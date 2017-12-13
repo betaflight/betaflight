@@ -161,11 +161,7 @@ static void serialInputPortDeActivate(softSerial_t *softSerial)
     TIM_CCxCmd(softSerial->timerHardware->tim, softSerial->timerHardware->channel, TIM_CCx_Disable);
 #endif
 
-#ifdef STM32F1
     IOConfigGPIO(softSerial->rxIO, IOCFG_IN_FLOATING);
-#else
-    IOConfigGPIOAF(softSerial->rxIO, IOCFG_IN_FLOATING, softSerial->timerHardware->alternateFunction);
-#endif
     softSerial->rxActive = false;
 }
 
@@ -232,7 +228,7 @@ static void resetBuffers(softSerial_t *softSerial)
     softSerial->port.txBufferHead = 0;
 }
 
-serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallbackPtr rxCallback, uint32_t baud, portMode_e mode, portOptions_e options)
+serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallbackPtr rxCallback, void *rxCallbackData, uint32_t baud, portMode_e mode, portOptions_e options)
 {
     softSerial_t *softSerial = &(softSerialPorts[portIndex]);
 
@@ -296,6 +292,7 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
     softSerial->port.mode = mode;
     softSerial->port.options = options;
     softSerial->port.rxCallback = rxCallback;
+    softSerial->port.rxCallbackData = rxCallbackData;
 
     resetBuffers(softSerial);
 
@@ -380,9 +377,14 @@ void processTxState(softSerial_t *softSerial)
             // Half-duplex: Deactivate receiver, activate transmitter
             serialInputPortDeActivate(softSerial);
             serialOutputPortActivate(softSerial);
-        }
 
-        return;
+            // Start sending on next bit timing, as port manipulation takes time,
+            // and continuing here may cause bit period to decrease causing sampling errors
+            // at the receiver under high rates.
+            // Note that there will be (little less than) 1-bit delay; take it as "turn around time".
+            // XXX We may be able to reload counter and continue. (Future work.)
+            return;
+        }
     }
 
     if (softSerial->bitsLeftToTransmit) {
@@ -444,7 +446,7 @@ void extractAndStoreRxByte(softSerial_t *softSerial)
     uint8_t rxByte = (softSerial->internalRxBuffer >> 1) & 0xFF;
 
     if (softSerial->port.rxCallback) {
-        softSerial->port.rxCallback(rxByte);
+        softSerial->port.rxCallback(rxByte, softSerial->port.rxCallbackData);
     } else {
         softSerial->port.rxBuffer[softSerial->port.rxBufferHead] = rxByte;
         softSerial->port.rxBufferHead = (softSerial->port.rxBufferHead + 1) % softSerial->port.rxBufferSize;

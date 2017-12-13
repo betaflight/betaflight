@@ -37,18 +37,18 @@
 #define MPU6500_SPI_INSTANCE    SPI2
 
 // Using MPU6050 for the moment.
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
 #define GYRO_MPU6500_ALIGN      CW270_DEG
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6500
 #define ACC_MPU6500_ALIGN       CW270_DEG
 
-//#define BARO
+//#define USE_BARO
 //#define USE_BARO_MS5611
 
-#define MAG
+#define USE_MAG
 #define USE_MAG_AK8963
 #define MAG_AK8963_ALIGN        CW0_DEG_FLIP
 
@@ -92,7 +92,7 @@
 #define VBAT_ADC_PIN            PC4
 #define CURRENT_METER_ADC_PIN   PC5
 
-#undef LED_STRIP
+#undef USE_LED_STRIP
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER    SERIALRX_SPEKTRUM2048

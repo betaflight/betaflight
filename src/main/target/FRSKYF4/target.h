@@ -17,7 +17,7 @@
 
 #define TARGET_BOARD_IDENTIFIER "FRF4"
 #define USBD_PRODUCT_STRING "FRSKYF4"
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 
 #define LED0_PIN                PB5
 #define BEEPER                  PB4
@@ -28,10 +28,10 @@
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 
 #define GYRO_MPU6000_ALIGN      CW270_DEG
@@ -41,13 +41,13 @@
 #define MPU_INT_EXTI            PC4
 #define USE_MPU_DATA_READY_SIGNAL
 
-#define BARO
+#define USE_BARO
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
 #define BMP280_SPI_INSTANCE     SPI3
 #define BMP280_CS_PIN           PB3
 
-#define OSD
+#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI3
 #define MAX7456_SPI_CS_PIN      PA15

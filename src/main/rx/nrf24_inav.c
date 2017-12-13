@@ -276,7 +276,7 @@ static void writeAckPayload(const uint8_t *data, uint8_t length)
 
 static void writeTelemetryAckPayload(void)
 {
-#ifdef TELEMETRY_NRF24_LTM
+#ifdef USE_TELEMETRY_NRF24_LTM
     // set up telemetry data, send back telemetry data in the ACK packet
     static uint8_t sequenceNumber = 0;
     static ltm_frame_e ltmFrameType = LTM_FRAME_START;

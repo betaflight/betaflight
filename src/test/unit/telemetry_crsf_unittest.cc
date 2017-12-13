@@ -300,7 +300,7 @@ uint8_t serialRead(serialPort_t *) {return 0;}
 void serialWrite(serialPort_t *, uint8_t) {}
 void serialWriteBuf(serialPort_t *, const uint8_t *, int) {}
 void serialSetMode(serialPort_t *, portMode_e) {}
-serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, uint32_t, portMode_e, portOptions_e) {return NULL;}
+serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) {return NULL;}
 void closeSerialPort(serialPort_t *) {}
 bool isSerialTransmitBufferEmpty(const serialPort_t *) { return true; }
 
@@ -336,5 +336,7 @@ int32_t getMAhDrawn(void){
 bool sendMspReply(uint8_t, mspResponseFnPtr) { return false; }
 bool handleMspFrame(uint8_t *, int)  { return false; }
 void crsfScheduleMspResponse(void) {};
+bool isBatteryVoltageAvailable(void) { return true; }
+bool isAmperageAvailable(void) { return true; }
 
 }

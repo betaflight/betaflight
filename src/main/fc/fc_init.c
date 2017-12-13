@@ -65,18 +65,18 @@
 #include "drivers/usb_io.h"
 #include "drivers/transponder_ir.h"
 #include "drivers/exti.h"
-#include "drivers/max7456.h"
 #include "drivers/vtx_rtc6705.h"
 #include "drivers/vtx_common.h"
 #include "drivers/camera_control.h"
 
 #include "fc/config.h"
 #include "fc/fc_init.h"
-#include "fc/fc_msp.h"
 #include "fc/fc_tasks.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
-#include "fc/cli.h"
+
+#include "interface/cli.h"
+#include "interface/msp.h"
 
 #include "msp/msp_serial.h"
 
@@ -100,10 +100,13 @@
 #include "io/osd.h"
 #include "io/osd_slave.h"
 #include "io/displayport_msp.h"
+#include "io/vtx.h"
 #include "io/vtx_rtc6705.h"
 #include "io/vtx_control.h"
 #include "io/vtx_smartaudio.h"
 #include "io/vtx_tramp.h"
+
+#include "io/displayport_srxl.h"
 
 #include "scheduler/scheduler.h"
 
@@ -158,18 +161,6 @@ void processLoopback(void)
     }
 #endif
 }
-
-#ifdef VTX_RTC6705
-bool canUpdateVTX(void)
-{
-#if defined(MAX7456_SPI_INSTANCE) && defined(RTC6705_SPI_INSTANCE) && defined(SPI_SHARED_MAX7456_AND_RTC6705)
-    if (feature(FEATURE_OSD)) {
-        return !max7456DmaInProgress();
-    }
-#endif
-    return true;
-}
-#endif
 
 #ifdef BUS_SWITCH_PIN
 void busSwitchInit(void)
@@ -260,7 +251,7 @@ void init(void)
     detectHardwareRevision();
 #endif
 
-#ifdef BRUSHED_ESC_AUTODETECT
+#ifdef USE_BRUSHED_ESC_AUTODETECT
     detectBrushedESC();
 #endif
 
@@ -296,7 +287,7 @@ void init(void)
     EXTIInit();
 #endif
 
-#if defined(BUTTONS)
+#if defined(USE_BUTTONS)
 
     buttonsInit();
 
@@ -388,10 +379,10 @@ void init(void)
         featureClear(FEATURE_3D);
         idlePulse = 0; // brushed motors
     }
-    /* Motors needs to be initialized soon as posible because hardware initialization 
+    /* Motors needs to be initialized soon as posible because hardware initialization
      * may send spurious pulses to esc's causing their early initialization. Also ppm
      * receiver may share timer with motors so motors MUST be initialized here. */
-    motorDevInit(&motorConfig()->dev, idlePulse, getMotorCount()); 
+    motorDevInit(&motorConfig()->dev, idlePulse, getMotorCount());
     systemState |= SYSTEM_STATE_MOTORS_READY;
 
     if (0) {}
@@ -472,13 +463,13 @@ void init(void)
     cameraControlInit();
 #endif
 
-#if defined(SONAR_SOFTSERIAL2_EXCLUSIVE) && defined(SONAR) && defined(USE_SOFTSERIAL2)
+#if defined(SONAR_SOFTSERIAL2_EXCLUSIVE) && defined(USE_SONAR) && defined(USE_SOFTSERIAL2)
     if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
         serialRemovePort(SERIAL_PORT_SOFTSERIAL2);
     }
 #endif
 
-#if defined(SONAR_SOFTSERIAL1_EXCLUSIVE) && defined(SONAR) && defined(USE_SOFTSERIAL1)
+#if defined(SONAR_SOFTSERIAL1_EXCLUSIVE) && defined(USE_SONAR) && defined(USE_SOFTSERIAL1)
     if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
         serialRemovePort(SERIAL_PORT_SOFTSERIAL1);
     }
@@ -507,7 +498,7 @@ void init(void)
     // so we are ready to call validateAndFixGyroConfig(), pidInit(), and setAccelerationFilter()
     validateAndFixGyroConfig();
     pidInit(currentPidProfile);
-    setAccelerationFilter(accelerometerConfig()->acc_lpf_hz);
+    accInitFilters();
 
 #ifdef USE_SERVOS
     servosInit();
@@ -550,15 +541,15 @@ void init(void)
 /*
  * CMS, display devices and OSD
  */
-#ifdef CMS
+#ifdef USE_CMS
     cmsInit();
 #endif
 
-#if (defined(OSD) || (defined(USE_MSP_DISPLAYPORT) && defined(CMS)) || defined(USE_OSD_SLAVE))
+#if (defined(USE_OSD) || (defined(USE_MSP_DISPLAYPORT) && defined(USE_CMS)) || defined(USE_OSD_SLAVE))
     displayPort_t *osdDisplayPort = NULL;
 #endif
 
-#if defined(OSD) && !defined(USE_OSD_SLAVE)
+#if defined(USE_OSD) && !defined(USE_OSD_SLAVE)
     //The OSD need to be initialised after GYRO to avoid GYRO initialisation failure on some targets
 
     if (feature(FEATURE_OSD)) {
@@ -573,7 +564,7 @@ void init(void)
     }
 #endif
 
-#if defined(USE_OSD_SLAVE) && !defined(OSD)
+#if defined(USE_OSD_SLAVE) && !defined(USE_OSD)
 #if defined(USE_MAX7456)
     // If there is a max7456 chip for the OSD then use it
     osdDisplayPort = max7456DisplayPortInit(vcdProfile());
@@ -582,7 +573,7 @@ void init(void)
 #endif
 #endif
 
-#if defined(CMS) && defined(USE_MSP_DISPLAYPORT)
+#if defined(USE_CMS) && defined(USE_MSP_DISPLAYPORT)
     // If BFOSD is not active, then register MSP_DISPLAYPORT as a CMS device.
     if (!osdDisplayPort)
         cmsDisplayPortRegister(displayPortMspInit());
@@ -595,15 +586,21 @@ void init(void)
     }
 #endif
 
+#if defined(USE_CMS) && defined(USE_SPEKTRUM_CMS_TELEMETRY)
+    // Register the srxl Textgen telemetry sensor as a displayport device
+    cmsDisplayPortRegister(displayPortSrxlInit());
+#endif
 
-#ifdef GPS
+#ifdef USE_GPS
     if (feature(FEATURE_GPS)) {
         gpsInit();
+#ifdef USE_NAV
         navigationInit();
+#endif
     }
 #endif
 
-#ifdef LED_STRIP
+#ifdef USE_LED_STRIP
     ledStripInit();
 
     if (feature(FEATURE_LED_STRIP)) {
@@ -611,7 +608,7 @@ void init(void)
     }
 #endif
 
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
     if (feature(FEATURE_TELEMETRY)) {
         telemetryInit();
     }
@@ -627,7 +624,7 @@ void init(void)
     usbCableDetectInit();
 #endif
 
-#ifdef TRANSPONDER
+#ifdef USE_TRANSPONDER
     if (feature(FEATURE_TRANSPONDER)) {
         transponderInit();
         transponderStartRepeating();
@@ -650,7 +647,7 @@ void init(void)
     }
 #endif
 
-#ifdef BLACKBOX
+#ifdef USE_BLACKBOX
     blackboxInit();
 #endif
 
@@ -658,14 +655,17 @@ void init(void)
         accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
     }
     gyroStartCalibration(false);
-#ifdef BARO
+#ifdef USE_BARO
     baroSetCalibrationCycles(CALIBRATING_BARO_CYCLES);
 #endif
 
 #ifdef VTX_CONTROL
     vtxControlInit();
 
+#if defined(VTX_COMMON)
     vtxCommonInit();
+    vtxInit();
+#endif
 
 #ifdef VTX_SMARTAUDIO
     vtxSmartAudioInit();

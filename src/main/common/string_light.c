@@ -16,46 +16,52 @@
  */
 
 #include <limits.h>
+#include <ctype.h>
+#include <string.h>
 
-#include "string_light.h"
 #include "typeconversion.h"
 
-int sl_isalnum(int c)
+int isalnum(int c)
 {
-    return sl_isdigit(c) || sl_isupper(c) || sl_islower(c);
+    return isdigit(c) || isupper(c) || islower(c);
 }
 
-int sl_isdigit(int c)
+int isdigit(int c)
 {
     return (c >= '0' && c <= '9');
 }
 
-int sl_isupper(int c)
+int isupper(int c)
 {
     return (c >= 'A' && c <= 'Z');
 }
 
-int sl_islower(int c)
+int islower(int c)
 {
     return (c >= 'a' && c <= 'z');
 }
 
-int sl_tolower(int c)
+int isspace(int c)
 {
-    return sl_isupper(c) ? (c) - 'A' + 'a' : c;
+    return (c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f' || c == '\v');
 }
 
-int sl_toupper(int c)
+int tolower(int c)
 {
-    return sl_islower(c) ? (c) - 'a' + 'A' : c;
+    return isupper(c) ? (c) - 'A' + 'a' : c;
 }
 
-int sl_strcasecmp(const char * s1, const char * s2)
+int toupper(int c)
 {
-    return sl_strncasecmp(s1, s2, INT_MAX);
+    return islower(c) ? (c) - 'a' + 'A' : c;
 }
 
-int sl_strncasecmp(const char * s1, const char * s2, int n)
+int strcasecmp(const char * s1, const char * s2)
+{
+    return strncasecmp(s1, s2, (size_t)-1);
+}
+
+int strncasecmp(const char * s1, const char * s2, size_t n)
 {
     const unsigned char * ucs1 = (const unsigned char *) s1;
     const unsigned char * ucs2 = (const unsigned char *) s2;
@@ -63,8 +69,8 @@ int sl_strncasecmp(const char * s1, const char * s2, int n)
     int d = 0;
 
     for ( ; n != 0; n--) {
-        const int c1 = sl_tolower(*ucs1++);
-        const int c2 = sl_tolower(*ucs2++);
+        const int c1 = tolower(*ucs1++);
+        const int c2 = tolower(*ucs2++);
         if (((d = c1 - c2) != 0) || (c2 == '\0')) {
             break;
         }

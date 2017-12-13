@@ -21,13 +21,15 @@
 
 #include "platform.h"
 
+#include "build/debug.h"
+
 #include "common/streambuf.h"
 #include "common/utils.h"
-#include "build/debug.h"
+
+#include "interface/msp.h"
 
 #include "io/serial.h"
 
-#include "msp/msp.h"
 #include "msp/msp_serial.h"
 
 static mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
@@ -50,7 +52,7 @@ void mspSerialAllocatePorts(void)
             continue;
         }
 
-        serialPort_t *serialPort = openSerialPort(portConfig->identifier, FUNCTION_MSP, NULL, baudRates[portConfig->msp_baudrateIndex], MODE_RXTX, SERIAL_NOT_INVERTED);
+        serialPort_t *serialPort = openSerialPort(portConfig->identifier, FUNCTION_MSP, NULL, NULL, baudRates[portConfig->msp_baudrateIndex], MODE_RXTX, SERIAL_NOT_INVERTED);
         if (serialPort) {
             resetMspPort(mspPort, serialPort);
             portIndex++;

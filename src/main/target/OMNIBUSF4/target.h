@@ -15,7 +15,7 @@
 
 #pragma once
 
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 
 #if defined(OMNIBUSF4SD)
 #define TARGET_BOARD_IDENTIFIER "OBSD"
@@ -58,10 +58,10 @@
 #define INVERTER_PIN_UART1      PC0 // PC0 used as inverter select GPIO XXX this is not used --- remove it at the next major release
 #endif
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 
 #define MPU6000_CS_PIN          PA4
@@ -95,14 +95,14 @@
 #define ACC_MPU6500_ALIGN       ACC_MPU6000_ALIGN
 #endif
 
-#define MAG
+#define USE_MAG
 #define USE_MAG_HMC5883
 #define MAG_HMC5883_ALIGN       CW90_DEG
 
 //#define USE_MAG_NAZA                   // Delete this on next major release
 //#define MAG_NAZA_ALIGN CW180_DEG_FLIP  // Ditto
 
-#define BARO
+#define USE_BARO
 #if defined(OMNIBUSF4SD)
 #define USE_BARO_SPI_BMP280
 #define BMP280_SPI_INSTANCE     SPI3
@@ -119,7 +119,7 @@
 #define DEFAULT_BARO_BMP280
 #endif
 
-#define OSD
+#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI3
 #define MAX7456_SPI_CS_PIN      PA15
@@ -216,6 +216,7 @@
 #define I2C_DEVICE              (I2CDEV_2)
 
 #define USE_ADC
+#define ADC_INSTANCE            ADC2
 #define CURRENT_METER_ADC_PIN   PC1  // Direct from CRNT pad (part of onboard sensor for Pro)
 #define VBAT_ADC_PIN            PC2  // 11:1 (10K + 1K) divider
 #ifdef DYSF4PRO
@@ -224,9 +225,9 @@
 #define RSSI_ADC_PIN            PA0  // Direct from RSSI pad
 #endif
 
-#define TRANSPONDER
+#define USE_TRANSPONDER
 
-#define SONAR
+#define USE_SONAR
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 

@@ -22,8 +22,8 @@
 
 #include "platform.h"
 
-#ifdef SERIAL_RX
-#ifdef TELEMETRY
+#ifdef USE_SERIAL_RX
+#ifdef USE_TELEMETRY
 
 #include "build/build_config.h"
 #include "build/debug.h"

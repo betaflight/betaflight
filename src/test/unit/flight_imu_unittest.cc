@@ -20,8 +20,6 @@
 #include <limits.h>
 #include <cmath>
 
-#undef BARO
-
 extern "C" {
     #include "build/debug.h"
 
@@ -200,7 +198,7 @@ TEST(FlightImuTest, TestSmallAngle)
 // STUBS
 
 extern "C" {
-uint32_t rcModeActivationMask;
+boxBitmask_t rcModeActivationMask;
 float rcCommand[4];
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 
@@ -241,4 +239,6 @@ uint32_t micros(void) { return 0; }
 bool isBaroCalibrationComplete(void) { return true; }
 void performBaroCalibrationCycle(void) {}
 int32_t baroCalculateAltitude(void) { return 0; }
+bool gyroGetAccumulationAverage(float *) { return false; }
+bool accGetAccumulationAverage(float *) { return false; }
 }

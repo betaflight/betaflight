@@ -48,16 +48,17 @@
 #define USE_DSHOT
 #define USE_ESC_SENSOR
 #define I2C3_OVERCLOCK true
-#define TELEMETRY_IBUS
+#define USE_TELEMETRY_IBUS
 #define USE_GYRO_DATA_ANALYSE
 #endif
 
 #ifdef STM32F7
 #define USE_DSHOT
+#define USE_DSHOT_DMAR
 #define USE_ESC_SENSOR
 #define I2C3_OVERCLOCK true
 #define I2C4_OVERCLOCK true
-#define TELEMETRY_IBUS
+#define USE_TELEMETRY_IBUS
 #define USE_GYRO_DATA_ANALYSE
 #endif
 
@@ -78,7 +79,7 @@
 #define USE_CLI
 #define USE_PPM
 #define USE_PWM
-#define SERIAL_RX
+#define USE_SERIAL_RX
 #define USE_SERIALRX_CRSF       // Team Black Sheep Crossfire protocol
 #define USE_SERIALRX_IBUS       // FlySky and Turnigy receivers
 #define USE_SERIALRX_SBUS       // Frsky and Futaba receivers
@@ -94,30 +95,31 @@
 #endif
 
 #if (FLASH_SIZE > 64)
-#define BLACKBOX
-#define LED_STRIP
-#define TELEMETRY
-#define TELEMETRY_FRSKY
-#define TELEMETRY_HOTT
-#define TELEMETRY_LTM
-#define TELEMETRY_SMARTPORT
+#define USE_BLACKBOX
+#define USE_LED_STRIP
+#define USE_TELEMETRY
+#define USE_TELEMETRY_FRSKY
+#define USE_TELEMETRY_HOTT
+#define USE_TELEMETRY_LTM
+#define USE_TELEMETRY_SMARTPORT
 #define USE_RESOURCE_MGMT
 #define USE_SERVOS
 #endif
-
+ 
 #if (FLASH_SIZE > 128)
-#define CMS
-#define TELEMETRY_CRSF
-#define TELEMETRY_IBUS
-#define TELEMETRY_JETIEXBUS
-#define TELEMETRY_MAVLINK
-#define TELEMETRY_SRXL
+#define USE_CMS
+#define USE_TELEMETRY_CRSF
+#define USE_TELEMETRY_IBUS
+#define USE_TELEMETRY_JETIEXBUS
+#define USE_TELEMETRY_MAVLINK
+#define USE_TELEMETRY_SRXL
 #define USE_DASHBOARD
 #define USE_MSP_DISPLAYPORT
 #define USE_RCDEVICE
 #define USE_RX_MSP
 #define USE_SERIALRX_JETIEXBUS
 #define USE_SENSOR_NAMES
+#define USE_SERIALRX_FPORT      // FrSky FPort
 #define USE_VIRTUAL_CURRENT_METER
 #define VTX_COMMON
 #define VTX_CONTROL
@@ -127,6 +129,7 @@
 #define USE_HUFFMAN
 #define USE_COPY_PROFILE_CMS_MENU
 #define USE_MSP_OVER_TELEMETRY
+#define USE_RTC_TIME
 
 #ifdef USE_SERIALRX_SPEKTRUM
 #define USE_SPEKTRUM_BIND
@@ -134,12 +137,18 @@
 #define USE_SPEKTRUM_REAL_RSSI
 #define USE_SPEKTRUM_FAKE_RSSI
 #define USE_SPEKTRUM_RSSI_PERCENT_CONVERSION
+#define USE_SPEKTRUM_VTX_CONTROL
+#define USE_SPEKTRUM_CMS_TELEMETRY
 #endif
 #endif
 
 #if (FLASH_SIZE > 256)
 // Temporarily moved GPS here because of overflowing flash size on F3
-#define GPS
+#define USE_GPS
+#define USE_GPS_UBLOX
+#define USE_GPS_NMEA
 #define USE_NAV
+#define USE_ALT_HOLD
 #define USE_UNCOMMON_MIXERS
+#define USE_OSD_ADJUSTMENTS
 #endif

@@ -17,7 +17,7 @@ long cmsMenuChange(displayPort_t *pPort, const void *ptr);
 long cmsMenuExit(displayPort_t *pPort, const void *ptr);
 void cmsUpdate(uint32_t currentTimeUs);
 
-#define CMS_STARTUP_HELP_TEXT1 "MENU: THR MID"
+#define CMS_STARTUP_HELP_TEXT1 "MENU:THR MID"
 #define CMS_STARTUP_HELP_TEXT2     "+ YAW LEFT"
 #define CMS_STARTUP_HELP_TEXT3     "+ PITCH UP"
 

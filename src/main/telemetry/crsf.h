@@ -17,9 +17,15 @@
 
 #pragma once
 
+#include <stdbool.h>
+#include <stdint.h>
+
 #include "common/time.h"
-#include "rx/crsf.h"
-#include "telemetry/msp_shared.h"
+#include "interface/crsf_protocol.h"
+
+#define CRSF_MSP_RX_BUF_SIZE 128
+#define CRSF_MSP_TX_BUF_SIZE 128
+
 
 void initCrsfTelemetry(void);
 bool checkCrsfTelemetryState(void);

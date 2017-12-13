@@ -27,7 +27,7 @@
 
 #include "platform.h"
 
-#ifdef SERIAL_RX
+#ifdef USE_SERIAL_RX
 
 #include "common/utils.h"
 
@@ -35,7 +35,7 @@
 
 #include "io/serial.h"
 
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
 #include "telemetry/telemetry.h"
 #endif
 
@@ -58,8 +58,10 @@ static serialPort_t *sumhPort;
 
 
 // Receive ISR callback
-static void sumhDataReceive(uint16_t c)
+static void sumhDataReceive(uint16_t c, void *data)
 {
+    UNUSED(data);
+
     uint32_t sumhTime;
     static uint32_t sumhTimeLast, sumhTimeInterval;
     static uint8_t sumhFramePosition;
@@ -80,8 +82,10 @@ static void sumhDataReceive(uint16_t c)
     }
 }
 
-static uint8_t sumhFrameStatus(void)
+static uint8_t sumhFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
 {
+    UNUSED(rxRuntimeConfig);
+
     uint8_t channelIndex;
 
     if (!sumhFrameDone) {
@@ -127,15 +131,15 @@ bool sumhInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
         return false;
     }
 
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
     bool portShared = telemetryCheckRxPortShared(portConfig);
 #else
     bool portShared = false;
 #endif
 
-    sumhPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, sumhDataReceive, SUMH_BAUDRATE, portShared ? MODE_RXTX : MODE_RX, (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0));
+    sumhPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, sumhDataReceive, NULL, SUMH_BAUDRATE, portShared ? MODE_RXTX : MODE_RX, (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0));
 
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
     if (portShared) {
         telemetrySharedPort = sumhPort;
     }

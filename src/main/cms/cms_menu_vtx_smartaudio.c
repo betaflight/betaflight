@@ -18,10 +18,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <ctype.h>
+#include <string.h>
 
 #include "platform.h"
 
-#if defined(CMS) && defined(VTX_SMARTAUDIO)
+#if defined(USE_CMS) && defined(VTX_SMARTAUDIO)
 
 #include "common/printf.h"
 #include "common/utils.h"
@@ -30,9 +31,13 @@
 #include "cms/cms_types.h"
 #include "cms/cms_menu_vtx_smartaudio.h"
 
+#include "drivers/vtx_common.h"
+
+#include "fc/config.h"
+
 #include "io/vtx_string.h"
 #include "io/vtx_smartaudio.h"
-#include "io/vtx_settings_config.h"
+#include "io/vtx.h"
 
 // Interface to CMS
 
@@ -76,18 +81,16 @@ uint16_t saCmsUserFreqNew;      // User defined frequency
 void saCmsUpdate(void)
 {
 // XXX Take care of pit mode update somewhere???
-
     if (saCmsOpmodel == SACMS_OPMODEL_UNDEF) {
         // This is a first valid response to GET_SETTINGS.
         saCmsOpmodel = (saDevice.mode & SA_MODE_GET_PITMODE) ? SACMS_OPMODEL_RACE : SACMS_OPMODEL_FREE;
 
         saCmsFselMode = (saDevice.mode & SA_MODE_GET_FREQ_BY_FREQ) ? 1 : 0;
 
-        saCmsBand = (saDevice.channel / 8) + 1;
-        saCmsChan = (saDevice.channel % 8) + 1;
-        saCmsFreqRef = vtx58frequencyTable[saDevice.channel / 8][saDevice.channel % 8];
-
-        saCmsDeviceFreq = vtx58frequencyTable[saDevice.channel / 8][saDevice.channel % 8];
+        saCmsBand = vtxSettingsConfig()->band;
+        saCmsChan = vtxSettingsConfig()->channel;
+        saCmsFreqRef = vtxSettingsConfig()->freq;
+        saCmsDeviceFreq = saCmsFreqRef;
 
         if ((saDevice.mode & SA_MODE_GET_PITMODE) == 0) {
             saCmsRFState = SACMS_TXMODE_ACTIVE;
@@ -97,15 +100,11 @@ void saCmsUpdate(void)
             saCmsRFState = SACMS_TXMODE_PIT_OUTRANGE;
         }
 
-        if (saDevice.version == 2) {
-            saCmsPower = saDevice.power + 1; // XXX Take care V1
-        } else {
-            saCmsPower = saDacToPowerIndex(saDevice.power) + 1;
-        }
+        saCmsPower = vtxSettingsConfig()->power;
 
         // if user-freq mode then track possible change
-        if (saCmsFselMode != 0 && saDevice.freq != 0) {
-            saCmsUserFreq = saDevice.freq;
+        if (saCmsFselMode && vtxSettingsConfig()->freq) {
+            saCmsUserFreq = vtxSettingsConfig()->freq;
         }
 
         saCmsFselModeNew = saCmsFselMode;   //init mode for menu
@@ -252,8 +251,9 @@ static long saCmsConfigPowerByGvar(displayPort_t *pDisp, const void *self)
         return 0;
     }
 
-    if (saCmsOpmodel == SACMS_OPMODEL_FREE)
-        saSetPowerByIndex(saCmsPower - 1);
+    if (saCmsOpmodel == SACMS_OPMODEL_FREE && !saDeferred) {
+        vtxSettingsConfigMutable()->power = saCmsPower;
+    }
 
     return 0;
 }
@@ -348,11 +348,12 @@ static OSD_Entry saCmsMenuStatsEntries[] = {
 };
 
 static CMS_Menu saCmsMenuStats = {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "XSAST",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = NULL,
     .onExit = NULL,
-    .onGlobalExit = NULL,
     .entries = saCmsMenuStatsEntries
 };
 
@@ -360,15 +361,7 @@ static OSD_TAB_t saCmsEntBand = { &saCmsBand, VTX_SMARTAUDIO_BAND_COUNT, vtx58Ba
 
 static OSD_TAB_t saCmsEntChan = { &saCmsChan, VTX_SMARTAUDIO_CHANNEL_COUNT, vtx58ChannelNames };
 
-static const char * const saCmsPowerNames[] = {
-    "---",
-    "25 ",
-    "200",
-    "500",
-    "800",
-};
-
-static OSD_TAB_t saCmsEntPower = { &saCmsPower, VTX_SMARTAUDIO_POWER_COUNT, saCmsPowerNames};
+static OSD_TAB_t saCmsEntPower = { &saCmsPower, VTX_SMARTAUDIO_POWER_COUNT, saPowerNames};
 
 static OSD_UINT16_t saCmsEntFreqRef = { &saCmsFreqRef, 5600, 5900, 0 };
 
@@ -417,12 +410,22 @@ static long saCmsCommence(displayPort_t *pDisp, const void *self)
     UNUSED(pDisp);
     UNUSED(self);
 
+    const vtxSettingsConfig_t prevSettings = {
+        .band = vtxSettingsConfig()->band,
+        .channel = vtxSettingsConfig()->channel,
+        .freq = vtxSettingsConfig()->freq,
+        .power = vtxSettingsConfig()->power,
+        .lowPowerDisarm = vtxSettingsConfig()->lowPowerDisarm,
+    };
+    vtxSettingsConfig_t newSettings = prevSettings;
+
     if (saCmsOpmodel == SACMS_OPMODEL_RACE) {
         // Race model
         // Setup band, freq and power.
 
-        saSetBandAndChannel(saCmsBand - 1, saCmsChan - 1);
-
+        newSettings.band = saCmsBand;
+        newSettings.channel = saCmsChan;
+        newSettings.freq = vtx58_Bandchan2Freq(saCmsBand, saCmsChan);
         // If in pit mode, cancel it.
 
         if (saCmsPitFMode == 0)
@@ -433,14 +436,25 @@ static long saCmsCommence(displayPort_t *pDisp, const void *self)
         // Freestyle model
         // Setup band and freq / user freq
         if (saCmsFselModeNew == 0) {
-            saSetBandAndChannel(saCmsBand - 1, saCmsChan - 1);
+            newSettings.band = saCmsBand;
+            newSettings.channel = saCmsChan;
+            newSettings.freq = vtx58_Bandchan2Freq(saCmsBand, saCmsChan);
         } else {
             saSetMode(0);    //make sure FREE mode is setup
-            saSetFreq(saCmsUserFreq);
+            newSettings.band = 0;
+            newSettings.freq = saCmsUserFreq;
         }
     }
 
-    saSetPowerByIndex(saCmsPower - 1);
+    newSettings.power = saCmsPower;
+
+    if (memcmp(&prevSettings, &newSettings, sizeof(vtxSettingsConfig_t))) {
+        vtxSettingsConfigMutable()->band = newSettings.band;
+        vtxSettingsConfigMutable()->channel = newSettings.channel;
+        vtxSettingsConfigMutable()->power = newSettings.power;
+        vtxSettingsConfigMutable()->freq = newSettings.freq;
+        saveConfigAndNotify();
+    }
 
     return MENU_CHAIN_BACK;
 }
@@ -496,7 +510,6 @@ static long saCmsConfigUserFreq(displayPort_t *pDisp, const void *self)
     UNUSED(self);
 
     saCmsUserFreq = saCmsUserFreqNew;
-    //saSetFreq(saCmsUserFreq);
 
     return MENU_CHAIN_BACK;
 }
@@ -504,8 +517,8 @@ static long saCmsConfigUserFreq(displayPort_t *pDisp, const void *self)
 static OSD_Entry saCmsMenuPORFreqEntries[] = {
     { "- POR FREQ -", OME_Label,   NULL,             NULL,                                                 0 },
 
-    { "CUR FREQ",     OME_UINT16,  NULL,             &(OSD_UINT16_t){ &saCmsORFreq, 5000, 5900, 0 },       DYNAMIC },
-    { "NEW FREQ",     OME_UINT16,  NULL,             &(OSD_UINT16_t){ &saCmsORFreqNew, 5000, 5900, 1 },    0 },
+    { "CUR FREQ",     OME_UINT16,  NULL,             &(OSD_UINT16_t){ &saCmsORFreq, 5000, 5999, 0 },       DYNAMIC },
+    { "NEW FREQ",     OME_UINT16,  NULL,             &(OSD_UINT16_t){ &saCmsORFreqNew, 5000, 5999, 1 },    0 },
     { "SET",          OME_Funcall, saCmsSetPORFreq,  NULL,                                                 0 },
 
     { "BACK",         OME_Back,    NULL,             NULL,                                                 0 },
@@ -514,19 +527,20 @@ static OSD_Entry saCmsMenuPORFreqEntries[] = {
 
 static CMS_Menu saCmsMenuPORFreq =
 {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "XSAPOR",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = saCmsSetPORFreqOnEnter,
     .onExit = NULL,
-    .onGlobalExit = NULL,
     .entries = saCmsMenuPORFreqEntries,
 };
 
 static OSD_Entry saCmsMenuUserFreqEntries[] = {
     { "- USER FREQ -", OME_Label,   NULL,             NULL,                                                0 },
 
-    { "CUR FREQ",      OME_UINT16,  NULL,             &(OSD_UINT16_t){ &saCmsUserFreq, 5000, 5900, 0 },    DYNAMIC },
-    { "NEW FREQ",      OME_UINT16,  NULL,             &(OSD_UINT16_t){ &saCmsUserFreqNew, 5000, 5900, 1 }, 0 },
+    { "CUR FREQ",      OME_UINT16,  NULL,             &(OSD_UINT16_t){ &saCmsUserFreq, 5000, 5999, 0 },    DYNAMIC },
+    { "NEW FREQ",      OME_UINT16,  NULL,             &(OSD_UINT16_t){ &saCmsUserFreqNew, 5000, 5999, 1 }, 0 },
     { "SET",           OME_Funcall, saCmsConfigUserFreq, NULL,                                                0 },
 
     { "BACK",          OME_Back,    NULL,             NULL,                                                0 },
@@ -535,11 +549,12 @@ static OSD_Entry saCmsMenuUserFreqEntries[] = {
 
 static CMS_Menu saCmsMenuUserFreq =
 {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "XSAUFQ",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = saCmsSetUserFreqOnEnter,
     .onExit = NULL,
-    .onGlobalExit = NULL,
     .entries = saCmsMenuUserFreqEntries,
 };
 
@@ -559,11 +574,12 @@ static OSD_Entry saCmsMenuConfigEntries[] = {
 };
 
 static CMS_Menu saCmsMenuConfig = {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "XSACFG",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = NULL,
     .onExit = NULL,
-    .onGlobalExit = NULL,
     .entries = saCmsMenuConfigEntries
 };
 
@@ -577,11 +593,12 @@ static OSD_Entry saCmsMenuCommenceEntries[] = {
 };
 
 static CMS_Menu saCmsMenuCommence = {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "XVTXCOM",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = NULL,
     .onExit = NULL,
-    .onGlobalExit = NULL,
     .entries = saCmsMenuCommenceEntries,
 };
 
@@ -642,11 +659,12 @@ static long sacms_SetupTopMenu(void)
 }
 
 CMS_Menu cmsx_menuVtxSmartAudio = {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "XVTXSA",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = sacms_SetupTopMenu,
     .onExit = NULL,
-    .onGlobalExit = NULL,
     .entries = saCmsMenuOfflineEntries,
 };
 

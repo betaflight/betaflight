@@ -29,6 +29,8 @@ extern "C" {
 
     #include "config/parameter_group_ids.h"
 
+    #include "common/time.h"
+
     #include "drivers/max7456_symbols.h"
 
     #include "fc/config.h"
@@ -57,7 +59,7 @@ extern "C" {
     int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
     uint8_t GPS_numSat;
     uint16_t GPS_distanceToHome;
-    uint16_t GPS_directionToHome;
+    int16_t GPS_directionToHome;
     int32_t GPS_coord[2];
     gpsSolutionData_t gpsSol;
 
@@ -132,6 +134,18 @@ void doTestArm(bool testEmpty = true)
 }
 
 /*
+ * Auxiliary function. Test is there're stats that must be shown
+ */
+bool isSomeStatEnabled(void) {
+    for (int i = 0; i < OSD_STAT_COUNT; i++) {
+            if (osdConfigMutable()->enabled_stats[i]) {
+                return true;
+            }
+        }
+    return false;
+}
+
+/*
  * Performs a test of the OSD actions on disarming.
  * (reused throughout the test suite)
  */
@@ -147,9 +161,10 @@ void doTestDisarm()
 
     // then
     // post flight statistics displayed
-    displayPortTestBufferSubstring(2, 2, "  --- STATS ---");
+    if (isSomeStatEnabled()) {
+        displayPortTestBufferSubstring(2, 2, "  --- STATS ---");
+    }
 }
-
 
 /*
  * Tests initialisation of the OSD and the power on splash screen.
@@ -175,7 +190,7 @@ TEST(OsdTest, TestInit)
 
     // then
     // display buffer should contain splash screen
-    displayPortTestBufferSubstring(7, 8, "MENU: THR MID");
+    displayPortTestBufferSubstring(7, 8, "MENU:THR MID");
     displayPortTestBufferSubstring(11, 9, "+ YAW LEFT");
     displayPortTestBufferSubstring(11, 10, "+ PITCH UP");
 
@@ -278,6 +293,7 @@ TEST(OsdTest, TestStatsImperial)
     osdConfigMutable()->enabled_stats[OSD_STAT_END_BATTERY]     = true;
     osdConfigMutable()->enabled_stats[OSD_STAT_TIMER_1]         = true;
     osdConfigMutable()->enabled_stats[OSD_STAT_TIMER_2]         = true;
+    osdConfigMutable()->enabled_stats[OSD_STAT_RTC_DATE_TIME]   = true;
     osdConfigMutable()->enabled_stats[OSD_STAT_MAX_DISTANCE]    = true;
     osdConfigMutable()->enabled_stats[OSD_STAT_BLACKBOX_NUMBER] = false;
 
@@ -296,6 +312,18 @@ TEST(OsdTest, TestStatsImperial)
     // and
     // a GPS fix is present
     stateFlags |= GPS_FIX | GPS_FIX_HOME;
+
+    // and
+    // this RTC time
+    dateTime_t dateTime;
+    dateTime.year = 2017;
+    dateTime.month = 11;
+    dateTime.day = 19;
+    dateTime.hours = 10;
+    dateTime.minutes = 12;
+    dateTime.seconds = 0;
+    dateTime.millis = 0;
+    rtcSetDateTime(&dateTime);
 
     // when
     // the craft is armed
@@ -334,6 +362,7 @@ TEST(OsdTest, TestStatsImperial)
     // then
     // statistics screen should display the following
     int row = 3;
+    displayPortTestBufferSubstring(2, row++, "2017-11-19 10:12:");
     displayPortTestBufferSubstring(2, row++, "TOTAL ARM         : 00:05.00");
     displayPortTestBufferSubstring(2, row++, "LAST ARM          : 00:03");
     displayPortTestBufferSubstring(2, row++, "MAX SPEED         : 28");
@@ -384,6 +413,7 @@ TEST(OsdTest, TestStatsMetric)
     // then
     // statistics screen should display the following
     int row = 3;
+    displayPortTestBufferSubstring(2, row++, "2017-11-19 10:12:");
     displayPortTestBufferSubstring(2, row++, "TOTAL ARM         : 00:07.50");
     displayPortTestBufferSubstring(2, row++, "LAST ARM          : 00:02");
     displayPortTestBufferSubstring(2, row++, "MAX SPEED         : 28");
@@ -405,11 +435,12 @@ TEST(OsdTest, TestAlarms)
 
     // and
     // the following OSD elements are visible
-    osdConfigMutable()->item_pos[OSD_RSSI_VALUE]        = OSD_POS(8, 1)  | VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(12, 1) | VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_ITEM_TIMER_1]      = OSD_POS(20, 1) | VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_ITEM_TIMER_2]      = OSD_POS(1, 1)  | VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_ALTITUDE]          = OSD_POS(23, 7) | VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_RSSI_VALUE]              = OSD_POS(8, 1)  | VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_MAIN_BATT_VOLTAGE]       = OSD_POS(12, 1) | VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_ITEM_TIMER_1]            = OSD_POS(20, 1) | VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_ITEM_TIMER_2]            = OSD_POS(1, 1)  | VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_REMAINING_TIME_ESTIMATE] = OSD_POS(1, 2) | VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_ALTITUDE]                = OSD_POS(23, 7) | VISIBLE_FLAG;
 
     // and
     // this set of alarm values
@@ -464,6 +495,7 @@ TEST(OsdTest, TestAlarms)
     simulationAltitude = 12000;
     simulationTime += 60e6;
     osdRefresh(simulationTime);
+    simulationMahDrawn = 999999;
 
     // then
     // elements showing values in alarm range should flash
@@ -717,6 +749,7 @@ TEST(OsdTest, TestElementWarningsBattery)
 {
     // given
     osdConfigMutable()->item_pos[OSD_WARNINGS] = OSD_POS(9, 10) | VISIBLE_FLAG;
+    osdConfigMutable()->enabledWarnings = OSD_WARNING_BATTERY_WARNING | OSD_WARNING_BATTERY_CRITICAL | OSD_WARNING_BATTERY_NOT_FULL;
 
     // and
     batteryConfigMutable()->vbatfullcellvoltage = 41;
@@ -857,6 +890,10 @@ extern "C" {
         return simulationTime;
     }
 
+    uint32_t millis() {
+        return micros() / 1000;
+    }
+
     bool isBeeperOn() {
         return false;
     }
@@ -918,4 +955,6 @@ extern "C" {
     bool cmsDisplayPortRegister(displayPort_t *) {
         return false;
     }
+
+    uint16_t getRssi(void) { return rssi; }
 }

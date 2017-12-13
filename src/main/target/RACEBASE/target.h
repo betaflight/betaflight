@@ -19,7 +19,7 @@
 
 #define TARGET_BOARD_IDENTIFIER "RBFC"
 #define USE_HARDWARE_REVISION_DETECTION
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 
 #define LED0_PIN                PB3
 #define LED0_INVERTED
@@ -39,10 +39,10 @@
 #define MPU6000_CS_PIN          PB5
 #define MPU6000_SPI_INSTANCE    SPI2
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
 
 #define ACC_MPU6000_ALIGN CW90_DEG
@@ -99,7 +99,7 @@
 #define CURRENT_METER_ADC_PIN   PA5
 #define RSSI_ADC_PIN            PA6
 
-#define OSD
+#define USE_OSD
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 

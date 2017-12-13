@@ -18,14 +18,14 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "AFF3" // AlienFlight F3.
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 #define REMAP_TIM17_DMA
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
 #define USE_HARDWARE_REVISION_DETECTION
 #define HW_PIN                  PB2
-#define BRUSHED_ESC_AUTODETECT
+#define USE_BRUSHED_ESC_AUTODETECT
 
 // LED's V1
 #define LED0_PIN                PB4
@@ -42,14 +42,14 @@
 #define USE_MPU_DATA_READY_SIGNAL
 
 // Using MPU6050 for the moment.
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_MPU6050
 #define USE_GYRO_SPI_MPU6500
 
 #define GYRO_MPU6050_ALIGN      CW270_DEG
 #define GYRO_MPU6500_ALIGN      CW270_DEG
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_MPU6050
 #define USE_ACC_SPI_MPU6500
 
@@ -57,13 +57,13 @@
 #define ACC_MPU6500_ALIGN       CW270_DEG
 
 // No baro support.
-//#define BARO
+//#define USE_BARO
 //#define USE_BARO_MS5611
 
 // option to use MPU9150 or MPU9250 integrated AK89xx Mag
-#define MAG
+#define USE_MAG
 #define USE_MAG_AK8963
-#define MAG_AK8963_ALIGN        CW0_DEG_FLIP
+#define MAG_AK8963_ALIGN        CW180_DEG_FLIP
 
 #define USE_VCP
 #define USE_UART1 // Not connected - TX (PB6) RX PB7 (AF7)
@@ -113,7 +113,7 @@
 #define VBAT_SCALE_DEFAULT      20
 
 // LED strip configuration.
-#define LED_STRIP
+#define USE_LED_STRIP
 
 #define BINDPLUG_PIN            PB12
 

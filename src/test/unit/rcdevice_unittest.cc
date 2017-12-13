@@ -1381,12 +1381,11 @@ TEST(RCDeviceTest, TestDSAInfoAccessProtocol)
 }
 
 extern "C" {
-    serialPort_t *openSerialPort(serialPortIdentifier_e identifier, serialPortFunction_e functionMask, serialReceiveCallbackPtr callback, uint32_t baudRate, portMode_e mode, portOptions_e options)
+    serialPort_t *openSerialPort(serialPortIdentifier_e identifier, serialPortFunction_e functionMask, serialReceiveCallbackPtr callback, void *callbackData, uint32_t baudRate, portMode_e mode, portOptions_e options)
     {
         UNUSED(identifier);
         UNUSED(functionMask);
         UNUSED(baudRate);
-        UNUSED(callback);
         UNUSED(mode);
         UNUSED(options);
 
@@ -1403,7 +1402,8 @@ extern "C" {
             s.txBuffer = s.txBuffer;
 
             // callback works for IRQ-based RX ONLY
-            s.rxCallback = NULL;
+            s.rxCallback = callback;
+            s.rxCallbackData = callbackData;
             s.baudRate = 0;
 
             return (serialPort_t *)&s;

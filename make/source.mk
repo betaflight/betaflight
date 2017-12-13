@@ -13,6 +13,8 @@ COMMON_SRC = \
             common/maths.c \
             common/printf.c \
             common/streambuf.c \
+            common/string_light.c \
+            common/time.c \
             common/typeconversion.c \
             config/config_eeprom.c \
             config/feature.c \
@@ -50,10 +52,10 @@ COMMON_SRC = \
             fc/config.c \
             fc/fc_dispatch.c \
             fc/fc_hardfaults.c \
-            fc/fc_msp.c \
-            fc/fc_msp_box.c \
             fc/fc_tasks.c \
             fc/runtime_config.c \
+            interface/msp.c \
+            interface/msp_box.c \
             io/beeper.c \
             io/serial.c \
             io/statusindicator.c \
@@ -86,14 +88,14 @@ FC_SRC = \
             fc/rc_adjustments.c \
             fc/rc_controls.c \
             fc/rc_modes.c \
-            fc/cli.c \
-            fc/settings.c \
             flight/altitude.c \
             flight/failsafe.c \
             flight/imu.c \
             flight/mixer.c \
             flight/pid.c \
             flight/servos.c \
+            interface/cli.c \
+            interface/settings.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
@@ -110,10 +112,12 @@ FC_SRC = \
             rx/rx_spi.c \
             rx/crsf.c \
             rx/sbus.c \
+            rx/sbus_channels.c \
             rx/spektrum.c \
             rx/sumd.c \
             rx/sumh.c \
             rx/xbus.c \
+            rx/fport.c \
             sensors/acceleration.c \
             sensors/boardalignment.c \
             sensors/compass.c \
@@ -146,6 +150,7 @@ FC_SRC = \
             io/displayport_msp.c \
             io/displayport_oled.c \
             io/displayport_rcdevice.c \
+            io/displayport_srxl.c \
             io/rcdevice_cam.c \
             io/rcdevice.c \
             io/rcdevice_osd.c \
@@ -168,7 +173,7 @@ FC_SRC = \
             telemetry/ibus_shared.c \
             sensors/esc_sensor.c \
             io/vtx_string.c \
-            io/vtx_settings_config.c \
+            io/vtx.c \
             io/vtx_rtc6705.c \
             io/vtx_smartaudio.c \
             io/vtx_tramp.c \
@@ -195,6 +200,22 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             common/filter.c \
             common/maths.c \
             common/typeconversion.c \
+            drivers/accgyro/accgyro_adxl345.c \
+            drivers/accgyro/accgyro_bma280.c \
+            drivers/accgyro/accgyro_fake.c \
+            drivers/accgyro/accgyro_l3g4200d.c \
+            drivers/accgyro/accgyro_l3gd20.c \
+            drivers/accgyro/accgyro_lsm303dlhc.c \
+            drivers/accgyro/accgyro_mma845x.c \
+            drivers/accgyro/accgyro_mpu3050.c \
+            drivers/accgyro/accgyro_mpu6050.c \
+            drivers/accgyro/accgyro_mpu6500.c \
+            drivers/accgyro/accgyro_mpu.c \
+            drivers/accgyro/accgyro_spi_bmi160.c \
+            drivers/accgyro/accgyro_spi_icm20689.c \
+            drivers/accgyro/accgyro_spi_mpu6000.c \
+            drivers/accgyro/accgyro_spi_mpu6500.c \
+            drivers/accgyro/accgyro_spi_mpu9250.c \
             drivers/adc.c \
             drivers/buf_writer.c \
             drivers/bus.c \
@@ -221,9 +242,11 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             rx/rx_spi.c \
             rx/crsf.c \
             rx/sbus.c \
+            rx/sbus_channels.c \
             rx/spektrum.c \
             rx/sumd.c \
             rx/xbus.c \
+            rx/fport.c \
             scheduler/scheduler.c \
             sensors/acceleration.c \
             sensors/boardalignment.c \
@@ -231,33 +254,48 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             sensors/gyroanalyse.c \
             $(CMSIS_SRC) \
             $(DEVICE_STDPERIPH_SRC) \
-            drivers/light_ws2811strip.c \
-            io/displayport_max7456.c \
-            io/osd.c \
-            io/osd_slave.c
 
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
+            bus_bst_stm32f30x.c \
+            drivers/barometer/barometer_bmp085.c \
+            drivers/barometer/barometer_bmp280.c \
+            drivers/barometer/barometer_fake.c \
+            drivers/barometer/barometer_ms5611.c \
             drivers/bus_i2c_config.c \
             drivers/bus_spi_config.c \
             drivers/bus_spi_pinconfig.c \
+            drivers/compass/compass_ak8963.c \
+            drivers/compass/compass_ak8975.c \
+            drivers/compass/compass_fake.c \
+            drivers/compass/compass_hmc5883l.c \
+            drivers/display_ug2864hsweg01.c \
+            drivers/inverter.c \
+            drivers/light_ws2811strip.c \
+            drivers/light_ws2811strip_hal.c \
             drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
+            drivers/serial_tcp.c \
             drivers/serial_uart_init.c \
             drivers/serial_uart_pinconfig.c \
+            drivers/serial_usb_vcp.c \
+            drivers/transponder_ir.c \
             drivers/vtx_rtc6705_soft_spi.c \
             drivers/vtx_rtc6705.c \
             drivers/vtx_common.c \
             fc/fc_init.c \
-            fc/cli.c \
-            fc/settings.c \
             config/config_eeprom.c \
             config/feature.c \
             config/parameter_group.c \
             config/config_streamer.c \
+            i2c_bst.c \
+            interface/cli.c \
+            interface/settings.c \
+            io/dashboard.c \
+            io/osd.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
-            io/dashboard.c \
+            io/transponder_ir.c \
             msp/msp_serial.c \
             cms/cms.c \
             cms/cms_menu_blackbox.c \
@@ -266,12 +304,25 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             cms/cms_menu_ledstrip.c \
             cms/cms_menu_misc.c \
             cms/cms_menu_osd.c \
+            cms/cms_menu_vtx_rtc6705.c \
+            cms/cms_menu_vtx_smartaudio.c \
+            cms/cms_menu_vtx_tramp.c \
             io/vtx_string.c \
-            io/vtx_settings_config.c \
+            io/vtx.c \
             io/vtx_rtc6705.c \
             io/vtx_smartaudio.c \
             io/vtx_tramp.c \
             io/vtx_control.c
+
+# F4 and F7 optimizations
+ifneq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
+SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
+            drivers/bus_i2c_hal.c \
+            drivers/bus_spi_ll.c \
+            drivers/max7456.c \
+            drivers/pwm_output_dshot.c \
+            drivers/pwm_output_dshot_hal.c
+endif #!F3
 endif #!F1
 
 # check if target.mk supplied

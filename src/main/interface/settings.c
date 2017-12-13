@@ -17,11 +17,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
-#include <math.h>
-#include <ctype.h>
 
 #include "platform.h"
 
@@ -41,13 +36,13 @@
 #include "drivers/light_led.h"
 #include "drivers/camera_control.h"
 #include "drivers/max7456.h"
+#include "drivers/vtx_common.h"
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/fc_core.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
-#include "fc/settings.h"
 
 #include "flight/altitude.h"
 #include "flight/failsafe.h"
@@ -57,19 +52,21 @@
 #include "flight/pid.h"
 #include "flight/servos.h"
 
+#include "interface/settings.h"
+
 #include "io/beeper.h"
 #include "io/dashboard.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/osd.h"
+#include "io/vtx.h"
 #include "io/vtx_control.h"
 #include "io/vtx_rtc6705.h"
-#include "io/vtx_settings_config.h"
 
 #include "rx/rx.h"
+#include "rx/cc2500_frsky_common.h"
 #include "rx/spektrum.h"
-#include "rx/frsky_d.h"
 
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
@@ -97,13 +94,13 @@ const char * const lookupTableGyroHardware[] = {
     "BMI160", "FAKE"
 };
 
-#if defined(USE_SENSOR_NAMES) || defined(BARO)
+#if defined(USE_SENSOR_NAMES) || defined(USE_BARO)
 // sync with baroSensor_e
 const char * const lookupTableBaroHardware[] = {
     "AUTO", "NONE", "BMP085", "MS5611", "BMP280"
 };
 #endif
-#if defined(USE_SENSOR_NAMES) || defined(MAG)
+#if defined(USE_SENSOR_NAMES) || defined(USE_MAG)
 // sync with magSensor_e
 const char * const lookupTableMagHardware[] = {
     "AUTO", "NONE", "HMC5883", "AK8975", "AK8963"
@@ -134,7 +131,7 @@ static const char * const lookupTableAlignment[] = {
     "CW270FLIP"
 };
 
-#ifdef GPS
+#ifdef USE_GPS
 static const char * const lookupTableGPSProvider[] = {
     "NMEA", "UBLOX"
 };
@@ -145,7 +142,7 @@ static const char * const lookupTableGPSSBASMode[] = {
 #endif
 
 static const char * const lookupTableCurrentSensor[] = {
-    "NONE", "ADC", "VIRTUAL", "ESC"
+    "NONE", "ADC", "VIRTUAL", "ESC", "MSP"
 };
 
 static const char * const lookupTableBatterySensor[] = {
@@ -158,13 +155,17 @@ static const char * const lookupTableGimbalMode[] = {
 };
 #endif
 
-#ifdef BLACKBOX
+#ifdef USE_BLACKBOX
 static const char * const lookupTableBlackboxDevice[] = {
     "NONE", "SPIFLASH", "SDCARD", "SERIAL"
 };
+
+static const char * const lookupTableBlackboxMode[] = {
+    "NORMAL", "MOTOR_TEST", "ALWAYS"
+};
 #endif
 
-#ifdef SERIAL_RX
+#ifdef USE_SERIAL_RX
 static const char * const lookupTableSerialRX[] = {
     "SPEK1024",
     "SPEK2048",
@@ -176,7 +177,9 @@ static const char * const lookupTableSerialRX[] = {
     "IBUS",
     "JETIEXBUS",
     "CRSF",
-    "SRXL"
+    "SRXL",
+    "CUSTOM",
+    "FPORT",
 };
 #endif
 
@@ -192,6 +195,7 @@ static const char * const lookupTableRxSpi[] = {
     "H8_3D",
     "INAV",
     "FRSKY_D",
+    "FRSKY_X",
     "FLYSKY",
     "FLYSKY_2A"
 };
@@ -208,7 +212,7 @@ static const char * const lookupTableGyroLpf[] = {
     "EXPERIMENTAL"
 };
 
-#ifdef OSD
+#ifdef USE_OSD
 static const char * const lookupTableOsdType[] = {
     "AUTO",
     "PAL",
@@ -265,19 +269,20 @@ const lookupTableEntry_t lookupTables[] = {
     { lookupTableOffOn, sizeof(lookupTableOffOn) / sizeof(char *) },
     { lookupTableUnit, sizeof(lookupTableUnit) / sizeof(char *) },
     { lookupTableAlignment, sizeof(lookupTableAlignment) / sizeof(char *) },
-#ifdef GPS
+#ifdef USE_GPS
     { lookupTableGPSProvider, sizeof(lookupTableGPSProvider) / sizeof(char *) },
     { lookupTableGPSSBASMode, sizeof(lookupTableGPSSBASMode) / sizeof(char *) },
 #endif
-#ifdef BLACKBOX
+#ifdef USE_BLACKBOX
     { lookupTableBlackboxDevice, sizeof(lookupTableBlackboxDevice) / sizeof(char *) },
+    { lookupTableBlackboxMode, sizeof(lookupTableBlackboxMode) / sizeof(char *) },
 #endif
     { lookupTableCurrentSensor, sizeof(lookupTableCurrentSensor) / sizeof(char *) },
     { lookupTableBatterySensor, sizeof(lookupTableBatterySensor) / sizeof(char *) },
 #ifdef USE_SERVOS
     { lookupTableGimbalMode, sizeof(lookupTableGimbalMode) / sizeof(char *) },
 #endif
-#ifdef SERIAL_RX
+#ifdef USE_SERIAL_RX
     { lookupTableSerialRX, sizeof(lookupTableSerialRX) / sizeof(char *) },
 #endif
 #ifdef USE_RX_SPI
@@ -286,10 +291,10 @@ const lookupTableEntry_t lookupTables[] = {
     { lookupTableGyroLpf, sizeof(lookupTableGyroLpf) / sizeof(char *) },
     { lookupTableGyroHardware, sizeof(lookupTableGyroHardware) / sizeof(char *) },
     { lookupTableAccHardware, sizeof(lookupTableAccHardware) / sizeof(char *) },
-#ifdef BARO
+#ifdef USE_BARO
     { lookupTableBaroHardware, sizeof(lookupTableBaroHardware) / sizeof(char *) },
 #endif
-#ifdef MAG
+#ifdef USE_MAG
     { lookupTableMagHardware, sizeof(lookupTableMagHardware) / sizeof(char *) },
 #endif
     { debugModeNames, sizeof(debugModeNames) / sizeof(char *) },
@@ -300,7 +305,7 @@ const lookupTableEntry_t lookupTables[] = {
     { lookupTableLowpassType, sizeof(lookupTableLowpassType) / sizeof(char *) },
     { lookupTableFailsafe, sizeof(lookupTableFailsafe) / sizeof(char *) },
     { lookupTableCrashRecovery, sizeof(lookupTableCrashRecovery) / sizeof(char *) },
-#ifdef OSD
+#ifdef USE_OSD
     { lookupTableOsdType, sizeof(lookupTableOsdType) / sizeof(char *) },
 #endif
 #ifdef USE_CAMERA_CONTROL
@@ -347,7 +352,7 @@ const clivalue_t valueTable[] = {
     { "acc_trim_roll",              VAR_INT16  | MASTER_VALUE, .config.minmax = { -300, 300 }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, accelerometerTrims.values.roll) },
 
 // PG_COMPASS_CONFIG
-#ifdef MAG
+#ifdef USE_MAG
     { "align_mag",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ALIGNMENT }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, mag_align) },
     { "mag_bustype",                VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BUS_TYPE }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, mag_bustype) },
     { "mag_i2c_device",             VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, I2CDEV_COUNT }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, mag_i2c_device) },
@@ -361,7 +366,7 @@ const clivalue_t valueTable[] = {
 #endif
 
 // PG_BAROMETER_CONFIG
-#ifdef BARO
+#ifdef USE_BARO
     { "baro_bustype",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BUS_TYPE }, PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_bustype) },
     { "baro_spi_device",            VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 5 }, PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_spi_device) },
     { "baro_i2c_device",            VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 5 }, PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_i2c_device) },
@@ -385,7 +390,7 @@ const clivalue_t valueTable[] = {
     { "rc_interp_int",              VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 50 }, PG_RX_CONFIG, offsetof(rxConfig_t, rcInterpolationInterval) },
     { "fpv_mix_degrees",            VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 50 }, PG_RX_CONFIG, offsetof(rxConfig_t, fpvCamAngleDegrees) },
     { "max_aux_channels",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, MAX_AUX_CHANNEL_COUNT }, PG_RX_CONFIG, offsetof(rxConfig_t, max_aux_channel) },
-#ifdef SERIAL_RX
+#ifdef USE_SERIAL_RX
     { "serialrx_provider",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_SERIAL_RX }, PG_RX_CONFIG, offsetof(rxConfig_t, serialrx_provider) },
     { "serialrx_inverted",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_RX_CONFIG, offsetof(rxConfig_t, serialrx_inverted) },
 #endif
@@ -401,17 +406,22 @@ const clivalue_t valueTable[] = {
     { "rx_spi_protocol",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_RX_SPI }, PG_RX_CONFIG, offsetof(rxConfig_t, rx_spi_protocol) },
 #endif
 
+// PG_ADC_CONFIG
+#if defined(ADC)
+    { "adc_device",                 VAR_INT8   | MASTER_VALUE, .config.minmax = { 0, ADCDEV_COUNT }, PG_ADC_CONFIG, offsetof(adcConfig_t, device) },
+#endif
+
 // PG_PWM_CONFIG
 #if defined(USE_PWM)
     { "input_filtering_mode",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  .config.lookup = { TABLE_OFF_ON }, PG_PWM_CONFIG, offsetof(pwmConfig_t, inputFilteringMode) },
 #endif
 
 // PG_BLACKBOX_CONFIG
-#ifdef BLACKBOX
+#ifdef USE_BLACKBOX
     { "blackbox_p_ratio",           VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, INT16_MAX }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, p_denom) },
     { "blackbox_device",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BLACKBOX_DEVICE }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, device) },
-    { "blackbox_on_motor_test",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, on_motor_test) },
     { "blackbox_record_acc",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, record_acc) },
+    { "blackbox_mode",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BLACKBOX_MODE }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, mode) },
 #endif
 
 // PG_MOTOR_CONFIG
@@ -537,7 +547,7 @@ const clivalue_t valueTable[] = {
 
 
 // PG_GPS_CONFIG
-#ifdef GPS
+#ifdef USE_GPS
     { "gps_provider",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GPS_PROVIDER }, PG_GPS_CONFIG, offsetof(gpsConfig_t, provider) },
     { "gps_sbas_mode",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GPS_SBAS_MODE }, PG_GPS_CONFIG, offsetof(gpsConfig_t, sbasMode) },
     { "gps_auto_config",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GPS_CONFIG, offsetof(gpsConfig_t, autoConfig) },
@@ -545,7 +555,7 @@ const clivalue_t valueTable[] = {
 #endif
 
 // PG_NAVIGATION_CONFIG
-#ifdef GPS
+#ifdef USE_NAV
     { "gps_wp_radius",              VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 2000 }, PG_NAVIGATION_CONFIG, offsetof(navigationConfig_t, gps_wp_radius) },
     { "nav_controls_heading",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_NAVIGATION_CONFIG, offsetof(navigationConfig_t, nav_controls_heading) },
     { "nav_speed_min",              VAR_UINT16 | MASTER_VALUE, .config.minmax = { 10, 2000 }, PG_NAVIGATION_CONFIG, offsetof(navigationConfig_t, nav_speed_min) },
@@ -554,7 +564,7 @@ const clivalue_t valueTable[] = {
 #endif
 
 // PG_AIRPLANE_CONFIG
-#if defined(BARO) || defined(SONAR)
+#if defined(USE_ALT_HOLD)
     { "fixedwing_althold_reversed", VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_AIRPLANE_CONFIG, offsetof(airplaneConfig_t, fixedwing_althold_reversed) },
 #endif
 
@@ -607,23 +617,24 @@ const clivalue_t valueTable[] = {
     { "i_yaw",                      VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_YAW].I) },
     { "d_yaw",                      VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_YAW].D) },
 
+#ifdef USE_ALT_HOLD
     { "p_alt",                      VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_ALT].P) },
     { "i_alt",                      VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_ALT].I) },
     { "d_alt",                      VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_ALT].D) },
+    { "p_vel",                      VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_VEL].P) },
+    { "i_vel",                      VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_VEL].I) },
+    { "d_vel",                      VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_VEL].D) },
+#endif
 
     { "p_level",                    VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_LEVEL].P) },
     { "i_level",                    VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_LEVEL].I) },
     { "d_level",                    VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_LEVEL].D) },
 
-    { "p_vel",                      VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_VEL].P) },
-    { "i_vel",                      VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_VEL].I) },
-    { "d_vel",                      VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_VEL].D) },
-
     { "level_limit",                VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 10, 90 }, PG_PID_PROFILE, offsetof(pidProfile_t, levelAngleLimit) },
 
     { "horizon_tilt_effect",        VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0,  250 }, PG_PID_PROFILE, offsetof(pidProfile_t, horizon_tilt_effect) },
     { "horizon_tilt_expert_mode",   VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_PID_PROFILE, offsetof(pidProfile_t, horizon_tilt_expert_mode) },
-#ifdef GPS
+#ifdef USE_NAV
     { "gps_pos_p",                  VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_POS].P) },
     { "gps_pos_i",                  VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_POS].I) },
     { "gps_pos_d",                  VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_POS].D) },
@@ -636,28 +647,28 @@ const clivalue_t valueTable[] = {
 #endif
 
 // PG_TELEMETRY_CONFIG
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
     { "tlm_switch",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, telemetry_switch) },
     { "tlm_inverted",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, telemetry_inverted) },
     { "tlm_halfduplex",             VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, halfDuplex) },
-#if defined(TELEMETRY_FRSKY)
-#if defined(GPS)
+#if defined(USE_TELEMETRY_FRSKY)
+#if defined(USE_GPS)
     { "frsky_default_lat",          VAR_INT16  | MASTER_VALUE, .config.minmax = { -9000, 9000 }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, gpsNoFixLatitude) },
     { "frsky_default_long",         VAR_INT16  | MASTER_VALUE, .config.minmax = { -18000, 18000 }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, gpsNoFixLongitude) },
     { "frsky_gps_format",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, FRSKY_FORMAT_NMEA }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, frsky_coordinate_format) },
     { "frsky_unit",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_UNIT }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, frsky_unit) },
 #endif
     { "frsky_vfas_precision",       VAR_UINT8  | MASTER_VALUE, .config.minmax = { FRSKY_VFAS_PRECISION_LOW,  FRSKY_VFAS_PRECISION_HIGH }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, frsky_vfas_precision) },
-#endif
+#endif // USE_TELEMETRY_FRSKY
     { "hott_alarm_int",             VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 120 }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, hottAlarmSoundInterval) },
     { "pid_in_tlm",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = {TABLE_OFF_ON }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, pidValuesAsTelemetry) },
-#if defined(TELEMETRY_IBUS)
+#if defined(USE_TELEMETRY_IBUS)
     { "report_cell_voltage",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, report_cell_voltage) },
 #endif
-#endif
+#endif // USE_TELEMETRY
 
 // PG_LED_STRIP_CONFIG
-#ifdef LED_STRIP
+#ifdef USE_LED_STRIP
     { "ledstrip_visual_beeper",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_visual_beeper) },
 #endif
 
@@ -667,8 +678,9 @@ const clivalue_t valueTable[] = {
 #endif
 
 // PG_OSD_CONFIG
-#ifdef OSD
+#ifdef USE_OSD
     { "osd_units",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_UNIT }, PG_OSD_CONFIG, offsetof(osdConfig_t, units) },
+    { "osd_warnings",               VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, INT16_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabledWarnings) },
 
     { "osd_rssi_alarm",             VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 100 }, PG_OSD_CONFIG, offsetof(osdConfig_t, rssi_alarm) },
     { "osd_cap_alarm",              VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 20000 }, PG_OSD_CONFIG, offsetof(osdConfig_t, cap_alarm) },
@@ -684,6 +696,7 @@ const clivalue_t valueTable[] = {
     { "osd_rssi_pos",               VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_RSSI_VALUE]) },
     { "osd_tim_1_pos",              VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_ITEM_TIMER_1]) },
     { "osd_tim_2_pos",              VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_ITEM_TIMER_2]) },
+    { "osd_remaining_time_estimate_pos",        VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_REMAINING_TIME_ESTIMATE]) },
     { "osd_flymode_pos",            VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_FLYMODE]) },
     { "osd_throttle_pos",           VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_THROTTLE_POS]) },
     { "osd_vtx_channel_pos",        VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_VTX_CHANNEL]) },
@@ -717,6 +730,8 @@ const clivalue_t valueTable[] = {
     { "osd_nvario_pos",             VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_NUMERICAL_VARIO]) },
     { "osd_esc_tmp_pos",            VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_ESC_TMP]) },
     { "osd_esc_rpm_pos",            VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_ESC_RPM]) },
+    { "osd_rtc_date_time_pos",      VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_RTC_DATETIME]) },
+    { "osd_adjustment_range_pos",   VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_ADJUSTMENT_RANGE]) },
 
     { "osd_stat_max_spd",           VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_MAX_SPEED])},
     { "osd_stat_max_dist",          VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_MAX_DISTANCE])},
@@ -743,12 +758,14 @@ const clivalue_t valueTable[] = {
     { "pwr_on_arm_grace",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 30 }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, powerOnArmingGraceTime) },
 
 // PG_VTX_CONFIG
-#ifdef VTX_SETTINGS_CONFIG
+#ifdef VTX_COMMON
     { "vtx_band",                   VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, VTX_SETTINGS_MAX_BAND }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, band) },
     { "vtx_channel",                VAR_UINT8  | MASTER_VALUE, .config.minmax = { VTX_SETTINGS_MIN_CHANNEL, VTX_SETTINGS_MAX_CHANNEL }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, channel) },
     { "vtx_power",                  VAR_UINT8  | MASTER_VALUE, .config.minmax = { VTX_SETTINGS_MIN_POWER, VTX_SETTINGS_POWER_COUNT }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, power) },
+    { "vtx_low_power_disarm",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, lowPowerDisarm) },
 #ifdef VTX_SETTINGS_FREQCMD
     { "vtx_freq",                   VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, VTX_SETTINGS_MAX_FREQUENCY_MHZ }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, freq) },
+    { "vtx_pit_mode_freq",          VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, VTX_SETTINGS_MAX_FREQUENCY_MHZ }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, pitModeFreq) },
 #endif
 #endif
 
@@ -788,11 +805,12 @@ const clivalue_t valueTable[] = {
     { "esc_sensor_halfduplex",          VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_ESC_SENSOR_CONFIG, offsetof(escSensorConfig_t, halfDuplex) },
 #endif
 
-#ifdef USE_RX_FRSKY_D
-    { "frsky_d_autobind",               VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_FRSKY_D_CONFIG, offsetof(frSkyDConfig_t, autoBind) },
-    { "frsky_d_tx_id",                  VAR_UINT8   | MASTER_VALUE | MODE_ARRAY, .config.array.length = 2, PG_FRSKY_D_CONFIG, offsetof(frSkyDConfig_t, bindTxId) },
-    { "frsky_d_offset",                 VAR_INT8    | MASTER_VALUE, .config.minmax = { -127, 127 }, PG_FRSKY_D_CONFIG, offsetof(frSkyDConfig_t, bindOffset) },
-    { "frsky_d_bind_hop_data",          VAR_UINT8   | MASTER_VALUE | MODE_ARRAY, .config.array.length = 50, PG_FRSKY_D_CONFIG, offsetof(frSkyDConfig_t, bindHopData) },
+#ifdef USE_RX_FRSKY_SPI
+    { "frsky_spi_autobind",             VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_RX_FRSKY_SPI_CONFIG, offsetof(rxFrSkySpiConfig_t, autoBind) },
+    { "frsky_spi_tx_id",                VAR_UINT8   | MASTER_VALUE | MODE_ARRAY, .config.array.length = 2, PG_RX_FRSKY_SPI_CONFIG, offsetof(rxFrSkySpiConfig_t, bindTxId) },
+    { "frsky_spi_offset",               VAR_INT8    | MASTER_VALUE, .config.minmax = { -127, 127 }, PG_RX_FRSKY_SPI_CONFIG, offsetof(rxFrSkySpiConfig_t, bindOffset) },
+    { "frsky_spi_bind_hop_data",        VAR_UINT8   | MASTER_VALUE | MODE_ARRAY, .config.array.length = 50, PG_RX_FRSKY_SPI_CONFIG, offsetof(rxFrSkySpiConfig_t, bindHopData) },
+    { "frsky_x_rx_num",                 VAR_UINT8   | MASTER_VALUE, .config.minmax = { 0, 255 }, PG_RX_FRSKY_SPI_CONFIG, offsetof(rxFrSkySpiConfig_t, rxNum) },
 #endif
     { "led_inversion",                  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, ((1 << STATUS_LED_NUMBER) - 1) }, PG_STATUS_LED_CONFIG, offsetof(statusLedConfig_t, inversion) },
 #ifdef USE_DASHBOARD

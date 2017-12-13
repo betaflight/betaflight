@@ -106,7 +106,7 @@ void pgResetFn_compassConfig(compassConfig_t *compassConfig)
     compassConfig->interruptTag = COMPASS_INTERRUPT_TAG;
 }
 
-#if defined(MAG)
+#if defined(USE_MAG)
 
 static int16_t magADCRaw[XYZ_AXIS_COUNT];
 static uint8_t magInit = 0;

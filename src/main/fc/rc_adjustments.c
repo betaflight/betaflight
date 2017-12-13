@@ -24,6 +24,7 @@
 #include "platform.h"
 
 #include "blackbox/blackbox.h"
+#include "blackbox/blackbox_fielddefs.h"
 
 #include "build/build_config.h"
 
@@ -56,7 +57,7 @@ static pidProfile_t *pidProfile;
 
 static void blackboxLogInflightAdjustmentEvent(adjustmentFunction_e adjustmentFunction, int32_t newValue)
 {
-#ifndef BLACKBOX
+#ifndef USE_BLACKBOX
     UNUSED(adjustmentFunction);
     UNUSED(newValue);
 #else
@@ -73,7 +74,7 @@ static void blackboxLogInflightAdjustmentEvent(adjustmentFunction_e adjustmentFu
 #if 0
 static void blackboxLogInflightAdjustmentEventFloat(adjustmentFunction_e adjustmentFunction, float newFloatValue)
 {
-#ifndef BLACKBOX
+#ifndef USE_BLACKBOX
     UNUSED(adjustmentFunction);
     UNUSED(newFloatValue);
 #else
@@ -197,6 +198,38 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
     }
 };
 
+#if defined(USE_OSD) && defined(USE_OSD_ADJUSTMENTS)
+static const char const *adjustmentLabels[] = {
+    "RC RATE",
+    "RC EXPO",
+    "THROTTLE EXPO",
+    "ROLL RATE",
+    "YAW RATE",
+    "PITCH/ROLL P",
+    "PITCH/ROLL I",
+    "PITCH/ROLL D",
+    "YAW P",
+    "YAW I",
+    "YAW D",
+    "RATE PROFILE",
+    "PITCH RATE",
+    "ROLL RATE",
+    "PITCH P",
+    "PITCH I",
+    "PITCH D",
+    "ROLL P",
+    "ROLL I",
+    "ROLL D",
+    "RC RATE YAW",
+    "D SETPOINT",
+    "D SETPOINT TRANSITION",
+    "HORIZON STRENGTH",
+};
+
+const char const *adjustmentRangeName;
+int adjustmentRangeValue = -1;
+#endif
+
 #define ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET 1
 
 STATIC_UNIT_TESTED adjustmentState_t adjustmentStates[MAX_SIMULTANEOUS_ADJUSTMENT_COUNT];
@@ -216,7 +249,7 @@ STATIC_UNIT_TESTED void configureAdjustment(uint8_t index, uint8_t auxSwitchChan
     MARK_ADJUSTMENT_FUNCTION_AS_READY(index);
 }
 
-static void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustmentFunction, int delta)
+static int applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustmentFunction, int delta)
 {
 
     beeperConfirmationBeeps(delta > 0 ? 2 : 1);
@@ -331,11 +364,14 @@ static void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t 
         blackboxLogInflightAdjustmentEvent(ADJUSTMENT_D_SETPOINT_TRANSITION, newValue);
         break;
     default:
+        newValue = -1;
         break;
     };
+
+    return newValue;
 }
 
-static void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
+static uint8_t applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
 {
     uint8_t beeps = 0;
 
@@ -345,6 +381,7 @@ static void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
             if (getCurrentControlRateProfileIndex() != position) {
                 changeControlRateProfile(position);
                 blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RATE_PROFILE, position);
+
                 beeps = position + 1;
             }
             break;
@@ -365,6 +402,7 @@ static void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
         beeperConfirmationBeeps(beeps);
     }
 
+    return position;
 }
 
 #define RESET_FREQUENCY_2HZ (1000 / 2)
@@ -372,6 +410,8 @@ static void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
 void processRcAdjustments(controlRateConfig_t *controlRateConfig)
 {
     const uint32_t now = millis();
+
+    int newValue = -1;
 
     const bool canUseRxData = rxIsReceivingSignal();
 
@@ -389,6 +429,10 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig)
         if (cmp32(now, adjustmentState->timeoutAt) >= 0) {
             adjustmentState->timeoutAt = now + RESET_FREQUENCY_2HZ;
             MARK_ADJUSTMENT_FUNCTION_AS_READY(adjustmentIndex);
+
+#if defined(USE_OSD) && defined(USE_OSD_ADJUSTMENTS)
+            adjustmentRangeValue = -1;
+#endif
         }
 
         if (!canUseRxData) {
@@ -413,13 +457,22 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig)
                 continue;
             }
 
-            applyStepAdjustment(controlRateConfig, adjustmentFunction, delta);
+            newValue = applyStepAdjustment(controlRateConfig, adjustmentFunction, delta);
             pidInitConfig(pidProfile);
         } else if (adjustmentState->config->mode == ADJUSTMENT_MODE_SELECT) {
             const uint16_t rangeWidth = ((2100 - 900) / adjustmentState->config->data.switchPositions);
             const uint8_t position = (constrain(rcData[channelIndex], 900, 2100 - 1) - 900) / rangeWidth;
-            applySelectAdjustment(adjustmentFunction, position);
+            newValue = applySelectAdjustment(adjustmentFunction, position);
         }
+
+#if defined(USE_OSD) && defined(USE_OSD_ADJUSTMENTS)
+        if (newValue != -1 && adjustmentState->config->adjustmentFunction != ADJUSTMENT_RATE_PROFILE) { // Rate profile already has an OSD element
+            adjustmentRangeName = &adjustmentLabels[adjustmentFunction - 1][0];
+            adjustmentRangeValue = newValue;
+        }
+#else
+        UNUSED(newValue);
+#endif
         MARK_ADJUSTMENT_FUNCTION_AS_BUSY(adjustmentIndex);
     }
 }

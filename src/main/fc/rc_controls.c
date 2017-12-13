@@ -60,7 +60,6 @@
 #include "scheduler/scheduler.h"
 
 #include "flight/pid.h"
-#include "flight/navigation.h"
 #include "flight/failsafe.h"
 
 static pidProfile_t *pidProfile;
@@ -110,15 +109,14 @@ throttleStatus_e calculateThrottleStatus(void)
 {
     if (feature(FEATURE_3D)) {
         if (IS_RC_MODE_ACTIVE(BOX3DDISABLE) || isModeActivationConditionPresent(BOX3DONASWITCH)) {
-            if (rcData[THROTTLE] < rxConfig()->mincheck)
+            if (rcData[THROTTLE] < rxConfig()->mincheck) {
                 return THROTTLE_LOW;
+            }
         } else if ((rcData[THROTTLE] > (rxConfig()->midrc - flight3DConfig()->deadband3d_throttle) && rcData[THROTTLE] < (rxConfig()->midrc + flight3DConfig()->deadband3d_throttle))) {
             return THROTTLE_LOW;
         }
-    } else {
-        if (rcData[THROTTLE] < rxConfig()->mincheck) {
-            return THROTTLE_LOW;
-            }
+    } else if (rcData[THROTTLE] < rxConfig()->mincheck) {
+        return THROTTLE_LOW;
     }
 
     return THROTTLE_HIGH;
@@ -141,7 +139,7 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
     static uint8_t rcDisarmTicks;
     static bool doNotRepeat;
 
-#ifdef CMS
+#ifdef USE_CMS
     if (cmsInMenu) {
         return;
     }
@@ -224,13 +222,13 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
         // GYRO calibration
         gyroStartCalibration(false);
 
-#ifdef GPS
+#ifdef USE_GPS
         if (feature(FEATURE_GPS)) {
             GPS_reset_home_position();
         }
 #endif
 
-#ifdef BARO
+#ifdef USE_BARO
         if (sensors(SENSOR_BARO))
             baroSetCalibrationCycles(10); // calibrate baro to new ground level (10 * 25 ms = ~250 ms non blocking)
 #endif
@@ -244,13 +242,13 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
         return;
     }
 
-    // Multiple configuration profiles
+    // Change PID profile
     int newPidProfile = 0;
-    if (rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_LO) {        // ROLL left  -> Profile 1
+    if (rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_LO) {        // ROLL left  -> PID profile 1
         newPidProfile = 1;
-    } else if (rcSticks == THR_LO + YAW_LO + PIT_HI + ROL_CE) { // PITCH up   -> Profile 2
+    } else if (rcSticks == THR_LO + YAW_LO + PIT_HI + ROL_CE) { // PITCH up   -> PID profile 2
         newPidProfile = 2;
-    } else if (rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_HI) { // ROLL right -> Profile 3
+    } else if (rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_HI) { // ROLL right -> PID profile 3
         newPidProfile = 3;
     }
     if (newPidProfile) {
@@ -276,28 +274,46 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
     }
 
 
-    // Accelerometer Trim
-    rollAndPitchTrims_t accelerometerTrimsDelta;
-    memset(&accelerometerTrimsDelta, 0, sizeof(accelerometerTrimsDelta));
+    if (FLIGHT_MODE(ANGLE_MODE|HORIZON_MODE)) {
+        // in ANGLE or HORIZON mode, so use sticks to apply accelerometer trims
+        rollAndPitchTrims_t accelerometerTrimsDelta;
+        memset(&accelerometerTrimsDelta, 0, sizeof(accelerometerTrimsDelta));
 
-    bool shouldApplyRollAndPitchTrimDelta = false;
-    if (rcSticks == THR_HI + YAW_CE + PIT_HI + ROL_CE) {
-        accelerometerTrimsDelta.values.pitch = 2;
-        shouldApplyRollAndPitchTrimDelta = true;
-    } else if (rcSticks == THR_HI + YAW_CE + PIT_LO + ROL_CE) {
-        accelerometerTrimsDelta.values.pitch = -2;
-        shouldApplyRollAndPitchTrimDelta = true;
-    } else if (rcSticks == THR_HI + YAW_CE + PIT_CE + ROL_HI) {
-        accelerometerTrimsDelta.values.roll = 2;
-        shouldApplyRollAndPitchTrimDelta = true;
-    } else if (rcSticks == THR_HI + YAW_CE + PIT_CE + ROL_LO) {
-        accelerometerTrimsDelta.values.roll = -2;
-        shouldApplyRollAndPitchTrimDelta = true;
-    }
-    if (shouldApplyRollAndPitchTrimDelta) {
-        applyAndSaveAccelerometerTrimsDelta(&accelerometerTrimsDelta);
-        repeatAfter(STICK_AUTOREPEAT_MS);
-        return;
+        bool shouldApplyRollAndPitchTrimDelta = false;
+        if (rcSticks == THR_HI + YAW_CE + PIT_HI + ROL_CE) {
+            accelerometerTrimsDelta.values.pitch = 2;
+            shouldApplyRollAndPitchTrimDelta = true;
+        } else if (rcSticks == THR_HI + YAW_CE + PIT_LO + ROL_CE) {
+            accelerometerTrimsDelta.values.pitch = -2;
+            shouldApplyRollAndPitchTrimDelta = true;
+        } else if (rcSticks == THR_HI + YAW_CE + PIT_CE + ROL_HI) {
+            accelerometerTrimsDelta.values.roll = 2;
+            shouldApplyRollAndPitchTrimDelta = true;
+        } else if (rcSticks == THR_HI + YAW_CE + PIT_CE + ROL_LO) {
+            accelerometerTrimsDelta.values.roll = -2;
+            shouldApplyRollAndPitchTrimDelta = true;
+        }
+        if (shouldApplyRollAndPitchTrimDelta) {
+            applyAndSaveAccelerometerTrimsDelta(&accelerometerTrimsDelta);
+            repeatAfter(STICK_AUTOREPEAT_MS);
+            return;
+        }
+    } else {
+        // in ACRO mode, so use sticks to change RATE profile
+        switch (rcSticks) {
+        case THR_HI + YAW_CE + PIT_HI + ROL_CE:
+            changeControlRateProfile(0);
+            return;
+        case THR_HI + YAW_CE + PIT_LO + ROL_CE:
+            changeControlRateProfile(1);
+            return;
+        case THR_HI + YAW_CE + PIT_CE + ROL_HI:
+            changeControlRateProfile(2);
+            return;
+        case THR_HI + YAW_CE + PIT_CE + ROL_LO:
+            changeControlRateProfile(3);
+            return;
+        }
     }
 
 #ifdef USE_DASHBOARD

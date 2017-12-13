@@ -50,11 +50,11 @@
 
 #include "io/serial.h"
 
-#include "fc/cli.h"
+#include "interface/cli.h"
 
 #include "msp/msp_serial.h"
 
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
 #include "telemetry/telemetry.h"
 #endif
 
@@ -258,7 +258,7 @@ serialPort_t *findNextSharedSerialPort(uint16_t functionMask, serialPortFunction
     return NULL;
 }
 
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
 #define ALL_FUNCTIONS_SHARABLE_WITH_MSP (FUNCTION_BLACKBOX | TELEMETRY_PORT_FUNCTIONS_MASK)
 #else
 #define ALL_FUNCTIONS_SHARABLE_WITH_MSP (FUNCTION_BLACKBOX)
@@ -294,7 +294,7 @@ bool isSerialConfigValid(const serialConfig_t *serialConfigToCheck)
 
             if ((portConfig->functionMask & FUNCTION_MSP) && (portConfig->functionMask & ALL_FUNCTIONS_SHARABLE_WITH_MSP)) {
                 // MSP & telemetry
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
             } else if (telemetryCheckRxPortShared(portConfig)) {
                 // serial RX & telemetry
 #endif
@@ -332,12 +332,14 @@ serialPort_t *openSerialPort(
     serialPortIdentifier_e identifier,
     serialPortFunction_e function,
     serialReceiveCallbackPtr rxCallback,
+    void *rxCallbackData,
     uint32_t baudRate,
     portMode_e mode,
     portOptions_e options)
 {
 #if !(defined(USE_UART) || defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2))
     UNUSED(rxCallback);
+    UNUSED(rxCallbackData);
     UNUSED(baudRate);
     UNUSED(mode);
     UNUSED(options);
@@ -385,21 +387,21 @@ serialPort_t *openSerialPort(
 #endif
 #ifdef SITL
             // SITL emulates serial ports over TCP
-            serialPort = serTcpOpen(SERIAL_PORT_IDENTIFIER_TO_UARTDEV(identifier), rxCallback, baudRate, mode, options);
+            serialPort = serTcpOpen(SERIAL_PORT_IDENTIFIER_TO_UARTDEV(identifier), rxCallback, rxCallbackData, baudRate, mode, options);
 #else
-            serialPort = uartOpen(SERIAL_PORT_IDENTIFIER_TO_UARTDEV(identifier), rxCallback, baudRate, mode, options);
+            serialPort = uartOpen(SERIAL_PORT_IDENTIFIER_TO_UARTDEV(identifier), rxCallback, rxCallbackData, baudRate, mode, options);
 #endif
             break;
 #endif
 
 #ifdef USE_SOFTSERIAL1
         case SERIAL_PORT_SOFTSERIAL1:
-            serialPort = openSoftSerial(SOFTSERIAL1, rxCallback, baudRate, mode, options);
+            serialPort = openSoftSerial(SOFTSERIAL1, rxCallback, rxCallbackData, baudRate, mode, options);
             break;
 #endif
 #ifdef USE_SOFTSERIAL2
         case SERIAL_PORT_SOFTSERIAL2:
-            serialPort = openSoftSerial(SOFTSERIAL2, rxCallback, baudRate, mode, options);
+            serialPort = openSoftSerial(SOFTSERIAL2, rxCallback, rxCallbackData, baudRate, mode, options);
             break;
 #endif
         default:
@@ -514,7 +516,7 @@ void serialEvaluateNonMspData(serialPort_t *serialPort, uint8_t receivedChar)
     }
 }
 
-#if defined(GPS) || ! defined(SKIP_SERIAL_PASSTHROUGH)
+#if defined(USE_GPS) || ! defined(SKIP_SERIAL_PASSTHROUGH)
 // Default data consumer for serialPassThrough.
 static void nopConsumer(uint8_t data)
 {

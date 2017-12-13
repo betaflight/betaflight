@@ -22,10 +22,11 @@
 
 #include "platform.h"
 
-#ifdef BLACKBOX
+#ifdef USE_BLACKBOX
 
 #include "blackbox.h"
 #include "blackbox_encoding.h"
+#include "blackbox_fielddefs.h"
 #include "blackbox_io.h"
 
 #include "build/build_config.h"
@@ -35,6 +36,7 @@
 #include "common/axis.h"
 #include "common/encoding.h"
 #include "common/maths.h"
+#include "common/time.h"
 #include "common/utils.h"
 
 #include "config/feature.h"
@@ -53,7 +55,6 @@
 
 #include "flight/failsafe.h"
 #include "flight/mixer.h"
-#include "flight/navigation.h"
 #include "flight/pid.h"
 #include "flight/servos.h"
 
@@ -70,6 +71,11 @@
 #include "sensors/gyro.h"
 #include "sensors/sonar.h"
 
+enum {
+    BLACKBOX_MODE_NORMAL = 0,
+    BLACKBOX_MODE_MOTOR_TEST,
+    BLACKBOX_MODE_ALWAYS_ON
+};
 
 #if defined(ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT)
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_FLASH
@@ -79,13 +85,13 @@
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_SERIAL
 #endif
 
-PG_REGISTER_WITH_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 1);
 
 PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
     .p_denom = 32,
     .device = DEFAULT_BLACKBOX_DEVICE,
-    .on_motor_test = 0, // default off
-    .record_acc = 1
+    .record_acc = 1,
+    .mode = BLACKBOX_MODE_NORMAL
 );
 
 #define BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS 200
@@ -187,15 +193,15 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
     {"vbatLatest",    -1, UNSIGNED, .Ipredict = PREDICT(VBATREF),  .Iencode = ENCODING(NEG_14BIT),   .Ppredict = PREDICT(PREVIOUS),  .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_VBAT},
     {"amperageLatest",-1, UNSIGNED, .Ipredict = PREDICT(0),        .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),  .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC},
 
-#ifdef MAG
+#ifdef USE_MAG
     {"magADC",      0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_MAG},
     {"magADC",      1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_MAG},
     {"magADC",      2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_MAG},
 #endif
-#ifdef BARO
+#ifdef USE_BARO
     {"BaroAlt",    -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_BARO},
 #endif
-#ifdef SONAR
+#ifdef USE_SONAR
     {"sonarRaw",   -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_SONAR},
 #endif
     {"rssi",       -1, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_RSSI},
@@ -226,7 +232,7 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
     {"servo",       5, UNSIGNED, .Ipredict = PREDICT(1500),    .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(TRICOPTER)}
 };
 
-#ifdef GPS
+#ifdef USE_GPS
 // GPS position/vel frame
 static const blackboxConditionalFieldDefinition_t blackboxGpsGFields[] = {
     {"time",              -1, UNSIGNED, PREDICT(LAST_MAIN_FRAME_TIME), ENCODING(UNSIGNED_VB), CONDITION(NOT_LOGGING_EVERY_FRAME)},
@@ -291,13 +297,13 @@ typedef struct blackboxMainState_s {
     uint16_t vbatLatest;
     uint16_t amperageLatest;
 
-#ifdef BARO
+#ifdef USE_BARO
     int32_t BaroAlt;
 #endif
-#ifdef MAG
+#ifdef USE_MAG
     int16_t magADC[XYZ_AXIS_COUNT];
 #endif
-#ifdef SONAR
+#ifdef USE_SONAR
     int32_t sonarRaw;
 #endif
     uint16_t rssi;
@@ -412,14 +418,14 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
         return currentPidProfile->pid[condition - FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0].D != 0;
 
     case FLIGHT_LOG_FIELD_CONDITION_MAG:
-#ifdef MAG
+#ifdef USE_MAG
         return sensors(SENSOR_MAG);
 #else
         return false;
 #endif
 
     case FLIGHT_LOG_FIELD_CONDITION_BARO:
-#ifdef BARO
+#ifdef USE_BARO
         return sensors(SENSOR_BARO);
 #else
         return false;
@@ -429,10 +435,10 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
         return batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE;
 
     case FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC:
-        return batteryConfig()->currentMeterSource == CURRENT_METER_ADC;
+        return (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) && (batteryConfig()->currentMeterSource != CURRENT_METER_VIRTUAL);
 
     case FLIGHT_LOG_FIELD_CONDITION_SONAR:
-#ifdef SONAR
+#ifdef USE_SONAR
         return feature(FEATURE_SONAR);
 #else
         return false;
@@ -550,19 +556,19 @@ static void writeIntraframe(void)
         blackboxWriteUnsignedVB(blackboxCurrent->amperageLatest);
     }
 
-#ifdef MAG
+#ifdef USE_MAG
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_MAG)) {
         blackboxWriteSigned16VBArray(blackboxCurrent->magADC, XYZ_AXIS_COUNT);
     }
 #endif
 
-#ifdef BARO
+#ifdef USE_BARO
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_BARO)) {
         blackboxWriteSignedVB(blackboxCurrent->BaroAlt);
     }
 #endif
 
-#ifdef SONAR
+#ifdef USE_SONAR
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_SONAR)) {
         blackboxWriteSignedVB(blackboxCurrent->sonarRaw);
     }
@@ -678,7 +684,7 @@ static void writeInterframe(void)
         deltas[optionalFieldCount++] = (int32_t) blackboxCurrent->amperageLatest - blackboxLast->amperageLatest;
     }
 
-#ifdef MAG
+#ifdef USE_MAG
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_MAG)) {
         for (int x = 0; x < XYZ_AXIS_COUNT; x++) {
             deltas[optionalFieldCount++] = blackboxCurrent->magADC[x] - blackboxLast->magADC[x];
@@ -686,13 +692,13 @@ static void writeInterframe(void)
     }
 #endif
 
-#ifdef BARO
+#ifdef USE_BARO
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_BARO)) {
         deltas[optionalFieldCount++] = blackboxCurrent->BaroAlt - blackboxLast->BaroAlt;
     }
 #endif
 
-#ifdef SONAR
+#ifdef USE_SONAR
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_SONAR)) {
         deltas[optionalFieldCount++] = blackboxCurrent->sonarRaw - blackboxLast->sonarRaw;
     }
@@ -888,9 +894,9 @@ void blackboxFinish(void)
 /**
  * Test Motors Blackbox Logging
  */
-bool startedLoggingInTestMode = false;
+static bool startedLoggingInTestMode = false;
 
-void startInTestMode(void)
+static void startInTestMode(void)
 {
     if (!startedLoggingInTestMode) {
         if (blackboxConfig()->device == BLACKBOX_DEVICE_SERIAL) {
@@ -903,7 +909,8 @@ void startInTestMode(void)
         startedLoggingInTestMode = true;
     }
 }
-void stopInTestMode(void)
+
+static void stopInTestMode(void)
 {
     if (startedLoggingInTestMode) {
         blackboxFinish();
@@ -920,7 +927,7 @@ void stopInTestMode(void)
  * Of course, after the 5 seconds and shutdown of the logger, the system will be re-enabled to allow the
  * test mode to trigger again; its just that the data will be in a second, third, fourth etc log file.
  */
-bool inMotorTestMode(void) {
+static bool inMotorTestMode(void) {
     static uint32_t resetTime = 0;
 
     if (!ARMING_FLAG(ARMED) && areMotorsRunning()) {
@@ -933,7 +940,7 @@ bool inMotorTestMode(void) {
     return false;
 }
 
-#ifdef GPS
+#ifdef USE_GPS
 static void writeGPSHomeFrame(void)
 {
     blackboxWrite('H');
@@ -990,7 +997,7 @@ static void loadMainState(timeUs_t currentTimeUs)
         blackboxCurrent->axisPID_D[i] = axisPID_D[i];
         blackboxCurrent->gyroADC[i] = lrintf(gyro.gyroADCf[i]);
         blackboxCurrent->accSmooth[i] = acc.accSmooth[i];
-#ifdef MAG
+#ifdef USE_MAG
         blackboxCurrent->magADC[i] = mag.magADC[i];
 #endif
     }
@@ -1011,16 +1018,16 @@ static void loadMainState(timeUs_t currentTimeUs)
     blackboxCurrent->vbatLatest = getBatteryVoltageLatest();
     blackboxCurrent->amperageLatest = getAmperageLatest();
 
-#ifdef BARO
+#ifdef USE_BARO
     blackboxCurrent->BaroAlt = baro.BaroAlt;
 #endif
 
-#ifdef SONAR
+#ifdef USE_SONAR
     // Store the raw sonar value without applying tilt correction
     blackboxCurrent->sonarRaw = sonarRead();
 #endif
 
-    blackboxCurrent->rssi = rssi;
+    blackboxCurrent->rssi = getRssi();
 
 #ifdef USE_SERVOS
     //Tail servo for tricopters
@@ -1147,6 +1154,22 @@ static bool sendFieldDefinition(char mainFrameChar, char deltaFrameChar, const v
     return xmitState.headerIndex < headerCount;
 }
 
+// Buf must be at least FORMATTED_DATE_TIME_BUFSIZE
+STATIC_UNIT_TESTED char *blackboxGetStartDateTime(char *buf)
+{
+    #ifdef USE_RTC_TIME
+    dateTime_t dt;
+    // rtcGetDateTime will fill dt with 0000-01-01T00:00:00
+    // when time is not known.
+    rtcGetDateTime(&dt);
+    dateTimeFormatLocal(buf, &dt);
+    #else
+    buf = "0000-01-01T00:00:00.000";
+    #endif
+
+    return buf;
+}
+
 #ifndef BLACKBOX_PRINT_HEADER_LINE
 #define BLACKBOX_PRINT_HEADER_LINE(name, format, ...) case __COUNTER__: \
                                                 blackboxPrintfHeaderLine(name, format, __VA_ARGS__); \
@@ -1171,12 +1194,14 @@ static bool blackboxWriteSysinfo(void)
         return false;
     }
 
+    char buf[FORMATTED_DATE_TIME_BUFSIZE];
+
     const controlRateConfig_t *currentControlRateProfile = controlRateProfiles(systemConfig()->activeRateProfile);
     switch (xmitState.headerIndex) {
         BLACKBOX_PRINT_HEADER_LINE("Firmware type", "%s",                   "Cleanflight");
         BLACKBOX_PRINT_HEADER_LINE("Firmware revision", "%s %s (%s) %s",    FC_FIRMWARE_NAME, FC_VERSION_STRING, shortGitRevision, targetName);
         BLACKBOX_PRINT_HEADER_LINE("Firmware date", "%s %s",                buildDate, buildTime);
-        BLACKBOX_PRINT_HEADER_LINE("Log start datetime", "%s",              blackboxGetStartDateTime());
+        BLACKBOX_PRINT_HEADER_LINE("Log start datetime", "%s",              blackboxGetStartDateTime(buf));
         BLACKBOX_PRINT_HEADER_LINE("Craft name", "%s",                      pilotConfig()->name);
         BLACKBOX_PRINT_HEADER_LINE("I interval", "%d",                      blackboxIInterval);
         BLACKBOX_PRINT_HEADER_LINE("P interval", "%d/%d",                   blackboxGetRateNum(), blackboxGetRateDenom());
@@ -1387,7 +1412,7 @@ STATIC_UNIT_TESTED bool blackboxShouldLogIFrame(void)
  * We write it periodically so that if one Home Frame goes missing, the GPS coordinates can
  * still be interpreted correctly.
  */
-#ifdef GPS
+#ifdef USE_GPS
 STATIC_UNIT_TESTED bool blackboxShouldLogGpsHomeFrame(void)
 {
     if (GPS_home[0] != gpsHistory.GPS_home[0] || GPS_home[1] != gpsHistory.GPS_home[1]
@@ -1442,7 +1467,7 @@ STATIC_UNIT_TESTED void blackboxLogIteration(timeUs_t currentTimeUs)
             loadMainState(currentTimeUs);
             writeInterframe();
         }
-#ifdef GPS
+#ifdef USE_GPS
         if (feature(FEATURE_GPS)) {
             if (blackboxShouldLogGpsHomeFrame()) {
                 writeGPSHomeFrame();
@@ -1508,7 +1533,7 @@ void blackboxUpdate(timeUs_t currentTimeUs)
         //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
         if (!sendFieldDefinition('I', 'P', blackboxMainFields, blackboxMainFields + 1, ARRAYLEN(blackboxMainFields),
                 &blackboxMainFields[0].condition, &blackboxMainFields[1].condition)) {
-#ifdef GPS
+#ifdef USE_GPS
             if (feature(FEATURE_GPS)) {
                 blackboxSetState(BLACKBOX_STATE_SEND_GPS_H_HEADER);
             } else
@@ -1516,7 +1541,7 @@ void blackboxUpdate(timeUs_t currentTimeUs)
                 blackboxSetState(BLACKBOX_STATE_SEND_SLOW_HEADER);
         }
         break;
-#ifdef GPS
+#ifdef USE_GPS
     case BLACKBOX_STATE_SEND_GPS_H_HEADER:
         blackboxReplenishHeaderBudget();
         //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
@@ -1630,38 +1655,39 @@ void blackboxUpdate(timeUs_t currentTimeUs)
 #endif
             blackboxSetState(BLACKBOX_STATE_STOPPED);
             // ensure we reset the test mode flag if we stop due to full memory card
-            if (startedLoggingInTestMode) startedLoggingInTestMode = false;
+            if (startedLoggingInTestMode) {
+                startedLoggingInTestMode = false;
+            }
 #ifdef USE_FLASHFS
         }
 #endif
     } else { // Only log in test mode if there is room!
-        if (blackboxConfig()->on_motor_test) {
+        switch (blackboxConfig()->mode) {
+        case BLACKBOX_MODE_MOTOR_TEST:
             // Handle Motor Test Mode
             if (inMotorTestMode()) {
-                if (blackboxState==BLACKBOX_STATE_STOPPED)
+                if (blackboxState==BLACKBOX_STATE_STOPPED) {
                     startInTestMode();
+                }
             } else {
-                if (blackboxState!=BLACKBOX_STATE_STOPPED)
+                if (blackboxState!=BLACKBOX_STATE_STOPPED) {
                     stopInTestMode();
+                }
             }
+
+            break;
+        case BLACKBOX_MODE_ALWAYS_ON:
+            if (blackboxState==BLACKBOX_STATE_STOPPED) {
+                startInTestMode();
+            }
+
+            break;
+        case BLACKBOX_MODE_NORMAL:
+        default:
+
+            break;
         }
     }
-}
-
-/*
- * Returns start time in ISO 8601 format, YYYY-MM-DDThh:mm:ss
- * Year value of "0000" indicates time not set
- */
-static char startDateTime[20] = "0000-01-01T00:00:00";
-const char *blackboxGetStartDateTime(void)
-{
-    return startDateTime;
-}
-
-void blackboxSetStartDateTime(const char *dateTime, timeMs_t timeNowMs)
-{
-    (void)dateTime;
-    (void)timeNowMs;
 }
 
 int blackboxCalculatePDenom(int rateNum, int rateDenom)

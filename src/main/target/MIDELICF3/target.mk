@@ -6,4 +6,6 @@ TARGET_SRC = \
             drivers/accgyro/accgyro_mpu.c \
             drivers/accgyro/accgyro_mpu6050.c \
             drivers/cc2500.c \
-            rx/frsky_d.c
+            rx/cc2500_frsky_shared.c \
+            rx/cc2500_frsky_d.c \
+            rx/cc2500_frsky_x.c

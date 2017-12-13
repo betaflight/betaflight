@@ -16,11 +16,15 @@
  */
 
 #pragma once
+#if defined(KAKUTEF4V2)
+#define TARGET_BOARD_IDENTIFIER "KTV2"
+#define USBD_PRODUCT_STRING "KakuteF4-V2"
+#else
 #define TARGET_BOARD_IDENTIFIER "KTV1"
-
 #define USBD_PRODUCT_STRING "KakuteF4-V1"
+#endif
 
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 
 #define LED0_PIN                PB5
 #define LED1_PIN                PB4
@@ -40,40 +44,42 @@
 #define  ICM20689_CS_PIN          PC4
 #define ICM20689_SPI_INSTANCE    SPI1
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_ICM20689
 #define ACC_ICM20689_ALIGN       CW270_DEG
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_ICM20689
 #define GYRO_ICM20689_ALIGN      CW270_DEG
 
-#define MAG
-#define USE_MAG_HMC5883
-//#define USE_MAG_AK8963
+#ifdef KAKUTEF4V2        // There is invertor on RXD3(PB11), so PB10/PB11 can't be used as I2C2.
+#define USE_I2C          //No other I2C pins are  fanned out, So V1 don't support I2C  peripherals.
+#define USE_I2C_DEVICE_1
+#define I2C_DEVICE              (I2CDEV_1)
+#define I2C1_SCL                PB8        // SCL pad
+#define I2C1_SDA                PB9        // SDA pad
+#define BARO_I2C_INSTANCE       I2C_DEVICE
+#define MAG_I2C_INSTANCE        I2C_DEVICE
 
+#define USE_MAG
+#define USE_MAG_HMC5883                   //External, connect to I2C1
 #define MAG_HMC5883_ALIGN       CW180_DEG
-//#define MAG_AK8963_ALIGN        CW270_DEG
 
-#define BARO
-#define USE_BARO_MS5611
-//#define USE_BARO_BMP280
+#define USE_BARO
+#define USE_BARO_MS5611                  //External, connect to I2C1
+#define USE_BARO_BMP280                  //onboard
+#endif
 
-#define OSD
+#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI3
 #define MAX7456_SPI_CS_PIN      PB14
-
-//#define MAX7456_DMA_CHANNEL_TX              DMA1_Stream5
-//#define MAX7456_DMA_CHANNEL_RX              DMA1_Stream0
-//#define MAX7456_DMA_IRQ_HANDLER_ID          DMA1_ST0_HANDLER
 
 #define M25P16_CS_PIN           PB3
 #define M25P16_SPI_INSTANCE     SPI3
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
-//#define USE_FLASH_TOOLS
 
 #define USE_VCP
 #define VBUS_SENSING_PIN        PA8
@@ -92,10 +98,22 @@
 #define UART6_RX_PIN            PC7
 #define UART6_TX_PIN            PC6
 
+#ifdef KAKUTEF4V2                // Uart4 and Uart5 are fanned out on v2
+#define USE_UART4                // Uart4 can be used for GPS or  RunCam Split
+#define UART4_RX_PIN            PA1
+#define UART4_TX_PIN            PA0
+
+#define USE_UART5               //Uart5 can be used for ESC sensor
+#define UART5_RX_PIN            PD2
+#define UART5_TX_PIN            NONE
+
+#define USE_SOFTSERIAL1         //M1~M4 and LedTrip can be redefined as Softserial
+#define SERIAL_PORT_COUNT 7     //vcp, uart1, uart3, uart4, uart5, uart6, softSerial1
+#else
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
-
-#define SERIAL_PORT_COUNT 6
+#define SERIAL_PORT_COUNT 6   //vcp, uart1, uart3,, uart6, softSerial1, softSerial2
+#endif
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN  PC7  // (HARDARE=0,PPM)
@@ -113,10 +131,6 @@
 #define SPI3_SCK_PIN            PC10
 #define SPI3_MISO_PIN           PC11
 #define SPI3_MOSI_PIN           PC12
-
-#define USE_I2C
-#define USE_I2C_DEVICE_1
-#define I2C_DEVICE              (I2CDEV_1)
 
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define USE_ADC
@@ -140,6 +154,12 @@
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff
 #define TARGET_IO_PORTC 0xffff
+#define TARGET_IO_PORTD        (BIT(2))
 
+#ifdef KAKUTEF4V2
+#define USABLE_TIMER_CHANNEL_COUNT 6
+#define USED_TIMERS  ( TIM_N(2) | TIM_N(3) |  TIM_N(8))
+#else
 #define USABLE_TIMER_CHANNEL_COUNT 8
 #define USED_TIMERS  ( TIM_N(2) | TIM_N(3) | TIM_N(5)  |  TIM_N(8))
+#endif

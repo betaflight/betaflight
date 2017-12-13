@@ -21,7 +21,7 @@
 
 #include "platform.h"
 
-#if defined(CMS) && defined(VTX_TRAMP)
+#if defined(USE_CMS) && defined(VTX_TRAMP)
 
 #include "common/printf.h"
 #include "common/utils.h"
@@ -29,10 +29,13 @@
 #include "cms/cms.h"
 #include "cms/cms_types.h"
 
+#include "drivers/vtx_common.h"
+
+#include "fc/config.h"
+
 #include "io/vtx_string.h"
 #include "io/vtx_tramp.h"
-#include "io/vtx_settings_config.h"
-
+#include "io/vtx.h"
 
 char trampCmsStatusString[31] = "- -- ---- ----";
 //                               m bc ffff tppp
@@ -153,6 +156,13 @@ static long trampCmsCommence(displayPort_t *pDisp, const void *self)
     // If it fails, the user should retry later
     trampCommitChanges();
 
+    // update'vtx_' settings
+    vtxSettingsConfigMutable()->band = trampCmsBand;
+    vtxSettingsConfigMutable()->channel = trampCmsChan;
+    vtxSettingsConfigMutable()->power = trampCmsPower;
+    vtxSettingsConfigMutable()->freq = vtx58_Bandchan2Freq(trampCmsBand, trampCmsChan);
+
+    saveConfigAndNotify();
 
     return MENU_CHAIN_BACK;
 }
@@ -189,11 +199,12 @@ static OSD_Entry trampCmsMenuCommenceEntries[] = {
 };
 
 static CMS_Menu trampCmsMenuCommence = {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "XVTXTRC",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = NULL,
     .onExit = NULL,
-    .onGlobalExit = NULL,
     .entries = trampCmsMenuCommenceEntries,
 };
 
@@ -215,11 +226,12 @@ static OSD_Entry trampMenuEntries[] =
 };
 
 CMS_Menu cmsx_menuVtxTramp = {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "XVTXTR",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = trampCmsOnEnter,
     .onExit = NULL,
-    .onGlobalExit = NULL,
     .entries = trampMenuEntries,
 };
 #endif

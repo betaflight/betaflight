@@ -23,7 +23,7 @@
 
 #include <math.h>
 
-#define BARO
+#define USE_BARO
 
 extern "C" {
     #include "platform.h"
@@ -125,9 +125,10 @@ static OSD_Entry menuMainEntries[] =
     {NULL, OME_END, NULL, NULL, 0}
 };
 CMS_Menu menuMain = {
+#ifdef CMS_MENU_DEBUG
     "MENUMAIN",
     OME_MENU,
-    NULL,
+#endif
     NULL,
     NULL,
     menuMainEntries,

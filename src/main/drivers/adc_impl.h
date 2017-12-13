@@ -28,19 +28,23 @@
 #define ADC_TAG_MAP_COUNT 10
 #endif
 
-typedef enum ADCDevice {
-    ADCINVALID = -1,
-    ADCDEV_1   = 0,
-#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
-    ADCDEV_2,
-    ADCDEV_3
-#endif
-} ADCDevice;
-
 typedef struct adcTagMap_s {
     ioTag_t tag;
+#if !defined(STM32F1) // F1 pins have uniform connection to ADC instances
+    uint8_t devices;
+#endif
     uint8_t channel;
 } adcTagMap_t;
+
+// Encoding for adcTagMap_t.devices
+
+#define ADC_DEVICES_1   (1 << ADCDEV_1)
+#define ADC_DEVICES_2   (1 << ADCDEV_2)
+#define ADC_DEVICES_3   (1 << ADCDEV_3)
+#define ADC_DEVICES_4   (1 << ADCDEV_4)
+#define ADC_DEVICES_12  ((1 << ADCDEV_1)|(1 << ADCDEV_2))
+#define ADC_DEVICES_34  ((1 << ADCDEV_3)|(1 << ADCDEV_4))
+#define ADC_DEVICES_123 ((1 << ADCDEV_1)|(1 << ADCDEV_2)|(1 << ADCDEV_3))
 
 typedef struct adcDevice_s {
     ADC_TypeDef* ADCx;
@@ -63,3 +67,5 @@ extern adcOperatingConfig_t adcOperatingConfig[ADC_CHANNEL_COUNT];
 extern volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
 
 uint8_t adcChannelByTag(ioTag_t ioTag);
+ADCDevice adcDeviceByInstance(ADC_TypeDef *instance);
+bool adcVerifyPin(ioTag_t tag, ADCDevice device);

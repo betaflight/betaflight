@@ -44,22 +44,22 @@
 #define MPU9250_CS_PIN          PC4
 #define MPU9250_SPI_INSTANCE    SPI1
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU9250
 #define ACC_MPU9250_ALIGN       CW270_DEG
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU9250
 #define GYRO_MPU9250_ALIGN      CW270_DEG
 
-#define MAG
+#define USE_MAG
 //#define USE_MAG_HMC5883
 #define USE_MAG_AK8963
 
 //#define MAG_HMC5883_ALIGN       CW180_DEG
 #define MAG_AK8963_ALIGN        CW270_DEG
 
-#define BARO
+#define USE_BARO
 #define USE_BARO_MS5611
 //#define USE_BARO_BMP280
 
@@ -116,7 +116,7 @@
 #define VBAT_ADC_PIN            PC1
 #define CURRENT_METER_ADC_PIN   PC2
 
-#undef LED_STRIP
+#undef USE_LED_STRIP
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS

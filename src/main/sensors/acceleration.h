@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "common/time.h"
 #include "config/parameter_group.h"
 #include "drivers/accgyro/accgyro.h"
 #include "sensors/sensors.h"
@@ -77,7 +78,8 @@ bool accInit(uint32_t gyroTargetLooptime);
 bool isAccelerationCalibrationComplete(void);
 void accSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims);
-void accUpdate(rollAndPitchTrims_t *rollAndPitchTrims);
+void accUpdate(timeUs_t currentTimeUs, rollAndPitchTrims_t *rollAndPitchTrims);
+bool accGetAccumulationAverage(float *accumulation);
 union flightDynamicsTrims_u;
 void setAccelerationTrims(union flightDynamicsTrims_u *accelerationTrimsToUse);
-void setAccelerationFilter(uint16_t initialAccLpfCutHz);
+void accInitFilters(void);

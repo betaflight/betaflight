@@ -19,7 +19,6 @@
 
 #include "platform.h"
 #include "build/build_config.h"
-#include "blackbox/blackbox_fielddefs.h"
 #include "common/time.h"
 #include "config/parameter_group.h"
 
@@ -34,20 +33,28 @@ typedef enum BlackboxDevice {
     BLACKBOX_DEVICE_SERIAL = 3
 } BlackboxDevice_e;
 
+typedef enum FlightLogEvent {
+    FLIGHT_LOG_EVENT_SYNC_BEEP = 0,
+    FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT = 13,
+    FLIGHT_LOG_EVENT_LOGGING_RESUME = 14,
+    FLIGHT_LOG_EVENT_FLIGHTMODE = 30, // Add new event type for flight mode status.
+    FLIGHT_LOG_EVENT_LOG_END = 255
+} FlightLogEvent;
+
 typedef struct blackboxConfig_s {
     uint16_t p_denom; // I-frame interval / P-frame interval
     uint8_t device;
-    uint8_t on_motor_test;
     uint8_t record_acc;
+    uint8_t mode;
 } blackboxConfig_t;
 
 PG_DECLARE(blackboxConfig_t, blackboxConfig);
 
-void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data);
+union flightLogEventData_u;
+void blackboxLogEvent(FlightLogEvent event, union flightLogEventData_u *data);
 
 void blackboxInit(void);
 void blackboxUpdate(timeUs_t currentTimeUs);
-const char *blackboxGetStartDateTime(void);
 void blackboxSetStartDateTime(const char *dateTime, timeMs_t timeNowMs);
 int blackboxCalculatePDenom(int rateNum, int rateDenom);
 uint8_t blackboxGetRateNum(void);

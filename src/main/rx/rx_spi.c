@@ -24,16 +24,19 @@
 
 #include "build/build_config.h"
 
-#include "drivers/cc2500.h"
-#include "drivers/rx_nrf24l01.h"
+#include "common/utils.h"
 
 #include "config/feature.h"
+
+#include "drivers/cc2500.h"
+#include "drivers/rx_nrf24l01.h"
 
 #include "fc/config.h"
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
-#include "rx/frsky_d.h"
+#include "cc2500_frsky_d.h"
+#include "cc2500_frsky_x.h"
 #include "rx/nrf24_cx10.h"
 #include "rx/nrf24_syma.h"
 #include "rx/nrf24_v202.h"
@@ -111,11 +114,18 @@ STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
         protocolSetRcDataFromPayload = inavNrf24SetRcDataFromPayload;
         break;
 #endif
-#ifdef USE_RX_FRSKY_D
+#ifdef USE_RX_FRSKY_SPI_D
     case RX_SPI_FRSKY_D:
         protocolInit = frSkyDInit;
         protocolDataReceived = frSkyDDataReceived;
         protocolSetRcDataFromPayload = frSkyDSetRcData;
+        break;
+#endif
+#ifdef USE_RX_FRSKY_SPI_X
+    case RX_SPI_FRSKY_X:
+        protocolInit = frSkyXInit;
+        protocolDataReceived = frSkyXDataReceived;
+        protocolSetRcDataFromPayload = frSkyXSetRcData;
         break;
 #endif
 #ifdef USE_RX_FLYSKY
@@ -135,8 +145,10 @@ STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
  * Called from updateRx in rx.c, updateRx called from taskUpdateRxCheck.
  * If taskUpdateRxCheck returns true, then taskUpdateRxMain will shortly be called.
  */
-static uint8_t rxSpiFrameStatus(void)
+static uint8_t rxSpiFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
 {
+    UNUSED(rxRuntimeConfig);
+
     if (protocolDataReceived(rxSpiPayload) == RX_SPI_RECEIVED_DATA) {
         rxSpiNewPacketAvailable = true;
         return RX_FRAME_COMPLETE;

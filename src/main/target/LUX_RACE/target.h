@@ -90,7 +90,7 @@
 #define MPU6500_CS_PIN          SPI1_NSS_PIN
 #define MPU6500_SPI_INSTANCE    SPI1
 
-#define GYRO
+#define USE_GYRO
 #ifdef LUXV2_RACE
 #define USE_GYRO_MPU6000
 #define USE_GYRO_SPI_MPU6000
@@ -101,7 +101,7 @@
 #define GYRO_MPU6500_ALIGN CW270_DEG
 #endif
 
-#define ACC
+#define USE_ACC
 #ifdef LUXV2_RACE
 #define USE_ACC_MPU6000
 #define USE_ACC_SPI_MPU6000

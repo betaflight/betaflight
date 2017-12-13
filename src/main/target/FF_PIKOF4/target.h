@@ -18,11 +18,11 @@
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "PIK4"
 #define USBD_PRODUCT_STRING     "PikoF4"
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 /*--------------LED----------------*/
 #define LED0_PIN                PA15
 #define LED1_PIN                PB6
-#define LED_STRIP
+#define USE_LED_STRIP
 /*---------------------------------*/
 
 /*------------BEEPER---------------*/
@@ -47,7 +47,7 @@
 #define ICM20689_CS_PIN         PA4
 #define ICM20689_SPI_INSTANCE   SPI1
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_ICM20689
 #define GYRO_ICM20689_ALIGN     CW180_DEG
 
@@ -60,7 +60,7 @@
 #define USE_GYRO_SPI_MPU6500
 #define GYRO_MPU6500_ALIGN      CW180_DEG
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_ICM20689
 #define ACC_ICM20689_ALIGN      CW180_DEG
 
@@ -100,7 +100,7 @@
 
 #define SERIAL_PORT_COUNT       4
 
-#define CMS
+#define USE_CMS
 #define USE_MSP_DISPLAYPORT
 /*---------------------------------*/
 

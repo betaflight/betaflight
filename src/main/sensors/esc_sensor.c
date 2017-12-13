@@ -180,8 +180,10 @@ escSensorData_t *getEscSensorData(uint8_t motorNumber)
 }
 
 // Receive ISR callback
-static void escSensorDataReceive(uint16_t c)
+static void escSensorDataReceive(uint16_t c, void *data)
 {
+    UNUSED(data);
+
     // KISS ESC sends some data during startup, ignore this for now (maybe future use)
     // startup data could be firmware version and serialnumber
 
@@ -202,7 +204,7 @@ bool escSensorInit(void)
     portOptions_e options = SERIAL_NOT_INVERTED  | (escSensorConfig()->halfDuplex ? SERIAL_BIDIR : 0);
 
     // Initialize serial port
-    escSensorPort = openSerialPort(portConfig->identifier, FUNCTION_ESC_SENSOR, escSensorDataReceive, ESC_SENSOR_BAUDRATE, MODE_RX, options);
+    escSensorPort = openSerialPort(portConfig->identifier, FUNCTION_ESC_SENSOR, escSensorDataReceive, NULL, ESC_SENSOR_BAUDRATE, MODE_RX, options);
 
     for (int i = 0; i < MAX_SUPPORTED_MOTORS; i = i + 1) {
         escSensorData[i].dataAge = ESC_DATA_INVALID;

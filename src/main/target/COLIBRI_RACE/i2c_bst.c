@@ -374,7 +374,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 
             bstWrite16(failsafeConfig()->failsafe_throttle);
 
-#ifdef GPS
+#ifdef USE_GPS
             bstWrite8(gpsConfig()->provider); // gps_type
             bstWrite8(0); // TODO gps_baudrate (an index, cleanflight uses a uint32_t
             bstWrite8(gpsConfig()->sbasMode); // gps_ubx_sbas
@@ -415,7 +415,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             break;
 
 
-#ifdef LED_STRIP
+#ifdef USE_LED_STRIP
         case BST_LED_COLORS:
             for (i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
                 hsvColor_t *color = &ledStripConfigMutable()->colors[i];
@@ -501,7 +501,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
 
             failsafeConfigMutable()->failsafe_throttle = bstRead16();
 
-#ifdef GPS
+#ifdef USE_GPS
             gpsConfigMutable()->provider = bstRead8(); // gps_type
             bstRead8(); // gps_baudrate
             gpsConfigMutable()->sbasMode = bstRead8(); // gps_ubx_sbas
@@ -567,7 +567,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             }
             break;
 
-#ifdef LED_STRIP
+#ifdef USE_LED_STRIP
         case BST_SET_LED_COLORS:
            //for (i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
            {
@@ -723,7 +723,7 @@ void taskBstMasterProcess(timeUs_t currentTimeUs)
                 sendCounter = 0;
             next20hzUpdateAt_1 = currentTimeUs + UPDATE_AT_20HZ;
         }
-#ifdef GPS
+#ifdef USE_GPS
         if (sensors(SENSOR_GPS) && !bstWriteBusy())
             writeGpsPositionPrameToBST();
 #endif
@@ -762,7 +762,7 @@ static void bstMasterWrite16(uint16_t data)
 /*************************************************************************************************/
 #define PUBLIC_ADDRESS            0x00
 
-#ifdef GPS
+#ifdef USE_GPS
 static void bstMasterWrite32(uint32_t data)
 {
     bstMasterWrite16((uint8_t)(data >> 16));
@@ -775,7 +775,7 @@ static uint16_t alt = 0;
 static uint8_t numOfSat = 0;
 #endif
 
-#ifdef GPS
+#ifdef USE_GPS
 bool writeGpsPositionPrameToBST(void)
 {
     if ((lat != gpsSol.llh.lat) || (lon != gpsSol.llh.lon) || (alt != gpsSol.llh.alt) || (numOfSat != gpsSol.numSat)) {

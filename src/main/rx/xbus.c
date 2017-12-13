@@ -21,13 +21,15 @@
 
 #include "platform.h"
 
-#ifdef SERIAL_RX
+#ifdef USE_SERIAL_RX
+
+#include "common/crc.h"
 
 #include "drivers/time.h"
 
 #include "io/serial.h"
 
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
 #include "telemetry/telemetry.h"
 #endif
 
@@ -49,9 +51,6 @@
 #define XBUS_RJ01_FRAME_SIZE 33
 #define XBUS_RJ01_MESSAGE_LENGTH 30
 #define XBUS_RJ01_OFFSET_BYTES 3
-
-#define XBUS_CRC_AND_VALUE 0x8000
-#define XBUS_CRC_POLY 0x1021
 
 #define XBUS_BAUDRATE 115200
 #define XBUS_RJ01_BAUDRATE 250000
@@ -85,34 +84,14 @@ static uint8_t xBusProvider;
 
 
 // Use max values for ram areas
-static volatile uint8_t xBusFrame[XBUS_FRAME_SIZE_A2];  //siz 35 for 16 channels in xbus_Mode_B
+static volatile uint8_t xBusFrame[XBUS_FRAME_SIZE_A2];  //size 35 for 16 channels in xbus_Mode_B
 static uint16_t xBusChannelData[XBUS_RJ01_CHANNEL_COUNT];
 
-// The xbus mode B CRC calculations
-static uint16_t xBusCRC16(uint16_t crc, uint8_t value)
-{
-    uint8_t i;
-
-    crc = crc ^ (int16_t)value << 8;
-
-    for (i = 0; i < 8; i++) {
-        if (crc & XBUS_CRC_AND_VALUE) {
-            crc = crc << 1 ^ XBUS_CRC_POLY;
-        } else {
-            crc = crc << 1;
-        }
-    }
-    return crc;
-}
-
 // Full RJ01 message CRC calculations
-uint8_t xBusRj01CRC8(uint8_t inData, uint8_t seed)
+static uint8_t xBusRj01CRC8(uint8_t inData, uint8_t seed)
 {
-    uint8_t bitsLeft;
-    uint8_t temp;
-
-    for (bitsLeft = 8; bitsLeft > 0; bitsLeft--) {
-        temp = ((seed ^ inData) & 0x01);
+    for (uint8_t bitsLeft = 8; bitsLeft > 0; bitsLeft--) {
+        const uint8_t temp = ((seed ^ inData) & 0x01);
 
         if (temp == 0) {
             seed >>= 1;
@@ -132,27 +111,18 @@ uint8_t xBusRj01CRC8(uint8_t inData, uint8_t seed)
 static void xBusUnpackModeBFrame(uint8_t offsetBytes)
 {
     // Calculate the CRC of the incoming frame
-    uint16_t crc = 0;
-    uint16_t inCrc = 0;
-    uint8_t i = 0;
-    uint16_t value;
-    uint8_t frameAddr;
-
     // Calculate on all bytes except the final two CRC bytes
-    for (i = 0; i < xBusFrameLength - 2; i++) {
-        inCrc = xBusCRC16(inCrc, xBusFrame[i+offsetBytes]);
-    }
+    const uint16_t inCrc = crc16_ccitt_update(0, (uint8_t*)&xBusFrame[offsetBytes], xBusFrameLength - 2);
 
     // Get the received CRC
-    crc = ((uint16_t)xBusFrame[offsetBytes + xBusFrameLength - 2]) << 8;
-    crc = crc + ((uint16_t)xBusFrame[offsetBytes + xBusFrameLength - 1]);
+    const uint16_t crc = (((uint16_t)xBusFrame[offsetBytes + xBusFrameLength - 2]) << 8) + ((uint16_t)xBusFrame[offsetBytes + xBusFrameLength - 1]);
 
     if (crc == inCrc) {
         // Unpack the data, we have a valid frame, only 12 channel unpack also when receive 16 channel
-        for (i = 0; i < xBusChannelCount; i++) {
+        for (int i = 0; i < xBusChannelCount; i++) {
 
-            frameAddr = offsetBytes + 1 + i * 2;
-            value = ((uint16_t)xBusFrame[frameAddr]) << 8;
+            const uint8_t frameAddr = offsetBytes + 1 + i * 2;
+            uint16_t value = ((uint16_t)xBusFrame[frameAddr]) << 8;
             value = value + ((uint16_t)xBusFrame[frameAddr + 1]);
 
             // Convert to internal format
@@ -161,7 +131,6 @@ static void xBusUnpackModeBFrame(uint8_t offsetBytes)
 
         xBusFrameReceived = true;
     }
-
 }
 
 static void xBusUnpackRJ01Frame(void)
@@ -212,8 +181,10 @@ static void xBusUnpackRJ01Frame(void)
 }
 
 // Receive ISR callback
-static void xBusDataReceive(uint16_t c)
+static void xBusDataReceive(uint16_t c, void *data)
 {
+    UNUSED(data);
+
     uint32_t now;
     static uint32_t xBusTimeLast, xBusTimeInterval;
 
@@ -258,8 +229,10 @@ static void xBusDataReceive(uint16_t c)
 }
 
 // Indicate time to read a frame from the data...
-static uint8_t xBusFrameStatus(void)
+static uint8_t xBusFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
 {
+    UNUSED(rxRuntimeConfig);
+
     if (!xBusFrameReceived) {
         return RX_FRAME_PENDING;
     }
@@ -323,7 +296,7 @@ bool xBusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
         return false;
     }
 
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
     bool portShared = telemetryCheckRxPortShared(portConfig);
 #else
     bool portShared = false;
@@ -332,12 +305,13 @@ bool xBusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     serialPort_t *xBusPort = openSerialPort(portConfig->identifier,
         FUNCTION_RX_SERIAL,
         xBusDataReceive,
+        NULL,
         baudRate,
         portShared ? MODE_RXTX : MODE_RX,
         (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0)
         );
 
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
     if (portShared) {
         telemetrySharedPort = xBusPort;
     }

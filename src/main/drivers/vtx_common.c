@@ -23,19 +23,18 @@
 #include <string.h>
 
 #include "platform.h"
-#include "build/debug.h"
 
 #if defined(VTX_COMMON)
 
-#include "vtx_common.h"
+#include "common/time.h"
+#include "drivers/vtx_common.h"
+
 
 vtxDevice_t *vtxDevice = NULL;
 
 void vtxCommonInit(void)
 {
 }
-
-// Whatever registered last will win
 
 void vtxCommonRegisterDevice(vtxDevice_t *pDevice)
 {
@@ -47,108 +46,86 @@ bool vtxCommonDeviceRegistered(void)
     return vtxDevice;
 }
 
-void vtxCommonProcess(uint32_t currentTimeUs)
-{
-    if (!vtxDevice)
-        return;
-
-    if (vtxDevice->vTable->process)
-        vtxDevice->vTable->process(currentTimeUs);
-}
-
 vtxDevType_e vtxCommonGetDeviceType(void)
 {
-    if (!vtxDevice || !vtxDevice->vTable->getDeviceType)
+    if (!vtxDevice || !vtxDevice->vTable->getDeviceType) {
         return VTXDEV_UNKNOWN;
+    }
 
     return vtxDevice->vTable->getDeviceType();
+}
+
+void vtxCommonProcess(timeUs_t currentTimeUs) {
+    if (vtxDevice && vtxDevice->vTable->process) {
+        vtxDevice->vTable->process(currentTimeUs);
+    }
 }
 
 // band and channel are 1 origin
 void vtxCommonSetBandAndChannel(uint8_t band, uint8_t channel)
 {
-    if (!vtxDevice)
-        return;
-
-    if ((band > vtxDevice->capability.bandCount) || (channel > vtxDevice->capability.channelCount))
-        return;
-
-    if (vtxDevice->vTable->setBandAndChannel)
-        vtxDevice->vTable->setBandAndChannel(band, channel);
+    if (vtxDevice && (band <= vtxDevice->capability.bandCount) && (channel <= vtxDevice->capability.channelCount)) {
+        if (vtxDevice->vTable->setBandAndChannel) {
+            vtxDevice->vTable->setBandAndChannel(band, channel);
+        }
+    }
 }
 
 // index is zero origin, zero = power off completely
 void vtxCommonSetPowerByIndex(uint8_t index)
 {
-    if (!vtxDevice)
-        return;
-
-    if (index > vtxDevice->capability.powerCount)
-        return;
-
-    if (vtxDevice->vTable->setPowerByIndex)
-        vtxDevice->vTable->setPowerByIndex(index);
+    if (vtxDevice && (index <= vtxDevice->capability.powerCount)) {
+        if (vtxDevice->vTable->setPowerByIndex) {
+            vtxDevice->vTable->setPowerByIndex(index);
+        }
+    }
 }
 
 // on = 1, off = 0
 void vtxCommonSetPitMode(uint8_t onoff)
 {
-    if (!vtxDevice)
-        return;
-
-    if (vtxDevice->vTable->setPitMode)
+    if (vtxDevice && vtxDevice->vTable->setPitMode) {
         vtxDevice->vTable->setPitMode(onoff);
+    }
 }
 
 void vtxCommonSetFrequency(uint16_t freq)
 {
-    if (!vtxDevice) {
-        return;
-    }
-    if (vtxDevice->vTable->setFrequency) {
+    if (vtxDevice && vtxDevice->vTable->setFrequency) {
         vtxDevice->vTable->setFrequency(freq);
     }
 }
 
 bool vtxCommonGetBandAndChannel(uint8_t *pBand, uint8_t *pChannel)
 {
-    if (!vtxDevice)
-        return false;
-
-    if (vtxDevice->vTable->getBandAndChannel)
+    if (vtxDevice && vtxDevice->vTable->getBandAndChannel) {
         return vtxDevice->vTable->getBandAndChannel(pBand, pChannel);
-    else
+    } else {
         return false;
+    }
 }
 
 bool vtxCommonGetPowerIndex(uint8_t *pIndex)
 {
-    if (!vtxDevice)
-        return false;
-
-    if (vtxDevice->vTable->getPowerIndex)
+    if (vtxDevice && vtxDevice->vTable->getPowerIndex) {
         return vtxDevice->vTable->getPowerIndex(pIndex);
-    else
+    } else {
         return false;
+    }
 }
 
 bool vtxCommonGetPitMode(uint8_t *pOnOff)
 {
-    if (!vtxDevice)
-        return false;
-
-    if (vtxDevice->vTable->getPitMode)
+    if (vtxDevice && vtxDevice->vTable->getPitMode) {
         return vtxDevice->vTable->getPitMode(pOnOff);
-    else
+    } else {
         return false;
+    }
 }
 
 bool vtxCommonGetFrequency(uint16_t *pFreq)
 {
-    if (!vtxDevice) {
-        return false;
-    }
-    if (vtxDevice->vTable->getFrequency) {
+    if (vtxDevice && vtxDevice->vTable->getFrequency) {
         return vtxDevice->vTable->getFrequency(pFreq);
     } else {
         return false;
@@ -157,10 +134,12 @@ bool vtxCommonGetFrequency(uint16_t *pFreq)
 
 bool vtxCommonGetDeviceCapability(vtxDeviceCapability_t *pDeviceCapability)
 {
-    if (!vtxDevice)
+    if (!vtxDevice) {
         return false;
+    }
 
     memcpy(pDeviceCapability, &vtxDevice->capability, sizeof(vtxDeviceCapability_t));
     return true;
 }
+
 #endif

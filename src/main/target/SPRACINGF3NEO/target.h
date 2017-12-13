@@ -18,7 +18,7 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "SP3N"
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
@@ -36,22 +36,14 @@
 #define USE_MAG_DATA_READY_SIGNAL
 #define ENSURE_MAG_DATA_READY_IS_HIGH
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6500
 
 #define ACC_MPU6500_ALIGN       CW0_DEG
 #define GYRO_MPU6500_ALIGN      CW0_DEG
-
-#define BARO
-#define USE_BARO_BMP280
-#define USE_BARO_MS5611
-
-#define MAG
-#define USE_MAG_AK8975
-#define USE_MAG_HMC5883
 
 #define USE_VCP
 #define USE_UART1
@@ -103,8 +95,9 @@
 #define VTX_RTC6705
 #define VTX_RTC6705_OPTIONAL    // VTX/OSD board is OPTIONAL
 
-#undef VTX_SMARTAUDIO           // Disabled due to flash size
-#undef VTX_TRAMP                // Disabled due to flash size
+// Disabled due to flash size
+#undef VTX_SMARTAUDIO
+#undef VTX_TRAMP
 
 #define RTC6705_CS_PIN          PF4
 #define RTC6705_SPI_INSTANCE    SPI3
@@ -163,11 +156,11 @@
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
 #define WS2811_TIMER_GPIO_AF            GPIO_AF_6
 
-#define TRANSPONDER
+#define USE_TRANSPONDER
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
-#define OSD
+#define USE_OSD
 
 #define DEFAULT_RX_FEATURE                  FEATURE_RX_SERIAL
 #define DEFAULT_FEATURES                    (FEATURE_TRANSPONDER | FEATURE_RSSI_ADC | FEATURE_TELEMETRY | FEATURE_OSD | FEATURE_LED_STRIP)
@@ -180,7 +173,7 @@
 #define TELEMETRY_UART                      SERIAL_PORT_UART5
 #define TELEMETRY_PROVIDER_DEFAULT          FUNCTION_TELEMETRY_SMARTPORT
 
-#define BUTTONS // Physically located on the optional OSD/VTX board.
+#define USE_BUTTONS // Physically located on the optional OSD/VTX board.
 #define BUTTON_A_PIN                        PD2
 
 // FIXME While it's possible to use the button on the OSD/VTX board for binding enabling it here will break binding unless you have the OSD/VTX connected.

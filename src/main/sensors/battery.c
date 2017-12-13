@@ -450,6 +450,11 @@ void batteryUpdateAlarms(void)
     }
 }
 
+bool isBatteryVoltageAvailable(void)
+{
+    return batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE && getBatteryCellCount() > 0;
+}
+
 uint16_t getBatteryVoltage(void)
 {
     return voltageMeter.filtered;
@@ -468,6 +473,11 @@ uint8_t getBatteryCellCount(void)
 uint16_t getBatteryAverageCellVoltage(void)
 {
     return voltageMeter.filtered / batteryCellCount;
+}
+
+bool isAmperageAvailable(void)
+{
+    return batteryConfig()->currentMeterSource != CURRENT_METER_NONE;
 }
 
 int32_t getAmperage(void) {

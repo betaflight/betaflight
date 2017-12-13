@@ -70,13 +70,16 @@
 #include "hardware_revision.h"
 #endif
 
-#if ((FLASH_SIZE > 128) && (defined(USE_GYRO_SPI_ICM20601) || defined(USE_GYRO_SPI_ICM20689)))
+#if ((FLASH_SIZE > 128) && (defined(USE_GYRO_SPI_ICM20601) || defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_SPI_MPU6500)))
 #define USE_GYRO_SLEW_LIMITER
 #endif
 
 gyro_t gyro;
 static uint8_t gyroDebugMode;
 
+static float accumulatedMeasurements[XYZ_AXIS_COUNT];
+static timeUs_t accumulatedMeasurementTimeUs;
+static timeUs_t accumulationLastTimeSampledUs;
 
 typedef struct gyroCalibration_s {
     int32_t sum[XYZ_AXIS_COUNT];
@@ -613,7 +616,7 @@ int32_t gyroSlewLimiter(gyroSensor_t *gyroSensor, int axis)
 }
 #endif
 
-void gyroUpdateSensor(gyroSensor_t *gyroSensor)
+static void gyroUpdateSensor(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
 {
     if (!gyroSensor->gyroDev.readFn(&gyroSensor->gyroDev)) {
         return;
@@ -646,6 +649,10 @@ void gyroUpdateSensor(gyroSensor_t *gyroSensor)
     gyroDataAnalyse(&gyroSensor->gyroDev, gyroSensor->notchFilterDyn);
 #endif
 
+    const timeDelta_t sampleDeltaUs = currentTimeUs - accumulationLastTimeSampledUs;
+    accumulationLastTimeSampledUs = currentTimeUs;
+    accumulatedMeasurementTimeUs += sampleDeltaUs;
+
     if (gyroDebugMode == DEBUG_NONE) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
             // NOTE: this branch optimized for when there is no gyro debugging, ensure it is kept in step with non-optimized branch
@@ -657,6 +664,7 @@ void gyroUpdateSensor(gyroSensor_t *gyroSensor)
             gyroADCf = gyroSensor->notchFilter2ApplyFn(&gyroSensor->notchFilter2[axis], gyroADCf);
             gyroADCf = gyroSensor->softLpfFilterApplyFn(gyroSensor->softLpfFilterPtr[axis], gyroADCf);
             gyro.gyroADCf[axis] = gyroADCf;
+            accumulatedMeasurements[axis] += gyroADCf * sampleDeltaUs;
         }
     } else {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
@@ -688,13 +696,32 @@ void gyroUpdateSensor(gyroSensor_t *gyroSensor)
             gyroADCf = gyroSensor->softLpfFilterApplyFn(gyroSensor->softLpfFilterPtr[axis], gyroADCf);
 
             gyro.gyroADCf[axis] = gyroADCf;
+            accumulatedMeasurements[axis] += gyroADCf * sampleDeltaUs;
         }
     }
 }
 
-void gyroUpdate(void)
+void gyroUpdate(timeUs_t currentTimeUs)
 {
-    gyroUpdateSensor(&gyroSensor1);
+    gyroUpdateSensor(&gyroSensor1, currentTimeUs);
+}
+
+bool gyroGetAccumulationAverage(float *accumulationAverage)
+{
+    if (accumulatedMeasurementTimeUs > 0) {
+        // If we have gyro data accumulated, calculate average rate that will yield the same rotation
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            accumulationAverage[axis] = accumulatedMeasurements[axis] / accumulatedMeasurementTimeUs;
+            accumulatedMeasurements[axis] = 0.0f;
+        }
+        accumulatedMeasurementTimeUs = 0;
+        return true;
+    } else {
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            accumulationAverage[axis] = 0.0f;
+        }
+        return false;
+    }
 }
 
 void gyroReadTemperature(void)

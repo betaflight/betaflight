@@ -30,7 +30,7 @@
 
 #define VBAT_SCALE       113
 
-#ifdef TARGET_CONFIG
+#ifdef USE_TARGET_CONFIG
 void targetConfiguration(void)
 {
     voltageSensorADCConfigMutable(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale = VBAT_SCALE;

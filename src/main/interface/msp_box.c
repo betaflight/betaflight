@@ -28,10 +28,11 @@
 #include "config/feature.h"
 
 #include "fc/config.h"
-#include "fc/fc_msp_box.h"
 #include "fc/runtime_config.h"
 
 #include "flight/mixer.h"
+
+#include "interface/msp_box.h"
 
 #include "sensors/sensors.h"
 
@@ -80,7 +81,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOXPREARM, "PREARM", 36 },
     { BOXBEEPGPSCOUNT, "BEEP GPS SATELLITE COUNT", 37 },
     { BOX3DONASWITCH, "3D ON A SWITCH", 38 },
-
+    { BOXVTXPITMODE, "VTX PIT MODE", 39 },
 };
 
 // mask of enabled IDs, calculated on startup based on enabled features. boxId_e is used as bit index
@@ -167,19 +168,19 @@ void initActiveBoxIds(void)
         BME(BOXHEADADJ);
     }
 
-#ifdef BARO
+#ifdef USE_BARO
     if (sensors(SENSOR_BARO)) {
         BME(BOXBARO);
     }
 #endif
 
-#ifdef MAG
+#ifdef USE_MAG
     if (sensors(SENSOR_MAG)) {
         BME(BOXMAG);
     }
 #endif
 
-#ifdef GPS
+#ifdef USE_GPS
     if (feature(FEATURE_GPS)) {
         BME(BOXGPSHOME);
         BME(BOXGPSHOLD);
@@ -187,7 +188,7 @@ void initActiveBoxIds(void)
     }
 #endif
 
-#ifdef SONAR
+#ifdef USE_SONAR
     if (feature(FEATURE_SONAR)) {
         BME(BOXSONAR);
     }
@@ -201,13 +202,13 @@ void initActiveBoxIds(void)
 
     BME(BOXBEEPERON);
 
-#ifdef LED_STRIP
+#ifdef USE_LED_STRIP
     if (feature(FEATURE_LED_STRIP)) {
         BME(BOXLEDLOW);
     }
 #endif
 
-#ifdef BLACKBOX
+#ifdef USE_BLACKBOX
     BME(BOXBLACKBOX);
 #ifdef USE_FLASHFS
     BME(BOXBLACKBOXERASE);
@@ -235,7 +236,7 @@ void initActiveBoxIds(void)
 
     BME(BOXOSD);
 
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
     if (feature(FEATURE_TELEMETRY) && telemetryConfig()->telemetry_switch) {
         BME(BOXTELEMETRY);
     }
@@ -253,6 +254,10 @@ void initActiveBoxIds(void)
     BME(BOXCAMERA1);
     BME(BOXCAMERA2);
     BME(BOXCAMERA3);
+#endif
+
+#if defined(VTX_SMARTAUDIO) || defined(VTX_TRAMP)
+    BME(BOXVTXPITMODE);
 #endif
 
 #undef BME
@@ -295,7 +300,8 @@ int packFlightModeFlags(boxBitmask_t *mspFlightModeFlags)
     const uint64_t rcModeCopyMask = BM(BOXHEADADJ) | BM(BOXCAMSTAB) | BM(BOXCAMTRIG) | BM(BOXBEEPERON)
         | BM(BOXLEDMAX) | BM(BOXLEDLOW) | BM(BOXLLIGHTS) | BM(BOXCALIB) | BM(BOXGOV) | BM(BOXOSD)
         | BM(BOXTELEMETRY) | BM(BOXGTUNE) | BM(BOXBLACKBOX) | BM(BOXBLACKBOXERASE) | BM(BOXAIRMODE)
-        | BM(BOXANTIGRAVITY) | BM(BOXFPVANGLEMIX) | BM(BOXFLIPOVERAFTERCRASH) | BM(BOX3DDISABLE) | BM(BOXBEEPGPSCOUNT);
+        | BM(BOXANTIGRAVITY) | BM(BOXFPVANGLEMIX) | BM(BOXFLIPOVERAFTERCRASH) | BM(BOX3DDISABLE)
+        | BM(BOXBEEPGPSCOUNT) | BM(BOXVTXPITMODE);
     STATIC_ASSERT(sizeof(rcModeCopyMask) * 8 >= CHECKBOX_ITEM_COUNT, copy_mask_too_small_for_boxes);
     for (unsigned i = 0; i < CHECKBOX_ITEM_COUNT; i++) {
         if ((rcModeCopyMask & BM(i))    // mode copy is enabled

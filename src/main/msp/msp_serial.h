@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "msp/msp.h"
+#include "interface/msp.h"
 
 // Each MSP port requires state and a receive buffer, revisit this default if someone needs more than 3 MSP ports.
 #define MAX_MSP_PORT_COUNT 3

@@ -26,7 +26,7 @@
 
 #include "platform.h"
 
-#if defined(TELEMETRY) && defined(TELEMETRY_MAVLINK)
+#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_MAVLINK)
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -158,7 +158,7 @@ void configureMAVLinkTelemetryPort(void)
         baudRateIndex = BAUD_57600;
     }
 
-    mavlinkPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_MAVLINK, NULL, baudRates[baudRateIndex], TELEMETRY_MAVLINK_INITIAL_PORT_MODE, telemetryConfig()->telemetry_inverted ? SERIAL_INVERTED : SERIAL_NOT_INVERTED);
+    mavlinkPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_MAVLINK, NULL, NULL, baudRates[baudRateIndex], TELEMETRY_MAVLINK_INITIAL_PORT_MODE, telemetryConfig()->telemetry_inverted ? SERIAL_INVERTED : SERIAL_NOT_INVERTED);
 
     if (!mavlinkPort) {
         return;
@@ -222,11 +222,11 @@ void mavlinkSendSystemStatus(void)
         // load Maximum usage in percent of the mainloop time, (0%: 0, 100%: 1000) should be always below 1000
         0,
         // voltage_battery Battery voltage, in millivolts (1 = 1 millivolt)
-        (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE) ? getBatteryVoltage() * 100 : 0,
+        isBatteryVoltageAvailable() ? getBatteryVoltage() * 100 : 0,
         // current_battery Battery current, in 10*milliamperes (1 = 10 milliampere), -1: autopilot does not measure the current
-        (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) ? getAmperage() : -1,
+        isAmperageAvailable() ? getAmperage() : -1,
         // battery_remaining Remaining battery energy: (0%: 0, 100%: 100), -1: autopilot estimate the remaining battery
-        (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE) ? calculateBatteryPercentageRemaining() : 100,
+        isBatteryVoltageAvailable() ? calculateBatteryPercentageRemaining() : 100,
         // drop_rate_comm Communication drops in percent, (0%: 0, 100%: 10'000), (UART, I2C, SPI, CAN), dropped packets on all links (packets that were corrupted on reception on the MAV)
         0,
         // errors_comm Communication errors (UART, I2C, SPI, CAN), dropped packets on all links (packets that were corrupted on reception on the MAV)
@@ -268,12 +268,12 @@ void mavlinkSendRCChannelsAndRSSI(void)
         // chan8_raw RC channel 8 value, in microseconds
         (rxRuntimeConfig.channelCount >= 8) ? rcData[7] : 0,
         // rssi Receive signal strength indicator, 0: 0%, 255: 100%
-        scaleRange(rssi, 0, 1023, 0, 255));
+        scaleRange(getRssi(), 0, 1023, 0, 255));
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
 
-#if defined(GPS)
+#if defined(USE_GPS)
 void mavlinkSendPosition(void)
 {
     uint16_t msgLength;
@@ -329,7 +329,7 @@ void mavlinkSendPosition(void)
         // alt Altitude in 1E3 meters (millimeters) above MSL
         gpsSol.llh.alt * 1000,
         // relative_alt Altitude above ground in meters, expressed as * 1000 (millimeters)
-#if defined(BARO) || defined(SONAR)
+#if defined(USE_BARO) || defined(USE_SONAR)
         (sensors(SENSOR_SONAR) || sensors(SENSOR_BARO)) ? getEstimatedAltitude() * 10 : gpsSol.llh.alt * 1000,
 #else
         gpsSol.llh.alt * 1000,
@@ -388,7 +388,7 @@ void mavlinkSendHUDAndHeartbeat(void)
     float mavAirSpeed = 0;
     float mavClimbRate = 0;
 
-#if defined(GPS)
+#if defined(USE_GPS)
     // use ground speed if source available
     if (sensors(SENSOR_GPS)) {
         mavGroundSpeed = gpsSol.groundSpeed / 100.0f;
@@ -396,18 +396,18 @@ void mavlinkSendHUDAndHeartbeat(void)
 #endif
 
     // select best source for altitude
-#if defined(BARO) || defined(SONAR)
+#if defined(USE_BARO) || defined(USE_SONAR)
     if (sensors(SENSOR_SONAR) || sensors(SENSOR_BARO)) {
         // Baro or sonar generally is a better estimate of altitude than GPS MSL altitude
         mavAltitude = getEstimatedAltitude() / 100.0;
     }
-#if defined(GPS)
+#if defined(USE_GPS)
     else if (sensors(SENSOR_GPS)) {
         // No sonar or baro, just display altitude above MLS
         mavAltitude = gpsSol.llh.alt;
     }
 #endif
-#elif defined(GPS)
+#elif defined(USE_GPS)
     if (sensors(SENSOR_GPS)) {
         // No sonar or baro, just display altitude above MLS
         mavAltitude = gpsSol.llh.alt;
@@ -524,7 +524,7 @@ void processMAVLinkTelemetry(void)
         mavlinkSendRCChannelsAndRSSI();
     }
 
-#ifdef GPS
+#ifdef USE_GPS
     if (mavlinkStreamTrigger(MAV_DATA_STREAM_POSITION)) {
         mavlinkSendPosition();
     }

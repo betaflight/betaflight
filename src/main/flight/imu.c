@@ -178,6 +178,7 @@ void imuResetAccelerationSum(void)
     accTimeSum = 0;
 }
 
+#if defined(USE_ALT_HOLD)
 static void imuTransformVectorBodyToEarth(t_fp_vector * v)
 {
     /* From body frame to earth frame */
@@ -227,6 +228,7 @@ static void imuCalculateAcceleration(uint32_t deltaT)
     accTimeSum += deltaT;
     accSumCount++;
 }
+#endif // USE_ALT_HOLD
 
 static float invSqrt(float x)
 {
@@ -389,9 +391,10 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void){
 
 static bool imuIsAccelerometerHealthy(void)
 {
-    int32_t accMagnitude = 0;
+    float accMagnitude = 0;
     for (int axis = 0; axis < 3; axis++) {
-        accMagnitude += (int32_t)acc.accSmooth[axis] * acc.accSmooth[axis];
+        const float a = acc.accSmooth[axis];
+        accMagnitude += a * a;
     }
 
     accMagnitude = accMagnitude * 100 / (sq((int32_t)acc.dev.acc_1G));
@@ -423,7 +426,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     if (sensors(SENSOR_MAG) && isMagnetometerHealthy()) {
         useMag = true;
     }
-#if defined(GPS)
+#if defined(USE_GPS)
     else if (STATE(FIXED_WING) && sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat >= 5 && gpsSol.groundSpeed >= 300) {
         // In case of a fixed-wing aircraft we can use GPS course over ground to correct heading
         rawYawError = DECIDEGREES_TO_RADIANS(attitude.values.yaw - gpsSol.groundCourse);
@@ -443,16 +446,23 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 //  printf("[imu]deltaT = %u, imuDeltaT = %u, currentTimeUs = %u, micros64_real = %lu\n", deltaT, imuDeltaT, currentTimeUs, micros64_real());
     deltaT = imuDeltaT;
 #endif
-
+    float gyroAverage[XYZ_AXIS_COUNT];
+    gyroGetAccumulationAverage(gyroAverage);
+    float accAverage[XYZ_AXIS_COUNT];
+    if (!accGetAccumulationAverage(accAverage)) {
+        useAcc = false;
+    }
     imuMahonyAHRSupdate(deltaT * 1e-6f,
-                        DEGREES_TO_RADIANS(gyro.gyroADCf[X]), DEGREES_TO_RADIANS(gyro.gyroADCf[Y]), DEGREES_TO_RADIANS(gyro.gyroADCf[Z]),
-                        useAcc, acc.accSmooth[X], acc.accSmooth[Y], acc.accSmooth[Z],
+                        DEGREES_TO_RADIANS(gyroAverage[X]), DEGREES_TO_RADIANS(gyroAverage[Y]), DEGREES_TO_RADIANS(gyroAverage[Z]),
+                        useAcc, accAverage[X], accAverage[Y], accAverage[Z],
                         useMag, mag.magADC[X], mag.magADC[Y], mag.magADC[Z],
                         useYaw, rawYawError);
 
     imuUpdateEulerAngles();
 #endif
+#if defined(USE_ALT_HOLD)
     imuCalculateAcceleration(deltaT); // rotate acc vector into earth frame
+#endif
 }
 
 void imuUpdateAttitude(timeUs_t currentTimeUs)

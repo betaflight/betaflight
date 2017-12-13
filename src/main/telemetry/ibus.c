@@ -28,7 +28,7 @@
 
 #include "platform.h"
 
-#if defined(TELEMETRY) && defined(TELEMETRY_IBUS)
+#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_IBUS)
 
 #include "common/axis.h"
 
@@ -152,7 +152,7 @@ void configureIbusTelemetryPort(void)
         return;
     }
 
-    ibusSerialPort = openSerialPort(ibusSerialPortConfig->identifier, FUNCTION_TELEMETRY_IBUS, NULL, IBUS_BAUDRATE, IBUS_UART_MODE, SERIAL_BIDIR | (telemetryConfig()->telemetry_inverted ? SERIAL_INVERTED : SERIAL_NOT_INVERTED));
+    ibusSerialPort = openSerialPort(ibusSerialPortConfig->identifier, FUNCTION_TELEMETRY_IBUS, NULL, NULL, IBUS_BAUDRATE, IBUS_UART_MODE, SERIAL_BIDIR | (telemetryConfig()->telemetry_inverted ? SERIAL_INVERTED : SERIAL_NOT_INVERTED));
 
     if (!ibusSerialPort) {
         return;

@@ -199,7 +199,7 @@ static void hmc5883SpiInit(busDevice_t *busdev)
 #endif
 
 static int16_t parseMag(uint8_t *raw, int16_t gain) {
-  int ret = (int16_t)(raw[1] << 8 | raw[0]) * gain / 256;
+  int ret = (int16_t)(raw[0] << 8 | raw[1]) * gain / 256;
   return constrain(ret, INT16_MIN, INT16_MAX);
 }
 

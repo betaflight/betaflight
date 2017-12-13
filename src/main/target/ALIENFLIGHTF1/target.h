@@ -18,9 +18,9 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "AFF1" // AlienFlight F1.
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 
-#define BRUSHED_ESC_AUTODETECT
+#define USE_BRUSHED_ESC_AUTODETECT
 
 #define LED0_PIN                PB3
 #define LED1_PIN                PB4
@@ -32,12 +32,12 @@
 #define USE_MPU_DATA_READY_SIGNAL
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_MPU6050
 
 #define GYRO_MPU6050_ALIGN      CW0_DEG
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_MPU6050
 
 #define ACC_MPU6050_ALIGN       CW0_DEG
@@ -62,8 +62,6 @@
 #define RSSI_ADC_PIN            PA1
 #define EXTERNAL1_ADC_PIN       PA5
 
-#define USE_SPEKTRUM_BIND
-#define USE_SPEKTRUM_BIND_PLUG
 #define BINDPLUG_PIN            PB5
 
 #define DEFAULT_FEATURES        FEATURE_MOTOR_STOP

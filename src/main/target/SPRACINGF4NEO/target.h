@@ -18,7 +18,7 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER             "SP4N"
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 
 #ifndef SPRACINGF4NEO_REV
     #define SPRACINGF4NEO_REV 3
@@ -57,24 +57,22 @@
 #define USE_MAG_DATA_READY_SIGNAL
 #define ENSURE_MAG_DATA_READY_IS_HIGH
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6500
 
 #define ACC_MPU6500_ALIGN                   CW0_DEG
 #define GYRO_MPU6500_ALIGN                  CW0_DEG
 
-#define BARO
+#define USE_BARO
 #define USE_BARO_BMP280
 #define USE_BARO_MS5611
 
-#define MAG
+#define USE_MAG
 #define USE_MAG_AK8975
 #define USE_MAG_HMC5883
-
-#define USB_IO
 
 #define USE_VCP
 #define USE_UART1
@@ -145,7 +143,7 @@
 #define USE_RTC6705_CLK_HACK
 #define RTC6705_CLK_PIN                     SPI3_SCK_PIN
 
-#define OSD
+#define USE_OSD
 
 // Bus Switched Device, Device A.
 #define USE_MAX7456
@@ -190,8 +188,8 @@
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 
-#define LED_STRIP
-#define TRANSPONDER
+#define USE_LED_STRIP
+#define USE_TRANSPONDER
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
@@ -206,7 +204,7 @@
 #define TELEMETRY_UART                      SERIAL_PORT_UART5
 #define TELEMETRY_PROVIDER_DEFAULT          FUNCTION_TELEMETRY_SMARTPORT
 
-#define BUTTONS // Physically located on the optional OSD/VTX board.
+#define USE_BUTTONS // Physically located on the optional OSD/VTX board.
 #if (SPRACINGF4NEO_REV >= 3)
     #define BUTTON_A_PIN                    PB0
 #else

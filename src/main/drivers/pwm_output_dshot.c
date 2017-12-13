@@ -143,7 +143,11 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     motor->timer = &dmaMotorTimers[timerIndex];
     motor->timer->timerDmaSources &= ~motor->timerDmaSource;
 
-    TIM_CCxCmd(timer, timerHardware->channel, TIM_CCx_Enable);
+    if (output & TIMER_OUTPUT_N_CHANNEL) {
+        TIM_CCxNCmd(timer, timerHardware->channel, TIM_CCxN_Enable);
+    } else {
+        TIM_CCxCmd(timer, timerHardware->channel, TIM_CCx_Enable);
+    }
 
     if (configureTimer) {
         TIM_CtrlPWMOutputs(timer, ENABLE);

@@ -24,7 +24,7 @@
 
 #define USBD_PRODUCT_STRING     "KroozX"
 
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 #define TARGET_PREINIT
 
 #define LED0_PIN                PA14 // Red LED
@@ -43,20 +43,20 @@
 #define USE_MPU_DATA_READY_SIGNAL
 #define MPU_INT_EXTI            PA4
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 #define GYRO_MPU6000_ALIGN      CW90_DEG
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
 #define ACC_MPU6000_ALIGN       CW270_DEG
 
-#define MAG
+#define USE_MAG
 #define USE_MAG_HMC5883
 #define MAG_HMC5883_ALIGN       CW180_DEG
 #define MAG_I2C_INSTANCE        I2CDEV_1
 
-#define BARO
+#define USE_BARO
 #define USE_BARO_MS5611
 
 #define USE_SDCARD
@@ -72,7 +72,7 @@
 #define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
 #define SDCARD_DMA_CHANNEL                  DMA_Channel_0
 
-#define OSD
+#define USE_OSD
 #ifdef USE_MSP_DISPLAYPORT
 #undef USE_MSP_DISPLAYPORT
 #endif
@@ -149,7 +149,7 @@
 #define RX_CHANNELS_TAER
 #define DEFAULT_FEATURES        (FEATURE_OSD)
 
-#define LED_STRIP
+#define USE_LED_STRIP
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

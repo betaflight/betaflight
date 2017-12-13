@@ -173,7 +173,7 @@ static void checkTimeout (void)
 
         if(countTimeout > 31) {
             timeout = timings->syncPacket;
-            rssi = 0;
+            setRssiFiltered(0, RSSI_SOURCE_RX_PROTOCOL);
         } else {
             timeout = timings->packet;
             countTimeout++;
@@ -197,7 +197,7 @@ static void checkRSSI (void)
     rssi_dBm = 50 + sum / (3 * FLYSKY_RSSI_SAMPLE_COUNT); // range about [95...52], -dBm
 
     int16_t tmp = 2280 - 24 * rssi_dBm;// convert to [0...1023]
-    rssi = (uint16_t) constrain(tmp, 0, 1023);// external variable from "rx/rx.h"
+    setRssiFiltered(constrain(tmp, 0, 1023), RSSI_SOURCE_RX_PROTOCOL);
 }
 
 static bool isValidPacket (const uint8_t *packet) {
@@ -354,9 +354,9 @@ void flySkyInit (const struct rxConfig_s *rxConfig, struct rxRuntimeConfig_s *rx
         PG_RESET(flySkyConfig);
     }
 
-    IO_t bindIO = IOGetByTag(IO_TAG(RX_FLYSKY_BIND_PIN));
-    IOInit(bindIO, OWNER_RX_SPI_CS, 0);
-    IOConfigGPIO(bindIO, IOCFG_IPU);
+    IO_t bindPin = IOGetByTag(IO_TAG(BINDPLUG_PIN));
+    IOInit(bindPin, OWNER_RX_SPI_CS, 0);
+    IOConfigGPIO(bindPin, IOCFG_IPU);
 
     uint8_t startRxChannel;
 
@@ -375,13 +375,17 @@ void flySkyInit (const struct rxConfig_s *rxConfig, struct rxRuntimeConfig_s *rx
         A7105Config(flySkyRegs, sizeof(flySkyRegs));
     }
 
-    if ( !IORead(bindIO) || flySkyConfig()->txId == 0) {
+    if ( !IORead(bindPin) || flySkyConfig()->txId == 0) {
         bound = false;
     } else {
         bound = true;
         txId = flySkyConfig()->txId; // load TXID
         memcpy (rfChannelMap, flySkyConfig()->rfChannelMap, FLYSKY_FREQUENCY_COUNT);// load channel map
         startRxChannel = getNextChannel(0);
+    }
+
+    if (rssiSource == RSSI_SOURCE_NONE) {
+        rssiSource = RSSI_SOURCE_RX_PROTOCOL;
     }
 
     A7105WriteReg(A7105_0F_CHANNEL, startRxChannel);

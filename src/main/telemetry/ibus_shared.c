@@ -36,7 +36,7 @@
 static uint16_t calculateChecksum(const uint8_t *ibusPacket, size_t packetLength);
 
 
-#if defined(TELEMETRY) && defined(TELEMETRY_IBUS)
+#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_IBUS)
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"

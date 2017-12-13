@@ -18,7 +18,10 @@
 #pragma once
 
 #include "common/time.h"
+
 #include "config/parameter_group.h"
+
+#include "drivers/io_types.h"
 
 #define STICK_CHANNEL_COUNT 4
 
@@ -57,6 +60,7 @@ typedef enum {
     SERIALRX_CRSF = 9,
     SERIALRX_SRXL = 10,
     SERIALRX_TARGET_CUSTOM = 11,
+    SERIALRX_FPORT = 12,
 } SerialRXType;
 
 #define MAX_SUPPORTED_RC_PPM_CHANNEL_COUNT          12
@@ -71,8 +75,6 @@ typedef enum {
 #else
 #define MAX_SUPPORTED_RX_PARALLEL_PWM_OR_PPM_CHANNEL_COUNT MAX_SUPPORTED_RC_PPM_CHANNEL_COUNT
 #endif
-
-extern uint16_t rssi;
 
 extern const char rcChannelLetters[];
 
@@ -148,14 +150,26 @@ PG_DECLARE(rxConfig_t, rxConfig);
 
 struct rxRuntimeConfig_s;
 typedef uint16_t (*rcReadRawDataFnPtr)(const struct rxRuntimeConfig_s *rxRuntimeConfig, uint8_t chan); // used by receiver driver to return channel data
-typedef uint8_t (*rcFrameStatusFnPtr)(void);
+typedef uint8_t (*rcFrameStatusFnPtr)(struct rxRuntimeConfig_s *rxRuntimeConfig);
 
 typedef struct rxRuntimeConfig_s {
-    uint8_t          channelCount; // number of RC channels as reported by current input driver
-    uint16_t         rxRefreshRate;
-    rcReadRawDataFnPtr rcReadRawFn;
-    rcFrameStatusFnPtr rcFrameStatusFn;
+    uint8_t             channelCount; // number of RC channels as reported by current input driver
+    uint16_t            rxRefreshRate;
+    rcReadRawDataFnPtr  rcReadRawFn;
+    rcFrameStatusFnPtr  rcFrameStatusFn;
+    uint16_t            *channelData;
+    void                *frameData;
 } rxRuntimeConfig_t;
+
+typedef enum rssiSource_e {
+    RSSI_SOURCE_NONE = 0,
+    RSSI_SOURCE_ADC,
+    RSSI_SOURCE_RX_CHANNEL,
+    RSSI_SOURCE_RX_PROTOCOL,
+    RSSI_SOURCE_MSP,
+} rssiSource_t;
+
+extern rssiSource_t rssiSource;
 
 extern rxRuntimeConfig_t rxRuntimeConfig; //!!TODO remove this extern, only needed once for channelCount
 
@@ -167,8 +181,11 @@ void calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs);
 
 void parseRcChannels(const char *input, rxConfig_t *rxConfig);
 
-void updateRSSI(timeUs_t currentTimeUs);
-void processRssi(uint8_t rssiPercentage);
+void setRssiFiltered(const uint16_t newRssi, const rssiSource_t source);
+void setRssiUnfiltered(const uint16_t rssiValue, const rssiSource_t source);
+void setRssiMsp(const uint8_t newMspRssi);
+void updateRSSI(const timeUs_t currentTimeUs);
+uint16_t getRssi(void);
 
 void resetAllRxChannelRangeConfigurations(rxChannelRangeConfig_t *rxChannelRangeConfig);
 
@@ -176,3 +193,4 @@ void suspendRxSignal(void);
 void resumeRxSignal(void);
 
 uint16_t rxGetRefreshRate(void);
+

@@ -64,11 +64,11 @@ extern "C" {
 
     serialPort_t *usbVcpOpen(void) { return NULL; }
 
-    serialPort_t *uartOpen(UARTDevice_e, serialReceiveCallbackPtr, uint32_t, portMode_e, portOptions_e) {
+    serialPort_t *uartOpen(UARTDevice_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) {
       return NULL;
     }
 
-    serialPort_t *openSoftSerial(softSerialPortIndex_e, serialReceiveCallbackPtr, uint32_t, portMode_e, portOptions_e) {
+    serialPort_t *openSoftSerial(softSerialPortIndex_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) {
       return NULL;
     }
 }

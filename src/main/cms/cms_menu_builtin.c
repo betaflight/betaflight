@@ -26,7 +26,7 @@
 
 #include "platform.h"
 
-#ifdef CMS
+#ifdef USE_CMS
 
 #include "build/version.h"
 
@@ -53,20 +53,22 @@
 
 // Info
 
-static char infoGitRev[GIT_SHORT_REVISION_LENGTH];
+static char infoGitRev[GIT_SHORT_REVISION_LENGTH + 1];
 static char infoTargetName[] = __TARGET__;
 
-#include "msp/msp_protocol.h" // XXX for FC identification... not available elsewhere
+#include "interface/msp_protocol.h" // XXX for FC identification... not available elsewhere
 
 static long cmsx_InfoInit(void)
 {
-    for (int i = 0 ; i < GIT_SHORT_REVISION_LENGTH ; i++) {
+    int i;
+    for ( i = 0 ; i < GIT_SHORT_REVISION_LENGTH ; i++) {
         if (shortGitRevision[i] >= 'a' && shortGitRevision[i] <= 'f')
             infoGitRev[i] = shortGitRevision[i] - 'a' + 'A';
         else
             infoGitRev[i] = shortGitRevision[i];
     }
 
+    infoGitRev[i] = 0x0; // Terminate string
     return 0;
 }
 
@@ -81,11 +83,12 @@ static OSD_Entry menuInfoEntries[] = {
 };
 
 static CMS_Menu menuInfo = {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "MENUINFO",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = cmsx_InfoInit,
     .onExit = NULL,
-    .onGlobalExit = NULL,
     .entries = menuInfoEntries
 };
 
@@ -95,7 +98,7 @@ static OSD_Entry menuFeaturesEntries[] =
 {
     {"--- FEATURES ---", OME_Label, NULL, NULL, 0},
 
-#if defined(BLACKBOX)
+#if defined(USE_BLACKBOX)
     {"BLACKBOX", OME_Submenu, cmsMenuChange, &cmsx_menuBlackbox, 0},
 #endif
 #if defined(VTX_CONTROL)
@@ -109,7 +112,7 @@ static OSD_Entry menuFeaturesEntries[] =
     {"VTX TR", OME_Submenu, cmsMenuChange, &cmsx_menuVtxTramp, 0},
 #endif
 #endif // VTX_CONTROL
-#ifdef LED_STRIP
+#ifdef USE_LED_STRIP
     {"LED STRIP", OME_Submenu, cmsMenuChange, &cmsx_menuLedstrip, 0},
 #endif // LED_STRIP
     {"BACK", OME_Back, NULL, NULL, 0},
@@ -117,11 +120,12 @@ static OSD_Entry menuFeaturesEntries[] =
 };
 
 static CMS_Menu menuFeatures = {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "MENUFEATURES",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = NULL,
     .onExit = NULL,
-    .onGlobalExit = NULL,
     .entries = menuFeaturesEntries,
 };
 
@@ -133,7 +137,7 @@ static OSD_Entry menuMainEntries[] =
 
     {"PROFILE",     OME_Submenu,  cmsMenuChange, &cmsx_menuImu, 0},
     {"FEATURES",    OME_Submenu,  cmsMenuChange, &menuFeatures, 0},
-#ifdef OSD
+#ifdef USE_OSD
     {"OSD",         OME_Submenu,  cmsMenuChange, &cmsx_menuOsd, 0},
 #endif
     {"FC&FW INFO",  OME_Submenu,  cmsMenuChange, &menuInfo, 0},
@@ -149,11 +153,12 @@ static OSD_Entry menuMainEntries[] =
 };
 
 CMS_Menu menuMain = {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "MENUMAIN",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = NULL,
     .onExit = NULL,
-    .onGlobalExit = NULL,
     .entries = menuMainEntries,
 };
 #endif

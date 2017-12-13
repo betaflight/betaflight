@@ -22,7 +22,7 @@
 
 #include "platform.h"
 
-#if defined(OSD) && defined(CMS)
+#if defined(USE_OSD) && defined(USE_CMS)
 
 #include "build/version.h"
 
@@ -68,6 +68,7 @@ OSD_Entry menuOsdActiveElemsEntries[] =
     {"HORIZON SIDEBARS",   OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HORIZON_SIDEBARS], 0},
     {"TIMER 1",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ITEM_TIMER_1], 0},
     {"TIMER 2",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ITEM_TIMER_2], 0},
+    {"REMAINING TIME ESTIMATE",       OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_REMAINING_TIME_ESTIMATE], 0},
     {"FLY MODE",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_FLYMODE], 0},
     {"NAME",               OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CRAFT_NAME], 0},
     {"THROTTLE",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_THROTTLE_POS], 0},
@@ -76,7 +77,7 @@ OSD_Entry menuOsdActiveElemsEntries[] =
 #endif // VTX
     {"CURRENT (A)",        OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CURRENT_DRAW], 0},
     {"USED MAH",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAH_DRAWN], 0},
-#ifdef GPS
+#ifdef USE_GPS
     {"GPS SPEED",          OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_SPEED], 0},
     {"GPS SATS",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_SATS], 0},
     {"GPS LAT",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_LAT], 0},
@@ -103,11 +104,12 @@ OSD_Entry menuOsdActiveElemsEntries[] =
 };
 
 CMS_Menu menuOsdActiveElems = {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "MENUOSDACT",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = menuOsdActiveElemsOnEnter,
     .onExit = menuOsdActiveElemsOnExit,
-    .onGlobalExit = NULL,
     .entries = menuOsdActiveElemsEntries
 };
 
@@ -146,11 +148,12 @@ OSD_Entry menuAlarmsEntries[] =
 };
 
 CMS_Menu menuAlarms = {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "MENUALARMS",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = menuAlarmsOnEnter,
     .onExit = menuAlarmsOnExit,
-    .onGlobalExit = NULL,
     .entries = menuAlarmsEntries,
 };
 
@@ -197,11 +200,12 @@ OSD_Entry menuTimersEntries[] =
 };
 
 CMS_Menu menuTimers = {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "MENUTIMERS",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = menuTimersOnEnter,
     .onExit = menuTimersOnExit,
-    .onGlobalExit = NULL,
     .entries = menuTimersEntries,
 };
 #endif /* DISABLE_EXTENDED_CMS_OSD_MENU */
@@ -254,11 +258,12 @@ OSD_Entry cmsx_menuOsdEntries[] =
 };
 
 CMS_Menu cmsx_menuOsd = {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "MENUOSD",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = cmsx_menuOsdOnEnter,
     .onExit = cmsx_menuOsdOnExit,
-    .onGlobalExit = NULL,
     .entries = cmsx_menuOsdEntries
 };
 #endif // CMS

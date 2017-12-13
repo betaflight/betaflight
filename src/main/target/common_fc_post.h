@@ -29,6 +29,10 @@
 #undef USE_SERVOS
 #endif
 
+#ifndef USE_DSHOT
+#undef USE_ESC_SENSOR
+#endif
+
 // XXX Followup implicit dependencies among DASHBOARD, display_xxx and USE_I2C.
 // XXX This should eventually be cleaned up.
 #ifndef USE_I2C
@@ -52,9 +56,14 @@
 #endif
 
 #if defined(USE_MSP_OVER_TELEMETRY)
-#if !defined(TELEMETRY_SMARTPORT) && !defined(TELEMETRY_CRSF)
+#if !defined(USE_TELEMETRY_SMARTPORT) && !defined(USE_TELEMETRY_CRSF)
 #undef USE_MSP_OVER_TELEMETRY
 #endif
+#endif
+
+// undefine USE_ALT_HOLD if there is no baro or sonar to support it
+#if defined(USE_ALT_HOLD) && !defined(USE_BARO) && !defined(USE_SONAR)
+#undef USE_ALT_HOLD
 #endif
 
 /* If either VTX_CONTROL or VTX_COMMON is undefined then remove common code and device drivers */
@@ -64,3 +73,8 @@
 #undef VTX_TRAMP
 #undef VTX_SMARTAUDIO
 #endif
+
+#if defined(USE_RX_FRSKY_SPI_D) || defined(USE_RX_FRSKY_SPI_X)
+#define USE_RX_FRSKY_SPI
+#endif
+

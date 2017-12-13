@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
+#include <stdlib.h>
 
 #include "platform.h"
 
@@ -59,8 +60,6 @@
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/fc_core.h"
-#include "fc/fc_msp.h"
-#include "fc/fc_msp_box.h"
 #include "fc/fc_rc.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
@@ -74,6 +73,10 @@
 #include "flight/navigation.h"
 #include "flight/pid.h"
 #include "flight/servos.h"
+
+#include "interface/msp.h"
+#include "interface/msp_box.h"
+#include "interface/msp_protocol.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
@@ -89,13 +92,13 @@
 #include "io/servos.h"
 #include "io/transponder_ir.h"
 #include "io/vtx_control.h"
+#include "io/vtx.h"
+#include "io/vtx_string.h"
 
-#include "msp/msp.h"
-#include "msp/msp_protocol.h"
 #include "msp/msp_serial.h"
 
-#include "rx/msp.h"
 #include "rx/rx.h"
+#include "rx/msp.h"
 
 #include "scheduler/scheduler.h"
 
@@ -146,6 +149,8 @@ typedef enum {
 
 #define RATEPROFILE_MASK (1 << 7)
 #endif //USE_OSD_SLAVE
+
+#define RTC_NOT_SUPPORTED 0xff
 
 #ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
 #define ESC_4WAY 0xff
@@ -413,7 +418,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 #ifdef USE_OSD_SLAVE
         sbufWriteU8(dst, 1);  // 1 == OSD
 #else
-#if defined(OSD) && defined(USE_MAX7456)
+#if defined(USE_OSD) && defined(USE_MAX7456)
         sbufWriteU8(dst, 2);  // 2 == FC with OSD
 #else
         sbufWriteU8(dst, 0);  // 0 == FC
@@ -439,7 +444,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 #ifdef USE_OSD_SLAVE
         sbufWriteU16(dst, 0); // rssi
 #else
-        sbufWriteU16(dst, rssi);
+        sbufWriteU16(dst, getRssi());
 #endif
         sbufWriteU16(dst, (int16_t)constrain(getAmperage(), -0x8000, 0x7FFF)); // send current in 0.01 A steps, range is -320A to 320A
         break;
@@ -584,7 +589,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         break;
 
     case MSP_TRANSPONDER_CONFIG: {
-#ifdef TRANSPONDER
+#ifdef USE_TRANSPONDER
         // Backward compatibility to BFC 3.1.1 is lost for this message type
         sbufWriteU8(dst, TRANSPONDER_PROVIDER_COUNT);
         for (unsigned int i = 0; i < TRANSPONDER_PROVIDER_COUNT; i++) {
@@ -617,7 +622,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 #define OSD_FLAGS_OSD_HARDWARE_MAX_7456 (1 << 4)
 
         uint8_t osdFlags = 0;
-#if defined(OSD)
+#if defined(USE_OSD)
         osdFlags |= OSD_FLAGS_OSD_FEATURE;
 #endif
 #if defined(USE_OSD_SLAVE)
@@ -636,7 +641,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU8(dst, 0);
 #endif
 
-#ifdef OSD
+#ifdef USE_OSD
         // OSD specific, not applicable to OSD slaves.
 
         // Configuration
@@ -645,7 +650,11 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         // Alarms
         sbufWriteU8(dst, osdConfig()->rssi_alarm);
         sbufWriteU16(dst, osdConfig()->cap_alarm);
-        sbufWriteU16(dst, 0);
+
+        // Reuse old timer alarm (U16) as OSD_ITEM_COUNT
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, OSD_ITEM_COUNT);
+
         sbufWriteU16(dst, osdConfig()->alt_alarm);
 
         // Element position and visibility
@@ -664,6 +673,9 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         for (int i = 0; i < OSD_TIMER_COUNT; i++) {
             sbufWriteU16(dst, osdConfig()->timers[i]);
         }
+
+        // Enabled warnings
+        sbufWriteU16(dst, osdConfig()->enabledWarnings);
 #endif
         break;
     }
@@ -837,7 +849,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         break;
 
     case MSP_ALTITUDE:
-#if defined(BARO) || defined(SONAR)
+#if defined(USE_BARO) || defined(USE_SONAR)
         sbufWriteU32(dst, getEstimatedAltitude());
 #else
         sbufWriteU32(dst, 0);
@@ -846,7 +858,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         break;
 
     case MSP_SONAR_ALTITUDE:
-#if defined(SONAR)
+#if defined(USE_SONAR)
         sbufWriteU32(dst, sonarGetLatestAltitude());
 #else
         sbufWriteU32(dst, 0);
@@ -926,7 +938,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, motorConfig()->mincommand);
         break;
 
-#ifdef MAG
+#ifdef USE_MAG
     case MSP_COMPASS_CONFIG:
         sbufWriteU16(dst, compassConfig()->mag_declination / 10);
         break;
@@ -935,14 +947,14 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 #ifdef USE_DSHOT
     case MSP_ESC_SENSOR_DATA:
         sbufWriteU8(dst, getMotorCount());
-        for (int i = 0; i < getMotorCount(); i++) {         
+        for (int i = 0; i < getMotorCount(); i++) {
             sbufWriteU8(dst, getEscSensorData(i)->temperature);
             sbufWriteU16(dst, getEscSensorData(i)->rpm);
         }
         break;
 #endif
 
-#ifdef GPS
+#ifdef USE_GPS
     case MSP_GPS_CONFIG:
         sbufWriteU8(dst, gpsConfig()->provider);
         sbufWriteU8(dst, gpsConfig()->sbasMode);
@@ -1057,7 +1069,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         }
         break;
 
-#ifdef LED_STRIP
+#ifdef USE_LED_STRIP
     case MSP_LED_COLORS:
         for (int i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
             const hsvColor_t *color = &ledStripConfig()->colors[i];
@@ -1100,7 +1112,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         break;
 
     case MSP_BLACKBOX_CONFIG:
-#ifdef BLACKBOX
+#ifdef USE_BLACKBOX
         sbufWriteU8(dst, 1); //Blackbox supported
         sbufWriteU8(dst, blackboxConfig()->device);
         sbufWriteU8(dst, blackboxGetRateNum());
@@ -1197,33 +1209,54 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         {
             uint8_t deviceType = vtxCommonGetDeviceType();
             if (deviceType != VTXDEV_UNKNOWN) {
-
-                uint8_t band=0, channel=0;
-                vtxCommonGetBandAndChannel(&band,&channel);
-
-                uint8_t powerIdx=0; // debug
-                vtxCommonGetPowerIndex(&powerIdx);
-
                 uint8_t pitmode=0;
                 vtxCommonGetPitMode(&pitmode);
-
-                uint16_t freq = 0;
-                vtxCommonGetFrequency(&freq);
-
                 sbufWriteU8(dst, deviceType);
-                sbufWriteU8(dst, band);
-                sbufWriteU8(dst, channel);
-                sbufWriteU8(dst, powerIdx);
+                sbufWriteU8(dst, vtxSettingsConfig()->band);
+                sbufWriteU8(dst, vtxSettingsConfig()->channel);
+                sbufWriteU8(dst, vtxSettingsConfig()->power);
                 sbufWriteU8(dst, pitmode);
-                sbufWriteU16(dst, freq);
+                sbufWriteU16(dst, vtxSettingsConfig()->freq);
                 // future extensions here...
             } else {
                 sbufWriteU8(dst, VTXDEV_UNKNOWN); // no VTX detected
             }
         }
-#endif
-        break;
 
+        break;
+#endif
+
+    case MSP_TX_INFO:
+        sbufWriteU8(dst, rssiSource);
+        uint8_t rtcDateTimeIsSet = 0;
+#ifdef USE_RTC_TIME
+        dateTime_t dt;
+        if (rtcGetDateTime(&dt)) {
+            rtcDateTimeIsSet = 1;
+        }
+#else
+        rtcDateTimeIsSet = RTC_NOT_SUPPORTED;
+#endif
+        sbufWriteU8(dst, rtcDateTimeIsSet);
+
+        break;
+#ifdef USE_RTC_TIME
+    case MSP_RTC:
+        {
+            dateTime_t dt;
+            if (rtcGetDateTime(&dt)) {
+                sbufWriteU16(dst, dt.year);
+                sbufWriteU8(dst, dt.month);
+                sbufWriteU8(dst, dt.day);
+                sbufWriteU8(dst, dt.hours);
+                sbufWriteU8(dst, dt.minutes);
+                sbufWriteU8(dst, dt.seconds);
+                sbufWriteU16(dst, dt.millis);
+            }
+        }
+
+        break;
+#endif
     default:
         return false;
     }
@@ -1252,7 +1285,7 @@ static mspResult_e mspFcProcessOutCommandWithArg(uint8_t cmdMSP, sbuf_t *arg, sb
 }
 #endif // USE_OSD_SLAVE
 
-#ifdef GPS
+#ifdef USE_NAV
 static void mspFcWpCommand(sbuf_t *dst, sbuf_t *src)
 {
     uint8_t wp_no;
@@ -1313,7 +1346,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     uint32_t i;
     uint8_t value;
     const unsigned int dataSize = sbufBytesRemaining(src);
-#ifdef GPS
+#ifdef USE_NAV
     uint8_t wp_no;
     int32_t lat = 0, lon = 0, alt = 0;
 #endif
@@ -1349,7 +1382,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         }
         break;
 
-#if defined(GPS) || defined(MAG)
+#if defined(USE_GPS) || defined(USE_MAG)
     case MSP_SET_HEADING:
         magHold = sbufReadU16(src);
         break;
@@ -1467,7 +1500,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         motorConfigMutable()->mincommand = sbufReadU16(src);
         break;
 
-#ifdef GPS
+#ifdef USE_GPS
     case MSP_SET_GPS_CONFIG:
         gpsConfigMutable()->provider = sbufReadU8(src);
         gpsConfigMutable()->sbasMode = sbufReadU8(src);
@@ -1476,7 +1509,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 #endif
 
-#ifdef MAG
+#ifdef USE_MAG
     case MSP_SET_COMPASS_CONFIG:
         compassConfigMutable()->mag_declination = sbufReadU16(src) * 10;
         break;
@@ -1649,7 +1682,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         readEEPROM();
         break;
 
-#ifdef BLACKBOX
+#ifdef USE_BLACKBOX
     case MSP_SET_BLACKBOX_CONFIG:
         // Don't allow config to be updated while Blackbox is logging
         if (blackboxMayEditConfig()) {
@@ -1670,42 +1703,30 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #ifdef VTX_COMMON
     case MSP_SET_VTX_CONFIG:
         {
-            const uint16_t tmp = sbufReadU16(src);
-
-            if (vtxCommonGetDeviceType() != VTXDEV_UNKNOWN) {
-
-                if (tmp <= VTXCOMMON_MSP_BANDCHAN_CHKVAL) {  //value is band and channel
-                    const uint8_t band    = (tmp / 8) + 1;
-                    const uint8_t channel = (tmp % 8) + 1;
-                    uint8_t current_band = 0, current_channel = 0;
-                    vtxCommonGetBandAndChannel(&current_band, &current_channel);
-                    if ((current_band != band) || (current_channel != channel)) {
-                        vtxCommonSetBandAndChannel(band, channel);
+            if (vtxCommonDeviceRegistered()) {
+                if (vtxCommonGetDeviceType() != VTXDEV_UNKNOWN) {
+                    uint16_t newFrequency = sbufReadU16(src);
+                    if (newFrequency <= VTXCOMMON_MSP_BANDCHAN_CHKVAL) {  //value is band and channel
+                        const uint8_t newBand = (newFrequency / 8) + 1;
+                        const uint8_t newChannel = (newFrequency % 8) + 1;
+                        vtxSettingsConfigMutable()->band = newBand;
+                        vtxSettingsConfigMutable()->channel = newChannel;
+                        vtxSettingsConfigMutable()->freq = vtx58_Bandchan2Freq(newBand, newChannel);
+                    } else {  //value is frequency in MHz
+                        vtxSettingsConfigMutable()->band = 0;
+                        vtxSettingsConfigMutable()->freq = newFrequency;
                     }
-                } else {  //value is frequency in MHz
-                    uint16_t currentFreq;
-                    vtxCommonGetFrequency(&currentFreq);
-                    if (currentFreq != tmp) {
-                        vtxCommonSetFrequency(tmp);
+
+                    if (sbufBytesRemaining(src) > 1) {
+                        vtxSettingsConfigMutable()->power = sbufReadU8(src);
+                        // Delegate pitmode to vtx directly
+                        const uint8_t newPitmode = sbufReadU8(src);
+                        uint8_t currentPitmode = 0;
+                        vtxCommonGetPitMode(&currentPitmode);
+                        if (currentPitmode != newPitmode) {
+                            vtxCommonSetPitMode(newPitmode);
+                        }
                     }
-                }
-
-                if (sbufBytesRemaining(src) < 2) {
-                    break;
-                }
-
-                uint8_t power = sbufReadU8(src);
-                uint8_t current_power = 0;
-                vtxCommonGetPowerIndex(&current_power);
-                if (current_power != power) {
-                    vtxCommonSetPowerByIndex(power);
-                }
-
-                uint8_t pitmode = sbufReadU8(src);
-                uint8_t current_pitmode = 0;
-                vtxCommonGetPitMode(&current_pitmode);
-                if (current_pitmode != pitmode) {
-                    vtxCommonSetPitMode(pitmode);
                 }
             }
         }
@@ -1725,7 +1746,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 #endif
 
-    case MSP_ARMING_DISABLE:
+    case MSP_SET_ARMING_DISABLED:
         {
             const uint8_t command = sbufReadU8(src);
             if (command) {
@@ -1742,7 +1763,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 #endif
 
-#ifdef GPS
+#ifdef USE_GPS
     case MSP_SET_RAW_GPS:
         if (sbufReadU8(src)) {
             ENABLE_STATE(GPS_FIX);
@@ -1756,7 +1777,8 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         gpsSol.groundSpeed = sbufReadU16(src);
         GPS_update |= 2;        // New data signalisation to GPS functions // FIXME Magic Numbers
         break;
-
+#endif // USE_GPS
+#ifdef USE_NAV
     case MSP_SET_WP:
         wp_no = sbufReadU8(src);    //get the wp number
         lat = sbufReadU32(src);
@@ -1781,7 +1803,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             GPS_set_next_wp(&GPS_hold[LAT], &GPS_hold[LON]);
         }
         break;
-#endif
+#endif // USE_NAV
 
     case MSP_SET_FEATURE_CONFIG:
         featureClearAll();
@@ -1913,7 +1935,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         }
         break;
 
-#ifdef LED_STRIP
+#ifdef USE_LED_STRIP
     case MSP_SET_LED_COLORS:
         for (int i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
             hsvColor_t *color = &ledStripConfigMutable()->colors[i];
@@ -1954,6 +1976,27 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         }
         break;
 
+#ifdef USE_RTC_TIME
+    case MSP_SET_RTC:
+        {
+            dateTime_t dt;
+            dt.year = sbufReadU16(src);
+            dt.month = sbufReadU8(src);
+            dt.day = sbufReadU8(src);
+            dt.hours = sbufReadU8(src);
+            dt.minutes = sbufReadU8(src);
+            dt.seconds = sbufReadU8(src);
+            dt.millis = 0;
+            rtcSetDateTime(&dt);
+        }
+
+        break;
+#endif
+
+    case MSP_SET_TX_INFO:
+        setRssiMsp(sbufReadU8(src));
+
+        break;
     default:
         // we do not know how to handle the (valid) message, indicate error MSP $M!
         return MSP_RESULT_ERROR;
@@ -1968,7 +2011,7 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     UNUSED(dataSize); // maybe unused due to compiler options
 
     switch (cmdMSP) {
-#ifdef TRANSPONDER
+#ifdef USE_TRANSPONDER
     case MSP_SET_TRANSPONDER_CONFIG: {
         // Backward compatibility to BFC 3.1.1 is lost for this message type
 
@@ -2063,7 +2106,7 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         batteryConfigMutable()->currentMeterSource = sbufReadU8(src);
         break;
 
-#if defined(OSD) || defined (USE_OSD_SLAVE)
+#if defined(USE_OSD) || defined (USE_OSD_SLAVE)
     case MSP_SET_OSD_CONFIG:
         {
             const uint8_t addr = sbufReadU8(src);
@@ -2075,7 +2118,7 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #else
                 sbufReadU8(src); // Skip video system
 #endif
-#if defined(OSD)
+#if defined(USE_OSD)
                 osdConfigMutable()->units = sbufReadU8(src);
 
                 // Alarms
@@ -2083,9 +2126,14 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 osdConfigMutable()->cap_alarm = sbufReadU16(src);
                 sbufReadU16(src); // Skip unused (previously fly timer)
                 osdConfigMutable()->alt_alarm = sbufReadU16(src);
+
+                if (sbufBytesRemaining(src) >= 2) {
+                    /* Enabled warnings */
+                    osdConfigMutable()->enabledWarnings = sbufReadU16(src);
+                }
 #endif
             } else if ((int8_t)addr == -2) {
-#if defined(OSD)
+#if defined(USE_OSD)
                 // Timers
                 uint8_t index = sbufReadU8(src);
                 if (index > OSD_TIMER_COUNT) {
@@ -2095,7 +2143,7 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #endif
                 return MSP_RESULT_ERROR;
             } else {
-#if defined(OSD)
+#if defined(USE_OSD)
                 const uint16_t value = sbufReadU16(src);
 
                 /* Get screen index, 0 is post flight statistics, 1 and above are in flight OSD screens */
@@ -2165,7 +2213,7 @@ mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostPro
         mspFc4waySerialCommand(dst, src, mspPostProcessFn);
         ret = MSP_RESULT_ACK;
 #endif
-#ifdef GPS
+#ifdef USE_NAV
     } else if (cmdMSP == MSP_WP) {
         mspFcWpCommand(dst, src);
         ret = MSP_RESULT_ACK;

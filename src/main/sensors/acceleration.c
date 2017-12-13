@@ -69,6 +69,9 @@
 
 acc_t acc;                       // acc access functions
 
+static float accumulatedMeasurements[XYZ_AXIS_COUNT];
+static int accumulatedMeasurementCount;
+
 static uint16_t calibratingA = 0;      // the calibration is done is the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
 
 extern uint16_t InflightcalibratingA;
@@ -463,8 +466,10 @@ static void applyAccelerationTrims(const flightDynamicsTrims_t *accelerationTrim
     acc.accSmooth[Z] -= accelerationTrims->raw[Z];
 }
 
-void accUpdate(rollAndPitchTrims_t *rollAndPitchTrims)
+void accUpdate(timeUs_t currentTimeUs, rollAndPitchTrims_t *rollAndPitchTrims)
 {
+    UNUSED(currentTimeUs);
+
     if (!acc.dev.readFn(&acc.dev)) {
         return;
     }
@@ -492,6 +497,29 @@ void accUpdate(rollAndPitchTrims_t *rollAndPitchTrims)
     }
 
     applyAccelerationTrims(accelerationTrims);
+
+    ++accumulatedMeasurementCount;
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        accumulatedMeasurements[axis] += acc.accSmooth[axis];
+    }
+}
+
+bool accGetAccumulationAverage(float *accumulationAverage)
+{
+    if (accumulatedMeasurementCount > 0) {
+        // If we have gyro data accumulated, calculate average rate that will yield the same rotation
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            accumulationAverage[axis] = accumulatedMeasurements[axis] / accumulatedMeasurementCount;
+            accumulatedMeasurements[axis] = 0.0f;
+        }
+        accumulatedMeasurementCount = 0;
+        return true;
+    } else {
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            accumulationAverage[axis] = 0.0f;
+        }
+        return false;
+    }
 }
 
 void setAccelerationTrims(flightDynamicsTrims_t *accelerationTrimsToUse)
@@ -499,9 +527,9 @@ void setAccelerationTrims(flightDynamicsTrims_t *accelerationTrimsToUse)
     accelerationTrims = accelerationTrimsToUse;
 }
 
-void setAccelerationFilter(uint16_t initialAccLpfCutHz)
+void accInitFilters(void)
 {
-    accLpfCutHz = initialAccLpfCutHz;
+    accLpfCutHz = accelerometerConfig()->acc_lpf_hz;
     if (acc.accSamplingInterval) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
             biquadFilterInitLPF(&accFilter[axis], accLpfCutHz, acc.accSamplingInterval);

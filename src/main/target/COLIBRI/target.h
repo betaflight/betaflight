@@ -36,11 +36,11 @@
 #define MPU6000_CS_PIN          PC4
 #define MPU6000_SPI_INSTANCE    SPI1
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
 #define ACC_MPU6000_ALIGN       CW270_DEG_FLIP
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 #define GYRO_MPU6000_ALIGN      CW270_DEG_FLIP
 
@@ -49,7 +49,7 @@
 #define MPU_INT_EXTI            PC0
 #define USE_MPU_DATA_READY_SIGNAL
 
-#define MAG
+#define USE_MAG
 #define USE_MAG_HMC5883
 #define MAG_HMC5883_ALIGN       CW270_DEG_FLIP
 
@@ -57,7 +57,7 @@
 #define USE_MAG_DATA_READY_SIGNAL
 #define ENSURE_MAG_DATA_READY_IS_HIGH
 
-#define BARO
+#define USE_BARO
 #define USE_BARO_MS5611
 
 #define M25P16_CS_PIN           PB12
@@ -120,7 +120,7 @@
 #define I2C3_SDA                PC9
 
 // alternative defaults for Colibri/Gemini target
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 

@@ -47,7 +47,7 @@
 #define MPU6500_CS_PIN          PA4
 #define MPU6500_SPI_INSTANCE    SPI1
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_ICM20689
 #define GYRO_ICM20689_ALIGN      CW180_DEG
 
@@ -58,7 +58,7 @@
 #define USE_GYRO_SPI_MPU6500
 #define GYRO_MPU6500_ALIGN      CW90_DEG
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_ICM20689
 #define ACC_ICM20689_ALIGN       CW180_DEG
 
@@ -79,7 +79,7 @@
 #define SPI2_MOSI_PIN           PB15
 
 #ifdef FURYF3OSD
-    #define OSD
+    #define USE_OSD
     // include the max7456 driver
     #define USE_MAX7456
     #define MAX7456_SPI_INSTANCE    SPI1
@@ -120,7 +120,7 @@
 
     #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
-    #define BARO
+    #define USE_BARO
     #define USE_BARO_MS5611
 
 #endif
@@ -142,10 +142,6 @@
 
 #define SOFTSERIAL1_RX_PIN      PB0
 #define SOFTSERIAL1_TX_PIN      PB1
-
-#define SONAR
-#define SONAR_ECHO_PIN          PB1
-#define SONAR_TRIGGER_PIN       PB0
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN  PB3  // (HARDARE=0,PPM)

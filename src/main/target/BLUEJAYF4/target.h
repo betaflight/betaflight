@@ -17,7 +17,7 @@
 
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "BJF4"
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 #define TARGET_VALIDATECONFIG
 #define TARGET_PREINIT
 
@@ -50,22 +50,22 @@
 #define MPU6500_CS_PIN          PC4
 #define MPU6500_SPI_INSTANCE    SPI1
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
 #define ACC_MPU6500_ALIGN       CW0_DEG
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
 #define GYRO_MPU6500_ALIGN      CW0_DEG
 
-#define MAG
+#define USE_MAG
 #define USE_MAG_HMC5883
 //#define USE_MAG_AK8963
 #define HMC5883_I2C_INSTANCE    I2CDEV_1
 
-#define BARO
+#define USE_BARO
 #define USE_BARO_MS5611
 #define MS5611_I2C_INSTANCE     I2CDEV_1
 

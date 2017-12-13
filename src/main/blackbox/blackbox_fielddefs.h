@@ -106,14 +106,6 @@ typedef enum FlightLogFieldSign {
     FLIGHT_LOG_FIELD_SIGNED   = 1
 } FlightLogFieldSign;
 
-typedef enum FlightLogEvent {
-    FLIGHT_LOG_EVENT_SYNC_BEEP = 0,
-    FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT = 13,
-    FLIGHT_LOG_EVENT_LOGGING_RESUME = 14,
-    FLIGHT_LOG_EVENT_FLIGHTMODE = 30, // Add new event type for flight mode status.
-    FLIGHT_LOG_EVENT_LOG_END = 255
-} FlightLogEvent;
-
 typedef struct flightLogEvent_syncBeep_s {
     uint32_t time;
 } flightLogEvent_syncBeep_t;

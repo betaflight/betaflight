@@ -81,14 +81,16 @@ void A7105Config (const uint8_t *regsTable, uint8_t size)
         uint32_t timeout = 1000;
 
         for (uint8_t i = 0; i < size; i++) {
-            if (regsTable[i] != 0xFF) {A7105WriteReg ((A7105Reg_t)i, regsTable[i]);}
+            if (regsTable[i] != 0xFF) {
+                A7105WriteReg ((A7105Reg_t)i, regsTable[i]);
+            }
         }
 
         A7105Strobe(A7105_STANDBY);
 
         A7105WriteReg(A7105_02_CALC, 0x01);
 
-        while ((A7105ReadReg(A7105_02_CALC) != 0) || timeout--) {}
+        while ((A7105ReadReg(A7105_02_CALC) != 0) && timeout--) {}
 
         A7105ReadReg(A7105_22_IF_CALIB_I);
 
@@ -160,7 +162,7 @@ uint32_t A7105ReadID (void)
 {
     uint32_t id;
     uint8_t data[4];
-    rxSpiReadCommandMulti ( (uint8_t)A7105_06_ID_DATA | 0x40, 0xFF, &data[0], sizeof(data));
+    rxSpiReadCommandMulti((uint8_t)A7105_06_ID_DATA | 0x40, 0xFF, &data[0], sizeof(data));
     id = data[0] << 24 | data[1] << 16 | data[2] << 8 | data[3] << 0;
     return id;
 }
@@ -168,7 +170,7 @@ uint32_t A7105ReadID (void)
 void A7105ReadFIFO (uint8_t *data, uint8_t num)
 {
     if (data) {
-        if(num > 64){
+        if(num > 64) {
             num = 64;
         }
 

@@ -43,15 +43,15 @@
 #define SPI2_MOSI_PIN            PB15
 
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 #define GYRO_MPU6000_ALIGN CW180_DEG
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
 #define ACC_MPU6000_ALIGN CW180_DEG
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 
 #define USE_EXTI
 #define MPU_INT_EXTI PC13
@@ -122,18 +122,7 @@
 #define CURRENT_METER_ADC_PIN    PA5
 #define VBAT_SCALE_DEFAULT       119
 
-#define TRANSPONDER
-#define TRANSPONDER_GPIO                     GPIOA
-#define TRANSPONDER_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
-#define TRANSPONDER_GPIO_AF                  GPIO_AF_1
-#define TRANSPONDER_PIN                      GPIO_Pin_6
-#define TRANSPONDER_PIN_SOURCE               GPIO_PinSource6
-#define TRANSPONDER_TIMER                    TIM16
-#define TRANSPONDER_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM16
-#define TRANSPONDER_DMA_CHANNEL              DMA1_Channel6
-#define TRANSPONDER_IRQ                      DMA1_Channel6_IRQn
-#define TRANSPONDER_DMA_TC_FLAG              DMA1_FLAG_TC6
-#define TRANSPONDER_DMA_HANDLER_IDENTIFER    DMA1_CH6_HANDLER
+#define USE_TRANSPONDER
 
 #define DEFAULT_RX_FEATURE FEATURE_RX_PPM
 

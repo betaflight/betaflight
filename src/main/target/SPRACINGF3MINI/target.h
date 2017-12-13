@@ -43,8 +43,8 @@
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
-#define GYRO
-#define ACC
+#define USE_GYRO
+#define USE_ACC
 
 #ifdef TINYBEEF3
 
@@ -64,21 +64,21 @@
 #define USE_ACC_MPU6500
 #define ACC_MPU6500_ALIGN       CW180_DEG
 
-#define BARO
+#define USE_BARO
 #define USE_BARO_BMP280
 
-#define MAG
+#define USE_MAG
 #define USE_MPU9250_MAG // Enables bypass configuration
 #define USE_MAG_AK8975
 #define USE_MAG_HMC5883 // External
 #define MAG_AK8975_ALIGN        CW90_DEG_FLIP
 #endif
 
-//#define SONAR
+//#define USE_SONAR
 //#define SONAR_ECHO_PIN          PB1
 //#define SONAR_TRIGGER_PIN       PB0
 
-#define BRUSHED_ESC_AUTODETECT
+#define USE_BRUSHED_ESC_AUTODETECT
 
 #define USE_VCP
 #define USE_UART1
@@ -178,7 +178,7 @@
 #define CURRENT_METER_ADC_PIN       PA5
 #define RSSI_ADC_PIN                PB2
 
-#define TRANSPONDER
+#define USE_TRANSPONDER
 
 #define REDUCE_TRANSPONDER_CURRENT_DRAW_WHEN_USB_CABLE_PRESENT
 
@@ -186,7 +186,7 @@
 
 #ifndef TINYBEEF3
 
-#define BUTTONS
+#define USE_BUTTONS
 #define BUTTON_A_PIN            PB1
 #define BUTTON_B_PIN            PB0
 

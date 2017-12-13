@@ -18,6 +18,7 @@
 #pragma once
 
 #include "common/axis.h"
+#include "common/time.h"
 #include "config/parameter_group.h"
 #include "drivers/bus.h"
 #include "drivers/sensor.h"
@@ -69,7 +70,8 @@ PG_DECLARE(gyroConfig_t, gyroConfig);
 bool gyroInit(void);
 
 void gyroInitFilters(void);
-void gyroUpdate(void);
+void gyroUpdate(timeUs_t currentTimeUs);
+bool gyroGetAccumulationAverage(float *accumulation);
 const busDevice_t *gyroSensorBus(void);
 struct mpuConfiguration_s;
 const struct mpuConfiguration_s *gyroMpuConfiguration(void);

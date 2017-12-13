@@ -28,15 +28,15 @@
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_MPU6050
 #define GYRO_MPU6050_ALIGN      CW270_DEG
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_MPU6050
 #define ACC_MPU6050_ALIGN       CW270_DEG
 
-#define BARO
+#define USE_BARO
 #define USE_BARO_BMP085
 
 #define USE_FLASHFS
@@ -79,7 +79,7 @@
 #define CURRENT_METER_ADC_PIN   PA5
 #define RSSI_ADC_PIN            PB2
 
-#undef LED_STRIP
+#undef USE_LED_STRIP
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

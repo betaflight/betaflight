@@ -39,7 +39,7 @@
 #include "io/statusindicator.h"
 #include "io/vtx_control.h"
 
-#ifdef GPS
+#ifdef USE_GPS
 #include "io/gps.h"
 #endif
 
@@ -331,7 +331,7 @@ void beeperWarningBeeps(uint8_t beepCount)
     beeper(BEEPER_MULTI_BEEPS);
 }
 
-#ifdef GPS
+#ifdef USE_GPS
 static void beeperGpsStatus(void)
 {
     if (!(getBeeperOffMask() & (1 << (BEEPER_GPS_STATUS - 1)))) {
@@ -361,7 +361,7 @@ void beeperUpdate(timeUs_t currentTimeUs)
     // If beeper option from AUX switch has been selected
     if (IS_RC_MODE_ACTIVE(BOXBEEPERON)) {
         beeper(BEEPER_RX_SET);
-#ifdef GPS
+#ifdef USE_GPS
     } else if (feature(FEATURE_GPS) && IS_RC_MODE_ACTIVE(BOXBEEPGPSCOUNT)) {
         beeperGpsStatus();
 #endif

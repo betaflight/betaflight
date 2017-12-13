@@ -44,18 +44,18 @@
 #define USBD_PRODUCT_STRING     "AlienWhoopF7"
 #endif
 
-#define TARGET_CONFIG // see config.c for target specific customizations
+#define USE_TARGET_CONFIG // see config.c for target specific customizations
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 #define BRUSHED_MOTORS
-#define BRUSHED_ESC_AUTODETECT
+#define USE_BRUSHED_ESC_AUTODETECT
 
 /* Visual Alerts - SMD LEDs
  */
 #define LED0_PIN                PC12 // conflicts UART5
 #define LED1_PIN                PD2  // conflicts UART5
 
-#define LED_STRIP
+#define USE_LED_STRIP
 
 /* Lost Quad Mode and Alerts - RCX03-787 Low Voltage Active Buzzer
  */
@@ -105,7 +105,7 @@
 #endif
 
 /* OSD MAX7456E */
-#define OSD
+#define USE_OSD
 
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI2
@@ -124,17 +124,17 @@
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 // MAG
-#define MAG
+#define USE_MAG
 #define USE_MAG_AK8963
 #define MAG_AK8963_ALIGN        CW0_DEG
 #define USE_MAG_DATA_READY_SIGNAL
 #define ENSURE_MAG_DATA_READY_IS_HIGH
 // GYRO
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
 #define GYRO_MPU6500_ALIGN      CW0_DEG
 // ACC
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6500
 #define ACC_MPU6500_ALIGN       CW0_DEG
 
@@ -142,7 +142,7 @@
  * TODO: not implemented on V1 or V2 pcb
  */
 #if defined(BREADBOARD)
-#define BARO
+#define USE_BARO
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
 #define BMP280_SPI_INSTANCE     SPI3
@@ -184,11 +184,9 @@
  */
 /* Assume Spektrum following defines inherited from common_fc_pre.h:
 //#define USE_SERIALRX_SPEKTRUM
-//#define USE_SPEKTRUM_BIND
-//#define USE_SPEKTRUM_BIND_PLUG
 */
+
 #define BINDPLUG_PIN            PC13 // PC13 Current Limited (3 mA). Not suitable for LED/Beeper
-#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
 #define SERIALRX_UART           SERIAL_PORT_USART3
 #define RX_CHANNELS_TAER        //RX_CHANNELS_AETR
 #define SERIALRX_PROVIDER       SERIALRX_SPEKTRUM1024 //SERIALRX_SBUS
@@ -211,7 +209,7 @@
 /* OLED Support
  */
 #if defined(BREADBOARD)
-#define CMS
+#define USE_CMS
 #define USE_I2C
 #define USE_I2C_DEVICE_1
 #define I2C_DEVICE              (I2CDEV_1)
@@ -219,7 +217,7 @@
 #define I2C1_SCL                PB6
 #define I2C1_SDA                PB7
 #else
-//#undef CMS // TODO: OSD depends upon CMS
+//#undef USE_CMS // TODO: OSD depends upon CMS
 #undef USE_I2C
 #endif
 

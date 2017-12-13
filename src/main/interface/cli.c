@@ -24,6 +24,7 @@
 #include <ctype.h>
 
 #include "platform.h"
+#include "common/time.h"
 
 // FIXME remove this for targets that don't need a CLI.  Perhaps use a no-op macro when USE_CLI is not enabled
 // signal that we're in cli mode
@@ -80,14 +81,11 @@ extern uint8_t __config_end;
 #include "drivers/vcd.h"
 #include "drivers/light_led.h"
 #include "drivers/camera_control.h"
+#include "drivers/vtx_common.h"
 
-#include "fc/settings.h"
-#include "fc/cli.h"
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/fc_core.h"
-#include "fc/fc_msp.h"
-#include "fc/fc_msp_box.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
@@ -100,11 +98,15 @@ extern uint8_t __config_end;
 #include "flight/pid.h"
 #include "flight/servos.h"
 
+#include "interface/cli.h"
+#include "interface/msp.h"
+#include "interface/msp_box.h"
+#include "interface/msp_protocol.h"
+#include "interface/settings.h"
+
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/flashfs.h"
-#include "io/displayport_max7456.h"
-#include "io/displayport_msp.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
@@ -112,13 +114,12 @@ extern uint8_t __config_end;
 #include "io/serial.h"
 #include "io/transponder_ir.h"
 #include "io/vtx_control.h"
-#include "io/vtx_settings_config.h"
-
-#include "msp/msp_protocol.h"
+#include "io/vtx.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
-#include "rx/frsky_d.h"
+#include "../rx/cc2500_frsky_common.h"
+#include "../rx/cc2500_frsky_x.h"
 
 #include "scheduler/scheduler.h"
 
@@ -688,7 +689,7 @@ static void cliRxFailsafe(char *cmdline)
 
 static void printAux(uint8_t dumpMask, const modeActivationCondition_t *modeActivationConditions, const modeActivationCondition_t *defaultModeActivationConditions)
 {
-    const char *format = "aux %u %u %u %u %u";
+    const char *format = "aux %u %u %u %u %u %u";
     // print out aux channel settings
     for (uint32_t i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
         const modeActivationCondition_t *mac = &modeActivationConditions[i];
@@ -698,7 +699,8 @@ static void printAux(uint8_t dumpMask, const modeActivationCondition_t *modeActi
             equalsDefault = mac->modeId == macDefault->modeId
                 && mac->auxChannelIndex == macDefault->auxChannelIndex
                 && mac->range.startStep == macDefault->range.startStep
-                && mac->range.endStep == macDefault->range.endStep;
+                && mac->range.endStep == macDefault->range.endStep
+                && mac->modeLogic == macDefault->modeLogic;
             const box_t *box = findBoxByBoxId(macDefault->modeId);
             if (box) {
                 cliDefaultPrintLinef(dumpMask, equalsDefault, format,
@@ -706,7 +708,8 @@ static void printAux(uint8_t dumpMask, const modeActivationCondition_t *modeActi
                     box->permanentId,
                     macDefault->auxChannelIndex,
                     MODE_STEP_TO_CHANNEL_VALUE(macDefault->range.startStep),
-                    MODE_STEP_TO_CHANNEL_VALUE(macDefault->range.endStep)
+                    MODE_STEP_TO_CHANNEL_VALUE(macDefault->range.endStep),
+                    macDefault->modeLogic
                 );
             }
         }
@@ -717,7 +720,8 @@ static void printAux(uint8_t dumpMask, const modeActivationCondition_t *modeActi
                 box->permanentId,
                 mac->auxChannelIndex,
                 MODE_STEP_TO_CHANNEL_VALUE(mac->range.startStep),
-                MODE_STEP_TO_CHANNEL_VALUE(mac->range.endStep)
+                MODE_STEP_TO_CHANNEL_VALUE(mac->range.endStep),
+                mac->modeLogic
             );
         }
     }
@@ -754,10 +758,27 @@ static void cliAux(char *cmdline)
                 }
             }
             ptr = processChannelRangeArgs(ptr, &mac->range, &validArgumentCount);
-
-            if (validArgumentCount != 4) {
+            ptr = nextArg(ptr);
+            if (ptr) {
+                val = atoi(ptr);
+                if (val == MODELOGIC_OR || val == MODELOGIC_AND) {
+                    mac->modeLogic = val;
+                    validArgumentCount++;
+                }
+            }
+            if (validArgumentCount == 4) { // for backwards compatibility
+                mac->modeLogic = MODELOGIC_OR;
+            } else if (validArgumentCount != 5) {
                 memset(mac, 0, sizeof(modeActivationCondition_t));
             }
+            cliPrintLinef( "aux %u %u %u %u %u %u",
+                i,
+                mac->modeId,
+                mac->auxChannelIndex,
+                MODE_STEP_TO_CHANNEL_VALUE(mac->range.startStep),
+                MODE_STEP_TO_CHANNEL_VALUE(mac->range.endStep),
+                mac->modeLogic
+            );
         } else {
             cliShowArgumentRangeError("index", 0, MAX_MODE_ACTIVATION_CONDITION_COUNT - 1);
         }
@@ -924,7 +945,7 @@ static void cliSerialPassthrough(char *cmdline)
         if (!mode)
             mode = MODE_RXTX;
 
-        passThroughPort = openSerialPort(id, FUNCTION_NONE, NULL,
+        passThroughPort = openSerialPort(id, FUNCTION_NONE, NULL, NULL,
                                          baud, mode,
                                          SERIAL_NOT_INVERTED);
         if (!passThroughPort) {
@@ -1225,7 +1246,7 @@ static void cliRxRange(char *cmdline)
     }
 }
 
-#ifdef LED_STRIP
+#ifdef USE_LED_STRIP
 static void printLed(uint8_t dumpMask, const ledConfig_t *ledConfigs, const ledConfig_t *defaultLedConfigs)
 {
     const char *format = "led %u %s";
@@ -2002,13 +2023,13 @@ static void cliFeature(char *cmdline)
             if (strncasecmp(cmdline, featureNames[i], len) == 0) {
 
                 mask = 1 << i;
-#ifndef GPS
+#ifndef USE_GPS
                 if (mask & FEATURE_GPS) {
                     cliPrintLine("unavailable");
                     break;
                 }
 #endif
-#ifndef SONAR
+#ifndef USE_SONAR
                 if (mask & FEATURE_SONAR) {
                     cliPrintLine("unavailable");
                     break;
@@ -2112,12 +2133,24 @@ static void cliBeeper(char *cmdline)
 }
 #endif
 
-#ifdef USE_RX_FRSKY_D
 void cliFrSkyBind(char *cmdline){
     UNUSED(cmdline);
-    frSkyDBind();
-}
+    switch (rxConfig()->rx_spi_protocol) {
+#ifdef USE_RX_FRSKY_SPI
+    case RX_SPI_FRSKY_D:
+    case RX_SPI_FRSKY_X:
+        frSkyBind();
+
+        cliPrint("Binding...");
+
+        break;
 #endif
+    default:
+        cliPrint("Not supported.");
+
+        break;
+    }
+}
 
 static void printMap(uint8_t dumpMask, const rxConfig_t *rxConfig, const rxConfig_t *defaultRxConfig)
 {
@@ -2229,7 +2262,7 @@ static void cliExit(char *cmdline)
     cliWriter = NULL;
 }
 
-#ifdef GPS
+#ifdef USE_GPS
 static void cliGpsPassthrough(char *cmdline)
 {
     UNUSED(cmdline);
@@ -2958,6 +2991,16 @@ static void cliStatus(char *cmdline)
     UNUSED(cmdline);
 
     cliPrintLinef("System Uptime: %d seconds", millis() / 1000);
+    
+    #ifdef USE_RTC_TIME
+    char buf[FORMATTED_DATE_TIME_BUFSIZE];
+    dateTime_t dt;
+    if (rtcGetDateTime(&dt)) {
+        dateTimeFormatLocal(buf, &dt);
+        cliPrintLinef("Current Time: %s", buf);
+    }
+    #endif
+
     cliPrintLinef("Voltage: %d * 0.1V (%dS battery - %s)", getBatteryVoltage(), getBatteryCellCount(), getBatteryStateString());
 
     cliPrintf("CPU Clock=%dMHz", (SystemCoreClock / 1000000));
@@ -3007,10 +3050,10 @@ static void cliStatus(char *cmdline)
     const int systemRate = getTaskDeltaTime(TASK_SYSTEM) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_SYSTEM)));
     cliPrintLinef("CPU:%d%%, cycle time: %d, GYRO rate: %d, RX rate: %d, System rate: %d",
             constrain(averageSystemLoadPercent, 0, 100), getTaskDeltaTime(TASK_GYROPID), gyroRate, rxRate, systemRate);
-#if defined(OSD) || !defined(MINIMAL_CLI)
+#if defined(USE_OSD) || !defined(MINIMAL_CLI)
     /* Flag strings are present if OSD is compiled so may as well use them even with MINIMAL_CLI */
     cliPrint("Arming disable flags:");
-    uint16_t flags = getArmingDisableFlags();
+    armingDisableFlags_e flags = getArmingDisableFlags();
     while (flags) {
         int bitpos = ffs(flags) - 1;
         flags &= ~(1 << bitpos);
@@ -3121,11 +3164,11 @@ const cliResourceValue_t resourceTable[] = {
     { OWNER_PPMINPUT,      PG_PPM_CONFIG, offsetof(ppmConfig_t, ioTag), 0 },
     { OWNER_PWMINPUT,      PG_PWM_CONFIG, offsetof(pwmConfig_t, ioTags[0]), PWM_INPUT_PORT_COUNT },
 #endif
-#ifdef SONAR
+#ifdef USE_SONAR
     { OWNER_SONAR_TRIGGER, PG_SONAR_CONFIG, offsetof(sonarConfig_t, triggerTag), 0 },
     { OWNER_SONAR_ECHO,    PG_SONAR_CONFIG, offsetof(sonarConfig_t, echoTag),    0 },
 #endif
-#ifdef LED_STRIP
+#ifdef USE_LED_STRIP
     { OWNER_LED_STRIP,     PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ioTag),   0 },
 #endif
     { OWNER_SERIAL_TX,     PG_SERIAL_PIN_CONFIG, offsetof(serialPinConfig_t, ioTagTx[0]), SERIAL_PORT_MAX_INDEX },
@@ -3142,7 +3185,7 @@ const cliResourceValue_t resourceTable[] = {
     { OWNER_RX_BIND,       PG_RX_CONFIG, offsetof(rxConfig_t, spektrum_bind_pin_override_ioTag), 0 },
     { OWNER_RX_BIND_PLUG,  PG_RX_CONFIG, offsetof(rxConfig_t, spektrum_bind_plug_ioTag), 0 },
 #endif
-#ifdef TRANSPONDER
+#ifdef USE_TRANSPONDER
     { OWNER_TRANSPONDER,   PG_TRANSPONDER_CONFIG, offsetof(transponderConfig_t, ioTag), 0 },
 #endif
 #ifdef USE_SPI
@@ -3162,10 +3205,10 @@ const cliResourceValue_t resourceTable[] = {
     { OWNER_ADC_CURR,      PG_ADC_CONFIG, offsetof(adcConfig_t, current.ioTag), 0 },
     { OWNER_ADC_EXT,       PG_ADC_CONFIG, offsetof(adcConfig_t, external1.ioTag), 0 },
 #endif
-#ifdef BARO
+#ifdef USE_BARO
     { OWNER_BARO_CS,       PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_spi_csn), 0 },
 #endif
-#ifdef MAG
+#ifdef USE_MAG
     { OWNER_COMPASS_CS,    PG_COMPASS_CONFIG, offsetof(compassConfig_t, mag_spi_csn), 0 },
 #endif
 };
@@ -3430,7 +3473,7 @@ static void printConfig(char *cmdline, bool doDiff)
     // reset all configs to defaults to do differencing
     resetConfigs();
 
-#if defined(TARGET_CONFIG)
+#if defined(USE_TARGET_CONFIG)
     targetConfiguration();
 #endif
     if (checkCommand(options, "defaults")) {
@@ -3491,7 +3534,7 @@ static void printConfig(char *cmdline, bool doDiff)
         cliPrintHashLine("serial");
         printSerial(dumpMask, &serialConfig_Copy, serialConfig());
 
-#ifdef LED_STRIP
+#ifdef USE_LED_STRIP
         cliPrintHashLine("led");
         printLed(dumpMask, ledStripConfig_Copy.ledConfigs, ledStripConfig()->ledConfigs);
 
@@ -3599,13 +3642,13 @@ static void cliHelp(char *cmdline);
 // should be sorted a..z for bsearch()
 const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("adjrange", "configure adjustment ranges", NULL, cliAdjustmentRange),
-    CLI_COMMAND_DEF("aux", "configure modes", NULL, cliAux),
+    CLI_COMMAND_DEF("aux", "configure modes", "<index> <mode> <aux> <start> <end> <logic>", cliAux),
 #ifdef BEEPER
     CLI_COMMAND_DEF("beeper", "turn on/off beeper", "list\r\n"
         "\t<+|->[name]", cliBeeper),
 #endif
     CLI_COMMAND_DEF("bl", "reboot into bootloader", NULL, cliBootloader),
-#ifdef LED_STRIP
+#ifdef USE_LED_STRIP
     CLI_COMMAND_DEF("color", "configure colors", NULL, cliColor),
 #endif
     CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", "[nosave]", cliDefaults),
@@ -3630,16 +3673,16 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("flash_read", NULL, "<length> <address>", cliFlashRead),
     CLI_COMMAND_DEF("flash_write", NULL, "<address> <message>", cliFlashWrite),
 #endif
-#ifdef USE_RX_FRSKY_D
-    CLI_COMMAND_DEF("frsky_bind", NULL, NULL, cliFrSkyBind),
 #endif
+#ifdef USE_RX_FRSKY_SPI
+    CLI_COMMAND_DEF("frsky_bind", "initiate binding for FrSky SPI RX", NULL, cliFrSkyBind),
 #endif
     CLI_COMMAND_DEF("get", "get variable value", "[name]", cliGet),
-#ifdef GPS
+#ifdef USE_GPS
     CLI_COMMAND_DEF("gpspassthrough", "passthrough gps to serial", NULL, cliGpsPassthrough),
 #endif
     CLI_COMMAND_DEF("help", NULL, NULL, cliHelp),
-#ifdef LED_STRIP
+#ifdef USE_LED_STRIP
     CLI_COMMAND_DEF("led", "configure leds", NULL, cliLed),
 #endif
     CLI_COMMAND_DEF("map", "configure rc channel order", "[<map>]", cliMap),
@@ -3647,7 +3690,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("mixer", "configure mixer", "list\r\n\t<name>", cliMixer),
 #endif
     CLI_COMMAND_DEF("mmix", "custom motor mixer", NULL, cliMotorMix),
-#ifdef LED_STRIP
+#ifdef USE_LED_STRIP
     CLI_COMMAND_DEF("mode_color", "configure mode and special colors", NULL, cliModeColor),
 #endif
     CLI_COMMAND_DEF("motor",  "get/set motor", "<index> [<value>]", cliMotor),
@@ -3689,6 +3732,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("vtx", "vtx channels on switch", NULL, cliVtx),
 #endif
 };
+
 static void cliHelp(char *cmdline)
 {
     UNUSED(cmdline);
