@@ -146,7 +146,6 @@ static telemetrySequenceMarker_t responseToSend;
 
 static uint8_t ccLen;
 static uint32_t missingPackets;
-static uint8_t calData[255][3];
 static uint8_t cnt;
 static timeDelta_t t_out;
 static timeUs_t packet_timer;
@@ -295,59 +294,6 @@ static void frSkyXTelemetryWriteFrame(const smartPortPayload_t *payload)
 #endif // USE_RX_FRSKY_SPI_TELEMETRY
 
 
-static void initialize() {
-    cc2500Reset();
-    cc2500WriteReg(CC2500_02_IOCFG0,   0x01);
-    cc2500WriteReg(CC2500_17_MCSM1,    0x0C);
-    cc2500WriteReg(CC2500_18_MCSM0,    0x18);
-    cc2500WriteReg(CC2500_06_PKTLEN,   0x1E);
-    cc2500WriteReg(CC2500_07_PKTCTRL1, 0x04);
-    cc2500WriteReg(CC2500_08_PKTCTRL0, 0x01);
-    cc2500WriteReg(CC2500_3E_PATABLE,  0xFF);
-    cc2500WriteReg(CC2500_0B_FSCTRL1,  0x0A);
-    cc2500WriteReg(CC2500_0C_FSCTRL0,  0x00);
-    cc2500WriteReg(CC2500_0D_FREQ2,    0x5C);
-    cc2500WriteReg(CC2500_0E_FREQ1,    0x76);
-    cc2500WriteReg(CC2500_0F_FREQ0,    0x27);
-    cc2500WriteReg(CC2500_10_MDMCFG4,  0x7B);
-    cc2500WriteReg(CC2500_11_MDMCFG3,  0x61);
-    cc2500WriteReg(CC2500_12_MDMCFG2,  0x13);
-    cc2500WriteReg(CC2500_13_MDMCFG1,  0x23);
-    cc2500WriteReg(CC2500_14_MDMCFG0,  0x7A);
-    cc2500WriteReg(CC2500_15_DEVIATN,  0x51);
-    cc2500WriteReg(CC2500_19_FOCCFG,   0x16);
-    cc2500WriteReg(CC2500_1A_BSCFG,    0x6C);
-    cc2500WriteReg(CC2500_1B_AGCCTRL2, 0x03);
-    cc2500WriteReg(CC2500_1C_AGCCTRL1, 0x40);
-    cc2500WriteReg(CC2500_1D_AGCCTRL0, 0x91);
-    cc2500WriteReg(CC2500_21_FREND1,   0x56);
-    cc2500WriteReg(CC2500_22_FREND0,   0x10);
-    cc2500WriteReg(CC2500_23_FSCAL3,   0xA9);
-    cc2500WriteReg(CC2500_24_FSCAL2,   0x0A);
-    cc2500WriteReg(CC2500_25_FSCAL1,   0x00);
-    cc2500WriteReg(CC2500_26_FSCAL0,   0x11);
-    cc2500WriteReg(CC2500_29_FSTEST,   0x59);
-    cc2500WriteReg(CC2500_2C_TEST2,    0x88);
-    cc2500WriteReg(CC2500_2D_TEST1,    0x31);
-    cc2500WriteReg(CC2500_2E_TEST0,    0x0B);
-    cc2500WriteReg(CC2500_03_FIFOTHR,  0x07);
-    cc2500WriteReg(CC2500_09_ADDR,     0x00);
-    cc2500Strobe(CC2500_SIDLE);	// Go to idle...
-
-    for(uint8_t c=0;c<0xFF;c++)
-    {//calibrate all channels
-        cc2500Strobe(CC2500_SIDLE);
-        cc2500WriteReg(CC2500_0A_CHANNR, c);
-        cc2500Strobe(CC2500_SCAL);
-        delayMicroseconds(900);	//
-        calData[c][0] = cc2500ReadReg(CC2500_23_FSCAL3);
-        calData[c][1] = cc2500ReadReg(CC2500_24_FSCAL2);
-        calData[c][2] = cc2500ReadReg(CC2500_25_FSCAL1);
-    }
-    //#######END INIT########
-}
-
-
 void frSkyXSetRcData(uint16_t *rcData, const uint8_t *packet)
 {
     uint16_t c[8];
@@ -396,14 +342,14 @@ rx_spi_received_e frSkyXDataReceived(uint8_t *packet)
     case STATE_BIND_BINDING1:
     case STATE_BIND_BINDING2:
     case STATE_BIND_COMPLETE:
-        handleBinding(protocolState, packet);
+        protocolState = handleBinding(protocolState, packet);
 
         break;
     case STATE_STARTING:
         listLength = 47;
         initialiseData(0);
         protocolState = STATE_UPDATE;
-        nextChannel(1, false); //
+        nextChannel(1);
         cc2500Strobe(CC2500_SRX);
         ret = RX_SPI_RECEIVED_BIND;		
         break;
@@ -433,7 +379,7 @@ rx_spi_received_e frSkyXDataReceived(uint8_t *packet)
                     if (packet[0] == 0x1D) {
                         if ((packet[1] == rxFrSkySpiConfig()->bindTxId[0]) &&
                                 (packet[2] == rxFrSkySpiConfig()->bindTxId[1]) &&
-                                (packet[6]==rxFrSkySpiConfig()->rxNum)) {
+                                (rxFrSkySpiConfig()->rxNum == 0 || packet[6] == 0 || packet[6] == rxFrSkySpiConfig()->rxNum)) {
                             missingPackets = 0;
                             t_out = 1;
                             t_received = 0;
@@ -523,7 +469,7 @@ rx_spi_received_e frSkyXDataReceived(uint8_t *packet)
 #if defined(USE_RX_FRSKY_SPI_TELEMETRY)
             setRssiFiltered(0, RSSI_SOURCE_RX_PROTOCOL);
 #endif
-            nextChannel(1, false);
+            nextChannel(1);
             cc2500Strobe(CC2500_SRX);
             protocolState = STATE_UPDATE;
         }
@@ -580,7 +526,7 @@ rx_spi_received_e frSkyXDataReceived(uint8_t *packet)
             packet_timer = micros();
             t_received=5300;
             frame_received=false;//again set for receive
-            nextChannel(chanskip, false);
+            nextChannel(chanskip);
             cc2500Strobe(CC2500_SRX);
 #ifdef USE_RX_FRSKY_SPI_PA_LNA
             RxEnable();
@@ -620,11 +566,15 @@ void frSkyXInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 
     rxRuntimeConfig->channelCount = RC_CHANNEL_COUNT;
 
-    frskySpiRxSetup();
+    protocolState = STATE_INIT;
+    missingPackets = 0;
+    t_out = 50;
 
 #if defined(USE_TELEMETRY_SMARTPORT)
      telemetryEnabled = initSmartPortTelemetryExternal(frSkyXTelemetryWriteFrame);
 #endif
+
+     frskySpiRxSetup(rxConfig->rx_spi_protocol);
 }
 
 #endif
