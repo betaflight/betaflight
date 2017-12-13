@@ -98,6 +98,9 @@ typedef union gyroSoftFilter_u {
 typedef struct gyroSensor_s {
     gyroDev_t gyroDev;
     gyroCalibration_t calibration;
+    // gyro kalman filter
+    filterApplyFnPtr fastKalmanApplyFn;
+    fastKalman_t fastKalman[XYZ_AXIS_COUNT];
     // gyro soft filter
     filterApplyFnPtr softLpfFilterApplyFn;
     gyroSoftLpfFilter_t softLpfFilter;
@@ -113,6 +116,7 @@ typedef struct gyroSensor_s {
 
 static gyroSensor_t gyroSensor1;
 
+static void gyroInitFilterKalman(gyroSensor_t *gyroSensor, uint8_t gyro_kalman_enable, uint16_t gyro_kalman_q, uint16_t gyro_kalman_r, uint16_t gyro_kalman_p);
 static void gyroInitSensorFilters(gyroSensor_t *gyroSensor);
 
 #define DEBUG_GYRO_CALIBRATION 3
@@ -141,7 +145,11 @@ PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
     .gyro_soft_notch_hz_1 = 400,
     .gyro_soft_notch_cutoff_1 = 300,
     .gyro_soft_notch_hz_2 = 200,
-    .gyro_soft_notch_cutoff_2 = 100
+    .gyro_soft_notch_cutoff_2 = 100,
+    .gyro_kalman_enable = 0,
+    .gyro_kalman_q = 110,
+    .gyro_kalman_r = 55,
+    .gyro_kalman_p = 0
 );
 
 
@@ -500,11 +508,24 @@ static void gyroInitFilterDynamicNotch(gyroSensor_t *gyroSensor)
 }
 #endif
 
+static void gyroInitFilterKalman(gyroSensor_t *gyroSensor, uint8_t gyro_kalman_enable, uint16_t gyro_kalman_q, uint16_t gyro_kalman_r, uint16_t gyro_kalman_p)
+{
+    gyroSensor->fastKalmanApplyFn = nullFilterApply;
+    if(gyro_kalman_enable)
+    {
+        gyroSensor->fastKalmanApplyFn = (filterApplyFnPtr)fastKalmanUpdate;
+        for (int axis = 0; axis < 3; axis++) {
+            fastKalmanInit(&gyroSensor->fastKalman[axis], (float)gyro_kalman_q, (float)gyro_kalman_r, (float)gyro_kalman_p, 0.0f, (float)gyro.targetLooptime * 0.000001f);
+        }
+    }
+}
+
 static void gyroInitSensorFilters(gyroSensor_t *gyroSensor)
 {
 #if defined(USE_GYRO_SLEW_LIMITER)
     gyroInitSlewLimiter(gyroSensor);
 #endif
+    gyroInitFilterKalman(gyroSensor, gyroConfig()->gyro_kalman_enable, gyroConfig()->gyro_kalman_q, gyroConfig()->gyro_kalman_r, gyroConfig()->gyro_kalman_p);
     gyroInitFilterLpf(gyroSensor, gyroConfig()->gyro_soft_lpf_hz);
     gyroInitFilterNotch1(gyroSensor, gyroConfig()->gyro_soft_notch_hz_1, gyroConfig()->gyro_soft_notch_cutoff_1);
     gyroInitFilterNotch2(gyroSensor, gyroConfig()->gyro_soft_notch_hz_2, gyroConfig()->gyro_soft_notch_cutoff_2);
@@ -657,6 +678,7 @@ static void gyroUpdateSensor(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
             // NOTE: this branch optimized for when there is no gyro debugging, ensure it is kept in step with non-optimized branch
             float gyroADCf = (float)gyroSensor->gyroDev.gyroADC[axis] * gyroSensor->gyroDev.scale;
+            gyroADCf = gyroSensor->fastKalmanApplyFn(&gyroSensor->fastKalman[axis], gyroADCf);
 #ifdef USE_GYRO_DATA_ANALYSE
             gyroADCf = gyroSensor->notchFilterDynApplyFn(&gyroSensor->notchFilterDyn[axis], gyroADCf);
 #endif
@@ -686,6 +708,9 @@ static void gyroUpdateSensor(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
                 }
             }
 #endif
+
+            // Apply Fast Kalman
+            gyroADCf = gyroSensor->fastKalmanApplyFn(&gyroSensor->fastKalman[axis], gyroADCf);
 
             // Apply Static Notch filtering
             gyroADCf = gyroSensor->notchFilter1ApplyFn(&gyroSensor->notchFilter1[axis], gyroADCf);

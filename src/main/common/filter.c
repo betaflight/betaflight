@@ -315,3 +315,41 @@ float firFilterDenoiseUpdate(firFilterDenoise_t *filter, float input)
         return filter->movingSum / ++filter->filledCount + 1;
     }
 }
+
+//Fast two-state Kalman
+void fastKalmanInit(fastKalman_t *filter, float q, float r, float p, float intialValue, float dT)
+{
+	filter->q     = q * 0.000001f; //add multiplier to make tuning easier
+	filter->r     = r * 0.001f;    //add multiplier to make tuning easier
+	filter->p     = p * 0.001f;    //add multiplier to make tuning easier
+	filter->x     = intialValue;   //set intial value, can be zero if unknown
+	filter->lastX = intialValue;   //set intial value, can be zero if unknown
+	filter->k     = 0.0f;          //kalman gain, 
+	filter->dT    = dT;            //deltaT
+	filter->idT   = 1.0f / dT;     //Inverse deltaT, faster to multiply than divide   
+}
+
+float fastKalmanUpdate(fastKalman_t *filter, float input)
+{
+
+	float acceleration;
+
+    //find expected acceleration using he last two states
+    acceleration = (filter->x - filter->lastX) * filter->idT;
+
+    //project the state ahead using the acceleration calculated above
+    filter->x += (acceleration * filter->dT);
+
+    //update last state
+    filter->lastX = filter->x;
+
+	//prediction update
+	filter->p = filter->p + filter->q;
+
+	//measurement update
+	filter->k = filter->p / (filter->p + filter->r);
+	filter->x += filter->k * (input - filter->x);
+	filter->p = (1.0f - filter->k) * filter->p;
+
+    return filter->x;
+}
