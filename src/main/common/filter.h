@@ -58,8 +58,6 @@ typedef struct fastKalman_s {
     float p;       //estimation error covariance matrix
     float k;       //kalman gain
     float x;       //state
-    float dT;      //deltaT
-    float idT;     //inverse deltaT
     float lastX;   //previous state
 } fastKalman_t;
 
@@ -96,7 +94,7 @@ void biquadFilterUpdate(biquadFilter_t *filter, float filterFreq, uint32_t refre
 float biquadFilterApplyDF1(biquadFilter_t *filter, float input);
 float biquadFilterApply(biquadFilter_t *filter, float input);
 float filterGetNotchQ(uint16_t centerFreq, uint16_t cutoff);
-void fastKalmanInit(fastKalman_t *filter, float q, float r, float p, float intialValue, float dT);
+void fastKalmanInit(fastKalman_t *filter, float q, float r, float p, float intialValue);
 float fastKalmanUpdate(fastKalman_t *filter, float input);
 
 // not exactly correct, but very very close and much much faster

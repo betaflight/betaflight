@@ -515,7 +515,7 @@ static void gyroInitFilterKalman(gyroSensor_t *gyroSensor, uint8_t gyro_kalman_e
     {
         gyroSensor->fastKalmanApplyFn = (filterApplyFnPtr)fastKalmanUpdate;
         for (int axis = 0; axis < 3; axis++) {
-            fastKalmanInit(&gyroSensor->fastKalman[axis], (float)gyro_kalman_q, (float)gyro_kalman_r, (float)gyro_kalman_p, 0.0f, (float)gyro.targetLooptime * 0.000001f);
+            fastKalmanInit(&gyroSensor->fastKalman[axis], (float)gyro_kalman_q, (float)gyro_kalman_r, (float)gyro_kalman_p, 0.0f);
         }
     }
 }
