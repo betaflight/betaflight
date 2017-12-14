@@ -49,9 +49,10 @@
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 
-#define USE_SONAR
-#define SONAR_TRIGGER_PIN       PB0
-#define SONAR_ECHO_PIN          PB1
+#define USE_RANGEFINDER
+#define USE_RANGEFINDER_HCSR04
+#define RANGEFINDER_HCSR04_TRIGGER_PIN       PB0
+#define RANGEFINDER_HCSR04_ECHO_PIN          PB1
 
 #define USE_UART1
 #define USE_UART2

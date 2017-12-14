@@ -72,7 +72,11 @@ typedef enum {
 #ifdef USE_MAX7456
     TABLE_MAX7456_CLOCK,
 #endif
+#ifdef USE_RANGEFINDER
+    TABLE_RANGEFINDER_HARDWARE,
+#endif
     LOOKUP_TABLE_COUNT
+
 } lookupTableIndex_e;
 
 typedef struct lookupTableEntry_s {
@@ -153,3 +157,5 @@ extern const char * const lookupTableBaroHardware[];
 
 extern const char * const lookupTableMagHardware[];
 //extern const uint8_t lookupTableMagHardwareEntryCount;
+
+extern const char * const lookupTableRangefinderHardware[];

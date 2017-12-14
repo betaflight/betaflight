@@ -75,7 +75,7 @@ typedef enum {
     HEADFREE_MODE   = (1 << 6),
     UNUSED_MODE     = (1 << 7), // old autotune
     PASSTHRU_MODE   = (1 << 8),
-    SONAR_MODE      = (1 << 9),
+    RANGEFINDER_MODE= (1 << 9),
     FAILSAFE_MODE   = (1 << 10)
 } flightModeFlags_e;
 
@@ -90,7 +90,7 @@ extern uint16_t flightModeFlags;
 // It is much more memory efficient than full map (uint32_t -> uint8_t)
 #define FLIGHT_MODE_BOXID_MAP_INITIALIZER {                             \
         BOXANGLE, BOXHORIZON, BOXMAG, BOXBARO, BOXGPSHOME, BOXGPSHOLD,  \
-        BOXHEADFREE, -1, BOXPASSTHRU, BOXSONAR, BOXFAILSAFE}  \
+        BOXHEADFREE, -1, BOXPASSTHRU, BOXRANGEFINDER, BOXFAILSAFE}  \
         /**/
 
 typedef enum {

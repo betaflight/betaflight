@@ -17,24 +17,40 @@
 
 #pragma once
 
+#include "common/time.h"
 #include "drivers/io_types.h"
 
-typedef struct sonarConfig_s {
+#define RANGEFINDER_OUT_OF_RANGE        (-1)
+#define RANGEFINDER_HARDWARE_FAILURE    (-2)
+#define RANGEFINDER_NO_NEW_DATA         (-3)
+
+struct rangefinderDev_s;
+
+typedef struct rangefinderHardwarePins_s {
     ioTag_t triggerTag;
     ioTag_t echoTag;
-} sonarConfig_t;
+} rangefinderHardwarePins_t;
 
-typedef struct sonarRange_s {
+struct rangefinderDev_s;
+
+typedef void (*rangefinderOpInitFuncPtr)(struct rangefinderDev_s * dev);
+typedef void (*rangefinderOpStartFuncPtr)(struct rangefinderDev_s * dev);
+typedef int32_t (*rangefinderOpReadFuncPtr)(struct rangefinderDev_s * dev);
+
+typedef struct rangefinderDev_s {
+    timeMs_t delayMs;
     int16_t maxRangeCm;
+
     // these are full detection cone angles, maximum tilt is half of this
-    int16_t detectionConeDeciDegrees; // detection cone angle as in HC-SR04 device spec
+    int16_t detectionConeDeciDegrees; // detection cone angle as in device spec
     int16_t detectionConeExtendedDeciDegrees; // device spec is conservative, in practice have slightly larger detection cone
-} sonarRange_t;
 
-#define HCSR04_MAX_RANGE_CM 400 // 4m, from HC-SR04 spec sheet
-#define HCSR04_DETECTION_CONE_DECIDEGREES 300 // recommended cone angle30 degrees, from HC-SR04 spec sheet
-#define HCSR04_DETECTION_CONE_EXTENDED_DECIDEGREES 450 // in practice 45 degrees seems to work well
+    // function pointers
+    rangefinderOpInitFuncPtr init;
+    rangefinderOpStartFuncPtr update;
+    rangefinderOpReadFuncPtr read;
+} rangefinderDev_t;
 
-void hcsr04_init(const sonarConfig_t *sonarConfig, sonarRange_t *sonarRange);
-void hcsr04_start_reading(void);
-int32_t hcsr04_get_distance(void);
+extern int16_t rangefinderMaxRangeCm;
+extern int16_t rangefinderMaxAltWithTiltCm;
+extern int16_t rangefinderCfAltCm;
