@@ -108,10 +108,10 @@ PG_REGISTER_ARRAY(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer, PG_MOTOR
 
 #define TRICOPTER_ERROR_RATE_YAW_SATURATED 75 // rate at which tricopter yaw axis becomes saturated, determined experimentally by TriFlight
 
-static uint8_t motorCount;
-static float motorMixRange;
+static FAST_RAM uint8_t motorCount;
+static FAST_RAM float motorMixRange;
 
-float motor[MAX_SUPPORTED_MOTORS];
+float FAST_RAM motor[MAX_SUPPORTED_MOTORS];
 float motor_disarmed[MAX_SUPPORTED_MOTORS];
 
 mixerMode_e currentMixerMode;
@@ -306,12 +306,12 @@ const mixer_t mixers[] = {
 };
 #endif // !USE_QUAD_MIXER_ONLY
 
-float motorOutputHigh, motorOutputLow;
+FAST_RAM float motorOutputHigh, motorOutputLow;
 
-static float disarmMotorOutput, deadbandMotor3dHigh, deadbandMotor3dLow;
-static uint16_t rcCommand3dDeadBandLow;
-static uint16_t rcCommand3dDeadBandHigh;
-static float rcCommandThrottleRange, rcCommandThrottleRange3dLow, rcCommandThrottleRange3dHigh;
+static FAST_RAM float disarmMotorOutput, deadbandMotor3dHigh, deadbandMotor3dLow;
+static FAST_RAM uint16_t rcCommand3dDeadBandLow;
+static FAST_RAM uint16_t rcCommand3dDeadBandHigh;
+static FAST_RAM float rcCommandThrottleRange, rcCommandThrottleRange3dLow, rcCommandThrottleRange3dHigh;
 
 uint8_t getMotorCount(void)
 {
@@ -513,12 +513,12 @@ void stopPwmAllMotors(void)
     delayMicroseconds(1500);
 }
 
-static float throttle = 0;
-static float motorOutputMin;
-static float motorRangeMin;
-static float motorRangeMax;
-static float motorOutputRange;
-static int8_t motorOutputMixSign;
+static FAST_RAM float throttle = 0;
+static FAST_RAM float motorOutputMin;
+static FAST_RAM float motorRangeMin;
+static FAST_RAM float motorRangeMax;
+static FAST_RAM float motorOutputRange;
+static FAST_RAM int8_t motorOutputMixSign;
 
 static FAST_CODE void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
 {

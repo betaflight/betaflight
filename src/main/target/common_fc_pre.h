@@ -82,6 +82,17 @@
 #define FAST_CODE
 #endif
 
+#ifdef USE_FAST_RAM
+#ifdef __APPLE__
+#define FAST_RAM                    __attribute__ ((section("__DATA,__.fastram_bss"), aligned(4)))
+#else
+#define FAST_RAM                    __attribute__ ((section(".fastram_bss"), aligned(4)))
+#endif
+#else
+#define FAST_RAM
+#endif // USE_FAST_RAM
+
+
 #define USE_CLI
 #define USE_PPM
 #define USE_PWM

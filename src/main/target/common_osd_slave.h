@@ -57,6 +57,7 @@
 #endif
 
 #define FAST_CODE
+#define FAST_RAM
 
 //CLI needs FC dependencies removed before we can compile it, disabling for now
 //#define USE_CLI

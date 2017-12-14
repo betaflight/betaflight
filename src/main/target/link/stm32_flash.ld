@@ -125,6 +125,15 @@ SECTIONS
     _ebss = .;         /* define a global symbol at bss end */
     __bss_end__ = _ebss;
   } >RAM
+  
+  .fastram_bss (NOLOAD) :
+  {
+    __fastram_bss_start__ = .;
+    *(.fastram_bss)
+    *(SORT_BY_ALIGNMENT(.fastram_bss*))
+    . = ALIGN(4);
+    __fastram_bss_end__ = .;
+  } >FASTRAM
 
   /* User_heap_stack section, used to check that there is enough RAM left */
   _heap_stack_end = ORIGIN(STACKRAM)+LENGTH(STACKRAM) - 8; /* 8 bytes to allow for alignment */

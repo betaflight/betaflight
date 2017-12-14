@@ -67,7 +67,7 @@
 #endif
 
 
-acc_t acc;                       // acc access functions
+FAST_RAM acc_t acc;                       // acc access functions
 
 static float accumulatedMeasurements[XYZ_AXIS_COUNT];
 static int accumulatedMeasurementCount;
