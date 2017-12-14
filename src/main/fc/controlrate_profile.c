@@ -50,7 +50,11 @@ void pgResetFn_controlRateProfiles(controlRateConfig_t *controlRateConfig)
             .tpa_breakpoint = 1650,
             .rates[FD_ROLL] = 70,
             .rates[FD_PITCH] = 70,
-            .rates[FD_YAW] = 70
+            .rates[FD_YAW] = 70,
+            .rfRatesEnabled = 0,
+            .rfRate = 400,
+            .rfAcro = 140,
+            .rfExpo = 50
         );
     }
 }

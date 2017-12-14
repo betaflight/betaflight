@@ -118,16 +118,22 @@ static void calculateSetpointRate(int axis)
     rcDeflection[axis] = rcCommandf;
     const float rcCommandfAbs = ABS(rcCommandf);
     rcDeflectionAbs[axis] = rcCommandfAbs;
+    float angleRate;
 
-    if (rcExpo) {
-        const float expof = rcExpo / 100.0f;
-        rcCommandf = rcCommandf * power3(rcCommandfAbs) * expof + rcCommandf * (1-expof);
-    }
+    if (currentControlRateProfile->rfRatesEnabled) {
+        rcCommandf = ((1.0f + 0.01f * currentControlRateProfile->rfExpo * (rcCommandf * rcCommandf - 1.0f)) * rcCommandf);
+        angleRate = (rcCommandf * ( currentControlRateProfile->rfRate + ( rcCommandfAbs * currentControlRateProfile->rfRate * currentControlRateProfile->rfAcro ) ) );
+    } else {
+        if (rcExpo) {
+            const float expof = rcExpo / 100.0f;
+            rcCommandf = rcCommandf * power3(rcCommandfAbs) * expof + rcCommandf * (1-expof);
+        }
 
-    float angleRate = 200.0f * rcRate * rcCommandf;
-    if (currentControlRateProfile->rates[axis]) {
-        const float rcSuperfactor = 1.0f / (constrainf(1.0f - (rcCommandfAbs * (currentControlRateProfile->rates[axis] / 100.0f)), 0.01f, 1.00f));
-        angleRate *= rcSuperfactor;
+        angleRate = 200.0f * rcRate * rcCommandf;
+        if (currentControlRateProfile->rates[axis]) {
+            const float rcSuperfactor = 1.0f / (constrainf(1.0f - (rcCommandfAbs * (currentControlRateProfile->rates[axis] / 100.0f)), 0.01f, 1.00f));
+            angleRate *= rcSuperfactor;
+        }
     }
 
     DEBUG_SET(DEBUG_ANGLERATE, axis, angleRate);
