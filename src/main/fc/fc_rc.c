@@ -121,8 +121,10 @@ static void calculateSetpointRate(int axis)
     float angleRate;
 
     if (currentControlRateProfile->rfRatesEnabled) {
-        rcCommandf = ((1.0f + 0.01f * currentControlRateProfile->rfExpo * (rcCommandf * rcCommandf - 1.0f)) * rcCommandf);
-        angleRate = (rcCommandf * ( currentControlRateProfile->rfRate + ( rcCommandfAbs * currentControlRateProfile->rfRate * currentControlRateProfile->rfAcro ) ) );
+        // -1.0 to 1.0 ranged and curved 
+        rcCommandf = ((1.0f + 0.01f * (float)currentControlRateProfile->rfExpo * (rcCommandf * rcCommandf - 1.0f)) * rcCommandf);
+        // convert to -2000 to 2000 range using acro+ modifier
+        angleRate = (rcCommandf * ( (float)currentControlRateProfile->rfRate + ( rcCommandfAbs * (float)currentControlRateProfile->rfRate * (float)currentControlRateProfile->rfAcro * 0.01f ) ) );
     } else {
         if (rcExpo) {
             const float expof = rcExpo / 100.0f;
