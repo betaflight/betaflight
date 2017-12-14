@@ -78,6 +78,7 @@ FAST_RAM gyro_t gyro;
 static FAST_RAM uint8_t gyroDebugMode;
 
 static FAST_RAM float accumulatedMeasurements[XYZ_AXIS_COUNT];
+static FAST_RAM float gyroPrevious[XYZ_AXIS_COUNT];
 static FAST_RAM timeUs_t accumulatedMeasurementTimeUs;
 static FAST_RAM timeUs_t accumulationLastTimeSampledUs;
 
@@ -664,7 +665,9 @@ static FAST_CODE void gyroUpdateSensor(gyroSensor_t *gyroSensor, timeUs_t curren
             gyroADCf = gyroSensor->notchFilter2ApplyFn(&gyroSensor->notchFilter2[axis], gyroADCf);
             gyroADCf = gyroSensor->softLpfFilterApplyFn(gyroSensor->softLpfFilterPtr[axis], gyroADCf);
             gyro.gyroADCf[axis] = gyroADCf;
-            accumulatedMeasurements[axis] += gyroADCf * sampleDeltaUs;
+            // integrate using trapezium rule to avoid bias
+            accumulatedMeasurements[axis] += 0.5f * (gyroPrevious[axis] + gyroADCf) * sampleDeltaUs;
+            gyroPrevious[axis] = gyroADCf;
         }
     } else {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
@@ -696,7 +699,9 @@ static FAST_CODE void gyroUpdateSensor(gyroSensor_t *gyroSensor, timeUs_t curren
             gyroADCf = gyroSensor->softLpfFilterApplyFn(gyroSensor->softLpfFilterPtr[axis], gyroADCf);
 
             gyro.gyroADCf[axis] = gyroADCf;
-            accumulatedMeasurements[axis] += gyroADCf * sampleDeltaUs;
+            // integrate using trapezium rule to avoid bias
+            accumulatedMeasurements[axis] += 0.5f * (gyroPrevious[axis] + gyroADCf) * sampleDeltaUs;
+            gyroPrevious[axis] = gyroADCf;
         }
     }
 }
