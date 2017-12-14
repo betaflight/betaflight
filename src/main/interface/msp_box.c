@@ -64,7 +64,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOXOSD, "OSD DISABLE SW", 19 },
     { BOXTELEMETRY, "TELEMETRY", 20 },
     { BOXGTUNE, "GTUNE", 21 },
-    { BOXSONAR, "SONAR", 22 },
+    { BOXALTIMETER, "ALTIMETER", 22 },
     { BOXSERVO1, "SERVO1", 23 },
     { BOXSERVO2, "SERVO2", 24 },
     { BOXSERVO3, "SERVO3", 25 },
@@ -188,10 +188,8 @@ void initActiveBoxIds(void)
     }
 #endif
 
-#ifdef USE_SONAR
-    if (feature(FEATURE_SONAR)) {
-        BME(BOXSONAR);
-    }
+#ifdef USE_ALTIMETER
+    BME(BOXALTIMETER);
 #endif
 
     BME(BOXFAILSAFE);

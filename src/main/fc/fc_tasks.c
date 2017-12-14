@@ -77,7 +77,7 @@
 #include "sensors/esc_sensor.h"
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
-#include "sensors/sonar.h"
+#include "sensors/altimeter.h"
 
 #include "scheduler/scheduler.h"
 
@@ -139,7 +139,7 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
     isRXDataNew = true;
 
 #if !defined(USE_ALT_HOLD)
-    // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
+    // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateAltimeterAltHoldState
     updateRcCommands();
 #endif
     updateArmingStatus();
@@ -151,9 +151,9 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
     }
 #endif
 
-#ifdef USE_SONAR
-    if (sensors(SENSOR_SONAR)) {
-        updateSonarAltHoldState();
+#ifdef USE_ALTIMETER
+    if (sensors(SENSOR_ALTIMETER)) {
+        updateAltimeterAltHoldState();
     }
 #endif
 #endif // USE_ALT_HOLD
@@ -183,20 +183,20 @@ static void taskUpdateBaro(timeUs_t currentTimeUs)
 }
 #endif
 
-#if defined(USE_BARO) || defined(USE_SONAR)
+#if defined(USE_BARO) || defined(USE_ALTIMETER)
 static void taskCalculateAltitude(timeUs_t currentTimeUs)
 {
     if (false
 #if defined(USE_BARO)
         || (sensors(SENSOR_BARO) && isBaroReady())
 #endif
-#if defined(USE_SONAR)
-        || sensors(SENSOR_SONAR)
+#if defined(USE_ALTIMETER)
+        || sensors(SENSOR_ALTIMETER)
 #endif
         ) {
         calculateEstimatedAltitude(currentTimeUs);
     }}
-#endif // USE_BARO || USE_SONAR
+#endif // USE_BARO || USE_ALTIMETER
 
 #ifdef USE_TELEMETRY
 static void taskTelemetry(timeUs_t currentTimeUs)
@@ -292,11 +292,11 @@ void fcTasksInit(void)
 #ifdef USE_BARO
     setTaskEnabled(TASK_BARO, sensors(SENSOR_BARO));
 #endif
-#ifdef USE_SONAR
-    setTaskEnabled(TASK_SONAR, sensors(SENSOR_SONAR));
+#ifdef USE_ALTIMETER
+    setTaskEnabled(TASK_ALTIMETER, sensors(SENSOR_ALTIMETER));
 #endif
-#if defined(USE_BARO) || defined(USE_SONAR)
-    setTaskEnabled(TASK_ALTITUDE, sensors(SENSOR_BARO) || sensors(SENSOR_SONAR));
+#if defined(USE_BARO) || defined(USE_ALTIMETER)
+    setTaskEnabled(TASK_ALTITUDE, sensors(SENSOR_BARO) || sensors(SENSOR_ALTIMETER));
 #endif
 #ifdef USE_DASHBOARD
     setTaskEnabled(TASK_DASHBOARD, feature(FEATURE_DASHBOARD));
@@ -492,11 +492,11 @@ cfTask_t cfTasks[TASK_COUNT] = {
     },
 #endif
 
-#ifdef USE_SONAR
-    [TASK_SONAR] = {
-        .taskName = "SONAR",
-        .taskFunc = sonarUpdate,
-        .desiredPeriod = TASK_PERIOD_MS(70),        // 70ms required so that SONAR pulses do not interfere with each other
+#ifdef USE_ALTIMETER
+    [TASK_ALTIMETER] = {
+        .taskName = "ALTIMETER",
+        .taskFunc = altimeterUpdate,
+        .desiredPeriod = TASK_PERIOD_MS(70),        // 70ms required so that SONAR pulses do not interfere with each other. TF series LIDAR updates at 10msec (100Hz)
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif

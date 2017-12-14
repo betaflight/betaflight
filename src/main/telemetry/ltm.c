@@ -142,8 +142,8 @@ static void ltm_gframe(void)
     ltm_serialise_32(gpsSol.llh.lon);
     ltm_serialise_8((uint8_t)(gpsSol.groundSpeed / 100));
 
-#if defined(USE_BARO) || defined(USE_SONAR)
-    ltm_alt = (sensors(SENSOR_SONAR) || sensors(SENSOR_BARO)) ? getEstimatedAltitude() : gpsSol.llh.alt * 100;
+#if defined(USE_BARO) || defined(USE_ALTIMETER)
+    ltm_alt = (sensors(SENSOR_ALTIMETER) || sensors(SENSOR_BARO)) ? getEstimatedAltitude() : gpsSol.llh.alt * 100;
 #else
     ltm_alt = gpsSol.llh.alt * 100;
 #endif

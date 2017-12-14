@@ -334,7 +334,7 @@ static void sendGPSLatLong(void)
 #endif
 #endif
 
-#if defined(USE_BARO) || defined(USE_SONAR)
+#if defined(USE_BARO) || defined(USE_ALTIMETER)
 /*
  * Send vertical speed for opentx. ID_VERT_SPEED
  * Unit is cm/s
@@ -545,8 +545,8 @@ void handleFrSkyTelemetry(timeUs_t currentTimeUs)
         sendAccel();
     }
 
-#if defined(USE_BARO) || defined(USE_SONAR)
-    if (sensors(SENSOR_BARO | SENSOR_SONAR)) {
+#if defined(USE_BARO) || defined(USE_ALTIMETER)
+    if (sensors(SENSOR_BARO | SENSOR_ALTIMETER)) {
         // Sent every 125ms
         sendVario();
 

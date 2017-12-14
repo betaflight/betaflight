@@ -71,8 +71,8 @@ typedef enum {
 #ifdef USE_BARO
     TASK_BARO,
 #endif
-#ifdef USE_SONAR
-    TASK_SONAR,
+#ifdef USE_ALTIMETER
+    TASK_ALTIMETER,
 #endif
 #if defined(USE_BARO) || defined(USE_SONAR)
     TASK_ALTITUDE,

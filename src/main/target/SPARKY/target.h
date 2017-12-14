@@ -90,6 +90,7 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
+//#define USE_ALTIMETER
 //#define USE_SONAR
 //#define SONAR_ECHO_PIN          PB1
 //#define SONAR_TRIGGER_PIN       PA2

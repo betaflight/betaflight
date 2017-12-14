@@ -626,10 +626,10 @@ static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
 #endif
 
 #if defined(USE_ALT_HOLD)
-    // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
+    // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateAltimeterAltHoldState
     updateRcCommands();
-    if (sensors(SENSOR_BARO) || sensors(SENSOR_SONAR)) {
-        if (FLIGHT_MODE(BARO_MODE) || FLIGHT_MODE(SONAR_MODE)) {
+    if (sensors(SENSOR_BARO) || sensors(SENSOR_ALTIMETER)) {
+        if (FLIGHT_MODE(BARO_MODE) || FLIGHT_MODE(ALTIMETER_MODE)) {
             applyAltHold();
         }
     }

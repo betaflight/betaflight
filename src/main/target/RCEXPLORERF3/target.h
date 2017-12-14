@@ -52,6 +52,7 @@
 
 #define MAG_AK8975_ALIGN CW180_DEG
 
+#define USE_ALTIMETER
 #define USE_SONAR
 #define SONAR_TRIGGER_PIN           PA6   // RC_CH7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
 #define SONAR_ECHO_PIN              PB1   // RC_CH8 (PB1) - only 3.3v ( add a 1K Ohms resistor )

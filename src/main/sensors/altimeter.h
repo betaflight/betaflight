@@ -17,20 +17,21 @@
 
 #pragma once
 
+#include "config/parameter_group.h"
 #include "common/time.h"
+#include "drivers/sonar_hcsr04.h"
+#include "sensors/battery.h"
 
-extern int32_t AltHold;
+#define SONAR_OUT_OF_RANGE (-1)
 
-typedef struct airplaneConfig_s {
-    bool fixedwing_althold_reversed;           // false for negative pitch/althold gain. later check if need more than just sign
-} airplaneConfig_t;
+extern int16_t altimeterMaxRangeCm;
+extern int16_t altimeterCfAltCm;
+extern int16_t altimeterMaxAltWithTiltCm;
 
-PG_DECLARE(airplaneConfig_t, airplaneConfig);
+PG_DECLARE(sonarConfig_t, sonarConfig);
 
-void calculateEstimatedAltitude(timeUs_t currentTimeUs);
-int32_t getEstimatedAltitude(void);
-int32_t getEstimatedVario(void);
-
-void applyAltHold(void);
-void updateAltHoldState(void);
-void updateAltimeterAltHoldState(void);
+void altimeterInit(void);
+void altimeterUpdate(timeUs_t currentTimeUs);
+int32_t altimeterRead(void);
+int32_t altimeterCalculateAltitude(int32_t sonarDistance, float cosTiltAngle);
+int32_t altimeterGetLatestAltitude(void);

@@ -74,6 +74,7 @@
 #define MAG_AK8975_ALIGN        CW90_DEG_FLIP
 #endif
 
+//#define USE_ALTIMETER
 //#define USE_SONAR
 //#define SONAR_ECHO_PIN          PB1
 //#define SONAR_TRIGGER_PIN       PB0

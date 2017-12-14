@@ -17,21 +17,24 @@
 
 #pragma once
 
-#include "config/parameter_group.h"
 #include "common/time.h"
-#include "drivers/sonar_hcsr04.h"
-#include "sensors/battery.h"
 
-#define SONAR_OUT_OF_RANGE (-1)
+typedef struct altimeterVTable_s {
+    void (*startReading)(void);
+    int32_t (*getDistance)(void);
+} altimeterVTable_t;
 
-extern int16_t sonarMaxRangeCm;
-extern int16_t sonarCfAltCm;
-extern int16_t sonarMaxAltWithTiltCm;
+typedef struct altimeterRange_s {
+    int16_t maxRangeCm;
+    // these are full detection cone angles, maximum tilt is half of this
+    int16_t detectionConeDeciDegrees; // detection cone angle
+    int16_t detectionConeExtendedDeciDegrees; // pragmatic value
+} altimeterRange_t;
 
-PG_DECLARE(sonarConfig_t, sonarConfig);
+typedef struct altimeterDevice_s {
+    const altimeterRange_t *range;
+    const altimeterVTable_t *vTable;
+} altimeterDevice_t;
 
-void sonarInit(const sonarConfig_t *sonarConfig);
-void sonarUpdate(timeUs_t currentTimeUs);
-int32_t sonarRead(void);
-int32_t sonarCalculateAltitude(int32_t sonarDistance, float cosTiltAngle);
-int32_t sonarGetLatestAltitude(void);
+
+#define ALTIMETER_OUT_OF_RANGE (-1)

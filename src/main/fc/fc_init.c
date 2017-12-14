@@ -119,7 +119,7 @@
 #include "sensors/gyro.h"
 #include "sensors/initialisation.h"
 #include "sensors/sensors.h"
-#include "sensors/sonar.h"
+#include "sensors/altimeter.h"
 
 #include "telemetry/telemetry.h"
 

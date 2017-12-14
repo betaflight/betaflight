@@ -157,7 +157,7 @@ FC_SRC = \
             io/gps.c \
             io/ledstrip.c \
             io/osd.c \
-            sensors/sonar.c \
+            sensors/altimeter.c \
             sensors/barometer.c \
             telemetry/telemetry.c \
             telemetry/crsf.c \
