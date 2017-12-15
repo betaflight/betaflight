@@ -146,9 +146,9 @@ PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
     .gyro_soft_notch_cutoff_1 = 300,
     .gyro_soft_notch_hz_2 = 200,
     .gyro_soft_notch_cutoff_2 = 100,
-    .gyro_kalman_enable = 0,
-    .gyro_kalman_q = 110,
-    .gyro_kalman_r = 55,
+    .gyro_kalman_enable = 1,
+    .gyro_kalman_q = 200,
+    .gyro_kalman_r = 88,
     .gyro_kalman_p = 0
 );
 
