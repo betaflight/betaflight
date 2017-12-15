@@ -136,7 +136,7 @@ const gyroFftData_t *gyroFftData(int axis)
     return &fftResult[axis];
 }
 
-bool isDynamicFilterActive(void)
+FAST_CODE bool isDynamicFilterActive(void)
 {
     return feature(FEATURE_DYNAMIC_FILTER);
 }
@@ -144,7 +144,7 @@ bool isDynamicFilterActive(void)
 /*
  * Collect gyro data, to be analysed in gyroDataAnalyseUpdate function
  */
-void gyroDataAnalyse(const gyroDev_t *gyroDev, biquadFilter_t *notchFilterDyn)
+FAST_CODE void gyroDataAnalyse(const gyroDev_t *gyroDev, biquadFilter_t *notchFilterDyn)
 {
     if (!isDynamicFilterActive()) {
         return;
@@ -197,7 +197,7 @@ typedef enum {
 /*
  * Analyse last gyro data from the last FFT_WINDOW_SIZE milliseconds
  */
-void gyroDataAnalyseUpdate(biquadFilter_t *notchFilterDyn)
+FAST_CODE void gyroDataAnalyseUpdate(biquadFilter_t *notchFilterDyn)
 {
     static int axis = 0;
     static int step = 0;

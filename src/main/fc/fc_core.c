@@ -600,7 +600,7 @@ void processRx(timeUs_t currentTimeUs)
 #endif
 }
 
-static void subTaskPidController(timeUs_t currentTimeUs)
+static FAST_CODE void subTaskPidController(timeUs_t currentTimeUs)
 {
     uint32_t startTime = 0;
     if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
@@ -609,7 +609,7 @@ static void subTaskPidController(timeUs_t currentTimeUs)
     DEBUG_SET(DEBUG_PIDLOOP, 1, micros() - startTime);
 }
 
-static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
+static FAST_CODE void subTaskMainSubprocesses(timeUs_t currentTimeUs)
 {
     uint32_t startTime = 0;
     if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
@@ -683,7 +683,7 @@ static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
     DEBUG_SET(DEBUG_PIDLOOP, 3, micros() - startTime);
 }
 
-static void subTaskMotorUpdate(timeUs_t currentTimeUs)
+static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
 {
     uint32_t startTime = 0;
     if (debugMode == DEBUG_CYCLETIME) {
@@ -711,7 +711,7 @@ static void subTaskMotorUpdate(timeUs_t currentTimeUs)
     DEBUG_SET(DEBUG_PIDLOOP, 2, micros() - startTime);
 }
 
-uint8_t setPidUpdateCountDown(void)
+FAST_CODE uint8_t setPidUpdateCountDown(void)
 {
     if (gyroConfig()->gyro_soft_lpf_hz) {
         return pidConfig()->pid_process_denom - 1;
@@ -721,7 +721,7 @@ uint8_t setPidUpdateCountDown(void)
 }
 
 // Function for loop trigger
-void taskMainPidLoop(timeUs_t currentTimeUs)
+FAST_CODE void taskMainPidLoop(timeUs_t currentTimeUs)
 {
     static uint8_t pidUpdateCountdown = 0;
 

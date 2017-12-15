@@ -56,5 +56,7 @@
 #define SCHEDULER_DELAY_LIMIT           100
 #endif
 
+#define FAST_CODE
+
 //CLI needs FC dependencies removed before we can compile it, disabling for now
 //#define USE_CLI

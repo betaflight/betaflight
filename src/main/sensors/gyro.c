@@ -518,12 +518,12 @@ void gyroInitFilters(void)
     gyroInitSensorFilters(&gyroSensor1);
 }
 
-bool isGyroSensorCalibrationComplete(const gyroSensor_t *gyroSensor)
+FAST_CODE bool isGyroSensorCalibrationComplete(const gyroSensor_t *gyroSensor)
 {
     return gyroSensor->calibration.calibratingG == 0;
 }
 
-bool isGyroCalibrationComplete(void)
+FAST_CODE bool isGyroCalibrationComplete(void)
 {
     return isGyroSensorCalibrationComplete(&gyroSensor1);
 }
@@ -604,7 +604,7 @@ STATIC_UNIT_TESTED void performGyroCalibration(gyroSensor_t *gyroSensor, uint8_t
 }
 
 #if defined(USE_GYRO_SLEW_LIMITER)
-int32_t gyroSlewLimiter(gyroSensor_t *gyroSensor, int axis)
+FAST_CODE int32_t gyroSlewLimiter(gyroSensor_t *gyroSensor, int axis)
 {
     int32_t newRawGyro = (int32_t)gyroSensor->gyroDev.gyroADCRaw[axis];
     if (abs(newRawGyro - gyroSensor->gyroDev.gyroADCRawPrevious[axis]) > (1<<14)) {
@@ -616,7 +616,7 @@ int32_t gyroSlewLimiter(gyroSensor_t *gyroSensor, int axis)
 }
 #endif
 
-static void gyroUpdateSensor(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
+static FAST_CODE void gyroUpdateSensor(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
 {
     if (!gyroSensor->gyroDev.readFn(&gyroSensor->gyroDev)) {
         return;
@@ -701,7 +701,7 @@ static void gyroUpdateSensor(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
     }
 }
 
-void gyroUpdate(timeUs_t currentTimeUs)
+FAST_CODE void gyroUpdate(timeUs_t currentTimeUs)
 {
     gyroUpdateSensor(&gyroSensor1, currentTimeUs);
 }

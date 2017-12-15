@@ -482,7 +482,7 @@ void mixerResetDisarmedMotors(void)
     }
 }
 
-void writeMotors(void)
+FAST_CODE void writeMotors(void)
 {
     if (pwmAreMotorsEnabled()) {
         for (int i = 0; i < motorCount; i++) {
@@ -520,7 +520,7 @@ static float motorRangeMax;
 static float motorOutputRange;
 static int8_t motorOutputMixSign;
 
-static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
+static FAST_CODE void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
 {
     static uint16_t rcThrottlePrevious = 0;   // Store the last throttle direction for deadband transitions
     static timeUs_t reversalTimeUs = 0; // time when motors last reversed in 3D mode
@@ -637,7 +637,7 @@ static void applyFlipOverAfterCrashModeToMotors(void)
     }
 }
 
-static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS])
+static FAST_CODE void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS])
 {
     // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
     // roll/pitch/yaw. This could move throttle down, but also up for those low throttle flips.
@@ -668,7 +668,7 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS])
     }
 }
 
-void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensation)
+FAST_CODE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensation)
 {
     if (isFlipOverAfterCrashMode()) {
         applyFlipOverAfterCrashModeToMotors();

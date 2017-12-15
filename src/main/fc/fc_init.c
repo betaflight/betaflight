@@ -236,6 +236,14 @@ void spiPreInit(void)
 
 void init(void)
 {
+#ifdef USE_ITCM_RAM
+    /* Load functions into ITCM RAM */
+    extern unsigned char tcm_code_start;
+    extern unsigned char tcm_code_end;
+    extern unsigned char tcm_code;
+    memcpy(&tcm_code_start, &tcm_code, (int)(&tcm_code_end - &tcm_code_start));
+#endif
+
 #ifdef USE_HAL_DRIVER
     HAL_Init();
 #endif
