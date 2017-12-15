@@ -134,7 +134,7 @@ PG_REGISTER_WITH_RESET_TEMPLATE(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 1);
 
 PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
     .gyro_align = ALIGN_DEFAULT,
-    .gyroMovementCalibrationThreshold = 48,
+    .gyroMovementCalibrationThreshold = 160,
     .gyro_sync_denom = GYRO_SYNC_DENOM_DEFAULT,
     .gyro_lpf = GYRO_LPF_256HZ,
     .gyro_soft_lpf_type = FILTER_PT1,
