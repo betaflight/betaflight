@@ -696,6 +696,9 @@ static void gyroUpdateSensor(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
             // DEBUG_GYRO_NOTCH records the unfiltered gyro output
             DEBUG_SET(DEBUG_GYRO_NOTCH, axis, lrintf(gyroADCf));
 
+            // Apply Fast Kalman
+            gyroADCf = gyroSensor->fastKalmanApplyFn(&gyroSensor->fastKalman[axis], gyroADCf);
+
 #ifdef USE_GYRO_DATA_ANALYSE
             // Apply Dynamic Notch filtering
             if (isDynamicFilterActive()) {
@@ -708,9 +711,6 @@ static void gyroUpdateSensor(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
                 }
             }
 #endif
-
-            // Apply Fast Kalman
-            gyroADCf = gyroSensor->fastKalmanApplyFn(&gyroSensor->fastKalman[axis], gyroADCf);
 
             // Apply Static Notch filtering
             gyroADCf = gyroSensor->notchFilter1ApplyFn(&gyroSensor->notchFilter1[axis], gyroADCf);
