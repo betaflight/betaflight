@@ -33,9 +33,9 @@ typedef struct controlRateConfig_s {
     uint8_t rcYawExpo8;
     uint16_t tpa_breakpoint;                // Breakpoint where TPA is activated
     uint8_t rfRatesEnabled;
-    uint16_t rfRate;
-    uint8_t rfAcro;
-    uint8_t rfExpo;
+    uint16_t rfRate[3];
+    uint8_t rfAcro[3];
+    uint8_t rfExpo[3];
 } controlRateConfig_t;
 
 #define CONTROL_RATE_PROFILE_COUNT  3

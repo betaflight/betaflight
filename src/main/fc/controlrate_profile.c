@@ -52,9 +52,15 @@ void pgResetFn_controlRateProfiles(controlRateConfig_t *controlRateConfig)
             .rates[FD_PITCH] = 70,
             .rates[FD_YAW] = 70,
             .rfRatesEnabled = 0,
-            .rfRate = 400,
-            .rfAcro = 140,
-            .rfExpo = 50
+            .rfRate[FD_ROLL] = 400,
+            .rfAcro[FD_ROLL] = 140,
+            .rfExpo[FD_ROLL] = 50,
+            .rfRate[FD_PITCH] = 400,
+            .rfAcro[FD_PITCH] = 140,
+            .rfExpo[FD_PITCH] = 50,
+            .rfRate[FD_YAW] = 400,
+            .rfAcro[FD_YAW] = 140,
+            .rfExpo[FD_YAW] = 50
         );
     }
 }
