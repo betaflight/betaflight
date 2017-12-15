@@ -36,7 +36,7 @@ void targetConfiguration(void)
 #ifdef EXUAVF4PRO
     serialConfigMutable()->portConfigs[1].functionMask = FUNCTION_TELEMETRY_SMARTPORT;
     serialConfigMutable()->portConfigs[2].functionMask = FUNCTION_VTX_TRAMP;
-    serialConfigMutable()->portConfigs[3].functionMask = FUNCTION_RCDEVICE;
+    serialConfigMutable()->portConfigs[3].functionMask = FUNCTION_RCSPLIT;
     serialConfigMutable()->portConfigs[4].functionMask = FUNCTION_RX_SERIAL;
 #endif
 }
