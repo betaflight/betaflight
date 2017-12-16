@@ -32,5 +32,6 @@ MEMORY
 }
 /* note CCM could be used for stack */
 REGION_ALIAS("STACKRAM", TCM)
+REGION_ALIAS("FASTRAM", TCM)
 
 INCLUDE "stm32_flash_split.ld"

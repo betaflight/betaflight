@@ -74,12 +74,12 @@
 #define USE_GYRO_SLEW_LIMITER
 #endif
 
-gyro_t gyro;
-static uint8_t gyroDebugMode;
+FAST_RAM gyro_t gyro;
+static FAST_RAM uint8_t gyroDebugMode;
 
-static float accumulatedMeasurements[XYZ_AXIS_COUNT];
-static timeUs_t accumulatedMeasurementTimeUs;
-static timeUs_t accumulationLastTimeSampledUs;
+static FAST_RAM float accumulatedMeasurements[XYZ_AXIS_COUNT];
+static FAST_RAM timeUs_t accumulatedMeasurementTimeUs;
+static FAST_RAM timeUs_t accumulationLastTimeSampledUs;
 
 typedef struct gyroCalibration_s {
     int32_t sum[XYZ_AXIS_COUNT];
@@ -111,7 +111,7 @@ typedef struct gyroSensor_s {
     biquadFilter_t notchFilterDyn[XYZ_AXIS_COUNT];
 } gyroSensor_t;
 
-static gyroSensor_t gyroSensor1;
+static FAST_RAM gyroSensor_t gyroSensor1;
 
 static void gyroInitSensorFilters(gyroSensor_t *gyroSensor);
 
