@@ -281,12 +281,17 @@ int packFlightModeFlags(boxBitmask_t *mspFlightModeFlags)
     boxBitmask_t boxEnabledMask;
     memset(&boxEnabledMask, 0, sizeof(boxEnabledMask));
 
+    // copy ARM state
+    if (ARMING_FLAG(ARMED)) {
+        bitArraySet(&boxEnabledMask, BOXARM);
+    }
+
     // enable BOXes dependent on FLIGHT_MODE, use mapping table (from runtime_config.h)
     // flightMode_boxId_map[HORIZON_MODE] == BOXHORIZON
     static const int8_t flightMode_boxId_map[] = FLIGHT_MODE_BOXID_MAP_INITIALIZER;
     flightModeFlags_e flightModeCopyMask = ~0;  // only modes with bit set will be copied
     for (unsigned i = 0; i < ARRAYLEN(flightMode_boxId_map); i++) {
-        if (flightMode_boxId_map[i] != -1        // boxId_e does exist for this FLIGHT_MODE
+        if (flightMode_boxId_map[i] != -1       // boxId_e does exist for this FLIGHT_MODE
            && (flightModeCopyMask & (1 << i))   // this flightmode is copy is enabled
            && FLIGHT_MODE(1 << i)) {            // this flightmode is active
             bitArraySet(&boxEnabledMask, flightMode_boxId_map[i]);
@@ -294,14 +299,40 @@ int packFlightModeFlags(boxBitmask_t *mspFlightModeFlags)
     }
 
     // enable BOXes dependent on rcMode bits, indexes are the same.
-    // only subset of BOXes depend on rcMode, use mask to select them
+    // only subset of BOXes depend on rcMode (non-ARM or FLIGHT_MODE), use mask to select them
+    // NOTE: ARM and FLIGHT modes are potentially contingent on other conditions.
+    //       Therefore, they must be masked/enabled separately from simple "range conditions" (RC)
 #define BM(x) (1ULL << (x))
     // limited to 64 BOXes now to keep code simple
-    const uint64_t rcModeCopyMask = BM(BOXHEADADJ) | BM(BOXCAMSTAB) | BM(BOXCAMTRIG) | BM(BOXBEEPERON)
-        | BM(BOXLEDMAX) | BM(BOXLEDLOW) | BM(BOXLLIGHTS) | BM(BOXCALIB) | BM(BOXGOV) | BM(BOXOSD)
-        | BM(BOXTELEMETRY) | BM(BOXGTUNE) | BM(BOXBLACKBOX) | BM(BOXBLACKBOXERASE) | BM(BOXAIRMODE)
-        | BM(BOXANTIGRAVITY) | BM(BOXFPVANGLEMIX) | BM(BOXFLIPOVERAFTERCRASH) | BM(BOX3DDISABLE)
-        | BM(BOXBEEPGPSCOUNT) | BM(BOXVTXPITMODE);
+    const uint64_t rcModeCopyMask = BM(BOXANTIGRAVITY)
+                                  | BM(BOXHEADADJ)
+                                  | BM(BOXCAMSTAB)
+                                  | BM(BOXCAMTRIG)
+                                  | BM(BOXBEEPERON)
+                                  | BM(BOXLEDMAX)
+                                  | BM(BOXLEDLOW)
+                                  | BM(BOXLLIGHTS)
+                                  | BM(BOXCALIB)
+                                  | BM(BOXGOV)
+                                  | BM(BOXOSD)
+                                  | BM(BOXTELEMETRY)
+                                  | BM(BOXGTUNE)
+                                  | BM(BOXSERVO1)
+                                  | BM(BOXSERVO2)
+                                  | BM(BOXSERVO3)
+                                  | BM(BOXBLACKBOX)
+                                  | BM(BOXAIRMODE)
+                                  | BM(BOX3DDISABLE)
+                                  | BM(BOXFPVANGLEMIX)
+                                  | BM(BOXBLACKBOXERASE)
+                                  | BM(BOXCAMERA1)
+                                  | BM(BOXCAMERA2)
+                                  | BM(BOXCAMERA3)
+                                  | BM(BOXFLIPOVERAFTERCRASH)
+                                  | BM(BOXPREARM)
+                                  | BM(BOXBEEPGPSCOUNT)
+                                  | BM(BOX3DONASWITCH)
+                                  | BM(BOXVTXPITMODE);
     STATIC_ASSERT(sizeof(rcModeCopyMask) * 8 >= CHECKBOX_ITEM_COUNT, copy_mask_too_small_for_boxes);
     for (unsigned i = 0; i < CHECKBOX_ITEM_COUNT; i++) {
         if ((rcModeCopyMask & BM(i))    // mode copy is enabled
@@ -310,9 +341,6 @@ int packFlightModeFlags(boxBitmask_t *mspFlightModeFlags)
         }
     }
 #undef BM
-    // copy ARM state
-    if (ARMING_FLAG(ARMED))
-        bitArraySet(&boxEnabledMask, BOXARM);
 
     // map boxId_e enabled bits to MSP status indexes
     // only active boxIds are sent in status over MSP, other bits are not counted
