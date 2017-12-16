@@ -50,8 +50,8 @@
 #include "drivers/accgyro/accgyro_spi_mpu6000.h"
 #include "drivers/accgyro/accgyro_spi_mpu6500.h"
 #include "drivers/accgyro/accgyro_spi_mpu9250.h"
+#include "drivers/accgyro/gyro_sync.h"
 #include "drivers/bus_spi.h"
-#include "drivers/gyro_sync.h"
 #include "drivers/io.h"
 
 #include "fc/runtime_config.h"

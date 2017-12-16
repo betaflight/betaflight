@@ -27,7 +27,7 @@ extern "C" {
     #include "config/parameter_group_ids.h"
 
     #include "drivers/accgyro/accgyro.h"
-    #include "drivers/gyro_sync.h"
+    #include "drivers/accgyro/gyro_sync.h"
     #include "drivers/serial.h"
 
     #include "flight/failsafe.h"
