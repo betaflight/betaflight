@@ -77,8 +77,6 @@ void currentMeterReset(currentMeter_t *meter)
 // ADC/Virtual shared
 //
 
-#define ADCVREF 3300   // in mV
-
 #define IBAT_LPF_FREQ  0.4f
 static biquadFilter_t adciBatFilter;
 
@@ -106,7 +104,7 @@ static int32_t currentMeterADCToCentiamps(const uint16_t src)
 
     const currentSensorADCConfig_t *config = currentSensorADCConfig();
 
-    int32_t millivolts = ((uint32_t)src * ADCVREF) / 4096;
+    int32_t millivolts = ((uint32_t)src * ADC_VOLTAGE_REFERENCE_MV) / 4096;
     millivolts -= config->offset;
 
     return (millivolts * 1000) / (int32_t)config->scale; // current in 0.01A steps

@@ -23,6 +23,10 @@
 #define ADC_INSTANCE                ADC1
 #endif
 
+#if !defined(ADC_VOLTAGE_REFERENCE_MV)
+#define ADC_VOLTAGE_REFERENCE_MV 3300
+#endif
+
 #if defined(STM32F4) || defined(STM32F7)
 #ifndef ADC1_DMA_STREAM
 #define ADC1_DMA_STREAM DMA2_Stream4 // ST0 or ST4
