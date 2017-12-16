@@ -405,7 +405,7 @@ static float accelerationLimit(int axis, float currentPidSetpoint)
 
 // Betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage.
 // Based on 2DOF reference design (matlab)
-void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, timeUs_t currentTimeUs)
+FAST_CODE void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, timeUs_t currentTimeUs)
 {
     static float previousRateError[2];
     const float tpaFactor = getThrottlePIDAttenuation();

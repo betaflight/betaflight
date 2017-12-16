@@ -106,7 +106,7 @@ bool queueRemove(cfTask_t *task)
 /*
  * Returns first item queue or NULL if queue empty
  */
-cfTask_t *queueFirst(void)
+FAST_CODE cfTask_t *queueFirst(void)
 {
     taskQueuePos = 0;
     return taskQueueArray[0]; // guaranteed to be NULL if queue is empty
@@ -115,7 +115,7 @@ cfTask_t *queueFirst(void)
 /*
  * Returns next item in queue or NULL if at end of queue
  */
-cfTask_t *queueNext(void)
+FAST_CODE cfTask_t *queueNext(void)
 {
     return taskQueueArray[++taskQueuePos]; // guaranteed to be NULL at end of queue
 }
@@ -225,7 +225,7 @@ void schedulerInit(void)
     queueAdd(&cfTasks[TASK_SYSTEM]);
 }
 
-void scheduler(void)
+FAST_CODE void scheduler(void)
 {
     // Cache currentTime
     const timeUs_t currentTimeUs = micros();
