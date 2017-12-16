@@ -82,7 +82,9 @@
 #define FAST_CODE
 #endif
 
-#ifdef USE_FAST_RAM
+#define USE_FAST_DATA_RAM
+
+#ifdef USE_FAST_DATA_RAM
 #ifdef __APPLE__
 #define FAST_RAM                    __attribute__ ((section("__DATA,__.fastram_bss"), aligned(4)))
 #else
