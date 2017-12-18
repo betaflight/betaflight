@@ -286,6 +286,7 @@ int packFlightModeFlags(boxBitmask_t *mspFlightModeFlags)
     // copy ARM state
     if (ARMING_FLAG(ARMED)) {
         bitArraySet(&boxEnabledMask, BOXARM);
+        bitArraySet(&boxFlightModeMask, BOXARM);
     }
 
     // enable BOXes dependent on FLIGHT_MODE, use mapping table (from runtime_config.h)
@@ -304,7 +305,7 @@ int packFlightModeFlags(boxBitmask_t *mspFlightModeFlags)
     // only subset of BOXes depend on rcMode (non-ARM or FLIGHT_MODE), use mask to select them
     // NOTE: ARM and FLIGHT modes are potentially contingent on other conditions.
     //       Therefore, they must be masked/enabled separately from simple "range conditions" (RC)
-    for (unsigned i = 1; i < CHECKBOX_ITEM_COUNT; i++) {    // skip BOXARM
+    for (unsigned i = 0; i < CHECKBOX_ITEM_COUNT; i++) {
         if (!bitArrayGet(&boxFlightModeMask, i) && IS_RC_MODE_ACTIVE(i))
             bitArraySet(&boxEnabledMask, i);
     }
