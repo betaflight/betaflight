@@ -115,6 +115,7 @@ FC_SRC = \
             rx/sbus.c \
             rx/sbus_channels.c \
             rx/spektrum.c \
+            io/spektrum_vtx_control.c \
             rx/sumd.c \
             rx/sumh.c \
             rx/xbus.c \
