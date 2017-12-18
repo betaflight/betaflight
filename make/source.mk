@@ -61,6 +61,7 @@ COMMON_SRC = \
             io/statusindicator.c \
             io/transponder_ir.c \
             msp/msp_serial.c \
+            pg/adc.c \
             scheduler/scheduler.c \
             sensors/battery.c \
             sensors/current.c \

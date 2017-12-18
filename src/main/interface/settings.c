@@ -31,6 +31,7 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
+#include "drivers/adc.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
 #include "drivers/light_led.h"
@@ -63,6 +64,8 @@
 #include "io/vtx.h"
 #include "io/vtx_control.h"
 #include "io/vtx_rtc6705.h"
+
+#include "pg/adc.h"
 
 #include "rx/rx.h"
 #include "rx/cc2500_frsky_common.h"

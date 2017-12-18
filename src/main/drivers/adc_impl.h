@@ -17,8 +17,9 @@
 
 #pragma once
 
+#include "drivers/adc.h"
 #include "drivers/io_types.h"
-#include "rcc_types.h"
+#include "drivers/rcc_types.h"
 
 #if defined(STM32F4) || defined(STM32F7)
 #define ADC_TAG_MAP_COUNT 16

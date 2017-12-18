@@ -34,6 +34,9 @@
 #include "adc.h"
 #include "adc_impl.h"
 
+#include "pg/adc.h"
+
+
 const adcDevice_t adcHardware[] = {
     { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .DMAy_Streamx = ADC1_DMA_STREAM, .channel = DMA_Channel_0 },
 #if !defined(STM32F411xE)
