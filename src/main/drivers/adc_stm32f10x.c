@@ -26,12 +26,16 @@
 #include "build/build_config.h"
 
 #include "drivers/accgyro/accgyro.h"
+
+#include "drivers/io.h"
+#include "drivers/dma.h"
+#include "drivers/rcc.h"
 #include "drivers/sensor.h"
+
+#include "parameter_groups/adc.h"
+
 #include "adc.h"
 #include "adc_impl.h"
-#include "drivers/io.h"
-#include "rcc.h"
-#include "dma.h"
 
 const adcDevice_t adcHardware[] = {
     { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .DMAy_Channelx = DMA1_Channel1 }

@@ -62,11 +62,6 @@
 #include "interface/cli.h"
 #include "interface/msp.h"
 
-#include "msp/msp_serial.h"
-
-#include "rx/rx.h"
-#include "rx/spektrum.h"
-
 #include "io/beeper.h"
 #include "io/displayport_max7456.h"
 #include "io/flashfs.h"
@@ -75,7 +70,14 @@
 #include "io/serial.h"
 #include "io/transponder_ir.h"
 
+#include "msp/msp_serial.h"
+
+#include "rx/rx.h"
+#include "rx/spektrum.h"
+
 #include "osd_slave/osd_slave_init.h"
+
+#include "parameter_groups/adc_pg.h"
 
 #include "scheduler/scheduler.h"
 
