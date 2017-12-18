@@ -18,13 +18,17 @@
 #pragma once
 
 #include "platform.h"
+
 #include "common/axis.h"
 #include "drivers/exti.h"
 #include "drivers/bus.h"
 #include "drivers/sensor.h"
 #include "drivers/accgyro/accgyro_mpu.h"
+#pragma GCC diagnostic push
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
 #include <pthread.h>
+#else
+#pragma GCC diagnostic warning "-Wpadded"
 #endif
 
 #ifndef MPU_I2C_INSTANCE
@@ -50,6 +54,9 @@ typedef enum {
 } gyroRateKHz_e;
 
 typedef struct gyroDev_s {
+#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
+    pthread_mutex_t lock;
+#endif
     sensorGyroInitFuncPtr initFn;                             // initialize function
     sensorGyroReadFuncPtr readFn;                             // read 3 axis data function
     sensorGyroReadDataFuncPtr temperatureFn;                  // read temperature if available
@@ -58,38 +65,36 @@ typedef struct gyroDev_s {
     float scale;                                            // scalefactor
     int32_t gyroZero[XYZ_AXIS_COUNT];
     int32_t gyroADC[XYZ_AXIS_COUNT];                        // gyro data after calibration and alignment
-    int16_t gyroADCRaw[XYZ_AXIS_COUNT];
     int32_t gyroADCRawPrevious[XYZ_AXIS_COUNT];
+    int16_t gyroADCRaw[XYZ_AXIS_COUNT];
     int16_t temperature;
-    uint8_t lpf;
-    gyroRateKHz_e gyroRateKHz;
-    uint8_t mpuDividerDrops;
-    bool dataReady;
-    sensor_align_e gyroAlign;
-    mpuDetectionResult_t mpuDetectionResult;
-    ioTag_t mpuIntExtiTag;
     mpuConfiguration_t mpuConfiguration;
+    mpuDetectionResult_t mpuDetectionResult;
+    sensor_align_e gyroAlign;
+    gyroRateKHz_e gyroRateKHz;
+    bool dataReady;
     bool gyro_high_fsr;
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
-    pthread_mutex_t lock;
-#endif
+    uint8_t lpf;
+    uint8_t mpuDividerDrops;
+    ioTag_t mpuIntExtiTag;
+    uint8_t filler[3];
 } gyroDev_t;
 
 typedef struct accDev_s {
+#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
+    pthread_mutex_t lock;
+#endif
     sensorAccInitFuncPtr initFn;                              // initialize function
     sensorAccReadFuncPtr readFn;                              // read 3 axis data function
     busDevice_t bus;
     uint16_t acc_1G;
     int16_t ADCRaw[XYZ_AXIS_COUNT];
-    char revisionCode;                                      // a revision code for the sensor, if known
-    bool dataReady;
-    sensor_align_e accAlign;
     mpuDetectionResult_t mpuDetectionResult;
-    mpuConfiguration_t mpuConfiguration;
+    sensor_align_e accAlign;
+    bool dataReady;
     bool acc_high_fsr;
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
-    pthread_mutex_t lock;
-#endif
+    char revisionCode;                                      // a revision code for the sensor, if known
+    uint8_t filler[2];
 } accDev_t;
 
 static inline void accDevLock(accDev_t *acc)
@@ -127,3 +132,4 @@ static inline void gyroDevUnLock(gyroDev_t *gyro)
     (void)gyro;
 #endif
 }
+#pragma GCC diagnostic pop
