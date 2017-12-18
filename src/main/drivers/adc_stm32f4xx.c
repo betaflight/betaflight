@@ -21,6 +21,8 @@
 
 #include "platform.h"
 
+#ifdef USE_ADC
+
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/system.h"
 
@@ -202,3 +204,4 @@ void adcInit(const adcConfig_t *config)
 
     ADC_SoftwareStartConv(adc.ADCx);
 }
+#endif
