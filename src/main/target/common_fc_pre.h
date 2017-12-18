@@ -53,6 +53,7 @@
 #endif
 
 #ifdef STM32F7
+#define USE_ITCM_RAM
 #define USE_DSHOT
 #define USE_DSHOT_DMAR
 #define USE_ESC_SENSOR
@@ -80,7 +81,7 @@
 #define FAST_CODE __attribute__((section(".tcm_code")))
 #else
 #define FAST_CODE
-#endif
+#endif // USE_ITCM_RAM
 
 #ifdef USE_FAST_RAM
 #ifdef __APPLE__
