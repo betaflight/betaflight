@@ -70,6 +70,11 @@ static bool spekHiRes = false;
 static bool srxlEnabled = false;
 static int32_t resolution;
 
+#ifdef USE_SPEKTRUM_RSSI_CH
+// This is for spektrum receivers that use one of the channels for RSSI.
+#undef USE_SPEKTRUM_FAKE_RSSI
+#endif
+
 #ifdef USE_SPEKTRUM_FAKE_RSSI
 // Spektrum Rx type. Determined by bind method.
 static bool spektrumSatInternal = true; // Assume internal,bound by BF.
@@ -455,7 +460,10 @@ static uint8_t spektrumFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
     for (int b = 3; b < SPEK_FRAME_SIZE; b += 2) {
         const uint8_t spekChannel = 0x0F & (spekFrame[b - 1] >> spek_chan_shift);
         if (spekChannel < rxRuntimeConfigPtr->channelCount && spekChannel < SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT) {
-            if (rssi_channel == 0 || spekChannel != rssi_channel) {
+#ifndef USE_SPEKTRUM_RSSI_CH
+            if (rssi_channel == 0 || spekChannel != rssi_channel)
+#endif
+            {
                 spekChannelData[spekChannel] = ((uint32_t)(spekFrame[b - 1] & spek_chan_mask) << 8) + spekFrame[b];
             }
         }
