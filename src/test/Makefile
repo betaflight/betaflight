@@ -74,7 +74,7 @@ blackbox_unittest_SRC :=  \
 		$(USER_DIR)/common/printf.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/typeconversion.c \
-		$(USER_DIR)/drivers/gyro_sync.c
+		$(USER_DIR)/drivers/accgyro/gyro_sync.c
 
 blackbox_encoding_unittest_SRC :=  \
 		$(USER_DIR)/blackbox/blackbox_encoding.c \

@@ -75,7 +75,7 @@ FC_SRC = \
             fc/fc_init.c \
             fc/controlrate_profile.c \
             drivers/camera_control.c \
-            drivers/gyro_sync.c \
+            drivers/accgyro/gyro_sync.c \
             drivers/rx_nrf24l01.c \
             drivers/rx_spi.c \
             drivers/rx_xn297.c \

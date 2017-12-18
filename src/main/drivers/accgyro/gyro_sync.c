@@ -12,7 +12,7 @@
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro/accgyro.h"
-#include "drivers/gyro_sync.h"
+#include "drivers/accgyro/gyro_sync.h"
 
 
 bool gyroSyncCheckUpdate(gyroDev_t *gyro)
@@ -69,9 +69,4 @@ uint32_t gyroSetSampleRate(gyroDev_t *gyro, uint8_t lpf, uint8_t gyroSyncDenomin
     gyro->mpuDividerDrops  = gyroSyncDenominator - 1;
     const uint32_t targetLooptime = (uint32_t)(gyroSyncDenominator * gyroSamplePeriod);
     return targetLooptime;
-}
-
-uint8_t gyroMPU6xxxGetDividerDrops(const gyroDev_t *gyro)
-{
-    return gyro->mpuDividerDrops;
 }

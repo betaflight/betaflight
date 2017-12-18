@@ -27,23 +27,21 @@
 
 #include "platform.h"
 
+#if defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_SPI_MPU6000)
+
 #include "common/axis.h"
 #include "common/maths.h"
 
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/accgyro/accgyro_mpu.h"
+#include "drivers/accgyro/accgyro_spi_mpu6000.h"
 #include "drivers/bus_spi.h"
 #include "drivers/exti.h"
-#include "drivers/gyro_sync.h"
 #include "drivers/io.h"
 #include "drivers/time.h"
 #include "drivers/sensor.h"
 #include "drivers/system.h"
 
-#include "accgyro.h"
-#include "accgyro_mpu.h"
-
-#if defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_SPI_MPU6000)
-
-#include "accgyro_spi_mpu6000.h"
 
 static void mpu6000AccAndGyroInit(gyroDev_t *gyro);
 
@@ -200,7 +198,7 @@ static void mpu6000AccAndGyroInit(gyroDev_t *gyro)
 
     // Accel Sample Rate 1kHz
     // Gyroscope Output Rate =  1kHz when the DLPF is enabled
-    spiBusWriteRegister(&gyro->bus, MPU_RA_SMPLRT_DIV, gyroMPU6xxxGetDividerDrops(gyro));
+    spiBusWriteRegister(&gyro->bus, MPU_RA_SMPLRT_DIV, gyro->mpuDividerDrops);
     delayMicroseconds(15);
 
     // Gyro +/- 1000 DPS Full Scale
