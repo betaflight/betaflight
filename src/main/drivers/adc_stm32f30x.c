@@ -21,6 +21,8 @@
 
 #include "platform.h"
 
+#ifdef USE_ADC
+
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/io.h"
 #include "drivers/sensor.h"
@@ -219,3 +221,4 @@ void adcInit(const adcConfig_t *config)
 
     ADC_StartConversion(adc.ADCx);
 }
+#endif
