@@ -177,6 +177,13 @@ enum accel_fsr_e {
 };
 
 typedef enum {
+    GYRO_OVERFLOW_NONE = 0x00,
+    GYRO_OVERFLOW_X = 0x01,
+    GYRO_OVERFLOW_Y = 0x02,
+    GYRO_OVERFLOW_Z = 0x04
+} gyroOverflow_e;
+
+typedef enum {
     MPU_NONE,
     MPU_3050,
     MPU_60x0,
@@ -204,8 +211,10 @@ typedef struct mpuDetectionResult_s {
 
 struct gyroDev_s;
 void mpuGyroInit(struct gyroDev_s *gyro);
-struct accDev_s;
-bool mpuAccRead(struct accDev_s *acc);
+gyroOverflow_e mpuGyroCheckOverflow(const struct gyroDev_s *gyro);
 bool mpuGyroRead(struct gyroDev_s *gyro);
 bool mpuGyroReadSPI(struct gyroDev_s *gyro);
 void mpuDetect(struct gyroDev_s *gyro);
+
+struct accDev_s;
+bool mpuAccRead(struct accDev_s *acc);
