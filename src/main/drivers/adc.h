@@ -58,6 +58,11 @@ typedef enum {
     ADC_CURRENT = 1,
     ADC_EXTERNAL1 = 2,
     ADC_RSSI = 3,
+#ifdef USE_VREFINT
+    ADC_CHANNEL_COUNT_EXTERNAL = 4,
+    ADC_TEMPERATURE = 4,
+    ADC_VREFINT = 5,
+#endif
     ADC_CHANNEL_COUNT
 } AdcChannel;
 
@@ -84,6 +89,7 @@ typedef struct adcConfig_s {
 
 void adcInit(const adcConfig_t *config);
 uint16_t adcGetChannel(uint8_t channel);
+void adcSampleVrefintStatic(void);
 
 #ifndef SITL
 ADCDevice adcDeviceByInstance(ADC_TypeDef *instance);

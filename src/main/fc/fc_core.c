@@ -34,6 +34,7 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
+#include "drivers/adc.h"
 #include "drivers/gyro_sync.h"
 #include "drivers/light_led.h"
 #include "drivers/system.h"
@@ -310,6 +311,9 @@ void tryArm(void)
         }
 #else
         beeper(BEEPER_ARMING);
+#endif
+#ifdef USE_VREFINT
+        adcSampleVrefintStatic();
 #endif
     } else {
         if (!isFirstArmingGyroCalibrationRunning()) {

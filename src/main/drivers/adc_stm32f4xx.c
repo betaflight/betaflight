@@ -21,6 +21,8 @@
 
 #include "platform.h"
 
+#include "build/debug.h"
+
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/system.h"
 
@@ -91,6 +93,101 @@ const adcTagMap_t adcTagMap[] = {
 #endif
 };
 
+#define VREFINT_CAL_ADDR 0x1FFF7A2A
+#define TSCAL1_LOCATION 0x1FFF7A2C
+#define TSCAL2_LOCATION 0x1FFF7A2E
+
+#ifdef USE_VREFINT
+static uint16_t adc_TSCAL1;
+static uint16_t adc_TSCAL2;
+static uint16_t adc_VREFIN_CAL;
+static bool isVrefintStatic;
+
+void adcGetCalibrationData(void)
+{
+    adc_VREFIN_CAL = *(uint16_t *)VREFINT_CAL_ADDR;
+    adc_TSCAL1 = *(uint16_t *)TSCAL1_LOCATION;
+    adc_TSCAL2 = *(uint16_t *)TSCAL2_LOCATION;
+}
+
+// Initialize a pin for ADC
+
+void adcSimpleConfigurePin(ioTag_t iotag) {
+    IOConfigGPIO(IOGetByTag(iotag), IO_CONFIG(GPIO_Mode_AN, 0, GPIO_OType_OD, GPIO_PuPd_NOPULL));
+}
+
+// Initialize ADC1 for single conversion
+
+void adcSimpleConfigure(void)
+{
+    ADC_InitTypeDef ADC_InitStructure;
+
+    ADC_StructInit(&ADC_InitStructure);
+
+    ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;
+    ADC_InitStructure.ADC_Resolution = ADC_Resolution_12b;
+    ADC_InitStructure.ADC_ContinuousConvMode = ENABLE;
+    ADC_InitStructure.ADC_ExternalTrigConv = ADC_ExternalTrigConv_T1_CC1;    // conversion is synchronous with TIM1 and CC1 (actually I'm not sure about this one :/)
+    ADC_InitStructure.ADC_ExternalTrigConvEdge = ADC_ExternalTrigConvEdge_None;
+    ADC_InitStructure.ADC_NbrOfConversion = 1;    //I think this one is clear :p
+    ADC_InitStructure.ADC_ScanConvMode = DISABLE;    //The scan is configured in one channel
+
+    ADC_Init(ADC1, &ADC_InitStructure);
+
+    //Enable ADC conversion
+    ADC_Cmd(ADC1,ENABLE);
+}
+
+uint16_t adcSimpleConversion(uint16_t channel)
+{
+    ADC_RegularChannelConfig(ADC1, channel, 1, ADC_SampleTime_480Cycles);
+
+    ADC_SoftwareStartConv(ADC1);//Start the conversion
+
+    while(!ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC));//Processing the conversion
+
+    return ADC_GetConversionValue(ADC1); //Return the converted data
+}
+
+#define ADC_VREFINT_SAMPLES 16
+
+void adcSampleVrefintStatic(void)
+{
+    if (!isVrefintStatic) {
+        return;
+    }
+
+    adcSimpleConfigure();
+    ADC_TempSensorVrefintCmd(ENABLE);
+    delayMicroseconds(1000);
+
+    uint16_t vrefint = 0;
+
+    for (int i = 0 ; i < ADC_VREFINT_SAMPLES ; i++) {
+        vrefint += adcSimpleConversion(ADC_Channel_Vrefint);
+    }
+
+    vrefint /= ADC_VREFINT_SAMPLES;
+
+    adcVrefInternalStatic = vrefint;
+    adcVrefInternal = &adcVrefInternalStatic;
+}
+#endif
+
+void adcInitCommon(adcDevice_t *adc)
+{
+    ADC_CommonInitTypeDef ADC_CommonInitStructure;
+
+    RCC_ClockCmd(adc->rccADC, ENABLE);
+
+    ADC_CommonStructInit(&ADC_CommonInitStructure);
+    ADC_CommonInitStructure.ADC_Mode             = ADC_Mode_Independent;
+    ADC_CommonInitStructure.ADC_Prescaler        = ADC_Prescaler_Div8;
+    ADC_CommonInitStructure.ADC_DMAAccessMode    = ADC_DMAAccessMode_Disabled;
+    ADC_CommonInitStructure.ADC_TwoSamplingDelay = ADC_TwoSamplingDelay_5Cycles;
+    ADC_CommonInit(&ADC_CommonInitStructure);
+}
+
 void adcInit(const adcConfig_t *config)
 {
     ADC_InitTypeDef ADC_InitStructure;
@@ -125,22 +222,54 @@ void adcInit(const adcConfig_t *config)
 
     bool adcActive = false;
     for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
-        if (!adcVerifyPin(adcOperatingConfig[i].tag, device)) {
+        if (i < ADC_CHANNEL_COUNT_EXTERNAL) {
+            // ADC channels with input pins
+            if (!adcVerifyPin(adcOperatingConfig[i].tag, device)) {
+                continue;
+            }
+
+            IOInit(IOGetByTag(adcOperatingConfig[i].tag), OWNER_ADC_BATT + i, 0);
+            IOConfigGPIO(IOGetByTag(adcOperatingConfig[i].tag), IO_CONFIG(GPIO_Mode_AN, 0, GPIO_OType_OD, GPIO_PuPd_NOPULL));
+            adcOperatingConfig[i].adcChannel = adcChannelByTag(adcOperatingConfig[i].tag);
+#ifdef USE_VREFINT
+        } else if (device == ADCDEV_1) {
+            // Internal ADC channels, only supported on ADC1
+            if (i == ADC_TEMPERATURE) {
+                adcOperatingConfig[i].adcChannel = ADC_Channel_TempSensor;
+            } else if (i == ADC_VREFINT) {
+                adcOperatingConfig[i].adcChannel = ADC_Channel_Vrefint;
+            }
+            ADC_TempSensorVrefintCmd(ENABLE);
+#endif
+        } else {
             continue;
         }
 
-        adcActive = true;
-        IOInit(IOGetByTag(adcOperatingConfig[i].tag), OWNER_ADC_BATT + i, 0);
-        IOConfigGPIO(IOGetByTag(adcOperatingConfig[i].tag), IO_CONFIG(GPIO_Mode_AN, 0, GPIO_OType_OD, GPIO_PuPd_NOPULL));
-        adcOperatingConfig[i].adcChannel = adcChannelByTag(adcOperatingConfig[i].tag);
         adcOperatingConfig[i].dmaIndex = configuredAdcChannels++;
         adcOperatingConfig[i].sampleTime = ADC_SampleTime_480Cycles;
         adcOperatingConfig[i].enabled = true;
+
+        adcActive = true;
     }
 
     if (!adcActive) {
         return;
     }
+
+#ifdef USE_VREFINT
+    adcGetCalibrationData();
+    adcVrefCalibration = adc_VREFIN_CAL;
+
+    // If configured adc device is ADC1, then DMA will update the VREFINT along with
+    // other channels. Otherwise, VREFINT is sampled here once, and probably upon arm.
+    if (device == ADCDEV_1) {
+        isVrefintStatic = false;
+        adcVrefInternal = &adcValues[adcOperatingConfig[ADC_VREFINT].dmaIndex];
+    } else {
+        isVrefintStatic = true;
+        adcSampleVrefintStatic();
+    }
+#endif
 
     RCC_ClockCmd(adc.rccADC, ENABLE);
 
@@ -164,14 +293,7 @@ void adcInit(const adcConfig_t *config)
 
     DMA_Cmd(adc.DMAy_Streamx, ENABLE);
 
-    ADC_CommonInitTypeDef ADC_CommonInitStructure;
-
-    ADC_CommonStructInit(&ADC_CommonInitStructure);
-    ADC_CommonInitStructure.ADC_Mode             = ADC_Mode_Independent;
-    ADC_CommonInitStructure.ADC_Prescaler        = ADC_Prescaler_Div8;
-    ADC_CommonInitStructure.ADC_DMAAccessMode    = ADC_DMAAccessMode_Disabled;
-    ADC_CommonInitStructure.ADC_TwoSamplingDelay = ADC_TwoSamplingDelay_5Cycles;
-    ADC_CommonInit(&ADC_CommonInitStructure);
+    adcInitCommon(&adc);
 
     ADC_StructInit(&ADC_InitStructure);
 
