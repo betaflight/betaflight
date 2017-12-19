@@ -118,6 +118,10 @@ typedef enum {
     TASK_RCDEVICE,
 #endif
 
+#ifdef USE_LIDAR_TF
+    TASK_LIDAR_TF,
+#endif
+
     /* Count of real tasks */
     TASK_COUNT,
 

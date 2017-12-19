@@ -60,6 +60,7 @@
 #include "drivers/buttons.h"
 #include "drivers/inverter.h"
 #include "drivers/flash_m25p16.h"
+#include "drivers/lidar_tf.h"
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/sdcard.h"
 #include "drivers/usb_io.h"
@@ -731,6 +732,10 @@ void init(void)
 #ifdef USE_RCDEVICE
     rcdeviceInit();
 #endif // USE_RCDEVICE
+
+#ifdef USE_LIDAR_TF
+    lidarTFInit();
+#endif
 
     // Latch active features AGAIN since some may be modified by init().
     latchActiveFeatures();
