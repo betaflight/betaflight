@@ -52,8 +52,10 @@
 #define USE_GYRO_DATA_ANALYSE
 #endif
 
-#ifdef STM32F7
+#ifdef STM32F722xx
 #define USE_ITCM_RAM
+#endif
+#ifdef STM32F7
 #define USE_DSHOT
 #define USE_DSHOT_DMAR
 #define USE_ESC_SENSOR
