@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 
 #include "drivers/io.h"
 #include "drivers/sensor.h"

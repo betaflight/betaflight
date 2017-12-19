@@ -38,8 +38,8 @@ static uint16_t calculateChecksum(const uint8_t *ibusPacket, size_t packetLength
 
 #if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_IBUS)
 
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 #include "sensors/battery.h"
 #include "fc/rc_controls.h"
 #include "sensors/gyro.h"

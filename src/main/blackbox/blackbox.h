@@ -20,7 +20,7 @@
 #include "platform.h"
 #include "build/build_config.h"
 #include "common/time.h"
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 
 typedef enum BlackboxDevice {
     BLACKBOX_DEVICE_NONE = 0,

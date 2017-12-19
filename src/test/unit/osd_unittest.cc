@@ -27,7 +27,7 @@ extern "C" {
 
     #include "blackbox/blackbox.h"
 
-    #include "config/parameter_group_ids.h"
+    #include "pg/pg_ids.h"
 
     #include "common/time.h"
 

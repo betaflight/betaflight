@@ -19,7 +19,7 @@
 
 #include "common/axis.h"
 #include "common/time.h"
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 #include "drivers/bus.h"
 #include "drivers/sensor.h"
 

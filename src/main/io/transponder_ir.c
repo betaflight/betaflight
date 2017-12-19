@@ -27,8 +27,8 @@
 #include "build/build_config.h"
 
 #include "config/config_reset.h"
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "drivers/timer.h"
 #include "drivers/transponder_ir.h"

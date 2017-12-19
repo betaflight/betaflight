@@ -23,8 +23,8 @@ extern "C" {
     #include "blackbox/blackbox.h"
     #include "common/utils.h"
 
-    #include "config/parameter_group.h"
-    #include "config/parameter_group_ids.h"
+    #include "pg/pg.h"
+    #include "pg/pg_ids.h"
 
     #include "drivers/accgyro/accgyro.h"
     #include "drivers/accgyro/gyro_sync.h"

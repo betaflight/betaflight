@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 #include "io/serial.h"
 
 typedef enum {

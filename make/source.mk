@@ -18,7 +18,6 @@ COMMON_SRC = \
             common/typeconversion.c \
             config/config_eeprom.c \
             config/feature.c \
-            config/parameter_group.c \
             config/config_streamer.c \
             drivers/adc.c \
             drivers/buf_writer.c \
@@ -62,6 +61,7 @@ COMMON_SRC = \
             io/transponder_ir.c \
             msp/msp_serial.c \
             pg/adc.c \
+            pg/pg.c \
             scheduler/scheduler.c \
             sensors/battery.c \
             sensors/current.c \
@@ -287,7 +287,6 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             fc/fc_init.c \
             config/config_eeprom.c \
             config/feature.c \
-            config/parameter_group.c \
             config/config_streamer.c \
             i2c_bst.c \
             interface/cli.c \
@@ -314,7 +313,8 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             io/vtx_rtc6705.c \
             io/vtx_smartaudio.c \
             io/vtx_tramp.c \
-            io/vtx_control.c
+            io/vtx_control.c \
+            pg/pg.h
 
 # F4 and F7 optimizations
 ifneq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))

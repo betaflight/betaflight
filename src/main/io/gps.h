@@ -20,7 +20,7 @@
 #include "common/axis.h"
 #include "common/time.h"
 
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 
 #define LAT 0
 #define LON 1

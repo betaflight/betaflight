@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 
 typedef struct boardAlignment_s {
     int32_t rollDegrees;

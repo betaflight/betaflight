@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 
 typedef enum {
     GIMBAL_MODE_NORMAL = 0,

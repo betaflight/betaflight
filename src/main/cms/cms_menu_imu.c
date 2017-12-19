@@ -36,7 +36,7 @@
 #include "common/utils.h"
 
 #include "config/feature.h"
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"

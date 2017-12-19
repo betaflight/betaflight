@@ -30,8 +30,8 @@
 #include "common/maths.h"
 #include "common/time.h"
 
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "drivers/time.h"
 

@@ -22,7 +22,7 @@
 
 #include "platform.h"
 
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 
 // time difference, 32 bits always sufficient
 typedef int32_t timeDelta_t;
