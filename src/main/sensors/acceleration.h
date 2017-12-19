@@ -18,7 +18,7 @@
 #pragma once
 
 #include "common/time.h"
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 #include "drivers/accgyro/accgyro.h"
 #include "sensors/sensors.h"
 

@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 
 typedef struct featureConfig_s {
     uint32_t enabledFeatures;

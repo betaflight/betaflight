@@ -26,8 +26,8 @@
 #include "build/debug.h"
 
 #include "config/feature.h"
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "common/maths.h"
 #include "common/utils.h"

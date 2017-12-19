@@ -39,7 +39,7 @@
 #include "fc/config.h"
 
 #include "config/feature.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg_ids.h"
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"

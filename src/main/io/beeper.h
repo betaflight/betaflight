@@ -18,7 +18,7 @@
 #pragma once
 
 #include "common/time.h"
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 
 typedef enum {
     // IMPORTANT: these are in priority order, 0 = Highest

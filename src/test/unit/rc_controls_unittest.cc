@@ -27,8 +27,8 @@ extern "C" {
     #include "common/axis.h"
     #include "common/bitarray.h"
 
-    #include "config/parameter_group.h"
-    #include "config/parameter_group_ids.h"
+    #include "pg/pg.h"
+    #include "pg/pg_ids.h"
 
     #include "blackbox/blackbox.h"
     #include "blackbox/blackbox_fielddefs.h"

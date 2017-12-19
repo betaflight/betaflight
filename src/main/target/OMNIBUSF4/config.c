@@ -22,7 +22,7 @@
 
 #ifdef USE_TARGET_CONFIG
 
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 #include "drivers/max7456.h"
 #include "io/serial.h"
 

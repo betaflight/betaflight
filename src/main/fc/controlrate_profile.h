@@ -19,7 +19,7 @@
 
 #include <stdint.h>
 
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 
 
 typedef struct controlRateConfig_s {

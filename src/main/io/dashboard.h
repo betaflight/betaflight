@@ -18,7 +18,7 @@
 #pragma once
 
 #include "common/time.h"
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 #include "drivers/bus_i2c.h"
 
 #define ENABLE_DEBUG_DASHBOARD_PAGE

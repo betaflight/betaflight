@@ -53,8 +53,8 @@ extern uint8_t __config_end;
 
 #include "config/config_eeprom.h"
 #include "config/feature.h"
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/buf_writer.h"

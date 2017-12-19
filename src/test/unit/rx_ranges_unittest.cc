@@ -25,7 +25,7 @@ extern "C" {
 
     #include "drivers/io.h"
     #include "common/maths.h"
-    #include "config/parameter_group_ids.h"
+    #include "pg/pg_ids.h"
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
     #include "rx/rx.h"

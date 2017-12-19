@@ -23,8 +23,8 @@
 
 #include "common/maths.h"
 
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "drivers/bus.h"
 #include "drivers/bus_spi.h"

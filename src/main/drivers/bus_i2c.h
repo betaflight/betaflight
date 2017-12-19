@@ -19,7 +19,7 @@
 
 #include "platform.h"
 
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 #include "drivers/io_types.h"
 #include "drivers/rcc_types.h"
 

@@ -7,7 +7,7 @@ MCU_COMMON_SRC  := $(ROOT)/lib/main/dyad/dyad.c
 #Flags
 ARCH_FLAGS      =
 DEVICE_FLAGS    =
-LD_SCRIPT       = src/main/target/SITL/parameter_group.ld
+LD_SCRIPT       = src/main/target/SITL/pg.ld
 STARTUP_SRC     =
 
 TARGET_FLAGS    = -D$(TARGET)

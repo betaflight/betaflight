@@ -22,8 +22,8 @@
 
 #ifdef USE_ADC
 
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "drivers/adc_impl.h"
 #include "drivers/io.h"

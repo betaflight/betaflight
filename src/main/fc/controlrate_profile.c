@@ -24,8 +24,8 @@
 #include "common/axis.h"
 
 #include "config/config_reset.h"
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"

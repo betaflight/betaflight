@@ -20,7 +20,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 
 #include "drivers/flash.h"
 #include "drivers/rx_pwm.h"
