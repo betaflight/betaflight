@@ -434,21 +434,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
                 BEEP_ON;
             }
             if (axis == FD_YAW) {
-                // on yaw axis, prevent "yaw spin to the moon" after crash by constraining errorRate
-#if !(defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_ICM20649))
-#define GYRO_POTENTIAL_OVERFLOW_RATE 1990.0f
-                if (gyroRate > GYRO_POTENTIAL_OVERFLOW_RATE || gyroRate < -GYRO_POTENTIAL_OVERFLOW_RATE) {
-                    // ICM gyros are specified to +/- 2000 deg/sec, in a crash they can go out of spec.
-                    // This can cause an overflow and sign reversal in the output.
-                    // Overflow and sign reversal seems to result in a gyro value of +1996 or -1996.
-                    // If there is a sign reversal we will actually increase crash-induced yaw spin
-                    // so best thing to do is set error to zero.
-                    errorRate = 0.0f;
-                } else
-#endif
-                {
-                    errorRate = constrainf(errorRate, -crashLimitYaw, crashLimitYaw);
-                }
+                errorRate = constrainf(errorRate, -crashLimitYaw, crashLimitYaw);
             } else {
                 // on roll and pitch axes calculate currentPidSetpoint and errorRate to level the aircraft to recover from crash
                 if (sensors(SENSOR_ACC)) {
@@ -515,8 +501,9 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
 
             previousRateError[axis] = rD;
 
-            // if crash recovery is on and accelerometer enabled then check for a crash
-            if (pidProfile->crash_recovery) {
+            // if crash recovery is on and accelerometer enabled and there is no gyro overflow, then check for a crash
+            // no point in trying to recover if the crash is so severe that the gyro overflows
+            if (pidProfile->crash_recovery && !gyroOverflowDetected()) {
                 if (ARMING_FLAG(ARMED)) {
                     if (motorMixRange >= 1.0f && !inCrashRecoveryMode
                         && ABS(delta) > crashDtermThreshold
@@ -538,8 +525,8 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             axisPID_D[axis] = Kd[axis] * delta * tpaFactor;
         }
 
-        // Disable PID control at zero throttle
-        if (!pidStabilisationEnabled) {
+        // Disable PID control if at zero throttle or if gyro overflow detected
+        if (!pidStabilisationEnabled || gyroOverflowDetected()) {
             axisPID_P[axis] = 0;
             axisPID_I[axis] = 0;
             axisPID_D[axis] = 0;

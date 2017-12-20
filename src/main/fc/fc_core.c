@@ -731,7 +731,7 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
     // 3 - subTaskMotorUpdate()
     uint32_t startTime = 0;
     if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
-    gyroUpdate();
+    gyroUpdate(currentTimeUs);
     DEBUG_SET(DEBUG_PIDLOOP, 0, micros() - startTime);
 
     if (pidUpdateCountdown) {
