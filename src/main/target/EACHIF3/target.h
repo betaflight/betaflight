@@ -97,7 +97,8 @@
 
 #undef USE_GPS
 #undef USE_MAG
-#undef USE_SONAR
+#undef USE_RANGEFINDER
+#undef USE_RANGEFINDER_HCSR04
 #undef USE_SERVOS
 #undef BEEPER
 

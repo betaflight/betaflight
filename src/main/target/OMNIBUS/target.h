@@ -59,9 +59,10 @@
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
 
-//#define USE_SONAR
-//#define SONAR_ECHO_PIN          PB1
-//#define SONAR_TRIGGER_PIN       PB0
+//#define USE_RANGEFINDER
+//#define USE_RANGEFINDER_HCSR04
+//#define RANGEFINDER_HCSR04_ECHO_PIN          PB1
+//#define RANGEFINDER_HCSR04_TRIGGER_PIN       PB0
 
 #define USB_DETECT_PIN          PB5
 

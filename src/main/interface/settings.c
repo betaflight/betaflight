@@ -78,6 +78,7 @@
 #include "sensors/compass.h"
 #include "sensors/esc_sensor.h"
 #include "sensors/gyro.h"
+#include "sensors/rangefinder.h"
 
 #include "telemetry/frsky.h"
 #include "telemetry/telemetry.h"
@@ -107,6 +108,11 @@ const char * const lookupTableBaroHardware[] = {
 // sync with magSensor_e
 const char * const lookupTableMagHardware[] = {
     "AUTO", "NONE", "HMC5883", "AK8975", "AK8963"
+};
+#endif
+#if defined(USE_SENSOR_NAMES) || defined(USE_RANGEFINDER)
+const char * const lookupTableRangefinderHardware[] = {
+    "NONE", "HCSR04"
 };
 #endif
 
@@ -317,6 +323,9 @@ const lookupTableEntry_t lookupTables[] = {
     { lookupTableBusType, sizeof(lookupTableBusType) / sizeof(char *) },
 #ifdef USE_MAX7456
     { lookupTableMax7456Clock, sizeof(lookupTableMax7456Clock) / sizeof(char *) },
+#endif
+#ifdef USE_RANGEFINDER
+    { lookupTableRangefinderHardware, sizeof(lookupTableRangefinderHardware) / sizeof(char *) },
 #endif
 };
 
@@ -828,6 +837,11 @@ const clivalue_t valueTable[] = {
     { "camera_control_ref_voltage", VAR_UINT16 | MASTER_VALUE, .config.minmax = { 200, 400 }, PG_CAMERA_CONTROL_CONFIG, offsetof(cameraControlConfig_t, refVoltage) },
     { "camera_control_key_delay", VAR_UINT16 | MASTER_VALUE, .config.minmax = { 100, 500 }, PG_CAMERA_CONTROL_CONFIG, offsetof(cameraControlConfig_t, keyDelayMs) },
     { "camera_control_internal_resistance", VAR_UINT16 | MASTER_VALUE, .config.minmax = { 10, 1000 }, PG_CAMERA_CONTROL_CONFIG, offsetof(cameraControlConfig_t, internalResistance) },
+#endif
+
+// PG_RANGEFINDER_CONFIG
+#ifdef USE_RANGEFINDER
+    { "rangefinder_hardware", VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_RANGEFINDER_HARDWARE }, PG_RANGEFINDER_CONFIG, offsetof(rangefinderConfig_t, rangefinder_hardware) },
 #endif
 };
 

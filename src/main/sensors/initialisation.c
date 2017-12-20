@@ -35,24 +35,12 @@
 #include "sensors/barometer.h"
 #include "sensors/gyro.h"
 #include "sensors/compass.h"
-#include "sensors/sonar.h"
+#include "sensors/rangefinder.h"
 #include "sensors/initialisation.h"
 
-uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE };
-
-
-#ifdef USE_SONAR
-static bool sonarDetect(void)
-{
-    if (feature(FEATURE_SONAR)) {
-        // the user has set the sonar feature, so assume they have an HC-SR04 plugged in,
-        // since there is no way to detect it
-        sensorsSet(SENSOR_SONAR);
-        return true;
-    }
-    return false;
-}
-#endif
+// requestedSensors is not actually used
+uint8_t requestedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE, RANGEFINDER_NONE };
+uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE, RANGEFINDER_NONE };
 
 bool sensorsAutodetect(void)
 {
@@ -73,10 +61,8 @@ bool sensorsAutodetect(void)
     baroDetect(&baro.dev, barometerConfig()->baro_hardware);
 #endif
 
-#ifdef USE_SONAR
-    if (sonarDetect()) {
-        sonarInit(sonarConfig());
-    }
+#ifdef USE_RANGEFINDER
+    rangefinderInit();
 #endif
 
     return gyroDetected;

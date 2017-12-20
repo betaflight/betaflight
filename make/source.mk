@@ -143,8 +143,8 @@ FC_SRC = \
             common/gps_conversion.c \
             drivers/display_ug2864hsweg01.c \
             drivers/light_ws2811strip.c \
+            drivers/rangefinder/rangefinder_hcsr04.c \
             drivers/serial_escserial.c \
-            drivers/sonar_hcsr04.c \
             drivers/vtx_common.c \
             flight/navigation.c \
             io/dashboard.c \
@@ -159,8 +159,8 @@ FC_SRC = \
             io/gps.c \
             io/ledstrip.c \
             io/osd.c \
-            sensors/sonar.c \
             sensors/barometer.c \
+            sensors/rangefinder.c \
             telemetry/telemetry.c \
             telemetry/crsf.c \
             telemetry/srxl.c \

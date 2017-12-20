@@ -53,7 +53,6 @@
 #include "drivers/rx_spi.h"
 #include "drivers/sdcard.h"
 #include "drivers/sensor.h"
-#include "drivers/sonar_hcsr04.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
 #include "drivers/timer.h"
@@ -403,8 +402,8 @@ static void validateAndFixConfig(void)
     featureClear(FEATURE_GPS);
 #endif
 
-#ifndef USE_SONAR
-    featureClear(FEATURE_SONAR);
+#ifndef USE_RANGEFINDER
+    featureClear(FEATURE_RANGEFINDER);
 #endif
 
 #ifndef USE_TELEMETRY

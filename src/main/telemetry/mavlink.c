@@ -329,8 +329,8 @@ void mavlinkSendPosition(void)
         // alt Altitude in 1E3 meters (millimeters) above MSL
         gpsSol.llh.alt * 1000,
         // relative_alt Altitude above ground in meters, expressed as * 1000 (millimeters)
-#if defined(USE_BARO) || defined(USE_SONAR)
-        (sensors(SENSOR_SONAR) || sensors(SENSOR_BARO)) ? getEstimatedAltitude() * 10 : gpsSol.llh.alt * 1000,
+#if defined(USE_BARO) || defined(USE_RANGEFINDER)
+        (sensors(SENSOR_RANGEFINDER) || sensors(SENSOR_BARO)) ? getEstimatedAltitude() * 10 : gpsSol.llh.alt * 1000,
 #else
         gpsSol.llh.alt * 1000,
 #endif
@@ -396,8 +396,8 @@ void mavlinkSendHUDAndHeartbeat(void)
 #endif
 
     // select best source for altitude
-#if defined(USE_BARO) || defined(USE_SONAR)
-    if (sensors(SENSOR_SONAR) || sensors(SENSOR_BARO)) {
+#if defined(USE_BARO) || defined(USE_RANGEFINDER)
+    if (sensors(SENSOR_RANGEFINDER) || sensors(SENSOR_BARO)) {
         // Baro or sonar generally is a better estimate of altitude than GPS MSL altitude
         mavAltitude = getEstimatedAltitude() / 100.0;
     }
@@ -478,7 +478,7 @@ void mavlinkSendHUDAndHeartbeat(void)
         mavCustomMode = 0;      //Stabilize
         mavModes |= MAV_MODE_FLAG_STABILIZE_ENABLED;
     }
-    if (FLIGHT_MODE(BARO_MODE) || FLIGHT_MODE(SONAR_MODE))
+    if (FLIGHT_MODE(BARO_MODE) || FLIGHT_MODE(RANGEFINDER_MODE))
         mavCustomMode = 2;      //Alt Hold
     if (FLIGHT_MODE(GPS_HOME_MODE))
         mavCustomMode = 6;      //Return to Launch

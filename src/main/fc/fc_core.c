@@ -627,8 +627,8 @@ static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
 #if defined(USE_ALT_HOLD)
     // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
     updateRcCommands();
-    if (sensors(SENSOR_BARO) || sensors(SENSOR_SONAR)) {
-        if (FLIGHT_MODE(BARO_MODE) || FLIGHT_MODE(SONAR_MODE)) {
+    if (sensors(SENSOR_BARO) || sensors(SENSOR_RANGEFINDER)) {
+        if (FLIGHT_MODE(BARO_MODE) || FLIGHT_MODE(RANGEFINDER_MODE)) {
             applyAltHold();
         }
     }
