@@ -27,7 +27,7 @@
 #pragma GCC diagnostic push
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
 #include <pthread.h>
-#else
+#elif !defined(UNIT_TEST)
 #pragma GCC diagnostic warning "-Wpadded"
 #endif
 
