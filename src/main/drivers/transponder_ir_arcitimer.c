@@ -36,7 +36,7 @@ void transponderIrInitArcitimer(transponder_t *transponder){
     transponder->vTable             = &arcitimerTansponderVTable;
     transponder->timer_hz           = TRANSPONDER_TIMER_MHZ_ARCITIMER;
     transponder->timer_carrier_hz   = TRANSPONDER_CARRIER_HZ_ARCITIMER;
-    memset(&(transponder->transponderIrDMABuffer.arcitimer), 0, TRANSPONDER_DMA_BUFFER_SIZE_ARCITIMER);
+    memset(&(transponder->transponderIrDMABuffer.arcitimer), 0, sizeof(transponder->transponderIrDMABuffer.arcitimer));
 }
 
 void updateTransponderDMABufferArcitimer(transponder_t *transponder, const uint8_t* transponderData)
