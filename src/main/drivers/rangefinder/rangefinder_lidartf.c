@@ -37,56 +37,56 @@
 
 static uint8_t tfDevtype = TF_DEVTYPE_NONE;
 
-#define TF_FRAME_LENGTH    6             // Exclusing sync bytes (0x59) x 2 and checksum
+#define TF_FRAME_LENGTH    6             // Excluding sync bytes (0x59) x 2 and checksum
 #define TF_FRAME_SYNC_BYTE 0x59
 #define TF_TIMEOUT_MS      (100 * 2)
 
 //
 // Benewake TFmini frame format
-// Byte
-// -: SYNC
-// -: SYNC
-// 0: Measured distance (LSB)
-// 1: Measured distance (MSB)
-// 2: Signal strength (LSB)
-// 3: Signal strength (MSB)
-// 4: Integral time
-// 5: Reserved
-// -: Checksum (Unsigned 8-bit sum of bytes 0~7)
-//
-// Note *1: TFmini product specification (Version A00) specifies byte 6 is
-// reserved and byte 7 is quality, but it seems like byte 7 contains
-// value of 7 for good measurement and 2 for bad measurement.
+// Byte Off Description
+// 1    -   SYNC
+// 2    -   SYNC
+// 3    0   Measured distance (LSB)
+// 4    1   Measured distance (MSB)
+// 5    2   Signal strength (LSB)
+// 6    3   Signal strength (MSB)
+// 7    4   Integral time
+// 8    5   Reserved
+// 9    -   Checksum (Unsigned 8-bit sum of bytes 0~7)
 //
 // Credibility
 // 1. If distance is 12m (1200cm), then OoR.
 //
 #define TF_MINI_FRAME_INTEGRAL_TIME 4
-#define TF_MINI_RANGE_MIN 40
-#define TF_MINI_RANGE_MAX 1200
-#define TF_DETECTION_CONE_DECIDEGREES 900 // Very conservative.
 
 //
 // Benewake TF02 frame format (From SJ-GU-TF02-01 Version: A01)
-// Byte
-// -: SYNC
-// -: SYNC
-// 0: Measured distance (LSB)
-// 1: Measured distance (MSB)
-// 2: Signal strength (LSB)
-// 3: Signal strength (MSB)
-// 4: SIG (Reliability in 1~8, less than 7 is unreliable)
-// 5: TIME (Exposure time, 3 or 6)
-// -: Checksum (Unsigned 8-bit sum of bytes 0~7)
+// Byte Off Description
+// 1    -   SYNC
+// 2    -   SYNC
+// 3    0   Measured distance (LSB)
+// 4    1   Measured distance (MSB)
+// 5    2   Signal strength (LSB)
+// 6    3   Signal strength (MSB)
+// 7    4   SIG (Reliability in 1~8, less than 7 is unreliable)
+// 8    5   TIME (Exposure time, 3 or 6)
+// 9    -   Checksum (Unsigned 8-bit sum of bytes 0~7)
 //
 // Credibility
 // 1. If SIG is less than 7, unreliable
 // 2. If distance is 22m (2200cm), then OoR.
 //
 #define TF_02_FRAME_SIG 4
+
+// Maximum ratings
+
+#define TF_MINI_RANGE_MIN 40
+#define TF_MINI_RANGE_MAX 1200
+
 #define TF_02_RANGE_MIN 40
 #define TF_02_RANGE_MAX 2200
-#define TF_02_DETECTION_CONE_DECIDEGREES 45
+
+#define TF_DETECTION_CONE_DECIDEGREES 900
 
 static serialPort_t *tfSerialPort = NULL;
 
@@ -117,10 +117,10 @@ static void lidarTFSendCommand(void)
 {
     switch (tfDevtype) {
     case TF_DEVTYPE_MINI:
-        serialWriteBuf(tfSerialPort, tfCmdTFmini, ARRAYLEN(tfCmdTFmini));
+        serialWriteBuf(tfSerialPort, tfCmdTFmini, sizeof(tfCmdTFmini));
         break;
     case TF_DEVTYPE_02:
-        serialWriteBuf(tfSerialPort, tfCmdTF02, ARRAYLEN(tfCmdTF02));
+        serialWriteBuf(tfSerialPort, tfCmdTF02, sizeof(tfCmdTF02));
         break;
     }
 }
