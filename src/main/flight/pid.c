@@ -77,7 +77,7 @@ PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles, PG
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
-    RESET_CONFIG(const pidProfile_t, pidProfile,
+    RESET_CONFIG(pidProfile_t, pidProfile,
         .pid = {
             [PID_ROLL] =  { 40, 40, 30 },
             [PID_PITCH] = { 58, 50, 35 },
