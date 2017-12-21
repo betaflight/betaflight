@@ -20,11 +20,13 @@
 #include <math.h>
 #include <string.h>
 
+#include "platform.h"
+
 #include "common/maths.h"
 #include "common/axis.h"
 
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "drivers/sensor.h"
 
@@ -68,7 +70,7 @@ static void alignBoard(int32_t *vec)
     vec[Z] = lrintf(boardRotation[0][Z] * x + boardRotation[1][Z] * y + boardRotation[2][Z] * z);
 }
 
-void alignSensors(int32_t *dest, uint8_t rotation)
+FAST_CODE void alignSensors(int32_t *dest, uint8_t rotation)
 {
     const int32_t x = dest[X];
     const int32_t y = dest[Y];

@@ -40,8 +40,8 @@
 #include "common/utils.h"
 
 #include "config/feature.h"
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "drivers/compass/compass.h"
 #include "drivers/sensor.h"
@@ -69,7 +69,7 @@
 #include "sensors/battery.h"
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
-#include "sensors/sonar.h"
+#include "sensors/rangefinder.h"
 
 enum {
     BLACKBOX_MODE_NORMAL = 0,
@@ -201,8 +201,8 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
 #ifdef USE_BARO
     {"BaroAlt",    -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_BARO},
 #endif
-#ifdef USE_SONAR
-    {"sonarRaw",   -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_SONAR},
+#ifdef USE_RANGEFINDER
+    {"surfaceRaw",   -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_RANGEFINDER},
 #endif
     {"rssi",       -1, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_RSSI},
 
@@ -303,8 +303,8 @@ typedef struct blackboxMainState_s {
 #ifdef USE_MAG
     int16_t magADC[XYZ_AXIS_COUNT];
 #endif
-#ifdef USE_SONAR
-    int32_t sonarRaw;
+#ifdef USE_RANGEFINDER
+    int32_t surfaceRaw;
 #endif
     uint16_t rssi;
 } blackboxMainState_t;
@@ -437,9 +437,9 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
     case FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC:
         return (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) && (batteryConfig()->currentMeterSource != CURRENT_METER_VIRTUAL);
 
-    case FLIGHT_LOG_FIELD_CONDITION_SONAR:
-#ifdef USE_SONAR
-        return feature(FEATURE_SONAR);
+    case FLIGHT_LOG_FIELD_CONDITION_RANGEFINDER:
+#ifdef USE_RANGEFINDER
+        return sensors(SENSOR_RANGEFINDER);
 #else
         return false;
 #endif
@@ -568,9 +568,9 @@ static void writeIntraframe(void)
     }
 #endif
 
-#ifdef USE_SONAR
-    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_SONAR)) {
-        blackboxWriteSignedVB(blackboxCurrent->sonarRaw);
+#ifdef USE_RANGEFINDER
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_RANGEFINDER)) {
+        blackboxWriteSignedVB(blackboxCurrent->surfaceRaw);
     }
 #endif
 
@@ -698,9 +698,9 @@ static void writeInterframe(void)
     }
 #endif
 
-#ifdef USE_SONAR
-    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_SONAR)) {
-        deltas[optionalFieldCount++] = blackboxCurrent->sonarRaw - blackboxLast->sonarRaw;
+#ifdef USE_RANGEFINDER
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_RANGEFINDER)) {
+        deltas[optionalFieldCount++] = blackboxCurrent->surfaceRaw - blackboxLast->surfaceRaw;
     }
 #endif
 
@@ -1022,9 +1022,9 @@ static void loadMainState(timeUs_t currentTimeUs)
     blackboxCurrent->BaroAlt = baro.BaroAlt;
 #endif
 
-#ifdef USE_SONAR
+#ifdef USE_RANGEFINDER
     // Store the raw sonar value without applying tilt correction
-    blackboxCurrent->sonarRaw = sonarRead();
+    blackboxCurrent->surfaceRaw = rangefinderGetLatestAltitude();
 #endif
 
     blackboxCurrent->rssi = getRssi();

@@ -82,7 +82,8 @@
 
 #define MAG_AK8963_ALIGN CW90_DEG_FLIP
 
-//#define USE_SONAR
+//#define USE_RANGEFINDER
+//#define USE_RANGEFINDER_HCSR04
 
 #define USE_VCP
 #define USE_UART1

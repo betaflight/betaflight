@@ -61,7 +61,7 @@ typedef enum {
     ADC_CHANNEL_COUNT
 } AdcChannel;
 
-typedef struct adc_config_s {
+typedef struct adcOperatingConfig_s {
     ioTag_t tag;
     uint8_t adcChannel;         // ADC1_INxx channel number
     uint8_t dmaIndex;           // index into DMA buffer in case of sparse channels
@@ -69,20 +69,8 @@ typedef struct adc_config_s {
     uint8_t sampleTime;
 } adcOperatingConfig_t;
 
-typedef struct adcChannelConfig_t {
-    bool enabled;
-    ioTag_t ioTag;
-} adcChannelConfig_t;
-
-typedef struct adcConfig_s {
-    adcChannelConfig_t vbat;
-    adcChannelConfig_t rssi;
-    adcChannelConfig_t current;
-    adcChannelConfig_t external1;
-    int8_t device; // ADCDevice
-} adcConfig_t;
-
-void adcInit(const adcConfig_t *config);
+struct adcConfig_s;
+void adcInit(const struct adcConfig_s *config);
 uint16_t adcGetChannel(uint8_t channel);
 
 #ifndef SITL

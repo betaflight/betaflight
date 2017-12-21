@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 #include "drivers/display.h"
 
 PG_DECLARE(displayPortProfile_t, displayPortProfileMsp);

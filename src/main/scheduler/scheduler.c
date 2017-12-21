@@ -42,21 +42,21 @@
 // 2 - time spent in scheduler
 // 3 - time spent executing check function
 
-static cfTask_t *currentTask = NULL;
+static FAST_RAM cfTask_t *currentTask = NULL;
 
-static uint32_t totalWaitingTasks;
-static uint32_t totalWaitingTasksSamples;
+static FAST_RAM uint32_t totalWaitingTasks;
+static FAST_RAM uint32_t totalWaitingTasksSamples;
 
-static bool calculateTaskStatistics;
-uint16_t averageSystemLoadPercent = 0;
+static FAST_RAM bool calculateTaskStatistics;
+FAST_RAM uint16_t averageSystemLoadPercent = 0;
 
 
-static int taskQueuePos = 0;
-STATIC_UNIT_TESTED int taskQueueSize = 0;
+static FAST_RAM int taskQueuePos = 0;
+STATIC_UNIT_TESTED FAST_RAM int taskQueueSize = 0;
 
 // No need for a linked list for the queue, since items are only inserted at startup
 
-STATIC_UNIT_TESTED cfTask_t* taskQueueArray[TASK_COUNT + 1]; // extra item for NULL pointer at end of queue
+STATIC_UNIT_TESTED FAST_RAM cfTask_t* taskQueueArray[TASK_COUNT + 1]; // extra item for NULL pointer at end of queue
 
 void queueClear(void)
 {
@@ -106,7 +106,7 @@ bool queueRemove(cfTask_t *task)
 /*
  * Returns first item queue or NULL if queue empty
  */
-cfTask_t *queueFirst(void)
+FAST_CODE cfTask_t *queueFirst(void)
 {
     taskQueuePos = 0;
     return taskQueueArray[0]; // guaranteed to be NULL if queue is empty
@@ -115,7 +115,7 @@ cfTask_t *queueFirst(void)
 /*
  * Returns next item in queue or NULL if at end of queue
  */
-cfTask_t *queueNext(void)
+FAST_CODE cfTask_t *queueNext(void)
 {
     return taskQueueArray[++taskQueuePos]; // guaranteed to be NULL at end of queue
 }
@@ -225,7 +225,7 @@ void schedulerInit(void)
     queueAdd(&cfTasks[TASK_SYSTEM]);
 }
 
-void scheduler(void)
+FAST_CODE void scheduler(void)
 {
     // Cache currentTime
     const timeUs_t currentTimeUs = micros();

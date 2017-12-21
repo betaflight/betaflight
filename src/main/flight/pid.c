@@ -30,8 +30,8 @@
 #include "common/filter.h"
 
 #include "config/config_reset.h"
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "drivers/sound_beeper.h"
 #include "drivers/time.h"
@@ -51,14 +51,14 @@
 #include "sensors/gyro.h"
 #include "sensors/acceleration.h"
 
-uint32_t targetPidLooptime;
-static bool pidStabilisationEnabled;
+FAST_RAM uint32_t targetPidLooptime;
+static FAST_RAM bool pidStabilisationEnabled;
 
-static bool inCrashRecoveryMode = false;
+static FAST_RAM bool inCrashRecoveryMode = false;
 
-float axisPID_P[3], axisPID_I[3], axisPID_D[3];
+FAST_RAM float axisPID_P[3], axisPID_I[3], axisPID_D[3];
 
-static float dT;
+static FAST_RAM float dT;
 
 PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 1);
 
@@ -143,7 +143,7 @@ void pidResetITerm(void)
     }
 }
 
-static float itermAccelerator = 1.0f;
+static FAST_RAM float itermAccelerator = 1.0f;
 
 void pidSetItermAccelerator(float newItermAccelerator)
 {
@@ -157,12 +157,12 @@ void pidStabilisationState(pidStabilisationState_e pidControllerState)
 
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 
-static filterApplyFnPtr dtermNotchFilterApplyFn;
-static void *dtermFilterNotch[2];
-static filterApplyFnPtr dtermLpfApplyFn;
-static void *dtermFilterLpf[2];
-static filterApplyFnPtr ptermYawFilterApplyFn;
-static void *ptermYawFilter;
+static FAST_RAM filterApplyFnPtr dtermNotchFilterApplyFn;
+static FAST_RAM void *dtermFilterNotch[2];
+static FAST_RAM filterApplyFnPtr dtermLpfApplyFn;
+static FAST_RAM void *dtermFilterLpf[2];
+static FAST_RAM filterApplyFnPtr ptermYawFilterApplyFn;
+static FAST_RAM void *ptermYawFilter;
 
 typedef union dtermFilterLpf_u {
     pt1Filter_t pt1Filter[2];
@@ -249,22 +249,22 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     }
 }
 
-static float Kp[3], Ki[3], Kd[3];
-static float maxVelocity[3];
-static float relaxFactor;
-static float dtermSetpointWeight;
-static float levelGain, horizonGain, horizonTransition, horizonCutoffDegrees, horizonFactorRatio;
-static float ITermWindupPointInv;
-static uint8_t horizonTiltExpertMode;
-static timeDelta_t crashTimeLimitUs;
-static timeDelta_t crashTimeDelayUs;
-static int32_t crashRecoveryAngleDeciDegrees;
-static float crashRecoveryRate;
-static float crashDtermThreshold;
-static float crashGyroThreshold;
-static float crashSetpointThreshold;
-static float crashLimitYaw;
-static float itermLimit;
+static FAST_RAM float Kp[3], Ki[3], Kd[3];
+static FAST_RAM float maxVelocity[3];
+static FAST_RAM float relaxFactor;
+static FAST_RAM float dtermSetpointWeight;
+static FAST_RAM float levelGain, horizonGain, horizonTransition, horizonCutoffDegrees, horizonFactorRatio;
+static FAST_RAM float ITermWindupPointInv;
+static FAST_RAM uint8_t horizonTiltExpertMode;
+static FAST_RAM timeDelta_t crashTimeLimitUs;
+static FAST_RAM timeDelta_t crashTimeDelayUs;
+static FAST_RAM int32_t crashRecoveryAngleDeciDegrees;
+static FAST_RAM float crashRecoveryRate;
+static FAST_RAM float crashDtermThreshold;
+static FAST_RAM float crashGyroThreshold;
+static FAST_RAM float crashSetpointThreshold;
+static FAST_RAM float crashLimitYaw;
+static FAST_RAM float itermLimit;
 
 void pidInitConfig(const pidProfile_t *pidProfile)
 {
@@ -440,21 +440,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
                 BEEP_ON;
             }
             if (axis == FD_YAW) {
-                // on yaw axis, prevent "yaw spin to the moon" after crash by constraining errorRate
-#if !(defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_ICM20649))
-#define GYRO_POTENTIAL_OVERFLOW_RATE 1990.0f
-                if (gyroRate > GYRO_POTENTIAL_OVERFLOW_RATE || gyroRate < -GYRO_POTENTIAL_OVERFLOW_RATE) {
-                    // ICM gyros are specified to +/- 2000 deg/sec, in a crash they can go out of spec.
-                    // This can cause an overflow and sign reversal in the output.
-                    // Overflow and sign reversal seems to result in a gyro value of +1996 or -1996.
-                    // If there is a sign reversal we will actually increase crash-induced yaw spin
-                    // so best thing to do is set error to zero.
-                    errorRate = 0.0f;
-                } else
-#endif
-                {
-                    errorRate = constrainf(errorRate, -crashLimitYaw, crashLimitYaw);
-                }
+                errorRate = constrainf(errorRate, -crashLimitYaw, crashLimitYaw);
             } else {
                 // on roll and pitch axes calculate currentPidSetpoint and errorRate to level the aircraft to recover from crash
                 if (sensors(SENSOR_ACC)) {
@@ -522,8 +508,9 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
 
             previousRateError[axis] = rD;
 
-            // if crash recovery is on and accelerometer enabled then check for a crash
-            if (pidProfile->crash_recovery) {
+            // if crash recovery is on and accelerometer enabled and there is no gyro overflow, then check for a crash
+            // no point in trying to recover if the crash is so severe that the gyro overflows
+            if (pidProfile->crash_recovery && !gyroOverflowDetected()) {
                 if (ARMING_FLAG(ARMED)) {
                     if (motorMixRange >= 1.0f && !inCrashRecoveryMode
                         && ABS(delta) > crashDtermThreshold
@@ -545,8 +532,8 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             axisPID_D[axis] = Kd[axis] * delta * tpaFactor;
         }
 
-        // Disable PID control at zero throttle
-        if (!pidStabilisationEnabled) {
+        // Disable PID control if at zero throttle or if gyro overflow detected
+        if (!pidStabilisationEnabled || gyroOverflowDetected()) {
             axisPID_P[axis] = 0;
             axisPID_I[axis] = 0;
             axisPID_D[axis] = 0;

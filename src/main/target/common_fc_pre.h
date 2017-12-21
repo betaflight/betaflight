@@ -52,6 +52,9 @@
 #define USE_GYRO_DATA_ANALYSE
 #endif
 
+#ifdef STM32F722xx
+#define USE_ITCM_RAM
+#endif
 #ifdef STM32F7
 #define USE_DSHOT
 #define USE_DSHOT_DMAR
@@ -75,6 +78,23 @@
 #else
 #define DEFAULT_AUX_CHANNEL_COUNT       6
 #endif
+
+#ifdef USE_ITCM_RAM
+#define FAST_CODE __attribute__((section(".tcm_code")))
+#else
+#define FAST_CODE
+#endif // USE_ITCM_RAM
+
+#ifdef USE_FAST_RAM
+#ifdef __APPLE__
+#define FAST_RAM                    __attribute__ ((section("__DATA,__.fastram_bss"), aligned(4)))
+#else
+#define FAST_RAM                    __attribute__ ((section(".fastram_bss"), aligned(4)))
+#endif
+#else
+#define FAST_RAM
+#endif // USE_FAST_RAM
+
 
 #define USE_CLI
 #define USE_PPM

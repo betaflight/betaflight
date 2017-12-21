@@ -30,8 +30,8 @@
 
 #include "config/config_eeprom.h"
 #include "config/feature.h"
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "drivers/adc.h"
 #include "drivers/bus.h"
@@ -76,6 +76,8 @@
 #include "io/transponder_ir.h"
 
 #include "osd_slave/osd_slave_init.h"
+
+#include "pg/adc.h"
 
 #include "scheduler/scheduler.h"
 

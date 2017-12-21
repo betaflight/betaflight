@@ -64,7 +64,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOXOSD, "OSD DISABLE SW", 19 },
     { BOXTELEMETRY, "TELEMETRY", 20 },
     { BOXGTUNE, "GTUNE", 21 },
-    { BOXSONAR, "SONAR", 22 },
+    { BOXRANGEFINDER, "RANGEFINDER", 22 },
     { BOXSERVO1, "SERVO1", 23 },
     { BOXSERVO2, "SERVO2", 24 },
     { BOXSERVO3, "SERVO3", 25 },
@@ -188,9 +188,9 @@ void initActiveBoxIds(void)
     }
 #endif
 
-#ifdef USE_SONAR
-    if (feature(FEATURE_SONAR)) {
-        BME(BOXSONAR);
+#ifdef USE_RANGEFINDER
+    if (feature(FEATURE_RANGEFINDER)) { // XXX && sensors(SENSOR_RANGEFINDER)?
+        BME(BOXRANGEFINDER);
     }
 #endif
 
@@ -279,40 +279,36 @@ int packFlightModeFlags(boxBitmask_t *mspFlightModeFlags)
 
     // enabled BOXes, bits indexed by boxId_e
     boxBitmask_t boxEnabledMask;
+    boxBitmask_t boxFlightModeMask;
     memset(&boxEnabledMask, 0, sizeof(boxEnabledMask));
+    memset(&boxFlightModeMask, 0, sizeof(boxFlightModeMask));
+
+    // copy ARM state
+    if (ARMING_FLAG(ARMED)) {
+        bitArraySet(&boxEnabledMask, BOXARM);
+        bitArraySet(&boxFlightModeMask, BOXARM);
+    }
 
     // enable BOXes dependent on FLIGHT_MODE, use mapping table (from runtime_config.h)
     // flightMode_boxId_map[HORIZON_MODE] == BOXHORIZON
     static const int8_t flightMode_boxId_map[] = FLIGHT_MODE_BOXID_MAP_INITIALIZER;
-    flightModeFlags_e flightModeCopyMask = ~0;  // only modes with bit set will be copied
     for (unsigned i = 0; i < ARRAYLEN(flightMode_boxId_map); i++) {
-        if (flightMode_boxId_map[i] != -1        // boxId_e does exist for this FLIGHT_MODE
-           && (flightModeCopyMask & (1 << i))   // this flightmode is copy is enabled
-           && FLIGHT_MODE(1 << i)) {            // this flightmode is active
-            bitArraySet(&boxEnabledMask, flightMode_boxId_map[i]);
+        const int8_t boxid = flightMode_boxId_map[i];
+        if (boxid != -1) {    // boxId_e does exist for this FLIGHT_MODE
+            bitArraySet(&boxFlightModeMask, boxid);
+            if (FLIGHT_MODE(1 << i))  // this flightmode is active
+                bitArraySet(&boxEnabledMask, boxid);
         }
     }
 
     // enable BOXes dependent on rcMode bits, indexes are the same.
-    // only subset of BOXes depend on rcMode, use mask to select them
-#define BM(x) (1ULL << (x))
-    // limited to 64 BOXes now to keep code simple
-    const uint64_t rcModeCopyMask = BM(BOXHEADADJ) | BM(BOXCAMSTAB) | BM(BOXCAMTRIG) | BM(BOXBEEPERON)
-        | BM(BOXLEDMAX) | BM(BOXLEDLOW) | BM(BOXLLIGHTS) | BM(BOXCALIB) | BM(BOXGOV) | BM(BOXOSD)
-        | BM(BOXTELEMETRY) | BM(BOXGTUNE) | BM(BOXBLACKBOX) | BM(BOXBLACKBOXERASE) | BM(BOXAIRMODE)
-        | BM(BOXANTIGRAVITY) | BM(BOXFPVANGLEMIX) | BM(BOXFLIPOVERAFTERCRASH) | BM(BOX3DDISABLE)
-        | BM(BOXBEEPGPSCOUNT) | BM(BOXVTXPITMODE);
-    STATIC_ASSERT(sizeof(rcModeCopyMask) * 8 >= CHECKBOX_ITEM_COUNT, copy_mask_too_small_for_boxes);
+    // only subset of BOXes depend on rcMode (non-ARM or FLIGHT_MODE), use mask to select them
+    // NOTE: ARM and FLIGHT modes are potentially contingent on other conditions.
+    //       Therefore, they must be masked/enabled separately from simple "range conditions" (RC)
     for (unsigned i = 0; i < CHECKBOX_ITEM_COUNT; i++) {
-        if ((rcModeCopyMask & BM(i))    // mode copy is enabled
-           && IS_RC_MODE_ACTIVE(i)) {    // mode is active
+        if (!bitArrayGet(&boxFlightModeMask, i) && IS_RC_MODE_ACTIVE(i))
             bitArraySet(&boxEnabledMask, i);
-        }
     }
-#undef BM
-    // copy ARM state
-    if (ARMING_FLAG(ARMED))
-        bitArraySet(&boxEnabledMask, BOXARM);
 
     // map boxId_e enabled bits to MSP status indexes
     // only active boxIds are sent in status over MSP, other bits are not counted

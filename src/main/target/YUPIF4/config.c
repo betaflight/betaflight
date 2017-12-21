@@ -24,6 +24,7 @@
 #include "blackbox/blackbox.h"
 #include "fc/config.h"
 #include "flight/pid.h"
+#include "pg/adc.h"
 #include "telemetry/telemetry.h"
 
 #include "hardware_revision.h"

@@ -32,8 +32,8 @@
 #include "drivers/io.h"
 #include "drivers/rcc.h"
 
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 // Pin defaults for backward compatibility
 #ifndef SPI1_SCK_PIN

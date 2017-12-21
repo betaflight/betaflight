@@ -56,4 +56,6 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "MAX7456_SPICLOCK",
     "SBUS",
     "FPORT",
+    "RANGEFINDER",
+    "RANGEFINDER_QUALITY",
 };

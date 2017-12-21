@@ -65,8 +65,8 @@ typedef struct currentMeterADCState_s {
 } currentMeterADCState_t;
 
 typedef struct currentSensorADCConfig_s {
-    int16_t scale;              // scale the current sensor output voltage to milliamps. Value in 1/10th mV/A
-    int16_t offset;            // offset of the current sensor in millivolt steps
+    int16_t scale;              // scale the current sensor output voltage to milliamps. Value in mV/10A
+    int16_t offset;             // offset of the current sensor in mA
 } currentSensorADCConfig_t;
 
 PG_DECLARE(currentSensorADCConfig_t, currentSensorADCConfig);

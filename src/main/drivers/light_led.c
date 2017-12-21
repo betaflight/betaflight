@@ -17,7 +17,7 @@
 
 #include "platform.h"
 
-#include "config/parameter_group_ids.h"
+#include "pg/pg_ids.h"
 
 #include "drivers/io.h"
 #include "io_impl.h"

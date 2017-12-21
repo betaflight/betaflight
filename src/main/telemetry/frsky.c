@@ -33,8 +33,8 @@
 #include "common/utils.h"
 
 #include "config/feature.h"
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/sensor.h"
@@ -334,7 +334,7 @@ static void sendGPSLatLong(void)
 #endif
 #endif
 
-#if defined(USE_BARO) || defined(USE_SONAR)
+#if defined(USE_BARO) || defined(USE_RANGEFINDER)
 /*
  * Send vertical speed for opentx. ID_VERT_SPEED
  * Unit is cm/s
@@ -545,8 +545,8 @@ void handleFrSkyTelemetry(timeUs_t currentTimeUs)
         sendAccel();
     }
 
-#if defined(USE_BARO) || defined(USE_SONAR)
-    if (sensors(SENSOR_BARO | SENSOR_SONAR)) {
+#if defined(USE_BARO) || defined(USE_RANGEFINDER)
+    if (sensors(SENSOR_BARO | SENSOR_RANGEFINDER)) {
         // Sent every 125ms
         sendVario();
 

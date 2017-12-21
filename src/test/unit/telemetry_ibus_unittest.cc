@@ -21,7 +21,7 @@
 extern "C" {
 #include <platform.h>
 #include "common/utils.h"
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 #include "drivers/serial.h"
 #include "io/serial.h"
 #include "fc/rc_controls.h"

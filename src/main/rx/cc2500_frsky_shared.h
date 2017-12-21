@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "rx/rx_spi.h"
+
 #define MAX_MISSING_PKT 100
 
 #define DEBUG_DATA_ERROR_COUNT 0
@@ -47,15 +49,16 @@ extern IO_t antSelPin;
 
 void setRssiDbm(uint8_t value);
 
-void frskySpiRxSetup();
+void frskySpiRxSetup(rx_spi_protocol_e protocol);
 
 void RxEnable(void);
 void TxEnable(void);
 
+void initialize();
 void initialiseData(uint8_t adr);
 
 bool checkBindRequested(bool reset);
 
-void handleBinding(uint8_t protocolState, uint8_t *packet);
+uint8_t handleBinding(uint8_t protocolState, uint8_t *packet);
 
-void nextChannel(uint8_t skip, bool sendStrobe);
+void nextChannel(uint8_t skip);

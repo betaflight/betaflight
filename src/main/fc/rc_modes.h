@@ -19,7 +19,7 @@
 
 #include <stdbool.h>
 
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 
 typedef enum {
     BOXARM = 0,
@@ -44,7 +44,7 @@ typedef enum {
     BOXOSD,
     BOXTELEMETRY,
     BOXGTUNE,
-    BOXSONAR,
+    BOXRANGEFINDER,
     BOXSERVO1,
     BOXSERVO2,
     BOXSERVO3,

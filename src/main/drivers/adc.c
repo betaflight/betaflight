@@ -19,6 +19,9 @@
 #include <stdint.h>
 
 #include "platform.h"
+#include "common/utils.h"
+
+#ifdef USE_ADC
 
 #include "build/build_config.h"
 #include "build/debug.h"
@@ -26,11 +29,9 @@
 #include "adc.h"
 #include "adc_impl.h"
 
-#include "common/utils.h"
 
 //#define DEBUG_ADC_CHANNELS
 
-#ifdef USE_ADC
 adcOperatingConfig_t adcOperatingConfig[ADC_CHANNEL_COUNT];
 volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
 

@@ -26,7 +26,7 @@
 #include "common/maths.h"
 #include "common/utils.h"
 #include "config/config_eeprom.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg_ids.h"
 #include "fc/config.h"
 
 #include "rx/rx.h"

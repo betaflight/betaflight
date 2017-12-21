@@ -19,7 +19,7 @@
 
 #include "common/color.h"
 #include "common/time.h"
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 #include "drivers/io_types.h"
 
 #define LED_MAX_STRIP_LENGTH           32

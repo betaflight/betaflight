@@ -25,7 +25,7 @@
 #include "nvic.h"
 #include "pwm_output.h"
 #include "time.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg_ids.h"
 
 #if defined(STM32F40_41xxx)
 #define CAMERA_CONTROL_TIMER_HZ   MHZ_TO_HZ(84)

@@ -22,14 +22,22 @@
 
 #ifdef USE_TARGET_CONFIG
 
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 #include "drivers/max7456.h"
+#include "io/serial.h"
 
 void targetConfiguration(void)
 {
 #ifdef OMNIBUSF4BASE
     // OMNIBUS F4 AIO (1st gen) has a AB7456 chip that is detected as MAX7456
     max7456ConfigMutable()->clockConfig = MAX7456_CLOCK_CONFIG_FULL;
+#endif
+
+#ifdef EXUAVF4PRO
+    serialConfigMutable()->portConfigs[1].functionMask = FUNCTION_TELEMETRY_SMARTPORT;
+    serialConfigMutable()->portConfigs[2].functionMask = FUNCTION_VTX_TRAMP;
+    serialConfigMutable()->portConfigs[3].functionMask = FUNCTION_RCDEVICE;
+    serialConfigMutable()->portConfigs[4].functionMask = FUNCTION_RX_SERIAL;
 #endif
 }
 #endif

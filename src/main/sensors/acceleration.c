@@ -29,8 +29,8 @@
 
 #include "config/config_reset.h"
 #include "config/feature.h"
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/accgyro/accgyro_adxl345.h"
@@ -67,7 +67,7 @@
 #endif
 
 
-acc_t acc;                       // acc access functions
+FAST_RAM acc_t acc;                       // acc access functions
 
 static float accumulatedMeasurements[XYZ_AXIS_COUNT];
 static int accumulatedMeasurementCount;
@@ -319,7 +319,6 @@ bool accInit(uint32_t gyroSamplingInverval)
     memset(&acc, 0, sizeof(acc));
     // copy over the common gyro mpu settings
     acc.dev.bus = *gyroSensorBus();
-    acc.dev.mpuConfiguration = *gyroMpuConfiguration();
     acc.dev.mpuDetectionResult = *gyroMpuDetectionResult();
     acc.dev.acc_high_fsr = accelerometerConfig()->acc_high_fsr;
     if (!accDetect(&acc.dev, accelerometerConfig()->acc_hardware)) {

@@ -20,6 +20,8 @@
 
 #include "platform.h"
 
+#ifdef USE_VCP
+
 #include "build/build_config.h"
 
 #include "common/utils.h"
@@ -227,3 +229,4 @@ uint32_t usbVcpGetBaudRate(serialPort_t *instance)
 
     return CDC_BaudRate();
 }
+#endif

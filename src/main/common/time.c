@@ -30,7 +30,7 @@
 #include "common/printf.h"
 #include "common/time.h"
 
-#include "config/parameter_group_ids.h"
+#include "pg/pg_ids.h"
 
 #include "drivers/time.h"
 

@@ -30,6 +30,7 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
+#include "drivers/adc.h"
 #include "drivers/cc2500.h"
 #include "drivers/io.h"
 #include "drivers/system.h"
@@ -38,7 +39,7 @@
 #include "fc/config.h"
 
 #include "config/feature.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg_ids.h"
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
@@ -59,7 +60,6 @@
 #define FS_THR 960
 
 static uint32_t missingPackets;
-static uint8_t calData[255][3];
 static uint8_t cnt;
 static int32_t t_out;
 static timeUs_t lastPacketReceivedTime;
@@ -143,59 +143,6 @@ static void telemetry_build_frame(uint8_t *packet)
 
 #endif // USE_RX_FRSKY_SPI_TELEMETRY
 
-static void initialize(void)
-{
-    cc2500Reset();
-    cc2500WriteReg(CC2500_02_IOCFG0, 0x01);
-    cc2500WriteReg(CC2500_17_MCSM1, 0x0C);
-    cc2500WriteReg(CC2500_18_MCSM0, 0x18);
-    cc2500WriteReg(CC2500_06_PKTLEN, 0x19);
-    cc2500WriteReg(CC2500_08_PKTCTRL0, 0x05);
-    cc2500WriteReg(CC2500_3E_PATABLE, 0xFF);
-    cc2500WriteReg(CC2500_0B_FSCTRL1, 0x08);
-    cc2500WriteReg(CC2500_0C_FSCTRL0, 0x00);
-    cc2500WriteReg(CC2500_0D_FREQ2, 0x5C);
-    cc2500WriteReg(CC2500_0E_FREQ1, 0x76);
-    cc2500WriteReg(CC2500_0F_FREQ0, 0x27);
-    cc2500WriteReg(CC2500_10_MDMCFG4, 0xAA);
-    cc2500WriteReg(CC2500_11_MDMCFG3, 0x39);
-    cc2500WriteReg(CC2500_12_MDMCFG2, 0x11);
-    cc2500WriteReg(CC2500_13_MDMCFG1, 0x23);
-    cc2500WriteReg(CC2500_14_MDMCFG0, 0x7A);
-    cc2500WriteReg(CC2500_15_DEVIATN, 0x42);
-    cc2500WriteReg(CC2500_19_FOCCFG, 0x16);
-    cc2500WriteReg(CC2500_1A_BSCFG, 0x6C);
-    cc2500WriteReg(CC2500_1B_AGCCTRL2, 0x03);
-    cc2500WriteReg(CC2500_1C_AGCCTRL1, 0x40);
-    cc2500WriteReg(CC2500_1D_AGCCTRL0, 0x91);
-    cc2500WriteReg(CC2500_21_FREND1, 0x56);
-    cc2500WriteReg(CC2500_22_FREND0, 0x10);
-    cc2500WriteReg(CC2500_23_FSCAL3, 0xA9);
-    cc2500WriteReg(CC2500_24_FSCAL2, 0x0A);
-    cc2500WriteReg(CC2500_25_FSCAL1, 0x00);
-    cc2500WriteReg(CC2500_26_FSCAL0, 0x11);
-    cc2500WriteReg(CC2500_29_FSTEST, 0x59);
-    cc2500WriteReg(CC2500_2C_TEST2, 0x88);
-    cc2500WriteReg(CC2500_2D_TEST1, 0x31);
-    cc2500WriteReg(CC2500_2E_TEST0, 0x0B);
-    cc2500WriteReg(CC2500_03_FIFOTHR, 0x07);
-    cc2500WriteReg(CC2500_09_ADDR, 0x00);
-    cc2500Strobe(CC2500_SIDLE);
-
-    cc2500WriteReg(CC2500_07_PKTCTRL1, 0x04);
-    cc2500WriteReg(CC2500_0C_FSCTRL0, 0);
-    for (uint8_t c = 0; c < 0xFF; c++) {
-        cc2500Strobe(CC2500_SIDLE);
-        cc2500WriteReg(CC2500_0A_CHANNR, c);
-        cc2500Strobe(CC2500_SCAL);
-        delayMicroseconds(900);
-        calData[c][0] = cc2500ReadReg(CC2500_23_FSCAL3);
-        calData[c][1] = cc2500ReadReg(CC2500_24_FSCAL2);
-        calData[c][2] = cc2500ReadReg(CC2500_25_FSCAL1);
-    }
-}
-
-
 #define FRSKY_D_CHANNEL_SCALING (2.0f / 3)
 
 static void decodeChannelPair(uint16_t *channels, const uint8_t *packet, const uint8_t highNibbleOffset) {
@@ -250,14 +197,14 @@ rx_spi_received_e frSkyDDataReceived(uint8_t *packet)
     case STATE_BIND_BINDING1:
     case STATE_BIND_BINDING2:
     case STATE_BIND_COMPLETE:
-        handleBinding(protocolState, packet);
+        protocolState = handleBinding(protocolState, packet);
 
         break;
     case STATE_STARTING:
         listLength = 47;
         initialiseData(0);
         protocolState = STATE_UPDATE;
-        nextChannel(1, true); //
+        nextChannel(1);
         cc2500Strobe(CC2500_SRX);
         ret = RX_SPI_RECEIVED_BIND;
 
@@ -288,7 +235,7 @@ rx_spi_received_e frSkyDDataReceived(uint8_t *packet)
                         if ((packet[1] == rxFrSkySpiConfig()->bindTxId[0]) &&
                             (packet[2] == rxFrSkySpiConfig()->bindTxId[1])) {
                             IOHi(frSkyLedPin);
-                            nextChannel(1, true);
+                            nextChannel(1);
 #if defined(USE_RX_FRSKY_SPI_TELEMETRY)
                             if ((packet[3] % 4) == 2) {
                                 telemetryTime = micros();
@@ -334,7 +281,7 @@ rx_spi_received_e frSkyDDataReceived(uint8_t *packet)
                 }
 
                 missingPackets++;
-                nextChannel(1, true);
+                nextChannel(1);
             } else {
                 if (cnt++ & 0x01) {
                     IOLo(frSkyLedPin);
@@ -345,7 +292,7 @@ rx_spi_received_e frSkyDDataReceived(uint8_t *packet)
 #if defined(USE_RX_FRSKY_SPI_TELEMETRY)
                 setRssiUnfiltered(0, RSSI_SOURCE_RX_PROTOCOL);
 #endif
-                nextChannel(13, true);
+                nextChannel(13);
             }
 
             cc2500Strobe(CC2500_SRX);
@@ -381,16 +328,18 @@ void frSkyDInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 
     rxRuntimeConfig->channelCount = RC_CHANNEL_COUNT;
 
-    frskySpiRxSetup();
-
+    protocolState = STATE_INIT;
     lastPacketReceivedTime = 0;
+    missingPackets = 0;
+    t_out = 50;
 
 #if defined(USE_RX_FRSKY_SPI_TELEMETRY) && defined(USE_TELEMETRY_FRSKY)
     initFrSkyExternalTelemetry(&frSkyTelemetryInitFrameSpi,
                                &frSkyTelemetryWriteSpi);
 #endif
-    if (rssiSource == RSSI_SOURCE_NONE) {
-        rssiSource = RSSI_SOURCE_RX_PROTOCOL;
-    }
+
+    frskySpiRxSetup(rxConfig->rx_spi_protocol);
+
+    start_time = millis();
 }
 #endif

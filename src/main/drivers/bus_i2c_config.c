@@ -25,6 +25,8 @@
 
 #include "platform.h"
 
+#if defined(USE_I2C) && !defined(SOFT_I2C)
+
 #include "build/build_config.h"
 #include "build/debug.h"
 
@@ -32,10 +34,8 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_i2c_impl.h"
 
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
-
-#if defined(USE_I2C) && !defined(SOFT_I2C)
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #ifdef I2C_FULL_RECONFIGURABILITY
 #if I2CDEV_COUNT >= 1

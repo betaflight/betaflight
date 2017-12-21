@@ -18,7 +18,7 @@
 #pragma once
 
 #include <stdbool.h>
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 #include "fc/rc_modes.h"
 
 typedef enum {
