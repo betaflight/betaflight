@@ -199,7 +199,7 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
 };
 
 #if defined(USE_OSD) && defined(USE_OSD_ADJUSTMENTS)
-static const char *adjustmentLabels[] = {
+static const char * const adjustmentLabels[] = {
     "RC RATE",
     "RC EXPO",
     "THROTTLE EXPO",
