@@ -358,7 +358,7 @@ static void osdDrawSingleElement(uint8_t item)
 
     case OSD_MAH_DRAWN:
         tfp_sprintf(buff, "%4d%c", getMAhDrawn(), SYM_MAH);
-         break;
+        break;
 
 #ifdef USE_GPS
     case OSD_GPS_SATS:
@@ -397,7 +397,7 @@ static void osdDrawSingleElement(uint8_t item)
             if (GPS_distanceToHome > 0) {
 				int h = GPS_directionToHome - DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 				// If MAG_Heading is not available, yaw starts with zero in a random direction. With GPS course over ground this can be roughly corrected
-				if (!FLIGHT_MODE(MAG_MODE)) h = GPS_directionToHome - DECIDEGREES_TO_DEGREES(gpsSol.groundCourse);
+				if (sensors(SENSOR_GPS)) h = GPS_directionToHome - DECIDEGREES_TO_DEGREES(gpsSol.groundCourse);
 
                 buff[0] = osdGetDirectionSymbolFromHeading(h);
             } else {
@@ -415,8 +415,7 @@ static void osdDrawSingleElement(uint8_t item)
         break;
 
     case OSD_HOME_DIST:
-//        if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
-        if (STATE(GPS_FIX)) {
+        if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
             int32_t distance = osdGetMetersToSelectedUnit(GPS_distanceToHome);
             tfp_sprintf(buff, "%d%c", distance, osdGetMetersToSelectedUnitSymbol());
         } else {
@@ -431,9 +430,11 @@ static void osdDrawSingleElement(uint8_t item)
     case OSD_COMPASS_BAR:
     {
 #ifdef USE_GPS
-        int16_t h;
+        int16_t h = 0;
 		// If MAG_Heading is not available, yaw starts with zero in a random direction. With GPS course over ground the flight direction is roughly displayed instead
-		if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME) && !FLIGHT_MODE(MAG_MODE)) h = DECIDEGREES_TO_DEGREES(gpsSol.groundCourse);
+		if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME) && !FLIGHT_MODE(MAG_MODE)) {
+			h = DECIDEGREES_TO_DEGREES(gpsSol.groundCourse);
+		}
 #else
         int16_t h = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 #endif
@@ -487,7 +488,7 @@ static void osdDrawSingleElement(uint8_t item)
 
             if (isAirmodeActive()) {
                 p = "AIR";
-			}
+		}
 
             if (FLIGHT_MODE(FAILSAFE_MODE)) {
                 p = "!FS!";
@@ -495,7 +496,7 @@ static void osdDrawSingleElement(uint8_t item)
                 p = "STAB";
             } else if (FLIGHT_MODE(HORIZON_MODE)) {
                 p = "HOR";
-			}
+		}
 
             displayWrite(osdDisplayPort, elemPosX, elemPosY, p);
             return;
@@ -509,7 +510,7 @@ static void osdDrawSingleElement(uint8_t item)
                 buff[i] = toupper((unsigned char)pilotConfig()->name[i]);
                 if (pilotConfig()->name[i] == 0) {
                     break;
-				}
+		}
             }
         }
         break;
@@ -712,7 +713,7 @@ static void osdDrawSingleElement(uint8_t item)
                     buff[i] = SYM_PB_FULL;
                 } else {
                     buff[i] = SYM_PB_EMPTY;
-				}
+		}
             }
             buff[MAIN_BATT_USAGE_STEPS+1] = SYM_PB_CLOSE;
 
@@ -1051,7 +1052,7 @@ static void osdUpdateStats(void)
 
 #ifdef USE_GPS
     if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME) && (stats.max_distance < GPS_distanceToHome)) {
-            stats.max_distance = GPS_distanceToHome;
+        stats.max_distance = GPS_distanceToHome;
     }
 #endif
 }
