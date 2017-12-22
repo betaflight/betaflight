@@ -21,6 +21,8 @@
 
 #include "platform.h"
 
+#ifdef USE_ADC
+
 #include "build/debug.h"
 
 #include "drivers/accgyro/accgyro.h"
