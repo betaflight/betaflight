@@ -1179,6 +1179,11 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, currentPidProfile->dterm_filter_type);
         break;
 
+    case MSP_GYRO_KALMAN:
+        sbufWriteU16(dst, gyroConfig()->gyro_kalman_q);
+        sbufWriteU16(dst, gyroConfig()->gyro_kalman_r);
+        break;
+
     case MSP_PID_ADVANCED:
         sbufWriteU16(dst, 0);
         sbufWriteU16(dst, 0);
@@ -1625,6 +1630,16 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         gyroInitFilters();
         // reinitialize the PID filters with the new values
         pidInitFilters(currentPidProfile);
+        break;
+
+    case MSP_SET_GYRO_KALMAN:
+        if (sbufBytesRemaining(src) >= 4) {
+            gyroConfigMutable()->gyro_kalman_q = sbufReadU16(src);
+            gyroConfigMutable()->gyro_kalman_r = sbufReadU16(src);
+        }
+        // reinitialize the gyro filters with the new values
+        validateAndFixGyroConfig();
+        gyroInitFilters();
         break;
 
     case MSP_SET_PID_ADVANCED:

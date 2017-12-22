@@ -326,3 +326,7 @@
 #define MSP_SET_4WAY_IF          245    //in message          Sets 4way interface
 #define MSP_SET_RTC              246    //in message          Sets the RTC clock
 #define MSP_RTC                  247    //out message         Gets the RTC clock
+#define MSP_RF_RATE              113    //out message         Returns RF rates
+#define MSP_SET_RF_RATE          203    //in message          Sets RF rates
+#define MSP_GYRO_KALMAN          114    //out message         Returns Kalman settings
+#define MSP_SET_GYRO_KALMAN      207    //in message          Sets Kalman setting
