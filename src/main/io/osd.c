@@ -395,9 +395,11 @@ static void osdDrawSingleElement(uint8_t item)
     case OSD_HOME_DIR:
         if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
             if (GPS_distanceToHome > 0) {
-				int h = GPS_directionToHome - DECIDEGREES_TO_DEGREES(attitude.values.yaw);
-				// If MAG_Heading is not available, yaw starts with zero in a random direction. With GPS course over ground this can be roughly corrected
-				if (sensors(SENSOR_GPS)) h = GPS_directionToHome - DECIDEGREES_TO_DEGREES(gpsSol.groundCourse);
+                int h = GPS_directionToHome - DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+                // If MAG_Heading is not available, yaw starts with zero in a random direction. With GPS course over ground this can be roughly corrected
+                if (!sensors(SENSOR_MAG)) {
+                    h = GPS_directionToHome - DECIDEGREES_TO_DEGREES(gpsSol.groundCourse);
+                }
 
                 buff[0] = osdGetDirectionSymbolFromHeading(h);
             } else {
@@ -429,14 +431,12 @@ static void osdDrawSingleElement(uint8_t item)
 
     case OSD_COMPASS_BAR:
     {
+        int16_t h = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 #ifdef USE_GPS
-        int16_t h = 0;
 		// If MAG_Heading is not available, yaw starts with zero in a random direction. With GPS course over ground the flight direction is roughly displayed instead
-		if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME) && !FLIGHT_MODE(MAG_MODE)) {
+		if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME) && !sensors(SENSOR_MAG | SENSOR_RANGEFINDER)) {
 			h = DECIDEGREES_TO_DEGREES(gpsSol.groundCourse);
 		}
-#else
-        int16_t h = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 #endif
         h = osdGetHeadingIntoDiscreteDirections(h, 16);
 
@@ -449,8 +449,7 @@ static void osdDrawSingleElement(uint8_t item)
         {
 #ifdef USE_GPS
 			// If BARO is not available, the estimated altitude is zero. Using GPS altitude an absolute height can be displayed instead.
-			if (STATE(GPS_FIX) && !FLIGHT_MODE(BARO_MODE)) {
-				//osdFormatAltitudeString(buff, gpsSol.llh.alt*100, true); // if GPS altitude is in 1m units
+			if (STATE(GPS_FIX) && !sensors(SENSOR_BARO | SENSOR_RANGEFINDER)) {
 				osdFormatAltitudeString(buff, gpsSol.llh.alt*10, true); // if GPS altitude is in 0.1m units
 			} else
 #endif				
