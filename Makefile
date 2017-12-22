@@ -274,15 +274,17 @@ $(TARGET_LST): $(TARGET_ELF)
 	$(V0) $(OBJDUMP) -S --disassemble $< > $@
 
 $(TARGET_HEX): $(TARGET_ELF)
-	$(V0) $(OBJCOPY) -O ihex --set-start 0x8000000 $< $@
+	$(V1) echo Creating HEX $(TARGET_HEX)
+	$(V1) $(OBJCOPY) -O ihex --set-start 0x8000000 $< $@
 
 $(TARGET_BIN): $(TARGET_ELF)
-	$(V0) $(OBJCOPY) -O binary $< $@
+	$(V1) echo Creating BIN $(TARGET_BIN)
+	$(V1) $(OBJCOPY) -O binary $< $@
 
 $(TARGET_ELF):  $(TARGET_OBJS)
 	$(V1) echo Linking $(TARGET)
 	$(V1) $(CROSS_CC) -o $@ $^ $(LD_FLAGS)
-	$(V0) $(SIZE) $(TARGET_ELF)
+	$(V1) $(SIZE) $(TARGET_ELF)
 
 # Compile
 ifeq ($(DEBUG),GDB)
