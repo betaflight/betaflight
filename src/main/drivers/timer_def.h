@@ -374,6 +374,11 @@
         DEF_TIM_DMA_STREAM(dmaopt, TCH_## tim ## _ ## chan),    \
         DEF_TIM_DMA_CHANNEL(dmaopt, TCH_## tim ## _ ## chan),   \
         DEF_TIM_DMA_HANDLER(dmaopt, TCH_## tim ## _ ## chan)    \
+    ),                                                          \
+    DEF_TIM_DMA_COND(                                           \
+        DEF_TIM_DMA_STREAM(0, TCH_## tim ## _UP),               \
+        DEF_TIM_DMA_CHANNEL(0, TCH_## tim ## _UP),              \
+        DEF_TIM_DMA_HANDLER(0, TCH_## tim ## _UP)               \
     )                                                           \
 }                                                               \
 /**/
@@ -446,6 +451,22 @@
 #define DEF_TIM_DMA__BTCH_TIM13_CH1   NONE
 
 #define DEF_TIM_DMA__BTCH_TIM14_CH1   NONE
+
+// TIM_UP table
+#define DEF_TIM_DMA__BTCH_TIM1_UP     D(2, 5, 6)
+#define DEF_TIM_DMA__BTCH_TIM2_UP     D(1, 7, 3)
+#define DEF_TIM_DMA__BTCH_TIM3_UP     D(1, 2, 5)
+#define DEF_TIM_DMA__BTCH_TIM4_UP     D(1, 6, 2)
+#define DEF_TIM_DMA__BTCH_TIM5_UP     D(1, 0, 6)
+#define DEF_TIM_DMA__BTCH_TIM6_UP     D(1, 1, 7)
+#define DEF_TIM_DMA__BTCH_TIM7_UP     D(1, 4, 1)
+#define DEF_TIM_DMA__BTCH_TIM8_UP     D(2, 1, 7)
+#define DEF_TIM_DMA__BTCH_TIM9_UP     NONE
+#define DEF_TIM_DMA__BTCH_TIM10_UP    NONE
+#define DEF_TIM_DMA__BTCH_TIM11_UP    NONE
+#define DEF_TIM_DMA__BTCH_TIM12_UP    NONE
+#define DEF_TIM_DMA__BTCH_TIM13_UP    NONE
+#define DEF_TIM_DMA__BTCH_TIM14_UP    NONE
 
 #elif defined(STM32F7)
 #define DEF_TIM(tim, chan, pin, flags, out, dmaopt) {                   \
