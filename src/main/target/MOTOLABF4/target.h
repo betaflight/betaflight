@@ -26,8 +26,6 @@
 #define TARGET_BOARD_IDENTIFIER "MLTY"
 #endif
 
-#define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
-
 #define USBD_PRODUCT_STRING "MotoLabF4"
 
 #define LED0_PIN                PC3
@@ -137,9 +135,6 @@
 // Reserved pins, not connected
 //#define RSSI_ADC_GPIO_PIN       PC2
 
-#define USE_DSHOT
-#define USE_ESC_TELEMETRY
-#define SENSORS_SET (SENSOR_ACC)
 #define LED_STRIP
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
