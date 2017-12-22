@@ -94,7 +94,8 @@ uint16_t adcGetChannel(uint8_t channel)
     debug[0] = adcValues[adcOperatingConfig[ADC_BATTERY].dmaIndex];
     debug[1] = *adcVrefInternal;
     debug[2] = adcVrefCalibration;
-    debug[3] = *adcVrefInternal * 3300 / adcVrefCalibration;
+    //debug[3] = *adcVrefInternal * 3300 / adcVrefCalibration;
+    debug[3] = debug[0] * adcVrefCalibration / *adcVrefInternal - debug[0];
 #endif
 
 #if defined(USE_VREFINT)
