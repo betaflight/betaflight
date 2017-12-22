@@ -37,8 +37,9 @@
 
 #include "drivers/io.h"
 #include "drivers/time.h"
-#include "drivers/rangefinder/rangefinder_hcsr04.h"
 #include "drivers/rangefinder/rangefinder.h"
+#include "drivers/rangefinder/rangefinder_hcsr04.h"
+#include "drivers/rangefinder/rangefinder_lidartf.h"
 
 #include "fc/config.h"
 #include "fc/runtime_config.h"
@@ -139,6 +140,24 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
             if (uibRangefinderDetect(dev)) {
                 rangefinderHardware = RANGEFINDER_UIB;
                 rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_UIB_TASK_PERIOD_MS));
+            }
+#endif
+            break;
+
+        case RANGEFINDER_TFMINI:
+#if defined(USE_RANGEFINDER_TF)
+            if (lidarTFminiDetect(dev)) {
+                rangefinderHardware = RANGEFINDER_TFMINI;
+                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_TF_TASK_PERIOD_MS));
+            }
+#endif
+            break;
+
+        case RANGEFINDER_TF02:
+#if defined(USE_RANGEFINDER_TF)
+            if (lidarTF02Detect(dev)) {
+                rangefinderHardware = RANGEFINDER_TF02;
+                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_TF_TASK_PERIOD_MS));
             }
 #endif
             break;

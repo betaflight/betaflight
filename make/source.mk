@@ -145,6 +145,7 @@ FC_SRC = \
             drivers/display_ug2864hsweg01.c \
             drivers/light_ws2811strip.c \
             drivers/rangefinder/rangefinder_hcsr04.c \
+            drivers/rangefinder/rangefinder_lidartf.c \
             drivers/serial_escserial.c \
             drivers/vtx_common.c \
             flight/navigation.c \

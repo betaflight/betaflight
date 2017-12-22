@@ -58,4 +58,5 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "FPORT",
     "RANGEFINDER",
     "RANGEFINDER_QUALITY",
+    "LIDAR_TF",
 };
