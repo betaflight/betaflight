@@ -112,7 +112,8 @@ void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refresh
     const float omega = 2.0f * M_PI_FLOAT * filterFreq * refreshRate * 0.000001f;
     const float sn = sin_approx(omega);
     const float cs = cos_approx(omega);
-    const float alpha = sn / (2.0f * Q);
+    const float sf = M_LN2_FLOAT * 0.5f * Q * omega / sn;
+    const float alpha = sn * 0.5f * (expf(sf) - expf(-sf));
 
     float b0 = 0, b1 = 0, b2 = 0, a0 = 0, a1 = 0, a2 = 0;
 
