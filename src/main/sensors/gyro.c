@@ -129,16 +129,6 @@ static void gyroInitSensorFilters(gyroSensor_t *gyroSensor);
 #define GYRO_SYNC_DENOM_DEFAULT 4
 #endif
 
-#if (defined(USE_GYRO_SPI_MPU6500) \
-  || defined(USE_GYRO_SPI_MPU9250) \
-  || defined(USE_GYRO_SPI_ICM20601) \
-  || defined(USE_GYRO_SPI_ICM20649) \
-  || defined(USE_GYRO_SPI_ICM20689))
-#define GYRO_CHECK_OVERFLOW_DEFAULT  true
-#else
-#define GYRO_CHECK_OVERFLOW_DEFAULT  false
-#endif
-
 PG_REGISTER_WITH_RESET_TEMPLATE(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 1);
 
 PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
@@ -155,7 +145,7 @@ PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
     .gyro_soft_notch_cutoff_1 = 300,
     .gyro_soft_notch_hz_2 = 200,
     .gyro_soft_notch_cutoff_2 = 100,
-    .checkOverflow = GYRO_CHECK_OVERFLOW_DEFAULT
+    .checkOverflow = true
 );
 
 
