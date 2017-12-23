@@ -21,7 +21,7 @@
 
 #include "drivers/io.h"
 #include "drivers/nvic.h"
-#include "drivers/rx_pwm.h"
+#include "drivers/rx/rx_pwm.h"
 #include "drivers/timer.h"
 
 #include "pg/pg.h"

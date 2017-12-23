@@ -25,15 +25,11 @@
 #include "build/build_config.h"
 #include "build/debug.h"
 
-#include "config/feature.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
-
 #include "common/maths.h"
 #include "common/utils.h"
 
 #include "drivers/adc.h"
-#include "drivers/rx_cc2500.h"
+#include "drivers/rx/rx_cc2500.h"
 #include "drivers/io.h"
 #include "drivers/io_def.h"
 #include "drivers/io_types.h"

@@ -24,7 +24,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "rx_spi.h"
+#include "rx/rx_spi.h"
 
 enum {
     CC2500_00_IOCFG2 = 0x00,   // GDO2 output pin configuration

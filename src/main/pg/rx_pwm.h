@@ -18,7 +18,7 @@
 #pragma once
 
 #include "drivers/io_types.h"
-#include "drivers/rx_pwm.h"
+#include "drivers/rx/rx_pwm.h"
 
 #include "pg/pg.h"
 

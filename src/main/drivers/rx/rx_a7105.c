@@ -23,13 +23,13 @@
 
 #ifdef USE_RX_FLYSKY
 
-#include "drivers/rx_a7105.h"
 #include "drivers/bus_spi.h"
-#include "drivers/rx_spi.h"
+#include "drivers/exti.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 #include "drivers/nvic.h"
-#include "drivers/exti.h"
+#include "drivers/rx/rx_a7105.h"
+#include "drivers/rx/rx_spi.h"
 #include "drivers/time.h"
 
 #ifdef RX_PA_TXEN_PIN

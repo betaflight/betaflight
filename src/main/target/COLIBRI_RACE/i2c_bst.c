@@ -16,17 +16,14 @@
 #include "common/color.h"
 #include "common/maths.h"
 
-
-#include "drivers/sensor.h"
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/compass/compass.h"
-
-#include "drivers/serial.h"
 #include "drivers/bus_i2c.h"
+#include "drivers/sensor.h"
+#include "drivers/serial.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
-#include "drivers/rx_pwm.h"
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"

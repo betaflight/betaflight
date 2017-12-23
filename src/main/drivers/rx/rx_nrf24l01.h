@@ -23,7 +23,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "rx_spi.h"
+#include "rx/rx_spi.h"
 
 #define NRF24L01_MAX_PAYLOAD_SIZE 32
 

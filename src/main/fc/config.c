@@ -49,7 +49,7 @@
 #include "drivers/max7456.h"
 #include "drivers/pwm_esc_detect.h"
 #include "drivers/pwm_output.h"
-#include "drivers/rx_spi.h"
+#include "drivers/rx/rx_spi.h"
 #include "drivers/sensor.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"

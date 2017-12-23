@@ -28,15 +28,15 @@
 
 #include "config/feature.h"
 
-#include "drivers/rx_spi.h"
-#include "drivers/rx_nrf24l01.h"
+#include "drivers/rx/rx_spi.h"
+#include "drivers/rx/rx_nrf24l01.h"
 
 #include "fc/config.h"
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
-#include "cc2500_frsky_d.h"
-#include "cc2500_frsky_x.h"
+#include "rx/cc2500_frsky_d.h"
+#include "rx/cc2500_frsky_x.h"
 #include "rx/nrf24_cx10.h"
 #include "rx/nrf24_syma.h"
 #include "rx/nrf24_v202.h"

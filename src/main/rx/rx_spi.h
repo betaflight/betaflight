@@ -17,8 +17,7 @@
 
 #pragma once
 
-#include <stdbool.h>
-#include <stdint.h>
+#include "rx/rx.h"
 
 typedef enum {
     RX_SPI_NRF24_V202_250K = 0,
