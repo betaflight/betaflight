@@ -282,6 +282,7 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
         }
 
         motors[motorIndex].io = IOGetByTag(tag);
+        IOInit(motors[motorIndex].io, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
 
 #ifdef USE_DSHOT
         if (isDshot) {
@@ -291,15 +292,15 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
                 motorConfig->motorPwmInversion ? timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output);
             motors[motorIndex].enabled = true;
             continue;
-        }
+        } else
 #endif
-
-        IOInit(motors[motorIndex].io, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
+        {
 #if defined(USE_HAL_DRIVER)
-        IOConfigGPIOAF(motors[motorIndex].io, IOCFG_AF_PP, timerHardware->alternateFunction);
+            IOConfigGPIOAF(motors[motorIndex].io, IOCFG_AF_PP, timerHardware->alternateFunction);
 #else
-        IOConfigGPIO(motors[motorIndex].io, IOCFG_AF_PP);
+            IOConfigGPIO(motors[motorIndex].io, IOCFG_AF_PP);
 #endif
+        }
 
         /* standard PWM outputs */
         // margin of safety is 4 periods when unsynced
