@@ -23,7 +23,7 @@
 
 #include "common/maths.h"
 
-#include "drivers/cc2500.h"
+#include "drivers/rx_cc2500.h"
 #include "drivers/io.h"
 #include "drivers/time.h"
 

@@ -33,7 +33,7 @@
 #include "common/utils.h"
 
 #include "drivers/adc.h"
-#include "drivers/cc2500.h"
+#include "drivers/rx_cc2500.h"
 #include "drivers/io.h"
 #include "drivers/io_def.h"
 #include "drivers/io_types.h"
