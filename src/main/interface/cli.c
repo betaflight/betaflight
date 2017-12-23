@@ -66,7 +66,6 @@ extern uint8_t __config_end;
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 #include "drivers/inverter.h"
-#include "drivers/rx_pwm.h"
 #include "drivers/sdcard.h"
 #include "drivers/sensor.h"
 #include "drivers/serial.h"
@@ -117,11 +116,12 @@ extern uint8_t __config_end;
 
 #include "pg/adc.h"
 #include "pg/bus_i2c.h"
+#include "pg/rx_pwm.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
-#include "../rx/cc2500_frsky_common.h"
-#include "../rx/cc2500_frsky_x.h"
+#include "rx/cc2500_frsky_common.h"
+#include "rx/cc2500_frsky_x.h"
 
 #include "scheduler/scheduler.h"
 

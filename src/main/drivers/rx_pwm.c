@@ -27,14 +27,14 @@
 
 #include "common/utils.h"
 
-#include "drivers/nvic.h"
 #include "drivers/io.h"
-#include "timer.h"
+#include "drivers/nvic.h"
+#include "drivers/pwm_output.h"
+#include "drivers/timer.h"
 
-#include "pwm_output.h"
+#include "pg/rx_pwm.h"
+
 #include "rx_pwm.h"
-
-#include "flight/mixer.h" //!!TODO remove dependency on this
 
 #define DEBUG_PPM_ISR
 

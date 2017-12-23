@@ -18,24 +18,19 @@
 #pragma once
 
 #include "drivers/io_types.h"
+#include "drivers/rx_pwm.h"
 
-typedef enum {
-    INPUT_FILTERING_DISABLED = 0,
-    INPUT_FILTERING_ENABLED
-} inputFilteringMode_e;
+#include "pg/pg.h"
 
-#define PPM_RCVR_TIMEOUT            0
-#define PWM_INPUT_PORT_COUNT        8
+typedef struct ppmConfig_s {
+    ioTag_t ioTag;
+} ppmConfig_t;
 
-struct ppmConfig_s;
-void ppmRxInit(const struct ppmConfig_s *ppmConfig);
-struct pwmConfig_s;
-void pwmRxInit(const struct pwmConfig_s *pwmConfig);
+PG_DECLARE(ppmConfig_t, ppmConfig);
 
-uint16_t pwmRead(uint8_t channel);
-uint16_t ppmRead(uint8_t channel);
+typedef struct pwmConfig_s {
+    ioTag_t ioTags[PWM_INPUT_PORT_COUNT];
+    inputFilteringMode_e inputFilteringMode;
+} pwmConfig_t;
 
-bool isPPMDataBeingReceived(void);
-void resetPPMDataReceivedState(void);
-
-bool isPWMDataBeingReceived(void);
+PG_DECLARE(pwmConfig_t, pwmConfig);
