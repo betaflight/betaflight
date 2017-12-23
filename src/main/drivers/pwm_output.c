@@ -282,6 +282,7 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
         }
 
         motors[motorIndex].io = IOGetByTag(tag);
+        IOInit(motors[motorIndex].io, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
 
 #ifdef USE_DSHOT
         if (isDshot) {
@@ -294,7 +295,6 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
         }
 #endif
 
-        IOInit(motors[motorIndex].io, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
 #if defined(USE_HAL_DRIVER)
         IOConfigGPIOAF(motors[motorIndex].io, IOCFG_AF_PP, timerHardware->alternateFunction);
 #else
