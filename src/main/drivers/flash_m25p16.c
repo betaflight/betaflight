@@ -22,11 +22,14 @@
 
 #ifdef USE_FLASH_M25P16
 
-#include "flash.h"
-#include "flash_m25p16.h"
 #include "drivers/bus_spi.h"
+#include "drivers/flash.h"
 #include "drivers/io.h"
 #include "drivers/time.h"
+
+#include "pg/flash.h"
+
+#include "flash_m25p16.h"
 
 #define M25P16_INSTRUCTION_RDID             0x9F
 #define M25P16_INSTRUCTION_READ_BYTES       0x03
@@ -229,6 +232,7 @@ static bool m25p16_readIdentification(void)
  * Attempts to detect a connected m25p16. If found, true is returned and device capacity can be fetched with
  * m25p16_getGeometry().
  */
+
 bool m25p16_init(const flashConfig_t *flashConfig)
 {
     /*

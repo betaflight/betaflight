@@ -81,6 +81,7 @@
 
 #include "pg/adc.h"
 #include "pg/bus_i2c.h"
+#include "pg/flash.h"
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
