@@ -23,7 +23,6 @@
 #include "pg/pg.h"
 
 #include "drivers/flash.h"
-#include "drivers/rx_pwm.h"
 #include "drivers/sdcard.h"
 #include "drivers/serial.h"
 #include "drivers/bus_i2c.h"
@@ -84,8 +83,6 @@ typedef struct systemConfig_s {
 PG_DECLARE(pilotConfig_t, pilotConfig);
 PG_DECLARE(systemConfig_t, systemConfig);
 PG_DECLARE(beeperDevConfig_t, beeperDevConfig);
-PG_DECLARE(ppmConfig_t, ppmConfig);
-PG_DECLARE(pwmConfig_t, pwmConfig);
 PG_DECLARE(vcdProfile_t, vcdProfile);
 PG_DECLARE(sdcardConfig_t, sdcardConfig);
 

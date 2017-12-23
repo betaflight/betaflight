@@ -30,8 +30,6 @@
 
 #include "config/config_eeprom.h"
 #include "config/feature.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
 
 #include "cms/cms.h"
 #include "cms/cms_types.h"
@@ -82,6 +80,9 @@
 #include "pg/adc.h"
 #include "pg/bus_i2c.h"
 #include "pg/flash.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+#include "pg/rx_pwm.h"
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"

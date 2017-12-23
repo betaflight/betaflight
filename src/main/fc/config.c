@@ -49,7 +49,6 @@
 #include "drivers/max7456.h"
 #include "drivers/pwm_esc_detect.h"
 #include "drivers/pwm_output.h"
-#include "drivers/rx_pwm.h"
 #include "drivers/rx_spi.h"
 #include "drivers/sdcard.h"
 #include "drivers/sensor.h"
@@ -144,13 +143,6 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
 #endif
 
 
-#ifdef USE_PWM
-PG_REGISTER_WITH_RESET_FN(pwmConfig_t, pwmConfig, PG_PWM_CONFIG, 0);
-#endif
-#ifdef USE_PPM
-PG_REGISTER_WITH_RESET_FN(ppmConfig_t, ppmConfig, PG_PPM_CONFIG, 0);
-#endif
-
 #ifdef USE_SDCARD
 PG_REGISTER_WITH_RESET_TEMPLATE(sdcardConfig_t, sdcardConfig, PG_SDCARD_CONFIG, 0);
 
@@ -161,36 +153,6 @@ PG_RESET_TEMPLATE(sdcardConfig_t, sdcardConfig,
 
 // no template required since defaults are zero
 PG_REGISTER(vcdProfile_t, vcdProfile, PG_VCD_CONFIG, 0);
-
-#if defined(USE_PWM) || defined(USE_PPM)
-void pgResetFn_ppmConfig(ppmConfig_t *ppmConfig)
-{
-#ifdef PPM_PIN
-    ppmConfig->ioTag = IO_TAG(PPM_PIN);
-#else
-    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
-        if (timerHardware[i].usageFlags & TIM_USE_PPM) {
-            ppmConfig->ioTag = timerHardware[i].tag;
-            return;
-        }
-    }
-
-    ppmConfig->ioTag = IO_TAG_NONE;
-#endif
-}
-
-void pgResetFn_pwmConfig(pwmConfig_t *pwmConfig)
-{
-    pwmConfig->inputFilteringMode = INPUT_FILTERING_DISABLED;
-    int inputIndex = 0;
-    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && inputIndex < PWM_INPUT_PORT_COUNT; i++) {
-        if (timerHardware[i].usageFlags & TIM_USE_PWM) {
-            pwmConfig->ioTags[inputIndex] = timerHardware[i].tag;
-            inputIndex++;
-        }
-    }
-}
-#endif
 
 #ifdef SWAP_SERIAL_PORT_0_AND_1_DEFAULTS
 #define FIRST_PORT_INDEX 1
