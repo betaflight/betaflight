@@ -49,6 +49,12 @@ typedef struct gyro_s {
 
 extern gyro_t gyro;
 
+typedef enum {
+    GYRO_OVERFLOW_CHECK_NONE = 0,
+    GYRO_OVERFLOW_CHECK_YAW,
+    GYRO_OVERFLOW_CHECK_ALL_AXES
+} gyroOverflowCheck_e;
+
 typedef struct gyroConfig_s {
     sensor_align_e gyro_align;              // gyro alignment
     uint8_t  gyroMovementCalibrationThreshold; // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
@@ -63,8 +69,7 @@ typedef struct gyroConfig_s {
     uint16_t gyro_soft_notch_cutoff_1;
     uint16_t gyro_soft_notch_hz_2;
     uint16_t gyro_soft_notch_cutoff_2;
-    uint16_t overflowResetThreshold;
-    bool checkOverflow;
+    gyroOverflowCheck_e checkOverflow;
 } gyroConfig_t;
 
 PG_DECLARE(gyroConfig_t, gyroConfig);
