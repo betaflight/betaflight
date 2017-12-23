@@ -19,6 +19,8 @@
 
 #ifdef USE_MAX7456
 
+#include "drivers/max7456.h"
+
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
