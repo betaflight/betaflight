@@ -158,7 +158,7 @@ displayPort_t *max7456DisplayPortInit(const vcdProfile_t *vcdProfile)
 {
     displayInit(&max7456DisplayPort, &max7456VTable);
 #ifdef USE_OSD_SLAVE
-    max7456Init(vcdProfile, false);
+    max7456Init(max7456Config(), vcdProfile, false);
 #else
     max7456Init(max7456Config(), vcdProfile, systemConfig()->cpu_overclock);
 #endif
