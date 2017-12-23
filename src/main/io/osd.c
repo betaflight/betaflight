@@ -430,30 +430,33 @@ static void osdDrawSingleElement(uint8_t item)
 #endif // GPS
 
     case OSD_COMPASS_BAR:
-    {
-        int16_t h = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+        {
+            int16_t h = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 #ifdef USE_GPS
-		// If MAG_Heading is not available, yaw starts with zero in a random direction. With GPS course over ground the flight direction is roughly displayed instead
-		if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME) && !sensors(SENSOR_MAG | SENSOR_RANGEFINDER)) {
-			h = DECIDEGREES_TO_DEGREES(gpsSol.groundCourse);
-		}
+            // If MAG_Heading is not available, yaw starts with zero in a random direction. With GPS course over ground the flight direction is roughly displayed instead
+            if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME) && !sensors(SENSOR_MAG | SENSOR_RANGEFINDER)) {
+                h = DECIDEGREES_TO_DEGREES(gpsSol.groundCourse);
+            }
 #endif
-        h = osdGetHeadingIntoDiscreteDirections(h, 16);
+            h = osdGetHeadingIntoDiscreteDirections(h, 16);
 
-        memcpy(buff, compassBar + h, 9);
-        buff[9]=0;
-        break;
-    }
+            memcpy(buff, compassBar + h, 9);
+            buff[9]=0;
+            break;
+        }
 
     case OSD_ALTITUDE:
         {
 #ifdef USE_GPS
-			// If BARO is not available, the estimated altitude is zero. Using GPS altitude an absolute height can be displayed instead.
-			if (STATE(GPS_FIX) && !sensors(SENSOR_BARO | SENSOR_RANGEFINDER)) {
-				osdFormatAltitudeString(buff, gpsSol.llh.alt*10, true); // if GPS altitude is in 0.1m units
-			} else
-#endif				
+            // If BARO is not available, the estimated altitude is zero. Using GPS altitude an absolute height can be displayed instead.
+            if (STATE(GPS_FIX) && !sensors(SENSOR_BARO | SENSOR_RANGEFINDER)) {
+                osdFormatAltitudeString(buff, gpsSol.llh.alt*100, true); // GPS altitude is in 1m units
+            } else {
             osdFormatAltitudeString(buff, getEstimatedAltitude(), true);
+            }
+#else				
+            osdFormatAltitudeString(buff, getEstimatedAltitude(), true);
+#endif				
 
             break;
         }
@@ -487,7 +490,7 @@ static void osdDrawSingleElement(uint8_t item)
 
             if (isAirmodeActive()) {
                 p = "AIR";
-		}
+        }
 
             if (FLIGHT_MODE(FAILSAFE_MODE)) {
                 p = "!FS!";
@@ -495,7 +498,7 @@ static void osdDrawSingleElement(uint8_t item)
                 p = "STAB";
             } else if (FLIGHT_MODE(HORIZON_MODE)) {
                 p = "HOR";
-		}
+        }
 
             displayWrite(osdDisplayPort, elemPosX, elemPosY, p);
             return;
@@ -509,7 +512,7 @@ static void osdDrawSingleElement(uint8_t item)
                 buff[i] = toupper((unsigned char)pilotConfig()->name[i]);
                 if (pilotConfig()->name[i] == 0) {
                     break;
-		}
+                }
             }
         }
         break;
@@ -712,7 +715,7 @@ static void osdDrawSingleElement(uint8_t item)
                     buff[i] = SYM_PB_FULL;
                 } else {
                     buff[i] = SYM_PB_EMPTY;
-		}
+                }
             }
             buff[MAIN_BATT_USAGE_STEPS+1] = SYM_PB_CLOSE;
 
@@ -783,7 +786,7 @@ static void osdDrawElements(void)
     // Hide OSD when OSDSW mode is active
     if (IS_RC_MODE_ACTIVE(BOXOSD)) {
       return;
-	}
+    }
 
     if (sensors(SENSOR_ACC)) {
         osdDrawSingleElement(OSD_ARTIFICIAL_HORIZON);
@@ -901,7 +904,7 @@ void osdInit(displayPort_t *osdDisplayPortToUse)
 {
     if (!osdDisplayPortToUse) {
         return;
-	}
+    }
 
     BUILD_BUG_ON(OSD_POS_MAX != OSD_POS(31,31));
 
@@ -949,7 +952,7 @@ void osdUpdateAlarms(void)
         SET_BLINK(OSD_RSSI_VALUE);
     } else {
         CLR_BLINK(OSD_RSSI_VALUE);
-	}
+    }
 
     if (getBatteryState() == BATTERY_OK) {
         CLR_BLINK(OSD_WARNINGS);
@@ -965,7 +968,7 @@ void osdUpdateAlarms(void)
         SET_BLINK(OSD_GPS_SATS);
     } else {
         CLR_BLINK(OSD_GPS_SATS);
-	}
+    }
 
     for (int i = 0; i < OSD_TIMER_COUNT; i++) {
         const uint16_t timer = osdConfig()->timers[i];
@@ -975,7 +978,7 @@ void osdUpdateAlarms(void)
             SET_BLINK(OSD_ITEM_TIMER_1 + i);
         } else {
             CLR_BLINK(OSD_ITEM_TIMER_1 + i);
-		}
+        }
     }
 
     if (getMAhDrawn() >= osdConfig()->cap_alarm) {
@@ -992,7 +995,7 @@ void osdUpdateAlarms(void)
         SET_BLINK(OSD_ALTITUDE);
     } else {
         CLR_BLINK(OSD_ALTITUDE);
-	}
+    }
 }
 
 void osdResetAlarms(void)
@@ -1030,24 +1033,24 @@ static void osdUpdateStats(void)
 #endif
     if (stats.max_speed < value) {
         stats.max_speed = value;
-	}
+    }
 
     if (stats.min_voltage > getBatteryVoltage()) {
         stats.min_voltage = getBatteryVoltage();
-	}
+    }
 
     value = getAmperage() / 100;
     if (stats.max_current < value) {
         stats.max_current = value;
-	}
+    }
 
     if (stats.min_rssi > statRssi) {
         stats.min_rssi = statRssi;
-	}
+    }
 
     if (stats.max_altitude < getEstimatedAltitude()) {
         stats.max_altitude = getEstimatedAltitude();
-	}
+    }
 
 #ifdef USE_GPS
     if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME) && (stats.max_distance < GPS_distanceToHome)) {
