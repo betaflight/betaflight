@@ -77,6 +77,9 @@
 FAST_RAM gyro_t gyro;
 static FAST_RAM uint8_t gyroDebugMode;
 
+#ifdef USE_GYRO_OVERFLOW_CHECK
+static FAST_RAM uint8_t overflowAxisMask;
+#endif
 static FAST_RAM float accumulatedMeasurements[XYZ_AXIS_COUNT];
 static FAST_RAM float gyroPrevious[XYZ_AXIS_COUNT];
 static FAST_RAM timeUs_t accumulatedMeasurementTimeUs;
@@ -145,7 +148,7 @@ PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
     .gyro_soft_notch_cutoff_1 = 300,
     .gyro_soft_notch_hz_2 = 200,
     .gyro_soft_notch_cutoff_2 = 100,
-    .checkOverflow = true
+    .checkOverflow = GYRO_OVERFLOW_CHECK_ALL_AXES
 );
 
 
@@ -387,6 +390,16 @@ static bool gyroInitSensor(gyroSensor_t *gyroSensor)
 
 bool gyroInit(void)
 {
+#ifdef USE_GYRO_OVERFLOW_CHECK
+    if (gyroConfig()->checkOverflow == GYRO_OVERFLOW_CHECK_YAW) {
+        overflowAxisMask = GYRO_OVERFLOW_Z;
+    } else if (gyroConfig()->checkOverflow == GYRO_OVERFLOW_CHECK_ALL_AXES) {
+        overflowAxisMask = GYRO_OVERFLOW_X | GYRO_OVERFLOW_Y | GYRO_OVERFLOW_Z;
+    } else {
+        overflowAxisMask = 0;
+    }
+#endif
+
     switch (debugMode) {
     case DEBUG_FFT:
     case DEBUG_GYRO_NOTCH:
@@ -627,6 +640,7 @@ FAST_CODE int32_t gyroSlewLimiter(gyroSensor_t *gyroSensor, int axis)
 
 static void checkForOverflow(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
 {
+#ifdef USE_GYRO_OVERFLOW_CHECK
     // check for overflow to handle Yaw Spin To The Moon (YSTTM)
     // ICM gyros are specified to +/- 2000 deg/sec, in a crash they can go out of spec.
     // This can cause an overflow and sign reversal in the output.
@@ -640,6 +654,7 @@ static void checkForOverflow(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
               && abs(gyroRateY) < overflowResetThreshold
               && abs(gyroRateZ) < overflowResetThreshold) {
             // if we have 50ms of consecutive OK gyro vales, then assume yaw readings are OK again and reset overflowDetected
+            // reset requires good OK values on all axes
             if (cmpTimeUs(currentTimeUs, gyroSensor->overflowTimeUs) > 50000) {
                 gyroSensor->overflowDetected = false;
             }
@@ -649,11 +664,16 @@ static void checkForOverflow(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
         }
     }
 #ifndef SIMULATOR_BUILD
-    if (mpuGyroCheckOverflow(&gyroSensor->gyroDev) != GYRO_OVERFLOW_NONE) {
+    // check for overflow in the axes set in overflowAxisMask
+    if (mpuGyroCheckOverflow(&gyroSensor->gyroDev) & overflowAxisMask) {
         gyroSensor->overflowDetected = true;
         gyroSensor->overflowTimeUs = currentTimeUs;
     }
-#endif
+#endif // SIMULATOR_BUILD
+#else
+    UNUSED(gyroSensor);
+    UNUSED(currentTimeUs);
+#endif // USE_GYRO_OVERFLOW_CHECK
 }
 
 static FAST_CODE void gyroUpdateSensor(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)

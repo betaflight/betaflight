@@ -75,6 +75,9 @@ typedef enum {
 #ifdef USE_RANGEFINDER
     TABLE_RANGEFINDER_HARDWARE,
 #endif
+#ifdef USE_GYRO_OVERFLOW_CHECK
+    TABLE_GYRO_OVERFLOW_CHECK,
+#endif
     LOOKUP_TABLE_COUNT
 
 } lookupTableIndex_e;
