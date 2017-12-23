@@ -22,9 +22,10 @@
 
 #ifdef USE_TARGET_CONFIG
 
-#include "pg/pg.h"
-#include "drivers/max7456.h"
 #include "io/serial.h"
+
+#include "pg/max7456.h"
+#include "pg/pg.h"
 
 void targetConfiguration(void)
 {
