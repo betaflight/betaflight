@@ -28,15 +28,11 @@
 
 #include "common/utils.h"
 
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
-
 #include "drivers/adc.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
 #include "drivers/light_led.h"
 #include "drivers/camera_control.h"
-#include "drivers/max7456.h"
 #include "drivers/vtx_common.h"
 
 #include "fc/config.h"
@@ -66,6 +62,9 @@
 #include "io/vtx_rtc6705.h"
 
 #include "pg/adc.h"
+#include "pg/max7456.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "rx/rx.h"
 #include "rx/cc2500_frsky_common.h"

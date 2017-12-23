@@ -24,9 +24,6 @@
 
 #include "common/utils.h"
 
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
-
 #include "drivers/display.h"
 #include "drivers/max7456.h"
 #include "drivers/vcd.h"
@@ -36,6 +33,10 @@
 #include "io/displayport_max7456.h"
 #include "io/osd.h"
 #include "io/osd_slave.h"
+
+#include "pg/max7456.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 displayPort_t max7456DisplayPort;
 
@@ -159,7 +160,7 @@ displayPort_t *max7456DisplayPortInit(const vcdProfile_t *vcdProfile)
 #ifdef USE_OSD_SLAVE
     max7456Init(vcdProfile, false);
 #else
-    max7456Init(vcdProfile, systemConfig()->cpu_overclock);
+    max7456Init(max7456Config(), vcdProfile, systemConfig()->cpu_overclock);
 #endif
     resync(&max7456DisplayPort);
     return &max7456DisplayPort;
