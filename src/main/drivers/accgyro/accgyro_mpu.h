@@ -157,9 +157,9 @@ enum gyro_fsr_e {
 };
 
 enum fchoice_b {
-    FCB_DISABLED = 0,
-    FCB_8800_32,
-    FCB_3600_32
+    FCB_DISABLED = 0x00,
+    FCB_8800_32 = 0x01,
+    FCB_3600_32 = 0x02
 };
 
 enum clock_sel_e {
