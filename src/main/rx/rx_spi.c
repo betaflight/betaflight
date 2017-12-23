@@ -28,7 +28,7 @@
 
 #include "config/feature.h"
 
-#include "drivers/cc2500.h"
+#include "drivers/rx_spi.h"
 #include "drivers/rx_nrf24l01.h"
 
 #include "fc/config.h"
@@ -59,7 +59,6 @@ static protocolSetRcDataFromPayloadFnPtr protocolSetRcDataFromPayload;
 
 STATIC_UNIT_TESTED uint16_t rxSpiReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t channel)
 {
-
     BUILD_BUG_ON(NRF24L01_MAX_PAYLOAD_SIZE > RX_SPI_MAX_PAYLOAD_SIZE);
 
     if (channel >= rxRuntimeConfig->channelCount) {
