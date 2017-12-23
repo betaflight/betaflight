@@ -17,6 +17,12 @@
 
 #pragma once
 
+#include <stdbool.h>
+
+#define MAX7456_CLOCK_CONFIG_HALF 0
+#define MAX7456_CLOCK_CONFIG_OC   1
+#define MAX7456_CLOCK_CONFIG_FULL 2
+
 /** PAL or NTSC, value is number of chars total */
 #define VIDEO_BUFFER_CHARS_NTSC   390
 #define VIDEO_BUFFER_CHARS_PAL    480

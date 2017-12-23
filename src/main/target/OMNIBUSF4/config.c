@@ -22,6 +22,8 @@
 
 #ifdef USE_TARGET_CONFIG
 
+#include "drivers/max7456.h"
+
 #include "io/serial.h"
 
 #include "pg/max7456.h"
