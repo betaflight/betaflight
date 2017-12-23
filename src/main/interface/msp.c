@@ -1180,6 +1180,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         break;
 
     case MSP_GYRO_KALMAN:
+        sbufWriteU8(dst, gyroConfig()->gyro_kalman_enable);
         sbufWriteU16(dst, gyroConfig()->gyro_kalman_q);
         sbufWriteU16(dst, gyroConfig()->gyro_kalman_r);
         break;
@@ -1633,6 +1634,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_GYRO_KALMAN:
+            gyroConfigMutable()->gyro_kalman_enable = sbufReadU8(src);
         if (sbufBytesRemaining(src) >= 4) {
             gyroConfigMutable()->gyro_kalman_q = sbufReadU16(src);
             gyroConfigMutable()->gyro_kalman_r = sbufReadU16(src);

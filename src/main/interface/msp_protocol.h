@@ -254,9 +254,9 @@
 #define MSP_RC_TUNING            111    //out message         rc rate, rc expo, rollpitch rate, yaw rate, dyn throttle PID
 #define MSP_PID                  112    //out message         P I D coeff (9 are used currently)
 // Legacy Multiicommand that was never used.
-//DEPRECATED - #define MSP_BOX                  113    //out message         BOX setup (number is dependant of your setup)
+//NEW MSP_RF_RATE - #define MSP_BOX                  113    //out message         BOX setup (number is dependant of your setup)
 // Legacy command that was under constant change due to the naming vagueness, avoid at all costs - use more specific commands instead.
-//DEPRECATED - #define MSP_MISC                 114    //out message         powermeter trig
+//NEW MSP_GYRO_KALMAN - #define MSP_MISC                 114    //out message         powermeter trig
 // Legacy Multiicommand that was never used and always wrong
 //DEPRECATED - #define MSP_MOTOR_PINS           115    //out message         which pins are in use for motors & servos, for GUI
 #define MSP_BOXNAMES             116    //out message         the aux switch names
@@ -282,12 +282,12 @@
 #define MSP_SET_RAW_GPS          201    //in message          fix, numsat, lat, lon, alt, speed
 #define MSP_SET_PID              202    //in message          P I D coeff (9 are used currently)
 // Legacy multiiwii command that was never used.
-//DEPRECATED - #define MSP_SET_BOX              203    //in message          BOX setup (number is dependant of your setup)
+//NEW MSP_SET_RF_RATE - #define MSP_SET_BOX              203    //in message          BOX setup (number is dependant of your setup)
 #define MSP_SET_RC_TUNING        204    //in message          rc rate, rc expo, rollpitch rate, yaw rate, dyn throttle PID, yaw expo
 #define MSP_ACC_CALIBRATION      205    //in message          no param
 #define MSP_MAG_CALIBRATION      206    //in message          no param
 // Legacy command that was under constant change due to the naming vagueness, avoid at all costs - use more specific commands instead.
-//DEPRECATED - #define MSP_SET_MISC             207    //in message          powermeter trig + 8 free for future use
+//NEW MSP_SET_GYRO_KALMAN - #define MSP_SET_MISC             207    //in message          powermeter trig + 8 free for future use
 #define MSP_RESET_CONF           208    //in message          no param
 #define MSP_SET_WP               209    //in message          sets a given WP (WP#,lat, lon, alt, flags)
 #define MSP_SELECT_SETTING       210    //in message          Select Setting Number (0-2)
