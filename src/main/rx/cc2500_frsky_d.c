@@ -222,6 +222,7 @@ rx_spi_received_e frSkyDDataReceived(uint8_t *packet)
 
             break;
         }
+        FALLTHROUGH; //!!TODO -check this fall through is correct
     // here FS code could be
     case STATE_DATA:
         if (IORead(gdoPin)) {

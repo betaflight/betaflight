@@ -123,6 +123,8 @@
   */ 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f30x_hrtim.h"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
 
 /** @addtogroup STM32F30x_StdPeriph_Driver
   * @{
@@ -4104,3 +4106,4 @@ void HRTIM_TIM_ResetConfig(HRTIM_TypeDef * HRTIMx,
 
 
 
+#pragma GCC diagnostic pop

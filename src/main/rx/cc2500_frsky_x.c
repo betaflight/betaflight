@@ -365,6 +365,7 @@ rx_spi_received_e frSkyXDataReceived(uint8_t *packet)
             protocolState = STATE_INIT;
             break;
         }
+        FALLTHROUGH; //!!TODO -check this fall through is correct
         // here FS code could be
     case STATE_DATA:	
         if ((IORead(gdoPin)) &&(frame_received==false)){

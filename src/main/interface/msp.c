@@ -204,6 +204,7 @@ static void mspFc4waySerialCommand(sbuf_t *dst, sbuf_t *src, mspPostProcessFnPtr
 
             break;
         }
+        FALLTHROUGH;
 #endif
     default:
         sbufWriteU8(dst, 0);

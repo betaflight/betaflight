@@ -880,12 +880,10 @@ void blackboxFinish(void)
     case BLACKBOX_STATE_SHUTTING_DOWN:
         // We're already stopped/shutting down
         break;
-
     case BLACKBOX_STATE_RUNNING:
     case BLACKBOX_STATE_PAUSED:
         blackboxLogEvent(FLIGHT_LOG_EVENT_LOG_END, NULL);
-
-        // Fall through
+        FALLTHROUGH;
     default:
         blackboxSetState(BLACKBOX_STATE_SHUTTING_DOWN);
     }

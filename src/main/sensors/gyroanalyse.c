@@ -234,7 +234,7 @@ void gyroDataAnalyseUpdate(biquadFilter_t *notchFilterDyn)
             arm_bitreversal_32((uint32_t*) fftData, Sint->bitRevLength, Sint->pBitRevTable);
             DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
             step++;
-            // fall through
+            FALLTHROUGH;
         }
         case STEP_STAGE_RFFT_F32:
         {
@@ -250,7 +250,7 @@ void gyroDataAnalyseUpdate(biquadFilter_t *notchFilterDyn)
             arm_cmplx_mag_f32(rfftData, fftData, fftBinCount);
             DEBUG_SET(DEBUG_FFT_TIME, 2, micros() - startTime);
             step++;
-            // fall through
+            FALLTHROUGH;
         }
         case STEP_CALC_FREQUENCIES:
         {
@@ -301,7 +301,7 @@ void gyroDataAnalyseUpdate(biquadFilter_t *notchFilterDyn)
 
             axis = (axis + 1) % 3;
             step++;
-            // fall through
+            FALLTHROUGH;
         }
         case STEP_HANNING:
         {

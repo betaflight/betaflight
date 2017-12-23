@@ -40,7 +40,7 @@ DEVICE_STDPERIPH_SRC := $(DEVICE_STDPERIPH_SRC) \
 endif
 
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f103_$(FLASH_SIZE)k.ld
-ARCH_FLAGS      = -mthumb -mcpu=cortex-m3 -Wimplicit-fallthrough=0
+ARCH_FLAGS      = -mthumb -mcpu=cortex-m3
 
 ifeq ($(DEVICE_FLAGS),)
 DEVICE_FLAGS    = -DSTM32F10X_MD
