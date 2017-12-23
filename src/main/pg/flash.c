@@ -15,29 +15,30 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
+#include <stdbool.h>
 #include <stdint.h>
+
+#include "platform.h"
+
+#ifdef USE_FLASHFS
+
+#include "drivers/bus_spi.h"
+#include "drivers/io.h"
+
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+
 #include "flash.h"
 
-#define M25P16_PAGESIZE 256
+PG_REGISTER_WITH_RESET_FN(flashConfig_t, flashConfig, PG_FLASH_CONFIG, 0);
 
-struct flashConfig_s;
-bool m25p16_init(const struct flashConfig_s *flashConfig);
-
-void m25p16_eraseSector(uint32_t address);
-void m25p16_eraseCompletely(void);
-
-void m25p16_pageProgram(uint32_t address, const uint8_t *data, int length);
-
-void m25p16_pageProgramBegin(uint32_t address);
-void m25p16_pageProgramContinue(const uint8_t *data, int length);
-void m25p16_pageProgramFinish(void);
-
-int m25p16_readBytes(uint32_t address, uint8_t *buffer, int length);
-
-bool m25p16_isReady(void);
-bool m25p16_waitForReady(uint32_t timeoutMillis);
-
-struct flashGeometry_s;
-const struct flashGeometry_s* m25p16_getGeometry(void);
+void pgResetFn_flashConfig(flashConfig_t *flashConfig)
+{
+#ifdef M25P16_CS_PIN
+    flashConfig->csTag = IO_TAG(M25P16_CS_PIN);
+#else
+    flashConfig->csTag = IO_TAG_NONE;
+#endif
+    flashConfig->spiDevice = SPI_DEV_TO_CFG(spiDeviceByInstance(M25P16_SPI_INSTANCE));
+}
+#endif

@@ -18,26 +18,14 @@
 #pragma once
 
 #include <stdint.h>
-#include "flash.h"
 
-#define M25P16_PAGESIZE 256
+#include "drivers/io_types.h"
 
-struct flashConfig_s;
-bool m25p16_init(const struct flashConfig_s *flashConfig);
+#include "pg/pg.h"
 
-void m25p16_eraseSector(uint32_t address);
-void m25p16_eraseCompletely(void);
+typedef struct flashConfig_s {
+    ioTag_t csTag;
+    uint8_t spiDevice;
+} flashConfig_t;
 
-void m25p16_pageProgram(uint32_t address, const uint8_t *data, int length);
-
-void m25p16_pageProgramBegin(uint32_t address);
-void m25p16_pageProgramContinue(const uint8_t *data, int length);
-void m25p16_pageProgramFinish(void);
-
-int m25p16_readBytes(uint32_t address, uint8_t *buffer, int length);
-
-bool m25p16_isReady(void);
-bool m25p16_waitForReady(uint32_t timeoutMillis);
-
-struct flashGeometry_s;
-const struct flashGeometry_s* m25p16_getGeometry(void);
+PG_DECLARE(flashConfig_t, flashConfig);

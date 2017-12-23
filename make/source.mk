@@ -62,6 +62,7 @@ COMMON_SRC = \
             msp/msp_serial.c \
             pg/adc.c \
             pg/bus_i2c.c \
+            pg/flash.c \
             pg/pg.c \
             scheduler/scheduler.c \
             sensors/battery.c \
