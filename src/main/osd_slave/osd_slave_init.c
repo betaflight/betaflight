@@ -78,6 +78,7 @@
 #include "osd_slave/osd_slave_init.h"
 
 #include "pg/adc.h"
+#include "pg/bus_i2c.h"
 
 #include "scheduler/scheduler.h"
 
@@ -199,7 +200,7 @@ void init(void)
 #endif /* USE_SPI */
 
 #ifdef USE_I2C
-    i2cHardwareConfigure();
+    i2cHardwareConfigure(i2cConfig());
 
     // Note: Unlike UARTs which are configured when client is present,
     // I2C buses are initialized unconditionally if they are configured.

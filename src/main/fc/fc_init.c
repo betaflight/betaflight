@@ -80,6 +80,7 @@
 #include "msp/msp_serial.h"
 
 #include "pg/adc.h"
+#include "pg/bus_i2c.h"
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
@@ -438,7 +439,7 @@ void init(void)
 #endif // USE_SPI
 
 #ifdef USE_I2C
-    i2cHardwareConfigure();
+    i2cHardwareConfigure(i2cConfig());
 
     // Note: Unlike UARTs which are configured when client is present,
     // I2C buses are initialized unconditionally if they are configured.

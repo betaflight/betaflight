@@ -58,7 +58,6 @@ extern uint8_t __config_end;
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/buf_writer.h"
-#include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
 #include "drivers/compass/compass.h"
 #include "drivers/display.h"
@@ -117,6 +116,7 @@ extern uint8_t __config_end;
 #include "io/vtx.h"
 
 #include "pg/adc.h"
+#include "pg/bus_i2c.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"

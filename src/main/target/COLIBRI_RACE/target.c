@@ -27,6 +27,8 @@
 #include "drivers/timer.h"
 #include "drivers/timer_def.h"
 
+#include "pg/bus_i2c.h"
+
 #ifdef USE_BST
 #include "bus_bst.h"
 #endif
@@ -61,7 +63,7 @@ void targetBusInit(void)
 #endif
 #endif
 
-    i2cHardwareConfigure();
+    i2cHardwareConfigure(i2cConfig());
     i2cInit(I2CDEV_2);
     
     bstInit(BST_DEVICE);
