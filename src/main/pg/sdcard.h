@@ -15,19 +15,12 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdint.h>
-#include <stdbool.h>
+#pragma once
 
-#include <platform.h>
+#include "pg/pg.h"
 
-#ifdef USE_TARGET_CONFIG
+typedef struct sdcardConfig_s {
+    uint8_t useDma;
+} sdcardConfig_t;
 
-#include "telemetry/telemetry.h"
-#include "pg/sdcard.h"
-
-void targetConfiguration(void)
-{
-    sdcardConfigMutable()->useDma = true;
-    telemetryConfigMutable()->halfDuplex = 0;
-}
-#endif
+PG_DECLARE(sdcardConfig_t, sdcardConfig);

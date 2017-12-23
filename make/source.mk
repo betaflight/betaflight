@@ -64,8 +64,9 @@ COMMON_SRC = \
             pg/bus_i2c.c \
             pg/flash.c \
             pg/max7456.c \
-            pg/rx_pwm.c \
             pg/pg.c \
+            pg/rx_pwm.c \
+            pg/sdcard.c \
             scheduler/scheduler.c \
             sensors/battery.c \
             sensors/current.c \

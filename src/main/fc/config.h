@@ -23,7 +23,6 @@
 #include "pg/pg.h"
 
 #include "drivers/flash.h"
-#include "drivers/sdcard.h"
 #include "drivers/serial.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/sound_beeper.h"
@@ -84,7 +83,6 @@ PG_DECLARE(pilotConfig_t, pilotConfig);
 PG_DECLARE(systemConfig_t, systemConfig);
 PG_DECLARE(beeperDevConfig_t, beeperDevConfig);
 PG_DECLARE(vcdProfile_t, vcdProfile);
-PG_DECLARE(sdcardConfig_t, sdcardConfig);
 
 struct pidProfile_s;
 extern struct pidProfile_s *currentPidProfile;
