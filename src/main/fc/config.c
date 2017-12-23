@@ -50,7 +50,6 @@
 #include "drivers/pwm_esc_detect.h"
 #include "drivers/pwm_output.h"
 #include "drivers/rx_spi.h"
-#include "drivers/sdcard.h"
 #include "drivers/sensor.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
@@ -141,15 +140,6 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .boardIdentifier = TARGET_BOARD_IDENTIFIER
 );
 #endif
-
-
-#ifdef USE_SDCARD
-PG_REGISTER_WITH_RESET_TEMPLATE(sdcardConfig_t, sdcardConfig, PG_SDCARD_CONFIG, 0);
-
-PG_RESET_TEMPLATE(sdcardConfig_t, sdcardConfig,
-    .useDma = false
-);
-#endif // USE_SDCARD
 
 // no template required since defaults are zero
 PG_REGISTER(vcdProfile_t, vcdProfile, PG_VCD_CONFIG, 0);

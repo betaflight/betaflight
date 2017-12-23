@@ -20,10 +20,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-typedef struct sdcardConfig_s {
-    uint8_t useDma;
-} sdcardConfig_t;
-
 typedef struct sdcardMetadata_s {
     uint32_t numBlocks; /* Card capacity in 512-byte blocks*/
     uint16_t oemID;
