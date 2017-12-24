@@ -76,7 +76,6 @@ extern uint8_t __config_end;
 #include "drivers/transponder_ir.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
-#include "drivers/vcd.h"
 #include "drivers/light_led.h"
 #include "drivers/camera_control.h"
 #include "drivers/vtx_common.h"

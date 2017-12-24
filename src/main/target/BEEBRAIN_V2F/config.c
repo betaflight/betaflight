@@ -37,6 +37,8 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 
+#include "pg/vcd.h"
+
 #include "rx/rx.h"
 
 #include "io/serial.h"

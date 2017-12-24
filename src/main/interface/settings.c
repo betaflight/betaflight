@@ -67,6 +67,7 @@
 #include "pg/pg_ids.h"
 #include "pg/rx_pwm.h"
 #include "pg/sdcard.h"
+#include "pg/vcd.h"
 
 #include "rx/rx.h"
 #include "rx/cc2500_frsky_common.h"

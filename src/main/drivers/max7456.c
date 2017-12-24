@@ -28,6 +28,7 @@
 #include "pg/max7456.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/vcd.h"
 
 #include "drivers/bus_spi.h"
 #include "drivers/dma.h"
@@ -37,7 +38,6 @@
 #include "drivers/max7456_symbols.h"
 #include "drivers/nvic.h"
 #include "drivers/time.h"
-#include "drivers/vcd.h"
 
 
 // DEBUG_MAX7456_SIGNAL
