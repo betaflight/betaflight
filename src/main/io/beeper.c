@@ -23,8 +23,6 @@
 #include "common/utils.h"
 
 #include "config/feature.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
 
 #include "drivers/sound_beeper.h"
 #include "drivers/time.h"
@@ -43,11 +41,10 @@
 #include "io/gps.h"
 #endif
 
+#include "pg/beeper.h"
+
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
-
-
-PG_REGISTER_WITH_RESET_TEMPLATE(beeperDevConfig_t, beeperDevConfig, PG_BEEPER_DEV_CONFIG, 0);
 
 #ifdef BEEPER_INVERTED
 #define IS_OPEN_DRAIN   false
@@ -67,13 +64,6 @@ PG_REGISTER_WITH_RESET_TEMPLATE(beeperDevConfig_t, beeperDevConfig, PG_BEEPER_DE
 #define BEEPER_PWM_HZ   0
 #endif
 
-PG_RESET_TEMPLATE(beeperDevConfig_t, beeperDevConfig,
-    .isOpenDrain = IS_OPEN_DRAIN,
-    .isInverted = IS_INVERTED,
-    .ioTag = IO_TAG(BEEPER_PIN),
-    .frequency = BEEPER_PWM_HZ
-);
-
 #if FLASH_SIZE > 64
 #define BEEPER_NAMES
 #endif
@@ -84,11 +74,6 @@ PG_RESET_TEMPLATE(beeperDevConfig_t, beeperDevConfig,
 #define BEEPER_COMMAND_STOP   0xFF
 
 #ifdef BEEPER
-PG_REGISTER_WITH_RESET_TEMPLATE(beeperConfig_t, beeperConfig, PG_BEEPER_CONFIG, 1);
-PG_RESET_TEMPLATE(beeperConfig_t, beeperConfig,
-    .dshotBeaconTone = 0
-);
-
 /* Beeper Sound Sequences: (Square wave generation)
  * Sequence must end with 0xFF or 0xFE. 0xFE repeats the sequence from
  * start when 0xFF stops the sound when it's completed.

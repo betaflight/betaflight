@@ -47,6 +47,7 @@ extern "C" {
     #include "io/osd.h"
     #include "io/serial.h"
     #include "io/vtx.h"
+    #include "pg/beeper.h"
     #include "rx/rx.h"
     #include "scheduler/scheduler.h"
     #include "sensors/battery.h"

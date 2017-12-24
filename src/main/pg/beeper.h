@@ -17,17 +17,13 @@
 
 #pragma once
 
-#ifdef BEEPER
-#define BEEP_TOGGLE              systemBeepToggle()
-#define BEEP_OFF                 systemBeep(false)
-#define BEEP_ON                  systemBeep(true)
-#else
-#define BEEP_TOGGLE do {} while (0)
-#define BEEP_OFF    do {} while (0)
-#define BEEP_ON     do {} while (0)
-#endif
+#include "pg/pg.h"
+#include "drivers/io_types.h"
 
-void systemBeep(bool on);
-void systemBeepToggle(void);
-struct beeperDevConfig_s;
-void beeperInit(const struct beeperDevConfig_s *beeperDevConfig);
+typedef struct beeperConfig_s {
+    uint32_t beeper_off_flags;
+    uint32_t preferred_beeper_off_flags;
+    uint8_t dshotBeaconTone;
+} beeperConfig_t;
+
+PG_DECLARE(beeperConfig_t, beeperConfig);

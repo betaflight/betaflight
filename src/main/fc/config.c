@@ -36,8 +36,6 @@
 
 #include "config/config_eeprom.h"
 #include "config/feature.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/bus_spi.h"
@@ -51,7 +49,6 @@
 #include "drivers/pwm_output.h"
 #include "drivers/rx/rx_spi.h"
 #include "drivers/sensor.h"
-#include "drivers/sound_beeper.h"
 #include "drivers/system.h"
 #include "drivers/timer.h"
 
@@ -80,6 +77,10 @@
 #include "io/serial.h"
 #include "io/servos.h"
 #include "io/vtx_control.h"
+
+#include "pg/beeper.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"

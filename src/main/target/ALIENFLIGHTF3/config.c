@@ -34,6 +34,8 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 
+#include "pg/beeper_dev.h"
+
 #include "rx/rx.h"
 
 #include "io/serial.h"

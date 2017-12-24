@@ -51,16 +51,6 @@ typedef enum {
     // BEEPER_ALL and BEEPER_PREFERENCE must remain at the bottom of this enum
 } beeperMode_e;
 
-typedef struct beeperConfig_s {
-    uint32_t beeper_off_flags;
-    uint32_t preferred_beeper_off_flags;
-    uint8_t dshotBeaconTone;
-} beeperConfig_t;
-
-#ifdef BEEPER
-PG_DECLARE(beeperConfig_t, beeperConfig);
-#endif
-
 void beeper(beeperMode_e mode);
 void beeperSilence(void);
 void beeperUpdate(timeUs_t currentTimeUs);
