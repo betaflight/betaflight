@@ -54,7 +54,6 @@
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
 #include "drivers/timer.h"
-#include "drivers/vcd.h"
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
@@ -140,9 +139,6 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .boardIdentifier = TARGET_BOARD_IDENTIFIER
 );
 #endif
-
-// no template required since defaults are zero
-PG_REGISTER(vcdProfile_t, vcdProfile, PG_VCD_CONFIG, 0);
 
 #ifdef SWAP_SERIAL_PORT_0_AND_1_DEFAULTS
 #define FIRST_PORT_INDEX 1

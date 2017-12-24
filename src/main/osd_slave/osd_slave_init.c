@@ -30,8 +30,6 @@
 
 #include "config/config_eeprom.h"
 #include "config/feature.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
 
 #include "drivers/adc.h"
 #include "drivers/bus.h"
@@ -79,6 +77,9 @@
 
 #include "pg/adc.h"
 #include "pg/bus_i2c.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+#include "pg/vcd.h"
 
 #include "scheduler/scheduler.h"
 

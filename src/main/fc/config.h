@@ -26,7 +26,6 @@
 #include "drivers/serial.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/sound_beeper.h"
-#include "drivers/vcd.h"
 
 typedef enum {
     FEATURE_RX_PPM = 1 << 0,
@@ -82,7 +81,6 @@ typedef struct systemConfig_s {
 PG_DECLARE(pilotConfig_t, pilotConfig);
 PG_DECLARE(systemConfig_t, systemConfig);
 PG_DECLARE(beeperDevConfig_t, beeperDevConfig);
-PG_DECLARE(vcdProfile_t, vcdProfile);
 
 struct pidProfile_s;
 extern struct pidProfile_s *currentPidProfile;

@@ -18,12 +18,15 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "drivers/vcd.h"
-
-#include "rcdevice.h"
-#include "rcdevice_osd.h"
+#include "platform.h"
 
 #ifdef USE_RCDEVICE
+
+#include "io/rcdevice.h"
+
+#include "pg/vcd.h"
+
+#include "rcdevice_osd.h"
 
 #define VIDEO_BUFFER_CHARS_PAL 480
 

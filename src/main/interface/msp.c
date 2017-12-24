@@ -52,7 +52,6 @@
 #include "drivers/serial.h"
 #include "drivers/serial_escserial.h"
 #include "drivers/system.h"
-#include "drivers/vcd.h"
 #include "drivers/vtx_common.h"
 #include "drivers/transponder_ir.h"
 #include "drivers/camera_control.h"
@@ -96,6 +95,8 @@
 #include "io/vtx_string.h"
 
 #include "msp/msp_serial.h"
+
+#include "pg/vcd.h"
 
 #include "rx/rx.h"
 #include "rx/msp.h"

@@ -26,7 +26,6 @@
 
 #include "drivers/display.h"
 #include "drivers/max7456.h"
-#include "drivers/vcd.h"
 
 #include "fc/config.h"
 
@@ -37,6 +36,7 @@
 #include "pg/max7456.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/vcd.h"
 
 displayPort_t max7456DisplayPort;
 

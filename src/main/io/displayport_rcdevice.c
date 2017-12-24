@@ -18,15 +18,18 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "platform.h"
+
+#ifdef USE_RCDEVICE
+
 #include "drivers/display.h"
-#include "drivers/vcd.h"
 
 #include "io/rcdevice.h"
 #include "io/rcdevice_osd.h"
 
-#include "io/displayport_rcdevice.h"
+#include "pg/vcd.h"
 
-#ifdef USE_RCDEVICE
+#include "displayport_rcdevice.h"
 
 displayPort_t rcdeviceOSDDisplayPort;
 
