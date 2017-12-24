@@ -61,6 +61,8 @@ COMMON_SRC = \
             io/transponder_ir.c \
             msp/msp_serial.c \
             pg/adc.c \
+            pg/beeper.c \
+            pg/beeper_dev.c \
             pg/bus_i2c.c \
             pg/flash.c \
             pg/max7456.c \

@@ -53,8 +53,6 @@ extern uint8_t __config_end;
 
 #include "config/config_eeprom.h"
 #include "config/feature.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/buf_writer.h"
@@ -114,7 +112,11 @@ extern uint8_t __config_end;
 #include "io/vtx.h"
 
 #include "pg/adc.h"
+#include "pg/beeper.h"
+#include "pg/beeper_dev.h"
 #include "pg/bus_i2c.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 #include "pg/rx_pwm.h"
 
 #include "rx/rx.h"

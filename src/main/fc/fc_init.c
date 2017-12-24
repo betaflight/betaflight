@@ -78,6 +78,7 @@
 #include "msp/msp_serial.h"
 
 #include "pg/adc.h"
+#include "pg/beeper_dev.h"
 #include "pg/bus_i2c.h"
 #include "pg/flash.h"
 #include "pg/pg.h"
@@ -92,6 +93,7 @@
 #include "io/beeper.h"
 #include "io/displayport_max7456.h"
 #include "io/displayport_rcdevice.h"
+#include "io/displayport_srxl.h"
 #include "io/serial.h"
 #include "io/flashfs.h"
 #include "io/gps.h"
@@ -110,8 +112,6 @@
 #include "io/vtx_control.h"
 #include "io/vtx_smartaudio.h"
 #include "io/vtx_tramp.h"
-
-#include "io/displayport_srxl.h"
 
 #include "scheduler/scheduler.h"
 

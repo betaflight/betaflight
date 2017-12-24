@@ -21,10 +21,11 @@
 #include "platform.h"
 
 #include "drivers/io.h"
+#include "drivers/pwm_output.h"
+
+#include "pg/beeper_dev.h"
 
 #include "sound_beeper.h"
-#include "pwm_output.h"
-
 
 #ifdef BEEPER
 static IO_t beeperIO = DEFIO_IO(NONE);

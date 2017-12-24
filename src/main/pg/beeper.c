@@ -15,19 +15,17 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <platform.h>
 
 #ifdef BEEPER
-#define BEEP_TOGGLE              systemBeepToggle()
-#define BEEP_OFF                 systemBeep(false)
-#define BEEP_ON                  systemBeep(true)
-#else
-#define BEEP_TOGGLE do {} while (0)
-#define BEEP_OFF    do {} while (0)
-#define BEEP_ON     do {} while (0)
-#endif
 
-void systemBeep(bool on);
-void systemBeepToggle(void);
-struct beeperDevConfig_s;
-void beeperInit(const struct beeperDevConfig_s *beeperDevConfig);
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+
+#include "beeper.h"
+
+PG_REGISTER_WITH_RESET_TEMPLATE(beeperConfig_t, beeperConfig, PG_BEEPER_CONFIG, 1);
+PG_RESET_TEMPLATE(beeperConfig_t, beeperConfig,
+    .dshotBeaconTone = 0
+);
+#endif
