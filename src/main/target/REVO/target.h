@@ -146,6 +146,12 @@
 #define USE_BARO_BMP085
 #define USE_BARO_BMP280
 
+#if defined(AIRBOTF4) || defined(AIRBOTF4SD)
+#define USE_BARO_SPI_BMP280
+#define BMP280_SPI_INSTANCE     SPI1
+#define BMP280_CS_PIN           PC13
+#endif
+
 #if defined(AIRBOTF4SD)
 // SDCARD support for AIRBOTF4SD
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
