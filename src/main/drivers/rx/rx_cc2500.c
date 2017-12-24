@@ -29,7 +29,7 @@
 #include "build/build_config.h"
 
 #include "drivers/io.h"
-#include "drivers/rx_spi.h"
+#include "drivers/rx/rx_spi.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
 

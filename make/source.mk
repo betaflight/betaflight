@@ -82,12 +82,12 @@ FC_SRC = \
             fc/controlrate_profile.c \
             drivers/camera_control.c \
             drivers/accgyro/gyro_sync.c \
-            drivers/rx_nrf24l01.c \
-            drivers/rx_spi.c \
-            drivers/rx_xn297.c \
             drivers/pwm_esc_detect.c \
             drivers/pwm_output.c \
-            drivers/rx_pwm.c \
+            drivers/rx/rx_nrf24l01.c \
+            drivers/rx/rx_spi.c \
+            drivers/rx/rx_xn297.c \
+            drivers/rx/rx_pwm.c \
             drivers/serial_softserial.c \
             fc/fc_core.c \
             fc/fc_rc.c \

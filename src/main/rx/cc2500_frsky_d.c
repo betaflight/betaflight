@@ -31,15 +31,12 @@
 #include "common/utils.h"
 
 #include "drivers/adc.h"
-#include "drivers/rx_cc2500.h"
+#include "drivers/rx/rx_cc2500.h"
 #include "drivers/io.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
 
 #include "fc/config.h"
-
-#include "config/feature.h"
-#include "pg/pg_ids.h"
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"

@@ -29,12 +29,13 @@
 #include "build/build_config.h"
 
 #include "drivers/bus_spi.h"
-#include "bus_spi_soft.h"
+#include "drivers/bus_spi_soft.h"
 #include "drivers/io.h"
-#include "io_impl.h"
-#include "rcc.h"
-#include "rx_spi.h"
+#include "drivers/io_impl.h"
+#include "drivers/rcc.h"
 #include "drivers/system.h"
+
+#include "rx_spi.h"
 
 #define DISABLE_RX()    {IOHi(DEFIO_IO(RX_NSS_PIN));}
 #define ENABLE_RX()     {IOLo(DEFIO_IO(RX_NSS_PIN));}

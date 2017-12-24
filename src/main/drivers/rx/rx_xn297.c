@@ -21,9 +21,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "rx_spi.h"
-#include "rx_nrf24l01.h"
 #include "common/crc.h"
+
+#include "drivers/rx/rx_nrf24l01.h"
+#include "drivers/rx/rx_spi.h"
 
 
 static const uint8_t xn297_data_scramble[30] = {

@@ -31,9 +31,10 @@
 #include "drivers/bus_spi.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
-#include "drivers/rx_spi.h"
-#include "drivers/rx_nrf24l01.h"
+#include "drivers/rx/rx_spi.h"
 #include "drivers/time.h"
+
+#include "rx_nrf24l01.h"
 
 #define NRF24_CE_HI()   {IOHi(DEFIO_IO(RX_CE_PIN));}
 #define NRF24_CE_LO()   {IOLo(DEFIO_IO(RX_CE_PIN));}

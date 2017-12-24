@@ -25,21 +25,24 @@
 
 #include "common/maths.h"
 #include "common/utils.h"
-#include "config/config_eeprom.h"
-#include "pg/pg_ids.h"
-#include "fc/config.h"
 
-#include "rx/rx.h"
-#include "rx/rx_spi.h"
-#include "rx/flysky.h"
-#include "rx/flysky_defs.h"
-
-#include "drivers/rx_a7105.h"
+#include "drivers/io.h"
+#include "drivers/rx/rx_a7105.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
-#include "drivers/io.h"
+
+#include "fc/config.h"
+
+#include "rx/flysky_defs.h"
+#include "rx/rx.h"
+#include "rx/rx_spi.h"
+
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "sensors/battery.h"
+
+#include "flysky.h"
 
 #if FLYSKY_CHANNEL_COUNT > MAX_FLYSKY_CHANNEL_COUNT
 #error "FlySky AFHDS protocol support 8 channel max"
