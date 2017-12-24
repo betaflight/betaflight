@@ -80,6 +80,7 @@
 #include "pg/adc.h"
 #include "pg/beeper_dev.h"
 #include "pg/bus_i2c.h"
+#include "pg/bus_spi.h"
 #include "pg/flash.h"
 #include "pg/pg.h"
 #include "pg/rx_pwm.h"
@@ -422,7 +423,7 @@ void init(void)
 #else
 
 #ifdef USE_SPI
-    spiPinConfigure();
+    spiPinConfigure(spiPinConfig());
 
     // Initialize CS lines and keep them high
     spiPreInit();

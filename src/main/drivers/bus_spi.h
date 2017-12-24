@@ -108,10 +108,5 @@ bool spiBusReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t *data
 uint8_t spiBusReadRegister(const busDevice_t *bus, uint8_t reg);
 void spiBusSetInstance(busDevice_t *bus, SPI_TypeDef *instance);
 
-typedef struct spiPinConfig_s {
-    ioTag_t ioTagSck[SPIDEV_COUNT];
-    ioTag_t ioTagMiso[SPIDEV_COUNT];
-    ioTag_t ioTagMosi[SPIDEV_COUNT];
-} spiPinConfig_t;
-
-void spiPinConfigure(void);
+struct spiPinConfig_s;
+void spiPinConfigure(const struct spiPinConfig_s *pConfig);
