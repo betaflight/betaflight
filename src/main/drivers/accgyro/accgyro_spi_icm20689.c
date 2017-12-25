@@ -126,7 +126,7 @@ void icm20689GyroInit(gyroDev_t *gyro)
 //    delay(100);
     spiBusWriteRegister(&gyro->bus, MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
     delay(15);
-    uint8_t raGyroConfigData = gyro->gyroRateKHz = INV_FSR_2000DPS << 3;
+    uint8_t raGyroConfigData = INV_FSR_2000DPS << 3;
     if (gyro->gyroRateKHz > GYRO_RATE_8_kHz) {
         // use otherwise redundant LPF value to configure FCHOICE_B
         // see REGISTER 27 – GYROSCOPE CONFIGURATION in datasheet
