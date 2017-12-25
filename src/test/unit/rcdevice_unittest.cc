@@ -1575,6 +1575,9 @@ extern "C" {
         // // reset the input buffer
         testData.responseDataReadPos = 0;
         testData.indexOfCurrentRespBuf++;
+        if (testData.indexOfCurrentRespBuf >= testData.responseBufCount) {
+            testData.indexOfCurrentRespBuf = 0;
+        }
         // testData.maxTimesOfRespDataAvailable = testData.responseDataLen + 1;
     }
 
