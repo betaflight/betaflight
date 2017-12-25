@@ -127,11 +127,10 @@ typedef struct {
 #else
     uint8_t dmaBuffer[DSHOT_DMA_BUFFER_SIZE];
 #endif
-#if defined(STM32F7)
+#if defined(USE_HAL_DRIVER)
     TIM_HandleTypeDef TimHandle;
     DMA_HandleTypeDef hdma_tim;
     uint16_t timerDmaIndex;
-    uint8_t timerIndex;
 #endif
 } motorDmaOutput_t;
 
