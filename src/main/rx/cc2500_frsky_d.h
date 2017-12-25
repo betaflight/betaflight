@@ -17,10 +17,12 @@
 
 #pragma once
 
-#include "rx.h"
-#include "rx_spi.h"
+#include "rx/rx.h"
+#include "rx/rx_spi.h"
 
-void frSkyDInit(const struct rxConfig_s *rxConfig, struct rxRuntimeConfig_s *rxRuntimeConfig);
+#define RC_CHANNEL_COUNT_FRSKY_D 8
+
 void frSkyDSetRcData(uint16_t *rcData, const uint8_t *payload);
-rx_spi_received_e frSkyDDataReceived(uint8_t *payload);
-void frSkyBind(void);
+
+void frSkyDInit(void);
+rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const protocolState);
