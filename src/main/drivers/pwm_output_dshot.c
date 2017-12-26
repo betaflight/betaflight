@@ -119,16 +119,16 @@ static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
 
 void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output)
 {
-#if defined(STM32F3)
-    DMA_Channel_TypeDef *dmaRef = timerHardware->dmaRef;
-#elif defined(STM32F4)
-#ifdef USE_DSHOT_DMAR
-    DMA_Stream_TypeDef *dmaRef = timerHardware->dmaTimUPRef;
+#if defined(STM32F4) || defined(STM32F7)
+    typedef DMA_Stream_TypeDef dmaStream_t;
 #else
-    DMA_Stream_TypeDef *dmaRef = timerHardware->dmaRef;
+    typedef DMA_Channel_TypeDef dmaStream_t;
 #endif
+
+#ifdef USE_DSHOT_DMAR
+    dmaStream_t *dmaRef = timerHardware->dmaTimUPRef;
 #else
-#error "No MCU specified in DSHOT"
+    dmaStream_t *dmaRef = timerHardware->dmaRef;
 #endif
 
     if (dmaRef == NULL) {
@@ -213,6 +213,10 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     dmaInit(timerHardware->dmaTimUPIrqHandler, OWNER_TIMUP, timerGetTIMNumber(timerHardware->tim));
     dmaSetHandler(timerHardware->dmaTimUPIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
 
+#if defined(STM32F3)
+    DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)motor->timer->dmaBurstBuffer;
+    DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
+#else
     DMA_InitStructure.DMA_Channel = timerHardware->dmaTimUPChannel;
     DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)motor->timer->dmaBurstBuffer;
     DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
@@ -220,6 +224,7 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_Full;
     DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single;
     DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
+#endif
     DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)&timerHardware->tim->DMAR;
     DMA_InitStructure.DMA_BufferSize = (pwmProtocolType == PWM_TYPE_PROSHOT1000) ? PROSHOT_DMA_BUFFER_SIZE : DSHOT_DMA_BUFFER_SIZE; // XXX
     DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;

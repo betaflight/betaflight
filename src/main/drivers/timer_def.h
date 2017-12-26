@@ -171,6 +171,10 @@
     DEF_TIM_DMA_COND(                                                   \
         DEF_TIM_DMA_CHANNEL(TCH_## tim ## _ ## chan),                   \
         DEF_TIM_DMA_HANDLER(TCH_## tim ## _ ## chan)                    \
+    ),                                                                  \
+    DEF_TIM_DMA_COND(                                                   \
+        DEF_TIM_DMA_CHANNEL(TCH_## tim ## _UP),                         \
+        DEF_TIM_DMA_HANDLER(TCH_## tim ## _UP)                          \
     )                                                                   \
     }                                                                   \
 /**/
@@ -198,11 +202,9 @@
 #define DEF_TIM_DMA__BTCH_TIM1_CH4    D(1, 4)
 #define DEF_TIM_DMA__BTCH_TIM1_TRIG   D(1, 4)
 #define DEF_TIM_DMA__BTCH_TIM1_COM    D(1, 4)
-#define DEF_TIM_DMA__BTCH_TIM1_UP     D(1, 5)
 #define DEF_TIM_DMA__BTCH_TIM1_CH3    D(1, 6)
 
 #define DEF_TIM_DMA__BTCH_TIM2_CH3    D(1, 1)
-#define DEF_TIM_DMA__BTCH_TIM2_UP     D(1, 2)
 #define DEF_TIM_DMA__BTCH_TIM2_CH1    D(1, 5)
 #define DEF_TIM_DMA__BTCH_TIM2_CH2    D(1, 7)
 #define DEF_TIM_DMA__BTCH_TIM2_CH4    D(1, 7)
@@ -210,14 +212,12 @@
 #define DEF_TIM_DMA__BTCH_TIM3_CH2    NONE
 #define DEF_TIM_DMA__BTCH_TIM3_CH3    D(1, 2)
 #define DEF_TIM_DMA__BTCH_TIM3_CH4    D(1, 3)
-#define DEF_TIM_DMA__BTCH_TIM3_UP     D(1, 3)
 #define DEF_TIM_DMA__BTCH_TIM3_CH1    D(1, 6)
 #define DEF_TIM_DMA__BTCH_TIM3_TRIG   D(1, 6)
 
 #define DEF_TIM_DMA__BTCH_TIM4_CH1    D(1, 1)
 #define DEF_TIM_DMA__BTCH_TIM4_CH2    D(1, 4)
 #define DEF_TIM_DMA__BTCH_TIM4_CH3    D(1, 5)
-#define DEF_TIM_DMA__BTCH_TIM4_UP     D(1, 7)
 #define DEF_TIM_DMA__BTCH_TIM4_CH4    NONE
 
 #define DEF_TIM_DMA__BTCH_TIM15_CH1   D(1, 5)
@@ -228,27 +228,42 @@
 
 #ifdef REMAP_TIM16_DMA
 #define DEF_TIM_DMA__BTCH_TIM16_CH1   D(1, 6)
-#define DEF_TIM_DMA__BTCH_TIM16_UP    D(1, 6)
 #else
 #define DEF_TIM_DMA__BTCH_TIM16_CH1   D(1, 3)
-#define DEF_TIM_DMA__BTCH_TIM16_UP    D(1, 3)
 #endif
 
 #ifdef REMAP_TIM17_DMA
 #define DEF_TIM_DMA__BTCH_TIM17_CH1   D(1, 7)
-#define DEF_TIM_DMA__BTCH_TIM17_UP    D(1, 7)
 #else
 #define DEF_TIM_DMA__BTCH_TIM17_CH1   D(1, 1)
-#define DEF_TIM_DMA__BTCH_TIM17_UP    D(1, 1)
 #endif
 
 #define DEF_TIM_DMA__BTCH_TIM8_CH3    D(2, 1)
-#define DEF_TIM_DMA__BTCH_TIM8_UP     D(2, 1)
 #define DEF_TIM_DMA__BTCH_TIM8_CH4    D(2, 2)
 #define DEF_TIM_DMA__BTCH_TIM8_TRIG   D(2, 2)
 #define DEF_TIM_DMA__BTCH_TIM8_COM    D(2, 2)
 #define DEF_TIM_DMA__BTCH_TIM8_CH1    D(2, 3)
 #define DEF_TIM_DMA__BTCH_TIM8_CH2    D(2, 5)
+
+// TIM_UP table
+#define DEF_TIM_DMA__BTCH_TIM1_UP     D(1, 5)
+#define DEF_TIM_DMA__BTCH_TIM2_UP     D(1, 2)
+#define DEF_TIM_DMA__BTCH_TIM3_UP     D(1, 3)
+#define DEF_TIM_DMA__BTCH_TIM4_UP     D(1, 7)
+#define DEF_TIM_DMA__BTCH_TIM6_UP     D(2, 3)
+#define DEF_TIM_DMA__BTCH_TIM7_UP     D(2, 4)
+#define DEF_TIM_DMA__BTCH_TIM8_UP     D(2, 1)
+#define DEF_TIM_DMA__BTCH_TIM15_UP    D(1, 5)
+#ifdef REMAP_TIM16_DMA
+#define DEF_TIM_DMA__BTCH_TIM16_UP    D(1, 6)
+#else
+#define DEF_TIM_DMA__BTCH_TIM16_UP    D(1, 3)
+#endif
+#ifdef REMAP_TIM17_DMA
+#define DEF_TIM_DMA__BTCH_TIM17_UP    D(1, 7)
+#else
+#define DEF_TIM_DMA__BTCH_TIM17_UP    D(1, 1)
+#endif
 
 // AF table
 

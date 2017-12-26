@@ -100,14 +100,18 @@ typedef struct timerHardware_s {
 #if defined(STM32F4) || defined(STM32F7)
     DMA_Stream_TypeDef *dmaRef;
     uint32_t dmaChannel;
-#elif defined(STM32F3) || defined(STM32F1)
+#else
     DMA_Channel_TypeDef *dmaRef;
 #endif
     uint8_t dmaIrqHandler;
-#if defined(STM32F4) || defined(STM32F7)
+#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
     // TIMUP
+#ifdef STM32F3
+    DMA_Channel_TypeDef *dmaTimUPRef;
+#else
     DMA_Stream_TypeDef *dmaTimUPRef;
     uint32_t dmaTimUPChannel;
+#endif
     uint8_t dmaTimUPIrqHandler;
 #endif
 #endif
