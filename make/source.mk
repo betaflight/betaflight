@@ -175,7 +175,7 @@ FC_SRC = \
             telemetry/telemetry.c \
             telemetry/crsf.c \
             telemetry/srxl.c \
-            telemetry/frsky.c \
+            telemetry/frsky_hub.c \
             telemetry/hott.c \
             telemetry/jetiexbus.c \
             telemetry/smartport.c \
