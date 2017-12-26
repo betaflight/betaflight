@@ -44,28 +44,13 @@ FAST_CODE float nullFilterApply(void *filter, float input)
 
 void pt1FilterInit(pt1Filter_t *filter, uint8_t f_cut, float dT)
 {
-    filter->RC = 1.0f / ( 2.0f * M_PI_FLOAT * f_cut );
-    filter->dT = dT;
-    filter->k = filter->dT / (filter->RC + filter->dT);
+    float RC = 1.0f / ( 2.0f * M_PI_FLOAT * f_cut );
+    filter->k = dT / (RC + dT);
 }
 
 FAST_CODE float pt1FilterApply(pt1Filter_t *filter, float input)
 {
     filter->state = filter->state + filter->k * (input - filter->state);
-    return filter->state;
-}
-
-FAST_CODE float pt1FilterApply4(pt1Filter_t *filter, float input, uint8_t f_cut, float dT)
-{
-    // Pre calculate and store RC
-    if (!filter->RC) {
-        filter->RC = 1.0f / ( 2.0f * M_PI_FLOAT * f_cut );
-        filter->dT = dT;
-        filter->k = filter->dT / (filter->RC + filter->dT);
-    }
-
-    filter->state = filter->state + filter->k * (input - filter->state);
-
     return filter->state;
 }
 
