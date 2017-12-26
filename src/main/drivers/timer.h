@@ -104,7 +104,7 @@ typedef struct timerHardware_s {
     DMA_Channel_TypeDef *dmaRef;
 #endif
     uint8_t dmaIrqHandler;
-#if defined(STM32F7)
+#if defined(STM32F4) || defined(STM32F7)
     // TIMUP
     DMA_Stream_TypeDef *dmaTimUPRef;
     uint32_t dmaTimUPChannel;
@@ -212,3 +212,4 @@ uint16_t timerGetPrescalerByDesiredMhz(TIM_TypeDef *tim, uint16_t mhz);
 uint16_t timerGetPeriodByPrescaler(TIM_TypeDef *tim, uint16_t prescaler, uint32_t hz);
 
 int8_t timerGetTIMNumber(const TIM_TypeDef *tim);
+uint8_t timerLookupChannelIndex(const uint16_t channel);

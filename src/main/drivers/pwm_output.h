@@ -109,9 +109,14 @@ typedef enum {
 
 typedef struct {
     TIM_TypeDef *timer;
-    uint16_t timerDmaSources;
-#ifdef USE_DSHOT_DMAR
+#if defined(USE_DSHOT_DMAR)
+#if !defined(USE_HAL_DRIVER)
+    DMA_Stream_TypeDef *dmaBurstRef;
+    uint16_t dmaBurstLength;
+#endif
     uint32_t dmaBurstBuffer[DSHOT_DMA_BUFFER_SIZE * 4];
+#else
+    uint16_t timerDmaSources;
 #endif
 } motorDmaTimer_t;
 
@@ -119,7 +124,9 @@ typedef struct {
     ioTag_t ioTag;
     const timerHardware_t *timerHardware;
     uint16_t value;
+#if !defined(USE_DSHOT_DMAR)
     uint16_t timerDmaSource;
+#endif
     motorDmaTimer_t *timer;
     volatile bool requestTelemetry;
 #if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
