@@ -39,19 +39,16 @@
 
 #include "fc/config.h"
 
-#include "rx/rx.h"
-#include "rx/rx_spi.h"
 #include "rx/cc2500_frsky_common.h"
 #include "rx/cc2500_frsky_shared.h"
-#include "rx/cc2500_frsky_x.h"
 
 #include "sensors/battery.h"
 
 #include "telemetry/smartport.h"
 
-#define RC_CHANNEL_COUNT 16
+#include "cc2500_frsky_x.h"
 
-const uint16_t CRCTable[] = {
+const uint16_t crcTable[] = {
         0x0000,0x1189,0x2312,0x329b,0x4624,0x57ad,0x6536,0x74bf,
         0x8c48,0x9dc1,0xaf5a,0xbed3,0xca6c,0xdbe5,0xe97e,0xf8f7,
         0x1081,0x0108,0x3393,0x221a,0x56a5,0x472c,0x75b7,0x643e,
@@ -128,74 +125,40 @@ typedef struct telemetryPayload_s {
     uint8_t crc[2];
 } __attribute__ ((__packed__)) telemetryPayload_t;
 
-static telemetryBuffer_t telemetryRxBuffer[TELEMETRY_SEQUENCE_LENGTH];
+#if defined(USE_RX_FRSKY_SPI_TELEMETRY)
 static telemetryData_t telemetryTxBuffer[TELEMETRY_SEQUENCE_LENGTH];
-
-static uint8_t remoteProcessedId = 0;
-static uint8_t remoteAckId = 0;
-
-static uint8_t remoteToProcessIndex = 0;
-
-static uint8_t localPacketId;
+#endif
 
 static telemetrySequenceMarker_t responseToSend;
 
-static uint8_t ccLen;
-static uint32_t missingPackets;
-static uint8_t cnt;
-static timeDelta_t t_out;
-static timeUs_t packet_timer;
-static uint8_t protocolState;
-static int16_t word_temp;
-static uint32_t start_time;
-
-static bool frame_received;
-static uint8_t one_time=1;
-static uint8_t chanskip=1;
-
-#if defined(USE_RX_FRSKY_SPI_PA_LNA)
-static uint8_t pass;
-#endif
-static timeDelta_t  t_received;
-#ifdef USE_RX_FRSKY_SPI_TELEMETRY
+#if defined(USE_RX_FRSKY_SPI_TELEMETRY)
 static uint8_t frame[20];
-static uint8_t telemetryRX;
 #if defined(USE_TELEMETRY_SMARTPORT)
-static uint8_t telemetryOutReader = 0;
 static uint8_t telemetryOutWriter;
 
 static uint8_t telemetryOutBuffer[TELEMETRY_OUT_BUFFER_SIZE];
 
 static bool telemetryEnabled = false;
 #endif
-#endif
+#endif // USE_RX_FRSKY_SPI_TELEMETRY
 
 
-bool frskySpiDetect(void)//debug CC2500 spi
-{
-    uint8_t tmp[2];
-    tmp[0] = cc2500ReadReg(CC2500_30_PARTNUM | CC2500_READ_BURST);//Cc2500 read registers chip part num
-    tmp[1] = cc2500ReadReg(CC2500_31_VERSION | CC2500_READ_BURST);//Cc2500 read registers chip version
-    if (tmp[0] == 0x80 && tmp[1]==0x03){
-        return true;
-    }
-    return false;
-}
-
-
-static uint16_t crc(uint8_t *data, uint8_t len) {
+static uint16_t calculateCrc(uint8_t *data, uint8_t len) {
     uint16_t crc = 0;
     for(uint8_t i=0; i < len; i++)
-        crc = (crc<<8) ^ (CRCTable[((uint8_t)(crc>>8) ^ *data++) & 0xFF]);
+        crc = (crc<<8) ^ (crcTable[((uint8_t)(crc>>8) ^ *data++) & 0xFF]);
     return crc;
 }
 
+#if defined(USE_RX_FRSKY_SPI_TELEMETRY)
 #if defined(USE_TELEMETRY_SMARTPORT)
-static uint8_t frsky_append_sport_data(uint8_t *buf)
+static uint8_t appendSmartPortData(uint8_t *buf)
 {
+    static uint8_t telemetryOutReader = 0;
+
     uint8_t index;
-    for (index = 0; index < TELEMETRY_DATA_SIZE; index++) { //max 5 bytes in a frame
-        if(telemetryOutReader == telemetryOutWriter){ //no new data
+    for (index = 0; index < TELEMETRY_DATA_SIZE; index++) { // max 5 bytes in a frame
+        if (telemetryOutReader == telemetryOutWriter){ // no new data
             break;
         }
         buf[index] = telemetryOutBuffer[telemetryOutReader];
@@ -206,26 +169,28 @@ static uint8_t frsky_append_sport_data(uint8_t *buf)
 }
 #endif
 
-#if defined(USE_RX_FRSKY_SPI_TELEMETRY)
-static void telemetry_build_frame(uint8_t *packet)
+static void buildTelemetryFrame(uint8_t *packet)
 {
-    frame[0]=0x0E;//length
-    frame[1]=rxFrSkySpiConfig()->bindTxId[0];
-    frame[2]=rxFrSkySpiConfig()->bindTxId[1];
-    frame[3]=packet[3];
+    static uint8_t localPacketId;
 
     static bool evenRun = false;
+
+    frame[0] = 0x0E;//length
+    frame[1] = rxFrSkySpiConfig()->bindTxId[0];
+    frame[2] = rxFrSkySpiConfig()->bindTxId[1];
+    frame[3] = packet[3];
+
     if (evenRun) {
-        frame[4]=(uint8_t)RSSI_dBm|0x80;
+        frame[4]=(uint8_t)rssiDbm|0x80;
     } else {
         const uint16_t adcExternal1Sample = adcGetChannel(ADC_EXTERNAL1);
-        frame[4]=(uint8_t)((adcExternal1Sample & 0xfe0) >> 5); // A1;
+        frame[4] = (uint8_t)((adcExternal1Sample & 0xfe0) >> 5); // A1;
     }
     evenRun = !evenRun;
 
     telemetrySequenceMarker_t *inFrameMarker = (telemetrySequenceMarker_t *)&packet[21];
     telemetrySequenceMarker_t *outFrameMarker = (telemetrySequenceMarker_t *)&frame[5];
-    if (inFrameMarker->data.initRequest) {//check syncronization at startup ok if not no sport telemetry
+    if (inFrameMarker->data.initRequest) { // check syncronization at startup ok if not no sport telemetry
         outFrameMarker-> raw = 0;
         outFrameMarker->data.initRequest = 1;
         outFrameMarker->data.initResponse = 1;
@@ -243,8 +208,8 @@ static void telemetry_build_frame(uint8_t *packet)
             if (localPacketId != (localAckId + 1) % TELEMETRY_SEQUENCE_LENGTH) {
                 outFrameMarker->raw = responseToSend.raw & SEQUENCE_MARKER_REMOTE_PART;
                 outFrameMarker->data.packetSequenceId = localPacketId;
-\
-                frame[6] = frsky_append_sport_data(&frame[7]);
+
+                frame[6] = appendSmartPortData(&frame[7]);
                 memcpy(&telemetryTxBuffer[localPacketId], &frame[6], TELEMETRY_FRAME_SIZE);
 
                 localPacketId = (localPacketId + 1) % TELEMETRY_SEQUENCE_LENGTH;
@@ -252,7 +217,7 @@ static void telemetry_build_frame(uint8_t *packet)
         }
     }
 
-    uint16_t lcrc = crc(&frame[3], 10);
+    uint16_t lcrc = calculateCrc(&frame[3], 10);
     frame[13]=lcrc>>8;
     frame[14]=lcrc;
 }
@@ -294,104 +259,112 @@ void frSkyXSetRcData(uint16_t *rcData, const uint8_t *packet)
 {
     uint16_t c[8];
 
-    c[0] = (uint16_t)((packet[10] <<8)& 0xF00) | packet[9];
-    c[1] = (uint16_t)((packet[11]<<4)&0xFF0) | (packet[10]>>4);
-    c[2] = (uint16_t)((packet[13] <<8)& 0xF00) | packet[12];
-    c[3] = (uint16_t)((packet[14]<<4)&0xFF0) | (packet[13]>>4);
-    c[4] = (uint16_t)((packet[16] <<8)& 0xF00) | packet[15];
-    c[5] = (uint16_t)((packet[17]<<4)&0xFF0) | (packet[16]>>4);
-    c[6] = (uint16_t)((packet[19] <<8)& 0xF00) | packet[18];
-    c[7] = (uint16_t)((packet[20]<<4)&0xFF0) | (packet[19]>>4);
+    c[0] = (uint16_t)((packet[10] << 8) & 0xF00) | packet[9];
+    c[1] = (uint16_t)((packet[11] << 4) & 0xFF0) | (packet[10] >> 4);
+    c[2] = (uint16_t)((packet[13] << 8) & 0xF00) | packet[12];
+    c[3] = (uint16_t)((packet[14] << 4) & 0xFF0) | (packet[13] >> 4);
+    c[4] = (uint16_t)((packet[16] << 8) & 0xF00) | packet[15];
+    c[5] = (uint16_t)((packet[17] << 4) & 0xFF0) | (packet[16] >> 4);
+    c[6] = (uint16_t)((packet[19] << 8) & 0xF00) | packet[18];
+    c[7] = (uint16_t)((packet[20] << 4) & 0xFF0) | (packet[19] >> 4);
 
-    uint8_t j;
-    for(uint8_t i=0;i<8;i++) {
-        if(c[i] > 2047)  {
+    uint8_t j = 0;
+    for(uint8_t i = 0; i < 8; i++) {
+        if(c[i] > 2047) {
             j = 8;
             c[i] = c[i] - 2048;
         } else {
             j = 0;
         }
-        word_temp = (((c[i]-64)<<1)/3+860);
-        if ((word_temp > 800) && (word_temp < 2200))
-            rcData[i+j] = word_temp;
+        int16_t temp = (((c[i] - 64) << 1) / 3 + 860);
+        if ((temp > 800) && (temp < 2200)) {
+            rcData[i+j] = temp;
+        }
     }
 }
 
-rx_spi_received_e frSkyXDataReceived(uint8_t *packet)
+rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const protocolState)
 {
     static unsigned receiveTelemetryRetryCount = 0;
-    static uint32_t polling_time=0;
+    static timeMs_t pollingTimeMs = 0;
+    static bool skipChannels = true;
+    static bool ledIsOn;
+
+    static uint8_t remoteProcessedId = 0;
+    static uint8_t remoteAckId = 0;
+
+    static uint8_t remoteToProcessIndex = 0;
+
+    static timeUs_t packetTimerUs;
+
+    static bool frameReceived;
+    static timeDelta_t receiveDelayUs;
+    static uint8_t channelsToSkip = 1;
+
+    static telemetryBuffer_t telemetryRxBuffer[TELEMETRY_SEQUENCE_LENGTH];
+
+#if defined(USE_RX_FRSKY_SPI_TELEMETRY)
+    static bool telemetryReceived = false;
+#endif
 
     rx_spi_received_e ret = RX_SPI_RECEIVED_NONE;
 
-    switch (protocolState) {
-    case STATE_INIT:
-        if ((millis() - start_time) > 10) {
-            initialize();
-
-            protocolState = STATE_BIND;
-        }
-
-        break;
-    case STATE_BIND:
-    case STATE_BIND_TUNING:
-    case STATE_BIND_BINDING1:
-    case STATE_BIND_BINDING2:
-    case STATE_BIND_COMPLETE:
-        protocolState = handleBinding(protocolState, packet);
-
-        break;
+    switch (*protocolState) {
     case STATE_STARTING:
         listLength = 47;
         initialiseData(0);
-        protocolState = STATE_UPDATE;
+        *protocolState = STATE_UPDATE;
         nextChannel(1);
         cc2500Strobe(CC2500_SRX);
-        ret = RX_SPI_RECEIVED_BIND;		
         break;
     case STATE_UPDATE:
-        packet_timer = micros();
-        protocolState = STATE_DATA;
-        frame_received=false;//again set for receive
-        t_received = 5300;
+        packetTimerUs = micros();
+        *protocolState = STATE_DATA;
+        frameReceived = false; // again set for receive
+        receiveDelayUs = 5300;
         if (checkBindRequested(false)) {
-            packet_timer = 0;
-            t_out = 50;
+            packetTimerUs = 0;
+            timeoutUs = 50;
             missingPackets = 0;
-            protocolState = STATE_INIT;
+            *protocolState = STATE_INIT;
+
             break;
         }
-        FALLTHROUGH; //!!TODO -check this fall through is correct
+
+        FALLTHROUGH;
         // here FS code could be
     case STATE_DATA:	
-        if ((IORead(gdoPin)) &&(frame_received==false)){
-            ccLen =cc2500ReadReg(CC2500_3B_RXBYTES | CC2500_READ_BURST) & 0x7F;
-            ccLen =cc2500ReadReg(CC2500_3B_RXBYTES | CC2500_READ_BURST) & 0x7F;//read 2 times to avoid reading errors
-            if (ccLen > 32)
+        if (IORead(gdoPin) && (frameReceived == false)){
+            uint8_t ccLen = cc2500ReadReg(CC2500_3B_RXBYTES | CC2500_READ_BURST) & 0x7F;
+            ccLen = cc2500ReadReg(CC2500_3B_RXBYTES | CC2500_READ_BURST) & 0x7F; // read 2 times to avoid reading errors
+            if (ccLen > 32) {
                 ccLen = 32;
+            }
             if (ccLen) {
                 cc2500ReadFifo(packet, ccLen);				
-                uint16_t lcrc= crc(&packet[3],(ccLen-7));
-                if((lcrc >>8)==packet[ccLen-4]&&(lcrc&0x00FF)==packet[ccLen-3]){//check crc
+                uint16_t lcrc= calculateCrc(&packet[3], (ccLen - 7));
+                if((lcrc >> 8) == packet[ccLen-4] && (lcrc&0x00FF) == packet[ccLen - 3]){ // check calculateCrc
                     if (packet[0] == 0x1D) {
                         if ((packet[1] == rxFrSkySpiConfig()->bindTxId[0]) &&
                                 (packet[2] == rxFrSkySpiConfig()->bindTxId[1]) &&
                                 (rxFrSkySpiConfig()->rxNum == 0 || packet[6] == 0 || packet[6] == rxFrSkySpiConfig()->rxNum)) {
                             missingPackets = 0;
-                            t_out = 1;
-                            t_received = 0;
+                            timeoutUs = 1;
+                            receiveDelayUs = 0;
                             IOHi(frSkyLedPin);
-                            if(one_time){
-                                chanskip=packet[5]<<2;
-                                if(packet[4]<listLength){}
-                                else if(packet[4]<(64+listLength))
-                                    chanskip +=1;
-                                else if(packet[4]<(128+listLength))
-                                    chanskip +=2;
-                                else if(packet[4]<(192+listLength))
-                                    chanskip +=3;
-                                telemetryRX=1;//now telemetry can be sent
-                                one_time=0;
+                            if (skipChannels) {
+                                channelsToSkip = packet[5] << 2;
+                                if (packet[4] >= listLength) {
+                                    if (packet[4] < (64 + listLength)) {
+                                        channelsToSkip += 1;
+                                    } else if (packet[4] < (128 + listLength)) {
+                                        channelsToSkip += 2;
+                                    } else if (packet[4] < (192 + listLength)) {
+                                        channelsToSkip += 3;
+                                    }
+                                }
+                                telemetryReceived = true; // now telemetry can be sent
+                                skipChannels = false;
                             }
 #ifdef USE_RX_FRSKY_SPI_TELEMETRY
                             setRssiDbm(packet[ccLen - 2]);
@@ -443,37 +416,38 @@ rx_spi_received_e frSkyXDataReceived(uint8_t *packet)
                                  receiveTelemetryRetryCount = 0;
                              }
 
-                            packet_timer=micros();
-                            frame_received=true;//no need to process frame again.
+                            packetTimerUs = micros();
+                            frameReceived = true; // no need to process frame again.
                         }
                     }				
                 }
             }
         }
-        if (telemetryRX) {
-            if(cmpTimeUs(micros(), packet_timer) > t_received) { // if received or not received in this time sent telemetry data
-                protocolState=STATE_TELEMETRY;
-                telemetry_build_frame(packet);
+        if (telemetryReceived) {
+            if(cmpTimeUs(micros(), packetTimerUs) > receiveDelayUs) { // if received or not received in this time sent telemetry data
+                *protocolState = STATE_TELEMETRY;
+                buildTelemetryFrame(packet);
             }
         }
-        if (cmpTimeUs(micros(), packet_timer) > t_out * SYNC) {
-            if (cnt++ & 0x01) {
+        if (cmpTimeUs(micros(), packetTimerUs) > timeoutUs * SYNC_DELAY_MAX) {
+            if (ledIsOn) {
                 IOLo(frSkyLedPin);
             } else {
                 IOHi(frSkyLedPin);
             }
-            //telemetryTime=micros();
+            ledIsOn = !ledIsOn;
+
 #if defined(USE_RX_FRSKY_SPI_TELEMETRY)
             setRssiFiltered(0, RSSI_SOURCE_RX_PROTOCOL);
 #endif
             nextChannel(1);
             cc2500Strobe(CC2500_SRX);
-            protocolState = STATE_UPDATE;
+            *protocolState = STATE_UPDATE;
         }
         break;
 #ifdef USE_RX_FRSKY_SPI_TELEMETRY
     case STATE_TELEMETRY:
-        if(cmpTimeUs(micros(), packet_timer) >= t_received + 400) { // if received or not received in this time sent telemetry data
+        if(cmpTimeUs(micros(), packetTimerUs) >= receiveDelayUs + 400) { // if received or not received in this time sent telemetry data
             cc2500Strobe(CC2500_SIDLE);
             cc2500SetPower(6);
             cc2500Strobe(CC2500_SFRX);
@@ -487,10 +461,10 @@ rx_spi_received_e frSkyXDataReceived(uint8_t *packet)
 #if defined(USE_TELEMETRY_SMARTPORT)
             if (telemetryEnabled) {
                 bool clearToSend = false;
-                uint32_t now = millis();
+                timeMs_t now = millis();
                 smartPortPayload_t *payload = NULL;
-                if ((now - polling_time) > 24) {
-                    polling_time=now;
+                if ((now - pollingTimeMs) > 24) {
+                    pollingTimeMs = now;
 
                     clearToSend = true;
                 } else {
@@ -512,66 +486,48 @@ rx_spi_received_e frSkyXDataReceived(uint8_t *packet)
                 processSmartPortTelemetry(payload, &clearToSend, NULL);
             }
 #endif
-            protocolState = STATE_RESUME;
+            *protocolState = STATE_RESUME;
             ret = RX_SPI_RECEIVED_DATA;
         }
 
         break;
 #endif // USE_RX_FRSKY_SPI_TELEMETRY
     case STATE_RESUME:
-        if (cmpTimeUs(micros(), packet_timer) > t_received + 3700) {
-            packet_timer = micros();
-            t_received=5300;
-            frame_received=false;//again set for receive
-            nextChannel(chanskip);
+        if (cmpTimeUs(micros(), packetTimerUs) > receiveDelayUs + 3700) {
+            packetTimerUs = micros();
+            receiveDelayUs = 5300;
+            frameReceived = false; // again set for receive
+            nextChannel(channelsToSkip);
             cc2500Strobe(CC2500_SRX);
 #ifdef USE_RX_FRSKY_SPI_PA_LNA
             RxEnable();
-#ifdef USE_RX_FRSKY_SPI_DIVERSITY // SE4311 chip
+#if defined(USE_RX_FRSKY_SPI_DIVERSITY)
             if (missingPackets >= 2) {
-                if (pass & 0x01)
-                {
-                    IOHi(antSelPin);
-                }
-                else
-                {
-                    IOLo(antSelPin);
-                }
-                pass++;
+                switchAntennae();
             }
 #endif
 #endif // USE_RX_FRSKY_SPI_PA_LNA
-            if (missingPackets > MAX_MISSING_PKT)
-            {
-                t_out = 50;
-                one_time=1;
-                telemetryRX=0;
-                protocolState = STATE_UPDATE;
+            if (missingPackets > MAX_MISSING_PKT) {
+                timeoutUs = 50;
+                skipChannels = true;
+                telemetryReceived = false;
+                *protocolState = STATE_UPDATE;
                 break;
             }
             missingPackets++;
-            protocolState = STATE_DATA;
+            *protocolState = STATE_DATA;
         }
         break;
     }
+
     return ret;
 }
 
-void frSkyXInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+void frSkyXInit(void)
 {
-    UNUSED(rxConfig);
-
-    rxRuntimeConfig->channelCount = RC_CHANNEL_COUNT;
-
-    protocolState = STATE_INIT;
-    missingPackets = 0;
-    t_out = 50;
-
 #if defined(USE_TELEMETRY_SMARTPORT)
      telemetryEnabled = initSmartPortTelemetryExternal(frSkyXTelemetryWriteFrame);
 #endif
-
-     frskySpiRxSetup(rxConfig->rx_spi_protocol);
 }
 
 #endif

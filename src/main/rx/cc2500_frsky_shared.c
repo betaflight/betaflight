@@ -33,12 +33,21 @@
 #include "pg/pg_ids.h"
 
 #include "rx/rx.h"
+#include "rx/rx_spi.h"
 
 #include "rx/cc2500_frsky_common.h"
+#include "rx/cc2500_frsky_d.h"
+#include "rx/cc2500_frsky_x.h"
 
 #include "cc2500_frsky_shared.h"
 
 static rx_spi_protocol_e spiProtocol;
+
+static timeMs_t start_time;
+static uint8_t protocolState;
+
+uint32_t missingPackets;
+timeDelta_t timeoutUs;
 
 static uint8_t calData[255][3];
 static timeMs_t timeTunedMs;
@@ -46,7 +55,14 @@ uint8_t listLength;
 static uint8_t bindIdx;
 static int8_t bindOffset;
 static bool lastBindPinStatus;
-bool bindRequested = false;
+
+static bool bindRequested;
+
+typedef uint8_t handlePacketFn(uint8_t * const packet, uint8_t * const protocolState);
+typedef void setRcDataFn(uint16_t *rcData, const uint8_t *payload);
+
+static handlePacketFn *handlePacket;
+static setRcDataFn *setRcData;
 
 IO_t gdoPin;
 static IO_t bindPin = DEFIO_IO(NONE);
@@ -55,11 +71,11 @@ IO_t frSkyLedPin;
 #if defined(USE_RX_FRSKY_SPI_PA_LNA)
 static IO_t txEnPin;
 static IO_t rxLnaEnPin;
-IO_t antSelPin;
+static IO_t antSelPin;
 #endif
 
 #ifdef USE_RX_FRSKY_SPI_TELEMETRY
-int16_t RSSI_dBm;
+int16_t rssiDbm;
 #endif
 
 PG_REGISTER_WITH_RESET_TEMPLATE(rxFrSkySpiConfig_t, rxFrSkySpiConfig, PG_RX_FRSKY_SPI_CONFIG, 0);
@@ -79,12 +95,12 @@ PG_RESET_TEMPLATE(rxFrSkySpiConfig_t, rxFrSkySpiConfig,
 void setRssiDbm(uint8_t value)
 {
     if (value >= 128) {
-        RSSI_dBm = ((((uint16_t)value) * 18) >> 5) - 82;
+        rssiDbm = ((((uint16_t)value) * 18) >> 5) - 82;
     } else {
-        RSSI_dBm = ((((uint16_t)value) * 18) >> 5) + 65;
+        rssiDbm = ((((uint16_t)value) * 18) >> 5) + 65;
     }
 
-    setRssiUnfiltered(constrain(RSSI_dBm << 3, 0, 1023), RSSI_SOURCE_RX_PROTOCOL);
+    setRssiUnfiltered(constrain(rssiDbm << 3, 0, 1023), RSSI_SOURCE_RX_PROTOCOL);
 }
 #endif // USE_RX_FRSKY_SPI_TELEMETRY
 
@@ -100,12 +116,12 @@ void TxEnable(void)
 }
 #endif
 
-void frSkyBind(void)
+void frSkySpiBind(void)
 {
     bindRequested = true;
 }
 
-void initialize() {
+static void initialise() {
     cc2500Reset();
     cc2500WriteReg(CC2500_02_IOCFG0,   0x01);
     cc2500WriteReg(CC2500_17_MCSM1,    0x0C);
@@ -136,7 +152,8 @@ void initialize() {
     cc2500WriteReg(CC2500_03_FIFOTHR,  0x07);
     cc2500WriteReg(CC2500_09_ADDR,     0x00);
 
-    if (spiProtocol == RX_SPI_FRSKY_D) {
+    switch (spiProtocol) {
+    case RX_SPI_FRSKY_D:
         cc2500WriteReg(CC2500_06_PKTLEN,   0x19);
         cc2500WriteReg(CC2500_08_PKTCTRL0, 0x05);
         cc2500WriteReg(CC2500_0B_FSCTRL1,  0x08);
@@ -144,7 +161,9 @@ void initialize() {
         cc2500WriteReg(CC2500_11_MDMCFG3,  0x39);
         cc2500WriteReg(CC2500_12_MDMCFG2,  0x11);
         cc2500WriteReg(CC2500_15_DEVIATN,  0x42);
-    } else {
+
+        break;
+    case RX_SPI_FRSKY_X:
         cc2500WriteReg(CC2500_06_PKTLEN,   0x1E);
         cc2500WriteReg(CC2500_08_PKTCTRL0, 0x01);
         cc2500WriteReg(CC2500_0B_FSCTRL1,  0x0A);
@@ -152,10 +171,15 @@ void initialize() {
         cc2500WriteReg(CC2500_11_MDMCFG3,  0x61);
         cc2500WriteReg(CC2500_12_MDMCFG2,  0x13);
         cc2500WriteReg(CC2500_15_DEVIATN,  0x51);
+
+        break;
+    default:
+
+        break;
     }
 
-    for(uint8_t c=0;c<0xFF;c++)
-    {//calibrate all channels
+    for(unsigned c = 0;c < 0xFF; c++)
+    { //calibrate all channels
         cc2500Strobe(CC2500_SIDLE);
         cc2500WriteReg(CC2500_0A_CHANNR, c);
         cc2500Strobe(CC2500_SCAL);
@@ -342,9 +366,19 @@ bool checkBindRequested(bool reset)
     }
 }
 
-uint8_t handleBinding(uint8_t protocolState, uint8_t *packet)
+rx_spi_received_e frSkySpiDataReceived(uint8_t *packet)
 {
+    rx_spi_received_e ret = RX_SPI_RECEIVED_NONE;
+
     switch (protocolState) {
+    case STATE_INIT:
+        if ((millis() - start_time) > 10) {
+            initialise();
+
+            protocolState = STATE_BIND;
+        }
+
+        break;
     case STATE_BIND:
         if (checkBindRequested(true) || rxFrSkySpiConfig()->autoBind) {
             IOHi(frSkyLedPin);
@@ -392,12 +426,22 @@ uint8_t handleBinding(uint8_t protocolState, uint8_t *packet)
             }
         }
 
+        ret = RX_SPI_RECEIVED_BIND;
         protocolState = STATE_STARTING;
+
+        break;
+    default:
+        ret = handlePacket(packet, &protocolState);
 
         break;
     }
 
-    return protocolState;
+    return ret;
+}
+
+void frSkySpiSetRcData(uint16_t *rcData, const uint8_t *payload)
+{
+    setRcData(rcData, payload);
 }
 
 void nextChannel(uint8_t skip)
@@ -421,9 +465,62 @@ void nextChannel(uint8_t skip)
     }
 }
 
-void frskySpiRxSetup(rx_spi_protocol_e protocol)
+#if defined(USE_RX_FRSKY_SPI_PA_LNA) && defined(USE_RX_FRSKY_SPI_DIVERSITY)
+void switchAntennae(void)
 {
-    spiProtocol = protocol;
+    static bool alternativeAntennaSelected = true;
+
+    if (alternativeAntennaSelected) {
+        IOLo(antSelPin);
+    } else {
+        IOHi(antSelPin);
+    }
+    alternativeAntennaSelected = !alternativeAntennaSelected;
+}
+#endif
+
+static bool frSkySpiDetect(void)
+{
+    uint8_t tmp[2];
+    tmp[0] = cc2500ReadReg(CC2500_30_PARTNUM | CC2500_READ_BURST); //CC2500 read registers chip part num
+    tmp[1] = cc2500ReadReg(CC2500_31_VERSION | CC2500_READ_BURST); //CC2500 read registers chip version
+    if (tmp[0] == 0x80 && tmp[1]==0x03){
+        return true;
+    }
+    return false;
+}
+
+void frSkySpiInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+{
+    if (!frSkySpiDetect()) {
+        rxRuntimeConfig->channelCount = 0;
+
+        return;
+    }
+
+    spiProtocol = rxConfig->rx_spi_protocol;
+
+    switch (spiProtocol) {
+    case RX_SPI_FRSKY_D:
+        rxRuntimeConfig->channelCount = RC_CHANNEL_COUNT_FRSKY_D;
+
+        handlePacket = frSkyDHandlePacket;
+        setRcData = frSkyDSetRcData;
+        frSkyDInit();
+
+        break;
+    case RX_SPI_FRSKY_X:
+        rxRuntimeConfig->channelCount = RC_CHANNEL_COUNT_FRSKY_X;
+
+        handlePacket = frSkyXHandlePacket;
+        setRcData = frSkyXSetRcData;
+        frSkyXInit();
+
+        break;
+    default:
+
+        break;
+    }
 
 #if defined(USE_RX_FRSKY_SPI_TELEMETRY)
     if (rssiSource == RSSI_SOURCE_NONE) {
@@ -467,7 +564,10 @@ void frskySpiRxSetup(rx_spi_protocol_e protocol)
     RxEnable();
 #endif // USE_RX_FRSKY_SPI_PA_LNA
 
-    // if(!frSkySpiDetect())//detect spi working routine
-    // return;
+    missingPackets = 0;
+    timeoutUs = 50;
+
+    start_time = millis();
+    protocolState = STATE_INIT;
 }
 #endif

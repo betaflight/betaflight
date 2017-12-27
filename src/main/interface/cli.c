@@ -2143,7 +2143,7 @@ void cliFrSkyBind(char *cmdline){
 #ifdef USE_RX_FRSKY_SPI
     case RX_SPI_FRSKY_D:
     case RX_SPI_FRSKY_X:
-        frSkyBind();
+        frSkySpiBind();
 
         cliPrint("Binding...");
 
