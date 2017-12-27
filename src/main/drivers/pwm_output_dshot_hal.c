@@ -64,19 +64,16 @@ void pwmWriteDshotInt(uint8_t index, uint16_t value)
 
     uint16_t packet = prepareDshotPacket(motor, value);
 
-    uint8_t bufferSize = loadDmaBuffer(motor, packet);
+    uint8_t bufferSize;
 
 #ifdef USE_DSHOT_DMAR
-    STATIC_ASSERT(TIM_CHANNEL_1==0, tim_channel_0_indexing);
-    uint8_t channel_index = motor->timerHardware->channel / TIM_CHANNEL_2;
-    // load channel data into burst buffer
-    for(int i = 0; i < bufferSize; i++) {
-        motor->timer->dmaBurstBuffer[channel_index + i * 4] = motor->dmaBuffer[i];
-    }
+    bufferSize = loadDmaBuffer(&motor->timer->dmaBurstBuffer[timerLookupChannelIndex(motor->timerHardware->channel)], 4, packet);
     if(HAL_DMA_STATE_READY == motor->TimHandle.hdma[motor->timerDmaIndex]->State) {
         HAL_DMA_Start_IT(motor->TimHandle.hdma[motor->timerDmaIndex], (uint32_t)motor->timer->dmaBurstBuffer, (uint32_t)&motor->TimHandle.Instance->DMAR, bufferSize * 4);
     }
 #else
+    bufferSize = loadDmaBuffer(motor->dmaBuffer, 1, packet);
+
     if (DMA_SetCurrDataCounter(&motor->TimHandle, motor->timerHardware->channel, motor->dmaBuffer, bufferSize) != HAL_OK) {
         /* DMA set error */
         return;

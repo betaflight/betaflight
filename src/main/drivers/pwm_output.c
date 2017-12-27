@@ -137,20 +137,20 @@ static void pwmWriteDshot(uint8_t index, float value)
     pwmWriteDshotInt(index, lrintf(value));
 }
 
-static uint8_t loadDmaBufferDshot(motorDmaOutput_t *const motor, uint16_t packet)
+static uint8_t loadDmaBufferDshot(uint32_t *dmaBuffer, int stride, uint16_t packet)
 {
     for (int i = 0; i < 16; i++) {
-        motor->dmaBuffer[i] = (packet & 0x8000) ? MOTOR_BIT_1 : MOTOR_BIT_0;  // MSB first
+        dmaBuffer[i * stride] = (packet & 0x8000) ? MOTOR_BIT_1 : MOTOR_BIT_0;  // MSB first 
         packet <<= 1;
     }
 
     return DSHOT_DMA_BUFFER_SIZE;
 }
 
-static uint8_t loadDmaBufferProshot(motorDmaOutput_t *const motor, uint16_t packet)
+static uint8_t loadDmaBufferProshot(uint32_t *dmaBuffer, int stride, uint16_t packet)
 {
     for (int i = 0; i < 4; i++) {
-        motor->dmaBuffer[i] = PROSHOT_BASE_SYMBOL + ((packet & 0xF000) >> 12) * PROSHOT_BIT_WIDTH;  // Most significant nibble first
+        dmaBuffer[i * stride] = PROSHOT_BASE_SYMBOL + ((packet & 0xF000) >> 12) * PROSHOT_BIT_WIDTH;  // Most significant nibble first
         packet <<= 4;   // Shift 4 bits
     }
 

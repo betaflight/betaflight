@@ -185,7 +185,7 @@ void pwmServoConfig(const struct timerHardware_s *timerHardware, uint8_t servoIn
 bool isMotorProtocolDshot(void);
 
 #ifdef USE_DSHOT
-typedef uint8_t loadDmaBufferFn(motorDmaOutput_t *const motor, uint16_t packet);  // function pointer used to encode a digital motor value into the DMA buffer representation
+typedef uint8_t loadDmaBufferFn(uint32_t *dmaBuffer, int stride, uint16_t packet);  // function pointer used to encode a digital motor value into the DMA buffer representation
 
 uint16_t prepareDshotPacket(motorDmaOutput_t *const motor, uint16_t value);
 

@@ -71,19 +71,13 @@ void pwmWriteDshotInt(uint8_t index, uint16_t value)
 #endif
 
     uint16_t packet = prepareDshotPacket(motor, value);
-
-    // XXX Replace this with striding loader in the next refactor
-    uint8_t bufferSize = loadDmaBuffer(motor, packet);
+    uint8_t bufferSize;
 
 #ifdef USE_DSHOT_DMAR
-    // Load channel data into burst buffer
-    uint8_t channelIndex = timerLookupChannelIndex(motor->timerHardware->channel);
-    // XXX This copy will be deleted once the striding loader is available
-    for (int i = 0; i < bufferSize; i++) {
-        motor->timer->dmaBurstBuffer[channelIndex + i * 4] = motor->dmaBuffer[i];
-    }
+    bufferSize = loadDmaBuffer(&motor->timer->dmaBurstBuffer[timerLookupChannelIndex(motor->timerHardware->channel)], 4, packet);
     motor->timer->dmaBurstLength = bufferSize * 4;
 #else
+    bufferSize = loadDmaBuffer(motor->dmaBuffer, 1, packet);
     motor->timer->timerDmaSources |= motor->timerDmaSource;
     DMA_SetCurrDataCounter(motor->timerHardware->dmaRef, bufferSize);
     DMA_Cmd(motor->timerHardware->dmaRef, ENABLE);
