@@ -25,6 +25,8 @@
 #define BEEPER                  PB3
 #define BEEPER_INVERTED
 
+#define USE_DSHOT_DMAR
+
 // ICM20689 interrupt
 #define USE_EXTI
 #define MPU_INT_EXTI            PA8
