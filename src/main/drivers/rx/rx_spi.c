@@ -69,7 +69,7 @@ void rxSpiDeviceInit(rx_spi_type_e spiType)
     UNUSED(spiType);
     const SPIDevice rxSPIDevice = spiDeviceByInstance(RX_SPI_INSTANCE);
     const IO_t rxCsPin = DEFIO_IO(RX_NSS_PIN);
-    IOInit(rxCsPin, OWNER_SPI_CS, rxSPIDevice + 1);
+    IOInit(rxCsPin, OWNER_RX_SPI_CS, rxSPIDevice + 1);
     IOConfigGPIO(rxCsPin, SPI_IO_CS_CFG);
 #endif // USE_RX_SOFTSPI
 

@@ -530,22 +530,22 @@ void frSkySpiInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
 
     // gpio init here
     gdoPin = IOGetByTag(IO_TAG(RX_FRSKY_SPI_GDO_0_PIN));
-    IOInit(gdoPin, OWNER_RX_BIND, 0);
+    IOInit(gdoPin, OWNER_RX_SPI, 0);
     IOConfigGPIO(gdoPin, IOCFG_IN_FLOATING);
     frSkyLedPin = IOGetByTag(IO_TAG(RX_FRSKY_SPI_LED_PIN));
     IOInit(frSkyLedPin, OWNER_LED, 0);
     IOConfigGPIO(frSkyLedPin, IOCFG_OUT_PP);
 #if defined(USE_RX_FRSKY_SPI_PA_LNA)
     rxLnaEnPin = IOGetByTag(IO_TAG(RX_FRSKY_SPI_LNA_EN_PIN));
-    IOInit(rxLnaEnPin, OWNER_RX_BIND, 0);
+    IOInit(rxLnaEnPin, OWNER_RX_SPI, 0);
     IOConfigGPIO(rxLnaEnPin, IOCFG_OUT_PP);
     IOHi(rxLnaEnPin); // always on at the moment
     txEnPin = IOGetByTag(IO_TAG(RX_FRSKY_SPI_TX_EN_PIN));
-    IOInit(txEnPin, OWNER_RX_BIND, 0);
+    IOInit(txEnPin, OWNER_RX_SPI, 0);
     IOConfigGPIO(txEnPin, IOCFG_OUT_PP);
 #if defined(USE_RX_FRSKY_SPI_DIVERSITY)
     antSelPin = IOGetByTag(IO_TAG(RX_FRSKY_SPI_ANT_SEL_PIN));
-    IOInit(antSelPin, OWNER_RX_BIND, 0);
+    IOInit(antSelPin, OWNER_RX_SPI, 0);
     IOConfigGPIO(antSelPin, IOCFG_OUT_PP);
 #endif
 #endif // USE_RX_FRSKY_SPI_PA_LNA
