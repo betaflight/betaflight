@@ -43,7 +43,7 @@
 #include "rx/rx.h"
 
 #include "telemetry/telemetry.h"
-#include "telemetry/frsky.h"
+#include "telemetry/frsky_hub.h"
 #include "telemetry/hott.h"
 #include "telemetry/smartport.h"
 #include "telemetry/ltm.h"
@@ -73,8 +73,8 @@ PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
 
 void telemetryInit(void)
 {
-#ifdef USE_TELEMETRY_FRSKY
-    initFrSkyTelemetry();
+#ifdef USE_TELEMETRY_FRSKY_HUB
+    initFrSkyHubTelemetry();
 #endif
 #ifdef USE_TELEMETRY_HOTT
     initHoTTTelemetry();
@@ -142,8 +142,8 @@ serialPort_t *telemetrySharedPort = NULL;
 
 void telemetryCheckState(void)
 {
-#ifdef USE_TELEMETRY_FRSKY
-    checkFrSkyTelemetryState();
+#ifdef USE_TELEMETRY_FRSKY_HUB
+    checkFrSkyHubTelemetryState();
 #endif
 #ifdef USE_TELEMETRY_HOTT
     checkHoTTTelemetryState();
@@ -173,8 +173,8 @@ void telemetryCheckState(void)
 
 void telemetryProcess(uint32_t currentTime)
 {
-#ifdef USE_TELEMETRY_FRSKY
-    handleFrSkyTelemetry(currentTime);
+#ifdef USE_TELEMETRY_FRSKY_HUB
+    handleFrSkyHubTelemetry(currentTime);
 #else
     UNUSED(currentTime);
 #endif

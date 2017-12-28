@@ -136,7 +136,7 @@ extern uint8_t __config_end;
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
 
-#include "telemetry/frsky.h"
+#include "telemetry/frsky_hub.h"
 #include "telemetry/telemetry.h"
 
 

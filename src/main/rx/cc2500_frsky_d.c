@@ -43,7 +43,7 @@
 
 #include "sensors/battery.h"
 
-#include "telemetry/frsky.h"
+#include "telemetry/frsky_hub.h"
 
 #include "cc2500_frsky_d.h"
 
@@ -51,51 +51,51 @@
 static uint8_t frame[20];
 static uint8_t telemetryId;
 
-#if defined(USE_TELEMETRY_FRSKY)
+#if defined(USE_TELEMETRY_FRSKY_HUB)
+static bool telemetryEnabled = false;
+
 #define MAX_SERIAL_BYTES 64
 
-static uint8_t hubIndex;
-static uint8_t telemetryInxdex = 0;
+static uint8_t telemetryBytesGenerated;
 static uint8_t serialBuffer[MAX_SERIAL_BYTES]; // buffer for telemetry serial data
-#endif
-#endif // USE_RX_FRSKY_SPI_TELEMETRY
 
-#if defined(USE_RX_FRSKY_SPI_TELEMETRY)
-#if defined(USE_TELEMETRY_FRSKY)
 static uint8_t appendFrSkyHubData(uint8_t *buf)
 {
-    static uint8_t telemetryIndexAcknowledged = 0;
-    static uint8_t telemetryIndexExpected = 0;
+    static uint8_t telemetryBytesSent = 0;
+    static uint8_t telemetryBytesAcknowledged = 0;
+    static uint8_t telemetryIdExpected = 0;
 
-    if (telemetryId == telemetryIndexExpected) {
-        telemetryIndexAcknowledged = telemetryInxdex;
+    if (telemetryId == telemetryIdExpected) {
+        telemetryBytesAcknowledged = telemetryBytesSent;
+
+        telemetryIdExpected = (telemetryId + 1) & 0x1F;
+        if (!telemetryBytesGenerated) {
+            telemetryBytesSent = 0;
+
+            processFrSkyHubTelemetry(micros());
+        }
     } else { // rx re-requests last packet
-        telemetryInxdex = telemetryIndexAcknowledged;
+        telemetryBytesSent = telemetryBytesAcknowledged;
     }
 
-    telemetryIndexExpected = (telemetryId + 1) & 0x1F;
     uint8_t index = 0;
     for (uint8_t i = 0; i < 10; i++) {
-        if (telemetryInxdex == hubIndex) {
+        if (telemetryBytesSent == telemetryBytesGenerated) {
+            telemetryBytesGenerated = 0;
+
             break;
         }
-        buf[i] = serialBuffer[telemetryInxdex];
-        telemetryInxdex = (telemetryInxdex + 1) & (MAX_SERIAL_BYTES - 1);
+        buf[i] = serialBuffer[telemetryBytesSent];
+        telemetryBytesSent = (telemetryBytesSent + 1) & (MAX_SERIAL_BYTES - 1);
         index++;
     }
     return index;
 }
 
-static void frSkyTelemetryInitFrameSpi(void)
+static void frSkyDTelemetryWriteByte(const char data)
 {
-    hubIndex = 0;
-    telemetryInxdex = 0;
-}
-
-static void frSkyTelemetryWriteSpi(uint8_t ch)
-{
-    if (hubIndex < MAX_SERIAL_BYTES) {
-        serialBuffer[hubIndex++] = ch;
+    if (telemetryBytesGenerated < MAX_SERIAL_BYTES) {
+        serialBuffer[telemetryBytesGenerated++] = data;
     }
 }
 #endif
@@ -104,7 +104,6 @@ static void buildTelemetryFrame(uint8_t *packet)
 {
     const uint16_t adcExternal1Sample = adcGetChannel(ADC_EXTERNAL1);
     const uint16_t adcRssiSample = adcGetChannel(ADC_RSSI);
-    uint8_t bytes_used = 0;
     telemetryId = packet[4];
     frame[0] = 0x11; // length
     frame[1] = rxFrSkySpiConfig()->bindTxId[0];
@@ -112,10 +111,13 @@ static void buildTelemetryFrame(uint8_t *packet)
     frame[3] = (uint8_t)((adcExternal1Sample & 0xff0) >> 4); // A1
     frame[4] = (uint8_t)((adcRssiSample & 0xff0) >> 4);      // A2
     frame[5] = (uint8_t)rssiDbm;
-#if defined(USE_TELEMETRY_FRSKY)
-    bytes_used = appendFrSkyHubData(&frame[8]);
-#endif
-    frame[6] = bytes_used;
+    uint8_t bytesUsed = 0;
+#if defined(USE_TELEMETRY_FRSKY_HUB)
+    if (telemetryEnabled) {
+        bytesUsed = appendFrSkyHubData(&frame[8]);
+    }
+ #endif
+    frame[6] = bytesUsed;
     frame[7] = telemetryId;
 }
 #endif // USE_RX_FRSKY_SPI_TELEMETRY
@@ -289,9 +291,8 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
 
 void frSkyDInit(void)
 {
-#if defined(USE_RX_FRSKY_SPI_TELEMETRY) && defined(USE_TELEMETRY_FRSKY)
-    initFrSkyExternalTelemetry(&frSkyTelemetryInitFrameSpi,
-                               &frSkyTelemetryWriteSpi);
+#if defined(USE_RX_FRSKY_SPI_TELEMETRY) && defined(USE_TELEMETRY_FRSKY_HUB)
+    telemetryEnabled = initFrSkyHubTelemetryExternal(frSkyDTelemetryWriteByte);
 #endif
 }
 #endif
