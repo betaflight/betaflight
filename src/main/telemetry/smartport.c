@@ -58,6 +58,8 @@
 #include "telemetry/smartport.h"
 #include "telemetry/msp_shared.h"
 
+#define SMARTPORT_MIN_TELEMETRY_RESPONSE_DELAY_US 500
+
 // these data identifiers are obtained from https://github.com/opentx/opentx/blob/master/radio/src/telemetry/frsky_hub.h
 enum
 {
@@ -141,7 +143,7 @@ typedef struct smartPortFrame_s {
     uint8_t  crc;
 } __attribute__((packed)) smartPortFrame_t;
 
-#define SMARTPORT_MSP_PAYLOAD_SIZE   (sizeof(smartPortPayload_t) - sizeof(uint8_t))
+#define SMARTPORT_MSP_PAYLOAD_SIZE (sizeof(smartPortPayload_t) - sizeof(uint8_t))
 
 static smartPortWriteFrameFn *smartPortWriteFrame;
 
@@ -584,17 +586,24 @@ static bool serialCheckQueueEmpty(void)
 void handleSmartPortTelemetry(void)
 {
     static bool clearToSend = false;
+    static volatile timeUs_t lastTelemetryFrameReceivedUs;
+    static smartPortPayload_t *payload = NULL;
 
     const uint32_t requestTimeout = millis() + SMARTPORT_SERVICE_TIMEOUT_MS;
 
     if (telemetryState == TELEMETRY_STATE_INITIALIZED_SERIAL && smartPortSerialPort) {
-        smartPortPayload_t *payload = NULL;
         while (serialRxBytesWaiting(smartPortSerialPort) > 0 && !payload) {
             uint8_t c = serialRead(smartPortSerialPort);
             payload = smartPortDataReceive(c, &clearToSend, serialCheckQueueEmpty, true);
+            if (payload) {
+                lastTelemetryFrameReceivedUs = micros();
+            }
         }
 
-        processSmartPortTelemetry(payload, &clearToSend, &requestTimeout);
+        if (cmpTimeUs(micros(), lastTelemetryFrameReceivedUs) >= SMARTPORT_MIN_TELEMETRY_RESPONSE_DELAY_US) {
+            processSmartPortTelemetry(payload, &clearToSend, &requestTimeout);
+            payload = NULL;
+        }
     }
 }
 #endif
