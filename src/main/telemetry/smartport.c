@@ -418,15 +418,15 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                 *clearToSend = false;
                 break;
             case FSSP_DATAID_ACCX       :
-                smartPortSendPackage(id, 100 * acc.accSmooth[X] / acc.dev.acc_1G); // Multiply by 100 to show as x.xx g on Taranis
+                smartPortSendPackage(id, 100 * acc.accADC[X] / acc.dev.acc_1G); // Multiply by 100 to show as x.xx g on Taranis
                 *clearToSend = false;
                 break;
             case FSSP_DATAID_ACCY       :
-                smartPortSendPackage(id, 100 * acc.accSmooth[Y] / acc.dev.acc_1G);
+                smartPortSendPackage(id, 100 * acc.accADC[Y] / acc.dev.acc_1G);
                 *clearToSend = false;
                 break;
             case FSSP_DATAID_ACCZ       :
-                smartPortSendPackage(id, 100 * acc.accSmooth[Z] / acc.dev.acc_1G);
+                smartPortSendPackage(id, 100 * acc.accADC[Z] / acc.dev.acc_1G);
                 *clearToSend = false;
                 break;
             case FSSP_DATAID_T1         :

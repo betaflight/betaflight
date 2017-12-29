@@ -173,7 +173,7 @@ static void frSkyHubWriteByteInternal(const char data)
 static void sendAccel(void)
 {
     for (unsigned i = 0; i < 3; i++) {
-        frSkyHubWriteFrame(ID_ACC_X + i, ((float)acc.accSmooth[i] / acc.dev.acc_1G) * 1000);
+        frSkyHubWriteFrame(ID_ACC_X + i, ((float)acc.accADC[i] / acc.dev.acc_1G) * 1000);
     }
 }
 

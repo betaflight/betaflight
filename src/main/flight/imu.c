@@ -200,9 +200,9 @@ static void imuCalculateAcceleration(uint32_t deltaT)
     const float dT = (float)deltaT * 1e-6f;
 
     t_fp_vector accel_ned;
-    accel_ned.V.X = acc.accSmooth[X];
-    accel_ned.V.Y = acc.accSmooth[Y];
-    accel_ned.V.Z = acc.accSmooth[Z];
+    accel_ned.V.X = acc.accADC[X];
+    accel_ned.V.Y = acc.accADC[Y];
+    accel_ned.V.Z = acc.accADC[Z];
 
     imuTransformVectorBodyToEarth(&accel_ned);
 
@@ -392,7 +392,7 @@ static bool imuIsAccelerometerHealthy(void)
 {
     float accMagnitude = 0;
     for (int axis = 0; axis < 3; axis++) {
-        const float a = acc.accSmooth[axis];
+        const float a = acc.accADC[axis];
         accMagnitude += a * a;
     }
 
@@ -478,9 +478,9 @@ void imuUpdateAttitude(timeUs_t currentTimeUs)
         imuCalculateEstimatedAttitude(currentTimeUs);
         IMU_UNLOCK;
     } else {
-        acc.accSmooth[X] = 0;
-        acc.accSmooth[Y] = 0;
-        acc.accSmooth[Z] = 0;
+        acc.accADC[X] = 0;
+        acc.accADC[Y] = 0;
+        acc.accADC[Z] = 0;
     }
 }
 
