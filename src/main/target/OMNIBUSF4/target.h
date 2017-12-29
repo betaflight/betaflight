@@ -53,6 +53,10 @@
 #define BEEPER                  PB4
 #define BEEPER_INVERTED
 
+#if defined(OMNIBUSF4SD)
+#define USE_DSHOT_DMAR
+#endif
+
 #ifdef OMNIBUSF4SD
 // These inverter control pins collide with timer channels on CH5 and CH6 pads.
 // Users of these timers/pads must un-map the inverter assignment explicitly.
