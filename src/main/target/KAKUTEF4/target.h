@@ -74,6 +74,8 @@
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI3
 #define MAX7456_SPI_CS_PIN      PB14
+#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD * 2) // 10MHz, 5MHz normal, 7.14 MHz when OC'd with the *2 multiplier
+#define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
 #define M25P16_CS_PIN           PB3
 #define M25P16_SPI_INSTANCE     SPI3
