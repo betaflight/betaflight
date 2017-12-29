@@ -27,6 +27,8 @@
 
 #ifdef USE_FAKE_GYRO
 
+#include "build/build_config.h"
+
 #include "common/axis.h"
 #include "common/utils.h"
 
@@ -59,7 +61,7 @@ void fakeGyroSet(gyroDev_t *gyro, int16_t x, int16_t y, int16_t z)
     gyroDevUnLock(gyro);
 }
 
-static bool fakeGyroRead(gyroDev_t *gyro)
+STATIC_UNIT_TESTED bool fakeGyroRead(gyroDev_t *gyro)
 {
     gyroDevLock(gyro);
     if (gyro->dataReady == false) {
