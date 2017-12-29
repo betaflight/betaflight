@@ -623,7 +623,7 @@ extern "C" {
     void systemBeep(bool) {}
     void saveConfigAndNotify(void) {}
     void blackboxFinish(void) {}
-    bool isAccelerationCalibrationComplete(void) { return true; }
+    bool accIsCalibrationComplete(void) { return true; }
     bool isBaroCalibrationComplete(void) { return true; }
     bool isGyroCalibrationComplete(void) { return gyroCalibDone; }
     void gyroStartCalibration(bool) {}
