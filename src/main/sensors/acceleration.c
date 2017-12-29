@@ -116,7 +116,7 @@ void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)
     RESET_CONFIG_2(accelerometerConfig_t, instance,
         .acc_lpf_hz = 10,
         .acc_align = ALIGN_DEFAULT,
-        .acc_hardware = ACC_DEFAULT,
+        .acc_hardware = ACC_NONE,
         .acc_high_fsr = false,
     );
     resetRollAndPitchTrims(&instance->accelerometerTrims);

@@ -55,7 +55,7 @@ void pgResetFn_barometerConfig(barometerConfig_t *barometerConfig)
     barometerConfig->baro_noise_lpf = 600;
     barometerConfig->baro_cf_vel = 985;
     barometerConfig->baro_cf_alt = 965;
-    barometerConfig->baro_hardware = BARO_DEFAULT;
+    barometerConfig->baro_hardware = BARO_NONE;
 
     // For backward compatibility; ceate a valid default value for bus parameters
     //

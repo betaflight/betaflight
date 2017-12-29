@@ -134,22 +134,22 @@ PG_REGISTER_WITH_RESET_TEMPLATE(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 1);
 
 PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
     .gyro_align = ALIGN_DEFAULT,
-    .gyroMovementCalibrationThreshold = 160,
+    .gyroMovementCalibrationThreshold = 200,
     .gyro_sync_denom = GYRO_SYNC_DENOM_DEFAULT,
     .gyro_lpf = GYRO_LPF_256HZ,
     .gyro_soft_lpf_type = FILTER_PT1,
     .gyro_soft_lpf_hz = 90,
     .gyro_high_fsr = false,
-    .gyro_use_32khz = false,
+    .gyro_use_32khz = true,
     .gyro_to_use = 0,
-    .gyro_soft_notch_hz_1 = 400,
+    .gyro_soft_notch_hz_1 = 0,
     .gyro_soft_notch_cutoff_1 = 300,
-    .gyro_soft_notch_hz_2 = 200,
+    .gyro_soft_notch_hz_2 = 0,
     .gyro_soft_notch_cutoff_2 = 100,
     .gyro_kalman_enable = 1,
-    .gyro_kalman_q = 200,
-    .gyro_kalman_r = 88,
-    .gyro_kalman_p = 0
+    .gyro_kalman_q = 300,
+    .gyro_kalman_r = 80,
+    .gyro_kalman_p = 400
 );
 
 

@@ -65,7 +65,7 @@ PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 1);
 #ifdef STM32F10X
 #define PID_PROCESS_DENOM_DEFAULT       1
 #elif defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500)  || defined(USE_GYRO_SPI_ICM20689)
-#define PID_PROCESS_DENOM_DEFAULT       4
+#define PID_PROCESS_DENOM_DEFAULT       2
 #else
 #define PID_PROCESS_DENOM_DEFAULT       2
 #endif
@@ -79,9 +79,9 @@ void resetPidProfile(pidProfile_t *pidProfile)
 {
     RESET_CONFIG(const pidProfile_t, pidProfile,
         .pid = {
-            [PID_ROLL] =  { 40, 40, 20 },
-            [PID_PITCH] = { 58, 50, 25 },
-            [PID_YAW] =   { 70, 45, 0 },
+            [PID_ROLL] =  { 46, 45, 20 },
+            [PID_PITCH] = { 61, 55, 20 },
+            [PID_YAW] =   { 60, 55, 10 },
             [PID_ALT] =   { 50, 0, 0 },
             [PID_POS] =   { 15, 0, 0 },     // POSHOLD_P * 100, POSHOLD_I * 100,
             [PID_POSR] =  { 34, 14, 53 },   // POSHOLD_RATE_P * 10, POSHOLD_RATE_I * 100, POSHOLD_RATE_D * 1000,
@@ -94,10 +94,10 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .pidSumLimit = PIDSUM_LIMIT,
         .pidSumLimitYaw = PIDSUM_LIMIT_YAW,
         .yaw_lpf_hz = 0,
-        .dterm_lpf_hz = 100,    // filtering ON by default
-        .dterm_notch_hz = 260,
+        .dterm_lpf_hz = 80,    // filtering ON by default
+        .dterm_notch_hz = 0,
         .dterm_notch_cutoff = 160,
-        .dterm_filter_type = FILTER_BIQUAD,
+        .dterm_filter_type = FILTER_PT1,
         .itermWindupPointPercent = 50,
         .vbatPidCompensation = 0,
         .pidAtMinThrottle = PID_STABILISATION_ON,
