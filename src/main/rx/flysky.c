@@ -358,7 +358,7 @@ void flySkyInit (const struct rxConfig_s *rxConfig, struct rxRuntimeConfig_s *rx
     }
 
     IO_t bindPin = IOGetByTag(IO_TAG(BINDPLUG_PIN));
-    IOInit(bindPin, OWNER_RX_SPI_CS, 0);
+    IOInit(bindPin, OWNER_RX_BIND, 0);
     IOConfigGPIO(bindPin, IOCFG_IPU);
 
     uint8_t startRxChannel;
