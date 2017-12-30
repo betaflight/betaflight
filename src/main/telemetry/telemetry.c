@@ -54,7 +54,7 @@
 #include "telemetry/ibus.h"
 #include "telemetry/msp_shared.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 1);
 
 PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
     .telemetry_inverted = false,
@@ -65,7 +65,6 @@ PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
     .frsky_coordinate_format = FRSKY_FORMAT_DMS,
     .frsky_unit = FRSKY_UNIT_METRICS,
     .frsky_vfas_precision = 0,
-    .frsky_vfas_cell_voltage = 0,
     .hottAlarmSoundInterval = 5,
     .pidValuesAsTelemetry = 0,
     .report_cell_voltage = false

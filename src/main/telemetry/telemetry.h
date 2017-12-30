@@ -46,7 +46,6 @@ typedef struct telemetryConfig_s {
     frskyGpsCoordFormat_e frsky_coordinate_format;
     frskyUnit_e frsky_unit;
     uint8_t frsky_vfas_precision;
-    uint8_t frsky_vfas_cell_voltage;        // Unused. Use 'report_cell_voltage' instead.
     uint8_t hottAlarmSoundInterval;
     uint8_t pidValuesAsTelemetry;
     uint8_t report_cell_voltage;
