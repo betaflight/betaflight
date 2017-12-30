@@ -80,7 +80,7 @@ endif
 
 openocd_win_install: openocd_win_clean libusb_win_install ftd2xx_install
         # download the source
-	$(V0) @echo " DOWNLOAD     $(OPENOCD_URL) @ $(OPENOCD_REV)"
+	@echo " DOWNLOAD     $(OPENOCD_URL) @ $(OPENOCD_REV)"
 	$(V1) [ ! -d "$(OPENOCD_BUILD_DIR)" ] || $(RM) -rf "$(OPENOCD_BUILD_DIR)"
 	$(V1) mkdir -p "$(OPENOCD_BUILD_DIR)"
 	$(V1) git clone --no-checkout $(OPENOCD_URL) "$(DL_DIR)/openocd-build"
@@ -90,7 +90,7 @@ openocd_win_install: openocd_win_clean libusb_win_install ftd2xx_install
 	)
 
         # apply patches
-	$(V0) @echo " PATCH        $(OPENOCD_BUILD_DIR)"
+	@echo " PATCH        $(OPENOCD_BUILD_DIR)"
 	$(V1) ( \
 	  cd $(OPENOCD_BUILD_DIR) ; \
 	  git apply < $(ROOT_DIR)/flight/Project/OpenOCD/0003-freertos-cm4f-fpu-support.patch ; \
@@ -98,7 +98,7 @@ openocd_win_install: openocd_win_clean libusb_win_install ftd2xx_install
 	)
 
         # build and install
-	$(V0) @echo " BUILD        $(OPENOCD_WIN_DIR)"
+	@echo " BUILD        $(OPENOCD_WIN_DIR)"
 	$(V1) mkdir -p "$(OPENOCD_WIN_DIR)"
 	$(V1) ( \
 	  cd $(OPENOCD_BUILD_DIR) ; \
@@ -119,7 +119,7 @@ openocd_win_install: openocd_win_clean libusb_win_install ftd2xx_install
 
 .PHONY: openocd_win_clean
 openocd_win_clean:
-	$(V0) @echo " CLEAN        $(OPENOCD_WIN_DIR)"
+	@echo " CLEAN        $(OPENOCD_WIN_DIR)"
 	$(V1) [ ! -d "$(OPENOCD_WIN_DIR)" ] || $(RM) -r "$(OPENOCD_WIN_DIR)"
 
 # Set up openocd tools
@@ -144,7 +144,7 @@ endif
 
 openocd_install: openocd_clean
         # download the source
-	$(V0) @echo " DOWNLOAD     $(OPENOCD_URL) @ $(OPENOCD_TAG)"
+	@echo " DOWNLOAD     $(OPENOCD_URL) @ $(OPENOCD_TAG)"
 	$(V1) [ ! -d "$(OPENOCD_BUILD_DIR)" ] || $(RM) -rf "$(OPENOCD_BUILD_DIR)"
 	$(V1) mkdir -p "$(OPENOCD_BUILD_DIR)"
 	$(V1) git clone --no-checkout $(OPENOCD_URL) "$(OPENOCD_BUILD_DIR)"
@@ -154,7 +154,7 @@ openocd_install: openocd_clean
 	)
 
         # build and install
-	$(V0) @echo " BUILD        $(OPENOCD_DIR)"
+	@echo " BUILD        $(OPENOCD_DIR)"
 	$(V1) mkdir -p "$(OPENOCD_DIR)"
 	$(V1) ( \
 	  cd $(OPENOCD_BUILD_DIR) ; \
@@ -169,7 +169,7 @@ openocd_install: openocd_clean
 
 .PHONY: openocd_clean
 openocd_clean:
-	$(V0) @echo " CLEAN        $(OPENOCD_DIR)"
+	@echo " CLEAN        $(OPENOCD_DIR)"
 	$(V1) [ ! -d "$(OPENOCD_DIR)" ] || $(RM) -r "$(OPENOCD_DIR)"
 
 STM32FLASH_DIR := $(TOOLS_DIR)/stm32flash
@@ -179,16 +179,16 @@ stm32flash_install: STM32FLASH_URL := http://stm32flash.googlecode.com/svn/trunk
 stm32flash_install: STM32FLASH_REV := 61
 stm32flash_install: stm32flash_clean
         # download the source
-	$(V0) @echo " DOWNLOAD     $(STM32FLASH_URL) @ r$(STM32FLASH_REV)"
+	@echo " DOWNLOAD     $(STM32FLASH_URL) @ r$(STM32FLASH_REV)"
 	$(V1) svn export -q -r "$(STM32FLASH_REV)" "$(STM32FLASH_URL)" "$(STM32FLASH_DIR)"
 
         # build
-	$(V0) @echo " BUILD        $(STM32FLASH_DIR)"
+	@echo " BUILD        $(STM32FLASH_DIR)"
 	$(V1) $(MAKE) --silent -C $(STM32FLASH_DIR) all
 
 .PHONY: stm32flash_clean
 stm32flash_clean:
-	$(V0) @echo " CLEAN        $(STM32FLASH_DIR)"
+	@echo " CLEAN        $(STM32FLASH_DIR)"
 	$(V1) [ ! -d "$(STM32FLASH_DIR)" ] || $(RM) -r "$(STM32FLASH_DIR)"
 
 DFUUTIL_DIR := $(TOOLS_DIR)/dfu-util
@@ -199,17 +199,17 @@ dfuutil_install: DFUUTIL_FILE := $(notdir $(DFUUTIL_URL))
 dfuutil_install: | $(DL_DIR) $(TOOLS_DIR)
 dfuutil_install: dfuutil_clean
         # download the source
-	$(V0) @echo " DOWNLOAD     $(DFUUTIL_URL)"
+	@echo " DOWNLOAD     $(DFUUTIL_URL)"
 	$(V1) curl -L -k -o "$(DL_DIR)/$(DFUUTIL_FILE)" "$(DFUUTIL_URL)"
 
         # extract the source
-	$(V0) @echo " EXTRACT      $(DFUUTIL_FILE)"
+	@echo " EXTRACT      $(DFUUTIL_FILE)"
 	$(V1) [ ! -d "$(DL_DIR)/dfuutil-build" ] || $(RM) -r "$(DL_DIR)/dfuutil-build"
 	$(V1) mkdir -p "$(DL_DIR)/dfuutil-build"
 	$(V1) tar -C $(DL_DIR)/dfuutil-build -xf "$(DL_DIR)/$(DFUUTIL_FILE)"
 
         # build
-	$(V0) @echo " BUILD        $(DFUUTIL_DIR)"
+	@echo " BUILD        $(DFUUTIL_DIR)"
 	$(V1) mkdir -p "$(DFUUTIL_DIR)"
 	$(V1) ( \
 	  cd $(DL_DIR)/dfuutil-build/dfu-util-0.8 ; \
@@ -220,7 +220,7 @@ dfuutil_install: dfuutil_clean
 
 .PHONY: dfuutil_clean
 dfuutil_clean:
-	$(V0) @echo " CLEAN        $(DFUUTIL_DIR)"
+	@echo " CLEAN        $(DFUUTIL_DIR)"
 	$(V1) [ ! -d "$(DFUUTIL_DIR)" ] || $(RM) -r "$(DFUUTIL_DIR)"
 
 # Set up uncrustify tools
@@ -234,14 +234,14 @@ uncrustify_install: UNCRUSTIFY_FILE := uncrustify-0.61.tar.gz
 uncrustify_install: UNCRUSTIFY_OPTIONS := prefix=$(UNCRUSTIFY_DIR)
 uncrustify_install: uncrustify_clean
 ifneq ($(OSFAMILY), windows)
-	$(V0) @echo " DOWNLOAD     $(UNCRUSTIFY_URL)"
+	@echo " DOWNLOAD     $(UNCRUSTIFY_URL)"
 	$(V1) curl -L -k -o "$(DL_DIR)/$(UNCRUSTIFY_FILE)" "$(UNCRUSTIFY_URL)"
 endif
         # extract the src
-	$(V0) @echo " EXTRACT      $(UNCRUSTIFY_FILE)"
+	@echo " EXTRACT      $(UNCRUSTIFY_FILE)"
 	$(V1) tar -C $(TOOLS_DIR) -xf "$(DL_DIR)/$(UNCRUSTIFY_FILE)"
 
-	$(V0) @echo " BUILD        $(UNCRUSTIFY_DIR)"
+	@echo " BUILD        $(UNCRUSTIFY_DIR)"
 	$(V1) ( \
 	  cd $(UNCRUSTIFY_DIR) ; \
 	  ./configure --prefix="$(UNCRUSTIFY_DIR)" ; \
@@ -253,9 +253,9 @@ endif
 
 .PHONY: uncrustify_clean
 uncrustify_clean:
-	$(V0) @echo " CLEAN        $(UNCRUSTIFY_DIR)"
+	@echo " CLEAN        $(UNCRUSTIFY_DIR)"
 	$(V1) [ ! -d "$(UNCRUSTIFY_DIR)" ] || $(RM) -r "$(UNCRUSTIFY_DIR)"
-	$(V0) @echo " CLEAN        $(UNCRUSTIFY_BUILD_DIR)"
+	@echo " CLEAN        $(UNCRUSTIFY_BUILD_DIR)"
 	$(V1) [ ! -d "$(UNCRUSTIFY_BUILD_DIR)" ] || $(RM) -r "$(UNCRUSTIFY_BUILD_DIR)"
 
 # ZIP download URL
@@ -329,9 +329,9 @@ BREAKPAD_DIR := $(TOOLS_DIR)/breakpad
 .PHONY: breakpad_install
 breakpad_install: | $(DL_DIR) $(TOOLS_DIR)
 breakpad_install: breakpad_clean
-	$(V0) @echo " DOWNLOAD     $(BREAKPAD_URL)"
+	@echo " DOWNLOAD     $(BREAKPAD_URL)"
 	$(V1) $(V1) curl -L -k -z "$(BREAKPAD_DL_FILE)" -o "$(BREAKPAD_DL_FILE)" "$(BREAKPAD_URL)"
-	$(V0) @echo " EXTRACT      $(notdir $(BREAKPAD_DL_FILE))"
+	@echo " EXTRACT      $(notdir $(BREAKPAD_DL_FILE))"
 	$(V1) mkdir -p "$(BREAKPAD_DIR)"
 	$(V1) unzip -q -d $(BREAKPAD_DIR) "$(BREAKPAD_DL_FILE)"
 ifeq ($(OSFAMILY), windows)
@@ -340,7 +340,7 @@ endif
 
 .PHONY: breakpad_clean
 breakpad_clean:
-	$(V0) @echo " CLEAN        $(BREAKPAD_DIR)"
+	@echo " CLEAN        $(BREAKPAD_DIR)"
 	$(V1) [ ! -d "$(BREAKPAD_DIR)" ] || $(RM) -rf $(BREAKPAD_DIR)
-	$(V0) @echo " CLEAN        $(BREAKPAD_DL_FILE)"
+	@echo " CLEAN        $(BREAKPAD_DL_FILE)"
 	$(V1) $(RM) -f $(BREAKPAD_DL_FILE)
