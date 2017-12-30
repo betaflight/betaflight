@@ -29,20 +29,11 @@
 #include "common/time.h"
 #include "common/utils.h"
 
-#include "config/feature.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
-
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/time.h"
 
-#include "fc/config.h"
-#include "fc/rc_controls.h"
-
 #include "sensors/gyro.h"
 #include "sensors/gyroanalyse.h"
-
-#include "common/filter.h"
 
 // The FFT splits the frequency domain into an number of bins
 // A sampling frequency of 1000 and max frequency of 500 at a window size of 32 gives 16 frequency bins each with a width 31.25Hz
@@ -136,20 +127,11 @@ const gyroFftData_t *gyroFftData(int axis)
     return &fftResult[axis];
 }
 
-bool isDynamicFilterActive(void)
-{
-    return feature(FEATURE_DYNAMIC_FILTER);
-}
-
 /*
  * Collect gyro data, to be analysed in gyroDataAnalyseUpdate function
  */
 void gyroDataAnalyse(const gyroDev_t *gyroDev, biquadFilter_t *notchFilterDyn)
 {
-    if (!isDynamicFilterActive()) {
-        return;
-    }
-
     // if gyro sampling is > 1kHz, accumulate multiple samples
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         fftAcc[axis] += gyroDev->gyroADC[axis];

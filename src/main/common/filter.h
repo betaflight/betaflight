@@ -25,6 +25,9 @@
 #define MAX_FIR_DENOISE_WINDOW_SIZE 120
 #endif
 
+struct filter_s;
+typedef struct filter_s filter_t;
+
 typedef struct pt1Filter_s {
     float state;
     float k;
@@ -73,9 +76,9 @@ typedef struct firFilter_s {
     uint8_t coeffsLength;
 } firFilter_t;
 
-typedef float (*filterApplyFnPtr)(void *filter, float input);
+typedef float (*filterApplyFnPtr)(filter_t *filter, float input);
 
-float nullFilterApply(void *filter, float input);
+float nullFilterApply(filter_t *filter, float input);
 
 void biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate);
 void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType);
