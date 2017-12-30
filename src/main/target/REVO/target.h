@@ -69,6 +69,10 @@
 #define BEEPER                  NONE
 #endif
 
+#if defined(REVOLT)
+#define USE_DSHOT_DMAR
+#endif
+
 // PC0 used as inverter select GPIO
 #ifdef AIRBOTF4SD
 #define INVERTER_PIN_UART6      PD2

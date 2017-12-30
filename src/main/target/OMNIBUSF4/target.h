@@ -53,7 +53,7 @@
 #define BEEPER                  PB4
 #define BEEPER_INVERTED
 
-#if defined(OMNIBUSF4SD)
+#if defined(OMNIBUSF4SD) || defined(DYSF4PRO)
 #define USE_DSHOT_DMAR
 #endif
 
