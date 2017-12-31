@@ -32,6 +32,7 @@
 #include "pg/pg_ids.h"
 #include "config/config_reset.h"
 
+#include "sensors/adcinternal.h"
 #include "sensors/current.h"
 #include "sensors/esc_sensor.h"
 
@@ -77,8 +78,6 @@ void currentMeterReset(currentMeter_t *meter)
 // ADC/Virtual shared
 //
 
-#define ADCVREF 3300   // in mV
-
 #define IBAT_LPF_FREQ  0.4f
 static biquadFilter_t adciBatFilter;
 
@@ -106,7 +105,7 @@ static int32_t currentMeterADCToCentiamps(const uint16_t src)
 
     const currentSensorADCConfig_t *config = currentSensorADCConfig();
 
-    int32_t millivolts = ((uint32_t)src * ADCVREF) / 4096;
+    int32_t millivolts = ((uint32_t)src * getVrefMv()) / 4096;
     // y=x/m+b m is scale in (mV/10A) and b is offset in (mA)
     int32_t centiAmps = (millivolts * 10000 / (int32_t)config->scale + (int32_t)config->offset) / 10;
 

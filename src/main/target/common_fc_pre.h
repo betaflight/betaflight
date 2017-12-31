@@ -51,6 +51,8 @@
 #define I2C3_OVERCLOCK true
 #define USE_TELEMETRY_IBUS
 #define USE_GYRO_DATA_ANALYSE
+#define USE_ADC
+#define USE_ADC_INTERNAL
 #endif
 
 #ifdef STM32F722xx

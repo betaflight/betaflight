@@ -20,6 +20,7 @@
 #include <stdbool.h>
 
 #include "drivers/io_types.h"
+#include "drivers/time.h"
 
 #ifndef ADC_INSTANCE
 #define ADC_INSTANCE                ADC1
@@ -74,6 +75,18 @@ typedef struct adcOperatingConfig_s {
 struct adcConfig_s;
 void adcInit(const struct adcConfig_s *config);
 uint16_t adcGetChannel(uint8_t channel);
+
+#ifdef USE_ADC_INTERNAL
+extern uint16_t adcVREFINTCAL;
+extern uint16_t adcTSCAL1;
+extern uint16_t adcTSCAL2;
+extern uint16_t adcTSSlopeK;
+
+bool adcInternalIsBusy(void);
+void adcInternalStartConversion(void);
+uint16_t adcInternalReadVrefint(void);
+uint16_t adcInternalReadTempsensor(void);
+#endif
 
 #ifndef SITL
 ADCDevice adcDeviceByInstance(ADC_TypeDef *instance);

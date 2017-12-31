@@ -71,6 +71,7 @@
 #include "rx/rx.h"
 
 #include "sensors/acceleration.h"
+#include "sensors/adcinternal.h"
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
 #include "sensors/compass.h"
@@ -323,6 +324,9 @@ void fcTasksInit(void)
 #endif
 #ifdef USE_ESC_SENSOR
     setTaskEnabled(TASK_ESC_SENSOR, feature(FEATURE_ESC_SENSOR));
+#endif
+#ifdef USE_ADC_INTERNAL
+    setTaskEnabled(TASK_ADC_INTERNAL, true);
 #endif
 #ifdef USE_CMS
 #ifdef USE_MSP_DISPLAYPORT
@@ -592,6 +596,15 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskName = "CAMCTRL",
         .taskFunc = taskCameraControl,
         .desiredPeriod = TASK_PERIOD_HZ(5),
+        .staticPriority = TASK_PRIORITY_IDLE
+    },
+#endif
+
+#ifdef USE_ADC_INTERNAL
+    [TASK_ADC_INTERNAL] = {
+        .taskName = "ADCINTERNAL",
+        .taskFunc = adcInternalProcess,
+        .desiredPeriod = TASK_PERIOD_HZ(1),
         .staticPriority = TASK_PRIORITY_IDLE
     },
 #endif
