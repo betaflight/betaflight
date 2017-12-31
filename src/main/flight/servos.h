@@ -140,3 +140,8 @@ int servoDirection(int servoIndex, int fromChannel);
 void servoConfigureOutput(void);
 void servosInit(void);
 void servosFilterInit(void);
+void servoMixer(void);
+// tricopter specific
+void servosTricopterInit(void);
+void servosTricopterMixer(void);
+bool servosTricopterIsEnabledServoUnarmed(void);

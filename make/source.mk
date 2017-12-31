@@ -102,8 +102,10 @@ FC_SRC = \
             flight/failsafe.c \
             flight/imu.c \
             flight/mixer.c \
+            flight/mixer_tricopter.c \
             flight/pid.c \
             flight/servos.c \
+            flight/servos_tricopter.c \
             interface/cli.c \
             interface/settings.c \
             io/serial_4way.c \
