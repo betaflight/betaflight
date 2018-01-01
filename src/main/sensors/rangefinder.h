@@ -18,8 +18,10 @@
 #pragma once
 
 #include <stdint.h>
-#include "pg/pg.h"
+
 #include "drivers/rangefinder/rangefinder.h"
+
+#include "pg/pg.h"
 
 typedef enum {
     RANGEFINDER_NONE        = 0,

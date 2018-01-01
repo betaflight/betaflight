@@ -144,9 +144,10 @@ STATIC_UNIT_TESTED uint16_t voltageAdcToVoltage(const uint16_t src, const voltag
 void voltageMeterADCRefresh(void)
 {
     for (uint8_t i = 0; i < MAX_VOLTAGE_SENSOR_ADC && i < ARRAYLEN(voltageMeterAdcChannelMap); i++) {
+        voltageMeterADCState_t *state = &voltageMeterADCStates[i];
+#ifdef USE_ADC
         // store the battery voltage with some other recent battery voltage readings
 
-        voltageMeterADCState_t *state = &voltageMeterADCStates[i];
         const voltageSensorADCConfig_t *config = voltageSensorADCConfig(i);
 
         uint8_t channel = voltageMeterAdcChannelMap[i];
@@ -157,6 +158,12 @@ void voltageMeterADCRefresh(void)
         // always calculate the latest voltage, see getLatestVoltage() which does the calculation on demand.
         state->voltageFiltered = voltageAdcToVoltage(filteredSample, config);
         state->voltageUnfiltered = voltageAdcToVoltage(rawSample, config);
+#else
+        UNUSED(voltageAdcToVoltage);
+
+        state->voltageFiltered = 0;
+        state->voltageUnfiltered = 0;
+#endif
     }
 }
 

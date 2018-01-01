@@ -66,6 +66,8 @@ typedef struct adjustmentConfig_s {
     adjustmentData_t data;
 } adjustmentConfig_t;
 
+#define MAX_ADJUSTMENT_RANGE_COUNT 15
+
 typedef struct adjustmentRange_s {
     // when aux channel is in range...
     uint8_t auxChannelIndex;
@@ -79,6 +81,8 @@ typedef struct adjustmentRange_s {
     uint8_t adjustmentIndex;
 } adjustmentRange_t;
 
+PG_DECLARE_ARRAY(adjustmentRange_t, MAX_ADJUSTMENT_RANGE_COUNT, adjustmentRanges);
+
 #define ADJUSTMENT_INDEX_OFFSET 1
 
 typedef struct adjustmentState_s {
@@ -91,12 +95,8 @@ typedef struct adjustmentState_s {
 #define MAX_SIMULTANEOUS_ADJUSTMENT_COUNT 4 // enough for 4 x 3position switches / 4 aux channel
 #endif
 
-#define MAX_ADJUSTMENT_RANGE_COUNT 15
-
 extern const char *adjustmentRangeName;
 extern int adjustmentRangeValue;
-
-PG_DECLARE_ARRAY(adjustmentRange_t, MAX_ADJUSTMENT_RANGE_COUNT, adjustmentRanges);
 
 void resetAdjustmentStates(void);
 void updateAdjustmentStates(void);

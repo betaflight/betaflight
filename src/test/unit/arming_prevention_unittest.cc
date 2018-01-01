@@ -21,6 +21,7 @@ extern "C" {
     #include "blackbox/blackbox.h"
     #include "build/debug.h"
     #include "common/maths.h"
+    #include "config/feature.h"
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
     #include "fc/config.h"

@@ -170,12 +170,7 @@ static inline uint8_t ledGetParams(const ledConfig_t *lcfg)     { return ((*lcfg
 
 static inline bool ledGetOverlayBit(const ledConfig_t *lcfg, int id) { return ((ledGetOverlay(lcfg) >> id) & 1); }
 static inline bool ledGetDirectionBit(const ledConfig_t *lcfg, int id) { return ((ledGetDirection(lcfg) >> id) & 1); }
-/*
-PG_DECLARE_ARR(ledConfig_t, LED_MAX_STRIP_LENGTH, ledConfigs);
-PG_DECLARE_ARR(hsvColor_t, LED_CONFIGURABLE_COLOR_COUNT, colors);
-PG_DECLARE_ARR(modeColorIndexes_t, LED_MODE_COUNT, modeColors);
-PG_DECLARE(specialColorIndexes_t, specialColors);
-*/
+
 bool parseColor(int index, const char *colorConfig);
 
 bool parseLedStripConfig(int ledIndex, const char *config);

@@ -22,8 +22,9 @@
 
 #ifdef USE_TARGET_CONFIG
 
-#include "telemetry/telemetry.h"
 #include "pg/sdcard.h"
+
+#include "telemetry/telemetry.h"
 
 void targetConfiguration(void)
 {

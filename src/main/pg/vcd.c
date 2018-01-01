@@ -15,6 +15,8 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "platform.h"
+
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 

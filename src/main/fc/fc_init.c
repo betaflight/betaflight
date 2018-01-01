@@ -35,6 +35,10 @@
 #include "cms/cms_types.h"
 
 #include "drivers/accgyro/accgyro.h"
+#include "drivers/camera_control.h"
+#include "drivers/compass/compass.h"
+#include "drivers/pwm_esc_detect.h"
+#include "drivers/pwm_output.h"
 #include "drivers/adc.h"
 #include "drivers/bus.h"
 #include "drivers/bus_i2c.h"
@@ -62,9 +66,10 @@
 #include "drivers/time.h"
 #include "drivers/timer.h"
 #include "drivers/transponder_ir.h"
+#include "drivers/exti.h"
 #include "drivers/usb_io.h"
-#include "drivers/vtx_common.h"
 #include "drivers/vtx_rtc6705.h"
+#include "drivers/vtx_common.h"
 
 #include "fc/config.h"
 #include "fc/fc_init.h"

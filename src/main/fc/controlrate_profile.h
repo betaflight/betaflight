@@ -21,6 +21,7 @@
 
 #include "pg/pg.h"
 
+#define CONTROL_RATE_PROFILE_COUNT  3
 
 typedef struct controlRateConfig_s {
     uint8_t rcRate8;
@@ -34,7 +35,6 @@ typedef struct controlRateConfig_s {
     uint16_t tpa_breakpoint;                // Breakpoint where TPA is activated
 } controlRateConfig_t;
 
-#define CONTROL_RATE_PROFILE_COUNT  3
 PG_DECLARE_ARRAY(controlRateConfig_t, CONTROL_RATE_PROFILE_COUNT, controlRateProfiles);
 
 extern controlRateConfig_t *currentControlRateProfile;

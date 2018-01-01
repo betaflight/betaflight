@@ -18,6 +18,7 @@
 #pragma once
 
 struct displayPortVTable_s;
+
 typedef struct displayPort_s {
     const struct displayPortVTable_s *vTable;
     void *device;
@@ -31,6 +32,8 @@ typedef struct displayPort_s {
     int8_t cursorRow;
     int8_t grabCount;
 } displayPort_t;
+
+// displayPort_t is used as a parameter group in 'displayport_msp.h' and 'displayport_max7456`.h'. Treat accordingly!
 
 typedef struct displayPortVTable_s {
     int (*grab)(displayPort_t *displayPort);

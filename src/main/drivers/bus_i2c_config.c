@@ -82,5 +82,4 @@ void i2cHardwareConfigure(const i2cConfig_t *i2cConfig)
         }
     }
 }
-
 #endif // defined(USE_I2C) && !defined(USE_SOFT_I2C)

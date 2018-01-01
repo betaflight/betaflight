@@ -133,11 +133,19 @@ void currentMeterADCInit(void)
 
 void currentMeterADCRefresh(int32_t lastUpdateAt)
 {
+#ifdef USE_ADC
     const uint16_t iBatSample = adcGetChannel(ADC_CURRENT);
     currentMeterADCState.amperageLatest = currentMeterADCToCentiamps(iBatSample);
     currentMeterADCState.amperage = currentMeterADCToCentiamps(biquadFilterApply(&adciBatFilter, iBatSample));
 
     updateCurrentmAhDrawnState(&currentMeterADCState.mahDrawnState, currentMeterADCState.amperageLatest, lastUpdateAt);
+#else
+    UNUSED(lastUpdateAt);
+    UNUSED(currentMeterADCToCentiamps);
+
+    currentMeterADCState.amperageLatest = 0;
+    currentMeterADCState.amperage = 0;
+#endif
 }
 
 void currentMeterADCRead(currentMeter_t *meter)

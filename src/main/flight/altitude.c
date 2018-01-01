@@ -27,6 +27,7 @@
 
 #include "common/axis.h"
 #include "common/maths.h"
+#include "common/utils.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"

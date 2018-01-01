@@ -81,6 +81,8 @@ typedef enum {
 #define SERVO_FLAPPERONS_MIN SERVO_FLAPPERON_1
 #define SERVO_FLAPPERONS_MAX SERVO_FLAPPERON_2
 
+#define MAX_SERVO_RULES (2 * MAX_SUPPORTED_SERVOS)
+
 typedef struct servoMixer_s {
     uint8_t targetChannel;                  // servo that receives the output of the rule
     uint8_t inputSource;                    // input channel for this rule
@@ -91,11 +93,10 @@ typedef struct servoMixer_s {
     uint8_t box;                            // active rule if box is enabled, range [0;3], 0=no box, 1=BOXSERVO1, 2=BOXSERVO2, 3=BOXSERVO3
 } servoMixer_t;
 
-#define MAX_SERVO_RULES (2 * MAX_SUPPORTED_SERVOS)
+PG_DECLARE_ARRAY(servoMixer_t, MAX_SERVO_RULES, customServoMixers);
+
 #define MAX_SERVO_SPEED UINT8_MAX
 #define MAX_SERVO_BOXES 3
-
-PG_DECLARE_ARRAY(servoMixer_t, MAX_SERVO_RULES, customServoMixers);
 
 // Custom mixer configuration
 typedef struct mixerRules_s {

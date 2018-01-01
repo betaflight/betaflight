@@ -65,7 +65,6 @@ COMMON_SRC = \
             pg/beeper_dev.c \
             pg/bus_i2c.c \
             pg/bus_spi.c \
-            pg/flash.c \
             pg/max7456.c \
             pg/pg.c \
             pg/rx_pwm.c \
@@ -202,7 +201,6 @@ COMMON_SRC := $(COMMON_SRC) $(OSD_SLAVE_SRC) $(COMMON_DEVICE_SRC)
 else
 COMMON_SRC := $(COMMON_SRC) $(FC_SRC) $(COMMON_DEVICE_SRC)
 endif
-
 
 SPEED_OPTIMISED_SRC := ""
 SIZE_OPTIMISED_SRC  := ""
@@ -361,7 +359,8 @@ endif
 ifneq ($(filter ONBOARDFLASH,$(FEATURES)),)
 SRC += \
             drivers/flash_m25p16.c \
-            io/flashfs.c
+            io/flashfs.c \
+            pg/flash.c
 endif
 
 SRC += $(COMMON_SRC)

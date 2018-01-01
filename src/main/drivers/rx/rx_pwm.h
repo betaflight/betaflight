@@ -17,8 +17,6 @@
 
 #pragma once
 
-#include "drivers/io_types.h"
-
 typedef enum {
     INPUT_FILTERING_DISABLED = 0,
     INPUT_FILTERING_ENABLED

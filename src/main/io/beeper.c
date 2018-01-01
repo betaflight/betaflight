@@ -24,9 +24,10 @@
 
 #include "config/feature.h"
 
+#include "drivers/io.h"
+#include "drivers/pwm_output.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/time.h"
-#include "drivers/pwm_output.h"
 
 #include "flight/mixer.h"
 

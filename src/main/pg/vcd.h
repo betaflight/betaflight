@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "pg/pg.h"
+
 // Video Character Display parameters
 
 enum VIDEO_SYSTEMS {
