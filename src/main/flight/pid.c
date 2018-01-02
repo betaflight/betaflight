@@ -79,9 +79,9 @@ void resetPidProfile(pidProfile_t *pidProfile)
 {
     RESET_CONFIG(pidProfile_t, pidProfile,
         .pid = {
-            [PID_ROLL] =  { 40, 40, 30 },
-            [PID_PITCH] = { 58, 50, 35 },
-            [PID_YAW] =   { 70, 45, 20 },
+            [PID_ROLL] =  { 40, 40, 20 },
+            [PID_PITCH] = { 58, 50, 25 },
+            [PID_YAW] =   { 70, 45, 0 },
             [PID_ALT] =   { 50, 0, 0 },
             [PID_POS] =   { 15, 0, 0 },     // POSHOLD_P * 100, POSHOLD_I * 100,
             [PID_POSR] =  { 34, 14, 53 },   // POSHOLD_RATE_P * 10, POSHOLD_RATE_I * 100, POSHOLD_RATE_D * 1000,
@@ -158,16 +158,16 @@ void pidStabilisationState(pidStabilisationState_e pidControllerState)
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 
 static FAST_RAM filterApplyFnPtr dtermNotchFilterApplyFn;
-static FAST_RAM void *dtermFilterNotch[2];
+static FAST_RAM void *dtermFilterNotch[3];
 static FAST_RAM filterApplyFnPtr dtermLpfApplyFn;
-static FAST_RAM void *dtermFilterLpf[2];
+static FAST_RAM void *dtermFilterLpf[3];
 static FAST_RAM filterApplyFnPtr ptermYawFilterApplyFn;
 static FAST_RAM void *ptermYawFilter;
 
 typedef union dtermFilterLpf_u {
-    pt1Filter_t pt1Filter[2];
-    biquadFilter_t biquadFilter[2];
-    firFilterDenoise_t denoisingFilter[2];
+    pt1Filter_t pt1Filter[3];
+    biquadFilter_t biquadFilter[3];
+    firFilterDenoise_t denoisingFilter[3];
 } dtermFilterLpf_t;
 
 void pidInitFilters(const pidProfile_t *pidProfile)
@@ -196,7 +196,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     }
 
     if (dTermNotchHz != 0 && pidProfile->dterm_notch_cutoff != 0) {
-        static biquadFilter_t biquadFilterNotch[2];
+        static biquadFilter_t biquadFilterNotch[3];
         dtermNotchFilterApplyFn = (filterApplyFnPtr)biquadFilterApply;
         const float notchQ = filterGetNotchQ(dTermNotchHz, pidProfile->dterm_notch_cutoff);
         for (int axis = FD_ROLL; axis <= FD_PITCH; axis++) {
@@ -407,7 +407,7 @@ static float accelerationLimit(int axis, float currentPidSetpoint)
 // Based on 2DOF reference design (matlab)
 void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, timeUs_t currentTimeUs)
 {
-    static float previousRateError[2];
+    static float previousRateError[3];
     const float tpaFactor = getThrottlePIDAttenuation();
     const float motorMixRange = getMotorMixRange();
     static timeUs_t crashDetectedAtUs;
@@ -493,7 +493,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         }
 
         // -----calculate D component
-        if (axis != FD_YAW) {
+        if (1) {
             // apply filters
             float gyroRateFiltered = dtermNotchFilterApplyFn(dtermFilterNotch[axis], gyroRate);
             gyroRateFiltered = dtermLpfApplyFn(dtermFilterLpf[axis], gyroRateFiltered);

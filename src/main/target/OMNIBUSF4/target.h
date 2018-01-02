@@ -133,7 +133,7 @@
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI3
 #define MAX7456_SPI_CS_PIN      PA15
-#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
+#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD * 2) // 10MHz, 5MHz normal, 7.14 MHz when OC'd with the *2 multiplier
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
 #if defined(OMNIBUSF4SD)

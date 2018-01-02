@@ -356,6 +356,10 @@ const clivalue_t valueTable[] = {
     { "gyro_notch1_cutoff",         VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 16000 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_soft_notch_cutoff_1) },
     { "gyro_notch2_hz",             VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 16000 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_soft_notch_hz_2) },
     { "gyro_notch2_cutoff",         VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 16000 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_soft_notch_cutoff_2) },
+    { "gyro_kalman_enable",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_kalman_enable) },
+    { "gyro_kalman_q",              VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 16000 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_kalman_q) },
+    { "gyro_kalman_r",              VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 16000 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_kalman_r) },
+    { "gyro_kalman_p",              VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 16000 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_kalman_p) },
     { "moron_threshold",            VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  200 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyroMovementCalibrationThreshold) },
 #ifdef USE_GYRO_OVERFLOW_CHECK
     { "gyro_overflow_detect",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GYRO_OVERFLOW_CHECK }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, checkOverflow) },
@@ -555,6 +559,16 @@ const clivalue_t valueTable[] = {
     { "yaw_srate",                  VAR_UINT8  | PROFILE_RATE_VALUE, .config.minmax = { 0, CONTROL_RATE_CONFIG_YAW_RATE_MAX }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rates[FD_YAW]) },
     { "tpa_rate",                   VAR_UINT8  | PROFILE_RATE_VALUE, .config.minmax = { 0, CONTROL_RATE_CONFIG_TPA_MAX}, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, dynThrPID) },
     { "tpa_breakpoint",             VAR_UINT16 | PROFILE_RATE_VALUE, .config.minmax = { PWM_RANGE_MIN,  PWM_RANGE_MAX}, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, tpa_breakpoint) },
+    { "rf_rates_enabled",           VAR_UINT8  | PROFILE_RATE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rfRatesEnabled) },
+    { "rf_rate_roll",               VAR_UINT16 | PROFILE_RATE_VALUE, .config.minmax = { 200, 1500 }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rfRate[FD_ROLL]) },
+    { "rf_acro_roll",               VAR_UINT8  | PROFILE_RATE_VALUE, .config.minmax = { 0, 255 }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rfAcro[FD_ROLL]) },
+    { "rf_expo_roll",               VAR_UINT8  | PROFILE_RATE_VALUE, .config.minmax = { 0, 100 }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rfExpo[FD_ROLL]) },
+    { "rf_rate_pitch",              VAR_UINT16 | PROFILE_RATE_VALUE, .config.minmax = { 200, 1500 }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rfRate[FD_PITCH]) },
+    { "rf_acro_pitch",              VAR_UINT8  | PROFILE_RATE_VALUE, .config.minmax = { 0, 255 }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rfAcro[FD_PITCH]) },
+    { "rf_expo_pitch",              VAR_UINT8  | PROFILE_RATE_VALUE, .config.minmax = { 0, 100 }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rfExpo[FD_PITCH]) },
+    { "rf_rate_yaw",                VAR_UINT16 | PROFILE_RATE_VALUE, .config.minmax = { 200, 1500 }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rfRate[FD_YAW]) },
+    { "rf_acro_yaw",                VAR_UINT8  | PROFILE_RATE_VALUE, .config.minmax = { 0, 255 }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rfAcro[FD_YAW]) },
+    { "rf_expo_yaw",                VAR_UINT8  | PROFILE_RATE_VALUE, .config.minmax = { 0, 100 }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rfExpo[FD_YAW]) },
 
 // PG_SERIAL_CONFIG
     { "reboot_character",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 48, 126 }, PG_SERIAL_CONFIG, offsetof(serialConfig_t, reboot_character) },
