@@ -72,8 +72,8 @@ float rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+50
 PG_REGISTER_WITH_RESET_TEMPLATE(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
 
 PG_RESET_TEMPLATE(rcControlsConfig_t, rcControlsConfig,
-    .deadband = 0,
-    .yaw_deadband = 0,
+    .deadband = 5,
+    .yaw_deadband = 5,
     .alt_hold_deadband = 40,
     .alt_hold_fast_change = 1,
     .yaw_control_reversed = false,

@@ -233,6 +233,7 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
     case PWM_TYPE_MULTISHOT:
         sMin = 5e-6f;
         sLen = 20e-6f;
+        useUnsyncedPwm = true;
         break;
     case PWM_TYPE_BRUSHED:
         sMin = 0;
