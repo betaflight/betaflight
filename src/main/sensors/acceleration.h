@@ -18,7 +18,7 @@
 #pragma once
 
 #include "common/time.h"
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 #include "drivers/accgyro/accgyro.h"
 #include "sensors/sensors.h"
 
@@ -46,7 +46,7 @@ typedef enum {
 typedef struct acc_s {
     accDev_t dev;
     uint32_t accSamplingInterval;
-    int32_t accSmooth[XYZ_AXIS_COUNT];
+    int32_t accADC[XYZ_AXIS_COUNT];
     bool isAccelUpdatedAtLeastOnce;
 } acc_t;
 
@@ -75,7 +75,7 @@ typedef struct accelerometerConfig_s {
 PG_DECLARE(accelerometerConfig_t, accelerometerConfig);
 
 bool accInit(uint32_t gyroTargetLooptime);
-bool isAccelerationCalibrationComplete(void);
+bool accIsCalibrationComplete(void);
 void accSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims);
 void accUpdate(timeUs_t currentTimeUs, rollAndPitchTrims_t *rollAndPitchTrims);

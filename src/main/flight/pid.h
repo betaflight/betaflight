@@ -19,7 +19,7 @@
 
 #include <stdbool.h>
 #include "common/time.h"
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 
 #define MAX_PID_PROCESS_DENOM       16
 #define PID_CONTROLLER_BETAFLIGHT   1

@@ -18,7 +18,6 @@
 #pragma once
 
 #include <stdint.h>
-#include "drivers/io_types.h"
 
 typedef struct flashGeometry_s {
     uint16_t sectors; // Count of the number of erasable blocks on the device
@@ -27,8 +26,3 @@ typedef struct flashGeometry_s {
     uint32_t totalSize;  // This is just sectorSize * sectors
     uint16_t pagesPerSector;
 } flashGeometry_t;
-
-typedef struct flashConfig_s {
-    ioTag_t csTag;
-    uint8_t spiDevice;
-} flashConfig_t;

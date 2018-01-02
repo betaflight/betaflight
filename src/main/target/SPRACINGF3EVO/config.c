@@ -21,10 +21,10 @@
 
 #include "common/axis.h"
 
-#include "fc/config.h"
-
 #include "flight/mixer.h"
 #include "flight/pid.h"
+
+#include "pg/sdcard.h"
 
 
 #if defined(SPRACINGF3MQ)

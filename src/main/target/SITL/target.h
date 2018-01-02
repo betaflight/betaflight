@@ -15,9 +15,15 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+// SITL (software in the loop) simulator
+
 #pragma once
 
-// SITL (software in the loop) simulator
+#include <stdint.h>
+#include <stddef.h>
+
+#include "common/utils.h"
+
 #define TARGET_BOARD_IDENTIFIER "SITL"
 
 #define SIMULATOR_BUILD
@@ -98,7 +104,7 @@
 #undef USE_SERIALRX_SUMH
 #undef USE_SERIALRX_XBUS
 #undef USE_LED_STRIP
-#undef USE_TELEMETRY_FRSKY
+#undef USE_TELEMETRY_FRSKY_HUB
 #undef USE_TELEMETRY_HOTT
 #undef USE_TELEMETRY_SMARTPORT
 #undef USE_TELEMETRY_MAVLINK
@@ -132,8 +138,6 @@
 
 
 // belows are internal stuff
-#include <stdint.h>
-#include <stddef.h>
 
 uint32_t SystemCoreClock;
 
@@ -145,8 +149,6 @@ extern uint8_t eepromData[EEPROM_SIZE];
 extern uint8_t __config_start;   // configured via linker script when building binaries.
 extern uint8_t __config_end;
 #endif
-
-#define UNUSED(x) (void)(x)
 
 typedef enum
 {

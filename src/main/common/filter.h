@@ -28,8 +28,6 @@
 typedef struct pt1Filter_s {
     float state;
     float k;
-    float RC;
-    float dT;
 } pt1Filter_t;
 
 typedef struct slewFilter_s {
@@ -102,7 +100,6 @@ float fastKalmanUpdate(fastKalman_t *filter, float input);
 
 void pt1FilterInit(pt1Filter_t *filter, uint8_t f_cut, float dT);
 float pt1FilterApply(pt1Filter_t *filter, float input);
-float pt1FilterApply4(pt1Filter_t *filter, float input, uint8_t f_cut, float dT);
 
 void slewFilterInit(slewFilter_t *filter, float slewLimit, float threshold);
 float slewFilterApply(slewFilter_t *filter, float input);

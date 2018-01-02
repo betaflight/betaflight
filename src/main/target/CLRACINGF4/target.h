@@ -28,6 +28,8 @@
 #define BEEPER_INVERTED
 #define BEEPER_PWM_HZ             3800 // Beeper PWM frequency in Hz
 
+#define USE_DSHOT_DMAR
+
 #define INVERTER_PIN_UART1        PC0 // PC0 used as inverter select GPIO
 
 #define CAMERA_CONTROL_PIN    PB9    // define dedicated camera_osd_control pin

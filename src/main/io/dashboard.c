@@ -44,8 +44,8 @@
 #include "common/typeconversion.h"
 
 #include "config/feature.h"
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
@@ -476,7 +476,7 @@ static void showSensorsPage(void)
     i2c_OLED_send_string(bus, "        X     Y     Z");
 
     if (sensors(SENSOR_ACC)) {
-        tfp_sprintf(lineBuffer, format, "ACC", acc.accSmooth[X], acc.accSmooth[Y], acc.accSmooth[Z]);
+        tfp_sprintf(lineBuffer, format, "ACC", acc.accADC[X], acc.accADC[Y], acc.accADC[Z]);
         padLineBuffer();
         i2c_OLED_set_line(bus, rowIndex++);
         i2c_OLED_send_string(bus, lineBuffer);

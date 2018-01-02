@@ -272,6 +272,11 @@ static inline uint8_t lookupChannelIndex(const uint16_t channel)
     return channel >> 2;
 }
 
+uint8_t timerLookupChannelIndex(const uint16_t channel)
+{
+    return lookupChannelIndex(channel);
+}
+
 rccPeriphTag_t timerRCC(TIM_TypeDef *tim)
 {
     for (int i = 0; i < HARDWARE_TIMER_DEFINITION_COUNT; i++) {

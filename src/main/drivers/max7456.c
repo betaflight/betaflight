@@ -25,8 +25,10 @@
 
 #include "build/debug.h"
 
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/max7456.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+#include "pg/vcd.h"
 
 #include "drivers/bus_spi.h"
 #include "drivers/dma.h"
@@ -36,7 +38,6 @@
 #include "drivers/max7456_symbols.h"
 #include "drivers/nvic.h"
 #include "drivers/time.h"
-#include "drivers/vcd.h"
 
 
 // DEBUG_MAX7456_SIGNAL
@@ -218,13 +219,6 @@ static bool fontIsLoading       = false;
 static IO_t max7456CsPin        = IO_NONE;
 
 static uint8_t max7456DeviceType;
-
-
-PG_REGISTER_WITH_RESET_TEMPLATE(max7456Config_t, max7456Config, PG_MAX7456_CONFIG, 0);
-
-PG_RESET_TEMPLATE(max7456Config_t, max7456Config,
-    .clockConfig = MAX7456_CLOCK_CONFIG_OC, // SPI clock based on device type and overclock state
-);
 
 
 static uint8_t max7456Send(uint8_t add, uint8_t data)
@@ -415,7 +409,7 @@ void max7456ReInit(void)
 // Here we init only CS and try to init MAX for first time.
 // Also detect device type (MAX v.s. AT)
 
-void max7456Init(const vcdProfile_t *pVcdProfile, bool cpuOverclock)
+void max7456Init(const max7456Config_t *max7456Config, const vcdProfile_t *pVcdProfile, bool cpuOverclock)
 {
     max7456HardwareReset();
 
@@ -441,7 +435,7 @@ void max7456Init(const vcdProfile_t *pVcdProfile, bool cpuOverclock)
 #if defined(STM32F4) && !defined(DISABLE_OVERCLOCK)
     // Determine SPI clock divisor based on config and the device type.
 
-    switch (max7456Config()->clockConfig) {
+    switch (max7456Config->clockConfig) {
     case MAX7456_CLOCK_CONFIG_HALF:
         max7456SpiClock = MAX7456_SPI_CLK * 2;
         break;
@@ -459,6 +453,7 @@ void max7456Init(const vcdProfile_t *pVcdProfile, bool cpuOverclock)
     DEBUG_SET(DEBUG_MAX7456_SPICLOCK, DEBUG_MAX7456_SPICLOCK_DEVTYPE, max7456DeviceType);
     DEBUG_SET(DEBUG_MAX7456_SPICLOCK, DEBUG_MAX7456_SPICLOCK_DIVISOR, max7456SpiClock);
 #else
+    UNUSED(max7456Config);
     UNUSED(cpuOverclock);
 #endif
 

@@ -31,12 +31,10 @@
 
 #include "config/config_reset.h"
 #include "config/feature.h"
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
 
 #include "drivers/adc.h"
-#include "drivers/rx_pwm.h"
-#include "drivers/rx_spi.h"
+#include "drivers/rx/rx_pwm.h"
+#include "drivers/rx/rx_spi.h"
 #include "drivers/time.h"
 
 #include "fc/config.h"
@@ -46,6 +44,9 @@
 #include "flight/failsafe.h"
 
 #include "io/serial.h"
+
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "rx/rx.h"
 #include "rx/pwm.h"

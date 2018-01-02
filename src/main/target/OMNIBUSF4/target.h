@@ -25,6 +25,8 @@
 #define TARGET_BOARD_IDENTIFIER "DYS4"
 #elif defined(XRACERF4)
 #define TARGET_BOARD_IDENTIFIER "XRF4"
+#elif defined(EXUAVF4PRO)
+#define TARGET_BOARD_IDENTIFIER "EXF4"
 #else
 #define TARGET_BOARD_IDENTIFIER "OBF4"
 #define OMNIBUSF4BASE // For config.c
@@ -36,6 +38,8 @@
 #define USBD_PRODUCT_STRING "DysF4Pro"
 #elif defined(XRACERF4)
 #define USBD_PRODUCT_STRING "XRACERF4"
+#elif defined(EXUAVF4PRO)
+#define USBD_PRODUCT_STRING "ExuavF4Pro"
 #else
 #define USBD_PRODUCT_STRING "OmnibusF4"
 #endif
@@ -49,11 +53,17 @@
 #define BEEPER                  PB4
 #define BEEPER_INVERTED
 
+#if defined(OMNIBUSF4SD) || defined(DYSF4PRO)
+#define USE_DSHOT_DMAR
+#endif
+
 #ifdef OMNIBUSF4SD
 // These inverter control pins collide with timer channels on CH5 and CH6 pads.
 // Users of these timers/pads must un-map the inverter assignment explicitly.
 #define INVERTER_PIN_UART6      PC8 // Omnibus F4 V3 and later
 #define INVERTER_PIN_UART3      PC9 // Omnibus F4 Pro Corners
+#elif defined(EXUAVF4PRO)
+#define INVERTER_PIN_UART6      PC8
 #else
 #define INVERTER_PIN_UART1      PC0 // PC0 used as inverter select GPIO XXX this is not used --- remove it at the next major release
 #endif
@@ -75,7 +85,7 @@
 #if defined(OMNIBUSF4SD)
 #define GYRO_MPU6000_ALIGN       CW270_DEG
 #define ACC_MPU6000_ALIGN        CW270_DEG
-#elif defined(XRACERF4)
+#elif defined(XRACERF4) || defined(EXUAVF4PRO)
 #define GYRO_MPU6000_ALIGN       CW90_DEG
 #define ACC_MPU6000_ALIGN        CW90_DEG 
 #else
@@ -167,6 +177,12 @@
 #define UART3_RX_PIN            PB11
 #define UART3_TX_PIN            PB10
 
+#if defined(EXUAVF4PRO)
+#define USE_UART4
+#define UART4_RX_PIN            PA1
+#define UART4_TX_PIN            PA0
+#endif
+
 #define USE_UART6
 #define UART6_RX_PIN            PC7
 #define UART6_TX_PIN            PC6
@@ -174,7 +190,11 @@
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
 
-#define SERIAL_PORT_COUNT       6 //VCP, USART1, USART3, USART6, SOFTSERIAL x 2
+#if defined(EXUAVF4PRO)
+#define SERIAL_PORT_COUNT       7 // VCP, USART1, USART3, USART4, USART6, SOFTSERIAL x 2
+#else
+#define SERIAL_PORT_COUNT       6 // VCP, USART1, USART3, USART6, SOFTSERIAL x 2
+#endif
 
 #define USE_ESCSERIAL
 #if defined(OMNIBUSF4SD)
@@ -227,7 +247,11 @@
 
 #define USE_TRANSPONDER
 
-#define USE_SONAR
+#define USE_RANGEFINDER
+#define USE_RANGEFINDER_HCSR04
+#define RANGEFINDER_HCSR04_TRIGGER_PIN     PA1
+#define RANGEFINDER_HCSR04_ECHO_PIN        PA8
+#define USE_RANGEFINDER_TF
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 

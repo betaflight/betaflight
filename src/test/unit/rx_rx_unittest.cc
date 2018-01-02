@@ -29,8 +29,8 @@ extern "C" {
     #include "common/maths.h"
     #include "common/utils.h"
     #include "config/feature.h"
-    #include "config/parameter_group.h"
-    #include "config/parameter_group_ids.h"
+    #include "pg/pg.h"
+    #include "pg/pg_ids.h"
     #include "io/beeper.h"
 
     boxBitmask_t rcModeActivationMask;
@@ -39,8 +39,6 @@ extern "C" {
     bool rxHaveValidFlightChannels(void);
     bool isPulseValid(uint16_t pulseDuration);
     void rxUpdateFlightChannelStatus(uint8_t channel, uint16_t pulseDuration);
-
-    PG_REGISTER_WITH_RESET_TEMPLATE(featureConfig_t, featureConfig, PG_FEATURE_CONFIG, 0);
 
     PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
         .enabledFeatures = 0

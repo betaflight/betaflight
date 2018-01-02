@@ -22,6 +22,8 @@
 
 #ifdef USE_DSHOT
 
+#include "build/debug.h"
+
 #include "drivers/io.h"
 #include "timer.h"
 #if defined(STM32F4)
@@ -58,17 +60,28 @@ void pwmWriteDshotInt(uint8_t index, uint16_t value)
 {
     motorDmaOutput_t *const motor = &dmaMotors[index];
 
+#ifdef USE_DSHOT_DMAR
+    if (!motor->timerHardware || !motor->timerHardware->dmaTimUPRef) {
+        return;
+    }
+#else
     if (!motor->timerHardware || !motor->timerHardware->dmaRef) {
         return;
     }
+#endif
 
     uint16_t packet = prepareDshotPacket(motor, value);
+    uint8_t bufferSize;
 
-    uint8_t bufferSize = loadDmaBuffer(motor, packet);
-
+#ifdef USE_DSHOT_DMAR
+    bufferSize = loadDmaBuffer(&motor->timer->dmaBurstBuffer[timerLookupChannelIndex(motor->timerHardware->channel)], 4, packet);
+    motor->timer->dmaBurstLength = bufferSize * 4;
+#else
+    bufferSize = loadDmaBuffer(motor->dmaBuffer, 1, packet);
     motor->timer->timerDmaSources |= motor->timerDmaSource;
     DMA_SetCurrDataCounter(motor->timerHardware->dmaRef, bufferSize);
     DMA_Cmd(motor->timerHardware->dmaRef, ENABLE);
+#endif
 }
 
 void pwmCompleteDshotMotorUpdate(uint8_t motorCount)
@@ -76,9 +89,16 @@ void pwmCompleteDshotMotorUpdate(uint8_t motorCount)
     UNUSED(motorCount);
 
     for (int i = 0; i < dmaMotorTimerCount; i++) {
+#ifdef USE_DSHOT_DMAR
+        DMA_SetCurrDataCounter(dmaMotorTimers[i].dmaBurstRef, dmaMotorTimers[i].dmaBurstLength);
+        DMA_Cmd(dmaMotorTimers[i].dmaBurstRef, ENABLE);
+        TIM_DMAConfig(dmaMotorTimers[i].timer, TIM_DMABase_CCR1, TIM_DMABurstLength_4Transfers);
+        TIM_DMACmd(dmaMotorTimers[i].timer, TIM_DMA_Update, ENABLE);
+#else
         TIM_SetCounter(dmaMotorTimers[i].timer, 0);
         TIM_DMACmd(dmaMotorTimers[i].timer, dmaMotorTimers[i].timerDmaSources, ENABLE);
         dmaMotorTimers[i].timerDmaSources = 0;
+#endif
     }
 }
 
@@ -86,14 +106,35 @@ static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
 {
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
         motorDmaOutput_t * const motor = &dmaMotors[descriptor->userParam];
+#ifdef USE_DSHOT_DMAR
+        DMA_Cmd(motor->timerHardware->dmaTimUPRef, DISABLE);
+        TIM_DMACmd(motor->timerHardware->tim, TIM_DMA_Update, DISABLE);
+#else
         DMA_Cmd(motor->timerHardware->dmaRef, DISABLE);
         TIM_DMACmd(motor->timerHardware->tim, motor->timerDmaSource, DISABLE);
+#endif
         DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
     }
 }
 
 void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output)
 {
+#if defined(STM32F4) || defined(STM32F7)
+    typedef DMA_Stream_TypeDef dmaStream_t;
+#else
+    typedef DMA_Channel_TypeDef dmaStream_t;
+#endif
+
+#ifdef USE_DSHOT_DMAR
+    dmaStream_t *dmaRef = timerHardware->dmaTimUPRef;
+#else
+    dmaStream_t *dmaRef = timerHardware->dmaRef;
+#endif
+
+    if (dmaRef == NULL) {
+        return;
+    }
+
     TIM_OCInitTypeDef TIM_OCInitStructure;
     DMA_InitTypeDef DMA_InitStructure;
 
@@ -106,7 +147,6 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     const uint8_t timerIndex = getTimerIndex(timer);
     const bool configureTimer = (timerIndex == dmaMotorTimerCount-1);
 
-    IOInit(motorIO, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
     IOConfigGPIOAF(motorIO, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP), timerHardware->alternateFunction);
 
     if (configureTimer) {
@@ -139,9 +179,6 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 
     timerOCInit(timer, timerHardware->channel, &TIM_OCInitStructure);
     timerOCPreloadConfig(timer, timerHardware->channel, TIM_OCPreload_Enable);
-    motor->timerDmaSource = timerDmaSource(timerHardware->channel);
-    motor->timer = &dmaMotorTimers[timerIndex];
-    motor->timer->timerDmaSources &= ~motor->timerDmaSource;
 
     if (output & TIMER_OUTPUT_N_CHANNEL) {
         TIM_CCxNCmd(timer, timerHardware->channel, TIM_CCxN_Enable);
@@ -155,25 +192,52 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
         TIM_Cmd(timer, ENABLE);
     }
 
-#if defined(STM32F3)
-    DMA_Channel_TypeDef *dmaRef = timerHardware->dmaRef;
-#elif defined(STM32F4)
-    DMA_Stream_TypeDef *dmaRef = timerHardware->dmaRef;
-#else
-#error "No MCU specified in DSHOT"
-#endif
+    motor->timer = &dmaMotorTimers[timerIndex];
 
-    if (dmaRef == NULL) {
+#ifdef USE_DSHOT_DMAR
+    motor->timer->dmaBurstRef = dmaRef;
+
+    if (!configureTimer) {
         return;
     }
-
-    dmaInit(timerHardware->dmaIrqHandler, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
-    dmaSetHandler(timerHardware->dmaIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
+#else
+    motor->timerDmaSource = timerDmaSource(timerHardware->channel);
+    motor->timer->timerDmaSources &= ~motor->timerDmaSource;
+#endif
 
     DMA_Cmd(dmaRef, DISABLE);
     DMA_DeInit(dmaRef);
-
     DMA_StructInit(&DMA_InitStructure);
+
+#ifdef USE_DSHOT_DMAR
+    dmaInit(timerHardware->dmaTimUPIrqHandler, OWNER_TIMUP, timerGetTIMNumber(timerHardware->tim));
+    dmaSetHandler(timerHardware->dmaTimUPIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
+
+#if defined(STM32F3)
+    DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)motor->timer->dmaBurstBuffer;
+    DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
+#else
+    DMA_InitStructure.DMA_Channel = timerHardware->dmaTimUPChannel;
+    DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)motor->timer->dmaBurstBuffer;
+    DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
+    DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Enable;
+    DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_Full;
+    DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single;
+    DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
+#endif
+    DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)&timerHardware->tim->DMAR;
+    DMA_InitStructure.DMA_BufferSize = (pwmProtocolType == PWM_TYPE_PROSHOT1000) ? PROSHOT_DMA_BUFFER_SIZE : DSHOT_DMA_BUFFER_SIZE; // XXX
+    DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+    DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
+    DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Word;
+    DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Word;
+    DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
+    DMA_InitStructure.DMA_Priority = DMA_Priority_High;
+
+#else // !USE_DSHOT_DMAR
+    dmaInit(timerHardware->dmaIrqHandler, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
+    dmaSetHandler(timerHardware->dmaIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
+
 #if defined(STM32F3)
     DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)motor->dmaBuffer;
     DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
@@ -195,6 +259,9 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Word;
     DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
     DMA_InitStructure.DMA_Priority = DMA_Priority_High;
+#endif // USE_DSHOT_DMAR
+
+    // XXX Consolidate common settings in the next refactor
 
     DMA_Init(dmaRef, &DMA_InitStructure);
     DMA_ITConfig(dmaRef, DMA_IT_TC, ENABLE);

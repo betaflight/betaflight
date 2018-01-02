@@ -30,23 +30,23 @@ extern "C" {
     #include "common/utils.h"
     #include "common/streambuf.h"
 
-    #include "config/parameter_group.h"
-    #include "config/parameter_group_ids.h"
-
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
 
+    #include "drivers/serial.h"
 
     #include "io/beeper.h"
     #include "io/serial.h"
 
     #include "scheduler/scheduler.h"
-    #include "drivers/serial.h"
-    #include "drivers/vcd.h"
     #include "io/rcdevice_cam.h"
     #include "io/osd.h"
     #include "io/rcdevice.h"
     #include "io/rcdevice_osd.h"
+
+    #include "pg/pg.h"
+    #include "pg/pg_ids.h"
+    #include "pg/vcd.h"
 
     #include "rx/rx.h"
 
@@ -1575,6 +1575,9 @@ extern "C" {
         // // reset the input buffer
         testData.responseDataReadPos = 0;
         testData.indexOfCurrentRespBuf++;
+        if (testData.indexOfCurrentRespBuf >= testData.responseBufCount) {
+            testData.indexOfCurrentRespBuf = 0;
+        }
         // testData.maxTimesOfRespDataAvailable = testData.responseDataLen + 1;
     }
 

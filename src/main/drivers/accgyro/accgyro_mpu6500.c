@@ -25,7 +25,6 @@
 #include "common/maths.h"
 
 #include "drivers/exti.h"
-#include "drivers/gyro_sync.h"
 #include "drivers/sensor.h"
 #include "drivers/time.h"
 
@@ -69,7 +68,7 @@ void mpu6500GyroInit(gyroDev_t *gyro)
     delay(15);
     busWriteRegister(&gyro->bus, MPU_RA_CONFIG, gyro->lpf);
     delay(15);
-    busWriteRegister(&gyro->bus, MPU_RA_SMPLRT_DIV, gyroMPU6xxxGetDividerDrops(gyro)); // Get Divider Drops
+    busWriteRegister(&gyro->bus, MPU_RA_SMPLRT_DIV, gyro->mpuDividerDrops); // Get Divider Drops
     delay(100);
 
     // Data ready interrupt configuration

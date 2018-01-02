@@ -28,15 +28,14 @@
 
 #include "config/feature.h"
 
-#include "drivers/cc2500.h"
-#include "drivers/rx_nrf24l01.h"
+#include "drivers/rx/rx_spi.h"
+#include "drivers/rx/rx_nrf24l01.h"
 
 #include "fc/config.h"
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
-#include "cc2500_frsky_d.h"
-#include "cc2500_frsky_x.h"
+#include "rx/cc2500_frsky_common.h"
 #include "rx/nrf24_cx10.h"
 #include "rx/nrf24_syma.h"
 #include "rx/nrf24_v202.h"
@@ -59,7 +58,6 @@ static protocolSetRcDataFromPayloadFnPtr protocolSetRcDataFromPayload;
 
 STATIC_UNIT_TESTED uint16_t rxSpiReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t channel)
 {
-
     BUILD_BUG_ON(NRF24L01_MAX_PAYLOAD_SIZE > RX_SPI_MAX_PAYLOAD_SIZE);
 
     if (channel >= rxRuntimeConfig->channelCount) {
@@ -114,20 +112,19 @@ STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
         protocolSetRcDataFromPayload = inavNrf24SetRcDataFromPayload;
         break;
 #endif
-#ifdef USE_RX_FRSKY_SPI_D
+#if defined(USE_RX_FRSKY_SPI)
+#if defined(USE_RX_FRSKY_SPI_D)
     case RX_SPI_FRSKY_D:
-        protocolInit = frSkyDInit;
-        protocolDataReceived = frSkyDDataReceived;
-        protocolSetRcDataFromPayload = frSkyDSetRcData;
-        break;
 #endif
-#ifdef USE_RX_FRSKY_SPI_X
+#if defined(USE_RX_FRSKY_SPI_X)
     case RX_SPI_FRSKY_X:
-        protocolInit = frSkyXInit;
-        protocolDataReceived = frSkyXDataReceived;
-        protocolSetRcDataFromPayload = frSkyXSetRcData;
-        break;
 #endif
+        protocolInit = frSkySpiInit;
+        protocolDataReceived = frSkySpiDataReceived;
+        protocolSetRcDataFromPayload = frSkySpiSetRcData;
+
+        break;
+#endif // USE_RX_FRSKY_SPI
 #ifdef USE_RX_FLYSKY
     case RX_SPI_A7105_FLYSKY:
     case RX_SPI_A7105_FLYSKY_2A:

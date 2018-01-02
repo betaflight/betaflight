@@ -18,7 +18,7 @@
 #pragma once
 
 #include "io_types.h"
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 
 typedef enum {
     CAMERA_CONTROL_KEY_ENTER,

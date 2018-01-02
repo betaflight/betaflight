@@ -26,8 +26,8 @@
 #include "common/maths.h"
 
 #include "config/config_eeprom.h"
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "drivers/buttons.h"
 #include "drivers/light_led.h"

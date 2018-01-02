@@ -18,7 +18,6 @@ COMMON_SRC = \
             common/typeconversion.c \
             config/config_eeprom.c \
             config/feature.c \
-            config/parameter_group.c \
             config/config_streamer.c \
             drivers/adc.c \
             drivers/buf_writer.c \
@@ -61,6 +60,16 @@ COMMON_SRC = \
             io/statusindicator.c \
             io/transponder_ir.c \
             msp/msp_serial.c \
+            pg/adc.c \
+            pg/beeper.c \
+            pg/beeper_dev.c \
+            pg/bus_i2c.c \
+            pg/bus_spi.c \
+            pg/max7456.c \
+            pg/pg.c \
+            pg/rx_pwm.c \
+            pg/sdcard.c \
+            pg/vcd.c \
             scheduler/scheduler.c \
             sensors/battery.c \
             sensors/current.c \
@@ -75,13 +84,13 @@ FC_SRC = \
             fc/fc_init.c \
             fc/controlrate_profile.c \
             drivers/camera_control.c \
-            drivers/gyro_sync.c \
-            drivers/rx_nrf24l01.c \
-            drivers/rx_spi.c \
-            drivers/rx_xn297.c \
+            drivers/accgyro/gyro_sync.c \
             drivers/pwm_esc_detect.c \
             drivers/pwm_output.c \
-            drivers/rx_pwm.c \
+            drivers/rx/rx_nrf24l01.c \
+            drivers/rx/rx_spi.c \
+            drivers/rx/rx_xn297.c \
+            drivers/rx/rx_pwm.c \
             drivers/serial_softserial.c \
             fc/fc_core.c \
             fc/fc_rc.c \
@@ -114,6 +123,8 @@ FC_SRC = \
             rx/sbus.c \
             rx/sbus_channels.c \
             rx/spektrum.c \
+            io/spektrum_vtx_control.c \
+            io/spektrum_rssi.c \
             rx/sumd.c \
             rx/sumh.c \
             rx/xbus.c \
@@ -141,8 +152,9 @@ FC_SRC = \
             common/gps_conversion.c \
             drivers/display_ug2864hsweg01.c \
             drivers/light_ws2811strip.c \
+            drivers/rangefinder/rangefinder_hcsr04.c \
+            drivers/rangefinder/rangefinder_lidartf.c \
             drivers/serial_escserial.c \
-            drivers/sonar_hcsr04.c \
             drivers/vtx_common.c \
             flight/navigation.c \
             io/dashboard.c \
@@ -157,12 +169,12 @@ FC_SRC = \
             io/gps.c \
             io/ledstrip.c \
             io/osd.c \
-            sensors/sonar.c \
             sensors/barometer.c \
+            sensors/rangefinder.c \
             telemetry/telemetry.c \
             telemetry/crsf.c \
             telemetry/srxl.c \
-            telemetry/frsky.c \
+            telemetry/frsky_hub.c \
             telemetry/hott.c \
             telemetry/jetiexbus.c \
             telemetry/smartport.c \
@@ -189,7 +201,6 @@ COMMON_SRC := $(COMMON_SRC) $(OSD_SLAVE_SRC) $(COMMON_DEVICE_SRC)
 else
 COMMON_SRC := $(COMMON_SRC) $(FC_SRC) $(COMMON_DEVICE_SRC)
 endif
-
 
 SPEED_OPTIMISED_SRC := ""
 SIZE_OPTIMISED_SRC  := ""
@@ -285,7 +296,6 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             fc/fc_init.c \
             config/config_eeprom.c \
             config/feature.c \
-            config/parameter_group.c \
             config/config_streamer.c \
             i2c_bst.c \
             interface/cli.c \
@@ -312,7 +322,8 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             io/vtx_rtc6705.c \
             io/vtx_smartaudio.c \
             io/vtx_tramp.c \
-            io/vtx_control.c
+            io/vtx_control.c \
+            pg/pg.h
 
 # F4 and F7 optimizations
 ifneq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
@@ -348,7 +359,8 @@ endif
 ifneq ($(filter ONBOARDFLASH,$(FEATURES)),)
 SRC += \
             drivers/flash_m25p16.c \
-            io/flashfs.c
+            io/flashfs.c \
+            pg/flash.c
 endif
 
 SRC += $(COMMON_SRC)

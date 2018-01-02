@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include "build/version.h"
+
 // Targets with built-in vtx do not need external vtx
 #if defined(VTX_RTC6705) && !defined(VTX_RTC6705_OPTIONAL)
 #undef VTX_SMARTAUDIO
@@ -75,6 +77,16 @@
 #endif
 
 #if defined(USE_RX_FRSKY_SPI_D) || defined(USE_RX_FRSKY_SPI_X)
+#define USE_RX_CC2500
 #define USE_RX_FRSKY_SPI
 #endif
+
+#if !defined(STM32F1) && defined(USE_DSHOT)
+#if !defined(USE_DSHOT_DMA) && !defined(USE_DSHOT_DMAR)
+#if !defined(RELEASE_BUILD)
+#define USE_DSHOT_DMAR
+#endif // !RELEASE_BUILD
+#endif // !USE_DSHOT_DMA && !USE_DSHOT_DMAR
+#endif // !STM32F1 && !STM32F3
+#undef USE_DSHOT_DMA
 

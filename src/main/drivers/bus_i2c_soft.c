@@ -20,6 +20,8 @@
 
 #include <platform.h>
 
+#ifdef SOFT_I2C
+
 #include "build/build_config.h"
 
 #include "drivers/bus_i2c.h"
@@ -27,8 +29,6 @@
 
 // Software I2C driver, using same pins as hardware I2C, with hw i2c module disabled.
 // Can be configured for I2C2 pinout (SCL: PB10, SDA: PB11) or I2C1 pinout (SCL: PB6, SDA: PB7)
-
-#ifdef SOFT_I2C
 
 static IO_t scl;
 static IO_t sda;

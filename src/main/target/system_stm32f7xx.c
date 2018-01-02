@@ -103,8 +103,12 @@
 /*!< Uncomment the following line if you need to relocate your vector Table in
      Internal SRAM. */
 /* #define VECT_TAB_SRAM */
-#define VECT_TAB_OFFSET  0x00 /*!< Vector Table base offset field.
-                                   This value must be a multiple of 0x200. */
+#ifdef CUSTOM_VECT_TAB_OFFSET
+#define VECT_TAB_OFFSET CUSTOM_VECT_TAB_OFFSET
+#else
+#define VECT_TAB_OFFSET  0x00 /*!< Vector Table base offset field.*/
+#endif
+                                   /*This value must be a multiple of 0x200. */
 /******************************************************************************/
 
 /**
@@ -156,15 +160,28 @@
 
       __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
-      /* Enable HSE Oscillator and activate PLL with HSE as source */
-      RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-      RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-      RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-      RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-      RCC_OscInitStruct.PLL.PLLM = PLL_M;
-      RCC_OscInitStruct.PLL.PLLN = PLL_N;
-      RCC_OscInitStruct.PLL.PLLP = PLL_P;
-      RCC_OscInitStruct.PLL.PLLQ = PLL_Q;
+#ifdef CLOCK_SOURCE_USE_HSI
+      /* Enable HSI Oscillator and activate PLL with HSI as source */
+      RCC_OscInitStruct.OscillatorType       = RCC_OSCILLATORTYPE_HSI;
+      RCC_OscInitStruct.HSIState             = RCC_HSI_ON;
+      RCC_OscInitStruct.HSICalibrationValue  = RCC_HSICALIBRATION_DEFAULT;
+      RCC_OscInitStruct.PLL.PLLState         = RCC_PLL_ON;
+      RCC_OscInitStruct.PLL.PLLSource        = RCC_PLLSOURCE_HSI;
+      RCC_OscInitStruct.PLL.PLLM             = 16;
+      RCC_OscInitStruct.PLL.PLLN             = 432;
+      RCC_OscInitStruct.PLL.PLLP             = RCC_PLLP_DIV2;
+      RCC_OscInitStruct.PLL.PLLQ             = 9;
+#else
+      /* Enable HSE Oscillator and activate PLL with HSE as source */ 
+      RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE; 
+      RCC_OscInitStruct.HSEState = RCC_HSE_ON; 
+      RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON; 
+      RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE; 
+      RCC_OscInitStruct.PLL.PLLM = PLL_M; 
+      RCC_OscInitStruct.PLL.PLLN = PLL_N; 
+      RCC_OscInitStruct.PLL.PLLP = PLL_P; 
+      RCC_OscInitStruct.PLL.PLLQ = PLL_Q;  
+#endif
 
       ret = HAL_RCC_OscConfig(&RCC_OscInitStruct);
       if (ret != HAL_OK) {

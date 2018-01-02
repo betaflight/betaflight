@@ -27,9 +27,9 @@ extern "C" {
     #include "platform.h"
     #include "target.h"
     #include "build/version.h"
-    #include "config/parameter_group.h"
+    #include "pg/pg.h"
     #include "config/feature.h"
-    #include "config/parameter_group_ids.h"
+    #include "pg/pg_ids.h"
     #include "drivers/buf_writer.h"
     #include "drivers/vtx_common.h"
     #include "fc/config.h"
@@ -47,6 +47,7 @@ extern "C" {
     #include "io/osd.h"
     #include "io/serial.h"
     #include "io/vtx.h"
+    #include "pg/beeper.h"
     #include "rx/rx.h"
     #include "scheduler/scheduler.h"
     #include "sensors/battery.h"
@@ -72,7 +73,6 @@ extern "C" {
     PG_REGISTER_ARRAY(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer, PG_MOTOR_MIXER, 0);
     PG_REGISTER_ARRAY(servoParam_t, MAX_SUPPORTED_SERVOS, servoParams, PG_SERVO_PARAMS, 0);
     PG_REGISTER_ARRAY(servoMixer_t, MAX_SERVO_RULES, customServoMixers, PG_SERVO_MIXER, 0);
-    PG_REGISTER(featureConfig_t, featureConfig, PG_FEATURE_CONFIG, 0);
     PG_REGISTER(beeperConfig_t, beeperConfig, PG_BEEPER_CONFIG, 0);
     PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
     PG_REGISTER(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 0);

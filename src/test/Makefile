@@ -74,7 +74,7 @@ blackbox_unittest_SRC :=  \
 		$(USER_DIR)/common/printf.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/typeconversion.c \
-		$(USER_DIR)/drivers/gyro_sync.c
+		$(USER_DIR)/drivers/accgyro/gyro_sync.c
 
 blackbox_encoding_unittest_SRC :=  \
 		$(USER_DIR)/blackbox/blackbox_encoding.c \
@@ -85,7 +85,7 @@ blackbox_encoding_unittest_SRC :=  \
 cli_unittest_SRC := \
 		$(USER_DIR)/interface/cli.c \
 		$(USER_DIR)/config/feature.c \
-		$(USER_DIR)/config/parameter_group.c \
+		$(USER_DIR)/pg/pg.c \
                 $(USER_DIR)/common/typeconversion.c
 
 cli_unittest_DEFINES := \
@@ -163,13 +163,13 @@ osd_unittest_DEFINES := \
 		USE_RTC_TIME
 
 
-parameter_groups_unittest_SRC := \
-		$(USER_DIR)/config/parameter_group.c
+pg_unittest_SRC := \
+		$(USER_DIR)/pg/pg.c
 
 
 rc_controls_unittest_SRC := \
 		$(USER_DIR)/fc/rc_controls.c \
-		$(USER_DIR)/config/parameter_group.c \
+		$(USER_DIR)/pg/pg.c \
 		$(USER_DIR)/common/bitarray.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/fc/rc_adjustments.c \
@@ -209,6 +209,16 @@ scheduler_unittest_SRC := \
 		$(USER_DIR)/common/crc.c \
 		$(USER_DIR)/common/streambuf.c
 
+
+sensor_gyro_unittest_SRC := \
+		$(USER_DIR)/sensors/gyro.c \
+		$(USER_DIR)/sensors/boardalignment.c \
+		$(USER_DIR)/build/debug.c \
+		$(USER_DIR)/common/filter.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/drivers/accgyro/accgyro_fake.c \
+		$(USER_DIR)/drivers/accgyro/gyro_sync.c \
+		$(USER_DIR)/pg/pg.c
 
 telemetry_crsf_unittest_SRC := \
 		$(USER_DIR)/rx/crsf.c \
@@ -343,7 +353,7 @@ CXX_FLAGS += $(COVERAGE_FLAGS)
 ifdef MACOSX
 LDFLAGS  += -Wl,-map,$(OBJECT_DIR)/$@.map
 else
-LDFLAGS  += -Wl,-T,$(TEST_DIR)/parameter_group.ld -Wl,-Map,$(OBJECT_DIR)/$@.map
+LDFLAGS  += -Wl,-T,$(TEST_DIR)/pg.ld -Wl,-Map,$(OBJECT_DIR)/$@.map
 endif
 
 # Gather up all of the tests.

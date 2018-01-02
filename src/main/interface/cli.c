@@ -53,12 +53,10 @@ extern uint8_t __config_end;
 
 #include "config/config_eeprom.h"
 #include "config/feature.h"
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
 
 #include "drivers/accgyro/accgyro.h"
+#include "drivers/adc.h"
 #include "drivers/buf_writer.h"
-#include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
 #include "drivers/compass/compass.h"
 #include "drivers/display.h"
@@ -67,18 +65,17 @@ extern uint8_t __config_end;
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 #include "drivers/inverter.h"
-#include "drivers/rx_pwm.h"
 #include "drivers/sdcard.h"
 #include "drivers/sensor.h"
 #include "drivers/serial.h"
 #include "drivers/serial_escserial.h"
-#include "drivers/sonar_hcsr04.h"
+#include "drivers/rangefinder/rangefinder_hcsr04.h"
+#include "drivers/sound_beeper.h"
 #include "drivers/stack_check.h"
 #include "drivers/system.h"
 #include "drivers/transponder_ir.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
-#include "drivers/vcd.h"
 #include "drivers/light_led.h"
 #include "drivers/camera_control.h"
 #include "drivers/vtx_common.h"
@@ -116,10 +113,19 @@ extern uint8_t __config_end;
 #include "io/vtx_control.h"
 #include "io/vtx.h"
 
+#include "pg/adc.h"
+#include "pg/beeper.h"
+#include "pg/beeper_dev.h"
+#include "pg/bus_i2c.h"
+#include "pg/bus_spi.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+#include "pg/rx_pwm.h"
+
 #include "rx/rx.h"
 #include "rx/spektrum.h"
-#include "../rx/cc2500_frsky_common.h"
-#include "../rx/cc2500_frsky_x.h"
+#include "rx/cc2500_frsky_common.h"
+#include "rx/cc2500_frsky_x.h"
 
 #include "scheduler/scheduler.h"
 
@@ -132,7 +138,7 @@ extern uint8_t __config_end;
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
 
-#include "telemetry/frsky.h"
+#include "telemetry/frsky_hub.h"
 #include "telemetry/telemetry.h"
 
 
@@ -173,7 +179,7 @@ static const char * const mixerNames[] = {
 static const char * const featureNames[] = {
     "RX_PPM", "", "INFLIGHT_ACC_CAL", "RX_SERIAL", "MOTOR_STOP",
     "SERVO_TILT", "SOFTSERIAL", "GPS", "",
-    "SONAR", "TELEMETRY", "", "3D", "RX_PARALLEL_PWM",
+    "RANGEFINDER", "TELEMETRY", "", "3D", "RX_PARALLEL_PWM",
     "RX_MSP", "RSSI_ADC", "LED_STRIP", "DISPLAY", "OSD",
     "", "CHANNEL_FORWARDING", "TRANSPONDER", "AIRMODE",
     "", "", "RX_SPI", "SOFTSPI", "ESC_SENSOR", "ANTI_GRAVITY", "DYNAMIC_FILTER", NULL
@@ -190,13 +196,13 @@ static const rxFailsafeChannelMode_e rxFailsafeModesTable[RX_FAILSAFE_TYPE_COUNT
 #if defined(USE_SENSOR_NAMES)
 // sync this with sensors_e
 static const char * const sensorTypeNames[] = {
-    "GYRO", "ACC", "BARO", "MAG", "SONAR", "GPS", "GPS+MAG", NULL
+    "GYRO", "ACC", "BARO", "MAG", "RANGEFINDER", "GPS", "GPS+MAG", NULL
 };
 
-#define SENSOR_NAMES_MASK (SENSOR_GYRO | SENSOR_ACC | SENSOR_BARO | SENSOR_MAG)
+#define SENSOR_NAMES_MASK (SENSOR_GYRO | SENSOR_ACC | SENSOR_BARO | SENSOR_MAG | SENSOR_RANGEFINDER)
 
 static const char * const *sensorHardwareNames[] = {
-    lookupTableGyroHardware, lookupTableAccHardware, lookupTableBaroHardware, lookupTableMagHardware
+    lookupTableGyroHardware, lookupTableAccHardware, lookupTableBaroHardware, lookupTableMagHardware, lookupTableRangefinderHardware
 };
 #endif // USE_SENSOR_NAMES
 
@@ -689,7 +695,7 @@ static void cliRxFailsafe(char *cmdline)
 
 static void printAux(uint8_t dumpMask, const modeActivationCondition_t *modeActivationConditions, const modeActivationCondition_t *defaultModeActivationConditions)
 {
-    const char *format = "aux %u %u %u %u %u";
+    const char *format = "aux %u %u %u %u %u %u";
     // print out aux channel settings
     for (uint32_t i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
         const modeActivationCondition_t *mac = &modeActivationConditions[i];
@@ -699,7 +705,8 @@ static void printAux(uint8_t dumpMask, const modeActivationCondition_t *modeActi
             equalsDefault = mac->modeId == macDefault->modeId
                 && mac->auxChannelIndex == macDefault->auxChannelIndex
                 && mac->range.startStep == macDefault->range.startStep
-                && mac->range.endStep == macDefault->range.endStep;
+                && mac->range.endStep == macDefault->range.endStep
+                && mac->modeLogic == macDefault->modeLogic;
             const box_t *box = findBoxByBoxId(macDefault->modeId);
             if (box) {
                 cliDefaultPrintLinef(dumpMask, equalsDefault, format,
@@ -707,7 +714,8 @@ static void printAux(uint8_t dumpMask, const modeActivationCondition_t *modeActi
                     box->permanentId,
                     macDefault->auxChannelIndex,
                     MODE_STEP_TO_CHANNEL_VALUE(macDefault->range.startStep),
-                    MODE_STEP_TO_CHANNEL_VALUE(macDefault->range.endStep)
+                    MODE_STEP_TO_CHANNEL_VALUE(macDefault->range.endStep),
+                    macDefault->modeLogic
                 );
             }
         }
@@ -718,7 +726,8 @@ static void printAux(uint8_t dumpMask, const modeActivationCondition_t *modeActi
                 box->permanentId,
                 mac->auxChannelIndex,
                 MODE_STEP_TO_CHANNEL_VALUE(mac->range.startStep),
-                MODE_STEP_TO_CHANNEL_VALUE(mac->range.endStep)
+                MODE_STEP_TO_CHANNEL_VALUE(mac->range.endStep),
+                mac->modeLogic
             );
         }
     }
@@ -755,10 +764,27 @@ static void cliAux(char *cmdline)
                 }
             }
             ptr = processChannelRangeArgs(ptr, &mac->range, &validArgumentCount);
-
-            if (validArgumentCount != 4) {
+            ptr = nextArg(ptr);
+            if (ptr) {
+                val = atoi(ptr);
+                if (val == MODELOGIC_OR || val == MODELOGIC_AND) {
+                    mac->modeLogic = val;
+                    validArgumentCount++;
+                }
+            }
+            if (validArgumentCount == 4) { // for backwards compatibility
+                mac->modeLogic = MODELOGIC_OR;
+            } else if (validArgumentCount != 5) {
                 memset(mac, 0, sizeof(modeActivationCondition_t));
             }
+            cliPrintLinef( "aux %u %u %u %u %u %u",
+                i,
+                mac->modeId,
+                mac->auxChannelIndex,
+                MODE_STEP_TO_CHANNEL_VALUE(mac->range.startStep),
+                MODE_STEP_TO_CHANNEL_VALUE(mac->range.endStep),
+                mac->modeLogic
+            );
         } else {
             cliShowArgumentRangeError("index", 0, MAX_MODE_ACTIVATION_CONDITION_COUNT - 1);
         }
@@ -2009,8 +2035,8 @@ static void cliFeature(char *cmdline)
                     break;
                 }
 #endif
-#ifndef USE_SONAR
-                if (mask & FEATURE_SONAR) {
+#ifndef USE_RANGEFINDER
+                if (mask & FEATURE_RANGEFINDER) {
                     cliPrintLine("unavailable");
                     break;
                 }
@@ -2119,7 +2145,7 @@ void cliFrSkyBind(char *cmdline){
 #ifdef USE_RX_FRSKY_SPI
     case RX_SPI_FRSKY_D:
     case RX_SPI_FRSKY_X:
-        frSkyBind();
+        frSkySpiBind();
 
         cliPrint("Binding...");
 
@@ -3144,7 +3170,7 @@ const cliResourceValue_t resourceTable[] = {
     { OWNER_PPMINPUT,      PG_PPM_CONFIG, offsetof(ppmConfig_t, ioTag), 0 },
     { OWNER_PWMINPUT,      PG_PWM_CONFIG, offsetof(pwmConfig_t, ioTags[0]), PWM_INPUT_PORT_COUNT },
 #endif
-#ifdef USE_SONAR
+#ifdef USE_RANGEFINDER_HCSR04
     { OWNER_SONAR_TRIGGER, PG_SONAR_CONFIG, offsetof(sonarConfig_t, triggerTag), 0 },
     { OWNER_SONAR_ECHO,    PG_SONAR_CONFIG, offsetof(sonarConfig_t, echoTag),    0 },
 #endif
@@ -3622,7 +3648,7 @@ static void cliHelp(char *cmdline);
 // should be sorted a..z for bsearch()
 const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("adjrange", "configure adjustment ranges", NULL, cliAdjustmentRange),
-    CLI_COMMAND_DEF("aux", "configure modes", NULL, cliAux),
+    CLI_COMMAND_DEF("aux", "configure modes", "<index> <mode> <aux> <start> <end> <logic>", cliAux),
 #ifdef BEEPER
     CLI_COMMAND_DEF("beeper", "turn on/off beeper", "list\r\n"
         "\t<+|->[name]", cliBeeper),

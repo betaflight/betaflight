@@ -27,9 +27,10 @@
 
 #include "common/axis.h"
 #include "common/maths.h"
+#include "common/utils.h"
 
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -44,7 +45,7 @@
 
 #include "sensors/sensors.h"
 #include "sensors/barometer.h"
-#include "sensors/sonar.h"
+#include "sensors/rangefinder.h"
 
 
 int32_t AltHold;
@@ -146,16 +147,16 @@ void updateAltHoldState(void)
     }
 }
 
-void updateSonarAltHoldState(void)
+void updateRangefinderAltHoldState(void)
 {
     // Sonar alt hold activate
-    if (!IS_RC_MODE_ACTIVE(BOXSONAR)) {
-        DISABLE_FLIGHT_MODE(SONAR_MODE);
+    if (!IS_RC_MODE_ACTIVE(BOXRANGEFINDER)) {
+        DISABLE_FLIGHT_MODE(RANGEFINDER_MODE);
         return;
     }
 
-    if (!FLIGHT_MODE(SONAR_MODE)) {
-        ENABLE_FLIGHT_MODE(SONAR_MODE);
+    if (!FLIGHT_MODE(RANGEFINDER_MODE)) {
+        ENABLE_FLIGHT_MODE(RANGEFINDER_MODE);
         AltHold = estimatedAltitude;
         initialThrottleHold = rcData[THROTTLE];
         errorVelocityI = 0;
@@ -205,7 +206,7 @@ int32_t calculateAltHoldThrottleAdjustment(int32_t vel_tmp, float accZ_tmp, floa
 }
 #endif // USE_ALT_HOLD
 
-#if defined(USE_BARO) || defined(USE_SONAR)
+#if defined(USE_BARO) || defined(USE_RANGEFINDER)
 void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 {
     static timeUs_t previousTimeUs = 0;
@@ -232,14 +233,14 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
     }
 #endif
 
-#ifdef USE_SONAR
-    if (sensors(SENSOR_SONAR)) {
-        int32_t sonarAlt = sonarCalculateAltitude(sonarRead(), getCosTiltAngle());
-        if (sonarAlt > 0 && sonarAlt >= sonarCfAltCm && sonarAlt <= sonarMaxAltWithTiltCm) {
-            // SONAR in range, so use complementary filter
-            float sonarTransition = (float)(sonarMaxAltWithTiltCm - sonarAlt) / (sonarMaxAltWithTiltCm - sonarCfAltCm);
-            sonarAlt = (float)sonarAlt * sonarTransition + baroAlt * (1.0f - sonarTransition);
-            estimatedAltitude = sonarAlt;
+#ifdef USE_RANGEFINDER
+    if (sensors(SENSOR_RANGEFINDER) && rangefinderProcess(getCosTiltAngle())) {
+        int32_t rangefinderAlt = rangefinderGetLatestAltitude();
+        if (rangefinderAlt > 0 && rangefinderAlt >= rangefinderCfAltCm && rangefinderAlt <= rangefinderMaxAltWithTiltCm) {
+            // RANGEFINDER in range, so use complementary filter
+            float rangefinderTransition = (float)(rangefinderMaxAltWithTiltCm - rangefinderAlt) / (rangefinderMaxAltWithTiltCm - rangefinderCfAltCm);
+            rangefinderAlt = (float)rangefinderAlt * rangefinderTransition + baroAlt * (1.0f - rangefinderTransition);
+            estimatedAltitude = rangefinderAlt;
         }
     }
 #endif
@@ -301,7 +302,7 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
     UNUSED(accZ_tmp);
 #endif
 }
-#endif // USE_BARO || USE_SONAR
+#endif // USE_BARO || USE_RANGEFINDER
 
 int32_t getEstimatedAltitude(void)
 {

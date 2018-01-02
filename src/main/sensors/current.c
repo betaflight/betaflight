@@ -28,8 +28,8 @@
 
 #include "drivers/adc.h"
 
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 #include "config/config_reset.h"
 
 #include "sensors/current.h"
@@ -107,9 +107,10 @@ static int32_t currentMeterADCToCentiamps(const uint16_t src)
     const currentSensorADCConfig_t *config = currentSensorADCConfig();
 
     int32_t millivolts = ((uint32_t)src * ADCVREF) / 4096;
-    millivolts -= config->offset;
+    // y=x/m+b m is scale in (mV/10A) and b is offset in (mA)
+    int32_t centiAmps = (millivolts * 10000 / (int32_t)config->scale + (int32_t)config->offset) / 10;
 
-    return (millivolts * 1000) / (int32_t)config->scale; // current in 0.01A steps
+    return centiAmps; // Returns Centiamps to maintain compatability with the rest of the code
 }
 
 static void updateCurrentmAhDrawnState(currentMeterMAhDrawnState_t *state, int32_t amperageLatest, int32_t lastUpdateAt)
@@ -132,11 +133,19 @@ void currentMeterADCInit(void)
 
 void currentMeterADCRefresh(int32_t lastUpdateAt)
 {
+#ifdef USE_ADC
     const uint16_t iBatSample = adcGetChannel(ADC_CURRENT);
     currentMeterADCState.amperageLatest = currentMeterADCToCentiamps(iBatSample);
     currentMeterADCState.amperage = currentMeterADCToCentiamps(biquadFilterApply(&adciBatFilter, iBatSample));
 
     updateCurrentmAhDrawnState(&currentMeterADCState.mahDrawnState, currentMeterADCState.amperageLatest, lastUpdateAt);
+#else
+    UNUSED(lastUpdateAt);
+    UNUSED(currentMeterADCToCentiamps);
+
+    currentMeterADCState.amperageLatest = 0;
+    currentMeterADCState.amperage = 0;
+#endif
 }
 
 void currentMeterADCRead(currentMeter_t *meter)

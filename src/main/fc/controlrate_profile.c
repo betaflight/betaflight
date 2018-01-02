@@ -24,8 +24,8 @@
 #include "common/axis.h"
 
 #include "config/config_reset.h"
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
@@ -39,7 +39,7 @@ PG_REGISTER_ARRAY_WITH_RESET_FN(controlRateConfig_t, CONTROL_RATE_PROFILE_COUNT,
 void pgResetFn_controlRateProfiles(controlRateConfig_t *controlRateConfig)
 {
     for (int i = 0; i < CONTROL_RATE_PROFILE_COUNT; i++) {
-        RESET_CONFIG(const controlRateConfig_t, &controlRateConfig[i],
+        RESET_CONFIG(controlRateConfig_t, &controlRateConfig[i],
             .rcRate8 = 100,
             .rcYawRate8 = 100,
             .rcExpo8 = 0,

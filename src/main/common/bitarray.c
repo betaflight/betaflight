@@ -17,6 +17,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "bitarray.h"
 
@@ -35,4 +36,11 @@ void bitArraySet(void *array, unsigned bit)
 void bitArrayClr(void *array, unsigned bit)
 {
     BITARRAY_BIT_OP((uint32_t*)array, bit, &=~);
+}
+
+void bitArrayXor(void *dest, size_t size, void *op1, void *op2)
+{
+    for (size_t i = 0; i < size; i++) {
+        ((uint8_t*)dest)[i] = ((uint8_t*)op1)[i] ^ ((uint8_t*)op2)[i];
+    }
 }

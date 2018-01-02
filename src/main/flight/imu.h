@@ -20,7 +20,7 @@
 #include "common/axis.h"
 #include "common/time.h"
 #include "common/maths.h"
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 
 // Exported symbols
 extern uint32_t accTimeSum;

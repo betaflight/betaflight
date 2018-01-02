@@ -21,8 +21,9 @@ extern "C" {
     #include "blackbox/blackbox.h"
     #include "build/debug.h"
     #include "common/maths.h"
-    #include "config/parameter_group.h"
-    #include "config/parameter_group_ids.h"
+    #include "config/feature.h"
+    #include "pg/pg.h"
+    #include "pg/pg_ids.h"
     #include "fc/config.h"
     #include "fc/controlrate_profile.h"
     #include "fc/fc_core.h"
@@ -623,7 +624,7 @@ extern "C" {
     void systemBeep(bool) {}
     void saveConfigAndNotify(void) {}
     void blackboxFinish(void) {}
-    bool isAccelerationCalibrationComplete(void) { return true; }
+    bool accIsCalibrationComplete(void) { return true; }
     bool isBaroCalibrationComplete(void) { return true; }
     bool isGyroCalibrationComplete(void) { return gyroCalibDone; }
     void gyroStartCalibration(bool) {}

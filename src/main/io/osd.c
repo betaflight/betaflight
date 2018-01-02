@@ -49,11 +49,11 @@
 #include "common/utils.h"
 
 #include "config/feature.h"
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
 
 #include "drivers/display.h"
+#include "drivers/flash.h"
 #include "drivers/max7456_symbols.h"
+#include "drivers/sdcard.h"
 #include "drivers/time.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
@@ -74,6 +74,9 @@
 #include "flight/altitude.h"
 #include "flight/imu.h"
 #include "flight/pid.h"
+
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "rx/rx.h"
 

@@ -25,6 +25,8 @@
 #define BEEPER                  PC13
 #define BEEPER_INVERTED
 
+#define USE_DSHOT_DMAR
+
 #define INVERTER_PIN_UART2      PC14
 
 #define USE_ACC
@@ -92,6 +94,12 @@
 #define SPI2_SCK_PIN            PB13
 #define SPI2_MISO_PIN           PB14
 #define SPI2_MOSI_PIN           PB15
+
+#define USE_FLASHFS
+#define USE_FLASH_M25P16
+#define M25P16_SPI_INSTANCE     SPI1
+#define M25P16_CS_PIN           PA15
+#define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 
 #define USE_ADC
 #define CURRENT_METER_ADC_PIN   NONE // PA6 Available from TP33

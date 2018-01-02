@@ -17,11 +17,9 @@
 
 #pragma once
 
-//#include <stdbool.h>
-//#include <stdint.h>
+#include "pg/pg.h"
 
-//#include "rx.h"
-//#include "rx_spi.h"
+#include "rx/rx_spi.h"
 
 typedef struct rxFrSkySpiConfig_s {
     bool autoBind;
@@ -33,4 +31,8 @@ typedef struct rxFrSkySpiConfig_s {
 
 PG_DECLARE(rxFrSkySpiConfig_t, rxFrSkySpiConfig);
 
-void frSkyBind(void);
+void frSkySpiInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
+rx_spi_received_e frSkySpiDataReceived(uint8_t *packet);
+void frSkySpiSetRcData(uint16_t *rcData, const uint8_t *payload);
+
+void frSkySpiBind(void);

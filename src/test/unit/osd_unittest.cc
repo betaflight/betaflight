@@ -27,11 +27,12 @@ extern "C" {
 
     #include "blackbox/blackbox.h"
 
-    #include "config/parameter_group_ids.h"
+    #include "pg/pg_ids.h"
 
     #include "common/time.h"
 
     #include "drivers/max7456_symbols.h"
+    #include "drivers/serial.h"
 
     #include "fc/config.h"
     #include "fc/rc_controls.h"

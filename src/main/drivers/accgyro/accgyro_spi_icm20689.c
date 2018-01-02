@@ -24,16 +24,15 @@
 #include "common/axis.h"
 #include "common/maths.h"
 
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/accgyro/accgyro_mpu.h"
+#include "drivers/accgyro/accgyro_spi_icm20689.h"
 #include "drivers/bus_spi.h"
 #include "drivers/exti.h"
-#include "drivers/gyro_sync.h"
 #include "drivers/io.h"
 #include "drivers/sensor.h"
 #include "drivers/time.h"
 
-#include "accgyro.h"
-#include "accgyro_mpu.h"
-#include "accgyro_spi_icm20689.h"
 
 static void icm20689SpiInit(const busDevice_t *bus)
 {
@@ -127,14 +126,23 @@ void icm20689GyroInit(gyroDev_t *gyro)
 //    delay(100);
     spiBusWriteRegister(&gyro->bus, MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
     delay(15);
-    const uint8_t raGyroConfigData = gyro->gyroRateKHz > GYRO_RATE_8_kHz ? (INV_FSR_2000DPS << 3 | FCB_8800_32) : (INV_FSR_2000DPS << 3 | FCB_DISABLED);
+    uint8_t raGyroConfigData = INV_FSR_2000DPS << 3;
+    if (gyro->gyroRateKHz > GYRO_RATE_8_kHz) {
+        // use otherwise redundant LPF value to configure FCHOICE_B
+        // see REGISTER 27 – GYROSCOPE CONFIGURATION in datasheet
+        if (gyro->lpf==GYRO_LPF_NONE) {
+            raGyroConfigData |= FCB_8800_32;
+        } else {
+            raGyroConfigData |= FCB_3600_32;
+        }
+    }
     spiBusWriteRegister(&gyro->bus, MPU_RA_GYRO_CONFIG, raGyroConfigData);
     delay(15);
     spiBusWriteRegister(&gyro->bus, MPU_RA_ACCEL_CONFIG, INV_FSR_16G << 3);
     delay(15);
     spiBusWriteRegister(&gyro->bus, MPU_RA_CONFIG, gyro->lpf);
     delay(15);
-    spiBusWriteRegister(&gyro->bus, MPU_RA_SMPLRT_DIV, gyroMPU6xxxGetDividerDrops(gyro)); // Get Divider Drops
+    spiBusWriteRegister(&gyro->bus, MPU_RA_SMPLRT_DIV, gyro->mpuDividerDrops); // Get Divider Drops
     delay(100);
 
     // Data ready interrupt configuration

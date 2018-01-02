@@ -20,12 +20,13 @@
 
 #include <platform.h>
 
-#include "drivers/bus_i2c.h"
-#include "drivers/bus_spi.h"
 #include "drivers/io.h"
 #include "drivers/dma.h"
 #include "drivers/timer.h"
 #include "drivers/timer_def.h"
+
+#include "pg/bus_i2c.h"
+#include "pg/bus_spi.h"
 
 #ifdef USE_BST
 #include "bus_bst.h"
@@ -55,13 +56,13 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 void targetBusInit(void)
 {
 #ifdef USE_SPI
-    spiPinConfigure();
+    spiPinConfigure(spiPinConfig());
 #ifdef USE_SPI_DEVICE_1
     spiInit(SPIDEV_1);
 #endif
 #endif
 
-    i2cHardwareConfigure();
+    i2cHardwareConfigure(i2cConfig());
     i2cInit(I2CDEV_2);
     
     bstInit(BST_DEVICE);

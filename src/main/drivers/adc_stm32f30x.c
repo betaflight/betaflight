@@ -21,6 +21,8 @@
 
 #include "platform.h"
 
+#ifdef USE_ADC
+
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/io.h"
 #include "drivers/sensor.h"
@@ -32,6 +34,9 @@
 #include "dma.h"
 
 #include "common/utils.h"
+
+#include "pg/adc.h"
+
 
 const adcDevice_t adcHardware[] = {
     { .ADCx = ADC1, .rccADC = RCC_AHB(ADC12), .DMAy_Channelx = DMA1_Channel1 },
@@ -219,3 +224,4 @@ void adcInit(const adcConfig_t *config)
 
     ADC_StartConversion(adc.ADCx);
 }
+#endif

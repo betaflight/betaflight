@@ -24,16 +24,15 @@
 #include "common/axis.h"
 #include "common/maths.h"
 
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/accgyro/accgyro_mpu.h"
+#include "drivers/accgyro/accgyro_spi_icm20649.h"
 #include "drivers/bus_spi.h"
 #include "drivers/exti.h"
-#include "drivers/gyro_sync.h"
 #include "drivers/io.h"
 #include "drivers/sensor.h"
 #include "drivers/time.h"
 
-#include "accgyro.h"
-#include "accgyro_mpu.h"
-#include "accgyro_spi_icm20649.h"
 
 static void icm20649SpiInit(const busDevice_t *bus)
 {
@@ -136,7 +135,7 @@ void icm20649GyroInit(gyroDev_t *gyro)
     raGyroConfigData |= gyro_fsr << 1 | gyro->lpf << 3;
     spiBusWriteRegister(&gyro->bus, ICM20649_RA_GYRO_CONFIG_1, raGyroConfigData);
     delay(15);
-    spiBusWriteRegister(&gyro->bus, ICM20649_RA_GYRO_SMPLRT_DIV, gyroMPU6xxxGetDividerDrops(gyro)); // Get Divider Drops
+    spiBusWriteRegister(&gyro->bus, ICM20649_RA_GYRO_SMPLRT_DIV, gyro->mpuDividerDrops); // Get Divider Drops
     delay(100);
 
     // Data ready interrupt configuration

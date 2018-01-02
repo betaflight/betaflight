@@ -30,6 +30,7 @@
 #include "drivers/sdcard.h"
 #include "common/maths.h"
 #include "common/time.h"
+#include "common/utils.h"
 
 #ifdef AFATFS_DEBUG
     #define ONLY_EXPOSE_FOR_TESTING
@@ -935,14 +936,14 @@ static afatfsOperationStatus_e afatfs_cacheSector(uint32_t physicalSectorIndex, 
             afatfs.cacheDescriptor[cacheSectorIndex].consecutiveEraseBlockCount = eraseCount;
 #endif
 
-            // Fall through
+            FALLTHROUGH;
 
         case AFATFS_CACHE_STATE_WRITING:
         case AFATFS_CACHE_STATE_IN_SYNC:
             if ((sectorFlags & AFATFS_CACHE_WRITE) != 0) {
                 afatfs_cacheSectorMarkDirty(&afatfs.cacheDescriptor[cacheSectorIndex]);
             }
-            // Fall through
+            FALLTHROUGH;
 
         case AFATFS_CACHE_STATE_DIRTY:
             if ((sectorFlags & AFATFS_CACHE_LOCK) != 0) {
@@ -1456,7 +1457,7 @@ static afatfsOperationStatus_e afatfs_saveDirectoryEntry(afatfsFilePtr_t file, a
                break;
                case AFATFS_SAVE_DIRECTORY_DELETED:
                    entry->filename[0] = FAT_DELETED_FILE_MARKER;
-                   //Fall through
+                   FALLTHROUGH;
 
                case AFATFS_SAVE_DIRECTORY_FOR_CLOSE:
                    // We write the true length of the file on close.
@@ -2098,8 +2099,7 @@ afatfsOperationStatus_e afatfs_fseek(afatfsFilePtr_t file, int32_t offset, afatf
         break;
 
         case AFATFS_SEEK_SET:
-            ;
-            // Fall through
+            FALLTHROUGH;
     }
 
     // Now we have a SEEK_SET with a positive offset. Begin by seeking to the start of the file

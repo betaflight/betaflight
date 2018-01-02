@@ -34,8 +34,8 @@
 
 #include "drivers/time.h"
 
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 #include "config/feature.h"
 
 #include "flight/pid.h"
@@ -199,7 +199,7 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
 };
 
 #if defined(USE_OSD) && defined(USE_OSD_ADJUSTMENTS)
-static const char const *adjustmentLabels[] = {
+static const char * const adjustmentLabels[] = {
     "RC RATE",
     "RC EXPO",
     "THROTTLE EXPO",
@@ -226,7 +226,7 @@ static const char const *adjustmentLabels[] = {
     "HORIZON STRENGTH",
 };
 
-const char const *adjustmentRangeName;
+const char *adjustmentRangeName;
 int adjustmentRangeValue = -1;
 #endif
 
@@ -279,7 +279,8 @@ static int applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t a
         if (adjustmentFunction == ADJUSTMENT_PITCH_RATE) {
             break;
         }
-        // follow though for combined ADJUSTMENT_PITCH_ROLL_RATE
+        // fall through for combined ADJUSTMENT_PITCH_ROLL_RATE
+        FALLTHROUGH;
     case ADJUSTMENT_ROLL_RATE:
         newValue = constrain((int)controlRateConfig->rates[FD_ROLL] + delta, 0, CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX);
         controlRateConfig->rates[FD_ROLL] = newValue;
@@ -299,7 +300,8 @@ static int applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t a
         if (adjustmentFunction == ADJUSTMENT_PITCH_P) {
             break;
         }
-        // follow though for combined ADJUSTMENT_PITCH_ROLL_P
+        // fall through for combined ADJUSTMENT_PITCH_ROLL_P
+        FALLTHROUGH;
     case ADJUSTMENT_ROLL_P:
         newValue = constrain((int)pidProfile->pid[PID_ROLL].P + delta, 0, 200); // FIXME magic numbers repeated in cli.c
         pidProfile->pid[PID_ROLL].P = newValue;
@@ -313,7 +315,8 @@ static int applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t a
         if (adjustmentFunction == ADJUSTMENT_PITCH_I) {
             break;
         }
-        // fall though for combined ADJUSTMENT_PITCH_ROLL_I
+        // fall through for combined ADJUSTMENT_PITCH_ROLL_I
+        FALLTHROUGH;
     case ADJUSTMENT_ROLL_I:
         newValue = constrain((int)pidProfile->pid[PID_ROLL].I + delta, 0, 200); // FIXME magic numbers repeated in cli.c
         pidProfile->pid[PID_ROLL].I = newValue;
@@ -327,7 +330,8 @@ static int applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t a
         if (adjustmentFunction == ADJUSTMENT_PITCH_D) {
             break;
         }
-        // fall though for combined ADJUSTMENT_PITCH_ROLL_D
+        // fall through for combined ADJUSTMENT_PITCH_ROLL_D
+        FALLTHROUGH;
     case ADJUSTMENT_ROLL_D:
         newValue = constrain((int)pidProfile->pid[PID_ROLL].D + delta, 0, 200); // FIXME magic numbers repeated in cli.c
         pidProfile->pid[PID_ROLL].D = newValue;

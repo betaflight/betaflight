@@ -18,7 +18,7 @@
 #pragma once
 
 #include "drivers/io.h"
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 
 typedef enum {
     MODE_RX = 1 << 0,

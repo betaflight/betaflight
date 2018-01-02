@@ -18,8 +18,8 @@
 #include "common/utils.h"
 
 #include "config/feature.h"
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/compass/compass.h"
@@ -58,14 +58,9 @@
 #include "telemetry/smartport.h"
 #include "telemetry/msp_shared.h"
 
-enum
-{
-    SPSTATE_UNINITIALIZED,
-    SPSTATE_INITIALIZED_SERIAL,
-    SPSTATE_INITIALIZED_EXTERNAL,
-};
+#define SMARTPORT_MIN_TELEMETRY_RESPONSE_DELAY_US 500
 
-// these data identifiers are obtained from https://github.com/opentx/opentx/blob/master/radio/src/telemetry/frsky.h
+// these data identifiers are obtained from https://github.com/opentx/opentx/blob/master/radio/src/telemetry/frsky_hub.h
 enum
 {
     FSSP_DATAID_SPEED      = 0x0830 ,
@@ -132,7 +127,14 @@ static serialPortConfig_t *portConfig;
 
 static portSharing_e smartPortPortSharing;
 
-char smartPortState = SPSTATE_UNINITIALIZED;
+enum
+{
+    TELEMETRY_STATE_UNINITIALIZED,
+    TELEMETRY_STATE_INITIALIZED_SERIAL,
+    TELEMETRY_STATE_INITIALIZED_EXTERNAL,
+};
+
+static uint8_t telemetryState = TELEMETRY_STATE_UNINITIALIZED;
 static uint8_t smartPortIdCnt = 0;
 
 typedef struct smartPortFrame_s {
@@ -141,7 +143,7 @@ typedef struct smartPortFrame_s {
     uint8_t  crc;
 } __attribute__((packed)) smartPortFrame_t;
 
-#define SMARTPORT_MSP_PAYLOAD_SIZE   (sizeof(smartPortPayload_t) - sizeof(uint8_t))
+#define SMARTPORT_MSP_PAYLOAD_SIZE (sizeof(smartPortPayload_t) - sizeof(uint8_t))
 
 static smartPortWriteFrameFn *smartPortWriteFrame;
 
@@ -255,14 +257,14 @@ static void smartPortSendPackage(uint16_t id, uint32_t val)
 
 bool initSmartPortTelemetry(void)
 {
-    if (smartPortState == SPSTATE_UNINITIALIZED) {
+    if (telemetryState == TELEMETRY_STATE_UNINITIALIZED) {
         portConfig = findSerialPortConfig(FUNCTION_TELEMETRY_SMARTPORT);
         if (portConfig) {
             smartPortPortSharing = determinePortSharing(portConfig, FUNCTION_TELEMETRY_SMARTPORT);
 
             smartPortWriteFrame = smartPortWriteFrameInternal;
 
-            smartPortState = SPSTATE_INITIALIZED_SERIAL;
+            telemetryState = TELEMETRY_STATE_INITIALIZED_SERIAL;
         }
 
         return true;
@@ -273,10 +275,10 @@ bool initSmartPortTelemetry(void)
 
 bool initSmartPortTelemetryExternal(smartPortWriteFrameFn *smartPortWriteFrameExternal)
 {
-    if (smartPortState == SPSTATE_UNINITIALIZED) {
+    if (telemetryState == TELEMETRY_STATE_UNINITIALIZED) {
         smartPortWriteFrame = smartPortWriteFrameExternal;
 
-        smartPortState = SPSTATE_INITIALIZED_EXTERNAL;
+        telemetryState = TELEMETRY_STATE_INITIALIZED_EXTERNAL;
 
         return true;
     }
@@ -292,18 +294,16 @@ static void freeSmartPortTelemetryPort(void)
 
 static void configureSmartPortTelemetryPort(void)
 {
-    if (!portConfig) {
-        return;
+    if (portConfig) {
+        portOptions_e portOptions = (telemetryConfig()->halfDuplex ? SERIAL_BIDIR : SERIAL_UNIDIR) | (telemetryConfig()->telemetry_inverted ? SERIAL_NOT_INVERTED : SERIAL_INVERTED);
+
+        smartPortSerialPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_SMARTPORT, NULL, NULL, SMARTPORT_BAUD, SMARTPORT_UART_MODE, portOptions);
     }
-
-    portOptions_e portOptions = (telemetryConfig()->halfDuplex ? SERIAL_BIDIR : SERIAL_UNIDIR) | (telemetryConfig()->telemetry_inverted ? SERIAL_NOT_INVERTED : SERIAL_INVERTED);
-
-    smartPortSerialPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_SMARTPORT, NULL, NULL, SMARTPORT_BAUD, SMARTPORT_UART_MODE, portOptions);
 }
 
 void checkSmartPortTelemetryState(void)
 {
-    if (smartPortState == SPSTATE_INITIALIZED_SERIAL) {
+    if (telemetryState == TELEMETRY_STATE_INITIALIZED_SERIAL) {
         bool enableSerialTelemetry = telemetryDetermineEnabledState(smartPortPortSharing);
 
         if (enableSerialTelemetry && !smartPortSerialPort) {
@@ -420,15 +420,15 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                 *clearToSend = false;
                 break;
             case FSSP_DATAID_ACCX       :
-                smartPortSendPackage(id, 100 * acc.accSmooth[X] / acc.dev.acc_1G); // Multiply by 100 to show as x.xx g on Taranis
+                smartPortSendPackage(id, 100 * acc.accADC[X] / acc.dev.acc_1G); // Multiply by 100 to show as x.xx g on Taranis
                 *clearToSend = false;
                 break;
             case FSSP_DATAID_ACCY       :
-                smartPortSendPackage(id, 100 * acc.accSmooth[Y] / acc.dev.acc_1G);
+                smartPortSendPackage(id, 100 * acc.accADC[Y] / acc.dev.acc_1G);
                 *clearToSend = false;
                 break;
             case FSSP_DATAID_ACCZ       :
-                smartPortSendPackage(id, 100 * acc.accSmooth[Z] / acc.dev.acc_1G);
+                smartPortSendPackage(id, 100 * acc.accADC[Z] / acc.dev.acc_1G);
                 *clearToSend = false;
                 break;
             case FSSP_DATAID_T1         :
@@ -464,7 +464,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                     tmpi += 100;
                 if (FLIGHT_MODE(BARO_MODE))
                     tmpi += 200;
-                if (FLIGHT_MODE(SONAR_MODE))
+                if (FLIGHT_MODE(RANGEFINDER_MODE))
                     tmpi += 400;
 
                 if (FLIGHT_MODE(GPS_HOLD_MODE))
@@ -586,20 +586,24 @@ static bool serialCheckQueueEmpty(void)
 void handleSmartPortTelemetry(void)
 {
     static bool clearToSend = false;
+    static volatile timeUs_t lastTelemetryFrameReceivedUs;
+    static smartPortPayload_t *payload = NULL;
 
     const uint32_t requestTimeout = millis() + SMARTPORT_SERVICE_TIMEOUT_MS;
 
-    if (!(smartPortState == SPSTATE_INITIALIZED_SERIAL && smartPortSerialPort)) {
-        return;
-    }
+    if (telemetryState == TELEMETRY_STATE_INITIALIZED_SERIAL && smartPortSerialPort) {
+        while (serialRxBytesWaiting(smartPortSerialPort) > 0 && !payload) {
+            uint8_t c = serialRead(smartPortSerialPort);
+            payload = smartPortDataReceive(c, &clearToSend, serialCheckQueueEmpty, true);
+            if (payload) {
+                lastTelemetryFrameReceivedUs = micros();
+            }
+        }
 
-    smartPortPayload_t *payload = NULL;
-    while (serialRxBytesWaiting(smartPortSerialPort) > 0 && !payload) {
-        uint8_t c = serialRead(smartPortSerialPort);
-        payload = smartPortDataReceive(c, &clearToSend, serialCheckQueueEmpty, true);
+        if (cmpTimeUs(micros(), lastTelemetryFrameReceivedUs) >= SMARTPORT_MIN_TELEMETRY_RESPONSE_DELAY_US) {
+            processSmartPortTelemetry(payload, &clearToSend, &requestTimeout);
+            payload = NULL;
+        }
     }
-
-    processSmartPortTelemetry(payload, &clearToSend, &requestTimeout);
 }
-
 #endif

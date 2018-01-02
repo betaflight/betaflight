@@ -19,4 +19,8 @@
 
 #define LOOPTIME_SUSPEND_TIME 3  // Prevent too long busy wait times
 
+#define TASK_PERIOD_HZ(hz) (1000000 / (hz))
+#define TASK_PERIOD_MS(ms) ((ms) * 1000)
+#define TASK_PERIOD_US(us) (us)
+
 void fcTasksInit(void);

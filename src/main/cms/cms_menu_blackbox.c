@@ -41,16 +41,18 @@
 #include "common/utils.h"
 
 #include "config/feature.h"
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
 
+#include "drivers/flash.h"
 #include "drivers/time.h"
+#include "drivers/sdcard.h"
 
 #include "fc/config.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/flashfs.h"
 #include "io/beeper.h"
+
+#include "pg/pg.h"
 
 static const char * const cmsx_BlackboxDeviceNames[] = {
     "NONE",

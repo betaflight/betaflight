@@ -26,11 +26,12 @@
 
 #include "common/axis.h"
 #include "common/filter.h"
+#include "common/utils.h"
 
 #include "config/config_reset.h"
 #include "config/feature.h"
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/accgyro/accgyro_adxl345.h"
@@ -67,7 +68,7 @@
 #endif
 
 
-acc_t acc;                       // acc access functions
+FAST_RAM acc_t acc;                       // acc access functions
 
 static float accumulatedMeasurements[XYZ_AXIS_COUNT];
 static int accumulatedMeasurementCount;
@@ -136,9 +137,10 @@ retry:
 
     switch (accHardwareToUse) {
     case ACC_DEFAULT:
-        ; // fallthrough
-    case ACC_ADXL345: // ADXL345
+        FALLTHROUGH;
+
 #ifdef USE_ACC_ADXL345
+    case ACC_ADXL345: // ADXL345
         acc_params.useFifo = false;
         acc_params.dataRate = 800; // unused currently
         if (adxl345Detect(&acc_params, dev)) {
@@ -148,10 +150,11 @@ retry:
             accHardware = ACC_ADXL345;
             break;
         }
+        FALLTHROUGH;
 #endif
-        ; // fallthrough
-    case ACC_LSM303DLHC:
+
 #ifdef USE_ACC_LSM303DLHC
+    case ACC_LSM303DLHC:
         if (lsm303dlhcAccDetect(dev)) {
 #ifdef ACC_LSM303DLHC_ALIGN
             dev->accAlign = ACC_LSM303DLHC_ALIGN;
@@ -159,10 +162,11 @@ retry:
             accHardware = ACC_LSM303DLHC;
             break;
         }
+        FALLTHROUGH;
 #endif
-        ; // fallthrough
-    case ACC_MPU6050: // MPU6050
+
 #ifdef USE_ACC_MPU6050
+    case ACC_MPU6050: // MPU6050
         if (mpu6050AccDetect(dev)) {
 #ifdef ACC_MPU6050_ALIGN
             dev->accAlign = ACC_MPU6050_ALIGN;
@@ -170,10 +174,11 @@ retry:
             accHardware = ACC_MPU6050;
             break;
         }
+        FALLTHROUGH;
 #endif
-        ; // fallthrough
-    case ACC_MMA8452: // MMA8452
+
 #ifdef USE_ACC_MMA8452
+    case ACC_MMA8452: // MMA8452
         if (mma8452Detect(dev)) {
 #ifdef ACC_MMA8452_ALIGN
             dev->accAlign = ACC_MMA8452_ALIGN;
@@ -181,10 +186,11 @@ retry:
             accHardware = ACC_MMA8452;
             break;
         }
+        FALLTHROUGH;
 #endif
-        ; // fallthrough
-    case ACC_BMA280: // BMA280
+
 #ifdef USE_ACC_BMA280
+    case ACC_BMA280: // BMA280
         if (bma280Detect(dev)) {
 #ifdef ACC_BMA280_ALIGN
             dev->accAlign = ACC_BMA280_ALIGN;
@@ -192,10 +198,11 @@ retry:
             accHardware = ACC_BMA280;
             break;
         }
+        FALLTHROUGH;
 #endif
-        ; // fallthrough
-    case ACC_MPU6000:
+
 #ifdef USE_ACC_SPI_MPU6000
+    case ACC_MPU6000:
         if (mpu6000SpiAccDetect(dev)) {
 #ifdef ACC_MPU6000_ALIGN
             dev->accAlign = ACC_MPU6000_ALIGN;
@@ -203,10 +210,11 @@ retry:
             accHardware = ACC_MPU6000;
             break;
         }
+        FALLTHROUGH;
 #endif
-        ; // fallthrough
-    case ACC_MPU9250:
+
 #ifdef USE_ACC_SPI_MPU9250
+    case ACC_MPU9250:
         if (mpu9250SpiAccDetect(dev)) {
 #ifdef ACC_MPU9250_ALIGN
             dev->accAlign = ACC_MPU9250_ALIGN;
@@ -214,19 +222,19 @@ retry:
             accHardware = ACC_MPU9250;
             break;
         }
+        FALLTHROUGH;
 #endif
-        ; // fallthrough
+
     case ACC_MPU6500:
     case ACC_ICM20601:
     case ACC_ICM20602:
     case ACC_ICM20608G:
 #if defined(USE_ACC_MPU6500) || defined(USE_ACC_SPI_MPU6500)
 #ifdef USE_ACC_SPI_MPU6500
-        if (mpu6500AccDetect(dev) || mpu6500SpiAccDetect(dev))
+        if (mpu6500AccDetect(dev) || mpu6500SpiAccDetect(dev)) {
 #else
-        if (mpu6500AccDetect(dev))
+        if (mpu6500AccDetect(dev)) {
 #endif
-        {
 #ifdef ACC_MPU6500_ALIGN
             dev->accAlign = ACC_MPU6500_ALIGN;
 #endif
@@ -249,9 +257,10 @@ retry:
             break;
         }
 #endif
-        ; // fallthrough
-    case ACC_ICM20649:
+        FALLTHROUGH;
+
 #ifdef USE_ACC_SPI_ICM20649
+    case ACC_ICM20649:
         if (icm20649SpiAccDetect(dev)) {
             accHardware = ACC_ICM20649;
 #ifdef ACC_ICM20649_ALIGN
@@ -259,10 +268,11 @@ retry:
 #endif
             break;
         }
+        FALLTHROUGH;
 #endif
-        ; // fallthrough
-    case ACC_ICM20689:
+
 #ifdef USE_ACC_SPI_ICM20689
+    case ACC_ICM20689:
         if (icm20689SpiAccDetect(dev)) {
             accHardware = ACC_ICM20689;
 #ifdef ACC_ICM20689_ALIGN
@@ -270,10 +280,11 @@ retry:
 #endif
             break;
         }
+        FALLTHROUGH;
 #endif
-        ; // fallthrough
-    case ACC_BMI160:
+
 #ifdef USE_ACCGYRO_BMI160
+    case ACC_BMI160:
         if (bmi160SpiAccDetect(dev)) {
             accHardware = ACC_BMI160;
 #ifdef ACC_BMI160_ALIGN
@@ -281,20 +292,22 @@ retry:
 #endif
             break;
         }
+        FALLTHROUGH;
 #endif
-        ; // fallthrough
-    case ACC_FAKE:
+
 #ifdef USE_FAKE_ACC
+    case ACC_FAKE:
         if (fakeAccDetect(dev)) {
             accHardware = ACC_FAKE;
             break;
         }
+        FALLTHROUGH;
 #endif
-        ; // fallthrough
+
+    default:
     case ACC_NONE: // disable ACC
         accHardware = ACC_NONE;
         break;
-
     }
 
     // Found anything? Check if error or ACC is really missing.
@@ -303,7 +316,6 @@ retry:
         accHardwareToUse = ACC_DEFAULT;
         goto retry;
     }
-
 
     if (accHardware == ACC_NONE) {
         return false;
@@ -319,7 +331,6 @@ bool accInit(uint32_t gyroSamplingInverval)
     memset(&acc, 0, sizeof(acc));
     // copy over the common gyro mpu settings
     acc.dev.bus = *gyroSensorBus();
-    acc.dev.mpuConfiguration = *gyroMpuConfiguration();
     acc.dev.mpuDetectionResult = *gyroMpuDetectionResult();
     acc.dev.acc_high_fsr = accelerometerConfig()->acc_high_fsr;
     if (!accDetect(&acc.dev, accelerometerConfig()->acc_hardware)) {
@@ -359,7 +370,7 @@ void accSetCalibrationCycles(uint16_t calibrationCyclesRequired)
     calibratingA = calibrationCyclesRequired;
 }
 
-bool isAccelerationCalibrationComplete(void)
+bool accIsCalibrationComplete(void)
 {
     return calibratingA == 0;
 }
@@ -381,14 +392,15 @@ static void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims
     for (int axis = 0; axis < 3; axis++) {
 
         // Reset a[axis] at start of calibration
-        if (isOnFirstAccelerationCalibrationCycle())
+        if (isOnFirstAccelerationCalibrationCycle()) {
             a[axis] = 0;
+        }
 
         // Sum up CALIBRATING_ACC_CYCLES readings
-        a[axis] += acc.accSmooth[axis];
+        a[axis] += acc.accADC[axis];
 
         // Reset global variables to prevent other code from using un-calibrated data
-        acc.accSmooth[axis] = 0;
+        acc.accADC[axis] = 0;
         accelerationTrims->raw[axis] = 0;
     }
 
@@ -408,7 +420,6 @@ static void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims
 
 static void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims)
 {
-    uint8_t axis;
     static int32_t b[3];
     static int16_t accZero_saved[3] = { 0, 0, 0 };
     static rollAndPitchTrims_t angleTrim_saved = { { 0, 0 } };
@@ -422,14 +433,14 @@ static void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndP
         angleTrim_saved.values.pitch = rollAndPitchTrims->values.pitch;
     }
     if (InflightcalibratingA > 0) {
-        for (axis = 0; axis < 3; axis++) {
+        for (int axis = 0; axis < 3; axis++) {
             // Reset a[axis] at start of calibration
             if (InflightcalibratingA == 50)
                 b[axis] = 0;
             // Sum up 50 readings
-            b[axis] += acc.accSmooth[axis];
+            b[axis] += acc.accADC[axis];
             // Clear global variables for next reading
-            acc.accSmooth[axis] = 0;
+            acc.accADC[axis] = 0;
             accelerationTrims->raw[axis] = 0;
         }
         // all values are measured
@@ -461,9 +472,9 @@ static void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndP
 
 static void applyAccelerationTrims(const flightDynamicsTrims_t *accelerationTrims)
 {
-    acc.accSmooth[X] -= accelerationTrims->raw[X];
-    acc.accSmooth[Y] -= accelerationTrims->raw[Y];
-    acc.accSmooth[Z] -= accelerationTrims->raw[Z];
+    acc.accADC[X] -= accelerationTrims->raw[X];
+    acc.accADC[Y] -= accelerationTrims->raw[Y];
+    acc.accADC[Z] -= accelerationTrims->raw[Z];
 }
 
 void accUpdate(timeUs_t currentTimeUs, rollAndPitchTrims_t *rollAndPitchTrims)
@@ -477,18 +488,18 @@ void accUpdate(timeUs_t currentTimeUs, rollAndPitchTrims_t *rollAndPitchTrims)
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         DEBUG_SET(DEBUG_ACCELEROMETER, axis, acc.dev.ADCRaw[axis]);
-        acc.accSmooth[axis] = acc.dev.ADCRaw[axis];
+        acc.accADC[axis] = acc.dev.ADCRaw[axis];
     }
 
     if (accLpfCutHz) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            acc.accSmooth[axis] = lrintf(biquadFilterApply(&accFilter[axis], (float)acc.accSmooth[axis]));
+            acc.accADC[axis] = lrintf(biquadFilterApply(&accFilter[axis], (float)acc.accADC[axis]));
         }
     }
 
-    alignSensors(acc.accSmooth, acc.dev.accAlign);
+    alignSensors(acc.accADC, acc.dev.accAlign);
 
-    if (!isAccelerationCalibrationComplete()) {
+    if (!accIsCalibrationComplete()) {
         performAcclerationCalibration(rollAndPitchTrims);
     }
 
@@ -500,7 +511,7 @@ void accUpdate(timeUs_t currentTimeUs, rollAndPitchTrims_t *rollAndPitchTrims)
 
     ++accumulatedMeasurementCount;
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        accumulatedMeasurements[axis] += acc.accSmooth[axis];
+        accumulatedMeasurements[axis] += acc.accADC[axis];
     }
 }
 

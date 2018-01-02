@@ -16,17 +16,14 @@
 #include "common/color.h"
 #include "common/maths.h"
 
-
-#include "drivers/sensor.h"
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/compass/compass.h"
-
-#include "drivers/serial.h"
 #include "drivers/bus_i2c.h"
+#include "drivers/sensor.h"
+#include "drivers/serial.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
-#include "drivers/rx_pwm.h"
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
@@ -52,11 +49,11 @@
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
 #include "sensors/battery.h"
-#include "sensors/sonar.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
+#include "sensors/rangefinder.h"
 
 #include "telemetry/telemetry.h"
 
@@ -173,7 +170,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXOSD, "OSD DISABLE SW;", 19 },
     { BOXTELEMETRY, "TELEMETRY;", 20 },
     { BOXGTUNE, "GTUNE;", 21 },
-    { BOXSONAR, "SONAR;", 22 },
+    { BOXRANGEFINDER, "RANGEFINDER;", 22 },
     { BOXSERVO1, "SERVO1;", 23 },
     { BOXSERVO2, "SERVO2;", 24 },
     { BOXSERVO3, "SERVO3;", 25 },
@@ -294,7 +291,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 #else
             bstWrite16(0);
 #endif
-            bstWrite16(sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
+            bstWrite16(sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_RANGEFINDER) << 4);
             // BST the flags in the order we delivered them, ignoring BOXNAMES and BOXINDEXES
             // Requires new Multiwii protocol version to fix
             // It would be preferable to setting the enabled bits based on BOXINDEX.
@@ -319,7 +316,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
                     IS_ENABLED(IS_RC_MODE_ACTIVE(BOXOSD)) << BOXOSD |
                     IS_ENABLED(IS_RC_MODE_ACTIVE(BOXTELEMETRY)) << BOXTELEMETRY |
                     IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGTUNE)) << BOXGTUNE |
-                    IS_ENABLED(FLIGHT_MODE(SONAR_MODE)) << BOXSONAR |
+                    IS_ENABLED(FLIGHT_MODE(RANGEFINDER_MODE)) << BOXRANGEFINDER |
                     IS_ENABLED(ARMING_FLAG(ARMED)) << BOXARM |
                     IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBLACKBOX)) << BOXBLACKBOX |
                     IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << BOXFAILSAFE;
@@ -628,7 +625,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
 static bool bstSlaveUSBCommandFeedback(/*uint8_t bstFeedback*/)
 {
     bstWrite8(BST_USB_DEVICE_INFO_FRAME);                        //Sub CPU Device Info FRAME
-    bstWrite8(sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
+    bstWrite8(sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_RANGEFINDER) << 4);
     bstWrite8(0x00);
     bstWrite8(0x00);
     bstWrite8(0x00);
@@ -841,13 +838,13 @@ bool writeFCModeToBST(void)
            IS_ENABLED(FLIGHT_MODE(BARO_MODE)) << 3 |
            IS_ENABLED(FLIGHT_MODE(MAG_MODE)) << 4 |
            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << 5 |
-           IS_ENABLED(FLIGHT_MODE(SONAR_MODE)) << 6 |
+           IS_ENABLED(FLIGHT_MODE(RANGEFINDER_MODE)) << 6 |
            IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << 7;
 
     bstMasterStartBuffer(PUBLIC_ADDRESS);
     bstMasterWrite8(CLEANFLIGHT_MODE_FRAME_ID);
     bstMasterWrite8(tmp);
-    bstMasterWrite8(sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
+    bstMasterWrite8(sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_RANGEFINDER) << 4);
 
     return bstMasterWrite(masterWriteData);
 }

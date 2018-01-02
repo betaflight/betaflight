@@ -30,6 +30,9 @@
 #define SPRACINGF3MINI_REV 2
 #endif
 
+// Space reduction measures to make the firmware fit into flash:
+#undef USE_RCDEVICE
+
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
 #define LED0_PIN                PB3
@@ -74,9 +77,10 @@
 #define MAG_AK8975_ALIGN        CW90_DEG_FLIP
 #endif
 
-//#define USE_SONAR
-//#define SONAR_ECHO_PIN          PB1
-//#define SONAR_TRIGGER_PIN       PB0
+//#define USE_RANGEFINDER
+//#define USE_RANGEFINDER_HCSR04
+//#define RANGEFINDER_HCSR04_ECHO_PIN          PB1
+//#define RANGEFINDER_HCSR04_TRIGGER_PIN       PB0
 
 #define USE_BRUSHED_ESC_AUTODETECT
 
@@ -122,7 +126,7 @@
 #define SOFTSERIAL1_TX_PIN      PA1 // PA1 / PAD4
 #endif
 
-#define SONAR_SOFTSERIAL1_EXCLUSIVE
+#define RANGEFINDER_HCSR04_SOFTSERIAL1_EXCLUSIVE
 
 #define USE_SPI
 

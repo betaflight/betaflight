@@ -73,11 +73,3 @@ typedef struct uartPort_s {
 
 void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig);
 serialPort_t *uartOpen(UARTDevice_e device, serialReceiveCallbackPtr rxCallback, void *rxCallbackData, uint32_t baudRate, portMode_e mode, portOptions_e options);
-
-// serialPort API
-void uartWrite(serialPort_t *instance, uint8_t ch);
-uint32_t uartTotalRxBytesWaiting(const serialPort_t *instance);
-uint32_t uartTotalTxBytesFree(const serialPort_t *instance);
-uint8_t uartRead(serialPort_t *instance);
-void uartSetBaudRate(serialPort_t *s, uint32_t baudRate);
-bool isUartTransmitBufferEmpty(const serialPort_t *s);

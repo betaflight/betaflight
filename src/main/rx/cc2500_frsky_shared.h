@@ -17,11 +17,15 @@
 
 #pragma once
 
+#include "rx/rx_spi.h"
+
 #define MAX_MISSING_PKT 100
 
 #define DEBUG_DATA_ERROR_COUNT 0
 
-#define SYNC 9000
+#define SYNC_DELAY_MAX 9000
+
+#define MAX_MISSING_PKT 100
 
 enum {
     STATE_INIT = 0,
@@ -37,25 +41,23 @@ enum {
     STATE_RESUME,
 };
 
-extern bool bindRequested;
 extern uint8_t listLength;
-extern int16_t RSSI_dBm;
+extern uint32_t missingPackets;
+extern timeDelta_t timeoutUs;
+extern int16_t rssiDbm;
 
 extern IO_t gdoPin;
 extern IO_t frSkyLedPin;
-extern IO_t antSelPin;
 
 void setRssiDbm(uint8_t value);
 
-void frskySpiRxSetup();
-
 void RxEnable(void);
 void TxEnable(void);
+
+void switchAntennae(void);
 
 void initialiseData(uint8_t adr);
 
 bool checkBindRequested(bool reset);
 
-void handleBinding(uint8_t protocolState, uint8_t *packet);
-
-void nextChannel(uint8_t skip, bool sendStrobe);
+void nextChannel(uint8_t skip);

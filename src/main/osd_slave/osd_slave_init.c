@@ -30,8 +30,6 @@
 
 #include "config/config_eeprom.h"
 #include "config/feature.h"
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
 
 #include "drivers/adc.h"
 #include "drivers/bus.h"
@@ -76,6 +74,12 @@
 #include "io/transponder_ir.h"
 
 #include "osd_slave/osd_slave_init.h"
+
+#include "pg/adc.h"
+#include "pg/bus_i2c.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+#include "pg/vcd.h"
 
 #include "scheduler/scheduler.h"
 
@@ -197,7 +201,7 @@ void init(void)
 #endif /* USE_SPI */
 
 #ifdef USE_I2C
-    i2cHardwareConfigure();
+    i2cHardwareConfigure(i2cConfig());
 
     // Note: Unlike UARTs which are configured when client is present,
     // I2C buses are initialized unconditionally if they are configured.

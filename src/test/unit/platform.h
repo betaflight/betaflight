@@ -25,6 +25,9 @@
 #define U_ID_1 1
 #define U_ID_2 2
 
+#define FAST_CODE
+#define FAST_RAM
+
 #define MAX_PROFILE_COUNT 3
 #define USE_MAG
 #define USE_BARO
