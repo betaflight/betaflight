@@ -63,8 +63,8 @@
 #endif
 #endif
 
-// undefine USE_ALT_HOLD if there is no baro or sonar to support it
-#if defined(USE_ALT_HOLD) && !defined(USE_BARO) && !defined(USE_SONAR)
+// undefine USE_ALT_HOLD if there is no baro or rangefinder to support it
+#if defined(USE_ALT_HOLD) && !defined(USE_BARO) && !defined(USE_RANGEFINDER)
 #undef USE_ALT_HOLD
 #endif
 
