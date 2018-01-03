@@ -49,7 +49,6 @@
 #define USE_DSHOT
 #define USE_ESC_SENSOR
 #define I2C3_OVERCLOCK true
-#define USE_TELEMETRY_IBUS
 #define USE_GYRO_DATA_ANALYSE
 #endif
 
@@ -61,15 +60,14 @@
 #define USE_ESC_SENSOR
 #define I2C3_OVERCLOCK true
 #define I2C4_OVERCLOCK true
-#define USE_TELEMETRY_IBUS
 #define USE_GYRO_DATA_ANALYSE
 #endif
 
 #if defined(STM32F4) || defined(STM32F7)
-#define TASK_GYROPID_DESIRED_PERIOD     125
+#define TASK_GYROPID_DESIRED_PERIOD     125 // 125us = 8kHz
 #define SCHEDULER_DELAY_LIMIT           10
 #else
-#define TASK_GYROPID_DESIRED_PERIOD     1000
+#define TASK_GYROPID_DESIRED_PERIOD     1000 // 1000us = 1kHz
 #define SCHEDULER_DELAY_LIMIT           100
 #endif
 
@@ -133,7 +131,6 @@
 #define USE_TELEMETRY_JETIEXBUS
 #define USE_TELEMETRY_MAVLINK
 #define USE_TELEMETRY_SRXL
-#define USE_DASHBOARD
 #define USE_MSP_DISPLAYPORT
 #define USE_RCDEVICE
 #define USE_RX_MSP
@@ -164,12 +161,13 @@
 #endif
 
 #if (FLASH_SIZE > 256)
-// Temporarily moved GPS here because of overflowing flash size on F3
+#define USE_ALT_HOLD
+#define USE_DASHBOARD
 #define USE_GPS
 #define USE_GPS_UBLOX
 #define USE_GPS_NMEA
-#define USE_NAV
-#define USE_ALT_HOLD
-#define USE_UNCOMMON_MIXERS
 #define USE_OSD_ADJUSTMENTS
+#define USE_NAV
+#define USE_TELEMETRY_IBUS
+#define USE_UNCOMMON_MIXERS
 #endif
