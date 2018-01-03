@@ -133,8 +133,6 @@
 #define MAX7456_SPI_INSTANCE    SPI2
 #define MAX7456_SPI_CS_PIN      SPI2_NSS_PIN
 
-//#define USE_CMS
-
 //#define USE_SDCARD
 //
 //#define SDCARD_SPI_INSTANCE     SPI2

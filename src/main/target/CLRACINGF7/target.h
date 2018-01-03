@@ -141,8 +141,6 @@
 #define RSSI_ADC_PIN            PC3
 #define CURRENT_METER_SCALE_DEFAULT 250                     // 3.3/120A  = 25mv/A
 
-// LED strip configuration.
-#define USE_LED_STRIP
 #define BINDPLUG_PIN            PB2
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL

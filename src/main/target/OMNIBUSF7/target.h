@@ -188,8 +188,6 @@
 #define VBAT_ADC_PIN            PC3
 #define RSSI_ADC_PIN            PC5
 
-#define USE_LED_STRIP
-
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
 #define DEFAULT_FEATURES        (FEATURE_OSD)
