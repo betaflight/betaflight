@@ -109,9 +109,6 @@
 #define CURRENT_METER_ADC_PIN   PC2
 #define CURRENT_METER_SCALE_DEFAULT 250                     // 3.3/120A  = 25mv/A
 
-// LED strip configuration.
-#define USE_LED_STRIP
-
 // Default configuration
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS

@@ -149,8 +149,6 @@
 #define RX_CHANNELS_TAER
 #define DEFAULT_FEATURES        (FEATURE_OSD)
 
-#define USE_LED_STRIP
-
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA         0xffff

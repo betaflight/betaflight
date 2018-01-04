@@ -112,9 +112,6 @@
 #define VBAT_ADC_PIN            PA4
 #define VBAT_SCALE_DEFAULT      20
 
-// LED strip configuration.
-#define USE_LED_STRIP
-
 #define BINDPLUG_PIN            PB12
 
 #define DEFAULT_FEATURES        FEATURE_MOTOR_STOP

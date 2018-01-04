@@ -161,8 +161,6 @@
 #define I2C1_SDA                PB7
 */
 
-#define USE_LED_STRIP
-
 #define USE_ADC
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define VBAT_ADC_PIN            PC1
@@ -188,6 +186,3 @@
 #define USABLE_TIMER_CHANNEL_COUNT 12
 
 #define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8) | TIM_N(9) )
-
-#define USE_CMS
-#define USE_MSP_DISPLAYPORT

@@ -24,7 +24,6 @@
 /*--------------LED----------------*/
 #define LED0_PIN                PB5
 #define LED1_PIN                PB6
-#define USE_LED_STRIP
 /*---------------------------------*/
 
 /*------------BEEPER---------------*/
@@ -119,8 +118,6 @@
 
 #define SERIAL_PORT_COUNT       5
 //SPECKTRUM BIND
-#define USE_CMS
-#define USE_MSP_DISPLAYPORT
 /*---------------------------------*/
 
 /*-------------SPIs----------------*/
