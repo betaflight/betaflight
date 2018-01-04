@@ -24,8 +24,6 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
-#undef USE_RX_MSP // never used.
-
 #define LED0_PIN                PC15
 #define LED1_PIN                PC14
 #define LED2_PIN                PC13

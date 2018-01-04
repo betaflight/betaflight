@@ -19,13 +19,10 @@
 
 // Removed to make the firmware fit into flash:
 #undef USE_TELEMETRY_IBUS
-#undef USE_TELEMETRY_HOTT
 #undef USE_TELEMETRY_JETIEXBUS
 #undef USE_SERIALRX_JETIEXBUS
 #undef USE_TELEMETRY_MAVLINK
 #undef USE_TELEMETRY_LTM
-#undef USE_RCDEVICE
-#undef USE_DASHBOARD
 
 
 #define TARGET_BOARD_IDENTIFIER "OMNI" // https://en.wikipedia.org/wiki/Omnibus
