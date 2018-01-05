@@ -33,7 +33,12 @@ bool busWriteRegister(const busDevice_t *busdev, uint8_t reg, uint8_t data)
     switch (busdev->bustype) {
 #ifdef USE_SPI
     case BUSTYPE_SPI:
+#ifdef USE_SPI_TRANSACTION
+        // XXX Watch out fastpath users, if any
+        return spiBusTransactionWriteRegister(busdev, reg & 0x7f, data);
+#else
         return spiBusWriteRegister(busdev, reg & 0x7f, data);
+#endif
 #endif
 #ifdef USE_I2C
     case BUSTYPE_I2C:
@@ -54,7 +59,12 @@ bool busReadRegisterBuffer(const busDevice_t *busdev, uint8_t reg, uint8_t *data
     switch (busdev->bustype) {
 #ifdef USE_SPI
     case BUSTYPE_SPI:
+#ifdef USE_SPI_TRANSACTION
+        // XXX Watch out fastpath users, if any
+        return spiBusTransactionReadRegisterBuffer(busdev, reg | 0x80, data, length);
+#else
         return spiBusReadRegisterBuffer(busdev, reg | 0x80, data, length);
+#endif
 #endif
 #ifdef USE_I2C
     case BUSTYPE_I2C:

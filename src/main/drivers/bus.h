@@ -37,6 +37,8 @@ typedef struct busDevice_s {
 #if defined(USE_HAL_DRIVER)
             SPI_HandleTypeDef* handle; // cached here for efficiency
 #endif
+            // Cached SPI_CR1 for spiBusTransactionXXX
+            uint16_t modeCache;
             IO_t csnPin;
         } spi;
         struct deviceI2C_s {

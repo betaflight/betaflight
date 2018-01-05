@@ -32,6 +32,16 @@
 
 spiDevice_t spiDevice[SPIDEV_COUNT];
 
+static SPI_InitTypeDef defaultInit = {
+    .SPI_Mode = SPI_Mode_Master,
+    .SPI_Direction = SPI_Direction_2Lines_FullDuplex,
+    .SPI_DataSize = SPI_DataSize_8b,
+    .SPI_NSS = SPI_NSS_Soft,
+    .SPI_FirstBit = SPI_FirstBit_MSB,
+    .SPI_CRCPolynomial = 7,
+    .SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_8,
+};
+
 void spiInitDevice(SPIDevice device)
 {
     spiDevice_t *spi = &(spiDevice[device]);
@@ -70,21 +80,12 @@ void spiInitDevice(SPIDevice device)
     // Init SPI hardware
     SPI_I2S_DeInit(spi->dev);
 
-    SPI_InitTypeDef spiInit;
-    spiInit.SPI_Mode = SPI_Mode_Master;
-    spiInit.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
-    spiInit.SPI_DataSize = SPI_DataSize_8b;
-    spiInit.SPI_NSS = SPI_NSS_Soft;
-    spiInit.SPI_FirstBit = SPI_FirstBit_MSB;
-    spiInit.SPI_CRCPolynomial = 7;
-    spiInit.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_8;
-
     if (spi->leadingEdge) {
-        spiInit.SPI_CPOL = SPI_CPOL_Low;
-        spiInit.SPI_CPHA = SPI_CPHA_1Edge;
+        defaultInit.SPI_CPOL = SPI_CPOL_Low;
+        defaultInit.SPI_CPHA = SPI_CPHA_1Edge;
     } else {
-        spiInit.SPI_CPOL = SPI_CPOL_High;
-        spiInit.SPI_CPHA = SPI_CPHA_2Edge;
+        defaultInit.SPI_CPOL = SPI_CPOL_High;
+        defaultInit.SPI_CPHA = SPI_CPHA_2Edge;
     }
 
 #ifdef STM32F303xC
@@ -92,7 +93,7 @@ void spiInitDevice(SPIDevice device)
     SPI_RxFIFOThresholdConfig(spi->dev, SPI_RxFIFOThreshold_QF);
 #endif
 
-    SPI_Init(spi->dev, &spiInit);
+    SPI_Init(spi->dev, &defaultInit);
     SPI_Cmd(spi->dev, ENABLE);
 }
 
@@ -169,25 +170,90 @@ bool spiTransfer(SPI_TypeDef *instance, const uint8_t *txData, uint8_t *rxData, 
     return true;
 }
 
-void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
+static uint16_t spiDivisorToBRbits(SPI_TypeDef *instance, uint16_t divisor)
 {
-#define BR_BITS ((BIT(5) | BIT(4) | BIT(3)))
-
 #if !(defined(STM32F1) || defined(STM32F3))
     // SPI2 and SPI3 are on APB1/AHB1 which PCLK is half that of APB2/AHB2.
 
     if (instance == SPI2 || instance == SPI3) {
         divisor /= 2; // Safe for divisor == 0 or 1
     }
+#else
+    UNUSED(instance);
 #endif
 
-    SPI_Cmd(instance, DISABLE);
+    return divisor ? ((ffs(divisor | 0x100) - 2) << 3) : 0;
+}
 
+static void spiSetDivisorBRreg(SPI_TypeDef *instance, uint16_t divisor)
+{
+#define BR_BITS ((BIT(5) | BIT(4) | BIT(3)))
     const uint16_t tempRegister = (instance->CR1 & ~BR_BITS);
-    instance->CR1 = tempRegister | (divisor ? ((ffs(divisor | 0x100) - 2) << 3) : 0);
-
-    SPI_Cmd(instance, ENABLE);
-
+    instance->CR1 = tempRegister | spiDivisorToBRbits(instance, divisor);
 #undef BR_BITS
 }
+
+void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
+{
+    SPI_Cmd(instance, DISABLE);
+    spiSetDivisorBRreg(instance, divisor);
+    SPI_Cmd(instance, ENABLE);
+}
+
+void spiBusSetDivisor(busDevice_t *bus, uint16_t divisor)
+{
+    spiSetDivisor(bus->busdev_u.spi.instance, divisor);
+    bus->busdev_u.spi.modeCache = bus->busdev_u.spi.instance->CR1;
+}
+
+#ifdef USE_SPI_TRANSACTION
+void spiBusTransactionInit(busDevice_t *bus, SPIMode_e mode, SPIClockDivider_e divider)
+{
+    switch (mode) {
+    case SPI_MODE0:
+        defaultInit.SPI_CPOL = SPI_CPOL_Low;
+        defaultInit.SPI_CPHA = SPI_CPHA_1Edge;
+        break;
+    case SPI_MODE1:
+        defaultInit.SPI_CPOL = SPI_CPOL_Low;
+        defaultInit.SPI_CPHA = SPI_CPHA_2Edge;
+        break;
+    case SPI_MODE2:
+        defaultInit.SPI_CPOL = SPI_CPOL_High;
+        defaultInit.SPI_CPHA = SPI_CPHA_1Edge;
+        break;
+    case SPI_MODE3:
+        defaultInit.SPI_CPOL = SPI_CPOL_High;
+        defaultInit.SPI_CPHA = SPI_CPHA_2Edge;
+        break;
+    }
+
+    // Initialize the SPI instance to setup CR1
+
+    SPI_Init(bus->busdev_u.spi.instance, &defaultInit);
+    spiSetDivisorBRreg(bus->busdev_u.spi.instance, divider);
+#ifdef STM32F303xC
+    // Configure for 8-bit reads.
+    SPI_RxFIFOThresholdConfig(bus->busdev_u.spi.instance, SPI_RxFIFOThreshold_QF);
+#endif
+
+    bus->busdev_u.spi.modeCache = bus->busdev_u.spi.instance->CR1;
+}
+
+void spiBusTransactionSetup(const busDevice_t *bus)
+{
+    // XXX We rely on MSTR bit to detect valid modeCache
+    if (bus->busdev_u.spi.modeCache) {
+        SPI_Cmd(bus->busdev_u.spi.instance, DISABLE);
+
+        // XXX Compare overheads of checking v.s. register writing v.s. transient signal glitches
+        // XXX Consider keeping a software copy of CR1 per SPI instance, too.
+
+        if (bus->busdev_u.spi.instance->CR1 != bus->busdev_u.spi.modeCache) {
+            bus->busdev_u.spi.instance->CR1 = bus->busdev_u.spi.modeCache;
+        }
+    }
+    SPI_Cmd(bus->busdev_u.spi.instance, ENABLE);
+}
+#endif // USE_SPI_TRANSACTION
 #endif

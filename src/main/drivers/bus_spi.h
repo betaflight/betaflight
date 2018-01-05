@@ -66,6 +66,14 @@ typedef enum {
 #endif
 } SPIClockDivider_e;
 
+// Standard modes
+typedef enum {
+    SPI_MODE0 = 0,
+    SPI_MODE1,
+    SPI_MODE2,
+    SPI_MODE3
+} SPIMode_e;
+
 typedef enum SPIDevice {
     SPIINVALID = -1,
     SPIDEV_1   = 0,
@@ -110,6 +118,15 @@ bool spiBusWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data);
 bool spiBusReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t *data, uint8_t length);
 uint8_t spiBusReadRegister(const busDevice_t *bus, uint8_t reg);
 void spiBusSetInstance(busDevice_t *bus, SPI_TypeDef *instance);
+void spiBusSetDivisor(busDevice_t *bus, SPIClockDivider_e divider);
+
+void spiBusTransactionInit(busDevice_t *bus, SPIMode_e mode, SPIClockDivider_e divider);
+void spiBusTransactionSetup(const busDevice_t *bus);
+void spiBusTransactionBegin(const busDevice_t *bus);
+void spiBusTransactionEnd(const busDevice_t *bus);
+bool spiBusTransactionWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data);
+uint8_t spiBusTransactionReadRegister(const busDevice_t *bus, uint8_t reg);
+bool spiBusTransactionReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t *data, uint8_t length);
 
 struct spiPinConfig_s;
 void spiPinConfigure(const struct spiPinConfig_s *pConfig);

@@ -72,7 +72,11 @@ void bmp280BusInit(busDevice_t *busdev)
         IOHi(busdev->busdev_u.spi.csnPin); // Disable
         IOInit(busdev->busdev_u.spi.csnPin, OWNER_BARO_CS, 0);
         IOConfigGPIO(busdev->busdev_u.spi.csnPin, IOCFG_OUT_PP);
-        spiSetDivisor(busdev->busdev_u.spi.instance, SPI_CLOCK_STANDARD); // XXX
+#ifdef USE_SPI_TRANSACTION
+        spiBusTransactionInit(busdev, SPI_MODE3, SPI_CLOCK_STANDARD); // BMP280 supports Mode 0 or 3
+#else
+        spiBusSetDivisor(busdev, SPI_CLOCK_STANDARD);
+#endif
     }
 #else
     UNUSED(busdev);
