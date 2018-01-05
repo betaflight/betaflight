@@ -174,7 +174,6 @@ bool spiBusWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data)
 }
 
 bool spiBusRawReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t *data, uint8_t length)
-
 {
     IOLo(bus->busdev_u.spi.csnPin);
     spiTransferByte(bus->busdev_u.spi.instance, reg);
@@ -218,4 +217,49 @@ void spiBusSetInstance(busDevice_t *bus, SPI_TypeDef *instance)
     bus->bustype = BUSTYPE_SPI;
     bus->busdev_u.spi.instance = instance;
 }
+
+void spiBusSetDivisor(busDevice_t *bus, uint16_t divisor)
+{
+    spiSetDivisor(bus->busdev_u.spi.instance, divisor);
+    // bus->busdev_u.spi.modeCache = bus->busdev_u.spi.instance->CR1;
+}
+
+#ifdef USE_SPI_TRANSACTION
+// Separate set of spiBusTransactionXXX to keep fast path for acc/gyros.
+
+void spiBusTransactionBegin(const busDevice_t *bus)
+{
+    spiBusTransactionSetup(bus);
+    IOLo(bus->busdev_u.spi.csnPin);
+}
+
+void spiBusTransactionEnd(const busDevice_t *bus)
+{
+    IOHi(bus->busdev_u.spi.csnPin);
+}
+
+bool spiBusTransactionTransfer(const busDevice_t *bus, const uint8_t *txData, uint8_t *rxData, int length)
+{
+    spiBusTransactionSetup(bus);
+    return spiBusTransfer(bus, txData, rxData, length);
+}
+
+bool spiBusTransactionWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data)
+{
+    spiBusTransactionSetup(bus);
+    return spiBusWriteRegister(bus, reg, data);
+}
+
+uint8_t spiBusTransactionReadRegister(const busDevice_t *bus, uint8_t reg)
+{
+    spiBusTransactionSetup(bus);
+    return spiBusReadRegister(bus, reg);
+}
+
+bool spiBusTransactionReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t *data, uint8_t length)
+{
+    spiBusTransactionSetup(bus);
+    return spiBusReadRegisterBuffer(bus, reg, data, length);
+}
+#endif // USE_SPI_TRANSACTION
 #endif

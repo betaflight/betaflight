@@ -55,6 +55,9 @@
 /* Operational speed <= 25MHz */
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER         SPI_CLOCK_FAST
 
+#define SDCARD_SPI_MODE                             SPI_MODE0_POL_LOW_EDGE_1ST
+//#define SDCARD_SPI_MODE                             SPI_MODE3_POL_HIGH_EDGE_2ND
+
 /* Break up 512-byte SD card sectors into chunks of this size when writing without DMA to reduce the peak overhead
  * per call to sdcard_poll().
  */
@@ -71,7 +74,11 @@ static bool sdcardSpi_isFunctional(void)
 
 static void sdcard_select(void)
 {
+#ifdef USE_SPI_TRANSACTION
+    spiBusTransactionBegin(&sdcard.busdev);
+#else
     IOLo(sdcard.busdev.busdev_u.spi.csnPin);
+#endif
 }
 
 static void sdcard_deselect(void)
@@ -82,7 +89,12 @@ static void sdcard_deselect(void)
     while (spiBusIsBusBusy(&sdcard.busdev)) {
     }
 
+    delayMicroseconds(10);
+#ifdef USE_SPI_TRANSACTION
+    spiBusTransactionEnd(&sdcard.busdev);
+#else
     IOHi(sdcard.busdev.busdev_u.spi.csnPin);
+#endif
 }
 
 /**
@@ -99,7 +111,11 @@ static void sdcard_reset(void)
     }
 
     if (sdcard.state >= SDCARD_STATE_READY) {
+#ifdef USE_SPI_TRANSACTION
+        spiBusTransactionInit(&sdcard.busdev, SDCARD_SPI_MODE, SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER);
+#else
         spiSetDivisor(sdcard.busdev.busdev_u.spi.instance, SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER);
+#endif
     }
 
     sdcard.failureCount++;
@@ -535,14 +551,18 @@ static void sdcardSpi_init(const sdcardConfig_t *config, const spiPinConfig_t *s
     }
 
     // Max frequency is initially 400kHz
+
+#ifdef USE_SPI_TRANSACTION
+    spiBusTransactionInit(&sdcard.busdev, SDCARD_SPI_MODE, SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER);
+#else
     spiSetDivisor(sdcard.busdev.busdev_u.spi.instance, SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER);
+#endif
 
     // SDCard wants 1ms minimum delay after power is applied to it
     delay(1000);
 
     // Transmit at least 74 dummy clock cycles with CS high so the SD card can start up
     IOHi(sdcard.busdev.busdev_u.spi.csnPin);
-
     spiBusRawTransfer(&sdcard.busdev, NULL, NULL, SDCARD_INIT_NUM_DUMMY_BYTES);
 
     // Wait for that transmission to finish before we enable the SDCard, so it receives the required number of cycles:
@@ -700,7 +720,12 @@ static bool sdcardSpi_poll(void)
                 }
 
                 // Now we're done with init and we can switch to the full speed clock (<25MHz)
+
+#ifdef USE_SPI_TRANSACTION
+                spiBusTransactionInit(&sdcard.busdev, SDCARD_SPI_MODE, SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER);
+#else
                 spiSetDivisor(sdcard.busdev.busdev_u.spi.instance, SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER);
+#endif
 
                 sdcard.multiWriteBlocksRemain = 0;
 
