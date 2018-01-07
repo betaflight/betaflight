@@ -29,6 +29,10 @@
 #define TARGET_BOARD_IDENTIFIER "RVLT"
 #define USBD_PRODUCT_STRING     "Revolt"
 #define TARGET_DEFAULT_MIXER    MIXER_QUADX_1234
+#define USE_MSP_DISPLAYPORT
+#define CMS
+#define USE_OSD
+#define USE_OSD_OVER_MSP_DISPLAYPORT
 
 #elif defined(SOULF4)
 #define TARGET_BOARD_IDENTIFIER "SOUL"
@@ -67,10 +71,6 @@
 #define LED1_PIN                PB4
 // Leave beeper here but with none as io - so disabled unless mapped.
 #define BEEPER                  NONE
-#endif
-
-#if defined(REVOLT)
-#define USE_DSHOT_DMAR
 #endif
 
 // PC0 used as inverter select GPIO
@@ -149,12 +149,6 @@
 #define USE_BARO_MS5611
 #define USE_BARO_BMP085
 #define USE_BARO_BMP280
-
-#if defined(AIRBOTF4) || defined(AIRBOTF4SD)
-#define USE_BARO_SPI_BMP280
-#define BMP280_SPI_INSTANCE     SPI1
-#define BMP280_CS_PIN           PC13
-#endif
 
 #if defined(AIRBOTF4SD)
 // SDCARD support for AIRBOTF4SD
