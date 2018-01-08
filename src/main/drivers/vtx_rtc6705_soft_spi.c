@@ -125,7 +125,7 @@ void rtc6705SetFreq(uint16_t channel_freq)
 
 void rtc6705SetBandAndChannel(uint8_t band, uint8_t channel)
 {
-    const uint8_t freqIndex = (band * RTC6705_CHANNEL_COUNT) + channel;
+    const uint8_t freqIndex = (band * VTX_RTC6705_CHANNEL_COUNT) + channel;
 
     const uint16_t freq = vtx_freq[freqIndex];
     rtc6705SetFreq(freq);
@@ -133,7 +133,7 @@ void rtc6705SetBandAndChannel(uint8_t band, uint8_t channel)
 
 void rtc6705SetRFPower(uint8_t rf_power)
 {
-    rtc6705_write_register(7, (rf_power ? PA_CONTROL_DEFAULT : (PA_CONTROL_DEFAULT | PD_Q5G_MASK) & (~(PA5G_PW_MASK | PA5G_BS_MASK))));
+    rtc6705_write_register(7, (rf_power > 1 ? PA_CONTROL_DEFAULT : (PA_CONTROL_DEFAULT | PD_Q5G_MASK) & (~(PA5G_PW_MASK | PA5G_BS_MASK))));
 }
 
 void rtc6705Disable(void)

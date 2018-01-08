@@ -22,17 +22,7 @@
 
 #include "platform.h"
 
-
-#define VTX_RTC6705_POWER_COUNT 3
-#define VTX_RTC6705_DEFAULT_POWER 1
-
-#if defined(RTC6705_POWER_PIN)
-#define VTX_RTC6705_MIN_POWER 0
-#else
-#define VTX_RTC6705_MIN_POWER 1
-#endif
-
-extern const char * const rtc6705PowerNames[VTX_RTC6705_POWER_COUNT];
+extern const char * const rtc6705PowerNames[];
 
 void vtxRTC6705Configure(void);
 bool vtxRTC6705CanUpdate(void);
