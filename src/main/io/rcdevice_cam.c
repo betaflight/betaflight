@@ -18,12 +18,15 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "drivers/time.h"
+
 #include "cms/cms.h"
 
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
 #include "io/beeper.h"
+#include "io/serial.h"
 #include "io/rcdevice_cam.h"
 
 #include "rx/rx.h"
@@ -66,13 +69,7 @@ static bool rcdeviceIsCameraControlEnabled(void)
 
 bool rcdeviceIsEnabled(void)
 {
-    bool is5KeySimulationSupported = isFeatureSupported(RCDEVICE_PROTOCOL_FEATURE_SIMULATE_5_KEY_OSD_CABLE);
-
-    if (camDevice->serialPort != NULL && (rcdeviceIsCameraControlEnabled() || is5KeySimulationSupported)) {
-        return true;
-    }
-
-    return false;
+    return findSerialPortConfig(FUNCTION_RCDEVICE) != NULL;
 }
 
 static bool rcdeviceIs5KeyEnabled(void)
@@ -84,12 +81,39 @@ static bool rcdeviceIs5KeyEnabled(void)
     return false;
 }
 
+static bool reInitializeDevice() {
+#define MAX_RETRY_COUNT  4
+#define RETRY_INTERVAL_MS  500
+    static timeMs_t lastInitializeTime = 0;
+    static int tryInitCount = 0;
+    bool result = false;
+
+    if (ARMING_FLAG(ARMED)) {
+        return false;
+    }
+
+    if (tryInitCount < MAX_RETRY_COUNT) {
+        timeMs_t nextRetryTime = lastInitializeTime + RETRY_INTERVAL_MS;
+        if (millis() >= nextRetryTime) {
+            result = rcdeviceInit();
+            tryInitCount++;
+            lastInitializeTime = millis();
+        }
+    }
+
+    return result;
+}
+
 static void rcdeviceCameraControlProcess(void)
 {
     for (boxId_e i = BOXCAMERA1; i <= BOXCAMERA3; i++) {
         uint8_t switchIndex = i - BOXCAMERA1;
 
         if (IS_RC_MODE_ACTIVE(i)) {
+            if (!rcdeviceIsCameraControlEnabled()) {
+                reInitializeDevice();
+            }
+
             // check last state of this mode, if it's true, then ignore it.
             // Here is a logic to make a toggle control for this mode
             if (switchStates[switchIndex].isActivated) {
@@ -201,7 +225,7 @@ static void rcdevice5KeySimulationProcess(timeUs_t currentTimeUs)
     }
 #endif
 
-    if (camDevice->serialPort == NULL) {
+    if (ARMING_FLAG(ARMED)) {
         return;
     }
 
@@ -209,16 +233,16 @@ static void rcdevice5KeySimulationProcess(timeUs_t currentTimeUs)
 
     if (needRelease) {
         if (IS_MID(YAW) && IS_MID(PITCH) && IS_MID(ROLL)) {
-            key = RCDEVICE_CAM_KEY_RELEASE;
-            if (rcdeviceSend5KeyOSDCableSimualtionEvent(key)) {
-                needRelease = false;
-            } else {
-                rcdeviceInMenu = false;
+            if ((camDevice->serialPort != NULL || reInitializeDevice()) && rcdeviceIs5KeyEnabled()) {
+                key = RCDEVICE_CAM_KEY_RELEASE;
+                if (rcdeviceSend5KeyOSDCableSimualtionEvent(key)) {
+                    needRelease = false;
+                } else {
+                    rcdeviceInMenu = false;
+                }   
             }
-            return;
-        } else {
-            return;
         }
+        return;
     } else {
         if (IS_MID(THROTTLE) && IS_MID(ROLL) && IS_MID(PITCH) && IS_LO(YAW)) { // Disconnect HI YAW
             if (rcdeviceInMenu) {
@@ -238,7 +262,7 @@ static void rcdevice5KeySimulationProcess(timeUs_t currentTimeUs)
                     key = RCDEVICE_CAM_KEY_ENTER;
                 }
             } else {
-                if (IS_MID(THROTTLE) && IS_MID(ROLL) && IS_MID(PITCH) && IS_HI(YAW) && !ARMING_FLAG(ARMED)) { // Enter HI YAW
+                if (IS_MID(THROTTLE) && IS_MID(ROLL) && IS_MID(PITCH) && IS_HI(YAW)) { // Enter HI YAW
                     key = RCDEVICE_CAM_KEY_CONNECTION_OPEN;
                 }
             }
@@ -246,23 +270,20 @@ static void rcdevice5KeySimulationProcess(timeUs_t currentTimeUs)
     }
 
     if (key != RCDEVICE_CAM_KEY_NONE) {
-        if (rcdeviceSend5KeyOSDCableSimualtionEvent(key)) {
-            needRelease = true;
-        } else {
-            rcdeviceInMenu = false;
+        if ((camDevice->serialPort != NULL || reInitializeDevice()) && rcdeviceIs5KeyEnabled()) {
+            if (rcdeviceSend5KeyOSDCableSimualtionEvent(key)) {
+                needRelease = true;
+            } else {
+                rcdeviceInMenu = false;
+            }
         }
     }
 }
 
 void rcdeviceUpdate(timeUs_t currentTimeUs)
 {
-    if (rcdeviceIsCameraControlEnabled()) {
-        rcdeviceCameraControlProcess();
-    }
-
-    if (rcdeviceIs5KeyEnabled()) {
-        rcdevice5KeySimulationProcess(currentTimeUs);
-    }
+    rcdeviceCameraControlProcess();
+    rcdevice5KeySimulationProcess(currentTimeUs);
 }
 
 bool rcdeviceInit(void)
