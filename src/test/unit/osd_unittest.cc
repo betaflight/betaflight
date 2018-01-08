@@ -139,10 +139,10 @@ void doTestArm(bool testEmpty = true)
  */
 bool isSomeStatEnabled(void) {
     for (int i = 0; i < OSD_STAT_COUNT; i++) {
-            if (osdConfigMutable()->enabled_stats[i]) {
-                return true;
-            }
+        if (osdConfigMutable()->enabled_stats[i]) {
+            return true;
         }
+    }
     return false;
 }
 
@@ -544,7 +544,7 @@ TEST(OsdTest, TestElementRssi)
     osdRefresh(simulationTime);
 
     // then
-    displayPortTestBufferSubstring(8, 1, "%c0", SYM_RSSI);
+    displayPortTestBufferSubstring(8, 1, "%c 0", SYM_RSSI);
 
     // when
     rssi = 512;
