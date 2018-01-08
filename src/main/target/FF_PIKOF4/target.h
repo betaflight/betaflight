@@ -16,18 +16,31 @@
  */
 
 #pragma once
+#if defined(FF_PIKOF4OSD)
+#define TARGET_BOARD_IDENTIFIER "PKOS"
+#define USBD_PRODUCT_STRING     "PikoF4OSD"
+#else
 #define TARGET_BOARD_IDENTIFIER "PIK4"
 #define USBD_PRODUCT_STRING     "PikoF4"
+#endif
 #define TARGET_CONFIG
 /*--------------LED----------------*/
+#if defined(FF_PIKOF4OSD)
+#define LED0_PIN                PB5
+#define LED1_PIN                PB4
+#else
 #define LED0_PIN                PA15
 #define LED1_PIN                PB6
-#define LED_STRIP
+#endif
 /*---------------------------------*/
 
 /*------------BEEPER---------------*/
 #define BEEPER                  PA14
 #define BEEPER_INVERTED
+/*---------------------------------*/
+
+/*----------CAMERA CONTROL---------*/
+// #define CAMERA_CONTROL_PIN      PB7
 /*---------------------------------*/
 
 /*------------SENSORS--------------*/
@@ -38,40 +51,45 @@
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
+#if defined(FF_PIKOF4OSD)
+#define MPU6000_CS_PIN          PA15
+#define MPU6000_SPI_INSTANCE    SPI3
+
+#define MPU6500_CS_PIN          PA15
+#define MPU6500_SPI_INSTANCE    SPI3
+#else
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
 
 #define MPU6500_CS_PIN          PA4
 #define MPU6500_SPI_INSTANCE    SPI1
-
-#define ICM20689_CS_PIN         PA4
-#define ICM20689_SPI_INSTANCE   SPI1
+#endif
 
 #define GYRO
-#define USE_GYRO_SPI_ICM20689
-#define GYRO_ICM20689_ALIGN     CW180_DEG
-
 #define USE_GYRO_SPI_MPU6000
 #define GYRO_MPU6000_ALIGN      CW180_DEG
-#define USE_ACC_SPI_MPU6000
-#define ACC_MPU6000_ALIGN       CW180_DEG
 
-#define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
 #define GYRO_MPU6500_ALIGN      CW180_DEG
 
 #define ACC
-#define USE_ACC_SPI_ICM20689
-#define ACC_ICM20689_ALIGN      CW180_DEG
-
 #define USE_ACC_SPI_MPU6000
 #define ACC_MPU6000_ALIGN       CW180_DEG
 
-#define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
 #define ACC_MPU6500_ALIGN       CW180_DEG
 /*---------------------------------*/
 
+#if defined(FF_PIKOF4OSD)
+/*-------------OSD-----------------*/
+#define OSD
+#define USE_MAX7456
+#define MAX7456_SPI_INSTANCE    SPI1
+#define MAX7456_SPI_CS_PIN      PA4
+#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
+#define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
+/*---------------------------------*/
+#else
 /*------------FLASH----------------*/
 #define M25P16_CS_PIN           PB3
 #define M25P16_SPI_INSTANCE     SPI3
@@ -79,6 +97,7 @@
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 /*---------------------------------*/
+#endif
 
 /*-----------USB-UARTs-------------*/
 #define USE_VCP
@@ -92,13 +111,22 @@
 #define USE_UART3
 #define UART3_RX_PIN            PB11
 #define UART3_TX_PIN            PB10
+#if defined(FF_PIKOF4OSD)
+#define INVERTER_PIN_UART3      PC3
+#else
 #define INVERTER_PIN_UART3      PC8
+#endif
+
+#define USE_UART4
+#define UART4_TX_PIN            PA0
+#define UART4_RX_PIN            PA1
 
 #define USE_UART6
 #define UART6_RX_PIN            PC7
 #define UART6_TX_PIN            PC6
 
-#define SERIAL_PORT_COUNT       4
+#define SERIAL_PORT_COUNT       5
+
 
 #define CMS
 #define USE_MSP_DISPLAYPORT
@@ -114,7 +142,11 @@
 #define SPI1_MOSI_PIN           PA7
 
 #define USE_SPI_DEVICE_3
+#if defined(FF_PIKOF4OSD)
+#define SPI3_NSS_PIN            PA15
+#else
 #define SPI3_NSS_PIN            PB3
+#endif
 #define SPI3_SCK_PIN            PC10
 #define SPI3_MISO_PIN           PC11
 #define SPI3_MOSI_PIN           PC12
@@ -122,8 +154,13 @@
 
 /*-------------ADCs----------------*/
 #define USE_ADC
-#define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
-#define VBAT_ADC_PIN            PC2
+#define DEFAULT_VOLTAGE_METER_SOURCE    VOLTAGE_METER_ADC
+#define VBAT_ADC_PIN                    PC2
+#if defined(FF_PIKOF4OSD)
+#define DEFAULT_CURRENT_METER_SOURCE    CURRENT_METER_ADC
+#define CURRENT_METER_ADC_PIN           PC1
+#define CURRENT_METER_SCALE_DEFAULT     250
+#endif
 /*---------------------------------*/
 
 /*-------------ESCs----------------*/
@@ -135,6 +172,9 @@
 
 /*--------DEFAULT VALUES-----------*/
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
+#if defined(FF_PIKOF4OSD)
+#define DEFAULT_FEATURES        ( FEATURE_TELEMETRY | FEATURE_OSD )
+#endif
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART3
 
@@ -145,6 +185,11 @@
 /*---------------------------------*/
 
 /*--------------TIMERS-------------*/
+#if defined(FF_PIKOF4OSD)
+#define USABLE_TIMER_CHANNEL_COUNT  7
+#define USED_TIMERS             ( TIM_N(1) | TIM_N(3) | TIM_N(5) | TIM_N(8) )
+#else
 #define USABLE_TIMER_CHANNEL_COUNT  5
 #define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(4) )
+#endif
 /*---------------------------------*/
