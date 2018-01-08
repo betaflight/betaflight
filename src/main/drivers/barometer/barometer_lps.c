@@ -3,7 +3,7 @@
 
 #include <platform.h>
 
-#if defined(BARO) && (defined(USE_BARO_LPS) || defined(USE_BARO_SPI_LPS))
+#if defined(USE_BARO) && (defined(USE_BARO_LPS) || defined(USE_BARO_SPI_LPS))
 
 #include "build/build_config.h"
 
