@@ -226,7 +226,7 @@ void spiPreInit(void)
 #ifdef USE_BARO_SPI_MS5611
     spiPreInitCs(IO_TAG(MS5611_CS_PIN));
 #endif
-#ifdef USE_BARO_LPS
+#ifdef USE_BARO_SPI_LPS
     spiPreInitCs(IO_TAG(LPS_CS_PIN));
 #endif
 #ifdef USE_MAG_SPI_HMC5883
