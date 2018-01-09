@@ -65,7 +65,7 @@ void pgResetFn_barometerConfig(barometerConfig_t *barometerConfig)
     //   a. Precedence is in the order of popularity; BMP280, MS5611 then BMP085, then
     //   b. If SPI variant is specified, it is likely onboard, so take it.
 
-#if !(defined(DEFAULT_BARO_SPI_BMP280) || defined(DEFAULT_BARO_BMP280) || defined(DEFAULT_BARO_SPI_MS5611) || defined(DEFAULT_BARO_MS5611) || defined(DEFAULT_BARO_BMP085) || defined(DEFAULT_BARO_LPS))
+#if !(defined(DEFAULT_BARO_SPI_BMP280) || defined(DEFAULT_BARO_BMP280) || defined(DEFAULT_BARO_SPI_MS5611) || defined(DEFAULT_BARO_MS5611) || defined(DEFAULT_BARO_BMP085) || defined(DEFAULT_BARO_SPI_LPS))
 #if defined(USE_BARO_BMP280) || defined(USE_BARO_SPI_BMP280)
 #if defined(USE_BARO_SPI_BMP280)
 #define DEFAULT_BARO_SPI_BMP280
@@ -78,7 +78,7 @@ void pgResetFn_barometerConfig(barometerConfig_t *barometerConfig)
 #else
 #define DEFAULT_BARO_MS5611
 #endif
-#elif defined(USE_BARO_LPS)
+#elif defined(USE_BARO_SPI_LPS)
 #define DEFAULT_BARO_SPI_LPS
 #elif defined(DEFAULT_BARO_BMP085)
 #define DEFAULT_BARO_BMP085
@@ -196,7 +196,7 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
         FALLTHROUGH;
 
     case BARO_LPS:
-#if defined(USE_BARO_LPS)
+#if defined(USE_BARO_SPI_LPS)
         if (lpsDetect(dev)) {
             baroHardware = BARO_LPS;
             break;
