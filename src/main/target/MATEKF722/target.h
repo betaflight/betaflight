@@ -73,6 +73,10 @@
 #define USE_BARO_MS5611
 #define USE_BARO_BMP085
 
+//*********** Magnetometer / Compass ************* 
+#define MAG
+#define USE_MAG_HMC5883 
+
 // *************** SD Card **************************
 #define USE_SDCARD
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
