@@ -170,4 +170,5 @@
 #define USE_NAV
 #define USE_TELEMETRY_IBUS
 #define USE_UNCOMMON_MIXERS
+#define USE_GYRO_FAST_KALMAN
 #endif
