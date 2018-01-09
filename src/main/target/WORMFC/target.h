@@ -38,7 +38,6 @@
 #define MPU6500_SPI_INSTANCE    SPI1
 
 // ACC section -- start
-#define ACC
 #define USE_ACC
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
@@ -46,7 +45,6 @@
 // ACC section -- end
 
 // GYRO section -- start
-#define GYRO
 #define USE_GYRO
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
@@ -54,7 +52,6 @@
 // GYRO section -- end
 
 //BARO
-#define BARO
 #define USE_BARO
 #define USE_BARO_LPS
 #define LPS_SPI_INSTANCE SPI3
