@@ -67,6 +67,9 @@ typedef struct SPIDevice_s {
     DMA_HandleTypeDef hdma;
     uint8_t dmaIrqHandler;
 #endif
+#ifdef USE_SPI_TRANSACTION
+    uint16_t cr1SoftCopy;
+#endif
 } spiDevice_t;
 
 extern spiDevice_t spiDevice[SPIDEV_COUNT];

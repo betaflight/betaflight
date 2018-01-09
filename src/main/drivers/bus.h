@@ -37,8 +37,11 @@ typedef struct busDevice_s {
 #if defined(USE_HAL_DRIVER)
             SPI_HandleTypeDef* handle; // cached here for efficiency
 #endif
+#ifdef USE_SPI_TRANSACTION
             // Cached SPI_CR1 for spiBusTransactionXXX
-            uint16_t modeCache;
+            uint16_t modeCache;        // XXX cr1Value may be a better name?
+            uint16_t *cr1SoftCopy;     // Soft copy of current CR1 value
+#endif
             IO_t csnPin;
         } spi;
         struct deviceI2C_s {

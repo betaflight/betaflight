@@ -203,7 +203,7 @@ void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
 void spiBusSetDivisor(busDevice_t *bus, uint16_t divisor)
 {
     spiSetDivisor(bus->busdev_u.spi.instance, divisor);
-    bus->busdev_u.spi.modeCache = bus->busdev_u.spi.instance->CR1;
+    // bus->busdev_u.spi.modeCache = bus->busdev_u.spi.instance->CR1;
 }
 
 #ifdef USE_SPI_TRANSACTION
@@ -238,22 +238,18 @@ void spiBusTransactionInit(busDevice_t *bus, SPIMode_e mode, SPIClockDivider_e d
 #endif
 
     bus->busdev_u.spi.modeCache = bus->busdev_u.spi.instance->CR1;
+    bus->busdev_u.spi.cr1SoftCopy = &spiDevice[spiDeviceByInstance(bus->busdev_u.spi.instance)].cr1SoftCopy;
 }
 
 void spiBusTransactionSetup(const busDevice_t *bus)
 {
-    // XXX We rely on MSTR bit to detect valid modeCache
-    if (bus->busdev_u.spi.modeCache) {
-        SPI_Cmd(bus->busdev_u.spi.instance, DISABLE);
+    // We rely on MSTR bit to detect valid modeCache
 
-        // XXX Compare overheads of checking v.s. register writing v.s. transient signal glitches
-        // XXX Consider keeping a software copy of CR1 per SPI instance, too.
-
-        if (bus->busdev_u.spi.instance->CR1 != bus->busdev_u.spi.modeCache) {
-            bus->busdev_u.spi.instance->CR1 = bus->busdev_u.spi.modeCache;
-        }
+    if (bus->busdev_u.spi.modeCache && bus->busdev_u.spi.modeCache != *bus->busdev_u.spi.cr1SoftCopy) {
+        bus->busdev_u.spi.instance->CR1 = bus->busdev_u.spi.modeCache;
+        *bus->busdev_u.spi.cr1SoftCopy = bus->busdev_u.spi.modeCache;
     }
-    SPI_Cmd(bus->busdev_u.spi.instance, ENABLE);
 }
+
 #endif // USE_SPI_TRANSACTION
 #endif
