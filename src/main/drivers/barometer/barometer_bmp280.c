@@ -96,6 +96,8 @@ void bmp280BusDeinit(busDevice_t *busdev)
 #endif
 }
 
+#include "drivers/time.h"
+
 bool bmp280Detect(baroDev_t *baro)
 {
     delay(20);
@@ -103,7 +105,44 @@ bool bmp280Detect(baroDev_t *baro)
     busDevice_t *busdev = &baro->busdev;
     bool defaultAddressApplied = false;
 
+    // Do some measurement
+
+    spiBusSetDivisor(busdev, SPI_CLOCK_STANDARD);
+
+    timeUs_t tsStart, tsEnd;
+    // Plain busReadRegisterBuffer
+    tsStart = micros();
+    for (int i = 0; i < 1000; i++) {
+        spiBusReadRegisterBuffer(busdev, BMP280_CHIP_ID_REG, &bmp280_chip_id, 1);
+    }
+    tsEnd = micros();
+    debug[0] = tsEnd - tsStart;
+
+    // spiBusTransactionReadRegisterBuffer WITHOUT mode initialization
+    tsStart = micros();
+    for (int i = 0; i < 1000; i++) {
+        spiBusTransactionReadRegisterBuffer(busdev, BMP280_CHIP_ID_REG, &bmp280_chip_id, 1);
+    }
+    tsEnd = micros();
+    debug[1] = tsEnd - tsStart;
+
     bmp280BusInit(busdev);
+
+    // spiBusTransactionReadRegisterBuffer WITH mode initialization
+    tsStart = micros();
+    for (int i = 0; i < 1000; i++) {
+        spiBusTransactionReadRegisterBuffer(busdev, BMP280_CHIP_ID_REG, &bmp280_chip_id, 1);
+    }
+    tsEnd = micros();
+    debug[2] = tsEnd - tsStart;
+
+    // spiBusTransactionReadRegisterBuffer WITH mode initialization and caching
+    tsStart = micros();
+    for (int i = 0; i < 1000; i++) {
+        spiBusTransactionReadRegisterBufferX(busdev, BMP280_CHIP_ID_REG, &bmp280_chip_id, 1);
+    }
+    tsEnd = micros();
+    debug[3] = tsEnd - tsStart;
 
     if ((busdev->bustype == BUSTYPE_I2C) && (busdev->busdev_u.i2c.address == 0)) {
         // Default address for BMP280
