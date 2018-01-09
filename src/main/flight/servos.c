@@ -117,6 +117,10 @@ static const servoMixer_t servoMixerFlyingWing[] = {
     { SERVO_THROTTLE,    INPUT_STABILIZED_THROTTLE, 100, 0, 0, 100, 0 },
 };
 
+static const servoMixer_t servoMixerTri[] = {
+    { SERVO_RUDDER, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
+};
+
 #if defined(USE_UNCOMMON_MIXERS)
 static const servoMixer_t servoMixerBI[] = {
     { SERVO_BICOPTER_LEFT, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
@@ -124,22 +128,11 @@ static const servoMixer_t servoMixerBI[] = {
     { SERVO_BICOPTER_RIGHT, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
     { SERVO_BICOPTER_RIGHT, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
 };
-#else
-#define servoMixerBI NULL
-#endif
 
-static const servoMixer_t servoMixerTri[] = {
-    { SERVO_RUDDER, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
-};
-
-#if defined(USE_UNCOMMON_MIXERS)
 static const servoMixer_t servoMixerDual[] = {
     { SERVO_DUALCOPTER_LEFT, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
     { SERVO_DUALCOPTER_RIGHT, INPUT_STABILIZED_ROLL,  100, 0, 0, 100, 0 },
 };
-#else
-#define servoMixerDual NULL
-#endif
 
 static const servoMixer_t servoMixerSingle[] = {
     { SERVO_SINGLECOPTER_1, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
@@ -163,6 +156,12 @@ static const servoMixer_t servoMixerHeli[] = {
     { SERVO_HELI_TOP, INPUT_RC_AUX1,    100, 0, 0, 100, 0 },
     { SERVO_HELI_RUD, INPUT_STABILIZED_YAW, 100, 0, 0, 100, 0 },
 };
+#else
+#define servoMixerBI NULL
+#define servoMixerDual NULL
+#define servoMixerSingle NULL
+#define servoMixerHeli NULL
+#endif // USE_UNCOMMON_MIXERS
 
 static const servoMixer_t servoMixerGimbal[] = {
     { SERVO_GIMBAL_PITCH, INPUT_GIMBAL_PITCH, 125, 0, 0, 100, 0 },
@@ -318,18 +317,6 @@ void writeServos(void)
 
     uint8_t servoIndex = 0;
     switch (currentMixerMode) {
-    case MIXER_BICOPTER:
-        pwmWriteServo(servoIndex++, servo[SERVO_BICOPTER_LEFT]);
-        pwmWriteServo(servoIndex++, servo[SERVO_BICOPTER_RIGHT]);
-        break;
-
-    case MIXER_HELI_120_CCPM:
-        pwmWriteServo(servoIndex++, servo[SERVO_HELI_LEFT]);
-        pwmWriteServo(servoIndex++, servo[SERVO_HELI_RIGHT]);
-        pwmWriteServo(servoIndex++, servo[SERVO_HELI_TOP]);
-        pwmWriteServo(servoIndex++, servo[SERVO_HELI_RUD]);
-        break;
-
     case MIXER_TRI:
     case MIXER_CUSTOM_TRI:
         if (servoConfig()->tri_unarmed_servo) {
@@ -349,11 +336,6 @@ void writeServos(void)
         pwmWriteServo(servoIndex++, servo[SERVO_FLAPPERON_2]);
         break;
 
-    case MIXER_DUALCOPTER:
-        pwmWriteServo(servoIndex++, servo[SERVO_DUALCOPTER_LEFT]);
-        pwmWriteServo(servoIndex++, servo[SERVO_DUALCOPTER_RIGHT]);
-        break;
-
     case MIXER_CUSTOM_AIRPLANE:
     case MIXER_AIRPLANE:
         for (int i = SERVO_PLANE_INDEX_MIN; i <= SERVO_PLANE_INDEX_MAX; i++) {
@@ -361,11 +343,30 @@ void writeServos(void)
         }
         break;
 
+#ifdef USE_UNCOMMON_MIXERS
+    case MIXER_BICOPTER:
+        pwmWriteServo(servoIndex++, servo[SERVO_BICOPTER_LEFT]);
+        pwmWriteServo(servoIndex++, servo[SERVO_BICOPTER_RIGHT]);
+        break;
+
+    case MIXER_HELI_120_CCPM:
+        pwmWriteServo(servoIndex++, servo[SERVO_HELI_LEFT]);
+        pwmWriteServo(servoIndex++, servo[SERVO_HELI_RIGHT]);
+        pwmWriteServo(servoIndex++, servo[SERVO_HELI_TOP]);
+        pwmWriteServo(servoIndex++, servo[SERVO_HELI_RUD]);
+        break;
+
+    case MIXER_DUALCOPTER:
+        pwmWriteServo(servoIndex++, servo[SERVO_DUALCOPTER_LEFT]);
+        pwmWriteServo(servoIndex++, servo[SERVO_DUALCOPTER_RIGHT]);
+        break;
+
     case MIXER_SINGLECOPTER:
         for (int i = SERVO_SINGLECOPTER_INDEX_MIN; i <= SERVO_SINGLECOPTER_INDEX_MAX; i++) {
             pwmWriteServo(servoIndex++, servo[i]);
         }
         break;
+#endif // USE_UNCOMMON_MIXERS
 
     default:
         break;
