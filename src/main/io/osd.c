@@ -506,7 +506,7 @@ static void osdDrawSingleElement(uint8_t item)
         tfp_sprintf(buff + 2, "%d", (constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN));
         break;
 
-#if defined(VTX_COMMON)
+#if defined(USE_VTX_COMMON)
     case OSD_VTX_CHANNEL:
         {
             const char vtxBandLetter = vtx58BandLetter[vtxSettingsConfig()->band];

@@ -1858,7 +1858,7 @@ static void cliFlashRead(char *cmdline)
 #endif
 #endif
 
-#ifdef VTX_CONTROL
+#ifdef USE_VTX_CONTROL
 static void printVtx(uint8_t dumpMask, const vtxConfig_t *vtxConfig, const vtxConfig_t *vtxConfigDefault)
 {
     // print out vtx channel settings
@@ -3560,7 +3560,7 @@ static void printConfig(char *cmdline, bool doDiff)
         cliPrintHashLine("rxrange");
         printRxRange(dumpMask, rxChannelRangeConfigs_CopyArray, rxChannelRangeConfigs(0));
 
-#ifdef VTX_CONTROL
+#ifdef USE_VTX_CONTROL
         cliPrintHashLine("vtx");
         printVtx(dumpMask, &vtxConfig_Copy, vtxConfig());
 #endif
@@ -3734,7 +3734,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("tasks", "show task stats", NULL, cliTasks),
 #endif
     CLI_COMMAND_DEF("version", "show version", NULL, cliVersion),
-#ifdef VTX_CONTROL
+#ifdef USE_VTX_CONTROL
     CLI_COMMAND_DEF("vtx", "vtx channels on switch", NULL, cliVtx),
 #endif
 };

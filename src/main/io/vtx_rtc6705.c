@@ -22,7 +22,7 @@
 
 #include "platform.h"
 
-#if defined(VTX_RTC6705) && defined(VTX_CONTROL)
+#if defined(USE_VTX_RTC6705) && defined(USE_VTX_CONTROL)
 
 #include "build/build_config.h"
 #include "build/debug.h"
@@ -51,13 +51,13 @@
 #include "io/vtx_rtc6705.h"
 #include "io/vtx_string.h"
 
-#if defined(USE_CMS) || defined(VTX_COMMON)
+#if defined(USE_CMS) || defined(USE_VTX_COMMON)
 const char * const rtc6705PowerNames[] = {
     "OFF", "MIN", "MAX"
 };
 #endif
 
-#ifdef VTX_COMMON
+#ifdef USE_VTX_COMMON
 static vtxVTable_t rtc6705VTable;    // Forward
 static vtxDevice_t vtxRTC6705 = {
     .vTable = &rtc6705VTable,
@@ -111,7 +111,7 @@ void vtxRTC6705Process(timeUs_t now)
     UNUSED(now);
 }
 
-#ifdef VTX_COMMON
+#ifdef USE_VTX_COMMON
 // Interface to common VTX API
 
 vtxDevType_e vtxRTC6705GetDeviceType(void)

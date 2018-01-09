@@ -17,7 +17,7 @@
 
 
 #include "platform.h"
-#if defined(USE_SPEKTRUM_VTX_CONTROL) && defined(VTX_COMMON)
+#if defined(USE_SPEKTRUM_VTX_CONTROL) && defined(USE_VTX_COMMON)
 
 #include <string.h>
 

@@ -20,7 +20,7 @@
 
 #include "platform.h"
 
-#if defined(VTX_RTC6705) && defined(VTX_RTC6705SOFTSPI)
+#if defined(USE_VTX_RTC6705) && defined(USE_VTX_RTC6705_SOFTSPI)
 
 #include "drivers/bus_spi.h"
 #include "drivers/io.h"

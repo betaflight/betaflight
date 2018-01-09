@@ -133,7 +133,7 @@
 #define SPI3_MOSI_PIN                       PB5
 
 // Bus Switched Device, Device B.
-#define VTX_RTC6705
+#define USE_VTX_RTC6705
 #define VTX_RTC6705_OPTIONAL    // VTX/OSD board is OPTIONAL
 
 #define RTC6705_CS_PIN                      PC4
@@ -214,8 +214,8 @@
 //#define BINDPLUG_PIN                        BUTTON_A_PIN
 
 // Temporarily disable SMARTAUDIO and TRAMP VTX support due to flash size issues.
-#undef VTX_SMARTAUDIO
-#undef VTX_TRAMP
+#undef USE_VTX_SMARTAUDIO
+#undef USE_VTX_TRAMP
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

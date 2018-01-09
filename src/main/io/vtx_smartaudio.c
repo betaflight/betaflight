@@ -24,7 +24,7 @@
 
 #include "platform.h"
 
-#if defined(VTX_SMARTAUDIO) && defined(VTX_CONTROL)
+#if defined(USE_VTX_SMARTAUDIO) && defined(USE_VTX_CONTROL)
 
 #include "build/build_config.h"
 #include "build/debug.h"
@@ -70,13 +70,13 @@ serialPort_t *debugSerialPort = NULL;
 
 static serialPort_t *smartAudioSerialPort = NULL;
 
-#if defined(USE_CMS) || defined(VTX_COMMON)
+#if defined(USE_CMS) || defined(USE_VTX_COMMON)
 const char * const saPowerNames[VTX_SMARTAUDIO_POWER_COUNT+1] = {
     "---", "25 ", "200", "500", "800",
 };
 #endif
 
-#ifdef VTX_COMMON
+#ifdef USE_VTX_COMMON
 static const vtxVTable_t saVTable;    // Forward
 static vtxDevice_t vtxSmartAudio = {
     .vTable = &saVTable,
@@ -349,7 +349,7 @@ static void saProcessResponse(uint8_t *buf, int len)
     }
     saDevicePrev = saDevice;
 
-#ifdef VTX_COMMON
+#ifdef USE_VTX_COMMON
     // Todo: Update states in saVtxDevice?
 #endif
 
@@ -680,7 +680,7 @@ bool vtxSmartAudioInit(void)
     serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_SMARTAUDIO);
     if (portConfig) {
         portOptions_e portOptions = SERIAL_STOPBITS_2;
-#if defined(VTX_COMMON)
+#if defined(USE_VTX_COMMON)
         portOptions = portOptions | (vtxConfig()->halfDuplex ? SERIAL_BIDIR | SERIAL_BIDIR_PP : SERIAL_UNIDIR);
 #else
         portOptions = SERIAL_BIDIR;
@@ -774,7 +774,7 @@ void vtxSAProcess(timeUs_t currentTimeUs)
     }
 }
 
-#ifdef VTX_COMMON
+#ifdef USE_VTX_COMMON
 // Interface to common VTX API
 
 vtxDevType_e vtxSAGetDeviceType(void)

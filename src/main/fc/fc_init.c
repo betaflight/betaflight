@@ -476,7 +476,7 @@ void init(void)
     updateHardwareRevision();
 #endif
 
-#ifdef VTX_RTC6705
+#ifdef USE_VTX_RTC6705
     rtc6705IOInit();
 #endif
 
@@ -682,23 +682,23 @@ void init(void)
     baroSetCalibrationCycles(CALIBRATING_BARO_CYCLES);
 #endif
 
-#ifdef VTX_CONTROL
+#ifdef USE_VTX_CONTROL
     vtxControlInit();
 
-#if defined(VTX_COMMON)
+#if defined(USE_VTX_COMMON)
     vtxCommonInit();
     vtxInit();
 #endif
 
-#ifdef VTX_SMARTAUDIO
+#ifdef USE_VTX_SMARTAUDIO
     vtxSmartAudioInit();
 #endif
 
-#ifdef VTX_TRAMP
+#ifdef USE_VTX_TRAMP
     vtxTrampInit();
 #endif
 
-#ifdef VTX_RTC6705
+#ifdef USE_VTX_RTC6705
 #ifdef VTX_RTC6705_OPTIONAL
     if (!vtxCommonDeviceRegistered()) // external VTX takes precedence when configured.
 #endif
