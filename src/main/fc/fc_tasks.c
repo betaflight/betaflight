@@ -205,14 +205,14 @@ static void taskTelemetry(timeUs_t currentTimeUs)
 }
 #endif
 
-#ifdef VTX_CONTROL
+#ifdef USE_VTX_CONTROL
 // Everything that listens to VTX devices
 void taskVtxControl(timeUs_t currentTime)
 {
     if (cliMode)
         return;
 
-#ifdef VTX_COMMON
+#ifdef USE_VTX_COMMON
     vtxProcessSchedule(currentTime);
 #endif
 }
@@ -331,8 +331,8 @@ void fcTasksInit(void)
     setTaskEnabled(TASK_CMS, feature(FEATURE_OSD) || feature(FEATURE_DASHBOARD));
 #endif
 #endif
-#ifdef VTX_CONTROL
-#if defined(VTX_RTC6705) || defined(VTX_SMARTAUDIO) || defined(VTX_TRAMP)
+#ifdef USE_VTX_CONTROL
+#if defined(USE_VTX_RTC6705) || defined(USE_VTX_SMARTAUDIO) || defined(USE_VTX_TRAMP)
     setTaskEnabled(TASK_VTXCTRL, true);
 #endif
 #endif
@@ -569,7 +569,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     },
 #endif
 
-#ifdef VTX_CONTROL
+#ifdef USE_VTX_CONTROL
     [TASK_VTXCTRL] = {
         .taskName = "VTXCTRL",
         .taskFunc = taskVtxControl,

@@ -101,14 +101,14 @@ static OSD_Entry menuFeaturesEntries[] =
 #if defined(USE_BLACKBOX)
     {"BLACKBOX", OME_Submenu, cmsMenuChange, &cmsx_menuBlackbox, 0},
 #endif
-#if defined(VTX_CONTROL)
-#if defined(VTX_RTC6705)
+#if defined(USE_VTX_CONTROL)
+#if defined(USE_VTX_RTC6705)
     {"VTX", OME_Submenu, cmsMenuChange, &cmsx_menuVtxRTC6705, 0},
 #endif // VTX_RTC6705
-#if defined(VTX_SMARTAUDIO)
+#if defined(USE_VTX_SMARTAUDIO)
     {"VTX SA", OME_Submenu, cmsMenuChange, &cmsx_menuVtxSmartAudio, 0},
 #endif
-#if defined(VTX_TRAMP)
+#if defined(USE_VTX_TRAMP)
     {"VTX TR", OME_Submenu, cmsMenuChange, &cmsx_menuVtxTramp, 0},
 #endif
 #endif // VTX_CONTROL

@@ -24,7 +24,7 @@
 
 #include "platform.h"
 
-#if defined(VTX_TRAMP) && defined(VTX_CONTROL)
+#if defined(USE_VTX_TRAMP) && defined(USE_VTX_CONTROL)
 
 #include "build/debug.h"
 
@@ -41,7 +41,7 @@
 #include "io/vtx.h"
 #include "io/vtx_string.h"
 
-#if defined(USE_CMS) || defined(VTX_COMMON)
+#if defined(USE_CMS) || defined(USE_VTX_COMMON)
 const uint16_t trampPowerTable[VTX_TRAMP_POWER_COUNT] = {
     25, 100, 200, 400, 600
 };
@@ -51,7 +51,7 @@ const char * const trampPowerNames[VTX_TRAMP_POWER_COUNT+1] = {
 };
 #endif
 
-#if defined(VTX_COMMON)
+#if defined(USE_VTX_COMMON)
 static const vtxVTable_t trampVTable; // forward
 static vtxDevice_t vtxTramp = {
     .vTable = &trampVTable,
@@ -485,7 +485,7 @@ void vtxTrampProcess(timeUs_t currentTimeUs)
 }
 
 
-#ifdef VTX_COMMON
+#ifdef USE_VTX_COMMON
 
 // Interface to common VTX API
 
@@ -597,7 +597,7 @@ bool vtxTrampInit(void)
 
     if (portConfig) {
         portOptions_e portOptions = 0;
-#if defined(VTX_COMMON)
+#if defined(USE_VTX_COMMON)
         portOptions = portOptions | (vtxConfig()->halfDuplex ? SERIAL_BIDIR : SERIAL_UNIDIR);
 #else
         portOptions = SERIAL_BIDIR;
@@ -610,7 +610,7 @@ bool vtxTrampInit(void)
         return false;
     }
 
-#if defined(VTX_COMMON)
+#if defined(USE_VTX_COMMON)
     vtxCommonRegisterDevice(&vtxTramp);
 #endif
 

@@ -379,10 +379,10 @@ void updateMagHold(void)
 }
 #endif
 
-#ifdef VTX_CONTROL
+#ifdef USE_VTX_CONTROL
 static bool canUpdateVTX(void)
 {
-#ifdef VTX_RTC6705
+#ifdef USE_VTX_RTC6705
     return vtxRTC6705CanUpdate();
 #endif
     return true;
@@ -591,7 +591,7 @@ void processRx(timeUs_t currentTimeUs)
     }
 #endif
 
-#ifdef VTX_CONTROL
+#ifdef USE_VTX_CONTROL
     vtxUpdateActivatedChannel();
 
     if (canUpdateVTX()) {

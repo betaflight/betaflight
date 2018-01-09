@@ -198,10 +198,10 @@
 #endif
 
 /* OSD currently dependent upon CMS, SMARTAUDIO, TRAMP
-#undef VTX_COMMON
-#undef VTX_CONTROL
-#undef VTX_SMARTAUDIO
-#undef VTX_TRAMP
+#undef USE_VTX_COMMON
+#undef USE_VTX_CONTROL
+#undef USE_VTX_SMARTAUDIO
+#undef USE_VTX_TRAMP
 */
 
 /* OLED Support

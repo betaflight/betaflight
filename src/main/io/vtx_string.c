@@ -24,7 +24,7 @@
 
 #include "build/debug.h"
 
-#if defined(VTX_COMMON)
+#if defined(USE_VTX_COMMON)
 
 #define VTX_STRING_BAND_COUNT 5
 #define VTX_STRING_CHAN_COUNT 8

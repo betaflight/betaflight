@@ -1206,7 +1206,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, compassConfig()->mag_hardware);
         break;
 
-#if defined(VTX_COMMON)
+#if defined(USE_VTX_COMMON)
     case MSP_VTX_CONFIG:
         {
             uint8_t deviceType = vtxCommonGetDeviceType();
@@ -1702,7 +1702,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 #endif
 
-#ifdef VTX_COMMON
+#ifdef USE_VTX_COMMON
     case MSP_SET_VTX_CONFIG:
         {
             if (vtxCommonDeviceRegistered()) {

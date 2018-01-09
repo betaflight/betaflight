@@ -107,7 +107,7 @@ typedef enum {
 #ifdef USE_CMS
     TASK_CMS,
 #endif
-#ifdef VTX_CONTROL
+#ifdef USE_VTX_CONTROL
     TASK_VTXCTRL,
 #endif
 #ifdef USE_CAMERA_CONTROL

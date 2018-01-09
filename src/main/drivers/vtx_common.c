@@ -24,7 +24,7 @@
 
 #include "platform.h"
 
-#if defined(VTX_COMMON)
+#if defined(USE_VTX_COMMON)
 
 #include "common/time.h"
 #include "drivers/vtx_common.h"

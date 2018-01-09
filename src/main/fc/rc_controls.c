@@ -326,7 +326,7 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
     }
 #endif
 
-#ifdef VTX_CONTROL
+#ifdef USE_VTX_CONTROL
     if (rcSticks ==  THR_HI + YAW_LO + PIT_CE + ROL_HI) {
         vtxIncrementBand();
     }

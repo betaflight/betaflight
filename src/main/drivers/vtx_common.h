@@ -41,13 +41,13 @@
 
 #define VTX_SETTINGS_MAX_FREQUENCY_MHZ 5999          //max freq (in MHz) for 'vtx_freq' setting
 
-#if defined(VTX_RTC6705)
+#if defined(USE_VTX_RTC6705)
 
 #include "drivers/vtx_rtc6705.h"
 
 #endif
 
-#if defined(VTX_SMARTAUDIO) || defined(VTX_TRAMP)
+#if defined(USE_VTX_SMARTAUDIO) || defined(USE_VTX_TRAMP)
 
 #define VTX_SETTINGS_POWER_COUNT        5
 #define VTX_SETTINGS_DEFAULT_POWER      1
@@ -56,7 +56,7 @@
 #define VTX_SETTINGS_MAX_USER_FREQ      5999
 #define VTX_SETTINGS_FREQCMD
 
-#elif defined(VTX_RTC6705)
+#elif defined(USE_VTX_RTC6705)
 
 #define VTX_SETTINGS_POWER_COUNT    VTX_RTC6705_POWER_COUNT
 #define VTX_SETTINGS_DEFAULT_POWER  VTX_RTC6705_DEFAULT_POWER

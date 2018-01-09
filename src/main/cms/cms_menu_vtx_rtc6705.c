@@ -21,7 +21,7 @@
 
 #include "platform.h"
 
-#if defined(USE_CMS) && defined(VTX_RTC6705)
+#if defined(USE_CMS) && defined(USE_VTX_RTC6705)
 
 #include "common/printf.h"
 #include "common/utils.h"

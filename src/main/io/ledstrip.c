@@ -578,7 +578,7 @@ static void applyLedWarningLayer(bool updateNow, timeUs_t *timer)
     }
 }
 
-#ifdef VTX_COMMON
+#ifdef USE_VTX_COMMON
 static void applyLedVtxLayer(bool updateNow, timeUs_t *timer)
 {
     static uint16_t frequency = 0;
@@ -1000,7 +1000,7 @@ typedef enum {
     timGps,
 #endif
     timWarning,
-#ifdef VTX_COMMON
+#ifdef USE_VTX_COMMON
     timVtx,
 #endif
     timIndicator,
@@ -1029,7 +1029,7 @@ static applyLayerFn_timed* layerTable[] = {
     [timGps] = &applyLedGpsLayer,
 #endif
     [timWarning] = &applyLedWarningLayer,
-#ifdef VTX_COMMON
+#ifdef USE_VTX_COMMON
     [timVtx] = &applyLedVtxLayer,
 #endif
     [timIndicator] = &applyLedIndicatorLayer,
