@@ -136,14 +136,6 @@ bool bmp280Detect(baroDev_t *baro)
     tsEnd = micros();
     debug[2] = tsEnd - tsStart;
 
-    // spiBusTransactionReadRegisterBuffer WITH mode initialization and caching
-    tsStart = micros();
-    for (int i = 0; i < 1000; i++) {
-        spiBusTransactionReadRegisterBufferX(busdev, BMP280_CHIP_ID_REG, &bmp280_chip_id, 1);
-    }
-    tsEnd = micros();
-    debug[3] = tsEnd - tsStart;
-
     if ((busdev->bustype == BUSTYPE_I2C) && (busdev->busdev_u.i2c.address == 0)) {
         // Default address for BMP280
         busdev->busdev_u.i2c.address = BMP280_I2C_ADDR;
