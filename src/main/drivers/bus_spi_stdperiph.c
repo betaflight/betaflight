@@ -200,12 +200,6 @@ void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
     SPI_Cmd(instance, ENABLE);
 }
 
-void spiBusSetDivisor(busDevice_t *bus, uint16_t divisor)
-{
-    spiSetDivisor(bus->busdev_u.spi.instance, divisor);
-    // bus->busdev_u.spi.modeCache = bus->busdev_u.spi.instance->CR1;
-}
-
 #ifdef USE_SPI_TRANSACTION
 void spiBusTransactionInit(busDevice_t *bus, SPIMode_e mode, SPIClockDivider_e divider)
 {

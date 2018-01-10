@@ -175,6 +175,12 @@ void spiBusSetInstance(busDevice_t *bus, SPI_TypeDef *instance)
     bus->busdev_u.spi.instance = instance;
 }
 
+void spiBusSetDivisor(busDevice_t *bus, uint16_t divisor)
+{
+    spiSetDivisor(bus->busdev_u.spi.instance, divisor);
+    // bus->busdev_u.spi.modeCache = bus->busdev_u.spi.instance->CR1;
+}
+
 #ifdef USE_SPI_TRANSACTION
 // Separate set of spiBusTransactionXXX to keep fast path for acc/gyros.
 
