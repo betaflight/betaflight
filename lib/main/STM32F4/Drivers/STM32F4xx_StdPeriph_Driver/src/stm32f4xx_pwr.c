@@ -1018,7 +1018,7 @@ void PWR_ClearFlag(uint32_t PWR_FLAG)
   /* Check the parameters */
   assert_param(IS_PWR_CLEAR_FLAG(PWR_FLAG));
   
-#if defined (STM32F427_437xx) || defined (STM32F429_439xx)
+#if defined (STM32F427_437xx) || defined (STM32F429_439xx) || defined (STM32F446xx)
   if (PWR_FLAG != PWR_FLAG_UDRDY)
   {
     PWR->CR |=  PWR_FLAG << 2;
