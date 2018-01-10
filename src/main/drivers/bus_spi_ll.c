@@ -119,6 +119,8 @@ void spiInitDevice(SPIDevice device)
     defaultInit.ClockPolarity = spi->leadingEdge ? SPI_POLARITY_LOW : SPI_POLARITY_HIGH,
     defaultInit.ClockPhase = spi->leadingEdge ? SPI_PHASE_1EDGE : SPI_PHASE_2EDGE,
 
+    LL_SPI_SetRxFIFOThreshold(spi->dev, SPI_RXFIFO_THRESHOLD_QF);
+
     LL_SPI_Init(spi->dev, &defaultInit);
     LL_SPI_Enable(spi->dev);
 }
