@@ -46,15 +46,6 @@
 #define DISABLE_RTC6705       IOHi(rtc6705CsnPin)
 #define ENABLE_RTC6705        IOLo(rtc6705CsnPin)
 
-const uint16_t vtx_freq[] =
-{
-    5865, 5845, 5825, 5805, 5785, 5765, 5745, 5725, // Boacam A
-    5733, 5752, 5771, 5790, 5809, 5828, 5847, 5866, // Boscam B
-    5705, 5685, 5665, 5645, 5885, 5905, 5925, 5945, // Boscam E
-    5740, 5760, 5780, 5800, 5820, 5840, 5860, 5880, // FatShark
-    5658, 5695, 5732, 5769, 5806, 5843, 5880, 5917, // RaceBand
-};
-
 static IO_t rtc6705DataPin = IO_NONE;
 static IO_t rtc6705CsnPin = IO_NONE;
 static IO_t rtc6705ClkPin = IO_NONE;
@@ -113,7 +104,7 @@ static void rtc6705_write_register(uint8_t addr, uint32_t data)
     DISABLE_RTC6705;
 }
 
-void rtc6705SetFreq(uint16_t channel_freq)
+void rtc6705SetFrequency(uint16_t channel_freq)
 {
     uint32_t freq = (uint32_t)channel_freq * 1000;
     freq /= 40;
@@ -121,14 +112,6 @@ void rtc6705SetFreq(uint16_t channel_freq)
     const uint32_t A = freq % 64;
     rtc6705_write_register(0, 400);
     rtc6705_write_register(1, (N << 7) | A);
-}
-
-void rtc6705SetBandAndChannel(uint8_t band, uint8_t channel)
-{
-    const uint8_t freqIndex = (band * VTX_RTC6705_CHANNEL_COUNT) + channel;
-
-    const uint16_t freq = vtx_freq[freqIndex];
-    rtc6705SetFreq(freq);
 }
 
 void rtc6705SetRFPower(uint8_t rf_power)
