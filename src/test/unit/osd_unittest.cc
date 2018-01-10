@@ -77,6 +77,7 @@ extern "C" {
     uint32_t simulationMahDrawn;
     int32_t simulationAltitude;
     int32_t simulationVerticalSpeed;
+    uint16_t simulationCoreTemperature;
 }
 
 /* #define DEBUG_OSD */
@@ -96,6 +97,7 @@ void setDefualtSimulationState()
     simulationMahDrawn = 0;
     simulationAltitude = 0;
     simulationVerticalSpeed = 0;
+    simulationCoreTemperature = 0;
 }
 
 /*
@@ -744,6 +746,35 @@ TEST(OsdTest, TestElementAltitude)
 }
 
 /*
+ * Tests the core temperature OSD element.
+ */
+TEST(OsdTest, TestElementCoreTemperature)
+{
+    // given
+    osdConfigMutable()->item_pos[OSD_CORE_TEMPERATURE] = OSD_POS(1, 8) | VISIBLE_FLAG;
+
+    // and
+    simulationCoreTemperature = 0;
+
+    // when
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(1, 8, "00C");
+
+    // given
+    simulationCoreTemperature = 33;
+
+    // when
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(1, 8, "33C");
+}
+
+/*
  * Tests the battery notifications shown on the warnings OSD element.
  */
 TEST(OsdTest, TestElementWarningsBattery)
@@ -958,4 +989,6 @@ extern "C" {
     }
 
     uint16_t getRssi(void) { return rssi; }
+
+    uint16_t getCoreTemperatureCelsius(void) { return simulationCoreTemperature; }
 }

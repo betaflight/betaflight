@@ -160,7 +160,8 @@ osd_unittest_SRC := \
 
 osd_unittest_DEFINES := \
 		USE_OSD \
-		USE_RTC_TIME
+		USE_RTC_TIME \
+		USE_ADC_INTERNAL
 
 
 pg_unittest_SRC := \

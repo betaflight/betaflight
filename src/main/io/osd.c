@@ -78,6 +78,7 @@
 
 #include "rx/rx.h"
 
+#include "sensors/adcinternal.h"
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
 #include "sensors/esc_sensor.h"
@@ -756,7 +757,12 @@ static bool osdDrawSingleElement(uint8_t item)
 #ifdef USE_OSD_ADJUSTMENTS
     case OSD_ADJUSTMENT_RANGE:
         tfp_sprintf(buff, "%s: %3d", adjustmentRangeName, adjustmentRangeValue);
+        break;
+#endif
 
+#ifdef USE_ADC_INTERNAL
+    case OSD_CORE_TEMPERATURE:
+        tfp_sprintf(buff, "%02dC", getCoreTemperatureCelsius());
         break;
 #endif
 
@@ -834,6 +840,10 @@ static void osdDrawElements(void)
 
 #ifdef USE_OSD_ADJUSTMENTS
     osdDrawSingleElement(OSD_ADJUSTMENT_RANGE);
+#endif
+
+#ifdef USE_ADC_INTERNAL
+    osdDrawSingleElement(OSD_CORE_TEMPERATURE);
 #endif
 }
 
