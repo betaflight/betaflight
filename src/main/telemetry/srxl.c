@@ -209,10 +209,10 @@ bool srxlFrameFlightPackCurrent(sbuf_t *dst, timeUs_t currentTimeUs)
 /*
 typedef struct
 {
-    UINT8		identifier;
-    UINT8		sID;		       // Secondary ID
-    UINT8		lineNumber;	       // Line number to display (0 = title, 1-8 for general, 254 = Refresh backlight, 255 = Erase all text on screen)
-    char		text[13];	       // 0-terminated text when < 13 chars
+    UINT8       identifier;
+    UINT8       sID;               // Secondary ID
+    UINT8       lineNumber;        // Line number to display (0 = title, 1-8 for general, 254 = Refresh backlight, 255 = Erase all text on screen)
+    char        text[13];          // 0-terminated text when < 13 chars
 } STRU_SPEKTRUM_SRXL_TEXTGEN;
 */
 
@@ -225,7 +225,7 @@ static bool lineSent[SPEKTRUM_SRXL_DEVICE_TEXTGEN_ROWS];
 #endif
 
 //**************************************************************************
-// API Running in external client task context. E.g. in the CMS task 
+// API Running in external client task context. E.g. in the CMS task
 int spektrumTmTextGenPutChar(uint8_t col, uint8_t row, char c)
 {
     if (row < SPEKTRUM_SRXL_TEXTGEN_BUFFER_ROWS && col < SPEKTRUM_SRXL_TEXTGEN_BUFFER_COLS) {

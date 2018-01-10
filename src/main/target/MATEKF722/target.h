@@ -73,9 +73,9 @@
 #define USE_BARO_MS5611
 #define USE_BARO_BMP085
 
-//*********** Magnetometer / Compass ************* 
-#define USE_MAG 
-#define USE_MAG_HMC5883 
+//*********** Magnetometer / Compass *************
+#define USE_MAG
+#define USE_MAG_HMC5883
 
 // *************** SD Card **************************
 #define USE_SDCARD

@@ -761,16 +761,16 @@ void vtxSAProcess(timeUs_t currentTimeUs)
         // dprintf(("process: resending 0x%x\r\n", sa_outstanding));
         // XXX Todo: Resend termination and possible offline transition
         saResendCmd();
-	lastCommandSentMs = nowMs;
+    lastCommandSentMs = nowMs;
     } else if (!saQueueEmpty()) {
         // Command pending. Send it.
         // dprintf(("process: sending queue\r\n"));
         saSendQueue();
-	lastCommandSentMs = nowMs;
+    lastCommandSentMs = nowMs;
     } else if ((nowMs - lastCommandSentMs < SMARTAUDIO_POLLING_WINDOW) && (nowMs - sa_lastTransmissionMs >= SMARTAUDIO_POLLING_INTERVAL)) {
-	//dprintf(("process: sending status change polling\r\n"));
-	saGetSettings();
-	saSendQueue();
+    //dprintf(("process: sending status change polling\r\n"));
+    saGetSettings();
+    saSendQueue();
     }
 }
 
@@ -779,123 +779,123 @@ void vtxSAProcess(timeUs_t currentTimeUs)
 
 vtxDevType_e vtxSAGetDeviceType(void)
 {
-	return VTXDEV_SMARTAUDIO;
+    return VTXDEV_SMARTAUDIO;
 }
 
 bool vtxSAIsReady(void)
 {
-	return !(saDevice.version == 0);
+    return !(saDevice.version == 0);
 }
 
 void vtxSASetBandAndChannel(uint8_t band, uint8_t channel)
 {
-	if (saValidateBandAndChannel(band, channel)) {
-		saSetBandAndChannel(band - 1, channel - 1);
-	}
+    if (saValidateBandAndChannel(band, channel)) {
+        saSetBandAndChannel(band - 1, channel - 1);
+    }
 }
 
 void vtxSASetPowerByIndex(uint8_t index)
 {
-	if (index == 0) {
-		// SmartAudio doesn't support power off.
-		return;
-	}
+    if (index == 0) {
+        // SmartAudio doesn't support power off.
+        return;
+    }
 
-	saSetPowerByIndex(index - 1);
+    saSetPowerByIndex(index - 1);
 }
 
 void vtxSASetPitMode(uint8_t onoff)
 {
-	if (!(vtxSAIsReady() && (saDevice.version == 2))) {
-		return;
-	}
+    if (!(vtxSAIsReady() && (saDevice.version == 2))) {
+        return;
+    }
 
-	if (onoff) {
-		// SmartAudio can not turn pit mode on by software.
-		return;
-	}
+    if (onoff) {
+        // SmartAudio can not turn pit mode on by software.
+        return;
+    }
 
-	uint8_t newmode = SA_MODE_CLR_PITMODE;
+    uint8_t newmode = SA_MODE_CLR_PITMODE;
 
-	if (saDevice.mode & SA_MODE_GET_IN_RANGE_PITMODE) {
-		newmode |= SA_MODE_SET_IN_RANGE_PITMODE;
-	}
+    if (saDevice.mode & SA_MODE_GET_IN_RANGE_PITMODE) {
+        newmode |= SA_MODE_SET_IN_RANGE_PITMODE;
+    }
 
-	if (saDevice.mode & SA_MODE_GET_OUT_RANGE_PITMODE) {
-		newmode |= SA_MODE_SET_OUT_RANGE_PITMODE;
-	}
+    if (saDevice.mode & SA_MODE_GET_OUT_RANGE_PITMODE) {
+        newmode |= SA_MODE_SET_OUT_RANGE_PITMODE;
+    }
 
-	saSetMode(newmode);
+    saSetMode(newmode);
 
-	return;
+    return;
 }
 
 void vtxSASetFreq(uint16_t freq)
 {
-	if (saValidateFreq(freq)) {
-		saSetMode(0);        //need to be in FREE mode to set freq
-		saSetFreq(freq);
-	}
+    if (saValidateFreq(freq)) {
+        saSetMode(0);        //need to be in FREE mode to set freq
+        saSetFreq(freq);
+    }
 }
 
 bool vtxSAGetBandAndChannel(uint8_t *pBand, uint8_t *pChannel)
 {
-	if (!vtxSAIsReady()) {
-		return false;
-	}
+    if (!vtxSAIsReady()) {
+        return false;
+    }
 
-	// if in user-freq mode then report band as zero
-	*pBand = (saDevice.mode & SA_MODE_GET_FREQ_BY_FREQ) ? 0 :
-		(SA_DEVICE_CHVAL_TO_BAND(saDevice.channel) + 1);
-	*pChannel = SA_DEVICE_CHVAL_TO_CHANNEL(saDevice.channel) + 1;
-	return true;
+    // if in user-freq mode then report band as zero
+    *pBand = (saDevice.mode & SA_MODE_GET_FREQ_BY_FREQ) ? 0 :
+        (SA_DEVICE_CHVAL_TO_BAND(saDevice.channel) + 1);
+    *pChannel = SA_DEVICE_CHVAL_TO_CHANNEL(saDevice.channel) + 1;
+    return true;
 }
 
 bool vtxSAGetPowerIndex(uint8_t *pIndex)
 {
-	if (!vtxSAIsReady()) {
-		return false;
-	}
+    if (!vtxSAIsReady()) {
+        return false;
+    }
 
-	*pIndex = ((saDevice.version == 1) ? saDacToPowerIndex(saDevice.power) : saDevice.power) + 1;
-	return true;
+    *pIndex = ((saDevice.version == 1) ? saDacToPowerIndex(saDevice.power) : saDevice.power) + 1;
+    return true;
 }
 
 bool vtxSAGetPitMode(uint8_t *pOnOff)
 {
-	if (!(vtxSAIsReady() && (saDevice.version == 2))) {
-		return false;
-	}
+    if (!(vtxSAIsReady() && (saDevice.version == 2))) {
+        return false;
+    }
 
-	*pOnOff = (saDevice.mode & SA_MODE_GET_PITMODE) ? 1 : 0;
-	return true;
+    *pOnOff = (saDevice.mode & SA_MODE_GET_PITMODE) ? 1 : 0;
+    return true;
 }
 
 bool vtxSAGetFreq(uint16_t *pFreq)
 {
-	if (!vtxSAIsReady()) {
-		return false;
-	}
+    if (!vtxSAIsReady()) {
+        return false;
+    }
 
-	// if not in user-freq mode then convert band/chan to frequency
-	*pFreq = (saDevice.mode & SA_MODE_GET_FREQ_BY_FREQ) ? saDevice.freq :
+    // if not in user-freq mode then convert band/chan to frequency
+    *pFreq = (saDevice.mode & SA_MODE_GET_FREQ_BY_FREQ) ? saDevice.freq :
         vtx58_Bandchan2Freq(SA_DEVICE_CHVAL_TO_BAND(saDevice.channel) + 1,
         SA_DEVICE_CHVAL_TO_CHANNEL(saDevice.channel) + 1);
-	return true;
+    return true;
 }
 
 static const vtxVTable_t saVTable = {
-	.process = vtxSAProcess,
-	.getDeviceType = vtxSAGetDeviceType,
-	.isReady = vtxSAIsReady,
-	.setBandAndChannel = vtxSASetBandAndChannel,
-	.setPowerByIndex = vtxSASetPowerByIndex,
-	.setPitMode = vtxSASetPitMode,
-	.setFrequency = vtxSASetFreq,
-	.getBandAndChannel = vtxSAGetBandAndChannel,
-	.getPowerIndex = vtxSAGetPowerIndex,
-	.getPitMode = vtxSAGetPitMode,
-	.getFrequency = vtxSAGetFreq,
+    .process = vtxSAProcess,
+    .getDeviceType = vtxSAGetDeviceType,
+    .isReady = vtxSAIsReady,
+    .setBandAndChannel = vtxSASetBandAndChannel,
+    .setPowerByIndex = vtxSASetPowerByIndex,
+    .setPitMode = vtxSASetPitMode,
+    .setFrequency = vtxSASetFreq,
+    .getBandAndChannel = vtxSAGetBandAndChannel,
+    .getPowerIndex = vtxSAGetPowerIndex,
+    .getPitMode = vtxSAGetPitMode,
+    .getFrequency = vtxSAGetFreq,
 };
 #endif // VTX_COMMON
 

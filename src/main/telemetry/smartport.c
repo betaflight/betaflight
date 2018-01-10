@@ -185,7 +185,7 @@ smartPortPayload_t *smartPortDataReceive(uint16_t c, bool *clearToSend, smartPor
     } else {
         if (c == FSSP_DLE) {
             byteStuffing = true;
- 
+
             return NULL;
         } else if (byteStuffing) {
             c ^= FSSP_DLE_XOR;

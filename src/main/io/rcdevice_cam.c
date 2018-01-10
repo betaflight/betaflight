@@ -239,7 +239,7 @@ static void rcdevice5KeySimulationProcess(timeUs_t currentTimeUs)
                     needRelease = false;
                 } else {
                     rcdeviceInMenu = false;
-                }   
+                }
             }
         }
         return;

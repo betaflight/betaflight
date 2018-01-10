@@ -100,7 +100,7 @@ void targetConfiguration(void)
 
     featureSet((FEATURE_DYNAMIC_FILTER | FEATURE_AIRMODE | FEATURE_ANTI_GRAVITY) ^ FEATURE_RX_PARALLEL_PWM);
 
-    /* AlienWhoop PIDs based on Ole Gravy Leg (aka Matt Williamson's) PIDs 
+    /* AlienWhoop PIDs based on Ole Gravy Leg (aka Matt Williamson's) PIDs
      */
     for (uint8_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
         pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);

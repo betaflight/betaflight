@@ -87,7 +87,7 @@
 #define ACC_MPU6000_ALIGN        CW270_DEG
 #elif defined(XRACERF4) || defined(EXUAVF4PRO)
 #define GYRO_MPU6000_ALIGN       CW90_DEG
-#define ACC_MPU6000_ALIGN        CW90_DEG 
+#define ACC_MPU6000_ALIGN        CW90_DEG
 #else
 #define GYRO_MPU6000_ALIGN       CW180_DEG
 #define ACC_MPU6000_ALIGN        CW180_DEG
