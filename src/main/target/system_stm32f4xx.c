@@ -504,10 +504,15 @@ void SystemInit(void)
 
 void SystemInitOC(void)
 {
+#if !defined(STM32F446xxx)
+    // XXX Doesn't work for F446 with this configuration.
+    // XXX Need to use smaller M to reduce N?
+
     /* PLL setting for overclocking */
     pll_n = PLL_N_OC;
     pll_p = PLL_P_OC;
     pll_q = PLL_Q_OC;
+#endif
 
     SystemInit();
 }
@@ -739,6 +744,44 @@ void SetSysClock(void)
   { /* If HSE fails to start-up, the application will have wrong clock
          configuration. User can add here some code to deal with this error */
   }
+
+#if defined(STM32F446xx)
+// Always use PLLSAI to derive USB 48MHz clock.
+// - This also works under arbitral overclocking situations.
+// - Only handles HSE case.
+
+#ifdef TARGET_XTAL_MHZ
+#define PLLSAI_M      TARGET_XTAL_MHZ
+#else
+#define PLLSAI_M      8
+#endif
+#define PLLSAI_N      192
+#define PLLSAI_P      4
+#define PLLSAI_Q      2
+
+#define RCC_PLLSAI_IS_READY() ((RCC->CR & (RCC_CR_PLLSAIRDY)) == (RCC_CR_PLLSAIRDY))
+
+    /* Configure 48MHz clock for USB */
+    // Set 48MHz clock source
+    RCC_48MHzClockSourceConfig(RCC_48MHZCLKSource_PLLSAI);
+
+    // Enable PLLSAI
+    RCC_PLLSAICmd(DISABLE);
+
+    // wait for PLLSAI to be disabled
+    while (RCC_PLLSAI_IS_READY()) {}
+
+    RCC_PLLSAIConfig(PLLSAI_M, PLLSAI_N, PLLSAI_P, PLLSAI_Q);
+
+    RCC_PLLSAICmd(ENABLE);
+
+    // wait for PLLSAI to be enabled
+    while (!RCC_PLLSAI_IS_READY()) {}
+
+    RCC->DCKCFGR2 |= RCC_DCKCFGR2_CK48MSEL;
+
+#undef  RCC_PLLSAI_GET_FLAG
+#endif /* STM32F446xx */
 }
 
 /**
