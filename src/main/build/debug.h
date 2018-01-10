@@ -73,6 +73,7 @@ typedef enum {
     DEBUG_RANGEFINDER,
     DEBUG_RANGEFINDER_QUALITY,
     DEBUG_LIDAR_TF,
+    DEBUG_CORE_TEMP,
     DEBUG_COUNT
 } debugType_e;
 

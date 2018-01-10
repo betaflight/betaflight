@@ -19,10 +19,9 @@
 #include <stdint.h>
 
 #include "platform.h"
+#include "common/utils.h"
 
 #ifdef USE_ADC
-
-#include "common/utils.h"
 
 #include "build/build_config.h"
 #include "build/debug.h"
@@ -34,11 +33,17 @@
 
 #include "adc.h"
 
-
 //#define DEBUG_ADC_CHANNELS
 
 adcOperatingConfig_t adcOperatingConfig[ADC_CHANNEL_COUNT];
 volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
+
+#ifdef USE_ADC_INTERNAL
+uint16_t adcTSCAL1;
+uint16_t adcTSCAL2;
+uint16_t adcTSSlopeK;
+uint16_t adcVREFINTCAL;
+#endif
 
 uint8_t adcChannelByTag(ioTag_t ioTag)
 {
@@ -115,5 +120,12 @@ bool adcVerifyPin(ioTag_t tag, ADCDevice device)
     }
 
     return false;
+}
+
+#else
+uint16_t adcGetChannel(uint8_t channel)
+{
+    UNUSED(channel);
+    return 0;
 }
 #endif

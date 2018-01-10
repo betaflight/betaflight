@@ -23,6 +23,8 @@
 
 #ifdef USE_ADC
 
+#include "build/debug.h"
+
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/system.h"
 
@@ -96,11 +98,84 @@ const adcTagMap_t adcTagMap[] = {
 #endif
 };
 
-void adcInit(const adcConfig_t *config)
+#define VREFINT_CAL_ADDR  0x1FFF7A2A
+#define TS_CAL1_ADDR      0x1FFF7A2C
+#define TS_CAL2_ADDR      0x1FFF7A2E
+
+void adcInitDevice(ADC_TypeDef *adcdev, int channelCount)
 {
     ADC_InitTypeDef ADC_InitStructure;
-    DMA_InitTypeDef DMA_InitStructure;
 
+    ADC_StructInit(&ADC_InitStructure);
+
+    ADC_InitStructure.ADC_ContinuousConvMode       = ENABLE;
+    ADC_InitStructure.ADC_Resolution               = ADC_Resolution_12b;
+    ADC_InitStructure.ADC_ExternalTrigConv         = ADC_ExternalTrigConv_T1_CC1;
+    ADC_InitStructure.ADC_ExternalTrigConvEdge     = ADC_ExternalTrigConvEdge_None;
+    ADC_InitStructure.ADC_DataAlign                = ADC_DataAlign_Right;
+    ADC_InitStructure.ADC_NbrOfConversion          = channelCount;
+    ADC_InitStructure.ADC_ScanConvMode             = channelCount > 1 ? ENABLE : DISABLE; // 1=scan more that one channel in group
+
+    ADC_Init(adcdev, &ADC_InitStructure);
+}
+
+#ifdef USE_ADC_INTERNAL
+void adcInitInternalInjected(void)
+{
+    ADC_TempSensorVrefintCmd(ENABLE);
+    ADC_InjectedDiscModeCmd(ADC1, DISABLE);
+    ADC_InjectedSequencerLengthConfig(ADC1, 2);
+    ADC_InjectedChannelConfig(ADC1, ADC_Channel_Vrefint, 1, ADC_SampleTime_480Cycles);
+    ADC_InjectedChannelConfig(ADC1, ADC_Channel_TempSensor, 2, ADC_SampleTime_480Cycles);
+
+    adcVREFINTCAL = *(uint16_t *)VREFINT_CAL_ADDR;
+    adcTSCAL1 = *(uint16_t *)TS_CAL1_ADDR;
+    adcTSCAL2 = *(uint16_t *)TS_CAL2_ADDR;
+    adcTSSlopeK = (110 - 30) * 1000 / (adcTSCAL2 - adcTSCAL1);
+}
+
+// Note on sampling time for temperature sensor and vrefint:
+// Both sources have minimum sample time of 10us.
+// With prescaler = 8:
+// 168MHz : fAPB2 = 84MHz, fADC = 10.5MHz, tcycle = 0.090us, 10us = 105cycle < 144cycle
+// 240MHz : fAPB2 = 120MHz, fADC = 15.0MHz, tcycle = 0.067usk 10us = 150cycle < 480cycle
+//
+// 480cycles@15.0MHz = 32us
+
+static bool adcInternalConversionInProgress = false;
+
+bool adcInternalIsBusy(void)
+{
+    if (adcInternalConversionInProgress) {
+        if (ADC_GetFlagStatus(ADC1, ADC_FLAG_JEOC) != RESET) {
+            adcInternalConversionInProgress = false;
+        }
+    }
+
+    return adcInternalConversionInProgress;
+}
+
+void adcInternalStartConversion(void)
+{
+    ADC_ClearFlag(ADC1, ADC_FLAG_JEOC);
+    ADC_SoftwareStartInjectedConv(ADC1);
+
+    adcInternalConversionInProgress = true;
+}
+
+uint16_t adcInternalReadVrefint(void)
+{
+    return ADC_GetInjectedConversionValue(ADC1, ADC_InjectedChannel_1);
+}
+
+uint16_t adcInternalReadTempsensor(void)
+{
+    return ADC_GetInjectedConversionValue(ADC1, ADC_InjectedChannel_2);
+}
+#endif
+
+void adcInit(const adcConfig_t *config)
+{
     uint8_t i;
     uint8_t configuredAdcChannels = 0;
 
@@ -149,9 +224,46 @@ void adcInit(const adcConfig_t *config)
 
     RCC_ClockCmd(adc.rccADC, ENABLE);
 
+    ADC_CommonInitTypeDef ADC_CommonInitStructure;
+
+    ADC_CommonStructInit(&ADC_CommonInitStructure);
+    ADC_CommonInitStructure.ADC_Mode             = ADC_Mode_Independent;
+    ADC_CommonInitStructure.ADC_Prescaler        = ADC_Prescaler_Div8;
+    ADC_CommonInitStructure.ADC_DMAAccessMode    = ADC_DMAAccessMode_Disabled;
+    ADC_CommonInitStructure.ADC_TwoSamplingDelay = ADC_TwoSamplingDelay_5Cycles;
+    ADC_CommonInit(&ADC_CommonInitStructure);
+
+    adcInitDevice(adc.ADCx, configuredAdcChannels);
+
+    uint8_t rank = 1;
+    for (i = 0; i < ADC_CHANNEL_COUNT; i++) {
+        if (!adcOperatingConfig[i].enabled) {
+            continue;
+        }
+        ADC_RegularChannelConfig(adc.ADCx, adcOperatingConfig[i].adcChannel, rank++, adcOperatingConfig[i].sampleTime);
+    }
+    ADC_DMARequestAfterLastTransferCmd(adc.ADCx, ENABLE);
+
+    ADC_DMACmd(adc.ADCx, ENABLE);
+    ADC_Cmd(adc.ADCx, ENABLE);
+
+#ifdef USE_ADC_INTERNAL
+    // If device is not ADC1, then initialize ADC1 separately
+    if (device != ADCDEV_1) {
+        RCC_ClockCmd(adcHardware[ADCDEV_1].rccADC, ENABLE);
+        adcInitDevice(ADC1, 2);
+        ADC_Cmd(ADC1, ENABLE);
+    }
+
+    // Initialize for injected conversion
+    adcInitInternalInjected();
+#endif
+
     dmaInit(dmaGetIdentifier(adc.DMAy_Streamx), OWNER_ADC, 0);
 
     DMA_DeInit(adc.DMAy_Streamx);
+
+    DMA_InitTypeDef DMA_InitStructure;
 
     DMA_StructInit(&DMA_InitStructure);
     DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)&adc.ADCx->DR;
@@ -168,39 +280,6 @@ void adcInit(const adcConfig_t *config)
     DMA_Init(adc.DMAy_Streamx, &DMA_InitStructure);
 
     DMA_Cmd(adc.DMAy_Streamx, ENABLE);
-
-    ADC_CommonInitTypeDef ADC_CommonInitStructure;
-
-    ADC_CommonStructInit(&ADC_CommonInitStructure);
-    ADC_CommonInitStructure.ADC_Mode             = ADC_Mode_Independent;
-    ADC_CommonInitStructure.ADC_Prescaler        = ADC_Prescaler_Div8;
-    ADC_CommonInitStructure.ADC_DMAAccessMode    = ADC_DMAAccessMode_Disabled;
-    ADC_CommonInitStructure.ADC_TwoSamplingDelay = ADC_TwoSamplingDelay_5Cycles;
-    ADC_CommonInit(&ADC_CommonInitStructure);
-
-    ADC_StructInit(&ADC_InitStructure);
-
-    ADC_InitStructure.ADC_ContinuousConvMode       = ENABLE;
-    ADC_InitStructure.ADC_Resolution               = ADC_Resolution_12b;
-    ADC_InitStructure.ADC_ExternalTrigConv         = ADC_ExternalTrigConv_T1_CC1;
-    ADC_InitStructure.ADC_ExternalTrigConvEdge     = ADC_ExternalTrigConvEdge_None;
-    ADC_InitStructure.ADC_DataAlign                = ADC_DataAlign_Right;
-    ADC_InitStructure.ADC_NbrOfConversion          = configuredAdcChannels;
-    ADC_InitStructure.ADC_ScanConvMode             = configuredAdcChannels > 1 ? ENABLE : DISABLE; // 1=scan more that one channel in group
-
-    ADC_Init(adc.ADCx, &ADC_InitStructure);
-
-    uint8_t rank = 1;
-    for (i = 0; i < ADC_CHANNEL_COUNT; i++) {
-        if (!adcOperatingConfig[i].enabled) {
-            continue;
-        }
-        ADC_RegularChannelConfig(adc.ADCx, adcOperatingConfig[i].adcChannel, rank++, adcOperatingConfig[i].sampleTime);
-    }
-    ADC_DMARequestAfterLastTransferCmd(adc.ADCx, ENABLE);
-
-    ADC_DMACmd(adc.ADCx, ENABLE);
-    ADC_Cmd(adc.ADCx, ENABLE);
 
     ADC_SoftwareStartConv(adc.ADCx);
 }

@@ -31,6 +31,7 @@
 #include "fc/runtime_config.h"
 
 #include "sensors/sensors.h"
+#include "sensors/adcinternal.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
 #include "sensors/gyro.h"
@@ -63,6 +64,10 @@ bool sensorsAutodetect(void)
 
 #ifdef USE_RANGEFINDER
     rangefinderInit();
+#endif
+
+#ifdef USE_ADC_INTERNAL
+    adcInternalInit();
 #endif
 
     return gyroDetected;

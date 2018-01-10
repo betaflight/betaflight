@@ -130,6 +130,7 @@ extern uint8_t __config_end;
 #include "scheduler/scheduler.h"
 
 #include "sensors/acceleration.h"
+#include "sensors/adcinternal.h"
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
@@ -3010,6 +3011,12 @@ static void cliStatus(char *cmdline)
     cliPrintLinef("Voltage: %d * 0.1V (%dS battery - %s)", getBatteryVoltage(), getBatteryCellCount(), getBatteryStateString());
 
     cliPrintf("CPU Clock=%dMHz", (SystemCoreClock / 1000000));
+
+#ifdef USE_ADC_INTERNAL
+    uint16_t vrefintMv = getVrefMv();
+    uint16_t coretemp = getCoreTemperatureCelsius();
+    cliPrintf(", Vref=%d.%2dV, Core temp=%ddegC", vrefintMv / 1000, (vrefintMv % 1000) / 10, coretemp);
+#endif
 
 #if defined(USE_SENSOR_NAMES)
     const uint32_t detectedSensorsMask = sensorsMask();

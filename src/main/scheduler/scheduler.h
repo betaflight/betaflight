@@ -118,6 +118,10 @@ typedef enum {
     TASK_RCDEVICE,
 #endif
 
+#ifdef USE_ADC_INTERNAL
+    TASK_ADC_INTERNAL,
+#endif
+
     /* Count of real tasks */
     TASK_COUNT,
 
