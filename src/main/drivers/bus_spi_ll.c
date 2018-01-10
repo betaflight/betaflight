@@ -267,19 +267,17 @@ void spiBusTransactionInit(busDevice_t *bus, SPIMode_e mode, SPIClockDivider_e d
     LL_SPI_Enable(bus->busdev_u.spi.instance);
 
     bus->busdev_u.spi.modeCache = bus->busdev_u.spi.instance->CR1;
+    bus->busdev_u.spi.cr1SoftCopy = &spiDevice[spiDeviceByInstance(bus->busdev_u.spi.instance)].cr1SoftCopy;
 }
 
 void spiBusTransactionSetup(const busDevice_t *bus)
 {
-    // XXX We rely on MSTR bit to detect valid modeCache during experiment and transition.
-    if (bus->busdev_u.spi.modeCache) {
-        LL_SPI_Disable(bus->busdev_u.spi.instance);
-        // XXX Compare overheads of checking v.s. register writing v.s. transient signal glitches
-        if (bus->busdev_u.spi.instance->CR1 != bus->busdev_u.spi.modeCache) {
-            bus->busdev_u.spi.instance->CR1 = bus->busdev_u.spi.modeCache;
-        }
+    // We rely on MSTR bit to detect valid modeCache
+
+    if (bus->busdev_u.spi.modeCache && bus->busdev_u.spi.modeCache != *bus->busdev_u.spi.cr1SoftCopy) {
+        bus->busdev_u.spi.instance->CR1 = bus->busdev_u.spi.modeCache;
+        *bus->busdev_u.spi.cr1SoftCopy = bus->busdev_u.spi.modeCache;
     }
-    LL_SPI_Enable(bus->busdev_u.spi.instance);
 }
 #endif // USE_SPI_TRANSACTION
 #endif
