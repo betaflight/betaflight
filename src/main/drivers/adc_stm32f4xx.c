@@ -218,9 +218,11 @@ void adcInit(const adcConfig_t *config)
         adcOperatingConfig[i].enabled = true;
     }
 
+#ifndef USE_ADC_INTERNAL
     if (!adcActive) {
         return;
     }
+#endif
 
     RCC_ClockCmd(adc.rccADC, ENABLE);
 
@@ -232,6 +234,22 @@ void adcInit(const adcConfig_t *config)
     ADC_CommonInitStructure.ADC_DMAAccessMode    = ADC_DMAAccessMode_Disabled;
     ADC_CommonInitStructure.ADC_TwoSamplingDelay = ADC_TwoSamplingDelay_5Cycles;
     ADC_CommonInit(&ADC_CommonInitStructure);
+
+#ifdef USE_ADC_INTERNAL
+    // If device is not ADC1 or there's no active channel, then initialize ADC1 separately
+    if (device != ADCDEV_1 || !adcActive) {
+        RCC_ClockCmd(adcHardware[ADCDEV_1].rccADC, ENABLE);
+        adcInitDevice(ADC1, 2);
+        ADC_Cmd(ADC1, ENABLE);
+    }
+
+    // Initialize for injected conversion
+    adcInitInternalInjected();
+
+    if (!adcActive) {
+        return;
+    }
+#endif
 
     adcInitDevice(adc.ADCx, configuredAdcChannels);
 
@@ -247,17 +265,6 @@ void adcInit(const adcConfig_t *config)
     ADC_DMACmd(adc.ADCx, ENABLE);
     ADC_Cmd(adc.ADCx, ENABLE);
 
-#ifdef USE_ADC_INTERNAL
-    // If device is not ADC1, then initialize ADC1 separately
-    if (device != ADCDEV_1) {
-        RCC_ClockCmd(adcHardware[ADCDEV_1].rccADC, ENABLE);
-        adcInitDevice(ADC1, 2);
-        ADC_Cmd(ADC1, ENABLE);
-    }
-
-    // Initialize for injected conversion
-    adcInitInternalInjected();
-#endif
 
     dmaInit(dmaGetIdentifier(adc.DMAy_Streamx), OWNER_ADC, 0);
 
