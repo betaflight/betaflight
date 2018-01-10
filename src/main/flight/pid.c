@@ -543,5 +543,5 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
 
 bool crashRecoveryModeActive(void)
 {
-	return inCrashRecoveryMode;
+    return inCrashRecoveryMode;
 }

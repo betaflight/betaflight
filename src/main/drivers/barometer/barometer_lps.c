@@ -14,7 +14,7 @@
 #include "drivers/io.h"
 #include "drivers/time.h"
 
-//====================================Registers Addresses=========================================// 
+//====================================Registers Addresses=========================================//
 #define LPS_REF_P_XL    0x08
 #define LPS_REF_P_L     0x09
 #define LPS_REF_P_H     0x0A
@@ -134,7 +134,7 @@
 #define LPS_THS_PH      0x31
 #define LPS_RPDS_L      0x39
 #define LPS_RPDS_H      0x3A
-//=======================================Constants=============================================// 
+//=======================================Constants=============================================//
 #define LPS22_ID        0xB1
 #define LPS25_ID        0xBD
 #define LPS33_ID        0xB1

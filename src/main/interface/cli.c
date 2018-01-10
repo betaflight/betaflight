@@ -2998,7 +2998,7 @@ static void cliStatus(char *cmdline)
     UNUSED(cmdline);
 
     cliPrintLinef("System Uptime: %d seconds", millis() / 1000);
-    
+
     #ifdef USE_RTC_TIME
     char buf[FORMATTED_DATE_TIME_BUFSIZE];
     dateTime_t dt;

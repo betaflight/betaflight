@@ -88,9 +88,9 @@ typedef enum {
 } rcdevice_5key_simulation_operation_e;
 
 // Operation of RCDEVICE_PROTOCOL_COMMAND_5KEY_CONNECTION
-typedef enum { 
-    RCDEVICE_PROTOCOL_5KEY_CONNECTION_OPEN = 0x01, 
-    RCDEVICE_PROTOCOL_5KEY_CONNECTION_CLOSE = 0x02 
+typedef enum {
+    RCDEVICE_PROTOCOL_5KEY_CONNECTION_OPEN = 0x01,
+    RCDEVICE_PROTOCOL_5KEY_CONNECTION_CLOSE = 0x02
 } RCDEVICE_5key_connection_event_e;
 
 typedef enum {

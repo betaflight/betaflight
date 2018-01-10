@@ -125,7 +125,7 @@
 #define USE_RESOURCE_MGMT
 #define USE_SERVOS
 #endif
- 
+
 #if (FLASH_SIZE > 128)
 #define USE_CMS
 #define USE_TELEMETRY_CRSF

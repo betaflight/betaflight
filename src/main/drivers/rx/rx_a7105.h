@@ -85,7 +85,7 @@ typedef enum {
     A7105_32_FILTER_TEST = 0x32,
 } A7105Reg_t;
 
-/*	Register: A7105_00_MODE */
+/* Register: A7105_00_MODE */
 #define A7105_MODE_FECF        0x40    // [0]: FEC pass. [1]: FEC error. (FECF is read only, it is updated internally while receiving every packet.)
 #define A7105_MODE_CRCF        0x20    // [0]: CRC pass. [1]: CRC error. (CRCF is read only, it is updated internally while receiving every packet.)
 #define A7105_MODE_CER         0x10    // [0]: RF chip is disabled. [1]: RF chip is enabled.

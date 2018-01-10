@@ -172,15 +172,15 @@
       RCC_OscInitStruct.PLL.PLLP             = RCC_PLLP_DIV2;
       RCC_OscInitStruct.PLL.PLLQ             = 9;
 #else
-      /* Enable HSE Oscillator and activate PLL with HSE as source */ 
-      RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE; 
-      RCC_OscInitStruct.HSEState = RCC_HSE_ON; 
-      RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON; 
-      RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE; 
-      RCC_OscInitStruct.PLL.PLLM = PLL_M; 
-      RCC_OscInitStruct.PLL.PLLN = PLL_N; 
-      RCC_OscInitStruct.PLL.PLLP = PLL_P; 
-      RCC_OscInitStruct.PLL.PLLQ = PLL_Q;  
+      /* Enable HSE Oscillator and activate PLL with HSE as source */
+      RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+      RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+      RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+      RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+      RCC_OscInitStruct.PLL.PLLM = PLL_M;
+      RCC_OscInitStruct.PLL.PLLN = PLL_N;
+      RCC_OscInitStruct.PLL.PLLP = PLL_P;
+      RCC_OscInitStruct.PLL.PLLQ = PLL_Q;
 #endif
 
       ret = HAL_RCC_OscConfig(&RCC_OscInitStruct);

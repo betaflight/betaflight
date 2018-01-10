@@ -455,10 +455,10 @@ static long cmsx_CopyControlRateProfile(displayPort_t *pDisplay, const void *ptr
     return 0;
 }
 
-static OSD_Entry cmsx_menuCopyProfileEntries[] = 
+static OSD_Entry cmsx_menuCopyProfileEntries[] =
 {
     { "-- COPY PROFILE --", OME_Label, NULL, NULL, 0},
-    
+
     { "CPY PID PROF TO",   OME_TAB,      NULL,                        &cmsx_PidProfileTable, 0 },
     { "COPY PP",           OME_Funcall,  cmsx_CopyPidProfile,         NULL, 0 },
     { "CPY RATE PROF TO",  OME_TAB,      NULL,                        &cmsx_ControlRateProfileTable, 0 },

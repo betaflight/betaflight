@@ -230,9 +230,9 @@ uint32_t rcdeviceOSDTxBytesFree(const displayPort_t *displayPort)
     return INT32_MAX;
 }
 
-int rcdeviceScreenSize(const displayPort_t *displayPort) 
-{ 
-    return displayPort->rows * displayPort->cols; 
+int rcdeviceScreenSize(const displayPort_t *displayPort)
+{
+    return displayPort->rows * displayPort->cols;
 }
 
 #endif

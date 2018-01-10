@@ -333,7 +333,7 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
 
         FALLTHROUGH;
         // here FS code could be
-    case STATE_DATA:	
+    case STATE_DATA:
         if (IORead(gdoPin) && (frameReceived == false)){
             uint8_t ccLen = cc2500ReadReg(CC2500_3B_RXBYTES | CC2500_READ_BURST) & 0x7F;
             ccLen = cc2500ReadReg(CC2500_3B_RXBYTES | CC2500_READ_BURST) & 0x7F; // read 2 times to avoid reading errors
@@ -341,7 +341,7 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
                 ccLen = 32;
             }
             if (ccLen) {
-                cc2500ReadFifo(packet, ccLen);				
+                cc2500ReadFifo(packet, ccLen);
                 uint16_t lcrc= calculateCrc(&packet[3], (ccLen - 7));
                 if((lcrc >> 8) == packet[ccLen-4] && (lcrc&0x00FF) == packet[ccLen - 3]){ // check calculateCrc
                     if (packet[0] == 0x1D) {
@@ -419,7 +419,7 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
                             packetTimerUs = micros();
                             frameReceived = true; // no need to process frame again.
                         }
-                    }				
+                    }
                 }
             }
         }

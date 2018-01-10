@@ -188,7 +188,7 @@ static void hmc5883lConfigureDataReadyInterruptHandling(magDev_t* mag)
 
 #ifdef USE_MAG_SPI_HMC5883
 static void hmc5883SpiInit(busDevice_t *busdev)
-{   
+{
     IOHi(busdev->busdev_u.spi.csnPin); // Disable
 
     IOInit(busdev->busdev_u.spi.csnPin, OWNER_COMPASS_CS, 0);

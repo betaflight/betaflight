@@ -38,7 +38,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM4, CH2, PB7, TIM_USE_MOTOR,            0), // S3_OUT
     DEF_TIM(TIM1, CH1, PA8, TIM_USE_MOTOR,            0), // S4_OUT
     DEF_TIM(TIM4, CH1, PB6, TIM_USE_MOTOR,            0), // S1_IN/
-	//    DEF_TIM(TIM3, CH1, PB4, TIM_USE_MOTOR,             1), // S5_OUT <--Moved to allow Parallel PWM with proper ESC
+//    DEF_TIM(TIM3, CH1, PB4, TIM_USE_MOTOR,             1), // S5_OUT <--Moved to allow Parallel PWM with proper ESC
     DEF_TIM(TIM2, CH3, PA2, TIM_USE_MOTOR,            0), // S6_OUT
 
 };
