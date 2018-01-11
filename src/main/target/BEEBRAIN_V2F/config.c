@@ -143,7 +143,7 @@ void targetConfiguration(void)
     osdConfigMutable()->item_pos[OSD_ESC_RPM]            &= ~VISIBLE_FLAG;
 
     modeActivationConditionsMutable(0)->modeId           = BOXANGLE;
-    modeActivationConditionsMutable(0)->auxChannelIndex  = AUX2 - AUX1;
+    modeActivationConditionsMutable(0)->auxChannelIndex  = AUX2 - NON_AUX_CHANNEL_COUNT;
     modeActivationConditionsMutable(0)->range.startStep  = CHANNEL_VALUE_TO_STEP(900);
     modeActivationConditionsMutable(0)->range.endStep    = CHANNEL_VALUE_TO_STEP(2100);
 
