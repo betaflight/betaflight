@@ -398,7 +398,12 @@ static void osdDrawSingleElement(uint8_t item)
     case OSD_HOME_DIR:
         if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
             if (GPS_distanceToHome > 0) {
-                const int h = GPS_directionToHome - DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+                int h = GPS_directionToHome - DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+                // If MAG_Heading is not available, yaw starts with zero in a random direction. With GPS course over ground this can be roughly corrected
+                if (!sensors(SENSOR_MAG)) {
+                    h = GPS_directionToHome - DECIDEGREES_TO_DEGREES(gpsSol.groundCourse);
+                }
+
                 buff[0] = osdGetDirectionSymbolFromHeading(h);
             } else {
                 // We don't have a HOME symbol in the font, by now we use this
@@ -430,7 +435,12 @@ static void osdDrawSingleElement(uint8_t item)
     case OSD_COMPASS_BAR:
         {
             int16_t h = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
-
+#ifdef USE_GPS
+            // If MAG_Heading is not available, yaw starts with zero in a random direction. With GPS course over ground the flight direction is roughly displayed instead
+            if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME) && !sensors(SENSOR_MAG | SENSOR_RANGEFINDER)) {
+                h = DECIDEGREES_TO_DEGREES(gpsSol.groundCourse);
+            }
+#endif
             h = osdGetHeadingIntoDiscreteDirections(h, 16);
 
             memcpy(buff, compassBar + h, 9);
@@ -440,7 +450,17 @@ static void osdDrawSingleElement(uint8_t item)
 
     case OSD_ALTITUDE:
         {
+#ifdef USE_GPS
+            // If BARO is not available, the estimated altitude is zero. Using GPS altitude an absolute height can be displayed instead.
+            if (STATE(GPS_FIX) && !sensors(SENSOR_BARO | SENSOR_RANGEFINDER)) {
+                osdFormatAltitudeString(buff, gpsSol.llh.alt*100, true); // GPS altitude is in 1m units
+            } else {
             osdFormatAltitudeString(buff, getEstimatedAltitude(), true);
+            }
+#else				
+            osdFormatAltitudeString(buff, getEstimatedAltitude(), true);
+#endif				
+
             break;
         }
 
@@ -464,7 +484,7 @@ static void osdDrawSingleElement(uint8_t item)
             } else {
                 osdFormatTime(buff, OSD_TIMER_PREC_SECOND, remaining_time);
             }
-            break;
+        break;
         }
 
     case OSD_FLYMODE:
@@ -473,7 +493,7 @@ static void osdDrawSingleElement(uint8_t item)
 
             if (isAirmodeActive()) {
                 p = "AIR";
-            }
+        }
 
             if (FLIGHT_MODE(FAILSAFE_MODE)) {
                 p = "!FS!";
@@ -481,7 +501,7 @@ static void osdDrawSingleElement(uint8_t item)
                 p = "STAB";
             } else if (FLIGHT_MODE(HORIZON_MODE)) {
                 p = "HOR";
-            }
+        }
 
             displayWrite(osdDisplayPort, elemPosX, elemPosY, p);
             return;
@@ -768,7 +788,7 @@ static void osdDrawElements(void)
 
     // Hide OSD when OSDSW mode is active
     if (IS_RC_MODE_ACTIVE(BOXOSD)) {
-        return;
+      return;
     }
 
     if (sensors(SENSOR_ACC)) {
@@ -816,14 +836,14 @@ static void osdDrawElements(void)
 #endif // GPS
 
 #ifdef USE_ESC_SENSOR
-    if (feature(FEATURE_ESC_SENSOR)) {
-        osdDrawSingleElement(OSD_ESC_TMP);
-        osdDrawSingleElement(OSD_ESC_RPM);
-    }
+  if (feature(FEATURE_ESC_SENSOR)) {
+      osdDrawSingleElement(OSD_ESC_TMP);
+      osdDrawSingleElement(OSD_ESC_RPM);
+  }
 #endif
 
 #ifdef USE_RTC_TIME
-    osdDrawSingleElement(OSD_RTC_DATETIME);
+  osdDrawSingleElement(OSD_RTC_DATETIME);
 #endif
 
 #ifdef USE_OSD_ADJUSTMENTS
