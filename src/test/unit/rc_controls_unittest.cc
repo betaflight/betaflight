@@ -50,12 +50,17 @@ extern "C" {
     #include "fc/rc_adjustments.h"
 
     #include "fc/rc_controls.h"
+    #include "fc/runtime_config.h"
 
     #include "scheduler/scheduler.h"
 }
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
+
+void unsetArmingDisabled(armingDisableFlags_e flag) {
+  UNUSED(flag);
+}
 
 class RcControlsModesTest : public ::testing::Test {
 protected:

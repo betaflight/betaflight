@@ -123,6 +123,7 @@
 #define USE_TELEMETRY_SMARTPORT
 #define USE_RESOURCE_MGMT
 #define USE_SERVOS
+#define USE_RUNAWAY_TAKEOFF     // Runaway Takeoff Prevention (anti-taz)
 #endif
 
 #if (FLASH_SIZE > 128)
