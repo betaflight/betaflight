@@ -39,6 +39,9 @@
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
 
+#include "pg/beeper_dev.h"
+#include "pg/flash.h"
+
 #include "hardware_revision.h"
 
 void targetConfiguration(void)

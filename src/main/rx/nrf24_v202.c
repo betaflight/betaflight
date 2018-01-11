@@ -31,7 +31,7 @@
 #include "common/utils.h"
 
 #include "drivers/io.h"
-#include "drivers/rx_nrf24l01.h"
+#include "drivers/rx/rx_nrf24l01.h"
 #include "drivers/time.h"
 
 #include "rx/rx.h"
