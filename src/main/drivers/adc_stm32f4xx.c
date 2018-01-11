@@ -40,6 +40,10 @@
 
 #include "pg/adc.h"
 
+// These are missing from STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_adc.h
+#ifdef STM32F446xx
+#define ADC_Channel_TempSensor ADC_Channel_18
+#endif
 
 const adcDevice_t adcHardware[] = {
     { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .DMAy_Streamx = ADC1_DMA_STREAM, .channel = DMA_Channel_0 },
