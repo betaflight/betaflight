@@ -112,11 +112,13 @@ static int32_t currentMeterADCToCentiamps(const uint16_t src)
     return centiAmps; // Returns Centiamps to maintain compatability with the rest of the code
 }
 
+#if defined(USE_ADC) || defined(USE_VIRTUAL_CURRENT_METER)
 static void updateCurrentmAhDrawnState(currentMeterMAhDrawnState_t *state, int32_t amperageLatest, int32_t lastUpdateAt)
 {
     state->mAhDrawnF = state->mAhDrawnF + (amperageLatest * lastUpdateAt / (100.0f * 1000 * 3600));
     state->mAhDrawn = state->mAhDrawnF;
 }
+#endif
 
 //
 // ADC
