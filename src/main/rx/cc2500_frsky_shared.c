@@ -66,7 +66,7 @@ static setRcDataFn *setRcData;
 
 IO_t gdoPin;
 static IO_t bindPin = DEFIO_IO(NONE);
-IO_t frSkyLedPin;
+static IO_t frSkyLedPin;
 
 #if defined(USE_RX_FRSKY_SPI_PA_LNA)
 static IO_t txEnPin;
@@ -105,16 +105,34 @@ void setRssiDbm(uint8_t value)
 #endif // USE_RX_FRSKY_SPI_TELEMETRY
 
 #if defined(USE_RX_FRSKY_SPI_PA_LNA)
-void RxEnable(void)
-{
-    IOLo(txEnPin);
-}
-
 void TxEnable(void)
 {
     IOHi(txEnPin);
 }
+
+void TxDisable(void)
+{
+    IOLo(txEnPin);
+}
 #endif
+
+void LedOn(void)
+{
+#if defined(RX_FRSKY_SPI_LED_PIN_INVERTED)
+    IOLo(frSkyLedPin);
+#else
+    IOHi(frSkyLedPin);
+#endif
+}
+
+void LedOff(void)
+{
+#if defined(RX_FRSKY_SPI_LED_PIN_INVERTED)
+    IOHi(frSkyLedPin);
+#else
+    IOLo(frSkyLedPin);
+#endif
+}
 
 void frSkySpiBind(void)
 {
@@ -381,7 +399,7 @@ rx_spi_received_e frSkySpiDataReceived(uint8_t *packet)
         break;
     case STATE_BIND:
         if (checkBindRequested(true) || rxFrSkySpiConfig()->autoBind) {
-            IOHi(frSkyLedPin);
+            LedOn();
             initTuneRx();
 
             protocolState = STATE_BIND_TUNING;
@@ -419,9 +437,9 @@ rx_spi_received_e frSkySpiDataReceived(uint8_t *packet)
         } else {
             uint8_t ctr = 40;
             while (ctr--) {
-                IOHi(frSkyLedPin);
+                LedOn();
                 delay(50);
-                IOLo(frSkyLedPin);
+                LedOff();
                 delay(50);
             }
         }
@@ -481,22 +499,24 @@ void switchAntennae(void)
 
 static bool frSkySpiDetect(void)
 {
-    uint8_t tmp[2];
-    tmp[0] = cc2500ReadReg(CC2500_30_PARTNUM | CC2500_READ_BURST); //CC2500 read registers chip part num
-    tmp[1] = cc2500ReadReg(CC2500_31_VERSION | CC2500_READ_BURST); //CC2500 read registers chip version
-    if (tmp[0] == 0x80 && tmp[1]==0x03){
+    const uint8_t chipPartNum = cc2500ReadReg(CC2500_30_PARTNUM | CC2500_READ_BURST); //CC2500 read registers chip part num
+    const uint8_t chipVersion = cc2500ReadReg(CC2500_31_VERSION | CC2500_READ_BURST); //CC2500 read registers chip version
+    if (chipPartNum == 0x80 && chipVersion == 0x03) {
         return true;
     }
+
     return false;
 }
 
-void frSkySpiInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+bool frSkySpiInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
+#if !defined(RX_FRSKY_SPI_DISABLE_CHIP_DETECTION)
     if (!frSkySpiDetect()) {
-        rxRuntimeConfig->channelCount = 0;
-
-        return;
+        return false;
     }
+#else
+    UNUSED(frSkySpiDetect);
+#endif
 
     spiProtocol = rxConfig->rx_spi_protocol;
 
@@ -561,7 +581,7 @@ void frSkySpiInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
 #if defined(USE_RX_FRSKY_SPI_DIVERSITY)
     IOHi(antSelPin);
 #endif
-    RxEnable();
+    TxDisable();
 #endif // USE_RX_FRSKY_SPI_PA_LNA
 
     missingPackets = 0;
@@ -569,5 +589,7 @@ void frSkySpiInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
 
     start_time = millis();
     protocolState = STATE_INIT;
+
+    return true;
 }
 #endif

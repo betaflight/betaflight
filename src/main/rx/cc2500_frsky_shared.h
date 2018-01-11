@@ -47,12 +47,14 @@ extern timeDelta_t timeoutUs;
 extern int16_t rssiDbm;
 
 extern IO_t gdoPin;
-extern IO_t frSkyLedPin;
 
 void setRssiDbm(uint8_t value);
 
-void RxEnable(void);
 void TxEnable(void);
+void TxDisable(void);
+
+void LedOn(void);
+void LedOff(void);
 
 void switchAntennae(void);
 

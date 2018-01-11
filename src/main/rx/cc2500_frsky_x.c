@@ -351,7 +351,7 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
                             missingPackets = 0;
                             timeoutUs = 1;
                             receiveDelayUs = 0;
-                            IOHi(frSkyLedPin);
+                            LedOn();
                             if (skipChannels) {
                                 channelsToSkip = packet[5] << 2;
                                 if (packet[4] >= listLength) {
@@ -431,9 +431,9 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
         }
         if (cmpTimeUs(micros(), packetTimerUs) > timeoutUs * SYNC_DELAY_MAX) {
             if (ledIsOn) {
-                IOLo(frSkyLedPin);
+                LedOff();
             } else {
-                IOHi(frSkyLedPin);
+                LedOn();
             }
             ledIsOn = !ledIsOn;
 
@@ -500,7 +500,7 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
             nextChannel(channelsToSkip);
             cc2500Strobe(CC2500_SRX);
 #ifdef USE_RX_FRSKY_SPI_PA_LNA
-            RxEnable();
+            TxDisable();
 #if defined(USE_RX_FRSKY_SPI_DIVERSITY)
             if (missingPackets >= 2) {
                 switchAntennae();
