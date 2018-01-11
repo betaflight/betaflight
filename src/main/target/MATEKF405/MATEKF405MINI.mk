@@ -1,0 +1,1 @@
+# MATEKF405MINI is a variant of MATEKF405 but with 32M Flash instead of Micro SD Slot
