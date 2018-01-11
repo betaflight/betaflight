@@ -114,8 +114,14 @@ void adcInitDevice(ADC_TypeDef *adcdev, int channelCount)
     ADC_InitStructure.ADC_ExternalTrigConvEdge     = ADC_ExternalTrigConvEdge_None;
     ADC_InitStructure.ADC_DataAlign                = ADC_DataAlign_Right;
     ADC_InitStructure.ADC_NbrOfConversion          = channelCount;
-    ADC_InitStructure.ADC_ScanConvMode             = channelCount > 1 ? ENABLE : DISABLE; // 1=scan more that one channel in group
 
+    // Multiple injected channel seems to require scan conversion mode to be
+    // enabled even if main (non-injected) channel count is 1.
+#ifdef USE_ADC_INTERNAL
+    ADC_InitStructure.ADC_ScanConvMode             = ENABLE;
+#else
+    ADC_InitStructure.ADC_ScanConvMode             = channelCount > 1 ? ENABLE : DISABLE; // 1=scan more that one channel in group
+#endif
     ADC_Init(adcdev, &ADC_InitStructure);
 }
 
