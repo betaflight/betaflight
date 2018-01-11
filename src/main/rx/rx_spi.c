@@ -48,7 +48,7 @@ uint16_t rxSpiRcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 STATIC_UNIT_TESTED uint8_t rxSpiPayload[RX_SPI_MAX_PAYLOAD_SIZE];
 STATIC_UNIT_TESTED uint8_t rxSpiNewPacketAvailable; // set true when a new packet is received
 
-typedef void (*protocolInitFnPtr)(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
+typedef bool (*protocolInitFnPtr)(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
 typedef rx_spi_received_e (*protocolDataReceivedFnPtr)(uint8_t *payload);
 typedef void (*protocolSetRcDataFromPayloadFnPtr)(uint16_t *rcData, const uint8_t *payload);
 
@@ -163,8 +163,7 @@ bool rxSpiInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     const rx_spi_type_e spiType = feature(FEATURE_SOFTSPI) ? RX_SPI_SOFTSPI : RX_SPI_HARDSPI;
     rxSpiDeviceInit(spiType);
     if (rxSpiSetProtocol(rxConfig->rx_spi_protocol)) {
-        protocolInit(rxConfig, rxRuntimeConfig);
-        ret = true;
+        ret = protocolInit(rxConfig, rxRuntimeConfig);
     }
     rxSpiNewPacketAvailable = false;
     rxRuntimeConfig->rxRefreshRate = 20000;

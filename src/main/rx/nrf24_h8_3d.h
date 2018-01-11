@@ -22,6 +22,6 @@
 
 struct rxConfig_s;
 struct rxRuntimeConfig_s;
-void h8_3dNrf24Init(const struct rxConfig_s *rxConfig, struct rxRuntimeConfig_s *rxRuntimeConfig);
+bool h8_3dNrf24Init(const struct rxConfig_s *rxConfig, struct rxRuntimeConfig_s *rxRuntimeConfig);
 void h8_3dNrf24SetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload);
 rx_spi_received_e h8_3dNrf24DataReceived(uint8_t *payload);

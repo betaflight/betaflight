@@ -204,7 +204,7 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
                     if (packet[0] == 0x11) {
                         if ((packet[1] == rxFrSkySpiConfig()->bindTxId[0]) &&
                             (packet[2] == rxFrSkySpiConfig()->bindTxId[1])) {
-                            IOHi(frSkyLedPin);
+                            LedOn();
                             nextChannel(1);
 #if defined(USE_RX_FRSKY_SPI_TELEMETRY)
                             if ((packet[3] % 4) == 2) {
@@ -228,7 +228,7 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
 
         if (cmpTimeUs(currentPacketReceivedTime, lastPacketReceivedTime) > (timeoutUs * SYNC_DELAY_MAX)) {
 #if defined(USE_RX_FRSKY_SPI_PA_LNA)
-            RxEnable();
+            TxDisable();
 #endif
             if (timeoutUs == 1) {
 #if defined(USE_RX_FRSKY_SPI_PA_LNA) && defined(USE_RX_FRSKY_SPI_DIVERSITY) // SE4311 chip
@@ -249,9 +249,9 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
                 nextChannel(1);
             } else {
                 if (ledIsOn) {
-                    IOLo(frSkyLedPin);
+                    LedOff();
                 } else {
-                    IOHi(frSkyLedPin);
+                    LedOn();
                 }
                 ledIsOn = !ledIsOn;
 

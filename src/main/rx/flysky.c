@@ -349,7 +349,7 @@ static rx_spi_received_e flySkyReadAndProcess (uint8_t *payload, const uint32_t 
     return result;
 }
 
-void flySkyInit (const struct rxConfig_s *rxConfig, struct rxRuntimeConfig_s *rxRuntimeConfig)
+bool flySkyInit (const struct rxConfig_s *rxConfig, struct rxRuntimeConfig_s *rxRuntimeConfig)
 {
     protocol = rxConfig->rx_spi_protocol;
 
@@ -395,6 +395,8 @@ void flySkyInit (const struct rxConfig_s *rxConfig, struct rxRuntimeConfig_s *rx
     A7105Strobe(A7105_RX); // start listening
 
     resetTimeout(micros());
+
+    return true;
 }
 
 void flySkySetRcDataFromPayload (uint16_t *rcData, const uint8_t *payload)

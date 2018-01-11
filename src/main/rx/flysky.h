@@ -30,7 +30,6 @@ PG_DECLARE(flySkyConfig_t, flySkyConfig);
 
 struct rxConfig_s;
 struct rxRuntimeConfig_s;
-void flySkyInit(const struct rxConfig_s *rxConfig,
-        struct rxRuntimeConfig_s *rxRuntimeConfig);
+bool flySkyInit(const struct rxConfig_s *rxConfig, struct rxRuntimeConfig_s *rxRuntimeConfig);
 void flySkySetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload);
 rx_spi_received_e flySkyDataReceived(uint8_t *payload);
