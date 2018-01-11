@@ -51,10 +51,7 @@
 #define I2C3_OVERCLOCK true
 #define USE_GYRO_DATA_ANALYSE
 #define USE_ADC
-#if !defined(STM32F446xx)
-// This needs a library / pathing fix first
 #define USE_ADC_INTERNAL
-#endif
 #endif // STM32F4
 
 #ifdef STM32F722xx
