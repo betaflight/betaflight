@@ -33,6 +33,8 @@
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
+#include "fc/rc_modes.h"
+#include "fc/rc_controls.h"
 
 #include "flight/mixer.h"
 #include "flight/pid.h"
@@ -139,6 +141,11 @@ void targetConfiguration(void)
     osdConfigMutable()->item_pos[OSD_NUMERICAL_VARIO]    &= ~VISIBLE_FLAG;
     osdConfigMutable()->item_pos[OSD_ESC_TMP]            &= ~VISIBLE_FLAG;
     osdConfigMutable()->item_pos[OSD_ESC_RPM]            &= ~VISIBLE_FLAG;
+
+    modeActivationConditionsMutable(0)->modeId           = BOXANGLE;
+    modeActivationConditionsMutable(0)->auxChannelIndex  = AUX2 - AUX1;
+    modeActivationConditionsMutable(0)->range.startStep  = CHANNEL_VALUE_TO_STEP(900);
+    modeActivationConditionsMutable(0)->range.endStep    = CHANNEL_VALUE_TO_STEP(2100);
 
 #if defined(BEEBRAIN_V2D)
     // DSM version
