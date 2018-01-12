@@ -220,8 +220,9 @@ void spektrumBind(rxConfig_t *rxConfig)
             }
             break;
 #endif // USE_TELEMETRY
+
         default:
-            bindPin = rxPin;
+            bindPin = rxConfig->halfDuplex ? txPin : rxPin;
         }
 
         if (!bindPin) {
