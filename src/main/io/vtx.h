@@ -35,4 +35,4 @@ typedef struct vtxSettingsConfig_s {
 PG_DECLARE(vtxSettingsConfig_t, vtxSettingsConfig);
 
 void vtxInit(void);
-void vtxProcessSchedule(timeUs_t currentTimeUs);
+void vtxUpdate(timeUs_t currentTimeUs);

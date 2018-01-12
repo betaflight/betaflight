@@ -37,6 +37,8 @@
 #include "io/vtx.h"
 #include "io/vtx_string.h"
 
+#include "interface/cli.h"
+
 
 PG_REGISTER_WITH_RESET_TEMPLATE(vtxSettingsConfig_t, vtxSettingsConfig, PG_VTX_SETTINGS_CONFIG, 0);
 
@@ -179,7 +181,8 @@ static bool vtxProcessPitMode(void) {
     return false;
 }
 
-static bool vtxProcessStateUpdate(void) {
+static bool vtxProcessStateUpdate(void)
+{
     const vtxSettingsConfig_t vtxSettingsState = vtxGetSettings();
     vtxSettingsConfig_t vtxState = vtxSettingsState;
 
@@ -196,13 +199,17 @@ static bool vtxProcessStateUpdate(void) {
     return (bool) memcmp(&vtxSettingsState, &vtxState, sizeof(vtxSettingsConfig_t));
 }
 
-void vtxProcessSchedule(timeUs_t currentTimeUs)
+void vtxUpdate(timeUs_t currentTimeUs)
 {
     static timeUs_t lastCycleTimeUs;
     static uint8_t currentSchedule = 0;
-    bool vtxUpdatePending = false;
+
+    if (cliMode) {
+        return;
+    }
 
     if (vtxCommonDeviceRegistered()) {
+        bool vtxUpdatePending = false;
         const vtxSettingsConfig_t settings = vtxGetSettings();
         // Process VTX changes from the parameter group at 10Hz
         if (currentTimeUs > lastCycleTimeUs + VTX_PARAM_CYCLE_TIME_US) {

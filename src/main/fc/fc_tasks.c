@@ -206,20 +206,6 @@ static void taskTelemetry(timeUs_t currentTimeUs)
 }
 #endif
 
-#ifdef USE_VTX_CONTROL
-// Everything that listens to VTX devices
-void taskVtxControl(timeUs_t currentTime)
-{
-    if (cliMode)
-        return;
-
-#ifdef USE_VTX_COMMON
-    vtxProcessSchedule(currentTime);
-#endif
-}
-#endif
-
-
 #ifdef USE_CAMERA_CONTROL
 void taskCameraControl(uint32_t currentTime)
 {
@@ -576,7 +562,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
 #ifdef USE_VTX_CONTROL
     [TASK_VTXCTRL] = {
         .taskName = "VTXCTRL",
-        .taskFunc = taskVtxControl,
+        .taskFunc = vtxUpdate,
         .desiredPeriod = TASK_PERIOD_HZ(5),          // 5 Hz, 200ms
         .staticPriority = TASK_PRIORITY_IDLE,
     },
