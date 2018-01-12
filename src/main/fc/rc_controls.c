@@ -243,16 +243,18 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
     }
 
     // Change PID profile
-    int newPidProfile = 0;
-    if (rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_LO) {        // ROLL left  -> PID profile 1
-        newPidProfile = 1;
-    } else if (rcSticks == THR_LO + YAW_LO + PIT_HI + ROL_CE) { // PITCH up   -> PID profile 2
-        newPidProfile = 2;
-    } else if (rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_HI) { // ROLL right -> PID profile 3
-        newPidProfile = 3;
-    }
-    if (newPidProfile) {
-        changePidProfile(newPidProfile - 1);
+    switch (rcSticks) {
+    case THR_LO + YAW_LO + PIT_CE + ROL_LO:
+        // ROLL left -> PID profile 1
+        changePidProfile(0);
+        return;
+    case THR_LO + YAW_LO + PIT_HI + ROL_CE:
+        // PITCH up -> PID profile 2
+        changePidProfile(1);
+        return;
+    case THR_LO + YAW_LO + PIT_CE + ROL_HI:
+        // ROLL right -> PID profile 3
+        changePidProfile(2);
         return;
     }
 
@@ -280,18 +282,23 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
         memset(&accelerometerTrimsDelta, 0, sizeof(accelerometerTrimsDelta));
 
         bool shouldApplyRollAndPitchTrimDelta = false;
-        if (rcSticks == THR_HI + YAW_CE + PIT_HI + ROL_CE) {
+        switch (rcSticks) {
+        case THR_HI + YAW_CE + PIT_HI + ROL_CE:
             accelerometerTrimsDelta.values.pitch = 2;
             shouldApplyRollAndPitchTrimDelta = true;
-        } else if (rcSticks == THR_HI + YAW_CE + PIT_LO + ROL_CE) {
+            break;
+        case THR_HI + YAW_CE + PIT_LO + ROL_CE:
             accelerometerTrimsDelta.values.pitch = -2;
             shouldApplyRollAndPitchTrimDelta = true;
-        } else if (rcSticks == THR_HI + YAW_CE + PIT_CE + ROL_HI) {
+            break;
+        case THR_HI + YAW_CE + PIT_CE + ROL_HI:
             accelerometerTrimsDelta.values.roll = 2;
             shouldApplyRollAndPitchTrimDelta = true;
-        } else if (rcSticks == THR_HI + YAW_CE + PIT_CE + ROL_LO) {
+            break;
+        case THR_HI + YAW_CE + PIT_CE + ROL_LO:
             accelerometerTrimsDelta.values.roll = -2;
             shouldApplyRollAndPitchTrimDelta = true;
+            break;
         }
         if (shouldApplyRollAndPitchTrimDelta) {
             applyAndSaveAccelerometerTrimsDelta(&accelerometerTrimsDelta);
