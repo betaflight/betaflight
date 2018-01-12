@@ -46,6 +46,7 @@ typedef struct pgRegistry_s {
     uint8_t *address;      // Address of the group in RAM.
     uint8_t *copy;         // Address of the copy in RAM.
     uint8_t **ptr;         // The pointer to update after loading the record into ram.
+    const char *name;      // User friendly name
     union {
         void *ptr;         // Pointer to init template
         pgResetFunc *fn;   // Popinter to pgResetFunc
@@ -121,6 +122,7 @@ extern const uint8_t __pg_resetdata_end[];
         .address = (uint8_t*)&_name ## _System,                         \
         .copy = (uint8_t*)&_name ## _Copy,                              \
         .ptr = 0,                                                       \
+        .name = #_name,                                                 \
         _reset,                                                         \
     }                                                                   \
     /**/
@@ -150,6 +152,7 @@ extern const uint8_t __pg_resetdata_end[];
         .address = (uint8_t*)&_name ## _SystemArray,                    \
         .copy = (uint8_t*)&_name ## _CopyArray,                         \
         .ptr = 0,                                                       \
+        .name = #_name,                                                 \
         _reset,                                                         \
     }                                                                   \
     /**/

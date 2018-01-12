@@ -143,6 +143,8 @@ extern uint8_t __config_end;
 #include "telemetry/telemetry.h"
 
 
+#define CLI_NAME_BUFF_LEN 64
+
 static serialPort_t *cliPort;
 
 #ifdef STM32F1
@@ -206,6 +208,13 @@ static const char * const *sensorHardwareNames[] = {
     lookupTableGyroHardware, lookupTableAccHardware, lookupTableBaroHardware, lookupTableMagHardware, lookupTableRangefinderHardware
 };
 #endif // USE_SENSOR_NAMES
+
+
+static void cliGetName(const clivalue_t *value, char *buff)
+{
+    const pgRegistry_t *pg = pgFind(value->pgn);
+    tfp_sprintf(buff, "%s.%s", pg->name, value->name);
+}
 
 static void cliPrint(const char *str)
 {
@@ -426,10 +435,13 @@ const void *cliGetDefaultPointer(const clivalue_t *value)
 
 static void dumpPgValue(const clivalue_t *value, uint8_t dumpMask)
 {
+    char fullVarName[CLI_NAME_BUFF_LEN];
+    cliGetName(value, fullVarName);
+
     const pgRegistry_t *pg = pgFind(value->pgn);
 #ifdef DEBUG
     if (!pg) {
-        cliPrintLinef("VALUE %s ERROR", value->name);
+        cliPrintLinef("VALUE %s ERROR", fullVarName);
         return; // if it's not found, the pgn shouldn't be in the value table!
     }
 #endif
@@ -441,11 +453,11 @@ static void dumpPgValue(const clivalue_t *value, uint8_t dumpMask)
 
     if (((dumpMask & DO_DIFF) == 0) || !equalsDefault) {
         if (dumpMask & SHOW_DEFAULTS && !equalsDefault) {
-            cliPrintf(defaultFormat, value->name);
+            cliPrintf(defaultFormat, fullVarName);
             printValuePointer(value, (uint8_t*)pg->address + valueOffset, false);
             cliPrintLinefeed();
         }
-        cliPrintf(format, value->name);
+        cliPrintf(format, fullVarName);
         printValuePointer(value, pg->copy + valueOffset, false);
         cliPrintLinefeed();
     }
@@ -2817,11 +2829,14 @@ STATIC_UNIT_TESTED void cliGet(char *cmdline)
 {
     const clivalue_t *val;
     int matchedCommands = 0;
+    char fullVarName[CLI_NAME_BUFF_LEN];
 
     for (uint32_t i = 0; i < valueTableEntryCount; i++) {
-        if (strstr(valueTable[i].name, cmdline)) {
-            val = &valueTable[i];
-            cliPrintf("%s = ", valueTable[i].name);
+        val = &valueTable[i];
+        cliGetName(val, fullVarName);
+
+        if (strstr(fullVarName, cmdline)) {
+            cliPrintf("%s = ", fullVarName);
             cliPrintVar(val, 0);
             cliPrintLinefeed();
             cliPrintVarRange(val);
@@ -2865,9 +2880,11 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
     if (len == 0 || (len == 1 && cmdline[0] == '*')) {
         cliPrintLine("Current settings: ");
 
+        char fullVarName[CLI_NAME_BUFF_LEN];
         for (uint32_t i = 0; i < valueTableEntryCount; i++) {
             const clivalue_t *val = &valueTable[i];
-            cliPrintf("%s = ", valueTable[i].name);
+            cliGetName(val, fullVarName);
+            cliPrintf("%s = ", fullVarName);
             cliPrintVar(val, len); // when len is 1 (when * is passed as argument), it will print min/max values as well, for gui
             cliPrintLinefeed();
         }
@@ -2880,11 +2897,14 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
         eqptr++;
         eqptr = skipSpace(eqptr);
 
+        char fullVarName[CLI_NAME_BUFF_LEN];
+
         for (uint32_t i = 0; i < valueTableEntryCount; i++) {
             const clivalue_t *val = &valueTable[i];
+            cliGetName(val, fullVarName);
 
             // ensure exact match when setting to prevent setting variables with shorter names
-            if (strncasecmp(cmdline, val->name, strlen(val->name)) == 0 && variableNameLength == strlen(val->name)) {
+            if (strncasecmp(cmdline, fullVarName, strlen(fullVarName)) == 0 && variableNameLength == strlen(fullVarName)) {
 
                 bool valueChanged = false;
                 int16_t value  = 0;
@@ -2976,7 +2996,7 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
                 }
 
                 if (valueChanged) {
-                    cliPrintf("%s set to ", val->name);
+                    cliPrintf("%s set to ", fullVarName);
                     cliPrintVar(val, 0);
                 } else {
                     cliPrintLine("Invalid value");
