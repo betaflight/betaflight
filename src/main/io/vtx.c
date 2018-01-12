@@ -52,8 +52,6 @@ PG_RESET_TEMPLATE(vtxSettingsConfig_t, vtxSettingsConfig,
     .lowPowerDisarm = VTX_SETTINGS_DEFAULT_LOW_POWER_DISARM,
 );
 
-#define VTX_PARAM_CYCLE_TIME_US 100000 // 10Hz
-
 typedef enum {
     VTX_PARAM_POWER = 0,
     VTX_PARAM_BANDCHAN,
@@ -202,7 +200,6 @@ static bool vtxProcessStateUpdate(void)
 
 void vtxUpdate(timeUs_t currentTimeUs)
 {
-    static timeUs_t lastCycleTimeUs;
     static uint8_t currentSchedule = 0;
 
     if (cliMode) {
@@ -214,34 +211,29 @@ void vtxUpdate(timeUs_t currentTimeUs)
 
     if (vtxCommonDeviceRegistered()) {
         bool vtxUpdatePending = false;
-        const vtxSettingsConfig_t settings = vtxGetSettings();
-        // Process VTX changes from the parameter group at 10Hz
-        if (currentTimeUs > lastCycleTimeUs + VTX_PARAM_CYCLE_TIME_US) {
-            switch (currentSchedule) {
-            case VTX_PARAM_POWER:
-                vtxUpdatePending = vtxProcessPower();
-                break;
-            case VTX_PARAM_BANDCHAN:
-                if (settings.band) {
-                    vtxUpdatePending = vtxProcessBandAndChannel();
+        switch (currentSchedule) {
+        case VTX_PARAM_POWER:
+            vtxUpdatePending = vtxProcessPower();
+            break;
+        case VTX_PARAM_BANDCHAN:
+            if (vtxGetSettings().band) {
+                vtxUpdatePending = vtxProcessBandAndChannel();
 #if defined(VTX_SETTINGS_FREQCMD)
-                } else {
-                    vtxUpdatePending = vtxProcessFrequency();
+            } else {
+                vtxUpdatePending = vtxProcessFrequency();
 #endif
-                }
-                break;
-            case VTX_PARAM_PITMODE:
-                vtxUpdatePending = vtxProcessPitMode();
-                break;
-            case VTX_PARAM_CONFIRM:
-                 vtxUpdatePending = vtxProcessStateUpdate();
-                 break;
-            default:
-                break;
             }
-            lastCycleTimeUs = currentTimeUs;
-            currentSchedule = (currentSchedule + 1) % VTX_PARAM_COUNT;
+            break;
+        case VTX_PARAM_PITMODE:
+            vtxUpdatePending = vtxProcessPitMode();
+            break;
+        case VTX_PARAM_CONFIRM:
+            vtxUpdatePending = vtxProcessStateUpdate();
+            break;
+        default:
+            break;
         }
+        currentSchedule = (currentSchedule + 1) % VTX_PARAM_COUNT;
         if (!ARMING_FLAG(ARMED) || vtxUpdatePending) {
             vtxCommonProcess(currentTimeUs);
         }
