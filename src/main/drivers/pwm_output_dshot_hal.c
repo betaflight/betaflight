@@ -38,15 +38,17 @@ motorDmaOutput_t *getMotorDmaOutput(uint8_t index)
     return &dmaMotors[index];
 }
 
-uint8_t getTimerIndex(TIM_TypeDef *timer)
+uint8_t getTimerIndex(TIM_TypeDef *timer, bool *newTimer)
 {
     for (int i = 0; i < dmaMotorTimerCount; i++) {
         if (dmaMotorTimers[i].timer == timer) {
+            *newTimer = false;
             return i;
         }
     }
     dmaMotorTimers[dmaMotorTimerCount++].timer = timer;
-    return dmaMotorTimerCount - 1;
+    *newTimer = true;
+    return dmaMotorTimerCount-1;
 }
 
 void pwmWriteDshotInt(uint8_t index, uint16_t value)
@@ -144,6 +146,9 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 
     RCC_ClockCmd(timerRCC(timer), ENABLE);
 
+    bool configureTimer; // XXX Not used (Todo?)
+    motor->timer = &dmaMotorTimers[getTimerIndex(timer, &configureTimer)];
+
     motor->TimHandle.Instance = timerHardware->tim;
     motor->TimHandle.Init.Prescaler = lrintf((float) timerClock(timer) / getDshotHz(pwmProtocolType) + 0.01f) - 1;
     motor->TimHandle.Init.Period = pwmProtocolType == PWM_TYPE_PROSHOT1000 ? MOTOR_NIBBLE_LENGTH_PROSHOT : MOTOR_BITLENGTH;
@@ -156,8 +161,6 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
         /* Initialization Error */
         return;
     }
-
-    motor->timer = &dmaMotorTimers[getTimerIndex(timer)];
 
     /* Set the common dma handle parameters to be configured */
     motor->hdma_tim.Init.Direction = DMA_MEMORY_TO_PERIPH;
