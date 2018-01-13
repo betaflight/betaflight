@@ -143,6 +143,12 @@ void displayPortTestBufferIsEmpty()
 {
     for (size_t i = 0; i < UNITTEST_DISPLAYPORT_BUFFER_LEN; i++) {
         EXPECT_EQ(' ', testDisplayPortBuffer[i]);
+        if (testDisplayPortBuffer[i] != ' ') {
+            testDisplayPortBuffer[UNITTEST_DISPLAYPORT_BUFFER_LEN - 1] = '\0';
+            printf("FIRST ERROR AT:%d\r\n", (int)i);
+            printf("DISPLAY:%s\r\n", testDisplayPortBuffer);
+            break;
+        }
     }
 }
 
