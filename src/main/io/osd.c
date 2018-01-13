@@ -207,6 +207,26 @@ static int32_t osdGetMetersToSelectedUnit(int32_t meters)
     }
 }
 
+STATIC_UNIT_TESTED int osdConvertTemperatureToSelectedUnit(int tempInDeciDegrees)
+{
+    switch (osdConfig()->units) {
+    case OSD_UNIT_IMPERIAL:
+        return ((tempInDeciDegrees * 9) / 5) + 320;
+    default:
+        return tempInDeciDegrees;
+    }
+}
+
+static char osdGetTemperatureSymbolForSelectedUnit(void)
+{
+    switch (osdConfig()->units) {
+    case OSD_UNIT_IMPERIAL:
+        return 'F';
+    default:
+        return 'C';
+    }
+}
+
 static void osdFormatAltitudeString(char * buff, int altitude, bool pad)
 {
     const int alt = osdGetMetersToSelectedUnit(altitude);
@@ -762,7 +782,7 @@ static bool osdDrawSingleElement(uint8_t item)
 
 #ifdef USE_ADC_INTERNAL
     case OSD_CORE_TEMPERATURE:
-        tfp_sprintf(buff, "%02dC", getCoreTemperatureCelsius());
+        tfp_sprintf(buff, "%02d%c", osdConvertTemperatureToSelectedUnit(getCoreTemperatureCelsius() * 10) / 10, osdGetTemperatureSymbolForSelectedUnit());
         break;
 #endif
 

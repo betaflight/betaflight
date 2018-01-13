@@ -52,6 +52,7 @@ extern "C" {
     void osdRefresh(timeUs_t currentTimeUs);
     void osdFormatTime(char * buff, osd_timer_precision_e precision, timeUs_t time);
     void osdFormatTimer(char *buff, bool showSymbol, int timerIndex);
+    int osdConvertTemperatureToSelectedUnit(int tempInDeciDegrees);
 
     uint16_t rssi;
     attitudeEulerAngles_t attitude;
@@ -754,6 +755,9 @@ TEST(OsdTest, TestElementCoreTemperature)
     osdConfigMutable()->item_pos[OSD_CORE_TEMPERATURE] = OSD_POS(1, 8) | VISIBLE_FLAG;
 
     // and
+    osdConfigMutable()->units = OSD_UNIT_METRIC;
+
+    // and
     simulationCoreTemperature = 0;
 
     // when
@@ -772,6 +776,16 @@ TEST(OsdTest, TestElementCoreTemperature)
 
     // then
     displayPortTestBufferSubstring(1, 8, "33C");
+
+    // given
+    osdConfigMutable()->units = OSD_UNIT_IMPERIAL;
+
+    // when
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(1, 8, "91F");
 }
 
 /*
@@ -905,6 +919,16 @@ TEST(OsdTest, TestFormatTimeString)
     EXPECT_EQ(0, strcmp("01:59.00", buff));
 }
 
+TEST(OsdTest, TestConvertTemperatureUnits)
+{
+    /* In Celsius */
+    osdConfigMutable()->units = OSD_UNIT_METRIC;
+    EXPECT_EQ(osdConvertTemperatureToSelectedUnit(330), 330);
+
+    /* In Fahrenheit */
+    osdConfigMutable()->units = OSD_UNIT_IMPERIAL;
+    EXPECT_EQ(osdConvertTemperatureToSelectedUnit(330), 914);
+}
 
 // STUBS
 extern "C" {
