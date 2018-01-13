@@ -1,0 +1,137 @@
+resource ppm b8
+
+resource pwm 2 c6
+resource pwm 3 c7
+resource pwm 4 c8
+resource pwm 5 c9
+
+resource motor 1 b0
+resource motor 2 b1
+resource motor 3 a3
+resource motor 4 a2
+
+resource motor 5 a1
+resource motor 6 a8
+
+resource led_strip b6
+
+resource motor 7 a9   # UART1_TX
+resource motor 8 a10  # UART1_RX
+
+#define LED0_PIN                PB5
+#define BEEPER                  PB4
+#define BEEPER_INVERTED
+
+resource inverter 3 c9
+resource inverter 6 c8
+
+#define MPU6500_CS_PIN          MPU6000_CS_PIN
+
+#define USE_MAG
+#define USE_MAG_HMC5883
+#define MAG_HMC5883_ALIGN       CW90_DEG
+
+#define USE_BARO
+
+set baro_hardware = BMP280
+set baro_bustype = SPI
+set baro_spi_device = 3
+resource baro_cs b3
+
+set baro_i2c_device = 2
+
+#define USE_OSD
+#define USE_MAX7456
+#define MAX7456_SPI_INSTANCE    SPI3
+#define MAX7456_SPI_CS_PIN      PA15
+#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
+#define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
+
+set blackbox_device = SDCARD
+
+#define USE_SDCARD
+#define SDCARD_DETECT_INVERTED
+#define SDCARD_DETECT_PIN               PB7
+#define SDCARD_SPI_INSTANCE             SPI2
+#define SDCARD_SPI_CS_PIN               SPI2_NSS_PIN
+// SPI2 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
+#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 328kHz
+// Divide to under 25MHz for normal operation:
+#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 4 // 21MHz
+
+#define SDCARD_DMA_CHANNEL_TX                   DMA1_Stream4
+#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG     DMA_FLAG_TCIF4
+#define SDCARD_DMA_CLK                          RCC_AHB1Periph_DMA1
+#define SDCARD_DMA_CHANNEL                      DMA_Channel_0
+
+#define USE_VCP
+#define VBUS_SENSING_PIN PC5
+
+resource serial_tx 1 a9
+resource serial_rx 1 a10
+
+resource serial_tx 3 b10
+resource serial_rx 3 b11
+
+resource serial_tx 6 c6
+resource serial_rx 6 c7
+
+resource serial_tx 11 none
+resource serial_rx 11 none
+
+resource serial_tx 12 none
+resource serial_rx 12 none
+
+resource ESCSERIAL b8
+
+#define USE_SPI
+#define USE_SPI_DEVICE_1
+
+resource spi_sck 1 a5
+resource spi_miso 1 a6
+resource spi_mosi 1 a7
+
+#define USE_SPI_DEVICE_2
+
+resource spi_sck 2 b13
+resource spi_miso 2 b14
+resource spi_mosi 2 b15
+
+#define USE_SPI_DEVICE_3
+resource spi_sck 3 c10
+resource spi_miso 3 c11
+resource spi_mosi 3 c12
+
+#define USE_I2C
+#define USE_I2C_DEVICE_2
+resource i2c_scl 2 none # PB10, shared with UART3TX
+resource i2c_sda 2 none # PB10, shared with UART3RX
+
+#define USE_I2C_DEVICE_3
+resource i2c_scl 3 none # PA8, PWM6
+resource i2c_sda 3 none # PC9, CH6
+
+#define I2C_DEVICE              (I2CDEV_2)
+set baro_i2c_device = 2
+set mag_i2c_device = 2
+set dashboard_i2c_bus = 2
+
+#define USE_ADC
+#define ADC_INSTANCE            ADC2
+//#define ADC_INSTANCE            ADC1
+set adc_device = 2
+
+resource adc_curr c1
+resource adc_batt c2
+resource adc_rssi a0
+
+resource transponder b6
+
+resource sonar_trigger a1
+resource sonar_echo a8
+
+feature rx_serial
+feature osd
+
+set current_meter = ADC
+set battery_meter = ADC
