@@ -41,7 +41,6 @@
 #ifdef STM32F3
 #define MINIMAL_CLI
 #define USE_DSHOT
-#define USE_DSHOT_DMAR
 #define USE_GYRO_DATA_ANALYSE
 #endif
 
