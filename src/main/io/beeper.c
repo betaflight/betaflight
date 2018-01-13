@@ -27,6 +27,7 @@
 #include "drivers/io.h"
 #include "drivers/pwm_output.h"
 #include "drivers/sound_beeper.h"
+#include "drivers/system.h"
 #include "drivers/time.h"
 
 #include "flight/mixer.h"
@@ -34,7 +35,6 @@
 #include "fc/config.h"
 #include "fc/runtime_config.h"
 
-#include "io/beeper.h"
 #include "io/statusindicator.h"
 #include "io/vtx_control.h"
 
@@ -46,6 +46,8 @@
 
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
+
+#include "beeper.h"
 
 #ifdef BEEPER_INVERTED
 #define IS_OPEN_DRAIN   false
@@ -156,6 +158,8 @@ static uint8_t beep_multiBeeps[MAX_MULTI_BEEPS + 1];
 
 #define BEEPER_CONFIRMATION_BEEP_DURATION 2
 #define BEEPER_CONFIRMATION_BEEP_GAP_DURATION 20
+
+#define BEEPER_WARNING_LONG_BEEP_MULTIPLIER 5
 
 #define BEEPER_WARNING_BEEP_1_DURATION 20
 #define BEEPER_WARNING_BEEP_2_DURATION 5
@@ -301,17 +305,37 @@ void beeperConfirmationBeeps(uint8_t beepCount)
 
 void beeperWarningBeeps(uint8_t beepCount)
 {
-    uint32_t i = 0;
-    uint32_t cLimit = beepCount * 4;
-    if (cLimit >= MAX_MULTI_BEEPS) {
-        cLimit = MAX_MULTI_BEEPS;
+    uint8_t longBeepCount = beepCount / BEEPER_WARNING_LONG_BEEP_MULTIPLIER;
+    uint8_t shortBeepCount = beepCount % BEEPER_WARNING_LONG_BEEP_MULTIPLIER;
+
+    unsigned i = 0;
+
+    unsigned count = 0;
+    while (i < MAX_MULTI_BEEPS - 1 && count < WARNING_FLASH_COUNT) {
+        beep_multiBeeps[i++] = WARNING_FLASH_DURATION_MS / 10;
+        if (++count < WARNING_FLASH_COUNT) {
+            beep_multiBeeps[i++] = WARNING_FLASH_DURATION_MS / 10;
+        } else {
+            beep_multiBeeps[i++] = WARNING_PAUSE_DURATION_MS / 10;
+        }
     }
-    do {
-        beep_multiBeeps[i++] = BEEPER_WARNING_BEEP_1_DURATION;
-        beep_multiBeeps[i++] = BEEPER_WARNING_BEEP_GAP_DURATION;
-        beep_multiBeeps[i++] = BEEPER_WARNING_BEEP_2_DURATION;
-        beep_multiBeeps[i++] = BEEPER_WARNING_BEEP_GAP_DURATION;
-    } while (i < cLimit);
+
+    while (i < MAX_MULTI_BEEPS - 1 && longBeepCount > 0) {
+        beep_multiBeeps[i++] = WARNING_CODE_DURATION_LONG_MS / 10;
+        if (--longBeepCount > 0) {
+            beep_multiBeeps[i++] = WARNING_CODE_DURATION_LONG_MS / 10;
+        } else {
+            beep_multiBeeps[i++] = WARNING_PAUSE_DURATION_MS / 10;
+        }
+    }
+
+    while (i < MAX_MULTI_BEEPS - 1 && shortBeepCount > 0) {
+        beep_multiBeeps[i++] = WARNING_CODE_DURATION_SHORT_MS / 10;
+        if (--shortBeepCount > 0) {
+            beep_multiBeeps[i++] = WARNING_CODE_DURATION_LONG_MS / 10;
+        }
+    }
+
     beep_multiBeeps[i] = BEEPER_COMMAND_STOP;
 
     beeper(BEEPER_MULTI_BEEPS);
