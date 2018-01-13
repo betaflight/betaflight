@@ -29,6 +29,10 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
+// Can be configured for DMAR, but keep it legacy DSHOT for backward compatibility of
+// Motor x 1 + Servo x 3 on PWM1~4 use case.
+#define USE_DSHOT_DMA
+
 #define LED0_PIN                PB3
 
 #define BEEPER                  PC15
