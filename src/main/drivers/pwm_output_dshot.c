@@ -55,7 +55,7 @@ uint8_t getTimerIndex(TIM_TypeDef *timer, bool *newTimer)
     }
     dmaMotorTimers[dmaMotorTimerCount++].timer = timer;
     *newTimer = true;
-    return dmaMotorTimerCount-1;
+    return dmaMotorTimerCount - 1;
 }
 
 void pwmWriteDshotInt(uint8_t index, uint16_t value)
