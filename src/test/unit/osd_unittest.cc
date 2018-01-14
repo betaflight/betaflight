@@ -765,7 +765,7 @@ TEST(OsdTest, TestElementCoreTemperature)
     osdRefresh(simulationTime);
 
     // then
-    displayPortTestBufferSubstring(1, 8, "00C");
+    displayPortTestBufferSubstring(1, 8, "  0C");
 
     // given
     simulationCoreTemperature = 33;
@@ -775,7 +775,7 @@ TEST(OsdTest, TestElementCoreTemperature)
     osdRefresh(simulationTime);
 
     // then
-    displayPortTestBufferSubstring(1, 8, "33C");
+    displayPortTestBufferSubstring(1, 8, " 33C");
 
     // given
     osdConfigMutable()->units = OSD_UNIT_IMPERIAL;
@@ -785,7 +785,7 @@ TEST(OsdTest, TestElementCoreTemperature)
     osdRefresh(simulationTime);
 
     // then
-    displayPortTestBufferSubstring(1, 8, "91F");
+    displayPortTestBufferSubstring(1, 8, " 91F");
 }
 
 /*

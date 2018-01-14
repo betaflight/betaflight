@@ -207,6 +207,7 @@ static int32_t osdGetMetersToSelectedUnit(int32_t meters)
     }
 }
 
+#if defined(USE_ADC_INTERNAL) || defined(USE_ESC_SENSOR)
 STATIC_UNIT_TESTED int osdConvertTemperatureToSelectedUnit(int tempInDeciDegrees)
 {
     switch (osdConfig()->units) {
@@ -226,6 +227,7 @@ static char osdGetTemperatureSymbolForSelectedUnit(void)
         return 'C';
     }
 }
+#endif
 
 static void osdFormatAltitudeString(char * buff, int altitude, bool pad)
 {
@@ -760,7 +762,7 @@ static bool osdDrawSingleElement(uint8_t item)
 
 #ifdef USE_ESC_SENSOR
     case OSD_ESC_TMP:
-        tfp_sprintf(buff, "%3d%c", escData == NULL ? 0 : escData->temperature, SYM_TEMP_C);
+        tfp_sprintf(buff, "%3d%c", osdConvertTemperatureToSelectedUnit(escData->temperature * 10) / 10, osdGetTemperatureSymbolForSelectedUnit());
         break;
 
     case OSD_ESC_RPM:
@@ -782,7 +784,7 @@ static bool osdDrawSingleElement(uint8_t item)
 
 #ifdef USE_ADC_INTERNAL
     case OSD_CORE_TEMPERATURE:
-        tfp_sprintf(buff, "%02d%c", osdConvertTemperatureToSelectedUnit(getCoreTemperatureCelsius() * 10) / 10, osdGetTemperatureSymbolForSelectedUnit());
+        tfp_sprintf(buff, "%3d%c", osdConvertTemperatureToSelectedUnit(getCoreTemperatureCelsius() * 10) / 10, osdGetTemperatureSymbolForSelectedUnit());
         break;
 #endif
 
