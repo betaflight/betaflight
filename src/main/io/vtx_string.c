@@ -36,7 +36,7 @@ const uint16_t vtx58frequencyTable[VTX_STRING_BAND_COUNT][VTX_STRING_CHAN_COUNT]
     { 5705, 5685, 5665, 5645, 5885, 5905, 5925, 5945 }, // Boscam E
     { 5740, 5760, 5780, 5800, 5820, 5840, 5860, 5880 }, // FatShark
     { 5658, 5695, 5732, 5769, 5806, 5843, 5880, 5917 }, // RaceBand
-	{ 5362, 5399, 5436, 5473, 5510, 5547, 5584, 5621 }, // Band D / 5.3
+    { 5362, 5399, 5436, 5473, 5510, 5547, 5584, 5621 }, // Band D / 5.3
 };
 
 const char * const vtx58BandNames[] = {
@@ -46,10 +46,10 @@ const char * const vtx58BandNames[] = {
     "BOSCAM E",
     "FATSHARK",
     "RACEBAND",
-	"Band D",
+    "Band D",
 };
 
-const char vtx58BandLetter[] = "-ABEFR";
+const char vtx58BandLetter[] = "-ABEFRD";
 
 const char * const vtx58ChannelNames[] = {
     "-", "1", "2", "3", "4", "5", "6", "7", "8",
