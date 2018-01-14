@@ -267,6 +267,28 @@ CLEAN_ARTIFACTS += $(TARGET_LST)
 # Make sure build date and revision is updated on every incremental build
 $(OBJECT_DIR)/$(TARGET)/build/version.o : $(SRC)
 
+# Settings generator
+.PHONY: .FORCE settings clean-settings
+UTILS_DIR		= $(ROOT)/src/utils
+SETTINGS_GENERATOR	= $(UTILS_DIR)/settings.rb
+
+GENERATED_SETTINGS	= $(SRC_DIR)/interface/settings_generated.h $(SRC_DIR)/interface/settings_generated.c
+SETTINGS_FILE 			= $(SRC_DIR)/interface/settings.yaml
+GENERATED_FILES			= $(GENERATED_SETTINGS)
+$(GENERATED_SETTINGS): $(SETTINGS_GENERATOR) $(SETTINGS_FILE)
+
+# Use a pattern rule, since they're different than normal rules.
+# See https://www.gnu.org/software/make/manual/make.html#Pattern-Examples
+%generated.h %generated.c:
+	$(V1) echo "settings.yaml -> settings_generated.h, settings_generated.c" "$(STDOUT)"
+	$(V1) CFLAGS="$(CFLAGS)" TARGET=$(TARGET) ruby $(SETTINGS_GENERATOR) . $(SETTINGS_FILE)
+
+settings-json:
+	$(V0) CFLAGS="$(CFLAGS)" TARGET=$(TARGET) ruby $(SETTINGS_GENERATOR) . $(SETTINGS_FILE) --json settings.json
+
+clean-settings:
+	$(V1) $(RM) $(GENERATED_SETTINGS)
+
 # List of buildable ELF files and their object dependencies.
 # It would be nice to compute these lists, but that seems to be just beyond make.
 
@@ -467,7 +489,7 @@ test junittest:
 	$(V0) cd src/test && $(MAKE) $@
 
 # rebuild everything when makefile changes
-$(TARGET_OBJS) : Makefile
+$(TARGET_OBJS) : Makefile | $(GENERATED_FILES)
 
 # include auto-generated dependencies
 -include $(TARGET_DEPS)

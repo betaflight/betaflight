@@ -46,6 +46,8 @@ before_install:
 
 install:
   - make arm_sdk_install
+  - export TOOLCHAINPATH=$PWD/tools/gcc-arm-none-eabi-7-2017-q4-major/bin/
+  - export PATH=$TOOLCHAINPATH:$PATH
 
 before_script:
   - tools/gcc-arm-none-eabi-7-2017-q4-major/bin/arm-none-eabi-gcc --version

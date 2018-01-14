@@ -40,3 +40,7 @@ stm32.mak
 
 .vagrant
 ubuntu*.log
+
+# build generated files
+/src/main/interface/settings_generated.h
+/src/main/interface/settings_generated.c

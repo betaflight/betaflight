@@ -23,6 +23,8 @@
 
 #define STATUS_LED_NUMBER 3
 
+#define STATUS_LED_INVERSION_CLI_MAX ((1 << STATUS_LED_NUMBER) - 1)
+
 typedef struct statusLedConfig_s {
     ioTag_t ioTags[STATUS_LED_NUMBER];
     uint8_t inversion;

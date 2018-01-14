@@ -32,6 +32,7 @@ Vagrant.configure(2) do |config|
     apt-get install -y git gcc-arm-embedded=6-2017q2-1~xenial1
     apt-get install -y make python gcc clang
     apt-get install -y libblocksruntime-dev
+    apt-get install -y ruby
   SHELL
 end
 
