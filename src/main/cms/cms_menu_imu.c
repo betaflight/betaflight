@@ -307,6 +307,9 @@ static uint16_t gyroConfig_gyro_soft_notch_hz_1;
 static uint16_t gyroConfig_gyro_soft_notch_cutoff_1;
 static uint16_t gyroConfig_gyro_soft_notch_hz_2;
 static uint16_t gyroConfig_gyro_soft_notch_cutoff_2;
+static uint16_t gyroConfig_gyro_kalman_q;
+static uint16_t gyroConfig_gyro_kalman_r;
+static uint16_t gyroConfig_gyro_kalman_p;
 
 static long cmsx_menuGyro_onEnter(void)
 {
@@ -315,6 +318,9 @@ static long cmsx_menuGyro_onEnter(void)
     gyroConfig_gyro_soft_notch_cutoff_1 = gyroConfig()->gyro_soft_notch_cutoff_1;
     gyroConfig_gyro_soft_notch_hz_2 = gyroConfig()->gyro_soft_notch_hz_2;
     gyroConfig_gyro_soft_notch_cutoff_2 = gyroConfig()->gyro_soft_notch_cutoff_2;
+    gyroConfig_gyro_kalman_q =  gyroConfig()->gyro_kalman_q;
+    gyroConfig_gyro_kalman_r = gyroConfig()->gyro_kalman_r;
+    gyroConfig_gyro_kalman_p = gyroConfig()->gyro_kalman_p;
 
     return 0;
 }
@@ -328,7 +334,9 @@ static long cmsx_menuGyro_onExit(const OSD_Entry *self)
     gyroConfigMutable()->gyro_soft_notch_cutoff_1 = gyroConfig_gyro_soft_notch_cutoff_1;
     gyroConfigMutable()->gyro_soft_notch_hz_2 = gyroConfig_gyro_soft_notch_hz_2;
     gyroConfigMutable()->gyro_soft_notch_cutoff_2 = gyroConfig_gyro_soft_notch_cutoff_2;
-
+    gyroConfigMutable()->gyro_kalman_q =  gyroConfig_gyro_kalman_q;
+    gyroConfigMutable()->gyro_kalman_r =  gyroConfig_gyro_kalman_r;
+    gyroConfigMutable()->gyro_kalman_p =  gyroConfig_gyro_kalman_p;
     return 0;
 }
 
@@ -341,7 +349,9 @@ static OSD_Entry cmsx_menuFilterGlobalEntries[] =
     { "GYRO NF1C",  OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_gyro_soft_notch_cutoff_1, 0, 500, 1 }, 0 },
     { "GYRO NF2",   OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_gyro_soft_notch_hz_2,     0, 500, 1 }, 0 },
     { "GYRO NF2C",  OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_gyro_soft_notch_cutoff_2, 0, 500, 1 }, 0 },
-
+    { "KALMAN Q",       OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_gyro_kalman_q, 0, 16000, 100 }, 0 },
+    { "KALMAN R",       OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_gyro_kalman_r, 0, 16000, 1 }, 0 },
+    { "KALMAN P",       OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_gyro_kalman_p, 0, 16000, 1 }, 0 },
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
 };
