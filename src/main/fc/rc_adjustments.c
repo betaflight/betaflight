@@ -326,7 +326,7 @@ static void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t 
         blackboxLogInflightAdjustmentEvent(ADJUSTMENT_D_SETPOINT, newValue);
         break;
     case ADJUSTMENT_D_SETPOINT_TRANSITION:
-        newValue = constrain((int)pidProfile->setpointRelaxRatio + delta, 0, 100); // FIXME magic numbers repeated in cli.c
+        newValue = constrain((int)pidProfile->setpointRelaxRatio + delta, 1, 100); // FIXME magic numbers repeated in cli.c
         pidProfile->setpointRelaxRatio = newValue;
         blackboxLogInflightAdjustmentEvent(ADJUSTMENT_D_SETPOINT_TRANSITION, newValue);
         break;
