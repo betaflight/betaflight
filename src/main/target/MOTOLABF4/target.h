@@ -99,9 +99,9 @@
 #define SERIAL_PORT_COUNT       5 //VCP, USART1, USART2, UART4, UART5
 #define USE_VTX_RTC6705
 #define USE_VTX_RTC6705_SOFTSPI
-#define RTC6705_SPIDATA_PIN     PC6
-#define RTC6705_SPILE_PIN       PC7
+#define RTC6705_SPI_MOSI_PIN    PC6
 #define RTC6705_SPICLK_PIN      PC2
+#define RTC6705_CS_PIN          PC7
 #endif
 
 #define USE_SPI

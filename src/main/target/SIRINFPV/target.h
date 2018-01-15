@@ -111,9 +111,9 @@
 #define USE_VTX_RTC6705
 #define USE_VTX_RTC6705_SOFTSPI
 
-#define RTC6705_SPIDATA_PIN     PC15
-#define RTC6705_SPILE_PIN       PC14
+#define RTC6705_SPI_MOSI_PIN    PC15
 #define RTC6705_SPICLK_PIN      PC13
+#define RTC6705_CS_PIN          PC14
 
 #define USE_SDCARD
 

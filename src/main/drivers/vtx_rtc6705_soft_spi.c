@@ -61,9 +61,9 @@ static IO_t rtc6705ClkPin = IO_NONE;
 
 void rtc6705IOInit(void)
 {
-    rtc6705DataPin = IOGetByTag(IO_TAG(RTC6705_SPIDATA_PIN));
-    rtc6705CsnPin   = IOGetByTag(IO_TAG(RTC6705_SPILE_PIN));
+    rtc6705DataPin = IOGetByTag(IO_TAG(RTC6705_SPI_MOSI_PIN));
     rtc6705ClkPin  = IOGetByTag(IO_TAG(RTC6705_SPICLK_PIN));
+    rtc6705CsnPin   = IOGetByTag(IO_TAG(RTC6705_CS_PIN));
 
     IOInit(rtc6705CsnPin, OWNER_SPI_CS, RESOURCE_SOFT_OFFSET);
     IOConfigGPIO(rtc6705CsnPin, IOCFG_OUT_PP);

@@ -118,9 +118,9 @@
 // *************** RTC6705 *************************
 #define USE_VTX_RTC6705
 #define USE_VTX_RTC6705_SOFTSPI
-#define RTC6705_SPILE_PIN       PB3
 #define RTC6705_SPICLK_PIN      PB4
-#define RTC6705_SPIDATA_PIN     PB5
+#define RTC6705_SPI_MOSI_PIN    PB5
+#define RTC6705_CS_PIN          PB3
 
 // *************** ADC *****************************
 #define USE_ADC

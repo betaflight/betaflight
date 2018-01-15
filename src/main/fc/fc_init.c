@@ -235,7 +235,7 @@ void spiPreInit(void)
 #ifdef USE_MAG_SPI_AK8963
     spiPreInitCs(IO_TAG(AK8963_CS_PIN));
 #endif
-#ifdef RTC6705_CS_PIN // XXX VTX_RTC6705? Should use USE_ format.
+#if defined(USE_VTX_RTC6705)
     spiPreInitCs(IO_TAG(RTC6705_CS_PIN));
 #endif
 #ifdef USE_FLASH_M25P16
