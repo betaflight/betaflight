@@ -78,6 +78,7 @@
 
 #include "rx/rx.h"
 
+#include "sensors/adcinternal.h"
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
 #include "sensors/esc_sensor.h"
@@ -205,6 +206,28 @@ static int32_t osdGetMetersToSelectedUnit(int32_t meters)
         return meters;               // Already in metre / 100
     }
 }
+
+#if defined(USE_ADC_INTERNAL) || defined(USE_ESC_SENSOR)
+STATIC_UNIT_TESTED int osdConvertTemperatureToSelectedUnit(int tempInDeciDegrees)
+{
+    switch (osdConfig()->units) {
+    case OSD_UNIT_IMPERIAL:
+        return ((tempInDeciDegrees * 9) / 5) + 320;
+    default:
+        return tempInDeciDegrees;
+    }
+}
+
+static char osdGetTemperatureSymbolForSelectedUnit(void)
+{
+    switch (osdConfig()->units) {
+    case OSD_UNIT_IMPERIAL:
+        return 'F';
+    default:
+        return 'C';
+    }
+}
+#endif
 
 static void osdFormatAltitudeString(char * buff, int altitude, bool pad)
 {
@@ -739,7 +762,7 @@ static bool osdDrawSingleElement(uint8_t item)
 
 #ifdef USE_ESC_SENSOR
     case OSD_ESC_TMP:
-        tfp_sprintf(buff, "%3d%c", escData == NULL ? 0 : escData->temperature, SYM_TEMP_C);
+        tfp_sprintf(buff, "%3d%c", osdConvertTemperatureToSelectedUnit(escData->temperature * 10) / 10, osdGetTemperatureSymbolForSelectedUnit());
         break;
 
     case OSD_ESC_RPM:
@@ -756,7 +779,12 @@ static bool osdDrawSingleElement(uint8_t item)
 #ifdef USE_OSD_ADJUSTMENTS
     case OSD_ADJUSTMENT_RANGE:
         tfp_sprintf(buff, "%s: %3d", adjustmentRangeName, adjustmentRangeValue);
+        break;
+#endif
 
+#ifdef USE_ADC_INTERNAL
+    case OSD_CORE_TEMPERATURE:
+        tfp_sprintf(buff, "%3d%c", osdConvertTemperatureToSelectedUnit(getCoreTemperatureCelsius() * 10) / 10, osdGetTemperatureSymbolForSelectedUnit());
         break;
 #endif
 
@@ -834,6 +862,10 @@ static void osdDrawElements(void)
 
 #ifdef USE_OSD_ADJUSTMENTS
     osdDrawSingleElement(OSD_ADJUSTMENT_RANGE);
+#endif
+
+#ifdef USE_ADC_INTERNAL
+    osdDrawSingleElement(OSD_CORE_TEMPERATURE);
 #endif
 }
 
