@@ -6,6 +6,12 @@ Betaflight is flight controller software (firmware) used to fly multi-rotor craf
 
 This fork differs from Baseflight and Cleanflight in that it focuses on flight performance, leading-edge feature additions, and wide target support.
 
+## Upcoming Events
+
+| 01 February 2018 | Start of feature freeze / Release Candidate window for Betaflight 3.3 |
+| 01 March 2018 | Planned [release](https://github.com/betaflight/betaflight/milestone/6) date for Betaflight 3.3 |
+
+
 ## Features
 
 Betaflight has the following features:
