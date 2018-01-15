@@ -26,20 +26,19 @@ typedef enum {
     VAR_UINT16 = (2 << SETTING_TYPE_OFFSET),
     VAR_INT16 = (3 << SETTING_TYPE_OFFSET),
     VAR_UINT32 = (4 << SETTING_TYPE_OFFSET),
-    VAR_FLOAT = (5 << SETTING_TYPE_OFFSET), // 0x05
 } setting_type_e;
 
 typedef enum {
     // value section, bits 4-5
     MASTER_VALUE = (0 << SETTING_SECTION_OFFSET),
     PROFILE_VALUE = (1 << SETTING_SECTION_OFFSET),
-    CONTROL_RATE_VALUE = (2 << SETTING_SECTION_OFFSET), // 0x20
+    CONTROL_RATE_VALUE = (2 << SETTING_SECTION_OFFSET),
 } setting_section_e;
 
 typedef enum {
     // value mode, bits 6-7
     MODE_DIRECT = (0 << SETTING_MODE_OFFSET),
-    MODE_LOOKUP = (1 << SETTING_MODE_OFFSET), // 0x40
+    MODE_LOOKUP = (1 << SETTING_MODE_OFFSET),
     MODE_ARRAY  = (2 << SETTING_MODE_OFFSET),
 } setting_mode_e;
 
@@ -70,7 +69,6 @@ typedef struct {
     const uint8_t type; // see settingFlag_e
     const settingConfig_t config;
     const setting_offset_t offset;
-
 } __attribute__((packed)) setting_t;
 
 extern const setting_t settingsTable[];
@@ -88,6 +86,7 @@ const setting_t *setting_find(const char *name);
 // Returns the size in bytes of the setting value.
 size_t setting_get_value_size(const setting_t *val);
 pgn_t setting_get_pgn(const setting_t *val);
+uint16_t setting_get_value_offset(const setting_t *value);
 // Returns a pointer to the actual value stored by
 // the setting_t. The returned value might be modified.
 void * setting_get_value_pointer(const setting_t *val);
