@@ -262,6 +262,7 @@ groups:
       table: gyro_lpf
     - name: gyro_high_range
       field: gyro_high_fsr
+      condition: defined(USE_GYRO_SPI_ICM20649)
       type: bool
     - name: gyro_sync_denom
       field: gyro_sync_denom
@@ -292,14 +293,17 @@ groups:
       max: 16000
     - name: gyro_kalman_q
       field: gyro_kalman_q
+      condition: defined(USE_GYRO_FAST_KALMAN)
       min: 0
       max: 16000
     - name: gyro_kalman_r
       field: gyro_kalman_r
+      condition: defined(USE_GYRO_FAST_KALMAN)
       min: 0
       max: 16000
     - name: gyro_kalman_p
       field: gyro_kalman_p
+      condition: defined(USE_GYRO_FAST_KALMAN)
       min: 0
       max: 16000
     - name: moron_threshold
@@ -308,13 +312,16 @@ groups:
       max: 200
     - name: gyro_overflow_detect
       field: checkOverflow
+      condition: defined(USE_GYRO_SPI_ICM20649)
       table: gyro_overflow_check
       type: uint8_t
     - name: gyro_use_32khz
       field: gyro_use_32khz
+      condition: defined(GYRO_USES_SPI) && (defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20689))
       type: bool
     - name: gyro_to_use
       field: gyro_to_use
+      condition: defined(USE_DUAL_GYRO)
       min: 0
       max: 1
   - name: PG_ACCELEROMETER_CONFIG
@@ -330,6 +337,7 @@ groups:
       table: acc_hardware
     - name: acc_high_range
       field: acc_high_fsr
+      condition: defined(USE_GYRO_SPI_ICM20649)
       type: bool
     - name: acc_lpf_hz
       field: acc_lpf_hz
@@ -345,6 +353,7 @@ groups:
       max: 300
   - name: PG_COMPASS_CONFIG
     type: compassConfig_t
+    condition: defined(USE_MAG)
     headers: ['sensors/compass.h', 'drivers/bus_spi.h']
     members:
     - name: align_mag
@@ -387,6 +396,7 @@ groups:
       max: INT16_MAX
   - name: PG_BAROMETER_CONFIG
     type: barometerConfig_t
+    condition: defined(USE_BARO)
     headers: ['sensors/barometer.h']
     members:
     - name: baro_bustype
@@ -470,16 +480,20 @@ groups:
       max: MAX_AUX_CHANNEL_COUNT
     - name: serialrx_provider
       field: serialrx_provider
+      condition: defined(USE_SERIAL_RX)
       table: serial_rx
     - name: serialrx_inverted
       field: serialrx_inverted
+      condition: defined(USE_SERIAL_RX)
       type: bool
     - name: spektrum_sat_bind
       field: spektrum_sat_bind
+      condition: defined(USE_SPEKTRUM_BIND)
       min: SPEKTRUM_SAT_BIND_DISABLED
       max: SPEKTRUM_SAT_BIND_MAX
     - name: spektrum_sat_bind_autoreset
       field: spektrum_sat_bind_autoreset
+      condition: defined(USE_SPEKTRUM_BIND)
       type: bool
     - name: airmode_start_throttle
       field: airModeActivateThreshold
@@ -498,9 +512,11 @@ groups:
       type: bool
     - name: rx_spi_protocol
       field: rx_spi_protocol
+      condition: defined(USE_RX_SPI)
       table: spi_rx
   - name: PG_ADC_CONFIG
     type: adcConfig_t
+    condition: defined(ADC)
     headers: ['pg/adc.h', 'drivers/adc.h']
     members:
     - name: adc_device
@@ -509,6 +525,7 @@ groups:
       max: ADCDEV_COUNT
   - name: PG_PWM_CONFIG
     type: pwmConfig_t
+    condition: defined(USE_PWM)
     headers: ['pg/rx_pwm.h']
     members:
     - name: input_filtering_mode
@@ -516,6 +533,7 @@ groups:
       type: bool
   - name: PG_BLACKBOX_CONFIG
     type: blackboxConfig_t
+    condition: defined(USE_BLACKBOX)
     headers: ['blackbox/blackbox.h']
     members:
     - name: blackbox_p_ratio
@@ -549,6 +567,7 @@ groups:
       max: PWM_PULSE_MAX
     - name: dshot_idle_value
       field: digitalIdleOffsetValue
+      condition: defined(USE_DSHOT)
       min: 0
       max: 2000
     - name: use_unsynced_pwm
@@ -620,6 +639,7 @@ groups:
       max: 360
   - name: PG_GIMBAL_CONFIG
     type: gimbalConfig_t
+    condition: defined(USE_SERVOS)
     headers: ['io/gimbal.h']
     members:
     - name: gimbal_mode
@@ -701,6 +721,7 @@ groups:
       max: 16000
   - name: PG_CURRENT_SENSOR_VIRTUAL_CONFIG
     type: currentSensorVirtualConfig_t
+    condition: defined(USE_VIRTUAL_CURRENT_METER)
     headers: ['sensors/current.h']
     members:
     - name: ibatv_scale
@@ -731,6 +752,7 @@ groups:
     members:
     - name: beeper_dshot_beacon_tone
       field: dshotBeaconTone
+      condition: defined(USE_DSHOT)
       min: 0
       max: DSHOT_CMD_BEACON5
   - name: PG_MIXER_CONFIG
@@ -762,6 +784,7 @@ groups:
       max: PWM_PULSE_MAX
   - name: PG_SERVO_CONFIG
     type: servoConfig_t
+    condition: defined(USE_SERVOS)
     headers: ['flight/servos.h']
     members:
     - name: servo_center_pulse
@@ -887,6 +910,7 @@ groups:
       type: bool
   - name: PG_GPS_CONFIG
     type: gpsConfig_t
+    condition: defined(USE_GPS)
     headers: ['io/gps.h']
     members:
     - name: gps_provider
@@ -905,6 +929,7 @@ groups:
       type: bool
   - name: PG_NAVIGATION_CONFIG
     type: navigationConfig_t
+    condition: defined(USE_NAV)
     headers: ['flight/navigation.h']
     members:
     - name: gps_wp_radius
@@ -928,6 +953,7 @@ groups:
       max: 100
   - name: PG_AIRPLANE_CONFIG
     type: airplaneConfig_t
+    condition: defined(USE_ALT_HOLD)
     headers: ['flight/altitude.h']
     members:
     - name: fixedwing_althold_reversed
@@ -939,10 +965,12 @@ groups:
     members:
     - name: alt_hold_deadband
       field: alt_hold_deadband
+      condition: defined(USE_ALT_HOLD)
       min: 1
       max: 250
     - name: alt_hold_fast_change
       field: alt_hold_fast_change
+      condition: defined(USE_ALT_HOLD)
       type: bool
     - name: deadband
       field: deadband
@@ -1107,26 +1135,32 @@ groups:
       max: 200
     - name: p_alt
       field: pid[PID_ALT].P
+      condition: defined(USE_ALT_HOLD)
       min: 0
       max: 200
     - name: i_alt
       field: pid[PID_ALT].I
+      condition: defined(USE_ALT_HOLD)
       min: 0
       max: 200
     - name: d_alt
       field: pid[PID_ALT].D
+      condition: defined(USE_ALT_HOLD)
       min: 0
       max: 200
     - name: p_vel
       field: pid[PID_VEL].P
+      condition: defined(USE_ALT_HOLD)
       min: 0
       max: 200
     - name: i_vel
       field: pid[PID_VEL].I
+      condition: defined(USE_ALT_HOLD)
       min: 0
       max: 200
     - name: d_vel
       field: pid[PID_VEL].D
+      condition: defined(USE_ALT_HOLD)
       min: 0
       max: 200
     - name: p_level
@@ -1154,42 +1188,52 @@ groups:
       type: bool
     - name: gps_pos_p
       field: pid[PID_POS].P
+      condition: defined(USE_NAV)
       min: 0
       max: 200
     - name: gps_pos_i
       field: pid[PID_POS].I
+      condition: defined(USE_NAV)
       min: 0
       max: 200
     - name: gps_pos_d
       field: pid[PID_POS].D
+      condition: defined(USE_NAV)
       min: 0
       max: 200
     - name: gps_posr_p
       field: pid[PID_POSR].P
+      condition: defined(USE_NAV)
       min: 0
       max: 200
     - name: gps_posr_i
       field: pid[PID_POSR].I
+      condition: defined(USE_NAV)
       min: 0
       max: 200
     - name: gps_posr_d
       field: pid[PID_POSR].D
+      condition: defined(USE_NAV)
       min: 0
       max: 200
     - name: gps_nav_p
       field: pid[PID_NAVR].P
+      condition: defined(USE_NAV)
       min: 0
       max: 200
     - name: gps_nav_i
       field: pid[PID_NAVR].I
+      condition: defined(USE_NAV)
       min: 0
       max: 200
     - name: gps_nav_d
       field: pid[PID_NAVR].D
+      condition: defined(USE_NAV)
       min: 0
       max: 200
   - name: PG_TELEMETRY_CONFIG
     type: telemetryConfig_t
+    condition: defined(USE_TELEMETRY)
     headers: ['telemetry/telemetry.h', 'telemetry/frsky_hub.h']
     members:
     - name: tlm_switch
@@ -1203,23 +1247,28 @@ groups:
       type: bool
     - name: frsky_default_lat
       field: gpsNoFixLatitude
+      condition: defined(USE_TELEMETRY_FRSKY_HUB) && defined(USE_GPS)
       min: -9000
       max: 9000
     - name: frsky_default_long
       field: gpsNoFixLongitude
+      condition: defined(USE_TELEMETRY_FRSKY_HUB) && defined(USE_GPS)
       min: -18000
       max: 18000
     - name: frsky_gps_format
       field: frsky_coordinate_format
+      condition: defined(USE_TELEMETRY_FRSKY_HUB) && defined(USE_GPS)
       min: 0
       max: FRSKY_FORMAT_NMEA
       type: uint8_t
     - name: frsky_unit
       field: frsky_unit
+      condition: defined(USE_TELEMETRY_FRSKY_HUB) && defined(USE_GPS)
       table: units
       type: uint8_t
     - name: frsky_vfas_precision
       field: frsky_vfas_precision
+      condition: defined(USE_TELEMETRY_FRSKY_HUB)
       min: FRSKY_VFAS_PRECISION_LOW
       max: FRSKY_VFAS_PRECISION_HIGH
     - name: hott_alarm_int
@@ -1234,6 +1283,7 @@ groups:
       type: bool
   - name: PG_LED_STRIP_CONFIG
     type: ledStripConfig_t
+    condition: defined(USE_LED_STRIP)
     headers: ['io/ledstrip.h']
     members:
     - name: ledstrip_visual_beeper
@@ -1241,6 +1291,7 @@ groups:
       type: bool
   - name: PG_SDCARD_CONFIG
     type: sdcardConfig_t
+    condition: defined(USE_SDCARD)
     headers: ['pg/sdcard.h']
     members:
     - name: sdcard_dma
@@ -1248,6 +1299,7 @@ groups:
       type: bool
   - name: PG_OSD_CONFIG
     type: osdConfig_t
+    condition: defined(USE_OSD)
     headers: ['io/osd.h']
     members:
     - name: osd_units
@@ -1488,6 +1540,7 @@ groups:
     members:
     - name: task_statistics
       field: task_statistics
+      condition: !defined(SKIP_TASK_STATISTICS)
       type: bool
     - name: debug_mode
       field: debug_mode
@@ -1495,6 +1548,7 @@ groups:
       type: uint8_t
     - name: cpu_overclock
       field: cpu_overclock
+      condition: defined(STM32F4) && !defined(DISABLE_OVERCLOCK)
       type: bool
     - name: pwr_on_arm_grace
       field: powerOnArmingGraceTime
@@ -1502,6 +1556,7 @@ groups:
       max: 30
   - name: PG_VTX_SETTINGS_CONFIG
     type: vtxSettingsConfig_t
+    condition: defined(USE_VTX_COMMON)
     headers: ['io/vtx.h', 'drivers/vtx_common.h']
     members:
     - name: vtx_band
@@ -1521,14 +1576,17 @@ groups:
       type: bool
     - name: vtx_freq
       field: freq
+      condition: defined(VTX_SETTINGS_FREQCMD)
       min: 0
       max: VTX_SETTINGS_MAX_FREQUENCY_MHZ
     - name: vtx_pit_mode_freq
       field: pitModeFreq
+      condition: defined(VTX_SETTINGS_FREQCMD)
       min: 0
       max: VTX_SETTINGS_MAX_FREQUENCY_MHZ
   - name: PG_VTX_CONFIG
     type: vtxConfig_t
+    condition: defined(USE_VTX_CONTROL) && defined(USE_VTX_COMMON)
     headers: ['io/vtx_control.h']
     members:
     - name: vtx_halfduplex
@@ -1536,6 +1594,7 @@ groups:
       type: bool
   - name: PG_VCD_CONFIG
     type: vcdProfile_t
+    condition: defined(USE_MAX7456)
     headers: ['pg/vcd.h']
     members:
     - name: vcd_video_system
@@ -1552,6 +1611,7 @@ groups:
       max: 16
   - name: PG_MAX7456_CONFIG
     type: max7456Config_t
+    condition: defined(USE_MAX7456)
     headers: ['pg/max7456.h']
     members:
     - name: max7456_clock
@@ -1559,6 +1619,7 @@ groups:
       table: max7456_clock
   - name: PG_DISPLAY_PORT_MSP_CONFIG
     type: displayPortProfile_t
+    condition: defined(USE_MSP_DISPLAYPORT)
     headers: ['drivers/display.h']
     members:
     - name: displayport_msp_col_adjust
@@ -1571,6 +1632,7 @@ groups:
       max: 0
   - name: PG_DISPLAY_PORT_MAX7456_CONFIG
     type: displayPortProfile_t
+    condition: defined(USE_MAX7456)
     headers: ['drivers/display.h']
     members:
     - name: displayport_max7456_col_adjust
@@ -1594,6 +1656,7 @@ groups:
       max: 3
   - name: PG_ESC_SENSOR_CONFIG
     type: escSensorConfig_t
+    condition: defined(USE_ESC_SENSOR)
     headers: ['sensors/esc_sensor.h']
     members:
     - name: esc_sensor_halfduplex
@@ -1601,6 +1664,7 @@ groups:
       type: bool
   - name: PG_RX_FRSKY_SPI_CONFIG
     type: rxFrSkySpiConfig_t
+    condition: defined(USE_RX_FRSKY_SPI)
     headers: ['rx/cc2500_frsky_common.h']
     members:
     - name: frsky_spi_autobind
@@ -1632,6 +1696,7 @@ groups:
       max: STATUS_LED_INVERSION_CLI_MAX
   - name: PG_DASHBOARD_CONFIG
     type: dashboardConfig_t
+    condition: defined(USE_DASHBOARD)
     headers: ['io/dashboard.h']
     members:
     - name: dashboard_i2c_bus
@@ -1645,6 +1710,7 @@ groups:
       max: I2C_ADDR7_MAX
   - name: PG_CAMERA_CONTROL_CONFIG
     type: cameraControlConfig_t
+    condition: defined(USE_CAMERA_CONTROL)
     headers: ['drivers/camera_control.h']
     members:
     - name: camera_control_mode
@@ -1665,6 +1731,7 @@ groups:
       max: 1000
   - name: PG_RANGEFINDER_CONFIG
     type: rangefinderConfig_t
+    condition: USE_RANGEFINDER
     headers: ['sensors/rangefinder.h']
     members:
     - name: rangefinder_hardware

@@ -669,7 +669,7 @@ class Generator
         add_condition = -> (c) {
             if c && !conditions.include?(c)
                 conditions.add(c)
-                buf << "#ifdef #{c}\n"
+                buf << "#if #{c}\n"
                 buf << "#pragma message(#{c.inspect})\n"
                 buf << "#endif\n"
             end

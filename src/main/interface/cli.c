@@ -224,9 +224,15 @@ const char *const lookupTableGyroHardware[] = {
 static const char * const *sensorHardwareNames[] = {
     lookupTableGyroHardware,
     table_acc_hardware,
+#ifdef USE_BARO
     table_baro_hardware,
+#endif
+#ifdef USE_MAG
     table_mag_hardware,
+#endif
+#ifdef USE_RANGEFINDER
     table_rangefinder_hardware
+#endif
 };
 #endif // USE_SENSOR_NAMES
 
