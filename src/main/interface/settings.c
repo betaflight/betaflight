@@ -560,6 +560,16 @@ const clivalue_t valueTable[] = {
     { "yaw_srate",                  VAR_UINT8  | PROFILE_RATE_VALUE, .config.minmax = { 0, CONTROL_RATE_CONFIG_YAW_RATE_MAX }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rates[FD_YAW]) },
     { "tpa_rate",                   VAR_UINT8  | PROFILE_RATE_VALUE, .config.minmax = { 0, CONTROL_RATE_CONFIG_TPA_MAX}, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, dynThrPID) },
     { "tpa_breakpoint",             VAR_UINT16 | PROFILE_RATE_VALUE, .config.minmax = { PWM_PULSE_MIN, PWM_PULSE_MAX }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, tpa_breakpoint) },
+    { "rf_rates_enabled",           VAR_UINT8  | PROFILE_RATE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rfRatesEnabled) },
+    { "rf_rate_roll",               VAR_UINT16 | PROFILE_RATE_VALUE, .config.minmax = { 200, 1500 }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rfRate[FD_ROLL]) },
+    { "rf_acro_roll",               VAR_UINT8  | PROFILE_RATE_VALUE, .config.minmax = { 0, 255 }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rfAcro[FD_ROLL]) },
+    { "rf_expo_roll",               VAR_UINT8  | PROFILE_RATE_VALUE, .config.minmax = { 0, 100 }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rfExpo[FD_ROLL]) },
+    { "rf_rate_pitch",              VAR_UINT16 | PROFILE_RATE_VALUE, .config.minmax = { 200, 1500 }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rfRate[FD_PITCH]) },
+    { "rf_acro_pitch",              VAR_UINT8  | PROFILE_RATE_VALUE, .config.minmax = { 0, 255 }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rfAcro[FD_PITCH]) },
+    { "rf_expo_pitch",              VAR_UINT8  | PROFILE_RATE_VALUE, .config.minmax = { 0, 100 }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rfExpo[FD_PITCH]) },
+    { "rf_rate_yaw",                VAR_UINT16 | PROFILE_RATE_VALUE, .config.minmax = { 200, 1500 }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rfRate[FD_YAW]) },
+    { "rf_acro_yaw",                VAR_UINT8  | PROFILE_RATE_VALUE, .config.minmax = { 0, 255 }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rfAcro[FD_YAW]) },
+    { "rf_expo_yaw",                VAR_UINT8  | PROFILE_RATE_VALUE, .config.minmax = { 0, 100 }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rfExpo[FD_YAW]) },
 
 // PG_SERIAL_CONFIG
     { "reboot_character",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 48, 126 }, PG_SERIAL_CONFIG, offsetof(serialConfig_t, reboot_character) },
