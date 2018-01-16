@@ -70,9 +70,9 @@ typedef struct gyroConfig_s {
     uint16_t gyro_soft_notch_hz_2;
     uint16_t gyro_soft_notch_cutoff_2;
     gyroOverflowCheck_e checkOverflow;
-    uint16_t gyro_kalman_q;
-    uint16_t gyro_kalman_r;
-    uint16_t gyro_kalman_p;
+    uint16_t gyro_filter_q;
+    uint16_t gyro_filter_r;
+    uint16_t gyro_filter_p;
 } gyroConfig_t;
 
 PG_DECLARE(gyroConfig_t, gyroConfig);
