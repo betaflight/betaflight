@@ -10,17 +10,17 @@
 
 void settingGetName(const setting_t *val, char *buf)
 {
-    uint8_t bpos = 0;
-    uint16_t n = 0;
+    unsigned bpos = 0;
+    unsigned n = 0;
 #ifndef SETTING_ENCODED_NAME_USES_BYTE_INDEXING
-    uint8_t shift = 0;
+    unsigned shift = 0;
 #endif
-    for (uint8_t ii = 0; ii < SETTING_ENCODED_NAME_MAX_BYTES; ii++) {
+    for (int ii = 0; ii < SETTING_ENCODED_NAME_MAX_BYTES; ii++) {
 #ifdef SETTING_ENCODED_NAME_USES_BYTE_INDEXING
         n = val->encoded_name[ii];
 #else
         // Decode a variable size uint
-        uint16_t b = val->encoded_name[ii];
+        unsigned b = val->encoded_name[ii];
         if (b >= 0x80) {
             // More bytes follow
             n |= (b&0x7f) << shift;
@@ -92,9 +92,9 @@ size_t settingGetValueSize(const setting_t *val)
 
 pgn_t settingGetPgNumber(const setting_t *val)
 {
-    uint16_t pos = val - (const setting_t *)settingsTable;
-    uint16_t acc = 0;
-    for (uint8_t ii = 0; ii < SETTINGS_PGN_COUNT; ii++) {
+    unsigned pos = val - (const setting_t *)settingsTable;
+    unsigned acc = 0;
+    for (unsigned ii = 0; ii < SETTINGS_PGN_COUNT; ii++) {
         acc += settingsPgnCounts[ii];
         if (acc > pos) {
             return settingsPgn[ii];
