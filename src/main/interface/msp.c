@@ -1181,6 +1181,12 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, currentPidProfile->dterm_filter_type);
         break;
 
+   case MSP_ADVANCED_FILTER_CONFIG :
+        sbufWriteU16(dst, gyroConfig()->gyro_filter_q);
+        sbufWriteU16(dst, gyroConfig()->gyro_filter_r);
+        sbufWriteU16(dst, gyroConfig()->gyro_filter_p);
+        break;
+
     case MSP_PID_ADVANCED:
         sbufWriteU16(dst, 0);
         sbufWriteU16(dst, 0);
@@ -1627,6 +1633,12 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         gyroInitFilters();
         // reinitialize the PID filters with the new values
         pidInitFilters(currentPidProfile);
+        break;
+
+    case MSP_SET_ADVANCED_FILTER_CONFIG :
+        gyroConfigMutable()->gyro_filter_q = sbufReadU16(src);
+        gyroConfigMutable()->gyro_filter_r = sbufReadU16(src);
+        gyroConfigMutable()->gyro_filter_p = sbufReadU16(src);
         break;
 
     case MSP_SET_PID_ADVANCED:
