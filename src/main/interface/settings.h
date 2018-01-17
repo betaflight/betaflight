@@ -15,9 +15,9 @@ typedef struct lookupTableEntry_s {
 
 extern const lookupTableEntry_t settingLookupTables[];
 
-#define SETTING_TYPE_OFFSET 0
-#define SETTING_SECTION_OFFSET 4
-#define SETTING_MODE_OFFSET 6
+#define SETTING_TYPE_OFFSET     0
+#define SETTING_SECTION_OFFSET  4
+#define SETTING_MODE_OFFSET     6
 
 typedef enum {
     // value type, bits 0-3
@@ -42,9 +42,9 @@ typedef enum {
     MODE_ARRAY  = (2 << SETTING_MODE_OFFSET),
 } setting_mode_e;
 
-#define SETTING_TYPE_MASK (0x0F)
-#define SETTING_SECTION_MASK (0x30)
-#define SETTING_MODE_MASK (0xC0)
+#define SETTING_TYPE_MASK     (0xF << SETTING_TYPE_OFFSET)
+#define SETTING_SECTION_MASK  (0x3 << SETTING_SECTION_OFFSET)
+#define SETTING_MODE_MASK     (0x3 << SETTING_MODE_OFFSET)
 
 typedef struct settingMinMaxConfig_s {
     const uint8_t indexes[SETTING_MIN_MAX_INDEX_BYTES];
@@ -66,7 +66,7 @@ typedef union {
 
 typedef struct {
     const uint8_t encoded_name[SETTING_ENCODED_NAME_MAX_BYTES];
-    const uint8_t type; // see settingFlag_e
+    const uint8_t type; // see setting_type_e, setting_section_e, setting_mode_e
     const settingConfig_t config;
     const setting_offset_t offset;
 } __attribute__((packed)) setting_t;
