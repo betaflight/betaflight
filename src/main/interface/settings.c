@@ -85,6 +85,7 @@
 #include "sensors/rangefinder.h"
 
 #include "telemetry/frsky_hub.h"
+#include "telemetry/ibus_shared.h"
 #include "telemetry/telemetry.h"
 
 // Sensor names (used in lookup tables for *_hardware settings and in status command output)
@@ -699,6 +700,7 @@ const clivalue_t valueTable[] = {
     { "pid_in_tlm",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = {TABLE_OFF_ON }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, pidValuesAsTelemetry) },
 #if defined(USE_TELEMETRY_IBUS)
     { "report_cell_voltage",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, report_cell_voltage) },
+    { "ibus_sensor",                VAR_UINT8  | MASTER_VALUE | MODE_ARRAY, .config.array.length = IBUS_SENSOR_COUNT, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, flysky_sensors)},
 #endif
 #endif // USE_TELEMETRY
 

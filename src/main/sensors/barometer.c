@@ -316,6 +316,8 @@ uint32_t baroUpdate(void)
             baro.dev.get_up(&baro.dev);
             baro.dev.start_ut(&baro.dev);
             baro.dev.calculate(&baroPressure, &baroTemperature);
+            baro.baroPressure = baroPressure;
+            baro.baroTemperature = baroTemperature;
             baroPressureSum = recalculateBarometerTotal(barometerConfig()->baro_sample_count, baroPressureSum, baroPressure);
             state = BAROMETER_NEEDS_SAMPLES;
             return baro.dev.ut_delay;
