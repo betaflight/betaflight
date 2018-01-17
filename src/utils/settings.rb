@@ -351,7 +351,7 @@ class Generator
     end
 
     def impl_file
-        File.join(@output_dir, "settings_generated.c")
+        File.join(@output_dir, "settings_generated.inc")
     end
 
     def write_file_header(buf)

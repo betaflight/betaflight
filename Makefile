@@ -272,15 +272,15 @@ $(OBJECT_DIR)/$(TARGET)/build/version.o : $(SRC)
 UTILS_DIR		= $(ROOT)/src/utils
 SETTINGS_GENERATOR	= $(UTILS_DIR)/settings.rb
 
-GENERATED_SETTINGS	= $(SRC_DIR)/interface/settings_generated.h $(SRC_DIR)/interface/settings_generated.c
+GENERATED_SETTINGS	= $(SRC_DIR)/interface/settings_generated.h $(SRC_DIR)/interface/settings_generated.inc
 SETTINGS_FILE 			= $(SRC_DIR)/interface/settings.yaml
 GENERATED_FILES			= $(GENERATED_SETTINGS)
 $(GENERATED_SETTINGS): $(SETTINGS_GENERATOR) $(SETTINGS_FILE)
 
 # Use a pattern rule, since they're different than normal rules.
 # See https://www.gnu.org/software/make/manual/make.html#Pattern-Examples
-%generated.h %generated.c:
-	$(V1) echo "settings.yaml -> settings_generated.h, settings_generated.c" "$(STDOUT)"
+%generated.h %generated.inc:
+	$(V1) echo "settings.yaml -> settings_generated.h, settings_generated.inc" "$(STDOUT)"
 	$(V1) CFLAGS="$(CFLAGS)" TARGET=$(TARGET) ruby $(SETTINGS_GENERATOR) . $(SETTINGS_FILE)
 
 settings-json:

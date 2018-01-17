@@ -6,7 +6,7 @@
 #include "interface/settings_generated.h"
 #include "interface/settings.h"
 
-#include "interface/settings_generated.c"
+#include "interface/settings_generated.inc"
 
 void settingGetName(const setting_t *val, char *buf)
 {

@@ -43,4 +43,4 @@ ubuntu*.log
 
 # build generated files
 /src/main/interface/settings_generated.h
-/src/main/interface/settings_generated.c
+/src/main/interface/settings_generated.inc
