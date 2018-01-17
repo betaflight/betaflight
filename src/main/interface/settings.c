@@ -8,7 +8,7 @@
 
 #include "interface/settings_generated.c"
 
-void setting_get_name(const setting_t *val, char *buf)
+void settingGetName(const setting_t *val, char *buf)
 {
   uint8_t bpos = 0;
   uint16_t n = 0;
@@ -50,24 +50,24 @@ void setting_get_name(const setting_t *val, char *buf)
 	buf[bpos] = '\0';
 }
 
-bool setting_name_contains(const setting_t *val, char *buf, const char *cmdline)
+bool settingNameContains(const setting_t *val, char *buf, const char *cmdline)
 {
-	setting_get_name(val, buf);
+	settingGetName(val, buf);
 	return strstr(buf, cmdline) != NULL;
 }
 
-bool setting_name_exact_match(const setting_t *val, char *buf, const char *cmdline, uint8_t var_name_length)
+bool settingNameIsExactMatch(const setting_t *val, char *buf, const char *cmdline, uint8_t var_name_length)
 {
-	setting_get_name(val, buf);
+	settingGetName(val, buf);
 	return strncasecmp(cmdline, buf, strlen(buf)) == 0 && var_name_length == strlen(buf);
 }
 
-const setting_t *setting_find(const char *name)
+const setting_t *settingFind(const char *name)
 {
 	char buf[SETTING_MAX_NAME_LENGTH];
 	for (int ii = 0; ii < SETTINGS_TABLE_COUNT; ii++) {
 		const setting_t *setting = &settingsTable[ii];
-		setting_get_name(setting, buf);
+		settingGetName(setting, buf);
 		if (strcmp(buf, name) == 0) {
 			return setting;
 		}
@@ -75,7 +75,7 @@ const setting_t *setting_find(const char *name)
 	return NULL;
 }
 
-size_t setting_get_value_size(const setting_t *val)
+size_t settingGetValueSize(const setting_t *val)
 {
 	switch (SETTING_TYPE(val)) {
 		case VAR_UINT8:
@@ -90,7 +90,7 @@ size_t setting_get_value_size(const setting_t *val)
 	return 0; // Unreachable
 }
 
-pgn_t setting_get_pgn(const setting_t *val)
+pgn_t settingGetPgNumber(const setting_t *val)
 {
 	uint16_t pos = val - (const setting_t *)settingsTable;
 	uint16_t acc = 0;
@@ -103,7 +103,7 @@ pgn_t setting_get_pgn(const setting_t *val)
 	return -1;
 }
 
-uint16_t setting_get_value_offset(const setting_t *value)
+uint16_t settingGetValueOffset(const setting_t *value)
 {
     switch (SETTING_SECTION(value)) {
     case MASTER_VALUE:
@@ -116,19 +116,19 @@ uint16_t setting_get_value_offset(const setting_t *value)
     return 0;
 }
 
-void *setting_get_value_pointer(const setting_t *val)
+void *settingGetValuePointer(const setting_t *val)
 {
-    const pgRegistry_t *pg = pgFind(setting_get_pgn(val));
-    return pg->address + setting_get_value_offset(val);
+    const pgRegistry_t *pg = pgFind(settingGetPgNumber(val));
+    return pg->address + settingGetValueOffset(val);
 }
 
-const void * setting_get_copy_value_pointer(const setting_t *val)
+const void * settingGetCopyValuePointer(const setting_t *val)
 {
-    const pgRegistry_t *pg = pgFind(setting_get_pgn(val));
-    return pg->copy + setting_get_value_offset(val);
+    const pgRegistry_t *pg = pgFind(settingGetPgNumber(val));
+    return pg->copy + settingGetValueOffset(val);
 }
 
-setting_min_t setting_get_min(const setting_t *val)
+setting_min_t settingGetMin(const setting_t *val)
 {
 	if (SETTING_MODE(val) == MODE_DIRECT) {
 		return 0;
@@ -136,7 +136,7 @@ setting_min_t setting_get_min(const setting_t *val)
 	return settingMinMaxTable[SETTING_INDEXES_GET_MIN(val)];
 }
 
-setting_max_t setting_get_max(const setting_t *val)
+setting_max_t settingGetMax(const setting_t *val)
 {
 	if (SETTING_MODE(val) == MODE_LOOKUP) {
 		return settingLookupTables[val->config.lookup.tableIndex].valueCount - 1;
@@ -144,7 +144,7 @@ setting_max_t setting_get_max(const setting_t *val)
 	return settingMinMaxTable[SETTING_INDEXES_GET_MAX(val)];
 }
 
-uint8_t setting_get_array_length(const setting_t *val)
+uint8_t settingGetArrayLength(const setting_t *val)
 {
   if(SETTING_MODE(val) != MODE_ARRAY) {
     return 0;

@@ -400,7 +400,7 @@ static void printValuePointer(const setting_t *var, const void *valuePointer, bo
         case MODE_DIRECT:
             cliPrintf("%d", value);
             if (full) {
-                cliPrintf(" %d %d", setting_get_min(var), setting_get_max(var));
+                cliPrintf(" %d %d", settingGetMin(var), settingGetMax(var));
             }
             break;
         case MODE_LOOKUP:
@@ -441,9 +441,9 @@ static bool valuePtrEqualsDefault(const setting_t *val, const void *ptr, const v
 static void dumpPgValue(const setting_t *value, uint8_t dumpMask)
 {
     char name[SETTING_MAX_NAME_LENGTH];
-    setting_get_name(value, name);
+    settingGetName(value, name);
 
-    const pgRegistry_t *pg = pgFind(setting_get_pgn(value));
+    const pgRegistry_t *pg = pgFind(settingGetPgNumber(value));
 #ifdef DEBUG
     if (!pg) {
         cliPrintLinef("VALUE %s ERROR", name);
@@ -453,7 +453,7 @@ static void dumpPgValue(const setting_t *value, uint8_t dumpMask)
 
     const char *format = "set %s = ";
     const char *defaultFormat = "#set %s = ";
-    const int valueOffset = setting_get_value_offset(value);
+    const int valueOffset = settingGetValueOffset(value);
     const bool equalsDefault = valuePtrEqualsDefault(value, pg->copy + valueOffset, pg->address + valueOffset);
 
     if (((dumpMask & DO_DIFF) == 0) || !equalsDefault) {
@@ -481,7 +481,7 @@ static void dumpAllValues(uint16_t valueSection, uint8_t dumpMask)
 
 static void cliPrintVar(const setting_t *var, bool full)
 {
-    const void *ptr = setting_get_value_pointer(var);
+    const void *ptr = settingGetValuePointer(var);
 
     printValuePointer(var, ptr, full);
 }
@@ -490,7 +490,7 @@ static void cliPrintVarRange(const setting_t *var)
 {
     switch (SETTING_MODE(var)) {
     case (MODE_DIRECT): {
-        cliPrintLinef("Allowed range: %d - %d", setting_get_min(var), setting_get_max(var));
+        cliPrintLinef("Allowed range: %d - %d", settingGetMin(var), settingGetMax(var));
     }
     break;
     case (MODE_LOOKUP): {
@@ -514,7 +514,7 @@ static void cliPrintVarRange(const setting_t *var)
 
 static void cliSetVar(const setting_t *var, const int16_t value)
 {
-    void *ptr = setting_get_value_pointer(var);
+    void *ptr = settingGetValuePointer(var);
 
     switch (SETTING_TYPE(var)) {
     case VAR_UINT8:
@@ -2842,7 +2842,7 @@ STATIC_UNIT_TESTED void cliGet(char *cmdline)
 
     for (uint32_t i = 0; i < SETTINGS_TABLE_COUNT; i++) {
         val = &settingsTable[i];
-        if (setting_name_contains(val, name, cmdline)) {
+        if (settingNameContains(val, name, cmdline)) {
             cliPrintf("%s = ", name);
             cliPrintVar(val, 0);
             cliPrintLinefeed();
@@ -2890,7 +2890,7 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
 
         for (uint32_t i = 0; i < SETTINGS_TABLE_COUNT; i++) {
             const setting_t *val = &settingsTable[i];
-            setting_get_name(val, name);
+            settingGetName(val, name);
             cliPrintf("%s = ", name);
             cliPrintVar(val, len); // when len is 1 (when * is passed as argument), it will print min/max values as well, for gui
             cliPrintLinefeed();
@@ -2908,7 +2908,7 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
             const setting_t *val = &settingsTable[i];
 
             // ensure exact match when setting to prevent setting variables with shorter names
-            if (setting_name_exact_match(val, name, cmdline, variableNameLength)) {
+            if (settingNameIsExactMatch(val, name, cmdline, variableNameLength)) {
 
                 bool valueChanged = false;
                 int16_t value  = 0;
@@ -2916,7 +2916,7 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
                 case MODE_DIRECT: {
                         int16_t value = atoi(eqptr);
 
-                        if (value >= setting_get_min(val) && value <= setting_get_max(val)) {
+                        if (value >= settingGetMin(val) && value <= settingGetMax(val)) {
                             cliSetVar(val, value);
                             valueChanged = true;
                         }
@@ -2958,7 +2958,7 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
                                 default:
                                 case VAR_UINT8: {
                                     // fetch data pointer
-                                    uint8_t *data = (uint8_t *)setting_get_value_pointer(val) + i;
+                                    uint8_t *data = (uint8_t *)settingGetValuePointer(val) + i;
                                     // store value
                                     *data = (uint8_t)atoi((const char*) valPtr);
                                     }
@@ -2966,7 +2966,7 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
 
                                 case VAR_INT8: {
                                     // fetch data pointer
-                                    int8_t *data = (int8_t *)setting_get_value_pointer(val) + i;
+                                    int8_t *data = (int8_t *)settingGetValuePointer(val) + i;
                                     // store value
                                     *data = (int8_t)atoi((const char*) valPtr);
                                     }
@@ -2974,7 +2974,7 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
 
                                 case VAR_UINT16: {
                                     // fetch data pointer
-                                    uint16_t *data = (uint16_t *)setting_get_value_pointer(val) + i;
+                                    uint16_t *data = (uint16_t *)settingGetValuePointer(val) + i;
                                     // store value
                                     *data = (uint16_t)atoi((const char*) valPtr);
                                     }
@@ -2982,7 +2982,7 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
 
                                 case VAR_INT16: {
                                     // fetch data pointer
-                                    int16_t *data = (int16_t *)setting_get_value_pointer(val) + i;
+                                    int16_t *data = (int16_t *)settingGetValuePointer(val) + i;
                                     // store value
                                     *data = (int16_t)atoi((const char*) valPtr);
                                     }

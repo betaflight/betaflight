@@ -77,30 +77,30 @@ static inline setting_type_e SETTING_TYPE(const setting_t *s) { return s->type &
 static inline setting_section_e SETTING_SECTION(const setting_t *s) { return s->type & SETTING_SECTION_MASK; }
 static inline setting_mode_e SETTING_MODE(const setting_t *s) { return s->type & SETTING_MODE_MASK; }
 
-void setting_get_name(const setting_t *val, char *buf);
-bool setting_name_contains(const setting_t *val, char *buf, const char *cmdline);
-bool setting_name_exact_match(const setting_t *val, char *buf, const char *cmdline, uint8_t var_name_length);
+void settingGetName(const setting_t *val, char *buf);
+bool settingNameContains(const setting_t *val, char *buf, const char *cmdline);
+bool settingNameIsExactMatch(const setting_t *val, char *buf, const char *cmdline, uint8_t var_name_length);
 // Returns a setting_t with the exact name (case sensitive), or
 // NULL if no setting with that name exists.
-const setting_t *setting_find(const char *name);
+const setting_t *settingFind(const char *name);
 // Returns the size in bytes of the setting value.
-size_t setting_get_value_size(const setting_t *val);
-pgn_t setting_get_pgn(const setting_t *val);
-uint16_t setting_get_value_offset(const setting_t *value);
+size_t settingGetValueSize(const setting_t *val);
+pgn_t settingGetPgNumber(const setting_t *val);
+uint16_t settingGetValueOffset(const setting_t *value);
 // Returns a pointer to the actual value stored by
 // the setting_t. The returned value might be modified.
-void * setting_get_value_pointer(const setting_t *val);
+void * settingGetValuePointer(const setting_t *val);
 // Returns a pointer to the backed up copy of the value. Note that
 // this will contain random garbage unless a copy of the parameter
 // group for the value has been manually performed. Currently, this
 // is only used by cli.c during config dumps.
-const void * setting_get_copy_value_pointer(const setting_t *val);
+const void * settingGetCopyValuePointer(const setting_t *val);
 // Returns the minimum valid value for the given setting_t. setting_min_t
 // depends on the target and build options, but will always be a signed
 // integer (e.g. intxx_t,)
-setting_min_t setting_get_min(const setting_t *val);
+setting_min_t settingGetMin(const setting_t *val);
 // Returns the maximum valid value for the given setting_t. setting_max_t
 // depends on the target and build options, but will always be an unsigned
 // integer (e.g. uintxx_t,)
-setting_max_t setting_get_max(const setting_t *val);
-uint8_t setting_get_array_length(const setting_t *val);
+setting_max_t settingGetMax(const setting_t *val);
+uint8_t settingGetArrayLength(const setting_t *val);
