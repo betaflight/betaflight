@@ -303,6 +303,8 @@
 #define MSP_SET_MOTOR_CONFIG     222    //out message         Motor configuration (min/max throttle, etc)
 #define MSP_SET_GPS_CONFIG       223    //out message         GPS configuration
 #define MSP_SET_COMPASS_CONFIG   224    //out message         Compass configuration
+#define MSP_ADVANCED_FILTER_CONFIG     225    //out message   Get advanced filters
+#define MSP_SET_ADVANCED_FILTER_CONFIG 226    //in message    Set advanced filters 
 
 // #define MSP_BIND                 240    //in message          no param
 // #define MSP_ALARMS               242
