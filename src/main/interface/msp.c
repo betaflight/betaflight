@@ -880,8 +880,8 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         break;
 
     case MSP_RC_TUNING:
-        sbufWriteU8(dst, currentControlRateProfile->rcRate8);
-        sbufWriteU8(dst, currentControlRateProfile->rcExpo8);
+        sbufWriteU8(dst, currentControlRateProfile->rcRates[FD_ROLL]);
+        sbufWriteU8(dst, currentControlRateProfile->rcExpo[FD_ROLL]);
         for (int i = 0 ; i < 3; i++) {
             sbufWriteU8(dst, currentControlRateProfile->rates[i]); // R,P,Y see flight_dynamics_index_t
         }
@@ -889,8 +889,10 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, currentControlRateProfile->thrMid8);
         sbufWriteU8(dst, currentControlRateProfile->thrExpo8);
         sbufWriteU16(dst, currentControlRateProfile->tpa_breakpoint);
-        sbufWriteU8(dst, currentControlRateProfile->rcYawExpo8);
-        sbufWriteU8(dst, currentControlRateProfile->rcYawRate8);
+        sbufWriteU8(dst, currentControlRateProfile->rcExpo[FD_YAW]);
+        sbufWriteU8(dst, currentControlRateProfile->rcRates[FD_YAW]);
+        sbufWriteU8(dst, currentControlRateProfile->rcRates[FD_PITCH]);
+        sbufWriteU8(dst, currentControlRateProfile->rcExpo[FD_PITCH]);
         break;
 
     case MSP_PID:
@@ -1473,24 +1475,45 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
     case MSP_SET_RC_TUNING:
         if (sbufBytesRemaining(src) >= 10) {
-            currentControlRateProfile->rcRate8 = sbufReadU8(src);
-            currentControlRateProfile->rcExpo8 = sbufReadU8(src);
-            for (int i = 0; i < 3; i++) {
-                value = sbufReadU8(src);
-                currentControlRateProfile->rates[i] = MIN(value, i == FD_YAW ? CONTROL_RATE_CONFIG_YAW_RATE_MAX : CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX);
+            value = sbufReadU8(src);
+            if (currentControlRateProfile->rcRates[FD_PITCH] == currentControlRateProfile->rcRates[FD_ROLL]) {
+                currentControlRateProfile->rcRates[FD_PITCH] = value;
             }
+            currentControlRateProfile->rcRates[FD_ROLL] = value;
+
+            value = sbufReadU8(src);
+            if (currentControlRateProfile->rcExpo[FD_PITCH] == currentControlRateProfile->rcExpo[FD_ROLL]) {
+                currentControlRateProfile->rcExpo[FD_PITCH] = value;
+            }
+            currentControlRateProfile->rcExpo[FD_ROLL] = value;
+
+            for (int i = 0; i < 3; i++) {
+                currentControlRateProfile->rates[i] = sbufReadU8(src);
+            }
+
             value = sbufReadU8(src);
             currentControlRateProfile->dynThrPID = MIN(value, CONTROL_RATE_CONFIG_TPA_MAX);
             currentControlRateProfile->thrMid8 = sbufReadU8(src);
             currentControlRateProfile->thrExpo8 = sbufReadU8(src);
             currentControlRateProfile->tpa_breakpoint = sbufReadU16(src);
+
             if (sbufBytesRemaining(src) >= 1) {
-                currentControlRateProfile->rcYawExpo8 = sbufReadU8(src);
+                currentControlRateProfile->rcExpo[FD_YAW] = sbufReadU8(src);
             }
+
             if (sbufBytesRemaining(src) >= 1) {
-                currentControlRateProfile->rcYawRate8 = sbufReadU8(src);
+                currentControlRateProfile->rcRates[FD_YAW] = sbufReadU8(src);
             }
-            generateThrottleCurve();
+
+            if (sbufBytesRemaining(src) >= 1) {
+                currentControlRateProfile->rcRates[FD_PITCH] = sbufReadU8(src);
+            }
+
+            if (sbufBytesRemaining(src) >= 1) {
+                currentControlRateProfile->rcExpo[FD_PITCH] = sbufReadU8(src);
+            }
+
+            initRcProcessing();
         } else {
             return MSP_RESULT_ERROR;
         }

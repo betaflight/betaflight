@@ -23,15 +23,19 @@
 
 #define CONTROL_RATE_PROFILE_COUNT  3
 
+typedef enum {
+    RATES_TYPE_BETAFLIGHT = 0,
+    RATES_TYPE_RACEFLIGHT,
+} ratesType_e;
+
 typedef struct controlRateConfig_s {
-    uint8_t rcRate8;
-    uint8_t rcYawRate8;
-    uint8_t rcExpo8;
     uint8_t thrMid8;
     uint8_t thrExpo8;
+    uint8_t rates_type;
+    uint8_t rcRates[3];
+    uint8_t rcExpo[3];
     uint8_t rates[3];
     uint8_t dynThrPID;
-    uint8_t rcYawExpo8;
     uint16_t tpa_breakpoint;                // Breakpoint where TPA is activated
 } controlRateConfig_t;
 

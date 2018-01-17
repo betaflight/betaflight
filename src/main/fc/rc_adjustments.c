@@ -256,24 +256,44 @@ static int applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t a
     int newValue;
     switch (adjustmentFunction) {
     case ADJUSTMENT_RC_RATE:
-        newValue = constrain((int)controlRateConfig->rcRate8 + delta, 0, 250); // FIXME magic numbers repeated in cli.c
-        controlRateConfig->rcRate8 = newValue;
-        blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RC_RATE, newValue);
+    case ADJUSTMENT_ROLL_RC_RATE:
+        newValue = constrain((int)controlRateConfig->rcRates[FD_ROLL] + delta, 0, CONTROL_RATE_CONFIG_RC_RATES_MAX);
+        controlRateConfig->rcRates[FD_ROLL] = newValue;
+        blackboxLogInflightAdjustmentEvent(ADJUSTMENT_ROLL_RC_RATE, newValue);
+        if (adjustmentFunction == ADJUSTMENT_ROLL_RC_RATE) {
+            break;
+        }
+        // fall through for combined ADJUSTMENT_RC_EXPO
+        FALLTHROUGH;
+    case ADJUSTMENT_PITCH_RC_RATE:
+        newValue = constrain((int)controlRateConfig->rcRates[FD_PITCH] + delta, 0, CONTROL_RATE_CONFIG_RC_RATES_MAX);
+        controlRateConfig->rcRates[FD_PITCH] = newValue;
+        blackboxLogInflightAdjustmentEvent(ADJUSTMENT_PITCH_RC_RATE, newValue);
         break;
     case ADJUSTMENT_RC_EXPO:
-        newValue = constrain((int)controlRateConfig->rcExpo8 + delta, 0, 100); // FIXME magic numbers repeated in cli.c
-        controlRateConfig->rcExpo8 = newValue;
-        blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RC_EXPO, newValue);
+    case ADJUSTMENT_ROLL_RC_EXPO:
+        newValue = constrain((int)controlRateConfig->rcExpo[FD_ROLL] + delta, 0, CONTROL_RATE_CONFIG_RC_EXPO_MAX);
+        controlRateConfig->rcExpo[FD_ROLL] = newValue;
+        blackboxLogInflightAdjustmentEvent(ADJUSTMENT_ROLL_RC_EXPO, newValue);
+        if (adjustmentFunction == ADJUSTMENT_ROLL_RC_EXPO) {
+            break;
+        }
+        // fall through for combined ADJUSTMENT_RC_EXPO
+        FALLTHROUGH;
+    case ADJUSTMENT_PITCH_RC_EXPO:
+        newValue = constrain((int)controlRateConfig->rcExpo[FD_PITCH] + delta, 0, CONTROL_RATE_CONFIG_RC_EXPO_MAX);
+        controlRateConfig->rcExpo[FD_PITCH] = newValue;
+        blackboxLogInflightAdjustmentEvent(ADJUSTMENT_PITCH_RC_EXPO, newValue);
         break;
     case ADJUSTMENT_THROTTLE_EXPO:
         newValue = constrain((int)controlRateConfig->thrExpo8 + delta, 0, 100); // FIXME magic numbers repeated in cli.c
         controlRateConfig->thrExpo8 = newValue;
-        generateThrottleCurve();
+        initRcProcessing();
         blackboxLogInflightAdjustmentEvent(ADJUSTMENT_THROTTLE_EXPO, newValue);
         break;
     case ADJUSTMENT_PITCH_ROLL_RATE:
     case ADJUSTMENT_PITCH_RATE:
-        newValue = constrain((int)controlRateConfig->rates[FD_PITCH] + delta, 0, CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX);
+        newValue = constrain((int)controlRateConfig->rates[FD_PITCH] + delta, 0, CONTROL_RATE_CONFIG_RATE_MAX);
         controlRateConfig->rates[FD_PITCH] = newValue;
         blackboxLogInflightAdjustmentEvent(ADJUSTMENT_PITCH_RATE, newValue);
         if (adjustmentFunction == ADJUSTMENT_PITCH_RATE) {
@@ -282,12 +302,12 @@ static int applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t a
         // fall through for combined ADJUSTMENT_PITCH_ROLL_RATE
         FALLTHROUGH;
     case ADJUSTMENT_ROLL_RATE:
-        newValue = constrain((int)controlRateConfig->rates[FD_ROLL] + delta, 0, CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX);
+        newValue = constrain((int)controlRateConfig->rates[FD_ROLL] + delta, 0, CONTROL_RATE_CONFIG_RATE_MAX);
         controlRateConfig->rates[FD_ROLL] = newValue;
         blackboxLogInflightAdjustmentEvent(ADJUSTMENT_ROLL_RATE, newValue);
         break;
     case ADJUSTMENT_YAW_RATE:
-        newValue = constrain((int)controlRateConfig->rates[FD_YAW] + delta, 0, CONTROL_RATE_CONFIG_YAW_RATE_MAX);
+        newValue = constrain((int)controlRateConfig->rates[FD_YAW] + delta, 0, CONTROL_RATE_CONFIG_RATE_MAX);
         controlRateConfig->rates[FD_YAW] = newValue;
         blackboxLogInflightAdjustmentEvent(ADJUSTMENT_YAW_RATE, newValue);
         break;
@@ -353,8 +373,8 @@ static int applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t a
         blackboxLogInflightAdjustmentEvent(ADJUSTMENT_YAW_D, newValue);
         break;
     case ADJUSTMENT_RC_RATE_YAW:
-        newValue = constrain((int)controlRateConfig->rcYawRate8 + delta, 0, 300); // FIXME magic numbers repeated in cli.c
-        controlRateConfig->rcYawRate8 = newValue;
+        newValue = constrain((int)controlRateConfig->rcRates[FD_YAW] + delta, 0, CONTROL_RATE_CONFIG_RC_RATES_MAX);
+        controlRateConfig->rcRates[FD_YAW] = newValue;
         blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RC_RATE_YAW, newValue);
         break;
     case ADJUSTMENT_D_SETPOINT:

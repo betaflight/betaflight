@@ -137,7 +137,7 @@ void resetConfigs(void)
 void activateConfig(void)
 {
 #ifndef USE_OSD_SLAVE
-    generateThrottleCurve();
+    initRcProcessing();
 
     resetAdjustmentStates();
 

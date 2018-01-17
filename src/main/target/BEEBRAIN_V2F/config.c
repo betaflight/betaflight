@@ -85,9 +85,10 @@ void targetConfiguration(void)
     for (uint8_t rateProfileIndex = 0; rateProfileIndex < CONTROL_RATE_PROFILE_COUNT; rateProfileIndex++) {
         controlRateConfig_t *controlRateConfig = controlRateProfilesMutable(rateProfileIndex);
 
-        controlRateConfig->rcYawRate8      = 120;
-        controlRateConfig->rcExpo8         = 15;
-        controlRateConfig->rcYawExpo8      = 15;
+        controlRateConfig->rcRates[FD_YAW] = 120;
+        controlRateConfig->rcExpo[FD_ROLL] = 15;
+        controlRateConfig->rcExpo[FD_PITCH] = 15;
+        controlRateConfig->rcExpo[FD_YAW]  = 15;
         controlRateConfig->rates[FD_ROLL]  = 85;
         controlRateConfig->rates[FD_PITCH] = 85;
     }

@@ -325,9 +325,19 @@ static void showProfilePage(void)
     i2c_OLED_send_string(bus, lineBuffer);
 
     const controlRateConfig_t *controlRateConfig = controlRateProfiles(currentRateProfileIndex);
-    tfp_sprintf(lineBuffer, "RCE: %d, RCR: %d",
-        controlRateConfig->rcExpo8,
-        controlRateConfig->rcRate8
+    tfp_sprintf(lineBuffer, "RRr:%d PRR:%d YRR:%d",
+        controlRateConfig->rcRates[FD_ROLL],
+        controlRateConfig->rcRates[FD_PITCH],
+        controlRateConfig->rcRates[FD_YAW]
+    );
+    padLineBuffer();
+    i2c_OLED_set_line(bus, rowIndex++);
+    i2c_OLED_send_string(bus, lineBuffer);
+
+    tfp_sprintf(lineBuffer, "RE:%d PE:%d YE:%d",
+        controlRateConfig->rcExpo[FD_ROLL],
+        controlRateConfig->rcExpo[FD_PITCH],
+        controlRateConfig->rcExpo[FD_YAW]
     );
     padLineBuffer();
     i2c_OLED_set_line(bus, rowIndex++);

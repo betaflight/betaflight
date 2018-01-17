@@ -130,9 +130,11 @@ void targetConfiguration(void)
         controlRateConfig_t *controlRateConfig = controlRateProfilesMutable(rateProfileIndex);
 
         /* RC Rates */
-        controlRateConfig->rcRate8 = 100;
-        controlRateConfig->rcYawRate8 = 100;
-        controlRateConfig->rcExpo8 = 0;
+        controlRateConfig->rcRates[FD_ROLL] = 100;
+        controlRateConfig->rcRates[FD_PITCH] = 100;
+        controlRateConfig->rcRates[FD_YAW] = 100;
+        controlRateConfig->rcExpo[FD_ROLL] = 0;
+        controlRateConfig->rcExpo[FD_PITCH] = 0;
 
         /* Super Expo Rates */
         controlRateConfig->rates[FD_ROLL] = 80;
