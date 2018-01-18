@@ -107,6 +107,8 @@ typedef struct fportFrame_s {
     fportData_t data;
 } fportFrame_t;
 
+static const smartPortPayload_t emptySmartPortFrame = { .frameId = 0, .valueId = 0, .data = 0 };
+
 #define FPORT_REQUEST_FRAME_LENGTH sizeof(fportFrame_t)
 #define FPORT_RESPONSE_FRAME_LENGTH (sizeof(uint8_t) + sizeof(smartPortPayload_t))
 
@@ -322,7 +324,11 @@ static uint8_t fportFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
                     processSmartPortTelemetry(mspPayload, &clearToSend, NULL);
                 }
 
-                clearToSend = false;
+                if (clearToSend) {
+                    smartPortWriteFrameFport(&emptySmartPortFrame);
+
+                    clearToSend = false;
+                }
             }
         }
 #endif
