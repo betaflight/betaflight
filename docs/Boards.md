@@ -6,21 +6,21 @@ If you want a fully featured version of Cleanflight then the recommendation for 
 
 The core set of recommended boards are:
 
-* [Seriously Pro SPRacingF3Mini](Board%20-%20SPRacingF3MINI.md)
-* [Seriously Pro SPRacingF3](Board%20-%20SPRacingF3.md)
-* [Seriously Pro SPRacingF3EVO](Board%20-%20SPRacingF3EVO.md)
-* [TBS Colibri Race](Board%20-%20ColibriRace.md)
-* [AlienFlightF3](Board%20-%20AlienFlight.md)
-* [TauLabs Sparky](Board%20-%20Sparky.md)
+* [Seriously Pro SPRacingF3Mini](boards/Board%20-%20SPRacingF3MINI.md)
+* [Seriously Pro SPRacingF3](boards/Board%20-%20SPRacingF3.md)
+* [Seriously Pro SPRacingF3EVO](boards/Board%20-%20SPRacingF3EVO.md)
+* [TBS Colibri Race](boards/Board%20-%20ColibriRace.md)
+* [AlienFlightF3](boards/Board%20-%20AlienFlight.md)
+* [TauLabs Sparky](boards/Board%20-%20Sparky.md)
 
 The core set of legacy boards are:
 
-* [AlienFlightF1](Board%20-%20AlienFlight.md)
-* [OpenPilot CC3D](Board%20-%20CC3D.md)
-* [CJMCU](Board%20-%20CJMCU.md)
+* [AlienFlightF1](boards/Board%20-%20AlienFlight.md)
+* [OpenPilot CC3D](boards/Board%20-%20CC3D.md)
+* [CJMCU](boards/Board%20-%20CJMCU.md)
 * Flip32+
-* [AbuseMark Naze32](Board%20-%20Naze32.md)
-* [RMRC Dodo](Board%20-%20RMDO.md)
+* [AbuseMark Naze32](boards/Board%20-%20Naze32.md)
+* [RMRC Dodo](boards/Board%20-%20RMDO.md)
 
 Cleanflight also runs on the following developer boards:
 
