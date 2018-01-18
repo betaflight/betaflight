@@ -1232,14 +1232,16 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("looptime", "%d",                        gyro.targetLooptime);
         BLACKBOX_PRINT_HEADER_LINE("gyro_sync_denom", "%d",                 gyroConfig()->gyro_sync_denom);
         BLACKBOX_PRINT_HEADER_LINE("pid_process_denom", "%d",               pidConfig()->pid_process_denom);
-        BLACKBOX_PRINT_HEADER_LINE("rc_rate", "%d",                         currentControlRateProfile->rcRate8);
-        BLACKBOX_PRINT_HEADER_LINE("rc_expo", "%d",                         currentControlRateProfile->rcExpo8);
-        BLACKBOX_PRINT_HEADER_LINE("rc_rate_yaw", "%d",                     currentControlRateProfile->rcYawRate8);
-        BLACKBOX_PRINT_HEADER_LINE("rc_expo_yaw", "%d",                     currentControlRateProfile->rcYawExpo8);
         BLACKBOX_PRINT_HEADER_LINE("thr_mid", "%d",                         currentControlRateProfile->thrMid8);
         BLACKBOX_PRINT_HEADER_LINE("thr_expo", "%d",                        currentControlRateProfile->thrExpo8);
         BLACKBOX_PRINT_HEADER_LINE("tpa_rate", "%d",                        currentControlRateProfile->dynThrPID);
         BLACKBOX_PRINT_HEADER_LINE("tpa_breakpoint", "%d",                  currentControlRateProfile->tpa_breakpoint);
+        BLACKBOX_PRINT_HEADER_LINE("rc_rates", "%d,%d,%d",                  currentControlRateProfile->rcRates[ROLL],
+                                                                            currentControlRateProfile->rcRates[PITCH],
+                                                                            currentControlRateProfile->rcRates[YAW]);
+        BLACKBOX_PRINT_HEADER_LINE("rc_expo", "%d,%d,%d",                   currentControlRateProfile->rcExpo[ROLL],
+                                                                            currentControlRateProfile->rcExpo[PITCH],
+                                                                            currentControlRateProfile->rcExpo[YAW]);
         BLACKBOX_PRINT_HEADER_LINE("rates", "%d,%d,%d",                     currentControlRateProfile->rates[ROLL],
                                                                             currentControlRateProfile->rates[PITCH],
                                                                             currentControlRateProfile->rates[YAW]);

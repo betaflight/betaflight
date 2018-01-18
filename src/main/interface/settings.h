@@ -78,6 +78,7 @@ typedef enum {
 #ifdef USE_GYRO_OVERFLOW_CHECK
     TABLE_GYRO_OVERFLOW_CHECK,
 #endif
+    TABLE_RATES_TYPE,
     LOOKUP_TABLE_COUNT
 
 } lookupTableIndex_e;

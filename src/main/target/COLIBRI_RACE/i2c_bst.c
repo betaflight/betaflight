@@ -332,8 +332,8 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite16(getTaskDeltaTime(TASK_GYROPID));
             break;
         case BST_RC_TUNING:
-            bstWrite8(currentControlRateProfile->rcRate8);
-            bstWrite8(currentControlRateProfile->rcExpo8);
+            bstWrite8(currentControlRateProfile->rcRates[FD_ROLL]);
+            bstWrite8(currentControlRateProfile->rcExpo[FD_ROLL]);
             for (i = 0 ; i < 3; i++) {
                 bstWrite8(currentControlRateProfile->rates[i]); // R,P,Y see flight_dynamics_index_t
             }
@@ -341,8 +341,8 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite8(currentControlRateProfile->thrMid8);
             bstWrite8(currentControlRateProfile->thrExpo8);
             bstWrite16(currentControlRateProfile->tpa_breakpoint);
-            bstWrite8(currentControlRateProfile->rcYawExpo8);
-            bstWrite8(currentControlRateProfile->rcYawRate8);
+            bstWrite8(currentControlRateProfile->rcExpo[FD_YAW]);
+            bstWrite8(currentControlRateProfile->rcRates[FD_YAW]);
             break;
         case BST_PID:
             for (i = 0; i < PID_ITEM_COUNT; i++) {

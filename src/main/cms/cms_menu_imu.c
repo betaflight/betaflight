@@ -203,15 +203,17 @@ static OSD_Entry cmsx_menuRateProfileEntries[] =
 {
     { "-- RATE --", OME_Label, NULL, rateProfileIndexString, 0 },
 
-    { "RC RATE",     OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcRate8,    0, 255, 1, 10 }, 0 },
-    { "RC YAW RATE", OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcYawRate8, 0, 255, 1, 10 }, 0 },
+    { "RC R RATE",   OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcRates[FD_ROLL],    0, 255, 1, 10 }, 0 },
+    { "RC P RATE",   OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcRates[FD_PITCH],    0, 255, 1, 10 }, 0 },
+    { "RC Y RATE",   OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcRates[FD_YAW], 0, 255, 1, 10 }, 0 },
 
-    { "ROLL SUPER",  OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rates[0],   0, 100, 1, 10 }, 0 },
-    { "PITCH SUPER", OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rates[1],   0, 100, 1, 10 }, 0 },
-    { "YAW SUPER",   OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rates[2],   0, 100, 1, 10 }, 0 },
+    { "ROLL SUPER",  OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rates[FD_ROLL],   0, 100, 1, 10 }, 0 },
+    { "PITCH SUPER", OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rates[FD_PITCH],   0, 100, 1, 10 }, 0 },
+    { "YAW SUPER",   OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rates[FD_YAW],   0, 100, 1, 10 }, 0 },
 
-    { "RC EXPO",     OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcExpo8,    0, 100, 1, 10 }, 0 },
-    { "RC YAW EXP",  OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcYawExpo8, 0, 100, 1, 10 }, 0 },
+    { "RC R EXPO",   OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcExpo[FD_ROLL],    0, 100, 1, 10 }, 0 },
+    { "RC P EXPO",   OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcExpo[FD_PITCH],    0, 100, 1, 10 }, 0 },
+    { "RC Y EXPO",   OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcExpo[FD_YAW], 0, 100, 1, 10 }, 0 },
 
     { "THR MID",     OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.thrMid8,           0,  100,  1}, 0 },
     { "THR EXPO",    OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.thrExpo8,          0,  100,  1}, 0 },

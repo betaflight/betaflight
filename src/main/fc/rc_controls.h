@@ -68,11 +68,12 @@ typedef enum {
 #define THR_CE (3 << (2 * THROTTLE))
 #define THR_HI (2 << (2 * THROTTLE))
 
-// Roll/pitch rates are a proportion used for mixing, so it tops out at 1.0:
-#define CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX  100
+#define CONTROL_RATE_CONFIG_RC_EXPO_MAX  100
 
-/* Meaningful yaw rates are effectively unbounded because they are treated as a rotation rate multiplier: */
-#define CONTROL_RATE_CONFIG_YAW_RATE_MAX         255
+#define CONTROL_RATE_CONFIG_RC_RATES_MAX  255
+
+// (Super) rates are constrained to [0, 100] for Betaflight rates, so values higher than 100 won't make a difference. Range extended for RaceFlight rates.
+#define CONTROL_RATE_CONFIG_RATE_MAX  255
 
 #define CONTROL_RATE_CONFIG_TPA_MAX              100
 
