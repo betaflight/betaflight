@@ -397,7 +397,9 @@ void processRx(timeUs_t currentTimeUs)
     static bool armedBeeperOn = false;
     static bool airmodeIsActivated;
 
-    calculateRxChannelsAndUpdateFailsafe(currentTimeUs);
+    if (!calculateRxChannelsAndUpdateFailsafe(currentTimeUs)) {
+        return;
+    }
 
     // in 3D mode, we need to be able to disarm by switch at any time
     if (feature(FEATURE_3D)) {
