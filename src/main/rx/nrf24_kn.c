@@ -15,9 +15,6 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// this file is copied with modifications from bradwii for jd385
-// see https://github.com/hackocopter/bradwii-jd385
-
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -36,7 +33,7 @@
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
-#include "rx/nrf24_kn.h"//#
+#include "rx/nrf24_kn.h"
 
 /*
  * KN Protocol
@@ -144,8 +141,6 @@ void knNrf24SetRcDataFromPayload(uint16_t *rcData, const uint8_t *packet)
 {
     UNUSED(rcData);
     UNUSED(packet);
-    // Ideally the decoding of the packet should be moved into here, to reduce the overhead of v202DataReceived function.
-	//????
 }
 
 static rx_spi_received_e readrx(uint8_t *packet)
