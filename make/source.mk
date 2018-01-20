@@ -117,6 +117,7 @@ FC_SRC = \
             rx/nrf24_h8_3d.c \
             rx/nrf24_syma.c \
             rx/nrf24_v202.c \
+            rx/nrf24_kn.c \
             rx/pwm.c \
             rx/rx.c \
             rx/rx_spi.c \
