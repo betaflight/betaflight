@@ -27,9 +27,9 @@
 #include "drivers/io.h"
 #include "timer.h"
 #if defined(STM32F4)
-#include "timer_stm32f4xx.h"
+#include "stm32f4xx.h"
 #elif defined(STM32F3)
-#include "timer_stm32f30x.h"
+#include "stm32f30x.h"
 #endif
 #include "pwm_output.h"
 #include "drivers/nvic.h"
