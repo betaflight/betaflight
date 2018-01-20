@@ -54,6 +54,8 @@
 #define REMAP_TIM16_DMA
 #define REMAP_TIM17_DMA
 
+#undef USE_TELEMETRY_IBUS
+
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2
