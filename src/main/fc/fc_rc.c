@@ -46,7 +46,7 @@
 
 #include "sensors/battery.h"
 
-typedef float (applyRatesFn)(int axis, float rcCommandf, const float rcCommandfAbs);
+typedef float (applyRatesFn)(const int axis, float rcCommandf, const float rcCommandfAbs);
 
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
 static float throttlePIDAttenuation;
@@ -86,14 +86,15 @@ static int16_t rcLookupThrottle(int32_t tmp)
 #define SETPOINT_RATE_LIMIT 1998.0f
 #define RC_RATE_INCREMENTAL 14.54f
 
-float applyBetaflightRates(int axis, float rcCommandf, const float rcCommandfAbs)
+float applyBetaflightRates(const int axis, float rcCommandf, const float rcCommandfAbs)
 {
     if (currentControlRateProfile->rcExpo[axis]) {
         const float expof = currentControlRateProfile->rcExpo[axis] / 100.0f;
         rcCommandf = rcCommandf * power3(rcCommandfAbs) * expof + rcCommandf * (1 - expof);
     }
 
-    float angleRate = 200.0f * currentControlRateProfile->rcRates[axis] * rcCommandf;
+    const float rcRate = currentControlRateProfile->rcRates[axis] / 100.0f;
+    float angleRate = 200.0f * rcRate * rcCommandf;
     if (currentControlRateProfile->rates[axis]) {
         const float rcSuperfactor = 1.0f / (constrainf(1.0f - (rcCommandfAbs * (currentControlRateProfile->rates[axis] / 100.0f)), 0.01f, 1.00f));
         angleRate *= rcSuperfactor;
@@ -102,7 +103,7 @@ float applyBetaflightRates(int axis, float rcCommandf, const float rcCommandfAbs
     return angleRate;
 }
 
-float applyRaceFlightRates(int axis, float rcCommandf, const float rcCommandfAbs)
+float applyRaceFlightRates(const int axis, float rcCommandf, const float rcCommandfAbs)
 {
     UNUSED(rcCommandfAbs);
 
@@ -387,6 +388,7 @@ void initRcProcessing(void)
 
     switch (currentControlRateProfile->rates_type) {
     case RATES_TYPE_BETAFLIGHT:
+    default:
         applyRates = applyBetaflightRates;
 
         break;
