@@ -242,7 +242,7 @@
  static uint16_t getTemperature()
  {
      uint16_t temperature = gyroGetTemperature() * 10;
- #if defined(BARO)
+ #if defined(USE_BARO)
      if (sensors(SENSOR_BARO)) {
          temperature = (uint16_t) ((baro.baroTemperature + 50) / 10);
      }
