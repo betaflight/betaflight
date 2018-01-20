@@ -122,7 +122,7 @@ static rx_spi_received_e decode_packet(uint8_t *packet)
     // Decode packet
     // Restore regular interval
     rx_timeout = 13000L; // 13ms if data received
-	bind_phase = PHASE_RECEIVED;
+    bind_phase = PHASE_RECEIVED;
 	
     for (int i = 0; i < 4; ++i) {
         uint16_t a = packet[i*2];
