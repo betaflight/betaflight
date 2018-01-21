@@ -60,7 +60,7 @@ static uint32_t imuDeltaT = 0;
 static bool imuUpdated = false;
 #endif
 
-#define IMU_LOCK pthread_mutex_unlock(&imuUpdateLock)
+#define IMU_LOCK pthread_mutex_lock(&imuUpdateLock)
 #define IMU_UNLOCK pthread_mutex_unlock(&imuUpdateLock)
 
 #else
