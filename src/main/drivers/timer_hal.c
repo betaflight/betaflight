@@ -1165,3 +1165,9 @@ HAL_StatusTypeDef DMA_SetCurrDataCounter(TIM_HandleTypeDef *htim, uint32_t Chann
     /* Return function status */
     return HAL_OK;
 }
+
+uint8_t timerAlternateFunction(const timerTag_t timerTag, ioTag_t ioTag)
+{
+    // todo lookup stored AF and return based on timer and pin.
+    return 0;
+}

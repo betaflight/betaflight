@@ -246,3 +246,4 @@ uint16_t timerGetPeriodByPrescaler(TIM_TypeDef *tim, uint16_t prescaler, uint32_
 
 int8_t timerGetTIMNumber(const TIM_TypeDef *tim);
 uint8_t timerLookupChannelIndex(const uint16_t channel);
+uint8_t timerAlternateFunction(const timerTag_t timerTag, ioTag_t ioTag);

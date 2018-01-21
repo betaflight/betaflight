@@ -3463,7 +3463,7 @@ static void printTimer(uint8_t dumpMask)
     char buffer[12];
     
     cliPrintLine("# examples: ");
-    const char *format = "timer TIM%d_CH%d%s %c%02d AF%d %s";
+    const char *format = "timer TIM%d_CH%d%s %c%02d %s";
     cliPrint("#");
 #if defined(STM32F7) || defined(STM32F4)
     const char *dmaFormat = "DMA%d_ST%d CH%d";
@@ -3510,7 +3510,6 @@ static void printTimer(uint8_t dumpMask)
                 channel,
                 (inverted) ? "N" : "",
                 IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag),
-                timerChannelConfig(i)->pinAF,
                 buffer
                 );
         }
@@ -3572,23 +3571,6 @@ static void cliTimer(char *cmdline)
         goto error;
     }
 
-    uint8_t alternateFunction = 0;
-    memset(buffer, 0, sizeof(buffer));
-    pch = strtok_r(NULL, " ", &saveptr);
-    if (pch) {
-        for (int i = 1; i < 16; i++) {
-            tfp_sprintf(buffer, "AF%d", i);
-            if (strcasecmp(pch, buffer) == 0) {
-                alternateFunction = i;
-                break;
-            }
-        }    
-    }
-
-    if (!alternateFunction) {
-        goto error;
-    }
-
 #if defined(STM32F7) || defined(STM32F4)
     uint8_t dmaChannel = 0;
 #endif
@@ -3633,7 +3615,7 @@ static void cliTimer(char *cmdline)
     
 success:
     timerChannelConfigMutable(timerChannelIndex)->ioTag = ioTag;
-    timerChannelConfigMutable(timerChannelIndex)->pinAF = alternateFunction;
+    timerChannelConfigMutable(timerChannelIndex)->pinAF = timerAlternateFunction(timerTags[timerChannelIndex], ioTag);
     timerChannelConfigMutable(timerChannelIndex)->inverted = inverted;
 
     timerChannelConfigMutable(timerChannelIndex)->dma = dmaIdentifier;
