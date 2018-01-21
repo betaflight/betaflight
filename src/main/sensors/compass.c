@@ -262,6 +262,11 @@ bool compassInit(void)
     return true;
 }
 
+bool compassIsHealthy(void)
+{
+    return (mag.magADC[X] != 0) && (mag.magADC[Y] != 0) && (mag.magADC[Z] != 0);
+}
+
 void compassUpdate(timeUs_t currentTimeUs)
 {
     static timeUs_t tCal = 0;
@@ -310,4 +315,4 @@ void compassUpdate(timeUs_t currentTimeUs)
         }
     }
 }
-#endif
+#endif // USE_MAG

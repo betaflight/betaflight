@@ -17,9 +17,9 @@
 
 #pragma once
 
+#include "common/time.h"
 #include "drivers/io_types.h"
 #include "drivers/sensor.h"
-#include "common/time.h"
 #include "pg/pg.h"
 #include "sensors/sensors.h"
 
@@ -56,6 +56,7 @@ typedef struct compassConfig_s {
 
 PG_DECLARE(compassConfig_t, compassConfig);
 
-bool compassInit(void);
+bool compassIsHealthy(void);
 void compassUpdate(timeUs_t currentTime);
+bool compassInit(void);
 
