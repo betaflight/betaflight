@@ -54,11 +54,8 @@ typedef enum {
     ARMING_DISABLED_ARM_SWITCH      = (1 << 16), // Needs to be the last element, since it's always activated if one of the others is active when arming
 } armingDisableFlags_e;
 
-#define NUM_ARMING_DISABLE_FLAGS 17
-
-#if defined(USE_OSD) || !defined(MINIMAL_CLI)
-extern const char *armingDisableFlagNames[NUM_ARMING_DISABLE_FLAGS];
-#endif
+#define ARMING_DISABLE_FLAGS_COUNT 17
+extern const char *armingDisableFlagNames[ARMING_DISABLE_FLAGS_COUNT];
 
 void setArmingDisabled(armingDisableFlags_e flag);
 void unsetArmingDisabled(armingDisableFlags_e flag);

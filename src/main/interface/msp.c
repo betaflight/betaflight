@@ -755,7 +755,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 
             // Write arming disable flags
             // 1 byte, flag count
-            sbufWriteU8(dst, NUM_ARMING_DISABLE_FLAGS);
+            sbufWriteU8(dst, ARMING_DISABLE_FLAGS_COUNT);
             // 4 bytes, flags
             const uint32_t armingDisableFlags = getArmingDisableFlags();
             sbufWriteU32(dst, armingDisableFlags);
