@@ -26,6 +26,7 @@
 #else
 #define TARGET_BOARD_IDENTIFIER "SRFM"
 
+#undef USE_OSD
 #ifndef SPRACINGF3MINI_REV
 #define SPRACINGF3MINI_REV 2
 #endif

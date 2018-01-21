@@ -53,7 +53,6 @@
 #define BMP280_SPI_INSTANCE     SPI2
 #define BMP280_CS_PIN           PA9
 
-#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI2
 #define MAX7456_SPI_CS_PIN      PA10

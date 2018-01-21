@@ -62,7 +62,6 @@
 #define ACC_MPU6000_ALIGN       CW180_DEG
 
 #if defined(KIWIF4) || defined(KIWIF4V2)
-#define USE_OSD
 #define USE_MAX7456
 #endif
 

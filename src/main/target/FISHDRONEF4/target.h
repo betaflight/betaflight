@@ -80,7 +80,6 @@
 #define SPI2_MISO_PIN       PC2
 #define SPI2_MOSI_PIN       PC3
 
-#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI2
 #define MAX7456_SPI_CS_PIN      SPI2_NSS_PIN

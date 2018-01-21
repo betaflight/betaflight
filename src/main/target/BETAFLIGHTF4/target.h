@@ -55,7 +55,6 @@
 #define USE_MAG
 #define USE_MAG_HMC5883
 
-#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI2
 #define MAX7456_SPI_CS_PIN      PB12
