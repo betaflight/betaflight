@@ -892,7 +892,7 @@ void timerInit(void)
         th->tim = getTimByTag(timerTags[i]);
         th->tag = timerChannelConfig(i)->ioTag;
         th->channel = TIMER_TAG_CHANNEL_INDEX(timerTags[i]);
-        th->output = timerChannelConfig(i)->inverted ? TIMER_OUTPUT_N_CHANNEL : TIMER_OUTPUT_STANDARD;
+        th->output = timerChannelConfig(i)->inverted ? TIMER_OUTPUT_N_CHANNEL : TIMER_OUTPUT_NONE;
         th->alternateFunction = timerChannelConfig(i)->pinAF;
         th->dmaRef = getDmaRefByIdentifier(timerChannelConfig(i)->dma);
 #if defined(STM32F7) || defined(STM32F4)

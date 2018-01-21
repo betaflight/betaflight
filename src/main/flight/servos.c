@@ -35,6 +35,7 @@
 #include "pg/pg_ids.h"
 
 #include "drivers/pwm_output.h"
+#include "drivers/io.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"

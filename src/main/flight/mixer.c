@@ -36,6 +36,7 @@
 #include "drivers/pwm_output.h"
 #include "drivers/pwm_esc_detect.h"
 #include "drivers/time.h"
+#include "drivers/io.h"
 
 #include "io/motors.h"
 

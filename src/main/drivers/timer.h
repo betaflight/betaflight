@@ -20,7 +20,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 #include "drivers/io_types.h"
 #include "rcc_types.h"
 #include "drivers/timer_def.h"
