@@ -54,12 +54,12 @@ static uint16_t calculateChecksum(const uint8_t *ibusPacket);
 #include "io/gps.h"
 
 
-#define IBUS_TEMPERATURE_OFFSET 400
-#define INVALID_IBUS_ADDRESS 0
-#define IBUS_BUFFSIZE 33				// biggest iBus message seen so far + 1
-#define IBUS_HEADER_FOOTER_SIZE 4
-#define IBUS_2BYTE_SESNSOR 2
-#define IBUS_4BYTE_SESNSOR 4
+#define IBUS_TEMPERATURE_OFFSET     400
+#define INVALID_IBUS_ADDRESS        0
+#define IBUS_BUFFSIZE               33 // biggest iBus message seen so far + 1
+#define IBUS_HEADER_FOOTER_SIZE     4
+#define IBUS_2BYTE_SESNSOR          2
+#define IBUS_4BYTE_SESNSOR          4
 
 typedef uint8_t ibusAddress_t;
 
@@ -78,7 +78,7 @@ typedef enum {
     IBUS_SENSOR_TYPE_BAT_CURR         = 0x05, // battery current A * 100
     IBUS_SENSOR_TYPE_FUEL             = 0x06, // remaining battery percentage / mah drawn otherwise or fuel level no unit!
     IBUS_SENSOR_TYPE_RPM              = 0x07, // throttle value / battery capacity
-    IBUS_SENSOR_TYPE_CMP_HEAD		  = 0x08, //Heading  0..360 deg, 0=north 2bytes
+    IBUS_SENSOR_TYPE_CMP_HEAD         = 0x08, //Heading  0..360 deg, 0=north 2bytes
     IBUS_SENSOR_TYPE_CLIMB_RATE       = 0x09, //2 bytes m/s *100
     IBUS_SENSOR_TYPE_COG              = 0x0a, //2 bytes  Course over ground(NOT heading, but direction of movement) in degrees * 100, 0.0..359.99 degrees. unknown max uint
     IBUS_SENSOR_TYPE_GPS_STATUS       = 0x0b, //2 bytes
@@ -104,7 +104,7 @@ typedef enum {
     IBUS_SENSOR_TYPE_ALT              = 0x83, //4bytes signed!!! Alt m*100
     IBUS_SENSOR_TYPE_ALT_MAX          = 0x84, //4bytes signed MaxAlt m*100
 
-    IBUS_SENSOR_TYPE_ALT_FLYSKY       = 0xf9, // Altitude	2 bytes signed in m
+    IBUS_SENSOR_TYPE_ALT_FLYSKY       = 0xf9, // Altitude 2 bytes signed in m
 #if defined(USE_TELEMETRY_IBUS_EXTENDED)
     IBUS_SENSOR_TYPE_GPS_FULL         = 0xfd,
     IBUS_SENSOR_TYPE_VOLT_FULL        = 0xf0,
