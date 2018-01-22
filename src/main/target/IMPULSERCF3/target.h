@@ -21,11 +21,11 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
+#define USE_DSHOT_DMAR
+
 #define LED0_PIN                PB7
 
 #define BEEPER                  PC15
-
-#define USABLE_TIMER_CHANNEL_COUNT 8
 
 #define USE_EXTI
 #define MPU_INT_EXTI            PC13
@@ -44,8 +44,6 @@
 #define USE_FLASH_M25P16
 
 #define USE_ESC_SENSOR
-#define REMAP_TIM17_DMA
-#define REMAP_TIM16_DMA
 
 #define USE_VCP
 #define USE_UART1
@@ -111,4 +109,5 @@
 #define TARGET_IO_PORTC         (BIT(13)|BIT(14)|BIT(15))
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
 
-#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(8) | TIM_N(16) |TIM_N(17))
+#define USABLE_TIMER_CHANNEL_COUNT 8
+#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8))
