@@ -118,7 +118,8 @@
 #define PG_FLYSKY_CONFIG 525
 #define PG_TIME_CONFIG 526
 #define PG_RANGEFINDER_CONFIG 527 // iNav
-#define PG_BETAFLIGHT_END 527
+#define PG_TRICOPTER_CONFIG 528
+#define PG_BETAFLIGHT_END 528
 
 
 // OSD configuration (subject to change)
