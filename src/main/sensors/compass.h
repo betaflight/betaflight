@@ -17,11 +17,12 @@
 
 #pragma once
 
-#include "pg/pg.h"
-
-#include "drivers/io.h"
+#include "common/time.h"
+#include "drivers/io_types.h"
 #include "drivers/sensor.h"
+#include "pg/pg.h"
 #include "sensors/sensors.h"
+
 
 // Type of magnetometer used/detected
 typedef enum {
@@ -55,7 +56,7 @@ typedef struct compassConfig_s {
 
 PG_DECLARE(compassConfig_t, compassConfig);
 
+bool compassIsHealthy(void);
+void compassUpdate(timeUs_t currentTime);
 bool compassInit(void);
-union flightDynamicsTrims_u;
-void compassUpdate(uint32_t currentTime, union flightDynamicsTrims_u *magZero);
 

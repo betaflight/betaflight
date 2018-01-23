@@ -88,7 +88,6 @@ FC_SRC = \
             drivers/accgyro/gyro_sync.c \
             drivers/pwm_esc_detect.c \
             drivers/pwm_output.c \
-            drivers/rx/rx_nrf24l01.c \
             drivers/rx/rx_spi.c \
             drivers/rx/rx_xn297.c \
             drivers/rx/rx_pwm.c \
@@ -102,8 +101,10 @@ FC_SRC = \
             flight/failsafe.c \
             flight/imu.c \
             flight/mixer.c \
+            flight/mixer_tricopter.c \
             flight/pid.c \
             flight/servos.c \
+            flight/servos_tricopter.c \
             interface/cli.c \
             interface/settings.c \
             io/serial_4way.c \
@@ -112,12 +113,6 @@ FC_SRC = \
             rx/ibus.c \
             rx/jetiexbus.c \
             rx/msp.c \
-            rx/nrf24_cx10.c \
-            rx/nrf24_inav.c \
-            rx/nrf24_h8_3d.c \
-            rx/nrf24_syma.c \
-            rx/nrf24_v202.c \
-            rx/nrf24_kn.c \
             rx/pwm.c \
             rx/rx.c \
             rx/rx_spi.c \

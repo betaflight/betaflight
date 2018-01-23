@@ -157,15 +157,6 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
 }
 #endif
 
-#ifdef USE_MAG
-static void taskUpdateCompass(timeUs_t currentTimeUs)
-{
-    if (sensors(SENSOR_MAG)) {
-        compassUpdate(currentTimeUs, &compassConfigMutable()->magZero);
-    }
-}
-#endif
-
 #ifdef USE_BARO
 static void taskUpdateBaro(timeUs_t currentTimeUs)
 {
@@ -463,7 +454,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
 #ifdef USE_MAG
     [TASK_COMPASS] = {
         .taskName = "COMPASS",
-        .taskFunc = taskUpdateCompass,
+        .taskFunc = compassUpdate,
         .desiredPeriod = TASK_PERIOD_HZ(10),        // Compass is updated at 10 Hz
         .staticPriority = TASK_PRIORITY_LOW,
     },

@@ -15,6 +15,31 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <stdbool.h>
+#include <stdint.h>
 
-#include "stm32f7xx.h"
+#include "platform.h"
+
+#ifdef USE_SERVOS
+
+#include "flight/mixer.h"
+#include "flight/mixer_tricopter.h"
+#include "flight/servos.h"
+
+
+bool servosTricopterIsEnabledServoUnarmed(void)
+{
+    return servoConfig()->tri_unarmed_servo;
+}
+
+void servosTricopterMixer(void)
+{
+    servoMixer();
+}
+
+void servosTricopterInit(void)
+{
+
+}
+
+#endif // USE_SERVOS
