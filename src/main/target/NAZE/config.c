@@ -25,6 +25,8 @@
 #include "common/axis.h"
 #include "common/utils.h"
 
+#include "drivers/io.h"
+
 #include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/controlrate_profile.h"
