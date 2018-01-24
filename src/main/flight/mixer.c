@@ -653,7 +653,7 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS])
             motorOutput = constrain(motorOutput, disarmMotorOutput, motorRangeMax);
         } else {
             motorOutput = constrain(motorOutput, motorRangeMin, motorRangeMax);
-	    if (i==1 || i == 2) {
+	    if (i==3 || i == 4) {
 		motorOutput = -(motorOutput-1500)+1500;
 	    }
         }
@@ -695,13 +695,13 @@ void mixTable(uint8_t vbatPidCompensation)
     if (isMotorsReversed()) {
         scaledAxisPidRoll = -scaledAxisPidRoll;
         scaledAxisPidPitch = -scaledAxisPidPitch;
-        // scaledAxisPidYaw = -scaledAxisPidYaw;
+        scaledAxisPidYaw = -scaledAxisPidYaw;
     }
     if (mixerConfig()->yaw_motors_reversed) {
         scaledAxisPidYaw = -scaledAxisPidYaw;
     }
 
-    if (motorOutputMixSign == -1) {
+    if (motorOutputMixSign == 1) {
         scaledAxisPidYaw = -scaledAxisPidYaw;
     }
     
