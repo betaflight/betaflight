@@ -6810,7 +6810,7 @@ static void applyMixToMotors(float motorMix[8])
             motorOutput = constrain(motorOutput, disarmMotorOutput, motorRangeMax);
         } else {
             motorOutput = constrain(motorOutput, motorRangeMin, motorRangeMax);
-     if (i==3 || i == 4) {
+     if (i==3 || i == 0) {
   motorOutput = -(motorOutput-1500)+1500;
      }
         }

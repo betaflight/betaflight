@@ -237,6 +237,6 @@ extern const char* const buildTime;
 # 19 "./src/main/build/version.c" 2
 
 const char * const targetName = "NAZE";
-const char * const shortGitRevision = "f58794a";
+const char * const shortGitRevision = "9f79b0e";
 const char * const buildDate = "Jan 24 2018";
-const char * const buildTime = "11:42:11";
+const char * const buildTime = "12:06:27";
