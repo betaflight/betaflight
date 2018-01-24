@@ -234,7 +234,11 @@ void initActiveBoxIds(void)
         BME(BOXCALIB);
     }
 
-    BME(BOXOSD);
+#ifdef USE_OSD
+    if (feature(FEATURE_OSD)) {
+        BME(BOXOSD);
+    }
+#endif
 
 #ifdef USE_TELEMETRY
     if (feature(FEATURE_TELEMETRY) && telemetryConfig()->telemetry_switch) {
