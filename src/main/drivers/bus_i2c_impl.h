@@ -26,13 +26,28 @@
 #define I2C_LONG_TIMEOUT             ((uint32_t)(10 * I2C_SHORT_TIMEOUT))
 #define I2C_DEFAULT_TIMEOUT          I2C_SHORT_TIMEOUT
 
-#define I2C_PIN_SEL_MAX 3
+#define I2C_PIN_SEL_MAX 4
+
+typedef struct i2cPinDef_s {
+    ioTag_t ioTag;
+#if defined(STM32F4)
+    uint8_t af;
+#endif
+} i2cPinDef_t;
+
+#if defined(STM32F4)
+#define I2CPINDEF(pin, af) { DEFIO_TAG_E(pin), af }
+#elif defined(STM32F1)
+#define I2CPINDEF(pin, af) { DEFIO_TAG_E(pin) }
+#else
+#define I2CPINDEF(pin) { DEFIO_TAG_E(pin) }
+#endif
 
 typedef struct i2cHardware_s {
     I2CDevice device;
     I2C_TypeDef *reg;
-    ioTag_t sclPins[I2C_PIN_SEL_MAX];
-    ioTag_t sdaPins[I2C_PIN_SEL_MAX];
+    i2cPinDef_t sclPins[I2C_PIN_SEL_MAX];
+    i2cPinDef_t sdaPins[I2C_PIN_SEL_MAX];
     rccPeriphTag_t rcc;
 #if !defined(STM32F303xC)
     uint8_t ev_irq;
@@ -61,6 +76,10 @@ typedef struct i2cDevice_s {
     I2C_TypeDef *reg;
     IO_t scl;
     IO_t sda;
+#ifdef STM32F4
+    uint8_t sclAF;
+    uint8_t sdaAF;
+#endif
     bool overClock;
     bool pullUp;
 

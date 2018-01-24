@@ -68,10 +68,18 @@ void i2cHardwareConfigure(const i2cConfig_t *i2cConfig)
         memset(pDev, 0, sizeof(*pDev));
 
         for (int pindex = 0 ; pindex < I2C_PIN_SEL_MAX ; pindex++) {
-            if (i2cConfig->ioTagScl[device] == hardware->sclPins[pindex])
-              pDev->scl = IOGetByTag(i2cConfig->ioTagScl[device]);
-            if (i2cConfig->ioTagSda[device] == hardware->sdaPins[pindex])
-              pDev->sda = IOGetByTag(i2cConfig->ioTagSda[device]);
+            if (i2cConfig->ioTagScl[device] == hardware->sclPins[pindex].ioTag) {
+                pDev->scl = IOGetByTag(i2cConfig->ioTagScl[device]);
+#if defined(STM32F4)
+                pDev->sclAF = hardware->sclPins[pindex].af;
+#endif
+            }
+            if (i2cConfig->ioTagSda[device] == hardware->sdaPins[pindex].ioTag) {
+                pDev->sda = IOGetByTag(i2cConfig->ioTagSda[device]);
+#if defined(STM32F4)
+                pDev->sdaAF = hardware->sdaPins[pindex].af;
+#endif
+            }
         }
 
         if (pDev->scl && pDev->sda) {
@@ -82,4 +90,5 @@ void i2cHardwareConfigure(const i2cConfig_t *i2cConfig)
         }
     }
 }
+
 #endif // defined(USE_I2C) && !defined(USE_SOFT_I2C)

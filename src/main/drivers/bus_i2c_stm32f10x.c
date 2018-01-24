@@ -38,8 +38,6 @@ static void i2c_er_handler(I2CDevice device);
 static void i2c_ev_handler(I2CDevice device);
 static void i2cUnstick(IO_t scl, IO_t sda);
 
-#define GPIO_AF_I2C GPIO_AF_I2C1
-
 #ifdef STM32F4
 #define IOCFG_I2C_PU IO_CONFIG(GPIO_Mode_AF, 0, GPIO_OType_OD, GPIO_PuPd_UP)
 #define IOCFG_I2C    IO_CONFIG(GPIO_Mode_AF, 0, GPIO_OType_OD, GPIO_PuPd_NOPULL)
@@ -52,8 +50,14 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
     {
         .device = I2CDEV_1,
         .reg = I2C1,
-        .sclPins = { DEFIO_TAG_E(PB6), DEFIO_TAG_E(PB8) },
-        .sdaPins = { DEFIO_TAG_E(PB7), DEFIO_TAG_E(PB9) },
+        .sclPins = {
+            I2CPINDEF(PB6, GPIO_AF_I2C1),
+            I2CPINDEF(PB8, GPIO_AF_I2C1),
+        },
+        .sdaPins = {
+            I2CPINDEF(PB7, GPIO_AF_I2C1),
+            I2CPINDEF(PB9, GPIO_AF_I2C1),
+        },
         .rcc = RCC_APB1(I2C1),
         .ev_irq = I2C1_EV_IRQn,
         .er_irq = I2C1_ER_IRQn,
@@ -63,8 +67,20 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
     {
         .device = I2CDEV_2,
         .reg = I2C2,
-        .sclPins = { DEFIO_TAG_E(PB10), DEFIO_TAG_E(PF1) },
-        .sdaPins = { DEFIO_TAG_E(PB11), DEFIO_TAG_E(PF0) },
+        .sclPins = {
+            I2CPINDEF(PB10, GPIO_AF_I2C2),
+            I2CPINDEF(PF1,  GPIO_AF_I2C2),
+        },
+        .sdaPins = {
+            I2CPINDEF(PB11, GPIO_AF_I2C2),
+            I2CPINDEF(PF0,  GPIO_AF_I2C2),
+
+#if defined(STM32F40_41xxx) || defined (STM32F411xE)
+            // STM32F401xx/STM32F410xx/STM32F411xE/STM32F412xG
+            I2CPINDEF(PB3,  GPIO_AF9_I2C2),
+            I2CPINDEF(PB9,  GPIO_AF9_I2C2),
+#endif
+        },
         .rcc = RCC_APB1(I2C2),
         .ev_irq = I2C2_EV_IRQn,
         .er_irq = I2C2_ER_IRQn,
@@ -74,8 +90,18 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
     {
         .device = I2CDEV_3,
         .reg = I2C3,
-        .sclPins = { DEFIO_TAG_E(PA8) },
-        .sdaPins = { DEFIO_TAG_E(PC9) },
+        .sclPins = {
+            I2CPINDEF(PA8, GPIO_AF_I2C3),
+        },
+        .sdaPins = {
+            I2CPINDEF(PC9, GPIO_AF_I2C3),
+
+#if defined(STM32F40_41xxx) || defined (STM32F411xE)
+            // STM32F401xx/STM32F410xx/STM32F411xE/STM32F412xG
+            I2CPINDEF(PB4, GPIO_AF9_I2C3),
+            I2CPINDEF(PB8, GPIO_AF9_I2C3),
+#endif
+        },
         .rcc = RCC_APB1(I2C3),
         .ev_irq = I2C3_EV_IRQn,
         .er_irq = I2C3_ER_IRQn,
@@ -394,8 +420,8 @@ void i2cInit(I2CDevice device)
 
     // Init pins
 #ifdef STM32F4
-    IOConfigGPIOAF(scl, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, GPIO_AF_I2C);
-    IOConfigGPIOAF(sda, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, GPIO_AF_I2C);
+    IOConfigGPIOAF(scl, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, pDev->sclAF);
+    IOConfigGPIOAF(sda, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, pDev->sdaAF);
 #else
     IOConfigGPIO(scl, IOCFG_I2C);
     IOConfigGPIO(sda, IOCFG_I2C);
