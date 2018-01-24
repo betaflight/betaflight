@@ -75,8 +75,8 @@ static timeUs_t lastMspRssiUpdateUs = 0;
 
 rssiSource_t rssiSource;
 
-static bool rxDataReceived = false;
-static bool processingRequired = false;
+static bool rxDataProcessingRequired = false;
+static bool auxiliaryProcessingRequired = false;
 
 static bool rxSignalReceived = false;
 static bool rxSignalReceivedNotDataDriven = false;
@@ -85,7 +85,7 @@ static bool rxIsInFailsafeMode = true;
 static bool rxIsInFailsafeModeNotDataDriven = true;
 static uint8_t rxChannelCount;
 
-static uint32_t rxUpdateAt = 0;
+static timeUs_t rxNextUpdateAtUs = 0;
 static uint32_t needRxSignalBefore = 0;
 static uint32_t needRxSignalMaxDelayUs;
 static uint32_t suspendRxSignalUntil = 0;
@@ -445,17 +445,19 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
     {
         const uint8_t frameStatus = rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig);
         if (frameStatus & RX_FRAME_COMPLETE) {
-            rxDataReceived = true;
+            rxDataProcessingRequired = true;
             rxIsInFailsafeMode = (frameStatus & RX_FRAME_FAILSAFE) != 0;
             rxSignalReceived = !rxIsInFailsafeMode;
             needRxSignalBefore = currentTimeUs + needRxSignalMaxDelayUs;
+	} else if (cmpTimeUs(currentTimeUs, rxNextUpdateAtUs) > 0) {
+            rxDataProcessingRequired = true;
         }
 
         if (frameStatus & RX_FRAME_PROCESSING_REQUIRED) {
-            processingRequired = true;
+            auxiliaryProcessingRequired = true;
         }
     }
-    return rxDataReceived || processingRequired || (currentTimeUs >= rxUpdateAt); // data driven or 50Hz
+    return rxDataProcessingRequired || auxiliaryProcessingRequired; // data driven or 50Hz
 }
 
 static uint16_t calculateChannelMovingAverage(uint8_t chan, uint16_t sample)
@@ -612,17 +614,16 @@ static void detectAndApplySignalLossBehaviour(timeUs_t currentTimeUs)
 
 bool calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs)
 {
-    if (processingRequired) {
-        processingRequired = !rxRuntimeConfig.rcProcessFrameFn(&rxRuntimeConfig);
+    if (auxiliaryProcessingRequired) {
+        auxiliaryProcessingRequired = !rxRuntimeConfig.rcProcessFrameFn(&rxRuntimeConfig);
     }
 
-    if (!rxDataReceived) {
+    if (!rxDataProcessingRequired) {
         return false;
     }
 
-    rxDataReceived = false;
-
-    rxUpdateAt = currentTimeUs + DELAY_50_HZ;
+    rxDataProcessingRequired = false;
+    rxNextUpdateAtUs = currentTimeUs + DELAY_50_HZ;
 
     // only proceed when no more samples to skip and suspend period is over
     if (skipRxSamples) {
