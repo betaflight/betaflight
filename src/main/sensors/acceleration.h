@@ -46,7 +46,7 @@ typedef enum {
 typedef struct acc_s {
     accDev_t dev;
     uint32_t accSamplingInterval;
-    int32_t accADC[XYZ_AXIS_COUNT];
+    float accADC[XYZ_AXIS_COUNT];
     bool isAccelUpdatedAtLeastOnce;
 } acc_t;
 

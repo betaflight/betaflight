@@ -27,5 +27,5 @@ typedef struct boardAlignment_s {
 
 PG_DECLARE(boardAlignment_t, boardAlignment);
 
-void alignSensors(int32_t *dest, uint8_t rotation);
+void alignSensors(float *dest, uint8_t rotation);
 void initBoardAlignment(const boardAlignment_t *boardAlignment);

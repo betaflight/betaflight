@@ -173,6 +173,7 @@ PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
     .gyro_filter_q = 0,
     .gyro_filter_r = 0,
     .gyro_filter_p = 0,
+    .gyro_offset_yaw = 0,
 );
 
 
@@ -681,7 +682,12 @@ STATIC_UNIT_TESTED void performGyroCalibration(gyroSensor_t *gyroSensor, uint8_t
                 gyroSetCalibrationCycles(gyroSensor);
                 return;
             }
-            gyroSensor->gyroDev.gyroZero[axis] = (gyroSensor->calibration.sum[axis] + (gyroCalculateCalibratingCycles() / 2)) / gyroCalculateCalibratingCycles();
+
+            // please take care with exotic boardalignment !!
+            gyroSensor->gyroDev.gyroZero[axis] = gyroSensor->calibration.sum[axis] / gyroCalculateCalibratingCycles();
+            if (axis == Z) {
+              gyroSensor->gyroDev.gyroZero[axis] -= ((float)gyroConfig()->gyro_offset_yaw / 100);
+            }
         }
     }
 
@@ -721,9 +727,9 @@ static void checkForOverflow(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
     // This can cause an overflow and sign reversal in the output.
     // Overflow and sign reversal seems to result in a gyro value of +1996 or -1996.
     if (gyroSensor->overflowDetected) {
-        const float gyroRateX = (float)gyroSensor->gyroDev.gyroADC[X] * gyroSensor->gyroDev.scale;
-        const float gyroRateY = (float)gyroSensor->gyroDev.gyroADC[Y] * gyroSensor->gyroDev.scale;
-        const float gyroRateZ = (float)gyroSensor->gyroDev.gyroADC[Z] * gyroSensor->gyroDev.scale;
+        const float gyroRateX = gyroSensor->gyroDev.gyroADC[X] * gyroSensor->gyroDev.scale;
+        const float gyroRateY = gyroSensor->gyroDev.gyroADC[Y] * gyroSensor->gyroDev.scale;
+        const float gyroRateZ = gyroSensor->gyroDev.gyroADC[Z] * gyroSensor->gyroDev.scale;
         static const int overflowResetThreshold = 1800;
         if (abs(gyroRateX) < overflowResetThreshold
               && abs(gyroRateY) < overflowResetThreshold
@@ -798,7 +804,7 @@ static FAST_CODE void gyroUpdateSensor(gyroSensor_t *gyroSensor, timeUs_t curren
     if (gyroDebugMode == DEBUG_NONE) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
             // NOTE: this branch optimized for when there is no gyro debugging, ensure it is kept in step with non-optimized branch
-            float gyroADCf = (float)gyroSensor->gyroDev.gyroADC[axis] * gyroSensor->gyroDev.scale;
+            float gyroADCf = gyroSensor->gyroDev.gyroADC[axis] * gyroSensor->gyroDev.scale;
 #if defined(USE_GYRO_FAST_KALMAN)
             gyroADCf = gyroSensor->fastKalmanApplyFn((filter_t *)&gyroSensor->fastKalman[axis], gyroADCf);
 #elif defined(USE_GYRO_BIQUAD_RC_FIR2)
@@ -821,7 +827,7 @@ static FAST_CODE void gyroUpdateSensor(gyroSensor_t *gyroSensor, timeUs_t curren
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
             DEBUG_SET(DEBUG_GYRO_RAW, axis, gyroSensor->gyroDev.gyroADCRaw[axis]);
             // scale gyro output to degrees per second
-            float gyroADCf = (float)gyroSensor->gyroDev.gyroADC[axis] * gyroSensor->gyroDev.scale;
+            float gyroADCf = gyroSensor->gyroDev.gyroADC[axis] * gyroSensor->gyroDev.scale;
             // DEBUG_GYRO_NOTCH records the unfiltered gyro output
             DEBUG_SET(DEBUG_GYRO_NOTCH, axis, lrintf(gyroADCf));
 
