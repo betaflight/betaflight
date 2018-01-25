@@ -420,7 +420,6 @@ uint8_t sendJetiExBusTelemetry(uint8_t packetID, uint8_t item)
     }
 
     serialWriteBuf(jetiExBusPort, jetiExBusTelemetryFrame, jetiExBusTelemetryFrame[EXBUS_HEADER_MSG_LEN]);
-
     jetiExBusTransceiveState = EXBUS_TRANS_IS_TX_COMPLETED;
 
     return item;
