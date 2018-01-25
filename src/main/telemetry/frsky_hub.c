@@ -554,7 +554,7 @@ void processFrSkyHubTelemetry(timeUs_t currentTimeUs)
         sendTemperature1();
         sendThrottleOrBatterySizeAsRpm();
 
-        if (getBatteryState() != BATTERY_INIT) {
+        if (isBatteryVoltageAvailable()) {
             sendVoltageCells();
             sendVoltageAmp();
 
