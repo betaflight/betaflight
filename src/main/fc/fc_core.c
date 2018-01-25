@@ -392,13 +392,13 @@ static bool canUpdateVTX(void)
 /*
  * processRx called from taskUpdateRxMain
  */
-void processRx(timeUs_t currentTimeUs)
+bool processRx(timeUs_t currentTimeUs)
 {
     static bool armedBeeperOn = false;
     static bool airmodeIsActivated;
 
     if (!calculateRxChannelsAndUpdateFailsafe(currentTimeUs)) {
-        return;
+        return false;
     }
 
     // in 3D mode, we need to be able to disarm by switch at any time
@@ -600,6 +600,8 @@ void processRx(timeUs_t currentTimeUs)
         handleVTXControlButton();
     }
 #endif
+
+    return true;
 }
 
 static void subTaskPidController(timeUs_t currentTimeUs)

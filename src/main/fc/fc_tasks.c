@@ -132,7 +132,10 @@ static void taskUpdateAccelerometer(timeUs_t currentTimeUs)
 
 static void taskUpdateRxMain(timeUs_t currentTimeUs)
 {
-    processRx(currentTimeUs);
+    if (!processRx(currentTimeUs)) {
+        return;
+    }
+
     isRXDataNew = true;
 
 #if !defined(USE_ALT_HOLD)

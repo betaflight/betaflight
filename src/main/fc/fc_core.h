@@ -42,7 +42,7 @@ void resetArmingDisabled(void);
 void disarm(void);
 void tryArm(void);
 
-void processRx(timeUs_t currentTimeUs);
+bool processRx(timeUs_t currentTimeUs);
 void updateArmingStatus(void);
 void updateRcCommands(void);
 
