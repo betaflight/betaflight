@@ -486,7 +486,7 @@ static void showSensorsPage(void)
     i2c_OLED_send_string(bus, "        X     Y     Z");
 
     if (sensors(SENSOR_ACC)) {
-        tfp_sprintf(lineBuffer, format, "ACC", acc.accADC[X], acc.accADC[Y], acc.accADC[Z]);
+        tfp_sprintf(lineBuffer, format, "ACC", lrintf(acc.accADC[X]), lrintf(acc.accADC[Y]), lrintf(acc.accADC[Z]));
         padLineBuffer();
         i2c_OLED_set_line(bus, rowIndex++);
         i2c_OLED_send_string(bus, lineBuffer);
@@ -501,7 +501,7 @@ static void showSensorsPage(void)
 
 #ifdef USE_MAG
     if (sensors(SENSOR_MAG)) {
-        tfp_sprintf(lineBuffer, format, "MAG", mag.magADC[X], mag.magADC[Y], mag.magADC[Z]);
+        tfp_sprintf(lineBuffer, format, "MAG", lrintf(mag.magADC[X]), lrintf(mag.magADC[Y]), lrintf(mag.magADC[Z]));
         padLineBuffer();
         i2c_OLED_set_line(bus, rowIndex++);
         i2c_OLED_send_string(bus, lineBuffer);

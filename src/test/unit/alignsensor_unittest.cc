@@ -40,9 +40,9 @@ extern "C" {
 
 #define DEG2RAD 0.01745329251
 
-static void rotateVector(int32_t mat[3][3], int32_t vec[3], int32_t *out)
+static void rotateVector(int32_t mat[3][3], float vec[3], float *out)
 {
-    int32_t tmp[3];
+    float tmp[3];
 
     for(int i=0; i<3; i++) {
         tmp[i] = 0;
@@ -98,8 +98,8 @@ static void initZAxisRotation(int32_t mat[][3], int32_t angle)
 
 static void testCW(sensor_align_e rotation, int32_t angle)
 {
-    int32_t src[XYZ_AXIS_COUNT];
-    int32_t test[XYZ_AXIS_COUNT];
+    float src[XYZ_AXIS_COUNT];
+    float test[XYZ_AXIS_COUNT];
 
     // unit vector along x-axis
     src[X] = 1;
@@ -155,8 +155,8 @@ static void testCW(sensor_align_e rotation, int32_t angle)
  */
 static void testCWFlip(sensor_align_e rotation, int32_t angle)
 {
-    int32_t src[XYZ_AXIS_COUNT];
-    int32_t test[XYZ_AXIS_COUNT];
+    float src[XYZ_AXIS_COUNT];
+    float test[XYZ_AXIS_COUNT];
 
     // unit vector along x-axis
     src[X] = 1;
