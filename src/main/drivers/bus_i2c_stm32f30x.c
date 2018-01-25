@@ -50,8 +50,8 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
     {
         .device = I2CDEV_1,
         .reg = I2C1,
-        .sclPins = { DEFIO_TAG_E(PA15), DEFIO_TAG_E(PB6), DEFIO_TAG_E(PB8) },
-        .sdaPins = { DEFIO_TAG_E(PA14), DEFIO_TAG_E(PB7), DEFIO_TAG_E(PB9) },
+        .sclPins = { I2CPINDEF(PA15), I2CPINDEF(PB6), I2CPINDEF(PB8) },
+        .sdaPins = { I2CPINDEF(PA14), I2CPINDEF(PB7), I2CPINDEF(PB9) },
         .rcc = RCC_APB1(I2C1),
     },
 #endif
@@ -59,8 +59,8 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
     {
         .device = I2CDEV_2,
         .reg = I2C2,
-        .sclPins = { DEFIO_TAG_E(PA9), DEFIO_TAG_E(PF6) },
-        .sdaPins = { DEFIO_TAG_E(PA10) },
+        .sclPins = { I2CPINDEF(PA9), I2CPINDEF(PF6) },
+        .sdaPins = { I2CPINDEF(PA10) },
         .rcc = RCC_APB1(I2C2),
     },
 #endif
