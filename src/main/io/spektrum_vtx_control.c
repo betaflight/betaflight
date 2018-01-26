@@ -54,6 +54,7 @@ const uint8_t spek2commonBand[]= {
 
 // RF Power Index translation tables. No generic power API available.....
 
+#ifdef USE_VTX_TRAMP
 // Tramp "---", 25, 200, 400. 600 mW
 const uint8_t vtxTrampPi[] = {         // Spektrum Spec    Tx menu  Tx sends   To VTX    Watt
     VTX_TRAMP_POWER_OFF,               //         Off      INHIBIT         0        0     -
@@ -65,7 +66,9 @@ const uint8_t vtxTrampPi[] = {         // Spektrum Spec    Tx menu  Tx sends   T
     VTX_TRAMP_POWER_600,               // 601 - max    601+ mW             6        5   600mW Slightly outside range
     VTX_TRAMP_POWER_200                // Manual               -           -        -     -
 };
+#endif // USE_VTX_TRAMP
 
+#ifdef USE_VTX_RTC6705
 // RTC6705 "---", 25 or 200 mW
 const uint8_t vtxRTC6705Pi[] = {
     VTX_6705_POWER_OFF,                // Off
@@ -77,7 +80,9 @@ const uint8_t vtxRTC6705Pi[] = {
     VTX_6705_POWER_200,                // 601 - max
     VTX_6705_POWER_200                 // Manual
 };
+#endif //USE_VTX_RTC6705
 
+#ifdef USE_VTX_SMARTAUDIO
 // SmartAudio "---", 25, 200, 500. 800 mW
 const uint8_t vtxSaPi[] = {
     VTX_SA_POWER_OFF,                  // Off
@@ -89,23 +94,30 @@ const uint8_t vtxSaPi[] = {
     VTX_SA_POWER_800,                  // 601 - max
     VTX_SA_POWER_200                   // Manual
 };
+#endif // USE_VTX_SMARTAUDIO
 
 uint8_t convertSpektrumVtxPowerIndex(uint8_t sPower)
 {
     uint8_t devicePower = 0;
 
     switch (vtxCommonGetDeviceType()) {
+#ifdef USE_VTX_RTC6705
     case VTXDEV_RTC6705:
         devicePower = vtxRTC6705Pi[sPower];
         break;
+#endif // USE_VTX_RTC6705
 
+#ifdef USE_VTX_SMARTAUDIO
     case VTXDEV_SMARTAUDIO:
         devicePower = vtxSaPi[sPower];
         break;
+#endif // USE_VTX_SMARTAUDIO
 
+#ifdef USE_VTX_TRAMP
     case VTXDEV_TRAMP:
         devicePower = vtxTrampPi[sPower];
         break;
+#endif // USE_VTX_TRAMP
 
     case VTXDEV_UNKNOWN:
     case VTXDEV_UNSUPPORTED:
@@ -116,59 +128,71 @@ uint8_t convertSpektrumVtxPowerIndex(uint8_t sPower)
     return devicePower;
 }
 
-void spektrumHandleVtxControl(uint32_t vtxControl)
-{
-    stru_vtx vtx;
+// Mark an inital invalid VTX ctrl frame to force first VTX settings cheange to actually come from Tx/Rx.
+static uint32_t vtxControl_ipc = ~(SPEKTRUM_VTX_CONTROL_FRAME);
 
-    vtx.pitMode = (vtxControl & SPEKTRUM_VTX_PIT_MODE_MASK) >> SPEKTRUM_VTX_PIT_MODE_SHIFT;;
-    vtx.region  = (vtxControl & SPEKTRUM_VTX_REGION_MASK)   >> SPEKTRUM_VTX_REGION_SHIFT;
-    vtx.power   = (vtxControl & SPEKTRUM_VTX_POWER_MASK)    >> SPEKTRUM_VTX_POWER_SHIFT;
-    vtx.band    = (vtxControl & SPEKTRUM_VTX_BAND_MASK)     >> SPEKTRUM_VTX_BAND_SHIFT;
-    vtx.channel = (vtxControl & SPEKTRUM_VTX_CHANNEL_MASK)  >> SPEKTRUM_VTX_CHANNEL_SHIFT;
+// ############ RX task ######################
+void spektrumHandleVtxControl(uint32_t vtxCntrl)
+{
+  vtxControl_ipc = vtxCntrl;
+}
+// ###########################################
+
+
+// ############ VTX_CONTROL task #############
+void spektrumVtxControl(void)
+{
+    // Check for invalid VTX ctrl frames
+    if ((vtxControl_ipc & SPEKTRUM_VTX_CONTROL_FRAME_MASK) != SPEKTRUM_VTX_CONTROL_FRAME) return;
+
+    uint32_t vtxControl = vtxControl_ipc;
+
+    spektrumVtx_t vtx = {
+        .pitMode = (vtxControl & SPEKTRUM_VTX_PIT_MODE_MASK) >> SPEKTRUM_VTX_PIT_MODE_SHIFT,
+        .region  = (vtxControl & SPEKTRUM_VTX_REGION_MASK)   >> SPEKTRUM_VTX_REGION_SHIFT,
+        .power   = (vtxControl & SPEKTRUM_VTX_POWER_MASK)    >> SPEKTRUM_VTX_POWER_SHIFT,
+        .band    = (vtxControl & SPEKTRUM_VTX_BAND_MASK)     >> SPEKTRUM_VTX_BAND_SHIFT,
+        .channel = (vtxControl & SPEKTRUM_VTX_CHANNEL_MASK)  >> SPEKTRUM_VTX_CHANNEL_SHIFT,
+    };
 
     const vtxSettingsConfig_t prevSettings = {
-        .band = vtxSettingsConfig()->band,
+        .band    = vtxSettingsConfig()->band,
         .channel = vtxSettingsConfig()->channel,
-        .freq = vtxSettingsConfig()->freq,
-        .power = vtxSettingsConfig()->power,
+        .freq    = vtxSettingsConfig()->freq,
+        .power   = vtxSettingsConfig()->power,
         .lowPowerDisarm = vtxSettingsConfig()->lowPowerDisarm,
     };
     vtxSettingsConfig_t newSettings = prevSettings;
 
-#ifdef USE_VTX_COMMON_FREQ_API
-    uint16_t freq = SpektrumVtxfrequencyTable[vtx.band][vtx.channel];
     if (vtxCommonDeviceRegistered()) {
+
+#ifdef USE_VTX_COMMON_FREQ_API
+        uint16_t freq = SpektrumVtxfrequencyTable[vtx.band][vtx.channel];
         if (prevSettings.freq != freq) {
-            newSettings.band = VTX_COMMON_BAND_USER;
+            newSettings.band    = VTX_COMMON_BAND_USER;
             newSettings.channel = vtx.channel;
-            newSettings.freq = freq;
+            newSettings.freq    = freq;
         }
-    }
 
 #else
-    // Convert to the internal Common Band index
-    uint8_t band    = spek2commonBand[vtx.band];
-    uint8_t channel = vtx.channel +1; // 0 based to 1 based
-    if (vtxCommonDeviceRegistered()) {
+        // Convert to the internal Common Band index
+        uint8_t band    = spek2commonBand[vtx.band];
+        uint8_t channel = vtx.channel +1; // 0 based to 1 based
         if ((prevSettings.band != band) || (prevSettings.channel != channel)) {
-            newSettings.band = band;
+            newSettings.band    = band;
             newSettings.channel = channel;
-            newSettings.freq = vtx58_Bandchan2Freq(band, channel);
+            newSettings.freq    = vtx58_Bandchan2Freq(band, channel);
         }
-    }
 #endif
 
-    // Seems to be no unified internal VTX API std for popwer levels/indexes, VTX device brand specific.
-    uint8_t power = convertSpektrumVtxPowerIndex(vtx.power);
-    if (vtxCommonDeviceRegistered()) {
+        // Seems to be no unified internal VTX API std for popwer levels/indexes, VTX device brand specific.
+        uint8_t power = convertSpektrumVtxPowerIndex(vtx.power);
         if (prevSettings.power != power) {
-            newSettings.power = power;
+            newSettings.power   = power;
         }
-    }
 
-    // Everyone seems to agree on what PIT ON/OFF means
-    uint8_t currentPitMode = 0;
-    if (vtxCommonDeviceRegistered()) {
+        // Everyone seems to agree on what PIT ON/OFF means
+        uint8_t currentPitMode = 0;
         vtxCommonGetPitMode(&currentPitMode);
         if (currentPitMode != vtx.pitMode) {
             vtxCommonSetPitMode(vtx.pitMode);
@@ -176,10 +200,10 @@ void spektrumHandleVtxControl(uint32_t vtxControl)
     }
 
     if(memcmp(&prevSettings,&newSettings,sizeof(vtxSettingsConfig_t))) {
-        vtxSettingsConfigMutable()->band = newSettings.band;
+        vtxSettingsConfigMutable()->band    = newSettings.band;
         vtxSettingsConfigMutable()->channel = newSettings.channel;
-        vtxSettingsConfigMutable()->power = newSettings.power;
-        vtxSettingsConfigMutable()->freq = newSettings.freq;
+        vtxSettingsConfigMutable()->power   = newSettings.power;
+        vtxSettingsConfigMutable()->freq    = newSettings.freq;
         saveConfigAndNotify();
     }
 }

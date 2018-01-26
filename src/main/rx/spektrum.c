@@ -93,6 +93,7 @@ static void spektrumDataReceive(uint16_t c, void *data)
     }
 }
 
+
 uint32_t spekChannelData[SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT];
 static dispatchEntry_t srxlTelemetryDispatch = { .dispatch = srxlRxSendTelemetryDataDispatch};
 
@@ -129,7 +130,7 @@ static uint8_t spektrumFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
                            (spekFrame[SPEKTRUM_VTX_CONTROL_4] <<  0) );
 
     // Handle VTX control frame,
-    if ( (vtxControl & SPEKTRUM_VTX_CONTROL_FRAME_MASK) == SPEKTRUM_VTX_CONTROL_FRAME ) {
+    if ((vtxControl & SPEKTRUM_VTX_CONTROL_FRAME_MASK) == SPEKTRUM_VTX_CONTROL_FRAME) {
       spektrumHandleVtxControl(vtxControl);
     }
 
