@@ -82,9 +82,11 @@ typedef struct
     uint8_t power;
     uint8_t region;
     uint8_t pitMode;
-} stru_vtx;
+} spektrumVtx_t;
+
 
 void spektrumHandleVtxControl(uint32_t vtxControl);
+void spektrumVtxControl(void);
 
 
 

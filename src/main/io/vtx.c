@@ -36,6 +36,7 @@
 
 #include "io/vtx.h"
 #include "io/vtx_string.h"
+#include "io/vtx_control.h"
 
 #include "interface/cli.h"
 
@@ -207,6 +208,9 @@ void vtxUpdate(timeUs_t currentTimeUs)
     if (cliMode) {
         return;
     }
+
+    // Check input sources for config updates
+    vtxControlInputPoll();
 
     if (vtxCommonDeviceRegistered()) {
         bool vtxUpdatePending = false;

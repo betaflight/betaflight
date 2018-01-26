@@ -321,6 +321,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             io/vtx_smartaudio.c \
             io/vtx_tramp.c \
             io/vtx_control.c \
+            io/spektrum_vtx_control.c \
             pg/pg.h
 
 # F4 and F7 optimizations

@@ -37,10 +37,11 @@
 #include "fc/config.h"
 #include "fc/runtime_config.h"
 
-#include "io/beeper.h"
 #include "io/osd.h"
 #include "io/vtx_control.h"
 #include "io/vtx.h"
+
+#include "io/spektrum_vtx_control.h"
 
 
 
@@ -56,6 +57,15 @@ static uint8_t locked = 0;
 void vtxControlInit(void)
 {
     // NOTHING TO DO
+}
+
+void vtxControlInputPoll(void)
+{
+  // Check variuos input sources for VTX config updates
+#if defined(USE_SPEKTRUM_VTX_CONTROL)
+    // Get VTX updates
+    spektrumVtxControl();
+#endif
 }
 
 static void vtxUpdateBandAndChannel(uint8_t bandStep, uint8_t channelStep)

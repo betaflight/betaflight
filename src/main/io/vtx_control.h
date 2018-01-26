@@ -42,6 +42,7 @@ typedef struct vtxConfig_s {
 PG_DECLARE(vtxConfig_t, vtxConfig);
 
 void vtxControlInit(void);
+void vtxControlInputPoll(void);
 
 void vtxIncrementBand(void);
 void vtxDecrementBand(void);
