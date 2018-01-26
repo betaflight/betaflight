@@ -174,7 +174,7 @@ void pgResetFn_ledStripConfig(ledStripConfig_t *ledStripConfig)
 #ifdef LEDSTRIP_PIN
     ledStripConfig->ioTag = IO_TAG(LEDSTRIP_PIN);
 #else
-    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+    for (int i = 0; i < (int)USABLE_TIMER_CHANNEL_COUNT; i++) {
         if (timerHardware[i].usageFlags & TIM_USE_LED) {
             ledStripConfig->ioTag = timerHardware[i].tag;
             return;
