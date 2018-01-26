@@ -93,7 +93,10 @@ float applyBetaflightRates(const int axis, float rcCommandf, const float rcComma
         rcCommandf = rcCommandf * power3(rcCommandfAbs) * expof + rcCommandf * (1 - expof);
     }
 
-    const float rcRate = currentControlRateProfile->rcRates[axis] / 100.0f;
+    float rcRate = currentControlRateProfile->rcRates[axis] / 100.0f;
+    if (rcRate > 2.0f) {
+        rcRate += RC_RATE_INCREMENTAL * (rcRate - 2.0f);
+    }
     float angleRate = 200.0f * rcRate * rcCommandf;
     if (currentControlRateProfile->rates[axis]) {
         const float rcSuperfactor = 1.0f / (constrainf(1.0f - (rcCommandfAbs * (currentControlRateProfile->rates[axis] / 100.0f)), 0.01f, 1.00f));
