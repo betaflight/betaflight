@@ -944,8 +944,10 @@ uint16_t timerGetPrescalerByDesiredHertz(TIM_TypeDef *tim, uint32_t hz)
     return (uint16_t)((timerClock(tim) + hz / 2 ) / hz) - 1;
 }
 
-uint8_t timerAlternateFunction(const timerTag_t timerTag, ioTag_t ioTag)
+uint8_t timerAlternateFunction(const timerTag_t timerTag, const ioTag_t ioTag)
 {
+    UNUSED(timerTag);
+    UNUSED(ioTag);
     // todo lookup stored AF and return based on timer and pin.
     return 0;
 }

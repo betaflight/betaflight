@@ -1166,8 +1166,19 @@ HAL_StatusTypeDef DMA_SetCurrDataCounter(TIM_HandleTypeDef *htim, uint32_t Chann
     return HAL_OK;
 }
 
-uint8_t timerAlternateFunction(const timerTag_t timerTag, ioTag_t ioTag)
+uint8_t timerAlternateFunction(const timerTag_t timerTag, const ioTag_t ioTag)
 {
+    UNUSED(ioTag);
     // todo lookup stored AF and return based on timer and pin.
+    const uint8_t timer = TIMER_TAG_INDEX(timerTag);
+#ifdef STM32F7
+    if (timer == 1 || timer == 2) {
+        return LL_GPIO_AF_1;
+    } else if (timer == 3 || timer == 4 || timer == 5) {
+        return LL_GPIO_AF_2;
+    } else if (timer == 8 || timer == 9 || timer == 10 || timer == 11) {
+        return LL_GPIO_AF_3;
+    }
+#endif
     return 0;
 }
