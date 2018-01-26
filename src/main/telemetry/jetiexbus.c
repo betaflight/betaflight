@@ -298,7 +298,9 @@ uint8_t createExTelemetryValueMessage(uint8_t *exMessage, uint8_t item)
         }
 
         sensorItem = activeSensorList[item];
-        if (EXTEL_MAX_PAYLOAD <= ((p-&exMessage[EXTEL_HEADER_ID]) + exDataTypeLen[jetiExSensors[sensorItem].exDataType]) + 1) break;
+        if (EXTEL_MAX_PAYLOAD <= ((p-&exMessage[EXTEL_HEADER_ID]) + exDataTypeLen[jetiExSensors[sensorItem].exDataType]) + 1) {
+                break;
+        }
     }
 
     messageSize = (EXTEL_HEADER_LEN + (p-&exMessage[EXTEL_HEADER_ID]));
