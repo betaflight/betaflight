@@ -63,6 +63,17 @@
 #endif
 #endif
 
+// If USE_SERIALRX_SPEKTRUM was dropped by a target, drop all related options
+#ifndef USE_SERIALRX_SPEKTRUM
+#undef USE_SPEKTRUM_BIND
+#undef USE_SPEKTRUM_BIND_PLUG
+#undef USE_SPEKTRUM_REAL_RSSI
+#undef USE_SPEKTRUM_FAKE_RSSI
+#undef USE_SPEKTRUM_RSSI_PERCENT_CONVERSION
+#undef USE_SPEKTRUM_VTX_CONTROL
+#undef USE_SPEKTRUM_CMS_TELEMETRY
+#endif
+
 // undefine USE_ALT_HOLD if there is no baro or rangefinder to support it
 #if defined(USE_ALT_HOLD) && !defined(USE_BARO) && !defined(USE_RANGEFINDER)
 #undef USE_ALT_HOLD
