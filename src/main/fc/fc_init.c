@@ -149,6 +149,10 @@
 #include "build/build_config.h"
 #include "build/debug.h"
 
+#ifdef USE_ARM_STATE
+#include "io/arm_state.h"
+#endif
+
 #ifdef TARGET_PREINIT
 void targetPreInit(void);
 #endif
@@ -744,6 +748,10 @@ void init(void)
 #ifdef USE_RCDEVICE
     rcdeviceInit();
 #endif // USE_RCDEVICE
+
+#ifdef USE_ARM_STATE
+    armStateInit();
+#endif
 
     // Latch active features AGAIN since some may be modified by init().
     latchActiveFeatures();
