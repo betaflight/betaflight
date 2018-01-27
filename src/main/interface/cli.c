@@ -1224,7 +1224,7 @@ static void cliRxRange(char *cmdline)
         ptr = cmdline;
         i = atoi(ptr);
         if (i >= 0 && i < NON_AUX_CHANNEL_COUNT) {
-            int rangeMin = 0, rangeMax = 0;
+            int rangeMin = PWM_PULSE_MIN, rangeMax = PWM_PULSE_MAX;
 
             ptr = nextArg(ptr);
             if (ptr) {
@@ -3310,6 +3310,27 @@ static void resourceCheck(uint8_t resourceIndex, uint8_t index, ioTag_t newTag)
     }
 }
 
+static bool strToPin(char *pch, ioTag_t *tag)
+{
+    if (strcasecmp(pch, "NONE") == 0) {
+        *tag = IO_TAG_NONE;
+        return true;
+    } else {
+        unsigned pin = 0;
+        unsigned port = (*pch >= 'a') ? *pch - 'a' : *pch - 'A';
+
+        if (port < 8) {
+            pch++;
+            pin = atoi(pch);
+            if (pin < 16) {
+                *tag = DEFIO_TAG_MAKE(port, pin);
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 static void cliResource(char *cmdline)
 {
     int len = strlen(cmdline);
@@ -3334,27 +3355,6 @@ static void cliResource(char *cmdline)
                 cliPrintf(" %d", ioRecs[i].index);
             }
             cliPrintLinefeed();
-        }
-
-        cliPrintLinefeed();
-
-#ifdef MINIMAL_CLI
-        cliPrintLine("DMA:");
-#else
-        cliPrintLine("Currently active DMA:");
-        cliRepeat('-', 20);
-#endif
-        for (int i = 0; i < DMA_MAX_DESCRIPTORS; i++) {
-            const char* owner;
-            owner = ownerNames[dmaGetOwner(i)];
-
-            cliPrintf(DMA_OUTPUT_STRING, i / DMA_MOD_VALUE + 1, (i % DMA_MOD_VALUE) + DMA_MOD_OFFSET);
-            uint8_t resourceIndex = dmaGetResourceIndex(i);
-            if (resourceIndex > 0) {
-                cliPrintLinef(" %s %d", owner, resourceIndex);
-            } else {
-                cliPrintLinef(" %s", owner);
-            }
         }
 
 #ifndef MINIMAL_CLI
@@ -3396,45 +3396,63 @@ static void cliResource(char *cmdline)
 
     ioTag_t *tag = getIoTag(resourceTable[resourceIndex], index);
 
-    uint8_t pin = 0;
     if (strlen(pch) > 0) {
-        if (strcasecmp(pch, "NONE") == 0) {
-            *tag = IO_TAG_NONE;
+        if (strToPin(pch, tag)) {
+            if (*tag == IO_TAG_NONE) {
 #ifdef MINIMAL_CLI
-            cliPrintLine("Freed");
+                cliPrintLine("Freed");
 #else
-            cliPrintLine("Resource is freed");
+                cliPrintLine("Resource is freed");
 #endif
-            return;
-        } else {
-            uint8_t port = (*pch) - 'A';
-            if (port >= 8) {
-                port = (*pch) - 'a';
-            }
-
-            if (port < 8) {
-                pch++;
-                pin = atoi(pch);
-                if (pin < 16) {
-                    ioRec_t *rec = IO_Rec(IOGetByTag(DEFIO_TAG_MAKE(port, pin)));
-                    if (rec) {
-                        resourceCheck(resourceIndex, index, DEFIO_TAG_MAKE(port, pin));
+                return;
+            } else {
+                ioRec_t *rec = IO_Rec(IOGetByTag(*tag));
+                if (rec) {
+                    resourceCheck(resourceIndex, index, *tag);
 #ifdef MINIMAL_CLI
-                        cliPrintLinef(" %c%02d set", port + 'A', pin);
+                    cliPrintLinef(" %c%02d set", IO_GPIOPortIdx(rec) + 'A', IO_GPIOPinIdx(rec));
 #else
-                        cliPrintLinef("\r\nResource is set to %c%02d", port + 'A', pin);
+                    cliPrintLinef("\r\nResource is set to %c%02d", IO_GPIOPortIdx(rec) + 'A', IO_GPIOPinIdx(rec));
 #endif
-                        *tag = DEFIO_TAG_MAKE(port, pin);
-                    } else {
-                        cliShowParseError();
-                    }
-                    return;
+                } else {
+                    cliShowParseError();
                 }
+                return;
             }
         }
     }
 
     cliShowParseError();
+}
+
+static void printDma(void)
+{
+    cliPrintLinefeed();
+
+#ifdef MINIMAL_CLI
+    cliPrintLine("DMA:");
+#else
+    cliPrintLine("Currently active DMA:");
+    cliRepeat('-', 20);
+#endif
+    for (int i = 1; i < DMA_MAX_DESCRIPTORS; i++) {
+        const char* owner;
+        owner = ownerNames[dmaGetOwner(i)];
+
+        cliPrintf(DMA_OUTPUT_STRING, DMA_DEVICE(i), DMA_DEVICE_INDEX(i));
+        uint8_t resourceIndex = dmaGetResourceIndex(i);
+        if (resourceIndex > 0) {
+            cliPrintLinef(" %s %d", owner, resourceIndex);
+        } else {
+            cliPrintLinef(" %s", owner);
+        }
+    }
+}
+
+static void cliDma(char* cmdLine)
+{
+    UNUSED(cmdLine);
+    printDma();
 }
 #endif /* USE_RESOURCE_MGMT */
 
@@ -3660,8 +3678,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("color", "configure colors", NULL, cliColor),
 #endif
     CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", "[nosave]", cliDefaults),
-    CLI_COMMAND_DEF("diff", "list configuration changes from default",
-        "[master|profile|rates|all] {defaults}", cliDiff),
+    CLI_COMMAND_DEF("diff", "list configuration changes from default", "[master|profile|rates|all] {showdefaults}", cliDiff),
 #ifdef USE_DSHOT
     CLI_COMMAND_DEF("dshotprog", "program DShot ESC(s)", "<index> <command>+", cliDshotProg),
 #endif
@@ -3708,8 +3725,9 @@ const clicmd_t cmdTable[] = {
 #endif
     CLI_COMMAND_DEF("profile", "change profile", "[<index>]", cliProfile),
     CLI_COMMAND_DEF("rateprofile", "change rate profile", "[<index>]", cliRateProfile),
-#if defined(USE_RESOURCE_MGMT)
+#ifdef USE_RESOURCE_MGMT
     CLI_COMMAND_DEF("resource", "show/set resources", NULL, cliResource),
+    CLI_COMMAND_DEF("dma", "list dma utilisation", NULL, cliDma),
 #endif
     CLI_COMMAND_DEF("rxfail", "show/set rx failsafe settings", NULL, cliRxFailsafe),
     CLI_COMMAND_DEF("rxrange", "configure rx channel ranges", NULL, cliRxRange),
