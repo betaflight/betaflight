@@ -69,6 +69,7 @@
 #include "io/transponder_ir.h"
 #include "io/vtx_control.h"
 #include "io/vtx_rtc6705.h"
+#include "io/armhook.h"
 
 #include "rx/rx.h"
 
@@ -253,6 +254,10 @@ void disarm(void)
 #endif
         BEEP_OFF;
         beeper(BEEPER_DISARMING);      // emit disarm tone
+
+#ifdef USE_ARM_HOOK
+        armHookProcess(false);
+#endif
     }
 }
 
@@ -310,6 +315,10 @@ void tryArm(void)
         }
 #else
         beeper(BEEPER_ARMING);
+#endif
+
+#ifdef USE_ARM_HOOK
+        armHookProcess(true);
 #endif
     } else {
         if (!isFirstArmingGyroCalibrationRunning()) {

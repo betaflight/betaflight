@@ -297,6 +297,17 @@ rcdevice_unittest_SRC := \
 rcdevice_unittest_DEFINES := \
 		USE_RCDEVICE
 
+armhook_unittest_SRC := \
+		$(USER_DIR)/io/armhook.c \
+		$(USER_DIR)/target/SPEEDYBEEF4/switch_control.c
+
+armhook_unittest_DEFINES := \
+		USE_ARM_HOOK \
+		SPEEDYBEEF4 \
+		SBFC_SWITCH_PIN=PB0 \
+		SBFC_CONNECTION_STATE_PIN=PB1
+
+
 # Please tweak the following variable definitions as needed by your
 # project, except GTEST_HEADERS, which you can use in your own targets
 # but shouldn't modify.

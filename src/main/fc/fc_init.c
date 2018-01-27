@@ -118,6 +118,7 @@
 #include "io/vtx_control.h"
 #include "io/vtx_smartaudio.h"
 #include "io/vtx_tramp.h"
+#include "io/armhook.h"
 
 #include "scheduler/scheduler.h"
 
@@ -744,6 +745,10 @@ void init(void)
 #ifdef USE_RCDEVICE
     rcdeviceInit();
 #endif // USE_RCDEVICE
+
+#ifdef USE_ARM_HOOK
+    armHookInit();
+#endif
 
     // Latch active features AGAIN since some may be modified by init().
     latchActiveFeatures();
