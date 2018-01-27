@@ -68,7 +68,7 @@
 //#define SDCARD_DMA_CLK                      LL_AHB1_GRP1_PERIPH_DMA1
 
 //#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF1_0
-//#define SDCARD_DMA_CHANNEL                  DMA_CHANNEL_0
+//#define SDCARD_DMA_CHANNEL                  0
 
 #define USE_I2C
 #define USE_I2C_DEVICE_1
