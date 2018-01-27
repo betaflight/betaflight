@@ -226,14 +226,6 @@ static const char * const lookupTableGyroLpf[] = {
     "EXPERIMENTAL"
 };
 
-#ifdef USE_OSD
-static const char * const lookupTableOsdType[] = {
-    "AUTO",
-    "PAL",
-    "NTSC"
-};
-#endif
-
 #ifdef USE_CAMERA_CONTROL
 static const char * const lookupTableCameraControlMode[] = {
     "HARDWARE_PWM",
@@ -241,10 +233,6 @@ static const char * const lookupTableCameraControlMode[] = {
     "DAC"
 };
 #endif
-
-static const char * const lookupTableSuperExpoYaw[] = {
-    "OFF", "ON", "ALWAYS"
-};
 
 static const char * const lookupTablePwmProtocol[] = {
     "OFF", "ONESHOT125", "ONESHOT42", "MULTISHOT", "BRUSHED",
@@ -313,7 +301,6 @@ const lookupTableEntry_t lookupTables[] = {
     { lookupTableRxSpi, sizeof(lookupTableRxSpi) / sizeof(char *) },
 #endif
     { lookupTableGyroLpf, sizeof(lookupTableGyroLpf) / sizeof(char *) },
-    { lookupTableGyroHardware, sizeof(lookupTableGyroHardware) / sizeof(char *) },
     { lookupTableAccHardware, sizeof(lookupTableAccHardware) / sizeof(char *) },
 #ifdef USE_BARO
     { lookupTableBaroHardware, sizeof(lookupTableBaroHardware) / sizeof(char *) },
@@ -322,16 +309,12 @@ const lookupTableEntry_t lookupTables[] = {
     { lookupTableMagHardware, sizeof(lookupTableMagHardware) / sizeof(char *) },
 #endif
     { debugModeNames, sizeof(debugModeNames) / sizeof(char *) },
-    { lookupTableSuperExpoYaw, sizeof(lookupTableSuperExpoYaw) / sizeof(char *) },
     { lookupTablePwmProtocol, sizeof(lookupTablePwmProtocol) / sizeof(char *) },
     { lookupTableRcInterpolation, sizeof(lookupTableRcInterpolation) / sizeof(char *) },
     { lookupTableRcInterpolationChannels, sizeof(lookupTableRcInterpolationChannels) / sizeof(char *) },
     { lookupTableLowpassType, sizeof(lookupTableLowpassType) / sizeof(char *) },
     { lookupTableFailsafe, sizeof(lookupTableFailsafe) / sizeof(char *) },
     { lookupTableCrashRecovery, sizeof(lookupTableCrashRecovery) / sizeof(char *) },
-#ifdef USE_OSD
-    { lookupTableOsdType, sizeof(lookupTableOsdType) / sizeof(char *) },
-#endif
 #ifdef USE_CAMERA_CONTROL
     { lookupTableCameraControlMode, sizeof(lookupTableCameraControlMode) / sizeof(char *) },
 #endif
