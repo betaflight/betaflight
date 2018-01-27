@@ -36,7 +36,7 @@ void pgResetFn_pwmConfig(pwmConfig_t *pwmConfig)
 {
     pwmConfig->inputFilteringMode = INPUT_FILTERING_DISABLED;
     int inputIndex = 0;
-    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && inputIndex < PWM_INPUT_PORT_COUNT; i++) {
+    for (int i = 0; i < (int)USABLE_TIMER_CHANNEL_COUNT && inputIndex < PWM_INPUT_PORT_COUNT; i++) {
         if (timerHardware[i].usageFlags & TIM_USE_PWM) {
             pwmConfig->ioTags[inputIndex] = timerHardware[i].tag;
             inputIndex++;
@@ -53,7 +53,7 @@ void pgResetFn_ppmConfig(ppmConfig_t *ppmConfig)
 #ifdef PPM_PIN
     ppmConfig->ioTag = IO_TAG(PPM_PIN);
 #else
-    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+    for (int i = 0; i < (int)USABLE_TIMER_CHANNEL_COUNT; i++) {
         if (timerHardware[i].usageFlags & TIM_USE_PPM) {
             ppmConfig->ioTag = timerHardware[i].tag;
             return;

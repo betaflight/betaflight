@@ -18,19 +18,25 @@
 #pragma once
 
 #include "pg/pg.h"
-#include "drivers/io.h"
+#include "pg/pg_ids.h"
 
-typedef struct sdcardConfig_s {
-    uint8_t useDma;
-    uint8_t enabled;
-    uint8_t device;
-    ioTag_t cardDetectTag;
-    ioTag_t chipSelectTag;
-    uint8_t cardDetectInverted;
-    uint8_t dmaIdentifier;
+#include "drivers/io.h"
+#include "drivers/timer_def.h"
+
+#ifdef USE_TIMER_MGMT
+
+typedef struct timerChannelConfig_s {
+    ioTag_t ioTag;
+#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
+    uint8_t pinAF;
+#endif
+    uint8_t dma;
 #if defined(STM32F4) || defined(STM32F7)
     uint8_t dmaChannel;
-#endif    
-} sdcardConfig_t;
+#endif
+    uint8_t inverted;
+} timerChannelConfig_t;
 
-PG_DECLARE(sdcardConfig_t, sdcardConfig);
+PG_DECLARE_ARRAY(timerChannelConfig_t, TIMER_CHANNEL_COUNT, timerChannelConfig);
+
+#endif

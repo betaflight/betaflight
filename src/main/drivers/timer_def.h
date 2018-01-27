@@ -28,6 +28,7 @@
 # define DEF_TIM_DMA_COND(...)
 #endif
 
+typedef uint8_t timerTag_t;
 
 // map to base channel (strip N from channel); works only when channel N exists
 #define DEF_TIM_TCH2BTCH(timch) CONCAT(B, timch)
@@ -699,5 +700,125 @@
 #define DEF_TIM_AF__PI5__TCH_TIM8_CH1     D(3, 8)
 #define DEF_TIM_AF__PI6__TCH_TIM8_CH2     D(3, 8)
 #define DEF_TIM_AF__PI7__TCH_TIM8_CH3     D(3, 8)
+
+#endif
+
+
+#ifdef USE_TIMER_MGMT
+
+#define TIMER_TAG_INDEX(t)           ((t) >> 3)
+#define TIMER_TAG_CHANNEL_INDEX(t)   ((t) & 0x7)
+#define DEF_TIM_CH(t, c)             (((t) << 3) | (c))
+#define TIMER_TAG_NONE               (0)
+
+#define TIM1_CH1        DEF_TIM_CH(1, 1)
+#define TIM1_CH2        DEF_TIM_CH(1, 2)
+#define TIM1_CH3        DEF_TIM_CH(1, 3)
+#define TIM1_CH4        DEF_TIM_CH(1, 4)
+
+#define TIM2_CH1        DEF_TIM_CH(2, 1)
+#define TIM2_CH2        DEF_TIM_CH(2, 2)
+#define TIM2_CH3        DEF_TIM_CH(2, 3)
+#define TIM2_CH4        DEF_TIM_CH(2, 4)
+
+#define TIM3_CH1        DEF_TIM_CH(3, 1)
+#define TIM3_CH2        DEF_TIM_CH(3, 2)
+#define TIM3_CH3        DEF_TIM_CH(3, 3)
+#define TIM3_CH4        DEF_TIM_CH(3, 4)
+
+#define TIM4_CH1        DEF_TIM_CH(4, 1)
+#define TIM4_CH2        DEF_TIM_CH(4, 2)
+#define TIM4_CH3        DEF_TIM_CH(4, 3)
+#define TIM4_CH4        DEF_TIM_CH(4, 4)
+
+#if defined(STM32F7) || defined(STM32F4)
+#define TIM5_CH1        DEF_TIM_CH(5, 1)
+#define TIM5_CH2        DEF_TIM_CH(5, 2)
+#endif
+
+#if defined(STM32F7) || defined(STM32F4) || defined(STM32F3)
+#define TIM6_CH0        DEF_TIM_CH(6, 0)
+#define TIM7_CH0        DEF_TIM_CH(7, 0)
+
+#define TIM8_CH1        DEF_TIM_CH(8, 1)
+#define TIM8_CH2        DEF_TIM_CH(8, 2)
+#define TIM8_CH3        DEF_TIM_CH(8, 3)
+#define TIM8_CH4        DEF_TIM_CH(8, 4)
+#endif
+
+#if defined(STM32F7) || defined(STM32F4)
+#define TIM9_CH1        DEF_TIM_CH(9, 1)
+#define TIM9_CH2        DEF_TIM_CH(9, 2)
+
+#define TIM10_CH1       DEF_TIM_CH(10, 1)
+#define TIM11_CH1       DEF_TIM_CH(11, 1)
+
+#define TIM12_CH1       DEF_TIM_CH(12, 1)
+#define TIM12_CH2       DEF_TIM_CH(12, 2)
+
+#define TIM13_CH1       DEF_TIM_CH(13, 1)
+#define TIM14_CH1       DEF_TIM_CH(14, 1)
+#endif
+
+#if defined(STM32F3)
+#define TIM15_CH1       DEF_TIM_CH(15, 1)
+#define TIM15_CH2       DEF_TIM_CH(15, 2)
+#define TIM16_CH1       DEF_TIM_CH(16, 1)
+#define TIM17_CH1       DEF_TIM_CH(17, 1)
+#endif
+
+#if defined(STM32F7) || defined(STM32F4)
+
+#define USED_TIMER_CHANNELS \
+    TIM1_CH1, TIM1_CH2, TIM1_CH3, TIM1_CH4, \
+    TIM2_CH1, TIM2_CH2, TIM2_CH3, TIM2_CH4, \
+    TIM3_CH1, TIM3_CH2, TIM3_CH3, TIM3_CH4, \
+    TIM4_CH1, TIM4_CH2, TIM4_CH3, TIM4_CH4, \
+    TIM5_CH1, TIM5_CH2, \
+    TIM6_CH0, \
+    TIM7_CH0, \
+    TIM8_CH1, TIM8_CH2, TIM8_CH3, TIM8_CH4, \
+    TIM9_CH1, TIM9_CH2, \
+    TIM10_CH1, \
+    TIM11_CH1, \
+    TIM12_CH1, TIM12_CH2, \
+    TIM13_CH1, \
+    TIM14_CH1
+
+#define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(6) | TIM_N(7) | TIM_N(8) | TIM_N(9) | TIM_N(10) | TIM_N(11) | TIM_N(12) | TIM_N(13) | TIM_N(14) )
+
+#elif defined(STM32F3)
+
+#define USED_TIMER_CHANNELS \
+    TIM1_CH1, TIM1_CH2, TIM1_CH3, TIM1_CH4, \
+    TIM2_CH1, TIM2_CH2, TIM2_CH3, TIM2_CH4, \
+    TIM3_CH1, TIM3_CH2, TIM3_CH3, TIM3_CH4, \
+    TIM4_CH1, TIM4_CH2, TIM4_CH3, TIM4_CH4, \
+    TIM6_CH0, \
+    TIM7_CH0, \
+    TIM8_CH1, TIM8_CH2, TIM8_CH3, TIM8_CH4, \
+    TIM15_CH1, TIM15_CH2, \
+    TIM16_CH1, \
+    TIM17_CH1
+
+#define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(6) | TIM_N(7) | TIM_N(8) | TIM_N(15) | TIM_N(16) | TIM_N(17) )
+
+#elif defined(STM32F1)
+
+#define USED_TIMER_CHANNELS \
+    TIM1_CH1, TIM1_CH2, TIM1_CH3, TIM1_CH4, \
+    TIM2_CH1, TIM2_CH2, TIM2_CH3, TIM2_CH4, \
+    TIM3_CH1, TIM3_CH2, TIM3_CH3, TIM3_CH4, \
+    TIM4_CH1, TIM4_CH2, TIM4_CH3, TIM4_CH4
+
+#define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) )
+
+#else
+    #error "No timer / channel tag definition found for CPU"
+#endif
+
+#define TIMER_CHANNEL_COUNT ARRAYLEN((timerTag_t[]){USED_TIMER_CHANNELS})
+#define TIMER_COUNT BITCOUNT(USED_TIMERS)
+#define USABLE_TIMER_CHANNEL_COUNT TIMER_CHANNEL_COUNT
 
 #endif

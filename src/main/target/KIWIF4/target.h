@@ -98,9 +98,7 @@
 //#define SDCARD_DMA_CHANNEL                  DMA_Channel_0
 
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Stream4
-#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF4
-#define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
-#define SDCARD_DMA_CHANNEL                  DMA_Channel_0
+#define SDCARD_DMA_CHANNEL                  0
 
 #else
 #define USE_FLASHFS

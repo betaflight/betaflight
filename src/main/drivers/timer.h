@@ -20,8 +20,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "pg/pg.h"
 #include "drivers/io_types.h"
 #include "rcc_types.h"
+#include "drivers/timer_def.h"
+
+#define CC_CHANNELS_PER_TIMER 4 // TIM_Channel_1..4
 
 typedef uint16_t captureCompare_t;        // 16 bit on both 103 and 303, just register access must be 32bit sometimes (use timCCR_t)
 
@@ -143,7 +147,12 @@ typedef enum {
 
 #define MHZ_TO_HZ(x) ((x) * 1000000)
 
+#ifdef USE_TIMER_MGMT
+extern timerHardware_t timerHardware[];
+extern const timerTag_t timerTags[TIMER_CHANNEL_COUNT];
+#else
 extern const timerHardware_t timerHardware[];
+#endif
 extern const timerDef_t timerDefinitions[];
 
 typedef enum {
@@ -217,3 +226,4 @@ uint16_t timerGetPeriodByPrescaler(TIM_TypeDef *tim, uint16_t prescaler, uint32_
 
 int8_t timerGetTIMNumber(const TIM_TypeDef *tim);
 uint8_t timerLookupChannelIndex(const uint16_t channel);
+uint8_t timerAlternateFunction(const timerTag_t timerTag, const ioTag_t ioTag);

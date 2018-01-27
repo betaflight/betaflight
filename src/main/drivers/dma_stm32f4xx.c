@@ -29,23 +29,23 @@
  * DMA descriptors.
  */
 static dmaChannelDescriptor_t dmaDescriptors[DMA_MAX_DESCRIPTORS] = {
-    DEFINE_DMA_CHANNEL(DMA1, DMA1_Stream0,  0, DMA1_Stream0_IRQn, RCC_AHB1Periph_DMA1),
-    DEFINE_DMA_CHANNEL(DMA1, DMA1_Stream1,  6, DMA1_Stream1_IRQn, RCC_AHB1Periph_DMA1),
-    DEFINE_DMA_CHANNEL(DMA1, DMA1_Stream2, 16, DMA1_Stream2_IRQn, RCC_AHB1Periph_DMA1),
-    DEFINE_DMA_CHANNEL(DMA1, DMA1_Stream3, 22, DMA1_Stream3_IRQn, RCC_AHB1Periph_DMA1),
-    DEFINE_DMA_CHANNEL(DMA1, DMA1_Stream4, 32, DMA1_Stream4_IRQn, RCC_AHB1Periph_DMA1),
-    DEFINE_DMA_CHANNEL(DMA1, DMA1_Stream5, 38, DMA1_Stream5_IRQn, RCC_AHB1Periph_DMA1),
-    DEFINE_DMA_CHANNEL(DMA1, DMA1_Stream6, 48, DMA1_Stream6_IRQn, RCC_AHB1Periph_DMA1),
-    DEFINE_DMA_CHANNEL(DMA1, DMA1_Stream7, 54, DMA1_Stream7_IRQn, RCC_AHB1Periph_DMA1),
+    DEFINE_DMA_CHANNEL(DMA1, 0,  0, RCC_AHB1Periph_DMA1),
+    DEFINE_DMA_CHANNEL(DMA1, 1,  6, RCC_AHB1Periph_DMA1),
+    DEFINE_DMA_CHANNEL(DMA1, 2, 16, RCC_AHB1Periph_DMA1),
+    DEFINE_DMA_CHANNEL(DMA1, 3, 22, RCC_AHB1Periph_DMA1),
+    DEFINE_DMA_CHANNEL(DMA1, 4, 32, RCC_AHB1Periph_DMA1),
+    DEFINE_DMA_CHANNEL(DMA1, 5, 38, RCC_AHB1Periph_DMA1),
+    DEFINE_DMA_CHANNEL(DMA1, 6, 48, RCC_AHB1Periph_DMA1),
+    DEFINE_DMA_CHANNEL(DMA1, 7, 54, RCC_AHB1Periph_DMA1),
 
-    DEFINE_DMA_CHANNEL(DMA2, DMA2_Stream0,  0, DMA2_Stream0_IRQn, RCC_AHB1Periph_DMA2),
-    DEFINE_DMA_CHANNEL(DMA2, DMA2_Stream1,  6, DMA2_Stream1_IRQn, RCC_AHB1Periph_DMA2),
-    DEFINE_DMA_CHANNEL(DMA2, DMA2_Stream2, 16, DMA2_Stream2_IRQn, RCC_AHB1Periph_DMA2),
-    DEFINE_DMA_CHANNEL(DMA2, DMA2_Stream3, 22, DMA2_Stream3_IRQn, RCC_AHB1Periph_DMA2),
-    DEFINE_DMA_CHANNEL(DMA2, DMA2_Stream4, 32, DMA2_Stream4_IRQn, RCC_AHB1Periph_DMA2),
-    DEFINE_DMA_CHANNEL(DMA2, DMA2_Stream5, 38, DMA2_Stream5_IRQn, RCC_AHB1Periph_DMA2),
-    DEFINE_DMA_CHANNEL(DMA2, DMA2_Stream6, 48, DMA2_Stream6_IRQn, RCC_AHB1Periph_DMA2),
-    DEFINE_DMA_CHANNEL(DMA2, DMA2_Stream7, 54, DMA2_Stream7_IRQn, RCC_AHB1Periph_DMA2),
+    DEFINE_DMA_CHANNEL(DMA2, 0,  0, RCC_AHB1Periph_DMA2),
+    DEFINE_DMA_CHANNEL(DMA2, 1,  6, RCC_AHB1Periph_DMA2),
+    DEFINE_DMA_CHANNEL(DMA2, 2, 16, RCC_AHB1Periph_DMA2),
+    DEFINE_DMA_CHANNEL(DMA2, 3, 22, RCC_AHB1Periph_DMA2),
+    DEFINE_DMA_CHANNEL(DMA2, 4, 32, RCC_AHB1Periph_DMA2),
+    DEFINE_DMA_CHANNEL(DMA2, 5, 38, RCC_AHB1Periph_DMA2),
+    DEFINE_DMA_CHANNEL(DMA2, 6, 48, RCC_AHB1Periph_DMA2),
+    DEFINE_DMA_CHANNEL(DMA2, 7, 54, RCC_AHB1Periph_DMA2),
 };
 
 /*
@@ -70,20 +70,23 @@ DEFINE_DMA_IRQ_HANDLER(2, 7, DMA2_ST7_HANDLER)
 
 void dmaInit(dmaIdentifier_e identifier, resourceOwner_e owner, uint8_t resourceIndex)
 {
-    RCC_AHB1PeriphClockCmd(dmaDescriptors[identifier].rcc, ENABLE);
-    dmaDescriptors[identifier].owner = owner;
-    dmaDescriptors[identifier].resourceIndex = resourceIndex;
+    const int index = identifier-1;
+    RCC_AHB1PeriphClockCmd(dmaDescriptors[index].rcc, ENABLE);
+    dmaDescriptors[index].owner = owner;
+    dmaDescriptors[index].resourceIndex = resourceIndex;
 }
 
 void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback, uint32_t priority, uint32_t userParam)
 {
     NVIC_InitTypeDef NVIC_InitStructure;
 
-    RCC_AHB1PeriphClockCmd(dmaDescriptors[identifier].rcc, ENABLE);
-    dmaDescriptors[identifier].irqHandlerCallback = callback;
-    dmaDescriptors[identifier].userParam = userParam;
+    const int index = identifier-1;
 
-    NVIC_InitStructure.NVIC_IRQChannel = dmaDescriptors[identifier].irqN;
+    RCC_AHB1PeriphClockCmd(dmaDescriptors[index].rcc, ENABLE);
+    dmaDescriptors[index].irqHandlerCallback = callback;
+    dmaDescriptors[index].userParam = userParam;
+
+    NVIC_InitStructure.NVIC_IRQChannel = dmaDescriptors[index].irqN;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(priority);
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(priority);
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
@@ -107,30 +110,45 @@ uint32_t dmaFlag_IT_TCIF(const DMA_Stream_TypeDef *stream)
 
 resourceOwner_e dmaGetOwner(dmaIdentifier_e identifier)
 {
-    return dmaDescriptors[identifier].owner;
+    return dmaDescriptors[identifier-1].owner;
 }
 
 uint8_t dmaGetResourceIndex(dmaIdentifier_e identifier)
 {
-    return dmaDescriptors[identifier].resourceIndex;
+    return dmaDescriptors[identifier-1].resourceIndex;
 }
 
 dmaIdentifier_e dmaGetIdentifier(const DMA_Stream_TypeDef* stream)
 {
-    for (int i = 0; i < DMA_MAX_DESCRIPTORS; i++) {
-        if (dmaDescriptors[i].ref == stream) {
+    for (int i = 1; i < DMA_MAX_DESCRIPTORS; i++) {
+        if (dmaDescriptors[i-1].ref == stream) {
             return i;
         }
     }
     return 0;
 }
 
-dmaChannelDescriptor_t* getDmaDescriptor(const DMA_Stream_TypeDef* stream)
+dmaChannelDescriptor_t* dmaGetDescriptor(const DMA_Stream_TypeDef* stream)
 {
-    for (int i = 0; i < DMA_MAX_DESCRIPTORS; i++) {
-        if (dmaDescriptors[i].ref == stream) {
-            return &dmaDescriptors[i];
+    for (int i = 1; i < DMA_MAX_DESCRIPTORS; i++) {
+        if (dmaDescriptors[i-1].ref == stream) {
+            return &dmaDescriptors[i-1];
         }
     }
     return NULL;
+}
+
+DMA_Stream_TypeDef* dmaGetRefByIdentifier(const dmaIdentifier_e identifier)
+{
+    return dmaDescriptors[identifier-1].ref;
+}
+
+dmaChannelDescriptor_t* dmaGetDescriptorByIdentifier(const dmaIdentifier_e identifier)
+{
+    return &dmaDescriptors[identifier-1];
+}
+
+uint32_t dmaGetChannel(const uint8_t channel)
+{
+    return ((uint32_t)channel*2)<<24;
 }

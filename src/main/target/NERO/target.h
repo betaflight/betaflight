@@ -68,7 +68,7 @@
 //#define SDCARD_DMA_CLK                      LL_AHB1_GRP1_PERIPH_DMA1
 
 //#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF1_0
-//#define SDCARD_DMA_CHANNEL                  DMA_CHANNEL_0
+//#define SDCARD_DMA_CHANNEL                  0
 
 #define USE_I2C
 #define USE_I2C_DEVICE_1
@@ -136,5 +136,15 @@
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         (BIT(2))
 
-#define USABLE_TIMER_CHANNEL_COUNT 9
-#define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8) | TIM_N(9) )
+#define PPM_PIN                 PC7
+#define PWM1_PIN                NONE
+
+#define MOTOR1_PIN              PA0
+#define MOTOR2_PIN              PA1
+#define MOTOR3_PIN              PA2
+#define MOTOR4_PIN              PA3
+
+#define SERVO1_PIN              NONE
+#define LEDSTRIP_PIN            PB0
+
+#define USE_TIMER_MGMT

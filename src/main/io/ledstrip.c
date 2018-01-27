@@ -170,14 +170,18 @@ void pgResetFn_ledStripConfig(ledStripConfig_t *ledStripConfig)
     memcpy_fn(&ledStripConfig->specialColors, &defaultSpecialColors, sizeof(defaultSpecialColors));
     ledStripConfig->ledstrip_visual_beeper = 0;
     ledStripConfig->ledstrip_aux_channel = THROTTLE;
-
-    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+    
+#ifdef LEDSTRIP_PIN
+    ledStripConfig->ioTag = IO_TAG(LEDSTRIP_PIN);
+#else
+    for (int i = 0; i < (int)USABLE_TIMER_CHANNEL_COUNT; i++) {
         if (timerHardware[i].usageFlags & TIM_USE_LED) {
             ledStripConfig->ioTag = timerHardware[i].tag;
             return;
         }
     }
     ledStripConfig->ioTag = IO_TAG_NONE;
+#endif
 }
 
 static int scaledThrottle;

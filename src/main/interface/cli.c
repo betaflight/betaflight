@@ -121,6 +121,7 @@ extern uint8_t __config_end;
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/rx_pwm.h"
+#include "pg/timer.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
@@ -1224,7 +1225,7 @@ static void cliRxRange(char *cmdline)
         ptr = cmdline;
         i = atoi(ptr);
         if (i >= 0 && i < NON_AUX_CHANNEL_COUNT) {
-            int rangeMin = 0, rangeMax = 0;
+            int rangeMin = PWM_PULSE_MIN, rangeMax = PWM_PULSE_MAX;
 
             ptr = nextArg(ptr);
             if (ptr) {
@@ -3310,6 +3311,27 @@ static void resourceCheck(uint8_t resourceIndex, uint8_t index, ioTag_t newTag)
     }
 }
 
+static bool strToPin(char *pch, ioTag_t *tag)
+{
+    if (strcasecmp(pch, "NONE") == 0) {
+        *tag = IO_TAG_NONE;
+        return true;
+    } else {
+        unsigned pin = 0;
+        unsigned port = (*pch >= 'a') ? *pch - 'a' : *pch - 'A';
+
+        if (port < 8) {
+            pch++;
+            pin = atoi(pch);
+            if (pin < 16) {
+                *tag = DEFIO_TAG_MAKE(port, pin);
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 static void cliResource(char *cmdline)
 {
     int len = strlen(cmdline);
@@ -3334,27 +3356,6 @@ static void cliResource(char *cmdline)
                 cliPrintf(" %d", ioRecs[i].index);
             }
             cliPrintLinefeed();
-        }
-
-        cliPrintLinefeed();
-
-#ifdef MINIMAL_CLI
-        cliPrintLine("DMA:");
-#else
-        cliPrintLine("Currently active DMA:");
-        cliRepeat('-', 20);
-#endif
-        for (int i = 0; i < DMA_MAX_DESCRIPTORS; i++) {
-            const char* owner;
-            owner = ownerNames[dmaGetOwner(i)];
-
-            cliPrintf(DMA_OUTPUT_STRING, i / DMA_MOD_VALUE + 1, (i % DMA_MOD_VALUE) + DMA_MOD_OFFSET);
-            uint8_t resourceIndex = dmaGetResourceIndex(i);
-            if (resourceIndex > 0) {
-                cliPrintLinef(" %s %d", owner, resourceIndex);
-            } else {
-                cliPrintLinef(" %s", owner);
-            }
         }
 
 #ifndef MINIMAL_CLI
@@ -3396,47 +3397,241 @@ static void cliResource(char *cmdline)
 
     ioTag_t *tag = getIoTag(resourceTable[resourceIndex], index);
 
-    uint8_t pin = 0;
     if (strlen(pch) > 0) {
-        if (strcasecmp(pch, "NONE") == 0) {
-            *tag = IO_TAG_NONE;
+        if (strToPin(pch, tag)) {
+            if (*tag == IO_TAG_NONE) {
 #ifdef MINIMAL_CLI
-            cliPrintLine("Freed");
+                cliPrintLine("Freed");
 #else
-            cliPrintLine("Resource is freed");
+                cliPrintLine("Resource is freed");
 #endif
-            return;
-        } else {
-            uint8_t port = (*pch) - 'A';
-            if (port >= 8) {
-                port = (*pch) - 'a';
-            }
-
-            if (port < 8) {
-                pch++;
-                pin = atoi(pch);
-                if (pin < 16) {
-                    ioRec_t *rec = IO_Rec(IOGetByTag(DEFIO_TAG_MAKE(port, pin)));
-                    if (rec) {
-                        resourceCheck(resourceIndex, index, DEFIO_TAG_MAKE(port, pin));
+                return;
+            } else {
+                ioRec_t *rec = IO_Rec(IOGetByTag(*tag));
+                if (rec) {
+                    resourceCheck(resourceIndex, index, *tag);
 #ifdef MINIMAL_CLI
-                        cliPrintLinef(" %c%02d set", port + 'A', pin);
+                    cliPrintLinef(" %c%02d set", IO_GPIOPortIdx(rec) + 'A', IO_GPIOPinIdx(rec));
 #else
-                        cliPrintLinef("\r\nResource is set to %c%02d", port + 'A', pin);
+                    cliPrintLinef("\r\nResource is set to %c%02d", IO_GPIOPortIdx(rec) + 'A', IO_GPIOPinIdx(rec));
 #endif
-                        *tag = DEFIO_TAG_MAKE(port, pin);
-                    } else {
-                        cliShowParseError();
-                    }
-                    return;
+                } else {
+                    cliShowParseError();
                 }
+                return;
             }
         }
     }
 
     cliShowParseError();
 }
+
+static void printDma(void)
+{
+    cliPrintLinefeed();
+
+#ifdef MINIMAL_CLI
+    cliPrintLine("DMA:");
+#else
+    cliPrintLine("Currently active DMA:");
+    cliRepeat('-', 20);
+#endif
+    for (int i = 1; i < DMA_MAX_DESCRIPTORS; i++) {
+        const char* owner;
+        owner = ownerNames[dmaGetOwner(i)];
+
+        cliPrintf(DMA_OUTPUT_STRING, DMA_DEVICE(i), DMA_DEVICE_INDEX(i));
+        uint8_t resourceIndex = dmaGetResourceIndex(i);
+        if (resourceIndex > 0) {
+            cliPrintLinef(" %s %d", owner, resourceIndex);
+        } else {
+            cliPrintLinef(" %s", owner);
+        }
+    }
+}
+
+static void cliDma(char* cmdLine)
+{
+    UNUSED(cmdLine);
+    printDma();
+}
 #endif /* USE_RESOURCE_MGMT */
+
+#ifdef USE_TIMER_MGMT
+
+static void printTimer(uint8_t dumpMask)
+{
+    char buffer[12];
+    
+    cliPrintLine("# examples: ");
+    const char *format = "timer TIM%d_CH%d%s %c%02d %s";
+    cliPrint("#");
+#if defined(STM32F7) || defined(STM32F4)
+    const char *dmaFormat = "DMA%d_ST%d CH%d";
+    cliPrintLinef(format, 1, 1, "", 'A', 1, 1, "DMA1_ST1 CH1 (or NONE)");
+#elif defined(STM32F3)
+    const char *dmaFormat = "DMA%d_CH%d";
+    cliPrintLinef(format, 1, 1, "", 'A', 1, 1, "DMA1_CH1 (or NONE)");
+#else
+#error "No format specified for this CPU for outputting timer values"
+#endif
+    const char *formatUnassigned = "timer TIM%d_CH%d NONE";
+    cliPrint("#");
+    cliPrintLinef(formatUnassigned, 1, 1);
+    
+    for (unsigned int i = 0; i < TIMER_CHANNEL_COUNT; i++) {
+
+        const timerTag_t timerTag = timerTags[i];
+        const uint8_t timer = TIMER_TAG_INDEX(timerTag);
+        const uint8_t channel = TIMER_TAG_CHANNEL_INDEX(timerTag);
+        const bool inverted = timerChannelConfig(i)->inverted;
+        const ioTag_t ioTag = timerChannelConfig(i)->ioTag;
+
+        if (!ioTag) {
+            if (!(dumpMask & HIDE_UNUSED)) {
+                cliDumpPrintLinef(dumpMask, false, formatUnassigned, timer, channel);
+            }
+        } else {
+            memset(buffer, 0, sizeof(buffer));
+            if (timerChannelConfig(i)->dma) {
+                tfp_sprintf(buffer,
+                    dmaFormat, 
+                    DMA_DEVICE(timerChannelConfig(i)->dma),
+                    DMA_DEVICE_INDEX(timerChannelConfig(i)->dma)
+#if defined(STM32F7) || defined(STM32F4)
+                    , timerChannelConfig(i)->dmaChannel
+#endif
+                    );
+            } else {
+                tfp_sprintf(buffer, "%s", "NONE");
+            }
+            
+            cliDumpPrintLinef(dumpMask, false, format, 
+                timer, 
+                channel,
+                (inverted) ? "N" : "",
+                IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag),
+                buffer
+                );
+        }
+    }
+}
+
+static void cliTimer(char *cmdline)
+{
+    int len = strlen(cmdline);
+
+    if (len == 0) {
+        printTimer(DUMP_MASTER | HIDE_UNUSED);
+        return;
+    } else if (strncasecmp(cmdline, "list", len) == 0) {
+        printTimer(DUMP_MASTER);
+        return;
+    }
+    
+    char *pch = NULL;
+    char *saveptr;
+    char buffer[20];
+    
+    memset(buffer, 0, sizeof(buffer));
+    timerTag_t timerTag = 0;
+    
+    const char *timChformat = "tim%d_ch%d%s";
+    unsigned inverted = false;
+    unsigned timerChannelIndex = 0;
+    
+    pch = strtok_r(cmdline, " ", &saveptr);
+    if (pch) {
+        for (unsigned i = 0; i < TIMER_CHANNEL_COUNT; i++) {
+            const uint8_t timer = TIMER_TAG_INDEX(timerTags[i]);
+            const uint8_t channel = TIMER_TAG_CHANNEL_INDEX(timerTags[i]);    
+
+            for(inverted = 0; inverted <= 1; inverted++) {
+                tfp_sprintf(buffer, timChformat, timer, channel, inverted ? "N" : "");
+
+                if (strcasecmp(pch, buffer) == 0) {
+                    timerTag = timerTags[i];
+                    timerChannelIndex = i;
+                    break;
+                }
+            }
+
+            if (timerTag) {
+                break;
+            }
+        }
+    }
+
+    if (!timerTag) {
+        goto error;
+    }    
+    
+    ioTag_t ioTag = 0;
+    pch = strtok_r(NULL, " ", &saveptr);
+    if (!pch || !(strToPin(pch, &ioTag) && IOGetByTag(ioTag))) {
+        goto error;
+    }
+
+#if defined(STM32F7) || defined(STM32F4)
+    uint8_t dmaChannel = 0;
+#endif
+    dmaIdentifier_e dmaIdentifier = 0;
+    memset(buffer, 0, sizeof(buffer));
+    pch = strtok_r(NULL, " ", &saveptr);
+    if (pch) {
+        if (strcasecmp(pch, "NONE") == 0) {
+            goto success;
+        } else {
+            for (int i = 1; i < DMA_MAX_DESCRIPTORS; i++) {
+                tfp_sprintf(buffer, DMA_INPUT_STRING, DMA_DEVICE(i), DMA_DEVICE_INDEX(i));
+
+                if (strcasecmp(pch, buffer) == 0) {
+                    dmaIdentifier = i;
+                    break;
+                }
+            }    
+        }
+    } 
+
+    if (!dmaIdentifier) {
+        goto error;
+    }  
+
+#if defined(STM32F7) || defined(STM32F4)
+    memset(buffer, 0, sizeof(buffer));
+    pch = strtok_r(NULL, " ", &saveptr);
+    if (pch) {
+        for (int i = 0; i < 8; i++) {
+            tfp_sprintf(buffer, "CH%d", i);
+            if (strcasecmp(pch, buffer) == 0) {
+                dmaChannel = i;
+                break;
+            }
+        }    
+    } else {
+        goto error;
+    }
+
+#endif
+    
+success:
+    timerChannelConfigMutable(timerChannelIndex)->ioTag = ioTag;
+    timerChannelConfigMutable(timerChannelIndex)->pinAF = timerAlternateFunction(timerTags[timerChannelIndex], ioTag);
+    timerChannelConfigMutable(timerChannelIndex)->inverted = inverted;
+
+    timerChannelConfigMutable(timerChannelIndex)->dma = dmaIdentifier;
+
+#if defined(STM32F7) || defined(STM32F4)
+    timerChannelConfigMutable(timerChannelIndex)->dmaChannel = dmaChannel;
+#endif
+
+    cliPrintLine("Success");
+    return;
+    
+error:
+    cliShowParseError();
+}
+#endif
 
 static void backupConfigs(void)
 {
@@ -3660,8 +3855,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("color", "configure colors", NULL, cliColor),
 #endif
     CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", "[nosave]", cliDefaults),
-    CLI_COMMAND_DEF("diff", "list configuration changes from default",
-        "[master|profile|rates|all] {defaults}", cliDiff),
+    CLI_COMMAND_DEF("diff", "list configuration changes from default", "[master|profile|rates|all] {showdefaults}", cliDiff),
 #ifdef USE_DSHOT
     CLI_COMMAND_DEF("dshotprog", "program DShot ESC(s)", "<index> <command>+", cliDshotProg),
 #endif
@@ -3708,8 +3902,12 @@ const clicmd_t cmdTable[] = {
 #endif
     CLI_COMMAND_DEF("profile", "change profile", "[<index>]", cliProfile),
     CLI_COMMAND_DEF("rateprofile", "change rate profile", "[<index>]", cliRateProfile),
-#if defined(USE_RESOURCE_MGMT)
+#ifdef USE_RESOURCE_MGMT
     CLI_COMMAND_DEF("resource", "show/set resources", NULL, cliResource),
+    CLI_COMMAND_DEF("dma", "list dma utilisation", NULL, cliDma),
+#ifdef USE_TIMER_MGMT
+    CLI_COMMAND_DEF("timer", "show timer confirguration", NULL, cliTimer),
+#endif
 #endif
     CLI_COMMAND_DEF("rxfail", "show/set rx failsafe settings", NULL, cliRxFailsafe),
     CLI_COMMAND_DEF("rxrange", "configure rx channel ranges", NULL, cliRxRange),

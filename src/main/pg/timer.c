@@ -15,22 +15,10 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "timer.h"
 
-#include "pg/pg.h"
-#include "drivers/io.h"
+#ifdef USE_TIMER_MGMT
 
-typedef struct sdcardConfig_s {
-    uint8_t useDma;
-    uint8_t enabled;
-    uint8_t device;
-    ioTag_t cardDetectTag;
-    ioTag_t chipSelectTag;
-    uint8_t cardDetectInverted;
-    uint8_t dmaIdentifier;
-#if defined(STM32F4) || defined(STM32F7)
-    uint8_t dmaChannel;
-#endif    
-} sdcardConfig_t;
+PG_REGISTER_ARRAY(timerChannelConfig_t, TIMER_CHANNEL_COUNT, timerChannelConfig, PG_TIMER_CHANNEL_CONFIG, 0);
 
-PG_DECLARE(sdcardConfig_t, sdcardConfig);
+#endif

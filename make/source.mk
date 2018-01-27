@@ -60,21 +60,12 @@ COMMON_SRC = \
             io/statusindicator.c \
             io/transponder_ir.c \
             msp/msp_serial.c \
-            pg/adc.c \
-            pg/beeper.c \
-            pg/beeper_dev.c \
-            pg/bus_i2c.c \
-            pg/bus_spi.c \
-            pg/max7456.c \
-            pg/pg.c \
-            pg/rx_pwm.c \
-            pg/sdcard.c \
-            pg/vcd.c \
             scheduler/scheduler.c \
             sensors/adcinternal.c \
             sensors/battery.c \
             sensors/current.c \
             sensors/voltage.c \
+            $(addprefix pg/,$(notdir $(wildcard $(SRC_DIR)/pg/*.c)))
 
 OSD_SLAVE_SRC = \
             io/displayport_max7456.c \

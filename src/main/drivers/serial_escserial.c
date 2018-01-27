@@ -947,7 +947,7 @@ void escEnablePassthrough(serialPort_t *escPassthroughPort, uint16_t output, uin
     }
     else {
         uint8_t first_output = 0;
-        for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+        for (unsigned i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
             if (timerHardware[i].usageFlags & TIM_USE_MOTOR) {
                 first_output = i;
                 break;
