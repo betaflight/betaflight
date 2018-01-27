@@ -28,6 +28,7 @@
 # define DEF_TIM_DMA_COND(...)
 #endif
 
+typedef uint8_t timerTag_t;
 
 // map to base channel (strip N from channel); works only when channel N exists
 #define DEF_TIM_TCH2BTCH(timch) CONCAT(B, timch)

@@ -146,7 +146,7 @@ void spektrumHandleRSSI(volatile uint8_t spekFrame[]) {
         // Fake RSSI value computed from fades
 
         const uint32_t current_secs = micros() / 1000 / (1000 / SPEKTRUM_FADE_REPORTS_PER_SEC);
-        uint16_t fade;
+        uint16_t fade = 0;
         uint8_t system;
 
         // Get fade count, different format depending on Rx rype and how Rx is bound. Initially assumed Internal

@@ -28,6 +28,7 @@
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/timer.h"
 
 #include "drivers/nvic.h"
 #include "drivers/io.h"
@@ -58,8 +59,6 @@
 
 const timerTag_t timerTags[TIMER_CHANNEL_COUNT] = { USED_TIMER_CHANNELS };
 timerHardware_t timerHardware[TIMER_CHANNEL_COUNT];
-
-PG_REGISTER_ARRAY(timerChannelConfig_t, TIMER_CHANNEL_COUNT, timerChannelConfig, PG_TIMER_CHANNEL_CONFIG, 0);
 
 #endif
 
@@ -894,7 +893,7 @@ void timerInit(void)
         th->channel = TIMER_TAG_CHANNEL_INDEX(timerTags[i]);
         th->output = timerChannelConfig(i)->inverted ? TIMER_OUTPUT_N_CHANNEL : TIMER_OUTPUT_NONE;
         th->alternateFunction = timerChannelConfig(i)->pinAF;
-        th->dmaRef = getDmaRefByIdentifier(timerChannelConfig(i)->dma);
+        th->dmaRef = dmaGetRefByIdentifier(timerChannelConfig(i)->dma);
 #if defined(STM32F7) || defined(STM32F4)
         th->dmaChannel = timerChannelConfig(i)->dmaChannel;
 #endif
@@ -1172,12 +1171,21 @@ uint8_t timerAlternateFunction(const timerTag_t timerTag, const ioTag_t ioTag)
     // todo lookup stored AF and return based on timer and pin.
     const uint8_t timer = TIMER_TAG_INDEX(timerTag);
 #ifdef STM32F7
-    if (timer == 1 || timer == 2) {
+    switch(timer) {
+    case 1:
+    case 2:
         return LL_GPIO_AF_1;
-    } else if (timer == 3 || timer == 4 || timer == 5) {
+    case 3:
+    case 4:
+    case 5:
         return LL_GPIO_AF_2;
-    } else if (timer == 8 || timer == 9 || timer == 10 || timer == 11) {
+    case 8:
+    case 9:
+    case 10:
+    case 11:
         return LL_GPIO_AF_3;
+    default:
+        return LL_GPIO_AF_0;
     }
 #endif
     return 0;

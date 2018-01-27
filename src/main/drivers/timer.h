@@ -121,26 +121,6 @@ typedef struct timerHardware_s {
 #endif
 } timerHardware_t;
 
-#ifdef USE_TIMER_MGMT
-
-typedef uint8_t timerTag_t;
-
-typedef struct timerChannelConfig_s {
-    ioTag_t ioTag;
-#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
-    uint8_t pinAF;
-#endif
-    uint8_t dma;
-#if defined(STM32F4) || defined(STM32F7)
-    uint8_t dmaChannel;
-#endif
-    uint8_t inverted;
-} timerChannelConfig_t;
-
-PG_DECLARE_ARRAY(timerChannelConfig_t, TIMER_CHANNEL_COUNT, timerChannelConfig);
-
-#endif
-
 typedef enum {
     TIMER_OUTPUT_NONE      = 0,
     TIMER_OUTPUT_INVERTED  = (1 << 0),

@@ -121,6 +121,7 @@ extern uint8_t __config_end;
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/rx_pwm.h"
+#include "pg/timer.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
