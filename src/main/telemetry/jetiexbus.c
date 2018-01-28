@@ -30,6 +30,7 @@
 #include "fc/runtime_config.h"
 
 #include "common/utils.h"
+#include "common/bitarray.h"
 
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
@@ -88,8 +89,6 @@ enum exDataType_e {
     EX_TYPE_DT   = 5,                // int22_t Special data type – time and date
     EX_TYPE_30b  = 8,                // int30_t Data type 30b (-536870911 ¸536870911)
     EX_TYPE_GPS  = 9,                // int30_t Special data type – GPS coordinates:  lo/hi minute - lo/hi degree.
-    EX_TYPE_SENSOR_DISABLED = 240,
-    EX_TYPE_SENSOR_ENABLED = 250,
     EX_TYPE_DES  = 255               // only for devicedescription
 };
 
@@ -107,23 +106,22 @@ typedef struct exBusSensor_s {
     const char *unit;
     const uint8_t exDataType;
     const uint8_t decimals;
-    uint8_t parameter;
 } exBusSensor_t;
 
 #define DECIMAL_MASK(decimals) (decimals << 5)
 
 // list of telemetry messages
 // after every 15 sensors a new header has to be inserted (e.g. "BF D2")
-exBusSensor_t jetiExSensors[] = {
-    { "BF D1",       "",      EX_TYPE_DES,   EX_TYPE_NONE,    EX_TYPE_SENSOR_ENABLED},     // device descripton
-    { "Voltage",     "V",     EX_TYPE_14b,   DECIMAL_MASK(1), EX_TYPE_SENSOR_DISABLED},
-    { "Current",     "A",     EX_TYPE_14b,   DECIMAL_MASK(2), EX_TYPE_SENSOR_DISABLED},
-    { "Altitude",    "m",     EX_TYPE_14b,   DECIMAL_MASK(2), EX_TYPE_SENSOR_DISABLED},
-    { "Capacity",    "mAh",   EX_TYPE_22b,   DECIMAL_MASK(0), EX_TYPE_SENSOR_DISABLED},
-    { "Power",       "W",     EX_TYPE_22b,   DECIMAL_MASK(1), EX_TYPE_SENSOR_DISABLED},
-    { "Roll angle",  "\xB0",  EX_TYPE_14b,   DECIMAL_MASK(1), EX_TYPE_SENSOR_DISABLED},
-    { "Pitch angle", "\xB0",  EX_TYPE_14b,   DECIMAL_MASK(1), EX_TYPE_SENSOR_DISABLED},
-    { "Heading",     "\xB0",  EX_TYPE_14b,   DECIMAL_MASK(1), EX_TYPE_SENSOR_DISABLED}
+const exBusSensor_t jetiExSensors[] = {
+    { "BF D1",       "",      EX_TYPE_DES,   0},     // device descripton
+    { "Voltage",     "V",     EX_TYPE_14b,   DECIMAL_MASK(1)},
+    { "Current",     "A",     EX_TYPE_14b,   DECIMAL_MASK(2)},
+    { "Altitude",    "m",     EX_TYPE_14b,   DECIMAL_MASK(2)},
+    { "Capacity",    "mAh",   EX_TYPE_22b,   DECIMAL_MASK(0)},
+    { "Power",       "W",     EX_TYPE_22b,   DECIMAL_MASK(1)},
+    { "Roll angle",  "\xB0",  EX_TYPE_14b,   DECIMAL_MASK(1)},
+    { "Pitch angle", "\xB0",  EX_TYPE_14b,   DECIMAL_MASK(1)},
+    { "Heading",     "\xB0",  EX_TYPE_14b,   DECIMAL_MASK(1)}
 };
 
 // after every 15 sensors increment the step by 2 (e.g. ...EX_VAL15, EX_VAL16 = 17) to skip the device description
@@ -144,8 +142,10 @@ static uint8_t jetiExBusTelemetryFrame[40];
 static uint8_t jetiExBusTransceiveState = EXBUS_TRANS_RX;
 static uint8_t activeSensorList[JETI_EX_SENSOR_COUNT];
 static uint8_t activeSensors;
+static uint32_t exSensorEnabled;
 
 static uint8_t sendJetiExBusTelemetry(uint8_t packetID, uint8_t item);
+
 
 // Jeti Ex Telemetry CRC calculations for a frame
 uint8_t calcCRC8(uint8_t *pt, uint8_t msgLen)
@@ -180,30 +180,32 @@ void initJetiExBusTelemetry(void)
     jetiExTelemetryFrame[EXTEL_HEADER_LSN_HB] = 0x00;
     jetiExTelemetryFrame[EXTEL_HEADER_RES] = 0x00;               // reserved, by default 0x00
 
+    bitArraySet(&exSensorEnabled, 0);
+
     // Check which sensors are available
     if (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE) {
-        jetiExSensors[EX_VOLTAGE].parameter = EX_TYPE_SENSOR_ENABLED;
+            bitArraySet(&exSensorEnabled, EX_VOLTAGE);
     }
     if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
-        jetiExSensors[EX_CURRENT].parameter = EX_TYPE_SENSOR_ENABLED;
+            bitArraySet(&exSensorEnabled, EX_CURRENT);
     }
     if ((batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE) && (batteryConfig()->currentMeterSource != CURRENT_METER_NONE)) {
-        jetiExSensors[EX_POWER].parameter = EX_TYPE_SENSOR_ENABLED;
-        jetiExSensors[EX_CAPACITY].parameter = EX_TYPE_SENSOR_ENABLED;
+            bitArraySet(&exSensorEnabled, EX_POWER);
+            bitArraySet(&exSensorEnabled, EX_CAPACITY);
     }
     if (sensors(SENSOR_BARO)) {
-        jetiExSensors[EX_ALTITUDE].parameter = EX_TYPE_SENSOR_ENABLED;
+            bitArraySet(&exSensorEnabled, EX_ALTITUDE);
     }
     if (sensors(SENSOR_ACC)) {
-        jetiExSensors[EX_ROLL_ANGLE].parameter = EX_TYPE_SENSOR_ENABLED;
-        jetiExSensors[EX_PITCH_ANGLE].parameter = EX_TYPE_SENSOR_ENABLED;
+            bitArraySet(&exSensorEnabled, EX_ROLL_ANGLE);
+            bitArraySet(&exSensorEnabled, EX_PITCH_ANGLE);
     }
     if (sensors(SENSOR_MAG)) {
-        jetiExSensors[EX_HEADING].parameter = EX_TYPE_SENSOR_ENABLED;
+            bitArraySet(&exSensorEnabled, EX_HEADING);
     }
 
     for (uint8_t item = 0; item < JETI_EX_SENSOR_COUNT; item++ ) {
-        if (jetiExSensors[item].parameter == EX_TYPE_SENSOR_ENABLED) {
+        if (bitArrayGet(&exSensorEnabled, item)) {
             activeSensorList[activeSensors] = item;
             activeSensors++;
         }
@@ -230,19 +232,19 @@ int32_t getSensorValue(uint8_t sensor)
 {
     switch(sensor) {
     case EX_VOLTAGE:
-        return (getBatteryVoltageLatest());
+        return getBatteryVoltageLatest();
         break;
 
     case EX_CURRENT:
-        return (getAmperageLatest());
+        return getAmperageLatest();
         break;
 
     case EX_ALTITUDE:
-        return (getEstimatedAltitude());
+        return getEstimatedAltitude();
         break;
 
     case EX_CAPACITY:
-        return (getMAhDrawn());
+        return getMAhDrawn();
         break;
 
     case EX_POWER:
@@ -250,15 +252,15 @@ int32_t getSensorValue(uint8_t sensor)
         break;
 
     case EX_ROLL_ANGLE:
-        return (attitude.values.roll);
+        return attitude.values.roll;
         break;
 
     case EX_PITCH_ANGLE:
-        return (attitude.values.pitch);
+        return attitude.values.pitch;
         break;
 
     case EX_HEADING:
-        return (attitude.values.yaw);
+        return attitude.values.yaw;
         break;
 
     default:
@@ -298,7 +300,7 @@ uint8_t createExTelemetryValueMessage(uint8_t *exMessage, uint8_t item)
         }
 
         sensorItem = activeSensorList[item];
-        if (EXTEL_MAX_PAYLOAD <= ((p-&exMessage[EXTEL_HEADER_ID]) + exDataTypeLen[jetiExSensors[sensorItem].exDataType]) + 1) {
+        if ((p - &exMessage[EXTEL_HEADER_ID]) + exDataTypeLen[jetiExSensors[sensorItem].exDataType] + 1 >= EXTEL_MAX_PAYLOAD) {
                 break;
         }
     }
@@ -379,7 +381,7 @@ uint8_t sendJetiExBusTelemetry(uint8_t packetID, uint8_t item)
 
     if (requestLoop < 0xFF) {
         while( ++sensorDescriptionCounter < JETI_EX_SENSOR_COUNT) {
-            if (jetiExSensors[sensorDescriptionCounter].parameter >= EX_TYPE_SENSOR_ENABLED) {
+            if (bitArrayGet(&exSensorEnabled, sensorDescriptionCounter)) {
                 break;
             }
         }
