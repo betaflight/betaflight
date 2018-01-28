@@ -30,8 +30,6 @@
 
 #include "switch_control.h"
 
-#include "fc/config.h"
-#include "config/feature.h"
 
 #ifndef SBFC_SWITCH_PIN
 #define SBFC_SWITCH_PIN NONE
@@ -48,7 +46,6 @@ static bool switchControlInitialize(void)
 {
     switchPin = IOGetByTag(IO_TAG(SBFC_SWITCH_PIN));
     if (switchPin == NULL) {
-        featureClear(FEATURE_TELEMETRY);
         return false;
     }
 
