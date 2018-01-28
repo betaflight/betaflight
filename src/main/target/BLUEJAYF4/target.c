@@ -26,7 +26,8 @@
 
 /*
  * - Support HEXA-Dshot
- * - S5_OUT, S6_OUT and DEBUG can be assigned to any combination of LED, software serial and servos
+ * - S5_OUT, S6_OUT are N-channels, which are only capable of outputs. (E.g., motors, servos, LED strip, PWM outputs.)
+ * - Input is only available on DEBUG pad. See comment on SOFTSERIAL1 in target.h for details.
  */
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM3, CH2,  PC7, TIM_USE_PPM,                 0, 0 ), // PPM IN
