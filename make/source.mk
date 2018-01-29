@@ -365,7 +365,7 @@ endif
 SRC += $(COMMON_SRC)
 
 #excludes
-SRC   := $(filter-out ${MCU_EXCLUDES}, $(SRC))
+SRC   := $(filter-out $(MCU_EXCLUDES), $(SRC))
 
 ifneq ($(filter SDCARD,$(FEATURES)),)
 SRC += \
