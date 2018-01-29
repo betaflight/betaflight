@@ -69,7 +69,6 @@
 #include "io/transponder_ir.h"
 #include "io/vtx_control.h"
 #include "io/vtx_rtc6705.h"
-#include "io/armhook.h"
 
 #include "rx/rx.h"
 
@@ -85,6 +84,9 @@
 #include "flight/pid.h"
 #include "flight/servos.h"
 
+#ifdef SPEEDYBEEF4
+#include "target/SPEEDYBEEF4/switch_control.h"
+#endif
 
 // June 2013     V2.2-dev
 
@@ -255,8 +257,8 @@ void disarm(void)
         BEEP_OFF;
         beeper(BEEPER_DISARMING);      // emit disarm tone
 
-#ifdef USE_ARM_HOOK
-        armHookProcess(false);
+#ifdef SPEEDYBEEF4
+        sbfcSwitchControlUpdateState(false);
 #endif
     }
 }
@@ -317,8 +319,8 @@ void tryArm(void)
         beeper(BEEPER_ARMING);
 #endif
 
-#ifdef USE_ARM_HOOK
-        armHookProcess(true);
+#ifdef SPEEDYBEEF4
+        sbfcSwitchControlUpdateState(true);
 #endif
     } else {
         if (!isFirstArmingGyroCalibrationRunning()) {

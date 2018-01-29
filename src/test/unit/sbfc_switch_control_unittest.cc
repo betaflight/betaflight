@@ -26,7 +26,7 @@ extern "C" {
     #include "drivers/io_def.h"
     #include "drivers/io.h"
     #include "common/utils.h"
-    #include "io/armhook.h"
+    #include "target/SPEEDYBEEF4/switch_control.h"
 }
 
 typedef struct testData_s {
@@ -35,44 +35,44 @@ typedef struct testData_s {
 
 static testData_t testData;
 
-TEST(ArmHookTest, InitializeWithoutIOSetup)
+TEST(SpeedyBeeF4SwitchControlTest, InitializeWithoutIOSetup)
 {
     memset(&testData, 0, sizeof(testData));
 
-    armHookInit();
+    sbfcSwitchControlInitialize();
 
-    EXPECT_EQ(false, armHookIsEnabled());
+    EXPECT_EQ(false, sbfcSwitchControlIsEnabled());
 }
 
-TEST(ArmHookTest, Initialize)
+TEST(SpeedyBeeF4SwitchControlTest, Initialize)
 {
     memset(&testData, 0, sizeof(testData));
     testData.configuredIOs[0] = IO_TAG(SBFC_SWITCH_PIN);
     testData.configuredIOs[1] = IO_TAG(SBFC_CONNECTION_STATE_PIN);
-    armHookInit();
+    sbfcSwitchControlInitialize();
 
-    EXPECT_EQ(true, armHookIsEnabled());
+    EXPECT_EQ(true, sbfcSwitchControlIsEnabled());
 }
 
-TEST(ArmHookTest, Initialize2)
+TEST(SpeedyBeeF4SwitchControlTest, Initialize2)
 {
     memset(&testData, 0, sizeof(testData));
     testData.configuredIOs[0] = IO_TAG(SBFC_SWITCH_PIN);
-    armHookInit();
+    sbfcSwitchControlInitialize();
 
-    EXPECT_EQ(false, armHookIsEnabled());
+    EXPECT_EQ(false, sbfcSwitchControlIsEnabled());
 }
 
-TEST(ArmHookTest, Process)
+TEST(SpeedyBeeF4SwitchControlTest, Process)
 {
     memset(&testData, 0, sizeof(testData));
     testData.configuredIOs[0] = IO_TAG(SBFC_SWITCH_PIN);
     testData.configuredIOs[1] = IO_TAG(SBFC_CONNECTION_STATE_PIN);
-    armHookInit();
+    sbfcSwitchControlInitialize();
 
-    EXPECT_EQ(true, armHookIsEnabled());
+    EXPECT_EQ(true, sbfcSwitchControlIsEnabled());
 
-    armHookProcess(0);
+    sbfcSwitchControlUpdateState(0);
 }
 
 // STUBS

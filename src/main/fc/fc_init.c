@@ -118,7 +118,6 @@
 #include "io/vtx_control.h"
 #include "io/vtx_smartaudio.h"
 #include "io/vtx_tramp.h"
-#include "io/armhook.h"
 
 #include "scheduler/scheduler.h"
 
@@ -149,6 +148,10 @@
 
 #include "build/build_config.h"
 #include "build/debug.h"
+
+#ifdef SPEEDYBEEF4
+#include "target/SPEEDYBEEF4/switch_control.h"
+#endif
 
 #ifdef TARGET_PREINIT
 void targetPreInit(void);
@@ -746,8 +749,8 @@ void init(void)
     rcdeviceInit();
 #endif // USE_RCDEVICE
 
-#ifdef USE_ARM_HOOK
-    armHookInit();
+#ifdef SPEEDYBEEF4
+    sbfcSwitchControlInitialize();
 #endif
 
     // Latch active features AGAIN since some may be modified by init().

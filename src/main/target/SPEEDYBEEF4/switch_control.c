@@ -26,8 +26,6 @@
 #include "drivers/io_types.h"
 #include "drivers/io.h"
 
-#include "io/armhook.h"
-
 #include "switch_control.h"
 
 
@@ -41,9 +39,11 @@
 
 static IO_t switchPin = NULL;
 static IO_t connectionStatePin = NULL;
+static bool isEnabled = false;
 
-static bool switchControlInitialize(void)
+bool sbfcSwitchControlInitialize(void)
 {
+    isEnabled = false;
     switchPin = IOGetByTag(IO_TAG(SBFC_SWITCH_PIN));
     if (switchPin == NULL) {
         return false;
@@ -60,10 +60,11 @@ static bool switchControlInitialize(void)
     IOInit(connectionStatePin, OWNER_SBFC_CONNECTION_STATE_PIN, 0);
     IOConfigGPIO(connectionStatePin, IOCFG_IN_FLOATING);
 
+    isEnabled = true;
     return true;
 }
 
-static void switchControlUpdateState(bool isArming)
+void sbfcSwitchControlUpdateState(bool isArming)
 {
     bool isHi = isArming;
     if (isArming && !IORead(connectionStatePin)) { // connectionStatePin is low, so connection state is connected
@@ -75,9 +76,9 @@ static void switchControlUpdateState(bool isArming)
     return ;
 }
 
-armHookInjectionVTable_t sbfcSwitchArmHook = {
-    .initialize = switchControlInitialize,
-    .process = switchControlUpdateState
-};
+bool sbfcSwitchControlIsEnabled(void)
+{
+    return isEnabled;
+}
 
 #endif

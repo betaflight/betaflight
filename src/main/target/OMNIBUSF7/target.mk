@@ -10,4 +10,5 @@ TARGET_SRC = \
             drivers/compass/compass_hmc5883l.c \
             drivers/light_ws2811strip.c \
             drivers/light_ws2811strip_hal.c \
-            drivers/max7456.c
+            drivers/max7456.c \
+            target/SPEEDYBEEF4/switch_control.c

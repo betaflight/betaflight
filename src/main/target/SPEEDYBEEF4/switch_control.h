@@ -17,4 +17,6 @@
 
 #pragma once
 
-extern armHookInjectionVTable_t sbfcSwitchArmHook;
+bool sbfcSwitchControlInitialize(void);
+void sbfcSwitchControlUpdateState(bool isArming);
+bool sbfcSwitchControlIsEnabled(void);
