@@ -108,13 +108,11 @@ float applyBetaflightRates(const int axis, float rcCommandf, const float rcComma
 
 float applyRaceFlightRates(const int axis, float rcCommandf, const float rcCommandfAbs)
 {
-    UNUSED(rcCommandfAbs);
-
     // -1.0 to 1.0 ranged and curved
     rcCommandf = ((1.0f + 0.01f * currentControlRateProfile->rcExpo[axis] * (rcCommandf * rcCommandf - 1.0f)) * rcCommandf);
     // convert to -2000 to 2000 range using acro+ modifier
     float angleRate = 10.0f * currentControlRateProfile->rcRates[axis] * rcCommandf;
-    angleRate = angleRate * (1 + (float)currentControlRateProfile->rates[axis] * 0.01f);
+    angleRate = angleRate * (1 + rcCommandfAbs * (float)currentControlRateProfile->rates[axis] * 0.01f);
 
     return angleRate;
 }
