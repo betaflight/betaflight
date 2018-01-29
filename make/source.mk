@@ -236,7 +236,6 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             drivers/serial_uart.c \
             drivers/system.c \
             drivers/timer.c \
-            fc/fc_core.c \
             fc/fc_tasks.c \
             fc/fc_rc.c \
             fc/rc_controls.c \
@@ -292,6 +291,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/vtx_rtc6705.c \
             drivers/vtx_common.c \
             fc/fc_init.c \
+            fc/fc_core.c \
             config/config_eeprom.c \
             config/feature.c \
             config/config_streamer.c \

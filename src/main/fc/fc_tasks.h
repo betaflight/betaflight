@@ -24,3 +24,4 @@
 #define TASK_PERIOD_US(us) (us)
 
 void fcTasksInit(void);
+void taskMainPidLoop(timeUs_t currentTimeUs);

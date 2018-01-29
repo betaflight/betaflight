@@ -50,7 +50,6 @@
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/fc_core.h"
-#include "fc/fc_rc.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
@@ -59,7 +58,6 @@
 
 #include "interface/cli.h"
 
-#include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/gps.h"
 #include "io/motors.h"
@@ -82,7 +80,6 @@
 #include "flight/mixer.h"
 #include "flight/navigation.h"
 #include "flight/pid.h"
-#include "flight/servos.h"
 
 
 // June 2013     V2.2-dev
@@ -602,158 +599,6 @@ bool processRx(timeUs_t currentTimeUs)
 #endif
 
     return true;
-}
-
-static void subTaskPidController(timeUs_t currentTimeUs)
-{
-    uint32_t startTime = 0;
-    if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
-    // PID - note this is function pointer set by setPIDController()
-    pidController(currentPidProfile, &accelerometerConfig()->accelerometerTrims, currentTimeUs);
-    DEBUG_SET(DEBUG_PIDLOOP, 1, micros() - startTime);
-}
-
-static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
-{
-    uint32_t startTime = 0;
-    if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
-
-    // Read out gyro temperature if used for telemmetry
-    if (feature(FEATURE_TELEMETRY)) {
-        gyroReadTemperature();
-    }
-
-#ifdef USE_MAG
-    if (sensors(SENSOR_MAG)) {
-        updateMagHold();
-    }
-#endif
-
-#if defined(USE_ALT_HOLD)
-    // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
-    updateRcCommands();
-    if (sensors(SENSOR_BARO) || sensors(SENSOR_RANGEFINDER)) {
-        if (FLIGHT_MODE(BARO_MODE) || FLIGHT_MODE(RANGEFINDER_MODE)) {
-            applyAltHold();
-        }
-    }
-#endif
-
-    // If we're armed, at minimum throttle, and we do arming via the
-    // sticks, do not process yaw input from the rx.  We do this so the
-    // motors do not spin up while we are trying to arm or disarm.
-    // Allow yaw control for tricopters if the user wants the servo to move even when unarmed.
-    if (isUsingSticksForArming() && rcData[THROTTLE] <= rxConfig()->mincheck
-#ifndef USE_QUAD_MIXER_ONLY
-#ifdef USE_SERVOS
-                && !((mixerConfig()->mixerMode == MIXER_TRI || mixerConfig()->mixerMode == MIXER_CUSTOM_TRI) && servoConfig()->tri_unarmed_servo)
-#endif
-                && mixerConfig()->mixerMode != MIXER_AIRPLANE
-                && mixerConfig()->mixerMode != MIXER_FLYING_WING
-#endif
-    ) {
-        resetYawAxis();
-    }
-
-    if (throttleCorrectionConfig()->throttle_correction_value && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
-        rcCommand[THROTTLE] += calculateThrottleAngleCorrection(throttleCorrectionConfig()->throttle_correction_value);
-    }
-
-    processRcCommand();
-
-#ifdef USE_NAV
-    if (sensors(SENSOR_GPS)) {
-        if ((FLIGHT_MODE(GPS_HOME_MODE) || FLIGHT_MODE(GPS_HOLD_MODE)) && STATE(GPS_FIX_HOME)) {
-            updateGpsStateForHomeAndHoldMode();
-        }
-    }
-#endif
-
-#ifdef USE_SDCARD
-    afatfs_poll();
-#endif
-
-#ifdef USE_BLACKBOX
-    if (!cliMode && blackboxConfig()->device) {
-        blackboxUpdate(currentTimeUs);
-    }
-#else
-    UNUSED(currentTimeUs);
-#endif
-
-#ifdef USE_TRANSPONDER
-    transponderUpdate(currentTimeUs);
-#endif
-    DEBUG_SET(DEBUG_PIDLOOP, 3, micros() - startTime);
-}
-
-static void subTaskMotorUpdate(timeUs_t currentTimeUs)
-{
-    uint32_t startTime = 0;
-    if (debugMode == DEBUG_CYCLETIME) {
-        startTime = micros();
-        static uint32_t previousMotorUpdateTime;
-        const uint32_t currentDeltaTime = startTime - previousMotorUpdateTime;
-        debug[2] = currentDeltaTime;
-        debug[3] = currentDeltaTime - targetPidLooptime;
-        previousMotorUpdateTime = startTime;
-    } else if (debugMode == DEBUG_PIDLOOP) {
-        startTime = micros();
-    }
-
-    mixTable(currentTimeUs, currentPidProfile->vbatPidCompensation);
-
-#ifdef USE_SERVOS
-    // motor outputs are used as sources for servo mixing, so motors must be calculated using mixTable() before servos.
-    if (isMixerUsingServos()) {
-        writeServos();
-    }
-#endif
-
-    writeMotors();
-
-    DEBUG_SET(DEBUG_PIDLOOP, 2, micros() - startTime);
-}
-
-uint8_t setPidUpdateCountDown(void)
-{
-    if (gyroConfig()->gyro_soft_lpf_hz) {
-        return pidConfig()->pid_process_denom - 1;
-    } else {
-        return 1;
-    }
-}
-
-// Function for loop trigger
-void taskMainPidLoop(timeUs_t currentTimeUs)
-{
-    static uint8_t pidUpdateCountdown = 0;
-
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_GYROPID_SYNC)
-    if (lockMainPID() != 0) return;
-#endif
-
-    // DEBUG_PIDLOOP, timings for:
-    // 0 - gyroUpdate()
-    // 1 - pidController()
-    // 2 - subTaskMotorUpdate()
-    // 3 - subTaskMainSubprocesses()
-    gyroUpdate(currentTimeUs);
-    DEBUG_SET(DEBUG_PIDLOOP, 0, micros() - currentTimeUs);
-
-    if (pidUpdateCountdown) {
-        pidUpdateCountdown--;
-    } else {
-        pidUpdateCountdown = setPidUpdateCountDown();
-        subTaskPidController(currentTimeUs);
-        subTaskMotorUpdate(currentTimeUs);
-        subTaskMainSubprocesses(currentTimeUs);
-    }
-
-    if (debugMode == DEBUG_CYCLETIME) {
-        debug[0] = getTaskDeltaTime(TASK_SELF);
-        debug[1] = averageSystemLoadPercent;
-    }
 }
 
 
