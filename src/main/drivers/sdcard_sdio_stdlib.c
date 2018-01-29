@@ -235,9 +235,9 @@ static bool sdcard_checkInitDone(void)
 /**
  * Begin the initialization process for the SD card. This must be called first before any other sdcard_ routine.
  */
-void sdcard_init(bool useDMA)
+void sdcard_init(const sdcardConfig_t *config)
 {
-    UNUSED(useDMA);
+    UNUSED(config);
     if (SD_Detect() == SD_PRESENT) {
         if (SD_Init() != SD_OK) {
             sdcard.state = SDCARD_STATE_NOT_PRESENT;

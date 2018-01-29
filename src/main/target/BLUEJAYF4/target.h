@@ -83,9 +83,7 @@
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     4 // 21MHz
 
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Stream5
-#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF5
-#define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
-#define SDCARD_DMA_CHANNEL                  DMA_Channel_0
+#define SDCARD_DMA_CHANNEL                  0
 
 // Performance logging for SD card operations:
 // #define AFATFS_USE_INTROSPECTIVE_LOGGING

@@ -217,8 +217,8 @@ void spiPreInit(void)
 #ifdef USE_MAX7456
     spiPreInitCsOutPU(IO_TAG(MAX7456_SPI_CS_PIN)); // XXX 3.2 workaround for Kakute F4. See comment for spiPreInitCSOutPU.
 #endif
-#ifdef USE_SDCARD
-    spiPreInitCs(IO_TAG(SDCARD_SPI_CS_PIN));
+#ifdef USE_SDCARD 
+    spiPreInitCs(sdcardConfig()->chipSelectTag);
 #endif
 #ifdef USE_BARO_SPI_BMP280
     spiPreInitCs(IO_TAG(BMP280_CS_PIN));
@@ -665,7 +665,7 @@ void init(void)
 #ifdef USE_SDCARD
     if (blackboxConfig()->device == BLACKBOX_DEVICE_SDCARD) {
         sdcardInsertionDetectInit();
-        sdcard_init(sdcardConfig()->useDma);
+        sdcard_init(sdcardConfig());
         afatfs_init();
     }
 #endif

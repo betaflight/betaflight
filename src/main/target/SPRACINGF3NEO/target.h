@@ -131,7 +131,6 @@
 
 // Note, this is the same DMA channel as UART1_RX. Luckily we don't use DMA for USART Rx.
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
-#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA1_FLAG_TC5
 
 #define MPU6500_CS_PIN                   SPI1_NSS_PIN
 #define MPU6500_SPI_INSTANCE             SPI1
