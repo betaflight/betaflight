@@ -121,6 +121,7 @@ union rollAndPitchTrims_u;
 void pidController(const pidProfile_t *pidProfile, const union rollAndPitchTrims_u *angleTrim, timeUs_t currentTimeUs);
 
 extern float axisPID_P[3], axisPID_I[3], axisPID_D[3];
+extern float axisPIDSum[3];
 bool airmodeWasActivated;
 extern uint32_t targetPidLooptime;
 
