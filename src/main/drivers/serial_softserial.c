@@ -350,12 +350,19 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
 void processTxState(softSerial_t *softSerial)
 {
     uint8_t mask;
+    static bool firstBit = true;
 
     if (!softSerial->isTransmittingData) {
         if (isSoftSerialTransmitBufferEmpty((serialPort_t *)softSerial)) {
             // Transmit buffer empty.
             // Start listening if not already in if half-duplex
             if (!softSerial->rxActive && softSerial->port.options & SERIAL_BIDIR) {
+                if (!firstBit) {
+                    // Reset pin at end of buffer and cycle once more to resolve falling edge
+                    setTxSignal(softSerial, 0);
+                    firstBit = true;
+                    return;
+                }
                 serialOutputPortDeActivate(softSerial);
                 serialInputPortActivate(softSerial);
             }
@@ -377,7 +384,8 @@ void processTxState(softSerial_t *softSerial)
             // Half-duplex: Deactivate receiver, activate transmitter
             serialInputPortDeActivate(softSerial);
             serialOutputPortActivate(softSerial);
-
+            // Set pin to ensure strong falling edge at the beginning of the buffer.
+            setTxSignal(softSerial, 1);
             // Start sending on next bit timing, as port manipulation takes time,
             // and continuing here may cause bit period to decrease causing sampling errors
             // at the receiver under high rates.
@@ -385,6 +393,12 @@ void processTxState(softSerial_t *softSerial)
             // XXX We may be able to reload counter and continue. (Future work.)
             return;
         }
+    }
+
+    if (firstBit && !softSerial->rxActive && (softSerial->port.options & SERIAL_BIDIR)) {
+        // Skip a cycle to allow pin to reach set state.
+        firstBit = false;
+        return;
     }
 
     if (softSerial->bitsLeftToTransmit) {
