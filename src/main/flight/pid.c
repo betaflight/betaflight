@@ -56,7 +56,7 @@ static FAST_RAM bool pidStabilisationEnabled;
 
 static FAST_RAM bool inCrashRecoveryMode = false;
 
-FAST_RAM float axisPID_P[3], axisPID_I[3], axisPID_D[3];
+FAST_RAM float axisPID_P[3], axisPID_I[3], axisPID_D[3], axisPIDSum[3];
 
 static FAST_RAM float dT;
 
@@ -530,6 +530,9 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
                 }
             }
             axisPID_D[axis] = Kd[axis] * delta * tpaFactor;
+            axisPIDSum[axis] = axisPID_P[axis] + axisPID_I[axis] + axisPID_D[axis];
+        } else {
+            axisPIDSum[axis] = axisPID_P[axis] + axisPID_I[axis];
         }
 
         // Disable PID control if at zero throttle or if gyro overflow detected
@@ -537,6 +540,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             axisPID_P[axis] = 0;
             axisPID_I[axis] = 0;
             axisPID_D[axis] = 0;
+            axisPIDSum[axis] = 0;
         }
     }
 }
