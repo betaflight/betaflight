@@ -111,8 +111,26 @@ static uint8_t spektrumFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
     spektrumHandleRSSI(spekFrame);
 #endif
 
+    // Get the VTX control bytes in a frame
+    uint32_t vtxControl = ((spekFrame[SPEKTRUM_VTX_CONTROL_1] << 24) |
+                           (spekFrame[SPEKTRUM_VTX_CONTROL_2] << 16) |
+                           (spekFrame[SPEKTRUM_VTX_CONTROL_3] <<  8) |
+                           (spekFrame[SPEKTRUM_VTX_CONTROL_4] <<  0) );
+
+    int8_t spektrumRcDataSize;
+    // Handle VTX control frame.
+    if ((vtxControl & SPEKTRUM_VTX_CONTROL_FRAME_MASK) == SPEKTRUM_VTX_CONTROL_FRAME &&
+        (spekFrame[2] & 0x80) == 0 )  {
+#if defined(USE_SPEKTRUM_VTX_CONTROL) && defined(USE_VTX_COMMON)
+      spektrumHandleVtxControl(vtxControl);
+#endif
+      spektrumRcDataSize = SPEK_FRAME_SIZE - SPEKTRUM_VTX_CONTROL_SIZE;
+    } else {
+      spektrumRcDataSize = SPEK_FRAME_SIZE;
+    }
+
     // Get the RC control channel inputs
-    for (int b = 3; b < SPEK_FRAME_SIZE; b += 2) {
+    for (int b = 3; b < spektrumRcDataSize; b += 2) {
         const uint8_t spekChannel = 0x0F & (spekFrame[b - 1] >> spek_chan_shift);
         if (spekChannel < rxRuntimeConfigPtr->channelCount && spekChannel < SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT) {
             if (rssi_channel == 0 || spekChannel != rssi_channel) {
@@ -121,23 +139,8 @@ static uint8_t spektrumFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
         }
     }
 
-#if defined(USE_SPEKTRUM_VTX_CONTROL) && defined(USE_VTX_COMMON)
-
-    // Get the VTX control bytes in a frame
-    uint32_t vtxControl = ((spekFrame[SPEKTRUM_VTX_CONTROL_1] << 24) |
-                           (spekFrame[SPEKTRUM_VTX_CONTROL_2] << 16) |
-                           (spekFrame[SPEKTRUM_VTX_CONTROL_3] <<  8) |
-                           (spekFrame[SPEKTRUM_VTX_CONTROL_4] <<  0) );
-
-    // Handle VTX control frame,
-    if ((vtxControl & SPEKTRUM_VTX_CONTROL_FRAME_MASK) == SPEKTRUM_VTX_CONTROL_FRAME) {
-      spektrumHandleVtxControl(vtxControl);
-    }
-
-#endif // USE_SPEKTRUM_VTX_CONTROL && VTX_COMMON
-
     /* only process if srxl enabled, some data in buffer AND servos in phase 0 */
-    if (srxlEnabled && telemetryBufLen && (spekFrame[2] & 0x80)) {
+    if (srxlEnabled && telemetryBufLen && (spekFrame[2] & 0x80) == 0) {
         dispatchAdd(&srxlTelemetryDispatch, SPEKTRUM_TELEMETRY_FRAME_DELAY);
     }
     return RX_FRAME_COMPLETE;
