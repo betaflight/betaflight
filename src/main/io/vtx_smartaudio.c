@@ -444,8 +444,6 @@ static void saReceiveFramer(uint8_t c)
 
 static void saSendFrame(uint8_t *buf, int len)
 {
-    serialWrite(smartAudioSerialPort, 0x00); // Generate 1st start bit
-
     for (int i = 0 ; i < len ; i++) {
         serialWrite(smartAudioSerialPort, buf[i]);
     }
