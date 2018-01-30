@@ -224,9 +224,11 @@ static void mspProcessPendingRequest(mspPort_t * mspPort)
             systemResetToBootloader();
             break;
 
+#ifdef USE_CLI
         case MSP_PENDING_CLI:
             cliEnter(mspPort->port);
             break;
+#endif
 
         default:
             break;
