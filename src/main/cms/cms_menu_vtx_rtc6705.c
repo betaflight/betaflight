@@ -41,15 +41,7 @@ static uint8_t cmsx_vtxBand;
 static uint8_t cmsx_vtxChannel;
 static uint8_t cmsx_vtxPower;
 
-static const char * const rtc6705BandNames[] = {
-    "BOSCAM A",
-    "BOSCAM B",
-    "BOSCAM E",
-    "FATSHARK",
-    "RACEBAND",
-};
-
-static OSD_TAB_t entryVtxBand =         {&cmsx_vtxBand, ARRAYLEN(rtc6705BandNames) - 1, &rtc6705BandNames[0]};
+static OSD_TAB_t entryVtxBand =         {&cmsx_vtxBand, VTX_RTC6705_BAND_COUNT - 1, &vtx58BandNames[1]};
 static OSD_UINT8_t entryVtxChannel =    {&cmsx_vtxChannel, 1, VTX_SETTINGS_CHANNEL_COUNT, 1};
 static OSD_TAB_t entryVtxPower =        {&cmsx_vtxPower, VTX_RTC6705_POWER_COUNT - 1 - VTX_RTC6705_MIN_POWER, &rtc6705PowerNames[VTX_RTC6705_MIN_POWER]};
 

@@ -70,6 +70,8 @@ static vtxDevice_t vtxRTC6705 = {
 };
 #endif
 
+static void vtxRTC6705SetBandAndChannel(uint8_t band, uint8_t channel);
+
 bool vtxRTC6705Init(void)
 {
     vtxCommonRegisterDevice(&vtxRTC6705);
@@ -80,7 +82,7 @@ bool vtxRTC6705Init(void)
 void vtxRTC6705Configure(void)
 {
     rtc6705SetRFPower(vtxRTC6705.powerIndex);
-    rtc6705SetBandAndChannel(vtxRTC6705.band - 1, vtxRTC6705.channel - 1);
+    vtxRTC6705SetBandAndChannel(vtxRTC6705.band, vtxRTC6705.channel);
 }
 
 bool vtxRTC6705CanUpdate(void)
@@ -124,16 +126,15 @@ bool vtxRTC6705IsReady(void)
     return true;
 }
 
-void vtxRTC6705SetBandAndChannel(uint8_t band, uint8_t channel)
+static void vtxRTC6705SetBandAndChannel(uint8_t band, uint8_t channel)
 {
     while (!vtxRTC6705CanUpdate());
 
-    if (band && channel) {
+    if (band >= 1 && band <= VTX_SETTINGS_BAND_COUNT && channel >= 1 && channel <= VTX_SETTINGS_CHANNEL_COUNT) {
         if (vtxRTC6705.powerIndex > 0) {
-            rtc6705SetBandAndChannel(band - 1, channel - 1);
-
             vtxRTC6705.band = band;
             vtxRTC6705.channel = channel;
+            rtc6705SetFrequency(vtx58frequencyTable[vtxRTC6705.band-1][ vtxRTC6705.channel-1]);
         }
     }
 }
