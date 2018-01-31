@@ -45,15 +45,17 @@ motorDmaOutput_t *getMotorDmaOutput(uint8_t index)
     return &dmaMotors[index];
 }
 
-uint8_t getTimerIndex(TIM_TypeDef *timer)
+uint8_t getTimerIndex(TIM_TypeDef *timer, bool *newTimer)
 {
     for (int i = 0; i < dmaMotorTimerCount; i++) {
         if (dmaMotorTimers[i].timer == timer) {
+            *newTimer = false;
             return i;
         }
     }
     dmaMotorTimers[dmaMotorTimerCount++].timer = timer;
-    return dmaMotorTimerCount-1;
+    *newTimer = true;
+    return dmaMotorTimerCount - 1;
 }
 
 void pwmWriteDshotInt(uint8_t index, uint16_t value)
@@ -144,8 +146,8 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     TIM_TypeDef *timer = timerHardware->tim;
     const IO_t motorIO = IOGetByTag(timerHardware->tag);
 
-    const uint8_t timerIndex = getTimerIndex(timer);
-    const bool configureTimer = (timerIndex == dmaMotorTimerCount-1);
+    bool configureTimer;
+    const uint8_t timerIndex = getTimerIndex(timer, &configureTimer);
 
     IOConfigGPIOAF(motorIO, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP), timerHardware->alternateFunction);
 
