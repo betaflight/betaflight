@@ -84,6 +84,9 @@
 #include "flight/pid.h"
 #include "flight/servos.h"
 
+#ifdef USE_ARM_STATE
+#include "io/arm_state.h"
+#endif
 
 // June 2013     V2.2-dev
 
@@ -253,6 +256,10 @@ void disarm(void)
 #endif
         BEEP_OFF;
         beeper(BEEPER_DISARMING);      // emit disarm tone
+
+#ifdef USE_ARM_STATE
+        armStateUpdate(false);
+#endif
     }
 }
 
@@ -310,6 +317,10 @@ void tryArm(void)
         }
 #else
         beeper(BEEPER_ARMING);
+#endif
+
+#ifdef USE_ARM_STATE
+        armStateUpdate(true);
 #endif
     } else {
         if (!isFirstArmingGyroCalibrationRunning()) {
