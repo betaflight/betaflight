@@ -450,6 +450,8 @@ static void saSendFrame(uint8_t *buf, int len)
         serialWrite(smartAudioSerialPort, buf[i]);
     }
 
+    serialWrite(smartAudioSerialPort, 0x00); // XXX Software serial case needs this (Need investigation for a reason)
+
     sa_lastTransmissionMs = millis();
     saStat.pktsent++;
 }
