@@ -126,6 +126,9 @@ static uint8_t rcSampleIndex = 0;
 #define BINDPLUG_PIN NONE
 #endif
 
+#define RSSI_SAMPLE_COUNT 16
+#define RSSI_MAX_VALUE 1023
+
 PG_REGISTER_WITH_RESET_FN(rxConfig_t, rxConfig, PG_RX_CONFIG, 1);
 void pgResetFn_rxConfig(rxConfig_t *rxConfig)
 {
@@ -449,6 +452,14 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
             rxIsInFailsafeMode = (frameStatus & RX_FRAME_FAILSAFE) != 0;
             rxSignalReceived = !rxIsInFailsafeMode;
             needRxSignalBefore = currentTimeUs + needRxSignalMaxDelayUs;
+
+            if (frameStatus & RX_FRAME_DROPPED) {
+            	// No (0%) signal
+            	setRssiUnfiltered(0, RSSI_SOURCE_NONE);
+            } else {
+            	// Valid (100%) signal
+            	setRssiUnfiltered(RSSI_MAX_VALUE, RSSI_SOURCE_NONE);
+            }
 	} else if (cmpTimeUs(currentTimeUs, rxNextUpdateAtUs) > 0) {
             rxDataProcessingRequired = true;
         }
