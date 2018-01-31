@@ -69,5 +69,7 @@ const char * const ownerNames[OWNER_TOTAL_COUNT] = {
     "CAMERA_CONTROL",
     "TIMUP",
     "RANGEFINDER",
-    "RX_SPI"
+    "RX_SPI",
+    "SBFC_SWITCH_PIN",
+    "SBFC_CONNECTION_STATE_PIN",
 };

@@ -149,6 +149,10 @@
 #include "build/build_config.h"
 #include "build/debug.h"
 
+#ifdef SPEEDYBEEF4
+#include "target/SPEEDYBEEF4/switch_control.h"
+#endif
+
 #ifdef TARGET_PREINIT
 void targetPreInit(void);
 #endif
@@ -748,6 +752,10 @@ void init(void)
 #ifdef USE_RCDEVICE
     rcdeviceInit();
 #endif // USE_RCDEVICE
+
+#ifdef SPEEDYBEEF4
+    sbfcSwitchControlInitialize();
+#endif
 
     // Latch active features AGAIN since some may be modified by init().
     latchActiveFeatures();
