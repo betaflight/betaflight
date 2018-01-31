@@ -1841,7 +1841,9 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_BEEPER_CONFIG:
         beeperOffClearAll();
         setBeeperOffMask(sbufReadU32(src));
-        beeperConfigMutable()->dshotBeaconTone = sbufReadU8(src);
+        if (sbufBytesRemaining(src) >= 1) {
+            beeperConfigMutable()->dshotBeaconTone = sbufReadU8(src);
+        }
         break;
 #endif
 
