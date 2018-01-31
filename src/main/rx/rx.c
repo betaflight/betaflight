@@ -73,7 +73,7 @@ static timeUs_t lastMspRssiUpdateUs = 0;
 
 #define MSP_RSSI_TIMEOUT_US 1500000   // 1.5 sec
 
-rssiSource_t rssiSource;
+rssiSource_e rssiSource;
 
 static bool rxDataProcessingRequired = false;
 static bool auxiliaryProcessingRequired = false;
@@ -652,7 +652,7 @@ void parseRcChannels(const char *input, rxConfig_t *rxConfig)
     }
 }
 
-void setRssiFiltered(uint16_t newRssi, rssiSource_t source)
+void setRssiFiltered(uint16_t newRssi, rssiSource_e source)
 {
     if (source != rssiSource) {
         return;
@@ -664,7 +664,7 @@ void setRssiFiltered(uint16_t newRssi, rssiSource_t source)
 #define RSSI_SAMPLE_COUNT 16
 #define RSSI_MAX_VALUE 1023
 
-void setRssiUnfiltered(uint16_t rssiValue, rssiSource_t source)
+void setRssiUnfiltered(uint16_t rssiValue, rssiSource_e source)
 {
     if (source != rssiSource) {
         return;
@@ -740,17 +740,14 @@ void updateRSSI(timeUs_t currentTimeUs)
     switch (rssiSource) {
     case RSSI_SOURCE_RX_CHANNEL:
         updateRSSIPWM();
-
         break;
     case RSSI_SOURCE_ADC:
         updateRSSIADC(currentTimeUs);
-
         break;
     case RSSI_SOURCE_MSP:
         if (cmpTimeUs(micros(), lastMspRssiUpdateUs) > MSP_RSSI_TIMEOUT_US) {
             rssi = 0;
         }
-
         break;
     default:
         break;
