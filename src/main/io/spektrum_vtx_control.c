@@ -43,7 +43,7 @@ const uint16_t SpektrumVtxfrequencyTable[SPEKTRUM_VTX_BAND_COUNT][SPEKTRUM_VTX_C
     };
 #else
 // Translation table, Spektrum bands to BF internal vtx_common bands
-const uint8_t spek2commonBand[]= {
+const uint8_t spek2commonBand[SPEKTRUM_VTX_BAND_COUNT]= {
     VTX_COMMON_BAND_FS,
     VTX_COMMON_BAND_RACE,
     VTX_COMMON_BAND_E,
@@ -56,7 +56,8 @@ const uint8_t spek2commonBand[]= {
 
 #ifdef USE_VTX_TRAMP
 // Tramp "---", 25, 200, 400. 600 mW
-const uint8_t vtxTrampPi[] = {         // Spektrum Spec    Tx menu  Tx sends   To VTX    Watt
+const uint8_t vtxTrampPi[SPEKTRUM_VTX_POWER_COUNT] = {
+                                       // Spektrum Spec    Tx menu  Tx sends   To VTX    Watt
     VTX_TRAMP_POWER_OFF,               //         Off      INHIBIT         0        0     -
     VTX_TRAMP_POWER_OFF,               //   1 -  14mW            -         -        -     -
     VTX_TRAMP_POWER_25,                //  15 -  25mW   15 -  25mW         2        1    25mW
@@ -70,7 +71,7 @@ const uint8_t vtxTrampPi[] = {         // Spektrum Spec    Tx menu  Tx sends   T
 
 #ifdef USE_VTX_RTC6705
 // RTC6705 "---", 25 or 200 mW
-const uint8_t vtxRTC6705Pi[] = {
+const uint8_t vtxRTC6705Pi[SPEKTRUM_VTX_POWER_COUNT] = {
     VTX_6705_POWER_OFF,                // Off
     VTX_6705_POWER_OFF,                //   1 -  14mW
     VTX_6705_POWER_25,                 //  15 -  25mW
@@ -84,7 +85,7 @@ const uint8_t vtxRTC6705Pi[] = {
 
 #ifdef USE_VTX_SMARTAUDIO
 // SmartAudio "---", 25, 200, 500. 800 mW
-const uint8_t vtxSaPi[] = {
+const uint8_t vtxSaPi[SPEKTRUM_VTX_POWER_COUNT] = {
     VTX_SA_POWER_OFF,                  // Off
     VTX_SA_POWER_OFF,                  //   1 -  14mW
     VTX_SA_POWER_25,                   //  15 -  25mW
@@ -128,6 +129,12 @@ uint8_t convertSpektrumVtxPowerIndex(uint8_t sPower)
     return devicePower;
 }
 
+#ifdef USE_SPEKTRUM_REGION_CODES
+// Just a global SpektrumRegion for now, To save VTX ctrl input to VTX tm output.
+// Would need a PG item to survive power cycle. Not really used so let it be as is.
+uint8_t SpektrumRegion = SPEKTRUM_VTX_REGION_NONE;
+#endif
+
 // Mark an inital invalid VTX ctrl frame to force first VTX settings cheange to actually come from Tx/Rx.
 static uint32_t vtxControl_ipc = ~(SPEKTRUM_VTX_CONTROL_FRAME);
 
@@ -153,6 +160,9 @@ void spektrumVtxControl(void)
         .power   = (vtxControl & SPEKTRUM_VTX_POWER_MASK)    >> SPEKTRUM_VTX_POWER_SHIFT,
         .band    = (vtxControl & SPEKTRUM_VTX_BAND_MASK)     >> SPEKTRUM_VTX_BAND_SHIFT,
         .channel = (vtxControl & SPEKTRUM_VTX_CHANNEL_MASK)  >> SPEKTRUM_VTX_CHANNEL_SHIFT,
+#ifdef USE_SPEKTRUM_REGION_CODES
+        .region  = (vtxControl & SPEKTRUM_VTX_REGION_MASK)   >> SPEKTRUM_VTX_REGION_SHIFT;
+#endif
     };
 
     const vtxSettingsConfig_t prevSettings = {
@@ -185,7 +195,7 @@ void spektrumVtxControl(void)
         }
 #endif
 
-        // Seems to be no unified internal VTX API std for popwer levels/indexes, VTX device brand specific.
+        // Seems to be no unified internal VTX API std for power levels/indexes, VTX device brand specific.
         uint8_t power = convertSpektrumVtxPowerIndex(vtx.power);
         if (prevSettings.power != power) {
             newSettings.power   = power;
@@ -206,6 +216,11 @@ void spektrumVtxControl(void)
         vtxSettingsConfigMutable()->freq    = newSettings.freq;
         saveConfigAndNotify();
     }
+#ifdef USE_SPEKTRUM_REGION_CODES
+    // Save region code
+    SpektrumRegion = vtx.region;
+#endif
+
 }
 
-#endif // USE_SPEKTRUM_VTX_CONTROL && VTX_COMMON
+#endif // USE_SPEKTRUM_VTX_CONTROL && USE_VTX_COMMON

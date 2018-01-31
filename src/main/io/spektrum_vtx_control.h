@@ -59,6 +59,7 @@ Channels vs Band according to spektrum spec.
 #define SPEKTRUM_VTX_BAND_E       2
 #define SPEKTRUM_VTX_BAND_B       3
 #define SPEKTRUM_VTX_BAND_A       4
+#define SPEKTRUM_VTX_BAND_COUNT   5
 
 // Spektrum Max power index
 #define SPEKTRUM_VTX_POWER_OFF    0
@@ -69,9 +70,11 @@ Channels vs Band according to spektrum spec.
 #define SPEKTRUM_VTX_POWER_600    5
 #define SPEKTRUM_VTX_POWER_MAXIT  6
 #define SPEKTRUM_VTX_POWER_MAN    7
+#define SPEKTRUM_VTX_POWER_COUNT  8
 
 #define SPEKTRUM_VTX_REGION_USA   0
 #define SPEKTRUM_VTX_REGION_EU    1
+#define SPEKTRUM_VTX_REGION_NONE  0xff
 
 #define SPEKTRUM_VTX_PITMODE_OFF  0 // Power on, race
 #define SPEKTRUM_VTX_PITMODE_ON   1 // Power off, pit
@@ -83,8 +86,16 @@ typedef struct
     uint8_t power;
     uint8_t region;
     uint8_t pitMode;
+    uint16_t powerValue;
 } spektrumVtx_t;
 
+
+extern const uint16_t SpektrumVtxfrequencyTable[SPEKTRUM_VTX_BAND_COUNT][SPEKTRUM_VTX_CHAN_COUNT];
+extern const uint8_t spek2commonBand[SPEKTRUM_VTX_BAND_COUNT];
+extern const uint8_t vtxTrampPi[SPEKTRUM_VTX_POWER_COUNT];
+extern const uint8_t vtxRTC6705Pi[SPEKTRUM_VTX_POWER_COUNT];
+extern const uint8_t vtxSaPi[SPEKTRUM_VTX_POWER_COUNT];
+extern uint8_t SpektrumRegion;
 
 void spektrumHandleVtxControl(uint32_t vtxControl);
 void spektrumVtxControl(void);
