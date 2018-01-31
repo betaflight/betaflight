@@ -23,6 +23,7 @@
 #undef USE_SERIALRX_JETIEXBUS
 #undef USE_TELEMETRY_MAVLINK
 #undef USE_TELEMETRY_LTM
+#undef USE_RTC_TIME
 
 
 #define TARGET_BOARD_IDENTIFIER "OMNI" // https://en.wikipedia.org/wiki/Omnibus
