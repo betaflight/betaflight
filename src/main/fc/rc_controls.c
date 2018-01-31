@@ -195,6 +195,14 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
             else {
                 beeper(BEEPER_DISARM_REPEAT);     // sound tone while stick held
                 repeatAfter(STICK_AUTOREPEAT_MS); // disarm tone will repeat
+
+#ifdef USE_RUNAWAY_TAKEOFF
+                // Unset the ARMING_DISABLED_RUNAWAY_TAKEOFF arming disabled flag that might have been set
+                // by a runaway pidSum detection auto-disarm.
+                // This forces the pilot to explicitly perform a disarm sequence (even though we're implicitly disarmed)
+                // before they're able to rearm
+                unsetArmingDisabled(ARMING_DISABLED_RUNAWAY_TAKEOFF);
+#endif
             }
         }
         return;
