@@ -157,6 +157,10 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
         return;
     }
 
+    // Note that a timer and an associated DMA are initialized more than once.
+    // To fix it, getTimerIndex must be expanded to return if a new timer has been requested.
+    // However, since the initialization is idempotent, it is left as is in a favor of flash space (for now).
+
     motor->timer = &dmaMotorTimers[getTimerIndex(timer)];
 
     /* Set the common dma handle parameters to be configured */

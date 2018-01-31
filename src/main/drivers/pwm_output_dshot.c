@@ -144,6 +144,10 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     TIM_TypeDef *timer = timerHardware->tim;
     const IO_t motorIO = IOGetByTag(timerHardware->tag);
 
+    // Boolean configureTimer is always true when different channels of the same timer are processed in sequence,
+    // causing the timer and the associated DMA initialized more than once.
+    // To fix this, getTimerIndex must be expanded to return if a new timer has been requested.
+    // However, since the initialization is idempotent, it is left as is in a favor of flash space (for now).
     const uint8_t timerIndex = getTimerIndex(timer);
     const bool configureTimer = (timerIndex == dmaMotorTimerCount-1);
 
