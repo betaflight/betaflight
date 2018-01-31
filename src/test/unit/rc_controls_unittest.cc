@@ -44,6 +44,7 @@ extern "C" {
 
     #include "flight/pid.h"
 
+    #include "fc/config.h"
     #include "fc/controlrate_profile.h"
     #include "fc/rc_modes.h"
     #include "fc/rc_adjustments.h"
@@ -720,6 +721,7 @@ uint8_t stateFlags = 0;
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 rxRuntimeConfig_t rxRuntimeConfig;
 PG_REGISTER(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
+PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 2);
 void resetArmingDisabled(void) {}
 timeDelta_t getTaskDeltaTime(cfTaskId_e) { return 20000; }
 }
