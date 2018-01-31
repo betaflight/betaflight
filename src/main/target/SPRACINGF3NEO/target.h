@@ -95,10 +95,6 @@
 #define USE_VTX_RTC6705
 #define VTX_RTC6705_OPTIONAL    // VTX/OSD board is OPTIONAL
 
-// Disabled due to flash size
-#undef USE_VTX_SMARTAUDIO
-#undef USE_VTX_TRAMP
-
 #define RTC6705_CS_PIN          PF4
 #define RTC6705_SPI_INSTANCE    SPI3
 #define RTC6705_POWER_PIN       PC3
