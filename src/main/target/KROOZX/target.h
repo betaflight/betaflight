@@ -70,7 +70,6 @@
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Stream5
 #define SDCARD_DMA_CHANNEL                  0
 
-#define USE_OSD
 #ifdef USE_MSP_DISPLAYPORT
 #undef USE_MSP_DISPLAYPORT
 #endif

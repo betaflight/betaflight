@@ -126,7 +126,6 @@
 #define SPI3_MOSI_PIN           PC12
 
 // OSD
-#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI1
 #define MAX7456_SPI_CS_PIN      PA14

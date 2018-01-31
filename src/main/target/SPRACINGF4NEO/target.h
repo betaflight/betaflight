@@ -143,8 +143,6 @@
 #define USE_RTC6705_CLK_HACK
 #define RTC6705_CLK_PIN                     SPI3_SCK_PIN
 
-#define USE_OSD
-
 // Bus Switched Device, Device A.
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE                SPI3

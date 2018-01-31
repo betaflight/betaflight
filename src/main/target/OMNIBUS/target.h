@@ -105,8 +105,6 @@
 
 // OSD define info:
 //   feature name (includes source) -> MAX_OSD, used in target.mk
-// include the osd code
-#define USE_OSD
 
 // include the max7456 driver
 #define USE_MAX7456

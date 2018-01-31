@@ -76,7 +76,6 @@
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN  PB9  // (HARDARE=0)
 #define USE_SPI
-#define USE_OSD
 
 // include the max7456 driver
 #define USE_MAX7456

@@ -23,6 +23,7 @@
 #else
     #define TARGET_BOARD_IDENTIFIER "FYF3"
 //    #define USBD_PRODUCT_STRING     "FuryF3"
+    #undef USE_OSD
 #endif
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
@@ -79,7 +80,6 @@
 #define SPI2_MOSI_PIN           PB15
 
 #ifdef FURYF3OSD
-    #define USE_OSD
     // include the max7456 driver
     #define USE_MAX7456
     #define MAX7456_SPI_INSTANCE    SPI1
