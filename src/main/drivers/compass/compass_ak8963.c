@@ -382,7 +382,6 @@ void ak8963BusInit(const busDevice_t *busdev)
 #endif
 
 #if defined(USE_MAG_AK8963) && (defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250))
-#define TASK_PERIOD_HZ(hz) (1000000 / (hz))
     case BUSTYPE_MPU_SLAVE:
         rescheduleTask(TASK_COMPASS, TASK_PERIOD_HZ(40));
 

@@ -669,4 +669,5 @@ extern "C" {
     void dashboardEnablePageCycling(void) {}
     void dashboardDisablePageCycling(void) {}
     bool imuQuaternionHeadfreeOffsetSet(void) { return true; }
+    void rescheduleTask(cfTaskId_e, uint32_t) {}
 }
