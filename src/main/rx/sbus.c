@@ -97,7 +97,6 @@ typedef union sbusFrame_u {
 typedef struct sbusFrameData_s {
     sbusFrame_t frame;
     uint32_t startAtUs;
-    uint16_t stateFlags;
     uint8_t position;
     bool done;
 } sbusFrameData_t;
@@ -142,19 +141,6 @@ static uint8_t sbusFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
     }
     sbusFrameData->done = false;
 
-    DEBUG_SET(DEBUG_SBUS, DEBUG_SBUS_FRAME_FLAGS, sbusFrameData->frame.frame.channels.flags);
-
-    if (sbusFrameData->frame.frame.channels.flags & SBUS_FLAG_SIGNAL_LOSS) {
-        sbusFrameData->stateFlags |= SBUS_STATE_SIGNALLOSS;
-        DEBUG_SET(DEBUG_SBUS, DEBUG_SBUS_STATE_FLAGS, sbusFrameData->stateFlags);
-    }
-    if (sbusFrameData->frame.frame.channels.flags & SBUS_FLAG_FAILSAFE_ACTIVE) {
-        sbusFrameData->stateFlags |= SBUS_STATE_FAILSAFE;
-        DEBUG_SET(DEBUG_SBUS, DEBUG_SBUS_STATE_FLAGS, sbusFrameData->stateFlags);
-    }
-
-    DEBUG_SET(DEBUG_SBUS, DEBUG_SBUS_STATE_FLAGS, sbusFrameData->stateFlags);
-
     return sbusChannelsDecode(rxRuntimeConfig, &sbusFrameData->frame.frame.channels);
 }
 
@@ -191,6 +177,10 @@ bool sbusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
         portShared ? MODE_RXTX : MODE_RX,
         SBUS_PORT_OPTIONS | (rxConfig->serialrx_inverted ? 0 : SERIAL_INVERTED) | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0)
         );
+
+    if (rssiSource == RSSI_SOURCE_NONE) {
+        rssiSource = RSSI_SOURCE_RX_PROTOCOL;
+    }
 
 #ifdef USE_TELEMETRY
     if (portShared) {

@@ -452,10 +452,10 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
 
             if (frameStatus & RX_FRAME_DROPPED) {
             	// No (0%) signal
-            	setRssiUnfiltered(0, RSSI_SOURCE_NONE);
+            	setRssiUnfiltered(0, RSSI_SOURCE_RX_PROTOCOL);
             } else {
             	// Valid (100%) signal
-            	setRssiUnfiltered(1024, RSSI_SOURCE_NONE);
+            	setRssiUnfiltered(1024, RSSI_SOURCE_RX_PROTOCOL);
             }
 	} else if (cmpTimeUs(currentTimeUs, rxNextUpdateAtUs) > 0) {
             rxDataProcessingRequired = true;
