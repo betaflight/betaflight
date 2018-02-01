@@ -386,7 +386,7 @@ void initEscEndpoints(void)
     default:
         if (feature(FEATURE_3D)) {
             disarmMotorOutput = flight3DConfig()->neutral3d;
-            motorOutputLow = PWM_RANGE_MIN;
+            motorOutputLow = motorConfig()->minthrottle;
         } else {
             disarmMotorOutput = motorConfig()->mincommand;
             motorOutputLow = motorConfig()->minthrottle;
