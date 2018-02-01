@@ -35,10 +35,7 @@ extern "C" {
 
     boxBitmask_t rcModeActivationMask;
 
-    void rxResetFlightChannelStatus(void);
-    bool rxHaveValidFlightChannels(void);
     bool isPulseValid(uint16_t pulseDuration);
-    void rxUpdateFlightChannelStatus(uint8_t channel, uint16_t pulseDuration);
 
     PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
         .enabledFeatures = 0
@@ -57,7 +54,8 @@ typedef struct testData_s {
 
 static testData_t testData;
 
-TEST(RxTest, TestValidFlightChannelsLowArm)
+#if 0 //!! valid pulse handling has changed so these test now test removed functions
+TEST(RxTest, TestValidFlightChannels)
 {
     // given
     memset(&testData, 0, sizeof(testData));
@@ -189,7 +187,7 @@ TEST(RxTest, TestInvalidFlightChannels)
         EXPECT_FALSE(rxHaveValidFlightChannels());
     }
 }
-
+#endif
 
 // STUBS
 
