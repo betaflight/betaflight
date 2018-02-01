@@ -139,7 +139,7 @@ typedef struct rxConfig_s {
     uint8_t rcInterpolationChannels;
     uint8_t rcInterpolationInterval;
     uint8_t fpvCamAngleDegrees;             // Camera angle to be scaled into rc commands
-    uint16_t airModeActivateThreshold;      // Throttle setpoint where airmode gets activated
+    uint8_t airModeActivateThreshold;       // Throttle setpoint percent where airmode gets activated
 
     uint16_t rx_min_usec;
     uint16_t rx_max_usec;

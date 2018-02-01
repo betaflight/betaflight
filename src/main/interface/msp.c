@@ -1013,7 +1013,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, rxConfig()->rx_max_usec);
         sbufWriteU8(dst, rxConfig()->rcInterpolation);
         sbufWriteU8(dst, rxConfig()->rcInterpolationInterval);
-        sbufWriteU16(dst, rxConfig()->airModeActivateThreshold);
+        sbufWriteU16(dst, (rxConfig()->airModeActivateThreshold * 10) + 1000);
         sbufWriteU8(dst, rxConfig()->rx_spi_protocol);
         sbufWriteU32(dst, rxConfig()->rx_spi_id);
         sbufWriteU8(dst, rxConfig()->rx_spi_rf_channel_count);
@@ -1872,7 +1872,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         if (sbufBytesRemaining(src) >= 4) {
             rxConfigMutable()->rcInterpolation = sbufReadU8(src);
             rxConfigMutable()->rcInterpolationInterval = sbufReadU8(src);
-            rxConfigMutable()->airModeActivateThreshold = sbufReadU16(src);
+            rxConfigMutable()->airModeActivateThreshold = ((sbufReadU16(src) - 1000) / 10);
         }
         if (sbufBytesRemaining(src) >= 6) {
             rxConfigMutable()->rx_spi_protocol = sbufReadU8(src);

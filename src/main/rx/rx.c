@@ -150,7 +150,7 @@ void pgResetFn_rxConfig(rxConfig_t *rxConfig)
         .rcInterpolationChannels = 0,
         .rcInterpolationInterval = 19,
         .fpvCamAngleDegrees = 0,
-        .airModeActivateThreshold = 1350,
+        .airModeActivateThreshold = 32,
         .max_aux_channel = DEFAULT_AUX_CHANNEL_COUNT
     );
 

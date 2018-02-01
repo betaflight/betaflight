@@ -97,8 +97,6 @@ enum {
 
 #define GYRO_WATCHDOG_DELAY 80 //  delay for gyro sync
 
-#define AIRMODE_THOTTLE_THRESHOLD 1350 // Make configurable in the future. ~35% throttle should be fine
-
 #ifdef USE_RUNAWAY_TAKEOFF
 #define RUNAWAY_TAKEOFF_DEACTIVATE_STICK_PERCENT 15   // 15% - minimum stick deflection during deactivation phase
 #define RUNAWAY_TAKEOFF_DEACTIVATE_PIDSUM_LIMIT  100  // 10.0% - pidSum limit during deactivation phase
@@ -446,6 +444,7 @@ bool areSticksActive(uint8_t stickPercentLimit)
     }
     return false;
 }
+#endif
 
 
 // calculate the throttle stick percent - integer math is good enough here.
@@ -470,7 +469,7 @@ uint8_t calculateThrottlePercent(void)
     }
     return ret;
 }
-#endif
+
 
 /*
  * processRx called from taskUpdateRxMain
@@ -498,9 +497,10 @@ bool processRx(timeUs_t currentTimeUs)
     failsafeUpdateState();
 
     const throttleStatus_e throttleStatus = calculateThrottleStatus();
+    const uint8_t throttlePercent = calculateThrottlePercent();
 
     if (isAirmodeActive() && ARMING_FLAG(ARMED)) {
-        if (rcData[THROTTLE] >= rxConfig()->airModeActivateThreshold) {
+        if (throttlePercent >= rxConfig()->airModeActivateThreshold) {
             airmodeIsActivated = true; // Prevent Iterm from being reset
         }
     } else {
@@ -538,7 +538,7 @@ bool processRx(timeUs_t currentTimeUs)
         //   - pidSum on all axis is less then runaway_takeoff_deactivate_pidlimit
         bool inStableFlight = false;
         if (!feature(FEATURE_MOTOR_STOP) || isAirmodeActive() || (throttleStatus != THROTTLE_LOW)) { // are motors running?
-            if ((calculateThrottlePercent() >= pidConfig()->runaway_takeoff_deactivate_throttle)
+            if ((throttlePercent >= pidConfig()->runaway_takeoff_deactivate_throttle)
                 && areSticksActive(RUNAWAY_TAKEOFF_DEACTIVATE_STICK_PERCENT)
                 && (fabsf(axisPIDSum[FD_PITCH]) < RUNAWAY_TAKEOFF_DEACTIVATE_PIDSUM_LIMIT)
                 && (fabsf(axisPIDSum[FD_ROLL]) < RUNAWAY_TAKEOFF_DEACTIVATE_PIDSUM_LIMIT)
