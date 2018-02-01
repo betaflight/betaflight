@@ -20,10 +20,6 @@
 
 #define TARGET_BOARD_IDENTIFIER "BFF3"
 
-// Removing some features to make the firmware fit the flash space
-#undef USE_TELEMETRY_JETIEXBUS
-#undef USE_TELEMETRY_LTM
-
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
@@ -53,8 +49,6 @@
 #define USE_ESC_SENSOR
 #define REMAP_TIM16_DMA
 #define REMAP_TIM17_DMA
-
-#undef USE_TELEMETRY_IBUS
 
 #define USE_VCP
 #define USE_UART1

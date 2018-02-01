@@ -38,11 +38,6 @@
 
 #endif // SPRACINGF3MQ
 
-// Space reduction measures to make the firmware fit into flash:
-#undef USE_TELEMETRY_JETIEXBUS
-#undef USE_SERIALRX_JETIEXBUS
-#undef USE_TELEMETRY_MAVLINK
-
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
