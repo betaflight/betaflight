@@ -267,14 +267,15 @@ bool srxlFrameText(sbuf_t *dst, timeUs_t currentTimeUs)
 
 static uint8_t vtxDeviceType;
 
-void collectVtxTmData(spektrumVtx_t * vtx)
+static void collectVtxTmData(spektrumVtx_t * vtx)
 {
-    vtxDeviceType = vtxCommonGetDeviceType();
+    const vtxDevice_t *vtxDevice = vtxCommonDevice();
+    vtxDeviceType = vtxCommonGetDeviceType(vtxDevice);
 
     // Collect all data from VTX, if VTX is ready
-    if ( !(vtxCommonGetBandAndChannel(&(vtx->band), &(vtx->channel)) &&
-           vtxCommonGetPitMode(&(vtx->pitMode)) &&
-           vtxCommonGetPowerIndex(&(vtx->power))) )
+    if (vtxDevice == NULL || !(vtxCommonGetBandAndChannel(vtxDevice, &vtx->band, &vtx->channel) &&
+           vtxCommonGetPitMode(vtxDevice, &vtx->pitMode) &&
+           vtxCommonGetPowerIndex(vtxDevice, &vtx->power)) )
         {
             vtx->band    = 0;
             vtx->channel = 0;
@@ -291,7 +292,7 @@ void collectVtxTmData(spektrumVtx_t * vtx)
 }
 
 // Reverse lookup, device power index to Spektrum power range index.
-void convertVtxPower(spektrumVtx_t * vtx)
+static void convertVtxPower(spektrumVtx_t * vtx)
     {
         uint8_t const * powerIndexTable = NULL;
 
@@ -333,7 +334,7 @@ void convertVtxPower(spektrumVtx_t * vtx)
         }
     }
 
-void convertVtxTmData(spektrumVtx_t * vtx)
+static void convertVtxTmData(spektrumVtx_t * vtx)
 {
     // Convert from internal band indexes to Spektrum indexes
     for (int i = 0; i < SPEKTRUM_VTX_BAND_COUNT; i++) {
@@ -368,7 +369,7 @@ typedef struct
 #define STRU_TELE_VTX_RESERVE_COUNT 7
 #define VTX_KEEPALIVE_TIME_OUT 2000000 // uS
 
-bool srxlFrameVTX(sbuf_t *dst, timeUs_t currentTimeUs)
+static bool srxlFrameVTX(sbuf_t *dst, timeUs_t currentTimeUs)
 {
     static timeUs_t lastTimeSentVtx = 0;
     static spektrumVtx_t vtxSent;

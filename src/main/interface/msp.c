@@ -1213,11 +1213,11 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 #if defined(USE_VTX_COMMON)
     case MSP_VTX_CONFIG:
         {
-            uint8_t deviceType = vtxCommonGetDeviceType();
-            if (deviceType != VTXDEV_UNKNOWN) {
+            const vtxDevice_t *vtxDevice = vtxCommonDevice();
+            if (vtxDevice) {
                 uint8_t pitmode=0;
-                vtxCommonGetPitMode(&pitmode);
-                sbufWriteU8(dst, deviceType);
+                vtxCommonGetPitMode(vtxDevice, &pitmode);
+                sbufWriteU8(dst, vtxCommonGetDeviceType(vtxDevice));
                 sbufWriteU8(dst, vtxSettingsConfig()->band);
                 sbufWriteU8(dst, vtxSettingsConfig()->channel);
                 sbufWriteU8(dst, vtxSettingsConfig()->power);
@@ -1730,8 +1730,9 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #ifdef USE_VTX_COMMON
     case MSP_SET_VTX_CONFIG:
         {
-            if (vtxCommonDeviceRegistered()) {
-                if (vtxCommonGetDeviceType() != VTXDEV_UNKNOWN) {
+            vtxDevice_t *vtxDevice = vtxCommonDevice();
+            if (vtxDevice) {
+                if (vtxCommonGetDeviceType(vtxDevice) != VTXDEV_UNKNOWN) {
                     uint16_t newFrequency = sbufReadU16(src);
                     if (newFrequency <= VTXCOMMON_MSP_BANDCHAN_CHKVAL) {  //value is band and channel
                         const uint8_t newBand = (newFrequency / 8) + 1;
@@ -1749,9 +1750,9 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                         // Delegate pitmode to vtx directly
                         const uint8_t newPitmode = sbufReadU8(src);
                         uint8_t currentPitmode = 0;
-                        vtxCommonGetPitMode(&currentPitmode);
+                        vtxCommonGetPitMode(vtxDevice, &currentPitmode);
                         if (currentPitmode != newPitmode) {
-                            vtxCommonSetPitMode(newPitmode);
+                            vtxCommonSetPitMode(vtxDevice, newPitmode);
                         }
                     }
                 }
