@@ -429,8 +429,13 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
     const float deltaT = (currentTimeUs - previousTimeUs) * 0.000001f;
     previousTimeUs = currentTimeUs;
 
-    // Dynamic ki component to gradually scale back integration when above windup point
-    const float dynKi = MIN((1.0f - motorMixRange) * ITermWindupPointInv, 1.0f);
+    // Dynamic i component,
+    // gradually scale back integration when above windup point,
+    // use dT (not deltaT) for ITerm calculation to avoid wind-up caused by jitter
+    const float dynCi = MIN((1.0f - motorMixRange) * ITermWindupPointInv, 1.0f) * dT * itermAccelerator;
+
+    // Dynamic d component, enable 2-DOF PID controller only for rate mode
+    const float dynCd = flightModeFlags ? 0.0f : dtermSetpointWeight;
 
     // ----------PID controller----------
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
@@ -496,8 +501,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
 
         // -----calculate I component
         const float ITerm = axisPID_I[axis];
-        // use dT (not deltaT) for ITerm calculation to avoid wind-up caused by jitter
-        const float ITermNew = constrainf(ITerm + Ki[axis] * errorRate * dT * dynKi * itermAccelerator, -itermLimit, itermLimit);
+        const float ITermNew = constrainf(ITerm + Ki[axis] * errorRate * dynCi, -itermLimit, itermLimit);
         const bool outputSaturated = mixerIsOutputSaturated(axis, errorRate);
         if (outputSaturated == false || ABS(ITermNew) < ABS(ITerm)) {
             // Only increase ITerm if output is not saturated
@@ -510,11 +514,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             float gyroRateFiltered = dtermNotchFilterApplyFn(dtermFilterNotch[axis], gyroRate);
             gyroRateFiltered = dtermLpfApplyFn(dtermFilterLpf[axis], gyroRateFiltered);
 
-            float dynC = 0;
-            if ( (pidProfile->dtermSetpointWeight > 0) && (!flightModeFlags) ) {
-                dynC = dtermSetpointWeight * MIN(getRcDeflectionAbs(axis) * relaxFactor, 1.0f);
-            }
-            const float rD = dynC * currentPidSetpoint - gyroRateFiltered;    // cr - y
+            const float rD = dynCd * MIN(getRcDeflectionAbs(axis) * relaxFactor, 1.0f) * currentPidSetpoint - gyroRateFiltered;    // cr - y
             // Divide rate change by deltaT to get differential (ie dr/dt)
             float delta = (rD - previousRateError[axis]) / deltaT;
 
