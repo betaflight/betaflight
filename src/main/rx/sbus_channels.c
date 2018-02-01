@@ -38,7 +38,6 @@
 
 uint8_t sbusChannelsDecode(rxRuntimeConfig_t *rxRuntimeConfig, const sbusChannels_t *channels)
 {
-	static int drop_count = 0;
     uint16_t *sbusChannelData = rxRuntimeConfig->channelData;
     sbusChannelData[0] = channels->chan0;
     sbusChannelData[1] = channels->chan1;
@@ -77,12 +76,7 @@ uint8_t sbusChannelsDecode(rxRuntimeConfig_t *rxRuntimeConfig, const sbusChannel
 
     if (channels->flags & SBUS_FLAG_SIGNAL_LOSS) {
     	// The received data is a repeat of the last valid data so can be considered complete.
-    	drop_count++;
     	return RX_FRAME_COMPLETE | RX_FRAME_DROPPED;
-    }
-    else
-    {
-    	drop_count = 0;
     }
 
     return RX_FRAME_COMPLETE;
