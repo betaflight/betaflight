@@ -215,6 +215,7 @@ void fcTasksInit(void)
 {
     schedulerInit();
     setTaskEnabled(TASK_SERIAL, true);
+    rescheduleTask(TASK_SERIAL, TASK_PERIOD_HZ(serialConfig()->serial_update_rate_hz));
 
     const bool useBatteryVoltage = batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE;
     setTaskEnabled(TASK_BATTERY_VOLTAGE, useBatteryVoltage);
@@ -246,12 +247,8 @@ void fcTasksInit(void)
     if (sensors(SENSOR_ACC)) {
         setTaskEnabled(TASK_ACCEL, true);
         rescheduleTask(TASK_ACCEL, acc.accSamplingInterval);
+        setTaskEnabled(TASK_ATTITUDE, true);
     }
-
-    setTaskEnabled(TASK_ATTITUDE, sensors(SENSOR_ACC));
-
-    rescheduleTask(TASK_SERIAL, TASK_PERIOD_HZ(serialConfig()->serial_update_rate_hz));
-
 
     setTaskEnabled(TASK_RX, true);
 
@@ -279,8 +276,8 @@ void fcTasksInit(void)
     setTaskEnabled(TASK_DASHBOARD, feature(FEATURE_DASHBOARD));
 #endif
 #ifdef USE_TELEMETRY
-    setTaskEnabled(TASK_TELEMETRY, feature(FEATURE_TELEMETRY));
     if (feature(FEATURE_TELEMETRY)) {
+        setTaskEnabled(TASK_TELEMETRY, true);
         if (rxConfig()->serialrx_provider == SERIALRX_JETIEXBUS) {
             // Reschedule telemetry to 500hz for Jeti Exbus
             rescheduleTask(TASK_TELEMETRY, TASK_PERIOD_HZ(500));
@@ -408,7 +405,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     },
 
     [TASK_ACCEL] = {
-        .taskName = "ACCEL",
+        .taskName = "ACC",
         .taskFunc = taskUpdateAccelerometer,
         .desiredPeriod = TASK_PERIOD_HZ(1000),      // 1000Hz, every 1ms
         .staticPriority = TASK_PRIORITY_MEDIUM,
