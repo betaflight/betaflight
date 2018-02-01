@@ -456,7 +456,7 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
             	setRssiUnfiltered(0, RSSI_SOURCE_RX_PROTOCOL);
             } else {
             	// Valid (100%) signal
-            	setRssiUnfiltered(1024, RSSI_SOURCE_RX_PROTOCOL);
+            	setRssiUnfiltered(RSSI_MAX_VALUE, RSSI_SOURCE_RX_PROTOCOL);
             }
 	} else if (cmpTimeUs(currentTimeUs, rxNextUpdateAtUs) > 0) {
             rxDataProcessingRequired = true;
