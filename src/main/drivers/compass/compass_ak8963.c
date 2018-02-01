@@ -330,9 +330,9 @@ static bool ak8963Read(magDev_t *mag, int16_t *magData)
         return false;
     }
 
-    magData[X] = -parseMag(buf + 0, mag->magGain[X]);
-    magData[Y] = -parseMag(buf + 2, mag->magGain[Y]);
-    magData[Z] = -parseMag(buf + 4, mag->magGain[Z]);
+    magData[X] = parseMag(buf + 0, mag->magGain[X]);
+    magData[Y] = parseMag(buf + 2, mag->magGain[Y]);
+    magData[Z] = parseMag(buf + 4, mag->magGain[Z]);
 
     return true;
 }
