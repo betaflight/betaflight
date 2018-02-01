@@ -21,15 +21,13 @@
 #undef USE_COPY_PROFILE_CMS_MENU
 #undef USE_TELEMETRY_LTM
 #undef USE_RTC_TIME
+#undef USE_GYRO_OVERFLOW_CHECK
 
+#undef USE_DSHOT_DMAR           // OMNIBUS (F3) does not benefit from burst Dshot
 
 #define TARGET_BOARD_IDENTIFIER "OMNI" // https://en.wikipedia.org/wiki/Omnibus
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
-
-// Can be configured for DMAR, but keep it legacy DSHOT for backward compatibility of
-// Motor x 1 + Servo x 3 on PWM1~4 use case.
-#define USE_DSHOT_DMA
 
 #define LED0_PIN                PB3
 
@@ -162,9 +160,10 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 #define DEFAULT_FEATURES        (FEATURE_OSD)
 
-#define USE_BUTTONS
-#define BUTTON_A_PIN            PB1
-#define BUTTON_B_PIN            PB0
+// Disable rarely used buttons in favor of flash space
+//#define USE_BUTTONS
+//#define BUTTON_A_PIN            PB1
+//#define BUTTON_B_PIN            PB0
 
 //#define AVOID_UART3_FOR_PWM_PPM // Disable this for using UART3
 
