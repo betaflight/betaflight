@@ -143,6 +143,7 @@ void pgResetFn_rxConfig(rxConfig_t *rxConfig)
         .maxcheck = 1900,
         .rx_min_usec = RX_MIN_USEC,          // any of first 4 channels below this value will trigger rx loss detection
         .rx_max_usec = RX_MAX_USEC,         // any of first 4 channels above this value will trigger rx loss detection
+		.rssi_from_rx_protocol = 1,
         .rssi_channel = 0,
         .rssi_scale = RSSI_SCALE_DEFAULT,
         .rssi_invert = 0,
@@ -670,7 +671,6 @@ void setRssiFiltered(uint16_t newRssi, rssiSource_e source)
 }
 
 #define RSSI_SAMPLE_COUNT 16
-#define RSSI_MAX_VALUE 1023
 
 void setRssiUnfiltered(uint16_t rssiValue, rssiSource_e source)
 {
