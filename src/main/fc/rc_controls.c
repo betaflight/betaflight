@@ -79,11 +79,10 @@ PG_RESET_TEMPLATE(rcControlsConfig_t, rcControlsConfig,
     .yaw_control_reversed = false,
 );
 
-PG_REGISTER_WITH_RESET_TEMPLATE(armingConfig_t, armingConfig, PG_ARMING_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(armingConfig_t, armingConfig, PG_ARMING_CONFIG, 1);
 
 PG_RESET_TEMPLATE(armingConfig_t, armingConfig,
     .gyro_cal_on_first_arm = 0,  // TODO - Cleanup retarded arm support
-    .disarm_kill_switch = 1,
     .auto_disarm_delay = 5
 );
 
@@ -129,7 +128,7 @@ throttleStatus_e calculateThrottleStatus(void)
     rcDelayMs -= (t); \
     doNotRepeat = false; \
 }
-void processRcStickPositions(throttleStatus_e throttleStatus)
+void processRcStickPositions()
 {
     // time the sticks are maintained
     static int16_t rcDelayMs;
@@ -178,11 +177,7 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
             if (ARMING_FLAG(ARMED) && rxIsReceivingSignal() && !failsafeIsActive()  ) {
                 rcDisarmTicks++;
                 if (rcDisarmTicks > 3) {
-                    if (armingConfig()->disarm_kill_switch) {
-                        disarm();
-                    } else if (throttleStatus == THROTTLE_LOW) {
-                        disarm();
-                    }
+                    disarm();
                 }
             }
         }
