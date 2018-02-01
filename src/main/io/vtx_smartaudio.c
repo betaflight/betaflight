@@ -26,34 +26,24 @@
 
 #if defined(USE_VTX_SMARTAUDIO) && defined(USE_VTX_CONTROL)
 
-#include "build/build_config.h"
 #include "build/debug.h"
 
 #include "cms/cms.h"
-#include "cms/cms_types.h"
 #include "cms/cms_menu_vtx_smartaudio.h"
 
 #include "common/maths.h"
 #include "common/printf.h"
 #include "common/utils.h"
 
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
-
-#include "drivers/serial.h"
 #include "drivers/time.h"
 #include "drivers/vtx_common.h"
 
-#include "fc/rc_controls.h"
-#include "fc/runtime_config.h"
-
-#include "flight/pid.h"
-
 #include "io/serial.h"
-#include "io/vtx_control.h"
 #include "io/vtx.h"
+#include "io/vtx_control.h"
 #include "io/vtx_smartaudio.h"
 #include "io/vtx_string.h"
+
 
 // Timing parameters
 // Note that vtxSAProcess() is normally called at 200ms interval
@@ -693,7 +683,7 @@ bool vtxSmartAudioInit(void)
         return false;
     }
 
-    vtxCommonRegisterDevice(&vtxSmartAudio);
+    vtxCommonSetDevice(&vtxSmartAudio);
 
     return true;
 }
@@ -703,8 +693,9 @@ bool vtxSmartAudioInit(void)
 #define SA_INITPHASE_WAIT_PITFREQ  2 // SA_FREQ_GETPIT sent and waiting for reply.
 #define SA_INITPHASE_DONE          3
 
-void vtxSAProcess(timeUs_t currentTimeUs)
+static void vtxSAProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
 {
+    UNUSED(vtxDevice);
     UNUSED(currentTimeUs);
 
     static char initPhase = SA_INITPHASE_START;
@@ -777,25 +768,28 @@ void vtxSAProcess(timeUs_t currentTimeUs)
 #ifdef USE_VTX_COMMON
 // Interface to common VTX API
 
-vtxDevType_e vtxSAGetDeviceType(void)
+vtxDevType_e vtxSAGetDeviceType(const vtxDevice_t *vtxDevice)
 {
+    UNUSED(vtxDevice);
     return VTXDEV_SMARTAUDIO;
 }
 
-bool vtxSAIsReady(void)
+static bool vtxSAIsReady(const vtxDevice_t *vtxDevice)
 {
-    return !(saDevice.version == 0);
+    return vtxDevice!=NULL && !(saDevice.version == 0);
 }
 
-void vtxSASetBandAndChannel(uint8_t band, uint8_t channel)
+static void vtxSASetBandAndChannel(vtxDevice_t *vtxDevice, uint8_t band, uint8_t channel)
 {
+    UNUSED(vtxDevice);
     if (saValidateBandAndChannel(band, channel)) {
         saSetBandAndChannel(band - 1, channel - 1);
     }
 }
 
-void vtxSASetPowerByIndex(uint8_t index)
+static void vtxSASetPowerByIndex(vtxDevice_t *vtxDevice, uint8_t index)
 {
+    UNUSED(vtxDevice);
     if (index == 0) {
         // SmartAudio doesn't support power off.
         return;
@@ -804,9 +798,9 @@ void vtxSASetPowerByIndex(uint8_t index)
     saSetPowerByIndex(index - 1);
 }
 
-void vtxSASetPitMode(uint8_t onoff)
+static void vtxSASetPitMode(vtxDevice_t *vtxDevice, uint8_t onoff)
 {
-    if (!(vtxSAIsReady() && (saDevice.version == 2))) {
+    if (!(vtxSAIsReady(vtxDevice) && (saDevice.version == 2))) {
         return;
     }
 
@@ -830,17 +824,18 @@ void vtxSASetPitMode(uint8_t onoff)
     return;
 }
 
-void vtxSASetFreq(uint16_t freq)
+static void vtxSASetFreq(vtxDevice_t *vtxDevice, uint16_t freq)
 {
+    UNUSED(vtxDevice);
     if (saValidateFreq(freq)) {
         saSetMode(0);        //need to be in FREE mode to set freq
         saSetFreq(freq);
     }
 }
 
-bool vtxSAGetBandAndChannel(uint8_t *pBand, uint8_t *pChannel)
+static bool vtxSAGetBandAndChannel(const vtxDevice_t *vtxDevice, uint8_t *pBand, uint8_t *pChannel)
 {
-    if (!vtxSAIsReady()) {
+    if (!vtxSAIsReady(vtxDevice)) {
         return false;
     }
 
@@ -851,9 +846,9 @@ bool vtxSAGetBandAndChannel(uint8_t *pBand, uint8_t *pChannel)
     return true;
 }
 
-bool vtxSAGetPowerIndex(uint8_t *pIndex)
+static bool vtxSAGetPowerIndex(const vtxDevice_t *vtxDevice, uint8_t *pIndex)
 {
-    if (!vtxSAIsReady()) {
+    if (!vtxSAIsReady(vtxDevice)) {
         return false;
     }
 
@@ -861,9 +856,9 @@ bool vtxSAGetPowerIndex(uint8_t *pIndex)
     return true;
 }
 
-bool vtxSAGetPitMode(uint8_t *pOnOff)
+static bool vtxSAGetPitMode(const vtxDevice_t *vtxDevice, uint8_t *pOnOff)
 {
-    if (!(vtxSAIsReady() && (saDevice.version == 2))) {
+    if (!(vtxSAIsReady(vtxDevice) && (saDevice.version == 2))) {
         return false;
     }
 
@@ -871,9 +866,9 @@ bool vtxSAGetPitMode(uint8_t *pOnOff)
     return true;
 }
 
-bool vtxSAGetFreq(uint16_t *pFreq)
+static bool vtxSAGetFreq(const vtxDevice_t *vtxDevice, uint16_t *pFreq)
 {
-    if (!vtxSAIsReady()) {
+    if (!vtxSAIsReady(vtxDevice)) {
         return false;
     }
 

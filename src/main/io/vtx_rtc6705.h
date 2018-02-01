@@ -24,6 +24,5 @@
 
 extern const char * const rtc6705PowerNames[];
 
-void vtxRTC6705Configure(void);
 bool vtxRTC6705CanUpdate(void);
 bool vtxRTC6705Init(void);
