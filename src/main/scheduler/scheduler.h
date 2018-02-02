@@ -127,6 +127,10 @@ typedef enum {
     TASK_ADC_INTERNAL,
 #endif
 
+#ifdef USE_PINIOBOX
+    TASK_PINIOBOX,
+#endif
+
     /* Count of real tasks */
     TASK_COUNT,
 

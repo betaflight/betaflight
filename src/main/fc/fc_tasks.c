@@ -58,6 +58,7 @@
 #include "io/dashboard.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
+#include "io/piniobox.h"
 #include "io/osd.h"
 #include "io/osd_slave.h"
 #include "io/serial.h"
@@ -304,6 +305,9 @@ void fcTasksInit(void)
 #endif
 #ifdef USE_ADC_INTERNAL
     setTaskEnabled(TASK_ADC_INTERNAL, true);
+#endif
+#ifdef USE_PINIOBOX
+    setTaskEnabled(TASK_PINIOBOX, true);
 #endif
 #ifdef USE_CMS
 #ifdef USE_MSP_DISPLAYPORT
@@ -582,6 +586,15 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskName = "ADCINTERNAL",
         .taskFunc = adcInternalProcess,
         .desiredPeriod = TASK_PERIOD_HZ(1),
+        .staticPriority = TASK_PRIORITY_IDLE
+    },
+#endif
+
+#ifdef USE_PINIOBOX
+    [TASK_PINIOBOX] = {
+        .taskName = "PINIOBOX",
+        .taskFunc = pinioBoxUpdate,
+        .desiredPeriod = TASK_PERIOD_HZ(20),
         .staticPriority = TASK_PRIORITY_IDLE
     },
 #endif
