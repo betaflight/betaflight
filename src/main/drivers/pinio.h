@@ -26,5 +26,4 @@
 struct pinioConfig_s;
 
 void pinioInit(const struct pinioConfig_s *pinioConfig);
-void pinioON(int index);
-void pinioOFF(int index);
+void pinioSet(int index, bool on);
