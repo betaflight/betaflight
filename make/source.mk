@@ -34,6 +34,7 @@ COMMON_SRC = \
             drivers/exti.c \
             drivers/io.c \
             drivers/light_led.c \
+            drivers/pinio.c \
             drivers/resource.c \
             drivers/rcc.c \
             drivers/serial.c \

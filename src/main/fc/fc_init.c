@@ -53,6 +53,7 @@
 #include "drivers/io.h"
 #include "drivers/light_led.h"
 #include "drivers/nvic.h"
+#include "drivers/pinio.h"
 #include "drivers/pwm_esc_detect.h"
 #include "drivers/pwm_output.h"
 #include "drivers/rx/rx_pwm.h"
@@ -531,6 +532,10 @@ void init(void)
         servoDevInit(&servoConfig()->dev);
     }
     servosFilterInit();
+#endif
+
+#ifdef USE_PINIO
+    pinioInit(pinioConfig());
 #endif
 
     LED1_ON;

@@ -65,6 +65,7 @@ extern uint8_t __config_end;
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 #include "drivers/inverter.h"
+#include "drivers/pinio.h"
 #include "drivers/sdcard.h"
 #include "drivers/sensor.h"
 #include "drivers/serial.h"
@@ -3218,6 +3219,9 @@ const cliResourceValue_t resourceTable[] = {
 #endif
 #ifdef USE_MAG
     { OWNER_COMPASS_CS,    PG_COMPASS_CONFIG, offsetof(compassConfig_t, mag_spi_csn), 0 },
+#endif
+#ifdef USE_PINIO
+    { OWNER_PINIO,         PG_PINIO_CONFIG, offsetof(pinioConfig_t, ioTag), MAX_PINIO },
 #endif
 };
 
