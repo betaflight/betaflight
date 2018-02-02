@@ -69,6 +69,7 @@
 #include "io/transponder_ir.h"
 #include "io/vtx_control.h"
 #include "io/vtx_rtc6705.h"
+#include "io/arm_state.h"
 
 #include "rx/rx.h"
 
@@ -84,9 +85,6 @@
 #include "flight/pid.h"
 #include "flight/servos.h"
 
-#ifdef USE_ARM_STATE
-#include "io/arm_state.h"
-#endif
 
 // June 2013     V2.2-dev
 

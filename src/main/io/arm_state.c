@@ -22,21 +22,18 @@
 
 #ifdef USE_ARM_STATE
 
-#include "fc/runtime_config.h"
-
-#include "drivers/io_types.h"
 #include "drivers/io.h"
 
 #ifndef ARM_STATE_PIN
 #define ARM_STATE_PIN NONE
 #endif
 
-static IO_t armStatePin = NULL;
+static IO_t armStatePin = IO_NONE;
 
 bool armStateInit(void)
 {
     armStatePin = IOGetByTag(IO_TAG(ARM_STATE_PIN));
-    if (armStatePin == NULL) {
+    if (armStatePin == IO_NONE) {
         return false;
     }
 
@@ -48,9 +45,9 @@ bool armStateInit(void)
     return true;
 }
 
-void armStateUpdate(bool isArming)
+void armStateUpdate(bool isArmed)
 {
-    IOWrite(armStatePin, !isArming);
+    IOWrite(armStatePin, !isArmed);
 }
 
 #endif
