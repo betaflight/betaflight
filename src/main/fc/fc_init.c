@@ -87,6 +87,7 @@
 #include "pg/bus_i2c.h"
 #include "pg/bus_spi.h"
 #include "pg/flash.h"
+#include "pg/pinio.h"
 #include "pg/pg.h"
 #include "pg/rx_pwm.h"
 #include "pg/sdcard.h"
@@ -531,6 +532,10 @@ void init(void)
         servoDevInit(&servoConfig()->dev);
     }
     servosFilterInit();
+#endif
+
+#ifdef USE_PINIO
+    pinioInit(pinioConfig());
 #endif
 
     LED1_ON;
