@@ -67,6 +67,7 @@ COMMON_SRC = \
             pg/bus_i2c.c \
             pg/bus_spi.c \
             pg/max7456.c \
+            pg/pinio.c \
             pg/pg.c \
             pg/rx_pwm.c \
             pg/sdcard.c \

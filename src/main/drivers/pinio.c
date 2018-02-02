@@ -21,44 +21,15 @@
 
 #ifdef USE_PINIO
 
+#include "build/debug.h"
+
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
-
-#include "build/debug.h"
+#include "pg/pinio.h"
 
 #include "drivers/io.h"
 
 #include "pinio.h"
-
-#ifndef PINIO1_PIN
-#define PINIO1_PIN NONE
-#endif
-#ifndef PINIO2_PIN
-#define PINIO2_PIN NONE
-#endif
-#ifndef PINIO3_PIN
-#define PINIO3_PIN NONE
-#endif
-#ifndef PINIO4_PIN
-#define PINIO4_PIN NONE
-#endif
-
-PG_REGISTER_WITH_RESET_TEMPLATE(pinioConfig_t, pinioConfig, PG_PINIO_CONFIG, 0);
-
-PG_RESET_TEMPLATE(pinioConfig_t, pinioConfig,
-    .ioTag = {
-        IO_TAG(PINIO1_PIN),
-        IO_TAG(PINIO2_PIN),
-        IO_TAG(PINIO3_PIN),
-        IO_TAG(PINIO4_PIN),
-    },
-    .config = {
-        PINIO_CONFIG_OUT_PP,
-        PINIO_CONFIG_OUT_PP,
-        PINIO_CONFIG_OUT_PP,
-        PINIO_CONFIG_OUT_PP
-    },
-);
 
 typedef struct pinioRuntime_s {
     IO_t io;
@@ -107,11 +78,13 @@ void pinio(int index, bool on)
 
 void pinioON(int index)
 {
-    pinio(index, true);
+    IOWrite(pinioRuntime[index].io, !pinioRuntime[index].inverted);
+    //pinio(index, true);
 }
 
 void pinioOFF(int index)
 {
-    pinio(index, false);
+    IOWrite(pinioRuntime[index].io, pinioRuntime[index].inverted);
+    //pinio(index, false);
 }
 #endif

@@ -17,14 +17,13 @@
 
 #pragma once
 
-#define MAX_PINIO 4
+#include "pg/pg.h"
+#include "drivers/io_types.h"
+#include "drivers/pinio.h"
 
-#define PINIO_CONFIG_OUT_INVERTED 0x80
-#define PINIO_CONFIG_MASK         0x7F
-#define PINIO_CONFIG_OUT_PP       0x01
+typedef struct pinioConfig_s {
+    ioTag_t ioTag[MAX_PINIO];
+    uint8_t config[MAX_PINIO];
+} pinioConfig_t;
 
-struct pinioConfig_s;
-
-void pinioInit(const struct pinioConfig_s *pinioConfig);
-void pinioON(int index);
-void pinioOFF(int index);
+PG_DECLARE(pinioConfig_t, pinioConfig);
