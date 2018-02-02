@@ -34,6 +34,7 @@
 typedef struct pinioRuntime_s {
     IO_t io;
     bool inverted;
+    bool state;
 } pinioRuntime_t;
 
 static pinioRuntime_t pinioRuntime[MAX_PINIO];
@@ -64,27 +65,16 @@ void pinioInit(const pinioConfig_t *pinioConfig)
             IOLo(io);
         }
         pinioRuntime[i].io = io;
+        pinioRuntime[i].state = false;
     }
 }
 
-void pinio(int index, bool on)
+void pinioSet(int index, bool on)
 {
-    if (on ^ pinioRuntime[index].inverted) {
-        IOHi(pinioRuntime[index].io);
-    } else {
-        IOLo(pinioRuntime[index].io);
+    bool newState = on ^ pinioRuntime[index].inverted;
+    if (newState != pinioRuntime[index].state) {
+        IOWrite(pinioRuntime[index].io, newState);
+        pinioRuntime[index].state = newState;
     }
-}
-
-void pinioON(int index)
-{
-    IOWrite(pinioRuntime[index].io, !pinioRuntime[index].inverted);
-    //pinio(index, true);
-}
-
-void pinioOFF(int index)
-{
-    IOWrite(pinioRuntime[index].io, pinioRuntime[index].inverted);
-    //pinio(index, false);
 }
 #endif
