@@ -34,8 +34,10 @@
 #include "config/feature.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/pinio_armstate.h"
 
 #include "drivers/light_led.h"
+#include "drivers/pinio.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
@@ -280,6 +282,12 @@ void disarm(void)
 #endif
         BEEP_OFF;
         beeper(BEEPER_DISARMING);      // emit disarm tone
+
+#ifdef USE_PINIO_ARMSTATE
+        if (pinioArmstateConfig()->pinioIndex > 0) {
+            pinioSet(pinioArmstateConfig()->pinioIndex - 1, false);
+        }
+#endif
     }
 }
 
@@ -337,6 +345,12 @@ void tryArm(void)
         }
 #else
         beeper(BEEPER_ARMING);
+#endif
+
+#ifdef USE_PINIO_ARMSTATE
+        if (pinioArmstateConfig()->pinioIndex > 0) {
+            pinioSet(pinioArmstateConfig()->pinioIndex - 1, true);
+        }
 #endif
 
 #ifdef USE_RUNAWAY_TAKEOFF

@@ -118,6 +118,7 @@ extern uint8_t __config_end;
 #include "pg/beeper_dev.h"
 #include "pg/bus_i2c.h"
 #include "pg/bus_spi.h"
+#include "pg/pinio.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/rx_pwm.h"
@@ -3218,6 +3219,9 @@ const cliResourceValue_t resourceTable[] = {
 #endif
 #ifdef USE_MAG
     { OWNER_COMPASS_CS,    PG_COMPASS_CONFIG, offsetof(compassConfig_t, mag_spi_csn), 0 },
+#endif
+#ifdef USE_PINIO
+    { OWNER_PINIO,         PG_PINIO_CONFIG, offsetof(pinioConfig_t, ioTag), PINIO_COUNT },
 #endif
 };
 

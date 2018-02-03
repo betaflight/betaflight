@@ -34,6 +34,7 @@ COMMON_SRC = \
             drivers/exti.c \
             drivers/io.c \
             drivers/light_led.c \
+            drivers/pinio.c \
             drivers/resource.c \
             drivers/rcc.c \
             drivers/serial.c \
@@ -66,6 +67,8 @@ COMMON_SRC = \
             pg/bus_i2c.c \
             pg/bus_spi.c \
             pg/max7456.c \
+            pg/pinio.c \
+            pg/pinio_armstate.c \
             pg/pg.c \
             pg/rx_pwm.c \
             pg/sdcard.c \
