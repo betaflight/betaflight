@@ -46,6 +46,8 @@ typedef enum {
     FUNCTION_VTX_TRAMP           = (1 << 13), // 8192
     FUNCTION_RCDEVICE            = (1 << 14), // 16384
     FUNCTION_LIDAR_TF            = (1 << 15), // 32768
+    FUNCTION_SERIAL_BRIDGE       = (1 << 15), // 32768
+
 } serialPortFunction_e;
 
 typedef enum {
@@ -81,6 +83,7 @@ typedef enum {
     SERIAL_PORT_USART7,
     SERIAL_PORT_USART8,
     SERIAL_PORT_USB_VCP = 20,
+    SERIAL_PORT_BRIDGE_VCP = 21,
     SERIAL_PORT_SOFTSERIAL1 = 30,
     SERIAL_PORT_SOFTSERIAL2
 } serialPortIdentifier_e;

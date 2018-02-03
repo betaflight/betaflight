@@ -35,6 +35,7 @@
 #include "drivers/compass/compass.h"
 #include "drivers/sensor.h"
 #include "drivers/serial.h"
+#include "drivers/serial_bridge.h"
 #include "drivers/stack_check.h"
 #include "drivers/transponder_ir.h"
 #include "drivers/vtx_common.h"
@@ -99,6 +100,11 @@ bool taskSerialCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
 static void taskHandleSerial(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
+
+#ifdef USE_SERIAL_BRIDGE
+    serialBridgeProcess();
+#endif
+
 #ifdef USE_CLI
     // in cli mode, all serial stuff goes to here. enter cli mode by sending #
     if (cliMode) {
