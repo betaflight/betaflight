@@ -33,6 +33,7 @@
 #include "drivers/bus_spi.h"
 #include "drivers/camera_control.h"
 #include "drivers/light_led.h"
+#include "drivers/pinio.h"
 #include "drivers/vtx_common.h"
 
 #include "fc/config.h"
@@ -67,6 +68,7 @@
 #include "pg/max7456.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/pinio_armstate.h"
 #include "pg/rx_pwm.h"
 #include "pg/sdcard.h"
 #include "pg/vcd.h"
@@ -866,6 +868,11 @@ const clivalue_t valueTable[] = {
 // PG_RANGEFINDER_CONFIG
 #ifdef USE_RANGEFINDER
     { "rangefinder_hardware", VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_RANGEFINDER_HARDWARE }, PG_RANGEFINDER_CONFIG, offsetof(rangefinderConfig_t, rangefinder_hardware) },
+#endif
+
+// PG_PINIO_ARMSTATE
+#ifdef USE_PINIO_ARMSTATE
+    { "pinio_armstate", VAR_INT8 | MASTER_VALUE, .config.minmax = { 0, PINIO_COUNT }, PG_PINIO_ARMSTATE_CONFIG, offsetof(pinioArmstateConfig_t, pinioIndex) },
 #endif
 };
 
