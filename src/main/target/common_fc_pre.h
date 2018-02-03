@@ -138,6 +138,7 @@
 #define USE_OSD
 #define USE_OSD_OVER_MSP_DISPLAYPORT
 #define USE_PINIO
+#define USE_PINIOBOX
 #define USE_RCDEVICE
 #define USE_RTC_TIME
 #define USE_RX_MSP

@@ -15,19 +15,38 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <stdint.h>
 
-#include <stdbool.h>
+#include <platform.h>
 
-#ifndef PINIO_COUNT
-#define PINIO_COUNT 4
+#ifdef USE_PINIOBOX
+
+#include "build/debug.h"
+
+#include "common/utils.h"
+#include "common/time.h"
+
+#include "interface/msp_box.h"
+
+#include "pg/pinio.h"
+#include "pg/piniobox.h"
+
+#include "piniobox.h"
+
+static const pinioBoxConfig_t *config;
+
+void pinioBoxInit(const pinioBoxConfig_t *pinioBoxConfig)
+{
+    config = pinioBoxConfig;
+}
+
+void pinioBoxUpdate(timeUs_t currentTimeUs)
+{
+    UNUSED(currentTimeUs);
+
+    for (int i = 0; i < PINIO_COUNT; i++) {
+        pinioSet(i, getBoxIdState(config->boxId[i]));
+    }
+}
+
 #endif
-
-#define PINIO_CONFIG_OUT_INVERTED 0x80
-#define PINIO_CONFIG_MODE_MASK    0x7F
-#define PINIO_CONFIG_MODE_OUT_PP  0x01
-
-struct pinioConfig_s;
-
-void pinioInit(const struct pinioConfig_s *pinioConfig);
-void pinioSet(int index, bool on);

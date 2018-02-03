@@ -57,6 +57,7 @@ COMMON_SRC = \
             interface/msp.c \
             interface/msp_box.c \
             io/beeper.c \
+            io/piniobox.c \
             io/serial.c \
             io/statusindicator.c \
             io/transponder_ir.c \
@@ -69,6 +70,7 @@ COMMON_SRC = \
             pg/dashboard.c \
             pg/max7456.c \
             pg/pinio.c \
+            pg/piniobox.c \
             pg/pg.c \
             pg/rx_pwm.c \
             pg/sdcard.c \

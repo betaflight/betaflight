@@ -38,6 +38,8 @@
 
 #include "telemetry/telemetry.h"
 
+#include "pg/piniobox.h"
+
 
 #ifndef USE_OSD_SLAVE
 // permanent IDs must uniquely identify BOX meaning, DO NOT REUSE THEM!
@@ -82,6 +84,10 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOXBEEPGPSCOUNT, "BEEP GPS SATELLITE COUNT", 37 },
     { BOX3DONASWITCH, "3D ON A SWITCH", 38 },
     { BOXVTXPITMODE, "VTX PIT MODE", 39 },
+    { BOXUSER1, "USER1", 40 },
+    { BOXUSER2, "USER2", 41 },
+    { BOXUSER3, "USER3", 42 },
+    { BOXUSER4, "USER4", 43 },
 };
 
 // mask of enabled IDs, calculated on startup based on enabled features. boxId_e is used as bit index
@@ -258,6 +264,23 @@ void initActiveBoxIds(void)
 
 #if defined(USE_VTX_SMARTAUDIO) || defined(USE_VTX_TRAMP)
     BME(BOXVTXPITMODE);
+#endif
+
+#ifdef USE_PINIOBOX
+    // Turn BOXUSERx only if pinioBox facility monitors them, as the facility is the only BOXUSERx observer.
+    // Note that pinioBoxConfig can be set to monitor any box.
+    for (int i = 0; i < PINIO_COUNT; i++) {
+        switch(pinioBoxConfig()->boxId[i]) {
+        case BOXUSER1:
+        case BOXUSER2:
+        case BOXUSER3:
+        case BOXUSER4:
+            BME(pinioBoxConfig()->boxId[i]);
+            break;
+        default:
+            break;
+        }
+    }
 #endif
 
 #undef BME
