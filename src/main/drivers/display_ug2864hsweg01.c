@@ -28,14 +28,6 @@
 
 #ifdef USE_I2C_OLED_DISPLAY
 
-#if !defined(OLED_I2C_INSTANCE)
-#if defined(I2C_DEVICE)
-#define OLED_I2C_INSTANCE I2C_DEVICE
-#else
-#define OLED_I2C_INSTANCE I2C_NONE
-#endif
-#endif
-
 #define INVERSE_CHAR_FORMAT 0x7f // 0b01111111
 #define NORMAL_CHAR_FORMAT  0x00 // 0b00000000
 

@@ -66,6 +66,7 @@ COMMON_SRC = \
             pg/bus_i2c.c \
             pg/bus_spi.c \
             pg/camera_control.c \
+            pg/dashboard.c \
             pg/max7456.c \
             pg/pg.c \
             pg/rx_pwm.c \
