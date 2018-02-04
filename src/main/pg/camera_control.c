@@ -15,23 +15,32 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <platform.h>
 
-typedef enum {
-    CAMERA_CONTROL_KEY_ENTER,
-    CAMERA_CONTROL_KEY_LEFT,
-    CAMERA_CONTROL_KEY_UP,
-    CAMERA_CONTROL_KEY_RIGHT,
-    CAMERA_CONTROL_KEY_DOWN,
-    CAMERA_CONTROL_KEYS_COUNT
-} cameraControlKey_e;
+#ifdef USE_CAMERA_CONTROL
 
-typedef enum {
-    CAMERA_CONTROL_MODE_HARDWARE_PWM,
-    CAMERA_CONTROL_MODE_DAC,
-    CAMERA_CONTROL_MODES_COUNT
-} cameraControlMode_e;
+#include "pg/pg_ids.h"
+#include "pg/camera_control.h"
+#include "drivers/camera_control.h"
+#include "drivers/io.h"
 
-void cameraControlInit(void);
-void cameraControlProcess(uint32_t currentTimeUs);
-void cameraControlKeyPress(cameraControlKey_e key, uint32_t holdDurationMs);
+//#include "math.h"
+//#include "nvic.h"
+//#include "pwm_output.h"
+//#include "time.h"
+
+#ifndef CAMERA_CONTROL_PIN
+#define CAMERA_CONTROL_PIN NONE
+#endif
+
+PG_REGISTER_WITH_RESET_TEMPLATE(cameraControlConfig_t, cameraControlConfig, PG_CAMERA_CONTROL_CONFIG, 0);
+
+PG_RESET_TEMPLATE(cameraControlConfig_t, cameraControlConfig,
+    .mode = CAMERA_CONTROL_MODE_HARDWARE_PWM,
+    .refVoltage = 330,
+    .keyDelayMs = 180,
+    .internalResistance = 470,
+    .ioTag = IO_TAG(CAMERA_CONTROL_PIN)
+);
+
+#endif
