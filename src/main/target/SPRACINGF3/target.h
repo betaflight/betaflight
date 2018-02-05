@@ -94,9 +94,6 @@
 #define RANGEFINDER_HCSR04_TRIGGER_PIN       PB0
 #define RANGEFINDER_HCSR04_ECHO_PIN          PB1
 
-#elif defined(RMDO)
-#undef USE_GPS
-
 #elif defined(ZCOREF3)
 #define USE_MAG_DATA_READY_SIGNAL
 #define ENSURE_MAG_DATA_READY_IS_HIGH

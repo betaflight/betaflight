@@ -209,10 +209,6 @@
 // FIXME While it's possible to use the button on the OSD/VTX board for binding enabling it here will break binding unless you have the OSD/VTX connected.
 //#define BINDPLUG_PIN                        BUTTON_A_PIN
 
-// Temporarily disable SMARTAUDIO and TRAMP VTX support due to flash size issues.
-#undef USE_VTX_SMARTAUDIO
-#undef USE_VTX_TRAMP
-
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA                     0xffff

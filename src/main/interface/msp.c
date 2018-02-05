@@ -40,6 +40,7 @@
 #include "config/feature.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/beeper.h"
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/bus_i2c.h"
@@ -473,6 +474,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 #ifdef BEEPER
     case MSP_BEEPER_CONFIG:
         sbufWriteU32(dst, getBeeperOffMask());
+        sbufWriteU8(dst, beeperConfig()->dshotBeaconTone);
         break;
 #endif
 
@@ -875,7 +877,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 
     case MSP_ARMING_CONFIG:
         sbufWriteU8(dst, armingConfig()->auto_disarm_delay);
-        sbufWriteU8(dst, armingConfig()->disarm_kill_switch);
+        sbufWriteU8(dst, 0);
         sbufWriteU8(dst, imuConfig()->small_angle);
         break;
 
@@ -1013,7 +1015,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, rxConfig()->rx_max_usec);
         sbufWriteU8(dst, rxConfig()->rcInterpolation);
         sbufWriteU8(dst, rxConfig()->rcInterpolationInterval);
-        sbufWriteU16(dst, rxConfig()->airModeActivateThreshold);
+        sbufWriteU16(dst, rxConfig()->airModeActivateThreshold * 10 + 1000);
         sbufWriteU8(dst, rxConfig()->rx_spi_protocol);
         sbufWriteU32(dst, rxConfig()->rx_spi_id);
         sbufWriteU8(dst, rxConfig()->rx_spi_rf_channel_count);
@@ -1211,11 +1213,11 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 #if defined(USE_VTX_COMMON)
     case MSP_VTX_CONFIG:
         {
-            uint8_t deviceType = vtxCommonGetDeviceType();
-            if (deviceType != VTXDEV_UNKNOWN) {
+            const vtxDevice_t *vtxDevice = vtxCommonDevice();
+            if (vtxDevice) {
                 uint8_t pitmode=0;
-                vtxCommonGetPitMode(&pitmode);
-                sbufWriteU8(dst, deviceType);
+                vtxCommonGetPitMode(vtxDevice, &pitmode);
+                sbufWriteU8(dst, vtxCommonGetDeviceType(vtxDevice));
                 sbufWriteU8(dst, vtxSettingsConfig()->band);
                 sbufWriteU8(dst, vtxSettingsConfig()->channel);
                 sbufWriteU8(dst, vtxSettingsConfig()->power);
@@ -1414,7 +1416,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
     case MSP_SET_ARMING_CONFIG:
         armingConfigMutable()->auto_disarm_delay = sbufReadU8(src);
-        armingConfigMutable()->disarm_kill_switch = sbufReadU8(src);
+        sbufReadU8(src); // reserved
         if (sbufBytesRemaining(src)) {
           imuConfigMutable()->small_angle = sbufReadU8(src);
         }
@@ -1728,8 +1730,9 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #ifdef USE_VTX_COMMON
     case MSP_SET_VTX_CONFIG:
         {
-            if (vtxCommonDeviceRegistered()) {
-                if (vtxCommonGetDeviceType() != VTXDEV_UNKNOWN) {
+            vtxDevice_t *vtxDevice = vtxCommonDevice();
+            if (vtxDevice) {
+                if (vtxCommonGetDeviceType(vtxDevice) != VTXDEV_UNKNOWN) {
                     uint16_t newFrequency = sbufReadU16(src);
                     if (newFrequency <= VTXCOMMON_MSP_BANDCHAN_CHKVAL) {  //value is band and channel
                         const uint8_t newBand = (newFrequency / 8) + 1;
@@ -1747,9 +1750,9 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                         // Delegate pitmode to vtx directly
                         const uint8_t newPitmode = sbufReadU8(src);
                         uint8_t currentPitmode = 0;
-                        vtxCommonGetPitMode(&currentPitmode);
+                        vtxCommonGetPitMode(vtxDevice, &currentPitmode);
                         if (currentPitmode != newPitmode) {
-                            vtxCommonSetPitMode(newPitmode);
+                            vtxCommonSetPitMode(vtxDevice, newPitmode);
                         }
                     }
                 }
@@ -1839,6 +1842,9 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_BEEPER_CONFIG:
         beeperOffClearAll();
         setBeeperOffMask(sbufReadU32(src));
+        if (sbufBytesRemaining(src) >= 1) {
+            beeperConfigMutable()->dshotBeaconTone = sbufReadU8(src);
+        }
         break;
 #endif
 
@@ -1872,7 +1878,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         if (sbufBytesRemaining(src) >= 4) {
             rxConfigMutable()->rcInterpolation = sbufReadU8(src);
             rxConfigMutable()->rcInterpolationInterval = sbufReadU8(src);
-            rxConfigMutable()->airModeActivateThreshold = sbufReadU16(src);
+            rxConfigMutable()->airModeActivateThreshold = (sbufReadU16(src) - 1000) / 10;
         }
         if (sbufBytesRemaining(src) >= 6) {
             rxConfigMutable()->rx_spi_protocol = sbufReadU8(src);

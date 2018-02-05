@@ -18,10 +18,6 @@
 #pragma once
 
 // Removed to make the firmware fit into flash:
-#undef USE_TELEMETRY_IBUS
-#undef USE_TELEMETRY_JETIEXBUS
-#undef USE_SERIALRX_JETIEXBUS
-#undef USE_TELEMETRY_MAVLINK
 #undef USE_TELEMETRY_LTM
 #undef USE_RTC_TIME
 
