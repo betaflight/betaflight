@@ -1041,7 +1041,9 @@ static void cliSerialPassthrough(char *cmdline)
     }
 
     // Register control line state callback
-    serialSetCtrlLineStateCb(cliPort, cbCtrlLine);
+    if (serialPassthroughDtrPin != IO_NONE) {
+    	serialSetCtrlLineStateCb(cliPort, cbCtrlLine);
+    }
 
     cliPrintLine("Forwarding, power cycle to exit.");
 
