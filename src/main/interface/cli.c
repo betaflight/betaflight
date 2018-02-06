@@ -1029,8 +1029,9 @@ static void cliSerialPassthrough(char *cmdline)
         }
 
         // Set the baud rate
-        // Needed as arduino bootloaders may run at 57600 baud
-        serialSetBaudRate(passThroughPort, baud);
+        if (baud) {
+        	serialSetBaudRate(passThroughPort, baud);
+        }
 
         // If this port has a rx callback associated we need to remove it now.
         // Otherwise no data will be pushed in the serial port buffer!
