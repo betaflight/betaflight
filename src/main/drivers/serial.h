@@ -47,6 +47,10 @@ typedef enum {
     SERIAL_BIDIR_PP      = 1 << 4
 } portOptions_e;
 
+// Define known line control states which may be passed up by underlying serial driver callback
+#define CTRL_LINE_STATE_DTR 1
+#define CTRL_LINE_STATE_RTS 2
+
 typedef void (*serialReceiveCallbackPtr)(uint16_t data, void *rxCallbackData);   // used by serial drivers to return frames to app
 
 typedef struct serialPort_s {
@@ -104,6 +108,7 @@ struct serialPortVTable {
     bool (*isSerialTransmitBufferEmpty)(const serialPort_t *instance);
 
     void (*setMode)(serialPort_t *instance, portMode_e mode);
+	void (*setCtrlLineStateCb)(serialPort_t *instance, void (*cb)(uint16_t ctrlLineState));
 
     void (*writeBuf)(serialPort_t *instance, const void *data, int count);
     // Optional functions used to buffer large writes.
@@ -118,6 +123,7 @@ void serialWriteBuf(serialPort_t *instance, const uint8_t *data, int count);
 uint8_t serialRead(serialPort_t *instance);
 void serialSetBaudRate(serialPort_t *instance, uint32_t baudRate);
 void serialSetMode(serialPort_t *instance, portMode_e mode);
+void serialSetCtrlLineStateCb(serialPort_t *instance, void (*cb)(uint16_t ctrlLineState));
 bool isSerialTransmitBufferEmpty(const serialPort_t *instance);
 void serialPrint(serialPort_t *instance, const char *str);
 uint32_t serialGetBaudRate(serialPort_t *instance);

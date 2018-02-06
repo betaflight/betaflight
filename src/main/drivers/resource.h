@@ -70,6 +70,7 @@ typedef enum {
     OWNER_TIMUP,
     OWNER_RANGEFINDER,
     OWNER_RX_SPI,
+	OWNER_SERIAL_PASSTHROUGH,
     OWNER_TOTAL_COUNT
 } resourceOwner_e;
 

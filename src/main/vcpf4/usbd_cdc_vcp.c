@@ -58,6 +58,8 @@ static uint16_t VCP_DeInit(void);
 static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len);
 static uint16_t VCP_DataTx(const uint8_t* Buf, uint32_t Len);
 static uint16_t VCP_DataRx(uint8_t* Buf, uint32_t Len);
+static void (*ctrlLineStateCb)(uint16_t ctrlLineState);
+
 
 CDC_IF_Prop_TypeDef VCP_fops = {VCP_Init, VCP_DeInit, VCP_Ctrl, VCP_DataTx, VCP_DataRx };
 
@@ -71,6 +73,7 @@ CDC_IF_Prop_TypeDef VCP_fops = {VCP_Init, VCP_DeInit, VCP_Ctrl, VCP_DataTx, VCP_
 static uint16_t VCP_Init(void)
 {
     bDeviceState = CONFIGURED;
+    ctrlLineStateCb = NULL;
     return USBD_OK;
 }
 
@@ -134,8 +137,12 @@ static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len)
 
 
       case SET_CONTROL_LINE_STATE:
-         /* Not  needed for this driver */
-         //RSW - This tells how to set RTS and DTR
+         // If a callback is provided, tell the upper driver of changes in DTR/RTS state
+    	 if (Buf && (Len == sizeof (uint16_t))) {
+    		 if (ctrlLineStateCb) {
+    			 ctrlLineStateCb(*((uint16_t *)Buf));
+    		 }
+    	 }
          break;
 
       case SEND_BREAK:
@@ -290,6 +297,18 @@ uint8_t usbIsConnected(void)
 uint32_t CDC_BaudRate(void)
 {
     return g_lc.bitrate;
+}
+
+/*******************************************************************************
+ * Function Name  : CDC_CtrlLineState.
+ * Description    : Get the current control line state
+ * Input          : None.
+ * Output         : None.
+ * Return         : Baud rate in bps
+ *******************************************************************************/
+void CDC_SetCtrlLineStateCb(void (*cb)(uint16_t ctrlLineState))
+{
+	ctrlLineStateCb = cb;
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

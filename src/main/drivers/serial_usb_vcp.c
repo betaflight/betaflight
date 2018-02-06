@@ -67,6 +67,14 @@ static void usbVcpSetMode(serialPort_t *instance, portMode_e mode)
     // TODO implement
 }
 
+static void usbVcpSetCtrlLineStateCb(serialPort_t *instance, void (*cb)(uint16_t ctrlLineState))
+{
+    UNUSED(instance);
+
+    // Register upper driver control line state callback routine with USB driver
+    CDC_SetCtrlLineStateCb(cb);
+}
+
 static bool isUsbVcpTransmitBufferEmpty(const serialPort_t *instance)
 {
     UNUSED(instance);
@@ -178,6 +186,7 @@ static const struct serialPortVTable usbVTable[] = {
         .serialSetBaudRate = usbVcpSetBaudRate,
         .isSerialTransmitBufferEmpty = isUsbVcpTransmitBufferEmpty,
         .setMode = usbVcpSetMode,
+		.setCtrlLineStateCb = usbVcpSetCtrlLineStateCb,
         .writeBuf = usbVcpWriteBuf,
         .beginWrite = usbVcpBeginWrite,
         .endWrite = usbVcpEndWrite
@@ -229,4 +238,5 @@ uint32_t usbVcpGetBaudRate(serialPort_t *instance)
 
     return CDC_BaudRate();
 }
+
 #endif

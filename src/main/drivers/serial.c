@@ -86,6 +86,15 @@ void serialSetMode(serialPort_t *instance, portMode_e mode)
     instance->vTable->setMode(instance, mode);
 }
 
+void serialSetCtrlLineStateCb(serialPort_t *instance, void (*cb)(uint16_t ctrlLineState))
+{
+	// If a callback routine for changes to control line state is supported by the underlying
+	// driver, then set the callback.
+	if (instance->vTable->setCtrlLineStateCb) {
+		instance->vTable->setCtrlLineStateCb(instance, cb);
+	}
+}
+
 void serialWriteBufShim(void *instance, const uint8_t *data, int count)
 {
     serialWriteBuf((serialPort_t *)instance, data, count);

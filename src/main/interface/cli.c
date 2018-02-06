@@ -908,6 +908,23 @@ static void cliSerial(char *cmdline)
 }
 
 #ifndef SKIP_SERIAL_PASSTHROUGH
+static uint32_t dtrPin = 0;
+
+// Callback routine registered with CLI serial port to support Arduino programming via passthrough
+//
+// For example to program a MinimOSD connected to UART 6 on an F4 with port C8 used
+// for DTR (eg OpenPilot Revolution receiver port)
+//
+// Use 'serialpassthrough 5 57600 rxtx 56' and then use Ardino to program MinimOSD
+// Use 'serialpassthrough 5 115200' and then use MWOSD configurator to setup MinimOSD
+//
+static void cbCtrlLine(uint16_t data)
+{
+    UNUSED(data);
+
+    IOWrite(IOGetByTag(dtrPin), data & CTRL_LINE_STATE_DTR);
+}
+
 static void cliSerialPassthrough(char *cmdline)
 {
     if (isEmpty(cmdline)) {
@@ -936,12 +953,21 @@ static void cliSerialPassthrough(char *cmdline)
             if (strstr(tok, "tx") || strstr(tok, "TX"))
                 mode |= MODE_TX;
             break;
+        case 3:
+        	// When programming Arduino based devices such as MinimOSD, the DTR line is used to control
+        	// the reset. This parameter is the pin number. For example, 56 (0x38) is port C8. This allows
+        	// any GPIO to be used for driving DTR.
+            dtrPin = atoi(tok);
+            IOInit(IOGetByTag(dtrPin), OWNER_SERIAL_PASSTHROUGH, 0);
+            IOConfigGPIO(IOGetByTag(dtrPin), IOCFG_OUT_PP);
+            break;
         }
         index++;
         tok = strtok_r(NULL, " ", &saveptr);
     }
 
     cliPrintf("Port %d ", id);
+
     serialPort_t *passThroughPort;
     serialPortUsage_t *passThroughPortUsage = findSerialPortUsageByIdentifier(id);
     if (!passThroughPortUsage || passThroughPortUsage->serialPort == NULL) {
@@ -970,12 +996,20 @@ static void cliSerialPassthrough(char *cmdline)
                    passThroughPort->mode, mode);
             serialSetMode(passThroughPort, mode);
         }
+
+        // Set the baud rate
+        // Needed as arduino bootloaders may run at 57600 baud
+        serialSetBaudRate(passThroughPort, baud);
+
         // If this port has a rx callback associated we need to remove it now.
         // Otherwise no data will be pushed in the serial port buffer!
         if (passThroughPort->rxCallback) {
             passThroughPort->rxCallback = 0;
         }
     }
+
+    // Register control line state callback
+    serialSetCtrlLineStateCb(cliPort, cbCtrlLine);
 
     cliPrintLine("Forwarding, power cycle to exit.");
 
