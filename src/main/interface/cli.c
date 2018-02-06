@@ -908,21 +908,44 @@ static void cliSerial(char *cmdline)
 }
 
 #ifndef SKIP_SERIAL_PASSTHROUGH
-static uint32_t dtrPin = 0;
+static IO_t serialPassthroughDtrPin = IO_NONE;
 
 // Callback routine registered with CLI serial port to support Arduino programming via passthrough
 //
 // For example to program a MinimOSD connected to UART 6 on an F4 with port C8 used
 // for DTR (eg OpenPilot Revolution receiver port)
 //
-// Use 'serialpassthrough 5 57600 rxtx 56' and then use Ardino to program MinimOSD
+// Use 'serialpassthrough 5 57600 rxtx c8' and then use Ardino to program MinimOSD
 // Use 'serialpassthrough 5 115200' and then use MWOSD configurator to setup MinimOSD
 //
 static void cbCtrlLine(uint16_t data)
 {
     UNUSED(data);
 
-    IOWrite(IOGetByTag(dtrPin), data & CTRL_LINE_STATE_DTR);
+    if (serialPassthroughDtrPin != IO_NONE) {
+    	IOWrite(serialPassthroughDtrPin, data & CTRL_LINE_STATE_DTR);
+    }
+}
+
+static bool strToPin(char *pch, ioTag_t *tag)
+{
+    if (strcasecmp(pch, "NONE") == 0) {
+        *tag = IO_TAG_NONE;
+        return true;
+    } else {
+        unsigned pin = 0;
+        unsigned port = (*pch >= 'a') ? *pch - 'a' : *pch - 'A';
+
+        if (port < 8) {
+            pch++;
+            pin = atoi(pch);
+            if (pin < 16) {
+                *tag = DEFIO_TAG_MAKE(port, pin);
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 static void cliSerialPassthrough(char *cmdline)
@@ -936,6 +959,7 @@ static void cliSerialPassthrough(char *cmdline)
     uint32_t baud = 0;
     unsigned mode = 0;
     char *saveptr;
+    ioTag_t serialPassthroughDtrTag;
     char* tok = strtok_r(cmdline, " ", &saveptr);
     int index = 0;
 
@@ -953,16 +977,21 @@ static void cliSerialPassthrough(char *cmdline)
             if (strstr(tok, "tx") || strstr(tok, "TX"))
                 mode |= MODE_TX;
             break;
-#ifdef IOGetByTag
         case 3:
         	// When programming Arduino based devices such as MinimOSD, the DTR line is used to control
-        	// the reset. This parameter is the pin number. For example, 56 (0x38) is port C8. This allows
+        	// the reset. This parameter is the pin name, for example C8. This allows
         	// any GPIO to be used for driving DTR.
-            dtrPin = atoi(tok);
-            IOInit(IOGetByTag(dtrPin), OWNER_SERIAL_PASSTHROUGH, 0);
-            IOConfigGPIO(IOGetByTag(dtrPin), IOCFG_OUT_PP);
+        	if (strToPin(tok, &serialPassthroughDtrTag)) {
+                if (serialPassthroughDtrTag == IO_TAG_NONE) {
+                	cliPrintLine("Invalid DTR pin");
+                	return;
+                } else {
+                	serialPassthroughDtrPin = IOGetByTag(serialPassthroughDtrTag);
+                    IOInit(serialPassthroughDtrPin, OWNER_SERIAL_PASSTHROUGH, 0);
+                    IOConfigGPIO(serialPassthroughDtrPin, IOCFG_OUT_PP);
+                }
+        	}
             break;
-#endif /* IOGetByTag */
         }
         index++;
         tok = strtok_r(NULL, " ", &saveptr);
@@ -3344,27 +3373,6 @@ static void resourceCheck(uint8_t resourceIndex, uint8_t index, ioTag_t newTag)
             }
         }
     }
-}
-
-static bool strToPin(char *pch, ioTag_t *tag)
-{
-    if (strcasecmp(pch, "NONE") == 0) {
-        *tag = IO_TAG_NONE;
-        return true;
-    } else {
-        unsigned pin = 0;
-        unsigned port = (*pch >= 'a') ? *pch - 'a' : *pch - 'A';
-
-        if (port < 8) {
-            pch++;
-            pin = atoi(pch);
-            if (pin < 16) {
-                *tag = DEFIO_TAG_MAKE(port, pin);
-                return true;
-            }
-        }
-    }
-    return false;
 }
 
 static void cliResource(char *cmdline)
