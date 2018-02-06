@@ -300,11 +300,11 @@ uint32_t CDC_BaudRate(void)
 }
 
 /*******************************************************************************
- * Function Name  : CDC_CtrlLineState.
- * Description    : Get the current control line state
+ * Function Name  : CDC_SetCtrlLineStateCb
+ * Description    : Set a callback to call when control line state changes
  * Input          : None.
  * Output         : None.
- * Return         : Baud rate in bps
+ * Return         : None.
  *******************************************************************************/
 void CDC_SetCtrlLineStateCb(void (*cb)(uint16_t ctrlLineState))
 {
