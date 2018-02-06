@@ -85,6 +85,8 @@ TIM_HandleTypeDef  TimHandle;
 /* USB handler declaration */
 extern USBD_HandleTypeDef  USBD_Device;
 
+static void (*ctrlLineStateCb)(uint16_t ctrlLineState);
+
 /* Private function prototypes -----------------------------------------------*/
 static int8_t CDC_Itf_Init(void);
 static int8_t CDC_Itf_DeInit(void);
@@ -132,6 +134,8 @@ static int8_t CDC_Itf_Init(void)
   /*##-5- Set Application Buffers ############################################*/
   USBD_CDC_SetTxBuffer(&USBD_Device, UserTxBuffer, 0);
   USBD_CDC_SetRxBuffer(&USBD_Device, UserRxBuffer);
+
+  ctrlLineStateCb = NULL;
 
   return (USBD_OK);
 }
@@ -201,7 +205,12 @@ static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
     break;
 
   case CDC_SET_CONTROL_LINE_STATE:
-    /* Add your code here */
+      // If a callback is provided, tell the upper driver of changes in DTR/RTS state
+ 	 if (pbuf && (length == sizeof (uint16_t))) {
+ 		 if (ctrlLineStateCb) {
+ 			 ctrlLineStateCb(*((uint16_t *)pbuf));
+ 		 }
+ 	 }
     break;
 
   case CDC_SEND_BREAK:
@@ -410,4 +419,17 @@ uint32_t CDC_BaudRate(void)
 {
     return LineCoding.bitrate;
 }
+
+/*******************************************************************************
+ * Function Name  : CDC_SetCtrlLineStateCb
+ * Description    : Set a callback to call when control line state changes
+ * Input          : None.
+ * Output         : None.
+ * Return         : None.
+ *******************************************************************************/
+void CDC_SetCtrlLineStateCb(void (*cb)(uint16_t ctrlLineState))
+{
+	ctrlLineStateCb = cb;
+}
+
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

@@ -953,6 +953,7 @@ static void cliSerialPassthrough(char *cmdline)
             if (strstr(tok, "tx") || strstr(tok, "TX"))
                 mode |= MODE_TX;
             break;
+#ifdef IOGetByTag
         case 3:
         	// When programming Arduino based devices such as MinimOSD, the DTR line is used to control
         	// the reset. This parameter is the pin number. For example, 56 (0x38) is port C8. This allows
@@ -961,6 +962,7 @@ static void cliSerialPassthrough(char *cmdline)
             IOInit(IOGetByTag(dtrPin), OWNER_SERIAL_PASSTHROUGH, 0);
             IOConfigGPIO(IOGetByTag(dtrPin), IOCFG_OUT_PP);
             break;
+#endif /* IOGetByTag */
         }
         index++;
         tok = strtok_r(NULL, " ", &saveptr);

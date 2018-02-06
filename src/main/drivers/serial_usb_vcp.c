@@ -71,8 +71,10 @@ static void usbVcpSetCtrlLineStateCb(serialPort_t *instance, void (*cb)(uint16_t
 {
     UNUSED(instance);
 
+#if defined(STM32F4) || defined(STM32F7)
     // Register upper driver control line state callback routine with USB driver
     CDC_SetCtrlLineStateCb(cb);
+#endif
 }
 
 static bool isUsbVcpTransmitBufferEmpty(const serialPort_t *instance)
