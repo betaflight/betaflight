@@ -55,6 +55,8 @@ extern __IO uint32_t receiveLength;                          // HJI
 uint8_t receiveBuffer[64];                                   // HJI
 uint32_t sendLength;                                          // HJI
 static void IntToUnicode(uint32_t value, uint8_t *pbuf, uint8_t len);
+static void (*ctrlLineStateCb)(uint16_t ctrlLineState);
+
 /* Extern variables ----------------------------------------------------------*/
 
 /* Private function prototypes -----------------------------------------------*/
@@ -388,4 +390,15 @@ uint32_t CDC_BaudRate(void)
     return Virtual_Com_Port_GetBaudRate();
 }
 
+/*******************************************************************************
+ * Function Name  : CDC_SetCtrlLineStateCb
+ * Description    : Set a callback to call when control line state changes
+ * Input          : None.
+ * Output         : None.
+ * Return         : None.
+ *******************************************************************************/
+void CDC_SetCtrlLineStateCb(void (*cb)(uint16_t ctrlLineState))
+{
+	ctrlLineStateCb = cb;
+}
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
