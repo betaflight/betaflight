@@ -63,7 +63,7 @@
 #define SBUS_BAUDRATE 100000
 
 #if !defined(SBUS_PORT_OPTIONS)
-#define SBUS_PORT_OPTIONS (SERIAL_STOPBITS_2 | SERIAL_PARITY_EVEN)
+#define SBUS_PORT_OPTIONS (SERIAL_STOPBITS_2)
 #endif
 
 #define SBUS_DIGITAL_CHANNEL_MIN 173
@@ -189,7 +189,8 @@ bool sbusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
         &sbusFrameData,
         SBUS_BAUDRATE,
         portShared ? MODE_RXTX : MODE_RX,
-        SBUS_PORT_OPTIONS | (rxConfig->serialrx_inverted ? 0 : SERIAL_INVERTED) | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0)
+        SBUS_PORT_OPTIONS | (rxConfig->serialrx_inverted ? 0 : SERIAL_INVERTED) | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0) |
+            (rxConfig->serialrx_parity + SERIAL_PARITY_NO)
         );
 
 #ifdef USE_TELEMETRY

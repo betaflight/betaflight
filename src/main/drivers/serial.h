@@ -31,8 +31,8 @@ typedef enum {
     SERIAL_INVERTED      = 1 << 0,
     SERIAL_STOPBITS_1    = 0 << 1,
     SERIAL_STOPBITS_2    = 1 << 1,
-    SERIAL_PARITY_NO     = 0 << 2,
-    SERIAL_PARITY_EVEN   = 1 << 2,
+    UNUSED_1             = 0 << 2,
+    UNUSED_2             = 1 << 2,
     SERIAL_UNIDIR        = 0 << 3,
     SERIAL_BIDIR         = 1 << 3,
 
@@ -44,8 +44,19 @@ typedef enum {
      * to actual data bytes.
      */
     SERIAL_BIDIR_OD      = 0 << 4,
-    SERIAL_BIDIR_PP      = 1 << 4
+    SERIAL_BIDIR_PP      = 1 << 4,
+
+    SERIAL_PARITY        = (1 << 6) | (1 << 5),
+    SERIAL_PARITY_NO     = (0 << 6) | (0 << 5),
+    SERIAL_PARITY_EVEN   = (0 << 6) | (1 << 5),
+    SERIAL_PARITY_ODD    = (1 << 6) | (0 << 5)
 } portOptions_e;
+
+typedef enum {
+    PARITY_NO,
+    PARITY_EVEN,
+    PARITY_ODD
+} portParity_e;
 
 typedef void (*serialReceiveCallbackPtr)(uint16_t data, void *rxCallbackData);   // used by serial drivers to return frames to app
 
