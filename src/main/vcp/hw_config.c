@@ -399,6 +399,6 @@ uint32_t CDC_BaudRate(void)
  *******************************************************************************/
 void CDC_SetCtrlLineStateCb(void (*cb)(uint16_t ctrlLineState))
 {
-	ctrlLineStateCb = cb;
+    ctrlLineStateCb = cb;
 }
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

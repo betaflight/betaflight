@@ -186,7 +186,7 @@ static const struct serialPortVTable usbVTable[] = {
         .serialSetBaudRate = usbVcpSetBaudRate,
         .isSerialTransmitBufferEmpty = isUsbVcpTransmitBufferEmpty,
         .setMode = usbVcpSetMode,
-		.setCtrlLineStateCb = usbVcpSetCtrlLineStateCb,
+        .setCtrlLineStateCb = usbVcpSetCtrlLineStateCb,
         .writeBuf = usbVcpWriteBuf,
         .beginWrite = usbVcpBeginWrite,
         .endWrite = usbVcpEndWrite
@@ -238,5 +238,4 @@ uint32_t usbVcpGetBaudRate(serialPort_t *instance)
 
     return CDC_BaudRate();
 }
-
 #endif

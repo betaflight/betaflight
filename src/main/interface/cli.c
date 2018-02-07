@@ -978,19 +978,19 @@ static void cliSerialPassthrough(char *cmdline)
                 mode |= MODE_TX;
             break;
         case 3:
-        	// When programming Arduino based devices such as MinimOSD, the DTR line is used to control
-        	// the reset. This parameter is the pin name, for example C8. This allows
-        	// any GPIO to be used for driving DTR.
-        	if (strToPin(tok, &serialPassthroughDtrTag)) {
+            // When programming Arduino based devices such as MinimOSD, the DTR line is used to control
+            // the reset. This parameter is the pin name, for example C8. This allows
+            // any GPIO to be used for driving DTR.
+            if (strToPin(tok, &serialPassthroughDtrTag)) {
                 if (serialPassthroughDtrTag == IO_TAG_NONE) {
-                	cliPrintLine("Invalid DTR pin");
-                	return;
+                    cliPrintLine("Invalid DTR pin");
+                    return;
                 } else {
-                	serialPassthroughDtrPin = IOGetByTag(serialPassthroughDtrTag);
+                    serialPassthroughDtrPin = IOGetByTag(serialPassthroughDtrTag);
                     IOInit(serialPassthroughDtrPin, OWNER_SERIAL_PASSTHROUGH, 0);
                     IOConfigGPIO(serialPassthroughDtrPin, IOCFG_OUT_PP);
                 }
-        	}
+            }
             break;
         }
         index++;
@@ -998,7 +998,6 @@ static void cliSerialPassthrough(char *cmdline)
     }
 
     cliPrintf("Port %d ", id);
-
     serialPort_t *passThroughPort;
     serialPortUsage_t *passThroughPortUsage = findSerialPortUsageByIdentifier(id);
     if (!passThroughPortUsage || passThroughPortUsage->serialPort == NULL) {
@@ -1030,7 +1029,7 @@ static void cliSerialPassthrough(char *cmdline)
 
         // Set the baud rate
         if (baud) {
-        	serialSetBaudRate(passThroughPort, baud);
+            serialSetBaudRate(passThroughPort, baud);
         }
 
         // If this port has a rx callback associated we need to remove it now.

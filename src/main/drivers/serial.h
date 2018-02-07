@@ -108,7 +108,7 @@ struct serialPortVTable {
     bool (*isSerialTransmitBufferEmpty)(const serialPort_t *instance);
 
     void (*setMode)(serialPort_t *instance, portMode_e mode);
-	void (*setCtrlLineStateCb)(serialPort_t *instance, void (*cb)(uint16_t ctrlLineState));
+    void (*setCtrlLineStateCb)(serialPort_t *instance, void (*cb)(uint16_t ctrlLineState));
 
     void (*writeBuf)(serialPort_t *instance, const void *data, int count);
     // Optional functions used to buffer large writes.

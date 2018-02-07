@@ -205,12 +205,12 @@ static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
     break;
 
   case CDC_SET_CONTROL_LINE_STATE:
-      // If a callback is provided, tell the upper driver of changes in DTR/RTS state
- 	 if (pbuf && (length == sizeof (uint16_t))) {
- 		 if (ctrlLineStateCb) {
- 			 ctrlLineStateCb(*((uint16_t *)pbuf));
- 		 }
- 	 }
+    // If a callback is provided, tell the upper driver of changes in DTR/RTS state
+    if (pbuf && (length == sizeof (uint16_t))) {
+         if (ctrlLineStateCb) {
+             ctrlLineStateCb(*((uint16_t *)pbuf));
+         }
+    }
     break;
 
   case CDC_SEND_BREAK:
@@ -429,7 +429,7 @@ uint32_t CDC_BaudRate(void)
  *******************************************************************************/
 void CDC_SetCtrlLineStateCb(void (*cb)(uint16_t ctrlLineState))
 {
-	ctrlLineStateCb = cb;
+    ctrlLineStateCb = cb;
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

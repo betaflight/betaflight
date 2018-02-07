@@ -139,9 +139,9 @@ static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len)
       case SET_CONTROL_LINE_STATE:
          // If a callback is provided, tell the upper driver of changes in DTR/RTS state
     	 if (Buf && (Len == sizeof (uint16_t))) {
-    		 if (ctrlLineStateCb) {
-    			 ctrlLineStateCb(*((uint16_t *)Buf));
-    		 }
+    	     if (ctrlLineStateCb) {
+    	         ctrlLineStateCb(*((uint16_t *)Buf));
+    	     }
     	 }
          break;
 
@@ -308,7 +308,7 @@ uint32_t CDC_BaudRate(void)
  *******************************************************************************/
 void CDC_SetCtrlLineStateCb(void (*cb)(uint16_t ctrlLineState))
 {
-	ctrlLineStateCb = cb;
+    ctrlLineStateCb = cb;
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
