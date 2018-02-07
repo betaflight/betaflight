@@ -537,3 +537,9 @@ void spektrumBind(rxConfig_t *rxConfig)
     UNUSED(rxConfig);
     printf("spektrumBind");
 }
+
+void IOConfigGPIO(IO_t io, ioConfig_t cfg)
+{
+    UNUSED(io);
+    UNUSED(cfg);
+}
