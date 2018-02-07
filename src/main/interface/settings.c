@@ -67,6 +67,7 @@
 #include "pg/max7456.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/camera_control.h"
 #include "pg/rx_pwm.h"
 #include "pg/sdcard.h"
 #include "pg/vcd.h"
@@ -229,7 +230,6 @@ static const char * const lookupTableGyroLpf[] = {
 #ifdef USE_CAMERA_CONTROL
 static const char * const lookupTableCameraControlMode[] = {
     "HARDWARE_PWM",
-    "SOFTWARE_PWM",
     "DAC"
 };
 #endif
