@@ -352,22 +352,26 @@ static void sendVario(void)
 static void sendVoltageCells(void)
 {
     static uint16_t currentCell;
+    uint32_t cellVoltage = 0;
+    const uint8_t cellCount = getBatteryCellCount();
 
-    uint8_t cellCount = getBatteryCellCount();
-    currentCell %= cellCount;
-
-    /*
-     * Format for Voltage Data for single cells is like this:
-     *
-     *  llll llll cccc hhhh
-     *  l: Low voltage bits
-     *  h: High voltage bits
-     *  c: Cell number (starting at 0)
-     *
-     * The actual value sent for cell voltage has resolution of 0.002 volts
-     * Since vbat has resolution of 0.1 volts it has to be multiplied by 50
-     */
-    uint32_t cellVoltage = ((uint32_t)getBatteryVoltage() * 100 + cellCount) / (cellCount * 2);
+    if (cellCount) {
+        currentCell %= cellCount;
+        /*
+        * Format for Voltage Data for single cells is like this:
+        *
+        *  llll llll cccc hhhh
+        *  l: Low voltage bits
+        *  h: High voltage bits
+        *  c: Cell number (starting at 0)
+        *
+        * The actual value sent for cell voltage has resolution of 0.002 volts
+        * Since vbat has resolution of 0.1 volts it has to be multiplied by 50
+        */
+        cellVoltage = ((uint32_t)getBatteryVoltage() * 100 + cellCount) / (cellCount * 2);
+    } else {
+        currentCell = 0;
+    }
 
     // Cell number is at bit 9-12
     uint16_t data = (currentCell << 4);
@@ -389,6 +393,7 @@ static void sendVoltageCells(void)
 static void sendVoltageAmp(void)
 {
     uint16_t voltage = getBatteryVoltage();
+    const uint8_t cellCount = getBatteryCellCount();
 
     if (telemetryConfig()->frsky_vfas_precision == FRSKY_VFAS_PRECISION_HIGH) {
         // Use new ID 0x39 to send voltage directly in 0.1 volts resolution
@@ -396,8 +401,8 @@ static void sendVoltageAmp(void)
     } else {
         // send in 0.2 volts resolution
         voltage *= 110 / 21;
-        if (telemetryConfig()->report_cell_voltage) {
-            voltage /= getBatteryCellCount();
+        if (telemetryConfig()->report_cell_voltage && cellCount) {
+            voltage /= cellCount;
         }
 
         frSkyHubWriteFrame(ID_VOLTAGE_AMP_BP, voltage / 100);
@@ -554,11 +559,11 @@ void processFrSkyHubTelemetry(timeUs_t currentTimeUs)
         sendTemperature1();
         sendThrottleOrBatterySizeAsRpm();
 
-        if (isBatteryVoltageAvailable()) {
+        if (isBatteryVoltageConfigured()) {
             sendVoltageCells();
             sendVoltageAmp();
 
-            if (isAmperageAvailable()) {
+            if (isAmperageConfigured()) {
                 sendAmperage();
                 sendFuelLevel();
             }
