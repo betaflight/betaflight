@@ -3220,6 +3220,10 @@ const cliResourceValue_t resourceTable[] = {
 #ifdef USE_MAG
     { OWNER_COMPASS_CS,    PG_COMPASS_CONFIG, offsetof(compassConfig_t, mag_spi_csn), 0 },
 #endif
+#ifdef USE_SDCARD
+    { OWNER_SDCARD_CS,     PG_SDCARD_CONFIG, offsetof(sdcardConfig_t, chipSelectTag), 0 },
+    { OWNER_SDCARD_DETECT, PG_SDCARD_CONFIG, offsetof(sdcardConfig_t, cardDetectTag), 0 },
+#endif
 };
 
 static ioTag_t *getIoTag(const cliResourceValue_t value, uint8_t index)
