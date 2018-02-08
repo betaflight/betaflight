@@ -3783,7 +3783,7 @@ const clicmd_t cmdTable[] = {
 #endif
     CLI_COMMAND_DEF("serial", "configure serial ports", NULL, cliSerial),
 #ifndef SKIP_SERIAL_PASSTHROUGH
-    CLI_COMMAND_DEF("serialpassthrough", "passthrough serial data to port", "<id> [baud] [mode] : passthrough to serial", cliSerialPassthrough),
+    CLI_COMMAND_DEF("serialpassthrough", "passthrough serial data to port", "<id> [baud] [mode] [dtr pin]: passthrough to serial", cliSerialPassthrough),
 #endif
 #ifdef USE_SERVOS
     CLI_COMMAND_DEF("servo", "configure servos", NULL, cliServo),
