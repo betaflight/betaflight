@@ -385,7 +385,7 @@ bool fportRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
         telemetryEnabled = initSmartPortTelemetryExternal(smartPortWriteFrameFport);
 #endif
 
-        if (rxConfig->rssi_from_rx_protocol) {
+        if (rssiSource == RSSI_SOURCE_NONE) {
             rssiSource = RSSI_SOURCE_RX_PROTOCOL;
         }
     }

@@ -178,8 +178,8 @@ bool sbusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
         SBUS_PORT_OPTIONS | (rxConfig->serialrx_inverted ? 0 : SERIAL_INVERTED) | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0)
         );
 
-    if (rxConfig->rssi_from_rx_protocol) {
-        rssiSource = RSSI_SOURCE_RX_PROTOCOL;
+    if (rxConfig->rssi_src_frame_errors) {
+        rssiSource = RSSI_SOURCE_FRAME_ERRORS;
     }
 
 #ifdef USE_TELEMETRY

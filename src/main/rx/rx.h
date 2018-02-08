@@ -130,7 +130,7 @@ typedef struct rxConfig_s {
     ioTag_t spektrum_bind_plug_ioTag;
     uint8_t spektrum_sat_bind;              // number of bind pulses for Spektrum satellite receivers
     uint8_t spektrum_sat_bind_autoreset;    // whenever we will reset (exit) binding mode after hard reboot
-    uint8_t rssi_from_rx_protocol;			// true to use frame drop flags in the rx protocol
+    uint8_t rssi_src_frame_errors;			// true to use frame drop flags in the rx protocol
     uint8_t rssi_channel;
     uint8_t rssi_scale;
     uint8_t rssi_invert;
@@ -170,6 +170,7 @@ typedef enum {
     RSSI_SOURCE_ADC,
     RSSI_SOURCE_RX_CHANNEL,
     RSSI_SOURCE_RX_PROTOCOL,
+	RSSI_SOURCE_FRAME_ERRORS,
     RSSI_SOURCE_MSP,
 } rssiSource_e;
 
