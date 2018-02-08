@@ -17,6 +17,9 @@
 
 #pragma once
 
+#include "io_types.h"
+#include "pg/pg.h"
+
 typedef enum {
     CAMERA_CONTROL_KEY_ENTER,
     CAMERA_CONTROL_KEY_LEFT,
@@ -28,10 +31,25 @@ typedef enum {
 
 typedef enum {
     CAMERA_CONTROL_MODE_HARDWARE_PWM,
+    CAMERA_CONTROL_MODE_SOFTWARE_PWM,
     CAMERA_CONTROL_MODE_DAC,
     CAMERA_CONTROL_MODES_COUNT
 } cameraControlMode_e;
 
+typedef struct cameraControlConfig_s {
+    cameraControlMode_e mode;
+    // measured in 10 mV steps
+    uint16_t refVoltage;
+    uint16_t keyDelayMs;
+    // measured 100 Ohm steps
+    uint16_t internalResistance;
+
+    ioTag_t ioTag;
+} cameraControlConfig_t;
+
+PG_DECLARE(cameraControlConfig_t, cameraControlConfig);
+
 void cameraControlInit(void);
+
 void cameraControlProcess(uint32_t currentTimeUs);
 void cameraControlKeyPress(cameraControlKey_e key, uint32_t holdDurationMs);
