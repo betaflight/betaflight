@@ -64,6 +64,7 @@ extern "C" {
     gpsSolutionData_t gpsSol;
     uint32_t targetPidLooptime;
     bool cmsInMenu = false;
+    float axisPID_P[3], axisPID_I[3], axisPID_D[3], axisPIDSum[3];
     rxRuntimeConfig_t rxRuntimeConfig = {};
 }
 
@@ -668,4 +669,5 @@ extern "C" {
     void dashboardEnablePageCycling(void) {}
     void dashboardDisablePageCycling(void) {}
     bool imuQuaternionHeadfreeOffsetSet(void) { return true; }
+    void rescheduleTask(cfTaskId_e, uint32_t) {}
 }

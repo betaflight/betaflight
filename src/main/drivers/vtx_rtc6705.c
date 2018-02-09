@@ -38,47 +38,6 @@
 
 
 #define RTC6705_SET_HEAD 0x3210 //fosc=8mhz r=400
-#define RTC6705_SET_A1 0x8F3031 //5865
-#define RTC6705_SET_A2 0x8EB1B1 //5845
-#define RTC6705_SET_A3 0x8E3331 //5825
-#define RTC6705_SET_A4 0x8DB4B1 //5805
-#define RTC6705_SET_A5 0x8D3631 //5785
-#define RTC6705_SET_A6 0x8CB7B1 //5765
-#define RTC6705_SET_A7 0x8C4131 //5745
-#define RTC6705_SET_A8 0x8BC2B1 //5725
-#define RTC6705_SET_B1 0x8BF3B1 //5733
-#define RTC6705_SET_B2 0x8C6711 //5752
-#define RTC6705_SET_B3 0x8CE271 //5771
-#define RTC6705_SET_B4 0x8D55D1 //5790
-#define RTC6705_SET_B5 0x8DD131 //5809
-#define RTC6705_SET_B6 0x8E4491 //5828
-#define RTC6705_SET_B7 0x8EB7F1 //5847
-#define RTC6705_SET_B8 0x8F3351 //5866
-#define RTC6705_SET_E1 0x8B4431 //5705
-#define RTC6705_SET_E2 0x8AC5B1 //5685
-#define RTC6705_SET_E3 0x8A4731 //5665
-#define RTC6705_SET_E4 0x89D0B1 //5645
-#define RTC6705_SET_E5 0x8FA6B1 //5885
-#define RTC6705_SET_E6 0x902531 //5905
-#define RTC6705_SET_E7 0x90A3B1 //5925
-#define RTC6705_SET_E8 0x912231 //5945
-#define RTC6705_SET_F1 0x8C2191 //5740
-#define RTC6705_SET_F2 0x8CA011 //5760
-#define RTC6705_SET_F3 0x8D1691 //5780
-#define RTC6705_SET_F4 0x8D9511 //5800
-#define RTC6705_SET_F5 0x8E1391 //5820
-#define RTC6705_SET_F6 0x8E9211 //5840
-#define RTC6705_SET_F7 0x8F1091 //5860
-#define RTC6705_SET_F8 0x8F8711 //5880
-#define RTC6705_SET_R1 0x8A2151 //5658
-#define RTC6705_SET_R2 0x8B04F1 //5695
-#define RTC6705_SET_R3 0x8BF091 //5732
-#define RTC6705_SET_R4 0x8CD431 //5769
-#define RTC6705_SET_R5 0x8DB7D1 //5806
-#define RTC6705_SET_R6 0x8EA371 //5843
-#define RTC6705_SET_R7 0x8F8711 //5880
-#define RTC6705_SET_R8 0x9072B1 //5917
-
 #define RTC6705_SET_R  400     //Reference clock
 #define RTC6705_SET_FDIV 1024  //128*(fosc/1000000)
 #define RTC6705_SET_NDIV 16    //Remainder divider to get 'A' part of equation
@@ -115,15 +74,6 @@ static IO_t vtxCLKPin       = IO_NONE;
 #define ENABLE_VTX_POWER()          IOLo(vtxPowerPin)
 #define DISABLE_VTX_POWER()         IOHi(vtxPowerPin)
 
-
-// Define variables
-static const uint32_t channelArray[VTX_RTC6705_BAND_COUNT][VTX_RTC6705_CHANNEL_COUNT] = {
-    { RTC6705_SET_A1, RTC6705_SET_A2, RTC6705_SET_A3, RTC6705_SET_A4, RTC6705_SET_A5, RTC6705_SET_A6, RTC6705_SET_A7, RTC6705_SET_A8 },
-    { RTC6705_SET_B1, RTC6705_SET_B2, RTC6705_SET_B3, RTC6705_SET_B4, RTC6705_SET_B5, RTC6705_SET_B6, RTC6705_SET_B7, RTC6705_SET_B8 },
-    { RTC6705_SET_E1, RTC6705_SET_E2, RTC6705_SET_E3, RTC6705_SET_E4, RTC6705_SET_E5, RTC6705_SET_E6, RTC6705_SET_E7, RTC6705_SET_E8 },
-    { RTC6705_SET_F1, RTC6705_SET_F2, RTC6705_SET_F3, RTC6705_SET_F4, RTC6705_SET_F5, RTC6705_SET_F6, RTC6705_SET_F7, RTC6705_SET_F8 },
-    { RTC6705_SET_R1, RTC6705_SET_R2, RTC6705_SET_R3, RTC6705_SET_R4, RTC6705_SET_R5, RTC6705_SET_R6, RTC6705_SET_R7, RTC6705_SET_R8 },
-};
 
 /**
  * Reverse a uint32_t (LSB to MSB)
@@ -191,25 +141,11 @@ static void rtc6705Transfer(uint32_t command)
     delayMicroseconds(2);
 }
 
-/**
- * Set a band and channel
- */
-void rtc6705SetBandAndChannel(uint8_t band, uint8_t channel)
-{
-    band = constrain(band, 0, VTX_RTC6705_BAND_COUNT - 1);
-    channel = constrain(channel, 0, VTX_RTC6705_CHANNEL_COUNT - 1);
-
-    spiSetDivisor(RTC6705_SPI_INSTANCE, SPI_CLOCK_SLOW);
-
-    rtc6705Transfer(RTC6705_SET_HEAD);
-    rtc6705Transfer(channelArray[band][channel]);
-}
-
  /**
- * Set a freq in mhz
+ * Set a frequency in Mhz
  * Formula derived from datasheet
  */
-void rtc6705SetFreq(uint16_t frequency)
+void rtc6705SetFrequency(uint16_t frequency)
 {
     frequency = constrain(frequency, VTX_RTC6705_FREQ_MIN, VTX_RTC6705_FREQ_MAX);
 

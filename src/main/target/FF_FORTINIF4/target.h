@@ -86,7 +86,6 @@
 /*---------------------------------*/
 
 /*-------------OSD-----------------*/
-#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI3
 #define MAX7456_SPI_CS_PIN      PB3
@@ -112,12 +111,15 @@
 #define UART4_TX_PIN            PA0
 #define UART4_RX_PIN            PA1
 
+#define USE_UART5
+#define UART5_RX_PIN            PD2
+#define UART5_TX_PIN            NONE
+
 #define USE_UART6
 #define UART6_RX_PIN            PC7
 #define UART6_TX_PIN            PC6
 
-#define SERIAL_PORT_COUNT       5
-//SPECKTRUM BIND
+#define SERIAL_PORT_COUNT       6
 /*---------------------------------*/
 
 /*-------------SPIs----------------*/

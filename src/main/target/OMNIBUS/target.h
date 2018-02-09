@@ -18,11 +18,8 @@
 #pragma once
 
 // Removed to make the firmware fit into flash:
-#undef USE_TELEMETRY_IBUS
-#undef USE_TELEMETRY_JETIEXBUS
-#undef USE_SERIALRX_JETIEXBUS
-#undef USE_TELEMETRY_MAVLINK
 #undef USE_TELEMETRY_LTM
+#undef USE_RTC_TIME
 
 
 #define TARGET_BOARD_IDENTIFIER "OMNI" // https://en.wikipedia.org/wiki/Omnibus
@@ -104,8 +101,6 @@
 
 // OSD define info:
 //   feature name (includes source) -> MAX_OSD, used in target.mk
-// include the osd code
-#define USE_OSD
 
 // include the max7456 driver
 #define USE_MAX7456
@@ -143,7 +138,6 @@
 // DSHOT output 4 uses DMA1_Channel5, so don't use it for the SDCARD until we find an alternative
 #ifndef USE_DSHOT
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
-#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA1_FLAG_TC5
 #endif
 
 // Performance logging for SD card operations:

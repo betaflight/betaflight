@@ -549,8 +549,9 @@ static bool osdDrawSingleElement(uint8_t item)
             const char vtxBandLetter = vtx58BandLetter[vtxSettingsConfig()->band];
             const char *vtxChannelName = vtx58ChannelNames[vtxSettingsConfig()->channel];
             uint8_t vtxPower = vtxSettingsConfig()->power;
-            if (vtxSettingsConfig()->lowPowerDisarm) {
-                vtxCommonGetPowerIndex(&vtxPower);
+            const vtxDevice_t *vtxDevice = vtxCommonDevice();
+            if (vtxDevice && vtxSettingsConfig()->lowPowerDisarm) {
+                vtxCommonGetPowerIndex(vtxDevice, &vtxPower);
             }
             tfp_sprintf(buff, "%c:%s:%2d", vtxBandLetter, vtxChannelName, vtxPower);
             break;

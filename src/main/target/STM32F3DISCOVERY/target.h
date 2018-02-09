@@ -31,7 +31,7 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
-#undef USE_TELEMETRY_JETIEXBUS // ROM SAVING
+#undef USE_OSD // ROM SAVING
 
 #define CURRENT_TARGET_CPU_VOLTAGE 3.0
 
@@ -128,7 +128,6 @@
 #define USE_BARO_BMP280
 #define USE_BARO_MS5611
 
-//#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI2
 #define MAX7456_SPI_CS_PIN      SPI2_NSS_PIN
@@ -144,7 +143,6 @@
 //
 //// Note, this is the same DMA channel as UART1_RX. Luckily we don't use DMA for USART Rx.
 //#define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
-//#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA1_FLAG_TC5
 
 // Performance logging for SD card operations:
 // #define AFATFS_USE_INTROSPECTIVE_LOGGING

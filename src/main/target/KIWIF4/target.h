@@ -62,7 +62,6 @@
 #define ACC_MPU6000_ALIGN       CW180_DEG
 
 #if defined(KIWIF4) || defined(KIWIF4V2)
-#define USE_OSD
 #define USE_MAX7456
 #endif
 
@@ -93,14 +92,10 @@
 
 
 //#define SDCARD_DMA_CHANNEL_TX               DMA1_Stream5
-//#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF5
-//#define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
-//#define SDCARD_DMA_CHANNEL                  DMA_Channel_0
+//#define SDCARD_DMA_CHANNEL                  0
 
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Stream4
-#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF4
-#define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
-#define SDCARD_DMA_CHANNEL                  DMA_Channel_0
+#define SDCARD_DMA_CHANNEL                  0
 
 #else
 #define USE_FLASHFS

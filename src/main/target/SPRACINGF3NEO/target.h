@@ -95,10 +95,6 @@
 #define USE_VTX_RTC6705
 #define VTX_RTC6705_OPTIONAL    // VTX/OSD board is OPTIONAL
 
-// Disabled due to flash size
-#undef USE_VTX_SMARTAUDIO
-#undef USE_VTX_TRAMP
-
 #define RTC6705_CS_PIN          PF4
 #define RTC6705_SPI_INSTANCE    SPI3
 #define RTC6705_POWER_PIN       PC3
@@ -131,7 +127,6 @@
 
 // Note, this is the same DMA channel as UART1_RX. Luckily we don't use DMA for USART Rx.
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
-#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA1_FLAG_TC5
 
 #define MPU6500_CS_PIN                   SPI1_NSS_PIN
 #define MPU6500_SPI_INSTANCE             SPI1

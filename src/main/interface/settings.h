@@ -46,7 +46,6 @@ typedef enum {
     TABLE_RX_SPI,
 #endif
     TABLE_GYRO_LPF,
-    TABLE_GYRO_HARDWARE,
     TABLE_ACC_HARDWARE,
 #ifdef USE_BARO
     TABLE_BARO_HARDWARE,
@@ -55,16 +54,12 @@ typedef enum {
     TABLE_MAG_HARDWARE,
 #endif
     TABLE_DEBUG,
-    TABLE_SUPEREXPO_YAW,
     TABLE_MOTOR_PWM_PROTOCOL,
     TABLE_RC_INTERPOLATION,
     TABLE_RC_INTERPOLATION_CHANNELS,
     TABLE_LOWPASS_TYPE,
     TABLE_FAILSAFE,
     TABLE_CRASH_RECOVERY,
-#ifdef USE_OSD
-    TABLE_OSD,
-#endif
 #ifdef USE_CAMERA_CONTROL
     TABLE_CAMERA_CONTROL_MODE,
 #endif
@@ -80,7 +75,6 @@ typedef enum {
 #endif
     TABLE_RATES_TYPE,
     LOOKUP_TABLE_COUNT
-
 } lookupTableIndex_e;
 
 typedef struct lookupTableEntry_s {

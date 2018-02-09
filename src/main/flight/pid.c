@@ -56,7 +56,7 @@ static FAST_RAM bool pidStabilisationEnabled;
 
 static FAST_RAM bool inCrashRecoveryMode = false;
 
-FAST_RAM float axisPID_P[3], axisPID_I[3], axisPID_D[3];
+FAST_RAM float axisPID_P[3], axisPID_I[3], axisPID_D[3], axisPIDSum[3];
 
 static FAST_RAM float dT;
 
@@ -69,9 +69,21 @@ PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 1);
 #else
 #define PID_PROCESS_DENOM_DEFAULT       2
 #endif
+
+#ifdef USE_RUNAWAY_TAKEOFF
+PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
+    .pid_process_denom = PID_PROCESS_DENOM_DEFAULT,
+    .runaway_takeoff_prevention = true,
+    .runaway_takeoff_threshold = 60,            // corresponds to a pidSum value of 60% (raw 600) in the blackbox viewer
+    .runaway_takeoff_activate_delay = 75,       // 75ms delay before activation (pidSum above threshold time)
+    .runaway_takeoff_deactivate_throttle = 25,  // throttle level % needed to accumulate deactivation time
+    .runaway_takeoff_deactivate_delay = 500     // Accumulated time (in milliseconds) before deactivation in successful takeoff
+);
+#else
 PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
     .pid_process_denom = PID_PROCESS_DENOM_DEFAULT
 );
+#endif
 
 PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 2);
 
@@ -417,8 +429,13 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
     const float deltaT = (currentTimeUs - previousTimeUs) * 0.000001f;
     previousTimeUs = currentTimeUs;
 
-    // Dynamic ki component to gradually scale back integration when above windup point
-    const float dynKi = MIN((1.0f - motorMixRange) * ITermWindupPointInv, 1.0f);
+    // Dynamic i component,
+    // gradually scale back integration when above windup point,
+    // use dT (not deltaT) for ITerm calculation to avoid wind-up caused by jitter
+    const float dynCi = MIN((1.0f - motorMixRange) * ITermWindupPointInv, 1.0f) * dT * itermAccelerator;
+
+    // Dynamic d component, enable 2-DOF PID controller only for rate mode
+    const float dynCd = flightModeFlags ? 0.0f : dtermSetpointWeight;
 
     // ----------PID controller----------
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
@@ -484,8 +501,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
 
         // -----calculate I component
         const float ITerm = axisPID_I[axis];
-        // use dT (not deltaT) for ITerm calculation to avoid wind-up caused by jitter
-        const float ITermNew = constrainf(ITerm + Ki[axis] * errorRate * dT * dynKi * itermAccelerator, -itermLimit, itermLimit);
+        const float ITermNew = constrainf(ITerm + Ki[axis] * errorRate * dynCi, -itermLimit, itermLimit);
         const bool outputSaturated = mixerIsOutputSaturated(axis, errorRate);
         if (outputSaturated == false || ABS(ITermNew) < ABS(ITerm)) {
             // Only increase ITerm if output is not saturated
@@ -498,11 +514,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             float gyroRateFiltered = dtermNotchFilterApplyFn(dtermFilterNotch[axis], gyroRate);
             gyroRateFiltered = dtermLpfApplyFn(dtermFilterLpf[axis], gyroRateFiltered);
 
-            float dynC = 0;
-            if ( (pidProfile->dtermSetpointWeight > 0) && (!flightModeFlags) ) {
-                dynC = dtermSetpointWeight * MIN(getRcDeflectionAbs(axis) * relaxFactor, 1.0f);
-            }
-            const float rD = dynC * currentPidSetpoint - gyroRateFiltered;    // cr - y
+            const float rD = dynCd * MIN(getRcDeflectionAbs(axis) * relaxFactor, 1.0f) * currentPidSetpoint - gyroRateFiltered;    // cr - y
             // Divide rate change by deltaT to get differential (ie dr/dt)
             float delta = (rD - previousRateError[axis]) / deltaT;
 
@@ -530,6 +542,9 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
                 }
             }
             axisPID_D[axis] = Kd[axis] * delta * tpaFactor;
+            axisPIDSum[axis] = axisPID_P[axis] + axisPID_I[axis] + axisPID_D[axis];
+        } else {
+            axisPIDSum[axis] = axisPID_P[axis] + axisPID_I[axis];
         }
 
         // Disable PID control if at zero throttle or if gyro overflow detected
@@ -537,6 +552,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             axisPID_P[axis] = 0;
             axisPID_I[axis] = 0;
             axisPID_D[axis] = 0;
+            axisPIDSum[axis] = 0;
         }
     }
 }

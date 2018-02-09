@@ -22,22 +22,23 @@
 
 #if defined(USE_VTX_COMMON)
 
-#include "common/time.h"
 #include "common/maths.h"
-
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
+#include "common/time.h"
 
 #include "drivers/vtx_common.h"
 
 #include "fc/config.h"
-#include "fc/runtime_config.h"
 #include "fc/rc_modes.h"
+#include "fc/runtime_config.h"
 
 #include "io/vtx.h"
 #include "io/vtx_string.h"
+#include "io/vtx_control.h"
 
 #include "interface/cli.h"
+
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 
 PG_REGISTER_WITH_RESET_TEMPLATE(vtxSettingsConfig_t, vtxSettingsConfig, PG_VTX_SETTINGS_CONFIG, 0);
@@ -50,8 +51,6 @@ PG_RESET_TEMPLATE(vtxSettingsConfig_t, vtxSettingsConfig,
     .pitModeFreq = VTX_SETTINGS_DEFAULT_PITMODE_FREQ,
     .lowPowerDisarm = VTX_SETTINGS_DEFAULT_LOW_POWER_DISARM,
 );
-
-#define VTX_PARAM_CYCLE_TIME_US 100000 // 10Hz
 
 typedef enum {
     VTX_PARAM_POWER = 0,
@@ -88,7 +87,8 @@ void vtxInit(void)
     }
 }
 
-static vtxSettingsConfig_t vtxGetSettings(void) {
+static vtxSettingsConfig_t vtxGetSettings(void)
+{
     vtxSettingsConfig_t settings = {
         .band = vtxSettingsConfig()->band,
         .channel = vtxSettingsConfig()->channel,
@@ -113,14 +113,15 @@ static vtxSettingsConfig_t vtxGetSettings(void) {
     return settings;
 }
 
-static bool vtxProcessBandAndChannel(void) {
+static bool vtxProcessBandAndChannel(vtxDevice_t *vtxDevice)
+{
     if(!ARMING_FLAG(ARMED)) {
         uint8_t vtxBand;
         uint8_t vtxChan;
-        if (vtxCommonGetBandAndChannel(&vtxBand, &vtxChan)) {
+        if (vtxCommonGetBandAndChannel(vtxDevice, &vtxBand, &vtxChan)) {
             const vtxSettingsConfig_t settings = vtxGetSettings();
             if (vtxBand != settings.band || vtxChan != settings.channel) {
-                vtxCommonSetBandAndChannel(settings.band, settings.channel);
+                vtxCommonSetBandAndChannel(vtxDevice, settings.band, settings.channel);
                 return true;
             }
         }
@@ -129,13 +130,14 @@ static bool vtxProcessBandAndChannel(void) {
 }
 
 #if defined(VTX_SETTINGS_FREQCMD)
-static bool vtxProcessFrequency(void) {
+static bool vtxProcessFrequency(vtxDevice_t *vtxDevice)
+{
     if(!ARMING_FLAG(ARMED)) {
         uint16_t vtxFreq;
-        if (vtxCommonGetFrequency(&vtxFreq)) {
+        if (vtxCommonGetFrequency(vtxDevice, &vtxFreq)) {
             const vtxSettingsConfig_t settings = vtxGetSettings();
             if (vtxFreq != settings.freq) {
-                vtxCommonSetFrequency(settings.freq);
+                vtxCommonSetFrequency(vtxDevice, settings.freq);
                 return true;
             }
         }
@@ -144,21 +146,23 @@ static bool vtxProcessFrequency(void) {
 }
 #endif
 
-static bool vtxProcessPower(void) {
+static bool vtxProcessPower(vtxDevice_t *vtxDevice)
+{
     uint8_t vtxPower;
-    if (vtxCommonGetPowerIndex(&vtxPower)) {
+    if (vtxCommonGetPowerIndex(vtxDevice, &vtxPower)) {
         const vtxSettingsConfig_t settings = vtxGetSettings();
         if (vtxPower != settings.power) {
-            vtxCommonSetPowerByIndex(settings.power);
+            vtxCommonSetPowerByIndex(vtxDevice, settings.power);
             return true;
         }
     }
     return false;
 }
 
-static bool vtxProcessPitMode(void) {
+static bool vtxProcessPitMode(vtxDevice_t *vtxDevice)
+{
     uint8_t pitOnOff;
-    if (!ARMING_FLAG(ARMED) && vtxCommonGetPitMode(&pitOnOff)) {
+    if (!ARMING_FLAG(ARMED) && vtxCommonGetPitMode(vtxDevice, &pitOnOff)) {
         if (IS_RC_MODE_ACTIVE(BOXVTXPITMODE)) {
 #if defined(VTX_SETTINGS_FREQCMD)
             if (vtxSettingsConfig()->pitModeFreq) {
@@ -167,12 +171,12 @@ static bool vtxProcessPitMode(void) {
 #endif
             if (isModeActivationConditionPresent(BOXVTXPITMODE)) {
                 if (!pitOnOff) {
-                    vtxCommonSetPitMode(true);
+                    vtxCommonSetPitMode(vtxDevice, true);
                     return true;
                 }
             } else {
                 if (pitOnOff) {
-                    vtxCommonSetPitMode(false);
+                    vtxCommonSetPitMode(vtxDevice, false);
                     return true;
                 }
             }
@@ -181,65 +185,63 @@ static bool vtxProcessPitMode(void) {
     return false;
 }
 
-static bool vtxProcessStateUpdate(void)
+static bool vtxProcessStateUpdate(vtxDevice_t *vtxDevice)
 {
     const vtxSettingsConfig_t vtxSettingsState = vtxGetSettings();
     vtxSettingsConfig_t vtxState = vtxSettingsState;
 
     if (vtxSettingsState.band) {
-        vtxCommonGetBandAndChannel(&vtxState.band, &vtxState.channel);
+        vtxCommonGetBandAndChannel(vtxDevice, &vtxState.band, &vtxState.channel);
 #if defined(VTX_SETTINGS_FREQCMD)
     } else {
-        vtxCommonGetFrequency(&vtxState.freq);
+        vtxCommonGetFrequency(vtxDevice, &vtxState.freq);
 #endif
     }
 
-    vtxCommonGetPowerIndex(&vtxState.power);
+    vtxCommonGetPowerIndex(vtxDevice, &vtxState.power);
 
-    return (bool) memcmp(&vtxSettingsState, &vtxState, sizeof(vtxSettingsConfig_t));
+    return (bool)memcmp(&vtxSettingsState, &vtxState, sizeof(vtxSettingsConfig_t));
 }
 
 void vtxUpdate(timeUs_t currentTimeUs)
 {
-    static timeUs_t lastCycleTimeUs;
     static uint8_t currentSchedule = 0;
 
     if (cliMode) {
         return;
     }
 
-    if (vtxCommonDeviceRegistered()) {
+    vtxDevice_t *vtxDevice = vtxCommonDevice();
+    if (vtxDevice) {
+        // Check input sources for config updates
+        vtxControlInputPoll();
+
         bool vtxUpdatePending = false;
-        const vtxSettingsConfig_t settings = vtxGetSettings();
-        // Process VTX changes from the parameter group at 10Hz
-        if (currentTimeUs > lastCycleTimeUs + VTX_PARAM_CYCLE_TIME_US) {
-            switch (currentSchedule) {
-            case VTX_PARAM_POWER:
-                vtxUpdatePending = vtxProcessPower();
-                break;
-            case VTX_PARAM_BANDCHAN:
-                if (settings.band) {
-                    vtxUpdatePending = vtxProcessBandAndChannel();
+        switch (currentSchedule) {
+        case VTX_PARAM_POWER:
+            vtxUpdatePending = vtxProcessPower(vtxDevice);
+            break;
+        case VTX_PARAM_BANDCHAN:
+            if (vtxGetSettings().band) {
+                vtxUpdatePending = vtxProcessBandAndChannel(vtxDevice);
 #if defined(VTX_SETTINGS_FREQCMD)
-                } else {
-                    vtxUpdatePending = vtxProcessFrequency();
+            } else {
+                vtxUpdatePending = vtxProcessFrequency(vtxDevice);
 #endif
-                }
-                break;
-            case VTX_PARAM_PITMODE:
-                vtxUpdatePending = vtxProcessPitMode();
-                break;
-            case VTX_PARAM_CONFIRM:
-                 vtxUpdatePending = vtxProcessStateUpdate();
-                 break;
-            default:
-                break;
             }
-            lastCycleTimeUs = currentTimeUs;
-            currentSchedule = (currentSchedule + 1) % VTX_PARAM_COUNT;
+            break;
+        case VTX_PARAM_PITMODE:
+            vtxUpdatePending = vtxProcessPitMode(vtxDevice);
+            break;
+        case VTX_PARAM_CONFIRM:
+            vtxUpdatePending = vtxProcessStateUpdate(vtxDevice);
+            break;
+        default:
+            break;
         }
+        currentSchedule = (currentSchedule + 1) % VTX_PARAM_COUNT;
         if (!ARMING_FLAG(ARMED) || vtxUpdatePending) {
-            vtxCommonProcess(currentTimeUs);
+            vtxCommonProcess(vtxDevice, currentTimeUs);
         }
     }
 }

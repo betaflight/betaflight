@@ -110,30 +110,12 @@ typedef struct vtxDeviceCapability_s {
     uint8_t bandCount;
     uint8_t channelCount;
     uint8_t powerCount;
+    uint8_t filler;
 } vtxDeviceCapability_t;
 
-// {set,get}BandAndChannel: band and channel are 1 origin
-// {set,get}PowerByIndex: 0 = Power OFF, 1 = device dependent
-// {set,get}PitMode: 0 = OFF, 1 = ON
-
-typedef struct vtxVTable_s {
-    void (*process)(timeUs_t currentTimeUs);
-    vtxDevType_e (*getDeviceType)(void);
-    bool (*isReady)(void);
-
-    void (*setBandAndChannel)(uint8_t band, uint8_t channel);
-    void (*setPowerByIndex)(uint8_t level);
-    void (*setPitMode)(uint8_t onoff);
-    void (*setFrequency)(uint16_t freq);
-
-    bool (*getBandAndChannel)(uint8_t *pBand, uint8_t *pChannel);
-    bool (*getPowerIndex)(uint8_t *pIndex);
-    bool (*getPitMode)(uint8_t *pOnOff);
-    bool (*getFrequency)(uint16_t *pFreq);
-} vtxVTable_t;
-
+struct vtxVTable_s;
 typedef struct vtxDevice_s {
-    const vtxVTable_t * const vTable;
+    const struct vtxVTable_s * const vTable;
 
     vtxDeviceCapability_t capability;
 
@@ -142,6 +124,7 @@ typedef struct vtxDevice_s {
     char **channelNames;    // char *channelNames[channelCount]
     char **powerNames;   // char *powerNames[powerCount]
 
+    uint16_t frequency;
     uint8_t band; // Band = 1, 1-based
     uint8_t channel; // CH1 = 1, 1-based
     uint8_t powerIndex; // Lowest/Off = 0
@@ -149,24 +132,44 @@ typedef struct vtxDevice_s {
 } vtxDevice_t;
 
 
+// {set,get}BandAndChannel: band and channel are 1 origin
+// {set,get}PowerByIndex: 0 = Power OFF, 1 = device dependent
+// {set,get}PitMode: 0 = OFF, 1 = ON
+
+typedef struct vtxVTable_s {
+    void (*process)(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs);
+    vtxDevType_e (*getDeviceType)(const vtxDevice_t *vtxDevice);
+    bool (*isReady)(const vtxDevice_t *vtxDevice);
+
+    void (*setBandAndChannel)(vtxDevice_t *vtxDevice, uint8_t band, uint8_t channel);
+    void (*setPowerByIndex)(vtxDevice_t *vtxDevice, uint8_t level);
+    void (*setPitMode)(vtxDevice_t *vtxDevice, uint8_t onoff);
+    void (*setFrequency)(vtxDevice_t *vtxDevice, uint16_t freq);
+
+    bool (*getBandAndChannel)(const vtxDevice_t *vtxDevice, uint8_t *pBand, uint8_t *pChannel);
+    bool (*getPowerIndex)(const vtxDevice_t *vtxDevice, uint8_t *pIndex);
+    bool (*getPitMode)(const vtxDevice_t *vtxDevice, uint8_t *pOnOff);
+    bool (*getFrequency)(const vtxDevice_t *vtxDevice, uint16_t *pFreq);
+} vtxVTable_t;
+
 // 3.1.0
 // PIT mode is defined as LOWEST POSSIBLE RF POWER.
 // - It can be a dedicated mode, or lowest RF power possible.
 // - It is *NOT* RF on/off control ?
 
 void vtxCommonInit(void);
-void vtxCommonRegisterDevice(vtxDevice_t *pDevice);
-bool vtxCommonDeviceRegistered(void);
+void vtxCommonSetDevice(vtxDevice_t *vtxDevice);
+vtxDevice_t *vtxCommonDevice(void);
 
 // VTable functions
-void vtxCommonProcess(timeUs_t currentTimeUs);
-uint8_t vtxCommonGetDeviceType(void);
-void vtxCommonSetBandAndChannel(uint8_t band, uint8_t channel);
-void vtxCommonSetPowerByIndex(uint8_t level);
-void vtxCommonSetPitMode(uint8_t onoff);
-void vtxCommonSetFrequency(uint16_t freq);
-bool vtxCommonGetBandAndChannel(uint8_t *pBand, uint8_t *pChannel);
-bool vtxCommonGetPowerIndex(uint8_t *pIndex);
-bool vtxCommonGetPitMode(uint8_t *pOnOff);
-bool vtxCommonGetFrequency(uint16_t *pFreq);
-bool vtxCommonGetDeviceCapability(vtxDeviceCapability_t *pDeviceCapability);
+void vtxCommonProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs);
+uint8_t vtxCommonGetDeviceType(const vtxDevice_t *vtxDevice);
+void vtxCommonSetBandAndChannel(vtxDevice_t *vtxDevice, uint8_t band, uint8_t channel);
+void vtxCommonSetPowerByIndex(vtxDevice_t *vtxDevice, uint8_t level);
+void vtxCommonSetPitMode(vtxDevice_t *vtxDevice, uint8_t onoff);
+void vtxCommonSetFrequency(vtxDevice_t *vtxDevice, uint16_t freq);
+bool vtxCommonGetBandAndChannel(const vtxDevice_t *vtxDevice, uint8_t *pBand, uint8_t *pChannel);
+bool vtxCommonGetPowerIndex(const vtxDevice_t *vtxDevice, uint8_t *pIndex);
+bool vtxCommonGetPitMode(const vtxDevice_t *vtxDevice, uint8_t *pOnOff);
+bool vtxCommonGetFrequency(const vtxDevice_t *vtxDevice, uint16_t *pFreq);
+bool vtxCommonGetDeviceCapability(const vtxDevice_t *vtxDevice, vtxDeviceCapability_t *pDeviceCapability);

@@ -26,29 +26,32 @@ typedef struct dmaChannelDescriptor_s {
     DMA_TypeDef*                dma;
 #if defined(STM32F4) || defined(STM32F7)
     DMA_Stream_TypeDef*         ref;
+    uint8_t                     stream;
 #else
     DMA_Channel_TypeDef*        ref;
 #endif
     dmaCallbackHandlerFuncPtr   irqHandlerCallback;
     uint8_t                     flagsShift;
     IRQn_Type                   irqN;
-    uint32_t                    rcc;
     uint32_t                    userParam;
     resourceOwner_e             owner;
     uint8_t                     resourceIndex;
+    uint32_t                    completeFlag;
 } dmaChannelDescriptor_t;
 
 #if defined(STM32F7)
 //#define HAL_CLEANINVALIDATECACHE(addr, size) (SCB_CleanInvalidateDCache_by_Addr((uint32_t*)((uint32_t)addr & ~0x1f), ((uint32_t)(addr + size + 0x1f) & ~0x1f) - ((uint32_t)addr & ~0x1f)))
 //#define HAL_CLEANCACHE(addr, size) (SCB_CleanDCache_by_Addr((uint32_t*)((uint32_t)addr & ~0x1f), ((uint32_t)(addr + size + 0x1f) & ~0x1f) - ((uint32_t)addr & ~0x1f)))
+
 #endif
+
+#define DMA_IDENTIFIER_TO_INDEX(x) ((x) - 1)
 
 #if defined(STM32F4) || defined(STM32F7)
 
-uint32_t dmaFlag_IT_TCIF(const DMA_Stream_TypeDef *stream);
-
 typedef enum {
-    DMA1_ST0_HANDLER = 0,
+    DMA_NONE = 0,
+    DMA1_ST0_HANDLER = 1,
     DMA1_ST1_HANDLER,
     DMA1_ST2_HANDLER,
     DMA1_ST3_HANDLER,
@@ -64,18 +67,31 @@ typedef enum {
     DMA2_ST5_HANDLER,
     DMA2_ST6_HANDLER,
     DMA2_ST7_HANDLER,
-    DMA_MAX_DESCRIPTORS
+    DMA_LAST_HANDLER = DMA2_ST7_HANDLER
 } dmaIdentifier_e;
 
-#define DMA_MOD_VALUE       8
-#define DMA_MOD_OFFSET      0
+#define DMA_DEVICE_NO(x)    ((((x)-1) / 8) + 1)
+#define DMA_DEVICE_INDEX(x) ((((x)-1) % 8))
 #define DMA_OUTPUT_INDEX    0
 #define DMA_OUTPUT_STRING   "DMA%d Stream %d:"
+#define DMA_INPUT_STRING    "DMA%d_ST%d"
 
-#define DEFINE_DMA_CHANNEL(d, s, f, i, r) {.dma = d, .ref = s, .irqHandlerCallback = NULL, .flagsShift = f, .irqN = i, .rcc = r, .userParam = 0, .owner = 0, .resourceIndex = 0 }
+#define DEFINE_DMA_CHANNEL(d, s, f) { \
+    .dma = d, \
+    .ref = d ## _Stream ## s, \
+    .stream = s, \
+    .irqHandlerCallback = NULL, \
+    .flagsShift = f, \
+    .irqN = d ## _Stream ## s ## _IRQn, \
+    .userParam = 0, \
+    .owner = 0, \
+    .resourceIndex = 0 \
+    } 
+
 #define DEFINE_DMA_IRQ_HANDLER(d, s, i) void DMA ## d ## _Stream ## s ## _IRQHandler(void) {\
-                                                                if (dmaDescriptors[i].irqHandlerCallback)\
-                                                                    dmaDescriptors[i].irqHandlerCallback(&dmaDescriptors[i]);\
+                                                                const uint8_t index = DMA_IDENTIFIER_TO_INDEX(i); \
+                                                                if (dmaDescriptors[index].irqHandlerCallback)\
+                                                                    dmaDescriptors[index].irqHandlerCallback(&dmaDescriptors[index]);\
                                                             }
 
 #define DMA_CLEAR_FLAG(d, flag) if (d->flagsShift > 31) d->dma->HIFCR = (flag << (d->flagsShift - 32)); else d->dma->LIFCR = (flag << d->flagsShift)
@@ -89,12 +105,15 @@ typedef enum {
 #define DMA_IT_FEIF         ((uint32_t)0x00000001)
 
 dmaIdentifier_e dmaGetIdentifier(const DMA_Stream_TypeDef* stream);
-dmaChannelDescriptor_t* getDmaDescriptor(const DMA_Stream_TypeDef* stream);
+dmaChannelDescriptor_t* dmaGetDmaDescriptor(const DMA_Stream_TypeDef* stream);
+DMA_Stream_TypeDef* dmaGetRefByIdentifier(const dmaIdentifier_e identifier);
+uint32_t dmaGetChannel(const uint8_t channel);
 
 #else
 
 typedef enum {
-    DMA1_CH1_HANDLER = 0,
+    DMA_NONE = 0,
+    DMA1_CH1_HANDLER = 1,
     DMA1_CH2_HANDLER,
     DMA1_CH3_HANDLER,
     DMA1_CH4_HANDLER,
@@ -107,19 +126,33 @@ typedef enum {
     DMA2_CH3_HANDLER,
     DMA2_CH4_HANDLER,
     DMA2_CH5_HANDLER,
+    DMA_LAST_HANDLER = DMA2_CH5_HANDLER 
+#else 
+    DMA_LAST_HANDLER = DMA1_CH7_HANDLER
 #endif
-    DMA_MAX_DESCRIPTORS
 } dmaIdentifier_e;
 
-#define DMA_MOD_VALUE       7
-#define DMA_MOD_OFFSET      1
+#define DMA_DEVICE_NO(x)    ((((x)-1) / 7) + 1)
+#define DMA_DEVICE_INDEX(x) ((((x)-1) % 7) + 1)
 #define DMA_OUTPUT_INDEX    0
 #define DMA_OUTPUT_STRING   "DMA%d Channel %d:"
+#define DMA_INPUT_STRING    "DMA%d_CH%d"
 
-#define DEFINE_DMA_CHANNEL(d, c, f, i, r) {.dma = d, .ref = c, .irqHandlerCallback = NULL, .flagsShift = f, .irqN = i, .rcc = r, .userParam = 0, .owner = 0, .resourceIndex = 0 }
+#define DEFINE_DMA_CHANNEL(d, c, f) { \
+    .dma = d, \
+    .ref = d ## _Channel ## c, \
+    .irqHandlerCallback = NULL, \
+    .flagsShift = f, \
+    .irqN = d ## _Channel ## c ## _IRQn, \
+    .userParam = 0, \
+    .owner = 0, \
+    .resourceIndex = 0 \
+    }
+
 #define DEFINE_DMA_IRQ_HANDLER(d, c, i) void DMA ## d ## _Channel ## c ## _IRQHandler(void) {\
-                                                                        if (dmaDescriptors[i].irqHandlerCallback)\
-                                                                            dmaDescriptors[i].irqHandlerCallback(&dmaDescriptors[i]);\
+                                                                        const uint8_t index = DMA_IDENTIFIER_TO_INDEX(i); \
+                                                                        if (dmaDescriptors[index].irqHandlerCallback)\
+                                                                            dmaDescriptors[index].irqHandlerCallback(&dmaDescriptors[index]);\
                                                                     }
 
 #define DMA_CLEAR_FLAG(d, flag) d->dma->IFCR = (flag << d->flagsShift)
@@ -130,6 +163,7 @@ typedef enum {
 #define DMA_IT_TEIF         ((uint32_t)0x00000008)
 
 dmaIdentifier_e dmaGetIdentifier(const DMA_Channel_TypeDef* channel);
+DMA_Channel_TypeDef* dmaGetRefByIdentifier(const dmaIdentifier_e identifier);
 
 #endif
 
@@ -138,3 +172,4 @@ void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callbac
 
 resourceOwner_e dmaGetOwner(dmaIdentifier_e identifier);
 uint8_t dmaGetResourceIndex(dmaIdentifier_e identifier);
+dmaChannelDescriptor_t* dmaGetDescriptorByIdentifier(const dmaIdentifier_e identifier);

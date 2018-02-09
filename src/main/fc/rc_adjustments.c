@@ -484,7 +484,11 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig)
             newValue = applyStepAdjustment(controlRateConfig, adjustmentFunction, delta);
             pidInitConfig(pidProfile);
         } else if (adjustmentState->config->mode == ADJUSTMENT_MODE_SELECT) {
-            const uint16_t rangeWidth = ((2100 - 900) / adjustmentState->config->data.switchPositions);
+            int switchPositions = adjustmentState->config->data.switchPositions;
+            if (adjustmentFunction == ADJUSTMENT_RATE_PROFILE && systemConfig()->rateProfile6PosSwitch) {
+                switchPositions =  6;
+            }
+            const uint16_t rangeWidth = (2100 - 900) / switchPositions;
             const uint8_t position = (constrain(rcData[channelIndex], 900, 2100 - 1) - 900) / rangeWidth;
             newValue = applySelectAdjustment(adjustmentFunction, position);
         }

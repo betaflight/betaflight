@@ -217,8 +217,8 @@ void spiPreInit(void)
 #ifdef USE_MAX7456
     spiPreInitCsOutPU(IO_TAG(MAX7456_SPI_CS_PIN)); // XXX 3.2 workaround for Kakute F4. See comment for spiPreInitCSOutPU.
 #endif
-#ifdef USE_SDCARD
-    spiPreInitCs(IO_TAG(SDCARD_SPI_CS_PIN));
+#ifdef USE_SDCARD 
+    spiPreInitCs(sdcardConfig()->chipSelectTag);
 #endif
 #ifdef USE_BARO_SPI_BMP280
     spiPreInitCs(IO_TAG(BMP280_CS_PIN));
@@ -664,9 +664,13 @@ void init(void)
 
 #ifdef USE_SDCARD
     if (blackboxConfig()->device == BLACKBOX_DEVICE_SDCARD) {
-        sdcardInsertionDetectInit();
-        sdcard_init(sdcardConfig()->useDma);
-        afatfs_init();
+        if (sdcardConfig()->enabled) {
+            sdcardInsertionDetectInit();
+            sdcard_init(sdcardConfig());
+            afatfs_init();
+        } else {
+            blackboxConfigMutable()->device = BLACKBOX_DEVICE_NONE;
+        }
     }
 #endif
 
@@ -700,7 +704,7 @@ void init(void)
 
 #ifdef USE_VTX_RTC6705
 #ifdef VTX_RTC6705_OPTIONAL
-    if (!vtxCommonDeviceRegistered()) // external VTX takes precedence when configured.
+    if (!vtxCommonDevice()) // external VTX takes precedence when configured.
 #endif
     {
         vtxRTC6705Init();

@@ -83,9 +83,7 @@
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     4 // 21MHz
 
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Stream5
-#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF5
-#define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
-#define SDCARD_DMA_CHANNEL                  DMA_Channel_0
+#define SDCARD_DMA_CHANNEL                  0
 
 // Performance logging for SD card operations:
 // #define AFATFS_USE_INTROSPECTIVE_LOGGING
@@ -119,8 +117,12 @@
 #define UART4_TX_PIN            NONE // PA0
 
 #define USE_SOFTSERIAL1
-#define SOFTSERIAL1_RX_PIN      PB0 // PWM5
-#define SOFTSERIAL1_TX_PIN      PB1 // PWM6
+// Since PB0 (motor 5) and PB1 (motor 6) are assigned with N-channels, these pin can not handle input.
+// Therefore, receiving function of SOFTSERIAL1 can only be assigned to PB3 (DEBUG).
+// Default defined here is to use DEBUG for half-duplex serial, suitable for VTX (SmartAudio or Tramp) controls.
+// For non-half-duplex requirement (full-duplex or simplex in either direction), assign PB3 to RX and PB0 or PB1 to TX.
+#define SOFTSERIAL1_RX_PIN      NONE
+#define SOFTSERIAL1_TX_PIN      PB3  // DEBUG
 
 #define USE_SOFTSERIAL2
 
