@@ -335,21 +335,17 @@ static void osdFormatCoordinate(char *buff, char sym, int32_t val)
 {
     // latitude maximum integer width is 3 (-90).
     // longitude maximum integer width is 4 (-180).
-    // We show 7 decimals, so we need to use 11 characters because
-    // we are embedding the decimal separator between two digits
-    // eg: s-1801234567z   s=symbol, z=zero terminator, decimal separator embedded between 0 and 1
+    // We show 7 decimals, so we need to use 12 characters:
+    // eg: s-180.1234567z   s=symbol, z=zero terminator, decimal separator  between 0 and 1
 
     static const int decimalPlaces = 7;
-    static const int coordinateMaxLength = 11;//5 + decimalPlaces; // 4 for the integer part of the number + 1 for the symbol
+    static const int coordinateMaxLength = 13;//12 for the number (4 + dot + 7) + 1 for the symbol
 
     buff[0] = sym;
     const int32_t integerPart = val / GPS_DEGREES_DIVIDER;
     const int32_t decimalPart = labs(val % GPS_DEGREES_DIVIDER);
-    const int written = tfp_sprintf(buff + 1, "%d", integerPart);
+    const int written = tfp_sprintf(buff + 1, "%d.", integerPart);
     tfp_sprintf(buff + 1 + written, "%07d", decimalPart);
-    // embed the decimal separator
-    buff[1+written-1] += SYM_ZERO_HALF_TRAILING_DOT - '0';
-    buff[1+written] += SYM_ZERO_HALF_LEADING_DOT - '0';
     // pad with blanks to coordinateMaxLength
     for (int pos = 1 + decimalPlaces + written; pos < coordinateMaxLength; ++pos) {
         buff[pos] = SYM_BLANK;
