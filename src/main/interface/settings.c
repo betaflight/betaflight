@@ -64,6 +64,7 @@
 #include "pg/adc.h"
 #include "pg/beeper.h"
 #include "pg/beeper_dev.h"
+#include "pg/dashboard.h"
 #include "pg/max7456.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
