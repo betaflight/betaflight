@@ -18,6 +18,7 @@
 #pragma once
 
 // Removed to make the firmware fit into flash:
+#undef USE_COPY_PROFILE_CMS_MENU
 #undef USE_TELEMETRY_LTM
 #undef USE_RTC_TIME
 
