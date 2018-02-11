@@ -377,13 +377,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
         switch (id) {
             case FSSP_DATAID_VFAS       :
                 if (isBatteryVoltageAvailable()) {
-                    uint16_t vfasVoltage;
-                    if (telemetryConfig()->report_cell_voltage) {
-                        vfasVoltage = getBatteryVoltage() / getBatteryCellCount();
-                    } else {
-                        vfasVoltage = getBatteryVoltage();
-                    }
-                    smartPortSendPackage(id, vfasVoltage * 10); // given in 0.1V, convert to volts
+                    smartPortSendPackage(id, getBatteryVoltage() * 10); // given in 0.1V, convert to volts
                     *clearToSend = false;
                 }
                 break;
