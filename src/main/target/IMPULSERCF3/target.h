@@ -21,7 +21,7 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
-#define USE_DSHOT_DMAR
+#define ENABLE_DSHOT_DMAR       true
 
 #define LED0_PIN                PB7
 

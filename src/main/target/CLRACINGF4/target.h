@@ -28,7 +28,7 @@
 #define BEEPER_INVERTED
 #define BEEPER_PWM_HZ             3800 // Beeper PWM frequency in Hz
 
-#define USE_DSHOT_DMAR
+#define ENABLE_DSHOT_DMAR         true
 
 #define INVERTER_PIN_UART1        PC0 // PC0 used as inverter select GPIO
 

@@ -93,6 +93,9 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
     motorConfig->maxthrottle = 2000;
     motorConfig->mincommand = 1000;
     motorConfig->digitalIdleOffsetValue = 450;
+#ifdef USE_DSHOT_DMAR
+    motorConfig->dev.useBurstDshot = ENABLE_DSHOT_DMAR;
+#endif
 
     int motorIndex = 0;
     for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && motorIndex < MAX_SUPPORTED_MOTORS; i++) {
