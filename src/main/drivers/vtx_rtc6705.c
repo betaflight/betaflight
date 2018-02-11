@@ -49,14 +49,22 @@ static IO_t vtxPowerPin     = IO_NONE;
 #endif
 static IO_t vtxCSPin        = IO_NONE;
 
-#define DISABLE_RTC6705()   IOHi(vtxCSPin)
+#ifndef RTC6705_SPI_CLK
+#define RTC6705_SPI_CLK     SPI_CLOCK_SLOW
+#endif
+
+#ifndef RTC6705_RESTORE_CLK
+#define RTC6705_RESTORE_CLK SPI_CLOCK_STANDARD
+#endif
+
+#define DISABLE_RTC6705()   {IOHi(vtxCSPin); spiSetDivisor(RTC6705_SPI_INSTANCE, RTC6705_RESTORE_CLK);}
 
 #ifdef USE_RTC6705_CLK_HACK
 static IO_t vtxCLKPin       = IO_NONE;
 // HACK for missing pull up on CLK line - drive the CLK high *before* enabling the CS pin.
-#define ENABLE_RTC6705()    {IOHi(vtxCLKPin); delayMicroseconds(5); IOLo(vtxCSPin); }
+#define ENABLE_RTC6705()    {spiSetDivisor(RTC6705_SPI_INSTANCE, RTC6705_SPI_CLK); IOHi(vtxCLKPin); delayMicroseconds(5); IOLo(vtxCSPin);}
 #else
-#define ENABLE_RTC6705()    IOLo(vtxCSPin)
+#define ENABLE_RTC6705()    {spiSetDivisor(RTC6705_SPI_INSTANCE, RTC6705_SPI_CLK); IOLo(vtxCSPin);}
 #endif
 
 #define DP_5G_MASK          0x7000 // b111000000000000
@@ -156,8 +164,6 @@ void rtc6705SetFrequency(uint16_t frequency)
     val_hex |= (val_a << 5);
     val_hex |= (val_n << 12);
 
-    spiSetDivisor(RTC6705_SPI_INSTANCE, SPI_CLOCK_SLOW);
-
     rtc6705Transfer(RTC6705_SET_HEAD);
     delayMicroseconds(10);
     rtc6705Transfer(val_hex);
@@ -166,8 +172,6 @@ void rtc6705SetFrequency(uint16_t frequency)
 void rtc6705SetRFPower(uint8_t rf_power)
 {
     rf_power = constrain(rf_power, VTX_RTC6705_MIN_POWER, VTX_RTC6705_POWER_COUNT - 1);
-
-    spiSetDivisor(RTC6705_SPI_INSTANCE, SPI_CLOCK_SLOW);
 
     uint32_t val_hex = RTC6705_RW_CONTROL_BIT; // write
     val_hex |= RTC6705_ADDRESS; // address

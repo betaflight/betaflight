@@ -139,6 +139,8 @@
 #define RTC6705_CS_PIN                      PC4
 #define RTC6705_SPI_INSTANCE                SPI3
 #define RTC6705_POWER_PIN                   PC3
+#define RTC6705_SPI_CLK                     (SPI_CLOCK_SLOW)
+#define RTC6705_RESTORE_CLK                 (SPI_CLOCK_STANDARD)
 
 #define USE_RTC6705_CLK_HACK
 #define RTC6705_CLK_PIN                     SPI3_SCK_PIN

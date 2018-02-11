@@ -76,6 +76,8 @@
 
 #define RTC6705_CS_PIN          PA4
 #define RTC6705_SPI_INSTANCE    SPI1
+#define RTC6705_SPI_CLK         (SPI_CLOCK_SLOW)
+#define RTC6705_RESTORE_CLK     (SPI_CLOCK_STANDARD)
 
 #define M25P16_CS_GPIO          GPIOB
 #define M25P16_CS_PIN           PB12
