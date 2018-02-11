@@ -94,6 +94,11 @@
 #include "build/build_config.h"
 #include "build/debug.h"
 
+#ifdef USE_DEBUG_SERIAL
+#include "io/serial.h"
+#include "io/debugserial.h"
+#endif
+
 #ifdef TARGET_PREINIT
 void targetPreInit(void);
 #endif
@@ -172,6 +177,10 @@ void init(void)
 #endif
 
     serialInit(false, SERIAL_PORT_NONE);
+
+#ifdef USE_DEBUG_SERIAL
+    dbg_initialize(DBG_DEFAULT_PORT, DBG_DEFAULT_BAUDRATE);
+#endif
 
 #ifdef BEEPER
     beeperInit(beeperDevConfig());

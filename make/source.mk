@@ -188,7 +188,8 @@ FC_SRC = \
             io/vtx_rtc6705.c \
             io/vtx_smartaudio.c \
             io/vtx_tramp.c \
-            io/vtx_control.c
+            io/vtx_control.c \
+            io/debugserial.c
 
 COMMON_DEVICE_SRC = \
             $(CMSIS_SRC) \

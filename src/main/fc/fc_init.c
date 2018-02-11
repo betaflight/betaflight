@@ -149,6 +149,10 @@
 #include "build/build_config.h"
 #include "build/debug.h"
 
+#ifdef USE_DEBUG_SERIAL
+#include "io/debugserial.h"
+#endif
+
 #ifdef TARGET_PREINIT
 void targetPreInit(void);
 #endif
@@ -387,6 +391,10 @@ void init(void)
             feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART3 : SERIAL_PORT_NONE);
 #else
     serialInit(feature(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
+#endif
+
+#ifdef USE_DEBUG_SERIAL
+    dbg_initialize(DBG_DEFAULT_PORT, DBG_DEFAULT_BAUDRATE);
 #endif
 
     mixerInit(mixerConfig()->mixerMode);
