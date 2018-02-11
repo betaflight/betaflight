@@ -37,6 +37,10 @@
 #include "sensors/voltage.h"
 #include "sensors/esc_sensor.h"
 
+const char * const voltageMeterSourceNames[VOLTAGE_METER_COUNT] = {
+    "NONE", "ADC", "ESC"
+};
+
 const uint8_t voltageMeterIds[] = {
     VOLTAGE_METER_ID_BATTERY_1,
 #ifdef ADC_POWER_12V
