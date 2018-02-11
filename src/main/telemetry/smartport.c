@@ -376,10 +376,11 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
 
         switch (id) {
             case FSSP_DATAID_VFAS       :
-                if (isBatteryVoltageAvailable()) {
+                if (isBatteryVoltageConfigured()) {
                     uint16_t vfasVoltage;
                     if (telemetryConfig()->report_cell_voltage) {
-                        vfasVoltage = getBatteryVoltage() / getBatteryCellCount();
+                        const uint8_t cellCount = getBatteryCellCount();
+                        vfasVoltage = cellCount ? getBatteryVoltage() / cellCount : 0;
                     } else {
                         vfasVoltage = getBatteryVoltage();
                     }
@@ -388,7 +389,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                 }
                 break;
             case FSSP_DATAID_CURRENT    :
-                if (isAmperageAvailable()) {
+                if (isAmperageConfigured()) {
                     smartPortSendPackage(id, getAmperage() / 10); // given in 10mA steps, unknown requested unit
                     *clearToSend = false;
                 }
@@ -401,7 +402,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                 }
                 break;
             case FSSP_DATAID_FUEL       :
-                if (isAmperageAvailable()) {
+                if (isAmperageConfigured()) {
                     smartPortSendPackage(id, getMAhDrawn()); // given in mAh, unknown requested unit
                     *clearToSend = false;
                 }
@@ -563,8 +564,10 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                 break;
 #endif
             case FSSP_DATAID_A4         :
-                if (isBatteryVoltageAvailable()) {
-                    smartPortSendPackage(id, getBatteryVoltage() * 10 / getBatteryCellCount()); // given in 0.1V, convert to volts
+                if (isBatteryVoltageConfigured()) {
+                    const uint8_t cellCount = getBatteryCellCount();
+                    const uint32_t vfasVoltage = cellCount ? (getBatteryVoltage() * 10 / cellCount) : 0; // given in 0.1V, convert to volts
+                    smartPortSendPackage(id, vfasVoltage);
                     *clearToSend = false;
                 }
                 break;
