@@ -65,7 +65,6 @@ COMMON_SRC = \
             pg/beeper_dev.c \
             pg/bus_i2c.c \
             pg/bus_spi.c \
-            pg/camera_control.c \
             pg/dashboard.c \
             pg/max7456.c \
             pg/pg.c \
