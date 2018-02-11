@@ -17,6 +17,8 @@
 
 #pragma once
 
+#undef USE_TELEMETRY_LTM
+
 #define TARGET_BOARD_IDENTIFIER "SP3N"
 #define USE_TARGET_CONFIG
 
