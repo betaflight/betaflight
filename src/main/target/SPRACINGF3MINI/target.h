@@ -83,13 +83,14 @@
 #define USE_BRUSHED_ESC_AUTODETECT
 
 #define USE_VCP
-#define USE_UART1
 #define USE_UART2
-#define USE_UART3
 
 #ifdef TINYBEEF3
-#define SERIAL_PORT_COUNT       4
+#define SERIAL_PORT_COUNT       2
 #else
+#define USE_UART1
+#define USE_UART3
+
 #define USB_DETECT_PIN          PB5
 
 #define USE_SOFTSERIAL1
