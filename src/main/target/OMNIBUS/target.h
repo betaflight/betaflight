@@ -26,6 +26,9 @@
 #undef USE_COPY_PROFILE_CMS_MENU
 #undef USE_RX_MSP
 
+#undef USE_SERIALRX_XBUS
+#undef USE_TELEMETRY_MAVLINK
+
 #define TARGET_BOARD_IDENTIFIER "OMNI" // https://en.wikipedia.org/wiki/Omnibus
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
