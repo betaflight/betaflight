@@ -70,6 +70,7 @@
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/pinio.h"
+#include "pg/piniobox.h"
 #include "pg/rx_pwm.h"
 #include "pg/sdcard.h"
 #include "pg/vcd.h"
@@ -869,6 +870,9 @@ const clivalue_t valueTable[] = {
 // PG_PINIO_CONFIG
 #ifdef USE_PINIO
     { "pinio_config", VAR_UINT8 | MASTER_VALUE | MODE_ARRAY, .config.array.length = PINIO_COUNT, PG_PINIO_CONFIG, offsetof(pinioConfig_t, config) },
+#ifdef USE_PINIOBOX
+    { "pinio_box", VAR_INT8 | MASTER_VALUE | MODE_ARRAY, .config.array.length = PINIO_COUNT, PG_PINIOBOX_CONFIG, offsetof(pinioBoxConfig_t, boxId) },
+#endif
 #endif
 };
 

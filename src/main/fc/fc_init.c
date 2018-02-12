@@ -88,6 +88,7 @@
 #include "pg/bus_spi.h"
 #include "pg/flash.h"
 #include "pg/pinio.h"
+#include "pg/piniobox.h"
 #include "pg/pg.h"
 #include "pg/rx_pwm.h"
 #include "pg/sdcard.h"
@@ -113,6 +114,7 @@
 #include "io/transponder_ir.h"
 #include "io/osd.h"
 #include "io/osd_slave.h"
+#include "io/piniobox.h"
 #include "io/displayport_msp.h"
 #include "io/vtx.h"
 #include "io/vtx_rtc6705.h"
@@ -536,6 +538,10 @@ void init(void)
 
 #ifdef USE_PINIO
     pinioInit(pinioConfig());
+#endif
+
+#ifdef USE_PINIOBOX
+    pinioBoxInit(pinioBoxConfig());
 #endif
 
     LED1_ON;

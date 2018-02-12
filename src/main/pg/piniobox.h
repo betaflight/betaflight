@@ -17,17 +17,14 @@
 
 #pragma once
 
-#include <stdbool.h>
+#include "drivers/pinio.h"
+#include "fc/rc_modes.h"
+#include "pg/pg.h"
 
-#ifndef PINIO_COUNT
-#define PINIO_COUNT 4
-#endif
+typedef struct pinioBoxConfig_s {
+    int8_t boxId[PINIO_COUNT];
+} pinioBoxConfig_t;
 
-#define PINIO_CONFIG_OUT_INVERTED 0x80
-#define PINIO_CONFIG_MODE_MASK    0x7F
-#define PINIO_CONFIG_MODE_OUT_PP  0x01
+PG_DECLARE(pinioBoxConfig_t, pinioBoxConfig);
 
-struct pinioConfig_s;
-
-void pinioInit(const struct pinioConfig_s *pinioConfig);
-void pinioSet(int index, bool on);
+#define BOXNONE (-1)

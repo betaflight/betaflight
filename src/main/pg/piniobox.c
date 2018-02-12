@@ -15,19 +15,17 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "platform.h"
 
-#include <stdbool.h>
+#ifdef USE_PINIOBOX
 
-#ifndef PINIO_COUNT
-#define PINIO_COUNT 4
+#include "pg/pg_ids.h"
+#include "piniobox.h"
+#include "drivers/io.h"
+
+PG_REGISTER_WITH_RESET_TEMPLATE(pinioBoxConfig_t, pinioBoxConfig, PG_PINIOBOX_CONFIG, 0);
+
+PG_RESET_TEMPLATE(pinioBoxConfig_t, pinioBoxConfig,
+    { BOXNONE, BOXNONE, BOXNONE, BOXNONE }
+);
 #endif
-
-#define PINIO_CONFIG_OUT_INVERTED 0x80
-#define PINIO_CONFIG_MODE_MASK    0x7F
-#define PINIO_CONFIG_MODE_OUT_PP  0x01
-
-struct pinioConfig_s;
-
-void pinioInit(const struct pinioConfig_s *pinioConfig);
-void pinioSet(int index, bool on);
