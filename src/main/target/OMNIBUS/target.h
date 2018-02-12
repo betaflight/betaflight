@@ -17,13 +17,14 @@
 
 #pragma once
 
-// Removed to make the firmware fit into flash:
-#undef USE_COPY_PROFILE_CMS_MENU
+// Removed to make the firmware fit into flash (in descending order of priority):
+#undef USE_DSHOT_DMAR           // OMNIBUS (F3) does not benefit from burst Dshot
+#undef USE_GYRO_OVERFLOW_CHECK
 #undef USE_TELEMETRY_LTM
 #undef USE_RTC_TIME
-#undef USE_GYRO_OVERFLOW_CHECK
 
-#undef USE_DSHOT_DMAR           // OMNIBUS (F3) does not benefit from burst Dshot
+#undef USE_COPY_PROFILE_CMS_MENU
+#undef USE_RX_MSP
 
 #define TARGET_BOARD_IDENTIFIER "OMNI" // https://en.wikipedia.org/wiki/Omnibus
 
