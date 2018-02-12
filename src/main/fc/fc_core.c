@@ -127,6 +127,7 @@ static timeUs_t runawayTakeoffDeactivateUs = 0;
 static timeUs_t runawayTakeoffAccumulatedUs = 0;
 static bool runawayTakeoffCheckDisabled = false;
 static timeUs_t runawayTakeoffTriggerUs = 0;
+static bool runawayTakeoffTemporarilyDisabled = false;
 #endif
 
 
@@ -444,6 +445,14 @@ bool areSticksActive(uint8_t stickPercentLimit)
     }
     return false;
 }
+
+
+// allow temporarily disabling runaway takeoff prevention if we are connected
+// to the configurator and the ARMING_DISABLED_MSP flag is cleared.
+void runawayTakeoffTemporaryDisable(uint8_t disableFlag)
+{
+    runawayTakeoffTemporarilyDisabled = disableFlag;
+}
 #endif
 
 
@@ -530,6 +539,7 @@ bool processRx(timeUs_t currentTimeUs)
         && pidConfig()->runaway_takeoff_prevention
         && !runawayTakeoffCheckDisabled
         && !flipOverAfterCrashMode
+        && !runawayTakeoffTemporarilyDisabled
         && !STATE(FIXED_WING)) {
 
         // Determine if we're in "flight"
@@ -767,6 +777,7 @@ static void subTaskPidController(timeUs_t currentTimeUs)
         && pidConfig()->runaway_takeoff_prevention
         && !runawayTakeoffCheckDisabled
         && !flipOverAfterCrashMode
+        && !runawayTakeoffTemporarilyDisabled
         && (!feature(FEATURE_MOTOR_STOP) || isAirmodeActive() || (calculateThrottleStatus() != THROTTLE_LOW))) {
 
         const float runawayTakeoffThreshold = pidConfig()->runaway_takeoff_threshold * 10.0f;
