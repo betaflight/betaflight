@@ -41,6 +41,7 @@
 #include "rx/nrf24_v202.h"
 #include "rx/nrf24_h8_3d.h"
 #include "rx/nrf24_inav.h"
+#include "rx/nrf24_kn.h"
 #include "rx/flysky.h"
 
 
@@ -103,6 +104,13 @@ STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
         protocolInit = h8_3dNrf24Init;
         protocolDataReceived = h8_3dNrf24DataReceived;
         protocolSetRcDataFromPayload = h8_3dNrf24SetRcDataFromPayload;
+        break;
+#endif
+#ifdef USE_RX_KN
+    case RX_SPI_NRF24_KN:
+        protocolInit = knNrf24Init;
+        protocolDataReceived = knNrf24DataReceived;
+        protocolSetRcDataFromPayload = knNrf24SetRcDataFromPayload;
         break;
 #endif
 #ifdef USE_RX_INAV
