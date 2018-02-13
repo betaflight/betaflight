@@ -165,14 +165,13 @@ typedef struct {
     IO_t io;
 } pwmOutputPort_t;
 
+//CAVEAT: This is used in the `motorConfig_t` parameter group, so the parameter group constraints apply
 typedef struct motorDevConfig_s {
     uint16_t motorPwmRate;                  // The update rate of motor outputs (50-498Hz)
     uint8_t  motorPwmProtocol;              // Pwm Protocol
     uint8_t  motorPwmInversion;             // Active-High vs Active-Low. Useful for brushed FCs converted for brushless operation
     uint8_t  useUnsyncedPwm;
-#ifdef USE_DSHOT_DMAR
     uint8_t  useBurstDshot;
-#endif
     ioTag_t  ioTags[MAX_SUPPORTED_MOTORS];
 } motorDevConfig_t;
 
