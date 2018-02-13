@@ -1779,6 +1779,9 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             const uint8_t command = sbufReadU8(src);
             if (command) {
                 setArmingDisabled(ARMING_DISABLED_MSP);
+                if (ARMING_FLAG(ARMED)) {
+                    disarm();
+                }
             } else {
                 unsetArmingDisabled(ARMING_DISABLED_MSP);
             }
