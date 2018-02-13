@@ -637,40 +637,42 @@ static void applyFlipOverAfterCrashModeToMotors(void)
         float signPitch = getRcDeflection(FD_PITCH) < 0 ? 1 : -1;
         float signRoll = getRcDeflection(FD_ROLL) < 0 ? 1 : -1;
         float signYaw = (getRcDeflection(FD_YAW) < 0 ? 1 : -1) * (mixerConfig()->yaw_motors_reversed ? 1 : -1);
-        float maxAbsStickDeflectionPitchRoll = MAX(stickDeflectionPitchAbs, stickDeflectionRollAbs);
 
-        float stickMaxSign = maxAbsStickDeflectionPitchRoll == stickDeflectionPitchAbs ? signPitch : signRoll;
         float stickDeflectionLength = sqrtf(stickDeflectionPitchAbs*stickDeflectionPitchAbs + stickDeflectionRollAbs*stickDeflectionRollAbs);
 
-        if (stickDeflectionYawAbs > maxAbsStickDeflectionPitchRoll) {
+        if (stickDeflectionYawAbs > MAX(stickDeflectionPitchAbs, stickDeflectionRollAbs)) {
+            // If yaw is the dominant, disable pitch and roll
             stickDeflectionLength = stickDeflectionYawAbs;
+            signRoll = 0;
+            signPitch = 0;
+        } else {
+            // If pitch/roll dominant, disable yaw
+            signYaw = 0;
         }
 
+        float cosPhi = (stickDeflectionPitchAbs + stickDeflectionRollAbs)/(sqrtf(2.0f) * stickDeflectionLength);
+        const float cos22p5 = 0.9238795f; // cos(PI/8.0f)
+
+        if (cosPhi < cos22p5) {
+            // Enforce either roll or pitch exclusively, if not on diagonal
+            if (stickDeflectionRollAbs > stickDeflectionPitchAbs) {
+                signPitch = 0;
+            } else {
+                signRoll = 0;
+            }
+        }
+
+        // Apply a reasonable amount of stick deadband
         const float flipStickRange = 1.0f - CRASH_FLIP_STICK_MINF;
         float flipPower = MAX(0.0f, stickDeflectionLength - CRASH_FLIP_STICK_MINF) / flipStickRange;
 
-        float cosPhi = (stickDeflectionPitchAbs + stickDeflectionRollAbs) / (sqrtf(2.0f) * stickDeflectionLength);
-        const float cos22p5 = 0.9238795f; // cos(PI/8.0f)
-
         for (int i = 0; i < motorCount; ++i) {
-            float motorOutput = 0;
-            if (stickDeflectionYawAbs < maxAbsStickDeflectionPitchRoll) {
-                if (cosPhi < cos22p5) {
-                    // Flip over pitch / roll (two motors)
-                    if (stickDeflectionRollAbs > stickDeflectionPitchAbs) {
-                        motorOutput = stickMaxSign * flipPower * currentMixer[i].roll;
-                    } else {
-                        motorOutput = stickMaxSign * flipPower * currentMixer[i].pitch;
-                    }
-                } else {
-                    // Flip over diagonal (one motor)
-                    motorOutput = flipPower * (signPitch*currentMixer[i].pitch + signRoll*currentMixer[i].roll);
-                }
-            } else {
-                // Yaw wiggle (two motors)
-                motorOutput = flipPower * signYaw * currentMixer[i].yaw;
-            }
-            motorOutput = MIN(1.0f, motorOutput);
+            float motorOutput =
+                signPitch*currentMixer[i].pitch +
+                signRoll*currentMixer[i].roll +
+                signYaw*currentMixer[i].yaw;
+
+            motorOutput = MIN(1.0f, flipPower*motorOutput);
             motorOutput = motorOutputMin + motorOutput*motorOutputRange;
 
             // Add a little bit to the motorOutputMin so props aren't spinning when sticks are centered
