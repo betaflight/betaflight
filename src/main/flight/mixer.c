@@ -650,10 +650,10 @@ static void applyFlipOverAfterCrashModeToMotors(void)
             signYaw = 0;
         }
 
-        float cosPhi = (stickDeflectionPitchAbs + stickDeflectionRollAbs)/(sqrtf(2.0f) * stickDeflectionLength);
-        const float cos22p5 = 0.9238795f; // cos(PI/8.0f)
+        float cosPhi = (stickDeflectionPitchAbs + stickDeflectionRollAbs) / (sqrtf(2.0f) * stickDeflectionLength);
+        const float cosThreshold = sqrtf(3.0f)/2.0f; // cos(PI/6.0f)
 
-        if (cosPhi < cos22p5) {
+        if (cosPhi < cosThreshold) {
             // Enforce either roll or pitch exclusively, if not on diagonal
             if (stickDeflectionRollAbs > stickDeflectionPitchAbs) {
                 signPitch = 0;
