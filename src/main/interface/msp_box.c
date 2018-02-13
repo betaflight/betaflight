@@ -73,7 +73,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOXBLACKBOX, "BLACKBOX", 26 },
     { BOXFAILSAFE, "FAILSAFE", 27 },
     { BOXAIRMODE, "AIR MODE", 28 },
-    { BOX3DDISABLE, "DISABLE 3D", 29},
+    { BOX3D, "DISABLE / SWITCH 3D", 29},
     { BOXFPVANGLEMIX, "FPV ANGLE MIX", 30},
     { BOXBLACKBOXERASE, "BLACKBOX ERASE (>30s)", 31 },
     { BOXCAMERA1, "CAMERA CONTROL 1", 32},
@@ -82,7 +82,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOXFLIPOVERAFTERCRASH, "FLIP OVER AFTER CRASH", 35 },
     { BOXPREARM, "PREARM", 36 },
     { BOXBEEPGPSCOUNT, "BEEP GPS SATELLITE COUNT", 37 },
-    { BOX3DONASWITCH, "3D ON A SWITCH", 38 },
+//    { BOX3DONASWITCH, "3D ON A SWITCH", 38 }, (removed)
     { BOXVTXPITMODE, "VTX PIT MODE", 39 },
     { BOXUSER1, "USER1", 40 },
     { BOXUSER2, "USER2", 41 },
@@ -224,8 +224,7 @@ void initActiveBoxIds(void)
     BME(BOXFPVANGLEMIX);
 
     if (feature(FEATURE_3D)) {
-        BME(BOX3DDISABLE);
-        BME(BOX3DONASWITCH);
+        BME(BOX3D);
     }
 
     if (isMotorProtocolDshot()) {
