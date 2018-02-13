@@ -345,3 +345,91 @@ int16_t qMultiply(fix12_t q, int16_t input) {
 fix12_t  qConstruct(int16_t num, int16_t den) {
     return (num << 12) / den;
 }
+
+// quaternions
+void quaternionTransformVectorBodyToEarth(quaternion *qVector, quaternion *qReference) {
+    quaternion qVectorBuffer, qReferenceConjugate;
+    qVector->w = 0;
+
+    quaternionCopy(qVector, &qVectorBuffer);
+    quaternionConjugate(qReference, &qReferenceConjugate);
+    quaternionMultiply(qReference, &qVectorBuffer, &qVectorBuffer);
+    quaternionMultiply(&qVectorBuffer, &qReferenceConjugate, qVector);
+}
+
+void quaternionTransformVectorEarthToBody(quaternion *qVector, quaternion *qReference) {
+    quaternion qVectorBuffer, qReferenceConjugate;
+    qVector->w = 0;
+
+    quaternionCopy(qVector, &qVectorBuffer);
+    quaternionConjugate(qReference, &qReferenceConjugate);
+    quaternionMultiply(&qReferenceConjugate, &qVectorBuffer, &qVectorBuffer);
+    quaternionMultiply(&qVectorBuffer, qReference, qVector);
+}
+
+void quaternionComputeProducts(quaternion *qIn, quaternionProducts *qPout) {
+    qPout->ww = qIn->w * qIn->w;
+    qPout->wx = qIn->w * qIn->x;
+    qPout->wy = qIn->w * qIn->y;
+    qPout->wz = qIn->w * qIn->z;
+    qPout->xx = qIn->x * qIn->x;
+    qPout->xy = qIn->x * qIn->y;
+    qPout->xz = qIn->x * qIn->z;
+    qPout->yy = qIn->y * qIn->y;
+    qPout->yz = qIn->y * qIn->z;
+    qPout->zz = qIn->z * qIn->z;
+}
+
+void quaternionMultiply(quaternion *l, quaternion *r, quaternion *o) {
+    const float w = l->w * r->w - l->x * r->x - l->y * r->y - l->z * r->z;
+    const float x = l->x * r->w + l->w * r->x + l->y * r->z - l->z * r->y;
+    const float y = l->w * r->y - l->x * r->z + l->y * r->w + l->z * r->x;
+    const float z = l->w * r->z + l->x * r->y - l->y * r->x + l->z * r->w;
+    o->w = w;
+    o->x = x;
+    o->y = y;
+    o->z = z;
+}
+
+void quaternionNormalize(quaternion *q) {
+    float norm = sqrtf(q->w * q->w + q->x * q->x + q->y * q->y + q->z * q->z);
+    if (norm == 0) {
+      norm = 0.0000001;
+    }
+    q->w /= norm;
+    q->x /= norm;
+    q->y /= norm;
+    q->z /= norm;
+}
+
+void quaternionAdd(quaternion *l, quaternion *r, quaternion *o) {
+    o->w = l->w + r->w;
+    o->x = l->x + r->x;
+    o->y = l->y + r->y;
+    o->z = l->z + r->z;
+}
+
+void quaternionCopy(quaternion *s, quaternion *d) {
+    d->w = s->w;
+    d->x = s->x;
+    d->y = s->y;
+    d->z = s->z;
+}
+
+void quaternionInverse(quaternion *i, quaternion *o) {
+    float norm_squared = i->w * i->w + i->x * i->x + i->y * i->y + i->z * i->z;
+    if (norm_squared == 0) {
+      norm_squared = 0.0000001;
+    }
+    o->w = i->w / norm_squared;
+    o->x = i->x * -1 / norm_squared;
+    o->y = i->y * -1 / norm_squared;
+    o->z = i->z * -1 / norm_squared;
+}
+
+void quaternionConjugate(quaternion *i, quaternion *o) {
+    o->w = i->w;
+    o->x = i->x * -1;
+    o->y = i->y * -1;
+    o->z = i->z * -1;
+}

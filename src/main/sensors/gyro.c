@@ -628,7 +628,7 @@ static bool isOnFinalGyroCalibrationCycle(const gyroCalibration_t *gyroCalibrati
 
 static uint16_t gyroCalculateCalibratingCycles(void)
 {
-    return (CALIBRATING_GYRO_CYCLES / gyro.targetLooptime) * CALIBRATING_GYRO_CYCLES;
+    return (CALIBRATING_GYRO_CYCLES / gyro.targetLooptime);
 }
 
 static bool isOnFirstGyroCalibrationCycle(const gyroCalibration_t *gyroCalibration)

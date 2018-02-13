@@ -51,11 +51,9 @@ extern "C" {
     #include "sensors/gyro.h"
     #include "sensors/sensors.h"
 
-    void imuComputeRotationMatrix(void);
     void imuUpdateEulerAngles(void);
 
     extern quaternion q;
-    extern float rMat[3][3];
 
     PG_REGISTER(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
     PG_REGISTER(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 0);
@@ -67,131 +65,6 @@ extern "C" {
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
-
-const float sqrt2over2 = sqrt(2) / 2.0f;
-
-TEST(FlightImuTest, TestCalculateRotationMatrix)
-{
-    #define TOL 1e-6
-
-    // No rotation
-    q.w = 1.0f;
-    q.x = 0.0f;
-    q.y = 0.0f;
-    q.z = 0.0f;
-
-    imuComputeRotationMatrix();
-
-    EXPECT_FLOAT_EQ(1.0f, rMat[0][0]);
-    EXPECT_FLOAT_EQ(0.0f, rMat[0][1]);
-    EXPECT_FLOAT_EQ(0.0f, rMat[0][2]);
-    EXPECT_FLOAT_EQ(0.0f, rMat[1][0]);
-    EXPECT_FLOAT_EQ(1.0f, rMat[1][1]);
-    EXPECT_FLOAT_EQ(0.0f, rMat[1][2]);
-    EXPECT_FLOAT_EQ(0.0f, rMat[2][0]);
-    EXPECT_FLOAT_EQ(0.0f, rMat[2][1]);
-    EXPECT_FLOAT_EQ(1.0f, rMat[2][2]);
-
-    // 90 degrees around Z axis
-    q.w = sqrt2over2;
-    q.x = 0.0f;
-    q.y = 0.0f;
-    q.z = sqrt2over2;
-
-    imuComputeRotationMatrix();
-
-    EXPECT_NEAR(0.0f, rMat[0][0], TOL);
-    EXPECT_NEAR(-1.0f, rMat[0][1], TOL);
-    EXPECT_NEAR(0.0f, rMat[0][2], TOL);
-    EXPECT_NEAR(1.0f, rMat[1][0], TOL);
-    EXPECT_NEAR(0.0f, rMat[1][1], TOL);
-    EXPECT_NEAR(0.0f, rMat[1][2], TOL);
-    EXPECT_NEAR(0.0f, rMat[2][0], TOL);
-    EXPECT_NEAR(0.0f, rMat[2][1], TOL);
-    EXPECT_NEAR(1.0f, rMat[2][2], TOL);
-
-    // 60 degrees around X axis
-    q.w = 0.866f;
-    q.x = 0.5f;
-    q.y = 0.0f;
-    q.z = 0.0f;
-
-    imuComputeRotationMatrix();
-
-    EXPECT_NEAR(1.0f, rMat[0][0], TOL);
-    EXPECT_NEAR(0.0f, rMat[0][1], TOL);
-    EXPECT_NEAR(0.0f, rMat[0][2], TOL);
-    EXPECT_NEAR(0.0f, rMat[1][0], TOL);
-    EXPECT_NEAR(0.5f, rMat[1][1], TOL);
-    EXPECT_NEAR(-0.866f, rMat[1][2], TOL);
-    EXPECT_NEAR(0.0f, rMat[2][0], TOL);
-    EXPECT_NEAR(0.866f, rMat[2][1], TOL);
-    EXPECT_NEAR(0.5f, rMat[2][2], TOL);
-}
-
-TEST(FlightImuTest, TestUpdateEulerAngles)
-{
-    // No rotation
-    memset(rMat, 0.0, sizeof(float) * 9);
-
-    imuUpdateEulerAngles();
-
-    EXPECT_EQ(0, attitude.values.roll);
-    EXPECT_EQ(0, attitude.values.pitch);
-    EXPECT_EQ(0, attitude.values.yaw);
-
-    // 45 degree yaw
-    memset(rMat, 0.0, sizeof(float) * 9);
-    rMat[0][0] = sqrt2over2;
-    rMat[0][1] = sqrt2over2;
-    rMat[1][0] = -sqrt2over2;
-    rMat[1][1] = sqrt2over2;
-
-    imuUpdateEulerAngles();
-
-    EXPECT_EQ(0, attitude.values.roll);
-    EXPECT_EQ(0, attitude.values.pitch);
-    EXPECT_EQ(450, attitude.values.yaw);
-}
-
-TEST(FlightImuTest, TestSmallAngle)
-{
-    const float r1 = 0.898;
-    const float r2 = 0.438;
-
-    // given
-    imuConfigMutable()->small_angle = 25;
-
-    // and
-    memset(rMat, 0.0, sizeof(float) * 9);
-
-    // when
-    imuUpdateEulerAngles();
-
-    // expect
-    EXPECT_EQ(0, STATE(SMALL_ANGLE));
-
-    // given
-    rMat[0][0] = r1;
-    rMat[0][2] = r2;
-    rMat[2][0] = -r2;
-    rMat[2][2] = r1;
-
-    // when
-    imuUpdateEulerAngles();
-
-    // expect
-    EXPECT_EQ(SMALL_ANGLE, STATE(SMALL_ANGLE));
-
-    // given
-    memset(rMat, 0.0, sizeof(float) * 9);
-
-    // when
-    imuUpdateEulerAngles();
-
-    // expect
-    EXPECT_EQ(0, STATE(SMALL_ANGLE));
-}
 
 // STUBS
 
