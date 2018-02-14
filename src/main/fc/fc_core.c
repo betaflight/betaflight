@@ -529,6 +529,7 @@ bool processRx(timeUs_t currentTimeUs)
     if (ARMING_FLAG(ARMED)
         && pidConfig()->runaway_takeoff_prevention
         && !runawayTakeoffCheckDisabled
+        && !flipOverAfterCrashMode
         && !STATE(FIXED_WING)) {
 
         // Determine if we're in "flight"
@@ -765,6 +766,7 @@ static void subTaskPidController(timeUs_t currentTimeUs)
         && !STATE(FIXED_WING)
         && pidConfig()->runaway_takeoff_prevention
         && !runawayTakeoffCheckDisabled
+        && !flipOverAfterCrashMode
         && (!feature(FEATURE_MOTOR_STOP) || isAirmodeActive() || (calculateThrottleStatus() != THROTTLE_LOW))) {
 
         const float runawayTakeoffThreshold = pidConfig()->runaway_takeoff_threshold * 10.0f;
