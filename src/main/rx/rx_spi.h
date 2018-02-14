@@ -19,6 +19,7 @@
 
 #include "rx/rx.h"
 
+// Used in MSP. Append at end.
 typedef enum {
     RX_SPI_NRF24_V202_250K = 0,
     RX_SPI_NRF24_V202_1M,
@@ -28,11 +29,11 @@ typedef enum {
     RX_SPI_NRF24_CX10A,
     RX_SPI_NRF24_H8_3D,
     RX_SPI_NRF24_INAV,
-    RX_SPI_NRF24_KN,
     RX_SPI_FRSKY_D,
     RX_SPI_FRSKY_X,
     RX_SPI_A7105_FLYSKY,
     RX_SPI_A7105_FLYSKY_2A,
+    RX_SPI_NRF24_KN,
     RX_SPI_PROTOCOL_COUNT
 } rx_spi_protocol_e;
 
