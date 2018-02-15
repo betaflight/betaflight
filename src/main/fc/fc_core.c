@@ -307,6 +307,9 @@ void tryArm(void)
                 }
             } else {
                 flipOverAfterCrashMode = true;
+#ifdef USE_RUNAWAY_TAKEOFF
+                runawayTakeoffCheckDisabled = false;
+#endif
                 if (!feature(FEATURE_3D)) {
                     pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_REVERSED);
                 }
