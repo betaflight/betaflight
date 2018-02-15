@@ -11,8 +11,8 @@ TARGET_SRC = \
             
             
 TARGET_SRC += \
-            drivers/sdio_stdlib.c \
-            drivers/sdcard_sdio_stdlib.c \
+            drivers/sdio_f4xx.c \
+            drivers/sdcard_sdio_baremetal.c \
             drivers/sdcard_standard.c \
             io/asyncfatfs/asyncfatfs.c \
             io/asyncfatfs/fat_standard.c
