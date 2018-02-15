@@ -85,7 +85,8 @@ TIM_HandleTypeDef  TimHandle;
 /* USB handler declaration */
 extern USBD_HandleTypeDef  USBD_Device;
 
-static void (*ctrlLineStateCb)(uint16_t ctrlLineState);
+static void (*ctrlLineStateCb)(void *context, uint16_t ctrlLineState);
+static void *ctrlLineStateCbContext;
 
 /* Private function prototypes -----------------------------------------------*/
 static int8_t CDC_Itf_Init(void);
@@ -423,12 +424,13 @@ uint32_t CDC_BaudRate(void)
 /*******************************************************************************
  * Function Name  : CDC_SetCtrlLineStateCb
  * Description    : Set a callback to call when control line state changes
- * Input          : None.
+ * Input          : callback function and context.
  * Output         : None.
  * Return         : None.
  *******************************************************************************/
-void CDC_SetCtrlLineStateCb(void (*cb)(uint16_t ctrlLineState))
+void CDC_SetCtrlLineStateCb(void *context, void (*cb)(void *context, uint16_t ctrlLineState))
 {
+    ctrlLineStateCbContext = context;
     ctrlLineStateCb = cb;
 }
 

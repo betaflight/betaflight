@@ -908,25 +908,6 @@ static void cliSerial(char *cmdline)
 }
 
 #ifndef SKIP_SERIAL_PASSTHROUGH
-static IO_t serialPassthroughDtrPin = IO_NONE;
-
-// Callback routine registered with CLI serial port to support Arduino programming via passthrough
-//
-// For example to program a MinimOSD connected to UART 6 on an F4 with port C8 used
-// for DTR (eg OpenPilot Revolution receiver port)
-//
-// Use 'serialpassthrough 5 57600 rxtx c8' and then use Ardino to program MinimOSD
-// Use 'serialpassthrough 5 115200' and then use MWOSD configurator to setup MinimOSD
-//
-static void cbCtrlLine(uint16_t data)
-{
-    UNUSED(data);
-
-    if (serialPassthroughDtrPin != IO_NONE) {
-    	IOWrite(serialPassthroughDtrPin, data & CTRL_LINE_STATE_DTR);
-    }
-}
-
 static bool strToPin(char *pch, ioTag_t *tag)
 {
     if (strcasecmp(pch, "NONE") == 0) {
@@ -959,7 +940,7 @@ static void cliSerialPassthrough(char *cmdline)
     uint32_t baud = 0;
     unsigned mode = 0;
     char *saveptr;
-    ioTag_t serialPassthroughDtrTag;
+    ioTag_t serialPassthroughDtrTag = IO_TAG_NONE;
     char* tok = strtok_r(cmdline, " ", &saveptr);
     int index = 0;
 
@@ -985,10 +966,6 @@ static void cliSerialPassthrough(char *cmdline)
                 if (serialPassthroughDtrTag == IO_TAG_NONE) {
                     cliPrintLine("Invalid DTR pin");
                     return;
-                } else {
-                    serialPassthroughDtrPin = IOGetByTag(serialPassthroughDtrTag);
-                    IOInit(serialPassthroughDtrPin, OWNER_SERIAL_PASSTHROUGH, 0);
-                    IOConfigGPIO(serialPassthroughDtrPin, IOCFG_OUT_PP);
                 }
             }
             break;
@@ -1039,14 +1016,9 @@ static void cliSerialPassthrough(char *cmdline)
         }
     }
 
-    // Register control line state callback
-    if (serialPassthroughDtrPin != IO_NONE) {
-    	serialSetCtrlLineStateCb(cliPort, cbCtrlLine);
-    }
-
     cliPrintLine("Forwarding, power cycle to exit.");
 
-    serialPassthrough(cliPort, passThroughPort, NULL, NULL);
+    serialPassthrough(cliPort, passThroughPort, NULL, NULL, serialPassthroughDtrTag);
 }
 #endif
 

@@ -58,7 +58,8 @@ static uint16_t VCP_DeInit(void);
 static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len);
 static uint16_t VCP_DataTx(const uint8_t* Buf, uint32_t Len);
 static uint16_t VCP_DataRx(uint8_t* Buf, uint32_t Len);
-static void (*ctrlLineStateCb)(uint16_t ctrlLineState);
+static void (*ctrlLineStateCb)(void* context, uint16_t ctrlLineState);
+static void *ctrlLineStateCbContext;
 
 
 CDC_IF_Prop_TypeDef VCP_fops = {VCP_Init, VCP_DeInit, VCP_Ctrl, VCP_DataTx, VCP_DataRx };
@@ -140,7 +141,7 @@ static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len)
          // If a callback is provided, tell the upper driver of changes in DTR/RTS state
     	 if (Buf && (Len == sizeof (uint16_t))) {
     	     if (ctrlLineStateCb) {
-    	         ctrlLineStateCb(*((uint16_t *)Buf));
+    	         ctrlLineStateCb(ctrlLineStateCbContext, *((uint16_t *)Buf));
     	     }
     	 }
          break;
@@ -302,12 +303,13 @@ uint32_t CDC_BaudRate(void)
 /*******************************************************************************
  * Function Name  : CDC_SetCtrlLineStateCb
  * Description    : Set a callback to call when control line state changes
- * Input          : None.
+ * Input          : callback function and context.
  * Output         : None.
  * Return         : None.
  *******************************************************************************/
-void CDC_SetCtrlLineStateCb(void (*cb)(uint16_t ctrlLineState))
+void CDC_SetCtrlLineStateCb(void (*cb)(void *context, uint16_t ctrlLineState), void *context)
 {
+    ctrlLineStateCbContext = context;
     ctrlLineStateCb = cb;
 }
 

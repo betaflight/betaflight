@@ -86,12 +86,30 @@ void serialSetMode(serialPort_t *instance, portMode_e mode)
     instance->vTable->setMode(instance, mode);
 }
 
-void serialSetCtrlLineStateCb(serialPort_t *instance, void (*cb)(uint16_t ctrlLineState))
+void serialSetCtrlLineStateCb(serialPort_t *serialPort, void (*cb)(void *context, uint16_t ctrlLineState), void *context)
 {
     // If a callback routine for changes to control line state is supported by the underlying
     // driver, then set the callback.
-    if (instance->vTable->setCtrlLineStateCb) {
-        instance->vTable->setCtrlLineStateCb(instance, cb);
+    if (serialPort->vTable->setCtrlLineStateCb) {
+    	serialPort->vTable->setCtrlLineStateCb(serialPort, cb, context);
+    }
+}
+
+void serialSetCtrlLineStateDtrPin(serialPort_t *serialPort, ioTag_t ioTagDtr)
+{
+	serialPinConfigMutable()->ioTagDtr[serialPort->identifier] = ioTagDtr;
+	IO_t ioDtr = IOGetByTag(ioTagDtr);
+
+    IOInit(ioDtr, OWNER_SERIAL_TX, 0);
+    IOConfigGPIO(ioDtr, IOCFG_OUT_PP);
+}
+
+void serialSetCtrlLineState(serialPort_t *serialPort, uint16_t ctrlLineState)
+{
+	// For now only handle DTR pin, not RTS
+	ioTag_t serialPassthroughDtrPin = serialPinConfig()->ioTagDtr[serialPort->identifier];
+    if (serialPassthroughDtrPin != IO_TAG_NONE) {
+    	IOWrite(IOGetByTag(serialPassthroughDtrPin), ~ctrlLineState & CTRL_LINE_STATE_DTR);
     }
 }
 

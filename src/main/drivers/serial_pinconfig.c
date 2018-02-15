@@ -267,6 +267,7 @@ void pgResetFn_serialPinConfig(serialPinConfig_t *serialPinConfig)
         serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_INDEX(defpin->ident)] = defpin->rxIO;
         serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_INDEX(defpin->ident)] = defpin->txIO;
         serialPinConfig->ioTagInverter[SERIAL_PORT_IDENTIFIER_TO_INDEX(defpin->ident)] = defpin->inverterIO;
+        serialPinConfig->ioTagDtr[SERIAL_PORT_IDENTIFIER_TO_INDEX(defpin->ident)] = IO_TAG_NONE;
     }
 }
 #endif
