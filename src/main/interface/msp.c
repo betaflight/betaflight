@@ -427,6 +427,14 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU8(dst, 0);  // 0 == FC
 #endif
 #endif
+        // 1 = USE_VCP, 0 = no VCP
+        // This way the configurator can find wether a board
+        // uses VCP without relying on a board list.
+#ifdef USE_VCP
+        sbufWriteU8(dst, 1);
+#else
+        sbufWriteU8(dst, 0);
+#endif
         sbufWriteU8(dst, strlen(targetName));
         sbufWriteData(dst, targetName, strlen(targetName));
         break;
