@@ -21,6 +21,8 @@
 
 #include "pg/pg.h"
 
+#define BOXID_NONE 255
+
 typedef enum {
     // ARM flag
     BOXARM = 0,

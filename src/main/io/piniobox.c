@@ -33,21 +33,20 @@
 
 #include "piniobox.h"
 
-static pinioBoxConfig_t pinioBoxRuntimeConfig;
+typedef struct pinioBoxRuntimeConfig_s {
+    uint8_t boxId[PINIO_COUNT];
+} pinioBoxRuntimeConfig_t;
+
+static pinioBoxRuntimeConfig_t pinioBoxRuntimeConfig;
 
 void pinioBoxInit(const pinioBoxConfig_t *pinioBoxConfig)
 {
     // Convert permanentId to boxId_e
 
-    pinioBoxRuntimeConfig = *pinioBoxConfig;
-
     for (int i = 0; i < PINIO_COUNT; i++) {
-        if (pinioBoxRuntimeConfig.boxId[i] >= 0) {
-            const box_t *box = findBoxByPermanentId(pinioBoxRuntimeConfig.boxId[i]);
-            if (box) {
-                pinioBoxRuntimeConfig.boxId[i] = box->boxId;
-            }
-        }
+        const box_t *box = findBoxByPermanentId(pinioBoxConfig->permanentId[i]);
+
+        pinioBoxRuntimeConfig.boxId[i] = box ? box->boxId : BOXID_NONE;
     }
 }
 
@@ -56,7 +55,7 @@ void pinioBoxUpdate(timeUs_t currentTimeUs)
     UNUSED(currentTimeUs);
 
     for (int i = 0; i < PINIO_COUNT; i++) {
-        if (pinioBoxRuntimeConfig.boxId[i] >= 0) {
+        if (pinioBoxRuntimeConfig.boxId[i] != BOXID_NONE) {
             pinioSet(i, getBoxIdState(pinioBoxRuntimeConfig.boxId[i]));
         }
     }

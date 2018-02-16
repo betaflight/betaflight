@@ -270,15 +270,20 @@ void initActiveBoxIds(void)
     // Turn BOXUSERx only if pinioBox facility monitors them, as the facility is the only BOXUSERx observer.
     // Note that pinioBoxConfig can be set to monitor any box.
     for (int i = 0; i < PINIO_COUNT; i++) {
-        switch(pinioBoxConfig()->boxId[i]) {
-        case BOXUSER1:
-        case BOXUSER2:
-        case BOXUSER3:
-        case BOXUSER4:
-            BME(pinioBoxConfig()->boxId[i]);
-            break;
-        default:
-            break;
+        if (pinioBoxConfig()->permanentId[i] != PERMANENT_ID_NONE) {
+            const box_t *box = findBoxByPermanentId(pinioBoxConfig()->permanentId[i]);
+            if (box) {
+                switch(box->boxId) {
+                case BOXUSER1:
+                case BOXUSER2:
+                case BOXUSER3:
+                case BOXUSER4:
+                    BME(box->boxId);
+                    break;
+                default:
+                    break;
+                }
+            }
         }
     }
 #endif

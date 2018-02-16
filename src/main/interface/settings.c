@@ -874,7 +874,7 @@ const clivalue_t valueTable[] = {
 #ifdef USE_PINIO
     { "pinio_config", VAR_UINT8 | MASTER_VALUE | MODE_ARRAY, .config.array.length = PINIO_COUNT, PG_PINIO_CONFIG, offsetof(pinioConfig_t, config) },
 #ifdef USE_PINIOBOX
-    { "pinio_box", VAR_INT8 | MASTER_VALUE | MODE_ARRAY, .config.array.length = PINIO_COUNT, PG_PINIOBOX_CONFIG, offsetof(pinioBoxConfig_t, boxId) },
+    { "pinio_box", VAR_UINT8 | MASTER_VALUE | MODE_ARRAY, .config.array.length = PINIO_COUNT, PG_PINIOBOX_CONFIG, offsetof(pinioBoxConfig_t, permanentId) },
 #endif
 #endif
 };
