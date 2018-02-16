@@ -109,9 +109,10 @@ struct serialPortVTable {
     bool (*isSerialTransmitBufferEmpty)(const serialPort_t *instance);
 
     void (*setMode)(serialPort_t *instance, portMode_e mode);
-    void (*setCtrlLineStateCb)(serialPort_t *instance, void (*cb)(void *instance, uint16_t ctrlLineState), void *context);
+    void (*setCtrlLineStateCb)(serialPort_t *instance, void (*cb)(serialPort_t *instance, uint16_t ctrlLineState), serialPort_t *context);
     void (*setCtrlLineStateDtrPin)(serialPort_t *instance, ioTag_t ioTagDtr);
     void (*setCtrlLineState)(serialPort_t *instance, uint16_t ctrlLineState);
+    void (*setBaudRateCb)(serialPort_t *instance, void (*cb)(serialPort_t *context, uint32_t baud), serialPort_t *context);
 
     void (*writeBuf)(serialPort_t *instance, const void *data, int count);
     // Optional functions used to buffer large writes.
@@ -126,9 +127,10 @@ void serialWriteBuf(serialPort_t *instance, const uint8_t *data, int count);
 uint8_t serialRead(serialPort_t *instance);
 void serialSetBaudRate(serialPort_t *instance, uint32_t baudRate);
 void serialSetMode(serialPort_t *instance, portMode_e mode);
-void serialSetCtrlLineStateCb(serialPort_t *instance, void (*cb)(void *context, uint16_t ctrlLineState), void *context);
+void serialSetCtrlLineStateCb(serialPort_t *instance, void (*cb)(serialPort_t *context, uint16_t ctrlLineState), serialPort_t *context);
 void serialSetCtrlLineStateDtrPin(serialPort_t *instance, ioTag_t ioTagDtr);
 void serialSetCtrlLineState(serialPort_t *instance, uint16_t ctrlLineState);
+void serialSetBaudRateCb(serialPort_t *instance, void (*cb)(serialPort_t *context, uint32_t baud), serialPort_t *context);
 bool isSerialTransmitBufferEmpty(const serialPort_t *instance);
 void serialPrint(serialPort_t *instance, const char *str);
 uint32_t serialGetBaudRate(serialPort_t *instance);

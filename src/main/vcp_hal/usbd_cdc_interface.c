@@ -87,6 +87,8 @@ extern USBD_HandleTypeDef  USBD_Device;
 
 static void (*ctrlLineStateCb)(void *context, uint16_t ctrlLineState);
 static void *ctrlLineStateCbContext;
+static void (*baudRateCb)(void *context, uint32_t baud);
+static void *baudRateCbContext;
 
 /* Private function prototypes -----------------------------------------------*/
 static int8_t CDC_Itf_Init(void);
@@ -137,6 +139,7 @@ static int8_t CDC_Itf_Init(void)
   USBD_CDC_SetRxBuffer(&USBD_Device, UserRxBuffer);
 
   ctrlLineStateCb = NULL;
+  baudRateCb = NULL;
 
   return (USBD_OK);
 }
@@ -192,6 +195,12 @@ static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
     LineCoding.format     = pbuf[4];
     LineCoding.paritytype = pbuf[5];
     LineCoding.datatype   = pbuf[6];
+    // If a callback is provided, tell the upper driver of changes in baud rate
+	 if (Buf && (Len == sizeof (LineCoding))) {
+	     if (baudRateCb) {
+	         baudRateCb(baudRateCbContext, LineCoding.bitrate);
+	     }
+	 }
 
     break;
 
@@ -419,6 +428,19 @@ uint8_t usbIsConnected(void)
 uint32_t CDC_BaudRate(void)
 {
     return LineCoding.bitrate;
+}
+
+/*******************************************************************************
+ * Function Name  : CDC_SetBaudRateCb
+ * Description    : Set a callback to call when baud rate changes
+ * Input          : callback function and context.
+ * Output         : None.
+ * Return         : None.
+ *******************************************************************************/
+void CDC_SetBaudRateCb(void (*cb)(void *context, uint32_t baud), void *context)
+{
+	baudRateCbContext = context;
+    baudRateCb = cb;
 }
 
 /*******************************************************************************

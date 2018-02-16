@@ -510,9 +510,9 @@ static void nopConsumer(uint8_t data)
 }
 
 
-static void cbCtrlLine(void *context, uint16_t ctrl)
+static void cbCtrlLine(serialPort_t *context, uint16_t ctrl)
 {
-    serialSetCtrlLineState((serialPort_t *)context, ctrl);
+    serialSetCtrlLineState(context, ctrl);
 }
 
 
@@ -539,7 +539,7 @@ void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer *
 #ifndef SITL
     	serialSetCtrlLineStateDtrPin(right, serialPassthroughDtrTag);
 #endif
-    	serialSetCtrlLineStateCb(left, cbCtrlLine, (void *)right);
+    	serialSetCtrlLineStateCb(left, cbCtrlLine, right);
     }
 
     // Either port might be open in a mode other than MODE_RXTX. We rely on
