@@ -71,6 +71,7 @@
 #include "drivers/usb_io.h"
 #include "drivers/vtx_rtc6705.h"
 #include "drivers/vtx_common.h"
+#include "drivers/usb_msc.h"
 
 #include "fc/config.h"
 #include "fc/fc_init.h"
@@ -227,7 +228,7 @@ void spiPreInit(void)
 #ifdef MAX7456_SPI_CS_PIN
     spiPreInitCsOutPU(IO_TAG(MAX7456_SPI_CS_PIN)); // XXX 3.2 workaround for Kakute F4. See comment for spiPreInitCSOutPU.
 #endif
-#ifdef USE_SDCARD 
+#ifdef USE_SDCARD
     spiPreInitCs(sdcardConfig()->chipSelectTag);
 #endif
 #ifdef BMP280_CS_PIN
@@ -449,6 +450,43 @@ void init(void)
     spiInit(SPIDEV_4);
 #endif
 #endif // USE_SPI
+
+#ifdef USB_MSC
+#ifdef MSC_BUTTON
+    IO_t msc_button = IOGetByTag(IO_TAG(MSC_BUTTON));
+	IOInit(msc_button, OWNER_USB, 0);
+#ifdef MSC_BUTTON_IPU
+	IOConfigGPIO(msc_button, IOCFG_IPU);
+#define BUTTON_STATUS IORead(msc_button) == 0
+#else
+	IOConfigGPIO(msc_button, IOCFG_IPD);
+#define BUTTON_STATUS IORead(msc_button) == 1
+#endif
+#else
+#define BUTTON_STATUS 0
+#endif
+
+/* MSC mode will start after init, but will not allow scheduler to run,
+ *  so there is no bottleneck in reading and writing data */
+    if (*((uint32_t *)0x2001FFF0) == 0xDDDD1010 || BUTTON_STATUS) {
+    		if (startMsc() == 0) {
+    			//In order to exit MSC mode simply disconnect the board
+#ifdef MSC_BUTTON
+    			while(BUTTON_STATUS);
+#endif
+    			while(1) {
+    				asm("NOP");
+#ifdef MSC_BUTTON
+    				if (BUTTON_STATUS) {
+    					*((uint32_t *)0x2001FFF0) = 0xDDDD1011;
+    					delay(1);
+    					NVIC_SystemReset();
+    				}
+#endif
+    			}
+    		}
+    }
+#endif
 
 #ifdef USE_I2C
     i2cHardwareConfigure(i2cConfig());
