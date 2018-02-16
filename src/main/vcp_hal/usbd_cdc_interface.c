@@ -196,7 +196,7 @@ static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
     LineCoding.paritytype = pbuf[5];
     LineCoding.datatype   = pbuf[6];
     // If a callback is provided, tell the upper driver of changes in baud rate
-	 if (Buf && (Len == sizeof (LineCoding))) {
+	 if (pbuf && (length == sizeof (LineCoding))) {
 	     if (baudRateCb) {
 	         baudRateCb(baudRateCbContext, LineCoding.bitrate);
 	     }
