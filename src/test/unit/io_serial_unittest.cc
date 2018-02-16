@@ -71,4 +71,10 @@ extern "C" {
     serialPort_t *openSoftSerial(softSerialPortIndex_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) {
       return NULL;
     }
+
+    void serialSetCtrlLineStateCb(serialPort_t *, void (*)(serialPort_t *, uint16_t ), serialPort_t *) {}
+    void serialSetCtrlLineStateDtrPin(serialPort_t *, ioTag_t ) {}
+    void serialSetCtrlLineState(serialPort_t *, uint16_t ) {}
+
+    void serialSetBaudRateCb(serialPort_t *, void (*)(serialPort_t *context, uint32_t baud), serialPort_t *) {}
 }

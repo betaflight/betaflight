@@ -271,4 +271,10 @@ void IOConfigGPIO(IO_t, ioConfig_t) {}
 void *IOGetByTag(ioTag_t) { return NULL; }
 void IOWrite(IO_t, bool) {}
 
+void serialSetCtrlLineStateCb(serialPort_t *, void (*)(serialPort_t *, uint16_t ), serialPort_t *) {}
+void serialSetCtrlLineStateDtrPin(serialPort_t *, ioTag_t ) {}
+void serialSetCtrlLineState(serialPort_t *, uint16_t ) {}
+
+void serialSetBaudRateCb(serialPort_t *, void (*)(serialPort_t *context, uint32_t baud), serialPort_t *) {}
+
 }

@@ -97,20 +97,29 @@ void serialSetCtrlLineStateCb(serialPort_t *serialPort, void (*cb)(serialPort_t 
 
 void serialSetCtrlLineStateDtrPin(serialPort_t *serialPort, ioTag_t ioTagDtr)
 {
+#ifdef UNIT_TEST
+	UNUSED(serialPort);
+	UNUSED(ioTagDtr);
+#else /* UNIT_TEST */
 	serialPinConfigMutable()->ioTagDtr[serialPort->identifier] = ioTagDtr;
 	IO_t ioDtr = IOGetByTag(ioTagDtr);
-
     IOInit(ioDtr, OWNER_SERIAL_TX, 0);
     IOConfigGPIO(ioDtr, IOCFG_OUT_PP);
+#endif /* UNIT_TEST */
 }
 
 void serialSetCtrlLineState(serialPort_t *serialPort, uint16_t ctrlLineState)
 {
 	// For now only handle DTR pin, not RTS
+#ifdef UNIT_TEST
+	UNUSED(serialPort);
+	UNUSED(ctrlLineState);
+#else /* UNIT_TEST */
 	ioTag_t serialPassthroughDtrPin = serialPinConfig()->ioTagDtr[serialPort->identifier];
     if (serialPassthroughDtrPin != IO_TAG_NONE) {
     	IOWrite(IOGetByTag(serialPassthroughDtrPin), ~ctrlLineState & CTRL_LINE_STATE_DTR);
     }
+#endif /* UNIT_TEST */
 }
 
 void serialSetBaudRateCb(serialPort_t *serialPort, void (*cb)(serialPort_t *context, uint32_t baud), serialPort_t *context)
