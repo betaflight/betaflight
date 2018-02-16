@@ -62,6 +62,7 @@ typedef struct imuConfig_s {
     uint8_t small_angle;
     uint8_t acc_unarmedcal;                 // turn automatic acc compensation on/off
     accDeadband_t accDeadband;
+    uint8_t use_gps_heading;
 } imuConfig_t;
 
 PG_DECLARE(imuConfig_t, imuConfig);
@@ -72,10 +73,12 @@ typedef struct imuRuntimeConfig_s {
     uint8_t acc_unarmedcal;
     uint8_t small_angle;
     accDeadband_t accDeadband;
+    uint8_t use_gps_heading;
 } imuRuntimeConfig_t;
 
 void imuConfigure(uint16_t throttle_correction_angle);
 
+int getHeadingDirection(void);
 float getCosTiltAngle(void);
 void imuUpdateAttitude(timeUs_t currentTimeUs);
 int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value);

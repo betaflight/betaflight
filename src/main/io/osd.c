@@ -123,7 +123,7 @@ typedef struct statistic_s {
     int16_t min_voltage; // /10
     int16_t max_current; // /10
     int16_t min_rssi;
-    int16_t max_altitude;
+    int32_t max_altitude; // absolute altitude in cm only fits in int32_t
     int16_t max_distance;
 } statistic_t;
 
@@ -437,7 +437,7 @@ static bool osdDrawSingleElement(uint8_t item)
     case OSD_HOME_DIR:
         if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
             if (GPS_distanceToHome > 0) {
-                const int h = GPS_directionToHome - DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+                const int h = GPS_directionToHome - getHeadingDirection();
                 buff[0] = osdGetDirectionSymbolFromHeading(h);
             } else {
                 // We don't have a HOME symbol in the font, by now we use this
@@ -469,7 +469,7 @@ static bool osdDrawSingleElement(uint8_t item)
 #endif // GPS
 
     case OSD_COMPASS_BAR:
-        memcpy(buff, compassBar + osdGetHeadingIntoDiscreteDirections(DECIDEGREES_TO_DEGREES(attitude.values.yaw), 16), 9);
+        memcpy(buff, compassBar + osdGetHeadingIntoDiscreteDirections(getHeadingDirection(), 16), 9);
         buff[9] = 0;
         break;
 

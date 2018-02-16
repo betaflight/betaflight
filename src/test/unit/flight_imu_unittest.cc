@@ -206,6 +206,8 @@ mag_t mag;
 
 gpsSolutionData_t gpsSol;
 
+uint16_t GPS_distanceToHome = 0;
+
 uint8_t debugMode;
 int16_t debug[DEBUG16_VALUE_COUNT];
 

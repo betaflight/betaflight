@@ -41,6 +41,8 @@
 #include "flight/imu.h"
 #include "flight/pid.h"
 
+#include "io/gps.h"
+
 #include "rx/rx.h"
 
 #include "sensors/sensors.h"
@@ -230,6 +232,12 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
             baroAlt = baroCalculateAltitude();
             estimatedAltitude = baroAlt;
         }
+    }
+#endif
+
+#ifdef USE_GPS
+    if (STATE(GPS_FIX) && !sensors(SENSOR_BARO | SENSOR_RANGEFINDER)) {
+        estimatedAltitude = gpsSol.llh.alt*100;
     }
 #endif
 
