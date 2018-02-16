@@ -509,10 +509,12 @@ static void nopConsumer(uint8_t data)
     UNUSED(data);
 }
 
+
 static void cbCtrlLine(void *context, uint16_t ctrl)
 {
     serialSetCtrlLineState((serialPort_t *)context, ctrl);
 }
+
 
 /*
  A high-level serial passthrough implementation. Used by cli to start an
@@ -534,7 +536,9 @@ void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer *
 
     // Register control line state callback
     if (serialPassthroughDtrTag != IO_TAG_NONE) {
+#ifndef SITL
     	serialSetCtrlLineStateDtrPin(right, serialPassthroughDtrTag);
+#endif
     	serialSetCtrlLineStateCb(left, cbCtrlLine, (void *)right);
     }
 

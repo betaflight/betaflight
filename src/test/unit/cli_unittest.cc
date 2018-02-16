@@ -215,7 +215,7 @@ serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e){ retu
 serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) { return NULL; }
 void serialSetBaudRate(serialPort_t *, uint32_t) {}
 void serialSetMode(serialPort_t *, portMode_e) {}
-void serialPassthrough(serialPort_t *, serialPort_t *, serialConsumer *, serialConsumer *) {}
+void serialPassthrough(serialPort_t *, serialPort_t *, serialConsumer *, serialConsumer *, ioTag_t) {}
 uint32_t millis(void) { return 0; }
 uint8_t getBatteryCellCount(void) { return 1; }
 void servoMixerLoadMix(int) {}
@@ -270,6 +270,5 @@ void IOConfigGPIO(IO_t, ioConfig_t) {}
 
 void *IOGetByTag(ioTag_t) { return NULL; }
 void IOWrite(IO_t, bool) {}
-void serialSetCtrlLineStateCb(serialPort_t *, void (*)(uint16_t)) {}
 
 }

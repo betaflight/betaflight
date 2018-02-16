@@ -398,7 +398,7 @@ uint32_t CDC_BaudRate(void)
  * Output         : None.
  * Return         : None.
  *******************************************************************************/
-void CDC_SetCtrlLineStateCb(void *context, void (*cb)(void *context, uint16_t ctrlLineState))
+void CDC_SetCtrlLineStateCb(void (*cb)(void *context, uint16_t ctrlLineState), void *context)
 {
     ctrlLineStateCbContext = context;
     ctrlLineStateCb = cb;
