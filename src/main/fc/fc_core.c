@@ -238,8 +238,8 @@ void updateArmingStatus(void)
 
           /* Ignore ARMING_DISABLED_THROTTLE (once arm switch is on) if we are in 3D mode */
           bool ignoreThrottle = feature(FEATURE_3D)
-                             && !IS_RC_MODE_ACTIVE(BOX3DDISABLE)
-                             && !isModeActivationConditionPresent(BOX3DONASWITCH)
+                             && !IS_RC_MODE_ACTIVE(BOX3D)
+                             && !flight3DConfig()->switched_mode3d
                              && !(getArmingDisableFlags() & ~(ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_THROTTLE));
 
 #ifdef USE_RUNAWAY_TAKEOFF
@@ -464,8 +464,8 @@ uint8_t calculateThrottlePercent(void)
 {
     uint8_t ret = 0;
     if (feature(FEATURE_3D)
-        && !IS_RC_MODE_ACTIVE(BOX3DDISABLE)
-        && !isModeActivationConditionPresent(BOX3DONASWITCH)) {
+        && !IS_RC_MODE_ACTIVE(BOX3D)
+        && !flight3DConfig()->switched_mode3d) {
 
         if ((rcData[THROTTLE] >= PWM_RANGE_MAX) || (rcData[THROTTLE] <= PWM_RANGE_MIN)) {
             ret = 100;
