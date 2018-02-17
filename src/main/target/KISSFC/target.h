@@ -48,6 +48,9 @@
 #define USE_ACC
 #define USE_ACC_MPU6050
 #define ACC_MPU6050_ALIGN       CW90_DEG
+
+#define TARGET_DEFAULT_MIXER    MIXER_QUADX_1234
+
 #undef USE_LED_STRIP
 #else
 #define USE_GYRO
