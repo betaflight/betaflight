@@ -153,6 +153,9 @@ static void gyroInitSensorFilters(gyroSensor_t *gyroSensor);
 #define GYRO_SYNC_DENOM_DEFAULT 4
 #endif
 
+#define GYRO_OVERFLOW_TRIGGER_THRESHOLD 31980  // 97.5% full scale (1950dps)
+#define GYRO_OVERFLOW_RESET_THRESHOLD 30340    // 92.5% full scale (1850dps)
+
 PG_REGISTER_WITH_RESET_TEMPLATE(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 1);
 
 PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
@@ -728,13 +731,9 @@ static void checkForOverflow(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
     // This can cause an overflow and sign reversal in the output.
     // Overflow and sign reversal seems to result in a gyro value of +1996 or -1996.
     if (gyroSensor->overflowDetected) {
-        const float gyroRateX = gyroSensor->gyroDev.gyroADC[X] * gyroSensor->gyroDev.scale;
-        const float gyroRateY = gyroSensor->gyroDev.gyroADC[Y] * gyroSensor->gyroDev.scale;
-        const float gyroRateZ = gyroSensor->gyroDev.gyroADC[Z] * gyroSensor->gyroDev.scale;
-        static const int overflowResetThreshold = 1800;
-        if (abs(gyroRateX) < overflowResetThreshold
-              && abs(gyroRateY) < overflowResetThreshold
-              && abs(gyroRateZ) < overflowResetThreshold) {
+        if (abs(gyroSensor->gyroDev.gyroADC[X]) < GYRO_OVERFLOW_RESET_THRESHOLD
+              && abs(gyroSensor->gyroDev.gyroADC[Y]) < GYRO_OVERFLOW_RESET_THRESHOLD
+              && abs(gyroSensor->gyroDev.gyroADC[Z]) < GYRO_OVERFLOW_RESET_THRESHOLD) {
             // if we have 50ms of consecutive OK gyro vales, then assume yaw readings are OK again and reset overflowDetected
             // reset requires good OK values on all axes
             if (cmpTimeUs(currentTimeUs, gyroSensor->overflowTimeUs) > 50000) {
@@ -744,14 +743,25 @@ static void checkForOverflow(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
             // not a consecutive OK value, so reset the overflow time
             gyroSensor->overflowTimeUs = currentTimeUs;
         }
-    }
+    } else {
 #ifndef SIMULATOR_BUILD
-    // check for overflow in the axes set in overflowAxisMask
-    if (mpuGyroCheckOverflow(&gyroSensor->gyroDev) & overflowAxisMask) {
-        gyroSensor->overflowDetected = true;
-        gyroSensor->overflowTimeUs = currentTimeUs;
-    }
+        // check for overflow in the axes set in overflowAxisMask
+        gyroOverflow_e overflowCheck = GYRO_OVERFLOW_NONE;
+        if (abs(gyroSensor->gyroDev.gyroADC[X]) > GYRO_OVERFLOW_TRIGGER_THRESHOLD) {
+            overflowCheck |= GYRO_OVERFLOW_X;
+        }
+        if (abs(gyroSensor->gyroDev.gyroADC[Y]) > GYRO_OVERFLOW_TRIGGER_THRESHOLD) {
+            overflowCheck |= GYRO_OVERFLOW_Y;
+        }
+        if (abs(gyroSensor->gyroDev.gyroADC[Z]) > GYRO_OVERFLOW_TRIGGER_THRESHOLD) {
+            overflowCheck |= GYRO_OVERFLOW_Z;
+        }
+        if (overflowCheck & overflowAxisMask) {
+            gyroSensor->overflowDetected = true;
+            gyroSensor->overflowTimeUs = currentTimeUs;
+        }
 #endif // SIMULATOR_BUILD
+    }
 #else
     UNUSED(gyroSensor);
     UNUSED(currentTimeUs);
@@ -799,9 +809,6 @@ static FAST_CODE void gyroUpdateSensor(gyroSensor_t *gyroSensor, timeUs_t curren
     accumulationLastTimeSampledUs = currentTimeUs;
     accumulatedMeasurementTimeUs += sampleDeltaUs;
 
-    if (gyroConfig()->checkOverflow) {
-        checkForOverflow(gyroSensor, currentTimeUs);
-    }
     if (gyroDebugMode == DEBUG_NONE) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
             // NOTE: this branch optimized for when there is no gyro debugging, ensure it is kept in step with non-optimized branch
@@ -868,6 +875,9 @@ static FAST_CODE void gyroUpdateSensor(gyroSensor_t *gyroSensor, timeUs_t curren
                 gyroPrevious[axis] = gyroADCf;
             }
         }
+    }
+    if (gyroConfig()->checkOverflow) {
+        checkForOverflow(gyroSensor, currentTimeUs);
     }
 }
 
