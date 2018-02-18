@@ -74,6 +74,7 @@ typedef struct gyroConfig_s {
     uint16_t gyro_filter_q;
     uint16_t gyro_filter_r;
     uint16_t gyro_filter_p;
+    uint8_t  gyro_stage2_filter_type;
     int16_t  gyro_offset_yaw;
 } gyroConfig_t;
 

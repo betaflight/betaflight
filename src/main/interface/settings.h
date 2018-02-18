@@ -77,6 +77,9 @@ typedef enum {
 #ifdef USE_OVERCLOCK
     TABLE_OVERCLOCK,
 #endif
+#ifdef USE_GYRO_STAGE2_FILTER
+    TABLE_STAGE2_FILTER_TYPE,
+#endif
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 
