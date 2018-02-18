@@ -518,17 +518,23 @@ static bool osdDrawSingleElement(uint8_t item)
         }
 
     case OSD_CRAFT_NAME:
+        // This does not strictly support iterative updating if the craft name changes at run time. But since the craft name is not supposed to be changing this should not matter, and blanking the entire length of the craft name string on update will make it impossible to configure elements to be displayed on the right hand side of the craft name.
+        //TODO: When iterative updating is implemented, change this so the craft name is only printed once whenever the OSD 'flight' screen is entered.
+
         if (strlen(pilotConfig()->name) == 0) {
             strcpy(buff, "CRAFT_NAME");
         } else {
-            for (unsigned int i = 0; i < MAX_NAME_LENGTH; i++) {
-                buff[i] = toupper((unsigned char)pilotConfig()->name[i]);
-                if (pilotConfig()->name[i] == 0) {
-                    buff[i] = SYM_BLANK;
-                }
-            }
-            buff[MAX_NAME_LENGTH] = '\0';
+            unsigned i;
+            for (i = 0; i < MAX_NAME_LENGTH; i++) {
+                if (pilotConfig()->name[i]) {
+                    buff[i] = toupper((unsigned char)pilotConfig()->name[i]);
+                } else {
+                    break;
+                }    
+            }    
+            buff[i] = '\0';
         }
+
         break;
 
     case OSD_THROTTLE_POS:
@@ -788,6 +794,7 @@ static bool osdDrawSingleElement(uint8_t item)
     }
 
     displayWrite(osdDisplayPort, elemPosX + elemOffsetX, elemPosY, buff);
+
     return true;
 }
 
