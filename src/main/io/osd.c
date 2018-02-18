@@ -386,7 +386,6 @@ static bool osdDrawSingleElement(uint8_t item)
 
     uint8_t elemPosX = OSD_X(osdConfig()->item_pos[item]);
     uint8_t elemPosY = OSD_Y(osdConfig()->item_pos[item]);
-    uint8_t elemOffsetX = 0;
     char buff[OSD_ELEMENT_BUFFER_LENGTH];
 
     switch (item) {
@@ -499,22 +498,19 @@ static bool osdDrawSingleElement(uint8_t item)
 
     case OSD_FLYMODE:
         {
-            char *p = "ACRO";
-
-            if (isAirmodeActive()) {
-                p = "AIR ";
-            }
-
             if (FLIGHT_MODE(FAILSAFE_MODE)) {
-                p = "!FS!";
+                strcpy(buff, "!FS!");
             } else if (FLIGHT_MODE(ANGLE_MODE)) {
-                p = "STAB";
+                strcpy(buff, "STAB");
             } else if (FLIGHT_MODE(HORIZON_MODE)) {
-                p = "HOR ";
+                strcpy(buff, "HOR ");
+            } else if (isAirmodeActive()) {
+                strcpy(buff, "AIR ");
+            } else {
+                strcpy(buff, "ACRO");
             }
 
-            displayWrite(osdDisplayPort, elemPosX, elemPosY, p);
-            return true;
+            break;
         }
 
     case OSD_CRAFT_NAME:
@@ -793,7 +789,7 @@ static bool osdDrawSingleElement(uint8_t item)
         return false;
     }
 
-    displayWrite(osdDisplayPort, elemPosX + elemOffsetX, elemPosY, buff);
+    displayWrite(osdDisplayPort, elemPosX, elemPosY, buff);
 
     return true;
 }
