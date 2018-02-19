@@ -409,7 +409,7 @@ static bool imuIsAccelerometerHealthy(void)
 
 static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 {
-    static timeUs_t previousIMUUpdateTime;
+    static timeUs_t previousIMUUpdateTime = 0;
     float rawYawError = 0;
     bool useAcc = false;
     bool useMag = false;
