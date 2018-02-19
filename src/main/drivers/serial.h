@@ -128,7 +128,6 @@ uint8_t serialRead(serialPort_t *instance);
 void serialSetBaudRate(serialPort_t *instance, uint32_t baudRate);
 void serialSetMode(serialPort_t *instance, portMode_e mode);
 void serialSetCtrlLineStateCb(serialPort_t *instance, void (*cb)(serialPort_t *context, uint16_t ctrlLineState), serialPort_t *context);
-void serialSetCtrlLineStateDtrPin(serialPort_t *instance, ioTag_t ioTagDtr);
 void serialSetCtrlLineState(serialPort_t *instance, uint16_t ctrlLineState);
 void serialSetBaudRateCb(serialPort_t *instance, void (*cb)(serialPort_t *context, uint32_t baud), serialPort_t *context);
 bool isSerialTransmitBufferEmpty(const serialPort_t *instance);

@@ -412,6 +412,17 @@ serialPort_t *openSerialPort(
         return NULL;
     }
 
+	ioTag_t ioDtrTag = serialPinConfig()->ioTagDtr[identifier];
+
+	// Initialise DTR pin if defined
+    if (ioDtrTag != IO_TAG_NONE) {
+		IO_t ioDtr = IOGetByTag(ioDtrTag);
+		IOInit(ioDtr, OWNER_SERIAL_DTR, identifier);
+		// Set the initial state before enabling the output to prevent a glitch
+    	IOWrite(ioDtr, CTRL_LINE_STATE_DTR);
+		IOConfigGPIO(ioDtr, IOCFG_OUT_PP);
+    }
+
     serialPort->identifier = identifier;
 
     serialPortUsage->function = function;
@@ -521,7 +532,7 @@ static void cbCtrlLine(serialPort_t *context, uint16_t ctrl)
  arbitrary serial passthrough "proxy". Optional callbacks can be given to allow
  for specialized data processing.
  */
-void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer *leftC, serialConsumer *rightC, ioTag_t serialPassthroughDtrTag)
+void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer *leftC, serialConsumer *rightC)
 {
     waitForSerialPortToFinishTransmitting(left);
     waitForSerialPortToFinishTransmitting(right);
@@ -535,12 +546,7 @@ void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer *
     LED1_OFF;
 
     // Register control line state callback
-    if (serialPassthroughDtrTag != IO_TAG_NONE) {
-#ifndef SITL
-    	serialSetCtrlLineStateDtrPin(right, serialPassthroughDtrTag);
-#endif
-    	serialSetCtrlLineStateCb(left, cbCtrlLine, right);
-    }
+    serialSetCtrlLineStateCb(left, cbCtrlLine, right);
 
     // Either port might be open in a mode other than MODE_RXTX. We rely on
     // serialRxBytesWaiting() to do the right thing for a TX only port. No
