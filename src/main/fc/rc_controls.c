@@ -93,7 +93,8 @@ PG_RESET_TEMPLATE(flight3DConfig_t, flight3DConfig,
     .neutral3d = 1460,
     .deadband3d_throttle = 50,
     .limit3d_low = 1000,
-    .limit3d_high = 2000
+    .limit3d_high = 2000,
+    .switched_mode3d = false
 );
 
 bool isUsingSticksForArming(void)
@@ -109,7 +110,7 @@ bool areSticksInApModePosition(uint16_t ap_mode)
 throttleStatus_e calculateThrottleStatus(void)
 {
     if (feature(FEATURE_3D)) {
-        if (IS_RC_MODE_ACTIVE(BOX3DDISABLE) || isModeActivationConditionPresent(BOX3DONASWITCH)) {
+        if (IS_RC_MODE_ACTIVE(BOX3D) || flight3DConfig()->switched_mode3d) {
             if (rcData[THROTTLE] < rxConfig()->mincheck) {
                 return THROTTLE_LOW;
             }

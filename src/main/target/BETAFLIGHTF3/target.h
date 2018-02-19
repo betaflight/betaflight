@@ -26,7 +26,7 @@
 #define BEEPER                  PC15
 #define BEEPER_INVERTED
 
-#define USE_DSHOT_DMAR
+#define ENABLE_DSHOT_DMAR       true
 
 #define USABLE_TIMER_CHANNEL_COUNT 10
 

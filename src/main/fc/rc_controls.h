@@ -96,6 +96,7 @@ typedef struct flight3DConfig_s {
     uint16_t deadband3d_throttle;           // default throttle deadband from MIDRC
     uint16_t limit3d_low;                   // pwm output value for max negative thrust
     uint16_t limit3d_high;                  // pwm output value for max positive thrust
+    uint8_t switched_mode3d;                // enable '3D Switched Mode'
 } flight3DConfig_t;
 
 PG_DECLARE(flight3DConfig_t, flight3DConfig);

@@ -119,7 +119,9 @@
 #define PG_TIME_CONFIG 526
 #define PG_RANGEFINDER_CONFIG 527 // iNav
 #define PG_TRICOPTER_CONFIG 528
-#define PG_BETAFLIGHT_END 528
+#define PG_PINIO_CONFIG 529
+#define PG_PINIOBOX_CONFIG 530
+#define PG_BETAFLIGHT_END 530
 
 
 // OSD configuration (subject to change)

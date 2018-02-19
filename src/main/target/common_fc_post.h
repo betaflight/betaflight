@@ -93,12 +93,7 @@
 #define USE_RX_FRSKY_SPI
 #endif
 
-#if !defined(STM32F1) && defined(USE_DSHOT)
-#if !defined(USE_DSHOT_DMA) && !defined(USE_DSHOT_DMAR)
-#if !defined(RELEASE_BUILD)
-#define USE_DSHOT_DMAR
-#endif // !RELEASE_BUILD
-#endif // !USE_DSHOT_DMA && !USE_DSHOT_DMAR
-#endif // !STM32F1 && !STM32F3
-#undef USE_DSHOT_DMA
-
+// Burst dshot to default off if not configured explicitly by target
+#ifndef ENABLE_DSHOT_DMAR
+#define ENABLE_DSHOT_DMAR false
+#endif

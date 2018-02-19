@@ -57,6 +57,7 @@
 #define JEDEC_ID_WINBOND_W25Q64        0xEF4017
 #define JEDEC_ID_WINBOND_W25Q128       0xEF4018
 #define JEDEC_ID_WINBOND_W25Q256       0xEF4019
+#define JEDEC_ID_CYPRESS_S25FL128L     0x016018
 
 static busDevice_t busInstance;
 static busDevice_t *bus;
@@ -195,6 +196,7 @@ static bool m25p16_readIdentification(void)
         break;
     case JEDEC_ID_MICRON_N25Q128:
     case JEDEC_ID_WINBOND_W25Q128:
+    case JEDEC_ID_CYPRESS_S25FL128L:
         geometry.sectors = 256;
         geometry.pagesPerSector = 256;
         break;

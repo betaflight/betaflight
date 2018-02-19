@@ -67,9 +67,9 @@ static int srxlClearScreen(displayPort_t *displayPort)
     srxlWriteString(displayPort, 1, 0,  "BETAFLIGHT");
 
     if ( displayPort->grabCount == 0 ) {
-        srxlWriteString(displayPort, 0, 3,  CMS_STARTUP_HELP_TEXT1);
-        srxlWriteString(displayPort, 2, 4,  CMS_STARTUP_HELP_TEXT2);
-        srxlWriteString(displayPort, 2, 5,  CMS_STARTUP_HELP_TEXT3);
+        srxlWriteString(displayPort, 0, 2,  CMS_STARTUP_HELP_TEXT1);
+        srxlWriteString(displayPort, 2, 3,  CMS_STARTUP_HELP_TEXT2);
+        srxlWriteString(displayPort, 2, 4,  CMS_STARTUP_HELP_TEXT3);
     }
     return 0;
 }

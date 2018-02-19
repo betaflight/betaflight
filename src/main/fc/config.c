@@ -78,7 +78,7 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .activeRateProfile = 0,
     .debug_mode = DEBUG_MODE,
     .task_statistics = true,
-    .cpu_overclock = false,
+    .cpu_overclock = 0,
     .powerOnArmingGraceTime = 5,
     .boardIdentifier = TARGET_BOARD_IDENTIFIER
 );

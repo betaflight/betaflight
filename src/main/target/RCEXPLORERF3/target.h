@@ -19,6 +19,12 @@
 
 #define TARGET_BOARD_IDENTIFIER "REF3"
 
+//Making it fit into flash:
+#undef USE_RTC_TIME
+#undef USE_COPY_PROFILE_CMS_MENU
+#undef USE_RX_MSP
+
+
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
 #define LED0_PIN    PB4

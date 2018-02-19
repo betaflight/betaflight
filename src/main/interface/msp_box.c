@@ -38,6 +38,8 @@
 
 #include "telemetry/telemetry.h"
 
+#include "pg/piniobox.h"
+
 
 #ifndef USE_OSD_SLAVE
 // permanent IDs must uniquely identify BOX meaning, DO NOT REUSE THEM!
@@ -71,7 +73,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOXBLACKBOX, "BLACKBOX", 26 },
     { BOXFAILSAFE, "FAILSAFE", 27 },
     { BOXAIRMODE, "AIR MODE", 28 },
-    { BOX3DDISABLE, "DISABLE 3D", 29},
+    { BOX3D, "DISABLE / SWITCH 3D", 29},
     { BOXFPVANGLEMIX, "FPV ANGLE MIX", 30},
     { BOXBLACKBOXERASE, "BLACKBOX ERASE (>30s)", 31 },
     { BOXCAMERA1, "CAMERA CONTROL 1", 32},
@@ -80,8 +82,12 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOXFLIPOVERAFTERCRASH, "FLIP OVER AFTER CRASH", 35 },
     { BOXPREARM, "PREARM", 36 },
     { BOXBEEPGPSCOUNT, "BEEP GPS SATELLITE COUNT", 37 },
-    { BOX3DONASWITCH, "3D ON A SWITCH", 38 },
+//    { BOX3DONASWITCH, "3D ON A SWITCH", 38 }, (removed)
     { BOXVTXPITMODE, "VTX PIT MODE", 39 },
+    { BOXUSER1, "USER1", 40 },
+    { BOXUSER2, "USER2", 41 },
+    { BOXUSER3, "USER3", 42 },
+    { BOXUSER4, "USER4", 43 },
 };
 
 // mask of enabled IDs, calculated on startup based on enabled features. boxId_e is used as bit index
@@ -218,8 +224,7 @@ void initActiveBoxIds(void)
     BME(BOXFPVANGLEMIX);
 
     if (feature(FEATURE_3D)) {
-        BME(BOX3DDISABLE);
-        BME(BOX3DONASWITCH);
+        BME(BOX3D);
     }
 
     if (isMotorProtocolDshot()) {
@@ -260,6 +265,23 @@ void initActiveBoxIds(void)
     BME(BOXVTXPITMODE);
 #endif
 
+#ifdef USE_PINIOBOX
+    // Turn BOXUSERx only if pinioBox facility monitors them, as the facility is the only BOXUSERx observer.
+    // Note that pinioBoxConfig can be set to monitor any box.
+    for (int i = 0; i < PINIO_COUNT; i++) {
+        switch(pinioBoxConfig()->boxId[i]) {
+        case BOXUSER1:
+        case BOXUSER2:
+        case BOXUSER3:
+        case BOXUSER4:
+            BME(pinioBoxConfig()->boxId[i]);
+            break;
+        default:
+            break;
+        }
+    }
+#endif
+
 #undef BME
     // check that all enabled IDs are in boxes array (check may be skipped when using findBoxById() functions)
     for (boxId_e boxId = 0;  boxId < CHECKBOX_ITEM_COUNT; boxId++)
@@ -270,53 +292,36 @@ void initActiveBoxIds(void)
     activeBoxIds = ena;                               // set global variable
 }
 
+// return state of given boxId box, handling ARM and FLIGHT_MODE
+bool getBoxIdState(boxId_e boxid)
+{
+    const uint8_t boxIdToFlightModeMap[] = BOXID_TO_FLIGHT_MODE_MAP_INITIALIZER;
+
+    // we assume that all boxId below BOXID_FLIGHTMODE_LAST except BOXARM are mapped to flightmode
+    STATIC_ASSERT(ARRAYLEN(boxIdToFlightModeMap) == BOXID_FLIGHTMODE_LAST + 1, FLIGHT_MODE_BOXID_MAP_INITIALIZER_does_not_match_boxId_e);
+
+    if (boxid == BOXARM) {
+        return ARMING_FLAG(ARMED);
+    } else if (boxid <= BOXID_FLIGHTMODE_LAST) {
+        return FLIGHT_MODE(1 << boxIdToFlightModeMap[boxid]);
+    } else {
+        return IS_RC_MODE_ACTIVE(boxid);
+    }
+}
+
 // pack used flightModeFlags into supplied array
 // returns number of bits used
 int packFlightModeFlags(boxBitmask_t *mspFlightModeFlags)
 {
     // Serialize the flags in the order we delivered them, ignoring BOXNAMES and BOXINDEXES
     memset(mspFlightModeFlags, 0, sizeof(boxBitmask_t));
-
-    // enabled BOXes, bits indexed by boxId_e
-    boxBitmask_t boxEnabledMask;
-    boxBitmask_t boxFlightModeMask;
-    memset(&boxEnabledMask, 0, sizeof(boxEnabledMask));
-    memset(&boxFlightModeMask, 0, sizeof(boxFlightModeMask));
-
-    // copy ARM state
-    if (ARMING_FLAG(ARMED)) {
-        bitArraySet(&boxEnabledMask, BOXARM);
-        bitArraySet(&boxFlightModeMask, BOXARM);
-    }
-
-    // enable BOXes dependent on FLIGHT_MODE, use mapping table (from runtime_config.h)
-    // flightMode_boxId_map[HORIZON_MODE] == BOXHORIZON
-    static const int8_t flightMode_boxId_map[] = FLIGHT_MODE_BOXID_MAP_INITIALIZER;
-    for (unsigned i = 0; i < ARRAYLEN(flightMode_boxId_map); i++) {
-        const int8_t boxid = flightMode_boxId_map[i];
-        if (boxid != -1) {    // boxId_e does exist for this FLIGHT_MODE
-            bitArraySet(&boxFlightModeMask, boxid);
-            if (FLIGHT_MODE(1 << i))  // this flightmode is active
-                bitArraySet(&boxEnabledMask, boxid);
-        }
-    }
-
-    // enable BOXes dependent on rcMode bits, indexes are the same.
-    // only subset of BOXes depend on rcMode (non-ARM or FLIGHT_MODE), use mask to select them
-    // NOTE: ARM and FLIGHT modes are potentially contingent on other conditions.
-    //       Therefore, they must be masked/enabled separately from simple "range conditions" (RC)
-    for (unsigned i = 0; i < CHECKBOX_ITEM_COUNT; i++) {
-        if (!bitArrayGet(&boxFlightModeMask, i) && IS_RC_MODE_ACTIVE(i))
-            bitArraySet(&boxEnabledMask, i);
-    }
-
     // map boxId_e enabled bits to MSP status indexes
     // only active boxIds are sent in status over MSP, other bits are not counted
     unsigned mspBoxIdx = 0;           // index of active boxId (matches sent permanentId and boxNames)
     for (boxId_e boxId = 0; boxId < CHECKBOX_ITEM_COUNT; boxId++) {
         if (activeBoxIdGet(boxId)) {
-            if (bitArrayGet(&boxEnabledMask,  boxId))
-                bitArraySet(mspFlightModeFlags,  mspBoxIdx);      // box is enabled
+            if (getBoxIdState(boxId))
+                bitArraySet(mspFlightModeFlags, mspBoxIdx);       // box is enabled
             mspBoxIdx++;                                          // box is active, count it
         }
     }
