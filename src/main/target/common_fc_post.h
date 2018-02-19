@@ -97,3 +97,8 @@
 #ifndef ENABLE_DSHOT_DMAR
 #define ENABLE_DSHOT_DMAR false
 #endif
+
+// Some target doesn't define USE_ADC which USE_ADC_INTERNAL depends on
+#ifndef USE_ADC
+#undef USE_ADC_INTERNAL
+#endif
