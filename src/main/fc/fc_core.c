@@ -148,12 +148,15 @@ void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsD
 
 static bool isCalibrating(void)
 {
+    
 #ifdef USE_BARO
     if (sensors(SENSOR_BARO) && !isBaroCalibrationComplete()) {
         return true;
     }
 #endif
-
+#ifdef USE_GYRO_IMUF9001
+    return false;
+#endif
     // Note: compass calibration is handled completely differently, outside of the main loop, see f.CALIBRATE_MAG
 
     return (!accIsCalibrationComplete() && sensors(SENSOR_ACC)) || (!isGyroCalibrationComplete());
@@ -927,12 +930,15 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_GYROPID_SYNC)
     if (lockMainPID() != 0) return;
 #endif
+    //__disable_irq();
 
     // DEBUG_PIDLOOP, timings for:
     // 0 - gyroUpdate()
     // 1 - pidController()
     // 2 - subTaskMotorUpdate()
     // 3 - subTaskMainSubprocesses()
+    //when using dma, this shouldn't run until the dma spi transfer flag is complete
+    //gyroUpdateSensor in gyro.c is called by gyroUpdate
     gyroUpdate(currentTimeUs);
     DEBUG_SET(DEBUG_PIDLOOP, 0, micros() - currentTimeUs);
 
@@ -949,6 +955,7 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
         debug[0] = getTaskDeltaTime(TASK_SELF);
         debug[1] = averageSystemLoadPercent;
     }
+    //__enable_irq();
 }
 
 
