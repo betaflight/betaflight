@@ -26,10 +26,11 @@
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 #ifdef KISSCC
-    DEF_TIM(TIM1,  CH2N, PB14, TIM_USE_MOTOR,               0),
-    DEF_TIM(TIM8,  CH2N, PB0,  TIM_USE_MOTOR,               0),
-    DEF_TIM(TIM15, CH1N, PB15, TIM_USE_MOTOR,               0),
     DEF_TIM(TIM1,  CH1,  PA8,  TIM_USE_MOTOR,               0),
+    DEF_TIM(TIM8,  CH2N, PB0,  TIM_USE_MOTOR,               0),
+    DEF_TIM(TIM1,  CH2N, PB14, TIM_USE_MOTOR,               0),
+    DEF_TIM(TIM15, CH1N, PB15, TIM_USE_MOTOR,               0),
+
     DEF_TIM(TIM3,  CH1,  PA6,  TIM_USE_MOTOR,               0),
     DEF_TIM(TIM17, CH1,  PA7,  TIM_USE_MOTOR,               0),
     DEF_TIM(TIM16, CH1N, PA13, TIM_USE_PWM,                 0),

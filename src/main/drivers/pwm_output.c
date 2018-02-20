@@ -47,6 +47,9 @@ static uint16_t freqBeep = 0;
 
 static bool pwmMotorsEnabled = false;
 static bool isDshot = false;
+#ifdef USE_DSHOT_DMAR
+bool useBurstDshot = false;
+#endif
 
 static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8_t output)
 {
@@ -260,6 +263,11 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
         loadDmaBuffer = &loadDmaBufferDshot;
         pwmCompleteWrite = &pwmCompleteDshotMotorUpdate;
         isDshot = true;
+#ifdef USE_DSHOT_DMAR
+        if (motorConfig->useBurstDshot) {
+            useBurstDshot = true;
+        }
+#endif
         break;
 #endif
     }
@@ -295,11 +303,7 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
         }
 #endif
 
-#if defined(USE_HAL_DRIVER)
         IOConfigGPIOAF(motors[motorIndex].io, IOCFG_AF_PP, timerHardware->alternateFunction);
-#else
-        IOConfigGPIO(motors[motorIndex].io, IOCFG_AF_PP);
-#endif
 
         /* standard PWM outputs */
         // margin of safety is 4 periods when unsynced

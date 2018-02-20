@@ -109,7 +109,7 @@ typedef enum {
 
 typedef struct {
     TIM_TypeDef *timer;
-#if defined(USE_DSHOT_DMAR)
+#if defined(USE_DSHOT) && defined(USE_DSHOT_DMAR)
 #if !defined(USE_HAL_DRIVER)
 #ifdef STM32F3
     DMA_Channel_TypeDef *dmaBurstRef;
@@ -118,18 +118,18 @@ typedef struct {
 #endif
     uint16_t dmaBurstLength;
 #endif
-    uint32_t dmaBurstBuffer[DSHOT_DMA_BUFFER_SIZE * 4];
-#else
-    uint16_t timerDmaSources;
 #endif
+    uint32_t dmaBurstBuffer[DSHOT_DMA_BUFFER_SIZE * 4];
+    uint16_t timerDmaSources;
 } motorDmaTimer_t;
 
 typedef struct {
     ioTag_t ioTag;
     const timerHardware_t *timerHardware;
     uint16_t value;
-#if !defined(USE_DSHOT_DMAR)
+#ifdef USE_DSHOT
     uint16_t timerDmaSource;
+    bool configured;
 #endif
     motorDmaTimer_t *timer;
     volatile bool requestTelemetry;
@@ -165,13 +165,17 @@ typedef struct {
     IO_t io;
 } pwmOutputPort_t;
 
+//CAVEAT: This is used in the `motorConfig_t` parameter group, so the parameter group constraints apply
 typedef struct motorDevConfig_s {
     uint16_t motorPwmRate;                  // The update rate of motor outputs (50-498Hz)
     uint8_t  motorPwmProtocol;              // Pwm Protocol
     uint8_t  motorPwmInversion;             // Active-High vs Active-Low. Useful for brushed FCs converted for brushless operation
     uint8_t  useUnsyncedPwm;
+    uint8_t  useBurstDshot;
     ioTag_t  ioTags[MAX_SUPPORTED_MOTORS];
 } motorDevConfig_t;
+
+extern bool useBurstDshot;
 
 void motorDevInit(const motorDevConfig_t *motorDevConfig, uint16_t idlePulse, uint8_t motorCount);
 

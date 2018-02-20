@@ -133,10 +133,13 @@ typedef struct
     UINT16 volts; // 0.01V increments
     INT16 temperature; // degrees F
     INT8 dBm_A, // Average signal for A antenna in dBm
-    dBm_B; // Average signal for B antenna in dBm.
+    INT8 dBm_B; // Average signal for B antenna in dBm.
     // If only 1 antenna, set B = A
 } STRU_TELE_RPM;
 */
+
+#define STRU_TELE_RPM_EMPTY_FIELDS_COUNT 8
+
 bool srxlFrameRpm(sbuf_t *dst, timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
@@ -147,6 +150,7 @@ bool srxlFrameRpm(sbuf_t *dst, timeUs_t currentTimeUs)
     sbufWriteU16BigEndian(dst, getBatteryVoltage() * 10);   // vbat is in units of 0.1V
     sbufWriteU16BigEndian(dst, 0x7FFF);                     // temperature
 
+    sbufFill(dst, 0xFF, STRU_TELE_RPM_EMPTY_FIELDS_COUNT);
     return true;
 }
 

@@ -303,10 +303,11 @@ float firFilterDenoiseUpdate(firFilterDenoise_t *filter, float input)
     }
 }
 
-// ledvinap's proposed RC+FIR2 Biquad-- equivalent to 'static' fast Kalman, without error estimation
-void biquadRCFIR2FilterInit(biquadFilter_t *filter, float q, float r)
+// ledvinap's proposed RC+FIR2 Biquad-- 1st order IIR, RC filter k
+void biquadRCFIR2FilterInit(biquadFilter_t *filter, uint16_t f_cut, float dT)
 {
-    float k = 2 * 2 * sqrt(q) / (sqrt(q + 4 * r) + sqrt(q));  // 1st order IIR filter k
+    float RC = 1.0f / ( 2.0f * M_PI_FLOAT * f_cut );
+    float k = dT / (RC + dT);
     filter->b0 = k / 2;
     filter->b1 = k / 2;
     filter->b2 = 0;

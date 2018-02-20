@@ -47,7 +47,7 @@ void pgResetFn_sdcardConfig(sdcardConfig_t *config)
 #else
     config->cardDetectTag = IO_TAG_NONE;
 #endif
-#ifdef SDCARD_DETECT_PIN
+#ifdef SDCARD_SPI_CS_PIN
     config->chipSelectTag = IO_TAG(SDCARD_SPI_CS_PIN);
 #else
     config->chipSelectTag = IO_TAG_NONE;

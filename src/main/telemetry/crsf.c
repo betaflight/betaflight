@@ -399,7 +399,7 @@ void initCrsfTelemetry(void)
     if (sensors(SENSOR_ACC)) {
         crsfSchedule[index++] = BV(CRSF_FRAME_ATTITUDE_INDEX);
     }
-    if (isBatteryVoltageAvailable() || isAmperageAvailable()) {
+    if (isBatteryVoltageConfigured() || isAmperageConfigured()) {
         crsfSchedule[index++] = BV(CRSF_FRAME_BATTERY_SENSOR_INDEX);
     }
     crsfSchedule[index++] = BV(CRSF_FRAME_FLIGHT_MODE_INDEX);
