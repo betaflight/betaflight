@@ -97,6 +97,71 @@ For example. If you have your MWOSD connected to UART 2, you could enable commun
 
     serialpassthrough 1
 
+If a baud rate is not specified then serial pass-through supports changing of the baud rate over USB. This allows tools such as the MWOSD GUI to dynamically set the baud rate to, for example 57600 for reflashing the MWOSD firmware and then 115200 for adjusting settings without having to powercycle your flight control board between the two.
+
 _To use a tool such as the MWOSD GUI, it is necessary to disconnect or exit Cleanflight configurator._
 
 **To exit serial passthrough mode, power cycle your flight control board.**
+
+In order to reflash an Arduino based device such as a MWOSD if is necessary to connect the DTR line in addition to the RX and TX serial lines. The DTR is used as a reset line to invoke the bootloader. The DTR line may be connected to any GPIO pin on the flight control board. The DTR line associated with any given UART may be set using the CLI command `resource`.
+
+For example, the following configuration for an OpenPilot Revolution shows the UART6 serial port to be configured with TX on pin C06, RX on pin C07 and DTR on pin C08.
+
+```
+# resource
+resource MOTOR 1 B00
+resource MOTOR 2 B01
+resource MOTOR 3 A03
+resource MOTOR 4 A02
+resource MOTOR 5 A01
+resource MOTOR 6 A00
+resource PPM 1 B14
+resource PWM 1 B14
+resource PWM 2 B15
+resource PWM 3 C06
+resource PWM 4 C07
+resource PWM 5 C08
+resource PWM 6 C09
+resource LED_STRIP 1 A01
+resource SERIAL_TX 1 A09
+resource SERIAL_TX 3 B10
+resource SERIAL_TX 4 A00
+resource SERIAL_TX 6 C06
+resource SERIAL_RX 1 A10
+resource SERIAL_RX 3 B11
+resource SERIAL_RX 4 A01
+resource SERIAL_RX 6 C07
+resource SERIAL_DTR 6 C08
+resource INVERTER 1 C00
+resource I2C_SCL 1 B08
+resource I2C_SDA 1 B09
+resource LED 1 B05
+resource LED 2 B04
+resource SPI_SCK 1 A05
+resource SPI_SCK 3 C10
+resource SPI_MISO 1 A06
+resource SPI_MISO 3 C11
+resource SPI_MOSI 1 A07
+resource SPI_MOSI 3 C12
+resource ESCSERIAL 1 B14
+resource ADC_BATT 1 C02
+resource ADC_CURR 1 C01
+```
+
+To assign the DTR line to another pin use the following command.
+
+```
+# resource SERIAL_DTR 6 c05
+
+Resource is set to C05
+```
+
+To disassociate DTR from a pin use the following command.
+
+```
+# resource SERIAL_DTR 6 none
+Resource is freed
+```
+
+
+
