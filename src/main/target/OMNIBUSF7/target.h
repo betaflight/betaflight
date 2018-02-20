@@ -17,6 +17,11 @@
 
 #define USE_TARGET_CONFIG
 
+
+#ifdef BETAFLIGHTF7
+#define TARGET_BOARD_IDENTIFIER "BFF7"
+#define USBD_PRODUCT_STRING "BETAFLIGHTF7"
+#else
 #ifdef OMNIBUSF7V2
 #define TARGET_BOARD_IDENTIFIER "OB72"
 #define USBD_PRODUCT_STRING "OmnibusF7V2"
@@ -29,6 +34,11 @@
 
 #define BEEPER                  PD15
 #define BEEPER_INVERTED
+
+#ifdef BETAFLIGHTF7
+//define camera control
+#define CAMERA_CONTROL_PIN      PC8 // Camera control , waiting on Sch file's to find the best timer 
+#endif
 
 #define USE_ACC
 #define USE_GYRO
@@ -186,9 +196,15 @@
 
 #define DEFAULT_FEATURES        (FEATURE_OSD)
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
+#ifdef BETAFLIGHTF7
+#define SERIALRX_UART           SERIAL_PORT_USART6
+#define SERIALRX_PROVIDER       SERIALRX_SBUS
+#define ESC_SENSOR_UART         SERIAL_PORT_USART2
+#else
 #define SERIALRX_UART           SERIAL_PORT_USART2
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define ESC_SENSOR_UART         SERIAL_PORT_USART7
+#endif
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
