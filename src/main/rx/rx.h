@@ -130,7 +130,6 @@ typedef struct rxConfig_s {
     ioTag_t spektrum_bind_plug_ioTag;
     uint8_t spektrum_sat_bind;              // number of bind pulses for Spektrum satellite receivers
     uint8_t spektrum_sat_bind_autoreset;    // whenever we will reset (exit) binding mode after hard reboot
-    uint8_t rssi_src_frame_errors;			// true to use frame drop flags in the rx protocol
     uint8_t rssi_channel;
     uint8_t rssi_scale;
     uint8_t rssi_invert;
@@ -146,6 +145,7 @@ typedef struct rxConfig_s {
     uint16_t rx_min_usec;
     uint16_t rx_max_usec;
     uint8_t max_aux_channel;
+    uint8_t rssi_src_frame_errors;          // true to use frame drop flags in the rx protocol
 } rxConfig_t;
 
 PG_DECLARE(rxConfig_t, rxConfig);
