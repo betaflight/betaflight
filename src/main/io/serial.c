@@ -412,15 +412,17 @@ serialPort_t *openSerialPort(
         return NULL;
     }
 
-	ioTag_t ioDtrTag = serialPinConfig()->ioTagDtr[identifier];
+    ioTag_t ioDtrTag = serialPinConfig()->ioTagDtr[identifier];
 
-	// Initialise DTR pin if defined
+    // Initialise DTR pin if defined
     if (ioDtrTag != IO_TAG_NONE) {
-		IO_t ioDtr = IOGetByTag(ioDtrTag);
-		IOInit(ioDtr, OWNER_SERIAL_DTR, identifier);
-		// Set the initial state before enabling the output to prevent a glitch
-    	IOWrite(ioDtr, CTRL_LINE_STATE_DTR);
-		IOConfigGPIO(ioDtr, IOCFG_OUT_PP);
+        IO_t ioDtr = IOGetByTag(ioDtrTag);
+        IOInit(ioDtr, OWNER_SERIAL_DTR, identifier);
+        // Set the initial state before enabling the output to prevent a glitch
+//        IOWrite(ioDtr, 0);
+        // Version 1.7.x.x of MW_OSD doesn't handle DTR resets well; loses sync with MAX7456 so leave DTR high for now
+        IOWrite(ioDtr, CTRL_LINE_STATE_DTR);
+        IOConfigGPIO(ioDtr, IOCFG_OUT_PP);
     }
 
     serialPort->identifier = identifier;
@@ -441,6 +443,13 @@ void closeSerialPort(serialPort_t *serialPort)
 
     // TODO wait until data has been transmitted.
 
+    ioTag_t ioDtrTag = serialPinConfig()->ioTagDtr[serialPort->identifier];
+
+    // Negate DTR pin if defined
+    if (ioDtrTag != IO_TAG_NONE) {
+        IO_t ioDtr = IOGetByTag(ioDtrTag);
+        IOWrite(ioDtr, CTRL_LINE_STATE_DTR);
+    }
     serialPort->rxCallback = NULL;
 
     serialPortUsage->function = FUNCTION_NONE;
