@@ -26,6 +26,7 @@
 #include "build/version.h"
 
 #include "cms/cms.h"
+#include "io/displayport_srxl.h"
 
 #include "common/crc.h"
 #include "common/streambuf.h"
@@ -234,7 +235,7 @@ static bool lineSent[SPEKTRUM_SRXL_DEVICE_TEXTGEN_ROWS];
 int spektrumTmTextGenPutChar(uint8_t col, uint8_t row, char c)
 {
     if (row < SPEKTRUM_SRXL_TEXTGEN_BUFFER_ROWS && col < SPEKTRUM_SRXL_TEXTGEN_BUFFER_COLS) {
-        // Only update and force a tm transmision if something has actually changed.
+      // Only update and force a tm transmision if something has actually changed.
         if (srxlTextBuff[row][col] != c) {
           srxlTextBuff[row][col] = c;
           lineSent[row] = false;
@@ -472,8 +473,9 @@ static void processSrxl(timeUs_t currentTimeUs)
 #if defined (USE_SPEKTRUM_CMS_TELEMETRY) && defined (USE_CMS)
         // Boost CMS performance by sending nothing else but CMS Text frames when in a CMS menu.
         // Sideeffect, all other reports are still not sent if user leaves CMS without a proper EXIT.
-        if (cmsInMenu) {
-          srxlFnPtr = srxlFrameText;
+        if (cmsInMenu &&
+            (pCurrentDisplay == &srxlDisplayPort)) {
+            srxlFnPtr = srxlFrameText;
         }
 #endif
 
