@@ -976,9 +976,9 @@ static void cliSerialPassthrough(char *cmdline)
         if (baud) {
             serialSetBaudRate(passThroughPort, baud);
         } else {
-			// Register the right side baud rate setting routine with the left side which allows setting of the UART
-			// baud rate over USB without setting it using the serialpassthrough command
-			serialSetBaudRateCb(cliPort, serialSetBaudRate, passThroughPort);
+            // Register the right side baud rate setting routine with the left side which allows setting of the UART
+            // baud rate over USB without setting it using the serialpassthrough command
+            serialSetBaudRateCb(cliPort, serialSetBaudRate, passThroughPort);
         }
 
         // If this port has a rx callback associated we need to remove it now.

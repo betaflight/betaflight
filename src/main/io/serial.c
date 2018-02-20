@@ -539,13 +539,6 @@ static void nopConsumer(uint8_t data)
     UNUSED(data);
 }
 
-
-static void cbCtrlLine(serialPort_t *context, uint16_t ctrl)
-{
-    serialSetCtrlLineState(context, ctrl);
-}
-
-
 /*
  A high-level serial passthrough implementation. Used by cli to start an
  arbitrary serial passthrough "proxy". Optional callbacks can be given to allow
@@ -565,7 +558,7 @@ void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer *
     LED1_OFF;
 
     // Register control line state callback
-    serialSetCtrlLineStateCb(left, cbCtrlLine, right);
+    serialSetCtrlLineStateCb(left, serialSetCtrlLineState, right);
 
     // Either port might be open in a mode other than MODE_RXTX. We rely on
     // serialRxBytesWaiting() to do the right thing for a TX only port. No

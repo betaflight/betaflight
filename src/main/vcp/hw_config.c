@@ -406,7 +406,7 @@ uint32_t CDC_BaudRate(void)
  *******************************************************************************/
 void CDC_SetBaudRateCb(void (*cb)(void *context, uint32_t baud), void *context)
 {
-	baudRateCbContext = context;
+    baudRateCbContext = context;
     baudRateCb = cb;
 }
 

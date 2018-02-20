@@ -199,9 +199,9 @@ static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
 
         // If a callback is provided, tell the upper driver of changes in baud rate
         if (baudRateCb) {
-         baudRateCb(baudRateCbContext, LineCoding.bitrate);
+            baudRateCb(baudRateCbContext, LineCoding.bitrate);
         }
-	 }
+    }
 
     break;
 

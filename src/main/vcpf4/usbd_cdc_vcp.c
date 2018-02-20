@@ -130,7 +130,7 @@ static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t *Buf, uint32_t Len)
 
       //Note - hw flow control on UART 1-3 and 6 only
       case SET_LINE_CODING:
-          // If a callback is provided, tell the upper driver of changes in baud rate
+         // If a callback is provided, tell the upper driver of changes in baud rate
      	 if (plc && (Len == sizeof (*plc))) {
      	     if (baudRateCb) {
      	         baudRateCb(baudRateCbContext, plc->bitrate);
@@ -317,7 +317,7 @@ uint32_t CDC_BaudRate(void)
  *******************************************************************************/
 void CDC_SetBaudRateCb(void (*cb)(void *context, uint32_t baud), void *context)
 {
-	baudRateCbContext = context;
+    baudRateCbContext = context;
     baudRateCb = cb;
 }
 
