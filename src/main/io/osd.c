@@ -335,23 +335,17 @@ static void osdFormatCoordinate(char *buff, char sym, int32_t val)
 {
     // latitude maximum integer width is 3 (-90).
     // longitude maximum integer width is 4 (-180).
-    // We show 7 decimals, so we need to use 11 characters because
-    // we are embedding the decimal separator between two digits
-    // eg: s-1801234567z   s=symbol, z=zero terminator, decimal separator embedded between 0 and 1
+    // We show 7 decimals, so we need to use 12 characters:
+    // eg: s-180.1234567z   s=symbol, z=zero terminator, decimal separator  between 0 and 1
 
-    static const int decimalPlaces = 7;
-    static const int coordinateMaxLength = 11;//5 + decimalPlaces; // 4 for the integer part of the number + 1 for the symbol
+    static const int coordinateMaxLength = 13;//12 for the number (4 + dot + 7) + 1 for the symbol
 
     buff[0] = sym;
     const int32_t integerPart = val / GPS_DEGREES_DIVIDER;
     const int32_t decimalPart = labs(val % GPS_DEGREES_DIVIDER);
-    const int written = tfp_sprintf(buff + 1, "%d", integerPart);
-    tfp_sprintf(buff + 1 + written, "%07d", decimalPart);
-    // embed the decimal separator
-    buff[1+written-1] += SYM_ZERO_HALF_TRAILING_DOT - '0';
-    buff[1+written] += SYM_ZERO_HALF_LEADING_DOT - '0';
+    const int written = tfp_sprintf(buff + 1, "%d.%07d", integerPart, decimalPart);
     // pad with blanks to coordinateMaxLength
-    for (int pos = 1 + decimalPlaces + written; pos < coordinateMaxLength; ++pos) {
+    for (int pos = 1 + written; pos < coordinateMaxLength; ++pos) {
         buff[pos] = SYM_BLANK;
     }
     buff[coordinateMaxLength] = '\0';
@@ -524,17 +518,23 @@ static bool osdDrawSingleElement(uint8_t item)
         }
 
     case OSD_CRAFT_NAME:
+        // This does not strictly support iterative updating if the craft name changes at run time. But since the craft name is not supposed to be changing this should not matter, and blanking the entire length of the craft name string on update will make it impossible to configure elements to be displayed on the right hand side of the craft name.
+        //TODO: When iterative updating is implemented, change this so the craft name is only printed once whenever the OSD 'flight' screen is entered.
+
         if (strlen(pilotConfig()->name) == 0) {
             strcpy(buff, "CRAFT_NAME");
         } else {
-            for (unsigned int i = 0; i < MAX_NAME_LENGTH; i++) {
-                buff[i] = toupper((unsigned char)pilotConfig()->name[i]);
-                if (pilotConfig()->name[i] == 0) {
-                    buff[i] = SYM_BLANK;
-                }
-            }
-            buff[MAX_NAME_LENGTH] = '\0';
+            unsigned i;
+            for (i = 0; i < MAX_NAME_LENGTH; i++) {
+                if (pilotConfig()->name[i]) {
+                    buff[i] = toupper((unsigned char)pilotConfig()->name[i]);
+                } else {
+                    break;
+                }    
+            }    
+            buff[i] = '\0';
         }
+
         break;
 
     case OSD_THROTTLE_POS:
@@ -794,6 +794,7 @@ static bool osdDrawSingleElement(uint8_t item)
     }
 
     displayWrite(osdDisplayPort, elemPosX + elemOffsetX, elemPosY, buff);
+
     return true;
 }
 

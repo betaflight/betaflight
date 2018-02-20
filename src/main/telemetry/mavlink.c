@@ -208,6 +208,16 @@ void mavlinkSendSystemStatus(void)
     if (sensors(SENSOR_BARO)) onboardControlAndSensors |=  8200;
     if (sensors(SENSOR_GPS))  onboardControlAndSensors |= 16416;
 
+    uint16_t batteryVoltage = 0;
+    int16_t batteryAmperage = -1;
+    int8_t batteryRemaining = 100;
+
+    if (getBatteryState() < BATTERY_NOT_PRESENT) {
+        batteryVoltage = isBatteryVoltageConfigured() ? getBatteryVoltage() * 100 : batteryVoltage;
+        batteryAmperage = isAmperageConfigured() ? getAmperage() : batteryAmperage;
+        batteryRemaining = isBatteryVoltageConfigured() ? calculateBatteryPercentageRemaining() : batteryRemaining;
+    }
+
     mavlink_msg_sys_status_pack(0, 200, &mavMsg,
         // onboard_control_sensors_present Bitmask showing which onboard controllers and sensors are present.
         //Value of 0: not present. Value of 1: present. Indices: 0: 3D gyro, 1: 3D acc, 2: 3D mag, 3: absolute pressure,
@@ -222,11 +232,11 @@ void mavlinkSendSystemStatus(void)
         // load Maximum usage in percent of the mainloop time, (0%: 0, 100%: 1000) should be always below 1000
         0,
         // voltage_battery Battery voltage, in millivolts (1 = 1 millivolt)
-        isBatteryVoltageAvailable() ? getBatteryVoltage() * 100 : 0,
+        batteryVoltage,
         // current_battery Battery current, in 10*milliamperes (1 = 10 milliampere), -1: autopilot does not measure the current
-        isAmperageAvailable() ? getAmperage() : -1,
+        batteryAmperage,
         // battery_remaining Remaining battery energy: (0%: 0, 100%: 100), -1: autopilot estimate the remaining battery
-        isBatteryVoltageAvailable() ? calculateBatteryPercentageRemaining() : 100,
+        batteryRemaining,
         // drop_rate_comm Communication drops in percent, (0%: 0, 100%: 10'000), (UART, I2C, SPI, CAN), dropped packets on all links (packets that were corrupted on reception on the MAV)
         0,
         // errors_comm Communication errors (UART, I2C, SPI, CAN), dropped packets on all links (packets that were corrupted on reception on the MAV)

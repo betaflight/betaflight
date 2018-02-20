@@ -36,6 +36,10 @@
 #include "sensors/current.h"
 #include "sensors/esc_sensor.h"
 
+const char * const currentMeterSourceNames[CURRENT_METER_COUNT] = {
+    "NONE", "ADC", "VIRTUAL", "ESC", "MSP"
+};
+
 const uint8_t currentMeterIds[] = {
     CURRENT_METER_ID_BATTERY_1,
 #ifdef USE_VIRTUAL_CURRENT_METER

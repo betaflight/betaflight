@@ -25,7 +25,7 @@
 #define BEEPER                  PB3
 #define BEEPER_INVERTED
 
-#define USE_DSHOT_DMAR
+#define ENABLE_DSHOT_DMAR       true
 
 // ICM20689 interrupt
 #define USE_EXTI

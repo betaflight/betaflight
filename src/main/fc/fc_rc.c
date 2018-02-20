@@ -324,21 +324,20 @@ void updateRcCommands(void)
 
     rcCommand[THROTTLE] = rcLookupThrottle(tmp);
 
-    if (feature(FEATURE_3D) && IS_RC_MODE_ACTIVE(BOX3DDISABLE) && !failsafeIsActive()) {
+    if (feature(FEATURE_3D) && IS_RC_MODE_ACTIVE(BOX3D) && !failsafeIsActive()) {
         fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
         rcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MAX - rxConfig()->midrc);
     }
 
-    if (feature(FEATURE_3D) && isModeActivationConditionPresent(BOX3DONASWITCH) && !failsafeIsActive()) {
-        if (IS_RC_MODE_ACTIVE(BOX3DONASWITCH)) {
-            reverseMotors = true;
-            fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
-            rcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MIN - rxConfig()->midrc);
-        }
-        else {
+    if (feature(FEATURE_3D) && flight3DConfig()->switched_mode3d && !failsafeIsActive()) {
+        if (IS_RC_MODE_ACTIVE(BOX3D)) {
             reverseMotors = false;
             fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
             rcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MAX - rxConfig()->midrc);
+        } else {
+            reverseMotors = true;
+            fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
+            rcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MIN - rxConfig()->midrc);
         }
     }
     if (FLIGHT_MODE(HEADFREE_MODE)) {

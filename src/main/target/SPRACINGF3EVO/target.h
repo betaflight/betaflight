@@ -25,6 +25,12 @@
 #define TARGET_BOARD_IDENTIFIER "SPEV"
 #endif
 
+//Making it fit into flash:
+#undef USE_RTC_TIME
+#undef USE_COPY_PROFILE_CMS_MENU
+#undef USE_RX_MSP
+
+
 #if !defined(AIORACERF3)
 #define USE_TARGET_CONFIG
 #endif

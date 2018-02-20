@@ -51,6 +51,11 @@
 #define USE_GYRO_DATA_ANALYSE
 #define USE_ADC
 #define USE_ADC_INTERNAL
+
+#if defined(STM32F40_41xxx) || defined(STM32F411xE)
+#define USE_OVERCLOCK
+#endif
+
 #endif // STM32F4
 
 #ifdef STM32F722xx
@@ -130,12 +135,15 @@
 #define USE_CAMERA_CONTROL
 #define USE_CMS
 #define USE_COPY_PROFILE_CMS_MENU
+#define USE_DSHOT_DMAR
 #define USE_GYRO_OVERFLOW_CHECK
 #define USE_HUFFMAN
 #define USE_MSP_DISPLAYPORT
 #define USE_MSP_OVER_TELEMETRY
 #define USE_OSD
 #define USE_OSD_OVER_MSP_DISPLAYPORT
+#define USE_PINIO
+#define USE_PINIOBOX
 #define USE_RCDEVICE
 #define USE_RTC_TIME
 #define USE_RX_MSP
@@ -147,6 +155,7 @@
 #define USE_VTX_CONTROL
 #define USE_VTX_SMARTAUDIO
 #define USE_VTX_TRAMP
+#define USE_GYRO_BIQUAD_RC_FIR2
 
 #ifdef USE_SERIALRX_SPEKTRUM
 #define USE_SPEKTRUM_BIND
@@ -166,8 +175,6 @@
 #define USE_GPS
 #define USE_GPS_NMEA
 #define USE_GPS_UBLOX
-#define USE_GYRO_BIQUAD_RC_FIR2
-// #define USE_GYRO_FAST_KALMAN
 #define USE_NAV
 #define USE_OSD_ADJUSTMENTS
 #define USE_SENSOR_NAMES

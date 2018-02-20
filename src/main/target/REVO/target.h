@@ -70,7 +70,7 @@
 #endif
 
 #if defined(REVOLT)
-#define USE_DSHOT_DMAR
+#define ENABLE_DSHOT_DMAR       true
 #endif
 
 // PC0 used as inverter select GPIO

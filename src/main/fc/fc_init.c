@@ -87,6 +87,8 @@
 #include "pg/bus_i2c.h"
 #include "pg/bus_spi.h"
 #include "pg/flash.h"
+#include "pg/pinio.h"
+#include "pg/piniobox.h"
 #include "pg/pg.h"
 #include "pg/rx_pwm.h"
 #include "pg/sdcard.h"
@@ -112,6 +114,7 @@
 #include "io/transponder_ir.h"
 #include "io/osd.h"
 #include "io/osd_slave.h"
+#include "io/piniobox.h"
 #include "io/displayport_msp.h"
 #include "io/vtx.h"
 #include "io/vtx_rtc6705.h"
@@ -350,18 +353,8 @@ void init(void)
     }
 #endif
 
-#if defined(STM32F4) && !defined(DISABLE_OVERCLOCK)
-    // If F4 Overclocking is set and System core clock is not correct a reset is forced
-    if (systemConfig()->cpu_overclock && SystemCoreClock != OC_FREQUENCY_HZ) {
-        *((uint32_t *)0x2001FFF8) = 0xBABEFACE; // 128KB SRAM STM32F4XX
-        __disable_irq();
-        NVIC_SystemReset();
-    } else if (!systemConfig()->cpu_overclock && SystemCoreClock == OC_FREQUENCY_HZ) {
-        *((uint32_t *)0x2001FFF8) = 0x0;        // 128KB SRAM STM32F4XX
-        __disable_irq();
-        NVIC_SystemReset();
-    }
-
+#ifdef USE_OVERCLOCK
+    OverclockRebootIfNecessary(systemConfig()->cpu_overclock);
 #endif
 
     delay(100);
@@ -531,6 +524,14 @@ void init(void)
         servoDevInit(&servoConfig()->dev);
     }
     servosFilterInit();
+#endif
+
+#ifdef USE_PINIO
+    pinioInit(pinioConfig());
+#endif
+
+#ifdef USE_PINIOBOX
+    pinioBoxInit(pinioBoxConfig());
 #endif
 
     LED1_ON;

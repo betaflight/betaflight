@@ -34,6 +34,7 @@ COMMON_SRC = \
             drivers/exti.c \
             drivers/io.c \
             drivers/light_led.c \
+            drivers/pinio.c \
             drivers/resource.c \
             drivers/rcc.c \
             drivers/serial.c \
@@ -56,6 +57,7 @@ COMMON_SRC = \
             interface/msp.c \
             interface/msp_box.c \
             io/beeper.c \
+            io/piniobox.c \
             io/serial.c \
             io/statusindicator.c \
             io/transponder_ir.c \
@@ -65,7 +67,10 @@ COMMON_SRC = \
             pg/beeper_dev.c \
             pg/bus_i2c.c \
             pg/bus_spi.c \
+            pg/dashboard.c \
             pg/max7456.c \
+            pg/pinio.c \
+            pg/piniobox.c \
             pg/pg.c \
             pg/rx_pwm.c \
             pg/sdcard.c \
@@ -142,6 +147,7 @@ FC_SRC = \
             cms/cms_menu_ledstrip.c \
             cms/cms_menu_misc.c \
             cms/cms_menu_osd.c \
+            cms/cms_menu_power.c \
             cms/cms_menu_vtx_rtc6705.c \
             cms/cms_menu_vtx_smartaudio.c \
             cms/cms_menu_vtx_tramp.c \
@@ -312,6 +318,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             cms/cms_menu_ledstrip.c \
             cms/cms_menu_misc.c \
             cms/cms_menu_osd.c \
+            cms/cms_menu_power.c \
             cms/cms_menu_vtx_rtc6705.c \
             cms/cms_menu_vtx_smartaudio.c \
             cms/cms_menu_vtx_tramp.c \

@@ -26,8 +26,11 @@
 typedef enum {
     VOLTAGE_METER_NONE = 0,
     VOLTAGE_METER_ADC,
-    VOLTAGE_METER_ESC
+    VOLTAGE_METER_ESC,
+    VOLTAGE_METER_COUNT
 } voltageMeterSource_e;
+
+extern const char * const voltageMeterSourceNames[VOLTAGE_METER_COUNT];
 
 // WARNING - do not mix usage of VOLTAGE_METER_* and VOLTAGE_SENSOR_*, they are separate concerns.
 

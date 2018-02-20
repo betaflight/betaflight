@@ -26,7 +26,7 @@
 #define BEEPER                  PC13
 #define BEEPER_INVERTED
 
-#define USE_DSHOT_DMAR
+#define ENABLE_DSHOT_DMAR       true
 
 // *************** Gyro & ACC **********************
 #define USE_SPI

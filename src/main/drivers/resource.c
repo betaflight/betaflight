@@ -70,5 +70,6 @@ const char * const ownerNames[OWNER_TOTAL_COUNT] = {
     "CAMERA_CONTROL",
     "TIMUP",
     "RANGEFINDER",
-    "RX_SPI"
+    "RX_SPI",
+    "PINIO",
 };
