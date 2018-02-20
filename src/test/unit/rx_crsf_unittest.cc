@@ -290,10 +290,4 @@ void crsfScheduleMspResponse(void) {};
 bool bufferMspFrame(uint8_t *, int) {return true;}
 bool isBatteryVoltageAvailable(void) { return true; }
 bool isAmperageAvailable(void) { return true; }
-
-void IOInit(IO_t, resourceOwner_e, uint8_t) {}
-void IOConfigGPIO(IO_t, ioConfig_t) {}
-void IOWrite(IO_t, bool) {}
-IO_t IOGetByTag(ioTag_t) {return NULL;}
-
 }
