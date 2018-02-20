@@ -415,7 +415,7 @@ serialPort_t *openSerialPort(
     ioTag_t ioDtrTag = serialPinConfig()->ioTagDtr[identifier];
 
     // Initialise DTR pin if defined
-    if (ioDtrTag != IO_TAG_NONE) {
+    if (ioDtrTag) {
         IO_t ioDtr = IOGetByTag(ioDtrTag);
         IOInit(ioDtr, OWNER_SERIAL_DTR, identifier);
         // Set the initial state before enabling the output to prevent a glitch
@@ -445,7 +445,7 @@ void closeSerialPort(serialPort_t *serialPort)
     ioTag_t ioDtrTag = serialPinConfig()->ioTagDtr[serialPort->identifier];
 
     // Negate DTR pin if defined
-    if (ioDtrTag != IO_TAG_NONE) {
+    if (ioDtrTag) {
         IO_t ioDtr = IOGetByTag(ioDtrTag);
         IOWrite(ioDtr, CTRL_LINE_STATE_DTR);
     }

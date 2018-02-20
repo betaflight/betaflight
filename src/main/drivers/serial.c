@@ -103,7 +103,7 @@ void serialSetCtrlLineState(serialPort_t *serialPort, uint16_t ctrlLineState)
 	UNUSED(ctrlLineState);
 #else /* UNIT_TEST */
 	ioTag_t serialPassthroughDtrPin = serialPinConfig()->ioTagDtr[serialPort->identifier];
-    if (serialPassthroughDtrPin != IO_TAG_NONE) {
+    if (serialPassthroughDtrPin) {
     	IOWrite(IOGetByTag(serialPassthroughDtrPin), ~ctrlLineState & CTRL_LINE_STATE_DTR);
     }
 #endif /* UNIT_TEST */
