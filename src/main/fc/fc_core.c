@@ -280,7 +280,10 @@ void disarm(void)
         }
 #endif
         BEEP_OFF;
-        beeper(BEEPER_DISARMING);      // emit disarm tone
+        // if ARMING_DISABLED_RUNAWAY_TAKEOFF is set then we want to play it's beep pattern instead
+        if (!(getArmingDisableFlags() & ARMING_DISABLED_RUNAWAY_TAKEOFF)) {
+            beeper(BEEPER_DISARMING);      // emit disarm tone
+        }
     }
 }
 
