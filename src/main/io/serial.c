@@ -419,9 +419,8 @@ serialPort_t *openSerialPort(
         IO_t ioDtr = IOGetByTag(ioDtrTag);
         IOInit(ioDtr, OWNER_SERIAL_DTR, identifier);
         // Set the initial state before enabling the output to prevent a glitch
-//        IOWrite(ioDtr, 0);
-        // Version 1.7.x.x of MW_OSD doesn't handle DTR resets well; loses sync with MAX7456 so leave DTR high for now
-        IOWrite(ioDtr, CTRL_LINE_STATE_DTR);
+        // Note that MW_OSD must be built with MAX_SOFTRESET defined for this to work as desired
+        IOWrite(ioDtr, 0);
         IOConfigGPIO(ioDtr, IOCFG_OUT_PP);
     }
 
