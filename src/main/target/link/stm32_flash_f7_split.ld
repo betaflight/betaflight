@@ -32,20 +32,7 @@ SECTIONS
     PROVIDE (isr_vector_table_base = .);
     KEEP(*(.isr_vector)) /* Startup code */
     . = ALIGN(4);
-  } >FLASH
-
-  /* Critical program code goes into ITCM RAM */
-  /* Copy specific fast-executing code to ITCM RAM */ 
-  tcm_code = LOADADDR(.tcm_code); 
-  .tcm_code :
-  {
-    . = ALIGN(4);
-    tcm_code_start = .; 
-    *(.tcm_code)
-    *(.tcm_code*)
-    . = ALIGN(4);
-    tcm_code_end = .; 
-  } >ITCM_RAM AT >FLASH1
+  } >FLASH AT >AXIM_FLASH
 
   /* The program code and other data goes into FLASH */
   .text :
@@ -64,7 +51,20 @@ SECTIONS
 
     . = ALIGN(4);
     _etext = .;        /* define a global symbols at end of code */
-  } >FLASH1
+  } >FLASH1 AT >AXIM_FLASH1
+
+  /* Critical program code goes into ITCM RAM */
+  /* Copy specific fast-executing code to ITCM RAM */ 
+  tcm_code = LOADADDR(.tcm_code); 
+  .tcm_code :
+  {
+    . = ALIGN(4);
+    tcm_code_start = .; 
+    *(.tcm_code)
+    *(.tcm_code*)
+    . = ALIGN(4);
+    tcm_code_end = .; 
+  } >ITCM_RAM AT >AXIM_FLASH1
 
   .ARM.extab   : 
   { 
@@ -75,45 +75,22 @@ SECTIONS
   {
     __exidx_start = .;
     *(.ARM.exidx*) __exidx_end = .;
-  } >FLASH
+  } >FLASH AT >AXIM_FLASH
 
-  .preinit_array     :
-  {
-    PROVIDE_HIDDEN (__preinit_array_start = .);
-    KEEP (*(.preinit_array*))
-    PROVIDE_HIDDEN (__preinit_array_end = .);
-  } >FLASH
-
-  .init_array :
-  {
-    PROVIDE_HIDDEN (__init_array_start = .);
-    KEEP (*(SORT(.init_array.*)))
-    KEEP (*(.init_array*))
-    PROVIDE_HIDDEN (__init_array_end = .);
-  } >FLASH
-  
-  .fini_array :
-  {
-    PROVIDE_HIDDEN (__fini_array_start = .);
-    KEEP (*(.fini_array*))
-    KEEP (*(SORT(.fini_array.*)))
-    PROVIDE_HIDDEN (__fini_array_end = .);
-  } >FLASH
-  
   .pg_registry :
   {
     PROVIDE_HIDDEN (__pg_registry_start = .);
     KEEP (*(.pg_registry))
     KEEP (*(SORT(.pg_registry.*)))
     PROVIDE_HIDDEN (__pg_registry_end = .);
-  } >FLASH
+  } >FLASH AT >AXIM_FLASH
   
   .pg_resetdata :
   {
     PROVIDE_HIDDEN (__pg_resetdata_start = .);
     KEEP (*(.pg_resetdata))
     PROVIDE_HIDDEN (__pg_resetdata_end = .);
-  } >FLASH
+  } >FLASH AT >AXIM_FLASH
 
   /* used by the startup to initialize data */
   _sidata = .;
@@ -128,11 +105,11 @@ SECTIONS
 
     . = ALIGN(4);
     _edata = .;        /* define a global symbol at data end */
-  } >RAM AT >FLASH
+  } >RAM AT >AXIM_FLASH
 
   /* Uninitialized data section */
   . = ALIGN(4);
-  .bss :
+  .bss (NOLOAD) :
   {
     /* This is used by the startup in order to initialize the .bss secion */
     _sbss = .;         /* define a global symbol at bss start */
@@ -145,6 +122,35 @@ SECTIONS
     _ebss = .;         /* define a global symbol at bss end */
     __bss_end__ = _ebss;
   } >RAM
+
+  /* Uninitialized data section */
+  . = ALIGN(4);
+  .sram2 (NOLOAD) :
+  {
+    /* This is used by the startup in order to initialize the .sram2 secion */
+    _ssram2 = .;         /* define a global symbol at sram2 start */
+    __sram2_start__ = _ssram2;
+    *(.sram2)
+    *(SORT_BY_ALIGNMENT(.sram2*))
+    *(COMMON)
+
+    . = ALIGN(4);
+    _esram2 = .;         /* define a global symbol at sram2 end */
+    __sram2_end__ = _esram2;
+  } >SRAM2
+
+  . = ALIGN(4);
+  .fastram_bss (NOLOAD) :
+  {
+    _sfastram_bss = .;
+    __fastram_bss_start__ = _sfastram_bss;
+    *(.fastram_bss)
+    *(SORT_BY_ALIGNMENT(.fastram_bss*))
+
+    . = ALIGN(4);
+    _efastram_bss = .;
+    __fastram_bss_end__ = _efastram_bss;
+  } >FASTRAM
 
   /* User_heap_stack section, used to check that there is enough RAM left */
   _heap_stack_end = ORIGIN(STACKRAM)+LENGTH(STACKRAM) - 8; /* 8 bytes to allow for alignment */

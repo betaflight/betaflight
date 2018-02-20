@@ -154,9 +154,13 @@ __IO uint32_t uwTick;
 HAL_StatusTypeDef HAL_Init(void)
 {
   /* Configure Flash prefetch and Instruction cache through ART accelerator */ 
-#if (ART_ACCLERATOR_ENABLE != 0)
+#if (ART_ACCLERATOR_ENABLE != 0U)
    __HAL_FLASH_ART_ENABLE();
 #endif /* ART_ACCLERATOR_ENABLE */
+
+#if (PREFETCH_ENABLE != 0U)
+  __HAL_FLASH_PREFETCH_BUFFER_ENABLE();
+#endif /* PREFETCH_ENABLE */
 
   /* Set Interrupt Group Priority */
   HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);

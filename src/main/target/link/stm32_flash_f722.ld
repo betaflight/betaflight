@@ -22,26 +22,29 @@ ENTRY(Reset_Handler)
 /* Specify the memory areas */
 MEMORY
 {
-    ITCM_ISR (rx)     : ORIGIN = 0x00000000, LENGTH = 1K
-    ITCM_RAM (rx)     : ORIGIN = 0x00000400, LENGTH = 15K
+    ITCM_RAM (rx)           : ORIGIN = 0x00000000, LENGTH = 16K
 
-    ITCMFL (rx)       : ORIGIN = 0x00200000, LENGTH = 16K 
-    ITCMFL1 (rx)      : ORIGIN = 0x00208000, LENGTH = 480K 
+    ITCM_FLASH (rx)         : ORIGIN = 0x00200000, LENGTH = 16K
+    /* config occupies the entire flash sector 1 for the ease of erasure, 16K on F72x */
+    ITCM_FLASH_CONFIG (r)   : ORIGIN = 0x00204000, LENGTH = 16K
+    ITCM_FLASH1 (rx)        : ORIGIN = 0x00208000, LENGTH = 480K
 
-    FLASH (rx)        : ORIGIN = 0x08000000, LENGTH = 16K
-    FLASH_CONFIG (r)  : ORIGIN = 0x08004000, LENGTH = 16K
-    FLASH1 (rx)       : ORIGIN = 0x08008000, LENGTH = 480K
+    AXIM_FLASH (rx)         : ORIGIN = 0x08000000, LENGTH = 16K
+    AXIM_FLASH_CONFIG (r)   : ORIGIN = 0x08004000, LENGTH = 16K
+    AXIM_FLASH1 (rx)        : ORIGIN = 0x08008000, LENGTH = 480K
 
-    TCM (rwx)         : ORIGIN = 0x20000000, LENGTH = 64K
-    SRAM1 (rwx)       : ORIGIN = 0x20010000, LENGTH = 176K
-    SRAM2 (rwx)       : ORIGIN = 0x2003C000, LENGTH = 16K
-    MEMORY_B1 (rx)    : ORIGIN = 0x60000000, LENGTH = 0K
+    DTCM_RAM (rwx)          : ORIGIN = 0x20000000, LENGTH = 64K
+    SRAM1 (rwx)             : ORIGIN = 0x20010000, LENGTH = 176K
+    SRAM2 (rwx)             : ORIGIN = 0x2003C000, LENGTH = 16K
+    MEMORY_B1 (rx)          : ORIGIN = 0x60000000, LENGTH = 0K
 }
 
-REGION_ALIAS("RAM", SRAM1)
+REGION_ALIAS("FLASH", AXIM_FLASH)
+REGION_ALIAS("FLASH_CONFIG", AXIM_FLASH_CONFIG)
+REGION_ALIAS("FLASH1", AXIM_FLASH1)
 
-/* note TCM could be used for stack */
-REGION_ALIAS("STACKRAM", TCM)
-REGION_ALIAS("FASTRAM", TCM)
+REGION_ALIAS("STACKRAM", DTCM_RAM)
+REGION_ALIAS("FASTRAM", DTCM_RAM)
+REGION_ALIAS("RAM", DTCM_RAM)
 
 INCLUDE "stm32_flash_f7_split.ld"
