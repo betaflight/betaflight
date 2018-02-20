@@ -111,8 +111,6 @@ struct serialPortVTable {
 
     void (*setMode)(serialPort_t *instance, portMode_e mode);
     void (*setCtrlLineStateCb)(serialPort_t *instance, void (*cb)(serialPort_t *instance, uint16_t ctrlLineState), serialPort_t *context);
-    void (*setCtrlLineStateDtrPin)(serialPort_t *instance, ioTag_t ioTagDtr);
-    void (*setCtrlLineState)(serialPort_t *instance, uint16_t ctrlLineState);
     void (*setBaudRateCb)(serialPort_t *instance, void (*cb)(serialPort_t *context, uint32_t baud), serialPort_t *context);
 
     void (*writeBuf)(serialPort_t *instance, const void *data, int count);
