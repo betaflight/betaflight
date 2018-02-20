@@ -664,10 +664,15 @@ static bool osdDrawSingleElement(uint8_t item)
             // Show most severe reason for arming being disabled
             if (enabledWarnings & OSD_WARNING_ARMING_DISABLE && IS_RC_MODE_ACTIVE(BOXARM) && isArmingDisabled()) {
                 const armingDisableFlags_e flags = getArmingDisableFlags();
-                for (int i = 0; i < ARMING_DISABLE_FLAGS_COUNT; i++) {
-                    if (flags & (1 << i)) {
-                        osdFormatMessage(buff, sizeof(buff), armingDisableFlagNames[i]);
-                        break;
+                // if ARMING_DISABLED_RUNAWAY_TAKEOFF is set we want to display that message in preference to the others
+                if (flags & ARMING_DISABLED_RUNAWAY_TAKEOFF) {
+                    osdFormatMessage(buff, sizeof(buff), armingDisableFlagNames[ffs(ARMING_DISABLED_RUNAWAY_TAKEOFF)-1]);
+                } else {
+                    for (int i = 0; i < ARMING_DISABLE_FLAGS_COUNT; i++) {
+                        if (flags & (1 << i)) {
+                            osdFormatMessage(buff, sizeof(buff), armingDisableFlagNames[i]);
+                            break;
+                        }
                     }
                 }
                 break;
