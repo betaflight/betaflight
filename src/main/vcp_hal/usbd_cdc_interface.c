@@ -190,28 +190,31 @@ static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
     break;
 
   case CDC_SET_LINE_CODING:
-    LineCoding.bitrate    = (uint32_t)(pbuf[0] | (pbuf[1] << 8) |\
-                            (pbuf[2] << 16) | (pbuf[3] << 24));
-    LineCoding.format     = pbuf[4];
-    LineCoding.paritytype = pbuf[5];
-    LineCoding.datatype   = pbuf[6];
-    // If a callback is provided, tell the upper driver of changes in baud rate
-	 if (pbuf && (length == sizeof (LineCoding))) {
-	     if (baudRateCb) {
-	         baudRateCb(baudRateCbContext, LineCoding.bitrate);
-	     }
+    if (pbuf && (length == sizeof (LineCoding))) {
+        LineCoding.bitrate    = (uint32_t)(pbuf[0] | (pbuf[1] << 8) |\
+                                (pbuf[2] << 16) | (pbuf[3] << 24));
+        LineCoding.format     = pbuf[4];
+        LineCoding.paritytype = pbuf[5];
+        LineCoding.datatype   = pbuf[6];
+
+        // If a callback is provided, tell the upper driver of changes in baud rate
+        if (baudRateCb) {
+         baudRateCb(baudRateCbContext, LineCoding.bitrate);
+        }
 	 }
 
     break;
 
   case CDC_GET_LINE_CODING:
-    pbuf[0] = (uint8_t)(LineCoding.bitrate);
-    pbuf[1] = (uint8_t)(LineCoding.bitrate >> 8);
-    pbuf[2] = (uint8_t)(LineCoding.bitrate >> 16);
-    pbuf[3] = (uint8_t)(LineCoding.bitrate >> 24);
-    pbuf[4] = LineCoding.format;
-    pbuf[5] = LineCoding.paritytype;
-    pbuf[6] = LineCoding.datatype;
+    if (pbuf && (length == sizeof (LineCoding))) {
+        pbuf[0] = (uint8_t)(LineCoding.bitrate);
+        pbuf[1] = (uint8_t)(LineCoding.bitrate >> 8);
+        pbuf[2] = (uint8_t)(LineCoding.bitrate >> 16);
+        pbuf[3] = (uint8_t)(LineCoding.bitrate >> 24);
+        pbuf[4] = LineCoding.format;
+        pbuf[5] = LineCoding.paritytype;
+        pbuf[6] = LineCoding.datatype;
+    }
     break;
 
   case CDC_SET_CONTROL_LINE_STATE:
