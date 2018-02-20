@@ -32,7 +32,7 @@ SECTIONS
     PROVIDE (isr_vector_table_base = .);
     KEEP(*(.isr_vector)) /* Startup code */
     . = ALIGN(4);
-  } >FLASH
+  } >ITCMFL AT >FLASH
 
   /* Critical program code goes into ITCM RAM */
   /* Copy specific fast-executing code to ITCM RAM */ 
@@ -64,25 +64,25 @@ SECTIONS
 
     . = ALIGN(4);
     _etext = .;        /* define a global symbols at end of code */
-  } >FLASH1
+  } >ITCMFL1 AT >FLASH1
 
   .ARM.extab   : 
   { 
     *(.ARM.extab* .gnu.linkonce.armextab.*) 
-  } >FLASH
+  } >ITCMFL AT >FLASH
   
   .ARM : 
   {
     __exidx_start = .;
     *(.ARM.exidx*) __exidx_end = .;
-  } >FLASH
+  } >ITCMFL AT >FLASH
 
   .preinit_array     :
   {
     PROVIDE_HIDDEN (__preinit_array_start = .);
     KEEP (*(.preinit_array*))
     PROVIDE_HIDDEN (__preinit_array_end = .);
-  } >FLASH
+  } >ITCMFL AT >FLASH
 
   .init_array :
   {
@@ -90,7 +90,7 @@ SECTIONS
     KEEP (*(SORT(.init_array.*)))
     KEEP (*(.init_array*))
     PROVIDE_HIDDEN (__init_array_end = .);
-  } >FLASH
+  } >ITCMFL AT >FLASH
   
   .fini_array :
   {
@@ -98,7 +98,7 @@ SECTIONS
     KEEP (*(.fini_array*))
     KEEP (*(SORT(.fini_array.*)))
     PROVIDE_HIDDEN (__fini_array_end = .);
-  } >FLASH
+  } >ITCMFL AT >FLASH
   
   .pg_registry :
   {

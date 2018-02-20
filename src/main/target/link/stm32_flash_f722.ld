@@ -25,8 +25,8 @@ MEMORY
     ITCM_ISR (rx)     : ORIGIN = 0x00000000, LENGTH = 1K
     ITCM_RAM (rx)     : ORIGIN = 0x00000400, LENGTH = 15K
 
-    ITCMFL (rx)       : ORIGIN = 0x00200000, LENGTH = 16K 
-    ITCMFL1 (rx)      : ORIGIN = 0x00208000, LENGTH = 480K 
+    ITCMFL (rx)       : ORIGIN = 0x00200000, LENGTH = 16K  /* ITCM interface into FLASH */
+    ITCMFL1 (rx)      : ORIGIN = 0x00208000, LENGTH = 480K /* ITCM interface into FLASH1 */
 
     FLASH (rx)        : ORIGIN = 0x08000000, LENGTH = 16K
     FLASH_CONFIG (r)  : ORIGIN = 0x08004000, LENGTH = 16K
