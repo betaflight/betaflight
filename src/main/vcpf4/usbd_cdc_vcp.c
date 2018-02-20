@@ -109,9 +109,8 @@ void ust_cpy(LINE_CODING* plc2, const LINE_CODING* plc1)
  * @param  Len: Number of data to be sent (in bytes)
  * @retval Result of the opeartion (USBD_OK in all cases)
  */
-static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len)
+static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t *Buf, uint32_t Len)
 {
-    (void)Len;
     LINE_CODING* plc = (LINE_CODING*)Buf;
 
     assert_param(Len>=sizeof(LINE_CODING));
@@ -132,7 +131,7 @@ static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len)
       //Note - hw flow control on UART 1-3 and 6 only
       case SET_LINE_CODING:
           // If a callback is provided, tell the upper driver of changes in baud rate
-     	 if (Buf && (Len == sizeof (*plc))) {
+     	 if (plc && (Len == sizeof (*plc))) {
      	     if (baudRateCb) {
      	         baudRateCb(baudRateCbContext, plc->bitrate);
      	     }
@@ -148,7 +147,7 @@ static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len)
 
       case SET_CONTROL_LINE_STATE:
          // If a callback is provided, tell the upper driver of changes in DTR/RTS state
-    	 if (Buf && (Len == sizeof (uint16_t))) {
+    	 if (plc && (Len == sizeof (uint16_t))) {
     	     if (ctrlLineStateCb) {
     	         ctrlLineStateCb(ctrlLineStateCbContext, *((uint16_t *)Buf));
     	     }
