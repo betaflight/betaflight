@@ -414,6 +414,9 @@ serialPort_t *openSerialPort(
 
     ioTag_t ioDtrTag = serialPinConfig()->ioTagDtr[identifier];
 
+#ifdef UNIT_TEST
+    UNUSED(ioDtrTag);
+#else /* UNIT_TEST */
     // Initialise DTR pin if defined
     if (ioDtrTag) {
         IO_t ioDtr = IOGetByTag(ioDtrTag);
@@ -423,6 +426,7 @@ serialPort_t *openSerialPort(
         IOWrite(ioDtr, 0);
         IOConfigGPIO(ioDtr, IOCFG_OUT_PP);
     }
+#endif /* UNIT_TEST */
 
     serialPort->identifier = identifier;
 
@@ -444,11 +448,16 @@ void closeSerialPort(serialPort_t *serialPort)
 
     ioTag_t ioDtrTag = serialPinConfig()->ioTagDtr[serialPort->identifier];
 
+#ifdef UNIT_TEST
+    UNUSED(ioDtrTag);
+#else /* UNIT_TEST */
     // Negate DTR pin if defined
     if (ioDtrTag) {
         IO_t ioDtr = IOGetByTag(ioDtrTag);
         IOWrite(ioDtr, CTRL_LINE_STATE_DTR);
     }
+#endif /* UNIT_TEST */
+
     serialPort->rxCallback = NULL;
 
     serialPortUsage->function = FUNCTION_NONE;
