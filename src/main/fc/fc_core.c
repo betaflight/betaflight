@@ -279,8 +279,11 @@ void disarm(void)
             blackboxFinish();
         }
 #endif
-        BEEP_OFF;
-        beeper(BEEPER_DISARMING);      // emit disarm tone
+        // if ARMING_DISABLED_RUNAWAY_TAKEOFF is set then we want to play it's beep pattern instead
+        if (!(getArmingDisableFlags() & ARMING_DISABLED_RUNAWAY_TAKEOFF)) {
+            BEEP_OFF;
+            beeper(BEEPER_DISARMING);      // emit disarm tone
+        }
     }
 }
 
@@ -350,11 +353,16 @@ void tryArm(void)
 #endif
     } else {
         if (!isFirstArmingGyroCalibrationRunning()) {
-            int armingDisabledReason = ffs(getArmingDisableFlags());
+            const armingDisableFlags_e armingDisableFlags = getArmingDisableFlags();
+            const int armingDisabledReason = ffs(armingDisableFlags);
             if (lastArmingDisabledReason != armingDisabledReason) {
                 lastArmingDisabledReason = armingDisabledReason;
-
-                beeperWarningBeeps(armingDisabledReason);
+                // if ARMING_DISABLED_RUNAWAY_TAKEOFF is set that should override other arming disabled beep patterns
+                if (armingDisableFlags & ARMING_DISABLED_RUNAWAY_TAKEOFF) {
+                    beeperWarningBeeps(ffs(ARMING_DISABLED_RUNAWAY_TAKEOFF));
+                } else {
+                    beeperWarningBeeps(armingDisabledReason);
+                }
             }
         }
     }
@@ -791,7 +799,6 @@ static void subTaskPidController(timeUs_t currentTimeUs)
             if (runawayTakeoffTriggerUs == 0) {
                 runawayTakeoffTriggerUs = currentTimeUs + (pidConfig()->runaway_takeoff_activate_delay * 1000);
             } else if (currentTimeUs > runawayTakeoffTriggerUs) {
-                
                 setArmingDisabled(ARMING_DISABLED_RUNAWAY_TAKEOFF);
                 disarm();
             }
