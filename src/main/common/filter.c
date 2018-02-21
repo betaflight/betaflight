@@ -365,18 +365,6 @@ float firFilterDenoiseUpdate(firFilterDenoise_t *filter, float input)
     }
 }
 
-// ledvinap's proposed RC+FIR2 Biquad-- 1st order IIR, RC filter k
-void biquadRCFIR2FilterInit(biquadFilter_t *filter, uint16_t f_cut, float dT)
-{
-    float RC = 1.0f / ( 2.0f * M_PI_FLOAT * f_cut );
-    float k = dT / (RC + dT);
-    filter->b0 = k / 2;
-    filter->b1 = k / 2;
-    filter->b2 = 0;
-    filter->a1 = -(1 - k);
-    filter->a2 = 0;
-}
-
 // Fast two-state Kalman
 void fastKalmanInit(fastKalman_t *filter, float q, float r, float p)
 {
