@@ -34,21 +34,8 @@ SECTIONS
     . = ALIGN(4);
   } >ITCMFL AT >FLASH
 
-  /* Critical program code goes into ITCM RAM */
-  /* Copy specific fast-executing code to ITCM RAM */ 
-  tcm_code = LOADADDR(.tcm_code); 
-  .tcm_code :
-  {
-    . = ALIGN(4);
-    tcm_code_start = .; 
-    *(.tcm_code)
-    *(.tcm_code*)
-    . = ALIGN(4);
-    tcm_code_end = .; 
-  } >ITCM_RAM AT >FLASH1
-
   /* The program code and other data goes into FLASH */
-  .text :
+  .text : ALIGN(16)
   {
     . = ALIGN(4);
     *(.text)           /* .text sections (code) */
@@ -65,6 +52,19 @@ SECTIONS
     . = ALIGN(4);
     _etext = .;        /* define a global symbols at end of code */
   } >ITCMFL1 AT >FLASH1
+
+  /* Critical program code goes into ITCM RAM */
+  /* Copy specific fast-executing code to ITCM RAM */ 
+  tcm_code = LOADADDR(.tcm_code); 
+  .tcm_code :
+  {
+    . = ALIGN(4);
+    tcm_code_start = .; 
+    *(.tcm_code)
+    *(.tcm_code*)
+    . = ALIGN(4);
+    tcm_code_end = .; 
+  } >ITCM_RAM AT >FLASH1
 
   .ARM.extab   : 
   { 
