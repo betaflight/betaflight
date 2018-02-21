@@ -47,8 +47,8 @@
 #define MPU6000_SPI_INSTANCE     SPI3
 #define ICM20689_CS_PIN          SPI4_NSS_PIN
 #define ICM20689_SPI_INSTANCE    SPI4
-#define GYRO_1_CS_PIN            MPU6000_CS_PIN
-#define GYRO_0_CS_PIN            ICM20689_CS_PIN
+#define GYRO_2_CS_PIN            MPU6000_CS_PIN
+#define GYRO_1_CS_PIN            ICM20689_CS_PIN
 
 
 //#define USE_MPU_DATA_READY_SIGNAL

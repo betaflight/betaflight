@@ -53,8 +53,8 @@
 #define MPU6000_SPI_INSTANCE    SPI1
 #define MPU6500_CS_PIN          SPI3_NSS_PIN
 #define MPU6500_SPI_INSTANCE    SPI3
-#define GYRO_1_CS_PIN           MPU6000_CS_PIN
-#define GYRO_0_CS_PIN           MPU6500_CS_PIN
+#define GYRO_2_CS_PIN           MPU6000_CS_PIN
+#define GYRO_1_CS_PIN           MPU6500_CS_PIN
 #define GYRO_MPU6500_ALIGN      CW90_DEG
 #define ACC_MPU6500_ALIGN       CW90_DEG
 #else
@@ -62,8 +62,8 @@
 #define MPU6000_SPI_INSTANCE    SPI3
 #define MPU6500_CS_PIN          SPI1_NSS_PIN
 #define MPU6500_SPI_INSTANCE    SPI1
-#define GYRO_0_CS_PIN           MPU6000_CS_PIN
-#define GYRO_1_CS_PIN           MPU6500_CS_PIN
+#define GYRO_1_CS_PIN           MPU6000_CS_PIN
+#define GYRO_2_CS_PIN           MPU6500_CS_PIN
 #endif
 
 // TODO: dual gyro support
