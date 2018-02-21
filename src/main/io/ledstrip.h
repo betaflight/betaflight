@@ -121,6 +121,12 @@ typedef enum {
     LED_OVERLAY_WARNING
 } ledOverlayId_e;
 
+// Enumeration to match the string options defined in lookupLedStripFormatRGB in settings.c
+typedef enum {
+    LED_RGB,
+    LED_GRB
+} ledStripFormatRGB_e;
+
 typedef struct modeColorIndexes_s {
     uint8_t color[LED_DIRECTION_COUNT];
 } modeColorIndexes_t;
@@ -145,7 +151,7 @@ typedef struct ledStripConfig_s {
     specialColorIndexes_t specialColors;
     uint8_t ledstrip_visual_beeper; // suppress LEDLOW mode if beeper is on
     uint8_t ledstrip_aux_channel;
-    uint8_t ledstrip_grb_rgb;
+    ledStripFormatRGB_e ledstrip_grb_rgb;
     ioTag_t ioTag;
 } ledStripConfig_t;
 

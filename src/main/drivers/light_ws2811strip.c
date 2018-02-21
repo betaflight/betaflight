@@ -110,14 +110,19 @@ static int16_t ledIndex;
 #define USE_FAST_DMA_BUFFER_IMPL
 #ifdef USE_FAST_DMA_BUFFER_IMPL
 
-STATIC_UNIT_TESTED void fastUpdateLEDDMABuffer(bool packedRGB, rgbColor24bpp_t *color)
+STATIC_UNIT_TESTED void fastUpdateLEDDMABuffer(ledStripFormatRGB_e ledFormat, rgbColor24bpp_t *color)
 {
     uint32_t packed_colour;
 
-    if (packedRGB) {
-        packed_colour = (color->rgb.r << 16) | (color->rgb.g << 8) | (color->rgb.b);
-    } else {
-        packed_colour = (color->rgb.g << 16) | (color->rgb.r << 8) | (color->rgb.b);
+    switch (ledFormat) {
+        case LED_RGB: // WS2811 drivers use RGB format
+            packed_colour = (color->rgb.r << 16) | (color->rgb.g << 8) | (color->rgb.b);
+            break;
+
+        case LED_GRB: // WS2812 drivers use GRB format
+        default:
+            packed_colour = (color->rgb.g << 16) | (color->rgb.r << 8) | (color->rgb.b);
+        break;
     }
 
     for (int8_t index = 23; index >= 0; index--) {
@@ -148,7 +153,7 @@ STATIC_UNIT_TESTED void updateLEDDMABuffer(uint8_t componentValue)
  * This method is non-blocking unless an existing LED update is in progress.
  * it does not wait until all the LEDs have been updated, that happens in the background.
  */
-void ws2811UpdateStrip(bool packedRGB)
+void ws2811UpdateStrip(ledStripFormatRGB_e ledFormat)
 {
     static rgbColor24bpp_t *rgb24;
 
@@ -167,15 +172,21 @@ void ws2811UpdateStrip(bool packedRGB)
         rgb24 = hsvToRgb24(&ledColorBuffer[ledIndex]);
 
 #ifdef USE_FAST_DMA_BUFFER_IMPL
-        fastUpdateLEDDMABuffer(packedRGB, rgb24);
+        fastUpdateLEDDMABuffer(ledFormat, rgb24);
 #else
-        if (packedRGB) {
+        switch (ledFormat) {
+            case LED_RGB: // WS2811 drivers use RGB format
             updateLEDDMABuffer(rgb24->rgb.r);
             updateLEDDMABuffer(rgb24->rgb.g);
-        } else {
+            break;
+
+        case LED_GRB: // WS2812 drivers use GRB format
+        default:
             updateLEDDMABuffer(rgb24->rgb.g);
             updateLEDDMABuffer(rgb24->rgb.r);
+            break;
         }
+
         updateLEDDMABuffer(rgb24->rgb.b);
 #endif
 
