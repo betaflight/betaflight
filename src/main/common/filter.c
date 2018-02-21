@@ -365,6 +365,7 @@ float firFilterDenoiseUpdate(firFilterDenoise_t *filter, float input)
     }
 }
 
+#if defined(USE_GYRO_FAST_KALMAN)
 // Fast two-state Kalman
 void fastKalmanInit(fastKalman_t *filter, float q, float r, float p)
 {
@@ -394,3 +395,5 @@ FAST_CODE float fastKalmanUpdate(fastKalman_t *filter, float input)
 
     return filter->x;
 }
+
+#endif
