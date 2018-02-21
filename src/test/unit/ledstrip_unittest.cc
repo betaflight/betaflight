@@ -308,7 +308,7 @@ void ws2811LedStripInit(ioTag_t ioTag) {
     UNUSED(ioTag);
 }
 
-void ws2811UpdateStrip(void) {}
+void ws2811UpdateStrip(bool) {}
 
 void setLedValue(uint16_t index, const uint8_t value) {
     UNUSED(index);
