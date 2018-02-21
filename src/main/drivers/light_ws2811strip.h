@@ -36,7 +36,7 @@ void ws2811LedStripInit(ioTag_t ioTag);
 void ws2811LedStripHardwareInit(ioTag_t ioTag);
 void ws2811LedStripDMAEnable(void);
 
-void ws2811UpdateStrip(void);
+void ws2811UpdateStrip(bool packedGRB);
 
 void setLedHsv(uint16_t index, const hsvColor_t *color);
 void getLedHsv(uint16_t index, hsvColor_t *color);

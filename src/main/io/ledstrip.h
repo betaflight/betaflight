@@ -145,6 +145,7 @@ typedef struct ledStripConfig_s {
     specialColorIndexes_t specialColors;
     uint8_t ledstrip_visual_beeper; // suppress LEDLOW mode if beeper is on
     uint8_t ledstrip_aux_channel;
+    uint8_t ledstrip_grb_rgb;
     ioTag_t ioTag;
 } ledStripConfig_t;
 
