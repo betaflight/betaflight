@@ -423,7 +423,7 @@ serialPort_t *openSerialPort(
         IOInit(ioDtr, OWNER_SERIAL_DTR, identifier);
         // Set the initial state before enabling the output to prevent a glitch
         // Note that MW_OSD must be built with MAX_SOFTRESET defined for this to work as desired
-        IOWrite(ioDtr, 0);
+        IOWrite(ioDtr, false);
         IOConfigGPIO(ioDtr, IOCFG_OUT_PP);
     }
 #endif /* UNIT_TEST */
@@ -454,7 +454,7 @@ void closeSerialPort(serialPort_t *serialPort)
     // Negate DTR pin if defined
     if (ioDtrTag) {
         IO_t ioDtr = IOGetByTag(ioDtrTag);
-        IOWrite(ioDtr, CTRL_LINE_STATE_DTR);
+        IOWrite(ioDtr, true);
     }
 #endif /* UNIT_TEST */
 
