@@ -61,7 +61,7 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-USBD_CDC_LineCodingTypeDef LineCoding =
+USBD_CDC_LineCodingTypeDef __attribute__ ((packed)) LineCoding =
 {
   115200, /* baud rate*/
   0x00,   /* stop bits-1*/
@@ -166,7 +166,8 @@ static int8_t CDC_Itf_DeInit(void)
   */
 static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
 {
-    UNUSED(length);
+  LINE_CODING* plc = (LINE_CODING*)pbuf;
+
   switch (cmd)
   {
   case CDC_SEND_ENCAPSULATED_COMMAND:
@@ -191,11 +192,10 @@ static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
 
   case CDC_SET_LINE_CODING:
     if (pbuf && (length == sizeof (LineCoding))) {
-        LineCoding.bitrate    = (uint32_t)(pbuf[0] | (pbuf[1] << 8) |\
-                                (pbuf[2] << 16) | (pbuf[3] << 24));
-        LineCoding.format     = pbuf[4];
-        LineCoding.paritytype = pbuf[5];
-        LineCoding.datatype   = pbuf[6];
+        LineCoding.bitrate    = plc->bitrate;
+        LineCoding.format     = plc->format;
+        LineCoding.paritytype = plc->paritytype;
+        LineCoding.datatype   = plc->datatype;
 
         // If a callback is provided, tell the upper driver of changes in baud rate
         if (baudRateCb) {
@@ -207,13 +207,10 @@ static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
 
   case CDC_GET_LINE_CODING:
     if (pbuf && (length == sizeof (LineCoding))) {
-        pbuf[0] = (uint8_t)(LineCoding.bitrate);
-        pbuf[1] = (uint8_t)(LineCoding.bitrate >> 8);
-        pbuf[2] = (uint8_t)(LineCoding.bitrate >> 16);
-        pbuf[3] = (uint8_t)(LineCoding.bitrate >> 24);
-        pbuf[4] = LineCoding.format;
-        pbuf[5] = LineCoding.paritytype;
-        pbuf[6] = LineCoding.datatype;
+        plc->bitrate = LineCoding.bitrate;
+        plc->format = LineCoding.format;
+        plc->paritytype = LineCoding.paritytype;
+        plc->datatype = LineCoding.datatype;
     }
     break;
 

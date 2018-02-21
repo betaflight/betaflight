@@ -109,7 +109,7 @@ void ust_cpy(LINE_CODING* plc2, const LINE_CODING* plc1)
  * @param  Len: Number of data to be sent (in bytes)
  * @retval Result of the opeartion (USBD_OK in all cases)
  */
-static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t *Buf, uint32_t Len)
+static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len)
 {
     LINE_CODING* plc = (LINE_CODING*)Buf;
 
