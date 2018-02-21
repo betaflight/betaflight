@@ -1181,6 +1181,6 @@ static void ledStripDisable(void)
 {
     setStripColor(&HSV(BLACK));
 
-    ws2811UpdateStrip(&ledStripConfig()->ledstrip_grb_rgb);
+    ws2811UpdateStrip(ledStripConfig()->ledstrip_grb_rgb);
 }
 #endif
