@@ -286,7 +286,7 @@ static const char * const lookupOverclock[] = {
 #endif
 
 #ifdef USE_LED_STRIP
-    static const char * const lookupLedStripOrder[] = {
+    static const char * const lookupLedStripPackingOrder[] = {
         "GRB", "RGB"
     };
 #endif
@@ -347,7 +347,7 @@ const lookupTableEntry_t lookupTables[] = {
     { lookupOverclock, sizeof(lookupOverclock) / sizeof(char *) },
 #endif
 #ifdef USE_LED_STRIP
-    { lookupLedStripOrder, sizeof(lookupLedStripOrder) / sizeof(char *) },
+    { lookupLedStripPackingOrder, sizeof(lookupLedStripPackingOrder) / sizeof(char *) },
 #endif
 };
 
