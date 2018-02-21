@@ -65,6 +65,18 @@
    The period depends on CDC_POLLING_INTERVAL */
 #define CDC_POLLING_INTERVAL             10 /* in ms. The max is 65 and the min is 1 */
 
+/* Exported typef ------------------------------------------------------------*/
+/* The following structures groups all needed parameters to be configured for the
+   ComPort. These parameters can modified on the fly by the host through CDC class
+   command class requests. */
+typedef struct __attribute__ ((packed))
+{
+  uint32_t bitrate;
+  uint8_t  format;
+  uint8_t  paritytype;
+  uint8_t  datatype;
+} LINE_CODING;
+
 extern USBD_CDC_ItfTypeDef  USBD_CDC_fops;
 
 uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength);

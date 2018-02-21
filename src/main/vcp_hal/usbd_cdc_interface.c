@@ -61,7 +61,7 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-USBD_CDC_LineCodingTypeDef __attribute__ ((packed)) LineCoding =
+USBD_CDC_LineCodingTypeDef LineCoding =
 {
   115200, /* baud rate*/
   0x00,   /* stop bits-1*/
