@@ -57,6 +57,7 @@
 #include "drivers/time.h"
 
 #include "fc/config.h"
+#include "fc/fc_core.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
@@ -655,8 +656,7 @@ static bool osdDrawSingleElement(uint8_t item)
 
             // Warn when in flip over after crash mode
             if ((enabledWarnings & OSD_WARNING_CRASH_FLIP)
-                  && (isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH))
-                  && IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
+                  && (isFlipOverAfterCrashMode())) {
                 osdFormatMessage(buff, sizeof(buff), "CRASH FLIP");
                 break;
             }
