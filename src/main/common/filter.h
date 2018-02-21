@@ -70,9 +70,10 @@ typedef enum {
 } filterType_e;
 
 typedef enum {
-    FILTER_LPF,
+    FILTER_LPF,    // 2nd order Butterworth section
     FILTER_NOTCH,
     FILTER_BPF,
+    FILTER_LPF1,   // 1st order Butterworth section
 } biquadFilterType_e;
 
 typedef struct firFilter_s {
@@ -89,9 +90,13 @@ typedef float (*filterApplyFnPtr)(filter_t *filter, float input);
 
 float nullFilterApply(filter_t *filter, float input);
 
+#define BIQUAD_LPF_ORDER_MAX 6
+
 void biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate);
 void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType);
 void biquadFilterUpdate(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType);
+int biquadFilterLpfCascadeInit(biquadFilter_t *sections, int order, float filterFreq, uint32_t refreshRate);
+
 float biquadFilterApplyDF1(biquadFilter_t *filter, float input);
 float biquadFilterApply(biquadFilter_t *filter, float input);
 float filterGetNotchQ(uint16_t centerFreq, uint16_t cutoff);
