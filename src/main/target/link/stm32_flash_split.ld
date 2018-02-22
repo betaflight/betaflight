@@ -12,8 +12,7 @@
 ENTRY(Reset_Handler)
 
 /* Highest address of the user mode stack */
-_Hot_Reboot_Flags_Size = 16;
-_estack = ORIGIN(STACKRAM) + LENGTH(STACKRAM) - _Hot_Reboot_Flags_Size;    /* end of RAM */
+_estack = ORIGIN(STACKRAM) + LENGTH(STACKRAM);    /* end of RAM */
 
 /* Base address where the config is stored. */
 __config_start = ORIGIN(FLASH_CONFIG);
@@ -137,7 +136,7 @@ SECTIONS
   } >FASTRAM
 
   /* User_heap_stack section, used to check that there is enough RAM left */
-  _heap_stack_end = ORIGIN(STACKRAM) + LENGTH(STACKRAM) - _Hot_Reboot_Flags_Size;
+  _heap_stack_end = ORIGIN(STACKRAM)+LENGTH(STACKRAM) - 8; /* 8 bytes to allow for alignment */
   _heap_stack_begin = _heap_stack_end - _Min_Stack_Size  - _Min_Heap_Size;
   . = _heap_stack_begin;
   ._user_heap_stack :

@@ -274,17 +274,6 @@ static const char * const lookupTableRatesType[] = {
     "BETAFLIGHT", "RACEFLIGHT"
 };
 
-#ifdef USE_OVERCLOCK
-static const char * const lookupOverclock[] = {
-    "OFF",
-#if defined(STM32F40_41xxx)
-    "192MHZ", "216MHZ", "240MHZ"
-#elif defined(STM32F411xE)
-    "108MHZ", "120MHZ"
-#endif
-};
-#endif
-
 const lookupTableEntry_t lookupTables[] = {
     { lookupTableOffOn, sizeof(lookupTableOffOn) / sizeof(char *) },
     { lookupTableUnit, sizeof(lookupTableUnit) / sizeof(char *) },
@@ -337,9 +326,6 @@ const lookupTableEntry_t lookupTables[] = {
     { lookupTableGyroOverflowCheck, sizeof(lookupTableGyroOverflowCheck) / sizeof(char *) },
 #endif
     { lookupTableRatesType, sizeof(lookupTableRatesType) / sizeof(char *) },
-#ifdef USE_OVERCLOCK
-    { lookupOverclock, sizeof(lookupOverclock) / sizeof(char *) },
-#endif
 };
 
 const clivalue_t valueTable[] = {
@@ -806,8 +792,8 @@ const clivalue_t valueTable[] = {
 #endif
     { "debug_mode",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_DEBUG }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, debug_mode) },
     { "rate_6pos_switch",           VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, rateProfile6PosSwitch) },
-#ifdef USE_OVERCLOCK
-    { "cpu_overclock",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OVERCLOCK }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, cpu_overclock) },
+#if defined(STM32F4) && !defined(DISABLE_OVERCLOCK)
+    { "cpu_overclock",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, cpu_overclock) },
 #endif
     { "pwr_on_arm_grace",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 30 }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, powerOnArmingGraceTime) },
 

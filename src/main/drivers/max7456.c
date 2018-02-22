@@ -432,7 +432,7 @@ void max7456Init(const max7456Config_t *max7456Config, const vcdProfile_t *pVcdP
         max7456DeviceType = MAX7456_DEVICE_TYPE_MAX;
     }
 
-#if defined(USE_OVERCLOCK)
+#if defined(STM32F4) && !defined(DISABLE_OVERCLOCK)
     // Determine SPI clock divisor based on config and the device type.
 
     switch (max7456Config->clockConfig) {
