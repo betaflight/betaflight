@@ -199,7 +199,7 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 void pwmCompleteDshotMotorUpdate(uint8_t motorCount);
 #endif
 
-#ifdef BEEPER
+#ifdef USE_BEEPER
 void pwmWriteBeeper(bool onoffBeep);
 void pwmToggleBeeper(void);
 void beeperPwmInit(const ioTag_t tag, uint16_t frequency);

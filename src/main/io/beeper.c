@@ -57,8 +57,7 @@
 #define IS_INVERTED     false
 #endif
 
-#ifdef BEEPER
-#define BEEPER_PIN      BEEPER
+#ifdef USE_BEEPER
 #ifndef BEEPER_PWM_HZ
 #define BEEPER_PWM_HZ   0
 #endif
@@ -76,7 +75,7 @@
 #define BEEPER_COMMAND_REPEAT 0xFE
 #define BEEPER_COMMAND_STOP   0xFF
 
-#ifdef BEEPER
+#ifdef USE_BEEPER
 /* Beeper Sound Sequences: (Square wave generation)
  * Sequence must end with 0xFF or 0xFE. 0xFE repeats the sequence from
  * start when 0xFF stops the sound when it's completed.

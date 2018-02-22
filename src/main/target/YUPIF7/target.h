@@ -25,7 +25,8 @@
 //define camera control
 #define CAMERA_CONTROL_PIN      PB7
 
-#define BEEPER                  PB14
+#define USE_BEEPER
+#define BEEPER_PIN              PB14
 #define BEEPER_PWM_HZ           3150 // Beeper PWM frequency in Hz
 
 // Gyro interrupt

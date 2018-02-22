@@ -35,7 +35,8 @@
 /*---------------------------------*/
 
 /*------------BEEPER---------------*/
-#define BEEPER                  PA14
+#define USE_BEEPER
+#define BEEPER_PIN              PA14
 #define BEEPER_INVERTED
 /*---------------------------------*/
 

@@ -96,7 +96,7 @@
 
 
 #undef USE_SERVOS
-#undef BEEPER
+#undef USE_BEEPER
 
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
