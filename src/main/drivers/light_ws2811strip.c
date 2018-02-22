@@ -96,7 +96,7 @@ void ws2811LedStripInit(ioTag_t ioTag)
     const hsvColor_t hsv_white = { 0, 255, 255 };
     setStripColor(&hsv_white);
     // RGB or GRB ordering doesn't matter for white
-    ws2811UpdateStrip(true);
+    ws2811UpdateStrip(LED_RGB);
 }
 
 bool isWS2811LedStripReady(void)
