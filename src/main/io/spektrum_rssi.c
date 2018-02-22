@@ -162,9 +162,7 @@ void spektrumHandleRSSI(volatile uint8_t spekFrame[]) {
                     (system == SPEKTRUM_DSMX_11) ) ){
                 spektrumSatInternal =false; // Nope, this is an externally bound Sat Rx
             }
-        }
-
-        if (!spektrumSatInternal) {
+        } else {
             // External Rx, bind values 4, 6, 8, 10
             fade = ((spekFrame[0] << 8) + spekFrame[1]);
         }
