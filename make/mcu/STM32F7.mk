@@ -18,8 +18,6 @@ EXCLUDES        = stm32f7xx_hal_can.c \
                   stm32f7xx_hal_crc_ex.c \
                   stm32f7xx_hal_cryp.c \
                   stm32f7xx_hal_cryp_ex.c \
-                  stm32f7xx_hal_dac.c \
-                  stm32f7xx_hal_dac_ex.c \
                   stm32f7xx_hal_dcmi.c \
                   stm32f7xx_hal_dcmi_ex.c \
                   stm32f7xx_hal_dfsdm.c \
