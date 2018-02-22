@@ -57,7 +57,7 @@
 #define USE_GYRO_SPI_MPU6000
 //#define MPU_INT_EXTI            PD0
 
-#ifdef OMNIBUSF7V2
+#if defined (OMNIBUSF7V2) || (BETAFLIGHTF7)
 #define MPU6000_CS_PIN          SPI1_NSS_PIN
 #define MPU6000_SPI_INSTANCE    SPI1
 #define MPU6500_CS_PIN          SPI3_NSS_PIN
