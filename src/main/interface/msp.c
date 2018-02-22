@@ -471,7 +471,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU32(dst, featureMask());
         break;
 
-#ifdef BEEPER
+#ifdef USE_BEEPER
     case MSP_BEEPER_CONFIG:
         sbufWriteU32(dst, getBeeperOffMask());
         sbufWriteU8(dst, beeperConfig()->dshotBeaconTone);
@@ -1846,7 +1846,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         featureSet(sbufReadU32(src)); // features bitmap
         break;
 
-#ifdef BEEPER
+#ifdef USE_BEEPER
     case MSP_SET_BEEPER_CONFIG:
         beeperOffClearAll();
         setBeeperOffMask(sbufReadU32(src));

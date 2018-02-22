@@ -28,7 +28,8 @@
 
 #define LED0_PIN                PA0
 
-#define BEEPER                  PC15
+#define USE_BEEPER
+#define BEEPER_PIN              PC15
 #define BEEPER_INVERTED
 
 #define INVERTER_PIN_UART2      PB2

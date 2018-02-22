@@ -40,7 +40,7 @@ loadDmaBufferFn *loadDmaBuffer;
 static pwmOutputPort_t servos[MAX_SUPPORTED_SERVOS];
 #endif
 
-#ifdef BEEPER
+#ifdef USE_BEEPER
 static pwmOutputPort_t beeperPwm;
 static uint16_t freqBeep = 0;
 #endif
@@ -460,7 +460,7 @@ void servoDevInit(const servoDevConfig_t *servoConfig)
 
 #endif
 
-#ifdef BEEPER
+#ifdef USE_BEEPER
 void pwmWriteBeeper(bool onoffBeep)
 {
         if (!beeperPwm.io)

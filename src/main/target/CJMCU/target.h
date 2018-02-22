@@ -25,7 +25,7 @@
 #define LED1_PIN                PC13
 #define LED2_PIN                PC15
 
-#undef BEEPER
+#undef USE_BEEPER
 
 #define USE_GYRO
 #define USE_GYRO_MPU6050

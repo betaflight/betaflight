@@ -36,7 +36,8 @@
 #define LED0_A                  PB8
 #define LED1_A                  PB9
 
-#define BEEPER                  PA5
+#define USE_BEEPER
+#define BEEPER_PIN              PA5
 
 #define USE_EXTI
 //#define DEBUG_MPU_DATA_READY_INTERRUPT

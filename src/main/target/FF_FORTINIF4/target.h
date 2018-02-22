@@ -27,7 +27,8 @@
 /*---------------------------------*/
 
 /*------------BEEPER---------------*/
-#define BEEPER                  PB4
+#define USE_BEEPER
+#define BEEPER_PIN              PB4
 #define BEEPER_INVERTED
 /*---------------------------------*/
 
