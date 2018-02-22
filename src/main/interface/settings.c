@@ -284,6 +284,13 @@ static const char * const lookupOverclock[] = {
 #endif
 };
 #endif
+#ifdef USE_GYRO_BIQUAD_RC_FIR2
+#ifdef USE_GYRO_FAST_KALMAN
+static const char * const lookupTableStage2FilterType[] = {
+    "NONE", "BIQUAD_RC_FIR2", "FAST_KALMAN"
+};
+#endif
+#endif // Only use lookup when both are enabled
 
 const lookupTableEntry_t lookupTables[] = {
     { lookupTableOffOn, sizeof(lookupTableOffOn) / sizeof(char *) },
@@ -337,9 +344,15 @@ const lookupTableEntry_t lookupTables[] = {
     { lookupTableGyroOverflowCheck, sizeof(lookupTableGyroOverflowCheck) / sizeof(char *) },
 #endif
     { lookupTableRatesType, sizeof(lookupTableRatesType) / sizeof(char *) },
+
 #ifdef USE_OVERCLOCK
     { lookupOverclock, sizeof(lookupOverclock) / sizeof(char *) },
 #endif
+#ifdef USE_GYRO_BIQUAD_RC_FIR2
+#ifdef USE_GYRO_FAST_KALMAN
+    { lookupTableStage2FilterType, sizeof(lookupTableStage2FilterType) / sizeof(char *) },
+#endif
+#endif // Only enable lookup if both are available
 };
 
 const clivalue_t valueTable[] = {
@@ -356,12 +369,14 @@ const clivalue_t valueTable[] = {
     { "gyro_notch1_cutoff",         VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 16000 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_soft_notch_cutoff_1) },
     { "gyro_notch2_hz",             VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 16000 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_soft_notch_hz_2) },
     { "gyro_notch2_cutoff",         VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 16000 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_soft_notch_cutoff_2) },
+#if defined(USE_GYRO_BIQUAD_RC_FIR2)
+    { "gyro_stage2_lowpass_hz",     VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 16000 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_soft_lpf_hz_2) },
 #if defined(USE_GYRO_FAST_KALMAN)
     { "gyro_filter_q",              VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 16000 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_filter_q) },
     { "gyro_filter_r",              VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 16000 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_filter_r) },
     { "gyro_filter_p",              VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 16000 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_filter_p) },
-#elif defined(USE_GYRO_BIQUAD_RC_FIR2)
-    { "gyro_stage2_lowpass_hz",     VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 16000 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_soft_lpf_hz_2) },
+    { "gyro_stage2_filter_type",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_STAGE2_FILTER_TYPE }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_stage2_filter_type) },
+#endif
 #endif
     { "moron_threshold",            VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  200 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyroMovementCalibrationThreshold) },
     { "gyro_offset_yaw",            VAR_INT16 | MASTER_VALUE, .config.minmax = { -1000, 1000 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_offset_yaw) },
