@@ -35,7 +35,7 @@ SECTIONS
   } >ITCMFL AT >FLASH
 
   /* The program code and other data goes into FLASH */
-  .text : ALIGN(16)
+  .text :
   {
     . = ALIGN(4);
     *(.text)           /* .text sections (code) */
