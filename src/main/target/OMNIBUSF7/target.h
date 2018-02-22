@@ -151,6 +151,7 @@
 #define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
+
 #define USE_SDCARD
 #define SDCARD_DETECT_INVERTED
 #define SDCARD_DETECT_PIN                   PE3
@@ -164,6 +165,12 @@
 
 #define SDCARD_DMA_STREAM_TX_FULL           DMA2_Stream1
 #define SDCARD_DMA_CHANNEL                  4
+
+#define M25P16_CS_PIN        SPI4_NSS_PIN
+#define M25P16_SPI_INSTANCE  SPI4
+
+#define USE_FLASHFS
+#define USE_FLASH_M25P16
 
 #define USE_I2C
 #define USE_I2C_DEVICE_2
