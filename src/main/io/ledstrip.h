@@ -123,8 +123,8 @@ typedef enum {
 
 // Enumeration to match the string options defined in lookupLedStripFormatRGB in settings.c
 typedef enum {
-    LED_RGB,
-    LED_GRB
+    LED_GRB,
+    LED_RGB
 } ledStripFormatRGB_e;
 
 typedef struct modeColorIndexes_s {
