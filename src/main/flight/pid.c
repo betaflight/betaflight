@@ -177,7 +177,9 @@ static FAST_RAM void *ptermYawFilter;
 typedef union dtermFilterLpf_u {
     pt1Filter_t pt1Filter[2];
     biquadFilter_t biquadFilter[2];
+#if defined(USE_FIR_FILTER_DENOISE)
     firFilterDenoise_t denoisingFilter[2];
+#endif
 } dtermFilterLpf_t;
 
 void pidInitFilters(const pidProfile_t *pidProfile)
@@ -239,6 +241,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
                 biquadFilterInitLPF(dtermFilterLpf[axis], pidProfile->dterm_lpf_hz, targetPidLooptime);
             }
             break;
+#if defined(USE_FIR_FILTER_DENOISE)
         case FILTER_FIR:
             dtermLpfApplyFn = (filterApplyFnPtr)firFilterDenoiseUpdate;
             for (int axis = FD_ROLL; axis <= FD_PITCH; axis++) {
@@ -246,6 +249,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
                 firFilterDenoiseInit(dtermFilterLpf[axis], pidProfile->dterm_lpf_hz, targetPidLooptime);
             }
             break;
+#endif
         }
     }
 

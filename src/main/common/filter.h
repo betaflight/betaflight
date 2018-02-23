@@ -123,5 +123,7 @@ float firFilterCalcPartialAverage(const firFilter_t *filter, uint8_t count);
 float firFilterCalcMovingAverage(const firFilter_t *filter);
 float firFilterLastInput(const firFilter_t *filter);
 
+#if defined(USE_FIR_FILTER_DENOISE)
 void firFilterDenoiseInit(firFilterDenoise_t *filter, uint8_t gyroSoftLpfHz, uint16_t targetLooptime);
 float firFilterDenoiseUpdate(firFilterDenoise_t *filter, float input);
+#endif

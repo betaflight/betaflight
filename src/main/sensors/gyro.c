@@ -101,7 +101,9 @@ bool firstArmingCalibrationWasStarted = false;
 typedef union gyroSoftFilter_u {
     biquadFilter_t gyroFilterLpfState[XYZ_AXIS_COUNT];
     pt1Filter_t gyroFilterPt1State[XYZ_AXIS_COUNT];
+#if defined(USE_FIR_FILTER_DENOISE)
     firFilterDenoise_t gyroDenoiseState[XYZ_AXIS_COUNT];
+#endif
 } gyroSoftLpfFilter_t;
 
 typedef struct gyroSensor_s {
@@ -580,11 +582,14 @@ void gyroInitFilterLpf(gyroSensor_t *gyroSensor, uint8_t lpfHz)
             }
             break;
         default:
+#if defined(USE_FIR_FILTER_DENOISE)
+            // this should be case FILTER_FIR:
             gyroSensor->softLpfFilterApplyFn = (filterApplyFnPtr)firFilterDenoiseUpdate;
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
                 gyroSensor->softLpfFilterPtr[axis] = (filter_t *)&gyroSensor->softLpfFilter.gyroDenoiseState[axis];
                 firFilterDenoiseInit(&gyroSensor->softLpfFilter.gyroDenoiseState[axis], lpfHz, gyro.targetLooptime);
             }
+#endif
             break;
         }
     }
