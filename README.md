@@ -65,24 +65,10 @@ Contributions are welcome and encouraged.  You can contribute in many ways:
 
 The best place to start is the IRC channel on gitter (see above), drop in, say hi. Next place is the github issue tracker:
 
-https://github.com/betaflight/betaflight/issues
+https://github.com/kidbrazil/betaflight/issues
 https://github.com/betaflight/betaflight-configurator/issues
 
 Before creating new issues please check to see if there is an existing one, search first otherwise you waste peoples time when they could be coding instead!
-
-## Developers
-
-Please refer to the development section in the `docs/development` folder.
-
-TravisCI is used to run automatic builds
-
-https://travis-ci.org/betaflight/betaflight
-
-[![Build Status](https://travis-ci.org/betaflight/betaflight.svg?branch=master)](https://travis-ci.org/betaflight/betaflight)
-
-## Betaflight Releases
-
-https://github.com/betaflight/betaflight/releases
 
 ## Open Source / Contributors
 
