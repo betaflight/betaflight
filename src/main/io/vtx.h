@@ -30,6 +30,7 @@ typedef struct vtxSettingsConfig_s {
     uint16_t freq;          // sets freq in MHz if band=0
     uint16_t pitModeFreq;   // sets out-of-range pitmode frequency
     uint8_t lowPowerDisarm; // min power while disarmed
+    uint8_t akkStyleEndFrame; // Fix for older AKK with 0x00 end frame
 } vtxSettingsConfig_t;
 
 PG_DECLARE(vtxSettingsConfig_t, vtxSettingsConfig);
