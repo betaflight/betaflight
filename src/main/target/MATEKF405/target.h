@@ -63,6 +63,7 @@
 
 #define USE_MAG
 #define USE_MAG_HMC5883
+#define USE_MAG_QMC5883
 
 // *************** Baro **************************
 #define USE_I2C

@@ -54,6 +54,7 @@
 
 #define USE_MAG
 #define USE_MAG_HMC5883
+#define USE_MAG_QMC5883
 #define MAG_HMC5883_ALIGN       CW180_DEG
 #define MAG_I2C_INSTANCE        I2CDEV_1
 

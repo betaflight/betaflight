@@ -200,6 +200,7 @@
 
 #define USE_MAG
 #define USE_MAG_HMC5883
+#define USE_MAG_QMC5883
 
 #define SENSORS_SET (SENSOR_ACC | SENSOR_BARO)
 //ADC---------------------------------------
