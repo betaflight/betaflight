@@ -645,19 +645,23 @@ static bool osdDrawSingleElement(uint8_t item)
 
     case OSD_WARNINGS:
         {
+
+#define OSD_WARNINGS_MAX_SIZE 11
+#define OSD_FORMAT_MESSAGE_BUFFER_SIZE (OSD_WARNINGS_MAX_SIZE + 1)
+
             const uint16_t enabledWarnings = osdConfig()->enabledWarnings;
 
             const batteryState_e batteryState = getBatteryState();
 
             if (enabledWarnings & OSD_WARNING_BATTERY_CRITICAL && batteryState == BATTERY_CRITICAL) {
-                osdFormatMessage(buff, sizeof(buff), " LAND NOW");
+                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, " LAND NOW");
                 break;
             }
 
             // Warn when in flip over after crash mode
             if ((enabledWarnings & OSD_WARNING_CRASH_FLIP)
                   && (isFlipOverAfterCrashMode())) {
-                osdFormatMessage(buff, sizeof(buff), "CRASH FLIP");
+                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "CRASH FLIP");
                 break;
             }
 
@@ -666,7 +670,7 @@ static bool osdDrawSingleElement(uint8_t item)
                 const armingDisableFlags_e flags = getArmingDisableFlags();
                 for (int i = 0; i < ARMING_DISABLE_FLAGS_COUNT; i++) {
                     if (flags & (1 << i)) {
-                        osdFormatMessage(buff, sizeof(buff), armingDisableFlagNames[i]);
+                        osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, armingDisableFlagNames[i]);
                         break;
                     }
                 }
@@ -674,24 +678,25 @@ static bool osdDrawSingleElement(uint8_t item)
             }
 
             if (enabledWarnings & OSD_WARNING_BATTERY_WARNING && batteryState == BATTERY_WARNING) {
-                osdFormatMessage(buff, sizeof(buff), "LOW BATTERY");
+                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "LOW BATTERY");
                 break;
             }
 
             // Show warning if battery is not fresh
             if (enabledWarnings & OSD_WARNING_BATTERY_NOT_FULL && !ARMING_FLAG(WAS_EVER_ARMED) && (getBatteryState() == BATTERY_OK)
                   && getBatteryAverageCellVoltage() < batteryConfig()->vbatfullcellvoltage) {
-                osdFormatMessage(buff, sizeof(buff), "BATT NOT FULL");
+                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "BATT < FULL");
                 break;
             }
 
             // Visual beeper
             if (enabledWarnings & OSD_WARNING_VISUAL_BEEPER && showVisualBeeper) {
-                osdFormatMessage(buff, sizeof(buff), "  * * * *");
+                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "  * * * *");
                 break;
             }
 
-            return true;
+            osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, NULL);
+            break;
         }
 
     case OSD_AVG_CELL_VOLTAGE:
