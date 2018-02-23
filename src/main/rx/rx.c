@@ -421,7 +421,7 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
             rxIsInFailsafeMode = (frameStatus & RX_FRAME_FAILSAFE) != 0;
             rxSignalReceived = !rxIsInFailsafeMode;
             needRxSignalBefore = currentTimeUs + needRxSignalMaxDelayUs;
-	} else if (cmpTimeUs(currentTimeUs, rxNextUpdateAtUs) > 0) {
+        } else if (cmpTimeUs(currentTimeUs, rxNextUpdateAtUs) > 0) {
             rxDataProcessingRequired = true;
         }
 
