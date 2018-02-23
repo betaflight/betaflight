@@ -75,6 +75,12 @@ typedef enum {
     FILTER_BPF,
 } biquadFilterType_e;
 
+typedef enum {
+    STAGE2_FILTER_NONE = 0,
+    STAGE2_FILTER_BIQUAD_RC_FIR2,
+    STAGE2_FILTER_FAST_KALMAN,
+} stage2FilterType_e;
+
 typedef struct firFilter_s {
     float *buf;
     const float *coeffs;

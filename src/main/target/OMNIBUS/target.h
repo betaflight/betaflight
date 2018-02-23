@@ -21,6 +21,7 @@
 #undef USE_DSHOT_DMAR           // OMNIBUS (F3) does not benefit from burst Dshot
 #undef USE_GYRO_OVERFLOW_CHECK
 #undef USE_GYRO_BIQUAD_RC_FIR2
+#undef USE_GYRO_FAST_KALMAN
 
 #undef USE_SERIALRX_XBUS
 #undef USE_TELEMETRY_LTM
