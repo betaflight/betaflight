@@ -28,6 +28,16 @@ Default is set to "OFF" for normal operation ( 100 = Full signal / 0 = Lost sign
 
 Connect the RSSI signal to any PWM input channel then set the RSSI channel as you would for RSSI via PPM
 
+## RSSI from Futaba S.Bus receiver
+
+The S.Bus serial protocol includes detection of dropped frames. These may be monitored and reported as RSSI by using the following command.
+
+```
+set rssi_src_frame_errors = ON
+```
+
+Note that RSSI stands for Received Signal Strength Indicator; the detection of S.Bus dropped frames is really a signal quality, not strength indication. Consequently you may experience a more rapid drop in reported RSSI at the extremes of range when using this facility than when using RSSI reporting signal strength.
+
 ## RSSI ADC
 
 Connect the RSSI signal to the RC2/CH2 input. The signal must be between 0v and 3.3v.
