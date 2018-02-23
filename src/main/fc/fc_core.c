@@ -936,6 +936,16 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
     gyroUpdate(currentTimeUs);
     DEBUG_SET(DEBUG_PIDLOOP, 0, micros() - currentTimeUs);
 
+#ifdef USE_SENSOR_HEATING
+    //we heating gyro sensor if temperature is too low
+    if(gyroGetTemperature() < 68 && isSensorHeatingDisabled())
+    {
+	sensorHeatingEnable();
+    }else if(gyroGetTemperature() >= 86 && isSensorHeatingEnabled()){
+	sensorHeatingDisable();
+    }	
+#endif
+
     if (pidUpdateCountdown) {
         pidUpdateCountdown--;
     } else {

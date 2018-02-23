@@ -23,6 +23,7 @@
 #include "drivers/timer_def.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
+    DEF_TIM(TIM8, CH3, PC8, TIM_USE_ANY,   0, 0), // USED FOR CAMERA CONTROL
     DEF_TIM(TIM1, CH3, PE13, TIM_USE_NONE,  0, 1 ), // RC1 / PPM, unusable
 
     DEF_TIM(TIM3, CH3, PB0,  TIM_USE_MOTOR, 0, 0 ), // M1

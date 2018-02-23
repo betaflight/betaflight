@@ -63,4 +63,12 @@ void ledInit(const statusLedConfig_t *statusLedConfig);
 void ledToggle(int led);
 void ledSet(int led, bool state);
 
+#ifdef USE_SENSOR_HEATING
+void sensorHeatingInit(void);
+void sensorHeatingEnable(void);
+void sensorHeatingDisable(void);
+bool isSensorHeatingEnabled(void);
+bool isSensorHeatingDisabled(void);
+#endif
+
 #endif
