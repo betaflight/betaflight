@@ -35,7 +35,6 @@
 #define USE_DASHBOARD
 #define USE_TELEMETRY
 #define USE_LED_STRIP
-#define USE_SERVOS
 #define USE_TRANSPONDER
 
 typedef enum
