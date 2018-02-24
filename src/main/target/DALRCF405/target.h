@@ -29,6 +29,9 @@
 #define BEEPER                  PC13
 #define BEEPER_INVERTED
 
+//define camera control
+#define CAMERA_CONTROL_PIN PA5
+
 //Gyro & ACC------------------------------- 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
