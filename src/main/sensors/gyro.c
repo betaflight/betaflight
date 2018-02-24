@@ -800,6 +800,9 @@ static FAST_CODE void gyroUpdateSensor(gyroSensor_t *gyroSensor, timeUs_t curren
         // still calibrating, so no need to further process gyro data
         return;
     }
+	
+    //update accgyro sensor temperature    
+    gyroReadTemperature();
 
 #ifdef USE_GYRO_DATA_ANALYSE
     if (isDynamicFilterActive()) {

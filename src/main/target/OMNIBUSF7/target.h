@@ -17,7 +17,11 @@
 
 #define USE_TARGET_CONFIG
 
-#ifdef OMNIBUSF7V2
+
+#if defined (BETAFLIGHTF7)
+#define TARGET_BOARD_IDENTIFIER "BFF7"
+#define USBD_PRODUCT_STRING "BETAFLIGHTF7"
+#elif defined (OMNIBUSF7V2)
 #define TARGET_BOARD_IDENTIFIER "OB72"
 #define USBD_PRODUCT_STRING "OmnibusF7V2"
 #else
@@ -29,6 +33,11 @@
 
 #define BEEPER                  PD15
 #define BEEPER_INVERTED
+
+#ifdef BETAFLIGHTF7
+//define camera control
+#define CAMERA_CONTROL_PIN      PC8 // Camera control , waiting on Sch file's to find the best timer 
+#endif
 
 #define USE_ACC
 #define USE_GYRO
@@ -48,7 +57,7 @@
 #define USE_GYRO_SPI_MPU6000
 //#define MPU_INT_EXTI            PD0
 
-#ifdef OMNIBUSF7V2
+#if defined (OMNIBUSF7V2) || (BETAFLIGHTF7)
 #define MPU6000_CS_PIN          SPI1_NSS_PIN
 #define MPU6000_SPI_INSTANCE    SPI1
 #define MPU6500_CS_PIN          SPI3_NSS_PIN
@@ -57,6 +66,8 @@
 #define GYRO_0_CS_PIN           MPU6500_CS_PIN
 #define GYRO_MPU6500_ALIGN      CW90_DEG
 #define ACC_MPU6500_ALIGN       CW90_DEG
+#define GYRO_MPU6000_ALIGN      CW90_DEG
+#define ACC_MPU6000_ALIGN       CW90_DEG
 #else
 #define MPU6000_CS_PIN          SPI3_NSS_PIN
 #define MPU6000_SPI_INSTANCE    SPI3
@@ -142,6 +153,7 @@
 #define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
+
 #define USE_SDCARD
 #define SDCARD_DETECT_INVERTED
 #define SDCARD_DETECT_PIN                   PE3
@@ -155,6 +167,12 @@
 
 #define SDCARD_DMA_STREAM_TX_FULL           DMA2_Stream1
 #define SDCARD_DMA_CHANNEL                  4
+
+#define M25P16_CS_PIN        SPI4_NSS_PIN
+#define M25P16_SPI_INSTANCE  SPI4
+
+#define USE_FLASHFS
+#define USE_FLASH_M25P16
 
 #define USE_I2C
 #define USE_I2C_DEVICE_2
@@ -186,9 +204,15 @@
 
 #define DEFAULT_FEATURES        (FEATURE_OSD)
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
+#ifdef BETAFLIGHTF7
+#define SERIALRX_UART           SERIAL_PORT_USART6
+#define SERIALRX_PROVIDER       SERIALRX_SBUS
+#define ESC_SENSOR_UART         SERIAL_PORT_USART1
+#else
 #define SERIALRX_UART           SERIAL_PORT_USART2
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define ESC_SENSOR_UART         SERIAL_PORT_USART7
+#endif
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

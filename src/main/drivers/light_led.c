@@ -41,6 +41,10 @@ static uint8_t ledInversion = 0;
 #define LED2_PIN NONE
 #endif
 
+#ifdef USE_SENSOR_HEATING
+static IO_t sensorHeatingPin = IO_NONE;
+#endif
+
 void pgResetFn_statusLedConfig(statusLedConfig_t *statusLedConfig)
 {
     statusLedConfig->ioTags[0] = IO_TAG(LED0_PIN);
@@ -88,3 +92,35 @@ void ledSet(int led, bool on)
     const bool inverted = (1 << (led)) & ledInversion;
     IOWrite(leds[led], on ? inverted : !inverted);
 }
+
+#ifdef USE_SENSOR_HEATING
+void sensorHeatingInit(void)
+{
+    sensorHeatingPin = IOGetByTag(IO_TAG(SENSOR_HEATING_PIN));
+    IOInit(sensorHeatingPin, OWNER_SYSTEM, 0);
+    IOConfigGPIO(sensorHeatingPin, IOCFG_OUT_PP);
+
+    IOLo(sensorHeatingPin);
+}
+
+void sensorHeatingEnable(void)
+{
+    IOWrite(sensorHeatingPin,true);
+}
+
+void sensorHeatingDisable(void)
+{
+    IOWrite(sensorHeatingPin,false);
+}
+
+bool isSensorHeatingEnabled(void)
+{
+    return IORead(sensorHeatingPin);
+}
+
+bool isSensorHeatingDisabled(void)
+{
+    return !IORead(sensorHeatingPin);
+}
+#endif
+

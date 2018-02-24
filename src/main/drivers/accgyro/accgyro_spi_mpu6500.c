@@ -83,6 +83,20 @@ uint8_t mpu6500SpiDetect(const busDevice_t *bus)
     return mpuDetected;
 }
 
+//read temperature for 6500
+static bool mpu6500ReadTemperature(gyroDev_t *gyro, int16_t *tempData)
+{
+    uint8_t temp[2];
+
+    if(!spiBusReadRegisterBuffer(&gyro->bus, MPU_RA_TEMP_OUT_H, temp, 2)){
+	return false;
+    }
+
+    *tempData = 35 + ((int32_t)(temp[0] << 8 | temp[1]) + 13200) / 280;
+	
+    return true;
+}
+
 void mpu6500SpiAccInit(accDev_t *acc)
 {
     mpu6500AccInit(acc);
