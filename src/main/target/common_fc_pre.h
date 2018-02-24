@@ -109,7 +109,6 @@
 #define USE_SERIALRX_SBUS       // Frsky and Futaba receivers
 #define USE_SERIALRX_SPEKTRUM   // SRXL, DSM2 and DSMX protocol
 #define USE_SERIALRX_SUMD       // Graupner Hott protocol
-//#define USE_SERIALRX_SUMH       // Graupner legacy protocol
 #define USE_SERIALRX_XBUS       // JR
 
 #if (FLASH_SIZE > 64)
@@ -120,10 +119,8 @@
 
 #if (FLASH_SIZE > 64)
 #define USE_BLACKBOX
-//#define USE_LED_STRIP
 #define USE_RESOURCE_MGMT
 #define USE_RUNAWAY_TAKEOFF     // Runaway Takeoff Prevention (anti-taz)
-//#define USE_SERVOS
 #define USE_TELEMETRY
 #define USE_TELEMETRY_FRSKY_HUB
 #define USE_TELEMETRY_HOTT
@@ -134,7 +131,6 @@
 
 #if (FLASH_SIZE > 128)
 #define USE_SERIALRX_SUMH       // Graupner legacy protocol
-#define USE_SERVOS
 #define USE_LED_STRIP
 #define USE_CAMERA_CONTROL
 #define USE_CMS
@@ -188,5 +184,4 @@
 #define USE_TELEMETRY_JETIEXBUS
 #define USE_TELEMETRY_MAVLINK
 #define USE_UNCOMMON_MIXERS
-//#define USE_GYRO_FAST_KALMAN
 #endif
