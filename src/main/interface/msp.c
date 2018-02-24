@@ -121,7 +121,7 @@
 #include "hardware_revision.h"
 #endif
 
-static const char * const flightControllerIdentifier = BETAFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
+static const char * const flightControllerIdentifier = BUTTERFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
 
 #ifndef USE_OSD_SLAVE
 
