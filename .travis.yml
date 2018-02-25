@@ -66,11 +66,11 @@ cache:
 #  use_notice: true
 #  skip_join: true
 
-notifications:
-  slack: betaflightgroup:LQSj02nsBEdefcO5UQcLgB0U
-  webhooks:
-    urls:
-      - https://webhooks.gitter.im/e/0c20f7a1a7e311499a88
-    on_success: always  # options: [always|never|change] default: always
-    on_failure: always  # options: [always|never|change] default: always
-    on_start: always     # options: [always|never|change] default: always
+#notifications:
+#  slack: betaflightgroup:LQSj02nsBEdefcO5UQcLgB0U
+#  webhooks:
+#    urls:
+#      - https://webhooks.gitter.im/e/0c20f7a1a7e311499a88
+#    on_success: always  # options: [always|never|change] default: always
+#    on_failure: always  # options: [always|never|change] default: always
+#    on_start: always     # options: [always|never|change] default: always
