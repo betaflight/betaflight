@@ -3671,6 +3671,13 @@ typedef struct {
 }
 #endif
 
+#ifdef USE_GYRO_IMUF9001
+static void cliImufUpdate(char *cmdline);
+#endif
+#ifdef MSD_ADDRESS
+static void cliMsd(char *cmdline);
+#endif
+
 static void cliHelp(char *cmdline);
 
 // should be sorted a..z for bsearch()
@@ -3713,6 +3720,12 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("get", "get variable value", "[name]", cliGet),
 #ifdef USE_GPS
     CLI_COMMAND_DEF("gpspassthrough", "passthrough gps to serial", NULL, cliGpsPassthrough),
+#endif
+#ifdef USE_GYRO_IMUF9001
+    CLI_COMMAND_DEF("imufupdate", "update imu-f's firmware", NULL, cliImufUpdate),
+#endif
+#ifdef MSD_ADDRESS
+    CLI_COMMAND_DEF("msd", "boot into USB drive mode to download log files", NULL, cliMsd),
 #endif
     CLI_COMMAND_DEF("help", NULL, NULL, cliHelp),
 #ifdef USE_LED_STRIP
@@ -3766,6 +3779,31 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("vtx", "vtx channels on switch", NULL, cliVtx),
 #endif
 };
+
+#ifdef USE_GYRO_IMUF9001
+static void cliImufUpdate(char *cmdline)
+{
+    UNUSED(cmdline);
+    cliPrint("I muff, you muff, we all muff for IMU-F!");
+    cliPrintLinefeed();
+    (*((uint32_t *)0x2001FFF4)) = 0xF431FA77;
+    delay(1000);
+    cliReboot();
+}
+#endif
+
+#ifdef MSD_ADDRESS
+static void cliMsd(char *cmdline)
+{
+    UNUSED(cmdline);
+
+    cliPrint("Loading as USB drive!");
+    cliPrintLinefeed();
+    (*((uint32_t *)0x2001FFF8)) = 0xF431FA11;
+    delay(1000);
+    cliReboot();
+}
+#endif
 
 static void cliHelp(char *cmdline)
 {

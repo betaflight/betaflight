@@ -197,6 +197,7 @@ typedef enum {
     ICM_20649_SPI,
     ICM_20689_SPI,
     BMI_160_SPI,
+    IMUF_9001_SPI,
 } mpuSensor_e;
 
 typedef enum {
@@ -208,7 +209,18 @@ typedef struct mpuDetectionResult_s {
     mpuSensor_e sensor;
     mpu6050Resolution_e resolution;
 } mpuDetectionResult_t;
-
+#ifdef USE_GYRO_IMUF9001
+typedef struct imufData
+{
+    float gyroX;
+    float gyroY;
+    float gyroZ;    
+    float accX;
+    float accY;
+    float accZ;
+} __attribute__((__packed__)) imufData_t;
+#endif
+extern volatile int dmaSpiGyroDataReady;
 struct gyroDev_s;
 void mpuGyroInit(struct gyroDev_s *gyro);
 bool mpuGyroRead(struct gyroDev_s *gyro);
@@ -217,3 +229,7 @@ void mpuDetect(struct gyroDev_s *gyro);
 
 struct accDev_s;
 bool mpuAccRead(struct accDev_s *acc);
+#ifdef USE_DMA_SPI_DEVICE
+extern bool mpuGyroDmaSpiReadStart(struct gyroDev_s *gyro);
+extern void mpuGyroDmaSpiReadFinish(struct gyroDev_s *gyro);
+#endif

@@ -50,6 +50,7 @@ typedef enum {
     GYRO_RATE_3200_Hz,
     GYRO_RATE_8_kHz,
     GYRO_RATE_9_kHz,
+    GYRO_RATE_16_kHz,
     GYRO_RATE_32_kHz,
 } gyroRateKHz_e;
 
