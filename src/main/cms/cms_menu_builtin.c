@@ -75,7 +75,7 @@ static long cmsx_InfoInit(void)
 
 static OSD_Entry menuInfoEntries[] = {
     { "--- INFO ---", OME_Label, NULL, NULL, 0 },
-    { "FWID", OME_String, NULL, BETAFLIGHT_IDENTIFIER, 0 },
+    { "FWID", OME_String, NULL, BUTTERFLIGHT_IDENTIFIER, 0 },
     { "FWVER", OME_String, NULL, FC_VERSION_STRING, 0 },
     { "GITREV", OME_String, NULL, infoGitRev, 0 },
     { "TARGET", OME_String, NULL, infoTargetName, 0 },
