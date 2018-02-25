@@ -303,7 +303,11 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
         }
 #endif
 
+#if defined(STM32F1)
+        IOConfigGPIO(motors[motorIndex].io, IOCFG_AF_PP);
+#else
         IOConfigGPIOAF(motors[motorIndex].io, IOCFG_AF_PP, timerHardware->alternateFunction);
+#endif
 
         /* standard PWM outputs */
         // margin of safety is 4 periods when unsynced
