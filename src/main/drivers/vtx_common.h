@@ -38,6 +38,7 @@
 #define VTX_SETTINGS_DEFAULT_FREQ               5740
 #define VTX_SETTINGS_DEFAULT_PITMODE_FREQ       0
 #define VTX_SETTINGS_DEFAULT_LOW_POWER_DISARM   0
+#define VTX_SETTINGS_DEFAULT_AKK_HACK           0
 
 #define VTX_SETTINGS_MAX_FREQUENCY_MHZ 5999          //max freq (in MHz) for 'vtx_freq' setting
 
