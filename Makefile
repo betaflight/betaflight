@@ -89,6 +89,9 @@ FEATURES        =
 
 include $(ROOT)/make/targets.mk
 
+# Specify 'SEGGER_RTT=YES' on the make invocation to enable
+SEGGER_RTT  ?= NO
+
 REVISION := $(shell git log -1 --format="%h")
 
 FC_VER_MAJOR := $(shell grep " FC_VERSION_MAJOR" src/main/build/version.h | awk '{print $$3}' )
@@ -103,10 +106,11 @@ USBFS_DIR       = $(ROOT)/lib/main/STM32_USB-FS-Device_Driver
 USBPERIPH_SRC   = $(notdir $(wildcard $(USBFS_DIR)/src/*.c))
 FATFS_DIR       = $(ROOT)/lib/main/FatFS
 FATFS_SRC       = $(notdir $(wildcard $(FATFS_DIR)/*.c))
+SEGGER_RTT_DIR  := $(ROOT)/lib/main/segger
 
 CSOURCES        := $(shell find $(SRC_DIR) -name '*.c')
 
-LD_FLAGS         :=
+LD_FLAGS        :=
 
 #
 # Default Tool options - can be overridden in {mcu}.mk files.

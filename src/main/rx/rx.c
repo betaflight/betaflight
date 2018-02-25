@@ -220,6 +220,9 @@ STATIC_UNIT_TESTED bool isPulseValid(uint16_t pulseDuration)
 #ifdef USE_SERIAL_RX
 bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
+#ifdef SEGGER_RTT
+    SEGGER_RTT_printf(0, "serialRxInit() provider %d\r\n", rxConfig->serialrx_provider);
+#endif
     bool enabled = false;
     switch (rxConfig->serialrx_provider) {
 #ifdef USE_SERIALRX_SPEKTRUM
@@ -285,6 +288,9 @@ bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
 
 void rxInit(void)
 {
+#ifdef SEGGER_RTT
+    SEGGER_RTT_printf(0, "rxInit()\r\n");
+#endif
     rxRuntimeConfig.rcReadRawFn = nullReadRawRC;
     rxRuntimeConfig.rcFrameStatusFn = nullFrameStatus;
     rxRuntimeConfig.rcProcessFrameFn = nullProcessFrame;
@@ -715,6 +721,9 @@ void updateRSSI(timeUs_t currentTimeUs)
 
 uint16_t getRssi(void)
 {
+#ifdef SEGGER_RTT
+    SEGGER_RTT_printf(0, "getRssi %d\r\n", rssi);
+#endif
     return rssi;
 }
 

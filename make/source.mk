@@ -385,6 +385,15 @@ endif
 ifneq ($(filter VCP,$(FEATURES)),)
 SRC += $(VCP_SRC)
 endif
+
+#ifneq ($(filter SEGGER_RTT,$(FEATURES)),)
+ifeq ($(SEGGER_RTT), YES)
+SEGGER_RTT_SRC  := $(wildcard $(SEGGER_RTT_DIR)/*.c)
+SRC += $(SEGGER_RTT_SRC)
+INCLUDE_DIRS += $(SEGGER_RTT_DIR)
+OPTIONS += SEGGER_RTT
+endif
+
 # end target specific make file checks
 
 # Search path and source files for the ST stdperiph library
