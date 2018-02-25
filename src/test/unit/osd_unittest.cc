@@ -851,7 +851,7 @@ TEST(OsdTest, TestElementWarningsBattery)
     osdRefresh(simulationTime);
 
     // then
-    displayPortTestBufferSubstring(9, 10, "BATT NOT FULL");
+    displayPortTestBufferSubstring(9, 10, "BATT < FULL");
 
     // given
     // full battery
