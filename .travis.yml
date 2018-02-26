@@ -36,7 +36,8 @@ addons:
   artifacts:
     s3_region: "us-west-2"
     paths:
-      - $(git ls-files -o -x node_modules/ | tr "\n" ":")
+      - $(ls obj/*.hex | tr "\n" ":")
+      - $(ls obj/*.bin | tr "\n" ":")
     target_paths:
       - /$TRAVIS_BUILD_NUMBER/Butterflight/
 
