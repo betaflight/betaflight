@@ -560,11 +560,6 @@ static bool osdDrawSingleElement(uint8_t item)
 #endif
 
     case OSD_CROSSHAIRS:
-        elemPosX = 14 - 1; // Offset for 1 char to the left
-        elemPosY = 6;
-        if (displayScreenSize(osdDisplayPort) == VIDEO_BUFFER_CHARS_PAL) {
-            ++elemPosY;
-        }
         buff[0] = SYM_AH_CENTER_LINE;
         buff[1] = SYM_AH_CENTER;
         buff[2] = SYM_AH_CENTER_LINE_RIGHT;
@@ -573,12 +568,6 @@ static bool osdDrawSingleElement(uint8_t item)
 
     case OSD_ARTIFICIAL_HORIZON:
         {
-            elemPosX = 14;
-            elemPosY = 6 - 4; // Top center of the AH area
-            if (displayScreenSize(osdDisplayPort) == VIDEO_BUFFER_CHARS_PAL) {
-                ++elemPosY;
-            }
-
             // Get pitch and roll limits in tenths of degrees
             const int maxPitch = osdConfig()->ahMaxPitch * 10;
             const int maxRoll = osdConfig()->ahMaxRoll * 10;
@@ -602,12 +591,6 @@ static bool osdDrawSingleElement(uint8_t item)
 
     case OSD_HORIZON_SIDEBARS:
         {
-            elemPosX = 14;
-            elemPosY = 6;
-            if (displayScreenSize(osdDisplayPort) == VIDEO_BUFFER_CHARS_PAL) {
-                ++elemPosY;
-            }
-
             // Draw AH sides
             const int8_t hudwidth = AH_SIDEBAR_WIDTH_POS;
             const int8_t hudheight = AH_SIDEBAR_HEIGHT_POS;
