@@ -499,7 +499,6 @@ void accUpdate(timeUs_t currentTimeUs, rollAndPitchTrims_t *rollAndPitchTrims)
     }
     #endif
 
-
     acc.isAccelUpdatedAtLeastOnce = true;
 
     #ifndef USE_ACC_IMUF9001
