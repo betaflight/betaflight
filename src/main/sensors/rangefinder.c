@@ -234,7 +234,7 @@ static int16_t computePseudoSnr(int32_t newReading) {
     int16_t pseudoSnr = 0;
 
     const int delta = newReading - previousReading;
-    snrSamples[snrSampleIndex] = constrain(delta * delta / 10), 0, 6400);
+    snrSamples[snrSampleIndex] = constrain(delta * delta / 10, 0, 6400);
     ++snrSampleIndex;
     if (snrSampleIndex == SNR_SAMPLES) {
         snrSampleIndex = 0;
