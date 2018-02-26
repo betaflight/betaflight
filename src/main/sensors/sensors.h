@@ -40,7 +40,7 @@ typedef union flightDynamicsTrims_u {
     flightDynamicsTrims_def_t values;
 } flightDynamicsTrims_t;
 
-#define CALIBRATING_GYRO_CYCLES             10000
+#define CALIBRATING_GYRO_TIME           3000000 // gyro calibration time in microseconds
 #define CALIBRATING_ACC_CYCLES              400
 #define CALIBRATING_BARO_CYCLES             200 // 10 seconds init_delay + 200 * 25 ms = 15 seconds before ground pressure settles
 
