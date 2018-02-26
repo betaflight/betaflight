@@ -25,6 +25,7 @@ ENTRY(Reset_Handler)
 MEMORY
 {
     FLASH (rx)        : ORIGIN = 0x08000000, LENGTH = 32K
+    /* config occupies the entire flash sector 1 for the ease of erasure, 32K on F74x */
     FLASH_CONFIG (r)  : ORIGIN = 0x08008000, LENGTH = 32K
     FLASH1 (rx)       : ORIGIN = 0x08010000, LENGTH = 960K
 
