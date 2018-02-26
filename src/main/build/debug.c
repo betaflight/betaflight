@@ -17,6 +17,7 @@
 
 #include "stdint.h"
 
+#include "platform.h"
 
 #include "debug.h"
 
@@ -37,7 +38,9 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "NOTCH",
     "RC_INTERPOLATION",
     "ANGLERATE",
+#ifdef USE_DSHOT
     "ESC_SENSOR",
+#endif
     "SCHEDULER",
     "STACK",
     "ESC_SENSOR_RPM",
@@ -48,13 +51,21 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "FFT_FREQ",
     "RX_FRSKY_SPI",
     "GYRO_RAW",
+#ifdef USE_MAX7456
     "MAX7456_SIGNAL",
     "MAX7456_SPICLOCK",
+#endif
+#ifdef USE_SERIAL_RX
     "SBUS",
     "FPORT",
+#endif
+#ifdef USE_RANGEFINDER
     "RANGEFINDER",
     "RANGEFINDER_QUALITY",
+#endif
+#ifdef USE_RANGEFINDER_TF
     "LIDAR_TF",
+#endif
     "CORE_TEMP",
     "RUNAWAY_TAKEOFF",
 };
