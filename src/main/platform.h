@@ -106,7 +106,3 @@
 #include "target.h"
 #include "target/common_fc_post.h"
 #endif
-
-#ifdef SEGGER_RTT
-#include "SEGGER_RTT.h"
-#endif /* SEGGER_RTT */

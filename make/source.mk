@@ -386,7 +386,6 @@ ifneq ($(filter VCP,$(FEATURES)),)
 SRC += $(VCP_SRC)
 endif
 
-#ifneq ($(filter SEGGER_RTT,$(FEATURES)),)
 ifeq ($(SEGGER_RTT), YES)
 SEGGER_RTT_SRC  := $(wildcard $(SEGGER_RTT_DIR)/*.c)
 SRC += $(SEGGER_RTT_SRC)

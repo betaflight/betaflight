@@ -15,8 +15,12 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "stdint.h"
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <stdarg.h>
 
+#include "platform.h"
 
 #include "debug.h"
 
@@ -58,3 +62,40 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "CORE_TEMP",
     "RUNAWAY_TAKEOFF",
 };
+
+static uint64_t dbgMsk = DBG_MSK(DBG_SYSTEM) | DBG_MSK(DBG_INIT) | DBG_MSK(DBG_RX);
+static uint8_t  dbgLvl = 3;
+
+void dbgInit()
+{
+#ifdef SEGGER_RTT
+    SEGGER_RTT_ConfigUpBuffer(0, NULL, NULL, 0, SEGGER_RTT_MODE_BLOCK_IF_FIFO_FULL);
+#endif
+}
+
+void dbgLevel(uint8_t dbgLevel)
+{
+    dbgLvl = dbgLevel;
+}
+
+void dbgMask(uint8_t dbgMask)
+{
+    dbgMsk = dbgMask;
+}
+
+int dbgPrintf(dbgSrc_e src, uint8_t lvl, const char *fmt, ...)
+{
+    va_list args;
+    int len = 0;
+
+    if ((DBG_MSK(src) & dbgMsk) && (lvl <= dbgLvl)) {
+        va_start (args, fmt);
+#ifdef SEGGER_RTT
+        len = SEGGER_RTT_vprintf(0, fmt, &args);
+#endif /* SEGGER_RTT */
+        va_end (args);
+    }
+
+    return len;
+}
+

@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include <stdarg.h>
+
 #define DEBUG16_VALUE_COUNT 4
 extern int16_t debug[DEBUG16_VALUE_COUNT];
 extern uint8_t debugMode;
@@ -79,3 +81,25 @@ typedef enum {
 } debugType_e;
 
 extern const char * const debugModeNames[DEBUG_COUNT];
+
+#ifdef SEGGER_RTT
+#include "SEGGER_RTT.h"
+extern int SEGGER_RTT_vprintf(unsigned BufferIndex, const char * sFormat, va_list * pParamList);
+#endif /* SEGGER_RTT */
+
+// Source of debug information
+typedef enum {
+    DBG_INIT,
+    DBG_SYSTEM,
+    DBG_RX,
+    DBG_LED,
+    DBG_MOTOR
+} dbgSrc_e;
+
+#define DBG_MSK(src) (1<<src)
+
+extern void dbgInit();
+extern void dbgLevel(uint8_t dbgLevel);
+extern void dbgMask(uint8_t dbgMask);
+extern int dbgPrintf(dbgSrc_e src, uint8_t lvl, const char *fmt, ...);
+

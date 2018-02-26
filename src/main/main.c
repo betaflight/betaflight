@@ -19,6 +19,7 @@
 #include <stdint.h>
 
 #include "platform.h"
+#include "debug.h"
 
 #include "fc/fc_init.h"
 
@@ -26,11 +27,8 @@
 
 int main(void)
 {
-#ifdef SEGGER_RTT
-    SEGGER_RTT_ConfigUpBuffer(0, NULL, NULL, 0, SEGGER_RTT_MODE_BLOCK_IF_FIFO_FULL);
-
-    SEGGER_RTT_WriteString(0, "Calling init()\r\n");
-#endif
+    dbgInit();
+    dbgPrintf(DBG_SYSTEM, 0, "**** Betaflight startup ****\n");
 
     init();
     while (true) {
