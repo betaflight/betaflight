@@ -196,6 +196,7 @@ PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
     .imuf_pitch_lpf_cutoff_hz = 120.0f,
     .imuf_roll_lpf_cutoff_hz = 120.0f,
     .imuf_yaw_lpf_cutoff_hz = 120.0f,
+    .imuf_dyn_gain = 20,
     .gyro_offset_yaw = 0,
 );
 #else

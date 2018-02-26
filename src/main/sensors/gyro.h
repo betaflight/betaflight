@@ -85,6 +85,7 @@ typedef struct gyroConfig_s {
     uint16_t imuf_pitch_lpf_cutoff_hz;
     uint16_t imuf_roll_lpf_cutoff_hz;
     uint16_t imuf_yaw_lpf_cutoff_hz;
+    uint16_t imuf_dyn_gain;
 #else
     uint16_t gyro_filter_q;
     uint16_t gyro_filter_r;

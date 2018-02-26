@@ -238,7 +238,7 @@ void imufSpiGyroInit(gyroDev_t *gyro)
     rxData.param4 = ( (uint16_t)gyroConfig()->imuf_roll_q << 16 ) | (uint16_t)gyroConfig()->imuf_roll_r;
     rxData.param5 = ( (uint16_t)gyroConfig()->imuf_yaw_q << 16 ) | (uint16_t)gyroConfig()->imuf_yaw_r;
     rxData.param6 = ( (uint16_t)gyroConfig()->imuf_pitch_lpf_cutoff_hz << 16) | (uint16_t)gyroConfig()->imuf_roll_lpf_cutoff_hz;
-    rxData.param7 = ( (uint16_t)gyroConfig()->imuf_yaw_lpf_cutoff_hz << 16);
+    rxData.param7 = ( (uint16_t)gyroConfig()->imuf_yaw_lpf_cutoff_hz << 16) | (uint16_t)gyroConfig()->imuf_dyn_gain;
     rxData.param8 = ( (int16_t)boardAlignment()->rollDegrees << 16 ) | returnGyroAlignmentForImuf9001();
     rxData.param9 = ( (int16_t)boardAlignment()->yawDegrees << 16 ) | (int16_t)boardAlignment()->pitchDegrees;
 

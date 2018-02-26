@@ -57,6 +57,7 @@
 #include "drivers/accgyro/accgyro_mpu.h"
 
 volatile int dmaSpiGyroDataReady = 0;
+volatile uint32_t imufCrcErrorCount = 0;
 mpuResetFnPtr mpuResetFn;
 #ifdef USE_GYRO_IMUF9001
     imufData_t imufData;
@@ -206,8 +207,9 @@ bool mpuGyroDmaSpiReadStart(gyroDev_t * gyro)
         }
 
     }
+    memset(dmaRxBuffer, 0, gyroConfig()->imuf_mode); //clear buffer
     //send and receive data using SPI and DMA
-    dmaSpiTransmitReceive(dmaTxBuffer, dmaRxBuffer, 32, 0);
+    dmaSpiTransmitReceive(dmaTxBuffer, dmaRxBuffer, gyroConfig()->imuf_mode, 0);
     #else
     dmaTxBuffer[0] = MPU_RA_ACCEL_XOUT_H | 0x80;
     dmaSpiTransmitReceive(dmaTxBuffer, dmaRxBuffer, 15, 0);
@@ -219,26 +221,22 @@ void mpuGyroDmaSpiReadFinish(gyroDev_t * gyro)
 {
     //spi rx dma callback
     #ifdef USE_GYRO_IMUF9001
-    memcpy(&imufData, dmaRxBuffer, sizeof(imufData_t));
-    if(
-        (imufData.gyroX < -3000.0f) || (imufData.gyroX > 3000.0f) ||
-        (imufData.gyroY < -3000.0f) || (imufData.gyroY > 3000.0f) ||
-        (imufData.gyroZ < -3000.0f) || (imufData.gyroZ > 3000.0f) ||
-        (imufData.accX < -16.0f) || (imufData.accX > 16.0f) ||
-        (imufData.accY < -16.0f) || (imufData.accY > 16.0f) ||
-        (imufData.accZ < -16.0f) || (imufData.accZ > 16.0f)
-    )
+    volatile uint32_t crc1 = (*(uint32_t *)(dmaRxBuffer+gyroConfig()->imuf_mode-4));
+    volatile uint32_t crc2 = getCrcImuf9001((uint32_t *)(dmaRxBuffer), (gyroConfig()->imuf_mode >> 2)-1);
+    if(crc1 == crc2)
     {
-
-    }
-    else
-    {
+        memcpy(&imufData, dmaRxBuffer, sizeof(imufData_t));
         acc.accADC[X]    = imufData.accX * acc.dev.acc_1G;
         acc.accADC[Y]    = imufData.accY * acc.dev.acc_1G;
         acc.accADC[Z]    = imufData.accZ * acc.dev.acc_1G;
         gyro->gyroADC[X] = imufData.gyroX;
         gyro->gyroADC[Y] = imufData.gyroY;
         gyro->gyroADC[Z] = imufData.gyroZ;
+    }
+    else
+    {
+        //error handler
+        imufCrcErrorCount++; //check every so often and cause a failsafe is this number is above a certain ammount
     }
     #else
     acc.dev.ADCRaw[X]   = (int16_t)((dmaRxBuffer[1] << 8)  | dmaRxBuffer[2]);
