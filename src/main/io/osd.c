@@ -584,8 +584,6 @@ static bool osdDrawSingleElement(uint8_t item)
                 }
             }
 
-            osdDrawSingleElement(OSD_HORIZON_SIDEBARS);
-
             return true;
         }
 
@@ -802,6 +800,7 @@ static void osdDrawElements(void)
     osdDrawSingleElement(OSD_MAIN_BATT_VOLTAGE);
     osdDrawSingleElement(OSD_RSSI_VALUE);
     osdDrawSingleElement(OSD_CROSSHAIRS);
+    osdDrawSingleElement(OSD_HORIZON_SIDEBARS);
     osdDrawSingleElement(OSD_ITEM_TIMER_1);
     osdDrawSingleElement(OSD_ITEM_TIMER_2);
     osdDrawSingleElement(OSD_REMAINING_TIME_ESTIMATE);
