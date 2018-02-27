@@ -107,5 +107,11 @@
 #define TARGET_IO_PORTC         (BIT(13)|BIT(14)|BIT(15))
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
 
+// Thanks to burst dshot, PIKOBLX is now capable of handling dshot and LED strip without any rewiring and remapping by a user
+#if defined(FF_PIKOBLX_BURST)
+#define ENABLE_DSHOT_DMAR true  // All 4 motors on TIM3, TIMUP on DMA1_CH3
+#define REMAP_TIM16_DMA         // Dodge DMA1_CH3 by remapping it to DMA1_CH6
+#endif
+
 #define USABLE_TIMER_CHANNEL_COUNT 9
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(16) | TIM_N(17))
