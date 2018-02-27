@@ -41,6 +41,8 @@
 #define USE_MPU_DATA_READY_SIGNAL
 
 
+#define USE_DSHOT_DMAR
+
 #define M25P16_CS_PIN           PC14
 #define M25P16_SPI_INSTANCE     SPI3
 #define USE_FLASHFS
@@ -169,9 +171,8 @@
 #define USED_TIMERS             ( TIM_N(1) | TIM_N(8) | TIM_N(4) | TIM_N(12) )
 
 #define IMUF_BIT_I2C_IF_DIS              (1 << 4)
-#ifndef DEBUG
+
 #define USE_QUAD_MIXER_ONLY
-#endif
 
 #define USE_ADC
 #define ADC_INSTANCE                   ADC1
