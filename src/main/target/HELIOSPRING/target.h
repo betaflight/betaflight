@@ -42,6 +42,7 @@
 
 
 #define USE_DSHOT_DMAR
+#define FORCE_DSHOT_DMAR
 
 #define M25P16_CS_PIN           PC14
 #define M25P16_SPI_INSTANCE     SPI3
