@@ -15,8 +15,8 @@ ENTRY(Reset_Handler)
 _estack = ORIGIN(STACKRAM) + LENGTH(STACKRAM);    /* end of RAM */
 
 /* Base address where the config is stored. */
-__config_start = ORIGIN(AXIM_FLASH_CONFIG);
-__config_end = ORIGIN(AXIM_FLASH_CONFIG) + LENGTH(AXIM_FLASH_CONFIG);
+__config_start = ORIGIN(FLASH_CONFIG);
+__config_end = ORIGIN(FLASH_CONFIG) + LENGTH(FLASH_CONFIG);
 
 /* Generate a link error if heap and stack don't fit into RAM */
 _Min_Heap_Size = 0;      /* required amount of heap  */
@@ -32,7 +32,7 @@ SECTIONS
     PROVIDE (isr_vector_table_base = .);
     KEEP(*(.isr_vector)) /* Startup code */
     . = ALIGN(4);
-  } >ITCM_FLASH AT >AXIM_FLASH
+  } >FLASH AT >AXIM_FLASH
 
   /* The program code and other data goes into FLASH */
   .text :
@@ -51,7 +51,7 @@ SECTIONS
 
     . = ALIGN(4);
     _etext = .;        /* define a global symbols at end of code */
-  } >ITCM_FLASH1 AT >AXIM_FLASH1
+  } >FLASH1 AT >AXIM_FLASH1
 
   /* Critical program code goes into ITCM RAM */
   /* Copy specific fast-executing code to ITCM RAM */ 
@@ -69,13 +69,13 @@ SECTIONS
   .ARM.extab   : 
   { 
     *(.ARM.extab* .gnu.linkonce.armextab.*) 
-  } >ITCM_FLASH AT >AXIM_FLASH
+  } >FLASH
   
   .ARM : 
   {
     __exidx_start = .;
     *(.ARM.exidx*) __exidx_end = .;
-  } >ITCM_FLASH AT >AXIM_FLASH
+  } >FLASH AT >AXIM_FLASH
 
   .pg_registry :
   {
@@ -83,14 +83,14 @@ SECTIONS
     KEEP (*(.pg_registry))
     KEEP (*(SORT(.pg_registry.*)))
     PROVIDE_HIDDEN (__pg_registry_end = .);
-  } >ITCM_FLASH AT >AXIM_FLASH
+  } >FLASH AT >AXIM_FLASH
   
   .pg_resetdata :
   {
     PROVIDE_HIDDEN (__pg_resetdata_start = .);
     KEEP (*(.pg_resetdata))
     PROVIDE_HIDDEN (__pg_resetdata_end = .);
-  } >ITCM_FLASH AT >AXIM_FLASH
+  } >FLASH AT >AXIM_FLASH
 
   /* used by the startup to initialize data */
   _sidata = .;
@@ -105,7 +105,7 @@ SECTIONS
 
     . = ALIGN(4);
     _edata = .;        /* define a global symbol at data end */
-  } >SRAM1 AT >AXIM_FLASH
+  } >RAM AT >AXIM_FLASH
 
   /* Uninitialized data section */
   . = ALIGN(4);
@@ -121,7 +121,7 @@ SECTIONS
     . = ALIGN(4);
     _ebss = .;         /* define a global symbol at bss end */
     __bss_end__ = _ebss;
-  } >SRAM1
+  } >RAM
 
   /* Uninitialized data section */
   . = ALIGN(4);
