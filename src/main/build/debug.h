@@ -100,7 +100,7 @@ extern int SEGGER_RTT_vprintf(unsigned BufferIndex, const char * sFormat, va_lis
 
 // Set RTT_DEBUG_CHANNEL to 0 to use the default channel and on the host use 'telnet localhost 19021'
 // Set RTT_DEBUG_CHANNEL to 1-3 to use alternate channels and JLinkRTTLogger to capture debug output to a log file
-#define RTT_DEBUG_CHANNEL 1
+#define RTT_DEBUG_CHANNEL 0
 
 #define DBG_MSK(src) (1<<src)
 
