@@ -65,6 +65,7 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "RUNAWAY_TAKEOFF",
 };
 
+#ifdef SEGGER_RTT
 // Debug mask and levels
 static uint64_t dbgMsk = DBG_MSK(DBG_SYSTEM) | DBG_MSK(DBG_INIT);
 static uint8_t  dbgLvl = 3;
@@ -72,14 +73,12 @@ static uint8_t  dbgLvl = 3;
 // Initialise debug output stream
 void dbgInit()
 {
-#ifdef SEGGER_RTT
 #if (RTT_DEBUG_CHANNEL == 0)
     SEGGER_RTT_ConfigUpBuffer(RTT_DEBUG_CHANNEL, "RTT Debug", NULL, 0, SEGGER_RTT_MODE_NO_BLOCK_SKIP);
 #else
     static char dbgBuf[BUFFER_SIZE_UP];
     SEGGER_RTT_ConfigUpBuffer(RTT_DEBUG_CHANNEL, "RTT Debug", dbgBuf, BUFFER_SIZE_UP, SEGGER_RTT_MODE_NO_BLOCK_SKIP);
 #endif
-#endif /* SEGGER_RTT */
 }
 
 // Dynamically set debug level above which no debug will be emitted
@@ -90,7 +89,7 @@ void dbgLevel(uint8_t dbgLevel)
 }
 
 // Set the debug mask to dynamically select which debug streams will be seen
-void dbgMask(uint8_t dbgMask)
+void dbgMask(uint64_t dbgMask)
 {
     dbgMsk = dbgMask;
 }
@@ -102,13 +101,13 @@ int dbgPrintf(dbgSrc_e src, uint8_t lvl, const char *fmt, ...)
     int len = 0;
 
     if ((DBG_MSK(src) & dbgMsk) && (lvl <= dbgLvl)) {
+        SEGGER_RTT_printf(RTT_DEBUG_CHANNEL, "%d:%d ", (int)src, lvl);
         va_start (args, fmt);
-#ifdef SEGGER_RTT
         len = SEGGER_RTT_vprintf(RTT_DEBUG_CHANNEL, fmt, &args);
-#endif /* SEGGER_RTT */
         va_end (args);
     }
 
     return len;
 }
+#endif /* SEGGER_RTT */
 

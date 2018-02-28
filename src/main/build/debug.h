@@ -106,13 +106,13 @@ extern int SEGGER_RTT_vprintf(unsigned BufferIndex, const char * sFormat, va_lis
 
 extern void dbgInit();
 extern void dbgLevel(uint8_t dbgLevel);
-extern void dbgMask(uint8_t dbgMask);
+extern void dbgMask(uint64_t dbgMask);
 extern int dbgPrintf(dbgSrc_e src, uint8_t lvl, const char *fmt, ...);
 #else /* SEGGER_RTT */
 // If the debugger isn't being used then define all debug calls to be empty to save code space
 #define dbgInit()
-#define dbgLevel()
-#define dbgMask()
-#define dbgPrintf()
+#define dbgLevel(dbgLevel)
+#define dbgMask(dbgMask)
+#define dbgPrintf(...)
 #endif /* SEGGER_RTT */
 
