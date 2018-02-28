@@ -19,6 +19,7 @@
 
 #include <stdarg.h>
 
+// Debug values
 #define DEBUG16_VALUE_COUNT 4
 extern int16_t debug[DEBUG16_VALUE_COUNT];
 extern uint8_t debugMode;
@@ -27,6 +28,7 @@ extern uint8_t debugMode;
 
 #define DEBUG_SECTION_TIMES
 
+// Optional timing information capture
 #ifdef DEBUG_SECTION_TIMES
 extern uint32_t sectionTimes[2][4];
 
@@ -47,6 +49,7 @@ extern uint32_t sectionTimes[2][4];
 
 #endif
 
+// Debug modes used in the CMS menus
 typedef enum {
     DEBUG_NONE,
     DEBUG_CYCLETIME,
@@ -82,11 +85,6 @@ typedef enum {
 
 extern const char * const debugModeNames[DEBUG_COUNT];
 
-#ifdef SEGGER_RTT
-#include "SEGGER_RTT.h"
-extern int SEGGER_RTT_vprintf(unsigned BufferIndex, const char * sFormat, va_list * pParamList);
-#endif /* SEGGER_RTT */
-
 // Source of debug information
 typedef enum {
     DBG_INIT,
@@ -96,10 +94,25 @@ typedef enum {
     DBG_MOTOR
 } dbgSrc_e;
 
+#ifdef SEGGER_RTT
+#include "SEGGER_RTT.h"
+extern int SEGGER_RTT_vprintf(unsigned BufferIndex, const char * sFormat, va_list * pParamList);
+
+// Set RTT_DEBUG_CHANNEL to 0 to use the default channel and on the host use 'telnet localhost 19021'
+// Set RTT_DEBUG_CHANNEL to 1-3 to use alternate channels and JLinkRTTLogger to capture debug output to a log file
+#define RTT_DEBUG_CHANNEL 1
+
 #define DBG_MSK(src) (1<<src)
 
 extern void dbgInit();
 extern void dbgLevel(uint8_t dbgLevel);
 extern void dbgMask(uint8_t dbgMask);
 extern int dbgPrintf(dbgSrc_e src, uint8_t lvl, const char *fmt, ...);
+#else /* SEGGER_RTT */
+// If the debugger isn't being used then define all debug calls to be empty to save code space
+#define dbgInit()
+#define dbgLevel()
+#define dbgMask()
+#define dbgPrintf()
+#endif /* SEGGER_RTT */
 

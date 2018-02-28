@@ -21,16 +21,18 @@
 #include <stdarg.h>
 
 #include "platform.h"
-
 #include "debug.h"
 
+// Debug values
 int16_t debug[DEBUG16_VALUE_COUNT];
 uint8_t debugMode;
 
+// Optional timing information
 #ifdef DEBUG_SECTION_TIMES
 uint32_t sectionTimes[2][4];
 #endif
 
+// Debug modes used in the CMS menus
 const char * const debugModeNames[DEBUG_COUNT] = {
     "NONE",
     "CYCLETIME",
@@ -63,26 +65,37 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "RUNAWAY_TAKEOFF",
 };
 
-static uint64_t dbgMsk = DBG_MSK(DBG_SYSTEM) | DBG_MSK(DBG_INIT) | DBG_MSK(DBG_RX);
+// Debug mask and levels
+static uint64_t dbgMsk = DBG_MSK(DBG_SYSTEM) | DBG_MSK(DBG_INIT);
 static uint8_t  dbgLvl = 3;
 
+// Initialise debug output stream
 void dbgInit()
 {
 #ifdef SEGGER_RTT
-    SEGGER_RTT_ConfigUpBuffer(0, NULL, NULL, 0, SEGGER_RTT_MODE_BLOCK_IF_FIFO_FULL);
+#if (RTT_DEBUG_CHANNEL == 0)
+    SEGGER_RTT_ConfigUpBuffer(RTT_DEBUG_CHANNEL, "RTT Debug", NULL, 0, SEGGER_RTT_MODE_NO_BLOCK_SKIP);
+#else
+    static char dbgBuf[BUFFER_SIZE_UP];
+    SEGGER_RTT_ConfigUpBuffer(RTT_DEBUG_CHANNEL, "RTT Debug", dbgBuf, BUFFER_SIZE_UP, SEGGER_RTT_MODE_NO_BLOCK_SKIP);
 #endif
+#endif /* SEGGER_RTT */
 }
 
+// Dynamically set debug level above which no debug will be emitted
+// The higher the debug level, the more debug will be seen
 void dbgLevel(uint8_t dbgLevel)
 {
     dbgLvl = dbgLevel;
 }
 
+// Set the debug mask to dynamically select which debug streams will be seen
 void dbgMask(uint8_t dbgMask)
 {
     dbgMsk = dbgMask;
 }
 
+// Emit debug information from a given source with a given level
 int dbgPrintf(dbgSrc_e src, uint8_t lvl, const char *fmt, ...)
 {
     va_list args;
@@ -91,7 +104,7 @@ int dbgPrintf(dbgSrc_e src, uint8_t lvl, const char *fmt, ...)
     if ((DBG_MSK(src) & dbgMsk) && (lvl <= dbgLvl)) {
         va_start (args, fmt);
 #ifdef SEGGER_RTT
-        len = SEGGER_RTT_vprintf(0, fmt, &args);
+        len = SEGGER_RTT_vprintf(RTT_DEBUG_CHANNEL, fmt, &args);
 #endif /* SEGGER_RTT */
         va_end (args);
     }
