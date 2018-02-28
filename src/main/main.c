@@ -23,6 +23,11 @@
 
 #include "fc/fc_init.h"
 
+#ifdef SEGGER_RTT
+#include "interface/cli.h"
+#include "drivers/serial_rtt.h"
+#endif /* SEGGER_RTT */
+
 #include "scheduler/scheduler.h"
 
 int main(void)
@@ -31,6 +36,11 @@ int main(void)
     dbgPrintf(DBG_SYSTEM, 0, "**** Betaflight startup ****\n");
 
     init();
+
+#if defined(SEGGER_RTT) && defined(SEGGER_RTT_CLI)
+    cliEnter(openRttSerial());
+#endif /* SEGGER_RTT */
+
     while (true) {
         scheduler();
         processLoopback();
