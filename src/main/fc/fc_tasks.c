@@ -102,9 +102,12 @@ static void taskHandleSerial(timeUs_t currentTimeUs)
     UNUSED(currentTimeUs);
 #ifdef USE_CLI
     // in cli mode, all serial stuff goes to here. enter cli mode by sending #
-    if (cliMode) {
+    if (cliMode != CLI_DISABLED) {
         cliProcess();
-        return;
+
+        if (cliMode == CLI_USB) {
+            return;
+        }
     }
 #endif
 #ifndef OSD_SLAVE
@@ -195,7 +198,7 @@ static void taskTelemetry(timeUs_t currentTimeUs)
 {
     telemetryCheckState();
 
-    if (!cliMode && feature(FEATURE_TELEMETRY)) {
+    if ((cliMode == CLI_DISABLED) && feature(FEATURE_TELEMETRY)) {
         telemetryProcess(currentTimeUs);
     }
 }

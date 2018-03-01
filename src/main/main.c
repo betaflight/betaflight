@@ -38,7 +38,7 @@ int main(void)
     init();
 
 #if defined(SEGGER_RTT) && defined(SEGGER_RTT_CLI)
-    cliEnter(openRttSerial());
+    cliEnter(openRttSerial(), CLI_RTT);
 #endif /* SEGGER_RTT */
 
     while (true) {

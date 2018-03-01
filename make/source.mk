@@ -391,7 +391,7 @@ SEGGER_RTT_SRC  := $(wildcard $(SEGGER_RTT_DIR)/*.c) drivers/serial_rtt.c
 SRC += $(SEGGER_RTT_SRC)
 INCLUDE_DIRS += $(SEGGER_RTT_DIR)
 OPTIONS += SEGGER_RTT
-ifeq ($(SEGGER_RTT), YES)
+ifeq ($(SEGGER_RTT_CLI), YES)
 OPTIONS += SEGGER_RTT_CLI
 endif
 endif

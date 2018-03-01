@@ -74,10 +74,10 @@ static uint8_t  dbgLvl = 3;
 void dbgInit()
 {
 #if (RTT_DEBUG_CHANNEL == 0)
-    SEGGER_RTT_ConfigUpBuffer(RTT_DEBUG_CHANNEL, "RTT Debug", NULL, 0, SEGGER_RTT_MODE_NO_BLOCK_SKIP);
+    SEGGER_RTT_ConfigUpBuffer(RTT_DEBUG_CHANNEL, "RTT Debug", NULL, 0, SEGGER_RTT_MODE_BLOCK_IF_FIFO_FULL);
 #else
     static char dbgBuf[BUFFER_SIZE_UP];
-    SEGGER_RTT_ConfigUpBuffer(RTT_DEBUG_CHANNEL, "RTT Debug", dbgBuf, BUFFER_SIZE_UP, SEGGER_RTT_MODE_NO_BLOCK_SKIP);
+    SEGGER_RTT_ConfigUpBuffer(RTT_DEBUG_CHANNEL, "RTT Debug", dbgBuf, BUFFER_SIZE_UP, SEGGER_RTT_MODE_BLOCK_IF_FIFO_FULL);
 #endif
 }
 

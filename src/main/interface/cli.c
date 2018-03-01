@@ -25,10 +25,12 @@
 
 #include "platform.h"
 #include "common/time.h"
+#include "interface/cli.h"
 
 // FIXME remove this for targets that don't need a CLI.  Perhaps use a no-op macro when USE_CLI is not enabled
 // signal that we're in cli mode
-uint8_t cliMode = 0;
+cliMode_e cliMode = CLI_DISABLED;
+
 #ifndef EEPROM_IN_RAM
 extern uint8_t __config_start;   // configured via linker script when building binaries.
 extern uint8_t __config_end;
@@ -2262,7 +2264,7 @@ static void cliExit(char *cmdline)
 
     *cliBuffer = '\0';
     bufferIndex = 0;
-    cliMode = 0;
+    cliMode = CLI_DISABLED;
     // incase a motor was left running during motortest, clear it here
     mixerResetDisarmedMotors();
     cliReboot();
@@ -3876,8 +3878,9 @@ void cliProcess(void)
             memset(cliBuffer, 0, sizeof(cliBuffer));
 
             // 'exit' will reset this flag, so we don't need to print prompt again
-            if (!cliMode)
+            if (cliMode == CLI_DISABLED) {
                 return;
+            }
 
             cliPrompt();
         } else if (c == 127) {
@@ -3895,9 +3898,9 @@ void cliProcess(void)
     }
 }
 
-void cliEnter(serialPort_t *serialPort)
+void cliEnter(serialPort_t *serialPort, cliMode_e cliNewMode)
 {
-    cliMode = 1;
+    cliMode = cliNewMode;
     cliPort = serialPort;
     setPrintfSerialPort(cliPort);
     cliWriter = bufWriterInit(cliWriteBuffer, sizeof(cliWriteBuffer), (bufWrite_t)serialWriteBufShim, serialPort);

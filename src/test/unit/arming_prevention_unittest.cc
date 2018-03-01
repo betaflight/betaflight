@@ -55,7 +55,7 @@ extern "C" {
     float rcCommand[4];
     int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
     uint16_t averageSystemLoadPercent = 0;
-    uint8_t cliMode = 0;
+    cliMode_e cliMode = CLI_DISABLED;
     uint8_t debugMode = 0;
     int16_t debug[DEBUG16_VALUE_COUNT];
     pidProfile_t *currentPidProfile;
