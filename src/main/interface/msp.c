@@ -1179,7 +1179,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_cutoff_2);
         sbufWriteU8(dst, currentPidProfile->dterm_filter_type);
         break;
-
+#ifdef USE_GYRO_FAST_KALMAN
     case MSP_ADVANCED_FILTER_CONFIG :
         sbufWriteU16(dst, gyroConfig()->gyro_soft_lpf_hz_2);
         sbufWriteU16(dst, gyroConfig()->gyro_filter_q);
@@ -1187,7 +1187,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, gyroConfig()->gyro_filter_p);
         sbufWriteU8(dst, gyroConfig()->gyro_stage2_filter_type);
         break;
-
+#endif
     case MSP_PID_ADVANCED:
         sbufWriteU16(dst, 0);
         sbufWriteU16(dst, 0);
