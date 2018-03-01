@@ -324,21 +324,22 @@ void updateRcCommands(void)
 
     rcCommand[THROTTLE] = rcLookupThrottle(tmp);
 
-    if (feature(FEATURE_3D) && IS_RC_MODE_ACTIVE(BOX3DDISABLE) && !failsafeIsActive()) {
-        fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
-        rcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MAX - rxConfig()->midrc);
-    }
-
-    if (feature(FEATURE_3D) && isModeActivationConditionPresent(BOX3DONASWITCH) && !failsafeIsActive()) {
-        if (IS_RC_MODE_ACTIVE(BOX3DONASWITCH)) {
-            reverseMotors = true;
-            fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
-            rcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MIN - rxConfig()->midrc);
-        }
-        else {
-            reverseMotors = false;
-            fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
-            rcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MAX - rxConfig()->midrc);
+    if (feature(FEATURE_3D) && !failsafeIsActive()) {
+        if (!flight3DConfig()->switched_mode3d) {
+            if (IS_RC_MODE_ACTIVE(BOX3D)) {
+                fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
+                rcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MAX - rxConfig()->midrc);
+            }
+        } else {
+            if (IS_RC_MODE_ACTIVE(BOX3D)) {
+                reverseMotors = true;
+                fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
+                rcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MIN - rxConfig()->midrc);
+            } else {
+                reverseMotors = false;
+                fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
+                rcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MAX - rxConfig()->midrc);
+            }
         }
     }
     if (FLIGHT_MODE(HEADFREE_MODE)) {

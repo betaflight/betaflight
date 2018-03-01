@@ -22,9 +22,7 @@
 #include "pg/pg.h"
 
 typedef struct pinioBoxConfig_s {
-    int8_t boxId[PINIO_COUNT];
+    uint8_t permanentId[PINIO_COUNT];
 } pinioBoxConfig_t;
 
 PG_DECLARE(pinioBoxConfig_t, pinioBoxConfig);
-
-#define BOXNONE (-1)

@@ -71,14 +71,6 @@ defined in linker script */
   .weak  Reset_Handler
   .type  Reset_Handler, %function
 Reset_Handler: 
-  // Enable CCM
-  // RCC->AHB1ENR |= RCC_AHB1ENR_CCMDATARAMEN;
-  ldr     r0, =0x40023800       // RCC_BASE
-  ldr     r1, [r0, #0x30]       // AHB1ENR
-  orr     r1, r1, 0x00100000    // RCC_AHB1ENR_CCMDATARAMEN
-  str     r1, [r0, #0x30]
-  dsb
-
   // Check for bootloader reboot
   ldr r0, =0x2001FFFC         // mj666
   ldr r1, =0xDEADBEEF         // mj666
@@ -135,7 +127,7 @@ LoopMarkHeapStack:
  str     r1,[r0]
 
 /* Call the clock system intitialization function.*/
-  bl  SystemInit   
+  bl  SystemInitOC
 
 /* Call the application's entry point.*/
   bl  main

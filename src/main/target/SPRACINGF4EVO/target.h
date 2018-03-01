@@ -143,8 +143,13 @@
 #define MPU6500_SPI_INSTANCE                SPI1
 
 #define USE_ADC
-#define ADC_INSTANCE            ADC1
-#define ADC1_DMA_STREAM DMA2_Stream0
+// It's possible to use ADC1 or ADC3 on this target, same pins.
+//#define ADC_INSTANCE            ADC1
+//#define ADC1_DMA_STREAM DMA2_Stream0
+
+// Using ADC3 frees up DMA2_Stream0 for SPI1_RX
+#define ADC_INSTANCE            ADC3
+#define ADC3_DMA_STREAM DMA2_Stream1
 
 #define VBAT_ADC_PIN            PC1
 #define CURRENT_METER_ADC_PIN   PC2

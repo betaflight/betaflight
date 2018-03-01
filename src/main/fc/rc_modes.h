@@ -21,6 +21,8 @@
 
 #include "pg/pg.h"
 
+#define BOXID_NONE 255
+
 typedef enum {
     // ARM flag
     BOXARM = 0,
@@ -56,7 +58,7 @@ typedef enum {
     BOXSERVO3,
     BOXBLACKBOX,
     BOXAIRMODE,
-    BOX3DDISABLE,
+    BOX3D,
     BOXFPVANGLEMIX,
     BOXBLACKBOXERASE,
     BOXCAMERA1,
@@ -65,7 +67,6 @@ typedef enum {
     BOXFLIPOVERAFTERCRASH,
     BOXPREARM,
     BOXBEEPGPSCOUNT,
-    BOX3DONASWITCH,
     BOXVTXPITMODE,
     BOXUSER1,
     BOXUSER2,

@@ -31,6 +31,8 @@
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
+#include "flight/failsafe.h"
+
 #include "io/vtx.h"
 #include "io/vtx_string.h"
 #include "io/vtx_control.h"
@@ -106,7 +108,7 @@ static vtxSettingsConfig_t vtxGetSettings(void)
     }
 #endif
 
-    if (!ARMING_FLAG(ARMED) && settings.lowPowerDisarm) {
+    if (!ARMING_FLAG(ARMED) && settings.lowPowerDisarm && !failsafeIsActive()) {
         settings.power = VTX_SETTINGS_DEFAULT_POWER;
     }
 
