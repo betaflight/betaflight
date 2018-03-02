@@ -3672,6 +3672,7 @@ typedef struct {
 #endif
 
 #ifdef USE_GYRO_IMUF9001
+static void cliReportImufErrors(char *cmdline);
 static void cliImufUpdate(char *cmdline);
 #endif
 #ifdef MSD_ADDRESS
@@ -3722,6 +3723,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("gpspassthrough", "passthrough gps to serial", NULL, cliGpsPassthrough),
 #endif
 #ifdef USE_GYRO_IMUF9001
+    CLI_COMMAND_DEF("reportimuferrors", "report imu-f comm errors", NULL, cliReportImufErrors),
     CLI_COMMAND_DEF("imufupdate", "update imu-f's firmware", NULL, cliImufUpdate),
 #endif
 #ifdef MSD_ADDRESS
@@ -3781,6 +3783,13 @@ const clicmd_t cmdTable[] = {
 };
 
 #ifdef USE_GYRO_IMUF9001
+static void cliReportImufErrors(char *cmdline)
+{
+    UNUSED(cmdline);
+    cliPrintf("Current Comm Errors: %ul", imufCrcErrorCount);
+    cliPrintLinefeed();
+}
+
 static void cliImufUpdate(char *cmdline)
 {
     UNUSED(cmdline);
