@@ -72,7 +72,7 @@ void vtxCommonSetBandAndChannel(vtxDevice_t *vtxDevice, uint8_t band, uint8_t ch
 // index is zero origin, zero = power off completely
 void vtxCommonSetPowerByIndex(vtxDevice_t *vtxDevice, uint8_t index)
 {
-    if (index < vtxDevice->capability.powerCount) {
+    if (index <= vtxDevice->capability.powerCount) {
         vtxDevice->vTable->setPowerByIndex(vtxDevice, index);
     }
 }

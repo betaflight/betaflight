@@ -15,9 +15,12 @@
 
 #pragma once
 
+//OMNIBUSF7 TARGETS-------------------------
 #define USE_TARGET_CONFIG
-
-#ifdef OMNIBUSF7V2
+#if defined (FPVM_BETAFLIGHTF7)
+#define TARGET_BOARD_IDENTIFIER "FBF7"
+#define USBD_PRODUCT_STRING "FPVM_BETAFLIGHTF7"
+#elif defined (OMNIBUSF7V2)
 #define TARGET_BOARD_IDENTIFIER "OB72"
 #define USBD_PRODUCT_STRING "OmnibusF7V2"
 #else
@@ -25,15 +28,22 @@
 #define USBD_PRODUCT_STRING "OmnibusF7"
 #endif
 
+//LED & BEEPER------------------------------
 #define LED0_PIN                PE0
-
 #define BEEPER                  PD15
 #define BEEPER_INVERTED
 
+//CAMERA CONTROL----------------------------
+#ifdef FPVM_BETAFLIGHTF7
+//define camera control
+#define CAMERA_CONTROL_PIN      PC8 // Camera control.
+#endif
+
+
+//GYRO & ACC--------------------------------
 #define USE_ACC
 #define USE_GYRO
 #define USE_DUAL_GYRO
-
 // ICM-20608-G
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
@@ -48,7 +58,7 @@
 #define USE_GYRO_SPI_MPU6000
 //#define MPU_INT_EXTI            PD0
 
-#ifdef OMNIBUSF7V2
+#if defined(OMNIBUSF7V2) || defined(FPVM_BETAFLIGHTF7)
 #define MPU6000_CS_PIN          SPI1_NSS_PIN
 #define MPU6000_SPI_INSTANCE    SPI1
 #define MPU6500_CS_PIN          SPI3_NSS_PIN
@@ -57,6 +67,8 @@
 #define GYRO_0_CS_PIN           MPU6500_CS_PIN
 #define GYRO_MPU6500_ALIGN      CW90_DEG
 #define ACC_MPU6500_ALIGN       CW90_DEG
+#define GYRO_MPU6000_ALIGN      CW90_DEG
+#define ACC_MPU6000_ALIGN       CW90_DEG
 #else
 #define MPU6000_CS_PIN          SPI3_NSS_PIN
 #define MPU6000_SPI_INSTANCE    SPI3
@@ -68,9 +80,9 @@
 
 // TODO: dual gyro support
 //#define USE_MPU_DATA_READY_SIGNAL
-
 #define USE_EXTI
 
+//UARTS-------------------------------------
 #define USE_VCP
 #define VBUS_SENSING_PIN        PC4
 
@@ -109,6 +121,7 @@
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN  PA2 // (Unwired UART2_TX)
 
+//SPI---------------------------------------
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
@@ -135,13 +148,24 @@
 #define SPI4_MISO_PIN           PE5
 #define SPI4_MOSI_PIN           PE6
 
-
+//OSD----------------------------------------
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI2
 #define MAX7456_SPI_CS_PIN      SPI2_NSS_PIN
 #define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
+#ifdef FPVM_BETAFLIGHTF7
+//FLASH--------------------------------------
+#define M25P16_CS_PIN        SPI4_NSS_PIN
+#define M25P16_SPI_INSTANCE  SPI4
+
+#define USE_FLASHFS
+#define USE_FLASH_M25P16
+
+#else
+
+//SD-----------------------------------------
 #define USE_SDCARD
 #define SDCARD_DETECT_INVERTED
 #define SDCARD_DETECT_PIN                   PE3
@@ -156,12 +180,16 @@
 #define SDCARD_DMA_STREAM_TX_FULL           DMA2_Stream1
 #define SDCARD_DMA_CHANNEL                  4
 
+#endif
+
+//I2C---------------------------------------
 #define USE_I2C
 #define USE_I2C_DEVICE_2
 #define I2C_DEVICE              (I2CDEV_2)
 #define I2C2_SCL                NONE        // PB10 (UART3_TX)
 #define I2C2_SDA                NONE        // PB11 (UART3_RX)
 
+//BARO & Mag--------------------------------
 #define USE_BARO
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
@@ -172,7 +200,7 @@
 #define USE_MAG_HMC5883
 
 #define SENSORS_SET (SENSOR_ACC | SENSOR_BARO)
-
+//ADC---------------------------------------
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 
@@ -182,22 +210,34 @@
 #define VBAT_ADC_PIN            PC3
 #define RSSI_ADC_PIN            PC5
 
-#define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
+//DEFAULTS----------------------------------
 
 #define DEFAULT_FEATURES        (FEATURE_OSD)
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
+#ifdef FPVM_BETAFLIGHTF7
+#define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
+#define SERIALRX_UART           SERIAL_PORT_USART6
+#define SERIALRX_PROVIDER       SERIALRX_SBUS
+#define ESC_SENSOR_UART         SERIAL_PORT_USART1
+#else
+#define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #define SERIALRX_UART           SERIAL_PORT_USART2
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define ESC_SENSOR_UART         SERIAL_PORT_USART7
+#endif
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
-
+//PORT'S & TIMERS---------------------------
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff
 #define TARGET_IO_PORTC 0xffff
 #define TARGET_IO_PORTD 0xffff
 #define TARGET_IO_PORTE 0xffff
 
+#ifdef FPVM_BETAFLIGHTF7
+#define USABLE_TIMER_CHANNEL_COUNT 12
+#else
 #define USABLE_TIMER_CHANNEL_COUNT 11
+#endif
 
 #define USED_TIMERS  ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(9) )
