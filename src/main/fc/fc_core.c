@@ -926,15 +926,6 @@ static void subTaskMotorUpdate(timeUs_t currentTimeUs)
     DEBUG_SET(DEBUG_PIDLOOP, 2, micros() - startTime);
 }
 
-uint8_t setPidUpdateCountDown(void)
-{
-    if (gyroConfig()->gyro_soft_lpf_hz) {
-        return pidConfig()->pid_process_denom - 1;
-    } else {
-        return 1;
-    }
-}
-
 // Function for loop trigger
 void taskMainPidLoop(timeUs_t currentTimeUs)
 {
@@ -955,7 +946,7 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
     if (pidUpdateCountdown) {
         pidUpdateCountdown--;
     } else {
-        pidUpdateCountdown = setPidUpdateCountDown();
+        pidUpdateCountdown = pidConfig()->pid_process_denom - 1;
         subTaskPidController(currentTimeUs);
         subTaskMotorUpdate(currentTimeUs);
         subTaskMainSubprocesses(currentTimeUs);
