@@ -929,7 +929,7 @@ static void subTaskMotorUpdate(timeUs_t currentTimeUs)
 // Function for loop trigger
 void taskMainPidLoop(timeUs_t currentTimeUs)
 {
-    static uint8_t pidUpdateCountdown = 0;
+    static uint32_t pidUpdateCounter = 0;
 
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_GYROPID_SYNC)
     if (lockMainPID() != 0) return;
@@ -937,16 +937,13 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
 
     // DEBUG_PIDLOOP, timings for:
     // 0 - gyroUpdate()
-    // 1 - pidController()
+    // 1 - subTaskPidController()
     // 2 - subTaskMotorUpdate()
     // 3 - subTaskMainSubprocesses()
     gyroUpdate(currentTimeUs);
     DEBUG_SET(DEBUG_PIDLOOP, 0, micros() - currentTimeUs);
 
-    if (pidUpdateCountdown) {
-        pidUpdateCountdown--;
-    } else {
-        pidUpdateCountdown = pidConfig()->pid_process_denom - 1;
+    if (pidUpdateCounter++ % pidConfig()->pid_process_denom == 0) {
         subTaskPidController(currentTimeUs);
         subTaskMotorUpdate(currentTimeUs);
         subTaskMainSubprocesses(currentTimeUs);
