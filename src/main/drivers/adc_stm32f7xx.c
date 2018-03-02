@@ -43,10 +43,6 @@
 #define ADC_INSTANCE                ADC1
 #endif
 
-#ifndef ADC1_DMA_STREAM
-#define ADC1_DMA_STREAM DMA2_Stream4
-#endif
-
 const adcDevice_t adcHardware[] = {
     { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .DMAy_Streamx = ADC1_DMA_STREAM, .channel = DMA_CHANNEL_0 },
     { .ADCx = ADC2, .rccADC = RCC_APB2(ADC2), .DMAy_Streamx = ADC2_DMA_STREAM, .channel = DMA_CHANNEL_1 },
