@@ -75,6 +75,11 @@ static bool imuUpdated = false;
 
 #define SPIN_RATE_LIMIT 20
 
+#define ATTITUDE_RESET_QUIET_TIME 250000   // 250ms - gyro quiet period after disarm before attitude reset
+#define ATTITUDE_RESET_GYRO_LIMIT 15       // 15 deg/sec - gyro limit for quiet period
+#define ATTITUDE_RESET_KP_GAIN    25.0     // dcmKpGain value to use during attitude reset
+#define ATTITUDE_RESET_ACTIVE_TIME 500000  // 500ms - Time to wait for attitude to converge at high gain
+
 int32_t accSum[XYZ_AXIS_COUNT];
 
 uint32_t accTimeSum = 0;        // keep track for integration of acc
@@ -234,25 +239,10 @@ static float invSqrt(float x)
     return 1.0f / sqrtf(x);
 }
 
-static bool imuUseFastGains(void)
-{
-    return !ARMING_FLAG(ARMED) && millis() < 20000;
-}
-
-static float imuGetPGainScaleFactor(void)
-{
-    if (imuUseFastGains()) {
-        return 10.0f;
-    }
-    else {
-        return 1.0f;
-    }
-}
-
 static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
                                 bool useAcc, float ax, float ay, float az,
                                 bool useMag, float mx, float my, float mz,
-                                bool useYaw, float yawError)
+                                bool useYaw, float yawError, const float dcmKpGain)
 {
     static float integralFBx = 0.0f,  integralFBy = 0.0f, integralFBz = 0.0f;    // integral error terms scaled by Ki
 
@@ -331,9 +321,6 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
         integralFBz = 0.0f;
     }
 
-    // Calculate kP gain. If we are acquiring initial attitude (not armed and within 20 sec from powerup) scale the kP to converge faster
-    const float dcmKpGain = imuRuntimeConfig.dcm_kp * imuGetPGainScaleFactor();
-
     // Apply proportional and integral feedback
     gx += dcmKpGain * ex + integralFBx;
     gy += dcmKpGain * ey + integralFBy;
@@ -407,6 +394,71 @@ static bool imuIsAccelerometerHealthy(void)
     return (81 < accMagnitude) && (accMagnitude < 121);
 }
 
+// Calculate the dcmKpGain to use. When armed, the gain is imuRuntimeConfig.dcm_kp * 1.0 scaling.
+// When disarmed after initial boot, the scaling is set to 10.0 for the first 20 seconds to speed up initial convergence.
+// After disarming we want to quickly reestablish convergence to deal with the attitude estimation being incorrect due to a crash.
+//   - wait for a 250ms period of low gyro activity to ensure the craft is not moving
+//   - use a large dcmKpGain value for 500ms to allow the attitude estimate to quickly converge
+//   - reset the gain back to the standard setting
+float imuCalcKpGain(timeUs_t currentTimeUs, bool useAcc, float *gyroAverage)
+{
+    static bool lastArmState = false;
+    static timeUs_t gyroQuietPeriodTimeEnd = 0;
+    static timeUs_t attitudeResetTimeEnd = 0;
+    static bool attitudeResetCompleted = false;
+    float ret;
+    bool attitudeResetActive = false;
+
+    const bool armState = ARMING_FLAG(ARMED);
+
+    if (!armState) {
+        if (lastArmState) {   // Just disarmed; start the gyro quiet period
+            gyroQuietPeriodTimeEnd = currentTimeUs + ATTITUDE_RESET_QUIET_TIME;
+            attitudeResetTimeEnd = 0;
+            attitudeResetCompleted = false;
+        }
+
+        // If gyro activity exceeds the threshold then restart the quiet period.
+        // Also, if the attitude reset has been complete and there is subsequent gyro activity then
+        // start the reset cycle again. This addresses the case where the pilot rights the craft after a crash.
+        if ((attitudeResetTimeEnd > 0) || (gyroQuietPeriodTimeEnd > 0) || attitudeResetCompleted) {
+            if ((fabsf(gyroAverage[X]) > ATTITUDE_RESET_GYRO_LIMIT)
+                || (fabsf(gyroAverage[Y]) > ATTITUDE_RESET_GYRO_LIMIT)
+                || (fabsf(gyroAverage[Z]) > ATTITUDE_RESET_GYRO_LIMIT)
+                || (!useAcc)) {  
+
+                gyroQuietPeriodTimeEnd = currentTimeUs + ATTITUDE_RESET_QUIET_TIME;
+                attitudeResetTimeEnd = 0;
+            }            
+        }
+        if (attitudeResetTimeEnd > 0) {        // Resetting the attitude estimation
+            if (currentTimeUs >= attitudeResetTimeEnd) {
+                gyroQuietPeriodTimeEnd = 0;
+                attitudeResetTimeEnd = 0;
+                attitudeResetCompleted = true;
+            } else {
+                attitudeResetActive = true;
+            }
+        } else if ((gyroQuietPeriodTimeEnd > 0) && (currentTimeUs >= gyroQuietPeriodTimeEnd)) {   
+            // Start the high gain period to bring the estimation into convergence
+            attitudeResetTimeEnd = currentTimeUs + ATTITUDE_RESET_ACTIVE_TIME;
+            gyroQuietPeriodTimeEnd = 0;
+        }
+    }
+    lastArmState = armState;
+    
+    if (attitudeResetActive) {
+        ret = ATTITUDE_RESET_KP_GAIN;
+    } else {
+       ret = imuRuntimeConfig.dcm_kp;
+       if (!armState) {
+          ret = ret * 10.0f; // Scale the kP to generally converge faster when disarmed.
+       }
+    }
+
+    return ret;
+}
+
 static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 {
     static timeUs_t previousIMUUpdateTime;
@@ -453,11 +505,12 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     if (!accGetAccumulationAverage(accAverage)) {
         useAcc = false;
     }
+
     imuMahonyAHRSupdate(deltaT * 1e-6f,
                         DEGREES_TO_RADIANS(gyroAverage[X]), DEGREES_TO_RADIANS(gyroAverage[Y]), DEGREES_TO_RADIANS(gyroAverage[Z]),
                         useAcc, accAverage[X], accAverage[Y], accAverage[Z],
                         useMag, mag.magADC[X], mag.magADC[Y], mag.magADC[Z],
-                        useYaw, rawYawError);
+                        useYaw, rawYawError, imuCalcKpGain(currentTimeUs, useAcc, gyroAverage));
 
     imuUpdateEulerAngles();
 #endif
