@@ -728,7 +728,7 @@ static bool osdDrawSingleElement(uint8_t item)
             const float value = constrain(batteryConfig()->batteryCapacity - getMAhDrawn(), 0, batteryConfig()->batteryCapacity);
 
             // Calculate mAh used progress
-            const uint8_t mAhUsedProgress = ceil((value / (batteryConfig()->batteryCapacity / MAIN_BATT_USAGE_STEPS)));
+            const uint8_t mAhUsedProgress = ceilf((value / (batteryConfig()->batteryCapacity / MAIN_BATT_USAGE_STEPS)));
 
             // Create empty battery indicator bar
             buff[0] = SYM_PB_START;

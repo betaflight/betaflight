@@ -11,6 +11,7 @@ COMMON_SRC = \
             common/huffman.c \
             common/huffman_table.c \
             common/maths.c \
+            common/explog_approx.c \
             common/printf.c \
             common/streambuf.c \
             common/string_light.c \
