@@ -238,7 +238,7 @@ void spiPreInit(void)
 #ifdef USE_MAG_SPI_AK8963
     spiPreInitCs(IO_TAG(AK8963_CS_PIN));
 #endif
-#if defined(USE_VTX_RTC6705)
+#if defined(RTC6705_CS_PIN) && !defined(USE_VTX_RTC6705_SOFTSPI) // RTC6705 soft SPI initialisation handled elsewhere.
     spiPreInitCs(IO_TAG(RTC6705_CS_PIN));
 #endif
 #ifdef USE_FLASH_M25P16
