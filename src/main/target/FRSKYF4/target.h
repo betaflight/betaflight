@@ -20,7 +20,8 @@
 #define USE_TARGET_CONFIG
 
 #define LED0_PIN                PB5
-#define BEEPER                  PB4
+#define USE_BEEPER
+#define BEEPER_PIN              PB4
 #define BEEPER_INVERTED
 
 #define INVERTER_PIN_UART6      PC8

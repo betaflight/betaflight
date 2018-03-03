@@ -33,9 +33,11 @@
 #endif
 
 #ifdef LUXV2_RACE
-#define BEEPER                  PB9
+#define USE_BEEPER
+#define BEEPER_PIN              PB9
 #else
-#define BEEPER                  PB13
+#define USE_BEEPER
+#define BEEPER_PIN              PB13
 #endif
 #define BEEPER_INVERTED
 

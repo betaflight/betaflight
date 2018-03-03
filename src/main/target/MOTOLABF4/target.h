@@ -31,7 +31,8 @@
 #define LED0_PIN                PC3
 //#define LED1                    PC4
 
-#define BEEPER                  PB4
+#define USE_BEEPER
+#define BEEPER_PIN              PB4
 #define BEEPER_INVERTED
 
 #define MPU6000_CS_PIN          PA4

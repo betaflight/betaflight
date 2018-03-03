@@ -22,7 +22,8 @@
 
 #define LED0_PIN                PB4
 
-#define BEEPER                  PB3
+#define USE_BEEPER
+#define BEEPER_PIN              PB3
 #define BEEPER_INVERTED
 
 #define ENABLE_DSHOT_DMAR       true
