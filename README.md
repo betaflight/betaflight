@@ -1,4 +1,5 @@
-![Important Notice: Support for STM32F1 based flight controllers has been dropped in Betaflight release 3.3. This includes NAZE, CC3D (original) and CJMCU like flight controllers](https://raw.githubusercontent.com/wiki/betaflight/betaflight/images/betaflight/bf3_3_notice.png)
+![Important Notice: Support for STM32F1 based flight controllers has been dropped in Betaflight release 3.3. This includes NAZE, CC3D (original) and CJMCU like flight controllers](https://raw.githubusercontent.com/wiki/betaflight/betaflight/images/betaflight/stm32f1_support_notice.png)
+
 
 ![Betaflight](https://raw.githubusercontent.com/wiki/betaflight/betaflight/images/betaflight/bf_logo.png)
 

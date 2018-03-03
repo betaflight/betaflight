@@ -77,6 +77,7 @@
 
 #include "pg/adc.h"
 #include "pg/bus_i2c.h"
+#include "pg/bus_spi.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/vcd.h"
@@ -116,6 +117,20 @@ static IO_t busSwitchResetPin        = IO_NONE;
 
     // ENABLE
     IOLo(busSwitchResetPin);
+}
+#endif
+
+
+#ifdef USE_SPI
+// Pre-initialize all CS pins to input with pull-up.
+// It's sad that we can't do this with an initialized array,
+// since we will be taking care of configurable CS pins shortly.
+
+void spiPreInit(void)
+{
+#ifdef USE_MAX7456
+    spiPreInitCs(IO_TAG(MAX7456_SPI_CS_PIN));
+#endif
 }
 #endif
 
@@ -186,6 +201,11 @@ void init(void)
 #else
 
 #ifdef USE_SPI
+    spiPinConfigure(spiPinConfig());
+
+    // Initialize CS lines and keep them high
+    spiPreInit();
+
 #ifdef USE_SPI_DEVICE_1
     spiInit(SPIDEV_1);
 #endif

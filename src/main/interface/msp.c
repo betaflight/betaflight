@@ -1773,6 +1773,9 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         {
             const uint8_t command = sbufReadU8(src);
             uint8_t disableRunawayTakeoff = 0;
+#ifndef USE_RUNAWAY_TAKEOFF
+            UNUSED(disableRunawayTakeoff);
+#endif
             if (sbufBytesRemaining(src)) {
                 disableRunawayTakeoff = sbufReadU8(src);
             }
