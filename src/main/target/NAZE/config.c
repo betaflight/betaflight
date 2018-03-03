@@ -89,7 +89,7 @@ void targetConfiguration(void)
 
         controlRateConfig->rcRates[FD_ROLL] = 100;
         controlRateConfig->rcRates[FD_PITCH] = 100;
-        controlRateConfig->rcRate[FD_YAW] = 110;
+        controlRateConfig->rcRates[FD_YAW] = 110;
         controlRateConfig->rcExpo[FD_ROLL] = 0;
         controlRateConfig->rcExpo[FD_PITCH] = 0;
         controlRateConfig->rates[FD_ROLL] = 77;
