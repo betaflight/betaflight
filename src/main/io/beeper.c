@@ -168,6 +168,8 @@ static uint8_t beep_multiBeeps[MAX_MULTI_BEEPS + 1];
 // Beeper off = 0 Beeper on = 1
 static uint8_t beeperIsOn = 0;
 
+static uint8_t beeperRxSet = 0;
+
 // Place in current sequence
 static uint16_t beeperPos = 0;
 // Time when beeper routine must act next time
@@ -371,6 +373,10 @@ void beeperUpdate(timeUs_t currentTimeUs)
     // If beeper option from AUX switch has been selected
     if (IS_RC_MODE_ACTIVE(BOXBEEPERON)) {
         beeper(BEEPER_RX_SET);
+        beeperRxSet = 1;
+    } else if (beeperRxSet) {
+        beeperSilence();
+        beeperRxSet = 0;
 #ifdef USE_GPS
     } else if (feature(FEATURE_GPS) && IS_RC_MODE_ACTIVE(BOXBEEPGPSCOUNT)) {
         beeperGpsStatus();
