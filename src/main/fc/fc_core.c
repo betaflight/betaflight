@@ -280,7 +280,7 @@ void disarm(void)
         DISABLE_ARMING_FLAG(ARMED);
 
 #ifdef USE_BLACKBOX
-        if (blackboxConfig()->device) {
+        if (blackboxConfig()->device && blackboxConfig()->mode != BLACKBOX_MODE_ALWAYS_ON) { // Close the log upon disarm except when logging mode is ALWAYS ON
             blackboxFinish();
         }
 #endif
