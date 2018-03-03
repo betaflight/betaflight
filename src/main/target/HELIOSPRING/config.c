@@ -31,8 +31,10 @@
 
 void targetConfiguration(void) {
     voltageSensorADCConfigMutable(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale = VBAT_SCALE;
-    rxConfigMutable()->rcInterpolation = 0;
-    motorConfigMutable()->dev.motorPwmProtocol = PWM_TYPE_DSHOT600;
+    rxConfigMutable()->rcInterpolation = 3;
+    rxConfigMutable()->rcInterpolationInterval = 14;
+    rxConfigMutable()->rcInterpolationChannels = 2;
+    motorConfigMutable()->dev.motorPwmProtocol = PWM_TYPE_MULTISHOT;
     pidConfigMutable()->pid_process_denom = 1; // 16kHz PID
     gyroConfigMutable()->gyro_use_32khz = 1;
     gyroConfigMutable()->gyro_sync_denom = 2;  // 16kHz gyro
@@ -46,13 +48,13 @@ void targetConfiguration(void) {
         /* Setpoints */
         pidProfile->dtermSetpointWeight = 100;
         pidProfile->setpointRelaxRatio = 100; // default to snappy for racers
-        pidProfile->itermAcceleratorGain = 3500;
+        pidProfile->itermAcceleratorGain = 5000;
         // should't need to set these since they don't get init in gyro.c with USE_GYRO_IMUF
         // pidProfile->yaw_lpf_hz = 0;
         // pidProfile->dterm_lpf_hz = 0;    
         // pidProfile->dterm_notch_hz = 0;
         // pidProfile->dterm_notch_cutoff = 0;
-        pidProfile->dterm_filter_type = FILTER_PT1;
+        pidProfile->dterm_filter_type = FILTER_BIQUAD;
     }
 }
 
