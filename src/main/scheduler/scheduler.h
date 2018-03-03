@@ -64,7 +64,7 @@ typedef enum {
     TASK_BATTERY_VOLTAGE,
     TASK_BATTERY_CURRENT,
     TASK_BATTERY_ALERTS,
-#ifdef BEEPER
+#ifdef USE_BEEPER
     TASK_BEEPER,
 #endif
 #ifdef USE_GPS

@@ -40,7 +40,7 @@ loadDmaBufferFn *loadDmaBuffer;
 static pwmOutputPort_t servos[MAX_SUPPORTED_SERVOS];
 #endif
 
-#ifdef BEEPER
+#ifdef USE_BEEPER
 static pwmOutputPort_t beeperPwm;
 static uint16_t freqBeep = 0;
 #endif
@@ -303,7 +303,11 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
         }
 #endif
 
+#if defined(STM32F1)
+        IOConfigGPIO(motors[motorIndex].io, IOCFG_AF_PP);
+#else
         IOConfigGPIOAF(motors[motorIndex].io, IOCFG_AF_PP, timerHardware->alternateFunction);
+#endif
 
         /* standard PWM outputs */
         // margin of safety is 4 periods when unsynced
@@ -460,7 +464,7 @@ void servoDevInit(const servoDevConfig_t *servoConfig)
 
 #endif
 
-#ifdef BEEPER
+#ifdef USE_BEEPER
 void pwmWriteBeeper(bool onoffBeep)
 {
         if (!beeperPwm.io)

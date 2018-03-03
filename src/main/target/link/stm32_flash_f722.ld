@@ -33,9 +33,12 @@ MEMORY
     FLASH1 (rx)       : ORIGIN = 0x08008000, LENGTH = 480K
 
     TCM (rwx)         : ORIGIN = 0x20000000, LENGTH = 64K
-    RAM (rwx)         : ORIGIN = 0x20010000, LENGTH = 192K
+    SRAM1 (rwx)       : ORIGIN = 0x20010000, LENGTH = 176K
+    SRAM2 (rwx)       : ORIGIN = 0x2003C000, LENGTH = 16K
     MEMORY_B1 (rx)    : ORIGIN = 0x60000000, LENGTH = 0K
 }
+
+REGION_ALIAS("RAM", SRAM1)
 
 /* note TCM could be used for stack */
 REGION_ALIAS("STACKRAM", TCM)

@@ -29,7 +29,7 @@
 
 #include "telemetry/srxl.h"
 
-static displayPort_t srxlDisplayPort;
+displayPort_t srxlDisplayPort;
 
 static int srxlDrawScreen(displayPort_t *displayPort)
 {

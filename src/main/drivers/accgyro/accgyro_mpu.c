@@ -183,23 +183,6 @@ bool mpuGyroRead(gyroDev_t *gyro)
     return true;
 }
 
-gyroOverflow_e mpuGyroCheckOverflow(const gyroDev_t *gyro)
-{
-    // we cannot detect overflow directly, so assume overflow if absolute gyro rate is large
-    gyroOverflow_e ret = GYRO_OVERFLOW_NONE;
-    const int16_t overflowValue = 0x7C00; // this is a slightly conservative value, could probably be as high as 0x7FF0
-    if (gyro->gyroADCRaw[X] > overflowValue || gyro->gyroADCRaw[X] < -overflowValue) {
-        ret |= GYRO_OVERFLOW_X;
-    }
-    if (gyro->gyroADCRaw[Y] > overflowValue || gyro->gyroADCRaw[Y] < -overflowValue) {
-        ret |= GYRO_OVERFLOW_Y;
-    }
-    if (gyro->gyroADCRaw[Z] > overflowValue || gyro->gyroADCRaw[Z] < -overflowValue) {
-        ret |= GYRO_OVERFLOW_Z;
-    }
-    return ret;
-}
-
 bool mpuGyroReadSPI(gyroDev_t *gyro)
 {
     static const uint8_t dataToSend[7] = {MPU_RA_GYRO_XOUT_H | 0x80, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};

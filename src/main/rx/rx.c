@@ -438,6 +438,11 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
             auxiliaryProcessingRequired = true;
         }
     }
+
+    if (cmpTimeUs(currentTimeUs, rxNextUpdateAtUs) > 0) {
+        rxDataProcessingRequired = true;
+    }
+
     return rxDataProcessingRequired || auxiliaryProcessingRequired; // data driven or 50Hz
 }
 
