@@ -281,6 +281,8 @@ static const char * const lookupOverclock[] = {
     "192MHZ", "216MHZ", "240MHZ"
 #elif defined(STM32F411xE)
     "108MHZ", "120MHZ"
+#elif defined(STM32F7)
+    "240MHZ"
 #endif
 };
 #endif

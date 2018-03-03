@@ -25,21 +25,23 @@
   ******************************************************************************
   */
 
-#ifndef __SYSTEM_STM32F7XX_H
-#define __SYSTEM_STM32F7XX_H
+#ifndef __TARGET_SYSTEM_STM32F7XX_H
+#define __TARGET_SYSTEM_STM32F7XX_H
 
 #ifdef __cplusplus
  extern "C" {
 #endif
 
 extern uint32_t SystemCoreClock;          /*!< System Clock Frequency (Core Clock) */
+extern void SystemInitOC(void);
 extern void SystemInit(void);
 extern void SystemClock_Config(void);
+extern void OverclockRebootIfNecessary(uint32_t overclockLevel);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /*__SYSTEM_STM32F7XX_H */
+#endif /*__TARGET_SYSTEM_STM32F7XX_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
