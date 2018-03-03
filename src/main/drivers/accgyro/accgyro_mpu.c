@@ -140,14 +140,13 @@ static void mpuIntExtiInit(gyroDev_t *gyro)
     EXTIHandlerInit(&gyro->exti, mpuIntExtiHandler);
     EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, IO_CONFIG(GPIO_MODE_INPUT,0,GPIO_NOPULL));   // TODO - maybe pullup / pulldown ?
 #else
-
     IOInit(mpuIntIO, OWNER_MPU_EXTI, 0);
     IOConfigGPIO(mpuIntIO, IOCFG_IN_FLOATING);   // TODO - maybe pullup / pulldown ?
 
     EXTIHandlerInit(&gyro->exti, mpuIntExtiHandler);
     EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, EXTI_Trigger_Rising);
-    EXTIEnable(mpuIntIO, true);
 #endif
+    EXTIEnable(mpuIntIO, true);
 }
 #endif // MPU_INT_EXTI
 
