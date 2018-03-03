@@ -58,7 +58,7 @@ mag_t mag;                   // mag access functions
 #define COMPASS_INTERRUPT_TAG   IO_TAG_NONE
 #endif
 
-PG_REGISTER_WITH_RESET_FN(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 0);
+PG_REGISTER_WITH_RESET_FN(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 1);
 
 void pgResetFn_compassConfig(compassConfig_t *compassConfig)
 {
