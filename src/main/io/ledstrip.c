@@ -1014,7 +1014,9 @@ typedef enum {
 } timId_e;
 
 static timeUs_t timerVal[timTimerCount];
-static bool requiredTimerLayer[timTimerCount];
+static uint16_t disabledTimerMask;
+
+STATIC_ASSERT(timTimerCount <= sizeof(disabledTimerMask) * 8, disabledTimerMask_too_small);
 
 // function to apply layer.
 // function must replan self using timer pointer
@@ -1055,16 +1057,14 @@ bool isOverlayTypeUsed(ledOverlayId_e overlayType)
 
 void updateRequiredOverlay(void)
 {
-    for (int timID = 0; timID < timTimerCount; timID++) {
-        requiredTimerLayer[timID] = true;
-    }
-    requiredTimerLayer[timBlink] = isOverlayTypeUsed(LED_OVERLAY_BLINK);
-    requiredTimerLayer[timLarson] = isOverlayTypeUsed(LED_OVERLAY_LARSON_SCANNER);
-    requiredTimerLayer[timWarning] = isOverlayTypeUsed(LED_OVERLAY_WARNING);
+    disabledTimerMask = 0;
+    disabledTimerMask |= !isOverlayTypeUsed(LED_OVERLAY_BLINK) << timBlink;
+    disabledTimerMask |= !isOverlayTypeUsed(LED_OVERLAY_LARSON_SCANNER) << timLarson;
+    disabledTimerMask |= !isOverlayTypeUsed(LED_OVERLAY_WARNING) << timWarning;
 #ifdef USE_VTX_COMMON
-    requiredTimerLayer[timVtx] = isOverlayTypeUsed(LED_OVERLAY_VTX);
+    disabledTimerMask |= !isOverlayTypeUsed(LED_OVERLAY_VTX) << timVtx;
 #endif
-    requiredTimerLayer[timIndicator] = isOverlayTypeUsed(LED_OVERLAY_INDICATOR);
+    disabledTimerMask |= !isOverlayTypeUsed(LED_OVERLAY_INDICATOR) << timIndicator;
 }
 
 void ledStripUpdate(timeUs_t currentTimeUs)
@@ -1087,7 +1087,7 @@ void ledStripUpdate(timeUs_t currentTimeUs)
     // test all led timers, setting corresponding bits
     uint32_t timActive = 0;
     for (timId_e timId = 0; timId < timTimerCount; timId++) {
-        if (requiredTimerLayer[timId]) {
+        if (!(disabledTimerMask & (1 << timId))) {
             // sanitize timer value, so that it can be safely incremented. Handles inital timerVal value.
             const timeDelta_t delta = cmpTimeUs(now, timerVal[timId]);
             // max delay is limited to 5s
