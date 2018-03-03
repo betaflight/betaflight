@@ -39,8 +39,7 @@
     #define LED1_PIN                        PB2
 #endif
 
-#define USE_BEEPER
-#define BEEPER_PIN                          PC15
+#define BEEPER                              PC15
 #define BEEPER_INVERTED
 
 #if (SPRACINGF4NEO_REV >= 2)

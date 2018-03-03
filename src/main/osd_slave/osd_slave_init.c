@@ -188,7 +188,7 @@ void init(void)
 
     serialInit(false, SERIAL_PORT_NONE);
 
-#ifdef USE_BEEPER
+#ifdef BEEPER
     beeperInit(beeperDevConfig());
 #endif
 /* temp until PGs are implemented. */

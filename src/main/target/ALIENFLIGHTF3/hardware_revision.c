@@ -40,7 +40,7 @@ void detectHardwareRevision(void)
     IOInit(HWDetectPin, OWNER_SYSTEM, 0);
     IOConfigGPIO(HWDetectPin, IOCFG_IPU);
 
-    RXDetectPin = IOGetByTag(IO_TAG(BEEPER_PIN));
+    RXDetectPin = IOGetByTag(IO_TAG(BEEPER));
     IOInit(RXDetectPin, OWNER_SYSTEM, 0);
     IOConfigGPIO(RXDetectPin, IOCFG_IPU);
 

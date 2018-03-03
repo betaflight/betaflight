@@ -39,8 +39,7 @@
 #define LED1_PIN                PB4
 #endif
 
-#define USE_BEEPER
-#define BEEPER_PIN              PA8
+#define BEEPER                  PA8
 
 #define INVERTER_PIN_UART1      PC0 // PC0 used as inverter select GPIO
 

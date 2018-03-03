@@ -17,7 +17,7 @@
 
 #include <platform.h>
 
-#ifdef USE_BEEPER
+#ifdef BEEPER
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"

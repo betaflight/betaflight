@@ -30,8 +30,7 @@
 #define LED0_PIN    PB4
 #define LED1_PIN    PB5
 
-#define USE_BEEPER
-#define BEEPER_PIN  PA0
+#define BEEPER      PA0
 #define BEEPER_INVERTED
 
 #define USE_EXTI

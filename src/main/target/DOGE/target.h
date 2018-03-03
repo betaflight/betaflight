@@ -28,8 +28,7 @@
 // tqfp48 pin 38
 #define LED2_PIN                PA15
 
-#define USE_BEEPER
-#define BEEPER_PIN              PB2
+#define BEEPER                  PB2
 #define BEEPER_INVERTED
 
 #define USE_SPI

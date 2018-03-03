@@ -23,8 +23,7 @@
 
 #define LED0_PIN                PB5 // Blue LED - PB5
 
-#define USE_BEEPER
-#define BEEPER_PIN              PA0
+#define BEEPER                  PA0
 
 // MPU6050 interrupts
 #define USE_EXTI
