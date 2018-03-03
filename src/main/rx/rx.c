@@ -287,7 +287,7 @@ bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
 
 void rxInit(void)
 {
-    dbgPrintf(DBG_INIT, 0, "rxInit()\n");
+    dbgPrintf(DBG_RX, 0, "rxInit()\n");
     rxRuntimeConfig.rcReadRawFn = nullReadRawRC;
     rxRuntimeConfig.rcFrameStatusFn = nullFrameStatus;
     rxRuntimeConfig.rcProcessFrameFn = nullProcessFrame;
@@ -718,7 +718,7 @@ void updateRSSI(timeUs_t currentTimeUs)
 
 uint16_t getRssi(void)
 {
-    dbgPrintf(DBG_RX, 2, "getRssi %d\n", rssi);
+    dbgPrintf(DBG_RX, 5, "getRssi %d\n", rssi);
     return rssi;
 }
 

@@ -67,7 +67,7 @@ const char * const debugModeNames[DEBUG_COUNT] = {
 
 #ifdef SEGGER_RTT
 // Debug mask and levels
-static uint64_t dbgMsk = DBG_MSK(DBG_SYSTEM) | DBG_MSK(DBG_INIT);
+static uint64_t dbgMsk = DBG_MSK(DBG_SYSTEM) | DBG_MSK(DBG_INIT) | DBG_MSK(DBG_RX);
 static uint8_t  dbgLvl = 3;
 
 // Initialise debug output stream
