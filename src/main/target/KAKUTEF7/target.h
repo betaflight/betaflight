@@ -22,8 +22,7 @@
 
 #define LED0_PIN                PA2
 
-#define USE_BEEPER
-#define BEEPER_PIN              PD15
+#define BEEPER                  PD15
 #define BEEPER_INVERTED
 
 #define USE_ACC

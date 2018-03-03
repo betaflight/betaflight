@@ -40,8 +40,7 @@
 #define LED1_PIN                PE10 // Orange LEDs - PE10/PE14
 #define LED1_INVERTED
 
-#define USE_BEEPER
-#define BEEPER_PIN              PD12
+#define BEEPER                  PD12
 #define BEEPER_PWM_HZ           2000  // Beeper PWM frequency in Hz
 
 #define USE_SPI

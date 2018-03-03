@@ -21,8 +21,7 @@
 #define USBD_PRODUCT_STRING "CLRACINGF7"
 
 #define LED0_PIN                PB0
-#define USE_BEEPER
-#define BEEPER_PIN              PB4
+#define BEEPER                  PB4
 #define BEEPER_INVERTED
 
 //define camera control

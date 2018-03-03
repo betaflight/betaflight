@@ -56,21 +56,17 @@
 
 // Disable LED1, conflicts with AirbotF4/Flip32F4/Revolt beeper
 #if defined(AIRBOTF4) || defined(AIRBOTF4SD)
-#define USE_BEEPER
-#define BEEPER_PIN              PB4
+#define BEEPER                  PB4
 #define BEEPER_INVERTED
 #elif defined(REVOLT)
-#define USE_BEEPER
-#define BEEPER_PIN              PB4
+#define BEEPER                  PB4
 #elif defined(SOULF4)
-#define USE_BEEPER
-#define BEEPER_PIN              PB6
+#define BEEPER                  PB6
 #define BEEPER_INVERTED
 #else
 #define LED1_PIN                PB4
 // Leave beeper here but with none as io - so disabled unless mapped.
-#define USE_BEEPER
-#define BEEPER_PIN              NONE
+#define BEEPER                  NONE
 #endif
 
 #if defined(REVOLT)

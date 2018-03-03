@@ -2057,7 +2057,7 @@ static void cliFeature(char *cmdline)
     }
 }
 
-#ifdef USE_BEEPER
+#ifdef BEEPER
 static void printBeeper(uint8_t dumpMask, const beeperConfig_t *beeperConfig, const beeperConfig_t *beeperConfigDefault)
 {
     const uint8_t beeperCount = beeperTableEntryCount();
@@ -3162,7 +3162,7 @@ typedef struct {
 } cliResourceValue_t;
 
 const cliResourceValue_t resourceTable[] = {
-#ifdef USE_BEEPER
+#ifdef BEEPER
     { OWNER_BEEPER,        PG_BEEPER_DEV_CONFIG, offsetof(beeperDevConfig_t, ioTag), 0 },
 #endif
     { OWNER_MOTOR,         PG_MOTOR_CONFIG, offsetof(motorConfig_t, dev.ioTags[0]), MAX_SUPPORTED_MOTORS },
@@ -3557,7 +3557,7 @@ static void printConfig(char *cmdline, bool doDiff)
         cliPrintHashLine("feature");
         printFeature(dumpMask, &featureConfig_Copy, featureConfig());
 
-#ifdef USE_BEEPER
+#ifdef BEEPER
         cliPrintHashLine("beeper");
         printBeeper(dumpMask, &beeperConfig_Copy, beeperConfig());
 #endif
@@ -3677,7 +3677,7 @@ static void cliHelp(char *cmdline);
 const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("adjrange", "configure adjustment ranges", NULL, cliAdjustmentRange),
     CLI_COMMAND_DEF("aux", "configure modes", "<index> <mode> <aux> <start> <end> <logic>", cliAux),
-#ifdef USE_BEEPER
+#ifdef BEEPER
     CLI_COMMAND_DEF("beeper", "turn on/off beeper", "list\r\n"
         "\t<+|->[name]", cliBeeper),
 #endif

@@ -30,8 +30,7 @@
 #define LED0_PIN                PA14 // Red LED
 #define LED1_PIN                PA13 // Green LED
 
-#define USE_BEEPER
-#define BEEPER_PIN              PC1
+#define BEEPER                  PC1
 
 #define INVERTER_PIN_UART1      PB13
 #define INVERTER_PIN_UART6      PB12

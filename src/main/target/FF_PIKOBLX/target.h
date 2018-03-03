@@ -38,8 +38,7 @@
 #define LED0_PIN                PB9
 #define LED1_PIN                PB5
 
-#define USE_BEEPER
-#define BEEPER_PIN              PA0
+#define BEEPER                  PA0
 #define BEEPER_INVERTED
 
 // MPU6000 interrupts

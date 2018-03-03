@@ -29,8 +29,7 @@
 #define LED0_PIN                PC14
 #define LED1_PIN                PC13
 
-#define USE_BEEPER
-#define BEEPER_PIN              PC5
+#define BEEPER                  PC5
 
 #define INVERTER_PIN_UART2      PB2 // PB2 used as inverter select GPIO
 

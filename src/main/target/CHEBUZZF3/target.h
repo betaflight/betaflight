@@ -29,8 +29,7 @@
 #define LED1_PIN                PE10  // Orange LEDs - PE10/PE14
 #define LED1_INVERTED
 
-#define USE_BEEPER
-#define BEEPER_PIN              PE9 // Red LEDs - PE9/PE13
+#define BEEPER                  PE9 // Red LEDs - PE9/PE13
 #define BEEPER_INVERTED
 
 #define USE_SPI

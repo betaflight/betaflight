@@ -29,8 +29,7 @@
 #define LED1   PC8 // blingbling
 #define LED1_INVERTED
 
-#define USE_BEEPER
-#define BEEPER_PIN              PC9
+#define BEEPER   PC9
 #define BEEPER_INVERTED
 
 #define MPU6000_CS_PIN          PB12

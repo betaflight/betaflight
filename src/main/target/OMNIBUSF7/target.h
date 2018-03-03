@@ -30,9 +30,7 @@
 
 //LED & BEEPER------------------------------
 #define LED0_PIN                PE0
-
-#define USE_BEEPER
-#define BEEPER_PIN              PD15
+#define BEEPER                  PD15
 #define BEEPER_INVERTED
 
 //CAMERA CONTROL----------------------------

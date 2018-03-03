@@ -57,8 +57,7 @@
 
 /* Lost Quad Mode and Alerts - RCX03-787 Low Voltage Active Buzzer
  */
-#define USE_BEEPER
-#define BEEPER_PIN             PA2
+#define BEEPER                 PA2
 #define BEEPER_INVERTED
 
 /* Serial Peripheral Interface (SPI) - Up to 50 Mbit/s on F7

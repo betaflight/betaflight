@@ -20,8 +20,7 @@
 #define TARGET_BOARD_IDENTIFIER "SIRF"
 
 #define LED0_PIN                PB2
-#define USE_BEEPER
-#define BEEPER_PIN              PA1
+#define BEEPER                  PA1
 
 
 #define USE_EXTI

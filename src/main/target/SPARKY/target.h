@@ -24,8 +24,7 @@
 #define LED0_PIN                PB4  // Blue (Rev 1 & 2) - PB4
 #define LED1_PIN                PB5  // Green (Rev 1) / Red (Rev 2) - PB5
 
-#define USE_BEEPER
-#define BEEPER_PIN              PA1
+#define BEEPER                  PA1
 #define BEEPER_INVERTED
 
 // MPU6050 interrupts

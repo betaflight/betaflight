@@ -23,8 +23,7 @@
 #define LED0_PIN                PB9
 #define LED1_PIN                PA14
 
-#define USE_BEEPER
-#define BEEPER_PIN              PC13
+#define BEEPER                  PC13
 #define BEEPER_INVERTED
 
 #define ENABLE_DSHOT_DMAR       true

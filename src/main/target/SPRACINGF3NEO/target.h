@@ -33,8 +33,7 @@
 #define LED0_PIN                PB9
 #define LED1_PIN                PB2
 
-#define USE_BEEPER
-#define BEEPER_PIN              PC15
+#define BEEPER                  PC15
 #define BEEPER_INVERTED
 
 #define USE_EXTI

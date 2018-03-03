@@ -21,8 +21,7 @@
 
 #define LED0_PIN                PB5
 
-#define USE_BEEPER
-#define BEEPER_PIN              PC14
+#define BEEPER                  PC14
 
 #define USE_GYRO
 #define USE_GYRO_MPU6050

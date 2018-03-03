@@ -23,8 +23,7 @@
 #define LED0_PIN                PC13
 #define LED1_PIN                PC14
 
-#define USE_BEEPER
-#define BEEPER_PIN              PB2
+#define BEEPER                  PB2
 #define BEEPER_INVERTED
 
 // *************** Gyro & ACC **********************
