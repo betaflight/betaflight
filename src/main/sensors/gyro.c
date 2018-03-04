@@ -915,3 +915,8 @@ bool gyroOverflowDetected(void)
 {
     return gyroSensor1.overflowDetected;
 }
+
+uint16_t gyroAbsRateDps(int axis)
+{
+    return fabsf(gyro.gyroADCf[axis]);
+}

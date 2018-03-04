@@ -31,8 +31,8 @@ static uint32_t enabledSensors = 0;
 
 const char *armingDisableFlagNames[]= {
     "NOGYRO", "FAILSAFE", "RXLOSS", "BADRX", "BOXFAILSAFE",
-    "THROTTLE", "ANGLE", "BOOTGRACE", "NOPREARM", "LOAD",
-    "CALIB", "CLI", "CMS", "OSD", "BST", "MSP", "RUNAWAY", "ARMSWITCH"
+    "RUNAWAY", "THROTTLE", "ANGLE", "BOOTGRACE", "NOPREARM", "LOAD",
+    "CALIB", "CLI", "CMS", "OSD", "BST", "MSP", "ARMSWITCH"
 };
 
 static armingDisableFlags_e armingDisableFlags = 0;
