@@ -208,6 +208,16 @@ static const char * const *sensorHardwareNames[] = {
 };
 #endif // USE_SENSOR_NAMES
 
+static char *cliStringToLowercase(char *str)
+{
+    char *s = str;
+    while (*s) {
+        *s = tolower((unsigned char)*s);
+        s++;
+    }
+    return str;
+}
+
 static void cliPrint(const char *str)
 {
     while (*str) {
@@ -2828,7 +2838,7 @@ STATIC_UNIT_TESTED void cliGet(char *cmdline)
     int matchedCommands = 0;
 
     for (uint32_t i = 0; i < valueTableEntryCount; i++) {
-        if (strstr(valueTable[i].name, cmdline)) {
+        if (strstr(valueTable[i].name, cliStringToLowercase(cmdline))) {
             val = &valueTable[i];
             cliPrintf("%s = ", valueTable[i].name);
             cliPrintVar(val, 0);
