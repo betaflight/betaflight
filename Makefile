@@ -352,8 +352,8 @@ $(VALID_TARGETS):
 $(SKIP_TARGETS):
 	$(MAKE) TARGET=$@
 
-CLEAN_TARGETS = $(addprefix clean_,$(VALID_TARGETS) $(SKIP_TARGETS) )
-TARGETS_CLEAN = $(addsuffix _clean,$(VALID_TARGETS) $(SKIP_TARGETS) )
+CLEAN_TARGETS = $(addprefix clean_,$(VALID_TARGETS) )
+TARGETS_CLEAN = $(addsuffix _clean,$(VALID_TARGETS) )
 
 ## clean             : clean up temporary / machine-generated files
 clean:

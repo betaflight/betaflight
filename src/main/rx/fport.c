@@ -242,6 +242,7 @@ static bool checkChecksum(uint8_t *data, uint8_t length)
 static uint8_t fportFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
 {
     static smartPortPayload_t payloadBuffer;
+    static bool hasTelemetryRequest = false;
 
     uint8_t result = RX_FRAME_PENDING;
 
@@ -278,18 +279,16 @@ static uint8_t fportFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
                             break;
                         }
 
-                        mspPayload = NULL;
                         switch(frame->data.telemetryData.frameId) {
                         case FPORT_FRAME_ID_NULL:
                         case FPORT_FRAME_ID_DATA: // never used
-                            result = result | RX_FRAME_PROCESSING_REQUIRED;
+                            hasTelemetryRequest = true;
 
                             break;
                         case FPORT_FRAME_ID_READ:
                         case FPORT_FRAME_ID_WRITE: // never used
                             memcpy(&payloadBuffer, &frame->data.telemetryData, sizeof(smartPortPayload_t));
                             mspPayload = &payloadBuffer;
-                            result = result | RX_FRAME_PROCESSING_REQUIRED;
 
                             break;
                         default:
@@ -312,6 +311,12 @@ static uint8_t fportFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
         rxBufferReadIndex = (rxBufferReadIndex + 1) % NUM_RX_BUFFERS;
     }
 
+    if ((mspPayload || hasTelemetryRequest) && cmpTimeUs(micros(), lastTelemetryFrameReceivedUs) >= FPORT_MIN_TELEMETRY_RESPONSE_DELAY_US) {
+        hasTelemetryRequest = false;
+
+        result = result | RX_FRAME_PROCESSING_REQUIRED;
+    }
+
     if (lastRcFrameReceivedMs && ((millis() - lastRcFrameReceivedMs) > FPORT_MAX_TELEMETRY_AGE_MS)) {
         setRssiFiltered(0, RSSI_SOURCE_RX_PROTOCOL);
         lastRcFrameReceivedMs = 0;
@@ -324,34 +329,28 @@ static bool fportProcessFrame(const rxRuntimeConfig_t *rxRuntimeConfig)
 {
     UNUSED(rxRuntimeConfig);
 
-    bool processingDone = false;
-
 #if defined(USE_TELEMETRY_SMARTPORT)
     timeUs_t currentTimeUs = micros();
-    if (telemetryEnabled && clearToSend && cmpTimeUs(currentTimeUs, lastTelemetryFrameReceivedUs) >= FPORT_MIN_TELEMETRY_RESPONSE_DELAY_US) {
-        if (cmpTimeUs(currentTimeUs, lastTelemetryFrameReceivedUs) > FPORT_MAX_TELEMETRY_RESPONSE_DELAY_US) {
-           clearToSend = false;
-        }
+    if (cmpTimeUs(currentTimeUs, lastTelemetryFrameReceivedUs) > FPORT_MAX_TELEMETRY_RESPONSE_DELAY_US) {
+       clearToSend = false;
+    }
+
+    if (clearToSend) {
+        DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_TELEMETRY_DELAY, currentTimeUs - lastTelemetryFrameReceivedUs);
+
+        processSmartPortTelemetry(mspPayload, &clearToSend, NULL);
 
         if (clearToSend) {
-           DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_TELEMETRY_DELAY, currentTimeUs - lastTelemetryFrameReceivedUs);
+            smartPortWriteFrameFport(&emptySmartPortFrame);
 
-            processSmartPortTelemetry(mspPayload, &clearToSend, NULL);
-
-            if (clearToSend) {
-                smartPortWriteFrameFport(&emptySmartPortFrame);
-
-                clearToSend = false;
-            }
+            clearToSend = false;
         }
-
-        processingDone = true;
     }
-#else
-    processingDone = true;
+
+    mspPayload = NULL;
 #endif
 
-    return processingDone;
+    return true;
 }
 
 bool fportRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)

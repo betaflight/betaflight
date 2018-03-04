@@ -65,7 +65,7 @@ uint16_t getVrefMv(void)
 #endif
 }
 
-uint16_t getCoreTemperatureCelsius(void)
+int16_t getCoreTemperatureCelsius(void)
 {
     return coreTemperature;
 }
