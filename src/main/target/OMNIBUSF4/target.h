@@ -107,6 +107,7 @@
 
 #define USE_MAG
 #define USE_MAG_HMC5883
+#define USE_MAG_QMC5883
 #define MAG_HMC5883_ALIGN       CW90_DEG
 
 //#define USE_MAG_NAZA                   // Delete this on next major release

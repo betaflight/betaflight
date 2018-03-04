@@ -92,7 +92,6 @@ uint8_t icm20689SpiDetect(const busDevice_t *bus)
     spiSetDivisor(bus->busdev_u.spi.instance, SPI_CLOCK_STANDARD);
 
     return icmDetected;
-
 }
 
 void icm20689AccInit(accDev_t *acc)
@@ -102,7 +101,11 @@ void icm20689AccInit(accDev_t *acc)
 
 bool icm20689SpiAccDetect(accDev_t *acc)
 {
-    if (acc->mpuDetectionResult.sensor != ICM_20689_SPI) {
+    switch (acc->mpuDetectionResult.sensor) {
+    case ICM_20602_SPI:
+    case ICM_20689_SPI:
+        break;
+    default:
         return false;
     }
 

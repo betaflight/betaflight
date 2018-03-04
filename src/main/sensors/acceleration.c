@@ -133,7 +133,6 @@ bool accDetect(accDev_t *dev, accelerationSensor_e accHardwareToUse)
 #endif
 
 retry:
-    dev->accAlign = ALIGN_DEFAULT;
 
     switch (accHardwareToUse) {
     case ACC_DEFAULT:
@@ -333,6 +332,17 @@ bool accInit(uint32_t gyroSamplingInverval)
     acc.dev.bus = *gyroSensorBus();
     acc.dev.mpuDetectionResult = *gyroMpuDetectionResult();
     acc.dev.acc_high_fsr = accelerometerConfig()->acc_high_fsr;
+
+#ifdef USE_DUAL_GYRO
+    if (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_2) {
+        acc.dev.accAlign = ACC_2_ALIGN;
+    } else {
+        acc.dev.accAlign = ACC_1_ALIGN;
+    }
+#else
+    acc.dev.accAlign = ALIGN_DEFAULT;
+#endif
+
     if (!accDetect(&acc.dev, accelerometerConfig()->acc_hardware)) {
         return false;
     }

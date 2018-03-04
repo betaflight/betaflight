@@ -251,6 +251,7 @@ void reevaluateLedConfig(void)
     updateLedCount();
     updateDimensions();
     updateLedRingCounts();
+    updateRequiredOverlay();
 }
 
 // get specialColor by index
@@ -1013,6 +1014,9 @@ typedef enum {
 } timId_e;
 
 static timeUs_t timerVal[timTimerCount];
+static uint16_t disabledTimerMask;
+
+STATIC_ASSERT(timTimerCount <= sizeof(disabledTimerMask) * 8, disabledTimerMask_too_small);
 
 // function to apply layer.
 // function must replan self using timer pointer
@@ -1040,6 +1044,29 @@ static applyLayerFn_timed* layerTable[] = {
     [timRing] = &applyLedThrustRingLayer
 };
 
+bool isOverlayTypeUsed(ledOverlayId_e overlayType)
+{
+    for (int ledIndex = 0; ledIndex < ledCounts.count; ledIndex++) {
+        const ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[ledIndex];
+        if (ledGetOverlayBit(ledConfig, overlayType)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void updateRequiredOverlay(void)
+{
+    disabledTimerMask = 0;
+    disabledTimerMask |= !isOverlayTypeUsed(LED_OVERLAY_BLINK) << timBlink;
+    disabledTimerMask |= !isOverlayTypeUsed(LED_OVERLAY_LARSON_SCANNER) << timLarson;
+    disabledTimerMask |= !isOverlayTypeUsed(LED_OVERLAY_WARNING) << timWarning;
+#ifdef USE_VTX_COMMON
+    disabledTimerMask |= !isOverlayTypeUsed(LED_OVERLAY_VTX) << timVtx;
+#endif
+    disabledTimerMask |= !isOverlayTypeUsed(LED_OVERLAY_INDICATOR) << timIndicator;
+}
+
 void ledStripUpdate(timeUs_t currentTimeUs)
 {
     if (!(ledStripInitialised && isWS2811LedStripReady())) {
@@ -1060,14 +1087,16 @@ void ledStripUpdate(timeUs_t currentTimeUs)
     // test all led timers, setting corresponding bits
     uint32_t timActive = 0;
     for (timId_e timId = 0; timId < timTimerCount; timId++) {
-        // sanitize timer value, so that it can be safely incremented. Handles inital timerVal value.
-        const timeDelta_t delta = cmpTimeUs(now, timerVal[timId]);
-        // max delay is limited to 5s
-        if (delta < 0 && delta > -MAX_TIMER_DELAY)
-            continue;  // not ready yet
-        timActive |= 1 << timId;
-        if (delta >= 100 * 1000 || delta < 0) {
-            timerVal[timId] = now;
+        if (!(disabledTimerMask & (1 << timId))) {
+            // sanitize timer value, so that it can be safely incremented. Handles inital timerVal value.
+            const timeDelta_t delta = cmpTimeUs(now, timerVal[timId]);
+            // max delay is limited to 5s
+            if (delta < 0 && delta > -MAX_TIMER_DELAY)
+                continue;  // not ready yet
+            timActive |= 1 << timId;
+            if (delta >= 100 * 1000 || delta < 0) {
+                timerVal[timId] = now;
+            }
         }
     }
 

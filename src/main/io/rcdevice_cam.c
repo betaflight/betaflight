@@ -225,7 +225,7 @@ static void rcdevice5KeySimulationProcess(timeUs_t currentTimeUs)
     }
 #endif
 
-    if (ARMING_FLAG(ARMED)) {
+    if (ARMING_FLAG(ARMED) || getArmingDisableFlags() & ARMING_DISABLED_RUNAWAY_TAKEOFF) {
         return;
     }
 

@@ -215,7 +215,7 @@ void processRcStickPositions()
         return;
     }
 
-    if (ARMING_FLAG(ARMED) || doNotRepeat || rcDelayMs <= STICK_DELAY_MS) {
+    if (ARMING_FLAG(ARMED) || doNotRepeat || rcDelayMs <= STICK_DELAY_MS || (getArmingDisableFlags() & ARMING_DISABLED_RUNAWAY_TAKEOFF)) {
         return;
     }
     doNotRepeat = true;

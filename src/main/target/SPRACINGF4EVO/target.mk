@@ -8,5 +8,12 @@ TARGET_SRC = \
             drivers/barometer/barometer_ms5611.c \
             drivers/compass/compass_ak8975.c \
             drivers/compass/compass_hmc5883l.c \
+            drivers/compass/compass_qmc5883l.c \
             drivers/max7456.c \
             drivers/vtx_rtc6705.c
+
+ifeq ($(TARGET), SPRACINGF4EVODG)
+TARGET_SRC += \
+            drivers/accgyro/accgyro_spi_icm20689.c
+endif
+

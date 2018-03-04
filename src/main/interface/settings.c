@@ -96,7 +96,7 @@
 // sync with accelerationSensor_e
 const char * const lookupTableAccHardware[] = {
     "AUTO", "NONE", "ADXL345", "MPU6050", "MMA8452", "BMA280", "LSM303DLHC",
-    "MPU6000", "MPU6500", "MPU9250", "ICM20601", "ICM20602", "ICM20608", "ICM20649", "ICM20689",
+    "MPU6000", "MPU6500", "MPU9250", "ICM20601", "ICM20602", "ICM20608G", "ICM20649", "ICM20689",
     "BMI160", "FAKE"
 };
 
@@ -116,7 +116,7 @@ const char * const lookupTableBaroHardware[] = {
 #if defined(USE_SENSOR_NAMES) || defined(USE_MAG)
 // sync with magSensor_e
 const char * const lookupTableMagHardware[] = {
-    "AUTO", "NONE", "HMC5883", "AK8975", "AK8963"
+    "AUTO", "NONE", "HMC5883", "AK8975", "AK8963", "QMC5883"
 };
 #endif
 #if defined(USE_SENSOR_NAMES) || defined(USE_RANGEFINDER)
@@ -148,6 +148,12 @@ static const char * const lookupTableAlignment[] = {
     "CW180FLIP",
     "CW270FLIP"
 };
+
+#ifdef USE_DUAL_GYRO
+static const char * const lookupTableGyro[] = {
+    "FIRST", "SECOND", "BOTH"
+};
+#endif
 
 #ifdef USE_GPS
 static const char * const lookupTableGPSProvider[] = {
@@ -340,6 +346,9 @@ const lookupTableEntry_t lookupTables[] = {
 #ifdef USE_OVERCLOCK
     { lookupOverclock, sizeof(lookupOverclock) / sizeof(char *) },
 #endif
+#ifdef USE_DUAL_GYRO
+    { lookupTableGyro, sizeof(lookupTableGyro) / sizeof(char *) },
+#endif
 };
 
 const clivalue_t valueTable[] = {
@@ -374,7 +383,7 @@ const clivalue_t valueTable[] = {
 #endif
 #endif
 #ifdef USE_DUAL_GYRO
-    { "gyro_to_use",                VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 1 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_to_use) },
+    { "gyro_to_use",                VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GYRO }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_to_use) },
 #endif
 
 // PG_ACCELEROMETER_CONFIG
@@ -386,6 +395,7 @@ const clivalue_t valueTable[] = {
     { "acc_lpf_hz",                 VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 400 }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, acc_lpf_hz) },
     { "acc_trim_pitch",             VAR_INT16  | MASTER_VALUE, .config.minmax = { -300, 300 }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, accelerometerTrims.values.pitch) },
     { "acc_trim_roll",              VAR_INT16  | MASTER_VALUE, .config.minmax = { -300, 300 }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, accelerometerTrims.values.roll) },
+    { "acc_calibration",            VAR_INT16  | MASTER_VALUE | MODE_ARRAY, .config.array.length = XYZ_AXIS_COUNT, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, accZero.raw) },
 
 // PG_COMPASS_CONFIG
 #ifdef USE_MAG
@@ -396,9 +406,7 @@ const clivalue_t valueTable[] = {
     { "mag_spi_device",             VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, SPIDEV_COUNT }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, mag_spi_device) },
     { "mag_hardware",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_MAG_HARDWARE }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, mag_hardware) },
     { "mag_declination",            VAR_INT16  | MASTER_VALUE, .config.minmax = { -18000, 18000 }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, mag_declination) },
-    { "magzero_x",                  VAR_INT16  | MASTER_VALUE, .config.minmax = { INT16_MIN, INT16_MAX }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, magZero.raw[X]) },
-    { "magzero_y",                  VAR_INT16  | MASTER_VALUE, .config.minmax = { INT16_MIN, INT16_MAX }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, magZero.raw[Y]) },
-    { "magzero_z",                  VAR_INT16  | MASTER_VALUE, .config.minmax = { INT16_MIN, INT16_MAX }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, magZero.raw[Z]) },
+    { "mag_calibration",            VAR_INT16  | MASTER_VALUE | MODE_ARRAY, .config.array.length = XYZ_AXIS_COUNT, PG_COMPASS_CONFIG, offsetof(compassConfig_t, magZero.raw) },
 #endif
 
 // PG_BAROMETER_CONFIG
@@ -623,9 +631,7 @@ const clivalue_t valueTable[] = {
     { "pid_process_denom",          VAR_UINT8  | MASTER_VALUE,  .config.minmax = { 1, MAX_PID_PROCESS_DENOM }, PG_PID_CONFIG, offsetof(pidConfig_t, pid_process_denom) },
 #ifdef USE_RUNAWAY_TAKEOFF
     { "runaway_takeoff_prevention", VAR_UINT8  | MODE_LOOKUP,  .config.lookup = { TABLE_OFF_ON }, PG_PID_CONFIG, offsetof(pidConfig_t, runaway_takeoff_prevention) },    // enables/disables runaway takeoff prevention
-    { "runaway_takeoff_threshold",  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 30, 100 }, PG_PID_CONFIG, offsetof(pidConfig_t, runaway_takeoff_threshold) },          // pidSum limit to trigger prevention
-    { "runaway_takeoff_activate_delay",  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 255 }, PG_PID_CONFIG, offsetof(pidConfig_t, runaway_takeoff_activate_delay) }, // time in ms where pidSum is above threshold to trigger prevention
-    { "runaway_takeoff_deactivate_delay",  VAR_UINT16  | MASTER_VALUE, .config.minmax = { 100, 5000 }, PG_PID_CONFIG, offsetof(pidConfig_t, runaway_takeoff_deactivate_delay) },           // deactivate time in ms
+    { "runaway_takeoff_deactivate_delay",  VAR_UINT16  | MASTER_VALUE, .config.minmax = { 100, 1000 }, PG_PID_CONFIG, offsetof(pidConfig_t, runaway_takeoff_deactivate_delay) },           // deactivate time in ms
     { "runaway_takeoff_deactivate_throttle_percent",  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 100 }, PG_PID_CONFIG, offsetof(pidConfig_t, runaway_takeoff_deactivate_throttle) }, // minimum throttle percentage during deactivation phase
 #endif
 
@@ -640,8 +646,8 @@ const clivalue_t valueTable[] = {
     { "anti_gravity_gain",          VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 1000, 30000 }, PG_PID_PROFILE, offsetof(pidProfile_t, itermAcceleratorGain) },
     { "setpoint_relax_ratio",       VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 1, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, setpointRelaxRatio) },
     { "dterm_setpoint_weight",      VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 254 }, PG_PID_PROFILE, offsetof(pidProfile_t, dtermSetpointWeight) },
-    { "acc_limit_yaw",              VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 1, 500 }, PG_PID_PROFILE, offsetof(pidProfile_t, yawRateAccelLimit) },
-    { "acc_limit",                  VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 1, 500 }, PG_PID_PROFILE, offsetof(pidProfile_t, rateAccelLimit) },
+    { "acc_limit_yaw",              VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 0, 500 }, PG_PID_PROFILE, offsetof(pidProfile_t, yawRateAccelLimit) },
+    { "acc_limit",                  VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 0, 500 }, PG_PID_PROFILE, offsetof(pidProfile_t, rateAccelLimit) },
     { "crash_dthreshold",           VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 0, 2000 }, PG_PID_PROFILE, offsetof(pidProfile_t, crash_dthreshold) },
     { "crash_gthreshold",           VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 0, 2000 }, PG_PID_PROFILE, offsetof(pidProfile_t, crash_gthreshold) },
     { "crash_setpoint_threshold",   VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 0, 2000 }, PG_PID_PROFILE, offsetof(pidProfile_t, crash_setpoint_threshold) },
@@ -796,6 +802,7 @@ const clivalue_t valueTable[] = {
     { "osd_stat_bbox",              VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_BLACKBOX])},
     { "osd_stat_endbatt",           VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_END_BATTERY])},
     { "osd_stat_bb_no",             VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_BLACKBOX_NUMBER])},
+    { "osd_stat_rtc_date_time",     VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_RTC_DATE_TIME])},
     { "osd_stat_tim_1",             VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_TIMER_1])},
     { "osd_stat_tim_2",             VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_TIMER_2])},
 #endif
