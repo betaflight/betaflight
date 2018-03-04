@@ -96,3 +96,4 @@ void gyroReadTemperature(void);
 int16_t gyroGetTemperature(void);
 int16_t gyroRateDps(int axis);
 bool gyroOverflowDetected(void);
+uint16_t gyroAbsRateDps(int axis);

@@ -1157,13 +1157,8 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         break;
 
     case MSP_ADVANCED_CONFIG:
-        if (gyroConfig()->gyro_lpf) {
-            sbufWriteU8(dst, 8); // If gyro_lpf != OFF then looptime is set to 1000
-            sbufWriteU8(dst, 1);
-        } else {
-            sbufWriteU8(dst, gyroConfig()->gyro_sync_denom);
-            sbufWriteU8(dst, pidConfig()->pid_process_denom);
-        }
+        sbufWriteU8(dst, gyroConfig()->gyro_sync_denom);
+        sbufWriteU8(dst, pidConfig()->pid_process_denom);
         sbufWriteU8(dst, motorConfig()->dev.useUnsyncedPwm);
         sbufWriteU8(dst, motorConfig()->dev.motorPwmProtocol);
         sbufWriteU16(dst, motorConfig()->dev.motorPwmRate);

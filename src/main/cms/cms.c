@@ -71,7 +71,7 @@
 #define CMS_MAX_DEVICE 4
 #endif
 
-static displayPort_t *pCurrentDisplay;
+displayPort_t *pCurrentDisplay;
 
 static displayPort_t *cmsDisplayPorts[CMS_MAX_DEVICE];
 static int cmsDeviceCount;
