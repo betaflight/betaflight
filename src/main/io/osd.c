@@ -57,6 +57,7 @@
 #include "drivers/time.h"
 
 #include "fc/config.h"
+#include "fc/fc_core.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
@@ -386,7 +387,6 @@ static bool osdDrawSingleElement(uint8_t item)
 
     uint8_t elemPosX = OSD_X(osdConfig()->item_pos[item]);
     uint8_t elemPosY = OSD_Y(osdConfig()->item_pos[item]);
-    uint8_t elemOffsetX = 0;
     char buff[OSD_ELEMENT_BUFFER_LENGTH];
 
     switch (item) {
@@ -499,22 +499,19 @@ static bool osdDrawSingleElement(uint8_t item)
 
     case OSD_FLYMODE:
         {
-            char *p = "ACRO";
-
-            if (isAirmodeActive()) {
-                p = "AIR ";
-            }
-
             if (FLIGHT_MODE(FAILSAFE_MODE)) {
-                p = "!FS!";
+                strcpy(buff, "!FS!");
             } else if (FLIGHT_MODE(ANGLE_MODE)) {
-                p = "STAB";
+                strcpy(buff, "STAB");
             } else if (FLIGHT_MODE(HORIZON_MODE)) {
-                p = "HOR ";
+                strcpy(buff, "HOR ");
+            } else if (isAirmodeActive()) {
+                strcpy(buff, "AIR ");
+            } else {
+                strcpy(buff, "ACRO");
             }
 
-            displayWrite(osdDisplayPort, elemPosX, elemPosY, p);
-            return true;
+            break;
         }
 
     case OSD_CRAFT_NAME:
@@ -559,11 +556,6 @@ static bool osdDrawSingleElement(uint8_t item)
 #endif
 
     case OSD_CROSSHAIRS:
-        elemPosX = 14 - 1; // Offset for 1 char to the left
-        elemPosY = 6;
-        if (displayScreenSize(osdDisplayPort) == VIDEO_BUFFER_CHARS_PAL) {
-            ++elemPosY;
-        }
         buff[0] = SYM_AH_CENTER_LINE;
         buff[1] = SYM_AH_CENTER;
         buff[2] = SYM_AH_CENTER_LINE_RIGHT;
@@ -572,12 +564,6 @@ static bool osdDrawSingleElement(uint8_t item)
 
     case OSD_ARTIFICIAL_HORIZON:
         {
-            elemPosX = 14;
-            elemPosY = 6 - 4; // Top center of the AH area
-            if (displayScreenSize(osdDisplayPort) == VIDEO_BUFFER_CHARS_PAL) {
-                ++elemPosY;
-            }
-
             // Get pitch and roll limits in tenths of degrees
             const int maxPitch = osdConfig()->ahMaxPitch * 10;
             const int maxRoll = osdConfig()->ahMaxRoll * 10;
@@ -594,19 +580,11 @@ static bool osdDrawSingleElement(uint8_t item)
                 }
             }
 
-            osdDrawSingleElement(OSD_HORIZON_SIDEBARS);
-
             return true;
         }
 
     case OSD_HORIZON_SIDEBARS:
         {
-            elemPosX = 14;
-            elemPosY = 6;
-            if (displayScreenSize(osdDisplayPort) == VIDEO_BUFFER_CHARS_PAL) {
-                ++elemPosY;
-            }
-
             // Draw AH sides
             const int8_t hudwidth = AH_SIDEBAR_WIDTH_POS;
             const int8_t hudheight = AH_SIDEBAR_HEIGHT_POS;
@@ -644,20 +622,23 @@ static bool osdDrawSingleElement(uint8_t item)
 
     case OSD_WARNINGS:
         {
+
+#define OSD_WARNINGS_MAX_SIZE 11
+#define OSD_FORMAT_MESSAGE_BUFFER_SIZE (OSD_WARNINGS_MAX_SIZE + 1)
+
             const uint16_t enabledWarnings = osdConfig()->enabledWarnings;
 
             const batteryState_e batteryState = getBatteryState();
 
             if (enabledWarnings & OSD_WARNING_BATTERY_CRITICAL && batteryState == BATTERY_CRITICAL) {
-                osdFormatMessage(buff, sizeof(buff), " LAND NOW");
+                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, " LAND NOW");
                 break;
             }
 
             // Warn when in flip over after crash mode
             if ((enabledWarnings & OSD_WARNING_CRASH_FLIP)
-                  && (isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH))
-                  && IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
-                osdFormatMessage(buff, sizeof(buff), "CRASH FLIP");
+                  && (isFlipOverAfterCrashMode())) {
+                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "CRASH FLIP");
                 break;
             }
 
@@ -666,7 +647,7 @@ static bool osdDrawSingleElement(uint8_t item)
                 const armingDisableFlags_e flags = getArmingDisableFlags();
                 for (int i = 0; i < ARMING_DISABLE_FLAGS_COUNT; i++) {
                     if (flags & (1 << i)) {
-                        osdFormatMessage(buff, sizeof(buff), armingDisableFlagNames[i]);
+                        osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, armingDisableFlagNames[i]);
                         break;
                     }
                 }
@@ -674,24 +655,25 @@ static bool osdDrawSingleElement(uint8_t item)
             }
 
             if (enabledWarnings & OSD_WARNING_BATTERY_WARNING && batteryState == BATTERY_WARNING) {
-                osdFormatMessage(buff, sizeof(buff), "LOW BATTERY");
+                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "LOW BATTERY");
                 break;
             }
 
             // Show warning if battery is not fresh
             if (enabledWarnings & OSD_WARNING_BATTERY_NOT_FULL && !ARMING_FLAG(WAS_EVER_ARMED) && (getBatteryState() == BATTERY_OK)
                   && getBatteryAverageCellVoltage() < batteryConfig()->vbatfullcellvoltage) {
-                osdFormatMessage(buff, sizeof(buff), "BATT NOT FULL");
+                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "BATT < FULL");
                 break;
             }
 
             // Visual beeper
             if (enabledWarnings & OSD_WARNING_VISUAL_BEEPER && showVisualBeeper) {
-                osdFormatMessage(buff, sizeof(buff), "  * * * *");
+                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "  * * * *");
                 break;
             }
 
-            return true;
+            osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, NULL);
+            break;
         }
 
     case OSD_AVG_CELL_VOLTAGE:
@@ -723,7 +705,7 @@ static bool osdDrawSingleElement(uint8_t item)
             const float value = constrain(batteryConfig()->batteryCapacity - getMAhDrawn(), 0, batteryConfig()->batteryCapacity);
 
             // Calculate mAh used progress
-            const uint8_t mAhUsedProgress = ceil((value / (batteryConfig()->batteryCapacity / MAIN_BATT_USAGE_STEPS)));
+            const uint8_t mAhUsedProgress = ceilf((value / (batteryConfig()->batteryCapacity / MAIN_BATT_USAGE_STEPS)));
 
             // Create empty battery indicator bar
             buff[0] = SYM_PB_START;
@@ -793,7 +775,7 @@ static bool osdDrawSingleElement(uint8_t item)
         return false;
     }
 
-    displayWrite(osdDisplayPort, elemPosX + elemOffsetX, elemPosY, buff);
+    displayWrite(osdDisplayPort, elemPosX, elemPosY, buff);
 
     return true;
 }
@@ -814,6 +796,7 @@ static void osdDrawElements(void)
     osdDrawSingleElement(OSD_MAIN_BATT_VOLTAGE);
     osdDrawSingleElement(OSD_RSSI_VALUE);
     osdDrawSingleElement(OSD_CROSSHAIRS);
+    osdDrawSingleElement(OSD_HORIZON_SIDEBARS);
     osdDrawSingleElement(OSD_ITEM_TIMER_1);
     osdDrawSingleElement(OSD_ITEM_TIMER_2);
     osdDrawSingleElement(OSD_REMAINING_TIME_ESTIMATE);
@@ -880,6 +863,11 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 
     // Always enable warnings elements by default
     osdConfig->item_pos[OSD_WARNINGS] = OSD_POS(9, 10) | VISIBLE_FLAG;
+
+    // Default to old fixed positions for these elements
+    osdConfig->item_pos[OSD_CROSSHAIRS]         = OSD_POS(13, 6);
+    osdConfig->item_pos[OSD_ARTIFICIAL_HORIZON] = OSD_POS(14, 2);
+    osdConfig->item_pos[OSD_HORIZON_SIDEBARS]   = OSD_POS(14, 6);
 
     osdConfig->enabled_stats[OSD_STAT_MAX_SPEED]       = true;
     osdConfig->enabled_stats[OSD_STAT_MIN_BATTERY]     = true;

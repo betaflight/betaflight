@@ -730,3 +730,6 @@ PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 2);
 void resetArmingDisabled(void) {}
 timeDelta_t getTaskDeltaTime(cfTaskId_e) { return 20000; }
 }
+armingDisableFlags_e getArmingDisableFlags(void) {
+    return (armingDisableFlags_e) 0;
+}

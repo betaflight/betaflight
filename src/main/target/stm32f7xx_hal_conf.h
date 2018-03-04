@@ -54,7 +54,7 @@
 /* #define HAL_CEC_MODULE_ENABLED   */
 /* #define HAL_CRC_MODULE_ENABLED   */
 /* #define HAL_CRYP_MODULE_ENABLED   */
-/* #define HAL_DAC_MODULE_ENABLED   */
+#define HAL_DAC_MODULE_ENABLED
 /* #define HAL_DCMI_MODULE_ENABLED   */
 /* #define HAL_DMA2D_MODULE_ENABLED   */
 /* #define HAL_ETH_MODULE_ENABLED   */
@@ -161,7 +161,7 @@
 #define  PREFETCH_ENABLE              1U
 #define  ART_ACCLERATOR_ENABLE        1U /* To enable instruction cache and prefetch */
 #define  INSTRUCTION_CACHE_ENABLE     1U
-#define  DATA_CACHE_ENABLE            0U
+#define  DATA_CACHE_ENABLE            1U
 
 /* ########################## Assert Selection ############################## */
 /**

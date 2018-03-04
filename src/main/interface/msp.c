@@ -412,6 +412,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         break;
 
     case MSP_BOARD_INFO:
+    {
         sbufWriteData(dst, systemConfig()->boardIdentifier, BOARD_IDENTIFIER_LENGTH);
 #ifdef USE_HARDWARE_REVISION_DETECTION
         sbufWriteU16(dst, hardwareRevision);
@@ -427,7 +428,23 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU8(dst, 0);  // 0 == FC
 #endif
 #endif
+        // Board communication capabilities (uint8)
+        // Bit 0: 1 iff the board has VCP
+        // Bit 1: 1 iff the board supports software serial
+        uint8_t commCapabilities = 0;
+#ifdef USE_VCP
+        commCapabilities |= 1 << 0;
+#endif
+#if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
+        commCapabilities |= 1 << 1;
+#endif
+        sbufWriteU8(dst, commCapabilities);
+
+        // Target name with explicit length
+        sbufWriteU8(dst, strlen(targetName));
+        sbufWriteData(dst, targetName, strlen(targetName));
         break;
+    }
 
     case MSP_BUILD_INFO:
         sbufWriteData(dst, buildDate, BUILD_DATE_LENGTH);
@@ -1157,13 +1174,8 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         break;
 
     case MSP_ADVANCED_CONFIG:
-        if (gyroConfig()->gyro_lpf) {
-            sbufWriteU8(dst, 8); // If gyro_lpf != OFF then looptime is set to 1000
-            sbufWriteU8(dst, 1);
-        } else {
-            sbufWriteU8(dst, gyroConfig()->gyro_sync_denom);
-            sbufWriteU8(dst, pidConfig()->pid_process_denom);
-        }
+        sbufWriteU8(dst, gyroConfig()->gyro_sync_denom);
+        sbufWriteU8(dst, pidConfig()->pid_process_denom);
         sbufWriteU8(dst, motorConfig()->dev.useUnsyncedPwm);
         sbufWriteU8(dst, motorConfig()->dev.motorPwmProtocol);
         sbufWriteU16(dst, motorConfig()->dev.motorPwmRate);
@@ -1778,6 +1790,9 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         {
             const uint8_t command = sbufReadU8(src);
             uint8_t disableRunawayTakeoff = 0;
+#ifndef USE_RUNAWAY_TAKEOFF
+            UNUSED(disableRunawayTakeoff);
+#endif
             if (sbufBytesRemaining(src)) {
                 disableRunawayTakeoff = sbufReadU8(src);
             }

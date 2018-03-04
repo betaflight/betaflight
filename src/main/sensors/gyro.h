@@ -55,6 +55,10 @@ typedef enum {
     GYRO_OVERFLOW_CHECK_ALL_AXES
 } gyroOverflowCheck_e;
 
+#define GYRO_CONFIG_USE_GYRO_1      0
+#define GYRO_CONFIG_USE_GYRO_2      1
+#define GYRO_CONFIG_USE_GYRO_BOTH   2
+
 typedef struct gyroConfig_s {
     sensor_align_e gyro_align;              // gyro alignment
     uint8_t  gyroMovementCalibrationThreshold; // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
@@ -96,3 +100,4 @@ void gyroReadTemperature(void);
 int16_t gyroGetTemperature(void);
 int16_t gyroRateDps(int axis);
 bool gyroOverflowDetected(void);
+uint16_t gyroAbsRateDps(int axis);
