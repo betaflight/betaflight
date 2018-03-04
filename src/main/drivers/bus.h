@@ -38,7 +38,10 @@ typedef struct busDevice_s {
             SPI_HandleTypeDef* handle; // cached here for efficiency
 #endif
             IO_t csnPin;
+
+#if defined(USE_GYRO_IMUF9001)          
             IO_t rstPin;
+#endif          
         } spi;
         struct deviceI2C_s {
             I2CDevice device;

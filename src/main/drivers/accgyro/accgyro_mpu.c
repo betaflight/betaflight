@@ -38,10 +38,12 @@
 #include "drivers/sensor.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
-#include "drivers/dma_spi.h"
 
+#ifdef USE_DMA_SPI_DEVICE
+#include "drivers/dma_spi.h"
 #include "sensors/gyro.h"
 #include "sensors/acceleration.h"
+#endif //USE_DMA_SPI_DEVICE
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/accgyro/accgyro_mpu3050.h"
@@ -53,11 +55,17 @@
 #include "drivers/accgyro/accgyro_spi_mpu6000.h"
 #include "drivers/accgyro/accgyro_spi_mpu6500.h"
 #include "drivers/accgyro/accgyro_spi_mpu9250.h"
+#ifdef USE_GYRO_IMUF9001
 #include "drivers/accgyro/accgyro_imuf9001.h"
+#endif //USE_GYRO_IMUF9001
 #include "drivers/accgyro/accgyro_mpu.h"
 
+
+#ifdef USE_DMA_SPI_DEVICE
 volatile int dmaSpiGyroDataReady = 0;
 volatile uint32_t imufCrcErrorCount = 0;
+#endif //USE_DMA_SPI_DEVICE
+
 mpuResetFnPtr mpuResetFn;
 #ifdef USE_GYRO_IMUF9001
     imufData_t imufData;

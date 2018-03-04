@@ -182,7 +182,7 @@
 #define DEFAULT_CURRENT_METER_SOURCE   CURRENT_METER_ADC
 #define CURRENT_METER_ADC_PIN          PA1
 #define VBAT_ADC_PIN                   PA0
-#define CURRENT_METER_SCALE_DEFAULT    16000
+#define CURRENT_METER_SCALE_DEFAULT    400
 #define VBAT_SCALE                     109
 
 #define CAMERA_CONTROL_PIN             PB6    // define dedicated camera_osd_control pin

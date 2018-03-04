@@ -3795,7 +3795,7 @@ static void cliImufUpdate(char *cmdline)
     UNUSED(cmdline);
     cliPrint("I muff, you muff, we all muff for IMU-F!");
     cliPrintLinefeed();
-    (*((uint32_t *)0x2001FFF4)) = 0xF431FA77;
+    (*((uint32_t *)0x2001FFEC)) = 0xF431FA77;
     delay(1000);
     cliReboot();
 }
@@ -3808,7 +3808,7 @@ static void cliMsd(char *cmdline)
 
     cliPrint("Loading as USB drive!");
     cliPrintLinefeed();
-    (*((uint32_t *)0x2001FFF8)) = 0xF431FA11;
+    (*((uint32_t *)0x2001FFF0)) = 0xF431FA11;
     delay(1000);
     cliReboot();
 }

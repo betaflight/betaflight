@@ -54,7 +54,7 @@ void targetConfiguration(void) {
         // pidProfile->dterm_lpf_hz = 0;    
         // pidProfile->dterm_notch_hz = 0;
         // pidProfile->dterm_notch_cutoff = 0;
-        pidProfile->dterm_filter_type = FILTER_BIQUAD;
+        pidProfile->dterm_filter_type = FILTER_PT1;
     }
 }
 

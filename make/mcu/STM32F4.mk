@@ -22,7 +22,8 @@ else
 CMSIS_DIR      := $(ROOT)/lib/main/CMSIS/CM4
 STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F4/Drivers/STM32F4xx_StdPeriph_Driver
 STDPERIPH_SRC   = $(notdir $(wildcard $(STDPERIPH_DIR)/src/*.c))
-EXCLUDES        = stm32f4xx_can.c \
+EXCLUDES        = stm32f4xx_crc.c \
+                  stm32f4xx_can.c \
                   stm32f4xx_fmc.c \
                   stm32f4xx_sai.c \
                   stm32f4xx_cec.c \
