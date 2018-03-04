@@ -211,7 +211,6 @@ typedef struct mpuDetectionResult_s {
 
 struct gyroDev_s;
 void mpuGyroInit(struct gyroDev_s *gyro);
-gyroOverflow_e mpuGyroCheckOverflow(const struct gyroDev_s *gyro);
 bool mpuGyroRead(struct gyroDev_s *gyro);
 bool mpuGyroReadSPI(struct gyroDev_s *gyro);
 void mpuDetect(struct gyroDev_s *gyro);

@@ -30,7 +30,8 @@
 //define camera control
 #define CAMERA_CONTROL_PIN      PB7 // Camera control
 
-#define BEEPER                  PC9
+#define USE_BEEPER
+#define BEEPER_PIN              PC9
 #define BEEPER_OPT              PB14
 #define BEEPER_PWM_HZ           3150 // Beeper PWM frequency in Hz
 
@@ -146,6 +147,7 @@
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART6
 #define DEFAULT_FEATURES        (FEATURE_OSD)
+#define USE_GYRO_FAST_KALMAN
 
 // Target IO and timers
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE

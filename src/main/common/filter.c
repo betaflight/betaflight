@@ -79,10 +79,13 @@ FAST_CODE float slewFilterApply(slewFilter_t *filter, float input)
     return filter->state;
 }
 
-
+// get notch filter Q given center frequency (f0) and lower cutoff frequency (f1)
+// Q = f0 / (f2 - f1) ; f2 = f0^2 / f1
 float filterGetNotchQ(uint16_t centerFreq, uint16_t cutoff) {
-    float octaves = log2f((float) centerFreq  / (float) cutoff) * 2;
-    return sqrtf(powf(2, octaves)) / (powf(2, octaves) - 1);
+    const float f0sq = (float)centerFreq * centerFreq;
+    const float f1 = cutoff;
+
+    return (f1 * f0sq) / (f0sq - f1 * f1);
 }
 
 /* sets up a biquad Filter */

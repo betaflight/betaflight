@@ -24,7 +24,8 @@
 #define LED0_PIN   PB7
 #define LED1_PIN   PB6
 
-#define BEEPER   PB2 // Unused pin, can be mapped to elsewhere
+#define USE_BEEPER
+#define BEEPER_PIN PB2 // Unused pin, can be mapped to elsewhere
 #define BEEPER_INVERTED
 
 #define MPU6000_CS_PIN        PA4

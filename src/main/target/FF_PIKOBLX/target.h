@@ -27,6 +27,9 @@
 #define TARGET_BOARD_IDENTIFIER "PIKO" // Furious FPV PIKOBLX
 #endif
 
+#define ENABLE_DSHOT_DMAR       true
+#define REMAP_TIM16_DMA
+
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
 #define USE_TARGET_CONFIG
@@ -35,7 +38,8 @@
 #define LED0_PIN                PB9
 #define LED1_PIN                PB5
 
-#define BEEPER                  PA0
+#define USE_BEEPER
+#define BEEPER_PIN              PA0
 #define BEEPER_INVERTED
 
 // MPU6000 interrupts
