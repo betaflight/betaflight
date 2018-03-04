@@ -22,6 +22,9 @@
 #include <platform.h>
 
 #ifdef USE_SPI
+#ifndef GYRO_READ_TIMEOUT
+    #define GYRO_READ_TIMEOUT 20
+#endif
 
 #include "drivers/bus.h"
 #include "drivers/bus_spi.h"
@@ -29,6 +32,8 @@
 #include "drivers/exti.h"
 #include "drivers/io.h"
 #include "drivers/rcc.h"
+#include "drivers/dma_spi.h"
+#include "drivers/time.h"
 
 spiDevice_t spiDevice[SPIDEV_COUNT];
 
@@ -113,13 +118,35 @@ uint32_t spiTimeoutUserCallback(SPI_TypeDef *instance)
     return spiDevice[device].errorCount;
 }
 
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
 bool spiBusTransfer(const busDevice_t *bus, const uint8_t *txData, uint8_t *rxData, int length)
 {
-    IOLo(bus->busdev_u.spi.csnPin);
-    spiTransfer(bus->busdev_u.spi.instance, txData, rxData, length);
-    IOHi(bus->busdev_u.spi.csnPin);
+    #ifdef USE_DMA_SPI_DEVICE
+        (void)(bus);
+        uint32_t timeoutCheck = millis();
+        memcpy(dmaTxBuffer, (uint8_t *)txData, length);
+        dmaSpiTransmitReceive(dmaTxBuffer, dmaRxBuffer, length, 1);
+        while(dmaSpiReadStatus != DMA_SPI_READ_DONE)
+        {
+            if(millis() - timeoutCheck > GYRO_READ_TIMEOUT)
+            {
+                //GYRO_READ_TIMEOUT ms max, read failed, cleanup spi and return 0
+                IOHi(bus->busdev_u.spi.csnPin);
+                dmaSpicleanupspi();
+                return false;
+            }
+        }
+        memcpy((uint8_t *)rxData, dmaRxBuffer, length);
+    #else
+        IOLo(bus->busdev_u.spi.csnPin);
+        spiTransfer(bus->busdev_u.spi.instance, txData, rxData, length);
+        IOHi(bus->busdev_u.spi.csnPin);
+    #endif
+
     return true;
 }
+#pragma GCC pop_options
 
 uint16_t spiGetErrorCounter(SPI_TypeDef *instance)
 {
@@ -140,33 +167,86 @@ void spiResetErrorCounter(SPI_TypeDef *instance)
 
 bool spiBusWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data)
 {
-    IOLo(bus->busdev_u.spi.csnPin);
-    spiTransferByte(bus->busdev_u.spi.instance, reg);
-    spiTransferByte(bus->busdev_u.spi.instance, data);
-    IOHi(bus->busdev_u.spi.csnPin);
+    #ifdef USE_DMA_SPI_DEVICE
+        (void)(bus);
+        uint32_t timeoutCheck = millis();
+        dmaTxBuffer[0] = reg;
+        dmaTxBuffer[1] = data;
+        dmaSpiTransmitReceive(dmaTxBuffer, dmaRxBuffer, 2, 1);
+        while(dmaSpiReadStatus != DMA_SPI_READ_DONE)
+        {
+            if(millis() - timeoutCheck > GYRO_READ_TIMEOUT)
+            {
+                //GYRO_READ_TIMEOUT ms max, read failed, cleanup spi and return 0
+                IOHi(bus->busdev_u.spi.csnPin);
+                dmaSpicleanupspi();
+                return false;
+            }
+        }
+    #else
+        IOLo(bus->busdev_u.spi.csnPin);
+        spiTransferByte(bus->busdev_u.spi.instance, reg);
+        spiTransferByte(bus->busdev_u.spi.instance, data);
+        IOHi(bus->busdev_u.spi.csnPin);
+    #endif
 
     return true;
 }
 
 bool spiBusReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t *data, uint8_t length)
 {
-    IOLo(bus->busdev_u.spi.csnPin);
-    spiTransferByte(bus->busdev_u.spi.instance, reg | 0x80); // read transaction
-    spiTransfer(bus->busdev_u.spi.instance, NULL, data, length);
-    IOHi(bus->busdev_u.spi.csnPin);
+    #ifdef USE_DMA_SPI_DEVICE
+        (void)(bus);
+        uint32_t timeoutCheck = millis();
+        dmaTxBuffer[0] = reg | 0x80;
+        dmaSpiTransmitReceive(dmaTxBuffer, dmaRxBuffer, length+1, 1);
+        while(dmaSpiReadStatus != DMA_SPI_READ_DONE)
+        {
+            if(millis() - timeoutCheck > GYRO_READ_TIMEOUT)
+            {
+                //GYRO_READ_TIMEOUT ms max, read failed, cleanup spi and return 0
+                IOHi(bus->busdev_u.spi.csnPin);
+                dmaSpicleanupspi();
+                return false;
+            }
+        }
+        memcpy(data, dmaRxBuffer+1, length);
+    #else
+        IOLo(bus->busdev_u.spi.csnPin);
+        spiTransferByte(bus->busdev_u.spi.instance, reg | 0x80); // read transaction
+        spiTransfer(bus->busdev_u.spi.instance, NULL, data, length);
+        IOHi(bus->busdev_u.spi.csnPin);
+    #endif
 
     return true;
 }
 
 uint8_t spiBusReadRegister(const busDevice_t *bus, uint8_t reg)
 {
-    uint8_t data;
-    IOLo(bus->busdev_u.spi.csnPin);
-    spiTransferByte(bus->busdev_u.spi.instance, reg | 0x80); // read transaction
-    spiTransfer(bus->busdev_u.spi.instance, NULL, &data, 1);
-    IOHi(bus->busdev_u.spi.csnPin);
-
-    return data;
+    #ifdef USE_DMA_SPI_DEVICE
+        (void)(bus);
+        uint32_t timeoutCheck = millis();
+        dmaTxBuffer[0] = reg | 0x80;
+        dmaSpiTransmitReceive(dmaTxBuffer, dmaRxBuffer, 2, 1);
+        while(dmaSpiReadStatus != DMA_SPI_READ_DONE)
+        {
+            if(millis() - timeoutCheck > GYRO_READ_TIMEOUT)
+            {
+                //GYRO_READ_TIMEOUT ms max, read failed, cleanup spi and return 0
+                IOHi(bus->busdev_u.spi.csnPin);
+                dmaSpicleanupspi();
+                return 0;
+            }
+        }
+        return dmaRxBuffer[1];
+    #else
+        uint8_t data;
+        IOLo(bus->busdev_u.spi.csnPin);
+        spiTransferByte(bus->busdev_u.spi.instance, reg | 0x80); // read transaction
+        spiTransfer(bus->busdev_u.spi.instance, NULL, &data, 1);
+        IOHi(bus->busdev_u.spi.csnPin);
+        return data;
+    #endif
 }
 
 void spiBusSetInstance(busDevice_t *bus, SPI_TypeDef *instance)

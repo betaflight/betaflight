@@ -70,6 +70,7 @@
 #include "drivers/usb_io.h"
 #include "drivers/vtx_rtc6705.h"
 #include "drivers/vtx_common.h"
+#include "drivers/dma_spi.h"
 
 #include "fc/config.h"
 #include "fc/fc_init.h"
@@ -250,6 +251,41 @@ void spiPreInit(void)
 }
 #endif
 
+void rebootUpdater(void)
+{
+    #ifdef UPT_ADDRESS
+    typedef void (*pFunction)(void);
+   	pFunction JumpToApplication;
+	uint32_t jumpAddress;
+
+    __disable_irq(); // disable interrupts for jump
+
+    jumpAddress = *(__IO uint32_t*)(UPT_ADDRESS + 4);
+    JumpToApplication = (pFunction)jumpAddress;
+
+    // Initialize user application's Stack Pointer
+    __set_MSP(*(__IO uint32_t*)UPT_ADDRESS);
+    JumpToApplication();
+    #endif
+}
+
+void rebootMsd(void)
+{
+    #ifdef MSD_ADDRESS
+    typedef void (*pFunction)(void);
+   	pFunction JumpToApplication;
+	uint32_t jumpAddress;
+
+    __disable_irq(); // disable interrupts for jump
+
+    jumpAddress = *(__IO uint32_t*)(MSD_ADDRESS + 4);
+    JumpToApplication = (pFunction)jumpAddress;
+
+    // Initialize user application's Stack Pointer
+    __set_MSP(*(__IO uint32_t*)MSD_ADDRESS);
+    JumpToApplication();
+    #endif
+}
 void init(void)
 {
 #ifdef USE_ITCM_RAM
@@ -431,6 +467,9 @@ void init(void)
 
 #ifdef USE_SPI_DEVICE_1
     spiInit(SPIDEV_1);
+#endif
+#ifdef USE_DMA_SPI_DEVICE
+    dmaSpiInit();
 #endif
 #ifdef USE_SPI_DEVICE_2
     spiInit(SPIDEV_2);

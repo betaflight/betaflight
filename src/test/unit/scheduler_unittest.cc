@@ -89,7 +89,7 @@ extern "C" {
         [TASK_ATTITUDE] = {
             .taskName = "ATTITUDE",
             .taskFunc = imuUpdateAttitude,
-            .desiredPeriod = TASK_PERIOD_HZ(100),
+            .desiredPeriod = TASK_PERIOD_HZ(1000),
             .staticPriority = TASK_PRIORITY_MEDIUM,
         },
         [TASK_RX] = {

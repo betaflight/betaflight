@@ -79,6 +79,22 @@ Reset_Handler:
   str     r1, [r0, #0x30]
   dsb
 
+  // Check for imufUpdate reboot
+  ldr r0, =0x2001FFF4         // rs2k
+  ldr r1, =0xF431FA77         // rs2k
+  ldr r2, [r0, #0]            // rs2k
+  str r0, [r0, #0]            // rs2k
+  cmp r2, r1                  // rs2k
+  beq rebootUpdater           // rs2k
+
+  // Check for msd reboot
+  ldr r0, =0x2001FFF8         // rs2k
+  ldr r1, =0xF431FA11         // rs2k
+  ldr r2, [r0, #0]            // rs2k
+  str r0, [r0, #0]            // rs2k
+  cmp r2, r1                  // rs2k
+  beq rebootMsd       
+
   // Check for bootloader reboot
   ldr r0, =0x2001FFFC         // mj666
   ldr r1, =0xDEADBEEF         // mj666
