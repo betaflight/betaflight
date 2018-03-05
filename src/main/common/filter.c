@@ -42,7 +42,7 @@ FAST_CODE float nullFilterApply(filter_t *filter, float input)
 
 // PT1 Low Pass filter
 
-void pt1FilterInit(pt1Filter_t *filter, uint8_t f_cut, float dT)
+void pt1FilterInit(pt1Filter_t *filter, uint16_t f_cut, float dT)
 {
     float RC = 1.0f / ( 2.0f * M_PI_FLOAT * f_cut );
     filter->k = dT / (RC + dT);
@@ -50,7 +50,7 @@ void pt1FilterInit(pt1Filter_t *filter, uint8_t f_cut, float dT)
 
 FAST_CODE float pt1FilterApply(pt1Filter_t *filter, float input)
 {
-    filter->state = filter->state + filter->k * (input - filter->state);
+    filter->state += filter->k * (input - filter->state);
     return filter->state;
 }
 
@@ -318,32 +318,21 @@ void biquadRCFIR2FilterInit(biquadFilter_t *filter, uint16_t f_cut, float dT)
     filter->a2 = 0;
 }
 
-// Fast two-state Kalman
-void fastKalmanInit(fastKalman_t *filter, float q, float r, float p)
+// Fast two-state FKF aka Kalman 
+void fkfFilterInit(fkfFilter_t *filter, uint16_t f_cut, float dT)
 {
-    filter->q     = q * 0.000001f; // add multiplier to make tuning easier
-    filter->r     = r * 0.001f;    // add multiplier to make tuning easier
-    filter->p     = p * 0.001f;    // add multiplier to make tuning easier
-    filter->x     = 0.0f;          // set initial value, can be zero if unknown
-    filter->lastX = 0.0f;          // set initial value, can be zero if unknown
-    filter->k     = 0.0f;          // kalman gain
+    float RC = 1.0f / ( 2.0f * M_PI_FLOAT * f_cut );
+    filter->k = 0.5f * dT / (RC + dT);
+    filter->state     = 0.0f;          // set initial value, can be zero if unknown
+    filter->lastState = 0.0f;          // set initial value, can be zero if unknown
 }
 
-FAST_CODE float fastKalmanUpdate(fastKalman_t *filter, float input)
+FAST_CODE float fkfApply(fkfFilter_t *filter, float input)
 {
-    // project the state ahead using acceleration
-    filter->x += (filter->x - filter->lastX);
-
-    // update last state
-    filter->lastX = filter->x;
-
-    // prediction update
-    filter->p = filter->p + filter->q;
-
-    // measurement update
-    filter->k = filter->p / (filter->p + filter->r);
-    filter->x += filter->k * (input - filter->x);
-    filter->p = (1.0f - filter->k) * filter->p;
-
-    return filter->x;
+    //two point smoothing funtionally
+    filter->state += (filter->state - filter->lastState);
+    filter->lastState = filter->state;	
+    //PT1 filter
+    filter->state += filter->state * (input - filter->state);
+    return filter->state;
 }
