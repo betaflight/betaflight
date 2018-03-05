@@ -31,7 +31,7 @@ See: https://github.com/betaflight/betaflight/wiki
 
 There's a dedicated Slack chat channel here:
 
-http://butterflight.slack.com
+https://communityinviter.com/apps/butterflight/butterflight
 
 ## Configuration Tool
 
