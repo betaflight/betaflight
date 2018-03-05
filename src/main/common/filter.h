@@ -33,6 +33,12 @@ typedef struct pt1Filter_s {
     float k;
 } pt1Filter_t;
 
+typedef struct fkf_s {
+    float k;       // kalman FKF gain
+    float state;       // state
+    float lastState;   // previous state
+} fkfFilter_t;
+
 typedef struct slewFilter_s {
     float state;
     float slewLimit;
@@ -53,17 +59,9 @@ typedef struct firFilterDenoise_s {
     float state[MAX_FIR_DENOISE_WINDOW_SIZE];
 } firFilterDenoise_t;
 
-typedef struct fastKalman_s {
-    float q;       // process noise covariance
-    float r;       // measurement noise covariance
-    float p;       // estimation error covariance matrix
-    float k;       // kalman gain
-    float x;       // state
-    float lastX;   // previous state
-} fastKalman_t;
-
 typedef enum {
     FILTER_PT1 = 0,
+    FILTER_FKF,
     FILTER_BIQUAD,
     FILTER_FIR,
     FILTER_SLEW
@@ -98,14 +96,14 @@ float filterGetNotchQ(uint16_t centerFreq, uint16_t cutoff);
 
 void biquadRCFIR2FilterInit(biquadFilter_t *filter, uint16_t f_cut, float dT);
 
-void fastKalmanInit(fastKalman_t *filter, float q, float r, float p);
-float fastKalmanUpdate(fastKalman_t *filter, float input);
-
 // not exactly correct, but very very close and much much faster
 #define filterGetNotchQApprox(centerFreq, cutoff)   ((float)(cutoff * centerFreq) / ((float)(centerFreq - cutoff) * (float)(centerFreq + cutoff)))
 
-void pt1FilterInit(pt1Filter_t *filter, uint8_t f_cut, float dT);
+void pt1FilterInit(pt1Filter_t *filter, uint16_t f_cut, float dT);
 float pt1FilterApply(pt1Filter_t *filter, float input);
+
+void fkfFilterInit(fkfFilter_t *filter, uint16_t f_cut, float dT);
+float fkfFilterApply(fkfFilter_t *filter, float input);
 
 void slewFilterInit(slewFilter_t *filter, float slewLimit, float threshold);
 float slewFilterApply(slewFilter_t *filter, float input);
