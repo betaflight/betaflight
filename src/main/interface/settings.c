@@ -293,6 +293,12 @@ static const char * const lookupOverclock[] = {
 };
 #endif
 
+#ifdef USE_LED_STRIP
+    static const char * const lookupLedStripFormatRGB[] = {
+        "GRB", "RGB"
+    };
+#endif
+
 const lookupTableEntry_t lookupTables[] = {
     { lookupTableOffOn, sizeof(lookupTableOffOn) / sizeof(char *) },
     { lookupTableUnit, sizeof(lookupTableUnit) / sizeof(char *) },
@@ -347,6 +353,9 @@ const lookupTableEntry_t lookupTables[] = {
     { lookupTableRatesType, sizeof(lookupTableRatesType) / sizeof(char *) },
 #ifdef USE_OVERCLOCK
     { lookupOverclock, sizeof(lookupOverclock) / sizeof(char *) },
+#endif
+#ifdef USE_LED_STRIP
+    { lookupLedStripFormatRGB, sizeof(lookupLedStripFormatRGB) / sizeof(char *) },
 #endif
 #ifdef USE_DUAL_GYRO
     { lookupTableGyro, sizeof(lookupTableGyro) / sizeof(char *) },
@@ -730,6 +739,7 @@ const clivalue_t valueTable[] = {
 // PG_LED_STRIP_CONFIG
 #ifdef USE_LED_STRIP
     { "ledstrip_visual_beeper",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_visual_beeper) },
+    { "ledstrip_grb_rgb",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_RGB_GRB }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_grb_rgb) },
 #endif
 
 // PG_SDCARD_CONFIG
