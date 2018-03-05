@@ -1013,6 +1013,10 @@ extern "C" {
         return false;
     }
 
+    int getHeadingDirection() {
+        return 0;
+    }
+
     uint16_t getRssi(void) { return rssi; }
 
     uint16_t getCoreTemperatureCelsius(void) { return simulationCoreTemperature; }

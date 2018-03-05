@@ -106,7 +106,8 @@ PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
     .dcm_ki = 0,                   // 0.003 * 10000
     .small_angle = 25,
     .accDeadband = {.xy = 40, .z= 40},
-    .acc_unarmedcal = 1
+    .acc_unarmedcal = 1,
+    .use_gps_heading = false,
 );
 
 STATIC_UNIT_TESTED void imuComputeRotationMatrix(void){
@@ -149,6 +150,7 @@ void imuConfigure(uint16_t throttle_correction_angle)
     imuRuntimeConfig.dcm_ki = imuConfig()->dcm_ki / 10000.0f;
     imuRuntimeConfig.acc_unarmedcal = imuConfig()->acc_unarmedcal;
     imuRuntimeConfig.small_angle = imuConfig()->small_angle;
+    imuRuntimeConfig.use_gps_heading = imuConfig()->use_gps_heading;
 
     fc_acc = calculateAccZLowPassFilterRCTimeConstant(5.0f); // Set to fix value
     throttleAngleScale = calculateThrottleAngleScale(throttle_correction_angle);
@@ -428,10 +430,12 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     }
 #endif
 #if defined(USE_GPS)
-    else if (STATE(FIXED_WING) && sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat >= 5 && gpsSol.groundSpeed >= 300) {
-        // In case of a fixed-wing aircraft we can use GPS course over ground to correct heading
-        rawYawError = DECIDEGREES_TO_RADIANS(attitude.values.yaw - gpsSol.groundCourse);
-        useYaw = true;
+    else if (sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat >= 5 && gpsSol.groundSpeed >= 300) {
+        if (imuRuntimeConfig.use_gps_heading || STATE(FIXED_WING)) {
+            // In case of a fixed-wing aircraft or use_gps_heading flag enabled, we can use GPS course over ground to correct heading
+            rawYawError = DECIDEGREES_TO_RADIANS(attitude.values.yaw - gpsSol.groundCourse);
+            useYaw = true;
+        }
     }
 #endif
 
@@ -489,6 +493,20 @@ void imuUpdateAttitude(timeUs_t currentTimeUs)
 float getCosTiltAngle(void)
 {
     return rMat[2][2];
+}
+
+int getHeadingDirection()
+{
+    int hd = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+
+    //If we have GPS, but no mag, use the GPS heading data instead of yaw accel data
+    #if defined(USE_GPS)
+        if (GPS_distanceToHome > 0 && STATE(GPS_FIX) && STATE(GPS_FIX_HOME) && !sensors(SENSOR_MAG) && imuRuntimeConfig.use_gps_heading == 1) {
+            hd = DECIDEGREES_TO_DEGREES(gpsSol.groundCourse);
+        }
+    #endif
+
+    return hd;
 }
 
 int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value)
