@@ -395,5 +395,6 @@ portSharing_e determinePortSharing(const serialPortConfig_t *, serialPortFunctio
 failsafePhase_e failsafePhase(void) {return FAILSAFE_IDLE;}
 bool rxAreFlightChannelsValid(void) {return false;}
 bool rxIsReceivingSignal(void) {return false;}
-
+void serialWriteBufAdapterFunc(void *instance, const uint8_t *data, int count) { UNUSED(instance), UNUSED(data), UNUSED(count); }
+void serialWriteBufShimForBLEModule(void *instance, const uint8_t *data, int count) { UNUSED(instance), UNUSED(data), UNUSED(count); }
 }

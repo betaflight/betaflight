@@ -264,6 +264,5 @@ bool serialIsPortAvailable(serialPortIdentifier_e) { return false; }
 void generateLedConfig(ledConfig_t *, char *, size_t) {}
 bool isSerialTransmitBufferEmpty(const serialPort_t *) {return true; }
 void serialWrite(serialPort_t *, uint8_t ch) { printf("%c", ch);}
-
-
+void serialWriteBufShimForBLEModule(void *instance, const uint8_t *data, int count) { UNUSED(instance), UNUSED(data), UNUSED(count); }
 }

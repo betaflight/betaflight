@@ -17,6 +17,15 @@
 
 #pragma once
 
+#include "drivers/io_types.h"
+#include "pg/pg.h"
+
+typedef struct cliConfig_s {
+    uint8_t isEnabledLowSpeedTransfer;
+} cliConfig_t;
+
+PG_DECLARE(cliConfig_t, cliConfig);
+
 extern uint8_t cliMode;
 
 struct clivalue_s;

@@ -143,6 +143,11 @@ extern uint8_t __config_end;
 #include "telemetry/frsky_hub.h"
 #include "telemetry/telemetry.h"
 
+PG_REGISTER_WITH_RESET_TEMPLATE(cliConfig_t, cliConfig, PG_CLI_CONFIG, 0);
+
+PG_RESET_TEMPLATE(cliConfig_t, cliConfig,
+    .isEnabledLowSpeedTransfer = 0
+);
 
 static serialPort_t *cliPort;
 
@@ -3903,13 +3908,22 @@ void cliProcess(void)
     }
 }
 
+void serialWriteBufAdapterFunc(void *instance, const uint8_t *data, int count)
+{
+    if (cliConfig()->isEnabledLowSpeedTransfer) {
+        serialWriteBufShimForBLEModule(instance, data, count);
+    } else {
+        serialWriteBufShim(instance, data, count);
+    }
+}
+
 void cliEnter(serialPort_t *serialPort)
 {
     cliMode = 1;
     cliPort = serialPort;
     setPrintfSerialPort(cliPort);
-    cliWriter = bufWriterInit(cliWriteBuffer, sizeof(cliWriteBuffer), (bufWrite_t)serialWriteBufShim, serialPort);
 
+    cliWriter = bufWriterInit(cliWriteBuffer, sizeof(cliWriteBuffer), (bufWrite_t)serialWriteBufAdapterFunc, serialPort);
     schedulerSetCalulateTaskStatistics(systemConfig()->task_statistics);
 
 #ifndef MINIMAL_CLI
