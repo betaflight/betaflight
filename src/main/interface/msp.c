@@ -1185,8 +1185,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         break;
 
     case MSP_FILTER_CONFIG :
-        sbufWriteU8(dst, gyroConfig()->gyro_soft_pre_lpf_hz);
-        sbufWriteU8(dst, gyroConfig()->gyro_soft_lpf_hz);
+        sbufWriteU16(dst, gyroConfig()->gyro_soft_lpf_hz);
         sbufWriteU16(dst, currentPidProfile->dterm_lpf_hz);
         sbufWriteU16(dst, currentPidProfile->yaw_lpf_hz);
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_hz_1);
@@ -1644,7 +1643,6 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_FILTER_CONFIG:
-    	gyroConfigMutable()->gyro_soft_pre_lpf_hz = sbufReadU16(src);
         gyroConfigMutable()->gyro_soft_lpf_hz = sbufReadU16(src);
         currentPidProfile->dterm_lpf_hz = sbufReadU16(src);
         currentPidProfile->yaw_lpf_hz = sbufReadU16(src);
