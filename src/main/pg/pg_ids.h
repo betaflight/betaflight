@@ -121,7 +121,8 @@
 #define PG_TRICOPTER_CONFIG 528
 #define PG_PINIO_CONFIG 529
 #define PG_PINIOBOX_CONFIG 530
-#define PG_BETAFLIGHT_END 530
+#define PG_CLI_CONFIG 531
+#define PG_BETAFLIGHT_END 531
 
 
 // OSD configuration (subject to change)

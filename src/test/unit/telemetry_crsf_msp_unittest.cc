@@ -295,4 +295,6 @@ extern "C" {
     int32_t getMAhDrawn(void) {
       return testmAhDrawn;
     }
+
+    uint32_t millis(void) { return 0; }
 }
