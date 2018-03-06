@@ -70,6 +70,12 @@ typedef enum {
 } filterType_e;
 
 typedef enum {
+    KD_FILTER_CLASSIC = 0,
+    KD_FILTER_SP,
+    KD_FILTER_NOSP,
+} kdFilterStyle_e;
+
+typedef enum {
     FILTER_LPF,
     FILTER_NOTCH,
     FILTER_BPF,

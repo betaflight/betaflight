@@ -55,6 +55,8 @@ void targetConfiguration(void) {
         // pidProfile->dterm_notch_hz = 0;
         // pidProfile->dterm_notch_cutoff = 0;
         pidProfile->dterm_filter_type = FILTER_PT1;
+        pidProfile->dterm_filter_style = KD_FILTER_NOSP;
+        pidProfile->dterm_lpf_hz = 60;
     }
 }
 
