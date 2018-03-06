@@ -22,8 +22,7 @@
 
 #define LED0_PIN                PA5  // Onboard LED
 
-//#define USE_BEEPER
-//#define BEEPER_PIN                PD12
+//#define BEEPER                  PD12
 
 #define USE_EXTI
 

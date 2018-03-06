@@ -29,8 +29,7 @@
 #define LED0_PIN                PC14
 #define LED1_PIN                PC13
 
-#define USE_BEEPER
-#define BEEPER_PIN              PC5
+#define BEEPER                  PC5
 
 #define INVERTER_PIN_UART2      PB2 // PB2 used as inverter select GPIO
 
@@ -52,6 +51,7 @@
 
 #define USE_MAG
 #define USE_MAG_HMC5883
+#define USE_MAG_QMC5883
 #define MAG_HMC5883_ALIGN       CW270_DEG_FLIP
 
 #define MAG_INT_EXTI            PC1

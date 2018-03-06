@@ -32,7 +32,6 @@
 #define MPU_RA_WHO_AM_I         0x75
 #define MPU_RA_WHO_AM_I_LEGACY  0x00
 
-
 #define MPUx0x0_WHO_AM_I_CONST              (0x68) // MPU3050, 6000 and 6050
 #define MPU6000_WHO_AM_I_CONST              (0x68)
 #define MPU6500_WHO_AM_I_CONST              (0x70)
@@ -43,8 +42,6 @@
 #define ICM20608G_WHO_AM_I_CONST            (0xAF)
 #define ICM20649_WHO_AM_I_CONST             (0xE1)
 #define ICM20689_WHO_AM_I_CONST             (0x98)
-
-
 
 // RA = Register Address
 

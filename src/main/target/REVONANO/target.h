@@ -26,8 +26,7 @@
 #define LED0_PIN                PC14
 #define LED1_PIN                PC13
 
-#define USE_BEEPER
-#define BEEPER_PIN              PC13
+#define BEEPER                  PC13
 
 #define MPU6500_CS_PIN          PB12
 #define MPU6500_SPI_INSTANCE    SPI2

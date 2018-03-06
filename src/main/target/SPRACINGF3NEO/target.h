@@ -33,14 +33,13 @@
 #define LED0_PIN                PB9
 #define LED1_PIN                PB2
 
-#define USE_BEEPER
-#define BEEPER_PIN              PC15
+#define BEEPER                  PC15
 #define BEEPER_INVERTED
 
-#define USE_EXTI
-#define MPU_INT_EXTI            PC13
-#define USE_MPU_DATA_READY_SIGNAL
-#define ENSURE_MPU_DATA_READY_IS_LOW
+//#define USE_EXTI
+//#define MPU_INT_EXTI            PC13
+//#define USE_MPU_DATA_READY_SIGNAL
+//#define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define USE_MAG_DATA_READY_SIGNAL
 #define ENSURE_MAG_DATA_READY_IS_HIGH

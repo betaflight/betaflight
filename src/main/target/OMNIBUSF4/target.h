@@ -50,8 +50,7 @@
 
 #define LED0_PIN                PB5
 //#define LED1_PIN                PB4 // Remove this at the next major release
-#define USE_BEEPER
-#define BEEPER_PIN              PB4
+#define BEEPER                  PB4
 #define BEEPER_INVERTED
 
 #if defined(OMNIBUSF4SD) || defined(DYSF4PRO)
@@ -108,6 +107,7 @@
 
 #define USE_MAG
 #define USE_MAG_HMC5883
+#define USE_MAG_QMC5883
 #define MAG_HMC5883_ALIGN       CW90_DEG
 
 //#define USE_MAG_NAZA                   // Delete this on next major release

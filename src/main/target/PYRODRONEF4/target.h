@@ -18,8 +18,7 @@
 #define USBD_PRODUCT_STRING "PYRODRONEF4"
 
 #define LED0_PIN                  PB4
-#define USE_BEEPER
-#define BEEPER_PIN                PB5
+#define BEEPER                    PB5
 #define BEEPER_INVERTED
 
 #define INVERTER_PIN_UART1        PC3       // PC3 used as sBUS inverter select GPIO

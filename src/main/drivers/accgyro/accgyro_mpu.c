@@ -140,14 +140,13 @@ static void mpuIntExtiInit(gyroDev_t *gyro)
     EXTIHandlerInit(&gyro->exti, mpuIntExtiHandler);
     EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, IO_CONFIG(GPIO_MODE_INPUT,0,GPIO_NOPULL));   // TODO - maybe pullup / pulldown ?
 #else
-
     IOInit(mpuIntIO, OWNER_MPU_EXTI, 0);
     IOConfigGPIO(mpuIntIO, IOCFG_IN_FLOATING);   // TODO - maybe pullup / pulldown ?
 
     EXTIHandlerInit(&gyro->exti, mpuIntExtiHandler);
     EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, EXTI_Trigger_Rising);
-    EXTIEnable(mpuIntIO, true);
 #endif
+    EXTIEnable(mpuIntIO, true);
 }
 #endif // MPU_INT_EXTI
 
@@ -208,8 +207,10 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
     uint8_t sensor = MPU_NONE;
     UNUSED(sensor);
 
+    // note, when USE_DUAL_GYRO is enabled the gyro->bus must already be initialised.
+
 #ifdef USE_GYRO_SPI_MPU6000
-#ifdef MPU6000_SPI_INSTANCE
+#ifndef USE_DUAL_GYRO
     spiBusSetInstance(&gyro->bus, MPU6000_SPI_INSTANCE);
 #endif
 #ifdef MPU6000_CS_PIN
@@ -223,7 +224,7 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
 #endif
 
 #ifdef USE_GYRO_SPI_MPU6500
-#ifdef MPU6500_SPI_INSTANCE
+#ifndef USE_DUAL_GYRO
     spiBusSetInstance(&gyro->bus, MPU6500_SPI_INSTANCE);
 #endif
 #ifdef MPU6500_CS_PIN
@@ -238,7 +239,7 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
 #endif
 
 #ifdef  USE_GYRO_SPI_MPU9250
-#ifdef MPU9250_SPI_INSTANCE
+#ifndef USE_DUAL_GYRO
     spiBusSetInstance(&gyro->bus, MPU9250_SPI_INSTANCE);
 #endif
 #ifdef MPU9250_CS_PIN
@@ -267,13 +268,14 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
 #endif
 
 #ifdef USE_GYRO_SPI_ICM20689
-#ifdef ICM20689_SPI_INSTANCE
+#ifndef USE_DUAL_GYRO
     spiBusSetInstance(&gyro->bus, ICM20689_SPI_INSTANCE);
 #endif
 #ifdef ICM20689_CS_PIN
     gyro->bus.busdev_u.spi.csnPin = gyro->bus.busdev_u.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(ICM20689_CS_PIN)) : gyro->bus.busdev_u.spi.csnPin;
 #endif
     sensor = icm20689SpiDetect(&gyro->bus);
+    // icm20689SpiDetect detects ICM20602 and ICM20689
     if (sensor != MPU_NONE) {
         gyro->mpuDetectionResult.sensor = sensor;
         return true;
@@ -281,7 +283,7 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
 #endif
 
 #ifdef USE_ACCGYRO_BMI160
-#ifdef BMI160_SPI_INSTANCE
+#ifndef USE_DUAL_GYRO
     spiBusSetInstance(&gyro->bus, BMI160_SPI_INSTANCE);
 #endif
 #ifdef BMI160_CS_PIN
@@ -304,39 +306,43 @@ void mpuDetect(gyroDev_t *gyro)
     delay(35);
 
 #ifdef USE_I2C
-    gyro->bus.bustype = BUSTYPE_I2C;
-    gyro->bus.busdev_u.i2c.device = MPU_I2C_INSTANCE;
-    gyro->bus.busdev_u.i2c.address = MPU_ADDRESS;
-    uint8_t sig = 0;
-    bool ack = busReadRegisterBuffer(&gyro->bus, MPU_RA_WHO_AM_I, &sig, 1);
-#else
-    bool ack = false;
+    if (gyro->bus.bustype == BUSTYPE_NONE) {
+        // if no bustype is selected try I2C first.
+        gyro->bus.bustype = BUSTYPE_I2C;
+    }
+
+    if (gyro->bus.bustype == BUSTYPE_I2C) {
+        gyro->bus.busdev_u.i2c.device = MPU_I2C_INSTANCE;
+        gyro->bus.busdev_u.i2c.address = MPU_ADDRESS;
+
+        uint8_t sig = 0;
+        bool ack = busReadRegisterBuffer(&gyro->bus, MPU_RA_WHO_AM_I, &sig, 1);
+
+        if (ack) {
+            // If an MPU3050 is connected sig will contain 0.
+            uint8_t inquiryResult;
+            ack = busReadRegisterBuffer(&gyro->bus, MPU_RA_WHO_AM_I_LEGACY, &inquiryResult, 1);
+            inquiryResult &= MPU_INQUIRY_MASK;
+            if (ack && inquiryResult == MPUx0x0_WHO_AM_I_CONST) {
+                gyro->mpuDetectionResult.sensor = MPU_3050;
+                return;
+            }
+
+            sig &= MPU_INQUIRY_MASK;
+            if (sig == MPUx0x0_WHO_AM_I_CONST) {
+                gyro->mpuDetectionResult.sensor = MPU_60x0;
+                mpu6050FindRevision(gyro);
+            } else if (sig == MPU6500_WHO_AM_I_CONST) {
+                gyro->mpuDetectionResult.sensor = MPU_65xx_I2C;
+            }
+            return;
+        }
+    }
 #endif
 
-    if (!ack) {
 #ifdef USE_SPI
-        detectSPISensorsAndUpdateDetectionResult(gyro);
-#endif
-        return;
-    }
-
-#ifdef USE_I2C
-    // If an MPU3050 is connected sig will contain 0.
-    uint8_t inquiryResult;
-    ack = busReadRegisterBuffer(&gyro->bus, MPU_RA_WHO_AM_I_LEGACY, &inquiryResult, 1);
-    inquiryResult &= MPU_INQUIRY_MASK;
-    if (ack && inquiryResult == MPUx0x0_WHO_AM_I_CONST) {
-        gyro->mpuDetectionResult.sensor = MPU_3050;
-        return;
-    }
-
-    sig &= MPU_INQUIRY_MASK;
-    if (sig == MPUx0x0_WHO_AM_I_CONST) {
-        gyro->mpuDetectionResult.sensor = MPU_60x0;
-        mpu6050FindRevision(gyro);
-    } else if (sig == MPU6500_WHO_AM_I_CONST) {
-        gyro->mpuDetectionResult.sensor = MPU_65xx_I2C;
-    }
+    gyro->bus.bustype = BUSTYPE_SPI;
+    detectSPISensorsAndUpdateDetectionResult(gyro);
 #endif
 }
 

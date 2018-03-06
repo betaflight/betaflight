@@ -24,8 +24,7 @@
 #define LED0_PIN   PB7
 #define LED1_PIN   PB6
 
-#define USE_BEEPER
-#define BEEPER_PIN PB2 // Unused pin, can be mapped to elsewhere
+#define BEEPER   PB2 // Unused pin, can be mapped to elsewhere
 #define BEEPER_INVERTED
 
 #define MPU6000_CS_PIN        PA4
@@ -46,6 +45,7 @@
 
 #define USE_MAG
 #define USE_MAG_HMC5883
+#define USE_MAG_QMC5883
 #define MAG_I2C_INSTANCE           (I2CDEV_2)
 
 //#define MAG_HMC5883_ALIGN CW270_DEG_FLIP

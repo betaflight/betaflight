@@ -23,7 +23,7 @@
 #define USE_CMS
 #define CMS_MAX_DEVICE 4
 #define USE_FAKE_GYRO
-#define USE_BEEPER
+#define BEEPER
 #define USE_BLACKBOX
 #define USE_MAG
 #define USE_BARO

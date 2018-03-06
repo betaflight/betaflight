@@ -17,7 +17,7 @@
 
 #pragma once
 
-#ifdef USE_BEEPER
+#ifdef BEEPER
 #define BEEP_TOGGLE              systemBeepToggle()
 #define BEEP_OFF                 systemBeep(false)
 #define BEEP_ON                  systemBeep(true)

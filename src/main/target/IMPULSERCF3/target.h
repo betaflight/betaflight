@@ -25,8 +25,7 @@
 
 #define LED0_PIN                PB7
 
-#define USE_BEEPER
-#define BEEPER_PIN              PC15
+#define BEEPER                  PC15
 
 #define USE_EXTI
 #define MPU_INT_EXTI            PC13

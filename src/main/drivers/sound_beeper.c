@@ -27,7 +27,7 @@
 
 #include "sound_beeper.h"
 
-#ifdef USE_BEEPER
+#ifdef BEEPER
 static IO_t beeperIO = DEFIO_IO(NONE);
 static bool beeperInverted = false;
 static uint16_t beeperFrequency = 0;
@@ -35,7 +35,7 @@ static uint16_t beeperFrequency = 0;
 
 void systemBeep(bool onoff)
 {
-#ifdef USE_BEEPER
+#ifdef BEEPER
     if (beeperFrequency == 0) {
         IOWrite(beeperIO, beeperInverted ? onoff : !onoff);
     } else {
@@ -48,7 +48,7 @@ void systemBeep(bool onoff)
 
 void systemBeepToggle(void)
 {
-#ifdef USE_BEEPER
+#ifdef BEEPER
     if (beeperFrequency == 0) {
         IOToggle(beeperIO);
     } else {
@@ -59,7 +59,7 @@ void systemBeepToggle(void)
 
 void beeperInit(const beeperDevConfig_t *config)
 {
-#ifdef USE_BEEPER
+#ifdef BEEPER
     beeperFrequency = config->frequency;
     if (beeperFrequency == 0) {
         beeperIO = IOGetByTag(config->ioTag);

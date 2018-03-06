@@ -28,8 +28,7 @@
 #define LED1_PIN                PC14
 #define LED2_PIN                PC13
 
-#define USE_BEEPER
-#define BEEPER_PIN              PB13
+#define BEEPER                  PB13
 #define BEEPER_INVERTED
 
 // MPU6500 interrupt
@@ -71,6 +70,7 @@
 
 #define USE_MAG
 #define USE_MAG_HMC5883
+#define USE_MAG_QMC5883
 #define USE_MAG_AK8963
 #define USE_MAG_AK8975
 

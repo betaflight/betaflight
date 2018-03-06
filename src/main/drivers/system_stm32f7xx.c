@@ -197,6 +197,9 @@ void checkForBootLoaderRequest(void)
     bt = (*(__IO uint32_t *) (BKPSRAM_BASE + 4)) ;
     if ( bt == 0xDEADBEEF ) {
         (*(__IO uint32_t *) (BKPSRAM_BASE + 4)) =  0xCAFEFEED; // Reset our trigger
+        // Backup SRAM is write-back by default, ensure value actually reaches memory
+        // Another solution would be marking BKPSRAM as write-through in Memory Protection Unit settings
+        SCB_CleanDCache_by_Addr((uint32_t *) (BKPSRAM_BASE + 4), sizeof(uint32_t));
 
         void (*SysMemBootJump)(void);
         __SYSCFG_CLK_ENABLE();

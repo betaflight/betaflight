@@ -30,9 +30,7 @@
 
 //LED & BEEPER------------------------------
 #define LED0_PIN                PE0
-
-#define USE_BEEPER
-#define BEEPER_PIN              PD15
+#define BEEPER                  PD15
 #define BEEPER_INVERTED
 
 //CAMERA CONTROL----------------------------
@@ -60,17 +58,40 @@
 #define USE_GYRO_SPI_MPU6000
 //#define MPU_INT_EXTI            PD0
 
-#if defined(OMNIBUSF7V2) || defined(FPVM_BETAFLIGHTF7)
+#if defined(OMNIBUSF7V2)
 #define MPU6000_CS_PIN          SPI1_NSS_PIN
 #define MPU6000_SPI_INSTANCE    SPI1
 #define MPU6500_CS_PIN          SPI3_NSS_PIN
 #define MPU6500_SPI_INSTANCE    SPI3
-#define GYRO_2_CS_PIN           MPU6000_CS_PIN
 #define GYRO_1_CS_PIN           MPU6500_CS_PIN
+#define GYRO_2_CS_PIN           MPU6000_CS_PIN
 #define GYRO_MPU6500_ALIGN      CW90_DEG
 #define ACC_MPU6500_ALIGN       CW90_DEG
+#define GYRO_MPU6000_ALIGN      ALIGN_DEFAULT
+#define ACC_MPU6000_ALIGN       ALIGN_DEFAULT
+#define ACC_1_ALIGN             ACC_MPU6500_ALIGN
+#define ACC_2_ALIGN             ACC_MPU6000_ALIGN
+#define GYRO_1_ALIGN            GYRO_MPU6500_ALIGN
+#define GYRO_2_ALIGN            GYRO_MPU6000_ALIGN
+#define GYRO_1_SPI_INSTANCE     MPU6500_SPI_INSTANCE
+#define GYRO_2_SPI_INSTANCE     MPU6000_SPI_INSTANCE
+#elif defined(FPVM_BETAFLIGHTF7)
+#define MPU6000_CS_PIN          SPI1_NSS_PIN
+#define MPU6000_SPI_INSTANCE    SPI1
+#define MPU6500_CS_PIN          SPI3_NSS_PIN
+#define MPU6500_SPI_INSTANCE    SPI3
+#define GYRO_1_CS_PIN           MPU6000_CS_PIN
+#define GYRO_2_CS_PIN           MPU6500_CS_PIN
+#define GYRO_MPU6500_ALIGN      CW270_DEG
+#define ACC_MPU6500_ALIGN       CW270_DEG
 #define GYRO_MPU6000_ALIGN      CW90_DEG
 #define ACC_MPU6000_ALIGN       CW90_DEG
+#define ACC_1_ALIGN             ACC_MPU6000_ALIGN
+#define ACC_2_ALIGN             ACC_MPU6500_ALIGN
+#define GYRO_1_ALIGN            GYRO_MPU6000_ALIGN
+#define GYRO_2_ALIGN            GYRO_MPU6500_ALIGN
+#define GYRO_1_SPI_INSTANCE     MPU6000_SPI_INSTANCE
+#define GYRO_2_SPI_INSTANCE     MPU6500_SPI_INSTANCE
 #else
 #define MPU6000_CS_PIN          SPI3_NSS_PIN
 #define MPU6000_SPI_INSTANCE    SPI3
@@ -78,6 +99,12 @@
 #define MPU6500_SPI_INSTANCE    SPI1
 #define GYRO_1_CS_PIN           MPU6000_CS_PIN
 #define GYRO_2_CS_PIN           MPU6500_CS_PIN
+#define ACC_1_ALIGN             ALIGN_DEFAULT
+#define ACC_2_ALIGN             ALIGN_DEFAULT
+#define GYRO_1_ALIGN            ALIGN_DEFAULT
+#define GYRO_2_ALIGN            ALIGN_DEFAULT
+#define GYRO_1_SPI_INSTANCE     MPU6000_SPI_INSTANCE
+#define GYRO_2_SPI_INSTANCE     MPU6500_SPI_INSTANCE
 #endif
 
 // TODO: dual gyro support
@@ -200,6 +227,7 @@
 
 #define USE_MAG
 #define USE_MAG_HMC5883
+#define USE_MAG_QMC5883
 
 #define SENSORS_SET (SENSOR_ACC | SENSOR_BARO)
 //ADC---------------------------------------

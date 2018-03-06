@@ -22,8 +22,7 @@
 
 #define LED0_PIN                PA2
 
-#define USE_BEEPER
-#define BEEPER_PIN              PD15
+#define BEEPER                  PD15
 #define BEEPER_INVERTED
 
 #define USE_ACC
@@ -44,13 +43,19 @@
 #define ACC_MPU6000_ALIGN        CW270_DEG
 //#define MPU_INT_EXTI                PB9
 
-#define MPU6000_CS_PIN           SPI3_NSS_PIN
-#define MPU6000_SPI_INSTANCE     SPI3
 #define ICM20689_CS_PIN          SPI4_NSS_PIN
 #define ICM20689_SPI_INSTANCE    SPI4
-#define GYRO_2_CS_PIN            MPU6000_CS_PIN
+#define MPU6000_CS_PIN           SPI3_NSS_PIN
+#define MPU6000_SPI_INSTANCE     SPI3
 #define GYRO_1_CS_PIN            ICM20689_CS_PIN
+#define GYRO_2_CS_PIN            MPU6000_CS_PIN
+#define GYRO_1_SPI_INSTANCE      ICM20689_SPI_INSTANCE
+#define GYRO_2_SPI_INSTANCE      MPU6000_SPI_INSTANCE
 
+#define ACC_1_ALIGN              ACC_ICM20689_ALIGN
+#define ACC_2_ALIGN              ACC_MPU6000_ALIGN
+#define GYRO_1_ALIGN             GYRO_ICM20689_ALIGN
+#define GYRO_2_ALIGN             GYRO_MPU6000_ALIGN
 
 //#define USE_MPU_DATA_READY_SIGNAL
 
@@ -151,6 +156,7 @@
 
 #define USE_MAG
 #define USE_MAG_HMC5883
+#define USE_MAG_QMC5883
 #define MAG_I2C_INSTANCE      I2C_DEVICE
 
 #define SENSORS_SET (SENSOR_ACC | SENSOR_BARO)
