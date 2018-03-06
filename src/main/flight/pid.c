@@ -508,22 +508,20 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
 
         // -----calculate D component
         if (axis != FD_YAW) {
-            // apply filters
-            float gyroRateFiltered = dtermNotchFilterApplyFn(dtermFilterNotch[axis], gyroRate);
-            gyroRateFiltered = dtermLpfApplyFn(dtermFilterLpf[axis], gyroRateFiltered);
-
-            const float rD = dynCd * MIN(getRcDeflectionAbs(axis) * relaxFactor, 1.0f) * currentPidSetpoint - gyroRateFiltered;    // cr - y
+            const float currentRateError = dynCd * MIN(getRcDeflectionAbs(axis) * relaxFactor, 1.0f) * currentPidSetpoint - gyroRate;
             // Divide rate change by deltaT to get differential (ie dr/dt)
-            float delta = (rD - previousRateError[axis]) / deltaT;
+            float deltaError = (currentRateError - previousRateError[axis]) / deltaT;
+            deltaError = dtermNotchFilterApplyFn(dtermFilterNotch[axis], deltaError);
+            deltaError = dtermLpfApplyFn(dtermFilterLpf[axis], deltaError);
 
-            previousRateError[axis] = rD;
+            previousRateError[axis] = currentRateError;
 
             // if crash recovery is on and accelerometer enabled and there is no gyro overflow, then check for a crash
             // no point in trying to recover if the crash is so severe that the gyro overflows
             if (pidProfile->crash_recovery && !gyroOverflowDetected()) {
                 if (ARMING_FLAG(ARMED)) {
                     if (motorMixRange >= 1.0f && !inCrashRecoveryMode
-                        && ABS(delta) > crashDtermThreshold
+                        && ABS(deltaError) > crashDtermThreshold
                         && ABS(errorRate) > crashGyroThreshold
                         && ABS(getSetpointRate(axis)) < crashSetpointThreshold) {
                         inCrashRecoveryMode = true;
@@ -539,7 +537,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
                     BEEP_OFF;
                 }
             }
-            axisPID_D[axis] = Kd[axis] * delta * tpaFactor;
+            axisPID_D[axis] = Kd[axis] * deltaError * tpaFactor;
             axisPIDSum[axis] = axisPID_P[axis] + axisPID_I[axis] + axisPID_D[axis];
         } else {
             axisPIDSum[axis] = axisPID_P[axis] + axisPID_I[axis];
