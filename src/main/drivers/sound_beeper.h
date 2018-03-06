@@ -20,13 +20,18 @@
 #ifdef BEEPER
 #define BEEP_TOGGLE              systemBeepToggle()
 #define BEEP_OFF                 systemBeep(false)
+#ifdef USE_DSHOT
+#define BEEP_ON                  systemBeepDshot()
+#else  // USE_DSHOT
 #define BEEP_ON                  systemBeep(true)
-#else
+#endif // USE_DSHOT
+#else  // BEEPER
 #define BEEP_TOGGLE do {} while (0)
 #define BEEP_OFF    do {} while (0)
 #define BEEP_ON     do {} while (0)
-#endif
+#endif // BEEPER
 
+void systemBeepDshot(void);
 void systemBeep(bool on);
 void systemBeepToggle(void);
 struct beeperDevConfig_s;

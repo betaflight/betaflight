@@ -389,17 +389,6 @@ void beeperUpdate(timeUs_t currentTimeUs)
     if (!beeperIsOn) {
         beeperIsOn = 1;
 
-#ifdef USE_DSHOT
-        if (!areMotorsRunning() && beeperConfig()->dshotBeaconTone && (beeperConfig()->dshotBeaconTone <= DSHOT_CMD_BEACON5) && (currentBeeperEntry->mode == BEEPER_RX_SET || currentBeeperEntry->mode == BEEPER_RX_LOST)) {
-            pwmDisableMotors();
-            delay(1);
-
-            pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), beeperConfig()->dshotBeaconTone);
-
-            pwmEnableMotors();
-        }
-#endif
-
         if (currentBeeperEntry->sequence[beeperPos] != 0) {
             if (!(getBeeperOffMask() & (1 << (currentBeeperEntry->mode - 1))))
                 BEEP_ON;

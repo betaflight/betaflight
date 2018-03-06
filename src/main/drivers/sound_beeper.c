@@ -22,8 +22,13 @@
 
 #include "drivers/io.h"
 #include "drivers/pwm_output.h"
+#include "drivers/time.h"
+
+#include "flight/mixer.h"
+#include "fc/runtime_config.h"
 
 #include "pg/beeper_dev.h"
+#include "pg/beeper.h"
 
 #include "sound_beeper.h"
 
@@ -31,6 +36,22 @@
 static IO_t beeperIO = DEFIO_IO(NONE);
 static bool beeperInverted = false;
 static uint16_t beeperFrequency = 0;
+#endif
+
+#ifdef BEEPER
+void systemBeepDshot(void)
+{
+#ifdef USE_DSHOT
+    if (!ARMING_FLAG(ARMED)) {
+        pwmDisableMotors();
+        delay(1);
+        pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), beeperConfig()->dshotBeaconTone);
+        pwmEnableMotors();
+    }
+#else
+    UNUSED(void)
+#endif
+}
 #endif
 
 void systemBeep(bool onoff)
@@ -43,7 +64,7 @@ void systemBeep(bool onoff)
     }
 #else
     UNUSED(onoff);
-#endif
+#endif // BEEPER
 }
 
 void systemBeepToggle(void)
