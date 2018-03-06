@@ -56,6 +56,7 @@
 #define USE_MAG
 #define USE_MAG_HMC5883
 #define USE_MAG_QMC5883
+#define USE_MAG_IST8310
 
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI2

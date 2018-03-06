@@ -154,6 +154,7 @@
 #define USE_MAG_AK8975
 #define USE_MAG_HMC5883
 #define USE_MAG_QMC5883
+#define USE_MAG_IST8310
 
 #define USE_VCP
 #define USE_UART1

@@ -28,5 +28,6 @@ TARGET_SRC = \
             drivers/compass/compass_fake.c \
             drivers/compass/compass_hmc5883l.c \
             drivers/compass/compass_qmc5883l.c \
+            drivers/compass/compass_ist8310.c \
             drivers/flash_m25p16.c \
             drivers/max7456.c

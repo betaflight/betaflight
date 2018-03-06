@@ -72,6 +72,7 @@
 #define USE_MAG
 #define USE_MAG_HMC5883
 #define USE_MAG_QMC5883
+#define USE_MAG_IST8310
 #define USE_MAG_AK8963
 #define USE_MAG_AK8975
 
