@@ -64,6 +64,8 @@
   */
 
 #include "stm32f7xx.h"
+#include "system_stm32f7xx.h"
+#include "platform.h"
 
 #if !defined  (HSE_VALUE)
   #define HSE_VALUE    ((uint32_t)8000000) /*!< Default value of the External oscillator in Hz */
@@ -135,7 +137,9 @@
                is no need to call the 2 first functions listed above, since SystemCoreClock
                variable is updated automatically.
   */
-  uint32_t SystemCoreClock = (PLL_N / PLL_P) * 1000000;
+  uint32_t SystemCoreClock;
+  uint32_t pll_p = PLL_P, pll_n = PLL_N, pll_q = PLL_Q;
+
   const uint8_t AHBPrescTable[16] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 6, 7, 8, 9};
   const uint8_t APBPrescTable[8] = {0, 0, 0, 0, 1, 2, 3, 4};
 
@@ -178,9 +182,9 @@
       RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
       RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
       RCC_OscInitStruct.PLL.PLLM = PLL_M;
-      RCC_OscInitStruct.PLL.PLLN = PLL_N;
-      RCC_OscInitStruct.PLL.PLLP = PLL_P;
-      RCC_OscInitStruct.PLL.PLLQ = PLL_Q;
+      RCC_OscInitStruct.PLL.PLLN = pll_n;
+      RCC_OscInitStruct.PLL.PLLP = pll_p;
+      RCC_OscInitStruct.PLL.PLLQ = pll_q;
 #endif
 
       ret = HAL_RCC_OscConfig(&RCC_OscInitStruct);
@@ -244,6 +248,60 @@
     SystemCoreClockUpdate();
   }
 
+typedef struct pllConfig_s {
+  uint16_t n;
+  uint16_t p;
+  uint16_t q;
+} pllConfig_t;
+
+static const pllConfig_t overclockLevels[] = {
+  { PLL_N, PLL_P, PLL_Q },    // default
+  { 480, RCC_PLLP_DIV2, 10 }, // 240 MHz
+};
+
+// 8 bytes of memory located at the very end of RAM, expected to be unoccupied
+#define REQUEST_OVERCLOCK               (*(__IO uint32_t *) (BKPSRAM_BASE + 8))
+#define CURRENT_OVERCLOCK_LEVEL         (*(__IO uint32_t *) (BKPSRAM_BASE + 12))
+#define REQUEST_OVERCLOCK_MAGIC_COOKIE  0xBABEFACE
+
+void SystemInitOC(void) {
+    __PWR_CLK_ENABLE();
+    __BKPSRAM_CLK_ENABLE();
+    HAL_PWR_EnableBkUpAccess();
+
+    if (REQUEST_OVERCLOCK_MAGIC_COOKIE == REQUEST_OVERCLOCK) {
+      const uint32_t overclockLevel = CURRENT_OVERCLOCK_LEVEL;
+
+      /* PLL setting for overclocking */
+      if (overclockLevel < ARRAYLEN(overclockLevels)) {
+        const pllConfig_t * const pll = overclockLevels + overclockLevel;
+
+        pll_n = pll->n;
+        pll_p = pll->p;
+        pll_q = pll->q;
+      }
+
+      REQUEST_OVERCLOCK = 0;
+    }
+}
+
+void OverclockRebootIfNecessary(uint32_t overclockLevel)
+{
+    if (overclockLevel >= ARRAYLEN(overclockLevels)) {
+        return;
+    }
+
+    const pllConfig_t * const pll = overclockLevels + overclockLevel;
+
+    // Reboot to adjust overclock frequency
+    if (SystemCoreClock != (pll->n / pll->p) * 1000000) {
+        REQUEST_OVERCLOCK = REQUEST_OVERCLOCK_MAGIC_COOKIE;
+        CURRENT_OVERCLOCK_LEVEL = overclockLevel;
+        __disable_irq();
+        NVIC_SystemReset();
+    }
+}
+
 /**
   * @}
   */
@@ -261,6 +319,10 @@
   */
 void SystemInit(void)
 {
+    SystemInitOC();
+
+    SystemCoreClock = (pll_n / pll_p) * 1000000;
+
     /* FPU settings ------------------------------------------------------------*/
 #if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
     SCB->CPACR |= ((3UL << 10*2)|(3UL << 11*2));  /* set CP10 and CP11 Full Access */
@@ -301,10 +363,10 @@ void SystemInit(void)
         SCB_EnableDCache();
     }
 
-    /* Configure the system clock to 216 MHz */
+    /* Configure the system clock to specified frequency */
     SystemClock_Config();
 
-    if (SystemCoreClock != 216000000) {
+    if (SystemCoreClock != (pll_n / pll_p) * 1000000) {
         // There is a mismatch between the configured clock and the expected clock in portable.h
         while (1);
     }

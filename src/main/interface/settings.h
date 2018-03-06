@@ -77,6 +77,12 @@ typedef enum {
 #ifdef USE_OVERCLOCK
     TABLE_OVERCLOCK,
 #endif
+#ifdef USE_LED_STRIP
+    TABLE_RGB_GRB,
+#endif
+#ifdef USE_DUAL_GYRO
+    TABLE_GYRO,
+#endif
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 

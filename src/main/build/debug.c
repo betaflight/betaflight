@@ -54,6 +54,10 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "FFT_FREQ",
     "RX_FRSKY_SPI",
     "GYRO_RAW",
+    "DUAL_GYRO",
+    "DUAL_GYRO_RAW",
+    "DUAL_GYRO_COMBINE",
+    "DUAL_GYRO_DIFF",
     "MAX7456_SIGNAL",
     "MAX7456_SPICLOCK",
     "SBUS",
@@ -63,6 +67,7 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "LIDAR_TF",
     "CORE_TEMP",
     "RUNAWAY_TAKEOFF",
+    "CURRENT_SENSOR",
 };
 
 #ifdef SEGGER_RTT

@@ -18,6 +18,7 @@
 #pragma once
 
 #include "drivers/io_types.h"
+#include "io/ledstrip.h"
 
 #define WS2811_LED_STRIP_LENGTH    32
 #define WS2811_BITS_PER_LED        24
@@ -36,7 +37,7 @@ void ws2811LedStripInit(ioTag_t ioTag);
 void ws2811LedStripHardwareInit(ioTag_t ioTag);
 void ws2811LedStripDMAEnable(void);
 
-void ws2811UpdateStrip(void);
+void ws2811UpdateStrip(ledStripFormatRGB_e ledFormat);
 
 void setLedHsv(uint16_t index, const hsvColor_t *color);
 void getLedHsv(uint16_t index, hsvColor_t *color);

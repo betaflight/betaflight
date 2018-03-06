@@ -25,8 +25,6 @@
 #define BEEPER                  PC13
 #define BEEPER_INVERTED
 
-#define USE_DSHOT_DMAR
-
 #define INVERTER_PIN_UART2      PC14
 
 #define USE_ACC
