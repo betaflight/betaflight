@@ -41,6 +41,7 @@ void targetConfiguration(void) {
     gyroConfigMutable()->gyro_soft_lpf_hz = 0;
     gyroConfigMutable()->gyro_soft_notch_hz_1 = 0;
     gyroConfigMutable()->gyro_soft_notch_hz_2 = 0;
+    gyroConfigMutable()->gyroMovementCalibrationThreshold = 5;
 
     for (uint8_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
         pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);

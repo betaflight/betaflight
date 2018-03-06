@@ -39,7 +39,7 @@
 #include "fc/config.h"
 
 #include "sensors/boardalignment.h"
-volatile int isImufCalibrating = 0;
+volatile uint32_t isImufCalibrating = 0;
 
 void crcConfig(void)
 {
@@ -283,11 +283,7 @@ bool imufSpiGyroDetect(gyroDev_t *gyro)
     return true;
 }
 
-int imufStartCalibration(bool isFirstArmingCalibration, gyroDev_t *gyro) {
-    (void)(gyro);
-    if (isFirstArmingCalibration) {
-        isImufCalibrating = 1; //reset by EXTI
-        delay(50); //give imuf time to calibrate
-    }
-    return 1;
+void imufStartCalibration(void)
+{
+    isImufCalibrating = IMUF_CALIBRATION_STEP1; //reset by EXTI
 }
