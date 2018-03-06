@@ -79,6 +79,7 @@ typedef enum {
     STAGE2_FILTER_NONE = 0,
     STAGE2_FILTER_BIQUAD_RC_FIR2,
     STAGE2_FILTER_FAST_KALMAN,
+    STAGE2_FILTER_FIXED_K_KALMAN
 } stage2FilterType_e;
 
 typedef struct firFilter_s {
@@ -106,6 +107,9 @@ void biquadRCFIR2FilterInit(biquadFilter_t *filter, uint16_t f_cut, float dT);
 
 void fastKalmanInit(fastKalman_t *filter, float q, float r, float p);
 float fastKalmanUpdate(fastKalman_t *filter, float input);
+
+void fixedKKalmanInit(fastKalman_t *filter, uint16_t f_cut, float dT);
+float fixedKKalmanUpdate(fastKalman_t *filter, float input);
 
 // not exactly correct, but very very close and much much faster
 #define filterGetNotchQApprox(centerFreq, cutoff)   ((float)(cutoff * centerFreq) / ((float)(centerFreq - cutoff) * (float)(centerFreq + cutoff)))

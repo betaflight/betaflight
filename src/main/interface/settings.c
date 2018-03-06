@@ -286,7 +286,7 @@ static const char * const lookupOverclock[] = {
 #ifdef USE_GYRO_BIQUAD_RC_FIR2
 #ifdef USE_GYRO_FAST_KALMAN
 static const char * const lookupTableStage2FilterType[] = {
-    "NONE", "BIQUAD_RC_FIR2", "FAST_KALMAN"
+    "NONE", "BIQUAD_RC_FIR2", "FAST_KALMAN", "FIXED_K_KALMAN"
 };
 #endif
 #endif // Only use lookup when both are enabled
