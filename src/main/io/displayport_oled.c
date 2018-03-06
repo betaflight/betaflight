@@ -76,6 +76,12 @@ static bool oledIsTransferInProgress(const displayPort_t *displayPort)
     return false;
 }
 
+static bool oledIsSynced(const displayPort_t *displayPort)
+{
+    UNUSED(displayPort);
+    return true;
+}
+
 static int oledHeartbeat(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
@@ -104,6 +110,7 @@ static const displayPortVTable_t oledVTable = {
     .isTransferInProgress = oledIsTransferInProgress,
     .heartbeat = oledHeartbeat,
     .resync = oledResync,
+    .isSynced = oledIsSynced,
     .txBytesFree = oledTxBytesFree
 };
 

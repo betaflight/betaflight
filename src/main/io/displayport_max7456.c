@@ -120,6 +120,12 @@ static bool isTransferInProgress(const displayPort_t *displayPort)
     return max7456DmaInProgress();
 }
 
+static bool isSynced(const displayPort_t *displayPort)
+{
+    UNUSED(displayPort);
+    return max7456BuffersSynced();
+}
+
 static void resync(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
@@ -151,6 +157,7 @@ static const displayPortVTable_t max7456VTable = {
     .isTransferInProgress = isTransferInProgress,
     .heartbeat = heartbeat,
     .resync = resync,
+    .isSynced = isSynced,
     .txBytesFree = txBytesFree,
 };
 

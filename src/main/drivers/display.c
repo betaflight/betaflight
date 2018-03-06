@@ -92,6 +92,11 @@ bool displayIsTransferInProgress(const displayPort_t *instance)
     return instance->vTable->isTransferInProgress(instance);
 }
 
+bool displayIsSynced(const displayPort_t *instance)
+{
+    return instance->vTable->isSynced(instance);
+}
+
 void displayHeartbeat(displayPort_t *instance)
 {
     instance->vTable->heartbeat(instance);
