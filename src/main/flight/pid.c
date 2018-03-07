@@ -105,9 +105,10 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .pidSumLimitYaw = PIDSUM_LIMIT_YAW,
         .yaw_lpf_hz = 0,
         .dterm_lpf_hz = 100,    // filtering ON by default
+        .dterm_lpf_2_hz = 200,    // second PT1 ON by default
         .dterm_notch_hz = 260,
         .dterm_notch_cutoff = 160,
-        .dterm_filter_type = FILTER_BIQUAD,
+        .dterm_filter_type = FILTER_PT1,
         .itermWindupPointPercent = 50,
         .vbatPidCompensation = 0,
         .pidAtMinThrottle = PID_STABILISATION_ON,
@@ -171,6 +172,8 @@ static FAST_RAM filterApplyFnPtr dtermNotchFilterApplyFn;
 static FAST_RAM void *dtermFilterNotch[2];
 static FAST_RAM filterApplyFnPtr dtermLpfApplyFn;
 static FAST_RAM void *dtermFilterLpf[2];
+static FAST_RAM filterApplyFnPtr dtermLpf2ApplyFn;
+static FAST_RAM void *dtermLpf2Filter[2];
 static FAST_RAM filterApplyFnPtr ptermYawFilterApplyFn;
 static FAST_RAM void *ptermYawFilter;
 
@@ -218,6 +221,18 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     } else {
         dtermNotchFilterApplyFn = nullFilterApply;
     }
+    
+    //extra Dterm PT1 filter
+	static pt1Filter_t ExtraPt1FilterD;
+	if (pidProfile->dterm_lpf_2_hz == 0 || pidProfile->dterm_lpf_2_hz > pidFrequencyNyquist) {
+		dtermLpf2ApplyFn = nullFilterApply;
+	} else {
+		dtermLpf2ApplyFn = (filterApplyFnPtr)pt1FilterApply;
+		for (int axis = FD_ROLL; axis <= FD_PITCH; axis++) {
+			dtermLpf2Filter[axis] = &ExtraPt1FilterD;
+			pt1FilterInit(dtermLpf2Filter[axis], pidProfile->dterm_lpf_2_hz, dT);
+			}
+	}
 
     static dtermFilterLpf_t dtermFilterLpfUnion;
     if (pidProfile->dterm_lpf_hz == 0 || pidProfile->dterm_lpf_hz > pidFrequencyNyquist) {
@@ -515,6 +530,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             // apply filters
             float gyroRateFiltered = dtermNotchFilterApplyFn(dtermFilterNotch[axis], gyroRate);
             gyroRateFiltered = dtermLpfApplyFn(dtermFilterLpf[axis], gyroRateFiltered);
+			gyroRateFiltered = dtermLpf2ApplyFn(dtermLpf2Filter[axis], gyroRateFiltered);
 
             const float rD = dynCd * MIN(getRcDeflectionAbs(axis) * relaxFactor, 1.0f) * currentPidSetpoint - gyroRateFiltered;    // cr - y
             // Divide rate change by deltaT to get differential (ie dr/dt)
