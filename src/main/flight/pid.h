@@ -75,6 +75,7 @@ typedef struct pidProfile_s {
 
     uint16_t yaw_lpf_hz;                    // Additional yaw filter when yaw axis too noisy
     uint16_t dterm_lpf_hz;                  // Delta Filter in hz
+    uint16_t dterm_lpf_2_hz;                // Extra PT1 Filter on D in hz
     uint16_t dterm_notch_hz;                // Biquad dterm notch hz
     uint16_t dterm_notch_cutoff;            // Biquad dterm notch low cutoff
     uint8_t dterm_filter_type;              // Filter selection for dterm
