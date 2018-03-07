@@ -63,7 +63,7 @@ void pwmWriteDshotInt(uint8_t index, uint16_t value)
 
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
-        bufferSize = loadDmaBuffer(&motor->timer->dmaBurstBuffer[timerLookupChannelIndex(motor->timerHardware->channel)], 4, packet);
+        bufferSize = loadDmaBuffer(&motor->timer->dmaBurstBuffer[CC_INDEX_FROM_CHANNEL(motor->timerHardware->channel)], 4, packet);
         if (HAL_DMA_STATE_READY == motor->TimHandle.hdma[motor->timerDmaIndex]->State) {
             HAL_DMA_Start_IT(motor->TimHandle.hdma[motor->timerDmaIndex], (uint32_t)motor->timer->dmaBurstBuffer, (uint32_t)&motor->TimHandle.Instance->DMAR, bufferSize * 4);
         }

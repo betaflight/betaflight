@@ -262,16 +262,6 @@ int8_t timerGetTIMNumber(const TIM_TypeDef *tim)
     }
 }
 
-static inline uint8_t lookupChannelIndex(const uint16_t channel)
-{
-    return channel >> 2;
-}
-
-uint8_t timerLookupChannelIndex(const uint16_t channel)
-{
-    return lookupChannelIndex(channel);
-}
-
 rccPeriphTag_t timerRCC(TIM_TypeDef *tim)
 {
     for (int i = 0; i < HARDWARE_TIMER_DEFINITION_COUNT; i++) {
@@ -419,7 +409,7 @@ void timerChConfigCallbacks(const timerHardware_t *timHw, timerCCHandlerRec_t *e
     if (timerIndex >= USED_TIMER_COUNT) {
         return;
     }
-    uint8_t channelIndex = lookupChannelIndex(timHw->channel);
+    uint8_t channelIndex = CC_INDEX_FROM_CHANNEL(timHw->channel);
     if (edgeCallback == NULL)   // disable irq before changing callback to NULL
         TIM_ITConfig(timHw->tim, TIM_IT_CCx(timHw->channel), DISABLE);
     // setup callback info
@@ -443,7 +433,7 @@ void timerChConfigCallbacksDual(const timerHardware_t *timHw, timerCCHandlerRec_
     }
     uint16_t chLo = timHw->channel & ~TIM_Channel_2;   // lower channel
     uint16_t chHi = timHw->channel | TIM_Channel_2;    // upper channel
-    uint8_t channelIndex = lookupChannelIndex(chLo);   // get index of lower channel
+    uint8_t channelIndex = CC_INDEX_FROM_CHANNEL(chLo);   // get index of lower channel
 
     if (edgeCallbackLo == NULL)   // disable irq before changing setting callback to NULL
         TIM_ITConfig(timHw->tim, TIM_IT_CCx(chLo), DISABLE);
@@ -558,6 +548,8 @@ void timerChICPolarity(const timerHardware_t *timHw, bool polarityRising)
     timHw->tim->CCER = tmpccer;
 }
 
+// XXX timerChCCRHi and timerChCCRLo not used?
+#if 0
 volatile timCCR_t* timerChCCRHi(const timerHardware_t *timHw)
 {
     return (volatile timCCR_t*)((volatile char*)&timHw->tim->CCR1 + (timHw->channel | TIM_Channel_2));
@@ -567,6 +559,7 @@ volatile timCCR_t* timerChCCRLo(const timerHardware_t *timHw)
 {
     return (volatile timCCR_t*)((volatile char*)&timHw->tim->CCR1 + (timHw->channel & ~TIM_Channel_2));
 }
+#endif
 
 volatile timCCR_t* timerChCCR(const timerHardware_t *timHw)
 {
@@ -776,12 +769,12 @@ void timerInit(void)
 #endif
 
     /* enable the timer peripherals */
-    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+    for (unsigned i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
         RCC_ClockCmd(timerRCC(timerHardware[i].tim), ENABLE);
     }
 
 #if defined(STM32F3) || defined(STM32F4)
-    for (int timerIndex = 0; timerIndex < USABLE_TIMER_CHANNEL_COUNT; timerIndex++) {
+    for (unsigned timerIndex = 0; timerIndex < USABLE_TIMER_CHANNEL_COUNT; timerIndex++) {
         const timerHardware_t *timerHardwarePtr = &timerHardware[timerIndex];
         if (timerHardwarePtr->usageFlags == TIM_USE_NONE) {
             continue;
@@ -792,10 +785,10 @@ void timerInit(void)
 #endif
 
     // initialize timer channel structures
-    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+    for(unsigned i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
         timerChannelInfo[i].type = TYPE_FREE;
     }
-    for (int i = 0; i < USED_TIMER_COUNT; i++) {
+    for(unsigned i = 0; i < USED_TIMER_COUNT; i++) {
         timerInfo[i].priority = ~0;
     }
 }
@@ -849,14 +842,14 @@ void timerForceOverflow(TIM_TypeDef *tim)
     }
 }
 
-const timerHardware_t *timerGetByTag(ioTag_t tag, timerUsageFlag_e flag)
+const timerHardware_t *timerGetByTag(ioTag_t ioTag, timerUsageFlag_e flag)
 {
-    if (!tag) {
+    if (!ioTag) {
         return NULL;
     }
 
-    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
-        if (timerHardware[i].tag == tag) {
+    for (unsigned i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+        if (timerHardware[i].tag == ioTag) {
             if (timerHardware[i].usageFlags & flag || flag == 0) {
                 return &timerHardware[i];
             }
@@ -932,7 +925,7 @@ uint16_t timerGetPrescalerByDesiredMhz(TIM_TypeDef *tim, uint16_t mhz)
 
 uint16_t timerGetPeriodByPrescaler(TIM_TypeDef *tim, uint16_t prescaler, uint32_t hz)
 {
-    return ((uint16_t)((timerClock(tim) / (prescaler + 1)) / hz));
+    return (uint16_t)((timerClock(tim) / (prescaler + 1)) / hz);
 }
 
 uint16_t timerGetPrescalerByDesiredHertz(TIM_TypeDef *tim, uint32_t hz)

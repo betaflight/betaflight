@@ -69,7 +69,7 @@ void pwmWriteDshotInt(uint8_t index, uint16_t value)
 
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
-        bufferSize = loadDmaBuffer(&motor->timer->dmaBurstBuffer[timerLookupChannelIndex(motor->timerHardware->channel)], 4, packet);
+        bufferSize = loadDmaBuffer(&motor->timer->dmaBurstBuffer[CC_INDEX_FROM_CHANNEL(motor->timerHardware->channel)], 4, packet);
         motor->timer->dmaBurstLength = bufferSize * 4;
     } else
 #endif

@@ -20,8 +20,14 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "pg/pg.h"
 #include "drivers/io_types.h"
 #include "rcc_types.h"
+#include "drivers/timer_def.h"
+
+#define CC_CHANNELS_PER_TIMER 4 // TIM_Channel_1..4
+#define CC_INDEX_FROM_CHANNEL(x)      ((uint8_t)((x) >> 2))
+#define CC_CHANNEL_FROM_INDEX(x)      ((uint16_t)(x) << 2)
 
 typedef uint16_t captureCompare_t;        // 16 bit on both 103 and 303, just register access must be 32bit sometimes (use timCCR_t)
 
@@ -143,7 +149,12 @@ typedef enum {
 
 #define MHZ_TO_HZ(x) ((x) * 1000000)
 
+#ifdef USE_TIMER_MGMT
+extern timerHardware_t timerHardware[];
+extern const timerTag_t timerTags[TIMER_CHANNEL_COUNT];
+#else
 extern const timerHardware_t timerHardware[];
+#endif
 extern const timerDef_t timerDefinitions[];
 
 typedef enum {
@@ -196,7 +207,7 @@ void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint32_t hz);  // TODO - 
 rccPeriphTag_t timerRCC(TIM_TypeDef *tim);
 uint8_t timerInputIrq(TIM_TypeDef *tim);
 
-const timerHardware_t *timerGetByTag(ioTag_t tag, timerUsageFlag_e flag);
+const timerHardware_t *timerGetByTag(ioTag_t ioTag, timerUsageFlag_e flag);
 
 #if defined(USE_HAL_DRIVER)
 TIM_HandleTypeDef* timerFindTimerHandle(TIM_TypeDef *tim);
@@ -216,4 +227,6 @@ uint16_t timerGetPrescalerByDesiredMhz(TIM_TypeDef *tim, uint16_t mhz);
 uint16_t timerGetPeriodByPrescaler(TIM_TypeDef *tim, uint16_t prescaler, uint32_t hz);
 
 int8_t timerGetTIMNumber(const TIM_TypeDef *tim);
-uint8_t timerLookupChannelIndex(const uint16_t channel);
+#if defined(STM32F4) || defined(USE_HAL_DRIVER)
+uint8_t timerAlternateFunction(const timerTag_t timerTag, const ioTag_t ioTag);
+#endif
