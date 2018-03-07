@@ -29,7 +29,7 @@
 - Added use TIM_UP and DMAR for all timer channels with Dshot (#4073, #4843, #4852);
 - Added '3D on a switch' mode (#4227);
 - Added Dshot beacon activation to BEEPER_RX_LOST_LANDING (#4231);
-- Added generic RunCam device protocol support (#4251);
+- Added generic RunCam device protocol support (#4251), see the [wiki article](https://github.com/betaflight/betaflight/wiki/RunCam-Device-Protocol) for details;
 - Added a reasonable default OSD layout (#4260);
 - Added handling and display of date and time (#4289);
 - Added MSP command to disable arming (#4320);
