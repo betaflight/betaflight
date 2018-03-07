@@ -78,6 +78,7 @@
 #include "pg/pg_ids.h"
 
 #include "rx/rx.h"
+#include "rx/crsf.h"
 
 #include "sensors/adcinternal.h"
 #include "sensors/barometer.h"
@@ -397,6 +398,13 @@ static bool osdDrawSingleElement(uint8_t item)
                 osdRssi = 99;
 
             tfp_sprintf(buff, "%c%2d", SYM_RSSI, osdRssi);
+            break;
+        }
+
+    case OSD_CRSF_LINK_QUALITY:
+        {
+            uint16_t lq = (crsfLQ + (crsfRFMode * 100));
+            tfp_sprintf(buff, "%c%d", SYM_RSSI, lq);
             break;
         }
 

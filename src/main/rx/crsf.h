@@ -37,6 +37,9 @@ typedef union crsfFrame_u {
     crsfFrameDef_t frame;
 } crsfFrame_t;
 
+extern int8_t crsfRFMode;
+extern int8_t crsfLQ;
+
 void crsfRxWriteTelemetryData(const void *data, int len);
 void crsfRxSendTelemetryData(void);
 
