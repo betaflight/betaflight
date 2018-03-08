@@ -297,6 +297,10 @@ rcdevice_unittest_SRC := \
 rcdevice_unittest_DEFINES := \
 		USE_RCDEVICE
 
+bqrc_kalman_unittest_SRC := \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/filter.c
+
 # Please tweak the following variable definitions as needed by your
 # project, except GTEST_HEADERS, which you can use in your own targets
 # but shouldn't modify.
