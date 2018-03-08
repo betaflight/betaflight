@@ -79,7 +79,7 @@ int strncasecmp(const char * s1, const char * s2, size_t n)
     return d;
 }
 
-char *strcasestr(const char *haystack, const char *needle) 
+char *strcasestr(const char *haystack, const char *needle)
 {
     int nLen = strlen(needle);
     do {
