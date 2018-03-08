@@ -18,7 +18,7 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "CBFR" //
-#define USBD_PRODUCT_STRING   "Crazy Bee F3"
+#define USBD_PRODUCT_STRING   "Crazy Bee F3 FR"
 #define LED0_PIN                PB3
 #define BEEPER                  PC15
 #define BEEPER_INVERTED
