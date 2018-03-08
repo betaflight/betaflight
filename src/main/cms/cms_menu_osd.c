@@ -84,10 +84,10 @@ OSD_Entry menuOsdActiveElemsEntries[] =
     {"GPS LON",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_LON], 0},
     {"HOME DIR",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HOME_DIR], 0},
     {"HOME DIST",          OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HOME_DIST], 0},
+#endif // GPS
 #ifdef USE_SERIALRX_CRSF
     {"CRSF LINK QUALITY",  OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CRSF_LINK_QUALITY], 0},
 #endif //CRSF
-#endif // GPS
     {"COMPASS BAR",        OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_COMPASS_BAR], 0},
     {"ALTITUDE",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ALTITUDE], 0},
     {"POWER",              OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_POWER], 0},
