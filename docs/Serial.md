@@ -97,13 +97,13 @@ For example. If you have your MWOSD connected to UART 2, you could enable commun
 
     serialpassthrough 1
 
-If a baud rate is not specified then serial pass-through supports changing of the baud rate over USB. This allows tools such as the MWOSD GUI to dynamically set the baud rate to, for example 57600 for reflashing the MWOSD firmware and then 115200 for adjusting settings without having to powercycle your flight control board between the two.
+If a baud rate is not specified then `serialpassthrough` supports changing of the baud rate over USB. This allows tools such as the MWOSD GUI to dynamically set the baud rate to, for example 57600 for reflashing the MWOSD firmware and then 115200 for adjusting settings without having to powercycle your flight control board between the two.
 
 _To use a tool such as the MWOSD GUI, it is necessary to disconnect or exit Cleanflight configurator._
 
 **To exit serial passthrough mode, power cycle your flight control board.**
 
-In order to reflash an Arduino based device such as a MWOSD if is necessary to connect the DTR line in addition to the RX and TX serial lines. The DTR is used as a reset line to invoke the bootloader. The DTR line may be connected to any GPIO pin on the flight control board. The DTR line associated with any given UART may be set using the CLI command `resource`.
+In order to reflash an Arduino based device such as a MWOSD via `serialpassthrough` if is necessary to connect the DTR line in addition to the RX and TX serial lines. The DTR is used as a reset line to invoke the bootloader. The DTR line may be connected to any GPIO pin on the flight control board. The DTR line associated with any given UART may be set using the CLI command `resource`.
 
 For example, the following configuration for an OpenPilot Revolution shows the UART6 serial port to be configured with TX on pin C06, RX on pin C07 and DTR on pin C08.
 
