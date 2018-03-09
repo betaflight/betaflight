@@ -1,73 +1,61 @@
-/* ----------------------------------------------------------------------------    
-* Copyright (C) 2010-2014 ARM Limited. All rights reserved.    
-*    
-* $Date:        19. March 2015
-* $Revision: 	V.1.4.5
-*    
-* Project: 	    CMSIS DSP Library    
-* Title:        arm_mat_add_f32.c    
-*    
-* Description:	Floating-point matrix addition    
-*    
-* Target Processor: Cortex-M4/Cortex-M3/Cortex-M0
-*  
-* Redistribution and use in source and binary forms, with or without 
-* modification, are permitted provided that the following conditions
-* are met:
-*   - Redistributions of source code must retain the above copyright
-*     notice, this list of conditions and the following disclaimer.
-*   - Redistributions in binary form must reproduce the above copyright
-*     notice, this list of conditions and the following disclaimer in
-*     the documentation and/or other materials provided with the 
-*     distribution.
-*   - Neither the name of ARM LIMITED nor the names of its contributors
-*     may be used to endorse or promote products derived from this
-*     software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-* "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-* LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-* FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-* COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-* BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-* CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-* LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-* ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-* POSSIBILITY OF SUCH DAMAGE.     
-* -------------------------------------------------------------------------- */
+/* ----------------------------------------------------------------------
+ * Project:      CMSIS DSP Library
+ * Title:        arm_mat_add_f32.c
+ * Description:  Floating-point matrix addition
+ *
+ * $Date:        27. January 2017
+ * $Revision:    V.1.5.1
+ *
+ * Target Processor: Cortex-M cores
+ * -------------------------------------------------------------------- */
+/*
+ * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed under the Apache License, Version 2.0 (the License); you may
+ * not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #include "arm_math.h"
 
-/**        
- * @ingroup groupMatrix        
+/**
+ * @ingroup groupMatrix
  */
 
-/**        
- * @defgroup MatrixAdd Matrix Addition        
- *        
- * Adds two matrices.        
- * \image html MatrixAddition.gif "Addition of two 3 x 3 matrices"        
- *        
- * The functions check to make sure that        
- * <code>pSrcA</code>, <code>pSrcB</code>, and <code>pDst</code> have the same        
- * number of rows and columns.        
+/**
+ * @defgroup MatrixAdd Matrix Addition
+ *
+ * Adds two matrices.
+ * \image html MatrixAddition.gif "Addition of two 3 x 3 matrices"
+ *
+ * The functions check to make sure that
+ * <code>pSrcA</code>, <code>pSrcB</code>, and <code>pDst</code> have the same
+ * number of rows and columns.
  */
 
-/**        
- * @addtogroup MatrixAdd        
- * @{        
+/**
+ * @addtogroup MatrixAdd
+ * @{
  */
 
 
-/**        
- * @brief Floating-point matrix addition.        
- * @param[in]       *pSrcA points to the first input matrix structure        
- * @param[in]       *pSrcB points to the second input matrix structure        
- * @param[out]      *pDst points to output matrix structure        
- * @return     		The function returns either        
- * <code>ARM_MATH_SIZE_MISMATCH</code> or <code>ARM_MATH_SUCCESS</code> based on the outcome of size checking.        
+/**
+ * @brief Floating-point matrix addition.
+ * @param[in]       *pSrcA points to the first input matrix structure
+ * @param[in]       *pSrcB points to the second input matrix structure
+ * @param[out]      *pDst points to output matrix structure
+ * @return     		The function returns either
+ * <code>ARM_MATH_SIZE_MISMATCH</code> or <code>ARM_MATH_SUCCESS</code> based on the outcome of size checking.
  */
 
 arm_status arm_mat_add_f32(
@@ -79,11 +67,11 @@ arm_status arm_mat_add_f32(
   float32_t *pIn2 = pSrcB->pData;                /* input data matrix pointer B  */
   float32_t *pOut = pDst->pData;                 /* output data matrix pointer   */
 
-#ifndef ARM_MATH_CM0_FAMILY
+#if defined (ARM_MATH_DSP)
 
   float32_t inA1, inA2, inB1, inB2, out1, out2;  /* temporary variables */
 
-#endif //      #ifndef ARM_MATH_CM0_FAMILY
+#endif //      #if defined (ARM_MATH_DSP)
 
   uint32_t numSamples;                           /* total number of elements in the matrix  */
   uint32_t blkCnt;                               /* loop counters */
@@ -91,7 +79,7 @@ arm_status arm_mat_add_f32(
 
 #ifdef ARM_MATH_MATRIX_CHECK
   /* Check for matrix mismatch condition */
-  if((pSrcA->numRows != pSrcB->numRows) ||
+  if ((pSrcA->numRows != pSrcB->numRows) ||
      (pSrcA->numCols != pSrcB->numCols) ||
      (pSrcA->numRows != pDst->numRows) || (pSrcA->numCols != pDst->numCols))
   {
@@ -105,14 +93,14 @@ arm_status arm_mat_add_f32(
     /* Total number of samples in the input matrix */
     numSamples = (uint32_t) pSrcA->numRows * pSrcA->numCols;
 
-#ifndef ARM_MATH_CM0_FAMILY
+#if defined (ARM_MATH_DSP)
 
     /* Loop unrolling */
-    blkCnt = numSamples >> 2u;
+    blkCnt = numSamples >> 2U;
 
-    /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.    
+    /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
      ** a second loop below computes the remaining 1 to 3 samples. */
-    while(blkCnt > 0u)
+    while (blkCnt > 0U)
     {
       /* C(m,n) = A(m,n) + B(m,n) */
       /* Add and then store the results in the destination buffer. */
@@ -164,16 +152,16 @@ arm_status arm_mat_add_f32(
 
 
       /* update pointers to process next sampels */
-      pIn1 += 4u;
-      pIn2 += 4u;
-      pOut += 4u;
+      pIn1 += 4U;
+      pIn2 += 4U;
+      pOut += 4U;
       /* Decrement the loop counter */
       blkCnt--;
     }
 
-    /* If the numSamples is not a multiple of 4, compute any remaining output samples here.    
+    /* If the numSamples is not a multiple of 4, compute any remaining output samples here.
      ** No loop unrolling is used. */
-    blkCnt = numSamples % 0x4u;
+    blkCnt = numSamples % 0x4U;
 
 #else
 
@@ -182,9 +170,9 @@ arm_status arm_mat_add_f32(
     /* Initialize blkCnt with number of samples */
     blkCnt = numSamples;
 
-#endif /* #ifndef ARM_MATH_CM0_FAMILY */
+#endif /* #if defined (ARM_MATH_DSP) */
 
-    while(blkCnt > 0u)
+    while (blkCnt > 0U)
     {
       /* C(m,n) = A(m,n) + B(m,n) */
       /* Add and then store the results in the destination buffer. */
@@ -203,6 +191,6 @@ arm_status arm_mat_add_f32(
   return (status);
 }
 
-/**        
- * @} end of MatrixAdd group        
+/**
+ * @} end of MatrixAdd group
  */

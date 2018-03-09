@@ -1,44 +1,36 @@
-/* ----------------------------------------------------------------------    
-* Copyright (C) 2010-2014 ARM Limited. All rights reserved.    
-*    
-* $Date:        19. March 2015 
-* $Revision: 	V.1.4.5  
-*    
-* Project: 	    CMSIS DSP Library    
-* Title:	    arm_rfft_f32.c    
-*    
-* Description:	RFFT & RIFFT Floating point process function    
-*    
-* Target Processor: Cortex-M4/Cortex-M3/Cortex-M0
-*  
-* Redistribution and use in source and binary forms, with or without 
-* modification, are permitted provided that the following conditions
-* are met:
-*   - Redistributions of source code must retain the above copyright
-*     notice, this list of conditions and the following disclaimer.
-*   - Redistributions in binary form must reproduce the above copyright
-*     notice, this list of conditions and the following disclaimer in
-*     the documentation and/or other materials provided with the 
-*     distribution.
-*   - Neither the name of ARM LIMITED nor the names of its contributors
-*     may be used to endorse or promote products derived from this
-*     software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-* "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-* LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-* FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-* COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-* BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-* CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-* LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-* ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-* POSSIBILITY OF SUCH DAMAGE.  
-* -------------------------------------------------------------------- */
+/* ----------------------------------------------------------------------
+ * Project:      CMSIS DSP Library
+ * Title:        arm_rfft_f32.c
+ * Description:  RFFT & RIFFT Floating point process function
+ *
+ * $Date:        27. January 2017
+ * $Revision:    V.1.5.1
+ *
+ * Target Processor: Cortex-M cores
+ * -------------------------------------------------------------------- */
+/*
+ * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed under the Apache License, Version 2.0 (the License); you may
+ * not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #include "arm_math.h"
+
+/* ----------------------------------------------------------------------
+ * Internal functions prototypes
+ * -------------------------------------------------------------------- */
 
 extern void arm_radix4_butterfly_f32(
     float32_t * pSrc,
@@ -59,14 +51,6 @@ extern void arm_bitreversal_f32(
     uint16_t bitRevFactor,
     uint16_t * pBitRevTab);
 
-/**    
- * @ingroup groupTransforms    
- */
-
-/*--------------------------------------------------------------------    
- *		Internal functions prototypes    
- *--------------------------------------------------------------------*/
-
 void arm_split_rfft_f32(
   float32_t * pSrc,
   uint32_t fftLen,
@@ -74,6 +58,7 @@ void arm_split_rfft_f32(
   float32_t * pBTable,
   float32_t * pDst,
   uint32_t modifier);
+
 void arm_split_rifft_f32(
   float32_t * pSrc,
   uint32_t fftLen,
@@ -82,19 +67,23 @@ void arm_split_rifft_f32(
   float32_t * pDst,
   uint32_t modifier);
 
-/**    
- * @addtogroup RealFFT    
- * @{    
+/**
+* @ingroup groupTransforms
+*/
+
+/**
+ * @addtogroup RealFFT
+ * @{
  */
 
-/**    
- * @brief Processing function for the floating-point RFFT/RIFFT.   
+/**
+ * @brief Processing function for the floating-point RFFT/RIFFT.
  * @deprecated Do not use this function.  It has been superceded by \ref arm_rfft_fast_f32 and will be removed
  * in the future.
- * @param[in]  *S    points to an instance of the floating-point RFFT/RIFFT structure.   
- * @param[in]  *pSrc points to the input buffer.   
- * @param[out] *pDst points to the output buffer.   
- * @return none.   
+ * @param[in]  *S    points to an instance of the floating-point RFFT/RIFFT structure.
+ * @param[in]  *pSrc points to the input buffer.
+ * @param[out] *pDst points to the output buffer.
+ * @return none.
  */
 
 void arm_rfft_f32(
@@ -106,7 +95,7 @@ void arm_rfft_f32(
 
 
   /* Calculation of Real IFFT of input */
-  if(S->ifftFlagR == 1u)
+  if (S->ifftFlagR == 1U)
   {
     /*  Real IFFT core process */
     arm_split_rifft_f32(pSrc, S->fftLenBy2, S->pTwiddleAReal,
@@ -120,7 +109,7 @@ void arm_rfft_f32(
                                      S_CFFT->onebyfftLen);
 
     /* Bit reversal process */
-    if(S->bitReverseFlagR == 1u)
+    if (S->bitReverseFlagR == 1U)
     {
       arm_bitreversal_f32(pDst, S_CFFT->fftLen,
                           S_CFFT->bitRevFactor, S_CFFT->pBitRevTable);
@@ -136,7 +125,7 @@ void arm_rfft_f32(
                              S_CFFT->pTwiddle, S_CFFT->twidCoefModifier);
 
     /* Bit reversal process */
-    if(S->bitReverseFlagR == 1u)
+    if (S->bitReverseFlagR == 1U)
     {
       arm_bitreversal_f32(pSrc, S_CFFT->fftLen,
                           S_CFFT->bitRevFactor, S_CFFT->pBitRevTable);
@@ -150,19 +139,19 @@ void arm_rfft_f32(
 
 }
 
-/**    
-   * @} end of RealFFT group    
+/**
+   * @} end of RealFFT group
    */
 
-/**    
- * @brief  Core Real FFT process    
- * @param[in]   *pSrc 				points to the input buffer.    
- * @param[in]   fftLen  			length of FFT.    
- * @param[in]   *pATable 			points to the twiddle Coef A buffer.    
- * @param[in]   *pBTable 			points to the twiddle Coef B buffer.    
- * @param[out]  *pDst 				points to the output buffer.    
- * @param[in]   modifier 	        twiddle coefficient modifier that supports different size FFTs with the same twiddle factor table.   
- * @return none.    
+/**
+ * @brief  Core Real FFT process
+ * @param[in]   *pSrc 				points to the input buffer.
+ * @param[in]   fftLen  			length of FFT.
+ * @param[in]   *pATable 			points to the twiddle Coef A buffer.
+ * @param[in]   *pBTable 			points to the twiddle Coef B buffer.
+ * @param[out]  *pDst 				points to the output buffer.
+ * @param[in]   modifier 	        twiddle coefficient modifier that supports different size FFTs with the same twiddle factor table.
+ * @return none.
  */
 
 void arm_split_rfft_f32(
@@ -177,25 +166,25 @@ void arm_split_rfft_f32(
   float32_t outR, outI;                          /* Temporary variables for output */
   float32_t *pCoefA, *pCoefB;                    /* Temporary pointers for twiddle factors */
   float32_t CoefA1, CoefA2, CoefB1;              /* Temporary variables for twiddle coefficients */
-  float32_t *pDst1 = &pDst[2], *pDst2 = &pDst[(4u * fftLen) - 1u];      /* temp pointers for output buffer */
-  float32_t *pSrc1 = &pSrc[2], *pSrc2 = &pSrc[(2u * fftLen) - 1u];      /* temp pointers for input buffer */
+  float32_t *pDst1 = &pDst[2], *pDst2 = &pDst[(4U * fftLen) - 1U];      /* temp pointers for output buffer */
+  float32_t *pSrc1 = &pSrc[2], *pSrc2 = &pSrc[(2U * fftLen) - 1U];      /* temp pointers for input buffer */
 
   /* Init coefficient pointers */
-  pCoefA = &pATable[modifier * 2u];
-  pCoefB = &pBTable[modifier * 2u];
+  pCoefA = &pATable[modifier * 2U];
+  pCoefB = &pBTable[modifier * 2U];
 
-  i = fftLen - 1u;
+  i = fftLen - 1U;
 
-  while(i > 0u)
+  while (i > 0U)
   {
-    /*    
-       outR = (pSrc[2 * i] * pATable[2 * i] - pSrc[2 * i + 1] * pATable[2 * i + 1]    
-       + pSrc[2 * n - 2 * i] * pBTable[2 * i] +    
-       pSrc[2 * n - 2 * i + 1] * pBTable[2 * i + 1]);    
+    /*
+       outR = (pSrc[2 * i] * pATable[2 * i] - pSrc[2 * i + 1] * pATable[2 * i + 1]
+       + pSrc[2 * n - 2 * i] * pBTable[2 * i] +
+       pSrc[2 * n - 2 * i + 1] * pBTable[2 * i + 1]);
      */
 
-    /* outI = (pIn[2 * i + 1] * pATable[2 * i] + pIn[2 * i] * pATable[2 * i + 1] +    
-       pIn[2 * n - 2 * i] * pBTable[2 * i + 1] -    
+    /* outI = (pIn[2 * i + 1] * pATable[2 * i] + pIn[2 * i] * pATable[2 * i + 1] +
+       pIn[2 * n - 2 * i] * pBTable[2 * i + 1] -
        pIn[2 * n - 2 * i + 1] * pBTable[2 * i]); */
 
     /* read pATable[2 * i] */
@@ -232,15 +221,15 @@ void arm_split_rfft_f32(
     *pDst2-- = outR;
 
     /* update coefficient pointer */
-    pCoefB = pCoefB + (modifier * 2u);
-    pCoefA = pCoefA + ((modifier * 2u) - 1u);
+    pCoefB = pCoefB + (modifier * 2U);
+    pCoefA = pCoefA + ((modifier * 2U) - 1U);
 
     i--;
 
   }
 
-  pDst[2u * fftLen] = pSrc[0] - pSrc[1];
-  pDst[(2u * fftLen) + 1u] = 0.0f;
+  pDst[2U * fftLen] = pSrc[0] - pSrc[1];
+  pDst[(2U * fftLen) + 1U] = 0.0f;
 
   pDst[0] = pSrc[0] + pSrc[1];
   pDst[1] = 0.0f;
@@ -248,15 +237,15 @@ void arm_split_rfft_f32(
 }
 
 
-/**    
- * @brief  Core Real IFFT process    
- * @param[in]   *pSrc 				points to the input buffer.    
- * @param[in]   fftLen  			length of FFT.   
- * @param[in]   *pATable 			points to the twiddle Coef A buffer.   
- * @param[in]   *pBTable 			points to the twiddle Coef B buffer.   
- * @param[out]  *pDst 				points to the output buffer.   
- * @param[in]   modifier 	        twiddle coefficient modifier that supports different size FFTs with the same twiddle factor table.    
- * @return none.    
+/**
+ * @brief  Core Real IFFT process
+ * @param[in]   *pSrc 				points to the input buffer.
+ * @param[in]   fftLen  			length of FFT.
+ * @param[in]   *pATable 			points to the twiddle Coef A buffer.
+ * @param[in]   *pBTable 			points to the twiddle Coef B buffer.
+ * @param[out]  *pDst 				points to the output buffer.
+ * @param[in]   modifier 	        twiddle coefficient modifier that supports different size FFTs with the same twiddle factor table.
+ * @return none.
  */
 
 void arm_split_rifft_f32(
@@ -270,21 +259,21 @@ void arm_split_rifft_f32(
   float32_t outR, outI;                          /* Temporary variables for output */
   float32_t *pCoefA, *pCoefB;                    /* Temporary pointers for twiddle factors */
   float32_t CoefA1, CoefA2, CoefB1;              /* Temporary variables for twiddle coefficients */
-  float32_t *pSrc1 = &pSrc[0], *pSrc2 = &pSrc[(2u * fftLen) + 1u];
+  float32_t *pSrc1 = &pSrc[0], *pSrc2 = &pSrc[(2U * fftLen) + 1U];
 
   pCoefA = &pATable[0];
   pCoefB = &pBTable[0];
 
-  while(fftLen > 0u)
+  while (fftLen > 0U)
   {
-    /*    
-       outR = (pIn[2 * i] * pATable[2 * i] + pIn[2 * i + 1] * pATable[2 * i + 1] +    
-       pIn[2 * n - 2 * i] * pBTable[2 * i] -    
-       pIn[2 * n - 2 * i + 1] * pBTable[2 * i + 1]);    
+    /*
+       outR = (pIn[2 * i] * pATable[2 * i] + pIn[2 * i + 1] * pATable[2 * i + 1] +
+       pIn[2 * n - 2 * i] * pBTable[2 * i] -
+       pIn[2 * n - 2 * i + 1] * pBTable[2 * i + 1]);
 
-       outI = (pIn[2 * i + 1] * pATable[2 * i] - pIn[2 * i] * pATable[2 * i + 1] -    
-       pIn[2 * n - 2 * i] * pBTable[2 * i + 1] -    
-       pIn[2 * n - 2 * i + 1] * pBTable[2 * i]);    
+       outI = (pIn[2 * i + 1] * pATable[2 * i] - pIn[2 * i] * pATable[2 * i + 1] -
+       pIn[2 * n - 2 * i] * pBTable[2 * i + 1] -
+       pIn[2 * n - 2 * i + 1] * pBTable[2 * i]);
 
      */
 
@@ -319,8 +308,8 @@ void arm_split_rifft_f32(
     *pDst++ = outI;
 
     /* update coefficient pointer */
-    pCoefB = pCoefB + (modifier * 2u);
-    pCoefA = pCoefA + ((modifier * 2u) - 1u);
+    pCoefB = pCoefB + (modifier * 2U);
+    pCoefA = pCoefA + ((modifier * 2U) - 1U);
 
     /* Decrement loop count */
     fftLen--;

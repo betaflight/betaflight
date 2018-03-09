@@ -1,131 +1,119 @@
-/* ----------------------------------------------------------------------    
-* Copyright (C) 2010-2014 ARM Limited. All rights reserved.    
-*    
-* $Date:        19. March 2015
-* $Revision: 	V.1.4.5
-*    
-* Project: 	    CMSIS DSP Library    
-* Title:	    arm_fir_lattice_f32.c    
-*    
-* Description:	Processing function for the floating-point FIR Lattice filter.    
-*    
-* Target Processor: Cortex-M4/Cortex-M3/Cortex-M0
-*  
-* Redistribution and use in source and binary forms, with or without 
-* modification, are permitted provided that the following conditions
-* are met:
-*   - Redistributions of source code must retain the above copyright
-*     notice, this list of conditions and the following disclaimer.
-*   - Redistributions in binary form must reproduce the above copyright
-*     notice, this list of conditions and the following disclaimer in
-*     the documentation and/or other materials provided with the 
-*     distribution.
-*   - Neither the name of ARM LIMITED nor the names of its contributors
-*     may be used to endorse or promote products derived from this
-*     software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-* "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-* LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-* FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-* COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-* BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-* CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-* LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-* ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-* POSSIBILITY OF SUCH DAMAGE.   
-* -------------------------------------------------------------------- */
+/* ----------------------------------------------------------------------
+ * Project:      CMSIS DSP Library
+ * Title:        arm_fir_lattice_f32.c
+ * Description:  Processing function for the floating-point FIR Lattice filter
+ *
+ * $Date:        27. January 2017
+ * $Revision:    V.1.5.1
+ *
+ * Target Processor: Cortex-M cores
+ * -------------------------------------------------------------------- */
+/*
+ * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed under the Apache License, Version 2.0 (the License); you may
+ * not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #include "arm_math.h"
 
-/**    
- * @ingroup groupFilters    
+/**
+ * @ingroup groupFilters
  */
 
-/**    
- * @defgroup FIR_Lattice Finite Impulse Response (FIR) Lattice Filters    
- *    
- * This set of functions implements Finite Impulse Response (FIR) lattice filters    
- * for Q15, Q31 and floating-point data types.  Lattice filters are used in a     
- * variety of adaptive filter applications.  The filter structure is feedforward and    
- * the net impulse response is finite length.    
- * The functions operate on blocks    
- * of input and output data and each call to the function processes    
- * <code>blockSize</code> samples through the filter.  <code>pSrc</code> and    
- * <code>pDst</code> point to input and output arrays containing <code>blockSize</code> values.    
- *    
- * \par Algorithm:    
- * \image html FIRLattice.gif "Finite Impulse Response Lattice filter"    
- * The following difference equation is implemented:    
- * <pre>    
- *    f0[n] = g0[n] = x[n]    
- *    fm[n] = fm-1[n] + km * gm-1[n-1] for m = 1, 2, ...M    
- *    gm[n] = km * fm-1[n] + gm-1[n-1] for m = 1, 2, ...M    
- *    y[n] = fM[n]    
- * </pre>    
- * \par    
- * <code>pCoeffs</code> points to tha array of reflection coefficients of size <code>numStages</code>.    
- * Reflection Coefficients are stored in the following order.    
- * \par    
- * <pre>    
- *    {k1, k2, ..., kM}    
- * </pre>    
- * where M is number of stages    
- * \par    
- * <code>pState</code> points to a state array of size <code>numStages</code>.    
- * The state variables (g values) hold previous inputs and are stored in the following order.    
- * <pre>    
- *    {g0[n], g1[n], g2[n] ...gM-1[n]}    
- * </pre>    
- * The state variables are updated after each block of data is processed; the coefficients are untouched.    
- * \par Instance Structure    
- * The coefficients and state variables for a filter are stored together in an instance data structure.    
- * A separate instance structure must be defined for each filter.    
- * Coefficient arrays may be shared among several instances while state variable arrays cannot be shared.    
- * There are separate instance structure declarations for each of the 3 supported data types.    
- *    
- * \par Initialization Functions    
- * There is also an associated initialization function for each data type.    
- * The initialization function performs the following operations:    
- * - Sets the values of the internal structure fields.    
- * - Zeros out the values in the state buffer.    
+/**
+ * @defgroup FIR_Lattice Finite Impulse Response (FIR) Lattice Filters
+ *
+ * This set of functions implements Finite Impulse Response (FIR) lattice filters
+ * for Q15, Q31 and floating-point data types.  Lattice filters are used in a
+ * variety of adaptive filter applications.  The filter structure is feedforward and
+ * the net impulse response is finite length.
+ * The functions operate on blocks
+ * of input and output data and each call to the function processes
+ * <code>blockSize</code> samples through the filter.  <code>pSrc</code> and
+ * <code>pDst</code> point to input and output arrays containing <code>blockSize</code> values.
+ *
+ * \par Algorithm:
+ * \image html FIRLattice.gif "Finite Impulse Response Lattice filter"
+ * The following difference equation is implemented:
+ * <pre>
+ *    f0[n] = g0[n] = x[n]
+ *    fm[n] = fm-1[n] + km * gm-1[n-1] for m = 1, 2, ...M
+ *    gm[n] = km * fm-1[n] + gm-1[n-1] for m = 1, 2, ...M
+ *    y[n] = fM[n]
+ * </pre>
+ * \par
+ * <code>pCoeffs</code> points to tha array of reflection coefficients of size <code>numStages</code>.
+ * Reflection Coefficients are stored in the following order.
+ * \par
+ * <pre>
+ *    {k1, k2, ..., kM}
+ * </pre>
+ * where M is number of stages
+ * \par
+ * <code>pState</code> points to a state array of size <code>numStages</code>.
+ * The state variables (g values) hold previous inputs and are stored in the following order.
+ * <pre>
+ *    {g0[n], g1[n], g2[n] ...gM-1[n]}
+ * </pre>
+ * The state variables are updated after each block of data is processed; the coefficients are untouched.
+ * \par Instance Structure
+ * The coefficients and state variables for a filter are stored together in an instance data structure.
+ * A separate instance structure must be defined for each filter.
+ * Coefficient arrays may be shared among several instances while state variable arrays cannot be shared.
+ * There are separate instance structure declarations for each of the 3 supported data types.
+ *
+ * \par Initialization Functions
+ * There is also an associated initialization function for each data type.
+ * The initialization function performs the following operations:
+ * - Sets the values of the internal structure fields.
+ * - Zeros out the values in the state buffer.
  * To do this manually without calling the init function, assign the follow subfields of the instance structure:
- * numStages, pCoeffs, pState. Also set all of the values in pState to zero. 
- *    
- * \par    
- * Use of the initialization function is optional.    
- * However, if the initialization function is used, then the instance structure cannot be placed into a const data section.    
- * To place an instance structure into a const data section, the instance structure must be manually initialized.    
- * Set the values in the state buffer to zeros and then manually initialize the instance structure as follows:    
- * <pre>    
- *arm_fir_lattice_instance_f32 S = {numStages, pState, pCoeffs};    
- *arm_fir_lattice_instance_q31 S = {numStages, pState, pCoeffs};    
- *arm_fir_lattice_instance_q15 S = {numStages, pState, pCoeffs};    
- * </pre>    
- * \par    
- * where <code>numStages</code> is the number of stages in the filter; <code>pState</code> is the address of the state buffer;    
- * <code>pCoeffs</code> is the address of the coefficient buffer.    
- * \par Fixed-Point Behavior    
- * Care must be taken when using the fixed-point versions of the FIR Lattice filter functions.    
- * In particular, the overflow and saturation behavior of the accumulator used in each function must be considered.    
- * Refer to the function specific documentation below for usage guidelines.    
+ * numStages, pCoeffs, pState. Also set all of the values in pState to zero.
+ *
+ * \par
+ * Use of the initialization function is optional.
+ * However, if the initialization function is used, then the instance structure cannot be placed into a const data section.
+ * To place an instance structure into a const data section, the instance structure must be manually initialized.
+ * Set the values in the state buffer to zeros and then manually initialize the instance structure as follows:
+ * <pre>
+ *arm_fir_lattice_instance_f32 S = {numStages, pState, pCoeffs};
+ *arm_fir_lattice_instance_q31 S = {numStages, pState, pCoeffs};
+ *arm_fir_lattice_instance_q15 S = {numStages, pState, pCoeffs};
+ * </pre>
+ * \par
+ * where <code>numStages</code> is the number of stages in the filter; <code>pState</code> is the address of the state buffer;
+ * <code>pCoeffs</code> is the address of the coefficient buffer.
+ * \par Fixed-Point Behavior
+ * Care must be taken when using the fixed-point versions of the FIR Lattice filter functions.
+ * In particular, the overflow and saturation behavior of the accumulator used in each function must be considered.
+ * Refer to the function specific documentation below for usage guidelines.
  */
 
-/**    
- * @addtogroup FIR_Lattice    
- * @{    
+/**
+ * @addtogroup FIR_Lattice
+ * @{
  */
 
 
-  /**    
-   * @brief Processing function for the floating-point FIR lattice filter.    
-   * @param[in]  *S        points to an instance of the floating-point FIR lattice structure.    
-   * @param[in]  *pSrc     points to the block of input data.    
-   * @param[out] *pDst     points to the block of output data    
-   * @param[in]  blockSize number of samples to process.    
-   * @return none.    
+  /**
+   * @brief Processing function for the floating-point FIR lattice filter.
+   * @param[in]  *S        points to an instance of the floating-point FIR lattice structure.
+   * @param[in]  *pSrc     points to the block of input data.
+   * @param[out] *pDst     points to the block of output data
+   * @param[in]  blockSize number of samples to process.
+   * @return none.
    */
 
 void arm_fir_lattice_f32(
@@ -140,7 +128,7 @@ void arm_fir_lattice_f32(
   float32_t *pk;                                 /* temporary coefficient pointer */
 
 
-#ifndef ARM_MATH_CM0_FAMILY
+#if defined (ARM_MATH_DSP)
 
   /* Run the below code for Cortex-M4 and Cortex-M3 */
 
@@ -156,9 +144,9 @@ void arm_fir_lattice_f32(
 
   blkCnt = blockSize >> 2;
 
-  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.    
+  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
      a second loop below computes the remaining 1 to 3 samples. */
-  while(blkCnt > 0u)
+  while (blkCnt > 0U)
   {
 
     /* Read two samples from input buffer */
@@ -191,7 +179,7 @@ void arm_fir_lattice_f32(
     fcurr3 = *pSrc++;
     fcurr4 = *pSrc++;
 
-    /* Copy only last input samples into the state buffer    
+    /* Copy only last input samples into the state buffer
        which will be used for next four samples processing */
     *px++ = fcurr4;
 
@@ -210,13 +198,13 @@ void arm_fir_lattice_f32(
     fcurr4 = fnext4;
 
     /* Loop unrolling.  Process 4 taps at a time . */
-    stageCnt = (numStages - 1u) >> 2u;
+    stageCnt = (numStages - 1U) >> 2U;
 
-    /* Loop over the number of taps.  Unroll by a factor of 4.    
+    /* Loop over the number of taps.  Unroll by a factor of 4.
      ** Repeat until we've computed numStages-3 coefficients. */
 
     /* Process 2nd, 3rd, 4th and 5th taps ... here */
-    while(stageCnt > 0u)
+    while (stageCnt > 0U)
     {
       /* Read g1(n-1), g3(n-1) .... from state */
       gcurr1 = *px;
@@ -322,9 +310,9 @@ void arm_fir_lattice_f32(
     }
 
     /* If the (filter length -1) is not a multiple of 4, compute the remaining filter taps */
-    stageCnt = (numStages - 1u) % 0x4u;
+    stageCnt = (numStages - 1U) % 0x4U;
 
-    while(stageCnt > 0u)
+    while (stageCnt > 0U)
     {
       gcurr1 = *px;
 
@@ -363,11 +351,11 @@ void arm_fir_lattice_f32(
     blkCnt--;
   }
 
-  /* If the blockSize is not a multiple of 4, compute any remaining output samples here.    
+  /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
    ** No loop unrolling is used. */
-  blkCnt = blockSize % 0x4u;
+  blkCnt = blockSize % 0x4U;
 
-  while(blkCnt > 0u)
+  while (blkCnt > 0U)
   {
     /* f0(n) = x(n) */
     fcurr1 = *pSrc++;
@@ -390,14 +378,14 @@ void arm_fir_lattice_f32(
     /* save g1(n) in state buffer */
     *px++ = fcurr1;
 
-    /* f1(n) is saved in fcurr1    
+    /* f1(n) is saved in fcurr1
        for next stage processing */
     fcurr1 = fnext1;
 
-    stageCnt = (numStages - 1u);
+    stageCnt = (numStages - 1U);
 
     /* stage loop */
-    while(stageCnt > 0u)
+    while (stageCnt > 0U)
     {
       /* read g2(n) from state buffer */
       gcurr1 = *px;
@@ -411,7 +399,7 @@ void arm_fir_lattice_f32(
       /* g2(n) = f1(n) * K2  +  g1(n-1) */
       gnext1 = (fcurr1 * (*pk++)) + gcurr1;
 
-      /* f1(n) is saved in fcurr1    
+      /* f1(n) is saved in fcurr1
          for next stage processing */
       fcurr1 = fnext1;
 
@@ -438,7 +426,7 @@ void arm_fir_lattice_f32(
 
   blkCnt = blockSize;
 
-  while(blkCnt > 0u)
+  while (blkCnt > 0U)
   {
     /* f0(n) = x(n) */
     fcurr = *pSrc++;
@@ -461,14 +449,14 @@ void arm_fir_lattice_f32(
     /* save f0(n) in state buffer */
     *px++ = fcurr;
 
-    /* f1(n) is saved in fcurr            
+    /* f1(n) is saved in fcurr
        for next stage processing */
     fcurr = fnext;
 
-    stageCnt = (numStages - 1u);
+    stageCnt = (numStages - 1U);
 
     /* stage loop */
-    while(stageCnt > 0u)
+    while (stageCnt > 0U)
     {
       /* read g2(n) from state buffer */
       gcurr = *px;
@@ -482,7 +470,7 @@ void arm_fir_lattice_f32(
       /* g2(n) = f1(n) * K2  +  g1(n-1) */
       gnext = (fcurr * (*pk++)) + gcurr;
 
-      /* f1(n) is saved in fcurr1            
+      /* f1(n) is saved in fcurr1
          for next stage processing */
       fcurr = fnext;
 
@@ -497,10 +485,10 @@ void arm_fir_lattice_f32(
 
   }
 
-#endif /*   #ifndef ARM_MATH_CM0_FAMILY */
+#endif /*   #if defined (ARM_MATH_DSP) */
 
 }
 
-/**    
- * @} end of FIR_Lattice group    
+/**
+ * @} end of FIR_Lattice group
  */

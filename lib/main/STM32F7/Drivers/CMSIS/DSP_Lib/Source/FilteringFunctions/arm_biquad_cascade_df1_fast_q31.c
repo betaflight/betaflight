@@ -1,77 +1,64 @@
-/* ----------------------------------------------------------------------    
-* Copyright (C) 2010-2014 ARM Limited. All rights reserved.    
-*    
-* $Date:        19. October 2015
-* $Revision: 	V.1.4.5 a
-*    
-* Project: 	    CMSIS DSP Library    
-* Title:	    arm_biquad_cascade_df1_fast_q31.c    
-*    
-* Description:	Processing function for the    
-*				Q31 Fast Biquad cascade DirectFormI(DF1) filter.    
-*    
-* Target Processor: Cortex-M4/Cortex-M3
-*  
-* Redistribution and use in source and binary forms, with or without 
-* modification, are permitted provided that the following conditions
-* are met:
-*   - Redistributions of source code must retain the above copyright
-*     notice, this list of conditions and the following disclaimer.
-*   - Redistributions in binary form must reproduce the above copyright
-*     notice, this list of conditions and the following disclaimer in
-*     the documentation and/or other materials provided with the 
-*     distribution.
-*   - Neither the name of ARM LIMITED nor the names of its contributors
-*     may be used to endorse or promote products derived from this
-*     software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-* "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-* LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-* FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-* COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-* BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-* CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-* LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-* ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-* POSSIBILITY OF SUCH DAMAGE. 
-* -------------------------------------------------------------------- */
+/* ----------------------------------------------------------------------
+ * Project:      CMSIS DSP Library
+ * Title:        arm_biquad_cascade_df1_fast_q31.c
+ * Description:  Processing function for the Q31 Fast Biquad cascade DirectFormI(DF1) filter
+ *
+ * $Date:        27. January 2017
+ * $Revision:    V.1.5.1
+ *
+ * Target Processor: Cortex-M cores
+ * -------------------------------------------------------------------- */
+/*
+ * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed under the Apache License, Version 2.0 (the License); you may
+ * not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #include "arm_math.h"
 
-/**    
- * @ingroup groupFilters    
+/**
+ * @ingroup groupFilters
  */
 
-/**    
- * @addtogroup BiquadCascadeDF1    
- * @{    
+/**
+ * @addtogroup BiquadCascadeDF1
+ * @{
  */
 
-/**    
- * @details    
- *    
- * @param[in]  *S        points to an instance of the Q31 Biquad cascade structure.    
- * @param[in]  *pSrc     points to the block of input data.    
- * @param[out] *pDst     points to the block of output data.    
- * @param[in]  blockSize number of samples to process per call.    
- * @return 	   none.    
- *    
- * <b>Scaling and Overflow Behavior:</b>    
- * \par    
- * This function is optimized for speed at the expense of fixed-point precision and overflow protection.    
- * The result of each 1.31 x 1.31 multiplication is truncated to 2.30 format.    
- * These intermediate results are added to a 2.30 accumulator.    
- * Finally, the accumulator is saturated and converted to a 1.31 result.    
- * The fast version has the same overflow behavior as the standard version and provides less precision since it discards the low 32 bits of each multiplication result.    
- * In order to avoid overflows completely the input signal must be scaled down by two bits and lie in the range [-0.25 +0.25). Use the intialization function    
- * arm_biquad_cascade_df1_init_q31() to initialize filter structure.    
- *    
- * \par    
- * Refer to the function <code>arm_biquad_cascade_df1_q31()</code> for a slower implementation of this function which uses 64-bit accumulation to provide higher precision.  Both the slow and the fast versions use the same instance structure.    
- * Use the function <code>arm_biquad_cascade_df1_init_q31()</code> to initialize the filter structure.    
+/**
+ * @details
+ *
+ * @param[in]  *S        points to an instance of the Q31 Biquad cascade structure.
+ * @param[in]  *pSrc     points to the block of input data.
+ * @param[out] *pDst     points to the block of output data.
+ * @param[in]  blockSize number of samples to process per call.
+ * @return     none.
+ *
+ * <b>Scaling and Overflow Behavior:</b>
+ * \par
+ * This function is optimized for speed at the expense of fixed-point precision and overflow protection.
+ * The result of each 1.31 x 1.31 multiplication is truncated to 2.30 format.
+ * These intermediate results are added to a 2.30 accumulator.
+ * Finally, the accumulator is saturated and converted to a 1.31 result.
+ * The fast version has the same overflow behavior as the standard version and provides less precision since it discards the low 32 bits of each multiplication result.
+ * In order to avoid overflows completely the input signal must be scaled down by two bits and lie in the range [-0.25 +0.25). Use the intialization function
+ * arm_biquad_cascade_df1_init_q31() to initialize filter structure.
+ *
+ * \par
+ * Refer to the function <code>arm_biquad_cascade_df1_q31()</code> for a slower implementation of this function which uses 64-bit accumulation to provide higher precision.  Both the slow and the fast versions use the same instance structure.
+ * Use the function <code>arm_biquad_cascade_df1_init_q31()</code> to initialize the filter structure.
  */
 
 void arm_biquad_cascade_df1_fast_q31(
@@ -108,16 +95,16 @@ void arm_biquad_cascade_df1_fast_q31(
     Yn2 = pState[3];
 
     /* Apply loop unrolling and compute 4 output values simultaneously. */
-    /*      The variables acc ... acc3 hold output values that are being computed:       
-     *       
-     *    acc =  b0 * x[n] + b1 * x[n-1] + b2 * x[n-2] + a1 * y[n-1] + a2 * y[n-2]       
+    /*      The variables acc ... acc3 hold output values that are being computed:
+     *
+     *    acc =  b0 * x[n] + b1 * x[n-1] + b2 * x[n-2] + a1 * y[n-1] + a2 * y[n-2]
      */
 
-    sample = blockSize >> 2u;
+    sample = blockSize >> 2U;
 
-    /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.       
+    /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
      ** a second loop below computes the remaining 1 to 3 samples. */
-    while(sample > 0u)
+    while (sample > 0U)
     {
       /* Read the input */
       Xn = *pIn;
@@ -143,7 +130,7 @@ void arm_biquad_cascade_df1_fast_q31(
       Yn2 = acc << shift;
 
       /* Read the second input */
-      Xn2 = *(pIn + 1u);
+      Xn2 = *(pIn + 1U);
 
       /* Store the output in the destination buffer. */
       *pOut = Yn2;
@@ -169,10 +156,10 @@ void arm_biquad_cascade_df1_fast_q31(
       Yn1 = acc << shift;
 
       /* Read the third input  */
-      Xn1 = *(pIn + 2u);
+      Xn1 = *(pIn + 2U);
 
       /* Store the output in the destination buffer. */
-      *(pOut + 1u) = Yn1;
+      *(pOut + 1U) = Yn1;
 
       /* acc =  b0 * x[n] + b1 * x[n-1] + b2 * x[n-2] + a1 * y[n-1] + a2 * y[n-2] */
       /* acc =  b0 * x[n] */
@@ -195,11 +182,11 @@ void arm_biquad_cascade_df1_fast_q31(
       Yn2 = acc << shift;
 
       /* Read the forth input */
-      Xn = *(pIn + 3u);
+      Xn = *(pIn + 3U);
 
       /* Store the output in the destination buffer. */
-      *(pOut + 2u) = Yn2;
-      pIn += 4u;
+      *(pOut + 2U) = Yn2;
+      pIn += 4U;
 
       /* acc =  b0 * x[n] + b1 * x[n-1] + b2 * x[n-2] + a1 * y[n-1] + a2 * y[n-2] */
       /* acc =  b0 * x[n] */
@@ -230,18 +217,18 @@ void arm_biquad_cascade_df1_fast_q31(
       Xn1 = Xn;
 
       /* Store the output in the destination buffer. */
-      *(pOut + 3u) = Yn1;
-      pOut += 4u;
+      *(pOut + 3U) = Yn1;
+      pOut += 4U;
 
       /* decrement the loop counter */
       sample--;
     }
 
-    /* If the blockSize is not a multiple of 4, compute any remaining output samples here.       
+    /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
      ** No loop unrolling is used. */
-    sample = (blockSize & 0x3u);
+    sample = (blockSize & 0x3U);
 
-   while(sample > 0u)
+   while (sample > 0U)
    {
       /* Read the input */
       Xn = *pIn++;
@@ -297,9 +284,9 @@ void arm_biquad_cascade_df1_fast_q31(
     *pState++ = Yn1;
     *pState++ = Yn2;
 
-  } while(--stage);
+  } while (--stage);
 }
 
-/**    
-  * @} end of BiquadCascadeDF1 group    
+/**
+  * @} end of BiquadCascadeDF1 group
   */

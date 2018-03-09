@@ -1,66 +1,54 @@
-/* ----------------------------------------------------------------------    
-* Copyright (C) 2010-2014 ARM Limited. All rights reserved.    
-*    
-* $Date:        19. March 2015
-* $Revision: 	V.1.4.5
-*    
-* Project: 	    CMSIS DSP Library    
-* Title:		arm_offset_q31.c    
-*    
-* Description:	Q31 vector offset.    
-*    
-* Target Processor: Cortex-M4/Cortex-M3/Cortex-M0
-*  
-* Redistribution and use in source and binary forms, with or without 
-* modification, are permitted provided that the following conditions
-* are met:
-*   - Redistributions of source code must retain the above copyright
-*     notice, this list of conditions and the following disclaimer.
-*   - Redistributions in binary form must reproduce the above copyright
-*     notice, this list of conditions and the following disclaimer in
-*     the documentation and/or other materials provided with the 
-*     distribution.
-*   - Neither the name of ARM LIMITED nor the names of its contributors
-*     may be used to endorse or promote products derived from this
-*     software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-* "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-* LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-* FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-* COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-* BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-* CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-* LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-* ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-* POSSIBILITY OF SUCH DAMAGE. 
-* -------------------------------------------------------------------- */
+/* ----------------------------------------------------------------------
+ * Project:      CMSIS DSP Library
+ * Title:        arm_offset_q31.c
+ * Description:  Q31 vector offset
+ *
+ * $Date:        27. January 2017
+ * $Revision:    V.1.5.1
+ *
+ * Target Processor: Cortex-M cores
+ * -------------------------------------------------------------------- */
+/*
+ * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed under the Apache License, Version 2.0 (the License); you may
+ * not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #include "arm_math.h"
 
-/**    
- * @ingroup groupMath    
+/**
+ * @ingroup groupMath
  */
 
-/**    
- * @addtogroup offset    
- * @{    
+/**
+ * @addtogroup offset
+ * @{
  */
 
-/**    
- * @brief  Adds a constant offset to a Q31 vector.    
- * @param[in]  *pSrc points to the input vector    
- * @param[in]  offset is the offset to be added    
- * @param[out]  *pDst points to the output vector    
- * @param[in]  blockSize number of samples in the vector    
- * @return none.    
- *    
- * <b>Scaling and Overflow Behavior:</b>    
- * \par    
- * The function uses saturating arithmetic.    
- * Results outside of the allowable Q31 range [0x80000000 0x7FFFFFFF] are saturated.    
+/**
+ * @brief  Adds a constant offset to a Q31 vector.
+ * @param[in]  *pSrc points to the input vector
+ * @param[in]  offset is the offset to be added
+ * @param[out]  *pDst points to the output vector
+ * @param[in]  blockSize number of samples in the vector
+ * @return none.
+ *
+ * <b>Scaling and Overflow Behavior:</b>
+ * \par
+ * The function uses saturating arithmetic.
+ * Results outside of the allowable Q31 range [0x80000000 0x7FFFFFFF] are saturated.
  */
 
 void arm_offset_q31(
@@ -71,18 +59,18 @@ void arm_offset_q31(
 {
   uint32_t blkCnt;                               /* loop counter */
 
-#ifndef ARM_MATH_CM0_FAMILY
+#if defined (ARM_MATH_DSP)
 
 /* Run the below code for Cortex-M4 and Cortex-M3 */
   q31_t in1, in2, in3, in4;
 
 
   /*loop Unrolling */
-  blkCnt = blockSize >> 2u;
+  blkCnt = blockSize >> 2U;
 
-  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.    
+  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
    ** a second loop below computes the remaining 1 to 3 samples. */
-  while(blkCnt > 0u)
+  while (blkCnt > 0U)
   {
     /* C = A + offset */
     /* Add offset and then store the results in the destination buffer. */
@@ -100,11 +88,11 @@ void arm_offset_q31(
     blkCnt--;
   }
 
-  /* If the blockSize is not a multiple of 4, compute any remaining output samples here.    
+  /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
    ** No loop unrolling is used. */
-  blkCnt = blockSize % 0x4u;
+  blkCnt = blockSize % 0x4U;
 
-  while(blkCnt > 0u)
+  while (blkCnt > 0U)
   {
     /* C = A + offset */
     /* Add offset and then store the result in the destination buffer. */
@@ -121,7 +109,7 @@ void arm_offset_q31(
   /* Initialize blkCnt with number of samples */
   blkCnt = blockSize;
 
-  while(blkCnt > 0u)
+  while (blkCnt > 0U)
   {
     /* C = A + offset */
     /* Add offset and then store the result in the destination buffer. */
@@ -131,10 +119,10 @@ void arm_offset_q31(
     blkCnt--;
   }
 
-#endif /* #ifndef ARM_MATH_CM0_FAMILY */
+#endif /* #if defined (ARM_MATH_DSP) */
 
 }
 
-/**    
- * @} end of offset group    
+/**
+ * @} end of offset group
  */

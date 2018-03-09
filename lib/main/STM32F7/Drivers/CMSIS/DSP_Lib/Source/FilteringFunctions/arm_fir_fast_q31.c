@@ -1,74 +1,62 @@
-/* ----------------------------------------------------------------------    
-* Copyright (C) 2010-2014 ARM Limited. All rights reserved.    
-*    
-* $Date:        19. March 2015 
-* $Revision: 	V.1.4.5  
-*    
-* Project: 	    CMSIS DSP Library    
-* Title:	    arm_fir_fast_q31.c    
-*    
-* Description:	Processing function for the Q31 Fast FIR filter.    
-*    
-* Target Processor: Cortex-M4/Cortex-M3
-*  
-* Redistribution and use in source and binary forms, with or without 
-* modification, are permitted provided that the following conditions
-* are met:
-*   - Redistributions of source code must retain the above copyright
-*     notice, this list of conditions and the following disclaimer.
-*   - Redistributions in binary form must reproduce the above copyright
-*     notice, this list of conditions and the following disclaimer in
-*     the documentation and/or other materials provided with the 
-*     distribution.
-*   - Neither the name of ARM LIMITED nor the names of its contributors
-*     may be used to endorse or promote products derived from this
-*     software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-* "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-* LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-* FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-* COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-* BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-* CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-* LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-* ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-* POSSIBILITY OF SUCH DAMAGE.    
-* -------------------------------------------------------------------- */
+/* ----------------------------------------------------------------------
+ * Project:      CMSIS DSP Library
+ * Title:        arm_fir_fast_q31.c
+ * Description:  Processing function for the Q31 Fast FIR filter
+ *
+ * $Date:        27. January 2017
+ * $Revision:    V.1.5.1
+ *
+ * Target Processor: Cortex-M cores
+ * -------------------------------------------------------------------- */
+/*
+ * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed under the Apache License, Version 2.0 (the License); you may
+ * not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #include "arm_math.h"
 
-/**    
- * @ingroup groupFilters    
+/**
+ * @ingroup groupFilters
  */
 
-/**    
- * @addtogroup FIR    
- * @{    
+/**
+ * @addtogroup FIR
+ * @{
  */
 
-/**    
- * @param[in] *S points to an instance of the Q31 structure.    
- * @param[in] *pSrc points to the block of input data.    
- * @param[out] *pDst points to the block output data.    
- * @param[in] blockSize number of samples to process per call.    
- * @return none.    
- *    
- * <b>Scaling and Overflow Behavior:</b>    
- *    
- * \par    
- * This function is optimized for speed at the expense of fixed-point precision and overflow protection.    
- * The result of each 1.31 x 1.31 multiplication is truncated to 2.30 format.    
- * These intermediate results are added to a 2.30 accumulator.    
- * Finally, the accumulator is saturated and converted to a 1.31 result.    
- * The fast version has the same overflow behavior as the standard version and provides less precision since it discards the low 32 bits of each multiplication result.    
- * In order to avoid overflows completely the input signal must be scaled down by log2(numTaps) bits.    
- *    
- * \par    
- * Refer to the function <code>arm_fir_q31()</code> for a slower implementation of this function which uses a 64-bit accumulator to provide higher precision.  Both the slow and the fast versions use the same instance structure.    
- * Use the function <code>arm_fir_init_q31()</code> to initialize the filter structure.    
+/**
+ * @param[in] *S points to an instance of the Q31 structure.
+ * @param[in] *pSrc points to the block of input data.
+ * @param[out] *pDst points to the block output data.
+ * @param[in] blockSize number of samples to process per call.
+ * @return none.
+ *
+ * <b>Scaling and Overflow Behavior:</b>
+ *
+ * \par
+ * This function is optimized for speed at the expense of fixed-point precision and overflow protection.
+ * The result of each 1.31 x 1.31 multiplication is truncated to 2.30 format.
+ * These intermediate results are added to a 2.30 accumulator.
+ * Finally, the accumulator is saturated and converted to a 1.31 result.
+ * The fast version has the same overflow behavior as the standard version and provides less precision since it discards the low 32 bits of each multiplication result.
+ * In order to avoid overflows completely the input signal must be scaled down by log2(numTaps) bits.
+ *
+ * \par
+ * Refer to the function <code>arm_fir_q31()</code> for a slower implementation of this function which uses a 64-bit accumulator to provide higher precision.  Both the slow and the fast versions use the same instance structure.
+ * Use the function <code>arm_fir_init_q31()</code> to initialize the filter structure.
  */
 
 IAR_ONLY_LOW_OPTIMIZATION_ENTER
@@ -91,21 +79,21 @@ void arm_fir_fast_q31(
 
   /* S->pState points to buffer which contains previous frame (numTaps - 1) samples */
   /* pStateCurnt points to the location where the new input data should be written */
-  pStateCurnt = &(S->pState[(numTaps - 1u)]);
+  pStateCurnt = &(S->pState[(numTaps - 1U)]);
 
-  /* Apply loop unrolling and compute 4 output values simultaneously.    
-   * The variables acc0 ... acc3 hold output values that are being computed:    
-   *    
-   *    acc0 =  b[numTaps-1] * x[n-numTaps-1] + b[numTaps-2] * x[n-numTaps-2] + b[numTaps-3] * x[n-numTaps-3] +...+ b[0] * x[0]    
-   *    acc1 =  b[numTaps-1] * x[n-numTaps] +   b[numTaps-2] * x[n-numTaps-1] + b[numTaps-3] * x[n-numTaps-2] +...+ b[0] * x[1]    
-   *    acc2 =  b[numTaps-1] * x[n-numTaps+1] + b[numTaps-2] * x[n-numTaps] +   b[numTaps-3] * x[n-numTaps-1] +...+ b[0] * x[2]    
-   *    acc3 =  b[numTaps-1] * x[n-numTaps+2] + b[numTaps-2] * x[n-numTaps+1] + b[numTaps-3] * x[n-numTaps]   +...+ b[0] * x[3]    
+  /* Apply loop unrolling and compute 4 output values simultaneously.
+   * The variables acc0 ... acc3 hold output values that are being computed:
+   *
+   *    acc0 =  b[numTaps-1] * x[n-numTaps-1] + b[numTaps-2] * x[n-numTaps-2] + b[numTaps-3] * x[n-numTaps-3] +...+ b[0] * x[0]
+   *    acc1 =  b[numTaps-1] * x[n-numTaps] +   b[numTaps-2] * x[n-numTaps-1] + b[numTaps-3] * x[n-numTaps-2] +...+ b[0] * x[1]
+   *    acc2 =  b[numTaps-1] * x[n-numTaps+1] + b[numTaps-2] * x[n-numTaps] +   b[numTaps-3] * x[n-numTaps-1] +...+ b[0] * x[2]
+   *    acc3 =  b[numTaps-1] * x[n-numTaps+2] + b[numTaps-2] * x[n-numTaps+1] + b[numTaps-3] * x[n-numTaps]   +...+ b[0] * x[3]
    */
   blkCnt = blockSize >> 2;
 
-  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.    
+  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
    ** a second loop below computes the remaining 1 to 3 samples. */
-  while(blkCnt > 0u)
+  while (blkCnt > 0U)
   {
     /* Copy four new input samples into the state buffer */
     *pStateCurnt++ = *pSrc++;
@@ -125,7 +113,7 @@ void arm_fir_fast_q31(
     /* Initialize coefficient pointer */
     pb = pCoeffs;
 
-    /* Read the first three samples from the state buffer:    
+    /* Read the first three samples from the state buffer:
      *  x[n-numTaps], x[n-numTaps-1], x[n-numTaps-2] */
     x0 = *(px++);
     x1 = *(px++);
@@ -135,7 +123,7 @@ void arm_fir_fast_q31(
     tapCnt = numTaps >> 2;
     i = tapCnt;
 
-    while(i > 0u)
+    while (i > 0U)
     {
       /* Read the b[numTaps] coefficient */
       c0 = *pb;
@@ -156,53 +144,53 @@ void arm_fir_fast_q31(
       multAcc_32x32_keep32_R(acc3, x3, c0);
 
       /* Read the b[numTaps-1] coefficient */
-      c0 = *(pb + 1u);
+      c0 = *(pb + 1U);
 
       /* Read x[n-numTaps-4] sample */
-      x0 = *(px + 1u);
+      x0 = *(px + 1U);
 
-      /* Perform the multiply-accumulates */      
+      /* Perform the multiply-accumulates */
       multAcc_32x32_keep32_R(acc0, x1, c0);
       multAcc_32x32_keep32_R(acc1, x2, c0);
       multAcc_32x32_keep32_R(acc2, x3, c0);
       multAcc_32x32_keep32_R(acc3, x0, c0);
 
       /* Read the b[numTaps-2] coefficient */
-      c0 = *(pb + 2u);
+      c0 = *(pb + 2U);
 
       /* Read x[n-numTaps-5] sample */
-      x1 = *(px + 2u);
+      x1 = *(px + 2U);
 
-      /* Perform the multiply-accumulates */      
+      /* Perform the multiply-accumulates */
       multAcc_32x32_keep32_R(acc0, x2, c0);
       multAcc_32x32_keep32_R(acc1, x3, c0);
       multAcc_32x32_keep32_R(acc2, x0, c0);
       multAcc_32x32_keep32_R(acc3, x1, c0);
 
       /* Read the b[numTaps-3] coefficients */
-      c0 = *(pb + 3u);
+      c0 = *(pb + 3U);
 
       /* Read x[n-numTaps-6] sample */
-      x2 = *(px + 3u);
+      x2 = *(px + 3U);
 
-      /* Perform the multiply-accumulates */      
+      /* Perform the multiply-accumulates */
       multAcc_32x32_keep32_R(acc0, x3, c0);
       multAcc_32x32_keep32_R(acc1, x0, c0);
       multAcc_32x32_keep32_R(acc2, x1, c0);
       multAcc_32x32_keep32_R(acc3, x2, c0);
 
       /* update coefficient pointer */
-      pb += 4u;
-      px += 4u;
-      
+      pb += 4U;
+      px += 4U;
+
       /* Decrement the loop counter */
       i--;
     }
 
     /* If the filter length is not a multiple of 4, compute the remaining filter taps */
 
-    i = numTaps - (tapCnt * 4u);
-    while(i > 0u)
+    i = numTaps - (tapCnt * 4U);
+    while (i > 0U)
     {
       /* Read coefficients */
       c0 = *(pb++);
@@ -210,7 +198,7 @@ void arm_fir_fast_q31(
       /* Fetch 1 state variable */
       x3 = *(px++);
 
-      /* Perform the multiply-accumulates */      
+      /* Perform the multiply-accumulates */
       multAcc_32x32_keep32_R(acc0, x0, c0);
       multAcc_32x32_keep32_R(acc1, x1, c0);
       multAcc_32x32_keep32_R(acc2, x2, c0);
@@ -228,7 +216,7 @@ void arm_fir_fast_q31(
     /* Advance the state pointer by 4 to process the next group of 4 samples */
     pState = pState + 4;
 
-    /* The results in the 4 accumulators are in 2.30 format.  Convert to 1.31    
+    /* The results in the 4 accumulators are in 2.30 format.  Convert to 1.31
      ** Then store the 4 outputs in the destination buffer. */
     *pDst++ = (q31_t) (acc0 << 1);
     *pDst++ = (q31_t) (acc1 << 1);
@@ -240,11 +228,11 @@ void arm_fir_fast_q31(
   }
 
 
-  /* If the blockSize is not a multiple of 4, compute any remaining output samples here.    
+  /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
    ** No loop unrolling is used. */
-  blkCnt = blockSize % 4u;
+  blkCnt = blockSize % 4U;
 
-  while(blkCnt > 0u)
+  while (blkCnt > 0U)
   {
     /* Copy one sample at a time into state buffer */
     *pStateCurnt++ = *pSrc++;
@@ -265,9 +253,9 @@ void arm_fir_fast_q31(
     {
       multAcc_32x32_keep32_R(acc0, (*px++), (*(pb++)));
       i--;
-    } while(i > 0u);
+    } while (i > 0U);
 
-    /* The result is in 2.30 format.  Convert to 1.31    
+    /* The result is in 2.30 format.  Convert to 1.31
      ** Then store the output in the destination buffer. */
     *pDst++ = (q31_t) (acc0 << 1);
 
@@ -278,18 +266,18 @@ void arm_fir_fast_q31(
     blkCnt--;
   }
 
-  /* Processing is complete.    
-   ** Now copy the last numTaps - 1 samples to the start of the state buffer.    
+  /* Processing is complete.
+   ** Now copy the last numTaps - 1 samples to the start of the state buffer.
    ** This prepares the state buffer for the next function call. */
 
   /* Points to the start of the state buffer */
   pStateCurnt = S->pState;
 
   /* Calculate remaining number of copies */
-  tapCnt = (numTaps - 1u);
+  tapCnt = (numTaps - 1U);
 
   /* Copy the remaining q31_t data */
-  while(tapCnt > 0u)
+  while (tapCnt > 0U)
   {
     *pStateCurnt++ = *pState++;
 
@@ -300,6 +288,6 @@ void arm_fir_fast_q31(
 
 }
 IAR_ONLY_LOW_OPTIMIZATION_EXIT
-/**    
- * @} end of FIR group    
+/**
+ * @} end of FIR group
  */

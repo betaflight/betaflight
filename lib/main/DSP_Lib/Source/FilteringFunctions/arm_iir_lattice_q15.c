@@ -1,71 +1,59 @@
-/* ----------------------------------------------------------------------    
-* Copyright (C) 2010-2014 ARM Limited. All rights reserved.    
-*    
-* $Date:        19. March 2015
-* $Revision: 	V.1.4.5
-*    
-* Project: 	    CMSIS DSP Library    
-* Title:	    arm_iir_lattice_q15.c    
-*    
-* Description:	Q15 IIR lattice filter processing function.    
-*    
-* Target Processor: Cortex-M4/Cortex-M3/Cortex-M0
-*  
-* Redistribution and use in source and binary forms, with or without 
-* modification, are permitted provided that the following conditions
-* are met:
-*   - Redistributions of source code must retain the above copyright
-*     notice, this list of conditions and the following disclaimer.
-*   - Redistributions in binary form must reproduce the above copyright
-*     notice, this list of conditions and the following disclaimer in
-*     the documentation and/or other materials provided with the 
-*     distribution.
-*   - Neither the name of ARM LIMITED nor the names of its contributors
-*     may be used to endorse or promote products derived from this
-*     software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-* "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-* LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-* FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-* COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-* BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-* CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-* LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-* ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-* POSSIBILITY OF SUCH DAMAGE.   
-* -------------------------------------------------------------------- */
+/* ----------------------------------------------------------------------
+ * Project:      CMSIS DSP Library
+ * Title:        arm_iir_lattice_q15.c
+ * Description:  Q15 IIR lattice filter processing function
+ *
+ * $Date:        27. January 2017
+ * $Revision:    V.1.5.1
+ *
+ * Target Processor: Cortex-M cores
+ * -------------------------------------------------------------------- */
+/*
+ * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed under the Apache License, Version 2.0 (the License); you may
+ * not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #include "arm_math.h"
 
-/**    
- * @ingroup groupFilters    
+/**
+ * @ingroup groupFilters
  */
 
-/**    
- * @addtogroup IIR_Lattice    
- * @{    
+/**
+ * @addtogroup IIR_Lattice
+ * @{
  */
 
-/**    
- * @brief Processing function for the Q15 IIR lattice filter.    
- * @param[in] *S points to an instance of the Q15 IIR lattice structure.    
- * @param[in] *pSrc points to the block of input data.    
- * @param[out] *pDst points to the block of output data.    
- * @param[in] blockSize number of samples to process.    
- * @return none.    
- *    
- * @details    
- * <b>Scaling and Overflow Behavior:</b>    
- * \par    
- * The function is implemented using a 64-bit internal accumulator.    
- * Both coefficients and state variables are represented in 1.15 format and multiplications yield a 2.30 result.    
- * The 2.30 intermediate results are accumulated in a 64-bit accumulator in 34.30 format.    
- * There is no risk of internal overflow with this approach and the full precision of intermediate multiplications is preserved.    
- * After all additions have been performed, the accumulator is truncated to 34.15 format by discarding low 15 bits.    
- * Lastly, the accumulator is saturated to yield a result in 1.15 format.    
+/**
+ * @brief Processing function for the Q15 IIR lattice filter.
+ * @param[in] *S points to an instance of the Q15 IIR lattice structure.
+ * @param[in] *pSrc points to the block of input data.
+ * @param[out] *pDst points to the block of output data.
+ * @param[in] blockSize number of samples to process.
+ * @return none.
+ *
+ * @details
+ * <b>Scaling and Overflow Behavior:</b>
+ * \par
+ * The function is implemented using a 64-bit internal accumulator.
+ * Both coefficients and state variables are represented in 1.15 format and multiplications yield a 2.30 result.
+ * The 2.30 intermediate results are accumulated in a 64-bit accumulator in 34.30 format.
+ * There is no risk of internal overflow with this approach and the full precision of intermediate multiplications is preserved.
+ * After all additions have been performed, the accumulator is truncated to 34.15 format by discarding low 15 bits.
+ * Lastly, the accumulator is saturated to yield a result in 1.15 format.
  */
 
 void arm_iir_lattice_q15(
@@ -76,7 +64,7 @@ void arm_iir_lattice_q15(
 {
 
 
-#ifndef ARM_MATH_CM0_FAMILY
+#if defined (ARM_MATH_DSP)
 
   /* Run the below code for Cortex-M4 and Cortex-M3 */
 
@@ -101,7 +89,7 @@ void arm_iir_lattice_q15(
   pState = &S->pState[0];
 
   /* Sample processing */
-  while(blkCnt > 0u)
+  while (blkCnt > 0U)
   {
     /* Read Sample from input buffer */
     /* fN(n) = x(n) */
@@ -137,9 +125,9 @@ void arm_iir_lattice_q15(
     fcurr = fnext;
 
     /* Loop unrolling.  Process 4 taps at a time. */
-    tapCnt = (numStages - 1u) >> 2;
+    tapCnt = (numStages - 1U) >> 2;
 
-    while(tapCnt > 0u)
+    while (tapCnt > 0U)
     {
 
       /* Process sample for 2nd, 6th ...taps */
@@ -285,9 +273,9 @@ void arm_iir_lattice_q15(
     fnext = fcurr;
 
     /* If the filter length is not a multiple of 4, compute the remaining filter taps */
-    tapCnt = (numStages - 1u) % 0x4u;
+    tapCnt = (numStages - 1U) % 0x4U;
 
-    while(tapCnt > 0u)
+    while (tapCnt > 0U)
     {
       gcurr = *px1++;
       /* Process sample for last taps */
@@ -313,21 +301,21 @@ void arm_iir_lattice_q15(
     *pDst++ = out;
 
     /* Advance the state pointer by 4 to process the next group of 4 samples */
-    pState = pState + 1u;
+    pState = pState + 1U;
     blkCnt--;
 
   }
 
-  /* Processing is complete. Now copy last S->numStages samples to start of the buffer    
+  /* Processing is complete. Now copy last S->numStages samples to start of the buffer
      for the preperation of next frame process */
   /* Points to the start of the state buffer */
   pStateCurnt = &S->pState[0];
   pState = &S->pState[blockSize];
 
-  stgCnt = (numStages >> 2u);
+  stgCnt = (numStages >> 2U);
 
   /* copy data */
-  while(stgCnt > 0u)
+  while (stgCnt > 0U)
   {
 #ifndef UNALIGNED_SUPPORT_DISABLE
 
@@ -349,10 +337,10 @@ void arm_iir_lattice_q15(
   }
 
   /* Calculation of count for remaining q15_t data */
-  stgCnt = (numStages) % 0x4u;
+  stgCnt = (numStages) % 0x4U;
 
   /* copy data */
-  while(stgCnt > 0u)
+  while (stgCnt > 0U)
   {
     *pStateCurnt++ = *pState++;
 
@@ -380,7 +368,7 @@ void arm_iir_lattice_q15(
   pState = &S->pState[0];
 
   /* Sample processing */
-  while(blkCnt > 0u)
+  while (blkCnt > 0U)
   {
     /* Read Sample from input buffer */
     /* fN(n) = x(n) */
@@ -399,7 +387,7 @@ void arm_iir_lattice_q15(
 
     tapCnt = numStages;
 
-    while(tapCnt > 0u)
+    while (tapCnt > 0U)
     {
       gcurr = *px1++;
       /* Process sample */
@@ -430,12 +418,12 @@ void arm_iir_lattice_q15(
     *pDst++ = out;
 
     /* Advance the state pointer by 1 to process the next group of samples */
-    pState = pState + 1u;
+    pState = pState + 1U;
     blkCnt--;
 
   }
 
-  /* Processing is complete. Now copy last S->numStages samples to start of the buffer           
+  /* Processing is complete. Now copy last S->numStages samples to start of the buffer
      for the preperation of next frame process */
   /* Points to the start of the state buffer */
   pStateCurnt = &S->pState[0];
@@ -444,7 +432,7 @@ void arm_iir_lattice_q15(
   stgCnt = numStages;
 
   /* copy data */
-  while(stgCnt > 0u)
+  while (stgCnt > 0U)
   {
     *pStateCurnt++ = *pState++;
 
@@ -452,13 +440,13 @@ void arm_iir_lattice_q15(
     stgCnt--;
   }
 
-#endif /*   #ifndef ARM_MATH_CM0_FAMILY */
+#endif /*   #if defined (ARM_MATH_DSP) */
 
 }
 
 
 
 
-/**    
- * @} end of IIR_Lattice group    
+/**
+ * @} end of IIR_Lattice group
  */

@@ -1,42 +1,30 @@
 /* ----------------------------------------------------------------------
-* Copyright (C) 2010-2014 ARM Limited. All rights reserved.
-*
-* $Date:        21. September 2015
-* $Revision:    V.1.4.5 a
-*
-* Project:      CMSIS DSP Library
-* Title:        arm_sin_f32.c
-*
-* Description:  Fast sine calculation for floating-point values.
-*
-* Target Processor: Cortex-M4/Cortex-M3/Cortex-M0
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions
-* are met:
-*   - Redistributions of source code must retain the above copyright
-*     notice, this list of conditions and the following disclaimer.
-*   - Redistributions in binary form must reproduce the above copyright
-*     notice, this list of conditions and the following disclaimer in
-*     the documentation and/or other materials provided with the
-*     distribution.
-*   - Neither the name of ARM LIMITED nor the names of its contributors
-*     may be used to endorse or promote products derived from this
-*     software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-* "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-* LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-* FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-* COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-* BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-* CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-* LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-* ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-* POSSIBILITY OF SUCH DAMAGE.
-* -------------------------------------------------------------------- */
+ * Project:      CMSIS DSP Library
+ * Title:        arm_sin_f32.c
+ * Description:  Fast sine calculation for floating-point values
+ *
+ * $Date:        27. January 2017
+ * $Revision:    V.1.5.1
+ *
+ * Target Processor: Cortex-M cores
+ * -------------------------------------------------------------------- */
+/*
+ * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed under the Apache License, Version 2.0 (the License); you may
+ * not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #include "arm_math.h"
 #include "arm_common_tables.h"
@@ -52,7 +40,7 @@
  * Computes the trigonometric sine function using a combination of table lookup
  * and linear interpolation.  There are separate functions for
  * Q15, Q31, and floating-point data types.
- * The input to the floating-point version is in radians while the
+ * The input to the floating-point version is in radians and in the range [0 2*pi) while the
  * fixed-point Q15 and Q31 have a scaled input with the range
  * [0 +0.9999] mapping to [0 2*pi).  The fixed-point range is chosen so that a
  * value of 2*pi wraps around to 0.
@@ -90,6 +78,11 @@ float32_t arm_sin_f32(
   int32_t n;
   float32_t findex;
 
+  /* Special case for small negative inputs */
+  if ((x < 0.0f) && (x >= -1.9e-7f)) {
+     return x;
+  }
+
   /* input x is in radians */
   /* Scale the input to [0 1] range from [0 2*PI] , divide input by 2*pi */
   in = x * 0.159154943092f;
@@ -98,7 +91,7 @@ float32_t arm_sin_f32(
   n = (int32_t) in;
 
   /* Make negative values towards -infinity */
-  if(x < 0.0f)
+  if (x < 0.0f)
   {
     n--;
   }
@@ -108,9 +101,6 @@ float32_t arm_sin_f32(
 
   /* Calculation of index of the table */
   findex = (float32_t) FAST_MATH_TABLE_SIZE * in;
-  if (findex >= 512.0f) {
-    findex -= 512.0f;
-  }
 
   index = ((uint16_t)findex) & 0x1ff;
 

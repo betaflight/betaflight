@@ -1,58 +1,47 @@
-/* ----------------------------------------------------------------------     
-* Copyright (C) 2010-2014 ARM Limited. All rights reserved.  
-*     
-* $Date:        19. October 2015
-* $Revision: 	V.1.4.5 a
-*     
-* Project:      CMSIS DSP Library  
-* Title:		arm_sqrt_q31.c     
-*     
-* Description:	Q31 square root function.    
-*     
-* Target Processor: Cortex-M4/Cortex-M3/Cortex-M0
-*  
-* Redistribution and use in source and binary forms, with or without 
-* modification, are permitted provided that the following conditions
-* are met:
-*   - Redistributions of source code must retain the above copyright
-*     notice, this list of conditions and the following disclaimer.
-*   - Redistributions in binary form must reproduce the above copyright
-*     notice, this list of conditions and the following disclaimer in
-*     the documentation and/or other materials provided with the 
-*     distribution.
-*   - Neither the name of ARM LIMITED nor the names of its contributors
-*     may be used to endorse or promote products derived from this
-*     software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-* "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-* LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-* FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-* COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-* BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-* CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-* LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-* ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-* POSSIBILITY OF SUCH DAMAGE. 
-* -------------------------------------------------------------------- */
+/* ----------------------------------------------------------------------
+ * Project:      CMSIS DSP Library
+ * Title:        arm_sqrt_q31.c
+ * Description:  Q31 square root function
+ *
+ * $Date:        27. January 2017
+ * $Revision:    V.1.5.1
+ *
+ * Target Processor: Cortex-M cores
+ * -------------------------------------------------------------------- */
+/*
+ * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed under the Apache License, Version 2.0 (the License); you may
+ * not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include "arm_math.h"
 #include "arm_common_tables.h"
 
-/**     
- * @ingroup groupFastMath     
+/**
+ * @ingroup groupFastMath
  */
 
-/**     
- * @addtogroup SQRT     
- * @{     
+/**
+ * @addtogroup SQRT
+ * @{
  */
 
-/**    
- * @brief Q31 square root function.    
- * @param[in]   in    input value.  The range of the input value is [0 +1) or 0x00000000 to 0x7FFFFFFF.    
- * @param[out]  *pOut square root of input value.    
+/**
+ * @brief Q31 square root function.
+ * @param[in]   in    input value.  The range of the input value is [0 +1) or 0x00000000 to 0x7FFFFFFF.
+ * @param[out]  *pOut square root of input value.
  * @return The function returns ARM_MATH_SUCCESS if the input value is positive
  * and ARM_MATH_ARGUMENT_ERROR if the input is negative.  For
  * negative inputs, the function returns *pOut = 0.
@@ -73,12 +62,12 @@ arm_status arm_sqrt_q31(
   number = in;
 
   /* If the input is a positive number then compute the signBits. */
-  if(number > 0)
+  if (number > 0)
   {
     signBits1 = __CLZ(number) - 1;
 
     /* Shift by the number of signBits1 */
-    if((signBits1 % 2) == 0)
+    if ((signBits1 % 2) == 0)
     {
       number = number << signBits1;
     }
@@ -128,7 +117,7 @@ arm_status arm_sqrt_q31(
     var1 = ((q31_t) (((q63_t) temp1 * var1) >> 31)) << 1;
 
     /* Shift the output down accordingly */
-    if((signBits1 % 2) == 0)
+    if ((signBits1 % 2) == 0)
     {
       var1 = var1 >> (signBits1 / 2);
     }
@@ -148,6 +137,6 @@ arm_status arm_sqrt_q31(
   }
 }
 
-/**     
- * @} end of SQRT group     
+/**
+ * @} end of SQRT group
  */
