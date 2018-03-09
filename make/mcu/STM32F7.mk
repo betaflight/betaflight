@@ -161,5 +161,5 @@ MCU_EXCLUDES = \
             drivers/timer.c \
             drivers/serial_uart.c
 
-DSP_LIB := $(ROOT)/lib/main/DSP
+DSP_LIB := $(ROOT)/lib/main/CMSIS/CM5/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM7

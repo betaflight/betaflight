@@ -80,5 +80,5 @@ MCU_COMMON_SRC = \
             drivers/system_stm32f30x.c \
             drivers/timer_stm32f30x.c
 
-DSP_LIB := $(ROOT)/lib/main/DSP
+DSP_LIB := $(ROOT)/lib/main/CMSIS/CM5/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM4
