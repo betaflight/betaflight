@@ -65,7 +65,6 @@ typedef struct gyroDev_s {
     float scale;                                            // scalefactor
     float gyroZero[XYZ_AXIS_COUNT];
     float gyroADC[XYZ_AXIS_COUNT];                        // gyro data after calibration and alignment
-    float gyroADCStaticf[XYZ_AXIS_COUNT];
     float gyroADCf[XYZ_AXIS_COUNT];
     int32_t gyroADCRawPrevious[XYZ_AXIS_COUNT];
     int16_t gyroADCRaw[XYZ_AXIS_COUNT];

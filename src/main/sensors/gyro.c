@@ -914,12 +914,6 @@ static FAST_CODE void gyroUpdateSensor(gyroSensor_t *gyroSensor, timeUs_t curren
         return;
     }
 
-#ifdef USE_GYRO_DATA_ANALYSE
-    if (isDynamicFilterActive()) {
-        gyroDataAnalyse(&gyroSensor->gyroDev, gyroSensor->notchFilterDyn);
-    }
-#endif
-
     const timeDelta_t sampleDeltaUs = currentTimeUs - accumulationLastTimeSampledUs;
     accumulationLastTimeSampledUs = currentTimeUs;
     accumulatedMeasurementTimeUs += sampleDeltaUs;
@@ -939,10 +933,15 @@ static FAST_CODE void gyroUpdateSensor(gyroSensor_t *gyroSensor, timeUs_t curren
             gyroADCf = gyroSensor->notchFilter1ApplyFn((filter_t *)&gyroSensor->notchFilter1[axis], gyroADCf);
             gyroADCf = gyroSensor->notchFilter2ApplyFn((filter_t *)&gyroSensor->notchFilter2[axis], gyroADCf);
             gyroADCf = gyroSensor->softLpfFilterApplyFn(gyroSensor->softLpfFilterPtr[axis], gyroADCf);
-            gyroSensor->gyroDev.gyroADCStaticf[axis] = gyroADCf;
+
 #ifdef USE_GYRO_DATA_ANALYSE
+            if (isDynamicFilterActive()) {
+                gyroDataAnalysePush(axis, gyroADCf);
+            }
+
             gyroADCf = gyroSensor->notchFilterDynApplyFn((filter_t *)&gyroSensor->notchFilterDyn[axis], gyroADCf);
 #endif
+
             gyroSensor->gyroDev.gyroADCf[axis] = gyroADCf;
             if (!gyroSensor->overflowDetected) {
                 // integrate using trapezium rule to avoid bias
@@ -973,11 +972,12 @@ static FAST_CODE void gyroUpdateSensor(gyroSensor_t *gyroSensor, timeUs_t curren
             // apply LPF
             DEBUG_SET(DEBUG_GYRO, axis, lrintf(gyroADCf));
             gyroADCf = gyroSensor->softLpfFilterApplyFn(gyroSensor->softLpfFilterPtr[axis], gyroADCf);
-            gyroSensor->gyroDev.gyroADCStaticf[axis] = gyroADCf;
 
 #ifdef USE_GYRO_DATA_ANALYSE
             // apply dynamic notch filter
             if (isDynamicFilterActive()) {
+                gyroDataAnalysePush(axis, gyroADCf);
+
                 if (axis == 0) {
                     DEBUG_SET(DEBUG_FFT, 0, lrintf(gyroADCf)); // store raw data
                 }
@@ -996,6 +996,12 @@ static FAST_CODE void gyroUpdateSensor(gyroSensor_t *gyroSensor, timeUs_t curren
             }
         }
     }
+
+#ifdef USE_GYRO_DATA_ANALYSE
+    if (isDynamicFilterActive()) {
+        gyroDataAnalyse(&gyroSensor->gyroDev, gyroSensor->notchFilterDyn);
+    }
+#endif
 }
 
 FAST_CODE void gyroUpdate(timeUs_t currentTimeUs)
