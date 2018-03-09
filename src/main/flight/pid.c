@@ -220,17 +220,17 @@ void pidInitFilters(const pidProfile_t *pidProfile)
         dtermNotchApplyFn = nullFilterApply;
     }
     
-    //2nd Dterm Lowpass Filter
-	static pt1Filter_t dtermLowpass2State;
-	if (pidProfile->dterm_lowpass2_hz == 0 || pidProfile->dterm_lowpass2_hz > pidFrequencyNyquist) {
-		dtermLowpass2ApplyFn = nullFilterApply;
-	} else {
-		dtermLowpass2ApplyFn = (filterApplyFnPtr)pt1FilterApply;
-		for (int axis = FD_ROLL; axis <= FD_PITCH; axis++) {
-			dtermLowpass2[axis] = &dtermLowpass2State;
-			pt1FilterInit(dtermLowpass2[axis], pidProfile->dterm_lowpass2_hz, dT);
-		}
-	}
+    //2nd Dterm Lowpass Filter   
+    static pt1Filter_t dtermFilterLowpass2[2];     
+    if (pidProfile->dterm_lowpass2_hz == 0 || pidProfile->dterm_lowpass2_hz > pidFrequencyNyquist) {
+    	dtermLowpass2ApplyFn = nullFilterApply;
+    } else {
+        dtermLowpass2ApplyFn = (filterApplyFnPtr)pt1FilterApply;
+        for (int axis = FD_ROLL; axis <= FD_PITCH; axis++) {
+            dtermLowpass2[axis] = &dtermFilterLowpass2[axis];
+            pt1FilterInit(dtermLowpass2[axis], pidProfile->dterm_lowpass2_hz, dT);
+        }        
+    }
 
     static dtermLowpass_t dtermLowpassUnion;
     if (pidProfile->dterm_lowpass_hz == 0 || pidProfile->dterm_lowpass_hz > pidFrequencyNyquist) {
