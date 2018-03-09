@@ -105,7 +105,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .pidSumLimitYaw = PIDSUM_LIMIT_YAW,
         .yaw_lpf_hz = 0,
         .dterm_lpf_hz = 100,    // filtering ON by default
-        .dterm_lpf_2_hz = 0,    // second Dterm LPF OFF by default
+        .dterm_lpf2_hz = 0,    // second Dterm LPF OFF by default
         .dterm_notch_hz = 260,
         .dterm_notch_cutoff = 160,
         .dterm_filter_type = FILTER_BIQUAD,
@@ -224,13 +224,13 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     
     //2nd Dterm Lowpass Filter
 	static pt1Filter_t dtermLowpass2State;
-	if (pidProfile->dterm_lpf_2_hz == 0 || pidProfile->dterm_lpf_2_hz > pidFrequencyNyquist) {
+	if (pidProfile->dterm_lpf2_hz == 0 || pidProfile->dterm_lpf2_hz > pidFrequencyNyquist) {
 		dtermLowpass2ApplyFn = nullFilterApply;
 	} else {
 		dtermLowpass2ApplyFn = (filterApplyFnPtr)pt1FilterApply;
 		for (int axis = FD_ROLL; axis <= FD_PITCH; axis++) {
 			dtermLowpass2[axis] = &dtermLowpass2State;
-			pt1FilterInit(dtermLowpass2[axis], pidProfile->dterm_lpf_2_hz, dT);
+			pt1FilterInit(dtermLowpass2[axis], pidProfile->dterm_lpf2_hz, dT);
 		}
 	}
 
@@ -528,11 +528,11 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         // -----calculate D component
         if (axis != FD_YAW) {
             // apply filters
-            float gyroRateFiltered = dtermNotchApplyFn(dtermNotch[axis], gyroRate);
+			float gyroRateFiltered = dtermNotchApplyFn(dtermNotch[axis], gyroRate);
 			gyroRateFiltered = dtermLowpassApplyFn(dtermLowpass[axis], gyroRateFiltered);
 			gyroRateFiltered = dtermLowpass2ApplyFn(dtermLowpass2[axis], gyroRateFiltered);
 
-            const float rD = dynCd * MIN(getRcDeflectionAbs(axis) * relaxFactor, 1.0f) * currentPidSetpoint - gyroRateFiltered;    // cr - y
+			const float rD = dynCd * MIN(getRcDeflectionAbs(axis) * relaxFactor, 1.0f) * currentPidSetpoint - gyroRateFiltered;    // cr - y
             // Divide rate change by deltaT to get differential (ie dr/dt)
             float delta = (rD - previousRateError[axis]) / deltaT;
 
