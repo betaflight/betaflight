@@ -7,7 +7,7 @@ CFLAGS               += -DDEBUG_HARDFAULTS
 endif
 
 #CMSIS
-CMSIS_DIR      := $(ROOT)/lib/main/CMSIS/CM5
+CMSIS_DIR      := $(ROOT)/lib/main/CMSIS
 
 #STDPERIPH
 STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F7/Drivers/STM32F7xx_HAL_Driver
@@ -161,5 +161,5 @@ MCU_EXCLUDES = \
             drivers/timer.c \
             drivers/serial_uart.c
 
-DSP_LIB := $(ROOT)/lib/main/CMSIS/CM5/DSP
+DSP_LIB := $(ROOT)/lib/main/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM7
