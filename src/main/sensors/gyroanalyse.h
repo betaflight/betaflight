@@ -30,5 +30,5 @@ void gyroDataAnalyseInit(uint32_t targetLooptime);
 const gyroFftData_t *gyroFftData(int axis);
 struct gyroDev_s;
 void gyroDataAnalysePush(int axis, float sample);
-void gyroDataAnalyse(const struct gyroDev_s *gyroDev, biquadFilter_t *notchFilterDyn);
+void gyroDataAnalyse(biquadFilter_t *notchFilterDyn);
 void gyroDataAnalyseUpdate(biquadFilter_t *notchFilterDyn);

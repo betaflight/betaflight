@@ -135,7 +135,7 @@ void gyroDataAnalysePush(const int axis, const float sample)
 /*
  * Collect gyro data, to be analysed in gyroDataAnalyseUpdate function
  */
-void gyroDataAnalyse(const struct gyroDev_s *gyroDev, biquadFilter_t *notchFilterDyn)
+void gyroDataAnalyse(biquadFilter_t *notchFilterDyn)
 {
     // samples should have been pushed by `gyroDataAnalysePush`
     // if gyro sampling is > 1kHz, accumulate multiple samples
