@@ -98,7 +98,7 @@ DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC) \
 endif
 
 #CMSIS
-VPATH           := $(VPATH):$(CMSIS_DIR)/Core/Include:$(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx
+VPATH           := $(VPATH):$(CMSIS_DIR)/Core/Include:$(ROOT)/lib/main/STM32F4/Drivers/CMSIS/Device/ST/STM32F4xx
 
 ifeq ($(PERIPH_DRIVER), HAL)
 CMSIS_SRC       :=
@@ -111,7 +111,7 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(ROOT)/src/main/vcp_hal
 else
 CMSIS_SRC       := $(notdir $(wildcard $(CMSIS_DIR)/CoreSupport/*.c \
-                   $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx/*.c))
+                   $(ROOT)/lib/main/STM32F4/Drivers/CMSIS/Device/ST/STM32F4xx/*.c))
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(STDPERIPH_DIR)/inc \
                    $(USBOTG_DIR)/inc \
@@ -119,7 +119,7 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(USBCDC_DIR)/inc \
                    $(USBFS_DIR)/inc \
                    $(CMSIS_DIR)/CM5/Core/Include \
-                   $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx \
+                   $(ROOT)/lib/main/STM32F4/Drivers/CMSIS/Device/ST/STM32F4xx \
                    $(ROOT)/src/main/vcpf4
 endif
 

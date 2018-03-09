@@ -25,12 +25,12 @@ STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
 DEVICE_STDPERIPH_SRC = $(STDPERIPH_SRC)
 
 VPATH           := $(VPATH):$(CMSIS_DIR)/CM5/Core/Include
-CMSIS_SRC       = $(notdir $(wildcard $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F30x/*.c))
+CMSIS_SRC       = $(notdir $(wildcard $(ROOT)/lib/main/STM32F3/Drivers/CMSIS/Device/ST/STM32F30x/*.c))
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(STDPERIPH_DIR)/inc \
                    $(CMSIS_DIR)/CM5/Core/Include \
-                   $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F30x
+                   $(ROOT)/lib/main/STM32F3/Drivers/CMSIS/Device/ST/STM32F30x
 
 ifneq ($(filter VCP, $(FEATURES)),)
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
