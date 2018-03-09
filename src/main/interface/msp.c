@@ -1186,8 +1186,8 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 
     case MSP_FILTER_CONFIG :
         sbufWriteU8(dst, gyroConfig()->gyro_soft_lpf_hz);
-        sbufWriteU16(dst, currentPidProfile->dterm_lpf_hz);
-        sbufWriteU16(dst, currentPidProfile->yaw_lpf_hz);
+        sbufWriteU16(dst, currentPidProfile->dterm_lowpass_hz);
+        sbufWriteU16(dst, currentPidProfile->yaw_lowpass_hz);
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_hz_1);
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_cutoff_1);
         sbufWriteU16(dst, currentPidProfile->dterm_notch_hz);
@@ -1658,8 +1658,8 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
     case MSP_SET_FILTER_CONFIG:
         gyroConfigMutable()->gyro_soft_lpf_hz = sbufReadU8(src);
-        currentPidProfile->dterm_lpf_hz = sbufReadU16(src);
-        currentPidProfile->yaw_lpf_hz = sbufReadU16(src);
+        currentPidProfile->dterm_lowpass_hz = sbufReadU16(src);
+        currentPidProfile->yaw_lowpass_hz = sbufReadU16(src);
         if (sbufBytesRemaining(src) >= 8) {
             gyroConfigMutable()->gyro_soft_notch_hz_1 = sbufReadU16(src);
             gyroConfigMutable()->gyro_soft_notch_cutoff_1 = sbufReadU16(src);
