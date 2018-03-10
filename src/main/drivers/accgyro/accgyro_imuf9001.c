@@ -153,8 +153,7 @@ int imuf9001Whoami(const gyroDev_t *gyro)
             switch ( (*(imufVersion_t *)&(reply.param1)).firmware )
             {
                 case 101:
-                case 102:
-                    //force update if updater exists
+                    //force update
                     if( (*((__IO uint32_t *)UPT_ADDRESS)) != 0xFFFFFFFF )
                     {
                         (*((__IO uint32_t *)0x2001FFEC)) = 0xF431FA77;
@@ -162,7 +161,7 @@ int imuf9001Whoami(const gyroDev_t *gyro)
                         systemReset();
                     }
                 break;
-                case 103: //version 103 required right now
+                case 102: //version 102 required right now
                     return IMUF_9001_SPI;
                 break;
                 default:
