@@ -98,6 +98,10 @@ typedef struct gyroCalibration_s {
     uint16_t calibratingG;
 } gyroCalibration_t;
 
+#ifdef USE_GYRO_IMUF9001
+uint32_t lastImufExtiTime = 0;
+#endif
+
 bool firstArmingCalibrationWasStarted = false;
 #ifdef USE_GYRO_IMUF9001
 uint32_t lastImufExtiTime = 0;
@@ -192,11 +196,11 @@ PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
     .checkOverflow = GYRO_OVERFLOW_CHECK_ALL_AXES,
     .imuf_mode = 32,
     .imuf_pitch_q = HELIO_PROFILE_PITCH_Q,
-    .imuf_pitch_r = 88,
+    .imuf_pitch_w = 6,
     .imuf_roll_q = HELIO_PROFILE_ROLL_Q,
-    .imuf_roll_r = 88,
+    .imuf_roll_w = 6,
     .imuf_yaw_q = HELIO_PROFILE_YAW_Q,
-    .imuf_yaw_r = 88,
+    .imuf_yaw_w = 6,
     .imuf_pitch_lpf_cutoff_hz = 150.0f,
     .imuf_roll_lpf_cutoff_hz = 150.0f,
     .imuf_yaw_lpf_cutoff_hz = 150.0f,
@@ -721,7 +725,7 @@ bool gyroIsSane(void)
         return false;
     }
 
-    // make sure calibration is complete
+    //0.0f on all three during an arm check is next to impossible
     if( !isGyroSensorCalibrationComplete(&gyroSensor1) )
     {
         return false;
@@ -730,7 +734,7 @@ bool gyroIsSane(void)
     //100 CRC errors is a lot
     if (imufCrcErrorCount > 100)
     {
-        imufCrcErrorCount = 0; //reset error count on this failed arm attempt
+        imufCrcErrorCount = 0;
         return false;
     }
 

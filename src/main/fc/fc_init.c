@@ -549,6 +549,13 @@ void init(void)
         setArmingDisabled(ARMING_DISABLED_NO_GYRO);
     }
 
+#ifdef USE_GYRO_IMUF9001
+    if(!gyroIsSane())
+    {
+        setArmingDisabled(ARMING_DISABLED_NO_GYRO);
+    }
+#endif
+
     systemState |= SYSTEM_STATE_SENSORS_READY;
 
     // gyro.targetLooptime set in sensorsAutodetect(),
