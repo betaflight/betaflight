@@ -20,7 +20,8 @@
 #define TARGET_BOARD_IDENTIFIER "CBFR" //
 #define USBD_PRODUCT_STRING     "CrazyBee F3 FR"
 #define LED0_PIN                PB3
-#define BEEPER                  PC15
+#define USE_BEEPER 
+#define BEEPER_PIN              PC15
 #define BEEPER_INVERTED
 
 #define USE_EXTI
@@ -28,10 +29,10 @@
 #define USE_MPU_DATA_READY_SIGNAL
 #define MPU6000_SPI_INSTANCE    SPI1
 #define MPU6000_CS_PIN          PA4
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 #define GYRO_MPU6000_ALIGN      CW90_DEG
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
 #define ACC_MPU6000_ALIGN       CW90_DEG
 
