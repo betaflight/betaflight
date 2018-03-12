@@ -433,9 +433,8 @@ void init(void)
     }
 #endif
 
-#ifdef BEEPER
+#ifdef USE_BEEPER
     dbgPrintf(DBG_INIT, 2, "Initialise beeper\n");
-
     beeperInit(beeperDevConfig());
 #endif
 /* temp until PGs are implemented. */

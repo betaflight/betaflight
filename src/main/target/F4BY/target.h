@@ -24,7 +24,8 @@
 #define LED1_PIN                PE2 // Red LED
 #define LED2_PIN                PE1 // Blue LED
 
-#define BEEPER                  PE5
+#define USE_BEEPER
+#define BEEPER_PIN              PE5
 
 #define INVERTER_PIN_UART6      PD3
 

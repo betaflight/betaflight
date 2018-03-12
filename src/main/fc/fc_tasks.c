@@ -258,7 +258,7 @@ void fcTasksInit(void)
 
     setTaskEnabled(TASK_DISPATCH, dispatchIsEnabled());
 
-#ifdef BEEPER
+#ifdef USE_BEEPER
     setTaskEnabled(TASK_BEEPER, true);
 #endif
 #ifdef USE_GPS
@@ -440,7 +440,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_HIGH,
     },
 
-#ifdef BEEPER
+#ifdef USE_BEEPER
     [TASK_BEEPER] = {
         .taskName = "BEEPER",
         .taskFunc = beeperUpdate,

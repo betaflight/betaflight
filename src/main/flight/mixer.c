@@ -389,15 +389,15 @@ void initEscEndpoints(void)
     default:
         if (feature(FEATURE_3D)) {
             disarmMotorOutput = flight3DConfig()->neutral3d;
-            motorOutputLow = PWM_RANGE_MIN;
+            motorOutputLow = flight3DConfig()->limit3d_low;
+            motorOutputHigh = flight3DConfig()->limit3d_high;
+            deadbandMotor3dHigh = flight3DConfig()->deadband3d_high;
+            deadbandMotor3dLow = flight3DConfig()->deadband3d_low;
         } else {
             disarmMotorOutput = motorConfig()->mincommand;
             motorOutputLow = motorConfig()->minthrottle;
+            motorOutputHigh = motorConfig()->maxthrottle;
         }
-        motorOutputHigh = motorConfig()->maxthrottle;
-        deadbandMotor3dHigh = flight3DConfig()->deadband3d_high;
-        deadbandMotor3dLow = flight3DConfig()->deadband3d_low;
-
         break;
     }
 

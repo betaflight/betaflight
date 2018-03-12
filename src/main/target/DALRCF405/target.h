@@ -23,7 +23,8 @@
 //LED & BEE------------------------------- 
 #define LED0_PIN                PC14
 
-#define BEEPER                  PC13
+#define USE_BEEPER
+#define BEEPER_PIN              PC13
 #define BEEPER_INVERTED
 
 //define camera control
