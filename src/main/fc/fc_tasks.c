@@ -213,15 +213,25 @@ void taskCameraControl(uint32_t currentTime)
 #endif
 
 #ifdef USE_KILLSWITCH
+bool readyToKillSwitch = false; //this may not be the right place to declare this
+
 void taskKillSwitch()
-{
+{    
     if (ARMING_FLAG(ARMED)) {
         return;
     }
     if (IS_RC_MODE_ACTIVE(BOXKILLSWITCH)) //if the mode is active kill the quad, needs more checks
     {
-        while(1) //this will crash the FC, must be rebooted in order to be operational again
-        {}
+        if(readyToKillSwitch) //mode needs to be inactive first 
+        {
+            __disable_irq(); //disable all interupts
+            //set channel to kill channel
+            while(1) {} //this will crash the FC, must be rebooted in order to be operational again
+        }
+    }
+    else
+    {
+        readyToKillSwitch = true;
     }
 }
 #endif
