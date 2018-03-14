@@ -160,6 +160,7 @@ void initActiveBoxIds(void)
 #define BME(boxId) do { bitArraySet(&ena, boxId); } while (0)
     BME(BOXARM);
     BME(BOXPREARM);
+    BME(BOXKILLSWITCH); //killswitch should always work, if theres no sa can still be used to kill quad 
     if (!feature(FEATURE_AIRMODE)) {
         BME(BOXAIRMODE);
     }
