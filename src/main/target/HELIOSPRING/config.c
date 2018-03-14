@@ -42,6 +42,7 @@ void targetConfiguration(void) {
     gyroConfigMutable()->gyro_soft_notch_hz_1 = 0;
     gyroConfigMutable()->gyro_soft_notch_hz_2 = 0;
     gyroConfigMutable()->gyroMovementCalibrationThreshold = 20;
+    systemConfig()->cpu_overclock = 1; //default 192 to match multishot bus speed of 48
 
     for (uint8_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
         pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
