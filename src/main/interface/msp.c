@@ -1354,7 +1354,21 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 {
     UNUSED(cmdMSP);
     UNUSED(src);
-    return MSP_RESULT_ERROR;
+
+    switch(cmdMSP) {
+    case MSP_RESET_CONF:
+        resetEEPROM();
+        readEEPROM();
+        break;
+    case MSP_EEPROM_WRITE:
+        writeEEPROM();
+        readEEPROM();
+        break;
+    default:
+        // we do not know how to handle the (valid) message, indicate error MSP $M!
+        return MSP_RESULT_ERROR;
+    }
+    return MSP_RESULT_ACK;
 }
 
 #else
