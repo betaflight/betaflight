@@ -468,6 +468,8 @@ static void saSendFrame(uint8_t *buf, int len)
         sa_outstanding = SA_CMD_NONE;
     }
 
+    serialWrite(smartAudioSerialPort, 0x00);
+
     sa_lastTransmissionMs = millis();
 }
 
