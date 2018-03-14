@@ -393,11 +393,11 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
     }
 }
 
-static bool imuIsAccelerometerHealthy(void)
+static bool imuIsAccelerometerHealthy(float *accAverage)
 {
     float accMagnitude = 0;
     for (int axis = 0; axis < 3; axis++) {
-        const float a = acc.accADC[axis];
+        const float a = accAverage[axis];
         accMagnitude += a * a;
     }
 
@@ -418,10 +418,6 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     const timeDelta_t deltaT = currentTimeUs - previousIMUUpdateTime;
     previousIMUUpdateTime = currentTimeUs;
 
-    if (imuIsAccelerometerHealthy()) {
-        useAcc = true;
-    }
-
 #ifdef USE_MAG
     if (sensors(SENSOR_MAG) && compassIsHealthy()) {
         useMag = true;
@@ -437,6 +433,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 
 #if defined(SIMULATOR_BUILD) && defined(SKIP_IMU_CALC)
     UNUSED(imuMahonyAHRSupdate);
+    UNUSED(imuIsAccelerometerHealthy);
     UNUSED(useAcc);
     UNUSED(useMag);
     UNUSED(useYaw);
@@ -450,8 +447,8 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     float gyroAverage[XYZ_AXIS_COUNT];
     gyroGetAccumulationAverage(gyroAverage);
     float accAverage[XYZ_AXIS_COUNT];
-    if (!accGetAccumulationAverage(accAverage)) {
-        useAcc = false;
+    if (accGetAccumulationAverage(accAverage)) {
+        useAcc = imuIsAccelerometerHealthy(accAverage);
     }
     imuMahonyAHRSupdate(deltaT * 1e-6f,
                         DEGREES_TO_RADIANS(gyroAverage[X]), DEGREES_TO_RADIANS(gyroAverage[Y]), DEGREES_TO_RADIANS(gyroAverage[Z]),
