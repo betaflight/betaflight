@@ -212,6 +212,20 @@ void taskCameraControl(uint32_t currentTime)
 }
 #endif
 
+#ifdef USE_KILLSWITCH
+void taskKillSwitch()
+{
+    if (ARMING_FLAG(ARMED)) {
+        return;
+    }
+    if (IS_RC_MODE_ACTIVE(BOXKILLSWITCH)) //if the mode is active kill the quad, needs more checks
+    {
+        while(1) //this will crash the FC, must be rebooted in order to be operational again
+        {}
+    }
+}
+#endif
+
 void fcTasksInit(void)
 {
     schedulerInit();
@@ -326,6 +340,9 @@ void fcTasksInit(void)
 #endif
 #ifdef USE_RCDEVICE
     setTaskEnabled(TASK_RCDEVICE, rcdeviceIsEnabled());
+#endif
+#ifdef USE_KILLSWITCH
+    setTaskEnabled(TASK_KILLSWITCH, true);
 #endif
 #endif
 }
@@ -598,5 +615,15 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_IDLE
     },
 #endif
+
+#ifdef USE_KILLSWITCH
+    [TASK_KILLSWITCH] = {
+        .taskName = "KILLSWITCH",
+        .taskFunc = taskKillSwitch,
+        .desiredPeriod = TASK_PERIOD_HZ(10),
+        .staticPriority = TASK_PRIORITY_MEDIUM //should have priority over most tasks
+    },
+#endif
+
 #endif
 };

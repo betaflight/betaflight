@@ -131,6 +131,10 @@ typedef enum {
     TASK_PINIOBOX,
 #endif
 
+#ifdef USE_KILLSWITCH
+    TASK_KILLSWITCH,
+#endif
+
     /* Count of real tasks */
     TASK_COUNT,
 
