@@ -43,6 +43,7 @@ static const displayPortVTable_t rcdeviceOSDVTable = {
     .isTransferInProgress = rcdeviceOSDIsTransferInProgress,
     .heartbeat = rcdeviceOSDHeartbeat,
     .resync = rcdeviceOSDResync,
+    .isSynced = rcdeviceOSDIsSynced,
     .txBytesFree = rcdeviceOSDTxBytesFree,
     .screenSize = rcdeviceScreenSize,
 };

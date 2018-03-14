@@ -220,6 +220,7 @@ static IO_t max7456CsPin        = IO_NONE;
 
 static uint8_t max7456DeviceType;
 
+static void max7456DrawScreenSlow(void);
 
 static uint8_t max7456Send(uint8_t add, uint8_t data)
 {
@@ -400,7 +401,7 @@ void max7456ReInit(void)
     // Clear shadow to force redraw all screen in non-dma mode.
     memset(shadowBuffer, 0, maxScreenSize);
     if (firstInit) {
-        max7456RefreshAll();
+        max7456DrawScreenSlow();
         firstInit = false;
     }
 }
@@ -543,62 +544,77 @@ bool max7456DmaInProgress(void)
 #endif
 }
 
-void max7456DrawScreen(void)
+bool max7456BuffersSynced(void)
+{
+    for (int i = 0; i < maxScreenSize; i++) {
+        if (screenBuffer[i] != shadowBuffer[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void max7456ReInitIfRequired(void)
 {
     static uint32_t lastSigCheckMs = 0;
     static uint32_t videoDetectTimeMs = 0;
-    static uint16_t pos = 0;
-
     static uint16_t reInitCount = 0;
+
+    ENABLE_MAX7456;
+    const uint8_t stallCheck = max7456Send(MAX7456ADD_VM0|MAX7456ADD_READ, 0x00);
+    DISABLE_MAX7456;
+
+    const timeMs_t nowMs = millis();
+
+    if (stallCheck != videoSignalReg) {
+        max7456ReInit();
+    } else if ((videoSignalCfg == VIDEO_SYSTEM_AUTO)
+              && ((nowMs - lastSigCheckMs) > MAX7456_SIGNAL_CHECK_INTERVAL_MS)) {
+
+        // Adjust output format based on the current input format.
+
+        ENABLE_MAX7456;
+        const uint8_t videoSense = max7456Send(MAX7456ADD_STAT, 0x00);
+        DISABLE_MAX7456;
+
+        DEBUG_SET(DEBUG_MAX7456_SIGNAL, DEBUG_MAX7456_SIGNAL_MODEREG, videoSignalReg & VIDEO_MODE_MASK);
+        DEBUG_SET(DEBUG_MAX7456_SIGNAL, DEBUG_MAX7456_SIGNAL_SENSE, videoSense & 0x7);
+        DEBUG_SET(DEBUG_MAX7456_SIGNAL, DEBUG_MAX7456_SIGNAL_ROWS, max7456GetRowsCount());
+
+        if (videoSense & STAT_LOS) {
+            videoDetectTimeMs = 0;
+        } else {
+            if ((VIN_IS_PAL(videoSense) && VIDEO_MODE_IS_NTSC(videoSignalReg))
+              || (VIN_IS_NTSC_alt(videoSense) && VIDEO_MODE_IS_PAL(videoSignalReg))) {
+                if (videoDetectTimeMs) {
+                    if (millis() - videoDetectTimeMs > VIDEO_SIGNAL_DEBOUNCE_MS) {
+                        max7456ReInit();
+                        DEBUG_SET(DEBUG_MAX7456_SIGNAL, DEBUG_MAX7456_SIGNAL_REINIT, ++reInitCount);
+                    }
+                } else {
+                    // Wait for signal to stabilize
+                    videoDetectTimeMs = millis();
+                }
+            }
+        }
+
+        lastSigCheckMs = nowMs;
+    }
+
+    //------------   end of (re)init-------------------------------------
+}
+
+void max7456DrawScreen(void)
+{
+    static uint16_t pos = 0;
 
     if (!max7456Lock && !fontIsLoading) {
 
         // (Re)Initialize MAX7456 at startup or stall is detected.
 
         max7456Lock = true;
-        ENABLE_MAX7456;
-        const uint8_t stallCheck = max7456Send(MAX7456ADD_VM0|MAX7456ADD_READ, 0x00);
-        DISABLE_MAX7456;
 
-        const timeMs_t nowMs = millis();
-
-        if (stallCheck != videoSignalReg) {
-            max7456ReInit();
-
-        } else if ((videoSignalCfg == VIDEO_SYSTEM_AUTO)
-                  && ((nowMs - lastSigCheckMs) > MAX7456_SIGNAL_CHECK_INTERVAL_MS)) {
-
-            // Adjust output format based on the current input format.
-
-            ENABLE_MAX7456;
-            const uint8_t videoSense = max7456Send(MAX7456ADD_STAT, 0x00);
-            DISABLE_MAX7456;
-
-            DEBUG_SET(DEBUG_MAX7456_SIGNAL, DEBUG_MAX7456_SIGNAL_MODEREG, videoSignalReg & VIDEO_MODE_MASK);
-            DEBUG_SET(DEBUG_MAX7456_SIGNAL, DEBUG_MAX7456_SIGNAL_SENSE, videoSense & 0x7);
-            DEBUG_SET(DEBUG_MAX7456_SIGNAL, DEBUG_MAX7456_SIGNAL_ROWS, max7456GetRowsCount());
-
-            if (videoSense & STAT_LOS) {
-                videoDetectTimeMs = 0;
-            } else {
-                if ((VIN_IS_PAL(videoSense) && VIDEO_MODE_IS_NTSC(videoSignalReg))
-                  || (VIN_IS_NTSC_alt(videoSense) && VIDEO_MODE_IS_PAL(videoSignalReg))) {
-                    if (videoDetectTimeMs) {
-                        if (millis() - videoDetectTimeMs > VIDEO_SIGNAL_DEBOUNCE_MS) {
-                            max7456ReInit();
-                            DEBUG_SET(DEBUG_MAX7456_SIGNAL, DEBUG_MAX7456_SIGNAL_REINIT, ++reInitCount);
-                        }
-                    } else {
-                        // Wait for signal to stabilize
-                        videoDetectTimeMs = millis();
-                    }
-                }
-            }
-
-            lastSigCheckMs = nowMs;
-        }
-
-        //------------   end of (re)init-------------------------------------
+        max7456ReInitIfRequired();
 
         int buff_len = 0;
         for (int k = 0; k < MAX_CHARS2UPDATE; k++) {
@@ -632,8 +648,25 @@ void max7456DrawScreen(void)
     }
 }
 
-// This funcktion refresh all and should not be used when copter is armed
+static void max7456DrawScreenSlow(void)
+{
+    ENABLE_MAX7456;
+    max7456Send(MAX7456ADD_DMAH, 0);
+    max7456Send(MAX7456ADD_DMAL, 0);
+    max7456Send(MAX7456ADD_DMM, displayMemoryModeReg | 1);
 
+    for (int xx = 0; xx < maxScreenSize; ++xx) {
+        max7456Send(MAX7456ADD_DMDI, screenBuffer[xx]);
+        shadowBuffer[xx] = screenBuffer[xx];
+    }
+
+    max7456Send(MAX7456ADD_DMDI, 0xFF);
+    max7456Send(MAX7456ADD_DMM, displayMemoryModeReg);
+    DISABLE_MAX7456;
+}
+
+
+// should not be used when armed
 void max7456RefreshAll(void)
 {
     if (!max7456Lock) {
@@ -641,19 +674,10 @@ void max7456RefreshAll(void)
         while (dmaTransactionInProgress);
 #endif
         max7456Lock = true;
-        ENABLE_MAX7456;
-        max7456Send(MAX7456ADD_DMAH, 0);
-        max7456Send(MAX7456ADD_DMAL, 0);
-        max7456Send(MAX7456ADD_DMM, displayMemoryModeReg | 1);
 
-        for (int xx = 0; xx < maxScreenSize; ++xx) {
-            max7456Send(MAX7456ADD_DMDI, screenBuffer[xx]);
-            shadowBuffer[xx] = screenBuffer[xx];
-        }
+        max7456ReInitIfRequired();
+        max7456DrawScreenSlow();
 
-        max7456Send(MAX7456ADD_DMDI, 0xFF);
-        max7456Send(MAX7456ADD_DMM, displayMemoryModeReg);
-        DISABLE_MAX7456;
         max7456Lock = false;
     }
 }
