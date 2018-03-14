@@ -447,6 +447,8 @@ static void saSendFrame(uint8_t *buf, int len)
         serialWrite(smartAudioSerialPort, buf[i]);
     }
 
+    serialWrite(smartAudioSerialPort, 0x00);
+
     sa_lastTransmissionMs = millis();
     saStat.pktsent++;
 }
