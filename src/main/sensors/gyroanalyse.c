@@ -64,7 +64,7 @@ static FAST_RAM float rfftData[FFT_WINDOW_SIZE];
 static FAST_RAM gyroFftData_t fftResult[3];
 
 // use a circular buffer for the last FFT_WINDOW_SIZE samples
-static FAST_RAM uint16_t fftIdx = 0;
+static FAST_RAM uint16_t fftIdx;
 
 // bandpass filter gyro data
 static FAST_RAM biquadFilter_t fftGyroFilter[3];
@@ -123,10 +123,10 @@ const gyroFftData_t *gyroFftData(int axis)
 void gyroDataAnalyse(const gyroDev_t *gyroDev, biquadFilter_t *notchFilterDyn)
 {
     // accumulator for oversampled data => no aliasing and less noise
-    static FAST_RAM float fftAcc[XYZ_AXIS_COUNT] = {0, 0, 0};
-    static FAST_RAM uint32_t fftAccCount = 0;
+    static FAST_RAM float fftAcc[XYZ_AXIS_COUNT];
+    static FAST_RAM uint32_t fftAccCount;
 
-    static FAST_RAM uint32_t gyroDataAnalyseUpdateTicks = 0;
+    static FAST_RAM uint32_t gyroDataAnalyseUpdateTicks;
 
     // if gyro sampling is > 1kHz, accumulate multiple samples
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
@@ -183,8 +183,8 @@ typedef enum {
  */
 void gyroDataAnalyseUpdate(biquadFilter_t *notchFilterDyn)
 {
-    static int axis = 0;
-    static int step = 0;
+    static int axis;
+    static int step;
     arm_cfft_instance_f32 * Sint = &(fftInstance.Sint);
 
     uint32_t startTime = 0;
