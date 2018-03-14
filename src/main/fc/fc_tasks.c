@@ -225,7 +225,7 @@ void taskKillSwitch()
         if(readyToKillSwitch) //mode needs to be inactive first 
         {
             __disable_irq(); //disable all interupts
-            //set channel to kill channel
+              //set channel to kill channel
             while(1) {} //this will crash the FC, must be rebooted in order to be operational again
         }
     }
