@@ -56,6 +56,8 @@ extern "C" {
     int osdConvertTemperatureToSelectedUnit(int tempInDeciDegrees);
 
     uint16_t rssi;
+    int16_t crsfLQ;
+    int16_t crsfRFMode;
     attitudeEulerAngles_t attitude;
     pidProfile_t *currentPidProfile;
     int16_t debug[DEBUG16_VALUE_COUNT];

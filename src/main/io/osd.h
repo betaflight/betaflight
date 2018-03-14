@@ -86,6 +86,7 @@ typedef enum {
     OSD_RTC_DATETIME,
     OSD_ADJUSTMENT_RANGE,
     OSD_CORE_TEMPERATURE,
+    OSD_CRSF_LINK_QUALITY,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 

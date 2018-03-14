@@ -60,6 +60,9 @@ static uint32_t crsfFrameStartAtUs = 0;
 static uint8_t telemetryBuf[CRSF_FRAME_SIZE_MAX];
 static uint8_t telemetryBufLen = 0;
 
+int8_t crsfLQ = 0;
+int8_t crsfRFMode = 0;
+
 /*
  * CRSF protocol
  *
@@ -108,6 +111,21 @@ struct crsfPayloadRcChannelsPacked_s {
 } __attribute__ ((__packed__));
 
 typedef struct crsfPayloadRcChannelsPacked_s crsfPayloadRcChannelsPacked_t;
+
+struct crsfPayloadLinkStatistics_s {
+    uint8_t     uplinkRSSIAnt1;
+    uint8_t     uplinkRSSIAnt2;
+    uint8_t     uplinkLQ;
+    int8_t      uplinkSNR;
+    uint8_t     activeAntenna;
+    uint8_t     rfMode;
+    uint8_t     uplinkTXPower;
+    uint8_t     downlinkRSSI;
+    uint8_t     downlinkLQ;
+    int8_t      downlinkSNR;
+} __attribute__ ((__packed__));
+
+typedef struct crsfPayloadLinkStatistics_s crsfPayloadLinkStatistics_t;
 
 STATIC_UNIT_TESTED uint8_t crsfFrameCRC(void)
 {
@@ -207,6 +225,24 @@ STATIC_UNIT_TESTED uint8_t crsfFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
             crsfChannelData[15] = rcChannels->chan15;
             return RX_FRAME_COMPLETE;
         }
+        else if (crsfFrame.frame.type == CRSF_FRAMETYPE_LINK_STATISTICS) {
+            // CRC includes type and payload of each frame
+            const uint8_t crc = crsfFrameCRC();
+            if (crc != crsfFrame.frame.payload[CRSF_FRAME_LINK_STATISTICS_PAYLOAD_SIZE]) {
+                return RX_FRAME_PENDING;
+            }
+            crsfFrame.frame.frameLength = CRSF_FRAME_LINK_STATISTICS_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC;
+
+            // Inject link quality into channel 17
+            const crsfPayloadLinkStatistics_t* linkStats = (crsfPayloadLinkStatistics_t*)&crsfFrame.frame.payload;
+
+            //Inject RF mode / LQ into exposed variable 18 (0 = 4HZ, 1 = 50HZ, 2 = 150HZ)
+            crsfLQ = constrain(linkStats->uplinkLQ, 0, 100);
+            crsfRFMode = linkStats->rfMode;
+
+            // This is not RC channels frame, update channel value but don't indicate frame completion
+            return RX_FRAME_PENDING;
+        }        
     }
     return RX_FRAME_PENDING;
 }
