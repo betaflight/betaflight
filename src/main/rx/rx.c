@@ -417,10 +417,10 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
 #endif
     {
         const uint8_t frameStatus = rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig);
-        if (frameStatus & RX_FRAME_COMPLETE) {
+        if (frameStatus & (RX_FRAME_COMPLETE | RX_FRAME_FAILSAFE | RX_FRAME_DROPPED)) {
             rxDataProcessingRequired = true;
             rxIsInFailsafeMode = (frameStatus & RX_FRAME_FAILSAFE) != 0;
-            rxSignalReceived = !rxIsInFailsafeMode;
+            rxSignalReceived = (frameStatus & RX_FRAME_COMPLETE) != 0;
             needRxSignalBefore = currentTimeUs + needRxSignalMaxDelayUs;
 
             if (frameStatus & RX_FRAME_DROPPED) {
@@ -430,8 +430,8 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
             	// Valid (100%) signal
             	setRssiUnfiltered(RSSI_MAX_VALUE, RSSI_SOURCE_FRAME_ERRORS);
             }
-	} else if (cmpTimeUs(currentTimeUs, rxNextUpdateAtUs) > 0) {
-            rxDataProcessingRequired = true;
+        } else if (cmpTimeUs(currentTimeUs, rxNextUpdateAtUs) > 0) {
+                rxDataProcessingRequired = true;
         }
 
         if (frameStatus & RX_FRAME_PROCESSING_REQUIRED) {

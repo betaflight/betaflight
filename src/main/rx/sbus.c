@@ -56,8 +56,6 @@
 #define SBUS_STATE_FAILSAFE (1 << 0)
 #define SBUS_STATE_SIGNALLOSS (1 << 1)
 
-#define SBUS_DROPPED_FRAME_LIMIT 128
-
 #define SBUS_FRAME_SIZE (SBUS_CHANNEL_DATA_LENGTH + 2)
 
 #define SBUS_FRAME_BEGIN_BYTE 0x0F
@@ -137,30 +135,13 @@ static void sbusDataReceive(uint16_t c, void *data)
 
 static uint8_t sbusFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
 {
-    static uint8_t consecutiveBadFrames = 0;
-    uint8_t frameStatus;
-
     sbusFrameData_t *sbusFrameData = rxRuntimeConfig->frameData;
     if (!sbusFrameData->done) {
         return RX_FRAME_PENDING;
     }
     sbusFrameData->done = false;
 
-    frameStatus = sbusChannelsDecode(rxRuntimeConfig, &sbusFrameData->frame.frame.channels);
-
-    // Ensure that the failsafe flag is set after a number of bad frames to protect against
-    // poor implementation of this functionality in clone receivers.
-    // This is a theoretical risk only.
-    if (frameStatus & RX_FRAME_DROPPED) {
-        if (++consecutiveBadFrames == SBUS_DROPPED_FRAME_LIMIT) {
-            frameStatus |= RX_FRAME_FAILSAFE;
-            consecutiveBadFrames--;
-        }
-    } else {
-        consecutiveBadFrames = 0;
-    }
-
-    return frameStatus;
+    return sbusChannelsDecode(rxRuntimeConfig, &sbusFrameData->frame.frame.channels);
 }
 
 bool sbusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
