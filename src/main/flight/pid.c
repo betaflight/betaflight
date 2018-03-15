@@ -528,11 +528,11 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         // -----calculate D component
         if (axis != FD_YAW) {
             // apply filters
-			float gyroRateFiltered = dtermNotchApplyFn(dtermNotch[axis], gyroRate);
-			gyroRateFiltered = dtermLowpassApplyFn(dtermLowpass[axis], gyroRateFiltered);
-			gyroRateFiltered = dtermLowpass2ApplyFn(dtermLowpass2[axis], gyroRateFiltered);
+            float gyroRateFiltered = dtermNotchApplyFn(dtermNotch[axis], gyroRate);
+            gyroRateFiltered = dtermLowpassApplyFn(dtermLowpass[axis], gyroRateFiltered);
+            gyroRateFiltered = dtermLowpass2ApplyFn(dtermLowpass2[axis], gyroRateFiltered);
 
-			const float rD = dynCd * MIN(getRcDeflectionAbs(axis) * relaxFactor, 1.0f) * currentPidSetpoint - gyroRateFiltered;    // cr - y
+            const float rD = dynCd * MIN(getRcDeflectionAbs(axis) * relaxFactor, 1.0f) * currentPidSetpoint - gyroRateFiltered;    // cr - y
             // Divide rate change by deltaT to get differential (ie dr/dt)
             float delta = (rD - previousRateError[axis]) / deltaT;
 
