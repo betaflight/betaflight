@@ -124,10 +124,10 @@ void sdcardInsertionDetectInit(void)
  */
 bool sdcard_isInserted(void)
 {
-	bool ret = true;
-	if (sdcard.cardDetectPin) {
-		ret = IORead(sdcard.cardDetectPin) == 0;
-	}
+    bool ret = true;
+    if (sdcard.cardDetectPin) {
+        ret = IORead(sdcard.cardDetectPin) == 0;
+    }
     return ret;
 }
 
