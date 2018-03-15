@@ -152,7 +152,7 @@ static uint8_t sbusFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
     // poor implementation of this functionality in clone receivers.
     // This is a theoretical risk only.
     if (frameStatus & RX_FRAME_DROPPED) {
-        if (++consecutiveBadFrames > SBUS_DROPPED_FRAME_LIMIT) {
+        if (++consecutiveBadFrames == SBUS_DROPPED_FRAME_LIMIT) {
             frameStatus |= RX_FRAME_FAILSAFE;
             consecutiveBadFrames--;
         }
