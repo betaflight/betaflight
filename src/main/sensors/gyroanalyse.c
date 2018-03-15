@@ -103,7 +103,8 @@ void gyroDataAnalyseInit(uint32_t targetLooptimeUs)
 
     // recalculation of filters takes 4 calls per axis => each filter gets updated every 3 * 4 = 12 calls
     // at 4khz gyro loop rate this means 4khz / 4 / 3 = 333Hz => update every 3ms
-    float looptime = 1000000 / FFT_SAMPLING_RATE + targetLooptimeUs * 4 * 3;
+    // for gyro rate > 16kHz, we have update frequency of 1kHz => 1ms
+    const float looptime = MAX(1000000 / FFT_SAMPLING_RATE, targetLooptimeUs * 4 * 3);
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         fftResult[axis].centerFreq = 200; // any init value
         biquadFilterInitLPF(&fftFreqFilter[axis], DYN_NOTCH_CHANGERATE, looptime);
