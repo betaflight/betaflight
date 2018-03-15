@@ -231,8 +231,8 @@ void mpuGyroDmaSpiReadFinish(gyroDev_t * gyro)
 {
     //spi rx dma callback
     #ifdef USE_GYRO_IMUF9001
-    volatile uint32_t crc1 = (*(uint32_t *)(dmaRxBuffer+gyroConfig()->imuf_mode-4));
-    volatile uint32_t crc2 = getCrcImuf9001((uint32_t *)(dmaRxBuffer), (gyroConfig()->imuf_mode >> 2)-1);
+    volatile uint32_t crc1 = ( (*(uint32_t *)(dmaRxBuffer+gyroConfig()->imuf_mode-4)) & 0xFF );
+    volatile uint32_t crc2 = ( getCrcImuf9001((uint32_t *)(dmaRxBuffer), (gyroConfig()->imuf_mode >> 2)-1) & 0xFF );
     if(crc1 == crc2)
     {
         memcpy(&imufData, dmaRxBuffer, sizeof(imufData_t));

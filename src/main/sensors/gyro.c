@@ -54,6 +54,7 @@
 #include "drivers/accgyro/accgyro_spi_mpu9250.h"
 #ifdef USE_GYRO_IMUF9001
 #include "drivers/accgyro/accgyro_imuf9001.h"
+#include "drivers/time.h"
 #endif //USE_GYRO_IMUF9001
 #include "drivers/accgyro/gyro_sync.h"
 #include "drivers/bus_spi.h"
@@ -195,6 +196,7 @@ PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
     .gyro_soft_notch_cutoff_2 = 0,
     .checkOverflow = GYRO_OVERFLOW_CHECK_ALL_AXES,
     .imuf_mode = 32,
+    .imuf_rate = IMUF_RATE_16K,
     .imuf_pitch_q = HELIO_PROFILE_PITCH_Q,
     .imuf_pitch_w = 6,
     .imuf_roll_q = HELIO_PROFILE_ROLL_Q,

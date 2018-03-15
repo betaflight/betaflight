@@ -56,6 +56,21 @@ typedef enum {
     GYRO_OVERFLOW_CHECK_ALL_AXES
 } gyroOverflowCheck_e;
 
+#if defined(USE_GYRO_IMUF9001)
+typedef enum {
+    IMUF_RATE_32K = 0,
+    IMUF_RATE_16K = 1,
+    IMUF_RATE_8K = 2,
+    IMUF_RATE_4K = 3,
+    IMUF_RATE_2K = 4,
+    IMUF_RATE_1K = 5,
+    IMUF_RATE_05K = 6,
+    IMUF_RATE_025K = 7,
+    IMUF_RATE_0125K = 8,
+    IMUF_RATE_00625K = 9,
+} imufRate_e;
+#endif
+
 typedef struct gyroConfig_s {
     sensor_align_e gyro_align;              // gyro alignment
     uint8_t  gyroMovementCalibrationThreshold; // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
@@ -76,6 +91,7 @@ typedef struct gyroConfig_s {
     int16_t  gyro_offset_yaw;
 #if defined(USE_GYRO_IMUF9001)
     uint16_t imuf_mode;
+    uint16_t imuf_rate;
     uint16_t imuf_pitch_q;
     uint16_t imuf_pitch_w;
     uint16_t imuf_roll_q;

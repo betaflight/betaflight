@@ -250,6 +250,12 @@ static const char * const lookupTableLowpassType[] = {
     "PT1", "BIQUAD", "FIR"
 };
 
+#if defined(USE_GYRO_IMUF9001)
+static const char * const lookupTableImufRate[] = {
+    "32K", "16K", "8K", "4K", "2K", "1K", "500", "250", "125", "62.5"
+};
+#endif
+
 static const char * const lookupTableKdStyle[] = {
     "KD_FILTER_CLASSIC", "KD_FILTER_SP", "KD_FILTER_NOSP"
 };
@@ -332,6 +338,9 @@ const lookupTableEntry_t lookupTables[] = {
     { lookupTableRcInterpolation, sizeof(lookupTableRcInterpolation) / sizeof(char *) },
     { lookupTableRcInterpolationChannels, sizeof(lookupTableRcInterpolationChannels) / sizeof(char *) },
     { lookupTableLowpassType, sizeof(lookupTableLowpassType) / sizeof(char *) },
+#if defined(USE_GYRO_IMUF9001)
+    { lookupTableImufRate, sizeof(lookupTableImufRate) / sizeof(char *) },
+#endif
     { lookupTableKdStyle, sizeof(lookupTableKdStyle) / sizeof(char *) },
     { lookupTableFailsafe, sizeof(lookupTableFailsafe) / sizeof(char *) },
     { lookupTableCrashRecovery, sizeof(lookupTableCrashRecovery) / sizeof(char *) },
@@ -376,6 +385,7 @@ const clivalue_t valueTable[] = {
     { "gyro_notch2_cutoff",         VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 16000 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_soft_notch_cutoff_2) },
 #if defined(USE_GYRO_IMUF9001)
     { "imuf_mode",                  VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 255   }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, imuf_mode) },
+    { "imuf_rate",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_IMUF_RATE }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, imuf_rate) },
     { "imuf_pitch_q",               VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 16000 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, imuf_pitch_q) },
     { "imuf_pitch_w",               VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 16000 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, imuf_pitch_w) },
     { "imuf_roll_q",                VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 16000 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, imuf_roll_q) },

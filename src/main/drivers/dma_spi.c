@@ -130,7 +130,7 @@ void dmaSpiInit(void)
     DMA_StructInit(&dmaInitStruct);
     dmaInitStruct.DMA_Channel = DMA_SPI_TX_DMA_CHANNEL;
     dmaInitStruct.DMA_Mode = DMA_Mode_Normal;
-    dmaInitStruct.DMA_Priority = DMA_Priority_High;
+    dmaInitStruct.DMA_Priority = DMA_Priority_VeryHigh;
     dmaInitStruct.DMA_DIR = DMA_DIR_MemoryToPeripheral;
 
     dmaInitStruct.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
@@ -146,7 +146,7 @@ void dmaSpiInit(void)
     DMA_Init(DMA_SPI_TX_DMA_STREAM, &dmaInitStruct);
 
     dmaInitStruct.DMA_Channel = DMA_SPI_RX_DMA_CHANNEL;
-    dmaInitStruct.DMA_Priority = DMA_Priority_Medium;
+    dmaInitStruct.DMA_Priority = DMA_Priority_High;
     dmaInitStruct.DMA_DIR = DMA_DIR_PeripheralToMemory;
 
     DMA_Init(DMA_SPI_RX_DMA_STREAM, &dmaInitStruct);
@@ -167,8 +167,8 @@ void dmaSpiTransmitReceive(uint8_t* txBuffer, uint8_t* rxBuffer, uint32_t size, 
     DMA_SetCurrDataCounter(DMA_SPI_RX_DMA_STREAM, size);
 
     //set buffer
-    DMA_SPI_TX_DMA_STREAM->M0AR = DMA_SPI_TX_DMA_STREAM->M1AR = (uint32_t)txBuffer;
-    DMA_SPI_RX_DMA_STREAM->M0AR = DMA_SPI_RX_DMA_STREAM->M1AR = (uint32_t)rxBuffer;
+    DMA_SPI_TX_DMA_STREAM->M0AR = (uint32_t)txBuffer;
+    DMA_SPI_RX_DMA_STREAM->M0AR = (uint32_t)rxBuffer;
 
     //enable DMA SPI streams
     DMA_Cmd(DMA_SPI_TX_DMA_STREAM, ENABLE);
