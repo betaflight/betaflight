@@ -221,7 +221,7 @@ uint8_t readyToKillSwitch = 0; //this may not be the right place to declare this
 void taskKillSwitch()
 {    
     if (ARMING_FLAG(ARMED)) {
-        if (readyToKillSwitch = KS_STAGE1)
+        if (readyToKillSwitch == KS_STAGE1)
         {
             readyToKillSwitch = KS_STAGE2_READY; // switch has been disabled and they have armed
         }
@@ -230,7 +230,7 @@ void taskKillSwitch()
     }
     if (IS_RC_MODE_ACTIVE(BOXKILLSWITCH)) //if the mode is active kill the quad, needs more checks
     {
-        if(readyToKillSwitch = KS_STAGE2_READY) //mode needs to be inactive first 
+        if(readyToKillSwitch == KS_STAGE2_READY) //mode needs to be inactive first 
         {
             setArmingDisabled(ARMING_DISABLED_RUNAWAY_TAKEOFF);
             disarm(); // make sure the board 
@@ -241,9 +241,9 @@ void taskKillSwitch()
     }
     else
     {
-        if(!readyToKillSwitch)
+        if(readyToKillSwitch == KS_NOT_READY)
         {
-            readyToKillSwitch = KS_STAGE1 //switch has been disabled
+            readyToKillSwitch = KS_STAGE1; //switch has been disabled
         }
     }
 }
