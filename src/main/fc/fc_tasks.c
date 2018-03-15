@@ -234,8 +234,15 @@ void taskKillSwitch()
         {
             setArmingDisabled(ARMING_DISABLED_RUNAWAY_TAKEOFF);
             disarm(); // make sure the board 
+
             __disable_irq(); //disable all interupts
-              //set channel to kill channel
+        
+            vtxSettingsConfigMutable->chan = 2;
+            vtxSettingsConfigMutable->band = 2;
+            settingsUpdated = true;
+
+            //set channel to kill channel
+
             while(1) {} //this will crash the FC, must be rebooted in order to be operational again
         }
     }
