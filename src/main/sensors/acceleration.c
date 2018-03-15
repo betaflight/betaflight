@@ -503,7 +503,7 @@ void accUpdate(timeUs_t currentTimeUs, rollAndPitchTrims_t *rollAndPitchTrims)
 
     if (accLpfCutHz) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            acc.accADC[axis] = lrintf(biquadFilterApply(&accFilter[axis], (float)acc.accADC[axis]));
+            acc.accADC[axis] = biquadFilterApply(&accFilter[axis], acc.accADC[axis]);
         }
     }
 

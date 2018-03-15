@@ -35,5 +35,6 @@ int rcdeviceOSDClearScreen(displayPort_t *);
 bool rcdeviceOSDIsTransferInProgress(const displayPort_t *);
 int rcdeviceOSDHeartbeat(displayPort_t *displayPort);
 void rcdeviceOSDResync(displayPort_t *displayPort);
+bool rcdeviceOSDIsSynced(const displayPort_t *displayPort);
 uint32_t rcdeviceOSDTxBytesFree(const displayPort_t *displayPort);
 int rcdeviceScreenSize(const displayPort_t *displayPort);

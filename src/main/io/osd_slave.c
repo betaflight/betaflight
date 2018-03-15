@@ -86,7 +86,11 @@ void osdSlaveWrite(const uint8_t x, const uint8_t y, const char *s)
 void osdSlaveHeartbeat(void)
 {
     timeoutAt = micros() + (1000 * 1000);
-    stalled = false;
+    if (stalled) {
+        stalled = false;
+
+        displayResync(osdDisplayPort);
+    }
 }
 
 void osdSlaveInit(displayPort_t *osdDisplayPortToUse)
@@ -96,7 +100,12 @@ void osdSlaveInit(displayPort_t *osdDisplayPortToUse)
 
     osdDisplayPort = osdDisplayPortToUse;
 
+    delay(100); // need max7456 to be ready before using the displayPort API further.
+
     displayClearScreen(osdDisplayPort);
+    displayResync(osdDisplayPort);
+
+    delay(100); // wait a little for video to stabilise
 
     osdDrawLogo(3, 1);
 
@@ -106,8 +115,6 @@ void osdSlaveInit(displayPort_t *osdDisplayPortToUse)
     displayWrite(osdDisplayPort, 13, 6, "OSD");
 
     displayResync(osdDisplayPort);
-
-    displayDrawScreenQueued = true;
 }
 
 bool osdSlaveCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
@@ -122,7 +129,12 @@ bool osdSlaveCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
         displayResync(osdDisplayPort);
     }
 
-    return receivingScreen || displayDrawScreenQueued || stalled;
+    if (!receivingScreen && !displayIsSynced(osdDisplayPort)) {
+        // queue a screen draw to ensure any remaining characters not written to the screen yet
+        // remember that displayDrawScreen() may return WITHOUT having fully updated the screen.
+        displayDrawScreenQueued = true;
+    }
+    return receivingScreen || displayDrawScreenQueued;
 }
 
 /*
@@ -147,7 +159,7 @@ void osdSlaveUpdate(timeUs_t currentTimeUs)
     }
 #endif
 
-    if (displayDrawScreenQueued || stalled) {
+    if (displayDrawScreenQueued) {
         displayDrawScreen(osdDisplayPort);
         displayDrawScreenQueued = false;
         receivingScreen = false;

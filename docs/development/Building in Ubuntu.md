@@ -10,6 +10,8 @@ the 4.9.3 compiler will work fine. For some, older compiler 4.8 (notably Sparky)
 suggest you build with 4.9.3 first, and try to see if you can connect to the CLI or run the Configurator.
 If you cannot, please see the section below for further hints on what you might do.
 
+Adjust the ARM_SDK_DIR variable in make/tools.mk file with the correct "gcc-arm-none-eabi-xxx" version.
+
 ## Setup GNU ARM Toolchain
 
 Note specifically the last paragraph of Terry's PPA documentation -- Ubuntu carries its own package for

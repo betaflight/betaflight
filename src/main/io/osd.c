@@ -134,6 +134,7 @@ timeUs_t resumeRefreshAt = 0;
 #define REFRESH_1S    1000 * 1000
 
 static uint8_t armState;
+static bool lastArmState;
 
 static displayPort_t *osdDisplayPort;
 
@@ -387,7 +388,7 @@ static bool osdDrawSingleElement(uint8_t item)
 
     uint8_t elemPosX = OSD_X(osdConfig()->item_pos[item]);
     uint8_t elemPosY = OSD_Y(osdConfig()->item_pos[item]);
-    char buff[OSD_ELEMENT_BUFFER_LENGTH];
+    char buff[OSD_ELEMENT_BUFFER_LENGTH] = "";
 
     switch (item) {
     case OSD_RSSI_VALUE:
@@ -550,7 +551,7 @@ static bool osdDrawSingleElement(uint8_t item)
             if (vtxDevice && vtxSettingsConfig()->lowPowerDisarm) {
                 vtxCommonGetPowerIndex(vtxDevice, &vtxPower);
             }
-            tfp_sprintf(buff, "%c:%s:%2d", vtxBandLetter, vtxChannelName, vtxPower);
+            tfp_sprintf(buff, "%c:%s:%1d", vtxBandLetter, vtxChannelName, vtxPower);
             break;
         }
 #endif
@@ -724,7 +725,9 @@ static bool osdDrawSingleElement(uint8_t item)
         if (!ARMING_FLAG(ARMED)) {
             tfp_sprintf(buff, "DISARMED");
         } else {
-            tfp_sprintf(buff, "        ");
+            if (!lastArmState) {  // previously disarmed - blank out the message one time
+                tfp_sprintf(buff, "        ");
+            }
         }
         break;
 
@@ -1240,7 +1243,9 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
             osdResetStats();
             osdShowArmed();
             resumeRefreshAt = currentTimeUs + (REFRESH_1S / 2);
-        } else if (isSomeStatEnabled()) {
+        } else if (isSomeStatEnabled()
+                   && (!(getArmingDisableFlags() & ARMING_DISABLED_RUNAWAY_TAKEOFF)
+                       || !VISIBLE(osdConfig()->item_pos[OSD_WARNINGS]))) { // suppress stats if runaway takeoff triggered disarm and WARNINGS element is visible
             osdShowStats();
             resumeRefreshAt = currentTimeUs + (60 * REFRESH_1S);
         }
@@ -1291,6 +1296,7 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
 #endif
     }
 #endif
+    lastArmState = ARMING_FLAG(ARMED);
 }
 
 /*

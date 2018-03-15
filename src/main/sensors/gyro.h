@@ -69,7 +69,7 @@ typedef struct gyroConfig_s {
     bool     gyro_high_fsr;
     bool     gyro_use_32khz;
     uint8_t  gyro_to_use;
-    uint16_t gyro_soft_lpf_hz_2;
+    uint16_t gyro_soft_lpf2_hz;
     uint16_t gyro_soft_notch_hz_1;
     uint16_t gyro_soft_notch_cutoff_1;
     uint16_t gyro_soft_notch_hz_2;
@@ -79,7 +79,10 @@ typedef struct gyroConfig_s {
     uint16_t gyro_filter_r;
     uint16_t gyro_filter_p;
     int16_t  gyro_offset_yaw;
+    uint8_t  gyro_soft_lpf2_order;
 } gyroConfig_t;
+
+#define GYRO_LPF2_ORDER_MAX 6
 
 PG_DECLARE(gyroConfig_t, gyroConfig);
 

@@ -425,11 +425,11 @@ void esc4wayProcess(serialPort_t *mspPort)
     port = mspPort;
 
     // Start here  with UART Main loop
-    #ifdef BEEPER
+#ifdef USE_BEEPER
     // fix for buzzer often starts beeping continuously when the ESCs are read
     // switch beeper silent here
     beeperSilence();
-    #endif
+#endif
     bool isExitScheduled = false;
 
     while (1) {

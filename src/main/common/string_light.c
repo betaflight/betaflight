@@ -78,3 +78,15 @@ int strncasecmp(const char * s1, const char * s2, size_t n)
 
     return d;
 }
+
+char *strcasestr(const char *haystack, const char *needle)
+{
+    int nLen = strlen(needle);
+    do {
+        if (!strncasecmp(haystack, needle, nLen)) {
+            return (char *)haystack;
+        }
+        haystack++;
+    } while (*haystack);
+    return NULL;
+}
