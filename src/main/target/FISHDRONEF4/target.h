@@ -24,7 +24,8 @@
 #define LED0_PIN                PC13
 #define LED1_PIN                PC14
 
-#define BEEPER                  PC15
+#define USE_BEEPER
+#define BEEPER_PIN              PC15
 #define BEEPER_INVERTED
 
 #define INVERTER_PIN_UART6      PC8

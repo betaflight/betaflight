@@ -25,7 +25,8 @@
 #define LED1_PIN                PC14
 
 //BEEPER
-#define BEEPER                  PB14
+#define USE_BEEPER
+#define BEEPER_PIN              PB14
 #define BEEPER_INVERTED
 
 // MPU6500 interrupt

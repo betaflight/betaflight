@@ -46,6 +46,7 @@ typedef struct displayPortVTable_s {
     bool (*isTransferInProgress)(const displayPort_t *displayPort);
     int (*heartbeat)(displayPort_t *displayPort);
     void (*resync)(displayPort_t *displayPort);
+    bool (*isSynced)(const displayPort_t *displayPort);
     uint32_t (*txBytesFree)(const displayPort_t *displayPort);
 } displayPortVTable_t;
 
@@ -70,5 +71,6 @@ int displayWriteChar(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t c);
 bool displayIsTransferInProgress(const displayPort_t *instance);
 void displayHeartbeat(displayPort_t *instance);
 void displayResync(displayPort_t *instance);
+bool displayIsSynced(const displayPort_t *instance);
 uint16_t displayTxBytesFree(const displayPort_t *instance);
 void displayInit(displayPort_t *instance, const displayPortVTable_t *vTable);

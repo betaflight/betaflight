@@ -118,6 +118,7 @@
 #define BST_SET_FC_FILTERS              75  //in message
 #define BST_STATUS                      101 //out message         cycletime & errors_count & sensor present & box activation & current setting number
 #define BST_RC_TUNING                   111 //out message         rc rate, rc expo, rollpitch rate, yaw rate, dyn throttle PID
+#define BST_SET_RC_TUNING               204 //in message          rc rate, rc expo, rollpitch rate, yaw rate, dyn throttle PID, yaw expo
 #define BST_PID                         112 //out message         P I D coeff (9 are used currently)
 #define BST_MISC                        114 //out message         powermeter trig
 #define BST_SET_PID                     202 //in message          P I D coeff (9 are used currently)
@@ -344,6 +345,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite8(currentControlRateProfile->rcExpo[FD_YAW]);
             bstWrite8(currentControlRateProfile->rcRates[FD_YAW]);
             break;
+
         case BST_PID:
             for (i = 0; i < PID_ITEM_COUNT; i++) {
                 bstWrite8(currentPidProfile->pid[i].P);
@@ -465,6 +467,29 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
                 currentPidProfile->pid[i].P = bstRead8();
                 currentPidProfile->pid[i].I = bstRead8();
                 currentPidProfile->pid[i].D = bstRead8();
+            }
+            break;
+        case BST_SET_RC_TUNING:
+            if (bstReadDataSize() >= 10) {
+                uint8_t rate;
+                currentControlRateProfile->rcRates[FD_ROLL] = bstRead8();
+                currentControlRateProfile->rcExpo[FD_ROLL] = bstRead8();
+                for (i = 0; i < 3; i++) {
+                    currentControlRateProfile->rates[i] = bstRead8();
+                }
+                rate = bstRead8();
+                currentControlRateProfile->dynThrPID = MIN(rate, CONTROL_RATE_CONFIG_TPA_MAX);
+                currentControlRateProfile->thrMid8 = bstRead8();
+                currentControlRateProfile->thrExpo8 = bstRead8();
+                currentControlRateProfile->tpa_breakpoint = bstRead16();
+                if (bstReadDataSize() >= 11) {
+                    currentControlRateProfile->rcExpo[FD_YAW] = bstRead8();
+                }
+                if (bstReadDataSize() >= 12) {
+                    currentControlRateProfile->rcRates[FD_YAW] = bstRead8();
+                }
+            } else {
+                ret = BST_FAILED;
             }
             break;
         case BST_SET_MODE_RANGE:

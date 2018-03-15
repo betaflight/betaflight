@@ -134,10 +134,17 @@ static bool isTransferInProgress(const displayPort_t *displayPort)
     return false;
 }
 
+static bool isSynced(const displayPort_t *displayPort)
+{
+    UNUSED(displayPort);
+    return true;
+}
+
 static void resync(displayPort_t *displayPort)
 {
     displayPort->rows = 13 + displayPortProfileMsp()->rowAdjust; // XXX Will reflect NTSC/PAL in the future
     displayPort->cols = 30 + displayPortProfileMsp()->colAdjust;
+    drawScreen(displayPort);
 }
 
 static uint32_t txBytesFree(const displayPort_t *displayPort)
@@ -157,6 +164,7 @@ static const displayPortVTable_t mspDisplayPortVTable = {
     .isTransferInProgress = isTransferInProgress,
     .heartbeat = heartbeat,
     .resync = resync,
+    .isSynced = isSynced,
     .txBytesFree = txBytesFree
 };
 

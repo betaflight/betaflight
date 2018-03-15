@@ -206,6 +206,7 @@ CFLAGS     += $(ARCH_FLAGS) \
               -fdata-sections \
               -pedantic \
               $(DEVICE_FLAGS) \
+              -D_GNU_SOURCE \
               -DUSE_STDPERIPH_DRIVER \
               -D$(TARGET) \
               $(TARGET_FLAGS) \

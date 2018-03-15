@@ -24,7 +24,8 @@
 #endif
 
 #define LED0_PIN                  PB5
-#define BEEPER                    PB4
+#define USE_BEEPER
+#define BEEPER_PIN                PB4
 #define BEEPER_INVERTED
 #define BEEPER_PWM_HZ             3800 // Beeper PWM frequency in Hz
 

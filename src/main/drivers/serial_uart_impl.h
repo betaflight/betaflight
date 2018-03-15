@@ -23,37 +23,37 @@
 #define UARTDEV_COUNT_MAX 3
 #define UARTHARDWARE_MAX_PINS 3
 #ifndef UART_RX_BUFFER_SIZE
-#define UART_RX_BUFFER_SIZE     256
+#define UART_RX_BUFFER_SIZE     128
 #endif
 #ifndef UART_TX_BUFFER_SIZE
-#define UART_TX_BUFFER_SIZE     256
+#define UART_TX_BUFFER_SIZE     128
 #endif
 #elif defined(STM32F3)
 #define UARTDEV_COUNT_MAX 5
 #define UARTHARDWARE_MAX_PINS 4
 #ifndef UART_RX_BUFFER_SIZE
-#define UART_RX_BUFFER_SIZE     256
+#define UART_RX_BUFFER_SIZE     128
 #endif
 #ifndef UART_TX_BUFFER_SIZE
-#define UART_TX_BUFFER_SIZE     256
+#define UART_TX_BUFFER_SIZE     128
 #endif
 #elif defined(STM32F4)
 #define UARTDEV_COUNT_MAX 6
 #define UARTHARDWARE_MAX_PINS 4
 #ifndef UART_RX_BUFFER_SIZE
-#define UART_RX_BUFFER_SIZE     512
+#define UART_RX_BUFFER_SIZE     128
 #endif
 #ifndef UART_TX_BUFFER_SIZE
-#define UART_TX_BUFFER_SIZE     512
+#define UART_TX_BUFFER_SIZE     128
 #endif
 #elif defined(STM32F7)
 #define UARTDEV_COUNT_MAX 8
 #define UARTHARDWARE_MAX_PINS 3
 #ifndef UART_RX_BUFFER_SIZE
-#define UART_RX_BUFFER_SIZE     512
+#define UART_RX_BUFFER_SIZE     128
 #endif
 #ifndef UART_TX_BUFFER_SIZE
-#define UART_TX_BUFFER_SIZE     512
+#define UART_TX_BUFFER_SIZE     128
 #endif
 #else
 #error unknown MCU family

@@ -17,7 +17,7 @@
 
 #include "platform.h"
 
-#ifdef BEEPER
+#ifdef USE_BEEPER
 
 #include "drivers/io.h"
 #include "pg/pg.h"
@@ -35,14 +35,12 @@ PG_REGISTER_WITH_RESET_TEMPLATE(beeperDevConfig_t, beeperDevConfig, PG_BEEPER_DE
 #define IS_INVERTED     false
 #endif
 
-#ifdef BEEPER
-#define BEEPER_PIN      BEEPER
 #ifndef BEEPER_PWM_HZ
 #define BEEPER_PWM_HZ   0
 #endif
-#else
+
+#ifndef BEEPER_PIN
 #define BEEPER_PIN      NONE
-#define BEEPER_PWM_HZ   0
 #endif
 
 PG_RESET_TEMPLATE(beeperDevConfig_t, beeperDevConfig,

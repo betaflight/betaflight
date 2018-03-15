@@ -24,7 +24,8 @@
 
 #define LED0_PIN                PB5
 
-#define BEEPER                  PB4
+#define USE_BEEPER
+#define BEEPER_PIN              PB4
 #define BEEPER_INVERTED
 
 // PC13 used as inverter select GPIO for UART2

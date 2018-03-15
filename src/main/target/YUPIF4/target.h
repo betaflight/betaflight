@@ -30,7 +30,8 @@
 //define camera control
 #define CAMERA_CONTROL_PIN      PB7 // Camera control
 
-#define BEEPER                  PC9
+#define USE_BEEPER
+#define BEEPER_PIN              PC9
 #define BEEPER_OPT              PB14
 #define BEEPER_PWM_HZ           3150 // Beeper PWM frequency in Hz
 
