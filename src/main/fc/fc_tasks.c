@@ -214,20 +214,23 @@ void taskCameraControl(uint32_t currentTime)
 
 #ifdef USE_KILLSWITCH
 uint8_t readyToKillSwitch = 0; //this may not be the right place to declare this
+#define KS_NOT_READY 0
+#define KS_STAGE1 1
+#define KS_STAGE2_READY 2
 
 void taskKillSwitch()
 {    
     if (ARMING_FLAG(ARMED)) {
-        if (readyToKillSwitch = 1)
+        if (readyToKillSwitch = KS_STAGE1)
         {
-            readyToKillSwitch = 2; // switch has been disabled and they have armed
+            readyToKillSwitch = KS_STAGE2_READY; // switch has been disabled and they have armed
         }
 
         return;
     }
     if (IS_RC_MODE_ACTIVE(BOXKILLSWITCH)) //if the mode is active kill the quad, needs more checks
     {
-        if(readyToKillSwitch = 2) //mode needs to be inactive first 
+        if(readyToKillSwitch = KS_STAGE2_READY) //mode needs to be inactive first 
         {
             setArmingDisabled(ARMING_DISABLED_RUNAWAY_TAKEOFF);
             disarm(); // make sure the board 
@@ -240,7 +243,7 @@ void taskKillSwitch()
     {
         if(!readyToKillSwitch)
         {
-            readyToKillSwitch = 1 //switch has been disabled
+            readyToKillSwitch = KS_STAGE1 //switch has been disabled
         }
     }
 }
