@@ -127,15 +127,18 @@ const gyroFftData_t *gyroFftData(int axis)
     return &fftResult[axis];
 }
 
+void gyroDataAnalysePush(const int axis, const float sample)
+{
+    fftAcc[axis] += sample;
+}
+
 /*
  * Collect gyro data, to be analysed in gyroDataAnalyseUpdate function
  */
-void gyroDataAnalyse(const gyroDev_t *gyroDev, biquadFilter_t *notchFilterDyn)
+void gyroDataAnalyse(biquadFilter_t *notchFilterDyn)
 {
+    // samples should have been pushed by `gyroDataAnalysePush`
     // if gyro sampling is > 1kHz, accumulate multiple samples
-    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        fftAcc[axis] += gyroDev->gyroADC[axis];
-    }
     fftAccCount++;
 
     // this runs at 1kHz
@@ -148,7 +151,7 @@ void gyroDataAnalyse(const gyroDev_t *gyroDev, biquadFilter_t *notchFilterDyn)
             sample = biquadFilterApply(&fftGyroFilter[axis], sample);
             gyroData[axis][fftIdx] = sample;
             if (axis == 0)
-                DEBUG_SET(DEBUG_FFT, 2, lrintf(sample * gyroDev->scale));
+                DEBUG_SET(DEBUG_FFT, 2, lrintf(sample));
             fftAcc[axis] = 0;
         }
 
