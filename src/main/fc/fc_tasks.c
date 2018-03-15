@@ -236,10 +236,6 @@ void taskKillSwitch()
             disarm(); // make sure the board 
 
             __disable_irq(); //disable all interupts
-        
-            vtxSettingsConfigMutable->chan = 2;
-            vtxSettingsConfigMutable->band = 2;
-            settingsUpdated = true;
 
             //set channel to kill channel
 
