@@ -232,7 +232,6 @@ void taskKillSwitch()
     {
         if(readyToKillSwitch == KS_STAGE2_READY) //mode needs to be inactive first 
         {
-            setArmingDisabled(ARMING_DISABLED_RUNAWAY_TAKEOFF);
             disarm(); // make sure the board 
 
             __disable_irq(); //disable all interupts
