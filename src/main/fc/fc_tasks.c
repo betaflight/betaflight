@@ -213,17 +213,24 @@ void taskCameraControl(uint32_t currentTime)
 #endif
 
 #ifdef USE_KILLSWITCH
-bool readyToKillSwitch = false; //this may not be the right place to declare this
+uint8_t readyToKillSwitch = 0; //this may not be the right place to declare this
 
 void taskKillSwitch()
 {    
     if (ARMING_FLAG(ARMED)) {
+        if (readyToKillSwitch = 1)
+        {
+            readyToKillSwitch = 2; // switch has been disabled and they have armed
+        }
+
         return;
     }
     if (IS_RC_MODE_ACTIVE(BOXKILLSWITCH)) //if the mode is active kill the quad, needs more checks
     {
-        if(readyToKillSwitch) //mode needs to be inactive first 
+        if(readyToKillSwitch = 2) //mode needs to be inactive first 
         {
+            setArmingDisabled(ARMING_DISABLED_RUNAWAY_TAKEOFF);
+            disarm(); // make sure the board 
             __disable_irq(); //disable all interupts
               //set channel to kill channel
             while(1) {} //this will crash the FC, must be rebooted in order to be operational again
@@ -231,7 +238,10 @@ void taskKillSwitch()
     }
     else
     {
-        readyToKillSwitch = true;
+        if(!readyToKillSwitch)
+        {
+            readyToKillSwitch = 1 //switch has been disabled
+        }
     }
 }
 #endif
