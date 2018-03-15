@@ -3654,6 +3654,84 @@ static void cliDiff(char *cmdline)
     printConfig(cmdline, true);
 }
 
+#if defined(USE_TIMDUMP) && (defined(USE_DSHOT) || defined(USE_LED_STRIP) || defined(USE_TRANSPONDER))
+
+// XXX TIMER_OUTPUT_INVERTED?
+
+static char *usageNames[] = {
+    "PPM", "PWM", "MOTOR", "SERVO", "LED", "TRANSPONDER", "BEEPER",
+};
+
+static void cliTimdump(char *cmdline)
+{
+    UNUSED(cmdline);
+
+    for (int i = 0 ; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+        const timerHardware_t *timerhw = &timerHardware[i];
+        cliPrintf("timer TIM%d_CH%d",
+            timerGetTIMNumber(timerhw->tim),
+            timerLookupChannelIndex(timerhw->channel) + 1);
+
+        if (timerhw->output & TIMER_OUTPUT_N_CHANNEL) {
+            cliPrint("N");
+        }
+
+        cliPrintf(" %c%d",
+            DEFIO_TAG_GPIOID(timerhw->tag) + 'A',
+            DEFIO_TAG_PIN(timerhw->tag));
+
+        if (timerhw->output & TIMER_OUTPUT_INVERTED) {
+            cliPrint(" INV");
+        }
+
+        if (timerhw->dmaRef) {
+            cliPrint(" ");
+            dmaIdentifier_e identifier = dmaGetIdentifier(timerhw->dmaRef);
+
+            cliPrintf(DMA_INPUT_STRING, DMA_DEVICE_NO(identifier),DMA_DEVICE_INDEX(identifier));
+#if defined(STM32F4) || defined(STM32F7)
+            cliPrintf(" CH%d", (timerhw->dmaChannel >> 24)/2); // XXX dmaGetChannelindexByChannel ?
+#endif
+        } else {
+            cliPrint("NONE");
+        }
+
+        if (timerhw->dmaTimUPRef) {
+            cliPrint(" ");
+            dmaIdentifier_e identifier = dmaGetIdentifier(timerhw->dmaTimUPRef);
+
+            cliPrintf(DMA_INPUT_STRING, DMA_DEVICE_NO(identifier),DMA_DEVICE_INDEX(identifier));
+#if defined(STM32F4) || defined(STM32F7)
+            cliPrintf(" CH%d", (timerhw->dmaTimUPChannel >> 24)/2); // XXX dmaGetChannelindexByChannel ?
+#endif
+        } else {
+            cliPrint("NONE");
+        }
+
+        cliPrintLinefeed();
+    }
+
+    uint8_t usageCount[ARRAYLEN(usageNames)];
+
+    memset(usageCount, 0, sizeof(usageCount));
+
+    for (int i = 0 ; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+        const timerHardware_t *timerhw = &timerHardware[i];
+        timerUsageFlag_e usageFlags = timerhw->usageFlags;
+        int usage;
+        while (usageFlags && (usage = ffs(usageFlags))) {
+            --usage;
+            cliPrintLinef("resource %s %d %c%d",
+                usageNames[usage],
+                ++usageCount[usage],
+                DEFIO_TAG_GPIOID(timerhw->tag) + 'A',
+                DEFIO_TAG_PIN(timerhw->tag));
+            usageFlags &= ~(1 << usage);
+        }
+    }
+}
+#endif
+
 typedef struct {
     const char *name;
 #ifndef MINIMAL_CLI
@@ -3772,6 +3850,9 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("version", "show version", NULL, cliVersion),
 #ifdef USE_VTX_CONTROL
     CLI_COMMAND_DEF("vtx", "vtx channels on switch", NULL, cliVtx),
+#endif
+#ifdef USE_TIMDUMP
+    CLI_COMMAND_DEF("timdump", "dumps timerHardware array", NULL, cliTimdump),
 #endif
 };
 
