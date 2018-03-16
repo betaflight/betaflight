@@ -75,7 +75,6 @@ typedef struct pidProfile_s {
 
     uint16_t yaw_lowpass_hz;                    // Additional yaw filter when yaw axis too noisy
     uint16_t dterm_lowpass_hz;                  // Delta Filter in hz
-    uint16_t dterm_lowpass2_hz;                // Extra PT1 Filter on D in hz
     uint16_t dterm_notch_hz;                // Biquad dterm notch hz
     uint16_t dterm_notch_cutoff;            // Biquad dterm notch low cutoff
     uint8_t dterm_filter_type;              // Filter selection for dterm
@@ -106,6 +105,7 @@ typedef struct pidProfile_s {
     pidCrashRecovery_e crash_recovery;      // off, on, on and beeps when it is in crash recovery mode
     uint16_t crash_limit_yaw;               // limits yaw errorRate, so crashes don't cause huge throttle increase
     uint16_t itermLimit;
+    uint16_t dterm_lowpass2_hz;                // Extra PT1 Filter on D in hz
 } pidProfile_t;
 
 #ifndef USE_OSD_SLAVE
