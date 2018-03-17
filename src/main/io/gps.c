@@ -1156,7 +1156,7 @@ void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
     }
 #endif
 
-    serialPassthrough(gpsPort, gpsPassthroughPort, &gpsHandlePassthrough, NULL, 0);
+    serialPassthrough(gpsPort, gpsPassthroughPort, &gpsHandlePassthrough, NULL);
 }
 
 float GPS_scaleLonDown = 1.0f;  // this is used to offset the shrinking longitude as we go towards the poles
