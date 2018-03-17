@@ -62,16 +62,16 @@ static float FAST_RAM gyroData[XYZ_AXIS_COUNT][FFT_WINDOW_SIZE];
 static FAST_RAM arm_rfft_fast_instance_f32 fftInstance;
 static FAST_RAM float fftData[FFT_WINDOW_SIZE];
 static FAST_RAM float rfftData[FFT_WINDOW_SIZE];
-static FAST_RAM gyroFftData_t fftResult[3];
+static FAST_RAM gyroFftData_t fftResult[XYZ_AXIS_COUNT];
 
 // use a circular buffer for the last FFT_WINDOW_SIZE samples
 static FAST_RAM uint16_t fftIdx;
 
 // bandpass filter gyro data
-static FAST_RAM biquadFilter_t fftGyroFilter[3];
+static FAST_RAM biquadFilter_t fftGyroFilter[XYZ_AXIS_COUNT];
 
 // filter for smoothing frequency estimation
-static FAST_RAM biquadFilter_t fftFreqFilter[3];
+static FAST_RAM biquadFilter_t fftFreqFilter[XYZ_AXIS_COUNT];
 
 // Hanning window, see https://en.wikipedia.org/wiki/Window_function#Hann_.28Hanning.29_window
 static FAST_RAM float hanningWindow[FFT_WINDOW_SIZE];
