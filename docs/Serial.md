@@ -108,21 +108,6 @@ In order to reflash an Arduino based device such as a MWOSD via `serialpassthrou
 For example, the following configuration for an OpenPilot Revolution shows the UART6 serial port to be configured with TX on pin C06, RX on pin C07 and DTR on pin C08.
 
 ```
-# resource
-resource MOTOR 1 B00
-resource MOTOR 2 B01
-resource MOTOR 3 A03
-resource MOTOR 4 A02
-resource MOTOR 5 A01
-resource MOTOR 6 A00
-resource PPM 1 B14
-resource PWM 1 B14
-resource PWM 2 B15
-resource PWM 3 C06
-resource PWM 4 C07
-resource PWM 5 C08
-resource PWM 6 C09
-resource LED_STRIP 1 A01
 resource SERIAL_TX 1 A09
 resource SERIAL_TX 3 B10
 resource SERIAL_TX 4 A00
@@ -133,19 +118,6 @@ resource SERIAL_RX 4 A01
 resource SERIAL_RX 6 C07
 resource SERIAL_DTR 6 C08
 resource INVERTER 1 C00
-resource I2C_SCL 1 B08
-resource I2C_SDA 1 B09
-resource LED 1 B05
-resource LED 2 B04
-resource SPI_SCK 1 A05
-resource SPI_SCK 3 C10
-resource SPI_MISO 1 A06
-resource SPI_MISO 3 C11
-resource SPI_MOSI 1 A07
-resource SPI_MOSI 3 C12
-resource ESCSERIAL 1 B14
-resource ADC_BATT 1 C02
-resource ADC_CURR 1 C01
 ```
 
 To assign the DTR line to another pin use the following command.
