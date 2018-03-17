@@ -49,8 +49,8 @@ typedef enum {
 } portOptions_e;
 
 // Define known line control states which may be passed up by underlying serial driver callback
-#define CTRL_LINE_STATE_DTR 1
-#define CTRL_LINE_STATE_RTS 2
+#define CTRL_LINE_STATE_DTR (1 << 0)
+#define CTRL_LINE_STATE_RTS (1 << 1)
 
 typedef void (*serialReceiveCallbackPtr)(uint16_t data, void *rxCallbackData);   // used by serial drivers to return frames to app
 
