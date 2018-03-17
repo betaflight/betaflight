@@ -50,6 +50,7 @@
 #define DYN_NOTCH_CHANGERATE  60  // lower cut does not improve the performance much, higher cut makes it worse...
 #define DYN_NOTCH_MIN_CUTOFF  120  // don't cut too deep into low frequencies
 #define DYN_NOTCH_MAX_CUTOFF  200  // don't go above this cutoff (better filtering with "constant" delay at higher center frequencies)
+#define DYN_NOTCH_CALC_TICKS  (XYZ_AXIS_COUNT * 4) // we need 4 steps for each axis
 
 #define BIQUAD_Q 1.0f / sqrtf(2.0f)         // quality factor - butterworth
 
@@ -101,10 +102,10 @@ void gyroDataAnalyseInit(uint32_t targetLooptimeUs)
     initGyroData();
     initHanning();
 
-    // recalculation of filters takes 4 calls per axis => each filter gets updated every 3 * 4 = 12 calls
+    // recalculation of filters takes 4 calls per axis => each filter gets updated every DYN_NOTCH_CALC_TICKS calls
     // at 4khz gyro loop rate this means 4khz / 4 / 3 = 333Hz => update every 3ms
     // for gyro rate > 16kHz, we have update frequency of 1kHz => 1ms
-    const float looptime = MAX(1000000u / FFT_SAMPLING_RATE, targetLooptimeUs * 4 * 3);
+    const float looptime = MAX(1000000u / FFT_SAMPLING_RATE, targetLooptimeUs * DYN_NOTCH_CALC_TICKS);
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         fftResult[axis].centerFreq = 200; // any init value
         biquadFilterInitLPF(&fftFreqFilter[axis], DYN_NOTCH_CHANGERATE, looptime);
@@ -151,8 +152,8 @@ void gyroDataAnalyse(const gyroDev_t *gyroDev, biquadFilter_t *notchFilterDyn)
 
         fftIdx = (fftIdx + 1) % FFT_WINDOW_SIZE;
 
-        // We need 3 * 4 tick to update all axis with newly sampled value
-        gyroDataAnalyseUpdateTicks = 12;
+        // We need DYN_NOTCH_CALC_TICKS tick to update all axis with newly sampled value
+        gyroDataAnalyseUpdateTicks = DYN_NOTCH_CALC_TICKS;
     }
 
     // calculate FFT and update filters
