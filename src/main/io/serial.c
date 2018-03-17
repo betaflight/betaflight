@@ -539,7 +539,7 @@ void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer *
 
     // Register control line state callback
     if (pinioDtr) {
-        serialSetCtrlLineStateCb(left, cbCtrlLine, (void *)(pinioDtr - 1));
+        serialSetCtrlLineStateCb(left, cbCtrlLine, (void *)(long)(pinioDtr - 1));
     }
 
     // Either port might be open in a mode other than MODE_RXTX. We rely on
