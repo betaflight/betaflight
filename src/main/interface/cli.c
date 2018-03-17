@@ -945,7 +945,9 @@ static void cliSerialPassthrough(char *cmdline)
 
     int id = -1;
     uint32_t baud = 0;
+#ifdef USE_PINIO
     int pinioDtr = 0;
+#endif /* USE_PINIO */
     unsigned mode = 0;
     char *saveptr;
     char* tok = strtok_r(cmdline, " ", &saveptr);
@@ -965,8 +967,8 @@ static void cliSerialPassthrough(char *cmdline)
             if (strstr(tok, "tx") || strstr(tok, "TX"))
                 mode |= MODE_TX;
             break;
-        case 3:
 #ifdef USE_PINIO
+        case 3:
             pinioDtr = atoi(tok);
             break;
 #endif /* USE_PINIO */
