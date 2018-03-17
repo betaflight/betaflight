@@ -957,8 +957,10 @@ static void cliSerialPassthrough(char *cmdline)
                 mode |= MODE_TX;
             break;
         case 3:
+#ifdef USE_PINIO
             pinioDtr = atoi(tok);
             break;
+#endif /* USE_PINIO */
         }
         index++;
         tok = strtok_r(NULL, " ", &saveptr);

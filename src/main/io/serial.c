@@ -512,12 +512,14 @@ static void nopConsumer(uint8_t data)
     UNUSED(data);
 }
 
+#ifdef USE_PINIO
 static void cbCtrlLine(void *context, uint16_t ctrl)
 {
     int pinioDtr = (int)(long)context;
 
     pinioSet(pinioDtr, ~ctrl & CTRL_LINE_STATE_DTR);
 }
+#endif /* USE_PINIO */
 
 /*
  A high-level serial passthrough implementation. Used by cli to start an
@@ -537,10 +539,12 @@ void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer *
     LED0_OFF;
     LED1_OFF;
 
+#ifdef USE_PINIO
     // Register control line state callback
     if (pinioDtr) {
         serialSetCtrlLineStateCb(left, cbCtrlLine, (void *)(long)(pinioDtr - 1));
     }
+#endif /* USE_PINIO */
 
     // Either port might be open in a mode other than MODE_RXTX. We rely on
     // serialRxBytesWaiting() to do the right thing for a TX only port. No
