@@ -571,6 +571,8 @@ void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer *
         if (serialRxBytesWaiting(left)) {
             LED0_ON;
             uint8_t c = serialRead(left);
+            // Make sure there is space in the tx buffer
+            while (!serialTxBytesFree(right));
             serialWrite(right, c);
             leftC(c);
             LED0_OFF;
@@ -578,6 +580,8 @@ void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer *
          if (serialRxBytesWaiting(right)) {
              LED0_ON;
              uint8_t c = serialRead(right);
+             // Make sure there is space in the tx buffer
+             while (!serialTxBytesFree(left));
              serialWrite(left, c);
              rightC(c);
              LED0_OFF;
