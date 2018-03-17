@@ -87,7 +87,7 @@ The allowable baud rates are as follows:
 
 Cleanflight can enter a special passthrough mode whereby it passes serial data through to a device connected to a UART/SoftSerial port. This is useful to change the configuration of a Cleanflight peripheral such as an OSD, bluetooth dongle, serial RX etc.
 
-To initiate passthrough mode, use the CLI command `serialpassthrough` This command takes three arguments.
+To initiate passthrough mode, use the CLI command `serialpassthrough` This command takes four arguments.
 
     serialpassthrough <id> [baud] [mode] [DTR PINIO]
 
@@ -122,16 +122,13 @@ resource PINIO 1 C08
 To assign the DTR line to another pin use the following command.
 
 ```
-# resource PINIO 1 c05
-
-Resource is set to C05
+resource PINIO 1 c05
 ```
 
 To disassociate DTR from a pin use the following command.
 
 ```
-# resource PINIO 1 none
-Resource is freed
+resource PINIO 1 none
 ```
 
 Having configured a PINIO resource assocaited with a DTR line as per the above example, connection to an MWOSD attached to an Openpilot Revolution could be achieved using the following command.
