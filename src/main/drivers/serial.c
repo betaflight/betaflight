@@ -86,27 +86,13 @@ void serialSetMode(serialPort_t *instance, portMode_e mode)
     instance->vTable->setMode(instance, mode);
 }
 
-void serialSetCtrlLineStateCb(serialPort_t *serialPort, void (*cb)(serialPort_t *context, uint16_t ctrlLineState), serialPort_t *context)
+void serialSetCtrlLineStateCb(serialPort_t *serialPort, void (*cb)(void *context, uint16_t ctrlLineState), void *context)
 {
     // If a callback routine for changes to control line state is supported by the underlying
     // driver, then set the callback.
     if (serialPort->vTable->setCtrlLineStateCb) {
         serialPort->vTable->setCtrlLineStateCb(serialPort, cb, context);
     }
-}
-
-void serialSetCtrlLineState(serialPort_t *serialPort, uint16_t ctrlLineState)
-{
-    // For now only handle DTR pin, not RTS
-#ifdef UNIT_TEST
-    UNUSED(serialPort);
-    UNUSED(ctrlLineState);
-#else /* UNIT_TEST */
-    ioTag_t serialPassthroughDtrPin = serialPinConfig()->ioTagDtr[serialPort->identifier];
-    if (serialPassthroughDtrPin) {
-        IOWrite(IOGetByTag(serialPassthroughDtrPin), ~ctrlLineState & CTRL_LINE_STATE_DTR);
-    }
-#endif /* UNIT_TEST */
 }
 
 void serialSetBaudRateCb(serialPort_t *serialPort, void (*cb)(serialPort_t *context, uint32_t baud), serialPort_t *context)

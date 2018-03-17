@@ -58,6 +58,8 @@
 #include "telemetry/telemetry.h"
 #endif
 
+#include "pg/pinio.h"
+
 static serialPortUsage_t serialPortUsageList[SERIAL_PORT_COUNT];
 
 const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
@@ -412,22 +414,6 @@ serialPort_t *openSerialPort(
         return NULL;
     }
 
-    ioTag_t ioDtrTag = serialPinConfig()->ioTagDtr[identifier];
-
-#ifdef UNIT_TEST
-    UNUSED(ioDtrTag);
-#else /* UNIT_TEST */
-    // Initialise DTR pin if defined
-    if (ioDtrTag) {
-        IO_t ioDtr = IOGetByTag(ioDtrTag);
-        IOInit(ioDtr, OWNER_SERIAL_DTR, identifier);
-        // Set the initial state before enabling the output to prevent a glitch
-        // Note that MW_OSD must be built with MAX_SOFTRESET defined for this to work as desired
-        IOWrite(ioDtr, false);
-        IOConfigGPIO(ioDtr, IOCFG_OUT_PP);
-    }
-#endif /* UNIT_TEST */
-
     serialPort->identifier = identifier;
 
     serialPortUsage->function = function;
@@ -445,19 +431,6 @@ void closeSerialPort(serialPort_t *serialPort)
     }
 
     // TODO wait until data has been transmitted.
-
-    ioTag_t ioDtrTag = serialPinConfig()->ioTagDtr[serialPort->identifier];
-
-#ifdef UNIT_TEST
-    UNUSED(ioDtrTag);
-#else /* UNIT_TEST */
-    // Negate DTR pin if defined
-    if (ioDtrTag) {
-        IO_t ioDtr = IOGetByTag(ioDtrTag);
-        IOWrite(ioDtr, true);
-    }
-#endif /* UNIT_TEST */
-
     serialPort->rxCallback = NULL;
 
     serialPortUsage->function = FUNCTION_NONE;
@@ -539,12 +512,19 @@ static void nopConsumer(uint8_t data)
     UNUSED(data);
 }
 
+static void cbCtrlLine(void *context, uint16_t ctrl)
+{
+    int pinioDtr = (int)context;
+
+    pinioSet(pinioDtr, ~ctrl & CTRL_LINE_STATE_DTR);
+}
+
 /*
  A high-level serial passthrough implementation. Used by cli to start an
  arbitrary serial passthrough "proxy". Optional callbacks can be given to allow
  for specialized data processing.
  */
-void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer *leftC, serialConsumer *rightC)
+void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer *leftC, serialConsumer *rightC, int pinioDtr)
 {
     waitForSerialPortToFinishTransmitting(left);
     waitForSerialPortToFinishTransmitting(right);
@@ -558,7 +538,9 @@ void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer *
     LED1_OFF;
 
     // Register control line state callback
-    serialSetCtrlLineStateCb(left, serialSetCtrlLineState, right);
+    if (pinioDtr) {
+        serialSetCtrlLineStateCb(left, cbCtrlLine, (void *)(pinioDtr - 1));
+    }
 
     // Either port might be open in a mode other than MODE_RXTX. We rely on
     // serialRxBytesWaiting() to do the right thing for a TX only port. No

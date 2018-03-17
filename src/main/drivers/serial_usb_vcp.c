@@ -67,12 +67,12 @@ static void usbVcpSetMode(serialPort_t *instance, portMode_e mode)
     // TODO implement
 }
 
-static void usbVcpSetCtrlLineStateCb(serialPort_t *instance, void (*cb)(serialPort_t *context, uint16_t ctrlLineState), serialPort_t *context)
+static void usbVcpSetCtrlLineStateCb(serialPort_t *instance, void (*cb)(void *context, uint16_t ctrlLineState), void *context)
 {
     UNUSED(instance);
 
     // Register upper driver control line state callback routine with USB driver
-    CDC_SetCtrlLineStateCb((void (*)(void *context, uint16_t ctrlLineState))cb, (void *)context);
+    CDC_SetCtrlLineStateCb((void (*)(void *context, uint16_t ctrlLineState))cb, context);
 }
 
 static void usbVcpSetBaudRateCb(serialPort_t *instance, void (*cb)(serialPort_t *context, uint32_t baud), serialPort_t *context)

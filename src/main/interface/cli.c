@@ -936,6 +936,7 @@ static void cliSerialPassthrough(char *cmdline)
 
     int id = -1;
     uint32_t baud = 0;
+    int pinioDtr = 0;
     unsigned mode = 0;
     char *saveptr;
     char* tok = strtok_r(cmdline, " ", &saveptr);
@@ -954,6 +955,9 @@ static void cliSerialPassthrough(char *cmdline)
                 mode |= MODE_RX;
             if (strstr(tok, "tx") || strstr(tok, "TX"))
                 mode |= MODE_TX;
+            break;
+        case 3:
+            pinioDtr = atoi(tok);
             break;
         }
         index++;
@@ -1008,7 +1012,7 @@ static void cliSerialPassthrough(char *cmdline)
 
     cliPrintLine("Forwarding, power cycle to exit.");
 
-    serialPassthrough(cliPort, passThroughPort, NULL, NULL);
+    serialPassthrough(cliPort, passThroughPort, NULL, NULL, pinioDtr);
 }
 #endif
 
@@ -3210,7 +3214,6 @@ const cliResourceValue_t resourceTable[] = {
 #endif
     { OWNER_SERIAL_TX,     PG_SERIAL_PIN_CONFIG, offsetof(serialPinConfig_t, ioTagTx[0]), SERIAL_PORT_MAX_INDEX },
     { OWNER_SERIAL_RX,     PG_SERIAL_PIN_CONFIG, offsetof(serialPinConfig_t, ioTagRx[0]), SERIAL_PORT_MAX_INDEX },
-    { OWNER_SERIAL_DTR,    PG_SERIAL_PIN_CONFIG, offsetof(serialPinConfig_t, ioTagDtr[0]), SERIAL_PORT_MAX_INDEX },
 #ifdef USE_INVERTER
     { OWNER_INVERTER,      PG_SERIAL_PIN_CONFIG, offsetof(serialPinConfig_t, ioTagInverter[0]), SERIAL_PORT_MAX_INDEX },
 #endif
@@ -3774,7 +3777,7 @@ const clicmd_t cmdTable[] = {
 #endif
     CLI_COMMAND_DEF("serial", "configure serial ports", NULL, cliSerial),
 #ifndef SKIP_SERIAL_PASSTHROUGH
-    CLI_COMMAND_DEF("serialpassthrough", "passthrough serial data to port", "<id> [baud] [mode] : passthrough to serial", cliSerialPassthrough),
+    CLI_COMMAND_DEF("serialpassthrough", "passthrough serial data to port", "<id> [baud] [mode] [DTR PINIO]: passthrough to serial", cliSerialPassthrough),
 #endif
 #ifdef USE_SERVOS
     CLI_COMMAND_DEF("servo", "configure servos", NULL, cliServo),
