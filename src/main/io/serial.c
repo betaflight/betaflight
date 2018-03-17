@@ -514,7 +514,7 @@ static void nopConsumer(uint8_t data)
 
 static void cbCtrlLine(void *context, uint16_t ctrl)
 {
-    int pinioDtr = (int)context;
+    int pinioDtr = (int)(long)context;
 
     pinioSet(pinioDtr, ~ctrl & CTRL_LINE_STATE_DTR);
 }
