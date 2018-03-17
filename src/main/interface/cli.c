@@ -927,6 +927,15 @@ static void cliSerial(char *cmdline)
 }
 
 #ifndef SKIP_SERIAL_PASSTHROUGH
+#ifdef USE_PINIO
+static void cbCtrlLine(void *context, uint16_t ctrl)
+{
+    int pinioDtr = (int)(long)context;
+
+    pinioSet(pinioDtr, ~ctrl & CTRL_LINE_STATE_DTR);
+}
+#endif /* USE_PINIO */
+
 static void cliSerialPassthrough(char *cmdline)
 {
     if (isEmpty(cmdline)) {
@@ -1014,7 +1023,14 @@ static void cliSerialPassthrough(char *cmdline)
 
     cliPrintLine("Forwarding, power cycle to exit.");
 
-    serialPassthrough(cliPort, passThroughPort, NULL, NULL, pinioDtr);
+#ifdef USE_PINIO
+    // Register control line state callback
+    if (pinioDtr) {
+        serialSetCtrlLineStateCb(cliPort, cbCtrlLine, (void *)(long)(pinioDtr - 1));
+    }
+#endif /* USE_PINIO */
+
+    serialPassthrough(cliPort, passThroughPort, NULL, NULL);
 }
 #endif
 
