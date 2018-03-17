@@ -75,6 +75,7 @@ extern "C" {
     void serialSetCtrlLineStateCb(serialPort_t *, void (*)(serialPort_t *, uint16_t ), serialPort_t *) {}
     void serialSetCtrlLineStateDtrPin(serialPort_t *, ioTag_t ) {}
     void serialSetCtrlLineState(serialPort_t *, uint16_t ) {}
+    uint32_t serialTxBytesFree(const serialPort_t *) {return 1;}
 
     void serialSetBaudRateCb(serialPort_t *, void (*)(serialPort_t *context, uint32_t baud), serialPort_t *) {}
 }
