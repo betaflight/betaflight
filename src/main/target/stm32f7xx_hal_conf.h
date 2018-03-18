@@ -161,7 +161,7 @@
 #define  PREFETCH_ENABLE              1U
 #define  ART_ACCLERATOR_ENABLE        1U /* To enable instruction cache and prefetch */
 #define  INSTRUCTION_CACHE_ENABLE     1U
-#define  DATA_CACHE_ENABLE            0U
+#define  DATA_CACHE_ENABLE            1U
 
 /* ########################## Assert Selection ############################## */
 /**
