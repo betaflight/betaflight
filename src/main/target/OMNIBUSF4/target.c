@@ -26,7 +26,7 @@
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 
-#if defined(OMNIBUSF4SD) || defined(EXUAVF4PRO)
+#if defined(OMNIBUSF4SD) || defined(EXUAVF4PRO) || defined(OBF4NANOBB)
     DEF_TIM(TIM10, CH1, PB8,  TIM_USE_PWM | TIM_USE_PPM,   0, 0), // PPM
     DEF_TIM(TIM4,  CH4, PB9,  TIM_USE_PWM,                 0, 0), // S2_IN
 #else
@@ -44,7 +44,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM2,  CH4, PA3,  TIM_USE_MOTOR,               0, 1), // S3_OUT D1_ST6
     DEF_TIM(TIM2,  CH3, PA2,  TIM_USE_MOTOR,               0, 0), // S4_OUT D1_ST1
 
-#if defined(OMNIBUSF4SD) || defined(EXUAVF4PRO)
+#if defined(OMNIBUSF4SD) || defined(EXUAVF4PRO) || defined(OBF4NANOBB)
     DEF_TIM(TIM5,  CH2, PA1,  TIM_USE_MOTOR,               0, 0), // S5_OUT
     DEF_TIM(TIM4,  CH1, PB6,  TIM_USE_LED,                 0, 0), // LED strip for F4 V2 / F4-Pro-0X and later (RCD_CS for F4)
 #else
