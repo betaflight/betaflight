@@ -148,15 +148,15 @@ bool sdcard_isFunctional(void)
  */
 static void sdcard_reset(void)
 {
-	if (SD_Init() != 0) {
-		sdcard.failureCount++;
-		if (sdcard.failureCount >= SDCARD_MAX_CONSECUTIVE_FAILURES || sdcard_isInserted() == SD_NOT_PRESENT) {
-			sdcard.state = SDCARD_STATE_NOT_PRESENT;
-		} else {
-			sdcard.operationStartTime = millis();
-			sdcard.state = SDCARD_STATE_RESET;
-		}
-	}
+    if (SD_Init() != 0) {
+        sdcard.failureCount++;
+        if (sdcard.failureCount >= SDCARD_MAX_CONSECUTIVE_FAILURES || sdcard_isInserted() == SD_NOT_PRESENT) {
+            sdcard.state = SDCARD_STATE_NOT_PRESENT;
+        } else {
+            sdcard.operationStartTime = millis();
+            sdcard.state = SDCARD_STATE_RESET;
+        }
+    }
 }
 
 typedef enum {
@@ -192,7 +192,7 @@ static bool sdcard_receiveCID(void)
     SD_CardInfo_t *sdinfo = &SD_CardInfo;
     SD_Error_t error = SD_GetCardInfo();
     if (error) {
-    		return false;
+         return false;
     }
 
     sdcard.metadata.manufacturerID = sdinfo->SD_cid.ManufacturerID;
@@ -220,7 +220,7 @@ static bool sdcard_fetchCSD(void)
     SD_Error_t error;
     error = SD_GetCardInfo();
     if (error) {
-    		return false;
+        return false;
     }
 
     sdcard.metadata.numBlocks = sdinfo->CardCapacity;
@@ -259,14 +259,14 @@ void sdcard_init(const sdcardConfig_t *config)
     }
     sdcard.dma = config->dmaIdentifier;
     if (sdcard.dma == 0) {
-    		sdcard.state = SDCARD_STATE_NOT_PRESENT;
-		return;
+        sdcard.state = SDCARD_STATE_NOT_PRESENT;
+        return;
     }
     if (config->cardDetectTag) {
-		sdcard.cardDetectPin = IOGetByTag(config->cardDetectTag);
-	} else {
-		sdcard.cardDetectPin = IO_NONE;
-	}
+        sdcard.cardDetectPin = IOGetByTag(config->cardDetectTag);
+    } else {
+        sdcard.cardDetectPin = IO_NONE;
+    }
     SD_Initialize_LL(dmaGetRefByIdentifier(sdcard.dma));
     if (SD_IsDetected()) {
         if (SD_Init() != 0) {
@@ -402,7 +402,7 @@ bool sdcard_poll(void)
                     sdcard.state = SDCARD_STATE_WRITING_MULTIPLE_BLOCKS;
                 } else if (sdcard.multiWriteBlocksRemain == 1) {
                     // This function changes the sd card state for us whether immediately succesful or delayed:
-                		sdcard_endWriteBlocks();
+                    sdcard_endWriteBlocks();
                 } else {
                     sdcard.state = SDCARD_STATE_READY;
                 }
@@ -577,10 +577,10 @@ sdcardOperationStatus_e sdcard_beginWriteBlocks(uint32_t blockIndex, uint32_t bl
         }
     }
 
-	sdcard.state = SDCARD_STATE_WRITING_MULTIPLE_BLOCKS;
-	sdcard.multiWriteBlocksRemain = blockCount;
-	sdcard.multiWriteNextBlock = blockIndex;
-	return SDCARD_OPERATION_SUCCESS;
+    sdcard.state = SDCARD_STATE_WRITING_MULTIPLE_BLOCKS;
+    sdcard.multiWriteBlocksRemain = blockCount;
+    sdcard.multiWriteNextBlock = blockIndex;
+    return SDCARD_OPERATION_SUCCESS;
 }
 
 /**
@@ -598,8 +598,8 @@ sdcardOperationStatus_e sdcard_beginWriteBlocks(uint32_t blockIndex, uint32_t bl
 bool sdcard_readBlock(uint32_t blockIndex, uint8_t *buffer, sdcard_operationCompleteCallback_c callback, uint32_t callbackData)
 {
     if (sdcard.state != SDCARD_STATE_READY) {
-    		if (sdcard.state == SDCARD_STATE_WRITING_MULTIPLE_BLOCKS) {
-    	        if (sdcard_endWriteBlocks() != SDCARD_OPERATION_SUCCESS) {
+		if (sdcard.state == SDCARD_STATE_WRITING_MULTIPLE_BLOCKS) {
+			if (sdcard_endWriteBlocks() != SDCARD_OPERATION_SUCCESS) {
 				return false;
 			}
 		} else {
