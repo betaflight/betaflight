@@ -153,9 +153,10 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     const IO_t motorIO = IOGetByTag(timerHardware->tag);
 
     const uint8_t timerIndex = getTimerIndex(timer);
-    const bool configureTimer = (timerIndex == dmaMotorTimerCount-1);
+    const bool configureTimer = (timerIndex == dmaMotorTimerCount - 1);
 
-    IOConfigGPIOAF(motorIO, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP), timerHardware->alternateFunction);
+    // @note original DSHOT for F7 has pulldown instead of pullup
+    IOConfigGPIOAF(motorIO, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLDOWN), timerHardware->alternateFunction);
 
     if (configureTimer) {
         LL_TIM_InitTypeDef init;
@@ -194,6 +195,8 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     }
     LL_TIM_OC_Init(timer, channel, &oc_init);
     LL_TIM_OC_EnablePreload(timer, channel);
+    // @note original DSHOT for F7
+    LL_TIM_OC_DisableFast(timer, channel);
 
     if (output & TIMER_OUTPUT_N_CHANNEL) {
         // @todo quick hack to get TIM_CCER_CCxNE from TIM_CCER_CCxE
@@ -205,6 +208,7 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     if (configureTimer) {
         LL_TIM_EnableAllOutputs(timer);
         LL_TIM_EnableARRPreload(timer);
+        // @note original DSHOT for F7
         LL_TIM_EnableCounter(timer);
     }
 
@@ -278,6 +282,7 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
         dma_init.Channel = timerHardware->dmaChannel;
         dma_init.MemoryOrM2MDstAddress = (uint32_t)motor->dmaBuffer;
         dma_init.Direction = LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
+        // @note original DSHOT for F7 disabled FIFO for non-burst
         dma_init.FIFOMode = LL_DMA_FIFOMODE_ENABLE;
         dma_init.FIFOThreshold = LL_DMA_FIFOTHRESHOLD_1_4;
         dma_init.MemBurst = LL_DMA_MBURST_SINGLE;
