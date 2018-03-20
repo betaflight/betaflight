@@ -19,6 +19,17 @@
 
 #include "common/streambuf.h"
 
+#define MSP_V2_FRAME_ID         255
+
+typedef enum {
+    MSP_V1          = 0,
+    MSP_V2_OVER_V1  = 1,
+    MSP_V2_NATIVE   = 2,
+    MSP_VERSION_COUNT
+} mspVersion_e;
+
+#define MSP_VERSION_MAGIC_INITIALIZER { 'M', 'M', 'X' }
+
 // return positive for ACK, negative on error, zero for no reply
 typedef enum {
     MSP_RESULT_ACK = 1,
@@ -35,6 +46,7 @@ typedef enum {
 typedef struct mspPacket_s {
     sbuf_t buf;
     int16_t cmd;
+    uint8_t flags;
     int16_t result;
     uint8_t direction;
 } mspPacket_t;
