@@ -117,6 +117,7 @@ static bool waitTx = false;
 static uint16_t errorRate = 0;
 static uint16_t rssi_dBm = 0;
 static uint8_t rfChannelMap[FLYSKY_FREQUENCY_COUNT] = {0};
+IO_t flySkyLedPin;
 
 
 static uint8_t getNextChannel (uint8_t step)
@@ -360,7 +361,11 @@ bool flySkyInit (const struct rxConfig_s *rxConfig, struct rxRuntimeConfig_s *rx
     IO_t bindPin = IOGetByTag(IO_TAG(BINDPLUG_PIN));
     IOInit(bindPin, OWNER_RX_BIND, 0);
     IOConfigGPIO(bindPin, IOCFG_IPU);
-
+    flySkyLedPin = IOGetByTag(IO_TAG(RX_FLYSKY_SPI_LED_PIN));
+    IOInit(flySkyLedPin, OWNER_LED, 0); 
+    IOConfigGPIO(flySkyLedPin, IOCFG_OUT_PP);
+    IOLo(flySkyLedPin);
+    
     uint8_t startRxChannel;
 
     if (protocol == RX_SPI_A7105_FLYSKY_2A) {
@@ -415,7 +420,8 @@ rx_spi_received_e flySkyDataReceived (uint8_t *payload)
 {
     rx_spi_received_e result = RX_SPI_RECEIVED_NONE;
     uint32_t timeStamp;
-
+    static uint16_t led_rxlosscount = 0;
+	
     if (A7105RxTxFinished(&timeStamp)) {
         uint8_t modeReg = A7105ReadReg(A7105_00_MODE);
 
@@ -442,6 +448,19 @@ rx_spi_received_e flySkyDataReceived (uint8_t *payload)
 
     if (bound) {
         checkTimeout();
+        if (result == RX_SPI_RECEIVED_DATA) {
+            led_rxlosscount = 0;
+            IOHi(flySkyLedPin);
+        } else {
+            led_rxlosscount++;
+            if (led_rxlosscount > 1000) {
+                led_rxlosscount = 1001;
+                if ((micros() % 2000000) > 1000000)
+                    IOLo(flySkyLedPin);
+                else
+                    IOHi(flySkyLedPin);
+            }
+        }
     } else {
         if ((micros() - timeLastBind) > BIND_TIMEOUT && rfChannelMap[0] != 0 && txId != 0) {
             result = RX_SPI_RECEIVED_BIND;
@@ -451,6 +470,10 @@ rx_spi_received_e flySkyDataReceived (uint8_t *payload)
             flySkyConfigMutable()->protocol = protocol;
             writeEEPROM();
         }
+        if ((micros() % 500000) > 250000)
+            IOLo(flySkyLedPin);
+        else
+            IOHi(flySkyLedPin);
     }
 
     return result;
