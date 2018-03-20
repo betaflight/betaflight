@@ -141,7 +141,7 @@ void pgResetFn_rxConfig(rxConfig_t *rxConfig)
         .maxcheck = 1900,
         .rx_min_usec = RX_MIN_USEC,          // any of first 4 channels below this value will trigger rx loss detection
         .rx_max_usec = RX_MAX_USEC,         // any of first 4 channels above this value will trigger rx loss detection
-        .rssi_src_frame_errors = 1,
+        .rssi_src_frame_errors = true,
         .rssi_channel = 0,
         .rssi_scale = RSSI_SCALE_DEFAULT,
         .rssi_invert = 0,
@@ -430,8 +430,6 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
             	// Valid (100%) signal
             	setRssiUnfiltered(RSSI_MAX_VALUE, RSSI_SOURCE_FRAME_ERRORS);
             }
-        } else if (cmpTimeUs(currentTimeUs, rxNextUpdateAtUs) > 0) {
-                rxDataProcessingRequired = true;
         }
 
         if (frameStatus & RX_FRAME_PROCESSING_REQUIRED) {
