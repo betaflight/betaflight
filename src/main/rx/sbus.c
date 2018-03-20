@@ -97,6 +97,7 @@ typedef union sbusFrame_u {
 typedef struct sbusFrameData_s {
     sbusFrame_t frame;
     uint32_t startAtUs;
+    uint16_t stateFlags;
     uint8_t position;
     bool done;
 } sbusFrameData_t;
