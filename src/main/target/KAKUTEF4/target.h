@@ -137,6 +137,7 @@
 
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define USE_ADC
+#define ADC1_DMA_STREAM 			DMA2_Stream0
 #define VBAT_ADC_PIN                PC3
 #define VBAT_ADC_CHANNEL            ADC_Channel_13
 
