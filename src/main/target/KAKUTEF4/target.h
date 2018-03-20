@@ -139,13 +139,8 @@
 #define USE_ADC
 #define ADC1_DMA_STREAM 			DMA2_Stream0
 #define VBAT_ADC_PIN                PC3
-#define VBAT_ADC_CHANNEL            ADC_Channel_13
-
 #define CURRENT_METER_ADC_PIN       PC2
-#define CURRENT_METER_ADC_CHANNEL   ADC_Channel_12
-
 #define RSSI_ADC_PIN                PC1
-#define RSSI_ADC_CHANNEL            ADC_Channel_11
 
 #define DEFAULT_FEATURES        ( FEATURE_TELEMETRY | FEATURE_OSD )
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
