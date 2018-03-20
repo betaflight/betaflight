@@ -79,9 +79,7 @@ typedef struct laggedMovingAverage_s {
 typedef enum {
     FILTER_PT1 = 0,
     FILTER_BIQUAD,
-#if defined(USE_GYRO_FIR_FILTER_DENOISE)
     FILTER_FIR,
-#endif
     FILTER_BUTTERWORTH,
     FILTER_BIQUAD_RC_FIR2,
     FILTER_FAST_KALMAN
