@@ -354,3 +354,54 @@ void mpuGyroInit(gyroDev_t *gyro)
     UNUSED(gyro);
 #endif
 }
+
+uint8_t mpuGyroDLPF(gyroDev_t *gyro)
+{
+    uint8_t ret;
+    if (gyro->gyroRateKHz > GYRO_RATE_8_kHz) {
+        ret = 0;  // If gyro is in 32KHz mode then the DLPF bits aren't used - set to 0
+    } else {
+        switch (gyro->hardware_lpf) {
+            case GYRO_HARDWARE_LPF_NORMAL:
+                ret = 0;
+                break;
+            case GYRO_HARDWARE_LPF_EXPERIMENTAL:
+                ret = 7;
+                break;
+            case GYRO_HARDWARE_LPF_1KHZ_SAMPLE:
+                ret = 1;
+                break;
+            default:
+                ret = 0;
+                break;
+        }
+    }
+    return ret;
+}
+
+uint8_t mpuGyroFCHOICE(gyroDev_t *gyro)
+{
+    if (gyro->gyroRateKHz > GYRO_RATE_8_kHz) {
+        if (gyro->hardware_32khz_lpf == GYRO_32KHZ_HARDWARE_LPF_EXPERIMENTAL) {
+            return FCB_8800_32;
+        } else {
+            return FCB_3600_32;
+        }
+    } else {
+        return FCB_DISABLED;  // Not in 32KHz mode, set FCHOICE to select 8KHz sampling
+    }
+}
+
+#ifdef USE_GYRO_REGISTER_DUMP
+uint8_t mpuGyroReadRegister(const busDevice_t *bus, uint8_t reg)
+{
+    uint8_t data;
+    const bool ack = busReadRegisterBuffer(bus, reg, &data, 1);
+    if (ack) {
+        return data;
+    } else {
+        return 0;
+    }
+
+}
+#endif

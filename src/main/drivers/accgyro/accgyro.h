@@ -35,14 +35,12 @@
 #define MPU_I2C_INSTANCE I2C_DEVICE
 #endif
 
-#define GYRO_LPF_256HZ      0
-#define GYRO_LPF_188HZ      1
-#define GYRO_LPF_98HZ       2
-#define GYRO_LPF_42HZ       3
-#define GYRO_LPF_20HZ       4
-#define GYRO_LPF_10HZ       5
-#define GYRO_LPF_5HZ        6
-#define GYRO_LPF_NONE       7
+#define GYRO_HARDWARE_LPF_NORMAL       0
+#define GYRO_HARDWARE_LPF_EXPERIMENTAL 1
+#define GYRO_HARDWARE_LPF_1KHZ_SAMPLE  2
+
+#define GYRO_32KHZ_HARDWARE_LPF_NORMAL       0
+#define GYRO_32KHZ_HARDWARE_LPF_EXPERIMENTAL 1
 
 typedef enum {
     GYRO_RATE_1_kHz,
@@ -75,10 +73,11 @@ typedef struct gyroDev_s {
     gyroRateKHz_e gyroRateKHz;
     bool dataReady;
     bool gyro_high_fsr;
-    uint8_t lpf;
+    uint8_t hardware_lpf;
+    uint8_t hardware_32khz_lpf;
     uint8_t mpuDividerDrops;
     ioTag_t mpuIntExtiTag;
-    uint8_t filler[3];
+    uint8_t filler[2];
 } gyroDev_t;
 
 typedef struct accDev_s {

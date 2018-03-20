@@ -438,7 +438,14 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite8(rcControlsConfig()->yaw_deadband);
             break;
         case BST_FC_FILTERS:
-            bstWrite16(constrain(gyroConfig()->gyro_lpf, 0, 1)); // Extra safety to prevent OSD setting corrupt values
+            switch (gyroConfig()->gyro_hardware_lpf) { // Extra safety to prevent OSD setting corrupt values
+                case GYRO_HARDWARE_LPF_1KHZ_SAMPLE:
+                    bstWrite16(1);
+                    break;
+                default:
+                    bstWrite16(0);
+                    break;
+            }
             break;
         default:
             // we do not know how to handle the (valid) message, indicate error BST
@@ -632,7 +639,14 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             rcControlsConfigMutable()->yaw_deadband = bstRead8();
             break;
         case BST_SET_FC_FILTERS:
-            gyroConfigMutable()->gyro_lpf = bstRead16();
+            switch (bstRead16()) {
+                case 1:
+                    gyroConfigMutable()->gyro_hardware_lpf = GYRO_HARDWARE_LPF_1KHZ_SAMPLE;
+                    break;
+                default:
+                    gyroConfigMutable()->gyro_hardware_lpf = GYRO_HARDWARE_LPF_NORMAL;
+                    break;
+            }
             break;
 
         default:

@@ -103,6 +103,7 @@
 
 
 #define USE_CLI
+#define USE_GYRO_REGISTER_DUMP  // Adds gyroregisters command to cli to dump configured register values
 #define USE_PPM
 #define USE_PWM
 #define USE_SERIAL_RX

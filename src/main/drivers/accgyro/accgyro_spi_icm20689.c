@@ -129,21 +129,11 @@ void icm20689GyroInit(gyroDev_t *gyro)
 //    delay(100);
     spiBusWriteRegister(&gyro->bus, MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
     delay(15);
-    uint8_t raGyroConfigData = INV_FSR_2000DPS << 3;
-    if (gyro->gyroRateKHz > GYRO_RATE_8_kHz) {
-        // use otherwise redundant LPF value to configure FCHOICE_B
-        // see REGISTER 27 – GYROSCOPE CONFIGURATION in datasheet
-        if (gyro->lpf==GYRO_LPF_NONE) {
-            raGyroConfigData |= FCB_8800_32;
-        } else {
-            raGyroConfigData |= FCB_3600_32;
-        }
-    }
-    spiBusWriteRegister(&gyro->bus, MPU_RA_GYRO_CONFIG, raGyroConfigData);
+    spiBusWriteRegister(&gyro->bus, MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3 | mpuGyroFCHOICE(gyro));
     delay(15);
     spiBusWriteRegister(&gyro->bus, MPU_RA_ACCEL_CONFIG, INV_FSR_16G << 3);
     delay(15);
-    spiBusWriteRegister(&gyro->bus, MPU_RA_CONFIG, gyro->lpf);
+    spiBusWriteRegister(&gyro->bus, MPU_RA_CONFIG, mpuGyroDLPF(gyro));
     delay(15);
     spiBusWriteRegister(&gyro->bus, MPU_RA_SMPLRT_DIV, gyro->mpuDividerDrops); // Get Divider Drops
     delay(100);

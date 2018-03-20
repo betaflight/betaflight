@@ -31,7 +31,7 @@ uint32_t gyroSetSampleRate(gyroDev_t *gyro, uint8_t lpf, uint8_t gyroSyncDenomin
 {
     float gyroSamplePeriod;
 
-    if (lpf == GYRO_LPF_256HZ || lpf == GYRO_LPF_NONE) {
+    if (lpf == GYRO_HARDWARE_LPF_NORMAL || lpf == GYRO_HARDWARE_LPF_EXPERIMENTAL) {
         if (gyro_use_32khz) {
             gyro->gyroRateKHz = GYRO_RATE_32_kHz;
             gyroSamplePeriod = 31.5f;
