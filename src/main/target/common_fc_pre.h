@@ -68,6 +68,7 @@
 #define I2C4_OVERCLOCK true
 #define USE_GYRO_DATA_ANALYSE
 #define USE_OVERCLOCK
+#define USE_ADC_INTERNAL
 #endif
 
 #if defined(STM32F4) || defined(STM32F7)
