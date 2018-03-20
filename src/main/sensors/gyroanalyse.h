@@ -20,7 +20,6 @@
 #include "common/time.h"
 #include "common/filter.h"
 
-#define GYRO_FFT_BIN_COUNT      16 // FFT_WINDOW_SIZE / 2
 typedef struct gyroFftData_s {
     float maxVal;
     uint16_t centerFreq;
