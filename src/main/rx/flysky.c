@@ -361,11 +361,13 @@ bool flySkyInit (const struct rxConfig_s *rxConfig, struct rxRuntimeConfig_s *rx
     IO_t bindPin = IOGetByTag(IO_TAG(BINDPLUG_PIN));
     IOInit(bindPin, OWNER_RX_BIND, 0);
     IOConfigGPIO(bindPin, IOCFG_IPU);
+#ifdef USE_RX_FLYSKY_SPI_LED	
     flySkyLedPin = IOGetByTag(IO_TAG(RX_FLYSKY_SPI_LED_PIN));
     IOInit(flySkyLedPin, OWNER_LED, 0); 
     IOConfigGPIO(flySkyLedPin, IOCFG_OUT_PP);
     IOLo(flySkyLedPin);
-    
+#endif /* USE_RX_FLYSKY_SPI_LED */
+
     uint8_t startRxChannel;
 
     if (protocol == RX_SPI_A7105_FLYSKY_2A) {
@@ -420,8 +422,10 @@ rx_spi_received_e flySkyDataReceived (uint8_t *payload)
 {
     rx_spi_received_e result = RX_SPI_RECEIVED_NONE;
     uint32_t timeStamp;
+#ifdef USE_RX_FLYSKY_SPI_LED
     static uint16_t led_rxlosscount = 0;
-	
+#endif /* USE_RX_FLYSKY_SPI_LED */	
+
     if (A7105RxTxFinished(&timeStamp)) {
         uint8_t modeReg = A7105ReadReg(A7105_00_MODE);
 
@@ -448,6 +452,7 @@ rx_spi_received_e flySkyDataReceived (uint8_t *payload)
 
     if (bound) {
         checkTimeout();
+#ifdef USE_RX_FLYSKY_SPI_LED
         if (result == RX_SPI_RECEIVED_DATA) {
             led_rxlosscount = 0;
             IOHi(flySkyLedPin);
@@ -461,6 +466,7 @@ rx_spi_received_e flySkyDataReceived (uint8_t *payload)
                     IOHi(flySkyLedPin);
             }
         }
+#endif /* USE_RX_FLYSKY_SPI_LED */
     } else {
         if ((micros() - timeLastBind) > BIND_TIMEOUT && rfChannelMap[0] != 0 && txId != 0) {
             result = RX_SPI_RECEIVED_BIND;
@@ -470,10 +476,12 @@ rx_spi_received_e flySkyDataReceived (uint8_t *payload)
             flySkyConfigMutable()->protocol = protocol;
             writeEEPROM();
         }
+#ifdef USE_RX_FLYSKY_SPI_LED
         if ((micros() % 500000) > 250000)
             IOLo(flySkyLedPin);
         else
             IOHi(flySkyLedPin);
+#endif /* USE_RX_FLYSKY_SPI_LED */
     }
 
     return result;
