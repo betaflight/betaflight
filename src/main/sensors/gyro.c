@@ -668,7 +668,7 @@ static uint16_t calculateNyquistAdjustedNotchHz(uint16_t notchHz, uint16_t notch
     return notchHz;
 }
 
-#ifdef USE_GYRO_SLEW_LIMITER
+#if defined(USE_GYRO_SLEW_LIMITER)
 void gyroInitSlewLimiter(gyroSensor_t *gyroSensor) {
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
@@ -730,7 +730,7 @@ static void gyroInitFilterDynamicNotch(gyroSensor_t *gyroSensor)
 
 static void gyroInitSensorFilters(gyroSensor_t *gyroSensor)
 {
-#ifdef USE_GYRO_SLEW_LIMITER
+#if defined(USE_GYRO_SLEW_LIMITER)
     gyroInitSlewLimiter(gyroSensor);
 #endif
 
@@ -875,7 +875,7 @@ STATIC_UNIT_TESTED void performGyroCalibration(gyroSensor_t *gyroSensor, uint8_t
 
 }
 
-#ifdef USE_GYRO_SLEW_LIMITER
+#if defined(USE_GYRO_SLEW_LIMITER)
 FAST_CODE int32_t gyroSlewLimiter(gyroSensor_t *gyroSensor, int axis)
 {
     int32_t ret = (int32_t)gyroSensor->gyroDev.gyroADCRaw[axis];
@@ -950,7 +950,7 @@ static FAST_CODE void gyroUpdateSensor(gyroSensor_t *gyroSensor, timeUs_t curren
     if (isGyroSensorCalibrationComplete(gyroSensor)) {
         // move 16-bit gyro data into 32-bit variables to avoid overflows in calculations
 
-#ifdef USE_GYRO_SLEW_LIMITER
+#if defined(USE_GYRO_SLEW_LIMITER)
         gyroSensor->gyroDev.gyroADC[X] = gyroSlewLimiter(gyroSensor, X) - gyroSensor->gyroDev.gyroZero[X];
         gyroSensor->gyroDev.gyroADC[Y] = gyroSlewLimiter(gyroSensor, Y) - gyroSensor->gyroDev.gyroZero[Y];
         gyroSensor->gyroDev.gyroADC[Z] = gyroSlewLimiter(gyroSensor, Z) - gyroSensor->gyroDev.gyroZero[Z];
