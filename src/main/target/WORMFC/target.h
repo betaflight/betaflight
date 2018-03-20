@@ -24,6 +24,9 @@
 #define LED0_PIN                PA15
 #define LED1_PIN                PC14
 
+#define USE_DSHOT_DMAR
+#define ENABLE_DSHOT_DMAR       true
+
 //BEEPER
 #define USE_BEEPER
 #define BEEPER_PIN              PB14
@@ -63,6 +66,8 @@
 #define INVERTER_PIN_UART3      PB12
 
 #define USE_VCP
+#define USB_MSC
+#define MSC_BUTTON              PB2
 #define VBUS_SENSING_PIN        PA9
 #define VBUS_SENSING_ENABLED
 
@@ -74,11 +79,15 @@
 #define UART3_RX_PIN            PB11
 #define UART3_TX_PIN            PB10
 
+#define USE_UART4
+#define UART4_RX_PIN            PA1
+#define UART4_TX_PIN            PA0
+
 #define USE_UART6
 #define UART6_RX_PIN            PC7
 #define UART6_TX_PIN            PC6
 
-#define SERIAL_PORT_COUNT       4 //VCP, USART1, USART3, USART6
+#define SERIAL_PORT_COUNT       5 //VCP, USART1, USART3, USART4, USART6
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
@@ -117,7 +126,7 @@
 //SD CARD
 #define USE_SDCARD
 #define USE_SDCARD_SDIO
-#define SDIO_DMA
+#define SDIO_DMA          DMA2_Stream3
 #define SDCARD_SPI_CS_PIN NONE //This is not used on SDIO, has to be kept for now to keep compiler happy
 #define SDCARD_DETECT_PIN PB15
 
@@ -126,5 +135,5 @@
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         (BIT(2))
 
-#define USABLE_TIMER_CHANNEL_COUNT 6
+#define USABLE_TIMER_CHANNEL_COUNT 7
 #define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(8))
