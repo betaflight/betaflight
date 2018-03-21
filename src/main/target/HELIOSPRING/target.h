@@ -25,6 +25,7 @@
 #define LED0_PIN                PB7
 
 #define BEEPER                  PC15
+#define BEEPER_INVERTED
 
 #define USE_GYRO
 #define USE_ACC
@@ -186,7 +187,7 @@
 #define VBAT_SCALE                     109
 
 #define CAMERA_CONTROL_PIN             PB6    // define dedicated camera_osd_control pin
-
+#define RSSI_ADC_PIN                   PA5
 
 #if defined(HELIO_RACE)
 #define HELIO_PROFILE_PITCH_Q 800
