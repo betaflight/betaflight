@@ -42,10 +42,15 @@ FAST_CODE float nullFilterApply(filter_t *filter, float input)
 
 // PT1 Low Pass filter
 
-void pt1FilterInit(pt1Filter_t *filter, uint8_t f_cut, float dT)
+float pt1FilterGain(uint8_t f_cut, float dT)
 {
-    float RC = 1.0f / ( 2.0f * M_PI_FLOAT * f_cut );
-    filter->k = dT / (RC + dT);
+    float RC = 1 / ( 2 * M_PI_FLOAT * f_cut);
+    return dT / (RC + dT);
+}
+
+void pt1FilterInit(pt1Filter_t *filter, float k)
+{
+    filter->k = k;
 }
 
 FAST_CODE float pt1FilterApply(pt1Filter_t *filter, float input)
@@ -245,6 +250,14 @@ FAST_CODE float biquadFilterApply(biquadFilter_t *filter, float input)
     return result;
 }
 
+FAST_CODE float biquadCascadeFilterApply(biquadFilterCascade_t *filter, float input)
+{
+    for (int i = 0; i < filter->sections; i++ ) {
+        input = biquadFilterApply(&filter->biquad[i], input);
+    }
+    return input;
+}
+
 /*
  * FIR filter
  */
@@ -342,6 +355,7 @@ float firFilterLastInput(const firFilter_t *filter)
     return filter->buf[index];
 }
 
+#if defined(USE_FIR_FILTER_DENOISE)
 void firFilterDenoiseInit(firFilterDenoise_t *filter, uint8_t gyroSoftLpfHz, uint16_t targetLooptime)
 {
     memset(filter, 0, sizeof(firFilterDenoise_t));
@@ -364,36 +378,54 @@ float firFilterDenoiseUpdate(firFilterDenoise_t *filter, float input)
         return filter->movingSum / ++filter->filledCount + 1;
     }
 }
+#endif
 
-#if defined(USE_GYRO_FAST_KALMAN)
-// Fast two-state Kalman
-void fastKalmanInit(fastKalman_t *filter, float q, float r, float p)
+// ledvinap's proposed RC+FIR2 Biquad-- 1st order IIR, RC filter k
+void biquadRCFIR2FilterInit(biquadFilter_t *filter, float k)
 {
-    filter->q     = q * 0.000001f; // add multiplier to make tuning easier
-    filter->r     = r * 0.001f;    // add multiplier to make tuning easier
-    filter->p     = p * 0.001f;    // add multiplier to make tuning easier
-    filter->x     = 0.0f;          // set initial value, can be zero if unknown
-    filter->lastX = 0.0f;          // set initial value, can be zero if unknown
-    filter->k     = 0.0f;          // kalman gain
+    filter->b0 = k / 2;
+    filter->b1 = k / 2;
+    filter->b2 = 0;
+    filter->a1 = -(1 - k);
+    filter->a2 = 0;
+}
+
+// rs2k's fast "kalman" filter
+void fastKalmanInit(fastKalman_t *filter, float k)
+{
+    filter->x     = 0.0f;  // set initial value, can be zero if unknown
+    filter->lastX = 0.0f;  // set initial value, can be zero if unknown
+    filter->k     = k;     // "kalman" gain - half of RC coefficient, calculated externally
 }
 
 FAST_CODE float fastKalmanUpdate(fastKalman_t *filter, float input)
 {
-    // project the state ahead using acceleration
     filter->x += (filter->x - filter->lastX);
-
-    // update last state
     filter->lastX = filter->x;
-
-    // prediction update
-    filter->p = filter->p + filter->q;
-
-    // measurement update
-    filter->k = filter->p / (filter->p + filter->r);
     filter->x += filter->k * (input - filter->x);
-    filter->p = (1.0f - filter->k) * filter->p;
-
     return filter->x;
 }
 
-#endif
+void lmaSmoothingInit(laggedMovingAverage_t *filter, uint8_t windowSize, float weight)
+{
+    filter->movingWindowIndex = 0;
+    filter->windowSize = windowSize;
+    filter->weight = weight;
+}
+
+FAST_CODE float lmaSmoothingUpdate(laggedMovingAverage_t *filter, float input)
+{
+
+    filter->movingSum -= filter->buf[filter->movingWindowIndex];
+    filter->buf[filter->movingWindowIndex] = input;
+    filter->movingSum += input;
+
+    uint8_t windowIndex = filter->movingWindowIndex;
+    if (++windowIndex >= filter->windowSize) {
+        filter->movingWindowIndex = 0;
+    } else {
+        filter->movingWindowIndex = windowIndex;
+    }
+
+    return input + (((filter->movingSum  / filter->windowSize) - input) * filter->weight);
+}
