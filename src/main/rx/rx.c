@@ -221,6 +221,8 @@ STATIC_UNIT_TESTED bool isPulseValid(uint16_t pulseDuration)
 #ifdef USE_SERIAL_RX
 bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
+    dbgPrintf(DBG_INIT, 1, "serialRxInit() provider %d\n", (int)rxConfig->serialrx_provider);
+
     bool enabled = false;
     switch (rxConfig->serialrx_provider) {
 #ifdef USE_SERIALRX_SPEKTRUM
@@ -286,6 +288,7 @@ bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
 
 void rxInit(void)
 {
+    dbgPrintf(DBG_RX, 0, "rxInit()\n");
     rxRuntimeConfig.rcReadRawFn = nullReadRawRC;
     rxRuntimeConfig.rcFrameStatusFn = nullFrameStatus;
     rxRuntimeConfig.rcProcessFrameFn = nullProcessFrame;
@@ -726,6 +729,7 @@ void updateRSSI(timeUs_t currentTimeUs)
 
 uint16_t getRssi(void)
 {
+    dbgPrintf(DBG_RX, 5, "getRssi %d\n", rssi);
     return rssi;
 }
 

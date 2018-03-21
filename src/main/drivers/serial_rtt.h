@@ -15,38 +15,10 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdbool.h>
-#include <stdint.h>
+#pragma once
 
-#include "platform.h"
-#include "debug.h"
+#include "drivers/serial.h"
 
-#include "fc/fc_init.h"
+#define RTT_SERIAL_CHANNEL 0
 
-#ifdef SEGGER_RTT
-#include "interface/cli.h"
-#include "drivers/serial_rtt.h"
-#endif /* SEGGER_RTT */
-
-#include "scheduler/scheduler.h"
-
-int main(void)
-{
-    dbgInit();
-    dbgPrintf(DBG_SYSTEM, 0, "**** Betaflight startup ****\n");
-
-    init();
-
-#if defined(SEGGER_RTT) && defined(SEGGER_RTT_CLI)
-    cliEnter(openRttSerial(), CLI_RTT);
-#endif /* SEGGER_RTT */
-
-    while (true) {
-        scheduler();
-        processLoopback();
-#ifdef SIMULATOR_BUILD
-        delayMicroseconds_real(50); // max rate 20kHz
-#endif
-    }
-    return 0;
-}
+extern serialPort_t *openRttSerial();

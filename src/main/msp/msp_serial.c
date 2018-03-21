@@ -424,7 +424,7 @@ static void mspProcessPendingRequest(mspPort_t * mspPort)
 
 #ifdef USE_CLI
         case MSP_PENDING_CLI:
-            cliEnter(mspPort->port);
+            cliEnter(mspPort->port, CLI_USB);
             break;
 #endif
 

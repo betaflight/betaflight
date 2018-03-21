@@ -291,6 +291,8 @@ void init(void)
     ensureEEPROMContainsValidData();
     readEEPROM();
 
+    dbgPrintf(DBG_INIT, 0, "Board: %s\n", systemConfig()->boardIdentifier);
+
     // !!TODO: Check to be removed when moving to generic targets
     if (strncasecmp(systemConfig()->boardIdentifier, TARGET_BOARD_IDENTIFIER, sizeof(TARGET_BOARD_IDENTIFIER))) {
         resetEEPROM();
@@ -301,6 +303,7 @@ void init(void)
     //i2cSetOverclock(masterConfig.i2c_overclock);
 
     debugMode = systemConfig()->debug_mode;
+    dbgPrintf(DBG_INIT, 2, "debugMode %s\n", debugModeNames[debugMode]);
 
     // Latch active features to be used for feature() in the remainder of init().
     latchActiveFeatures();
@@ -309,7 +312,9 @@ void init(void)
     targetPreInit();
 #endif
 
-#if !defined(UNIT_TEST) && !defined(USE_FAKE_LED)
+    dbgPrintf(DBG_INIT, 2, "Initialise LEDs\n");
+
+    #if !defined(UNIT_TEST) && !defined(USE_FAKE_LED)
     ledInit(statusLedConfig());
 #endif
     LED2_ON;
@@ -319,6 +324,7 @@ void init(void)
 #endif
 
 #if defined(USE_BUTTONS)
+    dbgPrintf(DBG_INIT, 2, "Initialise buttons\n");
 
     buttonsInit();
 
@@ -344,6 +350,8 @@ void init(void)
 #endif
     }
 #endif
+
+    dbgPrintf(DBG_INIT, 2, "Initialise rx bind\n");
 
 #if defined(USE_SPEKTRUM_BIND)
     if (feature(FEATURE_RX_SERIAL)) {
@@ -372,6 +380,8 @@ void init(void)
     busSwitchInit();
 #endif
 
+    dbgPrintf(DBG_INIT, 2, "Initialise serial\n");
+
 #if defined(USE_UART)
     uartPinConfigure(serialPinConfig());
 #endif
@@ -389,7 +399,12 @@ void init(void)
     serialInit(feature(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
 #endif
 
+    dbgPrintf(DBG_INIT, 2, "Initialise mixer\n");
+
     mixerInit(mixerConfig()->mixerMode);
+
+    dbgPrintf(DBG_INIT, 2, "Initialise output\n");
+
     mixerConfigureOutput();
 
     uint16_t idlePulse = motorConfig()->mincommand;
@@ -419,6 +434,7 @@ void init(void)
 #endif
 
 #ifdef USE_BEEPER
+    dbgPrintf(DBG_INIT, 2, "Initialise beeper\n");
     beeperInit(beeperDevConfig());
 #endif
 /* temp until PGs are implemented. */
@@ -431,6 +447,8 @@ void init(void)
 #else
 
 #ifdef USE_SPI
+    dbgPrintf(DBG_INIT, 1, "Initialise SPI\n");
+
     spiPinConfigure(spiPinConfig());
 
     // Initialize CS lines and keep them high
@@ -451,6 +469,8 @@ void init(void)
 #endif // USE_SPI
 
 #ifdef USE_I2C
+    dbgPrintf(DBG_INIT, 1, "Initialise I2C\n");
+
     i2cHardwareConfigure(i2cConfig());
 
     // Note: Unlike UARTs which are configured when client is present,
@@ -477,10 +497,14 @@ void init(void)
 #endif
 
 #ifdef USE_VTX_RTC6705
+    dbgPrintf(DBG_INIT, 2, "Initialise VTX\n");
+
     rtc6705IOInit();
 #endif
 
 #ifdef USE_CAMERA_CONTROL
+    dbgPrintf(DBG_INIT, 2, "Initialise Camera control\n");
+
     cameraControlInit();
 #endif
 
@@ -498,6 +522,8 @@ void init(void)
     }
 #endif
 
+    dbgPrintf(DBG_INIT, 2, "Initialise ADCs\n");
+
 #ifdef USE_ADC
     adcConfigMutable()->vbat.enabled = (batteryConfig()->voltageMeterSource == VOLTAGE_METER_ADC);
     adcConfigMutable()->current.enabled = (batteryConfig()->currentMeterSource == CURRENT_METER_ADC);
@@ -508,6 +534,8 @@ void init(void)
 #endif
 
     initBoardAlignment(boardAlignment());
+
+    dbgPrintf(DBG_INIT, 2, "Initialise sensors\n");
 
     if (!sensorsAutodetect()) {
         // if gyro was not detected due to whatever reason, notify and don't arm.
@@ -524,6 +552,8 @@ void init(void)
     accInitFilters();
 
 #ifdef USE_SERVOS
+    dbgPrintf(DBG_INIT, 2, "Initialise servos\n");
+
     servosInit();
     servoConfigureOutput();
     if (isMixerUsingServos()) {
@@ -534,10 +564,14 @@ void init(void)
 #endif
 
 #ifdef USE_PINIO
+    dbgPrintf(DBG_INIT, 2, "Initialise pinio\n");
+
     pinioInit(pinioConfig());
 #endif
 
 #ifdef USE_PINIOBOX
+    dbgPrintf(DBG_INIT, 2, "Initialise piniobox\n");
+
     pinioBoxInit(pinioBoxConfig());
 #endif
 
@@ -556,16 +590,24 @@ void init(void)
     LED0_OFF;
     LED1_OFF;
 
+    dbgPrintf(DBG_INIT, 2, "Initialise imu\n");
+
     imuInit();
+
+    dbgPrintf(DBG_INIT, 2, "Initialise msp\n");
 
     mspInit();
     mspSerialInit();
 
 #ifdef USE_CLI
+    dbgPrintf(DBG_INIT, 2, "Initialise CLI\n");
     cliInit(serialConfig());
 #endif
 
+    dbgPrintf(DBG_INIT, 2, "Initialise failsafe\n");
     failsafeInit();
+
+    dbgPrintf(DBG_INIT, 2, "Initialise rx\n");
 
     rxInit();
 
@@ -573,6 +615,7 @@ void init(void)
  * CMS, display devices and OSD
  */
 #ifdef USE_CMS
+    dbgPrintf(DBG_INIT, 2, "Initialise cms\n");
     cmsInit();
 #endif
 
@@ -584,7 +627,9 @@ void init(void)
     //The OSD need to be initialised after GYRO to avoid GYRO initialisation failure on some targets
 
     if (feature(FEATURE_OSD)) {
-#if defined(USE_MAX7456)
+        dbgPrintf(DBG_INIT, 2, "Initialise OSD\n");
+
+        #if defined(USE_MAX7456)
         // If there is a max7456 chip for the OSD then use it
         osdDisplayPort = max7456DisplayPortInit(vcdProfile());
 #elif defined(USE_OSD_OVER_MSP_DISPLAYPORT) // OSD over MSP; not supported (yet)
@@ -611,6 +656,8 @@ void init(void)
 #endif
 
 #ifdef USE_DASHBOARD
+    dbgPrintf(DBG_INIT, 2, "Initialise dashboard\n");
+
     // Dashbord will register with CMS by itself.
     if (feature(FEATURE_DASHBOARD)) {
         dashboardInit();
@@ -623,6 +670,7 @@ void init(void)
 #endif
 
 #ifdef USE_GPS
+    dbgPrintf(DBG_INIT, 2, "Initialise GPS\n");
     if (feature(FEATURE_GPS)) {
         gpsInit();
 #ifdef USE_NAV
@@ -632,6 +680,7 @@ void init(void)
 #endif
 
 #ifdef USE_LED_STRIP
+    dbgPrintf(DBG_INIT, 2, "Initialise LED strip\n");
     ledStripInit();
 
     if (feature(FEATURE_LED_STRIP)) {
@@ -640,28 +689,35 @@ void init(void)
 #endif
 
 #ifdef USE_TELEMETRY
+    dbgPrintf(DBG_INIT, 2, "Initialise telemetry\n");
     if (feature(FEATURE_TELEMETRY)) {
         telemetryInit();
     }
 #endif
 
 #ifdef USE_ESC_SENSOR
+    dbgPrintf(DBG_INIT, 2, "Initialise ESC sensor\n");
     if (feature(FEATURE_ESC_SENSOR)) {
         escSensorInit();
     }
 #endif
 
 #ifdef USB_DETECT_PIN
+    dbgPrintf(DBG_INIT, 2, "Initialise USB\n");
+
     usbCableDetectInit();
 #endif
 
 #ifdef USE_TRANSPONDER
+    dbgPrintf(DBG_INIT, 2, "Initialise transponder\n");
     if (feature(FEATURE_TRANSPONDER)) {
         transponderInit();
         transponderStartRepeating();
         systemState |= SYSTEM_STATE_TRANSPONDER_ENABLED;
     }
 #endif
+
+    dbgPrintf(DBG_INIT, 2, "Initialise FLASH\n");
 
 #ifdef USE_FLASHFS
 #if defined(USE_FLASH_M25P16)
@@ -671,6 +727,7 @@ void init(void)
 #endif
 
 #ifdef USE_SDCARD
+    dbgPrintf(DBG_INIT, 2, "Initialise Blackbox\n");
     if (blackboxConfig()->device == BLACKBOX_DEVICE_SDCARD) {
         if (sdcardConfig()->enabled) {
             sdcardInsertionDetectInit();
@@ -686,6 +743,8 @@ void init(void)
     blackboxInit();
 #endif
 
+    dbgPrintf(DBG_INIT, 2, "Initialise calibration\n");
+
     if (mixerConfig()->mixerMode == MIXER_GIMBAL) {
         accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
     }
@@ -695,6 +754,8 @@ void init(void)
 #endif
 
 #ifdef USE_VTX_CONTROL
+    dbgPrintf(DBG_INIT, 2, "Initialise VTX\n");
+
     vtxControlInit();
 
 #if defined(USE_VTX_COMMON)
@@ -736,9 +797,11 @@ void init(void)
     serialPrint(loopbackPort, "LOOPBACK\r\n");
 #endif
 
+    dbgPrintf(DBG_INIT, 2, "Initialise battery\n");
     batteryInit(); // always needs doing, regardless of features.
 
 #ifdef USE_DASHBOARD
+    dbgPrintf(DBG_INIT, 2, "Initialise dashboard\n");
     if (feature(FEATURE_DASHBOARD)) {
 #ifdef USE_OLED_GPS_DEBUG_PAGE_ONLY
         dashboardShowFixedPage(PAGE_GPS);

@@ -668,7 +668,7 @@ bool processRx(timeUs_t currentTimeUs)
     }
 #endif
 
-    if (!cliMode) {
+    if (cliMode == CLI_DISABLED) {
         updateAdjustmentStates();
         processRcAdjustments(currentControlRateProfile);
     }
@@ -885,7 +885,7 @@ static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
 #endif
 
 #ifdef USE_BLACKBOX
-    if (!cliMode && blackboxConfig()->device) {
+    if ((cliMode != CLI_USB) && blackboxConfig()->device) {
         blackboxUpdate(currentTimeUs);
     }
 #else

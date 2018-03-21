@@ -41,6 +41,8 @@ extern "C" {
     #include "sensors/acceleration.h"
     #include "sensors/gyro.h"
     #include "telemetry/telemetry.h"
+    #include "interface/cli.h"
+
 
     PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
     PG_REGISTER(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
@@ -55,7 +57,7 @@ extern "C" {
     float rcCommand[4];
     int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
     uint16_t averageSystemLoadPercent = 0;
-    uint8_t cliMode = 0;
+    cliMode_e cliMode = CLI_DISABLED;
     uint8_t debugMode = 0;
     int16_t debug[DEBUG16_VALUE_COUNT];
     pidProfile_t *currentPidProfile;
