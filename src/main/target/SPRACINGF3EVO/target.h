@@ -89,9 +89,8 @@
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
-// Disabled to make the target fit into flash
-//#define USE_SOFTSERIAL1
-//#define USE_SOFTSERIAL2
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
 
 #define SOFTSERIAL1_RX_PIN      PA6 // PWM 5
 #define SOFTSERIAL1_TX_PIN      PA7 // PWM 6
@@ -99,7 +98,7 @@
 #define SOFTSERIAL2_RX_PIN      PB0 // PWM 7
 #define SOFTSERIAL2_TX_PIN      PB1 // PWM 8
 
-#define SERIAL_PORT_COUNT       4
+#define SERIAL_PORT_COUNT       6
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN  PA15  // (HARDARE=0,PPM)
