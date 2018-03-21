@@ -265,5 +265,10 @@ void generateLedConfig(ledConfig_t *, char *, size_t) {}
 bool isSerialTransmitBufferEmpty(const serialPort_t *) {return true; }
 void serialWrite(serialPort_t *, uint8_t ch) { printf("%c", ch);}
 
+void serialSetCtrlLineStateCb(serialPort_t *, void (*)(void *, uint16_t ), void *) {}
+void serialSetCtrlLineStateDtrPin(serialPort_t *, ioTag_t ) {}
+void serialSetCtrlLineState(serialPort_t *, uint16_t ) {}
+
+void serialSetBaudRateCb(serialPort_t *, void (*)(serialPort_t *context, uint32_t baud), serialPort_t *) {}
 
 }

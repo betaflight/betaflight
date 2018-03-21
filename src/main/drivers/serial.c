@@ -86,6 +86,24 @@ void serialSetMode(serialPort_t *instance, portMode_e mode)
     instance->vTable->setMode(instance, mode);
 }
 
+void serialSetCtrlLineStateCb(serialPort_t *serialPort, void (*cb)(void *context, uint16_t ctrlLineState), void *context)
+{
+    // If a callback routine for changes to control line state is supported by the underlying
+    // driver, then set the callback.
+    if (serialPort->vTable->setCtrlLineStateCb) {
+        serialPort->vTable->setCtrlLineStateCb(serialPort, cb, context);
+    }
+}
+
+void serialSetBaudRateCb(serialPort_t *serialPort, void (*cb)(serialPort_t *context, uint32_t baud), serialPort_t *context)
+{
+    // If a callback routine for changes to baud rate is supported by the underlying
+    // driver, then set the callback.
+    if (serialPort->vTable->setBaudRateCb) {
+        serialPort->vTable->setBaudRateCb(serialPort, cb, context);
+    }
+}
+
 void serialWriteBufShim(void *instance, const uint8_t *data, int count)
 {
     serialWriteBuf((serialPort_t *)instance, data, count);
