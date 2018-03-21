@@ -388,6 +388,10 @@ endif
 ifneq ($(filter VCP,$(FEATURES)),)
 SRC += $(VCP_SRC)
 endif
+
+ifneq ($(filter MSC,$(FEATURES)),)
+SRC += $(MSC_SRC)
+endif
 # end target specific make file checks
 
 # Search path and source files for the ST stdperiph library

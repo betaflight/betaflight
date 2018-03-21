@@ -79,6 +79,7 @@ extern uint8_t __config_end;
 #include "drivers/light_led.h"
 #include "drivers/camera_control.h"
 #include "drivers/vtx_common.h"
+#include "drivers/usb_msc.h"
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
@@ -3706,6 +3707,33 @@ static void cliDiff(char *cmdline)
     printConfig(cmdline, true);
 }
 
+#ifdef USB_MSC
+static void cliMsc(char *cmdline)
+{
+    UNUSED(cmdline);
+
+    if (sdcard_isFunctional()) {
+        cliPrintHashLine("restarting in mass storage mode");
+        cliPrint("\r\nRebooting");
+        bufWriterFlush(cliWriter);
+        delay(1000);
+        waitForSerialPortToFinishTransmitting(cliPort);
+        stopPwmAllMotors();
+        if (mpuResetFn) {
+            mpuResetFn();
+        }
+
+        *((uint32_t *)0x2001FFF0) = 0xDDDD1010; // Same location as bootloader magic but different value
+
+        __disable_irq();
+        NVIC_SystemReset();
+    } else {
+        cliPrint("\r\nSD Card not present or failed to initialize!");
+        bufWriterFlush(cliWriter);
+    }
+}
+#endif
+
 typedef struct {
     const char *name;
 #ifndef MINIMAL_CLI
@@ -3824,6 +3852,9 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("version", "show version", NULL, cliVersion),
 #ifdef USE_VTX_CONTROL
     CLI_COMMAND_DEF("vtx", "vtx channels on switch", NULL, cliVtx),
+#endif
+#ifdef USB_MSC
+	CLI_COMMAND_DEF("msc", "switch into msc mode", NULL, cliMsc),
 #endif
 };
 

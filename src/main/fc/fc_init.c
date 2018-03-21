@@ -71,6 +71,9 @@
 #include "drivers/usb_io.h"
 #include "drivers/vtx_rtc6705.h"
 #include "drivers/vtx_common.h"
+#ifdef USB_MSC
+#include "drivers/usb_msc.h"
+#endif
 
 #include "fc/config.h"
 #include "fc/fc_init.h"
@@ -227,7 +230,7 @@ void spiPreInit(void)
 #ifdef MAX7456_SPI_CS_PIN
     spiPreInitCsOutPU(IO_TAG(MAX7456_SPI_CS_PIN)); // XXX 3.2 workaround for Kakute F4. See comment for spiPreInitCSOutPU.
 #endif
-#ifdef USE_SDCARD 
+#ifdef USE_SDCARD
     spiPreInitCs(sdcardConfig()->chipSelectTag);
 #endif
 #ifdef BMP280_CS_PIN
@@ -449,6 +452,19 @@ void init(void)
     spiInit(SPIDEV_4);
 #endif
 #endif // USE_SPI
+
+#ifdef USB_MSC
+/* MSC mode will start after init, but will not allow scheduler to run,
+ *  so there is no bottleneck in reading and writing data */
+    mscButtonInit();
+    if (*((uint32_t *)0x2001FFF0) == 0xDDDD1010 || mscButton()) {
+    		if (startMsc() == 0) {
+    			mscCheck();
+    		} else {
+    			NVIC_SystemReset();
+    		}
+    }
+#endif
 
 #ifdef USE_I2C
     i2cHardwareConfigure(i2cConfig());

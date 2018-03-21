@@ -59,6 +59,23 @@
 #define APP_TX_DATA_SIZE               2048  /* total size of the OUT (inbound to FC) buffer */
 #endif /* USE_USB_OTG_HS */
 
+/* MSC */
+#define MSC_IN_EP                    0x81
+#define MSC_OUT_EP                   0x01
+#ifdef USE_USB_OTG_HS
+#ifdef USE_ULPI_PHY
+#define MSC_MAX_PACKET               512
+#else
+#define MSC_MAX_PACKET               64
+#endif
+#else  /*USE_USB_OTG_FS*/
+#define MSC_MAX_PACKET                64
+#endif
+
+
+#define MSC_MEDIA_PACKET             4096
+/* END MSC */
+
 #define APP_FOPS                        VCP_fops
 /**
   * @}
