@@ -269,13 +269,8 @@ static const char * const lookupTableDtermLowpassType[] = {
     "PT1",
     "BIQUAD",
 #if defined(USE_FIR_FILTER_DENOISE)
-    "FIR",
-#else
-    NULL,
+    "FIR"
 #endif
-    NULL,
-    NULL,
-    NULL
 };
 
 
