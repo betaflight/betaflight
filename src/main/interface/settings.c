@@ -263,6 +263,18 @@ static const char * const lookupTableLowpassType[] = {
     "FAST_KALMAN"
 };
 
+static const char * const lookupTableDtermLowpassType[] = {
+    "PT1",
+    "BIQUAD",
+#if defined(USE_FIR_FILTER_DENOISE)
+    "FIR",
+#endif
+    NULL,
+    NULL,
+    NULL
+};
+
+
 static const char * const lookupTableFailsafe[] = {
     "AUTO-LAND", "DROP"
 };
@@ -342,6 +354,7 @@ const lookupTableEntry_t lookupTables[] = {
     { lookupTableRcInterpolation, sizeof(lookupTableRcInterpolation) / sizeof(char *) },
     { lookupTableRcInterpolationChannels, sizeof(lookupTableRcInterpolationChannels) / sizeof(char *) },
     { lookupTableLowpassType, sizeof(lookupTableLowpassType) / sizeof(char *) },
+    { lookupTableDtermLowpassType, sizeof(lookupTableDtermLowpassType) / sizeof(char *) },
     { lookupTableFailsafe, sizeof(lookupTableFailsafe) / sizeof(char *) },
     { lookupTableCrashRecovery, sizeof(lookupTableCrashRecovery) / sizeof(char *) },
 #ifdef USE_CAMERA_CONTROL
