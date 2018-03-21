@@ -257,6 +257,8 @@ static const char * const lookupTableLowpassType[] = {
     "BIQUAD",
 #if defined(USE_FIR_FILTER_DENOISE)
     "FIR",
+#else
+    NULL,
 #endif
     "BUTTERWORTH",
     "BIQUAD_RC_FIR2",
@@ -268,6 +270,8 @@ static const char * const lookupTableDtermLowpassType[] = {
     "BIQUAD",
 #if defined(USE_FIR_FILTER_DENOISE)
     "FIR",
+#else
+    NULL,
 #endif
     NULL,
     NULL,
@@ -674,7 +678,7 @@ const clivalue_t valueTable[] = {
 #endif
 
 // PG_PID_PROFILE
-    { "dterm_lowpass_type",         VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LOWPASS_TYPE }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_filter_type) },
+    { "dterm_lowpass_type",         VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_DTERM_LOWPASS_TYPE }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_filter_type) },
     { "dterm_lowpass_hz",           VAR_INT16  | PROFILE_VALUE, .config.minmax = { 0, 16000 }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_lowpass_hz) },
     { "dterm_lowpass2_hz",          VAR_INT16  | PROFILE_VALUE, .config.minmax = { 0, 16000 }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_lowpass2_hz) },
     { "dterm_notch_hz",             VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 0, 16000 }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_notch_hz) },
