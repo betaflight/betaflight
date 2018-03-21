@@ -141,6 +141,7 @@ void pgResetFn_rxConfig(rxConfig_t *rxConfig)
         .maxcheck = 1900,
         .rx_min_usec = RX_MIN_USEC,          // any of first 4 channels below this value will trigger rx loss detection
         .rx_max_usec = RX_MAX_USEC,         // any of first 4 channels above this value will trigger rx loss detection
+        .rssi_src_frame_errors = true,
         .rssi_channel = 0,
         .rssi_scale = RSSI_SCALE_DEFAULT,
         .rssi_invert = 0,
@@ -416,11 +417,19 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
 #endif
     {
         const uint8_t frameStatus = rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig);
-        if (frameStatus & RX_FRAME_COMPLETE) {
+        if (frameStatus & (RX_FRAME_COMPLETE | RX_FRAME_FAILSAFE | RX_FRAME_DROPPED)) {
             rxDataProcessingRequired = true;
             rxIsInFailsafeMode = (frameStatus & RX_FRAME_FAILSAFE) != 0;
-            rxSignalReceived = !rxIsInFailsafeMode;
+            rxSignalReceived = (frameStatus & RX_FRAME_COMPLETE) != 0;
             needRxSignalBefore = currentTimeUs + needRxSignalMaxDelayUs;
+
+            if (frameStatus & RX_FRAME_DROPPED) {
+            	// No (0%) signal
+            	setRssiUnfiltered(0, RSSI_SOURCE_FRAME_ERRORS);
+            } else {
+            	// Valid (100%) signal
+            	setRssiUnfiltered(RSSI_MAX_VALUE, RSSI_SOURCE_FRAME_ERRORS);
+            }
         }
 
         if (frameStatus & RX_FRAME_PROCESSING_REQUIRED) {
@@ -624,7 +633,6 @@ void setRssiFiltered(uint16_t newRssi, rssiSource_e source)
 }
 
 #define RSSI_SAMPLE_COUNT 16
-#define RSSI_MAX_VALUE 1023
 
 void setRssiUnfiltered(uint16_t rssiValue, rssiSource_e source)
 {
