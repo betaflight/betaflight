@@ -430,7 +430,8 @@ static float accelerationLimit(int axis, float currentPidSetpoint)
 // Based on 2DOF reference design (matlab)
 void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, timeUs_t currentTimeUs)
 {
-    static float previousRateError[2];
+    static float previousGyroRateFiltered[2];
+    static float previousPidSetpoint[2];
     const float tpaFactor = getThrottlePIDAttenuation();
     const float motorMixRange = getMotorMixRange();
     static timeUs_t crashDetectedAtUs;
@@ -447,6 +448,19 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
 
     // Dynamic d component, enable 2-DOF PID controller only for rate mode
     const float dynCd = flightModeFlags ? 0.0f : dtermSetpointWeight;
+
+    if (iterm_rotation) {
+        // rotate old I to the new coordinate system
+        const float gyroToAngle = dT * RAD;
+        for (int i = FD_ROLL; i <= FD_YAW; i++) {
+            int i_1 = ( i + 1 ) % 3;
+            int i_2 = ( i + 2 ) % 3;
+            float angle = gyro.gyroADCf[i] * gyroToAngle;
+            float newPID_I_i_1 = axisPID_I[i_1] + axisPID_I[i_2] * angle * Rki[i_1][i_2];
+            axisPID_I[i_2] -= axisPID_I[i_1] * angle * Rki[i_2][i_1];
+            axisPID_I[i_1] = newPID_I_i_1;
+        }
+    }
 
     // ----------PID controller----------
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
@@ -531,12 +545,15 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             if (relaxFactor > 0) {
                 transition = getRcDeflectionAbs(axis) * relaxFactor;
             }
-            const float rD = dynCd * transition * currentPidSetpoint - gyroRateFiltered;
             // Divide rate change by deltaT to get differential (ie dr/dt)
-            const float delta = (rD - previousRateError[axis]) / deltaT;
-
-            previousRateError[axis] = rD;
-
+            const float delta = (
+                dynCd * transition * ( currentPidSetpoint - previousPidSetpoint[axis] ) -
+                (gyroRateFiltered - previousGyroRateFiltered[axis])) / deltaT;
+            
+            previousPidSetpoint[axis] = currentPidSetpoint;
+            previousGyroRateFiltered[axis] = gyroRateFiltered;
+                
+                
             // if crash recovery is on and accelerometer enabled and there is no gyro overflow, then check for a crash
             // no point in trying to recover if the crash is so severe that the gyro overflows
             if (pidProfile->crash_recovery && !gyroOverflowDetected()) {
