@@ -765,9 +765,9 @@ void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensation)
     }
 
     motorMixRange = motorMixMax - motorMixMin;
-    if( throttle_boost > 0.0f) {
+    if( throttleBoost > 0.0f) {
         float throttlehpf = throttle - pt1FilterApply( &throttleLpf, throttle );
-        throttle = constrainf( throttle + throttle_boost * throttlehpf, 0.0f, 1.0f );
+        throttle = constrainf( throttle + throttleBoost * throttlehpf, 0.0f, 1.0f );
     }
 
     if (motorMixRange > 1.0f) {
