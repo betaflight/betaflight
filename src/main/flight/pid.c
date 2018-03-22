@@ -458,7 +458,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
 
     // rotate old I to the new coordinate system
     const float gyroToAngle = dT * RAD;
-    for (int i = FD_YAW; i != FD_ROLL; i--) {
+    for (int i = FD_ROLL; i <= FD_YAW; i++) {
         int i_1 = ( i + 1 ) % 3;
         int i_2 = ( i + 2 ) % 3;
         float angle = gyro.gyroADCf[i] * gyroToAngle;
