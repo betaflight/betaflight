@@ -269,7 +269,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
         pt1FilterInit(&ptermYawLowpass, pt1FilterGain(pidProfile->yaw_lowpass_hz, dT));
     }
 
-    pt1FilterInit( &throttlelpf, pt1FilterGain( pidProfile->throttle_boost_cutoff, targetPidLooptime * 0.000001f ));
+    pt1FilterInit( &throttleLpf, pt1FilterGain( pidProfile->throttle_boost_cutoff, dT ));
 }
 
 static FAST_RAM float Kp[3], Ki[3], Kd[3];
@@ -288,8 +288,8 @@ static FAST_RAM float crashGyroThreshold;
 static FAST_RAM float crashSetpointThreshold;
 static FAST_RAM float crashLimitYaw;
 static FAST_RAM float itermLimit;
-FAST_RAM float throttle_boost;
-pt1Filter_t throttlelpf;
+FAST_RAM float throttleBoost;
+pt1Filter_t throttleLpf;
 
 void pidInitConfig(const pidProfile_t *pidProfile)
 {
@@ -323,7 +323,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     crashSetpointThreshold = pidProfile->crash_setpoint_threshold;
     crashLimitYaw = pidProfile->crash_limit_yaw;
     itermLimit = pidProfile->itermLimit;
-    throttle_boost = pidProfile->throttle_boost * 0.1;
+    throttleBoost = pidProfile->throttle_boost * 0.1;
 }
 
 void pidInit(const pidProfile_t *pidProfile)
