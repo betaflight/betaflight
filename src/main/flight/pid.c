@@ -457,13 +457,14 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
     const float dynCd = flightModeFlags ? 0.0f : dtermSetpointWeight;
 
     // rotate old I to the new coordinate system
-    const float gyroToAngle = dT * 2.0f * 3.14159f / 360.0f;
-    for( int i = 3; i--; ) {
+    const float gyroToAngle = dT * RAD;
+    for (int i = FD_YAW; i != FD_ROLL; i--) {
         int i_1 = ( i + 1 ) % 3;
         int i_2 = ( i + 2 ) % 3;
         float angle = gyro.gyroADCf[i] * gyroToAngle;
-        axisPID_I[i_1] += axisPID_I[i_2] * angle;
+        float newPID_I_i_1 = axisPID_I[i_1] + axisPID_I[i_2] * angle;
         axisPID_I[i_2] -= axisPID_I[i_1] * angle;
+        axisPID_I[i_1] = newPID_I_i_1;
     }
 
     // ----------PID controller----------
