@@ -293,7 +293,11 @@ void pidInitConfig(const pidProfile_t *pidProfile)
         Kd[axis] = DTERM_SCALE * pidProfile->pid[axis].D;
     }
     dtermSetpointWeight = pidProfile->dtermSetpointWeight / 127.0f;
-    relaxFactor = 1.0f / (pidProfile->setpointRelaxRatio / 100.0f);
+    if (pidProfile->setpointRelaxRatio == 0) {
+        relaxFactor = 0;
+    } else {
+        relaxFactor = 100.0f / pidProfile->setpointRelaxRatio;
+    }
     levelGain = pidProfile->pid[PID_LEVEL].P / 10.0f;
     horizonGain = pidProfile->pid[PID_LEVEL].I / 10.0f;
     horizonTransition = (float)pidProfile->pid[PID_LEVEL].D;
@@ -522,9 +526,14 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             gyroRateFiltered = dtermLowpassApplyFn((filter_t *) &dtermLowpass[axis], gyroRateFiltered);
             gyroRateFiltered = dtermLowpass2ApplyFn((filter_t *) &dtermLowpass2[axis], gyroRateFiltered);
 
-            const float rD = dynCd * MIN(getRcDeflectionAbs(axis) * relaxFactor, 1.0f) * currentPidSetpoint - gyroRateFiltered;    // cr - y
+            // no transition if relaxFactor == 0
+            float transition = 1;
+            if (relaxFactor > 0) {
+                transition = getRcDeflectionAbs(axis) * relaxFactor;
+            }
+            const float rD = dynCd * transition * currentPidSetpoint - gyroRateFiltered;
             // Divide rate change by deltaT to get differential (ie dr/dt)
-            float delta = (rD - previousRateError[axis]) / deltaT;
+            const float delta = (rD - previousRateError[axis]) / deltaT;
 
             previousRateError[axis] = rD;
 
