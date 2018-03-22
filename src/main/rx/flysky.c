@@ -428,7 +428,7 @@ rx_spi_received_e flySkyDataReceived (uint8_t *payload)
     static bool ledOn = false;
 #endif /* USE_RX_FLYSKY_SPI_LED */
     rx_spi_received_e result = RX_SPI_RECEIVED_NONE;
-    uint32_t timeStamp;	
+    uint32_t timeStamp;
 
     if (A7105RxTxFinished(&timeStamp)) {
         uint8_t modeReg = A7105ReadReg(A7105_00_MODE);
