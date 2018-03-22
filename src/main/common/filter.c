@@ -420,11 +420,8 @@ FAST_CODE float lmaSmoothingUpdate(laggedMovingAverage_t *filter, float input)
     filter->buf[filter->movingWindowIndex] = input;
     filter->movingSum += input;
 
-    uint8_t windowIndex = filter->movingWindowIndex;
-    if (++windowIndex >= filter->windowSize) {
+    if (++filter->movingWindowIndex == filter->windowSize) {
         filter->movingWindowIndex = 0;
-    } else {
-        filter->movingWindowIndex = windowIndex;
     }
 
     return input + (((filter->movingSum  / filter->windowSize) - input) * filter->weight);

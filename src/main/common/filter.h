@@ -69,8 +69,8 @@ typedef struct fastKalman_s {
 } fastKalman_t;
 
 typedef struct laggedMovingAverage_s {
-    uint8_t movingWindowIndex;
-    uint8_t windowSize;
+    uint16_t movingWindowIndex;
+    uint16_t windowSize;
     float weight;
     float movingSum;
     float buf[MAX_LMA_WINDOW_SIZE];
