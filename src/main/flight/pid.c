@@ -323,7 +323,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     crashSetpointThreshold = pidProfile->crash_setpoint_threshold;
     crashLimitYaw = pidProfile->crash_limit_yaw;
     itermLimit = pidProfile->itermLimit;
-    throttleBoost = pidProfile->throttle_boost * 0.1;
+    throttleBoost = pidProfile->throttle_boost * 0.1f;
 }
 
 void pidInit(const pidProfile_t *pidProfile)
