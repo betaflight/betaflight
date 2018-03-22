@@ -273,6 +273,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 }
 
 static FAST_RAM float Kp[3], Ki[3], Kd[3];
+static FAST_RAM float Rki[3][3];
 static FAST_RAM float maxVelocity[3];
 static FAST_RAM float relaxFactor;
 static FAST_RAM float dtermSetpointWeight;
@@ -298,6 +299,10 @@ void pidInitConfig(const pidProfile_t *pidProfile)
         Ki[axis] = ITERM_SCALE * pidProfile->pid[axis].I;
         Kd[axis] = DTERM_SCALE * pidProfile->pid[axis].D;
     }
+    for (int axis1 = FD_ROLL; axis1 <= FD_YAW; axis1++)
+        for (int axis2 = FD_ROLL; axis2 <= FD_YAW; axis2++)
+            Rki[axis1][axis2] = Ki[axis1]/Ki[axis2];
+
     dtermSetpointWeight = pidProfile->dtermSetpointWeight / 127.0f;
     if (pidProfile->setpointRelaxRatio == 0) {
         relaxFactor = 0;
@@ -462,8 +467,8 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         int i_1 = ( i + 1 ) % 3;
         int i_2 = ( i + 2 ) % 3;
         float angle = gyro.gyroADCf[i] * gyroToAngle;
-        float newPID_I_i_1 = axisPID_I[i_1] + axisPID_I[i_2] * angle;
-        axisPID_I[i_2] -= axisPID_I[i_1] * angle;
+        float newPID_I_i_1 = axisPID_I[i_1] + axisPID_I[i_2] * angle * Rki[i_1][i_2];
+        axisPID_I[i_2] -= axisPID_I[i_1] * angle * Rki[i_2][i_1];
         axisPID_I[i_1] = newPID_I_i_1;
     }
 
