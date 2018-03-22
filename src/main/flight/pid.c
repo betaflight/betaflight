@@ -534,7 +534,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             }
             // Divide rate change by deltaT to get differential (ie dr/dt)
             const float delta = (
-                dynCd * transition * ( currentPidSetpoint - previousPidSetpoint[axis] ) -
+                dynCd * transition * (currentPidSetpoint - previousPidSetpoint[axis]) -
                 (gyroRateFiltered - previousGyroRateFiltered[axis])) / deltaT;
             
             previousPidSetpoint[axis] = currentPidSetpoint;
