@@ -319,72 +319,76 @@ static const char * const lookupOverclock[] = {
     };
 #endif
 
+#define LOOKUP_TABLE_ENTRY(name) name, ARRAYLEN(name)
+    
 const lookupTableEntry_t lookupTables[] = {
-    { lookupTableOffOn, sizeof(lookupTableOffOn) / sizeof(char *) },
-    { lookupTableUnit, sizeof(lookupTableUnit) / sizeof(char *) },
-    { lookupTableAlignment, sizeof(lookupTableAlignment) / sizeof(char *) },
+    { LOOKUP_TABLE_ENTRY(lookupTableOffOn) },
+    { LOOKUP_TABLE_ENTRY(lookupTableUnit) },
+    { LOOKUP_TABLE_ENTRY(lookupTableAlignment) },
 #ifdef USE_GPS
-    { lookupTableGPSProvider, sizeof(lookupTableGPSProvider) / sizeof(char *) },
-    { lookupTableGPSSBASMode, sizeof(lookupTableGPSSBASMode) / sizeof(char *) },
+    { LOOKUP_TABLE_ENTRY(lookupTableGPSProvider) },
+    { LOOKUP_TABLE_ENTRY(lookupTableGPSSBASMode) },
 #endif
 #ifdef USE_BLACKBOX
-    { lookupTableBlackboxDevice, sizeof(lookupTableBlackboxDevice) / sizeof(char *) },
-    { lookupTableBlackboxMode, sizeof(lookupTableBlackboxMode) / sizeof(char *) },
+    { LOOKUP_TABLE_ENTRY(lookupTableBlackboxDevice) },
+    { LOOKUP_TABLE_ENTRY(lookupTableBlackboxMode) },
 #endif
-    { currentMeterSourceNames, sizeof(currentMeterSourceNames) / sizeof(char *) },
-    { voltageMeterSourceNames, sizeof(voltageMeterSourceNames) / sizeof(char *) },
+    { LOOKUP_TABLE_ENTRY(currentMeterSourceNames) },
+    { LOOKUP_TABLE_ENTRY(voltageMeterSourceNames) },
 #ifdef USE_SERVOS
-    { lookupTableGimbalMode, sizeof(lookupTableGimbalMode) / sizeof(char *) },
+    { LOOKUP_TABLE_ENTRY(lookupTableGimbalMode) },
 #endif
 #ifdef USE_SERIAL_RX
-    { lookupTableSerialRX, sizeof(lookupTableSerialRX) / sizeof(char *) },
+    { LOOKUP_TABLE_ENTRY(lookupTableSerialRX) },
 #endif
 #ifdef USE_RX_SPI
-    { lookupTableRxSpi, sizeof(lookupTableRxSpi) / sizeof(char *) },
+    { LOOKUP_TABLE_ENTRY(lookupTableRxSpi) },
 #endif
-    { lookupTableGyroHardwareLpf, sizeof(lookupTableGyroHardwareLpf) / sizeof(char *) },
+    { LOOKUP_TABLE_ENTRY(lookupTableGyroHardwareLpf) },
 #if defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20689)
-    { lookupTableGyro32khzHardwareLpf, sizeof(lookupTableGyro32khzHardwareLpf) / sizeof(char *) },
+    { LOOKUP_TABLE_ENTRY(lookupTableGyro32khzHardwareLpf) },
 #endif
-    { lookupTableAccHardware, sizeof(lookupTableAccHardware) / sizeof(char *) },
+    { LOOKUP_TABLE_ENTRY(lookupTableAccHardware) },
 #ifdef USE_BARO
-    { lookupTableBaroHardware, sizeof(lookupTableBaroHardware) / sizeof(char *) },
+    { LOOKUP_TABLE_ENTRY(lookupTableBaroHardware) },
 #endif
 #ifdef USE_MAG
-    { lookupTableMagHardware, sizeof(lookupTableMagHardware) / sizeof(char *) },
+    { LOOKUP_TABLE_ENTRY(lookupTableMagHardware) },
 #endif
-    { debugModeNames, sizeof(debugModeNames) / sizeof(char *) },
-    { lookupTablePwmProtocol, sizeof(lookupTablePwmProtocol) / sizeof(char *) },
-    { lookupTableRcInterpolation, sizeof(lookupTableRcInterpolation) / sizeof(char *) },
-    { lookupTableRcInterpolationChannels, sizeof(lookupTableRcInterpolationChannels) / sizeof(char *) },
-    { lookupTableLowpassType, sizeof(lookupTableLowpassType) / sizeof(char *) },
-    { lookupTableDtermLowpassType, sizeof(lookupTableDtermLowpassType) / sizeof(char *) },
-    { lookupTableFailsafe, sizeof(lookupTableFailsafe) / sizeof(char *) },
-    { lookupTableCrashRecovery, sizeof(lookupTableCrashRecovery) / sizeof(char *) },
+    { LOOKUP_TABLE_ENTRY(debugModeNames) },
+    { LOOKUP_TABLE_ENTRY(lookupTablePwmProtocol) },
+    { LOOKUP_TABLE_ENTRY(lookupTableRcInterpolation) },
+    { LOOKUP_TABLE_ENTRY(lookupTableRcInterpolationChannels) },
+    { LOOKUP_TABLE_ENTRY(lookupTableLowpassType) },
+    { LOOKUP_TABLE_ENTRY(lookupTableDtermLowpassType) },
+    { LOOKUP_TABLE_ENTRY(lookupTableFailsafe) },
+    { LOOKUP_TABLE_ENTRY(lookupTableCrashRecovery) },
 #ifdef USE_CAMERA_CONTROL
-    { lookupTableCameraControlMode, sizeof(lookupTableCameraControlMode) / sizeof(char *) },
+    { LOOKUP_TABLE_ENTRY(lookupTableCameraControlMode) },
 #endif
-    { lookupTableBusType, sizeof(lookupTableBusType) / sizeof(char *) },
+    { LOOKUP_TABLE_ENTRY(lookupTableBusType) },
 #ifdef USE_MAX7456
-    { lookupTableMax7456Clock, sizeof(lookupTableMax7456Clock) / sizeof(char *) },
+    { LOOKUP_TABLE_ENTRY(lookupTableMax7456Clock) },
 #endif
 #ifdef USE_RANGEFINDER
-    { lookupTableRangefinderHardware, sizeof(lookupTableRangefinderHardware) / sizeof(char *) },
+    { LOOKUP_TABLE_ENTRY(lookupTableRangefinderHardware) },
 #endif
 #ifdef USE_GYRO_OVERFLOW_CHECK
-    { lookupTableGyroOverflowCheck, sizeof(lookupTableGyroOverflowCheck) / sizeof(char *) },
+    { LOOKUP_TABLE_ENTRY(lookupTableGyroOverflowCheck) },
 #endif
-    { lookupTableRatesType, sizeof(lookupTableRatesType) / sizeof(char *) },
+    { LOOKUP_TABLE_ENTRY(lookupTableRatesType) },
 #ifdef USE_OVERCLOCK
-    { lookupOverclock, sizeof(lookupOverclock) / sizeof(char *) },
+    { LOOKUP_TABLE_ENTRY(lookupOverclock) },
 #endif
 #ifdef USE_LED_STRIP
-    { lookupLedStripFormatRGB, sizeof(lookupLedStripFormatRGB) / sizeof(char *) },
+    { LOOKUP_TABLE_ENTRY(lookupLedStripFormatRGB) },
 #endif
 #ifdef USE_DUAL_GYRO
-    { lookupTableGyro, sizeof(lookupTableGyro) / sizeof(char *) },
+    { LOOKUP_TABLE_ENTRY(lookupTableGyro) },
 #endif
 };
+
+#undef LOOKUP_TABLE_ENTRY
 
 const clivalue_t valueTable[] = {
 // PG_GYRO_CONFIG
