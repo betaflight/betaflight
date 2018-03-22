@@ -319,72 +319,72 @@ static const char * const lookupOverclock[] = {
     };
 #endif
 
-#define LOOKUP_TABLE_ENTRY(name) name, ARRAYLEN(name)
+#define LOOKUP_TABLE_ENTRY(name) { name, ARRAYLEN(name) }
     
 const lookupTableEntry_t lookupTables[] = {
-    { LOOKUP_TABLE_ENTRY(lookupTableOffOn) },
-    { LOOKUP_TABLE_ENTRY(lookupTableUnit) },
-    { LOOKUP_TABLE_ENTRY(lookupTableAlignment) },
+    LOOKUP_TABLE_ENTRY(lookupTableOffOn),
+    LOOKUP_TABLE_ENTRY(lookupTableUnit),
+    LOOKUP_TABLE_ENTRY(lookupTableAlignment),
 #ifdef USE_GPS
-    { LOOKUP_TABLE_ENTRY(lookupTableGPSProvider) },
-    { LOOKUP_TABLE_ENTRY(lookupTableGPSSBASMode) },
+    LOOKUP_TABLE_ENTRY(lookupTableGPSProvider),
+    LOOKUP_TABLE_ENTRY(lookupTableGPSSBASMode),
 #endif
 #ifdef USE_BLACKBOX
-    { LOOKUP_TABLE_ENTRY(lookupTableBlackboxDevice) },
-    { LOOKUP_TABLE_ENTRY(lookupTableBlackboxMode) },
+    LOOKUP_TABLE_ENTRY(lookupTableBlackboxDevice),
+    LOOKUP_TABLE_ENTRY(lookupTableBlackboxMode),
 #endif
-    { LOOKUP_TABLE_ENTRY(currentMeterSourceNames) },
-    { LOOKUP_TABLE_ENTRY(voltageMeterSourceNames) },
+    LOOKUP_TABLE_ENTRY(currentMeterSourceNames),
+    LOOKUP_TABLE_ENTRY(voltageMeterSourceNames),
 #ifdef USE_SERVOS
-    { LOOKUP_TABLE_ENTRY(lookupTableGimbalMode) },
+    LOOKUP_TABLE_ENTRY(lookupTableGimbalMode),
 #endif
 #ifdef USE_SERIAL_RX
-    { LOOKUP_TABLE_ENTRY(lookupTableSerialRX) },
+    LOOKUP_TABLE_ENTRY(lookupTableSerialRX),
 #endif
 #ifdef USE_RX_SPI
-    { LOOKUP_TABLE_ENTRY(lookupTableRxSpi) },
+    LOOKUP_TABLE_ENTRY(lookupTableRxSpi),
 #endif
-    { LOOKUP_TABLE_ENTRY(lookupTableGyroHardwareLpf) },
+    LOOKUP_TABLE_ENTRY(lookupTableGyroHardwareLpf),
 #if defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20689)
-    { LOOKUP_TABLE_ENTRY(lookupTableGyro32khzHardwareLpf) },
+    LOOKUP_TABLE_ENTRY(lookupTableGyro32khzHardwareLpf),
 #endif
-    { LOOKUP_TABLE_ENTRY(lookupTableAccHardware) },
+    LOOKUP_TABLE_ENTRY(lookupTableAccHardware),
 #ifdef USE_BARO
-    { LOOKUP_TABLE_ENTRY(lookupTableBaroHardware) },
+    LOOKUP_TABLE_ENTRY(lookupTableBaroHardware),
 #endif
 #ifdef USE_MAG
-    { LOOKUP_TABLE_ENTRY(lookupTableMagHardware) },
+    LOOKUP_TABLE_ENTRY(lookupTableMagHardware),
 #endif
-    { LOOKUP_TABLE_ENTRY(debugModeNames) },
-    { LOOKUP_TABLE_ENTRY(lookupTablePwmProtocol) },
-    { LOOKUP_TABLE_ENTRY(lookupTableRcInterpolation) },
-    { LOOKUP_TABLE_ENTRY(lookupTableRcInterpolationChannels) },
-    { LOOKUP_TABLE_ENTRY(lookupTableLowpassType) },
-    { LOOKUP_TABLE_ENTRY(lookupTableDtermLowpassType) },
-    { LOOKUP_TABLE_ENTRY(lookupTableFailsafe) },
-    { LOOKUP_TABLE_ENTRY(lookupTableCrashRecovery) },
+    LOOKUP_TABLE_ENTRY(debugModeNames),
+    LOOKUP_TABLE_ENTRY(lookupTablePwmProtocol),
+    LOOKUP_TABLE_ENTRY(lookupTableRcInterpolation),
+    LOOKUP_TABLE_ENTRY(lookupTableRcInterpolationChannels),
+    LOOKUP_TABLE_ENTRY(lookupTableLowpassType),
+    LOOKUP_TABLE_ENTRY(lookupTableDtermLowpassType),
+    LOOKUP_TABLE_ENTRY(lookupTableFailsafe),
+    LOOKUP_TABLE_ENTRY(lookupTableCrashRecovery),
 #ifdef USE_CAMERA_CONTROL
-    { LOOKUP_TABLE_ENTRY(lookupTableCameraControlMode) },
+    LOOKUP_TABLE_ENTRY(lookupTableCameraControlMode),
 #endif
-    { LOOKUP_TABLE_ENTRY(lookupTableBusType) },
+    LOOKUP_TABLE_ENTRY(lookupTableBusType),
 #ifdef USE_MAX7456
-    { LOOKUP_TABLE_ENTRY(lookupTableMax7456Clock) },
+    LOOKUP_TABLE_ENTRY(lookupTableMax7456Clock),
 #endif
 #ifdef USE_RANGEFINDER
-    { LOOKUP_TABLE_ENTRY(lookupTableRangefinderHardware) },
+    LOOKUP_TABLE_ENTRY(lookupTableRangefinderHardware),
 #endif
 #ifdef USE_GYRO_OVERFLOW_CHECK
-    { LOOKUP_TABLE_ENTRY(lookupTableGyroOverflowCheck) },
+    LOOKUP_TABLE_ENTRY(lookupTableGyroOverflowCheck),
 #endif
-    { LOOKUP_TABLE_ENTRY(lookupTableRatesType) },
+    LOOKUP_TABLE_ENTRY(lookupTableRatesType),
 #ifdef USE_OVERCLOCK
-    { LOOKUP_TABLE_ENTRY(lookupOverclock) },
+    LOOKUP_TABLE_ENTRY(lookupOverclock),
 #endif
 #ifdef USE_LED_STRIP
-    { LOOKUP_TABLE_ENTRY(lookupLedStripFormatRGB) },
+    LOOKUP_TABLE_ENTRY(lookupLedStripFormatRGB),
 #endif
 #ifdef USE_DUAL_GYRO
-    { LOOKUP_TABLE_ENTRY(lookupTableGyro) },
+    LOOKUP_TABLE_ENTRY(lookupTableGyro),
 #endif
 };
 
