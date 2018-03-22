@@ -488,13 +488,15 @@ static void cliPrintVarRange(const clivalue_t *var)
     break;
     case (MODE_LOOKUP): {
         const lookupTableEntry_t *tableEntry = &lookupTables[var->config.lookup.tableIndex];
-        cliPrint("Allowed values:");
-        for (uint32_t i = 0; i < tableEntry->valueCount; i++) {
+        cliPrint("Allowed values: ");
+        bool firstEntry = true;
+        for (unsigned i = 0; i < tableEntry->valueCount; i++) {
             if (tableEntry->values[i]) {
-                cliPrintf(" %s", tableEntry->values[i]);
-                if (i + 1 < tableEntry->valueCount) {
-                    cliPrint(",");
+                if (!firstEntry) {
+                    cliPrint(", ");
                 }
+                cliPrintf("%s", tableEntry->values[i]);
+                firstEntry = false;
             }
         }
         cliPrintLinefeed();
