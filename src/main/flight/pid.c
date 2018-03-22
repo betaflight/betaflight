@@ -132,7 +132,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .crash_limit_yaw = 200,
         .itermLimit = 150,
         .throttle_boost = 0,
-        .throttle_boost_cutoff = 15
+        .throttle_boost_cutoff = 15,
+        .iterm_rotation = false                 
     );
 }
 
@@ -291,6 +292,7 @@ static FAST_RAM float crashLimitYaw;
 static FAST_RAM float itermLimit;
 FAST_RAM float throttleBoost;
 pt1Filter_t throttleLpf;
+static FAST_RAM bool  iterm_rotation;
 
 void pidInitConfig(const pidProfile_t *pidProfile)
 {
@@ -329,6 +331,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     crashLimitYaw = pidProfile->crash_limit_yaw;
     itermLimit = pidProfile->itermLimit;
     throttleBoost = pidProfile->throttle_boost * 0.1f;
+    iterm_rotation = pidProfile->iterm_rotation == 1;
 }
 
 void pidInit(const pidProfile_t *pidProfile)
@@ -461,15 +464,17 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
     // Dynamic d component, enable 2-DOF PID controller only for rate mode
     const float dynCd = flightModeFlags ? 0.0f : dtermSetpointWeight;
 
-    // rotate old I to the new coordinate system
-    const float gyroToAngle = dT * RAD;
-    for (int i = FD_ROLL; i <= FD_YAW; i++) {
-        int i_1 = ( i + 1 ) % 3;
-        int i_2 = ( i + 2 ) % 3;
-        float angle = gyro.gyroADCf[i] * gyroToAngle;
-        float newPID_I_i_1 = axisPID_I[i_1] + axisPID_I[i_2] * angle * Rki[i_1][i_2];
-        axisPID_I[i_2] -= axisPID_I[i_1] * angle * Rki[i_2][i_1];
-        axisPID_I[i_1] = newPID_I_i_1;
+    if (iterm_rotation) {
+        // rotate old I to the new coordinate system
+        const float gyroToAngle = dT * RAD;
+        for (int i = FD_ROLL; i <= FD_YAW; i++) {
+            int i_1 = ( i + 1 ) % 3;
+            int i_2 = ( i + 2 ) % 3;
+            float angle = gyro.gyroADCf[i] * gyroToAngle;
+            float newPID_I_i_1 = axisPID_I[i_1] + axisPID_I[i_2] * angle * Rki[i_1][i_2];
+            axisPID_I[i_2] -= axisPID_I[i_1] * angle * Rki[i_2][i_1];
+            axisPID_I[i_1] = newPID_I_i_1;
+        }
     }
 
     // ----------PID controller----------
