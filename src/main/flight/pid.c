@@ -269,9 +269,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
         pt1FilterInit(&ptermYawLowpass, pt1FilterGain(pidProfile->yaw_lowpass_hz, dT));
     }
 
-    float RC = 1.0f / ( 2.0f * M_PIf * pidProfile->throttle_boost_cutoff );
-    float k = targetPidLooptime * 0.000001f / (RC + targetPidLooptime * 0.000001f);
-    pt1FilterInit( &throttlelpf, k );
+    pt1FilterInit( &throttlelpf, pt1FilterGain( pidProfile->throttle_boost_cutoff, targetPidLooptime * 0.000001f ));
 }
 
 static FAST_RAM float Kp[3], Ki[3], Kd[3];

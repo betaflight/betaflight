@@ -108,7 +108,7 @@ typedef struct pidProfile_s {
     uint16_t itermLimit;
     uint16_t dterm_lowpass2_hz;                // Extra PT1 Filter on D in hz
     uint8_t throttle_boost;                 // how much should throttle be boosted during transient changes 0-100, 100 adds 10x hpf filtered throttle
-    uint8_t throttle_boost_cutoff;          // Which cutoff frequency to use for throttle boost. higher cutoffs keep the boost on for longer. Specified in hz
+    uint8_t throttle_boost_cutoff;          // Which cutoff frequency to use for throttle boost. higher cutoffs keep the boost on for shorter. Specified in hz.
     
 } pidProfile_t;
 
