@@ -2343,6 +2343,17 @@ static void cliGpsPassthrough(char *cmdline)
 }
 #endif
 
+#if defined(USE_GYRO_REGISTER_DUMP) && !defined(SIMULATOR_BUILD)
+static void cliDumpGyroRegisters(char *cmdline)
+{
+    tfp_printf("# WHO_AM_I    0x%X\r\n", gyroReadRegister(MPU_RA_WHO_AM_I));
+    tfp_printf("# CONFIG      0x%X\r\n", gyroReadRegister(MPU_RA_CONFIG));
+    tfp_printf("# GYRO_CONFIG 0x%X\r\n", gyroReadRegister(MPU_RA_GYRO_CONFIG));
+    UNUSED(cmdline);
+}
+#endif
+
+
 static int parseOutputIndex(char *pch, bool allowAllEscs) {
     int outputIndex = atoi(pch);
     if ((outputIndex >= 0) && (outputIndex < getMotorCount())) {
@@ -3804,6 +3815,9 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("get", "get variable value", "[name]", cliGet),
 #ifdef USE_GPS
     CLI_COMMAND_DEF("gpspassthrough", "passthrough gps to serial", NULL, cliGpsPassthrough),
+#endif
+#if defined(USE_GYRO_REGISTER_DUMP) && !defined(SIMULATOR_BUILD)
+    CLI_COMMAND_DEF("gyroregisters", "dump gyro config registers contents", NULL, cliDumpGyroRegisters),
 #endif
     CLI_COMMAND_DEF("help", NULL, NULL, cliHelp),
 #ifdef USE_LED_STRIP
