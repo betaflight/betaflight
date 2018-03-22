@@ -449,19 +449,6 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
     // Dynamic d component, enable 2-DOF PID controller only for rate mode
     const float dynCd = flightModeFlags ? 0.0f : dtermSetpointWeight;
 
-    if (iterm_rotation) {
-        // rotate old I to the new coordinate system
-        const float gyroToAngle = dT * RAD;
-        for (int i = FD_ROLL; i <= FD_YAW; i++) {
-            int i_1 = ( i + 1 ) % 3;
-            int i_2 = ( i + 2 ) % 3;
-            float angle = gyro.gyroADCf[i] * gyroToAngle;
-            float newPID_I_i_1 = axisPID_I[i_1] + axisPID_I[i_2] * angle * Rki[i_1][i_2];
-            axisPID_I[i_2] -= axisPID_I[i_1] * angle * Rki[i_2][i_1];
-            axisPID_I[i_1] = newPID_I_i_1;
-        }
-    }
-
     // ----------PID controller----------
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         float currentPidSetpoint = getSetpointRate(axis);
