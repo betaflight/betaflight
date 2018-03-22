@@ -85,7 +85,6 @@ typedef struct gyroConfig_s {
     uint16_t imuf_pitch_lpf_cutoff_hz;
     uint16_t imuf_roll_lpf_cutoff_hz;
     uint16_t imuf_yaw_lpf_cutoff_hz;
-    uint16_t imuf_dyn_gain;
 #else
     uint16_t gyro_filter_q;
     uint16_t gyro_filter_r;
@@ -119,5 +118,7 @@ int16_t gyroRateDps(int axis);
 bool gyroOverflowDetected(void);
 uint16_t gyroAbsRateDps(int axis);
 #ifdef USE_GYRO_IMUF9001
+uint32_t lastImufExtiTime;
+bool gyroIsSane(void);
 uint16_t returnGyroAlignmentForImuf9001(void);
 #endif
