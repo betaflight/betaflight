@@ -21,12 +21,12 @@
 #define USE_TARGET_CONFIG
 
 //Making it fit into flash:
+#undef USE_TELEMETRY_LTM
+
 #undef USE_RTC_TIME
 #undef USE_COPY_PROFILE_CMS_MENU
 #undef USE_RX_MSP
 
-
-#undef USE_COPY_PROFILE_CMS_MENU
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
