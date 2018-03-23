@@ -66,7 +66,6 @@
 #define INVERTER_PIN_UART3      PB12
 
 #define USE_VCP
-#define USB_MSC
 #define USB_CDC_HID
 #define VBUS_SENSING_PIN        PA9
 #define VBUS_SENSING_ENABLED

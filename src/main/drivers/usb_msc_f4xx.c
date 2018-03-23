@@ -26,7 +26,7 @@
 
 #include "platform.h"
 
-#ifdef USB_MSC
+#ifdef USE_USB_MSC
 
 #include "build/build_config.h"
 

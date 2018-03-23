@@ -71,7 +71,7 @@
 #include "drivers/usb_io.h"
 #include "drivers/vtx_rtc6705.h"
 #include "drivers/vtx_common.h"
-#ifdef USB_MSC
+#ifdef USE_USB_MSC
 #include "drivers/usb_msc.h"
 #endif
 
@@ -453,7 +453,7 @@ void init(void)
 #endif
 #endif // USE_SPI
 
-#ifdef USB_MSC
+#ifdef USE_USB_MSC
 /* MSC mode will start after init, but will not allow scheduler to run,
  *  so there is no bottleneck in reading and writing data */
     mscButtonInit();

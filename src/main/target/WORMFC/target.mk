@@ -16,5 +16,4 @@ TARGET_SRC += \
             drivers/sdcard_standard.c \
             io/asyncfatfs/asyncfatfs.c \
             io/asyncfatfs/fat_standard.c \
-            msc/usbd_storage_sdio.c \
-            msc/usbd_msc_desc.c
+            msc/usbd_storage_sdio.c
