@@ -327,6 +327,8 @@
 #define MSP_SET_RTC              246    //in message          Sets the RTC clock
 #define MSP_RTC                  247    //out message         Gets the RTC clock
 
-// additionnal advanced filter settings
-#define MSP_ADVANCED_FILTER_CONFIG 225         //out message
-#define MSP_SET_ADVANCED_FILTER_CONFIG 226     //in message
+// ButterFlight
+#define MSP_FAST_KALMAN          225    //out message
+#define MSP_SET_FAST_KALMAN      226    //in message
+#define MSP_IMUF_CONFIG          227    //out message
+#define MSP_SET_IMUF_CONFIG      228    //in message
