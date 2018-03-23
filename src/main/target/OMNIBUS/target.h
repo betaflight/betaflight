@@ -18,17 +18,19 @@
 #pragma once
 
 // Removed to make the firmware fit into flash (in descending order of priority):
-#undef USE_DSHOT_DMAR           // OMNIBUS (F3) does not benefit from burst Dshot
 #undef USE_GYRO_OVERFLOW_CHECK
 #undef USE_GYRO_BIQUAD_RC_FIR2
 
+#undef USE_SERIALRX_SUMH       // Graupner legacy protocol
 #undef USE_SERIALRX_XBUS
-#undef USE_TELEMETRY_LTM
 #undef USE_TELEMETRY_MAVLINK
+#undef USE_TELEMETRY_LTM
 
 #undef USE_RTC_TIME
 #undef USE_COPY_PROFILE_CMS_MENU
 #undef USE_RX_MSP
+
+#undef USE_DSHOT_DMAR           // OMNIBUS (F3) does not benefit from burst Dshot
 
 
 #define TARGET_BOARD_IDENTIFIER "OMNI" // https://en.wikipedia.org/wiki/Omnibus
