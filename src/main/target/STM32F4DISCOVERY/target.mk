@@ -8,5 +8,5 @@ TARGET_SRC = \
             drivers/accgyro/accgyro_spi_mpu6500.c
 
 TARGET_SRC += \
-			msc/usbd_storage_sd_spi.c \
+            msc/usbd_storage_sd_spi.c \
             msc/usbd_msc_desc.c
