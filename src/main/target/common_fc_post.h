@@ -106,3 +106,8 @@
 #if !defined(USE_SDCARD)
 #undef USE_USB_MSC
 #endif
+
+// Determine if the target could have a 32KHz capable gyro
+#if defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20689)
+#define USE_32K_CAPABLE_GYRO
+#endif
