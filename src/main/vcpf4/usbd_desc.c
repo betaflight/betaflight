@@ -52,7 +52,11 @@
 
 #define USBD_VID                        0x0483
 
+#ifdef USB_CDC_HID
+#define USBD_PID                        0x3256
+#else
 #define USBD_PID                        0x5740
+#endif
 
 /** @defgroup USB_String_Descriptors
   * @{
@@ -116,6 +120,26 @@ USBD_DEVICE USR_desc =
     #pragma data_alignment=4
   #endif
 #endif /* USB_OTG_HS_INTERNAL_DMA_ENABLED */
+#ifdef USB_CDC_HID
+/* USB Standard Device Descriptor */
+__ALIGN_BEGIN uint8_t USBD_DeviceDesc[USB_SIZ_DEVICE_DESC] __ALIGN_END =
+  {
+    0x12,                                  /*bLength */
+    USB_DEVICE_DESCRIPTOR_TYPE,            /*bDescriptorType*/
+    0x00, 0x02,                            /*bcdUSB */
+    0xEF,                                  /*bDeviceClass*/
+    0x02,                                  /*bDeviceSubClass*/
+    0x01,                                  /*bDeviceProtocol*/
+    USB_OTG_MAX_EP0_SIZE,                  /*bMaxPacketSize*/
+    LOBYTE(USBD_VID), HIBYTE(USBD_VID),    /*idVendor*/
+    LOBYTE(USBD_PID), HIBYTE(USBD_PID),    /*idProduct*/
+    0x00, 0x02,                            /*bcdDevice rel. 2.00*/
+    USBD_IDX_MFC_STR,                      /*Index of manufacturer  string*/
+    USBD_IDX_PRODUCT_STR,                  /*Index of product string*/
+    USBD_IDX_SERIAL_STR,                   /*Index of serial number string*/
+    USBD_CFG_MAX_NUM                       /*bNumConfigurations*/
+  } ; /* USB_DeviceDescriptor */
+#else
 /* USB Standard Device Descriptor */
 __ALIGN_BEGIN uint8_t USBD_DeviceDesc[USB_SIZ_DEVICE_DESC] __ALIGN_END =
   {
@@ -134,6 +158,7 @@ __ALIGN_BEGIN uint8_t USBD_DeviceDesc[USB_SIZ_DEVICE_DESC] __ALIGN_END =
     USBD_IDX_SERIAL_STR,                   /*Index of serial number string*/
     USBD_CFG_MAX_NUM                       /*bNumConfigurations*/
   } ; /* USB_DeviceDescriptor */
+#endif
 
 #ifdef USB_OTG_HS_INTERNAL_DMA_ENABLED
   #if defined ( __ICCARM__ ) /*!< IAR Compiler */

@@ -67,7 +67,7 @@
 
 #define USE_VCP
 #define USB_MSC
-#define MSC_BUTTON              PB2
+#define USB_CDC_HID
 #define VBUS_SENSING_PIN        PA9
 #define VBUS_SENSING_ENABLED
 
