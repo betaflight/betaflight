@@ -58,6 +58,7 @@
 #define MAX7456_DMA_IRQ_HANDLER_ID          DMA1_ST0_HANDLER
 
 #define USE_SDCARD
+#define USB_MSC
 
 #define SDCARD_DETECT_PIN       PC3
 #define SDCARD_DETECT_INVERTED
