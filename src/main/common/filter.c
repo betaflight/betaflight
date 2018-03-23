@@ -42,7 +42,7 @@ FAST_CODE float nullFilterApply(filter_t *filter, float input)
 
 // PT1 Low Pass filter
 
-float pt1FilterGain(uint8_t f_cut, float dT)
+float pt1FilterGain(uint16_t f_cut, float dT)
 {
     float RC = 1 / ( 2 * M_PI_FLOAT * f_cut);
     return dT / (RC + dT);

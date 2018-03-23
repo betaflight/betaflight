@@ -129,7 +129,7 @@ float lmaSmoothingUpdate(laggedMovingAverage_t *filter, float input);
 // not exactly correct, but very very close and much much faster
 #define filterGetNotchQApprox(centerFreq, cutoff)   ((float)(cutoff * centerFreq) / ((float)(centerFreq - cutoff) * (float)(centerFreq + cutoff)))
 
-float pt1FilterGain(uint8_t f_cut, float dT);
+float pt1FilterGain(uint16_t f_cut, float dT);
 void pt1FilterInit(pt1Filter_t *filter, float k);
 float pt1FilterApply(pt1Filter_t *filter, float input);
 
