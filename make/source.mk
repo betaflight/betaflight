@@ -75,6 +75,7 @@ COMMON_SRC = \
             pg/rx_pwm.c \
             pg/sdcard.c \
             pg/vcd.c \
+            pg/usb.c \
             scheduler/scheduler.c \
             sensors/adcinternal.c \
             sensors/battery.c \
