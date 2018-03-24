@@ -1265,17 +1265,23 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
         flyTime += deltaT;
         stats.armed_time += deltaT;
     } else if (osdStatsEnabled) {  // handle showing/hiding stats based on OSD disable switch position
-        if (IS_RC_MODE_ACTIVE(BOXOSD) && osdStatsVisible) {
-            osdStatsVisible = false;
-            displayClearScreen(osdDisplayPort);
-        } else if (!IS_RC_MODE_ACTIVE(BOXOSD)) {
-            if (!osdStatsVisible) {
-                osdStatsVisible = true;
-                osdStatsRefreshTimeUs = 0;
-            }
-            if (currentTimeUs >= osdStatsRefreshTimeUs) {
-                osdStatsRefreshTimeUs = currentTimeUs + REFRESH_1S;
-                osdShowStats(endBatteryVoltage);
+        if (displayIsGrabbed(osdDisplayPort)) {
+            osdStatsEnabled = false;
+            resumeRefreshAt = 0;
+            stats.armed_time = 0;
+        } else {
+            if (IS_RC_MODE_ACTIVE(BOXOSD) && osdStatsVisible) {
+                osdStatsVisible = false;
+                displayClearScreen(osdDisplayPort);
+            } else if (!IS_RC_MODE_ACTIVE(BOXOSD)) {
+                if (!osdStatsVisible) {
+                    osdStatsVisible = true;
+                    osdStatsRefreshTimeUs = 0;
+                }
+                if (currentTimeUs >= osdStatsRefreshTimeUs) {
+                    osdStatsRefreshTimeUs = currentTimeUs + REFRESH_1S;
+                    osdShowStats(endBatteryVoltage);
+                }
             }
         }
     }
