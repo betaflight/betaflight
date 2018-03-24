@@ -885,6 +885,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->enabled_stats[OSD_STAT_TIMER_1]         = false;
     osdConfig->enabled_stats[OSD_STAT_TIMER_2]         = true;
     osdConfig->enabled_stats[OSD_STAT_RTC_DATE_TIME]   = false;
+    osdConfig->enabled_stats[OSD_STAT_BATTERY]         = false;
 
     osdConfig->units = OSD_UNIT_METRIC;
 
@@ -1185,6 +1186,11 @@ static void osdShowStats(uint16_t endBatteryVoltage)
     if (osdConfig()->enabled_stats[OSD_STAT_END_BATTERY]) {
         tfp_sprintf(buff, "%d.%1d%c", endBatteryVoltage / 10, endBatteryVoltage % 10, SYM_VOLT);
         osdDisplayStatisticLabel(top++, "END BATTERY", buff);
+    }
+
+    if (osdConfig()->enabled_stats[OSD_STAT_BATTERY]) {
+        tfp_sprintf(buff, "%d.%1d%c", getBatteryVoltage() / 10, getBatteryVoltage() % 10, SYM_VOLT);
+        osdDisplayStatisticLabel(top++, "BATTERY", buff);
     }
 
     if (osdConfig()->enabled_stats[OSD_STAT_MIN_RSSI]) {
