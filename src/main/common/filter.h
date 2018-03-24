@@ -116,7 +116,7 @@ int biquadFilterLpfCascadeInit(biquadFilter_t *sections, int order, float filter
 float biquadFilterApplyDF1(biquadFilter_t *filter, float input);
 float biquadFilterApply(biquadFilter_t *filter, float input);
 float biquadCascadeFilterApply(biquadFilterCascade_t *filter, float input);
-float filterGetNotchQ(uint16_t centerFreq, uint16_t cutoff);
+float filterGetNotchQ(float centerFreq, float cutoffFreq);
 
 void biquadRCFIR2FilterInit(biquadFilter_t *filter, float k);
 
@@ -125,9 +125,6 @@ float fastKalmanUpdate(fastKalman_t *filter, float input);
 
 void lmaSmoothingInit(laggedMovingAverage_t *filter, uint8_t windowSize, float weight);
 float lmaSmoothingUpdate(laggedMovingAverage_t *filter, float input);
-
-// not exactly correct, but very very close and much much faster
-#define filterGetNotchQApprox(centerFreq, cutoff)   ((float)(cutoff * centerFreq) / ((float)(centerFreq - cutoff) * (float)(centerFreq + cutoff)))
 
 float pt1FilterGain(uint16_t f_cut, float dT);
 void pt1FilterInit(pt1Filter_t *filter, float k);
