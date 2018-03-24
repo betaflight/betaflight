@@ -85,7 +85,7 @@
 
 #include "telemetry/telemetry.h"
 
-#ifdef USB_CDC_HID
+#ifdef USE_USB_CDC_HID
 //TODO: Make it platform independent in the future
 #include "vcpf4/usbd_cdc_vcp.h"
 #include "usbd_hid_core.h"
@@ -145,7 +145,7 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
 
     isRXDataNew = true;
 
-#ifdef USB_CDC_HID
+#ifdef USE_USB_CDC_HID
     if (!ARMING_FLAG(ARMED)) {
         int8_t report[8];
         for (int i = 0; i < 8; i++) {
