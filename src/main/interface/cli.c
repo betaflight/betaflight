@@ -3723,7 +3723,7 @@ static void cliDiff(char *cmdline)
     printConfig(cmdline, true);
 }
 
-#ifdef USB_MSC
+#ifdef USE_USB_MSC
 static void cliMsc(char *cmdline)
 {
     UNUSED(cmdline);
@@ -3872,7 +3872,7 @@ const clicmd_t cmdTable[] = {
 #ifdef USE_VTX_CONTROL
     CLI_COMMAND_DEF("vtx", "vtx channels on switch", NULL, cliVtx),
 #endif
-#ifdef USB_MSC
+#ifdef USE_USB_MSC
 	CLI_COMMAND_DEF("msc", "switch into msc mode", NULL, cliMsc),
 #endif
 };

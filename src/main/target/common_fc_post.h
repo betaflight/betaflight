@@ -102,3 +102,7 @@
 #ifndef USE_ADC
 #undef USE_ADC_INTERNAL
 #endif
+
+#if !defined(USE_SDCARD)
+#undef USE_USB_MSC
+#endif
