@@ -274,7 +274,6 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 }
 
 static FAST_RAM float Kp[3], Ki[3], Kd[3];
-static FAST_RAM float Rki[3][3];
 static FAST_RAM float maxVelocity[3];
 static FAST_RAM float relaxFactor;
 static FAST_RAM float dtermSetpointWeight;
@@ -292,7 +291,7 @@ static FAST_RAM float crashLimitYaw;
 static FAST_RAM float itermLimit;
 FAST_RAM float throttleBoost;
 pt1Filter_t throttleLpf;
-static FAST_RAM bool  iterm_rotation;
+static FAST_RAM bool itermRotation;
 
 void pidInitConfig(const pidProfile_t *pidProfile)
 {
@@ -301,9 +300,6 @@ void pidInitConfig(const pidProfile_t *pidProfile)
         Ki[axis] = ITERM_SCALE * pidProfile->pid[axis].I;
         Kd[axis] = DTERM_SCALE * pidProfile->pid[axis].D;
     }
-    for (int axis1 = FD_ROLL; axis1 <= FD_YAW; axis1++)
-        for (int axis2 = FD_ROLL; axis2 <= FD_YAW; axis2++)
-            Rki[axis1][axis2] = Ki[axis1]/Ki[axis2];
 
     dtermSetpointWeight = pidProfile->dtermSetpointWeight / 127.0f;
     if (pidProfile->setpointRelaxRatio == 0) {
@@ -331,7 +327,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     crashLimitYaw = pidProfile->crash_limit_yaw;
     itermLimit = pidProfile->itermLimit;
     throttleBoost = pidProfile->throttle_boost * 0.1f;
-    iterm_rotation = pidProfile->iterm_rotation == 1;
+    itermRotation = pidProfile->iterm_rotation == 1;
 }
 
 void pidInit(const pidProfile_t *pidProfile)
@@ -464,15 +460,15 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
     // Dynamic d component, enable 2-DOF PID controller only for rate mode
     const float dynCd = flightModeFlags ? 0.0f : dtermSetpointWeight;
 
-    if (iterm_rotation) {
+    if (itermRotation) {
         // rotate old I to the new coordinate system
-        const float gyroToAngle = dT * RAD;
+        const float gyroToAngle = deltaT * RAD;
         for (int i = FD_ROLL; i <= FD_YAW; i++) {
-            int i_1 = ( i + 1 ) % 3;
-            int i_2 = ( i + 2 ) % 3;
+            int i_1 = (i + 1) % 3;
+            int i_2 = (i + 2) % 3;
             float angle = gyro.gyroADCf[i] * gyroToAngle;
-            float newPID_I_i_1 = axisPID_I[i_1] + axisPID_I[i_2] * angle * Rki[i_1][i_2];
-            axisPID_I[i_2] -= axisPID_I[i_1] * angle * Rki[i_2][i_1];
+            float newPID_I_i_1 = axisPID_I[i_1] + axisPID_I[i_2] * angle;
+            axisPID_I[i_2] -= axisPID_I[i_1] * angle;
             axisPID_I[i_1] = newPID_I_i_1;
         }
     }
