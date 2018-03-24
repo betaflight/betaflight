@@ -123,6 +123,7 @@ extern uint8_t __config_end;
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/rx_pwm.h"
+#include "pg/timer.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
@@ -3541,6 +3542,181 @@ static void cliDma(char* cmdLine)
 }
 #endif /* USE_RESOURCE_MGMT */
 
+#ifdef USE_TIMER_MGMT
+
+static void printTimer(uint8_t dumpMask)
+{
+    char buffer[12];
+    
+    cliPrintLine("# examples: ");
+    const char *format = "timer TIM%d_CH%d%s %c%02d %s";
+    cliPrint("#");
+#if defined(STM32F7) || defined(STM32F4)
+    const char *dmaFormat = "DMA%d_ST%d CH%d";
+    cliPrintLinef(format, 1, 1, "", 'A', 1, "DMA1_ST1 CH1 (or NONE)");
+#elif defined(STM32F3)
+    const char *dmaFormat = "DMA%d_CH%d";
+    cliPrintLinef(format, 1, 1, "", 'A', 1, "DMA1_CH1 (or NONE)");
+#else
+#error "No format specified for this CPU for outputting timer values"
+#endif
+    const char *formatUnassigned = "timer TIM%d_CH%d NONE";
+    cliPrint("#");
+    cliPrintLinef(formatUnassigned, 1, 1);
+    
+    for (unsigned int i = 0; i < TIMER_CHANNEL_COUNT; i++) {
+
+        const timerTag_t timerTag = timerTags[i];
+        const uint8_t timer = TIMER_TAG_NO(timerTag);
+        const uint8_t channel = TIMER_TAG_CHANNEL_NO(timerTag);
+        const bool nChannel = timerChannelConfig(i)->nChannel;
+        const ioTag_t ioTag = timerChannelConfig(i)->ioTag;
+
+        if (!ioTag) {
+            if (!(dumpMask & HIDE_UNUSED)) {
+                cliDumpPrintLinef(dumpMask, false, formatUnassigned, timer, channel);
+            }
+        } else {
+            memset(buffer, 0, sizeof(buffer));
+            if (timerChannelConfig(i)->dmaIdentifier) {
+                tfp_sprintf(buffer,
+                    dmaFormat, 
+                    DMA_DEVICE_NO(timerChannelConfig(i)->dmaIdentifier),
+                    DMA_DEVICE_INDEX(timerChannelConfig(i)->dmaIdentifier)
+#if defined(STM32F7) || defined(STM32F4)
+                    , timerChannelConfig(i)->dmaChannel
+#endif
+                    );
+            } else {
+                tfp_sprintf(buffer, "%s", "NONE");
+            }
+            
+            cliDumpPrintLinef(dumpMask, false, format, 
+                timer, 
+                channel,
+                (nChannel) ? "N" : "",
+                IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag),
+                buffer
+                );
+        }
+    }
+}
+
+static void cliTimer(char *cmdline)
+{
+    int len = strlen(cmdline);
+
+    if (len == 0) {
+        printTimer(DUMP_MASTER | HIDE_UNUSED);
+        return;
+    } else if (strncasecmp(cmdline, "list", len) == 0) {
+        printTimer(DUMP_MASTER);
+        return;
+    }
+    
+    char *pch = NULL;
+    char *saveptr;
+    char buffer[20];
+    
+    memset(buffer, 0, sizeof(buffer));
+    timerTag_t timerTag = 0;
+    
+    const char *timChformat = "tim%d_ch%d%s";
+    unsigned nChannel = false;
+    unsigned timerChannelIndex = 0;
+    
+    pch = strtok_r(cmdline, " ", &saveptr);
+    if (pch) {
+        for (unsigned i = 0; i < TIMER_CHANNEL_COUNT; i++) {
+            const uint8_t timer = TIMER_TAG_NO(timerTags[i]);
+            const uint8_t channel = TIMER_TAG_CHANNEL_NO(timerTags[i]);    
+
+            for(nChannel = 0; nChannel <= 1; nChannel++) {
+                tfp_sprintf(buffer, timChformat, timer, channel, nChannel ? "N" : "");
+
+                if (strcasecmp(pch, buffer) == 0) {
+                    timerTag = timerTags[i];
+                    timerChannelIndex = i;
+                    break;
+                }
+            }
+
+            if (timerTag) {
+                break;
+            }
+        }
+    }
+
+    if (!timerTag) {
+        goto error;
+    }    
+    
+    ioTag_t ioTag = 0;
+    pch = strtok_r(NULL, " ", &saveptr);
+    if (!pch || !(strToPin(pch, &ioTag) && IOGetByTag(ioTag))) {
+        goto error;
+    }
+
+#if defined(STM32F7) || defined(STM32F4)
+    uint8_t dmaChannel = 0;
+#endif
+    dmaIdentifier_e dmaIdentifier = 0;
+    memset(buffer, 0, sizeof(buffer));
+    pch = strtok_r(NULL, " ", &saveptr);
+    if (pch) {
+        if (strcasecmp(pch, "NONE") == 0) {
+            goto success;
+        } else {
+            for (int i = 1; i <= DMA_LAST_HANDLER; i++) {
+                tfp_sprintf(buffer, DMA_INPUT_STRING, DMA_DEVICE_NO(i), DMA_DEVICE_INDEX(i));
+
+                if (strcasecmp(pch, buffer) == 0) {
+                    dmaIdentifier = i;
+                    break;
+                }
+            }    
+        }
+    } 
+
+    if (!dmaIdentifier) {
+        goto error;
+    }  
+
+#if defined(STM32F7) || defined(STM32F4)
+    memset(buffer, 0, sizeof(buffer));
+    pch = strtok_r(NULL, " ", &saveptr);
+    if (pch) {
+        for (int i = 0; i < 8; i++) {
+            tfp_sprintf(buffer, "CH%d", i);
+            if (strcasecmp(pch, buffer) == 0) {
+                dmaChannel = i;
+                break;
+            }
+        }    
+    } else {
+        goto error;
+    }
+
+#endif
+    
+success:
+    timerChannelConfigMutable(timerChannelIndex)->ioTag = ioTag;
+    timerChannelConfigMutable(timerChannelIndex)->nChannel = nChannel;
+
+    timerChannelConfigMutable(timerChannelIndex)->dmaIdentifier = dmaIdentifier;
+
+#if defined(STM32F7) || defined(STM32F4)
+    timerChannelConfigMutable(timerChannelIndex)->dmaChannel = dmaChannel;
+#endif
+
+    cliPrintLine("Success");
+    return;
+    
+error:
+    cliShowParseError();
+}
+#endif
+
 static void backupConfigs(void)
 {
     // make copies of configs to do differencing
@@ -3843,6 +4019,9 @@ const clicmd_t cmdTable[] = {
 #ifdef USE_RESOURCE_MGMT
     CLI_COMMAND_DEF("resource", "show/set resources", NULL, cliResource),
     CLI_COMMAND_DEF("dma", "list dma utilisation", NULL, cliDma),
+#ifdef USE_TIMER_MGMT
+    CLI_COMMAND_DEF("timer", "show timer configuration", NULL, cliTimer),
+#endif
 #endif
     CLI_COMMAND_DEF("rxfail", "show/set rx failsafe settings", NULL, cliRxFailsafe),
     CLI_COMMAND_DEF("rxrange", "configure rx channel ranges", NULL, cliRxRange),

@@ -22,6 +22,7 @@
 #include "stm32f4xx.h"
 #include "rcc.h"
 #include "timer.h"
+#include "timer_def.h"
 
 const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
     { .TIMx = TIM1,  .rcc = RCC_APB2(TIM1),  .inputIrq = TIM1_CC_IRQn},
@@ -94,4 +95,25 @@ uint32_t timerClock(TIM_TypeDef *tim)
 #else
     #error "No timer clock defined correctly for MCU"
 #endif
+}
+
+uint8_t timerAlternateFunction(const timerTag_t timerTag, const ioTag_t ioTag)
+{
+    UNUSED(ioTag);
+    const uint8_t timerAF[] = {
+        0, // No timer
+        GPIO_AF_TIM1, // TIM1
+        GPIO_AF_TIM2, // TIM2
+        GPIO_AF_TIM3, // TIM3
+        GPIO_AF_TIM4, // TIM4
+        GPIO_AF_TIM5, // TIM5
+        0, // TIM6
+        0, // TIM7
+        GPIO_AF_TIM8, // TIM8
+        GPIO_AF_TIM9, // TIM9
+        GPIO_AF_TIM10, // TIM10
+        GPIO_AF_TIM11  // TIM11
+    };
+    const uint8_t timer = TIMER_TAG_NO(timerTag);
+    return timerAF[timer >= ARRAYLEN(timerAF) ? 0 : timer];
 }
