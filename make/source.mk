@@ -59,6 +59,7 @@ COMMON_SRC = \
             interface/msp.c \
             interface/msp_box.c \
             interface/tramp_protocol.c \
+            interface/smartaudio_protocol.c \
             io/beeper.c \
             io/piniobox.c \
             io/serial.c \
