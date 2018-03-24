@@ -31,7 +31,7 @@
   */
 #define USBD_CFG_MAX_NUM                1
 #define USBD_ITF_MAX_NUM                1
-#define USB_MAX_STR_DESC_SIZ            255
+#define USB_MAX_STR_DESC_SIZ            50
 
 /** @defgroup USB_VCP_Class_Layer_Parameter
   * @{
@@ -39,9 +39,6 @@
 #define CDC_IN_EP                       0x81  /* EP1 for data IN */
 #define CDC_OUT_EP                      0x01  /* EP1 for data OUT */
 #define CDC_CMD_EP                      0x82  /* EP2 for CDC commands */
-
-#define HID_IN_EP                       0x83
-#define HID_IN_PACKET                   8
 
 /* CDC Endpoints parameters: you can fine tune these values depending on the needed baudrates and performance. */
 #ifdef USE_USB_OTG_HS
