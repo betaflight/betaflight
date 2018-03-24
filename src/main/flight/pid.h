@@ -145,5 +145,5 @@ void pidInit(const pidProfile_t *pidProfile);
 void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex);
 bool crashRecoveryModeActive(void);
 
-FAST_RAM float   throttleBoost;
+FAST_RAM float throttleBoost;
 pt1Filter_t throttleLpf;
