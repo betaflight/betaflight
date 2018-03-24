@@ -19,6 +19,7 @@
 
 #include <stdbool.h>
 #include "common/time.h"
+#include "common/filter.h"
 #include "pg/pg.h"
 
 #define MAX_PID_PROCESS_DENOM       16
@@ -106,6 +107,9 @@ typedef struct pidProfile_s {
     uint16_t crash_limit_yaw;               // limits yaw errorRate, so crashes don't cause huge throttle increase
     uint16_t itermLimit;
     uint16_t dterm_lowpass2_hz;                // Extra PT1 Filter on D in hz
+    uint8_t throttle_boost;                 // how much should throttle be boosted during transient changes 0-100, 100 adds 10x hpf filtered throttle
+    uint8_t throttle_boost_cutoff;          // Which cutoff frequency to use for throttle boost. higher cutoffs keep the boost on for shorter. Specified in hz.
+    
 } pidProfile_t;
 
 #ifndef USE_OSD_SLAVE
@@ -140,3 +144,6 @@ void pidInitConfig(const pidProfile_t *pidProfile);
 void pidInit(const pidProfile_t *pidProfile);
 void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex);
 bool crashRecoveryModeActive(void);
+
+FAST_RAM float throttleBoost;
+pt1Filter_t throttleLpf;
