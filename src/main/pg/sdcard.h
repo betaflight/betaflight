@@ -28,9 +28,7 @@ typedef struct sdcardConfig_s {
     ioTag_t chipSelectTag;
     uint8_t cardDetectInverted;
     uint8_t dmaIdentifier;
-#if defined(STM32F4) || defined(STM32F7)
     uint8_t dmaChannel;
-#endif    
 } sdcardConfig_t;
 
 PG_DECLARE(sdcardConfig_t, sdcardConfig);

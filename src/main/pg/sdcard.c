@@ -70,7 +70,7 @@ void pgResetFn_sdcardConfig(sdcardConfig_t *config)
     config->useDma = true;
 #endif
 
-#if (defined(STM32F4) || defined(STM32F7)) && defined(SDCARD_DMA_CHANNEL)
+#if defined(SDCARD_DMA_CHANNEL)
     config->dmaChannel = SDCARD_DMA_CHANNEL;
 #endif
 }
