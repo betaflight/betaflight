@@ -961,6 +961,9 @@ const clivalue_t valueTable[] = {
 #ifdef USE_USB_CDC_HID
     { "usb_hid_cdc", VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_USB_CONFIG, offsetof(usbDev_t, type) },
 #endif
+#ifdef USE_USB_MSC
+    { "usb_msc_pin_pullup", VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_USB_CONFIG, offsetof(usbDev_t, mscButtonUsePullup) },
+#endif
 };
 
 const uint16_t valueTableEntryCount = ARRAYLEN(valueTable);

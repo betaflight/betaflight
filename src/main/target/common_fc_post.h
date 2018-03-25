@@ -107,6 +107,10 @@
 #undef USE_USB_MSC
 #endif
 
+#if defined(USE_USB_CDC_HID) || defined(USE_USB_MSC)
+#define USE_USB_ADVANCED_PROFILES
+#endif
+
 // Determine if the target could have a 32KHz capable gyro
 #if defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20689)
 #define USE_32K_CAPABLE_GYRO

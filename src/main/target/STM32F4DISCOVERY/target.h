@@ -55,7 +55,7 @@
 // GYRO section -- end
 
 #define USE_VCP
-#define MSC_BUTTON              PA0
+#define USB_MSC_BUTTON_PIN      PA0
 #define VBUS_SENSING_PIN        PA9
 #define VBUS_SENSING_ENABLED
 

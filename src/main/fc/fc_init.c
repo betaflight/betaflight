@@ -456,13 +456,13 @@ void init(void)
 #ifdef USE_USB_MSC
 /* MSC mode will start after init, but will not allow scheduler to run,
  *  so there is no bottleneck in reading and writing data */
-    mscButtonInit();
-    if (*((uint32_t *)0x2001FFF0) == 0xDDDD1010 || mscButton()) {
-    		if (startMsc() == 0) {
-    			mscCheck();
-    		} else {
-    			NVIC_SystemReset();
-    		}
+    mscInit();
+    if (*((uint32_t *)0x2001FFF0) == 0xDDDD1010 || mscCheckButton()) {
+        if (mscStart() == 0) {
+             mscWaitForButton();
+        } else {
+             NVIC_SystemReset();
+        }
     }
 #endif
 
