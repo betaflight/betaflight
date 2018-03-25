@@ -627,6 +627,8 @@ static bool osdDrawSingleElement(uint8_t item)
 #define OSD_WARNINGS_MAX_SIZE 11
 #define OSD_FORMAT_MESSAGE_BUFFER_SIZE (OSD_WARNINGS_MAX_SIZE + 1)
 
+            STATIC_ASSERT(OSD_FORMAT_MESSAGE_BUFFER_SIZE <= sizeof(buff), osd_warnings_size_exceeds_buffer_size);
+
             const uint16_t enabledWarnings = osdConfig()->enabledWarnings;
 
             const batteryState_e batteryState = getBatteryState();
