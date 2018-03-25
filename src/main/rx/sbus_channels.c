@@ -71,12 +71,12 @@ uint8_t sbusChannelsDecode(rxRuntimeConfig_t *rxRuntimeConfig, const sbusChannel
     if (channels->flags & SBUS_FLAG_FAILSAFE_ACTIVE) {
         // internal failsafe enabled and rx failsafe flag set
         // RX *should* still be sending valid channel data (repeated), so use it.
-        return RX_FRAME_DROPPED | RX_FRAME_FAILSAFE;
+        return RX_FRAME_COMPLETE | RX_FRAME_FAILSAFE;
     }
 
     if (channels->flags & SBUS_FLAG_SIGNAL_LOSS) {
-    	// The received data is a repeat of the last valid data so can be considered complete.
-    	return RX_FRAME_DROPPED;
+        // The received data is a repeat of the last valid data so can be considered complete.
+        return RX_FRAME_COMPLETE | RX_FRAME_DROPPED;
     }
 
     return RX_FRAME_COMPLETE;
