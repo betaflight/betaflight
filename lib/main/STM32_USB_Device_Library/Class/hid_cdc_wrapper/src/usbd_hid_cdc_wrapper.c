@@ -134,7 +134,7 @@ static uint8_t  USBD_HID_CDC_DataOut      (void *pdev , uint8_t epnum);
 static uint8_t  USBD_HID_CDC_SOF          (void *pdev);
 static uint8_t*  USBD_HID_CDC_GetConfigDescriptor( uint8_t speed , uint16_t *length);
 
-#define USB_HID_CDC_CONFIG_DESC_SIZ  (USB_HID_CONFIG_DESC_SIZ - 9 + USB_CDC_CONFIG_DESC_SIZ)
+#define USB_HID_CDC_CONFIG_DESC_SIZ  (USB_HID_CONFIG_DESC_SIZ - 9 + USB_CDC_CONFIG_DESC_SIZ + 8)
 
 #define HID_INTERFACE 0x0
 #define CDC_COM_INTERFACE 0x1
@@ -169,7 +169,7 @@ __ALIGN_BEGIN static uint8_t USBD_HID_CDC_CfgDesc[USB_HID_CDC_CONFIG_DESC_SIZ] _
   USB_HID_CDC_CONFIG_DESC_SIZ,
   /* wTotalLength: Bytes returned */
   0x00,
-  0x02,         /*bNumInterfaces: 2 interfaces (1 for CDC, 1 for HID)*/
+  0x03,         /*bNumInterfaces: 2 interfaces (1 for CDC, 1 for HID)*/
   0x01,         /*bConfigurationValue: Configuration value*/
   0x00,         /*iConfiguration: Index of string descriptor describing
   the configuration*/
@@ -210,6 +210,18 @@ __ALIGN_BEGIN static uint8_t USBD_HID_CDC_CfgDesc[USB_HID_CDC_CONFIG_DESC_SIZ] _
   0x0A,          /*bInterval: Polling Interval (10 ms)*/
   /* 34 */
 
+  /******** /IAD should be positioned just before the CDC interfaces ******
+               IAD to associate the two CDC interfaces */
+
+  0x08, /* bLength */
+  0x0B, /* bDescriptorType */
+  0x01, /* bFirstInterface */
+  0x02, /* bInterfaceCount */
+  0x02, /* bFunctionClass */
+  0x02, /* bFunctionSubClass */
+  0x01, /* bFunctionProtocol */
+  0x00, /* iFunction (Index of string descriptor describing this function) */
+
    /*Interface Descriptor */
   0x09,   /* bLength: Interface Descriptor size */
   USB_INTERFACE_DESCRIPTOR_TYPE,  /* bDescriptorType: Interface */
@@ -220,7 +232,7 @@ __ALIGN_BEGIN static uint8_t USBD_HID_CDC_CfgDesc[USB_HID_CDC_CONFIG_DESC_SIZ] _
   0x02,   /* bInterfaceClass: Communication Interface Class */
   0x02,   /* bInterfaceSubClass: Abstract Control Model */
   0x01,   /* bInterfaceProtocol: Common AT commands */
-  0x01,   /* iInterface: */
+  0x00,   /* iInterface: */
 
   /*Header Functional Descriptor*/
   0x05,   /* bLength: Endpoint Descriptor size */
