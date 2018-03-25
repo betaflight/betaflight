@@ -116,7 +116,6 @@ static uint32_t blinkBits[(OSD_ITEM_COUNT + 31)/32];
 #define IS_MID(X) (rcData[X] > 1250 && rcData[X] < 1750)
 
 static timeUs_t flyTime = 0;
-static uint8_t statRssi;
 
 typedef struct statistic_s {
     timeUs_t armed_time;
@@ -124,7 +123,7 @@ typedef struct statistic_s {
     int16_t min_voltage; // /10
     int16_t max_current; // /10
     int16_t min_rssi;
-    int16_t max_altitude;
+    int32_t max_altitude;
     int16_t max_distance;
 } statistic_t;
 
@@ -963,7 +962,7 @@ void osdUpdateAlarms(void)
 
     int32_t alt = osdGetMetersToSelectedUnit(getEstimatedAltitude()) / 100;
 
-    if (statRssi < osdConfig()->rssi_alarm) {
+    if (scaleRange(getRssi(), 0, 1024, 0, 100) < osdConfig()->rssi_alarm) {
         SET_BLINK(OSD_RSSI_VALUE);
     } else {
         CLR_BLINK(OSD_RSSI_VALUE);
@@ -1043,7 +1042,6 @@ static void osdResetStats(void)
 static void osdUpdateStats(void)
 {
     int16_t value = 0;
-
 #ifdef USE_GPS
     value = CM_S_TO_KM_H(gpsSol.groundSpeed);
 #endif
@@ -1051,8 +1049,9 @@ static void osdUpdateStats(void)
         stats.max_speed = value;
     }
 
-    if (stats.min_voltage > getBatteryVoltage()) {
-        stats.min_voltage = getBatteryVoltage();
+    value = getBatteryVoltage();
+    if (stats.min_voltage > value) {
+        stats.min_voltage = value;
     }
 
     value = getAmperage() / 100;
@@ -1060,18 +1059,23 @@ static void osdUpdateStats(void)
         stats.max_current = value;
     }
 
-    statRssi = scaleRange(getRssi(), 0, 1024, 0, 100);
-    if (stats.min_rssi > statRssi) {
-        stats.min_rssi = statRssi;
+    value = scaleRange(getRssi(), 0, 1024, 0, 100);
+    if (stats.min_rssi > value) {
+        stats.min_rssi = value;
     }
 
-    if (stats.max_altitude < getEstimatedAltitude()) {
-        stats.max_altitude = getEstimatedAltitude();
+    int altitude = getEstimatedAltitude();
+    if (stats.max_altitude < altitude) {
+        stats.max_altitude = altitude;
     }
 
 #ifdef USE_GPS
-    if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME) && (stats.max_distance < GPS_distanceToHome)) {
-        stats.max_distance = GPS_distanceToHome;
+    if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
+        value = GPS_distanceToHome;
+
+        if (stats.max_distance < GPS_distanceToHome) {
+            stats.max_distance = GPS_distanceToHome;
+        }
     }
 #endif
 }
