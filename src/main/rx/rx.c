@@ -391,25 +391,18 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
 {
     UNUSED(currentDeltaTime);
 
-    if (rxSignalReceived) {
-        if (currentTimeUs >= needRxSignalBefore) {
-            rxSignalReceived = false;
-        }
-    }
-
+    bool signalReceived = false;
 #if defined(USE_PWM) || defined(USE_PPM)
     if (feature(FEATURE_RX_PPM)) {
         if (isPPMDataBeingReceived()) {
-            rxDataProcessingRequired = true;
-            rxSignalReceived = true;
+            signalReceived = true;
             rxIsInFailsafeMode = false;
             needRxSignalBefore = currentTimeUs + needRxSignalMaxDelayUs;
             resetPPMDataReceivedState();
         }
     } else if (feature(FEATURE_RX_PARALLEL_PWM)) {
         if (isPWMDataBeingReceived()) {
-            rxDataProcessingRequired = true;
-            rxSignalReceived = true;
+            signalReceived = true;
             rxIsInFailsafeMode = false;
             needRxSignalBefore = currentTimeUs + needRxSignalMaxDelayUs;
         }
@@ -417,13 +410,15 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
 #endif
     {
         const uint8_t frameStatus = rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig);
-        if (frameStatus & (RX_FRAME_COMPLETE | RX_FRAME_FAILSAFE | RX_FRAME_DROPPED)) {
-            rxDataProcessingRequired = true;
+        if (frameStatus & RX_FRAME_COMPLETE) {
             rxIsInFailsafeMode = (frameStatus & RX_FRAME_FAILSAFE) != 0;
-            rxSignalReceived = (frameStatus & RX_FRAME_COMPLETE) != 0;
-            needRxSignalBefore = currentTimeUs + needRxSignalMaxDelayUs;
+            bool rxFrameDropped = (frameStatus & RX_FRAME_DROPPED) != 0;
+            signalReceived = !(rxIsInFailsafeMode || rxFrameDropped);
+            if (signalReceived) {
+                needRxSignalBefore = currentTimeUs + needRxSignalMaxDelayUs;
+            }
 
-            if (frameStatus & RX_FRAME_DROPPED) {
+            if (frameStatus & (RX_FRAME_FAILSAFE | RX_FRAME_DROPPED)) {
             	// No (0%) signal
             	setRssiUnfiltered(0, RSSI_SOURCE_FRAME_ERRORS);
             } else {
@@ -437,7 +432,13 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
         }
     }
 
-    if (cmpTimeUs(currentTimeUs, rxNextUpdateAtUs) > 0) {
+    if (signalReceived) {
+        rxSignalReceived = true;
+    } else if (currentTimeUs >= needRxSignalBefore) {
+        rxSignalReceived = false;
+    }
+
+    if (signalReceived || cmpTimeUs(currentTimeUs, rxNextUpdateAtUs) > 0) {
         rxDataProcessingRequired = true;
     }
 
