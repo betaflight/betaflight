@@ -942,7 +942,7 @@ static void checkForOverflow(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
 #endif // USE_GYRO_OVERFLOW_CHECK
 }
 
-static FAST_CODE void gyroUpdateSensor(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
+static __attribute__((noinline)) FAST_CODE void gyroUpdateSensor(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
 {
     if (!gyroSensor->gyroDev.readFn(&gyroSensor->gyroDev)) {
         return;
