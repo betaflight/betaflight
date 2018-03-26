@@ -22,20 +22,22 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "drivers/usb_msc.h"
-
 #include "platform.h"
 
-#ifdef USE_USB_MSC
+#if defined(USE_USB_MSC)
 
 #include "build/build_config.h"
 
 #include "common/utils.h"
+
 #include "drivers/io.h"
-#include "drivers/nvic.h"
-#include "drivers/time.h"
-#include "drivers/sdmmc_sdio.h"
 #include "drivers/light_led.h"
+#include "drivers/nvic.h"
+#include "drivers/sdmmc_sdio.h"
+#include "drivers/time.h"
+#include "drivers/usb_msc.h"
+
+#include "pg/usb.h"
 
 #if defined(STM32F4)
 #include "usb_core.h"
@@ -53,7 +55,24 @@ USBD_HandleTypeDef USBD_Device;
 
 #include "usbd_msc_core.h"
 
-uint8_t startMsc(void)
+#define DEBOUNCE_TIME_MS 20
+
+static IO_t mscButton;
+
+void mscInit(void)
+{
+    if (usbDevConfig()->mscButtonPin) {
+        mscButton = IOGetByTag(usbDevConfig()->mscButtonPin);
+        IOInit(mscButton, OWNER_USB_MSC_PIN, 0);
+        if (usbDevConfig()->mscButtonUsePullup) {
+            IOConfigGPIO(mscButton, IOCFG_IPU);
+        } else {
+            IOConfigGPIO(mscButton, IOCFG_IPD);
+        }
+    }
+}
+
+uint8_t mscStart(void)
 {
 	ledInit(statusLedConfig());
 
@@ -72,52 +91,33 @@ uint8_t startMsc(void)
 	return 0;
 }
 
-void mscButtonInit(void)
+bool mscCheckButton(void)
 {
-#ifdef MSC_BUTTON
-    IO_t msc_button = IOGetByTag(IO_TAG(MSC_BUTTON));
-	IOInit(msc_button, OWNER_USB, 0);
-#ifdef MSC_BUTTON_IPU
-	IOConfigGPIO(msc_button, IOCFG_IPU);
-#else
-	IOConfigGPIO(msc_button, IOCFG_IPD);
-#endif
-#endif
+    bool result = false;
+    if (mscButton) {
+        uint8_t state = IORead(mscButton);
+        if (usbDevConfig()->mscButtonUsePullup) {
+            result = state == 0;
+        } else {
+            result = state == 1;
+        }
+    }
+
+    return result;
 }
 
-#ifdef MSC_BUTTON
-#ifdef MSC_BUTTON_IPU
-#define BUTTON_STATUS IORead(msc_button) == 0
-#else
-#define BUTTON_STATUS IORead(msc_button) == 1
-#endif
-#else
-#define BUTTON_STATUS 0
-#endif
-
-void mscCheck(void)
+void mscWaitForButton(void)
 {
-	//In order to exit MSC mode simply disconnect the board
-#ifdef MSC_BUTTON
-	IO_t msc_button = IOGetByTag(IO_TAG(MSC_BUTTON));
-#endif
-
-	while(BUTTON_STATUS);
-	while(1) {
+	// In order to exit MSC mode simply disconnect the board, or push the button again.
+	while (mscCheckButton());
+	delay(DEBOUNCE_TIME_MS);
+	while (true) {
 		asm("NOP");
-		if (BUTTON_STATUS) {
+		if (mscCheckButton()) {
 			*((uint32_t *)0x2001FFF0) = 0xDDDD1011;
 			delay(1);
 			NVIC_SystemReset();
 		}
 	}
 }
-
-bool mscButton(void) {
-#ifdef MSC_BUTTON
-	IO_t msc_button = IOGetByTag(IO_TAG(MSC_BUTTON));
-#endif
-	return BUTTON_STATUS;
-}
-
 #endif

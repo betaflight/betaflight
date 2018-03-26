@@ -71,6 +71,7 @@ typedef enum {
     OWNER_RANGEFINDER,
     OWNER_RX_SPI,
     OWNER_PINIO,
+    OWNER_USB_MSC_PIN,
     OWNER_TOTAL_COUNT
 } resourceOwner_e;
 

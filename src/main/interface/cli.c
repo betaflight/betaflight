@@ -123,6 +123,7 @@ extern uint8_t __config_end;
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/rx_pwm.h"
+#include "pg/usb.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
@@ -3303,6 +3304,9 @@ const cliResourceValue_t resourceTable[] = {
 #endif
 #ifdef USE_PINIO
     { OWNER_PINIO,         PG_PINIO_CONFIG, offsetof(pinioConfig_t, ioTag), PINIO_COUNT },
+#endif
+#if defined(USE_USB_MSC)
+    { OWNER_USB_MSC_PIN,   PG_USB_CONFIG, offsetof(usbDev_t, mscButtonPin), 0 },
 #endif
 };
 
