@@ -797,20 +797,20 @@ static bool gpsNewFrameNMEA(char c)
                         *gpsPacketLogChar = LOG_NMEA_RMC;
                         gpsSol.groundSpeed = gps_Msg.speed;
                         gpsSol.groundCourse = gps_Msg.ground_course;
-                        #ifdef USE_RTC_TIME
-							// This check will miss 00:00:00.00, but we shouldn't care - next report will be valid
-							if(!rtcHasTime() && gps_Msg.date != 0) {
-								dateTime_t temp_time;
-								temp_time.year = (gps_Msg.date % 100) + 2000;
-								temp_time.month = (gps_Msg.date / 100) % 100;
-								temp_time.day = (gps_Msg.date / 10000) % 100;
-								temp_time.hours = (gps_Msg.time / 1000000) % 100;
-								temp_time.minutes = (gps_Msg.time / 10000) % 100;
-								temp_time.seconds = (gps_Msg.time / 100) % 100;
-								temp_time.millis = (gps_Msg.time & 100) * 10;
-								rtcSetDateTime(&temp_time);
-							}
-						#endif
+#ifdef USE_RTC_TIME
+                        // This check will miss 00:00:00.00, but we shouldn't care - next report will be valid
+                        if(!rtcHasTime() && gps_Msg.date != 0 && gps_Msg.time != 0) {
+                            dateTime_t temp_time;
+                            temp_time.year = (gps_Msg.date % 100) + 2000;
+                            temp_time.month = (gps_Msg.date / 100) % 100;
+                            temp_time.day = (gps_Msg.date / 10000) % 100;
+                            temp_time.hours = (gps_Msg.time / 1000000) % 100;
+                            temp_time.minutes = (gps_Msg.time / 10000) % 100;
+                            temp_time.seconds = (gps_Msg.time / 100) % 100;
+                            temp_time.millis = (gps_Msg.time & 100) * 10;
+                            rtcSetDateTime(&temp_time);
+                        }
+#endif
                         break;
                     } // end switch
                 } else {
@@ -940,8 +940,8 @@ enum {
 
 enum {
     NAV_STATUS_FIX_VALID = 1,
-	NAV_STATUS_TIME_WEEK_VALID = 2,
-	NAV_STATUS_TIME_SECOND_VALID = 3
+    NAV_STATUS_TIME_WEEK_VALID = 4,
+    NAV_STATUS_TIME_SECOND_VALID = 8
 } ubx_nav_status_bits;
 
 // Packet checksum accumulators
@@ -1034,14 +1034,14 @@ static bool UBLOX_parse_gps(void)
             DISABLE_STATE(GPS_FIX);
         gpsSol.numSat = _buffer.solution.satellites;
         gpsSol.hdop = _buffer.solution.position_DOP;
-        #ifdef USE_RTC_TIME
-		//set clock, when gps time is available
+#ifdef USE_RTC_TIME
+        //set clock, when gps time is available
         if(!rtcHasTime() && (_buffer.solution.fix_status & NAV_STATUS_TIME_SECOND_VALID) && (_buffer.solution.fix_status & NAV_STATUS_TIME_WEEK_VALID)) {
             //calculate rtctime: week number * ms in a week + ms of week + fractions of second + offset to UNIX reference year - 18 leap seconds
             rtcTime_t temp_time = (((int64_t) _buffer.solution.week)*7*24*60*60*1000) + _buffer.solution.time + (_buffer.solution.time_nsec/1000000) + 315964800000LL - 18000;
             rtcSet(&temp_time);
         }
-		#endif
+#endif
         break;
     case MSG_VELNED:
         *gpsPacketLogChar = LOG_UBLOX_VELNED;
