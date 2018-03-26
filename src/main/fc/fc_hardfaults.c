@@ -39,7 +39,7 @@
  * cause of the fault.
  * The function ends with a BKPT instruction to force control back into the debugger
  */
-void hard_fault_handler_c(unsigned long *hardfault_args)
+void __attribute__((optimize("-O0"))) hard_fault_handler_c(unsigned long *hardfault_args)
 {
   volatile unsigned long stacked_r0 ;
   volatile unsigned long stacked_r1 ;
@@ -86,6 +86,27 @@ void hard_fault_handler_c(unsigned long *hardfault_args)
   _BFAR = (*((volatile unsigned long *)(0xE000ED38))) ;
 
   __asm("BKPT #0\n") ; // Break into the debugger
+}
+
+void __attribute__((optimize("-O0"))) HardFault_Handler(void)
+{
+	  __asm volatile (
+	    " movs r0,#4       \n"
+	    " movs r1, lr      \n"
+	    " tst r0, r1       \n"
+	    " beq _MSP         \n"
+	    " mrs r0, psp      \n"
+	    " b _HALT          \n"
+	  "_MSP:               \n"
+	    " mrs r0, msp      \n"
+	  "_HALT:              \n"
+	    " ldr r1,[r0,#20]  \n"
+	    " b hard_fault_handler_c \n"
+	    " bkpt #0          \n"
+	  );
+  while (1)
+  {
+  }
 }
 
 #else
