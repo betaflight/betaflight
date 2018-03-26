@@ -137,7 +137,8 @@ typedef enum {
     OSD_WARNING_BATTERY_WARNING   = (1 << 2),
     OSD_WARNING_BATTERY_CRITICAL  = (1 << 3),
     OSD_WARNING_VISUAL_BEEPER     = (1 << 4),
-    OSD_WARNING_CRASH_FLIP        = (1 << 5)
+    OSD_WARNING_CRASH_FLIP        = (1 << 5),
+    OSD_WARNING_ESC_FAIL          = (1 << 6)
 } osdWarningsFlags_e;
 
 typedef struct osdConfig_s {
