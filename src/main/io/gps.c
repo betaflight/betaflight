@@ -706,7 +706,7 @@ static bool gpsNewFrameNMEA(char c)
                 case FRAME_RMC:        //************* GPRMC FRAME parsing
                     switch (param) {
                         case 1:
-                            gps_Msg.time = grab_fields(string, 2);
+                            gps_Msg.time = grab_fields(string, 2); // UTC time hhmmss.ss
                             break;
                         case 7:
                             gps_Msg.speed = ((grab_fields(string, 1) * 5144L) / 1000L);    // speed in cm/s added by Mis
@@ -715,7 +715,7 @@ static bool gpsNewFrameNMEA(char c)
                             gps_Msg.ground_course = (grab_fields(string, 1));      // ground course deg * 10
                             break;
                         case 9:
-                            gps_Msg.date = grab_fields(string, 0);
+                            gps_Msg.date = grab_fields(string, 0); // date dd/mm/yy
                             break;
                     }
                     break;
@@ -797,19 +797,20 @@ static bool gpsNewFrameNMEA(char c)
                         *gpsPacketLogChar = LOG_NMEA_RMC;
                         gpsSol.groundSpeed = gps_Msg.speed;
                         gpsSol.groundCourse = gps_Msg.ground_course;
-                        // This check will miss 00:00:00.00, but we shouldn't care - next report will be valid
-                        if(!rtcHasTime() && gps_Msg.date != 0 && gps_Msg.time != 0)
-                        {
-                            dateTime_t temp_time;
-                            temp_time.year = (gps_Msg.date % 100) + 2000;
-                            temp_time.month = (gps_Msg.date / 100) % 100;
-                            temp_time.day = (gps_Msg.date / 10000) % 100;
-                            temp_time.hours = (gps_Msg.time / 1000000) % 100;
-                            temp_time.minutes = (gps_Msg.time / 10000) % 100;
-                            temp_time.seconds = (gps_Msg.time / 100) % 100;
-                            temp_time.millis = (gps_Msg.time & 100) * 10;
-                            rtcSetDateTime(&temp_time);
-                        }
+                        #ifdef USE_RTC_TIME
+							// This check will miss 00:00:00.00, but we shouldn't care - next report will be valid
+							if(!rtcHasTime() && gps_Msg.date != 0) {
+								dateTime_t temp_time;
+								temp_time.year = (gps_Msg.date % 100) + 2000;
+								temp_time.month = (gps_Msg.date / 100) % 100;
+								temp_time.day = (gps_Msg.date / 10000) % 100;
+								temp_time.hours = (gps_Msg.time / 1000000) % 100;
+								temp_time.minutes = (gps_Msg.time / 10000) % 100;
+								temp_time.seconds = (gps_Msg.time / 100) % 100;
+								temp_time.millis = (gps_Msg.time & 100) * 10;
+								rtcSetDateTime(&temp_time);
+							}
+						#endif
                         break;
                     } // end switch
                 } else {
@@ -938,7 +939,9 @@ enum {
 } ubs_nav_fix_type;
 
 enum {
-    NAV_STATUS_FIX_VALID = 1
+    NAV_STATUS_FIX_VALID = 1,
+	NAV_STATUS_TIME_WEEK_VALID = 2,
+	NAV_STATUS_TIME_SECOND_VALID = 3
 } ubx_nav_status_bits;
 
 // Packet checksum accumulators
@@ -1031,12 +1034,14 @@ static bool UBLOX_parse_gps(void)
             DISABLE_STATE(GPS_FIX);
         gpsSol.numSat = _buffer.solution.satellites;
         gpsSol.hdop = _buffer.solution.position_DOP;
-        //set clock, when gps time is available
-        if(!rtcHasTime() && _buffer.solution.week != 0 && _buffer.solution.time != 0) {
+        #ifdef USE_RTC_TIME
+		//set clock, when gps time is available
+        if(!rtcHasTime() && (_buffer.solution.fix_status & NAV_STATUS_TIME_SECOND_VALID) && (_buffer.solution.fix_status & NAV_STATUS_TIME_WEEK_VALID)) {
             //calculate rtctime: week number * ms in a week + ms of week + fractions of second + offset to UNIX reference year - 18 leap seconds
             rtcTime_t temp_time = (((int64_t) _buffer.solution.week)*7*24*60*60*1000) + _buffer.solution.time + (_buffer.solution.time_nsec/1000000) + 315964800000LL - 18000;
             rtcSet(&temp_time);
         }
+		#endif
         break;
     case MSG_VELNED:
         *gpsPacketLogChar = LOG_UBLOX_VELNED;
