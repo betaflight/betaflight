@@ -21,7 +21,8 @@
 #define USBD_PRODUCT_STRING     "Revolt"
 #define TARGET_DEFAULT_MIXER    MIXER_QUADX_1234
 
-#define LED0_PIN                PB5
+
+#define LED0_PIN                PB5  
 
 #define USE_BEEPER
 #define BEEPER_PIN              PB4
@@ -30,6 +31,8 @@
 
 #define INVERTER_PIN_UART1      PC0
 
+
+/*----------Gyro Config--------*/
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
 
@@ -47,22 +50,12 @@
 #define USE_ACC_SPI_MPU6500
 #define ACC_MPU6500_ALIGN       CW0_DEG
 
-// MPU6000 interrupts
+
 #define USE_EXTI
 #define MPU_INT_EXTI            PC4
 #define USE_MPU_DATA_READY_SIGNAL
 
-// Configure MAG and BARO unconditionally.
-#define USE_MAG
-#define USE_MAG_HMC5883
-#define USE_MAG_QMC5883
-#define MAG_HMC5883_ALIGN       CW90_DEG
-
-#define USE_BARO
-#define USE_BARO_MS5611
-#define USE_BARO_BMP085
-#define USE_BARO_BMP280
-
+/*----------Flash Config--------*/
 #define M25P16_CS_PIN           PB3
 #define M25P16_SPI_INSTANCE     SPI3
 #define USE_FLASHFS
@@ -71,6 +64,7 @@
 #define USE_VCP
 #define VBUS_SENSING_PIN        PC5
 
+/*----------Uart Config--------*/
 #define USE_UART1
 #define UART1_RX_PIN            PA10
 #define UART1_TX_PIN            PA9
@@ -96,6 +90,7 @@
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN  PB14  // (HARDARE=0,PPM)
 
+/*----------Spi Config--------*/
 #define USE_SPI
 
 #define USE_SPI_DEVICE_1
@@ -106,12 +101,14 @@
 #define SPI3_MISO_PIN           PC11
 #define SPI3_MOSI_PIN           PC12
 
+/*----------I2C Config--------*/
 #define USE_I2C
 #define USE_I2C_DEVICE_1
 #define I2C_DEVICE              (I2CDEV_1)
 #define I2C1_SCL                PB8
 #define I2C1_SDA                PB9
 
+/*----------ADC Config--------*/
 #define USE_ADC
 
 #define CURRENT_METER_ADC_PIN   PC1
