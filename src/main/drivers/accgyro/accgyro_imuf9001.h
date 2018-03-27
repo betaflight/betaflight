@@ -19,10 +19,6 @@
 
 #include "drivers/bus.h"
 
-#define IMUF_VERSION_MAJOR       1
-#define IMUF_VERSION_MINOR       0
-#define IMUF_VERSION_PATCH_LEVEL 4
-
 uint8_t imuf9001SpiDetect(const gyroDev_t *bus);
 
 bool imufSpiAccDetect(accDev_t *acc);
