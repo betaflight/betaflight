@@ -35,6 +35,7 @@
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
+#include "drivers/dma_spi.h"
 #include "drivers/light_led.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
@@ -124,7 +125,6 @@ static bool flipOverAfterCrashMode = false;
 
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
-bool isRXDataNew;
 static int lastArmingDisabledReason = 0;
 
 #ifdef USE_RUNAWAY_TAKEOFF
@@ -158,9 +158,6 @@ static bool isCalibrating(void)
     if (sensors(SENSOR_BARO) && !isBaroCalibrationComplete()) {
         return true;
     }
-#endif
-#ifdef USE_GYRO_IMUF9001
-    return false;
 #endif
     // Note: compass calibration is handled completely differently, outside of the main loop, see f.CALIBRATE_MAG
 
@@ -337,7 +334,9 @@ void tryArm(void)
         if (isModeActivationConditionPresent(BOXPREARM)) {
             ENABLE_ARMING_FLAG(WAS_ARMED_WITH_PREARM);
         }
-        imuQuaternionHeadfreeOffsetSet();
+        if (sensors(SENSOR_ACC)){
+            imuQuaternionHeadfreeOffsetSet();
+        }
 
         disarmAt = millis() + armingConfig()->auto_disarm_delay * 1000;   // start disarm timeout, will be extended when throttle is nonzero
 
@@ -345,11 +344,14 @@ void tryArm(void)
 
         //beep to indicate arming
 #ifdef USE_GPS
-        if (feature(FEATURE_GPS) && STATE(GPS_FIX) && gpsSol.numSat >= 5) {
-            beeper(BEEPER_ARMING_GPS_FIX);
-        } else {
+        if(!feature(FEATURE_GPS)) 
+        {
             beeper(BEEPER_ARMING);
-        }
+        } 
+        else if(STATE(GPS_FIX) && gpsSol.numSat >= 5) 
+        {
+            beeper(BEEPER_ARMING_GPS_FIX);
+        } 
 #else
         beeper(BEEPER_ARMING);
 #endif
@@ -569,7 +571,7 @@ bool processRx(timeUs_t currentTimeUs)
                 && (fabsf(axisPIDSum[FD_PITCH]) < RUNAWAY_TAKEOFF_DEACTIVATE_PIDSUM_LIMIT)
                 && (fabsf(axisPIDSum[FD_ROLL]) < RUNAWAY_TAKEOFF_DEACTIVATE_PIDSUM_LIMIT)
                 && (fabsf(axisPIDSum[FD_YAW]) < RUNAWAY_TAKEOFF_DEACTIVATE_PIDSUM_LIMIT)) {
-                
+
                 inStableFlight = true;
                 if (runawayTakeoffDeactivateUs == 0) {
                     runawayTakeoffDeactivateUs = currentTimeUs;
@@ -702,11 +704,8 @@ bool processRx(timeUs_t currentTimeUs)
 
     if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
         LED1_ON;
-        // increase frequency of attitude task to reduce drift when in angle or horizon mode
-        rescheduleTask(TASK_ATTITUDE, TASK_PERIOD_HZ(500));
     } else {
         LED1_OFF;
-        rescheduleTask(TASK_ATTITUDE, TASK_PERIOD_HZ(100));
     }
 
     if (!IS_RC_MODE_ACTIVE(BOXPREARM) && ARMING_FLAG(WAS_ARMED_WITH_PREARM)) {
@@ -932,6 +931,10 @@ static void subTaskMotorUpdate(timeUs_t currentTimeUs)
 // Function for loop trigger
 void taskMainPidLoop(timeUs_t currentTimeUs)
 {
+
+#ifdef USE_DMA_SPI_DEVICE
+    dmaSpiDeviceDataReady = false;
+#endif
     static uint8_t pidUpdateCountdown = 0;
 
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_GYROPID_SYNC)

@@ -17,9 +17,11 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <math.h>
 
 #include "platform.h"
 
+#include "build/debug.h"
 #include "common/axis.h"
 
 #include "pg/pg.h"
@@ -262,9 +264,11 @@ bool compassInit(void)
     return true;
 }
 
-bool compassIsHealthy(void)
-{
-    return (mag.magADC[X] != 0) && (mag.magADC[Y] != 0) && (mag.magADC[Z] != 0);
+bool compassIsHealthy(quaternion *q) {
+  const float magModulus = quaternionModulus(q);
+
+  //todo findout mag healthy limits
+  return ((1 < magModulus) && (magModulus < 10000));
 }
 
 void compassUpdate(timeUs_t currentTimeUs)
@@ -314,5 +318,13 @@ void compassUpdate(timeUs_t currentTimeUs)
             saveConfigAndNotify();
         }
     }
+}
+
+bool compassGetAverage(quaternion *vAverage) {
+    vAverage->w = 0;
+    vAverage->x = mag.magADC[X];
+    vAverage->y = mag.magADC[Y];
+    vAverage->z = mag.magADC[Z];
+    return(true);
 }
 #endif // USE_MAG

@@ -31,6 +31,7 @@ typedef enum {
     TASK_PRIORITY_MEDIUM_HIGH = 4,
     TASK_PRIORITY_HIGH = 5,
     TASK_PRIORITY_REALTIME = 6,
+    TASK_PRIORITY_TRIGGER = 7,
     TASK_PRIORITY_MAX = 255
 } cfTaskPriority_e;
 
@@ -147,7 +148,7 @@ typedef struct {
     void (*taskFunc)(timeUs_t currentTimeUs);
     timeDelta_t desiredPeriod;      // target period of execution
     const uint8_t staticPriority;   // dynamicPriority grows in steps of this size, shouldn't be zero
-
+    bool executeNow;
     // Scheduling
     uint16_t dynamicPriority;       // measurement of how old task was last executed, used to avoid task starvation
     uint16_t taskAgeCycles;

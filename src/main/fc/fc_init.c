@@ -74,6 +74,10 @@
 #include "drivers/dma_spi.h"
 #endif //USE_DMA_SPI_DEVICE
 
+#ifdef USE_GYRO_IMUF9001
+#include "drivers/accgyro/accgyro_imuf9001.h"
+#endif //USE_GYRO_IMUF9001
+
 #include "fc/config.h"
 #include "fc/fc_init.h"
 #include "fc/fc_tasks.h"
@@ -305,6 +309,13 @@ void init(void)
     printfSupportInit();
 
     systemInit();
+
+#ifdef USE_GYRO_IMUF9001
+    if (isMPUSoftReset()) {
+        // reset imuf before befhal mucks with the pins
+        initImuf9001();
+    }
+#endif
 
     // initialize IO (needed for all IO operations)
     IOInitGlobal();
@@ -549,20 +560,15 @@ void init(void)
         setArmingDisabled(ARMING_DISABLED_NO_GYRO);
     }
 
-#ifdef USE_GYRO_IMUF9001
-    if(!gyroIsSane())
-    {
-        setArmingDisabled(ARMING_DISABLED_NO_GYRO);
-    }
-#endif
-
     systemState |= SYSTEM_STATE_SENSORS_READY;
 
     // gyro.targetLooptime set in sensorsAutodetect(),
     // so we are ready to call validateAndFixGyroConfig(), pidInit(), and setAccelerationFilter()
     validateAndFixGyroConfig();
     pidInit(currentPidProfile);
-    accInitFilters();
+    if (sensors(SENSOR_ACC)){
+        accInitFilters();
+    }
 
 #ifdef USE_SERVOS
     servosInit();

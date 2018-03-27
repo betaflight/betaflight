@@ -4,13 +4,20 @@
 
 #include "platform.h"
 #include "dma_spi.h"
+#include "common/time.h"
 #include "sensors/gyro.h"
+#include "drivers/accgyro/accgyro.h"
 #include "drivers/accgyro/accgyro_mpu.h"
+#ifdef USE_GYRO_IMUF9001
+#include "drivers/accgyro/accgyro_imuf9001.h"
+volatile uint32_t crcErrorCount = 0;
+#endif
 
 
 #ifdef USE_DMA_SPI_DEVICE
 
-volatile dma_spi_read_status_t dmaSpiReadStatus = DMA_SPI_READ_UNKOWN;
+volatile bool dmaSpiDeviceDataReady = false;
+volatile dma_spi_read_status_t dmaSpiReadStatus = DMA_SPI_READ_UNKNOWN;
 
 //must be static to avoid overflow/corruption by DMA
 uint8_t dmaTxBuffer[58];
@@ -62,16 +69,44 @@ void DMA_SPI_RX_DMA_HANDLER(void)
 {
     dmaSpiCsHi();
     dmaSpicleanupspi();
-    if(dmaSpiReadStatus != DMA_SPI_BLOCKING_READ_IN_PROGRESS)
+    
+    //spi rx dma callback
+    #ifdef USE_GYRO_IMUF9001
+    volatile uint32_t crc1 = ( (*(uint32_t *)(dmaRxBuffer+gyroConfig()->imuf_mode-4)) & 0xFF );
+    volatile uint32_t crc2 = ( getCrcImuf9001((uint32_t *)(dmaRxBuffer), (gyroConfig()->imuf_mode >> 2)-1) & 0xFF );
+    if(crc1 == crc2)
     {
-        dmaSpiReadStatus = DMA_SPI_READ_DONE;
-        gyroDmaSpiFinishRead();
+        if(dmaSpiReadStatus != DMA_SPI_BLOCKING_READ_IN_PROGRESS)
+        {
+            gyroDmaSpiFinishRead();
+        }
+        dmaSpiDeviceDataReady = true;    
     }
     else
     {
-        dmaSpiReadStatus = DMA_SPI_READ_DONE;
+        if (crcErrorCount > 100000)
+        {
+            crcErrorCount = 0;
+        }
+        //error handler
+        crcErrorCount++; //check every so often and cause a failsafe is this number is above a certain ammount
     }
+    #else 
+    if(dmaSpiReadStatus != DMA_SPI_BLOCKING_READ_IN_PROGRESS)
+    {
+        gyroDmaSpiFinishRead();
+    }
+    dmaSpiDeviceDataReady = true;    
+    #endif
     DMA_ClearITPendingBit(DMA_SPI_RX_DMA_STREAM, DMA_SPI_RX_DMA_FLAG_TC);         
+    dmaSpiReadStatus = DMA_SPI_READ_DONE;    
+}
+
+bool isDmaSpiDataReady(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
+{
+    (void)(currentTimeUs);
+    (void)(currentDeltaTimeUs);
+    return dmaSpiDeviceDataReady;
 }
 
 void dmaSpiInit(void)
@@ -154,7 +189,7 @@ void dmaSpiInit(void)
     //setup interrupt
     nvicInitStruct.NVIC_IRQChannel = DMA_SPI_RX_DMA_IRQn;
     nvicInitStruct.NVIC_IRQChannelPreemptionPriority = 0;
-    nvicInitStruct.NVIC_IRQChannelSubPriority = 1;
+    nvicInitStruct.NVIC_IRQChannelSubPriority = 2;
     nvicInitStruct.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&nvicInitStruct);
     DMA_ITConfig(DMA_SPI_RX_DMA_STREAM, DMA_IT_TC, ENABLE);

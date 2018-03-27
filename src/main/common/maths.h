@@ -28,12 +28,14 @@
 
 // Use floating point M_PI instead explicitly.
 #define M_PIf       3.14159265358979323846f
+#define M_PI_HALFf  3.14159265358979323846f/2
 
 #define RAD    (M_PIf / 180.0f)
 #define DEGREES_TO_DECIDEGREES(angle) (angle * 10)
 #define DECIDEGREES_TO_DEGREES(angle) (angle / 10)
 #define DECIDEGREES_TO_RADIANS(angle) ((angle / 10.0f) * 0.0174532925f)
 #define DEGREES_TO_RADIANS(angle) ((angle) * 0.0174532925f)
+#define RADIANS_TO_DECIDEGREES(angle) (((angle) * 10.0f) / RAD)
 
 #define CM_S_TO_KM_H(centimetersPerSecond) (centimetersPerSecond * 36 / 1000)
 
@@ -150,3 +152,29 @@ static inline float constrainf(float amt, float low, float high)
     else
         return amt;
 }
+
+// quaternions
+typedef struct {
+    float w,x,y,z;
+} quaternion;
+#define QUATERNION_INITIALIZE   {.w=1, .x=0, .y=0,.z=0}
+#define VECTOR_INITIALIZE       {.w=0, .x=0, .y=0,.z=0}
+
+typedef struct {
+    float ww,wx,wy,wz,xx,xy,xz,yy,yz,zz;
+} quaternionProducts;
+#define QUATERNION_PRODUCTS_INITIALIZE  {.ww=1, .wx=0, .wy=0, .wz=0, .xx=0, .xy=0, .xz=0, .yy=0, .yz=0, .zz=0}
+
+void quaternionComputeProducts(quaternion *qIn, quaternionProducts *qPout);
+void quaternionTransformVectorBodyToEarth(quaternion *qVector, quaternion *qReference);
+void quaternionTransformVectorEarthToBody(quaternion *qVector, quaternion *qReference);
+void quaternionMultiply(quaternion *l, quaternion *r, quaternion *o);
+void quaternionNormalize(quaternion *q);
+void quaternionAdd(quaternion *l, quaternion *r, quaternion *o);
+void quaternionCopy(quaternion *s, quaternion *d);
+void quaternionConjugate(quaternion *i, quaternion *o);
+float quaternionDotProduct(quaternion *l, quaternion *r);
+float quaternionNorm(quaternion *q);
+float quaternionModulus(quaternion *q);
+void quaternionInitQuaternion(quaternion *i);
+void quaternionInitVector(quaternion *i);

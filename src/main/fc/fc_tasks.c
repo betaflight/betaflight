@@ -33,6 +33,7 @@
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/camera_control.h"
 #include "drivers/compass/compass.h"
+#include "drivers/dma_spi.h"
 #include "drivers/sensor.h"
 #include "drivers/serial.h"
 #include "drivers/stack_check.h"
@@ -267,7 +268,7 @@ void fcTasksInit(void)
 
     if (sensors(SENSOR_ACC)) {
         setTaskEnabled(TASK_ACCEL, true);
-        rescheduleTask(TASK_ACCEL, acc.accSamplingInterval);
+        rescheduleTask(TASK_ACCEL, DEFAULT_ACC_SAMPLE_INTERVAL);
         setTaskEnabled(TASK_ATTITUDE, true);
     }
 
@@ -423,31 +424,36 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_GYROPID] = {
         .taskName = "PID",
         .subTaskName = "GYRO",
+#ifdef USE_DMA_SPI_DEVICE
+        .checkFunc = isDmaSpiDataReady,
+        .staticPriority = TASK_PRIORITY_TRIGGER,        
+#else
+        .staticPriority = TASK_PRIORITY_REALTIME,
+#endif
         .taskFunc = taskMainPidLoop,
         .desiredPeriod = TASK_GYROPID_DESIRED_PERIOD,
-        .staticPriority = TASK_PRIORITY_REALTIME,
     },
 
     [TASK_ACCEL] = {
         .taskName = "ACC",
         .taskFunc = taskUpdateAccelerometer,
-        .desiredPeriod = TASK_PERIOD_HZ(1000),      // 1000Hz, every 1ms
+        .desiredPeriod = TASK_PERIOD_HZ(DEFAULT_ACC_SAMPLE_INTERVAL),      // 1000Hz, every 1ms
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
     [TASK_ATTITUDE] = {
         .taskName = "ATTITUDE",
         .taskFunc = imuUpdateAttitude,
-        .desiredPeriod = TASK_PERIOD_HZ(100),
-        .staticPriority = TASK_PRIORITY_MEDIUM,
+        .desiredPeriod = TASK_PERIOD_HZ(DEFAULT_ATTITUDE_UPDATE_INTERVAL),
+        .staticPriority = TASK_PRIORITY_HIGH,
     },
 
     [TASK_RX] = {
         .taskName = "RX",
         .checkFunc = rxUpdateCheck,
         .taskFunc = taskUpdateRxMain,
-        .desiredPeriod = TASK_PERIOD_HZ(50),        // If event-based scheduling doesn't work, fallback to periodic scheduling
-        .staticPriority = TASK_PRIORITY_HIGH,
+        .desiredPeriod = TASK_PERIOD_HZ(160),        // If event-based scheduling doesn't work, fallback to periodic scheduling
+        .staticPriority = TASK_PRIORITY_TRIGGER,
     },
 
     [TASK_DISPATCH] = {

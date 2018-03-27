@@ -28,30 +28,30 @@ void imufSpiGyroInit(gyroDev_t *gyro);
 void imufSpiAccInit(accDev_t *acc);
 
 void imufStartCalibration(void);
+void imufEndCalibration(void);
 
 #ifndef IMUF_DEFAULT_PITCH_Q
-#define IMUF_DEFAULT_PITCH_Q  1500
+#define IMUF_DEFAULT_PITCH_Q  3500
 #endif
 #ifndef IMUF_DEFAULT_ROLL_Q
-#define IMUF_DEFAULT_ROLL_Q  1500
+#define IMUF_DEFAULT_ROLL_Q  3500
 #endif
 #ifndef IMUF_DEFAULT_YAW_Q
-#define IMUF_DEFAULT_YAW_Q  1500
+#define IMUF_DEFAULT_YAW_Q  2500
 #endif
 #ifndef IMUF_DEFAULT_PITCH_W
-#define IMUF_DEFAULT_PITCH_W  10
+#define IMUF_DEFAULT_PITCH_W  6
 #endif
 #ifndef IMUF_DEFAULT_ROLL_W
-#define IMUF_DEFAULT_ROLL_W  10
+#define IMUF_DEFAULT_ROLL_W  6
 #endif
 #ifndef IMUF_DEFAULT_YAW_W
-#define IMUF_DEFAULT_YAW_W  10
+#define IMUF_DEFAULT_YAW_W  6
 #endif
 
 
-
-volatile uint32_t isImufCalibrating;
-
+#define IMUF_FIRMWARE_VERSION  107
+extern volatile uint16_t imufCurrentVersion;
 typedef struct imufVersion
 {   
     uint32_t hardware;
@@ -78,6 +78,23 @@ typedef struct imufCommand {
    uint32_t tail;
 } __attribute__ ((__packed__)) imufCommand_t;
 
+typedef struct imufData
+{
+    float gyroX;
+    float gyroY;
+    float gyroZ;    
+    float accX;
+    float accY;
+    float accZ;
+    float tempC;
+    float quaternionW;
+    float quaternionX;
+    float quaternionY;
+    float quaternionZ;
+    uint32_t crc;
+    uint32_t tail;
+} __attribute__((__packed__)) imufData_t;
+
 typedef enum gyroCommands
 {
     IMUF_COMMAND_NONE            = 0,
@@ -85,6 +102,7 @@ typedef enum gyroCommands
     IMUF_COMMAND_LISTENING       = 108,
     IMUF_COMMAND_REPORT_INFO     = 121,
     IMUF_COMMAND_SETUP           = 122,
+    IMUF_COMMAND_SETPOINT        = 126,
     IMUF_COMMAND_RESTART         = 127,
 } gyroCommands_t;
 
@@ -182,15 +200,25 @@ typedef enum gyroToBoardCommMode
     GTBCM_GYRO_ONLY_FILTER_F     = 20, //gyro filtered, 3*4 bytes, 4 bytes crc
     GTBCM_GYRO_ACC_FILTER_F      = 32, //gyro filtered, acc filtered, temp, crc
     GTBCM_GYRO_ACC_QUAT_FILTER_F = 48, //gyro filtered, acc filtered, temp, quaternions filtered, crc
-    GTBCM_DEFAULT                = GTBCM_GYRO_ACC_FILTER_F, //default mode
+    GTBCM_DEFAULT                = GTBCM_GYRO_ACC_QUAT_FILTER_F, //default mode
 } gyroToBoardCommMode_t;
 
 typedef enum imufCalibrationSteps
 {
-    IMUF_NOT_CALIBRATING   = 0,
-    IMUF_CALIBRATION_STEP1 = 1,
-    IMUF_CALIBRATION_STEP2 = 2,
+    IMUF_NOT_CALIBRATING    = 0,
+    IMUF_IS_CALIBRATING     = 1,
+    IMUF_DONE_CALIBRATING   = 2
 
 } imufCalibrationSteps_t;
 
+typedef enum gpioState
+{
+    GPIO_LO    = 0,
+    GPIO_HI     = 1
+} gpioState_t;
+
+extern volatile imuFrame_t imufQuat;
+volatile uint32_t isImufCalibrating;
+
+extern void initImuf9001(void);
 extern uint32_t getCrcImuf9001(uint32_t* data, uint32_t size);

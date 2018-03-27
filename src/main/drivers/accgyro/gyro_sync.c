@@ -29,44 +29,23 @@ bool gyroSyncCheckUpdate(gyroDev_t *gyro)
 
 uint32_t gyroSetSampleRate(gyroDev_t *gyro, uint8_t lpf, uint8_t gyroSyncDenominator, bool gyro_use_32khz)
 {
-    float gyroSamplePeriod;
-
-    if (lpf == GYRO_LPF_256HZ || lpf == GYRO_LPF_NONE) {
-        if (gyro_use_32khz) {
-            gyro->gyroRateKHz = GYRO_RATE_32_kHz;
-            gyroSamplePeriod = 31.5f;
-        } else {
-            switch (gyro->mpuDetectionResult.sensor) {
-            case BMI_160_SPI:
-                gyro->gyroRateKHz = GYRO_RATE_3200_Hz;
-                gyroSamplePeriod = 312.0f;
-                break;
-            case ICM_20649_SPI:
-                gyro->gyroRateKHz = GYRO_RATE_9_kHz;
-                gyroSamplePeriod = 1000000.0f / 9000.0f;
-                break;
-            default:
-                gyro->gyroRateKHz = GYRO_RATE_8_kHz;
-                gyroSamplePeriod = 125.0f;
-                break;
-            }
-        }
-    } else {
-        switch (gyro->mpuDetectionResult.sensor) {
-        case ICM_20649_SPI:
-            gyro->gyroRateKHz = GYRO_RATE_1100_Hz;
-            gyroSamplePeriod = 1000000.0f / 1100.0f;
-            break;
-        default:
-            gyro->gyroRateKHz = GYRO_RATE_1_kHz;
-            gyroSamplePeriod = 1000.0f;
-            break;
-        }
-        gyroSyncDenominator = 1; // Always full Sampling 1khz
+    bool lpfNoneOr256 = (lpf == GYRO_LPF_256HZ || lpf == GYRO_LPF_NONE);
+    if (!lpfNoneOr256) {
+        gyroSyncDenominator = 1; // Always full Sampling
+    }
+    gyro->mpuDividerDrops = gyroSyncDenominator - 1;
+    gyro->gyroRateKHz = lpfNoneOr256 ? GYRO_RATE_8_kHz : GYRO_RATE_1_kHz;
+    //20649 is a weird gyro
+    if (gyro->mpuDetectionResult.sensor == ICM_20649_SPI) {
+        gyro->gyroRateKHz = lpfNoneOr256 ? GYRO_RATE_9_kHz : GYRO_RATE_1100_Hz;
+    } else if (gyro->mpuDetectionResult.sensor == BMI_160_SPI && lpfNoneOr256) { 
+        //brainFPV is also a weird gyro
+        gyro->gyroRateKHz = GYRO_RATE_3200_Hz;
+    } else if (gyro_use_32khz) {
+        //use full 32k
+        gyro->gyroRateKHz = GYRO_RATE_32_kHz;
     }
 
-    // calculate gyro divider and targetLooptime (expected cycleTime)
-    gyro->mpuDividerDrops  = gyroSyncDenominator - 1;
-    const uint32_t targetLooptime = (uint32_t)(gyroSyncDenominator * gyroSamplePeriod);
-    return targetLooptime;
+    // return the targetLooptime (expected cycleTime)
+    return (uint32_t)(gyroSyncDenominator * gyro->gyroRateKHz);
 }

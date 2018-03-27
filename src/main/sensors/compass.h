@@ -18,6 +18,7 @@
 #pragma once
 
 #include "common/time.h"
+#include "common/maths.h"
 #include "drivers/io_types.h"
 #include "drivers/sensor.h"
 #include "pg/pg.h"
@@ -56,6 +57,8 @@ typedef struct compassConfig_s {
 
 PG_DECLARE(compassConfig_t, compassConfig);
 
-bool compassIsHealthy(void);
+bool compassIsHealthy(quaternion *q);
 void compassUpdate(timeUs_t currentTime);
 bool compassInit(void);
+union flightDynamicsTrims_u;
+bool compassGetAverage(quaternion *vAverage);
