@@ -22,6 +22,7 @@
 #define TARGET_DEFAULT_MIXER    MIXER_QUADX_1234
 
 
+
 #define LED0_PIN                PB5  
 
 #define USE_BEEPER
@@ -29,8 +30,38 @@
 
 #define ENABLE_DSHOT_DMAR       true
 
+#define USE_TRANSPONDER
+
+#define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
+
+#define USE_TARGET_CONFIG
+
+#define USE_SERIAL_4WAY_BLHELI_INTERFACE
+
+
 #define INVERTER_PIN_UART1      PC0
 
+/*----------Spi Config--------*/
+#define USE_SPI
+
+#define USE_SPI_DEVICE_1
+#define SPI1_NSS_PIN            PA4
+#define SPI1_SCK_PIN            PA5
+#define SPI1_MISO_PIN           PA6
+#define SPI1_MOSI_PIN           PA7
+
+#define USE_SPI_DEVICE_2
+#define SPI2_NSS_PIN            PB9
+#define SPI2_SCK_PIN            PB13
+#define SPI2_MISO_PIN           PB14
+#define SPI2_MOSI_PIN           PB15
+
+/*----------I2C Config--------*/
+#define USE_I2C
+#define USE_I2C_DEVICE_1
+#define I2C_DEVICE              (I2CDEV_1)
+#define I2C1_SCL                PB8
+#define I2C1_SDA                PB9
 
 /*----------Gyro Config--------*/
 #define MPU6000_CS_PIN          PA4
@@ -55,15 +86,11 @@
 #define MPU_INT_EXTI            PC4
 #define USE_MPU_DATA_READY_SIGNAL
 
-/*----------Flash Config--------
+/*----------Flash Config--------*/
 #define M25P16_CS_PIN           PB3
-#define M25P16_SPI_INSTANCE     SPI3
+#define M25P16_SPI_INSTANCE     SPI2
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
-*/
-
-#define USE_VCP
-#define VBUS_SENSING_PIN        PC5
 
 /*----------OSD Config--------*/
 #define USE_MAX7456
@@ -98,37 +125,15 @@
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN  PC6  // (HARDARE=0,PPM)
 
-/*----------Spi Config--------*/
-#define USE_SPI
-
-#define USE_SPI_DEVICE_1
-
-#define USE_SPI_DEVICE_3
-#define SPI3_NSS_PIN            PB3
-#define SPI3_SCK_PIN            PC10
-#define SPI3_MISO_PIN           PC11
-#define SPI3_MOSI_PIN           PC12
-
-/*----------I2C Config--------*/
-#define USE_I2C
-#define USE_I2C_DEVICE_1
-#define I2C_DEVICE              (I2CDEV_1)
-#define I2C1_SCL                PB8
-#define I2C1_SDA                PB9
-
 /*----------ADC Config--------*/
 #define USE_ADC
 
 #define CURRENT_METER_ADC_PIN   PC1
 #define VBAT_ADC_PIN            PC2
 
-#define USE_TRANSPONDER
+#define USE_VCP
+#define VBUS_SENSING_PIN        PC5
 
-#define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
-
-#define USE_TARGET_CONFIG
-
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
