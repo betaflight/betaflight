@@ -496,7 +496,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
     case MSP_VOLTAGE_METERS: {
         // write out id and voltage meter values, once for each meter we support
         uint8_t count = supportedVoltageMeterCount;
-#if !defined(USE_OSD_SLAVE) && defined(USE_ESC_SENSOR)
+#ifdef USE_ESC_SENSOR
         count -= VOLTAGE_METER_ID_ESC_COUNT - getMotorCount();
 #endif
 
@@ -515,7 +515,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
     case MSP_CURRENT_METERS: {
         // write out id and current meter values, once for each meter we support
         uint8_t count = supportedCurrentMeterCount;
-#if !defined(USE_OSD_SLAVE) && defined(USE_ESC_SENSOR)
+#ifdef USE_ESC_SENSOR
         count -= VOLTAGE_METER_ID_ESC_COUNT - getMotorCount();
 #endif
         for (int i = 0; i < count; i++) {
