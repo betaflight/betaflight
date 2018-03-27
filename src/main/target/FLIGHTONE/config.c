@@ -29,8 +29,14 @@
 
 
 #ifdef USE_TARGET_CONFIG
+
+#include "pg/max7456.h"
+#include "pg/pg.h"
+
+
 void targetConfiguration(void)
 {
+    max7456ConfigMutable()->clockConfig = MAX7456_CLOCK_CONFIG_FULL;
     rxConfigMutable()->halfDuplex = true;
     serialConfigMutable()->portConfigs[1].functionMask = FUNCTION_RX_SERIAL;
 }
