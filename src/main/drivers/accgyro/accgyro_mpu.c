@@ -193,7 +193,6 @@ bool mpuAccRead(accDev_t *acc)
 bool mpuGyroDmaSpiReadStart(gyroDev_t * gyro)
 {
     (void)(gyro); ///not used at this time
-    lastImufExtiTime = micros();
     //no reason not to get acc and gyro data at the same time
     lastImufExtiTime = micros();
     #ifdef USE_GYRO_IMUF9001

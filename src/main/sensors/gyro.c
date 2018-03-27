@@ -99,10 +99,6 @@ typedef struct gyroCalibration_s {
     uint16_t calibratingG;
 } gyroCalibration_t;
 
-#ifdef USE_GYRO_IMUF9001
-uint32_t lastImufExtiTime = 0;
-#endif
-
 bool firstArmingCalibrationWasStarted = false;
 #ifdef USE_GYRO_IMUF9001
 uint32_t lastImufExtiTime = 0;
@@ -194,15 +190,15 @@ PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
     .gyro_soft_notch_cutoff_1 = 0,
     .gyro_soft_notch_hz_2 = 0,
     .gyro_soft_notch_cutoff_2 = 0,
-    .checkOverflow = GYRO_OVERFLOW_CHECK_ALL_AXES,
+    .checkOverflow = GYRO_OVERFLOW_CHECK_YAW,
     .imuf_mode = 32,
-    .imuf_rate = IMUF_RATE_16K,
+    .imuf_rate = IMUF_RATE_32K,
     .imuf_pitch_q = HELIO_PROFILE_PITCH_Q,
-    .imuf_pitch_w = 6,
+    .imuf_pitch_w = HELIO_PROFILE_PITCH_W,
     .imuf_roll_q = HELIO_PROFILE_ROLL_Q,
-    .imuf_roll_w = 6,
+    .imuf_roll_w = HELIO_PROFILE_PITCH_W,
     .imuf_yaw_q = HELIO_PROFILE_YAW_Q,
-    .imuf_yaw_w = 6,
+    .imuf_yaw_w = HELIO_PROFILE_PITCH_W,
     .imuf_pitch_lpf_cutoff_hz = 150.0f,
     .imuf_roll_lpf_cutoff_hz = 150.0f,
     .imuf_yaw_lpf_cutoff_hz = 150.0f,
@@ -493,13 +489,7 @@ static bool gyroInitSensor(gyroSensor_t *gyroSensor)
 bool gyroInit(void)
 {
 #ifdef USE_GYRO_OVERFLOW_CHECK
-    if (gyroConfig()->checkOverflow == GYRO_OVERFLOW_CHECK_YAW) {
-        overflowAxisMask = GYRO_OVERFLOW_Z;
-    } else if (gyroConfig()->checkOverflow == GYRO_OVERFLOW_CHECK_ALL_AXES) {
-        overflowAxisMask = GYRO_OVERFLOW_X | GYRO_OVERFLOW_Y | GYRO_OVERFLOW_Z;
-    } else {
-        overflowAxisMask = 0;
-    }
+    overflowAxisMask = gyroConfig()->checkOverflow;
 #endif
 
     switch (debugMode) {

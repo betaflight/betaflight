@@ -37,12 +37,11 @@ void targetConfiguration(void) {
     motorConfigMutable()->dev.motorPwmProtocol = PWM_TYPE_MULTISHOT;
     pidConfigMutable()->pid_process_denom = 1; // 16kHz PID
     gyroConfigMutable()->gyro_use_32khz = 1;
-    gyroConfigMutable()->gyro_sync_denom = 2;  // 16kHz gyro
+    gyroConfigMutable()->gyro_sync_denom = 1;  // 16kHz gyro
     gyroConfigMutable()->gyro_soft_lpf_hz = 0;
     gyroConfigMutable()->gyro_soft_notch_hz_1 = 0;
     gyroConfigMutable()->gyro_soft_notch_hz_2 = 0;
-    gyroConfigMutable()->gyroMovementCalibrationThreshold = 20;
-    systemConfigMutable()->cpu_overclock = 0;
+    systemConfigMutable()->cpu_overclock = 1; //192MHz makes Multishot run a little better because of maths.
 
     for (uint8_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
         pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);

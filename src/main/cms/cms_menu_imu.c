@@ -365,11 +365,11 @@ static CMS_Menu cmsx_menuFilterGlobal = {
 #if defined(USE_GYRO_IMUF9001)
 static uint16_t gyroConfig_imuf_mode;
 static uint16_t gyroConfig_imuf_pitch_q;
-static uint16_t gyroConfig_imuf_pitch_r;
+static uint16_t gyroConfig_imuf_pitch_w;
 static uint16_t gyroConfig_imuf_roll_q;
-static uint16_t gyroConfig_imuf_roll_r;
+static uint16_t gyroConfig_imuf_roll_w;
 static uint16_t gyroConfig_imuf_yaw_q;
-static uint16_t gyroConfig_imuf_yaw_r;
+static uint16_t gyroConfig_imuf_yaw_w;
 static uint16_t gyroConfig_imuf_pitch_lpf_cutoff_hz;
 static uint16_t gyroConfig_imuf_roll_lpf_cutoff_hz;
 static uint16_t gyroConfig_imuf_yaw_lpf_cutoff_hz;
@@ -380,11 +380,11 @@ static long cmsx_menuImuf_onEnter(void)
 {
     gyroConfig_imuf_mode = gyroConfig()->imuf_mode;
     gyroConfig_imuf_pitch_q = gyroConfig()->imuf_pitch_q;
-    gyroConfig_imuf_pitch_r = gyroConfig()->imuf_pitch_r;
+    gyroConfig_imuf_pitch_w = gyroConfig()->imuf_pitch_w;
     gyroConfig_imuf_roll_q = gyroConfig()->imuf_roll_q;
-    gyroConfig_imuf_roll_r = gyroConfig()->imuf_roll_r;
+    gyroConfig_imuf_roll_w = gyroConfig()->imuf_roll_w;
     gyroConfig_imuf_yaw_q = gyroConfig()->imuf_yaw_q;
-    gyroConfig_imuf_yaw_r = gyroConfig()->imuf_yaw_r;
+    gyroConfig_imuf_yaw_w = gyroConfig()->imuf_yaw_w;
     gyroConfig_imuf_pitch_lpf_cutoff_hz = gyroConfig()->imuf_pitch_lpf_cutoff_hz;
     gyroConfig_imuf_roll_lpf_cutoff_hz = gyroConfig()->imuf_roll_lpf_cutoff_hz;
     gyroConfig_imuf_yaw_lpf_cutoff_hz = gyroConfig()->imuf_yaw_lpf_cutoff_hz;
@@ -400,11 +400,11 @@ static long cmsx_menuImuf_onExit(const OSD_Entry *self)
 
     gyroConfigMutable()->imuf_mode =  gyroConfig_imuf_mode;
     gyroConfigMutable()->imuf_pitch_q = gyroConfig_imuf_pitch_q;
-    gyroConfigMutable()->imuf_pitch_r = gyroConfig_imuf_pitch_r;
+    gyroConfigMutable()->imuf_pitch_w = gyroConfig_imuf_pitch_w;
     gyroConfigMutable()->imuf_roll_q = gyroConfig_imuf_roll_q;
-    gyroConfigMutable()->imuf_roll_r = gyroConfig_imuf_roll_r;
+    gyroConfigMutable()->imuf_roll_w = gyroConfig_imuf_roll_w;
     gyroConfigMutable()->imuf_yaw_q = gyroConfig_imuf_yaw_q;
-    gyroConfigMutable()->imuf_yaw_r = gyroConfig_imuf_yaw_r;
+    gyroConfigMutable()->imuf_yaw_w = gyroConfig_imuf_yaw_w;
     gyroConfigMutable()->imuf_pitch_lpf_cutoff_hz = gyroConfig_imuf_pitch_lpf_cutoff_hz;
     gyroConfigMutable()->imuf_roll_lpf_cutoff_hz = gyroConfig_imuf_roll_lpf_cutoff_hz;
     gyroConfigMutable()->imuf_yaw_lpf_cutoff_hz = gyroConfig_imuf_yaw_lpf_cutoff_hz;
@@ -420,11 +420,11 @@ static OSD_Entry cmsx_menuImufEntries[] =
 
     { "MODE",      OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_imuf_mode,                0, 255,    1 }, 0 },
     { "PITCH Q",   OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_imuf_pitch_q,             0, 16000, 50 }, 0 },
-    { "PITCH R",   OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_imuf_pitch_r,             0, 16000,  1 }, 0 },
+    { "PITCH W",   OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_imuf_pitch_w,             0, 16000,  1 }, 0 },
     { "ROLL Q",    OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_imuf_roll_q,              0, 16000, 50 }, 0 },
-    { "ROLL R",    OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_imuf_roll_r,              0, 16000,  1 }, 0 },
+    { "ROLL W",    OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_imuf_roll_w,              0, 16000,  1 }, 0 },
     { "YAW Q",     OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_imuf_yaw_q,               0, 16000, 50 }, 0 },
-    { "YAW R",     OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_imuf_yaw_r,               0, 16000,  1 }, 0 },
+    { "YAW W",     OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_imuf_yaw_w,               0, 16000,  1 }, 0 },
     { "PITCH LPF", OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_imuf_pitch_lpf_cutoff_hz, 0, 255,    1 }, 0 },
     { "ROLL LPF",  OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_imuf_roll_lpf_cutoff_hz,  0, 255,    1 }, 0 },
     { "YAW LPF",   OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_imuf_yaw_lpf_cutoff_hz,   0, 255,    1 }, 0 },
