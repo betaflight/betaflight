@@ -20,7 +20,7 @@
 #include <string.h>
 
 #include "platform.h"
-#if defined (USE_SPEKTRUM_CMS_TELEMETRY) && defined (USE_CMS)
+#if defined (USE_SPEKTRUM_CMS_TELEMETRY) && defined (USE_CMS) && defined(USE_TELEMETRY_SRXL)
 
 #include "common/utils.h"
 

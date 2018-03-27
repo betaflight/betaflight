@@ -21,7 +21,7 @@
 
 #include "platform.h"
 
-#ifdef USE_TELEMETRY
+#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_SRXL)
 
 #include "build/version.h"
 
@@ -58,8 +58,6 @@
 #include "io/vtx_tramp.h"
 #include "io/vtx_smartaudio.h"
 
-#define SRXL_CYCLETIME_US           33000 // 33ms, 30 Hz
-
 #define SRXL_ADDRESS_FIRST          0xA5
 #define SRXL_ADDRESS_SECOND         0x80
 #define SRXL_PACKET_LENGTH          0x15
@@ -73,6 +71,13 @@
 
 static bool srxlTelemetryEnabled;
 static uint8_t srxlFrame[SRXL_FRAME_SIZE_MAX];
+static bool srxlTelemetryNow   = false;
+
+void srxlCollectTelemetryNow(void)
+{
+    srxlTelemetryNow   = true;
+}
+
 
 static void srxlInitializeFrame(sbuf_t *dst)
 {
@@ -191,8 +196,8 @@ bool srxlFrameFlightPackCurrent(sbuf_t *dst, timeUs_t currentTimeUs)
         sbufWriteU16(dst, amps);
         sbufWriteU16(dst, mah);
         sbufWriteU16(dst, 0x7fff);            // temp A
-        sbufWriteU16(dst, 0xffff);            // Amps B
-        sbufWriteU16(dst, 0xffff);            // mAH B
+        sbufWriteU16(dst, 0x7fff);            // Amps B
+        sbufWriteU16(dst, 0x7fff);            // mAH B
         sbufWriteU16(dst, 0x7fff);            // temp B
         sbufWriteU16(dst, 0xffff);
 
@@ -507,16 +512,11 @@ bool checkSrxlTelemetryState(void)
  */
 void handleSrxlTelemetry(timeUs_t currentTimeUs)
 {
-    static uint32_t srxlLastCycleTime;
-
-    if (!srxlTelemetryEnabled) {
+    if (!srxlTelemetryNow) {
         return;
     }
 
-    // Actual telemetry data only needs to be sent at a low frequency, ie 10Hz
-    if (currentTimeUs >= srxlLastCycleTime + SRXL_CYCLETIME_US) {
-        srxlLastCycleTime = currentTimeUs;
-        processSrxl(currentTimeUs);
-    }
+    srxlTelemetryNow   = false;
+    processSrxl(currentTimeUs);
 }
 #endif
