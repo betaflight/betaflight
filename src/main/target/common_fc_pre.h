@@ -128,11 +128,11 @@
 #define USE_TELEMETRY_LTM
 #define USE_GYRO_FAST_KALMAN
 #define USE_TELEMETRY_SMARTPORT
+#define USE_LED_STRIP
 #endif
 
 #if (FLASH_SIZE > 128)
 #define USE_SERIALRX_SUMH       // Graupner legacy protocol
-#define USE_LED_STRIP
 #define USE_CAMERA_CONTROL
 #define USE_CMS
 #define USE_COPY_PROFILE_CMS_MENU
