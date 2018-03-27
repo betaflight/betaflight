@@ -24,7 +24,11 @@
 #define FC_VERSION_MINOR            4  // increment when a minor release is made (small new feature, change etc)
 #define FC_VERSION_PATCH_LEVEL      2  // increment when a bug is fixed
 
-#define FC_VERSION_STRING STR(FC_VERSION_MAJOR) "." STR(FC_VERSION_MINOR) "." STR(FC_VERSION_PATCH_LEVEL)
+#ifdef USE_GYRO_IMUF9001
+    #define FC_VERSION_STRING STR(FC_VERSION_MAJOR) "." STR(FC_VERSION_MINOR) "." STR(FC_VERSION_PATCH_LEVEL) " | IMUF: " STR(IMUF_VERSION_MAJOR) "." STR(IMUF_VERSION_MINOR) "." STR(IMUF_VERSION_PATCH_LEVEL) 
+#else
+    #define FC_VERSION_STRING STR(FC_VERSION_MAJOR) "." STR(FC_VERSION_MINOR) "." STR(FC_VERSION_PATCH_LEVEL)
+#endif //USE_GYRO_IMUF9001
 
 // Uncomment this for release / maintenance branches, or use `OPTIONS=RELEASE_BUILD`
 //#define RELEASE_BUILD
