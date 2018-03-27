@@ -15,28 +15,22 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdbool.h>
 #include <stdint.h>
 
 #include <platform.h>
+#include "drivers/io.h"
 
-#include "drivers/serial.h"
-#include "rx/rx.h"
+#include "drivers/dma.h"
+#include "drivers/timer.h"
+#include "drivers/timer_def.h"
 
-#include "telemetry/telemetry.h"
+const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
+    DEF_TIM(TIM11, CH1,  PB9, TIM_USE_ANY,                 0, 0), //cam control
 
-#include "fc/config.h"
+    DEF_TIM(TIM8,  CH2N, PB0,  TIM_USE_MOTOR,               0, 0), // Motor 1
+    DEF_TIM(TIM8,  CH3N, PB1,  TIM_USE_MOTOR,               0, 0), // Motor 2
+    DEF_TIM(TIM5,  CH4, PA2,  TIM_USE_MOTOR,               0, 1), // Motor 3
+    DEF_TIM(TIM5,  CH3, PA3,  TIM_USE_MOTOR,               0, 0), // Motor 4
 
-
-#ifdef USE_TARGET_CONFIG
-
-#include "pg/max7456.h"
-#include "pg/pg.h"
-
-
-void targetConfiguration(void)
-{
-    rxConfigMutable()->halfDuplex = true;
-    serialConfigMutable()->portConfigs[1].functionMask = FUNCTION_RX_SERIAL;
-}
-#endif
+    DEF_TIM(TIM4,  CH1, PB6,  TIM_USE_LED,                 0, 0), // LED for REVOLT
+};
