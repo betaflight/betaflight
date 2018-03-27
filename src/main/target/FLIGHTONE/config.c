@@ -32,6 +32,6 @@
 void targetConfiguration(void)
 {
     rxConfigMutable()->halfDuplex = true;
-    serialConfigMutable()->portConfigs[0].functionMask = FUNCTION_RX_SERIAL;
+    serialConfigMutable()->portConfigs[1].functionMask = FUNCTION_RX_SERIAL;
 }
 #endif
