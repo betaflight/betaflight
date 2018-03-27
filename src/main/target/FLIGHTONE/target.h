@@ -64,6 +64,13 @@
 #define USE_VCP
 #define VBUS_SENSING_PIN        PC5
 
+/*----------OSD Config--------*/
+#define USE_MAX7456
+#define MAX7456_SPI_INSTANCE    SPI3
+#define MAX7456_SPI_CS_PIN      PA15
+#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
+#define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
+
 /*----------Uart Config--------*/
 #define USE_UART1
 #define UART1_RX_PIN            PA10
