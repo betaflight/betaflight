@@ -95,6 +95,7 @@ void uartReconfigure(uartPort_t *uartPort)
     usartConfigurePinInversion(uartPort);
 
 #ifdef TARGET_USART_CONFIG
+    void usartTargetConfigure(uartPort_t *);
     usartTargetConfigure(uartPort);
 #endif
 
