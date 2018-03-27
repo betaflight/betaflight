@@ -339,6 +339,13 @@ static void validateAndFixConfig(void)
 #ifndef USE_OSD_SLAVE
 void validateAndFixGyroConfig(void)
 {
+    #ifdef USE_GYRO_IMUF9001
+    if (motorConfigMutable()->dev.motorPwmProtocol == PWM_TYPE_DSHOT1200) 
+    {
+        //rc smoothing and DShot1200 are not compatible yet.
+        rxConfigMutable()->rcInterpolation = RC_SMOOTHING_OFF;
+    }
+    #endif
     // Prevent invalid notch cutoff
     if (gyroConfig()->gyro_soft_notch_cutoff_1 >= gyroConfig()->gyro_soft_notch_hz_1) {
         gyroConfigMutable()->gyro_soft_notch_hz_1 = 0;
