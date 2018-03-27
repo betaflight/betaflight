@@ -51,7 +51,7 @@
 #define SPI1_MOSI_PIN           PA7
 
 #define USE_SPI_DEVICE_2
-#define SPI2_NSS_PIN            PB9
+#define SPI2_NSS_PIN            PB12
 #define SPI2_SCK_PIN            PB13
 #define SPI2_MISO_PIN           PB14
 #define SPI2_MOSI_PIN           PB15
