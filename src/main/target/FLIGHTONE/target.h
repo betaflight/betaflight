@@ -18,7 +18,7 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "RVLT"
-#define USBD_PRODUCT_STRING     "Revolt"
+#define USBD_PRODUCT_STRING     "RevoltOSD"
 #define TARGET_DEFAULT_MIXER    MIXER_QUADX_1234
 
 
