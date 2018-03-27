@@ -128,7 +128,9 @@ typedef struct pidProfile_s {
     uint8_t iterm_relax_cutoff_low;        // Slowest setpoint response to prevent iterm accumulation
     uint8_t iterm_relax_cutoff_high;       // Fastest setpoint response to prevent iterm accumulation
     itermRelax_e iterm_relax;                   // Enable iterm suppression during stick input
-    
+    uint8_t acro_trainer_angle_limit;       // Acro trainer roll/pitch angle limit in degrees
+    uint16_t acro_trainer_lookahead_ms;     // The lookahead window in milliseconds used to reduce overshoot
+    uint8_t acro_trainer_debug_axis;        // The axis for which record debugging values are captured 0=roll, 1=pitch
 } pidProfile_t;
 
 #ifndef USE_OSD_SLAVE
@@ -171,4 +173,6 @@ void pidInitConfig(const pidProfile_t *pidProfile);
 void pidInit(const pidProfile_t *pidProfile);
 void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex);
 bool crashRecoveryModeActive(void);
+void pidAcroTrainerInit(void);
+void pidSetAcroTrainerState(bool newState);
 

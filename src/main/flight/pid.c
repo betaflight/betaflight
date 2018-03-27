@@ -88,6 +88,11 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 );
 #endif
 
+#ifdef USE_ACRO_TRAINER
+#define ACRO_TRAINER_GAIN 5.0f             // matches default angle mode strength of 50
+#define ACRO_TRAINER_LOOKAHEAD_MIN 10000   // 10ms
+#endif // USE_ACRO_TRAINER
+
 PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 3);
 
 void resetPidProfile(pidProfile_t *pidProfile)
@@ -142,7 +147,10 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .smart_feedforward = false,
         .iterm_relax = ITERM_RELAX_OFF,
         .iterm_relax_cutoff_low = 3,
-        .iterm_relax_cutoff_high = 15,
+        .iterm_relax_cutoff_high = 15,      
+        .acro_trainer_angle_limit = 20,
+        .acro_trainer_lookahead_ms = 50,
+        .acro_trainer_debug_axis = FD_ROLL
     );
 }
 
@@ -312,6 +320,14 @@ pt1Filter_t throttleLpf;
 static FAST_RAM_ZERO_INIT bool itermRotation;
 static FAST_RAM_ZERO_INIT bool smartFeedforward;
 
+#ifdef USE_ACRO_TRAINER
+static FAST_RAM_ZERO_INIT float acro_trainer_angle_limit;
+static FAST_RAM_ZERO_INIT timeUs_t acro_trainer_lookahead_time;
+static FAST_RAM_ZERO_INIT uint8_t acro_trainer_debug_axis;
+static FAST_RAM_ZERO_INIT bool acroTrainerActive;
+static FAST_RAM_ZERO_INIT int8_t acroTrainerAxisState[2];  // only need roll and pitch
+#endif // USE_ACRO_TRAINER
+
 void pidInitConfig(const pidProfile_t *pidProfile)
 {
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
@@ -351,6 +367,12 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     itermRelax = pidProfile->iterm_relax;
     itermRelaxCutoffLow = pidProfile->iterm_relax_cutoff_low;
     itermRelaxCutoffHigh = pidProfile->iterm_relax_cutoff_high;
+
+#ifdef USE_ACRO_TRAINER
+    acro_trainer_angle_limit = pidProfile->acro_trainer_angle_limit;
+    acro_trainer_lookahead_time = pidProfile->acro_trainer_lookahead_ms * 1000;
+    acro_trainer_debug_axis = pidProfile->acro_trainer_debug_axis;
+#endif // USE_ACRO_TRAINER
 }
 
 void pidInit(const pidProfile_t *pidProfile)
@@ -360,6 +382,13 @@ void pidInit(const pidProfile_t *pidProfile)
     pidInitConfig(pidProfile);
 }
 
+#ifdef USE_ACRO_TRAINER
+void pidAcroTrainerInit(void)
+{
+    acroTrainerAxisState[FD_ROLL] = 0;
+    acroTrainerAxisState[FD_PITCH] = 0;
+}
+#endif // USE_ACRO_TRAINER
 
 void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex)
 {
@@ -545,6 +574,79 @@ static void handleItermRotation()
     }
 }
 
+#ifdef USE_ACRO_TRAINER
+
+int8_t acroTrainerSign(float x)
+{
+    return (x > 0.0f) - (x < 0.0f);
+}
+
+// Acro Trainer - Manipulate the setPoint to limit axis angle while in acro mode
+// There are three states:
+// 1. Current angle has exceeded limit
+//    Apply correction to return to limit (similar to pidLevel)
+// 2. Future overflow has been projected based on current angle and gyro rate
+//    Manage the setPoint to control the gyro rate as the actual angle  approaches the limit (try to prevent overshoot)
+// 3. If no potential overflow is detected, then return the original setPoint
+
+static float applyAcroTrainer(int axis, const rollAndPitchTrims_t *angleTrim, float setPoint)
+{
+    float ret = setPoint;
+
+#ifndef SIMULATOR_BUILD
+    if (!FLIGHT_MODE(ANGLE_MODE) && !FLIGHT_MODE(HORIZON_MODE)) {
+        bool resetIterm = false;
+        float projectedAngle;
+        const int8_t setpointSign = acroTrainerSign(setPoint);
+        const float currentAngle = (attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f;
+        const int8_t angleSign = acroTrainerSign(currentAngle);
+
+        // Limit and correct the angle when it exceeds the limit
+        if ((fabsf(currentAngle) > acro_trainer_angle_limit) || (acroTrainerAxisState[axis] != 0)) {
+            if (angleSign == -setpointSign) {  // stick has reversed - stop limiting
+                acroTrainerAxisState[axis] = 0;
+            } else {
+                if (acroTrainerAxisState[axis] != angleSign) {
+                    acroTrainerAxisState[axis] = angleSign;
+                    resetIterm = true;
+                }
+                ret = ((acro_trainer_angle_limit * angleSign) - currentAngle) * ACRO_TRAINER_GAIN;
+            }
+        }
+        
+        // Not currently over the limit so project the angle based on current angle and
+        // gyro angular rate using a sliding window based on gyro rate (faster rotation means larger window.
+        // If the projected angle exceeds the limit then apply limiting to minimize overshoot.
+        if (acroTrainerAxisState[axis] == 0) {
+            const timeUs_t checkInterval = MAX(lrintf(constrainf(fabsf(gyro.gyroADCf[axis]) / 500.0f, 0.0f, 1.0f) * acro_trainer_lookahead_time), ACRO_TRAINER_LOOKAHEAD_MIN);
+            projectedAngle = (gyro.gyroADCf[axis] * checkInterval * 0.000001f) + currentAngle;
+            const int8_t projectedAngleSign = acroTrainerSign(projectedAngle);
+            if ((fabsf(projectedAngle) > acro_trainer_angle_limit) && (projectedAngleSign == setpointSign)) {
+                ret = ((acro_trainer_angle_limit * projectedAngleSign) - projectedAngle) * ACRO_TRAINER_GAIN;
+                resetIterm = true;
+            }
+        }
+
+        if (resetIterm) {
+            pidData[axis].I = 0.0f;
+        }
+ 
+        if (axis == acro_trainer_debug_axis) {
+            DEBUG_SET(DEBUG_ACRO_TRAINER, 0, lrintf(currentAngle * 10.0f));
+            DEBUG_SET(DEBUG_ACRO_TRAINER, 1, acroTrainerAxisState[axis]);
+            DEBUG_SET(DEBUG_ACRO_TRAINER, 2, lrintf(ret));
+            DEBUG_SET(DEBUG_ACRO_TRAINER, 3, lrintf(projectedAngle * 10.0f));
+        }
+    }
+#else
+    UNUSED(axis);
+    UNUSED(angleTrim);
+#endif // SIMULATOR_BUILD
+
+    return ret;
+}
+#endif // USE_ACRO_TRAINER
+
 // Betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage.
 // Based on 2DOF reference design (matlab)
 void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, timeUs_t currentTimeUs)
@@ -588,6 +690,12 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
         if ((FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE) || FLIGHT_MODE(GPS_RESCUE_MODE)) && axis != YAW) {
             currentPidSetpoint = pidLevel(axis, pidProfile, angleTrim, currentPidSetpoint);
         }
+
+#ifdef USE_ACRO_TRAINER
+        if ((axis != FD_YAW) && acroTrainerActive && !inCrashRecoveryMode) {
+            currentPidSetpoint = applyAcroTrainer(axis, angleTrim, currentPidSetpoint);
+        }
+#endif // USE_ACRO_TRAINER
 
         // Handle yaw spin recovery - zero the setpoint on yaw to aid in recovery
         // It's not necessary to zero the set points for R/P because the PIDs will be zeroed below
@@ -723,3 +831,10 @@ bool crashRecoveryModeActive(void)
 {
     return inCrashRecoveryMode;
 }
+
+#ifdef USE_ACRO_TRAINER
+void pidSetAcroTrainerState(bool newState)
+{
+    acroTrainerActive = newState;
+}
+#endif // USE_ACRO_TRAINER

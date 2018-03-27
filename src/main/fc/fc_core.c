@@ -382,6 +382,10 @@ void tryArm(void)
         ENABLE_ARMING_FLAG(ARMED);
         ENABLE_ARMING_FLAG(WAS_EVER_ARMED);
 
+#ifdef USE_ACRO_TRAINER
+        pidAcroTrainerInit();
+#endif // USE_ACRO_TRAINER
+
         if (isModeActivationConditionPresent(BOXPREARM)) {
             ENABLE_ARMING_FLAG(WAS_ARMED_WITH_PREARM);
         }
@@ -832,6 +836,10 @@ bool processRx(timeUs_t currentTimeUs)
         handleVTXControlButton();
     }
 #endif
+
+#ifdef USE_ACRO_TRAINER
+    pidSetAcroTrainerState(IS_RC_MODE_ACTIVE(BOXACROTRAINER) && sensors(SENSOR_ACC));
+#endif // USE_ACRO_TRAINER
 
     return true;
 }

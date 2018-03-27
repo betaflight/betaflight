@@ -144,6 +144,7 @@
 #endif
 
 #if (FLASH_SIZE > 64)
+#define USE_ACRO_TRAINER
 #define USE_BLACKBOX
 #define USE_LED_STRIP
 #define USE_RESOURCE_MGMT

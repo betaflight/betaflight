@@ -337,6 +337,11 @@ static const char * const lookupTableItermRelax[] = {
     "OFF", "RP", "RPY"
 };
 
+#ifdef USE_ACRO_TRAINER
+static const char * const lookupTableAcroTrainerDebug[] = {
+    "ROLL", "PITCH"
+};
+#endif // USE_ACRO_TRAINER
 
 #define LOOKUP_TABLE_ENTRY(name) { name, ARRAYLEN(name) }
 
@@ -413,6 +418,9 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableVideoSystem),
 #endif // USE_MAX7456
     LOOKUP_TABLE_ENTRY(lookupTableItermRelax),
+#ifdef USE_ACRO_TRAINER
+    LOOKUP_TABLE_ENTRY(lookupTableAcroTrainerDebug),
+#endif // USE_ACRO_TRAINER
 };
 
 #undef LOOKUP_TABLE_ENTRY
@@ -759,6 +767,12 @@ const clivalue_t valueTable[] = {
     { "throttle_boost",             VAR_UINT8 | PROFILE_VALUE,  .config.minmax = { 0, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, throttle_boost) },
     { "throttle_boost_cutoff",      VAR_UINT8 | PROFILE_VALUE,  .config.minmax = { 5, 50 }, PG_PID_PROFILE, offsetof(pidProfile_t, throttle_boost_cutoff) },
 
+#ifdef USE_ACRO_TRAINER
+    { "acro_trainer_angle_limit",   VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 10, 80 }, PG_PID_PROFILE, offsetof(pidProfile_t, acro_trainer_angle_limit) },
+    { "acro_trainer_lookahead_ms",  VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 10, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, acro_trainer_lookahead_ms) },
+    { "acro_trainer_debug_axis",    VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ACRO_TRAINER_DEBUG }, PG_PID_PROFILE, offsetof(pidProfile_t, acro_trainer_debug_axis) },
+#endif // USE_ACRO_TRAINER
+    
     { "p_pitch",                    VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_PITCH].P) },
     { "i_pitch",                    VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_PITCH].I) },
     { "d_pitch",                    VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_PITCH].D) },
