@@ -62,6 +62,10 @@ defined in linker script */
 .word  _sbss
 /* end address for the .bss section. defined in linker script */
 .word  _ebss
+/* start address for the .fastram_bss section. defined in linker script */
+.word  _sfastram_bss
+/* end address for the .fastram_bss section. defined in linker script */
+.word  _efastram_bss
 /* stack used for SystemInit_ExtMemCtl; always internal RAM used */
 
 /**
