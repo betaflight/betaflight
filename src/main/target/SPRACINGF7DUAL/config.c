@@ -57,6 +57,5 @@ void targetConfiguration(void)
     telemetryConfigMutable()->telemetry_inverted = 1;
     telemetryConfigMutable()->halfDuplex = 1;
 #endif
-
 }
 #endif
