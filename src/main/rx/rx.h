@@ -45,6 +45,7 @@ typedef enum {
     RX_FRAME_COMPLETE = (1 << 0),
     RX_FRAME_FAILSAFE = (1 << 1),
     RX_FRAME_PROCESSING_REQUIRED = (1 << 2),
+    RX_FRAME_DROPPED = (1 << 3)
 } rxFrameState_e;
 
 typedef enum {
@@ -144,6 +145,7 @@ typedef struct rxConfig_s {
     uint16_t rx_min_usec;
     uint16_t rx_max_usec;
     uint8_t max_aux_channel;
+    uint8_t rssi_src_frame_errors;          // true to use frame drop flags in the rx protocol
 } rxConfig_t;
 
 PG_DECLARE(rxConfig_t, rxConfig);
@@ -169,6 +171,7 @@ typedef enum {
     RSSI_SOURCE_RX_CHANNEL,
     RSSI_SOURCE_RX_PROTOCOL,
     RSSI_SOURCE_MSP,
+    RSSI_SOURCE_FRAME_ERRORS,
 } rssiSource_e;
 
 extern rssiSource_e rssiSource;
@@ -182,6 +185,8 @@ bool rxAreFlightChannelsValid(void);
 bool calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs);
 
 void parseRcChannels(const char *input, rxConfig_t *rxConfig);
+
+#define RSSI_MAX_VALUE 1023
 
 void setRssiFiltered(uint16_t newRssi, rssiSource_e source);
 void setRssiUnfiltered(uint16_t rssiValue, rssiSource_e source);

@@ -262,7 +262,7 @@ static uint8_t fportFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
                     if (frameLength != FPORT_FRAME_PAYLOAD_LENGTH_CONTROL) {
                         reportFrameError(DEBUG_FPORT_ERROR_TYPE_SIZE);
                     } else {
-                        result |= sbusChannelsDecode(rxRuntimeConfig, &frame->data.controlData.channels);
+                        result = sbusChannelsDecode(rxRuntimeConfig, &frame->data.controlData.channels);
 
                         setRssiUnfiltered(scaleRange(constrain(frame->data.controlData.rssi, 0, 100), 0, 100, 0, 1024), RSSI_SOURCE_RX_PROTOCOL);
 
@@ -314,7 +314,7 @@ static uint8_t fportFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
     if ((mspPayload || hasTelemetryRequest) && cmpTimeUs(micros(), lastTelemetryFrameReceivedUs) >= FPORT_MIN_TELEMETRY_RESPONSE_DELAY_US) {
         hasTelemetryRequest = false;
 
-        result = result | RX_FRAME_PROCESSING_REQUIRED;
+        result = (result & ~RX_FRAME_PENDING) | RX_FRAME_PROCESSING_REQUIRED;
     }
 
     if (lastRcFrameReceivedMs && ((millis() - lastRcFrameReceivedMs) > FPORT_MAX_TELEMETRY_AGE_MS)) {

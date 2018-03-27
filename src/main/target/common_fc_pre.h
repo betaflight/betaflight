@@ -51,6 +51,8 @@
 #define USE_GYRO_DATA_ANALYSE
 #define USE_ADC
 #define USE_ADC_INTERNAL
+#define USE_USB_CDC_HID
+#define USE_USB_MSC
 
 #if defined(STM32F40_41xxx) || defined(STM32F411xE)
 #define USE_OVERCLOCK
@@ -68,6 +70,7 @@
 #define I2C4_OVERCLOCK true
 #define USE_GYRO_DATA_ANALYSE
 #define USE_OVERCLOCK
+#define USE_ADC_INTERNAL
 #endif
 
 #if defined(STM32F4) || defined(STM32F7)
@@ -102,6 +105,7 @@
 
 
 #define USE_CLI
+#define USE_GYRO_REGISTER_DUMP  // Adds gyroregisters command to cli to dump configured register values
 #define USE_PPM
 #define USE_PWM
 #define USE_SERIAL_RX
@@ -136,6 +140,7 @@
 #define USE_CAMERA_CONTROL
 #define USE_CMS
 #define USE_COPY_PROFILE_CMS_MENU
+#define USE_EXTENDED_CMS_MENUS
 #define USE_DSHOT_DMAR
 #define USE_GYRO_OVERFLOW_CHECK
 #define USE_HUFFMAN

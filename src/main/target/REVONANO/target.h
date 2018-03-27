@@ -56,6 +56,7 @@
 #define USE_UART1 // Flexi Port
 #define UART1_RX_PIN            PB7
 #define UART1_TX_PIN            PB6
+#define PINIO1_PIN              PB10 // DTR pin
 
 #define USE_UART2 // Main Port
 #define UART2_RX_PIN            PA3

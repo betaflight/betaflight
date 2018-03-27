@@ -71,4 +71,5 @@ const char * const ownerNames[OWNER_TOTAL_COUNT] = {
     "RANGEFINDER",
     "RX_SPI",
     "PINIO",
+    "USB_MSC_PIN",
 };

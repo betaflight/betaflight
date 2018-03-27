@@ -25,6 +25,8 @@
 #define MAX_FIR_DENOISE_WINDOW_SIZE 120
 #endif
 
+#define MAX_LMA_WINDOW_SIZE 12
+
 struct filter_s;
 typedef struct filter_s filter_t;
 
@@ -45,6 +47,13 @@ typedef struct biquadFilter_s {
     float x1, x2, y1, y2;
 } biquadFilter_t;
 
+#define BIQUAD_LPF_ORDER_MAX 6
+
+typedef struct biquadFilterCascade_s {
+    int sections;
+    biquadFilter_t biquad[(BIQUAD_LPF_ORDER_MAX + 1) / 2];   // each section is of second order
+} biquadFilterCascade_t;
+
 typedef struct firFilterDenoise_s {
     int filledCount;
     int targetCount;
@@ -54,20 +63,27 @@ typedef struct firFilterDenoise_s {
 } firFilterDenoise_t;
 
 typedef struct fastKalman_s {
-    float q;       // process noise covariance
-    float r;       // measurement noise covariance
-    float p;       // estimation error covariance matrix
-    float k;       // kalman gain
+    float k;       // "kalman" gain
     float x;       // state
     float lastX;   // previous state
 } fastKalman_t;
+
+typedef struct laggedMovingAverage_s {
+    uint16_t movingWindowIndex;
+    uint16_t windowSize;
+    float weight;
+    float movingSum;
+    float buf[MAX_LMA_WINDOW_SIZE];
+} laggedMovingAverage_t;
 
 typedef enum {
     FILTER_PT1 = 0,
     FILTER_BIQUAD,
     FILTER_FIR,
-    FILTER_SLEW
-} filterType_e;
+    FILTER_BUTTERWORTH,
+    FILTER_BIQUAD_RC_FIR2,
+    FILTER_FAST_KALMAN
+} lowpassFilterType_e;
 
 typedef enum {
     FILTER_LPF,    // 2nd order Butterworth section
@@ -90,7 +106,7 @@ typedef float (*filterApplyFnPtr)(filter_t *filter, float input);
 
 float nullFilterApply(filter_t *filter, float input);
 
-#define BIQUAD_LPF_ORDER_MAX 6
+
 
 void biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate);
 void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType);
@@ -99,15 +115,19 @@ int biquadFilterLpfCascadeInit(biquadFilter_t *sections, int order, float filter
 
 float biquadFilterApplyDF1(biquadFilter_t *filter, float input);
 float biquadFilterApply(biquadFilter_t *filter, float input);
-float filterGetNotchQ(uint16_t centerFreq, uint16_t cutoff);
+float biquadCascadeFilterApply(biquadFilterCascade_t *filter, float input);
+float filterGetNotchQ(float centerFreq, float cutoffFreq);
 
-void fastKalmanInit(fastKalman_t *filter, float q, float r, float p);
+void biquadRCFIR2FilterInit(biquadFilter_t *filter, float k);
+
+void fastKalmanInit(fastKalman_t *filter, float k);
 float fastKalmanUpdate(fastKalman_t *filter, float input);
 
-// not exactly correct, but very very close and much much faster
-#define filterGetNotchQApprox(centerFreq, cutoff)   ((float)(cutoff * centerFreq) / ((float)(centerFreq - cutoff) * (float)(centerFreq + cutoff)))
+void lmaSmoothingInit(laggedMovingAverage_t *filter, uint8_t windowSize, float weight);
+float lmaSmoothingUpdate(laggedMovingAverage_t *filter, float input);
 
-void pt1FilterInit(pt1Filter_t *filter, uint8_t f_cut, float dT);
+float pt1FilterGain(uint16_t f_cut, float dT);
+void pt1FilterInit(pt1Filter_t *filter, float k);
 float pt1FilterApply(pt1Filter_t *filter, float input);
 
 void slewFilterInit(slewFilter_t *filter, float slewLimit, float threshold);

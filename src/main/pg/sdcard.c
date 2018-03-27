@@ -38,6 +38,8 @@ void pgResetFn_sdcardConfig(sdcardConfig_t *config)
 #ifdef SDCARD_SPI_INSTANCE
     config->enabled = 1;
     config->device = spiDeviceByInstance(SDCARD_SPI_INSTANCE);
+#elif defined(USE_SDCARD_SDIO)
+    config->enabled = 1;
 #else
     config->enabled = 0;
     config->device = 0;
@@ -63,9 +65,12 @@ void pgResetFn_sdcardConfig(sdcardConfig_t *config)
     config->dmaIdentifier = (uint8_t)dmaGetIdentifier(SDCARD_DMA_STREAM_TX_FULL);
 #elif defined(SDCARD_DMA_CHANNEL_TX)
     config->dmaIdentifier = (uint8_t)dmaGetIdentifier(SDCARD_DMA_CHANNEL_TX);
+#elif defined(SDIO_DMA)
+    config->dmaIdentifier = (uint8_t)dmaGetIdentifier(SDIO_DMA);
+    config->useDma = true;
 #endif
 
-#if (defined(STM32F4) || defined(STM32F7)) && defined(SDCARD_DMA_CHANNEL)
+#if defined(SDCARD_DMA_CHANNEL)
     config->dmaChannel = SDCARD_DMA_CHANNEL;
 #endif
 }

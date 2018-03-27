@@ -142,26 +142,9 @@ static void mpu9250AccAndGyroInit(gyroDev_t *gyro) {
 
     mpu9250SpiWriteRegisterVerify(&gyro->bus, MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
 
-    //Fchoice_b defaults to 00 which makes fchoice 11
-    uint8_t raGyroConfigData = INV_FSR_2000DPS << 3;
-    if (gyro->gyroRateKHz > GYRO_RATE_8_kHz) {
-        // use otherwise redundant LPF value to configure FCHOICE_B
-        // see REGISTER 27 – GYROSCOPE CONFIGURATION in datasheet
-        if (gyro->lpf==GYRO_LPF_NONE) {
-            raGyroConfigData |= FCB_8800_32;
-        } else {
-            raGyroConfigData |= FCB_3600_32;
-        }
-    }
-    mpu9250SpiWriteRegisterVerify(&gyro->bus, MPU_RA_GYRO_CONFIG, raGyroConfigData);
+    mpu9250SpiWriteRegisterVerify(&gyro->bus, MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3 | mpuGyroFCHOICE(gyro));
 
-    if (gyro->lpf == 4) {
-        mpu9250SpiWriteRegisterVerify(&gyro->bus, MPU_RA_CONFIG, 1); //1KHz, 184DLPF
-    } else if (gyro->lpf < 4) {
-        mpu9250SpiWriteRegisterVerify(&gyro->bus, MPU_RA_CONFIG, 7); //8KHz, 3600DLPF
-    } else if (gyro->lpf > 4) {
-        mpu9250SpiWriteRegisterVerify(&gyro->bus, MPU_RA_CONFIG, 0); //8KHz, 250DLPF
-    }
+    mpu9250SpiWriteRegisterVerify(&gyro->bus, MPU_RA_CONFIG, mpuGyroDLPF(gyro));
 
     mpu9250SpiWriteRegisterVerify(&gyro->bus, MPU_RA_SMPLRT_DIV, gyro->mpuDividerDrops);
 

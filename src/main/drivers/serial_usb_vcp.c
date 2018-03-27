@@ -30,6 +30,11 @@
 #if defined(STM32F4)
 #include "usb_core.h"
 #include "usbd_cdc_vcp.h"
+#ifdef USE_USB_CDC_HID
+#include "usbd_hid_cdc_wrapper.h"
+#include "pg/pg.h"
+#include "pg/usb.h"
+#endif
 #include "usb_io.h"
 #elif defined(STM32F7)
 #include "vcp_hal/usbd_cdc_interface.h"
@@ -65,6 +70,22 @@ static void usbVcpSetMode(serialPort_t *instance, portMode_e mode)
     UNUSED(mode);
 
     // TODO implement
+}
+
+static void usbVcpSetCtrlLineStateCb(serialPort_t *instance, void (*cb)(void *context, uint16_t ctrlLineState), void *context)
+{
+    UNUSED(instance);
+
+    // Register upper driver control line state callback routine with USB driver
+    CDC_SetCtrlLineStateCb((void (*)(void *context, uint16_t ctrlLineState))cb, context);
+}
+
+static void usbVcpSetBaudRateCb(serialPort_t *instance, void (*cb)(serialPort_t *context, uint32_t baud), serialPort_t *context)
+{
+    UNUSED(instance);
+
+    // Register upper driver baud rate callback routine with USB driver
+    CDC_SetBaudRateCb((void (*)(void *context, uint32_t baud))cb, (void *)context);
 }
 
 static bool isUsbVcpTransmitBufferEmpty(const serialPort_t *instance)
@@ -178,6 +199,8 @@ static const struct serialPortVTable usbVTable[] = {
         .serialSetBaudRate = usbVcpSetBaudRate,
         .isSerialTransmitBufferEmpty = isUsbVcpTransmitBufferEmpty,
         .setMode = usbVcpSetMode,
+        .setCtrlLineStateCb = usbVcpSetCtrlLineStateCb,
+        .setBaudRateCb = usbVcpSetBaudRateCb,
         .writeBuf = usbVcpWriteBuf,
         .beginWrite = usbVcpBeginWrite,
         .endWrite = usbVcpEndWrite
@@ -193,7 +216,15 @@ serialPort_t *usbVcpOpen(void)
 
     IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, 0);
     IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, 0);
-    USBD_Init(&USB_OTG_dev, USB_OTG_FS_CORE_ID, &USR_desc, &USBD_CDC_cb, &USR_cb);
+#ifdef USE_USB_CDC_HID
+    if (usbDevConfig()->type == COMPOSITE) {
+        USBD_Init(&USB_OTG_dev, USB_OTG_FS_CORE_ID, &USR_desc, &USBD_HID_CDC_cb, &USR_cb);
+    } else {
+#endif
+        USBD_Init(&USB_OTG_dev, USB_OTG_FS_CORE_ID, &USR_desc, &USBD_CDC_cb, &USR_cb);
+#ifdef USE_USB_CDC_HID
+    }
+#endif
 #elif defined(STM32F7)
     usbGenerateDisconnectPulse();
 

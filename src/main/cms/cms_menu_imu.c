@@ -283,7 +283,7 @@ static OSD_Entry cmsx_menuProfileOtherEntries[] = {
     { "-- OTHER PP --", OME_Label, NULL, pidProfileIndexString, 0 },
 
     { "D SETPT WT",  OME_FLOAT,  NULL, &(OSD_FLOAT_t)  { &cmsx_dtermSetpointWeight,    0,    255,   1, 10 }, 0 },
-    { "SETPT TRS",   OME_FLOAT,  NULL, &(OSD_FLOAT_t)  { &cmsx_setpointRelaxRatio,     1,    100,   1, 10 }, 0 },
+    { "SETPT TRS",   OME_FLOAT,  NULL, &(OSD_FLOAT_t)  { &cmsx_setpointRelaxRatio,     0,    100,   1, 10 }, 0 },
     { "ANGLE STR",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleStrength,          0,    200,   1 }    , 0 },
     { "HORZN STR",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_horizonStrength,        0,    200,   1 }    , 0 },
     { "HORZN TRS",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_horizonTransition,      0,    200,   1 }    , 0 },
@@ -304,7 +304,9 @@ static CMS_Menu cmsx_menuProfileOther = {
     .entries = cmsx_menuProfileOtherEntries,
 };
 
-static uint8_t gyroConfig_gyro_soft_lpf_hz;
+
+static uint16_t gyroConfig_gyro_lowpass_hz;
+static uint16_t gyroConfig_gyro_lowpass2_hz;
 static uint16_t gyroConfig_gyro_soft_notch_hz_1;
 static uint16_t gyroConfig_gyro_soft_notch_cutoff_1;
 static uint16_t gyroConfig_gyro_soft_notch_hz_2;
@@ -312,7 +314,8 @@ static uint16_t gyroConfig_gyro_soft_notch_cutoff_2;
 
 static long cmsx_menuGyro_onEnter(void)
 {
-    gyroConfig_gyro_soft_lpf_hz =  gyroConfig()->gyro_soft_lpf_hz;
+    gyroConfig_gyro_lowpass_hz =  gyroConfig()->gyro_lowpass_hz;
+    gyroConfig_gyro_lowpass2_hz =  gyroConfig()->gyro_lowpass2_hz;
     gyroConfig_gyro_soft_notch_hz_1 = gyroConfig()->gyro_soft_notch_hz_1;
     gyroConfig_gyro_soft_notch_cutoff_1 = gyroConfig()->gyro_soft_notch_cutoff_1;
     gyroConfig_gyro_soft_notch_hz_2 = gyroConfig()->gyro_soft_notch_hz_2;
@@ -325,7 +328,8 @@ static long cmsx_menuGyro_onExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
-    gyroConfigMutable()->gyro_soft_lpf_hz =  gyroConfig_gyro_soft_lpf_hz;
+    gyroConfigMutable()->gyro_lowpass_hz =  gyroConfig_gyro_lowpass_hz;
+    gyroConfigMutable()->gyro_lowpass2_hz =  gyroConfig_gyro_lowpass2_hz;
     gyroConfigMutable()->gyro_soft_notch_hz_1 = gyroConfig_gyro_soft_notch_hz_1;
     gyroConfigMutable()->gyro_soft_notch_cutoff_1 = gyroConfig_gyro_soft_notch_cutoff_1;
     gyroConfigMutable()->gyro_soft_notch_hz_2 = gyroConfig_gyro_soft_notch_hz_2;
@@ -338,7 +342,8 @@ static OSD_Entry cmsx_menuFilterGlobalEntries[] =
 {
     { "-- FILTER GLB  --", OME_Label, NULL, NULL, 0 },
 
-    { "GYRO LPF",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &gyroConfig_gyro_soft_lpf_hz,         0, 255, 1 }, 0 },
+    { "GYRO LPF",   OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_gyro_lowpass_hz, 0, 16000, 1 }, 0 },
+    { "GYRO LPF2",  OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_gyro_lowpass2_hz,  0, 16000, 1 }, 0 },
     { "GYRO NF1",   OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_gyro_soft_notch_hz_1,     0, 500, 1 }, 0 },
     { "GYRO NF1C",  OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_gyro_soft_notch_cutoff_1, 0, 500, 1 }, 0 },
     { "GYRO NF2",   OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_gyro_soft_notch_hz_2,     0, 500, 1 }, 0 },
@@ -358,18 +363,18 @@ static CMS_Menu cmsx_menuFilterGlobal = {
     .entries = cmsx_menuFilterGlobalEntries,
 };
 
-static uint16_t cmsx_dterm_lpf_hz;
+static uint16_t cmsx_dterm_lowpass_hz;
 static uint16_t cmsx_dterm_notch_hz;
 static uint16_t cmsx_dterm_notch_cutoff;
-static uint16_t cmsx_yaw_lpf_hz;
+static uint16_t cmsx_yaw_lowpass_hz;
 
 static long cmsx_FilterPerProfileRead(void)
 {
     const pidProfile_t *pidProfile = pidProfiles(pidProfileIndex);
-    cmsx_dterm_lpf_hz =       pidProfile->dterm_lpf_hz;
+    cmsx_dterm_lowpass_hz =   pidProfile->dterm_lowpass_hz;
     cmsx_dterm_notch_hz =     pidProfile->dterm_notch_hz;
     cmsx_dterm_notch_cutoff = pidProfile->dterm_notch_cutoff;
-    cmsx_yaw_lpf_hz =         pidProfile->yaw_lpf_hz;
+    cmsx_yaw_lowpass_hz =     pidProfile->yaw_lowpass_hz;
 
     return 0;
 }
@@ -379,10 +384,10 @@ static long cmsx_FilterPerProfileWriteback(const OSD_Entry *self)
     UNUSED(self);
 
     pidProfile_t *pidProfile = currentPidProfile;
-    pidProfile->dterm_lpf_hz =       cmsx_dterm_lpf_hz;
+    pidProfile->dterm_lowpass_hz =   cmsx_dterm_lowpass_hz;
     pidProfile->dterm_notch_hz =     cmsx_dterm_notch_hz;
     pidProfile->dterm_notch_cutoff = cmsx_dterm_notch_cutoff;
-    pidProfile->yaw_lpf_hz =         cmsx_yaw_lpf_hz;
+    pidProfile->yaw_lowpass_hz =     cmsx_yaw_lowpass_hz;
 
     return 0;
 }
@@ -391,10 +396,10 @@ static OSD_Entry cmsx_menuFilterPerProfileEntries[] =
 {
     { "-- FILTER PP  --", OME_Label, NULL, NULL, 0 },
 
-    { "DTERM LPF",  OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_dterm_lpf_hz,         0, 500, 1 }, 0 },
+    { "DTERM LPF",  OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_dterm_lowpass_hz,     0, 500, 1 }, 0 },
     { "DTERM NF",   OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_dterm_notch_hz,       0, 500, 1 }, 0 },
     { "DTERM NFCO", OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_dterm_notch_cutoff,   0, 500, 1 }, 0 },
-    { "YAW LPF",    OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_yaw_lpf_hz,           0, 500, 1 }, 0 },
+    { "YAW LPF",    OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_yaw_lowpass_hz,       0, 500, 1 }, 0 },
 
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
@@ -410,7 +415,7 @@ static CMS_Menu cmsx_menuFilterPerProfile = {
     .entries = cmsx_menuFilterPerProfileEntries,
 };
 
-#ifdef USE_COPY_PROFILE_CMS_MENU
+#ifdef USE_EXTENDED_CMS_MENUS
 
 static uint8_t cmsx_dstPidProfile;
 static uint8_t cmsx_dstControlRateProfile;
@@ -495,9 +500,9 @@ static OSD_Entry cmsx_menuImuEntries[] =
     {"RATE",      OME_Submenu, cmsMenuChange,                 &cmsx_menuRateProfile,                                         0},
 
     {"FILT GLB",  OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterGlobal,                                        0},
-#ifdef USE_COPY_PROFILE_CMS_MENU
+#ifdef USE_EXTENDED_CMS_MENUS
     {"COPY PROF", OME_Submenu, cmsMenuChange,                 &cmsx_menuCopyProfile,                                         0},
-#endif
+#endif /* USE_EXTENDED_CMS_MENUS */
 
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}

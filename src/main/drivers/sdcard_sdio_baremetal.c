@@ -13,6 +13,9 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Adaptation of original driver to SDIO: Chris Hockuba (https://github.com/conkerkh)
+ *
  */
 
 #include <stdbool.h>
@@ -21,6 +24,7 @@
 
 #include "platform.h"
 
+#define USE_SDCARD_SDIO
 #ifdef USE_SDCARD_SDIO
 
 #include "drivers/nvic.h"
@@ -32,7 +36,7 @@
 #include "drivers/sdcard.h"
 #include "drivers/sdcard_standard.h"
 
-#include "drivers/sdio_stdlib.h"
+#include "drivers/sdmmc_sdio.h"
 
 #ifdef AFATFS_USE_INTROSPECTIVE_LOGGING
     #define SDCARD_PROFILING
@@ -86,14 +90,13 @@ typedef struct sdcard_t {
     sdcardMetadata_t metadata;
     sdcardCSD_t csd;
 
-#ifdef SDIO_DMA
-    volatile uint8_t TxDMA_Cplt;
-    volatile uint8_t RxDMA_Cplt;
-#endif
-
 #ifdef SDCARD_PROFILING
     sdcard_profilerCallback_c profiler;
 #endif
+    bool enabled;
+    IO_t cardDetectPin;
+    dmaIdentifier_e dma;
+    uint8_t dmaChannel;
 } sdcard_t;
 
 static sdcard_t sdcard;
@@ -102,14 +105,18 @@ STATIC_ASSERT(sizeof(sdcardCSD_t) == 16, sdcard_csd_bitfields_didnt_pack_properl
 
 void sdcardInsertionDetectDeinit(void)
 {
-    //Handled by the driver
-    return;
+    if (sdcard.cardDetectPin) {
+        IOInit(sdcard.cardDetectPin, OWNER_FREE, 0);
+        IOConfigGPIO(sdcard.cardDetectPin, IOCFG_IN_FLOATING);
+    }
 }
 
 void sdcardInsertionDetectInit(void)
 {
-    //Handled by the driver
-    return;
+    if (sdcard.cardDetectPin) {
+        IOInit(sdcard.cardDetectPin, OWNER_SDCARD_DETECT, 0);
+        IOConfigGPIO(sdcard.cardDetectPin, IOCFG_IPU);
+    }
 }
 
 /**
@@ -117,7 +124,11 @@ void sdcardInsertionDetectInit(void)
  */
 bool sdcard_isInserted(void)
 {
-    return SD_Detect();
+    bool ret = true;
+    if (sdcard.cardDetectPin) {
+        ret = IORead(sdcard.cardDetectPin) == 0;
+    }
+    return ret;
 }
 
 /**
@@ -137,16 +148,14 @@ bool sdcard_isFunctional(void)
  */
 static void sdcard_reset(void)
 {
-    SD_DeInit();
-    delay(200);
-    SD_Init();
-
-    sdcard.failureCount++;
-    if (sdcard.failureCount >= SDCARD_MAX_CONSECUTIVE_FAILURES || sdcard_isInserted() == SD_NOT_PRESENT) {
-        sdcard.state = SDCARD_STATE_NOT_PRESENT;
-    } else {
-        sdcard.operationStartTime = millis();
-        sdcard.state = SDCARD_STATE_RESET;
+    if (SD_Init() != 0) {
+        sdcard.failureCount++;
+        if (sdcard.failureCount >= SDCARD_MAX_CONSECUTIVE_FAILURES || sdcard_isInserted() == SD_NOT_PRESENT) {
+            sdcard.state = SDCARD_STATE_NOT_PRESENT;
+        } else {
+            sdcard.operationStartTime = millis();
+            sdcard.state = SDCARD_STATE_RESET;
+        }
     }
 }
 
@@ -165,13 +174,13 @@ static sdcardReceiveBlockStatus_e sdcard_receiveDataBlock(uint8_t *buffer, int c
 {
     UNUSED(buffer);
     UNUSED(count);
-    SD_Error ret = SD_WaitReadOperation();
+    SD_Error_t ret = SD_CheckRead();
 
-    if (ret == SD_REQUEST_PENDING) {
+    if (ret == SD_BUSY) {
         return SDCARD_RECEIVE_BLOCK_IN_PROGRESS;
     }
 
-    if (SD_GetStatus() != SD_TRANSFER_OK) {
+    if (SD_GetState() != true) {
         return SDCARD_RECEIVE_ERROR;
     }
 
@@ -180,21 +189,24 @@ static sdcardReceiveBlockStatus_e sdcard_receiveDataBlock(uint8_t *buffer, int c
 
 static bool sdcard_receiveCID(void)
 {
-    SD_CardInfo sdinfo;
-    SD_GetCardInfo(&sdinfo);
+    SD_CardInfo_t *sdinfo = &SD_CardInfo;
+    SD_Error_t error = SD_GetCardInfo();
+    if (error) {
+         return false;
+    }
 
-    sdcard.metadata.manufacturerID = sdinfo.SD_cid.ManufacturerID;
-    sdcard.metadata.oemID = sdinfo.SD_cid.OEM_AppliID;
-    sdcard.metadata.productName[0] = (sdinfo.SD_cid.ProdName1 & 0xFF000000) >> 24;
-    sdcard.metadata.productName[1] = (sdinfo.SD_cid.ProdName1 & 0x00FF0000) >> 16;
-    sdcard.metadata.productName[2] = (sdinfo.SD_cid.ProdName1 & 0x0000FF00) >> 8;
-    sdcard.metadata.productName[3] = (sdinfo.SD_cid.ProdName1 & 0x000000FF) >> 0;
-    sdcard.metadata.productName[4] = sdinfo.SD_cid.ProdName2;
-    sdcard.metadata.productRevisionMajor = sdinfo.SD_cid.ProdRev >> 4;
-    sdcard.metadata.productRevisionMinor = sdinfo.SD_cid.ProdRev & 0x0F;
-    sdcard.metadata.productSerial = sdinfo.SD_cid.ProdSN;
-    sdcard.metadata.productionYear = (((sdinfo.SD_cid.ManufactDate & 0x0F00) >> 8) | ((sdinfo.SD_cid.ManufactDate & 0xFF) >> 4)) + 2000;
-    sdcard.metadata.productionMonth = sdinfo.SD_cid.ManufactDate & 0x000F;
+    sdcard.metadata.manufacturerID = sdinfo->SD_cid.ManufacturerID;
+    sdcard.metadata.oemID = sdinfo->SD_cid.OEM_AppliID;
+    sdcard.metadata.productName[0] = (sdinfo->SD_cid.ProdName1 & 0xFF000000) >> 24;
+    sdcard.metadata.productName[1] = (sdinfo->SD_cid.ProdName1 & 0x00FF0000) >> 16;
+    sdcard.metadata.productName[2] = (sdinfo->SD_cid.ProdName1 & 0x0000FF00) >> 8;
+    sdcard.metadata.productName[3] = (sdinfo->SD_cid.ProdName1 & 0x000000FF) >> 0;
+    sdcard.metadata.productName[4] = sdinfo->SD_cid.ProdName2;
+    sdcard.metadata.productRevisionMajor = sdinfo->SD_cid.ProdRev >> 4;
+    sdcard.metadata.productRevisionMinor = sdinfo->SD_cid.ProdRev & 0x0F;
+    sdcard.metadata.productSerial = sdinfo->SD_cid.ProdSN;
+    sdcard.metadata.productionYear = (((sdinfo->SD_cid.ManufactDate & 0x0F00) >> 8) | ((sdinfo->SD_cid.ManufactDate & 0xFF) >> 4)) + 2000;
+    sdcard.metadata.productionMonth = sdinfo->SD_cid.ManufactDate & 0x000F;
 
     return true;
 }
@@ -204,11 +216,15 @@ static bool sdcard_fetchCSD(void)
     /* The CSD command's data block should always arrive within 8 idle clock cycles (SD card spec). This is because
      * the information about card latency is stored in the CSD register itself, so we can't use that yet!
      */
-    SD_CardInfo sdinfo;
-    SD_GetCardInfo(&sdinfo);
+    SD_CardInfo_t *sdinfo = &SD_CardInfo;
+    SD_Error_t error;
+    error = SD_GetCardInfo();
+    if (error) {
+        return false;
+    }
 
-    sdcard.metadata.numBlocks = sdinfo.CardCapacity / sdinfo.CardBlockSize;
-    return (bool) 1;
+    sdcard.metadata.numBlocks = sdinfo->CardCapacity;
+    return true;
 }
 
 /**
@@ -218,18 +234,17 @@ static bool sdcard_fetchCSD(void)
  */
 static bool sdcard_checkInitDone(void)
 {
-    uint8_t ret = SD_GetStatus();
+    if (SD_GetState()) {
+        SD_CardType_t *sdtype = &SD_CardType;
+        SD_GetCardInfo();
 
-    if (ret == SD_TRANSFER_OK) {
-        SD_CardInfo sdinfo;
-        SD_GetCardInfo(&sdinfo);
-
-        sdcard.version = (sdinfo.CardType) ? 2 : 1;
-        sdcard.highCapacity = (sdinfo.CardType == 2) ? 1 : 0;
+        sdcard.version = (*sdtype) ? 2 : 1;
+        sdcard.highCapacity = (*sdtype == 2) ? 1 : 0;
+        return true;
     }
 
     // When card init is complete, the idle bit in the response becomes zero.
-    return (ret == SD_TRANSFER_OK) ? true : false;
+    return false;
 }
 
 /**
@@ -237,9 +252,24 @@ static bool sdcard_checkInitDone(void)
  */
 void sdcard_init(const sdcardConfig_t *config)
 {
-    UNUSED(config);
-    if (SD_Detect() == SD_PRESENT) {
-        if (SD_Init() != SD_OK) {
+    sdcard.enabled = config->enabled;
+    if (!sdcard.enabled) {
+        sdcard.state = SDCARD_STATE_NOT_PRESENT;
+        return;
+    }
+    sdcard.dma = config->dmaIdentifier;
+    if (sdcard.dma == 0) {
+        sdcard.state = SDCARD_STATE_NOT_PRESENT;
+        return;
+    }
+    if (config->cardDetectTag) {
+        sdcard.cardDetectPin = IOGetByTag(config->cardDetectTag);
+    } else {
+        sdcard.cardDetectPin = IO_NONE;
+    }
+    SD_Initialize_LL(dmaGetRefByIdentifier(sdcard.dma));
+    if (SD_IsDetected()) {
+        if (SD_Init() != 0) {
             sdcard.state = SDCARD_STATE_NOT_PRESENT;
             sdcard.failureCount++;
             return;
@@ -280,7 +310,7 @@ static sdcardOperationStatus_e sdcard_endWriteBlocks()
     // 8 dummy clocks to guarantee N_WR clocks between the last card response and this token
 
     // Card may choose to raise a busy (non-0xFF) signal after at most N_BR (1 byte) delay
-    if (SD_GetStatus() == SD_TRANSFER_OK) {
+    if (SD_GetState()) {
         sdcard.state = SDCARD_STATE_READY;
         return SDCARD_OPERATION_SUCCESS;
     } else {
@@ -297,8 +327,10 @@ static sdcardOperationStatus_e sdcard_endWriteBlocks()
  */
 bool sdcard_poll(void)
 {
-    uint8_t initStatus;
-    UNUSED(initStatus);
+    if (!sdcard.enabled) {
+        sdcard.state = SDCARD_STATE_NOT_PRESENT;
+        return false;
+    }
 
 #ifdef SDCARD_PROFILING
     bool profilingComplete;
@@ -343,7 +375,7 @@ bool sdcard_poll(void)
         break;
         case SDCARD_STATE_SENDING_WRITE:
             // Have we finished sending the write yet?
-            if (SD_WaitWriteOperation() == SD_OK) {
+            if (SD_CheckWrite() == SD_OK) {
 
                 // The SD card is now busy committing that write to the card
                 sdcard.state = SDCARD_STATE_WAITING_FOR_WRITE;
@@ -356,7 +388,7 @@ bool sdcard_poll(void)
             }
         break;
         case SDCARD_STATE_WAITING_FOR_WRITE:
-            if (SD_GetStatus() == SD_TRANSFER_OK) {
+            if (SD_GetState()) {
 #ifdef SDCARD_PROFILING
                 profilingComplete = true;
 #endif
@@ -370,7 +402,7 @@ bool sdcard_poll(void)
                     sdcard.state = SDCARD_STATE_WRITING_MULTIPLE_BLOCKS;
                 } else if (sdcard.multiWriteBlocksRemain == 1) {
                     // This function changes the sd card state for us whether immediately succesful or delayed:
-                    sdcard.multiWriteBlocksRemain = 0;
+                    sdcard_endWriteBlocks();
                 } else {
                     sdcard.state = SDCARD_STATE_READY;
                 }
@@ -424,7 +456,7 @@ bool sdcard_poll(void)
             }
         break;
         case SDCARD_STATE_STOPPING_MULTIPLE_BLOCK_WRITE:
-            if (SD_GetStatus() == SD_TRANSFER_OK) {
+            if (SD_GetState()) {
                 sdcard.state = SDCARD_STATE_READY;
 
 #ifdef SDCARD_PROFILING
@@ -500,7 +532,8 @@ sdcardOperationStatus_e sdcard_writeBlock(uint32_t blockIndex, uint8_t *buffer, 
     sdcard.pendingOperation.chunkIndex = 1; // (for non-DMA transfers) we've sent chunk #0 already
     sdcard.state = SDCARD_STATE_SENDING_WRITE;
 
-    if (SD_WriteBlock(buffer, blockIndex * 512, 1) != SD_OK) {
+    //TODO: make sure buffer is aligned
+    if (SD_WriteBlocks_DMA(blockIndex, (uint32_t*) buffer, 512, 1) != SD_OK) {
         /* Our write was rejected! This could be due to a bad address but we hope not to attempt that, so assume
          * the card is broken and needs reset.
          */
@@ -544,16 +577,10 @@ sdcardOperationStatus_e sdcard_beginWriteBlocks(uint32_t blockIndex, uint32_t bl
         }
     }
 
-//    if (BSP_SD_Erase(blockIndex, blockCount * 512 + blockIndex)) {
-        sdcard.state = SDCARD_STATE_WRITING_MULTIPLE_BLOCKS;
-        sdcard.multiWriteBlocksRemain = blockCount;
-        sdcard.multiWriteNextBlock = blockIndex;
-        // Leave the card selected
-        return SDCARD_OPERATION_SUCCESS;
-//    } else {
-//        sdcard_reset();
-//        return SDCARD_OPERATION_FAILURE;
-//    }
+    sdcard.state = SDCARD_STATE_WRITING_MULTIPLE_BLOCKS;
+    sdcard.multiWriteBlocksRemain = blockCount;
+    sdcard.multiWriteNextBlock = blockIndex;
+    return SDCARD_OPERATION_SUCCESS;
 }
 
 /**
@@ -571,7 +598,13 @@ sdcardOperationStatus_e sdcard_beginWriteBlocks(uint32_t blockIndex, uint32_t bl
 bool sdcard_readBlock(uint32_t blockIndex, uint8_t *buffer, sdcard_operationCompleteCallback_c callback, uint32_t callbackData)
 {
     if (sdcard.state != SDCARD_STATE_READY) {
-            return false;
+		if (sdcard.state == SDCARD_STATE_WRITING_MULTIPLE_BLOCKS) {
+			if (sdcard_endWriteBlocks() != SDCARD_OPERATION_SUCCESS) {
+				return false;
+			}
+		} else {
+			return false;
+		}
     }
 
 #ifdef SDCARD_PROFILING
@@ -579,7 +612,7 @@ bool sdcard_readBlock(uint32_t blockIndex, uint8_t *buffer, sdcard_operationComp
 #endif
 
     // Standard size cards use byte addressing, high capacity cards use block addressing
-    uint8_t status = SD_ReadBlock(buffer, blockIndex * 512, 1);
+    uint8_t status = SD_ReadBlocks_DMA(blockIndex, (uint32_t*) buffer, 512, 1);
 
     if (status == SD_OK) {
         sdcard.pendingOperation.buffer = buffer;

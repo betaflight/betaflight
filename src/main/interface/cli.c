@@ -79,6 +79,7 @@ extern uint8_t __config_end;
 #include "drivers/light_led.h"
 #include "drivers/camera_control.h"
 #include "drivers/vtx_common.h"
+#include "drivers/usb_msc.h"
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
@@ -122,6 +123,7 @@ extern uint8_t __config_end;
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/rx_pwm.h"
+#include "pg/usb.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
@@ -207,16 +209,6 @@ static const char * const *sensorHardwareNames[] = {
     lookupTableGyroHardware, lookupTableAccHardware, lookupTableBaroHardware, lookupTableMagHardware, lookupTableRangefinderHardware
 };
 #endif // USE_SENSOR_NAMES
-
-static char *cliStringToLowercase(char *str)
-{
-    char *s = str;
-    while (*s) {
-        *s = tolower((unsigned char)*s);
-        s++;
-    }
-    return str;
-}
 
 static void cliPrint(const char *str)
 {
@@ -497,11 +489,16 @@ static void cliPrintVarRange(const clivalue_t *var)
     break;
     case (MODE_LOOKUP): {
         const lookupTableEntry_t *tableEntry = &lookupTables[var->config.lookup.tableIndex];
-        cliPrint("Allowed values:");
-        for (uint32_t i = 0; i < tableEntry->valueCount ; i++) {
-            if (i > 0)
-                cliPrint(",");
-            cliPrintf(" %s", tableEntry->values[i]);
+        cliPrint("Allowed values: ");
+        bool firstEntry = true;
+        for (unsigned i = 0; i < tableEntry->valueCount; i++) {
+            if (tableEntry->values[i]) {
+                if (!firstEntry) {
+                    cliPrint(", ");
+                }
+                cliPrintf("%s", tableEntry->values[i]);
+                firstEntry = false;
+            }
         }
         cliPrintLinefeed();
     }
@@ -927,6 +924,15 @@ static void cliSerial(char *cmdline)
 }
 
 #ifndef SKIP_SERIAL_PASSTHROUGH
+#ifdef USE_PINIO
+static void cbCtrlLine(void *context, uint16_t ctrl)
+{
+    int pinioDtr = (int)(long)context;
+
+    pinioSet(pinioDtr, !(ctrl & CTRL_LINE_STATE_DTR));
+}
+#endif /* USE_PINIO */
+
 static void cliSerialPassthrough(char *cmdline)
 {
     if (isEmpty(cmdline)) {
@@ -936,6 +942,10 @@ static void cliSerialPassthrough(char *cmdline)
 
     int id = -1;
     uint32_t baud = 0;
+    bool enableBaudCb = false;
+#ifdef USE_PINIO
+    int pinioDtr = 0;
+#endif /* USE_PINIO */
     unsigned mode = 0;
     char *saveptr;
     char* tok = strtok_r(cmdline, " ", &saveptr);
@@ -955,21 +965,32 @@ static void cliSerialPassthrough(char *cmdline)
             if (strstr(tok, "tx") || strstr(tok, "TX"))
                 mode |= MODE_TX;
             break;
+#ifdef USE_PINIO
+        case 3:
+            pinioDtr = atoi(tok);
+            break;
+#endif /* USE_PINIO */
         }
         index++;
         tok = strtok_r(NULL, " ", &saveptr);
+    }
+
+    if (baud == 0) {
+        enableBaudCb = true;
     }
 
     cliPrintf("Port %d ", id);
     serialPort_t *passThroughPort;
     serialPortUsage_t *passThroughPortUsage = findSerialPortUsageByIdentifier(id);
     if (!passThroughPortUsage || passThroughPortUsage->serialPort == NULL) {
-        if (!baud) {
-            cliPrintLine("closed, specify baud.");
-            return;
+        if (enableBaudCb) {
+            // Set default baud
+            baud = 57600;
         }
-        if (!mode)
+
+        if (!mode) {
             mode = MODE_RXTX;
+        }
 
         passThroughPort = openSerialPort(id, FUNCTION_NONE, NULL, NULL,
                                          baud, mode,
@@ -978,17 +999,30 @@ static void cliSerialPassthrough(char *cmdline)
             cliPrintLine("could not be opened.");
             return;
         }
-        cliPrintf("opened, baud = %d.\r\n", baud);
+
+        if (enableBaudCb) {
+            cliPrintf("opened, default baud = %d.\r\n", baud);
+        } else {
+            cliPrintf("opened, baud = %d.\r\n", baud);
+        }
     } else {
         passThroughPort = passThroughPortUsage->serialPort;
         // If the user supplied a mode, override the port's mode, otherwise
         // leave the mode unchanged. serialPassthrough() handles one-way ports.
-        cliPrintLine("already open.");
+        // Set the baud rate if specified
+        if (baud) {
+            cliPrintf("already open, setting baud = %d.\n\r", baud);
+            serialSetBaudRate(passThroughPort, baud);
+        } else {
+            cliPrintf("already open, baud = %d.\n\r", passThroughPort->baudRate);
+        }
+
         if (mode && passThroughPort->mode != mode) {
-            cliPrintf("mode changed from %d to %d.\r\n",
+            cliPrintf("Mode changed from %d to %d.\r\n",
                    passThroughPort->mode, mode);
             serialSetMode(passThroughPort, mode);
         }
+
         // If this port has a rx callback associated we need to remove it now.
         // Otherwise no data will be pushed in the serial port buffer!
         if (passThroughPort->rxCallback) {
@@ -996,7 +1030,22 @@ static void cliSerialPassthrough(char *cmdline)
         }
     }
 
+    // If no baud rate is specified allow to be set via USB
+    if (enableBaudCb) {
+        cliPrintLine("Baud rate change over USB enabled.");
+        // Register the right side baud rate setting routine with the left side which allows setting of the UART
+        // baud rate over USB without setting it using the serialpassthrough command
+        serialSetBaudRateCb(cliPort, serialSetBaudRate, passThroughPort);
+    }
+
     cliPrintLine("Forwarding, power cycle to exit.");
+
+#ifdef USE_PINIO
+    // Register control line state callback
+    if (pinioDtr) {
+        serialSetCtrlLineStateCb(cliPort, cbCtrlLine, (void *)(intptr_t)(pinioDtr - 1));
+    }
+#endif /* USE_PINIO */
 
     serialPassthrough(cliPort, passThroughPort, NULL, NULL);
 }
@@ -2297,6 +2346,17 @@ static void cliGpsPassthrough(char *cmdline)
 }
 #endif
 
+#if defined(USE_GYRO_REGISTER_DUMP) && !defined(SIMULATOR_BUILD)
+static void cliDumpGyroRegisters(char *cmdline)
+{
+    tfp_printf("# WHO_AM_I    0x%X\r\n", gyroReadRegister(MPU_RA_WHO_AM_I));
+    tfp_printf("# CONFIG      0x%X\r\n", gyroReadRegister(MPU_RA_CONFIG));
+    tfp_printf("# GYRO_CONFIG 0x%X\r\n", gyroReadRegister(MPU_RA_GYRO_CONFIG));
+    UNUSED(cmdline);
+}
+#endif
+
+
 static int parseOutputIndex(char *pch, bool allowAllEscs) {
     int outputIndex = atoi(pch);
     if ((outputIndex >= 0) && (outputIndex < getMotorCount())) {
@@ -2838,7 +2898,7 @@ STATIC_UNIT_TESTED void cliGet(char *cmdline)
     int matchedCommands = 0;
 
     for (uint32_t i = 0; i < valueTableEntryCount; i++) {
-        if (strstr(valueTable[i].name, cliStringToLowercase(cmdline))) {
+        if (strcasestr(valueTable[i].name, cmdline)) {
             val = &valueTable[i];
             cliPrintf("%s = ", valueTable[i].name);
             cliPrintVar(val, 0);
@@ -2922,7 +2982,7 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
                         const lookupTableEntry_t *tableEntry = &lookupTables[val->config.lookup.tableIndex];
                         bool matched = false;
                         for (uint32_t tableValueIndex = 0; tableValueIndex < tableEntry->valueCount && !matched; tableValueIndex++) {
-                            matched = strcasecmp(tableEntry->values[tableValueIndex], eqptr) == 0;
+                            matched = tableEntry->values[tableValueIndex] && strcasecmp(tableEntry->values[tableValueIndex], eqptr) == 0;
 
                             if (matched) {
                                 value = tableValueIndex;
@@ -3244,6 +3304,9 @@ const cliResourceValue_t resourceTable[] = {
 #endif
 #ifdef USE_PINIO
     { OWNER_PINIO,         PG_PINIO_CONFIG, offsetof(pinioConfig_t, ioTag), PINIO_COUNT },
+#endif
+#if defined(USE_USB_MSC)
+    { OWNER_USB_MSC_PIN,   PG_USB_CONFIG, offsetof(usbDev_t, mscButtonPin), 0 },
 #endif
 };
 
@@ -3664,6 +3727,33 @@ static void cliDiff(char *cmdline)
     printConfig(cmdline, true);
 }
 
+#ifdef USE_USB_MSC
+static void cliMsc(char *cmdline)
+{
+    UNUSED(cmdline);
+
+    if (sdcard_isFunctional()) {
+        cliPrintHashLine("restarting in mass storage mode");
+        cliPrint("\r\nRebooting");
+        bufWriterFlush(cliWriter);
+        delay(1000);
+        waitForSerialPortToFinishTransmitting(cliPort);
+        stopPwmAllMotors();
+        if (mpuResetFn) {
+            mpuResetFn();
+        }
+
+        *((uint32_t *)0x2001FFF0) = 0xDDDD1010; // Same location as bootloader magic but different value
+
+        __disable_irq();
+        NVIC_SystemReset();
+    } else {
+        cliPrint("\r\nSD Card not present or failed to initialize!");
+        bufWriterFlush(cliWriter);
+    }
+}
+#endif
+
 typedef struct {
     const char *name;
 #ifndef MINIMAL_CLI
@@ -3732,6 +3822,9 @@ const clicmd_t cmdTable[] = {
 #ifdef USE_GPS
     CLI_COMMAND_DEF("gpspassthrough", "passthrough gps to serial", NULL, cliGpsPassthrough),
 #endif
+#if defined(USE_GYRO_REGISTER_DUMP) && !defined(SIMULATOR_BUILD)
+    CLI_COMMAND_DEF("gyroregisters", "dump gyro config registers contents", NULL, cliDumpGyroRegisters),
+#endif
     CLI_COMMAND_DEF("help", NULL, NULL, cliHelp),
 #ifdef USE_LED_STRIP
     CLI_COMMAND_DEF("led", "configure leds", NULL, cliLed),
@@ -3763,7 +3856,7 @@ const clicmd_t cmdTable[] = {
 #endif
     CLI_COMMAND_DEF("serial", "configure serial ports", NULL, cliSerial),
 #ifndef SKIP_SERIAL_PASSTHROUGH
-    CLI_COMMAND_DEF("serialpassthrough", "passthrough serial data to port", "<id> [baud] [mode] : passthrough to serial", cliSerialPassthrough),
+    CLI_COMMAND_DEF("serialpassthrough", "passthrough serial data to port", "<id> [baud] [mode] [DTR PINIO]: passthrough to serial", cliSerialPassthrough),
 #endif
 #ifdef USE_SERVOS
     CLI_COMMAND_DEF("servo", "configure servos", NULL, cliServo),
@@ -3782,6 +3875,9 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("version", "show version", NULL, cliVersion),
 #ifdef USE_VTX_CONTROL
     CLI_COMMAND_DEF("vtx", "vtx channels on switch", NULL, cliVtx),
+#endif
+#ifdef USE_USB_MSC
+	CLI_COMMAND_DEF("msc", "switch into msc mode", NULL, cliMsc),
 #endif
 };
 

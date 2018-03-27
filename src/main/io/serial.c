@@ -58,6 +58,8 @@
 #include "telemetry/telemetry.h"
 #endif
 
+#include "pg/pinio.h"
+
 static serialPortUsage_t serialPortUsageList[SERIAL_PORT_COUNT];
 
 const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
@@ -429,7 +431,6 @@ void closeSerialPort(serialPort_t *serialPort)
     }
 
     // TODO wait until data has been transmitted.
-
     serialPort->rxCallback = NULL;
 
     serialPortUsage->function = FUNCTION_NONE;
@@ -540,6 +541,8 @@ void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer *
         if (serialRxBytesWaiting(left)) {
             LED0_ON;
             uint8_t c = serialRead(left);
+            // Make sure there is space in the tx buffer
+            while (!serialTxBytesFree(right));
             serialWrite(right, c);
             leftC(c);
             LED0_OFF;
@@ -547,6 +550,8 @@ void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer *
          if (serialRxBytesWaiting(right)) {
              LED0_ON;
              uint8_t c = serialRead(right);
+             // Make sure there is space in the tx buffer
+             while (!serialTxBytesFree(left));
              serialWrite(left, c);
              rightC(c);
              LED0_OFF;

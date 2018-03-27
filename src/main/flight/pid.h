@@ -19,6 +19,7 @@
 
 #include <stdbool.h>
 #include "common/time.h"
+#include "common/filter.h"
 #include "pg/pg.h"
 
 #define MAX_PID_PROCESS_DENOM       16
@@ -73,8 +74,8 @@ typedef struct pid8_s {
 typedef struct pidProfile_s {
     pid8_t  pid[PID_ITEM_COUNT];
 
-    uint16_t yaw_lpf_hz;                    // Additional yaw filter when yaw axis too noisy
-    uint16_t dterm_lpf_hz;                  // Delta Filter in hz
+    uint16_t yaw_lowpass_hz;                    // Additional yaw filter when yaw axis too noisy
+    uint16_t dterm_lowpass_hz;                  // Delta Filter in hz
     uint16_t dterm_notch_hz;                // Biquad dterm notch hz
     uint16_t dterm_notch_cutoff;            // Biquad dterm notch low cutoff
     uint8_t dterm_filter_type;              // Filter selection for dterm
@@ -105,6 +106,10 @@ typedef struct pidProfile_s {
     pidCrashRecovery_e crash_recovery;      // off, on, on and beeps when it is in crash recovery mode
     uint16_t crash_limit_yaw;               // limits yaw errorRate, so crashes don't cause huge throttle increase
     uint16_t itermLimit;
+    uint16_t dterm_lowpass2_hz;                // Extra PT1 Filter on D in hz
+    uint8_t throttle_boost;                 // how much should throttle be boosted during transient changes 0-100, 100 adds 10x hpf filtered throttle
+    uint8_t throttle_boost_cutoff;          // Which cutoff frequency to use for throttle boost. higher cutoffs keep the boost on for shorter. Specified in hz.
+    uint8_t  iterm_rotation;                    // rotates iterm to translate world errors to local coordinate system
 } pidProfile_t;
 
 #ifndef USE_OSD_SLAVE
@@ -139,3 +144,6 @@ void pidInitConfig(const pidProfile_t *pidProfile);
 void pidInit(const pidProfile_t *pidProfile);
 void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex);
 bool crashRecoveryModeActive(void);
+
+extern float throttleBoost;
+extern pt1Filter_t throttleLpf;

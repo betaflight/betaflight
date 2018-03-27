@@ -1,5 +1,5 @@
 F405_TARGETS    += $(TARGET)
-FEATURES        += VCP
+FEATURES        += VCP MSC
 
 TARGET_SRC = \
             drivers/accgyro/accgyro_mpu.c \
@@ -11,8 +11,9 @@ TARGET_SRC = \
             
             
 TARGET_SRC += \
-            drivers/sdio_stdlib.c \
-            drivers/sdcard_sdio_stdlib.c \
+            drivers/sdio_f4xx.c \
+            drivers/sdcard_sdio_baremetal.c \
             drivers/sdcard_standard.c \
             io/asyncfatfs/asyncfatfs.c \
-            io/asyncfatfs/fat_standard.c
+            io/asyncfatfs/fat_standard.c \
+            msc/usbd_storage_sdio.c

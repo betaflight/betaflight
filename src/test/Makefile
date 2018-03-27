@@ -350,6 +350,8 @@ COVERAGE_FLAGS := --coverage
 C_FLAGS   += $(COVERAGE_FLAGS)
 CXX_FLAGS += $(COVERAGE_FLAGS)
 
+C_FLAGS   += -D_GNU_SOURCE
+
 # Set up the parameter group linker flags according to OS
 ifdef MACOSX
 LDFLAGS  += -Wl,-map,$(OBJECT_DIR)/$@.map
