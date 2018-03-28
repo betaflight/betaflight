@@ -56,6 +56,7 @@ static float rcCommandInterp[4] = { 0, 0, 0, 0 };
 static float rcStepSize[4] = { 0, 0, 0, 0 };
 static float inverseRcInt;
 static int16_t rcInterpolationStepCount;
+static int16_t rcInterpolationStepCountCurrent;
 static uint16_t rxRefreshRate;
 volatile uint16_t currentRxRefreshRate;
 
@@ -208,19 +209,20 @@ void processRcCommand(void)
                 //debug[1] = lrintf(rcCommandInterp[0]);
                 //debug[1] = lrintf(rcStepSize[0]*100);
             }
+            rcInterpolationStepCountCurrent = rcInterpolationStepCount;
         } else {
-            rcInterpolationStepCount--;
+            rcInterpolationStepCountCurrent--;
         }
 
         // Interpolate steps of rcCommand
-        if (rcInterpolationStepCount > 0) {
+        if (rcInterpolationStepCountCurrent > 0) {
             for (updatedChannel = ROLL; updatedChannel < interpolationChannels; updatedChannel++) {
                 rcCommandInterp[updatedChannel] += rcStepSize[updatedChannel];
                 rcCommand[updatedChannel] = rcCommandInterp[updatedChannel];
             }
         }
     } else {
-        rcInterpolationStepCount = 0; // reset factor in case of level modes flip flopping
+        rcInterpolationStepCountCurrent = 0; // reset factor in case of level modes flip flopping
     }
 
     if (isRXDataNew || updatedChannel) {
@@ -237,7 +239,7 @@ void processRcCommand(void)
         }
 
         if (debugMode == DEBUG_RC_INTERPOLATION) {
-            debug[2] = rcInterpolationStepCount;
+            debug[2] = rcInterpolationStepCountCurrent;
             debug[3] = setpointRate[0];
         }
 
@@ -397,6 +399,6 @@ void initRcProcessing(void)
             rxRefreshRate = rxGetRefreshRate();
     }
 
-    rcInterpolationStepCount = rxRefreshRate / constrain(targetPidLooptime, 62.5f, 5000);
+    rcInterpolationStepCount = rxRefreshRate / constrainf(targetPidLooptime, 125.0f, 5000.0f);
     inverseRcInt = 1.0f / (float)rcInterpolationStepCount;
 }
