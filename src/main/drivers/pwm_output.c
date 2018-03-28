@@ -48,7 +48,7 @@ static uint16_t freqBeep = 0;
 static bool pwmMotorsEnabled = false;
 static bool isDshot = false;
 #ifdef USE_DSHOT_DMAR
-#ifdef FORCE_DSHOT_DMAR
+#ifdef ENABLE_DSHOT_DMAR
 bool useBurstDshot = true;
 #else
 bool useBurstDshot = false;

@@ -348,10 +348,6 @@ void validateAndFixGyroConfig(void)
     {
         systemConfigMutable()->cpu_overclock = 2; //216MHZ is required for dshot + rc_interpolation + 32K pid loop.
     }
-    else 
-    {
-        systemConfigMutable()->cpu_overclock = 1; //default back to 192.
-    }
     #endif
     // Prevent invalid notch cutoff
     if (gyroConfig()->gyro_soft_notch_cutoff_1 >= gyroConfig()->gyro_soft_notch_hz_1) {
