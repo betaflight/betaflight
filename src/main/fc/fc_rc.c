@@ -52,6 +52,12 @@ static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
 static float throttlePIDAttenuation;
 static bool reverseMotors = false;
 static applyRatesFn *applyRates;
+static float rcCommandInterp[4] = { 0, 0, 0, 0 };
+static float rcStepSize[4] = { 0, 0, 0, 0 };
+static float inverseRcInt;
+static int16_t rcInterpolationStepCount;
+static uint16_t rxRefreshRate;
+volatile uint16_t currentRxRefreshRate;
 
 float getSetpointRate(int axis)
 {
@@ -154,8 +160,10 @@ static void scaleRcCommandToFpvCamAngle(void)
 #define THROTTLE_BUFFER_MAX 20
 #define THROTTLE_DELTA_MS 100
 
-static void checkForThrottleErrorResetState(uint16_t rxRefreshRate)
+static void checkForThrottleErrorResetState(void)
 {
+    currentRxRefreshRate = constrain(getTaskDeltaTime(TASK_RX),1000,20000);
+    
     static int index;
     static int16_t rcCommandThrottlePrevious[THROTTLE_BUFFER_MAX];
 
@@ -179,42 +187,19 @@ static void checkForThrottleErrorResetState(uint16_t rxRefreshRate)
 
 void processRcCommand(void)
 {
-    static float rcCommandInterp[4] = { 0, 0, 0, 0 };
-    static float rcStepSize[4] = { 0, 0, 0, 0 };
-    static int16_t rcInterpolationStepCount;
-    static uint16_t currentRxRefreshRate;
-
-    if (isRXDataNew) {
-        currentRxRefreshRate = constrain(getTaskDeltaTime(TASK_RX),1000,20000);
-        if (isAntiGravityModeActive()) {
-            checkForThrottleErrorResetState(currentRxRefreshRate);
-        }
-    }
-
     const uint8_t interpolationChannels = rxConfig()->rcInterpolationChannels + 2; //"RP", "RPY", "RPYT"
-    uint16_t rxRefreshRate;
     uint8_t updatedChannel = 0;
 
+    if (isRXDataNew && isAntiGravityModeActive()) {
+        checkForThrottleErrorResetState();
+    }
+
     if (rxConfig()->rcInterpolation) {
-         // Set RC refresh rate for sampling and channels to filter
-        switch (rxConfig()->rcInterpolation) {
-        case RC_SMOOTHING_AUTO:
-            rxRefreshRate = currentRxRefreshRate + 1000; // Add slight overhead to prevent ramps
-            break;
-        case RC_SMOOTHING_MANUAL:
-            rxRefreshRate = 1000 * rxConfig()->rcInterpolationInterval;
-            break;
-        case RC_SMOOTHING_OFF:
-        case RC_SMOOTHING_DEFAULT:
-        default:
-            rxRefreshRate = rxGetRefreshRate();
-        }
 
         if (isRXDataNew && rxRefreshRate > 0) {
-            rcInterpolationStepCount = rxRefreshRate / targetPidLooptime;
 
             for (int channel = ROLL; channel < interpolationChannels; channel++) {
-                rcStepSize[channel] = (rcCommand[channel] - rcCommandInterp[channel]) / (float)rcInterpolationStepCount;
+                 rcStepSize[channel] = (rcCommand[channel] - rcCommandInterp[channel]) * inverseRcInt;
             }
 
             if (debugMode == DEBUG_RC_INTERPOLATION) {
@@ -396,4 +381,22 @@ void initRcProcessing(void)
 
         break;
     }
+
+
+             // Set RC refresh rate for sampling and channels to filter
+    switch (rxConfig()->rcInterpolation) {
+        case RC_SMOOTHING_AUTO:
+            rxRefreshRate = currentRxRefreshRate + 1000; // Add slight overhead to prevent ramps
+            break;
+        case RC_SMOOTHING_MANUAL:
+            rxRefreshRate = 1000 * rxConfig()->rcInterpolationInterval;
+            break;
+        case RC_SMOOTHING_OFF:
+        case RC_SMOOTHING_DEFAULT:
+        default:
+            rxRefreshRate = rxGetRefreshRate();
+    }
+
+    rcInterpolationStepCount = rxRefreshRate / constrain(targetPidLooptime, 62.5f, 5000);
+    inverseRcInt = 1.0f / (float)rcInterpolationStepCount;
 }
