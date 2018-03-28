@@ -339,6 +339,17 @@ static void validateAndFixConfig(void)
 #ifndef USE_OSD_SLAVE
 void validateAndFixGyroConfig(void)
 {
+    #ifdef USE_GYRO_IMUF9001
+    if ((motorConfigMutable()->dev.motorPwmProtocol == PWM_TYPE_DSHOT1200 
+      || motorConfigMutable()->dev.motorPwmProtocol == PWM_TYPE_DSHOT600)
+      && (pidConfigMutable()->pid_process_denom == 1 && gyroConfigMutable()->gyro_sync_denom == 1)
+      && rxConfigMutable()->rcInterpolation != RC_SMOOTHING_OFF
+      && systemConfigMutable()->cpu_overclock != 2) 
+    {
+        systemConfigMutable()->cpu_overclock = 2; //216MHZ is required for dshot + rc_interpolation + 32K pid loop.
+    }
+    gyroConfigMutable()->imuf_rate = constrain(gyroConfigMutable()->gyro_sync_denom - 1, 0, 5);
+    #endif
     // Prevent invalid notch cutoff
     if (gyroConfig()->gyro_soft_notch_cutoff_1 >= gyroConfig()->gyro_soft_notch_hz_1) {
         gyroConfigMutable()->gyro_soft_notch_hz_1 = 0;

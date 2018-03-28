@@ -22,37 +22,35 @@
 #include "config/config_eeprom.h"
 #include "drivers/pwm_output.h"
 #include "common/filter.h"
+#include "sensors/acceleration.h"
 #include "sensors/gyro.h"
 #include "sensors/battery.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "fc/config.h"
+#include "fc/rc_controls.h"
 #include "rx/rx.h"
 
 void targetConfiguration(void) {
     voltageSensorADCConfigMutable(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale = VBAT_SCALE;
-    rxConfigMutable()->rcInterpolation = 3;
-    rxConfigMutable()->rcInterpolationInterval = 14;
+    rxConfigMutable()->rcInterpolation = RC_SMOOTHING_AUTO;
     rxConfigMutable()->rcInterpolationChannels = 2;
     motorConfigMutable()->dev.motorPwmProtocol = PWM_TYPE_MULTISHOT;
-    pidConfigMutable()->pid_process_denom = 1; // 16kHz PID
-    gyroConfigMutable()->gyro_use_32khz = 1;
-    gyroConfigMutable()->gyro_sync_denom = 2;  // 16kHz gyro
-    gyroConfigMutable()->gyro_soft_lpf_hz = 0;
-    gyroConfigMutable()->gyro_soft_notch_hz_1 = 0;
-    gyroConfigMutable()->gyro_soft_notch_hz_2 = 0;
-
+    pidConfigMutable()->pid_process_denom = 1; // 32KHZ PID
+    systemConfigMutable()->cpu_overclock = 1; //192MHz makes Multishot run a little better because of maths.
+    accelerometerConfigMutable()->acc_hardware = ACC_NONE;
+    
     for (uint8_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
         pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
 
-        pidProfile->pid[PID_PITCH].P = 40;	
-        pidProfile->pid[PID_PITCH].I = 50;	
-        pidProfile->pid[PID_PITCH].D = 25;	
-        pidProfile->pid[PID_ROLL].P = 40;	
-        pidProfile->pid[PID_ROLL].I = 50;	
-        pidProfile->pid[PID_ROLL].D = 25;
-        pidProfile->pid[PID_YAW].P = 40;	
-        pidProfile->pid[PID_YAW].I = 50;
+        pidProfile->pid[PID_PITCH].P = 58;	
+        pidProfile->pid[PID_PITCH].I = 60;	
+        pidProfile->pid[PID_PITCH].D = 35;	
+        pidProfile->pid[PID_ROLL].P = 45;	
+        pidProfile->pid[PID_ROLL].I = 60;	
+        pidProfile->pid[PID_ROLL].D = 30;
+        pidProfile->pid[PID_YAW].P = 70;	
+        pidProfile->pid[PID_YAW].I = 60;
 
         /* Setpoints */
         // should't need to set these since they don't get init in gyro.c with USE_GYRO_IMUF

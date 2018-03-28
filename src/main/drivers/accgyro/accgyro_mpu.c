@@ -193,8 +193,8 @@ bool mpuAccRead(accDev_t *acc)
 bool mpuGyroDmaSpiReadStart(gyroDev_t * gyro)
 {
     (void)(gyro); ///not used at this time
-    lastImufExtiTime = micros();
     //no reason not to get acc and gyro data at the same time
+    lastImufExtiTime = micros();
     #ifdef USE_GYRO_IMUF9001
     if (isImufCalibrating) //calibrating
     {
@@ -230,8 +230,8 @@ void mpuGyroDmaSpiReadFinish(gyroDev_t * gyro)
 {
     //spi rx dma callback
     #ifdef USE_GYRO_IMUF9001
-    volatile uint32_t crc1 = (*(uint32_t *)(dmaRxBuffer+gyroConfig()->imuf_mode-4));
-    volatile uint32_t crc2 = getCrcImuf9001((uint32_t *)(dmaRxBuffer), (gyroConfig()->imuf_mode >> 2)-1);
+    volatile uint32_t crc1 = ( (*(uint32_t *)(dmaRxBuffer+gyroConfig()->imuf_mode-4)) & 0xFF );
+    volatile uint32_t crc2 = ( getCrcImuf9001((uint32_t *)(dmaRxBuffer), (gyroConfig()->imuf_mode >> 2)-1) & 0xFF );
     if(crc1 == crc2)
     {
         memcpy(&imufData, dmaRxBuffer, sizeof(imufData_t));
@@ -339,7 +339,7 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
     #ifdef IMUF9001_CS_PIN
         gyro->bus.busdev_u.spi.csnPin = gyro->bus.busdev_u.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(IMUF9001_CS_PIN)) : gyro->bus.busdev_u.spi.csnPin;
     #else
-+       #error IMUF9001 must use a CS pin (IMUF9001_CS_PIN)
+       #error IMUF9001 must use a CS pin (IMUF9001_CS_PIN)
     #endif
     #ifdef IMUF9001_RST_PIN
         gyro->bus.busdev_u.spi.rstPin = IOGetByTag(IO_TAG(IMUF9001_RST_PIN));

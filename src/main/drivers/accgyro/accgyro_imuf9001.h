@@ -29,6 +29,27 @@ void imufSpiAccInit(accDev_t *acc);
 
 void imufStartCalibration(void);
 
+#ifndef IMUF_DEFAULT_PITCH_Q
+#define IMUF_DEFAULT_PITCH_Q  1500
+#endif
+#ifndef IMUF_DEFAULT_ROLL_Q
+#define IMUF_DEFAULT_ROLL_Q  1500
+#endif
+#ifndef IMUF_DEFAULT_YAW_Q
+#define IMUF_DEFAULT_YAW_Q  1500
+#endif
+#ifndef IMUF_DEFAULT_PITCH_W
+#define IMUF_DEFAULT_PITCH_W  10
+#endif
+#ifndef IMUF_DEFAULT_ROLL_W
+#define IMUF_DEFAULT_ROLL_W  10
+#endif
+#ifndef IMUF_DEFAULT_YAW_W
+#define IMUF_DEFAULT_YAW_W  10
+#endif
+
+
+
 volatile uint32_t isImufCalibrating;
 
 typedef struct imufVersion
