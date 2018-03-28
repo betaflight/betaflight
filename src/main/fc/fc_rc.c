@@ -57,6 +57,7 @@ static float rcStepSize[4] = { 0, 0, 0, 0 };
 static float inverseRcInt;
 static uint8_t interpolationChannels;
 volatile bool isRXDataNew;
+volatile bool skipNextInterpolate;
 volatile int16_t rcInterpolationStepCount;
 volatile uint16_t rxRefreshRate;
 volatile uint16_t currentRxRefreshRate;
@@ -189,6 +190,12 @@ static void checkForThrottleErrorResetState(void)
 
 void processRcCommand(void)
 {
+    if (skipNextInterpolate && !isRXDataNew) {
+        skipNextInterpolate = false;
+        return;
+    }
+    skipNextInterpolate = targetPidLooptime < 62;
+
     int updatedChannel = 0;
     if (isRXDataNew && isAntiGravityModeActive()) {
         checkForThrottleErrorResetState();
