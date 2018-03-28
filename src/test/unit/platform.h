@@ -25,6 +25,7 @@
 #define U_ID_1 1
 #define U_ID_2 2
 
+#define NOINLINE
 #define FAST_CODE
 #define FAST_RAM
 
