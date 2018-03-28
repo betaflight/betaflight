@@ -793,7 +793,7 @@ bool processRx(timeUs_t currentTimeUs)
     return true;
 }
 
-static FAST_CODE __attribute__((noinline)) void subTaskPidController(timeUs_t currentTimeUs)
+static FAST_CODE NOINLINE void subTaskPidController(timeUs_t currentTimeUs)
 {
     uint32_t startTime = 0;
     if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}

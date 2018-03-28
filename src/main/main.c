@@ -24,7 +24,7 @@
 
 #include "scheduler/scheduler.h"
 
-int main(void)
+int FAST_CODE main(void)
 {
     init();
     while (true) {
