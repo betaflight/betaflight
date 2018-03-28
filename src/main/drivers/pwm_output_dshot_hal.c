@@ -29,8 +29,8 @@
 #include "dma.h"
 #include "rcc.h"
 
-static uint8_t dmaMotorTimerCount = 0;
-static motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];
+static FAST_RAM uint8_t dmaMotorTimerCount = 0;
+static FAST_RAM motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];
 static FAST_RAM motorDmaOutput_t dmaMotors[MAX_SUPPORTED_MOTORS];
 
 motorDmaOutput_t *getMotorDmaOutput(uint8_t index)
@@ -49,7 +49,7 @@ uint8_t getTimerIndex(TIM_TypeDef *timer)
     return dmaMotorTimerCount - 1;
 }
 
-void pwmWriteDshotInt(uint8_t index, uint16_t value)
+FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
 {
     motorDmaOutput_t *const motor = &dmaMotors[index];
 
@@ -76,7 +76,7 @@ void pwmWriteDshotInt(uint8_t index, uint16_t value)
     }
 }
 
-void pwmCompleteDshotMotorUpdate(uint8_t motorCount)
+FAST_CODE void pwmCompleteDshotMotorUpdate(uint8_t motorCount)
 {
     UNUSED(motorCount);
 

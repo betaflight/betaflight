@@ -28,12 +28,12 @@
 #include "timer.h"
 #include "drivers/pwm_output.h"
 
-static pwmWriteFn *pwmWrite;
-static pwmOutputPort_t motors[MAX_SUPPORTED_MOTORS];
-static pwmCompleteWriteFn *pwmCompleteWrite = NULL;
+static FAST_RAM pwmWriteFn *pwmWrite;
+static FAST_RAM pwmOutputPort_t motors[MAX_SUPPORTED_MOTORS];
+static FAST_RAM pwmCompleteWriteFn *pwmCompleteWrite = NULL;
 
 #ifdef USE_DSHOT
-loadDmaBufferFn *loadDmaBuffer;
+FAST_RAM loadDmaBufferFn *loadDmaBuffer;
 #endif
 
 #ifdef USE_SERVOS
@@ -48,7 +48,7 @@ static uint16_t freqBeep = 0;
 static bool pwmMotorsEnabled = false;
 static bool isDshot = false;
 #ifdef USE_DSHOT_DMAR
-bool useBurstDshot = false;
+FAST_RAM bool useBurstDshot = false;
 #endif
 
 static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8_t output)
@@ -135,12 +135,12 @@ static void pwmWriteStandard(uint8_t index, float value)
 }
 
 #ifdef USE_DSHOT
-static void pwmWriteDshot(uint8_t index, float value)
+static FAST_CODE void pwmWriteDshot(uint8_t index, float value)
 {
     pwmWriteDshotInt(index, lrintf(value));
 }
 
-static uint8_t loadDmaBufferDshot(uint32_t *dmaBuffer, int stride, uint16_t packet)
+static FAST_CODE uint8_t loadDmaBufferDshot(uint32_t *dmaBuffer, int stride, uint16_t packet)
 {
     for (int i = 0; i < 16; i++) {
         dmaBuffer[i * stride] = (packet & 0x8000) ? MOTOR_BIT_1 : MOTOR_BIT_0;  // MSB first
