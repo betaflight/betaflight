@@ -252,7 +252,7 @@ static const char * const lookupTableLowpassType[] = {
 
 #if defined(USE_GYRO_IMUF9001)
 static const char * const lookupTableImufRate[] = {
-    "32K", "16K", "8K", "4K", "2K", "1K", "500", "250", "125", "62.5"
+    "32K", "16K", "8K", "4K", "2K", "1K"
 };
 #endif
 
