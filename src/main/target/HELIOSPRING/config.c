@@ -22,22 +22,24 @@
 #include "config/config_eeprom.h"
 #include "drivers/pwm_output.h"
 #include "common/filter.h"
+#include "sensors/acceleration.h"
 #include "sensors/gyro.h"
 #include "sensors/battery.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "fc/config.h"
+#include "fc/rc_controls.h"
 #include "rx/rx.h"
 
 void targetConfiguration(void) {
     voltageSensorADCConfigMutable(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale = VBAT_SCALE;
-    rxConfigMutable()->rcInterpolation = 3;
-    rxConfigMutable()->rcInterpolationInterval = 14;
+    rxConfigMutable()->rcInterpolation = RC_SMOOTHING_AUTO;
     rxConfigMutable()->rcInterpolationChannels = 2;
     motorConfigMutable()->dev.motorPwmProtocol = PWM_TYPE_MULTISHOT;
     pidConfigMutable()->pid_process_denom = 1; // 32KHZ PID
     systemConfigMutable()->cpu_overclock = 1; //192MHz makes Multishot run a little better because of maths.
-
+    accelerometerConfigMutable()->acc_hardware = ACC_NONE;
+    
     for (uint8_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
         pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
 
