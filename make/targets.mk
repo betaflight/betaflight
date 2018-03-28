@@ -136,13 +136,24 @@ GROUP_4_TARGETS := \
 
 GROUP_OTHER_TARGETS := $(filter-out $(GROUP_1_TARGETS) $(GROUP_2_TARGETS) $(GROUP_3_TARGETS) $(GROUP_4_TARGETS), $(SUPPORTED_TARGETS))
 
-# a dirty way of getting F7 targets via parsing target.mk
-GROUP_F7_TARGETS = $(foreach target, $(BASE_TARGETS), $(target)-$(shell grep -q F7 $(ROOT)/src/main/target/$(target)/target.mk && echo $$?))
-GROUP_F7_TARGETS := $(filter %-0, $(GROUP_F7_TARGETS))
-GROUP_F7_TARGETS := $(subst -0,, $(GROUP_F7_TARGETS))
-ALT_F7_TARGETS       = $(sort $(filter-out target, $(basename $(notdir $(foreach target, $(GROUP_F7_TARGETS), $(wildcard $(ROOT)/src/main/target/$(target)/*.mk))))))
-GROUP_F7_TARGETS := $(GROUP_F7_TARGETS) $(ALT_F7_TARGETS)
-GROUP_F7_TARGETS := $(filter-out ALIENWHOOPF4, $(GROUP_F7_TARGETS))
+GROUP_F7_TARGETS := \
+	ALIENFLIGHTNGF7 \
+	ANYFCF7 \
+	ANYFCM7 \
+	CLRACINGF7 \
+	FURYF7 \
+	KAKUTEF7 \
+	KISSFCV2F7 \
+	MATEKF722 \
+	NERO \
+	NUCLEOF7 \
+	NUCLEOF722 \
+	OMNIBUSF7 \
+	SPRACINGF7DUAL \
+	YUPIF7 \
+	ALIENWHOOPF7 \
+	FPVM_BETAFLIGHTF7 \
+	OMNIBUSF7V2
 
 ifeq ($(filter $(TARGET),$(ALT_TARGETS)), $(TARGET))
 BASE_TARGET    := $(firstword $(subst /,, $(subst ./src/main/target/,, $(dir $(wildcard $(ROOT)/src/main/target/*/$(TARGET).mk)))))
