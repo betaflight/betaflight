@@ -35,9 +35,9 @@ void targetConfiguration(void) {
     rxConfigMutable()->rcInterpolationInterval = 14;
     rxConfigMutable()->rcInterpolationChannels = 2;
     motorConfigMutable()->dev.motorPwmProtocol = PWM_TYPE_MULTISHOT;
-    pidConfigMutable()->pid_process_denom = 1; // 16kHz PID
+    pidConfigMutable()->pid_process_denom = 1; // 32KHZ PID
     gyroConfigMutable()->gyro_use_32khz = 1;
-    gyroConfigMutable()->gyro_sync_denom = 1;  // 16kHz gyro
+    gyroConfigMutable()->gyro_sync_denom = 1;  // 32KHZ gyro
     gyroConfigMutable()->gyro_soft_lpf_hz = 0;
     gyroConfigMutable()->gyro_soft_notch_hz_1 = 0;
     gyroConfigMutable()->gyro_soft_notch_hz_2 = 0;
@@ -46,14 +46,14 @@ void targetConfiguration(void) {
     for (uint8_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
         pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
 
-        pidProfile->pid[PID_PITCH].P = 40;	
-        pidProfile->pid[PID_PITCH].I = 50;	
-        pidProfile->pid[PID_PITCH].D = 25;	
-        pidProfile->pid[PID_ROLL].P = 40;	
-        pidProfile->pid[PID_ROLL].I = 50;	
-        pidProfile->pid[PID_ROLL].D = 25;
-        pidProfile->pid[PID_YAW].P = 40;	
-        pidProfile->pid[PID_YAW].I = 50;
+        pidProfile->pid[PID_PITCH].P = 45;	
+        pidProfile->pid[PID_PITCH].I = 60;	
+        pidProfile->pid[PID_PITCH].D = 30;	
+        pidProfile->pid[PID_ROLL].P = 58;	
+        pidProfile->pid[PID_ROLL].I = 60;	
+        pidProfile->pid[PID_ROLL].D = 35;
+        pidProfile->pid[PID_YAW].P = 70;	
+        pidProfile->pid[PID_YAW].I = 60;
 
         /* Setpoints */
         // should't need to set these since they don't get init in gyro.c with USE_GYRO_IMUF
