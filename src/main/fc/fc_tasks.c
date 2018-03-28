@@ -149,9 +149,6 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
     if (!processRx(currentTimeUs)) {
         return;
     }
-
-    isRXDataNew = true;
-
 #ifdef USE_USB_CDC_HID
     if (!ARMING_FLAG(ARMED)) {
         int8_t report[8];
