@@ -43,12 +43,12 @@ void targetConfiguration(void) {
     for (uint8_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
         pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
 
-        pidProfile->pid[PID_PITCH].P = 45;	
+        pidProfile->pid[PID_PITCH].P = 58;	
         pidProfile->pid[PID_PITCH].I = 60;	
-        pidProfile->pid[PID_PITCH].D = 30;	
-        pidProfile->pid[PID_ROLL].P = 58;	
+        pidProfile->pid[PID_PITCH].D = 35;	
+        pidProfile->pid[PID_ROLL].P = 45;	
         pidProfile->pid[PID_ROLL].I = 60;	
-        pidProfile->pid[PID_ROLL].D = 35;
+        pidProfile->pid[PID_ROLL].D = 30;
         pidProfile->pid[PID_YAW].P = 70;	
         pidProfile->pid[PID_YAW].I = 60;
 
