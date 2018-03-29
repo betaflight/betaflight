@@ -1816,10 +1816,10 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_ARMING_DISABLED:
         {
             const uint8_t command = sbufReadU8(src);
- //           uint8_t disableRunawayTakeoff = 0;
- //           if (sbufBytesRemaining(src)) {
- //               disableRunawayTakeoff = sbufReadU8(src);
- //           }
+            uint8_t disableRunawayTakeoff = 0;
+            if (sbufBytesRemaining(src)) {
+                disableRunawayTakeoff = sbufReadU8(src);
+            }
             if (command) {
                 setArmingDisabled(ARMING_DISABLED_MSP);
                 if (ARMING_FLAG(ARMED)) {
