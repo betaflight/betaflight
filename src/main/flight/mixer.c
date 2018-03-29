@@ -64,6 +64,7 @@ PG_REGISTER_WITH_RESET_TEMPLATE(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 0);
 PG_RESET_TEMPLATE(mixerConfig_t, mixerConfig,
     .mixerMode = TARGET_DEFAULT_MIXER,
     .yaw_motors_reversed = false,
+    .3d_mixergain_halving = true,
 );
 
 PG_REGISTER_WITH_RESET_FN(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 1);
@@ -448,8 +449,8 @@ void mixerConfigureOutput(void)
         }
     }
 
-    // in 3D mode, mixer gain has to be halved
-    if (feature(FEATURE_3D)) {
+    // in 3D mode, mixer gain has to be halved - 20180329-teracis: added cli switch for testing
+    if (feature(FEATURE_3D) && (mixerConfig()->3d_mixergain_halving)) {
         if (motorCount > 1) {
             for (int i = 0; i < motorCount; i++) {
                 currentMixer[i].pitch *= 0.5f;
