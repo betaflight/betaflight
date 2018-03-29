@@ -67,7 +67,12 @@ PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
     .frsky_vfas_precision = 0,
     .hottAlarmSoundInterval = 5,
     .pidValuesAsTelemetry = 0,
-    .report_cell_voltage = false
+    .report_cell_voltage = false,
+    .flysky_sensors = {
+            IBUS_SENSOR_TYPE_TEMPERATURE,
+            IBUS_SENSOR_TYPE_RPM_FLYSKY,
+            IBUS_SENSOR_TYPE_EXTERNAL_VOLTAGE
+    }
 );
 
 void telemetryInit(void)
