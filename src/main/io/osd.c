@@ -64,6 +64,9 @@
 
 #include "flight/altitude.h"
 #include "flight/imu.h"
+#ifdef USE_ESC_SENSOR
+#include "flight/mixer.h"
+#endif
 #include "flight/pid.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
@@ -667,6 +670,27 @@ static bool osdDrawSingleElement(uint8_t item)
                 osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "BATT < FULL");
                 break;
             }
+
+#ifdef USE_ESC_SENSOR
+            // Show warning if we lose motor output
+            if (enabledWarnings & OSD_WARNING_ESC_FAIL && ARMING_FLAG(ARMED)) {
+                char escErrMsg[OSD_FORMAT_MESSAGE_BUFFER_SIZE];
+                // center justify message
+                int pos = 0;
+                while (pos < 4 - getMotorCount()/2) {
+                    escErrMsg[pos++] = ' ';
+                }
+                strcpy(escErrMsg + pos, "ESC");
+                pos += strlen("ESC");
+                for (int i = 0; i < getMotorCount(); i++) {
+                    escSensorData_t *escDatai = getEscSensorData(i);
+                    escErrMsg[pos++] = escDatai->rpm == 0 ? '0' + i + 1 : ' ';
+                }
+                escErrMsg[pos] = '\0';
+                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, escErrMsg);
+                break;
+            }
+#endif
 
             // Visual beeper
             if (enabledWarnings & OSD_WARNING_VISUAL_BEEPER && showVisualBeeper) {
