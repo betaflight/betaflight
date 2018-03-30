@@ -58,6 +58,7 @@ COMMON_SRC = \
             fc/runtime_config.c \
             interface/msp.c \
             interface/msp_box.c \
+            interface/tramp_protocol.c \
             io/beeper.c \
             io/piniobox.c \
             io/serial.c \
