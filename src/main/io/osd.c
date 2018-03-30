@@ -141,7 +141,7 @@ static bool lastArmState;
 static displayPort_t *osdDisplayPort;
 
 #ifdef USE_ESC_SENSOR
-static escSensorData_t *escData;
+static escSensorData_t *escDataCombined;
 #endif
 
 #define AH_SYMBOL_COUNT 9
@@ -672,21 +672,34 @@ static bool osdDrawSingleElement(uint8_t item)
             }
 
 #ifdef USE_ESC_SENSOR
-            // Show warning if we lose motor output
-            if (enabledWarnings & OSD_WARNING_ESC_FAIL && ARMING_FLAG(ARMED)) {
+            // Show warning if we lose motor output or the ESC is overheating
+            if (feature(FEATURE_ESC_SENSOR) && enabledWarnings & OSD_WARNING_ESC_FAIL) {
                 char escErrMsg[OSD_FORMAT_MESSAGE_BUFFER_SIZE];
+                unsigned pos = 0;
+                
+                const char *title = "ESC";
+
                 // center justify message
-                int pos = 0;
-                while (pos < 4 - getMotorCount()/2) {
+                while (pos < (OSD_WARNINGS_MAX_SIZE - (strlen(title) + getMotorCount())) / 2) {
                     escErrMsg[pos++] = ' ';
                 }
-                strcpy(escErrMsg + pos, "ESC");
-                pos += strlen("ESC");
-                for (int i = 0; i < getMotorCount(); i++) {
-                    escSensorData_t *escDatai = getEscSensorData(i);
-                    escErrMsg[pos++] = escDatai->rpm == 0 ? '0' + i + 1 : ' ';
+
+                strcpy(escErrMsg + pos, title);
+                pos += strlen(title);
+
+                unsigned i = 0;
+                while (i < getMotorCount() && pos < OSD_FORMAT_MESSAGE_BUFFER_SIZE - 1) {
+                    escSensorData_t *escData = getEscSensorData(i);
+                    const bool escWarning = (ARMING_FLAG(ARMED) && osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF && escData->rpm <= osdConfig()->esc_rpm_alarm) ||
+                        (osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF && escData->temperature >= osdConfig()->esc_temp_alarm);
+
+                    escErrMsg[pos++] = escWarning ? '1' + i : ' ';
+
+                    i++;
                 }
+
                 escErrMsg[pos] = '\0';
+
                 osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, escErrMsg);
                 break;
             }
@@ -773,11 +786,15 @@ static bool osdDrawSingleElement(uint8_t item)
 
 #ifdef USE_ESC_SENSOR
     case OSD_ESC_TMP:
-        tfp_sprintf(buff, "%3d%c", osdConvertTemperatureToSelectedUnit(escData->temperature * 10) / 10, osdGetTemperatureSymbolForSelectedUnit());
+        if (feature(FEATURE_ESC_SENSOR)) {
+            tfp_sprintf(buff, "%3d%c", osdConvertTemperatureToSelectedUnit(escDataCombined->temperature * 10) / 10, osdGetTemperatureSymbolForSelectedUnit());
+        }
         break;
 
     case OSD_ESC_RPM:
-        tfp_sprintf(buff, "%5d", escData == NULL ? 0 : escData->rpm);
+        if (feature(FEATURE_ESC_SENSOR)) {
+            tfp_sprintf(buff, "%5d", escDataCombined == NULL ? 0 : escDataCombined->rpm);
+        }
         break;
 #endif
 
@@ -923,6 +940,8 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->rssi_alarm = 20;
     osdConfig->cap_alarm  = 2200;
     osdConfig->alt_alarm  = 100; // meters or feet depend on configuration
+    osdConfig->esc_temp_alarm = ESC_TEMP_ALARM_OFF; // off by default
+    osdConfig->esc_rpm_alarm = ESC_RPM_ALARM_OFF; // off by default
 
     osdConfig->ahMaxPitch = 20; // 20 degrees
     osdConfig->ahMaxRoll = 40; // 40 degrees
@@ -1036,6 +1055,17 @@ void osdUpdateAlarms(void)
     } else {
         CLR_BLINK(OSD_ALTITUDE);
     }
+
+#ifdef USE_ESC_SENSOR
+    if (feature(FEATURE_ESC_SENSOR)) {
+        // This works because the combined ESC data contains the maximum temperature seen amongst all ESCs
+        if (osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF && escDataCombined->temperature >= osdConfig()->esc_temp_alarm) {
+            SET_BLINK(OSD_ESC_TMP);
+        } else {
+            CLR_BLINK(OSD_ESC_TMP);
+        }
+    }
+#endif
 }
 
 void osdResetAlarms(void)
@@ -1051,6 +1081,7 @@ void osdResetAlarms(void)
     CLR_BLINK(OSD_ITEM_TIMER_1);
     CLR_BLINK(OSD_ITEM_TIMER_2);
     CLR_BLINK(OSD_REMAINING_TIME_ESTIMATE);
+    CLR_BLINK(OSD_ESC_TMP);
 }
 
 static void osdResetStats(void)
@@ -1343,7 +1374,7 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
 
 #ifdef USE_ESC_SENSOR
     if (feature(FEATURE_ESC_SENSOR)) {
-        escData = getEscSensorData(ESC_SENSOR_COMBINED);
+        escDataCombined = getEscSensorData(ESC_SENSOR_COMBINED);
     }
 #endif
 

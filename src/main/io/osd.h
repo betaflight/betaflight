@@ -141,6 +141,9 @@ typedef enum {
     OSD_WARNING_ESC_FAIL          = (1 << 6)
 } osdWarningsFlags_e;
 
+#define ESC_RPM_ALARM_OFF -1
+#define ESC_TEMP_ALARM_OFF INT8_MIN
+
 typedef struct osdConfig_s {
     uint16_t item_pos[OSD_ITEM_COUNT];
 
@@ -157,13 +160,13 @@ typedef struct osdConfig_s {
     uint8_t ahMaxPitch;
     uint8_t ahMaxRoll;
     bool enabled_stats[OSD_STAT_COUNT];
+    int8_t esc_temp_alarm;
+    int16_t esc_rpm_alarm;
 } osdConfig_t;
-
-extern timeUs_t resumeRefreshAt;
 
 PG_DECLARE(osdConfig_t, osdConfig);
 
-extern uint32_t resumeRefreshAt;
+extern timeUs_t resumeRefreshAt;
 
 struct displayPort_s;
 void osdInit(struct displayPort_s *osdDisplayPort);
