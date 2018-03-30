@@ -115,7 +115,11 @@
 
 //#define AVOID_UART2_FOR_PWM_PPM // PPM is not working on RC pin anyway
 #define USE_UART2
+#if defined (FPVM_BETAFLIGHTF7)
+#define UART2_TX_PIN            PA2
+#else
 #define UART2_TX_PIN            NONE
+#endif
 #define UART2_RX_PIN            PA3
 
 // Assigned to shared output I2C2
