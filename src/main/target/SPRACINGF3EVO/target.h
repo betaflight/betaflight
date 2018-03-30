@@ -29,6 +29,7 @@
 #undef USE_RTC_TIME
 #undef USE_COPY_PROFILE_CMS_MENU
 #undef USE_RX_MSP
+#undef USE_ESC_SENSOR_INFO
 
 
 #if !defined(AIORACERF3)
@@ -62,8 +63,6 @@
 
 #define USE_MAG_DATA_READY_SIGNAL
 #define ENSURE_MAG_DATA_READY_IS_HIGH
-
-#define USE_ESC_SENSOR
 
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6500

@@ -2372,7 +2372,8 @@ static int parseOutputIndex(char *pch, bool allowAllEscs) {
     return outputIndex;
 }
 
-#ifdef USE_DSHOT
+#if defined(USE_DSHOT)
+#if defined(USE_ESC_SENSOR) && defined(USE_ESC_SENSOR_INFO)
 
 #define ESC_INFO_KISS_V1_EXPECTED_FRAME_SIZE 15
 #define ESC_INFO_KISS_V2_EXPECTED_FRAME_SIZE 21
@@ -2558,6 +2559,7 @@ static void executeEscInfoCommand(uint8_t escIndex)
 
     printEscInfo(escInfoBuffer, getNumberEscBytesRead());
 }
+#endif // USE_ESC_SENSOR && USE_ESC_SENSOR_INFO
 
 static void cliDshotProg(char *cmdline)
 {
@@ -2600,12 +2602,19 @@ static void cliDshotProg(char *cmdline)
                     if (command != DSHOT_CMD_ESC_INFO) {
                         pwmWriteDshotCommand(escIndex, getMotorCount(), command);
                     } else {
-                        if (escIndex != ALL_MOTORS) {
-                            executeEscInfoCommand(escIndex);
-                        } else {
-                            for (uint8_t i = 0; i < getMotorCount(); i++) {
-                                executeEscInfoCommand(i);
+#if defined(USE_ESC_SENSOR) && defined(USE_ESC_SENSOR_INFO)
+                        if (feature(FEATURE_ESC_SENSOR)) {
+                            if (escIndex != ALL_MOTORS) {
+                                executeEscInfoCommand(escIndex);
+                            } else {
+                                for (uint8_t i = 0; i < getMotorCount(); i++) {
+                                    executeEscInfoCommand(i);
+                                }
                             }
+                        } else
+#endif
+                        {
+                            cliPrintLine("Not supported.");
                         }
                     }
 
@@ -2628,7 +2637,7 @@ static void cliDshotProg(char *cmdline)
 
     pwmEnableMotors();
 }
-#endif
+#endif // USE_DSHOT
 
 #ifdef USE_ESCSERIAL
 static void cliEscPassthrough(char *cmdline)

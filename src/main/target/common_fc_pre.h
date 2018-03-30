@@ -46,7 +46,6 @@
 
 #ifdef STM32F4
 #define USE_DSHOT
-#define USE_ESC_SENSOR
 #define I2C3_OVERCLOCK true
 #define USE_GYRO_DATA_ANALYSE
 #define USE_ADC
@@ -65,7 +64,6 @@
 #endif
 #ifdef STM32F7
 #define USE_DSHOT
-#define USE_ESC_SENSOR
 #define I2C3_OVERCLOCK true
 #define I2C4_OVERCLOCK true
 #define USE_GYRO_DATA_ANALYSE
@@ -162,6 +160,8 @@
 #define USE_VTX_SMARTAUDIO
 #define USE_VTX_TRAMP
 #define USE_GYRO_LPF2
+#define USE_ESC_SENSOR
+#define USE_ESC_SENSOR_INFO
 
 #ifdef USE_SERIALRX_SPEKTRUM
 #define USE_SPEKTRUM_BIND

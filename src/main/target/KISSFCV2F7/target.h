@@ -23,8 +23,6 @@
 
 #define USBD_PRODUCT_STRING "KISSFCV2F7"
 
-#define USE_ESC_SENSOR
-
 #define LED0   PA8  // blue
 #define LED1   PC8 // blingbling
 #define LED1_INVERTED

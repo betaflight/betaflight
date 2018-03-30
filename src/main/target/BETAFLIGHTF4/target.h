@@ -20,8 +20,6 @@
 #define TARGET_BOARD_IDENTIFIER "BFF4"
 #define USBD_PRODUCT_STRING     "BetaFlightF4"
 
-#define USE_ESC_SENSOR
-
 #define LED0_PIN                PB5
 
 #define USE_BEEPER

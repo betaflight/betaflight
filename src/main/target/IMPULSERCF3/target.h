@@ -44,8 +44,6 @@
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 
-#define USE_ESC_SENSOR
-
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2

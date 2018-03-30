@@ -21,8 +21,6 @@
 
 #define USBD_PRODUCT_STRING "AnyFCM7"
 
-#define USE_ESC_SENSOR
-
 #define LED0_PIN   PB6  //red
 #define LED1_PIN   PB9  //blue
 
