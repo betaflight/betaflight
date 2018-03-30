@@ -38,13 +38,9 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 
     // backdoor timers
     DEF_TIM(TIM1,  CH2,  PA9,  TIM_USE_ANY,                 0, 0), // UART1_TX
-    DEF_TIM(TIM1,  CH3,  PA10, TIM_USE_ANY,                 0, 0), // UART1_RX
 
     DEF_TIM(TIM9,  CH1,  PA2,  TIM_USE_ANY,                 0, 0), // UART2_TX
     DEF_TIM(TIM9,  CH2,  PA3,  TIM_USE_ANY,                 0, 0), // UART2_RX
-
-    DEF_TIM(TIM2,  CH3,  PB10, TIM_USE_ANY,                 0, 0), // UART3_TX
-    DEF_TIM(TIM2,  CH4,  PB11, TIM_USE_ANY,                 0, 0), // UART3_RX
 
     DEF_TIM(TIM5,  CH1,  PA0,  TIM_USE_ANY,                 0, 0), // UART4_TX
     DEF_TIM(TIM5,  CH2,  PA1,  TIM_USE_ANY,                 0, 0), // UART4_RX
