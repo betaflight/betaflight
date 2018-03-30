@@ -86,6 +86,23 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 
 PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 2);
 
+// Tx control of PID using aux channels
+enum {
+    TERM_P = 0,
+    TERM_I,
+    TERM_D,
+    TERM_COUNT
+} TermPID_e;
+
+struct {
+    int auxChannel[TERM_COUNT];
+    int16_t centerVal[TERM_COUNT];
+    int16_t adjustVal[TERM_COUNT];
+} TxPID[PID_ITEM_COUNT];
+
+// Scale txPID value around mid-point assuming RC input range of 1000-2000
+#define TX_PID_VAL(PID, TERM) TxPID[PID].centerVal[TERM] + ((rcData[TxPID[PID].auxChannel[TERM]] - stickCenter) * (TxPID[PID].adjustVal[TERM]) / 500.0)
+
 void resetPidProfile(pidProfile_t *pidProfile)
 {
     RESET_CONFIG(pidProfile_t, pidProfile,
@@ -331,11 +348,68 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     itermRotation = pidProfile->iterm_rotation == 1;
 }
 
+void pidInitTxPID()
+{
+    // Aux channel 2
+    TxPID[FD_ROLL].auxChannel[TERM_P] = 5;
+    TxPID[FD_ROLL].centerVal[TERM_P] = 40;
+    TxPID[FD_ROLL].adjustVal[TERM_P] = 20;
+    TxPID[FD_ROLL].auxChannel[TERM_I] = 5;
+    TxPID[FD_ROLL].centerVal[TERM_I] = 40;
+    TxPID[FD_ROLL].adjustVal[TERM_I] = 20;
+    TxPID[FD_ROLL].auxChannel[TERM_D] = 5;
+    TxPID[FD_ROLL].centerVal[TERM_D] = 30;
+    TxPID[FD_ROLL].adjustVal[TERM_D] = 15;
+
+    // Aux channel 3
+    TxPID[FD_PITCH].auxChannel[TERM_P] = 6;
+    TxPID[FD_PITCH].centerVal[TERM_P] = 58;
+    TxPID[FD_PITCH].adjustVal[TERM_P] = 29;
+    TxPID[FD_PITCH].auxChannel[TERM_I] = 6;
+    TxPID[FD_PITCH].centerVal[TERM_I] = 50;
+    TxPID[FD_PITCH].adjustVal[TERM_I] = 25;
+    TxPID[FD_PITCH].auxChannel[TERM_D] = 6;
+    TxPID[FD_PITCH].centerVal[TERM_D] = 35;
+    TxPID[FD_PITCH].adjustVal[TERM_D] = 17;
+
+    // Aux channel 4
+    TxPID[FD_YAW].auxChannel[TERM_P] = 7;
+    TxPID[FD_YAW].centerVal[TERM_P] = 70;
+    TxPID[FD_YAW].adjustVal[TERM_P] = 35;
+    TxPID[FD_YAW].auxChannel[TERM_I] = 7;
+    TxPID[FD_YAW].centerVal[TERM_I] = 45;
+    TxPID[FD_YAW].adjustVal[TERM_I] = 22;
+}
+
+void pidUpdateRates(pidProfile_t *pidProfile, int16_t *rcData)
+{
+    int16_t stickCenter = flight3DConfig()->neutral3d;
+
+    // RC data is in the range 1000 to 2000
+    // pid values are of type uint8_t, so scale accordingly
+
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        if (TxPID[axis].auxChannel[TERM_P]) {
+            pidProfile->pid[axis].P = TX_PID_VAL(axis, TERM_P);
+            Kp[axis] = PTERM_SCALE * pidProfile->pid[axis].P;
+        }
+        if (TxPID[axis].auxChannel[TERM_I]) {
+            pidProfile->pid[axis].I = TX_PID_VAL(axis, TERM_I);
+            Ki[axis] = ITERM_SCALE * pidProfile->pid[axis].I;
+        }
+        if ((axis != FD_YAW) && (TxPID[axis].auxChannel[TERM_D])) {
+            pidProfile->pid[axis].D = TX_PID_VAL(axis, TERM_D);
+            Kd[axis] = DTERM_SCALE * pidProfile->pid[axis].D;
+        }
+    }
+}
+
 void pidInit(const pidProfile_t *pidProfile)
 {
     pidSetTargetLooptime(gyro.targetLooptime * pidConfig()->pid_process_denom); // Initialize pid looptime
     pidInitFilters(pidProfile);
     pidInitConfig(pidProfile);
+    pidInitTxPID();
 }
 
 

@@ -608,6 +608,7 @@ bool calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs)
 
     readRxChannelsApplyRanges();
     detectAndApplySignalLossBehaviour();
+    pidUpdateRates(currentPidProfile, rcData);
 
     rcSampleIndex++;
 
