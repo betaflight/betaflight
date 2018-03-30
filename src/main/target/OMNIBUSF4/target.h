@@ -83,10 +83,10 @@
 #define MPU_INT_EXTI            PC4
 #define USE_MPU_DATA_READY_SIGNAL
 
-#if defined(OMNIBUSF4SD)
+#if defined(OMNIBUSF4SD) || defined(EXUAVF4PRO)
 #define GYRO_MPU6000_ALIGN       CW270_DEG
 #define ACC_MPU6000_ALIGN        CW270_DEG
-#elif defined(XRACERF4) || defined(EXUAVF4PRO)
+#elif defined(XRACERF4)
 #define GYRO_MPU6000_ALIGN       CW90_DEG
 #define ACC_MPU6000_ALIGN        CW90_DEG
 #else
