@@ -44,12 +44,7 @@
 #define USBD_PRODUCT_STRING "OmnibusF4"
 #endif
 
-#ifdef OPBL
-#define USBD_SERIALNUMBER_STRING "0x8020000" // Remove this at the next major release (?)
-#endif
-
 #define LED0_PIN                PB5
-//#define LED1_PIN                PB4 // Remove this at the next major release
 #define USE_BEEPER
 #define BEEPER_PIN              PB4
 #define BEEPER_INVERTED
@@ -66,7 +61,7 @@
 #elif defined(EXUAVF4PRO)
 #define INVERTER_PIN_UART6      PC8
 #else
-#define INVERTER_PIN_UART1      PC0 // PC0 used as inverter select GPIO XXX this is not used --- remove it at the next major release
+#define INVERTER_PIN_UART1      PC0 // DYS F4 Pro; Omnibus F4 AIO (1st gen) have a FIXED inverter on UART1
 #endif
 
 #define USE_ACC
@@ -110,9 +105,6 @@
 #define USE_MAG_HMC5883
 #define USE_MAG_QMC5883
 #define MAG_HMC5883_ALIGN       CW90_DEG
-
-//#define USE_MAG_NAZA                   // Delete this on next major release
-//#define MAG_NAZA_ALIGN CW180_DEG_FLIP  // Ditto
 
 #define USE_BARO
 #if defined(OMNIBUSF4SD)
