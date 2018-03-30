@@ -180,6 +180,9 @@ void updateArmingStatus(void)
             unsetArmingDisabled(ARMING_DISABLED_BOOT_GRACE_TIME);
         }
 
+        // Clear the crash flip active status
+        flipOverAfterCrashMode = false;
+
         // If switch is used for arming then check it is not defaulting to on when the RX link recovers from a fault
         if (!isUsingSticksForArming()) {
             static bool hadRx = false;
