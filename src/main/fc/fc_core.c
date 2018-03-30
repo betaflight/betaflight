@@ -64,6 +64,7 @@
 #include "io/beeper.h"
 #include "io/gps.h"
 #include "io/motors.h"
+#include "io/pidaudio.h"
 #include "io/servos.h"
 #include "io/serial.h"
 #include "io/statusindicator.h"
@@ -824,6 +825,11 @@ static void subTaskPidController(timeUs_t currentTimeUs)
         DEBUG_SET(DEBUG_RUNAWAY_TAKEOFF, DEBUG_RUNAWAY_TAKEOFF_ENABLED_STATE, DEBUG_RUNAWAY_TAKEOFF_FALSE);
         DEBUG_SET(DEBUG_RUNAWAY_TAKEOFF, DEBUG_RUNAWAY_TAKEOFF_ACTIVATING_DELAY, DEBUG_RUNAWAY_TAKEOFF_FALSE);
     }
+#endif
+
+
+#ifdef USE_PID_AUDIO
+    pidAudioUpdate();
 #endif
 }
 

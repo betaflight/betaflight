@@ -145,6 +145,7 @@ MCU_COMMON_SRC = \
             target/system_stm32f7xx.c \
             drivers/accgyro/accgyro_mpu.c \
             drivers/adc_stm32f7xx.c \
+            drivers/audio_stm32f7xx.c \
             drivers/bus_i2c_hal.c \
             drivers/dma_stm32f7xx.c \
             drivers/light_ws2811strip_hal.c \
