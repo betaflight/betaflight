@@ -39,6 +39,7 @@
 #include "io/spektrum_vtx_control.h"
 
 #include "telemetry/telemetry.h"
+#include "telemetry/srxl.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
@@ -61,10 +62,13 @@ static volatile uint8_t spekFrame[SPEK_FRAME_SIZE];
 static rxRuntimeConfig_t *rxRuntimeConfigPtr;
 static serialPort_t *serialPort;
 
+#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_SRXL)
 static uint8_t telemetryBuf[SRXL_FRAME_SIZE_MAX];
 static uint8_t telemetryBufLen = 0;
 
 void srxlRxSendTelemetryDataDispatch(dispatchEntry_t *self);
+static dispatchEntry_t srxlTelemetryDispatch = { .dispatch = srxlRxSendTelemetryDataDispatch};
+#endif
 
 // Receive ISR callback
 static void spektrumDataReceive(uint16_t c, void *data)
@@ -95,7 +99,6 @@ static void spektrumDataReceive(uint16_t c, void *data)
 
 
 uint32_t spekChannelData[SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT];
-static dispatchEntry_t srxlTelemetryDispatch = { .dispatch = srxlRxSendTelemetryDataDispatch};
 
 static uint8_t spektrumFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
 {
@@ -139,10 +142,21 @@ static uint8_t spektrumFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
         }
     }
 
-    /* only process if srxl enabled, some data in buffer AND servos in phase 0 */
-    if (srxlEnabled && telemetryBufLen && (spekFrame[2] & 0x80) == 0) {
-        dispatchAdd(&srxlTelemetryDispatch, SPEKTRUM_TELEMETRY_FRAME_DELAY);
+#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_SRXL)
+    if (srxlEnabled) {
+        /* Only dispatch for transmission if there are some data in buffer AND servos in phase 0 */
+        if (telemetryBufLen && (spekFrame[2] & 0x80) == 0) {
+            dispatchAdd(&srxlTelemetryDispatch, SPEKTRUM_TELEMETRY_FRAME_DELAY);
+        }
+
+        /* Trigger tm data collection if buffer has been sent and is empty, 
+           so data will be ready to transmit in the next phase 0 */
+        if (telemetryBufLen == 0) {
+            srxlCollectTelemetryNow();
+        }
     }
+#endif
+
     return RX_FRAME_COMPLETE;
 }
 
@@ -218,12 +232,12 @@ void spektrumBind(rxConfig_t *rxConfig)
         // Take care half-duplex case
         switch (rxConfig->serialrx_provider) {
         case SERIALRX_SRXL:
-#ifdef USE_TELEMETRY
+#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_SRXL)
             if (feature(FEATURE_TELEMETRY) && !telemetryCheckRxPortShared(portConfig)) {
                 bindPin = txPin;
             }
             break;
-#endif // USE_TELEMETRY
+#endif // USE_TELEMETRY && USE_TELEMETRY_SRXL
 
         default:
             bindPin = rxConfig->halfDuplex ? txPin : rxPin;
@@ -294,7 +308,7 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
     }
 
     srxlEnabled = false;
-#ifdef USE_TELEMETRY
+#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_SRXL)
     bool portShared = telemetryCheckRxPortShared(portConfig);
 #else
     bool portShared = false;
@@ -302,7 +316,7 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
 
     switch (rxConfig->serialrx_provider) {
     case SERIALRX_SRXL:
-#ifdef USE_TELEMETRY
+#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_SRXL)
         srxlEnabled = (feature(FEATURE_TELEMETRY) && !portShared);
         FALLTHROUGH;
 #endif
@@ -337,8 +351,7 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
         portShared || srxlEnabled ? MODE_RXTX : MODE_RX,
         (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | ((srxlEnabled || rxConfig->halfDuplex) ? SERIAL_BIDIR : 0)
         );
-
-#ifdef USE_TELEMETRY
+#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_SRXL)
     if (portShared) {
         telemetrySharedPort = serialPort;
     }
@@ -355,6 +368,7 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
     return serialPort != NULL;
 }
 
+#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_SRXL)
 void srxlRxWriteTelemetryData(const void *data, int len)
 {
     len = MIN(len, (int)sizeof(telemetryBuf));
@@ -371,6 +385,7 @@ void srxlRxSendTelemetryDataDispatch(dispatchEntry_t* self)
         telemetryBufLen = 0; // reset telemetry buffer
     }
 }
+#endif
 
 bool srxlRxIsActive(void)
 {
