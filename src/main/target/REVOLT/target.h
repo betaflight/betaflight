@@ -19,6 +19,16 @@
 
 #pragma once
 
+
+#if defined(REVOLTOSD)
+#define TARGET_BOARD_IDENTIFIER "ROSD"
+#define USBD_PRODUCT_STRING     "RevoltOSD"
+#else
+#define TARGET_BOARD_IDENTIFIER "RVLT"
+#define USBD_PRODUCT_STRING     "Revolt"
+#endif
+
+
 #define TARGET_BOARD_IDENTIFIER "RVLT"
 #define USBD_PRODUCT_STRING     "Revolt"
 #define TARGET_DEFAULT_MIXER    MIXER_QUADX_1234
@@ -109,12 +119,16 @@
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 
+#if defined(REVOLTOSD)
 /*----------OSD Config--------*/
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI2
 #define MAX7456_SPI_CS_PIN      PD2
 #define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
+#endif
+
+
 
 /*----------Uart Config--------*/
 #define USE_UART1
