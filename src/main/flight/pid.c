@@ -89,11 +89,9 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 2);
 
 #ifdef USE_TXPID
-PG_REGISTER(txPID_t, txPID, PG_TXPID_CONFIG, 0);
-
 // Scale txPID value around mid-point assuming RC input range of 1000-2000
-#define TX_PID_VAL(PID, TERM) txPID()->centerVal[PID][TERM] + \
-                              ((rcData[NON_AUX_CHANNEL_COUNT + txPID()->auxChannel[PID][TERM] - 1] - PWM_RANGE_MIDDLE) * (txPID()->adjustVal[PID][TERM]) / (PWM_RANGE_MIDDLE - PWM_RANGE_MIN))
+#define TX_PID_VAL(PID, TERM) pidProfile->centerVal[PID][TERM] + \
+                              ((rcData[NON_AUX_CHANNEL_COUNT + pidProfile->auxChannel[PID][TERM] - 1] - PWM_RANGE_MIDDLE) * (pidProfile->adjustVal[PID][TERM]) / (PWM_RANGE_MIDDLE - PWM_RANGE_MIN))
 #endif
 
 void resetPidProfile(pidProfile_t *pidProfile)
@@ -144,7 +142,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .itermLimit = 150,
         .throttle_boost = 0,
         .throttle_boost_cutoff = 15,
-        .iterm_rotation = false                 
+        .iterm_rotation = false,
+        .auxChannel = { {0} }
     );
 }
 
@@ -346,19 +345,19 @@ void pidUpdateRates(pidProfile_t *pidProfile, int16_t *rcData)
 {
     // On each axis, check if there is an aux channel being used to override the P, I and/or D term
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-        if ((txPID()->auxChannel[axis][TERM_P]) &&
-            (txPID()->auxChannel[axis][TERM_P] < RX_MAPPABLE_CHANNEL_COUNT)) {
+        if ((pidProfile->auxChannel[axis][TERM_P]) &&
+            (pidProfile->auxChannel[axis][TERM_P] < RX_MAPPABLE_CHANNEL_COUNT)) {
             pidProfile->pid[axis].P = TX_PID_VAL(axis, TERM_P);
             Kp[axis] = PTERM_SCALE * pidProfile->pid[axis].P;
         }
-        if ((txPID()->auxChannel[axis][TERM_I]) &&
-            (txPID()->auxChannel[axis][TERM_I] < RX_MAPPABLE_CHANNEL_COUNT)) {
+        if ((pidProfile->auxChannel[axis][TERM_I]) &&
+            (pidProfile->auxChannel[axis][TERM_I] < RX_MAPPABLE_CHANNEL_COUNT)) {
             pidProfile->pid[axis].I = TX_PID_VAL(axis, TERM_I);
             Ki[axis] = ITERM_SCALE * pidProfile->pid[axis].I;
         }
         if ((axis != FD_YAW) &&
-            (txPID()->auxChannel[axis][TERM_D]) &&
-            (txPID()->auxChannel[axis][TERM_D] < RX_MAPPABLE_CHANNEL_COUNT)) {
+            (pidProfile->auxChannel[axis][TERM_D]) &&
+            (pidProfile->auxChannel[axis][TERM_D] < RX_MAPPABLE_CHANNEL_COUNT)) {
             pidProfile->pid[axis].D = TX_PID_VAL(axis, TERM_D);
             Kd[axis] = DTERM_SCALE * pidProfile->pid[axis].D;
         }
