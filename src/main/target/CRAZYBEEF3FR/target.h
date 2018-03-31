@@ -25,6 +25,8 @@
 #define USBD_PRODUCT_STRING     "CrazyBee F3 FR"
 #endif
 
+#define ENABLE_DSHOT_DMAR       true
+
 #define LED0_PIN                PB3
 #define USE_BEEPER 
 #define BEEPER_PIN              PC15
