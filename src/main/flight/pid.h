@@ -125,6 +125,24 @@ typedef struct pidConfig_s {
 
 PG_DECLARE(pidConfig_t, pidConfig);
 
+#ifdef USE_TXPID
+// Tx control of PID using aux channels
+enum {
+    TERM_P = 0,
+    TERM_I,
+    TERM_D,
+    TERM_COUNT
+} TermPID_e;
+
+typedef struct txPID_s {
+    uint8_t auxChannel[3][TERM_COUNT];
+    uint16_t centerVal[3][TERM_COUNT];
+    uint8_t adjustVal[3][TERM_COUNT];
+} txPID_t;
+
+PG_DECLARE(txPID_t, txPID);
+#endif /* USE_TXPID */
+
 union rollAndPitchTrims_u;
 void pidController(const pidProfile_t *pidProfile, const union rollAndPitchTrims_u *angleTrim, timeUs_t currentTimeUs);
 
@@ -144,6 +162,7 @@ void pidInitConfig(const pidProfile_t *pidProfile);
 void pidInit(const pidProfile_t *pidProfile);
 void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex);
 bool crashRecoveryModeActive(void);
+void pidUpdateRates(pidProfile_t *pidProfile, int16_t *rcData);
 
 extern float throttleBoost;
 extern pt1Filter_t throttleLpf;

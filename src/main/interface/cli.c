@@ -3005,7 +3005,7 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
                             char *valEndPtr = strchr(valPtr, ',');
 
                             // comma found or last item?
-                            if ((valEndPtr != NULL) || (i == arrayLength - 1)){
+                            if ((valPtr != NULL) || (i == arrayLength - 1)){
                                 // process substring [valPtr, valEndPtr[
                                 // note: no need to copy substrings for atoi()
                                 //       it stops at the first character that cannot be converted...
@@ -3307,6 +3307,9 @@ const cliResourceValue_t resourceTable[] = {
 #endif
 #if defined(USE_USB_MSC)
     { OWNER_USB_MSC_PIN,   PG_USB_CONFIG, offsetof(usbDev_t, mscButtonPin), 0 },
+#endif
+#ifdef USE_TXPID
+    { OWNER_TXPID,         PG_TXPID_CONFIG, offsetof(txPID_t, auxChannel), 0 },
 #endif
 };
 

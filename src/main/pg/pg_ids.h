@@ -122,7 +122,8 @@
 #define PG_PINIO_CONFIG 529
 #define PG_PINIOBOX_CONFIG 530
 #define PG_USB_CONFIG 531
-#define PG_BETAFLIGHT_END 531
+#define PG_TXPID_CONFIG 532
+#define PG_BETAFLIGHT_END 532
 
 
 // OSD configuration (subject to change)

@@ -42,6 +42,7 @@
 #include "fc/rc_modes.h"
 
 #include "flight/failsafe.h"
+#include "flight/pid.h"
 
 #include "io/serial.h"
 
@@ -608,7 +609,9 @@ bool calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs)
 
     readRxChannelsApplyRanges();
     detectAndApplySignalLossBehaviour();
+#ifdef USE_TXPID
     pidUpdateRates(currentPidProfile, rcData);
+#endif /* USE_TXPID */
 
     rcSampleIndex++;
 

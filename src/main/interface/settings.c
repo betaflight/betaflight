@@ -965,6 +965,11 @@ const clivalue_t valueTable[] = {
 #ifdef USE_USB_MSC
     { "usb_msc_pin_pullup", VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_USB_CONFIG, offsetof(usbDev_t, mscButtonUsePullup) },
 #endif
+#ifdef USE_TXPID
+    { "txpid_channel", VAR_UINT8 | MASTER_VALUE | MODE_ARRAY, .config.array.length = 8, PG_TXPID_CONFIG, offsetof(txPID_t, auxChannel) },
+    { "txpid_center", VAR_UINT16 | MASTER_VALUE | MODE_ARRAY, .config.array.length = 8, PG_TXPID_CONFIG, offsetof(txPID_t, centerVal) },
+    { "txpid_adjust", VAR_UINT8 | MASTER_VALUE | MODE_ARRAY, .config.array.length = 8, PG_TXPID_CONFIG, offsetof(txPID_t, adjustVal) },
+#endif
 };
 
 const uint16_t valueTableEntryCount = ARRAYLEN(valueTable);
