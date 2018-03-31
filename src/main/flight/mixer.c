@@ -65,6 +65,7 @@ PG_REGISTER_WITH_RESET_TEMPLATE(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 0);
 PG_RESET_TEMPLATE(mixerConfig_t, mixerConfig,
     .mixerMode = TARGET_DEFAULT_MIXER,
     .yaw_motors_reversed = false,
+    .crashflip_motor_percent = 0,
 );
 
 PG_REGISTER_WITH_RESET_FN(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 1);
@@ -660,9 +661,16 @@ static void applyFlipOverAfterCrashModeToMotors(void)
                 signPitch*currentMixer[i].pitch +
                 signRoll*currentMixer[i].roll +
                 signYaw*currentMixer[i].yaw;
-
-            motorOutput = MIN(1.0f, flipPower*motorOutput);
-            motorOutput = motorOutputMin + motorOutput*motorOutputRange;
+                
+            if (motorOutput < 0) {
+                if (mixerConfig()->crashflip_motor_percent > 0) {
+                    motorOutput = -motorOutput * (float)mixerConfig()->crashflip_motor_percent / 100.0f;
+                } else {
+                    motorOutput = disarmMotorOutput;
+                }
+            } 
+            motorOutput = MIN(1.0f, flipPower * motorOutput);
+            motorOutput = motorOutputMin + motorOutput * motorOutputRange;
 
             // Add a little bit to the motorOutputMin so props aren't spinning when sticks are centered
             motorOutput = (motorOutput < motorOutputMin + CRASH_FLIP_DEADBAND) ? disarmMotorOutput : (motorOutput - CRASH_FLIP_DEADBAND);
