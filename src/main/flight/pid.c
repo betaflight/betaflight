@@ -88,12 +88,6 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 
 PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 2);
 
-#ifdef USE_TXPID
-// Scale txPID value around mid-point assuming RC input range of 1000-2000
-#define TX_PID_VAL(PID, TERM) pidProfile->centerVal[PID][TERM] + \
-                              ((rcData[NON_AUX_CHANNEL_COUNT + pidProfile->auxChannel[PID][TERM] - 1] - PWM_RANGE_MIDDLE) * (pidProfile->adjustVal[PID][TERM]) / (PWM_RANGE_MIDDLE - PWM_RANGE_MIN))
-#endif
-
 void resetPidProfile(pidProfile_t *pidProfile)
 {
     RESET_CONFIG(pidProfile_t, pidProfile,
@@ -341,24 +335,39 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 }
 
 #ifdef USE_TXPID
+static bool pidUpdateRate(
+    pidProfile_t *pidProfile,
+    int16_t *rcData,
+    flight_dynamics_index_t axis,
+    TermPID_e term,
+    uint8_t *value)
+{
+    if ((pidProfile->auxChannel[axis][term]) &&
+        (pidProfile->auxChannel[axis][term] < RX_MAPPABLE_CHANNEL_COUNT)) {
+        // An aux channel is mapped to this axis/term
+        *value = pidProfile->centerVal[axis][term] +
+                 ((rcData[NON_AUX_CHANNEL_COUNT + pidProfile->auxChannel[axis][term] - 1] - PWM_RANGE_MIDDLE) *
+                  (pidProfile->adjustVal[axis][term]) / (PWM_RANGE_MIDDLE - PWM_RANGE_MIN));
+
+         // Term was updated
+        return true;
+    }
+
+    // Term was not updated
+    return false;
+}
+
 void pidUpdateRates(pidProfile_t *pidProfile, int16_t *rcData)
 {
     // On each axis, check if there is an aux channel being used to override the P, I and/or D term
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-        if ((pidProfile->auxChannel[axis][TERM_P]) &&
-            (pidProfile->auxChannel[axis][TERM_P] < RX_MAPPABLE_CHANNEL_COUNT)) {
-            pidProfile->pid[axis].P = TX_PID_VAL(axis, TERM_P);
+        if (pidUpdateRate(pidProfile, rcData, axis, TERM_P, &pidProfile->pid[axis].P)) {
             Kp[axis] = PTERM_SCALE * pidProfile->pid[axis].P;
         }
-        if ((pidProfile->auxChannel[axis][TERM_I]) &&
-            (pidProfile->auxChannel[axis][TERM_I] < RX_MAPPABLE_CHANNEL_COUNT)) {
-            pidProfile->pid[axis].I = TX_PID_VAL(axis, TERM_I);
+        if (pidUpdateRate(pidProfile, rcData, axis, TERM_I, &pidProfile->pid[axis].I)) {
             Ki[axis] = ITERM_SCALE * pidProfile->pid[axis].I;
         }
-        if ((axis != FD_YAW) &&
-            (pidProfile->auxChannel[axis][TERM_D]) &&
-            (pidProfile->auxChannel[axis][TERM_D] < RX_MAPPABLE_CHANNEL_COUNT)) {
-            pidProfile->pid[axis].D = TX_PID_VAL(axis, TERM_D);
+        if ((axis != FD_YAW) && pidUpdateRate(pidProfile, rcData, axis, TERM_D, &pidProfile->pid[axis].D)) {
             Kd[axis] = DTERM_SCALE * pidProfile->pid[axis].D;
         }
     }

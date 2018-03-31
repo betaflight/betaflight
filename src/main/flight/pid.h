@@ -66,7 +66,7 @@ typedef enum {
 } pidCrashRecovery_e;
 
 // Tx control of PID using aux channels
-enum {
+typedef enum {
     TERM_P = 0,
     TERM_I,
     TERM_D,
