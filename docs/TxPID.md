@@ -24,7 +24,7 @@ These are each arrays of eight values, interpreted thus:
 | -------- | --------- |
 | txpid_channel  | Sets the Aux channel number, or zero to disable |
 | txpid_center | Sets the P, I or D value to set when aux channel is at mid-point |
-| txpid_adjust | Setes the amount to increase/decrease the P, I or D value when the aux channel is at max/min point respectively |
+| txpid_adjust | Sets the amount to increase/decrease the P, I or D value when the aux channel is at max/min point respectively |
 
 ### Example Setting
 
@@ -36,7 +36,7 @@ set txpid_center=0,0,0,50,0,0,0,0
 set txpid_adjust=0,0,0,10,0,0,0,0
 ```
 
-The following example adjusts all value of Roll P, I and D at the same time using Aux channel 2 with center settings of 40, 40 and 40 respectively, all values of Pitch P, I and D at the same time using Aux channel 3 with center settings of 58,50 and 35 respectively, and both value of Yaw P and I at the same time using Aud channel 4 with center settings of 70 and 45. In this example the adjustment range is set to ± half the center value.
+The following example adjusts all value of Roll P, I and D at the same time using Aux channel 2 with center settings of 40, 40 and 40 respectively, all values of Pitch P, I and D at the same time using Aux channel 3 with center settings of 58, 50 and 35 respectively, and both values of Yaw P and I at the same time using Aud channel 4 with center settings of 70 and 45. In this example the adjustment range is set to ± half the center value.
 
 ```
 set txpid_channel=2,2,2,3,3,3,4,4
