@@ -741,6 +741,8 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 
 static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 {
+    bool unsupportedCommand = false;
+
     switch (cmdMSP) {
     case MSP_STATUS_EX:
     case MSP_STATUS:
@@ -967,13 +969,19 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         break;
 #endif
 
-#ifdef USE_DSHOT
+#if defined(USE_ESC_SENSOR)
     case MSP_ESC_SENSOR_DATA:
-        sbufWriteU8(dst, getMotorCount());
-        for (int i = 0; i < getMotorCount(); i++) {
-            sbufWriteU8(dst, getEscSensorData(i)->temperature);
-            sbufWriteU16(dst, getEscSensorData(i)->rpm);
+        if (feature(FEATURE_ESC_SENSOR)) {
+            sbufWriteU8(dst, getMotorCount());
+            for (int i = 0; i < getMotorCount(); i++) {
+                const escSensorData_t *escData = getEscSensorData(i);
+                sbufWriteU8(dst, escData->temperature);
+                sbufWriteU16(dst, escData->rpm);
+            }
+        } else {
+            unsupportedCommand = true;
         }
+
         break;
 #endif
 
@@ -1276,9 +1284,9 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         break;
 #endif
     default:
-        return false;
+        unsupportedCommand = true;
     }
-    return true;
+    return !unsupportedCommand;
 }
 
 static mspResult_e mspFcProcessOutCommandWithArg(uint8_t cmdMSP, sbuf_t *arg, sbuf_t *dst)

@@ -33,8 +33,6 @@
 
 #define INVERTER_PIN_UART6      PC6
 
-#define USE_ESC_SENSOR
-
 // MPU9250 interrupt
 #define USE_EXTI
 #define MPU_INT_EXTI            PC5

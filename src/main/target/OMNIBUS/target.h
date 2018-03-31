@@ -29,6 +29,7 @@
 #undef USE_RTC_TIME
 #undef USE_COPY_PROFILE_CMS_MENU
 #undef USE_RX_MSP
+#undef USE_ESC_SENSOR_INFO
 
 
 #define TARGET_BOARD_IDENTIFIER "OMNI" // https://en.wikipedia.org/wiki/Omnibus
@@ -138,8 +139,6 @@
 #define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 128
 // Divide to under 25MHz for normal operation:
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     2
-
-#define USE_ESC_SENSOR
 
 // DSHOT output 4 uses DMA1_Channel5, so don't use it for the SDCARD until we find an alternative
 #ifndef USE_DSHOT

@@ -48,8 +48,6 @@
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
-#define USE_ESC_SENSOR
-
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 #ifdef LUXV2_RACE
