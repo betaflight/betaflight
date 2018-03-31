@@ -228,6 +228,45 @@ void taskCameraControl(uint32_t currentTime)
 }
 #endif
 
+#ifdef USE_KILLSWITCH
+uint8_t readyToKillSwitch = 0; //this may not be the right place to declare this
+#define KS_NOT_READY 0
+#define KS_STAGE1 1
+#define KS_STAGE2_READY 2
+
+void taskKillSwitch()
+{    
+    if (ARMING_FLAG(ARMED)) {
+        if (readyToKillSwitch == KS_STAGE1)
+        {
+            readyToKillSwitch = KS_STAGE2_READY; // switch has been disabled and they have armed
+        }
+
+        return;
+    }
+    if (IS_RC_MODE_ACTIVE(BOXKILLSWITCH)) //if the mode is active kill the quad, needs more checks
+    {
+        if(readyToKillSwitch == KS_STAGE2_READY) //mode needs to be inactive first 
+        {
+            disarm(); // make sure the board 
+
+            __disable_irq(); //disable all interupts
+
+            //set channel to kill channel
+
+            while(1) {} //this will crash the FC, must be rebooted in order to be operational again
+        }
+    }
+    else
+    {
+        if(readyToKillSwitch == KS_NOT_READY)
+        {
+            readyToKillSwitch = KS_STAGE1; //switch has been disabled
+        }
+    }
+}
+#endif
+
 void fcTasksInit(void)
 {
     schedulerInit();
@@ -342,6 +381,9 @@ void fcTasksInit(void)
 #endif
 #ifdef USE_RCDEVICE
     setTaskEnabled(TASK_RCDEVICE, rcdeviceIsEnabled());
+#endif
+#ifdef USE_KILLSWITCH
+    setTaskEnabled(TASK_KILLSWITCH, true);
 #endif
 #endif
 }
@@ -614,5 +656,15 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_IDLE
     },
 #endif
+
+#ifdef USE_KILLSWITCH
+    [TASK_KILLSWITCH] = {
+        .taskName = "KILLSWITCH",
+        .taskFunc = taskKillSwitch,
+        .desiredPeriod = TASK_PERIOD_HZ(10),
+        .staticPriority = TASK_PRIORITY_MEDIUM //should have priority over most tasks
+    },
+#endif
+
 #endif
 };

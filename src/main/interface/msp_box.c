@@ -88,6 +88,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOXUSER2, "USER2", 41 },
     { BOXUSER3, "USER3", 42 },
     { BOXUSER4, "USER4", 43 },
+    { BOXKILLSWITCH, "KILL SWITCH", 44 },
 };
 
 // mask of enabled IDs, calculated on startup based on enabled features. boxId_e is used as bit index
@@ -285,6 +286,10 @@ void initActiveBoxIds(void)
             }
         }
     }
+#endif
+
+#ifdef USE_KILLSWITCH
+    BME(BOXKILLSWITCH); 
 #endif
 
 #undef BME
