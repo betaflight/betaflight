@@ -92,7 +92,8 @@ PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles, PG
 PG_REGISTER(txPID_t, txPID, PG_TXPID_CONFIG, 0);
 
 // Scale txPID value around mid-point assuming RC input range of 1000-2000
-#define TX_PID_VAL(PID, TERM) txPID()->centerVal[PID][TERM] + ((rcData[NON_AUX_CHANNEL_COUNT + txPID()->auxChannel[PID][TERM] - 1] - stickCenter) * (txPID()->adjustVal[PID][TERM]) / 500.0)
+#define TX_PID_VAL(PID, TERM) txPID()->centerVal[PID][TERM] + \
+                              ((rcData[NON_AUX_CHANNEL_COUNT + txPID()->auxChannel[PID][TERM] - 1] - PWM_RANGE_MIDDLE) * (txPID()->adjustVal[PID][TERM]) / (PWM_RANGE_MIDDLE - PWM_RANGE_MIN))
 #endif
 
 void resetPidProfile(pidProfile_t *pidProfile)
@@ -343,11 +344,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 #ifdef USE_TXPID
 void pidUpdateRates(pidProfile_t *pidProfile, int16_t *rcData)
 {
-    int16_t stickCenter = flight3DConfig()->neutral3d;
-
-    // RC data is in the range 1000 to 2000
-    // pid values are of type uint8_t, so scale accordingly
-
+    // On each axis, check if there is an aux channel being used to override the P, I and/or D term
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         if ((txPID()->auxChannel[axis][TERM_P]) &&
             (txPID()->auxChannel[axis][TERM_P] < RX_MAPPABLE_CHANNEL_COUNT)) {
