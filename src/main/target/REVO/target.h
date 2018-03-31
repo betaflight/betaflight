@@ -25,11 +25,6 @@
 #define TARGET_BOARD_IDENTIFIER "A4SD"
 #define USBD_PRODUCT_STRING     "AirbotF4SD"
 
-#elif defined(REVOLT)
-#define TARGET_BOARD_IDENTIFIER "RVLT"
-#define USBD_PRODUCT_STRING     "Revolt"
-#define TARGET_DEFAULT_MIXER    MIXER_QUADX_1234
-
 #elif defined(SOULF4)
 #define TARGET_BOARD_IDENTIFIER "SOUL"
 #define USBD_PRODUCT_STRING     "DemonSoulF4"
@@ -54,14 +49,11 @@
 #define LED2_PIN                PB6
 #endif
 
-// Disable LED1, conflicts with AirbotF4/Flip32F4/Revolt beeper
+// Disable LED1, conflicts with AirbotF4/Flip32F4 beeper
 #if defined(AIRBOTF4) || defined(AIRBOTF4SD)
 #define USE_BEEPER
 #define BEEPER_PIN              PB4
 #define BEEPER_INVERTED
-#elif defined(REVOLT)
-#define USE_BEEPER
-#define BEEPER_PIN              PB4
 #elif defined(SOULF4)
 #define USE_BEEPER
 #define BEEPER_PIN              PB6
@@ -73,9 +65,6 @@
 #define BEEPER_PIN              NONE
 #endif
 
-#if defined(REVOLT)
-#define ENABLE_DSHOT_DMAR       true
-#endif
 
 // PC0 used as inverter select GPIO
 #ifdef AIRBOTF4SD
@@ -115,7 +104,7 @@
 #define USE_ACC_SPI_MPU6000
 #define ACC_MPU6000_ALIGN       CW180_DEG
 
-#elif defined(REVOLT) || defined(PODIUMF4)
+#elif defined(PODIUMF4)
 
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
@@ -208,11 +197,11 @@
 #define UART3_RX_PIN            PB11
 #define UART3_TX_PIN            PB10
 
-#if defined(REVOLT) || defined(REVO)
+#if defined(REVO)
 #define USE_UART4
 #define UART4_RX_PIN            PA1
 #define UART4_TX_PIN            PA0
-#endif // REVOLT || REVO
+#endif // REVO
 
 #define USE_UART6
 #define UART6_RX_PIN            PC7
@@ -222,7 +211,7 @@
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
 
-#if defined(REVOLT) || defined(REVO)
+#if defined(REVO)
 #define SERIAL_PORT_COUNT       7 //VCP, USART1, USART3, UART4,  USART6, SOFTSERIAL x 2
 #else
 #define SERIAL_PORT_COUNT       6 //VCP, USART1, USART3, USART6, SOFTSERIAL x 2
@@ -287,10 +276,7 @@
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         (BIT(2))
 
-#ifdef REVOLT
-#define USABLE_TIMER_CHANNEL_COUNT 11
-#define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(12) )
-#elif defined(AIRBOTF4) || defined(AIRBOTF4SD)
+#if defined(AIRBOTF4) || defined(AIRBOTF4SD)
 #define USABLE_TIMER_CHANNEL_COUNT 13
 #define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8) | TIM_N(12) )
 #else
