@@ -88,10 +88,12 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 
 PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 2);
 
+#ifdef USE_TXPID
 PG_REGISTER(txPID_t, txPID, PG_TXPID_CONFIG, 0);
 
 // Scale txPID value around mid-point assuming RC input range of 1000-2000
 #define TX_PID_VAL(PID, TERM) txPID()->centerVal[PID][TERM] + ((rcData[NON_AUX_CHANNEL_COUNT + txPID()->auxChannel[PID][TERM] - 1] - stickCenter) * (txPID()->adjustVal[PID][TERM]) / 500.0)
+#endif
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
