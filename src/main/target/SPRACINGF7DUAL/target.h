@@ -195,6 +195,8 @@
 #define USE_OSD_OVER_MSP_DISPLAYPORT
 #define USE_MSP_CURRENT_METER
 
+#define USE_PID_AUDIO
+
 #define USE_LED_STRIP
 
 //TODO Implement transponder on F7

@@ -118,6 +118,7 @@
 #include "io/transponder_ir.h"
 #include "io/osd.h"
 #include "io/osd_slave.h"
+#include "io/pidaudio.h"
 #include "io/piniobox.h"
 #include "io/displayport_msp.h"
 #include "io/vtx.h"
@@ -538,6 +539,10 @@ void init(void)
     validateAndFixGyroConfig();
     pidInit(currentPidProfile);
     accInitFilters();
+
+#ifdef USE_PID_AUDIO
+    pidAudioInit();
+#endif
 
 #ifdef USE_SERVOS
     servosInit();
