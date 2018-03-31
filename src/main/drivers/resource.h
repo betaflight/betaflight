@@ -72,7 +72,6 @@ typedef enum {
     OWNER_RX_SPI,
     OWNER_PINIO,
     OWNER_USB_MSC_PIN,
-    OWNER_TXPID,
     OWNER_TOTAL_COUNT
 } resourceOwner_e;
 
