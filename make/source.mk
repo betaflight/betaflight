@@ -390,6 +390,15 @@ SRC += \
             $(MSC_SRC)
 endif
 
+ifneq ($(filter SDIO,$(FEATURES)),)
+SRC += \
+            drivers/sdcard_sdio_baremetal.c \
+            drivers/sdcard_standard.c \
+            io/asyncfatfs/asyncfatfs.c \
+            io/asyncfatfs/fat_standard.c \
+            $(MSC_SRC)
+endif
+
 ifneq ($(filter VCP,$(FEATURES)),)
 SRC += $(VCP_SRC)
 endif
