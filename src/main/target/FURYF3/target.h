@@ -23,6 +23,7 @@
 #else
     #define TARGET_BOARD_IDENTIFIER "FYF3"
 //    #define USBD_PRODUCT_STRING     "FuryF3"
+    #undef USE_OSD
 #endif
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
@@ -30,7 +31,8 @@
 
 #define LED0_PIN                PC14
 
-#define BEEPER                  PC15
+#define USE_BEEPER
+#define BEEPER_PIN              PC15
 #define BEEPER_INVERTED
 
 #define USE_EXTI
@@ -47,7 +49,7 @@
 #define MPU6500_CS_PIN          PA4
 #define MPU6500_SPI_INSTANCE    SPI1
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_ICM20689
 #define GYRO_ICM20689_ALIGN      CW180_DEG
 
@@ -58,7 +60,7 @@
 #define USE_GYRO_SPI_MPU6500
 #define GYRO_MPU6500_ALIGN      CW90_DEG
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_ICM20689
 #define ACC_ICM20689_ALIGN       CW180_DEG
 
@@ -79,7 +81,6 @@
 #define SPI2_MOSI_PIN           PB15
 
 #ifdef FURYF3OSD
-    #define OSD
     // include the max7456 driver
     #define USE_MAX7456
     #define MAX7456_SPI_INSTANCE    SPI1
@@ -113,14 +114,13 @@
 
     // Note, this is the same DMA channel as UART1_RX. Luckily we don't use DMA for USART Rx.
     #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
-    #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA1_FLAG_TC5
 
     // Performance logging for SD card operations:
     // #define AFATFS_USE_INTROSPECTIVE_LOGGING
 
     #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
-    #define BARO
+    #define USE_BARO
     #define USE_BARO_MS5611
 
 #endif
@@ -142,10 +142,6 @@
 
 #define SOFTSERIAL1_RX_PIN      PB0
 #define SOFTSERIAL1_TX_PIN      PB1
-
-#define SONAR
-#define SONAR_ECHO_PIN          PB1
-#define SONAR_TRIGGER_PIN       PB0
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN  PB3  // (HARDARE=0,PPM)
@@ -170,7 +166,6 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#define USE_ESC_SENSOR
 #define REMAP_TIM17_DMA
 
 #define TARGET_IO_PORTA         0xffff

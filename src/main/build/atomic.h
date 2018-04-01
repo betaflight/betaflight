@@ -36,14 +36,6 @@ __attribute__( ( always_inline ) ) static inline void __set_BASEPRI_MAX_nb(uint3
    __ASM volatile ("\tMSR basepri_max, %0\n" : : "r" (basePri) );
 }
 
-// set BASEPRI_MAX register, with memory barrier
-# if !defined(STM32F3) && !defined(STM32F4) && !defined(STM32F7) /* already defined in /lib/main/CMSIS/CM4/CoreSupport/core_cmFunc.h for F4 targets */
-__attribute__( ( always_inline ) ) static inline void __set_BASEPRI_MAX(uint32_t basePri)
-{
-    __ASM volatile ("\tMSR basepri_max, %0\n" : : "r" (basePri) : "memory" );
-}
-# endif
-
 #endif
 
 #if defined(UNIT_TEST)
@@ -142,7 +134,7 @@ static inline uint8_t __basepriSetRetVal(uint8_t prio)
 // On gcc 5 and higher, this protects only memory passed as parameter (any type can be used)
 // this macro can be used only ONCE PER LINE, but multiple uses per block are fine
 
-#if (__GNUC__ > 6)
+#if (__GNUC__ > 7)
 # warning "Please verify that ATOMIC_BARRIER works as intended"
 // increment version number if BARRIER works
 // TODO - use flag to disable ATOMIC_BARRIER and use full barrier instead

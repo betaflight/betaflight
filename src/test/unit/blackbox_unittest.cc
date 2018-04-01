@@ -23,11 +23,11 @@ extern "C" {
     #include "blackbox/blackbox.h"
     #include "common/utils.h"
 
-    #include "config/parameter_group.h"
-    #include "config/parameter_group_ids.h"
+    #include "pg/pg.h"
+    #include "pg/pg_ids.h"
 
     #include "drivers/accgyro/accgyro.h"
-    #include "drivers/gyro_sync.h"
+    #include "drivers/accgyro/gyro_sync.h"
     #include "drivers/serial.h"
 
     #include "flight/failsafe.h"
@@ -71,14 +71,14 @@ TEST(BlackboxTest, TestInitIntervals)
     EXPECT_EQ(4096, blackboxSInterval);
 
     // 1kHz PIDloop
-    gyro.targetLooptime = gyroSetSampleRate(&gyroDev, GYRO_LPF_188HZ, 1, false);
+    gyro.targetLooptime = gyroSetSampleRate(&gyroDev, GYRO_HARDWARE_LPF_1KHZ_SAMPLE, 1, false);
     blackboxInit();
     EXPECT_EQ(32, blackboxIInterval);
     EXPECT_EQ(1, blackboxPInterval);
     EXPECT_EQ(8192, blackboxSInterval);
 
     // 2kHz PIDloop
-    gyro.targetLooptime = gyroSetSampleRate(&gyroDev, GYRO_LPF_256HZ, 4, false);
+    gyro.targetLooptime = gyroSetSampleRate(&gyroDev, GYRO_HARDWARE_LPF_NORMAL, 4, false);
     EXPECT_EQ(500, gyro.targetLooptime);
     blackboxInit();
     EXPECT_EQ(64, blackboxIInterval);
@@ -86,7 +86,7 @@ TEST(BlackboxTest, TestInitIntervals)
     EXPECT_EQ(16384, blackboxSInterval);
 
     // 4kHz PIDloop
-    gyro.targetLooptime = gyroSetSampleRate(&gyroDev, GYRO_LPF_256HZ, 2, false);
+    gyro.targetLooptime = gyroSetSampleRate(&gyroDev, GYRO_HARDWARE_LPF_NORMAL, 2, false);
     EXPECT_EQ(250, gyro.targetLooptime);
     blackboxInit();
     EXPECT_EQ(128, blackboxIInterval);
@@ -94,7 +94,7 @@ TEST(BlackboxTest, TestInitIntervals)
     EXPECT_EQ(32768, blackboxSInterval);
 
     // 8kHz PIDloop
-    gyro.targetLooptime = gyroSetSampleRate(&gyroDev, GYRO_LPF_256HZ, 1, false);
+    gyro.targetLooptime = gyroSetSampleRate(&gyroDev, GYRO_HARDWARE_LPF_NORMAL, 1, false);
     EXPECT_EQ(125, gyro.targetLooptime);
     gyro.targetLooptime = 125;
     blackboxInit();
@@ -103,7 +103,7 @@ TEST(BlackboxTest, TestInitIntervals)
     EXPECT_EQ(65536, blackboxSInterval);
 
     // 16kHz PIDloop
-    gyro.targetLooptime = gyroSetSampleRate(&gyroDev, GYRO_LPF_256HZ, 2, true);
+    gyro.targetLooptime = gyroSetSampleRate(&gyroDev, GYRO_HARDWARE_LPF_NORMAL, 2, true);
     EXPECT_EQ(63, gyro.targetLooptime);
     gyro.targetLooptime = 63; // rounded from 62.5
     blackboxInit();
@@ -112,7 +112,7 @@ TEST(BlackboxTest, TestInitIntervals)
     EXPECT_EQ(131072, blackboxSInterval);
 
     // 32kHz PIDloop
-    gyro.targetLooptime = gyroSetSampleRate(&gyroDev, GYRO_LPF_256HZ, 1, true);
+    gyro.targetLooptime = gyroSetSampleRate(&gyroDev, GYRO_HARDWARE_LPF_NORMAL, 1, true);
     EXPECT_EQ(31, gyro.targetLooptime);
     gyro.targetLooptime = 31; // rounded from 31.25
     blackboxInit();
@@ -371,7 +371,7 @@ struct pidProfile_s;
 struct pidProfile_s *currentPidProfile;
 uint32_t targetPidLooptime;
 
-uint32_t rcModeActivationMask;
+boxBitmask_t rcModeActivationMask;
 
 void mspSerialAllocatePorts(void) {}
 uint32_t getArmingBeepTimeMicros(void) {return 0;}
@@ -389,7 +389,7 @@ bool feature(uint32_t) {return false;}
 void mspSerialReleasePortIfAllocated(serialPort_t *) {}
 serialPortConfig_t *findSerialPortConfig(serialPortFunction_e ) {return NULL;}
 serialPort_t *findSharedSerialPort(uint16_t , serialPortFunction_e ) {return NULL;}
-serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, uint32_t, portMode_e, portOptions_e) {return NULL;}
+serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) {return NULL;}
 void closeSerialPort(serialPort_t *) {}
 portSharing_e determinePortSharing(const serialPortConfig_t *, serialPortFunction_e ) {return PORTSHARING_UNUSED;}
 failsafePhase_e failsafePhase(void) {return FAILSAFE_IDLE;}

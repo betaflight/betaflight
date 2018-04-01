@@ -20,14 +20,20 @@
 
 extern "C" {
 #include <platform.h>
-#include "config/parameter_group.h"
+#include "common/utils.h"
+#include "pg/pg.h"
 #include "drivers/serial.h"
 #include "io/serial.h"
+#include "io/gps.h"
+#include "flight/imu.h"
+#include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "telemetry/telemetry.h"
 #include "telemetry/ibus.h"
 #include "sensors/gyro.h"
 #include "sensors/battery.h"
+#include "sensors/barometer.h"
+#include "sensors/acceleration.h"
 #include "scheduler/scheduler.h"
 #include "fc/fc_tasks.h"
 }
@@ -37,9 +43,18 @@ extern "C" {
 
 
 extern "C" {
+    uint8_t armingFlags = 0;
+    uint8_t stateFlags = 0;
+    uint16_t flightModeFlags = 0;
     uint8_t testBatteryCellCount =3;
     float rcCommand[4] = {0, 0, 0, 0};
     telemetryConfig_t telemetryConfig_System;
+    batteryConfig_s batteryConfig_System;
+    attitudeEulerAngles_t attitude = EULER_INITIALIZE;
+    acc_t acc;
+    baro_t baro;
+    gpsSolutionData_t gpsSol;
+    uint16_t GPS_distanceToHome;
 }
 
 static int16_t gyroTemperature;
@@ -51,6 +66,57 @@ static uint16_t vbat = 100;
 uint16_t getVbat(void)
 {
     return vbat;
+}
+
+extern "C" {
+static int32_t amperage = 100;
+static int32_t estimatedVario = 0;
+static uint8_t batteryRemaining = 0;
+static uint16_t avgCellVoltage = vbat/testBatteryCellCount;
+static throttleStatus_e throttleStatus = THROTTLE_HIGH;
+static uint32_t definedFeatures = 0;
+static uint32_t definedSensors = SENSOR_GYRO | SENSOR_ACC | SENSOR_MAG | SENSOR_SONAR | SENSOR_GPS | SENSOR_GPSMAG;
+
+
+int32_t getAmperage(void)
+{
+    return amperage;
+}
+
+int32_t getEstimatedVario(void)
+{
+    return estimatedVario;
+}
+
+uint8_t calculateBatteryPercentageRemaining(void)
+{
+    return batteryRemaining;
+}
+
+uint16_t getBatteryAverageCellVoltage(void)
+{
+    return avgCellVoltage;
+}
+
+int32_t getMAhDrawn(void)
+{
+    return 0;
+}
+
+throttleStatus_e calculateThrottleStatus(void)
+{
+    return throttleStatus;
+}
+
+bool feature(uint32_t mask)
+{
+    return (definedFeatures & mask) != 0;
+}
+
+bool sensors(sensors_e sensor)
+{
+    return (definedSensors & sensor) != 0;
+}
 }
 
 #define SERIAL_BUFFER_SIZE 256
@@ -140,13 +206,15 @@ serialPort_t *openSerialPort(
     serialPortIdentifier_e identifier,
     serialPortFunction_e function,
     serialReceiveCallbackPtr callback,
+    void *callbackData,
     uint32_t baudrate,
     portMode_e mode,
     portOptions_e options
 )
 {
     openSerial_called = true;
-    (void) callback;
+    UNUSED(callback);
+    UNUSED(callbackData);
     EXPECT_EQ(SERIAL_PORT_DUMMY_IDENTIFIER, identifier);
     EXPECT_EQ(SERIAL_BIDIR, options);
     EXPECT_EQ(FUNCTION_TELEMETRY_IBUS, function);
@@ -199,6 +267,13 @@ void serialTestResetBuffers()
     memset(&serialWriteStub, 0, sizeof(serialWriteStub));
 }
 
+void setTestSensors()
+{
+    telemetryConfig_System.flysky_sensors[0] = 0x03;
+    telemetryConfig_System.flysky_sensors[1] = 0x01;
+    telemetryConfig_System.flysky_sensors[2] = 0x02;
+    telemetryConfig_System.flysky_sensors[3] = 0x00;
+}
 
 void serialTestResetPort()
 {
@@ -218,6 +293,7 @@ protected:
     virtual void SetUp()
     {
         serialTestResetPort();
+        setTestSensors();
     }
 };
 

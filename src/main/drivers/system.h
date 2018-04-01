@@ -32,6 +32,12 @@ typedef enum {
     FAILURE_GYRO_INIT_FAILED
 } failureMode_e;
 
+#define WARNING_FLASH_DURATION_MS 50
+#define WARNING_FLASH_COUNT 5
+#define WARNING_PAUSE_DURATION_MS 500
+#define WARNING_CODE_DURATION_LONG_MS 250
+#define WARNING_CODE_DURATION_SHORT_MS 50
+
 // failure
 void indicateFailure(failureMode_e mode, int repeatCount);
 void failureMode(failureMode_e mode);

@@ -22,7 +22,7 @@
 
 #include "platform.h"
 
-#ifdef CMS
+#ifdef USE_CMS
 
 #include "build/version.h"
 
@@ -31,13 +31,13 @@
 #include "cms/cms_menu_ledstrip.h"
 
 #include "config/feature.h"
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "fc/config.h"
 
 
-#ifdef LED_STRIP
+#ifdef USE_LED_STRIP
 
 static bool featureRead = false;
 static uint8_t cmsx_FeatureLedstrip;
@@ -52,8 +52,9 @@ static long cmsx_Ledstrip_FeatureRead(void)
     return 0;
 }
 
-static long cmsx_Ledstrip_FeatureWriteback(void)
+static long cmsx_Ledstrip_FeatureWriteback(const OSD_Entry *self)
 {
+    UNUSED(self);
     if (featureRead) {
         if (cmsx_FeatureLedstrip)
             featureSet(FEATURE_LED_STRIP);
@@ -74,11 +75,12 @@ static OSD_Entry cmsx_menuLedstripEntries[] =
 };
 
 CMS_Menu cmsx_menuLedstrip = {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "MENULED",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = cmsx_Ledstrip_FeatureRead,
-    .onExit = NULL,
-    .onGlobalExit = cmsx_Ledstrip_FeatureWriteback,
+    .onExit = cmsx_Ledstrip_FeatureWriteback,
     .entries = cmsx_menuLedstripEntries
 };
 #endif // LED_STRIP

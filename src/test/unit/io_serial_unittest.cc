@@ -64,11 +64,19 @@ extern "C" {
 
     serialPort_t *usbVcpOpen(void) { return NULL; }
 
-    serialPort_t *uartOpen(UARTDevice_e, serialReceiveCallbackPtr, uint32_t, portMode_e, portOptions_e) {
+    serialPort_t *uartOpen(UARTDevice_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) {
       return NULL;
     }
 
-    serialPort_t *openSoftSerial(softSerialPortIndex_e, serialReceiveCallbackPtr, uint32_t, portMode_e, portOptions_e) {
+    serialPort_t *openSoftSerial(softSerialPortIndex_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) {
       return NULL;
     }
+
+    void serialSetCtrlLineStateCb(serialPort_t *, void (*)(void *, uint16_t ), void *) {}
+    void serialSetCtrlLineState(serialPort_t *, uint16_t ) {}
+    uint32_t serialTxBytesFree(const serialPort_t *) {return 1;}
+
+    void serialSetBaudRateCb(serialPort_t *, void (*)(serialPort_t *context, uint32_t baud), serialPort_t *) {}
+
+    void pinioSet(int, bool) {}
 }

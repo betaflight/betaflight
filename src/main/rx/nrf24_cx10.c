@@ -29,8 +29,8 @@
 #include "build/build_config.h"
 
 #include "drivers/io.h"
-#include "drivers/rx_nrf24l01.h"
-#include "drivers/rx_xn297.h"
+#include "drivers/rx/rx_nrf24l01.h"
+#include "drivers/rx/rx_xn297.h"
 #include "drivers/time.h"
 
 #include "rx/rx.h"
@@ -294,9 +294,11 @@ static void cx10Nrf24Setup(rx_spi_protocol_e protocol)
     NRF24L01_SetRxMode(); // enter receive mode to start listening for packets
 }
 
-void cx10Nrf24Init(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+bool cx10Nrf24Init(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     rxRuntimeConfig->channelCount = RC_CHANNEL_COUNT;
     cx10Nrf24Setup((rx_spi_protocol_e)rxConfig->rx_spi_protocol);
+
+    return true;
 }
 #endif

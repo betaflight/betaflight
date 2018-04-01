@@ -17,14 +17,14 @@
 
 #include <platform.h>
 
-#ifdef TARGET_CONFIG
+#ifdef USE_TARGET_CONFIG
 
 #include "common/axis.h"
 
-#include "fc/config.h"
-
 #include "flight/mixer.h"
 #include "flight/pid.h"
+
+#include "pg/sdcard.h"
 
 
 #if defined(SPRACINGF3MQ)

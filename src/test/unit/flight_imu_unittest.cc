@@ -20,8 +20,6 @@
 #include <limits.h>
 #include <cmath>
 
-#undef BARO
-
 extern "C" {
     #include "build/debug.h"
 
@@ -29,7 +27,7 @@ extern "C" {
     #include "common/maths.h"
 
     #include "config/feature.h"
-    #include "config/parameter_group_ids.h"
+    #include "pg/pg_ids.h"
 
     #include "drivers/accgyro/accgyro.h"
     #include "drivers/compass/compass.h"
@@ -56,13 +54,11 @@ extern "C" {
     void imuComputeRotationMatrix(void);
     void imuUpdateEulerAngles(void);
 
-    extern float q0, q1, q2, q3;
+    extern quaternion q;
     extern float rMat[3][3];
 
     PG_REGISTER(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
     PG_REGISTER(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 0);
-
-    PG_REGISTER_WITH_RESET_TEMPLATE(featureConfig_t, featureConfig, PG_FEATURE_CONFIG, 0);
 
     PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
         .enabledFeatures = 0
@@ -79,10 +75,10 @@ TEST(FlightImuTest, TestCalculateRotationMatrix)
     #define TOL 1e-6
 
     // No rotation
-    q0 = 1.0f;
-    q1 = 0.0f;
-    q2 = 0.0f;
-    q3 = 0.0f;
+    q.w = 1.0f;
+    q.x = 0.0f;
+    q.y = 0.0f;
+    q.z = 0.0f;
 
     imuComputeRotationMatrix();
 
@@ -97,10 +93,10 @@ TEST(FlightImuTest, TestCalculateRotationMatrix)
     EXPECT_FLOAT_EQ(1.0f, rMat[2][2]);
 
     // 90 degrees around Z axis
-    q0 = sqrt2over2;
-    q1 = 0.0f;
-    q2 = 0.0f;
-    q3 = sqrt2over2;
+    q.w = sqrt2over2;
+    q.x = 0.0f;
+    q.y = 0.0f;
+    q.z = sqrt2over2;
 
     imuComputeRotationMatrix();
 
@@ -115,10 +111,10 @@ TEST(FlightImuTest, TestCalculateRotationMatrix)
     EXPECT_NEAR(1.0f, rMat[2][2], TOL);
 
     // 60 degrees around X axis
-    q0 = 0.866f;
-    q1 = 0.5f;
-    q2 = 0.0f;
-    q3 = 0.0f;
+    q.w = 0.866f;
+    q.x = 0.5f;
+    q.y = 0.0f;
+    q.z = 0.0f;
 
     imuComputeRotationMatrix();
 
@@ -200,7 +196,7 @@ TEST(FlightImuTest, TestSmallAngle)
 // STUBS
 
 extern "C" {
-uint32_t rcModeActivationMask;
+boxBitmask_t rcModeActivationMask;
 float rcCommand[4];
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 
@@ -238,7 +234,10 @@ bool sensors(uint32_t mask)
 uint32_t millis(void) { return 0; }
 uint32_t micros(void) { return 0; }
 
+bool compassIsHealthy(void) { return true; }
 bool isBaroCalibrationComplete(void) { return true; }
 void performBaroCalibrationCycle(void) {}
 int32_t baroCalculateAltitude(void) { return 0; }
+bool gyroGetAccumulationAverage(float *) { return false; }
+bool accGetAccumulationAverage(float *) { return false; }
 }

@@ -85,6 +85,11 @@ TIM_HandleTypeDef  TimHandle;
 /* USB handler declaration */
 extern USBD_HandleTypeDef  USBD_Device;
 
+static void (*ctrlLineStateCb)(void *context, uint16_t ctrlLineState);
+static void *ctrlLineStateCbContext;
+static void (*baudRateCb)(void *context, uint32_t baud);
+static void *baudRateCbContext;
+
 /* Private function prototypes -----------------------------------------------*/
 static int8_t CDC_Itf_Init(void);
 static int8_t CDC_Itf_DeInit(void);
@@ -133,6 +138,9 @@ static int8_t CDC_Itf_Init(void)
   USBD_CDC_SetTxBuffer(&USBD_Device, UserTxBuffer, 0);
   USBD_CDC_SetRxBuffer(&USBD_Device, UserRxBuffer);
 
+  ctrlLineStateCb = NULL;
+  baudRateCb = NULL;
+
   return (USBD_OK);
 }
 
@@ -158,7 +166,8 @@ static int8_t CDC_Itf_DeInit(void)
   */
 static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
 {
-    UNUSED(length);
+  LINE_CODING* plc = (LINE_CODING*)pbuf;
+
   switch (cmd)
   {
   case CDC_SEND_ENCAPSULATED_COMMAND:
@@ -182,26 +191,36 @@ static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
     break;
 
   case CDC_SET_LINE_CODING:
-    LineCoding.bitrate    = (uint32_t)(pbuf[0] | (pbuf[1] << 8) |\
-                            (pbuf[2] << 16) | (pbuf[3] << 24));
-    LineCoding.format     = pbuf[4];
-    LineCoding.paritytype = pbuf[5];
-    LineCoding.datatype   = pbuf[6];
+    if (pbuf && (length == sizeof (LINE_CODING))) {
+        LineCoding.bitrate    = plc->bitrate;
+        LineCoding.format     = plc->format;
+        LineCoding.paritytype = plc->paritytype;
+        LineCoding.datatype   = plc->datatype;
+
+        // If a callback is provided, tell the upper driver of changes in baud rate
+        if (baudRateCb) {
+            baudRateCb(baudRateCbContext, LineCoding.bitrate);
+        }
+    }
 
     break;
 
   case CDC_GET_LINE_CODING:
-    pbuf[0] = (uint8_t)(LineCoding.bitrate);
-    pbuf[1] = (uint8_t)(LineCoding.bitrate >> 8);
-    pbuf[2] = (uint8_t)(LineCoding.bitrate >> 16);
-    pbuf[3] = (uint8_t)(LineCoding.bitrate >> 24);
-    pbuf[4] = LineCoding.format;
-    pbuf[5] = LineCoding.paritytype;
-    pbuf[6] = LineCoding.datatype;
+    if (pbuf && (length == sizeof (LineCoding))) {
+        plc->bitrate = LineCoding.bitrate;
+        plc->format = LineCoding.format;
+        plc->paritytype = LineCoding.paritytype;
+        plc->datatype = LineCoding.datatype;
+    }
     break;
 
   case CDC_SET_CONTROL_LINE_STATE:
-    /* Add your code here */
+    // If a callback is provided, tell the upper driver of changes in DTR/RTS state
+    if (pbuf && (length == sizeof (uint16_t))) {
+         if (ctrlLineStateCb) {
+             ctrlLineStateCb(ctrlLineStateCbContext, *((uint16_t *)pbuf));
+         }
+    }
     break;
 
   case CDC_SEND_BREAK:
@@ -410,4 +429,31 @@ uint32_t CDC_BaudRate(void)
 {
     return LineCoding.bitrate;
 }
+
+/*******************************************************************************
+ * Function Name  : CDC_SetBaudRateCb
+ * Description    : Set a callback to call when baud rate changes
+ * Input          : callback function and context.
+ * Output         : None.
+ * Return         : None.
+ *******************************************************************************/
+void CDC_SetBaudRateCb(void (*cb)(void *context, uint32_t baud), void *context)
+{
+    baudRateCbContext = context;
+    baudRateCb = cb;
+}
+
+/*******************************************************************************
+ * Function Name  : CDC_SetCtrlLineStateCb
+ * Description    : Set a callback to call when control line state changes
+ * Input          : callback function and context.
+ * Output         : None.
+ * Return         : None.
+ *******************************************************************************/
+void CDC_SetCtrlLineStateCb(void (*cb)(void *context, uint16_t ctrlLineState), void *context)
+{
+    ctrlLineStateCbContext = context;
+    ctrlLineStateCb = cb;
+}
+
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

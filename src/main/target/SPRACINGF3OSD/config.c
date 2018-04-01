@@ -28,7 +28,7 @@
 
 #include "fc/config.h"
 
-#ifdef TARGET_CONFIG
+#ifdef USE_TARGET_CONFIG
 void targetConfiguration(void)
 {
     serialConfigMutable()->portConfigs[1].functionMask = FUNCTION_MSP; // To connect to FC.

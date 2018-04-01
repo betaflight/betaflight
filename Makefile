@@ -16,7 +16,7 @@
 #
 
 # The target to build, see VALID_TARGETS below
-TARGET    ?= NAZE
+TARGET    ?= BETAFLIGHTF3
 
 # Compile-time options
 OPTIONS   ?=
@@ -206,6 +206,7 @@ CFLAGS     += $(ARCH_FLAGS) \
               -fdata-sections \
               -pedantic \
               $(DEVICE_FLAGS) \
+              -D_GNU_SOURCE \
               -DUSE_STDPERIPH_DRIVER \
               -D$(TARGET) \
               $(TARGET_FLAGS) \
@@ -274,15 +275,17 @@ $(TARGET_LST): $(TARGET_ELF)
 	$(V0) $(OBJDUMP) -S --disassemble $< > $@
 
 $(TARGET_HEX): $(TARGET_ELF)
-	$(V0) $(OBJCOPY) -O ihex --set-start 0x8000000 $< $@
+	@echo "Creating HEX $(TARGET_HEX)" "$(STDOUT)"
+	$(V1) $(OBJCOPY) -O ihex --set-start 0x8000000 $< $@
 
 $(TARGET_BIN): $(TARGET_ELF)
-	$(V0) $(OBJCOPY) -O binary $< $@
+	@echo "Creating BIN $(TARGET_BIN)" "$(STDOUT)"
+	$(V1) $(OBJCOPY) -O binary $< $@
 
 $(TARGET_ELF):  $(TARGET_OBJS)
-	$(V1) echo Linking $(TARGET)
+	@echo "Linking $(TARGET)" "$(STDOUT)"
 	$(V1) $(CROSS_CC) -o $@ $^ $(LD_FLAGS)
-	$(V0) $(SIZE) $(TARGET_ELF)
+	$(V1) $(SIZE) $(TARGET_ELF)
 
 # Compile
 ifeq ($(DEBUG),GDB)
@@ -306,17 +309,23 @@ endif
 # Assemble
 $(OBJECT_DIR)/$(TARGET)/%.o: %.s
 	$(V1) mkdir -p $(dir $@)
-	$(V1) echo "%% $(notdir $<)" "$(STDOUT)"
+	@echo "%% $(notdir $<)" "$(STDOUT)"
 	$(V1) $(CROSS_CC) -c -o $@ $(ASFLAGS) $<
 
 $(OBJECT_DIR)/$(TARGET)/%.o: %.S
 	$(V1) mkdir -p $(dir $@)
-	$(V1) echo "%% $(notdir $<)" "$(STDOUT)"
+	@echo "%% $(notdir $<)" "$(STDOUT)"
 	$(V1) $(CROSS_CC) -c -o $@ $(ASFLAGS) $<
 
 
-## all               : Build all valid targets
-all: $(VALID_TARGETS)
+## all               : Build all targets (excluding unsupported)
+all: $(SUPPORTED_TARGETS)
+
+## all_with_unsupported : Build all targets (excluding unsupported)
+all_with_unsupported: $(VALID_TARGETS)
+
+## unsupported : Build unsupported targets
+unsupported: $(UNSUPPORTED_TARGETS)
 
 ## official          : Build all official (travis) targets
 official: $(OFFICIAL_TARGETS)
@@ -344,15 +353,15 @@ $(VALID_TARGETS):
 $(SKIP_TARGETS):
 	$(MAKE) TARGET=$@
 
-CLEAN_TARGETS = $(addprefix clean_,$(VALID_TARGETS) $(SKIP_TARGETS) )
-TARGETS_CLEAN = $(addsuffix _clean,$(VALID_TARGETS) $(SKIP_TARGETS) )
+CLEAN_TARGETS = $(addprefix clean_,$(VALID_TARGETS) )
+TARGETS_CLEAN = $(addsuffix _clean,$(VALID_TARGETS) )
 
 ## clean             : clean up temporary / machine-generated files
 clean:
-	$(V0) @echo "Cleaning $(TARGET)"
+	@echo "Cleaning $(TARGET)"
 	$(V0) rm -f $(CLEAN_ARTIFACTS)
 	$(V0) rm -rf $(OBJECT_DIR)/$(TARGET)
-	$(V0) @echo "Cleaning $(TARGET) succeeded."
+	@echo "Cleaning $(TARGET) succeeded."
 
 ## clean_test        : clean up temporary / machine-generated files (tests)
 clean_test:
@@ -428,28 +437,30 @@ version:
 
 ## help              : print this help message and exit
 help: Makefile make/tools.mk
-	$(V0) @echo ""
-	$(V0) @echo "Makefile for the $(FORKNAME) firmware"
-	$(V0) @echo ""
-	$(V0) @echo "Usage:"
-	$(V0) @echo "        make [V=<verbosity>] [TARGET=<target>] [OPTIONS=\"<options>\"]"
-	$(V0) @echo "Or:"
-	$(V0) @echo "        make <target> [V=<verbosity>] [OPTIONS=\"<options>\"]"
-	$(V0) @echo ""
-	$(V0) @echo "Valid TARGET values are: $(VALID_TARGETS)"
-	$(V0) @echo ""
-	$(V0) @sed -n 's/^## //p' $?
+	@echo ""
+	@echo "Makefile for the $(FORKNAME) firmware"
+	@echo ""
+	@echo "Usage:"
+	@echo "        make [V=<verbosity>] [TARGET=<target>] [OPTIONS=\"<options>\"]"
+	@echo "Or:"
+	@echo "        make <target> [V=<verbosity>] [OPTIONS=\"<options>\"]"
+	@echo ""
+	@echo "Valid TARGET values are: $(VALID_TARGETS)"
+	@echo ""
+	@sed -n 's/^## //p' $?
 
 ## targets           : print a list of all valid target platforms (for consumption by scripts)
 targets:
-	$(V0) @echo "Valid targets:      $(VALID_TARGETS)"
-	$(V0) @echo "Target:             $(TARGET)"
-	$(V0) @echo "Base target:        $(BASE_TARGET)"
-	$(V0) @echo "targets-group-1:    $(GROUP_1_TARGETS)"
-	$(V0) @echo "targets-group-2:    $(GROUP_2_TARGETS)"
-	$(V0) @echo "targets-group-3:    $(GROUP_3_TARGETS)"
-	$(V0) @echo "targets-group-4:    $(GROUP_4_TARGETS)"
-	$(V0) @echo "targets-group-rest: $(GROUP_OTHER_TARGETS)"
+	@echo "Valid targets:       $(VALID_TARGETS)"
+	@echo "Supported targets:   $(SUPPORTED_TARGETS)"
+	@echo "Unsupported targets: $(UNSUPPORTED_TARGETS)"
+	@echo "Target:              $(TARGET)"
+	@echo "Base target:         $(BASE_TARGET)"
+	@echo "targets-group-1:     $(GROUP_1_TARGETS)"
+	@echo "targets-group-2:     $(GROUP_2_TARGETS)"
+	@echo "targets-group-3:     $(GROUP_3_TARGETS)"
+	@echo "targets-group-4:     $(GROUP_4_TARGETS)"
+	@echo "targets-group-rest:  $(GROUP_OTHER_TARGETS)"
 
 ## test              : run the cleanflight test suite
 ## junittest         : run the cleanflight test suite, producing Junit XML result files.

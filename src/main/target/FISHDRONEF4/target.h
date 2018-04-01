@@ -24,7 +24,8 @@
 #define LED0_PIN                PC13
 #define LED1_PIN                PC14
 
-#define BEEPER                  PC15
+#define USE_BEEPER
+#define BEEPER_PIN              PC15
 #define BEEPER_INVERTED
 
 #define INVERTER_PIN_UART6      PC8
@@ -40,11 +41,11 @@
 #define MPU6500_CS_PIN          PA4
 #define MPU6500_SPI_INSTANCE    SPI1
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
 #define GYRO_MPU6500_ALIGN      CW90_DEG
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6500
 #define ACC_MPU6500_ALIGN       CW90_DEG
 
@@ -80,7 +81,6 @@
 #define SPI2_MISO_PIN       PC2
 #define SPI2_MOSI_PIN       PC3
 
-#define OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI2
 #define MAX7456_SPI_CS_PIN      SPI2_NSS_PIN
@@ -111,16 +111,14 @@
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     4 // 21MHz
 
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Stream5
-#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF5
-#define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
-#define SDCARD_DMA_CHANNEL                  DMA_Channel_0
+#define SDCARD_DMA_CHANNEL                  0
 
 // *************** RTC6705 *************************
-#define VTX_RTC6705
-#define VTX_RTC6705SOFTSPI
-#define RTC6705_SPILE_PIN       PB3
+#define USE_VTX_RTC6705
+#define USE_VTX_RTC6705_SOFTSPI
 #define RTC6705_SPICLK_PIN      PB4
-#define RTC6705_SPIDATA_PIN     PB5
+#define RTC6705_SPI_MOSI_PIN    PB5
+#define RTC6705_CS_PIN          PB3
 
 // *************** ADC *****************************
 #define USE_ADC

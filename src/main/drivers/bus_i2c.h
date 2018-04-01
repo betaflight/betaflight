@@ -19,7 +19,6 @@
 
 #include "platform.h"
 
-#include "config/parameter_group.h"
 #include "drivers/io_types.h"
 #include "drivers/rcc_types.h"
 
@@ -53,14 +52,8 @@ typedef enum I2CDevice {
 #define I2C_ADDR7_MIN       8
 #define I2C_ADDR7_MAX       119
 
-typedef struct i2cConfig_s {
-    ioTag_t ioTagScl[I2CDEV_COUNT];
-    ioTag_t ioTagSda[I2CDEV_COUNT];
-    bool overClock[I2CDEV_COUNT];
-    bool pullUp[I2CDEV_COUNT];
-} i2cConfig_t;
-
-void i2cHardwareConfigure(void);
+struct i2cConfig_s;
+void i2cHardwareConfigure(const struct i2cConfig_s *i2cConfig);
 void i2cInit(I2CDevice device);
 bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data);
 bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data);

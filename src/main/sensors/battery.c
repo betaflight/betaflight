@@ -27,8 +27,8 @@
 #include "common/utils.h"
 
 #include "config/feature.h"
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "drivers/adc.h"
 
@@ -450,6 +450,11 @@ void batteryUpdateAlarms(void)
     }
 }
 
+bool isBatteryVoltageConfigured(void)
+{
+    return batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE;
+}
+
 uint16_t getBatteryVoltage(void)
 {
     return voltageMeter.filtered;
@@ -468,6 +473,11 @@ uint8_t getBatteryCellCount(void)
 uint16_t getBatteryAverageCellVoltage(void)
 {
     return voltageMeter.filtered / batteryCellCount;
+}
+
+bool isAmperageConfigured(void)
+{
+    return batteryConfig()->currentMeterSource != CURRENT_METER_NONE;
 }
 
 int32_t getAmperage(void) {

@@ -19,7 +19,7 @@
 
 #include <platform.h>
 
-#ifdef TARGET_CONFIG
+#ifdef USE_TARGET_CONFIG
 #include "drivers/dma.h"
 #include "drivers/io.h"
 #include "drivers/timer.h"
@@ -41,7 +41,7 @@ void targetConfiguration(void)
 {
     // use the same uart for frsky telemetry and SBUS, both non inverted
     const int index = findSerialPortIndexByIdentifier(SBUS_TELEMETRY_UART);
-    serialConfigMutable()->portConfigs[index].functionMask = FUNCTION_TELEMETRY_FRSKY | FUNCTION_RX_SERIAL;
+    serialConfigMutable()->portConfigs[index].functionMask = FUNCTION_TELEMETRY_FRSKY_HUB | FUNCTION_RX_SERIAL;
 
     rxConfigMutable()->serialrx_provider = SERIALRX_SBUS;
     rxConfigMutable()->serialrx_inverted = true;

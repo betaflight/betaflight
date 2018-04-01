@@ -1,13 +1,14 @@
-*.md text
-*.c text
-*.h text
-*.cc text
-*.S text
-*.s text
+*.md text eol=lf
+*.c text eol=lf
+*.h text eol=lf
+*.cc text eol=lf
+*.S text eol=lf
+*.s text eol=lf
 *.hex -crlf -diff
 *.elf -crlf -diff
-*.ld text
-Makefile text
+*.ld text eol=lf
+Makefile text eol=lf
+*.mk text eol=lf
 *.bat eol=crlf
-*.txt text
-*.sh text
+*.txt text eol=lf
+*.sh text eol=lf

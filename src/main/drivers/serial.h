@@ -18,7 +18,7 @@
 #pragma once
 
 #include "drivers/io.h"
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 
 typedef enum {
     MODE_RX = 1 << 0,
@@ -43,11 +43,16 @@ typedef enum {
      * To ensure the first start bit to be sent, prepend a zero byte (0x00)
      * to actual data bytes.
      */
-    SERIAL_BIDIR_OD      = 0 << 4,
-    SERIAL_BIDIR_PP      = 1 << 4
+    SERIAL_BIDIR_OD        = 0 << 4,
+    SERIAL_BIDIR_PP        = 1 << 4,
+    SERIAL_BIDIR_NOPULL    = 1 << 5, // disable pulls in BIDIR RX mode
 } portOptions_e;
 
-typedef void (*serialReceiveCallbackPtr)(uint16_t data);   // used by serial drivers to return frames to app
+// Define known line control states which may be passed up by underlying serial driver callback
+#define CTRL_LINE_STATE_DTR (1 << 0)
+#define CTRL_LINE_STATE_RTS (1 << 1)
+
+typedef void (*serialReceiveCallbackPtr)(uint16_t data, void *rxCallbackData);   // used by serial drivers to return frames to app
 
 typedef struct serialPort_s {
 
@@ -69,6 +74,7 @@ typedef struct serialPort_s {
     uint32_t txBufferTail;
 
     serialReceiveCallbackPtr rxCallback;
+    void *rxCallbackData;
 } serialPort_t;
 
 #if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
@@ -103,6 +109,8 @@ struct serialPortVTable {
     bool (*isSerialTransmitBufferEmpty)(const serialPort_t *instance);
 
     void (*setMode)(serialPort_t *instance, portMode_e mode);
+    void (*setCtrlLineStateCb)(serialPort_t *instance, void (*cb)(void *instance, uint16_t ctrlLineState), void *context);
+    void (*setBaudRateCb)(serialPort_t *instance, void (*cb)(serialPort_t *context, uint32_t baud), serialPort_t *context);
 
     void (*writeBuf)(serialPort_t *instance, const void *data, int count);
     // Optional functions used to buffer large writes.
@@ -117,6 +125,8 @@ void serialWriteBuf(serialPort_t *instance, const uint8_t *data, int count);
 uint8_t serialRead(serialPort_t *instance);
 void serialSetBaudRate(serialPort_t *instance, uint32_t baudRate);
 void serialSetMode(serialPort_t *instance, portMode_e mode);
+void serialSetCtrlLineStateCb(serialPort_t *instance, void (*cb)(void *context, uint16_t ctrlLineState), void *context);
+void serialSetBaudRateCb(serialPort_t *instance, void (*cb)(serialPort_t *context, uint32_t baud), serialPort_t *context);
 bool isSerialTransmitBufferEmpty(const serialPort_t *instance);
 void serialPrint(serialPort_t *instance, const char *str);
 uint32_t serialGetBaudRate(serialPort_t *instance);

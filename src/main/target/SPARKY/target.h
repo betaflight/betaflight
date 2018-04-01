@@ -24,7 +24,8 @@
 #define LED0_PIN                PB4  // Blue (Rev 1 & 2) - PB4
 #define LED1_PIN                PB5  // Green (Rev 1) / Red (Rev 2) - PB5
 
-#define BEEPER                  PA1
+#define USE_BEEPER
+#define BEEPER_PIN              PA1
 #define BEEPER_INVERTED
 
 // MPU6050 interrupts
@@ -33,19 +34,19 @@
 #define USE_MPU_DATA_READY_SIGNAL
 
 // MPU 9150 INT connected to PA15, pulled up to VCC by 10K Resistor, contains MPU6050 and AK8975 in single component.
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_MPU6050
 #define GYRO_MPU6050_ALIGN      CW270_DEG
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_MPU6050
 #define ACC_MPU6050_ALIGN       CW270_DEG
 
-#define BARO
+#define USE_BARO
 #define USE_BARO_MS5611
 #define USE_BARO_BMP280
 
-#define MAG
+#define USE_MAG
 #define USE_MAG_AK8975
 
 #define MAG_AK8975_ALIGN        CW180_DEG_FLIP
@@ -90,9 +91,10 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-//#define SONAR
-//#define SONAR_ECHO_PIN          PB1
-//#define SONAR_TRIGGER_PIN       PA2
+//#define USE_RANGEFINDER
+//#define USE_RANGEFINDER_HCSR04
+//#define RANGEFINDER_HCSR04_ECHO_PIN          PB1
+//#define RANGEFINDER_HCSR04_TRIGGER_PIN       PA2
 
 // available IO pins (from schematics)
 //#define TARGET_IO_PORTA (BIT(1)|BIT(2)|BIT(3)|BIT(4)|BIT(6)|BIT(7)|BIT(8)|BIT(9)|BIT(10)|BIT(11)|BIT(12)|BIT(13)|BIT(14)|BIT(15))

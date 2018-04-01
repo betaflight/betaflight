@@ -26,7 +26,7 @@
 
 #include "platform.h"
 
-#if defined(CMS) && defined(BLACKBOX)
+#if defined(USE_CMS) && defined(USE_BLACKBOX)
 
 #include "build/version.h"
 
@@ -41,16 +41,18 @@
 #include "common/utils.h"
 
 #include "config/feature.h"
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
 
+#include "drivers/flash.h"
 #include "drivers/time.h"
+#include "drivers/sdcard.h"
 
 #include "fc/config.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/flashfs.h"
 #include "io/beeper.h"
+
+#include "pg/pg.h"
 
 static const char * const cmsx_BlackboxDeviceNames[] = {
     "NONE",
@@ -186,11 +188,6 @@ static long cmsx_Blackbox_onExit(const OSD_Entry *self)
     return 0;
 }
 
-static long cmsx_Blackbox_FeatureWriteback(void)
-{
-    return 0;
-}
-
 static OSD_Entry cmsx_menuBlackboxEntries[] =
 {
     { "-- BLACKBOX --", OME_Label, NULL, NULL, 0},
@@ -209,11 +206,12 @@ static OSD_Entry cmsx_menuBlackboxEntries[] =
 };
 
 CMS_Menu cmsx_menuBlackbox = {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "MENUBB",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = cmsx_Blackbox_onEnter,
     .onExit = cmsx_Blackbox_onExit,
-    .onGlobalExit = cmsx_Blackbox_FeatureWriteback,
     .entries = cmsx_menuBlackboxEntries
 };
 

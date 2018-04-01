@@ -20,10 +20,12 @@
 
 #include <platform.h>
 
-#ifdef TARGET_CONFIG
+#ifdef USE_TARGET_CONFIG
 
 #include "common/axis.h"
 #include "common/utils.h"
+
+#include "drivers/io.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -39,6 +41,9 @@
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
 
+#include "pg/beeper_dev.h"
+#include "pg/flash.h"
+
 #include "hardware_revision.h"
 
 void targetConfiguration(void)
@@ -51,7 +56,7 @@ void targetConfiguration(void)
 
     motorConfigMutable()->minthrottle = 1049;
 
-    gyroConfigMutable()->gyro_lpf = GYRO_LPF_188HZ;
+    gyroConfigMutable()->gyro_hardware_lpf = GYRO_HARDWARE_LPF_1KHZ_SAMPLE;
     gyroConfigMutable()->gyro_soft_lpf_hz = 100;
     gyroConfigMutable()->gyro_soft_notch_hz_1 = 0;
     gyroConfigMutable()->gyro_soft_notch_hz_2 = 0;
@@ -82,9 +87,11 @@ void targetConfiguration(void)
     for (uint8_t rateProfileIndex = 0; rateProfileIndex < CONTROL_RATE_PROFILE_COUNT; rateProfileIndex++) {
         controlRateConfig_t *controlRateConfig = controlRateProfilesMutable(rateProfileIndex);
 
-        controlRateConfig->rcRate8 = 100;
-        controlRateConfig->rcYawRate8 = 110;
-        controlRateConfig->rcExpo8 = 0;
+        controlRateConfig->rcRates[FD_ROLL] = 100;
+        controlRateConfig->rcRates[FD_PITCH] = 100;
+        controlRateConfig->rcRates[FD_YAW] = 110;
+        controlRateConfig->rcExpo[FD_ROLL] = 0;
+        controlRateConfig->rcExpo[FD_PITCH] = 0;
         controlRateConfig->rates[FD_ROLL] = 77;
         controlRateConfig->rates[FD_PITCH] = 77;
         controlRateConfig->rates[FD_YAW] = 80;

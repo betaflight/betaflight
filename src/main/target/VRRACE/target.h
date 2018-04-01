@@ -23,7 +23,8 @@
 
 #define LED0_PIN PD14
 #define LED1_PIN PD15
-#define BEEPER PA0
+#define USE_BEEPER
+#define BEEPER_PIN PA0
 #define BEEPER_INVERTED
 
 #define INVERTER_PIN_UART6 PD7
@@ -31,11 +32,11 @@
 #define MPU6500_CS_PIN        PE10
 #define MPU6500_SPI_INSTANCE  SPI2
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6500
 #define ACC_MPU6500_ALIGN CW270_DEG
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
 #define GYRO_MPU6500_ALIGN CW270_DEG
 
@@ -45,7 +46,7 @@
 #define USE_MPU_DATA_READY_SIGNAL
 
 /*
-#define BARO
+#define USE_BARO
 #define USE_BARO_MS5611
 #define MS5611_I2C_INSTANCE I2CDEV_1
 
@@ -76,9 +77,7 @@
 
 /*
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Stream4
-#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF4
-#define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
-#define SDCARD_DMA_CHANNEL                  DMA_Channel_0
+#define SDCARD_DMA_CHANNEL                  0
 */
 
 
@@ -153,7 +152,7 @@
 #define RSSI_ADC_PIN                PB1
 #define CURRENT_METER_ADC_PIN       PA5
 
-#undef LED_STRIP
+#undef USE_LED_STRIP
 
 #define DEFAULT_FEATURES        (FEATURE_SOFTSERIAL | FEATURE_TELEMETRY)
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL

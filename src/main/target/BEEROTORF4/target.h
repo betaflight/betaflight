@@ -22,8 +22,11 @@
 
 #define LED0_PIN                PB4
 
-#define BEEPER                  PB3
+#define USE_BEEPER
+#define BEEPER_PIN              PB3
 #define BEEPER_INVERTED
+
+#define ENABLE_DSHOT_DMAR       true
 
 // ICM20689 interrupt
 #define USE_EXTI
@@ -35,18 +38,17 @@
 #define ICM20689_CS_PIN          SPI1_NSS_PIN
 #define ICM20689_SPI_INSTANCE    SPI1
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_ICM20689
 #define ACC_ICM20689_ALIGN       CW270_DEG
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_ICM20689
 #define GYRO_ICM20689_ALIGN      CW270_DEG
 
-#define BARO
+#define USE_BARO
 #define USE_BARO_BMP280
 
-#define OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI3
 #define MAX7456_SPI_CS_PIN      SPI3_NSS_PIN
@@ -68,9 +70,7 @@
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     4 // 21MHz
 
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Stream4
-#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF4
-#define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
-#define SDCARD_DMA_CHANNEL                  DMA_Channel_0
+#define SDCARD_DMA_CHANNEL                  0
 
 #define USE_VCP
 #define VBUS_SENSING_ENABLED
@@ -139,9 +139,7 @@
 
 #define RSSI_ADC_PIN            PC2
 
-#define LED_STRIP
-
-#define TRANSPONDER
+#define USE_TRANSPONDER
 
 #define DEFAULT_FEATURES        ( FEATURE_TELEMETRY | FEATURE_OSD | FEATURE_AIRMODE )
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL

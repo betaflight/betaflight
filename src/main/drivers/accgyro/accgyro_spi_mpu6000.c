@@ -27,23 +27,21 @@
 
 #include "platform.h"
 
+#if defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_SPI_MPU6000)
+
 #include "common/axis.h"
 #include "common/maths.h"
 
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/accgyro/accgyro_mpu.h"
+#include "drivers/accgyro/accgyro_spi_mpu6000.h"
 #include "drivers/bus_spi.h"
 #include "drivers/exti.h"
-#include "drivers/gyro_sync.h"
 #include "drivers/io.h"
 #include "drivers/time.h"
 #include "drivers/sensor.h"
 #include "drivers/system.h"
 
-#include "accgyro.h"
-#include "accgyro_mpu.h"
-
-#if defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_SPI_MPU6000)
-
-#include "accgyro_spi_mpu6000.h"
 
 static void mpu6000AccAndGyroInit(gyroDev_t *gyro);
 
@@ -108,7 +106,7 @@ void mpu6000SpiGyroInit(gyroDev_t *gyro)
     spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_INITIALIZATON);
 
     // Accel and Gyro DLPF Setting
-    spiBusWriteRegister(&gyro->bus, MPU6000_CONFIG, gyro->lpf);
+    spiBusWriteRegister(&gyro->bus, MPU6000_CONFIG, mpuGyroDLPF(gyro));
     delayMicroseconds(1);
 
     spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_FAST);  // 18 MHz SPI clock
@@ -122,7 +120,7 @@ void mpu6000SpiGyroInit(gyroDev_t *gyro)
 
 void mpu6000SpiAccInit(accDev_t *acc)
 {
-    acc->acc_1G = 512 * 8;
+    acc->acc_1G = 512 * 4;
 }
 
 uint8_t mpu6000SpiDetect(const busDevice_t *bus)
@@ -200,15 +198,15 @@ static void mpu6000AccAndGyroInit(gyroDev_t *gyro)
 
     // Accel Sample Rate 1kHz
     // Gyroscope Output Rate =  1kHz when the DLPF is enabled
-    spiBusWriteRegister(&gyro->bus, MPU_RA_SMPLRT_DIV, gyroMPU6xxxGetDividerDrops(gyro));
+    spiBusWriteRegister(&gyro->bus, MPU_RA_SMPLRT_DIV, gyro->mpuDividerDrops);
     delayMicroseconds(15);
 
     // Gyro +/- 1000 DPS Full Scale
     spiBusWriteRegister(&gyro->bus, MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3);
     delayMicroseconds(15);
 
-    // Accel +/- 8 G Full Scale
-    spiBusWriteRegister(&gyro->bus, MPU_RA_ACCEL_CONFIG, INV_FSR_8G << 3);
+    // Accel +/- 16 G Full Scale
+    spiBusWriteRegister(&gyro->bus, MPU_RA_ACCEL_CONFIG, INV_FSR_16G << 3);
     delayMicroseconds(15);
 
     spiBusWriteRegister(&gyro->bus, MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 0 << 1 | 0 << 0);  // INT_ANYRD_2CLEAR

@@ -17,7 +17,44 @@
 
 #pragma once
 
+#include <stdbool.h>
+
 #include "drivers/io_types.h"
+#include "drivers/time.h"
+
+#ifndef ADC_INSTANCE
+#define ADC_INSTANCE                ADC1
+#endif
+
+#if defined(STM32F4) || defined(STM32F7)
+#ifndef ADC1_DMA_STREAM
+#define ADC1_DMA_STREAM DMA2_Stream4 // ST0 or ST4
+#endif
+
+#ifndef ADC2_DMA_STREAM
+#define ADC2_DMA_STREAM DMA2_Stream3 // ST2 or ST3
+#endif
+
+#ifndef ADC3_DMA_STREAM
+#define ADC3_DMA_STREAM DMA2_Stream0 // ST0 or ST1
+#endif
+#endif
+
+typedef enum ADCDevice {
+    ADCINVALID = -1,
+    ADCDEV_1   = 0,
+#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
+    ADCDEV_2,
+    ADCDEV_3,
+#endif
+#if defined(STM32F3)
+    ADCDEV_4,
+#endif
+    ADCDEV_COUNT
+} ADCDevice;
+
+#define ADC_CFG_TO_DEV(x) ((x) - 1)
+#define ADC_DEV_TO_CFG(x) ((x) + 1)
 
 typedef enum {
     ADC_BATTERY = 0,
@@ -27,7 +64,7 @@ typedef enum {
     ADC_CHANNEL_COUNT
 } AdcChannel;
 
-typedef struct adc_config_s {
+typedef struct adcOperatingConfig_s {
     ioTag_t tag;
     uint8_t adcChannel;         // ADC1_INxx channel number
     uint8_t dmaIndex;           // index into DMA buffer in case of sparse channels
@@ -35,17 +72,22 @@ typedef struct adc_config_s {
     uint8_t sampleTime;
 } adcOperatingConfig_t;
 
-typedef struct adcChannelConfig_t {
-    bool enabled;
-    ioTag_t ioTag;
-} adcChannelConfig_t;
-
-typedef struct adcConfig_s {
-    adcChannelConfig_t vbat;
-    adcChannelConfig_t rssi;
-    adcChannelConfig_t current;
-    adcChannelConfig_t external1;
-} adcConfig_t;
-
-void adcInit(const adcConfig_t *config);
+struct adcConfig_s;
+void adcInit(const struct adcConfig_s *config);
 uint16_t adcGetChannel(uint8_t channel);
+
+#ifdef USE_ADC_INTERNAL
+extern uint16_t adcVREFINTCAL;
+extern uint16_t adcTSCAL1;
+extern uint16_t adcTSCAL2;
+extern uint16_t adcTSSlopeK;
+
+bool adcInternalIsBusy(void);
+void adcInternalStartConversion(void);
+uint16_t adcInternalReadVrefint(void);
+uint16_t adcInternalReadTempsensor(void);
+#endif
+
+#ifndef SITL
+ADCDevice adcDeviceByInstance(ADC_TypeDef *instance);
+#endif

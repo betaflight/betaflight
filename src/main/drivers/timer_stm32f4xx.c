@@ -85,7 +85,7 @@ uint32_t timerClock(TIM_TypeDef *tim)
 #if defined (STM32F411xE)
     UNUSED(tim);
     return SystemCoreClock;
-#elif defined (STM32F40_41xxx)
+#elif defined (STM32F40_41xxx) || defined (STM32F446xx)
     if (tim == TIM8 || tim == TIM1 || tim == TIM9 || tim == TIM10 || tim == TIM11) {
         return SystemCoreClock;
     } else {

@@ -27,15 +27,19 @@
 #define TARGET_BOARD_IDENTIFIER "PIKO" // Furious FPV PIKOBLX
 #endif
 
+#define ENABLE_DSHOT_DMAR       true
+#define REMAP_TIM16_DMA
+
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
-#define TARGET_CONFIG
-#define BRUSHED_ESC_AUTODETECT
+#define USE_TARGET_CONFIG
+#define USE_BRUSHED_ESC_AUTODETECT
 
 #define LED0_PIN                PB9
 #define LED1_PIN                PB5
 
-#define BEEPER                  PA0
+#define USE_BEEPER
+#define BEEPER_PIN              PA0
 #define BEEPER_INVERTED
 
 // MPU6000 interrupts
@@ -43,11 +47,11 @@
 #define MPU_INT_EXTI            PA15
 #define USE_MPU_DATA_READY_SIGNAL
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 #define GYRO_MPU6000_ALIGN      CW180_DEG
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
 #define ACC_MPU6000_ALIGN       CW180_DEG
 
@@ -98,7 +102,7 @@
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART3
 
-#define TRANSPONDER
+#define USE_TRANSPONDER
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 // IO - stm32f303cc in 48pin package

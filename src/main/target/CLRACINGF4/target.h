@@ -24,9 +24,12 @@
 #endif
 
 #define LED0_PIN                  PB5
-#define BEEPER                    PB4
+#define USE_BEEPER
+#define BEEPER_PIN                PB4
 #define BEEPER_INVERTED
 #define BEEPER_PWM_HZ             3800 // Beeper PWM frequency in Hz
+
+#define ENABLE_DSHOT_DMAR         false // Motors 3 / 4 conflict with LED_STRIP if enabled
 
 #define INVERTER_PIN_UART1        PC0 // PC0 used as inverter select GPIO
 
@@ -40,9 +43,9 @@
 //  MPU 6000
 #define MPU6000_CS_PIN            PA4
 #define MPU6000_SPI_INSTANCE      SPI1
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 #define GYRO_MPU6000_ALIGN       CW0_DEG
 #define ACC_MPU6000_ALIGN        CW0_DEG
@@ -59,7 +62,6 @@
 #define MPU6500_SPI_INSTANCE    SPI1
 
 
-#define OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI3
 #define MAX7456_SPI_CS_PIN      PA15
@@ -76,9 +78,7 @@
 // Divide to under 25MHz for normal operation:
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER  4 // 21MHz
 #define SDCARD_DMA_CHANNEL_TX                DMA1_Stream4
-#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG  DMA_FLAG_TCIF4
-#define SDCARD_DMA_CLK                       RCC_AHB1Periph_DMA1
-#define SDCARD_DMA_CHANNEL                   DMA_Channel_0
+#define SDCARD_DMA_CHANNEL                   0
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
@@ -135,7 +135,7 @@
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 
-#define TRANSPONDER
+#define USE_TRANSPONDER
 
 #define DEFAULT_RX_FEATURE          FEATURE_RX_SERIAL
 #define DEFAULT_FEATURES            ( FEATURE_OSD  )

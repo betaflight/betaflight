@@ -21,7 +21,7 @@
 
 #include "platform.h"
 
-#ifdef CMS
+#if defined(USE_CMS) && defined(USE_VTX_RTC6705)
 
 #include "common/printf.h"
 #include "common/utils.h"
@@ -29,38 +29,38 @@
 #include "cms/cms.h"
 #include "cms/cms_types.h"
 
+#include "drivers/vtx_common.h"
+
+#include "fc/config.h"
+
 #include "io/vtx_string.h"
 #include "io/vtx_rtc6705.h"
-
+#include "io/vtx.h"
 
 static uint8_t cmsx_vtxBand;
 static uint8_t cmsx_vtxChannel;
 static uint8_t cmsx_vtxPower;
 
-static const char * const rtc6705BandNames[] = {
-    "BOSCAM A",
-    "BOSCAM B",
-    "BOSCAM E",
-    "FATSHARK",
-    "RACEBAND",
-};
-
-static OSD_TAB_t entryVtxBand =         {&cmsx_vtxBand, ARRAYLEN(rtc6705BandNames) - 1, &rtc6705BandNames[0]};
-static OSD_UINT8_t entryVtxChannel =    {&cmsx_vtxChannel, 1, 8, 1};
-static OSD_TAB_t entryVtxPower =        {&cmsx_vtxPower, RTC6705_POWER_COUNT - 1, &rtc6705PowerNames[0]};
+static OSD_TAB_t entryVtxBand =         {&cmsx_vtxBand, VTX_RTC6705_BAND_COUNT - 1, &vtx58BandNames[1]};
+static OSD_UINT8_t entryVtxChannel =    {&cmsx_vtxChannel, 1, VTX_SETTINGS_CHANNEL_COUNT, 1};
+static OSD_TAB_t entryVtxPower =        {&cmsx_vtxPower, VTX_RTC6705_POWER_COUNT - 1 - VTX_RTC6705_MIN_POWER, &rtc6705PowerNames[VTX_RTC6705_MIN_POWER]};
 
 static void cmsx_Vtx_ConfigRead(void)
 {
-    cmsx_vtxBand = vtxRTC6705Config()->band - 1;
-    cmsx_vtxChannel = vtxRTC6705Config()->channel;
-    cmsx_vtxPower = vtxRTC6705Config()->power;
+    cmsx_vtxBand = vtxSettingsConfig()->band - 1;
+    cmsx_vtxChannel = vtxSettingsConfig()->channel;
+    cmsx_vtxPower = vtxSettingsConfig()->power - VTX_RTC6705_MIN_POWER;
 }
 
 static void cmsx_Vtx_ConfigWriteback(void)
 {
-    vtxRTC6705ConfigMutable()->band = cmsx_vtxBand + 1;
-    vtxRTC6705ConfigMutable()->channel = cmsx_vtxChannel;
-    vtxRTC6705ConfigMutable()->power = cmsx_vtxPower;
+    // update vtx_ settings
+    vtxSettingsConfigMutable()->band = cmsx_vtxBand + 1;
+    vtxSettingsConfigMutable()->channel = cmsx_vtxChannel;
+    vtxSettingsConfigMutable()->power = cmsx_vtxPower + VTX_RTC6705_MIN_POWER;
+    vtxSettingsConfigMutable()->freq = vtx58_Bandchan2Freq(cmsx_vtxBand + 1, cmsx_vtxChannel);
+
+    saveConfigAndNotify();
 }
 
 static long cmsx_Vtx_onEnter(void)
@@ -91,11 +91,12 @@ static OSD_Entry cmsx_menuVtxEntries[] =
 };
 
 CMS_Menu cmsx_menuVtxRTC6705 = {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "MENUVTX",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = cmsx_Vtx_onEnter,
     .onExit= cmsx_Vtx_onExit,
-    .onGlobalExit = NULL,
     .entries = cmsx_menuVtxEntries
 };
 

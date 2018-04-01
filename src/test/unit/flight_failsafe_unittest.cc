@@ -23,7 +23,7 @@
 extern "C" {
     #include "build/debug.h"
 
-    #include "config/parameter_group_ids.h"
+    #include "pg/pg_ids.h"
 
     #include "platform.h"
 
@@ -471,4 +471,6 @@ bool isUsingSticksForArming(void)
 }
 
 void beeperConfirmationBeeps(uint8_t beepCount) { UNUSED(beepCount); }
+
+bool crashRecoveryModeActive(void) { return false; }
 }

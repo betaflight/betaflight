@@ -46,26 +46,36 @@
 
 #ifdef STM32F4
 #define USE_DSHOT
-#define USE_ESC_SENSOR
 #define I2C3_OVERCLOCK true
-#define TELEMETRY_IBUS
 #define USE_GYRO_DATA_ANALYSE
+#define USE_ADC
+#define USE_ADC_INTERNAL
+#define USE_USB_CDC_HID
+#define USE_USB_MSC
+
+#if defined(STM32F40_41xxx) || defined(STM32F411xE)
+#define USE_OVERCLOCK
 #endif
 
+#endif // STM32F4
+
+#ifdef STM32F722xx
+#define USE_ITCM_RAM
+#endif
 #ifdef STM32F7
 #define USE_DSHOT
-#define USE_ESC_SENSOR
 #define I2C3_OVERCLOCK true
 #define I2C4_OVERCLOCK true
-#define TELEMETRY_IBUS
 #define USE_GYRO_DATA_ANALYSE
+#define USE_OVERCLOCK
+#define USE_ADC_INTERNAL
 #endif
 
 #if defined(STM32F4) || defined(STM32F7)
-#define TASK_GYROPID_DESIRED_PERIOD     125
+#define TASK_GYROPID_DESIRED_PERIOD     125 // 125us = 8kHz
 #define SCHEDULER_DELAY_LIMIT           10
 #else
-#define TASK_GYROPID_DESIRED_PERIOD     1000
+#define TASK_GYROPID_DESIRED_PERIOD     1000 // 1000us = 1kHz
 #define SCHEDULER_DELAY_LIMIT           100
 #endif
 
@@ -75,10 +85,28 @@
 #define DEFAULT_AUX_CHANNEL_COUNT       6
 #endif
 
+#ifdef USE_ITCM_RAM
+#define FAST_CODE __attribute__((section(".tcm_code")))
+#else
+#define FAST_CODE
+#endif // USE_ITCM_RAM
+
+#ifdef USE_FAST_RAM
+#ifdef __APPLE__
+#define FAST_RAM                    __attribute__ ((section("__DATA,__.fastram_bss"), aligned(4)))
+#else
+#define FAST_RAM                    __attribute__ ((section(".fastram_bss"), aligned(4)))
+#endif
+#else
+#define FAST_RAM
+#endif // USE_FAST_RAM
+
+
 #define USE_CLI
+#define USE_GYRO_REGISTER_DUMP  // Adds gyroregisters command to cli to dump configured register values
 #define USE_PPM
 #define USE_PWM
-#define SERIAL_RX
+#define USE_SERIAL_RX
 #define USE_SERIALRX_CRSF       // Team Black Sheep Crossfire protocol
 #define USE_SERIALRX_IBUS       // FlySky and Turnigy receivers
 #define USE_SERIALRX_SBUS       // Frsky and Futaba receivers
@@ -94,49 +122,72 @@
 #endif
 
 #if (FLASH_SIZE > 64)
-#define BLACKBOX
-#define LED_STRIP
-#define TELEMETRY
-#define TELEMETRY_FRSKY
-#define TELEMETRY_HOTT
-#define TELEMETRY_LTM
-#define TELEMETRY_SMARTPORT
+#define USE_BLACKBOX
+#define USE_LED_STRIP
 #define USE_RESOURCE_MGMT
+#define USE_RUNAWAY_TAKEOFF     // Runaway Takeoff Prevention (anti-taz)
 #define USE_SERVOS
+#define USE_TELEMETRY
+#define USE_TELEMETRY_FRSKY_HUB
+#define USE_TELEMETRY_HOTT
+#define USE_TELEMETRY_LTM
+#define USE_TELEMETRY_SMARTPORT
 #endif
 
 #if (FLASH_SIZE > 128)
-#define CMS
-#define TELEMETRY_CRSF
-#define TELEMETRY_IBUS
-#define TELEMETRY_JETIEXBUS
-#define TELEMETRY_MAVLINK
-#define TELEMETRY_SRXL
-#define USE_DASHBOARD
-#define USE_MSP_DISPLAYPORT
-#define USE_RCSPLIT
-#define USE_RX_MSP
-#define USE_SERIALRX_JETIEXBUS
-#define USE_SENSOR_NAMES
-#define USE_VIRTUAL_CURRENT_METER
-#define VTX_COMMON
-#define VTX_CONTROL
-#define VTX_SMARTAUDIO
-#define VTX_TRAMP
 #define USE_CAMERA_CONTROL
-#define USE_HUFFMAN
+#define USE_CMS
 #define USE_COPY_PROFILE_CMS_MENU
+#define USE_EXTENDED_CMS_MENUS
+#define USE_DSHOT_DMAR
+#define USE_GYRO_OVERFLOW_CHECK
+#define USE_HUFFMAN
+#define USE_MSP_DISPLAYPORT
 #define USE_MSP_OVER_TELEMETRY
+#define USE_OSD
+#define USE_OSD_OVER_MSP_DISPLAYPORT
+#define USE_PINIO
+#define USE_PINIOBOX
+#define USE_RCDEVICE
+#define USE_RTC_TIME
+#define USE_RX_MSP
+#define USE_SERIALRX_FPORT      // FrSky FPort
+#define USE_TELEMETRY_CRSF
+#define USE_TELEMETRY_SRXL
+#define USE_VIRTUAL_CURRENT_METER
+#define USE_VTX_COMMON
+#define USE_VTX_CONTROL
+#define USE_VTX_SMARTAUDIO
+#define USE_VTX_TRAMP
+#define USE_GYRO_LPF2
+#define USE_ESC_SENSOR
+#define USE_ESC_SENSOR_INFO
 
 #ifdef USE_SERIALRX_SPEKTRUM
 #define USE_SPEKTRUM_BIND
 #define USE_SPEKTRUM_BIND_PLUG
+#define USE_SPEKTRUM_REAL_RSSI
+#define USE_SPEKTRUM_FAKE_RSSI
+#define USE_SPEKTRUM_RSSI_PERCENT_CONVERSION
+#define USE_SPEKTRUM_VTX_CONTROL
+#define USE_SPEKTRUM_VTX_TELEMETRY
+#define USE_SPEKTRUM_CMS_TELEMETRY
 #endif
 #endif
 
 #if (FLASH_SIZE > 256)
-// Temporarily moved GPS here because of overflowing flash size on F3
-#define GPS
+#define USE_ALT_HOLD
+#define USE_DASHBOARD
+#define USE_GPS
+#define USE_GPS_NMEA
+#define USE_GPS_UBLOX
 #define USE_NAV
+#define USE_OSD_ADJUSTMENTS
+#define USE_SENSOR_NAMES
+#define USE_SERIALRX_JETIEXBUS
+#define USE_TELEMETRY_IBUS
+#define USE_TELEMETRY_IBUS_EXTENDED
+#define USE_TELEMETRY_JETIEXBUS
+#define USE_TELEMETRY_MAVLINK
 #define USE_UNCOMMON_MIXERS
 #endif

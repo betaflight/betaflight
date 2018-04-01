@@ -21,12 +21,13 @@
 #include "platform.h"
 
 #include "drivers/io.h"
+#include "drivers/pwm_output.h"
+
+#include "pg/beeper_dev.h"
 
 #include "sound_beeper.h"
-#include "pwm_output.h"
 
-
-#ifdef BEEPER
+#ifdef USE_BEEPER
 static IO_t beeperIO = DEFIO_IO(NONE);
 static bool beeperInverted = false;
 static uint16_t beeperFrequency = 0;
@@ -34,7 +35,7 @@ static uint16_t beeperFrequency = 0;
 
 void systemBeep(bool onoff)
 {
-#ifdef BEEPER
+#ifdef USE_BEEPER
     if (beeperFrequency == 0) {
         IOWrite(beeperIO, beeperInverted ? onoff : !onoff);
     } else {
@@ -47,7 +48,7 @@ void systemBeep(bool onoff)
 
 void systemBeepToggle(void)
 {
-#ifdef BEEPER
+#ifdef USE_BEEPER
     if (beeperFrequency == 0) {
         IOToggle(beeperIO);
     } else {
@@ -58,7 +59,7 @@ void systemBeepToggle(void)
 
 void beeperInit(const beeperDevConfig_t *config)
 {
-#ifdef BEEPER
+#ifdef USE_BEEPER
     beeperFrequency = config->frequency;
     if (beeperFrequency == 0) {
         beeperIO = IOGetByTag(config->ioTag);

@@ -101,7 +101,7 @@ void HardFault_Handler(void)
     }
 #endif
 
-#ifdef TRANSPONDER
+#ifdef USE_TRANSPONDER
     // prevent IR LEDs from burning out.
     uint8_t requiredStateForTransponder = SYSTEM_STATE_CONFIG_LOADED | SYSTEM_STATE_TRANSPONDER_ENABLED;
     if ((systemState & requiredStateForTransponder) == requiredStateForTransponder) {

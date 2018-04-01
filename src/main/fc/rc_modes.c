@@ -19,14 +19,16 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "platform.h"
+
 #include "rc_modes.h"
 
 #include "common/bitarray.h"
 #include "common/maths.h"
 
 #include "config/feature.h"
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -37,7 +39,6 @@ boxBitmask_t rcModeActivationMask; // one bit per mode defined in boxId_e
 
 PG_REGISTER_ARRAY(modeActivationCondition_t, MAX_MODE_ACTIVATION_CONDITION_COUNT, modeActivationConditions,
                   PG_MODE_ACTIVATION_PROFILE, 0);
-
 
 bool IS_RC_MODE_ACTIVE(boxId_e boxId)
 {
@@ -70,29 +71,35 @@ bool isRangeActive(uint8_t auxChannelIndex, const channelRange_t *range) {
 
 void updateActivatedModes(void)
 {
-    boxBitmask_t newMask;
+    boxBitmask_t newMask, andMask;
     memset(&newMask, 0, sizeof(newMask));
+    memset(&andMask, 0, sizeof(andMask));
 
-    for (int index = 0; index < MAX_MODE_ACTIVATION_CONDITION_COUNT; index++) {
-        const modeActivationCondition_t *modeActivationCondition = modeActivationConditions(index);
+    // determine which conditions set/clear the mode
+    for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
+        const modeActivationCondition_t *mac = modeActivationConditions(i);
 
-        if (isRangeActive(modeActivationCondition->auxChannelIndex, &modeActivationCondition->range)) {
-            boxId_e mode = modeActivationCondition->modeId;
-            if (mode < CHECKBOX_ITEM_COUNT)
+        boxId_e mode = mac->modeId;
+        if (mode < CHECKBOX_ITEM_COUNT) {
+            bool bAnd = (mac->modeLogic == MODELOGIC_AND) || bitArrayGet(&andMask, mode);
+            bool bAct = isRangeActive(mac->auxChannelIndex, &mac->range);
+            if (bAnd)
+                bitArraySet(&andMask, mode);
+            if (bAnd != bAct)
                 bitArraySet(&newMask, mode);
         }
     }
+    bitArrayXor(&newMask, sizeof(&newMask), &newMask, &andMask);
+
     rcModeUpdate(&newMask);
 }
 
 bool isModeActivationConditionPresent(boxId_e modeId)
 {
-    uint8_t index;
+    for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
+        const modeActivationCondition_t *mac = modeActivationConditions(i);
 
-    for (index = 0; index < MAX_MODE_ACTIVATION_CONDITION_COUNT; index++) {
-        const modeActivationCondition_t *modeActivationCondition = modeActivationConditions(index);
-
-        if (modeActivationCondition->modeId == modeId && IS_RANGE_USABLE(&modeActivationCondition->range)) {
+        if (mac->modeId == modeId && IS_RANGE_USABLE(&mac->range)) {
             return true;
         }
     }

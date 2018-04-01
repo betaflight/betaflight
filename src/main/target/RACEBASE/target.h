@@ -19,7 +19,7 @@
 
 #define TARGET_BOARD_IDENTIFIER "RBFC"
 #define USE_HARDWARE_REVISION_DETECTION
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 
 #define LED0_PIN                PB3
 #define LED0_INVERTED
@@ -27,7 +27,8 @@
 #define LED1_PIN                PB4
 #define LED1_INVERTED
 
-#define BEEPER                  PA12
+#define USE_BEEPER
+#define BEEPER_PIN              PA12
 #define BEEPER_INVERTED
 
 #define USE_EXTI
@@ -39,10 +40,10 @@
 #define MPU6000_CS_PIN          PB5
 #define MPU6000_SPI_INSTANCE    SPI2
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
 
 #define ACC_MPU6000_ALIGN CW90_DEG
@@ -98,8 +99,6 @@
 #define VBAT_ADC_PIN            PA4
 #define CURRENT_METER_ADC_PIN   PA5
 #define RSSI_ADC_PIN            PA6
-
-#define OSD
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 

@@ -21,15 +21,16 @@
 
 #include "platform.h"
 
-#ifdef SERIAL_RX
+#ifdef USE_SERIAL_RX
 
+#include "common/crc.h"
 #include "common/utils.h"
 
 #include "drivers/time.h"
 
 #include "io/serial.h"
 
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
 #include "telemetry/telemetry.h"
 #endif
 
@@ -50,28 +51,14 @@ static bool sumdFrameDone = false;
 static uint16_t sumdChannels[SUMD_MAX_CHANNEL];
 static uint16_t crc;
 
-#define CRC_POLYNOME 0x1021
-
-// CRC calculation, adds a 8 bit unsigned to 16 bit crc
-static void CRC16(uint8_t value)
-{
-    uint8_t i;
-
-    crc = crc ^ (int16_t)value << 8;
-    for (i = 0; i < 8; i++) {
-    if (crc & 0x8000)
-        crc = (crc << 1) ^ CRC_POLYNOME;
-    else
-        crc = (crc << 1);
-    }
-}
-
 static uint8_t sumd[SUMD_BUFFSIZE] = { 0, };
 static uint8_t sumdChannelCount;
 
 // Receive ISR callback
-static void sumdDataReceive(uint16_t c)
+static void sumdDataReceive(uint16_t c, void *data)
 {
+    UNUSED(data);
+
     uint32_t sumdTime;
     static uint32_t sumdTimeLast;
     static uint8_t sumdIndex;
@@ -96,7 +83,7 @@ static void sumdDataReceive(uint16_t c)
         sumd[sumdIndex] = (uint8_t)c;
     sumdIndex++;
     if (sumdIndex < sumdChannelCount * 2 + 4)
-        CRC16((uint8_t)c);
+        crc = crc16_ccitt(crc, (uint8_t)c);
     else
         if (sumdIndex == sumdChannelCount * 2 + 5) {
             sumdIndex = 0;
@@ -112,8 +99,10 @@ static void sumdDataReceive(uint16_t c)
 #define SUMD_FRAME_STATE_OK 0x01
 #define SUMD_FRAME_STATE_FAILSAFE 0x81
 
-static uint8_t sumdFrameStatus(void)
+static uint8_t sumdFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
 {
+    UNUSED(rxRuntimeConfig);
+
     uint8_t channelIndex;
 
     uint8_t frameStatus = RX_FRAME_PENDING;
@@ -173,7 +162,7 @@ bool sumdInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
         return false;
     }
 
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
     bool portShared = telemetryCheckRxPortShared(portConfig);
 #else
     bool portShared = false;
@@ -182,12 +171,13 @@ bool sumdInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     serialPort_t *sumdPort = openSerialPort(portConfig->identifier,
         FUNCTION_RX_SERIAL,
         sumdDataReceive,
+        NULL,
         SUMD_BAUDRATE,
         portShared ? MODE_RXTX : MODE_RX,
         (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0)
         );
 
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
     if (portShared) {
         telemetrySharedPort = sumdPort;
     }

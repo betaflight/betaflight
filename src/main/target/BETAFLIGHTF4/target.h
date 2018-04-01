@@ -20,11 +20,10 @@
 #define TARGET_BOARD_IDENTIFIER "BFF4"
 #define USBD_PRODUCT_STRING     "BetaFlightF4"
 
-#define USE_ESC_SENSOR
-
 #define LED0_PIN                PB5
 
-#define BEEPER                  PB4
+#define USE_BEEPER
+#define BEEPER_PIN              PB4
 #define BEEPER_INVERTED
 
 // PC13 used as inverter select GPIO for UART2
@@ -33,11 +32,11 @@
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
 #define GYRO_MPU6000_ALIGN      CW180_DEG
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 #define ACC_MPU6000_ALIGN       CW180_DEG
 
@@ -48,13 +47,14 @@
 #define MPU_INT_EXTI            PC4
 #define USE_MPU_DATA_READY_SIGNAL
 
-#define BARO
-#define USE_BARO_SPI_BMP280
+#define USE_BARO
+#define USE_BARO_BMP280
+#define USE_BARO_MS5611
 
-#define BMP280_SPI_INSTANCE     SPI2
-#define BMP280_CS_PIN           PB3
+#define USE_MAG
+#define USE_MAG_HMC5883
+#define USE_MAG_QMC5883
 
-#define OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI2
 #define MAX7456_SPI_CS_PIN      PB12
@@ -123,8 +123,6 @@
 #define CURRENT_METER_ADC_PIN   PC1
 #define VBAT_ADC_PIN            PC2
 
-#define LED_STRIP
-
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART6
@@ -132,10 +130,6 @@
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 #define DEFAULT_FEATURES        ( FEATURE_TELEMETRY | FEATURE_OSD )
-
-#define SPEKTRUM_BIND
-// USART3,
-#define BIND_PIN                PB11
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

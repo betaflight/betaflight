@@ -18,7 +18,7 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER             "SP4N"
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 
 #ifndef SPRACINGF4NEO_REV
     #define SPRACINGF4NEO_REV 3
@@ -39,7 +39,8 @@
     #define LED1_PIN                        PB2
 #endif
 
-#define BEEPER                              PC15
+#define USE_BEEPER
+#define BEEPER_PIN                          PC15
 #define BEEPER_INVERTED
 
 #if (SPRACINGF4NEO_REV >= 2)
@@ -57,24 +58,23 @@
 #define USE_MAG_DATA_READY_SIGNAL
 #define ENSURE_MAG_DATA_READY_IS_HIGH
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6500
 
 #define ACC_MPU6500_ALIGN                   CW0_DEG
 #define GYRO_MPU6500_ALIGN                  CW0_DEG
 
-#define BARO
+#define USE_BARO
 #define USE_BARO_BMP280
 #define USE_BARO_MS5611
 
-#define MAG
+#define USE_MAG
 #define USE_MAG_AK8975
 #define USE_MAG_HMC5883
-
-#define USB_IO
+#define USE_MAG_QMC5883
 
 #define USE_VCP
 #define USE_UART1
@@ -135,7 +135,7 @@
 #define SPI3_MOSI_PIN                       PB5
 
 // Bus Switched Device, Device B.
-#define VTX_RTC6705
+#define USE_VTX_RTC6705
 #define VTX_RTC6705_OPTIONAL    // VTX/OSD board is OPTIONAL
 
 #define RTC6705_CS_PIN                      PC4
@@ -144,8 +144,6 @@
 
 #define USE_RTC6705_CLK_HACK
 #define RTC6705_CLK_PIN                     SPI3_SCK_PIN
-
-#define OSD
 
 // Bus Switched Device, Device A.
 #define USE_MAX7456
@@ -170,9 +168,7 @@
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     4 // 21MHz
 
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Stream4
-#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF4
-#define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
-#define SDCARD_DMA_CHANNEL                  DMA_Channel_0
+#define SDCARD_DMA_CHANNEL                  0
 
 #define MPU6500_CS_PIN                      SPI1_NSS_PIN
 #define MPU6500_SPI_INSTANCE                SPI1
@@ -190,8 +186,7 @@
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 
-#define LED_STRIP
-#define TRANSPONDER
+#define USE_TRANSPONDER
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
@@ -206,7 +201,7 @@
 #define TELEMETRY_UART                      SERIAL_PORT_UART5
 #define TELEMETRY_PROVIDER_DEFAULT          FUNCTION_TELEMETRY_SMARTPORT
 
-#define BUTTONS // Physically located on the optional OSD/VTX board.
+#define USE_BUTTONS // Physically located on the optional OSD/VTX board.
 #if (SPRACINGF4NEO_REV >= 3)
     #define BUTTON_A_PIN                    PB0
 #else
@@ -215,10 +210,6 @@
 
 // FIXME While it's possible to use the button on the OSD/VTX board for binding enabling it here will break binding unless you have the OSD/VTX connected.
 //#define BINDPLUG_PIN                        BUTTON_A_PIN
-
-// Temporarily disable SMARTAUDIO and TRAMP VTX support due to flash size issues.
-#undef VTX_SMARTAUDIO
-#undef VTX_TRAMP
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

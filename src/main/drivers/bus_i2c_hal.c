@@ -21,6 +21,8 @@
 
 #include <platform.h>
 
+#if defined(USE_I2C) && !defined(SOFT_I2C)
+
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 #include "drivers/nvic.h"
@@ -29,8 +31,6 @@
 
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_i2c_impl.h"
-
-#if defined(USE_I2C) && !defined(SOFT_I2C)
 
 #define CLOCKSPEED 800000    // i2c clockspeed 400kHz default (conform specs), 800kHz  and  1200kHz (Betaflight default)
 
@@ -46,8 +46,8 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
     {
         .device = I2CDEV_1,
         .reg = I2C1,
-        .sclPins = { DEFIO_TAG_E(PB6), DEFIO_TAG_E(PB8) },
-        .sdaPins = { DEFIO_TAG_E(PB7), DEFIO_TAG_E(PB9) },
+        .sclPins = { I2CPINDEF(PB6), I2CPINDEF(PB8) },
+        .sdaPins = { I2CPINDEF(PB7), I2CPINDEF(PB9) },
         .rcc = RCC_APB1(I2C1),
         .ev_irq = I2C1_EV_IRQn,
         .er_irq = I2C1_ER_IRQn,
@@ -57,8 +57,8 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
     {
         .device = I2CDEV_2,
         .reg = I2C2,
-        .sclPins = { DEFIO_TAG_E(PB10), DEFIO_TAG_E(PF1) },
-        .sdaPins = { DEFIO_TAG_E(PB11), DEFIO_TAG_E(PF0) },
+        .sclPins = { I2CPINDEF(PB10), I2CPINDEF(PF1) },
+        .sdaPins = { I2CPINDEF(PB11), I2CPINDEF(PF0) },
         .rcc = RCC_APB1(I2C2),
         .ev_irq = I2C2_EV_IRQn,
         .er_irq = I2C2_ER_IRQn,
@@ -68,8 +68,8 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
     {
         .device = I2CDEV_3,
         .reg = I2C3,
-        .sclPins = { DEFIO_TAG_E(PA8) },
-        .sdaPins = { DEFIO_TAG_E(PC9) },
+        .sclPins = { I2CPINDEF(PA8) },
+        .sdaPins = { I2CPINDEF(PC9) },
         .rcc = RCC_APB1(I2C3),
         .ev_irq = I2C3_EV_IRQn,
         .er_irq = I2C3_ER_IRQn,
@@ -79,8 +79,8 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
     {
         .device = I2CDEV_4,
         .reg = I2C4,
-        .sclPins = { DEFIO_TAG_E(PD12), DEFIO_TAG_E(PF14) },
-        .sdaPins = { DEFIO_TAG_E(PD13), DEFIO_TAG_E(PF15) },
+        .sclPins = { I2CPINDEF(PD12), I2CPINDEF(PF14) },
+        .sdaPins = { I2CPINDEF(PD13), I2CPINDEF(PF15) },
         .rcc = RCC_APB1(I2C4),
         .ev_irq = I2C4_EV_IRQn,
         .er_irq = I2C4_ER_IRQn,

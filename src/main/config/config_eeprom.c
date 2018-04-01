@@ -28,7 +28,7 @@
 
 #include "config/config_eeprom.h"
 #include "config/config_streamer.h"
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 #include "fc/config.h"
 
 #include "drivers/system.h"

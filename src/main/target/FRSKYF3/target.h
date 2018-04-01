@@ -17,14 +17,13 @@
 
 #pragma once
 
-#undef TELEMETRY_JETIEXBUS // no space left
-
 #define TARGET_BOARD_IDENTIFIER "FRF3"
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
 #define LED0_PIN                PB3
-#define BEEPER                  PC15
+#define USE_BEEPER
+#define BEEPER_PIN              PC15
 #define BEEPER_INVERTED
 
 #define USE_EXTI
@@ -36,19 +35,19 @@
 #ifdef MYMPU6000
 #define MPU6000_SPI_INSTANCE    SPI2
 #define MPU6000_CS_PIN          PB12
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 #define GYRO_MPU6000_ALIGN      CW270_DEG
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
 #define ACC_MPU6000_ALIGN       CW270_DEG
 #else
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_MPU6050
 #define GYRO_MPU6050_ALIGN      CW270_DEG
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_MPU6050
 #define ACC_MPU6050_ALIGN       CW270_DEG
 #endif
@@ -57,10 +56,8 @@
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
-#define USE_SOFTSERIAL1
-#define USE_SOFTSERIAL2
 
-#define SERIAL_PORT_COUNT       6
+#define SERIAL_PORT_COUNT       4
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
 
@@ -80,7 +77,6 @@
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN  PB9  // (HARDARE=0)
 #define USE_SPI
-#define OSD
 
 // include the max7456 driver
 #define USE_MAX7456
@@ -113,8 +109,6 @@
 #define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     4
 
-#define USE_ESC_SENSOR
-
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_NONE
 
@@ -124,7 +118,7 @@
 #define ADC_INSTANCE                ADC2
 #define ADC24_DMA_REMAP
 
-#define TRANSPONDER
+#define USE_TRANSPONDER
 #define REDUCE_TRANSPONDER_CURRENT_DRAW_WHEN_USB_CABLE_PRESENT
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT

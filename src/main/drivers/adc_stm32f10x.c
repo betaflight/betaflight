@@ -33,25 +33,12 @@
 #include "rcc.h"
 #include "dma.h"
 
-#ifndef ADC_INSTANCE
-#define ADC_INSTANCE   ADC1
-#endif
+#include "pg/adc.h"
+
 
 const adcDevice_t adcHardware[] = {
     { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .DMAy_Channelx = DMA1_Channel1 }
 };
-
-ADCDevice adcDeviceByInstance(ADC_TypeDef *instance)
-{
-    if (instance == ADC1)
-        return ADCDEV_1;
-
-/* TODO -- ADC2 available on large 10x devices.
-    if (instance == ADC2)
-        return ADCDEV_2;
-*/
-    return ADCINVALID;
-}
 
 const adcTagMap_t adcTagMap[] = {
     { DEFIO_TAG_E__PA0, ADC_Channel_0 }, // ADC12

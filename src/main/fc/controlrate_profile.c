@@ -24,8 +24,8 @@
 #include "common/axis.h"
 
 #include "config/config_reset.h"
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
@@ -33,21 +33,23 @@
 
 controlRateConfig_t *currentControlRateProfile;
 
-
-PG_REGISTER_ARRAY_WITH_RESET_FN(controlRateConfig_t, CONTROL_RATE_PROFILE_COUNT, controlRateProfiles, PG_CONTROL_RATE_PROFILES, 0);
+PG_REGISTER_ARRAY_WITH_RESET_FN(controlRateConfig_t, CONTROL_RATE_PROFILE_COUNT, controlRateProfiles, PG_CONTROL_RATE_PROFILES, 1);
 
 void pgResetFn_controlRateProfiles(controlRateConfig_t *controlRateConfig)
 {
     for (int i = 0; i < CONTROL_RATE_PROFILE_COUNT; i++) {
-        RESET_CONFIG(const controlRateConfig_t, &controlRateConfig[i],
-            .rcRate8 = 100,
-            .rcYawRate8 = 100,
-            .rcExpo8 = 0,
+        RESET_CONFIG(controlRateConfig_t, &controlRateConfig[i],
             .thrMid8 = 50,
             .thrExpo8 = 0,
             .dynThrPID = 10,
-            .rcYawExpo8 = 0,
             .tpa_breakpoint = 1650,
+            .rates_type = RATES_TYPE_BETAFLIGHT,
+            .rcRates[FD_ROLL] = 100,
+            .rcRates[FD_PITCH] = 100,
+            .rcRates[FD_YAW] = 100,
+            .rcExpo[FD_ROLL] = 0,
+            .rcExpo[FD_PITCH] = 0,
+            .rcExpo[FD_YAW] = 0,
             .rates[FD_ROLL] = 70,
             .rates[FD_PITCH] = 70,
             .rates[FD_YAW] = 70
@@ -69,7 +71,7 @@ void changeControlRateProfile(uint8_t controlRateProfileIndex)
         controlRateProfileIndex = CONTROL_RATE_PROFILE_COUNT - 1;
     }
     setControlRateProfile(controlRateProfileIndex);
-    generateThrottleCurve();
+    initRcProcessing();
 }
 
 void copyControlRateProfile(const uint8_t dstControlRateProfileIndex, const uint8_t srcControlRateProfileIndex) {

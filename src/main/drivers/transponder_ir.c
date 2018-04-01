@@ -21,7 +21,7 @@
 
 #include <platform.h>
 
-#ifdef TRANSPONDER
+#ifdef USE_TRANSPONDER
 
 #include "dma.h"
 #include "drivers/nvic.h"

@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 #include "drivers/barometer/barometer.h"
 
 typedef enum {
@@ -25,7 +25,8 @@ typedef enum {
     BARO_NONE = 1,
     BARO_BMP085 = 2,
     BARO_MS5611 = 3,
-    BARO_BMP280 = 4
+    BARO_BMP280 = 4,
+    BARO_LPS = 5
 } baroSensor_e;
 
 #define BARO_SAMPLE_COUNT_MAX   48
@@ -49,6 +50,7 @@ typedef struct baro_s {
     baroDev_t dev;
     int32_t BaroAlt;
     int32_t baroTemperature;             // Use temperature for telemetry
+    int32_t baroPressure;                // Use pressure for telemetry
 } baro_t;
 
 extern baro_t baro;

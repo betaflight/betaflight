@@ -19,7 +19,7 @@
 
 #include "common/color.h"
 #include "common/time.h"
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 #include "drivers/io_types.h"
 
 #define LED_MAX_STRIP_LENGTH           32
@@ -121,6 +121,12 @@ typedef enum {
     LED_OVERLAY_WARNING
 } ledOverlayId_e;
 
+// Enumeration to match the string options defined in lookupLedStripFormatRGB in settings.c
+typedef enum {
+    LED_GRB,
+    LED_RGB
+} ledStripFormatRGB_e;
+
 typedef struct modeColorIndexes_s {
     uint8_t color[LED_DIRECTION_COUNT];
 } modeColorIndexes_t;
@@ -146,6 +152,7 @@ typedef struct ledStripConfig_s {
     uint8_t ledstrip_visual_beeper; // suppress LEDLOW mode if beeper is on
     uint8_t ledstrip_aux_channel;
     ioTag_t ioTag;
+    ledStripFormatRGB_e ledstrip_grb_rgb;
 } ledStripConfig_t;
 
 PG_DECLARE(ledStripConfig_t, ledStripConfig);
@@ -170,12 +177,7 @@ static inline uint8_t ledGetParams(const ledConfig_t *lcfg)     { return ((*lcfg
 
 static inline bool ledGetOverlayBit(const ledConfig_t *lcfg, int id) { return ((ledGetOverlay(lcfg) >> id) & 1); }
 static inline bool ledGetDirectionBit(const ledConfig_t *lcfg, int id) { return ((ledGetDirection(lcfg) >> id) & 1); }
-/*
-PG_DECLARE_ARR(ledConfig_t, LED_MAX_STRIP_LENGTH, ledConfigs);
-PG_DECLARE_ARR(hsvColor_t, LED_CONFIGURABLE_COLOR_COUNT, colors);
-PG_DECLARE_ARR(modeColorIndexes_t, LED_MODE_COUNT, modeColors);
-PG_DECLARE(specialColorIndexes_t, specialColors);
-*/
+
 bool parseColor(int index, const char *colorConfig);
 
 bool parseLedStripConfig(int ledIndex, const char *config);
@@ -192,3 +194,5 @@ void applyDefaultLedStripConfig(ledConfig_t *ledConfig);
 void applyDefaultColors(hsvColor_t *colors);
 void applyDefaultModeColors(modeColorIndexes_t *modeColors);
 void applyDefaultSpecialColors(specialColorIndexes_t *specialColors);
+
+void updateRequiredOverlay(void);

@@ -29,8 +29,8 @@ extern "C" {
     #include "common/axis.h"
     #include "common/gps_conversion.h"
 
-    #include "config/parameter_group.h"
-    #include "config/parameter_group_ids.h"
+    #include "pg/pg.h"
+    #include "pg/pg_ids.h"
 
     #include "drivers/system.h"
     #include "drivers/serial.h"
@@ -219,12 +219,13 @@ void serialSetMode(serialPort_t *instance, portMode_e mode)
     UNUSED(mode);
 }
 
-serialPort_t *openSerialPort(serialPortIdentifier_e identifier, serialPortFunction_e functionMask, serialReceiveCallbackPtr callback, uint32_t baudRate, portMode_e mode, portOptions_e options)
+serialPort_t *openSerialPort(serialPortIdentifier_e identifier, serialPortFunction_e functionMask, serialReceiveCallbackPtr callback, void *callbackData, uint32_t baudRate, portMode_e mode, portOptions_e options)
 {
     UNUSED(identifier);
     UNUSED(functionMask);
     UNUSED(baudRate);
     UNUSED(callback);
+    UNUSED(callbackData);
     UNUSED(mode);
     UNUSED(options);
 

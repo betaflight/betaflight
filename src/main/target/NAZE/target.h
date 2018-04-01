@@ -17,9 +17,9 @@
 
 #pragma once
 
-#define TELEMETRY_IBUS
+#define USE_TELEMETRY_IBUS
 
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 #define TARGET_VALIDATECONFIG
 #define USE_HARDWARE_REVISION_DETECTION
 #define TARGET_BUS_INIT
@@ -29,7 +29,8 @@
 #define LED0_PIN                PB3
 #define LED1_PIN                PB4
 
-#define BEEPER                  PA12
+#define USE_BEEPER
+#define BEEPER_PIN              PA12
 
 #if defined(AFROMINI)
 #define BEEPER_INVERTED
@@ -38,7 +39,7 @@
 #define BRUSHED_MOTORS
 #undef USE_SERVOS
 #define TARGET_BOARD_IDENTIFIER "BEBR"
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 #define DEFAULT_FEATURES FEATURE_MOTOR_STOP
 #else
 #define TARGET_BOARD_IDENTIFIER "AFNA"
@@ -76,7 +77,7 @@
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_MPU3050
 #define USE_GYRO_MPU6050
 #define USE_GYRO_MPU6500
@@ -86,7 +87,7 @@
 #define GYRO_MPU6050_ALIGN      CW0_DEG
 #define GYRO_MPU6500_ALIGN      CW0_DEG
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_ADXL345
 #define USE_ACC_BMA280
 #define USE_ACC_MMA8452
@@ -100,21 +101,22 @@
 #define ACC_BMA280_ALIGN        CW0_DEG
 #define ACC_MPU6500_ALIGN       CW0_DEG
 
-#define BARO
+#define USE_BARO
 #define USE_BARO_MS5611 // needed for Flip32 board
 #define USE_BARO_BMP280
 
 /*
-#define MAG
+#define USE_MAG
 #define USE_MAG_HMC5883
 #define MAG_HMC5883_ALIGN       CW180_DEG
 */
 
-//#define SONAR
-//#define SONAR_TRIGGER_PIN       PB0
-//#define SONAR_ECHO_PIN          PB1
-//#define SONAR_TRIGGER_PIN_PWM   PB8
-//#define SONAR_ECHO_PIN_PWM      PB9
+//#define USE_RANGEFINDER
+//#define USE_RANGEFINDER_HCSR04
+//#define RANGEFINDER_HCSR04_TRIGGER_PIN       PB0
+//#define RANGEFINDER_HCSR04_ECHO_PIN          PB1
+//#define RANGEFINDER_HCSR04_TRIGGER_PIN_PWM   PB8
+//#define RANGEFINDER_HCSR04_ECHO_PIN_PWM      PB9
 
 #define USE_UART1
 #define USE_UART2
@@ -146,8 +148,6 @@
 #define VBAT_ADC_PIN            PA4
 #define RSSI_ADC_PIN            PA1
 #define EXTERNAL1_ADC_PIN       PA5
-
-#define USE_SPEKTRUM_BIND_PIN
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 

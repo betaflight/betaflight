@@ -19,7 +19,8 @@
 
 #include <stdbool.h>
 #include "common/time.h"
-#include "config/parameter_group.h"
+#include "common/filter.h"
+#include "pg/pg.h"
 
 #define MAX_PID_PROCESS_DENOM       16
 #define PID_CONTROLLER_BETAFLIGHT   1
@@ -73,8 +74,8 @@ typedef struct pid8_s {
 typedef struct pidProfile_s {
     pid8_t  pid[PID_ITEM_COUNT];
 
-    uint16_t yaw_lpf_hz;                    // Additional yaw filter when yaw axis too noisy
-    uint16_t dterm_lpf_hz;                  // Delta Filter in hz
+    uint16_t yaw_lowpass_hz;                    // Additional yaw filter when yaw axis too noisy
+    uint16_t dterm_lowpass_hz;                  // Delta Filter in hz
     uint16_t dterm_notch_hz;                // Biquad dterm notch hz
     uint16_t dterm_notch_cutoff;            // Biquad dterm notch low cutoff
     uint8_t dterm_filter_type;              // Filter selection for dterm
@@ -105,6 +106,10 @@ typedef struct pidProfile_s {
     pidCrashRecovery_e crash_recovery;      // off, on, on and beeps when it is in crash recovery mode
     uint16_t crash_limit_yaw;               // limits yaw errorRate, so crashes don't cause huge throttle increase
     uint16_t itermLimit;
+    uint16_t dterm_lowpass2_hz;                // Extra PT1 Filter on D in hz
+    uint8_t throttle_boost;                 // how much should throttle be boosted during transient changes 0-100, 100 adds 10x hpf filtered throttle
+    uint8_t throttle_boost_cutoff;          // Which cutoff frequency to use for throttle boost. higher cutoffs keep the boost on for shorter. Specified in hz.
+    uint8_t  iterm_rotation;                    // rotates iterm to translate world errors to local coordinate system
 } pidProfile_t;
 
 #ifndef USE_OSD_SLAVE
@@ -113,6 +118,9 @@ PG_DECLARE_ARRAY(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles);
 
 typedef struct pidConfig_s {
     uint8_t pid_process_denom;              // Processing denominator for PID controller vs gyro sampling rate
+    uint8_t runaway_takeoff_prevention;          // off, on - enables pidsum runaway disarm logic
+    uint16_t runaway_takeoff_deactivate_delay;   // delay in ms for "in-flight" conditions before deactivation (successful flight)
+    uint8_t runaway_takeoff_deactivate_throttle; // minimum throttle percent required during deactivation phase
 } pidConfig_t;
 
 PG_DECLARE(pidConfig_t, pidConfig);
@@ -121,16 +129,21 @@ union rollAndPitchTrims_u;
 void pidController(const pidProfile_t *pidProfile, const union rollAndPitchTrims_u *angleTrim, timeUs_t currentTimeUs);
 
 extern float axisPID_P[3], axisPID_I[3], axisPID_D[3];
+extern float axisPIDSum[3];
 bool airmodeWasActivated;
 extern uint32_t targetPidLooptime;
 
 // PIDweight is a scale factor for PIDs which is derived from the throttle and TPA setting, and 100 = 100% scale means no PID reduction
 extern uint8_t PIDweight[3];
 
-void pidResetErrorGyroState(void);
+void pidResetITerm(void);
 void pidStabilisationState(pidStabilisationState_e pidControllerState);
 void pidSetItermAccelerator(float newItermAccelerator);
 void pidInitFilters(const pidProfile_t *pidProfile);
 void pidInitConfig(const pidProfile_t *pidProfile);
 void pidInit(const pidProfile_t *pidProfile);
 void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex);
+bool crashRecoveryModeActive(void);
+
+extern float throttleBoost;
+extern pt1Filter_t throttleLpf;

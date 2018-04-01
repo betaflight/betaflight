@@ -41,14 +41,14 @@
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
 
-void uartSetBaudRate(serialPort_t *instance, uint32_t baudRate)
+static void uartSetBaudRate(serialPort_t *instance, uint32_t baudRate)
 {
     uartPort_t *uartPort = (uartPort_t *)instance;
     uartPort->port.baudRate = baudRate;
     uartReconfigure(uartPort);
 }
 
-void uartSetMode(serialPort_t *instance, portMode_e mode)
+static void uartSetMode(serialPort_t *instance, portMode_e mode)
 {
     uartPort_t *uartPort = (uartPort_t *)instance;
     uartPort->port.mode = mode;
@@ -138,7 +138,7 @@ void uartTryStartTxDMA(uartPort_t *s)
     }
 }
 
-uint32_t uartTotalRxBytesWaiting(const serialPort_t *instance)
+static uint32_t uartTotalRxBytesWaiting(const serialPort_t *instance)
 {
     const uartPort_t *s = (const uartPort_t*)instance;
 #ifdef STM32F4
@@ -162,7 +162,7 @@ uint32_t uartTotalRxBytesWaiting(const serialPort_t *instance)
     }
 }
 
-uint32_t uartTotalTxBytesFree(const serialPort_t *instance)
+static uint32_t uartTotalTxBytesFree(const serialPort_t *instance)
 {
     const uartPort_t *s = (const uartPort_t*)instance;
 
@@ -205,7 +205,7 @@ uint32_t uartTotalTxBytesFree(const serialPort_t *instance)
     return (s->port.txBufferSize - 1) - bytesUsed;
 }
 
-bool isUartTransmitBufferEmpty(const serialPort_t *instance)
+static bool isUartTransmitBufferEmpty(const serialPort_t *instance)
 {
     const uartPort_t *s = (const uartPort_t *)instance;
 #ifdef STM32F4
@@ -218,7 +218,7 @@ bool isUartTransmitBufferEmpty(const serialPort_t *instance)
         return s->port.txBufferTail == s->port.txBufferHead;
 }
 
-uint8_t uartRead(serialPort_t *instance)
+static uint8_t uartRead(serialPort_t *instance)
 {
     uint8_t ch;
     uartPort_t *s = (uartPort_t *)instance;
@@ -243,7 +243,7 @@ uint8_t uartRead(serialPort_t *instance)
     return ch;
 }
 
-void uartWrite(serialPort_t *instance, uint8_t ch)
+static void uartWrite(serialPort_t *instance, uint8_t ch)
 {
     uartPort_t *s = (uartPort_t *)instance;
     s->port.txBuffer[s->port.txBufferHead] = ch;
@@ -274,6 +274,8 @@ const struct serialPortVTable uartVTable[] = {
         .serialSetBaudRate = uartSetBaudRate,
         .isSerialTransmitBufferEmpty = isUartTransmitBufferEmpty,
         .setMode = uartSetMode,
+        .setCtrlLineStateCb = NULL,
+        .setBaudRateCb = NULL,
         .writeBuf = NULL,
         .beginWrite = NULL,
         .endWrite = NULL,

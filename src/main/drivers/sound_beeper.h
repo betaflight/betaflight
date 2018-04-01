@@ -17,9 +17,7 @@
 
 #pragma once
 
-#include "drivers/io_types.h"
-
-#ifdef BEEPER
+#ifdef USE_BEEPER
 #define BEEP_TOGGLE              systemBeepToggle()
 #define BEEP_OFF                 systemBeep(false)
 #define BEEP_ON                  systemBeep(true)
@@ -29,13 +27,7 @@
 #define BEEP_ON     do {} while (0)
 #endif
 
-typedef struct beeperDevConfig_s {
-    ioTag_t ioTag;
-    uint8_t isInverted;
-    uint8_t isOpenDrain;
-    uint16_t frequency;
-} beeperDevConfig_t;
-
 void systemBeep(bool on);
 void systemBeepToggle(void);
-void beeperInit(const beeperDevConfig_t *beeperDevConfig);
+struct beeperDevConfig_s;
+void beeperInit(const struct beeperDevConfig_s *beeperDevConfig);

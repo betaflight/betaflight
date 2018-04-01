@@ -24,8 +24,8 @@
 
 #include "common/axis.h"
 
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "drivers/time.h"
 
@@ -41,6 +41,8 @@
 #include "io/motors.h"
 
 #include "rx/rx.h"
+
+#include "flight/pid.h"
 
 /*
  * Usage:
@@ -256,7 +258,7 @@ void failsafeUpdateState(void)
                     failsafeApplyControlInput();
                     beeperMode = BEEPER_RX_LOST_LANDING;
                 }
-                if (failsafeShouldHaveCausedLandingByNow() || !armed) {
+                if (failsafeShouldHaveCausedLandingByNow() || crashRecoveryModeActive() || !armed) {
                     failsafeState.receivingRxDataPeriodPreset = PERIOD_OF_30_SECONDS; // require 30 seconds of valid rxData
                     failsafeState.phase = FAILSAFE_LANDED;
                     reprocessState = true;

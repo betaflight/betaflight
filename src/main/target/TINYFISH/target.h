@@ -25,7 +25,8 @@
 #define LED0_PIN                PC14
 #define LED1_PIN                PA13
 
-#define BEEPER                  PC15
+#define USE_BEEPER
+#define BEEPER_PIN              PC15
 #define BEEPER_INVERTED
 
 
@@ -36,11 +37,11 @@
 #define MPU6000_SPI_INSTANCE    SPI1
 #define MPU6000_CS_PIN          PA4
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 #define GYRO_MPU6000_ALIGN      CW180_DEG_FLIP
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
 #define ACC_MPU6000_ALIGN       CW180_DEG_FLIP
 
@@ -119,7 +120,7 @@
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define DEFAULT_FEATURES        ( FEATURE_TELEMETRY )
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

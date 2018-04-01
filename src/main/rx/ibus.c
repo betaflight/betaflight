@@ -27,7 +27,7 @@
 
 #include "platform.h"
 
-#ifdef SERIAL_RX
+#ifdef USE_SERIAL_RX
 
 #include "common/utils.h"
 
@@ -37,7 +37,7 @@
 
 #include "io/serial.h"
 
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
 #include "telemetry/telemetry.h"
 #endif
 
@@ -76,8 +76,10 @@ static bool isValidIa6bIbusPacketLength(uint8_t length)
 
 
 // Receive ISR callback
-static void ibusDataReceive(uint16_t c)
+static void ibusDataReceive(uint16_t c, void *data)
 {
+    UNUSED(data);
+
     uint32_t ibusTime;
     static uint32_t ibusTimeLast;
     static uint8_t ibusFramePosition;
@@ -154,8 +156,10 @@ static void updateChannelData(void) {
     }
 }
 
-static uint8_t ibusFrameStatus(void)
+static uint8_t ibusFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
 {
+    UNUSED(rxRuntimeConfig);
+
     uint8_t frameStatus = RX_FRAME_PENDING;
 
     if (!ibusFrameDone) {
@@ -171,7 +175,7 @@ static uint8_t ibusFrameStatus(void)
         }
         else
         {
-#if defined(TELEMETRY) && defined(TELEMETRY_IBUS)
+#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_IBUS)
             rxBytesToIgnore = respondToIbusRequest(ibus);
 #endif
         }
@@ -204,7 +208,7 @@ bool ibusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
         return false;
     }
 
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
     // bool portShared = telemetryCheckRxPortShared(portConfig);
     bool portShared = isSerialPortShared(portConfig, FUNCTION_RX_SERIAL, FUNCTION_TELEMETRY_IBUS);
 #else
@@ -216,12 +220,13 @@ bool ibusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     serialPort_t *ibusPort = openSerialPort(portConfig->identifier,
         FUNCTION_RX_SERIAL,
         ibusDataReceive,
+        NULL,
         IBUS_BAUDRATE,
         portShared ? MODE_RXTX : MODE_RX,
         (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | (rxConfig->halfDuplex || portShared ? SERIAL_BIDIR : 0)
         );
 
-#if defined(TELEMETRY) && defined(TELEMETRY_IBUS)
+#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_IBUS)
     if (portShared) {
         initSharedIbusTelemetry(ibusPort);
     }

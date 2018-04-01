@@ -24,8 +24,9 @@
 
 #pragma once
 
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 #include "io/serial.h"
+#include "telemetry/ibus_shared.h"
 
 typedef enum {
     FRSKY_FORMAT_DMS = 0,
@@ -46,15 +47,15 @@ typedef struct telemetryConfig_s {
     frskyGpsCoordFormat_e frsky_coordinate_format;
     frskyUnit_e frsky_unit;
     uint8_t frsky_vfas_precision;
-    uint8_t frsky_vfas_cell_voltage;        // Unused. Use 'report_cell_voltage' instead.
     uint8_t hottAlarmSoundInterval;
     uint8_t pidValuesAsTelemetry;
     uint8_t report_cell_voltage;
+    uint8_t flysky_sensors[IBUS_SENSOR_COUNT];
 } telemetryConfig_t;
 
 PG_DECLARE(telemetryConfig_t, telemetryConfig);
 
-#define TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_LTM | FUNCTION_TELEMETRY_MAVLINK)
+#define TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK (FUNCTION_TELEMETRY_FRSKY_HUB | FUNCTION_TELEMETRY_LTM | FUNCTION_TELEMETRY_MAVLINK)
 #define TELEMETRY_PORT_FUNCTIONS_MASK (TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK | FUNCTION_TELEMETRY_HOTT | FUNCTION_TELEMETRY_SMARTPORT)
 
 extern serialPort_t *telemetrySharedPort;

@@ -24,12 +24,14 @@
 #if defined(STM32F745xx) || defined(STM32F746xx) || defined(STM32F722xx)
 #include "stm32f7xx.h"
 #include "stm32f7xx_hal.h"
+#include "system_stm32f7xx.h"
 
 #include "stm32f7xx_ll_spi.h"
 #include "stm32f7xx_ll_gpio.h"
 #include "stm32f7xx_ll_dma.h"
 #include "stm32f7xx_ll_rcc.h"
 #include "stm32f7xx_ll_bus.h"
+#include "stm32f7xx_ll_tim.h"
 
 // Chip Unique ID on F7
 #if defined(STM32F722xx)

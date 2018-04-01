@@ -21,6 +21,10 @@
 
 #include "platform.h"
 
+#ifdef USE_ADC
+
+#include "build/debug.h"
+
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/system.h"
 
@@ -34,65 +38,154 @@
 #include "adc.h"
 #include "adc_impl.h"
 
-#ifndef ADC_INSTANCE
-#define ADC_INSTANCE                ADC1
-#endif
+#include "pg/adc.h"
 
-#ifndef ADC1_DMA_STREAM
-#define ADC1_DMA_STREAM DMA2_Stream4
+// These are missing from STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_adc.h
+#ifdef STM32F446xx
+#define ADC_Channel_TempSensor ADC_Channel_18
 #endif
 
 const adcDevice_t adcHardware[] = {
     { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .DMAy_Streamx = ADC1_DMA_STREAM, .channel = DMA_Channel_0 },
-    //{ .ADCx = ADC2, .rccADC = RCC_APB2(ADC2), .DMAy_Streamx = DMA2_Stream1, .channel = DMA_Channel_0 }
+#if !defined(STM32F411xE)
+    { .ADCx = ADC2, .rccADC = RCC_APB2(ADC2), .DMAy_Streamx = ADC2_DMA_STREAM, .channel = DMA_Channel_1 },
+    { .ADCx = ADC3, .rccADC = RCC_APB2(ADC3), .DMAy_Streamx = ADC3_DMA_STREAM, .channel = DMA_Channel_2 }
+#endif
 };
 
 /* note these could be packed up for saving space */
 const adcTagMap_t adcTagMap[] = {
 /*
-    { DEFIO_TAG_E__PF3,  ADC_Channel_9  },
-    { DEFIO_TAG_E__PF4,  ADC_Channel_14 },
-    { DEFIO_TAG_E__PF5,  ADC_Channel_15 },
-    { DEFIO_TAG_E__PF6,  ADC_Channel_4  },
-    { DEFIO_TAG_E__PF7,  ADC_Channel_5  },
-    { DEFIO_TAG_E__PF8,  ADC_Channel_6  },
-    { DEFIO_TAG_E__PF9,  ADC_Channel_7  },
-    { DEFIO_TAG_E__PF10, ADC_Channel_8  },
+    { DEFIO_TAG_E__PF3, ADC_DEVICES_3,   ADC_Channel_9  },
+    { DEFIO_TAG_E__PF4, ADC_DEVICES_3,   ADC_Channel_14 },
+    { DEFIO_TAG_E__PF5, ADC_DEVICES_3,   ADC_Channel_15 },
+    { DEFIO_TAG_E__PF6, ADC_DEVICES_3,   ADC_Channel_4  },
+    { DEFIO_TAG_E__PF7, ADC_DEVICES_3,   ADC_Channel_5  },
+    { DEFIO_TAG_E__PF8, ADC_DEVICES_3,   ADC_Channel_6  },
+    { DEFIO_TAG_E__PF9, ADC_DEVICES_3,   ADC_Channel_7  },
+    { DEFIO_TAG_E__PF10,ADC_DEVICES_3,   ADC_Channel_8  },
 */
-    { DEFIO_TAG_E__PC0, ADC_Channel_10 },
-    { DEFIO_TAG_E__PC1, ADC_Channel_11 },
-    { DEFIO_TAG_E__PC2, ADC_Channel_12 },
-    { DEFIO_TAG_E__PC3, ADC_Channel_13 },
-    { DEFIO_TAG_E__PC4, ADC_Channel_14 },
-    { DEFIO_TAG_E__PC5, ADC_Channel_15 },
-    { DEFIO_TAG_E__PB0, ADC_Channel_8  },
-    { DEFIO_TAG_E__PB1, ADC_Channel_9  },
-    { DEFIO_TAG_E__PA0, ADC_Channel_0  },
-    { DEFIO_TAG_E__PA1, ADC_Channel_1  },
-    { DEFIO_TAG_E__PA2, ADC_Channel_2  },
-    { DEFIO_TAG_E__PA3, ADC_Channel_3  },
-    { DEFIO_TAG_E__PA4, ADC_Channel_4  },
-    { DEFIO_TAG_E__PA5, ADC_Channel_5  },
-    { DEFIO_TAG_E__PA6, ADC_Channel_6  },
-    { DEFIO_TAG_E__PA7, ADC_Channel_7  },
+#if defined(STM32F411xE)
+    { DEFIO_TAG_E__PC0, ADC_DEVICES_1,   ADC_Channel_10 },
+    { DEFIO_TAG_E__PC1, ADC_DEVICES_1,   ADC_Channel_11 },
+    { DEFIO_TAG_E__PC2, ADC_DEVICES_1,   ADC_Channel_12 },
+    { DEFIO_TAG_E__PC3, ADC_DEVICES_1,   ADC_Channel_13 },
+    { DEFIO_TAG_E__PC4, ADC_DEVICES_1,   ADC_Channel_14 },
+    { DEFIO_TAG_E__PC5, ADC_DEVICES_1,   ADC_Channel_15 },
+    { DEFIO_TAG_E__PB0, ADC_DEVICES_1,   ADC_Channel_8  },
+    { DEFIO_TAG_E__PB1, ADC_DEVICES_1,   ADC_Channel_9  },
+    { DEFIO_TAG_E__PA0, ADC_DEVICES_1,   ADC_Channel_0  },
+    { DEFIO_TAG_E__PA1, ADC_DEVICES_1,   ADC_Channel_1  },
+    { DEFIO_TAG_E__PA2, ADC_DEVICES_1,   ADC_Channel_2  },
+    { DEFIO_TAG_E__PA3, ADC_DEVICES_1,   ADC_Channel_3  },
+    { DEFIO_TAG_E__PA4, ADC_DEVICES_1,   ADC_Channel_4  },
+    { DEFIO_TAG_E__PA5, ADC_DEVICES_1,   ADC_Channel_5  },
+    { DEFIO_TAG_E__PA6, ADC_DEVICES_1,   ADC_Channel_6  },
+    { DEFIO_TAG_E__PA7, ADC_DEVICES_1,   ADC_Channel_7  },
+#else
+    { DEFIO_TAG_E__PC0, ADC_DEVICES_123, ADC_Channel_10 },
+    { DEFIO_TAG_E__PC1, ADC_DEVICES_123, ADC_Channel_11 },
+    { DEFIO_TAG_E__PC2, ADC_DEVICES_123, ADC_Channel_12 },
+    { DEFIO_TAG_E__PC3, ADC_DEVICES_123, ADC_Channel_13 },
+    { DEFIO_TAG_E__PC4, ADC_DEVICES_12,  ADC_Channel_14 },
+    { DEFIO_TAG_E__PC5, ADC_DEVICES_12,  ADC_Channel_15 },
+    { DEFIO_TAG_E__PB0, ADC_DEVICES_12,  ADC_Channel_8  },
+    { DEFIO_TAG_E__PB1, ADC_DEVICES_12,  ADC_Channel_9  },
+    { DEFIO_TAG_E__PA0, ADC_DEVICES_123, ADC_Channel_0  },
+    { DEFIO_TAG_E__PA1, ADC_DEVICES_123, ADC_Channel_1  },
+    { DEFIO_TAG_E__PA2, ADC_DEVICES_123, ADC_Channel_2  },
+    { DEFIO_TAG_E__PA3, ADC_DEVICES_123, ADC_Channel_3  },
+    { DEFIO_TAG_E__PA4, ADC_DEVICES_12,  ADC_Channel_4  },
+    { DEFIO_TAG_E__PA5, ADC_DEVICES_12,  ADC_Channel_5  },
+    { DEFIO_TAG_E__PA6, ADC_DEVICES_12,  ADC_Channel_6  },
+    { DEFIO_TAG_E__PA7, ADC_DEVICES_12,  ADC_Channel_7  },
+#endif
 };
 
-ADCDevice adcDeviceByInstance(ADC_TypeDef *instance)
+#define VREFINT_CAL_ADDR  0x1FFF7A2A
+#define TS_CAL1_ADDR      0x1FFF7A2C
+#define TS_CAL2_ADDR      0x1FFF7A2E
+
+void adcInitDevice(ADC_TypeDef *adcdev, int channelCount)
 {
-    if (instance == ADC1)
-        return ADCDEV_1;
-/*
-    if (instance == ADC2) // TODO add ADC2 and 3
-        return ADCDEV_2;
-*/
-    return ADCINVALID;
+    ADC_InitTypeDef ADC_InitStructure;
+
+    ADC_StructInit(&ADC_InitStructure);
+
+    ADC_InitStructure.ADC_ContinuousConvMode       = ENABLE;
+    ADC_InitStructure.ADC_Resolution               = ADC_Resolution_12b;
+    ADC_InitStructure.ADC_ExternalTrigConv         = ADC_ExternalTrigConv_T1_CC1;
+    ADC_InitStructure.ADC_ExternalTrigConvEdge     = ADC_ExternalTrigConvEdge_None;
+    ADC_InitStructure.ADC_DataAlign                = ADC_DataAlign_Right;
+    ADC_InitStructure.ADC_NbrOfConversion          = channelCount;
+
+    // Multiple injected channel seems to require scan conversion mode to be
+    // enabled even if main (non-injected) channel count is 1.
+#ifdef USE_ADC_INTERNAL
+    ADC_InitStructure.ADC_ScanConvMode             = ENABLE;
+#else
+    ADC_InitStructure.ADC_ScanConvMode             = channelCount > 1 ? ENABLE : DISABLE; // 1=scan more that one channel in group
+#endif
+    ADC_Init(adcdev, &ADC_InitStructure);
 }
+
+#ifdef USE_ADC_INTERNAL
+void adcInitInternalInjected(void)
+{
+    ADC_TempSensorVrefintCmd(ENABLE);
+    ADC_InjectedDiscModeCmd(ADC1, DISABLE);
+    ADC_InjectedSequencerLengthConfig(ADC1, 2);
+    ADC_InjectedChannelConfig(ADC1, ADC_Channel_Vrefint, 1, ADC_SampleTime_480Cycles);
+    ADC_InjectedChannelConfig(ADC1, ADC_Channel_TempSensor, 2, ADC_SampleTime_480Cycles);
+
+    adcVREFINTCAL = *(uint16_t *)VREFINT_CAL_ADDR;
+    adcTSCAL1 = *(uint16_t *)TS_CAL1_ADDR;
+    adcTSCAL2 = *(uint16_t *)TS_CAL2_ADDR;
+    adcTSSlopeK = (110 - 30) * 1000 / (adcTSCAL2 - adcTSCAL1);
+}
+
+// Note on sampling time for temperature sensor and vrefint:
+// Both sources have minimum sample time of 10us.
+// With prescaler = 8:
+// 168MHz : fAPB2 = 84MHz, fADC = 10.5MHz, tcycle = 0.090us, 10us = 105cycle < 144cycle
+// 240MHz : fAPB2 = 120MHz, fADC = 15.0MHz, tcycle = 0.067usk 10us = 150cycle < 480cycle
+//
+// 480cycles@15.0MHz = 32us
+
+static bool adcInternalConversionInProgress = false;
+
+bool adcInternalIsBusy(void)
+{
+    if (adcInternalConversionInProgress) {
+        if (ADC_GetFlagStatus(ADC1, ADC_FLAG_JEOC) != RESET) {
+            adcInternalConversionInProgress = false;
+        }
+    }
+
+    return adcInternalConversionInProgress;
+}
+
+void adcInternalStartConversion(void)
+{
+    ADC_ClearFlag(ADC1, ADC_FLAG_JEOC);
+    ADC_SoftwareStartInjectedConv(ADC1);
+
+    adcInternalConversionInProgress = true;
+}
+
+uint16_t adcInternalReadVrefint(void)
+{
+    return ADC_GetInjectedConversionValue(ADC1, ADC_InjectedChannel_1);
+}
+
+uint16_t adcInternalReadTempsensor(void)
+{
+    return ADC_GetInjectedConversionValue(ADC1, ADC_InjectedChannel_2);
+}
+#endif
 
 void adcInit(const adcConfig_t *config)
 {
-    ADC_InitTypeDef ADC_InitStructure;
-    DMA_InitTypeDef DMA_InitStructure;
-
     uint8_t i;
     uint8_t configuredAdcChannels = 0;
 
@@ -114,7 +207,7 @@ void adcInit(const adcConfig_t *config)
         adcOperatingConfig[ADC_CURRENT].tag = config->current.ioTag;  //CURRENT_METER_ADC_CHANNEL;
     }
 
-    ADCDevice device = adcDeviceByInstance(ADC_INSTANCE);
+    ADCDevice device = ADC_CFG_TO_DEV(config->device);
     if (device == ADCINVALID)
         return;
 
@@ -122,8 +215,9 @@ void adcInit(const adcConfig_t *config)
 
     bool adcActive = false;
     for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
-        if (!adcOperatingConfig[i].tag)
+        if (!adcVerifyPin(adcOperatingConfig[i].tag, device)) {
             continue;
+        }
 
         adcActive = true;
         IOInit(IOGetByTag(adcOperatingConfig[i].tag), OWNER_ADC_BATT + i, 0);
@@ -134,15 +228,59 @@ void adcInit(const adcConfig_t *config)
         adcOperatingConfig[i].enabled = true;
     }
 
+#ifndef USE_ADC_INTERNAL
     if (!adcActive) {
         return;
     }
+#endif
 
     RCC_ClockCmd(adc.rccADC, ENABLE);
+
+    ADC_CommonInitTypeDef ADC_CommonInitStructure;
+
+    ADC_CommonStructInit(&ADC_CommonInitStructure);
+    ADC_CommonInitStructure.ADC_Mode             = ADC_Mode_Independent;
+    ADC_CommonInitStructure.ADC_Prescaler        = ADC_Prescaler_Div8;
+    ADC_CommonInitStructure.ADC_DMAAccessMode    = ADC_DMAAccessMode_Disabled;
+    ADC_CommonInitStructure.ADC_TwoSamplingDelay = ADC_TwoSamplingDelay_5Cycles;
+    ADC_CommonInit(&ADC_CommonInitStructure);
+
+#ifdef USE_ADC_INTERNAL
+    // If device is not ADC1 or there's no active channel, then initialize ADC1 separately
+    if (device != ADCDEV_1 || !adcActive) {
+        RCC_ClockCmd(adcHardware[ADCDEV_1].rccADC, ENABLE);
+        adcInitDevice(ADC1, 2);
+        ADC_Cmd(ADC1, ENABLE);
+    }
+
+    // Initialize for injected conversion
+    adcInitInternalInjected();
+
+    if (!adcActive) {
+        return;
+    }
+#endif
+
+    adcInitDevice(adc.ADCx, configuredAdcChannels);
+
+    uint8_t rank = 1;
+    for (i = 0; i < ADC_CHANNEL_COUNT; i++) {
+        if (!adcOperatingConfig[i].enabled) {
+            continue;
+        }
+        ADC_RegularChannelConfig(adc.ADCx, adcOperatingConfig[i].adcChannel, rank++, adcOperatingConfig[i].sampleTime);
+    }
+    ADC_DMARequestAfterLastTransferCmd(adc.ADCx, ENABLE);
+
+    ADC_DMACmd(adc.ADCx, ENABLE);
+    ADC_Cmd(adc.ADCx, ENABLE);
+
 
     dmaInit(dmaGetIdentifier(adc.DMAy_Streamx), OWNER_ADC, 0);
 
     DMA_DeInit(adc.DMAy_Streamx);
+
+    DMA_InitTypeDef DMA_InitStructure;
 
     DMA_StructInit(&DMA_InitStructure);
     DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)&adc.ADCx->DR;
@@ -160,38 +298,6 @@ void adcInit(const adcConfig_t *config)
 
     DMA_Cmd(adc.DMAy_Streamx, ENABLE);
 
-    ADC_CommonInitTypeDef ADC_CommonInitStructure;
-
-    ADC_CommonStructInit(&ADC_CommonInitStructure);
-    ADC_CommonInitStructure.ADC_Mode             = ADC_Mode_Independent;
-    ADC_CommonInitStructure.ADC_Prescaler        = ADC_Prescaler_Div8;
-    ADC_CommonInitStructure.ADC_DMAAccessMode    = ADC_DMAAccessMode_Disabled;
-    ADC_CommonInitStructure.ADC_TwoSamplingDelay = ADC_TwoSamplingDelay_5Cycles;
-    ADC_CommonInit(&ADC_CommonInitStructure);
-
-    ADC_StructInit(&ADC_InitStructure);
-
-    ADC_InitStructure.ADC_ContinuousConvMode       = ENABLE;
-    ADC_InitStructure.ADC_Resolution               = ADC_Resolution_12b;
-    ADC_InitStructure.ADC_ExternalTrigConv         = ADC_ExternalTrigConv_T1_CC1;
-    ADC_InitStructure.ADC_ExternalTrigConvEdge     = ADC_ExternalTrigConvEdge_None;
-    ADC_InitStructure.ADC_DataAlign                = ADC_DataAlign_Right;
-    ADC_InitStructure.ADC_NbrOfConversion          = configuredAdcChannels;
-    ADC_InitStructure.ADC_ScanConvMode             = configuredAdcChannels > 1 ? ENABLE : DISABLE; // 1=scan more that one channel in group
-
-    ADC_Init(adc.ADCx, &ADC_InitStructure);
-
-    uint8_t rank = 1;
-    for (i = 0; i < ADC_CHANNEL_COUNT; i++) {
-        if (!adcOperatingConfig[i].enabled) {
-            continue;
-        }
-        ADC_RegularChannelConfig(adc.ADCx, adcOperatingConfig[i].adcChannel, rank++, adcOperatingConfig[i].sampleTime);
-    }
-    ADC_DMARequestAfterLastTransferCmd(adc.ADCx, ENABLE);
-
-    ADC_DMACmd(adc.ADCx, ENABLE);
-    ADC_Cmd(adc.ADCx, ENABLE);
-
     ADC_SoftwareStartConv(adc.ADCx);
 }
+#endif

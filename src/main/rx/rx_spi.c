@@ -24,27 +24,32 @@
 
 #include "build/build_config.h"
 
-#include "drivers/cc2500.h"
-#include "drivers/rx_nrf24l01.h"
+#include "common/utils.h"
 
 #include "config/feature.h"
+
+#include "drivers/rx/rx_spi.h"
+#include "drivers/rx/rx_nrf24l01.h"
 
 #include "fc/config.h"
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
-#include "rx/frsky_d.h"
+#include "rx/cc2500_frsky_common.h"
 #include "rx/nrf24_cx10.h"
 #include "rx/nrf24_syma.h"
 #include "rx/nrf24_v202.h"
 #include "rx/nrf24_h8_3d.h"
 #include "rx/nrf24_inav.h"
+#include "rx/nrf24_kn.h"
+#include "rx/flysky.h"
+
 
 uint16_t rxSpiRcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 STATIC_UNIT_TESTED uint8_t rxSpiPayload[RX_SPI_MAX_PAYLOAD_SIZE];
 STATIC_UNIT_TESTED uint8_t rxSpiNewPacketAvailable; // set true when a new packet is received
 
-typedef void (*protocolInitFnPtr)(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
+typedef bool (*protocolInitFnPtr)(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
 typedef rx_spi_received_e (*protocolDataReceivedFnPtr)(uint8_t *payload);
 typedef void (*protocolSetRcDataFromPayloadFnPtr)(uint16_t *rcData, const uint8_t *payload);
 
@@ -54,7 +59,6 @@ static protocolSetRcDataFromPayloadFnPtr protocolSetRcDataFromPayload;
 
 STATIC_UNIT_TESTED uint16_t rxSpiReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t channel)
 {
-
     BUILD_BUG_ON(NRF24L01_MAX_PAYLOAD_SIZE > RX_SPI_MAX_PAYLOAD_SIZE);
 
     if (channel >= rxRuntimeConfig->channelCount) {
@@ -102,6 +106,13 @@ STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
         protocolSetRcDataFromPayload = h8_3dNrf24SetRcDataFromPayload;
         break;
 #endif
+#ifdef USE_RX_KN
+    case RX_SPI_NRF24_KN:
+        protocolInit = knNrf24Init;
+        protocolDataReceived = knNrf24DataReceived;
+        protocolSetRcDataFromPayload = knNrf24SetRcDataFromPayload;
+        break;
+#endif
 #ifdef USE_RX_INAV
     case RX_SPI_NRF24_INAV:
         protocolInit = inavNrf24Init;
@@ -109,11 +120,25 @@ STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
         protocolSetRcDataFromPayload = inavNrf24SetRcDataFromPayload;
         break;
 #endif
-#ifdef USE_RX_FRSKY_D
+#if defined(USE_RX_FRSKY_SPI)
+#if defined(USE_RX_FRSKY_SPI_D)
     case RX_SPI_FRSKY_D:
-        protocolInit = frSkyDInit;
-        protocolDataReceived = frSkyDDataReceived;
-        protocolSetRcDataFromPayload = frSkyDSetRcData;
+#endif
+#if defined(USE_RX_FRSKY_SPI_X)
+    case RX_SPI_FRSKY_X:
+#endif
+        protocolInit = frSkySpiInit;
+        protocolDataReceived = frSkySpiDataReceived;
+        protocolSetRcDataFromPayload = frSkySpiSetRcData;
+
+        break;
+#endif // USE_RX_FRSKY_SPI
+#ifdef USE_RX_FLYSKY
+    case RX_SPI_A7105_FLYSKY:
+    case RX_SPI_A7105_FLYSKY_2A:
+        protocolInit = flySkyInit;
+        protocolDataReceived = flySkyDataReceived;
+        protocolSetRcDataFromPayload = flySkySetRcDataFromPayload;
         break;
 #endif
     }
@@ -125,8 +150,10 @@ STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
  * Called from updateRx in rx.c, updateRx called from taskUpdateRxCheck.
  * If taskUpdateRxCheck returns true, then taskUpdateRxMain will shortly be called.
  */
-static uint8_t rxSpiFrameStatus(void)
+static uint8_t rxSpiFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
 {
+    UNUSED(rxRuntimeConfig);
+
     if (protocolDataReceived(rxSpiPayload) == RX_SPI_RECEIVED_DATA) {
         rxSpiNewPacketAvailable = true;
         return RX_FRAME_COMPLETE;
@@ -144,8 +171,7 @@ bool rxSpiInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     const rx_spi_type_e spiType = feature(FEATURE_SOFTSPI) ? RX_SPI_SOFTSPI : RX_SPI_HARDSPI;
     rxSpiDeviceInit(spiType);
     if (rxSpiSetProtocol(rxConfig->rx_spi_protocol)) {
-        protocolInit(rxConfig, rxRuntimeConfig);
-        ret = true;
+        ret = protocolInit(rxConfig, rxRuntimeConfig);
     }
     rxSpiNewPacketAvailable = false;
     rxRuntimeConfig->rxRefreshRate = 20000;

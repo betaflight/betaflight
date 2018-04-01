@@ -28,8 +28,8 @@
 
 #include "common/utils.h"
 
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "drivers/io.h"
 #include "drivers/light_led.h"
@@ -284,7 +284,7 @@ static void extractAndStoreRxByteBL(escSerial_t *escSerial)
     uint8_t rxByte = (escSerial->internalRxBuffer >> 1) & 0xFF;
 
     if (escSerial->port.rxCallback) {
-        escSerial->port.rxCallback(rxByte);
+        escSerial->port.rxCallback(rxByte, escSerial->port.rxCallbackData);
     } else {
         escSerial->port.rxBuffer[escSerial->port.rxBufferHead] = rxByte;
         escSerial->port.rxBufferHead = (escSerial->port.rxBufferHead + 1) % escSerial->port.rxBufferSize;
@@ -560,7 +560,7 @@ static void extractAndStoreRxByteEsc(escSerial_t *escSerial)
     uint8_t rxByte = (escSerial->internalRxBuffer) & 0xFF;
 
     if (escSerial->port.rxCallback) {
-        escSerial->port.rxCallback(rxByte);
+        escSerial->port.rxCallback(rxByte, escSerial->port.rxCallbackData);
     } else {
         escSerial->port.rxBuffer[escSerial->port.rxBufferHead] = rxByte;
         escSerial->port.rxBufferHead = (escSerial->port.rxBufferHead + 1) % escSerial->port.rxBufferSize;
@@ -842,6 +842,8 @@ const struct serialPortVTable escSerialVTable[] = {
         .serialSetBaudRate = escSerialSetBaudRate,
         .isSerialTransmitBufferEmpty = isEscSerialTransmitBufferEmpty,
         .setMode = escSerialSetMode,
+        .setCtrlLineStateCb = NULL,
+        .setBaudRateCb = NULL,
         .writeBuf = NULL,
         .beginWrite = NULL,
         .endWrite = NULL

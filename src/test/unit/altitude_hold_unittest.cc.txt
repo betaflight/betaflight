@@ -22,7 +22,7 @@
 
 //#define DEBUG_ALTITUDE_HOLD
 
-#define BARO
+#define USE_BARO
 
 extern "C" {
     #include "debug.h"

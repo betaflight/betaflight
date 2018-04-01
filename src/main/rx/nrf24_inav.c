@@ -29,7 +29,7 @@
 #include "common/utils.h"
 
 #include "drivers/io.h"
-#include "drivers/rx_nrf24l01.h"
+#include "drivers/rx/rx_nrf24l01.h"
 #include "drivers/time.h"
 
 #include "rx/rx.h"
@@ -276,7 +276,7 @@ static void writeAckPayload(const uint8_t *data, uint8_t length)
 
 static void writeTelemetryAckPayload(void)
 {
-#ifdef TELEMETRY_NRF24_LTM
+#ifdef USE_TELEMETRY_NRF24_LTM
     // set up telemetry data, send back telemetry data in the ACK packet
     static uint8_t sequenceNumber = 0;
     static ltm_frame_e ltmFrameType = LTM_FRAME_START;
@@ -419,9 +419,11 @@ static void inavNrf24Setup(rx_spi_protocol_e protocol, const uint32_t *rxSpiId, 
     writeAckPayload(ackPayload, payloadSize);
 }
 
-void inavNrf24Init(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+bool inavNrf24Init(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     rxRuntimeConfig->channelCount = RC_CHANNEL_COUNT_MAX;
     inavNrf24Setup((rx_spi_protocol_e)rxConfig->rx_spi_protocol, &rxConfig->rx_spi_id, rxConfig->rx_spi_rf_channel_count);
+
+    return true;
 }
 #endif

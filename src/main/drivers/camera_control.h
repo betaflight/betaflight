@@ -18,7 +18,7 @@
 #pragma once
 
 #include "io_types.h"
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 
 typedef enum {
     CAMERA_CONTROL_KEY_ENTER,
@@ -45,6 +45,7 @@ typedef struct cameraControlConfig_s {
     uint16_t internalResistance;
 
     ioTag_t ioTag;
+    uint8_t inverted;
 } cameraControlConfig_t;
 
 PG_DECLARE(cameraControlConfig_t, cameraControlConfig);

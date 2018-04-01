@@ -27,10 +27,9 @@
 #include "build/debug.h"
 
 #include "common/axis.h"
-#include "common/maths.h"
 
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "drivers/time.h"
 
@@ -47,7 +46,6 @@
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
-#include "sensors/sonar.h"
 
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
 #include <stdio.h>
@@ -60,7 +58,7 @@ static uint32_t imuDeltaT = 0;
 static bool imuUpdated = false;
 #endif
 
-#define IMU_LOCK pthread_mutex_unlock(&imuUpdateLock)
+#define IMU_LOCK pthread_mutex_lock(&imuUpdateLock)
 #define IMU_UNLOCK pthread_mutex_unlock(&imuUpdateLock)
 
 #else
@@ -77,6 +75,11 @@ static bool imuUpdated = false;
 
 #define SPIN_RATE_LIMIT 20
 
+#define ATTITUDE_RESET_QUIET_TIME 250000   // 250ms - gyro quiet period after disarm before attitude reset
+#define ATTITUDE_RESET_GYRO_LIMIT 15       // 15 deg/sec - gyro limit for quiet period
+#define ATTITUDE_RESET_KP_GAIN    25.0     // dcmKpGain value to use during attitude reset
+#define ATTITUDE_RESET_ACTIVE_TIME 500000  // 500ms - Time to wait for attitude to converge at high gain
+
 int32_t accSum[XYZ_AXIS_COUNT];
 
 uint32_t accTimeSum = 0;        // keep track for integration of acc
@@ -87,14 +90,19 @@ static float throttleAngleScale;
 static float fc_acc;
 static float smallAngleCosZ = 0;
 
-static float magneticDeclination = 0.0f;       // calculated at startup from config
-
 static imuRuntimeConfig_t imuRuntimeConfig;
 
-STATIC_UNIT_TESTED float q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f;    // quaternion of sensor frame relative to earth frame
 STATIC_UNIT_TESTED float rMat[3][3];
 
-attitudeEulerAngles_t attitude = { { 0, 0, 0 } };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
+// quaternion of sensor frame relative to earth frame
+STATIC_UNIT_TESTED quaternion q = QUATERNION_INITIALIZE;
+STATIC_UNIT_TESTED quaternionProducts qP = QUATERNION_PRODUCTS_INITIALIZE;
+// headfree quaternions
+quaternion headfree = QUATERNION_INITIALIZE;
+quaternion offset = QUATERNION_INITIALIZE;
+
+// absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
+attitudeEulerAngles_t attitude = EULER_INITIALIZE;
 
 PG_REGISTER_WITH_RESET_TEMPLATE(imuConfig_t, imuConfig, PG_IMU_CONFIG, 0);
 
@@ -106,34 +114,24 @@ PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
     .acc_unarmedcal = 1
 );
 
-STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
-{
-    float q1q1 = sq(q1);
-    float q2q2 = sq(q2);
-    float q3q3 = sq(q3);
+STATIC_UNIT_TESTED void imuComputeRotationMatrix(void){
+    imuQuaternionComputeProducts(&q, &qP);
 
-    float q0q1 = q0 * q1;
-    float q0q2 = q0 * q2;
-    float q0q3 = q0 * q3;
-    float q1q2 = q1 * q2;
-    float q1q3 = q1 * q3;
-    float q2q3 = q2 * q3;
+    rMat[0][0] = 1.0f - 2.0f * qP.yy - 2.0f * qP.zz;
+    rMat[0][1] = 2.0f * (qP.xy + -qP.wz);
+    rMat[0][2] = 2.0f * (qP.xz - -qP.wy);
 
-    rMat[0][0] = 1.0f - 2.0f * q2q2 - 2.0f * q3q3;
-    rMat[0][1] = 2.0f * (q1q2 + -q0q3);
-    rMat[0][2] = 2.0f * (q1q3 - -q0q2);
+    rMat[1][0] = 2.0f * (qP.xy - -qP.wz);
+    rMat[1][1] = 1.0f - 2.0f * qP.xx - 2.0f * qP.zz;
+    rMat[1][2] = 2.0f * (qP.yz + -qP.wx);
 
-    rMat[1][0] = 2.0f * (q1q2 - -q0q3);
-    rMat[1][1] = 1.0f - 2.0f * q1q1 - 2.0f * q3q3;
-    rMat[1][2] = 2.0f * (q2q3 + -q0q1);
-
-    rMat[2][0] = 2.0f * (q1q3 + -q0q2);
-    rMat[2][1] = 2.0f * (q2q3 - -q0q1);
-    rMat[2][2] = 1.0f - 2.0f * q1q1 - 2.0f * q2q2;
+    rMat[2][0] = 2.0f * (qP.xz + -qP.wy);
+    rMat[2][1] = 2.0f * (qP.yz - -qP.wx);
+    rMat[2][2] = 1.0f - 2.0f * qP.xx - 2.0f * qP.yy;
 
 #if defined(SIMULATOR_BUILD) && defined(SKIP_IMU_CALC) && !defined(SET_IMU_FROM_EULER)
-    rMat[1][0] = -2.0f * (q1q2 - -q0q3);
-    rMat[2][0] = -2.0f * (q1q3 + -q0q2);
+    rMat[1][0] = -2.0f * (qP.xy - -qP.wz);
+    rMat[2][0] = -2.0f * (qP.xz + -qP.wy);
 #endif
 }
 
@@ -184,9 +182,10 @@ void imuResetAccelerationSum(void)
     accTimeSum = 0;
 }
 
+#if defined(USE_ALT_HOLD)
 static void imuTransformVectorBodyToEarth(t_fp_vector * v)
 {
-    /* From body frame to earth frame */
+    // From body frame to earth frame
     const float x = rMat[0][0] * v->V.X + rMat[0][1] * v->V.Y + rMat[0][2] * v->V.Z;
     const float y = rMat[1][0] * v->V.X + rMat[1][1] * v->V.Y + rMat[1][2] * v->V.Z;
     const float z = rMat[2][0] * v->V.X + rMat[2][1] * v->V.Y + rMat[2][2] * v->V.Z;
@@ -197,7 +196,7 @@ static void imuTransformVectorBodyToEarth(t_fp_vector * v)
 }
 
 // rotate acc into Earth frame and calculate acceleration in it
-static void imuCalculateAcceleration(uint32_t deltaT)
+static void imuCalculateAcceleration(timeDelta_t deltaT)
 {
     static int32_t accZoffset = 0;
     static float accz_smooth = 0;
@@ -206,9 +205,9 @@ static void imuCalculateAcceleration(uint32_t deltaT)
     const float dT = (float)deltaT * 1e-6f;
 
     t_fp_vector accel_ned;
-    accel_ned.V.X = acc.accSmooth[X];
-    accel_ned.V.Y = acc.accSmooth[Y];
-    accel_ned.V.Z = acc.accSmooth[Z];
+    accel_ned.V.X = acc.accADC[X];
+    accel_ned.V.Y = acc.accADC[Y];
+    accel_ned.V.Z = acc.accADC[Z];
 
     imuTransformVectorBodyToEarth(&accel_ned);
 
@@ -233,31 +232,17 @@ static void imuCalculateAcceleration(uint32_t deltaT)
     accTimeSum += deltaT;
     accSumCount++;
 }
+#endif // USE_ALT_HOLD
 
 static float invSqrt(float x)
 {
     return 1.0f / sqrtf(x);
 }
 
-static bool imuUseFastGains(void)
-{
-    return !ARMING_FLAG(ARMED) && millis() < 20000;
-}
-
-static float imuGetPGainScaleFactor(void)
-{
-    if (imuUseFastGains()) {
-        return 10.0f;
-    }
-    else {
-        return 1.0f;
-    }
-}
-
 static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
                                 bool useAcc, float ax, float ay, float az,
                                 bool useMag, float mx, float my, float mz,
-                                bool useYaw, float yawError)
+                                bool useYaw, float yawError, const float dcmKpGain)
 {
     static float integralFBx = 0.0f,  integralFBy = 0.0f, integralFBz = 0.0f;    // integral error terms scaled by Ki
 
@@ -265,23 +250,22 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     const float spin_rate = sqrtf(sq(gx) + sq(gy) + sq(gz));
 
     // Use raw heading error (from GPS or whatever else)
-    float ez = 0;
+    float ex = 0, ey = 0, ez = 0;
     if (useYaw) {
         while (yawError >  M_PIf) yawError -= (2.0f * M_PIf);
         while (yawError < -M_PIf) yawError += (2.0f * M_PIf);
-
         ez += sin_approx(yawError / 2.0f);
     }
 
+#ifdef USE_MAG
     // Use measured magnetic field vector
-    float ex = 0, ey = 0;
-    float recipNorm = sq(mx) + sq(my) + sq(mz);
-    if (useMag && recipNorm > 0.01f) {
+    float recipMagNorm = sq(mx) + sq(my) + sq(mz);
+    if (useMag && recipMagNorm > 0.01f) {
         // Normalise magnetometer measurement
-        recipNorm = invSqrt(recipNorm);
-        mx *= recipNorm;
-        my *= recipNorm;
-        mz *= recipNorm;
+        recipMagNorm = invSqrt(recipMagNorm);
+        mx *= recipMagNorm;
+        my *= recipMagNorm;
+        mz *= recipMagNorm;
 
         // For magnetometer correction we make an assumption that magnetic field is perpendicular to gravity (ignore Z-component in EF).
         // This way magnetic field will only affect heading and wont mess roll/pitch angles
@@ -300,15 +284,21 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
         ey += rMat[2][1] * ez_ef;
         ez += rMat[2][2] * ez_ef;
     }
+#else
+    UNUSED(useMag);
+    UNUSED(mx);
+    UNUSED(my);
+    UNUSED(mz);
+#endif
 
     // Use measured acceleration vector
-    recipNorm = sq(ax) + sq(ay) + sq(az);
-    if (useAcc && recipNorm > 0.01f) {
+    float recipAccNorm = sq(ax) + sq(ay) + sq(az);
+    if (useAcc && recipAccNorm > 0.01f) {
         // Normalise accelerometer measurement
-        recipNorm = invSqrt(recipNorm);
-        ax *= recipNorm;
-        ay *= recipNorm;
-        az *= recipNorm;
+        recipAccNorm = invSqrt(recipAccNorm);
+        ax *= recipAccNorm;
+        ay *= recipAccNorm;
+        az *= recipAccNorm;
 
         // Error is sum of cross product between estimated direction and measured direction of gravity
         ex += (ay * rMat[2][2] - az * rMat[2][1]);
@@ -325,15 +315,11 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
             integralFBy += dcmKiGain * ey * dt;
             integralFBz += dcmKiGain * ez * dt;
         }
-    }
-    else {
+    } else {
         integralFBx = 0.0f;    // prevent integral windup
         integralFBy = 0.0f;
         integralFBz = 0.0f;
     }
-
-    // Calculate kP gain. If we are acquiring initial attitude (not armed and within 20 sec from powerup) scale the kP to converge faster
-    const float dcmKpGain = imuRuntimeConfig.dcm_kp * imuGetPGainScaleFactor();
 
     // Apply proportional and integral feedback
     gx += dcmKpGain * ex + integralFBx;
@@ -345,20 +331,23 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     gy *= (0.5f * dt);
     gz *= (0.5f * dt);
 
-    const float qa = q0;
-    const float qb = q1;
-    const float qc = q2;
-    q0 += (-qb * gx - qc * gy - q3 * gz);
-    q1 += (qa * gx + qc * gz - q3 * gy);
-    q2 += (qa * gy - qb * gz + q3 * gx);
-    q3 += (qa * gz + qb * gy - qc * gx);
+    quaternion buffer;
+    buffer.w = q.w;
+    buffer.x = q.x;
+    buffer.y = q.y;
+    buffer.z = q.z;
+
+    q.w += (-buffer.x * gx - buffer.y * gy - buffer.z * gz);
+    q.x += (+buffer.w * gx + buffer.y * gz - buffer.z * gy);
+    q.y += (+buffer.w * gy - buffer.x * gz + buffer.z * gx);
+    q.z += (+buffer.w * gz + buffer.x * gy - buffer.y * gx);
 
     // Normalise quaternion
-    recipNorm = invSqrt(sq(q0) + sq(q1) + sq(q2) + sq(q3));
-    q0 *= recipNorm;
-    q1 *= recipNorm;
-    q2 *= recipNorm;
-    q3 *= recipNorm;
+    float recipNorm = invSqrt(sq(q.w) + sq(q.x) + sq(q.y) + sq(q.z));
+    q.w *= recipNorm;
+    q.x *= recipNorm;
+    q.y *= recipNorm;
+    q.z *= recipNorm;
 
     // Pre-compute rotation matrix from quaternion
     imuComputeRotationMatrix();
@@ -366,15 +355,24 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
 
 STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
 {
-    /* Compute pitch/roll angles */
-    attitude.values.roll = lrintf(atan2f(rMat[2][1], rMat[2][2]) * (1800.0f / M_PIf));
-    attitude.values.pitch = lrintf(((0.5f * M_PIf) - acosf(-rMat[2][0])) * (1800.0f / M_PIf));
-    attitude.values.yaw = lrintf((-atan2f(rMat[1][0], rMat[0][0]) * (1800.0f / M_PIf) + magneticDeclination));
+    quaternionProducts buffer;
+
+    if (FLIGHT_MODE(HEADFREE_MODE)) {
+       imuQuaternionComputeProducts(&headfree, &buffer);
+
+       attitude.values.roll = lrintf(atan2_approx((+2.0f * (buffer.wx + buffer.yz)), (+1.0f - 2.0f * (buffer.xx + buffer.yy))) * (1800.0f / M_PIf));
+       attitude.values.pitch = lrintf(((0.5f * M_PIf) - acos_approx(+2.0f * (buffer.wy - buffer.xz))) * (1800.0f / M_PIf));
+       attitude.values.yaw = lrintf((-atan2_approx((+2.0f * (buffer.wz + buffer.xy)), (+1.0f - 2.0f * (buffer.yy + buffer.zz))) * (1800.0f / M_PIf)));
+    } else {
+       attitude.values.roll = lrintf(atan2_approx(rMat[2][1], rMat[2][2]) * (1800.0f / M_PIf));
+       attitude.values.pitch = lrintf(((0.5f * M_PIf) - acos_approx(-rMat[2][0])) * (1800.0f / M_PIf));
+       attitude.values.yaw = lrintf((-atan2_approx(rMat[1][0], rMat[0][0]) * (1800.0f / M_PIf)));
+    }
 
     if (attitude.values.yaw < 0)
         attitude.values.yaw += 3600;
 
-    /* Update small angle state */
+    // Update small angle state
     if (rMat[2][2] > smallAngleCosZ) {
         ENABLE_STATE(SMALL_ANGLE);
     } else {
@@ -382,11 +380,12 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
     }
 }
 
-static bool imuIsAccelerometerHealthy(void)
+static bool imuIsAccelerometerHealthy(float *accAverage)
 {
-    int32_t accMagnitude = 0;
+    float accMagnitude = 0;
     for (int axis = 0; axis < 3; axis++) {
-        accMagnitude += (int32_t)acc.accSmooth[axis] * acc.accSmooth[axis];
+        const float a = accAverage[axis];
+        accMagnitude += a * a;
     }
 
     accMagnitude = accMagnitude * 100 / (sq((int32_t)acc.dev.acc_1G));
@@ -395,31 +394,89 @@ static bool imuIsAccelerometerHealthy(void)
     return (81 < accMagnitude) && (accMagnitude < 121);
 }
 
-static bool isMagnetometerHealthy(void)
+// Calculate the dcmKpGain to use. When armed, the gain is imuRuntimeConfig.dcm_kp * 1.0 scaling.
+// When disarmed after initial boot, the scaling is set to 10.0 for the first 20 seconds to speed up initial convergence.
+// After disarming we want to quickly reestablish convergence to deal with the attitude estimation being incorrect due to a crash.
+//   - wait for a 250ms period of low gyro activity to ensure the craft is not moving
+//   - use a large dcmKpGain value for 500ms to allow the attitude estimate to quickly converge
+//   - reset the gain back to the standard setting
+float imuCalcKpGain(timeUs_t currentTimeUs, bool useAcc, float *gyroAverage)
 {
-    return (mag.magADC[X] != 0) && (mag.magADC[Y] != 0) && (mag.magADC[Z] != 0);
+    static bool lastArmState = false;
+    static timeUs_t gyroQuietPeriodTimeEnd = 0;
+    static timeUs_t attitudeResetTimeEnd = 0;
+    static bool attitudeResetCompleted = false;
+    float ret;
+    bool attitudeResetActive = false;
+
+    const bool armState = ARMING_FLAG(ARMED);
+
+    if (!armState) {
+        if (lastArmState) {   // Just disarmed; start the gyro quiet period
+            gyroQuietPeriodTimeEnd = currentTimeUs + ATTITUDE_RESET_QUIET_TIME;
+            attitudeResetTimeEnd = 0;
+            attitudeResetCompleted = false;
+        }
+
+        // If gyro activity exceeds the threshold then restart the quiet period.
+        // Also, if the attitude reset has been complete and there is subsequent gyro activity then
+        // start the reset cycle again. This addresses the case where the pilot rights the craft after a crash.
+        if ((attitudeResetTimeEnd > 0) || (gyroQuietPeriodTimeEnd > 0) || attitudeResetCompleted) {
+            if ((fabsf(gyroAverage[X]) > ATTITUDE_RESET_GYRO_LIMIT)
+                || (fabsf(gyroAverage[Y]) > ATTITUDE_RESET_GYRO_LIMIT)
+                || (fabsf(gyroAverage[Z]) > ATTITUDE_RESET_GYRO_LIMIT)
+                || (!useAcc)) {  
+
+                gyroQuietPeriodTimeEnd = currentTimeUs + ATTITUDE_RESET_QUIET_TIME;
+                attitudeResetTimeEnd = 0;
+            }            
+        }
+        if (attitudeResetTimeEnd > 0) {        // Resetting the attitude estimation
+            if (currentTimeUs >= attitudeResetTimeEnd) {
+                gyroQuietPeriodTimeEnd = 0;
+                attitudeResetTimeEnd = 0;
+                attitudeResetCompleted = true;
+            } else {
+                attitudeResetActive = true;
+            }
+        } else if ((gyroQuietPeriodTimeEnd > 0) && (currentTimeUs >= gyroQuietPeriodTimeEnd)) {   
+            // Start the high gain period to bring the estimation into convergence
+            attitudeResetTimeEnd = currentTimeUs + ATTITUDE_RESET_ACTIVE_TIME;
+            gyroQuietPeriodTimeEnd = 0;
+        }
+    }
+    lastArmState = armState;
+    
+    if (attitudeResetActive) {
+        ret = ATTITUDE_RESET_KP_GAIN;
+    } else {
+       ret = imuRuntimeConfig.dcm_kp;
+       if (!armState) {
+          ret = ret * 10.0f; // Scale the kP to generally converge faster when disarmed.
+       }
+    }
+
+    return ret;
 }
 
 static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 {
-    static uint32_t previousIMUUpdateTime;
+    static timeUs_t previousIMUUpdateTime;
     float rawYawError = 0;
     bool useAcc = false;
     bool useMag = false;
     bool useYaw = false;
 
-    uint32_t deltaT = currentTimeUs - previousIMUUpdateTime;
+    const timeDelta_t deltaT = currentTimeUs - previousIMUUpdateTime;
     previousIMUUpdateTime = currentTimeUs;
 
-    if (imuIsAccelerometerHealthy()) {
-        useAcc = true;
-    }
-
-    if (sensors(SENSOR_MAG) && isMagnetometerHealthy()) {
+#ifdef USE_MAG
+    if (sensors(SENSOR_MAG) && compassIsHealthy()) {
         useMag = true;
     }
-#if defined(GPS)
-    else if (STATE(FIXED_WING) && sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat >= 5 && gpsSol.groundSpeed >= 300) {
+#endif
+#if defined(USE_GPS)
+    if (!useMag && STATE(FIXED_WING) && sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat >= 5 && gpsSol.groundSpeed >= 300) {
         // In case of a fixed-wing aircraft we can use GPS course over ground to correct heading
         rawYawError = DECIDEGREES_TO_RADIANS(attitude.values.yaw - gpsSol.groundCourse);
         useYaw = true;
@@ -428,6 +485,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 
 #if defined(SIMULATOR_BUILD) && defined(SKIP_IMU_CALC)
     UNUSED(imuMahonyAHRSupdate);
+    UNUSED(imuIsAccelerometerHealthy);
     UNUSED(useAcc);
     UNUSED(useMag);
     UNUSED(useYaw);
@@ -438,16 +496,24 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 //  printf("[imu]deltaT = %u, imuDeltaT = %u, currentTimeUs = %u, micros64_real = %lu\n", deltaT, imuDeltaT, currentTimeUs, micros64_real());
     deltaT = imuDeltaT;
 #endif
+    float gyroAverage[XYZ_AXIS_COUNT];
+    gyroGetAccumulationAverage(gyroAverage);
+    float accAverage[XYZ_AXIS_COUNT];
+    if (accGetAccumulationAverage(accAverage)) {
+        useAcc = imuIsAccelerometerHealthy(accAverage);
+    }
 
     imuMahonyAHRSupdate(deltaT * 1e-6f,
-                        DEGREES_TO_RADIANS(gyro.gyroADCf[X]), DEGREES_TO_RADIANS(gyro.gyroADCf[Y]), DEGREES_TO_RADIANS(gyro.gyroADCf[Z]),
-                        useAcc, acc.accSmooth[X], acc.accSmooth[Y], acc.accSmooth[Z],
+                        DEGREES_TO_RADIANS(gyroAverage[X]), DEGREES_TO_RADIANS(gyroAverage[Y]), DEGREES_TO_RADIANS(gyroAverage[Z]),
+                        useAcc, accAverage[X], accAverage[Y], accAverage[Z],
                         useMag, mag.magADC[X], mag.magADC[Y], mag.magADC[Z],
-                        useYaw, rawYawError);
+                        useYaw, rawYawError, imuCalcKpGain(currentTimeUs, useAcc, gyroAverage));
 
     imuUpdateEulerAngles();
 #endif
+#if defined(USE_ALT_HOLD)
     imuCalculateAcceleration(deltaT); // rotate acc vector into earth frame
+#endif
 }
 
 void imuUpdateAttitude(timeUs_t currentTimeUs)
@@ -464,9 +530,9 @@ void imuUpdateAttitude(timeUs_t currentTimeUs)
         imuCalculateEstimatedAttitude(currentTimeUs);
         IMU_UNLOCK;
     } else {
-        acc.accSmooth[X] = 0;
-        acc.accSmooth[Y] = 0;
-        acc.accSmooth[Z] = 0;
+        acc.accADC[X] = 0;
+        acc.accADC[Y] = 0;
+        acc.accADC[Z] = 0;
     }
 }
 
@@ -485,7 +551,7 @@ int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value)
     if (rMat[2][2] <= 0.015f) {
         return 0;
     }
-    int angle = lrintf(acosf(rMat[2][2]) * throttleAngleScale);
+    int angle = lrintf(acos_approx(rMat[2][2]) * throttleAngleScale);
     if (angle > 900)
         angle = 900;
     return lrintf(throttle_correction_value * sin_approx(angle / (900.0f * M_PIf / 2.0f)));
@@ -506,10 +572,10 @@ void imuSetAttitudeQuat(float w, float x, float y, float z)
 {
     IMU_LOCK;
 
-    q0 = w;
-    q1 = x;
-    q2 = y;
-    q3 = z;
+    q.w = w;
+    q.x = x;
+    q.y = y;
+    q.z = z;
 
     imuComputeRotationMatrix();
     imuUpdateEulerAngles();
@@ -528,3 +594,66 @@ void imuSetHasNewData(uint32_t dt)
     IMU_UNLOCK;
 }
 #endif
+
+void imuQuaternionComputeProducts(quaternion *quat, quaternionProducts *quatProd)
+{
+    quatProd->ww = quat->w * quat->w;
+    quatProd->wx = quat->w * quat->x;
+    quatProd->wy = quat->w * quat->y;
+    quatProd->wz = quat->w * quat->z;
+    quatProd->xx = quat->x * quat->x;
+    quatProd->xy = quat->x * quat->y;
+    quatProd->xz = quat->x * quat->z;
+    quatProd->yy = quat->y * quat->y;
+    quatProd->yz = quat->y * quat->z;
+    quatProd->zz = quat->z * quat->z;
+}
+
+bool imuQuaternionHeadfreeOffsetSet(void)
+{
+    if ((ABS(attitude.values.roll) < 450)  && (ABS(attitude.values.pitch) < 450)) {
+        const float yaw = -atan2_approx((+2.0f * (qP.wz + qP.xy)), (+1.0f - 2.0f * (qP.yy + qP.zz)));
+
+        offset.w = cos_approx(yaw/2);
+        offset.x = 0;
+        offset.y = 0;
+        offset.z = sin_approx(yaw/2);
+
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void imuQuaternionMultiplication(quaternion *q1, quaternion *q2, quaternion *result)
+{
+    const float A = (q1->w + q1->x) * (q2->w + q2->x);
+    const float B = (q1->z - q1->y) * (q2->y - q2->z);
+    const float C = (q1->w - q1->x) * (q2->y + q2->z);
+    const float D = (q1->y + q1->z) * (q2->w - q2->x);
+    const float E = (q1->x + q1->z) * (q2->x + q2->y);
+    const float F = (q1->x - q1->z) * (q2->x - q2->y);
+    const float G = (q1->w + q1->y) * (q2->w - q2->z);
+    const float H = (q1->w - q1->y) * (q2->w + q2->z);
+
+    result->w = B + (- E - F + G + H) / 2.0f;
+    result->x = A - (+ E + F + G + H) / 2.0f;
+    result->y = C + (+ E - F + G - H) / 2.0f;
+    result->z = D + (+ E - F - G + H) / 2.0f;
+}
+
+void imuQuaternionHeadfreeTransformVectorEarthToBody(t_fp_vector_def *v)
+{
+    quaternionProducts buffer;
+
+    imuQuaternionMultiplication(&offset, &q, &headfree);
+    imuQuaternionComputeProducts(&headfree, &buffer);
+
+    const float x = (buffer.ww + buffer.xx - buffer.yy - buffer.zz) * v->X + 2.0f * (buffer.xy + buffer.wz) * v->Y + 2.0f * (buffer.xz - buffer.wy) * v->Z;
+    const float y = 2.0f * (buffer.xy - buffer.wz) * v->X + (buffer.ww - buffer.xx + buffer.yy - buffer.zz) * v->Y + 2.0f * (buffer.yz + buffer.wx) * v->Z;
+    const float z = 2.0f * (buffer.xz + buffer.wy) * v->X + 2.0f * (buffer.yz - buffer.wx) * v->Y + (buffer.ww - buffer.xx - buffer.yy + buffer.zz) * v->Z;
+
+    v->X = x;
+    v->Y = y;
+    v->Z = z;
+}

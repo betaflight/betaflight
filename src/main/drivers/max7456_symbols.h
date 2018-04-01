@@ -29,6 +29,8 @@
 // Satellite Graphics
 #define SYM_SAT_L 0x1E
 #define SYM_SAT_R 0x1F
+#define SYM_HDP_L 0xBD
+#define SYM_HDP_R 0xBE
 //#define SYM_SAT 0x0F  // Not used
 
 // Degrees Icon for HEADING/DIRECTION HOME
@@ -104,6 +106,7 @@
 #define SYM_GMISSION1 0xB6
 #define SYM_GLAND     0xB7
 #define SYM_GLAND1    0xB8
+#define SYM_HOME_DIST 0xA0
 
 // Gimbal active Mode
 #define SYM_GIMBAL  0x16
@@ -202,6 +205,7 @@
 #define SYM_FLY_M 0x9C
 #define SYM_ON_H  0x70
 #define SYM_FLY_H 0x71
+#define SYM_CLOCK 0xBC
 
 // Throttle Position (%)
 #define SYM_THR   0x04
@@ -215,6 +219,8 @@
 
 //Misc
 #define SYM_COLON 0x2D
+#define SYM_ZERO_HALF_TRAILING_DOT 0xC0
+#define SYM_ZERO_HALF_LEADING_DOT 0xD0
 
 //sport
 #define SYM_MIN 0xB3

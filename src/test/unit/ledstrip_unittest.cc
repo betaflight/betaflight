@@ -27,7 +27,7 @@ extern "C" {
     #include "common/axis.h"
     #include "common/color.h"
 
-    #include "config/parameter_group_ids.h"
+    #include "pg/pg_ids.h"
 
     #include "drivers/io.h"
     #include "drivers/light_ws2811strip.h"
@@ -297,8 +297,7 @@ uint8_t stateFlags = 0;
 uint16_t flightModeFlags = 0;
 float rcCommand[4];
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
-uint32_t rcModeActivationMask;
-uint16_t rssi = 0;
+boxBitmask_t rcModeActivationMask;
 gpsSolutionData_t gpsSol;
 
 batteryState_e getBatteryState(void) {
@@ -309,7 +308,7 @@ void ws2811LedStripInit(ioTag_t ioTag) {
     UNUSED(ioTag);
 }
 
-void ws2811UpdateStrip(void) {}
+void ws2811UpdateStrip(ledStripFormatRGB_e) {}
 
 void setLedValue(uint16_t index, const uint8_t value) {
     UNUSED(index);
@@ -383,5 +382,7 @@ bool sensors(uint32_t mask)
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {};
 
 bool isArmingDisabled(void) { return false; }
+
+uint16_t getRssi(void) { return 0; }
 
 }

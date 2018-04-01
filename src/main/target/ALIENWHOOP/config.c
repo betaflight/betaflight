@@ -37,7 +37,7 @@
 
 #include <platform.h>
 
-#ifdef TARGET_CONFIG
+#ifdef USE_TARGET_CONFIG
 
 #include "fc/rc_modes.h"
 #include "common/axis.h"
@@ -100,7 +100,7 @@ void targetConfiguration(void)
 
     featureSet((FEATURE_DYNAMIC_FILTER | FEATURE_AIRMODE | FEATURE_ANTI_GRAVITY) ^ FEATURE_RX_PARALLEL_PWM);
 
-    /* AlienWhoop PIDs based on Ole Gravy Leg (aka Matt Williamson's) PIDs 
+    /* AlienWhoop PIDs based on Ole Gravy Leg (aka Matt Williamson's) PIDs
      */
     for (uint8_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
         pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
@@ -130,9 +130,11 @@ void targetConfiguration(void)
         controlRateConfig_t *controlRateConfig = controlRateProfilesMutable(rateProfileIndex);
 
         /* RC Rates */
-        controlRateConfig->rcRate8 = 100;
-        controlRateConfig->rcYawRate8 = 100;
-        controlRateConfig->rcExpo8 = 0;
+        controlRateConfig->rcRates[FD_ROLL] = 100;
+        controlRateConfig->rcRates[FD_PITCH] = 100;
+        controlRateConfig->rcRates[FD_YAW] = 100;
+        controlRateConfig->rcExpo[FD_ROLL] = 0;
+        controlRateConfig->rcExpo[FD_PITCH] = 0;
 
         /* Super Expo Rates */
         controlRateConfig->rates[FD_ROLL] = 80;

@@ -19,7 +19,7 @@
 
 #include <stdbool.h>
 
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 
 typedef enum rc_alias {
     ROLL = 0,
@@ -68,11 +68,12 @@ typedef enum {
 #define THR_CE (3 << (2 * THROTTLE))
 #define THR_HI (2 << (2 * THROTTLE))
 
-// Roll/pitch rates are a proportion used for mixing, so it tops out at 1.0:
-#define CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX  100
+#define CONTROL_RATE_CONFIG_RC_EXPO_MAX  100
 
-/* Meaningful yaw rates are effectively unbounded because they are treated as a rotation rate multiplier: */
-#define CONTROL_RATE_CONFIG_YAW_RATE_MAX         255
+#define CONTROL_RATE_CONFIG_RC_RATES_MAX  255
+
+// (Super) rates are constrained to [0, 100] for Betaflight rates, so values higher than 100 won't make a difference. Range extended for RaceFlight rates.
+#define CONTROL_RATE_CONFIG_RATE_MAX  255
 
 #define CONTROL_RATE_CONFIG_TPA_MAX              100
 
@@ -93,13 +94,15 @@ typedef struct flight3DConfig_s {
     uint16_t deadband3d_high;               // max 3d value
     uint16_t neutral3d;                     // center 3d value
     uint16_t deadband3d_throttle;           // default throttle deadband from MIDRC
+    uint16_t limit3d_low;                   // pwm output value for max negative thrust
+    uint16_t limit3d_high;                  // pwm output value for max positive thrust
+    uint8_t switched_mode3d;                // enable '3D Switched Mode'
 } flight3DConfig_t;
 
 PG_DECLARE(flight3DConfig_t, flight3DConfig);
 
 typedef struct armingConfig_s {
     uint8_t gyro_cal_on_first_arm;          // allow disarm/arm on throttle down + roll left/right
-    uint8_t disarm_kill_switch;             // allow disarm via AUX switch regardless of throttle value
     uint8_t auto_disarm_delay;              // allow automatically disarming multicopters after auto_disarm_delay seconds of zero throttle. Disabled when 0
 } armingConfig_t;
 
@@ -109,7 +112,7 @@ bool areUsingSticksToArm(void);
 
 bool areSticksInApModePosition(uint16_t ap_mode);
 throttleStatus_e calculateThrottleStatus(void);
-void processRcStickPositions(throttleStatus_e throttleStatus);
+void processRcStickPositions();
 
 bool isUsingSticksForArming(void);
 

@@ -18,6 +18,9 @@
 #include <stdint.h>
 #include <string.h>
 #include <platform.h>
+
+#ifdef USE_TRANSPONDER
+
 #include "drivers/transponder_ir.h"
 #include "drivers/transponder_ir_erlt.h"
 
@@ -31,7 +34,7 @@ void transponderIrInitERLT(transponder_t *transponder){
     transponder->vTable             = &erltTansponderVTable;
     transponder->timer_hz           = TRANSPONDER_TIMER_MHZ_ERLT;
     transponder->timer_carrier_hz   = TRANSPONDER_CARRIER_HZ_ERLT;
-    memset(&(transponder->transponderIrDMABuffer.erlt), 0, TRANSPONDER_DMA_BUFFER_SIZE_ERLT);
+    memset(&(transponder->transponderIrDMABuffer.erlt), 0, sizeof(transponder->transponderIrDMABuffer.erlt));
 }
 
 void addBitToBuffer(transponder_t *transponder, uint8_t cycles, uint8_t pulsewidth)
@@ -76,4 +79,5 @@ const struct transponderVTable erltTansponderVTable = {
      updateTransponderDMABufferERLT,
 };
 
+#endif
 #endif

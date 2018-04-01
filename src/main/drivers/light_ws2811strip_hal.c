@@ -20,7 +20,7 @@
 
 #include "platform.h"
 
-#ifdef LED_STRIP
+#ifdef USE_LED_STRIP
 
 #include "common/color.h"
 #include "light_ws2811strip.h"
@@ -36,16 +36,11 @@ bool ws2811Initialised = false;
 
 static TIM_HandleTypeDef TimHandle;
 static uint16_t timerChannel = 0;
-static bool timerNChannel = false;
 
 void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
 {
     HAL_DMA_IRQHandler(TimHandle.hdma[descriptor->userParam]);
-    if(timerNChannel) {
-        HAL_TIMEx_PWMN_Stop_DMA(&TimHandle,timerChannel);
-    } else {
-        HAL_TIM_PWM_Stop_DMA(&TimHandle,timerChannel);
-    }
+    TIM_DMACmd(&TimHandle, timerChannel, DISABLE);
     ws2811LedDataTransferInProgress = 0;
 }
 
@@ -105,16 +100,16 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
     /* Set hdma_tim instance */
     hdma_tim.Instance = timerHardware->dmaRef;
 
-    uint16_t dmaSource = timerDmaSource(timerChannel);
+    uint16_t dmaIndex = timerDmaIndex(timerChannel);
 
     /* Link hdma_tim to hdma[x] (channelx) */
-    __HAL_LINKDMA(&TimHandle, hdma[dmaSource], hdma_tim);
+    __HAL_LINKDMA(&TimHandle, hdma[dmaIndex], hdma_tim);
 
     dmaInit(timerHardware->dmaIrqHandler, OWNER_LED_STRIP, 0);
-    dmaSetHandler(timerHardware->dmaIrqHandler, WS2811_DMA_IRQHandler, NVIC_PRIO_WS2811_DMA, dmaSource);
+    dmaSetHandler(timerHardware->dmaIrqHandler, WS2811_DMA_IRQHandler, NVIC_PRIO_WS2811_DMA, dmaIndex);
 
     /* Initialize TIMx DMA handle */
-    if (HAL_DMA_Init(TimHandle.hdma[dmaSource]) != HAL_OK) {
+    if (HAL_DMA_Init(TimHandle.hdma[dmaIndex]) != HAL_OK) {
         /* Initialization Error */
         return;
     }
@@ -123,25 +118,27 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
 
     /* PWM1 Mode configuration: Channel1 */
     TIM_OCInitStructure.OCMode = TIM_OCMODE_PWM1;
-    if (timerHardware->output & TIMER_OUTPUT_N_CHANNEL) {
-        timerNChannel = true;
-        TIM_OCInitStructure.OCIdleState = TIM_OCIDLESTATE_RESET;
-        TIM_OCInitStructure.OCPolarity = (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIM_OCPOLARITY_HIGH: TIM_OCPOLARITY_LOW;
-        TIM_OCInitStructure.OCNIdleState = TIM_OCNIDLESTATE_RESET;
-        TIM_OCInitStructure.OCNPolarity = (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPOLARITY_HIGH : TIM_OCNPOLARITY_LOW;
-    } else {
-        TIM_OCInitStructure.OCIdleState = TIM_OCIDLESTATE_RESET;
-        TIM_OCInitStructure.OCPolarity = (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIM_OCPOLARITY_LOW : TIM_OCPOLARITY_HIGH;
-        TIM_OCInitStructure.OCNIdleState = TIM_OCNIDLESTATE_RESET;
-        TIM_OCInitStructure.OCNPolarity = (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPOLARITY_LOW : TIM_OCNPOLARITY_HIGH;
-    }
+    TIM_OCInitStructure.OCIdleState = TIM_OCIDLESTATE_RESET;
+    TIM_OCInitStructure.OCPolarity = (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIM_OCPOLARITY_LOW : TIM_OCPOLARITY_HIGH;
+    TIM_OCInitStructure.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+    TIM_OCInitStructure.OCNPolarity = (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPOLARITY_LOW : TIM_OCNPOLARITY_HIGH;
     TIM_OCInitStructure.Pulse = 0;
     TIM_OCInitStructure.OCFastMode = TIM_OCFAST_DISABLE;
     if (HAL_TIM_PWM_ConfigChannel(&TimHandle, &TIM_OCInitStructure, timerChannel) != HAL_OK) {
         /* Configuration Error */
         return;
     }
-
+    if (timerHardware->output & TIMER_OUTPUT_N_CHANNEL) {
+        if (HAL_TIMEx_PWMN_Start(&TimHandle, timerChannel) != HAL_OK) {
+            /* Starting PWM generation Error */
+            return;
+        }
+    } else {
+        if (HAL_TIM_PWM_Start(&TimHandle, timerChannel) != HAL_OK) {
+            /* Starting PWM generation Error */
+            return;
+        }
+    }
     ws2811Initialised = true;
 }
 
@@ -152,18 +149,14 @@ void ws2811LedStripDMAEnable(void)
         return;
     }
 
-    if (timerNChannel) {
-        if (HAL_TIMEx_PWMN_Start_DMA(&TimHandle, timerChannel, ledStripDMABuffer, WS2811_DMA_BUFFER_SIZE) != HAL_OK) {
-            /* Starting PWM generation Error */
-            ws2811LedDataTransferInProgress = 0;
-            return;
-        }
-    } else {
-        if (HAL_TIM_PWM_Start_DMA(&TimHandle, timerChannel, ledStripDMABuffer, WS2811_DMA_BUFFER_SIZE) != HAL_OK) {
-            /* Starting PWM generation Error */
-            ws2811LedDataTransferInProgress = 0;
-            return;
-        }
+    if (DMA_SetCurrDataCounter(&TimHandle, timerChannel, ledStripDMABuffer, WS2811_DMA_BUFFER_SIZE) != HAL_OK) {
+        /* DMA set error */
+        ws2811LedDataTransferInProgress = 0;
+        return;
     }
+    /* Reset timer counter */
+    __HAL_TIM_SET_COUNTER(&TimHandle,0);
+    /* Enable channel DMA requests */
+    TIM_DMACmd(&TimHandle,timerChannel,ENABLE);
 }
 #endif

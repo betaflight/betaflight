@@ -22,7 +22,8 @@
 #define LED0_PIN                PB3
 #define LED1_PIN                PB4
 
-#define BEEPER                  PA12
+#define USE_BEEPER
+#define BEEPER_PIN              PA12
 
 #define BARO_XCLR_PIN           PC13
 #define BARO_EOC_PIN            PC14
@@ -45,21 +46,22 @@
 #define USE_SPI
 #define USE_SPI_DEVICE_2
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_MPU6050
 #define GYRO_MPU6050_ALIGN      CW0_DEG
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_MPU6050
 #define ACC_MPU6050_ALIGN       CW0_DEG
 
-#define BARO
+#define USE_BARO
 #define USE_BARO_MS5611
 #define USE_BARO_BMP085
 #define USE_BARO_BMP280
 
-#define MAG
+#define USE_MAG
 #define USE_MAG_HMC5883
+#define USE_MAG_QMC5883
 #define MAG_HMC5883_ALIGN       CW180_DEG
 
 #define USE_UART1
@@ -69,8 +71,6 @@
 #define USE_I2C
 #define USE_I2C_DEVICE_2
 #define I2C_DEVICE              (I2CDEV_2)
-
-#define USE_SPEKTRUM_BIND
 
 #define BRUSHED_MOTORS
 #define DEFAULT_FEATURES        FEATURE_MOTOR_STOP

@@ -18,7 +18,7 @@
 #pragma once
 
 #include "common/time.h"
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 
 typedef enum {
     // IMPORTANT: these are in priority order, 0 = Highest
@@ -43,20 +43,13 @@ typedef enum {
     BEEPER_SYSTEM_INIT,             // Initialisation beeps when board is powered on
     BEEPER_USB,                     // Some boards have beeper powered USB connected
     BEEPER_BLACKBOX_ERASE,          // Beep when blackbox erase completes
+    BEEPER_CRASH_FLIP_MODE,         // Crash flip mode is active
+    BEEPER_CAM_CONNECTION_OPEN,     // When the 5 key simulation stated
+    BEEPER_CAM_CONNECTION_CLOSE,    // When the 5 key simulation stop
     BEEPER_ALL,                     // Turn ON or OFF all beeper conditions
-    BEEPER_PREFERENCE               // Save preferred beeper configuration
+    BEEPER_PREFERENCE,              // Save preferred beeper configuration
     // BEEPER_ALL and BEEPER_PREFERENCE must remain at the bottom of this enum
 } beeperMode_e;
-
-typedef struct beeperConfig_s {
-    uint32_t beeper_off_flags;
-    uint32_t preferred_beeper_off_flags;
-    uint8_t dshotBeaconTone;
-} beeperConfig_t;
-
-#ifdef BEEPER
-PG_DECLARE(beeperConfig_t, beeperConfig);
-#endif
 
 void beeper(beeperMode_e mode);
 void beeperSilence(void);

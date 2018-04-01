@@ -20,21 +20,25 @@
 
 #define TARGET_BOARD_IDENTIFIER "BFF3"
 
+
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
-#define BEEPER                  PC15
+#define USE_BEEPER
+#define BEEPER_PIN              PC15
 #define BEEPER_INVERTED
+
+#define ENABLE_DSHOT_DMAR       true
 
 #define USABLE_TIMER_CHANNEL_COUNT 10
 
 #define MPU6000_CS_PIN          PA15
 #define MPU6000_SPI_INSTANCE    SPI1
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 #define GYRO_MPU6000_ALIGN      CW180_DEG
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
 #define ACC_MPU6000_ALIGN       CW180_DEG
 
@@ -43,7 +47,6 @@
 #define MPU_INT_EXTI                PC13
 #define USE_EXTI
 
-#define USE_ESC_SENSOR
 #define REMAP_TIM16_DMA
 #define REMAP_TIM17_DMA
 
@@ -87,7 +90,6 @@
 #define SPI2_MISO_PIN           PB14
 #define SPI2_MOSI_PIN           PB15
 
-#define OSD
 // include the max7456 driver
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI1
@@ -107,12 +109,12 @@
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     2
 
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
-#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA1_FLAG_TC5
 
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 #define USE_ADC
 #define ADC_INSTANCE            ADC2
+#define ADC24_DMA_REMAP
 #define VBAT_ADC_PIN            PA4
 #define CURRENT_METER_ADC_PIN   PA5
 #define RSSI_ADC_PIN            PB2

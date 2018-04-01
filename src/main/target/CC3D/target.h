@@ -23,7 +23,8 @@
 
 #define INVERTER_PIN_UART1      PB2 // PB2 (BOOT1) used as inverter select GPIO
 
-#define BEEPER                  PA15
+#define USE_BEEPER
+#define BEEPER_PIN              PA15
 #define BEEPER_OPT              PA2
 
 #define USE_EXTI
@@ -46,11 +47,11 @@
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 #define GYRO_MPU6000_ALIGN CW270_DEG
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
 #define ACC_MPU6000_ALIGN CW270_DEG
 
@@ -61,13 +62,13 @@
 //#define I2C_DEVICE (I2CDEV_2) // Flex port - SCL/PB10, SDA/PB11
 
 // External I2C BARO
-//#define BARO
+//#define USE_BARO
 //#define USE_BARO_MS5611
 //#define USE_BARO_BMP085
 //#define USE_BARO_BMP280
 
 // External I2C MAG
-//#define MAG
+//#define USE_MAG
 //#define USE_MAG_HMC5883
 
 #define USE_VCP
@@ -97,17 +98,19 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-//#define SONAR
-//#define SONAR_ECHO_PIN          PB0
-//#define SONAR_TRIGGER_PIN       PB5
+//#define USE_RANGEFINDER
+//#define USE_RANGEFINDER_HCSR04
+//#define RANGEFINDER_HCSR04_ECHO_PIN          PB0
+//#define RANGEFINDER_HCSR04_TRIGGER_PIN       PB5
 
-#undef MAG
+#undef USE_MAG
 
 #ifdef CC3D_OPBL
 #define SKIP_CLI_COMMAND_HELP
 //#undef USE_SERVOS
-#undef BARO
-#undef SONAR
+#undef USE_BARO
+#undef USE_RANGEFINDER
+#undef USE_RANGEFINDER_HCSR04
 #undef USE_SERIAL_4WAY_BLHELI_INTERFACE
 //#undef USE_SERIALRX_SPEKTRUM   // SRXL, DSM2 and DSMX protocol
 //#undef USE_SERIALRX_SBUS       // Frsky and Futaba receivers
@@ -116,10 +119,10 @@
 #undef USE_SERIALRX_SUMD       // Graupner Hott protocol
 #undef USE_SERIALRX_SUMH       // Graupner legacy protocol
 #undef USE_SERIALRX_XBUS       // JR
-#undef LED_STRIP
+#undef USE_LED_STRIP
 #endif
 
-//#undef LED_STRIP
+//#undef USE_LED_STRIP
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 
 // IO - from schematics

@@ -29,13 +29,27 @@ uint16_t flightModeFlags = 0;
 
 static uint32_t enabledSensors = 0;
 
-#if defined(OSD) || !defined(MINIMAL_CLI)
+// Must be shorter than OSD_WARNINGS_MAX_SIZE (11) to be displayed fully in OSD
 const char *armingDisableFlagNames[]= {
-    "NOGYRO", "FAILSAFE", "RXLOSS", "BADRX", "BOXFAILSAFE",
-    "THROTTLE", "ANGLE", "BOOTGRACE", "NOPREARM", "ARMSWITCH",
-    "LOAD", "CALIB", "CLI", "CMS", "OSD", "BST"
+    "NOGYRO",
+    "FAILSAFE",
+    "RXLOSS",
+    "BADRX",
+    "BOXFAILSAFE",
+    "RUNAWAY",
+    "THROTTLE",
+    "ANGLE",
+    "BOOTGRACE",
+    "NOPREARM",
+    "LOAD",
+    "CALIB",
+    "CLI",
+    "CMS",
+    "OSD",
+    "BST",
+    "MSP",
+    "ARMSWITCH"
 };
-#endif
 
 static armingDisableFlags_e armingDisableFlags = 0;
 

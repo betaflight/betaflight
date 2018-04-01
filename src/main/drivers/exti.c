@@ -4,11 +4,11 @@
 
 #include "platform.h"
 
+#ifdef USE_EXTI
+
 #include "drivers/nvic.h"
 #include "io_impl.h"
 #include "drivers/exti.h"
-
-#ifdef USE_EXTI
 
 typedef struct {
     extiCallbackRec_t* handler;

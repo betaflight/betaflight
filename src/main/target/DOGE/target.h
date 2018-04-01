@@ -28,7 +28,8 @@
 // tqfp48 pin 38
 #define LED2_PIN                PA15
 
-#define BEEPER                  PB2
+#define USE_BEEPER
+#define BEEPER_PIN              PB2
 #define BEEPER_INVERTED
 
 #define USE_SPI
@@ -69,7 +70,7 @@
 #define M25P16_CS_PIN           PC15
 #define M25P16_SPI_INSTANCE     SPI2
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
 #define GYRO_MPU6500_ALIGN      CW270_DEG
@@ -77,14 +78,14 @@
 #define USE_GYRO_SPI_MPU6000
 #define GYRO_MPU6000_ALIGN CW270_DEG
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
 #define ACC_MPU6500_ALIGN       CW270_DEG
 #define USE_ACC_SPI_MPU6000
 #define ACC_MPU6000_ALIGN CW270_DEG
 
-#define BARO
+#define USE_BARO
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
 
@@ -122,8 +123,6 @@
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
-
-#define USE_ESC_SENSOR
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 

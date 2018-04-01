@@ -26,8 +26,10 @@ typedef enum {
     CURRENT_METER_VIRTUAL,
     CURRENT_METER_ESC,
     CURRENT_METER_MSP,
-    CURRENT_METER_MAX = CURRENT_METER_ESC
+    CURRENT_METER_COUNT
 } currentMeterSource_e;
+
+extern const char * const currentMeterSourceNames[CURRENT_METER_COUNT];
 
 typedef struct currentMeter_s {
     int32_t amperage;           // current read by current sensor in centiampere (1/100th A)
@@ -65,8 +67,8 @@ typedef struct currentMeterADCState_s {
 } currentMeterADCState_t;
 
 typedef struct currentSensorADCConfig_s {
-    int16_t scale;              // scale the current sensor output voltage to milliamps. Value in 1/10th mV/A
-    int16_t offset;            // offset of the current sensor in millivolt steps
+    int16_t scale;              // scale the current sensor output voltage to milliamps. Value in mV/10A
+    int16_t offset;             // offset of the current sensor in mA
 } currentSensorADCConfig_t;
 
 PG_DECLARE(currentSensorADCConfig_t, currentSensorADCConfig);

@@ -20,7 +20,7 @@
 
 #include <platform.h>
 
-#ifdef TARGET_CONFIG
+#ifdef USE_TARGET_CONFIG
 
 #include "common/axis.h"
 #include "common/maths.h"
@@ -92,7 +92,8 @@ void targetConfiguration(void)
     for (uint8_t rateProfileIndex = 0; rateProfileIndex < CONTROL_RATE_PROFILE_COUNT; rateProfileIndex++) {
         controlRateConfig_t *controlRateConfig = controlRateProfilesMutable(rateProfileIndex);
 
-        controlRateConfig->rcRate8 = 70;
+        controlRateConfig->rcRates[FD_ROLL] = 70;
+        controlRateConfig->rcRates[FD_PITCH] = 70;
     }
 }
 #endif

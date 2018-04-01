@@ -20,7 +20,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 #include "drivers/serial.h"
 
 typedef enum {
@@ -33,7 +33,7 @@ typedef enum {
     FUNCTION_NONE                = 0,
     FUNCTION_MSP                 = (1 << 0),  // 1
     FUNCTION_GPS                 = (1 << 1),  // 2
-    FUNCTION_TELEMETRY_FRSKY     = (1 << 2),  // 4
+    FUNCTION_TELEMETRY_FRSKY_HUB = (1 << 2),  // 4
     FUNCTION_TELEMETRY_HOTT      = (1 << 3),  // 8
     FUNCTION_TELEMETRY_LTM       = (1 << 4),  // 16
     FUNCTION_TELEMETRY_SMARTPORT = (1 << 5),  // 32
@@ -44,7 +44,8 @@ typedef enum {
     FUNCTION_VTX_SMARTAUDIO      = (1 << 11), // 2048
     FUNCTION_TELEMETRY_IBUS      = (1 << 12), // 4096
     FUNCTION_VTX_TRAMP           = (1 << 13), // 8192
-    FUNCTION_RCSPLIT             = (1 << 14), // 16384
+    FUNCTION_RCDEVICE            = (1 << 14), // 16384
+    FUNCTION_LIDAR_TF            = (1 << 15), // 32768
 } serialPortFunction_e;
 
 typedef enum {
@@ -150,6 +151,7 @@ serialPort_t *openSerialPort(
     serialPortIdentifier_e identifier,
     serialPortFunction_e function,
     serialReceiveCallbackPtr rxCallback,
+    void *rxCallbackData,
     uint32_t baudrate,
     portMode_e mode,
     portOptions_e options
@@ -164,5 +166,4 @@ baudRate_e lookupBaudRateIndex(uint32_t baudRate);
 //
 // msp/cli/bootloader
 //
-void serialEvaluateNonMspData(serialPort_t *serialPort, uint8_t receivedChar);
 void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer *leftC, serialConsumer *rightC);

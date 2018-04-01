@@ -20,10 +20,14 @@
 
 #include <platform.h>
 
-#ifdef TARGET_CONFIG
+#ifdef USE_TARGET_CONFIG
 #include "blackbox/blackbox.h"
-#include "fc/config.h"
+
 #include "flight/pid.h"
+
+#include "pg/adc.h"
+#include "pg/beeper_dev.h"
+
 #include "telemetry/telemetry.h"
 
 #include "hardware_revision.h"

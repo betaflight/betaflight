@@ -21,7 +21,8 @@
 #define USBD_PRODUCT_STRING "CLRACINGF7"
 
 #define LED0_PIN                PB0
-#define BEEPER                  PB4
+#define USE_BEEPER
+#define BEEPER_PIN              PB4
 #define BEEPER_INVERTED
 
 //define camera control
@@ -33,17 +34,17 @@
 //ICM20689
 #define ICM20689_CS_PIN          PA4
 #define ICM20689_SPI_INSTANCE    SPI1
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_ICM20689
 #define GYRO_ICM20689_ALIGN      CW0_DEG
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_ICM20689
 #define ACC_ICM20689_ALIGN       CW0_DEG
 
 //MPU-6000
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 
 #define GYRO_MPU6000_ALIGN      CW0_DEG
@@ -62,7 +63,6 @@
 #define MPU6500_CS_PIN          SPI1_NSS_PIN
 #define MPU6500_SPI_INSTANCE    SPI1
 
-#define OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI3
 #define MAX7456_SPI_CS_PIN      PA15
@@ -79,12 +79,7 @@
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 8 // 27MHz
 
 #define SDCARD_DMA_STREAM_TX_FULL           DMA1_Stream4
-#define SDCARD_DMA_TX                       DMA1
-#define SDCARD_DMA_STREAM_TX                4
-#define SDCARD_DMA_CLK                      LL_AHB1_GRP1_PERIPH_DMA1
-
-#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF1_4
-#define SDCARD_DMA_CHANNEL                  DMA_CHANNEL_0
+#define SDCARD_DMA_CHANNEL                  0
 
 #define USE_VCP
 #define USE_UART1
@@ -141,8 +136,6 @@
 #define RSSI_ADC_PIN            PC3
 #define CURRENT_METER_SCALE_DEFAULT 250                     // 3.3/120A  = 25mv/A
 
-// LED strip configuration.
-#define LED_STRIP
 #define BINDPLUG_PIN            PB2
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL

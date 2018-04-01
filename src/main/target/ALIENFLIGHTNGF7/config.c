@@ -20,7 +20,7 @@
 
 #include <platform.h>
 
-#ifdef TARGET_CONFIG
+#ifdef USE_TARGET_CONFIG
 #include "common/axis.h"
 
 #include "config/feature.h"
@@ -63,7 +63,7 @@ void targetConfiguration(void)
     } else {
         rxConfigMutable()->serialrx_provider = SERIALRX_SBUS;
         rxConfigMutable()->serialrx_inverted = true;
-        serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(SERIALRX_UART)].functionMask = FUNCTION_TELEMETRY_FRSKY | FUNCTION_RX_SERIAL;
+        serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(SERIALRX_UART)].functionMask = FUNCTION_TELEMETRY_FRSKY_HUB | FUNCTION_RX_SERIAL;
         telemetryConfigMutable()->telemetry_inverted = false;
         batteryConfigMutable()->voltageMeterSource = VOLTAGE_METER_ADC;
         batteryConfigMutable()->currentMeterSource = CURRENT_METER_ADC;

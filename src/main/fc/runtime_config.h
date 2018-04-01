@@ -40,24 +40,24 @@ typedef enum {
     ARMING_DISABLED_RX_FAILSAFE     = (1 << 2),
     ARMING_DISABLED_BAD_RX_RECOVERY = (1 << 3),
     ARMING_DISABLED_BOXFAILSAFE     = (1 << 4),
-    ARMING_DISABLED_THROTTLE        = (1 << 5),
-    ARMING_DISABLED_ANGLE           = (1 << 6),
-    ARMING_DISABLED_BOOT_GRACE_TIME = (1 << 7),
-    ARMING_DISABLED_NOPREARM        = (1 << 8),
-    ARMING_DISABLED_ARM_SWITCH      = (1 << 9),
+    ARMING_DISABLED_RUNAWAY_TAKEOFF = (1 << 5),
+    ARMING_DISABLED_THROTTLE        = (1 << 6),
+    ARMING_DISABLED_ANGLE           = (1 << 7),
+    ARMING_DISABLED_BOOT_GRACE_TIME = (1 << 8),
+    ARMING_DISABLED_NOPREARM        = (1 << 9),
     ARMING_DISABLED_LOAD            = (1 << 10),
     ARMING_DISABLED_CALIBRATING     = (1 << 11),
     ARMING_DISABLED_CLI             = (1 << 12),
     ARMING_DISABLED_CMS_MENU        = (1 << 13),
     ARMING_DISABLED_OSD_MENU        = (1 << 14),
-    ARMING_DISABLED_BST             = (1 << 15)
+    ARMING_DISABLED_BST             = (1 << 15),
+    ARMING_DISABLED_MSP             = (1 << 16),
+    ARMING_DISABLED_ARM_SWITCH      = (1 << 17), // Needs to be the last element, since it's always activated if one of the others is active when arming
 } armingDisableFlags_e;
 
-#define NUM_ARMING_DISABLE_FLAGS 16
+#define ARMING_DISABLE_FLAGS_COUNT 18
 
-#if defined(OSD) || !defined(MINIMAL_CLI)
-extern const char *armingDisableFlagNames[NUM_ARMING_DISABLE_FLAGS];
-#endif
+extern const char *armingDisableFlagNames[ARMING_DISABLE_FLAGS_COUNT];
 
 void setArmingDisabled(armingDisableFlags_e flag);
 void unsetArmingDisabled(armingDisableFlags_e flag);
@@ -74,7 +74,7 @@ typedef enum {
     HEADFREE_MODE   = (1 << 6),
     UNUSED_MODE     = (1 << 7), // old autotune
     PASSTHRU_MODE   = (1 << 8),
-    SONAR_MODE      = (1 << 9),
+    RANGEFINDER_MODE= (1 << 9),
     FAILSAFE_MODE   = (1 << 10)
 } flightModeFlags_e;
 
@@ -84,13 +84,21 @@ extern uint16_t flightModeFlags;
 #define ENABLE_FLIGHT_MODE(mask) enableFlightMode(mask)
 #define FLIGHT_MODE(mask) (flightModeFlags & (mask))
 
-// macro to initialize map from flightModeFlags to boxId_e. Keep it in sync with flightModeFlags_e enum.
-// Each boxId_e is at index of flightModeFlags_e bit, value is -1 if boxId_e does not exist.
-// It is much more memory efficient than full map (uint32_t -> uint8_t)
-#define FLIGHT_MODE_BOXID_MAP_INITIALIZER {                             \
-        BOXANGLE, BOXHORIZON, BOXMAG, BOXBARO, BOXGPSHOME, BOXGPSHOLD,  \
-        BOXHEADFREE, -1, BOXPASSTHRU, BOXSONAR, BOXFAILSAFE}  \
-        /**/
+// macro to initialize map from boxId_e to log2(flightModeFlags). Keep it in sync with flightModeFlags_e enum.
+// [BOXARM] is left unpopulated
+#define BOXID_TO_FLIGHT_MODE_MAP_INITIALIZER {           \
+   [BOXANGLE]       = LOG2(ANGLE_MODE),                  \
+   [BOXHORIZON]     = LOG2(HORIZON_MODE),                \
+   [BOXMAG]         = LOG2(MAG_MODE),                    \
+   [BOXBARO]        = LOG2(BARO_MODE),                   \
+   [BOXGPSHOME]     = LOG2(GPS_HOME_MODE),               \
+   [BOXGPSHOLD]     = LOG2( GPS_HOLD_MODE),              \
+   [BOXHEADFREE]    = LOG2(HEADFREE_MODE),               \
+   [BOXPASSTHRU]    = LOG2(PASSTHRU_MODE),               \
+   [BOXRANGEFINDER] = LOG2(RANGEFINDER_MODE),            \
+   [BOXFAILSAFE]    = LOG2(FAILSAFE_MODE),               \
+}                                                        \
+/**/
 
 typedef enum {
     GPS_FIX_HOME   = (1 << 0),

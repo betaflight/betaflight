@@ -19,14 +19,20 @@
 
 #pragma once
 
+#include "build/version.h"
+
 // Targets with built-in vtx do not need external vtx
-#if defined(VTX_RTC6705) && !defined(VTX_RTC6705_OPTIONAL)
-#undef VTX_SMARTAUDIO
-#undef VTX_TRAMP
+#if defined(USE_VTX_RTC6705) && !defined(VTX_RTC6705_OPTIONAL)
+#undef USE_VTX_SMARTAUDIO
+#undef USE_VTX_TRAMP
 #endif
 
 #if defined(USE_QUAD_MIXER_ONLY) && defined(USE_SERVOS)
 #undef USE_SERVOS
+#endif
+
+#ifndef USE_DSHOT
+#undef USE_ESC_SENSOR
 #endif
 
 // XXX Followup implicit dependencies among DASHBOARD, display_xxx and USE_I2C.
@@ -52,15 +58,60 @@
 #endif
 
 #if defined(USE_MSP_OVER_TELEMETRY)
-#if !defined(TELEMETRY_SMARTPORT) && !defined(TELEMETRY_CRSF)
+#if !defined(USE_TELEMETRY_SMARTPORT) && !defined(USE_TELEMETRY_CRSF)
 #undef USE_MSP_OVER_TELEMETRY
 #endif
 #endif
 
+// If USE_SERIALRX_SPEKTRUM was dropped by a target, drop all related options
+#ifndef USE_SERIALRX_SPEKTRUM
+#undef USE_SPEKTRUM_BIND
+#undef USE_SPEKTRUM_BIND_PLUG
+#undef USE_SPEKTRUM_REAL_RSSI
+#undef USE_SPEKTRUM_FAKE_RSSI
+#undef USE_SPEKTRUM_RSSI_PERCENT_CONVERSION
+#undef USE_SPEKTRUM_VTX_CONTROL
+#undef USE_SPEKTRUM_VTX_TELEMETRY
+#undef USE_SPEKTRUM_CMS_TELEMETRY
+#endif
+
+// undefine USE_ALT_HOLD if there is no baro or rangefinder to support it
+#if defined(USE_ALT_HOLD) && !defined(USE_BARO) && !defined(USE_RANGEFINDER)
+#undef USE_ALT_HOLD
+#endif
+
 /* If either VTX_CONTROL or VTX_COMMON is undefined then remove common code and device drivers */
-#if !defined(VTX_COMMON) || !defined(VTX_CONTROL)
-#undef VTX_COMMON
-#undef VTX_CONTROL
-#undef VTX_TRAMP
-#undef VTX_SMARTAUDIO
+#if !defined(USE_VTX_COMMON) || !defined(USE_VTX_CONTROL)
+#undef USE_VTX_COMMON
+#undef USE_VTX_CONTROL
+#undef USE_VTX_TRAMP
+#undef USE_VTX_SMARTAUDIO
+#endif
+
+#if defined(USE_RX_FRSKY_SPI_D) || defined(USE_RX_FRSKY_SPI_X)
+#define USE_RX_CC2500
+#define USE_RX_FRSKY_SPI
+#endif
+
+// Burst dshot to default off if not configured explicitly by target
+#ifndef ENABLE_DSHOT_DMAR
+#define ENABLE_DSHOT_DMAR false
+#endif
+
+// Some target doesn't define USE_ADC which USE_ADC_INTERNAL depends on
+#ifndef USE_ADC
+#undef USE_ADC_INTERNAL
+#endif
+
+#if !defined(USE_SDCARD)
+#undef USE_USB_MSC
+#endif
+
+#if defined(USE_USB_CDC_HID) || defined(USE_USB_MSC)
+#define USE_USB_ADVANCED_PROFILES
+#endif
+
+// Determine if the target could have a 32KHz capable gyro
+#if defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20689)
+#define USE_32K_CAPABLE_GYRO
 #endif

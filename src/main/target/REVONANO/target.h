@@ -26,22 +26,23 @@
 #define LED0_PIN                PC14
 #define LED1_PIN                PC13
 
-#define BEEPER                  PC13
+#define USE_BEEPER
+#define BEEPER_PIN              PC13
 
 #define MPU6500_CS_PIN          PB12
 #define MPU6500_SPI_INSTANCE    SPI2
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
 #define ACC_MPU6500_ALIGN       CW270_DEG
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
 #define GYRO_MPU6500_ALIGN      CW270_DEG
 
-#define BARO
+#define USE_BARO
 #define USE_BARO_MS5611
 
 // MPU6500 interrupts
@@ -55,6 +56,7 @@
 #define USE_UART1 // Flexi Port
 #define UART1_RX_PIN            PB7
 #define UART1_TX_PIN            PB6
+#define PINIO1_PIN              PB10 // DTR pin
 
 #define USE_UART2 // Main Port
 #define UART2_RX_PIN            PA3
@@ -76,7 +78,7 @@
 #define USE_I2C_DEVICE_1        // UART1/FlexiPort (PB6,PB7)
 #define I2C_DEVICE (I2CDEV_1)
 
-#undef LED_STRIP
+#undef USE_LED_STRIP
 
 #define USE_ADC
 #define CURRENT_METER_ADC_PIN   PA7

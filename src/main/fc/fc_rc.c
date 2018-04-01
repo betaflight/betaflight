@@ -46,9 +46,12 @@
 
 #include "sensors/battery.h"
 
+typedef float (applyRatesFn)(const int axis, float rcCommandf, const float rcCommandfAbs);
 
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
 static float throttlePIDAttenuation;
+static bool reverseMotors = false;
+static applyRatesFn *applyRates;
 
 float getSetpointRate(int axis)
 {
@@ -73,20 +76,6 @@ float getThrottlePIDAttenuation(void)
 #define THROTTLE_LOOKUP_LENGTH 12
 static int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];    // lookup table for expo & mid THROTTLE
 
-void generateThrottleCurve(void)
-{
-    for (int i = 0; i < THROTTLE_LOOKUP_LENGTH; i++) {
-        const int16_t tmp = 10 * i - currentControlRateProfile->thrMid8;
-        uint8_t y = 1;
-        if (tmp > 0)
-            y = 100 - currentControlRateProfile->thrMid8;
-        if (tmp < 0)
-            y = currentControlRateProfile->thrMid8;
-        lookupThrottleRC[i] = 10 * currentControlRateProfile->thrMid8 + tmp * (100 - currentControlRateProfile->thrExpo8 + (int32_t) currentControlRateProfile->thrExpo8 * (tmp * tmp) / (y * y)) / 10;
-        lookupThrottleRC[i] = PWM_RANGE_MIN + (PWM_RANGE_MAX - PWM_RANGE_MIN) * lookupThrottleRC[i] / 1000; // [MINTHROTTLE;MAXTHROTTLE]
-    }
-}
-
 static int16_t rcLookupThrottle(int32_t tmp)
 {
     const int32_t tmp2 = tmp / 100;
@@ -97,37 +86,46 @@ static int16_t rcLookupThrottle(int32_t tmp)
 #define SETPOINT_RATE_LIMIT 1998.0f
 #define RC_RATE_INCREMENTAL 14.54f
 
-static void calculateSetpointRate(int axis)
+float applyBetaflightRates(const int axis, float rcCommandf, const float rcCommandfAbs)
 {
-    uint8_t rcExpo;
-    float rcRate;
-    if (axis != YAW) {
-        rcExpo = currentControlRateProfile->rcExpo8;
-        rcRate = currentControlRateProfile->rcRate8 / 100.0f;
-    } else {
-        rcExpo = currentControlRateProfile->rcYawExpo8;
-        rcRate = currentControlRateProfile->rcYawRate8 / 100.0f;
+    if (currentControlRateProfile->rcExpo[axis]) {
+        const float expof = currentControlRateProfile->rcExpo[axis] / 100.0f;
+        rcCommandf = rcCommandf * power3(rcCommandfAbs) * expof + rcCommandf * (1 - expof);
     }
+
+    float rcRate = currentControlRateProfile->rcRates[axis] / 100.0f;
     if (rcRate > 2.0f) {
         rcRate += RC_RATE_INCREMENTAL * (rcRate - 2.0f);
     }
+    float angleRate = 200.0f * rcRate * rcCommandf;
+    if (currentControlRateProfile->rates[axis]) {
+        const float rcSuperfactor = 1.0f / (constrainf(1.0f - (rcCommandfAbs * (currentControlRateProfile->rates[axis] / 100.0f)), 0.01f, 1.00f));
+        angleRate *= rcSuperfactor;
+    }
 
+    return angleRate;
+}
+
+float applyRaceFlightRates(const int axis, float rcCommandf, const float rcCommandfAbs)
+{
+    // -1.0 to 1.0 ranged and curved
+    rcCommandf = ((1.0f + 0.01f * currentControlRateProfile->rcExpo[axis] * (rcCommandf * rcCommandf - 1.0f)) * rcCommandf);
+    // convert to -2000 to 2000 range using acro+ modifier
+    float angleRate = 10.0f * currentControlRateProfile->rcRates[axis] * rcCommandf;
+    angleRate = angleRate * (1 + rcCommandfAbs * (float)currentControlRateProfile->rates[axis] * 0.01f);
+
+    return angleRate;
+}
+
+static void calculateSetpointRate(int axis)
+{
     // scale rcCommandf to range [-1.0, 1.0]
     float rcCommandf = rcCommand[axis] / 500.0f;
     rcDeflection[axis] = rcCommandf;
     const float rcCommandfAbs = ABS(rcCommandf);
     rcDeflectionAbs[axis] = rcCommandfAbs;
 
-    if (rcExpo) {
-        const float expof = rcExpo / 100.0f;
-        rcCommandf = rcCommandf * power3(rcCommandfAbs) * expof + rcCommandf * (1-expof);
-    }
-
-    float angleRate = 200.0f * rcRate * rcCommandf;
-    if (currentControlRateProfile->rates[axis]) {
-        const float rcSuperfactor = 1.0f / (constrainf(1.0f - (rcCommandfAbs * (currentControlRateProfile->rates[axis] / 100.0f)), 0.01f, 1.00f));
-        angleRate *= rcSuperfactor;
-    }
+    float angleRate = applyRates(axis, rcCommandf, rcCommandfAbs);
 
     DEBUG_SET(DEBUG_ANGLERATE, axis, angleRate);
 
@@ -195,8 +193,7 @@ void processRcCommand(void)
 
     const uint8_t interpolationChannels = rxConfig()->rcInterpolationChannels + 2; //"RP", "RPY", "RPYT"
     uint16_t rxRefreshRate;
-    bool readyToCalculateRate = false;
-    uint8_t readyToCalculateRateAxisCnt = 0;
+    uint8_t updatedChannel = 0;
 
     if (rxConfig()->rcInterpolation) {
          // Set RC refresh rate for sampling and channels to filter
@@ -216,7 +213,7 @@ void processRcCommand(void)
         if (isRXDataNew && rxRefreshRate > 0) {
             rcInterpolationStepCount = rxRefreshRate / targetPidLooptime;
 
-            for (int channel=ROLL; channel < interpolationChannels; channel++) {
+            for (int channel = ROLL; channel < interpolationChannels; channel++) {
                 rcStepSize[channel] = (rcCommand[channel] - rcCommandInterp[channel]) / (float)rcInterpolationStepCount;
             }
 
@@ -232,23 +229,25 @@ void processRcCommand(void)
 
         // Interpolate steps of rcCommand
         if (rcInterpolationStepCount > 0) {
-            for (int channel=ROLL; channel < interpolationChannels; channel++) {
-                rcCommandInterp[channel] += rcStepSize[channel];
-                rcCommand[channel] = rcCommandInterp[channel];
-                readyToCalculateRateAxisCnt = MAX(channel, FD_YAW); // throttle channel doesn't require rate calculation
+            for (updatedChannel = ROLL; updatedChannel < interpolationChannels; updatedChannel++) {
+                rcCommandInterp[updatedChannel] += rcStepSize[updatedChannel];
+                rcCommand[updatedChannel] = rcCommandInterp[updatedChannel];
             }
-            readyToCalculateRate = true;
         }
     } else {
         rcInterpolationStepCount = 0; // reset factor in case of level modes flip flopping
     }
 
-    if (readyToCalculateRate || isRXDataNew) {
-        if (isRXDataNew) {
-            readyToCalculateRateAxisCnt = FD_YAW;
-        }
-
-        for (int axis = 0; axis <= readyToCalculateRateAxisCnt; axis++) {
+    if (isRXDataNew || updatedChannel) {
+        const uint8_t maxUpdatedAxis = isRXDataNew ? FD_YAW : MIN(updatedChannel, FD_YAW); // throttle channel doesn't require rate calculation
+#if defined(SITL)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunsafe-loop-optimizations"
+#endif
+        for (int axis = FD_ROLL; axis <= maxUpdatedAxis; axis++) {
+#if defined(SITL)
+#pragma GCC diagnostic pop
+#endif
             calculateSetpointRate(axis);
         }
 
@@ -256,11 +255,14 @@ void processRcCommand(void)
             debug[2] = rcInterpolationStepCount;
             debug[3] = setpointRate[0];
         }
+
         // Scaling of AngleRate to camera angle (Mixing Roll and Yaw)
         if (rxConfig()->fpvCamAngleDegrees && IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX) && !FLIGHT_MODE(HEADFREE_MODE)) {
             scaleRcCommandToFpvCamAngle();
         }
+    }
 
+    if (isRXDataNew) {
         isRXDataNew = false;
     }
 }
@@ -309,31 +311,51 @@ void updateRcCommands(void)
     if (feature(FEATURE_3D)) {
         tmp = constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX);
         tmp = (uint32_t)(tmp - PWM_RANGE_MIN);
-        if (getLowVoltageCutoff()->enabled) {
-            tmp = tmp * getLowVoltageCutoff()->percentage / 100;
-        }
     } else {
         tmp = constrain(rcData[THROTTLE], rxConfig()->mincheck, PWM_RANGE_MAX);
         tmp = (uint32_t)(tmp - rxConfig()->mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - rxConfig()->mincheck);
-        if (getLowVoltageCutoff()->enabled) {
-            tmp = tmp * getLowVoltageCutoff()->percentage / 100;
-        }
+    }
+
+    if (getLowVoltageCutoff()->enabled) {
+        tmp = tmp * getLowVoltageCutoff()->percentage / 100;
     }
 
     rcCommand[THROTTLE] = rcLookupThrottle(tmp);
 
-    if (feature(FEATURE_3D) && IS_RC_MODE_ACTIVE(BOX3DDISABLE) && !failsafeIsActive()) {
-        fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
-        rcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MAX - rxConfig()->midrc);
+    if (feature(FEATURE_3D) && !failsafeIsActive()) {
+        if (!flight3DConfig()->switched_mode3d) {
+            if (IS_RC_MODE_ACTIVE(BOX3D)) {
+                fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
+                rcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MAX - rxConfig()->midrc);
+            }
+        } else {
+            if (IS_RC_MODE_ACTIVE(BOX3D)) {
+                reverseMotors = true;
+                fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
+                rcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MIN - rxConfig()->midrc);
+            } else {
+                reverseMotors = false;
+                fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
+                rcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MAX - rxConfig()->midrc);
+            }
+        }
     }
-
     if (FLIGHT_MODE(HEADFREE_MODE)) {
-        const float radDiff = degreesToRadians(DECIDEGREES_TO_DEGREES(attitude.values.yaw) - headFreeModeHold);
-        const float cosDiff = cos_approx(radDiff);
-        const float sinDiff = sin_approx(radDiff);
-        const float rcCommand_PITCH = rcCommand[PITCH] * cosDiff + rcCommand[ROLL] * sinDiff;
-        rcCommand[ROLL] = rcCommand[ROLL] * cosDiff - rcCommand[PITCH] * sinDiff;
-        rcCommand[PITCH] = rcCommand_PITCH;
+        static t_fp_vector_def  rcCommandBuff;
+
+        rcCommandBuff.X = rcCommand[ROLL];
+        rcCommandBuff.Y = rcCommand[PITCH];
+        if ((!FLIGHT_MODE(ANGLE_MODE)&&(!FLIGHT_MODE(HORIZON_MODE)))) {
+            rcCommandBuff.Z = rcCommand[YAW];
+        } else {
+            rcCommandBuff.Z = 0;
+        }
+        imuQuaternionHeadfreeTransformVectorEarthToBody(&rcCommandBuff);
+        rcCommand[ROLL] = rcCommandBuff.X;
+        rcCommand[PITCH] = rcCommandBuff.Y;
+        if ((!FLIGHT_MODE(ANGLE_MODE)&&(!FLIGHT_MODE(HORIZON_MODE)))) {
+            rcCommand[YAW] = rcCommandBuff.Z;
+        }
     }
 }
 
@@ -341,4 +363,35 @@ void resetYawAxis(void)
 {
     rcCommand[YAW] = 0;
     setpointRate[YAW] = 0;
+}
+
+bool isMotorsReversed(void)
+{
+    return reverseMotors;
+}
+
+void initRcProcessing(void)
+{
+    for (int i = 0; i < THROTTLE_LOOKUP_LENGTH; i++) {
+        const int16_t tmp = 10 * i - currentControlRateProfile->thrMid8;
+        uint8_t y = 1;
+        if (tmp > 0)
+            y = 100 - currentControlRateProfile->thrMid8;
+        if (tmp < 0)
+            y = currentControlRateProfile->thrMid8;
+        lookupThrottleRC[i] = 10 * currentControlRateProfile->thrMid8 + tmp * (100 - currentControlRateProfile->thrExpo8 + (int32_t) currentControlRateProfile->thrExpo8 * (tmp * tmp) / (y * y)) / 10;
+        lookupThrottleRC[i] = PWM_RANGE_MIN + (PWM_RANGE_MAX - PWM_RANGE_MIN) * lookupThrottleRC[i] / 1000; // [MINTHROTTLE;MAXTHROTTLE]
+    }
+
+    switch (currentControlRateProfile->rates_type) {
+    case RATES_TYPE_BETAFLIGHT:
+    default:
+        applyRates = applyBetaflightRates;
+
+        break;
+    case RATES_TYPE_RACEFLIGHT:
+        applyRates = applyRaceFlightRates;
+
+        break;
+    }
 }

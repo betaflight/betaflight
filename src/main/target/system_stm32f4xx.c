@@ -502,14 +502,72 @@ void SystemInit(void)
 #endif
 }
 
+typedef struct pllConfig_s {
+  uint16_t n;
+  uint16_t p;
+  uint16_t q;
+} pllConfig_t;
+
+static const pllConfig_t overclockLevels[] = {
+  { PLL_N, PLL_P, PLL_Q },    // default
+
+#if defined(STM32F40_41xxx)
+  { 384, 2, 8 },              // 192 MHz
+  { 432, 2, 9 },              // 216 MHz
+  { 480, 2, 10 }              // 240 MHz
+#elif defined(STM32F411xE)
+  { 432, 4, 9 },              // 108 MHz
+  { 480, 4, 10 },             // 120 MHz
+#endif
+
+  // XXX Doesn't work for F446 with this configuration.
+  // XXX Need to use smaller M to reduce N?
+};
+
+// 8 bytes of memory located at the very end of RAM, expected to be unoccupied
+#define REQUEST_OVERCLOCK               (*(__IO uint32_t *) 0x2001FFF8)
+#define CURRENT_OVERCLOCK_LEVEL         (*(__IO uint32_t *) 0x2001FFF4)
+#define REQUEST_OVERCLOCK_MAGIC_COOKIE  0xBABEFACE
+
 void SystemInitOC(void)
 {
-    /* PLL setting for overclocking */
-    pll_n = PLL_N_OC;
-    pll_p = PLL_P_OC;
-    pll_q = PLL_Q_OC;
+#ifdef STM32F411xE
+    if (REQUEST_OVERCLOCK_MAGIC_COOKIE == REQUEST_OVERCLOCK) {
+#endif
+      const uint32_t overclockLevel = CURRENT_OVERCLOCK_LEVEL;
+
+      /* PLL setting for overclocking */
+      if (overclockLevel < ARRAYLEN(overclockLevels)) {
+        const pllConfig_t * const pll = overclockLevels + overclockLevel;
+
+        pll_n = pll->n;
+        pll_p = pll->p;
+        pll_q = pll->q;
+      }
+
+#ifdef STM32F411xE
+      REQUEST_OVERCLOCK = 0;
+    }
+#endif
 
     SystemInit();
+}
+
+void OverclockRebootIfNecessary(uint32_t overclockLevel)
+{
+  if (overclockLevel >= ARRAYLEN(overclockLevels)) {
+    return;
+  }
+
+  const pllConfig_t * const pll = overclockLevels + overclockLevel;
+
+  // Reboot to adjust overclock frequency
+  if (SystemCoreClock != (pll->n / pll->p) * 1000000) {
+    REQUEST_OVERCLOCK = REQUEST_OVERCLOCK_MAGIC_COOKIE;
+    CURRENT_OVERCLOCK_LEVEL = overclockLevel;
+    __disable_irq();
+    NVIC_SystemReset();
+  }
 }
 
 /**
@@ -739,6 +797,44 @@ void SetSysClock(void)
   { /* If HSE fails to start-up, the application will have wrong clock
          configuration. User can add here some code to deal with this error */
   }
+
+#if defined(STM32F446xx)
+// Always use PLLSAI to derive USB 48MHz clock.
+// - This also works under arbitral overclocking situations.
+// - Only handles HSE case.
+
+#ifdef TARGET_XTAL_MHZ
+#define PLLSAI_M      TARGET_XTAL_MHZ
+#else
+#define PLLSAI_M      8
+#endif
+#define PLLSAI_N      192
+#define PLLSAI_P      4
+#define PLLSAI_Q      2
+
+#define RCC_PLLSAI_IS_READY() ((RCC->CR & (RCC_CR_PLLSAIRDY)) == (RCC_CR_PLLSAIRDY))
+
+    /* Configure 48MHz clock for USB */
+    // Set 48MHz clock source
+    RCC_48MHzClockSourceConfig(RCC_48MHZCLKSource_PLLSAI);
+
+    // Enable PLLSAI
+    RCC_PLLSAICmd(DISABLE);
+
+    // wait for PLLSAI to be disabled
+    while (RCC_PLLSAI_IS_READY()) {}
+
+    RCC_PLLSAIConfig(PLLSAI_M, PLLSAI_N, PLLSAI_P, PLLSAI_Q);
+
+    RCC_PLLSAICmd(ENABLE);
+
+    // wait for PLLSAI to be enabled
+    while (!RCC_PLLSAI_IS_READY()) {}
+
+    RCC->DCKCFGR2 |= RCC_DCKCFGR2_CK48MSEL;
+
+#undef  RCC_PLLSAI_GET_FLAG
+#endif /* STM32F446xx */
 }
 
 /**

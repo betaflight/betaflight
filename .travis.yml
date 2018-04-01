@@ -48,7 +48,7 @@ install:
   - make arm_sdk_install
 
 before_script:
-  - tools/gcc-arm-none-eabi-6-2017-q2-update/bin/arm-none-eabi-gcc --version
+  - tools/gcc-arm-none-eabi-7-2017-q4-major/bin/arm-none-eabi-gcc --version
   - clang --version
   - clang++ --version
   - gcc --version

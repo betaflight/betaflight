@@ -17,7 +17,7 @@
 
 #pragma once
 
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 #undef USE_MSP_DISPLAYPORT
 
 #ifdef MLTEMPF4
@@ -26,24 +26,23 @@
 #define TARGET_BOARD_IDENTIFIER "MLTY"
 #endif
 
-#define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
-
 #define USBD_PRODUCT_STRING "MotoLabF4"
 
 #define LED0_PIN                PC3
 //#define LED1                    PC4
 
-#define BEEPER                  PB4
+#define USE_BEEPER
+#define BEEPER_PIN              PB4
 #define BEEPER_INVERTED
 
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
 #define GYRO_MPU6000_ALIGN      CW180_DEG
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 #define ACC_MPU6000_ALIGN       CW180_DEG
 
@@ -59,7 +58,7 @@
 #define SPI3_SCK_PIN            PC10
 #define SPI3_MISO_PIN           PC11
 #define SPI3_MOSI_PIN           PC12
-#define OSD
+
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI3
 #define MAX7456_SPI_CS_PIN      SPI3_NSS_PIN
@@ -99,12 +98,15 @@
 #define SERIAL_PORT_COUNT       6 //VCP, USART1, USART2, UART4, UART5, USART6
 #else
 #define SERIAL_PORT_COUNT       5 //VCP, USART1, USART2, UART4, UART5
-#define VTX_RTC6705
-#define VTX_RTC6705SOFTSPI
-#define RTC6705_SPIDATA_PIN     PC6
-#define RTC6705_SPILE_PIN       PC7
+#define USE_VTX_RTC6705
+#define USE_VTX_RTC6705_SOFTSPI
+#define RTC6705_SPI_MOSI_PIN    PC6
 #define RTC6705_SPICLK_PIN      PC2
+#define RTC6705_CS_PIN          PC7
 #endif
+
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_PIN  PB8
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1        // MPU6000
@@ -122,9 +124,7 @@
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     4 // 21MHz
 
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Stream4
-#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF4
-#define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
-#define SDCARD_DMA_CHANNEL                  DMA_Channel_0
+#define SDCARD_DMA_CHANNEL                  0
 
 // Pins are available unless USART3 is connected, not connected
 //#define USE_I2C
@@ -137,10 +137,6 @@
 // Reserved pins, not connected
 //#define RSSI_ADC_GPIO_PIN       PC2
 
-#define USE_DSHOT
-#define USE_ESC_TELEMETRY
-#define SENSORS_SET (SENSOR_ACC)
-#define LED_STRIP
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
@@ -153,19 +149,10 @@
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 #define CURRENT_METER_SCALE_DEFAULT 140
 
-// USART5 Rx, PD2
-#define SPEKTRUM_BIND
-#define BIND_PIN    UART5_RX_PIN
-
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff
 #define TARGET_IO_PORTC 0xffff
 #define TARGET_IO_PORTD (BIT(2))
 
-#ifndef ML_PWM_6
-#define USABLE_TIMER_CHANNEL_COUNT 5
-#define USED_TIMERS  ( TIM_N(1) | TIM_N(2) | TIM_N(3) )
-#else
-#define USABLE_TIMER_CHANNEL_COUNT 7
-#define USED_TIMERS  ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(5) )
-#endif
+#define USABLE_TIMER_CHANNEL_COUNT 8
+#define USED_TIMERS  ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) )

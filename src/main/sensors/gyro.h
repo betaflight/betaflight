@@ -18,7 +18,8 @@
 #pragma once
 
 #include "common/axis.h"
-#include "config/parameter_group.h"
+#include "common/time.h"
+#include "pg/pg.h"
 #include "drivers/bus.h"
 #include "drivers/sensor.h"
 
@@ -48,20 +49,56 @@ typedef struct gyro_s {
 
 extern gyro_t gyro;
 
+typedef enum {
+    GYRO_OVERFLOW_CHECK_NONE = 0,
+    GYRO_OVERFLOW_CHECK_YAW,
+    GYRO_OVERFLOW_CHECK_ALL_AXES
+} gyroOverflowCheck_e;
+
+#define GYRO_CONFIG_USE_GYRO_1      0
+#define GYRO_CONFIG_USE_GYRO_2      1
+#define GYRO_CONFIG_USE_GYRO_BOTH   2
+
+typedef enum {
+    FILTER_LOWPASS = 0,
+    FILTER_LOWPASS2
+} filterSlots;
+
+#define GYRO_LPF_ORDER_MAX 6
+
 typedef struct gyroConfig_s {
     sensor_align_e gyro_align;              // gyro alignment
     uint8_t  gyroMovementCalibrationThreshold; // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
     uint8_t  gyro_sync_denom;                  // Gyro sample divider
-    uint8_t  gyro_lpf;                         // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
-    uint8_t  gyro_soft_lpf_type;
-    uint8_t  gyro_soft_lpf_hz;
+    uint8_t  gyro_hardware_lpf;                // gyro DLPF setting
+    uint8_t  gyro_32khz_hardware_lpf;          // gyro 32khz DLPF setting
+
     bool     gyro_high_fsr;
     bool     gyro_use_32khz;
     uint8_t  gyro_to_use;
+
+    // Lagged Moving Average smoother
+    uint8_t gyro_lma_depth;
+    uint8_t gyro_lma_weight;
+
+    // Lowpass primary/secondary
+    uint8_t  gyro_lowpass_type;
+    uint8_t  gyro_lowpass2_type;
+
+    // Order is used for the 'higher ordering' of cascaded butterworth/biquad sections
+    uint8_t  gyro_lowpass_order;
+    uint8_t  gyro_lowpass2_order;
+
+    uint16_t gyro_lowpass_hz;
+    uint16_t  gyro_lowpass2_hz;
+
     uint16_t gyro_soft_notch_hz_1;
     uint16_t gyro_soft_notch_cutoff_1;
     uint16_t gyro_soft_notch_hz_2;
     uint16_t gyro_soft_notch_cutoff_2;
+    gyroOverflowCheck_e checkOverflow;
+    int16_t  gyro_offset_yaw;
+
 } gyroConfig_t;
 
 PG_DECLARE(gyroConfig_t, gyroConfig);
@@ -69,7 +106,8 @@ PG_DECLARE(gyroConfig_t, gyroConfig);
 bool gyroInit(void);
 
 void gyroInitFilters(void);
-void gyroUpdate(void);
+void gyroUpdate(timeUs_t currentTimeUs);
+bool gyroGetAccumulationAverage(float *accumulation);
 const busDevice_t *gyroSensorBus(void);
 struct mpuConfiguration_s;
 const struct mpuConfiguration_s *gyroMpuConfiguration(void);
@@ -81,3 +119,6 @@ bool isGyroCalibrationComplete(void);
 void gyroReadTemperature(void);
 int16_t gyroGetTemperature(void);
 int16_t gyroRateDps(int axis);
+bool gyroOverflowDetected(void);
+uint16_t gyroAbsRateDps(int axis);
+uint8_t gyroReadRegister(uint8_t reg);

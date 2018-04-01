@@ -46,7 +46,7 @@
 
 #include "fc/config.h"
 
-#ifdef TARGET_CONFIG
+#ifdef USE_TARGET_CONFIG
 void targetConfiguration(void)
 {
     barometerConfigMutable()->baro_hardware = BARO_DEFAULT;

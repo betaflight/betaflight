@@ -22,6 +22,9 @@
 #include "drivers/bus.h"
 #include "drivers/rcc_types.h"
 
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+
 #if defined(STM32F4) || defined(STM32F3)
 #define SPI_IO_AF_CFG           IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
 #define SPI_IO_AF_SCK_CFG       IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_DOWN)
@@ -53,7 +56,7 @@ typedef enum {
 #elif defined(STM32F7)
     SPI_CLOCK_SLOW          = 256, //00.42188 MHz
     SPI_CLOCK_STANDARD      = 16,  //06.57500 MHz
-    SPI_CLOCK_FAST          = 4,   //27.00000 MHz
+    SPI_CLOCK_FAST          = 8,   //13.50000 MHz
     SPI_CLOCK_ULTRAFAST     = 2    //54.00000 MHz
 #else
     SPI_CLOCK_SLOW          = 128, //00.56250 MHz
@@ -108,10 +111,5 @@ bool spiBusReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t *data
 uint8_t spiBusReadRegister(const busDevice_t *bus, uint8_t reg);
 void spiBusSetInstance(busDevice_t *bus, SPI_TypeDef *instance);
 
-typedef struct spiPinConfig_s {
-    ioTag_t ioTagSck[SPIDEV_COUNT];
-    ioTag_t ioTagMiso[SPIDEV_COUNT];
-    ioTag_t ioTagMosi[SPIDEV_COUNT];
-} spiPinConfig_t;
-
-void spiPinConfigure(void);
+struct spiPinConfig_s;
+void spiPinConfigure(const struct spiPinConfig_s *pConfig);

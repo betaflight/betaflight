@@ -18,27 +18,29 @@
 #pragma once
 
 #include "platform.h"
+
 #include "common/axis.h"
 #include "drivers/exti.h"
 #include "drivers/bus.h"
 #include "drivers/sensor.h"
 #include "drivers/accgyro/accgyro_mpu.h"
+#pragma GCC diagnostic push
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
 #include <pthread.h>
+#elif !defined(UNIT_TEST)
+#pragma GCC diagnostic warning "-Wpadded"
 #endif
 
 #ifndef MPU_I2C_INSTANCE
 #define MPU_I2C_INSTANCE I2C_DEVICE
 #endif
 
-#define GYRO_LPF_256HZ      0
-#define GYRO_LPF_188HZ      1
-#define GYRO_LPF_98HZ       2
-#define GYRO_LPF_42HZ       3
-#define GYRO_LPF_20HZ       4
-#define GYRO_LPF_10HZ       5
-#define GYRO_LPF_5HZ        6
-#define GYRO_LPF_NONE       7
+#define GYRO_HARDWARE_LPF_NORMAL       0
+#define GYRO_HARDWARE_LPF_EXPERIMENTAL 1
+#define GYRO_HARDWARE_LPF_1KHZ_SAMPLE  2
+
+#define GYRO_32KHZ_HARDWARE_LPF_NORMAL       0
+#define GYRO_32KHZ_HARDWARE_LPF_EXPERIMENTAL 1
 
 typedef enum {
     GYRO_RATE_1_kHz,
@@ -50,47 +52,49 @@ typedef enum {
 } gyroRateKHz_e;
 
 typedef struct gyroDev_s {
-    sensorGyroInitFuncPtr initFn;                             // initialize function
-    sensorGyroReadFuncPtr readFn;                             // read 3 axis data function
-    sensorGyroReadDataFuncPtr temperatureFn;                  // read temperature if available
-    sensorGyroUpdateFuncPtr updateFn;
-    extiCallbackRec_t exti;
-    busDevice_t bus;
-    float scale;                                            // scalefactor
-    int32_t gyroZero[XYZ_AXIS_COUNT];
-    int32_t gyroADC[XYZ_AXIS_COUNT];                        // gyro data after calibration and alignment
-    int16_t gyroADCRaw[XYZ_AXIS_COUNT];
-    int32_t gyroADCRawPrevious[XYZ_AXIS_COUNT];
-    int16_t temperature;
-    uint8_t lpf;
-    gyroRateKHz_e gyroRateKHz;
-    uint8_t mpuDividerDrops;
-    bool dataReady;
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
     pthread_mutex_t lock;
 #endif
-    sensor_align_e gyroAlign;
-    mpuDetectionResult_t mpuDetectionResult;
-    ioTag_t mpuIntExtiTag;
+    sensorGyroInitFuncPtr initFn;                             // initialize function
+    sensorGyroReadFuncPtr readFn;                             // read 3 axis data function
+    sensorGyroReadDataFuncPtr temperatureFn;                  // read temperature if available
+    extiCallbackRec_t exti;
+    busDevice_t bus;
+    float scale;                                            // scalefactor
+    float gyroZero[XYZ_AXIS_COUNT];
+    float gyroADC[XYZ_AXIS_COUNT];                        // gyro data after calibration and alignment
+    float gyroADCf[XYZ_AXIS_COUNT];
+    int32_t gyroADCRawPrevious[XYZ_AXIS_COUNT];
+    int16_t gyroADCRaw[XYZ_AXIS_COUNT];
+    int16_t temperature;
     mpuConfiguration_t mpuConfiguration;
+    mpuDetectionResult_t mpuDetectionResult;
+    sensor_align_e gyroAlign;
+    gyroRateKHz_e gyroRateKHz;
+    bool dataReady;
     bool gyro_high_fsr;
+    uint8_t hardware_lpf;
+    uint8_t hardware_32khz_lpf;
+    uint8_t mpuDividerDrops;
+    ioTag_t mpuIntExtiTag;
+    uint8_t filler[2];
 } gyroDev_t;
 
 typedef struct accDev_s {
+#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
+    pthread_mutex_t lock;
+#endif
     sensorAccInitFuncPtr initFn;                              // initialize function
     sensorAccReadFuncPtr readFn;                              // read 3 axis data function
     busDevice_t bus;
     uint16_t acc_1G;
     int16_t ADCRaw[XYZ_AXIS_COUNT];
-    char revisionCode;                                      // a revision code for the sensor, if known
-    bool dataReady;
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
-    pthread_mutex_t lock;
-#endif
-    sensor_align_e accAlign;
     mpuDetectionResult_t mpuDetectionResult;
-    mpuConfiguration_t mpuConfiguration;
+    sensor_align_e accAlign;
+    bool dataReady;
     bool acc_high_fsr;
+    char revisionCode;                                      // a revision code for the sensor, if known
+    uint8_t filler[2];
 } accDev_t;
 
 static inline void accDevLock(accDev_t *acc)
@@ -128,3 +132,4 @@ static inline void gyroDevUnLock(gyroDev_t *gyro)
     (void)gyro;
 #endif
 }
+#pragma GCC diagnostic pop

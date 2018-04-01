@@ -26,6 +26,7 @@
 #else
 #define TARGET_BOARD_IDENTIFIER "SRFM"
 
+#undef USE_OSD
 #ifndef SPRACINGF3MINI_REV
 #define SPRACINGF3MINI_REV 2
 #endif
@@ -35,7 +36,8 @@
 #define LED0_PIN                PB3
 #endif
 
-#define BEEPER                  PC15
+#define USE_BEEPER
+#define BEEPER_PIN              PC15
 #define BEEPER_INVERTED
 
 #define USE_EXTI
@@ -43,8 +45,8 @@
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
-#define GYRO
-#define ACC
+#define USE_GYRO
+#define USE_ACC
 
 #ifdef TINYBEEF3
 
@@ -64,30 +66,33 @@
 #define USE_ACC_MPU6500
 #define ACC_MPU6500_ALIGN       CW180_DEG
 
-#define BARO
+#define USE_BARO
 #define USE_BARO_BMP280
 
-#define MAG
+#define USE_MAG
 #define USE_MPU9250_MAG // Enables bypass configuration
 #define USE_MAG_AK8975
 #define USE_MAG_HMC5883 // External
+#define USE_MAG_QMC5883
 #define MAG_AK8975_ALIGN        CW90_DEG_FLIP
 #endif
 
-//#define SONAR
-//#define SONAR_ECHO_PIN          PB1
-//#define SONAR_TRIGGER_PIN       PB0
+//#define USE_RANGEFINDER
+//#define USE_RANGEFINDER_HCSR04
+//#define RANGEFINDER_HCSR04_ECHO_PIN          PB1
+//#define RANGEFINDER_HCSR04_TRIGGER_PIN       PB0
 
-#define BRUSHED_ESC_AUTODETECT
+#define USE_BRUSHED_ESC_AUTODETECT
 
 #define USE_VCP
-#define USE_UART1
 #define USE_UART2
-#define USE_UART3
 
 #ifdef TINYBEEF3
-#define SERIAL_PORT_COUNT       4
+#define SERIAL_PORT_COUNT       2
 #else
+#define USE_UART1
+#define USE_UART3
+
 #define USB_DETECT_PIN          PB5
 
 #define USE_SOFTSERIAL1
@@ -122,7 +127,7 @@
 #define SOFTSERIAL1_TX_PIN      PA1 // PA1 / PAD4
 #endif
 
-#define SONAR_SOFTSERIAL1_EXCLUSIVE
+#define RANGEFINDER_HCSR04_SOFTSERIAL1_EXCLUSIVE
 
 #define USE_SPI
 
@@ -163,7 +168,6 @@
 
 // Note, this is the same DMA channel as UART1_RX. Luckily we don't use DMA for USART Rx.
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
-#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA1_FLAG_TC5
 
 // Performance logging for SD card operations:
 // #define AFATFS_USE_INTROSPECTIVE_LOGGING
@@ -178,7 +182,7 @@
 #define CURRENT_METER_ADC_PIN       PA5
 #define RSSI_ADC_PIN                PB2
 
-#define TRANSPONDER
+#define USE_TRANSPONDER
 
 #define REDUCE_TRANSPONDER_CURRENT_DRAW_WHEN_USB_CABLE_PRESENT
 
@@ -186,7 +190,7 @@
 
 #ifndef TINYBEEF3
 
-#define BUTTONS
+#define USE_BUTTONS
 #define BUTTON_A_PIN            PB1
 #define BUTTON_B_PIN            PB0
 

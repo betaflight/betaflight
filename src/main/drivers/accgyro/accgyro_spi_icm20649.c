@@ -24,16 +24,15 @@
 #include "common/axis.h"
 #include "common/maths.h"
 
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/accgyro/accgyro_mpu.h"
+#include "drivers/accgyro/accgyro_spi_icm20649.h"
 #include "drivers/bus_spi.h"
 #include "drivers/exti.h"
-#include "drivers/gyro_sync.h"
 #include "drivers/io.h"
 #include "drivers/sensor.h"
 #include "drivers/time.h"
 
-#include "accgyro.h"
-#include "accgyro_mpu.h"
-#include "accgyro_spi_icm20649.h"
 
 static void icm20649SpiInit(const busDevice_t *bus)
 {
@@ -95,12 +94,12 @@ void icm20649AccInit(accDev_t *acc)
 
     spiSetDivisor(acc->bus.busdev_u.spi.instance, SPI_CLOCK_STANDARD);
 
-    acc->mpuConfiguration.writeFn(&acc->bus, ICM20649_RA_REG_BANK_SEL, 2 << 4); // config in bank 2
+    spiBusWriteRegister(&acc->bus, ICM20649_RA_REG_BANK_SEL, 2 << 4); // config in bank 2
     delay(15);
     const uint8_t acc_fsr = acc->acc_high_fsr ? ICM20649_FSR_30G : ICM20649_FSR_16G;
-    acc->mpuConfiguration.writeFn(&acc->bus, ICM20649_RA_ACCEL_CONFIG, acc_fsr << 1);
+    spiBusWriteRegister(&acc->bus, ICM20649_RA_ACCEL_CONFIG, acc_fsr << 1);
     delay(15);
-    acc->mpuConfiguration.writeFn(&acc->bus, ICM20649_RA_REG_BANK_SEL, 0 << 4); // back to bank 0
+    spiBusWriteRegister(&acc->bus, ICM20649_RA_REG_BANK_SEL, 0 << 4); // back to bank 0
     delay(15);
 }
 
@@ -123,31 +122,37 @@ void icm20649GyroInit(gyroDev_t *gyro)
 
     spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_STANDARD); // ensure proper speed
 
-    gyro->mpuConfiguration.writeFn(&gyro->bus, ICM20649_RA_REG_BANK_SEL, 0 << 4); // select bank 0 just to be safe
+    spiBusWriteRegister(&gyro->bus, ICM20649_RA_REG_BANK_SEL, 0 << 4); // select bank 0 just to be safe
     delay(15);
-    gyro->mpuConfiguration.writeFn(&gyro->bus, ICM20649_RA_PWR_MGMT_1, ICM20649_BIT_RESET);
+    spiBusWriteRegister(&gyro->bus, ICM20649_RA_PWR_MGMT_1, ICM20649_BIT_RESET);
     delay(100);
-    gyro->mpuConfiguration.writeFn(&gyro->bus, ICM20649_RA_PWR_MGMT_1, INV_CLK_PLL);
+    spiBusWriteRegister(&gyro->bus, ICM20649_RA_PWR_MGMT_1, INV_CLK_PLL);
     delay(15);
-    gyro->mpuConfiguration.writeFn(&gyro->bus, ICM20649_RA_REG_BANK_SEL, 2 << 4); // config in bank 2
+    spiBusWriteRegister(&gyro->bus, ICM20649_RA_REG_BANK_SEL, 2 << 4); // config in bank 2
     delay(15);
     const uint8_t gyro_fsr = gyro->gyro_high_fsr ? ICM20649_FSR_4000DPS : ICM20649_FSR_2000DPS;
+
+    // If hardware_lpf is either GYRO_HARDWARE_LPF_NORMAL or GYRO_HARDWARE_LPF_EXPERIMENTAL then the
+    // gyro is running in 9KHz sample mode and GYRO_FCHOICE should be 0, otherwise we're in 1.1KHz sample
+    // mode and GYRO_FCHOICE = 1.  When in 1.1KHz mode select the 196.6Hz DLPF (GYRO_DLPFCFG = 0)
+    // Unfortunately we can't configure any difference in DLPF based on NORMAL vs. EXPERIMENTAL because
+    // the ICM20649 only has a single 9KHz DLPF cutoff.
     uint8_t raGyroConfigData = gyro->gyroRateKHz > GYRO_RATE_1100_Hz ? 0 : 1; // deactivate GYRO_FCHOICE for sample rates over 1kHz (opposite of other invensense chips)
-    raGyroConfigData |= gyro_fsr << 1 | gyro->lpf << 3;
-    gyro->mpuConfiguration.writeFn(&gyro->bus, ICM20649_RA_GYRO_CONFIG_1, raGyroConfigData);
+    raGyroConfigData |= gyro_fsr << 1;
+    spiBusWriteRegister(&gyro->bus, ICM20649_RA_GYRO_CONFIG_1, raGyroConfigData);
     delay(15);
-    gyro->mpuConfiguration.writeFn(&gyro->bus, ICM20649_RA_GYRO_SMPLRT_DIV, gyroMPU6xxxGetDividerDrops(gyro)); // Get Divider Drops
+    spiBusWriteRegister(&gyro->bus, ICM20649_RA_GYRO_SMPLRT_DIV, gyro->mpuDividerDrops); // Get Divider Drops
     delay(100);
 
     // Data ready interrupt configuration
     // back to bank 0
-    gyro->mpuConfiguration.writeFn(&gyro->bus, ICM20649_RA_REG_BANK_SEL, 0 << 4);
+    spiBusWriteRegister(&gyro->bus, ICM20649_RA_REG_BANK_SEL, 0 << 4);
     delay(15);
-    gyro->mpuConfiguration.writeFn(&gyro->bus, ICM20649_RA_INT_PIN_CFG, 0x11);  // INT_ANYRD_2CLEAR, BYPASS_EN
+    spiBusWriteRegister(&gyro->bus, ICM20649_RA_INT_PIN_CFG, 0x11);  // INT_ANYRD_2CLEAR, BYPASS_EN
     delay(15);
 
 #ifdef USE_MPU_DATA_READY_SIGNAL
-    gyro->mpuConfiguration.writeFn(&gyro->bus, ICM20649_RA_INT_ENABLE_1, 0x01);
+    spiBusWriteRegister(&gyro->bus, ICM20649_RA_INT_ENABLE_1, 0x01);
 #endif
 }
 
@@ -187,7 +192,7 @@ bool icm20649AccRead(accDev_t *acc)
 {
     uint8_t data[6];
 
-    const bool ack = acc->mpuConfiguration.readFn(&acc->bus, ICM20649_RA_ACCEL_XOUT_H, data, 6);
+    const bool ack = spiBusReadRegisterBuffer(&acc->bus, ICM20649_RA_ACCEL_XOUT_H, data, 6);
     if (!ack) {
         return false;
     }

@@ -17,7 +17,7 @@
 
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "YPF4"
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 
 #define USBD_PRODUCT_STRING     "YupiF4"
 
@@ -30,7 +30,8 @@
 //define camera control
 #define CAMERA_CONTROL_PIN      PB7 // Camera control
 
-#define BEEPER                  PC9
+#define USE_BEEPER
+#define BEEPER_PIN              PC9
 #define BEEPER_OPT              PB14
 #define BEEPER_PWM_HZ           3150 // Beeper PWM frequency in Hz
 
@@ -43,11 +44,11 @@
 #define ICM20689_CS_PIN         PA4
 #define ICM20689_SPI_INSTANCE   SPI1
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_ICM20689
 #define ACC_ICM20689_ALIGN      CW90_DEG
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_ICM20689
 #define GYRO_ICM20689_ALIGN     CW90_DEG
 
@@ -55,12 +56,12 @@
 #define MPU6500_CS_PIN          PA4
 #define MPU6500_SPI_INSTANCE    SPI1
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
 #define ACC_MPU6500_ALIGN       CW90_DEG
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
 #define GYRO_MPU6500_ALIGN      CW90_DEG
@@ -108,9 +109,7 @@
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 4 // 21MHz
 
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Stream5
-#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF5
-#define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
-#define SDCARD_DMA_CHANNEL                  DMA_Channel_0
+#define SDCARD_DMA_CHANNEL                  0
 
 // SPI Ports
 #define USE_SPI
@@ -128,7 +127,6 @@
 #define SPI3_MOSI_PIN           PC12
 
 // OSD
-#define OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI1
 #define MAX7456_SPI_CS_PIN      PA14
@@ -149,6 +147,7 @@
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART6
 #define DEFAULT_FEATURES        (FEATURE_OSD)
+#define USE_GYRO_FAST_KALMAN
 
 // Target IO and timers
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE

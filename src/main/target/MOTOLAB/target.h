@@ -20,12 +20,13 @@
 #define TARGET_BOARD_IDENTIFIER "MOTO" // MotoLab
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 
 #define LED0_PIN                PB5 // Blue LEDs - PB5
 //#define LED1_PIN                PB9 // Green LEDs - PB9
 
-#define BEEPER                  PA0
+#define USE_BEEPER
+#define BEEPER_PIN              PA0
 #define BEEPER_INVERTED
 
 // MPU6050 interrupts
@@ -34,8 +35,8 @@
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
-#define GYRO
-#define ACC
+#define USE_GYRO
+#define USE_ACC
 
 #define USE_GYRO_MPU6050
 #define GYRO_MPU6050_ALIGN      CW180_DEG
@@ -95,8 +96,6 @@
 #define VBAT_ADC_PIN            PA5
 //#define CURRENT_METER_ADC_PIN   PA5
 #define RSSI_ADC_PIN            PB2
-
-#define USE_ESC_SENSOR
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

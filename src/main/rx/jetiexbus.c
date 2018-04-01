@@ -39,7 +39,7 @@
 
 #include "platform.h"
 
-#ifdef SERIAL_RX
+#ifdef USE_SERIAL_RX
 
 #include "build/build_config.h"
 #include "build/debug.h"
@@ -145,8 +145,10 @@ void jetiExBusFrameReset(void)
 */
 
 // Receive ISR callback
-static void jetiExBusDataReceive(uint16_t c)
+static void jetiExBusDataReceive(uint16_t c, void *data)
 {
+    UNUSED(data);
+
     uint32_t now;
     static uint32_t jetiExBusTimeLast = 0;
     static int32_t jetiExBusTimeInterval;
@@ -220,8 +222,10 @@ static void jetiExBusDataReceive(uint16_t c)
 }
 
 // Check if it is time to read a frame from the data...
-static uint8_t jetiExBusFrameStatus(void)
+static uint8_t jetiExBusFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
 {
+    UNUSED(rxRuntimeConfig);
+
     if (jetiExBusFrameState != EXBUS_STATE_RECEIVED)
         return RX_FRAME_PENDING;
 
@@ -264,6 +268,7 @@ bool jetiExBusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfi
     jetiExBusPort = openSerialPort(portConfig->identifier,
         FUNCTION_RX_SERIAL,
         jetiExBusDataReceive,
+        NULL,
         JETIEXBUS_BAUDRATE,
         MODE_RXTX,
         JETIEXBUS_OPTIONS | (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0)

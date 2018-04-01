@@ -39,7 +39,8 @@
 #define LED1_PIN                PB4
 #endif
 
-#define BEEPER                  PA8
+#define USE_BEEPER
+#define BEEPER_PIN              PA8
 
 #define INVERTER_PIN_UART1      PC0 // PC0 used as inverter select GPIO
 
@@ -51,7 +52,7 @@
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
 
-#define GYRO
+#define USE_GYRO
 
 #define USE_GYRO_SPI_MPU6000
 #define GYRO_MPU6000_ALIGN      CW180_DEG
@@ -62,7 +63,6 @@
 #define ACC_MPU6000_ALIGN       CW180_DEG
 
 #if defined(KIWIF4) || defined(KIWIF4V2)
-#define OSD
 #define USE_MAX7456
 #endif
 
@@ -93,14 +93,10 @@
 
 
 //#define SDCARD_DMA_CHANNEL_TX               DMA1_Stream5
-//#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF5
-//#define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
-//#define SDCARD_DMA_CHANNEL                  DMA_Channel_0
+//#define SDCARD_DMA_CHANNEL                  0
 
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Stream4
-#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF4
-#define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
-#define SDCARD_DMA_CHANNEL                  DMA_Channel_0
+#define SDCARD_DMA_CHANNEL                  0
 
 #else
 #define USE_FLASHFS
@@ -161,8 +157,6 @@
 #define I2C1_SDA                PB7
 */
 
-#define LED_STRIP
-
 #define USE_ADC
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define VBAT_ADC_PIN            PC1
@@ -188,6 +182,3 @@
 #define USABLE_TIMER_CHANNEL_COUNT 12
 
 #define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8) | TIM_N(9) )
-
-#define CMS
-#define USE_MSP_DISPLAYPORT

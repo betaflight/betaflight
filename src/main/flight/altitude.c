@@ -27,9 +27,10 @@
 
 #include "common/axis.h"
 #include "common/maths.h"
+#include "common/utils.h"
 
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -44,7 +45,7 @@
 
 #include "sensors/sensors.h"
 #include "sensors/barometer.h"
-#include "sensors/sonar.h"
+#include "sensors/rangefinder.h"
 
 
 int32_t AltHold;
@@ -52,13 +53,16 @@ static int32_t estimatedVario = 0;                      // variometer in cm/s
 static int32_t estimatedAltitude = 0;                // in cm
 
 
-#if defined(BARO) || defined(SONAR)
 
 enum {
     DEBUG_ALTITUDE_ACC,
     DEBUG_ALTITUDE_VEL,
     DEBUG_ALTITUDE_HEIGHT
 };
+// 40hz update rate (20hz LPF on acc)
+#define BARO_UPDATE_FREQUENCY_40HZ (1000 * 25)
+
+#if defined(USE_ALT_HOLD)
 
 PG_REGISTER_WITH_RESET_TEMPLATE(airplaneConfig_t, airplaneConfig, PG_AIRPLANE_CONFIG, 0);
 
@@ -72,8 +76,6 @@ static int32_t errorVelocityI = 0;
 static int32_t altHoldThrottleAdjustment = 0;
 static int16_t initialThrottleHold;
 
-// 40hz update rate (20hz LPF on acc)
-#define BARO_UPDATE_FREQUENCY_40HZ (1000 * 25)
 
 #define DEGREES_80_IN_DECIDEGREES 800
 
@@ -145,16 +147,16 @@ void updateAltHoldState(void)
     }
 }
 
-void updateSonarAltHoldState(void)
+void updateRangefinderAltHoldState(void)
 {
     // Sonar alt hold activate
-    if (!IS_RC_MODE_ACTIVE(BOXSONAR)) {
-        DISABLE_FLIGHT_MODE(SONAR_MODE);
+    if (!IS_RC_MODE_ACTIVE(BOXRANGEFINDER)) {
+        DISABLE_FLIGHT_MODE(RANGEFINDER_MODE);
         return;
     }
 
-    if (!FLIGHT_MODE(SONAR_MODE)) {
-        ENABLE_FLIGHT_MODE(SONAR_MODE);
+    if (!FLIGHT_MODE(RANGEFINDER_MODE)) {
+        ENABLE_FLIGHT_MODE(RANGEFINDER_MODE);
         AltHold = estimatedAltitude;
         initialThrottleHold = rcData[THROTTLE];
         errorVelocityI = 0;
@@ -202,7 +204,9 @@ int32_t calculateAltHoldThrottleAdjustment(int32_t vel_tmp, float accZ_tmp, floa
 
     return result;
 }
+#endif // USE_ALT_HOLD
 
+#if defined(USE_BARO) || defined(USE_RANGEFINDER)
 void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 {
     static timeUs_t previousTimeUs = 0;
@@ -216,7 +220,7 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
     static float accAlt = 0.0f;
 
     int32_t baroAlt = 0;
-#ifdef BARO
+#ifdef USE_BARO
     if (sensors(SENSOR_BARO)) {
         if (!isBaroCalibrationComplete()) {
             performBaroCalibrationCycle();
@@ -229,20 +233,20 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
     }
 #endif
 
-#ifdef SONAR
-    if (sensors(SENSOR_SONAR)) {
-        int32_t sonarAlt = sonarCalculateAltitude(sonarRead(), getCosTiltAngle());
-        if (sonarAlt > 0 && sonarAlt >= sonarCfAltCm && sonarAlt <= sonarMaxAltWithTiltCm) {
-            // SONAR in range, so use complementary filter
-            float sonarTransition = (float)(sonarMaxAltWithTiltCm - sonarAlt) / (sonarMaxAltWithTiltCm - sonarCfAltCm);
-            sonarAlt = (float)sonarAlt * sonarTransition + baroAlt * (1.0f - sonarTransition);
-            estimatedAltitude = sonarAlt;
+#ifdef USE_RANGEFINDER
+    if (sensors(SENSOR_RANGEFINDER) && rangefinderProcess(getCosTiltAngle())) {
+        int32_t rangefinderAlt = rangefinderGetLatestAltitude();
+        if (rangefinderAlt > 0 && rangefinderAlt >= rangefinderCfAltCm && rangefinderAlt <= rangefinderMaxAltWithTiltCm) {
+            // RANGEFINDER in range, so use complementary filter
+            float rangefinderTransition = (float)(rangefinderMaxAltWithTiltCm - rangefinderAlt) / (rangefinderMaxAltWithTiltCm - rangefinderCfAltCm);
+            rangefinderAlt = (float)rangefinderAlt * rangefinderTransition + baroAlt * (1.0f - rangefinderTransition);
+            estimatedAltitude = rangefinderAlt;
         }
     }
 #endif
 
     float accZ_tmp = 0;
-#ifdef ACC
+#ifdef USE_ACC
     if (sensors(SENSOR_ACC)) {
         const float dt = accTimeSum * 1e-6f; // delta acc reading time in seconds
 
@@ -267,7 +271,7 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
     imuResetAccelerationSum();
 
     int32_t baroVel = 0;
-#ifdef BARO
+#ifdef USE_BARO
     if (sensors(SENSOR_BARO)) {
         if (!isBaroCalibrationComplete()) {
             return;
@@ -280,7 +284,7 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
         baroVel = constrain(baroVel, -1500, 1500);  // constrain baro velocity +/- 1500cm/s
         baroVel = applyDeadband(baroVel, 10);       // to reduce noise near zero
     }
-#endif // BARO
+#endif // USE_BARO
 
     // apply Complimentary Filter to keep the calculated velocity based on baro velocity (i.e. near real velocity).
     // By using CF it's possible to correct the drift of integrated accZ (velocity) without loosing the phase, i.e without delay
@@ -290,11 +294,15 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
     // set vario
     estimatedVario = applyDeadband(vel_tmp, 5);
 
+#ifdef USE_ALT_HOLD
     static float accZ_old = 0.0f;
     altHoldThrottleAdjustment = calculateAltHoldThrottleAdjustment(vel_tmp, accZ_tmp, accZ_old);
     accZ_old = accZ_tmp;
+#else
+    UNUSED(accZ_tmp);
+#endif
 }
-#endif // defined(BARO) || defined(SONAR)
+#endif // USE_BARO || USE_RANGEFINDER
 
 int32_t getEstimatedAltitude(void)
 {

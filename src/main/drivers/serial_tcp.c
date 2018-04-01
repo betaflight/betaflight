@@ -111,7 +111,7 @@ static tcpPort_t* tcpReconfigure(tcpPort_t *s, int id)
     return s;
 }
 
-serialPort_t *serTcpOpen(int id, serialReceiveCallbackPtr rxCallback, uint32_t baudRate, portMode_e mode, portOptions_e options)
+serialPort_t *serTcpOpen(int id, serialReceiveCallbackPtr rxCallback, void *rxCallbackData, uint32_t baudRate, portMode_e mode, portOptions_e options)
 {
     tcpPort_t *s = NULL;
 
@@ -135,6 +135,7 @@ serialPort_t *serTcpOpen(int id, serialReceiveCallbackPtr rxCallback, uint32_t b
 
     // callback works for IRQ-based RX ONLY
     s->port.rxCallback = rxCallback;
+    s->port.rxCallbackData = rxCallbackData;
     s->port.mode = mode;
     s->port.baudRate = baudRate;
     s->port.options = options;
@@ -262,6 +263,8 @@ static const struct serialPortVTable tcpVTable = {
         .serialSetBaudRate = NULL,
         .isSerialTransmitBufferEmpty = isTcpTransmitBufferEmpty,
         .setMode = NULL,
+        .setCtrlLineStateCb = NULL,
+        .setBaudRateCb = NULL,
         .writeBuf = NULL,
         .beginWrite = NULL,
         .endWrite = NULL,

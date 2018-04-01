@@ -26,30 +26,31 @@
 extern "C" {
     #include "platform.h"
     #include "target.h"
-    #include "fc/runtime_config.h"
-    #include "fc/fc_msp.h"
-    #include "fc/fc_msp_box.h"
-    #include "config/parameter_group.h"
-    #include "config/feature.h"
-    #include "config/parameter_group_ids.h"
-    #include "sensors/battery.h"
-    #include "drivers/buf_writer.h"
-    #include "flight/mixer.h"
-    #include "flight/servos.h"
-    #include "flight/pid.h"
-    #include "io/ledstrip.h"
-    #include "io/serial.h"
-    #include "io/osd.h"
-    #include "fc/settings.h"
-    #include "rx/rx.h"
-    #include "io/beeper.h"
-    #include "fc/rc_adjustments.h"
-    #include "scheduler/scheduler.h"
-    #include "fc/runtime_config.h"
     #include "build/version.h"
-    #include "fc/config.h"
+    #include "pg/pg.h"
+    #include "config/feature.h"
+    #include "pg/pg_ids.h"
     #include "drivers/buf_writer.h"
-    #include "fc/cli.h"
+    #include "drivers/vtx_common.h"
+    #include "fc/config.h"
+    #include "fc/rc_adjustments.h"
+    #include "fc/runtime_config.h"
+    #include "flight/mixer.h"
+    #include "flight/pid.h"
+    #include "flight/servos.h"
+    #include "interface/cli.h"
+    #include "interface/msp.h"
+    #include "interface/msp_box.h"
+    #include "interface/settings.h"
+    #include "io/beeper.h"
+    #include "io/ledstrip.h"
+    #include "io/osd.h"
+    #include "io/serial.h"
+    #include "io/vtx.h"
+    #include "pg/beeper.h"
+    #include "rx/rx.h"
+    #include "scheduler/scheduler.h"
+    #include "sensors/battery.h"
 
     void cliSet(char *cmdline);
     void cliGet(char *cmdline);
@@ -72,7 +73,6 @@ extern "C" {
     PG_REGISTER_ARRAY(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer, PG_MOTOR_MIXER, 0);
     PG_REGISTER_ARRAY(servoParam_t, MAX_SUPPORTED_SERVOS, servoParams, PG_SERVO_PARAMS, 0);
     PG_REGISTER_ARRAY(servoMixer_t, MAX_SERVO_RULES, customServoMixers, PG_SERVO_MIXER, 0);
-    PG_REGISTER(featureConfig_t, featureConfig, PG_FEATURE_CONFIG, 0);
     PG_REGISTER(beeperConfig_t, beeperConfig, PG_BEEPER_CONFIG, 0);
     PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
     PG_REGISTER(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 0);
@@ -212,7 +212,7 @@ void writeEEPROM() {}
 serialPortConfig_t *serialFindPortConfiguration(serialPortIdentifier_e) {return NULL; }
 baudRate_e lookupBaudRateIndex(uint32_t){return BAUD_9600; }
 serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e){ return NULL; }
-serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, uint32_t, portMode_e, portOptions_e) { return NULL; }
+serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) { return NULL; }
 void serialSetBaudRate(serialPort_t *, uint32_t) {}
 void serialSetMode(serialPort_t *, portMode_e) {}
 void serialPassthrough(serialPort_t *, serialPort_t *, serialConsumer *, serialConsumer *) {}
@@ -265,5 +265,10 @@ void generateLedConfig(ledConfig_t *, char *, size_t) {}
 bool isSerialTransmitBufferEmpty(const serialPort_t *) {return true; }
 void serialWrite(serialPort_t *, uint8_t ch) { printf("%c", ch);}
 
+void serialSetCtrlLineStateCb(serialPort_t *, void (*)(void *, uint16_t ), void *) {}
+void serialSetCtrlLineStateDtrPin(serialPort_t *, ioTag_t ) {}
+void serialSetCtrlLineState(serialPort_t *, uint16_t ) {}
+
+void serialSetBaudRateCb(serialPort_t *, void (*)(serialPort_t *context, uint32_t baud), serialPort_t *) {}
 
 }

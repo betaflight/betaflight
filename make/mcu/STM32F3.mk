@@ -24,14 +24,13 @@ STARTUP_SRC     = startup_stm32f30x_md_gcc.S
 STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
 DEVICE_STDPERIPH_SRC = $(STDPERIPH_SRC)
 
-VPATH           := $(VPATH):$(CMSIS_DIR)/CM4/CoreSupport:$(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F30x
-CMSIS_SRC       = $(notdir $(wildcard $(CMSIS_DIR)/CM4/CoreSupport/*.c \
-                  $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F30x/*.c))
+VPATH           := $(VPATH):$(CMSIS_DIR)/Core/Include
+CMSIS_SRC       = $(notdir $(wildcard $(ROOT)/lib/main/STM32F3/Drivers/CMSIS/Device/ST/STM32F30x/*.c))
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(STDPERIPH_DIR)/inc \
-                   $(CMSIS_DIR)/CM4/CoreSupport \
-                   $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F30x
+                   $(CMSIS_DIR)/Core/Include \
+                   $(ROOT)/lib/main/STM32F3/Drivers/CMSIS/Device/ST/STM32F30x
 
 ifneq ($(filter VCP, $(FEATURES)),)
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
@@ -72,6 +71,7 @@ MCU_COMMON_SRC = \
             target/system_stm32f30x.c \
             drivers/adc_stm32f30x.c \
             drivers/bus_i2c_stm32f30x.c \
+            drivers/bus_spi_stdperiph.c \
             drivers/dma.c \
             drivers/light_ws2811strip_stdperiph.c \
             drivers/pwm_output_dshot.c \
@@ -80,5 +80,5 @@ MCU_COMMON_SRC = \
             drivers/system_stm32f30x.c \
             drivers/timer_stm32f30x.c
 
-DSP_LIB := $(ROOT)/lib/main/DSP_Lib
+DSP_LIB := $(ROOT)/lib/main/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM4

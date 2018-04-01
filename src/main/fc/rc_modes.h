@@ -19,22 +19,31 @@
 
 #include <stdbool.h>
 
-#include "config/parameter_group.h"
+#include "pg/pg.h"
+
+#define BOXID_NONE 255
 
 typedef enum {
+    // ARM flag
     BOXARM = 0,
+    // FLIGHT_MODE
     BOXANGLE,
     BOXHORIZON,
-    BOXBARO,
-    BOXANTIGRAVITY,
     BOXMAG,
+    BOXBARO,
+    BOXGPSHOME,
+    BOXGPSHOLD,
     BOXHEADFREE,
+    BOXPASSTHRU,
+    BOXRANGEFINDER,
+    BOXFAILSAFE,
+    BOXID_FLIGHTMODE_LAST = BOXFAILSAFE,
+
+    // RCMODE flags
+    BOXANTIGRAVITY,
     BOXHEADADJ,
     BOXCAMSTAB,
     BOXCAMTRIG,
-    BOXGPSHOME,
-    BOXGPSHOLD,
-    BOXPASSTHRU,
     BOXBEEPERON,
     BOXLEDMAX,
     BOXLEDLOW,
@@ -44,14 +53,12 @@ typedef enum {
     BOXOSD,
     BOXTELEMETRY,
     BOXGTUNE,
-    BOXSONAR,
     BOXSERVO1,
     BOXSERVO2,
     BOXSERVO3,
     BOXBLACKBOX,
-    BOXFAILSAFE,
     BOXAIRMODE,
-    BOX3DDISABLE,
+    BOX3D,
     BOXFPVANGLEMIX,
     BOXBLACKBOXERASE,
     BOXCAMERA1,
@@ -60,8 +67,19 @@ typedef enum {
     BOXFLIPOVERAFTERCRASH,
     BOXPREARM,
     BOXBEEPGPSCOUNT,
+    BOXVTXPITMODE,
+    BOXUSER1,
+    BOXUSER2,
+    BOXUSER3,
+    BOXUSER4,
+    BOXPIDAUDIO,
     CHECKBOX_ITEM_COUNT
 } boxId_e;
+
+typedef enum {
+    MODELOGIC_OR = 0,
+    MODELOGIC_AND
+} modeLogic_e;
 
 // type to hold enough bits for CHECKBOX_ITEM_COUNT. Struct used for value-like behavior
 typedef struct boxBitmask_s { uint32_t bits[(CHECKBOX_ITEM_COUNT + 31) / 32]; } boxBitmask_t;
@@ -80,7 +98,7 @@ typedef struct boxBitmask_s { uint32_t bits[(CHECKBOX_ITEM_COUNT + 31) / 32]; } 
 // steps are 25 apart
 // a value of 0 corresponds to a channel value of 900 or less
 // a value of 48 corresponds to a channel value of 2100 or more
-// 48 steps between 900 and 1200
+// 48 steps between 900 and 2100
 typedef struct channelRange_s {
     uint8_t startStep;
     uint8_t endStep;
@@ -90,6 +108,7 @@ typedef struct modeActivationCondition_s {
     boxId_e modeId;
     uint8_t auxChannelIndex;
     channelRange_t range;
+    modeLogic_e modeLogic;
 } modeActivationCondition_t;
 
 PG_DECLARE_ARRAY(modeActivationCondition_t, MAX_MODE_ACTIVATION_CONDITION_COUNT, modeActivationConditions);

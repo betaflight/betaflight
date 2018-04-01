@@ -23,7 +23,8 @@
 
 
 #define LED0_PIN                PC14
-#define BEEPER                  PC15
+#define USE_BEEPER
+#define BEEPER_PIN              PC15
 #define BEEPER_INVERTED
 
 #define USE_MAG_DATA_READY_SIGNAL
@@ -33,11 +34,11 @@
 #define MPU6000_SPI_INSTANCE    SPI1
 
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 #define GYRO_MPU6000_ALIGN      CW270_DEG
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
 #define ACC_MPU6000_ALIGN       CW270_DEG
 
@@ -72,7 +73,7 @@
 
 #define SOFTSERIAL1_RX_PIN      PB0  // PWM 5
 #define SOFTSERIAL1_TX_PIN      PB1  // PWM 6
-#define SONAR_SOFTSERIAL1_EXCLUSIVE
+#define RANGEFINDER_HCSR04_SOFTSERIAL1_EXCLUSIVE
 
 #define USE_I2C
 #define USE_I2C_DEVICE_1
@@ -102,8 +103,6 @@
 #define VBAT_ADC_PIN            PA4
 #define CURRENT_METER_ADC_PIN   PA5
 #define RSSI_ADC_PIN            PB2
-
-#define USE_ESC_SENSOR
 
 #define REMAP_TIM17_DMA
 // UART1 TX uses DMA1_Channel4, which is also used by dshot on motor 4

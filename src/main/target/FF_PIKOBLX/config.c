@@ -20,7 +20,7 @@
 
 #include <platform.h>
 
-#ifdef TARGET_CONFIG
+#ifdef USE_TARGET_CONFIG
 #include "common/axis.h"
 
 #include "config/feature.h"
@@ -58,7 +58,7 @@ void targetConfiguration(void)
         rxConfigMutable()->spektrum_sat_bind = 5;
         rxConfigMutable()->spektrum_sat_bind_autoreset = 1;
 #else
-        serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(SERIAL_PORT_USART2)].functionMask = FUNCTION_TELEMETRY_FRSKY;
+        serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(SERIAL_PORT_USART2)].functionMask = FUNCTION_TELEMETRY_FRSKY_HUB;
         rxConfigMutable()->serialrx_inverted = true;
         featureSet(FEATURE_TELEMETRY);
 #endif
@@ -80,10 +80,12 @@ void targetConfiguration(void)
         for (uint8_t rateProfileIndex = 0; rateProfileIndex < CONTROL_RATE_PROFILE_COUNT; rateProfileIndex++) {
             controlRateConfig_t *controlRateConfig = controlRateProfilesMutable(rateProfileIndex);
 
-            controlRateConfig->rcRate8 = 100;
-            controlRateConfig->rcYawRate8 = 100;
-            controlRateConfig->rcExpo8 = 15;
-            controlRateConfig->rcYawExpo8 = 15;
+            controlRateConfig->rcRates[FD_ROLL] = 100;
+            controlRateConfig->rcRates[FD_PITCH] = 100;
+            controlRateConfig->rcRates[FD_YAW] = 100;
+            controlRateConfig->rcExpo[FD_ROLL] = 15;
+            controlRateConfig->rcExpo[FD_PITCH] = 15;
+            controlRateConfig->rcExpo[FD_YAW] = 15;
             controlRateConfig->rates[PID_ROLL] = 80;
             controlRateConfig->rates[PID_PITCH] = 80;
             controlRateConfig->rates[PID_YAW] = 80;

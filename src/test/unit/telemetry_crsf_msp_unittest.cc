@@ -35,8 +35,8 @@ extern "C" {
     #include "common/streambuf.h"
     #include "common/typeconversion.h"
 
-    #include "config/parameter_group.h"
-    #include "config/parameter_group_ids.h"
+    #include "pg/pg.h"
+    #include "pg/pg_ids.h"
 
     #include "drivers/nvic.h"
     #include "drivers/serial.h"
@@ -45,12 +45,11 @@ extern "C" {
     #include "fc/runtime_config.h"
     #include "fc/config.h"
     #include "flight/imu.h"
-    #include "fc/fc_msp.h"
+
+    #include "interface/msp.h"
 
     #include "io/serial.h"
     #include "io/gps.h"
-
-    #include "msp/msp.h"
 
     #include "rx/rx.h"
     #include "rx/crsf.h"
@@ -253,11 +252,13 @@ extern "C" {
     attitudeEulerAngles_t attitude = { { 0, 0, 0 } };
 
     uint32_t micros(void) {return dummyTimeUs;}
-    serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, uint32_t, portMode_e, portOptions_e) {return NULL;}
+    serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) {return NULL;}
     serialPortConfig_t *findSerialPortConfig(serialPortFunction_e ) {return NULL;}
+    bool isBatteryVoltageConfigured(void) { return true; }
     uint16_t getBatteryVoltage(void) {
         return testBatteryVoltage;
     }
+    bool isAmperageConfigured(void) { return true; }
     int32_t getAmperage(void) {
         return testAmperage;
     }

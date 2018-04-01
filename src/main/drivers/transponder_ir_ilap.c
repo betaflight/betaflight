@@ -18,6 +18,9 @@
 #include <stdint.h>
 #include <string.h>
 #include <platform.h>
+
+#ifdef USE_TRANSPONDER
+
 #include "drivers/transponder_ir.h"
 #include "drivers/transponder_ir_ilap.h"
 
@@ -33,7 +36,7 @@ void transponderIrInitIlap(transponder_t *transponder){
     transponder->vTable             = &ilapTansponderVTable;
     transponder->timer_hz           = TRANSPONDER_TIMER_MHZ_ILAP;
     transponder->timer_carrier_hz   = TRANSPONDER_CARRIER_HZ_ILAP;
-    memset(&(transponder->transponderIrDMABuffer.ilap), 0, TRANSPONDER_DMA_BUFFER_SIZE_ILAP);
+    memset(&(transponder->transponderIrDMABuffer.ilap), 0, sizeof(transponder->transponderIrDMABuffer.ilap));
 
 }
 
@@ -78,4 +81,5 @@ const struct transponderVTable ilapTansponderVTable = {
      updateTransponderDMABufferIlap,
 };
 
+#endif
 #endif

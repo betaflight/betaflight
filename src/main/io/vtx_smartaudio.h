@@ -1,9 +1,40 @@
+/*
+ * This file is part of Cleanflight.
+ *
+ * Cleanflight is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Cleanflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #pragma once
 
 #include <stdbool.h>
 #include <stdint.h>
 
 #include "platform.h"
+
+#define VTX_SMARTAUDIO_MIN_BAND 1
+#define VTX_SMARTAUDIO_MAX_BAND 5
+#define VTX_SMARTAUDIO_MIN_CHANNEL 1
+#define VTX_SMARTAUDIO_MAX_CHANNEL 8
+
+#define VTX_SMARTAUDIO_BAND_COUNT (VTX_SMARTAUDIO_MAX_BAND - VTX_SMARTAUDIO_MIN_BAND + 1)
+#define VTX_SMARTAUDIO_CHANNEL_COUNT (VTX_SMARTAUDIO_MAX_CHANNEL - VTX_SMARTAUDIO_MIN_CHANNEL + 1)
+
+#define VTX_SMARTAUDIO_POWER_COUNT 4
+#define VTX_SMARTAUDIO_DEFAULT_POWER 1
+
+#define VTX_SMARTAUDIO_MIN_FREQUENCY_MHZ 5000        //min freq in MHz
+#define VTX_SMARTAUDIO_MAX_FREQUENCY_MHZ 5999        //max freq in MHz
 
 // opmode flags, GET side
 #define SA_MODE_GET_FREQ_BY_FREQ            1
@@ -55,6 +86,7 @@ typedef struct smartAudioStat_s {
 
 extern smartAudioDevice_t saDevice;
 extern saPowerTable_t saPowerTable[];
+extern const char * const saPowerNames[];
 extern smartAudioStat_t saStat;
 
 extern uint16_t sa_smartbaud;
@@ -65,6 +97,7 @@ void saSetBandAndChannel(uint8_t band, uint8_t channel);
 void saSetMode(int mode);
 void saSetPowerByIndex(uint8_t index);
 void saSetFreq(uint16_t freq);
+void saSetPitFreq(uint16_t freq);
 bool vtxSmartAudioInit(void);
 
 #ifdef SMARTAUDIO_DPRINTF
@@ -78,33 +111,3 @@ extern serialPort_t *debugSerialPort;
 #else
 #define dprintf(x)
 #endif // SMARTAUDIO_DPRINTF
-
-#if 0
-#ifdef CMS
-
-uint16_t smartAudioSmartbaud;
-
-uint16_t saerr_badpre;
-uint16_t saerr_badlen;
-uint16_t saerr_crcerr;
-uint16_t saerr_oooresp;
-
-uint8_t smartAudioOpModel;
-uint8_t smartAudioStatus;
-uint8_t smartAudioBand;
-uint8_t smartAudioChan;
-uint16_t smartAudioFreq;
-uint8_t smartAudioPower;
-uint8_t smartAudioTxMode;
-uint8_t smartAudioPitFMode;
-uint16_t smartAudioORFreq;
-
-long smartAudioConfigureOpModelByGvar(displayPort_t *, const void *self);
-long smartAudioConfigurePitFModeByGvar(displayPort_t *, const void *self);
-long smartAudioConfigureBandByGvar(displayPort_t *, const void *self);
-long smartAudioConfigureChanByGvar(displayPort_t *, const void *self);
-long smartAudioConfigurePowerByGvar(displayPort_t *, const void *self);
-long smartAudioSetTxModeByGvar(displayPort_t *, const void *self);
-
-#endif
-#endif

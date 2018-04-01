@@ -24,17 +24,18 @@
 #define LED0_PIN   PB7
 #define LED1_PIN   PB6
 
-#define BEEPER   PB2 // Unused pin, can be mapped to elsewhere
+#define USE_BEEPER
+#define BEEPER_PIN PB2 // Unused pin, can be mapped to elsewhere
 #define BEEPER_INVERTED
 
 #define MPU6000_CS_PIN        PA4
 #define MPU6000_SPI_INSTANCE  SPI1
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
 #define ACC_MPU6000_ALIGN CW270_DEG
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 #define GYRO_MPU6000_ALIGN CW270_DEG
 
@@ -43,14 +44,15 @@
 #define MPU_INT_EXTI PC4
 #define USE_EXTI
 
-#define MAG
+#define USE_MAG
 #define USE_MAG_HMC5883
+#define USE_MAG_QMC5883
 #define MAG_I2C_INSTANCE           (I2CDEV_2)
 
 //#define MAG_HMC5883_ALIGN CW270_DEG_FLIP
 //#define MAG_HMC5883_ALIGN CW90_DEG
 
-#define BARO
+#define USE_BARO
 #define USE_BARO_MS5611
 #define USE_BARO_BMP280
 #define BARO_I2C_INSTANCE           (I2CDEV_2)
@@ -102,6 +104,7 @@
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
+#define USE_SPI_DEVICE_3
 #define USE_SPI_DEVICE_4
 
 #define SPI1_NSS_PIN            PA4
@@ -109,10 +112,21 @@
 #define SPI1_MISO_PIN           PA6
 #define SPI1_MOSI_PIN           PA7
 
+#define SPI3_NSS_PIN            PD2
+#define SPI3_SCK_PIN            PC10
+#define SPI3_MISO_PIN           PC11
+#define SPI3_MOSI_PIN           PC12
+
 #define SPI4_NSS_PIN            PE11
 #define SPI4_SCK_PIN            PE12
 #define SPI4_MISO_PIN           PE13
 #define SPI4_MOSI_PIN           PE14
+
+#define USE_MAX7456
+#define MAX7456_SPI_INSTANCE    SPI3
+#define MAX7456_SPI_CS_PIN      SPI3_NSS_PIN
+#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
+#define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
 #define USE_SDCARD
 #define SDCARD_DETECT_INVERTED
@@ -126,12 +140,7 @@
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 8 // 27MHz
 
 #define SDCARD_DMA_STREAM_TX_FULL           DMA2_Stream1
-#define SDCARD_DMA_TX                       DMA2
-#define SDCARD_DMA_STREAM_TX                1
-#define SDCARD_DMA_CLK                      LL_AHB1_GRP1_PERIPH_DMA2
-
-#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF1_5
-#define SDCARD_DMA_CHANNEL                  DMA_CHANNEL_4
+#define SDCARD_DMA_CHANNEL                  4
 
 #define USE_I2C
 #define USE_I2C_DEVICE_2  // External I2C

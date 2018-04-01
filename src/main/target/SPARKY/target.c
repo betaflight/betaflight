@@ -27,15 +27,15 @@
     // 6 3-pin headers
     // PPM PORT - Also USART2 RX (AF5)
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    DEF_TIM(TIM15, CH2, PB15, TIM_USE_MOTOR,               1), // PWM1  - PB15 - TIM1_CH3N, TIM15_CH1N, *TIM15_CH2
-    DEF_TIM(TIM15, CH1, PB14, TIM_USE_MOTOR,               1), // PWM2  - PB14 - TIM1_CH2N, *TIM15_CH1
-    DEF_TIM(TIM1,  CH1, PA8,  TIM_USE_MOTOR,               1), // PWM3  - PA8  - *TIM1_CH1, TIM4_ETR
+    DEF_TIM(TIM15, CH2, PB15, TIM_USE_MOTOR,               0), // PWM1  - PB15 - TIM1_CH3N, TIM15_CH1N, *TIM15_CH2
+    DEF_TIM(TIM15, CH1, PB14, TIM_USE_MOTOR,               0), // PWM2  - PB14 - TIM1_CH2N, *TIM15_CH1
+    DEF_TIM(TIM1,  CH1, PA8,  TIM_USE_MOTOR,               0), // PWM3  - PA8  - *TIM1_CH1, TIM4_ETR
     DEF_TIM(TIM3,  CH3, PB0,  TIM_USE_MOTOR,               0), // PWM4  - PB0  - *TIM3_CH3, TIM1_CH2N, TIM8_CH2N
     DEF_TIM(TIM16, CH1, PA6,  TIM_USE_MOTOR | TIM_USE_LED, 0), // PWM5  - PA6  - *TIM3_CH1, TIM8_BKIN, TIM1_BKIN, TIM16_CH1
     DEF_TIM(TIM2,  CH3, PA2,  TIM_USE_MOTOR,               0), // PWM6  - PA2  - *TIM2_CH3, !TIM15_CH1
     DEF_TIM(TIM3,  CH4, PB1,  TIM_USE_PWM,                 0), // PWM7  - PB1  - *TIM3_CH4, TIM1_CH3N, TIM8_CH3N
-    DEF_TIM(TIM17, CH1, PA7,  TIM_USE_PWM,                 1), // PWM8  - PA7  - !TIM3_CH2, *TIM17_CH1, TIM1_CH1N, TIM8_CH1
+    DEF_TIM(TIM17, CH1, PA7,  TIM_USE_PWM,                 0), // PWM8  - PA7  - !TIM3_CH2, *TIM17_CH1, TIM1_CH1N, TIM8_CH1
     DEF_TIM(TIM3,  CH2, PA4,  TIM_USE_PWM,                 0), // PWM9  - PA4  - *TIM3_CH2
     DEF_TIM(TIM2,  CH2, PA1,  TIM_USE_PWM,                 0), // PWM10 - PA1  - *TIM2_CH2, TIM15_CH1N
-    DEF_TIM(TIM2,  CH4, PA3,  TIM_USE_PPM,                 0)  // PPM   - PA3  - TIM2_CH4, TIM15_CH2 - PWM13
+    DEF_TIM(TIM2,  CH4, PA3,  TIM_USE_PPM,                 0), // PPM   - PA3  - TIM2_CH4, TIM15_CH2 - PWM13
 };

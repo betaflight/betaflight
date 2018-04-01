@@ -28,6 +28,8 @@
 #include "drivers/io.h"
 #include "drivers/time.h"
 
+#include "pg/flash.h"
+
 #include "hardware_revision.h"
 
 uint8_t hardwareRevision = UNKNOWN;

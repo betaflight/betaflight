@@ -19,20 +19,31 @@
 #include <stdint.h>
 
 #include "platform.h"
+#include "common/utils.h"
+
+#ifdef USE_ADC
 
 #include "build/build_config.h"
 #include "build/debug.h"
 
-#include "adc.h"
-#include "adc_impl.h"
+#include "drivers/adc_impl.h"
+#include "drivers/io.h"
 
-#include "common/utils.h"
+#include "pg/adc.h"
+
+#include "adc.h"
 
 //#define DEBUG_ADC_CHANNELS
 
-#ifdef USE_ADC
 adcOperatingConfig_t adcOperatingConfig[ADC_CHANNEL_COUNT];
 volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
+
+#ifdef USE_ADC_INTERNAL
+uint16_t adcTSCAL1;
+uint16_t adcTSCAL2;
+uint16_t adcTSSlopeK;
+uint16_t adcVREFINTCAL;
+#endif
 
 uint8_t adcChannelByTag(ioTag_t ioTag)
 {
@@ -41,6 +52,31 @@ uint8_t adcChannelByTag(ioTag_t ioTag)
             return adcTagMap[i].channel;
     }
     return 0;
+}
+
+ADCDevice adcDeviceByInstance(ADC_TypeDef *instance)
+{
+    if (instance == ADC1) {
+        return ADCDEV_1;
+    }
+
+#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
+    if (instance == ADC2) {
+        return ADCDEV_2;
+    }
+
+    if (instance == ADC3) {
+        return ADCDEV_3;
+    }
+#endif
+
+#ifdef STM32F3
+    if (instance == ADC4) {
+        return ADCDEV_4;
+    }
+#endif
+
+    return ADCINVALID;
 }
 
 uint16_t adcGetChannel(uint8_t channel)
@@ -60,6 +96,30 @@ uint16_t adcGetChannel(uint8_t channel)
     }
 #endif
     return adcValues[adcOperatingConfig[channel].dmaIndex];
+}
+
+// Verify a pin designated by tag has connection to an ADC instance designated by device
+
+bool adcVerifyPin(ioTag_t tag, ADCDevice device)
+{
+    if (!tag) {
+        return false;
+    }
+
+    for (int map = 0 ; map < ADC_TAG_MAP_COUNT ; map++) {
+#if defined(STM32F1)
+        UNUSED(device);
+        if ((adcTagMap[map].tag == tag)) {
+            return true;
+        }
+#else
+        if ((adcTagMap[map].tag == tag) && (adcTagMap[map].devices & (1 << device))) {
+            return true;
+        }
+#endif
+    }
+
+    return false;
 }
 
 #else

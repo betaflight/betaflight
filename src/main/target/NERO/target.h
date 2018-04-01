@@ -28,7 +28,8 @@
 #define LED1_PIN                PB5
 #define LED2_PIN                PB4
 
-#define BEEPER                  PC1
+#define USE_BEEPER
+#define BEEPER_PIN              PC1
 #define BEEPER_INVERTED
 
 // MPU6500 interrupt
@@ -40,12 +41,12 @@
 #define MPU6500_CS_PIN          PC4
 #define MPU6500_SPI_INSTANCE    SPI1
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
 #define ACC_MPU6500_ALIGN       CW0_DEG
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
 #define GYRO_MPU6500_ALIGN      CW0_DEG
@@ -63,12 +64,7 @@
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     4 // 21MHz
 
 //#define SDCARD_DMA_STREAM_TX_FULL           DMA1_Stream5
-//#define SDCARD_DMA_TX                       DMA1
-//#define SDCARD_DMA_STREAM_TX                5
-//#define SDCARD_DMA_CLK                      LL_AHB1_GRP1_PERIPH_DMA1
-
-//#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF1_0
-//#define SDCARD_DMA_CHANNEL                  DMA_CHANNEL_0
+//#define SDCARD_DMA_CHANNEL                  0
 
 #define USE_I2C
 #define USE_I2C_DEVICE_1

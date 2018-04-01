@@ -193,7 +193,7 @@ void uartIrqHandler(uartPort_t *s)
     if (SR & USART_FLAG_RXNE && !s->rxDMAChannel) {
         // If we registered a callback, pass crap there
         if (s->port.rxCallback) {
-            s->port.rxCallback(s->USARTx->DR);
+            s->port.rxCallback(s->USARTx->DR, s->port.rxCallbackData);
         } else {
             s->port.rxBuffer[s->port.rxBufferHead++] = s->USARTx->DR;
             if (s->port.rxBufferHead >= s->port.rxBufferSize) {

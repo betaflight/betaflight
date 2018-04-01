@@ -24,35 +24,24 @@
 #include "common/utils.h"
 
 #include "config/feature.h"
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "fc/config.h"
 #include "fc/runtime_config.h"
 
 #include "sensors/sensors.h"
+#include "sensors/adcinternal.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
 #include "sensors/gyro.h"
 #include "sensors/compass.h"
-#include "sensors/sonar.h"
+#include "sensors/rangefinder.h"
 #include "sensors/initialisation.h"
 
-uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE };
-
-
-#ifdef SONAR
-static bool sonarDetect(void)
-{
-    if (feature(FEATURE_SONAR)) {
-        // the user has set the sonar feature, so assume they have an HC-SR04 plugged in,
-        // since there is no way to detect it
-        sensorsSet(SENSOR_SONAR);
-        return true;
-    }
-    return false;
-}
-#endif
+// requestedSensors is not actually used
+uint8_t requestedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE, RANGEFINDER_NONE };
+uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE, RANGEFINDER_NONE };
 
 bool sensorsAutodetect(void)
 {
@@ -65,18 +54,20 @@ bool sensorsAutodetect(void)
         accInit(gyro.targetLooptime);
     }
 
-#ifdef MAG
+#ifdef USE_MAG
     compassInit();
 #endif
 
-#ifdef BARO
+#ifdef USE_BARO
     baroDetect(&baro.dev, barometerConfig()->baro_hardware);
 #endif
 
-#ifdef SONAR
-    if (sonarDetect()) {
-        sonarInit(sonarConfig());
-    }
+#ifdef USE_RANGEFINDER
+    rangefinderInit();
+#endif
+
+#ifdef USE_ADC_INTERNAL
+    adcInternalInit();
 #endif
 
     return gyroDetected;

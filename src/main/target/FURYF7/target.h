@@ -24,7 +24,8 @@
 #define LED0_PIN                PB5
 #define LED1_PIN                PB4
 
-#define BEEPER                  PD10
+#define USE_BEEPER
+#define BEEPER_PIN              PD10
 #define BEEPER_INVERTED
 
 #define USE_EXTI
@@ -34,15 +35,15 @@
 #define ICM20689_CS_PIN          PA4
 #define ICM20689_SPI_INSTANCE    SPI1
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_ICM20689
 #define GYRO_ICM20689_ALIGN      CW180_DEG
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_ICM20689
 #define ACC_ICM20689_ALIGN       CW180_DEG
 
-//#define BARO
+//#define USE_BARO
 //#define USE_BARO_MS5611
 //#define MS5611_I2C_INSTANCE     I2CDEV_1
 
@@ -84,12 +85,7 @@
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 8 // 13.5MHz
 
 #define SDCARD_DMA_STREAM_TX_FULL           DMA2_Stream1
-#define SDCARD_DMA_TX                       DMA2
-#define SDCARD_DMA_STREAM_TX                1
-#define SDCARD_DMA_CLK                      LL_AHB1_GRP1_PERIPH_DMA2
-
-#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF1_5
-#define SDCARD_DMA_CHANNEL                  DMA_CHANNEL_4
+#define SDCARD_DMA_CHANNEL                  4
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
@@ -134,7 +130,7 @@
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
-#undef LED_STRIP
+#undef USE_LED_STRIP
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS

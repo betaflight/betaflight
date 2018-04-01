@@ -23,17 +23,18 @@
 
 #define LED0_PIN                PB3
 
-#define BEEPER                  PC15
+#define USE_BEEPER
+#define BEEPER_PIN              PC15
 
 #define USE_EXTI
 #define MPU_INT_EXTI            PC13
 #define USE_MPU_DATA_READY_SIGNAL
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_MPU6050
 #define GYRO_MPU6050_ALIGN      CW0_DEG_FLIP
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_MPU6050
 #define ACC_MPU6050_ALIGN       CW0_DEG_FLIP
 
@@ -72,7 +73,7 @@
 #define USE_SPI_DEVICE_1 // PA4, 5, 6, 7
 #define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5
 
-#define VTX_RTC6705
+#define USE_VTX_RTC6705
 
 #define RTC6705_CS_PIN          PA4
 #define RTC6705_SPI_INSTANCE    SPI1

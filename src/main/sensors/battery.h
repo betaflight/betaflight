@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "config/parameter_group.h"
+#include "pg/pg.h"
 
 #include "common/filter.h"
 #include "common/time.h"
@@ -77,11 +77,13 @@ struct rxConfig_s;
 
 float calculateVbatPidCompensation(void);
 uint8_t calculateBatteryPercentageRemaining(void);
+bool isBatteryVoltageConfigured(void);
 uint16_t getBatteryVoltage(void);
 uint16_t getBatteryVoltageLatest(void);
 uint8_t getBatteryCellCount(void);
 uint16_t getBatteryAverageCellVoltage(void);
 
+bool isAmperageConfigured(void);
 int32_t getAmperage(void);
 int32_t getAmperageLatest(void);
 int32_t getMAhDrawn(void);
