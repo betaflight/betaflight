@@ -53,6 +53,10 @@
 #include "usbd_conf.h"
 #include "usbd_cdc_interface.h"
 
+#include "platform.h"
+#include "pg/pg.h"
+#include "pg/usb.h"
+
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
@@ -402,9 +406,21 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev)
   /* Initialize LL Driver */
   HAL_PCD_Init(&hpcd);
 
+#ifdef USE_USB_CDC_HID
+  if (usbDevConfig()->type == COMPOSITE) {
+    HAL_PCDEx_SetRxFiFo(&hpcd, 0x80);
+    HAL_PCDEx_SetTxFiFo(&hpcd, 0, 0x20);
+    HAL_PCDEx_SetTxFiFo(&hpcd, 1, 0x40);
+    HAL_PCDEx_SetTxFiFo(&hpcd, 2, 0x20);
+    HAL_PCDEx_SetTxFiFo(&hpcd, 3, 0x40);
+  } else {
+#endif /* CDC_HID */
   HAL_PCDEx_SetRxFiFo(&hpcd, 0x80);
   HAL_PCDEx_SetTxFiFo(&hpcd, 0, 0x40);
   HAL_PCDEx_SetTxFiFo(&hpcd, 1, 0x80);
+#ifdef USE_USB_CDC_HID
+  }
+#endif /* CDC_HID */
 #endif
 
 #ifdef USE_USB_HS
