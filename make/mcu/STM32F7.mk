@@ -179,9 +179,19 @@ MCU_EXCLUDES = \
             drivers/timer.c \
             drivers/serial_uart.c
             
+MSC_SRC = \
+            drivers/usb_msc_f7xx.c
+            
 ifneq ($(filter SDIO,$(FEATURES)),)
 MCU_COMMON_SRC += \
-            drivers/sdio_f7xx.c
+            drivers/sdio_f7xx.c            
+MSC_SRC += \
+            msc/usbd_storage_sdio.c
+endif
+
+ifneq ($(filter SDCARD,$(FEATURES)),)
+MSC_SRC += \
+            msc/usbd_storage_sd_spi.c
 endif
 
 DSP_LIB := $(ROOT)/lib/main/CMSIS/DSP
