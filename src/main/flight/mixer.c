@@ -40,6 +40,7 @@
 #include "io/motors.h"
 
 #include "fc/config.h"
+#include "fc/controlrate_profile.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
@@ -732,6 +733,21 @@ void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensation)
 
     // Calculate voltage compensation
     const float vbatCompensationFactor = vbatPidCompensation ? calculateVbatPidCompensation() : 1.0f;
+
+    // Apply the throttle_limit_percent to scale or limit the throttle based on throttle_limit_type
+    if ((currentControlRateProfile->throttle_limit_percent < 100) && (currentControlRateProfile->throttle_limit_type != THROTTLE_LIMIT_TYPE_OFF)) {
+        const float throttleLimitFactor = currentControlRateProfile->throttle_limit_percent / 100.0f;
+        switch (currentControlRateProfile->throttle_limit_type) {
+            case THROTTLE_LIMIT_TYPE_SCALE:
+                throttle = throttle * throttleLimitFactor;
+                break;
+            case THROTTLE_LIMIT_TYPE_CLIP:
+                if (throttle > throttleLimitFactor) {
+                    throttle = throttleLimitFactor;
+                }
+                break;
+        }
+    }
 
     // Find roll/pitch/yaw desired output
     float motorMix[MAX_SUPPORTED_MOTORS];

@@ -87,6 +87,7 @@ typedef enum {
 #ifdef USE_DUAL_GYRO
     TABLE_GYRO,
 #endif
+    TABLE_THROTTLE_LIMIT_TYPE,
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 
