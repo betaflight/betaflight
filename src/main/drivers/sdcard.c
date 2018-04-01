@@ -368,7 +368,7 @@ static bool sdcard_sendDataBlockFinish(void)
 {
 #ifdef USE_HAL_DRIVER
     // Drain anything left in the Rx FIFO (we didn't read it during the write)
-    //This is necessary here as when using msc ther is timing issue
+    //This is necessary here as when using msc there is timing issue
     while (LL_SPI_IsActiveFlag_RXNE(sdcard.instance)) {
         sdcard.instance->DR;
     }
