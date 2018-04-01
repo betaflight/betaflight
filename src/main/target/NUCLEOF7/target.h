@@ -23,6 +23,8 @@
 
 #define LED0_PIN   PB7
 #define LED1_PIN   PB14
+#define LED0_INVERTED
+#define LED1_INVERTED
 
 #define USE_BEEPER
 #define BEEPER_PIN PA0
