@@ -40,11 +40,11 @@
 #include "io/osd.h"
 
 #ifdef USE_EXTENDED_CMS_MENUS
-static uint16_t osdConfig_item_pos[OSD_ITEM_COUNT];
+static osdElementConfig_t osdConfig_item_pos[OSD_ITEM_COUNT];
 
 static long menuOsdActiveElemsOnEnter(void)
 {
-    memcpy(&osdConfig_item_pos[0], &osdConfig()->item_pos[0], sizeof(uint16_t) * OSD_ITEM_COUNT);
+    memcpy(&osdConfig_item_pos[0], &osdConfig()->elements[0], sizeof(uint16_t) * OSD_ITEM_COUNT);
     return 0;
 }
 
@@ -52,7 +52,7 @@ static long menuOsdActiveElemsOnExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
-    memcpy(&osdConfigMutable()->item_pos[0], &osdConfig_item_pos[0], sizeof(uint16_t) * OSD_ITEM_COUNT);
+    memcpy(&osdConfigMutable()->elements[0], &osdConfig_item_pos[0], sizeof(uint16_t) * OSD_ITEM_COUNT);
     return 0;
 }
 

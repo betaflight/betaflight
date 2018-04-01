@@ -389,12 +389,12 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
 #ifdef USE_OSD
     case OME_VISIBLE:
         if (IS_PRINTVALUE(p) && p->data) {
-            uint16_t *val = (uint16_t *)p->data;
+            osdElementConfig_t *val = (osdElementConfig_t *)p->data;
 
-            if (VISIBLE(*val)) {
+            if (VISIBLE((*val))) {
                 strcpy(buff, "YES");
             } else {
-              strcpy(buff, "NO ");
+                strcpy(buff, "NO ");
             }
             cnt = cmsDrawMenuItemValue(pDisplay, buff, row, 3);
             CLR_PRINTVALUE(p);

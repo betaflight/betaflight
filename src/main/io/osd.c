@@ -384,12 +384,12 @@ static void osdFormatMessage(char *buff, size_t size, const char *message)
 
 static bool osdDrawSingleElement(uint8_t item)
 {
-    if (!VISIBLE(osdConfig()->item_pos[item]) || BLINK(item)) {
+    if (!VISIBLE(osdConfig()->elements[item]) || BLINK(item)) {
         return false;
     }
 
-    uint8_t elemPosX = OSD_X(osdConfig()->item_pos[item]);
-    uint8_t elemPosY = OSD_Y(osdConfig()->item_pos[item]);
+    uint8_t elemPosX = osdConfig()->elements[item].x;
+    uint8_t elemPosY = osdConfig()->elements[item].y;
     char buff[OSD_ELEMENT_BUFFER_LENGTH] = "";
 
     switch (item) {
@@ -886,16 +886,16 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 {
     // Position elements near centre of screen and disabled by default
     for (int i = 0; i < OSD_ITEM_COUNT; i++) {
-        osdConfig->item_pos[i] = OSD_POS(10, 7);
+        osdConfig->elements[i] = OSD_ELEMENT(10, 7, 0);
     }
 
     // Always enable warnings elements by default
-    osdConfig->item_pos[OSD_WARNINGS] = OSD_POS(9, 10) | VISIBLE_FLAG;
+    osdConfig->elements[OSD_WARNINGS] = OSD_ELEMENT(9, 10, VISIBLE_FLAG);
 
     // Default to old fixed positions for these elements
-    osdConfig->item_pos[OSD_CROSSHAIRS]         = OSD_POS(13, 6);
-    osdConfig->item_pos[OSD_ARTIFICIAL_HORIZON] = OSD_POS(14, 2);
-    osdConfig->item_pos[OSD_HORIZON_SIDEBARS]   = OSD_POS(14, 6);
+    osdConfig->elements[OSD_CROSSHAIRS]         = OSD_ELEMENT(13, 6, 0);
+    osdConfig->elements[OSD_ARTIFICIAL_HORIZON] = OSD_ELEMENT(14, 2, 0);
+    osdConfig->elements[OSD_HORIZON_SIDEBARS]   = OSD_ELEMENT(14, 6, 0);
 
     osdConfig->enabled_stats[OSD_STAT_MAX_SPEED]       = true;
     osdConfig->enabled_stats[OSD_STAT_MIN_BATTERY]     = true;
@@ -945,8 +945,6 @@ void osdInit(displayPort_t *osdDisplayPortToUse)
     if (!osdDisplayPortToUse) {
         return;
     }
-
-    BUILD_BUG_ON(OSD_POS_MAX != OSD_POS(31,31));
 
     osdDisplayPort = osdDisplayPortToUse;
 #ifdef USE_CMS
@@ -1285,7 +1283,7 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
             resumeRefreshAt = currentTimeUs + (REFRESH_1S / 2);
         } else if (isSomeStatEnabled()
                    && (!(getArmingDisableFlags() & ARMING_DISABLED_RUNAWAY_TAKEOFF)
-                       || !VISIBLE(osdConfig()->item_pos[OSD_WARNINGS]))) { // suppress stats if runaway takeoff triggered disarm and WARNINGS element is visible
+                       || !VISIBLE(osdConfig()->elements[OSD_WARNINGS]))) { // suppress stats if runaway takeoff triggered disarm and WARNINGS element is visible
             osdStatsEnabled = true;
             resumeRefreshAt = currentTimeUs + (60 * REFRESH_1S);
             endBatteryVoltage = getBatteryVoltage();

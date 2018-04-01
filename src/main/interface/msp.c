@@ -680,7 +680,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 
         // Element position and visibility
         for (int i = 0; i < OSD_ITEM_COUNT; i++) {
-            sbufWriteU16(dst, osdConfig()->item_pos[i]);
+            sbufWriteData(dst, &osdConfig()->elements[i], 3);
         }
 
         // Post flight statistics
@@ -2235,7 +2235,7 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                     osdConfigMutable()->enabled_stats[addr] = value;
                 } else if (addr < OSD_ITEM_COUNT) {
                     /* Set element positions */
-                    osdConfigMutable()->item_pos[addr] = value;
+                    /* osdConfigMutable()->item_pos[addr] = value; */
                 } else {
                   return MSP_RESULT_ERROR;
                 }

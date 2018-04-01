@@ -25,17 +25,10 @@ extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 
 #define OSD_ELEMENT_BUFFER_LENGTH 32
 
-#define VISIBLE_FLAG  0x0800
-#define VISIBLE(x)    (x & VISIBLE_FLAG)
-#define OSD_POS_MAX   0x3FF
-#define OSD_POSCFG_MAX   (VISIBLE_FLAG|0x3FF) // For CLI values
+#define VISIBLE_FLAG  0x1
+#define VISIBLE(e)    (e.flags & VISIBLE_FLAG)
 
-// Character coordinate
-#define OSD_POSITION_BITS 5 // 5 bits gives a range 0-31
-#define OSD_POSITION_XY_MASK ((1 << OSD_POSITION_BITS) - 1)
-#define OSD_POS(x,y)  ((x & OSD_POSITION_XY_MASK) | ((y & OSD_POSITION_XY_MASK) << OSD_POSITION_BITS))
-#define OSD_X(x)      (x & OSD_POSITION_XY_MASK)
-#define OSD_Y(x)      ((x >> OSD_POSITION_BITS) & OSD_POSITION_XY_MASK)
+#define OSD_ELEMENT(x, y, flags) (osdElementConfig_t) {x, y, flags}
 
 // Timer configuration
 // Stored as 15[alarm:8][precision:4][source:4]0
@@ -141,8 +134,14 @@ typedef enum {
     OSD_WARNING_ESC_FAIL          = (1 << 6)
 } osdWarningsFlags_e;
 
+typedef struct osdElementConfig_s {
+    int8_t x;
+    int8_t y;
+    uint8_t flags;
+} osdElementConfig_t;
+
 typedef struct osdConfig_s {
-    uint16_t item_pos[OSD_ITEM_COUNT];
+    osdElementConfig_t elements[OSD_ITEM_COUNT];
 
     // Alarms
     uint16_t cap_alarm;
