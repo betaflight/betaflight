@@ -405,7 +405,7 @@ void pwmWriteDshotCommand(uint8_t index, uint8_t motorCount, uint8_t command)
     }
 }
 
-uint16_t prepareDshotPacket(motorDmaOutput_t *const motor, const uint16_t value)
+FAST_CODE uint16_t prepareDshotPacket(motorDmaOutput_t *const motor, const uint16_t value)
 {
     uint16_t packet = (value << 1) | (motor->requestTelemetry ? 1 : 0);
     motor->requestTelemetry = false;    // reset telemetry request to make sure it's triggered only once in a row

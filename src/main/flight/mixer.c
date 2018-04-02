@@ -732,7 +732,7 @@ float applyThrottleLimit(float throttle)
     return throttle;
 }
 
-void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensation)
+NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensation)
 {
     if (isFlipOverAfterCrashMode()) {
         applyFlipOverAfterCrashModeToMotors();
