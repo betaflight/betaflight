@@ -105,43 +105,14 @@ void targetConfiguration(void)
     vcdProfileMutable()->video_system = VIDEO_SYSTEM_NTSC;
     strcpy(pilotConfigMutable()->name, "BeeBrain V2");
     osdConfigMutable()->cap_alarm  = 250;
-    osdConfigMutable()->item_pos[OSD_CRAFT_NAME]        = OSD_POS(9, 11)  | VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(23, 10) | VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_ITEM_TIMER_2]      = OSD_POS(2, 10)  | VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_FLYMODE]           = OSD_POS(17, 10) | VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_VTX_CHANNEL]       = OSD_POS(10, 10) | VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_RSSI_VALUE]         &= ~VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_ITEM_TIMER_1]       &= ~VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_THROTTLE_POS]       &= ~VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_CROSSHAIRS]         &= ~VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_HORIZON_SIDEBARS]   &= ~VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_ARTIFICIAL_HORIZON] &= ~VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_CURRENT_DRAW]       &= ~VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_MAH_DRAWN]          &= ~VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_GPS_SPEED]          &= ~VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_GPS_LON]            &= ~VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_GPS_LAT]            &= ~VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_GPS_SATS]           &= ~VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_HOME_DIR]           &= ~VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_HOME_DIST]          &= ~VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_COMPASS_BAR]        &= ~VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_ALTITUDE]           &= ~VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_ROLL_PIDS]          &= ~VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_PITCH_PIDS]         &= ~VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_YAW_PIDS]           &= ~VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_DEBUG]              &= ~VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_POWER]              &= ~VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_PIDRATE_PROFILE]    &= ~VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_WARNINGS]           &= ~VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_AVG_CELL_VOLTAGE]   &= ~VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_PITCH_ANGLE]        &= ~VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_ROLL_ANGLE]         &= ~VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_MAIN_BATT_USAGE]    &= ~VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_DISARMED]           &= ~VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_NUMERICAL_HEADING]  &= ~VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_NUMERICAL_VARIO]    &= ~VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_ESC_TMP]            &= ~VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_ESC_RPM]            &= ~VISIBLE_FLAG;
+    for (unsigned i = 0; i < OSD_ITEM_COUNT; i++) {
+        osdConfigMutable()->elements[OSD_RSSI_VALUE].flags &= ~VISIBLE_FLAG;
+    }
+    osdConfigMutable()->elements[OSD_CRAFT_NAME]        = OSD_ELEMENT(9, 11, VISIBLE_FLAG);
+    osdConfigMutable()->elements[OSD_MAIN_BATT_VOLTAGE] = OSD_ELEMENT(23, 10, VISIBLE_FLAG);
+    osdConfigMutable()->elements[OSD_ITEM_TIMER_2]      = OSD_ELEMENT(2, 10,  VISIBLE_FLAG);
+    osdConfigMutable()->elements[OSD_FLYMODE]           = OSD_ELEMENT(17, 10, VISIBLE_FLAG);
+    osdConfigMutable()->elements[OSD_VTX_CHANNEL]       = OSD_ELEMENT(10, 10, VISIBLE_FLAG);
 
     modeActivationConditionsMutable(0)->modeId           = BOXANGLE;
     modeActivationConditionsMutable(0)->auxChannelIndex  = AUX2 - NON_AUX_CHANNEL_COUNT;
@@ -163,7 +134,7 @@ void targetConfiguration(void)
     rxFailsafeChannelConfig_t *channelFailsafeConfig = rxFailsafeChannelConfigsMutable(BBV2_FRSKY_RSSI_CH_IDX - 1);
     channelFailsafeConfig->mode = RX_FAILSAFE_MODE_SET;
     channelFailsafeConfig->step = CHANNEL_VALUE_TO_RXFAIL_STEP(1000);
-    osdConfigMutable()->item_pos[OSD_RSSI_VALUE]        = OSD_POS(2, 11)  | VISIBLE_FLAG;
+    osdConfigMutable()->elements[OSD_RSSI_VALUE] = OSD_ELEMENT(2, 11, VISIBLE_FLAG);
 #endif
 }
 #endif
