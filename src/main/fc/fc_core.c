@@ -289,6 +289,17 @@ void disarm(void)
         }
 #endif
         BEEP_OFF;
+#ifdef USE_DSHOT
+        if (isMotorProtocolDshot() && isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH) && !feature(FEATURE_3D)) {
+            flipOverAfterCrashMode = false;
+            if (!feature(FEATURE_3D)) {
+                pwmDisableMotors();
+                delay(1);
+                pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL);
+                pwmEnableMotors();
+            }
+        }
+#endif
         // if ARMING_DISABLED_RUNAWAY_TAKEOFF is set then we want to play it's beep pattern instead
         if (!(getArmingDisableFlags() & ARMING_DISABLED_RUNAWAY_TAKEOFF)) {
             beeper(BEEPER_DISARMING);      // emit disarm tone
