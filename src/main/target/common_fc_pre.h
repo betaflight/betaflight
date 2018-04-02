@@ -101,6 +101,10 @@
 #define FAST_RAM
 #endif // USE_FAST_RAM
 
+#ifdef STM32F4
+// Data in RAM which is guaranteed to not be reset on hot reboot
+#define PERSISTENT __attribute__ ((section(".persistent_data"), aligned(4)))
+#endif
 
 #define USE_CLI
 #define USE_GYRO_REGISTER_DUMP  // Adds gyroregisters command to cli to dump configured register values
