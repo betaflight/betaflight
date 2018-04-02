@@ -29,6 +29,10 @@ typedef struct sdcardConfig_s {
     uint8_t cardDetectInverted;
     uint8_t dmaIdentifier;
     uint8_t dmaChannel;
+#ifdef USE_SDCARD_SDIO
+    uint8_t clockBypass;
+    uint8_t useCache;
+#endif
 } sdcardConfig_t;
 
 PG_DECLARE(sdcardConfig_t, sdcardConfig);

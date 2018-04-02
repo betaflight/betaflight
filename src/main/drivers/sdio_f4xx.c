@@ -32,6 +32,9 @@
 #include "platform.h"
 #include "stm32f4xx_gpio.h"
 
+#include "pg/pg.h"
+#include "pg/sdcard.h"
+
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 #include "drivers/nvic.h"
@@ -1122,8 +1125,7 @@ static SD_Error_t SD_WideBusOperationConfig(uint32_t WideMode)
   *         This API must be used after "Transfer State"
   * @retval SD Card error state
   */
-/*
-SD_Error_t HAL_SD_HighSpeed(void)
+SD_Error_t SD_HighSpeed(void)
 {
     SD_Error_t  ErrorState;
     uint8_t     SD_hs[64]  = {0};
@@ -1147,16 +1149,16 @@ SD_Error_t HAL_SD_HighSpeed(void)
     if(SD_SPEC != SD_ALLZERO)
     {
         // Set Block Size for Card
-        if((ErrorState = SD_TransmitCommand((SD_CMD_SET_BLOCKLEN | SDIO_CMD_RESPONSE_SHORT), 64, 1)) != SD_OK)
+        if((ErrorState = SD_TransmitCommand((SD_CMD_SET_BLOCKLEN | SD_CMD_RESPONSE_SHORT), 64, 1)) != SD_OK)
         {
             return ErrorState;
         }
 
         // Configure the SD DPSM (Data Path State Machine)
-        SD_DataTransferInit(64, SDIO_DATABLOCK_SIZE_64B, true);
+        SD_DataTransferInit(64, SD_DATABLOCK_SIZE_64B, true);
 
         // Send CMD6 switch mode
-        if((ErrorState =SD_TransmitCommand((SD_CMD_HS_SWITCH | SDIO_CMD_RESPONSE_SHORT), 0x80FFFF01, 1)) != SD_OK)
+        if((ErrorState =SD_TransmitCommand((SD_CMD_HS_SWITCH | SD_CMD_RESPONSE_SHORT), 0x80FFFF01, 1)) != SD_OK)
         {
             return ErrorState;
         }
@@ -1196,8 +1198,6 @@ SD_Error_t HAL_SD_HighSpeed(void)
 
     return ErrorState;
 }
-
-*/
 
 
 /** -----------------------------------------------------------------------------------------------------------------*/
@@ -1673,6 +1673,13 @@ bool SD_Init(void)
 	{
 		// Enable wide operation
 		ErrorState = SD_WideBusOperationConfig(SD_BUS_WIDE_4B);
+
+		if (ErrorState == SD_OK && sdcardConfig()->clockBypass) {
+			if (SD_HighSpeed()) {
+				SDIO->CLKCR |= SDIO_CLKCR_BYPASS;
+				SDIO->CLKCR |= SDIO_CLKCR_NEGEDGE;
+			}
+		}
 	}
 
 	// Configure the SDCARD device

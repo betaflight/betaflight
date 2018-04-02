@@ -45,6 +45,27 @@
 #define SDCARD_TIMEOUT_INIT_MILLIS      200
 #define SDCARD_MAX_CONSECUTIVE_FAILURES 8
 
+//Use this to speed up writing to SDCARD, because out asyncfatfs is retarded.
+#define FATFS_BLOCK_CACHE_SIZE 16
+uint8_t writeCache[512 * FATFS_BLOCK_CACHE_SIZE] __attribute__ ((aligned (4)));
+uint32_t cacheCount = 0;
+
+void cache_write(uint8_t *buffer)
+{
+	memcpy(&writeCache[cacheCount], buffer, 512);
+	cacheCount += 512;
+}
+
+uint16_t cache_getCount(void)
+{
+	return (cacheCount / 512);
+}
+
+void cache_reset(void)
+{
+	cacheCount = 0;
+}
+
 typedef enum {
     // In these states we run at the initialization 400kHz clockspeed:
     SDCARD_STATE_NOT_PRESENT = 0,
@@ -97,6 +118,7 @@ typedef struct sdcard_t {
     IO_t cardDetectPin;
     dmaIdentifier_e dma;
     uint8_t dmaChannel;
+    uint8_t useCache;
 } sdcard_t;
 
 static sdcard_t sdcard;
@@ -267,6 +289,11 @@ void sdcard_init(const sdcardConfig_t *config)
     } else {
         sdcard.cardDetectPin = IO_NONE;
     }
+    if (config->useCache) {
+    	sdcard.useCache = 1;
+    } else {
+    	sdcard.useCache = 0;
+    }
     SD_Initialize_LL(dmaGetRefByIdentifier(sdcard.dma));
     if (SD_IsDetected()) {
         if (SD_Init() != 0) {
@@ -306,6 +333,7 @@ static bool sdcard_isReady()
 static sdcardOperationStatus_e sdcard_endWriteBlocks()
 {
     sdcard.multiWriteBlocksRemain = 0;
+    if (sdcard.useCache) cache_reset();
 
     // 8 dummy clocks to guarantee N_WR clocks between the last card response and this token
 
@@ -399,6 +427,7 @@ bool sdcard_poll(void)
                 if (sdcard.multiWriteBlocksRemain > 1) {
                     sdcard.multiWriteBlocksRemain--;
                     sdcard.multiWriteNextBlock++;
+                    if (sdcard.useCache) cache_reset();
                     sdcard.state = SDCARD_STATE_WRITING_MULTIPLE_BLOCKS;
                 } else if (sdcard.multiWriteBlocksRemain == 1) {
                     // This function changes the sd card state for us whether immediately succesful or delayed:
@@ -526,14 +555,32 @@ sdcardOperationStatus_e sdcard_writeBlock(uint32_t blockIndex, uint8_t *buffer, 
     }
 
     sdcard.pendingOperation.buffer = buffer;
-    sdcard.pendingOperation.blockIndex = blockIndex;
+	sdcard.pendingOperation.blockIndex = blockIndex;
+
+	uint16_t block_count = 1;
+    if ((cache_getCount() < FATFS_BLOCK_CACHE_SIZE) &&
+    		(sdcard.multiWriteBlocksRemain != 0) && sdcard.useCache) {
+        cache_write(buffer);
+        if (cache_getCount() == FATFS_BLOCK_CACHE_SIZE || sdcard.multiWriteBlocksRemain == 0) {
+        	//Relocate buffer
+        	buffer = (uint8_t*)writeCache;
+        	//Recalculate block index
+        	blockIndex -= cache_getCount() - 1;
+        	block_count = cache_getCount();
+        } else {
+        	sdcard.multiWriteBlocksRemain--;
+			sdcard.multiWriteNextBlock++;
+        	sdcard.state = SDCARD_STATE_READY;
+			return SDCARD_OPERATION_SUCCESS;
+        }
+    }
+
     sdcard.pendingOperation.callback = callback;
     sdcard.pendingOperation.callbackData = callbackData;
     sdcard.pendingOperation.chunkIndex = 1; // (for non-DMA transfers) we've sent chunk #0 already
     sdcard.state = SDCARD_STATE_SENDING_WRITE;
 
-    //TODO: make sure buffer is aligned
-    if (SD_WriteBlocks_DMA(blockIndex, (uint32_t*) buffer, 512, 1) != SD_OK) {
+    if (SD_WriteBlocks_DMA(blockIndex, (uint32_t*) buffer, 512, block_count) != SD_OK) {
         /* Our write was rejected! This could be due to a bad address but we hope not to attempt that, so assume
          * the card is broken and needs reset.
          */

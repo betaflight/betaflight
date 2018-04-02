@@ -40,6 +40,8 @@ void pgResetFn_sdcardConfig(sdcardConfig_t *config)
     config->device = spiDeviceByInstance(SDCARD_SPI_INSTANCE);
 #elif defined(USE_SDCARD_SDIO)
     config->enabled = 1;
+    config->clockBypass = 0;
+    config->useCache = 0;
 #else
     config->enabled = 0;
     config->device = 0;
