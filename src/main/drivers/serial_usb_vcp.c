@@ -39,6 +39,11 @@
 #elif defined(STM32F7)
 #include "vcp_hal/usbd_cdc_interface.h"
 #include "usb_io.h"
+#ifdef USE_USB_CDC_HID
+#include "usbd_cdc_hid.h"
+#include "pg/pg.h"
+#include "pg/usb.h"
+#endif
 USBD_HandleTypeDef USBD_Device;
 #else
 #include "usb_core.h"
@@ -234,8 +239,16 @@ serialPort_t *usbVcpOpen(void)
     USBD_Init(&USBD_Device, &VCP_Desc, 0);
 
     /* Add Supported Class */
-    USBD_RegisterClass(&USBD_Device, USBD_CDC_CLASS);
+#ifdef USE_USB_CDC_HID
+    if (usbDevConfig()->type == COMPOSITE) {
+    	USBD_RegisterClass(&USBD_Device, USBD_HID_CDC_CLASS);
+    } else
+#endif
+    {
+        USBD_RegisterClass(&USBD_Device, USBD_CDC_CLASS);
+    }
 
+    /* HID Interface doesn't have any callbacks... */
     /* Add CDC Interface Class */
     USBD_CDC_RegisterInterface(&USBD_Device, &USBD_CDC_fops);
 

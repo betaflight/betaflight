@@ -107,6 +107,10 @@
 #undef USE_USB_MSC
 #endif
 
+#if !defined(USE_VCP)
+#undef USE_USB_CDC_HID
+#endif
+
 #if defined(USE_USB_CDC_HID) || defined(USE_USB_MSC)
 #define USE_USB_ADVANCED_PROFILES
 #endif

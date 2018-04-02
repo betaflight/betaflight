@@ -52,6 +52,8 @@
 #include "platform.h"
 #include "build/version.h"
 
+#include "pg/pg.h"
+#include "pg/usb.h"
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 #define USBD_VID                      0x0483
@@ -114,6 +116,10 @@ __ALIGN_BEGIN uint8_t USBD_DeviceDesc[USB_LEN_DEV_DESC] __ALIGN_END = {
   USBD_MAX_NUM_CONFIGURATION  /* bNumConfigurations */
 }; /* USB_DeviceDescriptor */
 
+#ifdef USE_USB_CDC_HID
+extern uint8_t USBD_HID_CDC_DeviceDescriptor[USB_LEN_DEV_DESC];
+#endif
+
 /* USB Standard Device Descriptor */
 #if defined ( __ICCARM__ ) /*!< IAR Compiler */
   #pragma data_alignment=4
@@ -149,6 +155,12 @@ static void Get_SerialNum(void);
 uint8_t *USBD_VCP_DeviceDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
 {
   (void)speed;
+#ifdef USE_USB_CDC_HID
+  if (usbDevConfig()->type == COMPOSITE) {
+    *length = sizeof(USBD_HID_CDC_DeviceDescriptor);
+    return USBD_HID_CDC_DeviceDescriptor;
+  }
+#endif
   *length = sizeof(USBD_DeviceDesc);
   return (uint8_t*)USBD_DeviceDesc;
 }

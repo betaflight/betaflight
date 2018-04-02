@@ -69,6 +69,7 @@
 #define USE_GYRO_DATA_ANALYSE
 #define USE_OVERCLOCK
 #define USE_ADC_INTERNAL
+#define USE_USB_CDC_HID
 #endif
 
 #if defined(STM32F4) || defined(STM32F7)
