@@ -52,18 +52,18 @@ uint32_t cacheCount = 0;
 
 void cache_write(uint8_t *buffer)
 {
-	memcpy(&writeCache[cacheCount], buffer, 512);
-	cacheCount += 512;
+    memcpy(&writeCache[cacheCount], buffer, 512);
+    cacheCount += 512;
 }
 
 uint16_t cache_getCount(void)
 {
-	return (cacheCount / 512);
+    return (cacheCount / 512);
 }
 
 void cache_reset(void)
 {
-	cacheCount = 0;
+    cacheCount = 0;
 }
 
 typedef enum {
@@ -290,9 +290,9 @@ void sdcard_init(const sdcardConfig_t *config)
         sdcard.cardDetectPin = IO_NONE;
     }
     if (config->useCache) {
-    	sdcard.useCache = 1;
+        sdcard.useCache = 1;
     } else {
-    	sdcard.useCache = 0;
+        sdcard.useCache = 0;
     }
     SD_Initialize_LL(dmaGetRefByIdentifier(sdcard.dma));
     if (SD_IsDetected()) {
@@ -555,23 +555,23 @@ sdcardOperationStatus_e sdcard_writeBlock(uint32_t blockIndex, uint8_t *buffer, 
     }
 
     sdcard.pendingOperation.buffer = buffer;
-	sdcard.pendingOperation.blockIndex = blockIndex;
+    sdcard.pendingOperation.blockIndex = blockIndex;
 
-	uint16_t block_count = 1;
+    uint16_t block_count = 1;
     if ((cache_getCount() < FATFS_BLOCK_CACHE_SIZE) &&
-    		(sdcard.multiWriteBlocksRemain != 0) && sdcard.useCache) {
+        (sdcard.multiWriteBlocksRemain != 0) && sdcard.useCache) {
         cache_write(buffer);
         if (cache_getCount() == FATFS_BLOCK_CACHE_SIZE || sdcard.multiWriteBlocksRemain == 0) {
-        	//Relocate buffer
-        	buffer = (uint8_t*)writeCache;
-        	//Recalculate block index
-        	blockIndex -= cache_getCount() - 1;
-        	block_count = cache_getCount();
+            //Relocate buffer
+            buffer = (uint8_t*)writeCache;
+            //Recalculate block index
+            blockIndex -= cache_getCount() - 1;
+            block_count = cache_getCount();
         } else {
-        	sdcard.multiWriteBlocksRemain--;
-			sdcard.multiWriteNextBlock++;
-        	sdcard.state = SDCARD_STATE_READY;
-			return SDCARD_OPERATION_SUCCESS;
+            sdcard.multiWriteBlocksRemain--;
+            sdcard.multiWriteNextBlock++;
+            sdcard.state = SDCARD_STATE_READY;
+            return SDCARD_OPERATION_SUCCESS;
         }
     }
 
