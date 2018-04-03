@@ -39,16 +39,41 @@ void systemReset(void)
     NVIC_SystemReset();
 }
 
+PERSISTENT uint32_t bootloaderRequest = 0;
+#define BOOTLOADER_REQUEST_COOKIE 0xDEADBEEF
+
 void systemResetToBootloader(void)
 {
     if (mpuResetFn) {
         mpuResetFn();
     }
 
-    *((uint32_t *)0x2001FFFC) = 0xDEADBEEF; // 128KB SRAM STM32F4XX
+    bootloaderRequest = BOOTLOADER_REQUEST_COOKIE;
 
     __disable_irq();
     NVIC_SystemReset();
+}
+
+typedef void resetHandler_t(void);
+
+typedef struct isrVector_s {
+    __I uint32_t    stackEnd;
+    resetHandler_t *resetHandler;
+} isrVector_t;
+
+void checkForBootLoaderRequest(void)
+{
+    if (bootloaderRequest != BOOTLOADER_REQUEST_COOKIE) {
+        return;
+    }
+
+    bootloaderRequest = 0;
+
+    extern isrVector_t system_isr_vector_table_base;
+
+    __set_MSP(system_isr_vector_table_base.stackEnd);
+    system_isr_vector_table_base.resetHandler();
+    while (1);
 }
 
 void enableGPIOPowerUsageAndNoiseReductions(void)
@@ -160,8 +185,6 @@ bool isMPUSoftReset(void)
 
 void systemInit(void)
 {
-    checkForBootLoaderRequest();
-
     SetSysClock();
 
     // Configure NVIC preempt/priority groups
@@ -184,20 +207,4 @@ void systemInit(void)
 
     // SysTick
     SysTick_Config(SystemCoreClock / 1000);
-}
-
-void(*bootJump)(void);
-void checkForBootLoaderRequest(void)
-{
-    if (*((uint32_t *)0x2001FFFC) == 0xDEADBEEF) {
-
-        *((uint32_t *)0x2001FFFC) = 0x0;
-
-        __enable_irq();
-        __set_MSP(*((uint32_t *)0x1FFF0000));
-
-        bootJump = (void(*)(void))(*((uint32_t *) 0x1FFF0004));
-        bootJump();
-        while (1);
-    }
 }
