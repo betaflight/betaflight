@@ -23,7 +23,15 @@
 #define __fatfs_sd_sdio_H__
 
 #include <stdint.h>
+
+#include "platform.h"
+#ifdef STM32F4
 #include "stm32f4xx.h"
+#endif
+
+#ifdef STM32F7
+#include "stm32f7xx.h"
+#endif
 
  /* SDCARD pinouts
  *

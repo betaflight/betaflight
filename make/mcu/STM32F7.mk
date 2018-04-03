@@ -178,6 +178,11 @@ MCU_EXCLUDES = \
             drivers/bus_i2c.c \
             drivers/timer.c \
             drivers/serial_uart.c
+            
+ifneq ($(filter SDIO,$(FEATURES)),)
+MCU_COMMON_SRC += \
+            drivers/sdio_f7xx.c
+endif
 
 DSP_LIB := $(ROOT)/lib/main/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM7
