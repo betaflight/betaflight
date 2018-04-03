@@ -15,20 +15,18 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "platform.h"
 
-#include "pg/pg.h"
-#include "drivers/io.h"
+#if defined(USE_SDCARD_SDIO)
 
-typedef struct sdcardConfig_s {
-    uint8_t useDma;
-    uint8_t enabled;
-    uint8_t device;
-    ioTag_t cardDetectTag;
-    ioTag_t chipSelectTag;
-    uint8_t cardDetectInverted;
-    uint8_t dmaIdentifier;
-    uint8_t dmaChannel;
-} sdcardConfig_t;
+#include "pg/pg_ids.h"
+#include "pg/sdio.h"
 
-PG_DECLARE(sdcardConfig_t, sdcardConfig);
+PG_REGISTER_WITH_RESET_TEMPLATE(sdioConfig_t, sdioConfig, PG_SDIO_CONFIG, 0);
+
+PG_RESET_TEMPLATE(sdioConfig_t, sdioConfig,
+    .clockBypass = 0,
+    .useCache = 0,
+);
+
+#endif

@@ -38,6 +38,9 @@
 
 #include "drivers/sdmmc_sdio.h"
 
+#include "pg/pg.h"
+#include "pg/sdio.h"
+
 #ifdef AFATFS_USE_INTROSPECTIVE_LOGGING
     #define SDCARD_PROFILING
 #endif
@@ -45,13 +48,17 @@
 #define SDCARD_TIMEOUT_INIT_MILLIS      200
 #define SDCARD_MAX_CONSECUTIVE_FAILURES 8
 
-//Use this to speed up writing to SDCARD, because out asyncfatfs is retarded.
+// Use this to speed up writing to SDCARD... asyncfatfs has limited support for multiblock write
 #define FATFS_BLOCK_CACHE_SIZE 16
 uint8_t writeCache[512 * FATFS_BLOCK_CACHE_SIZE] __attribute__ ((aligned (4)));
 uint32_t cacheCount = 0;
 
 void cache_write(uint8_t *buffer)
 {
+    if (cacheCount == sizeof(writeCache)) {
+        // Prevents overflow
+        return;
+    }
     memcpy(&writeCache[cacheCount], buffer, 512);
     cacheCount += 512;
 }
@@ -289,7 +296,7 @@ void sdcard_init(const sdcardConfig_t *config)
     } else {
         sdcard.cardDetectPin = IO_NONE;
     }
-    if (config->useCache) {
+    if (sdioConfig()->useCache) {
         sdcard.useCache = 1;
     } else {
         sdcard.useCache = 0;
@@ -333,7 +340,9 @@ static bool sdcard_isReady()
 static sdcardOperationStatus_e sdcard_endWriteBlocks()
 {
     sdcard.multiWriteBlocksRemain = 0;
-    if (sdcard.useCache) cache_reset();
+    if (sdcard.useCache) {
+        cache_reset();
+    }
 
     // 8 dummy clocks to guarantee N_WR clocks between the last card response and this token
 
@@ -427,7 +436,9 @@ bool sdcard_poll(void)
                 if (sdcard.multiWriteBlocksRemain > 1) {
                     sdcard.multiWriteBlocksRemain--;
                     sdcard.multiWriteNextBlock++;
-                    if (sdcard.useCache) cache_reset();
+                    if (sdcard.useCache) {
+                        cache_reset();
+                    }
                     sdcard.state = SDCARD_STATE_WRITING_MULTIPLE_BLOCKS;
                 } else if (sdcard.multiWriteBlocksRemain == 1) {
                     // This function changes the sd card state for us whether immediately succesful or delayed:
@@ -561,7 +572,7 @@ sdcardOperationStatus_e sdcard_writeBlock(uint32_t blockIndex, uint8_t *buffer, 
     if ((cache_getCount() < FATFS_BLOCK_CACHE_SIZE) &&
         (sdcard.multiWriteBlocksRemain != 0) && sdcard.useCache) {
         cache_write(buffer);
-        if (cache_getCount() == FATFS_BLOCK_CACHE_SIZE || sdcard.multiWriteBlocksRemain == 0) {
+        if (cache_getCount() == FATFS_BLOCK_CACHE_SIZE || sdcard.multiWriteBlocksRemain == 1) {
             //Relocate buffer
             buffer = (uint8_t*)writeCache;
             //Recalculate block index

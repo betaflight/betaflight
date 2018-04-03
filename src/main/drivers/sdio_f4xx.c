@@ -33,7 +33,7 @@
 #include "stm32f4xx_gpio.h"
 
 #include "pg/pg.h"
-#include "pg/sdcard.h"
+#include "pg/sdio.h"
 
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
@@ -1674,7 +1674,7 @@ bool SD_Init(void)
 		// Enable wide operation
 		ErrorState = SD_WideBusOperationConfig(SD_BUS_WIDE_4B);
 
-		if (ErrorState == SD_OK && sdcardConfig()->clockBypass) {
+		if (ErrorState == SD_OK && sdioConfig()->clockBypass) {
 			if (SD_HighSpeed()) {
 				SDIO->CLKCR |= SDIO_CLKCR_BYPASS;
 				SDIO->CLKCR |= SDIO_CLKCR_NEGEDGE;

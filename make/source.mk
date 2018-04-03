@@ -80,6 +80,7 @@ COMMON_SRC = \
             pg/sdcard.c \
             pg/vcd.c \
             pg/usb.c \
+            pg/sdio.c \
             scheduler/scheduler.c \
             sensors/adcinternal.c \
             sensors/battery.c \
