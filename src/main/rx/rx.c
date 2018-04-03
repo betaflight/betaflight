@@ -393,6 +393,8 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
     UNUSED(currentDeltaTime);
 
     bool signalReceived = false;
+    bool useDataDrivenProcessing = true;
+
 #if defined(USE_PWM) || defined(USE_PPM)
     if (feature(FEATURE_RX_PPM)) {
         if (isPPMDataBeingReceived()) {
@@ -406,6 +408,7 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
             signalReceived = true;
             rxIsInFailsafeMode = false;
             needRxSignalBefore = currentTimeUs + needRxSignalMaxDelayUs;
+            useDataDrivenProcessing = false;
         }
     } else
 #endif
@@ -439,7 +442,7 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
         rxSignalReceived = false;
     }
 
-    if (signalReceived || cmpTimeUs(currentTimeUs, rxNextUpdateAtUs) > 0) {
+    if ((signalReceived && useDataDrivenProcessing) || cmpTimeUs(currentTimeUs, rxNextUpdateAtUs) > 0) {
         rxDataProcessingRequired = true;
     }
 

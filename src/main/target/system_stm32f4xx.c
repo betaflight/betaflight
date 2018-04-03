@@ -458,8 +458,64 @@ static void SystemInit_ExtMemCtl(void);
 uint32_t SystemCoreClock;
 uint32_t pll_p = PLL_P, pll_n = PLL_N, pll_q = PLL_Q;
 
+typedef struct pllConfig_s {
+  uint16_t n;
+  uint16_t p;
+  uint16_t q;
+} pllConfig_t;
+
+static const pllConfig_t overclockLevels[] = {
+  { PLL_N, PLL_P, PLL_Q },    // default
+
+#if defined(STM32F40_41xxx)
+  { 384, 2, 8 },              // 192 MHz
+  { 432, 2, 9 },              // 216 MHz
+  { 480, 2, 10 }              // 240 MHz
+#elif defined(STM32F411xE)
+  { 432, 4, 9 },              // 108 MHz
+  { 480, 4, 10 },             // 120 MHz
+#endif
+
+  // XXX Doesn't work for F446 with this configuration.
+  // XXX Need to use smaller M to reduce N?
+};
+
+static PERSISTENT uint32_t currentOverclockLevel = 0;
+
+void SystemInitOC(void)
+{
+    /* PLL setting for overclocking */
+    if (currentOverclockLevel >= ARRAYLEN(overclockLevels)) {
+      return;
+    }
+
+    const pllConfig_t * const pll = overclockLevels + currentOverclockLevel;
+
+    pll_n = pll->n;
+    pll_p = pll->p;
+    pll_q = pll->q;
+}
+
+void OverclockRebootIfNecessary(uint32_t overclockLevel)
+{
+  if (overclockLevel >= ARRAYLEN(overclockLevels)) {
+    return;
+  }
+
+  const pllConfig_t * const pll = overclockLevels + overclockLevel;
+
+  // Reboot to adjust overclock frequency
+  if (SystemCoreClock != (pll->n / pll->p) * 1000000) {
+    currentOverclockLevel = overclockLevel;
+    __disable_irq();
+    NVIC_SystemReset();
+  }
+}
+
 void SystemInit(void)
 {
+  SystemInitOC();
+
   /* core clock is simply a mhz of PLL_N / PLL_P */
   SystemCoreClock = (pll_n / pll_p) * 1000000;
 
@@ -500,74 +556,6 @@ void SystemInit(void)
 #else
   SCB->VTOR = FLASH_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal FLASH */
 #endif
-}
-
-typedef struct pllConfig_s {
-  uint16_t n;
-  uint16_t p;
-  uint16_t q;
-} pllConfig_t;
-
-static const pllConfig_t overclockLevels[] = {
-  { PLL_N, PLL_P, PLL_Q },    // default
-
-#if defined(STM32F40_41xxx)
-  { 384, 2, 8 },              // 192 MHz
-  { 432, 2, 9 },              // 216 MHz
-  { 480, 2, 10 }              // 240 MHz
-#elif defined(STM32F411xE)
-  { 432, 4, 9 },              // 108 MHz
-  { 480, 4, 10 },             // 120 MHz
-#endif
-
-  // XXX Doesn't work for F446 with this configuration.
-  // XXX Need to use smaller M to reduce N?
-};
-
-// 8 bytes of memory located at the very end of RAM, expected to be unoccupied
-#define REQUEST_OVERCLOCK               (*(__IO uint32_t *) 0x2001FFF8)
-#define CURRENT_OVERCLOCK_LEVEL         (*(__IO uint32_t *) 0x2001FFF4)
-#define REQUEST_OVERCLOCK_MAGIC_COOKIE  0xBABEFACE
-
-void SystemInitOC(void)
-{
-#ifdef STM32F411xE
-    if (REQUEST_OVERCLOCK_MAGIC_COOKIE == REQUEST_OVERCLOCK) {
-#endif
-      const uint32_t overclockLevel = CURRENT_OVERCLOCK_LEVEL;
-
-      /* PLL setting for overclocking */
-      if (overclockLevel < ARRAYLEN(overclockLevels)) {
-        const pllConfig_t * const pll = overclockLevels + overclockLevel;
-
-        pll_n = pll->n;
-        pll_p = pll->p;
-        pll_q = pll->q;
-      }
-
-#ifdef STM32F411xE
-      REQUEST_OVERCLOCK = 0;
-    }
-#endif
-
-    SystemInit();
-}
-
-void OverclockRebootIfNecessary(uint32_t overclockLevel)
-{
-  if (overclockLevel >= ARRAYLEN(overclockLevels)) {
-    return;
-  }
-
-  const pllConfig_t * const pll = overclockLevels + overclockLevel;
-
-  // Reboot to adjust overclock frequency
-  if (SystemCoreClock != (pll->n / pll->p) * 1000000) {
-    REQUEST_OVERCLOCK = REQUEST_OVERCLOCK_MAGIC_COOKIE;
-    CURRENT_OVERCLOCK_LEVEL = overclockLevel;
-    __disable_irq();
-    NVIC_SystemReset();
-  }
 }
 
 /**

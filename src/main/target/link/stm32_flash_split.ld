@@ -35,6 +35,15 @@ SECTIONS
     . = ALIGN(4);
   } >FLASH
 
+  /* System memory (read-only bootloader) interrupt vector */
+  .system_isr_vector (NOLOAD) :
+  {
+    . = ALIGN(4);
+    PROVIDE (system_isr_vector_table_base = .);
+    KEEP(*(.system_isr_vector)) /* Bootloader code */
+    . = ALIGN(4);
+  } >SYSTEM_MEMORY
+
   /* The program code and other data goes into FLASH */
   .text :
   {
@@ -113,7 +122,7 @@ SECTIONS
 
   /* Uninitialized data section */
   . = ALIGN(4);
-  .bss :
+  .bss (NOLOAD) :
   {
     /* This is used by the startup in order to initialize the .bss secion */
     _sbss = .;         /* define a global symbol at bss start */
@@ -135,6 +144,14 @@ SECTIONS
     . = ALIGN(4);
     __fastram_bss_end__ = .;
   } >FASTRAM
+
+  .persistent_data (NOLOAD) :
+  {
+    __persistent_data_start__ = .;
+    *(.persistent_data)
+    . = ALIGN(4);
+    __persistent_data_end__ = .;
+  } >RAM
 
   /* User_heap_stack section, used to check that there is enough RAM left */
   _heap_stack_end = ORIGIN(STACKRAM) + LENGTH(STACKRAM) - _Hot_Reboot_Flags_Size;

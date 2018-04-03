@@ -205,5 +205,12 @@ MSC_SRC += \
             msc/usbd_storage_sd_spi.c
 endif
 
+ifneq ($(filter SDIO,$(FEATURES)),)
+MSC_SRC += \
+            msc/usbd_storage_sdio.c
+MCU_COMMON_SRC += \
+            drivers/sdio_f4xx.c
+endif
+
 DSP_LIB := $(ROOT)/lib/main/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM4

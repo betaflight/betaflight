@@ -24,7 +24,7 @@
 #include "platform.h"
 #include "common/time.h"
 
-
+#define VTX_SETTINGS_NO_BAND        0 // used for custom frequency selection mode
 #define VTX_SETTINGS_MIN_BAND       1
 #define VTX_SETTINGS_MAX_BAND       5
 #define VTX_SETTINGS_MIN_CHANNEL    1

@@ -59,6 +59,7 @@ COMMON_SRC = \
             interface/msp.c \
             interface/msp_box.c \
             interface/tramp_protocol.c \
+            interface/smartaudio_protocol.c \
             io/beeper.c \
             io/piniobox.c \
             io/serial.c \
@@ -176,6 +177,7 @@ FC_SRC = \
             io/gps.c \
             io/ledstrip.c \
             io/osd.c \
+            io/pidaudio.c \
             sensors/barometer.c \
             sensors/rangefinder.c \
             telemetry/telemetry.c \
@@ -382,6 +384,15 @@ SRC   := $(filter-out $(MCU_EXCLUDES), $(SRC))
 ifneq ($(filter SDCARD,$(FEATURES)),)
 SRC += \
             drivers/sdcard.c \
+            drivers/sdcard_standard.c \
+            io/asyncfatfs/asyncfatfs.c \
+            io/asyncfatfs/fat_standard.c \
+            $(MSC_SRC)
+endif
+
+ifneq ($(filter SDIO,$(FEATURES)),)
+SRC += \
+            drivers/sdcard_sdio_baremetal.c \
             drivers/sdcard_standard.c \
             io/asyncfatfs/asyncfatfs.c \
             io/asyncfatfs/fat_standard.c \

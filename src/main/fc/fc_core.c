@@ -64,6 +64,7 @@
 #include "io/beeper.h"
 #include "io/gps.h"
 #include "io/motors.h"
+#include "io/pidaudio.h"
 #include "io/servos.h"
 #include "io/serial.h"
 #include "io/statusindicator.h"
@@ -288,6 +289,17 @@ void disarm(void)
         }
 #endif
         BEEP_OFF;
+#ifdef USE_DSHOT
+        if (isMotorProtocolDshot() && isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH) && !feature(FEATURE_3D)) {
+            flipOverAfterCrashMode = false;
+            if (!feature(FEATURE_3D)) {
+                pwmDisableMotors();
+                delay(1);
+                pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL);
+                pwmEnableMotors();
+            }
+        }
+#endif
         // if ARMING_DISABLED_RUNAWAY_TAKEOFF is set then we want to play it's beep pattern instead
         if (!(getArmingDisableFlags() & ARMING_DISABLED_RUNAWAY_TAKEOFF)) {
             beeper(BEEPER_DISARMING);      // emit disarm tone
@@ -824,6 +836,11 @@ static void subTaskPidController(timeUs_t currentTimeUs)
         DEBUG_SET(DEBUG_RUNAWAY_TAKEOFF, DEBUG_RUNAWAY_TAKEOFF_ENABLED_STATE, DEBUG_RUNAWAY_TAKEOFF_FALSE);
         DEBUG_SET(DEBUG_RUNAWAY_TAKEOFF, DEBUG_RUNAWAY_TAKEOFF_ACTIVATING_DELAY, DEBUG_RUNAWAY_TAKEOFF_FALSE);
     }
+#endif
+
+
+#ifdef USE_PID_AUDIO
+    pidAudioUpdate();
 #endif
 }
 

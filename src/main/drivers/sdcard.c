@@ -366,6 +366,14 @@ static sdcardReceiveBlockStatus_e sdcard_receiveDataBlock(uint8_t *buffer, int c
 
 static bool sdcard_sendDataBlockFinish(void)
 {
+#ifdef USE_HAL_DRIVER
+    // Drain anything left in the Rx FIFO (we didn't read it during the write)
+    //This is necessary here as when using msc there is timing issue
+    while (LL_SPI_IsActiveFlag_RXNE(sdcard.instance)) {
+        sdcard.instance->DR;
+    }
+#endif
+
     // Send a dummy CRC
     spiTransferByte(sdcard.instance, 0x00);
     spiTransferByte(sdcard.instance, 0x00);
@@ -670,7 +678,7 @@ bool sdcard_poll(void)
     if (!sdcard.enabled) {
         sdcard.state = SDCARD_STATE_NOT_PRESENT;
         return false;
-    } 
+    }
 
     uint8_t initStatus;
     bool sendComplete;
@@ -763,8 +771,10 @@ bool sdcard_poll(void)
             sendComplete = false;
 
 #if defined(USE_HAL_DRIVER)
-            // TODO : need to verify this
-            if (sdcard.useDMAForTx && LL_DMA_IsEnabledStream(sdcard.dma->dma, sdcard.dma->stream)) {
+            if (sdcard.useDMAForTx && DMA_GET_FLAG_STATUS(sdcard.dma, DMA_IT_TCIF)) {
+                //Clear both flags after transfer
+                DMA_CLEAR_FLAG(sdcard.dma, DMA_IT_TCIF);
+                DMA_CLEAR_FLAG(sdcard.dma, DMA_IT_HTIF);
                 // Drain anything left in the Rx FIFO (we didn't read it during the write)
                 while (LL_SPI_IsActiveFlag_RXNE(sdcard.instance)) {
                     sdcard.instance->DR;

@@ -21,7 +21,7 @@
 
 #include <platform.h>
 
-#ifdef USE_DSHOT
+#if defined(USE_ESC_SENSOR)
 
 #include "build/debug.h"
 

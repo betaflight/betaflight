@@ -46,7 +46,6 @@
 
 #ifdef STM32F4
 #define USE_DSHOT
-#define USE_ESC_SENSOR
 #define I2C3_OVERCLOCK true
 #define USE_GYRO_DATA_ANALYSE
 #define USE_ADC
@@ -65,12 +64,12 @@
 #endif
 #ifdef STM32F7
 #define USE_DSHOT
-#define USE_ESC_SENSOR
 #define I2C3_OVERCLOCK true
 #define I2C4_OVERCLOCK true
 #define USE_GYRO_DATA_ANALYSE
 #define USE_OVERCLOCK
 #define USE_ADC_INTERNAL
+#define USE_USB_CDC_HID
 #endif
 
 #if defined(STM32F4) || defined(STM32F7)
@@ -103,6 +102,10 @@
 #define FAST_RAM
 #endif // USE_FAST_RAM
 
+#ifdef STM32F4
+// Data in RAM which is guaranteed to not be reset on hot reboot
+#define PERSISTENT __attribute__ ((section(".persistent_data"), aligned(4)))
+#endif
 
 #define USE_CLI
 #define USE_GYRO_REGISTER_DUMP  // Adds gyroregisters command to cli to dump configured register values
@@ -162,6 +165,8 @@
 #define USE_VTX_SMARTAUDIO
 #define USE_VTX_TRAMP
 #define USE_GYRO_LPF2
+#define USE_ESC_SENSOR
+#define USE_ESC_SENSOR_INFO
 
 #ifdef USE_SERIALRX_SPEKTRUM
 #define USE_SPEKTRUM_BIND
