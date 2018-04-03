@@ -172,6 +172,7 @@ MCU_COMMON_SRC = \
             drivers/dma_stm32f4xx.c \
             drivers/inverter.c \
             drivers/light_ws2811strip_stdperiph.c \
+            drivers/transponder_ir_io_stdperiph.c \
             drivers/pwm_output_dshot.c \
             drivers/serial_uart_init.c \
             drivers/serial_uart_stm32f4xx.c \
