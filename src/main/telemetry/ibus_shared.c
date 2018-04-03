@@ -408,7 +408,7 @@ static void setValue(uint8_t* bufferPtr, uint8_t sensorType, uint8_t length)
             value.int16 = attitude.raw[sensorType - IBUS_SENSOR_TYPE_ROLL] *10;
             break;
         case IBUS_SENSOR_TYPE_ARMED:
-            value.uint16 = ARMING_FLAG(ARMED) ? 0 : 1;
+            value.uint16 = ARMING_FLAG(ARMED) ? 1 : 0;
             break;
 #if defined(USE_TELEMETRY_IBUS_EXTENDED)
         case IBUS_SENSOR_TYPE_CMP_HEAD:
