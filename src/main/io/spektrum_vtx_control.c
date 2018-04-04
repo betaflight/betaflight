@@ -150,10 +150,17 @@ void spektrumHandleVtxControl(uint32_t vtxCntrl)
 // ############ VTX_CONTROL task #############
 void spektrumVtxControl(void)
 {
+    static uint32_t prevVtxControl =0;
+    uint32_t vtxControl;
+
     // Check for invalid VTX ctrl frames
     if ((vtxControl_ipc & SPEKTRUM_VTX_CONTROL_FRAME_MASK) != SPEKTRUM_VTX_CONTROL_FRAME) return;
 
-    uint32_t vtxControl = vtxControl_ipc;
+    vtxControl = vtxControl_ipc;
+    vtxControl_ipc = 0;
+
+    if (prevVtxControl == vtxControl) return;
+    prevVtxControl = vtxControl;
 
     spektrumVtx_t vtx = {
         .pitMode = (vtxControl & SPEKTRUM_VTX_PIT_MODE_MASK) >> SPEKTRUM_VTX_PIT_MODE_SHIFT,
@@ -201,9 +208,10 @@ void spektrumVtxControl(void)
         }
         // Everyone seems to agree on what PIT ON/OFF means
         uint8_t currentPitMode = 0;
-        vtxCommonGetPitMode(vtxDevice, &currentPitMode);
-        if (currentPitMode != vtx.pitMode) {
-            vtxCommonSetPitMode(vtxDevice, vtx.pitMode);
+        if (vtxCommonGetPitMode(vtxDevice, &currentPitMode)) {
+            if (currentPitMode != vtx.pitMode) {
+                vtxCommonSetPitMode(vtxDevice, vtx.pitMode);
+            }
         }
     }
 
