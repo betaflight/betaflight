@@ -304,8 +304,9 @@ batteryState_e getBatteryState(void) {
     return BATTERY_OK;
 }
 
-void ws2811LedStripInit(ioTag_t ioTag) {
+void ws2811LedStripInit(ioTag_t ioTag, uint8_t odEnable) {
     UNUSED(ioTag);
+    UNUSED(odEnable);
 }
 
 void ws2811UpdateStrip(ledStripFormatRGB_e) {}

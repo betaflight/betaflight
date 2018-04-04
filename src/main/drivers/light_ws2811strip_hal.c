@@ -44,7 +44,7 @@ void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
     ws2811LedDataTransferInProgress = 0;
 }
 
-void ws2811LedStripHardwareInit(ioTag_t ioTag)
+void ws2811LedStripHardwareInit(ioTag_t ioTag, uint8_t odEnable)
 {
     if (!ioTag) {
         return;
@@ -79,7 +79,12 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
 
     ws2811IO = IOGetByTag(ioTag);
     IOInit(ws2811IO, OWNER_LED_STRIP, 0);
-    IOConfigGPIOAF(ws2811IO, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLDOWN), timerHardware->alternateFunction);
+
+    if (odEnable) {
+        IOConfigGPIOAF(ws2811IO, IO_CONFIG(GPIO_MODE_AF_OD, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL), timerHardware->alternateFunction);
+    } else {
+        IOConfigGPIOAF(ws2811IO, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLDOWN), timerHardware->alternateFunction);
+    }
 
     __DMA1_CLK_ENABLE();
 

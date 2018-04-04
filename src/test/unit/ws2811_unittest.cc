@@ -96,8 +96,9 @@ rgbColor24bpp_t* hsvToRgb24(const hsvColor_t *c) {
     return NULL;
 }
 
-void ws2811LedStripHardwareInit(ioTag_t ioTag) {
+void ws2811LedStripHardwareInit(ioTag_t ioTag, uint8_t odEnable) {
     UNUSED(ioTag);
+    UNUSED(odEnable);
 }
 
 void ws2811LedStripDMAEnable(void) {}

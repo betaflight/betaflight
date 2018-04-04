@@ -53,7 +53,7 @@ static void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
     }
 }
 
-void ws2811LedStripHardwareInit(ioTag_t ioTag)
+void ws2811LedStripHardwareInit(ioTag_t ioTag, uint8_t odEnable)
 {
     if (!ioTag) {
         return;
@@ -75,7 +75,12 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
 #ifdef STM32F1
     IOConfigGPIO(ws2811IO, IO_CONFIG(GPIO_Speed_50MHz, GPIO_Mode_AF_PP));
 #else
-    IOConfigGPIOAF(ws2811IO, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP), timerHardware->alternateFunction);
+    if (odEnable) {
+        // XXX IOConfigGPIOAF(ws2811IO, IOCFG_AF_OD, timerHardware->alternateFunction);
+        IOConfigGPIOAF(ws2811IO, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_OD, GPIO_PuPd_NOPULL), timerHardware->alternateFunction);
+    } else {
+        IOConfigGPIOAF(ws2811IO, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP), timerHardware->alternateFunction);
+    }
 #endif
 
     RCC_ClockCmd(timerRCC(timer), ENABLE);

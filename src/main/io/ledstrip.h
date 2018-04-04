@@ -153,6 +153,7 @@ typedef struct ledStripConfig_s {
     uint8_t ledstrip_aux_channel;
     ioTag_t ioTag;
     ledStripFormatRGB_e ledstrip_grb_rgb;
+    uint8_t isOpenDrain;
 } ledStripConfig_t;
 
 PG_DECLARE(ledStripConfig_t, ledStripConfig);

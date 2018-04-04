@@ -32,9 +32,9 @@
 #define WS2811_TIMER_MHZ           48
 #define WS2811_CARRIER_HZ          800000
 
-void ws2811LedStripInit(ioTag_t ioTag);
+void ws2811LedStripInit(ioTag_t ioTag, uint8_t odEnable);
 
-void ws2811LedStripHardwareInit(ioTag_t ioTag);
+void ws2811LedStripHardwareInit(ioTag_t ioTag, uint8_t odEnable);
 void ws2811LedStripDMAEnable(void);
 
 void ws2811UpdateStrip(ledStripFormatRGB_e ledFormat);

@@ -178,6 +178,7 @@ void pgResetFn_ledStripConfig(ledStripConfig_t *ledStripConfig)
         }
     }
     ledStripConfig->ioTag = IO_TAG_NONE;
+    ledStripConfig->isOpenDrain = 0;
 }
 
 static int scaledThrottle;
@@ -1203,7 +1204,7 @@ void ledStripEnable(void)
     reevaluateLedConfig();
     ledStripInitialised = true;
 
-    ws2811LedStripInit(ledStripConfig()->ioTag);
+    ws2811LedStripInit(ledStripConfig()->ioTag, ledStripConfig()->isOpenDrain);
 }
 
 static void ledStripDisable(void)
