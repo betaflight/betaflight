@@ -732,6 +732,13 @@ void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensation)
 
     // Calculate voltage compensation
     const float vbatCompensationFactor = vbatPidCompensation ? calculateVbatPidCompensation() : 1.0f;
+    
+    // Apply battery voltage compensation to throttle
+    if(currentPidProfile->vbatThrottleCompensationEnabled) {     
+        float vbatThrottleCompensationFactor = 
+            constrainf( (float)currentPidProfile->vbatThrottleCompensationVoltage / getBatteryAverageCellVoltage(), 0.5f, 1.5f );
+        throttle = constrainf(throttle * vbatThrottleCompensationFactor, 0.0f, 1.0f);
+    }
 
     // Find roll/pitch/yaw desired output
     float motorMix[MAX_SUPPORTED_MOTORS];
