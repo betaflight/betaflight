@@ -115,6 +115,7 @@ FC_SRC = \
             flight/pid.c \
             flight/servos.c \
             flight/servos_tricopter.c \
+            flight/beginner_mode.c \
             interface/cli.c \
             interface/settings.c \
             io/serial_4way.c \

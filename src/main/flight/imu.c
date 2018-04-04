@@ -68,6 +68,10 @@ static bool imuUpdated = false;
 
 #endif
 
+#ifdef USE_BEGINNER_MODE
+#include "beginner_mode.h"
+#endif //USE_BEGINNER_MODE
+
 // the limit (in degrees/second) beyond which we stop integrating
 // omega_I. At larger spin rates the DCM PI controller can get 'dizzy'
 // which results in false gyro drift. See
@@ -510,6 +514,14 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
                         useYaw, rawYawError, imuCalcKpGain(currentTimeUs, useAcc, gyroAverage));
 
     imuUpdateEulerAngles();
+
+#ifdef USE_BEGINNER_MODE
+    beginnerModeHandleAttitude(
+        DECIDEGREES_TO_DEGREES(attitude.values.roll), 
+        DECIDEGREES_TO_DEGREES(attitude.values.pitch), 
+        DECIDEGREES_TO_DEGREES(attitude.values.yaw));
+#endif //USE_BEGINNER_MODE
+
 #endif
 #if defined(USE_ALT_HOLD)
     imuCalculateAcceleration(deltaT); // rotate acc vector into earth frame

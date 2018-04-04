@@ -119,6 +119,7 @@
 #define USE_SERIALRX_SUMD       // Graupner Hott protocol
 #define USE_SERIALRX_SUMH       // Graupner legacy protocol
 #define USE_SERIALRX_XBUS       // JR
+#define USE_BEGINNER_MODE
 
 #if (FLASH_SIZE > 64)
 #define MAX_PROFILE_COUNT 3

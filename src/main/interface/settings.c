@@ -49,6 +49,7 @@
 #include "flight/navigation.h"
 #include "flight/pid.h"
 #include "flight/servos.h"
+#include "flight/beginner_mode.h"
 
 #include "interface/settings.h"
 
@@ -320,6 +321,12 @@ static const char * const lookupOverclock[] = {
     };
 #endif
 
+#ifdef USE_BEGINNER_MODE
+static const char * const lookupTableBeginnerModeTargets[] = {
+    "NONE", "ROLL", "PITCH", "ROLLPITCH"
+};
+#endif
+
 #define LOOKUP_TABLE_ENTRY(name) { name, ARRAYLEN(name) }
 
 const lookupTableEntry_t lookupTables[] = {
@@ -386,6 +393,9 @@ const lookupTableEntry_t lookupTables[] = {
 #endif
 #ifdef USE_DUAL_GYRO
     LOOKUP_TABLE_ENTRY(lookupTableGyro),
+#endif
+#ifdef USE_BEGINNER_MODE
+    LOOKUP_TABLE_ENTRY(lookupTableBeginnerModeTargets),
 #endif
 };
 
@@ -966,6 +976,12 @@ const clivalue_t valueTable[] = {
 #endif
 #ifdef USE_USB_MSC
     { "usb_msc_pin_pullup", VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_USB_CONFIG, offsetof(usbDev_t, mscButtonUsePullup) },
+#endif
+
+#ifdef USE_BEGINNER_MODE
+    { "bm_targets", VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BEGINNER_MODE_TARGETS }, PG_BEGINNER_MODE_CONFIG, offsetof(beginnerModeConfig_t, enabled_beginnerMode) },
+    { "bm_maxroll", VAR_UINT8 | MASTER_VALUE , .config.minmax = { 0, 80 }, PG_BEGINNER_MODE_CONFIG, offsetof(beginnerModeConfig_t, maxRoll) },
+    { "bm_maxpitch", VAR_UINT8 | MASTER_VALUE , .config.minmax = { 0, 80 }, PG_BEGINNER_MODE_CONFIG, offsetof(beginnerModeConfig_t, maxPitch) },
 #endif
 };
 
