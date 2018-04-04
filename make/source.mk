@@ -80,7 +80,6 @@ COMMON_SRC = \
             pg/sdcard.c \
             pg/vcd.c \
             pg/usb.c \
-            pg/sdio.c \
             scheduler/scheduler.c \
             sensors/adcinternal.c \
             sensors/battery.c \
@@ -397,6 +396,7 @@ SRC += \
             drivers/sdcard_standard.c \
             io/asyncfatfs/asyncfatfs.c \
             io/asyncfatfs/fat_standard.c \
+            pg/sdio.c \
             $(MSC_SRC)
 endif
 
