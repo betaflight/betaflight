@@ -48,8 +48,6 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
-#define USE_BRUSHED_ESC_AUTODETECT
-
 #define LED0_PIN                PB8
 
 #define USE_BEEPER

@@ -107,6 +107,7 @@
 #define PERSISTENT __attribute__ ((section(".persistent_data"), aligned(4)))
 #endif
 
+#define USE_BRUSHED_ESC_AUTODETECT  // Detect if brushed motors are connected and set defaults appropriately to avoid motors spinning on boot
 #define USE_CLI
 #define USE_GYRO_REGISTER_DUMP  // Adds gyroregisters command to cli to dump configured register values
 #define USE_PPM
@@ -119,6 +120,8 @@
 #define USE_SERIALRX_SUMD       // Graupner Hott protocol
 #define USE_SERIALRX_SUMH       // Graupner legacy protocol
 #define USE_SERIALRX_XBUS       // JR
+
+
 
 #if (FLASH_SIZE > 64)
 #define MAX_PROFILE_COUNT 3
