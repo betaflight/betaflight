@@ -396,6 +396,7 @@ SRC += \
             drivers/sdcard_standard.c \
             io/asyncfatfs/asyncfatfs.c \
             io/asyncfatfs/fat_standard.c \
+            pg/sdio.c \
             $(MSC_SRC)
 endif
 
