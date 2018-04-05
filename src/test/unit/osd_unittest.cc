@@ -1020,4 +1020,6 @@ extern "C" {
     bool isFlipOverAfterCrashMode(void) {
         return false;
     }
+
+    float pidItermAccelerator(void) { return 1.0; }
 }

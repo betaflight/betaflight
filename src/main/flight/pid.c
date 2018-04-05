@@ -168,6 +168,11 @@ void pidSetItermAccelerator(float newItermAccelerator)
     itermAccelerator = newItermAccelerator;
 }
 
+float pidItermAccelerator(void)
+{
+    return itermAccelerator;
+}
+
 void pidStabilisationState(pidStabilisationState_e pidControllerState)
 {
     pidStabilisationEnabled = (pidControllerState == PID_STABILISATION_ON) ? true : false;
