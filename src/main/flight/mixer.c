@@ -710,6 +710,21 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS])
     }
 }
 
+float applyThrottleLimit(float throttle)
+{
+    if (currentControlRateProfile->throttle_limit_percent < 100) {
+        const float throttleLimitFactor = currentControlRateProfile->throttle_limit_percent / 100.0f;
+        switch (currentControlRateProfile->throttle_limit_type) {
+            case THROTTLE_LIMIT_TYPE_SCALE:
+                return throttle * throttleLimitFactor;
+            case THROTTLE_LIMIT_TYPE_CLIP:
+                return MIN(throttle, throttleLimitFactor);
+        }
+    }
+
+    return throttle;
+}
+
 void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensation)
 {
     if (isFlipOverAfterCrashMode()) {
@@ -735,18 +750,8 @@ void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensation)
     const float vbatCompensationFactor = vbatPidCompensation ? calculateVbatPidCompensation() : 1.0f;
 
     // Apply the throttle_limit_percent to scale or limit the throttle based on throttle_limit_type
-    if ((currentControlRateProfile->throttle_limit_percent < 100) && (currentControlRateProfile->throttle_limit_type != THROTTLE_LIMIT_TYPE_OFF)) {
-        const float throttleLimitFactor = currentControlRateProfile->throttle_limit_percent / 100.0f;
-        switch (currentControlRateProfile->throttle_limit_type) {
-            case THROTTLE_LIMIT_TYPE_SCALE:
-                throttle = throttle * throttleLimitFactor;
-                break;
-            case THROTTLE_LIMIT_TYPE_CLIP:
-                if (throttle > throttleLimitFactor) {
-                    throttle = throttleLimitFactor;
-                }
-                break;
-        }
+    if (currentControlRateProfile->throttle_limit_type != THROTTLE_LIMIT_TYPE_OFF) {
+        throttle = applyThrottleLimit(throttle);
     }
 
     // Find roll/pitch/yaw desired output
