@@ -134,7 +134,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .itermLimit = 150,
         .throttle_boost = 0,
         .throttle_boost_cutoff = 15,
-        .iterm_rotation = false                 
+        .iterm_rotation = false,
     );
 }
 
