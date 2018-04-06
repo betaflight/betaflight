@@ -80,8 +80,6 @@
 //#define RANGEFINDER_HCSR04_ECHO_PIN          PB1
 //#define RANGEFINDER_HCSR04_TRIGGER_PIN       PB0
 
-#define USE_BRUSHED_ESC_AUTODETECT
-
 #define USE_VCP
 #define USE_UART2
 
