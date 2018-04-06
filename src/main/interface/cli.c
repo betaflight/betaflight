@@ -3757,7 +3757,11 @@ static void cliMsc(char *cmdline)
             mpuResetFn();
         }
 
-        *((uint32_t *)0x2001FFF0) = 0xDDDD1010; // Same location as bootloader magic but different value
+#ifdef STM32F7
+        *((__IO uint32_t*) BKPSRAM_BASE + 16) = MSC_MAGIC;
+#elif defined(STM32F4)
+        *((uint32_t *)0x2001FFF0) = MSC_MAGIC;
+#endif
 
         __disable_irq();
         NVIC_SystemReset();

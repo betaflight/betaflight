@@ -33,27 +33,16 @@
 #include "drivers/io.h"
 #include "drivers/light_led.h"
 #include "drivers/nvic.h"
-#include "drivers/sdmmc_sdio.h"
 #include "drivers/time.h"
 #include "drivers/usb_msc.h"
 
 #include "pg/usb.h"
 
-#if defined(STM32F4)
-#include "usb_core.h"
-#include "usbd_cdc_vcp.h"
-#include "usb_io.h"
-#elif defined(STM32F7)
 #include "vcp_hal/usbd_cdc_interface.h"
 #include "usb_io.h"
+#include "usbd_msc.h"
+#include "msc/usbd_storage.h"
 USBD_HandleTypeDef USBD_Device;
-#else
-#include "usb_core.h"
-#include "usb_init.h"
-#include "hw_config.h"
-#endif
-
-#include "usbd_msc_core.h"
 
 #define DEBOUNCE_TIME_MS 20
 
@@ -81,7 +70,16 @@ uint8_t mscStart(void)
 
 	IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, 0);
 	IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, 0);
-	USBD_Init(&USB_OTG_dev, USB_OTG_FS_CORE_ID, &MSC_desc, &USBD_MSC_cb, &USR_cb);
+
+	USBD_Init(&USBD_Device, &VCP_Desc, 0);
+
+	/** Regsiter class */
+	USBD_RegisterClass(&USBD_Device, USBD_MSC_CLASS);
+
+	/** Register interface callbacks */
+	USBD_MSC_RegisterStorage(&USBD_Device, &USBD_MSC_Template_fops);
+
+	USBD_Start(&USBD_Device);
 
 	// NVIC configuration for SYSTick
 	NVIC_DisableIRQ(SysTick_IRQn);
@@ -93,7 +91,7 @@ uint8_t mscStart(void)
 
 bool mscCheckBoot(void)
 {
-    if (*((uint32_t *)0x2001FFF0) == MSC_MAGIC) {
+    if (*((__IO uint32_t *)BKPSRAM_BASE + 16) == MSC_MAGIC) {
         return true;
     }
     return false;
