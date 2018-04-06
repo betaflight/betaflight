@@ -358,10 +358,9 @@ bool mixerIsOutputSaturated(int axis, float errorRate)
 {
     if (axis == FD_YAW && mixerIsTricopter()) {
         return mixerTricopterIsServoSaturated(errorRate);
-    } else {
-        return motorMixRange >= 1.0f;
     }
-    return false;
+
+    return motorMixRange >= 1.0f;
 }
 
 // All PWM motor scaling is done to standard PWM range of 1000-2000 for easier tick conversion with legacy code / configurator
@@ -745,11 +744,11 @@ void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensation)
 
     // Calculate and Limit the PIDsum
     const float scaledAxisPidRoll =
-        constrainf(axisPIDSum[FD_ROLL], -currentPidProfile->pidSumLimit, currentPidProfile->pidSumLimit) / PID_MIXER_SCALING;
+        constrainf(pidData[FD_ROLL].PIDSum, -currentPidProfile->pidSumLimit, currentPidProfile->pidSumLimit) / PID_MIXER_SCALING;
     const float scaledAxisPidPitch =
-        constrainf(axisPIDSum[FD_PITCH], -currentPidProfile->pidSumLimit, currentPidProfile->pidSumLimit) / PID_MIXER_SCALING;
+        constrainf(pidData[FD_PITCH].PIDSum, -currentPidProfile->pidSumLimit, currentPidProfile->pidSumLimit) / PID_MIXER_SCALING;
     float scaledAxisPidYaw =
-        constrainf(axisPIDSum[FD_YAW], -currentPidProfile->pidSumLimitYaw, currentPidProfile->pidSumLimitYaw) / PID_MIXER_SCALING;
+        constrainf(pidData[FD_YAW].PIDSum, -currentPidProfile->pidSumLimitYaw, currentPidProfile->pidSumLimitYaw) / PID_MIXER_SCALING;
     if (!mixerConfig()->yaw_motors_reversed) {
         scaledAxisPidYaw = -scaledAxisPidYaw;
     }
