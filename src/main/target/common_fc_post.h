@@ -103,7 +103,7 @@
 #undef USE_ADC_INTERNAL
 #endif
 
-#if !defined(USE_SDCARD)
+#if !defined(USE_SDCARD) && !defined(USE_FLASHFS)
 #undef USE_USB_MSC
 #endif
 

@@ -85,6 +85,13 @@ uint8_t mscStart(void)
         USBD_MSC_RegisterStorage(&USBD_Device, &USBD_MSC_MICRO_SDIO_fops);
         break;
 #endif
+
+#ifdef USE_FLASHFS
+    case BLACKBOX_DEVICE_FLASH:
+        USBD_MSC_RegisterStorage(&USBD_Device, &USBD_MSC_EMFAT_fops);
+        break;
+#endif
+
     default:
         return 1;
     }
