@@ -187,7 +187,7 @@ const frSkyTableInfo_t frSkyDataIdTables[] = {
     {frSkyDataIdTable2, sizeof(frSkyDataIdTable2)/sizeof(uint16_t), 2, false},
 #ifdef USE_ESC_SENSOR
     {frSkyEscDataIdTable, sizeof(frSkyEscDataIdTable)/sizeof(uint16_t), 1, true},
-    {frSkyEscDataIdTable, sizeof(frSkyEscDataIdTable2)/sizeof(uint16_t), 2, true}
+    {frSkyEscDataIdTable2, sizeof(frSkyEscDataIdTable2)/sizeof(uint16_t), 2, true}
 #endif
 };
 
