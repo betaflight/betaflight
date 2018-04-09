@@ -154,7 +154,7 @@ static void pidSetTargetLooptime(uint32_t pidLooptime)
 void pidResetITerm(void)
 {
     for (int axis = 0; axis < 3; axis++) {
-        pidData[axis].PID_I = 0.0f;
+        pidData[axis].I = 0.0f;
     }
 }
 
@@ -274,14 +274,13 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     pt1FilterInit(&throttleLpf, pt1FilterGain(pidProfile->throttle_boost_cutoff, dT));
 }
 
-typedef struct pidKoef_s
-{
+typedef struct pidCoefficient_s {
     float Kp;
     float Ki;
     float Kd;
-}pidKoef_s;
+} pidCoefficient_t;
 
-static FAST_RAM pidKoef_s pidKoef[3];
+static FAST_RAM pidCoefficient_t pidCoefficient[3];
 static FAST_RAM float maxVelocity[3];
 static FAST_RAM float relaxFactor;
 static FAST_RAM float dtermSetpointWeight;
@@ -304,9 +303,9 @@ static FAST_RAM bool itermRotation;
 void pidInitConfig(const pidProfile_t *pidProfile)
 {
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-        pidKoef[axis].Kp = PTERM_SCALE * pidProfile->pid[axis].P;
-        pidKoef[axis].Ki = ITERM_SCALE * pidProfile->pid[axis].I;
-        pidKoef[axis].Kd = DTERM_SCALE * pidProfile->pid[axis].D;
+        pidCoefficient[axis].Kp = PTERM_SCALE * pidProfile->pid[axis].P;
+        pidCoefficient[axis].Ki = ITERM_SCALE * pidProfile->pid[axis].I;
+        pidCoefficient[axis].Kd = DTERM_SCALE * pidProfile->pid[axis].D;
     }
 
     dtermSetpointWeight = pidProfile->dtermSetpointWeight / 127.0f;
@@ -468,7 +467,7 @@ static void handleCrashRecovery(
         }
         // reset ITerm, since accumulated error before crash is now meaningless
         // and ITerm windup during crash recovery can be extreme, especially on yaw axis
-        pidData[axis].PID_I = 0.0f;
+        pidData[axis].I = 0.0f;
         if (cmpTimeUs(currentTimeUs, crashDetectedAtUs) > crashTimeLimitUs
             || (getMotorMixRange() < 1.0f
                    && ABS(gyro.gyroADCf[FD_ROLL]) < crashRecoveryRate
@@ -524,9 +523,9 @@ static void handleItermRotation(const float deltaT)
         int i_1 = (i + 1) % 3;
         int i_2 = (i + 2) % 3;
         float angle = gyro.gyroADCf[i] * gyroToAngle;
-        float newPID_I_i_1 = pidData[i_1].PID_I + pidData[i_2].PID_I * angle;
-        pidData[i_2].PID_I -= pidData[i_1].PID_I * angle;
-        pidData[i_1].PID_I = newPID_I_i_1;
+        float newPID_I_i_1 = pidData[i_1].I + pidData[i_2].I * angle;
+        pidData[i_2].I -= pidData[i_1].I * angle;
+        pidData[i_1].I = newPID_I_i_1;
     }
 }
 
@@ -541,9 +540,9 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
     // Disable PID control if at zero throttle or if gyro overflow detected
     if (!pidStabilisationEnabled || gyroOverflowDetected()) {
         for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
-            pidData[axis].PID_P = 0;
-            pidData[axis].PID_I = 0;
-            pidData[axis].PID_D = 0;
+            pidData[axis].P = 0;
+            pidData[axis].I = 0;
+            pidData[axis].D = 0;
 
             pidData[axis].PIDSum = 0;
         }
@@ -602,18 +601,18 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         // b = 1 and only c (dtermSetpointWeight) can be tuned (amount derivative on measurement or error).
 
         // -----calculate P component and add Dynamic Part based on stick input
-        pidData[axis].PID_P = pidKoef[axis].Kp * errorRate * tpaFactor;
+        pidData[axis].P = pidCoefficient[axis].Kp * errorRate * tpaFactor;
         if (axis == FD_YAW) {
-            pidData[axis].PID_P = ptermYawLowpassApplyFn((filter_t *) &ptermYawLowpass, pidData[axis].PID_P);
+            pidData[axis].P = ptermYawLowpassApplyFn((filter_t *) &ptermYawLowpass, pidData[axis].P);
         }
 
         // -----calculate I component
-        const float ITerm = pidData[axis].PID_I;
-        const float ITermNew = constrainf(ITerm + pidKoef[axis].Ki * errorRate * dynCi, -itermLimit, itermLimit);
+        const float ITerm = pidData[axis].I;
+        const float ITermNew = constrainf(ITerm + pidCoefficient[axis].Ki * errorRate * dynCi, -itermLimit, itermLimit);
         const bool outputSaturated = mixerIsOutputSaturated(axis, errorRate);
         if (outputSaturated == false || ABS(ITermNew) < ABS(ITerm)) {
             // Only increase ITerm if output is not saturated
-            pidData[axis].PID_I = ITermNew;
+            pidData[axis].I = ITermNew;
         }
 
         // -----calculate D component
@@ -631,16 +630,16 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
 
             detectAndSetCrashRecovery(pidProfile->crash_recovery, axis, currentTimeUs, delta, errorRate);
 
-            pidData[axis].PID_D = pidKoef[axis].Kd * delta * tpaFactor;
+            pidData[axis].D = pidCoefficient[axis].Kd * delta * tpaFactor;
         }
     }
 
     // calculating the PID sum
-    pidData[FD_ROLL].PIDSum = pidData[FD_ROLL].PID_P + pidData[FD_ROLL].PID_I + pidData[FD_ROLL].PID_D;
-    pidData[FD_PITCH].PIDSum = pidData[FD_PITCH].PID_P + pidData[FD_PITCH].PID_I + pidData[FD_PITCH].PID_D;
+    pidData[FD_ROLL].PIDSum = pidData[FD_ROLL].P + pidData[FD_ROLL].I + pidData[FD_ROLL].D;
+    pidData[FD_PITCH].PIDSum = pidData[FD_PITCH].P + pidData[FD_PITCH].I + pidData[FD_PITCH].D;
 
     // YAW has no D
-    pidData[FD_YAW].PIDSum = pidData[FD_YAW].PID_P + pidData[FD_YAW].PID_I;
+    pidData[FD_YAW].PIDSum = pidData[FD_YAW].P + pidData[FD_YAW].I;
 }
 
 bool crashRecoveryModeActive(void)

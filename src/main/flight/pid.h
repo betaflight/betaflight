@@ -128,11 +128,10 @@ PG_DECLARE(pidConfig_t, pidConfig);
 union rollAndPitchTrims_u;
 void pidController(const pidProfile_t *pidProfile, const union rollAndPitchTrims_u *angleTrim, timeUs_t currentTimeUs);
 
-typedef struct pidAxisData_s
-{
-    float PID_P;
-    float PID_I;
-    float PID_D;
+typedef struct pidAxisData_s {
+    float P;
+    float I;
+    float D;
 
     float PIDSum;
 } pidAxisData_t;
