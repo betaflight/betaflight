@@ -30,6 +30,7 @@
 
 #include "common/utils.h"
 
+#include "blackbox/blackbox.h"
 #include "drivers/io.h"
 #include "drivers/light_led.h"
 #include "drivers/nvic.h"
@@ -42,6 +43,7 @@
 #include "usb_io.h"
 #include "usbd_msc.h"
 #include "msc/usbd_storage.h"
+
 USBD_HandleTypeDef USBD_Device;
 
 #define DEBOUNCE_TIME_MS 20
@@ -77,7 +79,15 @@ uint8_t mscStart(void)
     USBD_RegisterClass(&USBD_Device, USBD_MSC_CLASS);
 
     /** Register interface callbacks */
-    USBD_MSC_RegisterStorage(&USBD_Device, &USBD_MSC_Template_fops);
+    switch (blackboxConfig()->device) {
+#ifdef USE_SDCARD
+    case BLACKBOX_DEVICE_SDCARD:
+        USBD_MSC_RegisterStorage(&USBD_Device, &USBD_MSC_MICRO_SDIO_fops);
+        break;
+#endif
+    default:
+        return 1;
+    }
 
     USBD_Start(&USBD_Device);
 

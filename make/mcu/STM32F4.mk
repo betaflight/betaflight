@@ -199,7 +199,8 @@ endif
 
 MSC_SRC = \
             drivers/usb_msc_f4xx.c \
-            msc/usbd_msc_desc.c
+            msc/usbd_msc_desc.c \
+            msc/usbd_storage.c
 
 ifneq ($(filter SDCARD,$(FEATURES)),)
 MSC_SRC += \

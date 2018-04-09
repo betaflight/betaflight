@@ -30,6 +30,8 @@
 
 #include "common/utils.h"
 
+#include "blackbox/blackbox.h"
+
 #include "drivers/io.h"
 #include "drivers/light_led.h"
 #include "drivers/nvic.h"
@@ -53,7 +55,7 @@ USBD_HandleTypeDef USBD_Device;
 #include "hw_config.h"
 #endif
 
-#include "usbd_msc_core.h"
+#include "msc/usbd_storage.h"
 
 #define DEBOUNCE_TIME_MS 20
 
@@ -81,6 +83,17 @@ uint8_t mscStart(void)
 
     IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, 0);
     IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, 0);
+
+    switch (blackboxConfig()->device) {
+#ifdef USE_SDCARD
+    case BLACKBOX_DEVICE_SDCARD:
+        USBD_STORAGE_fops = &USBD_MSC_MICRO_SDIO_fops;
+        break;
+#endif
+    default:
+        return 1;
+    }
+
     USBD_Init(&USB_OTG_dev, USB_OTG_FS_CORE_ID, &MSC_desc, &USBD_MSC_cb, &USR_cb);
 
     // NVIC configuration for SYSTick
