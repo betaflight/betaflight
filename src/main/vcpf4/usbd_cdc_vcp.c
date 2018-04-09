@@ -135,13 +135,15 @@ static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len)
              if (baudRateCb) {
                  baudRateCb(baudRateCbContext, plc->bitrate);
              }
+             ust_cpy(&g_lc, plc);           //Copy into structure to save for later
          }
-         ust_cpy(&g_lc, plc);           //Copy into structure to save for later
          break;
 
 
       case GET_LINE_CODING:
-         ust_cpy(plc, &g_lc);
+         if (plc && (Len == sizeof (*plc))) {
+             ust_cpy(plc, &g_lc);
+         }
          break;
 
 
