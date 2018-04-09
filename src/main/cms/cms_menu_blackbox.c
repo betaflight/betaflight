@@ -61,7 +61,7 @@ static const char * const cmsx_BlackboxDeviceNames[] = {
     "SERIAL"
 };
 
-static uint16_t blackboxConfig_p_denom;
+static uint16_t blackboxConfig_p_ratio;
 
 static uint8_t cmsx_BlackboxDevice;
 static OSD_TAB_t cmsx_BlackboxDeviceTable = { &cmsx_BlackboxDevice, 2, cmsx_BlackboxDeviceNames };
@@ -172,7 +172,7 @@ static long cmsx_Blackbox_onEnter(void)
     cmsx_Blackbox_GetDeviceStatus();
     cmsx_BlackboxDevice = blackboxConfig()->device;
 
-    blackboxConfig_p_denom = blackboxConfig()->p_denom;
+    blackboxConfig_p_ratio = blackboxConfig()->p_ratio;
     return 0;
 }
 
@@ -184,7 +184,7 @@ static long cmsx_Blackbox_onExit(const OSD_Entry *self)
         blackboxConfigMutable()->device = cmsx_BlackboxDevice;
         blackboxValidateConfig();
     }
-    blackboxConfigMutable()->p_denom = blackboxConfig_p_denom;
+    blackboxConfigMutable()->p_ratio = blackboxConfig_p_ratio;
     return 0;
 }
 
@@ -195,7 +195,7 @@ static OSD_Entry cmsx_menuBlackboxEntries[] =
     { "(STATUS)",    OME_String,  NULL,            &cmsx_BlackboxStatus,                                      0 },
     { "(USED)",      OME_String,  NULL,            &cmsx_BlackboxDeviceStorageUsed,                           0 },
     { "(FREE)",      OME_String,  NULL,            &cmsx_BlackboxDeviceStorageFree,                           0 },
-    { "P DENOM",     OME_UINT16,  NULL,            &(OSD_UINT16_t){ &blackboxConfig_p_denom, 1, INT16_MAX, 1 },0 },
+    { "P RATIO",     OME_UINT16,  NULL,            &(OSD_UINT16_t){ &blackboxConfig_p_ratio, 1, INT16_MAX, 1 },0 },
 
 #ifdef USE_FLASHFS
     { "ERASE FLASH", OME_Funcall, cmsx_EraseFlash, NULL,                                                      0 },
