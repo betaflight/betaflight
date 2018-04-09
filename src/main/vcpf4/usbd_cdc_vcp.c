@@ -131,7 +131,7 @@ static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len)
       //Note - hw flow control on UART 1-3 and 6 only
       case SET_LINE_CODING:
          // If a callback is provided, tell the upper driver of changes in baud rate
-         if (plc && (Len == sizeof (LINE_CODING))) {
+         if (plc && (Len == sizeof (plc))) {
              if (baudRateCb) {
                  baudRateCb(baudRateCbContext, plc->bitrate);
              }
@@ -141,7 +141,7 @@ static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len)
 
 
       case GET_LINE_CODING:
-         if (plc && (Len == sizeof (LINE_CODING))) {
+         if (plc && (Len == sizeof (plc))) {
              ust_cpy(plc, &g_lc);
          }
          break;
