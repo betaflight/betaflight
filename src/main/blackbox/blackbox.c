@@ -984,9 +984,9 @@ static void loadMainState(timeUs_t currentTimeUs)
     blackboxCurrent->time = currentTimeUs;
 
     for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
-        blackboxCurrent->axisPID_P[i] = axisPID_P[i];
-        blackboxCurrent->axisPID_I[i] = axisPID_I[i];
-        blackboxCurrent->axisPID_D[i] = axisPID_D[i];
+        blackboxCurrent->axisPID_P[i] = pidData[i].P;
+        blackboxCurrent->axisPID_I[i] = pidData[i].I;
+        blackboxCurrent->axisPID_D[i] = pidData[i].D;
         blackboxCurrent->gyroADC[i] = lrintf(gyro.gyroADCf[i]);
         blackboxCurrent->accADC[i] = lrintf(acc.accADC[i]);
 #ifdef USE_MAG
