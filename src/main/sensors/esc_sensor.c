@@ -145,6 +145,10 @@ bool isEscSensorActive(void)
 
 escSensorData_t *getEscSensorData(uint8_t motorNumber)
 {
+    if (!feature(FEATURE_ESC_SENSOR)) {
+        return NULL;
+    }
+
     if (motorNumber < getMotorCount()) {
         return &escSensorData[motorNumber];
     } else if (motorNumber == ESC_SENSOR_COMBINED) {
