@@ -53,7 +53,7 @@
 
 
 FAST_RAM uint32_t targetPidLooptime;
-FAST_RAM pidAxisData_t pidData[3];
+FAST_RAM pidAxisData_t pidData[XYZ_AXIS_COUNT];
 
 static FAST_RAM bool pidStabilisationEnabled;
 
@@ -544,7 +544,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             pidData[axis].I = 0;
             pidData[axis].D = 0;
 
-            pidData[axis].PIDSum = 0;
+            pidData[axis].Sum = 0;
         }
 
         return;
@@ -635,11 +635,11 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
     }
 
     // calculating the PID sum
-    pidData[FD_ROLL].PIDSum = pidData[FD_ROLL].P + pidData[FD_ROLL].I + pidData[FD_ROLL].D;
-    pidData[FD_PITCH].PIDSum = pidData[FD_PITCH].P + pidData[FD_PITCH].I + pidData[FD_PITCH].D;
+    pidData[FD_ROLL].Sum = pidData[FD_ROLL].P + pidData[FD_ROLL].I + pidData[FD_ROLL].D;
+    pidData[FD_PITCH].Sum = pidData[FD_PITCH].P + pidData[FD_PITCH].I + pidData[FD_PITCH].D;
 
     // YAW has no D
-    pidData[FD_YAW].PIDSum = pidData[FD_YAW].P + pidData[FD_YAW].I;
+    pidData[FD_YAW].Sum = pidData[FD_YAW].P + pidData[FD_YAW].I;
 }
 
 bool crashRecoveryModeActive(void)

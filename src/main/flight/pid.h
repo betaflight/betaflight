@@ -133,7 +133,7 @@ typedef struct pidAxisData_s {
     float I;
     float D;
 
-    float PIDSum;
+    float Sum;
 } pidAxisData_t;
 
 extern pidAxisData_t pidData[3];
