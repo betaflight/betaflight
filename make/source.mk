@@ -374,7 +374,8 @@ ifneq ($(filter ONBOARDFLASH,$(FEATURES)),)
 SRC += \
             drivers/flash_m25p16.c \
             io/flashfs.c \
-            pg/flash.c
+            pg/flash.c \
+            $(MSC_SRC)
 endif
 
 SRC += $(COMMON_SRC)

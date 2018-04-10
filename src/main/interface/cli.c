@@ -3746,7 +3746,14 @@ static void cliMsc(char *cmdline)
 {
     UNUSED(cmdline);
 
-    if (sdcard_isFunctional()) {
+    if (false
+#ifdef USE_SDCARD
+        || sdcard_isFunctional()
+#endif
+#ifdef USE_FLASHFS
+        || flashfsGetSize() > 0
+#endif
+    ) {
         cliPrintHashLine("restarting in mass storage mode");
         cliPrint("\r\nRebooting");
         bufWriterFlush(cliWriter);
@@ -3766,7 +3773,7 @@ static void cliMsc(char *cmdline)
         __disable_irq();
         NVIC_SystemReset();
     } else {
-        cliPrint("\r\nSD Card not present or failed to initialize!");
+        cliPrint("\r\nStorage not present or failed to initialize!");
         bufWriterFlush(cliWriter);
     }
 }
