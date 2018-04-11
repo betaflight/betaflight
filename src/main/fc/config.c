@@ -276,6 +276,12 @@ static void validateAndFixConfig(void)
     }
 #endif // USE_OSD_SLAVE
 
+#if defined(USE_ESC_SENSOR)
+    if (!findSerialPortConfig(FUNCTION_ESC_SENSOR)) {
+        featureClear(FEATURE_ESC_SENSOR);
+    }
+#endif
+
 // clear features that are not supported.
 // I have kept them all here in one place, some could be moved to sections of code above.
 
