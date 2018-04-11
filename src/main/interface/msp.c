@@ -149,6 +149,11 @@ typedef enum {
     MSP_SDCARD_FLAG_SUPPORTTED   = 1
 } mspSDCardFlags_e;
 
+typedef enum {
+    MSP_FLASHFS_FLAG_READY       = 1,
+    MSP_FLASHFS_FLAG_SUPPORTED  = 2
+} mspFlashFsFlags_e;
+
 #define RATEPROFILE_MASK (1 << 7)
 #endif //USE_OSD_SLAVE
 
@@ -281,7 +286,8 @@ static void serializeDataflashSummaryReply(sbuf_t *dst)
 {
 #ifdef USE_FLASHFS
     const flashGeometry_t *geometry = flashfsGetGeometry();
-    uint8_t flags = (flashfsIsReady() ? 1 : 0) | 2 /* FlashFS is supported */;
+    uint8_t flags = (flashfsIsReady() ? MSP_FLASHFS_FLAG_READY : 0);
+    flags |= (flashfsIsSupported() ? MSP_FLASHFS_FLAG_SUPPORTED : 0);
 
     sbufWriteU8(dst, flags);
     sbufWriteU32(dst, geometry->sectors);

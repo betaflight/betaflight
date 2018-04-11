@@ -111,6 +111,11 @@ bool flashfsIsReady(void)
     return m25p16_isReady();
 }
 
+bool flashfsIsSupported(void)
+{
+    return flashfsGetSize() > 0;
+}
+
 uint32_t flashfsGetSize(void)
 {
     return m25p16_getGeometry()->totalSize;
