@@ -66,8 +66,8 @@
 #define INVERTER_PIN_UART3      PB12
 
 #define USE_VCP
-#define VBUS_SENSING_PIN        PA9
-#define VBUS_SENSING_ENABLED
+#define USB_DETECT_PIN          PA9
+#define USE_USB_DETECT
 
 #define USE_UART1
 #define UART1_RX_PIN            PB7

@@ -66,8 +66,8 @@
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
 #define USE_VCP
-//#define VBUS_SENSING_PIN        PC15
-//#define VBUS_SENSING_ENABLED
+//#define USB_DETECT_PIN          PC15
+//#define USE_USB_DETECT
 
 #define USE_UART1
 #define UART1_RX_PIN            PA10
