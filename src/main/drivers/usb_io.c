@@ -59,7 +59,9 @@ bool usbCableIsInserted(void)
     bool result = false;
 
 #ifdef USE_USB_DETECT
-    result = IORead(usbDetectPin) != 0;
+    if (usbDetectPin) {
+        result = IORead(usbDetectPin) != 0;
+    }
 #endif
 
     return result;

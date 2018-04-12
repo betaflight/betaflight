@@ -392,12 +392,9 @@ USB_OTG_STS USB_OTG_CoreInit(USB_OTG_CORE_HANDLE *pdev)
     /* Deactivate the power down*/
     gccfg.d32 = 0;
     gccfg.b.pwdn = 1;
-#ifdef VBUS_SENSING_ENABLED
-    gccfg.b.vbussensingA = 1 ;
-    gccfg.b.vbussensingB = 1 ; 
-#else
+
+    // XXX Betaflight mod; disabled VBUS sensing features completely, including Sense A and B.
     gccfg.b.disablevbussensing = 1; 
-#endif    
 
     if(pdev->cfg.Sof_output)
     {
