@@ -51,7 +51,8 @@
 #define USE_MPU_DATA_READY_SIGNAL
 
 #define USE_VCP
-//#define VBUS_SENSING_PIN        PA9
+#define USE_USB_DETECT
+//#define USB_DETECT_PIN          PA9
 
 #define USE_UART1 // Flexi Port
 #define UART1_RX_PIN            PB7

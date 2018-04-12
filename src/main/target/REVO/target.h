@@ -183,9 +183,11 @@
 
 #define USE_VCP
 #if defined(PODIUMF4)
-#define VBUS_SENSING_PIN        PA8
+#define USE_USB_DETECT
+#define USB_DETECT_PIN          PA8
 #else
-#define VBUS_SENSING_PIN        PC5
+#define USE_USB_DETECT
+#define USB_DETECT_PIN          PC5
 #endif
 
 #define USE_UART1

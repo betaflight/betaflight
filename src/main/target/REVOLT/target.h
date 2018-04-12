@@ -161,7 +161,8 @@
 #define VBAT_ADC_PIN            PC2
 
 #define USE_VCP
-#define VBUS_SENSING_PIN        PC5
+#define USE_USB_DETECT
+#define USB_DETECT_PIN          PC5
 
 
 #define TARGET_IO_PORTA         0xffff
