@@ -6,7 +6,6 @@ OSD_SLAVE_TARGETS = SPRACINGF3OSD
 
 VALID_TARGETS   = $(dir $(wildcard $(ROOT)/src/main/target/*/target.mk))
 VALID_TARGETS  := $(subst /,, $(subst ./src/main/target/,, $(VALID_TARGETS)))
-BASE_TARGETS   := $(VALID_TARGETS)
 VALID_TARGETS  := $(VALID_TARGETS) $(ALT_TARGETS)
 VALID_TARGETS  := $(sort $(VALID_TARGETS))
 VALID_TARGETS  := $(filter-out $(SKIP_TARGETS), $(VALID_TARGETS))
@@ -135,25 +134,6 @@ GROUP_4_TARGETS := \
 	ZCOREF3
 
 GROUP_OTHER_TARGETS := $(filter-out $(GROUP_1_TARGETS) $(GROUP_2_TARGETS) $(GROUP_3_TARGETS) $(GROUP_4_TARGETS), $(SUPPORTED_TARGETS))
-
-GROUP_F7_TARGETS := \
-	ALIENFLIGHTNGF7 \
-	ANYFCF7 \
-	ANYFCM7 \
-	CLRACINGF7 \
-	FURYF7 \
-	KAKUTEF7 \
-	KISSFCV2F7 \
-	MATEKF722 \
-	NERO \
-	NUCLEOF7 \
-	NUCLEOF722 \
-	OMNIBUSF7 \
-	SPRACINGF7DUAL \
-	YUPIF7 \
-	ALIENWHOOPF7 \
-	FPVM_BETAFLIGHTF7 \
-	OMNIBUSF7V2
 
 ifeq ($(filter $(TARGET),$(ALT_TARGETS)), $(TARGET))
 BASE_TARGET    := $(firstword $(subst /,, $(subst ./src/main/target/,, $(dir $(wildcard $(ROOT)/src/main/target/*/$(TARGET).mk)))))

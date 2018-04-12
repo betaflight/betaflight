@@ -345,8 +345,6 @@ targets-group-4: $(GROUP_4_TARGETS)
 ## targets-group-rest: build the rest of the targets (not listed in group 1, 2 or 3)
 targets-group-rest: $(GROUP_OTHER_TARGETS)
 
-targets-group-f7: $(GROUP_F7_TARGETS)
-
 $(VALID_TARGETS):
 	$(V0) @echo "Building $@" && \
 	$(MAKE) binary hex TARGET=$@ && \
@@ -463,7 +461,6 @@ targets:
 	@echo "targets-group-3:     $(GROUP_3_TARGETS)"
 	@echo "targets-group-4:     $(GROUP_4_TARGETS)"
 	@echo "targets-group-rest:  $(GROUP_OTHER_TARGETS)"
-	@echo "targets-group-f7:    $(GROUP_F7_TARGETS)"
 
 ## test              : run the cleanflight test suite
 ## junittest         : run the cleanflight test suite, producing Junit XML result files.

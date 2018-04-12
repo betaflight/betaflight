@@ -4,7 +4,11 @@ env:
 #  - PUBLISHDOCS=True
 # Specify the main Mafile supported goals.
   - GOAL=test
-  - GOAL=targets-group-f7
+  - GOAL=targets-group-1
+  - GOAL=targets-group-2
+  - GOAL=targets-group-3
+  - GOAL=targets-group-4
+  - GOAL=targets-group-rest
 #  - GOAL=all
 #  - GOAL=AFROMINI
 #  - GOAL=AIORACERF3
