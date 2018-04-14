@@ -298,12 +298,13 @@ bool isBlackboxErased(void)
 #endif
 
 /**
- * Close the Blackbox logging device immediately without attempting to flush any remaining data.
+ * Close the Blackbox logging device.
  */
 void blackboxDeviceClose(void)
 {
     switch (blackboxConfig()->device) {
     case BLACKBOX_DEVICE_SERIAL:
+        // Can immediately close without attempting to flush any remaining data.
         // Since the serial port could be shared with other processes, we have to give it back here
         closeSerialPort(blackboxPort);
         blackboxPort = NULL;
@@ -316,6 +317,12 @@ void blackboxDeviceClose(void)
             mspSerialAllocatePorts();
         }
         break;
+#ifdef USE_FLASHFS
+    case BLACKBOX_DEVICE_FLASH:
+        // Some flash device, e.g., NAND devices, require explicit close to flush internally buffered data.
+        flashfsClose();
+        break;
+#endif
     default:
         ;
     }

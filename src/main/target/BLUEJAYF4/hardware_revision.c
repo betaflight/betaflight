@@ -24,7 +24,7 @@
 #include "build/build_config.h"
 
 #include "drivers/bus_spi.h"
-#include "drivers/flash_m25p16.h"
+#include "drivers/flash.h"
 #include "drivers/io.h"
 #include "drivers/time.h"
 
@@ -85,7 +85,7 @@ void updateHardwareRevision(void)
         if flash exists on PB3 then Rev1
     */
     flashConfig_t flashConfig = { .csTag = IO_TAG(PB3) };
-    if (m25p16_init(&flashConfig)) {
+    if (flashInit(&flashConfig)) {
         hardwareRevision = BJF4_REV1;
     } else {
         IOInit(IOGetByTag(IO_TAG(PB3)), OWNER_FREE, 0);
