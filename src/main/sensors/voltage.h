@@ -58,6 +58,12 @@ typedef enum {
 #define VBAT_SCALE_MIN 0
 #define VBAT_SCALE_MAX 255
 
+#define VBAT_DIVIDER_MIN 1
+#define VBAT_DIVIDER_MAX 255
+
+#define VBAT_MULTIPLIER_MIN 1
+#define VBAT_MULTIPLIER_MAX 255
+
 #define VBAT_LPF_FREQ  0.1f
 
 #ifndef MAX_VOLTAGE_SENSOR_ADC

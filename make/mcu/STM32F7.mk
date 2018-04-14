@@ -166,6 +166,7 @@ MCU_COMMON_SRC = \
             drivers/bus_i2c_hal.c \
             drivers/dma_stm32f7xx.c \
             drivers/light_ws2811strip_hal.c \
+            drivers/transponder_ir_io_hal.c \
             drivers/bus_spi_ll.c \
             drivers/pwm_output_dshot_hal.c \
             drivers/timer_hal.c \
@@ -178,10 +179,28 @@ MCU_EXCLUDES = \
             drivers/bus_i2c.c \
             drivers/timer.c \
             drivers/serial_uart.c
-            
+
+MSC_SRC = \
+            drivers/usb_msc_f7xx.c \
+            msc/usbd_storage.c
+
 ifneq ($(filter SDIO,$(FEATURES)),)
 MCU_COMMON_SRC += \
-            drivers/sdio_f7xx.c
+            drivers/sdio_f7xx.c            
+MSC_SRC += \
+            msc/usbd_storage_sdio.c
+endif
+
+ifneq ($(filter SDCARD,$(FEATURES)),)
+MSC_SRC += \
+            msc/usbd_storage_sd_spi.c
+endif
+
+ifneq ($(filter ONBOARDFLASH,$(FEATURES)),)
+MSC_SRC += \
+            msc/usbd_storage_emfat.c \
+            msc/emfat.c \
+            msc/emfat_file.c
 endif
 
 DSP_LIB := $(ROOT)/lib/main/CMSIS/DSP

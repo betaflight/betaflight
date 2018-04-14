@@ -182,7 +182,9 @@ static void sendThrottleOrBatterySizeAsRpm(void)
     int16_t data;
 #if defined(USE_ESC_SENSOR)
     escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
-    data = escData->dataAge < ESC_DATA_INVALID ? escData->rpm : 0;
+    if (escData) {
+        data = escData->dataAge < ESC_DATA_INVALID ? escData->rpm : 0;
+    }
 #else
     if (ARMING_FLAG(ARMED)) {
         const throttleStatus_e throttleStatus = calculateThrottleStatus();
@@ -204,7 +206,9 @@ static void sendTemperature1(void)
     int16_t data;
 #if defined(USE_ESC_SENSOR)
     escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
-    data = escData->dataAge < ESC_DATA_INVALID ? escData->temperature : 0;
+    if (escData) {
+        data = escData->dataAge < ESC_DATA_INVALID ? escData->temperature : 0;
+    }
 #elif defined(USE_BARO)
     data = (baro.baroTemperature + 50)/ 100; // Airmamaf
 #else

@@ -218,7 +218,7 @@ void currentMeterESCRefresh(int32_t lastUpdateAt)
     UNUSED(lastUpdateAt);
 
     escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
-    if (escData->dataAge <= ESC_BATTERY_AGE_MAX) {
+    if (escData && escData->dataAge <= ESC_BATTERY_AGE_MAX) {
         currentMeterESCState.amperage = escData->current;
         currentMeterESCState.mAhDrawn = escData->consumption;
     } else {

@@ -55,11 +55,11 @@
 
 
 FAST_RAM uint32_t targetPidLooptime;
+FAST_RAM pidAxisData_t pidData[XYZ_AXIS_COUNT];
+
 static FAST_RAM bool pidStabilisationEnabled;
 
 static FAST_RAM bool inCrashRecoveryMode = false;
-
-FAST_RAM float axisPID_P[3], axisPID_I[3], axisPID_D[3], axisPIDSum[3];
 
 static FAST_RAM float dT;
 
@@ -157,7 +157,7 @@ static void pidSetTargetLooptime(uint32_t pidLooptime)
 void pidResetITerm(void)
 {
     for (int axis = 0; axis < 3; axis++) {
-        axisPID_I[axis] = 0.0f;
+        pidData[axis].I = 0.0f;
     }
 }
 
@@ -277,7 +277,13 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     pt1FilterInit(&throttleLpf, pt1FilterGain(pidProfile->throttle_boost_cutoff, dT));
 }
 
-static FAST_RAM float Kp[3], Ki[3], Kd[3];
+typedef struct pidCoefficient_s {
+    float Kp;
+    float Ki;
+    float Kd;
+} pidCoefficient_t;
+
+static FAST_RAM pidCoefficient_t pidCoefficient[3];
 static FAST_RAM float maxVelocity[3];
 static FAST_RAM float relaxFactor;
 static FAST_RAM float dtermSetpointWeight;
@@ -300,9 +306,9 @@ static FAST_RAM bool itermRotation;
 void pidInitConfig(const pidProfile_t *pidProfile)
 {
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-        Kp[axis] = PTERM_SCALE * pidProfile->pid[axis].P;
-        Ki[axis] = ITERM_SCALE * pidProfile->pid[axis].I;
-        Kd[axis] = DTERM_SCALE * pidProfile->pid[axis].D;
+        pidCoefficient[axis].Kp = PTERM_SCALE * pidProfile->pid[axis].P;
+        pidCoefficient[axis].Ki = ITERM_SCALE * pidProfile->pid[axis].I;
+        pidCoefficient[axis].Kd = DTERM_SCALE * pidProfile->pid[axis].D;
     }
 
     dtermSetpointWeight = pidProfile->dtermSetpointWeight / 127.0f;
@@ -362,13 +368,13 @@ void pidUpdateRates(pidProfile_t *pidProfile, int16_t *rcData)
     // On each axis, check if there is an aux channel being used to override the P, I and/or D term
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         if (pidUpdateRate(pidProfile, rcData, axis, TERM_P, &pidProfile->pid[axis].P)) {
-            Kp[axis] = PTERM_SCALE * pidProfile->pid[axis].P;
+            pidCoefficient[axis].Kp = PTERM_SCALE * pidProfile->pid[axis].P;
         }
         if (pidUpdateRate(pidProfile, rcData, axis, TERM_I, &pidProfile->pid[axis].I)) {
-            Ki[axis] = ITERM_SCALE * pidProfile->pid[axis].I;
+            pidCoefficient[axis].Ki = ITERM_SCALE * pidProfile->pid[axis].I;
         }
         if ((axis != FD_YAW) && pidUpdateRate(pidProfile, rcData, axis, TERM_D, &pidProfile->pid[axis].D)) {
-            Kd[axis] = DTERM_SCALE * pidProfile->pid[axis].D;
+            pidCoefficient[axis].Kd = DTERM_SCALE * pidProfile->pid[axis].D;
         }
     }
 }
@@ -481,16 +487,114 @@ static float accelerationLimit(int axis, float currentPidSetpoint)
     return currentPidSetpoint;
 }
 
+static timeUs_t crashDetectedAtUs;
+
+static void handleCrashRecovery(
+    const pidCrashRecovery_e crash_recovery, const rollAndPitchTrims_t *angleTrim,
+    const int axis, const timeUs_t currentTimeUs, const float gyroRate, float *currentPidSetpoint, float *errorRate)
+{
+    if (inCrashRecoveryMode && cmpTimeUs(currentTimeUs, crashDetectedAtUs) > crashTimeDelayUs) {
+        if (crash_recovery == PID_CRASH_RECOVERY_BEEP) {
+            BEEP_ON;
+        }
+        if (axis == FD_YAW) {
+            *errorRate = constrainf(*errorRate, -crashLimitYaw, crashLimitYaw);
+        } else {
+            // on roll and pitch axes calculate currentPidSetpoint and errorRate to level the aircraft to recover from crash
+            if (sensors(SENSOR_ACC)) {
+                // errorAngle is deviation from horizontal
+                const float errorAngle =  -(attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f;
+                *currentPidSetpoint = errorAngle * levelGain;
+                *errorRate = *currentPidSetpoint - gyroRate;
+            }
+        }
+        // reset ITerm, since accumulated error before crash is now meaningless
+        // and ITerm windup during crash recovery can be extreme, especially on yaw axis
+        pidData[axis].I = 0.0f;
+        if (cmpTimeUs(currentTimeUs, crashDetectedAtUs) > crashTimeLimitUs
+            || (getMotorMixRange() < 1.0f
+                   && ABS(gyro.gyroADCf[FD_ROLL]) < crashRecoveryRate
+                   && ABS(gyro.gyroADCf[FD_PITCH]) < crashRecoveryRate
+                   && ABS(gyro.gyroADCf[FD_YAW]) < crashRecoveryRate)) {
+            if (sensors(SENSOR_ACC)) {
+                // check aircraft nearly level
+                if (ABS(attitude.raw[FD_ROLL] - angleTrim->raw[FD_ROLL]) < crashRecoveryAngleDeciDegrees
+                   && ABS(attitude.raw[FD_PITCH] - angleTrim->raw[FD_PITCH]) < crashRecoveryAngleDeciDegrees) {
+                    inCrashRecoveryMode = false;
+                    BEEP_OFF;
+                }
+            } else {
+                inCrashRecoveryMode = false;
+                BEEP_OFF;
+            }
+        }
+    }
+}
+
+static void detectAndSetCrashRecovery(
+    const pidCrashRecovery_e crash_recovery, const uint8_t axis,
+    const timeUs_t currentTimeUs, const float delta, const float errorRate)
+{
+    // if crash recovery is on and accelerometer enabled and there is no gyro overflow, then check for a crash
+    // no point in trying to recover if the crash is so severe that the gyro overflows
+    if (crash_recovery && !gyroOverflowDetected()) {
+        if (ARMING_FLAG(ARMED)) {
+            if (getMotorMixRange() >= 1.0f && !inCrashRecoveryMode
+                && ABS(delta) > crashDtermThreshold
+                && ABS(errorRate) > crashGyroThreshold
+                && ABS(getSetpointRate(axis)) < crashSetpointThreshold) {
+                inCrashRecoveryMode = true;
+                crashDetectedAtUs = currentTimeUs;
+            }
+            if (inCrashRecoveryMode && cmpTimeUs(currentTimeUs, crashDetectedAtUs) < crashTimeDelayUs && (ABS(errorRate) < crashGyroThreshold
+                || ABS(getSetpointRate(axis)) > crashSetpointThreshold)) {
+                inCrashRecoveryMode = false;
+                BEEP_OFF;
+            }
+        } else if (inCrashRecoveryMode) {
+            inCrashRecoveryMode = false;
+            BEEP_OFF;
+        }
+    }
+}
+
+static void handleItermRotation(const float deltaT)
+{
+    // rotate old I to the new coordinate system
+    const float gyroToAngle = deltaT * RAD;
+    for (int i = FD_ROLL; i <= FD_YAW; i++) {
+        int i_1 = (i + 1) % 3;
+        int i_2 = (i + 2) % 3;
+        float angle = gyro.gyroADCf[i] * gyroToAngle;
+        float newPID_I_i_1 = pidData[i_1].I + pidData[i_2].I * angle;
+        pidData[i_2].I -= pidData[i_1].I * angle;
+        pidData[i_1].I = newPID_I_i_1;
+    }
+}
+
 // Betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage.
 // Based on 2DOF reference design (matlab)
 void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, timeUs_t currentTimeUs)
 {
-    static float previousGyroRateFiltered[2];
+    static float previousGyroRateDterm[2];
     static float previousPidSetpoint[2];
+    static timeUs_t previousTimeUs;
+
+    // Disable PID control if at zero throttle or if gyro overflow detected
+    if (!pidStabilisationEnabled || gyroOverflowDetected()) {
+        for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+            pidData[axis].P = 0;
+            pidData[axis].I = 0;
+            pidData[axis].D = 0;
+
+            pidData[axis].Sum = 0;
+        }
+
+        return;
+    }
+
     const float tpaFactor = getThrottlePIDAttenuation();
     const float motorMixRange = getMotorMixRange();
-    static timeUs_t crashDetectedAtUs;
-    static timeUs_t previousTimeUs;
 
     // calculate actual deltaT in seconds
     const float deltaT = (currentTimeUs - previousTimeUs) * 0.000001f;
@@ -504,21 +608,20 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
     // Dynamic d component, enable 2-DOF PID controller only for rate mode
     const float dynCd = flightModeFlags ? 0.0f : dtermSetpointWeight;
 
+    // Precalculate gyro deta for D-term here, this allows loop unrolling
+    float gyroRateDterm[2];
+    for (int axis = FD_ROLL; axis < FD_YAW; ++axis) {
+        gyroRateDterm[axis] = dtermNotchApplyFn((filter_t *) &dtermNotch[axis], gyro.gyroADCf[axis]);
+        gyroRateDterm[axis] = dtermLowpassApplyFn((filter_t *) &dtermLowpass[axis], gyroRateDterm[axis]);
+        gyroRateDterm[axis] = dtermLowpass2ApplyFn((filter_t *) &dtermLowpass2[axis], gyroRateDterm[axis]);
+    }
+
     if (itermRotation) {
-        // rotate old I to the new coordinate system
-        const float gyroToAngle = deltaT * RAD;
-        for (int i = FD_ROLL; i <= FD_YAW; i++) {
-            int i_1 = (i + 1) % 3;
-            int i_2 = (i + 2) % 3;
-            float angle = gyro.gyroADCf[i] * gyroToAngle;
-            float newPID_I_i_1 = axisPID_I[i_1] + axisPID_I[i_2] * angle;
-            axisPID_I[i_2] -= axisPID_I[i_1] * angle;
-            axisPID_I[i_1] = newPID_I_i_1;
-        }
+        handleItermRotation(deltaT);
     }
 
     // ----------PID controller----------
-    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+    for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
         float currentPidSetpoint = getSetpointRate(axis);
         if (maxVelocity[axis]) {
             currentPidSetpoint = accelerationLimit(axis, currentPidSetpoint);
@@ -532,118 +635,54 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         const float gyroRate = gyro.gyroADCf[axis]; // Process variable from gyro output in deg/sec
         float errorRate = currentPidSetpoint - gyroRate; // r - y
 
-        if (inCrashRecoveryMode && cmpTimeUs(currentTimeUs, crashDetectedAtUs) > crashTimeDelayUs) {
-            if (pidProfile->crash_recovery == PID_CRASH_RECOVERY_BEEP) {
-                BEEP_ON;
-            }
-            if (axis == FD_YAW) {
-                errorRate = constrainf(errorRate, -crashLimitYaw, crashLimitYaw);
-            } else {
-                // on roll and pitch axes calculate currentPidSetpoint and errorRate to level the aircraft to recover from crash
-                if (sensors(SENSOR_ACC)) {
-                    // errorAngle is deviation from horizontal
-                    const float errorAngle =  -(attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f;
-                    currentPidSetpoint = errorAngle * levelGain;
-                    errorRate = currentPidSetpoint - gyroRate;
-                }
-            }
-            // reset ITerm, since accumulated error before crash is now meaningless
-            // and ITerm windup during crash recovery can be extreme, especially on yaw axis
-            axisPID_I[axis] = 0.0f;
-            if (cmpTimeUs(currentTimeUs, crashDetectedAtUs) > crashTimeLimitUs
-                || (motorMixRange < 1.0f
-                       && ABS(gyro.gyroADCf[FD_ROLL]) < crashRecoveryRate
-                       && ABS(gyro.gyroADCf[FD_PITCH]) < crashRecoveryRate
-                       && ABS(gyro.gyroADCf[FD_YAW]) < crashRecoveryRate)) {
-                if (sensors(SENSOR_ACC)) {
-                    // check aircraft nearly level
-                    if (ABS(attitude.raw[FD_ROLL] - angleTrim->raw[FD_ROLL]) < crashRecoveryAngleDeciDegrees
-                       && ABS(attitude.raw[FD_PITCH] - angleTrim->raw[FD_PITCH]) < crashRecoveryAngleDeciDegrees) {
-                        inCrashRecoveryMode = false;
-                        BEEP_OFF;
-                    }
-                } else {
-                    inCrashRecoveryMode = false;
-                    BEEP_OFF;
-                }
-            }
-        }
+        handleCrashRecovery(
+            pidProfile->crash_recovery, angleTrim, axis, currentTimeUs, gyroRate,
+            &currentPidSetpoint, &errorRate);
 
         // --------low-level gyro-based PID based on 2DOF PID controller. ----------
         // 2-DOF PID controller with optional filter on derivative term.
         // b = 1 and only c (dtermSetpointWeight) can be tuned (amount derivative on measurement or error).
 
         // -----calculate P component and add Dynamic Part based on stick input
-        axisPID_P[axis] = Kp[axis] * errorRate * tpaFactor;
+        pidData[axis].P = pidCoefficient[axis].Kp * errorRate * tpaFactor;
         if (axis == FD_YAW) {
-            axisPID_P[axis] = ptermYawLowpassApplyFn((filter_t *) &ptermYawLowpass, axisPID_P[axis]);
+            pidData[axis].P = ptermYawLowpassApplyFn((filter_t *) &ptermYawLowpass, pidData[axis].P);
         }
 
         // -----calculate I component
-        const float ITerm = axisPID_I[axis];
-        const float ITermNew = constrainf(ITerm + Ki[axis] * errorRate * dynCi, -itermLimit, itermLimit);
+        const float ITerm = pidData[axis].I;
+        const float ITermNew = constrainf(ITerm + pidCoefficient[axis].Ki * errorRate * dynCi, -itermLimit, itermLimit);
         const bool outputSaturated = mixerIsOutputSaturated(axis, errorRate);
         if (outputSaturated == false || ABS(ITermNew) < ABS(ITerm)) {
             // Only increase ITerm if output is not saturated
-            axisPID_I[axis] = ITermNew;
+            pidData[axis].I = ITermNew;
         }
 
         // -----calculate D component
         if (axis != FD_YAW) {
-            // apply filters
-            float gyroRateFiltered = dtermNotchApplyFn((filter_t *) &dtermNotch[axis], gyroRate);
-            gyroRateFiltered = dtermLowpassApplyFn((filter_t *) &dtermLowpass[axis], gyroRateFiltered);
-            gyroRateFiltered = dtermLowpass2ApplyFn((filter_t *) &dtermLowpass2[axis], gyroRateFiltered);
-
             // no transition if relaxFactor == 0
-            float transition = 1;
-            if (relaxFactor > 0) {
-                transition = getRcDeflectionAbs(axis) * relaxFactor;
-            }
+            float transition = relaxFactor > 0 ? getRcDeflectionAbs(axis) * relaxFactor : 1;
+
             // Divide rate change by deltaT to get differential (ie dr/dt)
             const float delta = (
                 dynCd * transition * (currentPidSetpoint - previousPidSetpoint[axis]) -
-                (gyroRateFiltered - previousGyroRateFiltered[axis])) / deltaT;
-            
-            previousPidSetpoint[axis] = currentPidSetpoint;
-            previousGyroRateFiltered[axis] = gyroRateFiltered;
-                
-                
-            // if crash recovery is on and accelerometer enabled and there is no gyro overflow, then check for a crash
-            // no point in trying to recover if the crash is so severe that the gyro overflows
-            if (pidProfile->crash_recovery && !gyroOverflowDetected()) {
-                if (ARMING_FLAG(ARMED)) {
-                    if (motorMixRange >= 1.0f && !inCrashRecoveryMode
-                        && ABS(delta) > crashDtermThreshold
-                        && ABS(errorRate) > crashGyroThreshold
-                        && ABS(getSetpointRate(axis)) < crashSetpointThreshold) {
-                        inCrashRecoveryMode = true;
-                        crashDetectedAtUs = currentTimeUs;
-                    }
-                    if (inCrashRecoveryMode && cmpTimeUs(currentTimeUs, crashDetectedAtUs) < crashTimeDelayUs && (ABS(errorRate) < crashGyroThreshold
-                        || ABS(getSetpointRate(axis)) > crashSetpointThreshold)) {
-                        inCrashRecoveryMode = false;
-                        BEEP_OFF;
-                    }
-                } else if (inCrashRecoveryMode) {
-                    inCrashRecoveryMode = false;
-                    BEEP_OFF;
-                }
-            }
-            axisPID_D[axis] = Kd[axis] * delta * tpaFactor;
-            axisPIDSum[axis] = axisPID_P[axis] + axisPID_I[axis] + axisPID_D[axis];
-        } else {
-            axisPIDSum[axis] = axisPID_P[axis] + axisPID_I[axis];
-        }
+                (gyroRateDterm[axis] - previousGyroRateDterm[axis])) / deltaT;
 
-        // Disable PID control if at zero throttle or if gyro overflow detected
-        if (!pidStabilisationEnabled || gyroOverflowDetected()) {
-            axisPID_P[axis] = 0;
-            axisPID_I[axis] = 0;
-            axisPID_D[axis] = 0;
-            axisPIDSum[axis] = 0;
+            previousPidSetpoint[axis] = currentPidSetpoint;
+            previousGyroRateDterm[axis] = gyroRateDterm[axis];
+
+            detectAndSetCrashRecovery(pidProfile->crash_recovery, axis, currentTimeUs, delta, errorRate);
+
+            pidData[axis].D = pidCoefficient[axis].Kd * delta * tpaFactor;
         }
     }
+
+    // calculating the PID sum
+    pidData[FD_ROLL].Sum = pidData[FD_ROLL].P + pidData[FD_ROLL].I + pidData[FD_ROLL].D;
+    pidData[FD_PITCH].Sum = pidData[FD_PITCH].P + pidData[FD_PITCH].I + pidData[FD_PITCH].D;
+
+    // YAW has no D
+    pidData[FD_YAW].Sum = pidData[FD_YAW].P + pidData[FD_YAW].I;
 }
 
 bool crashRecoveryModeActive(void)

@@ -3746,7 +3746,14 @@ static void cliMsc(char *cmdline)
 {
     UNUSED(cmdline);
 
-    if (sdcard_isFunctional()) {
+    if (false
+#ifdef USE_SDCARD
+        || sdcard_isFunctional()
+#endif
+#ifdef USE_FLASHFS
+        || flashfsGetSize() > 0
+#endif
+    ) {
         cliPrintHashLine("restarting in mass storage mode");
         cliPrint("\r\nRebooting");
         bufWriterFlush(cliWriter);
@@ -3757,12 +3764,16 @@ static void cliMsc(char *cmdline)
             mpuResetFn();
         }
 
-        *((uint32_t *)0x2001FFF0) = 0xDDDD1010; // Same location as bootloader magic but different value
+#ifdef STM32F7
+        *((__IO uint32_t*) BKPSRAM_BASE + 16) = MSC_MAGIC;
+#elif defined(STM32F4)
+        *((uint32_t *)0x2001FFF0) = MSC_MAGIC;
+#endif
 
         __disable_irq();
         NVIC_SystemReset();
     } else {
-        cliPrint("\r\nSD Card not present or failed to initialize!");
+        cliPrint("\r\nStorage not present or failed to initialize!");
         bufWriterFlush(cliWriter);
     }
 }
@@ -3808,7 +3819,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("color", "configure colors", NULL, cliColor),
 #endif
     CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", "[nosave]", cliDefaults),
-    CLI_COMMAND_DEF("diff", "list configuration changes from default", "[master|profile|rates|all] {showdefaults}", cliDiff),
+    CLI_COMMAND_DEF("diff", "list configuration changes from default", "[master|profile|rates|all] {defaults}", cliDiff),
 #ifdef USE_DSHOT
     CLI_COMMAND_DEF("dshotprog", "program DShot ESC(s)", "<index> <command>+", cliDshotProg),
 #endif

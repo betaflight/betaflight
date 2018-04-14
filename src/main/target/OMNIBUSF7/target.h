@@ -115,7 +115,8 @@
 
 //UARTS-------------------------------------
 #define USE_VCP
-#define VBUS_SENSING_PIN        PC4
+#define USE_USB_DETECT
+#define USB_DETECT_PIN          PC4
 
 #define USE_UART1
 #define UART1_RX_PIN            PA10

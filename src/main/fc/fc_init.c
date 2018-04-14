@@ -458,7 +458,7 @@ void init(void)
 /* MSC mode will start after init, but will not allow scheduler to run,
  *  so there is no bottleneck in reading and writing data */
     mscInit();
-    if (*((uint32_t *)0x2001FFF0) == 0xDDDD1010 || mscCheckButton()) {
+    if (mscCheckBoot() || mscCheckButton()) {
         if (mscStart() == 0) {
              mscWaitForButton();
         } else {
@@ -672,7 +672,7 @@ void init(void)
     }
 #endif
 
-#ifdef USB_DETECT_PIN
+#ifdef USE_USB_DETECT
     usbCableDetectInit();
 #endif
 

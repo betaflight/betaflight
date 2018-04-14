@@ -32,12 +32,19 @@
 
 #include "platform.h"
 
-#include "usbd_msc_mem.h"
-#include "usbd_msc_core.h"
 #include "drivers/sdmmc_sdio.h"
 #include "drivers/light_led.h"
 #include "drivers/io.h"
 #include "common/utils.h"
+
+#ifdef USE_HAL_DRIVER
+#include "usbd_msc.h"
+#else
+#include "usbd_msc_mem.h"
+#include "usbd_msc_core.h"
+#endif
+
+#include "usbd_storage.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -52,38 +59,50 @@
  */
 
 #define STORAGE_LUN_NBR                  1
+#define STORAGE_BLK_NBR                  0x10000
+#define STORAGE_BLK_SIZ                  0x200
 
-int8_t STORAGE_Init (uint8_t lun);
+static int8_t STORAGE_Init (uint8_t lun);
 
-int8_t STORAGE_GetCapacity (uint8_t lun,
+#ifdef USE_HAL_DRIVER
+static int8_t STORAGE_GetCapacity (uint8_t lun,
+                           uint32_t *block_num,
+                           uint16_t *block_size);
+#else
+static int8_t STORAGE_GetCapacity (uint8_t lun,
                            uint32_t *block_num,
                            uint32_t *block_size);
+#endif
 
-int8_t  STORAGE_IsReady (uint8_t lun);
+static int8_t  STORAGE_IsReady (uint8_t lun);
 
-int8_t  STORAGE_IsWriteProtected (uint8_t lun);
+static int8_t  STORAGE_IsWriteProtected (uint8_t lun);
 
-int8_t STORAGE_Read (uint8_t lun,
+static int8_t STORAGE_Read (uint8_t lun,
                         uint8_t *buf,
                         uint32_t blk_addr,
                         uint16_t blk_len);
 
-int8_t STORAGE_Write (uint8_t lun,
+static int8_t STORAGE_Write (uint8_t lun,
                         uint8_t *buf,
                         uint32_t blk_addr,
                         uint16_t blk_len);
 
-int8_t STORAGE_GetMaxLun (void);
+static int8_t STORAGE_GetMaxLun (void);
 
 /* USB Mass storage Standard Inquiry Data */
-uint8_t  STORAGE_Inquirydata[] = {//36
+static uint8_t  STORAGE_Inquirydata[] = {//36
 
   /* LUN 0 */
   0x00,
   0x80,
   0x02,
   0x02,
+#ifdef USE_HAL_DRIVER
+  (STANDARD_INQUIRY_DATA_LEN - 5),
+#else
   (USBD_STD_INQUIRY_LENGTH - 5),
+#endif
   0x00,
   0x00,
   0x00,
@@ -93,7 +112,8 @@ uint8_t  STORAGE_Inquirydata[] = {//36
   '0', '.', '0' ,'1',                     /* Version      : 4 Bytes */
 };
 
-USBD_STORAGE_cb_TypeDef USBD_MICRO_SDIO_fops =
+#ifdef USE_HAL_DRIVER
+USBD_StorageTypeDef USBD_MSC_MICRO_SDIO_fops =
 {
   STORAGE_Init,
   STORAGE_GetCapacity,
@@ -103,10 +123,21 @@ USBD_STORAGE_cb_TypeDef USBD_MICRO_SDIO_fops =
   STORAGE_Write,
   STORAGE_GetMaxLun,
   (int8_t*)STORAGE_Inquirydata,
-
 };
+#else
+USBD_STORAGE_cb_TypeDef USBD_MSC_MICRO_SDIO_fops =
+{
+  STORAGE_Init,
+  STORAGE_GetCapacity,
+  STORAGE_IsReady,
+  STORAGE_IsWriteProtected,
+  STORAGE_Read,
+  STORAGE_Write,
+  STORAGE_GetMaxLun,
+  (int8_t*)STORAGE_Inquirydata,
+};
+#endif
 
-USBD_STORAGE_cb_TypeDef  *USBD_STORAGE_fops = &USBD_MICRO_SDIO_fops;
 /*******************************************************************************
 * Function Name  : Read_Memory
 * Description    : Handle the Read operation from the microSD card.
@@ -114,7 +145,7 @@ USBD_STORAGE_cb_TypeDef  *USBD_STORAGE_fops = &USBD_MICRO_SDIO_fops;
 * Output         : None.
 * Return         : None.
 *******************************************************************************/
-int8_t STORAGE_Init (uint8_t lun)
+static int8_t STORAGE_Init (uint8_t lun)
 {
 	//Initialize SD_DET
 #ifdef SDCARD_DETECT_PIN
@@ -138,7 +169,11 @@ int8_t STORAGE_Init (uint8_t lun)
 * Output         : None.
 * Return         : None.
 *******************************************************************************/
-int8_t STORAGE_GetCapacity (uint8_t lun, uint32_t *block_num, uint32_t *block_size)
+#ifdef USE_HAL_DRIVER
+static int8_t STORAGE_GetCapacity (uint8_t lun, uint32_t *block_num, uint16_t *block_size)
+#else
+static int8_t STORAGE_GetCapacity (uint8_t lun, uint32_t *block_num, uint32_t *block_size)
+#endif
 {
 	UNUSED(lun);
 	if (SD_IsDetected() == 0) {
@@ -158,7 +193,7 @@ int8_t STORAGE_GetCapacity (uint8_t lun, uint32_t *block_num, uint32_t *block_si
 * Output         : None.
 * Return         : None.
 *******************************************************************************/
-int8_t  STORAGE_IsReady (uint8_t lun)
+static int8_t  STORAGE_IsReady (uint8_t lun)
 {
 	UNUSED(lun);
 	int8_t ret = -1;
@@ -175,7 +210,7 @@ int8_t  STORAGE_IsReady (uint8_t lun)
 * Output         : None.
 * Return         : None.
 *******************************************************************************/
-int8_t  STORAGE_IsWriteProtected (uint8_t lun)
+static int8_t  STORAGE_IsWriteProtected (uint8_t lun)
 {
   UNUSED(lun);
   return  0;
@@ -188,7 +223,7 @@ int8_t  STORAGE_IsWriteProtected (uint8_t lun)
 * Output         : None.
 * Return         : None.
 *******************************************************************************/
-int8_t STORAGE_Read (uint8_t lun,
+static int8_t STORAGE_Read (uint8_t lun,
                  uint8_t *buf,
                  uint32_t blk_addr,
                  uint16_t blk_len)
@@ -215,7 +250,7 @@ int8_t STORAGE_Read (uint8_t lun,
 * Output         : None.
 * Return         : None.
 *******************************************************************************/
-int8_t STORAGE_Write (uint8_t lun,
+static int8_t STORAGE_Write (uint8_t lun,
                   uint8_t *buf,
                   uint32_t blk_addr,
                   uint16_t blk_len)
@@ -242,7 +277,7 @@ int8_t STORAGE_Write (uint8_t lun,
 * Output         : None.
 * Return         : None.
 *******************************************************************************/
-int8_t STORAGE_GetMaxLun (void)
+static int8_t STORAGE_GetMaxLun (void)
 {
   return (STORAGE_LUN_NBR - 1);
 }

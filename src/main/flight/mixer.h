@@ -87,6 +87,7 @@ typedef struct mixer_s {
 typedef struct mixerConfig_s {
     uint8_t mixerMode;
     bool yaw_motors_reversed;
+    uint8_t crashflip_motor_percent;
 } mixerConfig_t;
 
 PG_DECLARE(mixerConfig_t, mixerConfig);

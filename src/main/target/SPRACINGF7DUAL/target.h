@@ -199,8 +199,7 @@
 
 #define USE_LED_STRIP
 
-//TODO Implement transponder on F7
-//#define USE_TRANSPONDER
+#define USE_TRANSPONDER
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 //#define RX_CHANNELS_TAER

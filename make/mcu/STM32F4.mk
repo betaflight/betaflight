@@ -172,6 +172,7 @@ MCU_COMMON_SRC = \
             drivers/dma_stm32f4xx.c \
             drivers/inverter.c \
             drivers/light_ws2811strip_stdperiph.c \
+            drivers/transponder_ir_io_stdperiph.c \
             drivers/pwm_output_dshot.c \
             drivers/serial_uart_init.c \
             drivers/serial_uart_stm32f4xx.c \
@@ -198,7 +199,8 @@ endif
 
 MSC_SRC = \
             drivers/usb_msc_f4xx.c \
-            msc/usbd_msc_desc.c
+            msc/usbd_msc_desc.c \
+            msc/usbd_storage.c
 
 ifneq ($(filter SDCARD,$(FEATURES)),)
 MSC_SRC += \
@@ -210,6 +212,13 @@ MSC_SRC += \
             msc/usbd_storage_sdio.c
 MCU_COMMON_SRC += \
             drivers/sdio_f4xx.c
+endif
+
+ifneq ($(filter ONBOARDFLASH,$(FEATURES)),)
+MSC_SRC += \
+            msc/usbd_storage_emfat.c \
+            msc/emfat.c \
+            msc/emfat_file.c
 endif
 
 DSP_LIB := $(ROOT)/lib/main/CMSIS/DSP

@@ -57,6 +57,10 @@
 #include "pg/pg.h"
 #include "pg/usb.h"
 
+#ifdef USE_USB_MSC
+#include "drivers/usb_msc.h"
+#endif
+
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
@@ -406,8 +410,13 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev)
   /* Initialize LL Driver */
   HAL_PCD_Init(&hpcd);
 
+
 #ifdef USE_USB_CDC_HID
+#ifdef USE_USB_MSC
+  if (usbDevConfig()->type == COMPOSITE && !mscCheckBoot()) {
+#else
   if (usbDevConfig()->type == COMPOSITE) {
+#endif
     HAL_PCDEx_SetRxFiFo(&hpcd, 0x80);
     HAL_PCDEx_SetTxFiFo(&hpcd, 0, 0x20);
     HAL_PCDEx_SetTxFiFo(&hpcd, 1, 0x40);
