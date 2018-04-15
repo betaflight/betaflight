@@ -17,9 +17,24 @@ Changing settings during flight can make your aircraft unstable and crash if you
 
 ## Overview
 
+There are two modes of operation. The first supports adjusting settings by incrementing/decrementing them through use of an aux channel, typically a three position switch, where the middle position makes no change, and the other positions either increment or decrement the selected setting.
+
+The other mode is Absolute mode where a pot (knob/slider) may be directly mapped and changes the selected setting to a value based on a center value, coresponding to mid-postion on the switch and a range of ± adjustment at the min/max positions of the pot.
+
+Both modes utilise two channels to make an adjustment.
+
+| Channel | Use |
+| ------- | --- |
+| Range | This channel is used to enable an adjustment. When the channel is set to fall withing the specified range, then the corresponding adjustment is enabled. This is similar to mode setting where a given mode is enabled when a channel is within a lower and upper range. |
+| Adjustment | This channel is used to control the change to the specified setting|
+
+
+
+### Increment/Decrement mode
+
 Up to 4 RX channels can be used to make different adjustments at the same time.
 
-The adjustment a channel makes can be controlled by another channel.
+The adjustment the Adjustment Channel makes is controlled by the Range Channel.
 
 The following adjustments can be made, in flight, as well as on the ground.
 
@@ -42,16 +57,21 @@ Powering off without saving will discard the adjustments.
 
 Settings can be saved when disarmed using stick positions: Throttle Low, Yaw Left, Pitch Low, Roll Right.
 
-## Adjustment switches
+#### Adjustment switches
 
-The switch can be a ON-OFF-ON, POT or momentary ON-OFF-ON switch.  The latter is recommended.
+The Adjustment switch is associated with the Adjustment Channel. The switch can be a ON-OFF-ON, POT or momentary ON-OFF-ON switch.  The latter is recommended.
 
 When the switch is returned to the center position the value will not be increased/decreased.
 
 Each time you can press the switch high/low and then return it to the middle the value will change at least once, you do not have to wait before pressing the switch again if you want to increase/decrease at a faster rate.  While the adjustment switch held is high/low, the adjustment function applies and increases/decreases the value being adjusted twice a second and the flight controller will beep shorter/longer, respectively. The system works similar to how a keyboard repeat delay works.
 
 Hint: With OpenTX transmitters you can combine two momentary OFF-ON switches to control a single channel.  You could make it so that a momentary switch on the left of your transmitter decreases the value and a momentary switch on the right increases the value.  Experiment with your mixer!
- 
+
+### Absolute mode
+
+The adjustment is made where the Adjustment Channel is an Aux channel connected to a pot (knob/slider). This provides an easier approach than using the Increment/Decrement mode as it is easier to keep track of the setting.
+
+Note that if the same pot is used as the Adjustment Channel to make multiple adjustments, there is a risk of a jump in values of the second setting when switching from the first if the pot is not centered. To avoid this it is recommended that if adjusting two different settings using the same pot, a three position switch be used for the Range Channel, with neither setting associated with the middle position.
 
 ## Configuration
 
@@ -79,6 +99,8 @@ Configure a range using:
 | Range End | 900 - 2100 | End of range |
 | Adjustment function | 0 - 11 | See Adjustment function table |
 | Adjustment channel | 0 based index, AUX1 = 0, AUX2 = 1 | The channel that is controlled by a 3 Position switch/Pot |
+| Center Value | If this is non-zero then Absolute Mode is used for this range otherwise Increment/Decrement Mode is used. In Absolute Mode this value is the value which will be assigned to the setting when the Adjustment Channel is set to mid-position. |
+| Range Value |
 
 Range Start/End values should match the values sent by your receiver.
 

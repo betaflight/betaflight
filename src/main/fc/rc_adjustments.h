@@ -85,7 +85,7 @@ typedef struct adjustmentRange_s {
     // ... via slot
     uint8_t adjustmentIndex;
     uint16_t adjustmentCenter;
-    uint16_t adjustmentRange;
+    uint16_t adjustmentScale;
 } adjustmentRange_t;
 
 PG_DECLARE_ARRAY(adjustmentRange_t, MAX_ADJUSTMENT_RANGE_COUNT, adjustmentRanges);

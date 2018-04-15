@@ -687,7 +687,7 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig)
         if (isRangeActive(adjustmentRange->auxChannelIndex, &adjustmentRange->range) &&
             adjustmentRange->adjustmentCenter) {
             const uint8_t channelIndex = NON_AUX_CHANNEL_COUNT + adjustmentRange->auxSwitchChannelIndex;
-            int value = (((rcData[channelIndex] - PWM_RANGE_MIDDLE) * adjustmentRange->adjustmentRange) / (PWM_RANGE_MIDDLE - PWM_RANGE_MIN)) + adjustmentRange->adjustmentCenter;
+            int value = (((rcData[channelIndex] - PWM_RANGE_MIDDLE) * adjustmentRange->adjustmentScale) / (PWM_RANGE_MIDDLE - PWM_RANGE_MIN)) + adjustmentRange->adjustmentCenter;
 
             applyAbsoluteAdjustment(controlRateConfig, adjustmentRange->adjustmentFunction, value);
         }
