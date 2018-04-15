@@ -1067,7 +1067,7 @@ static void printAdjustmentRange(uint8_t dumpMask, const adjustmentRange_t *adju
                 && ar->auxSwitchChannelIndex == arDefault->auxSwitchChannelIndex
                 && ar->adjustmentIndex == arDefault->adjustmentIndex
                 && ar->adjustmentCenter == arDefault->adjustmentCenter
-                && ar->adjustmentRange == arDefault->adjustmentRange;
+                && ar->adjustmentScale == arDefault->adjustmentScale;
             cliDefaultPrintLinef(dumpMask, equalsDefault, format,
                 i,
                 arDefault->adjustmentIndex,
@@ -1077,7 +1077,7 @@ static void printAdjustmentRange(uint8_t dumpMask, const adjustmentRange_t *adju
                 arDefault->adjustmentFunction,
                 arDefault->auxSwitchChannelIndex,
                 arDefault->adjustmentCenter,
-                arDefault->adjustmentRange
+                arDefault->adjustmentScale
             );
         }
         cliDumpPrintLinef(dumpMask, equalsDefault, format,
@@ -1089,7 +1089,7 @@ static void printAdjustmentRange(uint8_t dumpMask, const adjustmentRange_t *adju
             ar->adjustmentFunction,
             ar->auxSwitchChannelIndex,
             ar->adjustmentCenter,
-            ar->adjustmentRange
+            ar->adjustmentScale
         );
     }
 }
@@ -1151,7 +1151,7 @@ static void cliAdjustmentRange(char *cmdline)
 
             // Optional arguments
             ar->adjustmentCenter = 0;
-            ar->adjustmentRange = 0;
+            ar->adjustmentScale = 0;
 
             ptr = nextArg(ptr);
             if (ptr) {
@@ -1162,7 +1162,7 @@ static void cliAdjustmentRange(char *cmdline)
             ptr = nextArg(ptr);
             if (ptr) {
                 val = atoi(ptr);
-                ar->adjustmentRange = val;
+                ar->adjustmentScale = val;
                 validArgumentCount++;
             }
         } else {

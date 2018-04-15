@@ -616,6 +616,7 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig)
 
     const bool canUseRxData = rxIsReceivingSignal();
 
+    // Process Increment/Decrement adjustments
     for (int adjustmentIndex = 0; adjustmentIndex < MAX_SIMULTANEOUS_ADJUSTMENT_COUNT; adjustmentIndex++) {
         adjustmentState_t *adjustmentState = &adjustmentStates[adjustmentIndex];
 
@@ -681,6 +682,7 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig)
         MARK_ADJUSTMENT_FUNCTION_AS_BUSY(adjustmentIndex);
     }
 
+    // Process Absolute adjustments
     for (int index = 0; index < MAX_ADJUSTMENT_RANGE_COUNT; index++) {
         const adjustmentRange_t * const adjustmentRange = adjustmentRanges(index);
         // If center value has  been specified, apply values directly (scaled) from aux channel
