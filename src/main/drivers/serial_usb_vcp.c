@@ -273,4 +273,9 @@ uint32_t usbVcpGetBaudRate(serialPort_t *instance)
 
     return CDC_BaudRate();
 }
+
+uint8_t usbVcpIsConnected(void)
+{
+    return usbIsConnected();
+}
 #endif
