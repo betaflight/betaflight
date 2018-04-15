@@ -48,8 +48,6 @@
 
 #include "io/gps.h"
 
-#include "rx/rx.h"
-
 #include "sensors/gyro.h"
 #include "sensors/acceleration.h"
 
@@ -137,7 +135,6 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .throttle_boost = 0,
         .throttle_boost_cutoff = 15,
         .iterm_rotation = false,
-        .auxChannel = { {0} }
     );
 }
 
@@ -339,46 +336,6 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     throttleBoost = pidProfile->throttle_boost * 0.1f;
     itermRotation = pidProfile->iterm_rotation == 1;
 }
-
-#ifdef USE_TXPID
-static bool pidUpdateRate(
-    pidProfile_t *pidProfile,
-    int16_t *rcData,
-    flight_dynamics_index_t axis,
-    TermPID_e term,
-    uint8_t *value)
-{
-    if ((pidProfile->auxChannel[axis][term]) &&
-        (pidProfile->auxChannel[axis][term] < RX_MAPPABLE_CHANNEL_COUNT)) {
-        // An aux channel is mapped to this axis/term
-        *value = pidProfile->centerVal[axis][term] +
-                 ((rcData[NON_AUX_CHANNEL_COUNT + pidProfile->auxChannel[axis][term] - 1] - PWM_RANGE_MIDDLE) *
-                  (pidProfile->adjustVal[axis][term]) / (PWM_RANGE_MIDDLE - PWM_RANGE_MIN));
-
-         // Term was updated
-        return true;
-    }
-
-    // Term was not updated
-    return false;
-}
-
-void pidUpdateRates(pidProfile_t *pidProfile, int16_t *rcData)
-{
-    // On each axis, check if there is an aux channel being used to override the P, I and/or D term
-    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-        if (pidUpdateRate(pidProfile, rcData, axis, TERM_P, &pidProfile->pid[axis].P)) {
-            pidCoefficient[axis].Kp = PTERM_SCALE * pidProfile->pid[axis].P;
-        }
-        if (pidUpdateRate(pidProfile, rcData, axis, TERM_I, &pidProfile->pid[axis].I)) {
-            pidCoefficient[axis].Ki = ITERM_SCALE * pidProfile->pid[axis].I;
-        }
-        if ((axis != FD_YAW) && pidUpdateRate(pidProfile, rcData, axis, TERM_D, &pidProfile->pid[axis].D)) {
-            pidCoefficient[axis].Kd = DTERM_SCALE * pidProfile->pid[axis].D;
-        }
-    }
-}
-#endif /* USE_TXPID */
 
 void pidInit(const pidProfile_t *pidProfile)
 {

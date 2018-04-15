@@ -769,12 +769,6 @@ const clivalue_t valueTable[] = {
     { "gps_nav_d",                  VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_NAVR].D) },
 #endif
 
-#ifdef USE_TXPID
-    { "txpid_channel",              VAR_UINT8 | PROFILE_VALUE | MODE_ARRAY, .config.array.length = 8, PG_PID_PROFILE, offsetof(pidProfile_t, auxChannel) },
-    { "txpid_center",               VAR_UINT16 | PROFILE_VALUE | MODE_ARRAY, .config.array.length = 8, PG_PID_PROFILE, offsetof(pidProfile_t, centerVal) },
-    { "txpid_adjust",               VAR_UINT8 | PROFILE_VALUE | MODE_ARRAY, .config.array.length = 8, PG_PID_PROFILE, offsetof(pidProfile_t, adjustVal) },
-#endif
-
 // PG_TELEMETRY_CONFIG
 #ifdef USE_TELEMETRY
     { "tlm_switch",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, telemetry_switch) },

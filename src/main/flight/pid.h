@@ -65,14 +65,6 @@ typedef enum {
     PID_CRASH_RECOVERY_BEEP
 } pidCrashRecovery_e;
 
-// Tx control of PID using aux channels
-typedef enum {
-    TERM_P = 0,
-    TERM_I,
-    TERM_D,
-    TERM_COUNT
-} TermPID_e;
-
 typedef struct pid8_s {
     uint8_t P;
     uint8_t I;
@@ -118,9 +110,6 @@ typedef struct pidProfile_s {
     uint8_t throttle_boost;                 // how much should throttle be boosted during transient changes 0-100, 100 adds 10x hpf filtered throttle
     uint8_t throttle_boost_cutoff;          // Which cutoff frequency to use for throttle boost. higher cutoffs keep the boost on for shorter. Specified in hz.
     uint8_t  iterm_rotation;                    // rotates iterm to translate world errors to local coordinate system
-    uint8_t auxChannel[3][TERM_COUNT];      // Sets the Aux channel number, or zero to disable
-    uint16_t centerVal[3][TERM_COUNT];      // Sets the P, I or D value to set when aux channel is at mid-point
-    uint8_t adjustVal[3][TERM_COUNT];       // Sets the amount to increase/decrease the P, I or D value when the aux channel is at max/min point respectively
 } pidProfile_t;
 
 #ifndef USE_OSD_SLAVE
@@ -162,5 +151,4 @@ void pidInitConfig(const pidProfile_t *pidProfile);
 void pidInit(const pidProfile_t *pidProfile);
 void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex);
 bool crashRecoveryModeActive(void);
-void pidUpdateRates(pidProfile_t *pidProfile, int16_t *rcData);
 
