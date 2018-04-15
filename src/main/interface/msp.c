@@ -285,20 +285,24 @@ static void serializeSDCardSummaryReply(sbuf_t *dst)
 static void serializeDataflashSummaryReply(sbuf_t *dst)
 {
 #ifdef USE_FLASHFS
-    const flashGeometry_t *geometry = flashfsGetGeometry();
-    uint8_t flags = (flashfsIsReady() ? MSP_FLASHFS_FLAG_READY : 0);
-    flags |= (flashfsIsSupported() ? MSP_FLASHFS_FLAG_SUPPORTED : 0);
-
-    sbufWriteU8(dst, flags);
-    sbufWriteU32(dst, geometry->sectors);
-    sbufWriteU32(dst, geometry->totalSize);
-    sbufWriteU32(dst, flashfsGetOffset()); // Effectively the current number of bytes stored on the volume
-#else
-    sbufWriteU8(dst, 0); // FlashFS is neither ready nor supported
-    sbufWriteU32(dst, 0);
-    sbufWriteU32(dst, 0);
-    sbufWriteU32(dst, 0);
+    if (flashfsIsSupported()) {
+        uint8_t flags = MSP_FLASHFS_FLAG_SUPPORTED;
+        flags |= (flashfsIsReady() ? MSP_FLASHFS_FLAG_READY : 0);
+        const flashGeometry_t *geometry = flashfsGetGeometry();
+        sbufWriteU8(dst, flags);
+        sbufWriteU32(dst, geometry->sectors);
+        sbufWriteU32(dst, geometry->totalSize);
+        sbufWriteU32(dst, flashfsGetOffset()); // Effectively the current number of bytes stored on the volume
+    } else
 #endif
+
+    // FlashFS is not configured or valid device is not detected
+    {
+        sbufWriteU8(dst, 0);
+        sbufWriteU32(dst, 0);
+        sbufWriteU32(dst, 0);
+        sbufWriteU32(dst, 0);
+    }    
 }
 
 #ifdef USE_FLASHFS
