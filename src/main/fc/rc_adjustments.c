@@ -418,6 +418,11 @@ static int applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t a
 static int applyAbsoluteAdjustment(controlRateConfig_t *controlRateConfig, adjustmentFunction_e adjustmentFunction, int value)
 {
     int newValue;
+
+    if ( !controlRateConfig || !pidProfile) {
+        return 0;
+    }
+
     switch (adjustmentFunction) {
     case ADJUSTMENT_RC_RATE:
     case ADJUSTMENT_ROLL_RC_RATE:
@@ -684,14 +689,20 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig)
 
     // Process Absolute adjustments
     for (int index = 0; index < MAX_ADJUSTMENT_RANGE_COUNT; index++) {
+        static int16_t lastRcData[MAX_ADJUSTMENT_RANGE_COUNT] = { 0 };
+
         const adjustmentRange_t * const adjustmentRange = adjustmentRanges(index);
+        const uint8_t channelIndex = NON_AUX_CHANNEL_COUNT + adjustmentRange->auxSwitchChannelIndex;
+
         // If center value has  been specified, apply values directly (scaled) from aux channel
         if (isRangeActive(adjustmentRange->auxChannelIndex, &adjustmentRange->range) &&
-            adjustmentRange->adjustmentCenter) {
-            const uint8_t channelIndex = NON_AUX_CHANNEL_COUNT + adjustmentRange->auxSwitchChannelIndex;
+            adjustmentRange->adjustmentCenter &&
+            (rcData[channelIndex] != lastRcData[index])) {
             int value = (((rcData[channelIndex] - PWM_RANGE_MIDDLE) * adjustmentRange->adjustmentScale) / (PWM_RANGE_MIDDLE - PWM_RANGE_MIN)) + adjustmentRange->adjustmentCenter;
 
+            lastRcData[index] = rcData[channelIndex];
             applyAbsoluteAdjustment(controlRateConfig, adjustmentRange->adjustmentFunction, value);
+            pidInitConfig(pidProfile);
         }
     }
 }
