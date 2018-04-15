@@ -210,7 +210,9 @@ explained:
 
 ### Example 4 - Use a single 3 position switch to change between 3 different rate profiles
 
+```
 adjrange 11 3 3 900 2100 12 3 0 0
+```
 
 explained:
 
@@ -225,8 +227,10 @@ When the switch is high, rate profile 2 is selcted.
 
 ### Example 5 - Use a single switch to enable absolute setting of Roll/Pitch P terms from two pots
 
+```
 adjrange 0 0 4 1450 1550 18 0 40 10
 adjrange 1 0 4 1450 1550 15 1 58 20
+```
 
 explained:
 
