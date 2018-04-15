@@ -28,7 +28,10 @@ Both modes utilise two channels to make an adjustment.
 | Range | This channel is used to enable an adjustment. When the channel is set to fall withing the specified range, then the corresponding adjustment is enabled. This is similar to mode setting where a given mode is enabled when a channel is within a lower and upper range. |
 | Adjustment | This channel is used to control the change to the specified setting|
 
+Settings are not saved automatically, connect a GUI, refresh and save or save using stick position when disarmed.
+Powering off without saving will discard the adjustments.
 
+Settings can be saved when disarmed using stick positions: Throttle Low, Yaw Left, Pitch Low, Roll Right.
 
 ### Increment/Decrement mode
 
@@ -51,11 +54,6 @@ Up to 4 3-position switches or pots can be used to adjust 4 different settings a
 A single 2/3/4/5/6/x position switch can be used to make one 3 position switch adjust one setting at a time.
 
 Any combination of switches and pots can be used. So you could have 6 POS switch.
-
-Settings are not saved automatically, connect a GUI, refresh and save or save using stick position when disarmed.
-Powering off without saving will discard the adjustments.
-
-Settings can be saved when disarmed using stick positions: Throttle Low, Yaw Left, Pitch Low, Roll Right.
 
 #### Adjustment switches
 
@@ -100,7 +98,7 @@ Configure a range using:
 | Adjustment function | 0 - 11 | See Adjustment function table |
 | Adjustment channel | 0 based index, AUX1 = 0, AUX2 = 1 | The channel that is controlled by a 3 Position switch/Pot |
 | Center Value | If this is non-zero then Absolute Mode is used for this range otherwise Increment/Decrement Mode is used. In Absolute Mode this value is the value which will be assigned to the setting when the Adjustment Channel is set to mid-position. |
-| Range Value |
+| Scale Value | This specifies the amount that will be subtracted/added to the center value when the Adjustment Channel is at min/max respectively. |
 
 Range Start/End values should match the values sent by your receiver.
 
@@ -146,21 +144,22 @@ this reason ensure that you define enough ranges to cover the range channel's us
 ### Example 1 - 3 Position switch used to adjust pitch/roll rate
 
 ```
-adjrange 0 0 3 900 2100 4 3
+adjrange 0 0 3 900 2100 4 3 0 0
 ```
 
 explained:
 
 * configure adjrange 0 to use adjustment slot 1 (0) so that when aux4
 (3) in the range 900-2100 then use adjustment 4 (pitch/roll rate) when aux 4 (3)
-is in the appropriate position.
+is in the appropriate position. 
+* note that Center/Scale values are both zero, so this range will use increment/decrement mode.
 
 
 ### Example 2 - 2 Position switch used to enable adjustment of RC rate via a 3 position switch
 
 ```
-adjrange 1 1 0 900 1700 0 2
-adjrange 2 1 0 1700 2100 1 2
+adjrange 1 1 0 900 1700 0 2 0 0
+adjrange 2 1 0 1700 2100 1 2 0 0
 ```
 explained:
 
@@ -170,6 +169,7 @@ position.
 * configure adjrange 2 to use adjustment slot 2 (1) so that when aux1
 (0) in the range 1700-2100 then use adjustment rc rate (1) when aux 3
 (2) is in the appropriate position.
+* note that Center/Scale values are both zero, so this range will use increment/decrement mode.
 
 Without the entire range of aux1 being defined there is nothing that
 would stop aux 3 adjusting the pitch/roll rate once aux 1 wasn't in the higher
@@ -178,12 +178,12 @@ range.
 ### Example 3 - 6 Position switch used to select PID tuning adjustments via a 3 position switch
 
 ```
-adjrange 3 2 1 900 1150 6 3
-adjrange 4 2 1 1150 1300 7 3
-adjrange 5 2 1 1300 1500 8 3
-adjrange 6 2 1 1500 1700 9 3
-adjrange 7 2 1 1700 1850 10 3
-adjrange 8 2 1 1850 2100 11 3
+adjrange 3 2 1 900 1150 6 3 0 0
+adjrange 4 2 1 1150 1300 7 3 0 0
+adjrange 5 2 1 1300 1500 8 3 0 0
+adjrange 6 2 1 1500 1700 9 3 0 0
+adjrange 7 2 1 1700 1850 10 3 0 0
+adjrange 8 2 1 1850 2100 11 3 0 0
 ```
 
 explained:
@@ -206,23 +206,37 @@ explained:
 * configure adjrange 8 to use adjustment slot 3 (2) so that when aux2
 (1) in the range 1850-2100 then use adjustment Yaw D (11) when aux 4
 (3) is in the appropriate position.
+* note that Center/Scale values are both zero, so this range will use increment/decrement mode.
 
 ### Example 4 - Use a single 3 position switch to change between 3 different rate profiles
 
-adjrange 11 3 3 900 2100 12 3
+adjrange 11 3 3 900 2100 12 3 0 0
 
 explained:
 
 * configure adjrange 11 to use adjustment slot 4 (3) so that when aux4
 (3) in the range 900-2100 then use adjustment Rate Profile (12) when aux 4
 (3) is in the appropriate position.
+* note that Center/Scale values are both zero, so this range will use increment/decrement mode.
 
 When the switch is low, rate profile 0 is selcted.
 When the switch is medium, rate profile 1 is selcted.
 When the switch is high, rate profile 2 is selcted.
 
+### Example 5 - Use a single switch to enable absolute setting of Roll/Pitch P terms from two pots
+
+adjrange 0 0 4 1450 1550 18 0 40 10
+adjrange 1 0 4 1450 1550 15 1 58 20
+
+explained:
+
+* note that Center value is non-zero, so this range will use absolute mode.
+* configure adjrange 0 so that when aux5 (3) in the range 1450-1550 then use aux 1 (0) to adjust Roll P Adjustment (18) such that the value will be 40 with the pot centered and 30/50 at min/max.
+* configure adjrange 1 so that when aux5 (3) in the range 1450-1550 then use aux 2 (0) to adjust Pitch P Adjustment (15) such that the value will be 58 with the pot centered and 38/78 at min/max.
 
 ### Configurator examples
+
+Note that the configurator does not currently support the Center/Scale values, however it may still be used to setup the ranges and then the CLI may be used to set the Center/Scale values.
 
 The following 5 images show valid configurations.  In all cales the enture usable range for the Range Channel is used.
 
