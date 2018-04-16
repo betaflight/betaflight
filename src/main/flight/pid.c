@@ -618,7 +618,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         // -----calculate D component
         if (axis != FD_YAW) {
             // no transition if relaxFactor == 0
-            float transition = relaxFactor > 0 ? getRcDeflectionAbs(axis) * relaxFactor : 1;
+            float transition = relaxFactor > 0 ? MIN(1.f, getRcDeflectionAbs(axis) * relaxFactor) : 1;
 
             // Divide rate change by deltaT to get differential (ie dr/dt)
             const float delta = (
