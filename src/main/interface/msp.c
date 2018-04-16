@@ -1795,6 +1795,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                             vtxCommonSetPitMode(vtxDevice, newPitmode);
                         }
                     }
+                    saveConfigAndNotify();
                 }
             }
         }
