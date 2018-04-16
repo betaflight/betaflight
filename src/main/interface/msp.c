@@ -280,9 +280,8 @@ static void serializeSDCardSummaryReply(sbuf_t *dst)
 static void serializeDataflashSummaryReply(sbuf_t *dst)
 {
 #ifdef USE_FLASHFS
-    if (flashfsIsSupported()) {
-        uint8_t flags = MSP_FLASHFS_FLAG_SUPPORTED;
-        flags |= (flashfsIsReady() ? MSP_FLASHFS_FLAG_READY : 0);
+    if (flashfsGetSize() > 0) {
+        uint8_t flags = (flashfsIsReady() ? 1 : 0) | 2 /* FlashFS is supported */;
         const flashGeometry_t *geometry = flashfsGetGeometry();
         sbufWriteU8(dst, flags);
         sbufWriteU32(dst, geometry->sectors);
