@@ -567,38 +567,33 @@ static int applyAbsoluteAdjustment(controlRateConfig_t *controlRateConfig, adjus
 static uint8_t applySelectAdjustment(adjustmentFunction_e adjustmentFunction, uint8_t position)
 {
     uint8_t beeps = 0;
+    uint8_t newValue;
 
     switch (adjustmentFunction) {
     case ADJUSTMENT_RATE_PROFILE:
-        {
-            if (getCurrentControlRateProfileIndex() != position) {
-                changeControlRateProfile(position);
-                blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RATE_PROFILE, position);
+        if (getCurrentControlRateProfileIndex() != position) {
+            changeControlRateProfile(position);
+            blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RATE_PROFILE, position);
 
-                beeps = position + 1;
-            }
-            break;
+            beeps = position + 1;
         }
+        break;
     case ADJUSTMENT_HORIZON_STRENGTH:
-        {
-            uint8_t newValue = constrain(position, 0, 200); // FIXME magic numbers repeated in serial_cli.c
-            if (pidProfile->pid[PID_LEVEL].D != newValue) {
-                beeps = ((newValue - pidProfile->pid[PID_LEVEL].D) / 8) + 1;
-                pidProfile->pid[PID_LEVEL].D = newValue;
-                blackboxLogInflightAdjustmentEvent(ADJUSTMENT_HORIZON_STRENGTH, position);
-            }
-            break;
+        newValue = constrain(position, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+        if (pidProfile->pid[PID_LEVEL].D != newValue) {
+            beeps = ((newValue - pidProfile->pid[PID_LEVEL].D) / 8) + 1;
+            pidProfile->pid[PID_LEVEL].D = newValue;
+            blackboxLogInflightAdjustmentEvent(ADJUSTMENT_HORIZON_STRENGTH, position);
         }
+        break;
     case ADJUSTMENT_PID_AUDIO:
-        {
 #ifdef USE_PID_AUDIO
-            uint8_t newMode = pidAudioPositionToModeMap[position];
-            if (newMode != pidAudioGetMode()) {
-                pidAudioSetMode(newMode);
-            }
-#endif
-            break;
+        pidAudioModes_e newMode = pidAudioPositionToModeMap[position];
+        if (pidAudioModes_e != pidAudioGetMode()) {
+            pidAudioSetMode(pidAudioModes_e);
         }
+#endif
+        break;
 
     default:
         break;
@@ -693,11 +688,13 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig)
 
         const adjustmentRange_t * const adjustmentRange = adjustmentRanges(index);
         const uint8_t channelIndex = NON_AUX_CHANNEL_COUNT + adjustmentRange->auxSwitchChannelIndex;
+        const adjustmentState_t *adjustmentState = &adjustmentStates[adjustmentRange->adjustmentIndex];
 
-        // If center value has  been specified, apply values directly (scaled) from aux channel
-        if (isRangeActive(adjustmentRange->auxChannelIndex, &adjustmentRange->range) &&
+        // If setting is defined for step adjustment and center value has been specified, apply values directly (scaled) from aux channel
+        if ((rcData[channelIndex] != lastRcData[index]) &&
             adjustmentRange->adjustmentCenter &&
-            (rcData[channelIndex] != lastRcData[index])) {
+            (adjustmentState->config->mode == ADJUSTMENT_MODE_STEP) &&
+            isRangeActive(adjustmentRange->auxChannelIndex, &adjustmentRange->range)) {
             int value = (((rcData[channelIndex] - PWM_RANGE_MIDDLE) * adjustmentRange->adjustmentScale) / (PWM_RANGE_MIDDLE - PWM_RANGE_MIN)) + adjustmentRange->adjustmentCenter;
 
             lastRcData[index] = rcData[channelIndex];
