@@ -32,6 +32,7 @@ extern "C" {
 
     #include "flight/failsafe.h"
     #include "flight/mixer.h"
+    #include "flight/pid.h"
 
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
@@ -57,14 +58,14 @@ TEST(BlackboxTest, TestInitIntervals)
 {
     blackboxConfigMutable()->p_ratio = 32;
     // 250Hz PIDloop
-    gyro.targetLooptime = 4000;
+    targetPidLooptime = 4000;
     blackboxInit();
     EXPECT_EQ(8, blackboxIInterval);
     EXPECT_EQ(0, blackboxPInterval);
     EXPECT_EQ(2048, blackboxSInterval);
 
     // 500Hz PIDloop
-    gyro.targetLooptime = 2000;
+    targetPidLooptime = 2000;
     blackboxInit();
     EXPECT_EQ(16, blackboxIInterval);
     EXPECT_EQ(0, blackboxPInterval);
@@ -72,49 +73,42 @@ TEST(BlackboxTest, TestInitIntervals)
 
     // 1kHz PIDloop
     gyro.targetLooptime = gyroSetSampleRate(&gyroDev, GYRO_LPF_188HZ, 1, false);
+    targetPidLooptime = gyro.targetLooptime * 1;
     blackboxInit();
     EXPECT_EQ(32, blackboxIInterval);
     EXPECT_EQ(1, blackboxPInterval);
     EXPECT_EQ(8192, blackboxSInterval);
 
     // 2kHz PIDloop
-    gyro.targetLooptime = gyroSetSampleRate(&gyroDev, GYRO_LPF_256HZ, 4, false);
-    EXPECT_EQ(500, gyro.targetLooptime);
+    targetPidLooptime = 500;
     blackboxInit();
     EXPECT_EQ(64, blackboxIInterval);
     EXPECT_EQ(2, blackboxPInterval);
     EXPECT_EQ(16384, blackboxSInterval);
 
     // 4kHz PIDloop
-    gyro.targetLooptime = gyroSetSampleRate(&gyroDev, GYRO_LPF_256HZ, 2, false);
-    EXPECT_EQ(250, gyro.targetLooptime);
+    targetPidLooptime = 250;
     blackboxInit();
     EXPECT_EQ(128, blackboxIInterval);
     EXPECT_EQ(4, blackboxPInterval);
     EXPECT_EQ(32768, blackboxSInterval);
 
     // 8kHz PIDloop
-    gyro.targetLooptime = gyroSetSampleRate(&gyroDev, GYRO_LPF_256HZ, 1, false);
-    EXPECT_EQ(125, gyro.targetLooptime);
-    gyro.targetLooptime = 125;
+    targetPidLooptime = 125;
     blackboxInit();
     EXPECT_EQ(256, blackboxIInterval);
     EXPECT_EQ(8, blackboxPInterval);
     EXPECT_EQ(65536, blackboxSInterval);
 
     // 16kHz PIDloop
-    gyro.targetLooptime = gyroSetSampleRate(&gyroDev, GYRO_LPF_256HZ, 2, true);
-    EXPECT_EQ(63, gyro.targetLooptime);
-    gyro.targetLooptime = 63; // rounded from 62.5
+    targetPidLooptime = 63; // rounded from 62.5
     blackboxInit();
     EXPECT_EQ(512, blackboxIInterval); // note rounding
     EXPECT_EQ(16, blackboxPInterval);
     EXPECT_EQ(131072, blackboxSInterval);
 
     // 32kHz PIDloop
-    gyro.targetLooptime = gyroSetSampleRate(&gyroDev, GYRO_LPF_256HZ, 1, true);
-    EXPECT_EQ(31, gyro.targetLooptime);
-    gyro.targetLooptime = 31; // rounded from 31.25
+    targetPidLooptime = 31; // rounded from 31.25
     blackboxInit();
     EXPECT_EQ(1024, blackboxIInterval); // note rounding
     EXPECT_EQ(32, blackboxPInterval);
@@ -125,7 +119,7 @@ TEST(BlackboxTest, Test_500Hz)
 {
     blackboxConfigMutable()->p_ratio = 32;
     // 500Hz PIDloop
-    gyro.targetLooptime = 2000;
+    targetPidLooptime = 2000;
     blackboxInit();
     EXPECT_EQ(true, blackboxShouldLogIFrame());
     EXPECT_EQ(true, blackboxShouldLogPFrame());
@@ -143,7 +137,7 @@ TEST(BlackboxTest, Test_1kHz)
 {
     blackboxConfigMutable()->p_ratio = 32;
     // 1kHz PIDloop
-    gyro.targetLooptime = 1000;
+    targetPidLooptime = 1000;
     blackboxInit();
     EXPECT_EQ(true, blackboxShouldLogIFrame());
     EXPECT_EQ(true, blackboxShouldLogPFrame());
@@ -169,7 +163,7 @@ TEST(BlackboxTest, Test_2kHz)
 {
     blackboxConfigMutable()->p_ratio = 32;
     // 2kHz PIDloop
-    gyro.targetLooptime = 500;
+    targetPidLooptime = 500;
     blackboxInit();
     EXPECT_EQ(64, blackboxIInterval);
     EXPECT_EQ(2, blackboxPInterval);
@@ -202,7 +196,7 @@ TEST(BlackboxTest, Test_8kHz)
 {
     blackboxConfigMutable()->p_ratio = 32;
     // 8kHz PIDloop
-    gyro.targetLooptime = 125;
+    targetPidLooptime = 125;
     blackboxInit();
     EXPECT_EQ(true, blackboxShouldLogIFrame());
     EXPECT_EQ(true, blackboxShouldLogPFrame());
@@ -227,7 +221,7 @@ TEST(BlackboxTest, Test_zero_p_ratio)
 {
     blackboxConfigMutable()->p_ratio = 0;
     // 1kHz PIDloop
-    gyro.targetLooptime = 1000;
+    targetPidLooptime = 1000;
     blackboxInit();
     EXPECT_EQ(32, blackboxIInterval);
     EXPECT_EQ(0, blackboxPInterval);
@@ -251,7 +245,7 @@ TEST(BlackboxTest, Test_CalculatePDenom)
     // so p_ratio is 32 when blackbox logging rate is 1kHz
 
     // 1kHz PIDloop
-    gyro.targetLooptime = 1000;
+    targetPidLooptime = 1000;
     blackboxInit();
     EXPECT_EQ(32, blackboxIInterval);
     EXPECT_EQ(32, blackboxCalculatePDenom(1, 1)); // 1kHz logging
@@ -259,7 +253,7 @@ TEST(BlackboxTest, Test_CalculatePDenom)
     EXPECT_EQ(8, blackboxCalculatePDenom(1, 4));
 
     // 2kHz PIDloop
-    gyro.targetLooptime = 500;
+    targetPidLooptime = 500;
     blackboxInit();
     EXPECT_EQ(64, blackboxIInterval);
     EXPECT_EQ(64, blackboxCalculatePDenom(1, 1));
@@ -267,7 +261,7 @@ TEST(BlackboxTest, Test_CalculatePDenom)
     EXPECT_EQ(16, blackboxCalculatePDenom(1, 4));
 
     // 4kHz PIDloop
-    gyro.targetLooptime = 250;
+    targetPidLooptime = 250;
     blackboxInit();
     EXPECT_EQ(128, blackboxIInterval);
     EXPECT_EQ(128, blackboxCalculatePDenom(1, 1));
@@ -276,7 +270,7 @@ TEST(BlackboxTest, Test_CalculatePDenom)
     EXPECT_EQ(16, blackboxCalculatePDenom(1, 8));
 
     // 8kHz PIDloop
-    gyro.targetLooptime = 125;
+    targetPidLooptime = 125;
     blackboxInit();
     EXPECT_EQ(256, blackboxIInterval);
     EXPECT_EQ(256, blackboxCalculatePDenom(1, 1));
@@ -289,7 +283,7 @@ TEST(BlackboxTest, Test_CalculatePDenom)
 TEST(BlackboxTest, Test_CalculateRates)
 {
     // 1kHz PIDloop
-    gyro.targetLooptime = 1000;
+    targetPidLooptime = 1000;
     blackboxConfigMutable()->p_ratio = 32;
     blackboxInit();
     EXPECT_EQ(32, blackboxIInterval);
@@ -310,7 +304,7 @@ TEST(BlackboxTest, Test_CalculateRates)
 
 
     // 8kHz PIDloop
-    gyro.targetLooptime = 125;
+    targetPidLooptime = 125;
     blackboxConfigMutable()->p_ratio = 32; // 1kHz logging
     blackboxInit();
     EXPECT_EQ(256, blackboxIInterval);
@@ -342,7 +336,7 @@ TEST(BlackboxTest, Test_CalculateRates)
     EXPECT_EQ(1, blackboxGetRateDenom());
 
     // 0.126 PIDloop
-    gyro.targetLooptime = 126;
+    targetPidLooptime = 126;
     blackboxConfigMutable()->p_ratio = 32; // 1kHz logging
     blackboxInit();
     EXPECT_EQ(253, blackboxIInterval);
