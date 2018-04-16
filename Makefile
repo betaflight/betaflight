@@ -120,7 +120,7 @@ OPTIMISE_DEFAULT      := -Og
 LTO_FLAGS             := $(OPTIMISE_DEFAULT)
 DEBUG_FLAGS            = -ggdb3 -DDEBUG
 else
-ifeq ($(DEBUG),RELWITHDEBINFO)
+ifeq ($(DEBUG),INFO)
 DEBUG_FLAGS            = -ggdb3
 endif
 OPTIMISATION_BASE     := -flto -fuse-linker-plugin -ffast-math

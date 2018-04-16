@@ -1709,13 +1709,14 @@ void blackboxInit(void)
     blackboxResetIterationTimers();
 
     // an I-frame is written every 32ms
-    // gyro.targetLooptime is 1000 for 1kHz loop, 500 for 2kHz loop etc, gyro.targetLooptime is rounded for short looptimes
-    if (gyro.targetLooptime == 31) { // rounded from 31.25us
+    // blackboxUpdate() is run in synchronisation with the PID loop
+    // targetPidLooptime is 1000 for 1kHz loop, 500 for 2kHz loop etc, targetPidLooptime is rounded for short looptimes
+    if (targetPidLooptime == 31) { // rounded from 31.25us
         blackboxIInterval = 1024;
-    } else if (gyro.targetLooptime == 63) { // rounded from 62.5us
+    } else if (targetPidLooptime == 63) { // rounded from 62.5us
         blackboxIInterval = 512;
     } else {
-        blackboxIInterval = (uint16_t)(32 * 1000 / gyro.targetLooptime);
+        blackboxIInterval = (uint16_t)(32 * 1000 / targetPidLooptime);
     }
     // by default p_ratio is 32 and a P-frame is written every 1ms
     // if p_ratio is zero then no P-frames are logged
