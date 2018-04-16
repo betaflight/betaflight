@@ -17,17 +17,19 @@
 
 #pragma once
 
-// Removed to make the firmware fit into flash (in descending order of priority):
 #undef USE_DSHOT_DMAR           // OMNIBUS (F3) does not benefit from burst Dshot
+
+// Removed to make the firmware fit into flash (in descending order of priority):
 #undef USE_GYRO_OVERFLOW_CHECK
 #undef USE_GYRO_LPF2
 
-#undef USE_SERIALRX_XBUS
-#undef USE_TELEMETRY_LTM
 #undef USE_TELEMETRY_MAVLINK
+#undef USE_TELEMETRY_LTM
+#undef USE_SERIALRX_XBUS
 
-#undef USE_RTC_TIME
+#undef USE_EXTENDED_CMS_MENUS
 #undef USE_COPY_PROFILE_CMS_MENU
+#undef USE_RTC_TIME
 #undef USE_RX_MSP
 #undef USE_ESC_SENSOR_INFO
 
