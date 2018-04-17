@@ -688,12 +688,12 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig)
 
         const adjustmentRange_t * const adjustmentRange = adjustmentRanges(index);
         const uint8_t channelIndex = NON_AUX_CHANNEL_COUNT + adjustmentRange->auxSwitchChannelIndex;
-        const adjustmentState_t *adjustmentState = &adjustmentStates[adjustmentRange->adjustmentIndex];
+        const adjustmentConfig_t *adjustmentConfig = &defaultAdjustmentConfigs[adjustmentRange->adjustmentFunction - ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET];
 
         // If setting is defined for step adjustment and center value has been specified, apply values directly (scaled) from aux channel
         if ((rcData[channelIndex] != lastRcData[index]) &&
             adjustmentRange->adjustmentCenter &&
-            (adjustmentState->config->mode == ADJUSTMENT_MODE_STEP) &&
+            (adjustmentConfig->mode == ADJUSTMENT_MODE_STEP) &&
             isRangeActive(adjustmentRange->auxChannelIndex, &adjustmentRange->range)) {
             int value = (((rcData[channelIndex] - PWM_RANGE_MIDDLE) * adjustmentRange->adjustmentScale) / (PWM_RANGE_MIDDLE - PWM_RANGE_MIN)) + adjustmentRange->adjustmentCenter;
 
