@@ -27,6 +27,7 @@
 #include "flash.h"
 #include "flash_impl.h"
 #include "flash_m25p16.h"
+#include "flash_w25m.h"
 #include "drivers/bus_spi.h"
 #include "drivers/io.h"
 #include "drivers/time.h"
@@ -79,6 +80,12 @@ bool flashInit(const flashConfig_t *flashConfig)
 
 #ifdef USE_FLASH_M25P16
     if (m25p16_detect(&flashDevice, chipID)) {
+        return true;
+    }
+#endif
+
+#ifdef USE_FLASH_W25M
+    if (w25m_detect(&flashDevice, chipID)) {
         return true;
     }
 #endif
