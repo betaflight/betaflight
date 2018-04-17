@@ -567,7 +567,6 @@ static int applyAbsoluteAdjustment(controlRateConfig_t *controlRateConfig, adjus
 static uint8_t applySelectAdjustment(adjustmentFunction_e adjustmentFunction, uint8_t position)
 {
     uint8_t beeps = 0;
-    uint8_t newValue;
 
     switch (adjustmentFunction) {
     case ADJUSTMENT_RATE_PROFILE:
@@ -579,18 +578,22 @@ static uint8_t applySelectAdjustment(adjustmentFunction_e adjustmentFunction, ui
         }
         break;
     case ADJUSTMENT_HORIZON_STRENGTH:
-        newValue = constrain(position, 0, 200); // FIXME magic numbers repeated in serial_cli.c
-        if (pidProfile->pid[PID_LEVEL].D != newValue) {
-            beeps = ((newValue - pidProfile->pid[PID_LEVEL].D) / 8) + 1;
-            pidProfile->pid[PID_LEVEL].D = newValue;
-            blackboxLogInflightAdjustmentEvent(ADJUSTMENT_HORIZON_STRENGTH, position);
+        {
+            uint8_t newValue = constrain(position, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+            if (pidProfile->pid[PID_LEVEL].D != newValue) {
+                beeps = ((newValue - pidProfile->pid[PID_LEVEL].D) / 8) + 1;
+                pidProfile->pid[PID_LEVEL].D = newValue;
+                blackboxLogInflightAdjustmentEvent(ADJUSTMENT_HORIZON_STRENGTH, position);
+            }
         }
         break;
     case ADJUSTMENT_PID_AUDIO:
 #ifdef USE_PID_AUDIO
-        pidAudioModes_e newMode = pidAudioPositionToModeMap[position];
-        if (pidAudioModes_e != pidAudioGetMode()) {
-            pidAudioSetMode(pidAudioModes_e);
+        {
+            pidAudioModes_e newMode = pidAudioPositionToModeMap[position];
+            if (newMode != pidAudioGetMode()) {
+                pidAudioSetMode(newMode);
+            }
         }
 #endif
         break;
