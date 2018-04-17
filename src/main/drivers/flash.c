@@ -30,6 +30,7 @@
 #include "flash.h"
 #include "flash_impl.h"
 #include "flash_m25p16.h"
+#include "flash_w25n01g.h"
 #include "flash_w25m.h"
 #include "drivers/bus_spi.h"
 #include "drivers/io.h"
@@ -71,15 +72,18 @@ bool flashInit(const flashConfig_t *flashConfig)
 
     flashDevice.busdev = busdev;
 
-    const uint8_t out[] = { SPIFLASH_INSTRUCTION_RDID, 0, 0, 0 };
+#define SPIFLASH_INSTRUCTION_RDID 0x9F
+
+    const uint8_t out[] = { SPIFLASH_INSTRUCTION_RDID, 0, 0, 0, 0 };
 
     delay(50); // short delay required after initialisation of SPI device instance.
 
-    /* Just in case transfer fails and writes nothing, so we don't try to verify the ID against random garbage
-     * from the stack:
+    /* 
+     * Some newer chips require one dummy byte to be read; we can read
+     * 4 bytes for these chips while retaining backward compatibility.
      */
-    uint8_t in[4];
-    in[1] = 0;
+    uint8_t in[5];
+    in[1] = in[2] = 0;
 
     // Clearing the CS bit terminates the command early so we don't have to read the chip UID:
     spiBusTransfer(busdev, out, in, sizeof(out));
@@ -93,7 +97,22 @@ bool flashInit(const flashConfig_t *flashConfig)
     }
 #endif
 
-#ifdef USE_FLASH_W25M
+#ifdef USE_FLASH_W25M512
+    if (w25m_detect(&flashDevice, chipID)) {
+        return true;
+    }
+#endif
+
+    // Newer chips
+    chipID = (in[2] << 16) | (in[3] << 8) | (in[4]);
+
+#ifdef USE_FLASH_W25N01G
+    if (w25n01g_detect(&flashDevice, chipID)) {
+        return true;
+    }
+#endif
+
+#ifdef USE_FLASH_W25M02G
     if (w25m_detect(&flashDevice, chipID)) {
         return true;
     }

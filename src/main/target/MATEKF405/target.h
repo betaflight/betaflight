@@ -101,6 +101,9 @@
 #define USE_FLASH_M25P16
 #define FLASH_CS_PIN            PC0
 #define FLASH_SPI_INSTANCE      SPI3
+#define USE_FLASH_W25M512
+#define USE_FLASH_W25N01G
+#define USE_FLASH_W25M02G
 
 // *************** SD Card **************************
 #define USE_SDCARD
