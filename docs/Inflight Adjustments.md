@@ -238,6 +238,22 @@ explained:
 * configure adjrange 0 so that when aux5 (3) in the range 1450-1550 then use aux 1 (0) to adjust Roll P Adjustment (18) such that the value will be 40 with the pot centered and 30/50 at min/max.
 * configure adjrange 1 so that when aux5 (3) in the range 1450-1550 then use aux 2 (0) to adjust Pitch P Adjustment (15) such that the value will be 58 with the pot centered and 38/78 at min/max.
 
+### Example 6 - Use a single switch to enable absolute setting of Roll/Pitch P/I/D terms from three pots, selected using a single switch
+
+```
+adjrange 0 0 4 950 1050 18 0 40 20
+adjrange 1 0 4 950 1050 19 1 107 53
+adjrange 2 0 4 950 1050 20 2 76 38
+adjrange 3 0 4 1950 2050 15 0 63 16
+adjrange 4 0 4 1950 2050 16 1 138 69
+adjrange 5 0 4 1950 2050 17 2 66 33
+```
+explained:
+
+* note that Center value is non-zero, so this range will use absolute mode.
+
+This assigns pots aux 1, aux 2, and aux 3 respectively to control P, I and D settings with the center values at default at set to provide a range of adjustment of +/- 50%. When the aux 5 switch is in one end position then roll P/I/D will be adjusted and when the aux 5 switch is in the other end position, pitch P/I/D will be adjusted. In the aux 5 switch middle position nether will be adjusted. Thus one could center the pots, select roll on aux 5 and then adjust the P/I/D values in flight. Then land, move the aux 5 switch to center, center the pots, select pitch on the switch and then again adjust P/I/D in flight. 
+
 ### Configurator examples
 
 Note that the configurator does not currently support the Center/Scale values, however it may still be used to setup the ranges and then the CLI may be used to set the Center/Scale values.
