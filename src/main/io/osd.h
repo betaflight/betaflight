@@ -143,6 +143,7 @@ typedef enum {
 
 #define ESC_RPM_ALARM_OFF -1
 #define ESC_TEMP_ALARM_OFF INT8_MIN
+#define ESC_CURRENT_ALARM_OFF INT8_MIN
 
 typedef struct osdConfig_s {
     uint16_t item_pos[OSD_ITEM_COUNT];
@@ -162,6 +163,7 @@ typedef struct osdConfig_s {
     bool enabled_stats[OSD_STAT_COUNT];
     int8_t esc_temp_alarm;
     int16_t esc_rpm_alarm;
+    int8_t esc_current_alarm;
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);

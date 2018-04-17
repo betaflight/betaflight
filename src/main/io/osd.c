@@ -640,6 +640,57 @@ static bool osdDrawSingleElement(uint8_t item)
                 break;
             }
 
+#ifdef USE_ESC_SENSOR
+            // Show warning if we lose motor output, the ESC is overheating or excessive current draw
+            if (feature(FEATURE_ESC_SENSOR) && enabledWarnings & OSD_WARNING_ESC_FAIL) {
+                char escWarningMsg[OSD_FORMAT_MESSAGE_BUFFER_SIZE];
+                unsigned pos = 0;
+                
+                const char *title = "ESC";
+
+                // center justify message
+                while (pos < (OSD_WARNINGS_MAX_SIZE - (strlen(title) + getMotorCount())) / 2) {
+                    escWarningMsg[pos++] = ' ';
+                }
+
+                strcpy(escWarningMsg + pos, title);
+                pos += strlen(title);
+
+                unsigned i = 0;
+                unsigned escWarningCount = 0;
+                while (i < getMotorCount() && pos < OSD_FORMAT_MESSAGE_BUFFER_SIZE - 1) {
+                    escSensorData_t *escData = getEscSensorData(i);
+                    const char motorNumber = '1' + i;
+                    // if everything is OK just display motor number else R, T or C
+                    char warnFlag = motorNumber;
+                    if (ARMING_FLAG(ARMED) && osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF && escData->rpm <= osdConfig()->esc_rpm_alarm) {
+                        warnFlag = 'R';
+                    }
+                    if (osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF && escData->temperature >= osdConfig()->esc_temp_alarm) {
+                        warnFlag = 'T';
+                    }
+                    if (ARMING_FLAG(ARMED) && osdConfig()->esc_current_alarm != ESC_CURRENT_ALARM_OFF && escData->current >= osdConfig()->esc_current_alarm) {
+                        warnFlag = 'C';
+                    }
+
+                    escWarningMsg[pos++] = warnFlag;
+
+                    if (warnFlag != motorNumber) {
+                        escWarningCount++;
+                    }
+
+                    i++;
+                }
+
+                escWarningMsg[pos] = '\0';
+
+                if (escWarningCount > 0) {
+                    osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, escWarningMsg);
+                }
+                break;
+            }
+#endif
+
             // Warn when in flip over after crash mode
             if ((enabledWarnings & OSD_WARNING_CRASH_FLIP)
                   && (isFlipOverAfterCrashMode())) {
@@ -670,40 +721,6 @@ static bool osdDrawSingleElement(uint8_t item)
                 osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "BATT < FULL");
                 break;
             }
-
-#ifdef USE_ESC_SENSOR
-            // Show warning if we lose motor output or the ESC is overheating
-            if (feature(FEATURE_ESC_SENSOR) && enabledWarnings & OSD_WARNING_ESC_FAIL) {
-                char escErrMsg[OSD_FORMAT_MESSAGE_BUFFER_SIZE];
-                unsigned pos = 0;
-                
-                const char *title = "ESC";
-
-                // center justify message
-                while (pos < (OSD_WARNINGS_MAX_SIZE - (strlen(title) + getMotorCount())) / 2) {
-                    escErrMsg[pos++] = ' ';
-                }
-
-                strcpy(escErrMsg + pos, title);
-                pos += strlen(title);
-
-                unsigned i = 0;
-                while (i < getMotorCount() && pos < OSD_FORMAT_MESSAGE_BUFFER_SIZE - 1) {
-                    escSensorData_t *escData = getEscSensorData(i);
-                    const bool escWarning = (ARMING_FLAG(ARMED) && osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF && escData->rpm <= osdConfig()->esc_rpm_alarm) ||
-                        (osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF && escData->temperature >= osdConfig()->esc_temp_alarm);
-
-                    escErrMsg[pos++] = escWarning ? '1' + i : ' ';
-
-                    i++;
-                }
-
-                escErrMsg[pos] = '\0';
-
-                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, escErrMsg);
-                break;
-            }
-#endif
 
             // Visual beeper
             if (enabledWarnings & OSD_WARNING_VISUAL_BEEPER && showVisualBeeper) {
