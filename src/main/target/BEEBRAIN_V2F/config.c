@@ -100,7 +100,11 @@ void targetConfiguration(void)
     *customMotorMixerMutable(3) = (motorMixer_t){ 1.0f,  0.414178f, -1.0f, -1.0f };    // FRONT_L
 
     vcdProfileMutable()->video_system = VIDEO_SYSTEM_NTSC;
+#if defined(BEESTORM)
+    strcpy(pilotConfigMutable()->name, "BeeStorm");
+#else
     strcpy(pilotConfigMutable()->name, "BeeBrain V2");
+#endif
     osdConfigMutable()->cap_alarm  = 250;
     osdConfigMutable()->item_pos[OSD_CRAFT_NAME]        = OSD_POS(9, 11)  | VISIBLE_FLAG;
     osdConfigMutable()->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(23, 10) | VISIBLE_FLAG;
