@@ -172,7 +172,7 @@ static void hmc5883lConfigureDataReadyInterruptHandling(magDev_t* mag)
 #if defined (STM32F7)
     IOInit(magIntIO, OWNER_COMPASS_EXTI, 0);
     EXTIHandlerInit(&mag->exti, hmc5883_extiHandler);
-    EXTIConfig(magIntIO, &gmag->exti, NVIC_PRIO_MPU_INT_EXTI, IO_CONFIG(GPIO_MODE_INPUT,0,GPIO_NOPULL));
+    EXTIConfig(magIntIO, &mag->exti, NVIC_PRIO_MPU_INT_EXTI, IO_CONFIG(GPIO_MODE_INPUT,0,GPIO_NOPULL));
     EXTIEnable(magIntIO, true);
 #else
     IOInit(magIntIO, OWNER_COMPASS_EXTI, 0);
