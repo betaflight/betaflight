@@ -71,6 +71,8 @@
 
 #define M25P16_PAGESIZE 256
 
+STATIC_ASSERT(M25P16_PAGESIZE < FLASH_MAX_PAGE_SIZE, M25P16_PAGESIZE_too_small);
+
 const flashVTable_t m25p16_vTable;
 
 static void m25p16_disable(busDevice_t *bus)

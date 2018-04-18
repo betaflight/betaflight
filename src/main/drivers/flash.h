@@ -22,6 +22,10 @@
 #include "pg/flash.h"
 #include "drivers/io.h"
 
+// Maximum page size of all supported SPI flash devices.
+// Used to detect flashfs allocation size being too small.
+#define FLASH_MAX_PAGE_SIZE       2048
+
 #define SPIFLASH_INSTRUCTION_RDID 0x9F
 
 typedef enum {
