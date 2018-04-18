@@ -191,7 +191,7 @@ static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
     break;
 
   case CDC_SET_LINE_CODING:
-    if (pbuf && (length == sizeof (LINE_CODING))) {
+    if (pbuf && (length == sizeof (*plc))) {
         LineCoding.bitrate    = plc->bitrate;
         LineCoding.format     = plc->format;
         LineCoding.paritytype = plc->paritytype;
@@ -206,7 +206,7 @@ static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
     break;
 
   case CDC_GET_LINE_CODING:
-    if (pbuf && (length == sizeof (LineCoding))) {
+    if (pbuf && (length == sizeof (*plc))) {
         plc->bitrate = LineCoding.bitrate;
         plc->format = LineCoding.format;
         plc->paritytype = LineCoding.paritytype;

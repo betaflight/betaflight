@@ -58,7 +58,8 @@
 #define USABLE_TIMER_CHANNEL_COUNT 11
 
 #define USE_VCP
-#define VBUS_SENSING_PIN PA9
+#define USE_USB_DETECT
+#define USB_DETECT_PIN   PA9
 
 //#define USE_UART1
 //#define UART1_RX_PIN PA10

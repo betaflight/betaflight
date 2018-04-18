@@ -179,10 +179,11 @@ MCU_EXCLUDES = \
             drivers/bus_i2c.c \
             drivers/timer.c \
             drivers/serial_uart.c
-            
+
 MSC_SRC = \
-            drivers/usb_msc_f7xx.c
-            
+            drivers/usb_msc_f7xx.c \
+            msc/usbd_storage.c
+
 ifneq ($(filter SDIO,$(FEATURES)),)
 MCU_COMMON_SRC += \
             drivers/sdio_f7xx.c            
@@ -193,6 +194,13 @@ endif
 ifneq ($(filter SDCARD,$(FEATURES)),)
 MSC_SRC += \
             msc/usbd_storage_sd_spi.c
+endif
+
+ifneq ($(filter ONBOARDFLASH,$(FEATURES)),)
+MSC_SRC += \
+            msc/usbd_storage_emfat.c \
+            msc/emfat.c \
+            msc/emfat_file.c
 endif
 
 DSP_LIB := $(ROOT)/lib/main/CMSIS/DSP

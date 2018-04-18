@@ -20,8 +20,27 @@
 
 #pragma once
 
-#include "platform.h"
+#ifdef USE_HAL_DRIVER
+#include "usbd_msc.h"
+#else
+#include "usbd_msc_mem.h"
+#include "usbd_msc_core.h"
+#endif
 
 #ifdef USE_HAL_DRIVER
-extern USBD_StorageTypeDef  USBD_MSC_Template_fops;
+extern USBD_StorageTypeDef *USBD_STORAGE_fops;
+#ifdef USE_SDCARD
+extern USBD_StorageTypeDef USBD_MSC_MICRO_SDIO_fops;
+#endif
+#ifdef USE_FLASHFS
+extern USBD_StorageTypeDef USBD_MSC_EMFAT_fops;
+#endif
+#else
+extern USBD_STORAGE_cb_TypeDef *USBD_STORAGE_fops;
+#ifdef USE_SDCARD
+extern USBD_STORAGE_cb_TypeDef USBD_MSC_MICRO_SDIO_fops;
+#endif
+#ifdef USE_FLASHFS
+extern USBD_STORAGE_cb_TypeDef USBD_MSC_EMFAT_fops;
+#endif
 #endif

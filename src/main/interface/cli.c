@@ -1053,7 +1053,7 @@ static void cliSerialPassthrough(char *cmdline)
 
 static void printAdjustmentRange(uint8_t dumpMask, const adjustmentRange_t *adjustmentRanges, const adjustmentRange_t *defaultAdjustmentRanges)
 {
-    const char *format = "adjrange %u %u %u %u %u %u %u";
+    const char *format = "adjrange %u %u %u %u %u %u %u %u %u";
     // print out adjustment ranges channel settings
     for (uint32_t i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
         const adjustmentRange_t *ar = &adjustmentRanges[i];
@@ -1065,7 +1065,9 @@ static void printAdjustmentRange(uint8_t dumpMask, const adjustmentRange_t *adju
                 && ar->range.endStep == arDefault->range.endStep
                 && ar->adjustmentFunction == arDefault->adjustmentFunction
                 && ar->auxSwitchChannelIndex == arDefault->auxSwitchChannelIndex
-                && ar->adjustmentIndex == arDefault->adjustmentIndex;
+                && ar->adjustmentIndex == arDefault->adjustmentIndex
+                && ar->adjustmentCenter == arDefault->adjustmentCenter
+                && ar->adjustmentScale == arDefault->adjustmentScale;
             cliDefaultPrintLinef(dumpMask, equalsDefault, format,
                 i,
                 arDefault->adjustmentIndex,
@@ -1073,7 +1075,9 @@ static void printAdjustmentRange(uint8_t dumpMask, const adjustmentRange_t *adju
                 MODE_STEP_TO_CHANNEL_VALUE(arDefault->range.startStep),
                 MODE_STEP_TO_CHANNEL_VALUE(arDefault->range.endStep),
                 arDefault->adjustmentFunction,
-                arDefault->auxSwitchChannelIndex
+                arDefault->auxSwitchChannelIndex,
+                arDefault->adjustmentCenter,
+                arDefault->adjustmentScale
             );
         }
         cliDumpPrintLinef(dumpMask, equalsDefault, format,
@@ -1083,7 +1087,9 @@ static void printAdjustmentRange(uint8_t dumpMask, const adjustmentRange_t *adju
             MODE_STEP_TO_CHANNEL_VALUE(ar->range.startStep),
             MODE_STEP_TO_CHANNEL_VALUE(ar->range.endStep),
             ar->adjustmentFunction,
-            ar->auxSwitchChannelIndex
+            ar->auxSwitchChannelIndex,
+            ar->adjustmentCenter,
+            ar->adjustmentScale
         );
     }
 }
@@ -1141,6 +1147,23 @@ static void cliAdjustmentRange(char *cmdline)
             if (validArgumentCount != 6) {
                 memset(ar, 0, sizeof(adjustmentRange_t));
                 cliShowParseError();
+            }
+
+            // Optional arguments
+            ar->adjustmentCenter = 0;
+            ar->adjustmentScale = 0;
+
+            ptr = nextArg(ptr);
+            if (ptr) {
+                val = atoi(ptr);
+                ar->adjustmentCenter = val;
+                validArgumentCount++;
+            }
+            ptr = nextArg(ptr);
+            if (ptr) {
+                val = atoi(ptr);
+                ar->adjustmentScale = val;
+                validArgumentCount++;
             }
         } else {
             cliShowArgumentRangeError("index", 0, MAX_ADJUSTMENT_RANGE_COUNT - 1);
@@ -3746,7 +3769,14 @@ static void cliMsc(char *cmdline)
 {
     UNUSED(cmdline);
 
-    if (sdcard_isFunctional()) {
+    if (false
+#ifdef USE_SDCARD
+        || sdcard_isFunctional()
+#endif
+#ifdef USE_FLASHFS
+        || flashfsGetSize() > 0
+#endif
+    ) {
         cliPrintHashLine("restarting in mass storage mode");
         cliPrint("\r\nRebooting");
         bufWriterFlush(cliWriter);
@@ -3766,7 +3796,7 @@ static void cliMsc(char *cmdline)
         __disable_irq();
         NVIC_SystemReset();
     } else {
-        cliPrint("\r\nSD Card not present or failed to initialize!");
+        cliPrint("\r\nStorage not present or failed to initialize!");
         bufWriterFlush(cliWriter);
     }
 }
@@ -3812,7 +3842,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("color", "configure colors", NULL, cliColor),
 #endif
     CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", "[nosave]", cliDefaults),
-    CLI_COMMAND_DEF("diff", "list configuration changes from default", "[master|profile|rates|all] {showdefaults}", cliDiff),
+    CLI_COMMAND_DEF("diff", "list configuration changes from default", "[master|profile|rates|all] {defaults}", cliDiff),
 #ifdef USE_DSHOT
     CLI_COMMAND_DEF("dshotprog", "program DShot ESC(s)", "<index> <command>+", cliDshotProg),
 #endif

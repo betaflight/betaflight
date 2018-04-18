@@ -13,23 +13,22 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Author: jflyper (https://github.com/jflyper)
+ *
  */
 
-#pragma once
+#ifdef USE_HAL_DRIVER
+#include "usbd_msc.h"
+#else
+#include "usbd_msc_mem.h"
+#include "usbd_msc_core.h"
+#endif
 
-#include "drivers/serial.h"
+#include "usbd_storage.h"
 
-typedef struct {
-    serialPort_t port;
-
-    // Buffer used during bulk writes.
-    uint8_t txBuf[20];
-    uint8_t txAt;
-    // Set if the port is in bulk write mode and can buffer.
-    bool buffering;
-} vcpPort_t;
-
-serialPort_t *usbVcpOpen(void);
-struct serialPort_s;
-uint32_t usbVcpGetBaudRate(struct serialPort_s *instance);
-uint8_t usbVcpIsConnected(void);
+#ifdef USE_HAL_DRIVER
+USBD_StorageTypeDef *USBD_STORAGE_fops;
+#else
+USBD_STORAGE_cb_TypeDef *USBD_STORAGE_fops;
+#endif

@@ -128,13 +128,20 @@ PG_DECLARE(pidConfig_t, pidConfig);
 union rollAndPitchTrims_u;
 void pidController(const pidProfile_t *pidProfile, const union rollAndPitchTrims_u *angleTrim, timeUs_t currentTimeUs);
 
-extern float axisPID_P[3], axisPID_I[3], axisPID_D[3];
-extern float axisPIDSum[3];
-bool airmodeWasActivated;
+typedef struct pidAxisData_s {
+    float P;
+    float I;
+    float D;
+
+    float Sum;
+} pidAxisData_t;
+
+extern pidAxisData_t pidData[3];
+
 extern uint32_t targetPidLooptime;
 
-// PIDweight is a scale factor for PIDs which is derived from the throttle and TPA setting, and 100 = 100% scale means no PID reduction
-extern uint8_t PIDweight[3];
+extern float throttleBoost;
+extern pt1Filter_t throttleLpf;
 
 void pidResetITerm(void);
 void pidStabilisationState(pidStabilisationState_e pidControllerState);
@@ -145,5 +152,3 @@ void pidInit(const pidProfile_t *pidProfile);
 void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex);
 bool crashRecoveryModeActive(void);
 
-extern float throttleBoost;
-extern pt1Filter_t throttleLpf;

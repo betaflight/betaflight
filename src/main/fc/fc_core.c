@@ -36,10 +36,12 @@
 #include "pg/pg_ids.h"
 
 #include "drivers/light_led.h"
+#include "drivers/serial_usb_vcp.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
 #include "drivers/transponder_ir.h"
+#include "drivers/usb_io.h"
 
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
@@ -578,10 +580,10 @@ bool processRx(timeUs_t currentTimeUs)
             const uint8_t lowThrottleLimit = pidConfig()->runaway_takeoff_deactivate_throttle;
             const uint8_t midThrottleLimit = constrain(lowThrottleLimit * 2, lowThrottleLimit * 2, RUNAWAY_TAKEOFF_HIGH_THROTTLE_PERCENT);
             if ((((throttlePercent >= lowThrottleLimit) && areSticksActive(RUNAWAY_TAKEOFF_DEACTIVATE_STICK_PERCENT)) || (throttlePercent >= midThrottleLimit))
-                && (fabsf(axisPIDSum[FD_PITCH]) < RUNAWAY_TAKEOFF_DEACTIVATE_PIDSUM_LIMIT)
-                && (fabsf(axisPIDSum[FD_ROLL]) < RUNAWAY_TAKEOFF_DEACTIVATE_PIDSUM_LIMIT)
-                && (fabsf(axisPIDSum[FD_YAW]) < RUNAWAY_TAKEOFF_DEACTIVATE_PIDSUM_LIMIT)) {
-                
+                && (fabsf(pidData[FD_PITCH].Sum) < RUNAWAY_TAKEOFF_DEACTIVATE_PIDSUM_LIMIT)
+                && (fabsf(pidData[FD_ROLL].Sum) < RUNAWAY_TAKEOFF_DEACTIVATE_PIDSUM_LIMIT)
+                && (fabsf(pidData[FD_YAW].Sum) < RUNAWAY_TAKEOFF_DEACTIVATE_PIDSUM_LIMIT)) {
+
                 inStableFlight = true;
                 if (runawayTakeoffDeactivateUs == 0) {
                     runawayTakeoffDeactivateUs = currentTimeUs;
@@ -813,9 +815,9 @@ static void subTaskPidController(timeUs_t currentTimeUs)
         && !runawayTakeoffTemporarilyDisabled
         && (!feature(FEATURE_MOTOR_STOP) || isAirmodeActive() || (calculateThrottleStatus() != THROTTLE_LOW))) {
 
-        if (((fabsf(axisPIDSum[FD_PITCH]) >= RUNAWAY_TAKEOFF_PIDSUM_THRESHOLD)
-            || (fabsf(axisPIDSum[FD_ROLL]) >= RUNAWAY_TAKEOFF_PIDSUM_THRESHOLD)
-            || (fabsf(axisPIDSum[FD_YAW]) >= RUNAWAY_TAKEOFF_PIDSUM_THRESHOLD))
+        if (((fabsf(pidData[FD_PITCH].Sum) >= RUNAWAY_TAKEOFF_PIDSUM_THRESHOLD)
+            || (fabsf(pidData[FD_ROLL].Sum) >= RUNAWAY_TAKEOFF_PIDSUM_THRESHOLD)
+            || (fabsf(pidData[FD_YAW].Sum) >= RUNAWAY_TAKEOFF_PIDSUM_THRESHOLD))
             && ((ABS(gyroAbsRateDps(FD_PITCH)) > RUNAWAY_TAKEOFF_GYRO_LIMIT_RP)
                 || (ABS(gyroAbsRateDps(FD_ROLL)) > RUNAWAY_TAKEOFF_GYRO_LIMIT_RP)
                 || (ABS(gyroAbsRateDps(FD_YAW)) > RUNAWAY_TAKEOFF_GYRO_LIMIT_YAW))) {
@@ -847,7 +849,9 @@ static void subTaskPidController(timeUs_t currentTimeUs)
 static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
 {
     uint32_t startTime = 0;
-    if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
+    if (debugMode == DEBUG_PIDLOOP) {
+        startTime = micros();
+    }
 
     // Read out gyro temperature if used for telemmetry
     if (feature(FEATURE_TELEMETRY)) {
@@ -902,6 +906,11 @@ static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
 
 #ifdef USE_SDCARD
     afatfs_poll();
+#endif
+
+#if defined(USE_VCP)
+    DEBUG_SET(DEBUG_USB, 0, usbCableIsInserted());
+    DEBUG_SET(DEBUG_USB, 1, usbVcpIsConnected());
 #endif
 
 #ifdef USE_BLACKBOX

@@ -46,6 +46,7 @@ bool flashfsFlushAsync(void);
 void flashfsFlushSync(void);
 
 void flashfsInit(void);
+bool flashfsIsSupported(void);
 
 bool flashfsIsReady(void);
 bool flashfsIsEOF(void);

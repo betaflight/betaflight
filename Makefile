@@ -24,7 +24,10 @@ OPTIONS   ?=
 # compile for OpenPilot BootLoader support
 OPBL      ?= no
 
-# Debugger optons, must be empty or GDB
+# Debugger optons:
+#   empty           - ordinary build with all optimizations enabled
+#   RELWITHDEBINFO  - ordinary build with debug symbols and all optimizations enabled
+#   GDB             - debug build with minimum number of optimizations
 DEBUG     ?=
 
 # Insert the debugging hardfault debugger
@@ -117,6 +120,9 @@ OPTIMISE_DEFAULT      := -Og
 LTO_FLAGS             := $(OPTIMISE_DEFAULT)
 DEBUG_FLAGS            = -ggdb3 -DDEBUG
 else
+ifeq ($(DEBUG),INFO)
+DEBUG_FLAGS            = -ggdb3
+endif
 OPTIMISATION_BASE     := -flto -fuse-linker-plugin -ffast-math
 OPTIMISE_DEFAULT      := -O2
 OPTIMISE_SPEED        := -Ofast

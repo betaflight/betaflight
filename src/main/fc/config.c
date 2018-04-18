@@ -260,6 +260,28 @@ static void validateAndFixConfig(void)
         pgResetFn_serialConfig(serialConfigMutable());
     }
 
+#if !defined(USE_OSD_SLAVE)
+#if defined(USE_PWM) || defined(USE_PPM)
+    if (feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM)) {
+        rxConfigMutable()->rssi_src_frame_errors = false;
+    } else
+#endif
+    if (rxConfig()->rssi_src_frame_errors) {
+        featureClear(FEATURE_RSSI_ADC);
+        rxConfigMutable()->rssi_channel = 0;
+#if defined(USE_ADC)
+    } else if (feature(FEATURE_RSSI_ADC)) {
+        rxConfigMutable()->rssi_channel = 0;
+#endif
+    }
+#endif // USE_OSD_SLAVE
+
+#if defined(USE_ESC_SENSOR)
+    if (!findSerialPortConfig(FUNCTION_ESC_SENSOR)) {
+        featureClear(FEATURE_ESC_SENSOR);
+    }
+#endif
+
 // clear features that are not supported.
 // I have kept them all here in one place, some could be moved to sections of code above.
 
@@ -329,6 +351,10 @@ static void validateAndFixConfig(void)
 
 #ifndef USE_GYRO_DATA_ANALYSE
     featureClear(FEATURE_DYNAMIC_FILTER);
+#endif
+
+#if !defined(USE_ADC)
+    featureClear(FEATURE_RSSI_ADC);
 #endif
 
 #if defined(TARGET_VALIDATECONFIG)

@@ -63,4 +63,5 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "RUNAWAY_TAKEOFF",
     "SDIO",
     "CURRENT_SENSOR",
+    "USB",
 };

@@ -28,13 +28,13 @@
 #include "sdcard.h"
 
 
-#ifdef USB_DETECT_PIN
+#ifdef USE_USB_DETECT
 static IO_t usbDetectPin = IO_NONE;
 #endif
 
 void usbCableDetectDeinit(void)
 {
-#ifdef USB_DETECT_PIN
+#ifdef USE_USB_DETECT
     IOInit(usbDetectPin, OWNER_FREE, 0);
     IOConfigGPIO(usbDetectPin, IOCFG_IN_FLOATING);
     usbDetectPin = IO_NONE;
@@ -43,7 +43,10 @@ void usbCableDetectDeinit(void)
 
 void usbCableDetectInit(void)
 {
-#ifdef USB_DETECT_PIN
+#ifdef USE_USB_DETECT
+#ifndef USB_DETECT_PIN
+#define USB_DETECT_PIN NONE
+#endif
     usbDetectPin = IOGetByTag(IO_TAG(USB_DETECT_PIN));
 
     IOInit(usbDetectPin, OWNER_USB_DETECT, 0);
@@ -55,8 +58,10 @@ bool usbCableIsInserted(void)
 {
     bool result = false;
 
-#ifdef USB_DETECT_PIN
-    result = IORead(usbDetectPin) != 0;
+#ifdef USE_USB_DETECT
+    if (usbDetectPin) {
+        result = IORead(usbDetectPin) != 0;
+    }
 #endif
 
     return result;
