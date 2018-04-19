@@ -129,14 +129,14 @@ ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16 -fs
 DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER
 ifeq ($(TARGET),$(filter $(TARGET),$(F7X5XG_TARGETS)))
 DEVICE_FLAGS   += -DSTM32F745xx
-LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f745.ld
+LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f74x.ld
 STARTUP_SRC     = startup_stm32f745xx.s
-TARGET_FLASH   := 2048
+TARGET_FLASH   := 1024
 else ifeq ($(TARGET),$(filter $(TARGET),$(F7X6XG_TARGETS)))
 DEVICE_FLAGS   += -DSTM32F746xx
-LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f746.ld
+LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f74x.ld
 STARTUP_SRC     = startup_stm32f746xx.s
-TARGET_FLASH   := 2048
+TARGET_FLASH   := 1024
 else ifeq ($(TARGET),$(filter $(TARGET),$(F7X2RE_TARGETS)))
 DEVICE_FLAGS   += -DSTM32F722xx
 ifndef LD_SCRIPT

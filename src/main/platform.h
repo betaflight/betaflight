@@ -17,6 +17,8 @@
 
 #pragma once
 
+#define NOINLINE __attribute__((noinline))
+
 #if !defined(UNIT_TEST) && !defined(SITL) && !(USBD_DEBUG_LEVEL > 0)
 #pragma GCC poison sprintf snprintf
 #endif

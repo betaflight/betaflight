@@ -110,14 +110,12 @@ typedef enum {
 typedef struct {
     TIM_TypeDef *timer;
 #if defined(USE_DSHOT) && defined(USE_DSHOT_DMAR)
-#if !defined(USE_HAL_DRIVER)
 #ifdef STM32F3
     DMA_Channel_TypeDef *dmaBurstRef;
 #else
     DMA_Stream_TypeDef *dmaBurstRef;
 #endif
     uint16_t dmaBurstLength;
-#endif
     uint32_t dmaBurstBuffer[DSHOT_DMA_BUFFER_SIZE * 4];
 #endif
     uint16_t timerDmaSources;
@@ -137,11 +135,6 @@ typedef struct {
     uint32_t dmaBuffer[DSHOT_DMA_BUFFER_SIZE];
 #else
     uint8_t dmaBuffer[DSHOT_DMA_BUFFER_SIZE];
-#endif
-#if defined(USE_HAL_DRIVER)
-    TIM_HandleTypeDef TimHandle;
-    DMA_HandleTypeDef hdma_tim;
-    uint16_t timerDmaIndex;
 #endif
 } motorDmaOutput_t;
 

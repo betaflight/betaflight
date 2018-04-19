@@ -31,6 +31,8 @@
 #define USE_DUAL_GYRO
 //#define DEBUG_MODE DEBUG_DUAL_GYRO_DIFF
 
+#define ENABLE_DSHOT_DMAR       true
+
 #define LED0_PIN                PC4
 
 #define USE_BEEPER
@@ -178,9 +180,9 @@
 //#define ADC_INSTANCE                        ADC1
 //#define ADC1_DMA_STREAM                     DMA2_Stream0
 
-// Using ADC3 frees up DMA2_Stream0 for SPI1_RX
+// Using ADC3 frees up DMA2_Stream0 for SPI1_RX (not necessarily, SPI1_RX has DMA2_Stream2 as well)
 #define ADC_INSTANCE                        ADC3
-#define ADC3_DMA_STREAM                     DMA2_Stream1
+#define ADC3_DMA_STREAM                     DMA2_Stream0
 
 #define VBAT_ADC_PIN                        PC1
 #define CURRENT_METER_ADC_PIN               PC2

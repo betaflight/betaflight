@@ -846,7 +846,7 @@ static void subTaskPidController(timeUs_t currentTimeUs)
 #endif
 }
 
-static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
+static NOINLINE void subTaskMainSubprocesses(timeUs_t currentTimeUs)
 {
     uint32_t startTime = 0;
     if (debugMode == DEBUG_PIDLOOP) {
@@ -956,7 +956,7 @@ static void subTaskMotorUpdate(timeUs_t currentTimeUs)
 }
 
 // Function for loop trigger
-void taskMainPidLoop(timeUs_t currentTimeUs)
+FAST_CODE void taskMainPidLoop(timeUs_t currentTimeUs)
 {
     static uint32_t pidUpdateCounter = 0;
 

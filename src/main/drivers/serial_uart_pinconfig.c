@@ -36,8 +36,8 @@
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
 
-uartDevice_t uartDevice[UARTDEV_COUNT];      // Only those configured in target.h
-uartDevice_t *uartDevmap[UARTDEV_COUNT_MAX]; // Full array
+FAST_RAM uartDevice_t uartDevice[UARTDEV_COUNT];      // Only those configured in target.h
+FAST_RAM uartDevice_t *uartDevmap[UARTDEV_COUNT_MAX]; // Full array
 
 void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig)
 {

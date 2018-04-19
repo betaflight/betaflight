@@ -56,6 +56,10 @@ defined in linker script */
 .word  _sbss
 /* end address for the .bss section. defined in linker script */
 .word  _ebss
+/* start address for the .fastram_bss section. defined in linker script */
+.word  __fastram_bss_start__
+/* end address for the .fastram_bss section. defined in linker script */
+.word  __fastram_bss_end__
 /* stack used for SystemInit_ExtMemCtl; always internal RAM used */
 
 /**
@@ -98,6 +102,7 @@ LoopCopyDataInit:
   adds  r2, r0, r1
   cmp  r2, r3
   bcc  CopyDataInit
+
   ldr  r2, =_sbss
   b  LoopFillZerobss
 /* Zero fill the bss segment. */  
@@ -109,6 +114,18 @@ LoopFillZerobss:
   ldr  r3, = _ebss
   cmp  r2, r3
   bcc  FillZerobss
+
+  ldr  r2, =__fastram_bss_start__
+  b  LoopFillZerofastram_bss
+/* Zero fill the fastram_bss segment. */  
+FillZerofastram_bss:
+  movs  r3, #0
+  str  r3, [r2], #4
+    
+LoopFillZerofastram_bss:
+  ldr  r3, = __fastram_bss_end__
+  cmp  r2, r3
+  bcc  FillZerofastram_bss
 
 /* Mark the heap and stack */
     ldr	r2, =_heap_stack_begin

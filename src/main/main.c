@@ -24,9 +24,19 @@
 
 #include "scheduler/scheduler.h"
 
+void run(void);
+
 int main(void)
 {
     init();
+
+    run();
+
+    return 0;
+}
+
+void FAST_CODE NOINLINE run(void)
+{
     while (true) {
         scheduler();
         processLoopback();
@@ -34,5 +44,4 @@ int main(void)
         delayMicroseconds_real(50); // max rate 20kHz
 #endif
     }
-    return 0;
 }

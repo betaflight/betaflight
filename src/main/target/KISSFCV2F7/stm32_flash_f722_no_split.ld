@@ -24,13 +24,15 @@ MEMORY
     FLASH (rx)        : ORIGIN = 0x08008000, LENGTH = 480K /*main fw*/
 
     TCM (rwx)         : ORIGIN = 0x20000000, LENGTH = 64K
-    RAM (rwx)         : ORIGIN = 0x20010000, LENGTH = 192K
+    SRAM1 (rwx)       : ORIGIN = 0x20010000, LENGTH = 176K
+    SRAM2 (rwx)       : ORIGIN = 0x2003C000, LENGTH = 16K
     MEMORY_B1 (rx)    : ORIGIN = 0x60000000, LENGTH = 0K
 }
 
 /* note TCM could be used for stack */
 REGION_ALIAS("STACKRAM", TCM)
 REGION_ALIAS("FASTRAM", TCM)
+REGION_ALIAS("RAM", SRAM1)
 
 
 /* Entry Point */
@@ -163,6 +165,35 @@ SECTIONS
     _ebss = .;         /* define a global symbol at bss end */
     __bss_end__ = _ebss;
   } >RAM
+
+  /* Uninitialized data section */
+  . = ALIGN(4);
+  .sram2 (NOLOAD) :
+  {
+    /* This is used by the startup in order to initialize the .sram2 secion */
+    _ssram2 = .;         /* define a global symbol at sram2 start */
+    __sram2_start__ = _ssram2;
+    *(.sram2)
+    *(SORT_BY_ALIGNMENT(.sram2*))
+    *(COMMON)
+
+    . = ALIGN(4);
+    _esram2 = .;         /* define a global symbol at sram2 end */
+    __sram2_end__ = _esram2;
+  } >SRAM2
+
+  . = ALIGN(4);
+  .fastram_bss (NOLOAD) :
+  {
+    _sfastram_bss = .;
+    __fastram_bss_start__ = _sfastram_bss;
+    *(.fastram_bss)
+    *(SORT_BY_ALIGNMENT(.fastram_bss*))
+
+    . = ALIGN(4);
+    _efastram_bss = .;
+    __fastram_bss_end__ = _efastram_bss;
+  } >FASTRAM
 
   /* User_heap_stack section, used to check that there is enough RAM left */
   _heap_stack_end = ORIGIN(STACKRAM)+LENGTH(STACKRAM) - 8; /* 8 bytes to allow for alignment */
