@@ -132,6 +132,7 @@
 // Globally configure flashfs and drivers for various flash chips
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
+#define USE_FLASH_W25M512
 
 #if defined(OMNIBUSF4SD)
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
