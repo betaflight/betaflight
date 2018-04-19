@@ -135,6 +135,10 @@
 #define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
+// Globally configure flashfs and drivers for various flash chips
+#define USE_FLASHFS
+#define USE_FLASH_M25P16
+
 #if defined(OMNIBUSF4SD)
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #define USE_SDCARD
@@ -149,12 +153,18 @@
 
 #define SDCARD_DMA_CHANNEL_TX                   DMA1_Stream4
 #define SDCARD_DMA_CHANNEL                      0
+
+// For variants with SDcard replaced with flash chip
+#define M25P16_CS_PIN           SDCARD_SPI_CS_PIN
+#define M25P16_SPI_INSTANCE     SDCARD_SPI_INSTANCE
+
 #elif defined(LUXF4OSD)
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 #define M25P16_CS_PIN           PB12
 #define M25P16_SPI_INSTANCE     SPI2
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
+
 #else
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 #define M25P16_CS_PIN           SPI3_NSS_PIN
