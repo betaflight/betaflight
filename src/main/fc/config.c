@@ -254,27 +254,24 @@ static void validateAndFixConfig(void)
     }
 #endif // USE_SOFTSPI
 
+#if defined(USE_ADC)
+    if (feature(FEATURE_RSSI_ADC)) {
+        rxConfigMutable()->rssi_channel = 0;
+        rxConfigMutable()->rssi_src_frame_errors = false;
+    } else
+#endif
+    if (rxConfigMutable()->rssi_channel
+#if defined(USE_PWM) || defined(USE_PPM)
+        || feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM)
+#endif
+        ) {
+        rxConfigMutable()->rssi_src_frame_errors = false;
+    }
 #endif // USE_OSD_SLAVE
 
     if (!isSerialConfigValid(serialConfig())) {
         pgResetFn_serialConfig(serialConfigMutable());
     }
-
-#if !defined(USE_OSD_SLAVE)
-#if defined(USE_PWM) || defined(USE_PPM)
-    if (feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM)) {
-        rxConfigMutable()->rssi_src_frame_errors = false;
-    } else
-#endif
-    if (rxConfig()->rssi_src_frame_errors) {
-        featureClear(FEATURE_RSSI_ADC);
-        rxConfigMutable()->rssi_channel = 0;
-#if defined(USE_ADC)
-    } else if (feature(FEATURE_RSSI_ADC)) {
-        rxConfigMutable()->rssi_channel = 0;
-#endif
-    }
-#endif // USE_OSD_SLAVE
 
 #if defined(USE_ESC_SENSOR)
     if (!findSerialPortConfig(FUNCTION_ESC_SENSOR)) {
