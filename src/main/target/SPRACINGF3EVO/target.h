@@ -30,6 +30,7 @@
 #undef USE_COPY_PROFILE_CMS_MENU
 #undef USE_RX_MSP
 #undef USE_ESC_SENSOR_INFO
+#undef USE_CRSF_CMS_TELEMETRY
 
 
 #if !defined(AIORACERF3)

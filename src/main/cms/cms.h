@@ -14,6 +14,8 @@ displayPort_t *pCurrentDisplay;
 void cmsInit(void);
 void cmsHandler(timeUs_t currentTimeUs);
 
+bool cmsDisplayPortSelect(displayPort_t *instance);
+void cmsMenuOpen(void);
 long cmsMenuChange(displayPort_t *pPort, const void *ptr);
 long cmsMenuExit(displayPort_t *pPort, const void *ptr);
 void cmsUpdate(uint32_t currentTimeUs);

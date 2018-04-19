@@ -19,6 +19,9 @@
 
 #define TARGET_BOARD_IDENTIFIER "MIF3"
 
+// prevent flash overflow
+#undef USE_CRSF_CMS_TELEMETRY
+
 #define LED0_PIN                PB5
 
 #define USE_BEEPER

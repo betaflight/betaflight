@@ -58,6 +58,8 @@ typedef struct displayPortProfile_s {
     uint8_t whiteBrightness;
 } displayPortProfile_t;
 
+// Note: displayPortProfile_t used as a parameter group for CMS over CRSF (io/displayport_crsf)
+
 void displayGrab(displayPort_t *instance);
 void displayRelease(displayPort_t *instance);
 void displayReleaseAll(displayPort_t *instance);

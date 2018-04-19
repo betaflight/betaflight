@@ -123,7 +123,8 @@
 #define PG_PINIOBOX_CONFIG 530
 #define PG_USB_CONFIG 531
 #define PG_SDIO_CONFIG 532
-#define PG_BETAFLIGHT_END 532
+#define PG_DISPLAY_PORT_CRSF_CONFIG 533
+#define PG_BETAFLIGHT_END 533
 
 
 // OSD configuration (subject to change)
