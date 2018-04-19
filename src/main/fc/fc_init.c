@@ -49,7 +49,7 @@
 #include "drivers/compass/compass.h"
 #include "drivers/dma.h"
 #include "drivers/exti.h"
-#include "drivers/flash_m25p16.h"
+#include "drivers/flash.h"
 #include "drivers/inverter.h"
 #include "drivers/io.h"
 #include "drivers/light_led.h"
@@ -685,8 +685,8 @@ void init(void)
 #endif
 
 #ifdef USE_FLASHFS
-#if defined(USE_FLASH_M25P16)
-    m25p16_init(flashConfig());
+#if defined(USE_FLASH)
+    flashInit(flashConfig());
 #endif
     flashfsInit();
 #endif

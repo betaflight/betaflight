@@ -45,6 +45,7 @@ int flashfsReadAbs(uint32_t offset, uint8_t *data, unsigned int len);
 bool flashfsFlushAsync(void);
 void flashfsFlushSync(void);
 
+void flashfsClose(void);
 void flashfsInit(void);
 bool flashfsIsSupported(void);
 

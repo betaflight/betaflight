@@ -34,7 +34,7 @@
 
 #include "drivers/light_led.h"
 #include "drivers/time.h"
-#include "drivers/flash_m25p16.h"
+#include "drivers/flash.h"
 
 #include "io/flashfs.h"
 
@@ -68,9 +68,9 @@ static int8_t STORAGE_Init(uint8_t lun)
 
     LED0_ON;
 
-#ifdef USE_FLASHFS
-#if defined(USE_FLASH_M25P16)
-    m25p16_init(flashConfig());
+#ifdef USE_FLASHFS 
+#ifdef USE_FLASH
+    flashInit(flashConfig());
 #endif
     flashfsInit();
 #endif
