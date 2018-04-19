@@ -108,6 +108,13 @@
 #define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
+/* BLACKBOX dataflash available as of V2.1 -- did not exist on V1 and V2 */
+#define USE_FLASHFS
+#define USE_FLASH_M25P16
+#define M25P16_CS_PIN        SPI3_NSS_PIN
+#define M25P16_SPI_INSTANCE  SPI3
+#define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
+
 /* Motion Processing Unit (MPU) - Invensense 6-axis MPU-6500 or 9-axis MPU-9250
  */
 // Interrupt
@@ -171,7 +178,7 @@
 #define UART4_TX_PIN            PA0 // PC10 currently used by USART3
 #define UART4_RX_PIN            PA1 // PC11 currently used by USART3
 
-// UART5 async only on F4
+// UART5 async only on F4 ... PB3 and PB4 used by SPI3
 //#define UART5_TX_PIN            PB3 // PC12
 //#define UART5_RX_PIN            PB4 // PD2
 
@@ -184,7 +191,7 @@
 #define BINDPLUG_PIN            PC13 // PC13 Current Limited (3 mA). Not suitable for LED/Beeper
 #define SERIALRX_UART           SERIAL_PORT_USART3
 #define RX_CHANNELS_TAER        //RX_CHANNELS_AETR
-#define SERIALRX_PROVIDER       SERIALRX_SPEKTRUM1024 //SERIALRX_SBUS
+#define SERIALRX_PROVIDER       SERIALRX_SPEKTRUM2048 //SERIALRX_SBUS
 
 /* Defaults - What do we want out of the box?
  */
@@ -193,13 +200,6 @@
 #else
 #define DEFAULT_FEATURES        (FEATURE_RX_SERIAL | FEATURE_MOTOR_STOP )  // TODO FEATURE_OSD for V3 board ... FEATURE_TELEMETRY changes bind pin from rx to tx
 #endif
-
-/* OSD currently dependent upon CMS, SMARTAUDIO, TRAMP
-#undef USE_VTX_COMMON
-#undef USE_VTX_CONTROL
-#undef USE_VTX_SMARTAUDIO
-#undef USE_VTX_TRAMP
-*/
 
 /* OLED Support
  */

@@ -67,7 +67,7 @@ void targetConfiguration(void)
 {
     if (hardwareMotorType == MOTOR_BRUSHED) {
         motorConfigMutable()->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
-        motorConfigMutable()->minthrottle = 1080;
+        motorConfigMutable()->minthrottle = 1020;
         motorConfigMutable()->maxthrottle = 2000;
     }
 
@@ -76,8 +76,8 @@ void targetConfiguration(void)
     rxConfigMutable()->spektrum_sat_bind = 5;
     rxConfigMutable()->spektrum_sat_bind_autoreset = 1;
     parseRcChannels("TAER1234", rxConfigMutable());
-#if defined(ALIENWHOOPF4)
-    rxConfigMutable()->serialrx_inverted = true; // TODO: what to do about F4 inversion?
+#if defined(ALIENWHOOPF7)
+    rxConfigMutable()->serialrx_inverted = true;
 #endif
 
     beeperOffSet((BEEPER_BAT_CRIT_LOW | BEEPER_BAT_LOW | BEEPER_RX_SET) ^ BEEPER_GYRO_CALIBRATED);
@@ -91,10 +91,11 @@ void targetConfiguration(void)
     barometerConfigMutable()->baro_hardware = BARO_NONE;
 #endif
 
-    compassConfigMutable()->mag_hardware =  MAG_DEFAULT;
+    compassConfigMutable()->mag_hardware =  MAG_NONE;
 
-    /* F4 (especially overclocked) and F7 ALIENWHOOP perform splendidly with 32kHz gyro enabled */
-    gyroConfigMutable()->gyro_use_32khz = 1;
+    /* Default to 32kHz enabled at 16/16 */
+    gyroConfigMutable()->gyro_use_32khz = 1; // enable 32kHz sampling
+    gyroConfigMutable()->gyroMovementCalibrationThreshold = 200; // aka moron_threshold
     gyroConfigMutable()->gyro_sync_denom = 2;  // 16kHz gyro
     pidConfigMutable()->pid_process_denom = 1; // 16kHz PID
 
@@ -120,7 +121,7 @@ void targetConfiguration(void)
 
         /* Setpoints */
         pidProfile->dtermSetpointWeight = 100;
-        pidProfile->setpointRelaxRatio = 100; // default to snappy for racers
+        pidProfile->setpointRelaxRatio = 100;
 
         /* Throttle PID Attenuation (TPA) */
         pidProfile->itermThrottleThreshold = 400;
@@ -143,7 +144,7 @@ void targetConfiguration(void)
 
         /* Throttle PID Attenuation (TPA) */
         controlRateConfig->dynThrPID = 0; // tpa_rate off
-        controlRateConfig->tpa_breakpoint = 1600;
+        controlRateConfig->tpa_breakpoint = 1650;
     }
 }
 #endif
