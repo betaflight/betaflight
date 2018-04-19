@@ -3345,6 +3345,9 @@ const cliResourceValue_t resourceTable[] = {
 #if defined(USE_USB_MSC)
     { OWNER_USB_MSC_PIN,   PG_USB_CONFIG, offsetof(usbDev_t, mscButtonPin), 0 },
 #endif
+#ifdef USE_FLASH
+    { OWNER_FLASH_CS,      PG_FLASH_CONFIG, offsetof(flashConfig_t, csTag), 0 },
+#endif
 };
 
 static ioTag_t *getIoTag(const cliResourceValue_t value, uint8_t index)
