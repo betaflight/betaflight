@@ -1,1 +1,0 @@
-# BEESTORM is a variant of BEEBRAIN_V2F without built-in vtx.
