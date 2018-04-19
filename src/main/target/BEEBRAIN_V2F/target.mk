@@ -7,7 +7,6 @@ TARGET_SRC = \
             drivers/accgyro/accgyro_spi_mpu6500.c \
             drivers/max7456.c
 
-ifeq ($(TARGET), BEESTORM)
-else
+ifneq ($(TARGET), BEESTORM)
 TARGET_SRC += drivers/vtx_rtc6705_soft_spi.c
 endif
