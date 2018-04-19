@@ -97,9 +97,11 @@ uint8_t bmi160Detect(const busDevice_t *bus)
         return BMI_160_SPI;
     }
 
+#ifndef USE_DUAL_GYRO
     IOInit(bus->busdev_u.spi.csnPin, OWNER_MPU_CS, 0);
     IOConfigGPIO(bus->busdev_u.spi.csnPin, SPI_IO_CS_CFG);
     IOHi(bus->busdev_u.spi.csnPin);
+#endif
 
     spiSetDivisor(bus->busdev_u.spi.instance, BMI160_SPI_DIVISOR);
 
