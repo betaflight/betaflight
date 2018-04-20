@@ -489,7 +489,7 @@ static void handleCrashRecovery(
 }
 
 static void detectAndSetCrashRecovery(
-    const pidCrashRecovery_e crash_recovery, const uint8_t axis,
+    const pidCrashRecovery_e crash_recovery, const int axis,
     const timeUs_t currentTimeUs, const float delta, const float errorRate)
 {
     // if crash recovery is on and accelerometer enabled and there is no gyro overflow, then check for a crash
