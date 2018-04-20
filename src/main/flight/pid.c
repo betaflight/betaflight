@@ -158,7 +158,7 @@ void pidResetITerm(void)
     }
 }
 
-static FAST_RAM float itermAccelerator = 1.0f;
+static FAST_RAM_INITIALIZED float itermAccelerator = 1.0f;
 
 void pidSetItermAccelerator(float newItermAccelerator)
 {

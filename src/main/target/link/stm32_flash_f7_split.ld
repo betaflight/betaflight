@@ -139,6 +139,21 @@ SECTIONS
     __sram2_end__ = _esram2;
   } >SRAM2
 
+  /* used during startup to initialized fastram_data */
+  _sfastram_idata = .;
+
+  /* Initialized FAST_RAM section for unsuspecting developers */
+  .fastram_data :
+  {
+    . = ALIGN(4);
+    _sfastram_data = .;        /* create a global symbol at data start */
+    *(.fastram_data)           /* .data sections */
+    *(.fastram_data*)          /* .data* sections */
+
+    . = ALIGN(4);
+    _efastram_data = .;        /* define a global symbol at data end */
+  } >FASTRAM AT> FLASH
+
   . = ALIGN(4);
   .fastram_bss (NOLOAD) :
   {
