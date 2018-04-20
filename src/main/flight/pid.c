@@ -515,8 +515,14 @@ static void detectAndSetCrashRecovery(
     }
 }
 
-static void handleItermRotation(const float deltaT)
+static void handleItermRotation(const timeUs_t currentTimeUs)
 {
+    static timeUs_t previousTimeUs;
+
+    // calculate actual deltaT in seconds
+    const float deltaT = (currentTimeUs - previousTimeUs) * 0.000001f;
+    previousTimeUs = currentTimeUs;
+
     // rotate old I to the new coordinate system
     const float gyroToAngle = deltaT * RAD;
     for (int i = FD_ROLL; i <= FD_YAW; i++) {
@@ -535,7 +541,6 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
 {
     static float previousGyroRateDterm[2];
     static float previousPidSetpoint[2];
-    static timeUs_t previousTimeUs;
 
     // Disable PID control if at zero throttle or if gyro overflow detected
     if (!pidStabilisationEnabled || gyroOverflowDetected()) {
@@ -553,13 +558,8 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
     const float tpaFactor = getThrottlePIDAttenuation();
     const float motorMixRange = getMotorMixRange();
 
-    // calculate actual deltaT in seconds
-    const float deltaT = (currentTimeUs - previousTimeUs) * 0.000001f;
-    previousTimeUs = currentTimeUs;
-
     // Dynamic i component,
-    // gradually scale back integration when above windup point,
-    // use dT (not deltaT) for ITerm calculation to avoid wind-up caused by jitter
+    // gradually scale back integration when above windup point
     const float dynCi = MIN((1.0f - motorMixRange) * ITermWindupPointInv, 1.0f) * dT * itermAccelerator;
 
     // Dynamic d component, enable 2-DOF PID controller only for rate mode
@@ -574,7 +574,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
     }
 
     if (itermRotation) {
-        handleItermRotation(deltaT);
+        handleItermRotation(currentTimeUs);
     }
 
     // ----------PID controller----------
@@ -623,7 +623,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             // Divide rate change by deltaT to get differential (ie dr/dt)
             const float delta = (
                 dynCd * transition * (currentPidSetpoint - previousPidSetpoint[axis]) -
-                (gyroRateDterm[axis] - previousGyroRateDterm[axis])) / deltaT;
+                (gyroRateDterm[axis] - previousGyroRateDterm[axis])) / dT;
 
             previousPidSetpoint[axis] = currentPidSetpoint;
             previousGyroRateDterm[axis] = gyroRateDterm[axis];
