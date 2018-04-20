@@ -515,16 +515,10 @@ static void detectAndSetCrashRecovery(
     }
 }
 
-static void handleItermRotation(const timeUs_t currentTimeUs)
+static void handleItermRotation()
 {
-    static timeUs_t previousTimeUs;
-
-    // calculate actual deltaT in seconds
-    const float deltaT = (currentTimeUs - previousTimeUs) * 1e-6f;
-    previousTimeUs = currentTimeUs;
-
     // rotate old I to the new coordinate system
-    const float gyroToAngle = deltaT * RAD;
+    const float gyroToAngle = dT * RAD;
     for (int i = FD_ROLL; i <= FD_YAW; i++) {
         int i_1 = (i + 1) % 3;
         int i_2 = (i + 2) % 3;
@@ -574,7 +568,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
     }
 
     if (itermRotation) {
-        handleItermRotation(currentTimeUs);
+        handleItermRotation();
     }
 
     // ----------PID controller----------
