@@ -247,10 +247,6 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     dma_init.FIFOMode = LL_DMA_FIFOMODE_ENABLE;
     dma_init.MemBurst = LL_DMA_MBURST_SINGLE;
     dma_init.PeriphBurst = LL_DMA_PBURST_SINGLE;
-    dma_init.Direction = LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
-    dma_init.FIFOMode = LL_DMA_FIFOMODE_ENABLE;
-    dma_init.MemBurst = LL_DMA_MBURST_SINGLE;
-    dma_init.PeriphBurst = LL_DMA_PBURST_SINGLE;
     dma_init.NbData = pwmProtocolType == PWM_TYPE_PROSHOT1000 ? PROSHOT_DMA_BUFFER_SIZE : DSHOT_DMA_BUFFER_SIZE;
     dma_init.PeriphOrM2MSrcIncMode = LL_DMA_PERIPH_NOINCREMENT;
     dma_init.MemoryOrM2MDstIncMode = LL_DMA_MEMORY_INCREMENT;
