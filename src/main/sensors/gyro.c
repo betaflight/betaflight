@@ -90,6 +90,8 @@ static FAST_RAM float gyroPrevious[XYZ_AXIS_COUNT];
 static FAST_RAM timeUs_t accumulatedMeasurementTimeUs;
 static FAST_RAM timeUs_t accumulationLastTimeSampledUs;
 
+static bool gyroHasOverflowProtection = true;
+
 typedef struct gyroCalibration_s {
     int32_t sum[XYZ_AXIS_COUNT];
     stdev_t var[XYZ_AXIS_COUNT];
@@ -452,6 +454,36 @@ static bool gyroInitSensor(gyroSensor_t *gyroSensor)
         gyroSensor->gyroDev.gyroAlign = gyroConfig()->gyro_align;
     }
 
+    // As new gyros are supported, be sure to add them below based on whether they are subject to the overflow/inversion bug
+    // Any gyro not explicitly defined will default to not having built-in overflow protection as a safe alternative.
+    switch (gyroHardware) {
+    case GYRO_NONE:    // Won't ever actually get here, but included to account for all gyro types
+    case GYRO_DEFAULT:
+    case GYRO_FAKE:
+    case GYRO_MPU6050:
+    case GYRO_L3G4200D:
+    case GYRO_MPU3050:
+    case GYRO_L3GD20:
+    case GYRO_BMI160:
+    case GYRO_MPU6000:
+    case GYRO_MPU6500:
+    case GYRO_MPU9250:
+        gyroSensor->gyroDev.gyroHasOverflowProtection = true;
+        break;
+
+    case GYRO_ICM20601:
+    case GYRO_ICM20602:
+    case GYRO_ICM20608G:
+    case GYRO_ICM20649:  // we don't actually know if this is affected, but as there are currently no flight controllers using it we err on the side of caution
+    case GYRO_ICM20689:
+        gyroSensor->gyroDev.gyroHasOverflowProtection = false;
+        break;
+
+    default:
+        gyroSensor->gyroDev.gyroHasOverflowProtection = false;  // default catch for newly added gyros until proven to be unaffected
+        break;
+    }
+
     gyroInitSensorFilters(gyroSensor);
 
 #ifdef USE_GYRO_DATA_ANALYSE
@@ -530,10 +562,12 @@ bool gyroInit(void)
         if (!ret) {
             return false; // TODO handle failure of first gyro detection better. - Perhaps update the config to use second gyro then indicate a new failure mode and reboot.
         }
+        gyroHasOverflowProtection =  gyroHasOverflowProtection && gyroSensor1.gyroDev.gyroHasOverflowProtection;
     }
-#else
+#else // USE_DUAL_GYRO
     ret = gyroInitSensor(&gyroSensor1);
-#endif
+    gyroHasOverflowProtection =  gyroHasOverflowProtection && gyroSensor1.gyroDev.gyroHasOverflowProtection;
+#endif // USE_DUAL_GYRO
 
 #ifdef USE_DUAL_GYRO
 
@@ -556,6 +590,7 @@ bool gyroInit(void)
         if (!ret) {
             return false; // TODO handle failure of second gyro detection better. - Perhaps update the config to use first gyro then indicate a new failure mode and reboot.
         }
+        gyroHasOverflowProtection =  gyroHasOverflowProtection && gyroSensor2.gyroDev.gyroHasOverflowProtection;
     }
 #endif
     return ret;
@@ -881,8 +916,8 @@ STATIC_UNIT_TESTED void performGyroCalibration(gyroSensor_t *gyroSensor, uint8_t
 FAST_CODE int32_t gyroSlewLimiter(gyroSensor_t *gyroSensor, int axis)
 {
     int32_t ret = (int32_t)gyroSensor->gyroDev.gyroADCRaw[axis];
-    if (gyroConfig()->checkOverflow) {
-        // don't use the slew limiter if overflow checking is on
+    if (gyroConfig()->checkOverflow || gyroHasOverflowProtection) {
+        // don't use the slew limiter if overflow checking is on or gyro is not subject to overflow bug
         return ret;
     }
     if (abs(ret - gyroSensor->gyroDev.gyroADCRawPrevious[axis]) > (1<<14)) {
@@ -979,7 +1014,7 @@ static FAST_CODE NOINLINE void gyroUpdateSensor(gyroSensor_t *gyroSensor, timeUs
     accumulationLastTimeSampledUs = currentTimeUs;
     accumulatedMeasurementTimeUs += sampleDeltaUs;
 
-    if (gyroConfig()->checkOverflow) {
+    if (gyroConfig()->checkOverflow && !gyroHasOverflowProtection) {
         checkForOverflow(gyroSensor, currentTimeUs);
     }
     if (gyroDebugMode == DEBUG_NONE) {
