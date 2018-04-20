@@ -363,6 +363,10 @@ void SystemInit(void)
         SCB_EnableDCache();
     }
 
+    if (PREFETCH_ENABLE) {
+        LL_FLASH_EnablePrefetch();
+    }
+
     /* Configure the system clock to specified frequency */
     SystemClock_Config();
 
