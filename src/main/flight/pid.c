@@ -520,7 +520,7 @@ static void handleItermRotation(const timeUs_t currentTimeUs)
     static timeUs_t previousTimeUs;
 
     // calculate actual deltaT in seconds
-    const float deltaT = (currentTimeUs - previousTimeUs) * 0.000001f;
+    const float deltaT = (currentTimeUs - previousTimeUs) * 1e-6f;
     previousTimeUs = currentTimeUs;
 
     // rotate old I to the new coordinate system
