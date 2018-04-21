@@ -19,7 +19,8 @@
 #define USBD_PRODUCT_STRING     "AIKONF4"
 
 #define LED0_PIN                PB4
-#define BEEPER                  PB5
+#define USE_BEEPER
+#define BEEPER_PIN              PB5
 #define BEEPER_INVERTED
 
 #define ENABLE_DSHOT_DMAR       true
