@@ -426,15 +426,9 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
     const float tpaFactor = getThrottlePIDAttenuation();
     const float motorMixRange = getMotorMixRange();
     static timeUs_t crashDetectedAtUs;
-    static timeUs_t previousTimeUs;
-
-    // calculate actual deltaT in seconds
-    const float deltaT = (currentTimeUs - previousTimeUs) * 0.000001f;
-    previousTimeUs = currentTimeUs;
 
     // Dynamic i component,
-    // gradually scale back integration when above windup point,
-    // use dT (not deltaT) for ITerm calculation to avoid wind-up caused by jitter
+    // gradually scale back integration when above windup point
     const float dynCi = MIN((1.0f - motorMixRange) * ITermWindupPointInv, 1.0f) * dT * itermAccelerator;
 
     // Dynamic d component, enable 2-DOF PID controller only for rate mode
@@ -522,10 +516,10 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             if (relaxFactor > 0) {
                 transition = getRcDeflectionAbs(axis) * relaxFactor;
             }
-            // Divide rate change by deltaT to get differential (ie dr/dt)
+            // Divide rate change by dT to get differential (ie dr/dt)
             const float delta = (
                 dynCd * transition * (currentPidSetpoint - previousPidSetpoint[axis]) -
-                (gyroRateFiltered - previousGyroRateFiltered[axis])) / deltaT;
+                (gyroRateFiltered - previousGyroRateFiltered[axis])) / dT;
             
             previousPidSetpoint[axis] = currentPidSetpoint;
             previousGyroRateFiltered[axis] = gyroRateFiltered;
