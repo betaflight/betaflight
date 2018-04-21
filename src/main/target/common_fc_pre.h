@@ -105,11 +105,11 @@
 
 #ifdef STM32F4
 // Data in RAM which is guaranteed to not be reset on hot reboot
-#define PERSISTENT					__attribute__ ((section(".persistent_data"), aligned(4)))
+#define PERSISTENT                  __attribute__ ((section(".persistent_data"), aligned(4)))
 #endif
 
 #ifdef USE_SRAM2
-#define SRAM2						__attribute__ ((section(".sram2"), aligned(4)))
+#define SRAM2                       __attribute__ ((section(".sram2"), aligned(4)))
 #else
 #define SRAM2
 #endif
