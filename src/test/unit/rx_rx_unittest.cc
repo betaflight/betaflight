@@ -24,6 +24,7 @@ extern "C" {
     #include "platform.h"
 
     #include "pg/rx.h"
+    #include "build/debug.h"
     #include "drivers/io.h"
     #include "rx/rx.h"
     #include "fc/rc_modes.h"
@@ -35,6 +36,8 @@ extern "C" {
     #include "io/beeper.h"
 
     boxBitmask_t rcModeActivationMask;
+    int16_t debug[DEBUG16_VALUE_COUNT];
+    uint8_t debugMode = 0;
 
     bool isPulseValid(uint16_t pulseDuration);
 

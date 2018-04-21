@@ -68,8 +68,6 @@
 #include "rx/targetcustomserial.h"
 
 
-//#define DEBUG_RX_SIGNAL_LOSS
-
 const char rcChannelLetters[] = "AERT12345678abcdefgh";
 
 static uint16_t rssi = 0;                  // range: [0;1023]
@@ -84,6 +82,7 @@ rssiSource_e rssiSource;
 static bool rxDataProcessingRequired = false;
 static bool auxiliaryProcessingRequired = false;
 
+static uint32_t rxMissedPackets = 0;
 static bool rxSignalReceived = false;
 static bool rxFlightChannelsValid = false;
 static bool rxIsInFailsafeMode = true;
@@ -390,6 +389,8 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
         rxSignalReceived = true;
     } else if (currentTimeUs >= needRxSignalBefore) {
         rxSignalReceived = false;
+        rxMissedPackets++;
+        needRxSignalBefore = currentTimeUs + needRxSignalMaxDelayUs;
     }
 
     if ((signalReceived && useDataDrivenProcessing) || cmpTimeUs(currentTimeUs, rxNextUpdateAtUs) > 0) {
@@ -491,11 +492,9 @@ static void detectAndApplySignalLossBehaviour(void)
 
     const bool useValueFromRx = rxSignalReceived && !rxIsInFailsafeMode;
 
-#ifdef DEBUG_RX_SIGNAL_LOSS
-    debug[0] = rxSignalReceived;
-    debug[1] = rxIsInFailsafeMode;
-    debug[2] = rxRuntimeConfig.rcReadRawFn(&rxRuntimeConfig, 0);
-#endif
+    DEBUG_SET(DEBUG_RX_SIGNAL_LOSS, 0, rxSignalReceived);
+    DEBUG_SET(DEBUG_RX_SIGNAL_LOSS, 1, rxIsInFailsafeMode);
+    DEBUG_SET(DEBUG_RX_SIGNAL_LOSS, 2, rxMissedPackets);
 
     rxFlightChannelsValid = true;
     for (int channel = 0; channel < rxChannelCount; channel++) {
@@ -532,10 +531,7 @@ static void detectAndApplySignalLossBehaviour(void)
             rcData[channel] = getRxfailValue(channel);
         }
     }
-
-#ifdef DEBUG_RX_SIGNAL_LOSS
-    debug[3] = rcData[THROTTLE];
-#endif
+    DEBUG_SET(DEBUG_RX_SIGNAL_LOSS, 3, rcData[THROTTLE]);
 }
 
 bool calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs)
