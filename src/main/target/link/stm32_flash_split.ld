@@ -106,7 +106,7 @@ SECTIONS
   } >FLASH
 
   /* used by the startup to initialize data */
-  _sidata = .;
+  _sidata = LOADADDR(.data);
 
   /* Initialized data sections goes into RAM, load LMA copy after code */
   .data :
@@ -136,6 +136,22 @@ SECTIONS
     __bss_end__ = _ebss;
   } >RAM
 
+  /* used during startup to initialized fastram_data */
+  _sfastram_idata = LOADADDR(.fastram_data);
+
+  /* Initialized FAST_RAM section for unsuspecting developers */
+  .fastram_data :
+  {
+    . = ALIGN(4);
+    _sfastram_data = .;        /* create a global symbol at data start */
+    *(.fastram_data)           /* .data sections */
+    *(.fastram_data*)          /* .data* sections */
+
+    . = ALIGN(4);
+    _efastram_data = .;        /* define a global symbol at data end */
+  } >FASTRAM AT> FLASH
+
+  . = ALIGN(4);
   .fastram_bss (NOLOAD) :
   {
     __fastram_bss_start__ = .;
