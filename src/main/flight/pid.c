@@ -614,7 +614,11 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             // no transition if relaxFactor == 0
             float transition = relaxFactor > 0 ? MIN(1.f, getRcDeflectionAbs(axis) * relaxFactor) : 1;
 
-            // Divide rate change by deltaT to get differential (ie dr/dt)
+            // Divide rate change by dT to get differential (ie dr/dt).
+            // dT is fixed and calculated from the target PID loop time
+            // This is done to avoid DTerm spikes that occur with dynamically
+            // calculated deltaT whenever another task causes the PID
+            // loop execution to be delayed.
             const float delta = (
                 dynCd * transition * (currentPidSetpoint - previousPidSetpoint[axis]) -
                 (gyroRateDterm[axis] - previousGyroRateDterm[axis])) / dT;
