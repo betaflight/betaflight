@@ -93,7 +93,7 @@ SECTIONS
   } >FLASH AT >AXIM_FLASH
 
   /* used by the startup to initialize data */
-  _sidata = .;
+  _sidata = LOADADDR(.data);
 
   /* Initialized data sections goes into RAM, load LMA copy after code */
   .data :
@@ -140,7 +140,7 @@ SECTIONS
   } >SRAM2
 
   /* used during startup to initialized fastram_data */
-  _sfastram_idata = .;
+  _sfastram_idata = LOADADDR(.fastram_data);
 
   /* Initialized FAST_RAM section for unsuspecting developers */
   .fastram_data :
