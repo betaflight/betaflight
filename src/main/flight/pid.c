@@ -436,7 +436,7 @@ static float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPit
 static float accelerationLimit(int axis, float currentPidSetpoint)
 {
     static float previousSetpoint[3];
-    const float currentVelocity = currentPidSetpoint- previousSetpoint[axis];
+    const float currentVelocity = currentPidSetpoint - previousSetpoint[axis];
 
     if (ABS(currentVelocity) > maxVelocity[axis]) {
         currentPidSetpoint = (currentVelocity > 0) ? previousSetpoint[axis] + maxVelocity[axis] : previousSetpoint[axis] - maxVelocity[axis];
@@ -538,19 +538,6 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
     static float previousGyroRateDterm[2];
     static float previousPidSetpoint[2];
 
-    // Disable PID control if at zero throttle or if gyro overflow detected
-    if (!pidStabilisationEnabled || gyroOverflowDetected()) {
-        for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
-            pidData[axis].P = 0;
-            pidData[axis].I = 0;
-            pidData[axis].D = 0;
-
-            pidData[axis].Sum = 0;
-        }
-
-        return;
-    }
-
     const float tpaFactor = getThrottlePIDAttenuation();
     const float motorMixRange = getMotorMixRange();
 
@@ -640,6 +627,18 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
 
     // YAW has no D
     pidData[FD_YAW].Sum = pidData[FD_YAW].P + pidData[FD_YAW].I;
+
+    // Disable PID control if at zero throttle or if gyro overflow detected
+    // This may look very innefficient, but it is done on purpose to always show real CPU usage as in flight
+    if (!pidStabilisationEnabled || gyroOverflowDetected()) {
+        for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+            pidData[axis].P = 0;
+            pidData[axis].I = 0;
+            pidData[axis].D = 0;
+
+            pidData[axis].Sum = 0;
+        }
+    }
 }
 
 bool crashRecoveryModeActive(void)

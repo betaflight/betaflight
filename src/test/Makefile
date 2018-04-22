@@ -294,6 +294,14 @@ rcdevice_unittest_SRC := \
 		$(USER_DIR)/io/rcdevice_osd.c \
 		$(USER_DIR)/io/rcdevice_cam.c \
 
+pid_unittest_SRC :=  \
+		$(USER_DIR)/common/filter.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/drivers/accgyro/gyro_sync.c \
+		$(USER_DIR)/flight/pid.c \
+		$(USER_DIR)/pg/pg.c \
+		$(USER_DIR)/fc/runtime_config.c
+
 rcdevice_unittest_DEFINES := \
 		USE_RCDEVICE
 
