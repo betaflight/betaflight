@@ -77,7 +77,8 @@ typedef struct gyroDev_s {
     uint8_t hardware_32khz_lpf;
     uint8_t mpuDividerDrops;
     ioTag_t mpuIntExtiTag;
-    uint8_t filler[2];
+    uint8_t gyroHasOverflowProtection;
+    uint8_t filler[1];
 } gyroDev_t;
 
 typedef struct accDev_s {
