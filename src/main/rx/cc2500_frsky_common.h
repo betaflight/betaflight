@@ -22,12 +22,12 @@
 #include "rx/rx_spi.h"
 
 typedef struct rxFrSkySpiConfig_s {
-    bool autoBind;
+    uint8_t autoBind;
     uint8_t bindTxId[2];
     int8_t  bindOffset;
     uint8_t bindHopData[50];
     uint8_t rxNum;
-    bool useExternalAdc;
+    uint8_t useExternalAdc;
 } rxFrSkySpiConfig_t;
 
 PG_DECLARE(rxFrSkySpiConfig_t, rxFrSkySpiConfig);

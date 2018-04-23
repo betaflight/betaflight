@@ -78,7 +78,7 @@ static IO_t antSelPin;
 int16_t rssiDbm;
 #endif
 
-PG_REGISTER_WITH_RESET_TEMPLATE(rxFrSkySpiConfig_t, rxFrSkySpiConfig, PG_RX_FRSKY_SPI_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(rxFrSkySpiConfig_t, rxFrSkySpiConfig, PG_RX_FRSKY_SPI_CONFIG, 1);
 
 PG_RESET_TEMPLATE(rxFrSkySpiConfig_t, rxFrSkySpiConfig,
     .autoBind = false,
