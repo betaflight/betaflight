@@ -30,6 +30,8 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
+#include "config/feature.h"
+
 #include "drivers/adc.h"
 #include "drivers/rx/rx_cc2500.h"
 #include "drivers/io.h"
@@ -102,14 +104,19 @@ static void frSkyDTelemetryWriteByte(const char data)
 
 static void buildTelemetryFrame(uint8_t *packet)
 {
-    const uint16_t adcExternal1Sample = adcGetChannel(ADC_EXTERNAL1);
-    const uint16_t adcRssiSample = adcGetChannel(ADC_RSSI);
+    uint8_t a1Value;
+    if (rxFrSkySpiConfig()->useExternalAdc) {
+        a1Value = (adcGetChannel(ADC_EXTERNAL1) & 0xff0) >> 4;
+    } else {
+        a1Value = (2 * getBatteryVoltage()) & 0xff;
+    }
+    const uint8_t a2Value = (adcGetChannel(ADC_RSSI)) >> 4;
     telemetryId = packet[4];
     frame[0] = 0x11; // length
     frame[1] = rxFrSkySpiConfig()->bindTxId[0];
     frame[2] = rxFrSkySpiConfig()->bindTxId[1];
-    frame[3] = (uint8_t)((adcExternal1Sample & 0xff0) >> 4); // A1
-    frame[4] = (uint8_t)((adcRssiSample & 0xff0) >> 4);      // A2
+    frame[3] = a1Value;
+    frame[4] = a2Value;
     frame[5] = (uint8_t)rssiDbm;
     uint8_t bytesUsed = 0;
 #if defined(USE_TELEMETRY_FRSKY_HUB)
@@ -292,7 +299,9 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
 void frSkyDInit(void)
 {
 #if defined(USE_RX_FRSKY_SPI_TELEMETRY) && defined(USE_TELEMETRY_FRSKY_HUB)
-    telemetryEnabled = initFrSkyHubTelemetryExternal(frSkyDTelemetryWriteByte);
+    if (feature(FEATURE_TELEMETRY)) {
+        telemetryEnabled = initFrSkyHubTelemetryExternal(frSkyDTelemetryWriteByte);
+    }
 #endif
 }
 #endif

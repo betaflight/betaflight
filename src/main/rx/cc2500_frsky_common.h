@@ -27,6 +27,7 @@ typedef struct rxFrSkySpiConfig_s {
     int8_t  bindOffset;
     uint8_t bindHopData[50];
     uint8_t rxNum;
+    bool useExternalAdc;
 } rxFrSkySpiConfig_t;
 
 PG_DECLARE(rxFrSkySpiConfig_t, rxFrSkySpiConfig);
