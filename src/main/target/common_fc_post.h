@@ -29,10 +29,6 @@
 #undef USE_VTX_TRAMP
 #endif
 
-#if defined(USE_QUAD_MIXER_ONLY) && defined(USE_SERVOS)
-#undef USE_SERVOS
-#endif
-
 #ifndef USE_DSHOT
 #undef USE_ESC_SENSOR
 #endif
