@@ -262,8 +262,13 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     // Use raw heading error (from GPS or whatever else)
     float ex = 0, ey = 0, ez = 0;
     if (useCOG) {
-        while (courseOverGround >  M_PIf) courseOverGround -= (2.0f * M_PIf);
-        while (courseOverGround < -M_PIf) courseOverGround += (2.0f * M_PIf);
+        while (courseOverGround >  M_PIf) {
+            courseOverGround -= (2.0f * M_PIf);
+        }
+
+        while (courseOverGround < -M_PIf) {
+            courseOverGround += (2.0f * M_PIf);
+        }
 
         const float ez_ef = (- sin_approx(courseOverGround) * rMat[0][0] - cos_approx(courseOverGround) * rMat[1][0]);
 
