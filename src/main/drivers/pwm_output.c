@@ -487,9 +487,11 @@ void pwmToggleBeeper(void)
 
 void beeperPwmInit(const ioTag_t tag, uint16_t frequency)
 {
-        beeperPwm.io = IOGetByTag(tag);
         const timerHardware_t *timer = timerGetByTag(tag, TIM_USE_BEEPER);
-        if (beeperPwm.io && timer) {
+        IO_t beeperIO = IOGetByTag(tag);
+
+        if (beeperIO && timer) {
+            beeperPwm.io = beeperIO;
             IOInit(beeperPwm.io, OWNER_BEEPER, RESOURCE_INDEX(0));
 #if defined(USE_HAL_DRIVER)
             IOConfigGPIOAF(beeperPwm.io, IOCFG_AF_PP, timer->alternateFunction);
@@ -498,8 +500,9 @@ void beeperPwmInit(const ioTag_t tag, uint16_t frequency)
 #endif
             freqBeep = frequency;
             pwmOutConfig(&beeperPwm.channel, timer, PWM_TIMER_1MHZ, PWM_TIMER_1MHZ / freqBeep, (PWM_TIMER_1MHZ / freqBeep) / 2, 0);
+
+            *beeperPwm.channel.ccr = 0;
+            beeperPwm.enabled = false;
         }
-        *beeperPwm.channel.ccr = 0;
-        beeperPwm.enabled = false;
 }
 #endif
