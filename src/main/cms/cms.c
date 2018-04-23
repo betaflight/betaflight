@@ -68,6 +68,10 @@
 
 #include "rx/rx.h"
 
+#ifdef USE_USB_CDC_HID
+#include "sensors/battery.h"
+#endif
+
 // DisplayPort management
 
 #ifndef CMS_MAX_DEVICE
@@ -991,6 +995,11 @@ void cmsUpdate(uint32_t currentTimeUs)
 #ifdef USE_RCDEVICE
     if(rcdeviceInMenu) {
         return ;
+    }
+#endif
+#ifdef USE_USB_CDC_HID
+    if (getBatteryCellCount() == 0) {
+        return;
     }
 #endif
 
