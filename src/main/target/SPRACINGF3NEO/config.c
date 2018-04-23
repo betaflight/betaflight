@@ -49,13 +49,20 @@
 #include "fc/config.h"
 
 #ifdef USE_TARGET_CONFIG
+
+#include "config_helper.h"
+
+static targetSerialPortFunction_t targetSerialPortFunction[] = {
+    { 0,              FUNCTION_MSP },
+    { TELEMETRY_UART, TELEMETRY_PROVIDER_DEFAULT },
+    { GPS_UART,       FUNCTION_GPS },
+};
+
 void targetConfiguration(void)
 {
     barometerConfigMutable()->baro_hardware = BARO_DEFAULT;
     compassConfigMutable()->mag_hardware = MAG_DEFAULT;
-    serialConfigMutable()->portConfigs[1].functionMask = FUNCTION_MSP; // So Bluetooth users don't have to change anything.
-    serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(TELEMETRY_UART)].functionMask = TELEMETRY_PROVIDER_DEFAULT;
-    serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(GPS_UART)].functionMask = FUNCTION_GPS;
+    targetSerialPortFunctionConfig(targetSerialPortFunction, ARRAYLEN(targetSerialPortFunction));
     telemetryConfigMutable()->halfDuplex = true;
 }
 #endif

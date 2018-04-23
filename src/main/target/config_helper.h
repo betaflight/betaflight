@@ -17,38 +17,14 @@
  * 
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include <stdbool.h>
-#include <stdint.h>
 
-#include <platform.h>
-
-#ifdef USE_TARGET_CONFIG
-
-#include "config_helper.h"
+#pragma once
 
 #include "io/serial.h"
 
-#include "pg/max7456.h"
-#include "pg/pg.h"
+typedef struct targetSerialPortFunction_s {
+    serialPortIdentifier_e identifier;
+    serialPortFunction_e   function;    
+} targetSerialPortFunction_t;
 
-#ifdef EXUAVF4PRO
-static targetSerialPortFunction_t targetSerialPortFunction[] = {
-    { 0, FUNCTION_TELEMETRY_SMARTPORT },
-    { 2, FUNCTION_VTX_TRAMP },
-    { 3, FUNCTION_RCDEVICE },
-    { 5, FUNCTION_RX_SERIAL },
-};
-#endif
-
-void targetConfiguration(void)
-{
-#ifdef OMNIBUSF4BASE
-    // OMNIBUS F4 AIO (1st gen) has a AB7456 chip that is detected as MAX7456
-    max7456ConfigMutable()->clockConfig = MAX7456_CLOCK_CONFIG_FULL;
-#endif
-
-#ifdef EXUAVF4PRO
-    targetSerialPortFunctionConfig(targetSerialPortFunction, ARRAYLEN(targetSerialPortFunction));
-#endif
-}
-#endif
+void targetSerialPortFunctionConfig(targetSerialPortFunction_t *config, size_t count);

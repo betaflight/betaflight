@@ -24,16 +24,19 @@
 
 #ifdef USE_TARGET_CONFIG
 
+#include "config_helper.h"
+
 #include "io/serial.h"
+
+static targetSerialPortFunction_t targetSerialPortFunction[] = {
+#if defined(OMNIBUSF7V2) && defined(ESC_SENSOR_UART)
+    // OMNIBUS F7 V2 has an option to connect UART7_RX to ESC telemetry
+    { ESC_SENSOR_UART, FUNCTION_ESC_SENSOR },
+#endif
+};
 
 void targetConfiguration(void)
 {
-// OMNIBUS F7 V2 has an option to connect UART7_RX to ESC telemetry
-#if defined(OMNIBUSF7V2) && defined(ESC_SENSOR_UART)
-    serialPortConfig_t *serialEscSensorUartConfig = serialFindPortConfiguration(ESC_SENSOR_UART);
-    if (serialEscSensorUartConfig) {
-        serialEscSensorUartConfig->functionMask = FUNCTION_ESC_SENSOR;
-    }
-#endif
+    targetSerialPortFunctionConfig(targetSerialPortFunction, ARRAYLEN(targetSerialPortFunction));
 }
 #endif
