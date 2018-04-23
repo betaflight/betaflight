@@ -115,7 +115,7 @@ LD_FLAGS         :=
 # Default Tool options - can be overridden in {mcu}.mk files.
 #
 ifeq ($(DEBUG),GDB)
-OPTIMISE_DEFAULT      := -Og
+OPTIMISE_DEFAULT      := -g
 
 LTO_FLAGS             := $(OPTIMISE_DEFAULT)
 DEBUG_FLAGS            = -ggdb3 -DDEBUG
