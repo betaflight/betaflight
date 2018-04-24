@@ -529,6 +529,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     UNUSED(useMag);
     UNUSED(useCOG);
     UNUSED(canUseGPSHeading);
+    UNUSED(courseOverGround);
 #else
 
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_IMU_SYNC)
