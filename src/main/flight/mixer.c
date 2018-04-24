@@ -111,7 +111,7 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
         }
     }
 
-    motorConfig->motorPolesCount = 14;   // Most brushes motors that we use are 14 poles
+    motorConfig->motorPoleCount = 14;   // Most brushes motors that we use are 14 poles
 }
 
 PG_REGISTER_ARRAY(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer, PG_MOTOR_MIXER, 0);
