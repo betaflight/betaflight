@@ -820,7 +820,7 @@ static bool osdDrawSingleElement(uint8_t item)
 
     case OSD_ESC_RPM:
         if (feature(FEATURE_ESC_SENSOR)) {
-            tfp_sprintf(buff, "%5d", escDataCombined == NULL ? 0 : escDataCombined->rpm);
+            tfp_sprintf(buff, "%5d", escDataCombined == NULL ? 0 : (escDataCombined->rpm * 100) / (motorConfig()->motorPolesCount / 2));
         }
         break;
 #endif
