@@ -25,9 +25,17 @@
 #include "rx/rx.h"
 #include "io/serial.h"
 
+#include "config_helper.h"
+
+#define TELEMETRY_UART          SERIAL_PORT_USART3
+
+static targetSerialPortFunction_t targetSerialPortFunction[] = {
+    { TELEMETRY_UART, FUNCTION_TELEMETRY_SMARTPORT },
+};
+
 void targetConfiguration(void)
 {
-    serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(TELEMETRY_UART)].functionMask = FUNCTION_TELEMETRY_SMARTPORT;
+    targetSerialPortFunctionConfig(targetSerialPortFunction, ARRAYLEN(targetSerialPortFunction));
     rxConfigMutable()->rssi_channel = 8;
 }
 #endif

@@ -21,18 +21,17 @@
 
 #ifdef USE_TARGET_CONFIG
 
-
 #include "io/serial.h"
 
+#include "config_helper.h"
+
+static targetSerialPortFunction_t targetSerialPortFunction[] = {
+    { SERIAL_PORT_USART1, FUNCTION_MSP },
+    { SERIAL_PORT_USART2, FUNCTION_MSP },
+};
 
 void targetConfiguration(void)
 {
-
-    serialConfigMutable()->portConfigs[0].functionMask = FUNCTION_MSP;
-    serialConfigMutable()->portConfigs[1].functionMask = FUNCTION_MSP;
-    serialConfigMutable()->portConfigs[2].functionMask = FUNCTION_MSP;
-
-
-
+    targetSerialPortFunctionConfig(targetSerialPortFunction, ARRAYLEN(targetSerialPortFunction));
 }
 #endif

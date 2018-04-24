@@ -49,12 +49,23 @@
 #include "fc/config.h"
 
 #ifdef USE_TARGET_CONFIG
+
+#include "config_helper.h"
+
+#define TELEMETRY_UART                      SERIAL_PORT_UART5
+
+#ifdef USE_TELEMETRY
+static targetSerialPortFunction_t targetSerialPortFunction[] = {
+    { TELEMETRY_UART, FUNCTION_TELEMETRY_SMARTPORT },
+};
+#endif
+
 void targetConfiguration(void)
 {
     barometerConfigMutable()->baro_hardware = BARO_DEFAULT;
-    serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(TELEMETRY_UART)].functionMask = FUNCTION_TELEMETRY_SMARTPORT;
 
 #ifdef USE_TELEMETRY
+    targetSerialPortFunctionConfig(targetSerialPortFunction, ARRAYLEN(targetSerialPortFunction));
     // change telemetry settings
     telemetryConfigMutable()->telemetry_inverted = 1;
     telemetryConfigMutable()->halfDuplex = 1;
