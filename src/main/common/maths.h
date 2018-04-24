@@ -38,6 +38,7 @@
 #define DEGREES_TO_RADIANS(angle) ((angle) * 0.0174532925f)
 
 #define CM_S_TO_KM_H(centimetersPerSecond) (centimetersPerSecond * 36 / 1000)
+#define CM_S_TO_MPH(centimetersPerSecond) (((centimetersPerSecond * 10000) / 5080) / 88)
 
 #define MIN(a,b) \
   __extension__ ({ __typeof__ (a) _a = (a); \
