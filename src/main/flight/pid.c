@@ -541,6 +541,10 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
     const float tpaFactor = getThrottlePIDAttenuation();
     const float motorMixRange = getMotorMixRange();
 
+#ifdef USE_YAW_SPIN_RECOVERY
+    const bool yawSpinActive = gyroYawSpinDetected();
+#endif
+
     // Dynamic i component,
     // gradually scale back integration when above windup point
     const float dynCi = MIN((1.0f - motorMixRange) * ITermWindupPointInv, 1.0f) * dT * itermAccelerator;
@@ -574,7 +578,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         // Handle yaw spin recovery - zero the setpoint on yaw to aid in recovery
         // It's not necessary to zero the set points for R/P because the PIDs will be zeroed below
 #ifdef USE_YAW_SPIN_RECOVERY
-        if ((axis == FD_YAW) && gyroYawSpinDetected()) {
+        if ((axis == FD_YAW) && yawSpinActive) {
             currentPidSetpoint = 0.0f;
         }
 #endif // USE_YAW_SPIN_RECOVERY
@@ -628,7 +632,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             pidData[axis].D = pidCoefficient[axis].Kd * delta * tpaFactor;
 
 #ifdef USE_YAW_SPIN_RECOVERY
-            if (gyroYawSpinDetected())  {
+            if (yawSpinActive)  {
                 // zero PIDs on pitch and roll leaving yaw P to correct spin 
                 pidData[axis].P = 0;
                 pidData[axis].I = 0;
@@ -643,7 +647,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
     pidData[FD_PITCH].Sum = pidData[FD_PITCH].P + pidData[FD_PITCH].I + pidData[FD_PITCH].D;
 
 #ifdef USE_YAW_SPIN_RECOVERY
-    if (gyroYawSpinDetected()) {
+    if (yawSpinActive) {
     // yaw P alone to correct spin 
         pidData[FD_YAW].I = 0;
     }

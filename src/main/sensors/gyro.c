@@ -1014,8 +1014,7 @@ static void checkForYawSpin(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
     } else {
 #ifndef SIMULATOR_BUILD
         // check for spin on yaw axis only
-        const float yawSpinTriggerRate = gyroConfig()->yaw_spin_threshold;
-         if (abs(gyro.gyroADCf[Z]) > yawSpinTriggerRate) {
+         if (abs(gyro.gyroADCf[Z]) > gyroConfig()->yaw_spin_threshold) {
             gyroSensor->yawSpinDetected = true;
             gyroSensor->yawSpinTimeUs = currentTimeUs;
         }
