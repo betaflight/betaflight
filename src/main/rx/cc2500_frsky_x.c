@@ -30,6 +30,8 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
+#include "config/feature.h"
+
 #include "drivers/adc.h"
 #include "drivers/rx/rx_cc2500.h"
 #include "drivers/io.h"
@@ -183,10 +185,15 @@ static void buildTelemetryFrame(uint8_t *packet)
     frame[3] = packet[3];
 
     if (evenRun) {
-        frame[4]=(uint8_t)rssiDbm|0x80;
+        frame[4] = (uint8_t)rssiDbm | 0x80;
     } else {
-        const uint16_t adcExternal1Sample = adcGetChannel(ADC_EXTERNAL1);
-        frame[4] = (uint8_t)((adcExternal1Sample & 0xfe0) >> 5); // A1;
+        uint8_t a1Value;
+        if (rxFrSkySpiConfig()->useExternalAdc) {
+            a1Value = (uint8_t)((adcGetChannel(ADC_EXTERNAL1) & 0xfe0) >> 5);
+        } else {
+            a1Value = getBatteryVoltage() & 0x7f;
+        }
+        frame[4] = a1Value;
     }
     evenRun = !evenRun;
 
@@ -528,7 +535,9 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
 void frSkyXInit(void)
 {
 #if defined(USE_TELEMETRY_SMARTPORT)
-     telemetryEnabled = initSmartPortTelemetryExternal(frSkyXTelemetryWriteFrame);
+     if (feature(FEATURE_TELEMETRY)) {
+         telemetryEnabled = initSmartPortTelemetryExternal(frSkyXTelemetryWriteFrame);
+     }
 #endif
 }
 
