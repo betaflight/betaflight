@@ -30,10 +30,17 @@
 
 #include "telemetry/telemetry.h"
 
+#include "config_helper.h"
+
+#define TELEMETRY_UART          SERIAL_PORT_USART1
+
+static targetSerialPortFunction_t targetSerialPortFunction[] = {
+    { TELEMETRY_UART, FUNCTION_TELEMETRY_SMARTPORT },
+};
 
 void targetConfiguration(void)
 {
-    serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(TELEMETRY_UART)].functionMask = FUNCTION_TELEMETRY_SMARTPORT;
+    targetSerialPortFunctionConfig(targetSerialPortFunction, ARRAYLEN(targetSerialPortFunction));
     telemetryConfigMutable()->halfDuplex = 0;
     telemetryConfigMutable()->telemetry_inverted = true;
 }

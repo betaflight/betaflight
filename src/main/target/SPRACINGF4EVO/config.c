@@ -32,12 +32,19 @@
 
 #include "telemetry/telemetry.h"
 
+#include "config_helper.h"
+
+#define TELEMETRY_UART                      SERIAL_PORT_UART5
+
+static targetSerialPortFunction_t targetSerialPortFunction[] = {
+    { SERIAL_PORT_USART1, FUNCTION_MSP                 },  // So SPRacingF3OSD users don't have to change anything.
+    { TELEMETRY_UART,     FUNCTION_TELEMETRY_SMARTPORT },
+};
 
 void targetConfiguration(void)
 {
     barometerConfigMutable()->baro_hardware = BARO_DEFAULT;
-    serialConfigMutable()->portConfigs[1].functionMask = FUNCTION_MSP; // So SPRacingF3OSD users don't have to change anything.
-    serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(TELEMETRY_UART)].functionMask = FUNCTION_TELEMETRY_SMARTPORT;
+    targetSerialPortFunctionConfig(targetSerialPortFunction, ARRAYLEN(targetSerialPortFunction));
     telemetryConfigMutable()->halfDuplex = 0;
     telemetryConfigMutable()->telemetry_inverted = true;
 }
