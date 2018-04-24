@@ -54,7 +54,7 @@ static uint16_t calculateChecksum(const uint8_t *ibusPacket);
 #include "sensors/sensors.h"
 #include "sensors/barometer.h"
 #include "flight/imu.h"
-#include "flight/altitude.h"
+#include "flight/position.h"
 #include "flight/navigation.h"
 #include "io/gps.h"
 

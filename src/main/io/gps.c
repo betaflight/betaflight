@@ -636,6 +636,7 @@ typedef struct gpsDataNmea_s {
     uint8_t numSat;
     uint16_t altitude;
     uint16_t speed;
+    uint16_t hdop;
     uint16_t ground_course;
     uint32_t time;
     uint32_t date;
@@ -699,6 +700,9 @@ static bool gpsNewFrameNMEA(char c)
                             break;
                         case 7:
                             gps_Msg.numSat = grab_fields(string, 0);
+                            break;
+                        case 8:
+                            gps_Msg.hdop = grab_fields(string, 1) * 100;          // hdop
                             break;
                         case 9:
                             gps_Msg.altitude = grab_fields(string, 0);     // altitude in meters added by Mis
@@ -793,6 +797,7 @@ static bool gpsNewFrameNMEA(char c)
                             gpsSol.llh.lon = gps_Msg.longitude;
                             gpsSol.numSat = gps_Msg.numSat;
                             gpsSol.llh.alt = gps_Msg.altitude;
+                            gpsSol.hdop = gps_Msg.hdop;
                         }
                         break;
                     case FRAME_RMC:
@@ -1015,7 +1020,7 @@ static bool UBLOX_parse_gps(void)
         //i2c_dataset.time                = _buffer.posllh.time;
         gpsSol.llh.lon = _buffer.posllh.longitude;
         gpsSol.llh.lat = _buffer.posllh.latitude;
-        gpsSol.llh.alt = _buffer.posllh.altitude_msl / 10 / 100;  //alt in m
+        gpsSol.llh.alt = _buffer.posllh.altitude_msl / 10;  //alt in cm
         if (next_fix) {
             ENABLE_STATE(GPS_FIX);
         } else {

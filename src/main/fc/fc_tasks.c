@@ -49,7 +49,7 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "flight/altitude.h"
+#include "flight/position.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
@@ -81,8 +81,8 @@
 #include "sensors/compass.h"
 #include "sensors/esc_sensor.h"
 #include "sensors/gyro.h"
-#include "sensors/rangefinder.h"
 #include "sensors/sensors.h"
+#include "sensors/rangefinder.h"
 
 #include "scheduler/scheduler.h"
 
@@ -168,25 +168,9 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
     }
 #endif
 
-#if !defined(USE_ALT_HOLD)
     // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
     updateRcCommands();
-#endif
     updateArmingStatus();
-
-#ifdef USE_ALT_HOLD
-#ifdef USE_BARO
-    if (sensors(SENSOR_BARO)) {
-        updateAltHoldState();
-    }
-#endif
-
-#ifdef USE_RANGEFINDER
-    if (sensors(SENSOR_RANGEFINDER)) {
-        updateRangefinderAltHoldState();
-    }
-#endif
-#endif // USE_ALT_HOLD
 }
 #endif
 
@@ -204,20 +188,12 @@ static void taskUpdateBaro(timeUs_t currentTimeUs)
 }
 #endif
 
-#if defined(USE_BARO) || defined(USE_RANGEFINDER)
+#if defined(USE_BARO) || defined(USE_GPS)
 static void taskCalculateAltitude(timeUs_t currentTimeUs)
 {
-    if (false
-#if defined(USE_BARO)
-        || (sensors(SENSOR_BARO) && isBaroReady())
-#endif
-#if defined(USE_RANGEFINDER)
-        || sensors(SENSOR_RANGEFINDER)
-#endif
-        ) {
-        calculateEstimatedAltitude(currentTimeUs);
-    }}
-#endif // USE_BARO || USE_RANGEFINDER
+    calculateEstimatedAltitude(currentTimeUs);
+}
+#endif // USE_BARO || USE_GPS
 
 #ifdef USE_TELEMETRY
 static void taskTelemetry(timeUs_t currentTimeUs)
@@ -296,11 +272,8 @@ void fcTasksInit(void)
 #ifdef USE_BARO
     setTaskEnabled(TASK_BARO, sensors(SENSOR_BARO));
 #endif
-#ifdef USE_RANGEFINDER
-    setTaskEnabled(TASK_RANGEFINDER, sensors(SENSOR_RANGEFINDER));
-#endif
-#if defined(USE_BARO) || defined(USE_RANGEFINDER)
-    setTaskEnabled(TASK_ALTITUDE, sensors(SENSOR_BARO) || sensors(SENSOR_RANGEFINDER));
+#if defined(USE_BARO) || defined(USE_GPS)
+    setTaskEnabled(TASK_ALTITUDE, sensors(SENSOR_BARO) || sensors(SENSOR_GPS));
 #endif
 #ifdef USE_DASHBOARD
     setTaskEnabled(TASK_DASHBOARD, feature(FEATURE_DASHBOARD));
@@ -502,16 +475,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     },
 #endif
 
-#ifdef USE_RANGEFINDER
-    [TASK_RANGEFINDER] = {
-        .taskName = "RANGEFINDER",
-        .taskFunc = rangefinderUpdate,
-        .desiredPeriod = TASK_PERIOD_MS(70), // XXX HCSR04 sonar specific value.
-        .staticPriority = TASK_PRIORITY_LOW,
-    },
-#endif
-
-#if defined(USE_BARO) || defined(USE_RANGEFINDER)
+#if defined(USE_BARO) || defined(USE_GPS)
     [TASK_ALTITUDE] = {
         .taskName = "ALTITUDE",
         .taskFunc = taskCalculateAltitude,

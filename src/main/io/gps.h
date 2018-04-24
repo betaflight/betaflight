@@ -85,7 +85,7 @@ typedef struct gpsCoordinateDDDMMmmmm_s {
 typedef struct gpsLocation_s {
     int32_t lat;                    // latitude * 1e+7
     int32_t lon;                    // longitude * 1e+7
-    uint16_t alt;                   // altitude in 0.1m
+    int32_t alt;                   // altitude in 0.1m
 } gpsLocation_t;
 
 typedef struct gpsSolutionData_s {

@@ -75,7 +75,7 @@
 
 #include "fc/runtime_config.h"
 
-#include "flight/altitude.h"
+#include "flight/position.h"
 #include "flight/pid.h"
 
 #include "io/gps.h"

@@ -193,58 +193,6 @@ void imuResetAccelerationSum(void)
     accTimeSum = 0;
 }
 
-#if defined(USE_ALT_HOLD)
-static void imuTransformVectorBodyToEarth(t_fp_vector * v)
-{
-    // From body frame to earth frame
-    const float x = rMat[0][0] * v->V.X + rMat[0][1] * v->V.Y + rMat[0][2] * v->V.Z;
-    const float y = rMat[1][0] * v->V.X + rMat[1][1] * v->V.Y + rMat[1][2] * v->V.Z;
-    const float z = rMat[2][0] * v->V.X + rMat[2][1] * v->V.Y + rMat[2][2] * v->V.Z;
-
-    v->V.X = x;
-    v->V.Y = -y;
-    v->V.Z = z;
-}
-
-// rotate acc into Earth frame and calculate acceleration in it
-static void imuCalculateAcceleration(timeDelta_t deltaT)
-{
-    static int32_t accZoffset = 0;
-    static float accz_smooth = 0;
-
-    // deltaT is measured in us ticks
-    const float dT = (float)deltaT * 1e-6f;
-
-    t_fp_vector accel_ned;
-    accel_ned.V.X = acc.accADC[X];
-    accel_ned.V.Y = acc.accADC[Y];
-    accel_ned.V.Z = acc.accADC[Z];
-
-    imuTransformVectorBodyToEarth(&accel_ned);
-
-    if (imuRuntimeConfig.acc_unarmedcal == 1) {
-        if (!ARMING_FLAG(ARMED)) {
-            accZoffset -= accZoffset / 64;
-            accZoffset += accel_ned.V.Z;
-        }
-        accel_ned.V.Z -= accZoffset / 64;  // compensate for gravitation on z-axis
-    } else {
-        accel_ned.V.Z -= acc.dev.acc_1G;
-    }
-
-    accz_smooth = accz_smooth + (dT / (fc_acc + dT)) * (accel_ned.V.Z - accz_smooth); // low pass filter
-
-    // apply Deadband to reduce integration drift and vibration influence
-    accSum[X] += applyDeadband(lrintf(accel_ned.V.X), imuRuntimeConfig.accDeadband.xy);
-    accSum[Y] += applyDeadband(lrintf(accel_ned.V.Y), imuRuntimeConfig.accDeadband.xy);
-    accSum[Z] += applyDeadband(lrintf(accz_smooth), imuRuntimeConfig.accDeadband.z);
-
-    // sum up Values for later integration to get velocity and distance
-    accTimeSum += deltaT;
-    accSumCount++;
-}
-#endif // USE_ALT_HOLD
-
 static float invSqrt(float x)
 {
     return 1.0f / sqrtf(x);
@@ -531,6 +479,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     UNUSED(useCOG);
     UNUSED(canUseGPSHeading);
     UNUSED(courseOverGround);
+    UNUSED(deltaT);
 #else
 
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_IMU_SYNC)
@@ -551,9 +500,6 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
                         useCOG, courseOverGround,  imuCalcKpGain(currentTimeUs, useAcc, gyroAverage));
 
     imuUpdateEulerAngles();
-#endif
-#if defined(USE_ALT_HOLD)
-    imuCalculateAcceleration(deltaT); // rotate acc vector into earth frame
 #endif
 }
 
