@@ -50,6 +50,7 @@
 #include "io/serial.h"
 
 #include "pg/beeper.h"
+#include "pg/beeper_dev.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
@@ -354,6 +355,12 @@ static void validateAndFixConfig(void)
 
 #if !defined(USE_ADC)
     featureClear(FEATURE_RSSI_ADC);
+#endif
+
+#if defined(USE_BEEPER)
+    if (beeperDevConfig()->frequency && !timerGetByTag(beeperDevConfig()->ioTag, TIM_USE_BEEPER)) {
+        beeperDevConfigMutable()->frequency = 0;
+    }
 #endif
 
 #if defined(TARGET_VALIDATECONFIG)
