@@ -51,8 +51,17 @@ typedef enum {
     // MSP commands
     CRSF_FRAMETYPE_MSP_REQ = 0x7A,   // response request using msp sequence as command
     CRSF_FRAMETYPE_MSP_RESP = 0x7B,  // reply with 58 byte chunked binary
-    CRSF_FRAMETYPE_MSP_WRITE = 0x7C  // write with 8 byte chunked binary (OpenTX outbound telemetry buffer limit)
+    CRSF_FRAMETYPE_MSP_WRITE = 0x7C,  // write with 8 byte chunked binary (OpenTX outbound telemetry buffer limit)
+    CRSF_FRAMETYPE_DISPLAYPORT_UPDATE = 0x7D, // transmit displayport buffer to remote
+    CRSF_FRAMETYPE_DISPLAYPORT_CLEAR = 0x7E, // clear remote
+    CRSF_FRAMETYPE_DISPLAYPORT_CMD = 0x7F, // client request
 } crsfFrameType_e;
+
+enum {
+    CRSF_DISPLAYPORT_SUBCMD_OPEN = 0x01,  // client request to open cms menu
+    CRSF_DISPLAYPORT_SUBCMD_CLOSE = 0x02,  // client request to close cms menu
+    CRSF_DISPLAYPORT_SUBCMD_POLL = 0x03,  // client request to poll/refresh cms menu
+};
 
 enum {
     CRSF_FRAME_GPS_PAYLOAD_SIZE = 15,

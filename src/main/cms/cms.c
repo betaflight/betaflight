@@ -110,6 +110,19 @@ static displayPort_t *cmsDisplayPortSelectNext(void)
     return cmsDisplayPorts[cmsCurrentDevice];
 }
 
+bool cmsDisplayPortSelect(displayPort_t *instance)
+{
+    if (cmsDeviceCount == 0) {
+        return false;
+    }
+    for (int i = 0; i < cmsDeviceCount; i++) {
+        if (cmsDisplayPortSelectNext() == instance) {
+            return true;
+        }
+    }
+    return false;
+}
+
 #define CMS_UPDATE_INTERVAL_US  50000   // Interval of key scans (microsec)
 #define CMS_POLL_INTERVAL_US   100000   // Interval of polling dynamic values (microsec)
 
@@ -640,7 +653,7 @@ STATIC_UNIT_TESTED long cmsMenuBack(displayPort_t *pDisplay)
     return 0;
 }
 
-STATIC_UNIT_TESTED void cmsMenuOpen(void)
+void cmsMenuOpen(void)
 {
     if (!cmsInMenu) {
         // New open
