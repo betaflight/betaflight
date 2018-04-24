@@ -101,6 +101,9 @@ typedef struct gyroConfig_s {
     gyroOverflowCheck_e checkOverflow;
     int16_t  gyro_offset_yaw;
 
+    bool     yaw_spin_recovery;
+    int16_t  yaw_spin_threshold;
+
 } gyroConfig_t;
 
 PG_DECLARE(gyroConfig_t, gyroConfig);
@@ -122,5 +125,6 @@ void gyroReadTemperature(void);
 int16_t gyroGetTemperature(void);
 int16_t gyroRateDps(int axis);
 bool gyroOverflowDetected(void);
+bool gyroYawSpinDetected(void);
 uint16_t gyroAbsRateDps(int axis);
 uint8_t gyroReadRegister(uint8_t reg);

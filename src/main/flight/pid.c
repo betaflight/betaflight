@@ -541,6 +541,10 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
     const float tpaFactor = getThrottlePIDAttenuation();
     const float motorMixRange = getMotorMixRange();
 
+#ifdef USE_YAW_SPIN_RECOVERY
+    const bool yawSpinActive = gyroYawSpinDetected();
+#endif
+
     // Dynamic i component,
     // gradually scale back integration when above windup point
     const float dynCi = MIN((1.0f - motorMixRange) * ITermWindupPointInv, 1.0f) * dT * itermAccelerator;
@@ -570,6 +574,14 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         if ((FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) && axis != YAW) {
             currentPidSetpoint = pidLevel(axis, pidProfile, angleTrim, currentPidSetpoint);
         }
+
+        // Handle yaw spin recovery - zero the setpoint on yaw to aid in recovery
+        // It's not necessary to zero the set points for R/P because the PIDs will be zeroed below
+#ifdef USE_YAW_SPIN_RECOVERY
+        if ((axis == FD_YAW) && yawSpinActive) {
+            currentPidSetpoint = 0.0f;
+        }
+#endif // USE_YAW_SPIN_RECOVERY
 
         // -----calculate error rate
         const float gyroRate = gyro.gyroADCf[axis]; // Process variable from gyro output in deg/sec
@@ -618,12 +630,28 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             detectAndSetCrashRecovery(pidProfile->crash_recovery, axis, currentTimeUs, delta, errorRate);
 
             pidData[axis].D = pidCoefficient[axis].Kd * delta * tpaFactor;
+
+#ifdef USE_YAW_SPIN_RECOVERY
+            if (yawSpinActive)  {
+                // zero PIDs on pitch and roll leaving yaw P to correct spin 
+                pidData[axis].P = 0;
+                pidData[axis].I = 0;
+                pidData[axis].D = 0;
+            }
+#endif // USE_YAW_SPIN_RECOVERY
         }
     }
 
     // calculating the PID sum
     pidData[FD_ROLL].Sum = pidData[FD_ROLL].P + pidData[FD_ROLL].I + pidData[FD_ROLL].D;
     pidData[FD_PITCH].Sum = pidData[FD_PITCH].P + pidData[FD_PITCH].I + pidData[FD_PITCH].D;
+
+#ifdef USE_YAW_SPIN_RECOVERY
+    if (yawSpinActive) {
+    // yaw P alone to correct spin 
+        pidData[FD_YAW].I = 0;
+    }
+#endif // USE_YAW_SPIN_RECOVERY
 
     // YAW has no D
     pidData[FD_YAW].Sum = pidData[FD_YAW].P + pidData[FD_YAW].I;

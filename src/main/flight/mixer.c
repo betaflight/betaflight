@@ -58,6 +58,7 @@
 #include "rx/rx.h"
 
 #include "sensors/battery.h"
+#include "sensors/gyro.h"
 
 PG_REGISTER_WITH_RESET_TEMPLATE(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 0);
 
@@ -749,8 +750,19 @@ NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensation)
         constrainf(pidData[FD_ROLL].Sum, -currentPidProfile->pidSumLimit, currentPidProfile->pidSumLimit) / PID_MIXER_SCALING;
     const float scaledAxisPidPitch =
         constrainf(pidData[FD_PITCH].Sum, -currentPidProfile->pidSumLimit, currentPidProfile->pidSumLimit) / PID_MIXER_SCALING;
+
+    uint16_t yawPidSumLimit = currentPidProfile->pidSumLimitYaw;
+
+#ifdef USE_YAW_SPIN_RECOVERY
+    const bool yawSpinDetected = gyroYawSpinDetected();
+    if (yawSpinDetected) {
+        yawPidSumLimit = PIDSUM_LIMIT_MAX;   // Set to the maximum limit during yaw spin recovery to prevent limiting motor authority
+    }
+#endif // USE_YAW_SPIN_RECOVERY
+
     float scaledAxisPidYaw =
-        constrainf(pidData[FD_YAW].Sum, -currentPidProfile->pidSumLimitYaw, currentPidProfile->pidSumLimitYaw) / PID_MIXER_SCALING;
+        constrainf(pidData[FD_YAW].Sum, -yawPidSumLimit, yawPidSumLimit) / PID_MIXER_SCALING;
+
     if (!mixerConfig()->yaw_motors_reversed) {
         scaledAxisPidYaw = -scaledAxisPidYaw;
     }
@@ -762,6 +774,14 @@ NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensation)
     if (currentControlRateProfile->throttle_limit_type != THROTTLE_LIMIT_TYPE_OFF) {
         throttle = applyThrottleLimit(throttle);
     }
+
+#ifdef USE_YAW_SPIN_RECOVERY
+    // 50% throttle provides the maximum authority for yaw recovery when airmode is not active.
+    // When airmode is active the throttle setting doesn't impact recovery authority.
+    if (yawSpinDetected && !isAirmodeActive()) {
+        throttle = 0.5f;   // 
+    }
+#endif // USE_YAW_SPIN_RECOVERY
 
     // Find roll/pitch/yaw desired output
     float motorMix[MAX_SUPPORTED_MOTORS];
