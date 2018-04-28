@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include "drivers/io_types.h"
 #include "pg/pg.h"
 
 #define MAX7456_CLOCK_CONFIG_HALF 0
@@ -28,6 +29,8 @@
 
 typedef struct max7456Config_s {
     uint8_t clockConfig; // 0 = force half clock, 1 = half if OC, 2 = force full
+    ioTag_t csTag;
+    uint8_t spiDevice;
 } max7456Config_t;
 
 PG_DECLARE(max7456Config_t, max7456Config);

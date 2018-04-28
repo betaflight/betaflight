@@ -122,6 +122,7 @@ extern uint8_t __config_end;
 #include "pg/beeper_dev.h"
 #include "pg/bus_i2c.h"
 #include "pg/bus_spi.h"
+#include "pg/max7456.h"
 #include "pg/pinio.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
@@ -3350,6 +3351,9 @@ const cliResourceValue_t resourceTable[] = {
 #endif
 #ifdef USE_FLASH
     { OWNER_FLASH_CS,      PG_FLASH_CONFIG, offsetof(flashConfig_t, csTag), 0 },
+#endif
+#ifdef USE_MAX7456
+    { OWNER_OSD_CS,        PG_MAX7456_CONFIG, offsetof(max7456Config_t, csTag), 0 },
 #endif
 };
 

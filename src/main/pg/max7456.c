@@ -25,12 +25,21 @@
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
+#include "drivers/io.h"
+#include "drivers/bus_spi.h"
+
 #include "max7456.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(max7456Config_t, max7456Config, PG_MAX7456_CONFIG, 0);
+PG_REGISTER_WITH_RESET_FN(max7456Config_t, max7456Config, PG_MAX7456_CONFIG, 0);
 
-PG_RESET_TEMPLATE(max7456Config_t, max7456Config,
-    .clockConfig = MAX7456_CLOCK_CONFIG_OC, // SPI clock based on device type and overclock state
-);
-
+void pgResetFn_max7456Config(max7456Config_t *config)
+{
+    config->clockConfig = MAX7456_CLOCK_CONFIG_OC; // SPI clock based on device type and overclock state
+#ifdef MAX7456_SPI_CS_PIN
+    config->csTag = IO_TAG(MAX7456_SPI_CS_PIN);
+#else
+    config->csTag = IO_TAG_NONE;
+#endif
+    config->spiDevice = SPI_DEV_TO_CFG(spiDeviceByInstance(MAX7456_SPI_INSTANCE));
+}
 #endif // USE_MAX7456
