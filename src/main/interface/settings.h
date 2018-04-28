@@ -91,6 +91,9 @@ typedef enum {
     TABLE_GYRO,
 #endif
     TABLE_THROTTLE_LIMIT_TYPE,
+#ifdef USE_MAX7456
+    TABLE_VIDEO_SYSTEM,
+#endif // USE_MAX7456
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 
