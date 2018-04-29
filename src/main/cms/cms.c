@@ -70,7 +70,6 @@
 
 #ifdef USE_USB_CDC_HID
 #include "sensors/battery.h"
-#include "pg/pg.h"
 #include "pg/usb.h"
 #endif
 
