@@ -70,6 +70,8 @@
 
 #ifdef USE_USB_CDC_HID
 #include "sensors/battery.h"
+#include "pg/pg.h"
+#include "pg/usb.h"
 #endif
 
 // DisplayPort management
@@ -998,7 +1000,7 @@ void cmsUpdate(uint32_t currentTimeUs)
     }
 #endif
 #ifdef USE_USB_CDC_HID
-    if (getBatteryCellCount() == 0) {
+    if (getBatteryCellCount() == 0 && usbDevConfig()->type == COMPOSITE) {
         return;
     }
 #endif
