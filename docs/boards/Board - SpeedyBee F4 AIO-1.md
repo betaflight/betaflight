@@ -71,7 +71,7 @@ This SpeedyBee F4 AIO board integrates the Bluetooth module, with SpeedyBee App,
 ### LED & PPM Input
 | Value | Identifier   | function  |  pin  | Notes                                                                                 |
 | ----- | ------------ | ----------| ------| ------------------------------------------------------------------------------------- |                                        
-| 1     | TIM5_CH4     |    PPM |  PC11  | 
+| 1     | TIM5_CH4     |    PPM |  PA3  | 
 | 2     | TIM4_CH1     |    LED Strip Signal Input |  PB6  | 
 
 
