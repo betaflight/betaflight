@@ -56,6 +56,7 @@
 #define USE_USB_DETECT
 //#define USB_DETECT_PIN          PA9
 
+// The Flexi Port can be used for either UART1 or I2CDEV_1, see I2C section below
 #define USE_UART1 // Flexi Port
 #define UART1_RX_PIN            PB7
 #define UART1_TX_PIN            PB6
@@ -78,8 +79,22 @@
 #define USE_SPI_DEVICE_2
 
 #define USE_I2C
+/* The Flexi Port can be used for either UART1 or I2CDEV_1
+ * I2C resources undefined by default
+ * To use I2C use the following CLI commands:
+ *   resource SERIAL_RX 1 NONE
+ *   resource SERIAL_TX 1 NONE
+ *   resource I2C1_SCL 1 PB6
+ *   resource I2C1_SDA 1 PB7
+ */
 #define USE_I2C_DEVICE_1        // UART1/FlexiPort (PB6,PB7)
-#define I2C_DEVICE (I2CDEV_1)
+#define I2C_DEVICE              I2CDEV_1
+#define I2C1_SCL                NONE // Define as PB6 if required
+#define I2C1_SDA                NONE // Define as PB7 if required
+#define USE_I2C_DEVICE_3
+#define I2C3_SCL                PA8
+#define I2C3_SDA                PB4
+#define BARO_I2C_INSTANCE       I2CDEV_3
 
 #undef USE_LED_STRIP
 
