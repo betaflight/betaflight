@@ -250,11 +250,11 @@ static void i2c_er_handler(I2CDevice device) {
     // Read the I2C1 status register
     volatile uint32_t SR1Register = I2Cx->SR1;
 
-    if (SR1Register & 0x0F00)                                           // an error
+    if (SR1Register & (I2C_SR1_BERR | I2C_SR1_ARLO | I2C_SR1_AF | I2C_SR1_OVR)) // an error
         state->error = true;
 
     // If AF, BERR or ARLO, abandon the current job and commence new if there are jobs
-    if (SR1Register & 0x0700) {
+    if (SR1Register & (I2C_SR1_BERR | I2C_SR1_ARLO | I2C_SR1_AF)) {
         (void)I2Cx->SR2;                                                        // read second status register to clear ADDR if it is set (note that BTF will not be set after a NACK)
         I2C_ITConfig(I2Cx, I2C_IT_BUF, DISABLE);                                // disable the RXNE/TXE interrupt - prevent the ISR tailchaining onto the ER (hopefully)
         if (!(SR1Register & I2C_SR1_ARLO) && !(I2Cx->CR1 & I2C_CR1_STOP)) {     // if we dont have an ARLO error, ensure sending of a stop
@@ -270,7 +270,7 @@ static void i2c_er_handler(I2CDevice device) {
             }
         }
     }
-    I2Cx->SR1 &= ~0x0F00;                                                       // reset all the error bits to clear the interrupt
+    I2Cx->SR1 &= ~(I2C_SR1_BERR | I2C_SR1_ARLO | I2C_SR1_AF | I2C_SR1_OVR);     // reset all the error bits to clear the interrupt
     state->busy = 0;
 }
 
@@ -359,7 +359,7 @@ void i2c_ev_handler(I2CDevice device) {
             }
         }
         // we must wait for the start to clear, otherwise we get constant BTF
-        while (I2Cx->CR1 & 0x0100) {; }
+        while (I2Cx->CR1 & I2C_CR1_START) {; }
     }
     else if (SReg_1 & I2C_SR1_RXNE) {                                 // Byte received - EV7
         state->read_p[index++] = (uint8_t)I2Cx->DR;
