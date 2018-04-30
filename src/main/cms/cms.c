@@ -1,22 +1,23 @@
 /*
  * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight and Betaflight are free software: you can redistribute 
- * this software and/or modify this software under the terms of the 
- * GNU General Public License as published by the Free Software 
- * Foundation, either version 3 of the License, or (at your option) 
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
  * any later version.
  *
  * Cleanflight and Betaflight are distributed in the hope that they
- * will be useful, but WITHOUT ANY WARRANTY; without even the implied 
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this software.  
- * 
+ * along with this software.
+ *
  * If not, see <http://www.gnu.org/licenses/>.
  */
+
 /*
  Original OSD code created by Marcin Baliniak
  OSD-CMS separation by jflyper
@@ -108,6 +109,19 @@ static displayPort_t *cmsDisplayPortSelectNext(void)
     cmsCurrentDevice = (cmsCurrentDevice + 1) % cmsDeviceCount; // -1 Okay
 
     return cmsDisplayPorts[cmsCurrentDevice];
+}
+
+bool cmsDisplayPortSelect(displayPort_t *instance)
+{
+    if (cmsDeviceCount == 0) {
+        return false;
+    }
+    for (int i = 0; i < cmsDeviceCount; i++) {
+        if (cmsDisplayPortSelectNext() == instance) {
+            return true;
+        }
+    }
+    return false;
 }
 
 #define CMS_UPDATE_INTERVAL_US  50000   // Interval of key scans (microsec)
@@ -640,7 +654,7 @@ STATIC_UNIT_TESTED long cmsMenuBack(displayPort_t *pDisplay)
     return 0;
 }
 
-STATIC_UNIT_TESTED void cmsMenuOpen(void)
+void cmsMenuOpen(void)
 {
     if (!cmsInMenu) {
         // New open

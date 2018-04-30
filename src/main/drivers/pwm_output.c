@@ -1,22 +1,23 @@
 /*
  * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight and Betaflight are free software: you can redistribute 
- * this software and/or modify this software under the terms of the 
- * GNU General Public License as published by the Free Software 
- * Foundation, either version 3 of the License, or (at your option) 
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
  * any later version.
  *
  * Cleanflight and Betaflight are distributed in the hope that they
- * will be useful, but WITHOUT ANY WARRANTY; without even the implied 
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this software.  
- * 
+ * along with this software.
+ *
  * If not, see <http://www.gnu.org/licenses/>.
  */
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -469,37 +470,42 @@ void servoDevInit(const servoDevConfig_t *servoConfig)
 #ifdef USE_BEEPER
 void pwmWriteBeeper(bool onoffBeep)
 {
-        if (!beeperPwm.io)
-            return;
-        if (onoffBeep == true) {
-            *beeperPwm.channel.ccr = (PWM_TIMER_1MHZ / freqBeep) / 2;
-            beeperPwm.enabled = true;
-        } else {
-            *beeperPwm.channel.ccr = 0;
-            beeperPwm.enabled = false;
-        }
+    if (!beeperPwm.io) {
+        return;
+    }
+
+    if (onoffBeep == true) {
+        *beeperPwm.channel.ccr = (PWM_TIMER_1MHZ / freqBeep) / 2;
+        beeperPwm.enabled = true;
+    } else {
+        *beeperPwm.channel.ccr = 0;
+        beeperPwm.enabled = false;
+    }
 }
 
 void pwmToggleBeeper(void)
 {
-        pwmWriteBeeper(!beeperPwm.enabled);
+    pwmWriteBeeper(!beeperPwm.enabled);
 }
 
 void beeperPwmInit(const ioTag_t tag, uint16_t frequency)
 {
-        beeperPwm.io = IOGetByTag(tag);
-        const timerHardware_t *timer = timerGetByTag(tag, TIM_USE_BEEPER);
-        if (beeperPwm.io && timer) {
-            IOInit(beeperPwm.io, OWNER_BEEPER, RESOURCE_INDEX(0));
+    const timerHardware_t *timer = timerGetByTag(tag, TIM_USE_BEEPER);
+    IO_t beeperIO = IOGetByTag(tag);
+
+    if (beeperIO && timer) {
+        beeperPwm.io = beeperIO;
+        IOInit(beeperPwm.io, OWNER_BEEPER, RESOURCE_INDEX(0));
 #if defined(USE_HAL_DRIVER)
-            IOConfigGPIOAF(beeperPwm.io, IOCFG_AF_PP, timer->alternateFunction);
+        IOConfigGPIOAF(beeperPwm.io, IOCFG_AF_PP, timer->alternateFunction);
 #else
-            IOConfigGPIO(beeperPwm.io, IOCFG_AF_PP);
+        IOConfigGPIO(beeperPwm.io, IOCFG_AF_PP);
 #endif
-            freqBeep = frequency;
-            pwmOutConfig(&beeperPwm.channel, timer, PWM_TIMER_1MHZ, PWM_TIMER_1MHZ / freqBeep, (PWM_TIMER_1MHZ / freqBeep) / 2, 0);
-        }
+        freqBeep = frequency;
+        pwmOutConfig(&beeperPwm.channel, timer, PWM_TIMER_1MHZ, PWM_TIMER_1MHZ / freqBeep, (PWM_TIMER_1MHZ / freqBeep) / 2, 0);
+
         *beeperPwm.channel.ccr = 0;
         beeperPwm.enabled = false;
+    }
 }
 #endif

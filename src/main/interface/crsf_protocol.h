@@ -1,20 +1,20 @@
 /*
  * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight and Betaflight are free software: you can redistribute 
- * this software and/or modify this software under the terms of the 
- * GNU General Public License as published by the Free Software 
- * Foundation, either version 3 of the License, or (at your option) 
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
  * any later version.
  *
  * Cleanflight and Betaflight are distributed in the hope that they
- * will be useful, but WITHOUT ANY WARRANTY; without even the implied 
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this software.  
- * 
+ * along with this software.
+ *
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
@@ -51,8 +51,17 @@ typedef enum {
     // MSP commands
     CRSF_FRAMETYPE_MSP_REQ = 0x7A,   // response request using msp sequence as command
     CRSF_FRAMETYPE_MSP_RESP = 0x7B,  // reply with 58 byte chunked binary
-    CRSF_FRAMETYPE_MSP_WRITE = 0x7C  // write with 8 byte chunked binary (OpenTX outbound telemetry buffer limit)
+    CRSF_FRAMETYPE_MSP_WRITE = 0x7C,  // write with 8 byte chunked binary (OpenTX outbound telemetry buffer limit)
+    CRSF_FRAMETYPE_DISPLAYPORT_UPDATE = 0x7D, // transmit displayport buffer to remote
+    CRSF_FRAMETYPE_DISPLAYPORT_CLEAR = 0x7E, // clear remote
+    CRSF_FRAMETYPE_DISPLAYPORT_CMD = 0x7F, // client request
 } crsfFrameType_e;
+
+enum {
+    CRSF_DISPLAYPORT_SUBCMD_OPEN = 0x01,  // client request to open cms menu
+    CRSF_DISPLAYPORT_SUBCMD_CLOSE = 0x02,  // client request to close cms menu
+    CRSF_DISPLAYPORT_SUBCMD_POLL = 0x03,  // client request to poll/refresh cms menu
+};
 
 enum {
     CRSF_FRAME_GPS_PAYLOAD_SIZE = 15,

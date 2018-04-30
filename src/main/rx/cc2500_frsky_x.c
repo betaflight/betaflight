@@ -1,22 +1,23 @@
 /*
  * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight and Betaflight are free software: you can redistribute 
- * this software and/or modify this software under the terms of the 
- * GNU General Public License as published by the Free Software 
- * Foundation, either version 3 of the License, or (at your option) 
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
  * any later version.
  *
  * Cleanflight and Betaflight are distributed in the hope that they
- * will be useful, but WITHOUT ANY WARRANTY; without even the implied 
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this software.  
- * 
+ * along with this software.
+ *
  * If not, see <http://www.gnu.org/licenses/>.
  */
+
 #include <string.h>
 #include <sys/_stdint.h>
 
@@ -29,6 +30,8 @@
 
 #include "common/maths.h"
 #include "common/utils.h"
+
+#include "config/feature.h"
 
 #include "drivers/adc.h"
 #include "drivers/rx/rx_cc2500.h"
@@ -183,10 +186,15 @@ static void buildTelemetryFrame(uint8_t *packet)
     frame[3] = packet[3];
 
     if (evenRun) {
-        frame[4]=(uint8_t)rssiDbm|0x80;
+        frame[4] = (uint8_t)rssiDbm | 0x80;
     } else {
-        const uint16_t adcExternal1Sample = adcGetChannel(ADC_EXTERNAL1);
-        frame[4] = (uint8_t)((adcExternal1Sample & 0xfe0) >> 5); // A1;
+        uint8_t a1Value;
+        if (rxFrSkySpiConfig()->useExternalAdc) {
+            a1Value = (uint8_t)((adcGetChannel(ADC_EXTERNAL1) & 0xfe0) >> 5);
+        } else {
+            a1Value = getBatteryVoltage() & 0x7f;
+        }
+        frame[4] = a1Value;
     }
     evenRun = !evenRun;
 
@@ -528,7 +536,9 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
 void frSkyXInit(void)
 {
 #if defined(USE_TELEMETRY_SMARTPORT)
-     telemetryEnabled = initSmartPortTelemetryExternal(frSkyXTelemetryWriteFrame);
+     if (feature(FEATURE_TELEMETRY)) {
+         telemetryEnabled = initSmartPortTelemetryExternal(frSkyXTelemetryWriteFrame);
+     }
 #endif
 }
 
