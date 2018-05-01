@@ -962,6 +962,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->alt_alarm  = 100; // meters or feet depend on configuration
     osdConfig->esc_temp_alarm = ESC_TEMP_ALARM_OFF; // off by default
     osdConfig->esc_rpm_alarm = ESC_RPM_ALARM_OFF; // off by default
+    osdConfig->esc_current_alarm = ESC_CURRENT_ALARM_OFF; // off by default
 
     osdConfig->ahMaxPitch = 20; // 20 degrees
     osdConfig->ahMaxRoll = 40; // 40 degrees
