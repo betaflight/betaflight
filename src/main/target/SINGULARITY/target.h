@@ -81,9 +81,8 @@
 #define RTC6705_CS_PIN          PA4
 #define RTC6705_SPI_INSTANCE    SPI1
 
-#define M25P16_CS_GPIO          GPIOB
-#define M25P16_CS_PIN           PB12
-#define M25P16_SPI_INSTANCE     SPI2
+#define FLASH_CS_PIN            PB12
+#define FLASH_SPI_INSTANCE      SPI2
 
 #define USE_ADC
 

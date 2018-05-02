@@ -155,20 +155,20 @@
 #define SDCARD_DMA_CHANNEL                      0
 
 // For variants with SDcard replaced with flash chip
-#define M25P16_CS_PIN           SDCARD_SPI_CS_PIN
-#define M25P16_SPI_INSTANCE     SDCARD_SPI_INSTANCE
+#define FLASH_CS_PIN            SDCARD_SPI_CS_PIN
+#define FLASH_SPI_INSTANCE      SDCARD_SPI_INSTANCE
 
 #elif defined(LUXF4OSD)
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
-#define M25P16_CS_PIN           PB12
-#define M25P16_SPI_INSTANCE     SPI2
+#define FLASH_CS_PIN            PB12
+#define FLASH_SPI_INSTANCE      SPI2
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 
 #else
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
-#define M25P16_CS_PIN           SPI3_NSS_PIN
-#define M25P16_SPI_INSTANCE     SPI3
+#define FLASH_CS_PIN            SPI3_NSS_PIN
+#define FLASH_SPI_INSTANCE      SPI3
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 #endif // OMNIBUSF4

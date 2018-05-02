@@ -91,8 +91,8 @@
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
-#define M25P16_SPI_INSTANCE     SPI2
-#define M25P16_CS_PIN           PB12
+#define FLASH_SPI_INSTANCE      SPI2
+#define FLASH_CS_PIN            PB12
 
 #define USE_VCP
 #define VBUS_SENSING_PIN        PC5

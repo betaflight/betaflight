@@ -71,8 +71,8 @@
 #define NAZE_SPI_CS_PIN         PB12
 
 // We either have this 16mbit flash chip on SPI or the MPU6500 acc/gyro depending on board revision:
-#define M25P16_CS_PIN           NAZE_SPI_CS_PIN
-#define M25P16_SPI_INSTANCE     NAZE_SPI_INSTANCE
+#define FLASH_CS_PIN            NAZE_SPI_CS_PIN
+#define FLASH_SPI_INSTANCE      NAZE_SPI_INSTANCE
 
 #define MPU6500_CS_PIN          NAZE_SPI_CS_PIN
 #define MPU6500_SPI_INSTANCE    NAZE_SPI_INSTANCE

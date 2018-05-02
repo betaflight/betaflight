@@ -256,8 +256,8 @@ void spiPreInit(void)
 #if defined(RTC6705_CS_PIN) && !defined(USE_VTX_RTC6705_SOFTSPI) // RTC6705 soft SPI initialisation handled elsewhere.
     spiPreInitCs(IO_TAG(RTC6705_CS_PIN));
 #endif
-#ifdef M25P16_CS_PIN
-    spiPreInitCs(IO_TAG(M25P16_CS_PIN));
+#ifdef FLASH_CS_PIN
+    spiPreInitCs(IO_TAG(FLASH_CS_PIN));
 #endif
 #if defined(USE_RX_SPI) && !defined(USE_RX_SOFTSPI)
     spiPreInitCs(IO_TAG(RX_NSS_PIN));

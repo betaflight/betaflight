@@ -90,8 +90,8 @@
 #define SPI2_MISO_PIN           PB14
 #define SPI2_MOSI_PIN           PB15
 
-#define M25P16_CS_PIN           SPI2_NSS_PIN
-#define M25P16_SPI_INSTANCE     SPI2
+#define FLASH_CS_PIN            SPI2_NSS_PIN
+#define FLASH_SPI_INSTANCE      SPI2
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16

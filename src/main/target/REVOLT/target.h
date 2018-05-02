@@ -106,12 +106,12 @@
 #define USE_MPU_DATA_READY_SIGNAL
 
 /*----------Flash Config--------*/
-#define M25P16_CS_PIN           PB3
+#define FLASH_CS_PIN            PB3
 
 #if defined(REVOLTOSD)
-#define M25P16_SPI_INSTANCE     SPI2
+#define FLASH_SPI_INSTANCE      SPI2
 #else
-#define M25P16_SPI_INSTANCE     SPI3
+#define FLASH_SPI_INSTANCE      SPI3
 #endif
 
 

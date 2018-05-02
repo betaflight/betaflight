@@ -87,8 +87,8 @@
 #define USE_SPI
 #define USE_SPI_DEVICE_2
 
-#define M25P16_CS_PIN           PB12
-#define M25P16_SPI_INSTANCE     SPI2
+#define FLASH_CS_PIN            PB12
+#define FLASH_SPI_INSTANCE      SPI2
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16

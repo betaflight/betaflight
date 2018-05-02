@@ -93,8 +93,8 @@
 
     #define USE_FLASHFS
     #define USE_FLASH_M25P16
-    #define M25P16_CS_PIN           PB12
-    #define M25P16_SPI_INSTANCE     SPI2
+    #define FLASH_CS_PIN            PB12
+    #define FLASH_SPI_INSTANCE      SPI2
 
     #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 
