@@ -70,9 +70,21 @@ Pads are organised into two large banks of pads on left and right sides of board
 | `G, 3V3, SDA, SLC`   | I2C           | (Rear of board) I2C connection marked for a magnetometer but could be used for whatever        |
 | `VTX, Cam, DAC`      | VTX/CAM       | VTX: Video out, Cam: Video in, DAC: Cam control pin (since BF3.3)                              |
 | `RX1, TX1`           | UART1         |                                                                                                |
-| `RX2`                | UART2-RX      | RX connection for Spektrum DSMX or DSM2, FlySky iBUS, or PPM                                   |
+| `TX2`                | UART2-TX      | May be reassigned to `softserial1` for use as FrSky SmartPort pad                              |
+| `RX2`                | UART2-RX      | RX connection for Spektrum DSMX or DSM2, FlySky iBUS, or PPM (Disable UART2 for PPM)           |
 | `Sbus`               | SBUS (UART2)  | Dedicated pad for SBUS (duplicate pad of RX2 with signal inverter)                             |
 | `RX3, TX3`           | UART3         |                                                                                                |
 | `RX4, TX4`           | UART4         |                                                                                                |
 | `RX5, TX5`           | UART5         |                                                                                                |
 | `RX5`                | UART5-RX      | (4x, one near each board corner) Duplicates of RX5 pad for ESC Telemetry                       |
+
+### UARTs + VCP
+
+| Port  | Default Assigned Role |
+|------:|-----------------------|
+| VCP   | microUSB Port         | 
+| UART1 | *Unassigned*          |
+| UART2 | RX Connection         |
+| UART3 | *Unassigned*          |
+| UART4 | *Unassigned*          |
+| UART5 | ESC Telemetry         |
