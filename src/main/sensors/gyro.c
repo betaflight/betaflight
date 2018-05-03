@@ -179,11 +179,7 @@ static void gyroInitLowpassFilterLpf(gyroSensor_t *gyroSensor, int slot, int typ
 PG_REGISTER_WITH_RESET_TEMPLATE(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 2);
 
 #ifndef GYRO_CONFIG_USE_GYRO_DEFAULT
-#ifdef USE_DUAL_GYRO
-#define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_BOTH
-#else
 #define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_1
-#endif
 #endif
 
 PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
