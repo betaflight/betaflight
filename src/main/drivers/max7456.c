@@ -629,7 +629,6 @@ void max7456DrawScreen(void)
                 spiBuff[buff_len++] = MAX7456ADD_DMDI;
                 spiBuff[buff_len++] = screenBuffer[pos];
                 shadowBuffer[pos] = screenBuffer[pos];
-                k++;
             }
 
             if (++pos >= maxScreenSize) {
