@@ -653,18 +653,41 @@ void max7456DrawScreen(void)
 
 static void max7456DrawScreenSlow(void)
 {
+    bool escapeCharFound;
+
     ENABLE_MAX7456;
+
+    // Enable auto-increment mode and update every character in the screenBuffer.
+    // The "escape" character 0xFF must be skipped as it causes the MAX7456 to exit auto-increment mode.
     max7456Send(MAX7456ADD_DMAH, 0);
     max7456Send(MAX7456ADD_DMAL, 0);
     max7456Send(MAX7456ADD_DMM, displayMemoryModeReg | 1);
 
-    for (int xx = 0; xx < maxScreenSize; ++xx) {
-        max7456Send(MAX7456ADD_DMDI, screenBuffer[xx]);
+    for (int xx = 0; xx < maxScreenSize; xx++) {
+        if (screenBuffer[xx] == END_STRING) {
+            escapeCharFound = true;
+            max7456Send(MAX7456ADD_DMDI, ' ');  // replace the 0xFF character with a blank in the first pass to avoid terminating auto-increment
+        } else {
+            max7456Send(MAX7456ADD_DMDI, screenBuffer[xx]);
+        }
         shadowBuffer[xx] = screenBuffer[xx];
     }
 
-    max7456Send(MAX7456ADD_DMDI, 0xFF);
+    max7456Send(MAX7456ADD_DMDI, END_STRING);
     max7456Send(MAX7456ADD_DMM, displayMemoryModeReg);
+
+    // If we found any of the "escape" character 0xFF, then make a second pass
+    // to update them with direct addressing
+    if (escapeCharFound) {
+        for (int xx = 0; xx < maxScreenSize; xx++) {
+            if (screenBuffer[xx] == END_STRING) {
+                max7456Send(MAX7456ADD_DMAH, xx >> 8);
+                max7456Send(MAX7456ADD_DMAL, xx & 0xFF);
+                max7456Send(MAX7456ADD_DMDI, END_STRING);
+            }
+        }
+    }
+
     DISABLE_MAX7456;
 }
 
