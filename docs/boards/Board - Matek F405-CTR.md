@@ -51,7 +51,7 @@ Pads are organised into two large banks of pads on left and right sides of board
 
 > NOTE: Under normal operation, the use of the Barometer `I2C1` bus (internal) and the WS2812 `LED` signal pad are mutually exclusive due to a pad mapping conflict. However, the `LED_STRIP` feature may be remapped to the `S5` (`PA15`) pad to avoid this conflict.
 >
-> *I.e.* `resource LED_STRIP 1 A15`
+> *I.e.* Type `resource LED_STRIP 1 A15` into the CLI.
 
 | Pad Silkscreen Label |   Function    |                                                 Notes                                          |
 |---------------------:|---------------|:-----------------------------------------------------------------------------------------------|
