@@ -2142,6 +2142,25 @@ static void cliFlashRead(char *cmdline)
     }
 }
 
+static void cliFlashScan(char *cmdline)
+{
+    UNUSED(cmdline);
+}
+
+static void cliFlashLog(char *cmdline)
+{
+    UNUSED(cmdline);
+}
+
+static void cliFlashBBLut(char *cmdline)
+{
+    UNUSED(cmdline);
+}
+
+static void cliFlashBBSub(char *cmdline)
+{
+    UNUSED(cmdline);
+}
 #endif
 #endif
 
@@ -4454,6 +4473,12 @@ const clicmd_t cmdTable[] = {
 #ifdef USE_FLASH_TOOLS
     CLI_COMMAND_DEF("flash_read", NULL, "<length> <address>", cliFlashRead),
     CLI_COMMAND_DEF("flash_write", NULL, "<address> <message>", cliFlashWrite),
+
+    // NAND (W25N01G) specific commands
+    CLI_COMMAND_DEF("flash_scan", "write and read flash chip for errors", NULL, cliFlashScan),
+    CLI_COMMAND_DEF("flash_log", "show error log", NULL, cliFlashLog),
+    CLI_COMMAND_DEF("flash_bblut", "show device bad block lookup table", NULL, cliFlashBBLut),
+    CLI_COMMAND_DEF("flash_bbsub", "bad block substitution", "<device> <bad block>", cliFlashBBSub),
 #endif
 #endif
 #ifdef USE_RX_FRSKY_SPI
