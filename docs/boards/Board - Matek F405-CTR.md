@@ -49,6 +49,10 @@ Pads are organised into two large banks of pads on left and right sides of board
 \------------[USB]------------/
 ```
 
+> NOTE: Under normal operation, the use of the Barometer `I2C1` bus (internal) and the WS2812 `LED` signal pad are mutually exclusive due to a pad mapping conflict. However, the `LED_STRIP` feature may be remapped to the `S5` (`PA15`) pad to avoid this conflict.
+>
+> *I.e.* `resource LED_STRIP 1 A15`
+
 | Pad Silkscreen Label |   Function    |                                                 Notes                                          |
 |---------------------:|---------------|:-----------------------------------------------------------------------------------------------|
 | `+ / -`              | Battery       | 6-30VDC LiPo Power input                                                                       |
@@ -71,4 +75,4 @@ Pads are organised into two large banks of pads on left and right sides of board
 | `RX3, TX3`           | UART3         |                                                                                                |
 | `RX4, TX4`           | UART4         |                                                                                                |
 | `RX5, TX5`           | UART5         |                                                                                                |
-| `RX5`                | UART5-RX      | (4x, one near each board corner) Duplicates of RX5 pin for ESC Telemetry                       |
+| `RX5`                | UART5-RX      | (4x, one near each board corner) Duplicates of RX5 pad for ESC Telemetry                       |
