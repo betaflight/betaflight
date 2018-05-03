@@ -32,8 +32,8 @@ typedef struct {
     uint8_t dataAge;
     int8_t temperature;  // C degrees
     int16_t voltage;     // 0.01V
-    int16_t current;     // 0.01A
-    int16_t consumption; // mAh
+    int32_t current;     // 0.01A
+    int32_t consumption; // mAh
     int16_t rpm;         // 0.01erpm
 } escSensorData_t;
 
