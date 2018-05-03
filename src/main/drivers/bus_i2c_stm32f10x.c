@@ -37,6 +37,17 @@
 
 #define CLOCKSPEED 800000    // i2c clockspeed 400kHz default (conform specs), 800kHz  and  1200kHz (Betaflight default)
 
+// Number of bits in I2C protocol phase
+#define LEN_ADDR 7
+#define LEN_RW 1
+#define LEN_ACK 1
+
+// Clock period in us during unstick transfer
+#define UNSTICK_CLK_US 10
+
+// Allow 500us for clock strech to complete during unstick
+#define UNSTICK_CLK_STRETCH (500/UNSTICK_CLK_US)
+
 static void i2c_er_handler(I2CDevice device);
 static void i2c_ev_handler(I2CDevice device);
 static void i2cUnstick(IO_t scl, IO_t sda);
@@ -250,11 +261,11 @@ static void i2c_er_handler(I2CDevice device) {
     // Read the I2C1 status register
     volatile uint32_t SR1Register = I2Cx->SR1;
 
-    if (SR1Register & 0x0F00)                                           // an error
+    if (SR1Register & (I2C_SR1_BERR | I2C_SR1_ARLO | I2C_SR1_AF | I2C_SR1_OVR)) // an error
         state->error = true;
 
     // If AF, BERR or ARLO, abandon the current job and commence new if there are jobs
-    if (SR1Register & 0x0700) {
+    if (SR1Register & (I2C_SR1_BERR | I2C_SR1_ARLO | I2C_SR1_AF)) {
         (void)I2Cx->SR2;                                                        // read second status register to clear ADDR if it is set (note that BTF will not be set after a NACK)
         I2C_ITConfig(I2Cx, I2C_IT_BUF, DISABLE);                                // disable the RXNE/TXE interrupt - prevent the ISR tailchaining onto the ER (hopefully)
         if (!(SR1Register & I2C_SR1_ARLO) && !(I2Cx->CR1 & I2C_CR1_STOP)) {     // if we dont have an ARLO error, ensure sending of a stop
@@ -270,7 +281,7 @@ static void i2c_er_handler(I2CDevice device) {
             }
         }
     }
-    I2Cx->SR1 &= ~0x0F00;                                                       // reset all the error bits to clear the interrupt
+    I2Cx->SR1 &= ~(I2C_SR1_BERR | I2C_SR1_ARLO | I2C_SR1_AF | I2C_SR1_OVR);     // reset all the error bits to clear the interrupt
     state->busy = 0;
 }
 
@@ -359,7 +370,7 @@ void i2c_ev_handler(I2CDevice device) {
             }
         }
         // we must wait for the start to clear, otherwise we get constant BTF
-        while (I2Cx->CR1 & 0x0100) {; }
+        while (I2Cx->CR1 & I2C_CR1_START) {; }
     }
     else if (SReg_1 & I2C_SR1_RXNE) {                                 // Byte received - EV7
         state->read_p[index++] = (uint8_t)I2Cx->DR;
@@ -473,7 +484,6 @@ uint16_t i2cGetErrorCounter(void)
 static void i2cUnstick(IO_t scl, IO_t sda)
 {
     int i;
-    int timeout = 100;
 
     IOHi(scl);
     IOHi(sda);
@@ -481,27 +491,33 @@ static void i2cUnstick(IO_t scl, IO_t sda)
     IOConfigGPIO(scl, IOCFG_OUT_OD);
     IOConfigGPIO(sda, IOCFG_OUT_OD);
 
-    for (i = 0; i < 8; i++) {
+    // Clock out, with SDA high:
+    //   7 data bits
+    //   1 READ bit
+    //   1 cycle for the ACK
+    for (i = 0; i < (LEN_ADDR + LEN_RW + LEN_ACK); i++) {
         // Wait for any clock stretching to finish
+        int timeout = UNSTICK_CLK_STRETCH;
         while (!IORead(scl) && timeout) {
-            delayMicroseconds(10);
+            delayMicroseconds(UNSTICK_CLK_US);
             timeout--;
         }
 
         // Pull low
         IOLo(scl); // Set bus low
-        delayMicroseconds(10);
+        delayMicroseconds(UNSTICK_CLK_US/2);
         IOHi(scl); // Set bus high
-        delayMicroseconds(10);
+        delayMicroseconds(UNSTICK_CLK_US/2);
     }
 
-    // Generate a start then stop condition
-    IOLo(sda); // Set bus data low
-    delayMicroseconds(10);
-    IOLo(scl); // Set bus scl low
-    delayMicroseconds(10);
+    // Generate a stop condition in case there was none
+    IOLo(scl);
+    delayMicroseconds(UNSTICK_CLK_US/2);
+    IOLo(sda);
+    delayMicroseconds(UNSTICK_CLK_US/2);
+
     IOHi(scl); // Set bus scl high
-    delayMicroseconds(10);
+    delayMicroseconds(UNSTICK_CLK_US/2);
     IOHi(sda); // Set bus sda high
 }
 
