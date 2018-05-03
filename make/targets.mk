@@ -16,6 +16,7 @@ $(error The target specified, $(TARGET), cannot be built. Use one of the ALT tar
 endif
 
 UNSUPPORTED_TARGETS := \
+	KISSFCV2F7 \
 	AFROMINI \
 	ALIENFLIGHTF1 \
 	BEEBRAIN \
