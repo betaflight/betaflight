@@ -28,6 +28,14 @@ Full details on the Matek Sys F405-CTR can be found on the Matek Website: [matek
 * *Current Sensor:* Rated for 184A (*Suggested scale value `179`*)
 * *Battery Voltage Sensor:* 1:10 (*Suggested scale value `110`*)
 
+## Status LEDs
+
+|     LED     | Color |              Color Codes              |
+|------------:|-------|:--------------------------------------|
+| FC Status   | Blue  | *Unknown*                             |
+| FC Status   | Red   | *Unknown*                             |
+| 3V3 Status  | Red   | Red: active, Not lit: inactive        |
+
 ## Pinout
 
 Pads are organised into two large banks of pads on left and right sides of board with a couple sets of pads on the underside of the board and ESC related connections near the board corners.
@@ -48,6 +56,8 @@ Pads are organised into two large banks of pads on left and right sides of board
 |oC                         Co|
 \------------[USB]------------/
 ```
+
+> NOTE: Pads `S5` and `S6` support `softserial` and may be configured as such
 
 > NOTE: Under normal operation, the use of the Barometer `I2C1` bus (internal) and the WS2812 `LED` signal pad are mutually exclusive due to a pad mapping conflict. However, the `LED_STRIP` feature may be remapped to the `S5` (`PA15`) pad to avoid this conflict.
 >
@@ -71,7 +81,7 @@ Pads are organised into two large banks of pads on left and right sides of board
 | `VTX, Cam, DAC`      | VTX/CAM       | VTX: Video out, Cam: Video in, DAC: Cam control pin (since BF3.3)                              |
 | `RX1, TX1`           | UART1         |                                                                                                |
 | `TX2`                | UART2-TX      | May be reassigned to `softserial1` for use as FrSky SmartPort pad                              |
-| `RX2`                | UART2-RX      | RX connection for Spektrum DSMX or DSM2, FlySky iBUS, or PPM (Disable UART2 for PPM)           |
+| `RX2`                | UART2-RX      | RX connection for Spektrum DSMX or DSM2, FlySky iBUS, or PPM (Disable `UART2` for PPM)           |
 | `Sbus`               | SBUS (UART2)  | Dedicated pad for SBUS (duplicate pad of RX2 with signal inverter)                             |
 | `RX3, TX3`           | UART3         |                                                                                                |
 | `RX4, TX4`           | UART4         |                                                                                                |
