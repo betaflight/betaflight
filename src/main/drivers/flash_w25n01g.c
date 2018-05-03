@@ -48,6 +48,7 @@ serialPort_t *debugSerialPort = NULL;
 
 // JEDEC ID
 #define JEDEC_ID_WINBOND_W25N01GV    0xEFAA21
+#define JEDEC_ID_WINBOND_W25M02GV    0xEFAB21
 
 // Device size parameters
 #define W25N01G_PAGE_SIZE         2048
@@ -247,6 +248,7 @@ bool w25n01g_detect(flashDevice_t *fdevice, uint32_t chipID)
 
     switch (chipID) {
     case JEDEC_ID_WINBOND_W25N01GV:
+    case JEDEC_ID_WINBOND_W25M02GV: // XXX Treat this as 1G part atm
         fdevice->geometry.sectors = 1024;      // Blocks
         fdevice->geometry.pagesPerSector = 64; // Pages/Blocks
         fdevice->geometry.pageSize = 2048;
