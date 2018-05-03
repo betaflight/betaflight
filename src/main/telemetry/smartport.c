@@ -143,76 +143,50 @@ enum
     FSSP_DATAID_A4         = 0x0910
 };
 
-// high priority/fast-changing sensor data
 const uint16_t frSkyDataIdTable[] = {
-#ifdef USE_GPS
-    FSSP_DATAID_SPEED     ,
-#endif
     FSSP_DATAID_VFAS      ,
     FSSP_DATAID_CURRENT   ,
-    FSSP_DATAID_ALTITUDE  ,
     FSSP_DATAID_FUEL      ,
-    //FSSP_DATAID_ADC1      ,
-    //FSSP_DATAID_ADC2      ,
-#ifdef USE_GPS
-    FSSP_DATAID_LATLONG   ,
-    FSSP_DATAID_LATLONG   , // twice
-#endif
-    //FSSP_DATAID_CAP_USED  ,
-    FSSP_DATAID_VARIO     ,
-    //FSSP_DATAID_CELLS     ,
-    //FSSP_DATAID_CELLS_LAST,
+    FSSP_DATAID_A4        ,
+    FSSP_DATAID_T1        ,
+    FSSP_DATAID_T2        ,
     FSSP_DATAID_HEADING   ,
     FSSP_DATAID_ACCX      ,
     FSSP_DATAID_ACCY      ,
     FSSP_DATAID_ACCZ      ,
 #ifdef USE_GPS
+    FSSP_DATAID_SPEED     ,
+    FSSP_DATAID_LATLONG   ,
+    FSSP_DATAID_LATLONG   , // twice (one for lat, one for long)
     FSSP_DATAID_HOME_DIST ,
     FSSP_DATAID_GPS_ALT   ,
 #endif
-    FSSP_DATAID_ASPD      ,
-    FSSP_DATAID_A4
-};
-
-// low priority/slow-changing sensor data (IDs in each row are sent alternatively i.e. half-rate)
-const uint16_t frSkyDataIdTable2[] = {
-    FSSP_DATAID_T1        , FSSP_DATAID_T2        ,
-#ifdef USE_ESC_SENSOR
-    FSSP_DATAID_RPM       , FSSP_DATAID_TEMP        // ESC_SENSOR_COMBINED values
-#endif
+    FSSP_DATAID_ALTITUDE  ,
+    FSSP_DATAID_VARIO
 };
 
 #ifdef USE_ESC_SENSOR
-// individual ESC data IDs - fast-changing data
+// number of sensors to send between sending the ESC sensors
+#define ESC_SENSOR_PERIOD 8
+
 const uint16_t frSkyEscDataIdTable[] = {
-    FSSP_DATAID_CURRENT1  ,
-    FSSP_DATAID_RPM1
-};
-
-// individual ESC data IDs - slow-changing data (half-rate)
-const uint16_t frSkyEscDataIdTable2[] = {
-    FSSP_DATAID_VFAS1     , FSSP_DATAID_TEMP1
+    FSSP_DATAID_CURRENT   ,
+    FSSP_DATAID_RPM       ,
+    FSSP_DATAID_VFAS      ,
+    FSSP_DATAID_TEMP
 };
 #endif
 
 typedef struct frSkyTableInfo_s {
     const uint16_t * table;
-    uint8_t size;
-    uint8_t cycleLength;
-    bool appendEscOffset;
+    const uint8_t size;
+    uint8_t index;
 } frSkyTableInfo_t;
 
-const frSkyTableInfo_t frSkyDataIdTables[] = {
-    {frSkyDataIdTable, sizeof(frSkyDataIdTable)/sizeof(uint16_t), 1, false},
-    {frSkyDataIdTable2, sizeof(frSkyDataIdTable2)/sizeof(uint16_t), 2, false},
+static frSkyTableInfo_t frSkyDataIdTableInfo = {frSkyDataIdTable, sizeof(frSkyDataIdTable)/sizeof(uint16_t), 0};
 #ifdef USE_ESC_SENSOR
-    {frSkyEscDataIdTable, sizeof(frSkyEscDataIdTable)/sizeof(uint16_t), 1, true},
-    {frSkyEscDataIdTable2, sizeof(frSkyEscDataIdTable2)/sizeof(uint16_t), 2, true}
+static frSkyTableInfo_t frSkyEscDataIdTableInfo = {frSkyEscDataIdTable, sizeof(frSkyEscDataIdTable)/sizeof(uint16_t), 0};
 #endif
-};
-
-#define FRSKY_TABLE_COUNT sizeof(frSkyDataIdTables)/sizeof(frSkyDataIdTables[0])
-#define DATAID_CYCLE_LENGTH 2 // lcd of table cycleLengths
 
 #define __USE_C99_MATH // for roundf()
 #define SMARTPORT_BAUD 57600
@@ -458,34 +432,40 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
 #endif
 
         // we can send back any data we want, our tables keep track of the order and frequency of each data type we send
-        static uint8_t smartPortIdTableCnt = 0;
-        static uint8_t smartPortIdCnt = 0;
+        frSkyTableInfo_t * tableInfo = &frSkyDataIdTableInfo;
+
+#ifdef USE_ESC_SENSOR
         static uint8_t smartPortIdCycleCnt = 0;
         static uint8_t smartPortIdOffset = 0;
-        frSkyTableInfo_t smartPortIdTableInfo = frSkyDataIdTables[smartPortIdTableCnt];
-        if (smartPortIdCnt == smartPortIdTableInfo.size) { // end of table reached, move to next table
-            smartPortIdCnt = 0;
-            smartPortIdTableCnt++;
-            if (smartPortIdTableCnt == FRSKY_TABLE_COUNT) { // if last table then loop back round to first table
-                smartPortIdTableCnt = 0;
-                // move to next ID in cycles
-                smartPortIdCycleCnt++;
-                if (smartPortIdCycleCnt == DATAID_CYCLE_LENGTH) {
-                    smartPortIdCycleCnt = 0;
-                    // on new cycle, move to next ESCon new cycle
-                    smartPortIdOffset++;
-                    if (smartPortIdOffset == getMotorCount()) {
-                        smartPortIdOffset = 0;
-                    }
+        if (smartPortIdCycleCnt == ESC_SENSOR_PERIOD) {
+            // send ESC sensors
+            tableInfo = &frSkyEscDataIdTableInfo;
+            if (tableInfo->index == tableInfo->size) { // end of ESC table, return to other sensors
+                tableInfo->index = 0;
+                smartPortIdCycleCnt = 0;
+                smartPortIdOffset++;
+                if (smartPortIdOffset == getMotorCount() + 1) { // each motor and ESC_SENSOR_COMBINED
+                    smartPortIdOffset = 0;
                 }
             }
-            smartPortIdTableInfo = frSkyDataIdTables[smartPortIdTableCnt];
         }
-        uint16_t id = smartPortIdTableInfo.table[smartPortIdCnt + (smartPortIdCycleCnt % smartPortIdTableInfo.cycleLength)];
-        if (smartPortIdTableInfo.appendEscOffset) {
+        if (smartPortIdCycleCnt != ESC_SENSOR_PERIOD) {
+            // send other sensors
+            tableInfo = &frSkyDataIdTableInfo;
+            if (tableInfo->index == tableInfo->size) { // end of table reached, loop back
+                tableInfo->index = 0;
+            }
+        }
+#endif
+        uint16_t id = tableInfo->table[tableInfo->index];
+#ifdef USE_ESC_SENSOR
+        if (smartPortIdCycleCnt == ESC_SENSOR_PERIOD) {
             id += smartPortIdOffset;
+        } else {
+            smartPortIdCycleCnt++;
         }
-        smartPortIdCnt += smartPortIdTableInfo.cycleLength;
+#endif
+        tableInfo->index++;
 
         int32_t tmpi;
         uint32_t tmp2 = 0;
@@ -549,8 +529,10 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                 break;
             case FSSP_DATAID_RPM        :
                 escData = getEscSensorData(ESC_SENSOR_COMBINED);
-                smartPortSendPackage(id, escData->rpm);
-                *clearToSend = false;
+                if (escData != NULL) {
+                    smartPortSendPackage(id, escData->rpm);
+                    *clearToSend = false;
+                }
                 break;
             case FSSP_DATAID_RPM1       :
             case FSSP_DATAID_RPM2       :
@@ -568,8 +550,10 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                 break;
             case FSSP_DATAID_TEMP        :
                 escData = getEscSensorData(ESC_SENSOR_COMBINED);
-                smartPortSendPackage(id, escData->temperature);
-                *clearToSend = false;
+                if (escData != NULL) {
+                    smartPortSendPackage(id, escData->temperature);
+                    *clearToSend = false;
+                }
                 break;
             case FSSP_DATAID_TEMP1      :
             case FSSP_DATAID_TEMP2      :
@@ -598,9 +582,6 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                     *clearToSend = false;
                 }
                 break;
-            //case FSSP_DATAID_ADC1       :
-            //case FSSP_DATAID_ADC2       :
-            //case FSSP_DATAID_CAP_USED   :
             case FSSP_DATAID_VARIO      :
                 if (sensors(SENSOR_BARO)) {
                     smartPortSendPackage(id, getEstimatedVario()); // unknown given unit but requested in 100 = 1m/s
@@ -727,7 +708,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                     // the same ID is sent twice, one for longitude, one for latitude
                     // the MSB of the sent uint32_t helps FrSky keep track
                     // the even/odd bit of our counter helps us keep track
-                    if (smartPortIdCnt & 1) {
+                    if (smartPortIdCycleCnt & 1) {
                         tmpui = abs(gpsSol.llh.lon);  // now we have unsigned value and one bit to spare
                         tmpui = (tmpui + tmpui / 2) / 25 | 0x80000000;  // 6/100 = 1.5/25, division by power of 2 is fast
                         if (gpsSol.llh.lon < 0) tmpui |= 0x40000000;
@@ -761,9 +742,6 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                     smartPortSendPackage(id, vfasVoltage);
                     *clearToSend = false;
                 }
-                break;
-            case FSSP_DATAID_ASPD       :
-                // Air speed. Not supported in BF yet.
                 break;
             default:
                 break;
