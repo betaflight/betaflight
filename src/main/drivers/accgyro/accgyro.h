@@ -27,6 +27,7 @@
 #include "drivers/bus.h"
 #include "drivers/sensor.h"
 #include "drivers/accgyro/accgyro_mpu.h"
+#include "sensors/gyro.h"
 #pragma GCC diagnostic push
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
 #include <pthread.h>
@@ -81,7 +82,7 @@ typedef struct gyroDev_s {
     uint8_t mpuDividerDrops;
     ioTag_t mpuIntExtiTag;
     uint8_t gyroHasOverflowProtection;
-    uint8_t filler[1];
+    gyroSensor_e gyroHardware;
 } gyroDev_t;
 
 typedef struct accDev_s {

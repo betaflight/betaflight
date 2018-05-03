@@ -697,7 +697,10 @@ void initRcProcessing(void) {}
 void changePidProfile(uint8_t) {}
 void pidInitConfig(const pidProfile_t *) {}
 void accSetCalibrationCycles(uint16_t) {}
-void gyroStartCalibration(void) {}
+void gyroStartCalibration(bool isFirstArmingCalibration)
+{
+    UNUSED(isFirstArmingCalibration);
+}
 void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t*) {}
 void handleInflightCalibrationStickPosition(void) {}
 bool feature(uint32_t) { return false;}
