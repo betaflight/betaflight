@@ -198,8 +198,8 @@
 
 #ifdef FPVM_BETAFLIGHTF7
 //FLASH--------------------------------------
-#define M25P16_CS_PIN        SPI4_NSS_PIN
-#define M25P16_SPI_INSTANCE  SPI4
+#define FLASH_CS_PIN         SPI4_NSS_PIN
+#define FLASH_SPI_INSTANCE   SPI4
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16

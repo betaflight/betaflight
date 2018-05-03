@@ -92,8 +92,8 @@
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
-#define M25P16_CS_PIN           PA15
-#define M25P16_SPI_INSTANCE     SPI3
+#define FLASH_CS_PIN            PA15
+#define FLASH_SPI_INSTANCE      SPI3
 
 #define USE_VCP
 #define USE_USB_DETECT

@@ -114,8 +114,8 @@
 /* BLACKBOX dataflash available as of V2.1 -- did not exist on V1 and V2 */
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
-#define M25P16_CS_PIN        SPI3_NSS_PIN
-#define M25P16_SPI_INSTANCE  SPI3
+#define FLASH_CS_PIN         SPI3_NSS_PIN
+#define FLASH_SPI_INSTANCE   SPI3
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 
 /* Motion Processing Unit (MPU) - Invensense 6-axis MPU-6500 or 9-axis MPU-9250

@@ -69,9 +69,9 @@
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
-#define M25P16_SPI_SHARED
-#define M25P16_CS_PIN           PC15
-#define M25P16_SPI_INSTANCE     SPI2
+#define FLASH_SPI_SHARED
+#define FLASH_CS_PIN            PC15
+#define FLASH_SPI_INSTANCE      SPI2
 
 #define USE_GYRO
 #define USE_GYRO_MPU6500

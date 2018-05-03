@@ -60,13 +60,6 @@
 // Note, this is the same DMA channel as UART1_RX. Luckily we don't use DMA for USART Rx.
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
 
-//#define USE_FLASHFS
-//#define USE_FLASH_M25P16
-
-//#define M25P16_CS_GPIO          GPIOB
-//#define M25P16_CS_PIN           GPIO_Pin_12
-//#define M25P16_SPI_INSTANCE     SPI2
-
 #define USE_GYRO
 #define USE_GYRO_L3GD20
 #define USE_GYRO_MPU6050

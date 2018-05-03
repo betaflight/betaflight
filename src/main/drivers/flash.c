@@ -63,7 +63,7 @@ bool flashInit(const flashConfig_t *flashConfig)
     IOConfigGPIO(busdev->busdev_u.spi.csnPin, SPI_IO_CS_CFG);
     IOHi(busdev->busdev_u.spi.csnPin);
 
-#ifndef M25P16_SPI_SHARED
+#ifndef FLASH_SPI_SHARED
     //Maximum speed for standard READ command is 20mHz, other commands tolerate 25mHz
     //spiSetDivisor(busdev->busdev_u.spi.instance, SPI_CLOCK_FAST);
     spiSetDivisor(busdev->busdev_u.spi.instance, SPI_CLOCK_STANDARD*2);

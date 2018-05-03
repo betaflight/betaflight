@@ -64,8 +64,8 @@
 #define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
-#define M25P16_CS_PIN           PA15
-#define M25P16_SPI_INSTANCE     SPI3
+#define FLASH_CS_PIN            PA15
+#define FLASH_SPI_INSTANCE      SPI3
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
