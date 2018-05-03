@@ -34,6 +34,17 @@
 
 #define CLOCKSPEED 800000    // i2c clockspeed 400kHz default (conform specs), 800kHz  and  1200kHz (Betaflight default)
 
+// Number of bits in I2C protocol phase
+#define LEN_ADDR 7
+#define LEN_RW 1
+#define LEN_ACK 1
+
+// Clock period in us during unstick transfer
+#define UNSTICK_CLK_US 10
+
+// Allow 500us for clock strech to complete during unstick
+#define UNSTICK_CLK_STRETCH (500/UNSTICK_CLK_US)
+
 static void i2cUnstick(IO_t scl, IO_t sda);
 
 #define IOCFG_I2C_PU IO_CONFIG(GPIO_MODE_AF_OD, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
@@ -289,31 +300,33 @@ static void i2cUnstick(IO_t scl, IO_t sda)
     IOConfigGPIO(scl, IOCFG_OUT_OD);
     IOConfigGPIO(sda, IOCFG_OUT_OD);
 
-    // Analog Devices AN-686
-    // We need 9 clock pulses + STOP condition
-    for (i = 0; i < 9; i++) {
+    // Clock out, with SDA high:
+    //   7 data bits
+    //   1 READ bit
+    //   1 cycle for the ACK
+    for (i = 0; i < (LEN_ADDR + LEN_RW + LEN_ACK); i++) {
         // Wait for any clock stretching to finish
-        int timeout = 100;
+        int timeout = UNSTICK_CLK_STRETCH;
         while (!IORead(scl) && timeout) {
-            delayMicroseconds(5);
+            delayMicroseconds(UNSTICK_CLK_US);
             timeout--;
         }
 
         // Pull low
         IOLo(scl); // Set bus low
-        delayMicroseconds(5);
+        delayMicroseconds(UNSTICK_CLK_US/2);
         IOHi(scl); // Set bus high
-        delayMicroseconds(5);
+        delayMicroseconds(UNSTICK_CLK_US/2);
     }
 
     // Generate a stop condition in case there was none
     IOLo(scl);
-    delayMicroseconds(5);
+    delayMicroseconds(UNSTICK_CLK_US/2);
     IOLo(sda);
-    delayMicroseconds(5);
+    delayMicroseconds(UNSTICK_CLK_US/2);
 
     IOHi(scl); // Set bus scl high
-    delayMicroseconds(5);
+    delayMicroseconds(UNSTICK_CLK_US/2);
     IOHi(sda); // Set bus sda high
 }
 
