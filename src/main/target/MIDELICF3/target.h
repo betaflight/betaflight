@@ -24,6 +24,12 @@
 
 // prevent flash overflow
 #undef USE_CRSF_CMS_TELEMETRY
+#undef USE_GYRO_OVERFLOW_CHECK  // target does not use an affected gyro
+#undef USE_SERIALRX_SUMD
+#undef USE_SERIALRX_SUMH
+#undef USE_SERIALRX_XBUS
+#undef USE_TELEMETRY_HOTT
+#undef USE_TELEMETRY_LTM
 
 #define LED0_PIN                PB5
 
