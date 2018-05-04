@@ -423,8 +423,15 @@ static bool osdDrawSingleElement(uint8_t item)
         break;
 
     case OSD_GPS_SPEED:
-        // FIXME ideally we want to use SYM_KMH symbol but it's not in the font any more, so we use K.
-        tfp_sprintf(buff, "%3dK", CM_S_TO_KM_H(gpsSol.groundSpeed));
+        // FIXME ideally we want to use SYM_KMH symbol but it's not in the font any more, so we use K (M for MPH)
+        switch (osdConfig()->units) {
+        case OSD_UNIT_IMPERIAL:
+            tfp_sprintf(buff, "%3dM", CM_S_TO_MPH(gpsSol.groundSpeed));
+            break;
+        default:
+            tfp_sprintf(buff, "%3dK", CM_S_TO_KM_H(gpsSol.groundSpeed));
+            break;
+        }
         break;
 
     case OSD_GPS_LAT:
@@ -1060,7 +1067,14 @@ static void osdUpdateStats(void)
     int16_t value = 0;
 
 #ifdef USE_GPS
-    value = CM_S_TO_KM_H(gpsSol.groundSpeed);
+    switch (osdConfig()->units) {
+    case OSD_UNIT_IMPERIAL:
+        value = CM_S_TO_MPH(gpsSol.groundSpeed);
+        break;
+    default:
+        value = CM_S_TO_KM_H(gpsSol.groundSpeed);
+        break;
+    }
 #endif
     if (stats.max_speed < value) {
         stats.max_speed = value;
