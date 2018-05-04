@@ -25,13 +25,13 @@
 #undef USE_SERIALRX_XBUS
 #undef USE_TELEMETRY_MAVLINK
 #undef USE_TELEMETRY_LTM
+#undef USE_TELEMETRY_HOTT
 
 #undef USE_RTC_TIME
 #undef USE_COPY_PROFILE_CMS_MENU
 #undef USE_RX_MSP
 
 #undef USE_DSHOT_DMAR           // OMNIBUS (F3) does not benefit from burst Dshot
-
 
 #define TARGET_BOARD_IDENTIFIER "OMNI" // https://en.wikipedia.org/wiki/Omnibus
 

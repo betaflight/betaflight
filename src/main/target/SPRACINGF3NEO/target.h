@@ -20,7 +20,9 @@
 #define TARGET_BOARD_IDENTIFIER "SP3N"
 #define USE_TARGET_CONFIG
 
-//Making it fit into flash:
+// Removed to make the firmware fit into flash (in descending order of priority):
+
+#undef USE_SERIALRX_XBUS
 #undef USE_TELEMETRY_LTM
 
 #undef USE_RTC_TIME
