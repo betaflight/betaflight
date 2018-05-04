@@ -230,6 +230,7 @@ uint8_t __config_end = 0x10;
 uint16_t averageSystemLoadPercent = 0;
 
 timeDelta_t getTaskDeltaTime(cfTaskId_e){ return 0; }
+uint16_t currentRxRefreshRate = 9000;
 armingDisableFlags_e getArmingDisableFlags(void) { return ARMING_DISABLED_NO_GYRO; }
 
 const char *armingDisableFlagNames[]= {

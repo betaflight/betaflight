@@ -20,6 +20,8 @@
 
 #pragma once
 
+extern uint16_t currentRxRefreshRate;
+
 void processRcCommand(void);
 float getSetpointRate(int axis);
 float getRcDeflection(int axis);
