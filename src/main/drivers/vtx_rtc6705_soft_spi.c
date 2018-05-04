@@ -30,11 +30,9 @@
 #include "drivers/light_led.h"
 #include "drivers/time.h"
 #include "drivers/vtx_rtc6705.h"
-#if defined(STACKX)
 #include "fc/runtime_config.h"
 #include "flight/failsafe.h"
 #include "io/vtx.h"
-#endif
 
 #define DP_5G_MASK                  0x7000
 #define PA5G_BS_MASK                0x0E00
