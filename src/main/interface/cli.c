@@ -2373,11 +2373,27 @@ static void cliGpsPassthrough(char *cmdline)
 #endif
 
 #if defined(USE_GYRO_REGISTER_DUMP) && !defined(SIMULATOR_BUILD)
+static void cliPrintGyroRegisters(uint8_t whichSensor)
+{
+    tfp_printf("# WHO_AM_I    0x%X\r\n", gyroReadRegister(whichSensor, MPU_RA_WHO_AM_I));
+    tfp_printf("# CONFIG      0x%X\r\n", gyroReadRegister(whichSensor, MPU_RA_CONFIG));
+    tfp_printf("# GYRO_CONFIG 0x%X\r\n", gyroReadRegister(whichSensor, MPU_RA_GYRO_CONFIG));
+}
+
 static void cliDumpGyroRegisters(char *cmdline)
 {
-    tfp_printf("# WHO_AM_I    0x%X\r\n", gyroReadRegister(MPU_RA_WHO_AM_I));
-    tfp_printf("# CONFIG      0x%X\r\n", gyroReadRegister(MPU_RA_CONFIG));
-    tfp_printf("# GYRO_CONFIG 0x%X\r\n", gyroReadRegister(MPU_RA_GYRO_CONFIG));
+#ifdef USE_DUAL_GYRO
+    if ((gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_1) || (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_BOTH)) {
+        tfp_printf("\r\n# Gyro 1\r\n");
+        cliPrintGyroRegisters(GYRO_CONFIG_USE_GYRO_1);
+    }
+    if ((gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_2) || (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_BOTH)) {
+        tfp_printf("\r\n# Gyro 2\r\n");
+        cliPrintGyroRegisters(GYRO_CONFIG_USE_GYRO_2);
+    }
+#else
+    cliPrintGyroRegisters(GYRO_CONFIG_USE_GYRO_1);
+#endif // USE_DUAL_GYRO
     UNUSED(cmdline);
 }
 #endif

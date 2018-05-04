@@ -128,4 +128,4 @@ int16_t gyroRateDps(int axis);
 bool gyroOverflowDetected(void);
 bool gyroYawSpinDetected(void);
 uint16_t gyroAbsRateDps(int axis);
-uint8_t gyroReadRegister(uint8_t reg);
+uint8_t gyroReadRegister(uint8_t whichSensor, uint8_t reg);

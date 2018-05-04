@@ -227,6 +227,22 @@ const busDevice_t *gyroSensorBus(void)
 #endif
 }
 
+#ifdef USE_GYRO_REGISTER_DUMP
+const busDevice_t *gyroSensorBusByDevice(uint8_t whichSensor)
+{
+#ifdef USE_DUAL_GYRO
+    if (whichSensor == GYRO_CONFIG_USE_GYRO_2) {
+        return &gyroSensor2.gyroDev.bus;
+    } else {
+        return &gyroSensor1.gyroDev.bus;
+    }
+#else
+    UNUSED(whichSensor);
+    return &gyroSensor1.gyroDev.bus;
+#endif
+}
+#endif // USE_GYRO_REGISTER_DUMP
+
 const mpuConfiguration_t *gyroMpuConfiguration(void)
 {
 #ifdef USE_DUAL_GYRO
@@ -1276,8 +1292,8 @@ uint16_t gyroAbsRateDps(int axis)
 }
 
 #ifdef USE_GYRO_REGISTER_DUMP
-uint8_t gyroReadRegister(uint8_t reg)
+uint8_t gyroReadRegister(uint8_t whichSensor, uint8_t reg)
 {
-    return mpuGyroReadRegister(gyroSensorBus(), reg);
+    return mpuGyroReadRegister(gyroSensorBusByDevice(whichSensor), reg);
 }
-#endif
+#endif // USE_GYRO_REGISTER_DUMP
