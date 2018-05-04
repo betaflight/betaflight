@@ -84,8 +84,8 @@
 #define UART6_TX_PIN            PC6
 
 #define USE_SOFTSERIAL1
-#define SOFTSERIAL1_RX_PIN      PB0 // PWM5
-#define SOFTSERIAL1_TX_PIN      PB1 // PWM7
+#define SOFTSERIAL1_RX_PIN      PB1 // PWM7
+#define SOFTSERIAL1_TX_PIN      PB0 // PWM5
 
 #define USE_SOFTSERIAL2
 
