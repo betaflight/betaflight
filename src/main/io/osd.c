@@ -673,7 +673,7 @@ static bool osdDrawSingleElement(uint8_t item)
                     const char motorNumber = '1' + i;
                     // if everything is OK just display motor number else R, T or C
                     char warnFlag = motorNumber;
-                    if (ARMING_FLAG(ARMED) && osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF && escData->rpm <= osdConfig()->esc_rpm_alarm) {
+                    if (ARMING_FLAG(ARMED) && osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF && calcEscRpm(escData->rpm) <= osdConfig()->esc_rpm_alarm) {
                         warnFlag = 'R';
                     }
                     if (osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF && escData->temperature >= osdConfig()->esc_temp_alarm) {
@@ -820,7 +820,7 @@ static bool osdDrawSingleElement(uint8_t item)
 
     case OSD_ESC_RPM:
         if (feature(FEATURE_ESC_SENSOR)) {
-            tfp_sprintf(buff, "%5d", escDataCombined == NULL ? 0 : escDataCombined->rpm);
+            tfp_sprintf(buff, "%5d", escDataCombined == NULL ? 0 : calcEscRpm(escDataCombined->rpm));
         }
         break;
 #endif
