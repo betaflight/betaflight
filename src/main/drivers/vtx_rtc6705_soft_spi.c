@@ -30,6 +30,11 @@
 #include "drivers/light_led.h"
 #include "drivers/time.h"
 #include "drivers/vtx_rtc6705.h"
+#if defined(STACKX)
+#include "fc/runtime_config.h"
+#include "flight/failsafe.h"
+#include "io/vtx.h"
+#endif
 
 #define DP_5G_MASK                  0x7000
 #define PA5G_BS_MASK                0x0E00
@@ -136,7 +141,11 @@ void rtc6705SetFrequency(uint16_t channel_freq)
 
 void rtc6705SetRFPower(uint8_t rf_power)
 {
-    rtc6705_write_register(7, (rf_power > 1 ? PA_CONTROL_DEFAULT : (PA_CONTROL_DEFAULT | PD_Q5G_MASK) & (~(PA5G_PW_MASK | PA5G_BS_MASK))));
+	if (!ARMING_FLAG(ARMED) && (vtxSettingsConfig()->lowPowerDisarm == 0xFF) && !failsafeIsActive()) {
+		rtc6705_write_register(7, ((PA_CONTROL_DEFAULT | PD_Q5G_MASK) & (~(PA5G_PW_MASK | PA5G_BS_MASK | DP_5G_MASK))));
+	} else {
+		rtc6705_write_register(7, (rf_power > 1 ? PA_CONTROL_DEFAULT : (PA_CONTROL_DEFAULT | PD_Q5G_MASK) & (~(PA5G_PW_MASK | PA5G_BS_MASK))));
+	}
 }
 
 void rtc6705Disable(void)
