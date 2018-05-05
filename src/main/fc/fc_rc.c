@@ -45,8 +45,6 @@
 #include "flight/pid.h"
 #include "rx/rx.h"
 
-#include "scheduler/scheduler.h"
-
 #include "sensors/battery.h"
 
 typedef float (applyRatesFn)(const int axis, float rcCommandf, const float rcCommandfAbs);
@@ -55,6 +53,7 @@ static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
 static float throttlePIDAttenuation;
 static bool reverseMotors = false;
 static applyRatesFn *applyRates;
+uint16_t currentRxRefreshRate;
 
 float getSetpointRate(int axis)
 {
@@ -185,13 +184,9 @@ FAST_CODE NOINLINE void processRcCommand(void)
     static float rcCommandInterp[4] = { 0, 0, 0, 0 };
     static float rcStepSize[4] = { 0, 0, 0, 0 };
     static int16_t rcInterpolationStepCount;
-    static uint16_t currentRxRefreshRate;
 
-    if (isRXDataNew) {
-        currentRxRefreshRate = constrain(getTaskDeltaTime(TASK_RX),1000,20000);
-        if (isAntiGravityModeActive()) {
-            checkForThrottleErrorResetState(currentRxRefreshRate);
-        }
+    if (isRXDataNew && isAntiGravityModeActive()) {
+        checkForThrottleErrorResetState(currentRxRefreshRate);
     }
 
     const uint8_t interpolationChannels = rxConfig()->rcInterpolationChannels + 2; //"RP", "RPY", "RPYT"
@@ -222,7 +217,7 @@ FAST_CODE NOINLINE void processRcCommand(void)
 
             if (debugMode == DEBUG_RC_INTERPOLATION) {
                 debug[0] = lrintf(rcCommand[0]);
-                debug[1] = lrintf(getTaskDeltaTime(TASK_RX) / 1000);
+                debug[1] = lrintf(currentRxRefreshRate / 1000);
                 //debug[1] = lrintf(rcCommandInterp[0]);
                 //debug[1] = lrintf(rcStepSize[0]*100);
             }

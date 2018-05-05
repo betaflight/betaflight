@@ -87,6 +87,7 @@ extern uint8_t __config_end;
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/fc_core.h"
+#include "fc/fc_rc.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
@@ -3195,7 +3196,7 @@ static void cliStatus(char *cmdline)
     cliPrintLinef("I2C Errors: %d, config size: %d, max available config: %d", i2cErrorCounter, getEEPROMConfigSize(), CONFIG_SIZE);
 
     const int gyroRate = getTaskDeltaTime(TASK_GYROPID) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_GYROPID)));
-    const int rxRate = getTaskDeltaTime(TASK_RX) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_RX)));
+    const int rxRate = currentRxRefreshRate == 0 ? 0 : (int)(1000000.0f / ((float)currentRxRefreshRate));
     const int systemRate = getTaskDeltaTime(TASK_SYSTEM) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_SYSTEM)));
     cliPrintLinef("CPU:%d%%, cycle time: %d, GYRO rate: %d, RX rate: %d, System rate: %d",
             constrain(averageSystemLoadPercent, 0, 100), getTaskDeltaTime(TASK_GYROPID), gyroRate, rxRate, systemRate);
@@ -3951,7 +3952,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("vtx", "vtx channels on switch", NULL, cliVtx),
 #endif
 #ifdef USE_USB_MSC
-	CLI_COMMAND_DEF("msc", "switch into msc mode", NULL, cliMsc),
+    CLI_COMMAND_DEF("msc", "switch into msc mode", NULL, cliMsc),
 #endif
 };
 
