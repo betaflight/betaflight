@@ -1249,6 +1249,14 @@ static bool isSomeStatEnabled(void)
     return (osdConfig()->enabled_stats != 0);
 }
 
+// *** IMPORTANT ***
+// The order of the OSD stats as displayed on-screen must match the osd_stats_e enumeration.
+// This is because the fields are presented in the configurator in the order of the enumeration
+// and we want the configuration order to match the on-screen display order.  If you change the
+// display order you *must* update the osd_stats_e enumeration to match. Additionally the
+// changes to the stats display order *must* be implemented in the configurator otherwise the
+// stats selections will not be populated correctly and the settings will become corrupted.
+
 static void osdShowStats(uint16_t endBatteryVoltage)
 {
     uint8_t top = 2;

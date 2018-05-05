@@ -95,21 +95,30 @@ typedef enum {
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
+// *** IMPORTANT ***
+// The order of the OSD stats enumeration *must* match the order they're displayed on-screen
+// This is because the fields are presented in the configurator in the order of the enumeration
+// and we want the configuration order to match the on-screen display order.
+// Changes to the stats display order *must* be implemented in the configurator otherwise the
+// stats selections will not be populated correctly and the settings will become corrupted.
+//
+// Also - if the stats are reordered then the PR version must be incremented. Otherwise there
+// is no indication that the stored config must be reset and the bitmapped values will be incorrect.
 typedef enum {
+    OSD_STAT_RTC_DATE_TIME,
+    OSD_STAT_TIMER_1,
+    OSD_STAT_TIMER_2,
     OSD_STAT_MAX_SPEED,
+    OSD_STAT_MAX_DISTANCE,
     OSD_STAT_MIN_BATTERY,
+    OSD_STAT_END_BATTERY,
+    OSD_STAT_BATTERY,
     OSD_STAT_MIN_RSSI,
     OSD_STAT_MAX_CURRENT,
     OSD_STAT_USED_MAH,
     OSD_STAT_MAX_ALTITUDE,
     OSD_STAT_BLACKBOX,
-    OSD_STAT_END_BATTERY,
-    OSD_STAT_TIMER_1,
-    OSD_STAT_TIMER_2,
-    OSD_STAT_MAX_DISTANCE,
     OSD_STAT_BLACKBOX_NUMBER,
-    OSD_STAT_RTC_DATE_TIME,
-    OSD_STAT_BATTERY,
     OSD_STAT_COUNT // MUST BE LAST
 } osd_stats_e;
 
