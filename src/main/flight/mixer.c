@@ -105,7 +105,7 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
 #endif
 
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS; motorIndex++) {
-        motorConfig->dev.ioTags[motorIndex] = timerioTagGetByUsage(TIM_USE_MOTOR, motorIndex + 1);
+        motorConfig->dev.ioTags[motorIndex] = timerioTagGetByUsage(TIM_USE_MOTOR, motorIndex);
     }
 
     motorConfig->motorPoleCount = 14;   // Most brushes motors that we use are 14 poles

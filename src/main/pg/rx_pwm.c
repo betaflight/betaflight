@@ -39,7 +39,7 @@ void pgResetFn_pwmConfig(pwmConfig_t *pwmConfig)
 {
     pwmConfig->inputFilteringMode = INPUT_FILTERING_DISABLED;
     for (unsigned inputIndex = 0; inputIndex < PWM_INPUT_PORT_COUNT; inputIndex++) {
-        pwmConfig->ioTags[inputIndex] = timerioTagGetByUsage(TIM_USE_PWM, inputIndex + 1);
+        pwmConfig->ioTags[inputIndex] = timerioTagGetByUsage(TIM_USE_PWM, inputIndex);
     }
 }
 #endif

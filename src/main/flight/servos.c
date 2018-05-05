@@ -67,7 +67,7 @@ void pgResetFn_servoConfig(servoConfig_t *servoConfig)
     servoConfig->channelForwardingStartChannel = AUX1;
 
     for (unsigned servoIndex = 0; servoIndex < MAX_SUPPORTED_SERVOS; servoIndex++) {
-        servoConfig->dev.ioTags[servoIndex] = timerioTagGetByUsage(TIM_USE_SERVO, servoIndex + 1);
+        servoConfig->dev.ioTags[servoIndex] = timerioTagGetByUsage(TIM_USE_SERVO, servoIndex);
     }
 }
 

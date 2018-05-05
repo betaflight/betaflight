@@ -60,10 +60,10 @@ const timerHardware_t *timerGetByTag(ioTag_t ioTag)
 
 ioTag_t timerioTagGetByUsage(timerUsageFlag_e usageFlag, uint8_t index)
 {
-    uint8_t currentIndex = 1;
+    uint8_t currentIndex = 0;
     for (int i = 0; i < (int)USABLE_TIMER_CHANNEL_COUNT; i++) {
         if ((timerHardware[i].usageFlags & usageFlag) == usageFlag) {
-            if (currentIndex == index || index == 0) {
+            if (currentIndex == index) {
                 return timerHardware[i].tag;
             }
             currentIndex++;
