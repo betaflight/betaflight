@@ -3692,7 +3692,7 @@ static void cliTimer(char *cmdline)
                     cliPrintLinef("# %d. TIM%d CH%d",
                         index,
                         timerGetTIMNumber(timerHardware[i].tim),
-                        timerHardware[i].channel
+                        CC_INDEX_FROM_CHANNEL(timerHardware[i].channel)
                     );
                     index++;
                 }
