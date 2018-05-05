@@ -74,11 +74,6 @@
 #undef USE_SPEKTRUM_CMS_TELEMETRY
 #endif
 
-// undefine USE_ALT_HOLD if there is no baro or rangefinder to support it
-#if defined(USE_ALT_HOLD) && !defined(USE_BARO) && !defined(USE_RANGEFINDER)
-#undef USE_ALT_HOLD
-#endif
-
 /* If either VTX_CONTROL or VTX_COMMON is undefined then remove common code and device drivers */
 #if !defined(USE_VTX_COMMON) || !defined(USE_VTX_CONTROL)
 #undef USE_VTX_COMMON

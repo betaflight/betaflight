@@ -60,7 +60,7 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
-#include "flight/altitude.h"
+#include "flight/position.h"
 
 #include "rx/rx.h"
 

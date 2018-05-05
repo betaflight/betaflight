@@ -69,7 +69,7 @@
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
-#include "flight/altitude.h"
+#include "flight/position.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
@@ -1324,29 +1324,6 @@ static mspResult_e mspFcProcessOutCommandWithArg(uint8_t cmdMSP, sbuf_t *arg, sb
 }
 #endif // USE_OSD_SLAVE
 
-#ifdef USE_NAV
-static void mspFcWpCommand(sbuf_t *dst, sbuf_t *src)
-{
-    uint8_t wp_no;
-    int32_t lat = 0, lon = 0;
-    wp_no = sbufReadU8(src);    // get the wp number
-    if (wp_no == 0) {
-        lat = GPS_home[LAT];
-        lon = GPS_home[LON];
-    } else if (wp_no == 16) {
-        lat = GPS_hold[LAT];
-        lon = GPS_hold[LON];
-    }
-    sbufWriteU8(dst, wp_no);
-    sbufWriteU32(dst, lat);
-    sbufWriteU32(dst, lon);
-    sbufWriteU32(dst, AltHold);           // altitude (cm) will come here -- temporary implementation to test feature with apps
-    sbufWriteU16(dst, 0);                 // heading  will come here (deg)
-    sbufWriteU16(dst, 0);                 // time to stay (ms) will come here
-    sbufWriteU8(dst, 0);                  // nav flag will come here
-}
-#endif
-
 #ifdef USE_FLASHFS
 static void mspFcDataFlashReadCommand(sbuf_t *dst, sbuf_t *src)
 {
@@ -1399,10 +1376,6 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     uint32_t i;
     uint8_t value;
     const unsigned int dataSize = sbufBytesRemaining(src);
-#ifdef USE_NAV
-    uint8_t wp_no;
-    int32_t lat = 0, lon = 0, alt = 0;
-#endif
     switch (cmdMSP) {
     case MSP_SELECT_SETTING:
         value = sbufReadU8(src);
@@ -1869,33 +1842,6 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         GPS_update |= 2;        // New data signalisation to GPS functions // FIXME Magic Numbers
         break;
 #endif // USE_GPS
-#ifdef USE_NAV
-    case MSP_SET_WP:
-        wp_no = sbufReadU8(src);    //get the wp number
-        lat = sbufReadU32(src);
-        lon = sbufReadU32(src);
-        alt = sbufReadU32(src);     // to set altitude (cm)
-        sbufReadU16(src);           // future: to set heading (deg)
-        sbufReadU16(src);           // future: to set time to stay (ms)
-        sbufReadU8(src);            // future: to set nav flag
-        if (wp_no == 0) {
-            GPS_home[LAT] = lat;
-            GPS_home[LON] = lon;
-            DISABLE_FLIGHT_MODE(GPS_HOME_MODE);        // with this flag, GPS_set_next_wp will be called in the next loop -- OK with SERIAL GPS / OK with I2C GPS
-            ENABLE_STATE(GPS_FIX_HOME);
-            if (alt != 0)
-                AltHold = alt;          // temporary implementation to test feature with apps
-        } else if (wp_no == 16) {       // OK with SERIAL GPS  --  NOK for I2C GPS / needs more code dev in order to inject GPS coord inside I2C GPS
-            GPS_hold[LAT] = lat;
-            GPS_hold[LON] = lon;
-            if (alt != 0)
-                AltHold = alt;          // temporary implementation to test feature with apps
-            nav_mode = NAV_MODE_WP;
-            GPS_set_next_wp(&GPS_hold[LAT], &GPS_hold[LON]);
-        }
-        break;
-#endif // USE_NAV
-
     case MSP_SET_FEATURE_CONFIG:
         featureClearAll();
         featureSet(sbufReadU32(src)); // features bitmap
@@ -2305,11 +2251,6 @@ mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostPro
 #ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
     } else if (cmdMSP == MSP_SET_4WAY_IF) {
         mspFc4waySerialCommand(dst, src, mspPostProcessFn);
-        ret = MSP_RESULT_ACK;
-#endif
-#ifdef USE_NAV
-    } else if (cmdMSP == MSP_WP) {
-        mspFcWpCommand(dst, src);
         ret = MSP_RESULT_ACK;
 #endif
 #ifdef USE_FLASHFS

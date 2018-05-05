@@ -83,7 +83,7 @@
 
 #include "telemetry/telemetry.h"
 
-#include "flight/altitude.h"
+#include "flight/position.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
@@ -866,17 +866,7 @@ static NOINLINE void subTaskMainSubprocesses(timeUs_t currentTimeUs)
         updateMagHold();
     }
 #endif
-
-#if defined(USE_ALT_HOLD)
-    // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
-    updateRcCommands();
-    if (sensors(SENSOR_BARO) || sensors(SENSOR_RANGEFINDER)) {
-        if (FLIGHT_MODE(BARO_MODE) || FLIGHT_MODE(RANGEFINDER_MODE)) {
-            applyAltHold();
-        }
-    }
-#endif
-
+    
     // If we're armed, at minimum throttle, and we do arming via the
     // sticks, do not process yaw input from the rx.  We do this so the
     // motors do not spin up while we are trying to arm or disarm.

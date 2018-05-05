@@ -65,7 +65,7 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "flight/altitude.h"
+#include "flight/position.h"
 #include "flight/imu.h"
 #ifdef USE_ESC_SENSOR
 #include "flight/mixer.h"

@@ -52,7 +52,7 @@
 #include "flight/imu.h"
 #include "flight/failsafe.h"
 #include "flight/navigation.h"
-#include "flight/altitude.h"
+#include "flight/position.h"
 
 #include "io/serial.h"
 #include "io/gimbal.h"
