@@ -114,3 +114,4 @@
 #include "target.h"
 #include "target/common_fc_post.h"
 #endif
+#include "target/common_defaults_post.h"
