@@ -38,6 +38,7 @@ typedef struct flashDevice_s {
     // for writes. This allows us to avoid polling for writable status
     // when it is definitely ready already.
     bool couldBeBusy;
+    void *devData; // Device type dependent data
 } flashDevice_t;
 
 typedef struct flashVTable_s {

@@ -115,11 +115,6 @@ serialPort_t *debugSerialPort = NULL;
 #define W25N01G_TIMEOUT_PAGE_PROGRAM_MS   2   // tPPmax = 700us
 #define W25N01G_TIMEOUT_BLOCK_ERASE_MS   15   // tBEmax = 10ms
 
-typedef struct bblut_s {
-    uint16_t pba;
-    uint16_t lba;
-} bblut_t;
-
 // These will be gone
 
 #define DISABLE(busdev)       IOHi((busdev)->busdev_u.spi.csnPin); __NOP()
@@ -248,7 +243,7 @@ bool w25n01g_detect(flashDevice_t *fdevice, uint32_t chipID)
 
     switch (chipID) {
     case JEDEC_ID_WINBOND_W25N01GV:
-    case JEDEC_ID_WINBOND_W25M02GV: // XXX Treat this as 1G part atm
+    case JEDEC_ID_WINBOND_W25M02GV: // XXX Treat this as 1G part atm, as stacked W25N01G is not tested at all (yet).
         fdevice->geometry.sectors = 1024;      // Blocks
         fdevice->geometry.pagesPerSector = 64; // Pages/Blocks
         fdevice->geometry.pageSize = 2048;
