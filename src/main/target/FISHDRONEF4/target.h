@@ -23,7 +23,6 @@
 #if defined(STACKX)
 #define TARGET_BOARD_IDENTIFIER "SXF4"
 #define USBD_PRODUCT_STRING     "Stack-X F4"
-#define USE_TARGET_CONFIG
 #else
 #define TARGET_BOARD_IDENTIFIER "FDF4"
 #define USBD_PRODUCT_STRING     "FishDroneF4"
