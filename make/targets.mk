@@ -1,6 +1,6 @@
 OFFICIAL_TARGETS  = ALIENFLIGHTF3 ALIENFLIGHTF4 ANYFCF7 BETAFLIGHTF3 BLUEJAYF4 FURYF4 REVO SIRINFPV SPARKY SPRACINGF3 SPRACINGF3EVO SPRACINGF3NEO SPRACINGF4EVO SPRACINGF7DUAL STM32F3DISCOVERY
-SKIP_TARGETS     := ALIENWHOOP MOTOLABF4 OMNINXT
 ALT_TARGETS       = $(sort $(filter-out target, $(basename $(notdir $(wildcard $(ROOT)/src/main/target/*/*.mk)))))
+NOBUILD_TARGETS   = $(sort $(filter-out target, $(basename $(notdir $(wildcard $(ROOT)/src/main/target/*/*.nomk)))))
 OPBL_TARGETS      = $(filter %_OPBL, $(ALT_TARGETS))
 OSD_SLAVE_TARGETS = SPRACINGF3OSD
 
@@ -8,9 +8,9 @@ VALID_TARGETS   = $(dir $(wildcard $(ROOT)/src/main/target/*/target.mk))
 VALID_TARGETS  := $(subst /,, $(subst ./src/main/target/,, $(VALID_TARGETS)))
 VALID_TARGETS  := $(VALID_TARGETS) $(ALT_TARGETS)
 VALID_TARGETS  := $(sort $(VALID_TARGETS))
-VALID_TARGETS  := $(filter-out $(SKIP_TARGETS), $(VALID_TARGETS))
+VALID_TARGETS  := $(filter-out $(NOBUILD_TARGETS), $(VALID_TARGETS))
 
-ifeq ($(filter $(TARGET),$(SKIP_TARGETS)), $(TARGET))
+ifeq ($(filter $(TARGET),$(NOBUILD_TARGETS)), $(TARGET))
 ALTERNATES    := $(sort $(filter-out target, $(basename $(notdir $(wildcard $(ROOT)/src/main/target/$(TARGET)/*.mk)))))
 $(error The target specified, $(TARGET), cannot be built. Use one of the ALT targets: $(ALTERNATES))
 endif

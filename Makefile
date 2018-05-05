@@ -356,7 +356,7 @@ $(VALID_TARGETS):
 	$(MAKE) binary hex TARGET=$@ && \
 	echo "Building $@ succeeded."
 
-$(SKIP_TARGETS):
+$(NOBUILD_TARGETS):
 	$(MAKE) TARGET=$@
 
 CLEAN_TARGETS = $(addprefix clean_,$(VALID_TARGETS) )
