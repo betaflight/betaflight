@@ -26,9 +26,15 @@
 
 #include "pg/pg.h"
 
+#include "config_helper.h"
+
+static targetSerialPortFunction_t targetSerialPortFunction[] = {
+    { SERIAL_PORT_USART1, FUNCTION_RX_SERIAL },
+    { SERIAL_PORT_UART5,  FUNCTION_ESC_SENSOR },
+};
+
 void targetConfiguration(void)
 {
-    serialConfigMutable()->portConfigs[SERIAL_PORT_USART1].functionMask = FUNCTION_RX_SERIAL;
-    serialConfigMutable()->portConfigs[SERIAL_PORT_UART5].functionMask = FUNCTION_ESC_SENSOR;
+    targetSerialPortFunctionConfig(targetSerialPortFunction, ARRAYLEN(targetSerialPortFunction));
 }
 #endif
