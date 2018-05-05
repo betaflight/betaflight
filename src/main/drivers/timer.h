@@ -25,6 +25,11 @@
 
 #include "drivers/io_types.h"
 #include "rcc_types.h"
+#include "drivers/timer_def.h"
+
+#define CC_CHANNELS_PER_TIMER         4 // TIM_Channel_1..4
+#define CC_INDEX_FROM_CHANNEL(x)      ((uint8_t)((x) >> 2))
+#define CC_CHANNEL_FROM_INDEX(x)      ((uint16_t)(x) << 2)
 
 typedef uint16_t captureCompare_t;        // 16 bit on both 103 and 303, just register access must be 32bit sometimes (use timCCR_t)
 
@@ -199,7 +204,8 @@ void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint32_t hz);  // TODO - 
 rccPeriphTag_t timerRCC(TIM_TypeDef *tim);
 uint8_t timerInputIrq(TIM_TypeDef *tim);
 
-const timerHardware_t *timerGetByTag(ioTag_t tag, timerUsageFlag_e flag);
+const timerHardware_t *timerGetByTag(ioTag_t ioTag);
+ioTag_t timerioTagGetByUsage(timerUsageFlag_e usageFlag, uint8_t index);
 
 #if defined(USE_HAL_DRIVER)
 TIM_HandleTypeDef* timerFindTimerHandle(TIM_TypeDef *tim);

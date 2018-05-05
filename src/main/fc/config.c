@@ -359,7 +359,7 @@ static void validateAndFixConfig(void)
 #endif
 
 #if defined(USE_BEEPER)
-    if (beeperDevConfig()->frequency && !timerGetByTag(beeperDevConfig()->ioTag, TIM_USE_BEEPER)) {
+    if (beeperDevConfig()->frequency && !timerGetByTag(beeperDevConfig()->ioTag)) {
         beeperDevConfigMutable()->frequency = 0;
     }
 #endif
