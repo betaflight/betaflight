@@ -4,23 +4,9 @@ COMMON_SRC = \
             build/version.c \
             $(TARGET_DIR_SRC) \
             main.c \
-            common/bitarray.c \
-            common/crc.c \
-            common/encoding.c \
-            common/filter.c \
-            common/huffman.c \
-            common/huffman_table.c \
-            common/maths.c \
-            common/explog_approx.c \
-            common/printf.c \
-            common/streambuf.c \
-            common/string_light.c \
-            common/strtol.c \
-            common/time.c \
-            common/typeconversion.c \
-            config/config_eeprom.c \
-            config/feature.c \
-            config/config_streamer.c \
+            $(addprefix pg/,$(notdir $(wildcard $(SRC_DIR)/pg/*.c))) \
+            $(addprefix common/,$(notdir $(wildcard $(SRC_DIR)/common/*.c))) \
+            $(addprefix config/,$(notdir $(wildcard $(SRC_DIR)/config/*.c))) \
             drivers/adc.c \
             drivers/buf_writer.c \
             drivers/bus.c \
@@ -65,26 +51,12 @@ COMMON_SRC = \
             io/statusindicator.c \
             io/transponder_ir.c \
             msp/msp_serial.c \
-            pg/adc.c \
-            pg/beeper.c \
-            pg/beeper_dev.c \
-            pg/bus_i2c.c \
-            pg/bus_spi.c \
-            pg/dashboard.c \
-            pg/max7456.c \
-            pg/pinio.c \
-            pg/piniobox.c \
-            pg/pg.c \
-            pg/rx_pwm.c \
-            pg/sdcard.c \
-            pg/vcd.c \
-            pg/usb.c \
             scheduler/scheduler.c \
             sensors/adcinternal.c \
             sensors/battery.c \
             sensors/current.c \
             sensors/voltage.c \
-            target/config_helper.c \
+            target/config_helper.c
 
 OSD_SLAVE_SRC = \
             io/displayport_max7456.c \
@@ -156,8 +128,6 @@ FC_SRC = \
             cms/cms_menu_vtx_rtc6705.c \
             cms/cms_menu_vtx_smartaudio.c \
             cms/cms_menu_vtx_tramp.c \
-            common/colorconversion.c \
-            common/gps_conversion.c \
             drivers/display_ug2864hsweg01.c \
             drivers/light_ws2811strip.c \
             drivers/rangefinder/rangefinder_hcsr04.c \
