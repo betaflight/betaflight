@@ -128,6 +128,7 @@ extern uint8_t __config_end;
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/rx_pwm.h"
+#include "pg/timerio.h"
 #include "pg/usb.h"
 
 #include "rx/rx.h"
@@ -3609,6 +3610,115 @@ static void cliDma(char* cmdLine)
 }
 #endif /* USE_RESOURCE_MGMT */
 
+#ifdef USE_TIMER_MGMT
+
+static void printTimer(uint8_t dumpMask)
+{
+    cliPrintLine("# examples: ");
+    const char *format = "timer %c%02d %d";
+    cliPrint("#");
+    cliPrintLinef(format, 'A', 1, 1);
+
+    cliPrint("#");
+    cliPrintLinef(format, 'A', 1, 0);
+    
+    for (unsigned int i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
+
+        const ioTag_t ioTag = timerIOConfig(i)->ioTag;
+        const uint8_t timerIndex = timerIOConfig(i)->index;
+
+        if (!ioTag) {
+            continue;
+        }
+
+        if (timerIndex != 0 && !(dumpMask & HIDE_UNUSED)) {
+            cliDumpPrintLinef(dumpMask, false, format, 
+                IO_GPIOPortIdxByTag(ioTag) + 'A', 
+                IO_GPIOPinIdxByTag(ioTag),
+                timerIndex
+                );
+        }
+    }
+}
+
+static void cliTimer(char *cmdline)
+{
+    int len = strlen(cmdline);
+
+    if (len == 0) {
+        printTimer(DUMP_MASTER | HIDE_UNUSED);
+        return;
+    } else if (strncasecmp(cmdline, "list", len) == 0) {
+        printTimer(DUMP_MASTER);
+        return;
+    }
+    
+    char *pch = NULL;
+    char *saveptr;
+    int timerIOIndex = -1;
+    
+    ioTag_t ioTag = 0;
+    pch = strtok_r(cmdline, " ", &saveptr);    
+    if (!pch || !(strToPin(pch, &ioTag) && IOGetByTag(ioTag))) {
+        goto error;
+    }
+
+    /* find existing entry, or go for next available */
+    for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
+        if (timerIOConfig(i)->ioTag == ioTag) {
+            timerIOIndex = i;
+            break;
+        }
+
+        /* first available empty slot */
+        if (timerIOIndex < 0 && timerIOConfig(i)->ioTag == IO_TAG_NONE) {
+            timerIOIndex = i;
+        }
+    }
+
+    if (timerIOIndex < 0) {
+        cliPrintLine("Error: out of index");
+        return;
+    }
+
+    uint8_t timerIndex = 0;
+    pch = strtok_r(NULL, " ", &saveptr);
+    if (pch) {
+        if (strcasecmp(pch, "list") == 0) {
+            /* output the list of available options */
+            uint8_t index = 1;
+            for (unsigned i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+                if (timerHardware[i].tag == ioTag) {
+                    cliPrintLinef("# %d. TIM%d CH%d",
+                        index,
+                        timerGetTIMNumber(timerHardware[i].tim),
+                        timerHardware[i].channel
+                    );
+                    index++;
+                }
+            }
+            return;
+        } else if (strcasecmp(pch, "none") == 0) {
+            goto success;
+        } else {
+            timerIndex = atoi(pch);
+        }
+    } else {
+        goto error;
+    }  
+
+success:
+    timerIOConfigMutable(timerIOIndex)->ioTag = timerIndex == 0 ? IO_TAG_NONE : ioTag;
+    timerIOConfigMutable(timerIOIndex)->index = timerIndex;
+
+    cliPrintLine("Success");
+    return;
+    
+error:
+    cliShowParseError();
+}
+#endif
+
 static void backupConfigs(void)
 {
     // make copies of configs to do differencing
@@ -3870,6 +3980,9 @@ const clicmd_t cmdTable[] = {
 #endif
     CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", "[nosave]", cliDefaults),
     CLI_COMMAND_DEF("diff", "list configuration changes from default", "[master|profile|rates|all] {defaults}", cliDiff),
+#ifdef USE_RESOURCE_MGMT
+    CLI_COMMAND_DEF("dma", "list dma utilisation", NULL, cliDma),
+#endif
 #ifdef USE_DSHOT
     CLI_COMMAND_DEF("dshotprog", "program DShot ESC(s)", "<index> <command>+", cliDshotProg),
 #endif
@@ -3913,6 +4026,9 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("mode_color", "configure mode and special colors", NULL, cliModeColor),
 #endif
     CLI_COMMAND_DEF("motor",  "get/set motor", "<index> [<value>]", cliMotor),
+#ifdef USE_USB_MSC
+    CLI_COMMAND_DEF("msc", "switch into msc mode", NULL, cliMsc),
+#endif
     CLI_COMMAND_DEF("name", "name of craft", NULL, cliName),
 #ifndef MINIMAL_CLI
     CLI_COMMAND_DEF("play_sound", NULL, "[<index>]", cliPlaySound),
@@ -3921,7 +4037,6 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("rateprofile", "change rate profile", "[<index>]", cliRateProfile),
 #ifdef USE_RESOURCE_MGMT
     CLI_COMMAND_DEF("resource", "show/set resources", NULL, cliResource),
-    CLI_COMMAND_DEF("dma", "list dma utilisation", NULL, cliDma),
 #endif
     CLI_COMMAND_DEF("rxfail", "show/set rx failsafe settings", NULL, cliRxFailsafe),
     CLI_COMMAND_DEF("rxrange", "configure rx channel ranges", NULL, cliRxRange),
@@ -3947,12 +4062,12 @@ const clicmd_t cmdTable[] = {
 #ifndef SKIP_TASK_STATISTICS
     CLI_COMMAND_DEF("tasks", "show task stats", NULL, cliTasks),
 #endif
+#ifdef USE_TIMER_MGMT
+    CLI_COMMAND_DEF("timer", "show timer configuration", NULL, cliTimer),
+#endif
     CLI_COMMAND_DEF("version", "show version", NULL, cliVersion),
 #ifdef USE_VTX_CONTROL
     CLI_COMMAND_DEF("vtx", "vtx channels on switch", NULL, cliVtx),
-#endif
-#ifdef USE_USB_MSC
-    CLI_COMMAND_DEF("msc", "switch into msc mode", NULL, cliMsc),
 #endif
 };
 

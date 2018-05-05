@@ -18,39 +18,22 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <platform.h>
-
-#if defined(USE_PWM) || defined(USE_PPM)
-
-#include "drivers/io.h"
-#include "drivers/nvic.h"
-#include "drivers/rx/rx_pwm.h"
-#include "drivers/timer.h"
+#pragma once
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
-#include "rx_pwm.h"
+#include "drivers/io.h"
 
-#ifdef USE_PWM
-PG_REGISTER_WITH_RESET_FN(pwmConfig_t, pwmConfig, PG_PWM_CONFIG, 0);
+#ifdef USE_TIMER_MGMT
 
-void pgResetFn_pwmConfig(pwmConfig_t *pwmConfig)
-{
-    pwmConfig->inputFilteringMode = INPUT_FILTERING_DISABLED;
-    for (unsigned inputIndex = 0; inputIndex < PWM_INPUT_PORT_COUNT; inputIndex++) {
-        pwmConfig->ioTags[inputIndex] = timerioTagGetByUsage(TIM_USE_PWM, inputIndex);
-    }
-}
-#endif
+#define MAX_TIMER_PINMAP_COUNT   10
 
-#ifdef USE_PPM
-PG_REGISTER_WITH_RESET_FN(ppmConfig_t, ppmConfig, PG_PPM_CONFIG, 0);
+typedef struct timerIOConfig_s {
+    ioTag_t ioTag;
+    uint8_t index;
+} timerIOConfig_t;
 
-void pgResetFn_ppmConfig(ppmConfig_t *ppmConfig)
-{
-    ppmConfig->ioTag = timerioTagGetByUsage(TIM_USE_PPM, 0);
-}
-#endif
+PG_DECLARE_ARRAY(timerIOConfig_t, MAX_TIMER_PINMAP_COUNT, timerIOConfig);
 
 #endif
