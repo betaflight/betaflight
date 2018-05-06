@@ -23,27 +23,32 @@
 
 #define USBD_PRODUCT_STRING     "S7X2"
 
+#define USE_BEEPER
+
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 
-// MPU6500 interrupt
+// MPU interrupt
 #define USE_EXTI
 #define USE_MPU_DATA_READY_SIGNAL
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
+#define MPU_INT_EXTI PB15 // XXX Should be gone
 
 #define USE_ACC
-#define USE_FAKE_ACC
-#define USE_ACC_MPU6050
-#define ACC_MPU6050_ALIGN CW270_DEG
-
 #define USE_GYRO
-#define USE_FAKE_GYRO
-#define USE_GYRO_MPU6050
-#define GYRO_MPU6050_ALIGN CW270_DEG
 
-// MPU6050 interrupts
-#define USE_MPU_DATA_READY_SIGNAL
-#define MPU_INT_EXTI PB15
-#define USE_EXTI
+#define USE_FAKE_ACC
+#define USE_FAKE_GYRO
+
+#define USE_ACC_SPI_MPU6500
+#define USE_GYRO_SPI_MPU6500
+// Other USE_ACCs and USE_GYROs should follow
+
+// Should be gone
+#define MPU6500_CS_PIN          PC4  // XXX Should be gone
+#define MPU6500_SPI_INSTANCE    SPI1 // XXX Should be gone
+#define ACC_MPU6500_ALIGN CW0_DEG
+#define GYRO_MPU6500_ALIGN CW0_DEG
+
 
 #define USE_MAG
 #define USE_FAKE_MAG
@@ -66,12 +71,15 @@
 #define USE_VCP
 
 #define USE_UART1
+#define USE_UART2
 #define USE_UART3
+#define USE_UART4
+#define USE_UART5
 #define USE_UART6
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
 
-#define SERIAL_PORT_COUNT       6
+#define SERIAL_PORT_COUNT       9
 
 #define USE_ESCSERIAL
 
