@@ -72,7 +72,7 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     TIM_OCInitTypeDef  TIM_OCInitStructure;
     DMA_InitTypeDef DMA_InitStructure;
 
-    const timerHardware_t *timerHardware = timerGetByTag(ioTag, TIM_USE_ANY);
+    const timerHardware_t *timerHardware = timerGetByTag(ioTag);
     timer = timerHardware->tim;
 
     if (timerHardware->dmaRef == NULL) {

@@ -66,12 +66,8 @@ void pgResetFn_servoConfig(servoConfig_t *servoConfig)
     servoConfig->servo_lowpass_freq = 0;
     servoConfig->channelForwardingStartChannel = AUX1;
 
-    int servoIndex = 0;
-    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && servoIndex < MAX_SUPPORTED_SERVOS; i++) {
-        if (timerHardware[i].usageFlags & TIM_USE_SERVO) {
-            servoConfig->dev.ioTags[servoIndex] = timerHardware[i].tag;
-            servoIndex++;
-        }
+    for (unsigned servoIndex = 0; servoIndex < MAX_SUPPORTED_SERVOS; servoIndex++) {
+        servoConfig->dev.ioTags[servoIndex] = timerioTagGetByUsage(TIM_USE_SERVO, servoIndex);
     }
 }
 

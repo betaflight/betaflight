@@ -282,7 +282,7 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
 
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
         const ioTag_t tag = motorConfig->ioTags[motorIndex];
-        const timerHardware_t *timerHardware = timerGetByTag(tag, TIM_USE_ANY);
+        const timerHardware_t *timerHardware = timerGetByTag(tag);
 
         if (timerHardware == NULL) {
             /* not enough motors initialised for the mixer or a break in the motors */
@@ -449,7 +449,7 @@ void servoDevInit(const servoDevConfig_t *servoConfig)
 
         IOInit(servos[servoIndex].io, OWNER_SERVO, RESOURCE_INDEX(servoIndex));
 
-        const timerHardware_t *timer = timerGetByTag(tag, TIM_USE_ANY);
+        const timerHardware_t *timer = timerGetByTag(tag);
 #if defined(USE_HAL_DRIVER)
         IOConfigGPIOAF(servos[servoIndex].io, IOCFG_AF_PP, timer->alternateFunction);
 #else
@@ -490,7 +490,7 @@ void pwmToggleBeeper(void)
 
 void beeperPwmInit(const ioTag_t tag, uint16_t frequency)
 {
-    const timerHardware_t *timer = timerGetByTag(tag, TIM_USE_BEEPER);
+    const timerHardware_t *timer = timerGetByTag(tag);
     IO_t beeperIO = IOGetByTag(tag);
 
     if (beeperIO && timer) {

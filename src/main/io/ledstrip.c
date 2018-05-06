@@ -174,13 +174,9 @@ void pgResetFn_ledStripConfig(ledStripConfig_t *ledStripConfig)
     ledStripConfig->ledstrip_visual_beeper = 0;
     ledStripConfig->ledstrip_aux_channel = THROTTLE;
 
-    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
-        if (timerHardware[i].usageFlags & TIM_USE_LED) {
-            ledStripConfig->ioTag = timerHardware[i].tag;
-            return;
-        }
-    }
-    ledStripConfig->ioTag = IO_TAG_NONE;
+#ifndef UNIT_TEST
+    ledStripConfig->ioTag = timerioTagGetByUsage(TIM_USE_LED, 0);
+#endif
 }
 
 static int scaledThrottle;

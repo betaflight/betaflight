@@ -242,8 +242,8 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
     ioTag_t tagRx = serialPinConfig()->ioTagRx[pinCfgIndex];
     ioTag_t tagTx = serialPinConfig()->ioTagTx[pinCfgIndex];
 
-    const timerHardware_t *timerRx = timerGetByTag(tagRx, TIM_USE_ANY);
-    const timerHardware_t *timerTx = timerGetByTag(tagTx, TIM_USE_ANY);
+    const timerHardware_t *timerRx = timerGetByTag(tagRx);
+    const timerHardware_t *timerTx = timerGetByTag(tagTx);
 
     IO_t rxIO = IOGetByTag(tagRx);
     IO_t txIO = IOGetByTag(tagTx);
