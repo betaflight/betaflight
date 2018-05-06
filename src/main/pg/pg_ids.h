@@ -127,7 +127,8 @@
 #define PG_USB_CONFIG 531
 #define PG_SDIO_CONFIG 532
 #define PG_DISPLAY_PORT_CRSF_CONFIG 533
-#define PG_BETAFLIGHT_END 533
+#define PG_TIMER_IO_CONFIG 534 // used to store the index for timer use in timerHardware array in target.c
+#define PG_BETAFLIGHT_END 534
 
 
 // OSD configuration (subject to change)

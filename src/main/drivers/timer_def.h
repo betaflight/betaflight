@@ -703,3 +703,25 @@
 #define DEF_TIM_AF__PI7__TCH_TIM8_CH3     D(3, 8)
 
 #endif
+
+#ifdef USE_TIMER_MGMT
+
+#if defined(STM32F7) || defined(STM32F4)
+
+#define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(6) | TIM_N(7) | TIM_N(8) | TIM_N(9) | TIM_N(10) | TIM_N(11) | TIM_N(12) | TIM_N(13) | TIM_N(14) )
+
+#elif defined(STM32F3)
+
+#define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(6) | TIM_N(7) | TIM_N(8) | TIM_N(15) | TIM_N(16) | TIM_N(17) )
+
+#elif defined(STM32F1)
+
+#define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) )
+
+#else
+    #error "No timer / channel tag definition found for CPU"
+#endif
+
+#define TIMER_COUNT BITCOUNT(USED_TIMERS)
+
+#endif
