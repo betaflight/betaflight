@@ -47,6 +47,10 @@ static int32_t estimatedAltitude = 0;                // in cm
 void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 {
     static timeUs_t previousTimeUs = 0;
+    static int32_t baroAltOffset = 0;
+    static int32_t gpsAltOffset = 0;
+    static bool altitudeOffsetSet = false;
+
     const uint32_t dTime = currentTimeUs - previousTimeUs;
     if (dTime < BARO_UPDATE_FREQUENCY_40HZ) {
         return;
@@ -54,13 +58,11 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
     previousTimeUs = currentTimeUs;
 
     int32_t baroAlt = 0;
-    static int32_t baroAltOffset = 0;
-    static int32_t gpsAltOffset = 0;
 
     int32_t gpsAlt = 0;
     float gpsTrust = 0.3; //conservative default
     bool haveBaroAlt = false;
-    bool haveGPSAlt = false;
+    bool haveGpsAlt = false;
 #ifdef USE_BARO
     if (sensors(SENSOR_BARO)) {
         if (!isBaroCalibrationComplete()) {
@@ -75,7 +77,7 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 #ifdef USE_GPS
 if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
     gpsAlt = gpsSol.llh.alt;
-    haveGPSAlt = true;
+    haveGpsAlt = true;
 
     if (gpsSol.hdop != 0) {
         gpsTrust = 100.0 / gpsSol.hdop;
@@ -85,17 +87,22 @@ if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
 }
 #endif
 
-    if (!ARMING_FLAG(ARMED)) {
+    if (ARMING_FLAG(ARMED) && !altitudeOffsetSet) {
         baroAltOffset = baroAlt;
         gpsAltOffset = gpsAlt;
+        altitudeOffsetSet = true;
+    } else if (!ARMING_FLAG(ARMED) && altitudeOffsetSet) {
+        altitudeOffsetSet = false;
     }
     baroAlt -= baroAltOffset;
     gpsAlt -= gpsAltOffset;
     
-    if (haveGPSAlt && haveBaroAlt) {
-        estimatedAltitude = gpsAlt * gpsTrust + baroAlt * (1-gpsTrust);
-    } else if (haveGPSAlt && !haveBaroAlt) {
+    if (haveGpsAlt && haveBaroAlt) {
+        estimatedAltitude = gpsAlt * gpsTrust + baroAlt * (1 - gpsTrust);
+    } else if (haveGpsAlt) {
         estimatedAltitude = gpsAlt;
+    } else if (haveBaroAlt) {
+        estimatedAltitude = baroAlt;
     }
     
     DEBUG_SET(DEBUG_ALTITUDE, 0, (int32_t)(100 * gpsTrust));
