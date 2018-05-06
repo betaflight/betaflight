@@ -371,6 +371,9 @@ static void printValuePointer(const clivalue_t *var, const void *valuePointer, b
         case VAR_INT16:
             value = *(int16_t *)valuePointer;
             break;
+        case VAR_UINT32:
+            value = *(uint32_t *)valuePointer;
+            break;
         }
 
         switch (var->type & VALUE_MODE_MASK) {
@@ -383,6 +386,12 @@ static void printValuePointer(const clivalue_t *var, const void *valuePointer, b
         case MODE_LOOKUP:
             cliPrint(lookupTables[var->config.lookup.tableIndex].values[value]);
             break;
+        case MODE_BITSET:
+            if (value & 1 << var->config.bitpos) {
+                cliPrintf("ON");
+            } else {
+                cliPrintf("OFF");
+            }
         }
     }
 }
@@ -392,14 +401,18 @@ static bool valuePtrEqualsDefault(const clivalue_t *var, const void *ptr, const 
 {
     bool result = true;
     int elementCount = 1;
+    uint32_t mask = 0xffffffff;
 
     if ((var->type & VALUE_MODE_MASK) == MODE_ARRAY) {
         elementCount = var->config.array.length;
     }
+    if ((var->type & VALUE_MODE_MASK) == MODE_BITSET) {
+        mask = 1 << var->config.bitpos;
+    }
     for (int i = 0; i < elementCount; i++) {
         switch (var->type & VALUE_TYPE_MASK) {
         case VAR_UINT8:
-            result = result && ((uint8_t *)ptr)[i] == ((uint8_t *)ptrDefault)[i];
+            result = result && (((uint8_t *)ptr)[i] & mask) == (((uint8_t *)ptrDefault)[i] & mask);
             break;
 
         case VAR_INT8:
@@ -407,8 +420,13 @@ static bool valuePtrEqualsDefault(const clivalue_t *var, const void *ptr, const 
             break;
 
         case VAR_UINT16:
+            result = result && (((int16_t *)ptr)[i] & mask) == (((int16_t *)ptrDefault)[i] & mask);
+            break;
         case VAR_INT16:
             result = result && ((int16_t *)ptr)[i] == ((int16_t *)ptrDefault)[i];
+            break;
+        case VAR_UINT32:
+            result = result && (((uint32_t *)ptr)[i] & mask) == (((uint32_t *)ptrDefault)[i] & mask);
             break;
         }
     }
@@ -512,7 +530,10 @@ static void cliPrintVarRange(const clivalue_t *var)
     case (MODE_ARRAY): {
         cliPrintLinef("Array length: %d", var->config.array.length);
     }
-
+    break;
+    case (MODE_BITSET): {
+        cliPrintLinef("Allowed values: OFF, ON");
+    }
     break;
     }
 }
@@ -520,20 +541,57 @@ static void cliPrintVarRange(const clivalue_t *var)
 static void cliSetVar(const clivalue_t *var, const int16_t value)
 {
     void *ptr = cliGetValuePointer(var);
+    uint32_t workValue;
+    uint32_t mask;
 
-    switch (var->type & VALUE_TYPE_MASK) {
-    case VAR_UINT8:
-        *(uint8_t *)ptr = value;
-        break;
+    if ((var->type & VALUE_MODE_MASK) == MODE_BITSET) {
+        switch (var->type & VALUE_TYPE_MASK) {
+        case VAR_UINT8:
+            mask = (1 << var->config.bitpos) & 0xff;
+            if (value) {
+                workValue = *(uint8_t *)ptr | mask;
+            } else {
+                workValue = *(uint8_t *)ptr & ~mask;
+            }
+            *(uint8_t *)ptr = workValue;
+            break;
 
-    case VAR_INT8:
-        *(int8_t *)ptr = value;
-        break;
+        case VAR_UINT16:
+            mask = (1 << var->config.bitpos) & 0xffff;
+            if (value) {
+                workValue = *(uint16_t *)ptr | mask;
+            } else {
+                workValue = *(uint16_t *)ptr & ~mask;
+            }
+            *(uint16_t *)ptr = workValue;
+            break;
 
-    case VAR_UINT16:
-    case VAR_INT16:
-        *(int16_t *)ptr = value;
-        break;
+        case VAR_UINT32:
+            mask = 1 << var->config.bitpos;
+            if (value) {
+                workValue = *(uint32_t *)ptr | mask;
+            } else {
+                workValue = *(uint32_t *)ptr & ~mask;
+            }
+            *(uint32_t *)ptr = workValue;
+            break;
+
+        }
+    } else {
+        switch (var->type & VALUE_TYPE_MASK) {
+        case VAR_UINT8:
+            *(uint8_t *)ptr = value;
+            break;
+
+        case VAR_INT8:
+            *(int8_t *)ptr = value;
+            break;
+
+        case VAR_UINT16:
+        case VAR_INT16:
+            *(int16_t *)ptr = value;
+            break;
+        }
     }
 }
 
@@ -3032,8 +3090,15 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
                     }
 
                     break;
-                case MODE_LOOKUP: {
-                        const lookupTableEntry_t *tableEntry = &lookupTables[val->config.lookup.tableIndex];
+                case MODE_LOOKUP: 
+                case MODE_BITSET: {
+                        int tableIndex;
+                        if ((val->type & VALUE_MODE_MASK) == MODE_BITSET) {
+                            tableIndex = TABLE_OFF_ON;
+                        } else {
+                            tableIndex = val->config.lookup.tableIndex;
+                        }
+                        const lookupTableEntry_t *tableEntry = &lookupTables[tableIndex];
                         bool matched = false;
                         for (uint32_t tableValueIndex = 0; tableValueIndex < tableEntry->valueCount && !matched; tableValueIndex++) {
                             matched = tableEntry->values[tableValueIndex] && strcasecmp(tableEntry->values[tableValueIndex], eqptr) == 0;
@@ -3048,6 +3113,7 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
                     }
 
                     break;
+
                 case MODE_ARRAY: {
                         const uint8_t arrayLength = val->config.array.length;
                         char *valPtr = eqptr;
@@ -3111,6 +3177,7 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
                     valueChanged = true;
 
                     break;
+
                 }
 
                 if (valueChanged) {
