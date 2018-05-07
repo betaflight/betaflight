@@ -527,6 +527,15 @@ static bool osdDrawSingleElement(uint8_t item)
             break;
         }
 
+    case OSD_ANTI_GRAVITY:
+        {
+            if (pidItermAccelerator() > 1.0f) {
+                strcpy(buff, "AG");
+            }
+
+            break;
+        }
+
     case OSD_CRAFT_NAME:
         // This does not strictly support iterative updating if the craft name changes at run time. But since the craft name is not supposed to be changing this should not matter, and blanking the entire length of the craft name string on update will make it impossible to configure elements to be displayed on the right hand side of the craft name.
         //TODO: When iterative updating is implemented, change this so the craft name is only printed once whenever the OSD 'flight' screen is entered.
@@ -894,6 +903,7 @@ static void osdDrawElements(void)
     osdDrawSingleElement(OSD_NUMERICAL_HEADING);
     osdDrawSingleElement(OSD_NUMERICAL_VARIO);
     osdDrawSingleElement(OSD_COMPASS_BAR);
+    osdDrawSingleElement(OSD_ANTI_GRAVITY);
 
 #ifdef USE_GPS
     if (sensors(SENSOR_GPS)) {

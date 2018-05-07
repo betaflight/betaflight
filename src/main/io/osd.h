@@ -47,6 +47,8 @@ extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 #define OSD_TIMER_PRECISION(timer)  ((timer >> 4) & 0x0F)
 #define OSD_TIMER_ALARM(timer)      ((timer >> 8) & 0xFF)
 
+// NB: to ensure backwards compatibility, new enum values must be appended at the end but before the OSD_XXXX_COUNT entry.
+
 typedef enum {
     OSD_RSSI_VALUE,
     OSD_MAIN_BATT_VOLTAGE,
@@ -89,6 +91,7 @@ typedef enum {
     OSD_RTC_DATETIME,
     OSD_ADJUSTMENT_RANGE,
     OSD_CORE_TEMPERATURE,
+    OSD_ANTI_GRAVITY,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
