@@ -775,8 +775,8 @@ bool processRx(timeUs_t currentTimeUs)
 
 #ifdef USE_TELEMETRY
     if (feature(FEATURE_TELEMETRY)) {
-        if ((!telemetryConfig()->telemetry_switch && ARMING_FLAG(ARMED)) ||
-                (telemetryConfig()->telemetry_switch && IS_RC_MODE_ACTIVE(BOXTELEMETRY))) {
+        if ((!isModeActivationConditionPresent(BOXTELEMETRY) && ARMING_FLAG(ARMED)) ||
+                (isModeActivationConditionPresent(BOXTELEMETRY) && IS_RC_MODE_ACTIVE(BOXTELEMETRY))) {
 
             releaseSharedTelemetryPorts();
         } else {
