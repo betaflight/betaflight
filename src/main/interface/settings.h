@@ -104,31 +104,33 @@ typedef struct lookupTableEntry_s {
 
 
 #define VALUE_TYPE_OFFSET 0
-#define VALUE_SECTION_OFFSET 2
-#define VALUE_MODE_OFFSET 4
+#define VALUE_SECTION_OFFSET 3
+#define VALUE_MODE_OFFSET 5
 
 typedef enum {
-    // value type, bits 0-1
+    // value type, bits 0-2
     VAR_UINT8 = (0 << VALUE_TYPE_OFFSET),
     VAR_INT8 = (1 << VALUE_TYPE_OFFSET),
     VAR_UINT16 = (2 << VALUE_TYPE_OFFSET),
     VAR_INT16 = (3 << VALUE_TYPE_OFFSET),
+    VAR_UINT32 = (4 << VALUE_TYPE_OFFSET),
 
-    // value section, bits 2-3
+    // value section, bits 3-4
     MASTER_VALUE = (0 << VALUE_SECTION_OFFSET),
     PROFILE_VALUE = (1 << VALUE_SECTION_OFFSET),
     PROFILE_RATE_VALUE = (2 << VALUE_SECTION_OFFSET),
 
-    // value mode, bits 4-5
+    // value mode, bits 5-6
     MODE_DIRECT = (0 << VALUE_MODE_OFFSET),
     MODE_LOOKUP = (1 << VALUE_MODE_OFFSET),
-    MODE_ARRAY = (2 << VALUE_MODE_OFFSET)
+    MODE_ARRAY = (2 << VALUE_MODE_OFFSET),
+    MODE_BITSET = (3 << VALUE_MODE_OFFSET)
 } cliValueFlag_e;
 
 
-#define VALUE_TYPE_MASK (0x03)
-#define VALUE_SECTION_MASK (0x0c)
-#define VALUE_MODE_MASK (0x30)
+#define VALUE_TYPE_MASK (0x07)
+#define VALUE_SECTION_MASK (0x18)
+#define VALUE_MODE_MASK (0x60)
 
 typedef struct cliMinMaxConfig_s {
     const int16_t min;
@@ -147,6 +149,7 @@ typedef union {
     cliLookupTableConfig_t lookup;
     cliMinMaxConfig_t minmax;
     cliArrayLengthConfig_t array;
+    uint8_t bitpos;
 } cliValueConfig_t;
 
 typedef struct clivalue_s {
