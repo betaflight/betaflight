@@ -36,9 +36,6 @@
 #define USE_ACC
 #define USE_GYRO
 
-#define USE_FAKE_ACC
-#define USE_FAKE_GYRO
-
 #define USE_ACC_SPI_MPU6500
 #define USE_GYRO_SPI_MPU6500
 // Other USE_ACCs and USE_GYROs should follow
@@ -51,14 +48,14 @@
 
 
 #define USE_MAG
-#define USE_FAKE_MAG
 #define USE_MAG_HMC5883
 #define USE_MAG_QMC5883
 #define MAG_HMC5883_ALIGN CW270_DEG_FLIP
 
 #define USE_BARO
-#define USE_FAKE_BARO
 #define USE_BARO_MS5611
+#define USE_BARO_BMP280
+#define USE_BARO_LPS
 
 #define USE_SDCARD
 
@@ -67,6 +64,9 @@
 
 #define USE_I2C
 #define USE_I2C_DEVICE_1
+#define USE_I2C_DEVICE_2
+#define USE_I2C_DEVICE_3
+#define I2C_FULL_RECONFIGURABILITY
 
 #define USE_VCP
 
@@ -84,10 +84,10 @@
 #define USE_ESCSERIAL
 
 #define USE_SPI
-
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
 #define USE_SPI_DEVICE_3
+#define SPI_FULL_RECONFIGURABILITY
 
 #define USE_ADC
 
