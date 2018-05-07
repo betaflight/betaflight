@@ -150,14 +150,18 @@ typedef enum {
 } osd_timer_precision_e;
 
 typedef enum {
-    OSD_WARNING_ARMING_DISABLE    = (1 << 0),
-    OSD_WARNING_BATTERY_NOT_FULL  = (1 << 1),
-    OSD_WARNING_BATTERY_WARNING   = (1 << 2),
-    OSD_WARNING_BATTERY_CRITICAL  = (1 << 3),
-    OSD_WARNING_VISUAL_BEEPER     = (1 << 4),
-    OSD_WARNING_CRASH_FLIP        = (1 << 5),
-    OSD_WARNING_ESC_FAIL          = (1 << 6)
+    OSD_WARNING_ARMING_DISABLE,
+    OSD_WARNING_BATTERY_NOT_FULL,
+    OSD_WARNING_BATTERY_WARNING,
+    OSD_WARNING_BATTERY_CRITICAL,
+    OSD_WARNING_VISUAL_BEEPER,
+    OSD_WARNING_CRASH_FLIP,
+    OSD_WARNING_ESC_FAIL,
+    OSD_WARNING_COUNT // MUST BE LAST
 } osdWarningsFlags_e;
+
+// Make sure the number of warnings do not exceed the available 16bit storage
+STATIC_ASSERT(OSD_WARNING_COUNT <= 16, osdwarnings_overflow);
 
 #define ESC_RPM_ALARM_OFF -1
 #define ESC_TEMP_ALARM_OFF INT8_MIN
@@ -194,4 +198,7 @@ void osdResetAlarms(void);
 void osdUpdate(timeUs_t currentTimeUs);
 void osdStatSetState(uint8_t statIndex, bool enabled);
 bool osdStatGetState(uint8_t statIndex);
+void osdWarnSetState(uint8_t warningIndex, bool enabled);
+bool osdWarnGetState(uint8_t warningIndex);
+
 
