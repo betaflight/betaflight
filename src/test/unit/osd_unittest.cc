@@ -142,12 +142,7 @@ void doTestArm(bool testEmpty = true)
  * Auxiliary function. Test is there're stats that must be shown
  */
 bool isSomeStatEnabled(void) {
-    for (int i = 0; i < OSD_STAT_COUNT; i++) {
-        if (osdConfigMutable()->enabled_stats[i]) {
-            return true;
-        }
-    }
-    return false;
+    return (osdConfigMutable()->enabled_stats != 0);
 }
 
 /*
@@ -288,19 +283,19 @@ TEST(OsdTest, TestStatsImperial)
 {
     // given
     // this set of enabled post flight statistics
-    osdConfigMutable()->enabled_stats[OSD_STAT_MAX_SPEED]       = true;
-    osdConfigMutable()->enabled_stats[OSD_STAT_MIN_BATTERY]     = true;
-    osdConfigMutable()->enabled_stats[OSD_STAT_MIN_RSSI]        = true;
-    osdConfigMutable()->enabled_stats[OSD_STAT_MAX_CURRENT]     = false;
-    osdConfigMutable()->enabled_stats[OSD_STAT_USED_MAH]        = false;
-    osdConfigMutable()->enabled_stats[OSD_STAT_MAX_ALTITUDE]    = true;
-    osdConfigMutable()->enabled_stats[OSD_STAT_BLACKBOX]        = false;
-    osdConfigMutable()->enabled_stats[OSD_STAT_END_BATTERY]     = true;
-    osdConfigMutable()->enabled_stats[OSD_STAT_TIMER_1]         = true;
-    osdConfigMutable()->enabled_stats[OSD_STAT_TIMER_2]         = true;
-    osdConfigMutable()->enabled_stats[OSD_STAT_RTC_DATE_TIME]   = true;
-    osdConfigMutable()->enabled_stats[OSD_STAT_MAX_DISTANCE]    = true;
-    osdConfigMutable()->enabled_stats[OSD_STAT_BLACKBOX_NUMBER] = false;
+    osdStatSetState(OSD_STAT_MAX_SPEED, true);
+    osdStatSetState(OSD_STAT_MIN_BATTERY, true);
+    osdStatSetState(OSD_STAT_MIN_RSSI, true);
+    osdStatSetState(OSD_STAT_MAX_CURRENT, false);
+    osdStatSetState(OSD_STAT_USED_MAH, false);
+    osdStatSetState(OSD_STAT_MAX_ALTITUDE, true);
+    osdStatSetState(OSD_STAT_BLACKBOX, false);
+    osdStatSetState(OSD_STAT_END_BATTERY, true);
+    osdStatSetState(OSD_STAT_TIMER_1, true);
+    osdStatSetState(OSD_STAT_TIMER_2, true);
+    osdStatSetState(OSD_STAT_RTC_DATE_TIME, true);
+    osdStatSetState(OSD_STAT_MAX_DISTANCE, true);
+    osdStatSetState(OSD_STAT_BLACKBOX_NUMBER, false);
 
     // and
     // using imperial unit system

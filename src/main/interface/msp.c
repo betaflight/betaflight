@@ -699,7 +699,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         // Post flight statistics
         sbufWriteU8(dst, OSD_STAT_COUNT);
         for (int i = 0; i < OSD_STAT_COUNT; i++ ) {
-            sbufWriteU8(dst, osdConfig()->enabled_stats[i]);
+            sbufWriteU8(dst, osdStatGetState(i));
         }
 
         // Timers
@@ -2191,7 +2191,7 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
                 if (screen == 0 && addr < OSD_STAT_COUNT) {
                     /* Set statistic item enable */
-                    osdConfigMutable()->enabled_stats[addr] = value;
+                    osdStatSetState(addr, (value != 0));
                 } else if (addr < OSD_ITEM_COUNT) {
                     /* Set element positions */
                     osdConfigMutable()->item_pos[addr] = value;
