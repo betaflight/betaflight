@@ -221,12 +221,4 @@ void telemetryProcess(uint32_t currentTime)
     handleIbusTelemetry();
 #endif
 }
-
-void releaseSharedTelemetryPorts(void) {
-    serialPort_t *sharedPort = findSharedSerialPort(TELEMETRY_PORT_FUNCTIONS_MASK, FUNCTION_MSP);
-    while (sharedPort) {
-        mspSerialReleasePortIfAllocated(sharedPort);
-        sharedPort = findNextSharedSerialPort(TELEMETRY_PORT_FUNCTIONS_MASK, FUNCTION_MSP);
-    }
-}
 #endif
