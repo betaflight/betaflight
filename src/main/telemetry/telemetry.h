@@ -44,7 +44,6 @@ typedef enum {
 typedef struct telemetryConfig_s {
     int16_t gpsNoFixLatitude;
     int16_t gpsNoFixLongitude;
-    uint8_t telemetry_switch;               // Use aux channel to change serial output & baudrate( MSP / Telemetry ). It disables automatic switching to Telemetry when armed.
     uint8_t telemetry_inverted;
     uint8_t halfDuplex;
     frskyGpsCoordFormat_e frsky_coordinate_format;

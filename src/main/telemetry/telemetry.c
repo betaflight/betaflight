@@ -57,12 +57,11 @@
 #include "telemetry/ibus.h"
 #include "telemetry/msp_shared.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 1);
+PG_REGISTER_WITH_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 2);
 
 PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
     .telemetry_inverted = false,
     .halfDuplex = 1,
-    .telemetry_switch = 0,
     .gpsNoFixLatitude = 0,
     .gpsNoFixLongitude = 0,
     .frsky_coordinate_format = FRSKY_FORMAT_DMS,
@@ -120,7 +119,7 @@ bool telemetryDetermineEnabledState(portSharing_e portSharing)
     bool enabled = portSharing == PORTSHARING_NOT_SHARED;
 
     if (portSharing == PORTSHARING_SHARED) {
-        if (telemetryConfig()->telemetry_switch)
+        if (isModeActivationConditionPresent(BOXTELEMETRY))
             enabled = IS_RC_MODE_ACTIVE(BOXTELEMETRY);
         else
             enabled = ARMING_FLAG(ARMED);

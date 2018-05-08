@@ -246,7 +246,7 @@ void initActiveBoxIds(void)
     BME(BOXOSD);
 
 #ifdef USE_TELEMETRY
-    if (feature(FEATURE_TELEMETRY) && telemetryConfig()->telemetry_switch) {
+    if (feature(FEATURE_TELEMETRY)) {
         BME(BOXTELEMETRY);
     }
 #endif
