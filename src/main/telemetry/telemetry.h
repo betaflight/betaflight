@@ -58,9 +58,6 @@ typedef struct telemetryConfig_s {
 
 PG_DECLARE(telemetryConfig_t, telemetryConfig);
 
-#define TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK (FUNCTION_TELEMETRY_FRSKY_HUB | FUNCTION_TELEMETRY_LTM | FUNCTION_TELEMETRY_MAVLINK)
-#define TELEMETRY_PORT_FUNCTIONS_MASK (TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK | FUNCTION_TELEMETRY_HOTT | FUNCTION_TELEMETRY_SMARTPORT)
-
 extern serialPort_t *telemetrySharedPort;
 
 void telemetryInit(void);
@@ -70,5 +67,3 @@ void telemetryCheckState(void);
 void telemetryProcess(uint32_t currentTime);
 
 bool telemetryDetermineEnabledState(portSharing_e portSharing);
-
-void releaseSharedTelemetryPorts(void);

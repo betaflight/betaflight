@@ -80,6 +80,16 @@ void mspSerialReleasePortIfAllocated(serialPort_t *serialPort)
     }
 }
 
+#if defined(USE_TELEMETRY)
+void mspSerialReleaseSharedTelemetryPorts(void) {
+    serialPort_t *sharedPort = findSharedSerialPort(TELEMETRY_PORT_FUNCTIONS_MASK, FUNCTION_MSP);
+    while (sharedPort) {
+        mspSerialReleasePortIfAllocated(sharedPort);
+        sharedPort = findNextSharedSerialPort(TELEMETRY_PORT_FUNCTIONS_MASK, FUNCTION_MSP);
+    }
+}
+#endif
+
 static bool mspSerialProcessReceivedData(mspPort_t *mspPort, uint8_t c)
 {
     switch (mspPort->c_state) {
