@@ -55,10 +55,11 @@ typedef enum {
     ARMING_DISABLED_OSD_MENU        = (1 << 14),
     ARMING_DISABLED_BST             = (1 << 15),
     ARMING_DISABLED_MSP             = (1 << 16),
-    ARMING_DISABLED_ARM_SWITCH      = (1 << 17), // Needs to be the last element, since it's always activated if one of the others is active when arming
+    ARMING_DISABLED_PARALYZE        = (1 << 17),
+    ARMING_DISABLED_ARM_SWITCH      = (1 << 18), // Needs to be the last element, since it's always activated if one of the others is active when arming
 } armingDisableFlags_e;
 
-#define ARMING_DISABLE_FLAGS_COUNT 18
+#define ARMING_DISABLE_FLAGS_COUNT 19
 
 extern const char *armingDisableFlagNames[ARMING_DISABLE_FLAGS_COUNT];
 

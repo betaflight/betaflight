@@ -39,6 +39,7 @@
 #include "rx/rx.h"
 
 boxBitmask_t rcModeActivationMask; // one bit per mode defined in boxId_e
+static bool modeChangesDisabled = false;
 
 PG_REGISTER_ARRAY(modeActivationCondition_t, MAX_MODE_ACTIVATION_CONDITION_COUNT, modeActivationConditions,
                   PG_MODE_ACTIVATION_PROFILE, 0);
@@ -51,6 +52,10 @@ bool IS_RC_MODE_ACTIVE(boxId_e boxId)
 void rcModeUpdate(boxBitmask_t *newState)
 {
     rcModeActivationMask = *newState;
+}
+
+void preventModeChanges(void) {
+    modeChangesDisabled = true;
 }
 
 bool isAirmodeActive(void) {
@@ -75,14 +80,24 @@ bool isRangeActive(uint8_t auxChannelIndex, const channelRange_t *range) {
 void updateActivatedModes(void)
 {
     boxBitmask_t newMask, andMask;
-    memset(&newMask, 0, sizeof(newMask));
     memset(&andMask, 0, sizeof(andMask));
+
+    if (!modeChangesDisabled) {
+        memset(&newMask, 0, sizeof(newMask));
+    } else {
+        memcpy(&newMask, &rcModeActivationMask, sizeof(newMask));
+    }
 
     // determine which conditions set/clear the mode
     for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
         const modeActivationCondition_t *mac = modeActivationConditions(i);
 
         boxId_e mode = mac->modeId;
+
+        if (modeChangesDisabled && mode != BOXBEEPERON) {
+            continue;
+        }
+
         if (mode < CHECKBOX_ITEM_COUNT) {
             bool bAnd = (mac->modeLogic == MODELOGIC_AND) || bitArrayGet(&andMask, mode);
             bool bAct = isRangeActive(mac->auxChannelIndex, &mac->range);
