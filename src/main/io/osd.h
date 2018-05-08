@@ -113,6 +113,9 @@ typedef enum {
     OSD_STAT_COUNT // MUST BE LAST
 } osd_stats_e;
 
+// Make sure the number of stats do not exceed the available 32bit storage
+STATIC_ASSERT(OSD_STAT_COUNT <= 32, osdstats_overflow);
+
 typedef enum {
     OSD_UNIT_IMPERIAL,
     OSD_UNIT_METRIC
@@ -166,7 +169,7 @@ typedef struct osdConfig_s {
 
     uint8_t ahMaxPitch;
     uint8_t ahMaxRoll;
-    bool enabled_stats[OSD_STAT_COUNT];
+    uint32_t enabled_stats;
     int8_t esc_temp_alarm;
     int16_t esc_rpm_alarm;
     int16_t esc_current_alarm;
@@ -180,3 +183,6 @@ struct displayPort_s;
 void osdInit(struct displayPort_s *osdDisplayPort);
 void osdResetAlarms(void);
 void osdUpdate(timeUs_t currentTimeUs);
+void osdStatSetState(uint8_t statIndex, bool enabled);
+bool osdStatGetState(uint8_t statIndex);
+
