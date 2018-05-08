@@ -649,7 +649,7 @@ extern "C" {
     void updateAdjustmentStates(void) {}
     void processRcAdjustments(controlRateConfig_t *) {}
     void updateGpsWaypointsAndMode(void) {}
-    void releaseSharedTelemetryPorts(void) {}
+    void mspSerialReleaseSharedTelemetryPorts(void) {}
     void telemetryCheckState(void) {}
     void mspSerialAllocatePorts(void) {}
     void gyroReadTemperature(void) {}
