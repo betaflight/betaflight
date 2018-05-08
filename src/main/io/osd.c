@@ -454,11 +454,13 @@ static bool osdDrawSingleElement(uint8_t item)
         break;
 
     case OSD_GPS_LAT:
-        osdFormatCoordinate(buff, SYM_LAT, gpsSol.llh.lat);
+        // The SYM_LAT symbol in the actual font contains only blank, so we use the SYM_ARROW_NORTH
+        osdFormatCoordinate(buff, SYM_ARROW_NORTH, gpsSol.llh.lat);
         break;
 
     case OSD_GPS_LON:
-        osdFormatCoordinate(buff, SYM_LON, gpsSol.llh.lon);
+        // The SYM_LON symbol in the actual font contains only blank, so we use the SYM_ARROW_EAST
+        osdFormatCoordinate(buff, SYM_ARROW_EAST, gpsSol.llh.lon);
         break;
 
     case OSD_HOME_DIR:
