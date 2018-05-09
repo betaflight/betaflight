@@ -61,7 +61,6 @@ typedef struct serialPort_s {
 
     const struct serialPortVTable *vTable;
 
-    uint8_t identifier;
     portMode_e mode;
     portOptions_e options;
 
@@ -69,8 +68,6 @@ typedef struct serialPort_s {
 
     uint32_t rxBufferSize;
     uint32_t txBufferSize;
-    volatile uint8_t *rxBuffer;
-    volatile uint8_t *txBuffer;
     uint32_t rxBufferHead;
     uint32_t rxBufferTail;
     uint32_t txBufferHead;
@@ -78,6 +75,11 @@ typedef struct serialPort_s {
 
     serialReceiveCallbackPtr rxCallback;
     void *rxCallbackData;
+
+    uint8_t identifier;
+
+    volatile uint8_t *rxBuffer;
+    volatile uint8_t *txBuffer;
 } serialPort_t;
 
 #if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
