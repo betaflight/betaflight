@@ -42,7 +42,6 @@
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
-#include "flight/navigation.h"
 #include "flight/pid.h"
 #include "flight/servos.h"
 
@@ -148,10 +147,6 @@ void activateConfig(void)
     pidInit(currentPidProfile);
     useRcControlsConfig(currentPidProfile);
     useAdjustmentConfig(currentPidProfile);
-
-#ifdef USE_NAV
-    gpsUsePIDs(currentPidProfile);
-#endif
 
     failsafeReset();
     setAccelerationTrims(&accelerometerConfigMutable()->accZero);

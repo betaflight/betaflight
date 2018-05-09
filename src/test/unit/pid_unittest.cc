@@ -60,7 +60,6 @@ extern "C" {
 
     gyro_t gyro;
     attitudeEulerAngles_t attitude;
-    int16_t GPS_angle[ANGLE_INDEX_COUNT];
 
     float getThrottlePIDAttenuation(void) { return simulatedThrottlePIDAttenuation; }
     float getMotorMixRange(void) { return simulatedMotorMixRange; }
