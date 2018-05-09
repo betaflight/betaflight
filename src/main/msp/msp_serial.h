@@ -96,7 +96,6 @@ typedef struct __attribute__((packed)) {
 struct serialPort_s;
 typedef struct mspPort_s {
     struct serialPort_s *port; // null when port unused.
-    bool sharedWithTelemetry;
     timeMs_t lastActivityMs;
     mspPendingSystemRequest_e pendingRequest;
     mspState_e c_state;
@@ -109,6 +108,7 @@ typedef struct mspPort_s {
     uint_fast16_t dataSize;
     uint8_t checksum1;
     uint8_t checksum2;
+    bool sharedWithTelemetry;
 } mspPort_t;
 
 void mspSerialInit(void);
