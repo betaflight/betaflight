@@ -228,7 +228,6 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             flight/imu.c \
             flight/mixer.c \
             flight/pid.c \
-            io/serial.c \
             rx/ibus.c \
             rx/rx.c \
             rx/rx_spi.c \
@@ -287,6 +286,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             interface/settings.c \
             io/dashboard.c \
             io/osd.c \
+            io/serial.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
