@@ -221,10 +221,6 @@ serialPortConfig_t *findNextSerialPortConfig(serialPortFunction_e function)
     return NULL;
 }
 
-typedef struct findSharedSerialPortState_s {
-    uint8_t lastIndex;
-} findSharedSerialPortState_t;
-
 portSharing_e determinePortSharing(const serialPortConfig_t *portConfig, serialPortFunction_e function)
 {
     if (!portConfig || (portConfig->functionMask & function) == 0) {
@@ -238,19 +234,10 @@ bool isSerialPortShared(const serialPortConfig_t *portConfig, uint16_t functionM
     return (portConfig) && (portConfig->functionMask & sharedWithFunction) && (portConfig->functionMask & functionMask);
 }
 
-static findSharedSerialPortState_t findSharedSerialPortState;
-
 serialPort_t *findSharedSerialPort(uint16_t functionMask, serialPortFunction_e sharedWithFunction)
 {
-    memset(&findSharedSerialPortState, 0, sizeof(findSharedSerialPortState));
-
-    return findNextSharedSerialPort(functionMask, sharedWithFunction);
-}
-
-serialPort_t *findNextSharedSerialPort(uint16_t functionMask, serialPortFunction_e sharedWithFunction)
-{
-    while (findSharedSerialPortState.lastIndex < SERIAL_PORT_COUNT) {
-        const serialPortConfig_t *candidate = &serialConfig()->portConfigs[findSharedSerialPortState.lastIndex++];
+    for (unsigned i = 0; i < SERIAL_PORT_COUNT; i++) {
+        const serialPortConfig_t *candidate = &serialConfig()->portConfigs[i];
 
         if (isSerialPortShared(candidate, functionMask, sharedWithFunction)) {
             const serialPortUsage_t *serialPortUsage = findSerialPortUsageByIdentifier(candidate->identifier);

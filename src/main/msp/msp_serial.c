@@ -41,11 +41,12 @@
 
 static mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
 
-static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort)
+static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort, bool sharedWithTelemetry)
 {
     memset(mspPortToReset, 0, sizeof(mspPort_t));
 
     mspPortToReset->port = serialPort;
+    mspPortToReset->sharedWithTelemetry = sharedWithTelemetry;
 }
 
 void mspSerialAllocatePorts(void)
@@ -61,7 +62,8 @@ void mspSerialAllocatePorts(void)
 
         serialPort_t *serialPort = openSerialPort(portConfig->identifier, FUNCTION_MSP, NULL, NULL, baudRates[portConfig->msp_baudrateIndex], MODE_RXTX, SERIAL_NOT_INVERTED);
         if (serialPort) {
-            resetMspPort(mspPort, serialPort);
+            bool sharedWithTelemetry = isSerialPortShared(portConfig, FUNCTION_MSP, TELEMETRY_PORT_FUNCTIONS_MASK);
+            resetMspPort(mspPort, serialPort, sharedWithTelemetry);
             portIndex++;
         }
 
@@ -82,10 +84,12 @@ void mspSerialReleasePortIfAllocated(serialPort_t *serialPort)
 
 #if defined(USE_TELEMETRY)
 void mspSerialReleaseSharedTelemetryPorts(void) {
-    serialPort_t *sharedPort = findSharedSerialPort(TELEMETRY_PORT_FUNCTIONS_MASK, FUNCTION_MSP);
-    while (sharedPort) {
-        mspSerialReleasePortIfAllocated(sharedPort);
-        sharedPort = findNextSharedSerialPort(TELEMETRY_PORT_FUNCTIONS_MASK, FUNCTION_MSP);
+    for (uint8_t portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
+        mspPort_t *candidateMspPort = &mspPorts[portIndex];
+        if (candidateMspPort->sharedWithTelemetry) {
+            closeSerialPort(candidateMspPort->port);
+            memset(candidateMspPort, 0, sizeof(mspPort_t));
+        }
     }
 }
 #endif

@@ -72,7 +72,7 @@ static bool rcdeviceIsCameraControlEnabled(void)
 
 bool rcdeviceIsEnabled(void)
 {
-    return findSerialPortConfig(FUNCTION_RCDEVICE) != NULL;
+    return camDevice->serialPort != NULL;
 }
 
 static bool rcdeviceIs5KeyEnabled(void)
