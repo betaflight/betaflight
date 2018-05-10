@@ -36,7 +36,8 @@
 #define USE_EXTI
 #define USE_MPU_DATA_READY_SIGNAL
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
-#define MPU_INT_EXTI PB15 // XXX Should be gone
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PINPB15 // XXX Should be gone
 
 #define USE_ACC
 #define USE_GYRO
@@ -45,12 +46,19 @@
 #define USE_GYRO_SPI_MPU6500
 // Other USE_ACCs and USE_GYROs should follow
 
-// Should be gone
-#define MPU6500_CS_PIN          PC4  // XXX Should be gone
-#define MPU6500_SPI_INSTANCE    SPI1 // XXX Should be gone
-#define ACC_MPU6500_ALIGN CW0_DEG
-#define GYRO_MPU6500_ALIGN CW0_DEG
+#define GYRO_1_SPI_INSTANCE     SPI1
+#define GYRO_1_CS_PIN           NONE
+#define GYRO_1_ALIGN            ALIGN_DEFAULT
+#define ACC_1_ALIGN             ALIGN_DEFAULT
+#define GYRO_1_EXTI_PIN         NONE
 
+#define GYRO_2_SPI_INSTANCE     SPI1
+#define GYRO_2_CS_PIN           NONE
+#define GYRO_2_ALIGN            ALIGN_DEFAULT
+#define ACC_2_ALIGN             ALIGN_DEFAULT
+#define GYRO_2_EXTI_PIN         NONE
+
+#define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_1
 
 #define USE_MAG
 #define USE_MAG_HMC5883

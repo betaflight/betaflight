@@ -71,29 +71,33 @@
 #define INVERTER_PIN_UART1      PC0 // DYS F4 Pro; Omnibus F4 AIO (1st gen) have a FIXED inverter on UART1
 #endif
 
+#define USE_EXTI
+
+#define USE_MULTI_GYRO
+
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
 
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 
-#define MPU6000_CS_PIN          PA4
-#define MPU6000_SPI_INSTANCE    SPI1
+#define GYRO_1_CS_PIN           PA4
+#define GYRO_1_SPI_INSTANCE     SPI1
 
 // MPU6000 interrupts
-#define USE_EXTI
-#define MPU_INT_EXTI            PC4
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC4
 #define USE_MPU_DATA_READY_SIGNAL
 
 #if defined(OMNIBUSF4SD)
-#define GYRO_MPU6000_ALIGN       CW270_DEG
-#define ACC_MPU6000_ALIGN        CW270_DEG
+#define GYRO_1_ALIGN            CW270_DEG
+#define ACC_1_ALIGN             CW270_DEG
 #elif defined(XRACERF4) || defined(EXUAVF4PRO)
-#define GYRO_MPU6000_ALIGN       CW90_DEG
-#define ACC_MPU6000_ALIGN        CW90_DEG
+#define GYRO_1_ALIGN            CW90_DEG
+#define ACC_1_ALIGN             CW90_DEG
 #else
-#define GYRO_MPU6000_ALIGN       CW180_DEG
-#define ACC_MPU6000_ALIGN        CW180_DEG
+#define GYRO_1_ALIGN            CW180_DEG
+#define ACC_1_ALIGN             CW180_DEG
 #endif
 
 // Support for iFlight OMNIBUS F4 V3
@@ -102,11 +106,14 @@
 #if defined (OMNIBUSF4SD) || defined(OMNIBUSF4BASE)
 #define USE_ACC_SPI_MPU6500
 #define USE_GYRO_SPI_MPU6500
-#define MPU6500_CS_PIN          MPU6000_CS_PIN
-#define MPU6500_SPI_INSTANCE    MPU6000_SPI_INSTANCE
-#define GYRO_MPU6500_ALIGN      GYRO_MPU6000_ALIGN
-#define ACC_MPU6500_ALIGN       ACC_MPU6000_ALIGN
 #endif
+
+// Dummy defines
+#define GYRO_2_SPI_INSTANCE     GYRO_1_SPI_INSTANCE
+#define GYRO_2_CS_PIN           NONE
+#define GYRO_2_ALIGN            ALIGN_DEFAULT
+#define GYRO_2_EXTI_PIN         NONE
+#define ACC_2_ALIGN             ALIGN_DEFAULT
 
 #define USE_MAG
 #define USE_MAG_HMC5883

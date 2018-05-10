@@ -31,7 +31,8 @@
 
 
 #define USE_EXTI
-#define MPU_INT_EXTI            PC13
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC13
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
@@ -40,11 +41,9 @@
 
 #define USE_GYRO
 #define USE_GYRO_MPU6500
-//#define USE_GYRO_SPI_MPU6500
 
 #define USE_ACC
 #define USE_ACC_MPU6500
-//#define USE_ACC_SPI_MPU6500
 
 #define USE_BARO
 #define USE_BARO_BMP280

@@ -31,26 +31,24 @@
 #define BEEPER_PIN              PD15
 #define BEEPER_INVERTED
 
+//define camera control
+#define CAMERA_CONTROL_PIN      PE13
+
 #define USE_ACC
 #define USE_GYRO
+#define USE_EXTI
 
 // ICM-20689
 #define USE_ACC_SPI_ICM20689
 #define USE_GYRO_SPI_ICM20689
-#define GYRO_ICM20689_ALIGN      CW270_DEG
-#define ACC_ICM20689_ALIGN       CW270_DEG
-#define MPU_INT_EXTI               PE1
+#define GYRO_1_CS_PIN           SPI4_NSS_PIN
+#define GYRO_1_SPI_INSTANCE     SPI4
+#define GYRO_1_ALIGN            CW270_DEG
+#define ACC_1_ALIGN             CW270_DEG
 
-#define ICM20689_CS_PIN          SPI4_NSS_PIN
-#define ICM20689_SPI_INSTANCE    SPI4
-#define GYRO_1_CS_PIN            ICM20689_CS_PIN
-#define GYRO_1_SPI_INSTANCE      ICM20689_SPI_INSTANCE
-
-#define ACC_1_ALIGN              ACC_ICM20689_ALIGN
-#define GYRO_1_ALIGN             GYRO_ICM20689_ALIGN
-
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PE1
 #define USE_MPU_DATA_READY_SIGNAL
-#define USE_EXTI
 
 #define USE_VCP
 #define USE_USB_DETECT
@@ -173,4 +171,3 @@
 #define USABLE_TIMER_CHANNEL_COUNT 8
 
 #define USED_TIMERS  ( TIM_N(1) | TIM_N(5) | TIM_N(3) | TIM_N(4) | TIM_N(8) )
-

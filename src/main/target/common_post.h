@@ -167,3 +167,12 @@
 #if defined(USE_GPS_RESCUE)
 #define USE_GPS
 #endif
+
+// Generate USE_SPI_GYRO or USE_I2C_GYRO
+#if defined(USE_GYRO_L3G4200D) || defined(USE_GYRO_L3GD20) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6000) || defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU6500)
+#define USE_I2C_GYRO
+#endif
+
+#if defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250)
+#define USE_SPI_GYRO
+#endif

@@ -41,14 +41,12 @@
 #define USE_GYRO_SPI_MPU6500
 #define USE_GYRO_SPI_MPU6000
 
-#define MPU6500_CS_PIN          PB12
-#define MPU6500_SPI_INSTANCE    SPI2
-
-#define MPU6000_CS_PIN          PB12
-#define MPU6000_SPI_INSTANCE    SPI2
+#define GYRO_1_CS_PIN           PB12
+#define GYRO_1_SPI_INSTANCE     SPI2
 
 #define USE_EXTI
-#define MPU_INT_EXTI            PA8
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PA8
 #define USE_MPU_DATA_READY_SIGNAL
 
 #define USE_BARO

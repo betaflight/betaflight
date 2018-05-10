@@ -38,32 +38,29 @@
 
 #define INVERTER_PIN_UART1        PC0 // PC0 used as inverter select GPIO
 
+#define CAMERA_CONTROL_PIN        PB9    // define dedicated camera_osd_control pin
+
 
 #define USE_EXTI
-#define MPU_INT_EXTI            PC4
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN           PC4
 #define USE_MPU_DATA_READY_SIGNAL
 
-//  MPU 6000
-#define MPU6000_CS_PIN            PA4
-#define MPU6000_SPI_INSTANCE      SPI1
 #define USE_ACC
-#define USE_ACC_SPI_MPU6000
 #define USE_GYRO
+
+//  MPU 6000
+#define USE_ACC_SPI_MPU6000
 #define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN       CW0_DEG
-#define ACC_MPU6000_ALIGN        CW0_DEG
 
 // ICM-20602
-#define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
-#define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
 
-#define ACC_MPU6500_ALIGN       CW0_DEG
-#define GYRO_MPU6500_ALIGN      CW0_DEG
-#define MPU6500_CS_PIN          PA4
-#define MPU6500_SPI_INSTANCE    SPI1
-
+#define GYRO_1_CS_PIN             PA4
+#define GYRO_1_SPI_INSTANCE       SPI1
+#define GYRO_1_ALIGN              CW0_DEG
+#define ACC_1_ALIGN               CW0_DEG
 
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI3

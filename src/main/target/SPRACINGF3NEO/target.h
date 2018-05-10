@@ -69,8 +69,8 @@
 #define USE_ACC
 #define USE_ACC_SPI_MPU6500
 
-#define ACC_MPU6500_ALIGN       CW0_DEG
-#define GYRO_MPU6500_ALIGN      CW0_DEG
+#define ACC_1_ALIGN             CW0_DEG
+#define GYRO_1_ALIGN            CW0_DEG
 
 #define USE_VCP
 #define USE_UART1
@@ -155,8 +155,8 @@
 // Note, this is the same DMA channel as UART1_RX. Luckily we don't use DMA for USART Rx.
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
 
-#define MPU6500_CS_PIN                   SPI1_NSS_PIN
-#define MPU6500_SPI_INSTANCE             SPI1
+#define GYRO_1_CS_PIN                    SPI1_NSS_PIN
+#define GYRO_1_SPI_INSTANCE              SPI1
 
 #define CURRENT_METER_SCALE_DEFAULT 300
 

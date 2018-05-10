@@ -69,7 +69,7 @@
 //#define L3GD20_CS_PIN                   PE3
 
 //#define GYRO_L3GD20_ALIGN CW270_DEG
-#define GYRO_MPU6050_ALIGN CW0_DEG
+#define GYRO_1_ALIGN       CW0_DEG
 
 #define USE_ACC
 #define USE_ACC_MPU6050
@@ -81,7 +81,7 @@
 //#define LSM303DLHC_I2C_INT1_PIN              PE4
 //#define LSM303DLHC_I2C_INT2_PIN              PE5
 
-#define ACC_MPU6050_ALIGN       CW0_DEG
+#define ACC_1_ALIGN             CW0_DEG
 
 #define USE_BARO
 #define USE_BARO_MS5611

@@ -31,22 +31,23 @@
 
 // MPU9250 interrupt
 #define USE_EXTI
-#define MPU_INT_EXTI            PB5
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PB5
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
-#define MPU6500_CS_PIN          PB12
-#define MPU6500_SPI_INSTANCE    SPI2
+#define GYRO_1_CS_PIN           PB12
+#define GYRO_1_SPI_INSTANCE     SPI2
 
 // Using MPU6050 for the moment.
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN      CW270_DEG
+#define GYRO_1_ALIGN            CW270_DEG
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN       CW270_DEG
+#define ACC_1_ALIGN             CW270_DEG
 
 //#define USE_BARO
 //#define USE_BARO_MS5611

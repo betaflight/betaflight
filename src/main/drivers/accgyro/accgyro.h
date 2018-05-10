@@ -35,10 +35,6 @@
 #pragma GCC diagnostic warning "-Wpadded"
 #endif
 
-#ifndef MPU_I2C_INSTANCE
-#define MPU_I2C_INSTANCE I2C_DEVICE
-#endif
-
 typedef enum {
     GYRO_NONE = 0,
     GYRO_DEFAULT,
