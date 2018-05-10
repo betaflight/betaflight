@@ -27,7 +27,6 @@
 #define LED0_PIN                PA15
 #define LED1_PIN                PC14
 
-#define USE_DSHOT_DMAR
 #define ENABLE_DSHOT_DMAR       true
 
 //BEEPER
