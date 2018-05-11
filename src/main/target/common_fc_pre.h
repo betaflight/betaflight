@@ -202,7 +202,6 @@
 #define USE_GPS
 #define USE_GPS_NMEA
 #define USE_GPS_UBLOX
-#define USE_NAV
 #define USE_OSD_ADJUSTMENTS
 #define USE_SENSOR_NAMES
 #define USE_SERIALRX_JETIEXBUS

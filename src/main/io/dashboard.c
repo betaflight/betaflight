@@ -59,7 +59,6 @@
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/failsafe.h"
-#include "flight/navigation.h"
 
 #include "io/gps.h"
 #include "io/dashboard.h"
@@ -427,20 +426,6 @@ static void showGpsPage(void)
     padHalfLineBuffer();
     i2c_OLED_set_line(bus, rowIndex++);
     i2c_OLED_send_string(bus, lineBuffer);
-
-#ifdef GPS_PH_DEBUG
-    tfp_sprintf(lineBuffer, "Angles: P:%d R:%d", GPS_angle[PITCH], GPS_angle[ROLL]);
-    padLineBuffer();
-    i2c_OLED_set_line(bus, rowIndex++);
-    i2c_OLED_send_string(bus, lineBuffer);
-#endif
-
-#if 0
-    tfp_sprintf(lineBuffer, "%d %d %d %d", debug[0], debug[1], debug[2], debug[3]);
-    padLineBuffer();
-    i2c_OLED_set_line(bus, rowIndex++);
-    i2c_OLED_send_string(bus, lineBuffer);
-#endif
 }
 #endif
 

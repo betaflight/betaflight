@@ -51,7 +51,6 @@
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/failsafe.h"
-#include "flight/navigation.h"
 #include "flight/position.h"
 
 #include "io/serial.h"
