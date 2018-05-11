@@ -75,6 +75,7 @@
 #define USE_FLASH_M25P16
 #define M25P16_CS_PIN           PC0
 #define M25P16_SPI_INSTANCE     SPI3
+#define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 
 // *************** OSD *****************************
 #define USE_SPI_DEVICE_2
@@ -131,7 +132,7 @@
 #define DEFAULT_FEATURES        (FEATURE_OSD | FEATURE_TELEMETRY | FEATURE_SOFTSERIAL)
 #define DEFAULT_VOLTAGE_METER_SOURCE    VOLTAGE_METER_ADC
 #define DEFAULT_CURRENT_METER_SOURCE    CURRENT_METER_ADC
-#define CURRENT_METER_SCALE_DEFAULT 608
+#define CURRENT_METER_SCALE_DEFAULT 302
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN PA3
@@ -146,5 +147,5 @@
 // *************** activate/deactivate Bluetooth When disarmed/armed using PINIO_BOX *****************************
 #define PINIO1_PIN PB0
 
-#define USABLE_TIMER_CHANNEL_COUNT 12
-#define USED_TIMERS             (TIM_N(1)|TIM_N(2)|TIM_N(4)|TIM_N(5)|TIM_N(8)|TIM_N(9))
+#define USABLE_TIMER_CHANNEL_COUNT 9
+#define USED_TIMERS             (TIM_N(1)|TIM_N(2)|TIM_N(4)|TIM_N(5)|TIM_N(8))
