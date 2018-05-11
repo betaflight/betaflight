@@ -30,8 +30,6 @@
 #define LED0_INVERTED
 #define LED1_INVERTED
 
-#define USE_DSHOT_DMAR
-
 // MPU6500 interrupt
 #define USE_EXTI
 #define MPU_INT_EXTI            PC4
