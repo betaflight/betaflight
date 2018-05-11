@@ -87,14 +87,6 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .boardIdentifier = TARGET_BOARD_IDENTIFIER
 );
 
-#ifdef SWAP_SERIAL_PORT_0_AND_1_DEFAULTS
-#define FIRST_PORT_INDEX 1
-#define SECOND_PORT_INDEX 0
-#else
-#define FIRST_PORT_INDEX 0
-#define SECOND_PORT_INDEX 1
-#endif
-
 #ifndef USE_OSD_SLAVE
 uint8_t getCurrentPidProfileIndex(void)
 {
