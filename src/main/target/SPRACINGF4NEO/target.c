@@ -31,10 +31,10 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM9,  CH2, PA3,  TIM_USE_PPM | TIM_USE_PWM,   0, 0),
     DEF_TIM(TIM9,  CH1, PA2,  TIM_USE_PWM,                 0, 0), // PPM / PWM1 / UART2 RX
 
-    DEF_TIM(TIM8,  CH3, PC8,  TIM_USE_MOTOR,               0, 0), // D(2,4,7) ESC 1
-    DEF_TIM(TIM8,  CH2, PC7,  TIM_USE_MOTOR,               0, 0), // D(2,3,7) ESC 2
+    DEF_TIM(TIM8,  CH3, PC8,  TIM_USE_MOTOR,               0, 1), // D(2,4,7) ESC 1
+    DEF_TIM(TIM8,  CH2, PC7,  TIM_USE_MOTOR,               0, 1), // D(2,3,7) ESC 2
     DEF_TIM(TIM8,  CH4, PC9,  TIM_USE_MOTOR,               0, 0), // D(2,7,7) ESC 3
-    DEF_TIM(TIM8,  CH1, PC6,  TIM_USE_MOTOR,               0, 0), // D(2,2,7) ESC 4
+    DEF_TIM(TIM8,  CH1, PC6,  TIM_USE_MOTOR,               0, 1), // D(2,2,7) ESC 4
 
 #if (SPRACINGF4NEO_REV >= 3)
     DEF_TIM(TIM4,  CH1, PB6,  TIM_USE_MOTOR,               0, 0), // D(1,0,2) ESC 5 / Conflicts with USART5_RX / SPI3_RX - SPI3_RX can be mapped to DMA1_ST3_CH0
