@@ -181,8 +181,8 @@ static void checkForThrottleErrorResetState(uint16_t rxRefreshRate)
 
 FAST_CODE NOINLINE void processRcCommand(void)
 {
-    static float rcCommandInterp[4] = { 0, 0, 0, 0 };
-    static float rcStepSize[4] = { 0, 0, 0, 0 };
+    static float rcCommandInterp[4];
+    static float rcStepSize[4];
     static int16_t rcInterpolationStepCount;
 
     if (isRXDataNew && isAntiGravityModeActive()) {
