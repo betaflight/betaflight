@@ -42,6 +42,8 @@
 #define BEEPER                              PC15
 #define BEEPER_INVERTED
 
+#define ENABLE_DSHOT_DMAR                   true
+
 #if (SPRACINGF4NEO_REV >= 2)
     #define INVERTER_PIN_UART2              PB2
 #else
