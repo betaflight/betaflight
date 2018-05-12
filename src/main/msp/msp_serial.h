@@ -108,6 +108,7 @@ typedef struct mspPort_s {
     uint_fast16_t dataSize;
     uint8_t checksum1;
     uint8_t checksum2;
+    bool sharedWithTelemetry;
 } mspPort_t;
 
 void mspSerialInit(void);

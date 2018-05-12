@@ -537,6 +537,7 @@ bool processRx(timeUs_t currentTimeUs)
 {
     static bool armedBeeperOn = false;
     static bool airmodeIsActivated;
+    static bool sharedPortTelemetryEnabled = false;
 
     if (!calculateRxChannelsAndUpdateFailsafe(currentTimeUs)) {
         return false;
@@ -788,14 +789,18 @@ bool processRx(timeUs_t currentTimeUs)
 
 #ifdef USE_TELEMETRY
     if (feature(FEATURE_TELEMETRY)) {
-        if ((!isModeActivationConditionPresent(BOXTELEMETRY) && ARMING_FLAG(ARMED)) ||
-                (isModeActivationConditionPresent(BOXTELEMETRY) && IS_RC_MODE_ACTIVE(BOXTELEMETRY))) {
-
+        bool enableSharedPortTelemetry = (!isModeActivationConditionPresent(BOXTELEMETRY) && ARMING_FLAG(ARMED)) || (isModeActivationConditionPresent(BOXTELEMETRY) && IS_RC_MODE_ACTIVE(BOXTELEMETRY));
+        if (enableSharedPortTelemetry && !sharedPortTelemetryEnabled) {
             mspSerialReleaseSharedTelemetryPorts();
-        } else {
+            telemetryCheckState();
+
+            sharedPortTelemetryEnabled = true;
+        } else if (!enableSharedPortTelemetry && sharedPortTelemetryEnabled) {
             // the telemetry state must be checked immediately so that shared serial ports are released.
             telemetryCheckState();
             mspSerialAllocatePorts();
+
+            sharedPortTelemetryEnabled = false;
         }
     }
 #endif

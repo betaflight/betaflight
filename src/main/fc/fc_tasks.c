@@ -202,8 +202,6 @@ static void taskCalculateAltitude(timeUs_t currentTimeUs)
 #ifdef USE_TELEMETRY
 static void taskTelemetry(timeUs_t currentTimeUs)
 {
-    telemetryCheckState();
-
     if (!cliMode && feature(FEATURE_TELEMETRY)) {
         telemetryProcess(currentTimeUs);
     }
