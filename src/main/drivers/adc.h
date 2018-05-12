@@ -91,6 +91,6 @@ uint16_t adcInternalReadVrefint(void);
 uint16_t adcInternalReadTempsensor(void);
 #endif
 
-#ifndef SITL
+#if !defined(SIMULATOR_BUILD)
 ADCDevice adcDeviceByInstance(ADC_TypeDef *instance);
 #endif

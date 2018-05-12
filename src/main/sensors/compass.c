@@ -115,8 +115,7 @@ void pgResetFn_compassConfig(compassConfig_t *compassConfig)
 static int16_t magADCRaw[XYZ_AXIS_COUNT];
 static uint8_t magInit = 0;
 
-#if !defined(SITL)
-
+#if !defined(SIMULATOR_BUILD)
 bool compassDetect(magDev_t *dev)
 {
     magSensor_e magHardware = MAG_NONE;
@@ -257,7 +256,7 @@ bool compassDetect(magDev_t *dev)
 
     return false;
 }
-#endif // !SITL
+#endif // !SIMULATOR_BUILD
 
 bool compassInit(void)
 {

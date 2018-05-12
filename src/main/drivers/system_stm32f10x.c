@@ -74,7 +74,7 @@ void systemInit(void)
 
     SetSysClock(false);
 
-#ifdef CC3D
+#if defined(OPBL)
     /* Accounts for OP Bootloader, set the Vector Table base address as specified in .ld file */
     extern void *isr_vector_table_base;
 
