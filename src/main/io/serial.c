@@ -459,7 +459,17 @@ void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisab
             }
         }
 
-        if ((serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL1
+#ifndef SITL
+        else if (serialPortUsageList[index].identifier <= SERIAL_PORT_USART8) {
+            int resourceIndex = SERIAL_PORT_IDENTIFIER_TO_INDEX(serialPortUsageList[index].identifier);
+            if (!(serialPinConfig()->ioTagTx[resourceIndex] || serialPinConfig()->ioTagRx[resourceIndex])) {
+                serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
+                serialPortCount--;
+            }
+        }
+#endif
+
+        else if ((serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL1
 #ifdef USE_SOFTSERIAL1
             && !(softserialEnabled && (serialPinConfig()->ioTagTx[RESOURCE_SOFT_OFFSET + SOFTSERIAL1] ||
                 serialPinConfig()->ioTagRx[RESOURCE_SOFT_OFFSET + SOFTSERIAL1]))
