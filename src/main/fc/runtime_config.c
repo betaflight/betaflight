@@ -51,6 +51,7 @@ const char *armingDisableFlagNames[]= {
     "OSD",
     "BST",
     "MSP",
+    "PARALYZE",
     "ARMSWITCH"
 };
 

@@ -56,6 +56,7 @@
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/fc_core.h"
+#include "fc/fc_dispatch.h"
 #include "fc/fc_rc.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
@@ -120,6 +121,7 @@ enum {
 #define DEBUG_RUNAWAY_TAKEOFF_FALSE 0
 #endif
 
+#define PARALYZE_PREVENT_MODE_CHANGES_DELAY_US   100000 // Delay after paralyze mode activates to let other mode changes propagate
 
 #if defined(USE_GPS) || defined(USE_MAG)
 int16_t magHold;
@@ -140,6 +142,14 @@ static timeUs_t runawayTakeoffTriggerUs = 0;
 static bool runawayTakeoffTemporarilyDisabled = false;
 #endif
 
+static bool paralyzeModeAllowed = false;
+
+void preventModeChangesDispatch(dispatchEntry_t *self) {
+    UNUSED(self);
+    preventModeChanges();
+}
+
+static dispatchEntry_t preventModeChangesDispatchEntry = { .dispatch = preventModeChangesDispatch};
 
 PG_REGISTER_WITH_RESET_TEMPLATE(throttleCorrectionConfig_t, throttleCorrectionConfig, PG_THROTTLE_CORRECTION_CONFIG, 0);
 
@@ -244,6 +254,11 @@ void updateArmingStatus(void)
             }
         }
 
+        if (IS_RC_MODE_ACTIVE(BOXPARALYZE) && paralyzeModeAllowed) {
+            setArmingDisabled(ARMING_DISABLED_PARALYZE);
+            dispatchAdd(&preventModeChangesDispatchEntry, PARALYZE_PREVENT_MODE_CHANGES_DELAY_US);
+        }
+
         if (!isUsingSticksForArming()) {
           /* Ignore ARMING_DISABLED_CALIBRATING if we are going to calibrate gyro on first arm */
           bool ignoreGyro = armingConfig()->gyro_cal_on_first_arm
@@ -279,6 +294,11 @@ void updateArmingStatus(void)
         }
 
         warningLedUpdate();
+    }
+
+    // Check if entering into paralyze mode can be allowed regardless of arming status
+    if (!IS_RC_MODE_ACTIVE(BOXPARALYZE) && !paralyzeModeAllowed) {
+        paralyzeModeAllowed = true;
     }
 }
 

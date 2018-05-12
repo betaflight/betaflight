@@ -71,6 +71,7 @@ typedef enum {
     BOXPREARM,
     BOXBEEPGPSCOUNT,
     BOXVTXPITMODE,
+    BOXPARALYZE,
     BOXUSER1,
     BOXUSER2,
     BOXUSER3,
@@ -124,6 +125,7 @@ typedef struct modeActivationProfile_s {
 
 bool IS_RC_MODE_ACTIVE(boxId_e boxId);
 void rcModeUpdate(boxBitmask_t *newState);
+void preventModeChanges(void);
 
 bool isAirmodeActive(void);
 bool isAntiGravityModeActive(void);

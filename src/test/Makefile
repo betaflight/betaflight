@@ -28,6 +28,7 @@ alignsensor_unittest_SRC := \
 
 arming_prevention_unittest_SRC := \
 		$(USER_DIR)/fc/fc_core.c \
+		$(USER_DIR)/fc/fc_dispatch.c \
 		$(USER_DIR)/fc/rc_controls.c \
 		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/fc/runtime_config.c \

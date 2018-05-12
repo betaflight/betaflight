@@ -92,6 +92,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOXUSER3, "USER3", 42 },
     { BOXUSER4, "USER4", 43 },
     { BOXPIDAUDIO, "PID AUDIO", 44 },
+    { BOXPARALYZE, "PARALYZE", 45 },
 };
 
 // mask of enabled IDs, calculated on startup based on enabled features. boxId_e is used as bit index
@@ -268,6 +269,8 @@ void initActiveBoxIds(void)
 #if defined(USE_VTX_SMARTAUDIO) || defined(USE_VTX_TRAMP)
     BME(BOXVTXPITMODE);
 #endif
+
+    BME(BOXPARALYZE);
 
 #ifdef USE_PINIOBOX
     // Turn BOXUSERx only if pinioBox facility monitors them, as the facility is the only BOXUSERx observer.
