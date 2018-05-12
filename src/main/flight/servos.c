@@ -147,10 +147,10 @@ static const servoMixer_t servoMixerSingle[] = {
 
 static const servoMixer_t servoMixerHeli[] = {
     { SERVO_HELI_LEFT, INPUT_STABILIZED_PITCH,   -50, 0, 0, 100, 0 },
-    { SERVO_HELI_LEFT, INPUT_STABILIZED_ROLL,    87, 0, 0, 100, 0 },
+    { SERVO_HELI_LEFT, INPUT_STABILIZED_ROLL,    -87, 0, 0, 100, 0 },
     { SERVO_HELI_LEFT, INPUT_RC_AUX1,    100, 0, 0, 100, 0 },
     { SERVO_HELI_RIGHT, INPUT_STABILIZED_PITCH,  -50, 0, 0, 100, 0 },
-    { SERVO_HELI_RIGHT, INPUT_STABILIZED_ROLL,  -87, 0, 0, 100, 0 },
+    { SERVO_HELI_RIGHT, INPUT_STABILIZED_ROLL,  87, 0, 0, 100, 0 },
     { SERVO_HELI_RIGHT, INPUT_RC_AUX1,    100, 0, 0, 100, 0 },
     { SERVO_HELI_TOP, INPUT_STABILIZED_PITCH,   100, 0, 0, 100, 0 },
     { SERVO_HELI_TOP, INPUT_RC_AUX1,    100, 0, 0, 100, 0 },
