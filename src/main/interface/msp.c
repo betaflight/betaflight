@@ -1200,6 +1200,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, motorConfig()->dev.motorPwmProtocol);
         sbufWriteU16(dst, motorConfig()->dev.motorPwmRate);
         sbufWriteU16(dst, motorConfig()->digitalIdleOffsetValue);
+        sbufWriteU16(dst, motorConfig()->digitalMaxOffsetValue);        
         sbufWriteU8(dst, gyroConfig()->gyro_use_32khz);
         sbufWriteU8(dst, motorConfig()->dev.motorPwmInversion);
         break;
@@ -1636,9 +1637,14 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         motorConfigMutable()->dev.motorPwmProtocol = constrain(sbufReadU8(src), 0, PWM_TYPE_BRUSHED);
 #endif
         motorConfigMutable()->dev.motorPwmRate = sbufReadU16(src);
-        if (sbufBytesRemaining(src) >= 2) {
+
+        if (sbufBytesRemaining(src) >= 4) {
             motorConfigMutable()->digitalIdleOffsetValue = sbufReadU16(src);
+            motorConfigMutable()->digitalMaxOffsetValue = sbufReadU16(src);
+        } else if (sbufBytesRemaining(src) >= 2) {
+             motorConfigMutable()->digitalIdleOffsetValue = sbufReadU16(src);
         }
+
         if (sbufBytesRemaining(src)) {
             gyroConfigMutable()->gyro_use_32khz = sbufReadU8(src);
         }
