@@ -182,6 +182,7 @@ TARGET_MCU := STM32F7
 
 else ifeq ($(TARGET),$(filter $(TARGET), $(SITL_TARGETS)))
 TARGET_MCU := SITL
+SIMULATOR_BUILD = yes
 
 else ifeq ($(TARGET),$(filter $(TARGET), $(F1_TARGETS)))
 TARGET_MCU := STM32F1
