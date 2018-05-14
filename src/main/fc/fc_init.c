@@ -437,7 +437,7 @@ void init(void)
     beeperInit(beeperDevConfig());
 #endif
 /* temp until PGs are implemented. */
-#if defined(USE_INVERTER) && !defined(SITL)
+#if defined(USE_INVERTER) && !defined(SIMULATOR_BUILD)
     initInverters(serialPinConfig());
 #endif
 
@@ -780,10 +780,6 @@ void init(void)
         dashboardEnablePageCycling();
 #endif
     }
-#endif
-
-#ifdef CJMCU
-    LED2_ON;
 #endif
 
 #ifdef USE_RCDEVICE

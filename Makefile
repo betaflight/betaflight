@@ -473,6 +473,17 @@ targets:
 test junittest:
 	$(V0) cd src/test && $(MAKE) $@
 
+
+check-target-independence:
+	$(V1) for test_target in $(VALID_TARGETS); do \
+		FOUND=$$(grep -rP "\W$${test_target}\W?" src/main/ | grep -vP "(\/\/)|(\/\*).*\W$${test_target}\W?" | grep -vP "^src/main/target"); \
+		if [ "$${FOUND}" != "" ]; then \
+			echo "Target dependencies found:"; \
+			echo "$${FOUND}"; \
+			exit 1; \
+		fi; \
+	done
+
 # rebuild everything when makefile changes
 $(TARGET_OBJS) : Makefile
 

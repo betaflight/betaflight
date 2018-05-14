@@ -185,7 +185,7 @@ void init(void)
     busSwitchInit();
 #endif
 
-#if defined(USE_UART) && !defined(SITL)
+#if defined(USE_UART) && !defined(SIMULATOR_BUILD)
     uartPinConfigure(serialPinConfig());
 #endif
 

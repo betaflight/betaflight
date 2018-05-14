@@ -29,7 +29,6 @@
 
 #define TARGET_BOARD_IDENTIFIER "SITL"
 
-#define SIMULATOR_BUILD
 #define SIMULATOR_MULTITHREAD
 
 // use simulatior's attitude directly

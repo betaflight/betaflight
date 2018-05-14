@@ -41,7 +41,7 @@
 #include "drivers/serial_softserial.h"
 #endif
 
-#ifdef SITL
+#if defined(SIMULATOR_BUILD)
 #include "drivers/serial_tcp.h"
 #endif
 
@@ -377,8 +377,8 @@ serialPort_t *openSerialPort(
 #ifdef USE_UART8
         case SERIAL_PORT_USART8:
 #endif
-#ifdef SITL
-            // SITL emulates serial ports over TCP
+#if defined(SIMULATOR_BUILD)
+            // emulate serial ports over TCP
             serialPort = serTcpOpen(SERIAL_PORT_IDENTIFIER_TO_UARTDEV(identifier), rxCallback, rxCallbackData, baudRate, mode, options);
 #else
             serialPort = uartOpen(SERIAL_PORT_IDENTIFIER_TO_UARTDEV(identifier), rxCallback, rxCallbackData, baudRate, mode, options);
@@ -446,7 +446,7 @@ void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisab
             }
         }
 
-#ifndef SITL
+#if !defined(SIMULATOR_BUILD)
         else if (serialPortUsageList[index].identifier <= SERIAL_PORT_USART8) {
             int resourceIndex = SERIAL_PORT_IDENTIFIER_TO_INDEX(serialPortUsageList[index].identifier);
             if (!(serialPinConfig()->ioTagTx[resourceIndex] || serialPinConfig()->ioTagRx[resourceIndex])) {
