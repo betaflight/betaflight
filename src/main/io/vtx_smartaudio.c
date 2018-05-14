@@ -501,17 +501,6 @@ static saCmdQueue_t sa_queue[SA_QSIZE];
 static uint8_t sa_qhead = 0;
 static uint8_t sa_qtail = 0;
 
-#ifdef USE_DPRINTF_SMARTAUDIO
-static int saQueueLength(void)
-{
-    if (sa_qhead >= sa_qtail) {
-        return sa_qhead - sa_qtail;
-    } else {
-        return SA_QSIZE + sa_qhead - sa_qtail;
-    }
-}
-#endif
-
 static bool saQueueEmpty(void)
 {
     return sa_qhead == sa_qtail;
