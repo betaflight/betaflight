@@ -28,7 +28,9 @@
 #include "beeper.h"
 
 PG_REGISTER_WITH_RESET_TEMPLATE(beeperConfig_t, beeperConfig, PG_BEEPER_CONFIG, 1);
+
 PG_RESET_TEMPLATE(beeperConfig_t, beeperConfig,
-    .dshotBeaconTone = 0
+    .dshotBeaconTone = 0,
+    .disableRxLossDshotBeacon = false,
 );
 #endif

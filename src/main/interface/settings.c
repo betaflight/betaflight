@@ -630,6 +630,7 @@ const clivalue_t valueTable[] = {
 // PG_BEEPER_CONFIG
 #ifdef USE_DSHOT
     { "beeper_dshot_beacon_tone",   VAR_UINT8  | MASTER_VALUE, .config.minmax = {0, DSHOT_CMD_BEACON5 }, PG_BEEPER_CONFIG, offsetof(beeperConfig_t, dshotBeaconTone) },
+    { "disable_rx_loss_dshot_beacon",   VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_BEEPER_CONFIG, offsetof(beeperConfig_t, disableRxLossDshotBeacon) },
 #endif
 #endif
 
