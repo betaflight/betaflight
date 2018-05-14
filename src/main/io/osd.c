@@ -399,6 +399,20 @@ bool osdStatGetState(uint8_t statIndex)
     return osdConfig()->enabled_stats & (1 << statIndex);
 }
 
+void osdWarnSetState(uint8_t warningIndex, bool enabled)
+{
+    if (enabled) {
+        osdConfigMutable()->enabledWarnings |= (1 << warningIndex);
+    } else {
+        osdConfigMutable()->enabledWarnings &= ~(1 << warningIndex);
+    }
+}
+
+bool osdWarnGetState(uint8_t warningIndex)
+{
+    return osdConfig()->enabledWarnings & (1 << warningIndex);
+}
+
 static bool osdDrawSingleElement(uint8_t item)
 {
     if (!VISIBLE(osdConfig()->item_pos[item]) || BLINK(item)) {
@@ -666,18 +680,16 @@ static bool osdDrawSingleElement(uint8_t item)
 
             STATIC_ASSERT(OSD_FORMAT_MESSAGE_BUFFER_SIZE <= sizeof(buff), osd_warnings_size_exceeds_buffer_size);
 
-            const uint16_t enabledWarnings = osdConfig()->enabledWarnings;
-
             const batteryState_e batteryState = getBatteryState();
 
-            if (enabledWarnings & OSD_WARNING_BATTERY_CRITICAL && batteryState == BATTERY_CRITICAL) {
+            if (osdWarnGetState(OSD_WARNING_BATTERY_CRITICAL) && batteryState == BATTERY_CRITICAL) {
                 osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, " LAND NOW");
                 break;
             }
 
 #ifdef USE_ESC_SENSOR
             // Show warning if we lose motor output, the ESC is overheating or excessive current draw
-            if (feature(FEATURE_ESC_SENSOR) && enabledWarnings & OSD_WARNING_ESC_FAIL) {
+            if (feature(FEATURE_ESC_SENSOR) && osdWarnGetState(OSD_WARNING_ESC_FAIL)) {
                 char escWarningMsg[OSD_FORMAT_MESSAGE_BUFFER_SIZE];
                 unsigned pos = 0;
                 
@@ -727,14 +739,13 @@ static bool osdDrawSingleElement(uint8_t item)
 #endif
 
             // Warn when in flip over after crash mode
-            if ((enabledWarnings & OSD_WARNING_CRASH_FLIP)
-                  && (isFlipOverAfterCrashMode())) {
+            if (osdWarnGetState(OSD_WARNING_CRASH_FLIP) && isFlipOverAfterCrashMode()) {
                 osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "CRASH FLIP");
                 break;
             }
 
             // Show most severe reason for arming being disabled
-            if (enabledWarnings & OSD_WARNING_ARMING_DISABLE && IS_RC_MODE_ACTIVE(BOXARM) && isArmingDisabled()) {
+            if (osdWarnGetState(OSD_WARNING_ARMING_DISABLE) && IS_RC_MODE_ACTIVE(BOXARM) && isArmingDisabled()) {
                 const armingDisableFlags_e flags = getArmingDisableFlags();
                 for (int i = 0; i < ARMING_DISABLE_FLAGS_COUNT; i++) {
                     if (flags & (1 << i)) {
@@ -745,20 +756,20 @@ static bool osdDrawSingleElement(uint8_t item)
                 break;
             }
 
-            if (enabledWarnings & OSD_WARNING_BATTERY_WARNING && batteryState == BATTERY_WARNING) {
+            if (osdWarnGetState(OSD_WARNING_BATTERY_WARNING) && batteryState == BATTERY_WARNING) {
                 osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "LOW BATTERY");
                 break;
             }
 
             // Show warning if battery is not fresh
-            if (enabledWarnings & OSD_WARNING_BATTERY_NOT_FULL && !ARMING_FLAG(WAS_EVER_ARMED) && (getBatteryState() == BATTERY_OK)
+            if (osdWarnGetState(OSD_WARNING_BATTERY_NOT_FULL) && !ARMING_FLAG(WAS_EVER_ARMED) && (getBatteryState() == BATTERY_OK)
                   && getBatteryAverageCellVoltage() < batteryConfig()->vbatfullcellvoltage) {
                 osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "BATT < FULL");
                 break;
             }
 
             // Visual beeper
-            if (enabledWarnings & OSD_WARNING_VISUAL_BEEPER && showVisualBeeper) {
+            if (osdWarnGetState(OSD_WARNING_VISUAL_BEEPER) && showVisualBeeper) {
                 osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "  * * * *");
                 break;
             }
@@ -981,7 +992,9 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->units = OSD_UNIT_METRIC;
 
     // Enable all warnings by default
-    osdConfig->enabledWarnings = UINT16_MAX;
+    for (int i=0; i < OSD_WARNING_COUNT; i++) {
+        osdWarnSetState(i, true);
+    }
 
     osdConfig->timers[OSD_TIMER_1] = OSD_TIMER(OSD_TIMER_SRC_ON, OSD_TIMER_PREC_SECOND, 10);
     osdConfig->timers[OSD_TIMER_2] = OSD_TIMER(OSD_TIMER_SRC_TOTAL_ARMED, OSD_TIMER_PREC_SECOND, 10);
