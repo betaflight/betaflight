@@ -64,6 +64,7 @@
 #include "drivers/serial.h"
 #include "drivers/serial_softserial.h"
 #include "drivers/serial_uart.h"
+#include "drivers/serial_bridge.h"
 #include "drivers/sdcard.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
@@ -592,6 +593,9 @@ void init(void)
 
     mspInit();
     mspSerialInit();
+#ifdef USE_SERIAL_BRIDGE
+    serialBridgeInit();
+#endif
 
 #ifdef USE_CLI
     cliInit(serialConfig());

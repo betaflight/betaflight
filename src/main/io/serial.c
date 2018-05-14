@@ -41,6 +41,11 @@
 #include "drivers/serial_softserial.h"
 #endif
 
+#ifdef USE_SERIAL_BRIDGE
+#include "../drivers/serial_bridge.h"
+#endif
+
+
 #ifdef SITL
 #include "drivers/serial_tcp.h"
 #endif
@@ -98,6 +103,9 @@ const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
 #endif
 #ifdef USE_SOFTSERIAL2
     SERIAL_PORT_SOFTSERIAL2,
+#endif
+#ifdef USE_SERIAL_BRIDGE
+    SERIAL_PORT_BRIDGE_VCP,
 #endif
 };
 
@@ -396,6 +404,13 @@ serialPort_t *openSerialPort(
             serialPort = openSoftSerial(SOFTSERIAL2, rxCallback, rxCallbackData, baudRate, mode, options);
             break;
 #endif
+
+#ifdef USE_SERIAL_BRIDGE
+        case SERIAL_PORT_BRIDGE_VCP:
+            serialPort = serialBridgeOpen(rxCallback);
+            break;
+#endif
+
         default:
             break;
     }
