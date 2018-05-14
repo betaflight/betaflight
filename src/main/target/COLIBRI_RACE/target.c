@@ -59,13 +59,13 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 void targetBusInit(void)
 {
 #ifdef USE_SPI
-    spiPinConfigure(spiPinConfig());
+    spiPinConfigure(spiPinConfig(0));
 #ifdef USE_SPI_DEVICE_1
     spiInit(SPIDEV_1);
 #endif
 #endif
 
-    i2cHardwareConfigure(i2cConfig());
+    i2cHardwareConfigure(i2cConfig(0));
     i2cInit(I2CDEV_2);
 
     bstInit(BST_DEVICE);

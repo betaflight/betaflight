@@ -204,7 +204,7 @@ void init(void)
 #else
 
 #ifdef USE_SPI
-    spiPinConfigure(spiPinConfig());
+    spiPinConfigure(spiPinConfig(0));
 
     // Initialize CS lines and keep them high
     spiPreInit();
@@ -224,7 +224,7 @@ void init(void)
 #endif /* USE_SPI */
 
 #ifdef USE_I2C
-    i2cHardwareConfigure(i2cConfig());
+    i2cHardwareConfigure(i2cConfig(0));
 
     // Note: Unlike UARTs which are configured when client is present,
     // I2C buses are initialized unconditionally if they are configured.
