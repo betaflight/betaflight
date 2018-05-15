@@ -29,7 +29,7 @@
 #define UART_RX_BUFFER_SIZE     128
 #endif
 #ifndef UART_TX_BUFFER_SIZE
-#define UART_TX_BUFFER_SIZE     128
+#define UART_TX_BUFFER_SIZE     256
 #endif
 #elif defined(STM32F3)
 #define UARTDEV_COUNT_MAX 5
@@ -38,7 +38,7 @@
 #define UART_RX_BUFFER_SIZE     128
 #endif
 #ifndef UART_TX_BUFFER_SIZE
-#define UART_TX_BUFFER_SIZE     128
+#define UART_TX_BUFFER_SIZE     256
 #endif
 #elif defined(STM32F4)
 #define UARTDEV_COUNT_MAX 6
@@ -47,7 +47,7 @@
 #define UART_RX_BUFFER_SIZE     128
 #endif
 #ifndef UART_TX_BUFFER_SIZE
-#define UART_TX_BUFFER_SIZE     128
+#define UART_TX_BUFFER_SIZE     256
 #endif
 #elif defined(STM32F7)
 #define UARTDEV_COUNT_MAX 8
@@ -56,7 +56,7 @@
 #define UART_RX_BUFFER_SIZE     128
 #endif
 #ifndef UART_TX_BUFFER_SIZE
-#define UART_TX_BUFFER_SIZE     128
+#define UART_TX_BUFFER_SIZE     256
 #endif
 #else
 #error unknown MCU family
