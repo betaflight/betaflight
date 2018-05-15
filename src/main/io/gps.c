@@ -52,6 +52,7 @@
 
 #include "flight/imu.h"
 #include "flight/pid.h"
+#include "flight/gps_rescue.h"
 
 #include "sensors/sensors.h"
 
@@ -219,12 +220,37 @@ gpsData_t gpsData;
 
 PG_REGISTER_WITH_RESET_TEMPLATE(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
 
+#ifdef USE_GPS_RESCUE
+PG_REGISTER_WITH_RESET_TEMPLATE(gpsRescue_t, gpsRescue, PG_GPS_RESCUE, 0);
+#endif
+
 PG_RESET_TEMPLATE(gpsConfig_t, gpsConfig,
     .provider = GPS_NMEA,
     .sbasMode = SBAS_AUTO,
     .autoConfig = GPS_AUTOCONFIG_ON,
     .autoBaud = GPS_AUTOBAUD_OFF
 );
+
+#ifdef USE_GPS_RESCUE
+PG_RESET_TEMPLATE(gpsRescue_t, gpsRescue,
+    .angle = 32,
+    .initialAltitude = 50,
+    .descentDistance = 200,
+    .rescueGroundspeed = 2000,
+    .throttleP = 150,
+    .throttleI = 20,
+    .throttleD = 50,
+    .velP = 80,
+    .velI = 20,
+    .velD = 15,
+    .yawP = 15,
+    .throttleMin = 1200,
+    .throttleMax = 1600,
+    .throttleHover = 1280,
+    .sanityChecks = 0,
+    .minSats = 8
+);
+#endif
 
 static void shiftPacketLog(void)
 {
@@ -1326,6 +1352,10 @@ void onGpsNewData(void)
     GPS_calculateDistanceAndDirectionToHome();
     // calculate the current velocity based on gps coordinates continously to get a valid speed at the moment when we start navigating
     GPS_calc_velocity();
+
+#ifdef USE_GPS_RESCUE
+    rescueNewGpsData();
+#endif
 }
 
 #endif

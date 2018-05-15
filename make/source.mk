@@ -82,6 +82,7 @@ FC_SRC = \
             fc/rc_modes.c \
             flight/position.c \
             flight/failsafe.c \
+            flight/gps_rescue.c \
             flight/imu.c \
             flight/mixer.c \
             flight/mixer_tricopter.c \

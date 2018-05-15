@@ -231,6 +231,9 @@ static void updateFailsafeStatus(void)
     case FAILSAFE_RX_LOSS_RECOVERED:
         failsafeIndicator = 'r';
         break;
+    case FAILSAFE_GPS_RESCUE:
+        failsafeIndicator = 'G';
+        break;
     }
     i2c_OLED_set_xy(bus, SCREEN_CHARACTER_COLUMN_COUNT - 3, 0);
     i2c_OLED_send_char(bus, failsafeIndicator);

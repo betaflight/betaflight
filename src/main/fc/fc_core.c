@@ -90,6 +90,7 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/servos.h"
+#include "flight/gps_rescue.h"
 
 
 // June 2013     V2.2-dev
@@ -253,6 +254,16 @@ void updateArmingStatus(void)
                 setArmingDisabled(ARMING_DISABLED_NOPREARM);
             }
         }
+
+#ifdef USE_GPS_RESCUE
+        if (isModeActivationConditionPresent(BOXGPSRESCUE)) {
+            if (rescueState.sensor.numSat < gpsRescue()->minSats) {
+                setArmingDisabled(ARMING_DISABLED_GPS);
+            } else {
+                unsetArmingDisabled(ARMING_DISABLED_GPS);
+            }
+        }
+#endif
 
         if (IS_RC_MODE_ACTIVE(BOXPARALYZE) && paralyzeModeAllowed) {
             setArmingDisabled(ARMING_DISABLED_PARALYZE);
@@ -737,6 +748,14 @@ bool processRx(timeUs_t currentTimeUs)
         DISABLE_FLIGHT_MODE(HORIZON_MODE);
     }
 
+    if (IS_RC_MODE_ACTIVE(BOXGPSRESCUE) || (failsafeIsActive() && failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE)) {
+        if (!FLIGHT_MODE(GPS_RESCUE_MODE)) {
+            ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
+        }
+    } else {
+        DISABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
+    }
+
     if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
         LED1_ON;
         // increase frequency of attitude task to reduce drift when in angle or horizon mode
@@ -883,6 +902,10 @@ static NOINLINE void subTaskMainSubprocesses(timeUs_t currentTimeUs)
     if (sensors(SENSOR_MAG)) {
         updateMagHold();
     }
+#endif
+
+#ifdef USE_GPS_RESCUE
+    updateGPSRescueState();
 #endif
     
     // If we're armed, at minimum throttle, and we do arming via the

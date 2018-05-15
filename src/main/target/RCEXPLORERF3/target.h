@@ -124,7 +124,6 @@
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART1
 
-#define USE_GPS
 #define USE_GPS_UBLOX
 #define USE_GPS_NMEA
 
