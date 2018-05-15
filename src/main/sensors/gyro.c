@@ -98,7 +98,7 @@ static bool gyroHasOverflowProtection = true;
 typedef struct gyroCalibration_s {
     int32_t sum[XYZ_AXIS_COUNT];
     stdev_t var[XYZ_AXIS_COUNT];
-    uint16_t calibratingG;
+    uint32_t calibratingG;
 } gyroCalibration_t;
 
 bool firstArmingCalibrationWasStarted = false;
@@ -872,7 +872,7 @@ static bool isOnFinalGyroCalibrationCycle(const gyroCalibration_t *gyroCalibrati
     return gyroCalibration->calibratingG == 1;
 }
 
-static uint16_t gyroCalculateCalibratingCycles(void)
+static uint32_t gyroCalculateCalibratingCycles(void)
 {
     return (CALIBRATING_GYRO_TIME_US / gyro.targetLooptime);
 }
