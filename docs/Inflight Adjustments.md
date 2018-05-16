@@ -19,7 +19,7 @@ Changing settings during flight can make your aircraft unstable and crash if you
 
 There are two modes of operation. The first supports adjusting settings by incrementing/decrementing them through use of an aux channel, typically a three position switch, where the middle position makes no change, and the other positions either increment or decrement the selected setting.
 
-The other mode is Absolute mode where a pot (knob/slider) may be directly mapped and changes the selected setting to a value based on a center value, coresponding to mid-postion on the switch and a range of ± adjustment at the min/max positions of the pot.
+The other mode is Absolute mode where a pot (knob/slider) may be directly mapped and changes the selected setting to a value based on a center value, coresponding to mid-postion on the pot and a range of ± adjustment at the min/max positions of the pot.
 
 Both modes utilise two channels to make an adjustment.
 
@@ -252,7 +252,7 @@ explained:
 
 * note that Center value is non-zero, so this range will use absolute mode.
 
-This assigns pots aux 1, aux 2, and aux 3 respectively to control P, I and D settings with the center values at default at set to provide a range of adjustment of +/- 50%. When the aux 5 switch is in one end position then roll P/I/D will be adjusted and when the aux 5 switch is in the other end position, pitch P/I/D will be adjusted. In the aux 5 switch middle position nether will be adjusted. Thus one could center the pots, select roll on aux 5 and then adjust the P/I/D values in flight. Then land, move the aux 5 switch to center, center the pots, select pitch on the switch and then again adjust P/I/D in flight. 
+This assigns pots aux 1, aux 2, and aux 3 respectively to control P, I and D settings with the pots at mid-position giving the default P/I/D values and providing a range of adjustment of +/- 50%. When the aux 5 switch is in one end position then roll P/I/D will be adjusted and when the aux 5 switch is in the other end position, pitch P/I/D will be adjusted. In the aux 5 switch middle position nether will be adjusted. Thus one could center the pots, select roll on aux 5 and then adjust the P/I/D values in flight. Then land, move the aux 5 switch to center, center the pots, select pitch on the switch and then again adjust P/I/D in flight. 
 
 ### Configurator examples
 
