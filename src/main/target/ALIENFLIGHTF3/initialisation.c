@@ -35,10 +35,10 @@ extern void spiPreInit(void);
 void targetBusInit(void)
 {
     if (hardwareRevision == AFF3_REV_2) {
-        spiPinConfigure(spiPinConfig());
+        spiPinConfigure(spiPinConfig(0));
         spiPreInit();
         spiInit(SPIDEV_3);
     }
-    i2cHardwareConfigure(i2cConfig());
+    i2cHardwareConfigure(i2cConfig(0));
     i2cInit(I2CDEV_2);
 }

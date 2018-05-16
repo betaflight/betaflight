@@ -51,15 +51,15 @@ const spiDefaultConfig_t spiDefaultConfig[] = {
 #endif
 };
 
-PG_REGISTER_WITH_RESET_FN(spiPinConfig_t, spiPinConfig, PG_SPI_PIN_CONFIG, 0);
+PG_REGISTER_ARRAY_WITH_RESET_FN(spiPinConfig_t, SPIDEV_COUNT, spiPinConfig, PG_SPI_PIN_CONFIG, 1);
 
 void pgResetFn_spiPinConfig(spiPinConfig_t *spiPinConfig)
 {
     for (size_t i = 0 ; i < ARRAYLEN(spiDefaultConfig) ; i++) {
         const spiDefaultConfig_t *defconf = &spiDefaultConfig[i];
-        spiPinConfig->ioTagSck[defconf->device] = defconf->sck;
-        spiPinConfig->ioTagMiso[defconf->device] = defconf->miso;
-        spiPinConfig->ioTagMosi[defconf->device] = defconf->mosi;
+        spiPinConfig[defconf->device].ioTagSck = defconf->sck;
+        spiPinConfig[defconf->device].ioTagMiso = defconf->miso;
+        spiPinConfig[defconf->device].ioTagMosi = defconf->mosi;
     }
 }
 #endif

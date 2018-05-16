@@ -29,10 +29,10 @@
 #include "pg/pg.h"
 
 typedef struct i2cConfig_s {
-    ioTag_t ioTagScl[I2CDEV_COUNT];
-    ioTag_t ioTagSda[I2CDEV_COUNT];
-    bool overClock[I2CDEV_COUNT];
-    bool pullUp[I2CDEV_COUNT];
+    ioTag_t ioTagScl;
+    ioTag_t ioTagSda;
+    bool overClock;
+    bool pullUp;
 } i2cConfig_t;
 
-PG_DECLARE(i2cConfig_t, i2cConfig);
+PG_DECLARE_ARRAY(i2cConfig_t, I2CDEV_COUNT, i2cConfig);

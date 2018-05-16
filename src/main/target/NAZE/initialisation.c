@@ -36,7 +36,7 @@ extern void spiPreInit(void); // XXX In fc/fc_init.c
 void targetBusInit(void)
 {
 #ifdef USE_SPI
-    spiPinConfigure(spiPinConfig());
+    spiPinConfigure(spiPinConfig(0));
     spiPreInit();
 #ifdef USE_SPI_DEVICE_2
     spiInit(SPIDEV_2);
@@ -48,11 +48,11 @@ void targetBusInit(void)
 
         if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
             serialRemovePort(SERIAL_PORT_USART3);
-            i2cHardwareConfigure(i2cConfig());
+            i2cHardwareConfigure(i2cConfig(0));
             i2cInit(I2C_DEVICE);
         }
     } else {
-        i2cHardwareConfigure(i2cConfig());
+        i2cHardwareConfigure(i2cConfig(0));
         i2cInit(I2C_DEVICE);
     }
 }

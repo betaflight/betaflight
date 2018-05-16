@@ -3360,91 +3360,110 @@ static void cliVersion(char *cmdline)
 typedef struct {
     const uint8_t owner;
     pgn_t pgn;
-    uint16_t offset;
+    uint8_t stride;
+    uint8_t offset;
     const uint8_t maxIndex;
 } cliResourceValue_t;
 
+// Handy macros for keeping the table tidy.
+// DEFS : Single entry
+// DEFA : Array of uint8_t (stride = 1)
+// DEFW : Wider stride case; array of structs.
+
+#define DEFS(owner, pgn, type, member) \
+    { owner, pgn, 0, offsetof(type, member), 0 }
+
+#define DEFA(owner, pgn, type, member, max) \
+    { owner, pgn, sizeof(ioTag_t), offsetof(type, member), max }
+
+#define DEFW(owner, pgn, type, member, max) \
+    { owner, pgn, sizeof(type), offsetof(type, member), max }
+
 const cliResourceValue_t resourceTable[] = {
 #ifdef USE_BEEPER
-    { OWNER_BEEPER,        PG_BEEPER_DEV_CONFIG, offsetof(beeperDevConfig_t, ioTag), 0 },
+    DEFS( OWNER_BEEPER,        PG_BEEPER_DEV_CONFIG, beeperDevConfig_t, ioTag) ,
 #endif
-    { OWNER_MOTOR,         PG_MOTOR_CONFIG, offsetof(motorConfig_t, dev.ioTags[0]), MAX_SUPPORTED_MOTORS },
+    DEFA( OWNER_MOTOR,         PG_MOTOR_CONFIG, motorConfig_t, dev.ioTags[0], MAX_SUPPORTED_MOTORS ),
 #ifdef USE_SERVOS
-    { OWNER_SERVO,         PG_SERVO_CONFIG, offsetof(servoConfig_t, dev.ioTags[0]), MAX_SUPPORTED_SERVOS },
+    DEFA( OWNER_SERVO,         PG_SERVO_CONFIG, servoConfig_t, dev.ioTags[0], MAX_SUPPORTED_SERVOS ),
 #endif
 #if defined(USE_PWM) || defined(USE_PPM)
-    { OWNER_PPMINPUT,      PG_PPM_CONFIG, offsetof(ppmConfig_t, ioTag), 0 },
-    { OWNER_PWMINPUT,      PG_PWM_CONFIG, offsetof(pwmConfig_t, ioTags[0]), PWM_INPUT_PORT_COUNT },
+    DEFS( OWNER_PPMINPUT,      PG_PPM_CONFIG, ppmConfig_t, ioTag ),
+    DEFA( OWNER_PWMINPUT,      PG_PWM_CONFIG, pwmConfig_t, ioTags[0], PWM_INPUT_PORT_COUNT ),
 #endif
 #ifdef USE_RANGEFINDER_HCSR04
-    { OWNER_SONAR_TRIGGER, PG_SONAR_CONFIG, offsetof(sonarConfig_t, triggerTag), 0 },
-    { OWNER_SONAR_ECHO,    PG_SONAR_CONFIG, offsetof(sonarConfig_t, echoTag),    0 },
+    DEFS( OWNER_SONAR_TRIGGER, PG_SONAR_CONFIG, sonarConfig_t, triggerTag ),
+    DEFS( OWNER_SONAR_ECHO,    PG_SONAR_CONFIG, sonarConfig_t, echoTag ),
 #endif
 #ifdef USE_LED_STRIP
-    { OWNER_LED_STRIP,     PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ioTag),   0 },
+    DEFS( OWNER_LED_STRIP,     PG_LED_STRIP_CONFIG, ledStripConfig_t, ioTag ),
 #endif
-    { OWNER_SERIAL_TX,     PG_SERIAL_PIN_CONFIG, offsetof(serialPinConfig_t, ioTagTx[0]), SERIAL_PORT_MAX_INDEX },
-    { OWNER_SERIAL_RX,     PG_SERIAL_PIN_CONFIG, offsetof(serialPinConfig_t, ioTagRx[0]), SERIAL_PORT_MAX_INDEX },
+    DEFA( OWNER_SERIAL_TX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagTx[0], SERIAL_PORT_MAX_INDEX ),
+    DEFA( OWNER_SERIAL_RX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagRx[0], SERIAL_PORT_MAX_INDEX ),
 #ifdef USE_INVERTER
-    { OWNER_INVERTER,      PG_SERIAL_PIN_CONFIG, offsetof(serialPinConfig_t, ioTagInverter[0]), SERIAL_PORT_MAX_INDEX },
+    DEFA( OWNER_INVERTER,      PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagInverter[0], SERIAL_PORT_MAX_INDEX ),
 #endif
 #ifdef USE_I2C
-    { OWNER_I2C_SCL,       PG_I2C_CONFIG, offsetof(i2cConfig_t, ioTagScl[0]), I2CDEV_COUNT },
-    { OWNER_I2C_SDA,       PG_I2C_CONFIG, offsetof(i2cConfig_t, ioTagSda[0]), I2CDEV_COUNT },
+    DEFW( OWNER_I2C_SCL,       PG_I2C_CONFIG, i2cConfig_t, ioTagScl, I2CDEV_COUNT ),
+    DEFW( OWNER_I2C_SDA,       PG_I2C_CONFIG, i2cConfig_t, ioTagSda, I2CDEV_COUNT ),
 #endif
-    { OWNER_LED,           PG_STATUS_LED_CONFIG, offsetof(statusLedConfig_t, ioTags[0]), STATUS_LED_NUMBER },
+    DEFA( OWNER_LED,           PG_STATUS_LED_CONFIG, statusLedConfig_t, ioTags[0], STATUS_LED_NUMBER ),
 #ifdef USE_SPEKTRUM_BIND
-    { OWNER_RX_BIND,       PG_RX_CONFIG, offsetof(rxConfig_t, spektrum_bind_pin_override_ioTag), 0 },
-    { OWNER_RX_BIND_PLUG,  PG_RX_CONFIG, offsetof(rxConfig_t, spektrum_bind_plug_ioTag), 0 },
+    DEFS( OWNER_RX_BIND,       PG_RX_CONFIG, rxConfig_t, spektrum_bind_pin_override_ioTag ),
+    DEFS( OWNER_RX_BIND_PLUG,  PG_RX_CONFIG, rxConfig_t, spektrum_bind_plug_ioTag ),
 #endif
 #ifdef USE_TRANSPONDER
-    { OWNER_TRANSPONDER,   PG_TRANSPONDER_CONFIG, offsetof(transponderConfig_t, ioTag), 0 },
+    DEFS( OWNER_TRANSPONDER,   PG_TRANSPONDER_CONFIG, transponderConfig_t, ioTag ),
 #endif
 #ifdef USE_SPI
-    { OWNER_SPI_SCK,       PG_SPI_PIN_CONFIG, offsetof(spiPinConfig_t, ioTagSck[0]), SPIDEV_COUNT },
-    { OWNER_SPI_MISO,      PG_SPI_PIN_CONFIG, offsetof(spiPinConfig_t, ioTagMiso[0]), SPIDEV_COUNT },
-    { OWNER_SPI_MOSI,      PG_SPI_PIN_CONFIG, offsetof(spiPinConfig_t, ioTagMosi[0]), SPIDEV_COUNT },
+    DEFW( OWNER_SPI_SCK,       PG_SPI_PIN_CONFIG, spiPinConfig_t, ioTagSck, SPIDEV_COUNT ),
+    DEFW( OWNER_SPI_MISO,      PG_SPI_PIN_CONFIG, spiPinConfig_t, ioTagMiso, SPIDEV_COUNT ),
+    DEFW( OWNER_SPI_MOSI,      PG_SPI_PIN_CONFIG, spiPinConfig_t, ioTagMosi, SPIDEV_COUNT ),
 #endif
 #ifdef USE_ESCSERIAL
-    { OWNER_ESCSERIAL,     PG_ESCSERIAL_CONFIG, offsetof(escSerialConfig_t, ioTag), 0 },
+    DEFS( OWNER_ESCSERIAL,     PG_ESCSERIAL_CONFIG, escSerialConfig_t, ioTag ),
 #endif
 #ifdef USE_CAMERA_CONTROL
-    { OWNER_CAMERA_CONTROL, PG_CAMERA_CONTROL_CONFIG, offsetof(cameraControlConfig_t, ioTag), 0 },
+    DEFS( OWNER_CAMERA_CONTROL, PG_CAMERA_CONTROL_CONFIG, cameraControlConfig_t, ioTag ),
 #endif
 #ifdef USE_ADC
-    { OWNER_ADC_BATT,      PG_ADC_CONFIG, offsetof(adcConfig_t, vbat.ioTag), 0 },
-    { OWNER_ADC_RSSI,      PG_ADC_CONFIG, offsetof(adcConfig_t, rssi.ioTag), 0 },
-    { OWNER_ADC_CURR,      PG_ADC_CONFIG, offsetof(adcConfig_t, current.ioTag), 0 },
-    { OWNER_ADC_EXT,       PG_ADC_CONFIG, offsetof(adcConfig_t, external1.ioTag), 0 },
+    DEFS( OWNER_ADC_BATT,      PG_ADC_CONFIG, adcConfig_t, vbat.ioTag ),
+    DEFS( OWNER_ADC_RSSI,      PG_ADC_CONFIG, adcConfig_t, rssi.ioTag ),
+    DEFS( OWNER_ADC_CURR,      PG_ADC_CONFIG, adcConfig_t, current.ioTag ),
+    DEFS( OWNER_ADC_EXT,       PG_ADC_CONFIG, adcConfig_t, external1.ioTag ),
 #endif
 #ifdef USE_BARO
-    { OWNER_BARO_CS,       PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_spi_csn), 0 },
+    DEFS( OWNER_BARO_CS,       PG_BAROMETER_CONFIG, barometerConfig_t, baro_spi_csn ),
 #endif
 #ifdef USE_MAG
-    { OWNER_COMPASS_CS,    PG_COMPASS_CONFIG, offsetof(compassConfig_t, mag_spi_csn), 0 },
+    DEFS( OWNER_COMPASS_CS,    PG_COMPASS_CONFIG, compassConfig_t, mag_spi_csn ),
 #endif
 #ifdef USE_SDCARD
-    { OWNER_SDCARD_CS,     PG_SDCARD_CONFIG, offsetof(sdcardConfig_t, chipSelectTag), 0 },
-    { OWNER_SDCARD_DETECT, PG_SDCARD_CONFIG, offsetof(sdcardConfig_t, cardDetectTag), 0 },
+    DEFS( OWNER_SDCARD_CS,     PG_SDCARD_CONFIG, sdcardConfig_t, chipSelectTag ),
+    DEFS( OWNER_SDCARD_DETECT, PG_SDCARD_CONFIG, sdcardConfig_t, cardDetectTag ),
 #endif
 #ifdef USE_PINIO
-    { OWNER_PINIO,         PG_PINIO_CONFIG, offsetof(pinioConfig_t, ioTag), PINIO_COUNT },
+    DEFA( OWNER_PINIO,         PG_PINIO_CONFIG, pinioConfig_t, ioTag, PINIO_COUNT ),
 #endif
 #if defined(USE_USB_MSC)
-    { OWNER_USB_MSC_PIN,   PG_USB_CONFIG, offsetof(usbDev_t, mscButtonPin), 0 },
+    DEFS( OWNER_USB_MSC_PIN,   PG_USB_CONFIG, usbDev_t, mscButtonPin ),
 #endif
 #ifdef USE_FLASH
-    { OWNER_FLASH_CS,      PG_FLASH_CONFIG, offsetof(flashConfig_t, csTag), 0 },
+    DEFS( OWNER_FLASH_CS,      PG_FLASH_CONFIG, flashConfig_t, csTag ),
 #endif
 #ifdef USE_MAX7456
-    { OWNER_OSD_CS,        PG_MAX7456_CONFIG, offsetof(max7456Config_t, csTag), 0 },
+    DEFS( OWNER_OSD_CS,        PG_MAX7456_CONFIG, max7456Config_t, csTag ),
 #endif
 };
+
+#undef DEFS
+#undef DEFA
+#undef DEFW
 
 static ioTag_t *getIoTag(const cliResourceValue_t value, uint8_t index)
 {
     const pgRegistry_t* rec = pgFind(value.pgn);
-    return CONST_CAST(ioTag_t *, rec->address + value.offset + index);
+    return CONST_CAST(ioTag_t *, rec->address + value.stride * index + value.offset);
 }
 
 static void printResource(uint8_t dumpMask)
@@ -3463,8 +3482,8 @@ static void printResource(uint8_t dumpMask)
         }
 
         for (int index = 0; index < MAX_RESOURCE_INDEX(resourceTable[i].maxIndex); index++) {
-            const ioTag_t ioTag = *((const ioTag_t *)currentConfig + resourceTable[i].offset + index);
-            const ioTag_t ioTagDefault = *((const ioTag_t *)defaultConfig + resourceTable[i].offset + index);
+            const ioTag_t ioTag = *((const uint8_t *)currentConfig + resourceTable[i].stride * index + resourceTable[i].offset);
+            const ioTag_t ioTagDefault = *((const uint8_t *)defaultConfig + resourceTable[i].stride * index + resourceTable[i].offset);
 
             bool equalsDefault = ioTag == ioTagDefault;
             const char *format = "resource %s %d %c%02d";

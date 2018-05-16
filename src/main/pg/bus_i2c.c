@@ -67,13 +67,14 @@ void pgResetFn_i2cConfig(i2cConfig_t *i2cConfig)
 
     for (size_t index = 0 ; index < ARRAYLEN(i2cDefaultConfig) ; index++) {
         const i2cDefaultConfig_t *defconf = &i2cDefaultConfig[index];
-        i2cConfig->ioTagScl[defconf->device] = defconf->ioTagScl;
-        i2cConfig->ioTagSda[defconf->device] = defconf->ioTagSda;
-        i2cConfig->overClock[defconf->device] = defconf->overClock;
-        i2cConfig->pullUp[defconf->device] = defconf->pullUp;
+        int device = defconf->device;
+        i2cConfig[device].ioTagScl = defconf->ioTagScl;
+        i2cConfig[device].ioTagSda = defconf->ioTagSda;
+        i2cConfig[device].overClock = defconf->overClock;
+        i2cConfig[device].pullUp = defconf->pullUp;
     }
 }
 
-PG_REGISTER_WITH_RESET_FN(i2cConfig_t, i2cConfig, PG_I2C_CONFIG, 0);
+PG_REGISTER_ARRAY_WITH_RESET_FN(i2cConfig_t, I2CDEV_COUNT, i2cConfig, PG_I2C_CONFIG, 0);
 
 #endif // defined(USE_I2C) && !defined(USE_SOFT_I2C)

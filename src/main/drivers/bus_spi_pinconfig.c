@@ -294,19 +294,19 @@ void spiPinConfigure(const spiPinConfig_t *pConfig)
         spiDevice_t *pDev = &spiDevice[device];
 
         for (int pindex = 0 ; pindex < MAX_SPI_PIN_SEL ; pindex++) {
-            if (pConfig->ioTagSck[device] == hw->sckPins[pindex].pin) {
+            if (pConfig[device].ioTagSck == hw->sckPins[pindex].pin) {
                 pDev->sck = hw->sckPins[pindex].pin;
 #ifdef STM32F7
                 pDev->sckAF = hw->sckPins[pindex].af;
 #endif
             }
-            if (pConfig->ioTagMiso[device] == hw->misoPins[pindex].pin) {
+            if (pConfig[device].ioTagMiso == hw->misoPins[pindex].pin) {
                 pDev->miso = hw->misoPins[pindex].pin;
 #ifdef STM32F7
                 pDev->misoAF = hw->misoPins[pindex].af;
 #endif
             }
-            if (pConfig->ioTagMosi[device] == hw->mosiPins[pindex].pin) {
+            if (pConfig[device].ioTagMosi == hw->mosiPins[pindex].pin) {
                 pDev->mosi = hw->mosiPins[pindex].pin;
 #ifdef STM32F7
                 pDev->mosiAF = hw->mosiPins[pindex].af;
