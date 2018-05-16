@@ -37,13 +37,7 @@
 #include "pg/pg_ids.h"
 
 #include "drivers/accgyro/accgyro.h"
-#include "drivers/accgyro/accgyro_adxl345.h"
-#include "drivers/accgyro/accgyro_bma280.h"
 #include "drivers/accgyro/accgyro_fake.h"
-#include "drivers/accgyro/accgyro_l3g4200d.h"
-#include "drivers/accgyro/accgyro_l3gd20.h"
-#include "drivers/accgyro/accgyro_lsm303dlhc.h"
-#include "drivers/accgyro/accgyro_mma845x.h"
 #include "drivers/accgyro/accgyro_mpu.h"
 #include "drivers/accgyro/accgyro_mpu3050.h"
 #include "drivers/accgyro/accgyro_mpu6050.h"
@@ -54,6 +48,23 @@
 #include "drivers/accgyro/accgyro_spi_mpu6000.h"
 #include "drivers/accgyro/accgyro_spi_mpu6500.h"
 #include "drivers/accgyro/accgyro_spi_mpu9250.h"
+
+#ifdef USE_ACC_ADXL345
+#include "drivers/accgyro_legacy/accgyro_adxl345.h"
+#endif
+
+#ifdef USE_ACC_BMA280
+#include "drivers/accgyro_legacy/accgyro_bma280.h"
+#endif
+
+#ifdef USE_ACC_LSM303DLHC
+#include "drivers/accgyro_legacy/accgyro_lsm303dlhc.h"
+#endif
+
+#ifdef USE_ACC_MMA8452
+#include "drivers/accgyro_legacy/accgyro_mma845x.h"
+#endif
+
 #include "drivers/bus_spi.h"
 
 #include "fc/config.h"

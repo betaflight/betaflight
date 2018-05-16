@@ -54,7 +54,6 @@
 #include "drivers/accgyro/accgyro_spi_mpu9250.h"
 #include "drivers/accgyro/accgyro_mpu.h"
 
-
 mpuResetFnPtr mpuResetFn;
 
 #ifndef MPU_I2C_INSTANCE

@@ -61,26 +61,26 @@
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
 
 #define USE_GYRO
-#define USE_GYRO_L3GD20
+//#define USE_GYRO_L3GD20
 #define USE_GYRO_MPU6050
 
-#define L3GD20_SPI                      SPI1
-#define L3GD20_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOE
-#define L3GD20_CS_GPIO                  GPIOE
-#define L3GD20_CS_PIN                   PE3
+//#define L3GD20_SPI                      SPI1
+//#define L3GD20_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOE
+//#define L3GD20_CS_GPIO                  GPIOE
+//#define L3GD20_CS_PIN                   PE3
 
-#define GYRO_L3GD20_ALIGN CW270_DEG
+//#define GYRO_L3GD20_ALIGN CW270_DEG
 #define GYRO_MPU6050_ALIGN CW0_DEG
 
 #define USE_ACC
 #define USE_ACC_MPU6050
-#define USE_ACC_LSM303DLHC
-#define LSM303DLHC_I2C                       I2C1
-#define LSM303DLHC_I2C_SCK_PIN               PB6
-#define LSM303DLHC_I2C_SDA_PIN               PB7
-#define LSM303DLHC_DRDY_PIN                  PE2
-#define LSM303DLHC_I2C_INT1_PIN              PE4
-#define LSM303DLHC_I2C_INT2_PIN              PE5
+//#define USE_ACC_LSM303DLHC
+//#define LSM303DLHC_I2C                       I2C1
+//#define LSM303DLHC_I2C_SCK_PIN               PB6
+//#define LSM303DLHC_I2C_SDA_PIN               PB7
+//#define LSM303DLHC_DRDY_PIN                  PE2
+//#define LSM303DLHC_I2C_INT1_PIN              PE4
+//#define LSM303DLHC_I2C_INT2_PIN              PE5
 
 #define ACC_MPU6050_ALIGN       CW0_DEG
 

@@ -35,7 +35,7 @@
 #include "drivers/bus_i2c.h"
 
 #include "drivers/sensor.h"
-#include "accgyro.h"
+#include "drivers/accgyro/accgyro.h"
 #include "accgyro_lsm303dlhc.h"
 
 // Addresses (7 bit address format)

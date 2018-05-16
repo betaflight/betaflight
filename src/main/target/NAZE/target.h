@@ -91,17 +91,17 @@
 #define GYRO_MPU6500_ALIGN      CW0_DEG
 
 #define USE_ACC
-#define USE_ACC_ADXL345
-#define USE_ACC_BMA280
-#define USE_ACC_MMA8452
+//#define USE_ACC_ADXL345
+//#define USE_ACC_BMA280
+//#define USE_ACC_MMA8452
 #define USE_ACC_MPU6050
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
 
-#define ACC_ADXL345_ALIGN       CW270_DEG
+//#define ACC_ADXL345_ALIGN       CW270_DEG
 #define ACC_MPU6050_ALIGN       CW0_DEG
-#define ACC_MMA8452_ALIGN       CW90_DEG
-#define ACC_BMA280_ALIGN        CW0_DEG
+//#define ACC_MMA8452_ALIGN       CW90_DEG
+//#define ACC_BMA280_ALIGN        CW0_DEG
 #define ACC_MPU6500_ALIGN       CW0_DEG
 
 #define USE_BARO

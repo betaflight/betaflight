@@ -26,7 +26,7 @@
 #include "drivers/bus_i2c.h"
 
 #include "drivers/sensor.h"
-#include "accgyro.h"
+#include "drivers/accgyro/accgyro.h"
 #include "accgyro_bma280.h"
 
 // BMA280, default I2C address mode 0x18
