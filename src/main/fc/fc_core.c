@@ -905,8 +905,6 @@ static NOINLINE void subTaskMainSubprocesses(timeUs_t currentTimeUs)
         rcCommand[THROTTLE] += calculateThrottleAngleCorrection(throttleCorrectionConfig()->throttle_correction_value);
     }
 
-    processRcCommand();
-
 #ifdef USE_SDCARD
     afatfs_poll();
 #endif
@@ -958,6 +956,12 @@ static void subTaskMotorUpdate(timeUs_t currentTimeUs)
     DEBUG_SET(DEBUG_PIDLOOP, 2, micros() - startTime);
 }
 
+static void subTaskRcCommand(timeUs_t currentTimeUs)
+{
+    processRcCommand();
+    UNUSED(currentTimeUs);
+}
+
 // Function for loop trigger
 FAST_CODE void taskMainPidLoop(timeUs_t currentTimeUs)
 {
@@ -976,6 +980,7 @@ FAST_CODE void taskMainPidLoop(timeUs_t currentTimeUs)
     DEBUG_SET(DEBUG_PIDLOOP, 0, micros() - currentTimeUs);
 
     if (pidUpdateCounter++ % pidConfig()->pid_process_denom == 0) {
+        subTaskRcCommand(currentTimeUs);
         subTaskPidController(currentTimeUs);
         subTaskMotorUpdate(currentTimeUs);
         subTaskMainSubprocesses(currentTimeUs);
