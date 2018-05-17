@@ -99,9 +99,9 @@ static FAST_RAM timeUs_t accumulationLastTimeSampledUs;
 static bool gyroHasOverflowProtection = true;
 
 typedef struct gyroCalibration_s {
-    int32_t sum[XYZ_AXIS_COUNT];
+    float sum[XYZ_AXIS_COUNT];
     stdev_t var[XYZ_AXIS_COUNT];
-    uint32_t calibratingG;
+    int32_t cyclesRemaining;
 } gyroCalibration_t;
 
 bool firstArmingCalibrationWasStarted = false;
@@ -847,7 +847,7 @@ void gyroInitFilters(void)
 
 FAST_CODE bool isGyroSensorCalibrationComplete(const gyroSensor_t *gyroSensor)
 {
-    return gyroSensor->calibration.calibratingG == 0;
+    return gyroSensor->calibration.cyclesRemaining == 0;
 }
 
 FAST_CODE bool isGyroCalibrationComplete(void)
@@ -872,22 +872,22 @@ FAST_CODE bool isGyroCalibrationComplete(void)
 
 static bool isOnFinalGyroCalibrationCycle(const gyroCalibration_t *gyroCalibration)
 {
-    return gyroCalibration->calibratingG == 1;
+    return gyroCalibration->cyclesRemaining == 1;
 }
 
-static uint32_t gyroCalculateCalibratingCycles(void)
+static int32_t gyroCalculateCalibratingCycles(void)
 {
     return (CALIBRATING_GYRO_TIME_US / gyro.targetLooptime);
 }
 
 static bool isOnFirstGyroCalibrationCycle(const gyroCalibration_t *gyroCalibration)
 {
-    return gyroCalibration->calibratingG == gyroCalculateCalibratingCycles();
+    return gyroCalibration->cyclesRemaining == gyroCalculateCalibratingCycles();
 }
 
 static void gyroSetCalibrationCycles(gyroSensor_t *gyroSensor)
 {
-    gyroSensor->calibration.calibratingG = gyroCalculateCalibratingCycles();
+    gyroSensor->calibration.cyclesRemaining = gyroCalculateCalibratingCycles();
 }
 
 void gyroStartCalibration(bool isFirstArmingCalibration)
@@ -914,10 +914,10 @@ STATIC_UNIT_TESTED void performGyroCalibration(gyroSensor_t *gyroSensor, uint8_t
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         // Reset g[axis] at start of calibration
         if (isOnFirstGyroCalibrationCycle(&gyroSensor->calibration)) {
-            gyroSensor->calibration.sum[axis] = 0;
+            gyroSensor->calibration.sum[axis] = 0.0f;
             devClear(&gyroSensor->calibration.var[axis]);
             // gyroZero is set to zero until calibration complete
-            gyroSensor->gyroDev.gyroZero[axis] = 0;
+            gyroSensor->gyroDev.gyroZero[axis] = 0.0f;
         }
 
         // Sum up CALIBRATING_GYRO_TIME_US readings
@@ -936,7 +936,7 @@ STATIC_UNIT_TESTED void performGyroCalibration(gyroSensor_t *gyroSensor, uint8_t
             }
 
             // please take care with exotic boardalignment !!
-            gyroSensor->gyroDev.gyroZero[axis] = (float)gyroSensor->calibration.sum[axis] / (float)gyroCalculateCalibratingCycles();
+            gyroSensor->gyroDev.gyroZero[axis] = gyroSensor->calibration.sum[axis] / gyroCalculateCalibratingCycles();
             if (axis == Z) {
               gyroSensor->gyroDev.gyroZero[axis] -= ((float)gyroConfig()->gyro_offset_yaw / 100);
             }
@@ -949,7 +949,7 @@ STATIC_UNIT_TESTED void performGyroCalibration(gyroSensor_t *gyroSensor, uint8_t
             beeper(BEEPER_GYRO_CALIBRATED);
         }
     }
-    --gyroSensor->calibration.calibratingG;
+    --gyroSensor->calibration.cyclesRemaining;
 
 }
 
