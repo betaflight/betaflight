@@ -908,6 +908,7 @@ static void printSerial(uint8_t dumpMask, const serialConfig_t *serialConfig, co
 
 static void cliSerial(char *cmdline)
 {
+    const char *format = "serial %d %d %ld %ld %ld %ld";
     if (isEmpty(cmdline)) {
         printSerial(DUMP_MASTER, serialConfig(), NULL);
         return;
@@ -984,6 +985,16 @@ static void cliSerial(char *cmdline)
     }
 
     memcpy(currentConfig, &portConfig, sizeof(portConfig));
+
+    cliDumpPrintLinef(0, false, format,
+        portConfig.identifier,
+        portConfig.functionMask,
+        baudRates[portConfig.msp_baudrateIndex],
+        baudRates[portConfig.gps_baudrateIndex],
+        baudRates[portConfig.telemetry_baudrateIndex],
+        baudRates[portConfig.blackbox_baudrateIndex]
+        );
+
 }
 
 #ifndef SKIP_SERIAL_PASSTHROUGH
@@ -1159,6 +1170,7 @@ static void printAdjustmentRange(uint8_t dumpMask, const adjustmentRange_t *adju
 
 static void cliAdjustmentRange(char *cmdline)
 {
+    const char *format = "adjrange %u %u %u %u %u %u %u %u %u";
     int i, val = 0;
     const char *ptr;
 
@@ -1210,6 +1222,7 @@ static void cliAdjustmentRange(char *cmdline)
             if (validArgumentCount != 6) {
                 memset(ar, 0, sizeof(adjustmentRange_t));
                 cliShowParseError();
+                return;
             }
 
             // Optional arguments
@@ -1228,6 +1241,18 @@ static void cliAdjustmentRange(char *cmdline)
                 ar->adjustmentScale = val;
                 validArgumentCount++;
             }
+            cliDumpPrintLinef(0, false, format,
+                i,
+                ar->adjustmentIndex,
+                ar->auxChannelIndex,
+                MODE_STEP_TO_CHANNEL_VALUE(ar->range.startStep),
+                MODE_STEP_TO_CHANNEL_VALUE(ar->range.endStep),
+                ar->adjustmentFunction,
+                ar->auxSwitchChannelIndex,
+                ar->adjustmentCenter,
+                ar->adjustmentScale
+            );
+
         } else {
             cliShowArgumentRangeError("index", 0, MAX_ADJUSTMENT_RANGE_COUNT - 1);
         }
@@ -1367,6 +1392,7 @@ static void printRxRange(uint8_t dumpMask, const rxChannelRangeConfig_t *channel
 
 static void cliRxRange(char *cmdline)
 {
+    const char *format = "rxrange %u %u %u";
     int i, validArgumentCount = 0;
     const char *ptr;
 
@@ -1400,6 +1426,12 @@ static void cliRxRange(char *cmdline)
                 rxChannelRangeConfig_t *channelRangeConfig = rxChannelRangeConfigsMutable(i);
                 channelRangeConfig->min = rangeMin;
                 channelRangeConfig->max = rangeMax;
+                cliDumpPrintLinef(0, false, format,
+                    i,
+                    channelRangeConfig->min,
+                    channelRangeConfig->max
+                );
+
             }
         } else {
             cliShowArgumentRangeError("channel", 0, NON_AUX_CHANNEL_COUNT - 1);
@@ -1429,6 +1461,8 @@ static void printLed(uint8_t dumpMask, const ledConfig_t *ledConfigs, const ledC
 
 static void cliLed(char *cmdline)
 {
+    const char *format = "led %u %s";
+    char ledConfigBuffer[20];
     int i;
     const char *ptr;
 
@@ -1439,7 +1473,10 @@ static void cliLed(char *cmdline)
         i = atoi(ptr);
         if (i < LED_MAX_STRIP_LENGTH) {
             ptr = nextArg(cmdline);
-            if (!parseLedStripConfig(i, ptr)) {
+            if (parseLedStripConfig(i, ptr)) {
+                generateLedConfig((ledConfig_t *)&ledStripConfig()->ledConfigs[i], ledConfigBuffer, sizeof(ledConfigBuffer));
+                cliDumpPrintLinef(0, false, format, i, ledConfigBuffer);
+            } else {
                 cliShowParseError();
             }
         } else {
@@ -1467,6 +1504,7 @@ static void printColor(uint8_t dumpMask, const hsvColor_t *colors, const hsvColo
 
 static void cliColor(char *cmdline)
 {
+    const char *format = "color %u %d,%u,%u";
     if (isEmpty(cmdline)) {
         printColor(DUMP_MASTER, ledStripConfig()->colors, NULL);
     } else {
@@ -1474,7 +1512,10 @@ static void cliColor(char *cmdline)
         const int i = atoi(ptr);
         if (i < LED_CONFIGURABLE_COLOR_COUNT) {
             ptr = nextArg(cmdline);
-            if (!parseColor(i, ptr)) {
+            if (parseColor(i, ptr)) {
+                const hsvColor_t *color = &ledStripConfig()->colors[i];
+                cliDumpPrintLinef(0, false, format, i, color->h, color->s, color->v);
+            } else {
                 cliShowParseError();
             }
         } else {
@@ -1614,6 +1655,7 @@ static void printServo(uint8_t dumpMask, const servoParam_t *servoParams, const 
 
 static void cliServo(char *cmdline)
 {
+    const char *format = "servo %u %d %d %d %d %d";
     enum { SERVO_ARGUMENT_COUNT = 6 };
     int16_t arguments[SERVO_ARGUMENT_COUNT];
 
@@ -1681,6 +1723,16 @@ static void cliServo(char *cmdline)
         servo->middle = arguments[MIDDLE];
         servo->rate = arguments[RATE];
         servo->forwardFromChannel = arguments[FORWARD];
+
+        cliDumpPrintLinef(0, false, format,
+            i,
+            servo->min,
+            servo->max,
+            servo->middle,
+            servo->rate,
+            servo->forwardFromChannel
+        );
+
     }
 }
 #endif
@@ -2050,6 +2102,7 @@ static void printVtx(uint8_t dumpMask, const vtxConfig_t *vtxConfig, const vtxCo
 
 static void cliVtx(char *cmdline)
 {
+    const char *format = "vtx %u %u %u %u %u %u";
     int i, val = 0;
     const char *ptr;
 
@@ -2091,6 +2144,16 @@ static void cliVtx(char *cmdline)
 
             if (validArgumentCount != 5) {
                 memset(cac, 0, sizeof(vtxChannelActivationCondition_t));
+                cliShowParseError();
+            } else {
+                cliDumpPrintLinef(0, false, format,
+                    i,
+                    cac->auxChannelIndex,
+                    cac->band,
+                    cac->channel,
+                    MODE_STEP_TO_CHANNEL_VALUE(cac->range.startStep),
+                    MODE_STEP_TO_CHANNEL_VALUE(cac->range.endStep)
+                );
             }
         } else {
             cliShowArgumentRangeError("index", 0, MAX_CHANNEL_ACTIVATION_CONDITION_COUNT - 1);
