@@ -35,7 +35,7 @@
 #include "drivers/bus_spi.h"
 
 #include "drivers/sensor.h"
-#include "accgyro.h"
+#include "drivers/accgyro/accgyro.h"
 #include "accgyro_l3gd20.h"
 
 #define READ_CMD               ((uint8_t)0x80)

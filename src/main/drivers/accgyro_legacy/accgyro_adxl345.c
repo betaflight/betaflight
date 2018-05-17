@@ -26,7 +26,7 @@
 #include "drivers/bus_i2c.h"
 
 #include "drivers/sensor.h"
-#include "accgyro.h"
+#include "drivers/accgyro/accgyro.h"
 #include "accgyro_adxl345.h"
 
 // ADXL345, Alternative address mode 0x53

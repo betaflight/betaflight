@@ -27,7 +27,7 @@
 #include "drivers/bus_i2c.h"
 
 #include "drivers/sensor.h"
-#include "accgyro.h"
+#include "drivers/accgyro/accgyro.h"
 #include "accgyro_mma845x.h"
 
 #ifndef MMA8452_I2C_INSTANCE
