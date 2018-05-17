@@ -971,27 +971,32 @@ FAST_CODE int32_t gyroSlewLimiter(gyroSensor_t *gyroSensor, int axis)
 }
 #endif
 
-static void checkForOverflow(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
-{
 #ifdef USE_GYRO_OVERFLOW_CHECK
+static NOINLINE void handleOverflow(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
+{
+    const float gyroOverflowResetRate = GYRO_OVERFLOW_RESET_THRESHOLD * gyroSensor->gyroDev.scale;
+    if ((abs(gyro.gyroADCf[X]) < gyroOverflowResetRate)
+          && (abs(gyro.gyroADCf[Y]) < gyroOverflowResetRate)
+          && (abs(gyro.gyroADCf[Z]) < gyroOverflowResetRate)) {
+        // if we have 50ms of consecutive OK gyro vales, then assume yaw readings are OK again and reset overflowDetected
+        // reset requires good OK values on all axes
+        if (cmpTimeUs(currentTimeUs, gyroSensor->overflowTimeUs) > 50000) {
+            gyroSensor->overflowDetected = false;
+        }
+    } else {
+        // not a consecutive OK value, so reset the overflow time
+        gyroSensor->overflowTimeUs = currentTimeUs;
+    }
+}
+
+static FAST_CODE void checkForOverflow(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
+{
     // check for overflow to handle Yaw Spin To The Moon (YSTTM)
     // ICM gyros are specified to +/- 2000 deg/sec, in a crash they can go out of spec.
     // This can cause an overflow and sign reversal in the output.
     // Overflow and sign reversal seems to result in a gyro value of +1996 or -1996.
     if (gyroSensor->overflowDetected) {
-        const float gyroOverflowResetRate = GYRO_OVERFLOW_RESET_THRESHOLD * gyroSensor->gyroDev.scale;
-        if ((abs(gyro.gyroADCf[X]) < gyroOverflowResetRate)
-              && (abs(gyro.gyroADCf[Y]) < gyroOverflowResetRate)
-              && (abs(gyro.gyroADCf[Z]) < gyroOverflowResetRate)) {
-            // if we have 50ms of consecutive OK gyro vales, then assume yaw readings are OK again and reset overflowDetected
-            // reset requires good OK values on all axes
-            if (cmpTimeUs(currentTimeUs, gyroSensor->overflowTimeUs) > 50000) {
-                gyroSensor->overflowDetected = false;
-            }
-        } else {
-            // not a consecutive OK value, so reset the overflow time
-            gyroSensor->overflowTimeUs = currentTimeUs;
-        }
+        handleOverflow(gyroSensor, currentTimeUs);
     } else {
 #ifndef SIMULATOR_BUILD
         // check for overflow in the axes set in overflowAxisMask
@@ -1015,15 +1020,26 @@ static void checkForOverflow(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
         }
 #endif // SIMULATOR_BUILD
     }
-#else
-    UNUSED(gyroSensor);
-    UNUSED(currentTimeUs);
+}
 #endif // USE_GYRO_OVERFLOW_CHECK
+
+#ifdef USE_YAW_SPIN_RECOVERY
+static NOINLINE void handleYawSpin(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
+{
+    const float yawSpinResetRate = gyroConfig()->yaw_spin_threshold - 100.0f;
+    if (abs(gyro.gyroADCf[Z]) < yawSpinResetRate) {
+        // testing whether 20ms of consecutive OK gyro yaw values is enough
+        if (cmpTimeUs(currentTimeUs, gyroSensor->yawSpinTimeUs) > 20000) {
+            gyroSensor->yawSpinDetected = false;
+        }
+    } else {
+        // reset the yaw spin time
+        gyroSensor->yawSpinTimeUs = currentTimeUs;
+    }
 }
 
-static void checkForYawSpin(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
+static FAST_CODE void checkForYawSpin(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
 {
-#ifdef USE_YAW_SPIN_RECOVERY
     // if not in overflow mode, handle yaw spins above threshold
 #ifdef USE_GYRO_OVERFLOW_CHECK
     if (gyroSensor->overflowDetected) {
@@ -1031,17 +1047,9 @@ static void checkForYawSpin(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
         return;
     }
 #endif // USE_GYRO_OVERFLOW_CHECK
+
     if (gyroSensor->yawSpinDetected) {
-        const float yawSpinResetRate = gyroConfig()->yaw_spin_threshold - 100.0f;
-        if (abs(gyro.gyroADCf[Z]) < yawSpinResetRate) {
-            // testing whether 20ms of consecutive OK gyro yaw values is enough
-            if (cmpTimeUs(currentTimeUs, gyroSensor->yawSpinTimeUs) > 20000) {
-                gyroSensor->yawSpinDetected = false;
-            }
-        } else {
-            // reset the yaw spin time
-            gyroSensor->yawSpinTimeUs = currentTimeUs;
-        }
+        handleYawSpin(gyroSensor, currentTimeUs);
     } else {
 #ifndef SIMULATOR_BUILD
         // check for spin on yaw axis only
@@ -1051,11 +1059,8 @@ static void checkForYawSpin(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
         }
 #endif // SIMULATOR_BUILD
     }
-#else
-    UNUSED(gyroSensor);
-    UNUSED(currentTimeUs);
-#endif // USE_YAW_SPIN_RECOVERY
 }
+#endif // USE_YAW_SPIN_RECOVERY
 
 static FAST_CODE NOINLINE void gyroUpdateSensor(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
 {
@@ -1094,13 +1099,17 @@ static FAST_CODE NOINLINE void gyroUpdateSensor(gyroSensor_t *gyroSensor, timeUs
     accumulationLastTimeSampledUs = currentTimeUs;
     accumulatedMeasurementTimeUs += sampleDeltaUs;
 
+#ifdef USE_GYRO_OVERFLOW_CHECK
     if (gyroConfig()->checkOverflow && !gyroHasOverflowProtection) {
         checkForOverflow(gyroSensor, currentTimeUs);
     }
+#endif
 
+#ifdef USE_YAW_SPIN_RECOVERY
     if (gyroConfig()->yaw_spin_recovery) {
         checkForYawSpin(gyroSensor, currentTimeUs);
     }
+#endif
 
     if (gyroDebugMode == DEBUG_NONE) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
