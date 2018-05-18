@@ -68,10 +68,10 @@ void qmp6988BusInit(busDevice_t *busdev)
 {
 #ifdef USE_BARO_SPI_QMP6988
     if (busdev->bustype == BUSTYPE_SPI) {
-    	IOHi(busdev->busdev_u.spi.csnPin); // Disable
+        IOHi(busdev->busdev_u.spi.csnPin); 
         IOInit(busdev->busdev_u.spi.csnPin, OWNER_BARO_CS, 0);
         IOConfigGPIO(busdev->busdev_u.spi.csnPin, IOCFG_OUT_PP);
-        spiSetDivisor(busdev->busdev_u.spi.instance, SPI_CLOCK_STANDARD); // XXX
+        spiSetDivisor(busdev->busdev_u.spi.instance, SPI_CLOCK_STANDARD);
     }
 #else
     UNUSED(busdev);
@@ -117,31 +117,25 @@ bool qmp6988Detect(baroDev_t *baro)
     qmp6988BusInit(busdev);
 
     if ((busdev->bustype == BUSTYPE_I2C) && (busdev->busdev_u.i2c.address == 0)) {
-        busdev->busdev_u.i2c.address = QMP6988_I2C_ADDR;
+        busdev->busdev_u.i2c.address = 0x70;
         defaultAddressApplied = true;
     }
 
-    busReadRegisterBuffer(busdev, QMP6988_CHIP_ID_REG, &qmp6988_chip_id, 1);  /* read Chip Id */
+    busReadRegisterBuffer(busdev, 0xD1, &qmp6988_chip_id, 1);  /* read Chip Id */
 
-#if 1
-    if (qmp6988_chip_id != QMP6988_DEFAULT_CHIP_ID) {
+    if (qmp6988_chip_id != 0x5c) {
         qmp6988BusDeinit(busdev);
         if (defaultAddressApplied) {
             busdev->busdev_u.i2c.address = 0;
         }
         return false;
     }
-#endif
 
-    // IO_SETUP
-    // qmp6988WriteRegister(busdev, QMP6988_IO_SETUP_REG, QMP6988_MODE);
-    
     // SetIIR
     busWriteRegister(busdev, QMP6988_SET_IIR_REG, 0x05);	
     
     //read OTP 
     busReadRegisterBuffer(busdev, QMP6988_COE_B00_1_REG, databuf, 25);
-    
     
     //algo OTP
     hw = databuf[0];
