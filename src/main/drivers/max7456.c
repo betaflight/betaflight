@@ -425,7 +425,7 @@ void max7456Init(const max7456Config_t *max7456Config, const vcdProfile_t *pVcdP
 
     busdev->busdev_u.spi.csnPin = IOGetByTag(max7456Config->csTag);
 
-    if (IOGetOwner(busdev->busdev_u.spi.csnPin) != OWNER_SPI_PREINIT) {
+    if (!IOIsFreeOrPreinit(busdev->busdev_u.spi.csnPin)) {
         return;
     }
 
