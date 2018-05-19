@@ -218,7 +218,6 @@ typedef struct beeperTableEntry_s {
     { BEEPER_ENTRY(BEEPER_CAM_CONNECTION_OPEN,   20, beep_camOpenBeep,     "CAM_CONNECTION_OPEN") },
     { BEEPER_ENTRY(BEEPER_CAM_CONNECTION_CLOSE,  21, beep_camCloseBeep,    "CAM_CONNECTION_CLOSED") },
     { BEEPER_ENTRY(BEEPER_ALL,                   22, NULL,                 "ALL") },
-    { BEEPER_ENTRY(BEEPER_PREFERENCE,            23, NULL,                 "PREFERRED") },
 };
 
 static const beeperTableEntry_t *currentBeeperEntry = NULL;
@@ -392,7 +391,7 @@ void beeperUpdate(timeUs_t currentTimeUs)
         beeperIsOn = 1;
 
 #ifdef USE_DSHOT
-        if (!areMotorsRunning() && beeperConfig()->dshotBeaconTone && (beeperConfig()->dshotBeaconTone <= DSHOT_CMD_BEACON5) && (currentBeeperEntry->mode == BEEPER_RX_SET || (beeperConfig()->disableRxLossDshotBeacon && currentBeeperEntry->mode == BEEPER_RX_LOST))) {
+        if (!areMotorsRunning() && beeperConfig()->dshotBeaconTone && (beeperConfig()->dshotBeaconTone <= DSHOT_CMD_BEACON5) && (currentBeeperEntry->mode == BEEPER_RX_SET || currentBeeperEntry->mode == BEEPER_RX_LOST)) {
             pwmDisableMotors();
             delay(1);
 

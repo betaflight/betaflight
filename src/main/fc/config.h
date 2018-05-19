@@ -55,8 +55,6 @@ void beeperOffClear(uint32_t mask);
 void beeperOffClearAll(void);
 uint32_t getBeeperOffMask(void);
 void setBeeperOffMask(uint32_t mask);
-uint32_t getPreferredBeeperOffMask(void);
-void setPreferredBeeperOffMask(uint32_t mask);
 
 void initEEPROM(void);
 void resetEEPROM(void);

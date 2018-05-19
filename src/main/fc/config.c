@@ -574,21 +574,3 @@ void setBeeperOffMask(uint32_t mask)
     UNUSED(mask);
 #endif
 }
-
-uint32_t getPreferredBeeperOffMask(void)
-{
-#ifdef USE_BEEPER
-    return beeperConfig()->preferred_beeper_off_flags;
-#else
-    return 0;
-#endif
-}
-
-void setPreferredBeeperOffMask(uint32_t mask)
-{
-#ifdef USE_BEEPER
-    beeperConfigMutable()->preferred_beeper_off_flags = mask;
-#else
-    UNUSED(mask);
-#endif
-}

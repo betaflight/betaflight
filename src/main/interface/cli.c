@@ -2376,25 +2376,19 @@ static void cliBeeper(char *cmdline)
             }
             if (strncasecmp(cmdline, beeperNameForTableIndex(i), len) == 0) {
                 if (remove) { // beeper off
-                    if (i == BEEPER_ALL-1)
+                    if (i == BEEPER_ALL-1) {
                         beeperOffSetAll(beeperCount-2);
-                    else
-                        if (i == BEEPER_PREFERENCE-1)
-                            setBeeperOffMask(getPreferredBeeperOffMask());
-                        else {
-                            beeperOffSet(beeperModeMaskForTableIndex(i));
-                        }
+                    } else {
+                        beeperOffSet(beeperModeMaskForTableIndex(i));
+                    }
                     cliPrint("Disabled");
                 }
                 else { // beeper on
-                    if (i == BEEPER_ALL-1)
+                    if (i == BEEPER_ALL-1) {
                         beeperOffClearAll();
-                    else
-                        if (i == BEEPER_PREFERENCE-1)
-                            setPreferredBeeperOffMask(getBeeperOffMask());
-                        else {
-                            beeperOffClear(beeperModeMaskForTableIndex(i));
-                        }
+                    } else {
+                        beeperOffClear(beeperModeMaskForTableIndex(i));
+                    }
                     cliPrint("Enabled");
                 }
             cliPrintLinef(" %s", beeperNameForTableIndex(i));
