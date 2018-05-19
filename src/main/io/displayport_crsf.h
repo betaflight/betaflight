@@ -20,23 +20,19 @@
 
 #pragma once
 
-#include "pg/pg.h"
 #include "drivers/display.h"
 
-#define CRSF_DISPLAY_PORT_ROWS_MAX 8
-#define CRSF_DISPLAY_PORT_COLS_MAX 32
-
-typedef struct crsfDisplayPortRow_s {
-    char data[CRSF_DISPLAY_PORT_COLS_MAX];
-    bool pendingTransport;
-} crsfDisplayPortRow_t;
+#define CRSF_DISPLAY_PORT_ROWS_MAX          9
+#define CRSF_DISPLAY_PORT_COLS_MAX          32
+#define CRSF_DISPLAY_PORT_MAX_BUFFER_SIZE   (CRSF_DISPLAY_PORT_ROWS_MAX * CRSF_DISPLAY_PORT_COLS_MAX)
 
 typedef struct crsfDisplayPortScreen_s {
-    crsfDisplayPortRow_t rows[CRSF_DISPLAY_PORT_ROWS_MAX];
+    char buffer[CRSF_DISPLAY_PORT_MAX_BUFFER_SIZE];
+    bool pendingTransport[CRSF_DISPLAY_PORT_ROWS_MAX];
+    uint8_t rows;
+    uint8_t cols;
     bool reset;
 } crsfDisplayPortScreen_t;
-
-PG_DECLARE(displayPortProfile_t, displayPortProfileCrsf);
 
 struct displayPort_s;
 struct displayPort_s *displayPortCrsfInit(void);
@@ -45,3 +41,4 @@ void crsfDisplayPortMenuOpen(void);
 void crsfDisplayPortMenuExit(void);
 void crsfDisplayPortRefresh(void);
 int crsfDisplayPortNextRow(void);
+void crsfDisplayPortSetDimensions(uint8_t rows, uint8_t cols);
