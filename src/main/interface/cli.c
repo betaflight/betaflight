@@ -2370,11 +2370,20 @@ static void cliMap(char *cmdline)
     cliPrintLinef("map %s", buf);
 }
 
+static char *skipSpace(char *buffer)
+{
+    while (*(buffer) == ' ') {
+        buffer++;
+    }
+
+    return buffer;
+}
+
 static char *checkCommand(char *cmdLine, const char *command)
 {
     if (!strncasecmp(cmdLine, command, strlen(command))   // command names match
         && (isspace((unsigned)cmdLine[strlen(command)]) || cmdLine[strlen(command)] == 0)) {
-        return cmdLine + strlen(command) + 1;
+        return skipSpace(cmdLine + strlen(command) + 1);
     } else {
         return 0;
     }
@@ -3027,15 +3036,6 @@ STATIC_UNIT_TESTED void cliGet(char *cmdline)
     }
 
     cliPrintLine("Invalid name");
-}
-
-static char *skipSpace(char *buffer)
-{
-    while (*(buffer) == ' ') {
-        buffer++;
-    }
-
-    return buffer;
 }
 
 static uint8_t getWordLength(char *bufBegin, char *bufEnd)
