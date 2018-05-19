@@ -495,11 +495,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
 
         static uint8_t smartPortIdCycleCnt = 0;
         if (smartPortIdCycleCnt % SENSOR_REST_PERIOD == 0) {
-#ifdef USE_ESC_SENSOR
             smartPortIdCycleCnt++;
-#else
-            smartPortIdCycleCnt = 0;
-#endif
             return;
         }
 
@@ -520,9 +516,11 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
         if (smartPortIdCycleCnt < ESC_SENSOR_PERIOD) {
             // send other sensors
             tableInfo = &frSkyDataIdTableInfo;
+#endif
             if (tableInfo->index == tableInfo->size) { // end of table reached, loop back
                 tableInfo->index = 0;
             }
+#ifdef USE_ESC_SENSOR
         }
 #endif
         uint16_t id = tableInfo->table[tableInfo->index];
