@@ -56,10 +56,11 @@ typedef enum {
     ARMING_DISABLED_BST             = (1 << 15),
     ARMING_DISABLED_MSP             = (1 << 16),
     ARMING_DISABLED_PARALYZE        = (1 << 17),
-    ARMING_DISABLED_ARM_SWITCH      = (1 << 18), // Needs to be the last element, since it's always activated if one of the others is active when arming
+    ARMING_DISABLED_GPS             = (1 << 18),
+    ARMING_DISABLED_ARM_SWITCH      = (1 << 19), // Needs to be the last element, since it's always activated if one of the others is active when arming
 } armingDisableFlags_e;
 
-#define ARMING_DISABLE_FLAGS_COUNT 19
+#define ARMING_DISABLE_FLAGS_COUNT 20
 
 extern const char *armingDisableFlagNames[ARMING_DISABLE_FLAGS_COUNT];
 
@@ -79,7 +80,8 @@ typedef enum {
     UNUSED_MODE     = (1 << 7), // old autotune
     PASSTHRU_MODE   = (1 << 8),
     RANGEFINDER_MODE= (1 << 9),
-    FAILSAFE_MODE   = (1 << 10)
+    FAILSAFE_MODE   = (1 << 10),
+    GPS_RESCUE_MODE = (1 << 11)
 } flightModeFlags_e;
 
 extern uint16_t flightModeFlags;
@@ -101,6 +103,7 @@ extern uint16_t flightModeFlags;
    [BOXPASSTHRU]    = LOG2(PASSTHRU_MODE),               \
    [BOXRANGEFINDER] = LOG2(RANGEFINDER_MODE),            \
    [BOXFAILSAFE]    = LOG2(FAILSAFE_MODE),               \
+   [BOXGPSRESCUE]   = LOG2(GPS_RESCUE_MODE),             \
 }                                                        \
 /**/
 

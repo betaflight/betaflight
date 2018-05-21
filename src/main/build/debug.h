@@ -86,6 +86,7 @@ typedef enum {
     DEBUG_CURRENT,
     DEBUG_USB,
     DEBUG_SMARTAUDIO,
+    DEBUG_RTH,
     DEBUG_COUNT
 } debugType_e;
 

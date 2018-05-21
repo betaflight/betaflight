@@ -65,6 +65,12 @@ typedef enum {
     GPS_AUTOBAUD_ON
 } gpsAutoBaud_e;
 
+typedef enum {
+    RESCUE_SANITY_OFF = 0,
+    RESCUE_SANITY_ON,
+    RESCUE_SANITY_FS_ONLY
+} gpsRescueSanity_e;
+
 #define GPS_BAUDRATE_MAX GPS_BAUDRATE_9600
 
 typedef struct gpsConfig_s {
@@ -75,6 +81,27 @@ typedef struct gpsConfig_s {
 } gpsConfig_t;
 
 PG_DECLARE(gpsConfig_t, gpsConfig);
+
+#ifdef USE_GPS_RESCUE
+
+typedef struct gpsRescue_s {
+    uint16_t angle; //degrees
+    uint16_t initialAltitude; //meters
+    uint16_t descentDistance; //meters
+    uint16_t rescueGroundspeed; // centimeters per second
+    uint16_t throttleP, throttleI, throttleD;
+    uint16_t yawP;
+    uint16_t throttleMin;
+    uint16_t throttleMax;
+    uint16_t throttleHover;
+    uint16_t velP, velI, velD;
+    uint8_t minSats;
+    gpsRescueSanity_e sanityChecks;
+} gpsRescue_t;
+
+PG_DECLARE(gpsRescue_t, gpsRescue);
+
+#endif
 
 typedef struct gpsCoordinateDDDMMmmmm_s {
     int16_t dddmm;
