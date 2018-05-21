@@ -266,10 +266,9 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsRxLossAndJustDisarms)
 
     // then
     EXPECT_EQ(true, failsafeIsActive());
-    // These checks were removed as they broke with introduction of rescue mode.  The failsafe code should be refactored.
-    //EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
-    //EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
-    //EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
+    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
+    EXPECT_TRUE(isArmingDisabled());
 
     // given
     failsafeOnValidDataFailed();                    // set last invalid sample at current time
@@ -280,11 +279,10 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsRxLossAndJustDisarms)
     failsafeUpdateState();
 
     // then
-    // These checks were removed as they broke with introduction of rescue mode.  The failsafe code should be refactored.
-    //EXPECT_EQ(true, failsafeIsActive());
-    //EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
-    //EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
-    //EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(true, failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
+    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
+    EXPECT_TRUE(isArmingDisabled());
 
     // given
     sysTickUptime += PERIOD_OF_3_SECONDS + 1;       // adjust time to point just past the required additional recovery time
@@ -296,8 +294,7 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsRxLossAndJustDisarms)
     // then
     EXPECT_EQ(false, failsafeIsActive());
     EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
-    // These checks were removed as they broke with introduction of rescue mode.  The failsafe code should be refactored.
-    //EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));  // disarm not called repeatedly.
+    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));  // disarm not called repeatedly.
     EXPECT_FALSE(isArmingDisabled());
 }
 
