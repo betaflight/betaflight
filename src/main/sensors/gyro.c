@@ -187,6 +187,7 @@ PG_REGISTER_WITH_RESET_TEMPLATE(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 2);
 
 PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
     .gyro_align = ALIGN_DEFAULT,
+    .gyroCalibrationDuration = 125,        // 1.25 seconds
     .gyroMovementCalibrationThreshold = 48,
     .gyro_sync_denom = GYRO_SYNC_DENOM_DEFAULT,
     .gyro_hardware_lpf = GYRO_HARDWARE_LPF_NORMAL,
@@ -877,7 +878,7 @@ static bool isOnFinalGyroCalibrationCycle(const gyroCalibration_t *gyroCalibrati
 
 static int32_t gyroCalculateCalibratingCycles(void)
 {
-    return (CALIBRATING_GYRO_TIME_US / gyro.targetLooptime);
+    return (gyroConfig()->gyroCalibrationDuration * 10000) / gyro.targetLooptime;
 }
 
 static bool isOnFirstGyroCalibrationCycle(const gyroCalibration_t *gyroCalibration)
