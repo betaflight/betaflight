@@ -35,19 +35,53 @@
 
 #if defined(USE_BARO) && (defined(USE_BARO_QMP6988) || defined(USE_BARO_SPI_QMP6988))
 
+#define QMP6988_I2C_ADDR					(0x70)
+#define QMP6988_DEFAULT_CHIP_ID			(0x5c)
+#define QMP6988_CHIP_ID_REG				(0xD1)  /* Chip ID Register */
+
+#define QMP6988_IO_SETUP_REG				(0xF5)
+#define QMP6988_SET_IIR_REG				(0xF1)
+#define QMP6988_CTRL_MEAS_REG				(0xF4)
+#define QMP6988_COE_B00_1_REG				(0xA0)
+#define QMP6988_PRESSURE_MSB_REG			(0xF7)  /* Pressure MSB Register */
+#define QMP6988_PRESSURE_LSB_REG			(0xF8)  /* Pressure LSB Register */
+#define QMP6988_PRESSURE_XLSB_REG		(0xF9)  /* Pressure XLSB Register */
+#define QMP6988_TEMPERATURE_MSB_REG		(0xFA)  /* Temperature MSB Reg */
+#define QMP6988_TEMPERATURE_LSB_REG		(0xFB)  /* Temperature LSB Reg */
+#define QMP6988_TEMPERATURE_XLSB_REG		(0xFC)  /* Temperature XLSB Reg */
+#define QMP6988_DATA_FRAME_SIZE			6
+#define QMP6988_FORCED_MODE				(0x01)
+#define QMP6988_PWR_SAMPLE_MODE			(0x7B)
+
+#define QMP6988_OVERSAMP_SKIPPED			(0x00)
+#define QMP6988_OVERSAMP_1X 				(0x01)
+#define QMP6988_OVERSAMP_2X				(0x02)
+#define QMP6988_OVERSAMP_4X				(0x03)
+#define QMP6988_OVERSAMP_8X				(0x04)
+#define QMP6988_OVERSAMP_16X				(0x05)
+
+// configure pressure and temperature oversampling, forced sampling mode
+#define QMP6988_PRESSURE_OSR              			(QMP6988_OVERSAMP_8X)
+#define QMP6988_TEMPERATURE_OSR           		(QMP6988_OVERSAMP_1X)
+#define QMP6988_MODE                      				(QMP6988_PRESSURE_OSR << 2 | QMP6988_TEMPERATURE_OSR << 5 | QMP6988_FORCED_MODE)
+
+#define T_INIT_MAX                       					(20)
+#define T_MEASURE_PER_OSRS_MAX           			(37)
+#define T_SETUP_PRESSURE_MAX             			(10)
+
 typedef struct qmp6988_calib_param_s {
-	float Coe_a0;
-	float Coe_a1;
-	float Coe_a2;
-	float Coe_b00;
-	float Coe_bt1;
-	float Coe_bt2;
-	float Coe_bp1;
-	float Coe_b11;
-	float Coe_bp2;
-	float Coe_b12;
-	float Coe_b21;
-	float Coe_bp3;
+    float Coe_a0;
+    float Coe_a1;
+    float Coe_a2;
+    float Coe_b00;
+    float Coe_bt1;
+    float Coe_bt2;
+    float Coe_bp1;
+    float Coe_b11;
+    float Coe_bp2;
+    float Coe_b12;
+    float Coe_b21;
+    float Coe_bp3;
 } qmp6988_calib_param_t;
 
 static uint8_t qmp6988_chip_id = 0;
@@ -62,7 +96,6 @@ static void qmp6988_start_up(baroDev_t *baro);
 static void qmp6988_get_up(baroDev_t *baro);
 
 STATIC_UNIT_TESTED void qmp6988_calculate(int32_t *pressure, int32_t *temperature);
-
 
 void qmp6988BusInit(busDevice_t *busdev)
 {
@@ -117,13 +150,13 @@ bool qmp6988Detect(baroDev_t *baro)
     qmp6988BusInit(busdev);
 
     if ((busdev->bustype == BUSTYPE_I2C) && (busdev->busdev_u.i2c.address == 0)) {
-        busdev->busdev_u.i2c.address = 0x70;
+        busdev->busdev_u.i2c.address = QMP6988_I2C_ADDR;
         defaultAddressApplied = true;
     }
 
-    busReadRegisterBuffer(busdev, 0xD1, &qmp6988_chip_id, 1);  /* read Chip Id */
+    busReadRegisterBuffer(busdev, QMP6988_CHIP_ID_REG, &qmp6988_chip_id, 1);  /* read Chip Id */
 
-    if (qmp6988_chip_id != 0x5c) {
+    if (qmp6988_chip_id != QMP6988_DEFAULT_CHIP_ID) {
         qmp6988BusDeinit(busdev);
         if (defaultAddressApplied) {
             busdev->busdev_u.i2c.address = 0;
@@ -188,7 +221,6 @@ bool qmp6988Detect(baroDev_t *baro)
     
     hb = databuf[24];
     
-    
     temp1 = temp1|((hb&0xf0)>>4);
     if(temp1&0x80000)
        Coe_b00_ = ((int)temp1 - (int)0x100000);	
@@ -215,12 +247,11 @@ bool qmp6988Detect(baroDev_t *baro)
     qmp6988_cal.Coe_bp2 = (-6.30E-10)+(3.50E-10)*(float)Coe_bp2_/32767.0;
     qmp6988_cal.Coe_b12= (2.90E-13)+(7.60E-13)*(float)Coe_b12_/32767.0;
     
-    
     qmp6988_cal.Coe_b21 = (2.10E-15)+(1.20E-14)*(float)Coe_b21_/32767.0;
     qmp6988_cal.Coe_bp3= (1.30E-16)+(7.90E-17)*(float)Coe_bp3_/32767.0;	
     
     // Set power mode and sample times
-    busWriteRegister(busdev, QMP6988_CTRL_MEAS_REG, 0x7B);	
+    busWriteRegister(busdev, QMP6988_CTRL_MEAS_REG, QMP6988_PWR_SAMPLE_MODE);	
 
     // these are dummy as temperature is measured as part of pressure
     baro->ut_delay = 0;
@@ -250,7 +281,7 @@ static void qmp6988_get_ut(baroDev_t *baro)
 static void qmp6988_start_up(baroDev_t *baro)
 {
     // start measurement
-    busWriteRegister(&baro->busdev, QMP6988_CTRL_MEAS_REG, 0x7B);	
+    busWriteRegister(&baro->busdev, QMP6988_CTRL_MEAS_REG, QMP6988_PWR_SAMPLE_MODE);	
 }
 
 static void qmp6988_get_up(baroDev_t *baro)
