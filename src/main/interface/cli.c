@@ -3075,6 +3075,24 @@ static void cliDefaults(char *cmdline)
     }
 }
 
+void cliPrintVarDefault(const clivalue_t *value)
+{
+    const pgRegistry_t *pg = pgFind(value->pgn);
+    if (pg) {
+        const char *defaultFormat = "Default value: ";
+        const int valueOffset = getValueOffset(value);
+        memcpy(pg->copy, pg->address, pg->size);
+        pgReset(pg);
+        const bool equalsDefault = valuePtrEqualsDefault(value, pg->copy + valueOffset, pg->address + valueOffset);
+        if (!equalsDefault) {
+            cliPrintf(defaultFormat, value->name);
+            printValuePointer(value, (uint8_t*)pg->address + valueOffset, false);
+            cliPrintLinefeed();
+        }
+        memcpy(pg->address, pg->copy, pg->size);
+    }
+}
+
 STATIC_UNIT_TESTED void cliGet(char *cmdline)
 {
     const clivalue_t *val;
@@ -3083,12 +3101,14 @@ STATIC_UNIT_TESTED void cliGet(char *cmdline)
     for (uint32_t i = 0; i < valueTableEntryCount; i++) {
         if (strcasestr(valueTable[i].name, cmdline)) {
             val = &valueTable[i];
+            if (matchedCommands > 0) {
+                cliPrintLinefeed();
+            }
             cliPrintf("%s = ", valueTable[i].name);
             cliPrintVar(val, 0);
             cliPrintLinefeed();
             cliPrintVarRange(val);
-            cliPrintLinefeed();
-
+            cliPrintVarDefault(val);
             matchedCommands++;
         }
     }
