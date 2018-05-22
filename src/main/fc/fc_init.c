@@ -275,7 +275,7 @@ void init(void)
 #endif
 
 #ifdef USE_FAST_RAM
-    /* Load FAST_RAM_INITIALIZED variable intializers into FAST RAM */
+    /* Load FAST_RAM variable intializers into DTCM RAM */
     extern uint8_t _sfastram_data;
     extern uint8_t _efastram_data;
     extern uint8_t _sfastram_idata;

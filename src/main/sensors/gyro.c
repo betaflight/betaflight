@@ -83,18 +83,18 @@
 #define USE_GYRO_SLEW_LIMITER
 #endif
 
-FAST_RAM gyro_t gyro;
-static FAST_RAM uint8_t gyroDebugMode;
+FAST_RAM_ZERO_INIT gyro_t gyro;
+static FAST_RAM_ZERO_INIT uint8_t gyroDebugMode;
 
 static uint8_t gyroToUse = 0;
 
 #ifdef USE_GYRO_OVERFLOW_CHECK
-static FAST_RAM uint8_t overflowAxisMask;
+static FAST_RAM_ZERO_INIT uint8_t overflowAxisMask;
 #endif
-static FAST_RAM float accumulatedMeasurements[XYZ_AXIS_COUNT];
-static FAST_RAM float gyroPrevious[XYZ_AXIS_COUNT];
-static FAST_RAM timeUs_t accumulatedMeasurementTimeUs;
-static FAST_RAM timeUs_t accumulationLastTimeSampledUs;
+static FAST_RAM_ZERO_INIT float accumulatedMeasurements[XYZ_AXIS_COUNT];
+static FAST_RAM_ZERO_INIT float gyroPrevious[XYZ_AXIS_COUNT];
+static FAST_RAM_ZERO_INIT timeUs_t accumulatedMeasurementTimeUs;
+static FAST_RAM_ZERO_INIT timeUs_t accumulationLastTimeSampledUs;
 
 static bool gyroHasOverflowProtection = true;
 
@@ -152,9 +152,9 @@ typedef struct gyroSensor_s {
 
 } gyroSensor_t;
 
-STATIC_UNIT_TESTED FAST_RAM gyroSensor_t gyroSensor1;
+STATIC_UNIT_TESTED FAST_RAM_ZERO_INIT gyroSensor_t gyroSensor1;
 #ifdef USE_DUAL_GYRO
-STATIC_UNIT_TESTED FAST_RAM gyroSensor_t gyroSensor2;
+STATIC_UNIT_TESTED FAST_RAM_ZERO_INIT gyroSensor_t gyroSensor2;
 #endif
 
 #ifdef UNIT_TEST
