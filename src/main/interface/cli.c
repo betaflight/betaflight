@@ -3910,9 +3910,6 @@ static void printConfig(char *cmdline, bool doDiff)
     // reset all configs to defaults to do differencing
     resetConfigs();
 
-#if defined(USE_TARGET_CONFIG)
-    targetConfiguration();
-#endif
     if (checkCommand(options, "defaults")) {
         dumpMask = dumpMask | SHOW_DEFAULTS;   // add default values as comments for changed values
     }
