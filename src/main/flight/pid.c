@@ -318,7 +318,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     }
 
     dtermSetpointWeight = pidProfile->dtermSetpointWeight / 100.0f;
-	if (dtermSetpointWeight > 2.0f) {
+    if (dtermSetpointWeight > 2.0f) {
         dtermSetpointWeight = 10 * (dtermSetpointWeight - 2.0f) + 2.0f;
     }
     if (pidProfile->setpointRelaxRatio == 0) {
