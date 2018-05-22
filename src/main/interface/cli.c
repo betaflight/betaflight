@@ -215,6 +215,16 @@ static const char * const *sensorHardwareNames[] = {
 };
 #endif // USE_SENSOR_NAMES
 
+static void backupPgConfig(const pgRegistry_t *pg)
+{
+    memcpy(pg->copy, pg->address, pg->size);
+}
+
+static void restorePgConfig(const pgRegistry_t *pg)
+{
+    memcpy(pg->address, pg->copy, pg->size);
+}
+
 static void cliPrint(const char *str)
 {
     while (*str) {
@@ -3081,7 +3091,7 @@ void cliPrintVarDefault(const clivalue_t *value)
     if (pg) {
         const char *defaultFormat = "Default value: ";
         const int valueOffset = getValueOffset(value);
-        memcpy(pg->copy, pg->address, pg->size);
+        backupPgConfig(pg);
         pgReset(pg);
         const bool equalsDefault = valuePtrEqualsDefault(value, pg->copy + valueOffset, pg->address + valueOffset);
         if (!equalsDefault) {
@@ -3089,7 +3099,7 @@ void cliPrintVarDefault(const clivalue_t *value)
             printValuePointer(value, (uint8_t*)pg->address + valueOffset, false);
             cliPrintLinefeed();
         }
-        memcpy(pg->address, pg->copy, pg->size);
+        restorePgConfig(pg);
     }
 }
 
@@ -3891,7 +3901,7 @@ static void backupConfigs(void)
 {
     // make copies of configs to do differencing
     PG_FOREACH(pg) {
-        memcpy(pg->copy, pg->address, pg->size);
+        backupPgConfig(pg);
     }
 
     configIsInCopy = true;
@@ -3900,7 +3910,7 @@ static void backupConfigs(void)
 static void restoreConfigs(void)
 {
     PG_FOREACH(pg) {
-        memcpy(pg->address, pg->copy, pg->size);
+        restorePgConfig(pg);
     }
 
     configIsInCopy = false;
