@@ -96,8 +96,10 @@
 
 #ifdef USE_ITCM_RAM
 #define FAST_CODE                   __attribute__((section(".tcm_code")))
+#define FAST_CODE_NOINLINE          NOINLINE
 #else
 #define FAST_CODE
+#define FAST_CODE_NOINLINE
 #endif // USE_ITCM_RAM
 
 #ifdef USE_FAST_RAM
