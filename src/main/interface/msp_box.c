@@ -196,6 +196,7 @@ void initActiveBoxIds(void)
     if (feature(FEATURE_GPS)) {
         BME(BOXGPSHOME);
         BME(BOXGPSHOLD);
+        BME(BOXGPSRESCUE);
         BME(BOXBEEPGPSCOUNT);
     }
 #endif
