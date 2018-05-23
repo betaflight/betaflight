@@ -180,7 +180,7 @@ static void checkForThrottleErrorResetState(uint16_t rxRefreshRate)
     }
 }
 
-FAST_CODE NOINLINE void processRcCommand(void)
+FAST_CODE FAST_CODE_NOINLINE void processRcCommand(void)
 {
     static float rcCommandInterp[4];
     static float rcStepSize[4];
@@ -266,7 +266,7 @@ FAST_CODE NOINLINE void processRcCommand(void)
     }
 }
 
-FAST_CODE NOINLINE void updateRcCommands(void)
+FAST_CODE FAST_CODE_NOINLINE void updateRcCommands(void)
 {
     // PITCH & ROLL only dynamic PID adjustment,  depending on throttle value
     int32_t prop;

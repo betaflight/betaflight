@@ -886,7 +886,7 @@ static void subTaskPidController(timeUs_t currentTimeUs)
 #endif
 }
 
-static NOINLINE void subTaskMainSubprocesses(timeUs_t currentTimeUs)
+static FAST_CODE_NOINLINE void subTaskMainSubprocesses(timeUs_t currentTimeUs)
 {
     uint32_t startTime = 0;
     if (debugMode == DEBUG_PIDLOOP) {
