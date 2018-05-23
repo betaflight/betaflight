@@ -485,6 +485,21 @@ check-target-independence:
 		fi; \
 	done
 
+check-fastram-usage-correctness:
+	$(V1) NON_TRIVIALLY_INITIALIZED=$$(grep -Ern "\W?FAST_RAM_ZERO_INIT\W.*=.*" src/main/ | grep -Ev "=\s*(false|NULL|0(\.0*f?)?)\s*[,;]"); \
+	if [ "$${NON_TRIVIALLY_INITIALIZED}" != "" ]; then \
+		echo "Non-trivially initialized FAST_RAM_ZERO_INIT variables found, use FAST_RAM instead:"; \
+		echo "$${NON_TRIVIALLY_INITIALIZED}"; \
+		exit 1; \
+	fi; \
+	TRIVIALLY_INITIALIZED=$$(grep -Ern "\W?FAST_RAM\W.*;" src/main/ | grep -v "="); \
+	EXPLICITLY_TRIVIALLY_INITIALIZED=$$(grep -Ern "\W?FAST_RAM\W.*;" src/main/ | grep -E "=\s*(false|NULL|0(\.0*f?)?)\s*[,;]"); \
+	if [ "$${TRIVIALLY_INITIALIZED}$${EXPLICITLY_TRIVIALLY_INITIALIZED}" != "" ]; then \
+		echo "Trivially initialized FAST_RAM variables found, use FAST_RAM_ZERO_INIT instead to save FLASH:"; \
+		echo "$${TRIVIALLY_INITIALIZED}\n$${EXPLICITLY_TRIVIALLY_INITIALIZED}"; \
+		exit 1; \
+	fi;
+
 # rebuild everything when makefile changes
 $(TARGET_OBJS) : Makefile
 
