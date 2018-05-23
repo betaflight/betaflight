@@ -36,7 +36,7 @@ void crsfScheduleDeviceInfoResponse(void);
 void crsfScheduleMspResponse(void);
 int getCrsfFrame(uint8_t *frame, crsfFrameType_e frameType);
 #if defined(USE_CRSF_CMS_TELEMETRY)
-void crsfProcessDisplayPortCmd(uint8_t cmd);
+void crsfProcessDisplayPortCmd(uint8_t *frameStart);
 #endif
 #if defined(USE_MSP_OVER_TELEMETRY)
 void initCrsfMspBuffer(void);
