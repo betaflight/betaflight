@@ -100,8 +100,8 @@ void updateGPSRescueState(void)
 	rescueState.intent.targetGroundspeed = 500;
 	rescueState.intent.targetAltitude = MAX(gpsRescue()->initialAltitude * 100, rescueState.sensor.maxAltitude + 1500);
 	rescueState.intent.crosstrack = true;
-	rescueState.intent.minAngle = 10;
-	rescueState.intent.maxAngle = 15;
+	rescueState.intent.minAngleDeg = 10;
+	rescueState.intent.maxAngleDeg = 15;
 	break;
     case RESCUE_CROSSTRACK:
 	if (rescueState.sensor.distanceToHome < gpsRescue()->descentDistance) {
@@ -113,8 +113,8 @@ void updateGPSRescueState(void)
 	rescueState.intent.targetGroundspeed = gpsRescue()->rescueGroundspeed;
 	rescueState.intent.targetAltitude = MAX(gpsRescue()->initialAltitude * 100, rescueState.sensor.maxAltitude + 1500);
 	rescueState.intent.crosstrack = true;
-	rescueState.intent.minAngle = 15;
-	rescueState.intent.maxAngle = gpsRescue()->angle;
+	rescueState.intent.minAngleDeg = 15;
+	rescueState.intent.maxAngleDeg = gpsRescue()->angle;
 	break;
     case RESCUE_LANDING_APPROACH:
 	// We are getting close to home in the XY plane, get Z where it needs to be to move to landing phase
@@ -129,8 +129,8 @@ void updateGPSRescueState(void)
 	rescueState.intent.targetAltitude = constrain(newAlt, 100, rescueState.intent.targetAltitude);
 	rescueState.intent.targetGroundspeed = constrain(newSpeed, 100, rescueState.intent.targetGroundspeed);
 	rescueState.intent.crosstrack = true;
-	rescueState.intent.minAngle = 10;
-	rescueState.intent.maxAngle = 20;
+	rescueState.intent.minAngleDeg = 10;
+	rescueState.intent.maxAngleDeg = 20;
 	break;
     case RESCUE_LANDING:
 	// We have reached the XYZ envelope to be considered at "home".  We need to land gently and check our accelerometer for abnormal data.
@@ -145,8 +145,8 @@ void updateGPSRescueState(void)
 	rescueState.intent.targetGroundspeed = 0;
 	rescueState.intent.targetAltitude = 0;
 	rescueState.intent.crosstrack = true;
-	rescueState.intent.minAngle = 0;
-	rescueState.intent.maxAngle = 15;
+	rescueState.intent.minAngleDeg = 0;
+	rescueState.intent.maxAngleDeg = 15;
 	break;
     case RESCUE_COMPLETE:
 	rescueStop();
@@ -319,7 +319,7 @@ void rescueAttainPosition()
 
     int16_t angleAdjustment =  gpsRescue()->velP * speedError + (gpsRescue()->velI * speedIntegral) / 100 +  gpsRescue()->velD * speedDerivative;
 
-    gpsRescueAngle[AI_PITCH] = constrain(gpsRescueAngle[AI_PITCH] + MIN(angleAdjustment, 80), rescueState.intent.minAngle * 100, rescueState.intent.maxAngle * 100);
+    gpsRescueAngle[AI_PITCH] = constrain(gpsRescueAngle[AI_PITCH] + MIN(angleAdjustment, 80), rescueState.intent.minAngleDeg * 100, rescueState.intent.maxAngleDeg * 100);
 
     float ct = cos(DECIDEGREES_TO_RADIANS(gpsRescueAngle[AI_PITCH] / 10));
 
