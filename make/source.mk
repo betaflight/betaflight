@@ -16,7 +16,6 @@ COMMON_SRC = \
             drivers/bus_spi.c \
             drivers/bus_spi_config.c \
             drivers/bus_spi_pinconfig.c \
-            drivers/bus_spi_soft.c \
             drivers/buttons.c \
             drivers/display.c \
             drivers/exti.c \
