@@ -32,7 +32,6 @@
 #include "build/build_config.h"
 
 #include "drivers/bus_spi.h"
-#include "drivers/bus_spi_soft.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 #include "drivers/rcc.h"
@@ -43,18 +42,7 @@
 #define DISABLE_RX()    {IOHi(DEFIO_IO(RX_NSS_PIN));}
 #define ENABLE_RX()     {IOLo(DEFIO_IO(RX_NSS_PIN));}
 
-#ifdef USE_RX_SOFTSPI
-static const softSPIDevice_t softSPIDevice = {
-    .sckTag = IO_TAG(RX_SCK_PIN),
-    .mosiTag = IO_TAG(RX_MOSI_PIN),
-    .misoTag = IO_TAG(RX_MISO_PIN),
-    // Note: Nordic Semiconductor uses 'CSN', STM uses 'NSS'
-    .nssTag = IO_TAG(RX_NSS_PIN),
-};
-static bool useSoftSPI = false;
-#endif // USE_RX_SOFTSPI
-
-void rxSpiDeviceInit(rx_spi_type_e spiType)
+void rxSpiDeviceInit(void)
 {
     static bool hardwareInitialised = false;
 
@@ -62,19 +50,10 @@ void rxSpiDeviceInit(rx_spi_type_e spiType)
         return;
     }
 
-#ifdef USE_RX_SOFTSPI
-    if (spiType == RX_SPI_SOFTSPI) {
-        useSoftSPI = true;
-        softSpiInit(&softSPIDevice);
-    }
-    const SPIDevice rxSPIDevice = SOFT_SPIDEV_1;
-#else
-    UNUSED(spiType);
     const SPIDevice rxSPIDevice = spiDeviceByInstance(RX_SPI_INSTANCE);
     const IO_t rxCsPin = DEFIO_IO(RX_NSS_PIN);
     IOInit(rxCsPin, OWNER_RX_SPI_CS, rxSPIDevice + 1);
     IOConfigGPIO(rxCsPin, SPI_IO_CS_CFG);
-#endif // USE_RX_SOFTSPI
 
     DISABLE_RX();
 
@@ -86,18 +65,11 @@ void rxSpiDeviceInit(rx_spi_type_e spiType)
 
 uint8_t rxSpiTransferByte(uint8_t data)
 {
-#ifdef USE_RX_SOFTSPI
-    if (useSoftSPI) {
-        return softSpiTransferByte(&softSPIDevice, data);
-    } else
-#endif
-    {
 #ifdef RX_SPI_INSTANCE
-        return spiTransferByte(RX_SPI_INSTANCE, data);
+    return spiTransferByte(RX_SPI_INSTANCE, data);
 #else
-        return 0;
+    return 0;
 #endif
-    }
 }
 
 uint8_t rxSpiWriteByte(uint8_t data)

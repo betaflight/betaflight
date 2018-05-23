@@ -258,7 +258,7 @@ void spiPreInit(void)
 #ifdef FLASH_CS_PIN
     spiPreInitCs(IO_TAG(FLASH_CS_PIN));
 #endif
-#if defined(USE_RX_SPI) && !defined(USE_RX_SOFTSPI)
+#if defined(USE_RX_SPI)
     spiPreInitCs(IO_TAG(RX_NSS_PIN));
 #endif
 }

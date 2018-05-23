@@ -171,8 +171,7 @@ bool rxSpiInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     bool ret = false;
 
-    const rx_spi_type_e spiType = feature(FEATURE_SOFTSPI) ? RX_SPI_SOFTSPI : RX_SPI_HARDSPI;
-    rxSpiDeviceInit(spiType);
+    rxSpiDeviceInit();
     if (rxSpiSetProtocol(rxConfig->rx_spi_protocol)) {
         ret = protocolInit(rxConfig, rxRuntimeConfig);
     }
