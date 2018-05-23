@@ -1224,7 +1224,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, 0); // reserved
         sbufWriteU8(dst, currentPidProfile->vbatPidCompensation);
         sbufWriteU8(dst, currentPidProfile->setpointRelaxRatio);
-        sbufWriteU8(dst, currentPidProfile->dtermSetpointWeight);
+        sbufWriteU8(dst, MIN(currentPidProfile->dtermSetpointWeight, 255));
         sbufWriteU8(dst, 0); // reserved
         sbufWriteU8(dst, 0); // reserved
         sbufWriteU8(dst, 0); // reserved
