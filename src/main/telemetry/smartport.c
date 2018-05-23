@@ -455,6 +455,13 @@ static void smartPortSendMspResponse(uint8_t *data) {
 
 void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clearToSend, const uint32_t *requestTimeout)
 {
+    static uint8_t smartPortIdCycleCnt = 0;
+    static uint8_t t1Cnt = 0;
+    static uint8_t t2Cnt = 0;
+#ifdef USE_ESC_SENSOR
+    static uint8_t smartPortIdOffset = 0;
+#endif
+
     if (payload) {
         // do not check the physical ID here again
         // unless we start receiving other sensors' packets
@@ -493,18 +500,12 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
         // we can send back any data we want, our tables keep track of the order and frequency of each data type we send
         frSkyTableInfo_t * tableInfo = &frSkyDataIdTableInfo;
 
-        static uint8_t smartPortIdCycleCnt = 0;
         if (smartPortIdCycleCnt % SENSOR_REST_PERIOD == 0) {
-#ifdef USE_ESC_SENSOR
             smartPortIdCycleCnt++;
-#else
-            smartPortIdCycleCnt = 0;
-#endif
             return;
         }
 
 #ifdef USE_ESC_SENSOR
-        static uint8_t smartPortIdOffset = 0;
         if (smartPortIdCycleCnt >= ESC_SENSOR_PERIOD) {
             // send ESC sensors
             tableInfo = &frSkyEscDataIdTableInfo;
@@ -520,9 +521,11 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
         if (smartPortIdCycleCnt < ESC_SENSOR_PERIOD) {
             // send other sensors
             tableInfo = &frSkyDataIdTableInfo;
+#endif
             if (tableInfo->index == tableInfo->size) { // end of table reached, loop back
                 tableInfo->index = 0;
             }
+#ifdef USE_ESC_SENSOR
         }
 #endif
         uint16_t id = tableInfo->table[tableInfo->index];
@@ -536,8 +539,6 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
 
         int32_t tmpi;
         uint32_t tmp2 = 0;
-        static uint8_t t1Cnt = 0;
-        static uint8_t t2Cnt = 0;
         uint16_t vfasVoltage;
         uint8_t cellCount;
 

@@ -56,14 +56,14 @@
 #include "sensors/acceleration.h"
 
 
-FAST_RAM uint32_t targetPidLooptime;
-FAST_RAM pidAxisData_t pidData[XYZ_AXIS_COUNT];
+FAST_RAM_ZERO_INIT uint32_t targetPidLooptime;
+FAST_RAM_ZERO_INIT pidAxisData_t pidData[XYZ_AXIS_COUNT];
 
-static FAST_RAM bool pidStabilisationEnabled;
+static FAST_RAM_ZERO_INIT bool pidStabilisationEnabled;
 
-static FAST_RAM bool inCrashRecoveryMode = false;
+static FAST_RAM_ZERO_INIT bool inCrashRecoveryMode = false;
 
-static FAST_RAM float dT;
+static FAST_RAM_ZERO_INIT float dT;
 
 PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 2);
 
@@ -162,7 +162,7 @@ void pidResetITerm(void)
     }
 }
 
-static FAST_RAM_INITIALIZED float itermAccelerator = 1.0f;
+static FAST_RAM float itermAccelerator = 1.0f;
 
 void pidSetItermAccelerator(float newItermAccelerator)
 {
@@ -189,14 +189,14 @@ typedef union dtermLowpass_u {
 #endif
 } dtermLowpass_t;
 
-static FAST_RAM filterApplyFnPtr dtermNotchApplyFn;
-static FAST_RAM biquadFilter_t dtermNotch[2];
-static FAST_RAM filterApplyFnPtr dtermLowpassApplyFn;
-static FAST_RAM dtermLowpass_t dtermLowpass[2];
-static FAST_RAM filterApplyFnPtr dtermLowpass2ApplyFn;
-static FAST_RAM pt1Filter_t dtermLowpass2[2];
-static FAST_RAM filterApplyFnPtr ptermYawLowpassApplyFn;
-static FAST_RAM pt1Filter_t ptermYawLowpass;
+static FAST_RAM_ZERO_INIT filterApplyFnPtr dtermNotchApplyFn;
+static FAST_RAM_ZERO_INIT biquadFilter_t dtermNotch[2];
+static FAST_RAM_ZERO_INIT filterApplyFnPtr dtermLowpassApplyFn;
+static FAST_RAM_ZERO_INIT dtermLowpass_t dtermLowpass[2];
+static FAST_RAM_ZERO_INIT filterApplyFnPtr dtermLowpass2ApplyFn;
+static FAST_RAM_ZERO_INIT pt1Filter_t dtermLowpass2[2];
+static FAST_RAM_ZERO_INIT filterApplyFnPtr ptermYawLowpassApplyFn;
+static FAST_RAM_ZERO_INIT pt1Filter_t ptermYawLowpass;
 
 void pidInitFilters(const pidProfile_t *pidProfile)
 {
@@ -289,25 +289,25 @@ typedef struct pidCoefficient_s {
     float Kd;
 } pidCoefficient_t;
 
-static FAST_RAM pidCoefficient_t pidCoefficient[3];
-static FAST_RAM float maxVelocity[3];
-static FAST_RAM float relaxFactor;
-static FAST_RAM float dtermSetpointWeight;
-static FAST_RAM float levelGain, horizonGain, horizonTransition, horizonCutoffDegrees, horizonFactorRatio;
-static FAST_RAM float ITermWindupPointInv;
-static FAST_RAM uint8_t horizonTiltExpertMode;
-static FAST_RAM timeDelta_t crashTimeLimitUs;
-static FAST_RAM timeDelta_t crashTimeDelayUs;
-static FAST_RAM int32_t crashRecoveryAngleDeciDegrees;
-static FAST_RAM float crashRecoveryRate;
-static FAST_RAM float crashDtermThreshold;
-static FAST_RAM float crashGyroThreshold;
-static FAST_RAM float crashSetpointThreshold;
-static FAST_RAM float crashLimitYaw;
-static FAST_RAM float itermLimit;
-FAST_RAM float throttleBoost;
+static FAST_RAM_ZERO_INIT pidCoefficient_t pidCoefficient[3];
+static FAST_RAM_ZERO_INIT float maxVelocity[3];
+static FAST_RAM_ZERO_INIT float relaxFactor;
+static FAST_RAM_ZERO_INIT float dtermSetpointWeight;
+static FAST_RAM_ZERO_INIT float levelGain, horizonGain, horizonTransition, horizonCutoffDegrees, horizonFactorRatio;
+static FAST_RAM_ZERO_INIT float ITermWindupPointInv;
+static FAST_RAM_ZERO_INIT uint8_t horizonTiltExpertMode;
+static FAST_RAM_ZERO_INIT timeDelta_t crashTimeLimitUs;
+static FAST_RAM_ZERO_INIT timeDelta_t crashTimeDelayUs;
+static FAST_RAM_ZERO_INIT int32_t crashRecoveryAngleDeciDegrees;
+static FAST_RAM_ZERO_INIT float crashRecoveryRate;
+static FAST_RAM_ZERO_INIT float crashDtermThreshold;
+static FAST_RAM_ZERO_INIT float crashGyroThreshold;
+static FAST_RAM_ZERO_INIT float crashSetpointThreshold;
+static FAST_RAM_ZERO_INIT float crashLimitYaw;
+static FAST_RAM_ZERO_INIT float itermLimit;
+FAST_RAM_ZERO_INIT float throttleBoost;
 pt1Filter_t throttleLpf;
-static FAST_RAM bool itermRotation;
+static FAST_RAM_ZERO_INIT bool itermRotation;
 
 void pidInitConfig(const pidProfile_t *pidProfile)
 {

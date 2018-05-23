@@ -215,6 +215,42 @@ static const char * const *sensorHardwareNames[] = {
 };
 #endif // USE_SENSOR_NAMES
 
+static void backupPgConfig(const pgRegistry_t *pg)
+{
+    memcpy(pg->copy, pg->address, pg->size);
+}
+
+static void restorePgConfig(const pgRegistry_t *pg)
+{
+    memcpy(pg->address, pg->copy, pg->size);
+}
+
+static void backupConfigs(void)
+{
+    // make copies of configs to do differencing
+    PG_FOREACH(pg) {
+        backupPgConfig(pg);
+    }
+
+    configIsInCopy = true;
+}
+
+static void restoreConfigs(void)
+{
+    PG_FOREACH(pg) {
+        restorePgConfig(pg);
+    }
+
+    configIsInCopy = false;
+}
+
+static void backupAndResetConfigs(void)
+{
+    backupConfigs();
+    // reset all configs to defaults to do differencing
+    resetConfigs();
+}
+
 static void cliPrint(const char *str)
 {
     while (*str) {
@@ -449,7 +485,11 @@ static uint16_t getValueOffset(const clivalue_t *value)
 void *cliGetValuePointer(const clivalue_t *value)
 {
     const pgRegistry_t* rec = pgFind(value->pgn);
-    return CONST_CAST(void *, rec->address + getValueOffset(value));
+    if (configIsInCopy) {
+        return CONST_CAST(void *, rec->copy + getValueOffset(value));
+    } else {
+        return CONST_CAST(void *, rec->address + getValueOffset(value));
+    }
 }
 
 const void *cliGetDefaultPointer(const clivalue_t *value)
@@ -908,6 +948,7 @@ static void printSerial(uint8_t dumpMask, const serialConfig_t *serialConfig, co
 
 static void cliSerial(char *cmdline)
 {
+    const char *format = "serial %d %d %ld %ld %ld %ld";
     if (isEmpty(cmdline)) {
         printSerial(DUMP_MASTER, serialConfig(), NULL);
         return;
@@ -984,6 +1025,16 @@ static void cliSerial(char *cmdline)
     }
 
     memcpy(currentConfig, &portConfig, sizeof(portConfig));
+
+    cliDumpPrintLinef(0, false, format,
+        portConfig.identifier,
+        portConfig.functionMask,
+        baudRates[portConfig.msp_baudrateIndex],
+        baudRates[portConfig.gps_baudrateIndex],
+        baudRates[portConfig.telemetry_baudrateIndex],
+        baudRates[portConfig.blackbox_baudrateIndex]
+        );
+
 }
 
 #ifndef SKIP_SERIAL_PASSTHROUGH
@@ -1159,6 +1210,7 @@ static void printAdjustmentRange(uint8_t dumpMask, const adjustmentRange_t *adju
 
 static void cliAdjustmentRange(char *cmdline)
 {
+    const char *format = "adjrange %u %u %u %u %u %u %u %u %u";
     int i, val = 0;
     const char *ptr;
 
@@ -1210,6 +1262,7 @@ static void cliAdjustmentRange(char *cmdline)
             if (validArgumentCount != 6) {
                 memset(ar, 0, sizeof(adjustmentRange_t));
                 cliShowParseError();
+                return;
             }
 
             // Optional arguments
@@ -1228,6 +1281,18 @@ static void cliAdjustmentRange(char *cmdline)
                 ar->adjustmentScale = val;
                 validArgumentCount++;
             }
+            cliDumpPrintLinef(0, false, format,
+                i,
+                ar->adjustmentIndex,
+                ar->auxChannelIndex,
+                MODE_STEP_TO_CHANNEL_VALUE(ar->range.startStep),
+                MODE_STEP_TO_CHANNEL_VALUE(ar->range.endStep),
+                ar->adjustmentFunction,
+                ar->auxSwitchChannelIndex,
+                ar->adjustmentCenter,
+                ar->adjustmentScale
+            );
+
         } else {
             cliShowArgumentRangeError("index", 0, MAX_ADJUSTMENT_RANGE_COUNT - 1);
         }
@@ -1367,6 +1432,7 @@ static void printRxRange(uint8_t dumpMask, const rxChannelRangeConfig_t *channel
 
 static void cliRxRange(char *cmdline)
 {
+    const char *format = "rxrange %u %u %u";
     int i, validArgumentCount = 0;
     const char *ptr;
 
@@ -1400,6 +1466,12 @@ static void cliRxRange(char *cmdline)
                 rxChannelRangeConfig_t *channelRangeConfig = rxChannelRangeConfigsMutable(i);
                 channelRangeConfig->min = rangeMin;
                 channelRangeConfig->max = rangeMax;
+                cliDumpPrintLinef(0, false, format,
+                    i,
+                    channelRangeConfig->min,
+                    channelRangeConfig->max
+                );
+
             }
         } else {
             cliShowArgumentRangeError("channel", 0, NON_AUX_CHANNEL_COUNT - 1);
@@ -1429,6 +1501,8 @@ static void printLed(uint8_t dumpMask, const ledConfig_t *ledConfigs, const ledC
 
 static void cliLed(char *cmdline)
 {
+    const char *format = "led %u %s";
+    char ledConfigBuffer[20];
     int i;
     const char *ptr;
 
@@ -1439,7 +1513,10 @@ static void cliLed(char *cmdline)
         i = atoi(ptr);
         if (i < LED_MAX_STRIP_LENGTH) {
             ptr = nextArg(cmdline);
-            if (!parseLedStripConfig(i, ptr)) {
+            if (parseLedStripConfig(i, ptr)) {
+                generateLedConfig((ledConfig_t *)&ledStripConfig()->ledConfigs[i], ledConfigBuffer, sizeof(ledConfigBuffer));
+                cliDumpPrintLinef(0, false, format, i, ledConfigBuffer);
+            } else {
                 cliShowParseError();
             }
         } else {
@@ -1467,6 +1544,7 @@ static void printColor(uint8_t dumpMask, const hsvColor_t *colors, const hsvColo
 
 static void cliColor(char *cmdline)
 {
+    const char *format = "color %u %d,%u,%u";
     if (isEmpty(cmdline)) {
         printColor(DUMP_MASTER, ledStripConfig()->colors, NULL);
     } else {
@@ -1474,7 +1552,10 @@ static void cliColor(char *cmdline)
         const int i = atoi(ptr);
         if (i < LED_CONFIGURABLE_COLOR_COUNT) {
             ptr = nextArg(cmdline);
-            if (!parseColor(i, ptr)) {
+            if (parseColor(i, ptr)) {
+                const hsvColor_t *color = &ledStripConfig()->colors[i];
+                cliDumpPrintLinef(0, false, format, i, color->h, color->s, color->v);
+            } else {
                 cliShowParseError();
             }
         } else {
@@ -1614,6 +1695,7 @@ static void printServo(uint8_t dumpMask, const servoParam_t *servoParams, const 
 
 static void cliServo(char *cmdline)
 {
+    const char *format = "servo %u %d %d %d %d %d";
     enum { SERVO_ARGUMENT_COUNT = 6 };
     int16_t arguments[SERVO_ARGUMENT_COUNT];
 
@@ -1681,6 +1763,16 @@ static void cliServo(char *cmdline)
         servo->middle = arguments[MIDDLE];
         servo->rate = arguments[RATE];
         servo->forwardFromChannel = arguments[FORWARD];
+
+        cliDumpPrintLinef(0, false, format,
+            i,
+            servo->min,
+            servo->max,
+            servo->middle,
+            servo->rate,
+            servo->forwardFromChannel
+        );
+
     }
 }
 #endif
@@ -2050,6 +2142,7 @@ static void printVtx(uint8_t dumpMask, const vtxConfig_t *vtxConfig, const vtxCo
 
 static void cliVtx(char *cmdline)
 {
+    const char *format = "vtx %u %u %u %u %u %u";
     int i, val = 0;
     const char *ptr;
 
@@ -2091,6 +2184,16 @@ static void cliVtx(char *cmdline)
 
             if (validArgumentCount != 5) {
                 memset(cac, 0, sizeof(vtxChannelActivationCondition_t));
+                cliShowParseError();
+            } else {
+                cliDumpPrintLinef(0, false, format,
+                    i,
+                    cac->auxChannelIndex,
+                    cac->band,
+                    cac->channel,
+                    MODE_STEP_TO_CHANNEL_VALUE(cac->range.startStep),
+                    MODE_STEP_TO_CHANNEL_VALUE(cac->range.endStep)
+                );
             }
         } else {
             cliShowArgumentRangeError("index", 0, MAX_CHANNEL_ACTIVATION_CONDITION_COUNT - 1);
@@ -2370,11 +2473,20 @@ static void cliMap(char *cmdline)
     cliPrintLinef("map %s", buf);
 }
 
+static char *skipSpace(char *buffer)
+{
+    while (*(buffer) == ' ') {
+        buffer++;
+    }
+
+    return buffer;
+}
+
 static char *checkCommand(char *cmdLine, const char *command)
 {
     if (!strncasecmp(cmdLine, command, strlen(command))   // command names match
         && (isspace((unsigned)cmdLine[strlen(command)]) || cmdLine[strlen(command)] == 0)) {
-        return cmdLine + strlen(command) + 1;
+        return skipSpace(cmdLine + strlen(command) + 1);
     } else {
         return 0;
     }
@@ -3003,39 +3115,50 @@ static void cliDefaults(char *cmdline)
     }
 }
 
+void cliPrintVarDefault(const clivalue_t *value)
+{
+    const pgRegistry_t *pg = pgFind(value->pgn);
+    if (pg) {
+        const char *defaultFormat = "Default value: ";
+        const int valueOffset = getValueOffset(value);
+        const bool equalsDefault = valuePtrEqualsDefault(value, pg->copy + valueOffset, pg->address + valueOffset);
+        if (!equalsDefault) {
+            cliPrintf(defaultFormat, value->name);
+            printValuePointer(value, (uint8_t*)pg->address + valueOffset, false);
+            cliPrintLinefeed();
+        }
+    }
+}
+
 STATIC_UNIT_TESTED void cliGet(char *cmdline)
 {
     const clivalue_t *val;
     int matchedCommands = 0;
 
+    backupAndResetConfigs();
+
     for (uint32_t i = 0; i < valueTableEntryCount; i++) {
         if (strcasestr(valueTable[i].name, cmdline)) {
             val = &valueTable[i];
+            if (matchedCommands > 0) {
+                cliPrintLinefeed();
+            }
             cliPrintf("%s = ", valueTable[i].name);
             cliPrintVar(val, 0);
             cliPrintLinefeed();
             cliPrintVarRange(val);
-            cliPrintLinefeed();
-
+            cliPrintVarDefault(val);
             matchedCommands++;
         }
     }
 
+    restoreConfigs();
 
     if (matchedCommands) {
         return;
     }
 
     cliPrintLine("Invalid name");
-}
-
-static char *skipSpace(char *buffer)
-{
-    while (*(buffer) == ' ') {
-        buffer++;
-    }
-
-    return buffer;
 }
 
 static uint8_t getWordLength(char *bufBegin, char *bufEnd)
@@ -3437,6 +3560,9 @@ const cliResourceValue_t resourceTable[] = {
 #endif
 #ifdef USE_MAG
     DEFS( OWNER_COMPASS_CS,    PG_COMPASS_CONFIG, compassConfig_t, mag_spi_csn ),
+#ifdef USE_MAG_DATA_READY_SIGNAL
+    DEFS( OWNER_COMPASS_EXTI,  PG_COMPASS_CONFIG, compassConfig_t, interruptTag ),
+#endif
 #endif
 #ifdef USE_SDCARD
     DEFS( OWNER_SDCARD_CS,     PG_SDCARD_CONFIG, sdcardConfig_t, chipSelectTag ),
@@ -3804,25 +3930,6 @@ error:
 }
 #endif
 
-static void backupConfigs(void)
-{
-    // make copies of configs to do differencing
-    PG_FOREACH(pg) {
-        memcpy(pg->copy, pg->address, pg->size);
-    }
-
-    configIsInCopy = true;
-}
-
-static void restoreConfigs(void)
-{
-    PG_FOREACH(pg) {
-        memcpy(pg->address, pg->copy, pg->size);
-    }
-
-    configIsInCopy = false;
-}
-
 static void printConfig(char *cmdline, bool doDiff)
 {
     uint8_t dumpMask = DUMP_MASTER;
@@ -3842,14 +3949,8 @@ static void printConfig(char *cmdline, bool doDiff)
     if (doDiff) {
         dumpMask = dumpMask | DO_DIFF;
     }
-
-    backupConfigs();
-    // reset all configs to defaults to do differencing
-    resetConfigs();
-
-#if defined(USE_TARGET_CONFIG)
-    targetConfiguration();
-#endif
+    
+    backupAndResetConfigs();
     if (checkCommand(options, "defaults")) {
         dumpMask = dumpMask | SHOW_DEFAULTS;   // add default values as comments for changed values
     }

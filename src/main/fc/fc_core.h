@@ -47,7 +47,6 @@ void tryArm(void);
 
 bool processRx(timeUs_t currentTimeUs);
 void updateArmingStatus(void);
-void updateRcCommands(void);
 
 void taskMainPidLoop(timeUs_t currentTimeUs);
 bool isFlipOverAfterCrashMode(void);

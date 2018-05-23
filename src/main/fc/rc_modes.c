@@ -42,7 +42,7 @@ boxBitmask_t rcModeActivationMask; // one bit per mode defined in boxId_e
 static bool modeChangesDisabled = false;
 
 PG_REGISTER_ARRAY(modeActivationCondition_t, MAX_MODE_ACTIVATION_CONDITION_COUNT, modeActivationConditions,
-                  PG_MODE_ACTIVATION_PROFILE, 0);
+                  PG_MODE_ACTIVATION_PROFILE, 1);
 
 bool IS_RC_MODE_ACTIVE(boxId_e boxId)
 {
