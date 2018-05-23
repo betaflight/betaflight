@@ -1,9 +1,9 @@
 MCU: STM32F722RE
-IMU: MPU-6000
+IMU: ICM-20602
 IMU Interrupt: yes
 BARO: NO
 VCP: YES
-Hardware UARTS:
+Hardware UARTS: 6 uarts
 OSD: uses a AB7456 chip
 Blackbox: SD Card
 PPM/UART NOT Shared: YES
