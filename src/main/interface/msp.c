@@ -1224,8 +1224,8 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, 0); // reserved
         sbufWriteU8(dst, currentPidProfile->vbatPidCompensation);
         sbufWriteU8(dst, currentPidProfile->setpointRelaxRatio);
-        sbufWriteU8(dst, currentPidProfile->dtermSetpointWeight);
-        sbufWriteU8(dst, 0); // reserved
+        sbufWriteU16(dst, currentPidProfile->dtermSetpointWeight);
+//        sbufWriteU8(dst, 0); // reserved
         sbufWriteU8(dst, 0); // reserved
         sbufWriteU8(dst, 0); // reserved
         sbufWriteU16(dst, currentPidProfile->rateAccelLimit);
@@ -1680,8 +1680,8 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         sbufReadU8(src); // reserved
         currentPidProfile->vbatPidCompensation = sbufReadU8(src);
         currentPidProfile->setpointRelaxRatio = sbufReadU8(src);
-        currentPidProfile->dtermSetpointWeight = sbufReadU8(src);
-        sbufReadU8(src); // reserved
+        currentPidProfile->dtermSetpointWeight = sbufReadU16(src);  // not sure, if this is OK. Low bit is written 1st, so it should be compatible
+//        sbufReadU8(src); // reserved
         sbufReadU8(src); // reserved
         sbufReadU8(src); // reserved
         currentPidProfile->rateAccelLimit = sbufReadU16(src);

@@ -317,10 +317,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
         pidCoefficient[axis].Kd = DTERM_SCALE * pidProfile->pid[axis].D;
     }
 
-    dtermSetpointWeight = pidProfile->dtermSetpointWeight / 100.0f;
-    if (dtermSetpointWeight > 2.0f) {
-        dtermSetpointWeight = 10 * (dtermSetpointWeight - 2.0f) + 2.0f;
-    }
+    dtermSetpointWeight = pidProfile->dtermSetpointWeight / 127.0f;
     if (pidProfile->setpointRelaxRatio == 0) {
         relaxFactor = 0;
     } else {

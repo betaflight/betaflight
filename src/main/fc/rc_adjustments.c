@@ -401,7 +401,7 @@ static int applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t a
         blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RC_RATE_YAW, newValue);
         break;
     case ADJUSTMENT_D_SETPOINT:
-        newValue = constrain((int)pidProfile->dtermSetpointWeight + delta, 0, 254); // FIXME magic numbers repeated in cli.c
+        newValue = constrain((int)pidProfile->dtermSetpointWeight + delta, 0, 2000); // FIXME magic numbers repeated in cli.c
         pidProfile->dtermSetpointWeight = newValue;
         blackboxLogInflightAdjustmentEvent(ADJUSTMENT_D_SETPOINT, newValue);
         break;
@@ -550,7 +550,7 @@ static int applyAbsoluteAdjustment(controlRateConfig_t *controlRateConfig, adjus
         blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RC_RATE_YAW, newValue);
         break;
     case ADJUSTMENT_D_SETPOINT:
-        newValue = constrain(value, 0, 254); // FIXME magic numbers repeated in cli.c
+        newValue = constrain(value, 0, 2000); // FIXME magic numbers repeated in cli.c
         pidProfile->dtermSetpointWeight = newValue;
         blackboxLogInflightAdjustmentEvent(ADJUSTMENT_D_SETPOINT, newValue);
         break;
