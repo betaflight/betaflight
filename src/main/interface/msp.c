@@ -1031,6 +1031,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
        }
         break;
 
+#ifdef USE_GPS_RESCUE
     case MSP_GPS_RESCUE:
         sbufWriteU16(dst, gpsRescue()->angle);
         sbufWriteU16(dst, gpsRescue()->initialAltitude);
@@ -1053,6 +1054,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, gpsRescue()->velD);
         sbufWriteU16(dst, gpsRescue()->yawP);
         break;
+#endif
 #endif
 
     case MSP_ACC_TRIM:
@@ -1577,7 +1579,8 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         gpsConfigMutable()->autoBaud = sbufReadU8(src);
         break;
 
-    case MSP_SET_GPS_RESCUE:
+#ifdef USE_GPS_RESCUE
+        case MSP_SET_GPS_RESCUE:
         gpsRescueMutable()->angle = sbufReadU16(src);
         gpsRescueMutable()->initialAltitude = sbufReadU16(src);
         gpsRescueMutable()->descentDistance = sbufReadU16(src);
@@ -1598,6 +1601,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         gpsRescueMutable()->velD = sbufReadU16(src);
         gpsRescueMutable()->yawP = sbufReadU16(src);
         break;
+#endif
 #endif
 
 #ifdef USE_MAG
