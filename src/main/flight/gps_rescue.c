@@ -363,8 +363,8 @@ void setBearing(int16_t deg)
         dif -= 360;
 
     dif *= -GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
-    dif = constrain(dif, -5, 5); // TODO: very basic smoothing, we need something less twitchy
-    rcCommand[YAW] -= dif * gpsRescue()->yawP / 20;
+
+    rcCommand[YAW] = - (dif * gpsRescue()->yawP / 20);
 }
 
 #endif
