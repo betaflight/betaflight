@@ -27,8 +27,8 @@
 
 #define NOINLINE
 #define FAST_CODE
+#define FAST_RAM_ZERO_INIT
 #define FAST_RAM
-#define FAST_RAM_INITIALIZED
 
 #define MAX_PROFILE_COUNT 3
 #define USE_MAG

@@ -31,12 +31,12 @@
 #include "timer.h"
 #include "drivers/pwm_output.h"
 
-static FAST_RAM pwmWriteFn *pwmWrite;
-static FAST_RAM pwmOutputPort_t motors[MAX_SUPPORTED_MOTORS];
-static FAST_RAM pwmCompleteWriteFn *pwmCompleteWrite = NULL;
+static FAST_RAM_ZERO_INIT pwmWriteFn *pwmWrite;
+static FAST_RAM_ZERO_INIT pwmOutputPort_t motors[MAX_SUPPORTED_MOTORS];
+static FAST_RAM_ZERO_INIT pwmCompleteWriteFn *pwmCompleteWrite = NULL;
 
 #ifdef USE_DSHOT
-FAST_RAM loadDmaBufferFn *loadDmaBuffer;
+FAST_RAM_ZERO_INIT loadDmaBufferFn *loadDmaBuffer;
 #endif
 
 #ifdef USE_SERVOS
@@ -51,7 +51,7 @@ static uint16_t freqBeep = 0;
 static bool pwmMotorsEnabled = false;
 static bool isDshot = false;
 #ifdef USE_DSHOT_DMAR
-FAST_RAM bool useBurstDshot = false;
+FAST_RAM_ZERO_INIT bool useBurstDshot = false;
 #endif
 
 static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8_t output)

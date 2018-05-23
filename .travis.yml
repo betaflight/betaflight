@@ -1,3 +1,26 @@
+os:
+  - linux
+
+sudo: false
+
+dist: trusty
+
+addons:
+  apt:
+    packages:
+      - lcov
+      - build-essential
+      - git
+      - libc6-i386
+      - time
+      - libblocksruntime-dev
+
+git:
+  depth: 5
+
+# We use cpp for unit tests, and c for the main project.
+language: cpp
+compiler: clang
 
 env:
 #  - PUBLISHMETA=True
@@ -18,28 +41,6 @@ env:
 #  - TARGET=AIORACERF3
 #  - TARGET=...
 
-# use new docker environment
-sudo: false
-
-git:
-  depth: 5
-
-addons:
-  apt:
-    packages:
-      - lcov
-      - build-essential
-      - git
-      - libc6-i386
-      - time
-      - libblocksruntime-dev
-
-# We use cpp for unit tests, and c for the main project.
-language: cpp
-compiler: clang
-dist: trusty
-
-
 before_install:
   - pip install --user cpp-coveralls
   - gem install coveralls-lcov
@@ -48,7 +49,7 @@ install:
   - make arm_sdk_install
 
 before_script:
-  - tools/gcc-arm-none-eabi-7-2017-q4-major/bin/arm-none-eabi-gcc --version
+  - make arm_sdk_version
   - clang --version
   - clang++ --version
   - gcc --version
@@ -59,12 +60,6 @@ cache:
   directories:
   - downloads
   - tools
-
-
-#notifications:
-#  irc: "chat.freenode.net#cleanflight"
-#  use_notice: true
-#  skip_join: true
 
 notifications:
   slack: betaflightgroup:LQSj02nsBEdefcO5UQcLgB0U

@@ -101,11 +101,11 @@
 #endif // USE_ITCM_RAM
 
 #ifdef USE_FAST_RAM
-#define FAST_RAM                    __attribute__ ((section(".fastram_bss"), aligned(4)))
-#define FAST_RAM_INITIALIZED        __attribute__ ((section(".fastram_data"), aligned(4)))
+#define FAST_RAM_ZERO_INIT             __attribute__ ((section(".fastram_bss"), aligned(4)))
+#define FAST_RAM                    __attribute__ ((section(".fastram_data"), aligned(4)))
 #else
+#define FAST_RAM_ZERO_INIT
 #define FAST_RAM
-#define FAST_RAM_INITIALIZED
 #endif // USE_FAST_RAM
 
 #ifdef STM32F4

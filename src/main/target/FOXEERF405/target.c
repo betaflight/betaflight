@@ -17,6 +17,7 @@
  *
  * If not, see <http://www.gnu.org/licenses/>.
  */
+
 #include <stdint.h>
 
 #include <platform.h>
@@ -27,15 +28,18 @@
 #include "drivers/timer_def.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
+    DEF_TIM(TIM12, CH2, PB15,  TIM_USE_PPM,   0, 0), // PPM
 
-    DEF_TIM(TIM2,  CH2,   PB3, TIM_USE_ANY,                0, 0), // USE FOR CAMERA CONTROL
-
-    DEF_TIM(TIM4,  CH1,  PB6, TIM_USE_MOTOR,               0, 0), // D1-ST6
-    DEF_TIM(TIM4,  CH2,  PB7, TIM_USE_MOTOR,               0, 0), // D1-ST6
-    DEF_TIM(TIM4,  CH3,  PB8, TIM_USE_MOTOR,               0, 0), // D1-ST6
-    DEF_TIM(TIM4,  CH4,  PB9, TIM_USE_MOTOR,               0, 0), // D1-ST6
-
-    DEF_TIM(TIM3,  CH4, PB1, TIM_USE_MOTOR | TIM_USE_LED,  0, 0), // D1-ST2
+    DEF_TIM(TIM3, CH3, PB0,  TIM_USE_MOTOR, 0, 0),   // S1 (1,7)
+    DEF_TIM(TIM3, CH1, PB4,  TIM_USE_MOTOR, 0, 0),   // S2 (1,4)
+    DEF_TIM(TIM8, CH3, PC8, TIM_USE_MOTOR, 0, 0),    // S3 (2,4)
+    DEF_TIM(TIM8, CH4, PC9,  TIM_USE_MOTOR, 0, 0),   // S4 (2,7)  
+    DEF_TIM(TIM8, CH1, PC6,  TIM_USE_MOTOR, 0, 0),   // S5 (2,2) 
+    DEF_TIM(TIM8, CH2, PC7,  TIM_USE_MOTOR, 0, 0),   // S6 (2,3)
 
 
+    DEF_TIM(TIM1, CH3, PA10,  TIM_USE_LED, 0, 0),    // LED STRIP(2,6)
+
+    DEF_TIM(TIM2, CH2, PB3,  TIM_USE_PWM, 0, 0),     // FC CAM	
+	
 };

@@ -548,6 +548,8 @@ static bool osdDrawSingleElement(uint8_t item)
                 strcpy(buff, "STAB");
             } else if (FLIGHT_MODE(HORIZON_MODE)) {
                 strcpy(buff, "HOR ");
+            } else if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
+                strcpy(buff, "RESC");
             } else if (isAirmodeActive()) {
                 strcpy(buff, "AIR ");
             } else {

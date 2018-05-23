@@ -68,6 +68,7 @@ elif [ $TARGET ] ; then
 elif [ $GOAL ] ; then
     if [ "test" == "$GOAL" ] ; then
         $MAKE check-target-independence || exit $?
+        $MAKE check-fastram-usage-correctness || exit $?
     fi
 
     $MAKE $GOAL || exit $?
