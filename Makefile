@@ -477,7 +477,7 @@ test junittest:
 
 check-target-independence:
 	$(V1) for test_target in $(VALID_TARGETS); do \
-		FOUND=$$(grep -rP "\W$${test_target}\W?" src/main/ | grep -vP "(\/\/)|(\/\*).*\W$${test_target}\W?" | grep -vP "^src/main/target"); \
+		FOUND=$$(grep -rE "\W$${test_target}\W?" src/main | grep -vE "(//)|(/\*).*\W$${test_target}\W?" | grep -vE "^src/main/target"); \
 		if [ "$${FOUND}" != "" ]; then \
 			echo "Target dependencies found:"; \
 			echo "$${FOUND}"; \
