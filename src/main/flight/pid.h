@@ -116,6 +116,10 @@ typedef struct pidProfile_s {
     uint8_t throttle_boost_cutoff;          // Which cutoff frequency to use for throttle boost. higher cutoffs keep the boost on for shorter. Specified in hz.
     uint8_t  iterm_rotation;                // rotates iterm to translate world errors to local coordinate system
     uint8_t  smart_feedforward;             // takes only the larger of P and the D weight feed forward term if they have the same sign.
+    uint8_t iterm_relax_cutoff_low;        // Slowest setpoint response to prevent iterm accumulation
+    uint8_t iterm_relax_cutoff_high;       // Fastest setpoint response to prevent iterm accumulation
+    uint8_t iterm_relax;                   // Enable iterm suppression during stick input
+    
 } pidProfile_t;
 
 #ifndef USE_OSD_SLAVE

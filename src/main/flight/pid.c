@@ -139,7 +139,10 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .throttle_boost = 0,
         .throttle_boost_cutoff = 15,
         .iterm_rotation = false,
-        .smart_feedforward = false         
+        .smart_feedforward = false,
+        .iterm_relax = false,
+        .iterm_relax_cutoff_low = 3,
+        .iterm_relax_cutoff_high = 15,
     );
 }
 
@@ -198,6 +201,10 @@ static FAST_RAM_ZERO_INIT filterApplyFnPtr dtermLowpass2ApplyFn;
 static FAST_RAM_ZERO_INIT pt1Filter_t dtermLowpass2[2];
 static FAST_RAM_ZERO_INIT filterApplyFnPtr ptermYawLowpassApplyFn;
 static FAST_RAM_ZERO_INIT pt1Filter_t ptermYawLowpass;
+static FAST_RAM_ZERO_INIT pt1Filter_t windupLpf[3][2];
+static FAST_RAM_ZERO_INIT bool itermRelax;
+static FAST_RAM_ZERO_INIT uint8_t itermRelaxCutoffLow;
+static FAST_RAM_ZERO_INIT uint8_t itermRelaxCutoffHigh;
 
 void pidInitFilters(const pidProfile_t *pidProfile)
 {
@@ -282,6 +289,11 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     }
 
     pt1FilterInit(&throttleLpf, pt1FilterGain(pidProfile->throttle_boost_cutoff, dT));
+    if (itermRelax)     
+        for (int i = 0; i < 3; i++) {
+            pt1FilterInit(&windupLpf[i][0], pt1FilterGain(itermRelaxCutoffLow, dT));
+            pt1FilterInit(&windupLpf[i][1], pt1FilterGain(itermRelaxCutoffHigh, dT));
+        }
 }
 
 typedef struct pidCoefficient_s {
@@ -345,8 +357,11 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     crashLimitYaw = pidProfile->crash_limit_yaw;
     itermLimit = pidProfile->itermLimit;
     throttleBoost = pidProfile->throttle_boost * 0.1f;
-    itermRotation = pidProfile->iterm_rotation == 1;
-    smartFeedforward = pidProfile->smart_feedforward == 1;
+    itermRotation = pidProfile->iterm_rotation;
+    smartFeedforward = pidProfile->smart_feedforward;
+    itermRelax = pidProfile->iterm_relax;
+    itermRelaxCutoffLow = pidProfile->iterm_relax_cutoff_low;
+    itermRelaxCutoffHigh = pidProfile->iterm_relax_cutoff_high;
 }
 
 void pidInit(const pidProfile_t *pidProfile)
@@ -592,7 +607,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
             currentPidSetpoint = 0.0f;
         }
 #endif // USE_YAW_SPIN_RECOVERY
-
+        
         // -----calculate error rate
         const float gyroRate = gyro.gyroADCf[axis]; // Process variable from gyro output in deg/sec
         float errorRate = currentPidSetpoint - gyroRate; // r - y
@@ -612,8 +627,21 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
         }
 
         // -----calculate I component
+        float itermErrorRate;
+        if (itermRelax) {
+            const float gyroTargetHigh = pt1FilterApply(&windupLpf[axis][0], currentPidSetpoint);
+            const float gyroTargetLow =  pt1FilterApply(&windupLpf[axis][1], currentPidSetpoint);
+            const float gmax = MAX(gyroTargetHigh, gyroTargetLow);
+            const float gmin = MIN(gyroTargetHigh, gyroTargetLow);
+            if (gyroRate >= gmin && gyroRate <= gmax)
+                itermErrorRate = 0.0f;
+            else
+                itermErrorRate = (gyroRate > gmax ? gmax : gmin ) - gyroRate;
+        }
+        else itermErrorRate = errorRate;
+        
         const float ITerm = pidData[axis].I;
-        const float ITermNew = constrainf(ITerm + pidCoefficient[axis].Ki * errorRate * dynCi, -itermLimit, itermLimit);
+        const float ITermNew = constrainf(ITerm + pidCoefficient[axis].Ki * itermErrorRate * dynCi, -itermLimit, itermLimit);
         const bool outputSaturated = mixerIsOutputSaturated(axis, errorRate);
         if (outputSaturated == false || ABS(ITermNew) < ABS(ITerm)) {
             // Only increase ITerm if output is not saturated
