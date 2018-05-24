@@ -638,13 +638,13 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             pidData[axis].D = pidCoefficient[axis].Kd * delta * tpaFactor;
 
 
-            const float pid_ff =
+            const float pidFeedForward =
                 pidCoefficient[axis].Kd * dynCd * transition *
                 (currentPidSetpoint - previousPidSetpoint[axis]) * tpaFactor / dT;
-            if ((pidData[axis].P > 0) == (pid_ff > 0)) {
-                if (ABS(pid_ff) > ABS(pidData[axis].P)) {
+            if ((pidData[axis].P > 0) == (pidFeedForward > 0)) {
+                if (ABS(pidFeedForward) > ABS(pidData[axis].P)) {
                     pidData[axis].P = 0;
-                    pidData[axis].D += pid_ff;
+                    pidData[axis].D += pidFeedForward;
                 }
             }
 
