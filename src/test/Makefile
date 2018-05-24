@@ -296,6 +296,7 @@ pid_unittest_SRC :=  \
 		$(USER_DIR)/drivers/accgyro/gyro_sync.c \
 		$(USER_DIR)/flight/pid.c \
 		$(USER_DIR)/pg/pg.c \
+		$(USER_DIR)/build/debug.c \
 		$(USER_DIR)/fc/runtime_config.c
 
 rcdevice_unittest_DEFINES := \
