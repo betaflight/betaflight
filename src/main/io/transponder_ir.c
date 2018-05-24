@@ -24,7 +24,7 @@
 #include <string.h>
 #include <stdarg.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #ifdef USE_TRANSPONDER
 #include "build/build_config.h"

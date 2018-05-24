@@ -25,7 +25,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #ifdef USE_RX_SYMA
 

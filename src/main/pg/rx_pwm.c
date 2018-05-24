@@ -18,7 +18,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <platform.h>
+#include "platform.h"
 
 #if defined(USE_PWM) || defined(USE_PPM)
 

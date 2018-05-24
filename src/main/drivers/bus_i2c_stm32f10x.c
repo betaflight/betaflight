@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #if defined(USE_I2C) && !defined(SOFT_I2C)
 

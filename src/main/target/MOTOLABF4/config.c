@@ -21,7 +21,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #ifdef USE_TARGET_CONFIG
 

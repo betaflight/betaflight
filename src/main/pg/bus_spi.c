@@ -18,7 +18,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <platform.h>
+#include "platform.h"
 
 #ifdef USE_SPI
 

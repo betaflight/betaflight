@@ -22,11 +22,11 @@
 #include <stdint.h>
 #include <math.h>
 
-#include <platform.h>
+#include "platform.h"
 
-#include <common/maths.h>
+#include "common/maths.h"
 
-#include <drivers/audio.h>
+#include "drivers/audio.h"
 
 static DAC_HandleTypeDef hdac;
 static TIM_HandleTypeDef handle;

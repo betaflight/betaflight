@@ -21,7 +21,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #if defined(USE_BARO) && defined(USE_BARO_SPI_LPS)
 
