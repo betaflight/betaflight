@@ -659,7 +659,6 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         }
     }
 
-    
     // calculating the PID sum
     pidData[FD_ROLL].Sum = pidData[FD_ROLL].P + pidData[FD_ROLL].I + pidData[FD_ROLL].D;
     pidData[FD_PITCH].Sum = pidData[FD_PITCH].P + pidData[FD_PITCH].I + pidData[FD_PITCH].D;
