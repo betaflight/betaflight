@@ -105,6 +105,8 @@ typedef struct gyroConfig_s {
     bool     yaw_spin_recovery;
     int16_t  yaw_spin_threshold;
 
+    uint16_t gyroCalibrationDuration;  // Gyro calibration duration in 1/100 second
+
 } gyroConfig_t;
 
 PG_DECLARE(gyroConfig_t, gyroConfig);
