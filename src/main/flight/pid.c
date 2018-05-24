@@ -627,9 +627,8 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             // This is done to avoid DTerm spikes that occur with dynamically
             // calculated deltaT whenever another task causes the PID
             // loop execution to be delayed.
-            const float delta = (
-                dynCd * transition * (currentPidSetpoint - previousPidSetpoint[axis]) -
-                (gyroRateDterm[axis] - previousGyroRateDterm[axis])) / dT;
+            const float delta =
+                - (gyroRateDterm[axis] - previousGyroRateDterm[axis]) / dT;
 
             previousPidSetpoint[axis] = currentPidSetpoint;
             previousGyroRateDterm[axis] = gyroRateDterm[axis];
@@ -637,6 +636,17 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             detectAndSetCrashRecovery(pidProfile->crash_recovery, axis, currentTimeUs, delta, errorRate);
 
             pidData[axis].D = pidCoefficient[axis].Kd * delta * tpaFactor;
+
+
+            const float pid_ff =
+                pidCoefficient[axis].Kd * dynCd * transition *
+                (currentPidSetpoint - previousPidSetpoint[axis]) * tpaFactor / dT;
+            if ((pidData[axis].P > 0) == (pid_ff > 0)) {
+                if (ABS(pid_ff) > ABS(pidData[axis].P)) {
+                    pidData[axis].P = 0;
+                    pidData[axis].D += pid_ff;
+                }
+            }
 
 #ifdef USE_YAW_SPIN_RECOVERY
             if (yawSpinActive)  {
@@ -649,6 +659,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         }
     }
 
+    
     // calculating the PID sum
     pidData[FD_ROLL].Sum = pidData[FD_ROLL].P + pidData[FD_ROLL].I + pidData[FD_ROLL].D;
     pidData[FD_PITCH].Sum = pidData[FD_PITCH].P + pidData[FD_PITCH].I + pidData[FD_PITCH].D;
