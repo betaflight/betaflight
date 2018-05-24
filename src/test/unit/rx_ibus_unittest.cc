@@ -18,7 +18,7 @@
 #include <stdint.h>
 
 extern "C" {
-#include <platform.h>
+#include "platform.h"
 #include "pg/pg.h"
 #include "drivers/serial.h"
 #include "drivers/time.h"

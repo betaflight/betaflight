@@ -21,7 +21,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <platform.h>
+#include "platform.h"
 #include "drivers/io.h"
 
 #include "drivers/dma.h"

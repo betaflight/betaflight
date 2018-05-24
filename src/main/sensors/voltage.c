@@ -22,7 +22,7 @@
 #include "stdint.h"
 #include "string.h"
 
-#include <platform.h>
+#include "platform.h"
 
 #include "build/build_config.h"
 

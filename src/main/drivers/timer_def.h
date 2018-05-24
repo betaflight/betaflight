@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include <platform.h>
+#include "platform.h"
 #include "common/utils.h"
 
 // allow conditional definition of DMA related members

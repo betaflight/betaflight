@@ -23,7 +23,7 @@
 #include <string.h>
 #include <math.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #include "build/build_config.h"
 #include "build/debug.h"
