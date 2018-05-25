@@ -607,7 +607,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
             currentPidSetpoint = 0.0f;
         }
 #endif // USE_YAW_SPIN_RECOVERY
-        
+
         // -----calculate error rate
         const float gyroRate = gyro.gyroADCf[axis]; // Process variable from gyro output in deg/sec
         float errorRate = currentPidSetpoint - gyroRate; // r - y
@@ -635,10 +635,12 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
             DEBUG_SET(DEBUG_ITERM_RELAX, 1, gyroTargetLow);
             const float gmax = MAX(gyroTargetHigh, gyroTargetLow);
             const float gmin = MIN(gyroTargetHigh, gyroTargetLow);
-            if (gyroRate >= gmin && gyroRate <= gmax)
+            if (gyroRate >= gmin && gyroRate <= gmax) {
                 itermErrorRate = 0.0f;
-            else
+            }
+            else {
                 itermErrorRate = (gyroRate > gmax ? gmax : gmin ) - gyroRate;
+            }
         }
         else itermErrorRate = errorRate;
         
