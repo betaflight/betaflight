@@ -640,19 +640,23 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
 
             pidData[axis].D = pidCoefficient[axis].Kd * delta * tpaFactor;
 
-
             const float pidFeedForward =
                 pidCoefficient[axis].Kd * dynCd * transition *
                 (currentPidSetpoint - previousPidSetpoint[axis]) * tpaFactor / dT;
             bool addFeedforward = true;
-            if (smartFeedforward)
+            if (smartFeedforward) {
                 if (pidData[axis].P * pidFeedForward > 0) {
                     if (ABS(pidFeedForward) > ABS(pidData[axis].P)) {
                         pidData[axis].P = 0;
                     }
-                    else addFeedforward = false;
+                    else {
+                        addFeedforward = false;
+                    }
                 }
-            if (addFeedforward) pidData[axis].D += pidFeedForward;
+            }
+            if (addFeedforward) {
+                pidData[axis].D += pidFeedForward;
+            }
 
 #ifdef USE_YAW_SPIN_RECOVERY
             if (yawSpinActive)  {
