@@ -115,7 +115,7 @@ const char * const lookupTableGyroHardware[] = {
 #if defined(USE_SENSOR_NAMES) || defined(USE_BARO)
 // sync with baroSensor_e
 const char * const lookupTableBaroHardware[] = {
-    "AUTO", "NONE", "BMP085", "MS5611", "BMP280", "LPS"
+    "AUTO", "NONE", "BMP085", "MS5611", "BMP280", "LPS", "QMP6988"
 };
 #endif
 #if defined(USE_SENSOR_NAMES) || defined(USE_MAG)
