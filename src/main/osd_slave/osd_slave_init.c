@@ -65,9 +65,6 @@
 
 #include "msp/msp_serial.h"
 
-#include "rx/rx.h"
-#include "rx/spektrum.h"
-
 #include "io/beeper.h"
 #include "io/displayport_max7456.h"
 #include "io/flashfs.h"
