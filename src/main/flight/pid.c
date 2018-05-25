@@ -364,8 +364,13 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     crashLimitYaw = pidProfile->crash_limit_yaw;
     itermLimit = pidProfile->itermLimit;
     throttleBoost = pidProfile->throttle_boost * 0.1f;
+<<<<<<< HEAD
     itermRotation = pidProfile->iterm_rotation;
     smartFeedforward = pidProfile->smart_feedforward;
+=======
+    smartFeedforward = pidProfile->smart_feedforward;
+    itermRotation = pidProfile->iterm_rotation;
+>>>>>>> incorporate style feedback
     itermRelax = pidProfile->iterm_relax;
     itermRelaxCutoffLow = pidProfile->iterm_relax_cutoff_low;
     itermRelaxCutoffHigh = pidProfile->iterm_relax_cutoff_high;
