@@ -20,11 +20,15 @@
 
 #pragma once
 
-#include <stdbool.h>
-#include <stdint.h>
+#include "drivers/io_types.h"
 
-struct rxSpiConfig_s;
-struct rxRuntimeConfig_s;
-bool cx10Nrf24Init(const struct rxSpiConfig_s *rxSpiConfig, struct rxRuntimeConfig_s *rxRuntimeConfig);
-void cx10Nrf24SetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload);
-rx_spi_received_e cx10Nrf24DataReceived(uint8_t *payload);
+#include "pg/pg.h"
+
+typedef struct rxSpiConfig_s {
+    uint8_t rx_spi_protocol;                // type of SPI RX protocol
+                                            // nrf24: 0 = v202 250kbps. (Must be enabled by FEATURE_RX_NRF24 first.)
+    uint32_t rx_spi_id;
+    uint8_t rx_spi_rf_channel_count;
+} rxSpiConfig_t;
+
+PG_DECLARE(rxSpiConfig_t, rxSpiConfig);

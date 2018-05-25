@@ -283,10 +283,10 @@ static void h8_3dNrf24Setup(rx_spi_protocol_e protocol, const uint32_t *rxSpiId)
     NRF24L01_SetRxMode(); // enter receive mode to start listening for packets
 }
 
-bool h8_3dNrf24Init(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+bool h8_3dNrf24Init(const rxSpiConfig_t *rxSpiConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     rxRuntimeConfig->channelCount = RC_CHANNEL_COUNT;
-    h8_3dNrf24Setup((rx_spi_protocol_e)rxConfig->rx_spi_protocol, &rxConfig->rx_spi_id);
+    h8_3dNrf24Setup((rx_spi_protocol_e)rxSpiConfig->rx_spi_protocol, &rxSpiConfig->rx_spi_id);
 
     return true;
 }

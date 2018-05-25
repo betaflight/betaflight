@@ -23,6 +23,7 @@
 #include "common/time.h"
 
 #include "pg/pg.h"
+#include "pg/rx.h"
 
 #include "drivers/io_types.h"
 

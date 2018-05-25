@@ -127,6 +127,7 @@ extern uint8_t __config_end;
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/rx.h"
+#include "pg/rx_spi.h"
 #include "pg/rx_pwm.h"
 #include "pg/timerio.h"
 #include "pg/usb.h"
@@ -2400,7 +2401,7 @@ static void cliBeeper(char *cmdline)
 
 void cliFrSkyBind(char *cmdline){
     UNUSED(cmdline);
-    switch (rxConfig()->rx_spi_protocol) {
+    switch (rxSpiConfig()->rx_spi_protocol) {
 #ifdef USE_RX_FRSKY_SPI
     case RX_SPI_FRSKY_D:
     case RX_SPI_FRSKY_X:

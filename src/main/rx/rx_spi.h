@@ -22,6 +22,7 @@
 
 #include "pg/rx.h"
 #include "rx/rx.h"
+#include "pg/rx_spi.h"
 
 // Used in MSP. Append at end.
 typedef enum {
@@ -77,4 +78,4 @@ typedef enum {
 #define RC_CHANNEL_HEADLESS    RC_SPI_AUX5
 #define RC_CHANNEL_RTH         RC_SPI_AUX6 // return to home
 
-bool rxSpiInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
+bool rxSpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeConfig_t *rxRuntimeConfig);

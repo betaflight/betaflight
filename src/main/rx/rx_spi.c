@@ -30,14 +30,14 @@
 #include "common/utils.h"
 
 #include "config/feature.h"
-#include "pg/rx.h"
 
 #include "drivers/rx/rx_spi.h"
 #include "drivers/rx/rx_nrf24l01.h"
 
 #include "fc/config.h"
 
-#include "rx/rx.h"
+#include "pg/rx_spi.h"
+
 #include "rx/rx_spi.h"
 #include "rx/cc2500_frsky_common.h"
 #include "rx/nrf24_cx10.h"
@@ -53,7 +53,7 @@ uint16_t rxSpiRcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 STATIC_UNIT_TESTED uint8_t rxSpiPayload[RX_SPI_MAX_PAYLOAD_SIZE];
 STATIC_UNIT_TESTED uint8_t rxSpiNewPacketAvailable; // set true when a new packet is received
 
-typedef bool (*protocolInitFnPtr)(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
+typedef bool (*protocolInitFnPtr)(const rxSpiConfig_t *rxSpiConfig, rxRuntimeConfig_t *rxRuntimeConfig);
 typedef rx_spi_received_e (*protocolDataReceivedFnPtr)(uint8_t *payload);
 typedef void (*protocolSetRcDataFromPayloadFnPtr)(uint16_t *rcData, const uint8_t *payload);
 
@@ -168,13 +168,13 @@ static uint8_t rxSpiFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
 /*
  * Set and initialize the RX protocol
  */
-bool rxSpiInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+bool rxSpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     bool ret = false;
 
     rxSpiDeviceInit();
-    if (rxSpiSetProtocol(rxConfig->rx_spi_protocol)) {
-        ret = protocolInit(rxConfig, rxRuntimeConfig);
+    if (rxSpiSetProtocol(rxSpiConfig->rx_spi_protocol)) {
+        ret = protocolInit(rxSpiConfig, rxRuntimeConfig);
     }
     rxSpiNewPacketAvailable = false;
     rxRuntimeConfig->rxRefreshRate = 20000;

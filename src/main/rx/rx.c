@@ -285,7 +285,7 @@ void rxInit(void)
 
 #ifdef USE_RX_SPI
     if (feature(FEATURE_RX_SPI)) {
-        const bool enabled = rxSpiInit(rxConfig(), &rxRuntimeConfig);
+        const bool enabled = rxSpiInit(rxSpiConfig(), &rxRuntimeConfig);
         if (!enabled) {
             featureClear(FEATURE_RX_SPI);
             rxRuntimeConfig.rcReadRawFn = nullReadRawRC;
