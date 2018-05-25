@@ -50,6 +50,7 @@
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/rx.h"
 
 #include "rx/rx.h"
 #include "rx/pwm.h"
@@ -107,61 +108,6 @@ uint32_t rcInvalidPulsPeriod[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 
 rxRuntimeConfig_t rxRuntimeConfig;
 static uint8_t rcSampleIndex = 0;
-
-#ifndef RX_SPI_DEFAULT_PROTOCOL
-#define RX_SPI_DEFAULT_PROTOCOL 0
-#endif
-#ifndef SERIALRX_PROVIDER
-#define SERIALRX_PROVIDER 0
-#endif
-
-#define RX_MIN_USEC 885
-#define RX_MAX_USEC 2115
-#define RX_MID_USEC 1500
-
-#ifndef SPEKTRUM_BIND_PIN
-#define SPEKTRUM_BIND_PIN NONE
-#endif
-
-#ifndef BINDPLUG_PIN
-#define BINDPLUG_PIN NONE
-#endif
-
-PG_REGISTER_WITH_RESET_FN(rxConfig_t, rxConfig, PG_RX_CONFIG, 2);
-void pgResetFn_rxConfig(rxConfig_t *rxConfig)
-{
-    RESET_CONFIG_2(rxConfig_t, rxConfig,
-        .halfDuplex = 0,
-        .serialrx_provider = SERIALRX_PROVIDER,
-        .rx_spi_protocol = RX_SPI_DEFAULT_PROTOCOL,
-        .serialrx_inverted = 0,
-        .spektrum_bind_pin_override_ioTag = IO_TAG(SPEKTRUM_BIND_PIN),
-        .spektrum_bind_plug_ioTag = IO_TAG(BINDPLUG_PIN),
-        .spektrum_sat_bind = 0,
-        .spektrum_sat_bind_autoreset = 1,
-        .midrc = RX_MID_USEC,
-        .mincheck = 1050,
-        .maxcheck = 1900,
-        .rx_min_usec = RX_MIN_USEC,          // any of first 4 channels below this value will trigger rx loss detection
-        .rx_max_usec = RX_MAX_USEC,         // any of first 4 channels above this value will trigger rx loss detection
-        .rssi_src_frame_errors = false,
-        .rssi_channel = 0,
-        .rssi_scale = RSSI_SCALE_DEFAULT,
-        .rssi_invert = 0,
-        .rcInterpolation = RC_SMOOTHING_AUTO,
-        .rcInterpolationChannels = 0,
-        .rcInterpolationInterval = 19,
-        .fpvCamAngleDegrees = 0,
-        .airModeActivateThreshold = 32,
-        .max_aux_channel = DEFAULT_AUX_CHANNEL_COUNT
-    );
-
-#ifdef RX_CHANNELS_TAER
-    parseRcChannels("TAER1234", rxConfig);
-#else
-    parseRcChannels("AETR1234", rxConfig);
-#endif
-}
 
 PG_REGISTER_ARRAY_WITH_RESET_FN(rxChannelRangeConfig_t, NON_AUX_CHANNEL_COUNT, rxChannelRangeConfigs, PG_RX_CHANNEL_RANGE_CONFIG, 0);
 void pgResetFn_rxChannelRangeConfigs(rxChannelRangeConfig_t *rxChannelRangeConfigs)

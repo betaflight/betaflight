@@ -37,6 +37,7 @@
 #include "flight/pid.h"
 
 #include "pg/beeper_dev.h"
+#include "pg/rx.h"
 
 #include "rx/rx.h"
 

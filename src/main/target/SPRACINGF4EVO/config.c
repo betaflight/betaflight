@@ -27,6 +27,8 @@
 
 #include "io/serial.h"
 
+#include "pg/rx.h"
+
 #include "rx/rx.h"
 
 #include "sensors/barometer.h"

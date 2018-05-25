@@ -21,11 +21,12 @@
 #include <limits.h>
 
 extern "C" {
+    #include "platform.h"
     #include "build/debug.h"
 
+    #include "pg/pg.h"
     #include "pg/pg_ids.h"
-
-    #include "platform.h"
+    #include "pg/rx.h"
 
     #include "common/axis.h"
     #include "common/maths.h"

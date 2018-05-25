@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include "pg/rx.h"
 #include "rx/rx.h"
 
 // Used in MSP. Append at end.

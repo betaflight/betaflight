@@ -44,6 +44,8 @@
 #include "telemetry/telemetry.h"
 #include "telemetry/srxl.h"
 
+#include "pg/rx.h"
+
 #include "rx/rx.h"
 #include "rx/spektrum.h"
 

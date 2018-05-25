@@ -43,6 +43,7 @@
 #include "flight/pid.h"
 
 #include "pg/vcd.h"
+#include "pg/rx.h"
 
 #include "rx/rx.h"
 

@@ -73,6 +73,8 @@
 
 #include "msp/msp_serial.h"
 
+#include "pg/rx.h"
+
 #include "rx/rx.h"
 
 #include "sensors/acceleration.h"

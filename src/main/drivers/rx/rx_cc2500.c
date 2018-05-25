@@ -31,6 +31,8 @@
 
 #include "build/build_config.h"
 
+#include "pg/rx.h"
+
 #include "drivers/io.h"
 #include "drivers/rx/rx_spi.h"
 #include "drivers/system.h"

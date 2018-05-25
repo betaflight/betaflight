@@ -48,6 +48,8 @@ const timerHardware_t timerHardware[1]; // unused
 #include "fc/config.h"
 #include "scheduler/scheduler.h"
 
+#include "pg/rx.h"
+
 #include "rx/rx.h"
 
 #include "dyad.h"

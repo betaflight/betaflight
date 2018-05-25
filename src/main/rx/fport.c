@@ -41,6 +41,8 @@
 #include "telemetry/smartport.h"
 #endif
 
+#include "pg/rx.h"
+
 #include "rx/rx.h"
 #include "rx/sbus_channels.h"
 #include "rx/fport.h"

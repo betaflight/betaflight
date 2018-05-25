@@ -47,6 +47,8 @@
 
 #include "io/serial.h"
 
+#include "pg/rx.h"
+
 #include "rx/rx.h"
 #include "rx/targetcustomserial.h"
 #include "syslink.h"

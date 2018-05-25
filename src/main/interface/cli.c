@@ -126,6 +126,7 @@ extern uint8_t __config_end;
 #include "pg/pinio.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/rx.h"
 #include "pg/rx_pwm.h"
 #include "pg/timerio.h"
 #include "pg/usb.h"

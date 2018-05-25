@@ -31,6 +31,8 @@
 
 #include "common/utils.h"
 
+#include "pg/rx.h"
+
 #include "drivers/io.h"
 #include "drivers/rx/rx_nrf24l01.h"
 #include "drivers/time.h"

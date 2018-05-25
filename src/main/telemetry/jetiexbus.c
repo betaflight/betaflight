@@ -41,6 +41,8 @@
 #include "flight/position.h"
 #include "flight/imu.h"
 
+#include "pg/rx.h"
+
 #include "io/serial.h"
 #include "rx/rx.h"
 #include "rx/jetiexbus.h"

@@ -30,6 +30,7 @@
 #include "common/utils.h"
 
 #include "config/feature.h"
+#include "pg/rx.h"
 
 #include "drivers/rx/rx_spi.h"
 #include "drivers/rx/rx_nrf24l01.h"
