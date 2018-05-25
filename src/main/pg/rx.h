@@ -50,6 +50,11 @@ typedef struct rxConfig_s {
     uint8_t max_aux_channel;
     uint8_t rssi_src_frame_errors;          // true to use frame drop flags in the rx protocol
     int8_t rssi_offset;                     // offset applied to the RSSI value before it is returned
+
+    uint8_t rc_smoothing_type;              // Determines the smoothing algorithm to use: INTERPOLATION or FILTER
+    uint8_t rc_smoothing_input_cutoff;      // Filter cutoff frequency for the input filter (0 = auto)
+    uint8_t rc_smoothing_derivative_cutoff; // Filter cutoff frequency for the setpoint weight derivative filter (0 = auto)
+    uint8_t rc_smoothing_debug_axis;        // Axis to log as debug values when debug_mode = RC_SMOOTHING
 } rxConfig_t;
 
 PG_DECLARE(rxConfig_t, rxConfig);

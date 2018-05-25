@@ -58,6 +58,12 @@ typedef enum {
     RC_SMOOTHING_MANUAL
 } rcSmoothing_t;
 
+typedef enum {
+    RC_SMOOTHING_TYPE_INTERPOLATION,
+    RC_SMOOTHING_TYPE_FILTER
+} rcInterpolationType_e;
+
+
 #define ROL_LO (1 << (2 * ROLL))
 #define ROL_CE (3 << (2 * ROLL))
 #define ROL_HI (2 << (2 * ROLL))

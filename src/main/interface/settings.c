@@ -349,6 +349,15 @@ static const char * const lookupTableAcroTrainerDebug[] = {
 };
 #endif // USE_ACRO_TRAINER
 
+#ifdef USE_RC_SMOOTHING_FILTER
+static const char * const lookupTableRcSmoothingType[] = {
+    "INTERPOLATION", "FILTER"
+};
+static const char * const lookupTableRcSmoothingDebug[] = {
+    "ROLL", "PITCH", "YAW", "THROTTLE"
+};
+#endif // USE_RC_SMOOTHING_FILTER
+
 #define LOOKUP_TABLE_ENTRY(name) { name, ARRAYLEN(name) }
 
 const lookupTableEntry_t lookupTables[] = {
@@ -430,6 +439,10 @@ const lookupTableEntry_t lookupTables[] = {
 #ifdef USE_ACRO_TRAINER
     LOOKUP_TABLE_ENTRY(lookupTableAcroTrainerDebug),
 #endif // USE_ACRO_TRAINER
+#ifdef USE_RC_SMOOTHING_FILTER
+    LOOKUP_TABLE_ENTRY(lookupTableRcSmoothingType),
+    LOOKUP_TABLE_ENTRY(lookupTableRcSmoothingDebug),
+#endif // USE_RC_SMOOTHING_FILTER
 };
 
 #undef LOOKUP_TABLE_ENTRY
@@ -525,6 +538,14 @@ const clivalue_t valueTable[] = {
     { "rc_interp",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_RC_INTERPOLATION }, PG_RX_CONFIG, offsetof(rxConfig_t, rcInterpolation) },
     { "rc_interp_ch",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_RC_INTERPOLATION_CHANNELS }, PG_RX_CONFIG, offsetof(rxConfig_t, rcInterpolationChannels) },
     { "rc_interp_int",              VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 50 }, PG_RX_CONFIG, offsetof(rxConfig_t, rcInterpolationInterval) },
+
+#ifdef USE_RC_SMOOTHING_FILTER
+    { "rc_smoothing_type",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_RC_SMOOTHING_TYPE }, PG_RX_CONFIG, offsetof(rxConfig_t, rc_smoothing_type) },
+    { "rc_smoothing_input_hz",      VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, UINT8_MAX }, PG_RX_CONFIG, offsetof(rxConfig_t, rc_smoothing_input_cutoff) },
+    { "rc_smoothing_derivative_hz", VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, UINT8_MAX }, PG_RX_CONFIG, offsetof(rxConfig_t, rc_smoothing_derivative_cutoff) },
+    { "rc_smoothing_debug_axis",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_RC_SMOOTHING_DEBUG }, PG_RX_CONFIG, offsetof(rxConfig_t, rc_smoothing_debug_axis) },
+#endif // USE_RC_SMOOTHING_FILTER
+
     { "fpv_mix_degrees",            VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 50 }, PG_RX_CONFIG, offsetof(rxConfig_t, fpvCamAngleDegrees) },
     { "max_aux_channels",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, MAX_AUX_CHANNEL_COUNT }, PG_RX_CONFIG, offsetof(rxConfig_t, max_aux_channel) },
 #ifdef USE_SERIAL_RX
