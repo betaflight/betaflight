@@ -355,8 +355,8 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     crashLimitYaw = pidProfile->crash_limit_yaw;
     itermLimit = pidProfile->itermLimit;
     throttleBoost = pidProfile->throttle_boost * 0.1f;
-    itermRotation = pidProfile->iterm_rotation == 1;
-    itermRelax = pidProfile->iterm_relax == 1;
+    itermRotation = pidProfile->iterm_rotation;
+    itermRelax = pidProfile->iterm_relax;
     itermRelaxCutoffLow = pidProfile->iterm_relax_cutoff_low;
     itermRelaxCutoffHigh = pidProfile->iterm_relax_cutoff_high;
 }
@@ -626,20 +626,20 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         // -----calculate I component
         float itermErrorRate;
         if (itermRelax) {
-            const float gyroTargetHigh = pt1FilterApply(&windupLpf[axis][0], currentPidSetpoint);
-            const float gyroTargetLow =  pt1FilterApply(&windupLpf[axis][1], currentPidSetpoint);
+            const float gyroTargetLow = pt1FilterApply(&windupLpf[axis][0], currentPidSetpoint);
+            const float gyroTargetHigh =  pt1FilterApply(&windupLpf[axis][1], currentPidSetpoint);
             DEBUG_SET(DEBUG_ITERM_RELAX, 0, gyroTargetHigh);
             DEBUG_SET(DEBUG_ITERM_RELAX, 1, gyroTargetLow);
             const float gmax = MAX(gyroTargetHigh, gyroTargetLow);
             const float gmin = MIN(gyroTargetHigh, gyroTargetLow);
             if (gyroRate >= gmin && gyroRate <= gmax) {
                 itermErrorRate = 0.0f;
-            }
-            else {
+            } else {
                 itermErrorRate = (gyroRate > gmax ? gmax : gmin ) - gyroRate;
             }
+        } else {
+            itermErrorRate = errorRate;
         }
-        else itermErrorRate = errorRate;
         
         const float ITerm = pidData[axis].I;
         const float ITermNew = constrainf(ITerm + pidCoefficient[axis].Ki * itermErrorRate * dynCi, -itermLimit, itermLimit);
