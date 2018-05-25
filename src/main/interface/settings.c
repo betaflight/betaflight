@@ -793,6 +793,11 @@ const clivalue_t valueTable[] = {
     { "horizon_tilt_effect",        VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0,  250 }, PG_PID_PROFILE, offsetof(pidProfile_t, horizon_tilt_effect) },
     { "horizon_tilt_expert_mode",   VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_PID_PROFILE, offsetof(pidProfile_t, horizon_tilt_expert_mode) },
 
+    { "abs_control_gain",           VAR_UINT8 | PROFILE_VALUE,  .config.minmax = { 0, 20 }, PG_PID_PROFILE, offsetof(pidProfile_t, abs_control_gain) },
+    { "abs_control_limit",          VAR_UINT8 | PROFILE_VALUE,  .config.minmax = { 10, 255 }, PG_PID_PROFILE, offsetof(pidProfile_t, abs_control_limit) },
+    { "abs_control_error_limit",    VAR_UINT8 | PROFILE_VALUE,  .config.minmax = { 1, 45 }, PG_PID_PROFILE, offsetof(pidProfile_t, abs_control_error_limit) },
+
+
 // PG_TELEMETRY_CONFIG
 #ifdef USE_TELEMETRY
     { "tlm_inverted",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, telemetry_inverted) },
