@@ -629,20 +629,20 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
         // -----calculate I component
         float itermErrorRate;
         if (itermRelax) {
-            const float gyroTargetHigh = pt1FilterApply(&windupLpf[axis][0], currentPidSetpoint);
-            const float gyroTargetLow =  pt1FilterApply(&windupLpf[axis][1], currentPidSetpoint);
+            const float gyroTargetLow = pt1FilterApply(&windupLpf[axis][0], currentPidSetpoint);
+            const float gyroTargetHigh =  pt1FilterApply(&windupLpf[axis][1], currentPidSetpoint);
             DEBUG_SET(DEBUG_ITERM_RELAX, 0, gyroTargetHigh);
             DEBUG_SET(DEBUG_ITERM_RELAX, 1, gyroTargetLow);
             const float gmax = MAX(gyroTargetHigh, gyroTargetLow);
             const float gmin = MIN(gyroTargetHigh, gyroTargetLow);
             if (gyroRate >= gmin && gyroRate <= gmax) {
                 itermErrorRate = 0.0f;
-            }
-            else {
+            } else {
                 itermErrorRate = (gyroRate > gmax ? gmax : gmin ) - gyroRate;
             }
+        } else {
+            itermErrorRate = errorRate;
         }
-        else itermErrorRate = errorRate;
         
         const float ITerm = pidData[axis].I;
         const float ITermNew = constrainf(ITerm + pidCoefficient[axis].Ki * itermErrorRate * dynCi, -itermLimit, itermLimit);
