@@ -210,7 +210,6 @@ scheduler_unittest_SRC := \
 sensor_gyro_unittest_SRC := \
 		$(USER_DIR)/sensors/gyro.c \
 		$(USER_DIR)/sensors/boardalignment.c \
-		$(USER_DIR)/build/debug.c \
 		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/drivers/accgyro/accgyro_fake.c \
