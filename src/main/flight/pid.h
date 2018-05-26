@@ -131,6 +131,7 @@ typedef struct pidProfile_s {
     uint8_t acro_trainer_angle_limit;       // Acro trainer roll/pitch angle limit in degrees
     uint16_t acro_trainer_lookahead_ms;     // The lookahead window in milliseconds used to reduce overshoot
     uint8_t acro_trainer_debug_axis;        // The axis for which record debugging values are captured 0=roll, 1=pitch
+    uint8_t acro_trainer_gain;              // The strength of the limiting. Raising may reduce overshoot but also lead to oscillation around the angle limit
 } pidProfile_t;
 
 #ifndef USE_OSD_SLAVE
