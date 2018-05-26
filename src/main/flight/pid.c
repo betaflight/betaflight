@@ -185,9 +185,6 @@ const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 typedef union dtermLowpass_u {
     pt1Filter_t pt1Filter;
     biquadFilter_t biquadFilter;
-#if defined(USE_FIR_FILTER_DENOISE)
-    firFilterDenoise_t denoisingFilter;
-#endif
 } dtermLowpass_t;
 
 static FAST_RAM_ZERO_INIT filterApplyFnPtr dtermNotchApplyFn;
@@ -263,14 +260,6 @@ void pidInitFilters(const pidProfile_t *pidProfile)
                 biquadFilterInitLPF(&dtermLowpass[axis].biquadFilter, pidProfile->dterm_lowpass_hz, targetPidLooptime);
             }
             break;
-#if defined(USE_FIR_FILTER_DENOISE)
-        case FILTER_FIR:
-            dtermLowpassApplyFn = (filterApplyFnPtr)firFilterDenoiseUpdate;
-            for (int axis = FD_ROLL; axis <= FD_PITCH; axis++) {
-                firFilterDenoiseInit(&dtermLowpass[axis].denoisingFilter, pidProfile->dterm_lowpass_hz, targetPidLooptime);
-            }
-            break;
-#endif
         }
     }
 
