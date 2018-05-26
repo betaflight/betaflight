@@ -798,7 +798,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
             }
             acErrorRate = itermErrorRate - acCorrection;
         } else {
-            itermErrorRate = errorRate;
+            itermErrorRate = acErrorRate = errorRate;
         }
         
         if (acGain > 0) {
