@@ -835,7 +835,7 @@ bool processRx(timeUs_t currentTimeUs)
     return true;
 }
 
-static void subTaskPidController(timeUs_t currentTimeUs)
+static FAST_CODE void subTaskPidController(timeUs_t currentTimeUs)
 {
     uint32_t startTime = 0;
     if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
@@ -951,7 +951,7 @@ static FAST_CODE_NOINLINE void subTaskMainSubprocesses(timeUs_t currentTimeUs)
     DEBUG_SET(DEBUG_PIDLOOP, 3, micros() - startTime);
 }
 
-static void subTaskMotorUpdate(timeUs_t currentTimeUs)
+static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
 {
     uint32_t startTime = 0;
     if (debugMode == DEBUG_CYCLETIME) {
