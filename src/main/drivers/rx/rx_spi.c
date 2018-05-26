@@ -37,39 +37,34 @@
 #include "drivers/rcc.h"
 #include "drivers/system.h"
 
+#include "pg/pg.h"
+#include "pg/rx_spi.h"
+
 #include "rx_spi.h"
 
-#define DISABLE_RX()    {IOHi(DEFIO_IO(RX_NSS_PIN));}
-#define ENABLE_RX()     {IOLo(DEFIO_IO(RX_NSS_PIN));}
+#define DISABLE_RX()    {IOHi(busdev->busdev_u.spi.csnPin);}
+#define ENABLE_RX()     {IOLo(busdev->busdev_u.spi.csnPin);}
+
+static busDevice_t rxSpiDevice;
+static busDevice_t *busdev = &rxSpiDevice;
 
 void rxSpiDeviceInit(void)
 {
-    static bool hardwareInitialised = false;
-
-    if (hardwareInitialised) {
-        return;
-    }
-
-    const SPIDevice rxSPIDevice = spiDeviceByInstance(RX_SPI_INSTANCE);
-    const IO_t rxCsPin = DEFIO_IO(RX_NSS_PIN);
-    IOInit(rxCsPin, OWNER_RX_SPI_CS, rxSPIDevice + 1);
+    const rxSpiConfig_t *config = rxSpiConfig();
+    const IO_t rxCsPin = IOGetByTag(config->csnTag);
+    spiBusSetInstance(busdev, spiInstanceByDevice(SPI_CFG_TO_DEV(config->spiBus)));
+    IOInit(rxCsPin, OWNER_RX_SPI_CS, 0);
     IOConfigGPIO(rxCsPin, SPI_IO_CS_CFG);
+    busdev->busdev_u.spi.csnPin = rxCsPin;
 
     DISABLE_RX();
 
-#ifdef RX_SPI_INSTANCE
-    spiSetDivisor(RX_SPI_INSTANCE, SPI_CLOCK_STANDARD);
-#endif
-    hardwareInitialised = true;
+    spiSetDivisor(busdev->busdev_u.spi.instance, SPI_CLOCK_STANDARD);
 }
 
-uint8_t rxSpiTransferByte(uint8_t data)
+uint8_t rxSpiTransferByte(uint8_t txData)
 {
-#ifdef RX_SPI_INSTANCE
-    return spiTransferByte(RX_SPI_INSTANCE, data);
-#else
-    return 0;
-#endif
+    return spiTransferByte(busdev->busdev_u.spi.instance, txData);
 }
 
 uint8_t rxSpiWriteByte(uint8_t data)
