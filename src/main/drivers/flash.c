@@ -52,7 +52,7 @@ bool flashInit(const flashConfig_t *flashConfig)
         return false;
     }
 
-    if (IOGetOwner(busdev->busdev_u.spi.csnPin) != OWNER_SPI_PREINIT) {
+    if (!IOIsFreeOrPreinit(busdev->busdev_u.spi.csnPin)) {
         return false;
     }
 
@@ -99,7 +99,7 @@ bool flashInit(const flashConfig_t *flashConfig)
     }
 #endif
 
-    spiPreInitCs(flashConfig->csTag);
+    spiPreinitCsByTag(flashConfig->csTag);
 
     return false;
 }
