@@ -257,7 +257,7 @@ void updateArmingStatus(void)
 
 #ifdef USE_GPS_RESCUE
         if (isModeActivationConditionPresent(BOXGPSRESCUE)) {
-            if (rescueState.sensor.numSat < gpsRescue()->minSats) {
+            if (rescueState.sensor.numSat < gpsRescueConfig()->minSats) {
                 setArmingDisabled(ARMING_DISABLED_GPS);
             } else {
                 unsetArmingDisabled(ARMING_DISABLED_GPS);
