@@ -328,7 +328,7 @@ $(OBJECT_DIR)/$(TARGET)/%.o: %.S
 ## all               : Build all targets (excluding unsupported)
 all: $(SUPPORTED_TARGETS)
 
-## all_with_unsupported : Build all targets (excluding unsupported)
+## all_with_unsupported : Build all targets (including unsupported)
 all_with_unsupported: $(VALID_TARGETS)
 
 ## unsupported : Build unsupported targets
