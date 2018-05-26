@@ -882,7 +882,9 @@ static FAST_CODE void subTaskPidController(timeUs_t currentTimeUs)
 
 
 #ifdef USE_PID_AUDIO
-    pidAudioUpdate();
+    if (isModeActivationConditionPresent(BOXPIDAUDIO)) {
+        pidAudioUpdate();
+    }
 #endif
 }
 
