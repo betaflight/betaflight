@@ -114,7 +114,13 @@ typedef struct pidProfile_s {
     uint16_t dterm_lowpass2_hz;                // Extra PT1 Filter on D in hz
     uint8_t throttle_boost;                 // how much should throttle be boosted during transient changes 0-100, 100 adds 10x hpf filtered throttle
     uint8_t throttle_boost_cutoff;          // Which cutoff frequency to use for throttle boost. higher cutoffs keep the boost on for shorter. Specified in hz.
-    uint8_t  iterm_rotation;                    // rotates iterm to translate world errors to local coordinate system
+    uint8_t iterm_rotation;                    // rotates iterm to translate world errors to local coordinate system
+    uint8_t iterm_relax_cutoff_low;        // Slowest setpoint response to prevent iterm accumulation
+    uint8_t iterm_relax_cutoff_high;       // Fastest setpoint response to prevent iterm accumulation
+    uint8_t iterm_relax;                   // Enable iterm suppression during stick input
+    uint8_t abs_control_gain;              // How strongly should the absolute accumulated error be corrected for
+    uint8_t abs_control_limit;             // Limit to the correction
+    uint8_t abs_control_error_limit;       // Limit to the accumulated error
 } pidProfile_t;
 
 #ifndef USE_OSD_SLAVE

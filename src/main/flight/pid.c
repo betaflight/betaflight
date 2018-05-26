@@ -139,6 +139,12 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .throttle_boost = 0,
         .throttle_boost_cutoff = 15,
         .iterm_rotation = false,
+        .iterm_relax = false,
+        .iterm_relax_cutoff_low = 3,
+        .iterm_relax_cutoff_high = 15,
+        .abs_control_gain = 5,
+        .abs_control_limit = 90,
+        .abs_control_error_limit = 20,
     );
 }
 
@@ -153,13 +159,6 @@ static void pidSetTargetLooptime(uint32_t pidLooptime)
 {
     targetPidLooptime = pidLooptime;
     dT = (float)targetPidLooptime * 0.000001f;
-}
-
-void pidResetITerm(void)
-{
-    for (int axis = 0; axis < 3; axis++) {
-        pidData[axis].I = 0.0f;
-    }
 }
 
 static FAST_RAM float itermAccelerator = 1.0f;
@@ -197,6 +196,10 @@ static FAST_RAM_ZERO_INIT filterApplyFnPtr dtermLowpass2ApplyFn;
 static FAST_RAM_ZERO_INIT pt1Filter_t dtermLowpass2[2];
 static FAST_RAM_ZERO_INIT filterApplyFnPtr ptermYawLowpassApplyFn;
 static FAST_RAM_ZERO_INIT pt1Filter_t ptermYawLowpass;
+static FAST_RAM_ZERO_INIT pt1Filter_t windupLpf[3][2];
+static FAST_RAM_ZERO_INIT bool itermRelax;
+static FAST_RAM_ZERO_INIT uint8_t itermRelaxCutoffLow;
+static FAST_RAM_ZERO_INIT uint8_t itermRelaxCutoffHigh;
 
 void pidInitFilters(const pidProfile_t *pidProfile)
 {
@@ -281,6 +284,11 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     }
 
     pt1FilterInit(&throttleLpf, pt1FilterGain(pidProfile->throttle_boost_cutoff, dT));
+    if (itermRelax)     
+        for (int i = 0; i < 3; i++) {
+            pt1FilterInit(&windupLpf[i][0], pt1FilterGain(itermRelaxCutoffLow, dT));
+            pt1FilterInit(&windupLpf[i][1], pt1FilterGain(itermRelaxCutoffHigh, dT));
+        }
 }
 
 typedef struct pidCoefficient_s {
@@ -308,6 +316,18 @@ static FAST_RAM_ZERO_INIT float itermLimit;
 FAST_RAM_ZERO_INIT float throttleBoost;
 pt1Filter_t throttleLpf;
 static FAST_RAM_ZERO_INIT bool itermRotation;
+static FAST_RAM_ZERO_INIT float axisError[3];
+static FAST_RAM_ZERO_INIT float acGain;
+static FAST_RAM_ZERO_INIT float acLimit;
+static FAST_RAM_ZERO_INIT float acErrorLimit;
+
+void pidResetITerm(void)
+{
+    for (int axis = 0; axis < 3; axis++) {
+        pidData[axis].I = 0.0f;
+        axisError[axis] = 0.0f;
+    }
+}
 
 void pidInitConfig(const pidProfile_t *pidProfile)
 {
@@ -343,7 +363,13 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     crashLimitYaw = pidProfile->crash_limit_yaw;
     itermLimit = pidProfile->itermLimit;
     throttleBoost = pidProfile->throttle_boost * 0.1f;
-    itermRotation = pidProfile->iterm_rotation == 1;
+    itermRotation = pidProfile->iterm_rotation;
+    itermRelax = pidProfile->iterm_relax;
+    itermRelaxCutoffLow = pidProfile->iterm_relax_cutoff_low;
+    itermRelaxCutoffHigh = pidProfile->iterm_relax_cutoff_high;
+    acGain = (float)pidProfile->abs_control_gain;
+    acLimit = (float)pidProfile->abs_control_limit;
+    acErrorLimit = (float)pidProfile->abs_control_error_limit;
 }
 
 void pidInit(const pidProfile_t *pidProfile)
@@ -524,17 +550,40 @@ static void detectAndSetCrashRecovery(
     }
 }
 
-static void handleItermRotation()
+static void rotateVector(float v[3], float rotation[3]) 
 {
-    // rotate old I to the new coordinate system
-    const float gyroToAngle = dT * RAD;
-    for (int i = FD_ROLL; i <= FD_YAW; i++) {
+    // rotate v around rotation vector rotation
+    // rotation in radians, all elements must be small
+    for (int i = 0; i < 3; i++) {
         int i_1 = (i + 1) % 3;
         int i_2 = (i + 2) % 3;
-        float angle = gyro.gyroADCf[i] * gyroToAngle;
-        float newPID_I_i_1 = pidData[i_1].I + pidData[i_2].I * angle;
-        pidData[i_2].I -= pidData[i_1].I * angle;
-        pidData[i_1].I = newPID_I_i_1;
+        float newV = v[i_1] + v[i_2] * rotation[i];
+        v[i_2] -= v[i_1] * rotation[i];
+        v[i_1] = newV;
+    }
+}
+
+static void handleRotations() 
+{
+    if (itermRotation || acGain > 0) {
+        const float gyroToAngle = dT * RAD;
+        float rotationRads[3];
+        for (int i = FD_ROLL; i <= FD_YAW; i++) {
+            rotationRads[i] = gyro.gyroADCf[i] * gyroToAngle;
+        }
+        if (acGain > 0) {
+            rotateVector(axisError, rotationRads);
+        }
+        if (itermRotation) {
+            float v[3];
+            for (int i = 0; i < 3; i++) {
+                v[i] = pidData[i].I;
+            }
+            rotateVector(v, rotationRads );
+            for (int i = 0; i < 3; i++) {
+                pidData[i].I = v[i];
+            }
+        }
     }
 }
 
@@ -567,9 +616,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         gyroRateDterm[axis] = dtermLowpass2ApplyFn((filter_t *) &dtermLowpass2[axis], gyroRateDterm[axis]);
     }
 
-    if (itermRotation) {
-        handleItermRotation();
-    }
+    handleRotations();
 
     // ----------PID controller----------
     for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
@@ -590,6 +637,13 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         }
 #endif // USE_YAW_SPIN_RECOVERY
 
+        // mix in a correction for accrued attitude error
+        float acCorrection = 0;
+        if (acGain > 0) {
+            acCorrection = constrainf(axisError[axis] * acGain, -acLimit, acLimit);
+            currentPidSetpoint += acCorrection;
+        }   
+        
         // -----calculate error rate
         const float gyroRate = gyro.gyroADCf[axis]; // Process variable from gyro output in deg/sec
         float errorRate = currentPidSetpoint - gyroRate; // r - y
@@ -609,8 +663,31 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         }
 
         // -----calculate I component
+        float itermErrorRate;
+        if (itermRelax) {
+            const float gyroTargetLow = pt1FilterApply(
+                &windupLpf[axis][0], currentPidSetpoint - acCorrection) + acCorrection;
+            const float gyroTargetHigh = pt1FilterApply(
+                &windupLpf[axis][1], currentPidSetpoint - acCorrection) + acCorrection;
+            DEBUG_SET(DEBUG_ITERM_RELAX, 0, gyroTargetHigh);
+            DEBUG_SET(DEBUG_ITERM_RELAX, 1, gyroTargetLow);
+            const float gmax = MAX(gyroTargetHigh, gyroTargetLow);
+            const float gmin = MIN(gyroTargetHigh, gyroTargetLow);
+            if (gyroRate >= gmin && gyroRate <= gmax) {
+                itermErrorRate = 0.0f;
+            } else {
+                itermErrorRate = (gyroRate > gmax ? gmax : gmin ) - gyroRate;
+            }
+        } else {
+            itermErrorRate = errorRate;
+        }
+        
+        if (acGain > 0) {
+            axisError[axis] = constrainf(axisError[axis] + (itermErrorRate - acCorrection) * dT, -acErrorLimit, acErrorLimit);
+        }
+        
         const float ITerm = pidData[axis].I;
-        const float ITermNew = constrainf(ITerm + pidCoefficient[axis].Ki * errorRate * dynCi, -itermLimit, itermLimit);
+        const float ITermNew = constrainf(ITerm + pidCoefficient[axis].Ki * itermErrorRate * dynCi, -itermLimit, itermLimit);
         const bool outputSaturated = mixerIsOutputSaturated(axis, errorRate);
         if (outputSaturated == false || ABS(ITermNew) < ABS(ITerm)) {
             // Only increase ITerm if output is not saturated
