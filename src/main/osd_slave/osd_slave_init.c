@@ -139,7 +139,7 @@ void init(void)
 
     initEEPROM();
 
-    ensureEEPROMContainsValidData();
+    ensureEEPROMStructureIsValid();
     readEEPROM();
 
     systemState |= SYSTEM_STATE_CONFIG_LOADED;
