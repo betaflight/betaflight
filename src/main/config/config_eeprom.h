@@ -25,7 +25,7 @@
 
 #define EEPROM_CONF_VERSION 169
 
-bool isEEPROMContentValid(void);
+bool isEEPROMStructureValid(void);
 bool loadEEPROM(void);
 void writeConfigToEEPROM(void);
 uint16_t getEEPROMConfigSize(void);

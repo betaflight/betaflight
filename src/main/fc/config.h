@@ -60,9 +60,9 @@ void setPreferredBeeperOffMask(uint32_t mask);
 
 void initEEPROM(void);
 void resetEEPROM(void);
-void readEEPROM(void);
+bool readEEPROM(void);
 void writeEEPROM(void);
-void ensureEEPROMContainsValidData(void);
+void ensureEEPROMStructureIsValid(void);
 
 void saveConfigAndNotify(void);
 void validateAndFixGyroConfig(void);

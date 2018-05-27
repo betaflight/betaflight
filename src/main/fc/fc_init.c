@@ -237,12 +237,13 @@ void init(void)
 
     initEEPROM();
 
-    ensureEEPROMContainsValidData();
-    readEEPROM();
+    ensureEEPROMStructureIsValid();
+    bool readSuccess = readEEPROM();
 
-    // !!TODO: Check to be removed when moving to generic targets
-    if (strncasecmp(systemConfig()->boardIdentifier, TARGET_BOARD_IDENTIFIER, sizeof(TARGET_BOARD_IDENTIFIER))) {
+    if (!readSuccess || strncasecmp(systemConfig()->boardIdentifier, TARGET_BOARD_IDENTIFIER, sizeof(TARGET_BOARD_IDENTIFIER))) {
         resetEEPROM();
+
+        activateConfig();
     }
 
     systemState |= SYSTEM_STATE_CONFIG_LOADED;

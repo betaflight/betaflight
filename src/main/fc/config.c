@@ -454,16 +454,14 @@ void validateAndFixGyroConfig(void)
 }
 #endif // USE_OSD_SLAVE
 
-void readEEPROM(void)
+bool readEEPROM(void)
 {
 #ifndef USE_OSD_SLAVE
     suspendRxSignal();
 #endif
 
     // Sanity check, read flash
-    if (!loadEEPROM()) {
-        failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
-    }
+    bool success = loadEEPROM();
 
     validateAndFixConfig();
     activateConfig();
@@ -471,6 +469,8 @@ void readEEPROM(void)
 #ifndef USE_OSD_SLAVE
     resumeRxSignal();
 #endif
+
+    return success;
 }
 
 void writeEEPROM(void)
@@ -489,12 +489,16 @@ void writeEEPROM(void)
 void resetEEPROM(void)
 {
     resetConfigs();
+
+    validateAndFixConfig();
+    activateConfig();
+
     writeEEPROM();
 }
 
-void ensureEEPROMContainsValidData(void)
+void ensureEEPROMStructureIsValid(void)
 {
-    if (isEEPROMContentValid()) {
+    if (isEEPROMStructureValid()) {
         return;
     }
     resetEEPROM();

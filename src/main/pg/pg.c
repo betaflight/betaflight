@@ -72,14 +72,18 @@ bool pgResetCopy(void *copy, pgn_t pgn)
     return false;
 }
 
-void pgLoad(const pgRegistry_t* reg, const void *from, int size, int version)
+bool pgLoad(const pgRegistry_t* reg, const void *from, int size, int version)
 {
     pgResetInstance(reg, pgOffset(reg));
     // restore only matching version, keep defaults otherwise
     if (version == pgVersion(reg)) {
         const int take = MIN(size, pgSize(reg));
         memcpy(pgOffset(reg), from, take);
+
+        return true;
     }
+
+    return false;
 }
 
 int pgStore(const pgRegistry_t* reg, void *to, int size)
