@@ -962,7 +962,7 @@ static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
     DEBUG_SET(DEBUG_PIDLOOP, 2, micros() - startTime);
 }
 
-static void subTaskRcCommand(timeUs_t currentTimeUs)
+static FAST_CODE_NOINLINE void subTaskRcCommand(timeUs_t currentTimeUs)
 {
 
     // If we're armed, at minimum throttle, and we do arming via the
