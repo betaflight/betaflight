@@ -157,6 +157,7 @@ typedef enum {
     OSD_WARNING_VISUAL_BEEPER,
     OSD_WARNING_CRASH_FLIP,
     OSD_WARNING_ESC_FAIL,
+    OSD_WARNING_CORE_TEMPERATURE,
     OSD_WARNING_COUNT // MUST BE LAST
 } osdWarningsFlags_e;
 
@@ -186,6 +187,7 @@ typedef struct osdConfig_s {
     int8_t esc_temp_alarm;
     int16_t esc_rpm_alarm;
     int16_t esc_current_alarm;
+    uint8_t core_temp_alarm;
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);
