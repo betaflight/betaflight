@@ -631,8 +631,11 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
         if (itermRelax) {
             const float gyroTargetLow = pt1FilterApply(&windupLpf[axis][0], currentPidSetpoint);
             const float gyroTargetHigh =  pt1FilterApply(&windupLpf[axis][1], currentPidSetpoint);
-            DEBUG_SET(DEBUG_ITERM_RELAX, 0, gyroTargetHigh);
-            DEBUG_SET(DEBUG_ITERM_RELAX, 1, gyroTargetLow);
+            if (axis < FD_YAW) {
+                int itemOffset = (axis << 1);
+                DEBUG_SET(DEBUG_ITERM_RELAX, itemOffset++, gyroTargetHigh);
+                DEBUG_SET(DEBUG_ITERM_RELAX, itemOffset, gyroTargetLow);
+            }
             const float gmax = MAX(gyroTargetHigh, gyroTargetLow);
             const float gmin = MIN(gyroTargetHigh, gyroTargetLow);
             if (gyroRate >= gmin && gyroRate <= gmax) {
