@@ -910,26 +910,6 @@ static FAST_CODE_NOINLINE void subTaskMainSubprocesses(timeUs_t currentTimeUs)
 #ifdef USE_GPS_RESCUE
     updateGPSRescueState();
 #endif
-    
-    // If we're armed, at minimum throttle, and we do arming via the
-    // sticks, do not process yaw input from the rx.  We do this so the
-    // motors do not spin up while we are trying to arm or disarm.
-    // Allow yaw control for tricopters if the user wants the servo to move even when unarmed.
-    if (isUsingSticksForArming() && rcData[THROTTLE] <= rxConfig()->mincheck
-#ifndef USE_QUAD_MIXER_ONLY
-#ifdef USE_SERVOS
-                && !((mixerConfig()->mixerMode == MIXER_TRI || mixerConfig()->mixerMode == MIXER_CUSTOM_TRI) && servoConfig()->tri_unarmed_servo)
-#endif
-                && mixerConfig()->mixerMode != MIXER_AIRPLANE
-                && mixerConfig()->mixerMode != MIXER_FLYING_WING
-#endif
-    ) {
-        resetYawAxis();
-    }
-
-    if (throttleCorrectionConfig()->throttle_correction_value && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
-        rcCommand[THROTTLE] += calculateThrottleAngleCorrection(throttleCorrectionConfig()->throttle_correction_value);
-    }
 
 #ifdef USE_SDCARD
     afatfs_poll();
@@ -984,6 +964,27 @@ static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
 
 static void subTaskRcCommand(timeUs_t currentTimeUs)
 {
+
+    // If we're armed, at minimum throttle, and we do arming via the
+    // sticks, do not process yaw input from the rx.  We do this so the
+    // motors do not spin up while we are trying to arm or disarm.
+    // Allow yaw control for tricopters if the user wants the servo to move even when unarmed.
+    if (isUsingSticksForArming() && rcData[THROTTLE] <= rxConfig()->mincheck
+#ifndef USE_QUAD_MIXER_ONLY
+#ifdef USE_SERVOS
+                && !((mixerConfig()->mixerMode == MIXER_TRI || mixerConfig()->mixerMode == MIXER_CUSTOM_TRI) && servoConfig()->tri_unarmed_servo)
+#endif
+                && mixerConfig()->mixerMode != MIXER_AIRPLANE
+                && mixerConfig()->mixerMode != MIXER_FLYING_WING
+#endif
+    ) {
+        resetYawAxis();
+    }
+
+    if (throttleCorrectionConfig()->throttle_correction_value && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
+        rcCommand[THROTTLE] += calculateThrottleAngleCorrection(throttleCorrectionConfig()->throttle_correction_value);
+    }
+
     processRcCommand();
     UNUSED(currentTimeUs);
 }
