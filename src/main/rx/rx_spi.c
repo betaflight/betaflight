@@ -172,7 +172,10 @@ bool rxSpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeConfig_t *rxRuntimeCon
 {
     bool ret = false;
 
-    rxSpiDeviceInit();
+    if (!rxSpiDeviceInit(rxSpiConfig)) {
+        return false;
+    }
+
     if (rxSpiSetProtocol(rxSpiConfig->rx_spi_protocol)) {
         ret = protocolInit(rxSpiConfig, rxRuntimeConfig);
     }
