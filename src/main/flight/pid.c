@@ -633,8 +633,6 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             const float delta =
                 - (gyroRateDterm[axis] - previousGyroRateDterm[axis]) / dT;
 
-            previousPidSetpoint[axis] = currentPidSetpoint;
-
             detectAndSetCrashRecovery(pidProfile->crash_recovery, axis, currentTimeUs, delta, errorRate);
 
             pidData[axis].D = pidCoefficient[axis].Kd * delta * tpaFactor;
@@ -657,6 +655,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
                 pidData[axis].D += pidFeedForward;
             }
             previousGyroRateDterm[axis] = gyroRateDterm[axis];
+            previousPidSetpoint[axis] = currentPidSetpoint;
 
 #ifdef USE_YAW_SPIN_RECOVERY
             if (yawSpinActive)  {
