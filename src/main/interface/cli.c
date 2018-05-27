@@ -2323,11 +2323,7 @@ static void cliMcuId(char *cmdline)
 {
     UNUSED(cmdline);
 
-    cliPrint("mcu_id 0x");
-    cliPrintf("%08x", U_ID_0);
-    cliPrintf("%08x", U_ID_1);
-    cliPrintf("%08x", U_ID_2);
-    cliPrintLinefeed();
+    cliPrintLinef("mcu_id %08x%08x%08x", U_ID_0, U_ID_1, U_ID_2);
 }
 
 static void printFeature(uint8_t dumpMask, const featureConfig_t *featureConfig, const featureConfig_t *featureConfigDefault)

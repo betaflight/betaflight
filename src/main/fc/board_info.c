@@ -47,12 +47,12 @@ void initBoardInformation(void)
     }
 }
 
-char *getManufacturerId(void)
+const char *getManufacturerId(void)
 {
     return manufacturerId;
 }
 
-char *getBoardName(void)
+const char *getBoardName(void)
 {
     return boardName;
 }
@@ -62,7 +62,7 @@ bool boardInformationIsSet(void)
     return boardInformationSet;
 }
 
-bool setManufacturerId(char *newManufacturerId)
+bool setManufacturerId(const char *newManufacturerId)
 {
     if (!boardInformationSet) {
         strncpy(manufacturerId, newManufacturerId, MAX_MANUFACTURER_ID_LENGTH);
@@ -73,7 +73,7 @@ bool setManufacturerId(char *newManufacturerId)
     }
 }
 
-bool setBoardName(char *newBoardName)
+bool setBoardName(const char *newBoardName)
 {
     if (!boardInformationSet) {
         strncpy(boardName, newBoardName, MAX_BOARD_NAME_LENGTH);
@@ -100,7 +100,7 @@ bool persistBoardInformation(void)
 }
 
 #if defined(USE_SIGNATURE)
-uint8_t *getSignature(void)
+const uint8_t *getSignature(void)
 {
     return signature;
 }
@@ -110,7 +110,7 @@ bool signatureIsSet(void)
     return signatureSet;
 }
 
-bool setSignature(uint8_t *newSignature)
+bool setSignature(const uint8_t *newSignature)
 {
     if (!signatureSet) {
         memcpy(signature, newSignature, SIGNATURE_LENGTH);
