@@ -36,6 +36,7 @@ COMMON_SRC = \
             drivers/transponder_ir_arcitimer.c \
             drivers/transponder_ir_ilap.c \
             drivers/transponder_ir_erlt.c \
+            fc/board_info.c \
             fc/config.c \
             fc/fc_dispatch.c \
             fc/fc_hardfaults.c \
@@ -65,7 +66,6 @@ OSD_SLAVE_SRC = \
 
 FC_SRC = \
             fc/fc_init.c \
-            fc/board_info.c \
             fc/controlrate_profile.c \
             drivers/camera_control.c \
             drivers/accgyro/gyro_sync.c \
