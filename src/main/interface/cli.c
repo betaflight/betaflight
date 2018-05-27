@@ -2284,8 +2284,8 @@ static void cliSignature(char *cmdline)
     const unsigned int len = strlen(cmdline);
 
     char signatureStr[SIGNATURE_LENGTH * 2 + 1] = {0};
+    uint8_t signature[SIGNATURE_LENGTH];
     if (len > 0) {
-        uint8_t signature[SIGNATURE_LENGTH];
 #define BLOCK_SIZE 2
         for (unsigned i = 0; i < SIGNATURE_LENGTH; i++) {
             char temp[BLOCK_SIZE + 1];
@@ -2294,22 +2294,24 @@ static void cliSignature(char *cmdline)
             signature[i] = strtoul(temp, NULL, 16);
         }
 #undef BLOCK_SIZE
-        if (signatureIsSet() && memcmp(signature, getSignature(), SIGNATURE_LENGTH)) {
-            writeSignature(signatureStr, getSignature());
-            cliPrintLinef(ERROR_MESSAGE, "signature", signatureStr);
-
-            return;
-        } else {
-            if (len > 0) {
-                setSignature(signature);
-
-                signatureUpdated = true;
-            }
-        }
     }
 
-    writeSignature(signatureStr, getSignature());
-    cliPrintLinef("signature %s", signatureStr);
+    if (len > 0 && signatureIsSet() && memcmp(signature, getSignature(), SIGNATURE_LENGTH)) {
+        writeSignature(signatureStr, getSignature());
+        cliPrintLinef(ERROR_MESSAGE, "signature", signatureStr);
+    } else {
+        if (len > 0) {
+            setSignature(signature);
+
+            signatureUpdated = true;
+
+            writeSignature(signatureStr, getSignature());
+        } else if (signatureUpdated || signatureIsSet()) {
+            writeSignature(signatureStr, getSignature());
+        }
+
+        cliPrintLinef("signature %s", signatureStr);
+    }
 }
 #endif
 
@@ -4089,13 +4091,13 @@ static void printConfig(char *cmdline, bool doDiff)
 #if defined(USE_BOARD_INFO)
         cliBoardName("");
         cliManufacturerId("");
-#if defined(USE_SIGNATURE)
-        cliSignature("");
 #endif
-#endif // USE_BOARD_INFO
 
         if (dumpMask & DUMP_ALL) {
             cliMcuId(NULL);
+#if defined(USE_BOARD_INFO) && defined(USE_SIGNATURE)
+        cliSignature("");
+#endif
         }
 
         if ((dumpMask & (DUMP_ALL | DO_DIFF)) == (DUMP_ALL | DO_DIFF)) {
