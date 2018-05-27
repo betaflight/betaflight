@@ -460,6 +460,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU8(dst, strlen(targetName));
         sbufWriteData(dst, targetName, strlen(targetName));
 
+#if defined(USE_BOARD_INFO)
         // Board name with explicit length
         char *value = getBoardName();
         sbufWriteU8(dst, strlen(value));
@@ -469,6 +470,12 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         value = getManufacturerId();
         sbufWriteU8(dst, strlen(value));
         sbufWriteData(dst, value, strlen(value));
+
+#if defined(USE_SIGNATURE)
+        // Signature
+        sbufWriteData(dst, getSignature(), SIGNATURE_LENGTH);
+#endif
+#endif // USE_BOARD_INFO
 
         break;
     }
@@ -2068,6 +2075,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
         break;
 
+#if defined(USE_BOARD_INFO)
     case MSP_SET_BOARD_INFO:
         if (!boardInformationIsSet()) {
             char boardName[MAX_BOARD_NAME_LENGTH + 1] = {0};
@@ -2089,7 +2097,20 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         }
 
         break;
+#if defined(USE_SIGNATURE)
+    case MSP_SET_SIGNATURE:
+        if (!signatureIsSet()) {
+            uint8_t signature[SIGNATURE_LENGTH];
+            sbufReadData(src, signature, SIGNATURE_LENGTH);
+            setSignature(signature);
+            persistSignature();
+        } else {
+            return MSP_RESULT_ERROR;
+        }
 
+        break;
+#endif
+#endif // USE_BOARD_INFO
     default:
         // we do not know how to handle the (valid) message, indicate error MSP $M!
         return MSP_RESULT_ERROR;

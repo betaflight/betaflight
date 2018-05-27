@@ -23,6 +23,7 @@
 
 #include "platform.h"
 
+#if defined(USE_BOARD_INFO)
 #include "build/version.h"
 
 #include "fc/board_info.h"
@@ -41,7 +42,6 @@ void pgResetFn_boardConfig(boardConfig_t *boardConfig)
         strncpy(boardConfig->boardName, getBoardName(), MAX_BOARD_NAME_LENGTH);
         boardConfig->boardInformationSet = true;
     } else {
-
 #if !defined(GENERIC_TARGET)
         strncpy(boardConfig->boardName, targetName, MAX_BOARD_NAME_LENGTH);
 
@@ -53,4 +53,14 @@ void pgResetFn_boardConfig(boardConfig_t *boardConfig)
         boardConfig->boardInformationSet = false;
 #endif // GENERIC_TARGET
     }
+
+#if defined(USE_SIGNATURE)
+    if (signatureIsSet()) {
+        memcpy(boardConfig->signature, getSignature(), SIGNATURE_LENGTH);
+        boardConfig->signatureSet = true;
+    } else {
+        boardConfig->signatureSet = false;
+    }
+#endif
 }
+#endif // USE_BOARD_INFO:

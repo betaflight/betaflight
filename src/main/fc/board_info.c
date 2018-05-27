@@ -23,11 +23,15 @@
 
 #include "platform.h"
 
+#if defined(USE_BOARD_INFO)
 #include "pg/board.h"
 
 static bool boardInformationSet = false;
 static char manufacturerId[MAX_MANUFACTURER_ID_LENGTH + 1];
 static char boardName[MAX_BOARD_NAME_LENGTH + 1];
+
+static bool signatureSet = false;
+static uint8_t signature[SIGNATURE_LENGTH];
 
 void initBoardInformation(void)
 {
@@ -35,9 +39,11 @@ void initBoardInformation(void)
     if (boardInformationSet) {
         strncpy(manufacturerId, boardConfig()->manufacturerId, MAX_MANUFACTURER_ID_LENGTH);
         strncpy(boardName, boardConfig()->boardName, MAX_BOARD_NAME_LENGTH);
-    } else {
-        strcpy(manufacturerId, "");
-        strcpy(boardName, "");
+    }
+
+    signatureSet = boardConfig()->signatureSet;
+    if (signatureSet) {
+        memcpy(signature, boardConfig()->signature, SIGNATURE_LENGTH);
     }
 }
 
@@ -92,3 +98,41 @@ bool persistBoardInformation(void)
         return false;
     }
 }
+
+#if defined(USE_SIGNATURE)
+uint8_t *getSignature(void)
+{
+    return signature;
+}
+
+bool signatureIsSet(void)
+{
+    return signatureSet;
+}
+
+bool setSignature(uint8_t *newSignature)
+{
+    if (!signatureSet) {
+        memcpy(signature, newSignature, SIGNATURE_LENGTH);
+
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool persistSignature(void)
+{
+    if (!signatureSet) {
+        memcpy(boardConfigMutable()->signature, signature, SIGNATURE_LENGTH);
+        boardConfigMutable()->signatureSet = true;
+
+        initBoardInformation();
+
+        return true;
+    } else {
+        return false;
+    }
+}
+#endif
+#endif // USE_BOARD_INFO

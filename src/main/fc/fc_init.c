@@ -242,7 +242,9 @@ void init(void)
     ensureEEPROMStructureIsValid();
     bool readSuccess = readEEPROM();
 
+#if defined(USE_BOARD_INFO)
     initBoardInformation();
+#endif
 
     if (!readSuccess || strncasecmp(systemConfig()->boardIdentifier, TARGET_BOARD_IDENTIFIER, sizeof(TARGET_BOARD_IDENTIFIER))) {
         resetEEPROM();
