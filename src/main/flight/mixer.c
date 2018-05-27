@@ -35,6 +35,7 @@
 #include "config/feature.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/rx.h"
 
 #include "drivers/pwm_output.h"
 #include "drivers/pwm_esc_detect.h"

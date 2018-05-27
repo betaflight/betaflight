@@ -29,6 +29,7 @@ extern "C" {
 
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
+    #include "pg/rx.h"
 
     #include "blackbox/blackbox.h"
     #include "blackbox/blackbox_fielddefs.h"

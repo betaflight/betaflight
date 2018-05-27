@@ -84,8 +84,6 @@ extern const char rcChannelLetters[];
 
 extern int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];       // interval [1000;2000]
 
-#define RX_MAPPABLE_CHANNEL_COUNT 8
-
 #define RSSI_SCALE_MIN 1
 #define RSSI_SCALE_MAX 255
 #define RSSI_SCALE_DEFAULT (4095.0f / 100.0f + 0.5f) // 100% @ 4095
@@ -119,39 +117,6 @@ typedef struct rxChannelRangeConfig_s {
 } rxChannelRangeConfig_t;
 
 PG_DECLARE_ARRAY(rxChannelRangeConfig_t, NON_AUX_CHANNEL_COUNT, rxChannelRangeConfigs);
-
-typedef struct rxConfig_s {
-    uint8_t rcmap[RX_MAPPABLE_CHANNEL_COUNT];  // mapping of radio channels to internal RPYTA+ order
-    uint8_t serialrx_provider;              // type of UART-based receiver (0 = spek 10, 1 = spek 11, 2 = sbus). Must be enabled by FEATURE_RX_SERIAL first.
-    uint8_t serialrx_inverted;              // invert the serial RX protocol compared to it's default setting
-    uint8_t halfDuplex;                     // allow rx to operate in half duplex mode on F4, ignored for F1 and F3.
-    uint8_t rx_spi_protocol;                // type of SPI RX protocol
-                                            // nrf24: 0 = v202 250kbps. (Must be enabled by FEATURE_RX_NRF24 first.)
-    uint32_t rx_spi_id;
-    uint8_t rx_spi_rf_channel_count;
-    ioTag_t spektrum_bind_pin_override_ioTag;
-    ioTag_t spektrum_bind_plug_ioTag;
-    uint8_t spektrum_sat_bind;              // number of bind pulses for Spektrum satellite receivers
-    uint8_t spektrum_sat_bind_autoreset;    // whenever we will reset (exit) binding mode after hard reboot
-    uint8_t rssi_channel;
-    uint8_t rssi_scale;
-    uint8_t rssi_invert;
-    uint16_t midrc;                         // Some radios have not a neutral point centered on 1500. can be changed here
-    uint16_t mincheck;                      // minimum rc end
-    uint16_t maxcheck;                      // maximum rc end
-    uint8_t rcInterpolation;
-    uint8_t rcInterpolationChannels;
-    uint8_t rcInterpolationInterval;
-    uint8_t fpvCamAngleDegrees;             // Camera angle to be scaled into rc commands
-    uint8_t airModeActivateThreshold;       // Throttle setpoint percent where airmode gets activated
-
-    uint16_t rx_min_usec;
-    uint16_t rx_max_usec;
-    uint8_t max_aux_channel;
-    uint8_t rssi_src_frame_errors;          // true to use frame drop flags in the rx protocol
-} rxConfig_t;
-
-PG_DECLARE(rxConfig_t, rxConfig);
 
 struct rxRuntimeConfig_s;
 typedef uint16_t (*rcReadRawDataFnPtr)(const struct rxRuntimeConfig_s *rxRuntimeConfig, uint8_t chan); // used by receiver driver to return channel data
@@ -187,7 +152,9 @@ bool rxIsReceivingSignal(void);
 bool rxAreFlightChannelsValid(void);
 bool calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs);
 
-void parseRcChannels(const char *input, rxConfig_t *rxConfig);
+struct rxConfig_s;
+
+void parseRcChannels(const char *input, struct rxConfig_s *rxConfig);
 
 #define RSSI_MAX_VALUE 1023
 

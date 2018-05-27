@@ -32,6 +32,8 @@
 
 #include "config/feature.h"
 
+#include "pg/rx.h"
+
 #include "drivers/rx/rx_pwm.h"
 
 #include "fc/config.h"

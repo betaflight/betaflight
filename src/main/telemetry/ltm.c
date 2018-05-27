@@ -66,6 +66,8 @@
 #include "io/ledstrip.h"
 #include "io/beeper.h"
 
+#include "pg/rx.h"
+
 #include "rx/rx.h"
 
 #include "flight/mixer.h"

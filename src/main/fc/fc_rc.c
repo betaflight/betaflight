@@ -44,7 +44,9 @@
 #include "flight/imu.h"
 #include "flight/gps_rescue.h"
 #include "flight/pid.h"
+#include "pg/rx.h"
 #include "rx/rx.h"
+
 
 #include "sensors/battery.h"
 

@@ -34,6 +34,7 @@
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/rx.h"
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"

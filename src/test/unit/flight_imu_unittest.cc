@@ -21,13 +21,16 @@
 #include <cmath>
 
 extern "C" {
+    #include "platform.h"
     #include "build/debug.h"
 
     #include "common/axis.h"
     #include "common/maths.h"
 
     #include "config/feature.h"
+    #include "pg/pg.h"
     #include "pg/pg_ids.h"
+    #include "pg/rx.h"
 
     #include "drivers/accgyro/accgyro.h"
     #include "drivers/compass/compass.h"

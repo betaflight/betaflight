@@ -33,6 +33,8 @@
 
 #ifdef USE_SERIAL_RX
 
+#include "pg/rx.h"
+
 #include "common/utils.h"
 
 #include "drivers/serial.h"

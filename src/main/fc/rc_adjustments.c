@@ -37,9 +37,10 @@
 
 #include "drivers/time.h"
 
+#include "config/feature.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
-#include "config/feature.h"
+#include "pg/rx.h"
 
 #include "flight/pid.h"
 

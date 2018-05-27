@@ -37,6 +37,7 @@
 #include "config/feature.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/rx.h"
 
 #include "drivers/light_led.h"
 #include "drivers/serial_usb_vcp.h"

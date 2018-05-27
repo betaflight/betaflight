@@ -36,6 +36,7 @@ extern "C" {
 
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
+    #include "pg/rx.h"
 
     #include "drivers/serial.h"
     #include "drivers/system.h"

@@ -52,6 +52,7 @@
 #include "flight/pid.h"
 #include "io/beeper.h"
 #include "io/serial.h"
+#include "pg/rx.h"
 #include "rx/rx.h"
 #include "sensors/barometer.h"
 #include "sensors/boardalignment.h"

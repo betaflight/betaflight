@@ -24,7 +24,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "platform.h"
+
 #include "common/crc.h"
+
+#include "pg/rx.h"
 
 #include "drivers/rx/rx_nrf24l01.h"
 #include "drivers/rx/rx_spi.h"

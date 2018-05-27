@@ -37,6 +37,8 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 
+#include "pg/rx.h"
+
 #include "rx/rx.h"
 
 #include "sensors/battery.h"

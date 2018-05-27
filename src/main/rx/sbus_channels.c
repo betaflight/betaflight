@@ -28,6 +28,8 @@
 
 #include "common/utils.h"
 
+#include "pg/rx.h"
+
 #include "rx/rx.h"
 #include "rx/sbus_channels.h"
 

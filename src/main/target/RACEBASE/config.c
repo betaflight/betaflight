@@ -27,6 +27,8 @@
 
 #include "fc/config.h"
 
+#include "pg/rx.h"
+
 #include "rx/rx.h"
 
 void targetConfiguration(void)

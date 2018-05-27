@@ -48,6 +48,8 @@
 
 #include "io/gps.h"
 
+#include "pg/rx.h"
+
 #include "rx/rx.h"
 #include "rx/spektrum.h"
 #include "io/spektrum_vtx_control.h"

@@ -44,6 +44,7 @@
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/beeper.h"
+#include "pg/rx.h"
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/bus_i2c.h"

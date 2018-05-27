@@ -51,6 +51,7 @@
 
 #include "pg/beeper.h"
 #include "pg/beeper_dev.h"
+#include "pg/rx.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 

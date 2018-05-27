@@ -18,6 +18,7 @@
 #pragma once
 
 #include <stdio.h>
+#include <stdint.h>
 
 #define USE_PARAMETER_GROUPS
 
@@ -108,3 +109,5 @@ typedef struct
 #define NVIC_PriorityGroup_2 0x500
 
 #include "target.h"
+
+#include "target/common_defaults_post.h"

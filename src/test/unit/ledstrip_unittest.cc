@@ -22,12 +22,15 @@
 //#define DEBUG_LEDSTRIP
 
 extern "C" {
+    #include "platform.h"
     #include "build/build_config.h"
 
     #include "common/axis.h"
     #include "common/color.h"
 
+    #include "pg/pg.h"
     #include "pg/pg_ids.h"
+    #include "pg/rx.h"
 
     #include "drivers/io.h"
     #include "drivers/light_ws2811strip.h"
