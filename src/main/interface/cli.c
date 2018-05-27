@@ -302,20 +302,14 @@ static void cliPrintfva(const char *format, va_list va)
     bufWriterFlush(cliWriter);
 }
 
-static void cliPrintLinefva(const char *format, va_list va)
-{
-    tfp_format(cliWriter, cliPutp, format, va);
-    bufWriterFlush(cliWriter);
-    cliPrintLinefeed();
-}
-
 static bool cliDumpPrintLinef(uint8_t dumpMask, bool equalsDefault, const char *format, ...)
 {
     if (!((dumpMask & DO_DIFF) && equalsDefault)) {
         va_list va;
         va_start(va, format);
-        cliPrintLinefva(format, va);
+        cliPrintfva(format, va);
         va_end(va);
+        cliPrintLinefeed();
         return true;
     } else {
         return false;
@@ -334,8 +328,9 @@ static bool cliDefaultPrintLinef(uint8_t dumpMask, bool equalsDefault, const cha
 
         va_list va;
         va_start(va, format);
-        cliPrintLinefva(format, va);
+        cliPrintfva(format, va);
         va_end(va);
+        cliPrintLinefeed();
         return true;
     } else {
         return false;
@@ -355,8 +350,19 @@ static void cliPrintLinef(const char *format, ...)
 {
     va_list va;
     va_start(va, format);
-    cliPrintLinefva(format, va);
+    cliPrintfva(format, va);
     va_end(va);
+    cliPrintLinefeed();
+}
+
+static void cliPrintErrorLinef(const char *format, ...)
+{
+    cliPrint("###ERROR### ");
+    va_list va;
+    va_start(va, format);
+    cliPrintfva(format, va);
+    va_end(va);
+    cliPrintLinefeed();
 }
 
 
@@ -652,12 +658,12 @@ static void cliPrompt(void)
 
 static void cliShowParseError(void)
 {
-    cliPrintLine("Parse error");
+    cliPrintErrorLinef("Parse error");
 }
 
 static void cliShowArgumentRangeError(char *name, int min, int max)
 {
-    cliPrintLinef("%s not between %d and %d", name, min, max);
+    cliPrintErrorLinef("%s not between %d and %d", name, min, max);
 }
 
 static const char *nextArg(const char *currentArg)
@@ -1362,7 +1368,7 @@ static void cliMotorMix(char *cmdline)
             len = strlen(ptr);
             for (uint32_t i = 0; ; i++) {
                 if (mixerNames[i] == NULL) {
-                    cliPrintLine("Invalid name");
+                    cliPrintErrorLinef("Invalid name");
                     break;
                 }
                 if (strncasecmp(ptr, mixerNames[i], len) == 0) {
@@ -1844,7 +1850,7 @@ static void cliServoMix(char *cmdline)
             len = strlen(ptr);
             for (uint32_t i = 0; ; i++) {
                 if (mixerNames[i] == NULL) {
-                    cliPrintLine("Invalid name");
+                    cliPrintErrorLinef("Invalid name");
                     break;
                 }
                 if (strncasecmp(ptr, mixerNames[i], len) == 0) {
@@ -2281,7 +2287,7 @@ static void cliFeature(char *cmdline)
 
         for (uint32_t i = 0; ; i++) {
             if (featureNames[i] == NULL) {
-                cliPrintLine("Invalid name");
+                cliPrintErrorLinef("Invalid name");
                 break;
             }
 
@@ -2364,7 +2370,7 @@ static void cliBeeper(char *cmdline)
 
         for (uint32_t i = 0; ; i++) {
             if (i == beeperCount) {
-                cliPrintLine("Invalid name");
+                cliPrintErrorLinef("Invalid name");
                 break;
             }
             if (strncasecmp(cmdline, beeperNameForTableIndex(i), len) == 0) {
@@ -2548,20 +2554,20 @@ static void cliGpsPassthrough(char *cmdline)
 #if defined(USE_GYRO_REGISTER_DUMP) && !defined(SIMULATOR_BUILD)
 static void cliPrintGyroRegisters(uint8_t whichSensor)
 {
-    tfp_printf("# WHO_AM_I    0x%X\r\n", gyroReadRegister(whichSensor, MPU_RA_WHO_AM_I));
-    tfp_printf("# CONFIG      0x%X\r\n", gyroReadRegister(whichSensor, MPU_RA_CONFIG));
-    tfp_printf("# GYRO_CONFIG 0x%X\r\n", gyroReadRegister(whichSensor, MPU_RA_GYRO_CONFIG));
+    cliPrintLinef("# WHO_AM_I    0x%X", gyroReadRegister(whichSensor, MPU_RA_WHO_AM_I));
+    cliPrintLinef("# CONFIG      0x%X", gyroReadRegister(whichSensor, MPU_RA_CONFIG));
+    cliPrintLinef("# GYRO_CONFIG 0x%X", gyroReadRegister(whichSensor, MPU_RA_GYRO_CONFIG));
 }
 
 static void cliDumpGyroRegisters(char *cmdline)
 {
 #ifdef USE_DUAL_GYRO
     if ((gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_1) || (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_BOTH)) {
-        tfp_printf("\r\n# Gyro 1\r\n");
+        cliPrintLinef("\r\n# Gyro 1");
         cliPrintGyroRegisters(GYRO_CONFIG_USE_GYRO_1);
     }
     if ((gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_2) || (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_BOTH)) {
-        tfp_printf("\r\n# Gyro 2\r\n");
+        cliPrintLinef("\r\n# Gyro 2");
         cliPrintGyroRegisters(GYRO_CONFIG_USE_GYRO_2);
     }
 #else
@@ -2575,11 +2581,11 @@ static void cliDumpGyroRegisters(char *cmdline)
 static int parseOutputIndex(char *pch, bool allowAllEscs) {
     int outputIndex = atoi(pch);
     if ((outputIndex >= 0) && (outputIndex < getMotorCount())) {
-        tfp_printf("Using output %d.\r\n", outputIndex);
+        cliPrintLinef("Using output %d.", outputIndex);
     } else if (allowAllEscs && outputIndex == ALL_MOTORS) {
-        tfp_printf("Using all outputs.\r\n");
+        cliPrintLinef("Using all outputs.");
     } else {
-        tfp_printf("Invalid output number. Range: 0  %d.\r\n", getMotorCount() - 1);
+        cliPrintErrorLinef("Invalid output number. Range: 0  %d.", getMotorCount() - 1);
 
         return -1;
     }
@@ -2750,7 +2756,7 @@ void printEscInfo(const uint8_t *escInfoBuffer, uint8_t bytesRead)
                     }
                 }
             } else {
-                cliPrintLine("Checksum Error.");
+                cliPrintErrorLinef("Checksum Error.");
             }
         }
     }
@@ -2839,7 +2845,7 @@ static void cliDshotProg(char *cmdline)
                         delay(20); // wait for sound output to finish
                     }
                 } else {
-                    cliPrintLinef("Invalid command. Range: 1 - %d.", DSHOT_MIN_THROTTLE - 1);
+                    cliPrintErrorLinef("Invalid command. Range: 1 - %d.", DSHOT_MIN_THROTTLE - 1);
                 }
             }
 
@@ -2931,7 +2937,7 @@ static void cliMixer(char *cmdline)
 
     for (uint32_t i = 0; ; i++) {
         if (mixerNames[i] == NULL) {
-            cliPrintLine("Invalid name");
+            cliPrintErrorLinef("Invalid name");
             return;
         }
         if (strncasecmp(cmdline, mixerNames[i], len) == 0) {
@@ -3015,7 +3021,7 @@ static void cliPlaySound(char *cmdline)
                 if ((name=beeperNameForTableIndex(i)) != NULL)
                     break;   //if name OK then play sound below
                 if (i == lastSoundIdx + 1) {     //prevent infinite loop
-                    cliPrintLine("Error playing sound");
+                    cliPrintErrorLinef("Error playing sound");
                     return;
                 }
             }
@@ -3159,7 +3165,7 @@ STATIC_UNIT_TESTED void cliGet(char *cmdline)
         return;
     }
 
-    cliPrintLine("Invalid name");
+    cliPrintErrorLinef("Invalid name");
 }
 
 static uint8_t getWordLength(char *bufBegin, char *bufEnd)
@@ -3307,14 +3313,14 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
                     cliPrintf("%s set to ", val->name);
                     cliPrintVar(val, 0);
                 } else {
-                    cliPrintLine("Invalid value");
+                    cliPrintErrorLinef("Invalid value");
                     cliPrintVarRange(val);
                 }
 
                 return;
             }
         }
-        cliPrintLine("Invalid name");
+        cliPrintErrorLinef("Invalid name");
     } else {
         // no equals, check for matching variables.
         cliGet(cmdline);
@@ -3742,7 +3748,7 @@ static void cliResource(char *cmdline)
     pch = strtok_r(cmdline, " ", &saveptr);
     for (resourceIndex = 0; ; resourceIndex++) {
         if (resourceIndex >= ARRAYLEN(resourceTable)) {
-            cliPrintLine("Invalid");
+            cliPrintErrorLinef("Invalid");
             return;
         }
 
@@ -3893,7 +3899,7 @@ static void cliTimer(char *cmdline)
     }
 
     if (timerIOIndex < 0) {
-        cliPrintLine("Error: out of index");
+        cliPrintErrorLinef("Index out of range.");
         return;
     }
 
