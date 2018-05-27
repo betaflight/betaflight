@@ -273,4 +273,11 @@ void serialSetCtrlLineState(serialPort_t *, uint16_t ) {}
 
 void serialSetBaudRateCb(serialPort_t *, void (*)(serialPort_t *context, uint32_t baud), serialPort_t *) {}
 
+char *getBoardName(void) { return NULL; };
+char *getManufacturerId(void) { return NULL; };
+bool boardInformationIsSet(void) { return true; };
+
+bool setBoardName(char *newBoardName) { UNUSED(newBoardName); return true; };
+bool setManufacturerId(char *newManufacturerId) { UNUSED(newManufacturerId); return true; };
+bool persistBoardInformation(void) { return true; };
 }
