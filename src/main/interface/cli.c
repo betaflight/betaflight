@@ -84,6 +84,7 @@ extern uint8_t __config_end;
 #include "drivers/vtx_common.h"
 #include "drivers/usb_msc.h"
 
+#include "fc/board_info.h"
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/fc_core.h"
@@ -170,6 +171,8 @@ static char cliBuffer[CLI_IN_BUFFER_SIZE];
 static uint32_t bufferIndex = 0;
 
 static bool configIsInCopy = false;
+
+static bool boardInformationUpdated = false;
 
 static const char* const emptyName = "-";
 static const char* const emptyString = "";
@@ -2229,6 +2232,49 @@ static void cliName(char *cmdline)
     printName(DUMP_MASTER, pilotConfig());
 }
 
+#define ERROR_MESSAGE "Error, %s is already set: %s"
+
+static void cliBoardName(char *cmdline)
+{
+    const unsigned int len = strlen(cmdline);
+    if (len > 0 && boardInformationIsSet() && strncmp(getBoardName(), cmdline, len)) {
+        cliPrintLinef(ERROR_MESSAGE, "board_name", getBoardName());
+    } else {
+        if (len > 0) {
+            setBoardName(cmdline);
+            boardInformationUpdated = true;
+        }
+        cliPrintLinef("board_name %s", getBoardName());
+    }
+}
+
+static void cliManufacturerId(char *cmdline)
+{
+    const unsigned int len = strlen(cmdline);
+    if (len > 0 && boardInformationIsSet() && strncmp(getManufacturerId(), cmdline, len)) {
+        cliPrintLinef(ERROR_MESSAGE, "manufactuer_id", getManufacturerId());
+    } else {
+        if (len > 0) {
+            setManufacturerId(cmdline);
+            boardInformationUpdated = true;
+        }
+        cliPrintLinef("manufacturer_id %s", getManufacturerId());
+    }
+}
+
+#undef ERROR_MESSAGE
+
+static void cliMcuId(char *cmdline)
+{
+    UNUSED(cmdline);
+
+    cliPrint("mcu_id 0x");
+    cliPrintf("%08x", U_ID_0);
+    cliPrintf("%08x", U_ID_1);
+    cliPrintf("%08x", U_ID_2);
+    cliPrintLinefeed();
+}
+
 static void printFeature(uint8_t dumpMask, const featureConfig_t *featureConfig, const featureConfig_t *featureConfigDefault)
 {
     const uint32_t mask = featureConfig->enabledFeatures;
@@ -3100,6 +3146,9 @@ static void cliSave(char *cmdline)
     UNUSED(cmdline);
 
     cliPrintHashLine("saving");
+    if (boardInformationUpdated) {
+        persistBoardInformation();
+    }
     writeEEPROM();
     cliReboot();
 }
@@ -3973,6 +4022,13 @@ static void printConfig(char *cmdline, bool doDiff)
     if ((dumpMask & DUMP_MASTER) || (dumpMask & DUMP_ALL)) {
         cliPrintHashLine("version");
         cliVersion(NULL);
+        cliPrintLinefeed();
+
+        cliBoardName("");
+        cliManufacturerId("");
+        if (dumpMask & DUMP_ALL) {
+            cliMcuId(NULL);
+        }
 
         if ((dumpMask & (DUMP_ALL | DO_DIFF)) == (DUMP_ALL | DO_DIFF)) {
             cliPrintHashLine("reset configuration to default settings");
@@ -4176,6 +4232,7 @@ const clicmd_t cmdTable[] = {
         "\t<+|->[name]", cliBeeper),
 #endif
     CLI_COMMAND_DEF("bl", "reboot into bootloader", NULL, cliBootloader),
+    CLI_COMMAND_DEF("board_name", "name of the board model", NULL, cliBoardName),
 #ifdef USE_LED_STRIP
     CLI_COMMAND_DEF("color", "configure colors", NULL, cliColor),
 #endif
@@ -4218,7 +4275,9 @@ const clicmd_t cmdTable[] = {
 #ifdef USE_LED_STRIP
     CLI_COMMAND_DEF("led", "configure leds", NULL, cliLed),
 #endif
+    CLI_COMMAND_DEF("manufacturer_id", "id of the board manufacturer", NULL, cliManufacturerId),
     CLI_COMMAND_DEF("map", "configure rc channel order", "[<map>]", cliMap),
+    CLI_COMMAND_DEF("mcu_id", "id of the microcontroller", NULL, cliMcuId),
 #ifndef USE_QUAD_MIXER_ONLY
     CLI_COMMAND_DEF("mixer", "configure mixer", "list\r\n\t<name>", cliMixer),
 #endif

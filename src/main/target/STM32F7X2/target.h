@@ -19,6 +19,11 @@
  */
 
 #pragma once
+
+// Treat the target as generic, and expect manufacturer id / board name
+// to be supplied when the board is configured for the first time
+#define GENERIC_TARGET
+
 #define TARGET_BOARD_IDENTIFIER "S7X2"
 
 #define USBD_PRODUCT_STRING     "S7X2"

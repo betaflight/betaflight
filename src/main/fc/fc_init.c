@@ -78,6 +78,7 @@
 #include "drivers/usb_msc.h"
 #endif
 
+#include "fc/board_info.h"
 #include "fc/config.h"
 #include "fc/fc_init.h"
 #include "fc/fc_tasks.h"
@@ -240,6 +241,8 @@ void init(void)
 
     ensureEEPROMStructureIsValid();
     bool readSuccess = readEEPROM();
+
+    initBoardInformation();
 
     if (!readSuccess || strncasecmp(systemConfig()->boardIdentifier, TARGET_BOARD_IDENTIFIER, sizeof(TARGET_BOARD_IDENTIFIER))) {
         resetEEPROM();

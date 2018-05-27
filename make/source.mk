@@ -65,6 +65,7 @@ OSD_SLAVE_SRC = \
 
 FC_SRC = \
             fc/fc_init.c \
+            fc/board_info.c \
             fc/controlrate_profile.c \
             drivers/camera_control.c \
             drivers/accgyro/gyro_sync.c \
@@ -282,6 +283,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/vtx_rtc6705.c \
             drivers/vtx_common.c \
             fc/fc_init.c \
+            fc/board_info.c \
             config/config_eeprom.c \
             config/feature.c \
             config/config_streamer.c \

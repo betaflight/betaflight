@@ -62,6 +62,7 @@
 #include "drivers/transponder_ir.h"
 #include "drivers/camera_control.h"
 
+#include "fc/board_info.h"
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/fc_core.h"
@@ -101,6 +102,7 @@
 
 #include "msp/msp_serial.h"
 
+#include "pg/board.h"
 #include "pg/vcd.h"
 
 #include "rx/rx.h"
@@ -457,6 +459,17 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         // Target name with explicit length
         sbufWriteU8(dst, strlen(targetName));
         sbufWriteData(dst, targetName, strlen(targetName));
+
+        // Board name with explicit length
+        char *value = getBoardName();
+        sbufWriteU8(dst, strlen(value));
+        sbufWriteData(dst, value, strlen(value));
+
+        // Manufacturer id with explicit length
+        value = getManufacturerId();
+        sbufWriteU8(dst, strlen(value));
+        sbufWriteData(dst, value, strlen(value));
+
         break;
     }
 
@@ -2054,6 +2067,29 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         setRssiMsp(sbufReadU8(src));
 
         break;
+
+    case MSP_SET_BOARD_INFO:
+        if (!boardInformationIsSet()) {
+            char boardName[MAX_BOARD_NAME_LENGTH + 1] = {0};
+            char manufacturerId[MAX_MANUFACTURER_ID_LENGTH + 1] = {0};
+            uint8_t length = sbufReadU8(src);
+            for (unsigned int i = 0; i < length; i++) {
+                boardName[i] = sbufReadU8(src);
+            }
+            length = sbufReadU8(src);
+            for (unsigned int i = 0; i < length; i++) {
+                manufacturerId[i] = sbufReadU8(src);
+            }
+
+            setBoardName(boardName);
+            setManufacturerId(manufacturerId);
+            persistBoardInformation();
+        } else {
+            return MSP_RESULT_ERROR;
+        }
+
+        break;
+
     default:
         // we do not know how to handle the (valid) message, indicate error MSP $M!
         return MSP_RESULT_ERROR;

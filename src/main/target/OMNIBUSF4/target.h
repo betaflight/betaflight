@@ -34,6 +34,8 @@
 #define TARGET_BOARD_IDENTIFIER "EXF4"
 #else
 #define TARGET_BOARD_IDENTIFIER "OBF4"
+// Example of a manufacturer ID to be persisted as part of the config:
+#define TARGET_MANUFACTURER_IDENTIFIER "AIRB"
 #define OMNIBUSF4BASE // For config.c
 #endif
 

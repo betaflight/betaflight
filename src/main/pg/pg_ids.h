@@ -132,7 +132,8 @@
 #define PG_SPI_PREINIT_IPU_CONFIG 535
 #define PG_SPI_PREINIT_OPU_CONFIG 536
 #define PG_RX_SPI_CONFIG 537
-#define PG_BETAFLIGHT_END 537
+#define PG_BOARD_CONFIG 538
+#define PG_BETAFLIGHT_END 538
 
 
 // OSD configuration (subject to change)
