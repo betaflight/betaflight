@@ -203,13 +203,8 @@ static FAST_RAM_ZERO_INIT filterApplyFnPtr dtermLowpass2ApplyFn;
 static FAST_RAM_ZERO_INIT pt1Filter_t dtermLowpass2[2];
 static FAST_RAM_ZERO_INIT filterApplyFnPtr ptermYawLowpassApplyFn;
 static FAST_RAM_ZERO_INIT pt1Filter_t ptermYawLowpass;
-<<<<<<< HEAD
-static FAST_RAM_ZERO_INIT pt1Filter_t windupLpf[3][2];
-static FAST_RAM_ZERO_INIT itermRelax_e itermRelax;
-=======
 static FAST_RAM_ZERO_INIT pt1Filter_t windupLpf[XYZ_AXIS_COUNT][2];
 static FAST_RAM_ZERO_INIT uint8_t itermRelax;
->>>>>>> address style issues and set off by default
 static FAST_RAM_ZERO_INIT uint8_t itermRelaxCutoffLow;
 static FAST_RAM_ZERO_INIT uint8_t itermRelaxCutoffHigh;
 
@@ -776,14 +771,10 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
 
         // -----calculate I component
         float itermErrorRate;
-<<<<<<< HEAD
-        if (itermRelax && (axis < FD_YAW || itermRelax == ITERM_RELAX_RPY )) {
-=======
         float acErrorRate;
-        if (itermRelax && (axis < FD_YAW || itermRelax == 2 )) {
->>>>>>> address style issues and set off by default
-            const float gyroTargetLow = pt1FilterApply(&windupLpf[axis][0], currentPidSetpoint);
-            const float gyroTargetHigh =  pt1FilterApply(&windupLpf[axis][1], currentPidSetpoint);
+        if (itermRelax && (axis < FD_YAW || itermRelax == ITERM_RELAX_RPY )) {
+            const float gyroTargetLow = pt1FilterApply(&windupLpf[axis][0], stickSetpoint) + acCorrection;
+            const float gyroTargetHigh =  pt1FilterApply(&windupLpf[axis][1], stickSetpoint) + acCorrection;
             if (axis < FD_YAW) {
                 int itemOffset = (axis << 1);
                 DEBUG_SET(DEBUG_ITERM_RELAX, itemOffset++, gyroTargetHigh);
