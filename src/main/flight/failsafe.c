@@ -68,7 +68,7 @@ PG_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig,
     .failsafe_throttle_low_delay = 100,              // default throttle low delay for "just disarm" on failsafe condition
     .failsafe_delay = 4,                             // 0,4sec
     .failsafe_off_delay = 10,                        // 1sec
-    .failsafe_kill_switch = 0,                       // default failsafe switch action is identical to rc link loss
+    .failsafe_switch_mode = 0,                       // default failsafe switch action is identical to rc link loss
     .failsafe_procedure = FAILSAFE_PROCEDURE_DROP_IT // default full failsafe procedure is 0: auto-landing
 );
 
@@ -192,6 +192,10 @@ void failsafeUpdateState(void)
     bool failsafeSwitchIsOn = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
     beeperMode_e beeperMode = BEEPER_SILENCE;
 
+    if (failsafeSwitchIsOn && failsafeConfig()->failsafe_switch_mode == FAILSAFE_SWITCH_MODE_STAGE2) {
+        receivingRxData = false; // force Stage2
+    }
+
     // Beep RX lost only if we are not seeing data and we have been armed earlier
     if (!receivingRxData && ARMING_FLAG(WAS_EVER_ARMED)) {
         beeperMode = BEEPER_RX_LOST;
@@ -210,7 +214,7 @@ void failsafeUpdateState(void)
                         failsafeState.throttleLowPeriod = millis() + failsafeConfig()->failsafe_throttle_low_delay * MILLIS_PER_TENTH_SECOND;
                     }
                     // Kill switch logic (must be independent of receivingRxData to skip PERIOD_RXDATA_FAILURE delay before disarming)
-                    if (failsafeSwitchIsOn && failsafeConfig()->failsafe_kill_switch) {
+                    if (failsafeSwitchIsOn && failsafeConfig()->failsafe_switch_mode == FAILSAFE_SWITCH_MODE_KILL) {
                         // KillswitchEvent: failsafe switch is configured as KILL switch and is switched ON
                         failsafeActivate();
                         failsafeState.phase = FAILSAFE_LANDED;      // skip auto-landing procedure

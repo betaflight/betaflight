@@ -37,7 +37,7 @@ typedef struct failsafeConfig_s {
     uint16_t failsafe_throttle_low_delay;   // Time throttle stick must have been below 'min_check' to "JustDisarm" instead of "full failsafe procedure".
     uint8_t failsafe_delay;                 // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example (10)
     uint8_t failsafe_off_delay;             // Time for Landing before motors stop in 0.1sec. 1 step = 0.1sec - 20sec in example (200)
-    uint8_t failsafe_kill_switch;           // failsafe switch action is 0: identical to rc link loss, 1: disarms instantly
+    uint8_t failsafe_switch_mode;           // failsafe switch action is 0: stage1 (identical to rc link loss), 1: disarms instantly, 2: stage2
     uint8_t failsafe_procedure;             // selected full failsafe procedure is 0: auto-landing, 1: Drop it
 } failsafeConfig_t;
 
@@ -63,6 +63,12 @@ typedef enum {
     FAILSAFE_PROCEDURE_DROP_IT,
     FAILSAFE_PROCEDURE_GPS_RESCUE
 } failsafeProcedure_e;
+
+typedef enum {
+    FAILSAFE_SWITCH_MODE_STAGE1 = 0,
+    FAILSAFE_SWITCH_MODE_KILL,
+    FAILSAFE_SWITCH_MODE_STAGE2
+} failsafeSwitchMode_e;
 
 typedef struct failsafeState_s {
     int16_t events;
