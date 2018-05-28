@@ -89,8 +89,8 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 #endif
 
 #ifdef USE_ACRO_TRAINER
-#define ACRO_TRAINER_LOOKAHEAD_MIN_TIME   0.01f
-#define ACRO_TRAINER_LOOKAHEAD_RATE_LIMIT 500.0f // Max gyro rate for lookahead time scaling
+#define ACRO_TRAINER_LOOKAHEAD_RATE_LIMIT 500.0f  // Max gyro rate for lookahead time scaling
+#define ACRO_TRAINER_SETPOINT_LIMIT       1000.0f // Limit the correcting setpoint
 #endif // USE_ACRO_TRAINER
 
 PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 3);
@@ -599,7 +599,7 @@ static FAST_CODE_NOINLINE float applyAcroTrainer(int axis, const rollAndPitchTri
 {
     float ret = setPoint;
 
-    if (!FLIGHT_MODE(ANGLE_MODE) && !FLIGHT_MODE(HORIZON_MODE)) {
+    if (!FLIGHT_MODE(ANGLE_MODE) && !FLIGHT_MODE(HORIZON_MODE) && !FLIGHT_MODE(GPS_RESCUE_MODE)) {
         bool resetIterm = false;
         float projectedAngle = 0;
         const int setpointSign = acroTrainerSign(setPoint);
@@ -619,7 +619,7 @@ static FAST_CODE_NOINLINE float applyAcroTrainer(int axis, const rollAndPitchTri
         }
 
         if (acroTrainerAxisState[axis] != 0) {
-            ret = ((acroTrainerAngleLimit * angleSign) - currentAngle) * acroTrainerGain;
+            ret = constrainf(((acroTrainerAngleLimit * angleSign) - currentAngle) * acroTrainerGain, -ACRO_TRAINER_SETPOINT_LIMIT, ACRO_TRAINER_SETPOINT_LIMIT);
         } else {
         
         // Not currently over the limit so project the angle based on current angle and
@@ -627,7 +627,6 @@ static FAST_CODE_NOINLINE float applyAcroTrainer(int axis, const rollAndPitchTri
         // If the projected angle exceeds the limit then apply limiting to minimize overshoot.
             // Calculate the lookahead window by scaling proportionally with gyro rate from 0-500dps
             float checkInterval = constrainf(fabsf(gyro.gyroADCf[axis]) / ACRO_TRAINER_LOOKAHEAD_RATE_LIMIT, 0.0f, 1.0f) * acroTrainerLookaheadTime;
-            checkInterval = MAX(checkInterval, ACRO_TRAINER_LOOKAHEAD_MIN_TIME);
             projectedAngle = (gyro.gyroADCf[axis] * checkInterval) + currentAngle;
             const int projectedAngleSign = acroTrainerSign(projectedAngle);
             if ((fabsf(projectedAngle) > acroTrainerAngleLimit) && (projectedAngleSign == setpointSign)) {
@@ -840,6 +839,11 @@ bool crashRecoveryModeActive(void)
 #ifdef USE_ACRO_TRAINER
 void pidSetAcroTrainerState(bool newState)
 {
-    acroTrainerActive = newState;
+    if (acroTrainerActive != newState) {
+        if (newState) {
+            pidAcroTrainerInit();
+        }
+        acroTrainerActive = newState;
+    }
 }
 #endif // USE_ACRO_TRAINER
