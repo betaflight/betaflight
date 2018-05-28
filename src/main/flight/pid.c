@@ -202,7 +202,7 @@ static FAST_RAM_ZERO_INIT pt1Filter_t dtermLowpass2[2];
 static FAST_RAM_ZERO_INIT filterApplyFnPtr ptermYawLowpassApplyFn;
 static FAST_RAM_ZERO_INIT pt1Filter_t ptermYawLowpass;
 static FAST_RAM_ZERO_INIT pt1Filter_t windupLpf[3][2];
-static FAST_RAM_ZERO_INIT bool itermRelax;
+static FAST_RAM_ZERO_INIT uint8_t itermRelax;
 static FAST_RAM_ZERO_INIT uint8_t itermRelaxCutoffLow;
 static FAST_RAM_ZERO_INIT uint8_t itermRelaxCutoffHigh;
 
