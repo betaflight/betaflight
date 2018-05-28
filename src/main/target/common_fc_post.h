@@ -122,3 +122,22 @@
 #if defined(USE_FLASH_M25P16)
 #define USE_FLASH
 #endif
+
+// Generate USE_SPI_GYRO or USE_I2C_GYRO
+#if defined(USE_GYRO_L3G4200D) || defined(USE_GYRO_L3GD20) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6000) || defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU6500)
+#define USE_GYRO_I2C
+#endif
+
+#if defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250)
+#define USE_SPI_GYRO
+#endif
+
+#if defined(USE_SPI_GYRO) && !defined(USE_DUAL_GYRO)
+#if !(defined(ICM20689_SPI_INSTANCE) || defined(MPU6000_SPI_INSTANCE) || defined(MPU6500_SPI_INSTANCE) || defined(MPU9250_SPI_INSTANCE))
+#error USE_SPI_GYRO but no valid GYRO_xxx_INSTANCE
+#endif
+#endif
+
+#if defined(USE_SPI_GYRO) && defined(USE_I2C_GYRO)
+#error USE_SPI_GYRO and USE_I2C_GYRO 
+#endif
