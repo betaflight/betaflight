@@ -127,6 +127,7 @@ extern uint8_t __config_end;
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/rx.h"
+#include "pg/rx_spi.h"
 #include "pg/rx_pwm.h"
 #include "pg/timerio.h"
 #include "pg/usb.h"
@@ -2404,10 +2405,10 @@ static void cliBeeper(char *cmdline)
 }
 #endif
 
+#ifdef USE_RX_FRSKY_SPI
 void cliFrSkyBind(char *cmdline){
     UNUSED(cmdline);
-    switch (rxConfig()->rx_spi_protocol) {
-#ifdef USE_RX_FRSKY_SPI
+    switch (rxSpiConfig()->rx_spi_protocol) {
     case RX_SPI_FRSKY_D:
     case RX_SPI_FRSKY_X:
         frSkySpiBind();
@@ -2415,13 +2416,13 @@ void cliFrSkyBind(char *cmdline){
         cliPrint("Binding...");
 
         break;
-#endif
     default:
         cliPrint("Not supported.");
 
         break;
     }
 }
+#endif
 
 static void printMap(uint8_t dumpMask, const rxConfig_t *rxConfig, const rxConfig_t *defaultRxConfig)
 {
@@ -3590,6 +3591,9 @@ const cliResourceValue_t resourceTable[] = {
 #ifdef USE_SPI
     DEFA( OWNER_SPI_PREINIT_IPU, PG_SPI_PREINIT_IPU_CONFIG, spiCs_t, csnTag, SPI_PREINIT_IPU_COUNT ),
     DEFA( OWNER_SPI_PREINIT_OPU, PG_SPI_PREINIT_OPU_CONFIG, spiCs_t, csnTag, SPI_PREINIT_OPU_COUNT ),
+#endif
+#ifdef USE_RX_SPI
+    DEFS( OWNER_RX_SPI_CS,     PG_RX_SPI_CONFIG, rxSpiConfig_t, csnTag ),
 #endif
 };
 

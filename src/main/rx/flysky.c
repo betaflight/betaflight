@@ -38,7 +38,7 @@
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
-#include "pg/rx.h"
+#include "pg/rx_spi.h"
 
 #include "rx/flysky_defs.h"
 #include "rx/rx.h"
@@ -356,9 +356,9 @@ static rx_spi_received_e flySkyReadAndProcess (uint8_t *payload, const uint32_t 
     return result;
 }
 
-bool flySkyInit (const struct rxConfig_s *rxConfig, struct rxRuntimeConfig_s *rxRuntimeConfig)
+bool flySkyInit (const rxSpiConfig_t *rxSpiConfig, struct rxRuntimeConfig_s *rxRuntimeConfig)
 {
-    protocol = rxConfig->rx_spi_protocol;
+    protocol = rxSpiConfig->rx_spi_protocol;
 
     if (protocol != flySkyConfig()->protocol) {
         PG_RESET(flySkyConfig);
