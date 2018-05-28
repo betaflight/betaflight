@@ -187,7 +187,7 @@ extern const uint8_t __pg_resetdata_end[];
 
 const pgRegistry_t* pgFind(pgn_t pgn);
 
-void pgLoad(const pgRegistry_t* reg, const void *from, int size, int version);
+bool pgLoad(const pgRegistry_t* reg, const void *from, int size, int version);
 int pgStore(const pgRegistry_t* reg, void *to, int size);
 void pgResetAll(void);
 void pgResetInstance(const pgRegistry_t *reg, uint8_t *base);
