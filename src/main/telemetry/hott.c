@@ -68,32 +68,49 @@
 #include "build/debug.h"
 
 #include "common/axis.h"
+#include "common/printf.h"
 #include "common/time.h"
 
 #include "drivers/serial.h"
 #include "drivers/time.h"
+#include "drivers/vtx_common.h"
 
 #include "fc/runtime_config.h"
+#include "fc/config.h"
+#include "fc/controlrate_profile.h"
 
 #include "flight/position.h"
 #include "flight/pid.h"
 
+#include "interface/settings.h"
+
 #include "io/gps.h"
+#include "io/vtx_control.h"
+#include "io/vtx.h"
+#include "io/vtx_string.h"
 
 #include "sensors/battery.h"
 #include "sensors/barometer.h"
 #include "sensors/sensors.h"
+#include "sensors/gyro.h"
 
 #include "telemetry/hott.h"
 #include "telemetry/telemetry.h"
 
 //#define HOTT_DEBUG
 
-#define HOTT_MESSAGE_PREPARATION_FREQUENCY_5_HZ ((1000 * 1000) / 5)
-#define HOTT_RX_SCHEDULE 4000
-#define HOTT_TX_DELAY_US 3000
+#define HOTT_MESSAGE_PREPARATION_FREQUENCY_5_HZ ((1000 * 1000) / 5) // 200ms
+#define HOTT_RX_SCHEDULE 5000  										// 5ms
+#define HOTT_TX_DELAY_US 1000  										// 1ms
 #define MILLISECONDS_IN_A_SECOND 1000
 
+static const char * const TableDtermLowpassType[] = {
+    "PT1",
+    "BIQUAD",
+//#if defined(USE_FIR_FILTER_DENOISE)
+    "FIR"
+//#endif
+};
 static uint32_t lastHoTTRequestCheckAt = 0;
 static uint32_t lastMessagesPreparedAt = 0;
 static uint32_t lastHottAlarmSoundTime = 0;
@@ -118,12 +135,15 @@ static portSharing_e hottPortSharing;
 static HOTT_GPS_MSG_t hottGPSMessage;
 static HOTT_EAM_MSG_t hottEAMMessage;
 
+static HOTT_TEXTMODE_MSG_t hottTEXTMODEMessage;
+
+static uint8_t page_settings = 1; // page number to display settings
 static void initialiseEAMMessage(HOTT_EAM_MSG_t *msg, size_t size)
 {
     memset(msg, 0, size);
     msg->start_byte = 0x7C;
     msg->eam_sensor_id = HOTT_TELEMETRY_EAM_SENSOR_ID;
-    msg->sensor_id = HOTT_EAM_SENSOR_TEXT_ID;
+    msg->sensor_id = HOTT_TELEMETRY_EAM_SENSOR_TEXT; // 0x8e
     msg->stop_byte = 0x7D;
 }
 
@@ -140,7 +160,7 @@ static void initialiseGPSMessage(HOTT_GPS_MSG_t *msg, size_t size)
     memset(msg, 0, size);
     msg->start_byte = 0x7C;
     msg->gps_sensor_id = HOTT_TELEMETRY_GPS_SENSOR_ID;
-    msg->sensor_id = HOTT_GPS_SENSOR_TEXT_ID;
+    msg->sensor_id = HOTT_TELEMETRY_GPS_SENSOR_TEXT; // 0x8a
     msg->stop_byte = 0x7D;
 }
 #endif
@@ -230,13 +250,21 @@ static inline void updateAlarmBatteryStatus(HOTT_EAM_MSG_t *hottEAMMessage)
     if (shouldTriggerBatteryAlarmNow()) {
         lastHottAlarmSoundTime = millis();
         const batteryState_e batteryState = getBatteryState();
-        if (batteryState == BATTERY_WARNING  || batteryState == BATTERY_CRITICAL) {
+        if (batteryState == BATTERY_WARNING  || batteryState == BATTERY_CRITICAL) 
+			{
             hottEAMMessage->warning_beeps = 0x10;
             hottEAMMessage->alarm_invers1 = HOTT_EAM_ALARM1_FLAG_BATTERY_1;
-        } else {
+			}
+		else if (getMAhDrawn() > batteryConfig()->batteryCapacity)
+			{
+            hottEAMMessage->warning_beeps = 0x16;
+            hottEAMMessage->alarm_invers1 = HOTT_EAM_ALARM1_FLAG_MAH;
+			}		
+		else 
+			{
             hottEAMMessage->warning_beeps = HOTT_EAM_ALARM1_FLAG_NONE;
             hottEAMMessage->alarm_invers1 = HOTT_EAM_ALARM1_FLAG_NONE;
-        }
+			}
     }
 }
 
@@ -293,6 +321,28 @@ void hottPrepareEAMResponse(HOTT_EAM_MSG_t *hottEAMMessage)
     hottEAMUpdateClimbrate(hottEAMMessage);
 }
 
+static void HottInvertLigne(HOTT_TEXTMODE_MSG_t *hottTEXTMODEMessage,int ligne) {
+  if (ligne>= 0 && ligne<= 7)
+    for(int i=0; i< 21; i++) {
+        if (hottTEXTMODEMessage->text[ligne][i] == 0)   //reversing the null character (end of string)
+            hottTEXTMODEMessage->text[ligne][i] = (0x80 + 0x20);
+        else
+            hottTEXTMODEMessage->text[ligne][i] = (0x80 + hottTEXTMODEMessage->text[ligne][i]);
+    }
+}
+
+static void HottWriteLine(HOTT_TEXTMODE_MSG_t *hottTEXTMODEMessage,uint8_t line, const char *text) {
+  uint8_t writeText = 1;
+
+  for (uint8_t index = 0; index < 21; index++) {
+    if (0x0 != text[index] && writeText) {
+       hottTEXTMODEMessage->text[line][index] = text[index];
+    } else {
+      writeText = 0;
+      hottTEXTMODEMessage->text[line][index] = ' ';
+    }
+  }
+}
 static void hottSerialWrite(uint8_t c)
 {
     static uint8_t serialWrites = 0;
@@ -408,6 +458,10 @@ static inline void hottSendEAMResponse(void)
     hottSendResponse((uint8_t *)&hottEAMMessage, sizeof(hottEAMMessage));
 }
 
+static inline void hottSendTEXTMODEResponse(void)
+{
+    hottSendResponse((uint8_t *)&hottTEXTMODEMessage, sizeof(hottTEXTMODEMessage));
+}
 static void hottPrepareMessages(void) {
     hottPrepareEAMResponse(&hottEAMMessage);
 #ifdef USE_GPS
@@ -453,6 +507,539 @@ static void processBinaryModeRequest(uint8_t address)
 #endif
 }
 
+static void processTextModeRequest(HOTT_TEXTMODE_MSG_t *hottTEXTMODEMessage,uint8_t octet3)
+{
+	uint8_t id_sensor = (octet3 >> 4);
+	uint8_t id_key = octet3 & 0x0f;
+	static uint8_t ligne_select = 4 ;
+	static int8_t ligne_edit = -1 ;
+	char lineText[21];
+
+	hottTEXTMODEMessage->start_byte = 0x7b;
+	hottTEXTMODEMessage->esc = 0x00;
+	hottTEXTMODEMessage->warning_beeps = 0x00;
+	memset((char *)&hottTEXTMODEMessage->text, 0x20, HOTT_TEXTMODE_MSG_TEXT_LEN);
+	hottTEXTMODEMessage->stop_byte = 0x7D;
+	
+	if (id_key == HOTTV4_BUTTON_LEFT && page_settings == 1)
+        {   
+          hottTEXTMODEMessage->esc = 0x01;
+        }
+        else
+        {
+          if (id_sensor == (HOTT_TELEMETRY_EAM_SENSOR_ID & 0x0f) && (!ARMING_FLAG(ARMED))) // Only Text modus when "No ARMED"
+            {  
+            hottTEXTMODEMessage->esc = HOTT_TELEMETRY_EAM_SENSOR_TEXT;
+			
+			    // Button Abfrage 
+                if (ligne_edit == -1) //keine line gewählt
+                {            
+                    switch (id_key) {
+						case HOTTV4_BUTTON_LEFT:
+							{
+							page_settings-=1;
+							if (page_settings <1)    // unter Seite 1 dann Seite 2
+							page_settings = 1;
+							break;	
+							}
+						case HOTTV4_BUTTON_RIGHT:
+							{	   
+							page_settings+=1;
+							if (page_settings >8)   // Über Seite 8 dann Seite 1
+								page_settings = 1;
+							break;	
+						}
+						case HOTTV4_BUTTON_UP: 
+							{   
+							ligne_select+=1;
+							if (ligne_select>7)
+								ligne_select =  1;
+							break;
+						}
+						case HOTTV4_BUTTON_DOWN:
+							{   
+							ligne_select-=1;
+							if (ligne_select<1)
+								ligne_select =  1;
+							break;
+							}
+						case HOTTV4_BUTTON_SET:
+							{   
+							ligne_edit =  ligne_select ;
+							break;
+							}  
+					}			
+                }    
+                else if (ligne_edit != -1)
+                {
+					switch (id_key) {
+						case HOTTV4_BUTTON_RIGHT:
+							{
+							break;
+							}
+						case HOTTV4_BUTTON_LEFT:
+							{   
+							break;
+							}
+						case HOTTV4_BUTTON_UP:
+							{   
+							if (page_settings == PID_Werte_1) {
+								switch (ligne_select) {
+									case 1:
+										changePidProfile(getCurrentPidProfileIndex() + 1);
+									break;
+									case 2:
+										currentPidProfile->pid[0].P +=1;
+									break;
+									case 3:
+										currentPidProfile->pid[0].I +=1;
+									break;
+									case 4:
+										currentPidProfile->pid[0].D +=1;
+									break;
+									case 5:
+										currentPidProfile->pid[1].P +=1;
+									break;
+									case 6:
+										currentPidProfile->pid[1].I +=1;
+									break;
+									case 7:
+										currentPidProfile->pid[1].D +=1;
+									break;   
+								} 
+							}
+							else if (page_settings == PID_Werte_2) {
+								switch (ligne_select) {
+									case 1:
+										changePidProfile(getCurrentPidProfileIndex() + 1);
+									break;
+									case 2:
+										currentPidProfile->pid[2].P +=1;
+									break;
+									case 3:
+										currentPidProfile->pid[2].I +=1;
+									break; 
+								} 
+							}        
+							else if (page_settings == RC_Rates_1) {
+								switch (ligne_select) {
+									case 1:
+										changeControlRateProfile(getCurrentControlRateProfileIndex() + 1);
+									break;
+									case 2:
+										currentControlRateProfile->rcRates[FD_ROLL] +=1;
+									break;
+									case 3:
+										currentControlRateProfile->rcRates[FD_YAW] +=1;
+									break;
+									case 4:
+										currentControlRateProfile->rates[0] +=1;
+									break;
+									case 5:
+										currentControlRateProfile->rates[1] +=1;
+									break;
+									case 6:
+										currentControlRateProfile->rates[2] +=1;
+									break;  
+								} 
+							}
+							else if (page_settings == RC_Rates_2) {
+								switch (ligne_select) {
+									case 1:
+										changeControlRateProfile(getCurrentControlRateProfileIndex() + 1);
+									break;
+									case 2:
+										currentControlRateProfile->rcExpo[FD_ROLL] +=1;
+									break;
+									case 3:
+										currentControlRateProfile->rcExpo[FD_YAW] +=1;
+									break;
+								} 
+							}
+							else if (page_settings == VTX_Config) {
+								switch (ligne_select) {
+									case 1:
+										vtxSettingsConfigMutable()->band = vtxSettingsConfig()->band + 1;
+									break;
+									case 2:
+										vtxSettingsConfigMutable()->channel = vtxSettingsConfig()->channel + 1;
+									break;
+									case 3:
+										vtxSettingsConfigMutable()->power = vtxSettingsConfig()->power + 1;
+									break;
+								} 
+							}
+                            else if (page_settings == FILTER_1) {
+								switch (ligne_select) {
+									case 1:
+										currentPidProfile->dterm_filter_type +=1;
+									break;
+									case 2:
+										gyroConfigMutable()->gyro_lowpass_hz = gyroConfig()->gyro_lowpass_hz + 1;
+									break;
+									case 3:
+										gyroConfigMutable()->gyro_soft_notch_hz_1 = gyroConfig()->gyro_soft_notch_hz_1 + 1;
+									break;
+									case 4:
+										gyroConfigMutable()->gyro_soft_notch_cutoff_1 = gyroConfig()->gyro_soft_notch_cutoff_1 + 1;
+									break;
+									case 5:
+										gyroConfigMutable()->gyro_soft_notch_hz_2 = gyroConfig()->gyro_soft_notch_hz_2 + 1;
+									break;
+									case 6:
+										gyroConfigMutable()->gyro_soft_notch_cutoff_2 = gyroConfig()->gyro_soft_notch_cutoff_2 + 1;
+									break;
+								} 
+							}		
+							else if (page_settings == FILTER_2) {
+								switch (ligne_select) {
+									case 1:
+										currentPidProfile->dterm_filter_type +=1;
+									break;
+									case 2:
+										currentPidProfile->dterm_lowpass_hz +=1;
+									break;
+									case 3:
+										currentPidProfile->dterm_notch_hz +=1;
+									break;
+									case 4:											
+										currentPidProfile->dterm_notch_cutoff +=1;
+									break;
+									case 5:								
+										currentPidProfile->yaw_lowpass_hz +=1;
+									break;
+									case 6:
+										currentControlRateProfile->tpa_breakpoint +=1;
+									break;
+								} 
+							}	
+							else if (page_settings == Battery) {
+								switch (ligne_select) {
+									case 1:
+										batteryConfigMutable()->vbatwarningcellvoltage = batteryConfig()->vbatwarningcellvoltage + 1;
+									break;
+									case 2:
+										batteryConfigMutable()->batteryCapacity = batteryConfig()->batteryCapacity + 10;
+									break;
+									case 3:
+										voltageSensorADCConfigMutable(0)->vbatscale = voltageSensorADCConfig(0)->vbatscale + 1;
+									break;
+									case 4:											
+										currentSensorADCConfigMutable()->scale = currentSensorADCConfig()->scale + 1;
+									break;
+								} 
+							}	
+							break;	
+							}
+						case HOTTV4_BUTTON_DOWN:
+							{   
+							if (page_settings == PID_Werte_1) {
+								switch (ligne_select) {
+									case 1:
+										changePidProfile(getCurrentPidProfileIndex() - 1);
+									break;
+									case 2:
+										currentPidProfile->pid[0].P -=1;
+									break;
+									case 3:
+										currentPidProfile->pid[0].I -=1;
+									break;
+									case 4:
+										currentPidProfile->pid[0].D -=1;
+									break;
+									case 5:
+										currentPidProfile->pid[1].P -=1;
+									break;
+									case 6:
+										currentPidProfile->pid[1].I -=1;
+									break;
+									case 7:
+										currentPidProfile->pid[1].D -=1;
+									break;   
+								}  
+							}
+							else if (page_settings == PID_Werte_2) {
+								switch (ligne_select) {
+									case 1:
+										changePidProfile(getCurrentPidProfileIndex() - 1);
+									break;
+									case 2:
+										currentPidProfile->pid[2].P -=1;
+									break;
+									case 3:
+										currentPidProfile->pid[2].I -=1;
+									break; 
+								} 
+							}        
+							else if (page_settings == RC_Rates_1) {
+								switch (ligne_select) {
+									case 1:
+										changeControlRateProfile(getCurrentControlRateProfileIndex() - 1);
+									break;
+									case 2:
+										currentControlRateProfile->rcRates[FD_ROLL] -=1;
+									break;
+									case 3:
+										currentControlRateProfile->rcRates[FD_YAW] -=1;
+									break;
+									case 4:
+										currentControlRateProfile->rates[0] -=1;
+									break;
+									case 5:
+										currentControlRateProfile->rates[1] -=1;
+									break;
+									case 6:
+										currentControlRateProfile->rates[2] -=1;
+									break;  
+								} 
+							}
+							else if (page_settings == RC_Rates_2) {
+								switch (ligne_select) {
+									case 1:
+										changeControlRateProfile(getCurrentControlRateProfileIndex() - 1);
+									break;
+									case 2:
+										currentControlRateProfile->rcExpo[FD_ROLL] -=1;
+									break;
+									case 3:
+										currentControlRateProfile->rcExpo[FD_YAW] -=1;
+									break;
+								} 
+							}  
+							else if (page_settings == VTX_Config) {
+								switch (ligne_select) {
+									case 1:
+										vtxSettingsConfigMutable()->band = vtxSettingsConfig()->band - 1;
+									break;
+									case 2:
+										vtxSettingsConfigMutable()->channel = vtxSettingsConfig()->channel - 1;
+									break;
+									case 3:
+										vtxSettingsConfigMutable()->power = vtxSettingsConfig()->power - 1;
+									break;
+								} 
+							}
+                            else if (page_settings == FILTER_1) {
+								switch (ligne_select) {
+									case 1:
+										currentPidProfile->dterm_filter_type -=1;
+									break;
+									case 2:
+										gyroConfigMutable()->gyro_lowpass_hz = gyroConfig()->gyro_lowpass_hz - 1;
+									break;
+									case 3:
+										gyroConfigMutable()->gyro_soft_notch_hz_1 = gyroConfig()->gyro_soft_notch_hz_1 - 1;
+									break;
+									case 4:
+										gyroConfigMutable()->gyro_soft_notch_cutoff_1 = gyroConfig()->gyro_soft_notch_cutoff_1 - 1;
+									break;
+									case 5:
+										gyroConfigMutable()->gyro_soft_notch_hz_2 = gyroConfig()->gyro_soft_notch_hz_2 - 1;
+									break;
+									case 6:
+										gyroConfigMutable()->gyro_soft_notch_cutoff_2 = gyroConfig()->gyro_soft_notch_cutoff_2 - 1;
+									break;
+								} 
+							}		
+							else if (page_settings == FILTER_2) {
+								switch (ligne_select) {
+									case 1:
+										currentPidProfile->dterm_filter_type -=1;
+									break;
+									case 2:
+										currentPidProfile->dterm_lowpass_hz -=1;
+									break;
+									case 3:
+										currentPidProfile->dterm_notch_hz -=1;
+									break;
+									case 4:											
+										currentPidProfile->dterm_notch_cutoff -=1;
+									break;
+									case 5:								
+										currentPidProfile->yaw_lowpass_hz -=1;
+									break;
+									case 6:
+										currentControlRateProfile->tpa_breakpoint -=1;
+									break;	
+								} 
+							}		
+							else if (page_settings == Battery) {
+								switch (ligne_select) {
+									case 1:
+										batteryConfigMutable()->vbatwarningcellvoltage = batteryConfig()->vbatwarningcellvoltage - 1;
+									break;
+									case 2:
+										batteryConfigMutable()->batteryCapacity = batteryConfig()->batteryCapacity - 10;
+									break;
+									case 3:
+										voltageSensorADCConfigMutable(0)->vbatscale = voltageSensorADCConfig(0)->vbatscale - 1;
+									break;
+									case 4:											
+										currentSensorADCConfigMutable()->scale = currentSensorADCConfig()->scale - 1;
+									break;
+								} 
+							}	
+							break;			
+							}
+						case HOTTV4_BUTTON_SET:
+							{   
+								ligne_edit = -1 ;
+								writeEEPROM();
+								readEEPROM();
+							}	  
+					}   
+				}
+			switch (page_settings) { //SETTINGS
+				
+				case PID_Werte_1: //PAGE PID-Werte 1
+					{                   //123456789|123456789|1            
+                    tfp_sprintf(lineText,"PID-Werte 1 v%5s <>",FC_VERSION_STRING);
+                    HottWriteLine(hottTEXTMODEMessage,0,lineText);
+                    tfp_sprintf(lineText," Profile     :%3d    ",getCurrentPidProfileIndex() + 1);
+                    HottWriteLine(hottTEXTMODEMessage,1,lineText);
+                    tfp_sprintf(lineText," ROLL      P :%3d    ",currentPidProfile->pid[0].P);
+                    HottWriteLine(hottTEXTMODEMessage,2,lineText);
+                    tfp_sprintf(lineText,"           I :%3d    ",currentPidProfile->pid[0].I);
+                    HottWriteLine(hottTEXTMODEMessage,3,lineText);
+                    tfp_sprintf(lineText,"           D :%3d    ",currentPidProfile->pid[0].D);
+                    HottWriteLine(hottTEXTMODEMessage,4,lineText);
+                    tfp_sprintf(lineText," PITCH     P :%3d    ",currentPidProfile->pid[1].P);
+                    HottWriteLine(hottTEXTMODEMessage,5,lineText);
+                    tfp_sprintf(lineText,"           I :%3d    ",currentPidProfile->pid[1].I);
+                    HottWriteLine(hottTEXTMODEMessage,6,lineText);
+                    tfp_sprintf(lineText,"           D :%3d    ",currentPidProfile->pid[1].D);
+                    HottWriteLine(hottTEXTMODEMessage,7,lineText);
+					break;
+					}//END PAGE
+				case PID_Werte_2: //PAGE PID-Werte 2
+					{                   //123456789|123456789|1
+                    tfp_sprintf(lineText,"PID-Werte 2 v%5s <>",FC_VERSION_STRING);
+                    HottWriteLine(hottTEXTMODEMessage,0,lineText);
+                    tfp_sprintf(lineText," Profile     :%3d    ",getCurrentPidProfileIndex() + 1);
+                    HottWriteLine(hottTEXTMODEMessage,1,lineText);
+                    tfp_sprintf(lineText," YAW       P :%3d    ",currentPidProfile->pid[2].P);
+                    HottWriteLine(hottTEXTMODEMessage,2,lineText);
+                    tfp_sprintf(lineText,"           I :%3d    ",currentPidProfile->pid[2].I);
+                    HottWriteLine(hottTEXTMODEMessage,3,lineText); 
+					break;
+					}//END PAGE
+				case RC_Rates_1: //PAGE RC-Rates 1 
+					{                   //123456789|123456789|1
+                    tfp_sprintf(lineText,"RC-Rates 1  v%5s <>",FC_VERSION_STRING);
+                    HottWriteLine(hottTEXTMODEMessage,0,lineText);
+                    tfp_sprintf(lineText," Profile Rates:%3d   ",getCurrentControlRateProfileIndex() + 1);
+                    HottWriteLine(hottTEXTMODEMessage,1,lineText);
+                    tfp_sprintf(lineText," RC Rate      :%3d   ",currentControlRateProfile->rcRates[FD_ROLL]);
+                    HottWriteLine(hottTEXTMODEMessage,2,lineText);
+                    tfp_sprintf(lineText," RC Rate Yaw  :%3d   ",currentControlRateProfile->rcRates[FD_YAW]);
+                    HottWriteLine(hottTEXTMODEMessage,3,lineText);
+                    tfp_sprintf(lineText," SuperRate Rol:%3d   ",currentControlRateProfile->rates[0]);
+                    HottWriteLine(hottTEXTMODEMessage,4,lineText);
+                    tfp_sprintf(lineText," SuperRate Pit:%3d   ",currentControlRateProfile->rates[1]);
+                    HottWriteLine(hottTEXTMODEMessage,5,lineText);
+                    tfp_sprintf(lineText," SuperRate Yaw:%3d   ",currentControlRateProfile->rates[2]);
+                    HottWriteLine(hottTEXTMODEMessage,6,lineText);    
+					break;
+					}//END PAGE
+				case RC_Rates_2: //PAGE RC-Rates 2
+					{                   //123456789|123456789|1
+                    tfp_sprintf(lineText,"RC-Rates 2  v%5s <>",FC_VERSION_STRING);
+                    HottWriteLine(hottTEXTMODEMessage,0,lineText);
+                    tfp_sprintf(lineText," Profile Rates: %3d  ",getCurrentControlRateProfileIndex() + 1);
+                    HottWriteLine(hottTEXTMODEMessage,1,lineText);
+                    tfp_sprintf(lineText," RC Expo      : %3d  ",currentControlRateProfile->rcExpo[FD_ROLL]);
+                    HottWriteLine(hottTEXTMODEMessage,2,lineText);
+                    tfp_sprintf(lineText," RC Expo Yaw  : %3d  ",currentControlRateProfile->rcExpo[FD_YAW]);
+                    HottWriteLine(hottTEXTMODEMessage,3,lineText);
+					break;
+					}//END PAGE
+                case VTX_Config: //PAGE VTX Config
+				    {
+                    tfp_sprintf(lineText,"VTX Config  v%5s <>",FC_VERSION_STRING);
+                    HottWriteLine(hottTEXTMODEMessage,0,lineText);
+                    tfp_sprintf(lineText," Band    : %s        ",(vtx58BandNames[vtxSettingsConfig()->band]));
+                    HottWriteLine(hottTEXTMODEMessage,1,lineText);
+                    tfp_sprintf(lineText," Channel : %d        ",vtxSettingsConfig()->channel);
+                    HottWriteLine(hottTEXTMODEMessage,2,lineText);
+					tfp_sprintf(lineText," Frequenz: %4d       ",(vtx58frequencyTable[vtxSettingsConfig()->band-1][vtxSettingsConfig()->channel-1]));
+                    HottWriteLine(hottTEXTMODEMessage,3,lineText);
+					tfp_sprintf(lineText," Power   : %d        ",vtxSettingsConfig()->power);
+                    HottWriteLine(hottTEXTMODEMessage,4,lineText);
+					break;
+					}//END PAGE  
+				case FILTER_1: //PAGE FILTER 1
+					{                   //123456789|123456789|1            
+                    tfp_sprintf(lineText,"FILTER 1    v%5s <>",FC_VERSION_STRING);
+                    HottWriteLine(hottTEXTMODEMessage,0,lineText);
+                    tfp_sprintf(lineText," Filter      :%s    ",TableDtermLowpassType[currentPidProfile->dterm_filter_type]);
+                    HottWriteLine(hottTEXTMODEMessage,1,lineText);
+                    tfp_sprintf(lineText," Gyro_low Hz :%3d    ",gyroConfig()->gyro_lowpass_hz);
+                    HottWriteLine(hottTEXTMODEMessage,2,lineText);
+                    tfp_sprintf(lineText," Gyro_not1Hz :%3d    ",gyroConfig()->gyro_soft_notch_hz_1);
+                    HottWriteLine(hottTEXTMODEMessage,3,lineText);
+                    tfp_sprintf(lineText," Gyro_cut1Hz :%3d    ",gyroConfig()->gyro_soft_notch_cutoff_1);
+                    HottWriteLine(hottTEXTMODEMessage,4,lineText);
+                    tfp_sprintf(lineText," Gyro_not2Hz :%3d    ",gyroConfig()->gyro_soft_notch_hz_2);
+                    HottWriteLine(hottTEXTMODEMessage,5,lineText);
+                    tfp_sprintf(lineText," Gyro_cut2Hz :%3d    ",gyroConfig()->gyro_soft_notch_cutoff_2);
+                    HottWriteLine(hottTEXTMODEMessage,6,lineText);
+					break;
+					}//END PAGE
+				case FILTER_2: //PAGE FILTER 2
+					{                   //123456789|123456789|1            
+                    tfp_sprintf(lineText,"FILTER 2    v%5s <>",FC_VERSION_STRING);
+                    HottWriteLine(hottTEXTMODEMessage,0,lineText);
+                    tfp_sprintf(lineText," Filter      :%s    ",TableDtermLowpassType[currentPidProfile->dterm_filter_type]);
+                    HottWriteLine(hottTEXTMODEMessage,1,lineText);
+                    tfp_sprintf(lineText," D-T_low  Hz :%3d    ",currentPidProfile->dterm_lowpass_hz);
+                    HottWriteLine(hottTEXTMODEMessage,2,lineText);
+                    tfp_sprintf(lineText," D-T_not  Hz :%3d    ",currentPidProfile->dterm_notch_hz);
+                    HottWriteLine(hottTEXTMODEMessage,3,lineText);
+                    tfp_sprintf(lineText," D-T_cut  Hz :%3d    ",currentPidProfile->dterm_notch_cutoff);
+                    HottWriteLine(hottTEXTMODEMessage,4,lineText);
+                    tfp_sprintf(lineText," YAW_low  Hz :%3d    ",currentPidProfile->yaw_lowpass_hz);
+                    HottWriteLine(hottTEXTMODEMessage,5,lineText);
+					tfp_sprintf(lineText," TPA         :%4d    ",currentControlRateProfile->tpa_breakpoint);
+					HottWriteLine(hottTEXTMODEMessage,6,lineText);
+					break;
+					}//END PAGE
+				case Battery: //PAGE Battery
+					{                   //123456789|123456789|1            
+                    tfp_sprintf(lineText,"Battery     v%5s <>",FC_VERSION_STRING);
+                    HottWriteLine(hottTEXTMODEMessage,0,lineText);
+                    tfp_sprintf(lineText," cell warn  V:%d.%1d ",batteryConfig()->vbatwarningcellvoltage / 10, batteryConfig()->vbatwarningcellvoltage % 10);
+                    HottWriteLine(hottTEXTMODEMessage,1,lineText);
+                    tfp_sprintf(lineText," Capacity mAh:%4d    ",batteryConfig()->batteryCapacity);
+                    HottWriteLine(hottTEXTMODEMessage,2,lineText);
+                    tfp_sprintf(lineText," Vbat scale  :%3d    ",voltageSensorADCConfig(0)->vbatscale);
+                    HottWriteLine(hottTEXTMODEMessage,3,lineText);
+                    tfp_sprintf(lineText," Curr scale  :%3d    ",currentSensorADCConfig()->scale);
+                    HottWriteLine(hottTEXTMODEMessage,4,lineText);
+                    tfp_sprintf(lineText," Vbat       V:%d.%1d ",getBatteryVoltage() / 10, getBatteryVoltage() % 10);
+                    HottWriteLine(hottTEXTMODEMessage,5,lineText);
+					tfp_sprintf(lineText," Curr       A:%d.%1d ",getAmperage() / 100, getAmperage() % 100);
+                    HottWriteLine(hottTEXTMODEMessage,6,lineText);
+					break;
+					}//END PAGE
+			    }
+                hottTEXTMODEMessage->text[ligne_select][0] = '>';
+                HottInvertLigne(hottTEXTMODEMessage,ligne_edit);  
+		    }
+			else if (id_sensor == (HOTT_TELEMETRY_EAM_SENSOR_ID & 0x0f) && (ARMING_FLAG(ARMED))) {
+				hottTEXTMODEMessage->esc = HOTT_TELEMETRY_EAM_SENSOR_TEXT;
+				
+				tfp_sprintf(lineText,"ARMED no edit        <");
+				HottWriteLine(hottTEXTMODEMessage,0,lineText);
+			}	
+			else {
+				tfp_sprintf(lineText,"Unknow sensor module <");
+				HottWriteLine(hottTEXTMODEMessage,0,lineText);
+				tfp_sprintf(lineText,"Nothing here");
+				HottWriteLine(hottTEXTMODEMessage,1,lineText);
+			}
+		}
+	hottSendTEXTMODEResponse();
+}
 static void hottCheckSerialData(uint32_t currentMicros)
 {
     static bool lookingForRequest = true;
@@ -485,7 +1072,10 @@ static void hottCheckSerialData(uint32_t currentMicros)
     const uint8_t requestId = serialRead(hottPort);
     const uint8_t address = serialRead(hottPort);
 
-    if ((requestId == 0) || (requestId == HOTT_BINARY_MODE_REQUEST_ID) || (address == HOTT_TELEMETRY_NO_SENSOR_ID)) {
+	if (requestId == HOTT_TEXT_MODE_REQUEST_ID) {
+		processTextModeRequest(&hottTEXTMODEMessage,address);
+	}
+    else if ((requestId == 0) || (requestId == HOTT_BINARY_MODE_REQUEST_ID) || (address == HOTT_TELEMETRY_NO_SENSOR_ID)) {
     /*
      * FIXME the first byte of the HoTT request frame is ONLY either 0x80 (binary mode) or 0x7F (text mode).
      * The binary mode is read as 0x00 (error reading the upper bit) while the text mode is correctly decoded.
@@ -560,7 +1150,7 @@ void handleHoTTTelemetry(timeUs_t currentTimeUs)
         lastMessagesPreparedAt = currentTimeUs;
     }
 
-    if (shouldCheckForHoTTRequest()) {
+    if (shouldCheckForHoTTRequest()) {    // Not hottIsSending
         hottCheckSerialData(currentTimeUs);
     }
 
