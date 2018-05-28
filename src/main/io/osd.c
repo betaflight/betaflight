@@ -167,6 +167,39 @@ static const char compassBar[] = {
   SYM_HEADING_LINE, SYM_HEADING_DIVIDED_LINE, SYM_HEADING_LINE
 };
 
+static const uint8_t osdElementDisplayOrder[] = {
+    OSD_MAIN_BATT_VOLTAGE,
+    OSD_RSSI_VALUE,
+    OSD_CROSSHAIRS,
+    OSD_HORIZON_SIDEBARS,
+    OSD_ITEM_TIMER_1,
+    OSD_ITEM_TIMER_2,
+    OSD_REMAINING_TIME_ESTIMATE,
+    OSD_FLYMODE,
+    OSD_THROTTLE_POS,
+    OSD_VTX_CHANNEL,
+    OSD_CURRENT_DRAW,
+    OSD_MAH_DRAWN,
+    OSD_CRAFT_NAME,
+    OSD_ALTITUDE,
+    OSD_ROLL_PIDS,
+    OSD_PITCH_PIDS,
+    OSD_YAW_PIDS,
+    OSD_POWER,
+    OSD_PIDRATE_PROFILE,
+    OSD_WARNINGS,
+    OSD_AVG_CELL_VOLTAGE,
+    OSD_DEBUG,
+    OSD_PITCH_ANGLE,
+    OSD_ROLL_ANGLE,
+    OSD_MAIN_BATT_USAGE,
+    OSD_DISARMED,
+    OSD_NUMERICAL_HEADING,
+    OSD_NUMERICAL_VARIO,
+    OSD_COMPASS_BAR,
+    OSD_ANTI_GRAVITY
+};
+
 PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 3);
 
 /**
@@ -916,36 +949,10 @@ static void osdDrawElements(void)
         osdDrawSingleElement(OSD_ARTIFICIAL_HORIZON);
     }
 
-    osdDrawSingleElement(OSD_MAIN_BATT_VOLTAGE);
-    osdDrawSingleElement(OSD_RSSI_VALUE);
-    osdDrawSingleElement(OSD_CROSSHAIRS);
-    osdDrawSingleElement(OSD_HORIZON_SIDEBARS);
-    osdDrawSingleElement(OSD_ITEM_TIMER_1);
-    osdDrawSingleElement(OSD_ITEM_TIMER_2);
-    osdDrawSingleElement(OSD_REMAINING_TIME_ESTIMATE);
-    osdDrawSingleElement(OSD_FLYMODE);
-    osdDrawSingleElement(OSD_THROTTLE_POS);
-    osdDrawSingleElement(OSD_VTX_CHANNEL);
-    osdDrawSingleElement(OSD_CURRENT_DRAW);
-    osdDrawSingleElement(OSD_MAH_DRAWN);
-    osdDrawSingleElement(OSD_CRAFT_NAME);
-    osdDrawSingleElement(OSD_ALTITUDE);
-    osdDrawSingleElement(OSD_ROLL_PIDS);
-    osdDrawSingleElement(OSD_PITCH_PIDS);
-    osdDrawSingleElement(OSD_YAW_PIDS);
-    osdDrawSingleElement(OSD_POWER);
-    osdDrawSingleElement(OSD_PIDRATE_PROFILE);
-    osdDrawSingleElement(OSD_WARNINGS);
-    osdDrawSingleElement(OSD_AVG_CELL_VOLTAGE);
-    osdDrawSingleElement(OSD_DEBUG);
-    osdDrawSingleElement(OSD_PITCH_ANGLE);
-    osdDrawSingleElement(OSD_ROLL_ANGLE);
-    osdDrawSingleElement(OSD_MAIN_BATT_USAGE);
-    osdDrawSingleElement(OSD_DISARMED);
-    osdDrawSingleElement(OSD_NUMERICAL_HEADING);
-    osdDrawSingleElement(OSD_NUMERICAL_VARIO);
-    osdDrawSingleElement(OSD_COMPASS_BAR);
-    osdDrawSingleElement(OSD_ANTI_GRAVITY);
+
+    for (unsigned i = 0; i < sizeof(osdElementDisplayOrder); i++) {
+        osdDrawSingleElement(osdElementDisplayOrder[i]);
+    }
 
 #ifdef USE_GPS
     if (sensors(SENSOR_GPS)) {

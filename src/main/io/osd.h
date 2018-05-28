@@ -49,6 +49,9 @@ extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 
 // NB: to ensure backwards compatibility, new enum values must be appended at the end but before the OSD_XXXX_COUNT entry.
 
+// *** IMPORTANT ***
+// If you are adding additional elements that do not require any conditional display logic,
+// you must add the elements to the osdElementDisplayOrder[] array in src/main/io/osd.c
 typedef enum {
     OSD_RSSI_VALUE,
     OSD_MAIN_BATT_VOLTAGE,
