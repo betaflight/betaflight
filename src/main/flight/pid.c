@@ -628,7 +628,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
 
         // -----calculate I component
         float itermErrorRate;
-        if (itermRelax) {
+        if (itermRelax && (axis < FD_YAW || itermRelax == 2 )) {
             const float gyroTargetLow = pt1FilterApply(&windupLpf[axis][0], currentPidSetpoint);
             const float gyroTargetHigh =  pt1FilterApply(&windupLpf[axis][1], currentPidSetpoint);
             if (axis < FD_YAW) {
