@@ -783,7 +783,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
             const float gmax = MAX(gyroTargetHigh, gyroTargetLow);
             const float gmin = MIN(gyroTargetHigh, gyroTargetLow);
             if (gyroRate >= gmin && gyroRate <= gmax) {
-                itermErrorRate = 0.0f;
+                itermErrorRate = acCorrection;
             } else {
                 itermErrorRate = (gyroRate > gmax ? gmax : gmin ) - gyroRate;
             }
