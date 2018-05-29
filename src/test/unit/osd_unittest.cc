@@ -1015,6 +1015,8 @@ extern "C" {
 
     uint16_t getRssi(void) { return rssi; }
 
+    uint8_t getRssiPercent(void) { return rssi * 100 / 1024; }
+
     uint16_t getCoreTemperatureCelsius(void) { return simulationCoreTemperature; }
 
     bool isFlipOverAfterCrashMode(void) {
