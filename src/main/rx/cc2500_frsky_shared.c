@@ -106,7 +106,7 @@ void setRssiDbm(uint8_t value)
         rssiDbm = ((((uint16_t)value) * 18) >> 5) + 65;
     }
 
-    setRssiUnfiltered(constrain(rssiDbm << 3, 0, 1023), RSSI_SOURCE_RX_PROTOCOL);
+    setRssi(rssiDbm << 3, RSSI_SOURCE_RX_PROTOCOL);
 }
 #endif // USE_RX_FRSKY_SPI_TELEMETRY
 

@@ -160,11 +160,12 @@ void parseRcChannels(const char *input, struct rxConfig_s *rxConfig);
 
 #define RSSI_MAX_VALUE 1023
 
-void setRssiFiltered(uint16_t newRssi, rssiSource_e source);
-void setRssiUnfiltered(uint16_t rssiValue, rssiSource_e source);
+void setRssiDirect(uint16_t newRssi, rssiSource_e source);
+void setRssi(uint16_t rssiValue, rssiSource_e source);
 void setRssiMsp(uint8_t newMspRssi);
 void updateRSSI(timeUs_t currentTimeUs);
 uint16_t getRssi(void);
+uint8_t getRssiPercent(void);
 
 void resetAllRxChannelRangeConfigurations(rxChannelRangeConfig_t *rxChannelRangeConfig);
 

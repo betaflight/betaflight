@@ -254,7 +254,7 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
                     timeoutUs = 50;
 
 #if defined(USE_RX_FRSKY_SPI_TELEMETRY)
-                    setRssiFiltered(0, RSSI_SOURCE_RX_PROTOCOL);
+                    setRssiDirect(0, RSSI_SOURCE_RX_PROTOCOL);
 #endif
                 }
 
@@ -269,7 +269,7 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
                 ledIsOn = !ledIsOn;
 
 #if defined(USE_RX_FRSKY_SPI_TELEMETRY)
-                setRssiUnfiltered(0, RSSI_SOURCE_RX_PROTOCOL);
+                setRssi(0, RSSI_SOURCE_RX_PROTOCOL);
 #endif
                 nextChannel(13);
             }
