@@ -97,6 +97,7 @@ typedef enum {
 #ifdef USE_MAX7456
     TABLE_VIDEO_SYSTEM,
 #endif // USE_MAX7456
+    TABLE_ITERM_RELAX,
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 

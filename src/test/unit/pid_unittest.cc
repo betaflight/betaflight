@@ -22,13 +22,16 @@
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
-
+#include "build/debug.h"
 
 bool simulateMixerSaturated = false;
 float simulatedSetpointRate[3] = { 0,0,0 };
 float simulatedRcDeflection[3] = { 0,0,0 };
 float simulatedThrottlePIDAttenuation = 1.0f;
 float simulatedMotorMixRange = 0.0f;
+
+int16_t debug[DEBUG16_VALUE_COUNT];
+uint8_t debugMode;
 
 extern "C" {
     #include "build/debug.h"

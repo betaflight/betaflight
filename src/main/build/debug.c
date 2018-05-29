@@ -69,4 +69,5 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "USB",
     "SMARTAUDIO",
     "RTH",
+    "ITERM_RELAX"
 };
