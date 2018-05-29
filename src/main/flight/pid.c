@@ -140,7 +140,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .throttle_boost_cutoff = 15,
         .iterm_rotation = false,
         .smart_feedforward = false,
-        .iterm_relax = false,
+        .iterm_relax = ITERM_RELAX_OFF,
         .iterm_relax_cutoff_low = 3,
         .iterm_relax_cutoff_high = 15,
     );
@@ -202,7 +202,7 @@ static FAST_RAM_ZERO_INIT pt1Filter_t dtermLowpass2[2];
 static FAST_RAM_ZERO_INIT filterApplyFnPtr ptermYawLowpassApplyFn;
 static FAST_RAM_ZERO_INIT pt1Filter_t ptermYawLowpass;
 static FAST_RAM_ZERO_INIT pt1Filter_t windupLpf[3][2];
-static FAST_RAM_ZERO_INIT uint8_t itermRelax;
+static FAST_RAM_ZERO_INIT itermRelax_e itermRelax;
 static FAST_RAM_ZERO_INIT uint8_t itermRelaxCutoffLow;
 static FAST_RAM_ZERO_INIT uint8_t itermRelaxCutoffHigh;
 
@@ -628,7 +628,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
 
         // -----calculate I component
         float itermErrorRate;
-        if (itermRelax && (axis < FD_YAW || itermRelax == 2 )) {
+        if (itermRelax && (axis < FD_YAW || itermRelax == ITERM_RELAX_RPY )) {
             const float gyroTargetLow = pt1FilterApply(&windupLpf[axis][0], currentPidSetpoint);
             const float gyroTargetHigh =  pt1FilterApply(&windupLpf[axis][1], currentPidSetpoint);
             if (axis < FD_YAW) {

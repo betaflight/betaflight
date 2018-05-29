@@ -76,6 +76,15 @@ typedef struct pid8_s {
     uint8_t D;
 } pid8_t;
 
+typedef enum 
+{
+    ITERM_RELAX_OFF,
+    ITERM_RELAX_RP,
+    ITERM_RELAX_RPY
+} itermRelax_e;
+
+    
+
 typedef struct pidProfile_s {
     pid8_t  pid[PID_ITEM_COUNT];
 
@@ -118,7 +127,7 @@ typedef struct pidProfile_s {
     uint8_t  smart_feedforward;             // takes only the larger of P and the D weight feed forward term if they have the same sign.
     uint8_t iterm_relax_cutoff_low;        // Slowest setpoint response to prevent iterm accumulation
     uint8_t iterm_relax_cutoff_high;       // Fastest setpoint response to prevent iterm accumulation
-    uint8_t iterm_relax;                   // Enable iterm suppression during stick input
+    itermRelax_e iterm_relax;                   // Enable iterm suppression during stick input
     
 } pidProfile_t;
 
