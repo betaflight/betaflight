@@ -67,8 +67,6 @@ typedef enum {
     FILTER_LOWPASS2
 } filterSlots;
 
-#define GYRO_LPF_ORDER_MAX 6
-
 typedef struct gyroConfig_s {
     sensor_align_e gyro_align;              // gyro alignment
     uint8_t  gyroMovementCalibrationThreshold; // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
@@ -80,17 +78,9 @@ typedef struct gyroConfig_s {
     bool     gyro_use_32khz;
     uint8_t  gyro_to_use;
 
-    // Lagged Moving Average smoother
-    uint8_t gyro_lma_depth;
-    uint8_t gyro_lma_weight;
-
     // Lowpass primary/secondary
     uint8_t  gyro_lowpass_type;
     uint8_t  gyro_lowpass2_type;
-
-    // Order is used for the 'higher ordering' of cascaded butterworth/biquad sections
-    uint8_t  gyro_lowpass_order;
-    uint8_t  gyro_lowpass2_order;
 
     uint16_t gyro_lowpass_hz;
     uint16_t  gyro_lowpass2_hz;

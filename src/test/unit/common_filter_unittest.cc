@@ -29,121 +29,37 @@ extern "C" {
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-TEST(FilterUnittest, TestFirFilterInit)
+TEST(FilterUnittest, TestPt1FilterInit)
 {
-#define BUFLEN 4
-    float buf[BUFLEN];
-    firFilter_t filter;
+    pt1Filter_t filter;
+    pt1FilterInit(&filter, 0.0f);
+    EXPECT_EQ(0, filter.k);
 
-
-    firFilterInit(&filter, buf, BUFLEN, NULL);
-
-    EXPECT_EQ(buf, filter.buf);
-    EXPECT_EQ(0, filter.coeffs);
-    EXPECT_EQ(0, filter.movingSum);
-    EXPECT_EQ(0, filter.index);
-    EXPECT_EQ(0, filter.count);
-    EXPECT_EQ(BUFLEN, filter.bufLength);
-    EXPECT_EQ(BUFLEN, filter.coeffsLength);
+    pt1FilterInit(&filter, 1.0f);
+    EXPECT_EQ(1.0, filter.k);
 }
 
-TEST(FilterUnittest, TestFirFilterUpdateAverage)
+TEST(FilterUnittest, TestPt1FilterGain)
 {
-#define BUFLEN 4
-    float buf[BUFLEN];
-    const float coeffs[BUFLEN] = {1.0f, 1.0f, 1.0f, 1.0f};
-    firFilter_t filter;
-
-    firFilterInit(&filter, buf, BUFLEN, coeffs);
-
-    firFilterUpdateAverage(&filter, 2.0f);
-    EXPECT_FLOAT_EQ(2.0f, filter.buf[0]);
-    EXPECT_FLOAT_EQ(2.0f, filter.movingSum);
-    EXPECT_EQ(1, filter.index);
-    EXPECT_EQ(1, filter.count);
-    EXPECT_EQ(2.0f, firFilterCalcMovingAverage(&filter));
-    EXPECT_FLOAT_EQ(2.0f, firFilterCalcPartialAverage(&filter, 1));
-    EXPECT_FLOAT_EQ(2.0f, firFilterApply(&filter));
-
-    firFilterUpdateAverage(&filter, 3.0f);
-    EXPECT_FLOAT_EQ(3.0f, filter.buf[1]);
-    EXPECT_FLOAT_EQ(5.0f, filter.movingSum);
-    EXPECT_EQ(2, filter.index);
-    EXPECT_EQ(2, filter.count);
-    EXPECT_EQ(2.5f, firFilterCalcMovingAverage(&filter));
-    EXPECT_FLOAT_EQ(2.5f, firFilterCalcPartialAverage(&filter, 2));
-    EXPECT_FLOAT_EQ(5.0f, firFilterApply(&filter));
-
-    firFilterUpdateAverage(&filter, 4.0f);
-    EXPECT_FLOAT_EQ(4.0f, filter.buf[2]);
-    EXPECT_FLOAT_EQ(9.0f, filter.movingSum);
-    EXPECT_EQ(3, filter.index);
-    EXPECT_EQ(3, filter.count);
-    EXPECT_EQ(3.0f, firFilterCalcMovingAverage(&filter));
-    EXPECT_FLOAT_EQ(3.0f, firFilterCalcPartialAverage(&filter, 3));
-    EXPECT_FLOAT_EQ(9.0f, firFilterApply(&filter));
-
-    firFilterUpdateAverage(&filter, 5.0f);
-    EXPECT_FLOAT_EQ(5.0f, filter.buf[3]);
-    EXPECT_FLOAT_EQ(14.0f, filter.movingSum);
-    EXPECT_EQ(0, filter.index);
-    EXPECT_EQ(4, filter.count);
-    EXPECT_EQ(3.5f, firFilterCalcMovingAverage(&filter));
-    EXPECT_FLOAT_EQ(3.5f, firFilterCalcPartialAverage(&filter, 4));
-    EXPECT_FLOAT_EQ(14.0f, firFilterApply(&filter));
-
-    firFilterUpdateAverage(&filter, 6.0f);
-    EXPECT_FLOAT_EQ(6.0f, filter.buf[0]);
-    EXPECT_FLOAT_EQ(18.0f, filter.movingSum);
-    EXPECT_EQ(1, filter.index);
-    EXPECT_EQ(BUFLEN, filter.count);
-    EXPECT_EQ(4.5f, firFilterCalcMovingAverage(&filter));
-    EXPECT_FLOAT_EQ(4.5f, firFilterCalcPartialAverage(&filter, BUFLEN));
-    EXPECT_FLOAT_EQ(18.0f, firFilterApply(&filter));
-
-    firFilterUpdateAverage(&filter, 7.0f);
-    EXPECT_FLOAT_EQ(7.0f, filter.buf[1]);
-    EXPECT_FLOAT_EQ(22.0f, filter.movingSum);
-    EXPECT_EQ(2, filter.index);
-    EXPECT_EQ(BUFLEN, filter.count);
-    EXPECT_EQ(5.5f, firFilterCalcMovingAverage(&filter));
-    EXPECT_FLOAT_EQ(5.5f, firFilterCalcPartialAverage(&filter, BUFLEN));
-    EXPECT_FLOAT_EQ(22.0f, firFilterApply(&filter));
+    EXPECT_FLOAT_EQ(0.999949, pt1FilterGain(100, 31.25f));
+    // handle cases over uint8_t boundary
+    EXPECT_FLOAT_EQ(0.99998301, pt1FilterGain(300, 31.25f));
 }
 
-TEST(FilterUnittest, TestFirFilterApply)
+TEST(FilterUnittest, TestPt1FilterApply)
 {
-#define BUFLEN 4
-    float buf[BUFLEN];
-    firFilter_t filter;
-    const float coeffs[BUFLEN] = {26.0f, 27.0f, 28.0f, 29.0f};
+    pt1Filter_t filter;
+    pt1FilterInit(&filter, pt1FilterGain(100, 31.25f));
+    EXPECT_EQ(0, filter.state);
 
-    float expected = 0.0f;
-    firFilterInit(&filter, buf, BUFLEN, coeffs);
+    pt1FilterApply(&filter, 1800.0f);
+    EXPECT_FLOAT_EQ(1799.9083, filter.state);
 
-    firFilterUpdate(&filter, 2.0f);
-    expected = 2.0f * 26.0f;
-    EXPECT_FLOAT_EQ(expected, firFilterApply(&filter));
+    pt1FilterApply(&filter, -1800.0f);
+    EXPECT_FLOAT_EQ(-1799.8165, filter.state);
 
-    firFilterUpdate(&filter, 3.0f);
-    expected = 3.0f * 26.0f + 2.0 * 27.0;
-    EXPECT_FLOAT_EQ(expected, firFilterApply(&filter));
-
-    firFilterUpdate(&filter, 4.0f);
-    expected = 4.0f * 26.0f + 3.0 * 27.0 + 2.0 * 28.0;
-    EXPECT_FLOAT_EQ(expected, firFilterApply(&filter));
-
-    firFilterUpdate(&filter, 5.0f);
-    expected = 5.0f * 26.0f + 4.0 * 27.0 + 3.0 * 28.0 + 2.0f * 29.0f;
-    EXPECT_FLOAT_EQ(expected, firFilterApply(&filter));
-
-    firFilterUpdate(&filter, 6.0f);
-    expected = 6.0f * 26.0f + 5.0 * 27.0 + 4.0 * 28.0 + 3.0f * 29.0f;
-    EXPECT_FLOAT_EQ(expected, firFilterApply(&filter));
-
-    firFilterUpdate(&filter, 7.0f);
-    expected = 7.0f * 26.0f + 6.0 * 27.0 + 5.0 * 28.0 + 4.0f * 29.0f;
-    EXPECT_FLOAT_EQ(expected, firFilterApply(&filter));
+    pt1FilterApply(&filter, -200.0f);
+    EXPECT_FLOAT_EQ(-200.08142, filter.state);
 }
 
 TEST(FilterUnittest, TestSlewFilterInit)
