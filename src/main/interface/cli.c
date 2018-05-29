@@ -2321,21 +2321,28 @@ static void cliFeature(char *cmdline)
     }
 }
 
-#ifdef USE_BEEPER
-static void printBeeper(uint8_t dumpMask, const beeperConfig_t *beeperConfig, const beeperConfig_t *beeperConfigDefault)
+#if defined(USE_BEEPER) || defined(USE_DSHOT)
+static void printBeeper(uint8_t dumpMask, const uint32_t offFlags, const uint32_t offFlagsDefault, char *name)
 {
     const uint8_t beeperCount = beeperTableEntryCount();
-    const uint32_t mask = beeperConfig->beeper_off_flags;
-    const uint32_t defaultMask = beeperConfigDefault->beeper_off_flags;
     for (int32_t i = 0; i < beeperCount - 2; i++) {
-        const char *formatOff = "beeper -%s";
-        const char *formatOn = "beeper %s";
+        const char *formatOff = "%s -%s";
+        const char *formatOn = "%s %s";
         const uint32_t beeperModeMask = beeperModeMaskForTableIndex(i);
-        cliDefaultPrintLinef(dumpMask, ~(mask ^ defaultMask) & beeperModeMask, mask & beeperModeMask ? formatOn : formatOff, beeperNameForTableIndex(i));
-        cliDumpPrintLinef(dumpMask, ~(mask ^ defaultMask) & beeperModeMask, mask & beeperModeMask ? formatOff : formatOn, beeperNameForTableIndex(i));
+        cliDefaultPrintLinef(dumpMask, ~(offFlags ^ offFlagsDefault) & beeperModeMask, offFlags & beeperModeMask ? formatOn : formatOff, name, beeperNameForTableIndex(i));
+        cliDumpPrintLinef(dumpMask, ~(offFlags ^ offFlagsDefault) & beeperModeMask, offFlags & beeperModeMask ? formatOff : formatOn, name, beeperNameForTableIndex(i));
     }
 }
+#endif
 
+#if defined(USE_DSHOT)
+static void cliBeacon(char *cmdline)
+{
+    UNUSED(cmdline);
+}
+#endif
+
+#if defined(USE_BEEPER)
 static void cliBeeper(char *cmdline)
 {
     uint32_t len = strlen(cmdline);
@@ -4009,7 +4016,12 @@ static void printConfig(char *cmdline, bool doDiff)
 
 #ifdef USE_BEEPER
         cliPrintHashLine("beeper");
-        printBeeper(dumpMask, &beeperConfig_Copy, beeperConfig());
+        printBeeper(dumpMask, beeperConfig_Copy.beeper_off_flags, beeperConfig()->beeper_off_flags, "beeper");
+#endif
+
+#ifdef USE_DSHOT
+        cliPrintHashLine("beacon");
+        printBeeper(dumpMask, beeperConfig_Copy.dshotBeaconOffFlags, beeperConfig()->dshotBeaconOffFlags, "beacon");
 #endif
 
         cliPrintHashLine("map");
@@ -4165,6 +4177,10 @@ static void cliHelp(char *cmdline);
 const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("adjrange", "configure adjustment ranges", NULL, cliAdjustmentRange),
     CLI_COMMAND_DEF("aux", "configure modes", "<index> <mode> <aux> <start> <end> <logic>", cliAux),
+#ifdef USE_DSHOT
+    CLI_COMMAND_DEF("beacon", "turn on/off beeper", "list\r\n"
+        "\t<+|->[name]", cliBeacon),
+#endif
 #ifdef USE_BEEPER
     CLI_COMMAND_DEF("beeper", "turn on/off beeper", "list\r\n"
         "\t<+|->[name]", cliBeeper),
