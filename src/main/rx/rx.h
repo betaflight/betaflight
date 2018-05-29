@@ -87,7 +87,8 @@ extern int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];       // interval [1000;2
 
 #define RSSI_SCALE_MIN 1
 #define RSSI_SCALE_MAX 255
-#define RSSI_SCALE_DEFAULT (4095.0f / 100.0f + 0.5f) // 100% @ 4095
+
+#define RSSI_SCALE_DEFAULT 100
 
 typedef enum {
     RX_FAILSAFE_MODE_AUTO = 0,

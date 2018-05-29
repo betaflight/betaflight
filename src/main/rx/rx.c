@@ -77,6 +77,8 @@ static timeUs_t lastMspRssiUpdateUs = 0;
 
 #define MSP_RSSI_TIMEOUT_US 1500000   // 1.5 sec
 
+#define RSSI_ADC_DIVISOR 4 // 4096 / 1024
+
 rssiSource_e rssiSource;
 
 static bool rxDataProcessingRequired = false;
@@ -646,7 +648,7 @@ static void updateRSSIADC(timeUs_t currentTimeUs)
     rssiUpdateAt = currentTimeUs + DELAY_50_HZ;
 
     const uint16_t adcRssiSample = adcGetChannel(ADC_RSSI);
-    uint16_t rssiValue = (uint16_t)((1024.0f * adcRssiSample) / (rxConfig()->rssi_scale * 100.0f));
+    uint16_t rssiValue = (uint16_t)(adcRssiSample / RSSI_ADC_DIVISOR);
     rssiValue = constrain(rssiValue, 0, RSSI_MAX_VALUE);
 
     // RSSI_Invert option
@@ -679,7 +681,7 @@ void updateRSSI(timeUs_t currentTimeUs)
 
 uint16_t getRssi(void)
 {
-    return rssi;
+    return (rxConfig()->rssi_scale / 100.0f) * rssi;
 }
 
 uint16_t rxGetRefreshRate(void)
