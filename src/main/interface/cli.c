@@ -2321,8 +2321,8 @@ static void cliFeature(char *cmdline)
     }
 }
 
-#if defined(USE_BEEPER) || defined(USE_DSHOT)
-static void printBeeper(uint8_t dumpMask, const uint32_t offFlags, const uint32_t offFlagsDefault, char *name)
+#if defined(USE_BEEPER)
+static void printBeeper(uint8_t dumpMask, const uint32_t offFlags, const uint32_t offFlagsDefault, const char *name)
 {
     const uint8_t beeperCount = beeperTableEntryCount();
     for (int32_t i = 0; i < beeperCount - 2; i++) {
@@ -2333,41 +2333,33 @@ static void printBeeper(uint8_t dumpMask, const uint32_t offFlags, const uint32_
         cliDumpPrintLinef(dumpMask, ~(offFlags ^ offFlagsDefault) & beeperModeMask, offFlags & beeperModeMask ? formatOff : formatOn, name, beeperNameForTableIndex(i));
     }
 }
-#endif
 
-#if defined(USE_DSHOT)
-static void cliBeacon(char *cmdline)
-{
-    UNUSED(cmdline);
-}
-#endif
-
-#if defined(USE_BEEPER)
-static void cliBeeper(char *cmdline)
+static void processBeeperCommand(char *cmdline, uint32_t *offFlags, const uint32_t allowedFlags)
 {
     uint32_t len = strlen(cmdline);
     uint8_t beeperCount = beeperTableEntryCount();
-    uint32_t mask = getBeeperOffMask();
 
     if (len == 0) {
         cliPrintf("Disabled:");
         for (int32_t i = 0; ; i++) {
-            if (i == beeperCount - 2) {
-                if (mask == 0)
+            if (i == beeperCount - 1) {
+                if (*offFlags == 0)
                     cliPrint("  none");
                 break;
             }
 
-            if (mask & beeperModeMaskForTableIndex(i))
+            if (beeperModeMaskForTableIndex(i) & *offFlags)
                 cliPrintf("  %s", beeperNameForTableIndex(i));
         }
         cliPrintLinefeed();
     } else if (strncasecmp(cmdline, "list", len) == 0) {
         cliPrint("Available:");
-        for (uint32_t i = 0; i < beeperCount; i++)
-            cliPrintf(" %s", beeperNameForTableIndex(i));
+        for (uint32_t i = 0; i < beeperCount; i++) {
+            if (beeperModeMaskForTableIndex(i) & allowedFlags) {
+                cliPrintf(" %s", beeperNameForTableIndex(i));
+            }
+        }
         cliPrintLinefeed();
-        return;
     } else {
         bool remove = false;
         if (cmdline[0] == '-') {
@@ -2381,20 +2373,20 @@ static void cliBeeper(char *cmdline)
                 cliPrintErrorLinef("Invalid name");
                 break;
             }
-            if (strncasecmp(cmdline, beeperNameForTableIndex(i), len) == 0) {
+            if (strncasecmp(cmdline, beeperNameForTableIndex(i), len) == 0 && beeperModeMaskForTableIndex(i) & (allowedFlags | BEEPER_GET_FLAG(BEEPER_ALL))) {
                 if (remove) { // beeper off
-                    if (i == BEEPER_ALL-1) {
-                        beeperOffSetAll(beeperCount-2);
+                    if (i == BEEPER_ALL - 1) {
+                        *offFlags = allowedFlags;
                     } else {
-                        beeperOffSet(beeperModeMaskForTableIndex(i));
+                        *offFlags |= beeperModeMaskForTableIndex(i);
                     }
                     cliPrint("Disabled");
                 }
                 else { // beeper on
-                    if (i == BEEPER_ALL-1) {
-                        beeperOffClearAll();
+                    if (i == BEEPER_ALL - 1) {
+                        *offFlags = 0;
                     } else {
-                        beeperOffClear(beeperModeMaskForTableIndex(i));
+                        *offFlags &= ~beeperModeMaskForTableIndex(i);
                     }
                     cliPrint("Enabled");
                 }
@@ -2403,6 +2395,18 @@ static void cliBeeper(char *cmdline)
             }
         }
     }
+}
+
+#if defined(USE_DSHOT)
+static void cliBeacon(char *cmdline)
+{
+    processBeeperCommand(cmdline, &(beeperConfigMutable()->dshotBeaconOffFlags), DSHOT_BEACON_ALLOWED_MODES);
+}
+#endif
+
+static void cliBeeper(char *cmdline)
+{
+    processBeeperCommand(cmdline, &(beeperConfigMutable()->beeper_off_flags), BEEPER_ALLOWED_MODES);
 }
 #endif
 

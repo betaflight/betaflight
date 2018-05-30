@@ -350,6 +350,21 @@ static void validateAndFixConfig(void)
     if (beeperDevConfig()->frequency && !timerGetByTag(beeperDevConfig()->ioTag)) {
         beeperDevConfigMutable()->frequency = 0;
     }
+
+    if (beeperConfig()->beeper_off_flags & ~BEEPER_ALLOWED_MODES) {
+        beeperConfigMutable()->beeper_off_flags = 0;
+    }
+
+#ifdef USE_DSHOT
+    if (beeperConfig()->dshotBeaconOffFlags & ~DSHOT_BEACON_ALLOWED_MODES) {
+        beeperConfigMutable()->dshotBeaconOffFlags = 0;
+    }
+
+    if (beeperConfig()->dshotBeaconTone < DSHOT_CMD_BEACON1
+        || beeperConfig()->dshotBeaconTone > DSHOT_CMD_BEACON5) {
+        beeperConfigMutable()->dshotBeaconTone = DSHOT_CMD_BEACON1;
+    }
+#endif
 #endif
 
 #if defined(TARGET_VALIDATECONFIG)
@@ -522,55 +537,3 @@ void changePidProfile(uint8_t pidProfileIndex)
     beeperConfirmationBeeps(pidProfileIndex + 1);
 }
 #endif
-
-void beeperOffSet(uint32_t mask)
-{
-#ifdef USE_BEEPER
-    beeperConfigMutable()->beeper_off_flags |= mask;
-#else
-    UNUSED(mask);
-#endif
-}
-
-void beeperOffSetAll(uint8_t beeperCount)
-{
-#ifdef USE_BEEPER
-    beeperConfigMutable()->beeper_off_flags = (1 << beeperCount) -1;
-#else
-    UNUSED(beeperCount);
-#endif
-}
-
-void beeperOffClear(uint32_t mask)
-{
-#ifdef USE_BEEPER
-    beeperConfigMutable()->beeper_off_flags &= ~(mask);
-#else
-    UNUSED(mask);
-#endif
-}
-
-void beeperOffClearAll(void)
-{
-#ifdef USE_BEEPER
-    beeperConfigMutable()->beeper_off_flags = 0;
-#endif
-}
-
-uint32_t getBeeperOffMask(void)
-{
-#ifdef USE_BEEPER
-    return beeperConfig()->beeper_off_flags;
-#else
-    return 0;
-#endif
-}
-
-void setBeeperOffMask(uint32_t mask)
-{
-#ifdef USE_BEEPER
-    beeperConfigMutable()->beeper_off_flags = mask;
-#else
-    UNUSED(mask);
-#endif
-}

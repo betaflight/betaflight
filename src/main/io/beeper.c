@@ -194,7 +194,7 @@ typedef struct beeperTableEntry_s {
 #define BEEPER_ENTRY(a,b,c,d) a,b,c
 #endif
 
-/*static*/ const beeperTableEntry_t beeperTable[] = {
+static const beeperTableEntry_t beeperTable[] = {
     { BEEPER_ENTRY(BEEPER_GYRO_CALIBRATED,       0, beep_gyroCalibrated,   "GYRO_CALIBRATED") },
     { BEEPER_ENTRY(BEEPER_RX_LOST,               1, beep_txLostBeep,       "RX_LOST") },
     { BEEPER_ENTRY(BEEPER_RX_LOST_LANDING,       2, beep_sos,              "RX_LOST_LANDING") },
@@ -232,7 +232,7 @@ void beeper(beeperMode_e mode)
 {
     if (
         mode == BEEPER_SILENCE || (
-            (getBeeperOffMask() & (1 << (BEEPER_USB - 1)))
+            (beeperConfigMutable()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_USB - 1))
             && getBatteryState() == BATTERY_NOT_PRESENT
         )
     ) {
@@ -345,7 +345,7 @@ void beeperWarningBeeps(uint8_t beepCount)
 #ifdef USE_GPS
 static void beeperGpsStatus(void)
 {
-    if (!(getBeeperOffMask() & (1 << (BEEPER_GPS_STATUS - 1)))) {
+    if (!(beeperConfigMutable()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_GPS_STATUS))) {
         // if GPS fix then beep out number of satellites
         if (STATE(GPS_FIX) && gpsSol.numSat >= 5) {
             uint8_t i = 0;
@@ -391,7 +391,9 @@ void beeperUpdate(timeUs_t currentTimeUs)
         beeperIsOn = 1;
 
 #ifdef USE_DSHOT
-        if (!areMotorsRunning() && beeperConfig()->dshotBeaconTone && (beeperConfig()->dshotBeaconTone <= DSHOT_CMD_BEACON5) && (currentBeeperEntry->mode == BEEPER_RX_SET || currentBeeperEntry->mode == BEEPER_RX_LOST)) {
+        if (!areMotorsRunning()
+            && ((currentBeeperEntry->mode == BEEPER_RX_SET && beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_SET))
+            || (currentBeeperEntry->mode == BEEPER_RX_LOST && beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_LOST)))) {
             pwmDisableMotors();
             delay(1);
 
@@ -402,7 +404,7 @@ void beeperUpdate(timeUs_t currentTimeUs)
 #endif
 
         if (currentBeeperEntry->sequence[beeperPos] != 0) {
-            if (!(getBeeperOffMask() & (1 << (currentBeeperEntry->mode - 1))))
+            if (!(beeperConfigMutable()->beeper_off_flags & BEEPER_GET_FLAG(currentBeeperEntry->mode)))
                 BEEP_ON;
             warningLedEnable();
             warningLedRefresh();
@@ -469,7 +471,7 @@ uint32_t beeperModeMaskForTableIndex(int idx)
     beeperMode_e beeperMode = beeperModeForTableIndex(idx);
     if (beeperMode == BEEPER_SILENCE)
         return 0;
-    return 1 << (beeperMode - 1);
+    return BEEPER_GET_FLAG(beeperMode);
 }
 
 /*

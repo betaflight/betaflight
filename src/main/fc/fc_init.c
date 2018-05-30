@@ -90,6 +90,7 @@
 #include "msp/msp_serial.h"
 
 #include "pg/adc.h"
+#include "pg/beeper.h"
 #include "pg/beeper_dev.h"
 #include "pg/bus_i2c.h"
 #include "pg/bus_spi.h"
@@ -519,10 +520,16 @@ void init(void)
     for (int i = 0; i < 10; i++) {
         LED1_TOGGLE;
         LED0_TOGGLE;
+#if defined(USE_BEEPER)
         delay(25);
-        if (!(getBeeperOffMask() & (1 << (BEEPER_SYSTEM_INIT - 1)))) BEEP_ON;
+        if (!(beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_SYSTEM_INIT))) {
+            BEEP_ON;
+        }
         delay(25);
         BEEP_OFF;
+#else
+        delay(50);
+#endif
     }
     LED0_OFF;
     LED1_OFF;

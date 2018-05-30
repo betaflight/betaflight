@@ -49,13 +49,6 @@ PG_DECLARE(systemConfig_t, systemConfig);
 struct pidProfile_s;
 extern struct pidProfile_s *currentPidProfile;
 
-void beeperOffSet(uint32_t mask);
-void beeperOffSetAll(uint8_t beeperCount);
-void beeperOffClear(uint32_t mask);
-void beeperOffClearAll(void);
-uint32_t getBeeperOffMask(void);
-void setBeeperOffMask(uint32_t mask);
-
 void initEEPROM(void);
 void resetEEPROM(void);
 bool readEEPROM(void);
