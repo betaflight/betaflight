@@ -98,6 +98,9 @@ typedef enum {
     TABLE_VIDEO_SYSTEM,
 #endif // USE_MAX7456
     TABLE_ITERM_RELAX,
+#ifdef USE_ACRO_TRAINER
+    TABLE_ACRO_TRAINER_DEBUG,
+#endif // USE_ACRO_TRAINER
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 
