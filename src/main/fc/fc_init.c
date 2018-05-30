@@ -240,13 +240,14 @@ void init(void)
     initEEPROM();
 
     ensureEEPROMStructureIsValid();
+
     bool readSuccess = readEEPROM();
 
 #if defined(USE_BOARD_INFO)
     initBoardInformation();
 #endif
 
-    if (!readSuccess || strncasecmp(systemConfig()->boardIdentifier, TARGET_BOARD_IDENTIFIER, sizeof(TARGET_BOARD_IDENTIFIER))) {
+    if (!readSuccess || !isEEPROMVersionValid() || strncasecmp(systemConfig()->boardIdentifier, TARGET_BOARD_IDENTIFIER, sizeof(TARGET_BOARD_IDENTIFIER))) {
         resetEEPROM();
 
         activateConfig();
