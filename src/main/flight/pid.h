@@ -132,6 +132,9 @@ typedef struct pidProfile_s {
     uint16_t acro_trainer_lookahead_ms;     // The lookahead window in milliseconds used to reduce overshoot
     uint8_t acro_trainer_debug_axis;        // The axis for which record debugging values are captured 0=roll, 1=pitch
     uint8_t acro_trainer_gain;              // The strength of the limiting. Raising may reduce overshoot but also lead to oscillation around the angle limit
+    uint8_t abs_control_gain;              // How strongly should the absolute accumulated error be corrected for
+    uint8_t abs_control_limit;             // Limit to the correction
+    uint8_t abs_control_error_limit;       // Limit to the accumulated error
 } pidProfile_t;
 
 #ifndef USE_OSD_SLAVE
