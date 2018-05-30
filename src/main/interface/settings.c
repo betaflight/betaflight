@@ -616,7 +616,7 @@ const clivalue_t valueTable[] = {
 // PG_CURRENT_SENSOR_ADC_CONFIG
 #ifdef USE_VIRTUAL_CURRENT_METER
     { "ibatv_scale",                VAR_INT16  | MASTER_VALUE, .config.minmax = { -16000, 16000 }, PG_CURRENT_SENSOR_VIRTUAL_CONFIG, offsetof(currentSensorVirtualConfig_t, scale) },
-    { "ibatv_offset",               VAR_INT16  | MASTER_VALUE, .config.minmax = { -16000, 16000 }, PG_CURRENT_SENSOR_VIRTUAL_CONFIG, offsetof(currentSensorVirtualConfig_t, offset) },
+    { "ibatv_offset",               VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 16000 }, PG_CURRENT_SENSOR_VIRTUAL_CONFIG, offsetof(currentSensorVirtualConfig_t, offset) },
 #endif
 
 #ifdef USE_BEEPER
@@ -982,6 +982,7 @@ const clivalue_t valueTable[] = {
 
 #ifdef USE_ESC_SENSOR
     { "esc_sensor_halfduplex",          VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_ESC_SENSOR_CONFIG, offsetof(escSensorConfig_t, halfDuplex) },
+    { "esc_sensor_current_offset",      VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, 16000 }, PG_ESC_SENSOR_CONFIG, offsetof(escSensorConfig_t, offset) },
 #endif
 
 #ifdef USE_RX_FRSKY_SPI
