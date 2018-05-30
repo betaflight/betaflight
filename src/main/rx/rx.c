@@ -77,7 +77,7 @@ static timeUs_t lastMspRssiUpdateUs = 0;
 
 #define MSP_RSSI_TIMEOUT_US 1500000   // 1.5 sec
 
-#define RSSI_ADC_DIVISOR 4 // 4096 / 1024
+#define RSSI_ADC_DIVISOR (4096 / 1024)
 
 rssiSource_e rssiSource;
 
@@ -655,7 +655,7 @@ static void updateRSSIADC(timeUs_t currentTimeUs)
         rssiValue = RSSI_MAX_VALUE - rssiValue;
     }
 
-    setRssi((uint16_t)rssiValue, RSSI_SOURCE_ADC);
+    setRssi(rssiValue, RSSI_SOURCE_ADC);
 #endif
 }
 
