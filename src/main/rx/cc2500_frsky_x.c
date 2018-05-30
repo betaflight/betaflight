@@ -451,7 +451,7 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
             ledIsOn = !ledIsOn;
 
 #if defined(USE_RX_FRSKY_SPI_TELEMETRY)
-            setRssiFiltered(0, RSSI_SOURCE_RX_PROTOCOL);
+            setRssiDirect(0, RSSI_SOURCE_RX_PROTOCOL);
 #endif
             nextChannel(1);
             cc2500Strobe(CC2500_SRX);

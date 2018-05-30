@@ -1015,6 +1015,8 @@ extern "C" {
 
     uint16_t getRssi(void) { return rssi; }
 
+    uint8_t getRssiPercent(void) { return scaleRange(rssi, 0, RSSI_MAX_VALUE, 0, 100); }
+
     uint16_t getCoreTemperatureCelsius(void) { return simulationCoreTemperature; }
 
     bool isFlipOverAfterCrashMode(void) {

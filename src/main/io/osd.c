@@ -1093,7 +1093,7 @@ void osdUpdateAlarms(void)
 
     int32_t alt = osdGetMetersToSelectedUnit(getEstimatedAltitude()) / 100;
 
-    if (scaleRange(getRssi(), 0, 1024, 0, 100) < osdConfig()->rssi_alarm) {
+    if (getRssiPercent() < osdConfig()->rssi_alarm) {
         SET_BLINK(OSD_RSSI_VALUE);
     } else {
         CLR_BLINK(OSD_RSSI_VALUE);
@@ -1209,7 +1209,7 @@ static void osdUpdateStats(void)
         stats.max_current = value;
     }
 
-    value = scaleRange(getRssi(), 0, 1024, 0, 100);
+    value = getRssiPercent();
     if (stats.min_rssi > value) {
         stats.min_rssi = value;
     }

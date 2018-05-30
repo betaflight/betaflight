@@ -77,6 +77,8 @@ static timeUs_t lastMspRssiUpdateUs = 0;
 
 #define MSP_RSSI_TIMEOUT_US 1500000   // 1.5 sec
 
+#define RSSI_ADC_DIVISOR (4096 / 1024)
+
 rssiSource_e rssiSource;
 
 static bool rxDataProcessingRequired = false;
@@ -372,10 +374,10 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
 
             if (frameStatus & (RX_FRAME_FAILSAFE | RX_FRAME_DROPPED)) {
             	// No (0%) signal
-            	setRssiUnfiltered(0, RSSI_SOURCE_FRAME_ERRORS);
+            	setRssi(0, RSSI_SOURCE_FRAME_ERRORS);
             } else {
             	// Valid (100%) signal
-            	setRssiUnfiltered(RSSI_MAX_VALUE, RSSI_SOURCE_FRAME_ERRORS);
+            	setRssi(RSSI_MAX_VALUE, RSSI_SOURCE_FRAME_ERRORS);
             }
         }
 
@@ -576,7 +578,7 @@ void parseRcChannels(const char *input, rxConfig_t *rxConfig)
     }
 }
 
-void setRssiFiltered(uint16_t newRssi, rssiSource_e source)
+void setRssiDirect(uint16_t newRssi, rssiSource_e source)
 {
     if (source != rssiSource) {
         return;
@@ -587,7 +589,7 @@ void setRssiFiltered(uint16_t newRssi, rssiSource_e source)
 
 #define RSSI_SAMPLE_COUNT 16
 
-void setRssiUnfiltered(uint16_t rssiValue, rssiSource_e source)
+void setRssi(uint16_t rssiValue, rssiSource_e source)
 {
     if (source != rssiSource) {
         return;
@@ -630,7 +632,7 @@ static void updateRSSIPWM(void)
     }
 
     // Range of rawPwmRssi is [1000;2000]. rssi should be in [0;1023];
-    setRssiFiltered(constrain((uint16_t)(((pwmRssi - 1000) / 1000.0f) * 1024.0f), 0, RSSI_MAX_VALUE), RSSI_SOURCE_RX_CHANNEL);
+    setRssiDirect(constrain(((pwmRssi - 1000) / 1000.0f) * RSSI_MAX_VALUE, 0, RSSI_MAX_VALUE), RSSI_SOURCE_RX_CHANNEL);
 }
 
 static void updateRSSIADC(timeUs_t currentTimeUs)
@@ -646,15 +648,14 @@ static void updateRSSIADC(timeUs_t currentTimeUs)
     rssiUpdateAt = currentTimeUs + DELAY_50_HZ;
 
     const uint16_t adcRssiSample = adcGetChannel(ADC_RSSI);
-    uint16_t rssiValue = (uint16_t)((1024.0f * adcRssiSample) / (rxConfig()->rssi_scale * 100.0f));
-    rssiValue = constrain(rssiValue, 0, RSSI_MAX_VALUE);
+    uint16_t rssiValue = adcRssiSample / RSSI_ADC_DIVISOR;
 
     // RSSI_Invert option
     if (rxConfig()->rssi_invert) {
         rssiValue = RSSI_MAX_VALUE - rssiValue;
     }
 
-    setRssiUnfiltered((uint16_t)rssiValue, RSSI_SOURCE_ADC);
+    setRssi(rssiValue, RSSI_SOURCE_ADC);
 #endif
 }
 
@@ -679,7 +680,12 @@ void updateRSSI(timeUs_t currentTimeUs)
 
 uint16_t getRssi(void)
 {
-    return rssi;
+    return (rxConfig()->rssi_scale / 100.0f) * rssi;
+}
+
+uint8_t getRssiPercent(void)
+{
+    return scaleRange(getRssi(), 0, RSSI_MAX_VALUE, 0, 100);
 }
 
 uint16_t rxGetRefreshRate(void)

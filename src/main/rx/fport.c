@@ -269,7 +269,7 @@ static uint8_t fportFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
                     } else {
                         result = sbusChannelsDecode(rxRuntimeConfig, &frame->data.controlData.channels);
 
-                        setRssiUnfiltered(scaleRange(constrain(frame->data.controlData.rssi, 0, 100), 0, 100, 0, 1024), RSSI_SOURCE_RX_PROTOCOL);
+                        setRssi(scaleRange(frame->data.controlData.rssi, 0, 100, 0, RSSI_MAX_VALUE), RSSI_SOURCE_RX_PROTOCOL);
 
                         lastRcFrameReceivedMs = millis();
                     }
@@ -323,7 +323,7 @@ static uint8_t fportFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
     }
 
     if (lastRcFrameReceivedMs && ((millis() - lastRcFrameReceivedMs) > FPORT_MAX_TELEMETRY_AGE_MS)) {
-        setRssiFiltered(0, RSSI_SOURCE_RX_PROTOCOL);
+        setRssiDirect(0, RSSI_SOURCE_RX_PROTOCOL);
         lastRcFrameReceivedMs = 0;
     }
 
