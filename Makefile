@@ -475,6 +475,9 @@ test junittest:
 	$(V0) cd src/test && $(MAKE) $@
 
 
+arm_sdk_prefix:
+	$(V1) echo $(ARM_SDK_PREFIX)
+
 check-target-independence:
 	$(V1) for test_target in $(VALID_TARGETS); do \
 		FOUND=$$(grep -rE "\W$${test_target}\W?" src/main | grep -vE "(//)|(/\*).*\W$${test_target}\W?" | grep -vE "^src/main/target"); \
