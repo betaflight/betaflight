@@ -72,6 +72,7 @@ typedef struct gpsConfig_s {
     sbasMode_e sbasMode;
     gpsAutoConfig_e autoConfig;
     gpsAutoBaud_e autoBaud;
+    uint8_t gps_ublox_use_galileo;
 } gpsConfig_t;
 
 PG_DECLARE(gpsConfig_t, gpsConfig);
@@ -101,6 +102,7 @@ typedef enum {
     GPS_MESSAGE_STATE_IDLE = 0,
     GPS_MESSAGE_STATE_INIT,
     GPS_MESSAGE_STATE_SBAS,
+    GPS_MESSAGE_STATE_GALILEO,
     GPS_MESSAGE_STATE_ENTRY_COUNT
 } gpsMessageState_e;
 
