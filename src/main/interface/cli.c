@@ -2241,13 +2241,13 @@ static void cliName(char *cmdline)
 
 #if defined(USE_BOARD_INFO)
 
-#define ERROR_MESSAGE "Error, %s is already set: %s"
+#define ERROR_MESSAGE "%s cannot be changed. Current value: '%s'"
 
 static void cliBoardName(char *cmdline)
 {
     const unsigned int len = strlen(cmdline);
-    if (len > 0 && boardInformationIsSet() && strncmp(getBoardName(), cmdline, len)) {
-        cliPrintLinef(ERROR_MESSAGE, "board_name", getBoardName());
+    if (len > 0 && boardInformationIsSet() && (len != strlen(getBoardName()) || strncmp(getBoardName(), cmdline, len))) {
+        cliPrintErrorLinef(ERROR_MESSAGE, "board_name", getBoardName());
     } else {
         if (len > 0) {
             setBoardName(cmdline);
@@ -2260,8 +2260,8 @@ static void cliBoardName(char *cmdline)
 static void cliManufacturerId(char *cmdline)
 {
     const unsigned int len = strlen(cmdline);
-    if (len > 0 && boardInformationIsSet() && strncmp(getManufacturerId(), cmdline, len)) {
-        cliPrintLinef(ERROR_MESSAGE, "manufactuer_id", getManufacturerId());
+    if (len > 0 && boardInformationIsSet() && (len != strlen(getManufacturerId()) || strncmp(getManufacturerId(), cmdline, len))) {
+        cliPrintErrorLinef(ERROR_MESSAGE, "manufactuer_id", getManufacturerId());
     } else {
         if (len > 0) {
             setManufacturerId(cmdline);
@@ -2281,24 +2281,38 @@ static void writeSignature(char *signatureStr, uint8_t *signature)
 
 static void cliSignature(char *cmdline)
 {
-    const unsigned int len = strlen(cmdline);
+    const int len = strlen(cmdline);
 
-    char signatureStr[SIGNATURE_LENGTH * 2 + 1] = {0};
-    uint8_t signature[SIGNATURE_LENGTH];
+    uint8_t signature[SIGNATURE_LENGTH] = {0};
     if (len > 0) {
+        if (len != 2 * SIGNATURE_LENGTH) {
+            cliPrintErrorLinef("Invalid length: %d (expected: %d)", len, 2 * SIGNATURE_LENGTH);
+
+            return;
+        }
+
 #define BLOCK_SIZE 2
         for (unsigned i = 0; i < SIGNATURE_LENGTH; i++) {
             char temp[BLOCK_SIZE + 1];
             strncpy(temp, &cmdline[i * BLOCK_SIZE], BLOCK_SIZE);
             temp[BLOCK_SIZE] = '\0';
-            signature[i] = strtoul(temp, NULL, 16);
+            char *end;
+            unsigned result = strtoul(temp, &end, 16);
+            if (end == &temp[BLOCK_SIZE]) {
+                signature[i] = result;
+            } else {
+                cliPrintErrorLinef("Invalid character found: %c", end[0]);
+
+                return;
+            }
         }
 #undef BLOCK_SIZE
     }
 
+    char signatureStr[SIGNATURE_LENGTH * 2 + 1] = {0};
     if (len > 0 && signatureIsSet() && memcmp(signature, getSignature(), SIGNATURE_LENGTH)) {
         writeSignature(signatureStr, getSignature());
-        cliPrintLinef(ERROR_MESSAGE, "signature", signatureStr);
+        cliPrintErrorLinef(ERROR_MESSAGE, "signature", signatureStr);
     } else {
         if (len > 0) {
             setSignature(signature);
