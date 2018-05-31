@@ -329,10 +329,7 @@ void disarm(void)
         if (isMotorProtocolDshot() && isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH) && !feature(FEATURE_3D)) {
             flipOverAfterCrashMode = false;
             if (!feature(FEATURE_3D)) {
-                pwmDisableMotors();
-                delay(1);
-                pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL);
-                pwmEnableMotors();
+                pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL, false);
             }
         }
 #endif
@@ -357,13 +354,10 @@ void tryArm(void)
         }
 #ifdef USE_DSHOT
         if (isMotorProtocolDshot() && isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH)) {
-            pwmDisableMotors();
-            delay(1);
-
             if (!IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
                 flipOverAfterCrashMode = false;
                 if (!feature(FEATURE_3D)) {
-                    pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL);
+                    pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL, false);
                 }
             } else {
                 flipOverAfterCrashMode = true;
@@ -371,11 +365,9 @@ void tryArm(void)
                 runawayTakeoffCheckDisabled = false;
 #endif
                 if (!feature(FEATURE_3D)) {
-                    pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_REVERSED);
+                    pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_REVERSED, false);
                 }
             }
-
-            pwmEnableMotors();
         }
 #endif
 
