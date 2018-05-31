@@ -4018,15 +4018,15 @@ static void printConfig(char *cmdline, bool doDiff)
         cliPrintHashLine("feature");
         printFeature(dumpMask, &featureConfig_Copy, featureConfig());
 
-#ifdef USE_BEEPER
+#if defined(USE_BEEPER)
         cliPrintHashLine("beeper");
         printBeeper(dumpMask, beeperConfig_Copy.beeper_off_flags, beeperConfig()->beeper_off_flags, "beeper");
-#endif
 
-#ifdef USE_DSHOT
+#if defined(USE_DSHOT)
         cliPrintHashLine("beacon");
         printBeeper(dumpMask, beeperConfig_Copy.dshotBeaconOffFlags, beeperConfig()->dshotBeaconOffFlags, "beacon");
 #endif
+#endif // USE_BEEPER
 
         cliPrintHashLine("map");
         printMap(dumpMask, &rxConfig_Copy, rxConfig());
@@ -4181,14 +4181,14 @@ static void cliHelp(char *cmdline);
 const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("adjrange", "configure adjustment ranges", NULL, cliAdjustmentRange),
     CLI_COMMAND_DEF("aux", "configure modes", "<index> <mode> <aux> <start> <end> <logic>", cliAux),
-#ifdef USE_DSHOT
+#if defined(USE_BEEPER)
+#if defined(USE_DSHOT)
     CLI_COMMAND_DEF("beacon", "turn on/off beeper", "list\r\n"
         "\t<+|->[name]", cliBeacon),
 #endif
-#ifdef USE_BEEPER
     CLI_COMMAND_DEF("beeper", "turn on/off beeper", "list\r\n"
         "\t<+|->[name]", cliBeeper),
-#endif
+#endif // USE_BEEPER
     CLI_COMMAND_DEF("bl", "reboot into bootloader", NULL, cliBootloader),
 #ifdef USE_LED_STRIP
     CLI_COMMAND_DEF("color", "configure colors", NULL, cliColor),
