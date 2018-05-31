@@ -62,6 +62,7 @@
 #include "drivers/transponder_ir.h"
 #include "drivers/camera_control.h"
 
+#include "fc/board_info.h"
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/fc_core.h"
@@ -101,6 +102,7 @@
 
 #include "msp/msp_serial.h"
 
+#include "pg/board.h"
 #include "pg/vcd.h"
 
 #include "rx/rx.h"
@@ -457,6 +459,24 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         // Target name with explicit length
         sbufWriteU8(dst, strlen(targetName));
         sbufWriteData(dst, targetName, strlen(targetName));
+
+#if defined(USE_BOARD_INFO)
+        // Board name with explicit length
+        char *value = getBoardName();
+        sbufWriteU8(dst, strlen(value));
+        sbufWriteString(dst, value);
+
+        // Manufacturer id with explicit length
+        value = getManufacturerId();
+        sbufWriteU8(dst, strlen(value));
+        sbufWriteString(dst, value);
+
+#if defined(USE_SIGNATURE)
+        // Signature
+        sbufWriteData(dst, getSignature(), SIGNATURE_LENGTH);
+#endif
+#endif // USE_BOARD_INFO
+
         break;
     }
 
@@ -2054,6 +2074,47 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         setRssiMsp(sbufReadU8(src));
 
         break;
+
+#if defined(USE_BOARD_INFO)
+    case MSP_SET_BOARD_INFO:
+        if (!boardInformationIsSet()) {
+            uint8_t length = sbufReadU8(src);
+            char boardName[MAX_BOARD_NAME_LENGTH + 1];
+            sbufReadData(src, boardName, MIN(length, MAX_BOARD_NAME_LENGTH));
+            if (length > MAX_BOARD_NAME_LENGTH) {
+                sbufAdvance(src, length - MAX_BOARD_NAME_LENGTH);
+            }
+            boardName[length] = '\0';
+            length = sbufReadU8(src);
+            char manufacturerId[MAX_MANUFACTURER_ID_LENGTH + 1];
+            sbufReadData(src, manufacturerId, MIN(length, MAX_MANUFACTURER_ID_LENGTH));
+            if (length > MAX_MANUFACTURER_ID_LENGTH) {
+                sbufAdvance(src, length - MAX_MANUFACTURER_ID_LENGTH);
+            }
+            manufacturerId[length] = '\0';
+
+            setBoardName(boardName);
+            setManufacturerId(manufacturerId);
+            persistBoardInformation();
+        } else {
+            return MSP_RESULT_ERROR;
+        }
+
+        break;
+#if defined(USE_SIGNATURE)
+    case MSP_SET_SIGNATURE:
+        if (!signatureIsSet()) {
+            uint8_t signature[SIGNATURE_LENGTH];
+            sbufReadData(src, signature, SIGNATURE_LENGTH);
+            setSignature(signature);
+            persistSignature();
+        } else {
+            return MSP_RESULT_ERROR;
+        }
+
+        break;
+#endif
+#endif // USE_BOARD_INFO
     default:
         // we do not know how to handle the (valid) message, indicate error MSP $M!
         return MSP_RESULT_ERROR;

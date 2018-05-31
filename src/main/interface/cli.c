@@ -50,6 +50,7 @@ extern uint8_t __config_end;
 #include "common/color.h"
 #include "common/maths.h"
 #include "common/printf.h"
+#include "common/strtol.h"
 #include "common/time.h"
 #include "common/typeconversion.h"
 #include "common/utils.h"
@@ -84,6 +85,7 @@ extern uint8_t __config_end;
 #include "drivers/vtx_common.h"
 #include "drivers/usb_msc.h"
 
+#include "fc/board_info.h"
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/fc_core.h"
@@ -120,6 +122,7 @@ extern uint8_t __config_end;
 #include "pg/adc.h"
 #include "pg/beeper.h"
 #include "pg/beeper_dev.h"
+#include "pg/board.h"
 #include "pg/bus_i2c.h"
 #include "pg/bus_spi.h"
 #include "pg/max7456.h"
@@ -170,6 +173,13 @@ static char cliBuffer[CLI_IN_BUFFER_SIZE];
 static uint32_t bufferIndex = 0;
 
 static bool configIsInCopy = false;
+
+#if defined(USE_BOARD_INFO)
+static bool boardInformationUpdated = false;
+#if defined(USE_SIGNATURE)
+static bool signatureUpdated = false;
+#endif
+#endif // USE_BOARD_INFO
 
 static const char* const emptyName = "-";
 static const char* const emptyString = "";
@@ -2229,6 +2239,107 @@ static void cliName(char *cmdline)
     printName(DUMP_MASTER, pilotConfig());
 }
 
+#if defined(USE_BOARD_INFO)
+
+#define ERROR_MESSAGE "%s cannot be changed. Current value: '%s'"
+
+static void cliBoardName(char *cmdline)
+{
+    const unsigned int len = strlen(cmdline);
+    if (len > 0 && boardInformationIsSet() && (len != strlen(getBoardName()) || strncmp(getBoardName(), cmdline, len))) {
+        cliPrintErrorLinef(ERROR_MESSAGE, "board_name", getBoardName());
+    } else {
+        if (len > 0) {
+            setBoardName(cmdline);
+            boardInformationUpdated = true;
+        }
+        cliPrintLinef("board_name %s", getBoardName());
+    }
+}
+
+static void cliManufacturerId(char *cmdline)
+{
+    const unsigned int len = strlen(cmdline);
+    if (len > 0 && boardInformationIsSet() && (len != strlen(getManufacturerId()) || strncmp(getManufacturerId(), cmdline, len))) {
+        cliPrintErrorLinef(ERROR_MESSAGE, "manufacturer_id", getManufacturerId());
+    } else {
+        if (len > 0) {
+            setManufacturerId(cmdline);
+            boardInformationUpdated = true;
+        }
+        cliPrintLinef("manufacturer_id %s", getManufacturerId());
+    }
+}
+
+#if defined(USE_SIGNATURE)
+static void writeSignature(char *signatureStr, uint8_t *signature)
+{
+    for (unsigned i = 0; i < SIGNATURE_LENGTH; i++) {
+        tfp_sprintf(&signatureStr[2 * i], "%02x", signature[i]);
+    }
+}
+
+static void cliSignature(char *cmdline)
+{
+    const int len = strlen(cmdline);
+
+    uint8_t signature[SIGNATURE_LENGTH] = {0};
+    if (len > 0) {
+        if (len != 2 * SIGNATURE_LENGTH) {
+            cliPrintErrorLinef("Invalid length: %d (expected: %d)", len, 2 * SIGNATURE_LENGTH);
+
+            return;
+        }
+
+#define BLOCK_SIZE 2
+        for (unsigned i = 0; i < SIGNATURE_LENGTH; i++) {
+            char temp[BLOCK_SIZE + 1];
+            strncpy(temp, &cmdline[i * BLOCK_SIZE], BLOCK_SIZE);
+            temp[BLOCK_SIZE] = '\0';
+            char *end;
+            unsigned result = strtoul(temp, &end, 16);
+            if (end == &temp[BLOCK_SIZE]) {
+                signature[i] = result;
+            } else {
+                cliPrintErrorLinef("Invalid character found: %c", end[0]);
+
+                return;
+            }
+        }
+#undef BLOCK_SIZE
+    }
+
+    char signatureStr[SIGNATURE_LENGTH * 2 + 1] = {0};
+    if (len > 0 && signatureIsSet() && memcmp(signature, getSignature(), SIGNATURE_LENGTH)) {
+        writeSignature(signatureStr, getSignature());
+        cliPrintErrorLinef(ERROR_MESSAGE, "signature", signatureStr);
+    } else {
+        if (len > 0) {
+            setSignature(signature);
+
+            signatureUpdated = true;
+
+            writeSignature(signatureStr, getSignature());
+        } else if (signatureUpdated || signatureIsSet()) {
+            writeSignature(signatureStr, getSignature());
+        }
+
+        cliPrintLinef("signature %s", signatureStr);
+    }
+}
+#endif
+
+#undef ERROR_MESSAGE
+
+#endif // USE_BOARD_INFO
+
+static void cliMcuId(char *cmdline)
+{
+    UNUSED(cmdline);
+
+    cliPrintLinef("mcu_id %08x%08x%08x", U_ID_0, U_ID_1, U_ID_2);
+}
+
 static void printFeature(uint8_t dumpMask, const featureConfig_t *featureConfig, const featureConfig_t *featureConfigDefault)
 {
     const uint32_t mask = featureConfig->enabledFeatures;
@@ -3100,6 +3211,18 @@ static void cliSave(char *cmdline)
     UNUSED(cmdline);
 
     cliPrintHashLine("saving");
+
+#if defined(USE_BOARD_INFO)
+    if (boardInformationUpdated) {
+        persistBoardInformation();
+    }
+#if defined(USE_SIGNATURE)
+    if (signatureUpdated) {
+        persistSignature();
+    }
+#endif
+#endif // USE_BOARD_INFO
+
     writeEEPROM();
     cliReboot();
 }
@@ -3973,6 +4096,19 @@ static void printConfig(char *cmdline, bool doDiff)
     if ((dumpMask & DUMP_MASTER) || (dumpMask & DUMP_ALL)) {
         cliPrintHashLine("version");
         cliVersion(NULL);
+        cliPrintLinefeed();
+
+#if defined(USE_BOARD_INFO)
+        cliBoardName("");
+        cliManufacturerId("");
+#endif
+
+        if (dumpMask & DUMP_ALL) {
+            cliMcuId(NULL);
+#if defined(USE_BOARD_INFO) && defined(USE_SIGNATURE)
+        cliSignature("");
+#endif
+        }
 
         if ((dumpMask & (DUMP_ALL | DO_DIFF)) == (DUMP_ALL | DO_DIFF)) {
             cliPrintHashLine("reset configuration to default settings");
@@ -4176,6 +4312,9 @@ const clicmd_t cmdTable[] = {
         "\t<+|->[name]", cliBeeper),
 #endif
     CLI_COMMAND_DEF("bl", "reboot into bootloader", NULL, cliBootloader),
+#if defined(USE_BOARD_INFO)
+    CLI_COMMAND_DEF("board_name", "get / set the name of the board model", "[board name]", cliBoardName),
+#endif
 #ifdef USE_LED_STRIP
     CLI_COMMAND_DEF("color", "configure colors", NULL, cliColor),
 #endif
@@ -4218,7 +4357,11 @@ const clicmd_t cmdTable[] = {
 #ifdef USE_LED_STRIP
     CLI_COMMAND_DEF("led", "configure leds", NULL, cliLed),
 #endif
+#if defined(USE_BOARD_INFO)
+    CLI_COMMAND_DEF("manufacturer_id", "get / set the id of the board manufacturer", "[manufacturer id]", cliManufacturerId),
+#endif
     CLI_COMMAND_DEF("map", "configure rc channel order", "[<map>]", cliMap),
+    CLI_COMMAND_DEF("mcu_id", "id of the microcontroller", NULL, cliMcuId),
 #ifndef USE_QUAD_MIXER_ONLY
     CLI_COMMAND_DEF("mixer", "configure mixer", "list\r\n\t<name>", cliMixer),
 #endif
@@ -4253,6 +4396,9 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("servo", "configure servos", NULL, cliServo),
 #endif
     CLI_COMMAND_DEF("set", "change setting", "[<name>=<value>]", cliSet),
+#if defined(USE_BOARD_INFO) && defined(USE_SIGNATURE)
+    CLI_COMMAND_DEF("signature", "get / set the board type signature", "[signature]", cliSignature),
+#endif
 #ifdef USE_SERVOS
     CLI_COMMAND_DEF("smix", "servo mixer", "<rule> <servo> <source> <rate> <speed> <min> <max> <box>\r\n"
         "\treset\r\n"

@@ -36,6 +36,7 @@ COMMON_SRC = \
             drivers/transponder_ir_arcitimer.c \
             drivers/transponder_ir_ilap.c \
             drivers/transponder_ir_erlt.c \
+            fc/board_info.c \
             fc/config.c \
             fc/fc_dispatch.c \
             fc/fc_hardfaults.c \
@@ -282,6 +283,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/vtx_rtc6705.c \
             drivers/vtx_common.c \
             fc/fc_init.c \
+            fc/board_info.c \
             config/config_eeprom.c \
             config/feature.c \
             config/config_streamer.c \

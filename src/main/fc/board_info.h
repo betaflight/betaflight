@@ -20,13 +20,18 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <stdbool.h>
+void initBoardInformation(void);
 
-#define EEPROM_CONF_VERSION 169
+char *getBoardName(void);
+char *getManufacturerId(void);
+bool boardInformationIsSet(void);
 
-bool isEEPROMVersionValid(void);
-bool isEEPROMStructureValid(void);
-bool loadEEPROM(void);
-void writeConfigToEEPROM(void);
-uint16_t getEEPROMConfigSize(void);
+bool setBoardName(char *newBoardName);
+bool setManufacturerId(char *newManufacturerId);
+bool persistBoardInformation(void);
+
+uint8_t * getSignature(void);
+bool signatureIsSet(void);
+
+bool setSignature(uint8_t *newSignature);
+bool persistSignature(void);

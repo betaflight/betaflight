@@ -94,8 +94,7 @@ void initEEPROM(void)
     BUILD_BUG_ON(sizeof(configRecord_t) != 6);
 }
 
-// Scan the EEPROM config. Returns true if the config is valid.
-bool isEEPROMStructureValid(void)
+bool isEEPROMVersionValid(void)
 {
     const uint8_t *p = &__config_start;
     const configHeader_t *header = (const configHeader_t *)p;
@@ -103,6 +102,16 @@ bool isEEPROMStructureValid(void)
     if (header->eepromConfigVersion != EEPROM_CONF_VERSION) {
         return false;
     }
+
+    return true;
+}
+
+// Scan the EEPROM config. Returns true if the config is valid.
+bool isEEPROMStructureValid(void)
+{
+    const uint8_t *p = &__config_start;
+    const configHeader_t *header = (const configHeader_t *)p;
+
     if (header->magic_be != 0xBE) {
         return false;
     }
@@ -254,7 +263,7 @@ void writeConfigToEEPROM(void)
         }
     }
 
-    if (success && isEEPROMStructureValid()) {
+    if (success && isEEPROMVersionValid() && isEEPROMStructureValid()) {
         return;
     }
 

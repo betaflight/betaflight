@@ -20,13 +20,8 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <stdbool.h>
+long strtol(const char * str, char ** endptr, int base);
 
-#define EEPROM_CONF_VERSION 169
+unsigned long strtoul(const char * str, char ** endptr, int base);
 
-bool isEEPROMVersionValid(void);
-bool isEEPROMStructureValid(void);
-bool loadEEPROM(void);
-void writeConfigToEEPROM(void);
-uint16_t getEEPROMConfigSize(void);
+int atoi(const char *str);
