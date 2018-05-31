@@ -435,9 +435,9 @@ void pwmWriteDshotCommand(uint8_t index, uint8_t motorCount, uint8_t command, bo
         }
         delayMicroseconds(timeDelayUs);
     } else {
-        for (uint8_t i = 0; i < motorCount; i++) {
-            if ((i == index) || (index == ALL_MOTORS)) {
-                if (dshotCommandControl.command[i] == 0) {
+        if (!pwmIsProcessingDshotCommand()) {
+            for (uint8_t i = 0; i < motorCount; i++) {
+                if ((index == i) || (index == ALL_MOTORS)) {
                     dshotCommandControl.command[i] = command;
                     dshotCommandControl.repeats = repeats;
                     dshotCommandControl.nextCommandAt = timeNowUs + DSHOT_COMMAND_DELAY_US;
@@ -458,11 +458,11 @@ uint8_t pwmGetDshotCommand(uint8_t index)
     return dshotCommandControl.command[index];
 }
 
-bool pwmProcessDshotCommand(uint8_t motorCount)
+bool FAST_CODE_NOINLINE pwmProcessDshotCommand(uint8_t motorCount)
 {
     timeUs_t timeNowUs = micros();
     if (cmpTimeUs(timeNowUs, dshotCommandControl.nextCommandAt) < 0) {
-        return true; //Skip motor update because it isn't time yet for a new command
+        return false; //Skip motor update because it isn't time yet for a new command
     }   
   
     //Timed motor update happening with dshot command
@@ -480,7 +480,7 @@ bool pwmProcessDshotCommand(uint8_t motorCount)
         dshotCommandControl.delayAfterCommand = 0;
     }
 
-    return false;
+    return true;
 }
 
 FAST_CODE uint16_t prepareDshotPacket(motorDmaOutput_t *const motor, const uint16_t value)

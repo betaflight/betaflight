@@ -90,10 +90,11 @@ FAST_CODE void pwmCompleteDshotMotorUpdate(uint8_t motorCount)
     UNUSED(motorCount);
 
     /* If there is a dshot command loaded up, time it correctly with motor update*/
-    if (pwmProcessDshotCommand(motorCount)) {
-        return; //Skip motor update
+    if (pwmIsProcessingDshotCommand()) {
+        if (!pwmProcessDshotCommand(motorCount)) {
+            return;
+        }
     }
-
 
     for (int i = 0; i < dmaMotorTimerCount; i++) {
 #ifdef USE_DSHOT_DMAR
