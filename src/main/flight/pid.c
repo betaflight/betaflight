@@ -93,7 +93,7 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 #define ACRO_TRAINER_SETPOINT_LIMIT       1000.0f // Limit the correcting setpoint
 #endif // USE_ACRO_TRAINER
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 3);
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 4);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
