@@ -1071,7 +1071,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, failsafeConfig()->failsafe_delay);
         sbufWriteU8(dst, failsafeConfig()->failsafe_off_delay);
         sbufWriteU16(dst, failsafeConfig()->failsafe_throttle);
-        sbufWriteU8(dst, failsafeConfig()->failsafe_kill_switch);
+        sbufWriteU8(dst, failsafeConfig()->failsafe_switch_mode);
         sbufWriteU16(dst, failsafeConfig()->failsafe_throttle_low_delay);
         sbufWriteU8(dst, failsafeConfig()->failsafe_procedure);
         break;
@@ -1920,7 +1920,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         failsafeConfigMutable()->failsafe_delay = sbufReadU8(src);
         failsafeConfigMutable()->failsafe_off_delay = sbufReadU8(src);
         failsafeConfigMutable()->failsafe_throttle = sbufReadU16(src);
-        failsafeConfigMutable()->failsafe_kill_switch = sbufReadU8(src);
+        failsafeConfigMutable()->failsafe_switch_mode = sbufReadU8(src);
         failsafeConfigMutable()->failsafe_throttle_low_delay = sbufReadU16(src);
         failsafeConfigMutable()->failsafe_procedure = sbufReadU8(src);
         break;
