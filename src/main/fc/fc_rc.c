@@ -188,7 +188,7 @@ static void checkForThrottleErrorResetState(uint16_t rxRefreshRate)
     }
 }
 
-FAST_CODE FAST_CODE_NOINLINE uint8_t processRcInterpolation(void)
+FAST_CODE uint8_t processRcInterpolation(void)
 {
     static float rcCommandInterp[4];
     static float rcStepSize[4];
@@ -244,7 +244,7 @@ FAST_CODE FAST_CODE_NOINLINE uint8_t processRcInterpolation(void)
 }
 
 #ifdef USE_RC_SMOOTHING_FILTER
-FAST_CODE FAST_CODE_NOINLINE uint8_t processRcSmoothingFilter(void)
+FAST_CODE uint8_t processRcSmoothingFilter(void)
 {
 
     uint8_t updatedChannel = 0;
@@ -273,15 +273,22 @@ FAST_CODE FAST_CODE_NOINLINE uint8_t processRcSmoothingFilter(void)
         }
         // If the filter cutoffs are set to auto and we have good rx data, then determine the average rx frame rate
         // and use that to calculate the filter cutoff frequencies
-        if ((filterCutoffFrequency == 0) || (derivativeCutoffFrequency == 0)) {
-            if (rxIsReceivingSignal()) {
+        if (!filterInitialized) {
+            if (rxIsReceivingSignal() && (targetPidLooptime > 0)) {
                 rxFrameTimeSum += currentRxRefreshRate;
                 rxFrameCount++;
                 if (rxFrameCount >= RC_SMOOTHING_FILTER_TRAINING_SAMPLES) {
-                    const float avgRxFrameRate = rxFrameTimeSum / rxFrameCount / 1000.0f;
+                    const float avgRxFrameRate = rxFrameTimeSum / rxFrameCount / 1000;
                     defaultCutoffFrequency = lrintf(RC_SMOOTHING_FILTER_AUTO_HZ / (avgRxFrameRate / RC_SMOOTHING_FILTER_AUTO_MS));
                     filterCutoffFrequency = (filterCutoffFrequency == 0) ? defaultCutoffFrequency : filterCutoffFrequency;
-                    derivativeCutoffFrequency = (derivativeCutoffFrequency == 0) ? defaultCutoffFrequency : derivativeCutoffFrequency;                
+                    derivativeCutoffFrequency = (derivativeCutoffFrequency == 0) ? defaultCutoffFrequency : derivativeCutoffFrequency;
+
+                    const float dT = targetPidLooptime * 1e-6f;
+                    for (int i = 0; i < interpolationChannels; i++) {
+                        pt1FilterInit(&rcCommandFilter[i], pt1FilterGain(filterCutoffFrequency, dT));
+                    }
+                    pidInitSetpointDerivativeLpf(derivativeCutoffFrequency, rxConfig()->rc_smoothing_debug_axis);
+                    filterInitialized = true;
                 }
             } else {
                 rxFrameTimeSum = 0;
@@ -293,19 +300,9 @@ FAST_CODE FAST_CODE_NOINLINE uint8_t processRcSmoothingFilter(void)
     DEBUG_SET(DEBUG_RC_SMOOTHING, 0, lrintf(lastRxData[rxConfig()->rc_smoothing_debug_axis]));
     DEBUG_SET(DEBUG_RC_SMOOTHING, 3, defaultCutoffFrequency);
 
-    // Once we've determined the filter cutoff frequencies then initialize the filters
-    if (!filterInitialized && (targetPidLooptime > 0) && (filterCutoffFrequency != 0) && (derivativeCutoffFrequency != 0)) {
-        const float dT = targetPidLooptime * 0.000001f;
-        for (int i = 0; i < interpolationChannels; i++) {
-            pt1FilterInit(&rcCommandFilter[i], pt1FilterGain(filterCutoffFrequency, dT));
-        }
-        pidInitSetpointDerivativeLpf(derivativeCutoffFrequency, rxConfig()->rc_smoothing_debug_axis);
-        filterInitialized = true;
-    }
-
     for (updatedChannel = ROLL; updatedChannel < interpolationChannels; updatedChannel++) {
         if (filterInitialized) {
-                rcCommand[updatedChannel] = pt1FilterApply(&rcCommandFilter[updatedChannel], lastRxData[updatedChannel]);
+            rcCommand[updatedChannel] = pt1FilterApply(&rcCommandFilter[updatedChannel], lastRxData[updatedChannel]);
         } else {
             // If filter isn't initialized yet then use the actual unsmoothed rx channel data
             rcCommand[updatedChannel] = lastRxData[updatedChannel];
@@ -316,7 +313,7 @@ FAST_CODE FAST_CODE_NOINLINE uint8_t processRcSmoothingFilter(void)
 }
 #endif // USE_RC_SMOOTHING_FILTER
 
-FAST_CODE FAST_CODE_NOINLINE void processRcCommand(void)
+FAST_CODE void processRcCommand(void)
 {
     uint8_t updatedChannel;
 
