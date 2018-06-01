@@ -3271,7 +3271,11 @@ STATIC_UNIT_TESTED void cliGet(char *cmdline)
     const clivalue_t *val;
     int matchedCommands = 0;
 
+    uint8_t backupPidProfile = getCurrentPidProfileIndex();
+    uint8_t backupRateProfile = getCurrentControlRateProfileIndex();
     backupAndResetConfigs();
+    setPidProfile(backupPidProfile);
+    setControlRateProfile(backupRateProfile);
 
     for (uint32_t i = 0; i < valueTableEntryCount; i++) {
         if (strcasestr(valueTable[i].name, cmdline)) {

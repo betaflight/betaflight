@@ -93,7 +93,7 @@ uint8_t getCurrentPidProfileIndex(void)
     return systemConfig()->pidProfileIndex;
 }
 
-static void setPidProfile(uint8_t pidProfileIndex)
+void setPidProfile(uint8_t pidProfileIndex)
 {
     if (pidProfileIndex < MAX_PROFILE_COUNT) {
         systemConfigMutable()->pidProfileIndex = pidProfileIndex;
@@ -532,8 +532,7 @@ void changePidProfile(uint8_t pidProfileIndex)
     if (pidProfileIndex >= MAX_PROFILE_COUNT) {
         pidProfileIndex = MAX_PROFILE_COUNT - 1;
     }
-    systemConfigMutable()->pidProfileIndex = pidProfileIndex;
-    currentPidProfile = pidProfilesMutable(pidProfileIndex);
+    setPidProfile(pidProfileIndex);
     beeperConfirmationBeeps(pidProfileIndex + 1);
 }
 #endif
