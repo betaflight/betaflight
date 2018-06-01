@@ -280,4 +280,8 @@ bool boardInformationIsSet(void) { return true; };
 bool setBoardName(char *newBoardName) { UNUSED(newBoardName); return true; };
 bool setManufacturerId(char *newManufacturerId) { UNUSED(newManufacturerId); return true; };
 bool persistBoardInformation(void) { return true; };
+
+void setPidProfile(uint8_t pidProfileIndex) { UNUSED(pidProfileIndex); };
+void setControlRateProfile(uint8_t controlRateProfileIndex) { UNUSED(controlRateProfileIndex); };
+
 }
