@@ -21,7 +21,8 @@
 #pragma once
 
 #include "common/time.h"
-#include "pg/pg.h"
+
+#define BEEPER_GET_FLAG(mode) (1 << (mode - 1))
 
 typedef enum {
     // IMPORTANT: these are in priority order, 0 = Highest
@@ -50,9 +51,37 @@ typedef enum {
     BEEPER_CAM_CONNECTION_OPEN,     // When the 5 key simulation stated
     BEEPER_CAM_CONNECTION_CLOSE,    // When the 5 key simulation stop
     BEEPER_ALL,                     // Turn ON or OFF all beeper conditions
-    BEEPER_PREFERENCE,              // Save preferred beeper configuration
-    // BEEPER_ALL and BEEPER_PREFERENCE must remain at the bottom of this enum
+    // BEEPER_ALL must remain at the bottom of this enum
 } beeperMode_e;
+
+
+#define BEEPER_ALLOWED_MODES ( \
+    BEEPER_GET_FLAG(BEEPER_GYRO_CALIBRATED) \
+    | BEEPER_GET_FLAG(BEEPER_RX_LOST) \
+    | BEEPER_GET_FLAG(BEEPER_RX_LOST_LANDING) \
+    | BEEPER_GET_FLAG(BEEPER_DISARMING) \
+    | BEEPER_GET_FLAG(BEEPER_ARMING) \
+    | BEEPER_GET_FLAG(BEEPER_ARMING_GPS_FIX) \
+    | BEEPER_GET_FLAG(BEEPER_BAT_CRIT_LOW) \
+    | BEEPER_GET_FLAG(BEEPER_BAT_LOW) \
+    | BEEPER_GET_FLAG(BEEPER_GPS_STATUS) \
+    | BEEPER_GET_FLAG(BEEPER_RX_SET) \
+    | BEEPER_GET_FLAG(BEEPER_ACC_CALIBRATION) \
+    | BEEPER_GET_FLAG(BEEPER_ACC_CALIBRATION_FAIL) \
+    | BEEPER_GET_FLAG(BEEPER_READY_BEEP) \
+    | BEEPER_GET_FLAG(BEEPER_MULTI_BEEPS) \
+    | BEEPER_GET_FLAG(BEEPER_DISARM_REPEAT) \
+    | BEEPER_GET_FLAG(BEEPER_ARMED) \
+    | BEEPER_GET_FLAG(BEEPER_SYSTEM_INIT) \
+    | BEEPER_GET_FLAG(BEEPER_USB) \
+    | BEEPER_GET_FLAG(BEEPER_BLACKBOX_ERASE) \
+    | BEEPER_GET_FLAG(BEEPER_CRASH_FLIP_MODE) \
+    | BEEPER_GET_FLAG(BEEPER_CAM_CONNECTION_OPEN) \
+    | BEEPER_GET_FLAG(BEEPER_CAM_CONNECTION_CLOSE) )
+
+#define DSHOT_BEACON_ALLOWED_MODES ( \
+    BEEPER_GET_FLAG(BEEPER_RX_LOST) \
+    | BEEPER_GET_FLAG(BEEPER_RX_SET) )
 
 void beeper(beeperMode_e mode);
 void beeperSilence(void);
