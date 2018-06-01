@@ -36,7 +36,11 @@
 
 #ifdef USE_RTC_TIME
 
-#define UNIX_REFERENCE_YEAR 1970
+// For the "modulo 4" arithmetic to work, we need a leap base year
+#define REFERENCE_YEAR 2000
+// Offset (seconds) from the UNIX epoch (1970-01-01) to 2000-01-01
+#define EPOCH_2000_OFFSET 946684800
+
 #define MILLIS_PER_SECOND 1000
 
 // rtcTime_t when the system was started.
@@ -64,14 +68,14 @@ static rtcTime_t dateTimeToRtcTime(dateTime_t *dt)
     unsigned int hour = dt->hours;      // 0-23
     unsigned int day = dt->day - 1;     // 0-30
     unsigned int month = dt->month - 1; // 0-11
-    unsigned int year = dt->year - UNIX_REFERENCE_YEAR; // 0-99
-    int32_t unixTime = (((year / 4 * (365 * 4 + 1) + days[year % 4][month] + day) * 24 + hour) * 60 + minute) * 60 + second;
+    unsigned int year = dt->year - REFERENCE_YEAR; // 0-99
+    int32_t unixTime = (((year / 4 * (365 * 4 + 1) + days[year % 4][month] + day) * 24 + hour) * 60 + minute) * 60 + second + EPOCH_2000_OFFSET;
     return rtcTimeMake(unixTime, dt->millis);
 }
 
 static void rtcTimeToDateTime(dateTime_t *dt, rtcTime_t t)
 {
-    int32_t unixTime = t / MILLIS_PER_SECOND;
+    int32_t unixTime = t / MILLIS_PER_SECOND - EPOCH_2000_OFFSET;
     dt->seconds = unixTime % 60;
     unixTime /= 60;
     dt->minutes = unixTime % 60;
@@ -96,7 +100,7 @@ static void rtcTimeToDateTime(dateTime_t *dt, rtcTime_t t)
         }
     }
 
-    dt->year = years + year + UNIX_REFERENCE_YEAR;
+    dt->year = years + year + REFERENCE_YEAR;
     dt->month = month + 1;
     dt->day = unixTime - days[year][month] + 1;
     dt->millis = t % MILLIS_PER_SECOND;
@@ -115,7 +119,7 @@ static void rtcGetDefaultDateTime(dateTime_t *dateTime)
 
 static bool rtcIsDateTimeValid(dateTime_t *dateTime)
 {
-    return (dateTime->year >= UNIX_REFERENCE_YEAR) &&
+    return (dateTime->year >= REFERENCE_YEAR) &&
            (dateTime->month >= 1 && dateTime->month <= 12) &&
            (dateTime->day >= 1 && dateTime->day <= 31) &&
            (dateTime->hours <= 23) &&
