@@ -250,7 +250,8 @@ FAST_CODE uint8_t processRcSmoothingFilter(void)
     uint8_t updatedChannel = 0;
 
     static float lastRxData[4];
-    static pt1Filter_t rcCommandFilter[4];
+    static pt1Filter_t rcCommandFilterPt1[4];
+    static biquadFilter_t rcCommandFilterBiquad[4];
     static bool initialized = false;
     static bool filterInitialized = false;
     static float rxFrameTimeSum;
@@ -285,9 +286,17 @@ FAST_CODE uint8_t processRcSmoothingFilter(void)
 
                     const float dT = targetPidLooptime * 1e-6f;
                     for (int i = 0; i < interpolationChannels; i++) {
-                        pt1FilterInit(&rcCommandFilter[i], pt1FilterGain(filterCutoffFrequency, dT));
+                        switch (rxConfig()->rc_smoothing_input_type) {
+                            case RC_SMOOTHING_INPUT_BIQUAD:
+                                biquadFilterInitLPF(&rcCommandFilterBiquad[i], filterCutoffFrequency, targetPidLooptime);
+                                break;
+                            case RC_SMOOTHING_INPUT_PT1:
+                            default:
+                                pt1FilterInit(&rcCommandFilterPt1[i], pt1FilterGain(filterCutoffFrequency, dT));
+                                break;
+                        }
                     }
-                    pidInitSetpointDerivativeLpf(derivativeCutoffFrequency, rxConfig()->rc_smoothing_debug_axis);
+                    pidInitSetpointDerivativeLpf(derivativeCutoffFrequency, rxConfig()->rc_smoothing_debug_axis, rxConfig()->rc_smoothing_derivative_type);
                     filterInitialized = true;
                 }
             } else {
@@ -302,7 +311,15 @@ FAST_CODE uint8_t processRcSmoothingFilter(void)
 
     for (updatedChannel = ROLL; updatedChannel < interpolationChannels; updatedChannel++) {
         if (filterInitialized) {
-            rcCommand[updatedChannel] = pt1FilterApply(&rcCommandFilter[updatedChannel], lastRxData[updatedChannel]);
+            switch (rxConfig()->rc_smoothing_input_type) {
+                case RC_SMOOTHING_INPUT_BIQUAD:
+                    rcCommand[updatedChannel] = biquadFilterApply(&rcCommandFilterBiquad[updatedChannel], lastRxData[updatedChannel]);
+                    break;
+                case RC_SMOOTHING_INPUT_PT1:
+                default:
+                    rcCommand[updatedChannel] = pt1FilterApply(&rcCommandFilterPt1[updatedChannel], lastRxData[updatedChannel]);
+                    break;
+            }
         } else {
             // If filter isn't initialized yet then use the actual unsmoothed rx channel data
             rcCommand[updatedChannel] = lastRxData[updatedChannel];

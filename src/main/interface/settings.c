@@ -356,6 +356,12 @@ static const char * const lookupTableRcSmoothingType[] = {
 static const char * const lookupTableRcSmoothingDebug[] = {
     "ROLL", "PITCH", "YAW", "THROTTLE"
 };
+static const char * const lookupTableRcSmoothingInputType[] = {
+    "PT1", "BIQUAD"
+};
+static const char * const lookupTableRcSmoothingDerivativeType[] = {
+    "OFF", "PT1", "BIQUAD"
+};
 #endif // USE_RC_SMOOTHING_FILTER
 
 #define LOOKUP_TABLE_ENTRY(name) { name, ARRAYLEN(name) }
@@ -442,6 +448,8 @@ const lookupTableEntry_t lookupTables[] = {
 #ifdef USE_RC_SMOOTHING_FILTER
     LOOKUP_TABLE_ENTRY(lookupTableRcSmoothingType),
     LOOKUP_TABLE_ENTRY(lookupTableRcSmoothingDebug),
+    LOOKUP_TABLE_ENTRY(lookupTableRcSmoothingInputType),
+    LOOKUP_TABLE_ENTRY(lookupTableRcSmoothingDerivativeType),
 #endif // USE_RC_SMOOTHING_FILTER
 };
 
@@ -544,6 +552,8 @@ const clivalue_t valueTable[] = {
     { "rc_smoothing_input_hz",      VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, UINT8_MAX }, PG_RX_CONFIG, offsetof(rxConfig_t, rc_smoothing_input_cutoff) },
     { "rc_smoothing_derivative_hz", VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, UINT8_MAX }, PG_RX_CONFIG, offsetof(rxConfig_t, rc_smoothing_derivative_cutoff) },
     { "rc_smoothing_debug_axis",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_RC_SMOOTHING_DEBUG }, PG_RX_CONFIG, offsetof(rxConfig_t, rc_smoothing_debug_axis) },
+    { "rc_smoothing_input_type",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_RC_SMOOTHING_INPUT_TYPE }, PG_RX_CONFIG, offsetof(rxConfig_t, rc_smoothing_input_type) },
+    { "rc_smoothing_derivative_type",VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_RC_SMOOTHING_DERIVATIVE_TYPE }, PG_RX_CONFIG, offsetof(rxConfig_t, rc_smoothing_derivative_type) },
 #endif // USE_RC_SMOOTHING_FILTER
 
     { "fpv_mix_degrees",            VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 50 }, PG_RX_CONFIG, offsetof(rxConfig_t, fpvCamAngleDegrees) },
