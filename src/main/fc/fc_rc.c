@@ -190,9 +190,9 @@ static void checkForThrottleErrorResetState(uint16_t rxRefreshRate)
 
 FAST_CODE uint8_t processRcInterpolation(void)
 {
-    static float rcCommandInterp[4];
-    static float rcStepSize[4];
-    static int16_t rcInterpolationStepCount;
+    static FAST_RAM_ZERO_INIT float rcCommandInterp[4];
+    static FAST_RAM_ZERO_INIT float rcStepSize[4];
+    static FAST_RAM_ZERO_INIT int16_t rcInterpolationStepCount;
 
     const uint8_t interpolationChannels = rxConfig()->rcInterpolationChannels + 2; //"RP", "RPY", "RPYT"
     uint16_t rxRefreshRate;
@@ -249,17 +249,17 @@ FAST_CODE uint8_t processRcSmoothingFilter(void)
 
     uint8_t updatedChannel = 0;
 
-    static float lastRxData[4];
-    static pt1Filter_t rcCommandFilterPt1[4];
-    static biquadFilter_t rcCommandFilterBiquad[4];
-    static bool initialized = false;
-    static bool filterInitialized = false;
-    static float rxFrameTimeSum;
-    static int rxFrameCount;
-    static uint16_t defaultCutoffFrequency;
-    static uint16_t filterCutoffFrequency;
-    static uint16_t derivativeCutoffFrequency;
-    static uint8_t interpolationChannels;
+    static FAST_RAM_ZERO_INIT float lastRxData[4];
+    static FAST_RAM_ZERO_INIT pt1Filter_t rcCommandFilterPt1[4];
+    static FAST_RAM_ZERO_INIT biquadFilter_t rcCommandFilterBiquad[4];
+    static FAST_RAM_ZERO_INIT bool initialized;
+    static FAST_RAM_ZERO_INIT bool filterInitialized;
+    static FAST_RAM_ZERO_INIT float rxFrameTimeSum;
+    static FAST_RAM_ZERO_INIT int rxFrameCount;
+    static FAST_RAM_ZERO_INIT uint16_t defaultCutoffFrequency;
+    static FAST_RAM_ZERO_INIT uint16_t filterCutoffFrequency;
+    static FAST_RAM_ZERO_INIT uint16_t derivativeCutoffFrequency;
+    static FAST_RAM_ZERO_INIT uint8_t interpolationChannels;
 
     if (!initialized) {
         initialized = true;
