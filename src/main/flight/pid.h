@@ -124,11 +124,11 @@ typedef struct pidProfile_s {
     uint8_t crash_recovery;                 // off, on, on and beeps when it is in crash recovery mode
     uint8_t throttle_boost;                 // how much should throttle be boosted during transient changes 0-100, 100 adds 10x hpf filtered throttle
     uint8_t throttle_boost_cutoff;          // Which cutoff frequency to use for throttle boost. higher cutoffs keep the boost on for shorter. Specified in hz.
-    uint8_t  iterm_rotation;                // rotates iterm to translate world errors to local coordinate system
-    uint8_t  smart_feedforward;             // takes only the larger of P and the D weight feed forward term if they have the same sign.
-    uint8_t iterm_relax_cutoff_low;         // Slowest setpoint response to prevent iterm accumulation
-    uint8_t iterm_relax_cutoff_high;        // Fastest setpoint response to prevent iterm accumulation
+    uint8_t iterm_rotation;                 // rotates iterm to translate world errors to local coordinate system
+    uint8_t smart_feedforward;              // takes only the larger of P and the D weight feed forward term if they have the same sign.
     uint8_t iterm_relax;                    // Enable iterm suppression during stick input
+    uint8_t iterm_relax_lowpass;            // Filter to generate indicator of rapid stick movement
+    uint8_t iterm_relax_cutoff;             // Value at which no more iTerm accumulation can occur
     uint8_t acro_trainer_angle_limit;       // Acro trainer roll/pitch angle limit in degrees
     uint8_t acro_trainer_debug_axis;        // The axis for which record debugging values are captured 0=roll, 1=pitch
     uint8_t acro_trainer_gain;              // The strength of the limiting. Raising may reduce overshoot but also lead to oscillation around the angle limit
