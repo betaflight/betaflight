@@ -54,7 +54,7 @@ PG_DECLARE_ARRAY(controlRateConfig_t, CONTROL_RATE_PROFILE_COUNT, controlRatePro
 
 extern controlRateConfig_t *currentControlRateProfile;
 
-void setControlRateProfile(uint8_t controlRateProfileIndex);
+void loadControlRateProfile(void);
 void changeControlRateProfile(uint8_t controlRateProfileIndex);
 
 void copyControlRateProfile(const uint8_t dstControlRateProfileIndex, const uint8_t srcControlRateProfileIndex);
