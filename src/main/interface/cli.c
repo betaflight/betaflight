@@ -3308,6 +3308,19 @@ STATIC_UNIT_TESTED void cliGet(char *cmdline)
             cliPrintf("%s = ", valueTable[i].name);
             cliPrintVar(val, 0);
             cliPrintLinefeed();
+            switch (val->type & VALUE_SECTION_MASK) {
+            case PROFILE_VALUE:
+                cliProfile("");
+
+                break;
+            case PROFILE_RATE_VALUE:
+                cliRateProfile("");
+
+                break;
+            default:
+
+                break;
+            }
             cliPrintVarRange(val);
             cliPrintVarDefault(val);
             matchedCommands++;
