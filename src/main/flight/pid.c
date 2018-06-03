@@ -115,10 +115,10 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .pidSumLimitYaw = PIDSUM_LIMIT_YAW,
         .yaw_lowpass_hz = 0,
         .dterm_lowpass_hz = 100,    // filtering ON by default
-        .dterm_lowpass2_hz = 200,    // second Dterm LPF OFF by default
+        .dterm_lowpass2_hz = 0,     // second Dterm LPF OFF by default
         .dterm_notch_hz = 260,
         .dterm_notch_cutoff = 160,
-        .dterm_filter_type = FILTER_PT1,
+        .dterm_filter_type = FILTER_BIQUAD,
         .itermWindupPointPercent = 50,
         .vbatPidCompensation = 0,
         .pidAtMinThrottle = PID_STABILISATION_ON,
