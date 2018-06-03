@@ -273,7 +273,11 @@ static char osdGetTemperatureSymbolForSelectedUnit(void)
 static void osdFormatAltitudeString(char * buff, int altitude)
 {
     const int alt = osdGetMetersToSelectedUnit(altitude) / 10;
-    tfp_sprintf(buff, "%s%d.%01d%c", alt < 0 ? "-" : "", abs(alt / 10), abs(alt % 10), osdGetMetersToSelectedUnitSymbol());
+
+    tfp_sprintf(buff, "%5d", alt);
+    buff[5] = buff[4];
+    buff[4] = '.';
+    buff[6] = osdGetMetersToSelectedUnitSymbol();
 }
 
 static void osdFormatPID(char * buff, const char * label, const pid8_t * pid)
