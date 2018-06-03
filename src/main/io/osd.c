@@ -274,10 +274,9 @@ static void osdFormatAltitudeString(char * buff, int altitude)
 {
     const int alt = osdGetMetersToSelectedUnit(altitude) / 10;
 
-    tfp_sprintf(buff, "%5d", alt);
+    tfp_sprintf(buff, "%5d %c", alt, osdGetMetersToSelectedUnitSymbol());
     buff[5] = buff[4];
     buff[4] = '.';
-    buff[6] = osdGetMetersToSelectedUnitSymbol();
 }
 
 static void osdFormatPID(char * buff, const char * label, const pid8_t * pid)
