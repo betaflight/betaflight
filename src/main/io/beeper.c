@@ -392,8 +392,8 @@ void beeperUpdate(timeUs_t currentTimeUs)
 
 #ifdef USE_DSHOT
         if (!areMotorsRunning()
-            && ((currentBeeperEntry->mode == BEEPER_RX_SET && beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_SET))
-            || (currentBeeperEntry->mode == BEEPER_RX_LOST && beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_LOST)))) {
+            && ((currentBeeperEntry->mode == BEEPER_RX_SET && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_SET)))
+            || (currentBeeperEntry->mode == BEEPER_RX_LOST && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_LOST))))) {
             pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), beeperConfig()->dshotBeaconTone, false);
         }
 #endif
