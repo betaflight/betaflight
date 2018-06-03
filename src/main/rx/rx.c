@@ -78,6 +78,7 @@ static timeUs_t lastMspRssiUpdateUs = 0;
 #define MSP_RSSI_TIMEOUT_US 1500000   // 1.5 sec
 
 #define RSSI_ADC_DIVISOR (4096 / 1024)
+#define RSSI_OFFSET_SCALING (1024 / 100.0f)
 
 rssiSource_e rssiSource;
 
@@ -680,7 +681,7 @@ void updateRSSI(timeUs_t currentTimeUs)
 
 uint16_t getRssi(void)
 {
-    return (rxConfig()->rssi_scale / 100.0f) * rssi;
+    return ((rxConfig()->rssi_scale / 100.0f) * rssi) + (rxConfig()->rssi_offset * RSSI_OFFSET_SCALING);
 }
 
 uint8_t getRssiPercent(void)
