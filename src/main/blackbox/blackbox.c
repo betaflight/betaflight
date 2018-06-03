@@ -1323,6 +1323,16 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("debug_mode", "%d",                      systemConfig()->debug_mode);
         BLACKBOX_PRINT_HEADER_LINE("features", "%d",                        featureConfig()->enabledFeatures);
 
+#ifdef USE_RC_SMOOTHING_FILTER
+        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_type", "%d",               rxConfig()->rc_smoothing_type);
+        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_input_cutoff", "%d",       rxConfig()->rc_smoothing_input_cutoff);
+        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_derivative_cutoff", "%d",  rxConfig()->rc_smoothing_derivative_cutoff);
+        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_debug_axis", "%d",         rxConfig()->rc_smoothing_debug_axis);
+        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_input_type", "%d",         rxConfig()->rc_smoothing_input_type);
+        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_derivative_type", "%d",    rxConfig()->rc_smoothing_derivative_type);
+#endif // USE_RC_SMOOTHING_FILTER
+
+
         default:
             return true;
     }

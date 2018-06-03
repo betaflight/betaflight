@@ -34,6 +34,7 @@
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
+#include "drivers/time.h"
 #include "fc/fc_core.h"
 #include "fc/fc_rc.h"
 #include "fc/rc_controls.h"
@@ -59,8 +60,10 @@ static applyRatesFn *applyRates;
 uint16_t currentRxRefreshRate;
 
 #ifdef USE_RC_SMOOTHING_FILTER
+#define RC_SMOOTHING_FILTER_TRAINING_DELAY_MS 3000 // Wait 3 seconds after power to let the PID loop stabilize before starting average frame rate calculation
 #define RC_SMOOTHING_FILTER_TRAINING_SAMPLES 50
-#define RC_SMOOTHING_FILTER_AUTO_HZ 30.0f // Used to calculate the default cutoff based on rx frame rate. For example, 9ms frame should use 30hz
+#define RC_SMOOTHING_FILTER_INPUT_AUTO_HZ      50.0f // Used to calculate the default cutoff based on rx frame rate. For example, 9ms frame should use 50hz
+#define RC_SMOOTHING_FILTER_DERIVATIVE_AUTO_HZ 60.0f // Used to calculate the derivative default cutoff based on rx frame rate. For example, 9ms frame should use 60hz
 #define RC_SMOOTHING_FILTER_AUTO_MS 9.0f  // Formula used: RC_SMOOTHING_FILTER_AUTO_HZ / (measured rx frame delay / RC_SMOOTHING_FILTER_AUTO_HZ)
 #endif // USE_RC_SMOOTHING_FILTER
 
@@ -244,6 +247,11 @@ FAST_CODE uint8_t processRcInterpolation(void)
 }
 
 #ifdef USE_RC_SMOOTHING_FILTER
+uint8_t calcRcSmoothingCutoff(float avgRxFrameRate, float filterBaseline)
+{
+    return lrintf(filterBaseline / (avgRxFrameRate / RC_SMOOTHING_FILTER_AUTO_MS));
+}
+
 FAST_CODE uint8_t processRcSmoothingFilter(void)
 {
 
@@ -256,7 +264,8 @@ FAST_CODE uint8_t processRcSmoothingFilter(void)
     static FAST_RAM_ZERO_INIT bool filterInitialized;
     static FAST_RAM_ZERO_INIT float rxFrameTimeSum;
     static FAST_RAM_ZERO_INIT int rxFrameCount;
-    static FAST_RAM_ZERO_INIT uint16_t defaultCutoffFrequency;
+    static FAST_RAM_ZERO_INIT uint16_t defaultInputCutoffFrequency;
+    static FAST_RAM_ZERO_INIT uint16_t defaultDerivativeCutoffFrequency;
     static FAST_RAM_ZERO_INIT uint16_t filterCutoffFrequency;
     static FAST_RAM_ZERO_INIT uint16_t derivativeCutoffFrequency;
     static FAST_RAM_ZERO_INIT uint8_t interpolationChannels;
@@ -275,14 +284,15 @@ FAST_CODE uint8_t processRcSmoothingFilter(void)
         // If the filter cutoffs are set to auto and we have good rx data, then determine the average rx frame rate
         // and use that to calculate the filter cutoff frequencies
         if (!filterInitialized) {
-            if (rxIsReceivingSignal() && (targetPidLooptime > 0)) {
+            if (rxIsReceivingSignal() && (targetPidLooptime > 0) && (millis() > RC_SMOOTHING_FILTER_TRAINING_DELAY_MS)) {
                 rxFrameTimeSum += currentRxRefreshRate;
                 rxFrameCount++;
                 if (rxFrameCount >= RC_SMOOTHING_FILTER_TRAINING_SAMPLES) {
                     const float avgRxFrameRate = rxFrameTimeSum / rxFrameCount / 1000;
-                    defaultCutoffFrequency = lrintf(RC_SMOOTHING_FILTER_AUTO_HZ / (avgRxFrameRate / RC_SMOOTHING_FILTER_AUTO_MS));
-                    filterCutoffFrequency = (filterCutoffFrequency == 0) ? defaultCutoffFrequency : filterCutoffFrequency;
-                    derivativeCutoffFrequency = (derivativeCutoffFrequency == 0) ? defaultCutoffFrequency : derivativeCutoffFrequency;
+                    defaultInputCutoffFrequency = calcRcSmoothingCutoff(avgRxFrameRate, RC_SMOOTHING_FILTER_INPUT_AUTO_HZ);
+                    defaultDerivativeCutoffFrequency = calcRcSmoothingCutoff(avgRxFrameRate, RC_SMOOTHING_FILTER_DERIVATIVE_AUTO_HZ);
+                    filterCutoffFrequency = (filterCutoffFrequency == 0) ? defaultInputCutoffFrequency : filterCutoffFrequency;
+                    derivativeCutoffFrequency = (derivativeCutoffFrequency == 0) ? defaultDerivativeCutoffFrequency : derivativeCutoffFrequency;
 
                     const float dT = targetPidLooptime * 1e-6f;
                     for (int i = 0; i < interpolationChannels; i++) {
@@ -307,7 +317,7 @@ FAST_CODE uint8_t processRcSmoothingFilter(void)
     }
 
     DEBUG_SET(DEBUG_RC_SMOOTHING, 0, lrintf(lastRxData[rxConfig()->rc_smoothing_debug_axis]));
-    DEBUG_SET(DEBUG_RC_SMOOTHING, 3, defaultCutoffFrequency);
+    DEBUG_SET(DEBUG_RC_SMOOTHING, 3, defaultInputCutoffFrequency);
 
     for (updatedChannel = ROLL; updatedChannel < interpolationChannels; updatedChannel++) {
         if (filterInitialized) {
