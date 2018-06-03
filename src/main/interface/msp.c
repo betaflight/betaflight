@@ -1263,6 +1263,9 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, currentPidProfile->itermThrottleThreshold);
         sbufWriteU16(dst, currentPidProfile->itermAcceleratorGain);
         sbufWriteU16(dst, currentPidProfile->dtermSetpointWeight);
+        sbufWriteU8(dst, currentPidProfile->smart_feedforward);
+        sbufWriteU8(dst, currentPidProfile->throttle_boost);
+        sbufWriteU8(dst, currentPidProfile->throttle_boost_cutoff);
         break;
 
     case MSP_SENSOR_CONFIG:
@@ -1725,6 +1728,11 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         }
         if (sbufBytesRemaining(src) >= 2) {
             currentPidProfile->dtermSetpointWeight = sbufReadU16(src);
+        }
+        if (sbufBytesRemaining(src) >= 3) {
+            currentPidProfile->smart_feedforward = sbufReadU8(src);
+            currentPidProfile->throttle_boost = sbufReadU8(src);
+            currentPidProfile->throttle_boost_cutoff = sbufReadU8(src);
         }
         pidInitConfig(currentPidProfile);
         break;
