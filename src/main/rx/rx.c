@@ -681,7 +681,7 @@ void updateRSSI(timeUs_t currentTimeUs)
 
 uint16_t getRssi(void)
 {
-    return ((rxConfig()->rssi_scale / 100.0f) * rssi) + (rxConfig()->rssi_offset * RSSI_OFFSET_SCALING);
+    return rxConfig()->rssi_scale / 100.0f * rssi + rxConfig()->rssi_offset * RSSI_OFFSET_SCALING;
 }
 
 uint8_t getRssiPercent(void)
