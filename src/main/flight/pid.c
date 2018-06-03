@@ -203,10 +203,12 @@ static FAST_RAM_ZERO_INIT filterApplyFnPtr dtermLowpass2ApplyFn;
 static FAST_RAM_ZERO_INIT pt1Filter_t dtermLowpass2[2];
 static FAST_RAM_ZERO_INIT filterApplyFnPtr ptermYawLowpassApplyFn;
 static FAST_RAM_ZERO_INIT pt1Filter_t ptermYawLowpass;
+#if defined(USE_ITERM_RELAX)
 static FAST_RAM_ZERO_INIT pt1Filter_t windupLpf[XYZ_AXIS_COUNT][2];
 static FAST_RAM_ZERO_INIT uint8_t itermRelax;
 static FAST_RAM_ZERO_INIT uint8_t itermRelaxCutoffLow;
 static FAST_RAM_ZERO_INIT uint8_t itermRelaxCutoffHigh;
+#endif
 
 void pidInitFilters(const pidProfile_t *pidProfile)
 {
@@ -283,11 +285,14 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     }
 
     pt1FilterInit(&throttleLpf, pt1FilterGain(pidProfile->throttle_boost_cutoff, dT));
-    if (itermRelax)     
+#if defined(USE_ITERM_RELAX)
+    if (itermRelax) {
         for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
             pt1FilterInit(&windupLpf[i][0], pt1FilterGain(itermRelaxCutoffLow, dT));
             pt1FilterInit(&windupLpf[i][1], pt1FilterGain(itermRelaxCutoffHigh, dT));
         }
+    }
+#endif
 }
 
 typedef struct pidCoefficient_s {
@@ -316,17 +321,23 @@ FAST_RAM_ZERO_INIT float throttleBoost;
 pt1Filter_t throttleLpf;
 static FAST_RAM_ZERO_INIT bool itermRotation;
 
+#if defined(USE_SMART_FEEDFORWARD)
 static FAST_RAM_ZERO_INIT bool smartFeedforward;
+#endif
+#if defined(USE_ABSOLUTE_CONTROL)
 static FAST_RAM_ZERO_INIT float axisError[XYZ_AXIS_COUNT];
 static FAST_RAM_ZERO_INIT float acGain;
 static FAST_RAM_ZERO_INIT float acLimit;
 static FAST_RAM_ZERO_INIT float acErrorLimit;
+#endif
 
 void pidResetITerm(void)
 {
     for (int axis = 0; axis < 3; axis++) {
         pidData[axis].I = 0.0f;
+#if defined(USE_ABSOLUTE_CONTROL)
         axisError[axis] = 0.0f;
+#endif
     }
 }
 
@@ -374,10 +385,14 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     itermLimit = pidProfile->itermLimit;
     throttleBoost = pidProfile->throttle_boost * 0.1f;
     itermRotation = pidProfile->iterm_rotation;
+#if defined(USE_SMART_FEEDFORWARD)
     smartFeedforward = pidProfile->smart_feedforward;
+#endif
+#if defined(USE_ITERM_RELAX)
     itermRelax = pidProfile->iterm_relax;
     itermRelaxCutoffLow = pidProfile->iterm_relax_cutoff_low;
     itermRelaxCutoffHigh = pidProfile->iterm_relax_cutoff_high;
+#endif
 
 #ifdef USE_ACRO_TRAINER
     acroTrainerAngleLimit = pidProfile->acro_trainer_angle_limit;
@@ -386,9 +401,11 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     acroTrainerGain = (float)pidProfile->acro_trainer_gain / 10.0f;
 #endif // USE_ACRO_TRAINER
 
+#if defined(USE_ABSOLUTE_CONTROL)
     acGain = (float)pidProfile->abs_control_gain;
     acLimit = (float)pidProfile->abs_control_limit;
     acErrorLimit = (float)pidProfile->abs_control_error_limit;
+#endif
 }
 
 void pidInit(const pidProfile_t *pidProfile)
@@ -591,15 +608,21 @@ static void rotateVector(float v[XYZ_AXIS_COUNT], float rotation[XYZ_AXIS_COUNT]
 
 static void rotateITermAndAxisError() 
 {
-    if (itermRotation || acGain > 0) {
+    if (itermRotation
+#if defined(USE_ABSOLUTE_CONTROL)
+        || acGain > 0
+#endif
+        ) {
         const float gyroToAngle = dT * RAD;
         float rotationRads[3];
         for (int i = FD_ROLL; i <= FD_YAW; i++) {
             rotationRads[i] = gyro.gyroADCf[i] * gyroToAngle;
         }
+#if defined(USE_ABSOLUTE_CONTROL)
         if (acGain > 0) {
             rotateVector(axisError, rotationRads);
         }
+#endif
         if (itermRotation) {
             float v[3];
             for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
@@ -743,13 +766,14 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
         }
 #endif // USE_YAW_SPIN_RECOVERY
 
+#if defined(USE_ABSOLUTE_CONTROL)
         // mix in a correction for accrued attitude error
-        float stickSetpoint = currentPidSetpoint;
         float acCorrection = 0;
         if (acGain > 0) {
             acCorrection = constrainf(axisError[axis] * acGain, -acLimit, acLimit);
             currentPidSetpoint += acCorrection;
         }   
+#endif
         
         // -----calculate error rate
         const float gyroRate = gyro.gyroADCf[axis]; // Process variable from gyro output in deg/sec
@@ -770,11 +794,18 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
         }
 
         // -----calculate I component
-        float itermErrorRate;
+        float itermErrorRate = 0.0f;
+#if defined(USE_ABSOLUTE_CONTROL)
         float acErrorRate;
+#endif
+#if defined(USE_ITERM_RELAX)
         if (itermRelax && (axis < FD_YAW || itermRelax == ITERM_RELAX_RPY )) {
-            const float gyroTargetLow = pt1FilterApply(&windupLpf[axis][0], stickSetpoint) + acCorrection;
-            const float gyroTargetHigh =  pt1FilterApply(&windupLpf[axis][1], stickSetpoint) + acCorrection;
+            float gyroTargetLow = pt1FilterApply(&windupLpf[axis][0], currentPidSetpoint);
+            float gyroTargetHigh = pt1FilterApply(&windupLpf[axis][1], currentPidSetpoint);
+#if defined(USE_ABSOLUTE_CONTROL)
+            gyroTargetLow += acCorrection;
+            gyroTargetHigh += acCorrection;
+#endif
             if (axis < FD_YAW) {
                 int itemOffset = (axis << 1);
                 DEBUG_SET(DEBUG_ITERM_RELAX, itemOffset++, gyroTargetHigh);
@@ -782,19 +813,29 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
             }
             const float gmax = MAX(gyroTargetHigh, gyroTargetLow);
             const float gmin = MIN(gyroTargetHigh, gyroTargetLow);
-            if (gyroRate >= gmin && gyroRate <= gmax) {
-                itermErrorRate = acCorrection;
-            } else {
+            if (gyroRate < gmin || gyroRate > gmax) {
                 itermErrorRate = (gyroRate > gmax ? gmax : gmin ) - gyroRate;
             }
+#if defined(USE_ABSOLUTE_CONTROL)
+            else {
+                itermErrorRate = acCorrection;
+            }
             acErrorRate = itermErrorRate - acCorrection;
-        } else {
-            itermErrorRate = acErrorRate = errorRate;
+#endif
+        } else
+#endif // USE_ITERM_RELAX
+        {
+            itermErrorRate = errorRate;
+#if defined(USE_ABSOLUTE_CONTROL)
+            acErrorRate = errorRate;
+#endif
         }
         
+#if defined(USE_ABSOLUTE_CONTROL)
         if (acGain > 0) {
             axisError[axis] = constrainf(axisError[axis] + acErrorRate * dT, -acErrorLimit, acErrorLimit);
         }
+#endif
         
         const float ITerm = pidData[axis].I;
         const float ITermNew = constrainf(ITerm + pidCoefficient[axis].Ki * itermErrorRate * dynCi, -itermLimit, itermLimit);
@@ -824,6 +865,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
             const float pidFeedForward =
                 pidCoefficient[axis].Kd * dynCd * transition *
                 (currentPidSetpoint - previousPidSetpoint[axis]) * tpaFactor / dT;
+#if defined(USE_SMART_FEEDFORWARD)
             bool addFeedforward = true;
             if (smartFeedforward) {
                 if (pidData[axis].P * pidFeedForward > 0) {
@@ -835,7 +877,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
                     }
                 }
             }
-            if (addFeedforward) {
+            if (addFeedforward)
+#endif
+            {
                 pidData[axis].D += pidFeedForward;
             }
             previousGyroRateDterm[axis] = gyroRateDterm[axis];
