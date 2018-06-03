@@ -83,8 +83,6 @@ typedef enum
     ITERM_RELAX_RPY
 } itermRelax_e;
 
-    
-
 typedef struct pidProfile_s {
     uint16_t yaw_lowpass_hz;                // Additional yaw filter when yaw axis too noisy
     uint16_t dterm_lowpass_hz;              // Delta Filter in hz

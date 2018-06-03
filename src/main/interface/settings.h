@@ -98,7 +98,9 @@ typedef enum {
 #ifdef USE_MAX7456
     TABLE_VIDEO_SYSTEM,
 #endif // USE_MAX7456
+#if defined(USE_ITERM_RELAX)
     TABLE_ITERM_RELAX,
+#endif
 #ifdef USE_ACRO_TRAINER
     TABLE_ACRO_TRAINER_DEBUG,
 #endif // USE_ACRO_TRAINER
