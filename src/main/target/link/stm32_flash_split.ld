@@ -149,7 +149,7 @@ SECTIONS
 
     . = ALIGN(4);
     _efastram_data = .;        /* define a global symbol at data end */
-  } >FASTRAM AT> FLASH
+  } >FASTRAM AT> FLASH1
 
   . = ALIGN(4);
   .fastram_bss (NOLOAD) :

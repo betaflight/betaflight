@@ -24,6 +24,7 @@ extern "C" {
     #include "config/feature.h"
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
+    #include "pg/rx.h"
     #include "fc/config.h"
     #include "fc/controlrate_profile.h"
     #include "fc/fc_core.h"

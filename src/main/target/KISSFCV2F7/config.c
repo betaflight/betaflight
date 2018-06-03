@@ -21,9 +21,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #include "drivers/serial.h"
+#include "pg/rx.h"
 #include "rx/rx.h"
 
 #include "telemetry/telemetry.h"

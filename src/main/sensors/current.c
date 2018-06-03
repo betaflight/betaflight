@@ -22,7 +22,7 @@
 #include "stdint.h"
 #include "string.h"
 
-#include <platform.h>
+#include "platform.h"
 #include "build/build_config.h"
 #include "build/debug.h"
 
@@ -222,8 +222,8 @@ void currentMeterESCRefresh(int32_t lastUpdateAt)
 
     escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
     if (escData && escData->dataAge <= ESC_BATTERY_AGE_MAX) {
-        currentMeterESCState.amperage = escData->current;
-        currentMeterESCState.mAhDrawn = escData->consumption;
+        currentMeterESCState.amperage = escData->current + escSensorConfig()->offset / 10;
+        currentMeterESCState.mAhDrawn = escData->consumption + escSensorConfig()->offset * millis() / (1000.0f * 3600);
     } else {
         currentMeterESCState.amperage = 0;
         currentMeterESCState.mAhDrawn = 0;

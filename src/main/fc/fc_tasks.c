@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #include "build/debug.h"
 
@@ -72,6 +72,8 @@
 #include "io/vtx.h"
 
 #include "msp/msp_serial.h"
+
+#include "pg/rx.h"
 
 #include "rx/rx.h"
 
@@ -275,7 +277,7 @@ void fcTasksInit(void)
     setTaskEnabled(TASK_BARO, sensors(SENSOR_BARO));
 #endif
 #if defined(USE_BARO) || defined(USE_GPS)
-    setTaskEnabled(TASK_ALTITUDE, sensors(SENSOR_BARO) || sensors(SENSOR_GPS));
+    setTaskEnabled(TASK_ALTITUDE, sensors(SENSOR_BARO) || feature(FEATURE_GPS));
 #endif
 #ifdef USE_DASHBOARD
     setTaskEnabled(TASK_DASHBOARD, feature(FEATURE_DASHBOARD));

@@ -19,7 +19,7 @@
 #include <string.h>
 
 extern "C" {
-#include <platform.h>
+#include "platform.h"
 #include "common/utils.h"
 #include "pg/pg.h"
 #include "drivers/serial.h"

@@ -49,6 +49,8 @@
 #include "build/build_config.h"
 #include "build/debug.h"
 
+#include "pg/rx.h"
+
 #include "common/utils.h"
 
 #include "drivers/time.h"

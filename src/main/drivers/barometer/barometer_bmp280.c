@@ -21,7 +21,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #include "build/build_config.h"
 #include "build/debug.h"
@@ -86,9 +86,7 @@ void bmp280BusDeinit(busDevice_t *busdev)
 {
 #ifdef USE_BARO_SPI_BMP280
     if (busdev->bustype == BUSTYPE_SPI) {
-        IOConfigGPIO(busdev->busdev_u.spi.csnPin, IOCFG_IPU);
-        IORelease(busdev->busdev_u.spi.csnPin);
-        IOInit(busdev->busdev_u.spi.csnPin, OWNER_SPI_PREINIT, 0);
+        spiPreinitCsByIO(busdev->busdev_u.spi.csnPin);
     }
 #else
     UNUSED(busdev);

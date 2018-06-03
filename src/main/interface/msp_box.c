@@ -94,6 +94,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOXPIDAUDIO, "PID AUDIO", 44 },
     { BOXPARALYZE, "PARALYZE", 45 },
     { BOXGPSRESCUE, "GPS RESCUE", 46 },
+    { BOXACROTRAINER, "ACRO TRAINER", 47 },
 };
 
 // mask of enabled IDs, calculated on startup based on enabled features. boxId_e is used as bit index
@@ -196,6 +197,7 @@ void initActiveBoxIds(void)
     if (feature(FEATURE_GPS)) {
         BME(BOXGPSHOME);
         BME(BOXGPSHOLD);
+        BME(BOXGPSRESCUE);
         BME(BOXBEEPGPSCOUNT);
     }
 #endif
@@ -298,6 +300,12 @@ void initActiveBoxIds(void)
 #if defined(USE_PID_AUDIO)
     BME(BOXPIDAUDIO);
 #endif
+
+#if defined(USE_ACRO_TRAINER) && defined(USE_ACC)
+    if (sensors(SENSOR_ACC)) {
+        BME(BOXACROTRAINER);
+    }
+#endif // USE_ACRO_TRAINER
 
 #undef BME
     // check that all enabled IDs are in boxes array (check may be skipped when using findBoxById() functions)

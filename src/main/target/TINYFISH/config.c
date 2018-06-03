@@ -20,7 +20,7 @@
 
 #include <stdint.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #ifdef USE_TARGET_CONFIG
 #include "drivers/dma.h"
@@ -32,6 +32,8 @@
 #include "fc/config.h"
 
 #include "io/serial.h"
+
+#include "pg/rx.h"
 
 #include "rx/rx.h"
 

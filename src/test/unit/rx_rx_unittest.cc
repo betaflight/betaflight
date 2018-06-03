@@ -23,6 +23,7 @@
 extern "C" {
     #include "platform.h"
 
+    #include "pg/rx.h"
     #include "drivers/io.h"
     #include "rx/rx.h"
     #include "fc/rc_modes.h"

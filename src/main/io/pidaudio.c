@@ -22,7 +22,7 @@
 #include <stdint.h>
 #include <math.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #include "common/axis.h"
 #include "common/maths.h"
@@ -64,7 +64,7 @@ void pidAudioSetMode(pidAudioModes_e mode)
     pidAudioMode = mode;
 }
 
-void pidAudioUpdate(void)
+void FAST_CODE_NOINLINE pidAudioUpdate(void)
 {
     bool newState = IS_RC_MODE_ACTIVE(BOXPIDAUDIO);
 

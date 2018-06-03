@@ -21,7 +21,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #if defined(USE_BARO) && (defined(USE_BARO_MS5611) || defined(USE_BARO_SPI_MS5611))
 
@@ -82,9 +82,7 @@ void ms5611BusDeinit(busDevice_t *busdev)
 {
 #ifdef USE_BARO_SPI_MS5611
     if (busdev->bustype == BUSTYPE_SPI) {
-        IOConfigGPIO(busdev->busdev_u.spi.csnPin, IOCFG_IPU);
-        IORelease(busdev->busdev_u.spi.csnPin);
-        IOInit(busdev->busdev_u.spi.csnPin, OWNER_SPI_PREINIT, 0);
+        spiPreinitCsByIO(busdev->busdev_u.spi.csnPin);
     }
 #else
     UNUSED(busdev);

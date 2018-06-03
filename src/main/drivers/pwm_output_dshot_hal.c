@@ -30,12 +30,13 @@
 #include "timer.h"
 #include "pwm_output.h"
 #include "drivers/nvic.h"
+#include "drivers/time.h"
 #include "dma.h"
 #include "rcc.h"
 
-static FAST_RAM uint8_t dmaMotorTimerCount = 0;
-static FAST_RAM motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];
-static FAST_RAM motorDmaOutput_t dmaMotors[MAX_SUPPORTED_MOTORS];
+static FAST_RAM_ZERO_INIT uint8_t dmaMotorTimerCount = 0;
+static FAST_RAM_ZERO_INIT motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];
+static FAST_RAM_ZERO_INIT motorDmaOutput_t dmaMotors[MAX_SUPPORTED_MOTORS];
 
 motorDmaOutput_t *getMotorDmaOutput(uint8_t index)
 {
@@ -61,6 +62,12 @@ FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
         return;
     }
 
+    /*If there is a command ready to go overwrite the value and send that instead*/
+    if (pwmIsProcessingDshotCommand()) {
+        value = pwmGetDshotCommand(index);
+        motor->requestTelemetry = true;
+    }
+
     uint16_t packet = prepareDshotPacket(motor, value);
     uint8_t bufferSize;
 
@@ -81,6 +88,13 @@ FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
 FAST_CODE void pwmCompleteDshotMotorUpdate(uint8_t motorCount)
 {
     UNUSED(motorCount);
+
+    /* If there is a dshot command loaded up, time it correctly with motor update*/
+    if (pwmIsProcessingDshotCommand()) {
+        if (!pwmProcessDshotCommand(motorCount)) {
+            return;
+        }
+    }
 
     for (int i = 0; i < dmaMotorTimerCount; i++) {
 #ifdef USE_DSHOT_DMAR

@@ -20,8 +20,6 @@
 
 #pragma once
 
-#include "platform.h"
-
 #include "drivers/bus_i2c.h"
 #include "drivers/io_types.h"
 #include "drivers/rcc_types.h"

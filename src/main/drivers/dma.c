@@ -22,7 +22,7 @@
 #include <string.h>
 #include <stdint.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #include "drivers/nvic.h"
 #include "dma.h"

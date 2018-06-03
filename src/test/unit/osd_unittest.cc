@@ -27,7 +27,9 @@ extern "C" {
 
     #include "blackbox/blackbox.h"
 
+    #include "pg/pg.h"
     #include "pg/pg_ids.h"
+    #include "pg/rx.h"
 
     #include "common/time.h"
 
@@ -1012,6 +1014,8 @@ extern "C" {
     }
 
     uint16_t getRssi(void) { return rssi; }
+
+    uint8_t getRssiPercent(void) { return scaleRange(rssi, 0, RSSI_MAX_VALUE, 0, 100); }
 
     uint16_t getCoreTemperatureCelsius(void) { return simulationCoreTemperature; }
 

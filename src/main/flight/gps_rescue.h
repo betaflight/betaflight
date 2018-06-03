@@ -16,7 +16,31 @@
  */
  
 #include "common/axis.h"
-#include "io/gps.h"
+
+#include "pg/pg.h"
+
+typedef enum {
+    RESCUE_SANITY_OFF = 0,
+    RESCUE_SANITY_ON,
+    RESCUE_SANITY_FS_ONLY
+} gpsRescueSanity_e;
+
+typedef struct gpsRescue_s {
+    uint16_t angle; //degrees
+    uint16_t initialAltitude; //meters
+    uint16_t descentDistance; //meters
+    uint16_t rescueGroundspeed; // centimeters per second
+    uint16_t throttleP, throttleI, throttleD;
+    uint16_t yawP;
+    uint16_t throttleMin;
+    uint16_t throttleMax;
+    uint16_t throttleHover;
+    uint16_t velP, velI, velD;
+    uint8_t minSats;
+    gpsRescueSanity_e sanityChecks;
+} gpsRescueConfig_t;
+
+PG_DECLARE(gpsRescueConfig_t, gpsRescueConfig);
 
 uint16_t      rescueThrottle;
 
@@ -41,8 +65,8 @@ typedef enum {
 typedef struct {
     int32_t targetAltitude;
     int32_t targetGroundspeed;
-    uint8_t minAngle; //NOTE: ANGLES ARE IN DEGREES
-    uint8_t maxAngle; //NOTE: ANGLES ARE IN DEGREES
+    uint8_t minAngleDeg;
+    uint8_t maxAngleDeg;
     bool crosstrack;
 } rescueIntent_s;
 

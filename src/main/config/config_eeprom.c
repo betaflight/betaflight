@@ -94,8 +94,7 @@ void initEEPROM(void)
     BUILD_BUG_ON(sizeof(configRecord_t) != 6);
 }
 
-// Scan the EEPROM config. Returns true if the config is valid.
-bool isEEPROMContentValid(void)
+bool isEEPROMVersionValid(void)
 {
     const uint8_t *p = &__config_start;
     const configHeader_t *header = (const configHeader_t *)p;
@@ -103,6 +102,16 @@ bool isEEPROMContentValid(void)
     if (header->eepromConfigVersion != EEPROM_CONF_VERSION) {
         return false;
     }
+
+    return true;
+}
+
+// Scan the EEPROM config. Returns true if the config is valid.
+bool isEEPROMStructureValid(void)
+{
+    const uint8_t *p = &__config_start;
+    const configHeader_t *header = (const configHeader_t *)p;
+
     if (header->magic_be != 0xBE) {
         return false;
     }
@@ -176,16 +185,23 @@ static const configRecord_t *findEEPROM(const pgRegistry_t *reg, configRecordFla
 //   but each PG is loaded/initialized exactly once and in defined order.
 bool loadEEPROM(void)
 {
+    bool success = true;
+
     PG_FOREACH(reg) {
         const configRecord_t *rec = findEEPROM(reg, CR_CLASSICATION_SYSTEM);
         if (rec) {
             // config from EEPROM is available, use it to initialize PG. pgLoad will handle version mismatch
-            pgLoad(reg, rec->pg, rec->size - offsetof(configRecord_t, pg), rec->version);
+            if (!pgLoad(reg, rec->pg, rec->size - offsetof(configRecord_t, pg), rec->version)) {
+                success = false;
+            }
         } else {
             pgReset(reg);
+
+            success = false;
         }
     }
-    return true;
+
+    return success;
 }
 
 static bool writeSettingsToEEPROM(void)
@@ -247,7 +263,7 @@ void writeConfigToEEPROM(void)
         }
     }
 
-    if (success && isEEPROMContentValid()) {
+    if (success && isEEPROMVersionValid() && isEEPROMStructureValid()) {
         return;
     }
 

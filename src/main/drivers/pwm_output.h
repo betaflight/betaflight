@@ -196,10 +196,15 @@ uint16_t prepareDshotPacket(motorDmaOutput_t *const motor, uint16_t value);
 extern loadDmaBufferFn *loadDmaBuffer;
 
 uint32_t getDshotHz(motorPwmProtocolTypes_e pwmProtocolType);
-void pwmWriteDshotCommand(uint8_t index, uint8_t motorCount, uint8_t command);
+void pwmWriteDshotCommandControl(uint8_t index);
+void pwmWriteDshotCommand(uint8_t index, uint8_t motorCount, uint8_t command, bool blocking);
 void pwmWriteDshotInt(uint8_t index, uint16_t value);
 void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output);
 void pwmCompleteDshotMotorUpdate(uint8_t motorCount);
+bool pwmIsProcessingDshotCommand(void);
+uint8_t pwmGetDshotCommand(uint8_t index);
+bool pwmProcessDshotCommand(uint8_t motorCount);
+
 #endif
 
 #ifdef USE_BEEPER

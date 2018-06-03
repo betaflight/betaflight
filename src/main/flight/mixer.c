@@ -35,6 +35,7 @@
 #include "config/feature.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/rx.h"
 
 #include "drivers/pwm_output.h"
 #include "drivers/pwm_esc_detect.h"
@@ -115,10 +116,10 @@ PG_REGISTER_ARRAY(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer, PG_MOTOR
 
 #define PWM_RANGE_MID 1500
 
-static FAST_RAM uint8_t motorCount;
-static FAST_RAM float motorMixRange;
+static FAST_RAM_ZERO_INIT uint8_t motorCount;
+static FAST_RAM_ZERO_INIT float motorMixRange;
 
-float FAST_RAM motor[MAX_SUPPORTED_MOTORS];
+float FAST_RAM_ZERO_INIT motor[MAX_SUPPORTED_MOTORS];
 float motor_disarmed[MAX_SUPPORTED_MOTORS];
 
 mixerMode_e currentMixerMode;
@@ -313,12 +314,12 @@ const mixer_t mixers[] = {
 };
 #endif // !USE_QUAD_MIXER_ONLY
 
-FAST_RAM float motorOutputHigh, motorOutputLow;
+FAST_RAM_ZERO_INIT float motorOutputHigh, motorOutputLow;
 
-static FAST_RAM float disarmMotorOutput, deadbandMotor3dHigh, deadbandMotor3dLow;
-static FAST_RAM uint16_t rcCommand3dDeadBandLow;
-static FAST_RAM uint16_t rcCommand3dDeadBandHigh;
-static FAST_RAM float rcCommandThrottleRange, rcCommandThrottleRange3dLow, rcCommandThrottleRange3dHigh;
+static FAST_RAM_ZERO_INIT float disarmMotorOutput, deadbandMotor3dHigh, deadbandMotor3dLow;
+static FAST_RAM_ZERO_INIT uint16_t rcCommand3dDeadBandLow;
+static FAST_RAM_ZERO_INIT uint16_t rcCommand3dDeadBandHigh;
+static FAST_RAM_ZERO_INIT float rcCommandThrottleRange, rcCommandThrottleRange3dLow, rcCommandThrottleRange3dHigh;
 
 uint8_t getMotorCount(void)
 {
@@ -519,12 +520,12 @@ void stopPwmAllMotors(void)
     delayMicroseconds(1500);
 }
 
-static FAST_RAM float throttle = 0;
-static FAST_RAM float motorOutputMin;
-static FAST_RAM float motorRangeMin;
-static FAST_RAM float motorRangeMax;
-static FAST_RAM float motorOutputRange;
-static FAST_RAM int8_t motorOutputMixSign;
+static FAST_RAM_ZERO_INIT float throttle = 0;
+static FAST_RAM_ZERO_INIT float motorOutputMin;
+static FAST_RAM_ZERO_INIT float motorRangeMin;
+static FAST_RAM_ZERO_INIT float motorRangeMax;
+static FAST_RAM_ZERO_INIT float motorOutputRange;
+static FAST_RAM_ZERO_INIT int8_t motorOutputMixSign;
 
 static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
 {
@@ -735,7 +736,7 @@ float applyThrottleLimit(float throttle)
     return throttle;
 }
 
-NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensation)
+FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensation)
 {
     if (isFlipOverAfterCrashMode()) {
         applyFlipOverAfterCrashModeToMotors();

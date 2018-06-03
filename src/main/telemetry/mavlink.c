@@ -38,6 +38,7 @@
 #include "config/feature.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/rx.h"
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/sensor.h"
@@ -280,7 +281,7 @@ void mavlinkSendRCChannelsAndRSSI(void)
         // chan8_raw RC channel 8 value, in microseconds
         (rxRuntimeConfig.channelCount >= 8) ? rcData[7] : 0,
         // rssi Receive signal strength indicator, 0: 0%, 255: 100%
-        scaleRange(getRssi(), 0, 1023, 0, 255));
+        constrain(scaleRange(getRssi(), 0, RSSI_MAX_VALUE, 0, 255), 0, 255));
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
 }

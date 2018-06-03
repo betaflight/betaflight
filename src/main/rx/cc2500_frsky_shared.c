@@ -26,14 +26,16 @@
 
 #include "common/maths.h"
 
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+#include "pg/rx.h"
+#include "pg/rx_spi.h"
+
 #include "drivers/rx/rx_cc2500.h"
 #include "drivers/io.h"
 #include "drivers/time.h"
 
 #include "fc/config.h"
-
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
@@ -104,7 +106,7 @@ void setRssiDbm(uint8_t value)
         rssiDbm = ((((uint16_t)value) * 18) >> 5) + 65;
     }
 
-    setRssiUnfiltered(constrain(rssiDbm << 3, 0, 1023), RSSI_SOURCE_RX_PROTOCOL);
+    setRssi(rssiDbm << 3, RSSI_SOURCE_RX_PROTOCOL);
 }
 #endif // USE_RX_FRSKY_SPI_TELEMETRY
 
@@ -512,7 +514,7 @@ static bool frSkySpiDetect(void)
     return false;
 }
 
-bool frSkySpiInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+bool frSkySpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
 #if !defined(RX_FRSKY_SPI_DISABLE_CHIP_DETECTION)
     if (!frSkySpiDetect()) {
@@ -522,7 +524,7 @@ bool frSkySpiInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
     UNUSED(frSkySpiDetect);
 #endif
 
-    spiProtocol = rxConfig->rx_spi_protocol;
+    spiProtocol = rxSpiConfig->rx_spi_protocol;
 
     switch (spiProtocol) {
     case RX_SPI_FRSKY_D:

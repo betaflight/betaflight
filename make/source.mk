@@ -16,7 +16,6 @@ COMMON_SRC = \
             drivers/bus_spi.c \
             drivers/bus_spi_config.c \
             drivers/bus_spi_pinconfig.c \
-            drivers/bus_spi_soft.c \
             drivers/buttons.c \
             drivers/display.c \
             drivers/exti.c \
@@ -37,6 +36,7 @@ COMMON_SRC = \
             drivers/transponder_ir_arcitimer.c \
             drivers/transponder_ir_ilap.c \
             drivers/transponder_ir_erlt.c \
+            fc/board_info.c \
             fc/config.c \
             fc/fc_dispatch.c \
             fc/fc_hardfaults.c \
@@ -257,6 +257,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/barometer/barometer_fake.c \
             drivers/barometer/barometer_ms5611.c \
             drivers/barometer/barometer_lps.c \
+            drivers/barometer/barometer_qmp6988.c \
             drivers/bus_i2c_config.c \
             drivers/bus_spi_config.c \
             drivers/bus_spi_pinconfig.c \
@@ -282,6 +283,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/vtx_rtc6705.c \
             drivers/vtx_common.c \
             fc/fc_init.c \
+            fc/board_info.c \
             config/config_eeprom.c \
             config/feature.c \
             config/config_streamer.c \

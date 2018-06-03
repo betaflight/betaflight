@@ -21,40 +21,87 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #ifdef USE_SPI
 
 #include "drivers/bus_spi.h"
 #include "drivers/io.h"
 
+#include "pg/bus_spi.h"
+
 // Bring a pin for possible CS line to pull-up state in preparation for
 // sequential initialization by relevant drivers.
 
-// There are two versions:
-// spiPreInitCs set the pin to input with pullup (IOCFG_IPU) for safety at this point.
-// spiPreInitCsOutPU which actually drive the pin for digital hi.
+// There are two versions locally:
+// spiPreInitCsIPU set the pin to input with pullup (IOCFG_IPU) for safety.
+// spiPreInitCsOPU actually drive the pin for digital hi.
 //
 // The later is required for SPI slave devices on some targets, interfaced through level shifters, such as Kakute F4.
-// Note that with this handling, a pin declared as CS pin for MAX7456 needs special care when re-purposing the pin for other, especially, input uses.
-// This will/should be fixed when we go fully reconfigurable.
+//
+// Two ioTag_t array PGs, spiPreinitIPUConfig and spiPreinitOPUConfig are used to
+// determine pin to be IPU or OPU.
+// The IPU array is initialized with a hard coded initialization array,
+// while the OPU array is initialized from target dependent config.c.
+// With generic targets, both arrays are setup with resource commands.
 
-void spiPreInitCs(ioTag_t iotag)
+static void spiPreInitCsIPU(ioTag_t iotag, int index)
 {
     IO_t io = IOGetByTag(iotag);
     if (io) {
-        IOInit(io, OWNER_SPI_PREINIT, 0);
+        IOInit(io, OWNER_SPI_PREINIT_IPU, index);
         IOConfigGPIO(io, IOCFG_IPU);
+        IOHi(io);
     }
 }
 
-void spiPreInitCsOutPU(ioTag_t iotag)
+static void spiPreInitCsOPU(ioTag_t iotag, int index)
 {
     IO_t io = IOGetByTag(iotag);
     if (io) {
-        IOInit(io, OWNER_SPI_PREINIT, 0);
+        IOInit(io, OWNER_SPI_PREINIT_OPU, index);
         IOConfigGPIO(io, IOCFG_OUT_PP);
         IOHi(io);
     }
 }
+
+void spiPreInit(void)
+{
+    for (int i = 0 ; i < SPI_PREINIT_IPU_COUNT ; i++) {
+        if (spiPreinitIPUConfig(i)->csnTag) {
+            spiPreInitCsIPU(spiPreinitIPUConfig(i)->csnTag, i);
+        }
+    }
+
+    for (int i = 0 ; i < SPI_PREINIT_OPU_COUNT ; i++) {
+        if (spiPreinitOPUConfig(i)->csnTag) {
+            spiPreInitCsOPU(spiPreinitOPUConfig(i)->csnTag, i);
+        }
+    }
+}
+
+// Back to pre-init state
+
+void spiPreinitCsByIO(IO_t io)
+{
+    for (int i = 0 ; i < SPI_PREINIT_IPU_COUNT ; i++) {
+        if (IOGetByTag(spiPreinitIPUConfig(i)->csnTag) == io) {
+            spiPreInitCsIPU(spiPreinitIPUConfig(i)->csnTag, i);
+            return;
+        }
+    }
+
+    for (int i = 0 ; i < SPI_PREINIT_OPU_COUNT ; i++) {
+        if (IOGetByTag(spiPreinitOPUConfig(i)->csnTag) == io) {
+            spiPreInitCsOPU(spiPreinitOPUConfig(i)->csnTag, i);
+            return;
+        }
+    }
+}
+
+void spiPreinitCsByTag(ioTag_t iotag)
+{
+    spiPreinitCsByIO(IOGetByTag(iotag));
+}
+
 #endif

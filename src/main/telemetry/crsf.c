@@ -311,17 +311,19 @@ void crsfFrameDeviceInfo(sbuf_t *dst) {
 
 #if defined(USE_CRSF_CMS_TELEMETRY)
 
-static void crsfFrameDisplayPortRow(sbuf_t *dst, uint8_t row, const char *str)
+static void crsfFrameDisplayPortRow(sbuf_t *dst, uint8_t row)
 {
     uint8_t *lengthPtr = sbufPtr(dst);
-    const uint8_t bufLen = CRSF_DISPLAY_PORT_COLS_MAX + displayPortProfileCrsf()->colAdjust;
-    const uint8_t frameLength = CRSF_FRAME_LENGTH_EXT_TYPE_CRC + bufLen;
+    uint8_t buflen = crsfDisplayPortScreen()->cols;
+    char *rowStart = &crsfDisplayPortScreen()->buffer[row * buflen];
+    const uint8_t frameLength = CRSF_FRAME_LENGTH_EXT_TYPE_CRC + buflen;
     sbufWriteU8(dst, frameLength);
-    sbufWriteU8(dst, CRSF_FRAMETYPE_DISPLAYPORT_UPDATE);
+    sbufWriteU8(dst, CRSF_FRAMETYPE_DISPLAYPORT_CMD);
     sbufWriteU8(dst, CRSF_ADDRESS_RADIO_TRANSMITTER);
     sbufWriteU8(dst, CRSF_ADDRESS_FLIGHT_CONTROLLER);
+    sbufWriteU8(dst, CRSF_DISPLAYPORT_SUBCMD_UPDATE);
     sbufWriteU8(dst, row);
-    sbufWriteData(dst, str, bufLen);
+    sbufWriteData(dst, rowStart, buflen);
     *lengthPtr = sbufPtr(dst) - lengthPtr;
 }
 
@@ -329,9 +331,10 @@ static void crsfFrameDisplayPortClear(sbuf_t *dst)
 {
     uint8_t *lengthPtr = sbufPtr(dst);
     sbufWriteU8(dst, CRSF_DISPLAY_PORT_COLS_MAX + CRSF_FRAME_LENGTH_EXT_TYPE_CRC);
-    sbufWriteU8(dst, CRSF_FRAMETYPE_DISPLAYPORT_CLEAR);
+    sbufWriteU8(dst, CRSF_FRAMETYPE_DISPLAYPORT_CMD);
     sbufWriteU8(dst, CRSF_ADDRESS_RADIO_TRANSMITTER);
     sbufWriteU8(dst, CRSF_ADDRESS_FLIGHT_CONTROLLER);
+    sbufWriteU8(dst, CRSF_DISPLAYPORT_SUBCMD_CLEAR);
     *lengthPtr = sbufPtr(dst) - lengthPtr;
 }
 
@@ -449,10 +452,14 @@ bool checkCrsfTelemetryState(void)
 }
 
 #if defined(USE_CRSF_CMS_TELEMETRY)
-void crsfProcessDisplayPortCmd(uint8_t cmd)
+void crsfProcessDisplayPortCmd(uint8_t *frameStart)
 {
+    uint8_t cmd = *frameStart;
     switch (cmd) {
-    case CRSF_DISPLAYPORT_SUBCMD_OPEN:
+    case CRSF_DISPLAYPORT_SUBCMD_OPEN: ;
+        const uint8_t rows = *(frameStart + CRSF_DISPLAYPORT_OPEN_ROWS_OFFSET);
+        const uint8_t cols = *(frameStart + CRSF_DISPLAYPORT_OPEN_COLS_OFFSET);
+        crsfDisplayPortSetDimensions(rows, cols);
         crsfDisplayPortMenuOpen();
         break;
     case CRSF_DISPLAYPORT_SUBCMD_CLOSE:
@@ -460,7 +467,6 @@ void crsfProcessDisplayPortCmd(uint8_t cmd)
         break;
     case CRSF_DISPLAYPORT_SUBCMD_POLL:
         crsfDisplayPortRefresh();
-        crsfDisplayPortScreen()->reset = true;
         break;
     default:
         break;
@@ -518,13 +524,12 @@ void handleCrsfTelemetry(timeUs_t currentTimeUs)
     }
     const int nextRow = crsfDisplayPortNextRow();
     if (nextRow >= 0) {
-        crsfDisplayPortRow_t *row = &crsfDisplayPortScreen()->rows[nextRow];
         sbuf_t crsfDisplayPortBuf;
         sbuf_t *dst = &crsfDisplayPortBuf;
         crsfInitializeFrame(dst);
-        crsfFrameDisplayPortRow(dst, nextRow, row->data);
+        crsfFrameDisplayPortRow(dst, nextRow);
         crsfFinalize(dst);
-        row->pendingTransport = false;
+        crsfDisplayPortScreen()->pendingTransport[nextRow] = false;
         crsfLastCycleTime = currentTimeUs;
         return;
     }

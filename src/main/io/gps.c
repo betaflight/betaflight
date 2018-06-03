@@ -204,6 +204,21 @@ static const ubloxSbas_t ubloxSbas[] = {
     { SBAS_MSAS,  { 0x00, 0x02, 0x02, 0x00, 0x35, 0xEF}},
     { SBAS_GAGAN, { 0x80, 0x01, 0x00, 0x00, 0xB2, 0xE8}}
 };
+
+// Remove QZSS and add Galileo (only 3 GNSS systems supported simultaneously)
+// Frame captured from uCenter
+static const uint8_t ubloxGalileoInit[] = {
+        0xB5, 0x62, 0x06, 0x3E, 0x3C,                       // UBX-CGF-GNSS
+        0x00, 0x00, 0x20, 0x20, 0x07,                       // GNSS
+        0x00, 0x08, 0x10, 0x00, 0x01, 0x00, 0x01, 0x01,     // GPS
+        0x01, 0x01, 0x03, 0x00, 0x01, 0x00, 0x01, 0x01,     // SBAS
+        0x02, 0x04, 0x08, 0x00, 0x01, 0x00, 0x01, 0x01,     // Galileo
+        0x03, 0x08, 0x10, 0x00, 0x00, 0x00, 0x01, 0x01,     // BeiDou
+        0x04, 0x00, 0x08, 0x00, 0x00, 0x00, 0x01, 0x03,     // IMES
+        0x05, 0x00, 0x03, 0x00, 0x00, 0x00, 0x01, 0x05,     // QZSS
+        0x06, 0x08, 0x0E, 0x00, 0x01, 0x00, 0x01, 0x01,     // GLONASS
+        0x55, 0x47
+};
 #endif // USE_GPS_UBLOX
 
 typedef enum {
@@ -220,37 +235,13 @@ gpsData_t gpsData;
 
 PG_REGISTER_WITH_RESET_TEMPLATE(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
 
-#ifdef USE_GPS_RESCUE
-PG_REGISTER_WITH_RESET_TEMPLATE(gpsRescue_t, gpsRescue, PG_GPS_RESCUE, 0);
-#endif
-
 PG_RESET_TEMPLATE(gpsConfig_t, gpsConfig,
     .provider = GPS_NMEA,
     .sbasMode = SBAS_AUTO,
     .autoConfig = GPS_AUTOCONFIG_ON,
-    .autoBaud = GPS_AUTOBAUD_OFF
+    .autoBaud = GPS_AUTOBAUD_OFF,
+    .gps_ublox_use_galileo = false
 );
-
-#ifdef USE_GPS_RESCUE
-PG_RESET_TEMPLATE(gpsRescue_t, gpsRescue,
-    .angle = 32,
-    .initialAltitude = 50,
-    .descentDistance = 200,
-    .rescueGroundspeed = 2000,
-    .throttleP = 150,
-    .throttleI = 20,
-    .throttleD = 50,
-    .velP = 80,
-    .velI = 20,
-    .velD = 15,
-    .yawP = 15,
-    .throttleMin = 1200,
-    .throttleMax = 1600,
-    .throttleHover = 1280,
-    .sanityChecks = 0,
-    .minSats = 8
-);
-#endif
 
 static void shiftPacketLog(void)
 {
@@ -447,6 +438,17 @@ void gpsInitUblox(void)
                     serialWrite(gpsPort, ubloxSbas[gpsConfig()->sbasMode].message[gpsData.state_position - UBLOX_SBAS_PREFIX_LENGTH]);
                     gpsData.state_position++;
                 } else {
+                    gpsData.state_position = 0;
+                    gpsData.messageState++;
+                }
+            }
+
+            if (gpsData.messageState == GPS_MESSAGE_STATE_GALILEO) {
+                if ((gpsConfig()->gps_ublox_use_galileo) && (gpsData.state_position < sizeof(ubloxGalileoInit))) {
+                    serialWrite(gpsPort, ubloxGalileoInit[gpsData.state_position]);
+                    gpsData.state_position++;
+                } else {
+                    gpsData.state_position = 0;
                     gpsData.messageState++;
                 }
             }

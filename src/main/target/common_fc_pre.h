@@ -96,16 +96,18 @@
 
 #ifdef USE_ITCM_RAM
 #define FAST_CODE                   __attribute__((section(".tcm_code")))
+#define FAST_CODE_NOINLINE          NOINLINE
 #else
 #define FAST_CODE
+#define FAST_CODE_NOINLINE
 #endif // USE_ITCM_RAM
 
 #ifdef USE_FAST_RAM
-#define FAST_RAM                    __attribute__ ((section(".fastram_bss"), aligned(4)))
-#define FAST_RAM_INITIALIZED        __attribute__ ((section(".fastram_data"), aligned(4)))
+#define FAST_RAM_ZERO_INIT             __attribute__ ((section(".fastram_bss"), aligned(4)))
+#define FAST_RAM                    __attribute__ ((section(".fastram_data"), aligned(4)))
 #else
+#define FAST_RAM_ZERO_INIT
 #define FAST_RAM
-#define FAST_RAM_INITIALIZED
 #endif // USE_FAST_RAM
 
 #ifdef STM32F4
@@ -142,6 +144,7 @@
 #endif
 
 #if (FLASH_SIZE > 64)
+#define USE_ACRO_TRAINER
 #define USE_BLACKBOX
 #define USE_LED_STRIP
 #define USE_RESOURCE_MGMT
@@ -184,6 +187,8 @@
 #define USE_ESC_SENSOR
 #define USE_ESC_SENSOR_INFO
 #define USE_CRSF_CMS_TELEMETRY
+#define USE_BOARD_INFO
+#define USE_SMART_FEEDFORWARD
 
 #ifdef USE_SERIALRX_SPEKTRUM
 #define USE_SPEKTRUM_BIND
@@ -211,4 +216,7 @@
 #define USE_TELEMETRY_JETIEXBUS
 #define USE_TELEMETRY_MAVLINK
 #define USE_UNCOMMON_MIXERS
+#define USE_SIGNATURE
+#define USE_ITERM_RELAX
+#define USE_ABSOLUTE_CONTROL
 #endif

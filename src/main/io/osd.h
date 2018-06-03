@@ -49,6 +49,9 @@ extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 
 // NB: to ensure backwards compatibility, new enum values must be appended at the end but before the OSD_XXXX_COUNT entry.
 
+// *** IMPORTANT ***
+// If you are adding additional elements that do not require any conditional display logic,
+// you must add the elements to the osdElementDisplayOrder[] array in src/main/io/osd.c
 typedef enum {
     OSD_RSSI_VALUE,
     OSD_MAIN_BATT_VOLTAGE,
@@ -157,6 +160,7 @@ typedef enum {
     OSD_WARNING_VISUAL_BEEPER,
     OSD_WARNING_CRASH_FLIP,
     OSD_WARNING_ESC_FAIL,
+    OSD_WARNING_CORE_TEMPERATURE,
     OSD_WARNING_COUNT // MUST BE LAST
 } osdWarningsFlags_e;
 
@@ -186,6 +190,7 @@ typedef struct osdConfig_s {
     int8_t esc_temp_alarm;
     int16_t esc_rpm_alarm;
     int16_t esc_current_alarm;
+    uint8_t core_temp_alarm;
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);

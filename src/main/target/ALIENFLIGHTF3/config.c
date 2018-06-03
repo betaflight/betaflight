@@ -21,7 +21,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #ifdef USE_TARGET_CONFIG
 
@@ -37,6 +37,7 @@
 #include "flight/pid.h"
 
 #include "pg/beeper_dev.h"
+#include "pg/rx.h"
 
 #include "rx/rx.h"
 

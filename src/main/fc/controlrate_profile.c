@@ -62,20 +62,18 @@ void pgResetFn_controlRateProfiles(controlRateConfig_t *controlRateConfig)
     }
 }
 
-void setControlRateProfile(uint8_t controlRateProfileIndex)
+void loadControlRateProfile(void)
 {
-    if (controlRateProfileIndex < CONTROL_RATE_PROFILE_COUNT) {
-        systemConfigMutable()->activeRateProfile = controlRateProfileIndex;
-        currentControlRateProfile = controlRateProfilesMutable(controlRateProfileIndex);
-    }
+    currentControlRateProfile = controlRateProfilesMutable(systemConfig()->activeRateProfile);
 }
 
 void changeControlRateProfile(uint8_t controlRateProfileIndex)
 {
-    if (controlRateProfileIndex >= CONTROL_RATE_PROFILE_COUNT) {
-        controlRateProfileIndex = CONTROL_RATE_PROFILE_COUNT - 1;
+    if (controlRateProfileIndex < CONTROL_RATE_PROFILE_COUNT) {
+        systemConfigMutable()->activeRateProfile = controlRateProfileIndex;
     }
-    setControlRateProfile(controlRateProfileIndex);
+
+    loadControlRateProfile();
     initRcProcessing();
 }
 

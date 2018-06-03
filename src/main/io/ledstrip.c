@@ -24,7 +24,7 @@
 #include <string.h>
 #include <stdarg.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #ifdef USE_LED_STRIP
 
@@ -40,6 +40,7 @@
 #include "config/feature.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/rx.h"
 
 #include "drivers/light_ws2811strip.h"
 #include "drivers/serial.h"
@@ -494,7 +495,7 @@ static void applyLedFixedLayers(void)
 
         case LED_FUNCTION_RSSI:
             color = HSV(RED);
-            hOffset += scaleRange(getRssi() * 100, 0, 1023, -30, 120);
+            hOffset += scaleRange(getRssiPercent(), 0, 100, -30, 120);
             break;
 
         default:
@@ -713,7 +714,7 @@ static void applyLedRssiLayer(bool updateNow, timeUs_t *timer)
     int timerDelay = HZ_TO_US(1);
 
     if (updateNow) {
-        int state = (getRssi() * 100) / 1023;
+        int state = getRssiPercent();
 
         if (state > 50) {
             flash = true;

@@ -29,6 +29,8 @@
 #include "drivers/system.h"
 #include "drivers/time.h"
 
+#include "pg/rx.h"
+
 #include "rx/rx.h"
 #include "rx/spektrum.h"
 #include "io/spektrum_rssi.h"

@@ -44,6 +44,8 @@
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/beeper.h"
+#include "pg/rx.h"
+#include "pg/rx_spi.h"
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/bus_i2c.h"
@@ -60,6 +62,7 @@
 #include "drivers/transponder_ir.h"
 #include "drivers/camera_control.h"
 
+#include "fc/board_info.h"
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/fc_core.h"
@@ -99,6 +102,7 @@
 
 #include "msp/msp_serial.h"
 
+#include "pg/board.h"
 #include "pg/vcd.h"
 
 #include "rx/rx.h"
@@ -455,6 +459,24 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         // Target name with explicit length
         sbufWriteU8(dst, strlen(targetName));
         sbufWriteData(dst, targetName, strlen(targetName));
+
+#if defined(USE_BOARD_INFO)
+        // Board name with explicit length
+        char *value = getBoardName();
+        sbufWriteU8(dst, strlen(value));
+        sbufWriteString(dst, value);
+
+        // Manufacturer id with explicit length
+        value = getManufacturerId();
+        sbufWriteU8(dst, strlen(value));
+        sbufWriteString(dst, value);
+
+#if defined(USE_SIGNATURE)
+        // Signature
+        sbufWriteData(dst, getSignature(), SIGNATURE_LENGTH);
+#endif
+#endif // USE_BOARD_INFO
+
         break;
     }
 
@@ -502,7 +524,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 
 #ifdef USE_BEEPER
     case MSP_BEEPER_CONFIG:
-        sbufWriteU32(dst, getBeeperOffMask());
+        sbufWriteU32(dst, beeperConfig()->beeper_off_flags);
         sbufWriteU8(dst, beeperConfig()->dshotBeaconTone);
         break;
 #endif
@@ -1053,9 +1075,15 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, rxConfig()->rcInterpolation);
         sbufWriteU8(dst, rxConfig()->rcInterpolationInterval);
         sbufWriteU16(dst, rxConfig()->airModeActivateThreshold * 10 + 1000);
-        sbufWriteU8(dst, rxConfig()->rx_spi_protocol);
-        sbufWriteU32(dst, rxConfig()->rx_spi_id);
-        sbufWriteU8(dst, rxConfig()->rx_spi_rf_channel_count);
+#ifdef USE_RX_SPI
+        sbufWriteU8(dst, rxSpiConfig()->rx_spi_protocol);
+        sbufWriteU32(dst, rxSpiConfig()->rx_spi_id);
+        sbufWriteU8(dst, rxSpiConfig()->rx_spi_rf_channel_count);
+#else
+        sbufWriteU8(dst, 0);
+        sbufWriteU32(dst, 0);
+        sbufWriteU8(dst, 0);
+#endif
         sbufWriteU8(dst, rxConfig()->fpvCamAngleDegrees);
         break;
 
@@ -1063,7 +1091,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, failsafeConfig()->failsafe_delay);
         sbufWriteU8(dst, failsafeConfig()->failsafe_off_delay);
         sbufWriteU16(dst, failsafeConfig()->failsafe_throttle);
-        sbufWriteU8(dst, failsafeConfig()->failsafe_kill_switch);
+        sbufWriteU8(dst, failsafeConfig()->failsafe_switch_mode);
         sbufWriteU16(dst, failsafeConfig()->failsafe_throttle_low_delay);
         sbufWriteU8(dst, failsafeConfig()->failsafe_procedure);
         break;
@@ -1852,8 +1880,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
 #ifdef USE_BEEPER
     case MSP_SET_BEEPER_CONFIG:
-        beeperOffClearAll();
-        setBeeperOffMask(sbufReadU32(src));
+        beeperConfigMutable()->beeper_off_flags = sbufReadU32(src);
         if (sbufBytesRemaining(src) >= 1) {
             beeperConfigMutable()->dshotBeaconTone = sbufReadU8(src);
         }
@@ -1893,9 +1920,15 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             rxConfigMutable()->airModeActivateThreshold = (sbufReadU16(src) - 1000) / 10;
         }
         if (sbufBytesRemaining(src) >= 6) {
-            rxConfigMutable()->rx_spi_protocol = sbufReadU8(src);
-            rxConfigMutable()->rx_spi_id = sbufReadU32(src);
-            rxConfigMutable()->rx_spi_rf_channel_count = sbufReadU8(src);
+#ifdef USE_RX_SPI
+            rxSpiConfigMutable()->rx_spi_protocol = sbufReadU8(src);
+            rxSpiConfigMutable()->rx_spi_id = sbufReadU32(src);
+            rxSpiConfigMutable()->rx_spi_rf_channel_count = sbufReadU8(src);
+#else
+            sbufReadU8(src);
+            sbufReadU32(src);
+            sbufReadU8(src);
+#endif
         }
         if (sbufBytesRemaining(src) >= 1) {
             rxConfigMutable()->fpvCamAngleDegrees = sbufReadU8(src);
@@ -1906,7 +1939,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         failsafeConfigMutable()->failsafe_delay = sbufReadU8(src);
         failsafeConfigMutable()->failsafe_off_delay = sbufReadU8(src);
         failsafeConfigMutable()->failsafe_throttle = sbufReadU16(src);
-        failsafeConfigMutable()->failsafe_kill_switch = sbufReadU8(src);
+        failsafeConfigMutable()->failsafe_switch_mode = sbufReadU8(src);
         failsafeConfigMutable()->failsafe_throttle_low_delay = sbufReadU16(src);
         failsafeConfigMutable()->failsafe_procedure = sbufReadU8(src);
         break;
@@ -2040,6 +2073,47 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         setRssiMsp(sbufReadU8(src));
 
         break;
+
+#if defined(USE_BOARD_INFO)
+    case MSP_SET_BOARD_INFO:
+        if (!boardInformationIsSet()) {
+            uint8_t length = sbufReadU8(src);
+            char boardName[MAX_BOARD_NAME_LENGTH + 1];
+            sbufReadData(src, boardName, MIN(length, MAX_BOARD_NAME_LENGTH));
+            if (length > MAX_BOARD_NAME_LENGTH) {
+                sbufAdvance(src, length - MAX_BOARD_NAME_LENGTH);
+            }
+            boardName[length] = '\0';
+            length = sbufReadU8(src);
+            char manufacturerId[MAX_MANUFACTURER_ID_LENGTH + 1];
+            sbufReadData(src, manufacturerId, MIN(length, MAX_MANUFACTURER_ID_LENGTH));
+            if (length > MAX_MANUFACTURER_ID_LENGTH) {
+                sbufAdvance(src, length - MAX_MANUFACTURER_ID_LENGTH);
+            }
+            manufacturerId[length] = '\0';
+
+            setBoardName(boardName);
+            setManufacturerId(manufacturerId);
+            persistBoardInformation();
+        } else {
+            return MSP_RESULT_ERROR;
+        }
+
+        break;
+#if defined(USE_SIGNATURE)
+    case MSP_SET_SIGNATURE:
+        if (!signatureIsSet()) {
+            uint8_t signature[SIGNATURE_LENGTH];
+            sbufReadData(src, signature, SIGNATURE_LENGTH);
+            setSignature(signature);
+            persistSignature();
+        } else {
+            return MSP_RESULT_ERROR;
+        }
+
+        break;
+#endif
+#endif // USE_BOARD_INFO
     default:
         // we do not know how to handle the (valid) message, indicate error MSP $M!
         return MSP_RESULT_ERROR;

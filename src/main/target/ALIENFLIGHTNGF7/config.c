@@ -21,7 +21,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #ifdef USE_TARGET_CONFIG
 #include "common/axis.h"
@@ -34,6 +34,8 @@
 
 #include "flight/mixer.h"
 #include "flight/pid.h"
+
+#include "pg/rx.h"
 
 #include "rx/rx.h"
 

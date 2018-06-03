@@ -27,7 +27,6 @@
 #include <ctype.h>
 
 #include "platform.h"
-#include "common/time.h"
 
 // FIXME remove this for targets that don't need a CLI.  Perhaps use a no-op macro when USE_CLI is not enabled
 // signal that we're in cli mode
@@ -51,6 +50,8 @@ extern uint8_t __config_end;
 #include "common/color.h"
 #include "common/maths.h"
 #include "common/printf.h"
+#include "common/strtol.h"
+#include "common/time.h"
 #include "common/typeconversion.h"
 #include "common/utils.h"
 
@@ -84,6 +85,7 @@ extern uint8_t __config_end;
 #include "drivers/vtx_common.h"
 #include "drivers/usb_msc.h"
 
+#include "fc/board_info.h"
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/fc_core.h"
@@ -92,11 +94,11 @@ extern uint8_t __config_end;
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "flight/position.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
+#include "flight/position.h"
 #include "flight/servos.h"
 
 #include "interface/cli.h"
@@ -120,12 +122,15 @@ extern uint8_t __config_end;
 #include "pg/adc.h"
 #include "pg/beeper.h"
 #include "pg/beeper_dev.h"
+#include "pg/board.h"
 #include "pg/bus_i2c.h"
 #include "pg/bus_spi.h"
 #include "pg/max7456.h"
 #include "pg/pinio.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/rx.h"
+#include "pg/rx_spi.h"
 #include "pg/rx_pwm.h"
 #include "pg/timerio.h"
 #include "pg/usb.h"
@@ -169,8 +174,19 @@ static uint32_t bufferIndex = 0;
 
 static bool configIsInCopy = false;
 
+#define CURRENT_PROFILE_INDEX -1
+static int8_t pidProfileIndexToUse = CURRENT_PROFILE_INDEX;
+static int8_t rateProfileIndexToUse = CURRENT_PROFILE_INDEX;
+
+#if defined(USE_BOARD_INFO)
+static bool boardInformationUpdated = false;
+#if defined(USE_SIGNATURE)
+static bool signatureUpdated = false;
+#endif
+#endif // USE_BOARD_INFO
+
 static const char* const emptyName = "-";
-static const char* const emptryString = "";
+static const char* const emptyString = "";
 
 #ifndef USE_QUAD_MIXER_ONLY
 // sync this with mixerMode_e
@@ -214,6 +230,42 @@ static const char * const *sensorHardwareNames[] = {
     lookupTableGyroHardware, lookupTableAccHardware, lookupTableBaroHardware, lookupTableMagHardware, lookupTableRangefinderHardware
 };
 #endif // USE_SENSOR_NAMES
+
+static void backupPgConfig(const pgRegistry_t *pg)
+{
+    memcpy(pg->copy, pg->address, pg->size);
+}
+
+static void restorePgConfig(const pgRegistry_t *pg)
+{
+    memcpy(pg->address, pg->copy, pg->size);
+}
+
+static void backupConfigs(void)
+{
+    // make copies of configs to do differencing
+    PG_FOREACH(pg) {
+        backupPgConfig(pg);
+    }
+
+    configIsInCopy = true;
+}
+
+static void restoreConfigs(void)
+{
+    PG_FOREACH(pg) {
+        restorePgConfig(pg);
+    }
+
+    configIsInCopy = false;
+}
+
+static void backupAndResetConfigs(void)
+{
+    backupConfigs();
+    // reset all configs to defaults to do differencing
+    resetConfigs();
+}
 
 static void cliPrint(const char *str)
 {
@@ -265,20 +317,14 @@ static void cliPrintfva(const char *format, va_list va)
     bufWriterFlush(cliWriter);
 }
 
-static void cliPrintLinefva(const char *format, va_list va)
-{
-    tfp_format(cliWriter, cliPutp, format, va);
-    bufWriterFlush(cliWriter);
-    cliPrintLinefeed();
-}
-
 static bool cliDumpPrintLinef(uint8_t dumpMask, bool equalsDefault, const char *format, ...)
 {
     if (!((dumpMask & DO_DIFF) && equalsDefault)) {
         va_list va;
         va_start(va, format);
-        cliPrintLinefva(format, va);
+        cliPrintfva(format, va);
         va_end(va);
+        cliPrintLinefeed();
         return true;
     } else {
         return false;
@@ -297,8 +343,9 @@ static bool cliDefaultPrintLinef(uint8_t dumpMask, bool equalsDefault, const cha
 
         va_list va;
         va_start(va, format);
-        cliPrintLinefva(format, va);
+        cliPrintfva(format, va);
         va_end(va);
+        cliPrintLinefeed();
         return true;
     } else {
         return false;
@@ -318,8 +365,19 @@ static void cliPrintLinef(const char *format, ...)
 {
     va_list va;
     va_start(va, format);
-    cliPrintLinefva(format, va);
+    cliPrintfva(format, va);
     va_end(va);
+    cliPrintLinefeed();
+}
+
+static void cliPrintErrorLinef(const char *format, ...)
+{
+    cliPrint("###ERROR### ");
+    va_list va;
+    va_start(va, format);
+    cliPrintfva(format, va);
+    va_end(va);
+    cliPrintLinefeed();
 }
 
 
@@ -433,15 +491,26 @@ static bool valuePtrEqualsDefault(const clivalue_t *var, const void *ptr, const 
     return result;
 }
 
+static uint8_t getPidProfileIndexToUse()
+{
+    return pidProfileIndexToUse == CURRENT_PROFILE_INDEX ? getCurrentPidProfileIndex() : pidProfileIndexToUse;
+}
+
+static uint8_t getRateProfileIndexToUse()
+{
+    return rateProfileIndexToUse == CURRENT_PROFILE_INDEX ? getCurrentControlRateProfileIndex() : rateProfileIndexToUse;
+}
+
+
 static uint16_t getValueOffset(const clivalue_t *value)
 {
     switch (value->type & VALUE_SECTION_MASK) {
     case MASTER_VALUE:
         return value->offset;
     case PROFILE_VALUE:
-        return value->offset + sizeof(pidProfile_t) * getCurrentPidProfileIndex();
+        return value->offset + sizeof(pidProfile_t) * getPidProfileIndexToUse();
     case PROFILE_RATE_VALUE:
-        return value->offset + sizeof(controlRateConfig_t) * getCurrentControlRateProfileIndex();
+        return value->offset + sizeof(controlRateConfig_t) * getRateProfileIndexToUse();
     }
     return 0;
 }
@@ -449,7 +518,11 @@ static uint16_t getValueOffset(const clivalue_t *value)
 void *cliGetValuePointer(const clivalue_t *value)
 {
     const pgRegistry_t* rec = pgFind(value->pgn);
-    return CONST_CAST(void *, rec->address + getValueOffset(value));
+    if (configIsInCopy) {
+        return CONST_CAST(void *, rec->copy + getValueOffset(value));
+    } else {
+        return CONST_CAST(void *, rec->address + getValueOffset(value));
+    }
 }
 
 const void *cliGetDefaultPointer(const clivalue_t *value)
@@ -611,12 +684,12 @@ static void cliPrompt(void)
 
 static void cliShowParseError(void)
 {
-    cliPrintLine("Parse error");
+    cliPrintErrorLinef("Parse error");
 }
 
 static void cliShowArgumentRangeError(char *name, int min, int max)
 {
-    cliPrintLinef("%s not between %d and %d", name, min, max);
+    cliPrintErrorLinef("%s not between %d and %d", name, min, max);
 }
 
 static const char *nextArg(const char *currentArg)
@@ -1321,7 +1394,7 @@ static void cliMotorMix(char *cmdline)
             len = strlen(ptr);
             for (uint32_t i = 0; ; i++) {
                 if (mixerNames[i] == NULL) {
-                    cliPrintLine("Invalid name");
+                    cliPrintErrorLinef("Invalid name");
                     break;
                 }
                 if (strncasecmp(ptr, mixerNames[i], len) == 0) {
@@ -1803,7 +1876,7 @@ static void cliServoMix(char *cmdline)
             len = strlen(ptr);
             for (uint32_t i = 0; ; i++) {
                 if (mixerNames[i] == NULL) {
-                    cliPrintLine("Invalid name");
+                    cliPrintErrorLinef("Invalid name");
                     break;
                 }
                 if (strncasecmp(ptr, mixerNames[i], len) == 0) {
@@ -2181,19 +2254,120 @@ static void cliName(char *cmdline)
     printName(DUMP_MASTER, pilotConfig());
 }
 
+#if defined(USE_BOARD_INFO)
+
+#define ERROR_MESSAGE "%s cannot be changed. Current value: '%s'"
+
+static void cliBoardName(char *cmdline)
+{
+    const unsigned int len = strlen(cmdline);
+    if (len > 0 && boardInformationIsSet() && (len != strlen(getBoardName()) || strncmp(getBoardName(), cmdline, len))) {
+        cliPrintErrorLinef(ERROR_MESSAGE, "board_name", getBoardName());
+    } else {
+        if (len > 0) {
+            setBoardName(cmdline);
+            boardInformationUpdated = true;
+        }
+        cliPrintLinef("board_name %s", getBoardName());
+    }
+}
+
+static void cliManufacturerId(char *cmdline)
+{
+    const unsigned int len = strlen(cmdline);
+    if (len > 0 && boardInformationIsSet() && (len != strlen(getManufacturerId()) || strncmp(getManufacturerId(), cmdline, len))) {
+        cliPrintErrorLinef(ERROR_MESSAGE, "manufacturer_id", getManufacturerId());
+    } else {
+        if (len > 0) {
+            setManufacturerId(cmdline);
+            boardInformationUpdated = true;
+        }
+        cliPrintLinef("manufacturer_id %s", getManufacturerId());
+    }
+}
+
+#if defined(USE_SIGNATURE)
+static void writeSignature(char *signatureStr, uint8_t *signature)
+{
+    for (unsigned i = 0; i < SIGNATURE_LENGTH; i++) {
+        tfp_sprintf(&signatureStr[2 * i], "%02x", signature[i]);
+    }
+}
+
+static void cliSignature(char *cmdline)
+{
+    const int len = strlen(cmdline);
+
+    uint8_t signature[SIGNATURE_LENGTH] = {0};
+    if (len > 0) {
+        if (len != 2 * SIGNATURE_LENGTH) {
+            cliPrintErrorLinef("Invalid length: %d (expected: %d)", len, 2 * SIGNATURE_LENGTH);
+
+            return;
+        }
+
+#define BLOCK_SIZE 2
+        for (unsigned i = 0; i < SIGNATURE_LENGTH; i++) {
+            char temp[BLOCK_SIZE + 1];
+            strncpy(temp, &cmdline[i * BLOCK_SIZE], BLOCK_SIZE);
+            temp[BLOCK_SIZE] = '\0';
+            char *end;
+            unsigned result = strtoul(temp, &end, 16);
+            if (end == &temp[BLOCK_SIZE]) {
+                signature[i] = result;
+            } else {
+                cliPrintErrorLinef("Invalid character found: %c", end[0]);
+
+                return;
+            }
+        }
+#undef BLOCK_SIZE
+    }
+
+    char signatureStr[SIGNATURE_LENGTH * 2 + 1] = {0};
+    if (len > 0 && signatureIsSet() && memcmp(signature, getSignature(), SIGNATURE_LENGTH)) {
+        writeSignature(signatureStr, getSignature());
+        cliPrintErrorLinef(ERROR_MESSAGE, "signature", signatureStr);
+    } else {
+        if (len > 0) {
+            setSignature(signature);
+
+            signatureUpdated = true;
+
+            writeSignature(signatureStr, getSignature());
+        } else if (signatureUpdated || signatureIsSet()) {
+            writeSignature(signatureStr, getSignature());
+        }
+
+        cliPrintLinef("signature %s", signatureStr);
+    }
+}
+#endif
+
+#undef ERROR_MESSAGE
+
+#endif // USE_BOARD_INFO
+
+static void cliMcuId(char *cmdline)
+{
+    UNUSED(cmdline);
+
+    cliPrintLinef("mcu_id %08x%08x%08x", U_ID_0, U_ID_1, U_ID_2);
+}
+
 static void printFeature(uint8_t dumpMask, const featureConfig_t *featureConfig, const featureConfig_t *featureConfigDefault)
 {
     const uint32_t mask = featureConfig->enabledFeatures;
     const uint32_t defaultMask = featureConfigDefault->enabledFeatures;
     for (uint32_t i = 0; featureNames[i]; i++) { // disabled features first
-        if (strcmp(featureNames[i], emptryString) != 0) { //Skip unused
+        if (strcmp(featureNames[i], emptyString) != 0) { //Skip unused
             const char *format = "feature -%s";
             cliDefaultPrintLinef(dumpMask, (defaultMask | ~mask) & (1 << i), format, featureNames[i]);
             cliDumpPrintLinef(dumpMask, (~defaultMask | mask) & (1 << i), format, featureNames[i]);
         }
     }
     for (uint32_t i = 0; featureNames[i]; i++) {  // enabled features
-        if (strcmp(featureNames[i], emptryString) != 0) { //Skip unused
+        if (strcmp(featureNames[i], emptyString) != 0) { //Skip unused
             const char *format = "feature %s";
             if (defaultMask & (1 << i)) {
                 cliDefaultPrintLinef(dumpMask, (~defaultMask | mask) & (1 << i), format, featureNames[i]);
@@ -2224,7 +2398,7 @@ static void cliFeature(char *cmdline)
         for (uint32_t i = 0; ; i++) {
             if (featureNames[i] == NULL)
                 break;
-            if (strcmp(featureNames[i], emptryString) != 0) //Skip unused
+            if (strcmp(featureNames[i], emptyString) != 0) //Skip unused
                 cliPrintf(" %s", featureNames[i]);
         }
         cliPrintLinefeed();
@@ -2240,7 +2414,7 @@ static void cliFeature(char *cmdline)
 
         for (uint32_t i = 0; ; i++) {
             if (featureNames[i] == NULL) {
-                cliPrintLine("Invalid name");
+                cliPrintErrorLinef("Invalid name");
                 break;
             }
 
@@ -2273,46 +2447,45 @@ static void cliFeature(char *cmdline)
     }
 }
 
-#ifdef USE_BEEPER
-static void printBeeper(uint8_t dumpMask, const beeperConfig_t *beeperConfig, const beeperConfig_t *beeperConfigDefault)
+#if defined(USE_BEEPER)
+static void printBeeper(uint8_t dumpMask, const uint32_t offFlags, const uint32_t offFlagsDefault, const char *name)
 {
     const uint8_t beeperCount = beeperTableEntryCount();
-    const uint32_t mask = beeperConfig->beeper_off_flags;
-    const uint32_t defaultMask = beeperConfigDefault->beeper_off_flags;
     for (int32_t i = 0; i < beeperCount - 2; i++) {
-        const char *formatOff = "beeper -%s";
-        const char *formatOn = "beeper %s";
+        const char *formatOff = "%s -%s";
+        const char *formatOn = "%s %s";
         const uint32_t beeperModeMask = beeperModeMaskForTableIndex(i);
-        cliDefaultPrintLinef(dumpMask, ~(mask ^ defaultMask) & beeperModeMask, mask & beeperModeMask ? formatOn : formatOff, beeperNameForTableIndex(i));
-        cliDumpPrintLinef(dumpMask, ~(mask ^ defaultMask) & beeperModeMask, mask & beeperModeMask ? formatOff : formatOn, beeperNameForTableIndex(i));
+        cliDefaultPrintLinef(dumpMask, ~(offFlags ^ offFlagsDefault) & beeperModeMask, offFlags & beeperModeMask ? formatOn : formatOff, name, beeperNameForTableIndex(i));
+        cliDumpPrintLinef(dumpMask, ~(offFlags ^ offFlagsDefault) & beeperModeMask, offFlags & beeperModeMask ? formatOff : formatOn, name, beeperNameForTableIndex(i));
     }
 }
 
-static void cliBeeper(char *cmdline)
+static void processBeeperCommand(char *cmdline, uint32_t *offFlags, const uint32_t allowedFlags)
 {
     uint32_t len = strlen(cmdline);
     uint8_t beeperCount = beeperTableEntryCount();
-    uint32_t mask = getBeeperOffMask();
 
     if (len == 0) {
         cliPrintf("Disabled:");
         for (int32_t i = 0; ; i++) {
-            if (i == beeperCount - 2) {
-                if (mask == 0)
+            if (i == beeperCount - 1) {
+                if (*offFlags == 0)
                     cliPrint("  none");
                 break;
             }
 
-            if (mask & beeperModeMaskForTableIndex(i))
+            if (beeperModeMaskForTableIndex(i) & *offFlags)
                 cliPrintf("  %s", beeperNameForTableIndex(i));
         }
         cliPrintLinefeed();
     } else if (strncasecmp(cmdline, "list", len) == 0) {
         cliPrint("Available:");
-        for (uint32_t i = 0; i < beeperCount; i++)
-            cliPrintf(" %s", beeperNameForTableIndex(i));
+        for (uint32_t i = 0; i < beeperCount; i++) {
+            if (beeperModeMaskForTableIndex(i) & allowedFlags) {
+                cliPrintf(" %s", beeperNameForTableIndex(i));
+            }
+        }
         cliPrintLinefeed();
-        return;
     } else {
         bool remove = false;
         if (cmdline[0] == '-') {
@@ -2323,30 +2496,24 @@ static void cliBeeper(char *cmdline)
 
         for (uint32_t i = 0; ; i++) {
             if (i == beeperCount) {
-                cliPrintLine("Invalid name");
+                cliPrintErrorLinef("Invalid name");
                 break;
             }
-            if (strncasecmp(cmdline, beeperNameForTableIndex(i), len) == 0) {
+            if (strncasecmp(cmdline, beeperNameForTableIndex(i), len) == 0 && beeperModeMaskForTableIndex(i) & (allowedFlags | BEEPER_GET_FLAG(BEEPER_ALL))) {
                 if (remove) { // beeper off
-                    if (i == BEEPER_ALL-1)
-                        beeperOffSetAll(beeperCount-2);
-                    else
-                        if (i == BEEPER_PREFERENCE-1)
-                            setBeeperOffMask(getPreferredBeeperOffMask());
-                        else {
-                            beeperOffSet(beeperModeMaskForTableIndex(i));
-                        }
+                    if (i == BEEPER_ALL - 1) {
+                        *offFlags = allowedFlags;
+                    } else {
+                        *offFlags |= beeperModeMaskForTableIndex(i);
+                    }
                     cliPrint("Disabled");
                 }
                 else { // beeper on
-                    if (i == BEEPER_ALL-1)
-                        beeperOffClearAll();
-                    else
-                        if (i == BEEPER_PREFERENCE-1)
-                            setPreferredBeeperOffMask(getBeeperOffMask());
-                        else {
-                            beeperOffClear(beeperModeMaskForTableIndex(i));
-                        }
+                    if (i == BEEPER_ALL - 1) {
+                        *offFlags = 0;
+                    } else {
+                        *offFlags &= ~beeperModeMaskForTableIndex(i);
+                    }
                     cliPrint("Enabled");
                 }
             cliPrintLinef(" %s", beeperNameForTableIndex(i));
@@ -2355,12 +2522,24 @@ static void cliBeeper(char *cmdline)
         }
     }
 }
+
+#if defined(USE_DSHOT)
+static void cliBeacon(char *cmdline)
+{
+    processBeeperCommand(cmdline, &(beeperConfigMutable()->dshotBeaconOffFlags), DSHOT_BEACON_ALLOWED_MODES);
+}
 #endif
 
+static void cliBeeper(char *cmdline)
+{
+    processBeeperCommand(cmdline, &(beeperConfigMutable()->beeper_off_flags), BEEPER_ALLOWED_MODES);
+}
+#endif
+
+#ifdef USE_RX_FRSKY_SPI
 void cliFrSkyBind(char *cmdline){
     UNUSED(cmdline);
-    switch (rxConfig()->rx_spi_protocol) {
-#ifdef USE_RX_FRSKY_SPI
+    switch (rxSpiConfig()->rx_spi_protocol) {
     case RX_SPI_FRSKY_D:
     case RX_SPI_FRSKY_X:
         frSkySpiBind();
@@ -2368,13 +2547,13 @@ void cliFrSkyBind(char *cmdline){
         cliPrint("Binding...");
 
         break;
-#endif
     default:
         cliPrint("Not supported.");
 
         break;
     }
 }
+#endif
 
 static void printMap(uint8_t dumpMask, const rxConfig_t *rxConfig, const rxConfig_t *defaultRxConfig)
 {
@@ -2507,20 +2686,20 @@ static void cliGpsPassthrough(char *cmdline)
 #if defined(USE_GYRO_REGISTER_DUMP) && !defined(SIMULATOR_BUILD)
 static void cliPrintGyroRegisters(uint8_t whichSensor)
 {
-    tfp_printf("# WHO_AM_I    0x%X\r\n", gyroReadRegister(whichSensor, MPU_RA_WHO_AM_I));
-    tfp_printf("# CONFIG      0x%X\r\n", gyroReadRegister(whichSensor, MPU_RA_CONFIG));
-    tfp_printf("# GYRO_CONFIG 0x%X\r\n", gyroReadRegister(whichSensor, MPU_RA_GYRO_CONFIG));
+    cliPrintLinef("# WHO_AM_I    0x%X", gyroReadRegister(whichSensor, MPU_RA_WHO_AM_I));
+    cliPrintLinef("# CONFIG      0x%X", gyroReadRegister(whichSensor, MPU_RA_CONFIG));
+    cliPrintLinef("# GYRO_CONFIG 0x%X", gyroReadRegister(whichSensor, MPU_RA_GYRO_CONFIG));
 }
 
 static void cliDumpGyroRegisters(char *cmdline)
 {
 #ifdef USE_DUAL_GYRO
     if ((gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_1) || (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_BOTH)) {
-        tfp_printf("\r\n# Gyro 1\r\n");
+        cliPrintLinef("\r\n# Gyro 1");
         cliPrintGyroRegisters(GYRO_CONFIG_USE_GYRO_1);
     }
     if ((gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_2) || (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_BOTH)) {
-        tfp_printf("\r\n# Gyro 2\r\n");
+        cliPrintLinef("\r\n# Gyro 2");
         cliPrintGyroRegisters(GYRO_CONFIG_USE_GYRO_2);
     }
 #else
@@ -2534,11 +2713,11 @@ static void cliDumpGyroRegisters(char *cmdline)
 static int parseOutputIndex(char *pch, bool allowAllEscs) {
     int outputIndex = atoi(pch);
     if ((outputIndex >= 0) && (outputIndex < getMotorCount())) {
-        tfp_printf("Using output %d.\r\n", outputIndex);
+        cliPrintLinef("Using output %d.", outputIndex);
     } else if (allowAllEscs && outputIndex == ALL_MOTORS) {
-        tfp_printf("Using all outputs.\r\n");
+        cliPrintLinef("Using all outputs.");
     } else {
-        tfp_printf("Invalid output number. Range: 0  %d.\r\n", getMotorCount() - 1);
+        cliPrintErrorLinef("Invalid output number. Range: 0  %d.", getMotorCount() - 1);
 
         return -1;
     }
@@ -2709,7 +2888,7 @@ void printEscInfo(const uint8_t *escInfoBuffer, uint8_t bytesRead)
                     }
                 }
             } else {
-                cliPrintLine("Checksum Error.");
+                cliPrintErrorLinef("Checksum Error.");
             }
         }
     }
@@ -2727,7 +2906,7 @@ static void executeEscInfoCommand(uint8_t escIndex)
 
     startEscDataRead(escInfoBuffer, ESC_INFO_BLHELI32_EXPECTED_FRAME_SIZE);
 
-    pwmWriteDshotCommand(escIndex, getMotorCount(), DSHOT_CMD_ESC_INFO);
+    pwmWriteDshotCommand(escIndex, getMotorCount(), DSHOT_CMD_ESC_INFO, true);
 
     delay(10);
 
@@ -2774,7 +2953,7 @@ static void cliDshotProg(char *cmdline)
                     }
 
                     if (command != DSHOT_CMD_ESC_INFO) {
-                        pwmWriteDshotCommand(escIndex, getMotorCount(), command);
+                        pwmWriteDshotCommand(escIndex, getMotorCount(), command, true);
                     } else {
 #if defined(USE_ESC_SENSOR) && defined(USE_ESC_SENSOR_INFO)
                         if (feature(FEATURE_ESC_SENSOR)) {
@@ -2794,11 +2973,8 @@ static void cliDshotProg(char *cmdline)
 
                     cliPrintLinef("Command Sent: %d", command);
 
-                    if (command <= 5) {
-                        delay(20); // wait for sound output to finish
-                    }
                 } else {
-                    cliPrintLinef("Invalid command. Range: 1 - %d.", DSHOT_MIN_THROTTLE - 1);
+                    cliPrintErrorLinef("Invalid command. Range: 1 - %d.", DSHOT_MIN_THROTTLE - 1);
                 }
             }
 
@@ -2890,7 +3066,7 @@ static void cliMixer(char *cmdline)
 
     for (uint32_t i = 0; ; i++) {
         if (mixerNames[i] == NULL) {
-            cliPrintLine("Invalid name");
+            cliPrintErrorLinef("Invalid name");
             return;
         }
         if (strncasecmp(cmdline, mixerNames[i], len) == 0) {
@@ -2974,7 +3150,7 @@ static void cliPlaySound(char *cmdline)
                 if ((name=beeperNameForTableIndex(i)) != NULL)
                     break;   //if name OK then play sound below
                 if (i == lastSoundIdx + 1) {     //prevent infinite loop
-                    cliPrintLine("Error playing sound");
+                    cliPrintErrorLinef("Error playing sound");
                     return;
                 }
             }
@@ -2996,12 +3172,12 @@ static void cliPlaySound(char *cmdline)
 static void cliProfile(char *cmdline)
 {
     if (isEmpty(cmdline)) {
-        cliPrintLinef("profile %d", getCurrentPidProfileIndex());
+        cliPrintLinef("profile %d", getPidProfileIndexToUse());
         return;
     } else {
         const int i = atoi(cmdline);
         if (i >= 0 && i < MAX_PROFILE_COUNT) {
-            systemConfigMutable()->pidProfileIndex = i;
+            changePidProfile(i);
             cliProfile("");
         }
     }
@@ -3010,7 +3186,7 @@ static void cliProfile(char *cmdline)
 static void cliRateProfile(char *cmdline)
 {
     if (isEmpty(cmdline)) {
-        cliPrintLinef("rateprofile %d", getCurrentControlRateProfileIndex());
+        cliPrintLinef("rateprofile %d", getRateProfileIndexToUse());
         return;
     } else {
         const int i = atoi(cmdline);
@@ -3027,11 +3203,15 @@ static void cliDumpPidProfile(uint8_t pidProfileIndex, uint8_t dumpMask)
         // Faulty values
         return;
     }
-    changePidProfile(pidProfileIndex);
+
+    pidProfileIndexToUse = pidProfileIndex;
+
     cliPrintHashLine("profile");
     cliProfile("");
     cliPrintLinefeed();
     dumpAllValues(PROFILE_VALUE, dumpMask);
+
+    pidProfileIndexToUse = CURRENT_PROFILE_INDEX;
 }
 
 static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask)
@@ -3040,11 +3220,15 @@ static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask)
         // Faulty values
         return;
     }
-    changeControlRateProfile(rateProfileIndex);
+
+    rateProfileIndexToUse = rateProfileIndex;
+
     cliPrintHashLine("rateprofile");
     cliRateProfile("");
     cliPrintLinefeed();
     dumpAllValues(PROFILE_RATE_VALUE, dumpMask);
+
+    rateProfileIndexToUse = CURRENT_PROFILE_INDEX;
 }
 
 static void cliSave(char *cmdline)
@@ -3052,7 +3236,20 @@ static void cliSave(char *cmdline)
     UNUSED(cmdline);
 
     cliPrintHashLine("saving");
+
+#if defined(USE_BOARD_INFO)
+    if (boardInformationUpdated) {
+        persistBoardInformation();
+    }
+#if defined(USE_SIGNATURE)
+    if (signatureUpdated) {
+        persistSignature();
+    }
+#endif
+#endif // USE_BOARD_INFO
+
     writeEEPROM();
+
     cliReboot();
 }
 
@@ -3069,9 +3266,26 @@ static void cliDefaults(char *cmdline)
     }
 
     cliPrintHashLine("resetting to defaults");
+
     resetConfigs();
+
     if (saveConfigs) {
         cliSave(NULL);
+    }
+}
+
+void cliPrintVarDefault(const clivalue_t *value)
+{
+    const pgRegistry_t *pg = pgFind(value->pgn);
+    if (pg) {
+        const char *defaultFormat = "Default value: ";
+        const int valueOffset = getValueOffset(value);
+        const bool equalsDefault = valuePtrEqualsDefault(value, pg->copy + valueOffset, pg->address + valueOffset);
+        if (!equalsDefault) {
+            cliPrintf(defaultFormat, value->name);
+            printValuePointer(value, (uint8_t*)pg->address + valueOffset, false);
+            cliPrintLinefeed();
+        }
     }
 }
 
@@ -3080,25 +3294,49 @@ STATIC_UNIT_TESTED void cliGet(char *cmdline)
     const clivalue_t *val;
     int matchedCommands = 0;
 
+    pidProfileIndexToUse = getCurrentPidProfileIndex();
+    rateProfileIndexToUse = getCurrentControlRateProfileIndex();
+
+    backupAndResetConfigs();
+
     for (uint32_t i = 0; i < valueTableEntryCount; i++) {
         if (strcasestr(valueTable[i].name, cmdline)) {
             val = &valueTable[i];
+            if (matchedCommands > 0) {
+                cliPrintLinefeed();
+            }
             cliPrintf("%s = ", valueTable[i].name);
             cliPrintVar(val, 0);
             cliPrintLinefeed();
-            cliPrintVarRange(val);
-            cliPrintLinefeed();
+            switch (val->type & VALUE_SECTION_MASK) {
+            case PROFILE_VALUE:
+                cliProfile("");
 
+                break;
+            case PROFILE_RATE_VALUE:
+                cliRateProfile("");
+
+                break;
+            default:
+
+                break;
+            }
+            cliPrintVarRange(val);
+            cliPrintVarDefault(val);
             matchedCommands++;
         }
     }
 
+    restoreConfigs();
+
+    pidProfileIndexToUse = CURRENT_PROFILE_INDEX;
+    rateProfileIndexToUse = CURRENT_PROFILE_INDEX;
 
     if (matchedCommands) {
         return;
     }
 
-    cliPrintLine("Invalid name");
+    cliPrintErrorLinef("Invalid name");
 }
 
 static uint8_t getWordLength(char *bufBegin, char *bufEnd)
@@ -3246,14 +3484,14 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
                     cliPrintf("%s set to ", val->name);
                     cliPrintVar(val, 0);
                 } else {
-                    cliPrintLine("Invalid value");
+                    cliPrintErrorLinef("Invalid value");
                     cliPrintVarRange(val);
                 }
 
                 return;
             }
         }
-        cliPrintLine("Invalid name");
+        cliPrintErrorLinef("Invalid name");
     } else {
         // no equals, check for matching variables.
         cliGet(cmdline);
@@ -3500,6 +3738,9 @@ const cliResourceValue_t resourceTable[] = {
 #endif
 #ifdef USE_MAG
     DEFS( OWNER_COMPASS_CS,    PG_COMPASS_CONFIG, compassConfig_t, mag_spi_csn ),
+#ifdef USE_MAG_DATA_READY_SIGNAL
+    DEFS( OWNER_COMPASS_EXTI,  PG_COMPASS_CONFIG, compassConfig_t, interruptTag ),
+#endif
 #endif
 #ifdef USE_SDCARD
     DEFS( OWNER_SDCARD_CS,     PG_SDCARD_CONFIG, sdcardConfig_t, chipSelectTag ),
@@ -3516,6 +3757,13 @@ const cliResourceValue_t resourceTable[] = {
 #endif
 #ifdef USE_MAX7456
     DEFS( OWNER_OSD_CS,        PG_MAX7456_CONFIG, max7456Config_t, csTag ),
+#endif
+#ifdef USE_SPI
+    DEFA( OWNER_SPI_PREINIT_IPU, PG_SPI_PREINIT_IPU_CONFIG, spiCs_t, csnTag, SPI_PREINIT_IPU_COUNT ),
+    DEFA( OWNER_SPI_PREINIT_OPU, PG_SPI_PREINIT_OPU_CONFIG, spiCs_t, csnTag, SPI_PREINIT_OPU_COUNT ),
+#endif
+#ifdef USE_RX_SPI
+    DEFS( OWNER_RX_SPI_CS,     PG_RX_SPI_CONFIG, rxSpiConfig_t, csnTag ),
 #endif
 };
 
@@ -3674,7 +3922,7 @@ static void cliResource(char *cmdline)
     pch = strtok_r(cmdline, " ", &saveptr);
     for (resourceIndex = 0; ; resourceIndex++) {
         if (resourceIndex >= ARRAYLEN(resourceTable)) {
-            cliPrintLine("Invalid");
+            cliPrintErrorLinef("Invalid");
             return;
         }
 
@@ -3825,7 +4073,7 @@ static void cliTimer(char *cmdline)
     }
 
     if (timerIOIndex < 0) {
-        cliPrintLine("Error: out of index");
+        cliPrintErrorLinef("Index out of range.");
         return;
     }
 
@@ -3867,25 +4115,6 @@ error:
 }
 #endif
 
-static void backupConfigs(void)
-{
-    // make copies of configs to do differencing
-    PG_FOREACH(pg) {
-        memcpy(pg->copy, pg->address, pg->size);
-    }
-
-    configIsInCopy = true;
-}
-
-static void restoreConfigs(void)
-{
-    PG_FOREACH(pg) {
-        memcpy(pg->address, pg->copy, pg->size);
-    }
-
-    configIsInCopy = false;
-}
-
 static void printConfig(char *cmdline, bool doDiff)
 {
     uint8_t dumpMask = DUMP_MASTER;
@@ -3905,14 +4134,8 @@ static void printConfig(char *cmdline, bool doDiff)
     if (doDiff) {
         dumpMask = dumpMask | DO_DIFF;
     }
-
-    backupConfigs();
-    // reset all configs to defaults to do differencing
-    resetConfigs();
-
-#if defined(USE_TARGET_CONFIG)
-    targetConfiguration();
-#endif
+    
+    backupAndResetConfigs();
     if (checkCommand(options, "defaults")) {
         dumpMask = dumpMask | SHOW_DEFAULTS;   // add default values as comments for changed values
     }
@@ -3920,6 +4143,19 @@ static void printConfig(char *cmdline, bool doDiff)
     if ((dumpMask & DUMP_MASTER) || (dumpMask & DUMP_ALL)) {
         cliPrintHashLine("version");
         cliVersion(NULL);
+        cliPrintLinefeed();
+
+#if defined(USE_BOARD_INFO)
+        cliBoardName("");
+        cliManufacturerId("");
+#endif
+
+        if (dumpMask & DUMP_ALL) {
+            cliMcuId(NULL);
+#if defined(USE_BOARD_INFO) && defined(USE_SIGNATURE)
+        cliSignature("");
+#endif
+        }
 
         if ((dumpMask & (DUMP_ALL | DO_DIFF)) == (DUMP_ALL | DO_DIFF)) {
             cliPrintHashLine("reset configuration to default settings");
@@ -3960,10 +4196,15 @@ static void printConfig(char *cmdline, bool doDiff)
         cliPrintHashLine("feature");
         printFeature(dumpMask, &featureConfig_Copy, featureConfig());
 
-#ifdef USE_BEEPER
+#if defined(USE_BEEPER)
         cliPrintHashLine("beeper");
-        printBeeper(dumpMask, &beeperConfig_Copy, beeperConfig());
+        printBeeper(dumpMask, beeperConfig_Copy.beeper_off_flags, beeperConfig()->beeper_off_flags, "beeper");
+
+#if defined(USE_DSHOT)
+        cliPrintHashLine("beacon");
+        printBeeper(dumpMask, beeperConfig_Copy.dshotBeaconOffFlags, beeperConfig()->dshotBeaconOffFlags, "beacon");
 #endif
+#endif // USE_BEEPER
 
         cliPrintHashLine("map");
         printMap(dumpMask, &rxConfig_Copy, rxConfig());
@@ -4003,21 +4244,27 @@ static void printConfig(char *cmdline, bool doDiff)
         dumpAllValues(MASTER_VALUE, dumpMask);
 
         if (dumpMask & DUMP_ALL) {
-            const uint8_t pidProfileIndexSave = systemConfig_Copy.pidProfileIndex;
             for (uint32_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
                 cliDumpPidProfile(pidProfileIndex, dumpMask);
             }
-            changePidProfile(pidProfileIndexSave);
             cliPrintHashLine("restore original profile selection");
+
+            pidProfileIndexToUse = systemConfig_Copy.pidProfileIndex;
+
             cliProfile("");
 
-            const uint8_t controlRateProfileIndexSave = systemConfig_Copy.activeRateProfile;
+            pidProfileIndexToUse = CURRENT_PROFILE_INDEX;
+
             for (uint32_t rateIndex = 0; rateIndex < CONTROL_RATE_PROFILE_COUNT; rateIndex++) {
                 cliDumpRateProfile(rateIndex, dumpMask);
             }
-            changeControlRateProfile(controlRateProfileIndexSave);
             cliPrintHashLine("restore original rateprofile selection");
+
+            rateProfileIndexToUse = systemConfig_Copy.activeRateProfile;
+
             cliRateProfile("");
+
+            rateProfileIndexToUse = CURRENT_PROFILE_INDEX;
 
             cliPrintHashLine("save configuration");
             cliPrint("save");
@@ -4118,11 +4365,18 @@ static void cliHelp(char *cmdline);
 const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("adjrange", "configure adjustment ranges", NULL, cliAdjustmentRange),
     CLI_COMMAND_DEF("aux", "configure modes", "<index> <mode> <aux> <start> <end> <logic>", cliAux),
-#ifdef USE_BEEPER
+#if defined(USE_BEEPER)
+#if defined(USE_DSHOT)
+    CLI_COMMAND_DEF("beacon", "turn on/off beeper", "list\r\n"
+        "\t<+|->[name]", cliBeacon),
+#endif
     CLI_COMMAND_DEF("beeper", "turn on/off beeper", "list\r\n"
         "\t<+|->[name]", cliBeeper),
-#endif
+#endif // USE_BEEPER
     CLI_COMMAND_DEF("bl", "reboot into bootloader", NULL, cliBootloader),
+#if defined(USE_BOARD_INFO)
+    CLI_COMMAND_DEF("board_name", "get / set the name of the board model", "[board name]", cliBoardName),
+#endif
 #ifdef USE_LED_STRIP
     CLI_COMMAND_DEF("color", "configure colors", NULL, cliColor),
 #endif
@@ -4165,7 +4419,11 @@ const clicmd_t cmdTable[] = {
 #ifdef USE_LED_STRIP
     CLI_COMMAND_DEF("led", "configure leds", NULL, cliLed),
 #endif
+#if defined(USE_BOARD_INFO)
+    CLI_COMMAND_DEF("manufacturer_id", "get / set the id of the board manufacturer", "[manufacturer id]", cliManufacturerId),
+#endif
     CLI_COMMAND_DEF("map", "configure rc channel order", "[<map>]", cliMap),
+    CLI_COMMAND_DEF("mcu_id", "id of the microcontroller", NULL, cliMcuId),
 #ifndef USE_QUAD_MIXER_ONLY
     CLI_COMMAND_DEF("mixer", "configure mixer", "list\r\n\t<name>", cliMixer),
 #endif
@@ -4200,6 +4458,9 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("servo", "configure servos", NULL, cliServo),
 #endif
     CLI_COMMAND_DEF("set", "change setting", "[<name>=<value>]", cliSet),
+#if defined(USE_BOARD_INFO) && defined(USE_SIGNATURE)
+    CLI_COMMAND_DEF("signature", "get / set the board type signature", "[signature]", cliSignature),
+#endif
 #ifdef USE_SERVOS
     CLI_COMMAND_DEF("smix", "servo mixer", "<rule> <servo> <source> <rate> <speed> <min> <max> <box>\r\n"
         "\treset\r\n"

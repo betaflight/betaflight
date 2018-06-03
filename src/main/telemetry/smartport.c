@@ -40,6 +40,7 @@
 #include "config/feature.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/rx.h"
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/compass/compass.h"

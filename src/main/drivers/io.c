@@ -275,6 +275,17 @@ resourceOwner_e IOGetOwner(IO_t io)
     return ioRec->owner;
 }
 
+bool IOIsFreeOrPreinit(IO_t io)
+{
+    resourceOwner_e owner = IOGetOwner(io);
+
+    if (owner == OWNER_FREE || owner == OWNER_SPI_PREINIT_IPU || owner == OWNER_SPI_PREINIT_OPU) {
+        return true;
+    }
+
+    return false;
+}
+
 #if defined(STM32F1)
 
 void IOConfigGPIO(IO_t io, ioConfig_t cfg)
@@ -414,3 +425,4 @@ IO_t IOGetByTag(ioTag_t tag)
     offset += ioDefUsedOffset[portIdx];
     return ioRecs + offset;
 }
+

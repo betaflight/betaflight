@@ -33,38 +33,26 @@
 
 #define USE_ACC
 #define USE_GYRO
-#define USE_DUAL_GYRO
+
+//define camera control
+#define CAMERA_CONTROL_PIN PE13
 
 // ICM-20689
 #define USE_ACC_SPI_ICM20689
 #define USE_GYRO_SPI_ICM20689
 #define GYRO_ICM20689_ALIGN      CW270_DEG
 #define ACC_ICM20689_ALIGN       CW270_DEG
-//#define MPU_INT_EXTI               PE1
-
-// MPU6000
-#define USE_ACC_SPI_MPU6000
-#define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN       CW270_DEG
-#define ACC_MPU6000_ALIGN        CW270_DEG
-//#define MPU_INT_EXTI                PB9
+#define MPU_INT_EXTI               PE1
 
 #define ICM20689_CS_PIN          SPI4_NSS_PIN
 #define ICM20689_SPI_INSTANCE    SPI4
-#define MPU6000_CS_PIN           SPI3_NSS_PIN
-#define MPU6000_SPI_INSTANCE     SPI3
 #define GYRO_1_CS_PIN            ICM20689_CS_PIN
-#define GYRO_2_CS_PIN            MPU6000_CS_PIN
 #define GYRO_1_SPI_INSTANCE      ICM20689_SPI_INSTANCE
-#define GYRO_2_SPI_INSTANCE      MPU6000_SPI_INSTANCE
 
 #define ACC_1_ALIGN              ACC_ICM20689_ALIGN
-#define ACC_2_ALIGN              ACC_MPU6000_ALIGN
 #define GYRO_1_ALIGN             GYRO_ICM20689_ALIGN
-#define GYRO_2_ALIGN             GYRO_MPU6000_ALIGN
 
-//#define USE_MPU_DATA_READY_SIGNAL
-
+#define USE_MPU_DATA_READY_SIGNAL
 #define USE_EXTI
 
 #define USE_VCP
@@ -107,7 +95,6 @@
 #define USE_SPI
 #define USE_SPI_DEVICE_1   //SD Card
 #define USE_SPI_DEVICE_2   //OSD
-#define USE_SPI_DEVICE_3   //MPU6000
 #define USE_SPI_DEVICE_4   //ICM20689
 
 #define SPI1_NSS_PIN            PA4
@@ -120,16 +107,10 @@
 #define SPI2_MISO_PIN           PB14
 #define SPI2_MOSI_PIN           PB15
 
-#define SPI3_NSS_PIN            PA15
-#define SPI3_SCK_PIN            PB3
-#define SPI3_MISO_PIN           PB4
-#define SPI3_MOSI_PIN           PB5
-
 #define SPI4_NSS_PIN            PE4
 #define SPI4_SCK_PIN            PE2
 #define SPI4_MISO_PIN           PE5
 #define SPI4_MOSI_PIN           PE6
-
 
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI2

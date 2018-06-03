@@ -25,11 +25,13 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #ifdef USE_RX_NRF24
 
 #include "build/build_config.h"
+
+#include "pg/rx.h"
 
 #include "drivers/bus_spi.h"
 #include "drivers/io.h"

@@ -38,6 +38,7 @@
 #include "config/feature.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/rx.h"
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/sensor.h"
@@ -404,6 +405,9 @@ static void sendVoltageAmp(void)
 
     if (telemetryConfig()->frsky_vfas_precision == FRSKY_VFAS_PRECISION_HIGH) {
         // Use new ID 0x39 to send voltage directly in 0.1 volts resolution
+        if (telemetryConfig()->report_cell_voltage && cellCount) {
+            voltage /= cellCount;
+        }
         frSkyHubWriteFrame(ID_VOLTAGE_AMP, voltage);
     } else {
         // send in 0.2 volts resolution

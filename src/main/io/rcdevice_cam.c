@@ -21,6 +21,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "platform.h"
+
+#include "pg/rx.h"
+
 #include "drivers/time.h"
 
 #include "cms/cms.h"

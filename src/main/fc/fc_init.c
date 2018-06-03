@@ -78,6 +78,7 @@
 #include "drivers/usb_msc.h"
 #endif
 
+#include "fc/board_info.h"
 #include "fc/config.h"
 #include "fc/fc_init.h"
 #include "fc/fc_tasks.h"
@@ -90,6 +91,7 @@
 #include "msp/msp_serial.h"
 
 #include "pg/adc.h"
+#include "pg/beeper.h"
 #include "pg/beeper_dev.h"
 #include "pg/bus_i2c.h"
 #include "pg/bus_spi.h"
@@ -97,6 +99,8 @@
 #include "pg/pinio.h"
 #include "pg/piniobox.h"
 #include "pg/pg.h"
+#include "pg/rx.h"
+#include "pg/rx_spi.h"
 #include "pg/rx_pwm.h"
 #include "pg/sdcard.h"
 #include "pg/vcd.h"
@@ -197,73 +201,6 @@ static IO_t busSwitchResetPin        = IO_NONE;
 }
 #endif
 
-#ifdef USE_SPI
-// Pre-initialize all CS pins to input with pull-up.
-// It's sad that we can't do this with an initialized array,
-// since we will be taking care of configurable CS pins shortly.
-
-void spiPreInit(void)
-{
-#ifdef GYRO_1_CS_PIN
-    spiPreInitCs(IO_TAG(GYRO_1_CS_PIN));
-#endif
-#ifdef GYRO_2_CS_PIN
-    spiPreInitCs(IO_TAG(GYRO_2_CS_PIN));
-#endif
-#ifdef MPU6000_CS_PIN
-    spiPreInitCs(IO_TAG(MPU6000_CS_PIN));
-#endif
-#ifdef MPU6500_CS_PIN
-    spiPreInitCs(IO_TAG(MPU6500_CS_PIN));
-#endif
-#ifdef MPU9250_CS_PIN
-    spiPreInitCs(IO_TAG(MPU9250_CS_PIN));
-#endif
-#ifdef ICM20649_CS_PIN
-    spiPreInitCs(IO_TAG(ICM20649_CS_PIN));
-#endif
-#ifdef ICM20689_CS_PIN
-    spiPreInitCs(IO_TAG(ICM20689_CS_PIN));
-#endif
-#ifdef BMI160_CS_PIN
-    spiPreInitCs(IO_TAG(BMI160_CS_PIN));
-#endif
-#ifdef L3GD20_CS_PIN
-    spiPreInitCs(IO_TAG(L3GD20_CS_PIN));
-#endif
-#ifdef MAX7456_SPI_CS_PIN
-    spiPreInitCsOutPU(IO_TAG(MAX7456_SPI_CS_PIN)); // XXX 3.2 workaround for Kakute F4. See comment for spiPreInitCSOutPU.
-#endif
-#ifdef USE_SDCARD
-    spiPreInitCs(sdcardConfig()->chipSelectTag);
-#endif
-#ifdef BMP280_CS_PIN
-    spiPreInitCs(IO_TAG(BMP280_CS_PIN));
-#endif
-#ifdef MS5611_CS_PIN
-    spiPreInitCs(IO_TAG(MS5611_CS_PIN));
-#endif
-#ifdef LPS_CS_PIN
-    spiPreInitCs(IO_TAG(LPS_CS_PIN));
-#endif
-#ifdef HMC5883_CS_PIN
-    spiPreInitCs(IO_TAG(HMC5883_CS_PIN));
-#endif
-#ifdef AK8963_CS_PIN
-    spiPreInitCs(IO_TAG(AK8963_CS_PIN));
-#endif
-#if defined(RTC6705_CS_PIN) && !defined(USE_VTX_RTC6705_SOFTSPI) // RTC6705 soft SPI initialisation handled elsewhere.
-    spiPreInitCs(IO_TAG(RTC6705_CS_PIN));
-#endif
-#ifdef FLASH_CS_PIN
-    spiPreInitCs(IO_TAG(FLASH_CS_PIN));
-#endif
-#if defined(USE_RX_SPI) && !defined(USE_RX_SOFTSPI)
-    spiPreInitCs(IO_TAG(RX_NSS_PIN));
-#endif
-}
-#endif
-
 void init(void)
 {
 #ifdef USE_ITCM_RAM
@@ -275,7 +212,7 @@ void init(void)
 #endif
 
 #ifdef USE_FAST_RAM
-    /* Load FAST_RAM_INITIALIZED variable intializers into FAST RAM */
+    /* Load FAST_RAM variable intializers into DTCM RAM */
     extern uint8_t _sfastram_data;
     extern uint8_t _efastram_data;
     extern uint8_t _sfastram_idata;
@@ -303,11 +240,15 @@ void init(void)
 
     initEEPROM();
 
-    ensureEEPROMContainsValidData();
-    readEEPROM();
+    ensureEEPROMStructureIsValid();
 
-    // !!TODO: Check to be removed when moving to generic targets
-    if (strncasecmp(systemConfig()->boardIdentifier, TARGET_BOARD_IDENTIFIER, sizeof(TARGET_BOARD_IDENTIFIER))) {
+    bool readSuccess = readEEPROM();
+
+#if defined(USE_BOARD_INFO)
+    initBoardInformation();
+#endif
+
+    if (!readSuccess || !isEEPROMVersionValid() || strncasecmp(systemConfig()->boardIdentifier, TARGET_BOARD_IDENTIFIER, sizeof(TARGET_BOARD_IDENTIFIER))) {
         resetEEPROM();
     }
 
@@ -531,7 +472,10 @@ void init(void)
     adcConfigMutable()->current.enabled = (batteryConfig()->currentMeterSource == CURRENT_METER_ADC);
 
     // The FrSky D SPI RX sends RSSI_ADC_PIN (if configured) as A2
-    adcConfigMutable()->rssi.enabled = feature(FEATURE_RSSI_ADC) || (feature(FEATURE_RX_SPI) && rxConfig()->rx_spi_protocol == RX_SPI_FRSKY_D);
+    adcConfigMutable()->rssi.enabled = feature(FEATURE_RSSI_ADC);
+#ifdef USE_RX_SPI
+    adcConfigMutable()->rssi.enabled |= (feature(FEATURE_RX_SPI) && rxSpiConfig()->rx_spi_protocol == RX_SPI_FRSKY_D);
+#endif
     adcInit(adcConfig());
 #endif
 
@@ -580,10 +524,16 @@ void init(void)
     for (int i = 0; i < 10; i++) {
         LED1_TOGGLE;
         LED0_TOGGLE;
+#if defined(USE_BEEPER)
         delay(25);
-        if (!(getBeeperOffMask() & (1 << (BEEPER_SYSTEM_INIT - 1)))) BEEP_ON;
+        if (!(beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_SYSTEM_INIT))) {
+            BEEP_ON;
+        }
         delay(25);
         BEEP_OFF;
+#else
+        delay(50);
+#endif
     }
     LED0_OFF;
     LED1_OFF;

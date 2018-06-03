@@ -82,6 +82,7 @@
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/rx.h"
 
 #include "rx/rx.h"
 
@@ -164,6 +165,39 @@ static const char compassBar[] = {
   SYM_HEADING_LINE, SYM_HEADING_DIVIDED_LINE, SYM_HEADING_LINE,
   SYM_HEADING_N,
   SYM_HEADING_LINE, SYM_HEADING_DIVIDED_LINE, SYM_HEADING_LINE
+};
+
+static const uint8_t osdElementDisplayOrder[] = {
+    OSD_MAIN_BATT_VOLTAGE,
+    OSD_RSSI_VALUE,
+    OSD_CROSSHAIRS,
+    OSD_HORIZON_SIDEBARS,
+    OSD_ITEM_TIMER_1,
+    OSD_ITEM_TIMER_2,
+    OSD_REMAINING_TIME_ESTIMATE,
+    OSD_FLYMODE,
+    OSD_THROTTLE_POS,
+    OSD_VTX_CHANNEL,
+    OSD_CURRENT_DRAW,
+    OSD_MAH_DRAWN,
+    OSD_CRAFT_NAME,
+    OSD_ALTITUDE,
+    OSD_ROLL_PIDS,
+    OSD_PITCH_PIDS,
+    OSD_YAW_PIDS,
+    OSD_POWER,
+    OSD_PIDRATE_PROFILE,
+    OSD_WARNINGS,
+    OSD_AVG_CELL_VOLTAGE,
+    OSD_DEBUG,
+    OSD_PITCH_ANGLE,
+    OSD_ROLL_ANGLE,
+    OSD_MAIN_BATT_USAGE,
+    OSD_DISARMED,
+    OSD_NUMERICAL_HEADING,
+    OSD_NUMERICAL_VARIO,
+    OSD_COMPASS_BAR,
+    OSD_ANTI_GRAVITY
 };
 
 PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 3);
@@ -548,6 +582,8 @@ static bool osdDrawSingleElement(uint8_t item)
                 strcpy(buff, "STAB");
             } else if (FLIGHT_MODE(HORIZON_MODE)) {
                 strcpy(buff, "HOR ");
+            } else if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
+                strcpy(buff, "RESC");
             } else if (isAirmodeActive()) {
                 strcpy(buff, "AIR ");
             } else {
@@ -686,6 +722,18 @@ static bool osdDrawSingleElement(uint8_t item)
                 osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, " LAND NOW");
                 break;
             }
+
+#ifdef USE_ADC_INTERNAL
+            uint8_t coreTemperature = getCoreTemperatureCelsius();
+            if (osdWarnGetState(OSD_WARNING_CORE_TEMPERATURE) && coreTemperature >= osdConfig()->core_temp_alarm) {
+                char coreTemperatureWarningMsg[OSD_FORMAT_MESSAGE_BUFFER_SIZE];
+                tfp_sprintf(coreTemperatureWarningMsg, "CORE: %3d%c", osdConvertTemperatureToSelectedUnit(getCoreTemperatureCelsius() * 10) / 10, osdGetTemperatureSymbolForSelectedUnit());
+
+                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, coreTemperatureWarningMsg);
+
+                break;
+            }
+#endif
 
 #ifdef USE_ESC_SENSOR
             // Show warning if we lose motor output, the ESC is overheating or excessive current draw
@@ -901,36 +949,10 @@ static void osdDrawElements(void)
         osdDrawSingleElement(OSD_ARTIFICIAL_HORIZON);
     }
 
-    osdDrawSingleElement(OSD_MAIN_BATT_VOLTAGE);
-    osdDrawSingleElement(OSD_RSSI_VALUE);
-    osdDrawSingleElement(OSD_CROSSHAIRS);
-    osdDrawSingleElement(OSD_HORIZON_SIDEBARS);
-    osdDrawSingleElement(OSD_ITEM_TIMER_1);
-    osdDrawSingleElement(OSD_ITEM_TIMER_2);
-    osdDrawSingleElement(OSD_REMAINING_TIME_ESTIMATE);
-    osdDrawSingleElement(OSD_FLYMODE);
-    osdDrawSingleElement(OSD_THROTTLE_POS);
-    osdDrawSingleElement(OSD_VTX_CHANNEL);
-    osdDrawSingleElement(OSD_CURRENT_DRAW);
-    osdDrawSingleElement(OSD_MAH_DRAWN);
-    osdDrawSingleElement(OSD_CRAFT_NAME);
-    osdDrawSingleElement(OSD_ALTITUDE);
-    osdDrawSingleElement(OSD_ROLL_PIDS);
-    osdDrawSingleElement(OSD_PITCH_PIDS);
-    osdDrawSingleElement(OSD_YAW_PIDS);
-    osdDrawSingleElement(OSD_POWER);
-    osdDrawSingleElement(OSD_PIDRATE_PROFILE);
-    osdDrawSingleElement(OSD_WARNINGS);
-    osdDrawSingleElement(OSD_AVG_CELL_VOLTAGE);
-    osdDrawSingleElement(OSD_DEBUG);
-    osdDrawSingleElement(OSD_PITCH_ANGLE);
-    osdDrawSingleElement(OSD_ROLL_ANGLE);
-    osdDrawSingleElement(OSD_MAIN_BATT_USAGE);
-    osdDrawSingleElement(OSD_DISARMED);
-    osdDrawSingleElement(OSD_NUMERICAL_HEADING);
-    osdDrawSingleElement(OSD_NUMERICAL_VARIO);
-    osdDrawSingleElement(OSD_COMPASS_BAR);
-    osdDrawSingleElement(OSD_ANTI_GRAVITY);
+
+    for (unsigned i = 0; i < sizeof(osdElementDisplayOrder); i++) {
+        osdDrawSingleElement(osdElementDisplayOrder[i]);
+    }
 
 #ifdef USE_GPS
     if (sensors(SENSOR_GPS)) {
@@ -1005,6 +1027,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->esc_temp_alarm = ESC_TEMP_ALARM_OFF; // off by default
     osdConfig->esc_rpm_alarm = ESC_RPM_ALARM_OFF; // off by default
     osdConfig->esc_current_alarm = ESC_CURRENT_ALARM_OFF; // off by default
+    osdConfig->core_temp_alarm = 70; // a temperature above 70C should produce a warning, lockups have been reported above 80C
 
     osdConfig->ahMaxPitch = 20; // 20 degrees
     osdConfig->ahMaxRoll = 40; // 40 degrees
@@ -1070,7 +1093,7 @@ void osdUpdateAlarms(void)
 
     int32_t alt = osdGetMetersToSelectedUnit(getEstimatedAltitude()) / 100;
 
-    if (scaleRange(getRssi(), 0, 1024, 0, 100) < osdConfig()->rssi_alarm) {
+    if (getRssiPercent() < osdConfig()->rssi_alarm) {
         SET_BLINK(OSD_RSSI_VALUE);
     } else {
         CLR_BLINK(OSD_RSSI_VALUE);
@@ -1186,7 +1209,7 @@ static void osdUpdateStats(void)
         stats.max_current = value;
     }
 
-    value = scaleRange(getRssi(), 0, 1024, 0, 100);
+    value = getRssiPercent();
     if (stats.min_rssi > value) {
         stats.min_rssi = value;
     }

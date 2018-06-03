@@ -54,6 +54,7 @@
 #include "config/feature.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/rx.h"
 
 // For 'ARM' related
 #include "fc/config.h"

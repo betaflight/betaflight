@@ -25,79 +25,51 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #ifdef USE_RX_SPI
 
 #include "build/build_config.h"
 
 #include "drivers/bus_spi.h"
-#include "drivers/bus_spi_soft.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 #include "drivers/rcc.h"
 #include "drivers/system.h"
 
+#include "pg/rx_spi.h"
+
 #include "rx_spi.h"
 
-#define DISABLE_RX()    {IOHi(DEFIO_IO(RX_NSS_PIN));}
-#define ENABLE_RX()     {IOLo(DEFIO_IO(RX_NSS_PIN));}
+static busDevice_t rxSpiDevice;
+static busDevice_t *busdev = &rxSpiDevice;
 
-#ifdef USE_RX_SOFTSPI
-static const softSPIDevice_t softSPIDevice = {
-    .sckTag = IO_TAG(RX_SCK_PIN),
-    .mosiTag = IO_TAG(RX_MOSI_PIN),
-    .misoTag = IO_TAG(RX_MISO_PIN),
-    // Note: Nordic Semiconductor uses 'CSN', STM uses 'NSS'
-    .nssTag = IO_TAG(RX_NSS_PIN),
-};
-static bool useSoftSPI = false;
-#endif // USE_RX_SOFTSPI
+#define DISABLE_RX()    {IOHi(busdev->busdev_u.spi.csnPin);}
+#define ENABLE_RX()     {IOLo(busdev->busdev_u.spi.csnPin);}
 
-void rxSpiDeviceInit(rx_spi_type_e spiType)
+bool rxSpiDeviceInit(const rxSpiConfig_t *rxSpiConfig)
 {
-    static bool hardwareInitialised = false;
-
-    if (hardwareInitialised) {
-        return;
+    if (!rxSpiConfig->spibus) {
+        return false;
     }
 
-#ifdef USE_RX_SOFTSPI
-    if (spiType == RX_SPI_SOFTSPI) {
-        useSoftSPI = true;
-        softSpiInit(&softSPIDevice);
-    }
-    const SPIDevice rxSPIDevice = SOFT_SPIDEV_1;
-#else
-    UNUSED(spiType);
-    const SPIDevice rxSPIDevice = spiDeviceByInstance(RX_SPI_INSTANCE);
-    const IO_t rxCsPin = DEFIO_IO(RX_NSS_PIN);
-    IOInit(rxCsPin, OWNER_RX_SPI_CS, rxSPIDevice + 1);
+    spiBusSetInstance(busdev, spiInstanceByDevice(SPI_CFG_TO_DEV(rxSpiConfig->spibus)));
+
+    const IO_t rxCsPin = IOGetByTag(rxSpiConfig->csnTag);
+    IOInit(rxCsPin, OWNER_RX_SPI_CS, 0);
     IOConfigGPIO(rxCsPin, SPI_IO_CS_CFG);
-#endif // USE_RX_SOFTSPI
+    busdev->busdev_u.spi.csnPin = rxCsPin;
 
     DISABLE_RX();
 
-#ifdef RX_SPI_INSTANCE
-    spiSetDivisor(RX_SPI_INSTANCE, SPI_CLOCK_STANDARD);
-#endif
-    hardwareInitialised = true;
+    spiSetDivisor(busdev->busdev_u.spi.instance, SPI_CLOCK_STANDARD);
+
+    return true;
 }
 
 uint8_t rxSpiTransferByte(uint8_t data)
 {
-#ifdef USE_RX_SOFTSPI
-    if (useSoftSPI) {
-        return softSpiTransferByte(&softSPIDevice, data);
-    } else
-#endif
-    {
-#ifdef RX_SPI_INSTANCE
-        return spiTransferByte(RX_SPI_INSTANCE, data);
-#else
-        return 0;
-#endif
-    }
+    return spiTransferByte(busdev->busdev_u.spi.instance, data);
 }
 
 uint8_t rxSpiWriteByte(uint8_t data)

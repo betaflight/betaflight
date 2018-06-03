@@ -25,13 +25,15 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #ifdef USE_RX_V202
 
 #include "build/build_config.h"
 
 #include "common/utils.h"
+
+#include "pg/rx.h"
 
 #include "drivers/io.h"
 #include "drivers/rx/rx_nrf24l01.h"
@@ -257,10 +259,10 @@ static void v202Nrf24Setup(rx_spi_protocol_e protocol)
     NRF24L01_SetRxMode(); // enter receive mode to start listening for packets
 }
 
-bool v202Nrf24Init(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+bool v202Nrf24Init(const rxSpiConfig_t *rxSpiConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     rxRuntimeConfig->channelCount = V2X2_RC_CHANNEL_COUNT;
-    v202Nrf24Setup((rx_spi_protocol_e)rxConfig->rx_spi_protocol);
+    v202Nrf24Setup((rx_spi_protocol_e)rxSpiConfig->rx_spi_protocol);
 
     return true;
 }

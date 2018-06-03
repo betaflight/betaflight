@@ -84,6 +84,12 @@
 #define SPI2_MOSI_PIN           PB15
 
 #ifdef FURYF3OSD
+
+// Removed to make the firmware fit into flash (in descending order of priority):
+#undef USE_RTC_TIME
+#undef USE_RX_MSP
+#undef USE_ESC_SENSOR_INFO
+
     // include the max7456 driver
     #define USE_MAX7456
     #define MAX7456_SPI_INSTANCE    SPI1

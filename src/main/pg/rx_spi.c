@@ -18,21 +18,27 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "platform.h"
 
-#include "drivers/io_types.h"
+#ifdef USE_RX_SPI
 
-typedef enum softSPIDevice {
-    SOFT_SPIDEV_1   = 0
-} softSPIDevice_e;
+#include "drivers/io.h"
+#include "drivers/bus_spi.h"
 
-typedef struct softSPIDevice_s {
-    ioTag_t sckTag;
-    ioTag_t mosiTag;
-    ioTag_t misoTag;
-    ioTag_t nssTag;
-} softSPIDevice_t;
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+#include "pg/rx_spi.h"
 
+#include "rx/rx_spi.h"
 
-void softSpiInit(const softSPIDevice_t *dev);
-uint8_t softSpiTransferByte(const softSPIDevice_t *dev, uint8_t data);
+PG_REGISTER_WITH_RESET_FN(rxSpiConfig_t, rxSpiConfig, PG_RX_SPI_CONFIG, 0);
+
+void pgResetFn_rxSpiConfig(rxSpiConfig_t *rxSpiConfig)
+{
+    rxSpiConfig->rx_spi_protocol = RX_SPI_DEFAULT_PROTOCOL;
+
+    // Basic SPI
+    rxSpiConfig->csnTag = IO_TAG(RX_NSS_PIN);
+    rxSpiConfig->spibus = SPI_DEV_TO_CFG(spiDeviceByInstance(RX_SPI_INSTANCE));
+}
+#endif

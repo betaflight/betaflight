@@ -51,6 +51,7 @@
 
 #include "pg/beeper.h"
 #include "pg/beeper_dev.h"
+#include "pg/rx.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
@@ -92,17 +93,14 @@ uint8_t getCurrentPidProfileIndex(void)
     return systemConfig()->pidProfileIndex;
 }
 
-static void setPidProfile(uint8_t pidProfileIndex)
+static void loadPidProfile(void)
 {
-    if (pidProfileIndex < MAX_PROFILE_COUNT) {
-        systemConfigMutable()->pidProfileIndex = pidProfileIndex;
-        currentPidProfile = pidProfilesMutable(pidProfileIndex);
-    }
+    currentPidProfile = pidProfilesMutable(systemConfig()->pidProfileIndex);
 }
 
 uint8_t getCurrentControlRateProfileIndex(void)
 {
-    return systemConfigMutable()->activeRateProfile;
+    return systemConfig()->activeRateProfile;
 }
 
 uint16_t getCurrentMinthrottle(void)
@@ -118,20 +116,14 @@ void resetConfigs(void)
 #if defined(USE_TARGET_CONFIG)
     targetConfiguration();
 #endif
-
-#ifndef USE_OSD_SLAVE
-    setPidProfile(0);
-    setControlRateProfile(0);
-#endif
-
-#ifdef USE_LED_STRIP
-    reevaluateLedConfig();
-#endif
 }
 
-void activateConfig(void)
+static void activateConfig(void)
 {
 #ifndef USE_OSD_SLAVE
+    loadPidProfile();
+    loadControlRateProfile();
+
     initRcProcessing();
 
     resetAdjustmentStates();
@@ -146,6 +138,10 @@ void activateConfig(void)
 
     imuConfigure(throttleCorrectionConfig()->throttle_correction_angle);
 #endif // USE_OSD_SLAVE
+
+#ifdef USE_LED_STRIP
+    reevaluateLedConfig();
+#endif
 }
 
 static void validateAndFixConfig(void)
@@ -171,12 +167,12 @@ static void validateAndFixConfig(void)
     if (systemConfig()->activeRateProfile >= CONTROL_RATE_PROFILE_COUNT) {
         systemConfigMutable()->activeRateProfile = 0;
     }
-    setControlRateProfile(systemConfig()->activeRateProfile);
+    loadControlRateProfile();
 
     if (systemConfig()->pidProfileIndex >= MAX_PROFILE_COUNT) {
         systemConfigMutable()->pidProfileIndex = 0;
     }
-    setPidProfile(systemConfig()->pidProfileIndex);
+    loadPidProfile();
 
     // Prevent invalid notch cutoff
     if (currentPidProfile->dterm_notch_cutoff >= currentPidProfile->dterm_notch_hz) {
@@ -349,6 +345,21 @@ static void validateAndFixConfig(void)
     if (beeperDevConfig()->frequency && !timerGetByTag(beeperDevConfig()->ioTag)) {
         beeperDevConfigMutable()->frequency = 0;
     }
+
+    if (beeperConfig()->beeper_off_flags & ~BEEPER_ALLOWED_MODES) {
+        beeperConfigMutable()->beeper_off_flags = 0;
+    }
+
+#ifdef USE_DSHOT
+    if (beeperConfig()->dshotBeaconOffFlags & ~DSHOT_BEACON_ALLOWED_MODES) {
+        beeperConfigMutable()->dshotBeaconOffFlags = 0;
+    }
+
+    if (beeperConfig()->dshotBeaconTone < DSHOT_CMD_BEACON1
+        || beeperConfig()->dshotBeaconTone > DSHOT_CMD_BEACON5) {
+        beeperConfigMutable()->dshotBeaconTone = DSHOT_CMD_BEACON1;
+    }
+#endif
 #endif
 
 #if defined(TARGET_VALIDATECONFIG)
@@ -453,27 +464,30 @@ void validateAndFixGyroConfig(void)
 }
 #endif // USE_OSD_SLAVE
 
-void readEEPROM(void)
+bool readEEPROM(void)
 {
 #ifndef USE_OSD_SLAVE
     suspendRxSignal();
 #endif
 
     // Sanity check, read flash
-    if (!loadEEPROM()) {
-        failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
-    }
+    bool success = loadEEPROM();
 
     validateAndFixConfig();
+
     activateConfig();
 
 #ifndef USE_OSD_SLAVE
     resumeRxSignal();
 #endif
+
+    return success;
 }
 
 void writeEEPROM(void)
 {
+    validateAndFixConfig();
+
 #ifndef USE_OSD_SLAVE
     suspendRxSignal();
 #endif
@@ -488,12 +502,15 @@ void writeEEPROM(void)
 void resetEEPROM(void)
 {
     resetConfigs();
+
     writeEEPROM();
+
+    activateConfig();
 }
 
-void ensureEEPROMContainsValidData(void)
+void ensureEEPROMStructureIsValid(void)
 {
-    if (isEEPROMContentValid()) {
+    if (isEEPROMStructureValid()) {
         return;
     }
     resetEEPROM();
@@ -509,81 +526,11 @@ void saveConfigAndNotify(void)
 #ifndef USE_OSD_SLAVE
 void changePidProfile(uint8_t pidProfileIndex)
 {
-    if (pidProfileIndex >= MAX_PROFILE_COUNT) {
-        pidProfileIndex = MAX_PROFILE_COUNT - 1;
+    if (pidProfileIndex < MAX_PROFILE_COUNT) {
+        systemConfigMutable()->pidProfileIndex = pidProfileIndex;
+        loadPidProfile();
     }
-    systemConfigMutable()->pidProfileIndex = pidProfileIndex;
-    currentPidProfile = pidProfilesMutable(pidProfileIndex);
+
     beeperConfirmationBeeps(pidProfileIndex + 1);
 }
 #endif
-
-void beeperOffSet(uint32_t mask)
-{
-#ifdef USE_BEEPER
-    beeperConfigMutable()->beeper_off_flags |= mask;
-#else
-    UNUSED(mask);
-#endif
-}
-
-void beeperOffSetAll(uint8_t beeperCount)
-{
-#ifdef USE_BEEPER
-    beeperConfigMutable()->beeper_off_flags = (1 << beeperCount) -1;
-#else
-    UNUSED(beeperCount);
-#endif
-}
-
-void beeperOffClear(uint32_t mask)
-{
-#ifdef USE_BEEPER
-    beeperConfigMutable()->beeper_off_flags &= ~(mask);
-#else
-    UNUSED(mask);
-#endif
-}
-
-void beeperOffClearAll(void)
-{
-#ifdef USE_BEEPER
-    beeperConfigMutable()->beeper_off_flags = 0;
-#endif
-}
-
-uint32_t getBeeperOffMask(void)
-{
-#ifdef USE_BEEPER
-    return beeperConfig()->beeper_off_flags;
-#else
-    return 0;
-#endif
-}
-
-void setBeeperOffMask(uint32_t mask)
-{
-#ifdef USE_BEEPER
-    beeperConfigMutable()->beeper_off_flags = mask;
-#else
-    UNUSED(mask);
-#endif
-}
-
-uint32_t getPreferredBeeperOffMask(void)
-{
-#ifdef USE_BEEPER
-    return beeperConfig()->preferred_beeper_off_flags;
-#else
-    return 0;
-#endif
-}
-
-void setPreferredBeeperOffMask(uint32_t mask)
-{
-#ifdef USE_BEEPER
-    beeperConfigMutable()->preferred_beeper_off_flags = mask;
-#else
-    UNUSED(mask);
-#endif
-}

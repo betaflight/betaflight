@@ -49,24 +49,14 @@ PG_DECLARE(systemConfig_t, systemConfig);
 struct pidProfile_s;
 extern struct pidProfile_s *currentPidProfile;
 
-void beeperOffSet(uint32_t mask);
-void beeperOffSetAll(uint8_t beeperCount);
-void beeperOffClear(uint32_t mask);
-void beeperOffClearAll(void);
-uint32_t getBeeperOffMask(void);
-void setBeeperOffMask(uint32_t mask);
-uint32_t getPreferredBeeperOffMask(void);
-void setPreferredBeeperOffMask(uint32_t mask);
-
 void initEEPROM(void);
 void resetEEPROM(void);
-void readEEPROM(void);
+bool readEEPROM(void);
 void writeEEPROM(void);
-void ensureEEPROMContainsValidData(void);
+void ensureEEPROMStructureIsValid(void);
 
 void saveConfigAndNotify(void);
 void validateAndFixGyroConfig(void);
-void activateConfig(void);
 
 uint8_t getCurrentPidProfileIndex(void);
 void changePidProfile(uint8_t pidProfileIndex);

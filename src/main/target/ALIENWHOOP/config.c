@@ -37,7 +37,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #ifdef USE_TARGET_CONFIG
 
@@ -52,6 +52,7 @@
 #include "flight/pid.h"
 #include "io/beeper.h"
 #include "io/serial.h"
+#include "pg/rx.h"
 #include "rx/rx.h"
 #include "sensors/barometer.h"
 #include "sensors/boardalignment.h"
@@ -82,7 +83,8 @@ void targetConfiguration(void)
     rxConfigMutable()->serialrx_inverted = true;
 #endif
 
-    beeperOffSet((BEEPER_BAT_CRIT_LOW | BEEPER_BAT_LOW | BEEPER_RX_SET) ^ BEEPER_GYRO_CALIBRATED);
+    // Don't know what this is meant to do, but it's broken because enum values can't be directly set
+    // beeperOffSet((BEEPER_BAT_CRIT_LOW | BEEPER_BAT_LOW | BEEPER_RX_SET) ^ BEEPER_GYRO_CALIBRATED);
 
     /* Breadboard-specific settings for development purposes only
      */

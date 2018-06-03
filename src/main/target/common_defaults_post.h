@@ -20,12 +20,14 @@
 
 // pg/max7456
 
+#ifdef USE_MAX7456
 #ifndef MAX7456_CLOCK_CONFIG_DEFAULT
 #define MAX7456_CLOCK_CONFIG_DEFAULT    MAX7456_CLOCK_CONFIG_OC
 #endif
 
 #ifndef MAX7456_SPI_CS_PIN
 #define MAX7456_SPI_CS_PIN              NONE
+#endif
 #endif
 
 // pg/bus_i2c
@@ -198,4 +200,27 @@
 #define SPI3_MISO_PIN   PB4
 #define SPI3_MOSI_PIN   PB5
 #endif
+#endif
+
+// Extracted from rx/rx.c and rx/rx.h
+
+#define RX_MAPPABLE_CHANNEL_COUNT 8
+
+#ifndef RX_SPI_DEFAULT_PROTOCOL
+#define RX_SPI_DEFAULT_PROTOCOL 0
+#endif
+#ifndef SERIALRX_PROVIDER
+#define SERIALRX_PROVIDER 0
+#endif
+
+#define RX_MIN_USEC 885
+#define RX_MAX_USEC 2115
+#define RX_MID_USEC 1500
+
+#ifndef SPEKTRUM_BIND_PIN
+#define SPEKTRUM_BIND_PIN NONE
+#endif
+
+#ifndef BINDPLUG_PIN
+#define BINDPLUG_PIN NONE
 #endif

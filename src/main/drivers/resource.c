@@ -66,7 +66,6 @@ const char * const ownerNames[OWNER_TOTAL_COUNT] = {
     "TRANSPONDER",
     "VTX",
     "COMPASS_CS",
-    "SPI_PREINIT",
     "RX_BIND_PLUG",
     "ESCSERIAL",
     "CAMERA_CONTROL",
@@ -75,4 +74,6 @@ const char * const ownerNames[OWNER_TOTAL_COUNT] = {
     "RX_SPI",
     "PINIO",
     "USB_MSC_PIN",
+    "SPI_PREINIT_IPU",
+    "SPI_PREINIT_OPU",
 };

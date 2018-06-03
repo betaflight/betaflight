@@ -34,6 +34,8 @@
 #define TARGET_BOARD_IDENTIFIER "EXF4"
 #else
 #define TARGET_BOARD_IDENTIFIER "OBF4"
+// Example of a manufacturer ID to be persisted as part of the config:
+#define TARGET_MANUFACTURER_IDENTIFIER "AIRB"
 #define OMNIBUSF4BASE // For config.c
 #endif
 
@@ -262,8 +264,6 @@
 #define RANGEFINDER_HCSR04_TRIGGER_PIN     PA1
 #define RANGEFINDER_HCSR04_ECHO_PIN        PA8
 #define USE_RANGEFINDER_TF
-
-#define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 
 #define DEFAULT_FEATURES        (FEATURE_OSD)
 

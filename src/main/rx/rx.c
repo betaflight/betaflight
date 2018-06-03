@@ -50,6 +50,7 @@
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/rx.h"
 
 #include "rx/rx.h"
 #include "rx/pwm.h"
@@ -75,6 +76,9 @@ static uint16_t rssi = 0;                  // range: [0;1023]
 static timeUs_t lastMspRssiUpdateUs = 0;
 
 #define MSP_RSSI_TIMEOUT_US 1500000   // 1.5 sec
+
+#define RSSI_ADC_DIVISOR (4096 / 1024)
+#define RSSI_OFFSET_SCALING (1024 / 100.0f)
 
 rssiSource_e rssiSource;
 
@@ -107,61 +111,6 @@ uint32_t rcInvalidPulsPeriod[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 
 rxRuntimeConfig_t rxRuntimeConfig;
 static uint8_t rcSampleIndex = 0;
-
-#ifndef RX_SPI_DEFAULT_PROTOCOL
-#define RX_SPI_DEFAULT_PROTOCOL 0
-#endif
-#ifndef SERIALRX_PROVIDER
-#define SERIALRX_PROVIDER 0
-#endif
-
-#define RX_MIN_USEC 885
-#define RX_MAX_USEC 2115
-#define RX_MID_USEC 1500
-
-#ifndef SPEKTRUM_BIND_PIN
-#define SPEKTRUM_BIND_PIN NONE
-#endif
-
-#ifndef BINDPLUG_PIN
-#define BINDPLUG_PIN NONE
-#endif
-
-PG_REGISTER_WITH_RESET_FN(rxConfig_t, rxConfig, PG_RX_CONFIG, 2);
-void pgResetFn_rxConfig(rxConfig_t *rxConfig)
-{
-    RESET_CONFIG_2(rxConfig_t, rxConfig,
-        .halfDuplex = 0,
-        .serialrx_provider = SERIALRX_PROVIDER,
-        .rx_spi_protocol = RX_SPI_DEFAULT_PROTOCOL,
-        .serialrx_inverted = 0,
-        .spektrum_bind_pin_override_ioTag = IO_TAG(SPEKTRUM_BIND_PIN),
-        .spektrum_bind_plug_ioTag = IO_TAG(BINDPLUG_PIN),
-        .spektrum_sat_bind = 0,
-        .spektrum_sat_bind_autoreset = 1,
-        .midrc = RX_MID_USEC,
-        .mincheck = 1050,
-        .maxcheck = 1900,
-        .rx_min_usec = RX_MIN_USEC,          // any of first 4 channels below this value will trigger rx loss detection
-        .rx_max_usec = RX_MAX_USEC,         // any of first 4 channels above this value will trigger rx loss detection
-        .rssi_src_frame_errors = false,
-        .rssi_channel = 0,
-        .rssi_scale = RSSI_SCALE_DEFAULT,
-        .rssi_invert = 0,
-        .rcInterpolation = RC_SMOOTHING_AUTO,
-        .rcInterpolationChannels = 0,
-        .rcInterpolationInterval = 19,
-        .fpvCamAngleDegrees = 0,
-        .airModeActivateThreshold = 32,
-        .max_aux_channel = DEFAULT_AUX_CHANNEL_COUNT
-    );
-
-#ifdef RX_CHANNELS_TAER
-    parseRcChannels("TAER1234", rxConfig);
-#else
-    parseRcChannels("AETR1234", rxConfig);
-#endif
-}
 
 PG_REGISTER_ARRAY_WITH_RESET_FN(rxChannelRangeConfig_t, NON_AUX_CHANNEL_COUNT, rxChannelRangeConfigs, PG_RX_CHANNEL_RANGE_CONFIG, 0);
 void pgResetFn_rxChannelRangeConfigs(rxChannelRangeConfig_t *rxChannelRangeConfigs)
@@ -339,7 +288,7 @@ void rxInit(void)
 
 #ifdef USE_RX_SPI
     if (feature(FEATURE_RX_SPI)) {
-        const bool enabled = rxSpiInit(rxConfig(), &rxRuntimeConfig);
+        const bool enabled = rxSpiInit(rxSpiConfig(), &rxRuntimeConfig);
         if (!enabled) {
             featureClear(FEATURE_RX_SPI);
             rxRuntimeConfig.rcReadRawFn = nullReadRawRC;
@@ -426,10 +375,10 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
 
             if (frameStatus & (RX_FRAME_FAILSAFE | RX_FRAME_DROPPED)) {
             	// No (0%) signal
-            	setRssiUnfiltered(0, RSSI_SOURCE_FRAME_ERRORS);
+            	setRssi(0, RSSI_SOURCE_FRAME_ERRORS);
             } else {
             	// Valid (100%) signal
-            	setRssiUnfiltered(RSSI_MAX_VALUE, RSSI_SOURCE_FRAME_ERRORS);
+            	setRssi(RSSI_MAX_VALUE, RSSI_SOURCE_FRAME_ERRORS);
             }
         }
 
@@ -630,7 +579,7 @@ void parseRcChannels(const char *input, rxConfig_t *rxConfig)
     }
 }
 
-void setRssiFiltered(uint16_t newRssi, rssiSource_e source)
+void setRssiDirect(uint16_t newRssi, rssiSource_e source)
 {
     if (source != rssiSource) {
         return;
@@ -641,7 +590,7 @@ void setRssiFiltered(uint16_t newRssi, rssiSource_e source)
 
 #define RSSI_SAMPLE_COUNT 16
 
-void setRssiUnfiltered(uint16_t rssiValue, rssiSource_e source)
+void setRssi(uint16_t rssiValue, rssiSource_e source)
 {
     if (source != rssiSource) {
         return;
@@ -684,7 +633,7 @@ static void updateRSSIPWM(void)
     }
 
     // Range of rawPwmRssi is [1000;2000]. rssi should be in [0;1023];
-    setRssiFiltered(constrain((uint16_t)(((pwmRssi - 1000) / 1000.0f) * 1024.0f), 0, RSSI_MAX_VALUE), RSSI_SOURCE_RX_CHANNEL);
+    setRssiDirect(constrain(((pwmRssi - 1000) / 1000.0f) * RSSI_MAX_VALUE, 0, RSSI_MAX_VALUE), RSSI_SOURCE_RX_CHANNEL);
 }
 
 static void updateRSSIADC(timeUs_t currentTimeUs)
@@ -700,15 +649,14 @@ static void updateRSSIADC(timeUs_t currentTimeUs)
     rssiUpdateAt = currentTimeUs + DELAY_50_HZ;
 
     const uint16_t adcRssiSample = adcGetChannel(ADC_RSSI);
-    uint16_t rssiValue = (uint16_t)((1024.0f * adcRssiSample) / (rxConfig()->rssi_scale * 100.0f));
-    rssiValue = constrain(rssiValue, 0, RSSI_MAX_VALUE);
+    uint16_t rssiValue = adcRssiSample / RSSI_ADC_DIVISOR;
 
     // RSSI_Invert option
     if (rxConfig()->rssi_invert) {
         rssiValue = RSSI_MAX_VALUE - rssiValue;
     }
 
-    setRssiUnfiltered((uint16_t)rssiValue, RSSI_SOURCE_ADC);
+    setRssi(rssiValue, RSSI_SOURCE_ADC);
 #endif
 }
 
@@ -733,7 +681,12 @@ void updateRSSI(timeUs_t currentTimeUs)
 
 uint16_t getRssi(void)
 {
-    return rssi;
+    return rxConfig()->rssi_scale / 100.0f * rssi + rxConfig()->rssi_offset * RSSI_OFFSET_SCALING;
+}
+
+uint8_t getRssiPercent(void)
+{
+    return scaleRange(getRssi(), 0, RSSI_MAX_VALUE, 0, 100);
 }
 
 uint16_t rxGetRefreshRate(void)

@@ -65,9 +65,6 @@
 
 #include "msp/msp_serial.h"
 
-#include "rx/rx.h"
-#include "rx/spektrum.h"
-
 #include "io/beeper.h"
 #include "io/displayport_max7456.h"
 #include "io/flashfs.h"
@@ -123,20 +120,6 @@ static IO_t busSwitchResetPin        = IO_NONE;
 }
 #endif
 
-
-#ifdef USE_SPI
-// Pre-initialize all CS pins to input with pull-up.
-// It's sad that we can't do this with an initialized array,
-// since we will be taking care of configurable CS pins shortly.
-
-void spiPreInit(void)
-{
-#ifdef USE_MAX7456
-    spiPreInitCs(IO_TAG(MAX7456_SPI_CS_PIN));
-#endif
-}
-#endif
-
 void init(void)
 {
 #ifdef USE_HAL_DRIVER
@@ -156,7 +139,7 @@ void init(void)
 
     initEEPROM();
 
-    ensureEEPROMContainsValidData();
+    ensureEEPROMStructureIsValid();
     readEEPROM();
 
     systemState |= SYSTEM_STATE_CONFIG_LOADED;
@@ -264,10 +247,14 @@ void init(void)
     for (int i = 0; i < 10; i++) {
         LED1_TOGGLE;
         LED0_TOGGLE;
+#if defined(USE_BEEPER)
         delay(25);
-        if (!(getBeeperOffMask() & (1 << (BEEPER_SYSTEM_INIT - 1)))) BEEP_ON;
+        if (!(beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_SYSTEM_INIT))) BEEP_ON;
         delay(25);
         BEEP_OFF;
+#else
+        delay(50);
+#endif
     }
     LED0_OFF;
     LED1_OFF;
