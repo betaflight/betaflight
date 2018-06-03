@@ -174,6 +174,10 @@ static uint32_t bufferIndex = 0;
 
 static bool configIsInCopy = false;
 
+#define CURRENT_PROFILE_INDEX -1
+static int8_t pidProfileIndexToUse = CURRENT_PROFILE_INDEX;
+static int8_t rateProfileIndexToUse = CURRENT_PROFILE_INDEX;
+
 #if defined(USE_BOARD_INFO)
 static bool boardInformationUpdated = false;
 #if defined(USE_SIGNATURE)
@@ -487,15 +491,26 @@ static bool valuePtrEqualsDefault(const clivalue_t *var, const void *ptr, const 
     return result;
 }
 
+static uint8_t getPidProfileIndexToUse()
+{
+    return pidProfileIndexToUse == CURRENT_PROFILE_INDEX ? getCurrentPidProfileIndex() : pidProfileIndexToUse;
+}
+
+static uint8_t getRateProfileIndexToUse()
+{
+    return rateProfileIndexToUse == CURRENT_PROFILE_INDEX ? getCurrentControlRateProfileIndex() : rateProfileIndexToUse;
+}
+
+
 static uint16_t getValueOffset(const clivalue_t *value)
 {
     switch (value->type & VALUE_SECTION_MASK) {
     case MASTER_VALUE:
         return value->offset;
     case PROFILE_VALUE:
-        return value->offset + sizeof(pidProfile_t) * getCurrentPidProfileIndex();
+        return value->offset + sizeof(pidProfile_t) * getPidProfileIndexToUse();
     case PROFILE_RATE_VALUE:
-        return value->offset + sizeof(controlRateConfig_t) * getCurrentControlRateProfileIndex();
+        return value->offset + sizeof(controlRateConfig_t) * getRateProfileIndexToUse();
     }
     return 0;
 }
@@ -3157,12 +3172,12 @@ static void cliPlaySound(char *cmdline)
 static void cliProfile(char *cmdline)
 {
     if (isEmpty(cmdline)) {
-        cliPrintLinef("profile %d", getCurrentPidProfileIndex());
+        cliPrintLinef("profile %d", getPidProfileIndexToUse());
         return;
     } else {
         const int i = atoi(cmdline);
         if (i >= 0 && i < MAX_PROFILE_COUNT) {
-            systemConfigMutable()->pidProfileIndex = i;
+            changePidProfile(i);
             cliProfile("");
         }
     }
@@ -3171,7 +3186,7 @@ static void cliProfile(char *cmdline)
 static void cliRateProfile(char *cmdline)
 {
     if (isEmpty(cmdline)) {
-        cliPrintLinef("rateprofile %d", getCurrentControlRateProfileIndex());
+        cliPrintLinef("rateprofile %d", getRateProfileIndexToUse());
         return;
     } else {
         const int i = atoi(cmdline);
@@ -3188,11 +3203,15 @@ static void cliDumpPidProfile(uint8_t pidProfileIndex, uint8_t dumpMask)
         // Faulty values
         return;
     }
-    changePidProfile(pidProfileIndex);
+
+    pidProfileIndexToUse = pidProfileIndex;
+
     cliPrintHashLine("profile");
     cliProfile("");
     cliPrintLinefeed();
     dumpAllValues(PROFILE_VALUE, dumpMask);
+
+    pidProfileIndexToUse = CURRENT_PROFILE_INDEX;
 }
 
 static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask)
@@ -3201,11 +3220,15 @@ static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask)
         // Faulty values
         return;
     }
-    changeControlRateProfile(rateProfileIndex);
+
+    rateProfileIndexToUse = rateProfileIndex;
+
     cliPrintHashLine("rateprofile");
     cliRateProfile("");
     cliPrintLinefeed();
     dumpAllValues(PROFILE_RATE_VALUE, dumpMask);
+
+    rateProfileIndexToUse = CURRENT_PROFILE_INDEX;
 }
 
 static void cliSave(char *cmdline)
@@ -3226,6 +3249,7 @@ static void cliSave(char *cmdline)
 #endif // USE_BOARD_INFO
 
     writeEEPROM();
+
     cliReboot();
 }
 
@@ -3242,7 +3266,9 @@ static void cliDefaults(char *cmdline)
     }
 
     cliPrintHashLine("resetting to defaults");
+
     resetConfigs();
+
     if (saveConfigs) {
         cliSave(NULL);
     }
@@ -3268,6 +3294,9 @@ STATIC_UNIT_TESTED void cliGet(char *cmdline)
     const clivalue_t *val;
     int matchedCommands = 0;
 
+    pidProfileIndexToUse = getCurrentPidProfileIndex();
+    rateProfileIndexToUse = getCurrentControlRateProfileIndex();
+
     backupAndResetConfigs();
 
     for (uint32_t i = 0; i < valueTableEntryCount; i++) {
@@ -3279,6 +3308,19 @@ STATIC_UNIT_TESTED void cliGet(char *cmdline)
             cliPrintf("%s = ", valueTable[i].name);
             cliPrintVar(val, 0);
             cliPrintLinefeed();
+            switch (val->type & VALUE_SECTION_MASK) {
+            case PROFILE_VALUE:
+                cliProfile("");
+
+                break;
+            case PROFILE_RATE_VALUE:
+                cliRateProfile("");
+
+                break;
+            default:
+
+                break;
+            }
             cliPrintVarRange(val);
             cliPrintVarDefault(val);
             matchedCommands++;
@@ -3286,6 +3328,9 @@ STATIC_UNIT_TESTED void cliGet(char *cmdline)
     }
 
     restoreConfigs();
+
+    pidProfileIndexToUse = CURRENT_PROFILE_INDEX;
+    rateProfileIndexToUse = CURRENT_PROFILE_INDEX;
 
     if (matchedCommands) {
         return;
@@ -4199,21 +4244,27 @@ static void printConfig(char *cmdline, bool doDiff)
         dumpAllValues(MASTER_VALUE, dumpMask);
 
         if (dumpMask & DUMP_ALL) {
-            const uint8_t pidProfileIndexSave = systemConfig_Copy.pidProfileIndex;
             for (uint32_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
                 cliDumpPidProfile(pidProfileIndex, dumpMask);
             }
-            changePidProfile(pidProfileIndexSave);
             cliPrintHashLine("restore original profile selection");
+
+            pidProfileIndexToUse = systemConfig_Copy.pidProfileIndex;
+
             cliProfile("");
 
-            const uint8_t controlRateProfileIndexSave = systemConfig_Copy.activeRateProfile;
+            pidProfileIndexToUse = CURRENT_PROFILE_INDEX;
+
             for (uint32_t rateIndex = 0; rateIndex < CONTROL_RATE_PROFILE_COUNT; rateIndex++) {
                 cliDumpRateProfile(rateIndex, dumpMask);
             }
-            changeControlRateProfile(controlRateProfileIndexSave);
             cliPrintHashLine("restore original rateprofile selection");
+
+            rateProfileIndexToUse = systemConfig_Copy.activeRateProfile;
+
             cliRateProfile("");
+
+            rateProfileIndexToUse = CURRENT_PROFILE_INDEX;
 
             cliPrintHashLine("save configuration");
             cliPrint("save");

@@ -93,17 +93,14 @@ uint8_t getCurrentPidProfileIndex(void)
     return systemConfig()->pidProfileIndex;
 }
 
-static void setPidProfile(uint8_t pidProfileIndex)
+static void loadPidProfile(void)
 {
-    if (pidProfileIndex < MAX_PROFILE_COUNT) {
-        systemConfigMutable()->pidProfileIndex = pidProfileIndex;
-        currentPidProfile = pidProfilesMutable(pidProfileIndex);
-    }
+    currentPidProfile = pidProfilesMutable(systemConfig()->pidProfileIndex);
 }
 
 uint8_t getCurrentControlRateProfileIndex(void)
 {
-    return systemConfigMutable()->activeRateProfile;
+    return systemConfig()->activeRateProfile;
 }
 
 uint16_t getCurrentMinthrottle(void)
@@ -119,20 +116,14 @@ void resetConfigs(void)
 #if defined(USE_TARGET_CONFIG)
     targetConfiguration();
 #endif
-
-#ifndef USE_OSD_SLAVE
-    setPidProfile(0);
-    setControlRateProfile(0);
-#endif
-
-#ifdef USE_LED_STRIP
-    reevaluateLedConfig();
-#endif
 }
 
-void activateConfig(void)
+static void activateConfig(void)
 {
 #ifndef USE_OSD_SLAVE
+    loadPidProfile();
+    loadControlRateProfile();
+
     initRcProcessing();
 
     resetAdjustmentStates();
@@ -147,6 +138,10 @@ void activateConfig(void)
 
     imuConfigure(throttleCorrectionConfig()->throttle_correction_angle);
 #endif // USE_OSD_SLAVE
+
+#ifdef USE_LED_STRIP
+    reevaluateLedConfig();
+#endif
 }
 
 static void validateAndFixConfig(void)
@@ -172,12 +167,12 @@ static void validateAndFixConfig(void)
     if (systemConfig()->activeRateProfile >= CONTROL_RATE_PROFILE_COUNT) {
         systemConfigMutable()->activeRateProfile = 0;
     }
-    setControlRateProfile(systemConfig()->activeRateProfile);
+    loadControlRateProfile();
 
     if (systemConfig()->pidProfileIndex >= MAX_PROFILE_COUNT) {
         systemConfigMutable()->pidProfileIndex = 0;
     }
-    setPidProfile(systemConfig()->pidProfileIndex);
+    loadPidProfile();
 
     // Prevent invalid notch cutoff
     if (currentPidProfile->dterm_notch_cutoff >= currentPidProfile->dterm_notch_hz) {
@@ -479,6 +474,7 @@ bool readEEPROM(void)
     bool success = loadEEPROM();
 
     validateAndFixConfig();
+
     activateConfig();
 
 #ifndef USE_OSD_SLAVE
@@ -490,6 +486,8 @@ bool readEEPROM(void)
 
 void writeEEPROM(void)
 {
+    validateAndFixConfig();
+
 #ifndef USE_OSD_SLAVE
     suspendRxSignal();
 #endif
@@ -505,10 +503,9 @@ void resetEEPROM(void)
 {
     resetConfigs();
 
-    validateAndFixConfig();
-    activateConfig();
-
     writeEEPROM();
+
+    activateConfig();
 }
 
 void ensureEEPROMStructureIsValid(void)
@@ -529,11 +526,11 @@ void saveConfigAndNotify(void)
 #ifndef USE_OSD_SLAVE
 void changePidProfile(uint8_t pidProfileIndex)
 {
-    if (pidProfileIndex >= MAX_PROFILE_COUNT) {
-        pidProfileIndex = MAX_PROFILE_COUNT - 1;
+    if (pidProfileIndex < MAX_PROFILE_COUNT) {
+        systemConfigMutable()->pidProfileIndex = pidProfileIndex;
+        loadPidProfile();
     }
-    systemConfigMutable()->pidProfileIndex = pidProfileIndex;
-    currentPidProfile = pidProfilesMutable(pidProfileIndex);
+
     beeperConfirmationBeeps(pidProfileIndex + 1);
 }
 #endif

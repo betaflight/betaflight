@@ -250,8 +250,6 @@ void init(void)
 
     if (!readSuccess || !isEEPROMVersionValid() || strncasecmp(systemConfig()->boardIdentifier, TARGET_BOARD_IDENTIFIER, sizeof(TARGET_BOARD_IDENTIFIER))) {
         resetEEPROM();
-
-        activateConfig();
     }
 
     systemState |= SYSTEM_STATE_CONFIG_LOADED;
