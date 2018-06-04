@@ -64,6 +64,7 @@ static FAST_RAM_ZERO_INIT bool pidStabilisationEnabled;
 static FAST_RAM_ZERO_INIT bool inCrashRecoveryMode = false;
 
 static FAST_RAM_ZERO_INIT float dT;
+static FAST_RAM_ZERO_INIT float pidFrequency;
 
 PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 2);
 
@@ -168,7 +169,8 @@ void pgResetFn_pidProfiles(pidProfile_t *pidProfiles)
 static void pidSetTargetLooptime(uint32_t pidLooptime)
 {
     targetPidLooptime = pidLooptime;
-    dT = (float)targetPidLooptime * 0.000001f;
+    dT = targetPidLooptime * 1e-6f;
+    pidFrequency = 1.0f / dT;
 }
 
 static FAST_RAM float itermAccelerator = 1.0f;
@@ -230,7 +232,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
         return;
     }
 
-    const uint32_t pidFrequencyNyquist = (1.0f / dT) / 2; // No rounding needed
+    const uint32_t pidFrequencyNyquist = pidFrequency / 2; // No rounding needed
 
     uint16_t dTermNotchHz;
     if (pidProfile->dterm_notch_hz <= pidFrequencyNyquist) {
@@ -882,7 +884,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
             // calculated deltaT whenever another task causes the PID
             // loop execution to be delayed.
             const float delta =
-                - (gyroRateDterm[axis] - previousGyroRateDterm[axis]) / dT;
+                - (gyroRateDterm[axis] - previousGyroRateDterm[axis]) * pidFrequency;
 
             detectAndSetCrashRecovery(pidProfile->crash_recovery, axis, currentTimeUs, delta, errorRate);
 
@@ -910,7 +912,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
 #endif // USE_RC_SMOOTHING_FILTER
 
             const float pidFeedForward =
-                pidCoefficient[axis].Kd * dynCd * transition * pidSetpointDelta * tpaFactor / dT;
+                pidCoefficient[axis].Kd * dynCd * transition * pidSetpointDelta * tpaFactor * pidFrequency;
 #if defined(USE_SMART_FEEDFORWARD)
             bool addFeedforward = true;
             if (smartFeedforward) {
