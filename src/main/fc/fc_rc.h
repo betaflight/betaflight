@@ -20,6 +20,14 @@
 
 #pragma once
 
+typedef enum {
+    INTERPOLATION_CHANNELS_RP,
+    INTERPOLATION_CHANNELS_RPY,
+    INTERPOLATION_CHANNELS_RPYT,
+    INTERPOLATION_CHANNELS_T,
+    INTERPOLATION_CHANNELS_RPT,
+} interpolationChannels_e;
+
 extern uint16_t currentRxRefreshRate;
 
 void processRcCommand(void);
