@@ -68,35 +68,34 @@ typedef enum {
 } filterSlots;
 
 typedef struct gyroConfig_s {
-    sensor_align_e gyro_align;              // gyro alignment
+    uint8_t  gyro_align;                       // gyro alignment
     uint8_t  gyroMovementCalibrationThreshold; // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
     uint8_t  gyro_sync_denom;                  // Gyro sample divider
     uint8_t  gyro_hardware_lpf;                // gyro DLPF setting
     uint8_t  gyro_32khz_hardware_lpf;          // gyro 32khz DLPF setting
 
-    bool     gyro_high_fsr;
-    bool     gyro_use_32khz;
+    uint8_t  gyro_high_fsr;
+    uint8_t  gyro_use_32khz;
     uint8_t  gyro_to_use;
 
-    // Lowpass primary/secondary
-    uint8_t  gyro_lowpass_type;
-    uint8_t  gyro_lowpass2_type;
-
     uint16_t gyro_lowpass_hz;
-    uint16_t  gyro_lowpass2_hz;
+    uint16_t gyro_lowpass2_hz;
 
     uint16_t gyro_soft_notch_hz_1;
     uint16_t gyro_soft_notch_cutoff_1;
     uint16_t gyro_soft_notch_hz_2;
     uint16_t gyro_soft_notch_cutoff_2;
-    gyroOverflowCheck_e checkOverflow;
     int16_t  gyro_offset_yaw;
+    uint8_t  checkOverflow;
 
-    bool     yaw_spin_recovery;
+    // Lowpass primary/secondary
+    uint8_t  gyro_lowpass_type;
+    uint8_t  gyro_lowpass2_type;
+
+    uint8_t  yaw_spin_recovery;
     int16_t  yaw_spin_threshold;
 
     uint16_t gyroCalibrationDuration;  // Gyro calibration duration in 1/100 second
-
 } gyroConfig_t;
 
 PG_DECLARE(gyroConfig_t, gyroConfig);
