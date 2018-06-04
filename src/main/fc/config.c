@@ -266,6 +266,22 @@ static void validateAndFixConfig(void)
     }
 #endif
 
+    if (rxConfig()->rcInterpolation == RC_SMOOTHING_OFF || rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_T) {
+        for (unsigned i = 0; i < MAX_PROFILE_COUNT; i++) {
+            pidProfilesMutable(i)->dtermSetpointWeight = 0;
+        }
+    }
+
+#if defined(USE_THROTTLE_BOOST)
+    if (!(rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_RPYT
+        || rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_T
+        || rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_RPT)) {
+        for (unsigned i = 0; i < MAX_PROFILE_COUNT; i++) {
+            pidProfilesMutable(i)->throttle_boost = 0;
+        }
+    }
+#endif
+
 // clear features that are not supported.
 // I have kept them all here in one place, some could be moved to sections of code above.
 

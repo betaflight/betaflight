@@ -803,12 +803,14 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
         motorMix[i] = mix;
     }
 
-    motorMixRange = motorMixMax - motorMixMin;
+#if defined(USE_THROTTLE_BOOST)
     if (throttleBoost > 0.0f) {
         float throttlehpf = throttle - pt1FilterApply(&throttleLpf, throttle);
         throttle = constrainf(throttle + throttleBoost * throttlehpf, 0.0f, 1.0f);
     }
+#endif
 
+    motorMixRange = motorMixMax - motorMixMin;
     if (motorMixRange > 1.0f) {
         for (int i = 0; i < motorCount; i++) {
             motorMix[i] /= motorMixRange;
