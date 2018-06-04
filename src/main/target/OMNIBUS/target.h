@@ -23,6 +23,7 @@
 #undef USE_DSHOT_DMAR           // OMNIBUS (F3) does not benefit from burst Dshot
 
 // Removed to make the firmware fit into flash (in descending order of priority):
+#undef USE_RC_SMOOTHING_FILTER
 #undef USE_GYRO_OVERFLOW_CHECK
 #undef USE_GYRO_LPF2
 
