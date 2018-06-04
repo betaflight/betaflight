@@ -71,4 +71,5 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "RTH",
     "ITERM_RELAX",
     "ACRO_TRAINER",
+    "RC_SMOOTHING",
 };

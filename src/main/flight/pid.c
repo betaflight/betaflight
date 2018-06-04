@@ -210,6 +210,14 @@ static FAST_RAM_ZERO_INIT uint8_t itermRelaxCutoffLow;
 static FAST_RAM_ZERO_INIT uint8_t itermRelaxCutoffHigh;
 #endif
 
+#ifdef USE_RC_SMOOTHING_FILTER
+static FAST_RAM_ZERO_INIT pt1Filter_t setpointDerivativePt1[2];
+static FAST_RAM_ZERO_INIT biquadFilter_t setpointDerivativeBiquad[2];
+static FAST_RAM_ZERO_INIT bool setpointDerivativeLpfInitialized;
+static FAST_RAM_ZERO_INIT uint8_t rcSmoothingDebugAxis;
+static FAST_RAM_ZERO_INIT uint8_t rcSmoothingFilterType;
+#endif // USE_RC_SMOOTHING_FILTER
+
 void pidInitFilters(const pidProfile_t *pidProfile)
 {
     BUILD_BUG_ON(FD_YAW != 2); // only setting up Dterm filters on roll and pitch axes, so ensure yaw axis is 2
@@ -294,6 +302,24 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     }
 #endif
 }
+
+#ifdef USE_RC_SMOOTHING_FILTER
+void pidInitSetpointDerivativeLpf(uint16_t filterCutoff, uint8_t debugAxis, uint8_t filterType) {
+    setpointDerivativeLpfInitialized = true;
+    rcSmoothingDebugAxis = debugAxis;
+    rcSmoothingFilterType = filterType;
+    for (int axis = FD_ROLL; axis <= FD_PITCH; axis++) {
+        switch (rcSmoothingFilterType) {
+            case RC_SMOOTHING_DERIVATIVE_PT1:
+                pt1FilterInit(&setpointDerivativePt1[axis], pt1FilterGain(filterCutoff, dT));
+                break;
+            case RC_SMOOTHING_DERIVATIVE_BIQUAD:
+                biquadFilterInitLPF(&setpointDerivativeBiquad[axis], filterCutoff, targetPidLooptime);
+                break;
+        }
+    }
+}
+#endif // USE_RC_SMOOTHING_FILTER
 
 typedef struct pidCoefficient_s {
     float Kp;
@@ -862,17 +888,36 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
 
             pidData[axis].D = pidCoefficient[axis].Kd * delta * tpaFactor;
 
+            float pidSetpointDelta = currentPidSetpoint - previousPidSetpoint[axis];
+
+#ifdef USE_RC_SMOOTHING_FILTER
+            if (axis == rcSmoothingDebugAxis) {
+                DEBUG_SET(DEBUG_RC_SMOOTHING, 1, lrintf(pidSetpointDelta * 100.0f));
+            }
+            if ((dynCd != 0) && setpointDerivativeLpfInitialized && (rcSmoothingFilterType != RC_SMOOTHING_DERIVATIVE_OFF)) {
+                switch (rcSmoothingFilterType) {
+                    case RC_SMOOTHING_DERIVATIVE_PT1:
+                        pidSetpointDelta = pt1FilterApply(&setpointDerivativePt1[axis], pidSetpointDelta);
+                        break;
+                    case RC_SMOOTHING_DERIVATIVE_BIQUAD:
+                        pidSetpointDelta = biquadFilterApply(&setpointDerivativeBiquad[axis], pidSetpointDelta);
+                        break;
+                }
+                if (axis == rcSmoothingDebugAxis) {
+                    DEBUG_SET(DEBUG_RC_SMOOTHING, 2, lrintf(pidSetpointDelta * 100.0f));
+                }
+            }
+#endif // USE_RC_SMOOTHING_FILTER
+
             const float pidFeedForward =
-                pidCoefficient[axis].Kd * dynCd * transition *
-                (currentPidSetpoint - previousPidSetpoint[axis]) * tpaFactor / dT;
+                pidCoefficient[axis].Kd * dynCd * transition * pidSetpointDelta * tpaFactor / dT;
 #if defined(USE_SMART_FEEDFORWARD)
             bool addFeedforward = true;
             if (smartFeedforward) {
                 if (pidData[axis].P * pidFeedForward > 0) {
                     if (ABS(pidFeedForward) > ABS(pidData[axis].P)) {
                         pidData[axis].P = 0;
-                    }
-                    else {
+                    } else {
                         addFeedforward = false;
                     }
                 }

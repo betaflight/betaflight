@@ -59,7 +59,13 @@ void pgResetFn_rxConfig(rxConfig_t *rxConfig)
         .rcInterpolationInterval = 19,
         .fpvCamAngleDegrees = 0,
         .airModeActivateThreshold = 32,
-        .max_aux_channel = DEFAULT_AUX_CHANNEL_COUNT
+        .max_aux_channel = DEFAULT_AUX_CHANNEL_COUNT,
+        .rc_smoothing_type = RC_SMOOTHING_TYPE_INTERPOLATION,
+        .rc_smoothing_input_cutoff = 0,      // automatically calculate the cutoff by default
+        .rc_smoothing_derivative_cutoff = 0, // automatically calculate the cutoff by default
+        .rc_smoothing_debug_axis = ROLL,     // default to debug logging for the roll axis
+        .rc_smoothing_input_type = RC_SMOOTHING_INPUT_BIQUAD,
+        .rc_smoothing_derivative_type = RC_SMOOTHING_DERIVATIVE_BIQUAD,
     );
 
 #ifdef RX_CHANNELS_TAER
