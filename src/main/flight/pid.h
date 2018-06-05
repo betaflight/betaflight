@@ -83,6 +83,12 @@ typedef enum
     ITERM_RELAX_RPY
 } itermRelax_e;
 
+typedef enum 
+{
+    ITERM_RELAX_GYRO,
+    ITERM_RELAX_SETPOINT
+} itermRelaxType_e;
+
 typedef struct pidProfile_s {
     uint16_t yaw_lowpass_hz;                // Additional yaw filter when yaw axis too noisy
     uint16_t dterm_lowpass_hz;              // Delta Filter in hz
@@ -124,8 +130,8 @@ typedef struct pidProfile_s {
     uint8_t throttle_boost_cutoff;          // Which cutoff frequency to use for throttle boost. higher cutoffs keep the boost on for shorter. Specified in hz.
     uint8_t  iterm_rotation;                // rotates iterm to translate world errors to local coordinate system
     uint8_t  smart_feedforward;             // takes only the larger of P and the D weight feed forward term if they have the same sign.
-    uint8_t iterm_relax_cutoff_low;         // Slowest setpoint response to prevent iterm accumulation
-    uint8_t iterm_relax_cutoff_high;        // Fastest setpoint response to prevent iterm accumulation
+    uint8_t iterm_relax_type;               // Specifies type of relax algorithm
+    uint8_t iterm_relax_cutoff;             // This cutoff frequency specifies a low pass filter which predicts average response of the quad to setpoint
     uint8_t iterm_relax;                    // Enable iterm suppression during stick input
     uint8_t acro_trainer_angle_limit;       // Acro trainer roll/pitch angle limit in degrees
     uint8_t acro_trainer_debug_axis;        // The axis for which record debugging values are captured 0=roll, 1=pitch

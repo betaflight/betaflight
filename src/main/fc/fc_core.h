@@ -52,3 +52,4 @@ void taskMainPidLoop(timeUs_t currentTimeUs);
 bool isFlipOverAfterCrashMode(void);
 
 void runawayTakeoffTemporaryDisable(uint8_t disableFlag);
+bool isAirmodeActivated();
