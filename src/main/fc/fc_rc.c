@@ -227,7 +227,7 @@ FAST_CODE uint8_t processRcInterpolation(void)
         if (isRXDataNew && rxRefreshRate > 0) {
             rcInterpolationStepCount = rxRefreshRate / targetPidLooptime;
 
-            for (int channel = ROLL; channel <= THROTTLE; channel++) {
+            for (int channel = 0; channel < PRIMARY_CHANNEL_COUNT; channel++) {
                 if ((1 << channel) & interpolationChannels) {
                     rcStepSize[channel] = (rcCommand[channel] - rcCommandInterp[channel]) / (float)rcInterpolationStepCount;
                 }
@@ -241,7 +241,7 @@ FAST_CODE uint8_t processRcInterpolation(void)
 
         // Interpolate steps of rcCommand
         if (rcInterpolationStepCount > 0) {
-            for (updatedChannel = ROLL; updatedChannel <= THROTTLE; updatedChannel++) {
+            for (updatedChannel = 0; updatedChannel < PRIMARY_CHANNEL_COUNT; updatedChannel++) {
                 if ((1 << updatedChannel) & interpolationChannels) {
                     rcCommandInterp[updatedChannel] += rcStepSize[updatedChannel];
                     rcCommand[updatedChannel] = rcCommandInterp[updatedChannel];
@@ -287,7 +287,7 @@ FAST_CODE uint8_t processRcSmoothingFilter(void)
     }
 
     if (isRXDataNew) {
-        for (int i = 0; i <= THROTTLE; i++) {
+        for (int i = 0; i < PRIMARY_CHANNEL_COUNT; i++) {
             if ((1 << i) & interpolationChannels) {
                 lastRxData[i] = rcCommand[i];
             }
@@ -306,7 +306,7 @@ FAST_CODE uint8_t processRcSmoothingFilter(void)
                     derivativeCutoffFrequency = (derivativeCutoffFrequency == 0) ? defaultDerivativeCutoffFrequency : derivativeCutoffFrequency;
 
                     const float dT = targetPidLooptime * 1e-6f;
-                    for (int i = 0; i <= THROTTLE; i++) {
+                    for (int i = 0; i < PRIMARY_CHANNEL_COUNT; i++) {
                         if ((1 << i) & interpolationChannels) {
                             switch (rxConfig()->rc_smoothing_input_type) {
                                 case RC_SMOOTHING_INPUT_BIQUAD:
@@ -332,7 +332,7 @@ FAST_CODE uint8_t processRcSmoothingFilter(void)
     DEBUG_SET(DEBUG_RC_SMOOTHING, 0, lrintf(lastRxData[rxConfig()->rc_smoothing_debug_axis]));
     DEBUG_SET(DEBUG_RC_SMOOTHING, 3, defaultInputCutoffFrequency);
 
-    for (updatedChannel = ROLL; updatedChannel <= THROTTLE; updatedChannel++) {
+    for (updatedChannel = 0; updatedChannel < PRIMARY_CHANNEL_COUNT; updatedChannel++) {
         if (filterInitialized && (1 << updatedChannel) & interpolationChannels) {
             switch (rxConfig()->rc_smoothing_input_type) {
                 case RC_SMOOTHING_INPUT_BIQUAD:
@@ -545,12 +545,12 @@ void initRcProcessing(void)
         interpolationChannels |= ROLL_FLAG | PITCH_FLAG;
 
         break;
-    case INTERPOLATION_CHANNELS_T:
-        interpolationChannels |= THROTTLE_FLAG;
-
-        FALLTHROUGH;
     case INTERPOLATION_CHANNELS_RPT:
         interpolationChannels |= ROLL_FLAG | PITCH_FLAG;
+
+        FALLTHROUGH;
+    case INTERPOLATION_CHANNELS_T:
+        interpolationChannels |= THROTTLE_FLAG;
 
         break;
     }
