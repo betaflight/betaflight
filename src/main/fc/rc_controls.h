@@ -76,6 +76,13 @@ typedef enum {
     RC_SMOOTHING_DERIVATIVE_BIQUAD
 } rcSmoothingDerivativeFilter_e;
 
+typedef enum {
+    RC_SMOOTHING_VALUE_INPUT_AUTO,
+    RC_SMOOTHING_VALUE_INPUT_ACTIVE,
+    RC_SMOOTHING_VALUE_DERIVATIVE_AUTO,
+    RC_SMOOTHING_VALUE_DERIVATIVE_ACTIVE,
+    RC_SMOOTHING_VALUE_AVERAGE_FRAME
+} rcSmoothingInfoType_e;
 
 #define ROL_LO (1 << (2 * ROLL))
 #define ROL_CE (3 << (2 * ROLL))
