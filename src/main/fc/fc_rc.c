@@ -59,6 +59,15 @@ static bool reverseMotors = false;
 static applyRatesFn *applyRates;
 uint16_t currentRxRefreshRate;
 
+FAST_RAM_ZERO_INIT uint8_t interpolationChannels;
+
+enum {
+    ROLL_FLAG = 1 << ROLL,
+    PITCH_FLAG = 1 << PITCH,
+    YAW_FLAG = 1 << YAW,
+    THROTTLE_FLAG = 1 << THROTTLE,
+};
+
 #ifdef USE_RC_SMOOTHING_FILTER
 #define RC_SMOOTHING_FILTER_TRAINING_DELAY_MS 3000 // Wait 3 seconds after power to let the PID loop stabilize before starting average frame rate calculation
 #define RC_SMOOTHING_FILTER_TRAINING_SAMPLES 50
@@ -197,7 +206,6 @@ FAST_CODE uint8_t processRcInterpolation(void)
     static FAST_RAM_ZERO_INIT float rcStepSize[4];
     static FAST_RAM_ZERO_INIT int16_t rcInterpolationStepCount;
 
-    const uint8_t interpolationChannels = rxConfig()->rcInterpolationChannels + 2; //"RP", "RPY", "RPYT"
     uint16_t rxRefreshRate;
     uint8_t updatedChannel = 0;
 
@@ -219,8 +227,10 @@ FAST_CODE uint8_t processRcInterpolation(void)
         if (isRXDataNew && rxRefreshRate > 0) {
             rcInterpolationStepCount = rxRefreshRate / targetPidLooptime;
 
-            for (int channel = ROLL; channel < interpolationChannels; channel++) {
-                rcStepSize[channel] = (rcCommand[channel] - rcCommandInterp[channel]) / (float)rcInterpolationStepCount;
+            for (int channel = 0; channel < PRIMARY_CHANNEL_COUNT; channel++) {
+                if ((1 << channel) & interpolationChannels) {
+                    rcStepSize[channel] = (rcCommand[channel] - rcCommandInterp[channel]) / (float)rcInterpolationStepCount;
+                }
             }
 
            DEBUG_SET(DEBUG_RC_INTERPOLATION, 0, lrintf(rcCommand[0]));
@@ -231,9 +241,11 @@ FAST_CODE uint8_t processRcInterpolation(void)
 
         // Interpolate steps of rcCommand
         if (rcInterpolationStepCount > 0) {
-            for (updatedChannel = ROLL; updatedChannel < interpolationChannels; updatedChannel++) {
-                rcCommandInterp[updatedChannel] += rcStepSize[updatedChannel];
-                rcCommand[updatedChannel] = rcCommandInterp[updatedChannel];
+            for (updatedChannel = 0; updatedChannel < PRIMARY_CHANNEL_COUNT; updatedChannel++) {
+                if ((1 << updatedChannel) & interpolationChannels) {
+                    rcCommandInterp[updatedChannel] += rcStepSize[updatedChannel];
+                    rcCommand[updatedChannel] = rcCommandInterp[updatedChannel];
+                }
             }
         }
     } else {
@@ -254,7 +266,6 @@ uint8_t calcRcSmoothingCutoff(float avgRxFrameRate, float filterBaseline)
 
 FAST_CODE uint8_t processRcSmoothingFilter(void)
 {
-
     uint8_t updatedChannel = 0;
 
     static FAST_RAM_ZERO_INIT float lastRxData[4];
@@ -268,18 +279,18 @@ FAST_CODE uint8_t processRcSmoothingFilter(void)
     static FAST_RAM_ZERO_INIT uint16_t defaultDerivativeCutoffFrequency;
     static FAST_RAM_ZERO_INIT uint16_t filterCutoffFrequency;
     static FAST_RAM_ZERO_INIT uint16_t derivativeCutoffFrequency;
-    static FAST_RAM_ZERO_INIT uint8_t interpolationChannels;
 
     if (!initialized) {
         initialized = true;
-        interpolationChannels = rxConfig()->rcInterpolationChannels + 2; //"RP", "RPY", "RPYT"
         filterCutoffFrequency = rxConfig()->rc_smoothing_input_cutoff;
         derivativeCutoffFrequency = rxConfig()->rc_smoothing_derivative_cutoff;
     }
 
     if (isRXDataNew) {
-        for (int i = 0; i < interpolationChannels; i++) {
-            lastRxData[i] = rcCommand[i];
+        for (int i = 0; i < PRIMARY_CHANNEL_COUNT; i++) {
+            if ((1 << i) & interpolationChannels) {
+                lastRxData[i] = rcCommand[i];
+            }
         }
         // If the filter cutoffs are set to auto and we have good rx data, then determine the average rx frame rate
         // and use that to calculate the filter cutoff frequencies
@@ -295,15 +306,17 @@ FAST_CODE uint8_t processRcSmoothingFilter(void)
                     derivativeCutoffFrequency = (derivativeCutoffFrequency == 0) ? defaultDerivativeCutoffFrequency : derivativeCutoffFrequency;
 
                     const float dT = targetPidLooptime * 1e-6f;
-                    for (int i = 0; i < interpolationChannels; i++) {
-                        switch (rxConfig()->rc_smoothing_input_type) {
-                            case RC_SMOOTHING_INPUT_BIQUAD:
-                                biquadFilterInitLPF(&rcCommandFilterBiquad[i], filterCutoffFrequency, targetPidLooptime);
-                                break;
-                            case RC_SMOOTHING_INPUT_PT1:
-                            default:
-                                pt1FilterInit(&rcCommandFilterPt1[i], pt1FilterGain(filterCutoffFrequency, dT));
-                                break;
+                    for (int i = 0; i < PRIMARY_CHANNEL_COUNT; i++) {
+                        if ((1 << i) & interpolationChannels) {
+                            switch (rxConfig()->rc_smoothing_input_type) {
+                                case RC_SMOOTHING_INPUT_BIQUAD:
+                                    biquadFilterInitLPF(&rcCommandFilterBiquad[i], filterCutoffFrequency, targetPidLooptime);
+                                    break;
+                                case RC_SMOOTHING_INPUT_PT1:
+                                default:
+                                    pt1FilterInit(&rcCommandFilterPt1[i], pt1FilterGain(filterCutoffFrequency, dT));
+                                    break;
+                            }
                         }
                     }
                     pidInitSetpointDerivativeLpf(derivativeCutoffFrequency, rxConfig()->rc_smoothing_debug_axis, rxConfig()->rc_smoothing_derivative_type);
@@ -319,20 +332,22 @@ FAST_CODE uint8_t processRcSmoothingFilter(void)
     DEBUG_SET(DEBUG_RC_SMOOTHING, 0, lrintf(lastRxData[rxConfig()->rc_smoothing_debug_axis]));
     DEBUG_SET(DEBUG_RC_SMOOTHING, 3, defaultInputCutoffFrequency);
 
-    for (updatedChannel = ROLL; updatedChannel < interpolationChannels; updatedChannel++) {
-        if (filterInitialized) {
-            switch (rxConfig()->rc_smoothing_input_type) {
-                case RC_SMOOTHING_INPUT_BIQUAD:
-                    rcCommand[updatedChannel] = biquadFilterApply(&rcCommandFilterBiquad[updatedChannel], lastRxData[updatedChannel]);
-                    break;
-                case RC_SMOOTHING_INPUT_PT1:
-                default:
-                    rcCommand[updatedChannel] = pt1FilterApply(&rcCommandFilterPt1[updatedChannel], lastRxData[updatedChannel]);
-                    break;
+    for (updatedChannel = 0; updatedChannel < PRIMARY_CHANNEL_COUNT; updatedChannel++) {
+        if ((1 << updatedChannel) & interpolationChannels) {
+            if (filterInitialized) {
+                switch (rxConfig()->rc_smoothing_input_type) {
+                    case RC_SMOOTHING_INPUT_BIQUAD:
+                        rcCommand[updatedChannel] = biquadFilterApply(&rcCommandFilterBiquad[updatedChannel], lastRxData[updatedChannel]);
+                        break;
+                    case RC_SMOOTHING_INPUT_PT1:
+                    default:
+                        rcCommand[updatedChannel] = pt1FilterApply(&rcCommandFilterPt1[updatedChannel], lastRxData[updatedChannel]);
+                        break;
+                }
+            } else {
+                // If filter isn't initialized yet then use the actual unsmoothed rx channel data
+                rcCommand[updatedChannel] = lastRxData[updatedChannel];
             }
-        } else {
-            // If filter isn't initialized yet then use the actual unsmoothed rx channel data
-            rcCommand[updatedChannel] = lastRxData[updatedChannel];
         }
     }
 
@@ -514,6 +529,30 @@ void initRcProcessing(void)
         break;
     case RATES_TYPE_RACEFLIGHT:
         applyRates = applyRaceFlightRates;
+
+        break;
+    }
+
+    interpolationChannels = 0;
+    switch (rxConfig()->rcInterpolationChannels) {
+    case INTERPOLATION_CHANNELS_RPYT:
+        interpolationChannels |= THROTTLE_FLAG;
+
+        FALLTHROUGH;
+    case INTERPOLATION_CHANNELS_RPY:
+        interpolationChannels |= YAW_FLAG;
+
+        FALLTHROUGH;
+    case INTERPOLATION_CHANNELS_RP:
+        interpolationChannels |= ROLL_FLAG | PITCH_FLAG;
+
+        break;
+    case INTERPOLATION_CHANNELS_RPT:
+        interpolationChannels |= ROLL_FLAG | PITCH_FLAG;
+
+        FALLTHROUGH;
+    case INTERPOLATION_CHANNELS_T:
+        interpolationChannels |= THROTTLE_FLAG;
 
         break;
     }
