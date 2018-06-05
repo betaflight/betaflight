@@ -266,7 +266,11 @@ static void validateAndFixConfig(void)
     }
 #endif
 
-    if (rxConfig()->rcInterpolation == RC_SMOOTHING_OFF || rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_T) {
+    if ((
+#if defined(USE_RC_SMOOTHING_FILTER)
+        rxConfig()->rc_smoothing_type == RC_SMOOTHING_TYPE_INTERPOLATION &&
+#endif
+        rxConfig()->rcInterpolation == RC_SMOOTHING_OFF) || rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_T) {
         for (unsigned i = 0; i < MAX_PROFILE_COUNT; i++) {
             pidProfilesMutable(i)->dtermSetpointWeight = 0;
         }
