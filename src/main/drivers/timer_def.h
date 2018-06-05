@@ -553,9 +553,9 @@
 #define DEF_TIM_DMA__BTCH_TIM5_CH3    D(1, 0, 6)
 #define DEF_TIM_DMA__BTCH_TIM5_CH4    D(1, 1, 6),D(1, 3, 6)
 
-#define DEF_TIM_DMA__BTCH_TIM8_CH1    D(2, 2, 7),D(2, 2, 0)
-#define DEF_TIM_DMA__BTCH_TIM8_CH2    D(2, 3, 7),D(2, 2, 0)
-#define DEF_TIM_DMA__BTCH_TIM8_CH3    D(2, 4, 7),D(2, 2, 0)
+#define DEF_TIM_DMA__BTCH_TIM8_CH1    D(2, 2, 0),D(2, 2, 7)
+#define DEF_TIM_DMA__BTCH_TIM8_CH2    D(2, 2, 0),D(2, 3, 7)
+#define DEF_TIM_DMA__BTCH_TIM8_CH3    D(2, 2, 0),D(2, 4, 7)
 #define DEF_TIM_DMA__BTCH_TIM8_CH4    D(2, 7, 7)
 
 #define DEF_TIM_DMA__BTCH_TIM4_CH4    NONE
