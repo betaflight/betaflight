@@ -254,6 +254,26 @@ static void validateAndFixConfig(void)
         ) {
         rxConfigMutable()->rssi_src_frame_errors = false;
     }
+
+    if ((
+#if defined(USE_RC_SMOOTHING_FILTER)
+        rxConfig()->rc_smoothing_type == RC_SMOOTHING_TYPE_INTERPOLATION &&
+#endif
+        rxConfig()->rcInterpolation == RC_SMOOTHING_OFF) || rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_T) {
+        for (unsigned i = 0; i < MAX_PROFILE_COUNT; i++) {
+            pidProfilesMutable(i)->dtermSetpointWeight = 0;
+        }
+    }
+
+#if defined(USE_THROTTLE_BOOST)
+    if (!(rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_RPYT
+        || rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_T
+        || rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_RPT)) {
+        for (unsigned i = 0; i < MAX_PROFILE_COUNT; i++) {
+            pidProfilesMutable(i)->throttle_boost = 0;
+        }
+    }
+#endif
 #endif // USE_OSD_SLAVE
 
     if (!isSerialConfigValid(serialConfig())) {
