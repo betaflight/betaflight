@@ -333,19 +333,21 @@ FAST_CODE uint8_t processRcSmoothingFilter(void)
     DEBUG_SET(DEBUG_RC_SMOOTHING, 3, defaultInputCutoffFrequency);
 
     for (updatedChannel = 0; updatedChannel < PRIMARY_CHANNEL_COUNT; updatedChannel++) {
-        if (filterInitialized && (1 << updatedChannel) & interpolationChannels) {
-            switch (rxConfig()->rc_smoothing_input_type) {
-                case RC_SMOOTHING_INPUT_BIQUAD:
-                    rcCommand[updatedChannel] = biquadFilterApply(&rcCommandFilterBiquad[updatedChannel], lastRxData[updatedChannel]);
-                    break;
-                case RC_SMOOTHING_INPUT_PT1:
-                default:
-                    rcCommand[updatedChannel] = pt1FilterApply(&rcCommandFilterPt1[updatedChannel], lastRxData[updatedChannel]);
-                    break;
+        if ((1 << updatedChannel) & interpolationChannels) {
+            if (filterInitialized) {
+                switch (rxConfig()->rc_smoothing_input_type) {
+                    case RC_SMOOTHING_INPUT_BIQUAD:
+                        rcCommand[updatedChannel] = biquadFilterApply(&rcCommandFilterBiquad[updatedChannel], lastRxData[updatedChannel]);
+                        break;
+                    case RC_SMOOTHING_INPUT_PT1:
+                    default:
+                        rcCommand[updatedChannel] = pt1FilterApply(&rcCommandFilterPt1[updatedChannel], lastRxData[updatedChannel]);
+                        break;
+                }
+            } else {
+                // If filter isn't initialized yet then use the actual unsmoothed rx channel data
+                rcCommand[updatedChannel] = lastRxData[updatedChannel];
             }
-        } else {
-            // If filter isn't initialized yet then use the actual unsmoothed rx channel data
-            rcCommand[updatedChannel] = lastRxData[updatedChannel];
         }
     }
 
