@@ -111,7 +111,6 @@
 
 #include "io/beeper.h"
 #include "io/displayport_max7456.h"
-#include "io/displayport_rcdevice.h"
 #include "io/displayport_srxl.h"
 #include "io/displayport_crsf.h"
 #include "io/serial.h"
