@@ -1251,6 +1251,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, currentPidProfile->dterm_filter_type);
         sbufWriteU8(dst, gyroConfig()->gyro_hardware_lpf);
         sbufWriteU8(dst, gyroConfig()->gyro_32khz_hardware_lpf);
+        sbufWriteU16(dst, gyroConfig()->gyro_lowpass_hz);
         sbufWriteU16(dst, gyroConfig()->gyro_lowpass2_hz);
         sbufWriteU8(dst, gyroConfig()->gyro_lowpass_type);
         sbufWriteU8(dst, gyroConfig()->gyro_lowpass2_type);
@@ -1715,9 +1716,10 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         if (sbufBytesRemaining(src) >= 1) {
             currentPidProfile->dterm_filter_type = sbufReadU8(src);
         }
-        if (sbufBytesRemaining(src) >= 8) {
+        if (sbufBytesRemaining(src) >= 10) {
             gyroConfigMutable()->gyro_hardware_lpf = sbufReadU8(src);
             gyroConfigMutable()->gyro_32khz_hardware_lpf = sbufReadU8(src);
+            gyroConfigMutable()->gyro_lowpass_hz = sbufReadU16(src);
             gyroConfigMutable()->gyro_lowpass2_hz = sbufReadU16(src);
             gyroConfigMutable()->gyro_lowpass_type = sbufReadU8(src);
             gyroConfigMutable()->gyro_lowpass2_type = sbufReadU8(src);
