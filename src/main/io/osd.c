@@ -270,14 +270,13 @@ static char osdGetTemperatureSymbolForSelectedUnit(void)
 }
 #endif
 
-static void osdFormatAltitudeString(char * buff, int altitude, bool pad)
+static void osdFormatAltitudeString(char * buff, int altitude)
 {
-    const int alt = osdGetMetersToSelectedUnit(altitude);
-    int altitudeIntergerPart = abs(alt / 100);
-    if (alt < 0) {
-        altitudeIntergerPart *= -1;
-    }
-    tfp_sprintf(buff, pad ? "%4d.%01d%c" : "%d.%01d%c", altitudeIntergerPart, abs((alt % 100) / 10), osdGetMetersToSelectedUnitSymbol());
+    const int alt = osdGetMetersToSelectedUnit(altitude) / 10;
+
+    tfp_sprintf(buff, "%5d %c", alt, osdGetMetersToSelectedUnitSymbol());
+    buff[5] = buff[4];
+    buff[4] = '.';
 }
 
 static void osdFormatPID(char * buff, const char * label, const pid8_t * pid)
@@ -551,7 +550,7 @@ static bool osdDrawSingleElement(uint8_t item)
         break;
 
     case OSD_ALTITUDE:
-        osdFormatAltitudeString(buff, getEstimatedAltitude(), true);
+        osdFormatAltitudeString(buff, getEstimatedAltitude());
         break;
 
     case OSD_ITEM_TIMER_1:
@@ -1370,7 +1369,7 @@ static void osdShowStats(uint16_t endBatteryVoltage)
     }
 
     if (osdStatGetState(OSD_STAT_MAX_ALTITUDE)) {
-        osdFormatAltitudeString(buff, stats.max_altitude, false);
+        osdFormatAltitudeString(buff, stats.max_altitude);
         osdDisplayStatisticLabel(top++, "MAX ALTITUDE", buff);
     }
 
