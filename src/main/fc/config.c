@@ -254,17 +254,6 @@ static void validateAndFixConfig(void)
         ) {
         rxConfigMutable()->rssi_src_frame_errors = false;
     }
-#endif // USE_OSD_SLAVE
-
-    if (!isSerialConfigValid(serialConfig())) {
-        pgResetFn_serialConfig(serialConfigMutable());
-    }
-
-#if defined(USE_ESC_SENSOR)
-    if (!findSerialPortConfig(FUNCTION_ESC_SENSOR)) {
-        featureClear(FEATURE_ESC_SENSOR);
-    }
-#endif
 
     if ((
 #if defined(USE_RC_SMOOTHING_FILTER)
@@ -283,6 +272,17 @@ static void validateAndFixConfig(void)
         for (unsigned i = 0; i < MAX_PROFILE_COUNT; i++) {
             pidProfilesMutable(i)->throttle_boost = 0;
         }
+    }
+#endif
+#endif // USE_OSD_SLAVE
+
+    if (!isSerialConfigValid(serialConfig())) {
+        pgResetFn_serialConfig(serialConfigMutable());
+    }
+
+#if defined(USE_ESC_SENSOR)
+    if (!findSerialPortConfig(FUNCTION_ESC_SENSOR)) {
+        featureClear(FEATURE_ESC_SENSOR);
     }
 #endif
 
