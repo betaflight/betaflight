@@ -53,6 +53,7 @@
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
+#include "fc/fc_rc.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
@@ -1325,11 +1326,13 @@ static bool blackboxWriteSysinfo(void)
 
 #ifdef USE_RC_SMOOTHING_FILTER
         BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_type", "%d",               rxConfig()->rc_smoothing_type);
-        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_input_cutoff", "%d",       rxConfig()->rc_smoothing_input_cutoff);
-        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_derivative_cutoff", "%d",  rxConfig()->rc_smoothing_derivative_cutoff);
         BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_debug_axis", "%d",         rxConfig()->rc_smoothing_debug_axis);
-        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_input_type", "%d",         rxConfig()->rc_smoothing_input_type);
-        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_derivative_type", "%d",    rxConfig()->rc_smoothing_derivative_type);
+        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_cutoffs", "%d, %d",        rxConfig()->rc_smoothing_input_cutoff,
+                                                                            rxConfig()->rc_smoothing_derivative_cutoff);
+        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_filter_type", "%d, %d",    rxConfig()->rc_smoothing_input_type,
+                                                                            rxConfig()->rc_smoothing_derivative_type);
+        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_active_cutoffs", "%d, %d", rcSmoothingGetValue(RC_SMOOTHING_VALUE_INPUT_ACTIVE),
+                                                                            rcSmoothingGetValue(RC_SMOOTHING_VALUE_DERIVATIVE_ACTIVE));
 #endif // USE_RC_SMOOTHING_FILTER
 
 
