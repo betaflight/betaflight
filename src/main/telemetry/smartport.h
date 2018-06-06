@@ -75,3 +75,4 @@ smartPortPayload_t *smartPortDataReceive(uint16_t c, bool *clearToSend, smartPor
 struct serialPort_s;
 void smartPortWriteFrameSerial(const smartPortPayload_t *payload, struct serialPort_s *port, uint16_t checksum);
 void smartPortSendByte(uint8_t c, uint16_t *checksum, struct serialPort_s *port);
+bool smartPortPayloadContainsMSP(const smartPortPayload_t *payload);

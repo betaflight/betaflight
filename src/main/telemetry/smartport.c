@@ -149,13 +149,8 @@ enum
 
 static uint16_t frSkyDataIdTable[MAX_DATAIDS];
 
-// number of sensors to send before taking a rest
-// seems to improve throughput and prevents "sensor lost" issue (oversaturation of send queue???)
-#define SENSOR_REST_PERIOD 3
-
 #ifdef USE_ESC_SENSOR
 // number of sensors to send between sending the ESC sensors
-// must be greater than and not a multiple of SENSOR_REST_PERIOD
 #define ESC_SENSOR_PERIOD 7
 
 static uint16_t frSkyEscDataIdTable[] = {
@@ -290,6 +285,12 @@ void smartPortSendByte(uint8_t c, uint16_t *checksum, serialPort_t *port)
         *checksum += c;
     }
 }
+
+bool smartPortPayloadContainsMSP(const smartPortPayload_t *payload)
+{
+    return payload->frameId == FSSP_MSPC_FRAME_SMARTPORT || payload->frameId == FSSP_MSPC_FRAME_FPORT;
+}
+
 
 void smartPortWriteFrameSerial(const smartPortPayload_t *payload, serialPort_t *port, uint16_t checksum)
 {
@@ -468,7 +469,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
         // unless we start receiving other sensors' packets
 
 #if defined(USE_MSP_OVER_TELEMETRY)
-        if (payload->frameId == FSSP_MSPC_FRAME_SMARTPORT || payload->frameId == FSSP_MSPC_FRAME_FPORT) {
+        if (smartPortPayloadContainsMSP(payload)) {
             // Pass only the payload: skip frameId
             uint8_t *frameStart = (uint8_t *)&payload->valueId;
             smartPortMspReplyPending = handleMspFrame(frameStart, SMARTPORT_MSP_PAYLOAD_SIZE);
@@ -500,11 +501,6 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
 
         // we can send back any data we want, our tables keep track of the order and frequency of each data type we send
         frSkyTableInfo_t * tableInfo = &frSkyDataIdTableInfo;
-
-        if (smartPortIdCycleCnt % SENSOR_REST_PERIOD == 0) {
-            smartPortIdCycleCnt++;
-            return;
-        }
 
 #ifdef USE_ESC_SENSOR
         if (smartPortIdCycleCnt >= ESC_SENSOR_PERIOD) {
