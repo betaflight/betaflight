@@ -49,7 +49,6 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
     static timeUs_t previousTimeUs = 0;
     static int32_t baroAltOffset = 0;
     static int32_t gpsAltOffset = 0;
-    static bool altitudeOffsetSet = false;
 
     const uint32_t dTime = currentTimeUs - previousTimeUs;
     if (dTime < BARO_UPDATE_FREQUENCY_40HZ) {
@@ -87,13 +86,11 @@ if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
 }
 #endif
 
-    if (ARMING_FLAG(ARMED) && !altitudeOffsetSet) {
+    if (!ARMING_FLAG(ARMED)) {
         baroAltOffset = baroAlt;
         gpsAltOffset = gpsAlt;
-        altitudeOffsetSet = true;
-    } else if (!ARMING_FLAG(ARMED) && altitudeOffsetSet) {
-        altitudeOffsetSet = false;
     }
+
     baroAlt -= baroAltOffset;
     gpsAlt -= gpsAltOffset;
     
