@@ -49,6 +49,7 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
     static timeUs_t previousTimeUs = 0;
     static int32_t baroAltOffset = 0;
     static int32_t gpsAltOffset = 0;
+    static bool altitudeOffsetSet = false;
 
     const uint32_t dTime = currentTimeUs - previousTimeUs;
     if (dTime < BARO_UPDATE_FREQUENCY_40HZ) {
