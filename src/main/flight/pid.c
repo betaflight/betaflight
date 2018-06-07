@@ -125,7 +125,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .pidAtMinThrottle = PID_STABILISATION_ON,
         .levelAngleLimit = 55,
         .setpointRelaxRatio = 100,
-        .dtermSetpointWeight = 0,
+        .dtermSetpointWeight = 45,
         .yawRateAccelLimit = 100,
         .rateAccelLimit = 0,
         .itermThrottleThreshold = 350,
@@ -393,7 +393,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
         pidCoefficient[axis].Kd = DTERM_SCALE * pidProfile->pid[axis].D;
     }
 
-    dtermSetpointWeight = pidProfile->dtermSetpointWeight / 127.0f;
+    dtermSetpointWeight = pidProfile->dtermSetpointWeight / 100.0f;
     if (pidProfile->setpointRelaxRatio == 0) {
         relaxFactor = 0;
     } else {
