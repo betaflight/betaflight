@@ -308,18 +308,21 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 }
 
 #ifdef USE_RC_SMOOTHING_FILTER
-void pidInitSetpointDerivativeLpf(uint16_t filterCutoff, uint8_t debugAxis, uint8_t filterType) {
-    setpointDerivativeLpfInitialized = true;
+void pidInitSetpointDerivativeLpf(uint16_t filterCutoff, uint8_t debugAxis, uint8_t filterType)
+{
     rcSmoothingDebugAxis = debugAxis;
     rcSmoothingFilterType = filterType;
-    for (int axis = FD_ROLL; axis <= FD_PITCH; axis++) {
-        switch (rcSmoothingFilterType) {
-            case RC_SMOOTHING_DERIVATIVE_PT1:
-                pt1FilterInit(&setpointDerivativePt1[axis], pt1FilterGain(filterCutoff, dT));
-                break;
-            case RC_SMOOTHING_DERIVATIVE_BIQUAD:
-                biquadFilterInitLPF(&setpointDerivativeBiquad[axis], filterCutoff, targetPidLooptime);
-                break;
+    if ((filterCutoff > 0) && (rcSmoothingFilterType != RC_SMOOTHING_DERIVATIVE_OFF)) {
+        setpointDerivativeLpfInitialized = true;
+        for (int axis = FD_ROLL; axis <= FD_PITCH; axis++) {
+            switch (rcSmoothingFilterType) {
+                case RC_SMOOTHING_DERIVATIVE_PT1:
+                    pt1FilterInit(&setpointDerivativePt1[axis], pt1FilterGain(filterCutoff, dT));
+                    break;
+                case RC_SMOOTHING_DERIVATIVE_BIQUAD:
+                    biquadFilterInitLPF(&setpointDerivativeBiquad[axis], filterCutoff, targetPidLooptime);
+                    break;
+            }
         }
     }
 }
@@ -902,7 +905,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
             if (axis == rcSmoothingDebugAxis) {
                 DEBUG_SET(DEBUG_RC_SMOOTHING, 1, lrintf(pidSetpointDelta * 100.0f));
             }
-            if ((dynCd != 0) && setpointDerivativeLpfInitialized && (rcSmoothingFilterType != RC_SMOOTHING_DERIVATIVE_OFF)) {
+            if ((dynCd != 0) && setpointDerivativeLpfInitialized) {
                 switch (rcSmoothingFilterType) {
                     case RC_SMOOTHING_DERIVATIVE_PT1:
                         pidSetpointDelta = pt1FilterApply(&setpointDerivativePt1[axis], pidSetpointDelta);

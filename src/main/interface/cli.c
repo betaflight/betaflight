@@ -3654,6 +3654,44 @@ static void cliVersion(char *cmdline)
     );
 }
 
+#ifdef USE_RC_SMOOTHING_FILTER
+static void cliRcSmoothing(char *cmdline)
+{
+    UNUSED(cmdline);
+    cliPrint("# RC Smoothing Type: ");
+    if (rxConfig()->rc_smoothing_type == RC_SMOOTHING_TYPE_FILTER) {
+        cliPrintLine("FILTER");
+        uint16_t avgRxFrameMs = rcSmoothingGetValue(RC_SMOOTHING_VALUE_AVERAGE_FRAME);
+        cliPrint("# Detected RX frame rate: ");
+        if (avgRxFrameMs == 0) {
+            cliPrintLine("NO SIGNAL");
+        } else {
+            cliPrintLinef("%d.%dms", avgRxFrameMs / 1000, avgRxFrameMs % 1000);
+        }
+        cliPrintLinef("# Auto input cutoff: %dhz", rcSmoothingGetValue(RC_SMOOTHING_VALUE_INPUT_AUTO));
+        cliPrintf("# Active input cutoff: %dhz ", rcSmoothingGetValue(RC_SMOOTHING_VALUE_INPUT_ACTIVE));
+        if (rxConfig()->rc_smoothing_input_cutoff == 0) {
+            cliPrintLine("(auto)");
+        } else {
+            cliPrintLine("(manual)");
+        }
+        cliPrintLinef("# Auto derivative cutoff: %dhz", rcSmoothingGetValue(RC_SMOOTHING_VALUE_DERIVATIVE_AUTO));
+        cliPrintf("# Active derivative cutoff: %dhz (", rcSmoothingGetValue(RC_SMOOTHING_VALUE_DERIVATIVE_ACTIVE));
+        if (rxConfig()->rc_smoothing_derivative_type == RC_SMOOTHING_DERIVATIVE_OFF) {
+            cliPrintLine("off)");
+        } else {
+            if (rxConfig()->rc_smoothing_derivative_cutoff == 0) {
+                cliPrintLine("auto)");
+            } else {
+                cliPrintLine("manual)");
+            }
+        }
+    } else {
+        cliPrintLine("INTERPOLATION");
+    }
+}
+#endif // USE_RC_SMOOTHING_FILTER
+
 #if defined(USE_RESOURCE_MGMT)
 
 #define MAX_RESOURCE_INDEX(x) ((x) == 0 ? 1 : (x))
@@ -4441,6 +4479,9 @@ const clicmd_t cmdTable[] = {
 #endif
     CLI_COMMAND_DEF("profile", "change profile", "[<index>]", cliProfile),
     CLI_COMMAND_DEF("rateprofile", "change rate profile", "[<index>]", cliRateProfile),
+#ifdef USE_RC_SMOOTHING_FILTER
+    CLI_COMMAND_DEF("rc_smoothing_info", "show rc_smoothing operational settings", NULL, cliRcSmoothing),
+#endif // USE_RC_SMOOTHING_FILTER
 #ifdef USE_RESOURCE_MGMT
     CLI_COMMAND_DEF("resource", "show/set resources", NULL, cliResource),
 #endif
