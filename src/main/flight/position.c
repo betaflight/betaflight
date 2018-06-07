@@ -89,10 +89,10 @@ if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
     if (!ARMING_FLAG(ARMED)) {
         baroAltOffset = baroAlt;
         gpsAltOffset = gpsAlt;
+    } else { 
+        baroAlt -= baroAltOffset;
+        gpsAlt -= gpsAltOffset;
     }
-
-    baroAlt -= baroAltOffset;
-    gpsAlt -= gpsAltOffset;
     
     if (haveGpsAlt && haveBaroAlt) {
         estimatedAltitude = gpsAlt * gpsTrust + baroAlt * (1 - gpsTrust);
