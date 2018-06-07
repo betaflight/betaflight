@@ -464,18 +464,15 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
     static uint8_t smartPortIdOffset = 0;
 #endif
 
-    if (payload) {
-        // do not check the physical ID here again
-        // unless we start receiving other sensors' packets
-
 #if defined(USE_MSP_OVER_TELEMETRY)
-        if (smartPortPayloadContainsMSP(payload)) {
-            // Pass only the payload: skip frameId
-            uint8_t *frameStart = (uint8_t *)&payload->valueId;
-            smartPortMspReplyPending = handleMspFrame(frameStart, SMARTPORT_MSP_PAYLOAD_SIZE);
-        }
-#endif
+    if (payload && smartPortPayloadContainsMSP(payload)) {
+        // Do not check the physical ID here again
+        // unless we start receiving other sensors' packets
+        // Pass only the payload: skip frameId
+         uint8_t *frameStart = (uint8_t *)&payload->valueId;
+         smartPortMspReplyPending = handleMspFrame(frameStart, SMARTPORT_MSP_PAYLOAD_SIZE);
     }
+#endif
 
     bool doRun = true;
     while (doRun && *clearToSend) {

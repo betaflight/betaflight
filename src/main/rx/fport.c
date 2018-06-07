@@ -347,7 +347,7 @@ static bool fportProcessFrame(const rxRuntimeConfig_t *rxRuntimeConfig)
     if (clearToSend) {
         DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_TELEMETRY_DELAY, currentTimeUs - lastTelemetryFrameReceivedUs);
 
-        if (consecutiveSensorCount >= FPORT_TELEMETRY_MAX_CONSECUTIVE_SENSORS && !smartPortPayloadContainsMSP(mspPayload)) {
+        if (consecutiveSensorCount >= FPORT_TELEMETRY_MAX_CONSECUTIVE_SENSORS && !(mspPayload && smartPortPayloadContainsMSP(mspPayload))) {
 // Stop one cycle to avoid saturating the buffer in the RX, since the
 // downstream bandwidth doesn't allow sensor sensors on every cycle.
 // We allow MSP frames to run over the resting period, expecting that
