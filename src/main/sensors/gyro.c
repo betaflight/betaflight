@@ -520,9 +520,9 @@ bool gyroInit(void)
 
     switch (debugMode) {
     case DEBUG_FFT:
-    case DEBUG_GYRO_NOTCH:
-    case DEBUG_GYRO:
     case DEBUG_GYRO_RAW:
+    case DEBUG_GYRO_SCALED:
+    case DEBUG_GYRO_FILTERED:
         gyroDebugMode = debugMode;
         break;
     default:
@@ -864,8 +864,8 @@ STATIC_UNIT_TESTED void performGyroCalibration(gyroSensor_t *gyroSensor, uint8_t
 
         if (isOnFinalGyroCalibrationCycle(&gyroSensor->calibration)) {
             const float stddev = devStandardDeviation(&gyroSensor->calibration.var[axis]);
-
-            DEBUG_SET(DEBUG_GYRO, DEBUG_GYRO_CALIBRATION, lrintf(stddev));
+            // DEBUG_GYRO_CALIBRATION records per-axis standard deviation
+            DEBUG_SET(DEBUG_GYRO_CALIBRATION, axis, lrintf(stddev));
 
             // check deviation and startover in case the model was moved
             if (gyroMovementCalibrationThreshold && stddev > gyroMovementCalibrationThreshold) {
@@ -1054,14 +1054,13 @@ static FAST_CODE FAST_CODE_NOINLINE void gyroUpdateSensor(gyroSensor_t *gyroSens
             // NOTE: this branch optimized for when there is no gyro debugging, ensure it is kept in step with non-optimized branch
             float gyroADCf = gyroSensor->gyroDev.gyroADC[axis] * gyroSensor->gyroDev.scale;
 
-            gyroADCf = gyroSensor->lowpass2FilterApplyFn((filter_t *)&gyroSensor->lowpass2Filter[axis], gyroADCf);
-
 #ifdef USE_GYRO_DATA_ANALYSE
             gyroADCf = gyroSensor->notchFilterDynApplyFn((filter_t *)&gyroSensor->notchFilterDyn[axis], gyroADCf);
 #endif
             gyroADCf = gyroSensor->notchFilter1ApplyFn((filter_t *)&gyroSensor->notchFilter1[axis], gyroADCf);
             gyroADCf = gyroSensor->notchFilter2ApplyFn((filter_t *)&gyroSensor->notchFilter2[axis], gyroADCf);
             gyroADCf = gyroSensor->lowpassFilterApplyFn((filter_t *)&gyroSensor->lowpassFilter[axis], gyroADCf);
+            gyroADCf = gyroSensor->lowpass2FilterApplyFn((filter_t *)&gyroSensor->lowpass2Filter[axis], gyroADCf);
             gyroSensor->gyroDev.gyroADCf[axis] = gyroADCf;
 
             if (!gyroSensor->overflowDetected) {
@@ -1075,11 +1074,8 @@ static FAST_CODE FAST_CODE_NOINLINE void gyroUpdateSensor(gyroSensor_t *gyroSens
             DEBUG_SET(DEBUG_GYRO_RAW, axis, gyroSensor->gyroDev.gyroADCRaw[axis]);
             // scale gyro output to degrees per second
             float gyroADCf = gyroSensor->gyroDev.gyroADC[axis] * gyroSensor->gyroDev.scale;
-            // DEBUG_GYRO_NOTCH records the unfiltered gyro output
-            DEBUG_SET(DEBUG_GYRO_NOTCH, axis, lrintf(gyroADCf));
-
-            // apply lowpass2 filter
-            gyroADCf = gyroSensor->lowpass2FilterApplyFn((filter_t *)&gyroSensor->lowpass2Filter[axis], gyroADCf);
+            // DEBUG_GYRO_SCALED records the unfiltered, scaled gyro output
+            DEBUG_SET(DEBUG_GYRO_SCALED, axis, lrintf(gyroADCf));
 
 #ifdef USE_GYRO_DATA_ANALYSE
             // apply dynamic notch filter
@@ -1093,14 +1089,13 @@ static FAST_CODE FAST_CODE_NOINLINE void gyroUpdateSensor(gyroSensor_t *gyroSens
                 }
             }
 #endif
-
-            // apply static notch filters
+            // apply static notch filters and software lowpass filters
             gyroADCf = gyroSensor->notchFilter1ApplyFn((filter_t *)&gyroSensor->notchFilter1[axis], gyroADCf);
             gyroADCf = gyroSensor->notchFilter2ApplyFn((filter_t *)&gyroSensor->notchFilter2[axis], gyroADCf);
-
-            // apply lowpass2 filter
-            DEBUG_SET(DEBUG_GYRO, axis, lrintf(gyroADCf));
             gyroADCf = gyroSensor->lowpassFilterApplyFn((filter_t *)&gyroSensor->lowpassFilter[axis], gyroADCf);
+            gyroADCf = gyroSensor->lowpass2FilterApplyFn((filter_t *)&gyroSensor->lowpass2Filter[axis], gyroADCf);
+            // DEBUG_GYRO_FILTERED records the scaled, filtered, after all software filtering has been applied.
+            DEBUG_SET(DEBUG_GYRO_FILTERED, axis, lrintf(gyroADCf));
 
             gyroSensor->gyroDev.gyroADCf[axis] = gyroADCf;
             if (!gyroSensor->overflowDetected) {
