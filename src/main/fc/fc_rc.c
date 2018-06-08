@@ -70,7 +70,8 @@ enum {
 
 #ifdef USE_RC_SMOOTHING_FILTER
 #define RC_SMOOTHING_IDENTITY_FREQUENCY 80         // Used in the formula to convert a BIQUAD cutoff frequency to PT1
-#define RC_SMOOTHING_FILTER_TRAINING_DELAY_MS 5000 // Wait 5 seconds after power to let the PID loop stabilize before starting average frame rate calculation
+#define RC_SMOOTHING_FILTER_STARTUP_DELAY_MS 5000  // Time to wait after power to let the PID loop stabilize before starting average frame rate calculation
+#define RC_SMOOTHING_FILTER_TRAINING_DELAY_MS 1000 // Additional time to wait after receiving first valid rx frame before training starts
 #define RC_SMOOTHING_FILTER_TRAINING_SAMPLES 50
 
 static FAST_RAM_ZERO_INIT uint16_t defaultInputCutoffFrequency;
@@ -290,6 +291,7 @@ FAST_CODE uint8_t processRcSmoothingFilter(void)
     static FAST_RAM_ZERO_INIT int rxFrameCount;
     static FAST_RAM uint16_t minRxFrameInterval = UINT16_MAX;
     static FAST_RAM_ZERO_INIT uint16_t maxRxFrameInterval;
+    static FAST_RAM_ZERO_INIT timeMs_t validRxFrameTimeMs;
 
     if (!initialized) {
         initialized = true;
@@ -306,48 +308,56 @@ FAST_CODE uint8_t processRcSmoothingFilter(void)
         // If the filter cutoffs are set to auto and we have good rx data, then determine the average rx frame rate
         // and use that to calculate the filter cutoff frequencies
         if (!filterInitialized) {
-            if (rxIsReceivingSignal() && (targetPidLooptime > 0) && (millis() > RC_SMOOTHING_FILTER_TRAINING_DELAY_MS)) {
-                rxFrameTimeSum += currentRxRefreshRate;
-                rxFrameCount++;
-                maxRxFrameInterval = MAX(maxRxFrameInterval, currentRxRefreshRate);
-                minRxFrameInterval = MIN(minRxFrameInterval, currentRxRefreshRate);
-                DEBUG_SET(DEBUG_RC_SMOOTHING, 0, rxFrameCount);           // log the step count during training
-                DEBUG_SET(DEBUG_RC_SMOOTHING, 3, currentRxRefreshRate);   // log each frame interval during training
-                if (rxFrameCount >= RC_SMOOTHING_FILTER_TRAINING_SAMPLES) {
-                    rxFrameTimeSum = rxFrameTimeSum - minRxFrameInterval - maxRxFrameInterval; // Throw out high and low samples
-                    calculatedFrameTimeAverageUs = lrintf(rxFrameTimeSum / (rxFrameCount - 2));
-                    const float avgRxFrameTime = (rxFrameTimeSum / (rxFrameCount - 2)) * 1e-6f;
+            const timeMs_t currentTimeMs = millis();
+            if (rxIsReceivingSignal() && (targetPidLooptime > 0) && (currentTimeMs > RC_SMOOTHING_FILTER_STARTUP_DELAY_MS)) {
+                if (validRxFrameTimeMs == 0) {
+                    validRxFrameTimeMs = currentTimeMs;
+                } else if ((currentTimeMs - validRxFrameTimeMs) > RC_SMOOTHING_FILTER_TRAINING_DELAY_MS) {
+                    rxFrameTimeSum += currentRxRefreshRate;
+                    rxFrameCount++;
+                    maxRxFrameInterval = MAX(maxRxFrameInterval, currentRxRefreshRate);
+                    minRxFrameInterval = MIN(minRxFrameInterval, currentRxRefreshRate);
+                    DEBUG_SET(DEBUG_RC_SMOOTHING, 0, rxFrameCount);           // log the step count during training
+                    DEBUG_SET(DEBUG_RC_SMOOTHING, 3, currentRxRefreshRate);   // log each frame interval during training
+                    if (rxFrameCount >= RC_SMOOTHING_FILTER_TRAINING_SAMPLES) {
+                        rxFrameTimeSum = rxFrameTimeSum - minRxFrameInterval - maxRxFrameInterval; // Throw out high and low samples
+                        calculatedFrameTimeAverageUs = lrintf(rxFrameTimeSum / (rxFrameCount - 2));
+                        const float avgRxFrameTime = (rxFrameTimeSum / (rxFrameCount - 2)) * 1e-6f;
 
-                    defaultInputCutoffFrequency = calcRcSmoothingCutoff(avgRxFrameTime, (rxConfig()->rc_smoothing_input_type == RC_SMOOTHING_INPUT_PT1));
-                    filterCutoffFrequency = (filterCutoffFrequency == 0) ? defaultInputCutoffFrequency : filterCutoffFrequency;
+                        defaultInputCutoffFrequency = calcRcSmoothingCutoff(avgRxFrameTime, (rxConfig()->rc_smoothing_input_type == RC_SMOOTHING_INPUT_PT1));
+                        filterCutoffFrequency = (filterCutoffFrequency == 0) ? defaultInputCutoffFrequency : filterCutoffFrequency;
 
-                    if (rxConfig()->rc_smoothing_derivative_type == RC_SMOOTHING_DERIVATIVE_OFF) {
-                        derivativeCutoffFrequency = 0;
-                    } else {
-                        defaultDerivativeCutoffFrequency = calcRcSmoothingCutoff(avgRxFrameTime, (rxConfig()->rc_smoothing_derivative_type == RC_SMOOTHING_DERIVATIVE_PT1));
-                        derivativeCutoffFrequency = (derivativeCutoffFrequency == 0) ? defaultDerivativeCutoffFrequency : derivativeCutoffFrequency;
-                    }
+                        if (rxConfig()->rc_smoothing_derivative_type == RC_SMOOTHING_DERIVATIVE_OFF) {
+                            derivativeCutoffFrequency = 0;
+                        } else {
+                            defaultDerivativeCutoffFrequency = calcRcSmoothingCutoff(avgRxFrameTime, (rxConfig()->rc_smoothing_derivative_type == RC_SMOOTHING_DERIVATIVE_PT1));
+                            derivativeCutoffFrequency = (derivativeCutoffFrequency == 0) ? defaultDerivativeCutoffFrequency : derivativeCutoffFrequency;
+                        }
 
-                    const float dT = targetPidLooptime * 1e-6f;
-                    for (int i = 0; i < PRIMARY_CHANNEL_COUNT; i++) {
-                        if ((1 << i) & interpolationChannels) {
-                            switch (rxConfig()->rc_smoothing_input_type) {
-                                case RC_SMOOTHING_INPUT_PT1:
-                                    pt1FilterInit(&rcCommandFilterPt1[i], pt1FilterGain(filterCutoffFrequency, dT));
-                                    break;
-                                case RC_SMOOTHING_INPUT_BIQUAD:
-                                default:
-                                    biquadFilterInitLPF(&rcCommandFilterBiquad[i], filterCutoffFrequency, targetPidLooptime);
-                                    break;
+                        const float dT = targetPidLooptime * 1e-6f;
+                        for (int i = 0; i < PRIMARY_CHANNEL_COUNT; i++) {
+                            if ((1 << i) & interpolationChannels) {
+                                switch (rxConfig()->rc_smoothing_input_type) {
+                                    case RC_SMOOTHING_INPUT_PT1:
+                                        pt1FilterInit(&rcCommandFilterPt1[i], pt1FilterGain(filterCutoffFrequency, dT));
+                                        break;
+                                    case RC_SMOOTHING_INPUT_BIQUAD:
+                                    default:
+                                        biquadFilterInitLPF(&rcCommandFilterBiquad[i], filterCutoffFrequency, targetPidLooptime);
+                                        break;
+                                }
                             }
                         }
+                        pidInitSetpointDerivativeLpf(derivativeCutoffFrequency, rxConfig()->rc_smoothing_debug_axis, rxConfig()->rc_smoothing_derivative_type);
+                        filterInitialized = true;
                     }
-                    pidInitSetpointDerivativeLpf(derivativeCutoffFrequency, rxConfig()->rc_smoothing_debug_axis, rxConfig()->rc_smoothing_derivative_type);
-                    filterInitialized = true;
                 }
             } else {
                 rxFrameTimeSum = 0;
                 rxFrameCount = 0;
+                validRxFrameTimeMs = 0;
+                minRxFrameInterval = UINT16_MAX;
+                maxRxFrameInterval = 0;
             }
         }
     }
