@@ -4405,11 +4405,11 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("aux", "configure modes", "<index> <mode> <aux> <start> <end> <logic>", cliAux),
 #if defined(USE_BEEPER)
 #if defined(USE_DSHOT)
-    CLI_COMMAND_DEF("beacon", "turn on/off beeper", "list\r\n"
-        "\t<+|->[name]", cliBeacon),
+    CLI_COMMAND_DEF("beacon", "enable/disable Dshot beacon for a condition", "list\r\n"
+        "\t<->[name]", cliBeacon),
 #endif
-    CLI_COMMAND_DEF("beeper", "turn on/off beeper", "list\r\n"
-        "\t<+|->[name]", cliBeeper),
+    CLI_COMMAND_DEF("beeper", "enable/disable beeper for a condition", "list\r\n"
+        "\t<->[name]", cliBeeper),
 #endif // USE_BEEPER
     CLI_COMMAND_DEF("bl", "reboot into bootloader", NULL, cliBootloader),
 #if defined(USE_BOARD_INFO)
