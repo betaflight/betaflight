@@ -232,7 +232,7 @@ void beeper(beeperMode_e mode)
 {
     if (
         mode == BEEPER_SILENCE || (
-            (beeperConfigMutable()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_USB - 1))
+            (beeperConfigMutable()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_USB))
             && getBatteryState() == BATTERY_NOT_PRESENT
         )
     ) {
