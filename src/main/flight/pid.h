@@ -76,15 +76,13 @@ typedef struct pid8_s {
     uint8_t D;
 } pid8_t;
 
-typedef enum 
-{
+typedef enum {
     ITERM_RELAX_OFF,
     ITERM_RELAX_RP,
     ITERM_RELAX_RPY
 } itermRelax_e;
 
-typedef enum 
-{
+typedef enum {
     ITERM_RELAX_GYRO,
     ITERM_RELAX_SETPOINT
 } itermRelaxType_e;
