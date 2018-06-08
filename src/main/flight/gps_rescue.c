@@ -293,6 +293,11 @@ void rescueStop()
 // Things that need to run regardless of GPS rescue mode being enabled or not
 void idleTasks()
 {
+    // Do not calculate any of the idle task values when we are not flying
+    if (!ARMING_FLAG(ARMED)) {
+        return;
+    }
+
     gpsRescueAngle[AI_PITCH] = 0;
     gpsRescueAngle[AI_ROLL] = 0;
 
