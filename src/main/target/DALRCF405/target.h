@@ -74,6 +74,11 @@
 #define I2C1_SCL                PB8      
 #define I2C1_SDA                PB9 
 
+#define USE_MAG
+#define USE_MAG_AK8975
+#define USE_MAG_HMC5883
+#define USE_MAG_QMC5883
+
 //ON BOARD FLASH -----------------------------------
 #define USE_SPI_DEVICE_2
 #define SPI2_SCK_PIN            PB13
