@@ -290,8 +290,7 @@ void frSkyXSetRcData(uint16_t *rcData, const uint8_t *packet)
         } else {
             j = 0;
         }
-        if (c[i] == 0)
-        {
+        if (c[i] == 0) {
             continue;
         }
         int16_t temp = (((c[i] - 64) << 1) / 3 + 860);
