@@ -83,7 +83,6 @@ rssiSource_e rssiSource;
 static bool rxDataProcessingRequired = false;
 static bool auxiliaryProcessingRequired = false;
 
-static uint32_t rxMissedPackets = 0;
 static bool rxSignalReceived = false;
 static bool rxFlightChannelsValid = false;
 static bool rxIsInFailsafeMode = true;
@@ -390,8 +389,6 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
         rxSignalReceived = true;
     } else if (currentTimeUs >= needRxSignalBefore) {
         rxSignalReceived = false;
-        rxMissedPackets++;
-        needRxSignalBefore = currentTimeUs + needRxSignalMaxDelayUs;
     }
 
     if ((signalReceived && useDataDrivenProcessing) || cmpTimeUs(currentTimeUs, rxNextUpdateAtUs) > 0) {
@@ -495,7 +492,6 @@ static void detectAndApplySignalLossBehaviour(void)
 
     DEBUG_SET(DEBUG_RX_SIGNAL_LOSS, 0, rxSignalReceived);
     DEBUG_SET(DEBUG_RX_SIGNAL_LOSS, 1, rxIsInFailsafeMode);
-    DEBUG_SET(DEBUG_RX_SIGNAL_LOSS, 2, rxMissedPackets);
 
     rxFlightChannelsValid = true;
     for (int channel = 0; channel < rxChannelCount; channel++) {
