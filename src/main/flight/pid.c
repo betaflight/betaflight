@@ -815,17 +815,23 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
         if (itermRelax && (axis < FD_YAW || itermRelax == ITERM_RELAX_RPY )) {
             const float setpointLpf = pt1FilterApply(&windupLpf[axis], currentPidSetpoint);
             const float setpointHpf = fabsf(currentPidSetpoint - setpointLpf);
-            if (itermRelaxType == ITERM_RELAX_SETPOINT && setpointHpf < 60) {
-                itermErrorRate = (1 - setpointHpf / 60.0f) * (currentPidSetpoint - gyroRate);
-            }
             if (axis == FD_ROLL) {
                 DEBUG_SET(DEBUG_ITERM_RELAX, 0, lrintf(setpointLpf));
                 DEBUG_SET(DEBUG_ITERM_RELAX, 1, lrintf(setpointHpf));
-                DEBUG_SET(DEBUG_ITERM_RELAX, 2, lrintf(currentPidSetpoint));
-                DEBUG_SET(DEBUG_ITERM_RELAX, 3, lrintf(axisError[axis] * 10));
+            }
+            if (itermRelaxType == ITERM_RELAX_SETPOINT && setpointHpf < 60) {
+                itermErrorRate = (1 - setpointHpf / 60.0f) * (currentPidSetpoint - gyroRate);
+                if (axis == FD_ROLL) {
+                    DEBUG_SET(DEBUG_ITERM_RELAX, 2, lrintf(currentPidSetpoint));
+                    DEBUG_SET(DEBUG_ITERM_RELAX, 3, lrintf((1 - setpointHpf / 60.0f) * 100));
+                }
             }
             if (itermRelaxType == ITERM_RELAX_GYRO ) {
                 itermErrorRate = fapplyDeadband(setpointLpf - gyroRate, setpointHpf);
+                if (axis == FD_ROLL) {
+                    DEBUG_SET(DEBUG_ITERM_RELAX, 2, lrintf(gyroRate + setpointHpf));
+                    DEBUG_SET(DEBUG_ITERM_RELAX, 3, lrintf(gyroRate - setpointHpf));
+                }
             }
             
 #if defined(USE_ABSOLUTE_CONTROL)
@@ -845,6 +851,11 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
             } else {
                 acErrorRate = (gyroRate > gmaxac ? gmaxac : gminac ) - gyroRate;
             }
+            if (axis == FD_ROLL) {
+                DEBUG_SET(DEBUG_ITERM_RELAX, 2, lrintf(acErrorRate));
+                DEBUG_SET(DEBUG_ITERM_RELAX, 3, lrintf(axisError[axis] * 10));
+            }
+
 #endif // USE_ABSOLUTE_CONTROL             
         } else
 #endif // USE_ITERM_RELAX
