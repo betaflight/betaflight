@@ -270,6 +270,7 @@ static void frSkyXTelemetryWriteFrame(const smartPortPayload_t *payload)
 
 void frSkyXSetRcData(uint16_t *rcData, const uint8_t *packet)
 {
+    static uint32_t rangeErrors = 0;
     uint16_t c[8];
 
     c[0] = (uint16_t)((packet[10] << 8) & 0xF00) | packet[9];
@@ -289,9 +290,16 @@ void frSkyXSetRcData(uint16_t *rcData, const uint8_t *packet)
         } else {
             j = 0;
         }
+        if (c[i] == 0) {
+            continue;
+        }
         int16_t temp = (((c[i] - 64) << 1) / 3 + 860);
         if ((temp > 800) && (temp < 2200)) {
             rcData[i+j] = temp;
+        } else {
+            rangeErrors++;
+            DEBUG_SET(DEBUG_RX_FRSKY_SPI, DEBUG_DATA_ERROR_COUNT, rangeErrors);
+
         }
     }
 }
@@ -313,7 +321,7 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
     static bool frameReceived;
     static timeDelta_t receiveDelayUs;
     static uint8_t channelsToSkip = 1;
-
+    static uint32_t packetErrors = 0;
     static telemetryBuffer_t telemetryRxBuffer[TELEMETRY_SEQUENCE_LENGTH];
 
 #if defined(USE_RX_FRSKY_SPI_TELEMETRY)
@@ -433,6 +441,11 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
                             frameReceived = true; // no need to process frame again.
                         }
                     }
+                } 
+                if (!frameReceived)
+                {
+                    packetErrors++;
+                    DEBUG_SET(DEBUG_RX_FRSKY_SPI, DEBUG_DATA_BAD_FRAME, packetErrors);
                 }
             }
         }
@@ -499,8 +512,10 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
                 processSmartPortTelemetry(payload, &clearToSend, NULL);
             }
 #endif
+            if (frameReceived == true) {
+                ret = RX_SPI_RECEIVED_DATA;
+            }
             *protocolState = STATE_RESUME;
-            ret = RX_SPI_RECEIVED_DATA;
         }
 
         break;
@@ -528,6 +543,8 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
                 break;
             }
             missingPackets++;
+            DEBUG_SET(DEBUG_RX_FRSKY_SPI, DEBUG_DATA_MISSING_PACKETS, missingPackets);
+            
             *protocolState = STATE_DATA;
         }
         break;
