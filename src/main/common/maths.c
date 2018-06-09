@@ -133,7 +133,7 @@ float fapplyDeadband(const float value, const float deadband)
         return 0;
     }
 
-    return value >=0 ? value - deadband : value + deadband;
+    return value >= 0 ? value - deadband : value + deadband;
 }
 
 void devClear(stdev_t *dev)
