@@ -167,10 +167,10 @@ static FAST_CODE uint8_t loadDmaBufferDshot(uint32_t *dmaBuffer, int stride, uin
 
 static uint8_t loadDmaBufferProshot(uint32_t *dmaBuffer, int stride, uint16_t packet)
 {
-    for (int i = 0; i < 4; i++) {
-        dmaBuffer[i * stride] = PROSHOT_BASE_SYMBOL + ((packet & 0xF000) >> 12) * PROSHOT_BIT_WIDTH;  // Most significant nibble first
-        packet <<= 4;   // Shift 4 bits
-    }
+    dmaBuffer[1 * stride] = PROSHOT_BASE_SYMBOL + ((packet & 0xF000) >> 12) * PROSHOT_BIT_WIDTH;  // Most significant nibble first
+    dmaBuffer[2 * stride] = PROSHOT_BASE_SYMBOL + ((packet & 0x0F00) >> 8) * PROSHOT_BIT_WIDTH;
+    dmaBuffer[3 * stride] = PROSHOT_BASE_SYMBOL + ((packet & 0x00F0) >> 4) * PROSHOT_BIT_WIDTH;
+    dmaBuffer[4 * stride] = PROSHOT_BASE_SYMBOL + ((packet & 0x000F) >> 0) * PROSHOT_BIT_WIDTH;
 
     return PROSHOT_DMA_BUFFER_SIZE;
 }
