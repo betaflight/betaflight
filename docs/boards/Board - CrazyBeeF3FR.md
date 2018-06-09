@@ -63,12 +63,15 @@ https://www.banggood.com/Racerstar-Crazybee-F3-Flight-Controller-4-IN-1-5A-1S-Bl
 
 ## Designers
 
-
-
 ## Maintainers
 
-
 ## FAQ & Known Issues
+
+- FRSKY version only: To bind to your Taranis, you need to be running the non-eu OpenTX version, which allows you to use the required D8 setting to bind to the RX. Also don't forget to set the receiver mode in BF to FRSKY_D, because the factory default is FRSKY_X.
+- With factory installed BF v3.3.0: The DSHOT beeper function does not work.
+- With BF =< v3.3.3 When turtle mode ("Flip over after Crash") is activated, the FC will only arm if the failsafe timeout is 1s (10 * 0.1s) or more. If the timeout is set lower than that, you may see the motors shortly try to spin up and then stop, and then the quad will not be armed. Rumour has it that this is fixed in BF 3.4 .
+ - The board specifications claim DSHOT600-ready, but due to the use of a type L (BB1 24MHz) ESC, only DSHOT300 is reliably supported, although DSHOT600 seems to be working for quite a few people. But just how clean that ESC control signal is when using DSHOT600, is untested. For a discussion on this, see https://www.rcgroups.com/forums/showthread.php?3036325-Racerstar-Crazybee-F3-Ultimate-Micro-AIO-FC%21-1S-5A-BlheliS-Frsky-Flysky-OSD/page3 .
+- The factory default GYSO / PID config is 8KHz / 2KHz . There are reports that this may lead to possible instability and 4KHz / 4KHz is recommended.
 
 ## Other Resources
    User Manual: http://img.banggood.com/file/products/20180209021414Crazybeef3.pdf
