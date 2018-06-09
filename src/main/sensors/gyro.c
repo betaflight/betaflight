@@ -864,8 +864,11 @@ STATIC_UNIT_TESTED void performGyroCalibration(gyroSensor_t *gyroSensor, uint8_t
 
         if (isOnFinalGyroCalibrationCycle(&gyroSensor->calibration)) {
             const float stddev = devStandardDeviation(&gyroSensor->calibration.var[axis]);
-            // DEBUG_GYRO_CALIBRATION records per-axis standard deviation
-            DEBUG_SET(DEBUG_GYRO_CALIBRATION, axis, lrintf(stddev));
+            // DEBUG_GYRO_CALIBRATION records the standard deviation of roll
+            // into the spare field - debug[3], in DEBUG_GYRO_RAW
+            if (axis == X) {
+                DEBUG_SET(DEBUG_GYRO_RAW, DEBUG_GYRO_CALIBRATION, lrintf(stddev));
+            }
 
             // check deviation and startover in case the model was moved
             if (gyroMovementCalibrationThreshold && stddev > gyroMovementCalibrationThreshold) {
