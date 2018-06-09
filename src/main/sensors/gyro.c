@@ -1083,11 +1083,11 @@ static FAST_CODE FAST_CODE_NOINLINE void gyroUpdateSensor(gyroSensor_t *gyroSens
 #ifdef USE_GYRO_DATA_ANALYSE
             // apply dynamic notch filter
             if (isDynamicFilterActive()) {
-                if (axis == 0) {
+                if (axis == X) {
                     DEBUG_SET(DEBUG_FFT, 0, lrintf(gyroADCf)); // store raw data
                 }
                 gyroADCf = gyroSensor->notchFilterDynApplyFn((filter_t *)&gyroSensor->notchFilterDyn[axis], gyroADCf);
-                if (axis == 0) {
+                if (axis == X) {
                     DEBUG_SET(DEBUG_FFT, 1, lrintf(gyroADCf)); // store data after dynamic notch
                 }
             }
