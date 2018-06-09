@@ -53,3 +53,6 @@ bool isFlipOverAfterCrashMode(void);
 
 void runawayTakeoffTemporaryDisable(uint8_t disableFlag);
 bool isAirmodeActivated();
+timeUs_t getLastDisarmTimeUs(void);
+bool isTryingToArm();
+void resetTryingToArm();

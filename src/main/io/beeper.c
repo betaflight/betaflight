@@ -36,6 +36,7 @@
 #include "flight/mixer.h"
 
 #include "fc/config.h"
+#include "fc/fc_core.h"
 #include "fc/runtime_config.h"
 
 #include "io/statusindicator.h"
@@ -77,6 +78,10 @@
 
 #define BEEPER_COMMAND_REPEAT 0xFE
 #define BEEPER_COMMAND_STOP   0xFF
+
+#ifdef USE_DSHOT
+static timeUs_t lastDshotBeaconCommandTimeUs;
+#endif
 
 #ifdef USE_BEEPER
 /* Beeper Sound Sequences: (Square wave generation)
@@ -394,7 +399,11 @@ void beeperUpdate(timeUs_t currentTimeUs)
         if (!areMotorsRunning()
             && ((currentBeeperEntry->mode == BEEPER_RX_SET && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_SET)))
             || (currentBeeperEntry->mode == BEEPER_RX_LOST && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_LOST))))) {
-            pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), beeperConfig()->dshotBeaconTone, false);
+
+            if ((currentTimeUs - getLastDisarmTimeUs() > DSHOT_BEACON_GUARD_DELAY_US) && !isTryingToArm()) {
+                lastDshotBeaconCommandTimeUs = currentTimeUs;
+                pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), beeperConfig()->dshotBeaconTone, false);
+            }
         }
 #endif
 
@@ -513,4 +522,11 @@ const char *beeperNameForTableIndex(int idx) {UNUSED(idx); return NULL;}
 int beeperTableEntryCount(void) {return 0;}
 bool isBeeperOn(void) {return false;}
 
+#endif
+
+#ifdef USE_DSHOT
+timeUs_t getLastDshotBeaconCommandTimeUs(void)
+{
+    return lastDshotBeaconCommandTimeUs;
+}
 #endif

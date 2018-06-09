@@ -135,6 +135,8 @@ static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the m
 
 bool isRXDataNew;
 static int lastArmingDisabledReason = 0;
+static timeUs_t lastDisarmTimeUs;
+static bool tryingToArm;
 
 #ifdef USE_RUNAWAY_TAKEOFF
 static timeUs_t runawayTakeoffDeactivateUs = 0;
@@ -318,6 +320,7 @@ void disarm(void)
 {
     if (ARMING_FLAG(ARMED)) {
         DISABLE_ARMING_FLAG(ARMED);
+        lastDisarmTimeUs = micros();
 
 #ifdef USE_BLACKBOX
         if (blackboxConfig()->device && blackboxConfig()->mode != BLACKBOX_MODE_ALWAYS_ON) { // Close the log upon disarm except when logging mode is ALWAYS ON
@@ -353,6 +356,10 @@ void tryArm(void)
             return;
         }
 #ifdef USE_DSHOT
+        if (micros() - getLastDshotBeaconCommandTimeUs() < DSHOT_BEACON_GUARD_DELAY_US) {
+            tryingToArm = true;
+            return;
+        }
         if (isMotorProtocolDshot() && isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH)) {
             if (!IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
                 flipOverAfterCrashMode = false;
@@ -373,6 +380,8 @@ void tryArm(void)
 
         ENABLE_ARMING_FLAG(ARMED);
         ENABLE_ARMING_FLAG(WAS_EVER_ARMED);
+
+        resetTryingToArm();
 
 #ifdef USE_ACRO_TRAINER
         pidAcroTrainerInit();
@@ -404,6 +413,7 @@ void tryArm(void)
         runawayTakeoffTriggerUs = 0;
 #endif
     } else {
+       resetTryingToArm();
         if (!isFirstArmingGyroCalibrationRunning()) {
             int armingDisabledReason = ffs(getArmingDisableFlags());
             if (lastArmingDisabledReason != armingDisabledReason) {
@@ -1031,3 +1041,19 @@ bool isFlipOverAfterCrashMode(void)
 {
     return flipOverAfterCrashMode;
 }
+
+timeUs_t getLastDisarmTimeUs(void)
+{
+    return lastDisarmTimeUs;
+}
+
+bool isTryingToArm()
+{
+    return tryingToArm;
+}
+
+void resetTryingToArm()
+{
+    tryingToArm = false;
+}
+
