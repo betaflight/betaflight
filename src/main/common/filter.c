@@ -192,3 +192,24 @@ FAST_CODE float biquadFilterApply(biquadFilter_t *filter, float input)
     filter->x2 = filter->b2 * input - filter->a2 * result;
     return result;
 }
+
+void lmaSmoothingInit(laggedMovingAverage_t *filter, uint8_t windowSize, float weight)
+{
+    filter->movingWindowIndex = 0;
+    filter->windowSize = windowSize;
+    filter->weight = weight;
+}
+
+FAST_CODE float lmaSmoothingUpdate(laggedMovingAverage_t *filter, float input)
+{
+
+    filter->movingSum -= filter->buf[filter->movingWindowIndex];
+    filter->buf[filter->movingWindowIndex] = input;
+    filter->movingSum += input;
+
+    if (++filter->movingWindowIndex == filter->windowSize) {
+        filter->movingWindowIndex = 0;
+    }
+
+    return input + (((filter->movingSum  / filter->windowSize) - input) * filter->weight);
+}
