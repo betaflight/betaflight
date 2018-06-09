@@ -813,25 +813,24 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
 
 #if defined(USE_ITERM_RELAX)
         if (itermRelax && (axis < FD_YAW || itermRelax == ITERM_RELAX_RPY )) {
-            const float gyroTarget = pt1FilterApply(&windupLpf[axis], currentPidSetpoint);
-            const float gyroHpf = fabsf(currentPidSetpoint - gyroTarget);
-            if (itermRelaxType == ITERM_RELAX_SETPOINT && gyroHpf < 60) {
-                itermErrorRate = (1 - gyroHpf / 60.0f) * (currentPidSetpoint - gyroRate);
+            const float setpointLpf = pt1FilterApply(&windupLpf[axis], currentPidSetpoint);
+            const float setpointHpf = fabsf(currentPidSetpoint - setpointLpf);
+            if (itermRelaxType == ITERM_RELAX_SETPOINT && setpointHpf < 60) {
+                itermErrorRate = (1 - setpointHpf / 60.0f) * (currentPidSetpoint - gyroRate);
             }
-            const float tolerance = gyroHpf * 1.0f;
             if (axis == FD_ROLL) {
-                DEBUG_SET(DEBUG_ITERM_RELAX, 0, gyroTarget);
-                DEBUG_SET(DEBUG_ITERM_RELAX, 1, gyroTarget + tolerance);
-                DEBUG_SET(DEBUG_ITERM_RELAX, 2, gyroTarget - tolerance);
-                DEBUG_SET(DEBUG_ITERM_RELAX, 3, axisError[axis] * 10);
+                DEBUG_SET(DEBUG_ITERM_RELAX, 0, lrintf(setpointLpf));
+                DEBUG_SET(DEBUG_ITERM_RELAX, 1, lrintf(setpointHpf));
+                DEBUG_SET(DEBUG_ITERM_RELAX, 2, lrintf(currentPidSetpoint));
+                DEBUG_SET(DEBUG_ITERM_RELAX, 3, lrintf(axisError[axis] * 10));
             }
             if (itermRelaxType == ITERM_RELAX_GYRO ) {
-                itermErrorRate = fapplyDeadband(gyroTarget - gyroRate, tolerance);
+                itermErrorRate = fapplyDeadband(setpointLpf - gyroRate, setpointHpf);
             }
             
 #if defined(USE_ABSOLUTE_CONTROL)
-            const float gmaxac = gyroTarget + 2 * tolerance;
-            const float gminac = gyroTarget - 2 * tolerance;
+            const float gmaxac = setpointLpf + 2 * setpointHpf;
+            const float gminac = setpointLpf - 2 * setpointHpf;
             if (gyroRate >= gminac && gyroRate <= gmaxac) {
                 float acErrorRate1 = gmaxac - gyroRate;
                 float acErrorRate2 = gminac - gyroRate;
