@@ -537,6 +537,14 @@ uint8_t calculateThrottlePercent(void)
     return ret;
 }
 
+static bool airmodeIsActivated;
+
+bool isAirmodeActivated() 
+{
+    return airmodeIsActivated;
+}
+
+
 
 /*
  * processRx called from taskUpdateRxMain
@@ -544,7 +552,6 @@ uint8_t calculateThrottlePercent(void)
 bool processRx(timeUs_t currentTimeUs)
 {
     static bool armedBeeperOn = false;
-    static bool airmodeIsActivated;
     static bool sharedPortTelemetryEnabled = false;
 
     if (!calculateRxChannelsAndUpdateFailsafe(currentTimeUs)) {
