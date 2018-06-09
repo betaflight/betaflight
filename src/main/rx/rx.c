@@ -68,8 +68,6 @@
 #include "rx/targetcustomserial.h"
 
 
-//#define DEBUG_RX_SIGNAL_LOSS
-
 const char rcChannelLetters[] = "AERT12345678abcdefgh";
 
 static uint16_t rssi = 0;                  // range: [0;1023]
@@ -492,11 +490,8 @@ static void detectAndApplySignalLossBehaviour(void)
 
     const bool useValueFromRx = rxSignalReceived && !rxIsInFailsafeMode;
 
-#ifdef DEBUG_RX_SIGNAL_LOSS
-    debug[0] = rxSignalReceived;
-    debug[1] = rxIsInFailsafeMode;
-    debug[2] = rxRuntimeConfig.rcReadRawFn(&rxRuntimeConfig, 0);
-#endif
+    DEBUG_SET(DEBUG_RX_SIGNAL_LOSS, 0, rxSignalReceived);
+    DEBUG_SET(DEBUG_RX_SIGNAL_LOSS, 1, rxIsInFailsafeMode);
 
     rxFlightChannelsValid = true;
     for (int channel = 0; channel < rxChannelCount; channel++) {
@@ -533,10 +528,7 @@ static void detectAndApplySignalLossBehaviour(void)
             rcData[channel] = getRxfailValue(channel);
         }
     }
-
-#ifdef DEBUG_RX_SIGNAL_LOSS
-    debug[3] = rcData[THROTTLE];
-#endif
+    DEBUG_SET(DEBUG_RX_SIGNAL_LOSS, 3, rcData[THROTTLE]);
 }
 
 bool calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs)

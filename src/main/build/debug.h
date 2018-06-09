@@ -90,6 +90,7 @@ typedef enum {
     DEBUG_ITERM_RELAX,
     DEBUG_ACRO_TRAINER,
     DEBUG_RC_SMOOTHING,
+    DEBUG_RX_SIGNAL_LOSS,
     DEBUG_COUNT
 } debugType_e;
 
