@@ -19,6 +19,7 @@
  */
 
 #pragma once
+#include <stdbool.h>
 
 struct filter_s;
 typedef struct filter_s filter_t;
@@ -39,6 +40,14 @@ typedef struct biquadFilter_s {
     float b0, b1, b2, a1, a2;
     float x1, x2, y1, y2;
 } biquadFilter_t;
+
+typedef struct laggedMovingAverage_s {
+    uint16_t movingWindowIndex;
+    uint16_t windowSize;
+    float movingSum;
+    float *buf;
+    bool primed;
+} laggedMovingAverage_t;
 
 typedef enum {
     FILTER_PT1 = 0,
@@ -62,6 +71,9 @@ void biquadFilterUpdate(biquadFilter_t *filter, float filterFreq, uint32_t refre
 float biquadFilterApplyDF1(biquadFilter_t *filter, float input);
 float biquadFilterApply(biquadFilter_t *filter, float input);
 float filterGetNotchQ(float centerFreq, float cutoffFreq);
+
+void laggedMovingAverageInit(laggedMovingAverage_t *filter, uint16_t windowSize, float *buf);
+float laggedMovingAverageUpdate(laggedMovingAverage_t *filter, float input);
 
 float pt1FilterGain(uint16_t f_cut, float dT);
 void pt1FilterInit(pt1Filter_t *filter, float k);
