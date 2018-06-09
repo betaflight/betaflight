@@ -130,6 +130,18 @@ int32_t applyDeadband(int32_t value, int32_t deadband)
     return value;
 }
 
+float fapplyDeadband(float value, float deadband)
+{
+    if (fabsf(value) < deadband) {
+        value = 0;
+    } else if (value > 0) {
+        value -= deadband;
+    } else if (value < 0) {
+        value += deadband;
+    }
+    return value;
+}
+
 void devClear(stdev_t *dev)
 {
     dev->m_n = 0;

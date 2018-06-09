@@ -815,8 +815,8 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
         if (itermRelax && (axis < FD_YAW || itermRelax == ITERM_RELAX_RPY )) {
             const float gyroTarget = pt1FilterApply(&windupLpf[axis], currentPidSetpoint);
             const float gyroHpf = fabsf(currentPidSetpoint - gyroTarget);
-            if (itermRelaxType == ITERM_RELAX_SETPOINT) {
-                itermErrorRate = (1 - MIN(1, fabsf(gyroHpf) / 60.0f)) * (currentPidSetpoint - gyroRate);
+            if (itermRelaxType == ITERM_RELAX_SETPOINT && gyroHpf < 60) {
+                itermErrorRate = (1 - gyroHpf / 60.0f) * (currentPidSetpoint - gyroRate);
             }
             const float tolerance = gyroHpf * 1.0f;
             if (axis == FD_ROLL) {
@@ -826,14 +826,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
                 DEBUG_SET(DEBUG_ITERM_RELAX, 3, axisError[axis] * 10);
             }
             if (itermRelaxType == ITERM_RELAX_GYRO ) {
-                const float gmax = gyroTarget + tolerance;
-                const float gmin = gyroTarget - tolerance;
-                
-                if (gyroRate >= gmin && gyroRate <= gmax) {
-                     itermErrorRate = 0;
-                } else {
-                     itermErrorRate = (gyroRate > gmax ? gmax : gmin ) - gyroRate;
-                }
+                itermErrorRate = fapplyDeadband(gyroTarget - gyroRate, tolerance);
             }
             
 #if defined(USE_ABSOLUTE_CONTROL)
@@ -847,8 +840,8 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
                 } else {
                     acErrorRate = acErrorRate2;
                 }
-                if (fabsf(acErrorRate*dT) > fabsf(axisError[axis]) ) {
-                    acErrorRate = -axisError[axis]/dT;
+                if (fabsf(acErrorRate * dT) > fabsf(axisError[axis]) ) {
+                    acErrorRate = -axisError[axis] / dT;
                 }
             } else {
                 acErrorRate = (gyroRate > gmaxac ? gmaxac : gminac ) - gyroRate;
@@ -857,9 +850,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
         } else
 #endif // USE_ITERM_RELAX
         {
-              itermErrorRate = currentPidSetpoint - gyroRate;
+            itermErrorRate = currentPidSetpoint - gyroRate;
 #if defined(USE_ABSOLUTE_CONTROL)
-              acErrorRate = itermErrorRate;
+            acErrorRate = itermErrorRate;
 #endif // USE_ABSOLUTE_CONTROL
         }
         
