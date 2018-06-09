@@ -362,7 +362,7 @@ FAST_CODE uint8_t processRcSmoothingFilter(void)
         }
     }
 
-    if (filterInitialized && (debugMode = DEBUG_RC_SMOOTHING)) {
+    if (filterInitialized && (debugMode == DEBUG_RC_SMOOTHING)) {
         // after training has completed then log the raw rc channel and the calculated
         // average rx frame rate that was used to calculate the automatic filter cutoffs
         DEBUG_SET(DEBUG_RC_SMOOTHING, 0, lrintf(lastRxData[rxConfig()->rc_smoothing_debug_axis]));
