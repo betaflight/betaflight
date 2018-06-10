@@ -815,19 +815,19 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
         if (itermRelax && (axis < FD_YAW || itermRelax == ITERM_RELAX_RPY )) {
             const float setpointLpf = pt1FilterApply(&windupLpf[axis], currentPidSetpoint);
             const float setpointHpf = fabsf(currentPidSetpoint - setpointLpf);
-            if (itermRelaxType == ITERM_RELAX_SETPOINT && setpointHpf < 60) {
-                itermErrorRate = (1 - setpointHpf / 60.0f) * (currentPidSetpoint - gyroRate);
-            }
-            if (axis == FD_ROLL) {
-                DEBUG_SET(DEBUG_ITERM_RELAX, 0, lrintf(setpointLpf));
-                DEBUG_SET(DEBUG_ITERM_RELAX, 1, lrintf(setpointHpf));
-                DEBUG_SET(DEBUG_ITERM_RELAX, 2, lrintf(currentPidSetpoint));
-                DEBUG_SET(DEBUG_ITERM_RELAX, 3, lrintf(axisError[axis] * 10));
-            }
-            if (itermRelaxType == ITERM_RELAX_GYRO ) {
+            const float itermRelaxFactor = 1 - setpointHpf / 30.0f;
+            if (itermRelaxType == ITERM_RELAX_SETPOINT && setpointHpf < 30) {
+                itermErrorRate = itermRelaxFactor * (currentPidSetpoint - gyroRate);
+            } else if (itermRelaxType == ITERM_RELAX_GYRO ) {
                 itermErrorRate = fapplyDeadband(setpointLpf - gyroRate, setpointHpf);
             }
             
+            if (axis == FD_ROLL) {
+                DEBUG_SET(DEBUG_ITERM_RELAX, 0, lrintf(setpointHpf));
+                DEBUG_SET(DEBUG_ITERM_RELAX, 1, lrintf(itermRelaxFactor * 100.0f));
+                DEBUG_SET(DEBUG_ITERM_RELAX, 2, lrintf(itermErrorRate));
+            }
+
 #if defined(USE_ABSOLUTE_CONTROL)
             const float gmaxac = setpointLpf + 2 * setpointHpf;
             const float gminac = setpointLpf - 2 * setpointHpf;
@@ -861,8 +861,12 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
             acCorrection = constrainf(axisError[axis] * acGain, -acLimit, acLimit);
             currentPidSetpoint += acCorrection;
             itermErrorRate += acCorrection;
+            if (axis == FD_ROLL) {
+                DEBUG_SET(DEBUG_ITERM_RELAX, 3, lrintf(axisError[axis] * 10));
+            }
         }
 #endif
+
         float errorRate = currentPidSetpoint - gyroRate; // r - y
         handleCrashRecovery(
             pidProfile->crash_recovery, angleTrim, axis, currentTimeUs, gyroRate,
