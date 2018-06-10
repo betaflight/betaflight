@@ -819,18 +819,17 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
                 DEBUG_SET(DEBUG_ITERM_RELAX, 0, lrintf(setpointLpf));
                 DEBUG_SET(DEBUG_ITERM_RELAX, 1, lrintf(setpointHpf));
             }
-            if (itermRelaxType == ITERM_RELAX_SETPOINT && setpointHpf < 60) {
-                itermErrorRate = (1 - setpointHpf / 60.0f) * (currentPidSetpoint - gyroRate);
+            if (itermRelaxType == ITERM_RELAX_SETPOINT && setpointHpf < 30) {
+                itermErrorRate = (1 - setpointHpf / 30.0f) * (currentPidSetpoint - gyroRate);
                 if (axis == FD_ROLL) {
-                    DEBUG_SET(DEBUG_ITERM_RELAX, 2, lrintf(currentPidSetpoint));
-                    DEBUG_SET(DEBUG_ITERM_RELAX, 3, lrintf((1 - setpointHpf / 60.0f) * 100));
+                    DEBUG_SET(DEBUG_ITERM_RELAX, 2, lrintf(itermErrorRate));
+                    DEBUG_SET(DEBUG_ITERM_RELAX, 3, lrintf((1 - setpointHpf / 30.0f) * 100));
                 }
             }
             if (itermRelaxType == ITERM_RELAX_GYRO ) {
                 itermErrorRate = fapplyDeadband(setpointLpf - gyroRate, setpointHpf);
                 if (axis == FD_ROLL) {
-                    DEBUG_SET(DEBUG_ITERM_RELAX, 2, lrintf(gyroRate + setpointHpf));
-                    DEBUG_SET(DEBUG_ITERM_RELAX, 3, lrintf(gyroRate - setpointHpf));
+                    DEBUG_SET(DEBUG_ITERM_RELAX, 2, lrintf(itermErrorRate));
                 }
             }
             
@@ -851,11 +850,6 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
             } else {
                 acErrorRate = (gyroRate > gmaxac ? gmaxac : gminac ) - gyroRate;
             }
-            if (axis == FD_ROLL) {
-                DEBUG_SET(DEBUG_ITERM_RELAX, 2, lrintf(acErrorRate));
-                DEBUG_SET(DEBUG_ITERM_RELAX, 3, lrintf(axisError[axis] * 10));
-            }
-
 #endif // USE_ABSOLUTE_CONTROL             
         } else
 #endif // USE_ITERM_RELAX
@@ -872,8 +866,13 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
             acCorrection = constrainf(axisError[axis] * acGain, -acLimit, acLimit);
             currentPidSetpoint += acCorrection;
             itermErrorRate += acCorrection;
+            if (axis == FD_ROLL) {
+                DEBUG_SET(DEBUG_ITERM_RELAX, 2, lrintf(acErrorRate));
+                DEBUG_SET(DEBUG_ITERM_RELAX, 3, lrintf(axisError[axis] * 10));
+            }
         }
 #endif
+
         float errorRate = currentPidSetpoint - gyroRate; // r - y
         handleCrashRecovery(
             pidProfile->crash_recovery, angleTrim, axis, currentTimeUs, gyroRate,
