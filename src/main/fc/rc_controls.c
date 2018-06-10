@@ -179,6 +179,7 @@ void processRcStickPositions()
             // Arming via ARM BOX
             tryArm();
         } else {
+            resetTryingToArm();
             // Disarming via ARM BOX
             resetArmingDisabled();
             if (ARMING_FLAG(ARMED) && rxIsReceivingSignal() && !failsafeIsActive()  ) {
@@ -192,6 +193,7 @@ void processRcStickPositions()
         if (rcDelayMs >= ARM_DELAY_MS && !doNotRepeat) {
             doNotRepeat = true;
             // Disarm on throttle down + yaw
+            resetTryingToArm();
             if (ARMING_FLAG(ARMED))
                 disarm();
             else {
@@ -214,11 +216,16 @@ void processRcStickPositions()
             if (!ARMING_FLAG(ARMED)) {
                 // Arm via YAW
                 tryArm();
+                if (isTryingToArm()) {
+                    doNotRepeat = false;
+                }
             } else {
                 resetArmingDisabled();
             }
         }
         return;
+    } else {
+        resetTryingToArm();
     }
 
     if (ARMING_FLAG(ARMED) || doNotRepeat || rcDelayMs <= STICK_DELAY_MS || (getArmingDisableFlags() & ARMING_DISABLED_RUNAWAY_TAKEOFF)) {

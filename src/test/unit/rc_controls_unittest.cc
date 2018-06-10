@@ -52,6 +52,7 @@ extern "C" {
 
     #include "fc/rc_controls.h"
     #include "fc/runtime_config.h"
+    #include "fc/fc_core.h"
 
     #include "scheduler/scheduler.h"
 }
@@ -737,3 +738,5 @@ timeDelta_t getTaskDeltaTime(cfTaskId_e) { return 20000; }
 armingDisableFlags_e getArmingDisableFlags(void) {
     return (armingDisableFlags_e) 0;
 }
+bool isTryingToArm(void) { return false; }
+void resetTryingToArm(void) {}
