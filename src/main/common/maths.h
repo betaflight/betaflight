@@ -1,5 +1,4 @@
 /*
-/*
  * This file is part of Cleanflight and Betaflight.
  *
  * Cleanflight and Betaflight are free software. You can redistribute
