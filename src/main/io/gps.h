@@ -91,7 +91,7 @@ typedef struct gpsLocation_s {
 
 typedef struct gpsSolutionData_s {
     gpsLocation_t llh;
-    uint16_t GPS_altitude;          // altitude in 0.1m
+//    int32_t GPS_altitude;          // altitude in 0.1m: UNUSED!
     uint16_t groundSpeed;           // speed in 0.1m/s
     uint16_t groundCourse;          // degrees * 10
     uint16_t hdop;                  // generic HDOP value (*100)

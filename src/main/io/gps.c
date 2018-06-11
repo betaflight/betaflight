@@ -662,7 +662,7 @@ typedef struct gpsDataNmea_s {
     int32_t latitude;
     int32_t longitude;
     uint8_t numSat;
-    uint16_t altitude;
+    int32_t altitude;
     uint16_t speed;
     uint16_t hdop;
     uint16_t ground_course;
@@ -734,6 +734,8 @@ static bool gpsNewFrameNMEA(char c)
                             break;
                         case 9:
                             gps_Msg.altitude = grab_fields(string, 0);     // altitude in meters added by Mis
+                            if (string[0] == '-')
+                                gps_Msg.altitude = -gps_Msg.altitude;     // handle negative altitudes
                             break;
                     }
                     break;
