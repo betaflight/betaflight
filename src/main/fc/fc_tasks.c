@@ -69,6 +69,7 @@
 #include "io/transponder_ir.h"
 #include "io/vtx_tramp.h" // Will be gone
 #include "io/rcdevice_cam.h"
+#include "io/usb_cdc_hid.h"
 #include "io/vtx.h"
 
 #include "msp/msp_serial.h"
@@ -90,17 +91,6 @@
 #include "scheduler/scheduler.h"
 
 #include "telemetry/telemetry.h"
-
-#ifdef USE_USB_CDC_HID
-//TODO: Make it platform independent in the future
-#ifdef STM32F4
-#include "vcpf4/usbd_cdc_vcp.h"
-#include "usbd_hid_core.h"
-#elif defined(STM32F7)
-#include "usbd_cdc_interface.h"
-#include "usbd_hid.h"
-#endif
-#endif
 
 #ifdef USE_BST
 void taskBstMasterProcess(timeUs_t currentTimeUs);
@@ -161,16 +151,7 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
 
 #ifdef USE_USB_CDC_HID
     if (!ARMING_FLAG(ARMED)) {
-        int8_t report[8];
-        for (int i = 0; i < 8; i++) {
-                report[i] = scaleRange(constrain(rcData[i], 1000, 2000), 1000, 2000, -127, 127);
-        }
-#ifdef STM32F4
-        USBD_HID_SendReport(&USB_OTG_dev, (uint8_t*)report, sizeof(report));
-#elif defined(STM32F7)
-        extern USBD_HandleTypeDef  USBD_Device;
-        USBD_HID_SendReport(&USBD_Device, (uint8_t*)report, sizeof(report));
-#endif
+        sendRcDataToHid();
     }
 #endif
 

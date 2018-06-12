@@ -466,11 +466,16 @@ STATIC_UNIT_TESTED uint16_t applyRxChannelRangeConfiguraton(int sample, const rx
     return sample;
 }
 
+uint8_t getMappedChannel(uint8_t channel)
+{
+    return channel < RX_MAPPABLE_CHANNEL_COUNT ? rxConfig()->rcmap[channel] : channel;
+}
+
 static void readRxChannelsApplyRanges(void)
 {
     for (int channel = 0; channel < rxChannelCount; channel++) {
 
-        const uint8_t rawChannel = channel < RX_MAPPABLE_CHANNEL_COUNT ? rxConfig()->rcmap[channel] : channel;
+        const uint8_t rawChannel = getMappedChannel(channel);
 
         // sample the channel
         uint16_t sample = rxRuntimeConfig.rcReadRawFn(&rxRuntimeConfig, rawChannel);

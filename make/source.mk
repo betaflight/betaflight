@@ -51,6 +51,7 @@ COMMON_SRC = \
             io/serial.c \
             io/statusindicator.c \
             io/transponder_ir.c \
+            io/usb_cdc_hid.c \
             msp/msp_serial.c \
             scheduler/scheduler.c \
             sensors/adcinternal.c \
@@ -297,6 +298,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
             io/transponder_ir.c \
+            io/usb_cdc_hid.c \
             msp/msp_serial.c \
             cms/cms.c \
             cms/cms_menu_blackbox.c \
