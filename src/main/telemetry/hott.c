@@ -111,6 +111,29 @@ static const char * const TableDtermLowpassType[] = {
     "FIR"
 //#endif
 };
+
+static const char * const vtxRTC6705Po[] = {	// RTC6705 RF Power index "---", 25 or 200 mW
+    "---",
+    "25",
+	"200"  
+};
+
+static const char * const vtxSaPo[] = {	// SmartAudio "---", 25, 200, 500, 800 mW
+    "---",
+    "25",
+	"200",
+	"500",
+	"800"   
+};
+
+static const char * const vtxTrampPo[] = {	// Tramp "---", 25, 100, 200, 400, 600 mW
+    "---",
+    "25",
+	"100",
+	"200",
+	"400",
+	"600"   
+};
 static uint32_t lastHoTTRequestCheckAt = 0;
 static uint32_t lastMessagesPreparedAt = 0;
 static uint32_t lastHottAlarmSoundTime = 0;
@@ -658,13 +681,13 @@ static void processTextModeRequest(HOTT_TEXTMODE_MSG_t *hottTEXTMODEMessage,uint
 							}
 							else if (page_settings == VTX_Config) {
 								switch (ligne_select) {
-									case 1:
+									case 3:
 										vtxSettingsConfigMutable()->band = vtxSettingsConfig()->band + 1;
 									break;
-									case 2:
+									case 4:
 										vtxSettingsConfigMutable()->channel = vtxSettingsConfig()->channel + 1;
 									break;
-									case 3:
+									case 5:
 										vtxSettingsConfigMutable()->power = vtxSettingsConfig()->power + 1;
 									break;
 								} 
@@ -808,13 +831,13 @@ static void processTextModeRequest(HOTT_TEXTMODE_MSG_t *hottTEXTMODEMessage,uint
 							}  
 							else if (page_settings == VTX_Config) {
 								switch (ligne_select) {
-									case 1:
+									case 3:
 										vtxSettingsConfigMutable()->band = vtxSettingsConfig()->band - 1;
 									break;
-									case 2:
+									case 4:
 										vtxSettingsConfigMutable()->channel = vtxSettingsConfig()->channel - 1;
 									break;
-									case 3:
+									case 5:
 										vtxSettingsConfigMutable()->power = vtxSettingsConfig()->power - 1;
 									break;
 								} 
@@ -957,14 +980,40 @@ static void processTextModeRequest(HOTT_TEXTMODE_MSG_t *hottTEXTMODEMessage,uint
 				    {
                     tfp_sprintf(lineText,"VTX Config  v%5s <>",FC_VERSION_STRING);
                     HottWriteLine(hottTEXTMODEMessage,0,lineText);
-                    tfp_sprintf(lineText," Band    : %s        ",(vtx58BandNames[vtxSettingsConfig()->band]));
-                    HottWriteLine(hottTEXTMODEMessage,1,lineText);
-                    tfp_sprintf(lineText," Channel : %d        ",vtxSettingsConfig()->channel);
-                    HottWriteLine(hottTEXTMODEMessage,2,lineText);
-					tfp_sprintf(lineText," Frequenz: %4d       ",(vtx58frequencyTable[vtxSettingsConfig()->band-1][vtxSettingsConfig()->channel-1]));
+                    tfp_sprintf(lineText," Band    : %s        ",(vtx58BandNames[vtxSettingsConfig()->band]));																										  
                     HottWriteLine(hottTEXTMODEMessage,3,lineText);
-					tfp_sprintf(lineText," Power   : %d        ",vtxSettingsConfig()->power);
+                    tfp_sprintf(lineText," Channel : %d        ",vtxSettingsConfig()->channel);
                     HottWriteLine(hottTEXTMODEMessage,4,lineText);
+					tfp_sprintf(lineText," Frequenz: %4d       ",(vtx58frequencyTable[vtxSettingsConfig()->band-1][vtxSettingsConfig()->channel-1]));
+                    HottWriteLine(hottTEXTMODEMessage,2,lineText);
+					
+					const vtxDevice_t *vtxDevice = vtxCommonDevice();
+					switch (vtxCommonGetDeviceType(vtxDevice)) {
+						case VTXDEV_RTC6705:
+							tfp_sprintf(lineText," Device  : RTC6705");
+							HottWriteLine(hottTEXTMODEMessage,1,lineText);
+							tfp_sprintf(lineText," Power mW: %s    ",vtxRTC6705Po[vtxSettingsConfig()->power]);
+							HottWriteLine(hottTEXTMODEMessage,5,lineText);
+							break;
+						case VTXDEV_SMARTAUDIO:
+							tfp_sprintf(lineText," Device  : SMARTAUDIO");
+							HottWriteLine(hottTEXTMODEMessage,1,lineText);
+							tfp_sprintf(lineText," Power mW: %s    ",vtxSaPo[vtxSettingsConfig()->power]);
+							HottWriteLine(hottTEXTMODEMessage,5,lineText);
+							break;
+						case VTXDEV_TRAMP:
+							tfp_sprintf(lineText," Device  : TRAMP");
+							HottWriteLine(hottTEXTMODEMessage,1,lineText);
+							tfp_sprintf(lineText," Power mW: %s    ",vtxTrampPo[vtxSettingsConfig()->power]);
+							HottWriteLine(hottTEXTMODEMessage,5,lineText);
+							break;
+						case VTXDEV_UNKNOWN:
+							tfp_sprintf(lineText," Device  : UNKNOWN");
+							HottWriteLine(hottTEXTMODEMessage,1,lineText);
+							tfp_sprintf(lineText," Power mW: ---   ");
+							HottWriteLine(hottTEXTMODEMessage,5,lineText);
+							break;
+					}
 					break;
 					}//END PAGE  
 				case FILTER_1: //PAGE FILTER 1
