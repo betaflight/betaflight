@@ -294,7 +294,7 @@ void rescueStop()
 void idleTasks()
 {
     // Do not calculate any of the idle task values when we are not flying
-    if (!ARMING_FLAG(ARMED)) {
+    if (!ARMING_FLAG(ARMED) || calculateThrottleStatus() == THROTTLE_LOW) {
         return;
     }
 
