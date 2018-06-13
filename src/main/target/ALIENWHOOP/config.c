@@ -138,7 +138,7 @@ void targetConfiguration(void)
 
         /* Setpoints */
         pidProfile->dterm_filter_type = FILTER_BIQUAD;
-	pidProfile->dterm_notch_hz = 0;
+        pidProfile->dterm_notch_hz = 0;
         pidProfile->dtermSetpointWeight = 100;
         pidProfile->setpointRelaxRatio = 0;
 
