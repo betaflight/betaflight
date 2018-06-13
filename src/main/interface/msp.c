@@ -1033,7 +1033,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, gpsSol.numSat);
         sbufWriteU32(dst, gpsSol.llh.lat);
         sbufWriteU32(dst, gpsSol.llh.lon);
-        sbufWriteU16(dst, MIN(gpsSol.llh.alt,65535));
+        sbufWriteU16(dst, MIN(gpsSol.llh.alt / 10, 65535));
         sbufWriteU16(dst, gpsSol.groundSpeed);
         sbufWriteU16(dst, gpsSol.groundCourse);
         sbufWriteU32(dst, gpsSol.llh.alt);
@@ -1900,7 +1900,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         gpsSol.numSat = sbufReadU8(src);
         gpsSol.llh.lat = sbufReadU32(src);
         gpsSol.llh.lon = sbufReadU32(src);
-        gpsSol.llh.alt = sbufReadU16(src);
+        gpsSol.llh.alt = sbufReadU16(src) * 10;
         gpsSol.groundSpeed = sbufReadU16(src);
         if (sbufBytesRemaining(src) >= 4) {
             gpsSol.llh.alt = sbufReadU32(src);
