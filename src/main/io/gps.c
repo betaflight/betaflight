@@ -641,7 +641,8 @@ static uint32_t grab_fields(char *src, uint8_t mult)
 {                               // convert string to uint32
     uint32_t i;
     uint32_t tmp = 0;
-    for (i = 0; src[i] != 0; i++) {
+    int isneg = src[0] == '-';
+    for (i = isneg; src[i] != 0; i++) {
         if (src[i] == '.') {
             i++;
             if (mult == 0)
@@ -655,6 +656,8 @@ static uint32_t grab_fields(char *src, uint8_t mult)
         if (i >= 15)
             return 0; // out of bounds
     }
+    if (isneg)
+        return -tmp;     // handle negative altitudes
     return tmp;
 }
 
@@ -734,8 +737,6 @@ static bool gpsNewFrameNMEA(char c)
                             break;
                         case 9:
                             gps_Msg.altitude = grab_fields(string, 0);     // altitude in meters added by Mis
-                            if (string[0] == '-')
-                                gps_Msg.altitude = -gps_Msg.altitude;     // handle negative altitudes
                             break;
                     }
                     break;
