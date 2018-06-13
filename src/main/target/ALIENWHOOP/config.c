@@ -74,8 +74,7 @@ void targetConfiguration(void)
 {
     if (hardwareMotorType == MOTOR_BRUSHED) {
         motorConfigMutable()->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
-        motorConfigMutable()->minthrottle = 1050;
-        motorConfigMutable()->maxthrottle = 2000;
+        motorConfigMutable()->minthrottle = 1050; // for 6mm and 7mm brushed
     }
 
     /* Default to Spektrum */
@@ -83,13 +82,9 @@ void targetConfiguration(void)
     rxConfigMutable()->spektrum_sat_bind = 5; // DSM2 11ms
     rxConfigMutable()->spektrum_sat_bind_autoreset = 1;
     rxConfigMutable()->mincheck = 1025;
-    rxConfigMutable()->maxcheck = 2000;
     rxConfigMutable()->rcInterpolation = RC_SMOOTHING_MANUAL;
     rxConfigMutable()->rcInterpolationInterval = 14;
     parseRcChannels("TAER1234", rxConfigMutable());
-#if defined(ALIENWHOOPF7)
-    rxConfigMutable()->serialrx_inverted = false; // don't invert signal for target default DSM*
-#endif
 
     mixerConfigMutable()->yaw_motors_reversed = true;
     imuConfigMutable()->small_angle = 180;
@@ -114,14 +109,7 @@ void targetConfiguration(void)
     gyroConfigMutable()->gyroMovementCalibrationThreshold = 200; // aka moron_threshold
     gyroConfigMutable()->gyro_sync_denom = 2;  // 16kHz gyro
     pidConfigMutable()->pid_process_denom = 1; // 16kHz PID
-    gyroConfigMutable()->gyro_lowpass_type = FILTER_PT1;
-    gyroConfigMutable()->gyro_lowpass2_type = FILTER_PT1;
-    gyroConfigMutable()->gyro_lowpass_hz = 100;
     gyroConfigMutable()->gyro_lowpass2_hz = 751;
-    gyroConfigMutable()->gyro_soft_notch_hz_1 = 0;
-    gyroConfigMutable()->gyro_soft_notch_cutoff_1 = 0;
-    gyroConfigMutable()->gyro_soft_notch_hz_2 = 0;
-    gyroConfigMutable()->gyro_soft_notch_cutoff_2 = 0;
 
     pidConfigMutable()->runaway_takeoff_prevention = false;
 
@@ -157,6 +145,8 @@ void targetConfiguration(void)
 	/* Anti-Gravity */
 	pidProfile->itermThrottleThreshold = 500;
 	pidProfile->itermAcceleratorGain = 5000;
+
+	pidProfile->levelAngleLimit = 65;
     }
 
     for (uint8_t rateProfileIndex = 0; rateProfileIndex < CONTROL_RATE_PROFILE_COUNT; rateProfileIndex++) {
@@ -181,9 +171,9 @@ void targetConfiguration(void)
         controlRateConfig->dynThrPID = 0; // tpa_rate off
         controlRateConfig->tpa_breakpoint = 1600;
 
-	/* Force the clipping mixer at 100% seems better for brushed than default (off) and scaling) */
+	/* Force the clipping mixer at 100% seems better for brushed than default (off) and scaling)? */
         controlRateConfig->throttle_limit_type = THROTTLE_LIMIT_TYPE_CLIP;
-        controlRateConfig->throttle_limit_percent = 100;
+        //controlRateConfig->throttle_limit_percent = 100;
 
         controlRateConfig->thrExpo8 = 20; // 20% throttle expo
     }
