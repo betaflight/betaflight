@@ -202,6 +202,13 @@ static const uint8_t osdElementDisplayOrder[] = {
 
 PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 3);
 
+static void osdDisplayCenteredMessage(int row, const char *message)
+{
+    const int messageLen = strlen(message);
+    const int col = (messageLen >= osdDisplayPort->cols) ? 0 : (osdDisplayPort->cols - strlen(message)) / 2;
+    displayWrite(osdDisplayPort, col, row, message);
+}
+
 /**
  * Gets the correct altitude symbol for the current unit system
  */
@@ -1390,8 +1397,23 @@ static void osdShowStats(uint16_t endBatteryVoltage)
 static void osdShowArmed(void)
 {
     displayClearScreen(osdDisplayPort);
-    displayWrite(osdDisplayPort, 12, 7, "ARMED");
+    osdDisplayCenteredMessage(7, "ARMED");
 }
+
+#ifdef USE_DSHOT
+static void osdShowTryingToArm(timeUs_t currentTimeUs)
+{
+    char buff[14];
+    int delayTime = (getLastDshotBeaconCommandTimeUs() + DSHOT_BEACON_GUARD_DELAY_US - currentTimeUs) / 1e5;
+    if (delayTime < 0) {
+        delayTime = 0;
+    }
+    displayClearScreen(osdDisplayPort);
+    osdDisplayCenteredMessage(5, "DISABLING BEACON");
+    tfp_sprintf(buff, "ARMING IN %d.%d", delayTime / 10, delayTime % 10);
+    osdDisplayCenteredMessage(7, buff);
+}
+#endif
 
 STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
 {
@@ -1400,6 +1422,13 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
     static bool osdStatsVisible = false;
     static timeUs_t osdStatsRefreshTimeUs;
     static uint16_t endBatteryVoltage;
+
+#ifdef USE_DSHOT
+    if (isTryingToArm() && !ARMING_FLAG(ARMED)) {
+        osdShowTryingToArm(currentTimeUs);
+        return;
+    }
+#endif
 
     // detect arm/disarm
     if (armState != ARMING_FLAG(ARMED)) {
