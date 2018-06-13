@@ -641,8 +641,12 @@ static uint32_t grab_fields(char *src, uint8_t mult)
 {                               // convert string to uint32
     uint32_t i;
     uint32_t tmp = 0;
-    int isneg = src[0] == '-';
-    for (i = isneg; src[i] != 0; i++) {
+    int isneg = 0;
+    for (i = 0; src[i] != 0; i++) {
+        if ((i == 0) && (src[0] == '-')) { // detect negative sign
+            isneg = 1;
+            continue; // jump to next character if the first one was a negative sign
+        }
         if (src[i] == '.') {
             i++;
             if (mult == 0)
@@ -658,7 +662,8 @@ static uint32_t grab_fields(char *src, uint8_t mult)
     }
     if (isneg)
         return -tmp;     // handle negative altitudes
-    return tmp;
+    else
+        return tmp;
 }
 
 typedef struct gpsDataNmea_s {
