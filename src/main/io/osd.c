@@ -202,13 +202,6 @@ static const uint8_t osdElementDisplayOrder[] = {
 
 PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 3);
 
-static void osdDisplayCenteredMessage(int row, const char *message)
-{
-    const int messageLen = strlen(message);
-    const int col = (messageLen >= osdDisplayPort->cols) ? 0 : (osdDisplayPort->cols - strlen(message)) / 2;
-    displayWrite(osdDisplayPort, col, row, message);
-}
-
 /**
  * Gets the correct altitude symbol for the current unit system
  */
@@ -724,6 +717,23 @@ static bool osdDrawSingleElement(uint8_t item)
 
             const batteryState_e batteryState = getBatteryState();
 
+#ifdef USE_DSHOT
+            if (isTryingToArm() && !ARMING_FLAG(ARMED)) {
+                int armingDelayTime = (getLastDshotBeaconCommandTimeUs() + DSHOT_BEACON_GUARD_DELAY_US - micros()) / 1e5;
+                if (armingDelayTime < 0) {
+                    armingDelayTime = 0;
+                }
+                if (armingDelayTime >= (DSHOT_BEACON_GUARD_DELAY_US / 1e5 - 5)) {
+                    osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, " BEACON ON"); // Display this message for the first 0.5 seconds
+                } else {
+                    char armingDelayMessage[OSD_FORMAT_MESSAGE_BUFFER_SIZE];
+                    tfp_sprintf(armingDelayMessage, "ARM IN %d.%d", armingDelayTime / 10, armingDelayTime % 10);
+                    osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, armingDelayMessage);
+                }
+                break;
+            }
+#endif
+
             if (osdWarnGetState(OSD_WARNING_BATTERY_CRITICAL) && batteryState == BATTERY_CRITICAL) {
                 osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, " LAND NOW");
                 break;
@@ -1105,12 +1115,22 @@ void osdUpdateAlarms(void)
         CLR_BLINK(OSD_RSSI_VALUE);
     }
 
-    if (getBatteryState() == BATTERY_OK) {
+    // Determine if the OSD_WARNINGS should blink
+    if (getBatteryState() != BATTERY_OK
+           && (osdWarnGetState(OSD_WARNING_BATTERY_CRITICAL) || osdWarnGetState(OSD_WARNING_BATTERY_WARNING))
+#ifdef USE_DSHOT
+           && (!isTryingToArm())
+#endif
+       ) {
+        SET_BLINK(OSD_WARNINGS);
+    } else {
         CLR_BLINK(OSD_WARNINGS);
+    }
+
+    if (getBatteryState() == BATTERY_OK) {
         CLR_BLINK(OSD_MAIN_BATT_VOLTAGE);
         CLR_BLINK(OSD_AVG_CELL_VOLTAGE);
     } else {
-        SET_BLINK(OSD_WARNINGS);
         SET_BLINK(OSD_MAIN_BATT_VOLTAGE);
         SET_BLINK(OSD_AVG_CELL_VOLTAGE);
     }
@@ -1397,23 +1417,8 @@ static void osdShowStats(uint16_t endBatteryVoltage)
 static void osdShowArmed(void)
 {
     displayClearScreen(osdDisplayPort);
-    osdDisplayCenteredMessage(7, "ARMED");
+    displayWrite(osdDisplayPort, 12, 7, "ARMED");
 }
-
-#ifdef USE_DSHOT
-static void osdShowTryingToArm(timeUs_t currentTimeUs)
-{
-    char buff[14];
-    int delayTime = (getLastDshotBeaconCommandTimeUs() + DSHOT_BEACON_GUARD_DELAY_US - currentTimeUs) / 1e5;
-    if (delayTime < 0) {
-        delayTime = 0;
-    }
-    displayClearScreen(osdDisplayPort);
-    osdDisplayCenteredMessage(5, "DISABLING BEACON");
-    tfp_sprintf(buff, "ARMING IN %d.%d", delayTime / 10, delayTime % 10);
-    osdDisplayCenteredMessage(7, buff);
-}
-#endif
 
 STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
 {
@@ -1422,13 +1427,6 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
     static bool osdStatsVisible = false;
     static timeUs_t osdStatsRefreshTimeUs;
     static uint16_t endBatteryVoltage;
-
-#ifdef USE_DSHOT
-    if (isTryingToArm() && !ARMING_FLAG(ARMED)) {
-        osdShowTryingToArm(currentTimeUs);
-        return;
-    }
-#endif
 
     // detect arm/disarm
     if (armState != ARMING_FLAG(ARMED)) {
