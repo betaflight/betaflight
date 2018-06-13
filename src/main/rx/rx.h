@@ -173,5 +173,3 @@ void suspendRxSignal(void);
 void resumeRxSignal(void);
 
 uint16_t rxGetRefreshRate(void);
-
-uint8_t getMappedChannel(uint8_t channel);

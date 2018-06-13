@@ -24,6 +24,8 @@
 
 #include "common/maths.h"
 
+#include "fc/rc_controls.h"
+
 #include "rx/rx.h"
 
 //TODO: Make it platform independent in the future
@@ -32,39 +34,45 @@
 #include "usbd_hid_core.h"
 #elif defined(STM32F7)
 #include "usbd_cdc_interface.h"
+#include "usbd_def.h"
 #include "usbd_hid.h"
 #endif
 
 #define USB_CDC_HID_NUM_AXES 8
 
-// In the windows joystick driver, the axes are defined as shown in the third column.
+#define USB_CDC_HID_RANGE_MIN -127
+#define USB_CDC_HID_RANGE_MAX 127
+
+// In the windows joystick driver, the axes are defined as shown in the second column.
 
 const uint8_t hidChannelMapping[] = {
-    0, // X,          ROLL
-    1, // Y,          PITCH
-    6, // ,           AUX3
-    3, // Y Rotation, THROTTLE
-    4, // Z Rotation, AUX1
-    2, // X Rotation, YAW
-    7, // ,           AUX4
-    5, // Wheel,      AUX2
+    ROLL,     // X
+    PITCH,    // Y
+    AUX3,
+    YAW,      // X Rotation
+    AUX1,     // Z Rotation
+    THROTTLE, // Y Rotation
+    AUX4,
+    AUX2,     // Wheel
 };
 
 void sendRcDataToHid(void)
 {
     int8_t report[8];
     for (unsigned i = 0; i < USB_CDC_HID_NUM_AXES; i++) {
-        const uint8_t channel = getMappedChannel(hidChannelMapping[i]);
-            report[i] = scaleRange(constrain(rcData[channel], 1000, 2000), 1000, 2000, -127, 127);
-            if (i == 1 || i == 2) {
-                report[i] = -report[i];
-            }
+        const uint8_t channel = hidChannelMapping[i];
+        report[i] = scaleRange(constrain(rcData[channel], PWM_RANGE_MIN, PWM_RANGE_MAX), PWM_RANGE_MIN, PWM_RANGE_MAX, USB_CDC_HID_RANGE_MIN, USB_CDC_HID_RANGE_MAX);
+        if (i == 1) {
+            // For some reason ROLL is inverted in Windows
+            report[i] = -report[i];
+        }
     }
 #ifdef STM32F4
     USBD_HID_SendReport(&USB_OTG_dev, (uint8_t*)report, sizeof(report));
 #elif defined(STM32F7)
-    extern USBD_HandleTypeDef  USBD_Device;
     USBD_HID_SendReport(&USBD_Device, (uint8_t*)report, sizeof(report));
+#else
+# error "MCU does not support USB HID."
 #endif
 }
 #endif

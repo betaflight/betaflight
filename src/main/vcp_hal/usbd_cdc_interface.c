@@ -48,6 +48,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f7xx_hal.h"
 #include "usbd_core.h"
+#include "usbd_def.h"
 #include "usbd_desc.h"
 #include "usbd_cdc.h"
 #include "usbd_cdc_interface.h"
@@ -82,8 +83,6 @@ uint8_t* rxBuffPtr = NULL;
 
 /* TIM handler declaration */
 TIM_HandleTypeDef  TimHandle;
-/* USB handler declaration */
-extern USBD_HandleTypeDef  USBD_Device;
 
 static void (*ctrlLineStateCb)(void *context, uint16_t ctrlLineState);
 static void *ctrlLineStateCbContext;

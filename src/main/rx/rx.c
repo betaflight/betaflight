@@ -466,7 +466,7 @@ STATIC_UNIT_TESTED uint16_t applyRxChannelRangeConfiguraton(int sample, const rx
     return sample;
 }
 
-uint8_t getMappedChannel(uint8_t channel)
+static uint8_t getMappedChannel(uint8_t channel)
 {
     return channel < RX_MAPPABLE_CHANNEL_COUNT ? rxConfig()->rcmap[channel] : channel;
 }
