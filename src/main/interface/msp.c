@@ -1033,10 +1033,9 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, gpsSol.numSat);
         sbufWriteU32(dst, gpsSol.llh.lat);
         sbufWriteU32(dst, gpsSol.llh.lon);
-        sbufWriteU16(dst, MIN(gpsSol.llh.alt / 10, 65535));
+        sbufWriteU16(dst, (uint16_t)constrain(gpsSol.llh.alt / 10, 0, UINT16_MAX));
         sbufWriteU16(dst, gpsSol.groundSpeed);
         sbufWriteU16(dst, gpsSol.groundCourse);
-        sbufWriteU32(dst, gpsSol.llh.alt);
         break;
 
     case MSP_COMP_GPS:
@@ -1902,9 +1901,6 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         gpsSol.llh.lon = sbufReadU32(src);
         gpsSol.llh.alt = sbufReadU16(src) * 10;
         gpsSol.groundSpeed = sbufReadU16(src);
-        if (sbufBytesRemaining(src) >= 4) {
-            gpsSol.llh.alt = sbufReadU32(src);
-        }
         GPS_update |= 2;        // New data signalisation to GPS functions // FIXME Magic Numbers
         break;
 #endif // USE_GPS
