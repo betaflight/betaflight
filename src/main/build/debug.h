@@ -91,6 +91,7 @@ typedef enum {
     DEBUG_ACRO_TRAINER,
     DEBUG_RC_SMOOTHING,
     DEBUG_RX_SIGNAL_LOSS,
+    DEBUG_RC_SMOOTHING_RATE,
     DEBUG_COUNT
 } debugType_e;
 
