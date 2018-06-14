@@ -213,12 +213,12 @@ void sensorUpdate()
         rescueState.sensor.zVelocity = (rescueState.sensor.currentAltitude - previousAltitude) * 1000000.0f / dTime;
         rescueState.sensor.zVelocityAvg = 0.8f * rescueState.sensor.zVelocityAvg + rescueState.sensor.zVelocity * 0.2f;
 
+        rescueState.sensor.accMagnitude = (float) sqrt(sq(acc.accADC[Z]) + sq(acc.accADC[X]) + sq(acc.accADC[Y]) / sq(acc.dev.acc_1G));
+        rescueState.sensor.accMagnitudeAvg = (rescueState.sensor.accMagnitudeAvg * 0.8f) + (rescueState.sensor.accMagnitude * 0.2f);
+
         previousAltitude = rescueState.sensor.currentAltitude;
         previousTimeUs = currentTimeUs;
     }
-
-    rescueState.sensor.accMagnitude = (float) sqrt(sq(acc.accADC[Z]) + sq(acc.accADC[X]) + sq(acc.accADC[Y]) / sq(acc.dev.acc_1G));
-    rescueState.sensor.accMagnitudeAvg = (rescueState.sensor.accMagnitudeAvg * 0.998f) + (rescueState.sensor.accMagnitude * 0.002f);
 }
 
 void performSanityChecks()
