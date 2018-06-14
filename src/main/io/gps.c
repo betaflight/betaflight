@@ -649,21 +649,22 @@ static uint32_t grab_fields(char *src, uint8_t mult)
         }
         if (src[i] == '.') {
             i++;
-            if (mult == 0)
+            if (mult == 0) {
                 break;
-            else
+            }
+            else {
                 src[i + mult] = 0;
+            }
         }
         tmp *= 10;
-        if (src[i] >= '0' && src[i] <= '9')
+        if (src[i] >= '0' && src[i] <= '9') {
             tmp += src[i] - '0';
-        if (i >= 15)
+        }
+        if (i >= 15) {
             return 0; // out of bounds
+        }
     }
-    if (isneg)
-        return -tmp;     // handle negative altitudes
-    else
-        return tmp;
+    return isneg ? -tmp : tmp;     // handle negative altitudes
 }
 
 typedef struct gpsDataNmea_s {
