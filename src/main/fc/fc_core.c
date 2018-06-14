@@ -549,7 +549,7 @@ uint8_t calculateThrottlePercent(void)
 
 static bool airmodeIsActivated;
 
-bool isAirmodeActivated()
+bool isAirmodeActivated() 
 {
     return airmodeIsActivated;
 }
@@ -809,7 +809,7 @@ bool processRx(timeUs_t currentTimeUs)
         }
     }
 #endif
-
+    
     if (IS_RC_MODE_ACTIVE(BOXPASSTHRU)) {
         ENABLE_FLIGHT_MODE(PASSTHRU_MODE);
     } else {
@@ -922,6 +922,10 @@ static FAST_CODE_NOINLINE void subTaskMainSubprocesses(timeUs_t currentTimeUs)
     if (sensors(SENSOR_MAG)) {
         updateMagHold();
     }
+#endif
+
+#ifdef USE_GPS_RESCUE
+    updateGPSRescueState();
 #endif
 
 #ifdef USE_SDCARD

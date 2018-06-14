@@ -41,7 +41,6 @@
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
-#include "flight/gps_rescue.h"
 
 #include "io/gps.h"
 
@@ -395,11 +394,11 @@ float imuCalcKpGain(timeUs_t currentTimeUs, bool useAcc, float *gyroAverage)
             if ((fabsf(gyroAverage[X]) > ATTITUDE_RESET_GYRO_LIMIT)
                 || (fabsf(gyroAverage[Y]) > ATTITUDE_RESET_GYRO_LIMIT)
                 || (fabsf(gyroAverage[Z]) > ATTITUDE_RESET_GYRO_LIMIT)
-                || (!useAcc)) {
+                || (!useAcc)) {  
 
                 gyroQuietPeriodTimeEnd = currentTimeUs + ATTITUDE_RESET_QUIET_TIME;
                 attitudeResetTimeEnd = 0;
-            }
+            }            
         }
         if (attitudeResetTimeEnd > 0) {        // Resetting the attitude estimation
             if (currentTimeUs >= attitudeResetTimeEnd) {
@@ -409,14 +408,14 @@ float imuCalcKpGain(timeUs_t currentTimeUs, bool useAcc, float *gyroAverage)
             } else {
                 attitudeResetActive = true;
             }
-        } else if ((gyroQuietPeriodTimeEnd > 0) && (currentTimeUs >= gyroQuietPeriodTimeEnd)) {
+        } else if ((gyroQuietPeriodTimeEnd > 0) && (currentTimeUs >= gyroQuietPeriodTimeEnd)) {   
             // Start the high gain period to bring the estimation into convergence
             attitudeResetTimeEnd = currentTimeUs + ATTITUDE_RESET_ACTIVE_TIME;
             gyroQuietPeriodTimeEnd = 0;
         }
     }
     lastArmState = armState;
-
+    
     if (attitudeResetActive) {
         ret = ATTITUDE_RESET_KP_GAIN;
     } else {
@@ -452,7 +451,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
             courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
             useCOG = true;
         } else {
-            // If GPS rescue mode is active and we can use it, go for it.  When we're close to home we will
+            // If GPS rescue mode is active and we can use it, go for it.  When we're close to home we will 
             // probably stop re calculating GPS heading data.  Other future modes can also use this extern
 
             if (canUseGPSHeading) {
@@ -522,9 +521,6 @@ void imuUpdateAttitude(timeUs_t currentTimeUs)
         acc.accADC[Y] = 0;
         acc.accADC[Z] = 0;
     }
-#ifdef USE_GPS_RESCUE
-    updateGPSRescueState();
-#endif
 }
 
 bool shouldInitializeGPSHeading()
@@ -536,7 +532,7 @@ bool shouldInitializeGPSHeading()
 
         return true;
     }
-
+    
     return false;
 }
 
