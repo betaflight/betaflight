@@ -186,6 +186,8 @@ static void taskCalculateAltitude(timeUs_t currentTimeUs)
 static void taskTelemetry(timeUs_t currentTimeUs)
 {
     if (!cliMode && feature(FEATURE_TELEMETRY)) {
+        subTaskTelemetryPollSensors(currentTimeUs);
+
         telemetryProcess(currentTimeUs);
     }
 }
@@ -205,6 +207,9 @@ void taskCameraControl(uint32_t currentTime)
 void fcTasksInit(void)
 {
     schedulerInit();
+
+    setTaskEnabled(TASK_SYSTEM, true);
+
     setTaskEnabled(TASK_SERIAL, true);
     rescheduleTask(TASK_SERIAL, TASK_PERIOD_HZ(serialConfig()->serial_update_rate_hz));
 
@@ -318,10 +323,19 @@ void fcTasksInit(void)
 }
 
 cfTask_t cfTasks[TASK_COUNT] = {
+    [TASK_SYSTEM_LOAD] = {
+        .taskName = "SYSTEM",
+        .subTaskName = "LOAD",
+        .taskFunc = taskSystemLoad,
+        .desiredPeriod = TASK_PERIOD_HZ(10),        // 10Hz, every 100 ms
+        .staticPriority = TASK_PRIORITY_MEDIUM_HIGH,
+    },
+
     [TASK_SYSTEM] = {
         .taskName = "SYSTEM",
-        .taskFunc = taskSystem,
-        .desiredPeriod = TASK_PERIOD_HZ(10),        // 10Hz, every 100 ms
+        .subTaskName = "UPDATE",
+        .taskFunc = taskMain,
+        .desiredPeriod = TASK_PERIOD_HZ(100),
         .staticPriority = TASK_PRIORITY_MEDIUM_HIGH,
     },
 

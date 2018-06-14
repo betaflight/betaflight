@@ -905,31 +905,17 @@ static FAST_CODE void subTaskPidController(timeUs_t currentTimeUs)
 #endif
 }
 
-static FAST_CODE_NOINLINE void subTaskMainSubprocesses(timeUs_t currentTimeUs)
+static FAST_CODE_NOINLINE void subTaskPidSubprocesses(timeUs_t currentTimeUs)
 {
     uint32_t startTime = 0;
     if (debugMode == DEBUG_PIDLOOP) {
         startTime = micros();
     }
 
-    // Read out gyro temperature if used for telemmetry
-    if (feature(FEATURE_TELEMETRY)) {
-        gyroReadTemperature();
-    }
-
 #ifdef USE_MAG
     if (sensors(SENSOR_MAG)) {
         updateMagHold();
     }
-#endif
-
-#ifdef USE_SDCARD
-    afatfs_poll();
-#endif
-
-#if defined(USE_VCP)
-    DEBUG_SET(DEBUG_USB, 0, usbCableIsInserted());
-    DEBUG_SET(DEBUG_USB, 1, usbVcpIsConnected());
 #endif
 
 #ifdef USE_BLACKBOX
@@ -942,6 +928,25 @@ static FAST_CODE_NOINLINE void subTaskMainSubprocesses(timeUs_t currentTimeUs)
 
     DEBUG_SET(DEBUG_PIDLOOP, 3, micros() - startTime);
 }
+
+void taskMain(timeUs_t currentTimeUs)
+{
+    UNUSED(currentTimeUs);
+
+#ifdef USE_SDCARD
+    afatfs_poll();
+#endif
+}
+
+#ifdef USE_TELEMETRY
+void subTaskTelemetryPollSensors(timeUs_t currentTimeUs)
+{
+    UNUSED(currentTimeUs);
+
+    // Read out gyro temperature if used for telemmetry
+    gyroReadTemperature();
+}
+#endif
 
 static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
 {
@@ -1017,7 +1022,7 @@ FAST_CODE void taskMainPidLoop(timeUs_t currentTimeUs)
     // 0 - gyroUpdate()
     // 1 - subTaskPidController()
     // 2 - subTaskMotorUpdate()
-    // 3 - subTaskMainSubprocesses()
+    // 3 - subTaskPidSubprocesses()
     gyroUpdate(currentTimeUs);
     DEBUG_SET(DEBUG_PIDLOOP, 0, micros() - currentTimeUs);
 
@@ -1025,7 +1030,7 @@ FAST_CODE void taskMainPidLoop(timeUs_t currentTimeUs)
         subTaskRcCommand(currentTimeUs);
         subTaskPidController(currentTimeUs);
         subTaskMotorUpdate(currentTimeUs);
-        subTaskMainSubprocesses(currentTimeUs);
+        subTaskPidSubprocesses(currentTimeUs);
     }
 
     if (debugMode == DEBUG_CYCLETIME) {
