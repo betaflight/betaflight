@@ -664,7 +664,7 @@ static uint32_t grab_fields(char *src, uint8_t mult)
             return 0; // out of bounds
         }
     }
-    return isneg ? -tmp : tmp;     // handle negative altitudes
+    return isneg ? -tmp : tmp;    // handle negative altitudes
 }
 
 typedef struct gpsDataNmea_s {
