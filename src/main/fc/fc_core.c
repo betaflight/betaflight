@@ -945,9 +945,6 @@ static FAST_CODE_NOINLINE void subTaskMainSubprocesses(timeUs_t currentTimeUs)
     UNUSED(currentTimeUs);
 #endif
 
-#ifdef USE_TRANSPONDER
-    transponderUpdate(currentTimeUs);
-#endif
     DEBUG_SET(DEBUG_PIDLOOP, 3, micros() - startTime);
 }
 
