@@ -22,7 +22,7 @@
 
 #include "drivers/serial.h"
 
-#include "vcp_hal/usbd_cdc_interface.h"
+#include "usbd_cdc.h"
 
 typedef struct {
     serialPort_t port;
