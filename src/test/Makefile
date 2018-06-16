@@ -20,6 +20,7 @@ include $(ROOT)/make/system-id.mk
 # variables available:
 #   <test_name>_SRC
 #   <test_name>_DEFINES
+#   <test_name>_INCLUDE_DIRS
 
 
 alignsensor_unittest_SRC := \
@@ -478,6 +479,7 @@ $(OBJECT_DIR)/$1/%.c.o: $(USER_DIR)/%.c
 	@echo "compiling $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
 	$(V1) $(CC) $(C_FLAGS) $(TEST_CFLAGS) \
+                $(foreach def,$($1_INCLUDE_DIRS),-I $(def)) \
                 $(foreach def,$($1_DEFINES),-D $(def)) \
                 -c $$< -o $$@
 
@@ -485,6 +487,7 @@ $(OBJECT_DIR)/$1/%.c.o: $(TEST_DIR)/%.c
 	@echo "compiling test c file: $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
 	$(V1) $(CC) $(C_FLAGS) $(TEST_CFLAGS) \
+                $(foreach def,$($1_INCLUDE_DIRS),-I $(def)) \
                 $(foreach def,$($1_DEFINES),-D $(def)) \
                 -c $$< -o $$@
 
@@ -492,8 +495,9 @@ $(OBJECT_DIR)/$1/$1.o: $(TEST_DIR)/$1.cc
 	@echo "compiling $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
 	$(V1) $(CXX) $(CXX_FLAGS) $(TEST_CFLAGS)  \
-                 $(foreach def,$($1_DEFINES),-D $(def)) \
-                 -c $$< -o $$@
+                $(foreach def,$($1_INCLUDE_DIRS),-I $(def)) \
+                $(foreach def,$($1_DEFINES),-D $(def)) \
+                -c $$< -o $$@
 
 
 $(OBJECT_DIR)/$1/$1 : $$($$1_OBJS) \
