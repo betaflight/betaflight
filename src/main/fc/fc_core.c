@@ -40,12 +40,10 @@
 #include "pg/rx.h"
 
 #include "drivers/light_led.h"
-#include "drivers/serial_usb_vcp.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
 #include "drivers/transponder_ir.h"
-#include "drivers/usb_io.h"
 
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"

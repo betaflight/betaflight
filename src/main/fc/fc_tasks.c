@@ -38,8 +38,10 @@
 #include "drivers/compass/compass.h"
 #include "drivers/sensor.h"
 #include "drivers/serial.h"
+#include "drivers/serial_usb_vcp.h"
 #include "drivers/stack_check.h"
 #include "drivers/transponder_ir.h"
+#include "drivers/usb_io.h"
 #include "drivers/vtx_common.h"
 
 #include "fc/config.h"
@@ -119,6 +121,12 @@ static bool taskSerialCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime
 static void taskHandleSerial(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
+
+#if defined(USE_VCP)
+    DEBUG_SET(DEBUG_USB, 0, usbCableIsInserted());
+    DEBUG_SET(DEBUG_USB, 1, usbVcpIsConnected());
+#endif
+
 #ifdef USE_CLI
     // in cli mode, all serial stuff goes to here. enter cli mode by sending #
     if (cliMode) {
