@@ -95,7 +95,7 @@
 #include "telemetry/telemetry.h"
 
 #ifdef USE_BST
-#include "COLIBRI_RACE/i2c_bst.h"
+#include "i2c_bst.h"
 #endif
 
 #ifdef USE_USB_CDC_HID
