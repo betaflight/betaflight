@@ -45,7 +45,7 @@
 #if defined(STM32F1) || defined(STM32F3)
 uint8_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
 #else
-uint32_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
+FAST_RAM_ZERO_INIT uint32_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
 #endif
 volatile uint8_t ws2811LedDataTransferInProgress = 0;
 
