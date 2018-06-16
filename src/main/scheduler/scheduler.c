@@ -225,7 +225,7 @@ void schedulerInit(void)
 {
     calculateTaskStatistics = true;
     queueClear();
-    queueAdd(&cfTasks[TASK_SYSTEM_LOAD]);
+    queueAdd(&cfTasks[TASK_SYSTEM]);
 }
 
 FAST_CODE void scheduler(void)

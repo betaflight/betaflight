@@ -58,6 +58,7 @@
 #include "interface/cli.h"
 #include "interface/msp.h"
 
+#include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/dashboard.h"
 #include "io/gps.h"
@@ -93,16 +94,27 @@
 #include "telemetry/telemetry.h"
 
 #ifdef USE_BST
-void taskBstMasterProcess(timeUs_t currentTimeUs);
+static void taskBstMasterProcess(timeUs_t currentTimeUs);
 #endif
 
-bool taskSerialCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
+static void taskMain(timeUs_t currentTimeUs)
+{
+    UNUSED(currentTimeUs);
+
+#ifdef USE_SDCARD
+    afatfs_poll();
+#endif
+}
+
+#ifdef USE_OSD_SLAVE
+static bool taskSerialCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
 {
     UNUSED(currentTimeUs);
     UNUSED(currentDeltaTimeUs);
 
     return mspSerialWaiting();
 }
+#endif
 
 static void taskHandleSerial(timeUs_t currentTimeUs)
 {
@@ -122,7 +134,7 @@ static void taskHandleSerial(timeUs_t currentTimeUs)
     mspSerialProcess(evaluateMspData, mspFcProcessCommand, mspFcProcessReply);
 }
 
-void taskBatteryAlerts(timeUs_t currentTimeUs)
+static void taskBatteryAlerts(timeUs_t currentTimeUs)
 {
     if (!ARMING_FLAG(ARMED)) {
         // the battery *might* fall out in flight, but if that happens the FC will likely be off too unless the user has battery backup.
@@ -194,7 +206,7 @@ static void taskTelemetry(timeUs_t currentTimeUs)
 #endif
 
 #ifdef USE_CAMERA_CONTROL
-void taskCameraControl(uint32_t currentTime)
+static void taskCameraControl(uint32_t currentTime)
 {
     if (ARMING_FLAG(ARMED)) {
         return;
@@ -208,7 +220,7 @@ void fcTasksInit(void)
 {
     schedulerInit();
 
-    setTaskEnabled(TASK_SYSTEM, true);
+    setTaskEnabled(TASK_MAIN, true);
 
     setTaskEnabled(TASK_SERIAL, true);
     rescheduleTask(TASK_SERIAL, TASK_PERIOD_HZ(serialConfig()->serial_update_rate_hz));
@@ -323,7 +335,7 @@ void fcTasksInit(void)
 }
 
 cfTask_t cfTasks[TASK_COUNT] = {
-    [TASK_SYSTEM_LOAD] = {
+    [TASK_SYSTEM] = {
         .taskName = "SYSTEM",
         .subTaskName = "LOAD",
         .taskFunc = taskSystemLoad,
@@ -331,7 +343,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_MEDIUM_HIGH,
     },
 
-    [TASK_SYSTEM] = {
+    [TASK_MAIN] = {
         .taskName = "SYSTEM",
         .subTaskName = "UPDATE",
         .taskFunc = taskMain,

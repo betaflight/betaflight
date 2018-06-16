@@ -67,7 +67,6 @@
 
 #include "interface/cli.h"
 
-#include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/gps.h"
 #include "io/motors.h"
@@ -929,15 +928,6 @@ static FAST_CODE_NOINLINE void subTaskPidSubprocesses(timeUs_t currentTimeUs)
     DEBUG_SET(DEBUG_PIDLOOP, 3, micros() - startTime);
 }
 
-void taskMain(timeUs_t currentTimeUs)
-{
-    UNUSED(currentTimeUs);
-
-#ifdef USE_SDCARD
-    afatfs_poll();
-#endif
-}
-
 #ifdef USE_TELEMETRY
 void subTaskTelemetryPollSensors(timeUs_t currentTimeUs)
 {
@@ -1059,4 +1049,3 @@ void resetTryingToArm()
 {
     tryingToArm = false;
 }
-

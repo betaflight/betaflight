@@ -57,5 +57,4 @@ timeUs_t getLastDisarmTimeUs(void);
 bool isTryingToArm();
 void resetTryingToArm();
 
-void taskMain(timeUs_t currentTimeUs);
 void subTaskTelemetryPollSensors(timeUs_t currentTimeUs);
