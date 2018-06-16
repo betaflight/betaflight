@@ -386,6 +386,11 @@ uint32_t getDshotHz(motorPwmProtocolTypes_e pwmProtocolType)
     }
 }
 
+FAST_CODE bool pwmIsProcessingDshotCommand(void)
+{
+    return dshotCommandControl.nextCommandAt;
+}
+
 void pwmWriteDshotCommand(uint8_t index, uint8_t motorCount, uint8_t command, bool blocking)
 {
     timeUs_t timeNowUs = micros();
@@ -448,17 +453,12 @@ void pwmWriteDshotCommand(uint8_t index, uint8_t motorCount, uint8_t command, bo
     }
 }
 
-FAST_RAM bool pwmIsProcessingDshotCommand(void)
-{
-    return dshotCommandControl.nextCommandAt;
-}
-
 uint8_t pwmGetDshotCommand(uint8_t index)
 {
     return dshotCommandControl.command[index];
 }
 
-bool FAST_CODE_NOINLINE pwmProcessDshotCommand(uint8_t motorCount)
+FAST_CODE_NOINLINE bool pwmProcessDshotCommand(uint8_t motorCount)
 {
     timeUs_t timeNowUs = micros();
     if (cmpTimeUs(timeNowUs, dshotCommandControl.nextCommandAt) < 0) {
