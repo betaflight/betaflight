@@ -408,7 +408,7 @@ FAST_CODE bool pwmDshotCommandIsQueued(void)
 
 FAST_CODE bool pwmDshotCommandIsProcessing(void)
 {
-    return dshotCommandControl.nextCommandAtUs && !dshotCommandControl.waitingForIdle;
+    return dshotCommandControl.nextCommandAtUs && !dshotCommandControl.waitingForIdle && dshotCommandControl.repeats > 0;
 }
 
 void pwmWriteDshotCommand(uint8_t index, uint8_t motorCount, uint8_t command, bool blocking)
@@ -431,14 +431,12 @@ void pwmWriteDshotCommand(uint8_t index, uint8_t motorCount, uint8_t command, bo
     case DSHOT_CMD_SPIN_DIRECTION_NORMAL:
     case DSHOT_CMD_SPIN_DIRECTION_REVERSED:
         repeats = 10;
-        delayAfterCommandUs = DSHOT_COMMAND_DELAY_US;
         break;
     case DSHOT_CMD_BEACON1:
     case DSHOT_CMD_BEACON2:
     case DSHOT_CMD_BEACON3:
     case DSHOT_CMD_BEACON4:
     case DSHOT_CMD_BEACON5:
-        repeats = 1;
         delayAfterCommandUs = DSHOT_BEEP_DELAY_US;
         break;
     default:
@@ -503,13 +501,13 @@ FAST_CODE_NOINLINE bool pwmDshotCommandOutputIsEnabled(uint8_t motorCount)
   
     //Timed motor update happening with dshot command
     if (dshotCommandControl.repeats > 0) {
-        if (dshotCommandControl.repeats > 1) { 
+        dshotCommandControl.repeats--;
+
+        if (dshotCommandControl.repeats > 0) {
             dshotCommandControl.nextCommandAtUs = timeNowUs + DSHOT_COMMAND_DELAY_US;
         } else {
             dshotCommandControl.nextCommandAtUs = timeNowUs + dshotCommandControl.delayAfterCommandUs;
         }
-
-        dshotCommandControl.repeats--;
     } else {
         dshotCommandControl.nextCommandAtUs = 0;
     }
