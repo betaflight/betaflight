@@ -531,6 +531,9 @@ void gpsUpdate(timeUs_t currentTimeUs)
     if (sensors(SENSOR_GPS)) {
         updateGpsIndicator(currentTimeUs);
     }
+#if defined(USE_GPS_RESCUE)
+    updateGPSRescueState();
+#endif
 }
 
 static void gpsNewData(uint16_t c)
