@@ -42,13 +42,14 @@ FAST_RAM_ZERO_INIT loadDmaBufferFn *loadDmaBuffer;
 #define DSHOT_BEEP_DELAY_US 100000
 
 typedef struct dshotCommandControl_s {
-    timeUs_t nextCommandAt; 
-    timeUs_t delayAfterCommand; 
+    timeUs_t nextCommandAt;
+    timeUs_t delayAfterCommand;
+    bool waitingForIdle;
+    uint8_t repeats;
     uint8_t command[MAX_SUPPORTED_MOTORS];
-    uint8_t repeats;    
 } dshotCommandControl_t;
 
-dshotCommandControl_t dshotCommandControl;
+static dshotCommandControl_t dshotCommandControl;
 #endif
 
 #ifdef USE_SERVOS
@@ -386,16 +387,21 @@ uint32_t getDshotHz(motorPwmProtocolTypes_e pwmProtocolType)
     }
 }
 
-FAST_CODE bool pwmIsProcessingDshotCommand(void)
+FAST_CODE bool pwmDshotCommandIsQueued(void)
 {
     return dshotCommandControl.nextCommandAt;
+}
+
+FAST_CODE bool pwmDshotCommandIsProcessing(void)
+{
+    return dshotCommandControl.nextCommandAt && !dshotCommandControl.waitingForIdle;
 }
 
 void pwmWriteDshotCommand(uint8_t index, uint8_t motorCount, uint8_t command, bool blocking)
 {
     timeUs_t timeNowUs = micros();
 
-    if (!isMotorProtocolDshot() || (command > DSHOT_MAX_COMMAND)) {   
+    if (!isMotorProtocolDshot() || (command > DSHOT_MAX_COMMAND) || pwmDshotCommandIsQueued()) {
         return;
     }
 
@@ -427,8 +433,9 @@ void pwmWriteDshotCommand(uint8_t index, uint8_t motorCount, uint8_t command, bo
 
     if (blocking) {
         for (; repeats; repeats--) {
+            delayMicroseconds(DSHOT_COMMAND_DELAY_US);
+
             for (uint8_t i = 0; i < motorCount; i++) {
-                delayMicroseconds(DSHOT_COMMAND_DELAY_US);
                 if ((i == index) || (index == ALL_MOTORS)) {
                     motorDmaOutput_t *const motor = getMotorDmaOutput(i);
                     motor->requestTelemetry = true;
@@ -440,14 +447,13 @@ void pwmWriteDshotCommand(uint8_t index, uint8_t motorCount, uint8_t command, bo
         }
         delayMicroseconds(timeDelayUs);
     } else {
-        if (!pwmIsProcessingDshotCommand()) {
-            for (uint8_t i = 0; i < motorCount; i++) {
-                if ((index == i) || (index == ALL_MOTORS)) {
-                    dshotCommandControl.command[i] = command;
-                    dshotCommandControl.repeats = repeats;
-                    dshotCommandControl.nextCommandAt = timeNowUs + DSHOT_COMMAND_DELAY_US;
-                    dshotCommandControl.delayAfterCommand = timeDelayUs;
-                }
+        dshotCommandControl.repeats = repeats;
+        dshotCommandControl.nextCommandAt = timeNowUs + DSHOT_COMMAND_DELAY_US;
+        dshotCommandControl.delayAfterCommand = timeDelayUs;
+        dshotCommandControl.waitingForIdle = true;
+        for (unsigned i = 0; i < motorCount; i++) {
+            if (index == i || index == ALL_MOTORS) {
+                dshotCommandControl.command[i] = command;
             }
         }
     }
@@ -458,11 +464,30 @@ uint8_t pwmGetDshotCommand(uint8_t index)
     return dshotCommandControl.command[index];
 }
 
-FAST_CODE_NOINLINE bool pwmProcessDshotCommand(uint8_t motorCount)
+FAST_CODE_NOINLINE bool pwmDshotCommandOutputIsEnabled(uint8_t motorCount)
 {
     timeUs_t timeNowUs = micros();
+
+    if (dshotCommandControl.waitingForIdle) {
+        bool allMotorsIdle = true;
+        for (unsigned i = 0; i < motorCount; i++) {
+            const motorDmaOutput_t *motor = getMotorDmaOutput(i);
+            if (motor->value) {
+                allMotorsIdle = false;
+            }
+        }
+
+        if (allMotorsIdle) {
+            dshotCommandControl.waitingForIdle = false;
+        }
+
+        // Send normal motor output while waiting for motors to go idle
+        return true;
+    }
+
     if (cmpTimeUs(timeNowUs, dshotCommandControl.nextCommandAt) < 0) {
-        return false; //Skip motor update because it isn't time yet for a new command
+        //Skip motor update because it isn't time yet for a new command
+        return false;
     }   
   
     //Timed motor update happening with dshot command
@@ -473,7 +498,7 @@ FAST_CODE_NOINLINE bool pwmProcessDshotCommand(uint8_t motorCount)
             dshotCommandControl.nextCommandAt = timeNowUs + dshotCommandControl.delayAfterCommand;
         }
     } else {
-        for (uint8_t i = 0; i < motorCount; i++) {
+        for (unsigned i = 0; i < motorCount; i++) {
             dshotCommandControl.command[i] = 0;
         }
         dshotCommandControl.nextCommandAt = 0;
@@ -483,9 +508,9 @@ FAST_CODE_NOINLINE bool pwmProcessDshotCommand(uint8_t motorCount)
     return true;
 }
 
-FAST_CODE uint16_t prepareDshotPacket(motorDmaOutput_t *const motor, const uint16_t value)
+FAST_CODE uint16_t prepareDshotPacket(motorDmaOutput_t *const motor)
 {
-    uint16_t packet = (value << 1) | (motor->requestTelemetry ? 1 : 0);
+    uint16_t packet = (motor->value << 1) | (motor->requestTelemetry ? 1 : 0);
     motor->requestTelemetry = false;    // reset telemetry request to make sure it's triggered only once in a row
 
     // compute checksum
