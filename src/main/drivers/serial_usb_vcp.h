@@ -22,7 +22,11 @@
 
 #include "drivers/serial.h"
 
+#if defined(STM32F7)
 #include "usbd_cdc.h"
+
+extern USBD_HandleTypeDef  USBD_Device;
+#endif
 
 typedef struct {
     serialPort_t port;
@@ -33,8 +37,6 @@ typedef struct {
     // Set if the port is in bulk write mode and can buffer.
     bool buffering;
 } vcpPort_t;
-
-extern USBD_HandleTypeDef  USBD_Device;
 
 serialPort_t *usbVcpOpen(void);
 struct serialPort_s;
