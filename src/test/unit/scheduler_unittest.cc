@@ -259,7 +259,7 @@ TEST(SchedulerUnittest, TestQueueArray)
     EXPECT_EQ(lastTaskPrev, taskQueueArray[enqueuedTasks - 2]);
     EXPECT_EQ(NULL, taskQueueArray[enqueuedTasks - 1]); // NULL at end of queue
     EXPECT_EQ(NULL, taskQueueArray[enqueuedTasks]);
-    EXPECT_EQ(NULL, taskQueueArray[enqueuedTasks - 1]);
+    EXPECT_EQ(NULL, taskQueueArray[enqueuedTasks + 1]);
     EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT_UNITTEST + 1]);
 
     taskQueueArray[enqueuedTasks - 1] = 0;

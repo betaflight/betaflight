@@ -48,7 +48,6 @@
 #include "fc/fc_core.h"
 #include "fc/fc_rc.h"
 #include "fc/fc_dispatch.h"
-#include "fc/fc_tasks.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
@@ -96,8 +95,21 @@
 #include "telemetry/telemetry.h"
 
 #ifdef USE_BST
-static void taskBstMasterProcess(timeUs_t currentTimeUs);
+#include "COLIBRI_RACE/i2c_bst.h"
 #endif
+
+#ifdef USE_USB_CDC_HID
+//TODO: Make it platform independent in the future
+#ifdef STM32F4
+#include "vcpf4/usbd_cdc_vcp.h"
+#include "usbd_hid_core.h"
+#elif defined(STM32F7)
+#include "usbd_cdc_interface.h"
+#include "usbd_hid.h"
+#endif
+#endif
+
+#include "fc_tasks.h"
 
 static void taskMain(timeUs_t currentTimeUs)
 {
