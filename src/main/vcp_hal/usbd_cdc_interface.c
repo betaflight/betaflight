@@ -53,6 +53,8 @@
 #include "usbd_cdc.h"
 #include "usbd_cdc_interface.h"
 #include "stdbool.h"
+
+#include "drivers/serial_usb_vcp.h"
 #include "drivers/time.h"
 
 /* Private typedef -----------------------------------------------------------*/

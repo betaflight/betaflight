@@ -29,12 +29,15 @@
 #include "rx/rx.h"
 
 //TODO: Make it platform independent in the future
-#ifdef STM32F4
+#if defined(STM32F4)
 #include "vcpf4/usbd_cdc_vcp.h"
+
 #include "usbd_hid_core.h"
 #elif defined(STM32F7)
-#include "usbd_cdc_interface.h"
-#include "usbd_def.h"
+#include "drivers/serial_usb_vcp.h"
+
+#include "vcp_hal/usbd_cdc_interface.h"
+
 #include "usbd_hid.h"
 #endif
 
@@ -67,7 +70,7 @@ void sendRcDataToHid(void)
             report[i] = -report[i];
         }
     }
-#ifdef STM32F4
+#if defined(STM32F4)
     USBD_HID_SendReport(&USB_OTG_dev, (uint8_t*)report, sizeof(report));
 #elif defined(STM32F7)
     USBD_HID_SendReport(&USBD_Device, (uint8_t*)report, sizeof(report));
