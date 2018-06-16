@@ -974,6 +974,7 @@ static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
 
 static FAST_CODE_NOINLINE void subTaskRcCommand(timeUs_t currentTimeUs)
 {
+    UNUSED(currentTimeUs);
 
     // If we're armed, at minimum throttle, and we do arming via the
     // sticks, do not process yaw input from the rx.  We do this so the
@@ -996,7 +997,12 @@ static FAST_CODE_NOINLINE void subTaskRcCommand(timeUs_t currentTimeUs)
     }
 
     processRcCommand();
-    UNUSED(currentTimeUs);
+
+#if defined(USE_GPS_RESCUE)
+    if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
+        gpsRescueInjectRcCommands();
+    }
+#endif
 }
 
 // Function for loop trigger

@@ -42,8 +42,6 @@ typedef struct gpsRescue_s {
 
 PG_DECLARE(gpsRescueConfig_t, gpsRescueConfig);
 
-uint16_t      rescueThrottle;
-
 typedef enum {
     RESCUE_IDLE,
     RESCUE_INITIALIZE,
@@ -110,3 +108,5 @@ void performSanityChecks(void);
 void sensorUpdate(void);
 
 void rescueAttainPosition(void);
+
+void gpsRescueInjectRcCommands(void);

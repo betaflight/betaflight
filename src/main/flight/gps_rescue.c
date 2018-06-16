@@ -71,6 +71,9 @@ PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
     .minSats = 8
 );
 
+static uint16_t      rescueThrottle;
+static uint16_t      rescueYaw;
+
 int32_t       gpsRescueAngle[ANGLE_INDEX_COUNT] = { 0, 0 };
 uint16_t      hoverThrottle = 0;
 float         averageThrottle = 0.0;
@@ -398,7 +401,13 @@ void setBearing(int16_t deg)
 
     dif *= -GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
 
-    rcCommand[YAW] = - (dif * gpsRescueConfig()->yawP / 20);
+    rescueYaw = - (dif * gpsRescueConfig()->yawP / 20);
+}
+
+void gpsRescueInjectRcCommands(void)
+{
+    rcCommand[THROTTLE] = rescueThrottle;
+    rcCommand[YAW] = rescueYaw;
 }
 
 #endif
