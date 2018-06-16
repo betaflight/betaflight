@@ -651,8 +651,7 @@ static uint32_t grab_fields(char *src, uint8_t mult)
             i++;
             if (mult == 0) {
                 break;
-            }
-            else {
+            } else {
                 src[i + mult] = 0;
             }
         }
