@@ -1201,7 +1201,6 @@ static void osdResetStats(void)
     stats.max_current  = 0;
     stats.max_speed    = 0;
     stats.min_voltage  = 500;
-    stats.max_current  = 0;
     stats.min_rssi     = 99;
     stats.max_altitude = 0;
     stats.max_distance = 0;
