@@ -123,7 +123,7 @@ FAST_CODE cfTask_t *queueNext(void)
     return taskQueueArray[++taskQueuePos]; // guaranteed to be NULL at end of queue
 }
 
-void taskSystem(timeUs_t currentTimeUs)
+void taskSystemLoad(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
 

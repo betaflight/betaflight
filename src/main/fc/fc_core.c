@@ -40,12 +40,10 @@
 #include "pg/rx.h"
 
 #include "drivers/light_led.h"
-#include "drivers/serial_usb_vcp.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
 #include "drivers/transponder_ir.h"
-#include "drivers/usb_io.h"
 
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
@@ -67,7 +65,6 @@
 
 #include "interface/cli.h"
 
-#include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/gps.h"
 #include "io/motors.h"
@@ -905,31 +902,17 @@ static FAST_CODE void subTaskPidController(timeUs_t currentTimeUs)
 #endif
 }
 
-static FAST_CODE_NOINLINE void subTaskMainSubprocesses(timeUs_t currentTimeUs)
+static FAST_CODE_NOINLINE void subTaskPidSubprocesses(timeUs_t currentTimeUs)
 {
     uint32_t startTime = 0;
     if (debugMode == DEBUG_PIDLOOP) {
         startTime = micros();
     }
 
-    // Read out gyro temperature if used for telemmetry
-    if (feature(FEATURE_TELEMETRY)) {
-        gyroReadTemperature();
-    }
-
 #ifdef USE_MAG
     if (sensors(SENSOR_MAG)) {
         updateMagHold();
     }
-#endif
-
-#ifdef USE_SDCARD
-    afatfs_poll();
-#endif
-
-#if defined(USE_VCP)
-    DEBUG_SET(DEBUG_USB, 0, usbCableIsInserted());
-    DEBUG_SET(DEBUG_USB, 1, usbVcpIsConnected());
 #endif
 
 #ifdef USE_BLACKBOX
@@ -942,6 +925,16 @@ static FAST_CODE_NOINLINE void subTaskMainSubprocesses(timeUs_t currentTimeUs)
 
     DEBUG_SET(DEBUG_PIDLOOP, 3, micros() - startTime);
 }
+
+#ifdef USE_TELEMETRY
+void subTaskTelemetryPollSensors(timeUs_t currentTimeUs)
+{
+    UNUSED(currentTimeUs);
+
+    // Read out gyro temperature if used for telemmetry
+    gyroReadTemperature();
+}
+#endif
 
 static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
 {
@@ -1017,7 +1010,7 @@ FAST_CODE void taskMainPidLoop(timeUs_t currentTimeUs)
     // 0 - gyroUpdate()
     // 1 - subTaskPidController()
     // 2 - subTaskMotorUpdate()
-    // 3 - subTaskMainSubprocesses()
+    // 3 - subTaskPidSubprocesses()
     gyroUpdate(currentTimeUs);
     DEBUG_SET(DEBUG_PIDLOOP, 0, micros() - currentTimeUs);
 
@@ -1025,7 +1018,7 @@ FAST_CODE void taskMainPidLoop(timeUs_t currentTimeUs)
         subTaskRcCommand(currentTimeUs);
         subTaskPidController(currentTimeUs);
         subTaskMotorUpdate(currentTimeUs);
-        subTaskMainSubprocesses(currentTimeUs);
+        subTaskPidSubprocesses(currentTimeUs);
     }
 
     if (debugMode == DEBUG_CYCLETIME) {
@@ -1054,4 +1047,3 @@ void resetTryingToArm()
 {
     tryingToArm = false;
 }
-

@@ -58,6 +58,7 @@ typedef struct {
 typedef enum {
     /* Actual tasks */
     TASK_SYSTEM = 0,
+    TASK_MAIN,
     TASK_GYROPID,
     TASK_ACCEL,
     TASK_ATTITUDE,
@@ -179,7 +180,7 @@ void schedulerResetTaskStatistics(cfTaskId_e taskId);
 
 void schedulerInit(void);
 void scheduler(void);
-void taskSystem(timeUs_t currentTime);
+void taskSystemLoad(timeUs_t currentTime);
 
 #define LOAD_PERCENTAGE_ONE 100
 

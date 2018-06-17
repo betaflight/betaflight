@@ -56,3 +56,5 @@ bool isAirmodeActivated();
 timeUs_t getLastDisarmTimeUs(void);
 bool isTryingToArm();
 void resetTryingToArm();
+
+void subTaskTelemetryPollSensors(timeUs_t currentTimeUs);
