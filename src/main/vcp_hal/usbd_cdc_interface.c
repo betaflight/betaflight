@@ -46,15 +46,15 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
+#include "drivers/serial_usb_vcp.h"
+#include "drivers/time.h"
+
 #include "stm32f7xx_hal.h"
 #include "usbd_core.h"
 #include "usbd_desc.h"
 #include "usbd_cdc.h"
 #include "usbd_cdc_interface.h"
 #include "stdbool.h"
-
-#include "drivers/serial_usb_vcp.h"
-#include "drivers/time.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
