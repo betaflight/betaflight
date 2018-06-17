@@ -1669,16 +1669,15 @@ void blackboxUpdate(timeUs_t currentTimeUs)
 #ifdef USE_FLASHFS
         if (blackboxState != BLACKBOX_STATE_ERASING
             && blackboxState != BLACKBOX_STATE_START_ERASE
-            && blackboxState != BLACKBOX_STATE_ERASED) {
+            && blackboxState != BLACKBOX_STATE_ERASED)
 #endif
+        {
             blackboxSetState(BLACKBOX_STATE_STOPPED);
             // ensure we reset the test mode flag if we stop due to full memory card
             if (startedLoggingInTestMode) {
                 startedLoggingInTestMode = false;
             }
-#ifdef USE_FLASHFS
         }
-#endif
     } else { // Only log in test mode if there is room!
         switch (blackboxConfig()->mode) {
         case BLACKBOX_MODE_MOTOR_TEST:

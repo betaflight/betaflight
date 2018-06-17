@@ -367,7 +367,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskName = "SYSTEM",
         .subTaskName = "UPDATE",
         .taskFunc = taskMain,
-        .desiredPeriod = TASK_PERIOD_HZ(100),
+        .desiredPeriod = TASK_PERIOD_HZ(1000),
         .staticPriority = TASK_PRIORITY_MEDIUM_HIGH,
     },
 
