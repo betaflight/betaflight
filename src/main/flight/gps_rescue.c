@@ -71,6 +71,9 @@ PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
     .minSats = 8
 );
 
+static uint16_t      rescueThrottle;
+static uint16_t      rescueYaw;
+
 int32_t       gpsRescueAngle[ANGLE_INDEX_COUNT] = { 0, 0 };
 uint16_t      hoverThrottle = 0;
 float         averageThrottle = 0.0;
@@ -109,87 +112,89 @@ void updateGPSRescueState(void)
 
     switch (rescueState.phase) {
     case RESCUE_IDLE:
-	idleTasks();
-	break;
+        idleTasks();
+        break;
     case RESCUE_INITIALIZE:
-	if (hoverThrottle == 0) { //no actual throttle data yet, let's use the default.
-	    hoverThrottle = gpsRescueConfig()->throttleHover;
-	}
-	
-	rescueState.phase = RESCUE_ATTAIN_ALT;
-	FALLTHROUGH;
+        if (hoverThrottle == 0) { //no actual throttle data yet, let's use the default.
+            hoverThrottle = gpsRescueConfig()->throttleHover;
+        }
+
+        rescueState.phase = RESCUE_ATTAIN_ALT;
+        FALLTHROUGH;
     case RESCUE_ATTAIN_ALT:
-	// Get to a safe altitude at a low velocity ASAP
-	if (ABS(rescueState.intent.targetAltitude - rescueState.sensor.currentAltitude) < 1000) {
-	    rescueState.phase = RESCUE_CROSSTRACK;
-	}
-	
-	rescueState.intent.targetGroundspeed = 500;
-	rescueState.intent.targetAltitude = MAX(gpsRescueConfig()->initialAltitude * 100, rescueState.sensor.maxAltitude + 1500);
-	rescueState.intent.crosstrack = true;
-	rescueState.intent.minAngleDeg = 10;
-	rescueState.intent.maxAngleDeg = 15;
-	break;
+        // Get to a safe altitude at a low velocity ASAP
+        if (ABS(rescueState.intent.targetAltitude - rescueState.sensor.currentAltitude) < 1000) {
+            rescueState.phase = RESCUE_CROSSTRACK;
+        }
+
+        rescueState.intent.targetGroundspeed = 500;
+        rescueState.intent.targetAltitude = MAX(gpsRescueConfig()->initialAltitude * 100, rescueState.sensor.maxAltitude + 1500);
+        rescueState.intent.crosstrack = true;
+        rescueState.intent.minAngleDeg = 10;
+        rescueState.intent.maxAngleDeg = 15;
+        break;
     case RESCUE_CROSSTRACK:
-	if (rescueState.sensor.distanceToHome < gpsRescueConfig()->descentDistance) {
-	    rescueState.phase = RESCUE_LANDING_APPROACH;
-	}
-	
-	// We can assume at this point that we are at or above our RTH height, so we need to try and point to home and tilt while maintaining alt
-	// Is our altitude way off?  We should probably kick back to phase RESCUE_ATTAIN_ALT
-	rescueState.intent.targetGroundspeed = gpsRescueConfig()->rescueGroundspeed;
-	rescueState.intent.targetAltitude = MAX(gpsRescueConfig()->initialAltitude * 100, rescueState.sensor.maxAltitude + 1500);
-	rescueState.intent.crosstrack = true;
-	rescueState.intent.minAngleDeg = 15;
-	rescueState.intent.maxAngleDeg = gpsRescueConfig()->angle;
-	break;
+        if (rescueState.sensor.distanceToHome < gpsRescueConfig()->descentDistance) {
+            rescueState.phase = RESCUE_LANDING_APPROACH;
+        }
+
+        // We can assume at this point that we are at or above our RTH height, so we need to try and point to home and tilt while maintaining alt
+        // Is our altitude way off?  We should probably kick back to phase RESCUE_ATTAIN_ALT
+        rescueState.intent.targetGroundspeed = gpsRescueConfig()->rescueGroundspeed;
+        rescueState.intent.targetAltitude = MAX(gpsRescueConfig()->initialAltitude * 100, rescueState.sensor.maxAltitude + 1500);
+        rescueState.intent.crosstrack = true;
+        rescueState.intent.minAngleDeg = 15;
+        rescueState.intent.maxAngleDeg = gpsRescueConfig()->angle;
+        break;
     case RESCUE_LANDING_APPROACH:
-	// We are getting close to home in the XY plane, get Z where it needs to be to move to landing phase
-	if (rescueState.sensor.distanceToHome < 10 && rescueState.sensor.currentAltitude <= 1000) {
-	    rescueState.phase = RESCUE_LANDING;
-	}
-	
-	// Only allow new altitude and new speed to be equal or lower than the current values (to prevent parabolic movement on overshoot)
-	int32_t newAlt = gpsRescueConfig()->initialAltitude * 100  * rescueState.sensor.distanceToHome / gpsRescueConfig()->descentDistance;
-	int32_t newSpeed = gpsRescueConfig()->rescueGroundspeed * rescueState.sensor.distanceToHome / gpsRescueConfig()->descentDistance;
-	
-	rescueState.intent.targetAltitude = constrain(newAlt, 100, rescueState.intent.targetAltitude);
-	rescueState.intent.targetGroundspeed = constrain(newSpeed, 100, rescueState.intent.targetGroundspeed);
-	rescueState.intent.crosstrack = true;
-	rescueState.intent.minAngleDeg = 10;
-	rescueState.intent.maxAngleDeg = 20;
-	break;
+        // We are getting close to home in the XY plane, get Z where it needs to be to move to landing phase
+        if (rescueState.sensor.distanceToHome < 10 && rescueState.sensor.currentAltitude <= 1000) {
+            rescueState.phase = RESCUE_LANDING;
+        }
+
+        // Only allow new altitude and new speed to be equal or lower than the current values (to prevent parabolic movement on overshoot)
+        int32_t newAlt = gpsRescueConfig()->initialAltitude * 100  * rescueState.sensor.distanceToHome / gpsRescueConfig()->descentDistance;
+        int32_t newSpeed = gpsRescueConfig()->rescueGroundspeed * rescueState.sensor.distanceToHome / gpsRescueConfig()->descentDistance;
+
+        rescueState.intent.targetAltitude = constrain(newAlt, 100, rescueState.intent.targetAltitude);
+        rescueState.intent.targetGroundspeed = constrain(newSpeed, 100, rescueState.intent.targetGroundspeed);
+        rescueState.intent.crosstrack = true;
+        rescueState.intent.minAngleDeg = 10;
+        rescueState.intent.maxAngleDeg = 20;
+        break;
     case RESCUE_LANDING:
-	// We have reached the XYZ envelope to be considered at "home".  We need to land gently and check our accelerometer for abnormal data.
-	// At this point, do not let the target altitude go up anymore, so if we overshoot, we dont' move in a parabolic trajectory
-	
-	// If we are over 120% of average magnitude, just disarm since we're pretty much home
-	if (rescueState.sensor.accMagnitude > rescueState.sensor.accMagnitudeAvg * 1.5) {
-	    disarm();
-	    rescueState.phase = RESCUE_COMPLETE;
-	}
-	
-	rescueState.intent.targetGroundspeed = 0;
-	rescueState.intent.targetAltitude = 0;
-	rescueState.intent.crosstrack = true;
-	rescueState.intent.minAngleDeg = 0;
-	rescueState.intent.maxAngleDeg = 15;
-	break;
+        // We have reached the XYZ envelope to be considered at "home".  We need to land gently and check our accelerometer for abnormal data.
+        // At this point, do not let the target altitude go up anymore, so if we overshoot, we dont' move in a parabolic trajectory
+
+        // If we are over 120% of average magnitude, just disarm since we're pretty much home
+        if (rescueState.sensor.accMagnitude > rescueState.sensor.accMagnitudeAvg * 1.5) {
+            disarm();
+            rescueState.phase = RESCUE_COMPLETE;
+        }
+
+        rescueState.intent.targetGroundspeed = 0;
+        rescueState.intent.targetAltitude = 0;
+        rescueState.intent.crosstrack = true;
+        rescueState.intent.minAngleDeg = 0;
+        rescueState.intent.maxAngleDeg = 15;
+        break;
     case RESCUE_COMPLETE:
-	rescueStop();
-	break;
+        rescueStop();
+        break;
     case RESCUE_ABORT:
-	disarm();
-	rescueStop();
-	break;
+        disarm();
+        rescueStop();
+        break;
+    default:
+        break;
     }
-    
+
     performSanityChecks();
-    
+
     if (rescueState.phase != RESCUE_IDLE) {
         rescueAttainPosition();
     }
-    
+
     newGPSData = false;
 }
 
@@ -225,7 +230,7 @@ void performSanityChecks()
 {
     if (rescueState.phase == RESCUE_IDLE) {
         rescueState.failure = RESCUE_HEALTHY;
-        
+
         return;
     }
 
@@ -335,7 +340,7 @@ void rescueAttainPosition()
         return;
     }
 
-    
+
     /**
         Speed controller
     */
@@ -396,7 +401,13 @@ void setBearing(int16_t deg)
 
     dif *= -GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
 
-    rcCommand[YAW] = - (dif * gpsRescueConfig()->yawP / 20);
+    rescueYaw = - (dif * gpsRescueConfig()->yawP / 20);
+}
+
+void gpsRescueInjectRcCommands(void)
+{
+    rcCommand[THROTTLE] = rescueThrottle;
+    rcCommand[YAW] = rescueYaw;
 }
 
 #endif
