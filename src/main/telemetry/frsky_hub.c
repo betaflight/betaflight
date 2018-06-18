@@ -23,6 +23,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <math.h>
 
 #include "platform.h"
 
@@ -173,7 +174,7 @@ static void frSkyHubWriteByteInternal(const char data)
 static void sendAccel(void)
 {
     for (unsigned i = 0; i < 3; i++) {
-        frSkyHubWriteFrame(ID_ACC_X + i, ((int16_t)acc.accADC[i] / acc.dev.acc_1G) * 1000);
+        frSkyHubWriteFrame(ID_ACC_X + i, lrintf(1000 * acc.accADC[i] / acc.dev.acc_1G));
     }
 }
 
@@ -437,13 +438,13 @@ static void sendFakeLatLongThatAllowsHeadingDisplay(void)
 
     sendLatLong(coord);
 }
+#endif
 
 static void sendHeading(void)
 {
     frSkyHubWriteFrame(ID_COURSE_BP, DECIDEGREES_TO_DEGREES(attitude.values.yaw));
     frSkyHubWriteFrame(ID_COURSE_AP, 0);
 }
-#endif
 
 bool initFrSkyHubTelemetry(void)
 {
@@ -545,14 +546,11 @@ void processFrSkyHubTelemetry(timeUs_t currentTimeUs)
     }
 #endif
 
-#if defined(USE_MAG)
-    if (sensors(SENSOR_MAG)) {
-        // Sent every 500ms
-        if ((cycleNum % 4) == 0) {
-            sendHeading();
-        }
-    }
-#endif
+
+    // Sent every 125ms
+    sendHeading();
+
+
 
     // Sent every 1s
     if ((cycleNum % 8) == 0) {
