@@ -26,13 +26,15 @@
 #ifdef USE_LED_STRIP
 
 #include "common/color.h"
-#include "light_ws2811strip.h"
-#include "drivers/nvic.h"
-#include "dma.h"
+
+#include "drivers/dma.h"
 #include "drivers/io.h"
+#include "drivers/nvic.h"
+#include "drivers/rcc.h"
 #include "drivers/system.h"
-#include "rcc.h"
-#include "timer.h"
+#include "drivers/timer.h"
+
+#include "light_ws2811strip.h"
 
 static IO_t ws2811IO = IO_NONE;
 bool ws2811Initialised = false;
