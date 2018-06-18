@@ -298,8 +298,8 @@ void rescueStop()
 // Things that need to run regardless of GPS rescue mode being enabled or not
 void idleTasks()
 {
-    // Do not calculate any of the idle task values when we are not flying
-    if (!ARMING_FLAG(ARMED)) {
+    // Do not calculate any of the idle task values when we are not flying.  No sense in storing max altitude or throttle samples if not climbing.
+    if (!ARMING_FLAG(ARMED) || calculateThrottleStatus() == THROTTLE_LOW) {
         return;
     }
 
