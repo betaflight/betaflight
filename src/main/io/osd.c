@@ -212,6 +212,7 @@ static const uint8_t osdElementDisplayOrder[] = {
 #ifdef USE_ADC_INTERNAL
     OSD_CORE_TEMPERATURE,
 #endif
+    OSD_LOG_STATUS
 };
 
 PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 3);
@@ -981,6 +982,20 @@ static bool osdDrawSingleElement(uint8_t item)
         break;
 #endif
 
+#ifdef USE_BLACKBOX
+    case OSD_LOG_STATUS:
+        if (!IS_RC_MODE_ACTIVE(BOXBLACKBOX)) {
+            break;
+        } else if (!isBlackboxDeviceWorking()) {
+            tfp_sprintf(buff, "L-");
+        } else if (isBlackboxDeviceFull()) {
+            tfp_sprintf(buff, "L>");
+        } else {
+            tfp_sprintf(buff, "L%d", blackboxGetLogNumber());
+        }
+        break;
+#endif
+
     default:
         return false;
     }
@@ -1294,16 +1309,16 @@ static void osdUpdateStats(void)
 }
 
 #ifdef USE_BLACKBOX
+
 static void osdGetBlackboxStatusString(char * buff)
 {
-    bool storageDeviceIsWorking = false;
+    bool storageDeviceIsWorking = isBlackboxDeviceWorking();
     uint32_t storageUsed = 0;
     uint32_t storageTotal = 0;
 
     switch (blackboxConfig()->device) {
 #ifdef USE_SDCARD
     case BLACKBOX_DEVICE_SDCARD:
-        storageDeviceIsWorking = sdcard_isInserted() && sdcard_isFunctional() && (afatfs_getFilesystemState() == AFATFS_FILESYSTEM_STATE_READY);
         if (storageDeviceIsWorking) {
             storageTotal = sdcard_getMetadata()->numBlocks / 2000;
             storageUsed = storageTotal - (afatfs_getContiguousFreeSpace() / 1024000);
@@ -1313,7 +1328,6 @@ static void osdGetBlackboxStatusString(char * buff)
 
 #ifdef USE_FLASHFS
     case BLACKBOX_DEVICE_FLASH:
-        storageDeviceIsWorking = flashfsIsSupported();
         if (storageDeviceIsWorking) {
             const flashGeometry_t *geometry = flashfsGetGeometry();
             storageTotal = geometry->totalSize / 1024;
