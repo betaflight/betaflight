@@ -110,12 +110,12 @@ if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
     DEBUG_SET(DEBUG_ALTITUDE, 1, baroAlt);
     DEBUG_SET(DEBUG_ALTITUDE, 2, gpsAlt);
 }
-#endif
 
 bool isAltitudeOffset(void)
 {
     return altitudeOffsetSet;
 }
+#endif
 
 int32_t getEstimatedAltitude(void)
 {
