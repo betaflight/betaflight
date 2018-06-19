@@ -394,10 +394,11 @@ void setBearing(int16_t deg)
 {
     int16_t dif = DECIDEGREES_TO_DEGREES(attitude.values.yaw) - deg;
 
-    if (dif <= -180)
+    if (dif <= -180) {
         dif += 360;
-    if (dif >= +180)
+    } else if (dif > 180) {
         dif -= 360;
+    }
 
     dif *= -GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
 
