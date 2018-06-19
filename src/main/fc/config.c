@@ -213,16 +213,6 @@ static void validateAndFixConfig(void)
 
     if (featureConfigured(FEATURE_RX_PARALLEL_PWM)) {
         featureClear(FEATURE_RX_SERIAL | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_SPI);
-#if defined(STM32F10X)
-        // rssi adc needs the same ports
-        featureClear(FEATURE_RSSI_ADC);
-        // current meter needs the same ports
-        if (batteryConfig()->currentMeterSource == CURRENT_METER_ADC) {
-            batteryConfigMutable()->currentMeterSource = CURRENT_METER_NONE;
-        }
-#endif // STM32F10X
-        // software serial needs free PWM ports
-        featureClear(FEATURE_SOFTSERIAL);
     }
 
 #ifdef USE_SOFTSPI
