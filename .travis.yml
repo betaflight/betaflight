@@ -58,6 +58,7 @@ before_script:
 script: ./.travis.sh
 
 cache:
+  timeout: 1000
   directories:
   - downloads
   - tools
