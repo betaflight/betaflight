@@ -101,6 +101,7 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
     motorConfig->maxthrottle = 2000;
     motorConfig->mincommand = 1000;
     motorConfig->digitalIdleOffsetValue = 450;
+    motorConfig->digitalMaxOffsetValue = 0;
 #ifdef USE_DSHOT_DMAR
     motorConfig->dev.useBurstDshot = ENABLE_DSHOT_DMAR;
 #endif
@@ -385,7 +386,7 @@ void initEscEndpoints(void)
         } else {
             motorOutputLow = DSHOT_MIN_THROTTLE + ((DSHOT_MAX_THROTTLE - DSHOT_MIN_THROTTLE) / 100.0f) * CONVERT_PARAMETER_TO_PERCENT(motorConfig()->digitalIdleOffsetValue);
         }
-        motorOutputHigh = DSHOT_MAX_THROTTLE;
+        motorOutputHigh = DSHOT_MAX_THROTTLE - ((DSHOT_MAX_THROTTLE - DSHOT_MIN_THROTTLE) / 100.0f) * CONVERT_PARAMETER_TO_PERCENT(motorConfig()->digitalMaxOffsetValue);
         deadbandMotor3dHigh = DSHOT_3D_DEADBAND_HIGH + ((DSHOT_MAX_THROTTLE - DSHOT_3D_DEADBAND_HIGH) / 100.0f) * CONVERT_PARAMETER_TO_PERCENT(motorConfig()->digitalIdleOffsetValue);
         deadbandMotor3dLow = DSHOT_3D_DEADBAND_LOW;
 
