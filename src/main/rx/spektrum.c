@@ -121,20 +121,20 @@ static uint8_t spektrumFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
 
     // Get the VTX control bytes in a frame
     uint32_t vtxControl = ((spekFrame[SPEKTRUM_VTX_CONTROL_1] << 24) |
-                           (spekFrame[SPEKTRUM_VTX_CONTROL_2] << 16) |
-                           (spekFrame[SPEKTRUM_VTX_CONTROL_3] <<  8) |
-                           (spekFrame[SPEKTRUM_VTX_CONTROL_4] <<  0) );
+            (spekFrame[SPEKTRUM_VTX_CONTROL_2] << 16) |
+            (spekFrame[SPEKTRUM_VTX_CONTROL_3] <<  8) |
+            (spekFrame[SPEKTRUM_VTX_CONTROL_4] <<  0) );
 
     int8_t spektrumRcDataSize;
     // Handle VTX control frame.
     if ((vtxControl & SPEKTRUM_VTX_CONTROL_FRAME_MASK) == SPEKTRUM_VTX_CONTROL_FRAME &&
         (spekFrame[2] & 0x80) == 0 )  {
 #if defined(USE_SPEKTRUM_VTX_CONTROL) && defined(USE_VTX_COMMON)
-      spektrumHandleVtxControl(vtxControl);
+        spektrumHandleVtxControl(vtxControl);
 #endif
-      spektrumRcDataSize = SPEK_FRAME_SIZE - SPEKTRUM_VTX_CONTROL_SIZE;
+        spektrumRcDataSize = SPEK_FRAME_SIZE - SPEKTRUM_VTX_CONTROL_SIZE;
     } else {
-      spektrumRcDataSize = SPEK_FRAME_SIZE;
+        spektrumRcDataSize = SPEK_FRAME_SIZE;
     }
 
     // Get the RC control channel inputs
@@ -154,7 +154,7 @@ static uint8_t spektrumFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
             dispatchAdd(&srxlTelemetryDispatch, SPEKTRUM_TELEMETRY_FRAME_DELAY);
         }
 
-        /* Trigger tm data collection if buffer has been sent and is empty, 
+        /* Trigger tm data collection if buffer has been sent and is empty,
            so data will be ready to transmit in the next phase 0 */
         if (telemetryBufLen == 0) {
             srxlCollectTelemetryNow();
@@ -201,10 +201,10 @@ bool spekShouldBind(uint8_t spektrum_sat_bind)
 #endif // USE_SPEKTRUM_BIND_PLUG
 
     return !(
-        isMPUSoftReset() ||
-        spektrum_sat_bind == SPEKTRUM_SAT_BIND_DISABLED ||
-        spektrum_sat_bind > SPEKTRUM_SAT_BIND_MAX
-    );
+            isMPUSoftReset() ||
+            spektrum_sat_bind == SPEKTRUM_SAT_BIND_DISABLED ||
+            spektrum_sat_bind > SPEKTRUM_SAT_BIND_MAX
+        );
 }
 
 /* spektrumBind function ported from Baseflight. It's used to bind satellite receiver to TX.
@@ -349,12 +349,12 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
     rxRuntimeConfig->rcFrameStatusFn = spektrumFrameStatus;
 
     serialPort = openSerialPort(portConfig->identifier,
-        FUNCTION_RX_SERIAL,
-        spektrumDataReceive,
-        NULL,
-        SPEKTRUM_BAUDRATE,
-        portShared || srxlEnabled ? MODE_RXTX : MODE_RX,
-        (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | ((srxlEnabled || rxConfig->halfDuplex) ? SERIAL_BIDIR : 0)
+            FUNCTION_RX_SERIAL,
+            spektrumDataReceive,
+            NULL,
+            SPEKTRUM_BAUDRATE,
+            portShared || srxlEnabled ? MODE_RXTX : MODE_RX,
+            (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | ((srxlEnabled || rxConfig->halfDuplex) ? SERIAL_BIDIR : 0)
         );
 #if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_SRXL)
     if (portShared) {

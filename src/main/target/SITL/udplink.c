@@ -12,7 +12,8 @@
 
 #include "udplink.h"
 
-int udpInit(udpLink_t* link, const char* addr, int port, bool isServer) {
+int udpInit(udpLink_t* link, const char* addr, int port, bool isServer)
+{
     int one = 1;
 
     if ((link->fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
@@ -30,7 +31,7 @@ int udpInit(udpLink_t* link, const char* addr, int port, bool isServer) {
 
     if (addr == NULL) {
         link->si.sin_addr.s_addr = htonl(INADDR_ANY);
-    }else{
+    } else {
         link->si.sin_addr.s_addr = inet_addr(addr);
     }
 
@@ -42,11 +43,13 @@ int udpInit(udpLink_t* link, const char* addr, int port, bool isServer) {
     return 0;
 }
 
-int udpSend(udpLink_t* link, const void* data, size_t size) {
+int udpSend(udpLink_t* link, const void* data, size_t size)
+{
     return sendto(link->fd, data, size, 0, (struct sockaddr *)&link->si, sizeof(link->si));
 }
 
-int udpRecv(udpLink_t* link, void* data, size_t size, uint32_t timeout_ms) {
+int udpRecv(udpLink_t* link, void* data, size_t size, uint32_t timeout_ms)
+{
     fd_set fds;
     struct timeval tv;
 

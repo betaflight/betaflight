@@ -227,7 +227,7 @@ static void saAutobaud(void)
 
 #if 0
     dprintf(("autobaud: %d rcvd %d/%d (%d)\r\n",
-        sa_smartbaud, saStat.pktrcvd, saStat.pktsent, ((saStat.pktrcvd * 100) / saStat.pktsent)));
+            sa_smartbaud, saStat.pktrcvd, saStat.pktsent, ((saStat.pktrcvd * 100) / saStat.pktsent)));
 #endif
 
     if (((saStat.pktrcvd * 100) / saStat.pktsent) >= 70) {
@@ -240,11 +240,11 @@ static void saAutobaud(void)
     dprintf(("autobaud: adjusting\r\n"));
 
     if ((sa_adjdir == 1) && (sa_smartbaud == SMARTBAUD_MAX)) {
-       sa_adjdir = -1;
-       dprintf(("autobaud: now going down\r\n"));
+        sa_adjdir = -1;
+        dprintf(("autobaud: now going down\r\n"));
     } else if ((sa_adjdir == -1 && sa_smartbaud == SMARTBAUD_MIN)) {
-       sa_adjdir = 1;
-       dprintf(("autobaud: now going up\r\n"));
+        sa_adjdir = 1;
+        dprintf(("autobaud: now going up\r\n"));
     }
 
     sa_smartbaud += sa_baudstep * sa_adjdir;
@@ -436,12 +436,12 @@ static void saReceiveFramer(uint8_t c)
 static void saSendFrame(uint8_t *buf, int len)
 {
     switch (smartAudioSerialPort->identifier) {
-        case SERIAL_PORT_SOFTSERIAL1:
-        case SERIAL_PORT_SOFTSERIAL2:
-            break;
-        default:
-            serialWrite(smartAudioSerialPort, 0x00); // Generate 1st start bit
-            break;
+    case SERIAL_PORT_SOFTSERIAL1:
+    case SERIAL_PORT_SOFTSERIAL2:
+        break;
+    default:
+        serialWrite(smartAudioSerialPort, 0x00); // Generate 1st start bit
+        break;
     }
 
     for (int i = 0 ; i < len ; i++) {
@@ -514,7 +514,7 @@ static bool saQueueFull(void)
 static void saQueueCmd(uint8_t *buf, int len)
 {
     if (saQueueFull()) {
-         return;
+        return;
     }
 
     sa_queue[sa_qhead].buf = buf;
@@ -525,7 +525,7 @@ static void saQueueCmd(uint8_t *buf, int len)
 static void saSendQueue(void)
 {
     if (saQueueEmpty()) {
-         return;
+        return;
     }
 
     saSendCmd(sa_queue[sa_qtail].buf, sa_queue[sa_qtail].len);
@@ -599,7 +599,7 @@ static void saGetPitFreq(void)
 static bool saValidateBandAndChannel(uint8_t band, uint8_t channel)
 {
     return (band >= VTX_SMARTAUDIO_MIN_BAND && band <= VTX_SMARTAUDIO_MAX_BAND &&
-             channel >= VTX_SMARTAUDIO_MIN_CHANNEL && channel <= VTX_SMARTAUDIO_MAX_CHANNEL);
+            channel >= VTX_SMARTAUDIO_MIN_CHANNEL && channel <= VTX_SMARTAUDIO_MAX_CHANNEL);
 }
 
 static void saDevSetBandAndChannel(uint8_t band, uint8_t channel)
@@ -749,16 +749,16 @@ static void vtxSAProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
         // dprintf(("process: resending 0x%x\r\n", sa_outstanding));
         // XXX Todo: Resend termination and possible offline transition
         saResendCmd();
-    lastCommandSentMs = nowMs;
+        lastCommandSentMs = nowMs;
     } else if (!saQueueEmpty()) {
         // Command pending. Send it.
         // dprintf(("process: sending queue\r\n"));
         saSendQueue();
-    lastCommandSentMs = nowMs;
+        lastCommandSentMs = nowMs;
     } else if ((nowMs - lastCommandSentMs < SMARTAUDIO_POLLING_WINDOW) && (nowMs - sa_lastTransmissionMs >= SMARTAUDIO_POLLING_INTERVAL)) {
-    //dprintf(("process: sending status change polling\r\n"));
-    saGetSettings();
-    saSendQueue();
+        //dprintf(("process: sending status change polling\r\n"));
+        saGetSettings();
+        saSendQueue();
     }
 }
 
@@ -872,7 +872,7 @@ static bool vtxSAGetFreq(const vtxDevice_t *vtxDevice, uint16_t *pFreq)
     // if not in user-freq mode then convert band/chan to frequency
     *pFreq = (saDevice.mode & SA_MODE_GET_FREQ_BY_FREQ) ? saDevice.freq :
         vtx58_Bandchan2Freq(SA_DEVICE_CHVAL_TO_BAND(saDevice.channel) + 1,
-        SA_DEVICE_CHVAL_TO_CHANNEL(saDevice.channel) + 1);
+            SA_DEVICE_CHVAL_TO_CHANNEL(saDevice.channel) + 1);
     return true;
 }
 

@@ -33,7 +33,7 @@
 
 static targetSerialPortFunction_t targetSerialPortFunction[] = {
     { SERIAL_PORT_USART1, FUNCTION_RX_SERIAL },
-    { SERIAL_PORT_UART4,  FUNCTION_ESC_SENSOR },    
+    { SERIAL_PORT_UART4,  FUNCTION_ESC_SENSOR },
 };
 
 void targetConfiguration(void)

@@ -99,63 +99,63 @@ PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles, PG
 void resetPidProfile(pidProfile_t *pidProfile)
 {
     RESET_CONFIG(pidProfile_t, pidProfile,
-        .pid = {
-            [PID_ROLL] =  { 46, 45, 25 },
-            [PID_PITCH] = { 50, 50, 27 },
-            [PID_YAW] =   { 65, 45, 20 },
-            [PID_ALT] =   { 50, 0, 0 },
-            [PID_POS] =   { 15, 0, 0 },     // POSHOLD_P * 100, POSHOLD_I * 100,
-            [PID_POSR] =  { 34, 14, 53 },   // POSHOLD_RATE_P * 10, POSHOLD_RATE_I * 100, POSHOLD_RATE_D * 1000,
-            [PID_NAVR] =  { 25, 33, 83 },   // NAV_P * 10, NAV_I * 100, NAV_D * 1000
-            [PID_LEVEL] = { 50, 50, 75 },
-            [PID_MAG] =   { 40, 0, 0 },
-            [PID_VEL] =   { 55, 55, 75 }
-        },
+    .pid = {
+        [PID_ROLL] =  { 46, 45, 25 },
+        [PID_PITCH] = { 50, 50, 27 },
+        [PID_YAW] =   { 65, 45, 20 },
+        [PID_ALT] =   { 50, 0, 0 },
+        [PID_POS] =   { 15, 0, 0 },     // POSHOLD_P * 100, POSHOLD_I * 100,
+        [PID_POSR] =  { 34, 14, 53 },   // POSHOLD_RATE_P * 10, POSHOLD_RATE_I * 100, POSHOLD_RATE_D * 1000,
+        [PID_NAVR] =  { 25, 33, 83 },   // NAV_P * 10, NAV_I * 100, NAV_D * 1000
+        [PID_LEVEL] = { 50, 50, 75 },
+        [PID_MAG] =   { 40, 0, 0 },
+        [PID_VEL] =   { 55, 55, 75 }
+    },
 
-        .pidSumLimit = PIDSUM_LIMIT,
-        .pidSumLimitYaw = PIDSUM_LIMIT_YAW,
-        .yaw_lowpass_hz = 0,
-        .dterm_lowpass_hz = 100,    // dual PT1 filtering ON by default
-        .dterm_lowpass2_hz = 200,   // second Dterm LPF ON by default
-        .dterm_notch_hz = 0,
-        .dterm_notch_cutoff = 160,
-        .dterm_filter_type = FILTER_PT1,
-        .itermWindupPointPercent = 40,
-        .vbatPidCompensation = 0,
-        .pidAtMinThrottle = PID_STABILISATION_ON,
-        .levelAngleLimit = 55,
-        .setpointRelaxRatio = 0,
-        .dtermSetpointWeight = 60,
-        .yawRateAccelLimit = 100,
-        .rateAccelLimit = 0,
-        .itermThrottleThreshold = 350,
-        .itermAcceleratorGain = 5000,
-        .crash_time = 500,          // ms
-        .crash_delay = 0,           // ms
-        .crash_recovery_angle = 10, // degrees
-        .crash_recovery_rate = 100, // degrees/second
-        .crash_dthreshold = 50,     // degrees/second/second
-        .crash_gthreshold = 400,    // degrees/second
-        .crash_setpoint_threshold = 350, // degrees/second
-        .crash_recovery = PID_CRASH_RECOVERY_OFF, // off by default
-        .horizon_tilt_effect = 75,
-        .horizon_tilt_expert_mode = false,
-        .crash_limit_yaw = 200,
-        .itermLimit = 150,
-        .throttle_boost = 5,
-        .throttle_boost_cutoff = 15,
-        .iterm_rotation = true,
-        .smart_feedforward = false,
-        .iterm_relax = ITERM_RELAX_OFF,
-        .iterm_relax_cutoff = 11,
-        .iterm_relax_type = ITERM_RELAX_GYRO,
-        .acro_trainer_angle_limit = 20,
-        .acro_trainer_lookahead_ms = 50,
-        .acro_trainer_debug_axis = FD_ROLL,
-        .acro_trainer_gain = 75,
-        .abs_control_gain = 0,
-        .abs_control_limit = 90,
-        .abs_control_error_limit = 20,
+    .pidSumLimit = PIDSUM_LIMIT,
+    .pidSumLimitYaw = PIDSUM_LIMIT_YAW,
+    .yaw_lowpass_hz = 0,
+    .dterm_lowpass_hz = 100,    // dual PT1 filtering ON by default
+    .dterm_lowpass2_hz = 200,   // second Dterm LPF ON by default
+    .dterm_notch_hz = 0,
+    .dterm_notch_cutoff = 160,
+    .dterm_filter_type = FILTER_PT1,
+    .itermWindupPointPercent = 40,
+    .vbatPidCompensation = 0,
+    .pidAtMinThrottle = PID_STABILISATION_ON,
+    .levelAngleLimit = 55,
+    .setpointRelaxRatio = 0,
+    .dtermSetpointWeight = 60,
+    .yawRateAccelLimit = 100,
+    .rateAccelLimit = 0,
+    .itermThrottleThreshold = 350,
+    .itermAcceleratorGain = 5000,
+    .crash_time = 500,          // ms
+    .crash_delay = 0,           // ms
+    .crash_recovery_angle = 10, // degrees
+    .crash_recovery_rate = 100, // degrees/second
+    .crash_dthreshold = 50,     // degrees/second/second
+    .crash_gthreshold = 400,    // degrees/second
+    .crash_setpoint_threshold = 350, // degrees/second
+    .crash_recovery = PID_CRASH_RECOVERY_OFF, // off by default
+    .horizon_tilt_effect = 75,
+    .horizon_tilt_expert_mode = false,
+    .crash_limit_yaw = 200,
+    .itermLimit = 150,
+    .throttle_boost = 5,
+    .throttle_boost_cutoff = 15,
+    .iterm_rotation = true,
+    .smart_feedforward = false,
+    .iterm_relax = ITERM_RELAX_OFF,
+    .iterm_relax_cutoff = 11,
+    .iterm_relax_type = ITERM_RELAX_GYRO,
+    .acro_trainer_angle_limit = 20,
+    .acro_trainer_lookahead_ms = 50,
+    .acro_trainer_debug_axis = FD_ROLL,
+    .acro_trainer_gain = 75,
+    .abs_control_gain = 0,
+    .abs_control_limit = 90,
+    .abs_control_error_limit = 20,
     );
 }
 
@@ -257,7 +257,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 
     //2nd Dterm Lowpass Filter
     if (pidProfile->dterm_lowpass2_hz == 0 || pidProfile->dterm_lowpass2_hz > pidFrequencyNyquist) {
-    	dtermLowpass2ApplyFn = nullFilterApply;
+        dtermLowpass2ApplyFn = nullFilterApply;
     } else {
         dtermLowpass2ApplyFn = (filterApplyFnPtr)pt1FilterApply;
         for (int axis = FD_ROLL; axis <= FD_PITCH; axis++) {
@@ -315,12 +315,12 @@ void pidInitSetpointDerivativeLpf(uint16_t filterCutoff, uint8_t debugAxis, uint
         setpointDerivativeLpfInitialized = true;
         for (int axis = FD_ROLL; axis <= FD_PITCH; axis++) {
             switch (rcSmoothingFilterType) {
-                case RC_SMOOTHING_DERIVATIVE_PT1:
-                    pt1FilterInit(&setpointDerivativePt1[axis], pt1FilterGain(filterCutoff, dT));
-                    break;
-                case RC_SMOOTHING_DERIVATIVE_BIQUAD:
-                    biquadFilterInitLPF(&setpointDerivativeBiquad[axis], filterCutoff, targetPidLooptime);
-                    break;
+            case RC_SMOOTHING_DERIVATIVE_PT1:
+                pt1FilterInit(&setpointDerivativePt1[axis], pt1FilterGain(filterCutoff, dT));
+                break;
+            case RC_SMOOTHING_DERIVATIVE_BIQUAD:
+                biquadFilterInitLPF(&setpointDerivativeBiquad[axis], filterCutoff, targetPidLooptime);
+                break;
             }
         }
     }
@@ -481,22 +481,22 @@ static float calcHorizonLevelStrength(void)
     //                         1 = leveling can be totally off when inverted
     if (horizonTiltExpertMode) {
         if (horizonTransition > 0 && horizonCutoffDegrees > 0) {
-                    // if d_level > 0 and horizonTiltEffect < 175
+            // if d_level > 0 and horizonTiltEffect < 175
             // horizonCutoffDegrees: 0 to 125 => 270 to 90 (represents where leveling goes to zero)
             // inclinationLevelRatio (0.0 to 1.0) is smaller (less leveling)
             //  for larger inclinations; 0.0 at horizonCutoffDegrees value:
             const float inclinationLevelRatio = constrainf((horizonCutoffDegrees-currentInclination) / horizonCutoffDegrees, 0, 1);
             // apply configured horizon sensitivity:
-                // when stick is near center (horizonLevelStrength ~= 1.0)
-                //  H_sensitivity value has little effect,
-                // when stick is deflected (horizonLevelStrength near 0.0)
-                //  H_sensitivity value has more effect:
+            // when stick is near center (horizonLevelStrength ~= 1.0)
+            //  H_sensitivity value has little effect,
+            // when stick is deflected (horizonLevelStrength near 0.0)
+            //  H_sensitivity value has more effect:
             horizonLevelStrength = (horizonLevelStrength - 1) * 100 / horizonTransition + 1;
             // apply inclination ratio, which may lower leveling
             //  to zero regardless of stick position:
             horizonLevelStrength *= inclinationLevelRatio;
         } else  { // d_level=0 or horizon_tilt_effect>=175 means no leveling
-          horizonLevelStrength = 0;
+            horizonLevelStrength = 0;
         }
     } else { // horizon_tilt_expert_mode = 0 (leveling always active when sticks centered)
         float sensitFact;
@@ -524,7 +524,8 @@ static float calcHorizonLevelStrength(void)
     return constrainf(horizonLevelStrength, 0, 1);
 }
 
-static float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, float currentPidSetpoint) {
+static float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, float currentPidSetpoint)
+{
     // calculate error angle and limit the angle to the max inclination
     // rcDeflection is in range [-1.0, 1.0]
     float angle = pidProfile->levelAngleLimit * getRcDeflection(axis);
@@ -584,13 +585,13 @@ static void handleCrashRecovery(
         pidData[axis].I = 0.0f;
         if (cmpTimeUs(currentTimeUs, crashDetectedAtUs) > crashTimeLimitUs
             || (getMotorMixRange() < 1.0f
-                   && ABS(gyro.gyroADCf[FD_ROLL]) < crashRecoveryRate
-                   && ABS(gyro.gyroADCf[FD_PITCH]) < crashRecoveryRate
-                   && ABS(gyro.gyroADCf[FD_YAW]) < crashRecoveryRate)) {
+                && ABS(gyro.gyroADCf[FD_ROLL]) < crashRecoveryRate
+                && ABS(gyro.gyroADCf[FD_PITCH]) < crashRecoveryRate
+                && ABS(gyro.gyroADCf[FD_YAW]) < crashRecoveryRate)) {
             if (sensors(SENSOR_ACC)) {
                 // check aircraft nearly level
                 if (ABS(attitude.raw[FD_ROLL] - angleTrim->raw[FD_ROLL]) < crashRecoveryAngleDeciDegrees
-                   && ABS(attitude.raw[FD_PITCH] - angleTrim->raw[FD_PITCH]) < crashRecoveryAngleDeciDegrees) {
+                    && ABS(attitude.raw[FD_PITCH] - angleTrim->raw[FD_PITCH]) < crashRecoveryAngleDeciDegrees) {
                     inCrashRecoveryMode = false;
                     BEEP_OFF;
                 }
@@ -618,7 +619,7 @@ static void detectAndSetCrashRecovery(
                 crashDetectedAtUs = currentTimeUs;
             }
             if (inCrashRecoveryMode && cmpTimeUs(currentTimeUs, crashDetectedAtUs) < crashTimeDelayUs && (ABS(errorRate) < crashGyroThreshold
-                || ABS(getSetpointRate(axis)) > crashSetpointThreshold)) {
+                    || ABS(getSetpointRate(axis)) > crashSetpointThreshold)) {
                 inCrashRecoveryMode = false;
                 BEEP_OFF;
             }
@@ -629,7 +630,7 @@ static void detectAndSetCrashRecovery(
     }
 }
 
-static void rotateVector(float v[XYZ_AXIS_COUNT], float rotation[XYZ_AXIS_COUNT]) 
+static void rotateVector(float v[XYZ_AXIS_COUNT], float rotation[XYZ_AXIS_COUNT])
 {
     // rotate v around rotation vector rotation
     // rotation in radians, all elements must be small
@@ -642,13 +643,13 @@ static void rotateVector(float v[XYZ_AXIS_COUNT], float rotation[XYZ_AXIS_COUNT]
     }
 }
 
-static void rotateITermAndAxisError() 
+static void rotateITermAndAxisError()
 {
     if (itermRotation
 #if defined(USE_ABSOLUTE_CONTROL)
         || acGain > 0
 #endif
-        ) {
+    ) {
         const float gyroToAngle = dT * RAD;
         float rotationRads[3];
         for (int i = FD_ROLL; i <= FD_YAW; i++) {
@@ -716,10 +717,10 @@ static FAST_CODE_NOINLINE float applyAcroTrainer(int axis, const rollAndPitchTri
         if (acroTrainerAxisState[axis] != 0) {
             ret = constrainf(((acroTrainerAngleLimit * angleSign) - currentAngle) * acroTrainerGain, -ACRO_TRAINER_SETPOINT_LIMIT, ACRO_TRAINER_SETPOINT_LIMIT);
         } else {
-        
-        // Not currently over the limit so project the angle based on current angle and
-        // gyro angular rate using a sliding window based on gyro rate (faster rotation means larger window.
-        // If the projected angle exceeds the limit then apply limiting to minimize overshoot.
+
+            // Not currently over the limit so project the angle based on current angle and
+            // gyro angular rate using a sliding window based on gyro rate (faster rotation means larger window.
+            // If the projected angle exceeds the limit then apply limiting to minimize overshoot.
             // Calculate the lookahead window by scaling proportionally with gyro rate from 0-500dps
             float checkInterval = constrainf(fabsf(gyro.gyroADCf[axis]) / ACRO_TRAINER_LOOKAHEAD_RATE_LIMIT, 0.0f, 1.0f) * acroTrainerLookaheadTime;
             projectedAngle = (gyro.gyroADCf[axis] * checkInterval) + currentAngle;
@@ -733,7 +734,7 @@ static FAST_CODE_NOINLINE float applyAcroTrainer(int axis, const rollAndPitchTri
         if (resetIterm) {
             pidData[axis].I = 0;
         }
- 
+
         if (axis == acroTrainerDebugAxis) {
             DEBUG_SET(DEBUG_ACRO_TRAINER, 0, lrintf(currentAngle * 10.0f));
             DEBUG_SET(DEBUG_ACRO_TRAINER, 1, acroTrainerAxisState[axis]);
@@ -808,7 +809,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
 #ifdef USE_ABSOLUTE_CONTROL
         float acCorrection = 0;
         float acErrorRate;
-#endif        
+#endif
         float itermErrorRate = 0.0f;
 
 #if defined(USE_ITERM_RELAX)
@@ -821,7 +822,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
             } else if (itermRelaxType == ITERM_RELAX_GYRO ) {
                 itermErrorRate = fapplyDeadband(setpointLpf - gyroRate, setpointHpf);
             }
-            
+
             if (axis == FD_ROLL) {
                 DEBUG_SET(DEBUG_ITERM_RELAX, 0, lrintf(setpointHpf));
                 DEBUG_SET(DEBUG_ITERM_RELAX, 1, lrintf(itermRelaxFactor * 100.0f));
@@ -854,7 +855,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
             acErrorRate = itermErrorRate;
 #endif // USE_ABSOLUTE_CONTROL
         }
-        
+
 #if defined(USE_ABSOLUTE_CONTROL)
         if (acGain > 0 && isAirmodeActivated()) {
             axisError[axis] = constrainf(axisError[axis] + acErrorRate * dT, -acErrorLimit, acErrorLimit);
@@ -917,12 +918,12 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
             }
             if ((dynCd != 0) && setpointDerivativeLpfInitialized) {
                 switch (rcSmoothingFilterType) {
-                    case RC_SMOOTHING_DERIVATIVE_PT1:
-                        pidSetpointDelta = pt1FilterApply(&setpointDerivativePt1[axis], pidSetpointDelta);
-                        break;
-                    case RC_SMOOTHING_DERIVATIVE_BIQUAD:
-                        pidSetpointDelta = biquadFilterApply(&setpointDerivativeBiquad[axis], pidSetpointDelta);
-                        break;
+                case RC_SMOOTHING_DERIVATIVE_PT1:
+                    pidSetpointDelta = pt1FilterApply(&setpointDerivativePt1[axis], pidSetpointDelta);
+                    break;
+                case RC_SMOOTHING_DERIVATIVE_BIQUAD:
+                    pidSetpointDelta = biquadFilterApply(&setpointDerivativeBiquad[axis], pidSetpointDelta);
+                    break;
                 }
                 if (axis == rcSmoothingDebugAxis) {
                     DEBUG_SET(DEBUG_RC_SMOOTHING, 2, lrintf(pidSetpointDelta * 100.0f));
@@ -953,7 +954,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
 
 #ifdef USE_YAW_SPIN_RECOVERY
             if (yawSpinActive)  {
-                // zero PIDs on pitch and roll leaving yaw P to correct spin 
+                // zero PIDs on pitch and roll leaving yaw P to correct spin
                 pidData[axis].P = 0;
                 pidData[axis].I = 0;
                 pidData[axis].D = 0;
@@ -968,7 +969,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
 
 #ifdef USE_YAW_SPIN_RECOVERY
     if (yawSpinActive) {
-    // yaw P alone to correct spin 
+        // yaw P alone to correct spin
         pidData[FD_YAW].I = 0;
     }
 #endif // USE_YAW_SPIN_RECOVERY

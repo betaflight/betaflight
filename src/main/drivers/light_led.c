@@ -52,15 +52,15 @@ void pgResetFn_statusLedConfig(statusLedConfig_t *statusLedConfig)
 
     statusLedConfig->inversion = 0
 #ifdef LED0_INVERTED
-    | BIT(0)
+        | BIT(0)
 #endif
 #ifdef LED1_INVERTED
-    | BIT(1)
+        | BIT(1)
 #endif
 #ifdef LED2_INVERTED
-    | BIT(2)
+        | BIT(2)
 #endif
-    ;
+        ;
 }
 
 void ledInit(const statusLedConfig_t *statusLedConfig)

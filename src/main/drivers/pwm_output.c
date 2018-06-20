@@ -119,7 +119,7 @@ void pwmOutConfig(timerChannel_t *channel, const timerHardware_t *timerHardware,
         timerHardware->channel,
         value,
         inversion ? timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output
-        );
+    );
 
 #if defined(USE_HAL_DRIVER)
     if (timerHardware->output & TIMER_OUTPUT_N_CHANNEL)
@@ -497,8 +497,8 @@ FAST_CODE_NOINLINE bool pwmDshotCommandOutputIsEnabled(uint8_t motorCount)
     if (cmpTimeUs(timeNowUs, dshotCommandControl.nextCommandAtUs) < 0) {
         //Skip motor update because it isn't time yet for a new command
         return false;
-    }   
-  
+    }
+
     //Timed motor update happening with dshot command
     if (dshotCommandControl.repeats > 0) {
         dshotCommandControl.repeats--;

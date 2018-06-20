@@ -131,7 +131,8 @@ bool mpu9250SpiWriteRegisterVerify(const busDevice_t *bus, uint8_t reg, uint8_t 
     return false;
 }
 
-static void mpu9250AccAndGyroInit(gyroDev_t *gyro) {
+static void mpu9250AccAndGyroInit(gyroDev_t *gyro)
+{
 
     if (mpuSpi9250InitDone) {
         return;

@@ -47,8 +47,7 @@
 // Calculated in rtcSet().
 static rtcTime_t started = 0;
 
-static const uint16_t days[4][12] =
-{
+static const uint16_t days[4][12] = {
     {   0,  31,     60,     91,     121,    152,    182,    213,    244,    274,    305,    335},
     { 366,  397,    425,    456,    486,    517,    547,    578,    609,    639,    670,    700},
     { 731,  762,    790,    821,    851,    882,    912,    943,    974,    1004,   1035,   1065},
@@ -120,12 +119,12 @@ static void rtcGetDefaultDateTime(dateTime_t *dateTime)
 static bool rtcIsDateTimeValid(dateTime_t *dateTime)
 {
     return (dateTime->year >= REFERENCE_YEAR) &&
-           (dateTime->month >= 1 && dateTime->month <= 12) &&
-           (dateTime->day >= 1 && dateTime->day <= 31) &&
-           (dateTime->hours <= 23) &&
-           (dateTime->minutes <= 59) &&
-           (dateTime->seconds <= 59) &&
-           (dateTime->millis <= 999);
+        (dateTime->month >= 1 && dateTime->month <= 12) &&
+        (dateTime->day >= 1 && dateTime->day <= 31) &&
+        (dateTime->hours <= 23) &&
+        (dateTime->minutes <= 59) &&
+        (dateTime->seconds <= 59) &&
+        (dateTime->millis <= 999);
 }
 
 static void dateTimeWithOffset(dateTime_t *dateTimeOffset, dateTime_t *dateTimeInitial, int16_t minutes)

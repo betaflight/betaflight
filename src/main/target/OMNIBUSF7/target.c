@@ -28,7 +28,7 @@
 #include "drivers/timer_def.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-	
+
 #ifdef FPVM_BETAFLIGHTF7
     DEF_TIM(TIM8, CH3, PC8, TIM_USE_ANY,   0, 0), // USED FOR CAMERA CONTROL
 #endif

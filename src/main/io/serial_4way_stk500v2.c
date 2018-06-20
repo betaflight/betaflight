@@ -183,7 +183,7 @@ static uint8_t StkReadLeader(void)
     uint32_t waitcycl; //250uS each
 
     if ((StkCmd == CMD_PROGRAM_EEPROM_ISP) || (StkCmd == CMD_CHIP_ERASE_ISP)) {
-         waitcycl = STK_WAITCYLCES_EXT;
+        waitcycl = STK_WAITCYLCES_EXT;
     } else if (StkCmd == CMD_SIGN_ON) {
         waitcycl = STK_WAITCYLCES_START;
     } else {
@@ -234,10 +234,9 @@ static uint8_t StkRcvPacket(uint8_t *pstring)
     if (!ReadByte(&bt) || (bt != TOKEN)) goto Err;
     if (!ReadByte(&bt) || (bt != StkCmd)) goto Err;
     if (!ReadByte(&bt) || (bt != STATUS_CMD_OK)) goto Err;
-    for (uint16_t i = 0; i < (Len.word - 2); i++)
-    {
-         if (!ReadByte(pstring)) goto Err;
-         pstring++;
+    for (uint16_t i = 0; i < (Len.word - 2); i++) {
+        if (!ReadByte(pstring)) goto Err;
+        pstring++;
     }
     ReadByte(&bt);
     if (ckSumIn != 0) goto Err;
@@ -265,10 +264,10 @@ static uint8_t _CMD_SPI_MULTI_EX(volatile uint8_t * ResByte,uint8_t Cmd,uint8_t 
     StkSendByte(0); // {TxData} 0
     StkSendPacketFooter();
     if (StkRcvPacket((void *)StkInBuf)) { // NumRX + 3
-         if ((StkInBuf[0] == 0x00) && ((StkInBuf[1] == Cmd)||(StkInBuf[1] == 0x00)/* ignore  zero returns */) &&(StkInBuf[2] == 0x00)) {
+        if ((StkInBuf[0] == 0x00) && ((StkInBuf[1] == Cmd)||(StkInBuf[1] == 0x00)/* ignore  zero returns */) &&(StkInBuf[2] == 0x00)) {
             *ResByte = StkInBuf[3];
-         }
-         return 1;
+        }
+        return 1;
     }
     return 0;
 }

@@ -38,7 +38,8 @@ typedef enum {
 
 static warningLedState_e warningLedState = WARNING_LED_OFF;
 
-void warningLedResetTimer(void) {
+void warningLedResetTimer(void)
+{
     uint32_t now = millis();
     warningLedTimer = now + 500000;
 }
@@ -61,15 +62,15 @@ void warningLedFlash(void)
 void warningLedRefresh(void)
 {
     switch (warningLedState) {
-        case WARNING_LED_OFF:
-            LED0_OFF;
-            break;
-        case WARNING_LED_ON:
-            LED0_ON;
-            break;
-        case WARNING_LED_FLASH:
-            LED0_TOGGLE;
-            break;
+    case WARNING_LED_OFF:
+        LED0_OFF;
+        break;
+    case WARNING_LED_ON:
+        LED0_ON;
+        break;
+    case WARNING_LED_FLASH:
+        LED0_TOGGLE;
+        break;
     }
 
     uint32_t now = micros();

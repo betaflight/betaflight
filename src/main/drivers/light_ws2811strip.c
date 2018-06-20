@@ -120,13 +120,13 @@ STATIC_UNIT_TESTED void fastUpdateLEDDMABuffer(ledStripFormatRGB_e ledFormat, rg
     uint32_t packed_colour;
 
     switch (ledFormat) {
-        case LED_RGB: // WS2811 drivers use RGB format
-            packed_colour = (color->rgb.r << 16) | (color->rgb.g << 8) | (color->rgb.b);
-            break;
+    case LED_RGB: // WS2811 drivers use RGB format
+        packed_colour = (color->rgb.r << 16) | (color->rgb.g << 8) | (color->rgb.b);
+        break;
 
-        case LED_GRB: // WS2812 drivers use GRB format
-        default:
-            packed_colour = (color->rgb.g << 16) | (color->rgb.r << 8) | (color->rgb.b);
+    case LED_GRB: // WS2812 drivers use GRB format
+    default:
+        packed_colour = (color->rgb.g << 16) | (color->rgb.r << 8) | (color->rgb.b);
         break;
     }
 
@@ -139,14 +139,10 @@ STATIC_UNIT_TESTED void updateLEDDMABuffer(uint8_t componentValue)
 {
     uint8_t bitIndex;
 
-    for (bitIndex = 0; bitIndex < 8; bitIndex++)
-    {
-        if ((componentValue << bitIndex) & 0x80 )    // data sent MSB first, j = 0 is MSB j = 7 is LSB
-        {
+    for (bitIndex = 0; bitIndex < 8; bitIndex++) {
+        if ((componentValue << bitIndex) & 0x80 ) {  // data sent MSB first, j = 0 is MSB j = 7 is LSB
             ledStripDMABuffer[dmaBufferOffset] = BIT_COMPARE_1;
-        }
-        else
-        {
+        } else {
             ledStripDMABuffer[dmaBufferOffset] = BIT_COMPARE_0;   // compare value for logical 0
         }
         dmaBufferOffset++;
@@ -172,15 +168,14 @@ void ws2811UpdateStrip(ledStripFormatRGB_e ledFormat)
 
     // fill transmit buffer with correct compare values to achieve
     // correct pulse widths according to color values
-    while (ledIndex < WS2811_LED_STRIP_LENGTH)
-    {
+    while (ledIndex < WS2811_LED_STRIP_LENGTH) {
         rgb24 = hsvToRgb24(&ledColorBuffer[ledIndex]);
 
 #ifdef USE_FAST_DMA_BUFFER_IMPL
         fastUpdateLEDDMABuffer(ledFormat, rgb24);
 #else
         switch (ledFormat) {
-            case LED_RGB: // WS2811 drivers use RGB format
+        case LED_RGB: // WS2811 drivers use RGB format
             updateLEDDMABuffer(rgb24->rgb.r);
             updateLEDDMABuffer(rgb24->rgb.g);
             break;

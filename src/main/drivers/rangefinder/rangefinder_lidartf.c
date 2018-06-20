@@ -170,56 +170,55 @@ void lidarTFUpdate(rangefinderDev_t *dev)
             }
             break;
 
-        case TF_FRAME_STATE_WAIT_CKSUM:
-            {
-                uint8_t cksum = TF_FRAME_SYNC_BYTE + TF_FRAME_SYNC_BYTE;
-                for (int i = 0 ; i < TF_FRAME_LENGTH ; i++) {
-                    cksum += tfFrame[i];
-                }
-
-                if (c == cksum) {
-
-                    uint16_t distance = tfFrame[0] | (tfFrame[1] << 8);
-                    uint16_t strength = tfFrame[2] | (tfFrame[3] << 8);
-
-                    DEBUG_SET(DEBUG_LIDAR_TF, 0, distance);
-                    DEBUG_SET(DEBUG_LIDAR_TF, 1, strength);
-                    DEBUG_SET(DEBUG_LIDAR_TF, 2, tfFrame[4]);
-                    DEBUG_SET(DEBUG_LIDAR_TF, 3, tfFrame[5]);
-
-                    switch (tfDevtype) {
-                    case TF_DEVTYPE_MINI:
-                        if (distance >= TF_MINI_RANGE_MIN && distance < TF_MINI_RANGE_MAX) {
-                            lidarTFValue = distance;
-                            if (tfFrame[TF_MINI_FRAME_INTEGRAL_TIME] == 7) {
-                                // When integral time is long (7), measured distance tends to be longer by 12~13.
-                                lidarTFValue -= 13;
-                            }
-                        } else {
-                            lidarTFValue = -1;
-                        }
-                        break;
-
-                    case TF_DEVTYPE_02:
-                        if (distance >= TF_02_RANGE_MIN && distance < TF_02_RANGE_MAX && tfFrame[TF_02_FRAME_SIG] >= 7) {
-                            lidarTFValue = distance;
-                        } else {
-                            lidarTFValue = -1;
-                        }
-                        break;
-                    }
-                    lastFrameReceivedMs = timeNowMs;
-                } else {
-                    // Checksum error. Simply discard the current frame.
-                    ++lidarTFerrors;
-                    //DEBUG_SET(DEBUG_LIDAR_TF, 3, lidarTFerrors);
-                }
+        case TF_FRAME_STATE_WAIT_CKSUM: {
+            uint8_t cksum = TF_FRAME_SYNC_BYTE + TF_FRAME_SYNC_BYTE;
+            for (int i = 0 ; i < TF_FRAME_LENGTH ; i++) {
+                cksum += tfFrame[i];
             }
 
-            tfFrameState = TF_FRAME_STATE_WAIT_START1;
-            tfReceivePosition = 0;
+            if (c == cksum) {
 
-            break;
+                uint16_t distance = tfFrame[0] | (tfFrame[1] << 8);
+                uint16_t strength = tfFrame[2] | (tfFrame[3] << 8);
+
+                DEBUG_SET(DEBUG_LIDAR_TF, 0, distance);
+                DEBUG_SET(DEBUG_LIDAR_TF, 1, strength);
+                DEBUG_SET(DEBUG_LIDAR_TF, 2, tfFrame[4]);
+                DEBUG_SET(DEBUG_LIDAR_TF, 3, tfFrame[5]);
+
+                switch (tfDevtype) {
+                case TF_DEVTYPE_MINI:
+                    if (distance >= TF_MINI_RANGE_MIN && distance < TF_MINI_RANGE_MAX) {
+                        lidarTFValue = distance;
+                        if (tfFrame[TF_MINI_FRAME_INTEGRAL_TIME] == 7) {
+                            // When integral time is long (7), measured distance tends to be longer by 12~13.
+                            lidarTFValue -= 13;
+                        }
+                    } else {
+                        lidarTFValue = -1;
+                    }
+                    break;
+
+                case TF_DEVTYPE_02:
+                    if (distance >= TF_02_RANGE_MIN && distance < TF_02_RANGE_MAX && tfFrame[TF_02_FRAME_SIG] >= 7) {
+                        lidarTFValue = distance;
+                    } else {
+                        lidarTFValue = -1;
+                    }
+                    break;
+                }
+                lastFrameReceivedMs = timeNowMs;
+            } else {
+                // Checksum error. Simply discard the current frame.
+                ++lidarTFerrors;
+                //DEBUG_SET(DEBUG_LIDAR_TF, 3, lidarTFerrors);
+            }
+        }
+
+        tfFrameState = TF_FRAME_STATE_WAIT_START1;
+        tfReceivePosition = 0;
+
+        break;
         }
     }
 

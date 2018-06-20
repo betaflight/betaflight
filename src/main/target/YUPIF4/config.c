@@ -42,8 +42,8 @@ void targetConfiguration(void)
 {
     /* Changes depending on versions */
     if (hardwareRevision == YUPIF4_RACE3) {
-            beeperDevConfigMutable()->ioTag = IO_TAG(BEEPER_OPT);
-            telemetryConfigMutable()->halfDuplex = false;
+        beeperDevConfigMutable()->ioTag = IO_TAG(BEEPER_OPT);
+        telemetryConfigMutable()->halfDuplex = false;
 
     } else if (hardwareRevision == YUPIF4_RACE2) {
         beeperDevConfigMutable()->ioTag = IO_TAG(BEEPER_OPT);

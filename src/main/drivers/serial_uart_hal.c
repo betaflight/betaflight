@@ -43,18 +43,16 @@
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
 
-static void usartConfigurePinInversion(uartPort_t *uartPort) {
+static void usartConfigurePinInversion(uartPort_t *uartPort)
+{
     bool inverted = uartPort->port.options & SERIAL_INVERTED;
 
-    if (inverted)
-    {
-        if (uartPort->port.mode & MODE_RX)
-        {
+    if (inverted) {
+        if (uartPort->port.mode & MODE_RX) {
             uartPort->Handle.AdvancedInit.AdvFeatureInit |= UART_ADVFEATURE_RXINVERT_INIT;
             uartPort->Handle.AdvancedInit.RxPinLevelInvert = UART_ADVFEATURE_RXINV_ENABLE;
         }
-        if (uartPort->port.mode & MODE_TX)
-        {
+        if (uartPort->port.mode & MODE_TX) {
             uartPort->Handle.AdvancedInit.AdvFeatureInit |= UART_ADVFEATURE_TXINVERT_INIT;
             uartPort->Handle.AdvancedInit.TxPinLevelInvert = UART_ADVFEATURE_TXINV_ENABLE;
         }
@@ -102,20 +100,15 @@ void uartReconfigure(uartPort_t *uartPort)
     usartTargetConfigure(uartPort);
 #endif
 
-    if (uartPort->port.options & SERIAL_BIDIR)
-    {
+    if (uartPort->port.options & SERIAL_BIDIR) {
         HAL_HalfDuplex_Init(&uartPort->Handle);
-    }
-    else
-    {
+    } else {
         HAL_UART_Init(&uartPort->Handle);
     }
 
     // Receive DMA or IRQ
-    if (uartPort->port.mode & MODE_RX)
-    {
-        if (uartPort->rxDMAStream)
-        {
+    if (uartPort->port.mode & MODE_RX) {
+        if (uartPort->rxDMAStream) {
             uartPort->rxDMAHandle.Instance = uartPort->rxDMAStream;
             uartPort->rxDMAHandle.Init.Channel = uartPort->rxDMAChannel;
             uartPort->rxDMAHandle.Init.Direction = DMA_PERIPH_TO_MEMORY;
@@ -140,9 +133,7 @@ void uartReconfigure(uartPort_t *uartPort)
 
             uartPort->rxDMAPos = __HAL_DMA_GET_COUNTER(&uartPort->rxDMAHandle);
 
-        }
-        else
-        {
+        } else {
             /* Enable the UART Parity Error Interrupt */
             SET_BIT(uartPort->USARTx->CR1, USART_CR1_PEIE);
 
@@ -175,8 +166,7 @@ void uartReconfigure(uartPort_t *uartPort)
 
             HAL_DMA_DeInit(&uartPort->txDMAHandle);
             HAL_StatusTypeDef status = HAL_DMA_Init(&uartPort->txDMAHandle);
-            if (status != HAL_OK)
-            {
+            if (status != HAL_OK) {
                 while (1);
             }
             /* Associate the initialized DMA handle to the UART handle */

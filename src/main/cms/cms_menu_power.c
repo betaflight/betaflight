@@ -96,8 +96,7 @@ static long cmsx_Power_onExit(const OSD_Entry *self)
     return 0;
 }
 
-static OSD_Entry cmsx_menuPowerEntries[] =
-{
+static OSD_Entry cmsx_menuPowerEntries[] = {
     { "-- POWER --", OME_Label, NULL, NULL, 0},
 
     { "V METER", OME_TAB, NULL, &(OSD_TAB_t){ &batteryConfig_voltageMeterSource, VOLTAGE_METER_COUNT - 1, voltageMeterSourceNames }, 0 },

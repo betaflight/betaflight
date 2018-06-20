@@ -284,30 +284,29 @@ void voltageMeterRead(voltageMeterId_e id, voltageMeter_t *meter)
         voltageMeterADCRead(VOLTAGE_SENSOR_ADC_VBAT, meter);
     } else
 #ifdef ADC_POWER_12V
-    if (id == VOLTAGE_METER_ID_12V_1) {
-        voltageMeterADCRead(VOLTAGE_SENSOR_ADC_12V, meter);
-    } else
+        if (id == VOLTAGE_METER_ID_12V_1) {
+            voltageMeterADCRead(VOLTAGE_SENSOR_ADC_12V, meter);
+        } else
 #endif
 #ifdef ADC_POWER_9V
-    if (id == VOLTAGE_METER_ID_9V_1) {
-        voltageMeterADCRead(VOLTAGE_SENSOR_ADC_9V, meter);
-    } else
+            if (id == VOLTAGE_METER_ID_9V_1) {
+                voltageMeterADCRead(VOLTAGE_SENSOR_ADC_9V, meter);
+            } else
 #endif
 #ifdef ADC_POWER_5V
-    if (id == VOLTAGE_METER_ID_5V_1) {
-        voltageMeterADCRead(VOLTAGE_SENSOR_ADC_5V, meter);
-    } else
+                if (id == VOLTAGE_METER_ID_5V_1) {
+                    voltageMeterADCRead(VOLTAGE_SENSOR_ADC_5V, meter);
+                } else
 #endif
 #ifdef USE_ESC_SENSOR
-    if (id == VOLTAGE_METER_ID_ESC_COMBINED_1) {
-        voltageMeterESCReadCombined(meter);
-    } else
-    if (id >= VOLTAGE_METER_ID_ESC_MOTOR_1 && id <= VOLTAGE_METER_ID_ESC_MOTOR_20 ) {
-        int motor = id - VOLTAGE_METER_ID_ESC_MOTOR_1;
-        voltageMeterESCReadMotor(motor, meter);
-    } else
+                    if (id == VOLTAGE_METER_ID_ESC_COMBINED_1) {
+                        voltageMeterESCReadCombined(meter);
+                    } else if (id >= VOLTAGE_METER_ID_ESC_MOTOR_1 && id <= VOLTAGE_METER_ID_ESC_MOTOR_20 ) {
+                        int motor = id - VOLTAGE_METER_ID_ESC_MOTOR_1;
+                        voltageMeterESCReadMotor(motor, meter);
+                    } else
 #endif
-    {
-        voltageMeterReset(meter);
-    }
+                    {
+                        voltageMeterReset(meter);
+                    }
 }

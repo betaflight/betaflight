@@ -63,7 +63,7 @@ void vtxControlInit(void)
 
 void vtxControlInputPoll(void)
 {
-  // Check variuos input sources for VTX config updates
+    // Check variuos input sources for VTX config updates
 #if defined(USE_SPEKTRUM_VTX_CONTROL)
     // Get VTX updates
     spektrumVtxControl();

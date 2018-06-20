@@ -245,7 +245,7 @@ serialPort_t *usbVcpOpen(void)
     /* Add Supported Class */
 #ifdef USE_USB_CDC_HID
     if (usbDevConfig()->type == COMPOSITE) {
-    	USBD_RegisterClass(&USBD_Device, USBD_HID_CDC_CLASS);
+        USBD_RegisterClass(&USBD_Device, USBD_HID_CDC_CLASS);
     } else
 #endif
     {

@@ -111,7 +111,7 @@
 #define UART5_RX_PIN            PD2
 
 #if (SPRACINGF7DUAL_REV <= 1)
-    #define TARGET_USART_CONFIG
+#define TARGET_USART_CONFIG
 #endif
 
 // TODO

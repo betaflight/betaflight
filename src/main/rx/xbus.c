@@ -162,8 +162,7 @@ static void xBusUnpackRJ01Frame(void)
     //
     // Check we have correct length of message
     //
-    if (xBusFrame[1] != XBUS_RJ01_MESSAGE_LENGTH)
-    {
+    if (xBusFrame[1] != XBUS_RJ01_MESSAGE_LENGTH) {
         // Unknown package as length is not ok
         return;
     }
@@ -175,8 +174,7 @@ static void xBusUnpackRJ01Frame(void)
         outerCrc = xBusRj01CRC8(outerCrc, xBusFrame[i]);
     }
 
-    if (outerCrc != xBusFrame[xBusFrameLength - 1])
-    {
+    if (outerCrc != xBusFrame[xBusFrameLength - 1]) {
         // CRC does not match, skip this frame
         return;
     }
@@ -309,12 +307,12 @@ bool xBusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 #endif
 
     serialPort_t *xBusPort = openSerialPort(portConfig->identifier,
-        FUNCTION_RX_SERIAL,
-        xBusDataReceive,
-        NULL,
-        baudRate,
-        portShared ? MODE_RXTX : MODE_RX,
-        (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0)
+            FUNCTION_RX_SERIAL,
+            xBusDataReceive,
+            NULL,
+            baudRate,
+            portShared ? MODE_RXTX : MODE_RX,
+            (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0)
         );
 
 #ifdef USE_TELEMETRY

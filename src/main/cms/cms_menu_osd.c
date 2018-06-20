@@ -59,8 +59,7 @@ static long menuOsdActiveElemsOnExit(const OSD_Entry *self)
     return 0;
 }
 
-OSD_Entry menuOsdActiveElemsEntries[] =
-{
+OSD_Entry menuOsdActiveElemsEntries[] = {
     {"--- ACTIV ELEM ---", OME_Label,   NULL, NULL, 0},
     {"RSSI",               OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_RSSI_VALUE], 0},
     {"BATTERY VOLTAGE",    OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAIN_BATT_VOLTAGE], 0},
@@ -140,8 +139,7 @@ static long menuAlarmsOnExit(const OSD_Entry *self)
     return 0;
 }
 
-OSD_Entry menuAlarmsEntries[] =
-{
+OSD_Entry menuAlarmsEntries[] = {
     {"--- ALARMS ---", OME_Label, NULL, NULL, 0},
     {"RSSI",     OME_UINT8,  NULL, &(OSD_UINT8_t){&osdConfig_rssi_alarm, 5, 90, 5}, 0},
     {"MAIN BAT", OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_cap_alarm, 50, 30000, 50}, 0},
@@ -189,8 +187,7 @@ static long menuTimersOnExit(const OSD_Entry *self)
 
 static const char * osdTimerPrecisionNames[] = {"SCND", "HDTH"};
 
-OSD_Entry menuTimersEntries[] =
-{
+OSD_Entry menuTimersEntries[] = {
     {"--- TIMERS ---", OME_Label, NULL, NULL, 0},
     {"1 SRC",          OME_TAB,   NULL, &(OSD_TAB_t){&timerSource[OSD_TIMER_1], OSD_TIMER_SRC_COUNT - 1, osdTimerSourceNames}, 0 },
     {"1 PREC",         OME_TAB,   NULL, &(OSD_TAB_t){&timerPrecision[OSD_TIMER_1], OSD_TIMER_PREC_COUNT - 1, osdTimerPrecisionNames}, 0},
@@ -240,11 +237,10 @@ static long cmsx_menuOsdOnExit(const OSD_Entry *self)
     displayPortProfileMax7456Mutable()->whiteBrightness = displayPortProfileMax7456_whiteBrightness;
 #endif
 
-  return 0;
+    return 0;
 }
 
-OSD_Entry cmsx_menuOsdEntries[] =
-{
+OSD_Entry cmsx_menuOsdEntries[] = {
     {"---OSD---",   OME_Label,   NULL,          NULL,                0},
 #ifdef USE_EXTENDED_CMS_MENUS
     {"ACTIVE ELEM", OME_Submenu, cmsMenuChange, &menuOsdActiveElems, 0},

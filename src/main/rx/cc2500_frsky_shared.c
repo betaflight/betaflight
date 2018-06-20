@@ -92,7 +92,8 @@ PG_RESET_TEMPLATE(rxFrSkySpiConfig_t, rxFrSkySpiConfig,
     .bindHopData = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    },
     .rxNum = 0,
     .useExternalAdc = false,
 );
@@ -145,7 +146,8 @@ void frSkySpiBind(void)
     bindRequested = true;
 }
 
-static void initialise() {
+static void initialise()
+{
     cc2500Reset();
     cc2500WriteReg(CC2500_02_IOCFG0,   0x01);
     cc2500WriteReg(CC2500_17_MCSM1,    0x0C);
@@ -202,8 +204,8 @@ static void initialise() {
         break;
     }
 
-    for(unsigned c = 0;c < 0xFF; c++)
-    { //calibrate all channels
+    for(unsigned c = 0; c < 0xFF; c++) {
+        //calibrate all channels
         cc2500Strobe(CC2500_SIDLE);
         cc2500WriteReg(CC2500_0A_CHANNR, c);
         cc2500Strobe(CC2500_SCAL);
@@ -415,7 +417,7 @@ rx_spi_received_e frSkySpiDataReceived(uint8_t *packet)
 
         break;
     case STATE_BIND_TUNING:
-       if (tuneRx(packet)) {
+        if (tuneRx(packet)) {
             initGetBind();
             initialiseData(1);
 
@@ -478,11 +480,11 @@ void nextChannel(uint8_t skip)
     }
     cc2500Strobe(CC2500_SIDLE);
     cc2500WriteReg(CC2500_23_FSCAL3,
-                    calData[rxFrSkySpiConfig()->bindHopData[channr]][0]);
+        calData[rxFrSkySpiConfig()->bindHopData[channr]][0]);
     cc2500WriteReg(CC2500_24_FSCAL2,
-                    calData[rxFrSkySpiConfig()->bindHopData[channr]][1]);
+        calData[rxFrSkySpiConfig()->bindHopData[channr]][1]);
     cc2500WriteReg(CC2500_25_FSCAL1,
-                    calData[rxFrSkySpiConfig()->bindHopData[channr]][2]);
+        calData[rxFrSkySpiConfig()->bindHopData[channr]][2]);
     cc2500WriteReg(CC2500_0A_CHANNR, rxFrSkySpiConfig()->bindHopData[channr]);
     if (spiProtocol == RX_SPI_FRSKY_D) {
         cc2500Strobe(CC2500_SFRX);

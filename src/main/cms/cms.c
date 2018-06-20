@@ -306,11 +306,11 @@ static void cmsPadLeftToSize(char *buf, int size)
     int len = strlen(buf);
 
     for (i = size - 1, j = size - len ; i - j >= 0 ; i--) {
-      buf[i] = buf[i - j];
+        buf[i] = buf[i - j];
     }
 
     for ( ; i >= 0 ; i--) {
-      buf[i] = ' ';
+        buf[i] = ' ';
     }
 
     buf[size] = 0;
@@ -322,9 +322,9 @@ static void cmsPadToSize(char *buf, int size)
     buf[size] = 0x00,
 
 #ifdef CMS_OSD_RIGHT_ALIGNED_VALUES
-    cmsPadLeftToSize(buf, size);
+        cmsPadLeftToSize(buf, size);
 #else
-    smallScreen ? cmsPadLeftToSize(buf, size) : cmsPadRightToSize(buf, size);
+        smallScreen ? cmsPadLeftToSize(buf, size) : cmsPadRightToSize(buf, size);
 #endif
 }
 
@@ -345,8 +345,8 @@ static int cmsDrawMenuItemValue(displayPort_t *pDisplay, char *buff, uint8_t row
 
 static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
 {
-    #define CMS_DRAW_BUFFER_LEN 12
-    #define CMS_NUM_FIELD_LEN 5
+#define CMS_DRAW_BUFFER_LEN 12
+#define CMS_NUM_FIELD_LEN 5
 
     char buff[CMS_DRAW_BUFFER_LEN +1]; // Make room for null terminator.
     int cnt = 0;
@@ -388,9 +388,9 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
     case OME_Bool:
         if (IS_PRINTVALUE(p) && p->data) {
             if (*((uint8_t *)(p->data))) {
-              strcpy(buff, "YES");
+                strcpy(buff, "YES");
             } else {
-              strcpy(buff, "NO ");
+                strcpy(buff, "NO ");
             }
 
             cnt = cmsDrawMenuItemValue(pDisplay, buff, row, 3);
@@ -416,7 +416,7 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
             if (VISIBLE(*val)) {
                 strcpy(buff, "YES");
             } else {
-              strcpy(buff, "NO ");
+                strcpy(buff, "NO ");
             }
             cnt = cmsDrawMenuItemValue(pDisplay, buff, row, 3);
             CLR_PRINTVALUE(p);
@@ -483,7 +483,7 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
         break;
 
     case OME_MENU:
-        // Fall through
+    // Fall through
     default:
 #ifdef CMS_MENU_DEBUG
         // Shouldn't happen. Notify creator of this menu content
@@ -566,10 +566,10 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
                 return;
         }
 
-    // Print values
+        // Print values
 
-    // XXX Polled values at latter positions in the list may not be
-    // XXX printed if not enough room in the middle of the list.
+        // XXX Polled values at latter positions in the list may not be
+        // XXX printed if not enough room in the middle of the list.
 
         if (IS_PRINTVALUE(p)) {
             room -= cmsDrawMenuEntry(pDisplay, p, top + i * linesPerMenuItem);
@@ -668,7 +668,9 @@ void cmsMenuOpen(void)
         if (!pCurrentDisplay)
             return;
         cmsInMenu = true;
-        currentCtx = (cmsCtx_t){ &menuMain, 0, 0 };
+        currentCtx = (cmsCtx_t) {
+            &menuMain, 0, 0
+        };
         setArmingDisabled(ARMING_DISABLED_CMS_MENU);
     } else {
         // Switch display
@@ -686,21 +688,21 @@ void cmsMenuOpen(void)
     displayGrab(pCurrentDisplay); // grab the display for use by the CMS
 
     if ( pCurrentDisplay->cols < NORMAL_SCREEN_MIN_COLS) {
-      smallScreen       = true;
-      linesPerMenuItem  = 2;
-      leftMenuColumn    = 0;
-      rightMenuColumn   = pCurrentDisplay->cols;
-      maxMenuItems      = (pCurrentDisplay->rows) / linesPerMenuItem;
+        smallScreen       = true;
+        linesPerMenuItem  = 2;
+        leftMenuColumn    = 0;
+        rightMenuColumn   = pCurrentDisplay->cols;
+        maxMenuItems      = (pCurrentDisplay->rows) / linesPerMenuItem;
     } else {
-      smallScreen       = false;
-      linesPerMenuItem  = 1;
-      leftMenuColumn    = 2;
+        smallScreen       = false;
+        linesPerMenuItem  = 1;
+        leftMenuColumn    = 2;
 #ifdef CMS_OSD_RIGHT_ALIGNED_VALUES
-      rightMenuColumn   = pCurrentDisplay->cols - 2;
+        rightMenuColumn   = pCurrentDisplay->cols - 2;
 #else
-      rightMenuColumn   = pCurrentDisplay->cols - CMS_DRAW_BUFFER_LEN;
+        rightMenuColumn   = pCurrentDisplay->cols - CMS_DRAW_BUFFER_LEN;
 #endif
-      maxMenuItems      = pCurrentDisplay->rows - 2;
+        maxMenuItems      = pCurrentDisplay->rows - 2;
     }
 
     cmsMenuChange(pCurrentDisplay, currentCtx.menu);
@@ -822,161 +824,157 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
     p = pageTop + currentCtx.cursorRow;
 
     switch (p->type) {
-        case OME_Submenu:
-            if (key == KEY_RIGHT) {
-                cmsMenuChange(pDisplay, p->data);
-                res = BUTTON_PAUSE;
-            }
-            break;
-
-        case OME_Funcall:;
-            long retval;
-            if (p->func && key == KEY_RIGHT) {
-                retval = p->func(pDisplay, p->data);
-                if (retval == MENU_CHAIN_BACK)
-                    cmsMenuBack(pDisplay);
-                res = BUTTON_PAUSE;
-            }
-            break;
-
-        case OME_OSD_Exit:
-            if (p->func && key == KEY_RIGHT) {
-                p->func(pDisplay, p->data);
-                res = BUTTON_PAUSE;
-            }
-            break;
-
-        case OME_Back:
-            cmsMenuBack(pDisplay);
+    case OME_Submenu:
+        if (key == KEY_RIGHT) {
+            cmsMenuChange(pDisplay, p->data);
             res = BUTTON_PAUSE;
-            break;
+        }
+        break;
 
-        case OME_Bool:
-            if (p->data) {
-                uint8_t *val = p->data;
-                if (key == KEY_RIGHT)
-                    *val = 1;
-                else
-                    *val = 0;
-                SET_PRINTVALUE(p);
-            }
-            break;
+    case OME_Funcall:
+        ;
+        long retval;
+        if (p->func && key == KEY_RIGHT) {
+            retval = p->func(pDisplay, p->data);
+            if (retval == MENU_CHAIN_BACK)
+                cmsMenuBack(pDisplay);
+            res = BUTTON_PAUSE;
+        }
+        break;
+
+    case OME_OSD_Exit:
+        if (p->func && key == KEY_RIGHT) {
+            p->func(pDisplay, p->data);
+            res = BUTTON_PAUSE;
+        }
+        break;
+
+    case OME_Back:
+        cmsMenuBack(pDisplay);
+        res = BUTTON_PAUSE;
+        break;
+
+    case OME_Bool:
+        if (p->data) {
+            uint8_t *val = p->data;
+            if (key == KEY_RIGHT)
+                *val = 1;
+            else
+                *val = 0;
+            SET_PRINTVALUE(p);
+        }
+        break;
 
 #ifdef USE_OSD
-        case OME_VISIBLE:
-            if (p->data) {
-                uint16_t *val = (uint16_t *)p->data;
+    case OME_VISIBLE:
+        if (p->data) {
+            uint16_t *val = (uint16_t *)p->data;
 
-                if (key == KEY_RIGHT)
-                    *val |= VISIBLE_FLAG;
-                else
-                    *val %= ~VISIBLE_FLAG;
-                SET_PRINTVALUE(p);
-            }
-            break;
+            if (key == KEY_RIGHT)
+                *val |= VISIBLE_FLAG;
+            else
+                *val %= ~VISIBLE_FLAG;
+            SET_PRINTVALUE(p);
+        }
+        break;
 #endif
 
-        case OME_UINT8:
-        case OME_FLOAT:
-            if (p->data) {
-                OSD_UINT8_t *ptr = p->data;
-                if (key == KEY_RIGHT) {
-                    if (*ptr->val < ptr->max)
-                        *ptr->val += ptr->step;
-                }
-                else {
-                    if (*ptr->val > ptr->min)
-                        *ptr->val -= ptr->step;
-                }
-                SET_PRINTVALUE(p);
-                if (p->func) {
-                    p->func(pDisplay, p);
-                }
+    case OME_UINT8:
+    case OME_FLOAT:
+        if (p->data) {
+            OSD_UINT8_t *ptr = p->data;
+            if (key == KEY_RIGHT) {
+                if (*ptr->val < ptr->max)
+                    *ptr->val += ptr->step;
+            } else {
+                if (*ptr->val > ptr->min)
+                    *ptr->val -= ptr->step;
             }
-            break;
-
-        case OME_TAB:
-            if (p->type == OME_TAB) {
-                OSD_TAB_t *ptr = p->data;
-
-                if (key == KEY_RIGHT) {
-                    if (*ptr->val < ptr->max)
-                        *ptr->val += 1;
-                }
-                else {
-                    if (*ptr->val > 0)
-                        *ptr->val -= 1;
-                }
-                if (p->func)
-                    p->func(pDisplay, p->data);
-                SET_PRINTVALUE(p);
+            SET_PRINTVALUE(p);
+            if (p->func) {
+                p->func(pDisplay, p);
             }
-            break;
+        }
+        break;
 
-        case OME_INT8:
-            if (p->data) {
-                OSD_INT8_t *ptr = p->data;
-                if (key == KEY_RIGHT) {
-                    if (*ptr->val < ptr->max)
-                        *ptr->val += ptr->step;
-                }
-                else {
-                    if (*ptr->val > ptr->min)
-                        *ptr->val -= ptr->step;
-                }
-                SET_PRINTVALUE(p);
-                if (p->func) {
-                    p->func(pDisplay, p);
-                }
+    case OME_TAB:
+        if (p->type == OME_TAB) {
+            OSD_TAB_t *ptr = p->data;
+
+            if (key == KEY_RIGHT) {
+                if (*ptr->val < ptr->max)
+                    *ptr->val += 1;
+            } else {
+                if (*ptr->val > 0)
+                    *ptr->val -= 1;
             }
-            break;
+            if (p->func)
+                p->func(pDisplay, p->data);
+            SET_PRINTVALUE(p);
+        }
+        break;
 
-        case OME_UINT16:
-            if (p->data) {
-                OSD_UINT16_t *ptr = p->data;
-                if (key == KEY_RIGHT) {
-                    if (*ptr->val < ptr->max)
-                        *ptr->val += ptr->step;
-                }
-                else {
-                    if (*ptr->val > ptr->min)
-                        *ptr->val -= ptr->step;
-                }
-                SET_PRINTVALUE(p);
-                if (p->func) {
-                    p->func(pDisplay, p);
-                }
+    case OME_INT8:
+        if (p->data) {
+            OSD_INT8_t *ptr = p->data;
+            if (key == KEY_RIGHT) {
+                if (*ptr->val < ptr->max)
+                    *ptr->val += ptr->step;
+            } else {
+                if (*ptr->val > ptr->min)
+                    *ptr->val -= ptr->step;
             }
-            break;
-
-        case OME_INT16:
-            if (p->data) {
-                OSD_INT16_t *ptr = p->data;
-                if (key == KEY_RIGHT) {
-                    if (*ptr->val < ptr->max)
-                        *ptr->val += ptr->step;
-                }
-                else {
-                    if (*ptr->val > ptr->min)
-                        *ptr->val -= ptr->step;
-                }
-                SET_PRINTVALUE(p);
-                if (p->func) {
-                    p->func(pDisplay, p);
-                }
+            SET_PRINTVALUE(p);
+            if (p->func) {
+                p->func(pDisplay, p);
             }
-            break;
+        }
+        break;
 
-        case OME_String:
-            break;
+    case OME_UINT16:
+        if (p->data) {
+            OSD_UINT16_t *ptr = p->data;
+            if (key == KEY_RIGHT) {
+                if (*ptr->val < ptr->max)
+                    *ptr->val += ptr->step;
+            } else {
+                if (*ptr->val > ptr->min)
+                    *ptr->val -= ptr->step;
+            }
+            SET_PRINTVALUE(p);
+            if (p->func) {
+                p->func(pDisplay, p);
+            }
+        }
+        break;
 
-        case OME_Label:
-        case OME_END:
-            break;
+    case OME_INT16:
+        if (p->data) {
+            OSD_INT16_t *ptr = p->data;
+            if (key == KEY_RIGHT) {
+                if (*ptr->val < ptr->max)
+                    *ptr->val += ptr->step;
+            } else {
+                if (*ptr->val > ptr->min)
+                    *ptr->val -= ptr->step;
+            }
+            SET_PRINTVALUE(p);
+            if (p->func) {
+                p->func(pDisplay, p);
+            }
+        }
+        break;
 
-        case OME_MENU:
-            // Shouldn't happen
-            break;
+    case OME_String:
+        break;
+
+    case OME_Label:
+    case OME_END:
+        break;
+
+    case OME_MENU:
+        // Shouldn't happen
+        break;
     }
     return res;
 }
@@ -1030,21 +1028,15 @@ void cmsUpdate(uint32_t currentTimeUs)
 
         if (IS_MID(THROTTLE) && IS_LO(YAW) && IS_HI(PITCH) && !ARMING_FLAG(ARMED)) {
             key = KEY_MENU;
-        }
-        else if (IS_HI(PITCH)) {
+        } else if (IS_HI(PITCH)) {
             key = KEY_UP;
-        }
-        else if (IS_LO(PITCH)) {
+        } else if (IS_LO(PITCH)) {
             key = KEY_DOWN;
-        }
-        else if (IS_LO(ROLL)) {
+        } else if (IS_LO(ROLL)) {
             key = KEY_LEFT;
-        }
-        else if (IS_HI(ROLL)) {
+        } else if (IS_HI(ROLL)) {
             key = KEY_RIGHT;
-        }
-        else if (IS_HI(YAW) || IS_LO(YAW))
-        {
+        } else if (IS_HI(YAW) || IS_LO(YAW)) {
             key = KEY_ESC;
         }
 

@@ -67,8 +67,7 @@ static long cmsx_menuRcConfirmBack(const OSD_Entry *self)
 //
 // RC preview
 //
-static OSD_Entry cmsx_menuRcEntries[] =
-{
+static OSD_Entry cmsx_menuRcEntries[] = {
     { "-- RC PREV --", OME_Label, NULL, NULL, 0},
 
     { "ROLL",  OME_INT16, NULL, &(OSD_INT16_t){ &rcData[ROLL],     1, 2500, 0 }, DYNAMIC },
@@ -119,8 +118,7 @@ static long cmsx_menuMiscOnExit(const OSD_Entry *self)
     return 0;
 }
 
-static OSD_Entry menuMiscEntries[]=
-{
+static OSD_Entry menuMiscEntries[]= {
     { "-- MISC --", OME_Label, NULL, NULL, 0 },
 
     { "MIN THR",      OME_UINT16,  NULL,          &(OSD_UINT16_t){ &motorConfig_minthrottle,              1000, 2000, 1 },      0 },

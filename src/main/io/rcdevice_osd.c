@@ -44,10 +44,10 @@ static uint16_t maxScreenSize = VIDEO_BUFFER_CHARS_PAL;
 #ifdef USE_PARTICLE_DRAW
 #define MAX_CHARS2UPDATE 20
 static uint8_t screenBuffer[VIDEO_BUFFER_CHARS_PAL + 40]; // For faster writes
-                                                          // we use memcpy so we
-                                                          // need some space to
-                                                          // don't overwrite
-                                                          // buffer
+// we use memcpy so we
+// need some space to
+// don't overwrite
+// buffer
 static uint8_t shadowBuffer[VIDEO_BUFFER_CHARS_PAL];
 static bool rcdeviceOSDLock = false;
 #endif

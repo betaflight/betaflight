@@ -144,10 +144,10 @@ static void rtc6705Transfer(uint32_t command)
     delayMicroseconds(2);
 }
 
- /**
- * Set a frequency in Mhz
- * Formula derived from datasheet
- */
+/**
+* Set a frequency in Mhz
+* Formula derived from datasheet
+*/
 void rtc6705SetFrequency(uint16_t frequency)
 {
     frequency = constrain(frequency, VTX_RTC6705_FREQ_MIN, VTX_RTC6705_FREQ_MAX);

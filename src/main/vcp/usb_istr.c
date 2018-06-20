@@ -44,8 +44,7 @@ __IO uint32_t wCNTR = 0;
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 /* function pointers to non-control endpoints service routines */
-void (*pEpInt_IN[7])(void) =
-{
+void (*pEpInt_IN[7])(void) = {
     EP1_IN_Callback,
     EP2_IN_Callback,
     EP3_IN_Callback,
@@ -55,8 +54,7 @@ void (*pEpInt_IN[7])(void) =
     EP7_IN_Callback,
 };
 
-void (*pEpInt_OUT[7])(void) =
-{
+void (*pEpInt_OUT[7])(void) = {
     EP1_OUT_Callback,
     EP2_OUT_Callback,
     EP3_OUT_Callback,
@@ -111,8 +109,7 @@ void USB_Istr(void)
 #endif
     /*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*/
 #if (IMR_MSK & ISTR_DOVR)
-    if (wIstr & ISTR_DOVR & wInterrupt_Mask)
-    {
+    if (wIstr & ISTR_DOVR & wInterrupt_Mask) {
         _SetISTR((uint16_t)CLR_DOVR);
 #ifdef DOVR_CALLBACK
         DOVR_Callback();
@@ -140,16 +137,12 @@ void USB_Istr(void)
 #endif
     /*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*/
 #if (IMR_MSK & ISTR_SUSP)
-    if (wIstr & ISTR_SUSP & wInterrupt_Mask)
-    {
+    if (wIstr & ISTR_SUSP & wInterrupt_Mask) {
 
         /* check if SUSPEND is possible */
-        if (fSuspendEnabled)
-        {
+        if (fSuspendEnabled) {
             Suspend();
-        }
-        else
-        {
+        } else {
             /* if not possible then resume after xx ms */
             Resume(RESUME_LATER);
         }
@@ -163,26 +156,23 @@ void USB_Istr(void)
     /*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*/
 
 #if (IMR_MSK & ISTR_ESOF)
-    if (wIstr & ISTR_ESOF & wInterrupt_Mask)
-    {
+    if (wIstr & ISTR_ESOF & wInterrupt_Mask) {
         /* clear ESOF flag in ISTR */
         _SetISTR((uint16_t)CLR_ESOF);
 
-        if ((_GetFNR()&FNR_RXDP)!=0)
-        {
+        if ((_GetFNR()&FNR_RXDP)!=0) {
             /* increment ESOF counter */
             esof_counter ++;
 
             /* test if we enter in ESOF more than 3 times with FSUSP =0 and RXDP =1=>> possible missing SUSP flag*/
-            if ((esof_counter >3)&&((_GetCNTR()&CNTR_FSUSP)==0))
-            {
+            if ((esof_counter >3)&&((_GetCNTR()&CNTR_FSUSP)==0)) {
                 /* this a sequence to apply a force RESET*/
 
                 /*Store CNTR value */
                 wCNTR = _GetCNTR();
 
                 /*Store endpoints registers status */
-                for (i=0;i<8;i++) EP[i] = _GetENDPOINT(i);
+                for (i=0; i<8; i++) EP[i] = _GetENDPOINT(i);
 
                 /*apply FRES */
                 wCNTR|=CNTR_FRES;
@@ -198,14 +188,12 @@ void USB_Istr(void)
                 _SetISTR((uint16_t)CLR_RESET);
 
                 /*restore Enpoints*/
-                for (i=0;i<8;i++)
-                _SetENDPOINT(i, EP[i]);
+                for (i=0; i<8; i++)
+                    _SetENDPOINT(i, EP[i]);
 
                 esof_counter = 0;
             }
-        }
-        else
-        {
+        } else {
             esof_counter = 0;
         }
 

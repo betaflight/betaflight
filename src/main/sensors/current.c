@@ -313,8 +313,7 @@ void currentMeterRead(currentMeterId_e id, currentMeter_t *meter)
 #ifdef USE_ESC_SENSOR
     else if (id == CURRENT_METER_ID_ESC_COMBINED_1) {
         currentMeterESCReadCombined(meter);
-    }
-    else if (id >= CURRENT_METER_ID_ESC_MOTOR_1 && id <= CURRENT_METER_ID_ESC_MOTOR_20 ) {
+    } else if (id >= CURRENT_METER_ID_ESC_MOTOR_1 && id <= CURRENT_METER_ID_ESC_MOTOR_20 ) {
         int motor = id - CURRENT_METER_ID_ESC_MOTOR_1;
         currentMeterESCReadMotor(motor, meter);
     }

@@ -43,7 +43,7 @@ boxBitmask_t rcModeActivationMask; // one bit per mode defined in boxId_e
 static bool modeChangesDisabled = false;
 
 PG_REGISTER_ARRAY(modeActivationCondition_t, MAX_MODE_ACTIVATION_CONDITION_COUNT, modeActivationConditions,
-                  PG_MODE_ACTIVATION_PROFILE, 1);
+    PG_MODE_ACTIVATION_PROFILE, 1);
 
 bool IS_RC_MODE_ACTIVE(boxId_e boxId)
 {
@@ -55,19 +55,23 @@ void rcModeUpdate(boxBitmask_t *newState)
     rcModeActivationMask = *newState;
 }
 
-void preventModeChanges(void) {
+void preventModeChanges(void)
+{
     modeChangesDisabled = true;
 }
 
-bool isAirmodeActive(void) {
+bool isAirmodeActive(void)
+{
     return (IS_RC_MODE_ACTIVE(BOXAIRMODE) || feature(FEATURE_AIRMODE));
 }
 
-bool isAntiGravityModeActive(void) {
+bool isAntiGravityModeActive(void)
+{
     return (IS_RC_MODE_ACTIVE(BOXANTIGRAVITY) || feature(FEATURE_ANTI_GRAVITY));
 }
 
-bool isRangeActive(uint8_t auxChannelIndex, const channelRange_t *range) {
+bool isRangeActive(uint8_t auxChannelIndex, const channelRange_t *range)
+{
     if (!IS_RANGE_USABLE(range)) {
         return false;
     }

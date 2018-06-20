@@ -924,7 +924,8 @@ static void stopInTestMode(void)
  * Of course, after the 5 seconds and shutdown of the logger, the system will be re-enabled to allow the
  * test mode to trigger again; its just that the data will be in a second, third, fourth etc log file.
  */
-static bool inMotorTestMode(void) {
+static bool inMotorTestMode(void)
+{
     static uint32_t resetTime = 0;
 
     if (!ARMING_FLAG(ARMED) && areMotorsRunning()) {
@@ -1055,7 +1056,7 @@ static void loadMainState(timeUs_t currentTimeUs)
  * Returns true if there is still header left to transmit (so call again to continue transmission).
  */
 static bool sendFieldDefinition(char mainFrameChar, char deltaFrameChar, const void *fieldDefinitions,
-        const void *secondFieldDefinition, int fieldCount, const uint8_t *conditions, const uint8_t *secondCondition)
+    const void *secondFieldDefinition, int fieldCount, const uint8_t *conditions, const uint8_t *secondCondition)
 {
     const blackboxFieldDefinition_t *def;
     unsigned int headerCount;
@@ -1154,15 +1155,15 @@ static bool sendFieldDefinition(char mainFrameChar, char deltaFrameChar, const v
 // Buf must be at least FORMATTED_DATE_TIME_BUFSIZE
 STATIC_UNIT_TESTED char *blackboxGetStartDateTime(char *buf)
 {
-    #ifdef USE_RTC_TIME
+#ifdef USE_RTC_TIME
     dateTime_t dt;
     // rtcGetDateTime will fill dt with 0000-01-01T00:00:00
     // when time is not known.
     rtcGetDateTime(&dt);
     dateTimeFormatLocal(buf, &dt);
-    #else
+#else
     buf = "0000-01-01T00:00:00.000";
-    #endif
+#endif
 
     return buf;
 }
@@ -1210,23 +1211,23 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("acc_1G", "%u",                          acc.dev.acc_1G);
 
         BLACKBOX_PRINT_HEADER_LINE_CUSTOM(
-            if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_VBAT)) {
-                blackboxPrintfHeaderLine("vbat_scale", "%u", voltageSensorADCConfig(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale);
-            } else {
-                xmitState.headerIndex += 2; // Skip the next two vbat fields too
-            }
-            );
+        if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_VBAT)) {
+        blackboxPrintfHeaderLine("vbat_scale", "%u", voltageSensorADCConfig(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale);
+        } else {
+            xmitState.headerIndex += 2; // Skip the next two vbat fields too
+        }
+        );
 
         BLACKBOX_PRINT_HEADER_LINE("vbatcellvoltage", "%u,%u,%u",           batteryConfig()->vbatmincellvoltage,
-                                                                            batteryConfig()->vbatwarningcellvoltage,
-                                                                            batteryConfig()->vbatmaxcellvoltage);
+            batteryConfig()->vbatwarningcellvoltage,
+            batteryConfig()->vbatmaxcellvoltage);
         BLACKBOX_PRINT_HEADER_LINE("vbatref", "%u",                         vbatReference);
 
         BLACKBOX_PRINT_HEADER_LINE_CUSTOM(
-            if (batteryConfig()->currentMeterSource == CURRENT_METER_ADC) {
-                blackboxPrintfHeaderLine("currentSensor", "%d,%d",currentSensorADCConfig()->offset, currentSensorADCConfig()->scale);
-            }
-            );
+        if (batteryConfig()->currentMeterSource == CURRENT_METER_ADC) {
+        blackboxPrintfHeaderLine("currentSensor", "%d,%d",currentSensorADCConfig()->offset, currentSensorADCConfig()->scale);
+        }
+        );
 
         BLACKBOX_PRINT_HEADER_LINE("looptime", "%d",                        gyro.targetLooptime);
         BLACKBOX_PRINT_HEADER_LINE("gyro_sync_denom", "%d",                 gyroConfig()->gyro_sync_denom);
@@ -1236,42 +1237,42 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("tpa_rate", "%d",                        currentControlRateProfile->dynThrPID);
         BLACKBOX_PRINT_HEADER_LINE("tpa_breakpoint", "%d",                  currentControlRateProfile->tpa_breakpoint);
         BLACKBOX_PRINT_HEADER_LINE("rc_rates", "%d,%d,%d",                  currentControlRateProfile->rcRates[ROLL],
-                                                                            currentControlRateProfile->rcRates[PITCH],
-                                                                            currentControlRateProfile->rcRates[YAW]);
+            currentControlRateProfile->rcRates[PITCH],
+            currentControlRateProfile->rcRates[YAW]);
         BLACKBOX_PRINT_HEADER_LINE("rc_expo", "%d,%d,%d",                   currentControlRateProfile->rcExpo[ROLL],
-                                                                            currentControlRateProfile->rcExpo[PITCH],
-                                                                            currentControlRateProfile->rcExpo[YAW]);
+            currentControlRateProfile->rcExpo[PITCH],
+            currentControlRateProfile->rcExpo[YAW]);
         BLACKBOX_PRINT_HEADER_LINE("rates", "%d,%d,%d",                     currentControlRateProfile->rates[ROLL],
-                                                                            currentControlRateProfile->rates[PITCH],
-                                                                            currentControlRateProfile->rates[YAW]);
+            currentControlRateProfile->rates[PITCH],
+            currentControlRateProfile->rates[YAW]);
         BLACKBOX_PRINT_HEADER_LINE("rollPID", "%d,%d,%d",                   currentPidProfile->pid[PID_ROLL].P,
-                                                                            currentPidProfile->pid[PID_ROLL].I,
-                                                                            currentPidProfile->pid[PID_ROLL].D);
+            currentPidProfile->pid[PID_ROLL].I,
+            currentPidProfile->pid[PID_ROLL].D);
         BLACKBOX_PRINT_HEADER_LINE("pitchPID", "%d,%d,%d",                  currentPidProfile->pid[PID_PITCH].P,
-                                                                            currentPidProfile->pid[PID_PITCH].I,
-                                                                            currentPidProfile->pid[PID_PITCH].D);
+            currentPidProfile->pid[PID_PITCH].I,
+            currentPidProfile->pid[PID_PITCH].D);
         BLACKBOX_PRINT_HEADER_LINE("yawPID", "%d,%d,%d",                    currentPidProfile->pid[PID_YAW].P,
-                                                                            currentPidProfile->pid[PID_YAW].I,
-                                                                            currentPidProfile->pid[PID_YAW].D);
+            currentPidProfile->pid[PID_YAW].I,
+            currentPidProfile->pid[PID_YAW].D);
         BLACKBOX_PRINT_HEADER_LINE("altPID", "%d,%d,%d",                    currentPidProfile->pid[PID_ALT].P,
-                                                                            currentPidProfile->pid[PID_ALT].I,
-                                                                            currentPidProfile->pid[PID_ALT].D);
+            currentPidProfile->pid[PID_ALT].I,
+            currentPidProfile->pid[PID_ALT].D);
         BLACKBOX_PRINT_HEADER_LINE("posPID", "%d,%d,%d",                    currentPidProfile->pid[PID_POS].P,
-                                                                            currentPidProfile->pid[PID_POS].I,
-                                                                            currentPidProfile->pid[PID_POS].D);
+            currentPidProfile->pid[PID_POS].I,
+            currentPidProfile->pid[PID_POS].D);
         BLACKBOX_PRINT_HEADER_LINE("posrPID", "%d,%d,%d",                   currentPidProfile->pid[PID_POSR].P,
-                                                                            currentPidProfile->pid[PID_POSR].I,
-                                                                            currentPidProfile->pid[PID_POSR].D);
+            currentPidProfile->pid[PID_POSR].I,
+            currentPidProfile->pid[PID_POSR].D);
         BLACKBOX_PRINT_HEADER_LINE("navrPID", "%d,%d,%d",                   currentPidProfile->pid[PID_NAVR].P,
-                                                                            currentPidProfile->pid[PID_NAVR].I,
-                                                                            currentPidProfile->pid[PID_NAVR].D);
+            currentPidProfile->pid[PID_NAVR].I,
+            currentPidProfile->pid[PID_NAVR].D);
         BLACKBOX_PRINT_HEADER_LINE("levelPID", "%d,%d,%d",                  currentPidProfile->pid[PID_LEVEL].P,
-                                                                            currentPidProfile->pid[PID_LEVEL].I,
-                                                                            currentPidProfile->pid[PID_LEVEL].D);
+            currentPidProfile->pid[PID_LEVEL].I,
+            currentPidProfile->pid[PID_LEVEL].D);
         BLACKBOX_PRINT_HEADER_LINE("magPID", "%d",                          currentPidProfile->pid[PID_MAG].P);
         BLACKBOX_PRINT_HEADER_LINE("velPID", "%d,%d,%d",                    currentPidProfile->pid[PID_VEL].P,
-                                                                            currentPidProfile->pid[PID_VEL].I,
-                                                                            currentPidProfile->pid[PID_VEL].D);
+            currentPidProfile->pid[PID_VEL].I,
+            currentPidProfile->pid[PID_VEL].D);
         BLACKBOX_PRINT_HEADER_LINE("dterm_filter_type", "%d",               currentPidProfile->dterm_filter_type);
         BLACKBOX_PRINT_HEADER_LINE("dterm_lowpass_hz", "%d",                currentPidProfile->dterm_lowpass_hz);
         BLACKBOX_PRINT_HEADER_LINE("dterm_lowpass2_hz", "%d",               currentPidProfile->dterm_lowpass2_hz);
@@ -1305,9 +1306,9 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("gyro_lowpass2_type", "%d",              gyroConfig()->gyro_lowpass2_type);
         BLACKBOX_PRINT_HEADER_LINE("gyro_lowpass2_hz", "%d",                gyroConfig()->gyro_lowpass2_hz);
         BLACKBOX_PRINT_HEADER_LINE("gyro_notch_hz", "%d,%d",                gyroConfig()->gyro_soft_notch_hz_1,
-                                                                            gyroConfig()->gyro_soft_notch_hz_2);
+            gyroConfig()->gyro_soft_notch_hz_2);
         BLACKBOX_PRINT_HEADER_LINE("gyro_notch_cutoff", "%d,%d",            gyroConfig()->gyro_soft_notch_cutoff_1,
-                                                                            gyroConfig()->gyro_soft_notch_cutoff_2);
+            gyroConfig()->gyro_soft_notch_cutoff_2);
         BLACKBOX_PRINT_HEADER_LINE("acc_lpf_hz", "%d",                 (int)(accelerometerConfig()->acc_lpf_hz * 100.0f));
         BLACKBOX_PRINT_HEADER_LINE("acc_hardware", "%d",                    accelerometerConfig()->acc_hardware);
         BLACKBOX_PRINT_HEADER_LINE("baro_hardware", "%d",                   barometerConfig()->baro_hardware);
@@ -1328,16 +1329,16 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_type", "%d",               rxConfig()->rc_smoothing_type);
         BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_debug_axis", "%d",         rxConfig()->rc_smoothing_debug_axis);
         BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_cutoffs", "%d, %d",        rxConfig()->rc_smoothing_input_cutoff,
-                                                                            rxConfig()->rc_smoothing_derivative_cutoff);
+            rxConfig()->rc_smoothing_derivative_cutoff);
         BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_filter_type", "%d, %d",    rxConfig()->rc_smoothing_input_type,
-                                                                            rxConfig()->rc_smoothing_derivative_type);
+            rxConfig()->rc_smoothing_derivative_type);
         BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_active_cutoffs", "%d, %d", rcSmoothingGetValue(RC_SMOOTHING_VALUE_INPUT_ACTIVE),
-                                                                            rcSmoothingGetValue(RC_SMOOTHING_VALUE_DERIVATIVE_ACTIVE));
+            rcSmoothingGetValue(RC_SMOOTHING_VALUE_DERIVATIVE_ACTIVE));
 #endif // USE_RC_SMOOTHING_FILTER
 
 
-        default:
-            return true;
+    default:
+        return true;
     }
 
     xmitState.headerIndex++;
@@ -1491,8 +1492,8 @@ STATIC_UNIT_TESTED void blackboxLogIteration(timeUs_t currentTimeUs)
                 writeGPSHomeFrame();
                 writeGPSFrame(currentTimeUs);
             } else if (gpsSol.numSat != gpsHistory.GPS_numSat
-                    || gpsSol.llh.lat != gpsHistory.GPS_coord[LAT]
-                    || gpsSol.llh.lon != gpsHistory.GPS_coord[LON]) {
+                || gpsSol.llh.lat != gpsHistory.GPS_coord[LAT]
+                || gpsSol.llh.lon != gpsHistory.GPS_coord[LON]) {
                 //We could check for velocity changes as well but I doubt it changes independent of position
                 writeGPSFrame(currentTimeUs);
             }
@@ -1658,7 +1659,7 @@ void blackboxUpdate(timeUs_t currentTimeUs)
         if (!IS_RC_MODE_ACTIVE(BOXBLACKBOXERASE)) {
             blackboxSetState(BLACKBOX_STATE_STOPPED);
         }
-    break;
+        break;
 #endif
     default:
         break;

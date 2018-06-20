@@ -31,12 +31,14 @@
 
 /* Includes ------------------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
-typedef struct __attribute__ ((packed)) {
+typedef struct __attribute__ ((packed))
+{
     uint32_t bitrate;
     uint8_t format;
     uint8_t paritytype;
     uint8_t datatype;
-} LINE_CODING;
+}
+LINE_CODING;
 
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/

@@ -91,7 +91,7 @@ rescueState_s rescueState;
 void rescueNewGpsData(void)
 {
     if (!ARMING_FLAG(ARMED))
-	GPS_reset_home_position();
+        GPS_reset_home_position();
     newGPSData = true;
 }
 
@@ -261,7 +261,7 @@ void performSanityChecks()
 
     previousTimeUs = currentTimeUs;
 
-     // Stalled movement detection
+    // Stalled movement detection
     static int8_t gsI = 0;
 
     gsI = constrain(gsI + (rescueState.sensor.groundSpeed < 150) ? 1 : -1, -10, 10);

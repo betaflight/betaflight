@@ -195,7 +195,7 @@ bool srxlFrameFlightPackCurrent(sbuf_t *dst, timeUs_t currentTimeUs)
     timeUs_t keepAlive = currentTimeUs - lastTimeSentFPmAh;
 
     if ( (amps != sentAmps) || (mah != sentMah) ||
-         keepAlive > FP_MAH_KEEPALIVE_TIME_OUT ) {
+        keepAlive > FP_MAH_KEEPALIVE_TIME_OUT ) {
         sbufWriteU8(dst, SRXL_FRAMETYPE_TELE_FP_MAH);
         sbufWriteU8(dst, SRXL_FRAMETYPE_SID);
         sbufWriteU16(dst, amps);
@@ -245,10 +245,10 @@ static bool lineSent[SPEKTRUM_SRXL_DEVICE_TEXTGEN_ROWS];
 int spektrumTmTextGenPutChar(uint8_t col, uint8_t row, char c)
 {
     if (row < SPEKTRUM_SRXL_TEXTGEN_BUFFER_ROWS && col < SPEKTRUM_SRXL_TEXTGEN_BUFFER_COLS) {
-      // Only update and force a tm transmision if something has actually changed.
+        // Only update and force a tm transmision if something has actually changed.
         if (srxlTextBuff[row][col] != c) {
-          srxlTextBuff[row][col] = c;
-          lineSent[row] = false;
+            srxlTextBuff[row][col] = c;
+            lineSent[row] = false;
         }
     }
     return 0;
@@ -263,7 +263,7 @@ bool srxlFrameText(sbuf_t *dst, timeUs_t currentTimeUs)
 
     // Skip already sent lines...
     while (lineSent[lineNo] &&
-           lineCount < SPEKTRUM_SRXL_DEVICE_TEXTGEN_ROWS) {
+        lineCount < SPEKTRUM_SRXL_DEVICE_TEXTGEN_ROWS) {
         lineNo = (lineNo + 1) % SPEKTRUM_SRXL_DEVICE_TEXTGEN_ROWS;
         lineCount++;
     }
@@ -294,14 +294,13 @@ static void collectVtxTmData(spektrumVtx_t * vtx)
 
     // Collect all data from VTX, if VTX is ready
     if (vtxDevice == NULL || !(vtxCommonGetBandAndChannel(vtxDevice, &vtx->band, &vtx->channel) &&
-           vtxCommonGetPitMode(vtxDevice, &vtx->pitMode) &&
-           vtxCommonGetPowerIndex(vtxDevice, &vtx->power)) )
-        {
-            vtx->band    = 0;
-            vtx->channel = 0;
-            vtx->power   = 0;
-            vtx->pitMode = 0;
-        }
+            vtxCommonGetPitMode(vtxDevice, &vtx->pitMode) &&
+            vtxCommonGetPowerIndex(vtxDevice, &vtx->power)) ) {
+        vtx->band    = 0;
+        vtx->channel = 0;
+        vtx->power   = 0;
+        vtx->pitMode = 0;
+    }
 
     vtx->powerValue = 0;
 #ifdef USE_SPEKTRUM_REGION_CODES
@@ -313,46 +312,46 @@ static void collectVtxTmData(spektrumVtx_t * vtx)
 
 // Reverse lookup, device power index to Spektrum power range index.
 static void convertVtxPower(spektrumVtx_t * vtx)
-    {
-        uint8_t const * powerIndexTable = NULL;
+{
+    uint8_t const * powerIndexTable = NULL;
 
-        switch (vtxDeviceType) {
+    switch (vtxDeviceType) {
 
 #if defined(USE_VTX_TRAMP)
-        case VTXDEV_TRAMP:
-            powerIndexTable = vtxTrampPi;
-            vtx->powerValue = trampPowerTable[vtx->power -1];      // Lookup the device power value, 0-based table vs 1-based index. Doh.
-            break;
+    case VTXDEV_TRAMP:
+        powerIndexTable = vtxTrampPi;
+        vtx->powerValue = trampPowerTable[vtx->power -1];      // Lookup the device power value, 0-based table vs 1-based index. Doh.
+        break;
 #endif
 #if defined(USE_VTX_SMARTAUDIO)
-        case VTXDEV_SMARTAUDIO:
-            powerIndexTable = vtxSaPi;
-            vtx->powerValue = saPowerTable[vtx->power -1].rfpower;
-            break;
+    case VTXDEV_SMARTAUDIO:
+        powerIndexTable = vtxSaPi;
+        vtx->powerValue = saPowerTable[vtx->power -1].rfpower;
+        break;
 #endif
 #if defined(USE_VTX_RTC6705)
-        case VTXDEV_RTC6705:
-            powerIndexTable = vtxRTC6705Pi;
-            // No power value table available.Hard code some "knowledge" here. Doh.
-            vtx->powerValue = vtx->power == VTX_6705_POWER_200 ? 200 : 25;
-            break;
+    case VTXDEV_RTC6705:
+        powerIndexTable = vtxRTC6705Pi;
+        // No power value table available.Hard code some "knowledge" here. Doh.
+        vtx->powerValue = vtx->power == VTX_6705_POWER_200 ? 200 : 25;
+        break;
 #endif
 
-        case VTXDEV_UNKNOWN:
-        case VTXDEV_UNSUPPORTED:
-        default:
-          break;
+    case VTXDEV_UNKNOWN:
+    case VTXDEV_UNSUPPORTED:
+    default:
+        break;
 
-        }
-
-        if (powerIndexTable != NULL) {
-            for (int i = 0; i < SPEKTRUM_VTX_POWER_COUNT; i++)
-                if (powerIndexTable[i] >= vtx->power) {
-                    vtx->power = i;                                    // Translate device power index to Spektrum power index.
-                    break;
-                }
-        }
     }
+
+    if (powerIndexTable != NULL) {
+        for (int i = 0; i < SPEKTRUM_VTX_POWER_COUNT; i++)
+            if (powerIndexTable[i] >= vtx->power) {
+                vtx->power = i;                                    // Translate device power index to Spektrum power index.
+                break;
+            }
+    }
+}
 
 static void convertVtxTmData(spektrumVtx_t * vtx)
 {
@@ -505,7 +504,7 @@ void initSrxlTelemetry(void)
     // check if there is a serial port open for SRXL telemetry (ie opened by the SRXL RX)
     // and feature is enabled, if so, set SRXL telemetry enabled
     srxlTelemetryEnabled = srxlRxIsActive();
- }
+}
 
 bool checkSrxlTelemetryState(void)
 {

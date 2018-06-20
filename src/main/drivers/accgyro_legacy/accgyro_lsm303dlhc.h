@@ -26,29 +26,29 @@
 
 /* LSM303DLHC ACC struct */
 typedef struct {
-  uint8_t Power_Mode;                         /* Power-down/Normal Mode */
-  uint8_t AccOutput_DataRate;                 /* OUT data rate */
-  uint8_t Axes_Enable;                        /* Axes enable */
-  uint8_t High_Resolution;                    /* High Resolution enabling/disabling */
-  uint8_t BlockData_Update;                   /* Block Data Update */
-  uint8_t Endianness;                         /* Endian Data selection */
-  uint8_t AccFull_Scale;                      /* Full Scale selection */
+    uint8_t Power_Mode;                         /* Power-down/Normal Mode */
+    uint8_t AccOutput_DataRate;                 /* OUT data rate */
+    uint8_t Axes_Enable;                        /* Axes enable */
+    uint8_t High_Resolution;                    /* High Resolution enabling/disabling */
+    uint8_t BlockData_Update;                   /* Block Data Update */
+    uint8_t Endianness;                         /* Endian Data selection */
+    uint8_t AccFull_Scale;                      /* Full Scale selection */
 } LSM303DLHCAcc_InitTypeDef;
 
 /* LSM303DLHC Acc High Pass Filter struct */
 typedef struct {
-  uint8_t HighPassFilter_Mode_Selection;      /* Internal filter mode */
-  uint8_t HighPassFilter_CutOff_Frequency;    /* High pass filter cut-off frequency */
-  uint8_t HighPassFilter_AOI1;                /* HPF_enabling/disabling for AOI function on interrupt 1 */
-  uint8_t HighPassFilter_AOI2;                /* HPF_enabling/disabling for AOI function on interrupt 2 */
+    uint8_t HighPassFilter_Mode_Selection;      /* Internal filter mode */
+    uint8_t HighPassFilter_CutOff_Frequency;    /* High pass filter cut-off frequency */
+    uint8_t HighPassFilter_AOI1;                /* HPF_enabling/disabling for AOI function on interrupt 1 */
+    uint8_t HighPassFilter_AOI2;                /* HPF_enabling/disabling for AOI function on interrupt 2 */
 } LSM303DLHCAcc_FilterConfigTypeDef;
 
 /* LSM303DLHC Mag struct */
 typedef struct {
-  uint8_t Temperature_Sensor;                /* Temperature sensor enable/disable */
-  uint8_t MagOutput_DataRate;                /* OUT data rate */
-  uint8_t Working_Mode;                      /* operating mode */
-  uint8_t MagFull_Scale;                     /* Full Scale selection */
+    uint8_t Temperature_Sensor;                /* Temperature sensor enable/disable */
+    uint8_t MagOutput_DataRate;                /* OUT data rate */
+    uint8_t Working_Mode;                      /* operating mode */
+    uint8_t MagFull_Scale;                     /* Full Scale selection */
 } LSM303DLHCMag_InitTypeDef;
 /**
   * @}

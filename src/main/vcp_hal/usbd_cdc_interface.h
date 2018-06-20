@@ -73,11 +73,12 @@
    command class requests. */
 typedef struct __attribute__ ((packed))
 {
-  uint32_t bitrate;
-  uint8_t  format;
-  uint8_t  paritytype;
-  uint8_t  datatype;
-} LINE_CODING;
+    uint32_t bitrate;
+    uint8_t  format;
+    uint8_t  paritytype;
+    uint8_t  datatype;
+}
+LINE_CODING;
 
 extern USBD_CDC_ItfTypeDef  USBD_CDC_fops;
 

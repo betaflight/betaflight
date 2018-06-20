@@ -75,16 +75,16 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 #endif
 
 #ifdef USE_GPS
-if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
-    gpsAlt = gpsSol.llh.alt;
-    haveGpsAlt = true;
+    if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
+        gpsAlt = gpsSol.llh.alt;
+        haveGpsAlt = true;
 
-    if (gpsSol.hdop != 0) {
-        gpsTrust = 100.0 / gpsSol.hdop;
+        if (gpsSol.hdop != 0) {
+            gpsTrust = 100.0 / gpsSol.hdop;
+        }
+        // always use at least 10% of other sources besides gps if available
+        gpsTrust = MIN(gpsTrust, 0.9f);
     }
-    // always use at least 10% of other sources besides gps if available
-    gpsTrust = MIN(gpsTrust, 0.9f);
-}
 #endif
 
     if (ARMING_FLAG(ARMED) && !altitudeOffsetSet) {
@@ -96,7 +96,7 @@ if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
     }
     baroAlt -= baroAltOffset;
     gpsAlt -= gpsAltOffset;
-    
+
     if (haveGpsAlt && haveBaroAlt) {
         estimatedAltitude = gpsAlt * gpsTrust + baroAlt * (1 - gpsTrust);
     } else if (haveGpsAlt) {
@@ -104,7 +104,7 @@ if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
     } else if (haveBaroAlt) {
         estimatedAltitude = baroAlt;
     }
-    
+
     DEBUG_SET(DEBUG_ALTITUDE, 0, (int32_t)(100 * gpsTrust));
     DEBUG_SET(DEBUG_ALTITUDE, 1, baroAlt);
     DEBUG_SET(DEBUG_ALTITUDE, 2, gpsAlt);

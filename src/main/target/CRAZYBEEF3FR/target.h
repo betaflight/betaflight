@@ -31,7 +31,7 @@
 #define ENABLE_DSHOT_DMAR       true
 
 #define LED0_PIN                PB3
-#define USE_BEEPER 
+#define USE_BEEPER
 #define BEEPER_PIN              PC15
 #define BEEPER_INVERTED
 
@@ -60,7 +60,7 @@
 #define SPI1_MISO_PIN           PA6
 #define SPI1_MOSI_PIN           PA7
 
-#define USE_SPI_DEVICE_2 
+#define USE_SPI_DEVICE_2
 #define SPI2_NSS_PIN            PB12
 #define SPI2_SCK_PIN            PB13
 #define SPI2_MISO_PIN           PB14
@@ -82,7 +82,7 @@
 #define USE_RX_FRSKY_SPI_D
 #define USE_RX_FRSKY_SPI_X
 #define USE_RX_FRSKY_SPI_TELEMETRY
-#define DEFAULT_RX_FEATURE      FEATURE_RX_SPI	
+#define DEFAULT_RX_FEATURE      FEATURE_RX_SPI
 #define RX_SPI_DEFAULT_PROTOCOL RX_SPI_FRSKY_X
 #define RX_SPI_INSTANCE         SPI2
 #define RX_NSS_PIN              SPI2_NSS_PIN

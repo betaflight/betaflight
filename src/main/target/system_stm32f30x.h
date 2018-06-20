@@ -40,7 +40,7 @@
 #define __SYSTEM_STM32F30X_H
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 
 /* Exported types ------------------------------------------------------------*/

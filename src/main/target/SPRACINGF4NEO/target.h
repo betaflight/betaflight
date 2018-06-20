@@ -24,22 +24,22 @@
 #define USE_TARGET_CONFIG
 
 #ifndef SPRACINGF4NEO_REV
-    #define SPRACINGF4NEO_REV 3
+#define SPRACINGF4NEO_REV 3
 #endif
 
 #define USBD_PRODUCT_STRING                 "SP Racing F4 NEO"
 
 #if (SPRACINGF4NEO_REV >= 3)
-    #define LED0_PIN                        PA0
-    #define LED1_PIN                        PB1
+#define LED0_PIN                        PA0
+#define LED1_PIN                        PB1
 #endif
 #if (SPRACINGF4NEO_REV == 2)
-    #define LED0_PIN                        PB9
-    #define LED1_PIN                        PB2
+#define LED0_PIN                        PB9
+#define LED1_PIN                        PB2
 #endif
 #if (SPRACINGF4NEO_REV == 1)
-    #define LED0_PIN                        PB9
-    #define LED1_PIN                        PB2
+#define LED0_PIN                        PB9
+#define LED1_PIN                        PB2
 #endif
 
 #define USE_BEEPER
@@ -49,9 +49,9 @@
 #define ENABLE_DSHOT_DMAR                   true
 
 #if (SPRACINGF4NEO_REV >= 2)
-    #define INVERTER_PIN_UART2              PB2
+#define INVERTER_PIN_UART2              PB2
 #else
-    #define INVERTER_PIN_UART2              PA0
+#define INVERTER_PIN_UART2              PA0
 #endif
 
 #define USE_EXTI
@@ -112,11 +112,11 @@
 #define I2C_DEVICE                          (I2CDEV_1) // PB6/SCL, PB7/SDA
 
 #if (SPRACINGF4NEO_REV >= 3)
-    #define I2C1_SCL                        PB8
-    #define I2C1_SDA                        PB9
+#define I2C1_SCL                        PB8
+#define I2C1_SDA                        PB9
 #else
-    #define I2C1_SCL                        PB6
-    #define I2C1_SDA                        PB7
+#define I2C1_SCL                        PB6
+#define I2C1_SDA                        PB7
 #endif
 
 #define USE_SPI
@@ -208,9 +208,9 @@
 
 #define USE_BUTTONS // Physically located on the optional OSD/VTX board.
 #if (SPRACINGF4NEO_REV >= 3)
-    #define BUTTON_A_PIN                    PB0
+#define BUTTON_A_PIN                    PB0
 #else
-    #define BUTTON_A_PIN                    PB8
+#define BUTTON_A_PIN                    PB8
 #endif
 
 // FIXME While it's possible to use the button on the OSD/VTX board for binding enabling it here will break binding unless you have the OSD/VTX connected.

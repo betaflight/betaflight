@@ -226,9 +226,9 @@
 
 #define USE_SPI_DEVICE_3
 #if defined(OMNIBUSF4SD)
-  #define SPI3_NSS_PIN          PA15
+#define SPI3_NSS_PIN          PA15
 #else
-  #define SPI3_NSS_PIN          PB3
+#define SPI3_NSS_PIN          PB3
 #endif
 #define SPI3_SCK_PIN            PC10
 #define SPI3_MISO_PIN           PC11

@@ -35,14 +35,13 @@
 //#define USE_VTX_COMMON_FREQ_API
 
 #ifdef USE_VTX_COMMON_FREQ_API
-const uint16_t SpektrumVtxfrequencyTable[SPEKTRUM_VTX_BAND_COUNT][SPEKTRUM_VTX_CHAN_COUNT] =
-    {
-        { 5740, 5760, 5780, 5800, 5820, 5840, 5860, 5880 }, // FatShark
-        { 5658, 5695, 5732, 5769, 5806, 5843, 5880, 5917 }, // RaceBand
-        { 5705, 5685, 5665, 5645, 5885, 5905, 5925, 5945 }, // Boscam E
-        { 5733, 5752, 5771, 5790, 5809, 5828, 5847, 5866 }, // Boscam B
-        { 5865, 5845, 5825, 5805, 5785, 5765, 5745, 5725 }, // Boscam A
-    };
+const uint16_t SpektrumVtxfrequencyTable[SPEKTRUM_VTX_BAND_COUNT][SPEKTRUM_VTX_CHAN_COUNT] = {
+    { 5740, 5760, 5780, 5800, 5820, 5840, 5860, 5880 }, // FatShark
+    { 5658, 5695, 5732, 5769, 5806, 5843, 5880, 5917 }, // RaceBand
+    { 5705, 5685, 5665, 5645, 5885, 5905, 5925, 5945 }, // Boscam E
+    { 5733, 5752, 5771, 5790, 5809, 5828, 5847, 5866 }, // Boscam B
+    { 5865, 5845, 5825, 5805, 5785, 5765, 5745, 5725 }, // Boscam A
+};
 #else
 // Translation table, Spektrum bands to BF internal vtx_common bands
 const uint8_t spek2commonBand[SPEKTRUM_VTX_BAND_COUNT]= {
@@ -59,7 +58,7 @@ const uint8_t spek2commonBand[SPEKTRUM_VTX_BAND_COUNT]= {
 #ifdef USE_VTX_TRAMP
 // Tramp "---", 25, 200, 400. 600 mW
 const uint8_t vtxTrampPi[SPEKTRUM_VTX_POWER_COUNT] = {
-                                       // Spektrum Spec    Tx menu  Tx sends   To VTX    Watt
+    // Spektrum Spec    Tx menu  Tx sends   To VTX    Watt
     VTX_TRAMP_POWER_OFF,               //         Off      INHIBIT         0        0     -
     VTX_TRAMP_POWER_OFF,               //   1 -  14mW            -         -        -     -
     VTX_TRAMP_POWER_25,                //  15 -  25mW   15 -  25mW         2        1    25mW
@@ -144,7 +143,7 @@ static uint32_t vtxControl_ipc = ~(SPEKTRUM_VTX_CONTROL_FRAME);
 // ############ RX task ######################
 void spektrumHandleVtxControl(uint32_t vtxCntrl)
 {
-  vtxControl_ipc = vtxCntrl;
+    vtxControl_ipc = vtxCntrl;
 }
 // ###########################################
 
@@ -166,12 +165,12 @@ void spektrumVtxControl(void)
 
     spektrumVtx_t vtx = {
         .pitMode = (vtxControl & SPEKTRUM_VTX_PIT_MODE_MASK) >> SPEKTRUM_VTX_PIT_MODE_SHIFT,
-        .region  = (vtxControl & SPEKTRUM_VTX_REGION_MASK)   >> SPEKTRUM_VTX_REGION_SHIFT,
-        .power   = (vtxControl & SPEKTRUM_VTX_POWER_MASK)    >> SPEKTRUM_VTX_POWER_SHIFT,
-        .band    = (vtxControl & SPEKTRUM_VTX_BAND_MASK)     >> SPEKTRUM_VTX_BAND_SHIFT,
-        .channel = (vtxControl & SPEKTRUM_VTX_CHANNEL_MASK)  >> SPEKTRUM_VTX_CHANNEL_SHIFT,
+            .region  = (vtxControl & SPEKTRUM_VTX_REGION_MASK)   >> SPEKTRUM_VTX_REGION_SHIFT,
+            .power   = (vtxControl & SPEKTRUM_VTX_POWER_MASK)    >> SPEKTRUM_VTX_POWER_SHIFT,
+            .band    = (vtxControl & SPEKTRUM_VTX_BAND_MASK)     >> SPEKTRUM_VTX_BAND_SHIFT,
+            .channel = (vtxControl & SPEKTRUM_VTX_CHANNEL_MASK)  >> SPEKTRUM_VTX_CHANNEL_SHIFT,
 #ifdef USE_SPEKTRUM_REGION_CODES
-        .region  = (vtxControl & SPEKTRUM_VTX_REGION_MASK)   >> SPEKTRUM_VTX_REGION_SHIFT;
+            .region  = (vtxControl & SPEKTRUM_VTX_REGION_MASK)   >> SPEKTRUM_VTX_REGION_SHIFT;
 #endif
     };
 

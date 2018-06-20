@@ -132,8 +132,7 @@ static frSkyHubWriteByteFn *frSkyHubWriteByte = NULL;
 #define DELAY_FOR_BARO_INITIALISATION_US 5000000
 #define BLADE_NUMBER_DIVIDER  5 // should set 12 blades in Taranis
 
-enum
-{
+enum {
     TELEMETRY_STATE_UNINITIALIZED,
     TELEMETRY_STATE_INITIALIZED_SERIAL,
     TELEMETRY_STATE_INITIALIZED_EXTERNAL,
@@ -150,7 +149,7 @@ static void serializeFrSkyHub(uint8_t data)
     } else if (data == 0x5d) {
         frSkyHubWriteByte(0x5d);
         frSkyHubWriteByte(0x3d);
-    } else{
+    } else {
         frSkyHubWriteByte(data);
     }
 }
@@ -170,9 +169,9 @@ static void sendTelemetryTail(void)
 }
 
 static void frSkyHubWriteByteInternal(const char data)
- {
-   serialWrite(frSkyHubPort, data);
- }
+{
+    serialWrite(frSkyHubPort, data);
+}
 
 static void sendAccel(void)
 {
@@ -589,9 +588,9 @@ void processFrSkyHubTelemetry(timeUs_t currentTimeUs)
         } else
 #endif
 #if defined(USE_MAG)
-        if (sensors(SENSOR_MAG)) {
-            sendFakeLatLongThatAllowsHeadingDisplay();
-        }
+            if (sensors(SENSOR_MAG)) {
+                sendFakeLatLongThatAllowsHeadingDisplay();
+            }
 #else
         {}
 #endif

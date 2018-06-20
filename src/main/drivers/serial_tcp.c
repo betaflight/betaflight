@@ -44,14 +44,17 @@ static const struct serialPortVTable tcpVTable; // Forward
 static tcpPort_t tcpSerialPorts[SERIAL_PORT_COUNT];
 static bool tcpPortInitialized[SERIAL_PORT_COUNT];
 static bool tcpStart = false;
-bool tcpIsStart(void) {
+bool tcpIsStart(void)
+{
     return tcpStart;
 }
-static void onData(dyad_Event *e) {
+static void onData(dyad_Event *e)
+{
     tcpPort_t* s = (tcpPort_t*)(e->udata);
     tcpDataIn(s, (uint8_t*)e->data, e->size);
 }
-static void onClose(dyad_Event *e) {
+static void onClose(dyad_Event *e)
+{
     tcpPort_t* s = (tcpPort_t*)(e->udata);
     s->clientCount--;
     s->conn = NULL;
@@ -60,7 +63,8 @@ static void onClose(dyad_Event *e) {
         s->connected = false;
     }
 }
-static void onAccept(dyad_Event *e) {
+static void onAccept(dyad_Event *e)
+{
     tcpPort_t* s = (tcpPort_t*)(e->udata);
     fprintf(stderr, "New connection on UART%u, %d\n", s->id + 1, s->clientCount);
 
@@ -120,7 +124,7 @@ serialPort_t *serTcpOpen(int id, serialReceiveCallbackPtr rxCallback, void *rxCa
 
 #if defined(USE_UART1) || defined(USE_UART2) || defined(USE_UART3) || defined(USE_UART4) || defined(USE_UART5) || defined(USE_UART6) || defined(USE_UART7) || defined(USE_UART8)
     if (id >= 0 && id < SERIAL_PORT_COUNT) {
-    s = tcpReconfigure(&tcpSerialPorts[id], id);
+        s = tcpReconfigure(&tcpSerialPorts[id], id);
     }
 #endif
     if (!s)
@@ -259,16 +263,16 @@ void tcpDataIn(tcpPort_t *instance, uint8_t* ch, int size)
 }
 
 static const struct serialPortVTable tcpVTable = {
-        .serialWrite = tcpWrite,
-        .serialTotalRxWaiting = tcpTotalRxBytesWaiting,
-        .serialTotalTxFree = tcpTotalTxBytesFree,
-        .serialRead = tcpRead,
-        .serialSetBaudRate = NULL,
-        .isSerialTransmitBufferEmpty = isTcpTransmitBufferEmpty,
-        .setMode = NULL,
-        .setCtrlLineStateCb = NULL,
-        .setBaudRateCb = NULL,
-        .writeBuf = NULL,
-        .beginWrite = NULL,
-        .endWrite = NULL,
+    .serialWrite = tcpWrite,
+    .serialTotalRxWaiting = tcpTotalRxBytesWaiting,
+    .serialTotalTxFree = tcpTotalTxBytesFree,
+    .serialRead = tcpRead,
+    .serialSetBaudRate = NULL,
+    .isSerialTransmitBufferEmpty = isTcpTransmitBufferEmpty,
+    .setMode = NULL,
+    .setCtrlLineStateCb = NULL,
+    .setBaudRateCb = NULL,
+    .writeBuf = NULL,
+    .beginWrite = NULL,
+    .endWrite = NULL,
 };

@@ -68,8 +68,7 @@ static long cmsx_Ledstrip_FeatureWriteback(const OSD_Entry *self)
     return 0;
 }
 
-static OSD_Entry cmsx_menuLedstripEntries[] =
-{
+static OSD_Entry cmsx_menuLedstripEntries[] = {
     { "-- LED STRIP --", OME_Label, NULL, NULL, 0 },
     { "ENABLED",         OME_Bool,  NULL, &cmsx_FeatureLedstrip, 0 },
 

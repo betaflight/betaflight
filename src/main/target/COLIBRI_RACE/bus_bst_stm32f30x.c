@@ -79,7 +79,7 @@ void I2C_EV_IRQHandler(void)
             currentWriteBufferPointer = 0;
             receiverAddress = true;
             I2C_SendData(BSTx, (uint8_t) writeData[currentWriteBufferPointer++]);
-               I2C_ITConfig(BSTx, I2C_IT_TXI, ENABLE);
+            I2C_ITConfig(BSTx, I2C_IT_TXI, ENABLE);
         } else {
             readData[0] = I2C_GetAddressMatched(BSTx);
             bufferPointer = 1;
@@ -116,7 +116,7 @@ void I2C_EV_IRQHandler(void)
                     receiverAddress = false;
                     crc8Cal(0);
                     I2C_SendData(BSTx, (uint8_t) CRC8);
-                       I2C_ITConfig(BSTx, I2C_IT_TXI, DISABLE);
+                    I2C_ITConfig(BSTx, I2C_IT_TXI, DISABLE);
                 } else {
                     crc8Cal((uint8_t) writeData[currentWriteBufferPointer]);
                     I2C_SendData(BSTx, (uint8_t) writeData[currentWriteBufferPointer++]);
@@ -147,8 +147,8 @@ void I2C_EV_IRQHandler(void)
         }
         I2C_ClearITPendingBit(BSTx, I2C_IT_STOPF);
     } else if (I2C_GetITStatus(BSTx, I2C_IT_BERR)
-            || I2C_GetITStatus(BSTx, I2C_IT_ARLO)
-            || I2C_GetITStatus(BSTx, I2C_IT_OVR)) {
+        || I2C_GetITStatus(BSTx, I2C_IT_ARLO)
+        || I2C_GetITStatus(BSTx, I2C_IT_OVR)) {
         bstTimeoutUserCallback();
         I2C_ClearITPendingBit(BSTx, I2C_IT_BERR | I2C_IT_ARLO | I2C_IT_OVR);
     }

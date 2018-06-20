@@ -266,9 +266,12 @@ bool lpsDetect(baroDev_t *baro)
     //Init, if writeVerify is false fallback to false on detect
     bool ret = false;
     lpsOff(busdev);
-    ret = lpsWriteVerify(busdev, LPS_CTRL2, (0x00 << 1)); if (ret != true) return false;
-    ret = lpsWriteVerify(busdev, LPS_RES_CONF, (LPS_AVT_64 | LPS_AVP_512)); if (ret != true) return false;
-    ret = lpsWriteVerify(busdev, LPS_CTRL4, 0x01); if (ret != true) return false;
+    ret = lpsWriteVerify(busdev, LPS_CTRL2, (0x00 << 1));
+    if (ret != true) return false;
+    ret = lpsWriteVerify(busdev, LPS_RES_CONF, (LPS_AVT_64 | LPS_AVP_512));
+    if (ret != true) return false;
+    ret = lpsWriteVerify(busdev, LPS_CTRL4, 0x01);
+    if (ret != true) return false;
     lpsOn(busdev, (0x04 << 4) | (0x01 << 1) | (0x01 << 2) | (0x01 << 3));
 
     lpsReadCommand(busdev, LPS_CTRL1, &temp, 1);

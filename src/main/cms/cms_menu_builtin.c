@@ -98,8 +98,7 @@ static CMS_Menu menuInfo = {
 
 // Features
 
-static OSD_Entry menuFeaturesEntries[] =
-{
+static OSD_Entry menuFeaturesEntries[] = {
     {"--- FEATURES ---", OME_Label, NULL, NULL, 0},
 
 #if defined(USE_BLACKBOX)
@@ -136,8 +135,7 @@ static CMS_Menu menuFeatures = {
 
 // Main
 
-static OSD_Entry menuMainEntries[] =
-{
+static OSD_Entry menuMainEntries[] = {
     {"-- MAIN --",  OME_Label, NULL, NULL, 0},
 
     {"PROFILE",     OME_Submenu,  cmsMenuChange, &cmsx_menuImu, 0},

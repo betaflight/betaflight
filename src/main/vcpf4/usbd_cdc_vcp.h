@@ -65,11 +65,12 @@ typedef enum _DEVICE_STATE {
    command class requests. */
 typedef struct __attribute__ ((packed))
 {
-  uint32_t bitrate;
-  uint8_t  format;
-  uint8_t  paritytype;
-  uint8_t  datatype;
-} LINE_CODING;
+    uint32_t bitrate;
+    uint8_t  format;
+    uint8_t  paritytype;
+    uint8_t  datatype;
+}
+LINE_CODING;
 
 
 #endif /* __USBD_CDC_VCP_H */

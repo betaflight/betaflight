@@ -93,14 +93,13 @@ void uartTryStartTxDMA(uartPort_t *s)
         if (s->port.txBufferHead > s->port.txBufferTail) {
             s->txDMAStream->NDTR = s->port.txBufferHead - s->port.txBufferTail;
             s->port.txBufferTail = s->port.txBufferHead;
-        }
-        else {
+        } else {
             s->txDMAStream->NDTR = s->port.txBufferSize - s->port.txBufferTail;
             s->port.txBufferTail = 0;
         }
         s->txDMAEmpty = false;
 
-    reenable:
+reenable:
         DMA_Cmd(s->txDMAStream, ENABLE);
 #else
         if (s->txDMAChannel->CCR & 1) {
@@ -135,7 +134,7 @@ void uartTryStartTxDMA(uartPort_t *s)
         }
         s->txDMAEmpty = false;
 
-    reenable:
+reenable:
         DMA_Cmd(s->txDMAChannel, ENABLE);
 #endif
     }

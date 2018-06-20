@@ -31,20 +31,19 @@
 #define CRTP_MAX_DATA_SIZE 30
 
 typedef enum {
-  CRTP_PORT_CONSOLE          = 0x00,
-  CRTP_PORT_PARAM            = 0x02,
-  CRTP_PORT_SETPOINT         = 0x03,
-  CRTP_PORT_MEM              = 0x04,
-  CRTP_PORT_LOG              = 0x05,
-  CRTP_PORT_LOCALIZATION     = 0x06,
-  CRTP_PORT_SETPOINT_GENERIC = 0x07,
-  CRTP_PORT_PLATFORM         = 0x0D,
-  CRTP_PORT_LINK             = 0x0F,
+    CRTP_PORT_CONSOLE          = 0x00,
+    CRTP_PORT_PARAM            = 0x02,
+    CRTP_PORT_SETPOINT         = 0x03,
+    CRTP_PORT_MEM              = 0x04,
+    CRTP_PORT_LOG              = 0x05,
+    CRTP_PORT_LOCALIZATION     = 0x06,
+    CRTP_PORT_SETPOINT_GENERIC = 0x07,
+    CRTP_PORT_PLATFORM         = 0x0D,
+    CRTP_PORT_LINK             = 0x0F,
 } crtpPort_e;
 
-typedef struct crtpPacket_s
-{
-    struct{
+typedef struct crtpPacket_s {
+    struct {
         uint8_t chan : 2;
         uint8_t link : 2;
         uint8_t port : 4;
@@ -53,16 +52,15 @@ typedef struct crtpPacket_s
 } __attribute__((packed)) crtpPacket_t;
 
 typedef enum {
-  stopType          = 0,
-  velocityWorldType = 1,
-  zDistanceType     = 2,
-  cppmEmuType       = 3,
+    stopType          = 0,
+    velocityWorldType = 1,
+    zDistanceType     = 2,
+    cppmEmuType       = 3,
 } crtpCommanderPacketType_e;
 
 // Legacy RPYT data type for supporting existing clients
 // See https://wiki.bitcraze.io/projects:crazyflie:crtp:commander
-typedef struct crtpCommanderRPYT_s
-{
+typedef struct crtpCommanderRPYT_s {
     float roll;       // deg
     float pitch;      // deg
     float yaw;        // deg
@@ -72,8 +70,7 @@ typedef struct crtpCommanderRPYT_s
 // Commander packet type for emulating CPPM-style setpoints
 // Corresponds to crtpCommanderPacketType_e::cppmEmuType
 #define CRTP_CPPM_EMU_MAX_AUX_CHANNELS 10
-typedef struct crtpCommanderCPPMEmuPacket_s
-{
+typedef struct crtpCommanderCPPMEmuPacket_s {
     struct {
         uint8_t numAuxChannels : 4;   // Set to 0 through CRTP_CPPM_EMU_MAX_AUX_CHANNELS
         uint8_t reserved : 4;

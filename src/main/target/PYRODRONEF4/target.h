@@ -98,7 +98,7 @@
 
 
 
-//DEFINE BATTERY METER 
+//DEFINE BATTERY METER
 #define USE_ADC
 #define CURRENT_METER_ADC_PIN   PC1
 #define VBAT_ADC_PIN            PC2

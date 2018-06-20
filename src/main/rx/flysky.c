@@ -210,7 +210,8 @@ static void checkRSSI (void)
     setRssiDirect(tmp, RSSI_SOURCE_RX_PROTOCOL);
 }
 
-static bool isValidPacket (const uint8_t *packet) {
+static bool isValidPacket (const uint8_t *packet)
+{
     const flySky2ARcDataPkt_t *rcPacket = (const flySky2ARcDataPkt_t*) packet;
     return (rcPacket->rxId == rxId && rcPacket->txId == txId);
 }
@@ -256,9 +257,9 @@ static rx_spi_received_e flySky2AReadAndProcess (uint8_t *payload, const uint32_
     A7105ReadFIFO(packet, bytesToRead);
 
     switch (packet[0]) {
-        case FLYSKY_2A_PACKET_RC_DATA:
-        case FLYSKY_2A_PACKET_FS_SETTINGS: // failsafe settings
-        case FLYSKY_2A_PACKET_SETTINGS: // receiver settings
+    case FLYSKY_2A_PACKET_RC_DATA:
+    case FLYSKY_2A_PACKET_FS_SETTINGS: // failsafe settings
+    case FLYSKY_2A_PACKET_SETTINGS: // receiver settings
         if (isValidPacket(packet)) {
             checkRSSI();
             resetTimeout(timeStamp);
@@ -286,8 +287,8 @@ static rx_spi_received_e flySky2AReadAndProcess (uint8_t *payload, const uint32_
         }
         break;
 
-        case FLYSKY_2A_PACKET_BIND1:
-        case FLYSKY_2A_PACKET_BIND2:
+    case FLYSKY_2A_PACKET_BIND1:
+    case FLYSKY_2A_PACKET_BIND2:
         if (!bound) {
             resetTimeout(timeStamp);
 
@@ -308,11 +309,11 @@ static rx_spi_received_e flySky2AReadAndProcess (uint8_t *payload, const uint32_
         }
         break;
 
-        default:
+    default:
         break;
     }
 
-    if (!waitTx){
+    if (!waitTx) {
         A7105Strobe(A7105_RX);
     }
     return result;
@@ -367,9 +368,9 @@ bool flySkyInit (const rxSpiConfig_t *rxSpiConfig, struct rxRuntimeConfig_s *rxR
     IO_t bindPin = IOGetByTag(IO_TAG(BINDPLUG_PIN));
     IOInit(bindPin, OWNER_RX_BIND, 0);
     IOConfigGPIO(bindPin, IOCFG_IPU);
-#ifdef USE_RX_FLYSKY_SPI_LED	
+#ifdef USE_RX_FLYSKY_SPI_LED
     flySkyLedPin = IOGetByTag(IO_TAG(RX_FLYSKY_SPI_LED_PIN));
-    IOInit(flySkyLedPin, OWNER_LED, 0); 
+    IOInit(flySkyLedPin, OWNER_LED, 0);
     IOConfigGPIO(flySkyLedPin, IOCFG_OUT_PP);
     IOLo(flySkyLedPin);
 #endif /* USE_RX_FLYSKY_SPI_LED */
@@ -466,7 +467,7 @@ rx_spi_received_e flySkyDataReceived (uint8_t *payload)
             IOHi(flySkyLedPin);
         } else {
             if (rxLossCount  < RX_LOSS_COUNT) {
-                rxLossCount++;      
+                rxLossCount++;
             } else {
                 timeMs_t now = millis();
                 if (now - ledLastUpdate > INTERVAL_RX_LOSS_MS) {
@@ -499,7 +500,7 @@ rx_spi_received_e flySkyDataReceived (uint8_t *payload)
             } else {
                 IOHi(flySkyLedPin);
             }
-                ledOn = !ledOn;
+            ledOn = !ledOn;
         }
 #endif /* USE_RX_FLYSKY_SPI_LED */
     }

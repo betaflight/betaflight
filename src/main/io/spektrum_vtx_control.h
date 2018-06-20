@@ -80,8 +80,7 @@ Channels vs Band according to spektrum spec.
 #define SPEKTRUM_VTX_PITMODE_OFF  0 // Power on, race
 #define SPEKTRUM_VTX_PITMODE_ON   1 // Power off, pit
 
-typedef struct
-{
+typedef struct {
     uint8_t band;
     uint8_t channel;
     uint8_t power;

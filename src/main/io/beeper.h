@@ -26,7 +26,7 @@
 
 #ifdef USE_DSHOT
 #define DSHOT_BEACON_GUARD_DELAY_US 1200000  // Time to separate dshot beacon and armining/disarming events
-                                             // to prevent interference with motor direction commands
+// to prevent interference with motor direction commands
 #endif
 
 typedef enum {

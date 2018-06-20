@@ -139,7 +139,8 @@ static uint8_t lookupTimerIndex(const TIM_TypeDef *tim)
 #if USED_TIMERS & TIM_N(17)
         _CASE(17);
 #endif
-    default:  return ~1;  // make sure final index is out of range
+    default:
+        return ~1;  // make sure final index is out of range
     }
 #undef _CASE
 #undef _CASE_
@@ -1011,7 +1012,7 @@ HAL_StatusTypeDef TIM_DMACmd(TIM_HandleTypeDef *htim, uint32_t Channel, Function
             __HAL_TIM_DISABLE_DMA(htim, TIM_DMA_CC1);
         }
     }
-        break;
+    break;
 
     case TIM_CHANNEL_2: {
         if (NewState != DISABLE) {
@@ -1022,7 +1023,7 @@ HAL_StatusTypeDef TIM_DMACmd(TIM_HandleTypeDef *htim, uint32_t Channel, Function
             __HAL_TIM_DISABLE_DMA(htim, TIM_DMA_CC2);
         }
     }
-        break;
+    break;
 
     case TIM_CHANNEL_3: {
         if (NewState != DISABLE) {
@@ -1033,7 +1034,7 @@ HAL_StatusTypeDef TIM_DMACmd(TIM_HandleTypeDef *htim, uint32_t Channel, Function
             __HAL_TIM_DISABLE_DMA(htim, TIM_DMA_CC3);
         }
     }
-        break;
+    break;
 
     case TIM_CHANNEL_4: {
         if (NewState != DISABLE) {
@@ -1044,7 +1045,7 @@ HAL_StatusTypeDef TIM_DMACmd(TIM_HandleTypeDef *htim, uint32_t Channel, Function
             __HAL_TIM_DISABLE_DMA(htim, TIM_DMA_CC4);
         }
     }
-        break;
+    break;
 
     default:
         break;
@@ -1077,7 +1078,7 @@ HAL_StatusTypeDef DMA_SetCurrDataCounter(TIM_HandleTypeDef *htim, uint32_t Chann
         /* Enable the DMA Stream */
         HAL_DMA_Start_IT(htim->hdma[TIM_DMA_ID_CC1], (uint32_t) pData, (uint32_t) & htim->Instance->CCR1, Length);
     }
-        break;
+    break;
 
     case TIM_CHANNEL_2: {
         /* Set the DMA Period elapsed callback */
@@ -1089,7 +1090,7 @@ HAL_StatusTypeDef DMA_SetCurrDataCounter(TIM_HandleTypeDef *htim, uint32_t Chann
         /* Enable the DMA Stream */
         HAL_DMA_Start_IT(htim->hdma[TIM_DMA_ID_CC2], (uint32_t) pData, (uint32_t) & htim->Instance->CCR2, Length);
     }
-        break;
+    break;
 
     case TIM_CHANNEL_3: {
         /* Set the DMA Period elapsed callback */
@@ -1101,7 +1102,7 @@ HAL_StatusTypeDef DMA_SetCurrDataCounter(TIM_HandleTypeDef *htim, uint32_t Chann
         /* Enable the DMA Stream */
         HAL_DMA_Start_IT(htim->hdma[TIM_DMA_ID_CC3], (uint32_t) pData, (uint32_t) & htim->Instance->CCR3, Length);
     }
-        break;
+    break;
 
     case TIM_CHANNEL_4: {
         /* Set the DMA Period elapsed callback */
@@ -1113,7 +1114,7 @@ HAL_StatusTypeDef DMA_SetCurrDataCounter(TIM_HandleTypeDef *htim, uint32_t Chann
         /* Enable the DMA Stream */
         HAL_DMA_Start_IT(htim->hdma[TIM_DMA_ID_CC4], (uint32_t) pData, (uint32_t) & htim->Instance->CCR4, Length);
     }
-        break;
+    break;
 
     default:
         break;

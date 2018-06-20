@@ -149,15 +149,17 @@ static const modeColorIndexes_t defaultModeColors[] = {
 };
 
 static const specialColorIndexes_t defaultSpecialColors[] = {
-    {{ [LED_SCOLOR_DISARMED]        = COLOR_GREEN,
-       [LED_SCOLOR_ARMED]           = COLOR_BLUE,
-       [LED_SCOLOR_ANIMATION]       = COLOR_WHITE,
-       [LED_SCOLOR_BACKGROUND]      = COLOR_BLACK,
-       [LED_SCOLOR_BLINKBACKGROUND] = COLOR_BLACK,
-       [LED_SCOLOR_GPSNOSATS]       = COLOR_RED,
-       [LED_SCOLOR_GPSNOLOCK]       = COLOR_ORANGE,
-       [LED_SCOLOR_GPSLOCKED]       = COLOR_GREEN,
-    }}
+    {   {
+            [LED_SCOLOR_DISARMED]        = COLOR_GREEN,
+            [LED_SCOLOR_ARMED]           = COLOR_BLUE,
+            [LED_SCOLOR_ANIMATION]       = COLOR_WHITE,
+            [LED_SCOLOR_BACKGROUND]      = COLOR_BLACK,
+            [LED_SCOLOR_BLINKBACKGROUND] = COLOR_BLACK,
+            [LED_SCOLOR_GPSNOSATS]       = COLOR_RED,
+            [LED_SCOLOR_GPSNOLOCK]       = COLOR_ORANGE,
+            [LED_SCOLOR_GPSLOCKED]       = COLOR_GREEN,
+        }
+    }
 };
 
 void pgResetFn_ledStripConfig(ledStripConfig_t *ledStripConfig)
@@ -303,45 +305,45 @@ bool parseLedStripConfig(int ledIndex, const char *config)
             config++;   // skip separator
         }
         switch (parseState) {
-            case X_COORDINATE:
-                x = atoi(chunk);
-                break;
-            case Y_COORDINATE:
-                y = atoi(chunk);
-                break;
-            case DIRECTIONS:
-                for (char *ch = chunk; *ch; ch++) {
-                    for (ledDirectionId_e dir = 0; dir < LED_DIRECTION_COUNT; dir++) {
-                        if (directionCodes[dir] == *ch) {
-                            direction_flags |= LED_FLAG_DIRECTION(dir);
-                            break;
-                        }
+        case X_COORDINATE:
+            x = atoi(chunk);
+            break;
+        case Y_COORDINATE:
+            y = atoi(chunk);
+            break;
+        case DIRECTIONS:
+            for (char *ch = chunk; *ch; ch++) {
+                for (ledDirectionId_e dir = 0; dir < LED_DIRECTION_COUNT; dir++) {
+                    if (directionCodes[dir] == *ch) {
+                        direction_flags |= LED_FLAG_DIRECTION(dir);
+                        break;
                     }
                 }
-                break;
-            case FUNCTIONS:
-                for (char *ch = chunk; *ch; ch++) {
-                    for (ledBaseFunctionId_e fn = 0; fn < LED_BASEFUNCTION_COUNT; fn++) {
-                        if (baseFunctionCodes[fn] == *ch) {
-                            baseFunction = fn;
-                            break;
-                        }
+            }
+            break;
+        case FUNCTIONS:
+            for (char *ch = chunk; *ch; ch++) {
+                for (ledBaseFunctionId_e fn = 0; fn < LED_BASEFUNCTION_COUNT; fn++) {
+                    if (baseFunctionCodes[fn] == *ch) {
+                        baseFunction = fn;
+                        break;
                     }
+                }
 
-                    for (ledOverlayId_e ol = 0; ol < LED_OVERLAY_COUNT; ol++) {
-                        if (overlayCodes[ol] == *ch) {
-                            overlay_flags |= LED_FLAG_OVERLAY(ol);
-                            break;
-                        }
+                for (ledOverlayId_e ol = 0; ol < LED_OVERLAY_COUNT; ol++) {
+                    if (overlayCodes[ol] == *ch) {
+                        overlay_flags |= LED_FLAG_OVERLAY(ol);
+                        break;
                     }
                 }
-                break;
-            case RING_COLORS:
-                color = atoi(chunk);
-                if (color >= LED_CONFIGURABLE_COLOR_COUNT)
-                    color = 0;
-                break;
-            case PARSE_STATE_COUNT:; // prevent warning
+            }
+            break;
+        case RING_COLORS:
+            color = atoi(chunk);
+            if (color >= LED_CONFIGURABLE_COLOR_COUNT)
+                color = 0;
+            break;
+        case PARSE_STATE_COUNT:; // prevent warning
         }
     }
 
@@ -555,16 +557,17 @@ static void applyLedWarningLayer(bool updateNow, timeUs_t *timer)
         warningFlags_e warningId = warningFlashCounter / 4;
         if (warningFlags & (1 << warningId)) {
             switch (warningId) {
-                case WARNING_ARMING_DISABLED:
-                    warningColor = colorOn ? &HSV(GREEN)  : &HSV(BLACK);
-                    break;
-                case WARNING_LOW_BATTERY:
-                    warningColor = colorOn ? &HSV(RED)    : &HSV(BLACK);
-                    break;
-                case WARNING_FAILSAFE:
-                    warningColor = colorOn ? &HSV(YELLOW) : &HSV(BLUE);
-                    break;
-                default:;
+            case WARNING_ARMING_DISABLED:
+                warningColor = colorOn ? &HSV(GREEN)  : &HSV(BLACK);
+                break;
+            case WARNING_LOW_BATTERY:
+                warningColor = colorOn ? &HSV(RED)    : &HSV(BLACK);
+                break;
+            case WARNING_FAILSAFE:
+                warningColor = colorOn ? &HSV(YELLOW) : &HSV(BLUE);
+                break;
+            default:
+                ;
             }
         }
     } else {
@@ -603,7 +606,7 @@ static void applyLedVtxLayer(bool updateNow, timeUs_t *timer)
         vtxCommonGetPitMode(vtxDevice, &pit);
 
         frequency = vtx58frequencyTable[band - 1][channel - 1]; //subtracting 1 from band and channel so that correct frequency is returned.
-                                                                //might not be correct for tramp but should fix smart audio.
+        //might not be correct for tramp but should fix smart audio.
         // check if last vtx values have changed.
         check = pit + (power << 1) + (band << 4) + (channel << 8);
         if (!showSettings && check != lastCheck) {
@@ -629,13 +632,11 @@ static void applyLedVtxLayer(bool updateNow, timeUs_t *timer)
                     color.h = HSV(GREEN).h;
                     color.s = HSV(GREEN).s;
                     color.v = blink ? 15 : 0; // blink received settings
-                }
-                else if (vtxLedCount > 0 && power >= vtxLedCount && !pit) { // show power
+                } else if (vtxLedCount > 0 && power >= vtxLedCount && !pit) { // show power
                     color.h = HSV(ORANGE).h;
                     color.s = HSV(ORANGE).s;
                     color.v = blink ? 15 : 0; // blink received settings
-                }
-                else { // turn rest off
+                } else { // turn rest off
                     color.h = HSV(BLACK).h;
                     color.s = HSV(BLACK).s;
                     color.v = HSV(BLACK).v;
@@ -644,8 +645,7 @@ static void applyLedVtxLayer(bool updateNow, timeUs_t *timer)
                 ++vtxLedCount;
             }
         }
-    }
-    else { // show frequency
+    } else { // show frequency
         // calculate the VTX color based on frequency
         int colorIndex = 0;
         if (frequency <= 5672) {
@@ -681,29 +681,29 @@ static void applyLedBatteryLayer(bool updateNow, timeUs_t *timer)
     if (updateNow) {
 
         switch (getBatteryState()) {
-            case BATTERY_OK:
-                flash = true;
-                timerDelayUs = HZ_TO_US(1);
+        case BATTERY_OK:
+            flash = true;
+            timerDelayUs = HZ_TO_US(1);
 
-                break;
-            case BATTERY_WARNING:
-                flash = !flash;
-                timerDelayUs = HZ_TO_US(2);
+            break;
+        case BATTERY_WARNING:
+            flash = !flash;
+            timerDelayUs = HZ_TO_US(2);
 
-                break;
-            default:
-                flash = !flash;
-                timerDelayUs = HZ_TO_US(8);
+            break;
+        default:
+            flash = !flash;
+            timerDelayUs = HZ_TO_US(8);
 
-                break;
+            break;
         }
     }
 
     *timer += timerDelayUs;
 
     if (!flash) {
-       const hsvColor_t *bgc = getSC(LED_SCOLOR_BACKGROUND);
-       applyLedHsv(LED_MOV_FUNCTION(LED_FUNCTION_BATTERY), bgc);
+        const hsvColor_t *bgc = getSC(LED_SCOLOR_BACKGROUND);
+        applyLedHsv(LED_MOV_FUNCTION(LED_FUNCTION_BATTERY), bgc);
     }
 }
 
@@ -1136,15 +1136,15 @@ bool parseColor(int index, const char *colorConfig)
             break;
         }
         switch (componentIndex) {
-            case HSV_HUE:
-                color->h = val;
-                break;
-            case HSV_SATURATION:
-                color->s = val;
-                break;
-            case HSV_VALUE:
-                color->v = val;
-                break;
+        case HSV_HUE:
+            color->h = val;
+            break;
+        case HSV_SATURATION:
+            color->s = val;
+            break;
+        case HSV_VALUE:
+            color->v = val;
+            break;
         }
         remainingCharacters = strchr(remainingCharacters, ',');
         if (remainingCharacters) {

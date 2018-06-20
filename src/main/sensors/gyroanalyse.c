@@ -198,112 +198,105 @@ void gyroDataAnalyseUpdate(biquadFilter_t *notchFilterDyn)
 
     DEBUG_SET(DEBUG_FFT_TIME, 0, step);
     switch (step) {
-        case STEP_ARM_CFFT_F32:
-        {
-            switch (FFT_BIN_COUNT) {
-            case 16:
-                // 16us
-                arm_cfft_radix8by2_f32(Sint, fftData);
-                break;
-            case 32:
-                // 35us
-                arm_cfft_radix8by4_f32(Sint, fftData);
-                break;
-            case 64:
-                // 70us
-                arm_radix8_butterfly_f32(fftData, FFT_BIN_COUNT, Sint->pTwiddle, 1);
-                break;
-            }
-            DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
+    case STEP_ARM_CFFT_F32: {
+        switch (FFT_BIN_COUNT) {
+        case 16:
+            // 16us
+            arm_cfft_radix8by2_f32(Sint, fftData);
+            break;
+        case 32:
+            // 35us
+            arm_cfft_radix8by4_f32(Sint, fftData);
+            break;
+        case 64:
+            // 70us
+            arm_radix8_butterfly_f32(fftData, FFT_BIN_COUNT, Sint->pTwiddle, 1);
             break;
         }
-        case STEP_BITREVERSAL:
-        {
-            // 6us
-            arm_bitreversal_32((uint32_t*) fftData, Sint->bitRevLength, Sint->pBitRevTable);
-            DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
-            step++;
-            FALLTHROUGH;
-        }
-        case STEP_STAGE_RFFT_F32:
-        {
-            // 14us
-            // this does not work in place => fftData AND rfftData needed
-            stage_rfft_f32(&fftInstance, fftData, rfftData);
-            DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
-            break;
-        }
-        case STEP_ARM_CMPLX_MAG_F32:
-        {
-            // 8us
-            arm_cmplx_mag_f32(rfftData, fftData, FFT_BIN_COUNT);
-            DEBUG_SET(DEBUG_FFT_TIME, 2, micros() - startTime);
-            step++;
-            FALLTHROUGH;
-        }
-        case STEP_CALC_FREQUENCIES:
-        {
-            // 13us
-            float fftSum = 0;
-            float fftWeightedSum = 0;
+        DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
+        break;
+    }
+    case STEP_BITREVERSAL: {
+        // 6us
+        arm_bitreversal_32((uint32_t*) fftData, Sint->bitRevLength, Sint->pBitRevTable);
+        DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
+        step++;
+        FALLTHROUGH;
+    }
+    case STEP_STAGE_RFFT_F32: {
+        // 14us
+        // this does not work in place => fftData AND rfftData needed
+        stage_rfft_f32(&fftInstance, fftData, rfftData);
+        DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
+        break;
+    }
+    case STEP_ARM_CMPLX_MAG_F32: {
+        // 8us
+        arm_cmplx_mag_f32(rfftData, fftData, FFT_BIN_COUNT);
+        DEBUG_SET(DEBUG_FFT_TIME, 2, micros() - startTime);
+        step++;
+        FALLTHROUGH;
+    }
+    case STEP_CALC_FREQUENCIES: {
+        // 13us
+        float fftSum = 0;
+        float fftWeightedSum = 0;
 
-            fftResult[axis].maxVal = 0;
-            // iterate over fft data and calculate weighted indexes
-            float squaredData;
-            for (int i = 0; i < FFT_BIN_COUNT; i++) {
-                squaredData = fftData[i] * fftData[i];  //more weight on higher peaks
-                fftResult[axis].maxVal = MAX(fftResult[axis].maxVal, squaredData);
-                fftSum += squaredData;
-                fftWeightedSum += squaredData * (i + 1); // calculate weighted index starting at 1, not 0
+        fftResult[axis].maxVal = 0;
+        // iterate over fft data and calculate weighted indexes
+        float squaredData;
+        for (int i = 0; i < FFT_BIN_COUNT; i++) {
+            squaredData = fftData[i] * fftData[i];  //more weight on higher peaks
+            fftResult[axis].maxVal = MAX(fftResult[axis].maxVal, squaredData);
+            fftSum += squaredData;
+            fftWeightedSum += squaredData * (i + 1); // calculate weighted index starting at 1, not 0
+        }
+
+        // get weighted center of relevant frequency range (this way we have a better resolution than 31.25Hz)
+        if (fftSum > 0) {
+            // idx was shifted by 1 to start at 1, not 0
+            float fftMeanIndex = (fftWeightedSum / fftSum) - 1;
+            // the index points at the center frequency of each bin so index 0 is actually 16.125Hz
+            // fftMeanIndex += 0.5;
+
+            // don't go below the minimal cutoff frequency + 10 and don't jump around too much
+            float centerFreq;
+            centerFreq = constrain(fftMeanIndex * FFT_RESOLUTION, DYN_NOTCH_MIN_CUTOFF + 10, FFT_MAX_FREQUENCY);
+            centerFreq = biquadFilterApply(&fftFreqFilter[axis], centerFreq);
+            centerFreq = constrain(centerFreq, DYN_NOTCH_MIN_CUTOFF + 10, FFT_MAX_FREQUENCY);
+            fftResult[axis].centerFreq = centerFreq;
+            if (axis == 0) {
+                DEBUG_SET(DEBUG_FFT, 3, lrintf(fftMeanIndex * 100));
             }
-
-            // get weighted center of relevant frequency range (this way we have a better resolution than 31.25Hz)
-            if (fftSum > 0) {
-                // idx was shifted by 1 to start at 1, not 0
-                float fftMeanIndex = (fftWeightedSum / fftSum) - 1;
-                // the index points at the center frequency of each bin so index 0 is actually 16.125Hz
-                // fftMeanIndex += 0.5;
-
-                // don't go below the minimal cutoff frequency + 10 and don't jump around too much
-                float centerFreq;
-                centerFreq = constrain(fftMeanIndex * FFT_RESOLUTION, DYN_NOTCH_MIN_CUTOFF + 10, FFT_MAX_FREQUENCY);
-                centerFreq = biquadFilterApply(&fftFreqFilter[axis], centerFreq);
-                centerFreq = constrain(centerFreq, DYN_NOTCH_MIN_CUTOFF + 10, FFT_MAX_FREQUENCY);
-                fftResult[axis].centerFreq = centerFreq;
-                if (axis == 0) {
-                    DEBUG_SET(DEBUG_FFT, 3, lrintf(fftMeanIndex * 100));
-                }
-            }
-
-            DEBUG_SET(DEBUG_FFT_FREQ, axis, fftResult[axis].centerFreq);
-            DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
-            break;
         }
-        case STEP_UPDATE_FILTERS:
-        {
-            // 7us
-            // calculate new filter coefficients
-            float cutoffFreq = constrain(fftResult[axis].centerFreq - DYN_NOTCH_WIDTH, DYN_NOTCH_MIN_CUTOFF, DYN_NOTCH_MAX_CUTOFF);
-            float notchQ = filterGetNotchQ(fftResult[axis].centerFreq, cutoffFreq);
-            biquadFilterUpdate(&notchFilterDyn[axis], fftResult[axis].centerFreq, gyro.targetLooptime, notchQ, FILTER_NOTCH);
-            DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
 
-            axis = (axis + 1) % 3;
-            step++;
-            FALLTHROUGH;
-        }
-        case STEP_HANNING:
-        {
-            // 5us
-            // apply hanning window to gyro samples and store result in fftData
-            // hanning starts and ends with 0, could be skipped for minor speed improvement
-            uint8_t ringBufIdx = FFT_WINDOW_SIZE - fftIdx;
-            arm_mult_f32(&gyroData[axis][fftIdx], &hanningWindow[0], &fftData[0], ringBufIdx);
-            if (fftIdx > 0)
-                arm_mult_f32(&gyroData[axis][0], &hanningWindow[ringBufIdx], &fftData[ringBufIdx], fftIdx);
+        DEBUG_SET(DEBUG_FFT_FREQ, axis, fftResult[axis].centerFreq);
+        DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
+        break;
+    }
+    case STEP_UPDATE_FILTERS: {
+        // 7us
+        // calculate new filter coefficients
+        float cutoffFreq = constrain(fftResult[axis].centerFreq - DYN_NOTCH_WIDTH, DYN_NOTCH_MIN_CUTOFF, DYN_NOTCH_MAX_CUTOFF);
+        float notchQ = filterGetNotchQ(fftResult[axis].centerFreq, cutoffFreq);
+        biquadFilterUpdate(&notchFilterDyn[axis], fftResult[axis].centerFreq, gyro.targetLooptime, notchQ, FILTER_NOTCH);
+        DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
 
-            DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
-        }
+        axis = (axis + 1) % 3;
+        step++;
+        FALLTHROUGH;
+    }
+    case STEP_HANNING: {
+        // 5us
+        // apply hanning window to gyro samples and store result in fftData
+        // hanning starts and ends with 0, could be skipped for minor speed improvement
+        uint8_t ringBufIdx = FFT_WINDOW_SIZE - fftIdx;
+        arm_mult_f32(&gyroData[axis][fftIdx], &hanningWindow[0], &fftData[0], ringBufIdx);
+        if (fftIdx > 0)
+            arm_mult_f32(&gyroData[axis][0], &hanningWindow[ringBufIdx], &fftData[ringBufIdx], fftIdx);
+
+        DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
+    }
     }
 
     step = (step + 1) % STEP_COUNT;

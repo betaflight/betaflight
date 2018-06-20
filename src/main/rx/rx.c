@@ -131,7 +131,8 @@ void pgResetFn_rxFailsafeChannelConfigs(rxFailsafeChannelConfig_t *rxFailsafeCha
     }
 }
 
-void resetAllRxChannelRangeConfigurations(rxChannelRangeConfig_t *rxChannelRangeConfig) {
+void resetAllRxChannelRangeConfigurations(rxChannelRangeConfig_t *rxChannelRangeConfig)
+{
     // set default calibration to full range and 1:1 mapping
     for (int i = 0; i < NON_AUX_CHANNEL_COUNT; i++) {
         rxChannelRangeConfig->min = PWM_RANGE_MIN;
@@ -165,7 +166,7 @@ static bool nullProcessFrame(const rxRuntimeConfig_t *rxRuntimeConfig)
 STATIC_UNIT_TESTED bool isPulseValid(uint16_t pulseDuration)
 {
     return  pulseDuration >= rxConfig()->rx_min_usec &&
-            pulseDuration <= rxConfig()->rx_max_usec;
+        pulseDuration <= rxConfig()->rx_max_usec;
 }
 
 #ifdef USE_SERIAL_RX
@@ -306,9 +307,9 @@ void rxInit(void)
         rssiSource = RSSI_SOURCE_ADC;
     } else
 #endif
-    if (rxConfig()->rssi_channel > 0) {
-        rssiSource = RSSI_SOURCE_RX_CHANNEL;
-    }
+        if (rxConfig()->rssi_channel > 0) {
+            rssiSource = RSSI_SOURCE_RX_CHANNEL;
+        }
 
     rxChannelCount = MIN(rxConfig()->max_aux_channel + NON_AUX_CHANNEL_COUNT, rxRuntimeConfig.channelCount);
 }
@@ -372,11 +373,11 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
             }
 
             if (frameStatus & (RX_FRAME_FAILSAFE | RX_FRAME_DROPPED)) {
-            	// No (0%) signal
-            	setRssi(0, RSSI_SOURCE_FRAME_ERRORS);
+                // No (0%) signal
+                setRssi(0, RSSI_SOURCE_FRAME_ERRORS);
             } else {
-            	// Valid (100%) signal
-            	setRssi(RSSI_MAX_VALUE, RSSI_SOURCE_FRAME_ERRORS);
+                // Valid (100%) signal
+                setRssi(RSSI_MAX_VALUE, RSSI_SOURCE_FRAME_ERRORS);
             }
         }
 
@@ -441,7 +442,7 @@ static uint16_t getRxfailValue(uint8_t channel)
             else
                 return rxConfig()->rx_min_usec;
         }
-        /* no break */
+    /* no break */
 
     default:
     case RX_FAILSAFE_MODE_INVALID:

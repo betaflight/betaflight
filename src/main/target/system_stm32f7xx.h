@@ -29,7 +29,7 @@
 #define __TARGET_SYSTEM_STM32F7XX_H
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 
 extern uint32_t SystemCoreClock;          /*!< System Clock Frequency (Core Clock) */

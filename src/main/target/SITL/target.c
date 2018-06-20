@@ -68,17 +68,20 @@ static pthread_mutex_t mainLoopLock;
 
 int timeval_sub(struct timespec *result, struct timespec *x, struct timespec *y);
 
-int lockMainPID(void) {
+int lockMainPID(void)
+{
     return pthread_mutex_trylock(&mainLoopLock);
 }
 
 #define RAD2DEG (180.0 / M_PI)
 #define ACC_SCALE (256 / 9.80665)
 #define GYRO_SCALE (16.4)
-void sendMotorUpdate() {
+void sendMotorUpdate()
+{
     udpSend(&pwmLink, &pwmPkt, sizeof(servo_packet));
 }
-void updateState(const fdm_packet* pkt) {
+void updateState(const fdm_packet* pkt)
+{
     static double last_timestamp = 0; // in seconds
     static uint64_t last_realtime = 0; // in uS
     static struct timespec last_ts; // last packet
@@ -170,7 +173,8 @@ void updateState(const fdm_packet* pkt) {
 #endif
 }
 
-static void* udpThread(void* data) {
+static void* udpThread(void* data)
+{
     UNUSED(data);
     int n = 0;
 
@@ -186,7 +190,8 @@ static void* udpThread(void* data) {
     return NULL;
 }
 
-static void* tcpThread(void* data) {
+static void* tcpThread(void* data)
+{
     UNUSED(data);
 
     dyad_init();
@@ -203,7 +208,8 @@ static void* tcpThread(void* data) {
 }
 
 // system
-void systemInit(void) {
+void systemInit(void)
+{
     int ret;
 
     clock_gettime(CLOCK_MONOTONIC, &start_time);
@@ -244,14 +250,16 @@ void systemInit(void) {
     rescheduleTask(TASK_SERIAL, 1);
 }
 
-void systemReset(void){
+void systemReset(void)
+{
     printf("[system]Reset!\n");
     workerRunning = false;
     pthread_join(tcpWorker, NULL);
     pthread_join(udpWorker, NULL);
     exit(0);
 }
-void systemResetToBootloader(void) {
+void systemResetToBootloader(void)
+{
     printf("[system]ResetToBootloader!\n");
     workerRunning = false;
     pthread_join(tcpWorker, NULL);
@@ -259,14 +267,17 @@ void systemResetToBootloader(void) {
     exit(0);
 }
 
-void timerInit(void) {
+void timerInit(void)
+{
     printf("[timer]Init...\n");
 }
 
-void timerStart(void) {
+void timerStart(void)
+{
 }
 
-void failureMode(failureMode_e mode) {
+void failureMode(failureMode_e mode)
+{
     printf("[failureMode]!!! %d\n", mode);
     while (1);
 }
@@ -279,25 +290,29 @@ void indicateFailure(failureMode_e mode, int repeatCount)
 
 // Time part
 // Thanks ArduPilot
-uint64_t nanos64_real() {
+uint64_t nanos64_real()
+{
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (ts.tv_sec*1e9 + ts.tv_nsec) - (start_time.tv_sec*1e9 + start_time.tv_nsec);
 }
 
-uint64_t micros64_real() {
+uint64_t micros64_real()
+{
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return 1.0e6*((ts.tv_sec + (ts.tv_nsec*1.0e-9)) - (start_time.tv_sec + (start_time.tv_nsec*1.0e-9)));
 }
 
-uint64_t millis64_real() {
+uint64_t millis64_real()
+{
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return 1.0e3*((ts.tv_sec + (ts.tv_nsec*1.0e-9)) - (start_time.tv_sec + (start_time.tv_nsec*1.0e-9)));
 }
 
-uint64_t micros64() {
+uint64_t micros64()
+{
     static uint64_t last = 0;
     static uint64_t out = 0;
     uint64_t now = nanos64_real();
@@ -309,7 +324,8 @@ uint64_t micros64() {
 //    return micros64_real();
 }
 
-uint64_t millis64() {
+uint64_t millis64()
+{
     static uint64_t last = 0;
     static uint64_t out = 0;
     uint64_t now = nanos64_real();
@@ -321,30 +337,36 @@ uint64_t millis64() {
 //    return millis64_real();
 }
 
-uint32_t micros(void) {
+uint32_t micros(void)
+{
     return micros64() & 0xFFFFFFFF;
 }
 
-uint32_t millis(void) {
+uint32_t millis(void)
+{
     return millis64() & 0xFFFFFFFF;
 }
 
-void microsleep(uint32_t usec) {
+void microsleep(uint32_t usec)
+{
     struct timespec ts;
     ts.tv_sec = 0;
     ts.tv_nsec = usec*1000UL;
     while (nanosleep(&ts, &ts) == -1 && errno == EINTR) ;
 }
 
-void delayMicroseconds(uint32_t us) {
+void delayMicroseconds(uint32_t us)
+{
     microsleep(us / simRate);
 }
 
-void delayMicroseconds_real(uint32_t us) {
+void delayMicroseconds_real(uint32_t us)
+{
     microsleep(us);
 }
 
-void delay(uint32_t ms) {
+void delay(uint32_t ms)
+{
     uint64_t start = millis64();
 
     while ((millis64() - start) < ms) {
@@ -356,7 +378,8 @@ void delay(uint32_t ms) {
 // Return 1 if the difference is negative, otherwise 0.
 // result = x - y
 // from: http://www.gnu.org/software/libc/manual/html_node/Elapsed-Time.html
-int timeval_sub(struct timespec *result, struct timespec *x, struct timespec *y) {
+int timeval_sub(struct timespec *result, struct timespec *x, struct timespec *y)
+{
     unsigned int s_carry = 0;
     unsigned int ns_carry = 0;
     // Perform the carry for the later subtraction by updating y.
@@ -385,7 +408,8 @@ static int16_t motorsPwm[MAX_SUPPORTED_MOTORS];
 static int16_t servosPwm[MAX_SUPPORTED_SERVOS];
 static int16_t idlePulse;
 
-void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t _idlePulse, uint8_t motorCount) {
+void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t _idlePulse, uint8_t motorCount)
+{
     UNUSED(motorConfig);
     UNUSED(motorCount);
 
@@ -397,22 +421,26 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t _idlePulse, uint
     pwmMotorsEnabled = true;
 }
 
-void servoDevInit(const servoDevConfig_t *servoConfig) {
+void servoDevInit(const servoDevConfig_t *servoConfig)
+{
     UNUSED(servoConfig);
     for (uint8_t servoIndex = 0; servoIndex < MAX_SUPPORTED_SERVOS; servoIndex++) {
         servos[servoIndex].enabled = true;
     }
 }
 
-pwmOutputPort_t *pwmGetMotors(void) {
+pwmOutputPort_t *pwmGetMotors(void)
+{
     return motors;
 }
 
-void pwmEnableMotors(void) {
+void pwmEnableMotors(void)
+{
     pwmMotorsEnabled = true;
 }
 
-bool pwmAreMotorsEnabled(void) {
+bool pwmAreMotorsEnabled(void)
+{
     return pwmMotorsEnabled;
 }
 
@@ -421,16 +449,19 @@ bool isMotorProtocolDshot(void)
     return false;
 }
 
-void pwmWriteMotor(uint8_t index, float value) {
+void pwmWriteMotor(uint8_t index, float value)
+{
     motorsPwm[index] = value - idlePulse;
 }
 
-void pwmShutdownPulsesForAllMotors(uint8_t motorCount) {
+void pwmShutdownPulsesForAllMotors(uint8_t motorCount)
+{
     UNUSED(motorCount);
     pwmMotorsEnabled = false;
 }
 
-void pwmCompleteMotorUpdate(uint8_t motorCount) {
+void pwmCompleteMotorUpdate(uint8_t motorCount)
+{
     UNUSED(motorCount);
     // send to simulator
     // for gazebo8 ArduCopterPlugin remap, normal range = [0.0, 1.0], 3D rang = [-1.0, 1.0]
@@ -451,12 +482,14 @@ void pwmCompleteMotorUpdate(uint8_t motorCount) {
 //    printf("[pwm]%u:%u,%u,%u,%u\n", idlePulse, motorsPwm[0], motorsPwm[1], motorsPwm[2], motorsPwm[3]);
 }
 
-void pwmWriteServo(uint8_t index, float value) {
+void pwmWriteServo(uint8_t index, float value)
+{
     servosPwm[index] = value;
 }
 
 // ADC part
-uint16_t adcGetChannel(uint8_t channel) {
+uint16_t adcGetChannel(uint8_t channel)
+{
     UNUSED(channel);
     return 0;
 }
@@ -469,7 +502,8 @@ char _Min_Stack_Size;
 static FILE *eepromFd = NULL;
 uint8_t eepromData[EEPROM_SIZE];
 
-void FLASH_Unlock(void) {
+void FLASH_Unlock(void)
+{
     if (eepromFd != NULL) {
         fprintf(stderr, "[FLASH_Unlock] eepromFd != NULL\n");
         return;
@@ -479,7 +513,7 @@ void FLASH_Unlock(void) {
     eepromFd = fopen(EEPROM_FILENAME,"r+");
     if (eepromFd != NULL) {
         // obtain file size:
-        fseek(eepromFd , 0 , SEEK_END);
+        fseek(eepromFd, 0, SEEK_END);
         size_t lSize = ftell(eepromFd);
         rewind(eepromFd);
 
@@ -502,7 +536,8 @@ void FLASH_Unlock(void) {
     }
 }
 
-void FLASH_Lock(void) {
+void FLASH_Lock(void)
+{
     // flush & close
     if (eepromFd != NULL) {
         fseek(eepromFd, 0, SEEK_SET);
@@ -515,18 +550,20 @@ void FLASH_Lock(void) {
     }
 }
 
-FLASH_Status FLASH_ErasePage(uintptr_t Page_Address) {
+FLASH_Status FLASH_ErasePage(uintptr_t Page_Address)
+{
     UNUSED(Page_Address);
 //    printf("[FLASH_ErasePage]%x\n", Page_Address);
     return FLASH_COMPLETE;
 }
 
-FLASH_Status FLASH_ProgramWord(uintptr_t addr, uint32_t value) {
+FLASH_Status FLASH_ProgramWord(uintptr_t addr, uint32_t value)
+{
     if ((addr >= (uintptr_t)eepromData) && (addr < (uintptr_t)ARRAYEND(eepromData))) {
         *((uint32_t*)addr) = value;
         printf("[FLASH_ProgramWord]%p = %08x\n", (void*)addr, *((uint32_t*)addr));
     } else {
-            printf("[FLASH_ProgramWord]%p out of range!\n", (void*)addr);
+        printf("[FLASH_ProgramWord]%p out of range!\n", (void*)addr);
     }
     return FLASH_COMPLETE;
 }

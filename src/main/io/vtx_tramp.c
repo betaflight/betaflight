@@ -222,52 +222,49 @@ char trampHandleResponse(void)
     const uint8_t respCode = trampRespBuffer[1];
 
     switch (respCode) {
-    case 'r':
-        {
-            const uint16_t min_freq = trampRespBuffer[2]|(trampRespBuffer[3] << 8);
-            if (min_freq != 0) {
-                trampRFFreqMin = min_freq;
-                trampRFFreqMax = trampRespBuffer[4]|(trampRespBuffer[5] << 8);
-                trampRFPowerMax = trampRespBuffer[6]|(trampRespBuffer[7] << 8);
-                return 'r';
+    case 'r': {
+        const uint16_t min_freq = trampRespBuffer[2]|(trampRespBuffer[3] << 8);
+        if (min_freq != 0) {
+            trampRFFreqMin = min_freq;
+            trampRFFreqMax = trampRespBuffer[4]|(trampRespBuffer[5] << 8);
+            trampRFPowerMax = trampRespBuffer[6]|(trampRespBuffer[7] << 8);
+            return 'r';
+        }
+
+        // throw bytes echoed from tx to rx in bidirectional mode away
+    }
+    break;
+
+    case 'v': {
+        const uint16_t freq = trampRespBuffer[2]|(trampRespBuffer[3] << 8);
+        if (freq != 0) {
+            trampCurFreq = freq;
+            trampConfiguredPower = trampRespBuffer[4]|(trampRespBuffer[5] << 8);
+            trampPitMode = trampRespBuffer[7];
+            trampPower = trampRespBuffer[8]|(trampRespBuffer[9] << 8);
+
+            // if no band/chan match then make sure set-by-freq mode is flagged
+            if (!vtx58_Freq2Bandchan(trampCurFreq, &trampBand, &trampChannel)) {
+                trampSetByFreqFlag = true;
             }
 
-            // throw bytes echoed from tx to rx in bidirectional mode away
+            if (trampConfFreq == 0)  trampConfFreq  = trampCurFreq;
+            if (trampConfPower == 0) trampConfPower = trampPower;
+            return 'v';
         }
-        break;
 
-    case 'v':
-        {
-            const uint16_t freq = trampRespBuffer[2]|(trampRespBuffer[3] << 8);
-            if (freq != 0) {
-                trampCurFreq = freq;
-                trampConfiguredPower = trampRespBuffer[4]|(trampRespBuffer[5] << 8);
-                trampPitMode = trampRespBuffer[7];
-                trampPower = trampRespBuffer[8]|(trampRespBuffer[9] << 8);
+        // throw bytes echoed from tx to rx in bidirectional mode away
+    }
+    break;
 
-                // if no band/chan match then make sure set-by-freq mode is flagged
-                if (!vtx58_Freq2Bandchan(trampCurFreq, &trampBand, &trampChannel)) {
-                    trampSetByFreqFlag = true;
-                }
-
-                if (trampConfFreq == 0)  trampConfFreq  = trampCurFreq;
-                if (trampConfPower == 0) trampConfPower = trampPower;
-                return 'v';
-            }
-
-            // throw bytes echoed from tx to rx in bidirectional mode away
+    case 's': {
+        const uint16_t temp = (int16_t)(trampRespBuffer[6]|(trampRespBuffer[7] << 8));
+        if (temp != 0) {
+            trampTemperature = temp;
+            return 's';
         }
-        break;
-
-    case 's':
-        {
-            const uint16_t temp = (int16_t)(trampRespBuffer[6]|(trampRespBuffer[7] << 8));
-            if (temp != 0) {
-                trampTemperature = temp;
-                return 's';
-            }
-        }
-        break;
+    }
+    break;
     }
 
     return 0;
@@ -405,10 +402,10 @@ static void vtxTrampProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
         break;
 
     case 'v':
-         if (trampStatus == TRAMP_STATUS_CHECK_FREQ_PW) {
-             trampStatus = TRAMP_STATUS_SET_FREQ_PW;
-         }
-         break;
+        if (trampStatus == TRAMP_STATUS_CHECK_FREQ_PW) {
+            trampStatus = TRAMP_STATUS_SET_FREQ_PW;
+        }
+        break;
     }
 
     switch (trampStatus) {
@@ -432,40 +429,39 @@ static void vtxTrampProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
         }
         break;
 
-    case TRAMP_STATUS_SET_FREQ_PW:
-        {
-            bool done = true;
-            if (trampConfFreq && trampFreqRetries && (trampConfFreq != trampCurFreq)) {
-                trampSendFreq(trampConfFreq);
-                trampFreqRetries--;
+    case TRAMP_STATUS_SET_FREQ_PW: {
+        bool done = true;
+        if (trampConfFreq && trampFreqRetries && (trampConfFreq != trampCurFreq)) {
+            trampSendFreq(trampConfFreq);
+            trampFreqRetries--;
 #ifdef TRAMP_DEBUG
-                debugFreqReqCounter++;
+            debugFreqReqCounter++;
 #endif
-                done = false;
-            } else if (trampConfPower && trampPowerRetries && (trampConfPower != trampConfiguredPower)) {
-                trampSendRFPower(trampConfPower);
-                trampPowerRetries--;
+            done = false;
+        } else if (trampConfPower && trampPowerRetries && (trampConfPower != trampConfiguredPower)) {
+            trampSendRFPower(trampConfPower);
+            trampPowerRetries--;
 #ifdef TRAMP_DEBUG
-                debugPowReqCounter++;
+            debugPowReqCounter++;
 #endif
-                done = false;
-            }
-
-            if (!done) {
-                trampStatus = TRAMP_STATUS_CHECK_FREQ_PW;
-
-                // delay next status query by 300ms
-                lastQueryTimeUs = currentTimeUs + 300 * 1000;
-            } else {
-                // everything has been done, let's return to original state
-                trampStatus = TRAMP_STATUS_ONLINE;
-                // reset configuration value in case it failed (no more retries)
-                trampConfFreq  = trampCurFreq;
-                trampConfPower = trampPower;
-                trampFreqRetries = trampPowerRetries = 0;
-            }
+            done = false;
         }
-        break;
+
+        if (!done) {
+            trampStatus = TRAMP_STATUS_CHECK_FREQ_PW;
+
+            // delay next status query by 300ms
+            lastQueryTimeUs = currentTimeUs + 300 * 1000;
+        } else {
+            // everything has been done, let's return to original state
+            trampStatus = TRAMP_STATUS_ONLINE;
+            // reset configuration value in case it failed (no more retries)
+            trampConfFreq  = trampCurFreq;
+            trampConfPower = trampPower;
+            trampFreqRetries = trampPowerRetries = 0;
+        }
+    }
+    break;
 
     case TRAMP_STATUS_CHECK_FREQ_PW:
         if (cmp32(currentTimeUs, lastQueryTimeUs) > 200 * 1000) {

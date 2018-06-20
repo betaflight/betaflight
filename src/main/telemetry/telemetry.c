@@ -71,11 +71,11 @@ PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
     .hottAlarmSoundInterval = 5,
     .pidValuesAsTelemetry = 0,
     .report_cell_voltage = false,
-    .flysky_sensors = {
-            IBUS_SENSOR_TYPE_TEMPERATURE,
-            IBUS_SENSOR_TYPE_RPM_FLYSKY,
-            IBUS_SENSOR_TYPE_EXTERNAL_VOLTAGE
-    }
+.flysky_sensors = {
+    IBUS_SENSOR_TYPE_TEMPERATURE,
+    IBUS_SENSOR_TYPE_RPM_FLYSKY,
+    IBUS_SENSOR_TYPE_EXTERNAL_VOLTAGE
+}
 );
 
 void telemetryInit(void)
@@ -133,13 +133,13 @@ bool telemetryCheckRxPortShared(const serialPortConfig_t *portConfig)
 {
     if (portConfig->functionMask & FUNCTION_RX_SERIAL && portConfig->functionMask & TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK &&
         (rxConfig()->serialrx_provider == SERIALRX_SPEKTRUM1024 ||
-        rxConfig()->serialrx_provider == SERIALRX_SPEKTRUM2048 ||
-        rxConfig()->serialrx_provider == SERIALRX_SBUS ||
-        rxConfig()->serialrx_provider == SERIALRX_SUMD ||
-        rxConfig()->serialrx_provider == SERIALRX_SUMH ||
-        rxConfig()->serialrx_provider == SERIALRX_XBUS_MODE_B ||
-        rxConfig()->serialrx_provider == SERIALRX_XBUS_MODE_B_RJ01 ||
-        rxConfig()->serialrx_provider == SERIALRX_IBUS)) {
+            rxConfig()->serialrx_provider == SERIALRX_SPEKTRUM2048 ||
+            rxConfig()->serialrx_provider == SERIALRX_SBUS ||
+            rxConfig()->serialrx_provider == SERIALRX_SUMD ||
+            rxConfig()->serialrx_provider == SERIALRX_SUMH ||
+            rxConfig()->serialrx_provider == SERIALRX_XBUS_MODE_B ||
+            rxConfig()->serialrx_provider == SERIALRX_XBUS_MODE_B_RJ01 ||
+            rxConfig()->serialrx_provider == SERIALRX_IBUS)) {
 
         return true;
     }

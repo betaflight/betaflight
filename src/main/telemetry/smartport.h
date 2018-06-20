@@ -33,8 +33,7 @@
 #define SMARTPORT_MSP_TX_BUF_SIZE 256
 #define SMARTPORT_MSP_RX_BUF_SIZE 64
 
-enum
-{
+enum {
     FSSP_START_STOP = 0x7E,
 
     FSSP_DLE        = 0x7D,
@@ -50,8 +49,8 @@ enum
     FSSP_SENSOR_ID2 = 0x0D,
     FSSP_SENSOR_ID3 = 0x34,
     FSSP_SENSOR_ID4 = 0x67
-    // there are 32 ID's polled by smartport master
-    // remaining 3 bits are crc (according to comments in openTx code)
+        // there are 32 ID's polled by smartport master
+        // remaining 3 bits are crc (according to comments in openTx code)
 };
 
 typedef struct smartPortPayload_s {

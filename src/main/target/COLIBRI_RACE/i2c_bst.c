@@ -186,7 +186,8 @@ extern uint8_t writeData[BST_BUFFER_SIZE];
 
 /*************************************************************************************************/
 uint8_t writeBufferPointer = 1;
-static void bstWrite8(uint8_t data) {
+static void bstWrite8(uint8_t data)
+{
     writeData[writeBufferPointer++] = data;
     writeData[0] = writeBufferPointer;
 }
@@ -268,189 +269,189 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
     uint32_t i, tmp, junk;
 
     switch (bstRequest) {
-        case BST_API_VERSION:
-            bstWrite8(BST_PROTOCOL_VERSION);
+    case BST_API_VERSION:
+        bstWrite8(BST_PROTOCOL_VERSION);
 
-            bstWrite8(API_VERSION_MAJOR);
-            bstWrite8(API_VERSION_MINOR);
-            break;
-        case BST_BUILD_INFO:
-            for (i = 0; i < BUILD_DATE_LENGTH; i++) {
-                bstWrite8(buildDate[i]);
-            }
-            for (i = 0; i < BUILD_TIME_LENGTH; i++) {
-                bstWrite8(buildTime[i]);
-            }
+        bstWrite8(API_VERSION_MAJOR);
+        bstWrite8(API_VERSION_MINOR);
+        break;
+    case BST_BUILD_INFO:
+        for (i = 0; i < BUILD_DATE_LENGTH; i++) {
+            bstWrite8(buildDate[i]);
+        }
+        for (i = 0; i < BUILD_TIME_LENGTH; i++) {
+            bstWrite8(buildTime[i]);
+        }
 
-            for (i = 0; i < GIT_SHORT_REVISION_LENGTH; i++) {
-                bstWrite8(shortGitRevision[i]);
-            }
-            break;
-        case BST_STATUS:
-            bstWrite16(getTaskDeltaTime(TASK_GYROPID));
+        for (i = 0; i < GIT_SHORT_REVISION_LENGTH; i++) {
+            bstWrite8(shortGitRevision[i]);
+        }
+        break;
+    case BST_STATUS:
+        bstWrite16(getTaskDeltaTime(TASK_GYROPID));
 #ifdef USE_I2C
-            bstWrite16(i2cGetErrorCounter());
+        bstWrite16(i2cGetErrorCounter());
 #else
-            bstWrite16(0);
+        bstWrite16(0);
 #endif
-            bstWrite16(sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_RANGEFINDER) << 4);
-            // BST the flags in the order we delivered them, ignoring BOXNAMES and BOXINDEXES
-            // Requires new Multiwii protocol version to fix
-            // It would be preferable to setting the enabled bits based on BOXINDEX.
-            junk = 0;
-            tmp = IS_ENABLED(FLIGHT_MODE(ANGLE_MODE)) << BOXANGLE |
-                    IS_ENABLED(FLIGHT_MODE(HORIZON_MODE)) << BOXHORIZON |
-                    IS_ENABLED(FLIGHT_MODE(BARO_MODE)) << BOXBARO |
-                    IS_ENABLED(FLIGHT_MODE(MAG_MODE)) << BOXMAG |
-                    IS_ENABLED(FLIGHT_MODE(HEADFREE_MODE)) << BOXHEADFREE |
-                    IS_ENABLED(IS_RC_MODE_ACTIVE(BOXHEADADJ)) << BOXHEADADJ |
-                    IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCAMSTAB)) << BOXCAMSTAB |
-                    IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCAMTRIG)) << BOXCAMTRIG |
-                    IS_ENABLED(FLIGHT_MODE(GPS_HOME_MODE)) << BOXGPSHOME |
-                    IS_ENABLED(FLIGHT_MODE(GPS_HOLD_MODE)) << BOXGPSHOLD |
-                    IS_ENABLED(FLIGHT_MODE(PASSTHRU_MODE)) << BOXPASSTHRU |
-                    IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBEEPERON)) << BOXBEEPERON |
-                    IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLEDMAX)) << BOXLEDMAX |
-                    IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLEDLOW)) << BOXLEDLOW |
-                    IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLLIGHTS)) << BOXLLIGHTS |
-                    IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCALIB)) << BOXCALIB |
-                    IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGOV)) << BOXGOV |
-                    IS_ENABLED(IS_RC_MODE_ACTIVE(BOXOSD)) << BOXOSD |
-                    IS_ENABLED(IS_RC_MODE_ACTIVE(BOXTELEMETRY)) << BOXTELEMETRY |
-                    IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGTUNE)) << BOXGTUNE |
-                    IS_ENABLED(FLIGHT_MODE(RANGEFINDER_MODE)) << BOXRANGEFINDER |
-                    IS_ENABLED(ARMING_FLAG(ARMED)) << BOXARM |
-                    IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBLACKBOX)) << BOXBLACKBOX |
-                    IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << BOXFAILSAFE;
-            for (i = 0; i < activeBoxIdCount; i++) {
-                int flag = (tmp & (1 << activeBoxIds[i]));
-                if (flag)
-                    junk |= 1 << i;
-            }
-            bstWrite32(junk);
-            bstWrite8(getCurrentPidProfileIndex());
-            break;
-        case BST_LOOP_TIME:
-            bstWrite16(getTaskDeltaTime(TASK_GYROPID));
-            break;
-        case BST_RC_TUNING:
-            bstWrite8(currentControlRateProfile->rcRates[FD_ROLL]);
-            bstWrite8(currentControlRateProfile->rcExpo[FD_ROLL]);
-            for (i = 0 ; i < 3; i++) {
-                bstWrite8(currentControlRateProfile->rates[i]); // R,P,Y see flight_dynamics_index_t
-            }
-            bstWrite8(currentControlRateProfile->dynThrPID);
-            bstWrite8(currentControlRateProfile->thrMid8);
-            bstWrite8(currentControlRateProfile->thrExpo8);
-            bstWrite16(currentControlRateProfile->tpa_breakpoint);
-            bstWrite8(currentControlRateProfile->rcExpo[FD_YAW]);
-            bstWrite8(currentControlRateProfile->rcRates[FD_YAW]);
-            break;
+        bstWrite16(sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_RANGEFINDER) << 4);
+        // BST the flags in the order we delivered them, ignoring BOXNAMES and BOXINDEXES
+        // Requires new Multiwii protocol version to fix
+        // It would be preferable to setting the enabled bits based on BOXINDEX.
+        junk = 0;
+        tmp = IS_ENABLED(FLIGHT_MODE(ANGLE_MODE)) << BOXANGLE |
+            IS_ENABLED(FLIGHT_MODE(HORIZON_MODE)) << BOXHORIZON |
+            IS_ENABLED(FLIGHT_MODE(BARO_MODE)) << BOXBARO |
+            IS_ENABLED(FLIGHT_MODE(MAG_MODE)) << BOXMAG |
+            IS_ENABLED(FLIGHT_MODE(HEADFREE_MODE)) << BOXHEADFREE |
+            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXHEADADJ)) << BOXHEADADJ |
+            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCAMSTAB)) << BOXCAMSTAB |
+            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCAMTRIG)) << BOXCAMTRIG |
+            IS_ENABLED(FLIGHT_MODE(GPS_HOME_MODE)) << BOXGPSHOME |
+            IS_ENABLED(FLIGHT_MODE(GPS_HOLD_MODE)) << BOXGPSHOLD |
+            IS_ENABLED(FLIGHT_MODE(PASSTHRU_MODE)) << BOXPASSTHRU |
+            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBEEPERON)) << BOXBEEPERON |
+            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLEDMAX)) << BOXLEDMAX |
+            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLEDLOW)) << BOXLEDLOW |
+            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLLIGHTS)) << BOXLLIGHTS |
+            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCALIB)) << BOXCALIB |
+            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGOV)) << BOXGOV |
+            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXOSD)) << BOXOSD |
+            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXTELEMETRY)) << BOXTELEMETRY |
+            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGTUNE)) << BOXGTUNE |
+            IS_ENABLED(FLIGHT_MODE(RANGEFINDER_MODE)) << BOXRANGEFINDER |
+            IS_ENABLED(ARMING_FLAG(ARMED)) << BOXARM |
+            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBLACKBOX)) << BOXBLACKBOX |
+            IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << BOXFAILSAFE;
+        for (i = 0; i < activeBoxIdCount; i++) {
+            int flag = (tmp & (1 << activeBoxIds[i]));
+            if (flag)
+                junk |= 1 << i;
+        }
+        bstWrite32(junk);
+        bstWrite8(getCurrentPidProfileIndex());
+        break;
+    case BST_LOOP_TIME:
+        bstWrite16(getTaskDeltaTime(TASK_GYROPID));
+        break;
+    case BST_RC_TUNING:
+        bstWrite8(currentControlRateProfile->rcRates[FD_ROLL]);
+        bstWrite8(currentControlRateProfile->rcExpo[FD_ROLL]);
+        for (i = 0 ; i < 3; i++) {
+            bstWrite8(currentControlRateProfile->rates[i]); // R,P,Y see flight_dynamics_index_t
+        }
+        bstWrite8(currentControlRateProfile->dynThrPID);
+        bstWrite8(currentControlRateProfile->thrMid8);
+        bstWrite8(currentControlRateProfile->thrExpo8);
+        bstWrite16(currentControlRateProfile->tpa_breakpoint);
+        bstWrite8(currentControlRateProfile->rcExpo[FD_YAW]);
+        bstWrite8(currentControlRateProfile->rcRates[FD_YAW]);
+        break;
 
-        case BST_PID:
-            for (i = 0; i < PID_ITEM_COUNT; i++) {
-                bstWrite8(currentPidProfile->pid[i].P);
-                bstWrite8(currentPidProfile->pid[i].I);
-                bstWrite8(currentPidProfile->pid[i].D);
-            }
-            pidInitConfig(currentPidProfile);
-            break;
-        case BST_MODE_RANGES:
-            for (i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
-                const modeActivationCondition_t *mac = modeActivationConditions(i);
-                const box_t *box = &boxes[mac->modeId];
-                bstWrite8(box->permanentId);
-                bstWrite8(mac->auxChannelIndex);
-                bstWrite8(mac->range.startStep);
-                bstWrite8(mac->range.endStep);
-            }
-            break;
-        case BST_MISC:
-            bstWrite16(rxConfig()->midrc);
+    case BST_PID:
+        for (i = 0; i < PID_ITEM_COUNT; i++) {
+            bstWrite8(currentPidProfile->pid[i].P);
+            bstWrite8(currentPidProfile->pid[i].I);
+            bstWrite8(currentPidProfile->pid[i].D);
+        }
+        pidInitConfig(currentPidProfile);
+        break;
+    case BST_MODE_RANGES:
+        for (i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
+            const modeActivationCondition_t *mac = modeActivationConditions(i);
+            const box_t *box = &boxes[mac->modeId];
+            bstWrite8(box->permanentId);
+            bstWrite8(mac->auxChannelIndex);
+            bstWrite8(mac->range.startStep);
+            bstWrite8(mac->range.endStep);
+        }
+        break;
+    case BST_MISC:
+        bstWrite16(rxConfig()->midrc);
 
-            bstWrite16(motorConfig()->minthrottle);
-            bstWrite16(motorConfig()->maxthrottle);
-            bstWrite16(motorConfig()->mincommand);
+        bstWrite16(motorConfig()->minthrottle);
+        bstWrite16(motorConfig()->maxthrottle);
+        bstWrite16(motorConfig()->mincommand);
 
-            bstWrite16(failsafeConfig()->failsafe_throttle);
+        bstWrite16(failsafeConfig()->failsafe_throttle);
 
 #ifdef USE_GPS
-            bstWrite8(gpsConfig()->provider); // gps_type
-            bstWrite8(0); // TODO gps_baudrate (an index, cleanflight uses a uint32_t
-            bstWrite8(gpsConfig()->sbasMode); // gps_ubx_sbas
+        bstWrite8(gpsConfig()->provider); // gps_type
+        bstWrite8(0); // TODO gps_baudrate (an index, cleanflight uses a uint32_t
+        bstWrite8(gpsConfig()->sbasMode); // gps_ubx_sbas
 #else
-            bstWrite8(0); // gps_type
-            bstWrite8(0); // TODO gps_baudrate (an index, cleanflight uses a uint32_t
-            bstWrite8(0); // gps_ubx_sbas
+        bstWrite8(0); // gps_type
+        bstWrite8(0); // TODO gps_baudrate (an index, cleanflight uses a uint32_t
+        bstWrite8(0); // gps_ubx_sbas
 #endif
-            bstWrite8(0); // legacy - was multiwiiCurrentMeterOutput);
-            bstWrite8(rxConfig()->rssi_channel);
-            bstWrite8(0);
+        bstWrite8(0); // legacy - was multiwiiCurrentMeterOutput);
+        bstWrite8(rxConfig()->rssi_channel);
+        bstWrite8(0);
 
-            bstWrite16(compassConfig()->mag_declination / 10);
+        bstWrite16(compassConfig()->mag_declination / 10);
 
-            bstWrite8(voltageSensorADCConfig(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale);
-            bstWrite8(batteryConfig()->vbatmincellvoltage);
-            bstWrite8(batteryConfig()->vbatmaxcellvoltage);
-            bstWrite8(batteryConfig()->vbatwarningcellvoltage);
-            break;
+        bstWrite8(voltageSensorADCConfig(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale);
+        bstWrite8(batteryConfig()->vbatmincellvoltage);
+        bstWrite8(batteryConfig()->vbatmaxcellvoltage);
+        bstWrite8(batteryConfig()->vbatwarningcellvoltage);
+        break;
 
-        case BST_FEATURE:
-            bstWrite32(featureMask());
-            break;
+    case BST_FEATURE:
+        bstWrite32(featureMask());
+        break;
 
-        case BST_RX_CONFIG:
-            bstWrite8(rxConfig()->serialrx_provider);
-            bstWrite16(rxConfig()->maxcheck);
-            bstWrite16(rxConfig()->midrc);
-            bstWrite16(rxConfig()->mincheck);
-            bstWrite8(rxConfig()->spektrum_sat_bind);
-            bstWrite16(rxConfig()->rx_min_usec);
-            bstWrite16(rxConfig()->rx_max_usec);
-            break;
+    case BST_RX_CONFIG:
+        bstWrite8(rxConfig()->serialrx_provider);
+        bstWrite16(rxConfig()->maxcheck);
+        bstWrite16(rxConfig()->midrc);
+        bstWrite16(rxConfig()->mincheck);
+        bstWrite8(rxConfig()->spektrum_sat_bind);
+        bstWrite16(rxConfig()->rx_min_usec);
+        bstWrite16(rxConfig()->rx_max_usec);
+        break;
 
-        case BST_RX_MAP:
-            for (i = 0; i < RX_MAPPABLE_CHANNEL_COUNT; i++)
-                bstWrite8(rxConfig()->rcmap[i]);
-            break;
+    case BST_RX_MAP:
+        for (i = 0; i < RX_MAPPABLE_CHANNEL_COUNT; i++)
+            bstWrite8(rxConfig()->rcmap[i]);
+        break;
 
 
 #ifdef USE_LED_STRIP
-        case BST_LED_COLORS:
-            for (i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
-                hsvColor_t *color = &ledStripConfigMutable()->colors[i];
-                bstWrite16(color->h);
-                bstWrite8(color->s);
-                bstWrite8(color->v);
-            }
-            break;
+    case BST_LED_COLORS:
+        for (i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
+            hsvColor_t *color = &ledStripConfigMutable()->colors[i];
+            bstWrite16(color->h);
+            bstWrite8(color->s);
+            bstWrite8(color->v);
+        }
+        break;
 
-        case BST_LED_STRIP_CONFIG:
-            for (i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
-                const ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[i];
-                bstWrite32(*ledConfig);
-            }
-            break;
+    case BST_LED_STRIP_CONFIG:
+        for (i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
+            const ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[i];
+            bstWrite32(*ledConfig);
+        }
+        break;
 #endif
-        case BST_DEADBAND:
-            bstWrite8(rcControlsConfig()->alt_hold_deadband);
-            bstWrite8(rcControlsConfig()->alt_hold_fast_change);
-            bstWrite8(rcControlsConfig()->deadband);
-            bstWrite8(rcControlsConfig()->yaw_deadband);
-            break;
-        case BST_FC_FILTERS:
-            switch (gyroConfig()->gyro_hardware_lpf) { // Extra safety to prevent OSD setting corrupt values
-                case GYRO_HARDWARE_LPF_1KHZ_SAMPLE:
-                    bstWrite16(1);
-                    break;
-                default:
-                    bstWrite16(0);
-                    break;
-            }
+    case BST_DEADBAND:
+        bstWrite8(rcControlsConfig()->alt_hold_deadband);
+        bstWrite8(rcControlsConfig()->alt_hold_fast_change);
+        bstWrite8(rcControlsConfig()->deadband);
+        bstWrite8(rcControlsConfig()->yaw_deadband);
+        break;
+    case BST_FC_FILTERS:
+        switch (gyroConfig()->gyro_hardware_lpf) { // Extra safety to prevent OSD setting corrupt values
+        case GYRO_HARDWARE_LPF_1KHZ_SAMPLE:
+            bstWrite16(1);
             break;
         default:
-            // we do not know how to handle the (valid) message, indicate error BST
-            return false;
+            bstWrite16(0);
+            break;
+        }
+        break;
+    default:
+        // we do not know how to handle the (valid) message, indicate error BST
+        return false;
     }
     return true;
 }
@@ -462,197 +463,196 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
 
     bool ret = BST_PASSED;
     switch (bstWriteCommand) {
-        case BST_SELECT_SETTING:
-            if (!ARMING_FLAG(ARMED)) {
-                changePidProfile(bstRead8());
+    case BST_SELECT_SETTING:
+        if (!ARMING_FLAG(ARMED)) {
+            changePidProfile(bstRead8());
+        }
+        break;
+    case BST_SET_LOOP_TIME:
+        bstRead16();
+        break;
+    case BST_SET_PID:
+        for (i = 0; i < PID_ITEM_COUNT; i++) {
+            currentPidProfile->pid[i].P = bstRead8();
+            currentPidProfile->pid[i].I = bstRead8();
+            currentPidProfile->pid[i].D = bstRead8();
+        }
+        break;
+    case BST_SET_RC_TUNING:
+        if (bstReadDataSize() >= 10) {
+            uint8_t rate;
+            currentControlRateProfile->rcRates[FD_ROLL] = bstRead8();
+            currentControlRateProfile->rcExpo[FD_ROLL] = bstRead8();
+            for (i = 0; i < 3; i++) {
+                currentControlRateProfile->rates[i] = bstRead8();
             }
-            break;
-        case BST_SET_LOOP_TIME:
-            bstRead16();
-            break;
-        case BST_SET_PID:
-            for (i = 0; i < PID_ITEM_COUNT; i++) {
-                currentPidProfile->pid[i].P = bstRead8();
-                currentPidProfile->pid[i].I = bstRead8();
-                currentPidProfile->pid[i].D = bstRead8();
+            rate = bstRead8();
+            currentControlRateProfile->dynThrPID = MIN(rate, CONTROL_RATE_CONFIG_TPA_MAX);
+            currentControlRateProfile->thrMid8 = bstRead8();
+            currentControlRateProfile->thrExpo8 = bstRead8();
+            currentControlRateProfile->tpa_breakpoint = bstRead16();
+            if (bstReadDataSize() >= 11) {
+                currentControlRateProfile->rcExpo[FD_YAW] = bstRead8();
             }
-            break;
-        case BST_SET_RC_TUNING:
-            if (bstReadDataSize() >= 10) {
-                uint8_t rate;
-                currentControlRateProfile->rcRates[FD_ROLL] = bstRead8();
-                currentControlRateProfile->rcExpo[FD_ROLL] = bstRead8();
-                for (i = 0; i < 3; i++) {
-                    currentControlRateProfile->rates[i] = bstRead8();
-                }
-                rate = bstRead8();
-                currentControlRateProfile->dynThrPID = MIN(rate, CONTROL_RATE_CONFIG_TPA_MAX);
-                currentControlRateProfile->thrMid8 = bstRead8();
-                currentControlRateProfile->thrExpo8 = bstRead8();
-                currentControlRateProfile->tpa_breakpoint = bstRead16();
-                if (bstReadDataSize() >= 11) {
-                    currentControlRateProfile->rcExpo[FD_YAW] = bstRead8();
-                }
-                if (bstReadDataSize() >= 12) {
-                    currentControlRateProfile->rcRates[FD_YAW] = bstRead8();
-                }
-            } else {
-                ret = BST_FAILED;
+            if (bstReadDataSize() >= 12) {
+                currentControlRateProfile->rcRates[FD_YAW] = bstRead8();
             }
-            break;
-        case BST_SET_MODE_RANGE:
+        } else {
+            ret = BST_FAILED;
+        }
+        break;
+    case BST_SET_MODE_RANGE:
+        i = bstRead8();
+        if (i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
+            modeActivationCondition_t *mac = modeActivationConditionsMutable(i);
             i = bstRead8();
-            if (i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
-                modeActivationCondition_t *mac = modeActivationConditionsMutable(i);
-                i = bstRead8();
-                const box_t *box = findBoxByPermenantId(i);
-                if (box) {
-                    mac->modeId = box->boxId;
-                    mac->auxChannelIndex = bstRead8();
-                    mac->range.startStep = bstRead8();
-                    mac->range.endStep = bstRead8();
+            const box_t *box = findBoxByPermenantId(i);
+            if (box) {
+                mac->modeId = box->boxId;
+                mac->auxChannelIndex = bstRead8();
+                mac->range.startStep = bstRead8();
+                mac->range.endStep = bstRead8();
 
-                    useRcControlsConfig(currentPidProfile);
-                } else {
-                    ret = BST_FAILED;
-                }
+                useRcControlsConfig(currentPidProfile);
             } else {
                 ret = BST_FAILED;
             }
-            break;
-        case BST_SET_MISC:
-            tmp = bstRead16();
-            if (tmp < 1600 && tmp > 1400)
-                rxConfigMutable()->midrc = tmp;
+        } else {
+            ret = BST_FAILED;
+        }
+        break;
+    case BST_SET_MISC:
+        tmp = bstRead16();
+        if (tmp < 1600 && tmp > 1400)
+            rxConfigMutable()->midrc = tmp;
 
-            motorConfigMutable()->minthrottle = bstRead16();
-            motorConfigMutable()->maxthrottle = bstRead16();
-            motorConfigMutable()->mincommand = bstRead16();
+        motorConfigMutable()->minthrottle = bstRead16();
+        motorConfigMutable()->maxthrottle = bstRead16();
+        motorConfigMutable()->mincommand = bstRead16();
 
-            failsafeConfigMutable()->failsafe_throttle = bstRead16();
+        failsafeConfigMutable()->failsafe_throttle = bstRead16();
 
 #ifdef USE_GPS
-            gpsConfigMutable()->provider = bstRead8(); // gps_type
-            bstRead8(); // gps_baudrate
-            gpsConfigMutable()->sbasMode = bstRead8(); // gps_ubx_sbas
+        gpsConfigMutable()->provider = bstRead8(); // gps_type
+        bstRead8(); // gps_baudrate
+        gpsConfigMutable()->sbasMode = bstRead8(); // gps_ubx_sbas
 #else
-            bstRead8(); // gps_type
-            bstRead8(); // gps_baudrate
-            bstRead8(); // gps_ubx_sbas
+        bstRead8(); // gps_type
+        bstRead8(); // gps_baudrate
+        bstRead8(); // gps_ubx_sbas
 #endif
-            bstRead8(); // legacy - was multiwiiCurrentMeterOutput
-            rxConfigMutable()->rssi_channel = bstRead8();
-            bstRead8();
+        bstRead8(); // legacy - was multiwiiCurrentMeterOutput
+        rxConfigMutable()->rssi_channel = bstRead8();
+        bstRead8();
 
-            compassConfigMutable()->mag_declination = bstRead16() * 10;
+        compassConfigMutable()->mag_declination = bstRead16() * 10;
 
-            voltageSensorADCConfigMutable(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale = bstRead8();  // actual vbatscale as intended
-            batteryConfigMutable()->vbatmincellvoltage = bstRead8();  // vbatlevel_warn1 in MWC2.3 GUI
-            batteryConfigMutable()->vbatmaxcellvoltage = bstRead8();  // vbatlevel_warn2 in MWC2.3 GUI
-            batteryConfigMutable()->vbatwarningcellvoltage = bstRead8();  // vbatlevel when buzzer starts to alert
-            break;
+        voltageSensorADCConfigMutable(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale = bstRead8();  // actual vbatscale as intended
+        batteryConfigMutable()->vbatmincellvoltage = bstRead8();  // vbatlevel_warn1 in MWC2.3 GUI
+        batteryConfigMutable()->vbatmaxcellvoltage = bstRead8();  // vbatlevel_warn2 in MWC2.3 GUI
+        batteryConfigMutable()->vbatwarningcellvoltage = bstRead8();  // vbatlevel when buzzer starts to alert
+        break;
 
-        case BST_ACC_CALIBRATION:
-           if (!ARMING_FLAG(ARMED))
-               accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
-           break;
-        case BST_MAG_CALIBRATION:
-           if (!ARMING_FLAG(ARMED))
-               ENABLE_STATE(CALIBRATE_MAG);
-           break;
-        case BST_EEPROM_WRITE:
-            if (ARMING_FLAG(ARMED)) {
-                ret = BST_FAILED;
-                bstWrite8(ret);
-                return ret;
-            }
-            writeEEPROM();
-            readEEPROM();
-            break;
-        case BST_SET_FEATURE:
-            featureClearAll();
-            featureSet(bstRead32()); // features bitmap
+    case BST_ACC_CALIBRATION:
+        if (!ARMING_FLAG(ARMED))
+            accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
+        break;
+    case BST_MAG_CALIBRATION:
+        if (!ARMING_FLAG(ARMED))
+            ENABLE_STATE(CALIBRATE_MAG);
+        break;
+    case BST_EEPROM_WRITE:
+        if (ARMING_FLAG(ARMED)) {
+            ret = BST_FAILED;
+            bstWrite8(ret);
+            return ret;
+        }
+        writeEEPROM();
+        readEEPROM();
+        break;
+    case BST_SET_FEATURE:
+        featureClearAll();
+        featureSet(bstRead32()); // features bitmap
 #ifdef SERIALRX_UART
-            if (featureConfigured(FEATURE_RX_SERIAL)) {
-                serialConfigMutable()->portConfigs[SERIALRX_UART].functionMask = FUNCTION_RX_SERIAL;
-            } else {
-                serialConfigMutable()->portConfigs[SERIALRX_UART].functionMask = FUNCTION_NONE;
-            }
+        if (featureConfigured(FEATURE_RX_SERIAL)) {
+            serialConfigMutable()->portConfigs[SERIALRX_UART].functionMask = FUNCTION_RX_SERIAL;
+        } else {
+            serialConfigMutable()->portConfigs[SERIALRX_UART].functionMask = FUNCTION_NONE;
+        }
 #endif
-            break;
-        case BST_SET_RX_CONFIG:
-           rxConfigMutable()->serialrx_provider = bstRead8();
-           rxConfigMutable()->maxcheck = bstRead16();
-           rxConfigMutable()->midrc = bstRead16();
-           rxConfigMutable()->mincheck = bstRead16();
-           rxConfigMutable()->spektrum_sat_bind = bstRead8();
-           if (bstReadDataSize() > 8) {
-               rxConfigMutable()->rx_min_usec = bstRead16();
-               rxConfigMutable()->rx_max_usec = bstRead16();
-           }
-           break;
-        case BST_SET_RX_MAP:
-            for (i = 0; i < RX_MAPPABLE_CHANNEL_COUNT; i++) {
-                rxConfigMutable()->rcmap[i] = bstRead8();
-            }
-            break;
+        break;
+    case BST_SET_RX_CONFIG:
+        rxConfigMutable()->serialrx_provider = bstRead8();
+        rxConfigMutable()->maxcheck = bstRead16();
+        rxConfigMutable()->midrc = bstRead16();
+        rxConfigMutable()->mincheck = bstRead16();
+        rxConfigMutable()->spektrum_sat_bind = bstRead8();
+        if (bstReadDataSize() > 8) {
+            rxConfigMutable()->rx_min_usec = bstRead16();
+            rxConfigMutable()->rx_max_usec = bstRead16();
+        }
+        break;
+    case BST_SET_RX_MAP:
+        for (i = 0; i < RX_MAPPABLE_CHANNEL_COUNT; i++) {
+            rxConfigMutable()->rcmap[i] = bstRead8();
+        }
+        break;
 
 #ifdef USE_LED_STRIP
-        case BST_SET_LED_COLORS:
-           //for (i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
-           {
-               i = bstRead8();
-               hsvColor_t *color = &ledStripConfigMutable()->colors[i];
-               color->h = bstRead16();
-               color->s = bstRead8();
-               color->v = bstRead8();
-           }
-           break;
-        case BST_SET_LED_STRIP_CONFIG:
-           {
-               i = bstRead8();
-               if (i >= LED_MAX_STRIP_LENGTH || bstReadDataSize() != (1 + 4)) {
-                   ret = BST_FAILED;
-                   break;
-               }
-               ledConfig_t *ledConfig = &ledStripConfigMutable()->ledConfigs[i];
-               *ledConfig = bstRead32();
-               reevaluateLedConfig();
-           }
-           break;
-#endif
-        case BST_REBOOT:
-            isRebootScheduled = true;
-            break;
-        case BST_DISARM:
-            if (ARMING_FLAG(ARMED)) {
-                    disarm();
-            }
-            setArmingDisabled(ARMING_DISABLED_BST);
-            break;
-        case BST_ENABLE_ARM:
-            unsetArmingDisabled(ARMING_DISABLED_BST);
-            break;
-        case BST_SET_DEADBAND:
-            rcControlsConfigMutable()->alt_hold_deadband = bstRead8();
-            rcControlsConfigMutable()->alt_hold_fast_change = bstRead8();
-            rcControlsConfigMutable()->deadband = bstRead8();
-            rcControlsConfigMutable()->yaw_deadband = bstRead8();
-            break;
-        case BST_SET_FC_FILTERS:
-            switch (bstRead16()) {
-                case 1:
-                    gyroConfigMutable()->gyro_hardware_lpf = GYRO_HARDWARE_LPF_1KHZ_SAMPLE;
-                    break;
-                default:
-                    gyroConfigMutable()->gyro_hardware_lpf = GYRO_HARDWARE_LPF_NORMAL;
-                    break;
-            }
-            break;
-
-        default:
-            // we do not know how to handle the (valid) message, indicate error BST
+    case BST_SET_LED_COLORS:
+        //for (i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
+    {
+        i = bstRead8();
+        hsvColor_t *color = &ledStripConfigMutable()->colors[i];
+        color->h = bstRead16();
+        color->s = bstRead8();
+        color->v = bstRead8();
+    }
+    break;
+    case BST_SET_LED_STRIP_CONFIG: {
+        i = bstRead8();
+        if (i >= LED_MAX_STRIP_LENGTH || bstReadDataSize() != (1 + 4)) {
             ret = BST_FAILED;
+            break;
+        }
+        ledConfig_t *ledConfig = &ledStripConfigMutable()->ledConfigs[i];
+        *ledConfig = bstRead32();
+        reevaluateLedConfig();
+    }
+    break;
+#endif
+    case BST_REBOOT:
+        isRebootScheduled = true;
+        break;
+    case BST_DISARM:
+        if (ARMING_FLAG(ARMED)) {
+            disarm();
+        }
+        setArmingDisabled(ARMING_DISABLED_BST);
+        break;
+    case BST_ENABLE_ARM:
+        unsetArmingDisabled(ARMING_DISABLED_BST);
+        break;
+    case BST_SET_DEADBAND:
+        rcControlsConfigMutable()->alt_hold_deadband = bstRead8();
+        rcControlsConfigMutable()->alt_hold_fast_change = bstRead8();
+        rcControlsConfigMutable()->deadband = bstRead8();
+        rcControlsConfigMutable()->yaw_deadband = bstRead8();
+        break;
+    case BST_SET_FC_FILTERS:
+        switch (bstRead16()) {
+        case 1:
+            gyroConfigMutable()->gyro_hardware_lpf = GYRO_HARDWARE_LPF_1KHZ_SAMPLE;
+            break;
+        default:
+            gyroConfigMutable()->gyro_hardware_lpf = GYRO_HARDWARE_LPF_NORMAL;
+            break;
+        }
+        break;
+
+    default:
+        // we do not know how to handle the (valid) message, indicate error BST
+        ret = BST_FAILED;
     }
     bstWrite8(ret);
 
@@ -696,22 +696,22 @@ void bstProcessInCommand(void)
                 writeData[i] = 0;
             }
             switch (bstRead8()) {
-                case BST_USB_DEVICE_INFO_REQUEST:
-                    bstRead8();
-                    if (bstSlaveUSBCommandFeedback(/*bstRead8()*/))
-                        coreProReady = true;
-                    break;
-                case BST_READ_COMMANDS:
-                    bstWrite8(BST_READ_COMMANDS);
-                    bstSlaveProcessFeedbackCommand(bstRead8());
-                    break;
-                case BST_WRITE_COMMANDS:
-                    bstWrite8(BST_WRITE_COMMANDS);
-                    bstSlaveProcessWriteCommand(bstRead8());
-                    break;
-                default:
-                    // we do not know how to handle the (valid) message, indicate error BST
-                    break;
+            case BST_USB_DEVICE_INFO_REQUEST:
+                bstRead8();
+                if (bstSlaveUSBCommandFeedback(/*bstRead8()*/))
+                    coreProReady = true;
+                break;
+            case BST_READ_COMMANDS:
+                bstWrite8(BST_READ_COMMANDS);
+                bstSlaveProcessFeedbackCommand(bstRead8());
+                break;
+            case BST_WRITE_COMMANDS:
+                bstWrite8(BST_WRITE_COMMANDS);
+                bstSlaveProcessWriteCommand(bstRead8());
+                break;
+            default:
+                // we do not know how to handle the (valid) message, indicate error BST
+                break;
             }
             cleanflight_data_ready = true;
         }
@@ -726,8 +726,7 @@ void bstProcessInCommand(void)
 static void resetBstChecker(timeUs_t currentTimeUs)
 {
     if (needResetCheck) {
-        if (currentTimeUs >= (resetBstTimer + BST_RESET_TIME))
-        {
+        if (currentTimeUs >= (resetBstTimer + BST_RESET_TIME)) {
             bstTimeoutUserCallback();
             needResetCheck = false;
         }
@@ -873,13 +872,13 @@ bool writeFCModeToBST(void)
 {
     uint8_t tmp = 0;
     tmp = IS_ENABLED(ARMING_FLAG(ARMED)) |
-           IS_ENABLED(FLIGHT_MODE(ANGLE_MODE)) << 1 |
-           IS_ENABLED(FLIGHT_MODE(HORIZON_MODE)) << 2 |
-           IS_ENABLED(FLIGHT_MODE(BARO_MODE)) << 3 |
-           IS_ENABLED(FLIGHT_MODE(MAG_MODE)) << 4 |
-           IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << 5 |
-           IS_ENABLED(FLIGHT_MODE(RANGEFINDER_MODE)) << 6 |
-           IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << 7;
+        IS_ENABLED(FLIGHT_MODE(ANGLE_MODE)) << 1 |
+        IS_ENABLED(FLIGHT_MODE(HORIZON_MODE)) << 2 |
+        IS_ENABLED(FLIGHT_MODE(BARO_MODE)) << 3 |
+        IS_ENABLED(FLIGHT_MODE(MAG_MODE)) << 4 |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << 5 |
+        IS_ENABLED(FLIGHT_MODE(RANGEFINDER_MODE)) << 6 |
+        IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << 7;
 
     bstMasterStartBuffer(PUBLIC_ADDRESS);
     bstMasterWrite8(CLEANFLIGHT_MODE_FRAME_ID);

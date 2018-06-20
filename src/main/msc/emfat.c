@@ -8,17 +8,17 @@
  * The MIT License (MIT)
  *
  * Copyright (c) 2015 by Sergey Fetisov <fsenok@gmail.com>
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -119,8 +119,7 @@ extern "C" {
 
 #pragma pack(push, 1)
 
-typedef struct
-{
+typedef struct {
     uint8_t  status;          // 0x80 for bootable, 0x00 for not bootable, anything else for invalid
     uint8_t  start_head;      // The head of the start
     uint8_t  start_sector;    // (S | ((C >> 2) & 0xC0)) where S is the sector of the start and C is the cylinder of the start. Note that S is counted from one.
@@ -133,8 +132,7 @@ typedef struct
     uint32_t EndLBA;          // linear address of last sector in partition. Multiply by sector size (usually 512) for real offset
 } mbr_part_t;
 
-typedef struct
-{
+typedef struct {
     uint8_t    Code[440];
     uint32_t   DiskSig;  //This is optional
     uint16_t   Reserved; //Usually 0x0000
@@ -142,8 +140,7 @@ typedef struct
     uint8_t    BootSignature[2]; //0x55 0xAA for bootable
 } mbr_t;
 
-typedef struct
-{
+typedef struct {
     uint8_t jump[JUMP_INS_LEN];
     uint8_t OEM_name[OEM_NAME_LEN];
     uint16_t bytes_per_sec;
@@ -173,8 +170,7 @@ typedef struct
     uint8_t file_system_type[FILE_SYS_TYPE_LENGTH];
 } boot_sector;
 
-typedef struct
-{
+typedef struct {
     uint32_t signature1;     /* 0x41615252L */
     uint32_t reserved1[120]; /* Nothing as far as I can tell */
     uint32_t signature2;     /* 0x61417272L */
@@ -184,8 +180,7 @@ typedef struct
     uint32_t signature3;
 } fsinfo_t;
 
-typedef struct
-{
+typedef struct {
     uint8_t name[FILE_NAME_SHRT_LEN];
     uint8_t extn[FILE_NAME_EXTN_LEN];
     uint8_t attr;
@@ -201,8 +196,7 @@ typedef struct
     uint32_t size;
 } dir_entry;
 
-typedef struct
-{
+typedef struct {
     uint8_t ord_field;
     uint8_t fname0_4[LFN_FIRST_SET_LEN];
     uint8_t flag;
@@ -274,8 +268,8 @@ static void lba_to_chs(int lba, uint8_t *cl, uint8_t *ch, uint8_t *dh)
     head = (lba / sectors) % heads;
     cylinder = lba / (sectors * heads);
     if (cylinder >= cylinders) {
-      *cl = *ch = *dh = 0xff;
-      return;
+        *cl = *ch = *dh = 0xff;
+        return;
     }
     *cl = sector | ((cylinder & 0x300) >> 2);
     *ch = cylinder & 0xFF;
@@ -507,8 +501,7 @@ void fill_entry(dir_entry *entry, const char *name, uint8_t attr, uint32_t clust
 
     if ((attr & ATTR_DIR) == 0) {
         for (i = l - 1; i >= 0; i--) {
-            if (name[i] == '.')
-            {
+            if (name[i] == '.') {
                 dot_pos = i;
                 break;
             }
@@ -726,7 +719,7 @@ uint32_t emfat_cma_time_from_unix(uint32_t tim)
 
     /* Days are what is left over (+1) from all that. */
     ymd[2] = day + 1;
-    
+
     return EMFAT_ENCODE_CMA_TIME(ymd[2], ymd[1], ymd[0], hms[0], hms[1], hms[2]);
 }
 

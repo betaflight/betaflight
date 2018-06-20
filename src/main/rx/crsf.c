@@ -157,30 +157,29 @@ STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c, void *data)
             if (crsfFrame.frame.type != CRSF_FRAMETYPE_RC_CHANNELS_PACKED) {
                 const uint8_t crc = crsfFrameCRC();
                 if (crc == crsfFrame.bytes[fullFrameLength - 1]) {
-                    switch (crsfFrame.frame.type)
-                    {
+                    switch (crsfFrame.frame.type) {
 #if defined(USE_MSP_OVER_TELEMETRY)
-                        case CRSF_FRAMETYPE_MSP_REQ:
-                        case CRSF_FRAMETYPE_MSP_WRITE: {
-                            uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + CRSF_FRAME_ORIGIN_DEST_SIZE;
-                            if (bufferCrsfMspFrame(frameStart, CRSF_FRAME_RX_MSP_FRAME_SIZE)) {
-                                crsfScheduleMspResponse();
-                            }
-                            break;
+                    case CRSF_FRAMETYPE_MSP_REQ:
+                    case CRSF_FRAMETYPE_MSP_WRITE: {
+                        uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + CRSF_FRAME_ORIGIN_DEST_SIZE;
+                        if (bufferCrsfMspFrame(frameStart, CRSF_FRAME_RX_MSP_FRAME_SIZE)) {
+                            crsfScheduleMspResponse();
                         }
+                        break;
+                    }
 #endif
-                        case CRSF_FRAMETYPE_DEVICE_PING:
-                            crsfScheduleDeviceInfoResponse();
-                            break;
+                    case CRSF_FRAMETYPE_DEVICE_PING:
+                        crsfScheduleDeviceInfoResponse();
+                        break;
 #if defined(USE_CRSF_CMS_TELEMETRY)
-                        case CRSF_FRAMETYPE_DISPLAYPORT_CMD: {
-                            uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + CRSF_FRAME_ORIGIN_DEST_SIZE;
-                            crsfProcessDisplayPortCmd(frameStart);
-                            break;
-                        }
+                    case CRSF_FRAMETYPE_DISPLAYPORT_CMD: {
+                        uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + CRSF_FRAME_ORIGIN_DEST_SIZE;
+                        crsfProcessDisplayPortCmd(frameStart);
+                        break;
+                    }
 #endif
-                        default:
-                            break;
+                    default:
+                        break;
                     }
                 }
             }
@@ -272,12 +271,12 @@ bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     }
 
     serialPort = openSerialPort(portConfig->identifier,
-        FUNCTION_RX_SERIAL,
-        crsfDataReceive,
-        NULL,
-        CRSF_BAUDRATE,
-        CRSF_PORT_MODE,
-        CRSF_PORT_OPTIONS | (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0)
+            FUNCTION_RX_SERIAL,
+            crsfDataReceive,
+            NULL,
+            CRSF_BAUDRATE,
+            CRSF_PORT_MODE,
+            CRSF_PORT_OPTIONS | (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0)
         );
 
     return serialPort != NULL;

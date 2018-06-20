@@ -83,8 +83,7 @@ static void cmsx_Blackbox_GetDeviceStatus(void)
     uint32_t storageUsed = 0;
     uint32_t storageFree = 0;
 
-    switch (blackboxConfig()->device)
-    {
+    switch (blackboxConfig()->device) {
 #ifdef USE_SDCARD
     case BLACKBOX_DEVICE_SDCARD:
         unit = "MB";
@@ -191,8 +190,7 @@ static long cmsx_Blackbox_onExit(const OSD_Entry *self)
     return 0;
 }
 
-static OSD_Entry cmsx_menuBlackboxEntries[] =
-{
+static OSD_Entry cmsx_menuBlackboxEntries[] = {
     { "-- BLACKBOX --", OME_Label, NULL, NULL, 0},
     { "DEVICE",      OME_TAB,     NULL,            &cmsx_BlackboxDeviceTable,                                 0 },
     { "(STATUS)",    OME_String,  NULL,            &cmsx_BlackboxStatus,                                      0 },

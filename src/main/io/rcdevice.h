@@ -110,8 +110,8 @@ typedef enum {
 
 typedef enum {
     RCDEVICE_PROTOCOL_RCSPLIT_VERSION = 0x00, // this is used to indicate the
-                                              // device that using rcsplit
-                                              // firmware version that <= 1.1.0
+    // device that using rcsplit
+    // firmware version that <= 1.1.0
     RCDEVICE_PROTOCOL_VERSION_1_0 = 0x01,
     RCDEVICE_PROTOCOL_UNKNOWN
 } rcdevice_protocol_version_e;
@@ -119,7 +119,7 @@ typedef enum {
 // Reserved setting ids
 typedef enum {
     RCDEVICE_PROTOCOL_SETTINGID_DISP_CHARSET                = 0, // type: text_selection, read&write, 0: use charset with betaflight logo, 1 use
-                                                                 // charset with cleanflight logo, other id are not used
+    // charset with cleanflight logo, other id are not used
     RCDEVICE_PROTOCOL_SETTINGID_DISP_COLUMNS                = 1, // type: uint8_t, read only, the column count of the OSD layer
     RCDEVICE_PROTOCOL_SETTINGID_DISP_TV_MODE                = 2, // type: text_selection, read&write, 0:NTSC, 1:PAL
     RCDEVICE_PROTOCOL_SETTINGID_SDCARD_CAPACITY             = 3, // type: info, read only, return sd card capacity

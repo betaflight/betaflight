@@ -736,7 +736,7 @@ static void printRxFailsafe(uint8_t dumpMask, const rxFailsafeChannelConfig_t *r
         const rxFailsafeChannelConfig_t *channelFailsafeConfig = &rxFailsafeChannelConfigs[channel];
         const rxFailsafeChannelConfig_t *defaultChannelFailsafeConfig = &defaultRxFailsafeChannelConfigs[channel];
         const bool equalsDefault = channelFailsafeConfig->mode == defaultChannelFailsafeConfig->mode
-                && channelFailsafeConfig->step == defaultChannelFailsafeConfig->step;
+            && channelFailsafeConfig->step == defaultChannelFailsafeConfig->step;
         const bool requireValue = channelFailsafeConfig->mode == RX_FAILSAFE_MODE_SET;
         if (requireValue) {
             const char *format = "rxfail %u %c %d";
@@ -975,7 +975,7 @@ static void printSerial(uint8_t dumpMask, const serialConfig_t *serialConfig, co
             baudRates[serialConfig->portConfigs[i].gps_baudrateIndex],
             baudRates[serialConfig->portConfigs[i].telemetry_baudrateIndex],
             baudRates[serialConfig->portConfigs[i].blackbox_baudrateIndex]
-            );
+        );
     }
 }
 
@@ -987,7 +987,7 @@ static void cliSerial(char *cmdline)
         return;
     }
     serialPortConfig_t portConfig;
-    memset(&portConfig, 0 , sizeof(portConfig));
+    memset(&portConfig, 0, sizeof(portConfig));
 
     serialPortConfig_t *currentConfig;
 
@@ -1066,7 +1066,7 @@ static void cliSerial(char *cmdline)
         baudRates[portConfig.gps_baudrateIndex],
         baudRates[portConfig.telemetry_baudrateIndex],
         baudRates[portConfig.blackbox_baudrateIndex]
-        );
+    );
 
 }
 
@@ -1140,8 +1140,8 @@ static void cliSerialPassthrough(char *cmdline)
         }
 
         passThroughPort = openSerialPort(id, FUNCTION_NONE, NULL, NULL,
-                                         baud, mode,
-                                         SERIAL_NOT_INVERTED);
+                baud, mode,
+                SERIAL_NOT_INVERTED);
         if (!passThroughPort) {
             cliPrintLine("could not be opened.");
             return;
@@ -1166,7 +1166,7 @@ static void cliSerialPassthrough(char *cmdline)
 
         if (mode && passThroughPort->mode != mode) {
             cliPrintf("Mode changed from %d to %d.\r\n",
-                   passThroughPort->mode, mode);
+                passThroughPort->mode, mode);
             serialSetMode(passThroughPort, mode);
         }
 
@@ -1710,16 +1710,16 @@ static void printServo(uint8_t dumpMask, const servoParam_t *servoParams, const 
             for (uint32_t channel = 0; channel < INPUT_SOURCE_COUNT; channel++) {
                 equalsDefault = ~(servoConf->reversedSources ^ servoConfDefault->reversedSources) & (1 << channel);
                 if (servoConfDefault->reversedSources & (1 << channel)) {
-                    cliDefaultPrintLinef(dumpMask, equalsDefault, format, i , channel);
+                    cliDefaultPrintLinef(dumpMask, equalsDefault, format, i, channel);
                 }
                 if (servoConf->reversedSources & (1 << channel)) {
-                    cliDumpPrintLinef(dumpMask, equalsDefault, format, i , channel);
+                    cliDumpPrintLinef(dumpMask, equalsDefault, format, i, channel);
                 }
             }
         } else {
             for (uint32_t channel = 0; channel < INPUT_SOURCE_COUNT; channel++) {
                 if (servoConf->reversedSources & (1 << channel)) {
-                    cliDumpPrintLinef(dumpMask, true, format, i , channel);
+                    cliDumpPrintLinef(dumpMask, true, format, i, channel);
                 }
             }
         }
@@ -1920,8 +1920,8 @@ static void cliServoMix(char *cmdline)
         }
 
         if (args[SERVO] >= 0 && args[SERVO] < MAX_SUPPORTED_SERVOS
-                && args[INPUT] >= 0 && args[INPUT] < INPUT_SOURCE_COUNT
-                && (*ptr == 'r' || *ptr == 'n')) {
+            && args[INPUT] >= 0 && args[INPUT] < INPUT_SOURCE_COUNT
+            && (*ptr == 'r' || *ptr == 'n')) {
             if (*ptr == 'r')
                 servoParamsMutable(args[SERVO])->reversedSources |= 1 << args[INPUT];
             else
@@ -2049,7 +2049,7 @@ static void cliFlashInfo(char *cmdline)
     UNUSED(cmdline);
 
     cliPrintLinef("Flash sectors=%u, sectorSize=%u, pagesPerSector=%u, pageSize=%u, totalSize=%u, usedSize=%u",
-            layout->sectors, layout->sectorSize, layout->pagesPerSector, layout->pageSize, layout->totalSize, flashfsGetOffset());
+        layout->sectors, layout->sectorSize, layout->pagesPerSector, layout->pageSize, layout->totalSize, flashfsGetOffset());
 }
 
 
@@ -2507,8 +2507,7 @@ static void processBeeperCommand(char *cmdline, uint32_t *offFlags, const uint32
                         *offFlags |= beeperModeMaskForTableIndex(i);
                     }
                     cliPrint("Disabled");
-                }
-                else { // beeper on
+                } else { // beeper on
                     if (i == BEEPER_ALL - 1) {
                         *offFlags = 0;
                     } else {
@@ -2516,8 +2515,8 @@ static void processBeeperCommand(char *cmdline, uint32_t *offFlags, const uint32
                     }
                     cliPrint("Enabled");
                 }
-            cliPrintLinef(" %s", beeperNameForTableIndex(i));
-            break;
+                cliPrintLinef(" %s", beeperNameForTableIndex(i));
+                break;
             }
         }
     }
@@ -2537,7 +2536,8 @@ static void cliBeeper(char *cmdline)
 #endif
 
 #ifdef USE_RX_FRSKY_SPI
-void cliFrSkyBind(char *cmdline){
+void cliFrSkyBind(char *cmdline)
+{
     UNUSED(cmdline);
     switch (rxSpiConfig()->rx_spi_protocol) {
     case RX_SPI_FRSKY_D:
@@ -2710,7 +2710,8 @@ static void cliDumpGyroRegisters(char *cmdline)
 #endif
 
 
-static int parseOutputIndex(char *pch, bool allowAllEscs) {
+static int parseOutputIndex(char *pch, bool allowAllEscs)
+{
     int outputIndex = atoi(pch);
     if ((outputIndex >= 0) && (outputIndex < getMotorCount())) {
         cliPrintLinef("Using output %d.", outputIndex);
@@ -2813,14 +2814,13 @@ void printEscInfo(const uint8_t *escInfoBuffer, uint8_t bytesRead)
                     }
 
                     break;
-                case ESC_INFO_BLHELI32:
-                    {
-                        char *escType = (char *)(escInfoBuffer + 31);
-                        escType[32] = 0;
-                        cliPrintLine(escType);
-                    }
+                case ESC_INFO_BLHELI32: {
+                    char *escType = (char *)(escInfoBuffer + 31);
+                    escType[32] = 0;
+                    cliPrintLine(escType);
+                }
 
-                    break;
+                break;
                 }
 
                 cliPrint("MCU Serial No: 0x");
@@ -2936,49 +2936,48 @@ static void cliDshotProg(char *cmdline)
             }
 
             break;
-        default:
-            {
-                int command = atoi(pch);
-                if (command >= 0 && command < DSHOT_MIN_THROTTLE) {
-                    if (firstCommand) {
-                        pwmDisableMotors();
+        default: {
+            int command = atoi(pch);
+            if (command >= 0 && command < DSHOT_MIN_THROTTLE) {
+                if (firstCommand) {
+                    pwmDisableMotors();
 
-                        if (command == DSHOT_CMD_ESC_INFO) {
-                            delay(5); // Wait for potential ESC telemetry transmission to finish
-                        } else {
-                            delay(1);
-                        }
-
-                        firstCommand = false;
-                    }
-
-                    if (command != DSHOT_CMD_ESC_INFO) {
-                        pwmWriteDshotCommand(escIndex, getMotorCount(), command, true);
+                    if (command == DSHOT_CMD_ESC_INFO) {
+                        delay(5); // Wait for potential ESC telemetry transmission to finish
                     } else {
-#if defined(USE_ESC_SENSOR) && defined(USE_ESC_SENSOR_INFO)
-                        if (feature(FEATURE_ESC_SENSOR)) {
-                            if (escIndex != ALL_MOTORS) {
-                                executeEscInfoCommand(escIndex);
-                            } else {
-                                for (uint8_t i = 0; i < getMotorCount(); i++) {
-                                    executeEscInfoCommand(i);
-                                }
-                            }
-                        } else
-#endif
-                        {
-                            cliPrintLine("Not supported.");
-                        }
+                        delay(1);
                     }
 
-                    cliPrintLinef("Command Sent: %d", command);
-
-                } else {
-                    cliPrintErrorLinef("Invalid command. Range: 1 - %d.", DSHOT_MIN_THROTTLE - 1);
+                    firstCommand = false;
                 }
-            }
 
-            break;
+                if (command != DSHOT_CMD_ESC_INFO) {
+                    pwmWriteDshotCommand(escIndex, getMotorCount(), command, true);
+                } else {
+#if defined(USE_ESC_SENSOR) && defined(USE_ESC_SENSOR_INFO)
+                    if (feature(FEATURE_ESC_SENSOR)) {
+                        if (escIndex != ALL_MOTORS) {
+                            executeEscInfoCommand(escIndex);
+                        } else {
+                            for (uint8_t i = 0; i < getMotorCount(); i++) {
+                                executeEscInfoCommand(i);
+                            }
+                        }
+                    } else
+#endif
+                    {
+                        cliPrintLine("Not supported.");
+                    }
+                }
+
+                cliPrintLinef("Command Sent: %d", command);
+
+            } else {
+                cliPrintErrorLinef("Invalid command. Range: 1 - %d.", DSHOT_MIN_THROTTLE - 1);
+            }
+        }
+
+        break;
         }
 
         pos++;
@@ -3381,102 +3380,98 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
                 int16_t value  = 0;
                 switch (val->type & VALUE_MODE_MASK) {
                 case MODE_DIRECT: {
-                        int16_t value = atoi(eqptr);
+                    int16_t value = atoi(eqptr);
 
-                        if (value >= val->config.minmax.min && value <= val->config.minmax.max) {
+                    if (value >= val->config.minmax.min && value <= val->config.minmax.max) {
+                        cliSetVar(val, value);
+                        valueChanged = true;
+                    }
+                }
+
+                break;
+                case MODE_LOOKUP:
+                case MODE_BITSET: {
+                    int tableIndex;
+                    if ((val->type & VALUE_MODE_MASK) == MODE_BITSET) {
+                        tableIndex = TABLE_OFF_ON;
+                    } else {
+                        tableIndex = val->config.lookup.tableIndex;
+                    }
+                    const lookupTableEntry_t *tableEntry = &lookupTables[tableIndex];
+                    bool matched = false;
+                    for (uint32_t tableValueIndex = 0; tableValueIndex < tableEntry->valueCount && !matched; tableValueIndex++) {
+                        matched = tableEntry->values[tableValueIndex] && strcasecmp(tableEntry->values[tableValueIndex], eqptr) == 0;
+
+                        if (matched) {
+                            value = tableValueIndex;
+
                             cliSetVar(val, value);
                             valueChanged = true;
                         }
                     }
+                }
 
-                    break;
-                case MODE_LOOKUP: 
-                case MODE_BITSET: {
-                        int tableIndex;
-                        if ((val->type & VALUE_MODE_MASK) == MODE_BITSET) {
-                            tableIndex = TABLE_OFF_ON;
-                        } else {
-                            tableIndex = val->config.lookup.tableIndex;
-                        }
-                        const lookupTableEntry_t *tableEntry = &lookupTables[tableIndex];
-                        bool matched = false;
-                        for (uint32_t tableValueIndex = 0; tableValueIndex < tableEntry->valueCount && !matched; tableValueIndex++) {
-                            matched = tableEntry->values[tableValueIndex] && strcasecmp(tableEntry->values[tableValueIndex], eqptr) == 0;
-
-                            if (matched) {
-                                value = tableValueIndex;
-
-                                cliSetVar(val, value);
-                                valueChanged = true;
-                            }
-                        }
-                    }
-
-                    break;
+                break;
 
                 case MODE_ARRAY: {
-                        const uint8_t arrayLength = val->config.array.length;
-                        char *valPtr = eqptr;
+                    const uint8_t arrayLength = val->config.array.length;
+                    char *valPtr = eqptr;
 
-                        int i = 0;
-                        while (i < arrayLength && valPtr != NULL) {
-                            // skip spaces
-                            valPtr = skipSpace(valPtr);
+                    int i = 0;
+                    while (i < arrayLength && valPtr != NULL) {
+                        // skip spaces
+                        valPtr = skipSpace(valPtr);
 
-                            // process substring starting at valPtr
-                            // note: no need to copy substrings for atoi()
-                            //       it stops at the first character that cannot be converted...
-                            switch (val->type & VALUE_TYPE_MASK) {
-                            default:
-                            case VAR_UINT8:
-                                {
-                                    // fetch data pointer
-                                    uint8_t *data = (uint8_t *)cliGetValuePointer(val) + i;
-                                    // store value
-                                    *data = (uint8_t)atoi((const char*) valPtr);
-                                }
-
-                                break;
-                            case VAR_INT8:
-                                {
-                                    // fetch data pointer
-                                    int8_t *data = (int8_t *)cliGetValuePointer(val) + i;
-                                    // store value
-                                    *data = (int8_t)atoi((const char*) valPtr);
-                                }
-
-                                break;
-                            case VAR_UINT16:
-                                {
-                                    // fetch data pointer
-                                    uint16_t *data = (uint16_t *)cliGetValuePointer(val) + i;
-                                    // store value
-                                    *data = (uint16_t)atoi((const char*) valPtr);
-                                }
-
-                                break;
-                            case VAR_INT16:
-                                {
-                                    // fetch data pointer
-                                    int16_t *data = (int16_t *)cliGetValuePointer(val) + i;
-                                    // store value
-                                    *data = (int16_t)atoi((const char*) valPtr);
-                                }
-
-                                break;
-                            }
-
-                            // find next comma (or end of string)
-                            valPtr = strchr(valPtr, ',') + 1;
-
-                            i++;
+                        // process substring starting at valPtr
+                        // note: no need to copy substrings for atoi()
+                        //       it stops at the first character that cannot be converted...
+                        switch (val->type & VALUE_TYPE_MASK) {
+                        default:
+                        case VAR_UINT8: {
+                            // fetch data pointer
+                            uint8_t *data = (uint8_t *)cliGetValuePointer(val) + i;
+                            // store value
+                            *data = (uint8_t)atoi((const char*) valPtr);
                         }
+
+                        break;
+                        case VAR_INT8: {
+                            // fetch data pointer
+                            int8_t *data = (int8_t *)cliGetValuePointer(val) + i;
+                            // store value
+                            *data = (int8_t)atoi((const char*) valPtr);
+                        }
+
+                        break;
+                        case VAR_UINT16: {
+                            // fetch data pointer
+                            uint16_t *data = (uint16_t *)cliGetValuePointer(val) + i;
+                            // store value
+                            *data = (uint16_t)atoi((const char*) valPtr);
+                        }
+
+                        break;
+                        case VAR_INT16: {
+                            // fetch data pointer
+                            int16_t *data = (int16_t *)cliGetValuePointer(val) + i;
+                            // store value
+                            *data = (int16_t)atoi((const char*) valPtr);
+                        }
+
+                        break;
+                        }
+
+                        // find next comma (or end of string)
+                        valPtr = strchr(valPtr, ',') + 1;
+
+                        i++;
                     }
+                }
 
                     // mark as changed
-                    valueChanged = true;
+                valueChanged = true;
 
-                    break;
+                break;
 
                 }
 
@@ -3504,14 +3499,14 @@ static void cliStatus(char *cmdline)
 
     cliPrintLinef("System Uptime: %d seconds", millis() / 1000);
 
-    #ifdef USE_RTC_TIME
+#ifdef USE_RTC_TIME
     char buf[FORMATTED_DATE_TIME_BUFSIZE];
     dateTime_t dt;
     if (rtcGetDateTime(&dt)) {
         dateTimeFormatLocal(buf, &dt);
         cliPrintLinef("Current Time: %s", buf);
     }
-    #endif
+#endif
 
     cliPrintLinef("Voltage: %d * 0.1V (%dS battery - %s)", getBatteryVoltage(), getBatteryCellCount(), getBatteryStateString());
 
@@ -3567,7 +3562,7 @@ static void cliStatus(char *cmdline)
     const int rxRate = currentRxRefreshRate == 0 ? 0 : (int)(1000000.0f / ((float)currentRxRefreshRate));
     const int systemRate = getTaskDeltaTime(TASK_SYSTEM) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_SYSTEM)));
     cliPrintLinef("CPU:%d%%, cycle time: %d, GYRO rate: %d, RX rate: %d, System rate: %d",
-            constrain(averageSystemLoadPercent, 0, 100), getTaskDeltaTime(TASK_GYROPID), gyroRate, rxRate, systemRate);
+        constrain(averageSystemLoadPercent, 0, 100), getTaskDeltaTime(TASK_GYROPID), gyroRate, rxRate, systemRate);
     cliPrint("Arming disable flags:");
     armingDisableFlags_e flags = getArmingDisableFlags();
     while (flags) {
@@ -3619,8 +3614,8 @@ static void cliTasks(char *cmdline)
             }
             if (systemConfig()->task_statistics) {
                 cliPrintLinef("%6d %7d %7d %4d.%1d%% %4d.%1d%% %9d",
-                        taskFrequency, taskInfo.maxExecutionTime, taskInfo.averageExecutionTime,
-                        maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10, taskInfo.totalExecutionTime / 1000);
+                    taskFrequency, taskInfo.maxExecutionTime, taskInfo.averageExecutionTime,
+                    maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10, taskInfo.totalExecutionTime / 1000);
             } else {
                 cliPrintLinef("%6d", taskFrequency);
             }
@@ -3720,7 +3715,7 @@ typedef struct {
 
 const cliResourceValue_t resourceTable[] = {
 #ifdef USE_BEEPER
-    DEFS( OWNER_BEEPER,        PG_BEEPER_DEV_CONFIG, beeperDevConfig_t, ioTag) ,
+    DEFS( OWNER_BEEPER,        PG_BEEPER_DEV_CONFIG, beeperDevConfig_t, ioTag),
 #endif
     DEFA( OWNER_MOTOR,         PG_MOTOR_CONFIG, motorConfig_t, dev.ioTags[0], MAX_SUPPORTED_MOTORS ),
 #ifdef USE_SERVOS
@@ -4055,7 +4050,7 @@ static void printTimer(uint8_t dumpMask)
 
     cliPrint("#");
     cliPrintLinef(format, 'A', 1, 0);
-    
+
     for (unsigned int i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
 
         const ioTag_t ioTag = timerIOConfig(i)->ioTag;
@@ -4066,11 +4061,11 @@ static void printTimer(uint8_t dumpMask)
         }
 
         if (timerIndex != 0 && !(dumpMask & HIDE_UNUSED)) {
-            cliDumpPrintLinef(dumpMask, false, format, 
-                IO_GPIOPortIdxByTag(ioTag) + 'A', 
+            cliDumpPrintLinef(dumpMask, false, format,
+                IO_GPIOPortIdxByTag(ioTag) + 'A',
                 IO_GPIOPinIdxByTag(ioTag),
                 timerIndex
-                );
+            );
         }
     }
 }
@@ -4086,13 +4081,13 @@ static void cliTimer(char *cmdline)
         printTimer(DUMP_MASTER);
         return;
     }
-    
+
     char *pch = NULL;
     char *saveptr;
     int timerIOIndex = -1;
-    
+
     ioTag_t ioTag = 0;
-    pch = strtok_r(cmdline, " ", &saveptr);    
+    pch = strtok_r(cmdline, " ", &saveptr);
     if (!pch || !(strToPin(pch, &ioTag) && IOGetByTag(ioTag))) {
         goto error;
     }
@@ -4139,7 +4134,7 @@ static void cliTimer(char *cmdline)
         }
     } else {
         goto error;
-    }  
+    }
 
 success:
     timerIOConfigMutable(timerIOIndex)->ioTag = timerIndex == 0 ? IO_TAG_NONE : ioTag;
@@ -4147,7 +4142,7 @@ success:
 
     cliPrintLine("Success");
     return;
-    
+
 error:
     cliShowParseError();
 }
@@ -4172,7 +4167,7 @@ static void printConfig(char *cmdline, bool doDiff)
     if (doDiff) {
         dumpMask = dumpMask | DO_DIFF;
     }
-    
+
     backupAndResetConfigs();
     if (checkCommand(options, "defaults")) {
         dumpMask = dumpMask | SHOW_DEFAULTS;   // add default values as comments for changed values
@@ -4191,7 +4186,7 @@ static void printConfig(char *cmdline, bool doDiff)
         if (dumpMask & DUMP_ALL) {
             cliMcuId(NULL);
 #if defined(USE_BOARD_INFO) && defined(USE_SIGNATURE)
-        cliSignature("");
+            cliSignature("");
 #endif
         }
 

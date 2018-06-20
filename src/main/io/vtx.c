@@ -235,26 +235,26 @@ void vtxUpdate(timeUs_t currentTimeUs)
         bool vtxUpdatePending = false;
         do {
             switch (currentSchedule) {
-                case VTX_PARAM_POWER:
-                    vtxUpdatePending = vtxProcessPower(vtxDevice);
-                    break;
-                case VTX_PARAM_BANDCHAN:
-                    if (vtxGetSettings().band) {
-                        vtxUpdatePending = vtxProcessBandAndChannel(vtxDevice);
+            case VTX_PARAM_POWER:
+                vtxUpdatePending = vtxProcessPower(vtxDevice);
+                break;
+            case VTX_PARAM_BANDCHAN:
+                if (vtxGetSettings().band) {
+                    vtxUpdatePending = vtxProcessBandAndChannel(vtxDevice);
 #if defined(VTX_SETTINGS_FREQCMD)
-                    } else {
-                        vtxUpdatePending = vtxProcessFrequency(vtxDevice);
+                } else {
+                    vtxUpdatePending = vtxProcessFrequency(vtxDevice);
 #endif
-                    }
-                    break;
-                case VTX_PARAM_PITMODE:
-                    vtxUpdatePending = vtxProcessPitMode(vtxDevice);
-                    break;
-                case VTX_PARAM_CONFIRM:
-                    vtxUpdatePending = vtxProcessStateUpdate(vtxDevice);
-                    break;
-                default:
-                    break;
+                }
+                break;
+            case VTX_PARAM_PITMODE:
+                vtxUpdatePending = vtxProcessPitMode(vtxDevice);
+                break;
+            case VTX_PARAM_CONFIRM:
+                vtxUpdatePending = vtxProcessStateUpdate(vtxDevice);
+                break;
+            default:
+                break;
             }
             currentSchedule = (currentSchedule + 1) % VTX_PARAM_COUNT;
         } while (!vtxUpdatePending && currentSchedule != startingSchedule);

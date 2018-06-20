@@ -132,7 +132,7 @@ static void resetDisplay(void)
 
 void LCDprint(uint8_t i)
 {
-   i2c_OLED_send_char(bus, i);
+    i2c_OLED_send_char(bus, i);
 }
 
 static void padLineBuffer(void)
@@ -204,7 +204,8 @@ static void updateRxStatus(void)
     char rxStatus = '!';
     if (rxIsReceivingSignal()) {
         rxStatus = 'r';
-    } if (rxAreFlightChannelsValid()) {
+    }
+    if (rxAreFlightChannelsValid()) {
         rxStatus = 'R';
     }
     i2c_OLED_send_char(bus, rxStatus);
@@ -629,7 +630,7 @@ void dashboardUpdate(timeUs_t currentTimeUs)
         }
 
         pageState.pageChanging = (pageState.pageFlags & PAGE_STATE_FLAG_FORCE_PAGE_CHANGE) ||
-                (((int32_t)(currentTimeUs - pageState.nextPageAt) >= 0L && (pageState.pageFlags & PAGE_STATE_FLAG_CYCLE_ENABLED)));
+            (((int32_t)(currentTimeUs - pageState.nextPageAt) >= 0L && (pageState.pageFlags & PAGE_STATE_FLAG_CYCLE_ENABLED)));
         if (pageState.pageChanging && (pageState.pageFlags & PAGE_STATE_FLAG_CYCLE_ENABLED)) {
 
             do {

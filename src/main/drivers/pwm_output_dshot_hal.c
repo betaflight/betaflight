@@ -81,7 +81,7 @@ FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
         motor->timer->dmaBurstLength = bufferSize * 4;
     } else
 #endif
-    {    
+    {
         bufferSize = loadDmaBuffer(motor->dmaBuffer, 1, packet);
         motor->timer->timerDmaSources |= motor->timerDmaSource;
         LL_EX_DMA_SetDataLength(motor->timerHardware->dmaRef, bufferSize);
@@ -203,10 +203,18 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 
     uint32_t channel;
     switch (timerHardware->channel) {
-    case TIM_CHANNEL_1: channel = LL_TIM_CHANNEL_CH1; break;
-    case TIM_CHANNEL_2: channel = LL_TIM_CHANNEL_CH2; break;
-    case TIM_CHANNEL_3: channel = LL_TIM_CHANNEL_CH3; break;
-    case TIM_CHANNEL_4: channel = LL_TIM_CHANNEL_CH4; break;
+    case TIM_CHANNEL_1:
+        channel = LL_TIM_CHANNEL_CH1;
+        break;
+    case TIM_CHANNEL_2:
+        channel = LL_TIM_CHANNEL_CH2;
+        break;
+    case TIM_CHANNEL_3:
+        channel = LL_TIM_CHANNEL_CH3;
+        break;
+    case TIM_CHANNEL_4:
+        channel = LL_TIM_CHANNEL_CH4;
+        break;
     }
     LL_TIM_OC_Init(timer, channel, &oc_init);
     LL_TIM_OC_EnablePreload(timer, channel);

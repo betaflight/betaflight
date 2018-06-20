@@ -160,7 +160,7 @@ static int32_t BMI160_Config(const busDevice_t *bus)
 
     // Verify that normal power mode was entered
     uint8_t pmu_status = spiBusReadRegister(bus, BMI160_REG_PMU_STAT);
-    if ((pmu_status & 0x3C) != 0x14){
+    if ((pmu_status & 0x3C) != 0x14) {
         return -3;
     }
 

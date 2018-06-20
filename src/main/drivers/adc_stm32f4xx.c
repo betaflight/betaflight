@@ -58,16 +58,16 @@ const adcDevice_t adcHardware[] = {
 
 /* note these could be packed up for saving space */
 const adcTagMap_t adcTagMap[] = {
-/*
-    { DEFIO_TAG_E__PF3, ADC_DEVICES_3,   ADC_Channel_9  },
-    { DEFIO_TAG_E__PF4, ADC_DEVICES_3,   ADC_Channel_14 },
-    { DEFIO_TAG_E__PF5, ADC_DEVICES_3,   ADC_Channel_15 },
-    { DEFIO_TAG_E__PF6, ADC_DEVICES_3,   ADC_Channel_4  },
-    { DEFIO_TAG_E__PF7, ADC_DEVICES_3,   ADC_Channel_5  },
-    { DEFIO_TAG_E__PF8, ADC_DEVICES_3,   ADC_Channel_6  },
-    { DEFIO_TAG_E__PF9, ADC_DEVICES_3,   ADC_Channel_7  },
-    { DEFIO_TAG_E__PF10,ADC_DEVICES_3,   ADC_Channel_8  },
-*/
+    /*
+        { DEFIO_TAG_E__PF3, ADC_DEVICES_3,   ADC_Channel_9  },
+        { DEFIO_TAG_E__PF4, ADC_DEVICES_3,   ADC_Channel_14 },
+        { DEFIO_TAG_E__PF5, ADC_DEVICES_3,   ADC_Channel_15 },
+        { DEFIO_TAG_E__PF6, ADC_DEVICES_3,   ADC_Channel_4  },
+        { DEFIO_TAG_E__PF7, ADC_DEVICES_3,   ADC_Channel_5  },
+        { DEFIO_TAG_E__PF8, ADC_DEVICES_3,   ADC_Channel_6  },
+        { DEFIO_TAG_E__PF9, ADC_DEVICES_3,   ADC_Channel_7  },
+        { DEFIO_TAG_E__PF10,ADC_DEVICES_3,   ADC_Channel_8  },
+    */
 #if defined(STM32F411xE)
     { DEFIO_TAG_E__PC0, ADC_DEVICES_1,   ADC_Channel_10 },
     { DEFIO_TAG_E__PC1, ADC_DEVICES_1,   ADC_Channel_11 },

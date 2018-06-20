@@ -107,8 +107,8 @@ uint16_t jetiExBusCalcCRC16(uint8_t *pt, uint8_t msgLen)
         data = pt[mlen] ^ ((uint8_t)(crc16_data) & (uint8_t)(0xFF));
         data ^= data << 4;
         crc16_data = ((((uint16_t)data << 8) | ((crc16_data & 0xFF00) >> 8))
-                      ^ (uint8_t)(data >> 4)
-                      ^ ((uint16_t)data << 3));
+                ^ (uint8_t)(data >> 4)
+                ^ ((uint16_t)data << 3));
     }
     return(crc16_data);
 }
@@ -273,12 +273,12 @@ bool jetiExBusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfi
     }
 
     jetiExBusPort = openSerialPort(portConfig->identifier,
-        FUNCTION_RX_SERIAL,
-        jetiExBusDataReceive,
-        NULL,
-        JETIEXBUS_BAUDRATE,
-        MODE_RXTX,
-        JETIEXBUS_OPTIONS | (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0)
+            FUNCTION_RX_SERIAL,
+            jetiExBusDataReceive,
+            NULL,
+            JETIEXBUS_BAUDRATE,
+            MODE_RXTX,
+            JETIEXBUS_OPTIONS | (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0)
         );
     serialSetMode(jetiExBusPort, MODE_RX);
     return jetiExBusPort != NULL;

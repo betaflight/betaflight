@@ -402,7 +402,7 @@ uint8_t sendJetiExBusTelemetry(uint8_t packetID, uint8_t item)
         createExTelemetryTextMessage(jetiExTelemetryFrame, sensorDescriptionCounter, &jetiExSensors[sensorDescriptionCounter]);
         createExBusMessage(jetiExBusTelemetryFrame, jetiExTelemetryFrame, packetID);
         requestLoop--;
-        if (requestLoop == 0){
+        if (requestLoop == 0) {
             item = firstActiveSensor;
         }
     } else {

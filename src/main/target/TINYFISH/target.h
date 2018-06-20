@@ -50,11 +50,11 @@
 
 
 #if USB_VCP_ENABLED
-  #define USE_VCP
-  #define USBD_PRODUCT_STRING "tinyFISH"
-  #define SERIAL_PORT_COUNT 6
+#define USE_VCP
+#define USBD_PRODUCT_STRING "tinyFISH"
+#define SERIAL_PORT_COUNT 6
 #else
-  #define SERIAL_PORT_COUNT 5
+#define SERIAL_PORT_COUNT 5
 #endif
 
 #define USE_UART1

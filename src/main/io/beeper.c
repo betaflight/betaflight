@@ -398,7 +398,7 @@ void beeperUpdate(timeUs_t currentTimeUs)
 #ifdef USE_DSHOT
         if (!areMotorsRunning()
             && ((currentBeeperEntry->mode == BEEPER_RX_SET && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_SET)))
-            || (currentBeeperEntry->mode == BEEPER_RX_LOST && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_LOST))))) {
+                || (currentBeeperEntry->mode == BEEPER_RX_LOST && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_LOST))))) {
 
             if ((currentTimeUs - getLastDisarmTimeUs() > DSHOT_BEACON_GUARD_DELAY_US) && !isTryingToArm()) {
                 lastDshotBeaconCommandTimeUs = currentTimeUs;
@@ -510,17 +510,50 @@ bool isBeeperOn(void)
 #else
 
 // Stub out beeper functions if #BEEPER not defined
-void beeper(beeperMode_e mode) {UNUSED(mode);}
+void beeper(beeperMode_e mode)
+{
+    UNUSED(mode);
+}
 void beeperSilence(void) {}
-void beeperConfirmationBeeps(uint8_t beepCount) {UNUSED(beepCount);}
-void beeperWarningBeeps(uint8_t beepCount) {UNUSED(beepCount);}
-void beeperUpdate(timeUs_t currentTimeUs) {UNUSED(currentTimeUs);}
-uint32_t getArmingBeepTimeMicros(void) {return 0;}
-beeperMode_e beeperModeForTableIndex(int idx) {UNUSED(idx); return BEEPER_SILENCE;}
-uint32_t beeperModeMaskForTableIndex(int idx) {UNUSED(idx); return 0;}
-const char *beeperNameForTableIndex(int idx) {UNUSED(idx); return NULL;}
-int beeperTableEntryCount(void) {return 0;}
-bool isBeeperOn(void) {return false;}
+void beeperConfirmationBeeps(uint8_t beepCount)
+{
+    UNUSED(beepCount);
+}
+void beeperWarningBeeps(uint8_t beepCount)
+{
+    UNUSED(beepCount);
+}
+void beeperUpdate(timeUs_t currentTimeUs)
+{
+    UNUSED(currentTimeUs);
+}
+uint32_t getArmingBeepTimeMicros(void)
+{
+    return 0;
+}
+beeperMode_e beeperModeForTableIndex(int idx)
+{
+    UNUSED(idx);
+    return BEEPER_SILENCE;
+}
+uint32_t beeperModeMaskForTableIndex(int idx)
+{
+    UNUSED(idx);
+    return 0;
+}
+const char *beeperNameForTableIndex(int idx)
+{
+    UNUSED(idx);
+    return NULL;
+}
+int beeperTableEntryCount(void)
+{
+    return 0;
+}
+bool isBeeperOn(void)
+{
+    return false;
+}
 
 #endif
 

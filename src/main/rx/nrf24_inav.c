@@ -244,7 +244,7 @@ static void inavHopToNextChannel(void)
 STATIC_UNIT_TESTED void inavSetHoppingChannels(void)
 {
 #ifdef NO_RF_CHANNEL_HOPPING
-     // just stay on bind channel, useful for debugging
+    // just stay on bind channel, useful for debugging
     inavRfChannelCount = 1;
     inavRfChannels[0] = INAV_RF_BIND_CHANNEL;
 #else

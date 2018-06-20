@@ -175,22 +175,18 @@ static void handleUsartTxDma(uartPort_t *s)
 void dmaIRQHandler(dmaChannelDescriptor_t* descriptor)
 {
     uartPort_t *s = &(((uartDevice_t*)(descriptor->userParam))->port);
-    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF))
-    {
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
         DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
         DMA_CLEAR_FLAG(descriptor, DMA_IT_HTIF);
-        if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_FEIF))
-        {
+        if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_FEIF)) {
             DMA_CLEAR_FLAG(descriptor, DMA_IT_FEIF);
         }
         handleUsartTxDma(s);
     }
-    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF))
-    {
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF)) {
         DMA_CLEAR_FLAG(descriptor, DMA_IT_TEIF);
     }
-    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_DMEIF))
-    {
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_DMEIF)) {
         DMA_CLEAR_FLAG(descriptor, DMA_IT_DMEIF);
     }
 }
@@ -289,8 +285,7 @@ void uartIrqHandler(uartPort_t *s)
         }
     }
 
-    if (USART_GetITStatus(s->USARTx, USART_FLAG_ORE) == SET)
-    {
+    if (USART_GetITStatus(s->USARTx, USART_FLAG_ORE) == SET) {
         USART_ClearITPendingBit (s->USARTx, USART_IT_ORE);
     }
 }

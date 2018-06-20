@@ -171,9 +171,9 @@ void blackboxWriteTag2_3S32(int32_t *values)
 
         //Require more than 4 bits?
         if (values[x] >= 8 || values[x] < -8) {
-             if (selector < BITS_6) {
-                 selector = BITS_6;
-             }
+            if (selector < BITS_6) {
+                selector = BITS_6;
+            }
         } else if (values[x] >= 2 || values[x] < -2) { //Require more than 2 bits?
             if (selector < BITS_4) {
                 selector = BITS_4;
@@ -287,18 +287,18 @@ int blackboxWriteTag2_3SVariable(int32_t *values)
     int selector2 = 0;
     // Require more than 877 bits?
     if (values[0] >= 256 || values[0] < -256
-            || values[1] >= 128 || values[1] < -128
-            || values[2] >= 128 || values[2] < -128) {
+        || values[1] >= 128 || values[1] < -128
+        || values[2] >= 128 || values[2] < -128) {
         selector = BITS_32;
-   // Require more than 554 bits?
+        // Require more than 554 bits?
     } else if (values[0] >= 16 || values[0] < -16
-            || values[1] >= 16 || values[1] < -16
-            || values[2] >= 8 || values[2] < -8) {
+        || values[1] >= 16 || values[1] < -16
+        || values[2] >= 8 || values[2] < -8) {
         selector = BITS_877;
         // Require more than 2 bits?
     } else if (values[0] >= 2 || values[0] < -2
-            || values[1] >= 2 || values[1] < -2
-            || values[2] >= 2 || values[2] < -2) {
+        || values[1] >= 2 || values[1] < -2
+        || values[2] >= 2 || values[2] < -2) {
         selector = BITS_554;
     }
 
@@ -369,7 +369,7 @@ int blackboxWriteTag2_3SVariable(int32_t *values)
                 break;
             }
         }
-    break;
+        break;
     }
     return selector;
 }

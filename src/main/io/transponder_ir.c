@@ -142,7 +142,8 @@ void transponderUpdateData(void)
     transponderIrUpdateData(transponderConfig()->data);
 }
 
-void transponderTransmitOnce(void) {
+void transponderTransmitOnce(void)
+{
 
     if (!transponderInitialised) {
         return;

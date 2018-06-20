@@ -133,7 +133,8 @@ bool ms5611Detect(baroDev_t *baro)
 
     return true;
 
-fail:;
+fail:
+    ;
     ms5611BusDeinit(busdev);
 
     if (defaultAddressApplied) {
@@ -239,7 +240,7 @@ STATIC_UNIT_TESTED void ms5611_calculate(int32_t *pressure, int32_t *temperature
             off -= 7 * delt;
             sens -= (11 * delt) >> 1;
         }
-    temp -= ((dT * dT) >> 31);
+        temp -= ((dT * dT) >> 31);
     }
     press = ((((int64_t)ms5611_up * sens) >> 21) - off) >> 15;
 

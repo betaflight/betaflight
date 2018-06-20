@@ -53,7 +53,7 @@ uint8_t cc2500WriteFifo(uint8_t *dpbuffer, uint8_t len)
     uint8_t ret;
     cc2500Strobe(CC2500_SFTX); // 0x3B SFTX
     ret = rxSpiWriteCommandMulti(CC2500_3F_TXFIFO | CC2500_WRITE_BURST,
-                                 dpbuffer, len);
+            dpbuffer, len);
     cc2500Strobe(CC2500_STX); // 0x35
     return ret;
 }
@@ -64,7 +64,7 @@ uint8_t cc2500ReadRegisterMulti(uint8_t address, uint8_t *data, uint8_t length)
 }
 
 uint8_t cc2500WriteRegisterMulti(uint8_t address, uint8_t *data,
-                                  uint8_t length)
+    uint8_t length)
 {
     return rxSpiWriteCommandMulti(address, data, length);
 }
@@ -74,7 +74,10 @@ uint8_t cc2500ReadReg(uint8_t reg)
     return rxSpiReadCommand(reg | 0x80, NOP);
 }
 
-void cc2500Strobe(uint8_t address) { rxSpiWriteByte(address); }
+void cc2500Strobe(uint8_t address)
+{
+    rxSpiWriteByte(address);
+}
 
 uint8_t cc2500WriteReg(uint8_t address, uint8_t data)
 {

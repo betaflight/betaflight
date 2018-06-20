@@ -142,7 +142,8 @@ void pgResetFn_spiPreinitIPUConfig(spiCs_t *config)
             }
         }
         config[puPins++].csnTag = preinitIPUList[i];
-    next:;
+next:
+        ;
     }
 }
 #endif

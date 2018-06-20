@@ -212,48 +212,48 @@ static bool ak8963SlaveReadData(const busDevice_t *busdev, uint8_t *buf)
 
 restart:
     switch (state) {
-        case CHECK_STATUS: {
-            ak8963SlaveStartRead(busdev, AK8963_MAG_REG_ST1, 1);
-            state = WAITING_FOR_STATUS;
+    case CHECK_STATUS: {
+        ak8963SlaveStartRead(busdev, AK8963_MAG_REG_ST1, 1);
+        state = WAITING_FOR_STATUS;
+        return false;
+    }
+
+    case WAITING_FOR_STATUS: {
+        uint32_t timeRemaining = ak8963SlaveQueuedReadTimeRemaining();
+        if (timeRemaining) {
             return false;
         }
 
-        case WAITING_FOR_STATUS: {
-            uint32_t timeRemaining = ak8963SlaveQueuedReadTimeRemaining();
-            if (timeRemaining) {
-                return false;
-            }
+        ack = ak8963SlaveCompleteRead(busdev, &buf[0]);
 
-            ack = ak8963SlaveCompleteRead(busdev, &buf[0]);
+        uint8_t status = buf[0];
 
-            uint8_t status = buf[0];
-
-            if (!ack || (status & ST1_DATA_READY) == 0) {
-                // too early. queue the status read again
-                state = CHECK_STATUS;
-                if (retry) {
-                    retry = false;
-                    goto restart;
-               }
-               return false;
-            }
-
-            // read the 6 bytes of data and the status2 register
-            ak8963SlaveStartRead(busdev, AK8963_MAG_REG_HXL, 7);
-
-            state = WAITING_FOR_DATA;
-            return false;
-        }
-
-        case WAITING_FOR_DATA: {
-            uint32_t timeRemaining = ak8963SlaveQueuedReadTimeRemaining();
-            if (timeRemaining) {
-                return false;
-            }
-
-            ack = ak8963SlaveCompleteRead(busdev, &buf[0]);
+        if (!ack || (status & ST1_DATA_READY) == 0) {
+            // too early. queue the status read again
             state = CHECK_STATUS;
+            if (retry) {
+                retry = false;
+                goto restart;
+            }
+            return false;
         }
+
+        // read the 6 bytes of data and the status2 register
+        ak8963SlaveStartRead(busdev, AK8963_MAG_REG_HXL, 7);
+
+        state = WAITING_FOR_DATA;
+        return false;
+    }
+
+    case WAITING_FOR_DATA: {
+        uint32_t timeRemaining = ak8963SlaveQueuedReadTimeRemaining();
+        if (timeRemaining) {
+            return false;
+        }
+
+        ack = ak8963SlaveCompleteRead(busdev, &buf[0]);
+        state = CHECK_STATUS;
+    }
     }
 
     return ack;
@@ -293,9 +293,10 @@ static bool ak8963DirectReadData(const busDevice_t *busdev, uint8_t *buf)
     return ak8963ReadRegisterBuffer(busdev, AK8963_MAG_REG_HXL, buf, 7);
 }
 
-static int16_t parseMag(uint8_t *raw, int16_t gain) {
-  int ret = (int16_t)(raw[1] << 8 | raw[0]) * gain / 256;
-  return constrain(ret, INT16_MIN, INT16_MAX);
+static int16_t parseMag(uint8_t *raw, int16_t gain)
+{
+    int ret = (int16_t)(raw[1] << 8 | raw[0]) * gain / 256;
+    return constrain(ret, INT16_MIN, INT16_MAX);
 }
 
 static bool ak8963Read(magDev_t *mag, int16_t *magData)
@@ -441,8 +442,7 @@ bool ak8963Detect(magDev_t *mag)
 
     bool ack = ak8963ReadRegisterBuffer(busdev, AK8963_MAG_REG_WIA, &sig, 1);               // check for AK8963
 
-    if (ack && sig == AK8963_DEVICE_ID) // 0x48 / 01001000 / 'H'
-    {
+    if (ack && sig == AK8963_DEVICE_ID) { // 0x48 / 01001000 / 'H'
         mag->init = ak8963Init;
         mag->read = ak8963Read;
 

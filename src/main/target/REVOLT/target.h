@@ -34,7 +34,7 @@
 
 
 
-#define LED0_PIN                PB5  
+#define LED0_PIN                PB5
 
 #define USE_BEEPER
 #define BEEPER_PIN              PB4

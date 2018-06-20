@@ -40,7 +40,10 @@ typedef uint32_t timeUs_t;
 #define TIMEUS_MAX UINT32_MAX
 #endif
 
-static inline timeDelta_t cmpTimeUs(timeUs_t a, timeUs_t b) { return (timeDelta_t)(a - b); }
+static inline timeDelta_t cmpTimeUs(timeUs_t a, timeUs_t b)
+{
+    return (timeDelta_t)(a - b);
+}
 
 #define FORMATTED_DATE_TIME_BUFSIZE 30
 

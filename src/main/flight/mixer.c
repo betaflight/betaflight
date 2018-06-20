@@ -571,7 +571,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             currentThrottleInputRange = rcCommandThrottleRange3dHigh;
         } else if ((rcThrottlePrevious <= rcCommand3dDeadBandLow &&
                 !flight3DConfigMutable()->switched_mode3d) ||
-                isMotorsReversed()) {
+            isMotorsReversed()) {
             // INVERTED_TO_DEADBAND
             motorRangeMin = motorOutputLow;
             motorRangeMax = deadbandMotor3dLow;
@@ -664,14 +664,14 @@ static void applyFlipOverAfterCrashModeToMotors(void)
                 signPitch*currentMixer[i].pitch +
                 signRoll*currentMixer[i].roll +
                 signYaw*currentMixer[i].yaw;
-                
+
             if (motorOutput < 0) {
                 if (mixerConfig()->crashflip_motor_percent > 0) {
                     motorOutput = -motorOutput * (float)mixerConfig()->crashflip_motor_percent / 100.0f;
                 } else {
                     motorOutput = disarmMotorOutput;
                 }
-            } 
+            }
             motorOutput = MIN(1.0f, flipPower * motorOutput);
             motorOutput = motorOutputMin + motorOutput * motorOutputRange;
 
@@ -726,10 +726,10 @@ float applyThrottleLimit(float throttle)
     if (currentControlRateProfile->throttle_limit_percent < 100) {
         const float throttleLimitFactor = currentControlRateProfile->throttle_limit_percent / 100.0f;
         switch (currentControlRateProfile->throttle_limit_type) {
-            case THROTTLE_LIMIT_TYPE_SCALE:
-                return throttle * throttleLimitFactor;
-            case THROTTLE_LIMIT_TYPE_CLIP:
-                return MIN(throttle, throttleLimitFactor);
+        case THROTTLE_LIMIT_TYPE_SCALE:
+            return throttle * throttleLimitFactor;
+        case THROTTLE_LIMIT_TYPE_CLIP:
+            return MIN(throttle, throttleLimitFactor);
         }
     }
 
@@ -780,7 +780,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
     // 50% throttle provides the maximum authority for yaw recovery when airmode is not active.
     // When airmode is active the throttle setting doesn't impact recovery authority.
     if (yawSpinDetected && !isAirmodeActive()) {
-        throttle = 0.5f;   // 
+        throttle = 0.5f;   //
     }
 #endif // USE_YAW_SPIN_RECOVERY
 

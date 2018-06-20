@@ -27,7 +27,7 @@
 #include "drivers/timer.h"
 #include "drivers/timer_def.h"
 
-    // Production boards swapped RC_CH3/4 swapped to make it easierTIM_USE_MOTOR,  to using supplied cables - compared to first prototype.
+// Production boards swapped RC_CH3/4 swapped to make it easierTIM_USE_MOTOR,  to using supplied cables - compared to first prototype.
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM2,  CH1, PA0,  TIM_USE_PWM | TIM_USE_PPM, 0), // RC_CH1 - PA0  - *TIM2_CH1
     DEF_TIM(TIM2,  CH2, PA1,  TIM_USE_PWM,               0), // RC_CH2 - PA1  - *TIM2_CH2, TIM15_CH1N

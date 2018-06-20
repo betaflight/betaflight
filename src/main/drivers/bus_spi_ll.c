@@ -107,8 +107,7 @@ void spiInitDevice(SPIDevice device)
     LL_SPI_Disable(spi->dev);
     LL_SPI_DeInit(spi->dev);
 
-    LL_SPI_InitTypeDef init =
-    {
+    LL_SPI_InitTypeDef init = {
         .TransferDirection = SPI_DIRECTION_2LINES,
         .Mode = SPI_MODE_MASTER,
         .DataWidth = SPI_DATASIZE_8BIT,

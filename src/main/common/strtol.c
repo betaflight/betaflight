@@ -47,11 +47,11 @@ unsigned long _strto_l(const char * str, char ** endptr, int base, int sflag)
     /* Handle optional sign. */
     negative = 0;
     switch (*str) {
-        case '-':
-            negative = 1;	/* Fall through to increment str. */
-            FALLTHROUGH;
-        case '+':
-            ++str;
+    case '-':
+        negative = 1;	/* Fall through to increment str. */
+        FALLTHROUGH;
+    case '+':
+        ++str;
     }
 
     if (!base || base == 16 || base == 2) {		/* Either dynamic (base = 0) or base with 0[xb] prefix. */
@@ -78,8 +78,8 @@ unsigned long _strto_l(const char * str, char ** endptr, int base, int sflag)
             digit = (        (*str - '0') <= 9)
                 ? /* 0..9 */ (*str - '0')
                 : /* else */ (((0x20 | *str) >= 'a') /* WARNING: assumes ascii. */
-                              ? /* >= A/a */ ((0x20 | *str) - ('a' - 10))
-                              : /* else   */ 40 /* bad value */);
+                    ? /* >= A/a */ ((0x20 | *str) - ('a' - 10))
+                    : /* else   */ 40 /* bad value */);
 
             if (digit >= base) {
                 break;
@@ -105,8 +105,8 @@ unsigned long _strto_l(const char * str, char ** endptr, int base, int sflag)
 
     {
         unsigned long tmp = (negative
-                             ? ((unsigned long)(-(1+LONG_MIN)))+1
-                             : LONG_MAX);
+                ? ((unsigned long)(-(1+LONG_MIN)))+1
+                : LONG_MAX);
         if (sflag && (number > tmp)) {
             number = tmp;
         }

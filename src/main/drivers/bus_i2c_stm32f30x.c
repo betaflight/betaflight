@@ -168,8 +168,7 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data)
 
     /* Wait until TCR flag is set */
     i2cTimeout = I2C_LONG_TIMEOUT;
-    while (I2C_GetFlagStatus(I2Cx, I2C_ISR_TCR) == RESET)
-    {
+    while (I2C_GetFlagStatus(I2Cx, I2C_ISR_TCR) == RESET) {
         if ((i2cTimeout--) == 0) {
             return i2cTimeoutUserCallback();
         }

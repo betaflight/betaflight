@@ -28,8 +28,7 @@
 #define SPEKTRUM_MAX_FADE_PER_SEC       40
 #define SPEKTRUM_FADE_REPORTS_PER_SEC   2
 
-typedef struct dbm_table_s
-{
+typedef struct dbm_table_s {
     int8_t  dBm;
     uint8_t reportAs;
 } dbm_table_t;

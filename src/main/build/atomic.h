@@ -30,13 +30,13 @@
 // set BASEPRI register, do not create memory barrier
 __attribute__( ( always_inline ) ) static inline void __set_BASEPRI_nb(uint32_t basePri)
 {
-   __ASM volatile ("\tMSR basepri, %0\n" : : "r" (basePri) );
+    __ASM volatile ("\tMSR basepri, %0\n" : : "r" (basePri) );
 }
 
 // set BASEPRI_MAX register, do not create memory barrier
 __attribute__( ( always_inline ) ) static inline void __set_BASEPRI_MAX_nb(uint32_t basePri)
 {
-   __ASM volatile ("\tMSR basepri_max, %0\n" : : "r" (basePri) );
+    __ASM volatile ("\tMSR basepri_max, %0\n" : : "r" (basePri) );
 }
 
 #endif
@@ -160,7 +160,10 @@ static inline uint8_t __basepriSetRetVal(uint8_t prio)
 // CLang version, using Objective C-style block
 // based on https://stackoverflow.com/questions/24959440/rewrite-gcc-cleanup-macro-with-nested-function-for-clang
 typedef void (^__cleanup_block)(void);
-static inline void __do_cleanup(__cleanup_block * b) { (*b)(); }
+static inline void __do_cleanup(__cleanup_block * b)
+{
+    (*b)();
+}
 
 #define ATOMIC_BARRIER(data)                                            \
     typeof(data) *__UNIQL(__barrier) = &data;                           \

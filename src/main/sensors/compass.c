@@ -144,18 +144,17 @@ bool compassDetect(magDev_t *dev)
         break;
 
 #if defined(USE_MAG_AK8963) && (defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250))
-    case BUSTYPE_MPU_SLAVE:
-        {
-            if (gyroMpuDetectionResult()->sensor == MPU_9250_SPI) {
-                busdev->bustype = BUSTYPE_MPU_SLAVE;
-                busdev->busdev_u.mpuSlave.master = gyroSensorBus();
-                busdev->busdev_u.mpuSlave.address = compassConfig()->mag_i2c_address;
-            } else {
-                return false;
-            }
+    case BUSTYPE_MPU_SLAVE: {
+        if (gyroMpuDetectionResult()->sensor == MPU_9250_SPI) {
+            busdev->bustype = BUSTYPE_MPU_SLAVE;
+            busdev->busdev_u.mpuSlave.master = gyroSensorBus();
+            busdev->busdev_u.mpuSlave.address = compassConfig()->mag_i2c_address;
+        } else {
+            return false;
         }
+    }
 #endif
-        break;
+    break;
 
     default:
         return false;
@@ -170,7 +169,7 @@ bool compassDetect(magDev_t *dev)
     case MAG_HMC5883:
 #if defined(USE_MAG_HMC5883) || defined(USE_MAG_SPI_HMC5883)
         if (busdev->bustype == BUSTYPE_I2C) {
-                busdev->busdev_u.i2c.address = compassConfig()->mag_i2c_address;
+            busdev->busdev_u.i2c.address = compassConfig()->mag_i2c_address;
         }
 
         if (hmc5883lDetect(dev)) {
@@ -186,7 +185,7 @@ bool compassDetect(magDev_t *dev)
     case MAG_QMC5883:
 #ifdef USE_MAG_QMC5883
         if (busdev->bustype == BUSTYPE_I2C) {
-                busdev->busdev_u.i2c.address = compassConfig()->mag_i2c_address;
+            busdev->busdev_u.i2c.address = compassConfig()->mag_i2c_address;
         }
 
         if (qmc5883lDetect(dev)) {
@@ -202,7 +201,7 @@ bool compassDetect(magDev_t *dev)
     case MAG_AK8975:
 #ifdef USE_MAG_AK8975
         if (busdev->bustype == BUSTYPE_I2C) {
-                busdev->busdev_u.i2c.address = compassConfig()->mag_i2c_address;
+            busdev->busdev_u.i2c.address = compassConfig()->mag_i2c_address;
         }
 
         if (ak8975Detect(dev)) {

@@ -214,7 +214,7 @@ FAST_CODE uint8_t processRcInterpolation(void)
     uint8_t updatedChannel = 0;
 
     if (rxConfig()->rcInterpolation) {
-         // Set RC refresh rate for sampling and channels to filter
+        // Set RC refresh rate for sampling and channels to filter
         switch (rxConfig()->rcInterpolation) {
         case RC_SMOOTHING_AUTO:
             rxRefreshRate = currentRxRefreshRate + 1000; // Add slight overhead to prevent ramps
@@ -237,8 +237,8 @@ FAST_CODE uint8_t processRcInterpolation(void)
                 }
             }
 
-           DEBUG_SET(DEBUG_RC_INTERPOLATION, 0, lrintf(rcCommand[0]));
-           DEBUG_SET(DEBUG_RC_INTERPOLATION, 1, lrintf(currentRxRefreshRate / 1000));
+            DEBUG_SET(DEBUG_RC_INTERPOLATION, 0, lrintf(rcCommand[0]));
+            DEBUG_SET(DEBUG_RC_INTERPOLATION, 1, lrintf(currentRxRefreshRate / 1000));
         } else {
             rcInterpolationStepCount--;
         }
@@ -337,13 +337,13 @@ FAST_CODE uint8_t processRcSmoothingFilter(void)
                         for (int i = 0; i < PRIMARY_CHANNEL_COUNT; i++) {
                             if ((1 << i) & interpolationChannels) {
                                 switch (rxConfig()->rc_smoothing_input_type) {
-                                    case RC_SMOOTHING_INPUT_PT1:
-                                        pt1FilterInit(&rcCommandFilterPt1[i], pt1FilterGain(filterCutoffFrequency, dT));
-                                        break;
-                                    case RC_SMOOTHING_INPUT_BIQUAD:
-                                    default:
-                                        biquadFilterInitLPF(&rcCommandFilterBiquad[i], filterCutoffFrequency, targetPidLooptime);
-                                        break;
+                                case RC_SMOOTHING_INPUT_PT1:
+                                    pt1FilterInit(&rcCommandFilterPt1[i], pt1FilterGain(filterCutoffFrequency, dT));
+                                    break;
+                                case RC_SMOOTHING_INPUT_BIQUAD:
+                                default:
+                                    biquadFilterInitLPF(&rcCommandFilterBiquad[i], filterCutoffFrequency, targetPidLooptime);
+                                    break;
                                 }
                             }
                         }
@@ -372,13 +372,13 @@ FAST_CODE uint8_t processRcSmoothingFilter(void)
         if ((1 << updatedChannel) & interpolationChannels) {
             if (filterInitialized) {
                 switch (rxConfig()->rc_smoothing_input_type) {
-                    case RC_SMOOTHING_INPUT_PT1:
-                        rcCommand[updatedChannel] = pt1FilterApply(&rcCommandFilterPt1[updatedChannel], lastRxData[updatedChannel]);
-                        break;
-                    case RC_SMOOTHING_INPUT_BIQUAD:
-                    default:
-                        rcCommand[updatedChannel] = biquadFilterApply(&rcCommandFilterBiquad[updatedChannel], lastRxData[updatedChannel]);
-                        break;
+                case RC_SMOOTHING_INPUT_PT1:
+                    rcCommand[updatedChannel] = pt1FilterApply(&rcCommandFilterPt1[updatedChannel], lastRxData[updatedChannel]);
+                    break;
+                case RC_SMOOTHING_INPUT_BIQUAD:
+                default:
+                    rcCommand[updatedChannel] = biquadFilterApply(&rcCommandFilterBiquad[updatedChannel], lastRxData[updatedChannel]);
+                    break;
                 }
             } else {
                 // If filter isn't initialized yet then use the actual unsmoothed rx channel data
@@ -594,18 +594,18 @@ void initRcProcessing(void)
 int rcSmoothingGetValue(int whichValue)
 {
     switch (whichValue) {
-        case RC_SMOOTHING_VALUE_INPUT_AUTO:
-            return defaultInputCutoffFrequency;
-        case RC_SMOOTHING_VALUE_INPUT_ACTIVE:
-            return filterCutoffFrequency;
-        case RC_SMOOTHING_VALUE_DERIVATIVE_AUTO:
-            return defaultDerivativeCutoffFrequency;
-        case RC_SMOOTHING_VALUE_DERIVATIVE_ACTIVE:
-            return derivativeCutoffFrequency;
-        case RC_SMOOTHING_VALUE_AVERAGE_FRAME:
-            return calculatedFrameTimeAverageUs;
-        default:
-            return 0;
+    case RC_SMOOTHING_VALUE_INPUT_AUTO:
+        return defaultInputCutoffFrequency;
+    case RC_SMOOTHING_VALUE_INPUT_ACTIVE:
+        return filterCutoffFrequency;
+    case RC_SMOOTHING_VALUE_DERIVATIVE_AUTO:
+        return defaultDerivativeCutoffFrequency;
+    case RC_SMOOTHING_VALUE_DERIVATIVE_ACTIVE:
+        return derivativeCutoffFrequency;
+    case RC_SMOOTHING_VALUE_AVERAGE_FRAME:
+        return calculatedFrameTimeAverageUs;
+    default:
+        return 0;
     }
 }
 #endif // USE_RC_SMOOTHING_FILTER

@@ -53,12 +53,12 @@
 static void mpu6050AccInit(accDev_t *acc)
 {
     switch (acc->mpuDetectionResult.resolution) {
-        case MPU_HALF_RESOLUTION:
-            acc->acc_1G = 256 * 4;
-            break;
-        case MPU_FULL_RESOLUTION:
-            acc->acc_1G = 512 * 4;
-            break;
+    case MPU_HALF_RESOLUTION:
+        acc->acc_1G = 256 * 4;
+        break;
+    case MPU_FULL_RESOLUTION:
+        acc->acc_1G = 512 * 4;
+        break;
     }
 }
 
@@ -92,7 +92,7 @@ static void mpu6050GyroInit(gyroDev_t *gyro)
     busWriteRegister(&gyro->bus, MPU_RA_ACCEL_CONFIG, INV_FSR_16G << 3);
 
     busWriteRegister(&gyro->bus, MPU_RA_INT_PIN_CFG,
-            0 << 7 | 0 << 6 | 0 << 5 | 0 << 4 | 0 << 3 | 0 << 2 | 1 << 1 | 0 << 0); // INT_PIN_CFG   -- INT_LEVEL_HIGH, INT_OPEN_DIS, LATCH_INT_DIS, INT_RD_CLEAR_DIS, FSYNC_INT_LEVEL_HIGH, FSYNC_INT_DIS, I2C_BYPASS_EN, CLOCK_DIS
+        0 << 7 | 0 << 6 | 0 << 5 | 0 << 4 | 0 << 3 | 0 << 2 | 1 << 1 | 0 << 0); // INT_PIN_CFG   -- INT_LEVEL_HIGH, INT_OPEN_DIS, LATCH_INT_DIS, INT_RD_CLEAR_DIS, FSYNC_INT_LEVEL_HIGH, FSYNC_INT_DIS, I2C_BYPASS_EN, CLOCK_DIS
 
 #ifdef USE_MPU_DATA_READY_SIGNAL
     busWriteRegister(&gyro->bus, MPU_RA_INT_ENABLE, MPU_RF_DATA_RDY_EN);

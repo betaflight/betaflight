@@ -129,8 +129,7 @@ void hcsr04_update(rangefinderDev_t *dev)
             if (lastCalculatedDistance > HCSR04_MAX_RANGE_CM) {
                 lastCalculatedDistance = RANGEFINDER_OUT_OF_RANGE;
             }
-        }
-        else {
+        } else {
             // No measurement within reasonable time - indicate failure
             lastCalculatedDistance = RANGEFINDER_HARDWARE_FAILURE;
         }
@@ -217,8 +216,7 @@ bool hcsr04Detect(rangefinderDev_t *dev, const sonarConfig_t * rangefinderHardwa
         dev->read = &hcsr04_get_distance;
 
         return true;
-    }
-    else {
+    } else {
         // Not detected - free resources
         IORelease(triggerIO);
         IORelease(echoIO);

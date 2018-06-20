@@ -59,8 +59,7 @@ void trampCmsUpdateStatusString(void)
 
     if (trampPower) {
         tfp_sprintf(&trampCmsStatusString[9], " %c%3d", (trampPower == trampConfiguredPower) ? ' ' : '*', trampPower);
-    }
-    else
+    } else
         tfp_sprintf(&trampCmsStatusString[9], " ----");
 }
 
@@ -211,8 +210,7 @@ static CMS_Menu trampCmsMenuCommence = {
     .entries = trampCmsMenuCommenceEntries,
 };
 
-static OSD_Entry trampMenuEntries[] =
-{
+static OSD_Entry trampMenuEntries[] = {
     { "- TRAMP -", OME_Label, NULL, NULL, 0 },
 
     { "",       OME_Label,   NULL,                   trampCmsStatusString,  DYNAMIC },

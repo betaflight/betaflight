@@ -518,7 +518,7 @@ static bool runcamDeviceDecodeSettings(sbuf_t *buf, runcamDeviceSetting_t *outSe
             settingIterator->id = sbufReadU8(buf);
             parseStep = RCDP_SETTING_PARSE_WAITING_NAME;
         }
-            break;
+        break;
         case RCDP_SETTING_PARSE_WAITING_NAME: {
             const char *str = (const char *)sbufConstPtr(buf);
             uint8_t nameLen = strlen(str) + 1;
@@ -528,7 +528,7 @@ static bool runcamDeviceDecodeSettings(sbuf_t *buf, runcamDeviceSetting_t *outSe
 
             parseStep = RCDP_SETTING_PARSE_WAITING_VALUE;
         }
-            break;
+        break;
         case RCDP_SETTING_PARSE_WAITING_VALUE: {
             const char *str = (const char *)sbufConstPtr(buf);
             uint8_t valueLen = strlen(str) + 1;
@@ -539,7 +539,7 @@ static bool runcamDeviceDecodeSettings(sbuf_t *buf, runcamDeviceSetting_t *outSe
 
             settingIterator++;
         }
-            break;
+        break;
         }
     }
 
@@ -688,7 +688,7 @@ static bool runcamDeviceDecodeSettingDetail(sbuf_t *buf, runcamDeviceSettingDeta
             i++;
         }
     }
-        break;
+    break;
     case RCDEVICE_PROTOCOL_SETTINGTYPE_STRING: {
         const char *tmp = (const char *)sbufConstPtr(buf);
         strncpy(outSettingDetail->stringValue, tmp, RCDEVICE_PROTOCOL_MAX_STRING_LENGTH);
@@ -696,7 +696,7 @@ static bool runcamDeviceDecodeSettingDetail(sbuf_t *buf, runcamDeviceSettingDeta
 
         outSettingDetail->maxStringSize = sbufReadU8(buf);
     }
-        break;
+    break;
     case RCDEVICE_PROTOCOL_SETTINGTYPE_FOLDER:
         break;
     case RCDEVICE_PROTOCOL_SETTINGTYPE_INFO: {
@@ -704,7 +704,7 @@ static bool runcamDeviceDecodeSettingDetail(sbuf_t *buf, runcamDeviceSettingDeta
         strncpy(outSettingDetail->stringValue, tmp, RCDEVICE_PROTOCOL_MAX_STRING_LENGTH);
         sbufAdvance(buf, strlen(outSettingDetail->stringValue) + 1);
     }
-        break;
+    break;
     case RCDEVICE_PROTOCOL_SETTINGTYPE_UNKNOWN:
         break;
     }

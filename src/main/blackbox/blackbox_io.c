@@ -149,10 +149,10 @@ void blackboxDeviceFlush(void)
 {
     switch (blackboxConfig()->device) {
 #ifdef USE_FLASHFS
-        /*
-         * This is our only output device which requires us to call flush() in order for it to write anything. The other
-         * devices will progressively write in the background without Blackbox calling anything.
-         */
+    /*
+     * This is our only output device which requires us to call flush() in order for it to write anything. The other
+     * devices will progressively write in the background without Blackbox calling anything.
+     */
     case BLACKBOX_DEVICE_FLASH:
         flashfsFlushAsync();
         break;
@@ -199,64 +199,63 @@ bool blackboxDeviceFlushForce(void)
 bool blackboxDeviceOpen(void)
 {
     switch (blackboxConfig()->device) {
-    case BLACKBOX_DEVICE_SERIAL:
-        {
-            serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_BLACKBOX);
-            baudRate_e baudRateIndex;
-            portOptions_e portOptions = SERIAL_PARITY_NO | SERIAL_NOT_INVERTED;
+    case BLACKBOX_DEVICE_SERIAL: {
+        serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_BLACKBOX);
+        baudRate_e baudRateIndex;
+        portOptions_e portOptions = SERIAL_PARITY_NO | SERIAL_NOT_INVERTED;
 
-            if (!portConfig) {
-                return false;
-            }
+        if (!portConfig) {
+            return false;
+        }
 
-            blackboxPortSharing = determinePortSharing(portConfig, FUNCTION_BLACKBOX);
-            baudRateIndex = portConfig->blackbox_baudrateIndex;
+        blackboxPortSharing = determinePortSharing(portConfig, FUNCTION_BLACKBOX);
+        baudRateIndex = portConfig->blackbox_baudrateIndex;
 
-            if (baudRates[baudRateIndex] == 230400) {
-                /*
-                 * OpenLog's 230400 baud rate is very inaccurate, so it requires a larger inter-character gap in
-                 * order to maintain synchronization.
-                 */
-                portOptions |= SERIAL_STOPBITS_2;
-            } else {
-                portOptions |= SERIAL_STOPBITS_1;
-            }
+        if (baudRates[baudRateIndex] == 230400) {
+            /*
+             * OpenLog's 230400 baud rate is very inaccurate, so it requires a larger inter-character gap in
+             * order to maintain synchronization.
+             */
+            portOptions |= SERIAL_STOPBITS_2;
+        } else {
+            portOptions |= SERIAL_STOPBITS_1;
+        }
 
-            blackboxPort = openSerialPort(portConfig->identifier, FUNCTION_BLACKBOX, NULL, NULL, baudRates[baudRateIndex],
+        blackboxPort = openSerialPort(portConfig->identifier, FUNCTION_BLACKBOX, NULL, NULL, baudRates[baudRateIndex],
                 BLACKBOX_SERIAL_PORT_MODE, portOptions);
 
-            /*
-             * The slowest MicroSD cards have a write latency approaching 400ms. The OpenLog's buffer is about 900
-             * bytes. In order for its buffer to be able to absorb this latency we must write slower than 6000 B/s.
-             *
-             * The OpenLager has a 125KB buffer for when the the MicroSD card is busy, so when the user configures
-             * high baud rates, assume the OpenLager is in use and so there is no need to constrain the writes.
-             *
-             * In all other cases, constrain the writes as follows:
-             *
-             *     Bytes per loop iteration = floor((looptime_ns / 1000000.0) * 6000)
-             *                              = floor((looptime_ns * 6000) / 1000000.0)
-             *                              = floor((looptime_ns * 3) / 500.0)
-             *                              = (looptime_ns * 3) / 500
-             */
+        /*
+         * The slowest MicroSD cards have a write latency approaching 400ms. The OpenLog's buffer is about 900
+         * bytes. In order for its buffer to be able to absorb this latency we must write slower than 6000 B/s.
+         *
+         * The OpenLager has a 125KB buffer for when the the MicroSD card is busy, so when the user configures
+         * high baud rates, assume the OpenLager is in use and so there is no need to constrain the writes.
+         *
+         * In all other cases, constrain the writes as follows:
+         *
+         *     Bytes per loop iteration = floor((looptime_ns / 1000000.0) * 6000)
+         *                              = floor((looptime_ns * 6000) / 1000000.0)
+         *                              = floor((looptime_ns * 3) / 500.0)
+         *                              = (looptime_ns * 3) / 500
+         */
 
 
-            switch (baudRateIndex) {
-            case BAUD_1000000:
-            case BAUD_1500000:
-            case BAUD_2000000:
-            case BAUD_2470000:
-                // assume OpenLager in use, so do not constrain writes
-                blackboxMaxHeaderBytesPerIteration = BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION;
-                break;
-            default:
-                blackboxMaxHeaderBytesPerIteration = constrain((targetPidLooptime * 3) / 500, 1, BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION);
-                break;
-            };
+        switch (baudRateIndex) {
+        case BAUD_1000000:
+        case BAUD_1500000:
+        case BAUD_2000000:
+        case BAUD_2470000:
+            // assume OpenLager in use, so do not constrain writes
+            blackboxMaxHeaderBytesPerIteration = BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION;
+            break;
+        default:
+            blackboxMaxHeaderBytesPerIteration = constrain((targetPidLooptime * 3) / 500, 1, BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION);
+            break;
+        };
 
-            return blackboxPort != NULL;
-        }
-        break;
+        return blackboxPort != NULL;
+    }
+    break;
 #ifdef USE_FLASHFS
     case BLACKBOX_DEVICE_FLASH:
         if (flashfsGetSize() == 0 || isBlackboxDeviceFull()) {
@@ -310,7 +309,7 @@ bool isBlackboxErased(void)
         return flashfsIsReady();
         break;
     default:
-    //not supported
+        //not supported
         return true;
         break;
     }
@@ -403,7 +402,7 @@ static bool blackboxSDCardBeginLog(void)
 {
     fatDirectoryEntry_t *directoryEntry;
 
-    doMore:
+doMore:
     switch (blackboxSDCard.state) {
     case BLACKBOX_SDCARD_INITIAL:
         if (afatfs_getFilesystemState() == AFATFS_FILESYSTEM_STATE_READY) {

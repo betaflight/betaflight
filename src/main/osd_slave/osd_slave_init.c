@@ -109,7 +109,7 @@ void processLoopback(void)
 #ifdef BUS_SWITCH_PIN
 void busSwitchInit(void)
 {
-static IO_t busSwitchResetPin        = IO_NONE;
+    static IO_t busSwitchResetPin        = IO_NONE;
 
     busSwitchResetPin = IOGetByTag(IO_TAG(BUS_SWITCH_PIN));
     IOInit(busSwitchResetPin, OWNER_SYSTEM, 0);
@@ -177,7 +177,7 @@ void init(void)
 #ifdef USE_BEEPER
     beeperInit(beeperDevConfig());
 #endif
-/* temp until PGs are implemented. */
+    /* temp until PGs are implemented. */
 #ifdef USE_INVERTER
     initInverters();
 #endif

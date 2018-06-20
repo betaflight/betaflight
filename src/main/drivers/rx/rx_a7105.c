@@ -54,7 +54,8 @@ void a7105extiHandler(extiCallbackRec_t* cb)
     }
 }
 
-void A7105Init (uint32_t id) {
+void A7105Init (uint32_t id)
+{
     spiDeviceByInstance(RX_SPI_INSTANCE);
     rxIntIO = IOGetByTag(IO_TAG(RX_IRQ_PIN)); /* config receiver IRQ pin */
     IOInit(rxIntIO, OWNER_RX_SPI_CS, 0);
@@ -103,7 +104,8 @@ void A7105Config (const uint8_t *regsTable, uint8_t size)
     }
 }
 
-bool A7105RxTxFinished (uint32_t *timeStamp) {
+bool A7105RxTxFinished (uint32_t *timeStamp)
+{
     bool result = false;
 
     if (occurEvent) {

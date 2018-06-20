@@ -95,10 +95,10 @@ static uint16_t VCP_DeInit(void)
 
 void ust_cpy(LINE_CODING* plc2, const LINE_CODING* plc1)
 {
-   plc2->bitrate    = plc1->bitrate;
-   plc2->format     = plc1->format;
-   plc2->paritytype = plc1->paritytype;
-   plc2->datatype   = plc1->datatype;
+    plc2->bitrate    = plc1->bitrate;
+    plc2->format     = plc1->format;
+    plc2->paritytype = plc1->paritytype;
+    plc2->datatype   = plc1->datatype;
 }
 
 /**
@@ -116,52 +116,52 @@ static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len)
     assert_param(Len>=sizeof(LINE_CODING));
 
     switch (Cmd) {
-       /* Not  needed for this driver, AT modem commands */
-      case SEND_ENCAPSULATED_COMMAND:
-      case GET_ENCAPSULATED_RESPONSE:
-         break;
+    /* Not  needed for this driver, AT modem commands */
+    case SEND_ENCAPSULATED_COMMAND:
+    case GET_ENCAPSULATED_RESPONSE:
+        break;
 
-      // Not needed for this driver
-      case SET_COMM_FEATURE:
-      case GET_COMM_FEATURE:
-      case CLEAR_COMM_FEATURE:
-         break;
-
-
-      //Note - hw flow control on UART 1-3 and 6 only
-      case SET_LINE_CODING:
-         // If a callback is provided, tell the upper driver of changes in baud rate
-         if (plc && (Len == sizeof (*plc))) {
-             if (baudRateCb) {
-                 baudRateCb(baudRateCbContext, plc->bitrate);
-             }
-             ust_cpy(&g_lc, plc);           //Copy into structure to save for later
-         }
-         break;
+    // Not needed for this driver
+    case SET_COMM_FEATURE:
+    case GET_COMM_FEATURE:
+    case CLEAR_COMM_FEATURE:
+        break;
 
 
-      case GET_LINE_CODING:
-         if (plc && (Len == sizeof (*plc))) {
-             ust_cpy(plc, &g_lc);
-         }
-         break;
+    //Note - hw flow control on UART 1-3 and 6 only
+    case SET_LINE_CODING:
+        // If a callback is provided, tell the upper driver of changes in baud rate
+        if (plc && (Len == sizeof (*plc))) {
+            if (baudRateCb) {
+                baudRateCb(baudRateCbContext, plc->bitrate);
+            }
+            ust_cpy(&g_lc, plc);           //Copy into structure to save for later
+        }
+        break;
 
 
-      case SET_CONTROL_LINE_STATE:
-         // If a callback is provided, tell the upper driver of changes in DTR/RTS state
-         if (plc && (Len == sizeof (uint16_t))) {
-             if (ctrlLineStateCb) {
-                 ctrlLineStateCb(ctrlLineStateCbContext, *((uint16_t *)Buf));
-             }
-         }
-         break;
+    case GET_LINE_CODING:
+        if (plc && (Len == sizeof (*plc))) {
+            ust_cpy(plc, &g_lc);
+        }
+        break;
 
-      case SEND_BREAK:
-         /* Not  needed for this driver */
-         break;
 
-      default:
-         break;
+    case SET_CONTROL_LINE_STATE:
+        // If a callback is provided, tell the upper driver of changes in DTR/RTS state
+        if (plc && (Len == sizeof (uint16_t))) {
+            if (ctrlLineStateCb) {
+                ctrlLineStateCb(ctrlLineStateCbContext, *((uint16_t *)Buf));
+            }
+        }
+        break;
+
+    case SEND_BREAK:
+        /* Not  needed for this driver */
+        break;
+
+    default:
+        break;
     }
 
     return USBD_OK;

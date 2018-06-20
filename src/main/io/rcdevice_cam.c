@@ -88,7 +88,8 @@ static bool rcdeviceIs5KeyEnabled(void)
     return false;
 }
 
-static bool reInitializeDevice() {
+static bool reInitializeDevice()
+{
 #define MAX_RETRY_COUNT  4
 #define RETRY_INTERVAL_MS  500
     static timeMs_t lastInitializeTime = 0;
@@ -203,7 +204,7 @@ static bool rcdeviceSend5KeyOSDCableSimualtionEvent(rcdeviceCamSimulationKeyEven
             beeper(BEEPER_CAM_CONNECTION_CLOSE);
         }
     }
-        break;
+    break;
     case RCDEVICE_CAM_KEY_ENTER:
     case RCDEVICE_CAM_KEY_LEFT:
     case RCDEVICE_CAM_KEY_UP:

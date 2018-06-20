@@ -47,8 +47,7 @@
 
 #define STORAGE_LUN_NBR 1
 
-static const uint8_t STORAGE_Inquirydata[] = 
-{
+static const uint8_t STORAGE_Inquirydata[] = {
     0x00, 0x80, 0x02, 0x02,
 #ifdef USE_HAL_DRIVER
     (STANDARD_INQUIRY_DATA_LEN - 5),
@@ -59,7 +58,7 @@ static const uint8_t STORAGE_Inquirydata[] =
     'B', 'E', 'T', 'A', 'F', 'L', 'T', ' ', // Manufacturer : 8 bytes
     'O', 'n', 'b', 'o', 'a', 'r', 'd', ' ', // Product      : 16 Bytes
     'F', 'l', 'a', 's', 'h', ' ', ' ', ' ', //
-    ' ', ' ', ' ' ,' ',                     // Version      : 4 Bytes
+    ' ', ' ', ' ',' ',                      // Version      : 4 Bytes
 };
 
 static int8_t STORAGE_Init(uint8_t lun)
@@ -68,7 +67,7 @@ static int8_t STORAGE_Init(uint8_t lun)
 
     LED0_ON;
 
-#ifdef USE_FLASHFS 
+#ifdef USE_FLASHFS
 #ifdef USE_FLASH
     flashInit(flashConfig());
 #endif
@@ -135,7 +134,7 @@ static int8_t STORAGE_Write(uint8_t lun,
 
 static int8_t STORAGE_GetMaxLun(void)
 {
-  return (STORAGE_LUN_NBR - 1);
+    return (STORAGE_LUN_NBR - 1);
 }
 
 #ifdef USE_HAL_DRIVER
@@ -143,8 +142,7 @@ USBD_StorageTypeDef
 #else
 USBD_STORAGE_cb_TypeDef
 #endif
-USBD_MSC_EMFAT_fops =
-{
+USBD_MSC_EMFAT_fops = {
     STORAGE_Init,
     STORAGE_GetCapacity,
     STORAGE_IsReady,

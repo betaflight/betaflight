@@ -132,19 +132,19 @@ void saUpdateStatusString(void)
         return;
 
 // XXX These should be done somewhere else
-if (saCmsDeviceStatus == 0 && saDevice.version != 0)
-    saCmsDeviceStatus = saDevice.version;
-if (saCmsORFreq == 0 && saDevice.orfreq != 0)
-    saCmsORFreq = saDevice.orfreq;
-if (saCmsUserFreq == 0 && saDevice.freq != 0)
-    saCmsUserFreq = saDevice.freq;
+    if (saCmsDeviceStatus == 0 && saDevice.version != 0)
+        saCmsDeviceStatus = saDevice.version;
+    if (saCmsORFreq == 0 && saDevice.orfreq != 0)
+        saCmsORFreq = saDevice.orfreq;
+    if (saCmsUserFreq == 0 && saDevice.freq != 0)
+        saCmsUserFreq = saDevice.freq;
 
-if (saDevice.version == 2) {
-    if (saDevice.mode & SA_MODE_GET_OUT_RANGE_PITMODE)
-        saCmsPitFMode = 1;
-    else
-        saCmsPitFMode = 0;
-}
+    if (saDevice.version == 2) {
+        if (saDevice.mode & SA_MODE_GET_OUT_RANGE_PITMODE)
+            saCmsPitFMode = 1;
+        else
+            saCmsPitFMode = 0;
+    }
 
     saCmsStatusString[0] = "-FR"[saCmsOpmodel];
 
@@ -157,7 +157,7 @@ if (saDevice.version == 2) {
     }
 
     if ((saDevice.mode & SA_MODE_GET_PITMODE)
-       && (saDevice.mode & SA_MODE_GET_OUT_RANGE_PITMODE))
+        && (saDevice.mode & SA_MODE_GET_OUT_RANGE_PITMODE))
         tfp_sprintf(&saCmsStatusString[5], "%4d", saDevice.orfreq);
     else if (saDevice.mode & SA_MODE_GET_FREQ_BY_FREQ)
         tfp_sprintf(&saCmsStatusString[5], "%4d", saDevice.freq);
@@ -530,8 +530,7 @@ static OSD_Entry saCmsMenuPORFreqEntries[] = {
     { NULL,           OME_END,     NULL,             NULL,                                                 0 }
 };
 
-static CMS_Menu saCmsMenuPORFreq =
-{
+static CMS_Menu saCmsMenuPORFreq = {
 #ifdef CMS_MENU_DEBUG
     .GUARD_text = "XSAPOR",
     .GUARD_type = OME_MENU,
@@ -552,8 +551,7 @@ static OSD_Entry saCmsMenuUserFreqEntries[] = {
     { NULL,            OME_END,     NULL,             NULL,                                                0 }
 };
 
-static CMS_Menu saCmsMenuUserFreq =
-{
+static CMS_Menu saCmsMenuUserFreq = {
 #ifdef CMS_MENU_DEBUG
     .GUARD_text = "XSAUFQ",
     .GUARD_type = OME_MENU,
@@ -622,8 +620,7 @@ static OSD_Entry saCmsMenuFreqModeEntries[] = {
     { NULL, OME_END, NULL, NULL, 0 }
 };
 
-static OSD_Entry saCmsMenuChanModeEntries[] =
-{
+static OSD_Entry saCmsMenuChanModeEntries[] = {
     { "- SMARTAUDIO -", OME_Label, NULL, NULL, 0 },
 
     { "",       OME_Label,   NULL,                   saCmsStatusString,  DYNAMIC },
@@ -638,8 +635,7 @@ static OSD_Entry saCmsMenuChanModeEntries[] =
     { NULL,     OME_END, NULL, NULL, 0 }
 };
 
-static OSD_Entry saCmsMenuOfflineEntries[] =
-{
+static OSD_Entry saCmsMenuOfflineEntries[] = {
     { "- VTX SMARTAUDIO -", OME_Label, NULL, NULL, 0 },
 
     { "",      OME_Label,   NULL,          saCmsStatusString, DYNAMIC },

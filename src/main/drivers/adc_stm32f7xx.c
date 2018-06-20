@@ -79,16 +79,16 @@ const adcDevice_t adcHardware[] = {
 
 /* note these could be packed up for saving space */
 const adcTagMap_t adcTagMap[] = {
-/*
-    { DEFIO_TAG_E__PF3, ADC_DEVICES_3,   ADC_CHANNEL_9  },
-    { DEFIO_TAG_E__PF4, ADC_DEVICES_3,   ADC_CHANNEL_14 },
-    { DEFIO_TAG_E__PF5, ADC_DEVICES_3,   ADC_CHANNEL_15 },
-    { DEFIO_TAG_E__PF6, ADC_DEVICES_3,   ADC_CHANNEL_4  },
-    { DEFIO_TAG_E__PF7, ADC_DEVICES_3,   ADC_CHANNEL_5  },
-    { DEFIO_TAG_E__PF8, ADC_DEVICES_3,   ADC_CHANNEL_6  },
-    { DEFIO_TAG_E__PF9, ADC_DEVICES_3,   ADC_CHANNEL_7  },
-    { DEFIO_TAG_E__PF10,ADC_DEVICES_3,   ADC_CHANNEL_8  },
-*/
+    /*
+        { DEFIO_TAG_E__PF3, ADC_DEVICES_3,   ADC_CHANNEL_9  },
+        { DEFIO_TAG_E__PF4, ADC_DEVICES_3,   ADC_CHANNEL_14 },
+        { DEFIO_TAG_E__PF5, ADC_DEVICES_3,   ADC_CHANNEL_15 },
+        { DEFIO_TAG_E__PF6, ADC_DEVICES_3,   ADC_CHANNEL_4  },
+        { DEFIO_TAG_E__PF7, ADC_DEVICES_3,   ADC_CHANNEL_5  },
+        { DEFIO_TAG_E__PF8, ADC_DEVICES_3,   ADC_CHANNEL_6  },
+        { DEFIO_TAG_E__PF9, ADC_DEVICES_3,   ADC_CHANNEL_7  },
+        { DEFIO_TAG_E__PF10,ADC_DEVICES_3,   ADC_CHANNEL_8  },
+    */
     { DEFIO_TAG_E__PC0, ADC_DEVICES_123, ADC_CHANNEL_10 },
     { DEFIO_TAG_E__PC1, ADC_DEVICES_123, ADC_CHANNEL_11 },
     { DEFIO_TAG_E__PC2, ADC_DEVICES_123, ADC_CHANNEL_12 },
@@ -129,9 +129,8 @@ void adcInitDevice(adcDevice_t *adcdev, int channelCount)
     adcdev->ADCHandle.Init.EOCSelection          = DISABLE;
     adcdev->ADCHandle.Instance = adcdev->ADCx;
 
-    if (HAL_ADC_Init(&adcdev->ADCHandle) != HAL_OK)
-    {
-      /* Initialization Error */
+    if (HAL_ADC_Init(&adcdev->ADCHandle) != HAL_OK) {
+        /* Initialization Error */
     }
 }
 
@@ -293,9 +292,8 @@ void adcInit(const adcConfig_t *config)
         sConfig.SamplingTime = adcOperatingConfig[i].sampleTime;
         sConfig.Offset       = 0;
 
-        if (HAL_ADC_ConfigChannel(&adc.ADCHandle, &sConfig) != HAL_OK)
-        {
-          /* Channel Configuration Error */
+        if (HAL_ADC_ConfigChannel(&adc.ADCHandle, &sConfig) != HAL_OK) {
+            /* Channel Configuration Error */
         }
     }
 
@@ -315,8 +313,7 @@ void adcInit(const adcConfig_t *config)
     adc.DmaHandle.Init.PeriphBurst = DMA_PBURST_SINGLE;
     adc.DmaHandle.Instance = adc.DMAy_Streamx;
 
-    if (HAL_DMA_Init(&adc.DmaHandle) != HAL_OK)
-    {
+    if (HAL_DMA_Init(&adc.DmaHandle) != HAL_OK) {
         /* Initialization Error */
     }
 
@@ -324,8 +321,7 @@ void adcInit(const adcConfig_t *config)
 
     //HAL_CLEANINVALIDATECACHE((uint32_t*)&adcValues, configuredAdcChannels);
 
-    if (HAL_ADC_Start_DMA(&adc.ADCHandle, (uint32_t*)&adcValues, configuredAdcChannels) != HAL_OK)
-    {
+    if (HAL_ADC_Start_DMA(&adc.ADCHandle, (uint32_t*)&adcValues, configuredAdcChannels) != HAL_OK) {
         /* Start Conversation Error */
     }
 }

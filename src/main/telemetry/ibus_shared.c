@@ -239,10 +239,10 @@ static uint16_t getMode()
 {
     uint16_t flightMode = 1; //Acro
     if (FLIGHT_MODE(ANGLE_MODE)) {
-         flightMode = 0; //Stab
+        flightMode = 0; //Stab
     }
     if (FLIGHT_MODE(BARO_MODE)) {
-         flightMode = 2; //AltHold
+        flightMode = 2; //AltHold
     }
     if (FLIGHT_MODE(PASSTHRU_MODE)) {
         flightMode = 3; //Auto
@@ -377,60 +377,60 @@ static void setValue(uint8_t* bufferPtr, uint8_t sensorType, uint8_t length)
         bufferPtr[i] = value.byte[i] = 0;
     }
     switch (sensorType) {
-        case IBUS_SENSOR_TYPE_EXTERNAL_VOLTAGE:
-            value.uint16 = getVoltage();
-            break;
-        case IBUS_SENSOR_TYPE_TEMPERATURE:
-            value.uint16 = getTemperature();
-            break;
-        case IBUS_SENSOR_TYPE_RPM_FLYSKY:
-            value.int16 = (int16_t)rcCommand[THROTTLE];
-            break;
-        case IBUS_SENSOR_TYPE_FUEL:
-            value.uint16 = getFuel();
-            break;
-        case IBUS_SENSOR_TYPE_RPM:
-            value.uint16 = getRPM();
-            break;
-        case IBUS_SENSOR_TYPE_FLIGHT_MODE:
-            value.uint16 = getMode();
-            break;
-        case IBUS_SENSOR_TYPE_CELL:
-            value.uint16 = (uint16_t)(getBatteryAverageCellVoltage() *10);
-            break;
-        case IBUS_SENSOR_TYPE_BAT_CURR:
-            value.uint16 = (uint16_t)getAmperage();
-            break;
-        case IBUS_SENSOR_TYPE_ACC_X:
-        case IBUS_SENSOR_TYPE_ACC_Y:
-        case IBUS_SENSOR_TYPE_ACC_Z:
-            value.int16 = getACC(sensorType - IBUS_SENSOR_TYPE_ACC_X);
-            break;
-        case IBUS_SENSOR_TYPE_ROLL:
-        case IBUS_SENSOR_TYPE_PITCH:
-        case IBUS_SENSOR_TYPE_YAW:
-            value.int16 = attitude.raw[sensorType - IBUS_SENSOR_TYPE_ROLL] *10;
-            break;
-        case IBUS_SENSOR_TYPE_ARMED:
-            value.uint16 = ARMING_FLAG(ARMED) ? 1 : 0;
-            break;
+    case IBUS_SENSOR_TYPE_EXTERNAL_VOLTAGE:
+        value.uint16 = getVoltage();
+        break;
+    case IBUS_SENSOR_TYPE_TEMPERATURE:
+        value.uint16 = getTemperature();
+        break;
+    case IBUS_SENSOR_TYPE_RPM_FLYSKY:
+        value.int16 = (int16_t)rcCommand[THROTTLE];
+        break;
+    case IBUS_SENSOR_TYPE_FUEL:
+        value.uint16 = getFuel();
+        break;
+    case IBUS_SENSOR_TYPE_RPM:
+        value.uint16 = getRPM();
+        break;
+    case IBUS_SENSOR_TYPE_FLIGHT_MODE:
+        value.uint16 = getMode();
+        break;
+    case IBUS_SENSOR_TYPE_CELL:
+        value.uint16 = (uint16_t)(getBatteryAverageCellVoltage() *10);
+        break;
+    case IBUS_SENSOR_TYPE_BAT_CURR:
+        value.uint16 = (uint16_t)getAmperage();
+        break;
+    case IBUS_SENSOR_TYPE_ACC_X:
+    case IBUS_SENSOR_TYPE_ACC_Y:
+    case IBUS_SENSOR_TYPE_ACC_Z:
+        value.int16 = getACC(sensorType - IBUS_SENSOR_TYPE_ACC_X);
+        break;
+    case IBUS_SENSOR_TYPE_ROLL:
+    case IBUS_SENSOR_TYPE_PITCH:
+    case IBUS_SENSOR_TYPE_YAW:
+        value.int16 = attitude.raw[sensorType - IBUS_SENSOR_TYPE_ROLL] *10;
+        break;
+    case IBUS_SENSOR_TYPE_ARMED:
+        value.uint16 = ARMING_FLAG(ARMED) ? 1 : 0;
+        break;
 #if defined(USE_TELEMETRY_IBUS_EXTENDED)
-        case IBUS_SENSOR_TYPE_CMP_HEAD:
-            value.uint16 = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
-            break;
-        case IBUS_SENSOR_TYPE_VERTICAL_SPEED:
-        case IBUS_SENSOR_TYPE_CLIMB_RATE:
-            if(sensors(SENSOR_SONAR) || sensors(SENSOR_BARO)) {
-                value.int16 = (int16_t)getEstimatedVario();
-            }
-            break;
-        case IBUS_SENSOR_TYPE_ALT:
-        case IBUS_SENSOR_TYPE_ALT_MAX:
-            value.int32 = baro.BaroAlt;
-            break;
-        case IBUS_SENSOR_TYPE_PRES:
-            value.uint32 = baro.baroPressure | (((uint32_t)getTemperature()) << 19);
-            break;
+    case IBUS_SENSOR_TYPE_CMP_HEAD:
+        value.uint16 = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+        break;
+    case IBUS_SENSOR_TYPE_VERTICAL_SPEED:
+    case IBUS_SENSOR_TYPE_CLIMB_RATE:
+        if(sensors(SENSOR_SONAR) || sensors(SENSOR_BARO)) {
+            value.int16 = (int16_t)getEstimatedVario();
+        }
+        break;
+    case IBUS_SENSOR_TYPE_ALT:
+    case IBUS_SENSOR_TYPE_ALT_MAX:
+        value.int32 = baro.BaroAlt;
+        break;
+    case IBUS_SENSOR_TYPE_PRES:
+        value.uint32 = baro.baroPressure | (((uint32_t)getTemperature()) << 19);
+        break;
 #endif //defined(TELEMETRY_IBUS_EXTENDED)
     }
     for (unsigned i = 0; i < length; i++) {
@@ -459,7 +459,7 @@ static ibusAddress_t getAddress(const uint8_t *ibusPacket)
 static void autodetectFirstReceivedAddressAsBaseAddress(ibusAddress_t returnAddress)
 {
     if ((INVALID_IBUS_ADDRESS == ibusBaseAddress) &&
-    (INVALID_IBUS_ADDRESS != returnAddress)) {
+        (INVALID_IBUS_ADDRESS != returnAddress)) {
         ibusBaseAddress = returnAddress;
     }
 }
@@ -467,8 +467,8 @@ static void autodetectFirstReceivedAddressAsBaseAddress(ibusAddress_t returnAddr
 static bool theAddressIsWithinOurRange(ibusAddress_t returnAddress)
 {
     return (returnAddress >= ibusBaseAddress) &&
-    (ibusAddress_t)(returnAddress - ibusBaseAddress) < ARRAYLEN(telemetryConfig()->flysky_sensors) &&
-    telemetryConfig()->flysky_sensors[(returnAddress - ibusBaseAddress)] != IBUS_SENSOR_TYPE_NONE;
+        (ibusAddress_t)(returnAddress - ibusBaseAddress) < ARRAYLEN(telemetryConfig()->flysky_sensors) &&
+        telemetryConfig()->flysky_sensors[(returnAddress - ibusBaseAddress)] != IBUS_SENSOR_TYPE_NONE;
 }
 
 uint8_t respondToIbusRequest(uint8_t const * const ibusPacket)
@@ -518,5 +518,5 @@ bool isChecksumOkIa6b(const uint8_t *ibusPacket, const uint8_t length)
 
     // Note that there's a byte order swap to little endian here
     return (calculatedChecksum >> 8) == ibusPacket[length - 1]
-           && (calculatedChecksum & 0xFF) == ibusPacket[length - 2];
+        && (calculatedChecksum & 0xFF) == ibusPacket[length - 2];
 }

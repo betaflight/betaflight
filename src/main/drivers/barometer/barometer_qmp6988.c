@@ -101,7 +101,7 @@ void qmp6988BusInit(busDevice_t *busdev)
 {
 #ifdef USE_BARO_SPI_QMP6988
     if (busdev->bustype == BUSTYPE_SPI) {
-        IOHi(busdev->busdev_u.spi.csnPin); 
+        IOHi(busdev->busdev_u.spi.csnPin);
         IOInit(busdev->busdev_u.spi.csnPin, OWNER_BARO_CS, 0);
         IOConfigGPIO(busdev->busdev_u.spi.csnPin, IOCFG_OUT_PP);
         spiSetDivisor(busdev->busdev_u.spi.instance, SPI_CLOCK_STANDARD);
@@ -165,93 +165,93 @@ bool qmp6988Detect(baroDev_t *baro)
     }
 
     // SetIIR
-    busWriteRegister(busdev, QMP6988_SET_IIR_REG, 0x05);	
-    
-    //read OTP 
+    busWriteRegister(busdev, QMP6988_SET_IIR_REG, 0x05);
+
+    //read OTP
     busReadRegisterBuffer(busdev, QMP6988_COE_B00_1_REG, databuf, 25);
-    
+
     //algo OTP
     hw = databuf[0];
-    lw =  databuf[1];	
-    temp1 = (hw<<12) | (lw<<4);	
-    
+    lw =  databuf[1];
+    temp1 = (hw<<12) | (lw<<4);
+
     hb = databuf[2];
-    lb = databuf[3];	
+    lb = databuf[3];
     Coe_bt1_ = (short)((hb<<8) | lb);
-    
+
     hb = databuf[4];
-    lb = databuf[5];	
+    lb = databuf[5];
     Coe_bt2_ = (short)((hb<<8) | lb);
-    
+
     hb = databuf[6];
-    lb = databuf[7];	
+    lb = databuf[7];
     Coe_bp1_ = (short)((hb<<8) | lb);
-    
+
     hb = databuf[8];
-    lb = databuf[9];	
+    lb = databuf[9];
     Coe_b11_ = (short)((hb<<8) | lb);
-    
+
     hb = databuf[10];
-    lb = databuf[11];	
+    lb = databuf[11];
     Coe_bp2_ = (short)((hb<<8) | lb);
-    
+
     hb = databuf[12];
-    lb = databuf[13];	
+    lb = databuf[13];
     Coe_b12_ = (short)((hb<<8) | lb);
-    
+
     hb = databuf[14];
-    lb = databuf[15];	
+    lb = databuf[15];
     Coe_b21_ = (short)((hb<<8) | lb);
-	
+
     hb = databuf[16];
-    lb = databuf[17];	
+    lb = databuf[17];
     Coe_bp3_ = (short)((hb<<8) | lb);
-    
+
     hw = databuf[18];
-    lw = databuf[19];	
-    temp2 = (hw<<12) | (lw<<4);	
-    
+    lw = databuf[19];
+    temp2 = (hw<<12) | (lw<<4);
+
     hb = databuf[20];
-    lb = databuf[21];	
+    lb = databuf[21];
     Coe_a1_ = (short)((hb<<8) | lb);
-    
+
     hb = databuf[22];
-    lb = databuf[23];	
+    lb = databuf[23];
     Coe_a2_ = (short)((hb<<8) | lb);
-    
+
     hb = databuf[24];
-    
+
     temp1 = temp1|((hb&0xf0)>>4);
     if(temp1&0x80000)
-       Coe_b00_ = ((int)temp1 - (int)0x100000);	
+        Coe_b00_ = ((int)temp1 - (int)0x100000);
     else
-       Coe_b00_ = temp1;
-    
+        Coe_b00_ = temp1;
+
     temp2 = temp2|(hb&0x0f);
     if(temp2&0x80000)
-    	Coe_a0_  = ((int)temp2 - (int)0x100000);
+        Coe_a0_  = ((int)temp2 - (int)0x100000);
     else
         Coe_a0_ = temp2;
-    
+
     qmp6988_cal.Coe_a0=(float)Coe_a0_/16.0;
     qmp6988_cal.Coe_a1=(-6.30E-03)+(4.30E-04)*(float)Coe_a1_/32767.0;
     qmp6988_cal.Coe_a2=(-1.9E-11)+(1.2E-10)*(float)Coe_a2_/32767.0;
-    
+
     qmp6988_cal.Coe_b00 = Coe_b00_/16.0;
     qmp6988_cal.Coe_bt1 = (1.00E-01)+(9.10E-02)*(float)Coe_bt1_/32767.0;
     qmp6988_cal.Coe_bt2= (1.20E-08)+(1.20E-06)*(float)Coe_bt2_/32767.0;
-    
+
     qmp6988_cal.Coe_bp1 = (3.30E-02)+(1.90E-02)*(float)Coe_bp1_/32767.0;
     qmp6988_cal.Coe_b11= (2.10E-07)+(1.40E-07)*(float)Coe_b11_/32767.0;
-    
+
     qmp6988_cal.Coe_bp2 = (-6.30E-10)+(3.50E-10)*(float)Coe_bp2_/32767.0;
     qmp6988_cal.Coe_b12= (2.90E-13)+(7.60E-13)*(float)Coe_b12_/32767.0;
-    
+
     qmp6988_cal.Coe_b21 = (2.10E-15)+(1.20E-14)*(float)Coe_b21_/32767.0;
-    qmp6988_cal.Coe_bp3= (1.30E-16)+(7.90E-17)*(float)Coe_bp3_/32767.0;	
-    
+    qmp6988_cal.Coe_bp3= (1.30E-16)+(7.90E-17)*(float)Coe_bp3_/32767.0;
+
     // Set power mode and sample times
-    busWriteRegister(busdev, QMP6988_CTRL_MEAS_REG, QMP6988_PWR_SAMPLE_MODE);	
+    busWriteRegister(busdev, QMP6988_CTRL_MEAS_REG, QMP6988_PWR_SAMPLE_MODE);
 
     // these are dummy as temperature is measured as part of pressure
     baro->ut_delay = 0;
@@ -281,7 +281,7 @@ static void qmp6988_get_ut(baroDev_t *baro)
 static void qmp6988_start_up(baroDev_t *baro)
 {
     // start measurement
-    busWriteRegister(&baro->busdev, QMP6988_CTRL_MEAS_REG, QMP6988_PWR_SAMPLE_MODE);	
+    busWriteRegister(&baro->busdev, QMP6988_CTRL_MEAS_REG, QMP6988_PWR_SAMPLE_MODE);
 }
 
 static void qmp6988_get_up(baroDev_t *baro)
@@ -300,8 +300,8 @@ static float qmp6988_compensate_T(int32_t adc_T)
 {
     int32_t var1;
     float T;
-    
-    var1=adc_T-1024*1024*8;	
+
+    var1=adc_T-1024*1024*8;
     T= qmp6988_cal.Coe_a0+qmp6988_cal.Coe_a1*var1+qmp6988_cal.Coe_a2*var1*var1;
 
     return T;
@@ -313,17 +313,17 @@ STATIC_UNIT_TESTED void qmp6988_calculate(int32_t *pressure, int32_t *temperatur
 {
     float tr,pr;
     int32_t Dp;
-    
+
     tr = qmp6988_compensate_T(qmp6988_ut);
-    Dp = qmp6988_up - 1024*1024*8;	
-    
+    Dp = qmp6988_up - 1024*1024*8;
+
     pr = qmp6988_cal.Coe_b00+qmp6988_cal.Coe_bt1*tr+qmp6988_cal.Coe_bp1*Dp+qmp6988_cal.Coe_b11*tr*Dp+qmp6988_cal.Coe_bt2*tr*tr+qmp6988_cal.Coe_bp2*Dp*Dp+qmp6988_cal.Coe_b12*Dp*tr*tr
-    +qmp6988_cal.Coe_b21*Dp*Dp*tr+qmp6988_cal.Coe_bp3*Dp*Dp*Dp;
-      
+        +qmp6988_cal.Coe_b21*Dp*Dp*tr+qmp6988_cal.Coe_bp3*Dp*Dp*Dp;
+
     if (pr)
-    *pressure = (int32_t)(pr);
+        *pressure = (int32_t)(pr);
     if (tr)
-    *temperature = (int32_t)tr/256;
+        *temperature = (int32_t)tr/256;
 }
 
 #endif

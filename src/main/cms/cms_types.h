@@ -27,8 +27,7 @@
 
 //type of elements
 
-typedef enum
-{
+typedef enum {
     OME_Label,
     OME_Back,
     OME_OSD_Exit,
@@ -56,8 +55,7 @@ typedef enum
 
 typedef long (*CMSEntryFuncPtr)(displayPort_t *displayPort, const void *ptr);
 
-typedef struct
-{
+typedef struct {
     const char * const text;
     const OSD_MenuElement type;
     const CMSEntryFuncPtr func;
@@ -95,8 +93,7 @@ onExit function is called with self:
 
 typedef long (*CMSMenuOnExitPtr)(const OSD_Entry *self);
 
-typedef struct
-{
+typedef struct {
 #ifdef CMS_MENU_DEBUG
     // These two are debug aids for menu content creators.
     const char *GUARD_text;
@@ -107,40 +104,35 @@ typedef struct
     OSD_Entry *entries;
 } CMS_Menu;
 
-typedef struct
-{
+typedef struct {
     uint8_t *val;
     uint8_t min;
     uint8_t max;
     uint8_t step;
 } OSD_UINT8_t;
 
-typedef struct
-{
+typedef struct {
     int8_t *val;
     int8_t min;
     int8_t max;
     int8_t step;
 } OSD_INT8_t;
 
-typedef struct
-{
+typedef struct {
     int16_t *val;
     int16_t min;
     int16_t max;
     int16_t step;
 } OSD_INT16_t;
 
-typedef struct
-{
+typedef struct {
     uint16_t *val;
     uint16_t min;
     uint16_t max;
     uint16_t step;
 } OSD_UINT16_t;
 
-typedef struct
-{
+typedef struct {
     uint8_t *val;
     uint8_t min;
     uint8_t max;
@@ -148,15 +140,13 @@ typedef struct
     uint16_t multipler;
 } OSD_FLOAT_t;
 
-typedef struct
-{
+typedef struct {
     uint8_t *val;
     uint8_t max;
     const char * const *names;
 } OSD_TAB_t;
 
-typedef struct
-{
+typedef struct {
     char *val;
 } OSD_String_t;
 

@@ -76,20 +76,26 @@ typedef enum {
 #define MSP_PORT_OUTBUF_SIZE 256
 #endif
 
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed))
+{
     uint8_t size;
     uint8_t cmd;
-} mspHeaderV1_t;
+}
+mspHeaderV1_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed))
+{
     uint16_t size;
-} mspHeaderJUMBO_t;
+}
+mspHeaderJUMBO_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed))
+{
     uint8_t  flags;
     uint16_t cmd;
     uint16_t size;
-} mspHeaderV2_t;
+}
+mspHeaderV2_t;
 
 #define MSP_MAX_HEADER_SIZE     9
 

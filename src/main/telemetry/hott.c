@@ -408,7 +408,8 @@ static inline void hottSendEAMResponse(void)
     hottSendResponse((uint8_t *)&hottEAMMessage, sizeof(hottEAMMessage));
 }
 
-static void hottPrepareMessages(void) {
+static void hottPrepareMessages(void)
+{
     hottPrepareEAMResponse(&hottEAMMessage);
 #ifdef USE_GPS
     hottPrepareGPSResponse(&hottGPSMessage);
@@ -486,18 +487,19 @@ static void hottCheckSerialData(uint32_t currentMicros)
     const uint8_t address = serialRead(hottPort);
 
     if ((requestId == 0) || (requestId == HOTT_BINARY_MODE_REQUEST_ID) || (address == HOTT_TELEMETRY_NO_SENSOR_ID)) {
-    /*
-     * FIXME the first byte of the HoTT request frame is ONLY either 0x80 (binary mode) or 0x7F (text mode).
-     * The binary mode is read as 0x00 (error reading the upper bit) while the text mode is correctly decoded.
-     * The (requestId == 0) test is a workaround for detecting the binary mode with no ambiguity as there is only
-     * one other valid value (0x7F) for text mode.
-     * The error reading for the upper bit should nevertheless be fixed
-     */
+        /*
+         * FIXME the first byte of the HoTT request frame is ONLY either 0x80 (binary mode) or 0x7F (text mode).
+         * The binary mode is read as 0x00 (error reading the upper bit) while the text mode is correctly decoded.
+         * The (requestId == 0) test is a workaround for detecting the binary mode with no ambiguity as there is only
+         * one other valid value (0x7F) for text mode.
+         * The error reading for the upper bit should nevertheless be fixed
+         */
         processBinaryModeRequest(address);
     }
 }
 
-static void hottSendTelemetryData(void) {
+static void hottSendTelemetryData(void)
+{
 
     if (!hottIsSending) {
         hottConfigurePortForTX();

@@ -136,8 +136,7 @@ static void I2C_SendByte(uint8_t byte)
         I2C_delay();
         if (byte & 0x80) {
             SDA_H;
-        }
-        else {
+        } else {
             SDA_L;
         }
         byte <<= 1;
@@ -250,8 +249,7 @@ bool i2cRead(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t len, uint8_t *
         *buf = I2C_ReceiveByte();
         if (len == 1) {
             I2C_NoAck();
-        }
-        else {
+        } else {
             I2C_Ack();
         }
         buf++;

@@ -719,7 +719,7 @@
 #define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) )
 
 #else
-    #error "No timer / channel tag definition found for CPU"
+#error "No timer / channel tag definition found for CPU"
 #endif
 
 #define TIMER_COUNT BITCOUNT(USED_TIMERS)

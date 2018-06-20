@@ -247,19 +247,19 @@ static void validateAndFixConfig(void)
         rxConfigMutable()->rssi_src_frame_errors = false;
     } else
 #endif
-    if (rxConfigMutable()->rssi_channel
+        if (rxConfigMutable()->rssi_channel
 #if defined(USE_PWM) || defined(USE_PPM)
-        || feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM)
+            || feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM)
 #endif
         ) {
-        rxConfigMutable()->rssi_src_frame_errors = false;
-    }
+            rxConfigMutable()->rssi_src_frame_errors = false;
+        }
 
     if ((
 #if defined(USE_RC_SMOOTHING_FILTER)
-        rxConfig()->rc_smoothing_type == RC_SMOOTHING_TYPE_INTERPOLATION &&
+            rxConfig()->rc_smoothing_type == RC_SMOOTHING_TYPE_INTERPOLATION &&
 #endif
-        rxConfig()->rcInterpolation == RC_SMOOTHING_OFF) || rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_T) {
+            rxConfig()->rcInterpolation == RC_SMOOTHING_OFF) || rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_T) {
         for (unsigned i = 0; i < MAX_PROFILE_COUNT; i++) {
             pidProfilesMutable(i)->dtermSetpointWeight = 0;
         }
@@ -267,8 +267,8 @@ static void validateAndFixConfig(void)
 
 #if defined(USE_THROTTLE_BOOST)
     if (!(rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_RPYT
-        || rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_T
-        || rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_RPT)) {
+            || rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_T
+            || rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_RPT)) {
         for (unsigned i = 0; i < MAX_PROFILE_COUNT; i++) {
             pidProfilesMutable(i)->throttle_boost = 0;
         }
@@ -447,21 +447,21 @@ void validateAndFixGyroConfig(void)
     float motorUpdateRestriction;
     switch (motorConfig()->dev.motorPwmProtocol) {
     case PWM_TYPE_STANDARD:
-            motorUpdateRestriction = 1.0f / BRUSHLESS_MOTORS_PWM_RATE;
-            break;
+        motorUpdateRestriction = 1.0f / BRUSHLESS_MOTORS_PWM_RATE;
+        break;
     case PWM_TYPE_ONESHOT125:
-            motorUpdateRestriction = 0.0005f;
-            break;
+        motorUpdateRestriction = 0.0005f;
+        break;
     case PWM_TYPE_ONESHOT42:
-            motorUpdateRestriction = 0.0001f;
-            break;
+        motorUpdateRestriction = 0.0001f;
+        break;
 #ifdef USE_DSHOT
     case PWM_TYPE_DSHOT150:
-            motorUpdateRestriction = 0.000250f;
-            break;
+        motorUpdateRestriction = 0.000250f;
+        break;
     case PWM_TYPE_DSHOT300:
-            motorUpdateRestriction = 0.0001f;
-            break;
+        motorUpdateRestriction = 0.0001f;
+        break;
 #endif
     default:
         motorUpdateRestriction = 0.00003125f;

@@ -150,7 +150,8 @@ static volatile uint16_t i2cErrorCount = 0;
 
 static bool i2cOverClock;
 
-void i2cSetOverclock(uint8_t OverClock) {
+void i2cSetOverclock(uint8_t OverClock)
+{
     i2cOverClock = (OverClock) ? true : false;
 }
 
@@ -178,9 +179,9 @@ bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_,
     HAL_StatusTypeDef status;
 
     if (reg_ == 0xFF)
-        status = HAL_I2C_Master_Transmit(pHandle ,addr_ << 1, data, len_, I2C_DEFAULT_TIMEOUT);
+        status = HAL_I2C_Master_Transmit(pHandle,addr_ << 1, data, len_, I2C_DEFAULT_TIMEOUT);
     else
-        status = HAL_I2C_Mem_Write(pHandle ,addr_ << 1, reg_, I2C_MEMADD_SIZE_8BIT,data, len_, I2C_DEFAULT_TIMEOUT);
+        status = HAL_I2C_Mem_Write(pHandle,addr_ << 1, reg_, I2C_MEMADD_SIZE_8BIT,data, len_, I2C_DEFAULT_TIMEOUT);
 
     if (status != HAL_OK)
         return i2cHandleHardwareFailure(device);
@@ -208,7 +209,7 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t
     HAL_StatusTypeDef status;
 
     if (reg_ == 0xFF)
-        status = HAL_I2C_Master_Receive(pHandle ,addr_ << 1, buf, len, I2C_DEFAULT_TIMEOUT);
+        status = HAL_I2C_Master_Receive(pHandle,addr_ << 1, buf, len, I2C_DEFAULT_TIMEOUT);
     else
         status = HAL_I2C_Mem_Read(pHandle, addr_ << 1, reg_, I2C_MEMADD_SIZE_8BIT,buf, len, I2C_DEFAULT_TIMEOUT);
 

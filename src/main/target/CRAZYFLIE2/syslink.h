@@ -55,21 +55,19 @@
 #define SYSLINK_OW_READ     0x22
 #define SYSLINK_OW_WRITE    0x23
 
-typedef struct syslinkPacket_s
-{
-  uint8_t type;
-  uint8_t length;
-  char data[SYSLINK_MTU];
+typedef struct syslinkPacket_s {
+    uint8_t type;
+    uint8_t length;
+    char data[SYSLINK_MTU];
 } __attribute__((packed)) syslinkPacket_t;
 
 // State machine states for receiving syslink packets
-typedef enum
-{
-  waitForFirstStart,
-  waitForSecondStart,
-  waitForType,
-  waitForLength,
-  waitForData,
-  waitForChksum1,
-  waitForChksum2
+typedef enum {
+    waitForFirstStart,
+    waitForSecondStart,
+    waitForType,
+    waitForLength,
+    waitForData,
+    waitForChksum1,
+    waitForChksum2
 } syslinkRxState_e;

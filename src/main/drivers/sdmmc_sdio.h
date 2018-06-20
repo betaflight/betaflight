@@ -38,12 +38,12 @@
 #include "stm32f7xx.h"
 #endif
 
- /* SDCARD pinouts
- *
- * SD CARD PINS
-   _________________
-  / 1 2 3 4 5 6 7 8 |  NR   |SDIO INTERFACE
- /                  |       |NAME     STM32F746     DESCRIPTION
+/* SDCARD pinouts
+*
+* SD CARD PINS
+  _________________
+ / 1 2 3 4 5 6 7 8 |  NR   |SDIO INTERFACE
+/                  |       |NAME     STM32F746     DESCRIPTION
 / 9                 |       |         4-BIT  1-BIT
 |                   |       |
 |                   |   1   |CD/DAT3  PC11   -      Connector data line 3
@@ -56,7 +56,7 @@
 |                   |   8   |DAT1     PC9    -      Connector data line 1
 |___________________|   9   |DAT2     PC10   -      Connector data line 2
 
- */
+*/
 
 /* Define(s) --------------------------------------------------------------------------------------------------------*/
 
@@ -74,9 +74,8 @@
 
 /* Structure(s) -----------------------------------------------------------------------------------------------------*/
 
-typedef enum
-{
-  // SD specific error defines
+typedef enum {
+    // SD specific error defines
     SD_CMD_CRC_FAIL                    = (1),   // Command response received (but CRC check failed)
     SD_DATA_CRC_FAIL                   = (2),   // Data block sent/received (CRC check failed)
     SD_CMD_RSP_TIMEOUT                 = (3),   // Command response TimeOut
@@ -127,8 +126,7 @@ typedef enum
 } SD_Error_t;
 
 
-typedef struct
-{
+typedef struct {
     uint8_t  DAT_BUS_WIDTH;           // Shows the currently defined data bus width
     uint8_t  SECURED_MODE;            // Card is in secured mode of operation
     uint16_t SD_CARD_TYPE;            // Carries information about card type
@@ -141,8 +139,7 @@ typedef struct
     uint8_t  ERASE_OFFSET;            // Carries information about the erase offset
 } SD_CardStatus_t;
 
-typedef struct
-{
+typedef struct {
     uint8_t  CSDStruct;                 // CSD structure
     uint8_t  SysSpecVersion;            // System specification version
     uint8_t  Reserved1;                 // Reserved
@@ -182,8 +179,7 @@ typedef struct
     uint8_t  Reserved4;                 // Always 1
 } SD_CSD_t;
 
-typedef struct
-{
+typedef struct {
     uint8_t  ManufacturerID;            // Manufacturer ID
     uint16_t OEM_AppliID;               // OEM/Application ID
     uint32_t ProdName1;                 // Product Name part1
@@ -197,8 +193,7 @@ typedef struct
 
 } SD_CID_t;
 
-typedef enum
-{
+typedef enum {
     SD_STD_CAPACITY_V1_1       = 0,
     SD_STD_CAPACITY_V2_0       = 1,
     SD_HIGH_CAPACITY           = 2,
@@ -209,12 +204,11 @@ typedef enum
     SD_HIGH_CAPACITY_MMC       = 7,
 } SD_CardType_t;
 
-typedef struct
-{
-  volatile SD_CSD_t    SD_csd;          // SD card specific data register
-  volatile SD_CID_t    SD_cid;          // SD card identification number register
-  uint64_t             CardCapacity;    // Card capacity
-  uint32_t             CardBlockSize;   // Card block size
+typedef struct {
+    volatile SD_CSD_t    SD_csd;          // SD card specific data register
+    volatile SD_CID_t    SD_cid;          // SD card identification number register
+    uint64_t             CardCapacity;    // Card capacity
+    uint32_t             CardBlockSize;   // Card block size
 } SD_CardInfo_t;
 
 /* Prototype(s) -----------------------------------------------------------------------------------------------------*/

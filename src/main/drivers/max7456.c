@@ -175,15 +175,15 @@
 // On shared SPI buss we want to change clock for OSD chip and restore for other devices.
 
 #ifdef MAX7456_SPI_CLK
-    #define __spiBusTransactionBegin(busdev)        {spiSetDivisor((busdev)->busdev_u.spi.instance, max7456SpiClock);IOLo((busdev)->busdev_u.spi.csnPin);}
+#define __spiBusTransactionBegin(busdev)        {spiSetDivisor((busdev)->busdev_u.spi.instance, max7456SpiClock);IOLo((busdev)->busdev_u.spi.csnPin);}
 #else
-    #define __spiBusTransactionBegin(busdev)        IOLo((busdev)->busdev_u.spi.csnPin)
+#define __spiBusTransactionBegin(busdev)        IOLo((busdev)->busdev_u.spi.csnPin)
 #endif
 
 #ifdef MAX7456_RESTORE_CLK
-    #define __spiBusTransactionEnd(busdev)       {IOHi((busdev)->busdev_u.spi.csnPin);spiSetDivisor((busdev)->busdev_u.spi.instance, MAX7456_RESTORE_CLK);}
+#define __spiBusTransactionEnd(busdev)       {IOHi((busdev)->busdev_u.spi.csnPin);spiSetDivisor((busdev)->busdev_u.spi.instance, MAX7456_RESTORE_CLK);}
 #else
-    #define __spiBusTransactionEnd(busdev)       IOHi((busdev)->busdev_u.spi.csnPin)
+#define __spiBusTransactionEnd(busdev)       IOHi((busdev)->busdev_u.spi.csnPin)
 #endif
 
 #ifndef MAX7456_SPI_CLK
@@ -302,9 +302,9 @@ static void max7456SendDma(void* tx_buffer, void* rx_buffer, uint16_t buffer_siz
 
     SPI_I2S_DMACmd(busdev->busdev_u.spi.instance,
 #ifdef MAX7456_DMA_CHANNEL_RX
-            SPI_I2S_DMAReq_Rx |
+        SPI_I2S_DMAReq_Rx |
 #endif
-            SPI_I2S_DMAReq_Tx, ENABLE);
+        SPI_I2S_DMAReq_Tx, ENABLE);
 }
 
 void max7456_dma_irq_handler(dmaChannelDescriptor_t* descriptor)
@@ -331,9 +331,9 @@ void max7456_dma_irq_handler(dmaChannelDescriptor_t* descriptor)
 
         SPI_I2S_DMACmd(busdev->busdev_u.spi.instance,
 #ifdef MAX7456_DMA_CHANNEL_RX
-                SPI_I2S_DMAReq_Rx |
+            SPI_I2S_DMAReq_Rx |
 #endif
-                SPI_I2S_DMAReq_Tx, DISABLE);
+            SPI_I2S_DMAReq_Tx, DISABLE);
 
         __spiBusTransactionEnd(busdev);
         dmaTransactionInProgress = false;
@@ -583,7 +583,7 @@ void max7456ReInitIfRequired(void)
     if (stallCheck != videoSignalReg) {
         max7456ReInit();
     } else if ((videoSignalCfg == VIDEO_SYSTEM_AUTO)
-              && ((nowMs - lastSigCheckMs) > MAX7456_SIGNAL_CHECK_INTERVAL_MS)) {
+        && ((nowMs - lastSigCheckMs) > MAX7456_SIGNAL_CHECK_INTERVAL_MS)) {
 
         // Adjust output format based on the current input format.
 
@@ -599,7 +599,7 @@ void max7456ReInitIfRequired(void)
             videoDetectTimeMs = 0;
         } else {
             if ((VIN_IS_PAL(videoSense) && VIDEO_MODE_IS_NTSC(videoSignalReg))
-              || (VIN_IS_NTSC_alt(videoSense) && VIDEO_MODE_IS_PAL(videoSignalReg))) {
+                || (VIN_IS_NTSC_alt(videoSense) && VIDEO_MODE_IS_PAL(videoSignalReg))) {
                 if (videoDetectTimeMs) {
                     if (millis() - videoDetectTimeMs > VIDEO_SIGNAL_DEBOUNCE_MS) {
                         max7456ReInit();

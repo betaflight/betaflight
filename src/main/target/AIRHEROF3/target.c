@@ -28,22 +28,22 @@
 #include "drivers/dma.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-/*
-    { TIM2,  IO_TAG(PA0),  TIM_Channel_1, TIM_USE_PPM | TIM_USE_PWM, 0, GPIO_AF_1,  NULL, 0},  // PWM1 - RC1
-    { TIM2,  IO_TAG(PA1),  TIM_Channel_2, TIM_USE_PWM,    0, GPIO_AF_1,  NULL, 0},  // PWM2 - RC2
-    { TIM2,  IO_TAG(PA2),  TIM_Channel_3, TIM_USE_PWM,    0, GPIO_AF_1,  NULL, 0},  // PWM3 - RC3
-    { TIM2,  IO_TAG(PA3),  TIM_Channel_4, TIM_USE_PWM,    0, GPIO_AF_1,  NULL, 0},  // PWM4 - RC4
-    { TIM3,  IO_TAG(PA6),  TIM_Channel_1, TIM_USE_PWM | TIM_USE_LED,    0, GPIO_AF_2, DMA1_Channel6, DMA1_CH6_HANDLER },  // PWM5 - RC5
-    { TIM3,  IO_TAG(PA7),  TIM_Channel_2, TIM_USE_PWM,    0, GPIO_AF_2,  NULL, 0},  // PWM6 - RC6
-    { TIM3,  IO_TAG(PB0),  TIM_Channel_3, TIM_USE_PWM,    0, GPIO_AF_2,  NULL, 0},  // PWM7 - RC7
-    { TIM3,  IO_TAG(PB1),  TIM_Channel_4, TIM_USE_PWM,    0, GPIO_AF_2,  NULL, 0},  // PWM8 - RC8
-    { TIM1,  IO_TAG(PA8),  TIM_Channel_1, TIM_USE_MOTOR,  1, GPIO_AF_6,  NULL, 0},  // PWM9 - OUT1
-    { TIM1,  IO_TAG(PA11), TIM_Channel_4, TIM_USE_MOTOR,  1, GPIO_AF_11, NULL, 0}, // PWM10 - OUT2
-    { TIM4,  IO_TAG(PB6),  TIM_Channel_1, TIM_USE_MOTOR,  1, GPIO_AF_2,  NULL, 0},  // PWM11 - OUT3
-    { TIM4,  IO_TAG(PB7),  TIM_Channel_2, TIM_USE_MOTOR,  1, GPIO_AF_2,  NULL, 0},  // PWM12 - OUT4
-    { TIM4,  IO_TAG(PB8),  TIM_Channel_3, TIM_USE_MOTOR,  1, GPIO_AF_2,  NULL, 0},  // PWM13 - OUT5
-    { TIM4,  IO_TAG(PB9),  TIM_Channel_4, TIM_USE_MOTOR,  1, GPIO_AF_2,  NULL, 0}   // PWM14 - OUT6
-*/
+    /*
+        { TIM2,  IO_TAG(PA0),  TIM_Channel_1, TIM_USE_PPM | TIM_USE_PWM, 0, GPIO_AF_1,  NULL, 0},  // PWM1 - RC1
+        { TIM2,  IO_TAG(PA1),  TIM_Channel_2, TIM_USE_PWM,    0, GPIO_AF_1,  NULL, 0},  // PWM2 - RC2
+        { TIM2,  IO_TAG(PA2),  TIM_Channel_3, TIM_USE_PWM,    0, GPIO_AF_1,  NULL, 0},  // PWM3 - RC3
+        { TIM2,  IO_TAG(PA3),  TIM_Channel_4, TIM_USE_PWM,    0, GPIO_AF_1,  NULL, 0},  // PWM4 - RC4
+        { TIM3,  IO_TAG(PA6),  TIM_Channel_1, TIM_USE_PWM | TIM_USE_LED,    0, GPIO_AF_2, DMA1_Channel6, DMA1_CH6_HANDLER },  // PWM5 - RC5
+        { TIM3,  IO_TAG(PA7),  TIM_Channel_2, TIM_USE_PWM,    0, GPIO_AF_2,  NULL, 0},  // PWM6 - RC6
+        { TIM3,  IO_TAG(PB0),  TIM_Channel_3, TIM_USE_PWM,    0, GPIO_AF_2,  NULL, 0},  // PWM7 - RC7
+        { TIM3,  IO_TAG(PB1),  TIM_Channel_4, TIM_USE_PWM,    0, GPIO_AF_2,  NULL, 0},  // PWM8 - RC8
+        { TIM1,  IO_TAG(PA8),  TIM_Channel_1, TIM_USE_MOTOR,  1, GPIO_AF_6,  NULL, 0},  // PWM9 - OUT1
+        { TIM1,  IO_TAG(PA11), TIM_Channel_4, TIM_USE_MOTOR,  1, GPIO_AF_11, NULL, 0}, // PWM10 - OUT2
+        { TIM4,  IO_TAG(PB6),  TIM_Channel_1, TIM_USE_MOTOR,  1, GPIO_AF_2,  NULL, 0},  // PWM11 - OUT3
+        { TIM4,  IO_TAG(PB7),  TIM_Channel_2, TIM_USE_MOTOR,  1, GPIO_AF_2,  NULL, 0},  // PWM12 - OUT4
+        { TIM4,  IO_TAG(PB8),  TIM_Channel_3, TIM_USE_MOTOR,  1, GPIO_AF_2,  NULL, 0},  // PWM13 - OUT5
+        { TIM4,  IO_TAG(PB9),  TIM_Channel_4, TIM_USE_MOTOR,  1, GPIO_AF_2,  NULL, 0}   // PWM14 - OUT6
+    */
     DEF_TIM(TIM2, CH1, PA0,  TIM_USE_PPM | TIM_USE_PWM, 0),
     DEF_TIM(TIM2, CH2, PA1,  TIM_USE_PWM,               0),
     DEF_TIM(TIM2, CH3, PA2,  TIM_USE_PWM,               0),

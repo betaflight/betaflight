@@ -27,8 +27,8 @@
 #include "drivers/timer_def.h"
 #include "drivers/dma.h"
 
-    // 6 3-pin headers
-    // PPM PORT - Also USART2 RX (AF5)
+// 6 3-pin headers
+// PPM PORT - Also USART2 RX (AF5)
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM15, CH2, PB15, TIM_USE_MOTOR,               0), // PWM1  - PB15 - TIM1_CH3N, TIM15_CH1N, *TIM15_CH2
     DEF_TIM(TIM15, CH1, PB14, TIM_USE_MOTOR,               0), // PWM2  - PB14 - TIM1_CH2N, *TIM15_CH1

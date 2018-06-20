@@ -343,7 +343,7 @@ static void bmp085_get_up(baroDev_t *baro)
 
     busReadRegisterBuffer(&baro->busdev, BMP085_ADC_OUT_MSB_REG, data, 3);
     bmp085_up = (((uint32_t) data[0] << 16) | ((uint32_t) data[1] << 8) | (uint32_t) data[2])
-            >> (8 - bmp085.oversampling_setting);
+        >> (8 - bmp085.oversampling_setting);
 }
 
 STATIC_UNIT_TESTED void bmp085_calculate(int32_t *pressure, int32_t *temperature)

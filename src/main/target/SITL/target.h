@@ -155,8 +155,7 @@ extern uint8_t __config_start;   // configured via linker script when building b
 extern uint8_t __config_end;
 #endif
 
-typedef enum
-{
+typedef enum {
     Mode_TEST = 0x0,
     Mode_Out_PP = 0x10
 } GPIO_Mode;
@@ -170,23 +169,20 @@ typedef enum {
     EXTI_Trigger_Rising_Falling = 0x10
 } EXTITrigger_TypeDef;
 
-typedef struct
-{
-  uint32_t IDR;
-  uint32_t ODR;
-  uint32_t BSRR;
-  uint32_t BRR;
+typedef struct {
+    uint32_t IDR;
+    uint32_t ODR;
+    uint32_t BSRR;
+    uint32_t BRR;
 } GPIO_TypeDef;
 
 #define GPIOA_BASE ((intptr_t)0x0001)
 
-typedef struct
-{
+typedef struct {
     void* test;
 } TIM_TypeDef;
 
-typedef struct
-{
+typedef struct {
     void* test;
 } TIM_OCInitTypeDef;
 
@@ -202,13 +198,11 @@ uint8_t DMA_GetFlagStatus(void *);
 void DMA_Cmd(DMA_Channel_TypeDef*, FunctionalState );
 void DMA_ClearFlag(uint32_t);
 
-typedef struct
-{
+typedef struct {
     void* test;
 } SPI_TypeDef;
 
-typedef struct
-{
+typedef struct {
     void* test;
 } USART_TypeDef;
 
@@ -226,18 +220,16 @@ typedef struct
 #define UART7 ((USART_TypeDef *)0x0007)
 #define UART8 ((USART_TypeDef *)0x0008)
 
-typedef struct
-{
+typedef struct {
     void* test;
 } I2C_TypeDef;
 
-typedef enum
-{
-  FLASH_BUSY = 1,
-  FLASH_ERROR_PG,
-  FLASH_ERROR_WRP,
-  FLASH_COMPLETE,
-  FLASH_TIMEOUT
+typedef enum {
+    FLASH_BUSY = 1,
+    FLASH_ERROR_PG,
+    FLASH_ERROR_WRP,
+    FLASH_COMPLETE,
+    FLASH_TIMEOUT
 } FLASH_Status;
 
 typedef struct {

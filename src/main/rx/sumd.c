@@ -76,8 +76,7 @@ static void sumdDataReceive(uint16_t c, void *data)
     if (sumdIndex == 0) {
         if (c != SUMD_SYNCBYTE)
             return;
-        else
-        {
+        else {
             sumdFrameDone = false; // lazy main loop didnt fetch the stuff
             crc = 0;
         }
@@ -89,11 +88,10 @@ static void sumdDataReceive(uint16_t c, void *data)
     sumdIndex++;
     if (sumdIndex < sumdChannelCount * 2 + 4)
         crc = crc16_ccitt(crc, (uint8_t)c);
-    else
-        if (sumdIndex == sumdChannelCount * 2 + 5) {
-            sumdIndex = 0;
-            sumdFrameDone = true;
-        }
+    else if (sumdIndex == sumdChannelCount * 2 + 5) {
+        sumdIndex = 0;
+        sumdFrameDone = true;
+    }
 }
 
 #define SUMD_OFFSET_CHANNEL_1_HIGH 3
@@ -124,14 +122,14 @@ static uint8_t sumdFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
         return frameStatus;
 
     switch (sumd[1]) {
-        case SUMD_FRAME_STATE_FAILSAFE:
-            frameStatus = RX_FRAME_COMPLETE | RX_FRAME_FAILSAFE;
-            break;
-        case SUMD_FRAME_STATE_OK:
-            frameStatus = RX_FRAME_COMPLETE;
-            break;
-        default:
-            return frameStatus;
+    case SUMD_FRAME_STATE_FAILSAFE:
+        frameStatus = RX_FRAME_COMPLETE | RX_FRAME_FAILSAFE;
+        break;
+    case SUMD_FRAME_STATE_OK:
+        frameStatus = RX_FRAME_COMPLETE;
+        break;
+    default:
+        return frameStatus;
     }
 
     if (sumdChannelCount > SUMD_MAX_CHANNEL)
@@ -139,9 +137,9 @@ static uint8_t sumdFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
 
     for (channelIndex = 0; channelIndex < sumdChannelCount; channelIndex++) {
         sumdChannels[channelIndex] = (
-            (sumd[SUMD_BYTES_PER_CHANNEL * channelIndex + SUMD_OFFSET_CHANNEL_1_HIGH] << 8) |
-            sumd[SUMD_BYTES_PER_CHANNEL * channelIndex + SUMD_OFFSET_CHANNEL_1_LOW]
-        );
+                (sumd[SUMD_BYTES_PER_CHANNEL * channelIndex + SUMD_OFFSET_CHANNEL_1_HIGH] << 8) |
+                sumd[SUMD_BYTES_PER_CHANNEL * channelIndex + SUMD_OFFSET_CHANNEL_1_LOW]
+            );
     }
     return frameStatus;
 }
@@ -174,12 +172,12 @@ bool sumdInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 #endif
 
     serialPort_t *sumdPort = openSerialPort(portConfig->identifier,
-        FUNCTION_RX_SERIAL,
-        sumdDataReceive,
-        NULL,
-        SUMD_BAUDRATE,
-        portShared ? MODE_RXTX : MODE_RX,
-        (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0)
+            FUNCTION_RX_SERIAL,
+            sumdDataReceive,
+            NULL,
+            SUMD_BAUDRATE,
+            portShared ? MODE_RXTX : MODE_RX,
+            (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0)
         );
 
 #ifdef USE_TELEMETRY

@@ -89,7 +89,7 @@ typedef enum {
     .userParam = 0, \
     .owner = 0, \
     .resourceIndex = 0 \
-    } 
+    }
 
 #define DEFINE_DMA_IRQ_HANDLER(d, s, i) void DMA ## d ## _Stream ## s ## _IRQHandler(void) {\
                                                                 const uint8_t index = DMA_IDENTIFIER_TO_INDEX(i); \
@@ -129,8 +129,8 @@ typedef enum {
     DMA2_CH3_HANDLER,
     DMA2_CH4_HANDLER,
     DMA2_CH5_HANDLER,
-    DMA_LAST_HANDLER = DMA2_CH5_HANDLER 
-#else 
+    DMA_LAST_HANDLER = DMA2_CH5_HANDLER
+#else
     DMA_LAST_HANDLER = DMA1_CH7_HANDLER
 #endif
 } dmaIdentifier_e;

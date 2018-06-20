@@ -49,7 +49,7 @@ const timerHardware_t *timerGetByTag(ioTag_t ioTag)
 
     for (int i = 0; i < (int)USABLE_TIMER_CHANNEL_COUNT; i++) {
         if (timerHardware[i].tag == ioTag) {
-            if (index == timerIndex || timerIndex == 0) {                
+            if (index == timerIndex || timerIndex == 0) {
                 return &timerHardware[i];
             }
             index++;

@@ -94,7 +94,7 @@ static void adcIDDetectInit(void)
     ADC_CommonInit(&ADC_CommonInitStructure);
 
     ADC_InitTypeDef ADC_InitStructure;
-    
+
     ADC_StructInit(&ADC_InitStructure);
     ADC_InitStructure.ADC_ContinuousConvMode       = ENABLE;
     ADC_InitStructure.ADC_Resolution               = ADC_Resolution_12b;
@@ -154,8 +154,8 @@ static uint16_t adcIDDetectReadVrefint(void)
 
 #include "drivers/adc_impl.h"
 
-static adcDevice_t adcIDDetHardware = 
-    { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .DMAy_Streamx = ADC1_DMA_STREAM, .channel = DMA_CHANNEL_0 };
+static adcDevice_t adcIDDetHardware =
+{ .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .DMAy_Streamx = ADC1_DMA_STREAM, .channel = DMA_CHANNEL_0 };
 
 // XXX adcIDDetectInitDevice is an exact copy of adcInitDevice() from adc_stm32f7xx.c. Export and use?
 
@@ -181,9 +181,8 @@ static void adcIDDetectInitDevice(adcDevice_t *adcdev, int channelCount)
     adcdev->ADCHandle.Init.EOCSelection          = DISABLE;
     adcdev->ADCHandle.Instance = adcdev->ADCx;
 
-    if (HAL_ADC_Init(&adcdev->ADCHandle) != HAL_OK)
-    {
-      /* Initialization Error */
+    if (HAL_ADC_Init(&adcdev->ADCHandle) != HAL_OK) {
+        /* Initialization Error */
     }
 }
 
@@ -250,7 +249,7 @@ static uint16_t adcIDDetectReadIDDet(void)
 #endif
 
 void detectHardwareRevision(void)
-{        
+{
     adcIDDetectInit();
 
     uint32_t vrefintValue = 0;

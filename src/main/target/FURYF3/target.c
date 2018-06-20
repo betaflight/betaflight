@@ -28,18 +28,18 @@
 #include "drivers/dma.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-/*
-    { TIM2,   IO_TAG(PB3),  TIM_Channel_2, TIM_USE_PPM,   0, GPIO_AF_1,  NULL, 0 }, // PPM IN
-    { TIM3,   IO_TAG(PB0),  TIM_Channel_3, TIM_USE_PWM,   0, GPIO_AF_2,  NULL, 0 }, // SS1 - PB0  - *TIM3_CH3, TIM1_CH2N, TIM8_CH2N
-    { TIM3,   IO_TAG(PB1),  TIM_Channel_4, TIM_USE_PWM,   0, GPIO_AF_2,  NULL, 0 }, // SS1 - PB1  - *TIM3_CH4, TIM1_CH3N, TIM8_CH3N
+    /*
+        { TIM2,   IO_TAG(PB3),  TIM_Channel_2, TIM_USE_PPM,   0, GPIO_AF_1,  NULL, 0 }, // PPM IN
+        { TIM3,   IO_TAG(PB0),  TIM_Channel_3, TIM_USE_PWM,   0, GPIO_AF_2,  NULL, 0 }, // SS1 - PB0  - *TIM3_CH3, TIM1_CH2N, TIM8_CH2N
+        { TIM3,   IO_TAG(PB1),  TIM_Channel_4, TIM_USE_PWM,   0, GPIO_AF_2,  NULL, 0 }, // SS1 - PB1  - *TIM3_CH4, TIM1_CH3N, TIM8_CH3N
 
-    { TIM4,   IO_TAG(PB7),  TIM_Channel_2, TIM_USE_MOTOR, 1, GPIO_AF_2,  DMA1_Channel4, DMA1_CH4_HANDLER }, // PWM4 - S1
-    { TIM8,   IO_TAG(PB6),  TIM_Channel_1, TIM_USE_MOTOR, 1, GPIO_AF_5,  DMA2_Channel3, DMA2_CH3_HANDLER }, // PWM5 - S2
-    { TIM17,  IO_TAG(PB5),  TIM_Channel_1, TIM_USE_MOTOR, 1, GPIO_AF_10, DMA1_Channel7, DMA1_CH7_HANDLER }, // PWM6 - S3
-    { TIM16,  IO_TAG(PB4),  TIM_Channel_1, TIM_USE_MOTOR, 1, GPIO_AF_1,  DMA1_Channel3, DMA1_CH3_HANDLER }, // PWM7 - S4
+        { TIM4,   IO_TAG(PB7),  TIM_Channel_2, TIM_USE_MOTOR, 1, GPIO_AF_2,  DMA1_Channel4, DMA1_CH4_HANDLER }, // PWM4 - S1
+        { TIM8,   IO_TAG(PB6),  TIM_Channel_1, TIM_USE_MOTOR, 1, GPIO_AF_5,  DMA2_Channel3, DMA2_CH3_HANDLER }, // PWM5 - S2
+        { TIM17,  IO_TAG(PB5),  TIM_Channel_1, TIM_USE_MOTOR, 1, GPIO_AF_10, DMA1_Channel7, DMA1_CH7_HANDLER }, // PWM6 - S3
+        { TIM16,  IO_TAG(PB4),  TIM_Channel_1, TIM_USE_MOTOR, 1, GPIO_AF_1,  DMA1_Channel3, DMA1_CH3_HANDLER }, // PWM7 - S4
 
-    { TIM1,   IO_TAG(PA8),  TIM_Channel_1, TIM_USE_LED,   1, GPIO_AF_6,  DMA1_Channel2, DMA1_CH2_HANDLER }, // GPIO TIMER - LED_STRIP
-*/
+        { TIM1,   IO_TAG(PA8),  TIM_Channel_1, TIM_USE_LED,   1, GPIO_AF_6,  DMA1_Channel2, DMA1_CH2_HANDLER }, // GPIO TIMER - LED_STRIP
+    */
     DEF_TIM(TIM2,  CH2, PB3, TIM_USE_PPM,   0), // PPM IN
     DEF_TIM(TIM3,  CH3, PB0, TIM_USE_PWM,   0), // SS1 - PB0  - *TIM3_CH3, TIM1_CH2N, TIM8_CH2N
     DEF_TIM(TIM3,  CH4, PB1, TIM_USE_PWM,   0), // SS1 - PB1  - *TIM3_CH4, TIM1_CH3N, TIM8_CH3N
