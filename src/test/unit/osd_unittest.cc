@@ -26,6 +26,7 @@ extern "C" {
     #include "build/debug.h"
 
     #include "blackbox/blackbox.h"
+    #include "blackbox/blackbox_io.h"
 
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
@@ -1015,6 +1016,14 @@ extern "C" {
 
     unsigned int blackboxGetLogNumber() {
         return 0;
+    }
+
+    bool isBlackboxDeviceWorking() {
+        return true;
+    }
+
+    bool isBlackboxDeviceFull() {
+        return false;
     }
 
     bool isSerialTransmitBufferEmpty(const serialPort_t *) {
