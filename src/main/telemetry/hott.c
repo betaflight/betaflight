@@ -229,14 +229,20 @@ static inline void updateAlarmBatteryStatus(HOTT_EAM_MSG_t *hottEAMMessage)
 {
     if (shouldTriggerBatteryAlarmNow()) {
         lastHottAlarmSoundTime = millis();
-        const batteryState_e batteryState = getBatteryState();
-        if (batteryState == BATTERY_WARNING  || batteryState == BATTERY_CRITICAL) {
+		const batteryState_e voltageState = getVoltageState();
+		const batteryState_e consumptionState = getConsumptionState();
+        if (voltageState == BATTERY_WARNING  || voltageState == BATTERY_CRITICAL) {
             hottEAMMessage->warning_beeps = 0x10;
             hottEAMMessage->alarm_invers1 = HOTT_EAM_ALARM1_FLAG_BATTERY_1;
-        } else {
+		}
+		else if (consumptionState == BATTERY_WARNING  || consumptionState == BATTERY_CRITICAL) {
+            hottEAMMessage->warning_beeps = 0x16;
+            hottEAMMessage->alarm_invers1 = HOTT_EAM_ALARM1_FLAG_MAH;
+		}		
+		else {
             hottEAMMessage->warning_beeps = HOTT_EAM_ALARM1_FLAG_NONE;
             hottEAMMessage->alarm_invers1 = HOTT_EAM_ALARM1_FLAG_NONE;
-        }
+		}
     }
 }
 

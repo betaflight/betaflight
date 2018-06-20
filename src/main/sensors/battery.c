@@ -279,6 +279,16 @@ batteryState_e getBatteryState(void)
     return batteryState;
 }
 
+batteryState_e getVoltageState(void)
+{
+    return voltageState;
+}
+
+batteryState_e getConsumptionState(void)
+{
+    return consumptionState;
+}
+
 const char * const batteryStateStrings[] = {"OK", "WARNING", "CRITICAL", "NOT PRESENT", "INIT"};
 
 const char * getBatteryStateString(void)
