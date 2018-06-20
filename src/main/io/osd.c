@@ -203,7 +203,6 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_NUMERICAL_VARIO,
     OSD_COMPASS_BAR,
     OSD_ANTI_GRAVITY,
-    OSD_LOG_STATUS,
 #ifdef USE_RTC_TIME
     OSD_RTC_DATETIME,
 #endif
@@ -984,9 +983,7 @@ static bool osdDrawSingleElement(uint8_t item)
 
 #ifdef USE_BLACKBOX
     case OSD_LOG_STATUS:
-        if (!IS_RC_MODE_ACTIVE(BOXBLACKBOX)) {
-            break;
-        } else if (!isBlackboxDeviceWorking()) {
+        if (!isBlackboxDeviceWorking()) {
             tfp_sprintf(buff, "L-");
         } else if (isBlackboxDeviceFull()) {
             tfp_sprintf(buff, "L>");
@@ -1042,6 +1039,11 @@ static void osdDrawElements(void)
     }
 #endif
 
+#ifdef USE_BLACKBOX
+    if (IS_RC_MODE_ACTIVE(BOXBLACKBOX)) {
+        osdDrawSingleElement(OSD_LOG_STATUS);
+    }
+#endif
 }
 
 void pgResetFn_osdConfig(osdConfig_t *osdConfig)
