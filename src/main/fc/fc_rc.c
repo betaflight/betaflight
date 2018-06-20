@@ -144,6 +144,8 @@ float applyRaceFlightRates(const int axis, float rcCommandf, const float rcComma
     return angleRate;
 }
 
+// my rates
+
 static void calculateSetpointRate(int axis)
 {
     // scale rcCommandf to range [-1.0, 1.0]
