@@ -234,15 +234,15 @@ static inline void updateAlarmBatteryStatus(HOTT_EAM_MSG_t *hottEAMMessage)
         if (voltageState == BATTERY_WARNING  || voltageState == BATTERY_CRITICAL) {
             hottEAMMessage->warning_beeps = 0x10;
             hottEAMMessage->alarm_invers1 = HOTT_EAM_ALARM1_FLAG_BATTERY_1;
-		}
-		else if (consumptionState == BATTERY_WARNING  || consumptionState == BATTERY_CRITICAL) {
+	}
+	else if (consumptionState == BATTERY_WARNING  || consumptionState == BATTERY_CRITICAL) {
             hottEAMMessage->warning_beeps = 0x16;
             hottEAMMessage->alarm_invers1 = HOTT_EAM_ALARM1_FLAG_MAH;
-		}		
-		else {
+	}		
+	else {
             hottEAMMessage->warning_beeps = HOTT_EAM_ALARM1_FLAG_NONE;
             hottEAMMessage->alarm_invers1 = HOTT_EAM_ALARM1_FLAG_NONE;
-		}
+	}
     }
 }
 
