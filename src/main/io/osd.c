@@ -203,6 +203,7 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_NUMERICAL_VARIO,
     OSD_COMPASS_BAR,
     OSD_ANTI_GRAVITY,
+    OSD_LOG_STATUS,
 #ifdef USE_RTC_TIME
     OSD_RTC_DATETIME,
 #endif
@@ -212,7 +213,6 @@ static const uint8_t osdElementDisplayOrder[] = {
 #ifdef USE_ADC_INTERNAL
     OSD_CORE_TEMPERATURE,
 #endif
-    OSD_LOG_STATUS
 };
 
 PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 3);
