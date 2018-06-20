@@ -545,6 +545,9 @@ bool isBlackboxDeviceFull(void)
 bool isBlackboxDeviceWorking(void)
 {
     switch (blackboxConfig()->device) {
+    case BLACKBOX_DEVICE_SERIAL:
+        return true;
+
 #ifdef USE_SDCARD
     case BLACKBOX_DEVICE_SDCARD:
         return sdcard_isInserted() && sdcard_isFunctional() && (afatfs_getFilesystemState() == AFATFS_FILESYSTEM_STATE_READY);
