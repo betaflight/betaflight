@@ -101,6 +101,7 @@
 #define SPI2_MOSI_PIN           PB15
 
 // include the max7456 driver
+#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI1
 #define MAX7456_SPI_CS_PIN      PA1

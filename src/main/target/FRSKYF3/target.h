@@ -86,6 +86,7 @@
 #define USE_SPI
 
 // include the max7456 driver
+#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI2
 #define MAX7456_SPI_CS_PIN      PB4
