@@ -72,7 +72,7 @@ PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
 );
 
 static uint16_t      rescueThrottle;
-static uint16_t      rescueYaw;
+static int16_t       rescueYaw;
 
 int32_t       gpsRescueAngle[ANGLE_INDEX_COUNT] = { 0, 0 };
 uint16_t      hoverThrottle = 0;
