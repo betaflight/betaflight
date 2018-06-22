@@ -23,14 +23,18 @@
 #define TARGET_BOARD_IDENTIFIER "SP3N"
 #define USE_TARGET_CONFIG
 
-// Removed to make the firmware fit into flash (in descending order of priority):
 // NOTE: Don't disable USE_GYRO_OVERFLOW_CHECK - board has ICM20602 gyro
 #undef USE_GYRO_LPF2
 
+// Removed to make the firmware fit into flash (in descending order of priority):
+#undef USE_GYRO_OVERFLOW_CHECK
+
+#undef USE_TELEMETRY_HOTT
 #undef USE_TELEMETRY_MAVLINK
 #undef USE_TELEMETRY_LTM
 #undef USE_SERIALRX_XBUS
 
+#undef USE_BOARD_INFO
 #undef USE_EXTENDED_CMS_MENUS
 #undef USE_RTC_TIME
 #undef USE_RX_MSP
