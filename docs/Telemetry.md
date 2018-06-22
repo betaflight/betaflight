@@ -107,7 +107,10 @@ Use the latest Graupner firmware for your transmitter and receiver.
 
 Older HoTT transmitters required the EAM and GPS modules to be enabled in the telemetry menu of the transmitter. (e.g. on MX-20)
 
-Serial ports use two wires but HoTT uses a single wire so some electronics are required so that the signals don't get mixed up.  The TX and RX pins of
+You can connect HoTT-Telemetry in two ways:
+
+#### Old way: 
+Serial ports use two wires but HoTT uses a single wire so some electronics are required so that the signals don't get mixed up.  The TX  and RX pins of
 a serial port should be connected using a diode and a single wire to the `T` port on a HoTT receiver.
 
 Connect as follows:
@@ -122,6 +125,11 @@ The diode should be arranged to allow the data signals to flow the right way
 ```
 
 1N4148 diodes have been tested and work with the GR-24.
+ 
+When using the diode disable `tlm_halfduplex`, go to CLI and type `set tlm_halfduplex = OFF`, don't forget a `save` afterwards.
+
+#### New way:
+You can use a single connection, connect HoTT RX/TX only to serial TX, leave serial RX open and make sure `tlm_halfduplex` is ON.
 
 As noticed by Skrebber the GR-12 (and probably GR-16/24, too) are based on a PIC 24FJ64GA-002, which has 5V tolerant digital pins.
 
