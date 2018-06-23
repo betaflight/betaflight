@@ -214,7 +214,9 @@ void failsafeUpdateState(void)
                         failsafeState.throttleLowPeriod = millis() + failsafeConfig()->failsafe_throttle_low_delay * MILLIS_PER_TENTH_SECOND;
                     }
                     // Kill switch logic (must be independent of receivingRxData to skip PERIOD_RXDATA_FAILURE delay before disarming)
-                    if (failsafeSwitchIsOn && failsafeConfig()->failsafe_switch_mode == FAILSAFE_SWITCH_MODE_KILL) {
+                    if (failsafeSwitchIsOn 
+                            && failsafeConfig()->failsafe_switch_mode == FAILSAFE_SWITCH_MODE_KILL
+                            && failsafeConfig()->failsafe_procedure != FAILSAFE_PROCEDURE_GPS_RESCUE) {
                         // KillswitchEvent: failsafe switch is configured as KILL switch and is switched ON
                         failsafeActivate();
                         failsafeState.phase = FAILSAFE_LANDED;      // skip auto-landing procedure
