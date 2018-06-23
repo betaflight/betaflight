@@ -93,7 +93,12 @@ static void rcdeviceCameraControlProcess(void)
             switch (i) {
             case BOXCAMERA1:
                 if (isFeatureSupported(RCDEVICE_PROTOCOL_FEATURE_SIMULATE_WIFI_BUTTON)) {
-                    behavior = RCDEVICE_PROTOCOL_CAM_CTRL_SIMULATE_WIFI_BTN;
+                    // avoid display wifi page when arming, in the next firmware(>2.0) of rcsplit we have change the wifi page logic:
+                    // when the wifi was turn on it won't turn off the analog video output, 
+                    // and just put a wifi indicator on the right top of the video output. here is for the old split firmware
+                    if (!ARMING_FLAG(ARMED) && ((getArmingDisableFlags() & ARMING_DISABLED_RUNAWAY_TAKEOFF) == 0)) {
+                        behavior = RCDEVICE_PROTOCOL_CAM_CTRL_SIMULATE_WIFI_BTN;
+                    }
                 }
                 break;
             case BOXCAMERA2:
@@ -103,7 +108,10 @@ static void rcdeviceCameraControlProcess(void)
                 break;
             case BOXCAMERA3:
                 if (isFeatureSupported(RCDEVICE_PROTOCOL_FEATURE_CHANGE_MODE)) {
-                    behavior = RCDEVICE_PROTOCOL_CAM_CTRL_CHANGE_MODE;
+                    // avoid change camera mode when arming
+                    if (!ARMING_FLAG(ARMED) && ((getArmingDisableFlags() & ARMING_DISABLED_RUNAWAY_TAKEOFF) == 0)) {
+                        behavior = RCDEVICE_PROTOCOL_CAM_CTRL_CHANGE_MODE;
+                    }
                 }
                 break;
             default:
