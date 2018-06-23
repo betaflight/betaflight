@@ -110,7 +110,7 @@ typedef struct runcamDevice_s {
     bool isReady;
 } runcamDevice_t;
 
-#define MAX_WAITING_RESPONSES 20
+#define MAX_WAITING_RESPONSES 5
 
 typedef enum {
     RCDEVICE_RESP_SUCCESS = 0,
@@ -124,7 +124,7 @@ struct rcdeviceResponseParseContext_s {
     uint8_t command;
     uint8_t expectedRespLen; // total length of response data
     uint8_t recvRespLen; // length of the data received
-    uint8_t recvBuf[RCDEVICE_PROTOCOL_MAX_PACKET_SIZE]; // response data buffer
+    uint8_t *recvBuf; // response data buffer
     timeUs_t timeout;
     timeUs_t timeoutTimestamp; // if zero, it's means keep waiting for the response
     rcdeviceRespParseFunc parserFunc;
@@ -156,5 +156,3 @@ void runcamDeviceOpen5KeyOSDCableConnection(runcamDevice_t *device, rcdeviceResp
 void runcamDeviceClose5KeyOSDCableConnection(runcamDevice_t *device, rcdeviceRespParseFunc parseFunc);
 void runcamDeviceSimulate5KeyOSDCableButtonPress(runcamDevice_t *device, uint8_t operation, rcdeviceRespParseFunc parseFunc);
 void runcamDeviceSimulate5KeyOSDCableButtonRelease(runcamDevice_t *device, rcdeviceRespParseFunc parseFunc);
-
-void rcdeviceReceive(timeUs_t currentTimeUs);

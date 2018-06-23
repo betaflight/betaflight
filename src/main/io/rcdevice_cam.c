@@ -34,13 +34,9 @@
 
 #include "io/beeper.h"
 #include "io/serial.h"
-#include "io/osd.h"
 #include "io/rcdevice_cam.h"
 
 #include "rx/rx.h"
-
-#include "fc/config.h"
-#include "config/feature.h"
 
 #ifdef USE_RCDEVICE
 
