@@ -26,7 +26,6 @@
 #else
     #define TARGET_BOARD_IDENTIFIER "FYF3"
 //    #define USBD_PRODUCT_STRING     "FuryF3"
-    #undef USE_OSD
 #endif
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
@@ -91,7 +90,6 @@
 #undef USE_ESC_SENSOR_INFO
 
     // include the max7456 driver
-    #define USE_OSD
     #define USE_MAX7456
     #define MAX7456_SPI_INSTANCE    SPI1
     #define MAX7456_SPI_CS_PIN      PC13

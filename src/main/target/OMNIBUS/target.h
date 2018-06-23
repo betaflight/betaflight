@@ -118,7 +118,6 @@
 //   feature name (includes source) -> MAX_OSD, used in target.mk
 
 // include the max7456 driver
-#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI1
 #define MAX7456_SPI_CS_PIN      PB1

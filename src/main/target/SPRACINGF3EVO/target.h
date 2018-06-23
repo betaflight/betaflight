@@ -173,6 +173,7 @@
 #define CURRENT_METER_ADC_PIN   PA5
 #endif
 
+#define USE_OSD
 #define USE_OSD_OVER_MSP_DISPLAYPORT
 #define USE_MSP_CURRENT_METER
 
