@@ -114,10 +114,14 @@ typedef struct rcSmoothingFilterTraining_s {
     uint16_t max;
 } rcSmoothingFilterTraining_t;
 
+typedef union rcSmoothingFilterTypes_u {
+    pt1Filter_t pt1Filter;
+    biquadFilter_t biquadFilter;
+} rcSmoothingFilterTypes_t;
+
 typedef struct rcSmoothingFilter_s {
     bool filterInitialized;
-    biquadFilter_t filterBiquad[4];
-    pt1Filter_t filterPt1[4];
+    rcSmoothingFilterTypes_t filter[4];
     uint16_t inputCutoffFrequency;
     uint16_t derivativeCutoffFrequency;
     int averageFrameTimeUs;
