@@ -77,7 +77,7 @@ enum {
 #define RC_SMOOTHING_RX_RATE_MIN_US             5000  // 5ms or 200hz
 #define RC_SMOOTHING_RX_RATE_MAX_US             50000 // 50ms or 20hz
 
-static FAST_RAM rcSmoothingFilter_t rcSmoothingData;
+static FAST_RAM_ZERO_INIT rcSmoothingFilter_t rcSmoothingData;
 #endif // USE_RC_SMOOTHING_FILTER
 
 float getSetpointRate(int axis)
