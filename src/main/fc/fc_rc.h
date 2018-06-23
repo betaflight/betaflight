@@ -40,3 +40,4 @@ void resetYawAxis(void);
 void initRcProcessing(void);
 bool isMotorsReversed(void);
 int rcSmoothingGetValue(int whichValue);
+bool rcSmoothingAutoCalculate(void);

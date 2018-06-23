@@ -22,6 +22,7 @@
 
 #include <stdbool.h>
 
+#include "common/filter.h"
 #include "pg/pg.h"
 
 typedef enum rc_alias {
@@ -77,9 +78,7 @@ typedef enum {
 } rcSmoothingDerivativeFilter_e;
 
 typedef enum {
-    RC_SMOOTHING_VALUE_INPUT_AUTO,
     RC_SMOOTHING_VALUE_INPUT_ACTIVE,
-    RC_SMOOTHING_VALUE_DERIVATIVE_AUTO,
     RC_SMOOTHING_VALUE_DERIVATIVE_ACTIVE,
     RC_SMOOTHING_VALUE_AVERAGE_FRAME
 } rcSmoothingInfoType_e;
@@ -107,6 +106,27 @@ typedef enum {
 #define CONTROL_RATE_CONFIG_TPA_MAX              100
 
 extern float rcCommand[4];
+
+typedef struct rcSmoothingFilterTraining_s {
+    float sum;
+    int count;
+    uint16_t min;
+    uint16_t max;
+} rcSmoothingFilterTraining_t;
+
+typedef union rcSmoothingFilterTypes_u {
+    pt1Filter_t pt1Filter;
+    biquadFilter_t biquadFilter;
+} rcSmoothingFilterTypes_t;
+
+typedef struct rcSmoothingFilter_s {
+    bool filterInitialized;
+    rcSmoothingFilterTypes_t filter[4];
+    uint16_t inputCutoffFrequency;
+    uint16_t derivativeCutoffFrequency;
+    int averageFrameTimeUs;
+    rcSmoothingFilterTraining_t training;
+} rcSmoothingFilter_t;
 
 typedef struct rcControlsConfig_s {
     uint8_t deadband;                       // introduce a deadband around the stick center for pitch and roll axis. Must be greater than zero.
