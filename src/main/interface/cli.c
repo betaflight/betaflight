@@ -2451,7 +2451,7 @@ static void cliFeature(char *cmdline)
 static void printBeeper(uint8_t dumpMask, const uint32_t offFlags, const uint32_t offFlagsDefault, const char *name)
 {
     const uint8_t beeperCount = beeperTableEntryCount();
-    for (int32_t i = 0; i < beeperCount - 2; i++) {
+    for (int32_t i = 0; i < beeperCount - 1; i++) {
         const char *formatOff = "%s -%s";
         const char *formatOn = "%s %s";
         const uint32_t beeperModeMask = beeperModeMaskForTableIndex(i);
