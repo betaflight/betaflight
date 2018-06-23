@@ -40,12 +40,10 @@
 #include "pg/rx.h"
 
 #include "drivers/light_led.h"
-#include "drivers/serial_usb_vcp.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
 #include "drivers/transponder_ir.h"
-#include "drivers/usb_io.h"
 
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
@@ -67,7 +65,6 @@
 
 #include "interface/cli.h"
 
-#include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/gps.h"
 #include "io/motors.h"
@@ -135,6 +132,8 @@ static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the m
 
 bool isRXDataNew;
 static int lastArmingDisabledReason = 0;
+static timeUs_t lastDisarmTimeUs;
+static bool tryingToArm;
 
 #ifdef USE_RUNAWAY_TAKEOFF
 static timeUs_t runawayTakeoffDeactivateUs = 0;
@@ -318,6 +317,7 @@ void disarm(void)
 {
     if (ARMING_FLAG(ARMED)) {
         DISABLE_ARMING_FLAG(ARMED);
+        lastDisarmTimeUs = micros();
 
 #ifdef USE_BLACKBOX
         if (blackboxConfig()->device && blackboxConfig()->mode != BLACKBOX_MODE_ALWAYS_ON) { // Close the log upon disarm except when logging mode is ALWAYS ON
@@ -326,13 +326,12 @@ void disarm(void)
 #endif
         BEEP_OFF;
 #ifdef USE_DSHOT
-        if (isMotorProtocolDshot() && isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH) && !feature(FEATURE_3D)) {
-            flipOverAfterCrashMode = false;
-            if (!feature(FEATURE_3D)) {
-                pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL, false);
-            }
+        if (isMotorProtocolDshot() && flipOverAfterCrashMode && !feature(FEATURE_3D)) {
+            pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL, false);
         }
 #endif
+        flipOverAfterCrashMode = false;
+
         // if ARMING_DISABLED_RUNAWAY_TAKEOFF is set then we want to play it's beep pattern instead
         if (!(getArmingDisableFlags() & ARMING_DISABLED_RUNAWAY_TAKEOFF)) {
             beeper(BEEPER_DISARMING);      // emit disarm tone
@@ -353,6 +352,10 @@ void tryArm(void)
             return;
         }
 #ifdef USE_DSHOT
+        if (micros() - getLastDshotBeaconCommandTimeUs() < DSHOT_BEACON_GUARD_DELAY_US) {
+            tryingToArm = true;
+            return;
+        }
         if (isMotorProtocolDshot() && isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH)) {
             if (!IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
                 flipOverAfterCrashMode = false;
@@ -373,6 +376,8 @@ void tryArm(void)
 
         ENABLE_ARMING_FLAG(ARMED);
         ENABLE_ARMING_FLAG(WAS_EVER_ARMED);
+
+        resetTryingToArm();
 
 #ifdef USE_ACRO_TRAINER
         pidAcroTrainerInit();
@@ -404,6 +409,7 @@ void tryArm(void)
         runawayTakeoffTriggerUs = 0;
 #endif
     } else {
+       resetTryingToArm();
         if (!isFirstArmingGyroCalibrationRunning()) {
             int armingDisabledReason = ffs(getArmingDisableFlags());
             if (lastArmingDisabledReason != armingDisabledReason) {
@@ -537,6 +543,14 @@ uint8_t calculateThrottlePercent(void)
     return ret;
 }
 
+static bool airmodeIsActivated;
+
+bool isAirmodeActivated()
+{
+    return airmodeIsActivated;
+}
+
+
 
 /*
  * processRx called from taskUpdateRxMain
@@ -544,7 +558,6 @@ uint8_t calculateThrottlePercent(void)
 bool processRx(timeUs_t currentTimeUs)
 {
     static bool armedBeeperOn = false;
-    static bool airmodeIsActivated;
     static bool sharedPortTelemetryEnabled = false;
 
     if (!calculateRxChannelsAndUpdateFailsafe(currentTimeUs)) {
@@ -792,7 +805,7 @@ bool processRx(timeUs_t currentTimeUs)
         }
     }
 #endif
-    
+
     if (IS_RC_MODE_ACTIVE(BOXPASSTHRU)) {
         ENABLE_FLIGHT_MODE(PASSTHRU_MODE);
     } else {
@@ -889,35 +902,17 @@ static FAST_CODE void subTaskPidController(timeUs_t currentTimeUs)
 #endif
 }
 
-static FAST_CODE_NOINLINE void subTaskMainSubprocesses(timeUs_t currentTimeUs)
+static FAST_CODE_NOINLINE void subTaskPidSubprocesses(timeUs_t currentTimeUs)
 {
     uint32_t startTime = 0;
     if (debugMode == DEBUG_PIDLOOP) {
         startTime = micros();
     }
 
-    // Read out gyro temperature if used for telemmetry
-    if (feature(FEATURE_TELEMETRY)) {
-        gyroReadTemperature();
-    }
-
 #ifdef USE_MAG
     if (sensors(SENSOR_MAG)) {
         updateMagHold();
     }
-#endif
-
-#ifdef USE_GPS_RESCUE
-    updateGPSRescueState();
-#endif
-
-#ifdef USE_SDCARD
-    afatfs_poll();
-#endif
-
-#if defined(USE_VCP)
-    DEBUG_SET(DEBUG_USB, 0, usbCableIsInserted());
-    DEBUG_SET(DEBUG_USB, 1, usbVcpIsConnected());
 #endif
 
 #ifdef USE_BLACKBOX
@@ -928,11 +923,18 @@ static FAST_CODE_NOINLINE void subTaskMainSubprocesses(timeUs_t currentTimeUs)
     UNUSED(currentTimeUs);
 #endif
 
-#ifdef USE_TRANSPONDER
-    transponderUpdate(currentTimeUs);
-#endif
     DEBUG_SET(DEBUG_PIDLOOP, 3, micros() - startTime);
 }
+
+#ifdef USE_TELEMETRY
+void subTaskTelemetryPollSensors(timeUs_t currentTimeUs)
+{
+    UNUSED(currentTimeUs);
+
+    // Read out gyro temperature if used for telemmetry
+    gyroReadTemperature();
+}
+#endif
 
 static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
 {
@@ -964,6 +966,7 @@ static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
 
 static FAST_CODE_NOINLINE void subTaskRcCommand(timeUs_t currentTimeUs)
 {
+    UNUSED(currentTimeUs);
 
     // If we're armed, at minimum throttle, and we do arming via the
     // sticks, do not process yaw input from the rx.  We do this so the
@@ -986,7 +989,12 @@ static FAST_CODE_NOINLINE void subTaskRcCommand(timeUs_t currentTimeUs)
     }
 
     processRcCommand();
-    UNUSED(currentTimeUs);
+
+#if defined(USE_GPS_RESCUE)
+    if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
+        gpsRescueInjectRcCommands();
+    }
+#endif
 }
 
 // Function for loop trigger
@@ -1002,7 +1010,7 @@ FAST_CODE void taskMainPidLoop(timeUs_t currentTimeUs)
     // 0 - gyroUpdate()
     // 1 - subTaskPidController()
     // 2 - subTaskMotorUpdate()
-    // 3 - subTaskMainSubprocesses()
+    // 3 - subTaskPidSubprocesses()
     gyroUpdate(currentTimeUs);
     DEBUG_SET(DEBUG_PIDLOOP, 0, micros() - currentTimeUs);
 
@@ -1010,7 +1018,7 @@ FAST_CODE void taskMainPidLoop(timeUs_t currentTimeUs)
         subTaskRcCommand(currentTimeUs);
         subTaskPidController(currentTimeUs);
         subTaskMotorUpdate(currentTimeUs);
-        subTaskMainSubprocesses(currentTimeUs);
+        subTaskPidSubprocesses(currentTimeUs);
     }
 
     if (debugMode == DEBUG_CYCLETIME) {
@@ -1023,4 +1031,19 @@ FAST_CODE void taskMainPidLoop(timeUs_t currentTimeUs)
 bool isFlipOverAfterCrashMode(void)
 {
     return flipOverAfterCrashMode;
+}
+
+timeUs_t getLastDisarmTimeUs(void)
+{
+    return lastDisarmTimeUs;
+}
+
+bool isTryingToArm()
+{
+    return tryingToArm;
+}
+
+void resetTryingToArm()
+{
+    tryingToArm = false;
 }

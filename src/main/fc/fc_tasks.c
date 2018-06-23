@@ -38,15 +38,16 @@
 #include "drivers/compass/compass.h"
 #include "drivers/sensor.h"
 #include "drivers/serial.h"
+#include "drivers/serial_usb_vcp.h"
 #include "drivers/stack_check.h"
 #include "drivers/transponder_ir.h"
+#include "drivers/usb_io.h"
 #include "drivers/vtx_common.h"
 
 #include "fc/config.h"
 #include "fc/fc_core.h"
 #include "fc/fc_rc.h"
 #include "fc/fc_dispatch.h"
-#include "fc/fc_tasks.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
@@ -58,6 +59,7 @@
 #include "interface/cli.h"
 #include "interface/msp.h"
 
+#include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/dashboard.h"
 #include "io/gps.h"
@@ -69,6 +71,7 @@
 #include "io/transponder_ir.h"
 #include "io/vtx_tramp.h" // Will be gone
 #include "io/rcdevice_cam.h"
+#include "io/usb_cdc_hid.h"
 #include "io/vtx.h"
 
 #include "msp/msp_serial.h"
@@ -91,6 +94,10 @@
 
 #include "telemetry/telemetry.h"
 
+#ifdef USE_BST
+#include "i2c_bst.h"
+#endif
+
 #ifdef USE_USB_CDC_HID
 //TODO: Make it platform independent in the future
 #ifdef STM32F4
@@ -102,21 +109,36 @@
 #endif
 #endif
 
-#ifdef USE_BST
-void taskBstMasterProcess(timeUs_t currentTimeUs);
-#endif
+#include "fc_tasks.h"
 
-bool taskSerialCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
+static void taskMain(timeUs_t currentTimeUs)
+{
+    UNUSED(currentTimeUs);
+
+#ifdef USE_SDCARD
+    afatfs_poll();
+#endif
+}
+
+#ifdef USE_OSD_SLAVE
+static bool taskSerialCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
 {
     UNUSED(currentTimeUs);
     UNUSED(currentDeltaTimeUs);
 
     return mspSerialWaiting();
 }
+#endif
 
 static void taskHandleSerial(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
+
+#if defined(USE_VCP)
+    DEBUG_SET(DEBUG_USB, 0, usbCableIsInserted());
+    DEBUG_SET(DEBUG_USB, 1, usbVcpIsConnected());
+#endif
+
 #ifdef USE_CLI
     // in cli mode, all serial stuff goes to here. enter cli mode by sending #
     if (cliMode) {
@@ -132,7 +154,7 @@ static void taskHandleSerial(timeUs_t currentTimeUs)
     mspSerialProcess(evaluateMspData, mspFcProcessCommand, mspFcProcessReply);
 }
 
-void taskBatteryAlerts(timeUs_t currentTimeUs)
+static void taskBatteryAlerts(timeUs_t currentTimeUs)
 {
     if (!ARMING_FLAG(ARMED)) {
         // the battery *might* fall out in flight, but if that happens the FC will likely be off too unless the user has battery backup.
@@ -161,16 +183,7 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
 
 #ifdef USE_USB_CDC_HID
     if (!ARMING_FLAG(ARMED)) {
-        int8_t report[8];
-        for (int i = 0; i < 8; i++) {
-                report[i] = scaleRange(constrain(rcData[i], 1000, 2000), 1000, 2000, -127, 127);
-        }
-#ifdef STM32F4
-        USBD_HID_SendReport(&USB_OTG_dev, (uint8_t*)report, sizeof(report));
-#elif defined(STM32F7)
-        extern USBD_HandleTypeDef  USBD_Device;
-        USBD_HID_SendReport(&USBD_Device, (uint8_t*)report, sizeof(report));
-#endif
+        sendRcDataToHid();
     }
 #endif
 
@@ -205,13 +218,15 @@ static void taskCalculateAltitude(timeUs_t currentTimeUs)
 static void taskTelemetry(timeUs_t currentTimeUs)
 {
     if (!cliMode && feature(FEATURE_TELEMETRY)) {
+        subTaskTelemetryPollSensors(currentTimeUs);
+
         telemetryProcess(currentTimeUs);
     }
 }
 #endif
 
 #ifdef USE_CAMERA_CONTROL
-void taskCameraControl(uint32_t currentTime)
+static void taskCameraControl(uint32_t currentTime)
 {
     if (ARMING_FLAG(ARMED)) {
         return;
@@ -224,6 +239,9 @@ void taskCameraControl(uint32_t currentTime)
 void fcTasksInit(void)
 {
     schedulerInit();
+
+    setTaskEnabled(TASK_MAIN, true);
+
     setTaskEnabled(TASK_SERIAL, true);
     rescheduleTask(TASK_SERIAL, TASK_PERIOD_HZ(serialConfig()->serial_update_rate_hz));
 
@@ -339,8 +357,17 @@ void fcTasksInit(void)
 cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_SYSTEM] = {
         .taskName = "SYSTEM",
-        .taskFunc = taskSystem,
+        .subTaskName = "LOAD",
+        .taskFunc = taskSystemLoad,
         .desiredPeriod = TASK_PERIOD_HZ(10),        // 10Hz, every 100 ms
+        .staticPriority = TASK_PRIORITY_MEDIUM_HIGH,
+    },
+
+    [TASK_MAIN] = {
+        .taskName = "SYSTEM",
+        .subTaskName = "UPDATE",
+        .taskFunc = taskMain,
+        .desiredPeriod = TASK_PERIOD_HZ(1000),
         .staticPriority = TASK_PRIORITY_MEDIUM_HIGH,
     },
 

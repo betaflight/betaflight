@@ -34,10 +34,10 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "NONE",
     "CYCLETIME",
     "BATTERY",
-    "GYRO",
+    "GYRO_FILTERED",
     "ACCELEROMETER",
     "PIDLOOP",
-    "NOTCH",
+    "GYRO_SCALED",
     "RC_INTERPOLATION",
     "ANGLERATE",
     "ESC_SENSOR",
@@ -72,4 +72,5 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "ITERM_RELAX",
     "ACRO_TRAINER",
     "RC_SMOOTHING",
+    "RX_SIGNAL_LOSS",    
 };

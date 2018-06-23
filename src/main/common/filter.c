@@ -192,3 +192,26 @@ FAST_CODE float biquadFilterApply(biquadFilter_t *filter, float input)
     filter->x2 = filter->b2 * input - filter->a2 * result;
     return result;
 }
+
+void laggedMovingAverageInit(laggedMovingAverage_t *filter, uint16_t windowSize, float *buf)
+{
+    filter->movingWindowIndex = 0;
+    filter->windowSize = windowSize;
+    filter->buf = buf;
+    filter->primed = false;
+}
+
+FAST_CODE float laggedMovingAverageUpdate(laggedMovingAverage_t *filter, float input)
+{
+    filter->movingSum -= filter->buf[filter->movingWindowIndex];
+    filter->buf[filter->movingWindowIndex] = input;
+    filter->movingSum += input;
+
+    if (++filter->movingWindowIndex == filter->windowSize) {
+        filter->movingWindowIndex = 0;
+        filter->primed = true;
+    }
+
+    const uint16_t denom = filter->primed ? filter->windowSize : filter->movingWindowIndex;
+    return filter->movingSum  / denom;
+}

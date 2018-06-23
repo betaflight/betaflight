@@ -190,7 +190,7 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
     {"rcCommand",   3, UNSIGNED, .Ipredict = PREDICT(MINTHROTTLE), .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),  .Pencode = ENCODING(TAG8_4S16), CONDITION(ALWAYS)},
 
     {"vbatLatest",    -1, UNSIGNED, .Ipredict = PREDICT(VBATREF),  .Iencode = ENCODING(NEG_14BIT),   .Ppredict = PREDICT(PREVIOUS),  .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_VBAT},
-    {"amperageLatest",-1, UNSIGNED, .Ipredict = PREDICT(0),        .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),  .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC},
+    {"amperageLatest",-1, SIGNED,   .Ipredict = PREDICT(0),        .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),  .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC},
 
 #ifdef USE_MAG
     {"magADC",      0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_MAG},
@@ -294,7 +294,7 @@ typedef struct blackboxMainState_s {
     int16_t servo[MAX_SUPPORTED_SERVOS];
 
     uint16_t vbatLatest;
-    uint16_t amperageLatest;
+    int32_t amperageLatest;
 
 #ifdef USE_BARO
     int32_t BaroAlt;
@@ -552,7 +552,7 @@ static void writeIntraframe(void)
 
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC)) {
         // 12bit value directly from ADC
-        blackboxWriteUnsignedVB(blackboxCurrent->amperageLatest);
+        blackboxWriteSignedVB(blackboxCurrent->amperageLatest);
     }
 
 #ifdef USE_MAG
@@ -680,7 +680,7 @@ static void writeInterframe(void)
     }
 
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC)) {
-        deltas[optionalFieldCount++] = (int32_t) blackboxCurrent->amperageLatest - blackboxLast->amperageLatest;
+        deltas[optionalFieldCount++] = blackboxCurrent->amperageLatest - blackboxLast->amperageLatest;
     }
 
 #ifdef USE_MAG
@@ -1669,16 +1669,15 @@ void blackboxUpdate(timeUs_t currentTimeUs)
 #ifdef USE_FLASHFS
         if (blackboxState != BLACKBOX_STATE_ERASING
             && blackboxState != BLACKBOX_STATE_START_ERASE
-            && blackboxState != BLACKBOX_STATE_ERASED) {
+            && blackboxState != BLACKBOX_STATE_ERASED)
 #endif
+        {
             blackboxSetState(BLACKBOX_STATE_STOPPED);
             // ensure we reset the test mode flag if we stop due to full memory card
             if (startedLoggingInTestMode) {
                 startedLoggingInTestMode = false;
             }
-#ifdef USE_FLASHFS
         }
-#endif
     } else { // Only log in test mode if there is room!
         switch (blackboxConfig()->mode) {
         case BLACKBOX_MODE_MOTOR_TEST:

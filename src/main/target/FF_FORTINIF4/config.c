@@ -34,7 +34,7 @@
 
 void targetConfiguration(void)
 {
-    if (hardwareRevision == FORTINIF4_REV_2) {
+    if (hardwareRevision >= FORTINIF4_REV_2) {
         featureSet(FEATURE_OSD);
     }
 

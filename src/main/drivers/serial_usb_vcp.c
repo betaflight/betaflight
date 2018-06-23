@@ -28,6 +28,7 @@
 #include "build/build_config.h"
 
 #include "common/utils.h"
+
 #include "drivers/io.h"
 
 #if defined(STM32F4)

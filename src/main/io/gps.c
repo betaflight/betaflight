@@ -531,6 +531,9 @@ void gpsUpdate(timeUs_t currentTimeUs)
     if (sensors(SENSOR_GPS)) {
         updateGpsIndicator(currentTimeUs);
     }
+#if defined(USE_GPS_RESCUE)
+    updateGPSRescueState();
+#endif
 }
 
 static void gpsNewData(uint16_t c)
@@ -641,28 +644,36 @@ static uint32_t grab_fields(char *src, uint8_t mult)
 {                               // convert string to uint32
     uint32_t i;
     uint32_t tmp = 0;
+    int isneg = 0;
     for (i = 0; src[i] != 0; i++) {
+        if ((i == 0) && (src[0] == '-')) { // detect negative sign
+            isneg = 1;
+            continue; // jump to next character if the first one was a negative sign
+        }
         if (src[i] == '.') {
             i++;
-            if (mult == 0)
+            if (mult == 0) {
                 break;
-            else
+            } else {
                 src[i + mult] = 0;
+            }
         }
         tmp *= 10;
-        if (src[i] >= '0' && src[i] <= '9')
+        if (src[i] >= '0' && src[i] <= '9') {
             tmp += src[i] - '0';
-        if (i >= 15)
+        }
+        if (i >= 15) {
             return 0; // out of bounds
+        }
     }
-    return tmp;
+    return isneg ? -tmp : tmp;    // handle negative altitudes
 }
 
 typedef struct gpsDataNmea_s {
     int32_t latitude;
     int32_t longitude;
     uint8_t numSat;
-    uint16_t altitude;
+    int32_t altitude;
     uint16_t speed;
     uint16_t hdop;
     uint16_t ground_course;
@@ -733,7 +744,7 @@ static bool gpsNewFrameNMEA(char c)
                             gps_Msg.hdop = grab_fields(string, 1) * 100;          // hdop
                             break;
                         case 9:
-                            gps_Msg.altitude = grab_fields(string, 0);     // altitude in meters added by Mis
+                            gps_Msg.altitude = grab_fields(string, 1) * 10;     // altitude in centimeters. Note: NMEA delivers altitude with 1 or 3 decimals. It's safer to cut at 0.1m and multiply by 10
                             break;
                     }
                     break;

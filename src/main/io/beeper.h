@@ -24,6 +24,11 @@
 
 #define BEEPER_GET_FLAG(mode) (1 << (mode - 1))
 
+#ifdef USE_DSHOT
+#define DSHOT_BEACON_GUARD_DELAY_US 1200000  // Time to separate dshot beacon and armining/disarming events
+                                             // to prevent interference with motor direction commands
+#endif
+
 typedef enum {
     // IMPORTANT: these are in priority order, 0 = Highest
     BEEPER_SILENCE = 0,             // Silence, see beeperSilence()
@@ -94,3 +99,4 @@ uint32_t beeperModeMaskForTableIndex(int idx);
 const char *beeperNameForTableIndex(int idx);
 int beeperTableEntryCount(void);
 bool isBeeperOn(void);
+timeUs_t getLastDshotBeaconCommandTimeUs(void);

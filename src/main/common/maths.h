@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include <stdint.h>
+
 #ifndef sq
 #define sq(x) ((x)*(x))
 #endif
@@ -33,13 +35,13 @@
 #define M_PIf       3.14159265358979323846f
 
 #define RAD    (M_PIf / 180.0f)
-#define DEGREES_TO_DECIDEGREES(angle) (angle * 10)
-#define DECIDEGREES_TO_DEGREES(angle) (angle / 10)
-#define DECIDEGREES_TO_RADIANS(angle) ((angle / 10.0f) * 0.0174532925f)
+#define DEGREES_TO_DECIDEGREES(angle) ((angle) * 10)
+#define DECIDEGREES_TO_DEGREES(angle) ((angle) / 10)
+#define DECIDEGREES_TO_RADIANS(angle) ((angle) / 10.0f * 0.0174532925f)
 #define DEGREES_TO_RADIANS(angle) ((angle) * 0.0174532925f)
 
-#define CM_S_TO_KM_H(centimetersPerSecond) (centimetersPerSecond * 36 / 1000)
-#define CM_S_TO_MPH(centimetersPerSecond) (((centimetersPerSecond * 10000) / 5080) / 88)
+#define CM_S_TO_KM_H(centimetersPerSecond) ((centimetersPerSecond) * 36 / 1000)
+#define CM_S_TO_MPH(centimetersPerSecond) ((centimetersPerSecond) * 10000 / 5080 / 88)
 
 #define MIN(a,b) \
   __extension__ ({ __typeof__ (a) _a = (a); \
@@ -91,6 +93,7 @@ typedef union {
 int gcd(int num, int denom);
 float powerf(float base, int exp);
 int32_t applyDeadband(int32_t value, int32_t deadband);
+float fapplyDeadband(float value, float deadband);
 
 void devClear(stdev_t *dev);
 void devPush(stdev_t *dev, float x);

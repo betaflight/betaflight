@@ -46,6 +46,8 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
+#include "common/maths.h"
+
 #include "stm32f7xx_hal.h"
 #include "usbd_core.h"
 #include "usbd_desc.h"

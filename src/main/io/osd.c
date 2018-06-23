@@ -717,6 +717,23 @@ static bool osdDrawSingleElement(uint8_t item)
 
             const batteryState_e batteryState = getBatteryState();
 
+#ifdef USE_DSHOT
+            if (isTryingToArm() && !ARMING_FLAG(ARMED)) {
+                int armingDelayTime = (getLastDshotBeaconCommandTimeUs() + DSHOT_BEACON_GUARD_DELAY_US - micros()) / 1e5;
+                if (armingDelayTime < 0) {
+                    armingDelayTime = 0;
+                }
+                if (armingDelayTime >= (DSHOT_BEACON_GUARD_DELAY_US / 1e5 - 5)) {
+                    osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, " BEACON ON"); // Display this message for the first 0.5 seconds
+                } else {
+                    char armingDelayMessage[OSD_FORMAT_MESSAGE_BUFFER_SIZE];
+                    tfp_sprintf(armingDelayMessage, "ARM IN %d.%d", armingDelayTime / 10, armingDelayTime % 10);
+                    osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, armingDelayMessage);
+                }
+                break;
+            }
+#endif
+
             if (osdWarnGetState(OSD_WARNING_BATTERY_CRITICAL) && batteryState == BATTERY_CRITICAL) {
                 osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, " LAND NOW");
                 break;
@@ -1098,12 +1115,22 @@ void osdUpdateAlarms(void)
         CLR_BLINK(OSD_RSSI_VALUE);
     }
 
-    if (getBatteryState() == BATTERY_OK) {
+    // Determine if the OSD_WARNINGS should blink
+    if (getBatteryState() != BATTERY_OK
+           && (osdWarnGetState(OSD_WARNING_BATTERY_CRITICAL) || osdWarnGetState(OSD_WARNING_BATTERY_WARNING))
+#ifdef USE_DSHOT
+           && (!isTryingToArm())
+#endif
+       ) {
+        SET_BLINK(OSD_WARNINGS);
+    } else {
         CLR_BLINK(OSD_WARNINGS);
+    }
+
+    if (getBatteryState() == BATTERY_OK) {
         CLR_BLINK(OSD_MAIN_BATT_VOLTAGE);
         CLR_BLINK(OSD_AVG_CELL_VOLTAGE);
     } else {
-        SET_BLINK(OSD_WARNINGS);
         SET_BLINK(OSD_MAIN_BATT_VOLTAGE);
         SET_BLINK(OSD_AVG_CELL_VOLTAGE);
     }
@@ -1174,7 +1201,6 @@ static void osdResetStats(void)
     stats.max_current  = 0;
     stats.max_speed    = 0;
     stats.min_voltage  = 500;
-    stats.max_current  = 0;
     stats.min_rssi     = 99;
     stats.max_altitude = 0;
     stats.max_distance = 0;

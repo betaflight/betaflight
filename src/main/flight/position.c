@@ -44,12 +44,13 @@ static int32_t estimatedAltitude = 0;                // in cm
 
 
 #if defined(USE_BARO) || defined(USE_GPS)
+static bool altitudeOffsetSet = false;
+
 void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 {
     static timeUs_t previousTimeUs = 0;
     static int32_t baroAltOffset = 0;
     static int32_t gpsAltOffset = 0;
-    static bool altitudeOffsetSet = false;
 
     const uint32_t dTime = currentTimeUs - previousTimeUs;
     if (dTime < BARO_UPDATE_FREQUENCY_40HZ) {
@@ -109,8 +110,12 @@ if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
     DEBUG_SET(DEBUG_ALTITUDE, 1, baroAlt);
     DEBUG_SET(DEBUG_ALTITUDE, 2, gpsAlt);
 }
-#endif
 
+bool isAltitudeOffset(void)
+{
+    return altitudeOffsetSet;
+}
+#endif
 
 int32_t getEstimatedAltitude(void)
 {
