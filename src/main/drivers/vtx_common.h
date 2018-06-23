@@ -40,7 +40,6 @@
 #define VTX_SETTINGS_DEFAULT_CHANNEL            1
 #define VTX_SETTINGS_DEFAULT_FREQ               5740
 #define VTX_SETTINGS_DEFAULT_PITMODE_FREQ       0
-#define VTX_SETTINGS_DEFAULT_LOW_POWER_DISARM   0
 
 #define VTX_SETTINGS_MAX_FREQUENCY_MHZ 5999          //max freq (in MHz) for 'vtx_freq' setting
 
@@ -167,6 +166,7 @@ vtxDevice_t *vtxCommonDevice(void);
 // VTable functions
 void vtxCommonProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs);
 vtxDevType_e vtxCommonGetDeviceType(const vtxDevice_t *vtxDevice);
+bool vtxCommonDeviceIsReady(const vtxDevice_t *vtxDevice);
 void vtxCommonSetBandAndChannel(vtxDevice_t *vtxDevice, uint8_t band, uint8_t channel);
 void vtxCommonSetPowerByIndex(vtxDevice_t *vtxDevice, uint8_t level);
 void vtxCommonSetPitMode(vtxDevice_t *vtxDevice, uint8_t onoff);
