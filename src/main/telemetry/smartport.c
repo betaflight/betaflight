@@ -361,7 +361,7 @@ static void initSmartPortSensors(void)
     }
 
 #ifdef USE_GPS
-    if (sensors(SENSOR_GPS)) {
+    if (feature(FEATURE_GPS)) {
         ADD_SENSOR(FSSP_DATAID_SPEED);
         ADD_SENSOR(FSSP_DATAID_LATLONG);
         ADD_SENSOR(FSSP_DATAID_LATLONG); // twice (one for lat, one for long)
@@ -703,16 +703,17 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                 *clearToSend = false;
                 break;
             case FSSP_DATAID_T2         :
-                if (sensors(SENSOR_GPS)) {
 #ifdef USE_GPS
+                if (sensors(SENSOR_GPS)) {
                     // provide GPS lock status
                     smartPortSendPackage(id, (STATE(GPS_FIX) ? 1000 : 0) + (STATE(GPS_FIX_HOME) ? 2000 : 0) + gpsSol.numSat);
                     *clearToSend = false;
-#endif
                 } else if (feature(FEATURE_GPS)) {
                     smartPortSendPackage(id, 0);
                     *clearToSend = false;
-                } else if (telemetryConfig()->pidValuesAsTelemetry) {
+                } else
+#endif
+                if (telemetryConfig()->pidValuesAsTelemetry) {
                     switch (t2Cnt) {
                         case 0:
                             tmp2 = currentPidProfile->pid[PID_ROLL].P;
