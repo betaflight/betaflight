@@ -26,7 +26,7 @@
 // Removed to make the firmware fit into flash (in descending order of priority):
 // NOTE: Don't disable USE_GYRO_OVERFLOW_CHECK - board has ICM20602 gyro
 //#undef USE_GYRO_OVERFLOW_CHECK
-#undef USE_GYRO_LPF2
+//#undef USE_GYRO_LPF2
 
 #undef USE_ITERM_RELAX
 #undef USE_RC_SMOOTHING_FILTER
