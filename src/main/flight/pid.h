@@ -39,6 +39,10 @@
 #define ITERM_SCALE 0.244381f
 #define DTERM_SCALE 0.000529f
 
+// The constant scale factor to replace the Kd component of the feedforward calculation.
+// This value gives the same "feel" as the previous Kd default of 26 (26 * DTERM_SCALE)
+#define FEEDFORWARD_SCALE 0.013754f
+
 typedef enum {
     PID_ROLL,
     PID_PITCH,
@@ -70,11 +74,12 @@ typedef enum {
     PID_CRASH_RECOVERY_BEEP
 } pidCrashRecovery_e;
 
-typedef struct pid8_s {
+typedef struct pidf_s {
     uint8_t P;
     uint8_t I;
     uint8_t D;
-} pid8_t;
+    uint16_t F;
+} pidf_t;
 
 typedef enum {
     ANTI_GRAVITY_SMOOTH,
@@ -100,7 +105,7 @@ typedef struct pidProfile_s {
     uint16_t dterm_notch_hz;                // Biquad dterm notch hz
     uint16_t dterm_notch_cutoff;            // Biquad dterm notch low cutoff
 
-    pid8_t  pid[PID_ITEM_COUNT];
+    pidf_t  pid[PID_ITEM_COUNT];
 
     uint8_t dterm_filter_type;              // Filter selection for dterm
     uint8_t itermWindupPointPercent;        // Experimental ITerm windup threshold, percent motor saturation
@@ -116,7 +121,6 @@ typedef struct pidProfile_s {
     uint8_t  antiGravityMode;             // type of anti gravity method
     uint16_t itermThrottleThreshold;        // max allowed throttle delta before iterm accelerated in ms
     uint16_t itermAcceleratorGain;          // Iterm Accelerator Gain when itermThrottlethreshold is hit
-    uint16_t dtermSetpointWeight;           // Setpoint weight for Dterm (0= measurement, 1= full error, 1 > aggressive derivative)
     uint16_t yawRateAccelLimit;             // yaw accel limiter for deg/sec/ms
     uint16_t rateAccelLimit;                // accel limiter roll/pitch deg/sec/ms
     uint16_t crash_dthreshold;              // dterm crash value
@@ -127,7 +131,7 @@ typedef struct pidProfile_s {
     uint8_t crash_recovery_angle;           // degrees
     uint8_t crash_recovery_rate;            // degree/second
     uint8_t vbatPidCompensation;            // Scale PIDsum to battery voltage
-    uint8_t setpointRelaxRatio;             // Setpoint weight relaxation effect
+    uint8_t feedForwardTransition;          // Feed forward weight transition
     uint16_t crash_limit_yaw;               // limits yaw errorRate, so crashes don't cause huge throttle increase
     uint16_t itermLimit;
     uint16_t dterm_lowpass2_hz;             // Extra PT1 Filter on D in hz
@@ -168,6 +172,7 @@ typedef struct pidAxisData_s {
     float P;
     float I;
     float D;
+    float F;
 
     float Sum;
 } pidAxisData_t;

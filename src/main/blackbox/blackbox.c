@@ -182,6 +182,9 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
     {"axisD",       0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PID_D_0)},
     {"axisD",       1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PID_D_1)},
     {"axisD",       2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PID_D_2)},
+    {"axisF",       0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"axisF",       1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"axisF",       2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
     /* rcCommands are encoded together as a group in P-frames: */
     {"rcCommand",   0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_4S16), CONDITION(ALWAYS)},
     {"rcCommand",   1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_4S16), CONDITION(ALWAYS)},
@@ -285,6 +288,7 @@ typedef struct blackboxMainState_s {
     int32_t axisPID_P[XYZ_AXIS_COUNT];
     int32_t axisPID_I[XYZ_AXIS_COUNT];
     int32_t axisPID_D[XYZ_AXIS_COUNT];
+    int32_t axisPID_F[XYZ_AXIS_COUNT];
 
     int16_t rcCommand[4];
     int16_t gyroADC[XYZ_AXIS_COUNT];
@@ -531,6 +535,8 @@ static void writeIntraframe(void)
         }
     }
 
+    blackboxWriteSignedVBArray(blackboxCurrent->axisPID_F, XYZ_AXIS_COUNT);
+
     // Write roll, pitch and yaw first:
     blackboxWriteSigned16VBArray(blackboxCurrent->rcCommand, 3);
 
@@ -661,6 +667,9 @@ static void writeInterframe(void)
             blackboxWriteSignedVB(blackboxCurrent->axisPID_D[x] - blackboxLast->axisPID_D[x]);
         }
     }
+
+    arraySubInt32(deltas, blackboxCurrent->axisPID_F, blackboxLast->axisPID_F, XYZ_AXIS_COUNT);
+    blackboxWriteSignedVBArray(deltas, XYZ_AXIS_COUNT);
 
     /*
      * RC tends to stay the same or fairly small for many frames at a time, so use an encoding that
@@ -992,6 +1001,7 @@ static void loadMainState(timeUs_t currentTimeUs)
         blackboxCurrent->axisPID_P[i] = pidData[i].P;
         blackboxCurrent->axisPID_I[i] = pidData[i].I;
         blackboxCurrent->axisPID_D[i] = pidData[i].D;
+        blackboxCurrent->axisPID_F[i] = pidData[i].F;
         blackboxCurrent->gyroADC[i] = lrintf(gyro.gyroADCf[i]);
         blackboxCurrent->accADC[i] = lrintf(acc.accADC[i]);
 #ifdef USE_MAG
@@ -1286,8 +1296,12 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("anti_gravity_mode", "%d",               currentPidProfile->antiGravityMode);
         BLACKBOX_PRINT_HEADER_LINE("anti_gravity_threshold", "%d",          currentPidProfile->itermThrottleThreshold);
         BLACKBOX_PRINT_HEADER_LINE("anti_gravity_gain", "%d",               currentPidProfile->itermAcceleratorGain);
-        BLACKBOX_PRINT_HEADER_LINE("setpoint_relaxation_ratio", "%d",       currentPidProfile->setpointRelaxRatio);
-        BLACKBOX_PRINT_HEADER_LINE("dterm_setpoint_weight", "%d",           currentPidProfile->dtermSetpointWeight);
+
+        BLACKBOX_PRINT_HEADER_LINE("feedforward_transition", "%d",          currentPidProfile->feedForwardTransition);
+        BLACKBOX_PRINT_HEADER_LINE("feedforward_weight", "%d,%d,%d",        currentPidProfile->pid[PID_ROLL].F,
+                                                                            currentPidProfile->pid[PID_PITCH].F,
+                                                                            currentPidProfile->pid[PID_YAW].F);
+
         BLACKBOX_PRINT_HEADER_LINE("acc_limit_yaw", "%d",                   currentPidProfile->yawRateAccelLimit);
         BLACKBOX_PRINT_HEADER_LINE("acc_limit", "%d",                       currentPidProfile->rateAccelLimit);
         BLACKBOX_PRINT_HEADER_LINE("pidsum_limit", "%d",                    currentPidProfile->pidSumLimit);
