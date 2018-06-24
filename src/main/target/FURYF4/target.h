@@ -76,7 +76,6 @@
 #define ACC_MPU6500_ALIGN       CW180_DEG
 
 #ifdef FURYF4OSD
-    #define USE_OSD
     #define USE_MAX7456
     #define MAX7456_SPI_INSTANCE    SPI2
     #define MAX7456_SPI_CS_PIN      PB12

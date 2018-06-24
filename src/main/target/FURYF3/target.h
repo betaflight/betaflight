@@ -26,8 +26,27 @@
 #else
     #define TARGET_BOARD_IDENTIFIER "FYF3"
 //    #define USBD_PRODUCT_STRING     "FuryF3"
-    #undef USE_OSD
 #endif
+
+// Removed to make the firmware fit into flash (in descending order of priority):
+//#undef USE_GYRO_OVERFLOW_CHECK
+//#undef USE_GYRO_LPF2
+
+//#undef USE_ITERM_RELAX
+//#undef USE_RC_SMOOTHING_FILTER
+
+//#undef USE_TELEMETRY_HOTT
+//#undef USE_TELEMETRY_MAVLINK
+//#undef USE_TELEMETRY_LTM
+//#undef USE_SERIALRX_XBUS
+
+//#undef USE_BOARD_INFO
+#ifdef FURYF3OSD
+#undef USE_EXTENDED_CMS_MENUS
+#undef USE_RTC_TIME
+#endif
+#undef USE_RX_MSP
+#undef USE_ESC_SENSOR_INFO
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 #define CONFIG_PREFER_ACC_ON
@@ -84,12 +103,6 @@
 #define SPI2_MOSI_PIN           PB15
 
 #ifdef FURYF3OSD
-
-// Removed to make the firmware fit into flash (in descending order of priority):
-#undef USE_RTC_TIME
-#undef USE_RX_MSP
-#undef USE_ESC_SENSOR_INFO
-
     // include the max7456 driver
     #define USE_MAX7456
     #define MAX7456_SPI_INSTANCE    SPI1

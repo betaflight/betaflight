@@ -122,3 +122,7 @@
 #if defined(USE_FLASH_M25P16)
 #define USE_FLASH
 #endif
+
+#if defined(USE_MAX7456)
+#define USE_OSD
+#endif
