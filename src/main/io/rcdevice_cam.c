@@ -145,15 +145,12 @@ static void rcdeviceSimulationRespHandle(rcdeviceResponseParseContext_t *ctx)
 {
     if (ctx->result != RCDEVICE_RESP_SUCCESS) {
         rcdeviceSimulationOSDCableFailed(ctx);
-        return ;
+        return;
     }
     
     switch (ctx->command) {
     case RCDEVICE_PROTOCOL_COMMAND_5KEY_SIMULATION_RELEASE:
-    {
-        UNUSED(ctx);
         isButtonPressed = false;
-    }
         break;
     case RCDEVICE_PROTOCOL_COMMAND_5KEY_CONNECTION:
     {
@@ -178,15 +175,11 @@ static void rcdeviceSimulationRespHandle(rcdeviceResponseParseContext_t *ctx)
     }
         break;
     case RCDEVICE_PROTOCOL_COMMAND_5KEY_SIMULATION_PRESS:
-    {
         isButtonPressed = true;
-    }
         break;
     }
 
     waitingDeviceResponse = false;
-
-    return ;
 }
 
 static void rcdeviceCamSimulate5KeyCablePress(rcdeviceCamSimulationKeyEvent_e key)
@@ -223,9 +216,8 @@ void rcdeviceSend5KeyOSDCableSimualtionEvent(rcdeviceCamSimulationKeyEvent_e key
     case RCDEVICE_CAM_KEY_CONNECTION_OPEN:
         runcamDeviceOpen5KeyOSDCableConnection(camDevice, rcdeviceSimulationRespHandle);
         break;
-    case RCDEVICE_CAM_KEY_CONNECTION_CLOSE: {
+    case RCDEVICE_CAM_KEY_CONNECTION_CLOSE:
         runcamDeviceClose5KeyOSDCableConnection(camDevice, rcdeviceSimulationRespHandle);
-    }
         break;
     case RCDEVICE_CAM_KEY_ENTER:
     case RCDEVICE_CAM_KEY_LEFT:
@@ -241,8 +233,6 @@ void rcdeviceSend5KeyOSDCableSimualtionEvent(rcdeviceCamSimulationKeyEvent_e key
     default:
         break;
     }
-
-    return;
 }
 
 static void rcdevice5KeySimulationProcess(timeUs_t currentTimeUs)
@@ -323,8 +313,6 @@ void rcdeviceInit(void)
         uint8_t switchIndex = i - BOXCAMERA1;
         switchStates[switchIndex].isActivated = true;
     }
-
-    return;
 }
 
 #endif
