@@ -40,7 +40,6 @@
 #undef USE_RX_MSP
 #undef USE_ESC_SENSOR_INFO
 
-
 #define TARGET_BOARD_IDENTIFIER "OMNI" // https://en.wikipedia.org/wiki/Omnibus
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE

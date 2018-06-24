@@ -24,10 +24,13 @@
 #define USE_TARGET_CONFIG
 
 // Removed to make the firmware fit into flash (in descending order of priority):
-#undef USE_GYRO_LPF2
 // NOTE: Don't disable USE_GYRO_OVERFLOW_CHECK - board has ICM20602 gyro
 //#undef USE_GYRO_OVERFLOW_CHECK
+#undef USE_GYRO_LPF2
 
+#undef USE_ITERM_RELAX
+#undef USE_RC_SMOOTHING_FILTER
+  
 #undef USE_TELEMETRY_HOTT
 #undef USE_TELEMETRY_MAVLINK
 #undef USE_TELEMETRY_LTM
@@ -38,7 +41,6 @@
 #undef USE_RTC_TIME
 #undef USE_RX_MSP
 #undef USE_ESC_SENSOR_INFO
-
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
