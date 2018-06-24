@@ -257,10 +257,10 @@ void updateArmingStatus(void)
 
 #ifdef USE_GPS_RESCUE
         if (isModeActivationConditionPresent(BOXGPSRESCUE)) {
-            if (rescueState.sensor.numSat < gpsRescueConfig()->minSats) {
-                setArmingDisabled(ARMING_DISABLED_GPS);
-            } else {
+            if (!gpsRescueConfig()->minSats || STATE(GPS_FIX_HOME) || ARMING_FLAG(WAS_EVER_ARMED)) {
                 unsetArmingDisabled(ARMING_DISABLED_GPS);
+            } else {
+                setArmingDisabled(ARMING_DISABLED_GPS);
             }
         }
 #endif
@@ -758,6 +758,7 @@ bool processRx(timeUs_t currentTimeUs)
         DISABLE_FLIGHT_MODE(HORIZON_MODE);
     }
 
+#ifdef USE_GPS_RESCUE
     if (IS_RC_MODE_ACTIVE(BOXGPSRESCUE) || (failsafeIsActive() && failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE)) {
         if (!FLIGHT_MODE(GPS_RESCUE_MODE)) {
             ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
@@ -765,6 +766,7 @@ bool processRx(timeUs_t currentTimeUs)
     } else {
         DISABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
     }
+#endif
 
     if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
         LED1_ON;
