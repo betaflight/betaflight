@@ -26,6 +26,9 @@
 #undef USE_GYRO_OVERFLOW_CHECK
 #undef USE_GYRO_LPF2
 
+#undef USE_ITERM_RELAX
+#undef USE_RC_SMOOTHING_FILTER
+
 #undef USE_TELEMETRY_HOTT
 #undef USE_TELEMETRY_MAVLINK
 #undef USE_TELEMETRY_LTM
@@ -36,7 +39,6 @@
 #undef USE_RTC_TIME
 #undef USE_RX_MSP
 #undef USE_ESC_SENSOR_INFO
-
 
 #define TARGET_BOARD_IDENTIFIER "OMNI" // https://en.wikipedia.org/wiki/Omnibus
 

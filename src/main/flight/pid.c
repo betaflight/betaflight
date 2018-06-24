@@ -325,6 +325,22 @@ void pidInitSetpointDerivativeLpf(uint16_t filterCutoff, uint8_t debugAxis, uint
         }
     }
 }
+
+void pidUpdateSetpointDerivativeLpf(uint16_t filterCutoff)
+{
+    if ((filterCutoff > 0) && (rcSmoothingFilterType != RC_SMOOTHING_DERIVATIVE_OFF)) {
+        for (int axis = FD_ROLL; axis <= FD_PITCH; axis++) {
+            switch (rcSmoothingFilterType) {
+                case RC_SMOOTHING_DERIVATIVE_PT1:
+                    pt1FilterUpdateCutoff(&setpointDerivativePt1[axis], pt1FilterGain(filterCutoff, dT));
+                    break;
+                case RC_SMOOTHING_DERIVATIVE_BIQUAD:
+                    biquadFilterUpdateLPF(&setpointDerivativeBiquad[axis], filterCutoff, targetPidLooptime);
+                    break;
+            }
+        }
+    }
+}
 #endif // USE_RC_SMOOTHING_FILTER
 
 typedef struct pidCoefficient_s {
@@ -921,7 +937,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
                         pidSetpointDelta = pt1FilterApply(&setpointDerivativePt1[axis], pidSetpointDelta);
                         break;
                     case RC_SMOOTHING_DERIVATIVE_BIQUAD:
-                        pidSetpointDelta = biquadFilterApply(&setpointDerivativeBiquad[axis], pidSetpointDelta);
+                        pidSetpointDelta = biquadFilterApplyDF1(&setpointDerivativeBiquad[axis], pidSetpointDelta);
                         break;
                 }
                 if (axis == rcSmoothingDebugAxis) {

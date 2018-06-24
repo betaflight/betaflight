@@ -183,3 +183,4 @@ bool crashRecoveryModeActive(void);
 void pidAcroTrainerInit(void);
 void pidSetAcroTrainerState(bool newState);
 void pidInitSetpointDerivativeLpf(uint16_t filterCutoff, uint8_t debugAxis, uint8_t filterType);
+void pidUpdateSetpointDerivativeLpf(uint16_t filterCutoff);
