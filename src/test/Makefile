@@ -289,7 +289,6 @@ rcdevice_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
 		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/io/rcdevice.c \
-		$(USER_DIR)/io/rcdevice_osd.c \
 		$(USER_DIR)/io/rcdevice_cam.c \
 
 pid_unittest_SRC :=  \

@@ -591,7 +591,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_RCDEVICE] = {
         .taskName = "RCDEVICE",
         .taskFunc = rcdeviceUpdate,
-        .desiredPeriod = TASK_PERIOD_HZ(10),        // 10 Hz, 100ms
+        .desiredPeriod = TASK_PERIOD_HZ(20),
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 #endif
