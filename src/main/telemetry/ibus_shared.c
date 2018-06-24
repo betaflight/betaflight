@@ -318,7 +318,7 @@ static bool setGPS(uint8_t sensorType, ibusTelemetry_s* value)
                 value->int32 = gpsSol.llh.lon;
                 break;
             case IBUS_SENSOR_TYPE_GPS_ALT:
-                value->int32 = (int32_t)gpsSol.llh.alt;
+                value->int32 = (int32_t)gpsSol.llh.altCm;
                 break;
             case IBUS_SENSOR_TYPE_GROUND_SPEED:
                 value->uint16 = gpsSol.groundSpeed;

@@ -977,7 +977,7 @@ static void writeGPSFrame(timeUs_t currentTimeUs)
     blackboxWriteUnsignedVB(gpsSol.numSat);
     blackboxWriteSignedVB(gpsSol.llh.lat - gpsHistory.GPS_home[LAT]);
     blackboxWriteSignedVB(gpsSol.llh.lon - gpsHistory.GPS_home[LON]);
-    blackboxWriteUnsignedVB(gpsSol.llh.alt);
+    blackboxWriteUnsignedVB(gpsSol.llh.altCm / 10); // was originally designed to transport meters in int16, but +-3276.7m is a good compromise
     blackboxWriteUnsignedVB(gpsSol.groundSpeed);
     blackboxWriteUnsignedVB(gpsSol.groundCourse);
 

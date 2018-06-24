@@ -635,7 +635,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                 break;
 #endif
             case FSSP_DATAID_ALTITUDE   :
-                smartPortSendPackage(id, getEstimatedAltitude()); // unknown given unit, requested 100 = 1 meter
+                smartPortSendPackage(id, getEstimatedAltitudeCm()); // unknown given unit, requested 100 = 1 meter
                 *clearToSend = false;
                 break;
             case FSSP_DATAID_FUEL       :
@@ -794,7 +794,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                 break;
             case FSSP_DATAID_GPS_ALT    :
                 if (STATE(GPS_FIX)) {
-                    smartPortSendPackage(id, gpsSol.llh.alt * 100); // given in 0.1m , requested in 10 = 1m (should be in mm, probably a bug in opentx, tested on 2.0.1.7)
+                    smartPortSendPackage(id, gpsSol.llh.altCm * 10); // given in 0.01m , requested in 10 = 1m (should be in mm, probably a bug in opentx, tested on 2.0.1.7)
                     *clearToSend = false;
                 }
                 break;
@@ -829,7 +829,7 @@ void handleSmartPortTelemetry(void)
             payload = smartPortDataReceive(c, &clearToSend, serialCheckQueueEmpty, true);
         }
 
-        processSmartPortTelemetry(payload, &clearToSend, &requestTimeout);
+            processSmartPortTelemetry(payload, &clearToSend, &requestTimeout);
     }
 }
 #endif
