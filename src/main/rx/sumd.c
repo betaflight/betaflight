@@ -28,6 +28,7 @@
 
 #include "common/crc.h"
 #include "common/utils.h"
+#include "common/maths.h"
 
 #include "drivers/time.h"
 
@@ -160,7 +161,7 @@ bool sumdInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     UNUSED(rxConfig);
 
-    rxRuntimeConfig->channelCount = MAX_SUPPORTED_RC_CHANNEL_COUNT;
+    rxRuntimeConfig->channelCount = MIN(SUMD_MAX_CHANNEL, MAX_SUPPORTED_RC_CHANNEL_COUNT);
     rxRuntimeConfig->rxRefreshRate = 11000;
 
     rxRuntimeConfig->rcReadRawFn = sumdReadRawRC;
