@@ -25,7 +25,7 @@
 
 #include "pg/rx.h"
 
-#include "drivers/time.h"
+#include "common/time.h"
 
 #include "cms/cms.h"
 
@@ -147,7 +147,7 @@ static void rcdeviceSimulationRespHandle(rcdeviceResponseParseContext_t *ctx)
         rcdeviceSimulationOSDCableFailed(ctx);
         return;
     }
-    
+
     switch (ctx->command) {
     case RCDEVICE_PROTOCOL_COMMAND_5KEY_SIMULATION_RELEASE:
         isButtonPressed = false;
@@ -156,6 +156,7 @@ static void rcdeviceSimulationRespHandle(rcdeviceResponseParseContext_t *ctx)
     {
         // the high 4 bits is the operationID that we sent
         // the low 4 bits is the result code
+        isButtonPressed = true;
         uint8_t operationID = ctx->paramData[0];
         bool errorCode = (ctx->recvBuf[1] & 0x0F);
         if (operationID == RCDEVICE_PROTOCOL_5KEY_CONNECTION_OPEN) {

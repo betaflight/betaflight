@@ -82,6 +82,7 @@
 #include "pg/vcd.h"
 #include "pg/usb.h"
 #include "pg/sdio.h"
+#include "pg/rcdevice.h"
 
 #include "rx/rx.h"
 #include "rx/cc2500_frsky_common.h"
@@ -1090,6 +1091,11 @@ const clivalue_t valueTable[] = {
 // PG_FLASH_CONFIG
 #ifdef USE_FLASH
     { "flash_spi_bus", VAR_UINT8 | MASTER_VALUE, .config.minmax = { 0, SPIDEV_COUNT }, PG_FLASH_CONFIG, offsetof(flashConfig_t, spiDevice) },
+#endif
+// RCDEVICE
+#ifdef USE_RCDEVICE
+    { "rcdevice_init_dev_attempts", VAR_UINT8 | MASTER_VALUE, .config.minmax = { 0, 10 }, PG_RCDEVICE_CONFIG, offsetof(rcdeviceConfig_t, initDeviceAttempts) },
+    { "rcdevice_init_dev_attempt_interval", VAR_UINT32 | MASTER_VALUE, .config.minmax = { 500, 5000 }, PG_RCDEVICE_CONFIG, offsetof(rcdeviceConfig_t, initDeviceAttemptInterval) }
 #endif
 };
 
