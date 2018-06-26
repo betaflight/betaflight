@@ -35,13 +35,12 @@
 #define HOTTV4_TEXT_MODE_REQUEST_ID       0x7f
 #define HOTTV4_BINARY_MODE_REQUEST_ID     0x80
 
-#define HOTTV4_BUTTON_DEC    0xEB
-#define HOTTV4_BUTTON_INC    0xED
-#define HOTTV4_BUTTON_SET    0xE9
-#define HOTTV4_BUTTON_NIL    0x0F
-#define HOTTV4_BUTTON_NEXT   0xEE
-#define HOTTV4_BUTTON_PREV   0xE7
-
+#define HOTTV4_BUTTON_UP      0x0D	// UP arrow
+#define HOTTV4_BUTTON_DOWN    0x0B	// DOWN arrow
+#define HOTTV4_BUTTON_SET     0x09	// ESC (right button)
+#define HOTTV4_BUTTON_NIL     0x0F
+#define HOTTV4_BUTTON_RIGHT   0x0E	// RIGHT arrow
+#define HOTTV4_BUTTON_LEFT    0x07	// LEFT arrow
 #define HOTT_EAM_OFFSET_HEIGHT       500
 #define HOTT_EAM_OFFSET_M2S           72
 #define HOTT_EAM_OFFSET_M3S          120
@@ -84,39 +83,56 @@ typedef enum {
 
 //Id 0x80 is used when no sensor has been found during the bus scan
 // additionaly meaning?
-#define HOTT_TELEMETRY_NO_SENSOR_ID     0x80
+#define HOTT_TELEMETRY_NO_SENSOR_ID      0x80
 
-//Graupner #33601 Vario Module
-#define HOTT_TELEMETRY_VARIO_SENSOR_ID  0x89
+//Graupner # Vario Sensor Module (VARIO)
+#define HOTT_TELEMETRY_VARIO_SENSOR_ID   0x89
+#define HOTT_TELEMETRY_VARIO_SENSOR_TEXT 0x90
 
-//Graupner #33600 GPS Module
-#define HOTT_TELEMETRY_GPS_SENSOR_ID    0x8a
+//Graupner # GPS Module (GPS)
+#define HOTT_TELEMETRY_GPS_SENSOR_ID     0x8a
+#define HOTT_TELEMETRY_GPS_SENSOR_TEXT   0xa0
 
-//Graupner #337xx Air ESC
-#define HOTT_TELEMETRY_AIRESC_SENSOR_ID 0x8c
+//Graupner #  Telemetry Speed Controller 70A ESC (ESC)
+#define HOTT_TELEMETRY_ESC_SENSOR_ID     0x8C 
+#define HOTT_TELEMETRY_ESC_SENSOR_TEXT   0xC0
 
-//Graupner #33611 General Air Module
-#define HOTT_TELEMETRY_GAM_SENSOR_ID    0x8d
+//Graupner #General Air Module (GAM) 
+#define HOTT_TELEMETRY_GAM_SENSOR_ID     0x8d
+#define HOTT_TELEMETRY_GAM_SENSOR_TEXT   0xd0
 
-//Graupner #33620 Electric Air Module
-#define HOTT_TELEMETRY_EAM_SENSOR_ID    0x8e
+//Graupner # Electric Air Module module (EAM)
+#define HOTT_TELEMETRY_EAM_SENSOR_ID     0x8e
+#define HOTT_TELEMETRY_EAM_SENSOR_TEXT   0xe0
 
 
-#define HOTT_EAM_SENSOR_TEXT_ID  0xE0 // Electric Air Module ID
-#define HOTT_GPS_SENSOR_TEXT_ID  0xA0 // GPS Module ID
+// #define HOTT_EAM_SENSOR_TEXT_ID  0xE0 // Electric Air Module ID
+// #define HOTT_GPS_SENSOR_TEXT_ID  0xA0 // GPS Module ID
 
+// page_settings
+#define VTX_Config                          1
+#define PID_Werte_1                         2
+#define PID_Werte_2                         3
+#define RC_Rates_1                      	4
+#define RC_Rates_2                      	5
+#define FILTER_1							6
+#define FILTER_2							7
+#define Battery							    8
 
 #define HOTT_TEXTMODE_MSG_TEXT_LEN 168
 //Text mode msgs type
-struct HOTT_TEXTMODE_MSG {
-    uint8_t start_byte;  //#01 constant value 0x7b
-    uint8_t fill1;       //#02 constant value 0x00
-    uint8_t warning_beeps;//#03 1=A 2=B ...
-    uint8_t msg_txt[HOTT_TEXTMODE_MSG_TEXT_LEN]; //#04 ASCII text to display to
-                        // Bit 7 = 1 -> Inverse character display
-                        // Display 21x8
-    uint8_t stop_byte;   //#171 constant value 0x7d
-};
+typedef struct HOTT_TEXTMODE_MSG_s {
+    uint8_t start_byte;  		//#01 constant value 0x7b
+    uint8_t esc;				//#02 Escape (higher-ranking menu in text mode or Text mode leave)
+						        //0x00 to stay normal
+						        //0x01 to exit
+						        //I will send 2 times, so the ESCAPE works really well, so two data frames with 0x01 in byte 2
+    uint8_t warning_beeps;		//#03 1=A 2=B ...
+    uint8_t text[8][21]; 		//#04 ASCII text to display to
+								// Bit 7 = 1 -> Inverse character display
+								// Display 21x8
+    uint8_t stop_byte;   		//#171 constant value 0x7d
+} HOTT_TEXTMODE_MSG_t;
 
 typedef struct HOTT_GAM_MSG_s {
     uint8_t start_byte;          //#01 start uint8_t constant value 0x7c

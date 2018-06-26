@@ -309,6 +309,12 @@ void fcTasksInit(void)
         } else if (rxConfig()->serialrx_provider == SERIALRX_CRSF) {
             // Reschedule telemetry to 500hz, 2ms for CRSF
             rescheduleTask(TASK_TELEMETRY, TASK_PERIOD_HZ(500));
+        } else if (rxConfig()->serialrx_provider == SERIALRX_SUMD) {
+            // Reschedule telemetry to 1000hz, 1ms for Graupner
+            rescheduleTask(TASK_TELEMETRY, TASK_PERIOD_HZ(1000));
+        } else if (rxConfig()->serialrx_provider == SERIALRX_SUMH) {
+            // Reschedule telemetry to 1000hz, 1ms for Graupner
+            rescheduleTask(TASK_TELEMETRY, TASK_PERIOD_HZ(1000));																																	 
         }
     }
 #endif
