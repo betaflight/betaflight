@@ -49,7 +49,7 @@ void cmsMenuOpen(void);
 long cmsMenuChange(displayPort_t *pPort, const void *ptr);
 long cmsMenuExit(displayPort_t *pPort, const void *ptr);
 void cmsUpdate(uint32_t currentTimeUs);
-void cmsSetExternKey(uint8_t extKey);
+void cmsSetExternKey(cms_key_e extKey);
 
 #define CMS_STARTUP_HELP_TEXT1 "MENU:THR MID"
 #define CMS_STARTUP_HELP_TEXT2     "+ YAW LEFT"
