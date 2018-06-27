@@ -50,8 +50,8 @@
 
 #include "gps_rescue.h"
 
-#define GPS_RESCUE_MAX_YAW_RATE 180        // 180 deg/sec
-#define GPS_RESCUE_RATE_SCALE_DEGREES 20   // Scale the commanded yaw rate when the error is less then this angle
+#define GPS_RESCUE_MAX_YAW_RATE       100  // 100 deg/sec max yaw
+#define GPS_RESCUE_RATE_SCALE_DEGREES 45   // Scale the commanded yaw rate when the error is less then this angle
 
 PG_REGISTER_WITH_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 0);
 
@@ -421,6 +421,11 @@ void setBearing(int16_t desiredHeading)
     // Calculate a desired yaw rate based on a maximum limit beyond
     // an error window and then scale the requested rate down inside
     // the window as error approaches 0.
+    if (errorAngleAbs > GPS_RESCUE_RATE_SCALE_DEGREES) {
+        rescueYaw = GPS_RESCUE_MAX_YAW_RATE;
+    } else {
+        rescueYaw = (errorAngleAbs / GPS_RESCUE_RATE_SCALE_DEGREES) * GPS_RESCUE_MAX_YAW_RATE;
+    }
     rescueYaw = (errorAngleAbs > GPS_RESCUE_RATE_SCALE_DEGREES) ? GPS_RESCUE_MAX_YAW_RATE : errorAngleAbs;
 
     rescueYaw *= errorAngleSign;
