@@ -86,6 +86,7 @@
 
 #include "rx/rx.h"
 
+#include "sensors/acceleration.h"
 #include "sensors/adcinternal.h"
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
@@ -687,6 +688,18 @@ static bool osdDrawSingleElement(uint8_t item)
             return true;
         }
 
+    case OSD_G_FORCE:
+        {
+            float osdGForce = 0;
+            for (int axis = 0; axis < 3; axis++) {
+                const float a = accAverage[axis];
+                osdGForce += a * a;
+            }
+            osdGForce = sqrtf(osdGForce) / acc.dev.acc_1G * 10;
+            tfp_sprintf(buff, "%01d.%01d%c", (uint8_t)osdGForce / 10, (uint8_t)osdGForce % 10, "G");
+            break;
+        }
+
     case OSD_ROLL_PIDS:
         osdFormatPID(buff, "ROL", &currentPidProfile->pid[PID_ROLL]);
         break;
@@ -963,6 +976,7 @@ static void osdDrawElements(void)
 
     if (sensors(SENSOR_ACC)) {
         osdDrawSingleElement(OSD_ARTIFICIAL_HORIZON);
+        osdDrawSingleElement(OSD_G_FORCE);
     }
 
 
