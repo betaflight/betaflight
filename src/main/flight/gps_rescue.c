@@ -50,7 +50,7 @@
 
 #include "gps_rescue.h"
 
-#define GPS_RESCUE_MAX_YAW_RATE       100  // 100 deg/sec max yaw
+#define GPS_RESCUE_MAX_YAW_RATE       360  // deg/sec max yaw rate
 #define GPS_RESCUE_RATE_SCALE_DEGREES 45   // Scale the commanded yaw rate when the error is less then this angle
 
 PG_REGISTER_WITH_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 0);
@@ -405,7 +405,7 @@ void rescueAttainPosition()
 // Very similar to maghold function on betaflight/cleanflight
 void setBearing(int16_t desiredHeading)
 {
-    float errorAngle = DECIDEGREES_TO_DEGREES(attitude.values.yaw) - desiredHeading;
+    float errorAngle = (attitude.values.yaw / 10.0f) - desiredHeading;
 
     // Determine the most efficient direction to rotate
     if (errorAngle <= -180) {
@@ -415,20 +415,11 @@ void setBearing(int16_t desiredHeading)
     }
 
     errorAngle *= -GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
-    const int errorAngleSign = (errorAngle < 0) ? -1 : 1;
-    const float errorAngleAbs = ABS(errorAngle);
         
     // Calculate a desired yaw rate based on a maximum limit beyond
     // an error window and then scale the requested rate down inside
     // the window as error approaches 0.
-    if (errorAngleAbs > GPS_RESCUE_RATE_SCALE_DEGREES) {
-        rescueYaw = GPS_RESCUE_MAX_YAW_RATE;
-    } else {
-        rescueYaw = (errorAngleAbs / GPS_RESCUE_RATE_SCALE_DEGREES) * GPS_RESCUE_MAX_YAW_RATE;
-    }
-    rescueYaw = (errorAngleAbs > GPS_RESCUE_RATE_SCALE_DEGREES) ? GPS_RESCUE_MAX_YAW_RATE : errorAngleAbs;
-
-    rescueYaw *= errorAngleSign;
+    rescueYaw = -constrainf(errorAngle / GPS_RESCUE_RATE_SCALE_DEGREES * GPS_RESCUE_MAX_YAW_RATE, -GPS_RESCUE_MAX_YAW_RATE, GPS_RESCUE_MAX_YAW_RATE);
 }
 
 float gpsRescueGetYawRate(void)
@@ -438,16 +429,11 @@ float gpsRescueGetYawRate(void)
 
 float gpsRescueGetThrottle(void)
 {
-    float commandedThrottle = 0;
-    const int minCheck = MAX(rxConfig()->mincheck, 1000);
-    
+    // Calculated a desired commanded throttle scaled from 0.0 to 1.0 for use in the mixer.
     // We need to compensate for min_check since the throttle value set by gps rescue
     // is based on the raw rcCommand value commanded by the pilot.
-    if (rescueThrottle > minCheck) {
-        // Calculated a desired commanded throttle scaled from 0.0 to 1.0 for use in the mixer.
-        commandedThrottle = (float)(rescueThrottle - minCheck) / (PWM_RANGE_MAX - minCheck);
-        commandedThrottle = constrainf(commandedThrottle, 0.0f, 1.0f);
-    }
+    float commandedThrottle = scaleRangef(rescueThrottle, MAX(rxConfig()->mincheck, PWM_RANGE_MIN), PWM_RANGE_MAX, 0.0f, 1.0f);
+    commandedThrottle = constrainf(commandedThrottle, 0.0f, 1.0f);
     
     return commandedThrottle;
 }
