@@ -92,6 +92,7 @@
 #include "scheduler/scheduler.h"
 #include "io/displayport_hott.h"
 
+#define HOTT_TEXTMODE_TASK_PERIOD 1000
 #define HOTT_TEXTMODE_RX_SCHEDULE 5000
 #define HOTT_TEXTMODE_TX_DELAY_US 1000
 #endif
@@ -131,11 +132,11 @@ static HOTT_GPS_MSG_t hottGPSMessage;
 static HOTT_EAM_MSG_t hottEAMMessage;
 
 #if defined (USE_HOTT_TEXTMODE) && defined (USE_CMS)
-static HOTT_TEXTMODE_MSG_t hottTextModeMessage;
+static hottTextModeMsg_t hottTextModeMessage;
 static bool textmodeIsAlive = false;
-static int32_t telemetryPeriod = 0;
+static int32_t telemetryTaskPeriod = 0;
 
-static void initialiseTextmodeMessage(HOTT_TEXTMODE_MSG_t *msg)
+static void initialiseTextmodeMessage(hottTextModeMsg_t *msg)
 {
     msg->start = HOTT_TEXTMODE_START;
     msg->esc = HOTT_EAM_SENSOR_TEXT_ID;
@@ -450,8 +451,8 @@ static void hottTextmodeStart()
     // Increase menu speed
     cfTaskInfo_t taskInfo;
     getTaskInfo(TASK_TELEMETRY, &taskInfo);
-    telemetryPeriod = taskInfo.desiredPeriod;
-    rescheduleTask(TASK_TELEMETRY, TASK_PERIOD_HZ(1000));
+    telemetryTaskPeriod = taskInfo.desiredPeriod;
+    rescheduleTask(TASK_TELEMETRY, TASK_PERIOD_HZ(HOTT_TEXTMODE_TASK_PERIOD));
 
     rxSchedule = HOTT_TEXTMODE_RX_SCHEDULE;
     txDelayUs = HOTT_TEXTMODE_TX_DELAY_US;
@@ -460,8 +461,9 @@ static void hottTextmodeStart()
 static void hottTextmodeStop()
 {
     // Set back to avoid slow down of the FC
-    if (telemetryPeriod > 0)
-        rescheduleTask(TASK_TELEMETRY, telemetryPeriod);
+    if (telemetryTaskPeriod > 0) {
+        rescheduleTask(TASK_TELEMETRY, telemetryTaskPeriod);
+    }
 
     rxSchedule = HOTT_RX_SCHEDULE;
     txDelayUs = HOTT_TX_DELAY_US;
@@ -494,24 +496,25 @@ static void processHottTextModeRequest(const uint8_t cmd)
 {
     static bool setEscBack = false;
 
-    if (!textmodeIsAlive)
-    {
+    if (!textmodeIsAlive) {
         hottTextmodeStart();
         textmodeIsAlive = true;
     }
 
-    if ((cmd & 0xF0) != HOTT_EAM_SENSOR_TEXT_ID)
+    if ((cmd & 0xF0) != HOTT_EAM_SENSOR_TEXT_ID) {
         return;
+    }
 
     if (setEscBack) {
         hottTextModeMessage.esc = HOTT_EAM_SENSOR_TEXT_ID;
         setEscBack = false;
     }
 
-    if (hottTextModeMessage.esc != HOTT_TEXTMODE_ESC)
+    if (hottTextModeMessage.esc != HOTT_TEXTMODE_ESC) {
         hottCmsOpen();
-    else
+    } else {
         setEscBack = true;
+    }
 
     hottSetCmsKey(cmd & 0x0f, hottTextModeMessage.esc == HOTT_TEXTMODE_ESC);
     hottSendResponse((uint8_t *)&hottTextModeMessage, sizeof(hottTextModeMessage));
@@ -605,7 +608,7 @@ static void hottCheckSerialData(uint32_t currentMicros)
         processBinaryModeRequest(address);
     }
 #if defined (USE_HOTT_TEXTMODE) && defined (USE_CMS)
-    else if (requestId == HOTTV4_TEXT_MODE_REQUEST_ID){
+    else if (requestId == HOTTV4_TEXT_MODE_REQUEST_ID) {
         processHottTextModeRequest(address);
     }
 #endif

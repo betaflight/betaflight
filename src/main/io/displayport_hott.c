@@ -49,20 +49,12 @@ static int hottWriteChar(displayPort_t *displayPort, uint8_t col, uint8_t row, u
 {
     UNUSED(displayPort);
 
-
-    // Correct fake display dimensions
-    if (row <= ROW_CORRECTION - 1)
-        return 0;
-    else
-        row -= ROW_CORRECTION;
-
-    if (col <= COL_CORRECTION - 1)
-        return 0;
-    else
-        col -= COL_CORRECTION;
-
-    if (row >= HOTT_TEXTMODE_DISPLAY_ROWS || col >= HOTT_TEXTMODE_DISPLAY_COLUMNS)
-        return 0;
+    if (row < ROW_CORRECTION || row >= HOTT_TEXTMODE_DISPLAY_ROWS + ROW_CORRECTION
+        || col < COL_CORRECTION || col >= HOTT_TEXTMODE_DISPLAY_COLUMNS + COL_CORRECTION) {
+       return 0;
+    }
+    row -= ROW_CORRECTION;
+    col -= COL_CORRECTION;
 
     hottTextmodeWriteChar(col, row, c);
     return 0;
@@ -94,8 +86,9 @@ static bool hottIsTransferInProgress(const displayPort_t *displayPort)
 
 static int hottHeartbeat(displayPort_t *displayPort)
 {
-    if (!hottTextmodeIsAlive())
+    if (!hottTextmodeIsAlive()) {
         cmsMenuExit(displayPort, (void*)CMS_EXIT_SAVE);
+    }
 
     return 0;
 }
@@ -156,7 +149,7 @@ void hottCmsOpen()
     }
 }
 
-void hottSetCmsKey(uint8_t hottKey, bool esc)
+void hottSetCmsKey(uint8_t hottKey, bool keepCmsOpen)
 {
     switch (hottKey) {
         case HOTTV4_BUTTON_DEC:
@@ -166,8 +159,9 @@ void hottSetCmsKey(uint8_t hottKey, bool esc)
             cmsSetExternKey(CMS_KEY_DOWN);
             break;
         case HOTTV4_BUTTON_SET:
-            if (cmsInMenu)
+            if (cmsInMenu) {
                 cmsMenuExit(pCurrentDisplay, (void*)CMS_EXIT_SAVE);
+            }
             cmsSetExternKey(CMS_KEY_NONE);
             break;
         case HOTTV4_BUTTON_NEXT:
@@ -175,8 +169,9 @@ void hottSetCmsKey(uint8_t hottKey, bool esc)
             break;
         case HOTTV4_BUTTON_PREV:
             cmsSetExternKey(CMS_KEY_LEFT);
-            if (esc)
+            if (keepCmsOpen) { // Make sure CMS is open until textmode is closed.
                 cmsMenuOpen();
+            }
             break;
          default:
             cmsSetExternKey(CMS_KEY_NONE);

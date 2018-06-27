@@ -160,7 +160,7 @@ static uint8_t leftMenuColumn;
 static uint8_t rightMenuColumn;
 static uint8_t maxMenuItems;
 static uint8_t linesPerMenuItem;
-static uint8_t externKey = CMS_KEY_NONE;
+static cms_key_e externKey = CMS_KEY_NONE;
 
 bool cmsInMenu = false;
 
@@ -768,7 +768,7 @@ long cmsMenuExit(displayPort_t *pDisplay, const void *ptr)
 #define BUTTON_TIME   250 // msec
 #define BUTTON_PAUSE  500 // msec
 
-STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
+STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, cms_key_e key)
 {
     uint16_t res = BUTTON_TIME;
     OSD_Entry *p;
@@ -974,13 +974,13 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
     return res;
 }
 
-void cmsSetExternKey(uint8_t extKey)
+void cmsSetExternKey(cms_key_e extKey)
 {
     if (externKey == CMS_KEY_NONE)
         externKey = extKey;
 }
 
-uint16_t cmsHandleKeyWithRepeat(displayPort_t *pDisplay, uint8_t key, int repeatCount)
+uint16_t cmsHandleKeyWithRepeat(displayPort_t *pDisplay, cms_key_e key, int repeatCount)
 {
     uint16_t ret = 0;
 
@@ -1025,7 +1025,7 @@ void cmsUpdate(uint32_t currentTimeUs)
         // Scan 'key' first
         //
 
-        uint8_t key = CMS_KEY_NONE;
+        cms_key_e key = CMS_KEY_NONE;
 
         if (externKey != CMS_KEY_NONE) {
             rcDelayMs = cmsHandleKey(pCurrentDisplay, externKey);

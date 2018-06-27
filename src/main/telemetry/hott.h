@@ -112,7 +112,7 @@ typedef enum {
 #define HOTT_TEXTMODE_STOP                  0x7D
 #define HOTT_TEXTMODE_ESC                   0x01
 //Text mode msgs type
-typedef struct HOTT_TEXTMODE_MSG_s {
+typedef struct hottTextModeMsg_s {
     uint8_t start;      //#01 constant value 0x7b
     uint8_t esc;        //#02 Low byte: Sensor ID or 0x01 for escape
     uint8_t warning;    //#03 1=A 2=B ...
@@ -120,7 +120,7 @@ typedef struct HOTT_TEXTMODE_MSG_s {
                         // Bit 7 = 1 -> Inverse character display
                         // Display 21x8
     uint8_t stop;       //#171 constant value 0x7d
-} HOTT_TEXTMODE_MSG_t;
+} hottTextModeMsg_t;
 
 typedef struct HOTT_GAM_MSG_s {
     uint8_t start_byte;          //#01 start uint8_t constant value 0x7c
