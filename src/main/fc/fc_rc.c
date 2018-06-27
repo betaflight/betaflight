@@ -43,6 +43,7 @@
 
 #include "flight/failsafe.h"
 #include "flight/imu.h"
+#include "flight/gps_rescue.h"
 #include "flight/pid.h"
 #include "pg/rx.h"
 #include "rx/rx.h"
@@ -144,10 +145,13 @@ float applyRaceFlightRates(const int axis, float rcCommandf, const float rcComma
     return angleRate;
 }
 
-static void calculateSetpointRate(int axis)
+static void calculateSetpointRate(int axis, bool zeroAxis)
 {
-    // scale rcCommandf to range [-1.0, 1.0]
-    float rcCommandf = rcCommand[axis] / 500.0f;
+    float rcCommandf = 0;
+    if (!zeroAxis) {
+        // scale rcCommandf to range [-1.0, 1.0]
+        rcCommandf = rcCommand[axis] / 500.0f;
+    }
     rcDeflection[axis] = rcCommandf;
     const float rcCommandfAbs = ABS(rcCommandf);
     rcDeflectionAbs[axis] = rcCommandfAbs;
@@ -548,7 +552,27 @@ FAST_CODE void processRcCommand(void)
 #if defined(SIMULATOR_BUILD)
 #pragma GCC diagnostic pop
 #endif
-            calculateSetpointRate(axis);
+            bool useGpsRescueYaw = false;
+#ifdef USE_GPS_RESCUE
+            // Logic improvements to not override rcCommand when GPS Rescue is active.
+            // Instead only modify the flight control values derived from rcCommand
+            // like setpointRate[] and rcDeflection[].
+            if ((axis == FD_YAW) && FLIGHT_MODE(GPS_RESCUE_MODE)) {
+                // If GPS Rescue is active then override the yaw commanded input
+                // with a zero (centered) stick input. Otherwise the pilot's yaw inputs
+                // will get calculated into the rcDeflection values affecting downstream logic
+                useGpsRescueYaw = true;
+            }
+#endif
+            calculateSetpointRate(axis, useGpsRescueYaw);
+
+#ifdef USE_GPS_RESCUE
+            if (useGpsRescueYaw) {
+                // If GPS Rescue is active then override the setpointRate used in the
+                // pid controller with the value calculated from the desired heading logic.
+                setpointRate[axis] = gpsRescueGetYawRate();
+            }
+#endif
         }
 
         DEBUG_SET(DEBUG_RC_INTERPOLATION, 3, setpointRate[0]);
