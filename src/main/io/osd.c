@@ -46,6 +46,7 @@
 #include "cms/cms.h"
 #include "cms/cms_types.h"
 
+#include "common/axis.h"
 #include "common/maths.h"
 #include "common/printf.h"
 #include "common/typeconversion.h"
@@ -691,12 +692,12 @@ static bool osdDrawSingleElement(uint8_t item)
     case OSD_G_FORCE:
         {
             float osdGForce = 0;
-            for (int axis = 0; axis < 3; axis++) {
+            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
                 const float a = accAverage[axis];
                 osdGForce += a * a;
             }
-            osdGForce = sqrtf(osdGForce) / acc.dev.acc_1G * 10;
-            tfp_sprintf(buff, "%01d.%01d%c", (uint8_t)osdGForce / 10, (uint8_t)osdGForce % 10, "G");
+            osdGForce = pow_approx(osdGForce, 0.5) / acc.dev.acc_1G * 10;
+            tfp_sprintf(buff, "%01d.%01d%c", osdGForce / 10, osdGForce % 10, "G");
             break;
         }
 
