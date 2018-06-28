@@ -426,7 +426,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .subTaskName = "GYRO",
 #ifdef USE_DMA_SPI_DEVICE
         .checkFunc = isDmaSpiDataReady,
-        .staticPriority = TASK_PRIORITY_TRIGGER,        
+        .staticPriority = TASK_PRIORITY_TRIGGER,
 #else
         .staticPriority = TASK_PRIORITY_REALTIME,
 #endif
@@ -453,7 +453,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .checkFunc = rxUpdateCheck,
         .taskFunc = taskUpdateRxMain,
         .desiredPeriod = TASK_PERIOD_HZ(160),        // If event-based scheduling doesn't work, fallback to periodic scheduling
-        .staticPriority = TASK_PRIORITY_TRIGGER,
+        .staticPriority = TASK_PRIORITY_HIGH,
     },
 
     [TASK_DISPATCH] = {
