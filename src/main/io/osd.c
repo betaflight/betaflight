@@ -197,7 +197,16 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_NUMERICAL_HEADING,
     OSD_NUMERICAL_VARIO,
     OSD_COMPASS_BAR,
-    OSD_ANTI_GRAVITY
+    OSD_ANTI_GRAVITY,
+#ifdef USE_RTC_TIME
+    OSD_RTC_DATETIME,
+#endif
+#ifdef USE_OSD_ADJUSTMENTS
+    OSD_ADJUSTMENT_RANGE,
+#endif
+#ifdef USE_ADC_INTERNAL
+    OSD_CORE_TEMPERATURE,
+#endif
 };
 
 PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 3);
@@ -988,17 +997,6 @@ static void osdDrawElements(void)
     }
 #endif
 
-#ifdef USE_RTC_TIME
-    osdDrawSingleElement(OSD_RTC_DATETIME);
-#endif
-
-#ifdef USE_OSD_ADJUSTMENTS
-    osdDrawSingleElement(OSD_ADJUSTMENT_RANGE);
-#endif
-
-#ifdef USE_ADC_INTERNAL
-    osdDrawSingleElement(OSD_CORE_TEMPERATURE);
-#endif
 }
 
 void pgResetFn_osdConfig(osdConfig_t *osdConfig)
