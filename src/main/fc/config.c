@@ -136,7 +136,7 @@ static void activateConfig(void)
     setAccelerationTrims(&accelerometerConfigMutable()->accZero);
     accInitFilters();
 
-    imuConfigure(throttleCorrectionConfig()->throttle_correction_angle);
+    imuConfigure(throttleCorrectionConfig()->throttle_correction_angle, throttleCorrectionConfig()->throttle_correction_value);
 #endif // USE_OSD_SLAVE
 
 #ifdef USE_LED_STRIP
