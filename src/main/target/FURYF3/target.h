@@ -40,8 +40,8 @@
 //#undef USE_TELEMETRY_LTM
 //#undef USE_SERIALRX_XBUS
 
-//#undef USE_BOARD_INFO
 #ifdef FURYF3OSD
+#undef USE_BOARD_INFO
 #undef USE_EXTENDED_CMS_MENUS
 #undef USE_RTC_TIME
 #endif
