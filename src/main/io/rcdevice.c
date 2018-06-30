@@ -30,9 +30,12 @@
 
 #include "io/serial.h"
 
+#include "pg/rcdevice.h"
+
 #include "rcdevice.h"
 
 #ifdef USE_RCDEVICE
+
 
 typedef struct runcamDeviceExpectedResponseLength_s {
     uint8_t command;
@@ -147,7 +150,7 @@ static void runcamDeviceSendPacket(runcamDevice_t *device, uint8_t command, uint
 }
 
 // a common way to send a packet to device, and get response from the device.
-static void runcamDeviceSendRequestAndWaitingResp(runcamDevice_t *device, uint8_t commandID, uint8_t *paramData, uint8_t paramDataLen, timeUs_t tiemout, int maxRetryTimes, void *userInfo, rcdeviceRespParseFunc parseFunc)
+static void runcamDeviceSendRequestAndWaitingResp(runcamDevice_t *device, uint8_t commandID, uint8_t *paramData, uint8_t paramDataLen, timeMs_t tiemout, int maxRetryTimes, void *userInfo, rcdeviceRespParseFunc parseFunc)
 {
     runcamDeviceFlushRxBuffer(device);
 
@@ -190,7 +193,7 @@ static void runcamDeviceParseV2DeviceInfo(rcdeviceResponseParseContext_t *ctx)
 // definition of runcamDeviceInfo_t to know more)
 static void runcamDeviceGetDeviceInfo(runcamDevice_t *device)
 {
-    runcamDeviceSendRequestAndWaitingResp(device, RCDEVICE_PROTOCOL_COMMAND_GET_DEVICE_INFO, NULL, 0, 5000, 0, NULL, runcamDeviceParseV2DeviceInfo);
+    runcamDeviceSendRequestAndWaitingResp(device, RCDEVICE_PROTOCOL_COMMAND_GET_DEVICE_INFO, NULL, 0, rcdeviceConfig()->initDeviceAttemptInterval, rcdeviceConfig()->initDeviceAttempts, NULL, runcamDeviceParseV2DeviceInfo);
 }
 
 // init the runcam device, it'll search the UART port with FUNCTION_RCDEVICE id
@@ -229,7 +232,7 @@ bool runcamDeviceSimulateCameraButton(runcamDevice_t *device, uint8_t operation)
 void runcamDeviceOpen5KeyOSDCableConnection(runcamDevice_t *device, rcdeviceRespParseFunc parseFunc)
 {
     uint8_t operation = RCDEVICE_PROTOCOL_5KEY_CONNECTION_OPEN;
-    runcamDeviceSendRequestAndWaitingResp(device, RCDEVICE_PROTOCOL_COMMAND_5KEY_CONNECTION, &operation, sizeof(uint8_t), 200, 1, NULL, parseFunc);
+    runcamDeviceSendRequestAndWaitingResp(device, RCDEVICE_PROTOCOL_COMMAND_5KEY_CONNECTION, &operation, sizeof(uint8_t), 200, 0, NULL, parseFunc);
 }
 
 // when the control was stop, must call this method to the camera to disconnect
@@ -237,7 +240,7 @@ void runcamDeviceOpen5KeyOSDCableConnection(runcamDevice_t *device, rcdeviceResp
 void runcamDeviceClose5KeyOSDCableConnection(runcamDevice_t *device, rcdeviceRespParseFunc parseFunc)
 {
     uint8_t operation = RCDEVICE_PROTOCOL_5KEY_CONNECTION_CLOSE;
-    runcamDeviceSendRequestAndWaitingResp(device, RCDEVICE_PROTOCOL_COMMAND_5KEY_CONNECTION, &operation, sizeof(uint8_t), 200, 1, NULL, parseFunc);
+    runcamDeviceSendRequestAndWaitingResp(device, RCDEVICE_PROTOCOL_COMMAND_5KEY_CONNECTION, &operation, sizeof(uint8_t), 200, 0, NULL, parseFunc);
 }
 
 // simulate button press event of 5 key osd cable with special button
@@ -247,36 +250,34 @@ void runcamDeviceSimulate5KeyOSDCableButtonPress(runcamDevice_t *device, uint8_t
         return;
     }
 
-    runcamDeviceSendRequestAndWaitingResp(device, RCDEVICE_PROTOCOL_COMMAND_5KEY_SIMULATION_PRESS, &operation, sizeof(uint8_t), 200, 1, NULL, parseFunc);
+    runcamDeviceSendRequestAndWaitingResp(device, RCDEVICE_PROTOCOL_COMMAND_5KEY_SIMULATION_PRESS, &operation, sizeof(uint8_t), 200, 0, NULL, parseFunc);
 }
 
 // simulate button release event of 5 key osd cable
 void runcamDeviceSimulate5KeyOSDCableButtonRelease(runcamDevice_t *device, rcdeviceRespParseFunc parseFunc)
 {
-    runcamDeviceSendRequestAndWaitingResp(device, RCDEVICE_PROTOCOL_COMMAND_5KEY_SIMULATION_RELEASE, NULL, 0, 200, 1, NULL, parseFunc);
+    runcamDeviceSendRequestAndWaitingResp(device, RCDEVICE_PROTOCOL_COMMAND_5KEY_SIMULATION_RELEASE, NULL, 0, 200, 0, NULL, parseFunc);
 }
 
-static rcdeviceResponseParseContext_t* getWaitingResponse(timeUs_t currentTimeUs)
+static rcdeviceResponseParseContext_t* getWaitingResponse(timeMs_t currentTimeMs)
 {
     rcdeviceResponseParseContext_t *respCtx = rcdeviceRespCtxQueuePeekFront(&watingResponseQueue);
-    while (respCtx != NULL && respCtx->timeoutTimestamp != 0 && currentTimeUs > respCtx->timeoutTimestamp) {
-        if (respCtx->timeoutTimestamp != 0 && currentTimeUs > respCtx->timeoutTimestamp) {
-            if (respCtx->maxRetryTimes > 0) {
-                runcamDeviceSendPacket(respCtx->device, respCtx->command, respCtx->paramData, respCtx->paramDataLen);
-                respCtx->timeoutTimestamp = currentTimeUs + respCtx->timeout;
-                respCtx->maxRetryTimes -= 1;
-                respCtx = NULL;
-                break;
-            } else {
-                respCtx->result = RCDEVICE_RESP_TIMEOUT;
-                if (respCtx->parserFunc != NULL) {
-                    respCtx->parserFunc(respCtx);
-                }
-
-                // dequeue and get next waiting response context
-                rcdeviceRespCtxQueueShift(&watingResponseQueue);
-                respCtx = rcdeviceRespCtxQueuePeekFront(&watingResponseQueue);
+    while (respCtx != NULL && respCtx->timeoutTimestamp != 0 && currentTimeMs > respCtx->timeoutTimestamp) {
+        if (respCtx->maxRetryTimes > 0) {
+            runcamDeviceSendPacket(respCtx->device, respCtx->command, respCtx->paramData, respCtx->paramDataLen);
+            respCtx->timeoutTimestamp = currentTimeMs + respCtx->timeout;
+            respCtx->maxRetryTimes -= 1;
+            respCtx = NULL;
+            break;
+        } else {
+            respCtx->result = RCDEVICE_RESP_TIMEOUT;
+            if (respCtx->parserFunc != NULL) {
+                respCtx->parserFunc(respCtx);
             }
+
+            // dequeue and get next waiting response context
+            rcdeviceRespCtxQueueShift(&watingResponseQueue);
+            respCtx = rcdeviceRespCtxQueuePeekFront(&watingResponseQueue);
         }
     }
 

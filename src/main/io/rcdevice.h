@@ -125,8 +125,8 @@ struct rcdeviceResponseParseContext_s {
     uint8_t expectedRespLen; // total length of response data
     uint8_t recvRespLen; // length of the data received
     uint8_t *recvBuf; // response data buffer
-    timeUs_t timeout;
-    timeUs_t timeoutTimestamp; // if zero, it's means keep waiting for the response
+    timeMs_t timeout;
+    timeMs_t timeoutTimestamp; // if zero, it's means keep waiting for the response
     rcdeviceRespParseFunc parserFunc;
     runcamDevice_t *device;
     uint8_t paramData[RCDEVICE_PROTOCOL_MAX_DATA_SIZE];
