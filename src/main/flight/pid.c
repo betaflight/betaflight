@@ -102,7 +102,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .pid = {
             [PID_ROLL] =  { 46, 45, 25 },
             [PID_PITCH] = { 50, 50, 27 },
-            [PID_YAW] =   { 65, 45, 20 },
+            [PID_YAW] =   { 65, 45, 0 },
             [PID_ALT] =   { 50, 0, 0 },
             [PID_POS] =   { 15, 0, 0 },     // POSHOLD_P * 100, POSHOLD_I * 100,
             [PID_POSR] =  { 34, 14, 53 },   // POSHOLD_RATE_P * 10, POSHOLD_RATE_I * 100, POSHOLD_RATE_D * 1000,

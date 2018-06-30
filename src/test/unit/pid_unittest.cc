@@ -86,7 +86,7 @@ void setDefaultTestSettings(void) {
     pidProfile = pidProfilesMutable(1);
     pidProfile->pid[PID_ROLL]  =  { 40, 40, 30 };
     pidProfile->pid[PID_PITCH] =  { 58, 50, 35 };
-    pidProfile->pid[PID_YAW]   =  { 70, 45, 20 };
+    pidProfile->pid[PID_YAW]   =  { 70, 45, 0 };
     pidProfile->pid[PID_LEVEL] =  { 50, 50, 75 };
 
     pidProfile->pidSumLimit = PIDSUM_LIMIT;
