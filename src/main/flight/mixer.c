@@ -126,6 +126,8 @@ float motor_disarmed[MAX_SUPPORTED_MOTORS];
 mixerMode_e currentMixerMode;
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
 
+static FAST_RAM_ZERO_INIT int throttleAngleCorrection;
+
 
 static const motorMixer_t mixerQuadX[] = {
     { 1.0f, -1.0f,  1.0f, -1.0f },          // REAR_R
@@ -607,7 +609,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             pidResetITerm();
         }
     } else {
-        throttle = rcCommand[THROTTLE] - rxConfig()->mincheck;
+        throttle = rcCommand[THROTTLE] - rxConfig()->mincheck + throttleAngleCorrection;
         currentThrottleInputRange = rcCommandThrottleRange;
         motorRangeMin = motorOutputLow;
         motorRangeMax = motorOutputHigh;
@@ -896,4 +898,9 @@ uint16_t convertMotorToExternal(float motorValue)
     }
 
     return externalValue;
+}
+
+void mixerSetThrottleAngleCorrection(int correctionValue)
+{
+    throttleAngleCorrection = correctionValue;
 }
