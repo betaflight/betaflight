@@ -532,7 +532,9 @@ void gpsUpdate(timeUs_t currentTimeUs)
         updateGpsIndicator(currentTimeUs);
     }
 #if defined(USE_GPS_RESCUE)
-    updateGPSRescueState();
+    if (!feature(FEATURE_3D)) {
+        updateGPSRescueState();
+    }
 #endif
 }
 

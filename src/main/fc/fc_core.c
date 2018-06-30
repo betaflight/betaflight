@@ -256,7 +256,7 @@ void updateArmingStatus(void)
         }
 
 #ifdef USE_GPS_RESCUE
-        if (isModeActivationConditionPresent(BOXGPSRESCUE)) {
+        if (isModeActivationConditionPresent(BOXGPSRESCUE) && !feature(FEATURE_3D)) {
             if (!gpsRescueConfig()->minSats || STATE(GPS_FIX_HOME) || ARMING_FLAG(WAS_EVER_ARMED)) {
                 unsetArmingDisabled(ARMING_DISABLED_GPS);
             } else {
@@ -759,7 +759,7 @@ bool processRx(timeUs_t currentTimeUs)
     }
 
 #ifdef USE_GPS_RESCUE
-    if (IS_RC_MODE_ACTIVE(BOXGPSRESCUE) || (failsafeIsActive() && failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE)) {
+    if (!feature(FEATURE_3D) && (IS_RC_MODE_ACTIVE(BOXGPSRESCUE) || (failsafeIsActive() && failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE))) {
         if (!FLIGHT_MODE(GPS_RESCUE_MODE)) {
             ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
         }
