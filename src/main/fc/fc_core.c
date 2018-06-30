@@ -992,11 +992,6 @@ static FAST_CODE_NOINLINE void subTaskRcCommand(timeUs_t currentTimeUs)
 
     processRcCommand();
 
-#if defined(USE_GPS_RESCUE)
-    if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
-        gpsRescueInjectRcCommands();
-    }
-#endif
 }
 
 // Function for loop trigger

@@ -50,6 +50,9 @@
 
 #include "gps_rescue.h"
 
+#define GPS_RESCUE_MAX_YAW_RATE       360  // deg/sec max yaw rate
+#define GPS_RESCUE_RATE_SCALE_DEGREES 45   // Scale the commanded yaw rate when the error is less then this angle
+
 PG_REGISTER_WITH_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 0);
 
 PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
@@ -71,8 +74,8 @@ PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
     .minSats = 8
 );
 
-static uint16_t      rescueThrottle;
-static int16_t       rescueYaw;
+static uint16_t rescueThrottle;
+static float    rescueYaw;
 
 int32_t       gpsRescueAngle[ANGLE_INDEX_COUNT] = { 0, 0 };
 uint16_t      hoverThrottle = 0;
@@ -319,6 +322,11 @@ void idleTasks()
     rescueThrottle = rcCommand[THROTTLE];
 
     //to do: have a default value for hoverThrottle
+    
+    // FIXME: GPS Rescue throttle handling should take into account min_check as the
+    // active throttle is from min_check through PWM_RANGE_MAX. Currently adjusting for this
+    // in gpsRescueGetThrottle() but it would be better handled here.
+
     float ct = getCosTiltAngle();
     if (ct > 0.5 && ct < 0.96 && throttleSamples < 1E6 && rescueThrottle > 1070) { //5 to 45 degrees tilt
         //TO DO: only sample when acceleration is low
@@ -395,25 +403,39 @@ void rescueAttainPosition()
 }
 
 // Very similar to maghold function on betaflight/cleanflight
-void setBearing(int16_t deg)
+void setBearing(int16_t desiredHeading)
 {
-    int16_t dif = DECIDEGREES_TO_DEGREES(attitude.values.yaw) - deg;
+    float errorAngle = (attitude.values.yaw / 10.0f) - desiredHeading;
 
-    if (dif <= -180) {
-        dif += 360;
-    } else if (dif > 180) {
-        dif -= 360;
+    // Determine the most efficient direction to rotate
+    if (errorAngle <= -180) {
+        errorAngle += 360;
+    } else if (errorAngle > 180) {
+        errorAngle -= 360;
     }
 
-    dif *= -GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
-
-    rescueYaw = - (dif * gpsRescueConfig()->yawP / 20);
+    errorAngle *= -GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
+        
+    // Calculate a desired yaw rate based on a maximum limit beyond
+    // an error window and then scale the requested rate down inside
+    // the window as error approaches 0.
+    rescueYaw = -constrainf(errorAngle / GPS_RESCUE_RATE_SCALE_DEGREES * GPS_RESCUE_MAX_YAW_RATE, -GPS_RESCUE_MAX_YAW_RATE, GPS_RESCUE_MAX_YAW_RATE);
 }
 
-void gpsRescueInjectRcCommands(void)
+float gpsRescueGetYawRate(void)
 {
-    rcCommand[THROTTLE] = rescueThrottle;
-    rcCommand[YAW] = rescueYaw;
+    return rescueYaw;
+}
+
+float gpsRescueGetThrottle(void)
+{
+    // Calculated a desired commanded throttle scaled from 0.0 to 1.0 for use in the mixer.
+    // We need to compensate for min_check since the throttle value set by gps rescue
+    // is based on the raw rcCommand value commanded by the pilot.
+    float commandedThrottle = scaleRangef(rescueThrottle, MAX(rxConfig()->mincheck, PWM_RANGE_MIN), PWM_RANGE_MAX, 0.0f, 1.0f);
+    commandedThrottle = constrainf(commandedThrottle, 0.0f, 1.0f);
+    
+    return commandedThrottle;
 }
 
 #endif

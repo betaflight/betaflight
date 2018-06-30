@@ -43,6 +43,7 @@
 
 #include "flight/failsafe.h"
 #include "flight/imu.h"
+#include "flight/gps_rescue.h"
 #include "flight/pid.h"
 #include "pg/rx.h"
 #include "rx/rx.h"
@@ -146,17 +147,31 @@ float applyRaceFlightRates(const int axis, float rcCommandf, const float rcComma
 
 static void calculateSetpointRate(int axis)
 {
-    // scale rcCommandf to range [-1.0, 1.0]
-    float rcCommandf = rcCommand[axis] / 500.0f;
-    rcDeflection[axis] = rcCommandf;
-    const float rcCommandfAbs = ABS(rcCommandf);
-    rcDeflectionAbs[axis] = rcCommandfAbs;
+    float angleRate;
+    
+#ifdef USE_GPS_RESCUE
+    if ((axis == FD_YAW) && FLIGHT_MODE(GPS_RESCUE_MODE)) {
+        // If GPS Rescue is active then override the setpointRate used in the
+        // pid controller with the value calculated from the desired heading logic.
+        angleRate = gpsRescueGetYawRate();
 
-    float angleRate = applyRates(axis, rcCommandf, rcCommandfAbs);
+        // Treat the stick input as centered to avoid any stick deflection base modifications (like acceleration limit)
+        rcDeflection[axis] = 0;
+        rcDeflectionAbs[axis] = 0;
+    } else
+#endif
+    {
+        // scale rcCommandf to range [-1.0, 1.0]
+        float rcCommandf = rcCommand[axis] / 500.0f;
+        rcDeflection[axis] = rcCommandf;
+        const float rcCommandfAbs = ABS(rcCommandf);
+        rcDeflectionAbs[axis] = rcCommandfAbs;
+
+        angleRate = applyRates(axis, rcCommandf, rcCommandfAbs);
+    }
+    setpointRate[axis] = constrainf(angleRate, -SETPOINT_RATE_LIMIT, SETPOINT_RATE_LIMIT); // Rate limit protection (deg/sec)
 
     DEBUG_SET(DEBUG_ANGLERATE, axis, angleRate);
-
-    setpointRate[axis] = constrainf(angleRate, -SETPOINT_RATE_LIMIT, SETPOINT_RATE_LIMIT); // Rate limit protection (deg/sec)
 }
 
 static void scaleRcCommandToFpvCamAngle(void)
