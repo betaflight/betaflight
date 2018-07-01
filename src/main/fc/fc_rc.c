@@ -486,7 +486,6 @@ FAST_CODE uint8_t processRcSmoothingFilter(void)
                     }
                 } else {
                     // we have either stopped receiving rx samples (failsafe?) or the sample time is unreasonable so reset the accumulation
-                    validRxFrameTimeMs = 0;
                     rcSmoothingResetAccumulation(&rcSmoothingData);
                 }
             }
