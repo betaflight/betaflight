@@ -20,6 +20,7 @@
 
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "YPF7"
+#define USE_TARGET_CONFIG
 
 #define USBD_PRODUCT_STRING     "YUPIF7"
 
