@@ -26,24 +26,13 @@
 #ifdef USE_TARGET_CONFIG
 #include "fc/config.h"
 
-#include "flight/pid.h"
+#include "sensors/boardalignment.h"
 
 
 // alternative defaults settings for YuPiF4 targets
 void targetConfiguration(void)
 {
-    /* Specific PID values for YupiF4 */
-    for (uint8_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
-        pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
-
-        pidProfile->pid[PID_ROLL].P = 30;
-        pidProfile->pid[PID_ROLL].I = 45;
-        pidProfile->pid[PID_ROLL].D = 20;
-        pidProfile->pid[PID_PITCH].P = 30;
-        pidProfile->pid[PID_PITCH].I = 50;
-        pidProfile->pid[PID_PITCH].D = 20;
-        pidProfile->pid[PID_YAW].P = 40;
-        pidProfile->pid[PID_YAW].I = 50;
-    }
+    boardAlignmentMutable()->yawDegrees = 90;
 }
 #endif
+

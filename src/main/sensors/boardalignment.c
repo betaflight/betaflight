@@ -73,7 +73,7 @@ static void alignBoard(float *vec)
     vec[Z] = (boardRotation[0][Z] * x + boardRotation[1][Z] * y + boardRotation[2][Z] * z);
 }
 
-void alignSensors(float *dest, uint8_t rotation)
+FAST_CODE void alignSensors(float *dest, uint8_t rotation)
 {
     const float x = dest[X];
     const float y = dest[Y];
