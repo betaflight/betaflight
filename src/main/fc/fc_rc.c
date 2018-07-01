@@ -732,9 +732,9 @@ void initRcProcessing(void)
     }
 }
 
-bool rcSmoothingIsOff(void)
+bool rcSmoothingIsEnabled(void)
 {
-    return (
+    return !(
 #if defined(USE_RC_SMOOTHING_FILTER)
         rxConfig()->rc_smoothing_type == RC_SMOOTHING_TYPE_INTERPOLATION &&
 #endif

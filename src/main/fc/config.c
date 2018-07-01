@@ -245,14 +245,14 @@ static void validateAndFixConfig(void)
         rxConfigMutable()->rssi_src_frame_errors = false;
     }
 
-    if (rcSmoothingIsOff() || rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_T) {
+    if (!rcSmoothingIsEnabled() || rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_T) {
         for (unsigned i = 0; i < MAX_PROFILE_COUNT; i++) {
             pidProfilesMutable(i)->dtermSetpointWeight = 0;
         }
     }
 
 #if defined(USE_THROTTLE_BOOST)
-    if (rcSmoothingIsOff() ||
+    if (!rcSmoothingIsEnabled() ||
         !(rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_RPYT
         || rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_T
         || rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_RPT)) {
