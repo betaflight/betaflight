@@ -111,3 +111,4 @@ void rescueAttainPosition(void);
 
 float gpsRescueGetYawRate(void);
 float gpsRescueGetThrottle(void);
+bool gpsRescueIsConfigured(void);

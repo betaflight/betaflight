@@ -125,3 +125,27 @@ bool isModeActivationConditionPresent(boxId_e modeId)
 
     return false;
 }
+
+void removeModeActivationCondition(const boxId_e modeId)
+{
+    unsigned offset = 0;
+    for (unsigned i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
+        modeActivationCondition_t *mac = modeActivationConditionsMutable(i);
+
+        if (mac->modeId == modeId && !offset) {
+            offset++;
+        }
+
+        if (offset) {
+            while (i + offset < MAX_MODE_ACTIVATION_CONDITION_COUNT && modeActivationConditions(i + offset)->modeId == modeId) {
+                offset++;
+            }
+
+            if (i + offset < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
+                memcpy(mac, modeActivationConditions(i + offset), sizeof(modeActivationCondition_t));
+            } else {
+                memset(mac, 0, sizeof(modeActivationCondition_t));
+            }
+        }
+    }
+}
