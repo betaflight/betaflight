@@ -27,6 +27,8 @@
 
 #include "common/axis.h"
 
+#include "config/feature.h"
+
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/rx.h"
@@ -93,6 +95,16 @@ void failsafeInit(void)
     failsafeState.events = 0;
     failsafeState.monitoring = false;
 
+    // Disallow failsafe procedure GPS-RESCUE if 3D mode is active or GPS Rescue is not available
+    if (failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE && (
+        feature(FEATURE_3D)
+#ifndef USE_GPS_RESCUE
+        || true
+#endif
+        )) {
+        failsafeConfigMutable()->failsafe_procedure = FAILSAFE_PROCEDURE_DROP_IT;
+    }
+
     return;
 }
 
@@ -135,7 +147,7 @@ static void failsafeActivate(void)
 
 static void failsafeApplyControlInput(void)
 {
-    if (failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE) {
+    if (failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE && !feature(FEATURE_3D)) {
         ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
 
         return;
