@@ -163,6 +163,18 @@ static void validateAndFixConfig(void)
     }
 #endif
 
+    if (!isSerialConfigValid(serialConfig())) {
+        pgResetFn_serialConfig(serialConfigMutable());
+    }
+
+    if (
+#if defined(USE_GPS)
+        !findSerialPortConfig(FUNCTION_GPS) &&
+#endif
+        true) {
+        featureClear(FEATURE_GPS);
+    }
+
 #ifndef USE_OSD_SLAVE
     if (systemConfig()->activeRateProfile >= CONTROL_RATE_PROFILE_COUNT) {
         systemConfigMutable()->activeRateProfile = 0;
@@ -265,19 +277,6 @@ static void validateAndFixConfig(void)
         }
     }
 #endif
-#endif // USE_OSD_SLAVE
-
-    if (!isSerialConfigValid(serialConfig())) {
-        pgResetFn_serialConfig(serialConfigMutable());
-    }
-
-    if (
-#if defined(USE_GPS)
-        !findSerialPortConfig(FUNCTION_GPS) &&
-#endif
-        true) {
-        featureClear(FEATURE_GPS);
-    }
 
     if (
         featureConfigured(FEATURE_3D) || !featureConfigured(FEATURE_GPS)
@@ -293,6 +292,7 @@ static void validateAndFixConfig(void)
             removeModeActivationCondition(BOXGPSRESCUE);
         }
     }
+#endif // USE_OSD_SLAVE
 
 #if defined(USE_ESC_SENSOR)
     if (!findSerialPortConfig(FUNCTION_ESC_SENSOR)) {
