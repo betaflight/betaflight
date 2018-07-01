@@ -245,22 +245,49 @@ static void validateAndFixConfig(void)
         rxConfigMutable()->rssi_src_frame_errors = false;
     }
 
-    if ((
+    bool rpInterpolationNeeded = false;
+#if defined(USE_THROTTLE_BOOST)
+    bool throttleInterpolationNeeded = false;
+#endif
+    for (unsigned i = 0; i < MAX_PROFILE_COUNT; i++) {
+        if (pidProfiles(i)->dtermSetpointWeight) {
+            rpInterpolationNeeded = true;
+        }
+
+#if defined(USE_THROTTLE_BOOST)
+        if (pidProfiles(i)->throttle_boost) {
+            throttleInterpolationNeeded = true;
+        }
+#endif
+    }
+
+    if ((rpInterpolationNeeded
+#if defined(USE_THROTTLE_BOOST)
+        || throttleInterpolationNeeded
+#endif
+        ) &&
 #if defined(USE_RC_SMOOTHING_FILTER)
         rxConfig()->rc_smoothing_type == RC_SMOOTHING_TYPE_INTERPOLATION &&
 #endif
-        rxConfig()->rcInterpolation == RC_SMOOTHING_OFF) || rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_T) {
-        for (unsigned i = 0; i < MAX_PROFILE_COUNT; i++) {
-            pidProfilesMutable(i)->dtermSetpointWeight = 0;
-        }
+        rxConfig()->rcInterpolation == RC_SMOOTHING_OFF) {
+        rxConfigMutable()->rcInterpolation = RC_SMOOTHING_AUTO;
+    }
+
+    if (rpInterpolationNeeded && rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_T) {
+        rxConfigMutable()->rcInterpolationChannels = INTERPOLATION_CHANNELS_RPT;
     }
 
 #if defined(USE_THROTTLE_BOOST)
-    if (!(rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_RPYT
-        || rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_T
-        || rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_RPT)) {
-        for (unsigned i = 0; i < MAX_PROFILE_COUNT; i++) {
-            pidProfilesMutable(i)->throttle_boost = 0;
+    if (throttleInterpolationNeeded) {
+        switch (rxConfig()->rcInterpolationChannels) {
+        case INTERPOLATION_CHANNELS_RP:
+            rxConfigMutable()->rcInterpolationChannels = INTERPOLATION_CHANNELS_RPT;
+
+            break;
+        case INTERPOLATION_CHANNELS_RPY:
+            rxConfigMutable()->rcInterpolationChannels = INTERPOLATION_CHANNELS_RPYT;
+
+            break;
         }
     }
 #endif
