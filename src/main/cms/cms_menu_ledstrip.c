@@ -48,7 +48,7 @@ static uint8_t cmsx_FeatureLedstrip;
 static long cmsx_Ledstrip_FeatureRead(void)
 {
     if (!featureRead) {
-        cmsx_FeatureLedstrip = feature(FEATURE_LED_STRIP) ? 1 : 0;
+        cmsx_FeatureLedstrip = featureConfigured(FEATURE_LED_STRIP) ? 1 : 0;
         featureRead = true;
     }
 

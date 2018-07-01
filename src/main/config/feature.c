@@ -29,8 +29,6 @@
 #include "pg/pg_ids.h"
 
 
-static uint32_t activeFeaturesLatch = 0;
-
 PG_REGISTER_WITH_RESET_TEMPLATE(featureConfig_t, featureConfig, PG_FEATURE_CONFIG, 0);
 
 PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
@@ -52,19 +50,9 @@ void intFeatureClearAll(uint32_t *features)
     *features = 0;
 }
 
-void latchActiveFeatures(void)
-{
-    activeFeaturesLatch = featureConfig()->enabledFeatures;
-}
-
 bool featureConfigured(uint32_t mask)
 {
     return featureConfig()->enabledFeatures & mask;
-}
-
-bool feature(uint32_t mask)
-{
-    return activeFeaturesLatch & mask;
 }
 
 void featureSet(uint32_t mask)

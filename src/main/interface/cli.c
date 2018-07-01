@@ -2946,7 +2946,7 @@ static void cliDshotProg(char *cmdline)
                         pwmWriteDshotCommand(escIndex, getMotorCount(), command, true);
                     } else {
 #if defined(USE_ESC_SENSOR) && defined(USE_ESC_SENSOR_INFO)
-                        if (feature(FEATURE_ESC_SENSOR)) {
+                        if (featureConfigured(FEATURE_ESC_SENSOR)) {
                             if (escIndex != ALL_MOTORS) {
                                 executeEscInfoCommand(escIndex);
                             } else {

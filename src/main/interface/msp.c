@@ -1018,7 +1018,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 
 #if defined(USE_ESC_SENSOR)
     case MSP_ESC_SENSOR_DATA:
-        if (feature(FEATURE_ESC_SENSOR)) {
+        if (featureConfigured(FEATURE_ESC_SENSOR)) {
             sbufWriteU8(dst, getMotorCount());
             for (int i = 0; i < getMotorCount(); i++) {
                 const escSensorData_t *escData = getEscSensorData(i);

@@ -318,7 +318,7 @@ static void smartPortSendPackage(uint16_t id, uint32_t val)
 }
 
 static bool reportExtendedEscSensors(void) {
-    return feature(FEATURE_ESC_SENSOR) && telemetryConfig()->smartport_use_extra_sensors;
+    return featureConfigured(FEATURE_ESC_SENSOR) && telemetryConfig()->smartport_use_extra_sensors;
 }
 
 #define ADD_SENSOR(dataId) frSkyDataIdTableInfo.table[frSkyDataIdTableInfo.index++] = dataId
@@ -332,7 +332,7 @@ static void initSmartPortSensors(void)
 
     if (isBatteryVoltageConfigured()) {
 #ifdef USE_ESC_SENSOR
-        if (!reportExtendedEscSensors())
+        if (!featureConfigured(FEATURE_ESC_SENSOR)) {
 #endif
         {
             ADD_SENSOR(FSSP_DATAID_VFAS);
@@ -365,7 +365,7 @@ static void initSmartPortSensors(void)
     }
 
 #ifdef USE_GPS
-    if (feature(FEATURE_GPS)) {
+    if (featureConfigured(FEATURE_GPS)) {
         ADD_SENSOR(FSSP_DATAID_SPEED);
         ADD_SENSOR(FSSP_DATAID_LATLONG);
         ADD_SENSOR(FSSP_DATAID_LATLONG); // twice (one for lat, one for long)
@@ -719,7 +719,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                     // provide GPS lock status
                     smartPortSendPackage(id, (STATE(GPS_FIX) ? 1000 : 0) + (STATE(GPS_FIX_HOME) ? 2000 : 0) + gpsSol.numSat);
                     *clearToSend = false;
-                } else if (feature(FEATURE_GPS)) {
+                } else if (featureConfigured(FEATURE_GPS)) {
                     smartPortSendPackage(id, 0);
                     *clearToSend = false;
                 } else

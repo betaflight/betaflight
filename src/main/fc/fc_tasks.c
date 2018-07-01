@@ -216,7 +216,7 @@ static void taskCalculateAltitude(timeUs_t currentTimeUs)
 #ifdef USE_TELEMETRY
 static void taskTelemetry(timeUs_t currentTimeUs)
 {
-    if (!cliMode && feature(FEATURE_TELEMETRY)) {
+    if (!cliMode && featureConfigured(FEATURE_TELEMETRY)) {
         subTaskTelemetryPollSensors(currentTimeUs);
 
         telemetryProcess(currentTimeUs);
@@ -251,12 +251,12 @@ void fcTasksInit(void)
 #ifdef USE_OSD_SLAVE
     const bool useBatteryAlerts = batteryConfig()->useVBatAlerts || batteryConfig()->useConsumptionAlerts;
 #else
-    const bool useBatteryAlerts = batteryConfig()->useVBatAlerts || batteryConfig()->useConsumptionAlerts || feature(FEATURE_OSD);
+    const bool useBatteryAlerts = batteryConfig()->useVBatAlerts || batteryConfig()->useConsumptionAlerts || featureConfigured(FEATURE_OSD);
 #endif
     setTaskEnabled(TASK_BATTERY_ALERTS, (useBatteryVoltage || useBatteryCurrent) && useBatteryAlerts);
 
 #ifdef USE_TRANSPONDER
-    setTaskEnabled(TASK_TRANSPONDER, feature(FEATURE_TRANSPONDER));
+    setTaskEnabled(TASK_TRANSPONDER, featureConfigured(FEATURE_TRANSPONDER));
 #endif
 
 #ifdef STACK_CHECK
@@ -285,7 +285,7 @@ void fcTasksInit(void)
     setTaskEnabled(TASK_BEEPER, true);
 #endif
 #ifdef USE_GPS
-    setTaskEnabled(TASK_GPS, feature(FEATURE_GPS));
+    setTaskEnabled(TASK_GPS, featureConfigured(FEATURE_GPS));
 #endif
 #ifdef USE_MAG
     setTaskEnabled(TASK_COMPASS, sensors(SENSOR_MAG));
@@ -294,13 +294,13 @@ void fcTasksInit(void)
     setTaskEnabled(TASK_BARO, sensors(SENSOR_BARO));
 #endif
 #if defined(USE_BARO) || defined(USE_GPS)
-    setTaskEnabled(TASK_ALTITUDE, sensors(SENSOR_BARO) || feature(FEATURE_GPS));
+    setTaskEnabled(TASK_ALTITUDE, sensors(SENSOR_BARO) || featureConfigured(FEATURE_GPS));
 #endif
 #ifdef USE_DASHBOARD
-    setTaskEnabled(TASK_DASHBOARD, feature(FEATURE_DASHBOARD));
+    setTaskEnabled(TASK_DASHBOARD, featureConfigured(FEATURE_DASHBOARD));
 #endif
 #ifdef USE_TELEMETRY
-    if (feature(FEATURE_TELEMETRY)) {
+    if (featureConfigured(FEATURE_TELEMETRY)) {
         setTaskEnabled(TASK_TELEMETRY, true);
         if (rxConfig()->serialrx_provider == SERIALRX_JETIEXBUS) {
             // Reschedule telemetry to 500hz for Jeti Exbus
@@ -312,19 +312,19 @@ void fcTasksInit(void)
     }
 #endif
 #ifdef USE_LED_STRIP
-    setTaskEnabled(TASK_LEDSTRIP, feature(FEATURE_LED_STRIP));
+    setTaskEnabled(TASK_LEDSTRIP, featureConfigured(FEATURE_LED_STRIP));
 #endif
 #ifdef USE_TRANSPONDER
-    setTaskEnabled(TASK_TRANSPONDER, feature(FEATURE_TRANSPONDER));
+    setTaskEnabled(TASK_TRANSPONDER, featureConfigured(FEATURE_TRANSPONDER));
 #endif
 #ifdef USE_OSD
-    setTaskEnabled(TASK_OSD, feature(FEATURE_OSD) && osdInitialized());
+    setTaskEnabled(TASK_OSD, featureConfigured(FEATURE_OSD) && osdInitialized());
 #endif
 #ifdef USE_BST
     setTaskEnabled(TASK_BST_MASTER_PROCESS, true);
 #endif
 #ifdef USE_ESC_SENSOR
-    setTaskEnabled(TASK_ESC_SENSOR, feature(FEATURE_ESC_SENSOR));
+    setTaskEnabled(TASK_ESC_SENSOR, featureConfigured(FEATURE_ESC_SENSOR));
 #endif
 #ifdef USE_ADC_INTERNAL
     setTaskEnabled(TASK_ADC_INTERNAL, true);
@@ -336,7 +336,7 @@ void fcTasksInit(void)
 #ifdef USE_MSP_DISPLAYPORT
     setTaskEnabled(TASK_CMS, true);
 #else
-    setTaskEnabled(TASK_CMS, feature(FEATURE_OSD) || feature(FEATURE_DASHBOARD));
+    setTaskEnabled(TASK_CMS, featureConfigured(FEATURE_OSD) || featureConfigured(FEATURE_DASHBOARD));
 #endif
 #endif
 #ifdef USE_VTX_CONTROL

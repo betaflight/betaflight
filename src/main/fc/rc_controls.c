@@ -113,7 +113,7 @@ bool areSticksInApModePosition(uint16_t ap_mode)
 
 throttleStatus_e calculateThrottleStatus(void)
 {
-    if (feature(FEATURE_3D)) {
+    if (featureConfigured(FEATURE_3D)) {
         if (IS_RC_MODE_ACTIVE(BOX3D) || flight3DConfig()->switched_mode3d) {
             if (rcData[THROTTLE] < rxConfig()->mincheck) {
                 return THROTTLE_LOW;
@@ -240,7 +240,7 @@ void processRcStickPositions()
         gyroStartCalibration(false);
 
 #ifdef USE_GPS
-        if (feature(FEATURE_GPS)) {
+        if (featureConfigured(FEATURE_GPS)) {
             GPS_reset_home_position();
         }
 #endif
@@ -253,7 +253,7 @@ void processRcStickPositions()
         return;
     }
 
-    if (feature(FEATURE_INFLIGHT_ACC_CAL) && (rcSticks == THR_LO + YAW_LO + PIT_HI + ROL_HI)) {
+    if (featureConfigured(FEATURE_INFLIGHT_ACC_CAL) && (rcSticks == THR_LO + YAW_LO + PIT_HI + ROL_HI)) {
         // Inflight ACC Calibration
         handleInflightCalibrationStickPosition();
         return;
