@@ -283,7 +283,6 @@ void gpsInit(void)
 
     serialPortConfig_t *gpsPortConfig = findSerialPortConfig(FUNCTION_GPS);
     if (!gpsPortConfig) {
-        featureClear(FEATURE_GPS);
         return;
     }
 
@@ -305,7 +304,6 @@ void gpsInit(void)
     // no callback - buffer will be consumed in gpsUpdate()
     gpsPort = openSerialPort(gpsPortConfig->identifier, FUNCTION_GPS, NULL, NULL, baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex], mode, SERIAL_NOT_INVERTED);
     if (!gpsPort) {
-        featureClear(FEATURE_GPS);
         return;
     }
 
@@ -532,7 +530,9 @@ void gpsUpdate(timeUs_t currentTimeUs)
         updateGpsIndicator(currentTimeUs);
     }
 #if defined(USE_GPS_RESCUE)
-    updateGPSRescueState();
+    if (gpsRescueIsConfigured()) {
+        updateGPSRescueState();
+    }
 #endif
 }
 

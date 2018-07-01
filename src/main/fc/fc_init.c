@@ -352,7 +352,6 @@ void init(void)
         idlePulse = flight3DConfig()->neutral3d;
     }
     if (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_BRUSHED) {
-        featureClear(FEATURE_3D);
         idlePulse = 0; // brushed motors
     }
     /* Motors needs to be initialized soon as posible because hardware initialization
