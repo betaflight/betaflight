@@ -2057,6 +2057,10 @@ static void cliFlashErase(char *cmdline)
 {
     UNUSED(cmdline);
 
+    if (!flashfsIsSupported()) {
+        return;
+    }
+
 #ifndef MINIMAL_CLI
     uint32_t i = 0;
     cliPrintLine("Erasing, please wait ... ");

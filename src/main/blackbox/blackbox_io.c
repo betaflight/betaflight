@@ -259,7 +259,7 @@ bool blackboxDeviceOpen(void)
         break;
 #ifdef USE_FLASHFS
     case BLACKBOX_DEVICE_FLASH:
-        if (flashfsGetSize() == 0 || isBlackboxDeviceFull()) {
+        if (!flashfsIsSupported() || isBlackboxDeviceFull()) {
             return false;
         }
 
