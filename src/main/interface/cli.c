@@ -1891,8 +1891,7 @@ static void cliServoMix(char *cmdline)
         enum {SERVO = 0, INPUT, REVERSE, ARGS_COUNT};
         char *ptr = strchr(cmdline, ' ');
 
-        len = strlen(ptr);
-        if (len == 0) {
+        if (ptr == NULL) {
             cliPrintf("s");
             for (uint32_t inputSource = 0; inputSource < INPUT_SOURCE_COUNT; inputSource++)
                 cliPrintf("\ti%d", inputSource);
@@ -1900,8 +1899,9 @@ static void cliServoMix(char *cmdline)
 
             for (uint32_t servoIndex = 0; servoIndex < MAX_SUPPORTED_SERVOS; servoIndex++) {
                 cliPrintf("%d", servoIndex);
-                for (uint32_t inputSource = 0; inputSource < INPUT_SOURCE_COUNT; inputSource++)
+                for (uint32_t inputSource = 0; inputSource < INPUT_SOURCE_COUNT; inputSource++) {
                     cliPrintf("\t%s  ", (servoParams(servoIndex)->reversedSources & (1 << inputSource)) ? "r" : "n");
+                }
                 cliPrintLinefeed();
             }
             return;
@@ -1922,12 +1922,15 @@ static void cliServoMix(char *cmdline)
         if (args[SERVO] >= 0 && args[SERVO] < MAX_SUPPORTED_SERVOS
                 && args[INPUT] >= 0 && args[INPUT] < INPUT_SOURCE_COUNT
                 && (*ptr == 'r' || *ptr == 'n')) {
-            if (*ptr == 'r')
+            if (*ptr == 'r') {
                 servoParamsMutable(args[SERVO])->reversedSources |= 1 << args[INPUT];
-            else
+            } else {
                 servoParamsMutable(args[SERVO])->reversedSources &= ~(1 << args[INPUT]);
-        } else
+            }
+        } else {
             cliShowParseError();
+            return;
+        }
 
         cliServoMix("reverse");
     } else {
