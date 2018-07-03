@@ -845,7 +845,7 @@ extern "C" {
         sbufWriteU8(dst, (uint8_t)val);
     }
 
-    bool feature(uint32_t) { return false; }
+    bool featureConfigured(uint32_t) { return false; }
 
     void serialWriteBuf(serialPort_t *instance, const uint8_t *data, int count) 
     { 

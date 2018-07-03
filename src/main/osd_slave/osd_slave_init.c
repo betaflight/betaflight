@@ -146,9 +146,6 @@ void init(void)
 
     debugMode = systemConfig()->debug_mode;
 
-    // Latch active features to be used for featureConfigured() in the remainder of init().
-    latchActiveFeatures();
-
 #ifdef TARGET_PREINIT
     targetPreInit();
 #endif
@@ -298,9 +295,6 @@ void init(void)
     timerStart();
 
     batteryInit();
-
-    // Latch active features AGAIN since some may be modified by init().
-    latchActiveFeatures();
 
     fcTasksInit();
 

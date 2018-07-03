@@ -186,7 +186,7 @@ bool rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadR
     return true;
 }
 
-bool feature(uint32_t) {
+bool featureConfigured(uint32_t) {
     return false;
 }
 
