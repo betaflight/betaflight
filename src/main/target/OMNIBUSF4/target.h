@@ -32,12 +32,20 @@
 #define TARGET_BOARD_IDENTIFIER "XRF4"
 #elif defined(EXUAVF4PRO)
 #define TARGET_BOARD_IDENTIFIER "EXF4"
+#elif defined(OMNIF4FPV)
+#define TARGET_BOARD_IDENTIFIER "OB4F"
 #else
 #define TARGET_BOARD_IDENTIFIER "OBF4"
-// Example of a manufacturer ID to be persisted as part of the config:
-#define TARGET_MANUFACTURER_IDENTIFIER "AIRB"
-#define OMNIBUSF4BASE // For config.c
 #endif
+
+// Example of a manufacturer ID to be persisted as part of the config:
+#if defined(OMNIF4FPV)
+#define TARGET_BOARD_IDENTIFIER "OB4F"
+#else
+#define TARGET_MANUFACTURER_IDENTIFIER "AIRB"
+#endif
+
+#define OMNIBUSF4BASE // For config.c
 
 #if defined(LUXF4OSD)
 #define USBD_PRODUCT_STRING "LuxF4osd"
@@ -47,6 +55,8 @@
 #define USBD_PRODUCT_STRING "XRACERF4"
 #elif defined(EXUAVF4PRO)
 #define USBD_PRODUCT_STRING "ExuavF4Pro"
+#elif defined(OMNIF4FPV)
+#define USBD_PRODUCT_STRING "OmnibusF4FPV"
 #else
 #define USBD_PRODUCT_STRING "OmnibusF4"
 #endif
@@ -56,7 +66,7 @@
 #define BEEPER_PIN              PB4
 #define BEEPER_INVERTED
 
-#if defined(OMNIBUSF4SD) || defined(DYSF4PRO)
+#if defined(OMNIBUSF4SD) || defined(DYSF4PRO) || defined(OMNIF4FPV)
 #define ENABLE_DSHOT_DMAR       true
 #endif
 
@@ -108,21 +118,20 @@
 #define ACC_MPU6500_ALIGN       ACC_MPU6000_ALIGN
 #endif
 
+#if defined(OMNIBUSF4SD)
 #define USE_MAG
 #define USE_MAG_HMC5883
 #define USE_MAG_QMC5883
 #define MAG_HMC5883_ALIGN       CW90_DEG
-
 #define USE_BARO
-#if defined(OMNIBUSF4SD)
 #define USE_BARO_SPI_BMP280
 #define BMP280_SPI_INSTANCE     SPI3
 #define BMP280_CS_PIN           PB3 // v1
-#endif
 #define USE_BARO_BMP085
 #define USE_BARO_BMP280
 #define USE_BARO_MS5611
 #define BARO_I2C_INSTANCE       (I2CDEV_2)
+#endif
 
 #if defined(OMNIBUSF4SD)
 #define DEFAULT_BARO_SPI_BMP280
@@ -159,8 +168,9 @@
 // For variants with SDcard replaced with flash chip
 #define FLASH_CS_PIN            SDCARD_SPI_CS_PIN
 #define FLASH_SPI_INSTANCE      SDCARD_SPI_INSTANCE
+#endif // OMNIBUSF4
 
-#elif defined(LUXF4OSD)
+#if defined(LUXF4OSD) || defined(OMNIF4FPV)
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 #define FLASH_CS_PIN            PB12
 #define FLASH_SPI_INSTANCE      SPI2
@@ -173,7 +183,7 @@
 #define FLASH_SPI_INSTANCE      SPI3
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
-#endif // OMNIBUSF4
+#endif
 
 #define USE_VCP
 #define USE_USB_DETECT
