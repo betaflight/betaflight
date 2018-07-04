@@ -492,7 +492,7 @@ CMS_Menu cmsx_menuCopyProfile = {
 
 static OSD_Entry cmsx_menuImuEntries[] =
 {
-    { "-- IMU --", OME_Label, NULL, NULL, 0},
+    { "-- PROFILE --", OME_Label, NULL, NULL, 0},
 
     {"PID PROF",  OME_UINT8,   cmsx_profileIndexOnChange,     &(OSD_UINT8_t){ &tmpPidProfileIndex, 1, MAX_PROFILE_COUNT, 1},    0},
     {"PID",       OME_Submenu, cmsMenuChange,                 &cmsx_menuPid,                                                 0},
