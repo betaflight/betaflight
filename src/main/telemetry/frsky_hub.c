@@ -183,7 +183,7 @@ static void sendAccel(void)
 
 static void sendThrottleOrBatterySizeAsRpm(void)
 {
-    int16_t data;
+    int16_t data = 0;
 #if defined(USE_ESC_SENSOR)
     escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
     if (escData) {
@@ -207,7 +207,7 @@ static void sendThrottleOrBatterySizeAsRpm(void)
 
 static void sendTemperature1(void)
 {
-    int16_t data;
+    int16_t data = 0;
 #if defined(USE_ESC_SENSOR)
     escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
     if (escData) {
