@@ -172,6 +172,7 @@ void updateGPSRescueState(void)
 
         // If we are over 120% of average magnitude, just disarm since we're pretty much home
         if (rescueState.sensor.accMagnitude > rescueState.sensor.accMagnitudeAvg * 1.5) {
+            setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
             disarm();
             rescueState.phase = RESCUE_COMPLETE;
         }
@@ -186,6 +187,7 @@ void updateGPSRescueState(void)
         rescueStop();
         break;
     case RESCUE_ABORT:
+        setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
         disarm();
         rescueStop();
         break;
