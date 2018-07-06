@@ -265,37 +265,45 @@ void updateArmingStatus(void)
         }
 #endif
 
+#ifdef USE_RC_SMOOTHING_FILTER
+        if ((rxConfig()->rc_smoothing_type == RC_SMOOTHING_TYPE_FILTER) && !rcSmoothingFilterInitialized()) {
+            setArmingDisabled(ARMING_DISABLED_RC_SMOOTHING);
+        } else {
+            unsetArmingDisabled(ARMING_DISABLED_RC_SMOOTHING);
+        }
+#endif // USE_RC_SMOOTHING_FILTER
+
         if (IS_RC_MODE_ACTIVE(BOXPARALYZE) && paralyzeModeAllowed) {
             setArmingDisabled(ARMING_DISABLED_PARALYZE);
             dispatchAdd(&preventModeChangesDispatchEntry, PARALYZE_PREVENT_MODE_CHANGES_DELAY_US);
         }
 
         if (!isUsingSticksForArming()) {
-          /* Ignore ARMING_DISABLED_CALIBRATING if we are going to calibrate gyro on first arm */
-          bool ignoreGyro = armingConfig()->gyro_cal_on_first_arm
-                         && !(getArmingDisableFlags() & ~(ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_CALIBRATING));
+            /* Ignore ARMING_DISABLED_CALIBRATING if we are going to calibrate gyro on first arm */
+            bool ignoreGyro = armingConfig()->gyro_cal_on_first_arm
+                              && !(getArmingDisableFlags() & ~(ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_CALIBRATING));
 
-          /* Ignore ARMING_DISABLED_THROTTLE (once arm switch is on) if we are in 3D mode */
-          bool ignoreThrottle = feature(FEATURE_3D)
-                             && !IS_RC_MODE_ACTIVE(BOX3D)
-                             && !flight3DConfig()->switched_mode3d
-                             && !(getArmingDisableFlags() & ~(ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_THROTTLE));
+            /* Ignore ARMING_DISABLED_THROTTLE (once arm switch is on) if we are in 3D mode */
+            bool ignoreThrottle = feature(FEATURE_3D)
+                                  && !IS_RC_MODE_ACTIVE(BOX3D)
+                                  && !flight3DConfig()->switched_mode3d
+                                  && !(getArmingDisableFlags() & ~(ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_THROTTLE));
 
 #ifdef USE_RUNAWAY_TAKEOFF
-           if (!IS_RC_MODE_ACTIVE(BOXARM)) {
-               unsetArmingDisabled(ARMING_DISABLED_RUNAWAY_TAKEOFF);
-           }
+             if (!IS_RC_MODE_ACTIVE(BOXARM)) {
+                 unsetArmingDisabled(ARMING_DISABLED_RUNAWAY_TAKEOFF);
+             }
 #endif
 
-          // If arming is disabled and the ARM switch is on
-          if (isArmingDisabled()
-              && !ignoreGyro
-              && !ignoreThrottle
-              && IS_RC_MODE_ACTIVE(BOXARM)) {
-              setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
-          } else if (!IS_RC_MODE_ACTIVE(BOXARM)) {
-              unsetArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
-          }
+            // If arming is disabled and the ARM switch is on
+            if (isArmingDisabled()
+                && !ignoreGyro
+                && !ignoreThrottle
+                && IS_RC_MODE_ACTIVE(BOXARM)) {
+                setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+            } else if (!IS_RC_MODE_ACTIVE(BOXARM)) {
+                unsetArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+            }
         }
 
         if (isArmingDisabled()) {
