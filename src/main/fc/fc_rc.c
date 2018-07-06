@@ -754,4 +754,8 @@ int rcSmoothingGetValue(int whichValue)
             return 0;
     }
 }
+
+bool rcSmoothingFilterInitialized(void) {
+    return rcSmoothingData.filterInitialized;
+}
 #endif // USE_RC_SMOOTHING_FILTER
