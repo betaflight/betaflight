@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
@@ -24,6 +27,7 @@
 #include "drivers/bus.h"
 #include "drivers/sensor.h"
 #include "drivers/accgyro/accgyro_mpu.h"
+#include "sensors/gyro.h"
 #pragma GCC diagnostic push
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
 #include <pthread.h>
@@ -35,14 +39,12 @@
 #define MPU_I2C_INSTANCE I2C_DEVICE
 #endif
 
-#define GYRO_LPF_256HZ      0
-#define GYRO_LPF_188HZ      1
-#define GYRO_LPF_98HZ       2
-#define GYRO_LPF_42HZ       3
-#define GYRO_LPF_20HZ       4
-#define GYRO_LPF_10HZ       5
-#define GYRO_LPF_5HZ        6
-#define GYRO_LPF_NONE       7
+#define GYRO_HARDWARE_LPF_NORMAL       0
+#define GYRO_HARDWARE_LPF_EXPERIMENTAL 1
+#define GYRO_HARDWARE_LPF_1KHZ_SAMPLE  2
+
+#define GYRO_32KHZ_HARDWARE_LPF_NORMAL       0
+#define GYRO_32KHZ_HARDWARE_LPF_EXPERIMENTAL 1
 
 typedef enum {
     GYRO_RATE_1_kHz,
@@ -75,10 +77,12 @@ typedef struct gyroDev_s {
     gyroRateKHz_e gyroRateKHz;
     bool dataReady;
     bool gyro_high_fsr;
-    uint8_t lpf;
+    uint8_t hardware_lpf;
+    uint8_t hardware_32khz_lpf;
     uint8_t mpuDividerDrops;
     ioTag_t mpuIntExtiTag;
-    uint8_t filler[3];
+    uint8_t gyroHasOverflowProtection;
+    gyroSensor_e gyroHardware;
 } gyroDev_t;
 
 typedef struct accDev_s {

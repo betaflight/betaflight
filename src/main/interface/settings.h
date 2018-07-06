@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
@@ -30,6 +33,9 @@ typedef enum {
     TABLE_GPS_PROVIDER,
     TABLE_GPS_SBAS_MODE,
 #endif
+#ifdef USE_GPS_RESCUE
+    TABLE_GPS_RESCUE,
+#endif
 #ifdef USE_BLACKBOX
     TABLE_BLACKBOX_DEVICE,
     TABLE_BLACKBOX_MODE,
@@ -45,7 +51,10 @@ typedef enum {
 #ifdef USE_RX_SPI
     TABLE_RX_SPI,
 #endif
-    TABLE_GYRO_LPF,
+    TABLE_GYRO_HARDWARE_LPF,
+#ifdef USE_32K_CAPABLE_GYRO
+    TABLE_GYRO_32KHZ_HARDWARE_LPF,
+#endif
     TABLE_ACC_HARDWARE,
 #ifdef USE_BARO
     TABLE_BARO_HARDWARE,
@@ -58,7 +67,9 @@ typedef enum {
     TABLE_RC_INTERPOLATION,
     TABLE_RC_INTERPOLATION_CHANNELS,
     TABLE_LOWPASS_TYPE,
+    TABLE_DTERM_LOWPASS_TYPE,
     TABLE_FAILSAFE,
+    TABLE_FAILSAFE_SWITCH_MODE,
     TABLE_CRASH_RECOVERY,
 #ifdef USE_CAMERA_CONTROL
     TABLE_CAMERA_CONTROL_MODE,
@@ -83,6 +94,23 @@ typedef enum {
 #ifdef USE_DUAL_GYRO
     TABLE_GYRO,
 #endif
+    TABLE_THROTTLE_LIMIT_TYPE,
+#ifdef USE_MAX7456
+    TABLE_VIDEO_SYSTEM,
+#endif // USE_MAX7456
+#if defined(USE_ITERM_RELAX)
+    TABLE_ITERM_RELAX,
+    TABLE_ITERM_RELAX_TYPE,
+#endif
+#ifdef USE_ACRO_TRAINER
+    TABLE_ACRO_TRAINER_DEBUG,
+#endif // USE_ACRO_TRAINER
+#ifdef USE_RC_SMOOTHING_FILTER
+    TABLE_RC_SMOOTHING_TYPE,
+    TABLE_RC_SMOOTHING_DEBUG,
+    TABLE_RC_SMOOTHING_INPUT_TYPE,
+    TABLE_RC_SMOOTHING_DERIVATIVE_TYPE,
+#endif // USE_RC_SMOOTHING_FILTER
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 
@@ -93,31 +121,33 @@ typedef struct lookupTableEntry_s {
 
 
 #define VALUE_TYPE_OFFSET 0
-#define VALUE_SECTION_OFFSET 2
-#define VALUE_MODE_OFFSET 4
+#define VALUE_SECTION_OFFSET 3
+#define VALUE_MODE_OFFSET 5
 
 typedef enum {
-    // value type, bits 0-1
+    // value type, bits 0-2
     VAR_UINT8 = (0 << VALUE_TYPE_OFFSET),
     VAR_INT8 = (1 << VALUE_TYPE_OFFSET),
     VAR_UINT16 = (2 << VALUE_TYPE_OFFSET),
     VAR_INT16 = (3 << VALUE_TYPE_OFFSET),
+    VAR_UINT32 = (4 << VALUE_TYPE_OFFSET),
 
-    // value section, bits 2-3
+    // value section, bits 3-4
     MASTER_VALUE = (0 << VALUE_SECTION_OFFSET),
     PROFILE_VALUE = (1 << VALUE_SECTION_OFFSET),
     PROFILE_RATE_VALUE = (2 << VALUE_SECTION_OFFSET),
 
-    // value mode, bits 4-5
+    // value mode, bits 5-6
     MODE_DIRECT = (0 << VALUE_MODE_OFFSET),
     MODE_LOOKUP = (1 << VALUE_MODE_OFFSET),
-    MODE_ARRAY = (2 << VALUE_MODE_OFFSET)
+    MODE_ARRAY = (2 << VALUE_MODE_OFFSET),
+    MODE_BITSET = (3 << VALUE_MODE_OFFSET)
 } cliValueFlag_e;
 
 
-#define VALUE_TYPE_MASK (0x03)
-#define VALUE_SECTION_MASK (0x0c)
-#define VALUE_MODE_MASK (0x30)
+#define VALUE_TYPE_MASK (0x07)
+#define VALUE_SECTION_MASK (0x18)
+#define VALUE_MODE_MASK (0x60)
 
 typedef struct cliMinMaxConfig_s {
     const int16_t min;
@@ -136,6 +166,7 @@ typedef union {
     cliLookupTableConfig_t lookup;
     cliMinMaxConfig_t minmax;
     cliArrayLengthConfig_t array;
+    uint8_t bitpos;
 } cliValueConfig_t;
 
 typedef struct clivalue_s {

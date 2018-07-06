@@ -294,7 +294,7 @@ void OverclockRebootIfNecessary(uint32_t overclockLevel)
     const pllConfig_t * const pll = overclockLevels + overclockLevel;
 
     // Reboot to adjust overclock frequency
-    if (SystemCoreClock != ((pll->n / pll->p) * 1000000UL)) {
+    if (SystemCoreClock != (pll->n / pll->p) * 1000000) {
         REQUEST_OVERCLOCK = REQUEST_OVERCLOCK_MAGIC_COOKIE;
         CURRENT_OVERCLOCK_LEVEL = overclockLevel;
         __disable_irq();
@@ -363,10 +363,14 @@ void SystemInit(void)
         SCB_EnableDCache();
     }
 
+    if (PREFETCH_ENABLE) {
+        LL_FLASH_EnablePrefetch();
+    }
+
     /* Configure the system clock to specified frequency */
     SystemClock_Config();
 
-    if (SystemCoreClock != (pll_n / pll_p) * 1000000UL) {
+    if (SystemCoreClock != (pll_n / pll_p) * 1000000) {
         // There is a mismatch between the configured clock and the expected clock in portable.h
         while (1);
     }

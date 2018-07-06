@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
@@ -51,6 +54,7 @@ typedef enum {
     ADJUSTMENT_PITCH_RC_RATE,
     ADJUSTMENT_ROLL_RC_EXPO,
     ADJUSTMENT_PITCH_RC_EXPO,
+    ADJUSTMENT_PID_AUDIO,
     ADJUSTMENT_FUNCTION_COUNT
 } adjustmentFunction_e;
 
@@ -65,8 +69,8 @@ typedef union adjustmentConfig_u {
 } adjustmentData_t;
 
 typedef struct adjustmentConfig_s {
-    uint8_t adjustmentFunction;
-    uint8_t mode;
+    adjustmentFunction_e adjustmentFunction;
+    adjustmentMode_e mode;
     adjustmentData_t data;
 } adjustmentConfig_t;
 
@@ -83,6 +87,8 @@ typedef struct adjustmentRange_s {
 
     // ... via slot
     uint8_t adjustmentIndex;
+    uint16_t adjustmentCenter;
+    uint16_t adjustmentScale;
 } adjustmentRange_t;
 
 PG_DECLARE_ARRAY(adjustmentRange_t, MAX_ADJUSTMENT_RANGE_COUNT, adjustmentRanges);

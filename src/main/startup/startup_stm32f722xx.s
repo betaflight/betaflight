@@ -62,6 +62,10 @@ defined in linker script */
 .word  _sbss
 /* end address for the .bss section. defined in linker script */
 .word  _ebss
+/* start address for the .fastram_bss section. defined in linker script */
+.word  _sfastram_bss
+/* end address for the .fastram_bss section. defined in linker script */
+.word  _efastram_bss
 /* stack used for SystemInit_ExtMemCtl; always internal RAM used */
 
 /**
@@ -95,6 +99,7 @@ LoopCopyDataInit:
   adds  r2, r0, r1
   cmp  r2, r3
   bcc  CopyDataInit
+
   ldr  r2, =_sbss
   b  LoopFillZerobss
 /* Zero fill the bss segment. */  
@@ -107,10 +112,32 @@ LoopFillZerobss:
   cmp  r2, r3
   bcc  FillZerobss
 
+  ldr  r2, =_ssram2
+  b  LoopFillZerosram2
+/* Zero fill the sram2 segment. */  
+FillZerosram2:
+  movs  r3, #0
+  str  r3, [r2], #4
+    
+LoopFillZerosram2:
+  ldr  r3, = _esram2
+  cmp  r2, r3
+  bcc  FillZerosram2
+
+  ldr  r2, =_sfastram_bss
+  b  LoopFillZerofastram_bss
+/* Zero fill the fastram_bss segment. */  
+FillZerofastram_bss:
+  movs  r3, #0
+  str  r3, [r2], #4
+    
+LoopFillZerofastram_bss:
+  ldr  r3, = _efastram_bss
+  cmp  r2, r3
+  bcc  FillZerofastram_bss
+
 /* Call the clock system intitialization function.*/
   bl  SystemInit   
-/* Call static constructors */
-//    bl __libc_init_array
 /* Call the application's entry point.*/
   bl  main
   bx  lr    

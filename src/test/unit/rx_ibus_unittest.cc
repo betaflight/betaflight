@@ -18,8 +18,9 @@
 #include <stdint.h>
 
 extern "C" {
-#include <platform.h>
+#include "platform.h"
 #include "pg/pg.h"
+#include "pg/rx.h"
 #include "drivers/serial.h"
 #include "drivers/time.h"
 #include "io/serial.h"

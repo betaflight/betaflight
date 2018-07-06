@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
@@ -21,7 +24,6 @@
 
 #define USE_HARDWARE_REVISION_DETECTION
 #define HW_PIN                  PC13
-#define USE_BRUSHED_ESC_AUTODETECT
 
 #define USBD_PRODUCT_STRING "AlienFlightNG F7"
 
@@ -96,8 +98,8 @@
 // Performance logging for SD card operations:
 // #define AFATFS_USE_INTROSPECTIVE_LOGGING
 
-#define M25P16_CS_PIN        SPI2_NSS_PIN
-#define M25P16_SPI_INSTANCE  SPI2
+#define FLASH_CS_PIN         SPI2_NSS_PIN
+#define FLASH_SPI_INSTANCE   SPI2
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
@@ -112,9 +114,9 @@
 #define UART2_RX_PIN            PA3
 #define UART2_TX_PIN            PA2
 
-//#define USE_UART3
-//#define UART3_RX_PIN            PB11
-//#define UART3_TX_PIN            PB10
+#define USE_UART3
+#define UART3_RX_PIN            NONE
+#define UART3_TX_PIN            NONE
 
 #define USE_UART4
 #define UART4_RX_PIN            PC11
@@ -123,7 +125,7 @@
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
 
-#define SERIAL_PORT_COUNT       6
+#define SERIAL_PORT_COUNT       7
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN  PA8 // (Hardware=0, PPM/LED_STRIP) XXX Crash if using an LED strip.
@@ -154,6 +156,12 @@
 #define I2C_DEVICE              (I2CDEV_1)
 #define I2C1_SCL                PB6
 #define I2C1_SDA                PB7
+
+#define USE_MAX7456
+#define MAX7456_SPI_INSTANCE    SPI3
+#define MAX7456_SPI_CS_PIN      PB12
+#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
+#define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
 #define USE_ADC
 #define ADC1_DMA_STREAM         DMA2_Stream0

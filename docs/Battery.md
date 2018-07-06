@@ -1,6 +1,6 @@
 # Battery Monitoring
 
-Cleanflight has a battery monitoring feature.  The voltage of the main battery can be measured by the system and used to trigger a low-battery warning [buzzer](Buzzer.md), on-board status LED flashing and LED strip patterns.
+Betaflight has a battery monitoring feature.  The voltage of the main battery can be measured by the system and used to trigger a low-battery warning [buzzer](Buzzer.md), on-board status LED flashing and LED strip patterns.
 
 Low battery warnings can:
 
@@ -102,14 +102,47 @@ If you're using an OSD that expects the multiwii current meter output value, the
 
 ### ADC Sensor
 
-The current meter may need to be configured so the value read at the ADC input matches actual current draw.  Just like you need a voltmeter to correctly calibrate your voltage reading you also need an ammeter to calibrate the current sensor.
-
-Use the following settings to adjust calibration:
-
-`amperage_meter_scale`
-`amperage_meter_offset`
+The current meter needs to be configured so the value read at the Analog to Digital Converter (ADC) input matches actual current draw.  Just like you need a voltmeter to correctly calibrate your voltage reading you also need an ammeter to calibrate the current sensor.
+Unlike voltage sensing which is usually quite good from the factory, current sensing varies significantly from board to board and should be calibrated.
 
 It is recommended to set `multiwii_amperage_meter_output` to `OFF` when calibrating ADC current sensor.
+
+To measure the current a linear response device is used that converts the current traveling through it to a voltage to be read by the ADC on your flight controller.
+The maximum voltage that the flight controller can read is 3.3V (3300 mV), this is usually the limiting factor on the maximum measurable current.
+Most sensors use a shunt resistor to measure current however there are a few that use hall effect sensors.
+
+The flight controller uses the following equation to convert the measured ADC voltage to a current.
+```
+Current(Amps) = ADC (mV) / amperage_meter_scale * 10 + amperage_meter_offset / 1000
+```
+Where the calibrations are:
+
+| Setting                       | Description                                              |
+| ----------------------------- | -------------------------------------------------------- | 
+| `amperage_meter_scale`     | The scaling factor in mV/10A  |
+| `amperage_meter_offset`    | The offset in mA |
+
+This is in the mathematical form of y = x/m + b and with a few measurements along this line you can calibrate any combination of sensor and flight controller to a high accuracy.
+
+#### Calibrate using an ammeter
+
+**!!Important: Always take off your props before doing any testing!!**
+
+To calibrate your flight controller with a current meter follow these steps.
+
+1. Make a copy of [this google sheet](https://docs.google.com/spreadsheets/d/1lkL-X_FT9x2oqrwQEctDsEUhgdY19upNGc78M6FfJXY/). It will do all of the maths for you.
+2. Hook your ammeter up in series with your drone and a charged battery. I suggest an XT60 extender with one lead cut. Now your ammeter will be displaying the true current draw of your system.
+3. Connect to your flight controller through the configurator and check your current calibrations. Change them in the google sheet if needed.
+4. Use the motor tab to increase the throttle and change the current draw of the drone to around 1 A on the ammeter (it does not matter if it is not exact).
+5. Switch back to the power and battery tab and record current from the ammeter in the measured current column and the current reported by Betaflight in the flight controller current column (both in amps, to 2 decimal places).
+6. Repeat this measurement (steps 4 and 5) 3 or more times at various currents from 0 to 5 Amps (make sure not to go over your ammeter rated current).
+7. Once this is done make sure the results are linear on the graph and that the regression value is green. You can now update to the new calibration values and enjoy accurate battery usage information.
+
+The same method can be applied to both hall effect sensors and shunt resistors. Shunt resistors will usually have an offset of less than +/- 1000 mA however hall effect sensors offsets will be much higher.
+Note that while your calibration may be correct there is still a maximum current measure that you may exceed at maximum throttle, this will cause the current recorded by the flight controller to ceiling at this value even if the actual current is higher.
+As a result the reported mAh used may be less than is actually used, always keep an eye on the battery voltage as well.
+
+If you do not want to use google sheets then simply use some other tool that preforms a linear regression on the dataset. Multiply `amperage_meter_scale` used in testing by the slope and subtract the intercept in mA from  `amperage_meter_offset` to get the corrected calibration values.
 
 ### Virtual Sensor
 

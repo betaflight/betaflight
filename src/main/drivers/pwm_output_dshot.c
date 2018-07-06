@@ -1,19 +1,23 @@
 /*
- * This file is part of Betaflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Betaflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Betaflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Betaflight. If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <math.h>
@@ -33,6 +37,7 @@
 #endif
 #include "pwm_output.h"
 #include "drivers/nvic.h"
+#include "drivers/time.h"
 #include "dma.h"
 #include "rcc.h"
 
@@ -53,7 +58,7 @@ uint8_t getTimerIndex(TIM_TypeDef *timer)
         }
     }
     dmaMotorTimers[dmaMotorTimerCount++].timer = timer;
-    return dmaMotorTimerCount-1;
+    return dmaMotorTimerCount - 1;
 }
 
 void pwmWriteDshotInt(uint8_t index, uint16_t value)
@@ -64,7 +69,17 @@ void pwmWriteDshotInt(uint8_t index, uint16_t value)
         return;
     }
 
-    uint16_t packet = prepareDshotPacket(motor, value);
+    /*If there is a command ready to go overwrite the value and send that instead*/
+    if (pwmDshotCommandIsProcessing()) {
+        value = pwmGetDshotCommand(index);
+        if (value) {
+            motor->requestTelemetry = true;
+        }
+    }
+
+    motor->value = value;
+
+    uint16_t packet = prepareDshotPacket(motor);
     uint8_t bufferSize;
 
 #ifdef USE_DSHOT_DMAR
@@ -84,6 +99,13 @@ void pwmWriteDshotInt(uint8_t index, uint16_t value)
 void pwmCompleteDshotMotorUpdate(uint8_t motorCount)
 {
     UNUSED(motorCount);
+
+    /* If there is a dshot command loaded up, time it correctly with motor update*/
+    if (pwmDshotCommandIsQueued()) {
+        if (!pwmDshotCommandOutputIsEnabled(motorCount)) {
+            return;
+        }
+    }
 
     for (int i = 0; i < dmaMotorTimerCount; i++) {
 #ifdef USE_DSHOT_DMAR

@@ -26,13 +26,9 @@ alignsensor_unittest_SRC := \
 		$(USER_DIR)/sensors/boardalignment.c \
 		$(USER_DIR)/common/maths.c
 
-
-altitude_hold_unittest_SRC :=  \
-		$(USER_DIR)/flight/altitude.c
-
-
 arming_prevention_unittest_SRC := \
 		$(USER_DIR)/fc/fc_core.c \
+		$(USER_DIR)/fc/fc_dispatch.c \
 		$(USER_DIR)/fc/rc_controls.c \
 		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/fc/runtime_config.c \
@@ -120,7 +116,7 @@ flight_imu_unittest_SRC := \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/config/feature.c \
 		$(USER_DIR)/fc/rc_modes.c \
-		$(USER_DIR)/flight/altitude.c \
+		$(USER_DIR)/flight/position.c \
 		$(USER_DIR)/flight/imu.c
 
 
@@ -194,7 +190,9 @@ rx_ranges_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/fc/rc_modes.c \
-		$(USER_DIR)/rx/rx.c
+		$(USER_DIR)/rx/rx.c \
+		$(USER_DIR)/pg/pg.c \
+		$(USER_DIR)/pg/rx.c
 
 
 rx_rx_unittest_SRC := \
@@ -202,7 +200,8 @@ rx_rx_unittest_SRC := \
 		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/common/bitarray.c \
 		$(USER_DIR)/common/maths.c \
-		$(USER_DIR)/config/feature.c
+		$(USER_DIR)/config/feature.c \
+		$(USER_DIR)/pg/rx.c
 
 
 scheduler_unittest_SRC := \
@@ -214,7 +213,6 @@ scheduler_unittest_SRC := \
 sensor_gyro_unittest_SRC := \
 		$(USER_DIR)/sensors/gyro.c \
 		$(USER_DIR)/sensors/boardalignment.c \
-		$(USER_DIR)/build/debug.c \
 		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/drivers/accgyro/accgyro_fake.c \
@@ -291,8 +289,15 @@ rcdevice_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
 		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/io/rcdevice.c \
-		$(USER_DIR)/io/rcdevice_osd.c \
 		$(USER_DIR)/io/rcdevice_cam.c \
+
+pid_unittest_SRC :=  \
+		$(USER_DIR)/common/filter.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/drivers/accgyro/gyro_sync.c \
+		$(USER_DIR)/flight/pid.c \
+		$(USER_DIR)/pg/pg.c \
+		$(USER_DIR)/fc/runtime_config.c
 
 rcdevice_unittest_DEFINES := \
 		USE_RCDEVICE

@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -23,14 +26,16 @@
 
 #include "common/maths.h"
 
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+#include "pg/rx.h"
+#include "pg/rx_spi.h"
+
 #include "drivers/rx/rx_cc2500.h"
 #include "drivers/io.h"
 #include "drivers/time.h"
 
 #include "fc/config.h"
-
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
@@ -78,7 +83,7 @@ static IO_t antSelPin;
 int16_t rssiDbm;
 #endif
 
-PG_REGISTER_WITH_RESET_TEMPLATE(rxFrSkySpiConfig_t, rxFrSkySpiConfig, PG_RX_FRSKY_SPI_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(rxFrSkySpiConfig_t, rxFrSkySpiConfig, PG_RX_FRSKY_SPI_CONFIG, 1);
 
 PG_RESET_TEMPLATE(rxFrSkySpiConfig_t, rxFrSkySpiConfig,
     .autoBind = false,
@@ -89,6 +94,7 @@ PG_RESET_TEMPLATE(rxFrSkySpiConfig_t, rxFrSkySpiConfig,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     .rxNum = 0,
+    .useExternalAdc = false,
 );
 
 #if defined(USE_RX_FRSKY_SPI_TELEMETRY)
@@ -100,7 +106,7 @@ void setRssiDbm(uint8_t value)
         rssiDbm = ((((uint16_t)value) * 18) >> 5) + 65;
     }
 
-    setRssiUnfiltered(constrain(rssiDbm << 3, 0, 1023), RSSI_SOURCE_RX_PROTOCOL);
+    setRssi(rssiDbm << 3, RSSI_SOURCE_RX_PROTOCOL);
 }
 #endif // USE_RX_FRSKY_SPI_TELEMETRY
 
@@ -508,7 +514,7 @@ static bool frSkySpiDetect(void)
     return false;
 }
 
-bool frSkySpiInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+bool frSkySpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
 #if !defined(RX_FRSKY_SPI_DISABLE_CHIP_DETECTION)
     if (!frSkySpiDetect()) {
@@ -518,7 +524,7 @@ bool frSkySpiInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
     UNUSED(frSkySpiDetect);
 #endif
 
-    spiProtocol = rxConfig->rx_spi_protocol;
+    spiProtocol = rxSpiConfig->rx_spi_protocol;
 
     switch (spiProtocol) {
     case RX_SPI_FRSKY_D:

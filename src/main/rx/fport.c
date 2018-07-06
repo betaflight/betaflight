@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -38,6 +41,8 @@
 #include "telemetry/smartport.h"
 #endif
 
+#include "pg/rx.h"
+
 #include "rx/rx.h"
 #include "rx/sbus_channels.h"
 #include "rx/fport.h"
@@ -47,6 +52,8 @@
 #define FPORT_MAX_TELEMETRY_RESPONSE_DELAY_US 2000
 #define FPORT_MIN_TELEMETRY_RESPONSE_DELAY_US 500
 #define FPORT_MAX_TELEMETRY_AGE_MS 500
+
+#define FPORT_TELEMETRY_MAX_CONSECUTIVE_SENSORS 2
 
 
 #define FPORT_FRAME_MARKER 0x7E
@@ -262,9 +269,9 @@ static uint8_t fportFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
                     if (frameLength != FPORT_FRAME_PAYLOAD_LENGTH_CONTROL) {
                         reportFrameError(DEBUG_FPORT_ERROR_TYPE_SIZE);
                     } else {
-                        result |= sbusChannelsDecode(rxRuntimeConfig, &frame->data.controlData.channels);
+                        result = sbusChannelsDecode(rxRuntimeConfig, &frame->data.controlData.channels);
 
-                        setRssiUnfiltered(scaleRange(constrain(frame->data.controlData.rssi, 0, 100), 0, 100, 0, 1024), RSSI_SOURCE_RX_PROTOCOL);
+                        setRssi(scaleRange(frame->data.controlData.rssi, 0, 100, 0, RSSI_MAX_VALUE), RSSI_SOURCE_RX_PROTOCOL);
 
                         lastRcFrameReceivedMs = millis();
                     }
@@ -314,11 +321,11 @@ static uint8_t fportFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
     if ((mspPayload || hasTelemetryRequest) && cmpTimeUs(micros(), lastTelemetryFrameReceivedUs) >= FPORT_MIN_TELEMETRY_RESPONSE_DELAY_US) {
         hasTelemetryRequest = false;
 
-        result = result | RX_FRAME_PROCESSING_REQUIRED;
+        result = (result & ~RX_FRAME_PENDING) | RX_FRAME_PROCESSING_REQUIRED;
     }
 
     if (lastRcFrameReceivedMs && ((millis() - lastRcFrameReceivedMs) > FPORT_MAX_TELEMETRY_AGE_MS)) {
-        setRssiFiltered(0, RSSI_SOURCE_RX_PROTOCOL);
+        setRssiDirect(0, RSSI_SOURCE_RX_PROTOCOL);
         lastRcFrameReceivedMs = 0;
     }
 
@@ -330,6 +337,8 @@ static bool fportProcessFrame(const rxRuntimeConfig_t *rxRuntimeConfig)
     UNUSED(rxRuntimeConfig);
 
 #if defined(USE_TELEMETRY_SMARTPORT)
+    static uint8_t consecutiveSensorCount = 0;
+
     timeUs_t currentTimeUs = micros();
     if (cmpTimeUs(currentTimeUs, lastTelemetryFrameReceivedUs) > FPORT_MAX_TELEMETRY_RESPONSE_DELAY_US) {
        clearToSend = false;
@@ -338,7 +347,16 @@ static bool fportProcessFrame(const rxRuntimeConfig_t *rxRuntimeConfig)
     if (clearToSend) {
         DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_TELEMETRY_DELAY, currentTimeUs - lastTelemetryFrameReceivedUs);
 
-        processSmartPortTelemetry(mspPayload, &clearToSend, NULL);
+        if (consecutiveSensorCount >= FPORT_TELEMETRY_MAX_CONSECUTIVE_SENSORS && !(mspPayload && smartPortPayloadContainsMSP(mspPayload))) {
+// Stop one cycle to avoid saturating the buffer in the RX, since the
+// downstream bandwidth doesn't allow sensor sensors on every cycle.
+// We allow MSP frames to run over the resting period, expecting that
+// the caller won't flood us with requests.
+            consecutiveSensorCount = 0;
+        } else {
+            consecutiveSensorCount++;
+            processSmartPortTelemetry(mspPayload, &clearToSend, NULL);
+        }
 
         if (clearToSend) {
             smartPortWriteFrameFport(&emptySmartPortFrame);

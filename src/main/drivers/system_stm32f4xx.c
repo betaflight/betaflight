@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -39,16 +42,41 @@ void systemReset(void)
     NVIC_SystemReset();
 }
 
+PERSISTENT uint32_t bootloaderRequest = 0;
+#define BOOTLOADER_REQUEST_COOKIE 0xDEADBEEF
+
 void systemResetToBootloader(void)
 {
     if (mpuResetFn) {
         mpuResetFn();
     }
 
-    *((uint32_t *)0x2001FFFC) = 0xDEADBEEF; // 128KB SRAM STM32F4XX
+    bootloaderRequest = BOOTLOADER_REQUEST_COOKIE;
 
     __disable_irq();
     NVIC_SystemReset();
+}
+
+typedef void resetHandler_t(void);
+
+typedef struct isrVector_s {
+    __I uint32_t    stackEnd;
+    resetHandler_t *resetHandler;
+} isrVector_t;
+
+void checkForBootLoaderRequest(void)
+{
+    if (bootloaderRequest != BOOTLOADER_REQUEST_COOKIE) {
+        return;
+    }
+
+    bootloaderRequest = 0;
+
+    extern isrVector_t system_isr_vector_table_base;
+
+    __set_MSP(system_isr_vector_table_base.stackEnd);
+    system_isr_vector_table_base.resetHandler();
+    while (1);
 }
 
 void enableGPIOPowerUsageAndNoiseReductions(void)
@@ -160,8 +188,6 @@ bool isMPUSoftReset(void)
 
 void systemInit(void)
 {
-    checkForBootLoaderRequest();
-
     SetSysClock();
 
     // Configure NVIC preempt/priority groups
@@ -184,20 +210,4 @@ void systemInit(void)
 
     // SysTick
     SysTick_Config(SystemCoreClock / 1000);
-}
-
-void(*bootJump)(void);
-void checkForBootLoaderRequest(void)
-{
-    if (*((uint32_t *)0x2001FFFC) == 0xDEADBEEF) {
-
-        *((uint32_t *)0x2001FFFC) = 0x0;
-
-        __enable_irq();
-        __set_MSP(*((uint32_t *)0x1FFF0000));
-
-        bootJump = (void(*)(void))(*((uint32_t *) 0x1FFF0004));
-        bootJump();
-        while (1);
-    }
 }

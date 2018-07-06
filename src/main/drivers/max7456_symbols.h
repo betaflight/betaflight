@@ -29,12 +29,12 @@
 // Satellite Graphics
 #define SYM_SAT_L 0x1E
 #define SYM_SAT_R 0x1F
-#define SYM_HDP_L 0xBD
-#define SYM_HDP_R 0xBE
+// Not available: #define SYM_HDP_L 0xBD
+// Not available: #define SYM_HDP_R 0xBE
 //#define SYM_SAT 0x0F  // Not used
 
 // Degrees Icon for HEADING/DIRECTION HOME
-#define SYM_DEGREES 0xBD
+// Not available: #define SYM_DEGREES 0xBD
 
 // Direction arrows
 #define SYM_ARROW_SOUTH 0x60
@@ -63,22 +63,22 @@
 #define SYM_HEADING_LINE          0x1D
 
 // FRSKY HUB
-#define SYM_CELL0      0xF0
-#define SYM_CELL1      0xF1
-#define SYM_CELL2      0xF2
-#define SYM_CELL3      0xF3
-#define SYM_CELL4      0xF4
-#define SYM_CELL5      0xF5
-#define SYM_CELL6      0xF6
-#define SYM_CELL7      0xF7
-#define SYM_CELL8      0xF8
-#define SYM_CELL9      0xF9
-#define SYM_CELLA      0xFA
-#define SYM_CELLB      0xFB
-#define SYM_CELLC      0xFC
-#define SYM_CELLD      0xFD
-#define SYM_CELLE      0xFE
-#define SYM_CELLF      0xC3
+// Not available: #define SYM_CELL0      0xF0
+// Not available: #define SYM_CELL1      0xF1
+// Not available: #define SYM_CELL2      0xF2
+// Not available: #define SYM_CELL3      0xF3
+// Not available: #define SYM_CELL4      0xF4
+// Not available: #define SYM_CELL5      0xF5
+// Not available: #define SYM_CELL6      0xF6
+// Not available: #define SYM_CELL7      0xF7
+// Not available: #define SYM_CELL8      0xF8
+// Not available: #define SYM_CELL9      0xF9
+// Not available: #define SYM_CELLA      0xFA
+// Not available: #define SYM_CELLB      0xFB
+// Not available: #define SYM_CELLC      0xFC
+// Not available: #define SYM_CELLD      0xFD
+// Not available: #define SYM_CELLE      0xFE
+// Not available: #define SYM_CELLF      0xC3
 
 // Map mode
 #define SYM_HOME       0x04
@@ -90,41 +90,41 @@
 #define SYM_DIRECTION  0x72
 
 // GPS Coordinates and Altitude
-#define SYM_LAT 0xCA
-#define SYM_LON 0xCB
-#define SYM_ALT 0xCC
+// Not available: #define SYM_LAT 0xCA
+// Not available: #define SYM_LON 0xCB
+// Not available: #define SYM_ALT 0xCC
 
 // GPS Mode and Autopilot
-#define SYM_3DFIX     0xDF
-#define SYM_HOLD      0xEF
-#define SYM_G_HOME    0xFF
+// Not available: #define SYM_3DFIX     0xDF
+// Not available: #define SYM_HOLD      0xEF
+// Not available: #define SYM_G_HOME    0xFF
 #define SYM_GHOME     0x9D
 #define SYM_GHOME1    0x9E
-#define SYM_GHOLD     0xCD
-#define SYM_GHOLD1    0xCE
-#define SYM_GMISSION  0xB5
-#define SYM_GMISSION1 0xB6
-#define SYM_GLAND     0xB7
-#define SYM_GLAND1    0xB8
-#define SYM_HOME_DIST 0xA0
+// Not available: #define SYM_GHOLD     0xCD
+// Not available: #define SYM_GHOLD1    0xCE
+// Not available: #define SYM_GMISSION  0xB5
+// Not available: #define SYM_GMISSION1 0xB6
+// Not available: #define SYM_GLAND     0xB7
+// Not available: #define SYM_GLAND1    0xB8
+// Not available: #define SYM_HOME_DIST 0xA0
 
 // Gimbal active Mode
 #define SYM_GIMBAL  0x16
 #define SYM_GIMBAL1 0x17
 
 // Sensor´s Presence
-#define SYM_ACC     0xA0
-#define SYM_MAG     0xA1
-#define SYM_BAR     0xA2
-#define SYM_GPS     0xA3
-#define SYM_MAN     0xC0
-#define SYM_MAN1    0xC1
-#define SYM_MAN2    0xC2
-#define SYM_CHECK   0xBE
-#define SYM_BARO10  0xB7
-#define SYM_BARO11  0xB8
-#define SYM_MAG10   0xB5
-#define SYM_MAG11   0xB6
+// Not available: #define SYM_ACC     0xA0
+// Not available: #define SYM_MAG     0xA1
+// Not available: #define SYM_BAR     0xA2
+// Not available: #define SYM_GPS     0xA3
+// Not available: #define SYM_MAN     0xC0
+// Not available: #define SYM_MAN1    0xC1
+// Not available: #define SYM_MAN2    0xC2
+// Not available: #define SYM_CHECK   0xBE
+// Not available: #define SYM_BARO10  0xB7
+// Not available: #define SYM_BARO11  0xB8
+// Not available: #define SYM_MAG10   0xB5
+// Not available: #define SYM_MAG11   0xB6
 
 // AH Center screen Graphics
 #define SYM_AH_CENTER_LINE        0x26
@@ -155,24 +155,24 @@
 #define SYM_VARIO 0x7F
 
 // Glidescope
-#define SYM_GLIDESCOPE 0xE0
+// Not available: #define SYM_GLIDESCOPE 0xE0
 
 // Batt Icon´s
 #define SYM_MAIN_BATT 0x97
-#define SYM_VID_BAT   0xBF
+// Not available: #define SYM_VID_BAT   0xBF
 
 // Unit Icon´s (Metric)
 #define SYM_MS          0x9F
-#define SYM_KMH         0xA5
-#define SYM_ALTM        0xA7
-#define SYM_DISTHOME_M  0xBB
+// Not available: #define SYM_KMH         0xA5
+// Not available: #define SYM_ALTM        0xA7
+// Not available: #define SYM_DISTHOME_M  0xBB
 #define SYM_M           0x0C
 
 // Unit Icon´s (Imperial)
 #define SYM_FTS         0x99
-#define SYM_MPH         0xA6
-#define SYM_ALTFT       0xA8
-#define SYM_DISTHOME_FT 0xB9
+// Not available: #define SYM_MPH         0xA6
+// Not available: #define SYM_ALTFT       0xA8
+// Not available: #define SYM_DISTHOME_FT 0xB9
 #define SYM_FT          0x0F
 
 // Voltage and amperage
@@ -182,17 +182,17 @@
 #define SYM_WATT  0x57
 
 // Flying Mode
-#define SYM_ACRO      0xAE
+// Not available: #define SYM_ACRO      0xAE
 #define SYM_ACROGY    0x98
-#define SYM_ACRO1     0xAF
-#define SYM_STABLE    0xAC
-#define SYM_STABLE1   0xAD
-#define SYM_HORIZON   0xC4
-#define SYM_HORIZON1  0xC5
-#define SYM_PASS      0xAA
-#define SYM_PASS1     0xAB
-#define SYM_AIR       0xEA
-#define SYM_AIR1      0xEB
+// Not available: #define SYM_ACRO1     0xAF
+// Not available: #define SYM_STABLE    0xAC
+// Not available: #define SYM_STABLE1   0xAD
+// Not available: #define SYM_HORIZON   0xC4
+// Not available: #define SYM_HORIZON1  0xC5
+// Not available: #define SYM_PASS      0xAA
+// Not available: #define SYM_PASS1     0xAB
+// Not available: #define SYM_AIR       0xEA
+// Not available: #define SYM_AIR1      0xEB
 #define SYM_PLUS      0x89
 
 // Note, these change with scrolling enabled (scrolling is TODO)
@@ -205,7 +205,7 @@
 #define SYM_FLY_M 0x9C
 #define SYM_ON_H  0x70
 #define SYM_FLY_H 0x71
-#define SYM_CLOCK 0xBC
+// Not available: #define SYM_CLOCK 0xBC
 
 // Throttle Position (%)
 #define SYM_THR   0x04
@@ -219,12 +219,12 @@
 
 //Misc
 #define SYM_COLON 0x2D
-#define SYM_ZERO_HALF_TRAILING_DOT 0xC0
-#define SYM_ZERO_HALF_LEADING_DOT 0xD0
+// Not available: #define SYM_ZERO_HALF_TRAILING_DOT 0xC0
+// Not available: #define SYM_ZERO_HALF_LEADING_DOT 0xD0
 
 //sport
-#define SYM_MIN 0xB3
-#define SYM_AVG 0xB4
+// Not available: #define SYM_MIN 0xB3
+// Not available: #define SYM_AVG 0xB4
 
 // Progress bar
 #define SYM_PB_START 0x8A

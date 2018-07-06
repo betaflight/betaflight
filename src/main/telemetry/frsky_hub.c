@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -35,6 +38,7 @@
 #include "config/feature.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/rx.h"
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/sensor.h"
@@ -57,7 +61,7 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
-#include "flight/altitude.h"
+#include "flight/position.h"
 
 #include "rx/rx.h"
 
@@ -182,7 +186,9 @@ static void sendThrottleOrBatterySizeAsRpm(void)
     int16_t data;
 #if defined(USE_ESC_SENSOR)
     escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
-    data = escData->dataAge < ESC_DATA_INVALID ? escData->rpm : 0;
+    if (escData) {
+        data = escData->dataAge < ESC_DATA_INVALID ? (calcEscRpm(escData->rpm) / 10) : 0;
+    }
 #else
     if (ARMING_FLAG(ARMED)) {
         const throttleStatus_e throttleStatus = calculateThrottleStatus();
@@ -204,7 +210,9 @@ static void sendTemperature1(void)
     int16_t data;
 #if defined(USE_ESC_SENSOR)
     escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
-    data = escData->dataAge < ESC_DATA_INVALID ? escData->temperature : 0;
+    if (escData) {
+        data = escData->dataAge < ESC_DATA_INVALID ? escData->temperature : 0;
+    }
 #elif defined(USE_BARO)
     data = (baro.baroTemperature + 50)/ 100; // Airmamaf
 #else
@@ -397,6 +405,9 @@ static void sendVoltageAmp(void)
 
     if (telemetryConfig()->frsky_vfas_precision == FRSKY_VFAS_PRECISION_HIGH) {
         // Use new ID 0x39 to send voltage directly in 0.1 volts resolution
+        if (telemetryConfig()->report_cell_voltage && cellCount) {
+            voltage /= cellCount;
+        }
         frSkyHubWriteFrame(ID_VOLTAGE_AMP, voltage);
     } else {
         // send in 0.2 volts resolution

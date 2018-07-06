@@ -28,6 +28,8 @@ extern "C" {
 
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
+    #include "pg/rx.h"
+
     #include "common/crc.h"
     #include "common/utils.h"
 

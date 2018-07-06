@@ -1,25 +1,28 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #if defined(USE_I2C) && !defined(SOFT_I2C)
 
@@ -33,6 +36,17 @@
 #include "drivers/bus_i2c_impl.h"
 
 #define CLOCKSPEED 800000    // i2c clockspeed 400kHz default (conform specs), 800kHz  and  1200kHz (Betaflight default)
+
+// Number of bits in I2C protocol phase
+#define LEN_ADDR 7
+#define LEN_RW 1
+#define LEN_ACK 1
+
+// Clock period in us during unstick transfer
+#define UNSTICK_CLK_US 10
+
+// Allow 500us for clock strech to complete during unstick
+#define UNSTICK_CLK_STRETCH (500/UNSTICK_CLK_US)
 
 static void i2cUnstick(IO_t scl, IO_t sda);
 
@@ -289,31 +303,33 @@ static void i2cUnstick(IO_t scl, IO_t sda)
     IOConfigGPIO(scl, IOCFG_OUT_OD);
     IOConfigGPIO(sda, IOCFG_OUT_OD);
 
-    // Analog Devices AN-686
-    // We need 9 clock pulses + STOP condition
-    for (i = 0; i < 9; i++) {
+    // Clock out, with SDA high:
+    //   7 data bits
+    //   1 READ bit
+    //   1 cycle for the ACK
+    for (i = 0; i < (LEN_ADDR + LEN_RW + LEN_ACK); i++) {
         // Wait for any clock stretching to finish
-        int timeout = 100;
+        int timeout = UNSTICK_CLK_STRETCH;
         while (!IORead(scl) && timeout) {
-            delayMicroseconds(5);
+            delayMicroseconds(UNSTICK_CLK_US);
             timeout--;
         }
 
         // Pull low
         IOLo(scl); // Set bus low
-        delayMicroseconds(5);
+        delayMicroseconds(UNSTICK_CLK_US/2);
         IOHi(scl); // Set bus high
-        delayMicroseconds(5);
+        delayMicroseconds(UNSTICK_CLK_US/2);
     }
 
     // Generate a stop condition in case there was none
     IOLo(scl);
-    delayMicroseconds(5);
+    delayMicroseconds(UNSTICK_CLK_US/2);
     IOLo(sda);
-    delayMicroseconds(5);
+    delayMicroseconds(UNSTICK_CLK_US/2);
 
     IOHi(scl); // Set bus scl high
-    delayMicroseconds(5);
+    delayMicroseconds(UNSTICK_CLK_US/2);
     IOHi(sda); // Set bus sda high
 }
 

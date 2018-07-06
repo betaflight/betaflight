@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
@@ -68,8 +71,8 @@
 #define NAZE_SPI_CS_PIN         PB12
 
 // We either have this 16mbit flash chip on SPI or the MPU6500 acc/gyro depending on board revision:
-#define M25P16_CS_PIN           NAZE_SPI_CS_PIN
-#define M25P16_SPI_INSTANCE     NAZE_SPI_INSTANCE
+#define FLASH_CS_PIN            NAZE_SPI_CS_PIN
+#define FLASH_SPI_INSTANCE      NAZE_SPI_INSTANCE
 
 #define MPU6500_CS_PIN          NAZE_SPI_CS_PIN
 #define MPU6500_SPI_INSTANCE    NAZE_SPI_INSTANCE
@@ -88,17 +91,17 @@
 #define GYRO_MPU6500_ALIGN      CW0_DEG
 
 #define USE_ACC
-#define USE_ACC_ADXL345
-#define USE_ACC_BMA280
-#define USE_ACC_MMA8452
+//#define USE_ACC_ADXL345
+//#define USE_ACC_BMA280
+//#define USE_ACC_MMA8452
 #define USE_ACC_MPU6050
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
 
-#define ACC_ADXL345_ALIGN       CW270_DEG
+//#define ACC_ADXL345_ALIGN       CW270_DEG
 #define ACC_MPU6050_ALIGN       CW0_DEG
-#define ACC_MMA8452_ALIGN       CW90_DEG
-#define ACC_BMA280_ALIGN        CW0_DEG
+//#define ACC_MMA8452_ALIGN       CW90_DEG
+//#define ACC_BMA280_ALIGN        CW0_DEG
 #define ACC_MPU6500_ALIGN       CW0_DEG
 
 #define USE_BARO

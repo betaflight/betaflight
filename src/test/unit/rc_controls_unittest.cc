@@ -29,6 +29,7 @@ extern "C" {
 
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
+    #include "pg/rx.h"
 
     #include "blackbox/blackbox.h"
     #include "blackbox/blackbox_fielddefs.h"
@@ -51,6 +52,7 @@ extern "C" {
 
     #include "fc/rc_controls.h"
     #include "fc/runtime_config.h"
+    #include "fc/fc_core.h"
 
     #include "scheduler/scheduler.h"
 }
@@ -697,7 +699,10 @@ void initRcProcessing(void) {}
 void changePidProfile(uint8_t) {}
 void pidInitConfig(const pidProfile_t *) {}
 void accSetCalibrationCycles(uint16_t) {}
-void gyroStartCalibration(void) {}
+void gyroStartCalibration(bool isFirstArmingCalibration)
+{
+    UNUSED(isFirstArmingCalibration);
+}
 void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t*) {}
 void handleInflightCalibrationStickPosition(void) {}
 bool feature(uint32_t) { return false;}
@@ -733,3 +738,5 @@ timeDelta_t getTaskDeltaTime(cfTaskId_e) { return 20000; }
 armingDisableFlags_e getArmingDisableFlags(void) {
     return (armingDisableFlags_e) 0;
 }
+bool isTryingToArm(void) { return false; }
+void resetTryingToArm(void) {}

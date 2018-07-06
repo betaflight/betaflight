@@ -1,19 +1,23 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
+
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "CHF3" // Chebuzz F3
@@ -56,34 +60,27 @@
 // Note, this is the same DMA channel as UART1_RX. Luckily we don't use DMA for USART Rx.
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
 
-//#define USE_FLASHFS
-//#define USE_FLASH_M25P16
-
-//#define M25P16_CS_GPIO          GPIOB
-//#define M25P16_CS_PIN           GPIO_Pin_12
-//#define M25P16_SPI_INSTANCE     SPI2
-
 #define USE_GYRO
-#define USE_GYRO_L3GD20
+//#define USE_GYRO_L3GD20
 #define USE_GYRO_MPU6050
 
-#define L3GD20_SPI                      SPI1
-#define L3GD20_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOE
-#define L3GD20_CS_GPIO                  GPIOE
-#define L3GD20_CS_PIN                   PE3
+//#define L3GD20_SPI                      SPI1
+//#define L3GD20_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOE
+//#define L3GD20_CS_GPIO                  GPIOE
+//#define L3GD20_CS_PIN                   PE3
 
-#define GYRO_L3GD20_ALIGN CW270_DEG
+//#define GYRO_L3GD20_ALIGN CW270_DEG
 #define GYRO_MPU6050_ALIGN CW0_DEG
 
 #define USE_ACC
 #define USE_ACC_MPU6050
-#define USE_ACC_LSM303DLHC
-#define LSM303DLHC_I2C                       I2C1
-#define LSM303DLHC_I2C_SCK_PIN               PB6
-#define LSM303DLHC_I2C_SDA_PIN               PB7
-#define LSM303DLHC_DRDY_PIN                  PE2
-#define LSM303DLHC_I2C_INT1_PIN              PE4
-#define LSM303DLHC_I2C_INT2_PIN              PE5
+//#define USE_ACC_LSM303DLHC
+//#define LSM303DLHC_I2C                       I2C1
+//#define LSM303DLHC_I2C_SCK_PIN               PB6
+//#define LSM303DLHC_I2C_SDA_PIN               PB7
+//#define LSM303DLHC_DRDY_PIN                  PE2
+//#define LSM303DLHC_I2C_INT1_PIN              PE4
+//#define LSM303DLHC_I2C_INT2_PIN              PE5
 
 #define ACC_MPU6050_ALIGN       CW0_DEG
 

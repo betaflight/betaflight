@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -29,6 +32,7 @@
 #include "config/feature.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/rx.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -36,9 +40,10 @@
 #include "rx/rx.h"
 
 boxBitmask_t rcModeActivationMask; // one bit per mode defined in boxId_e
+static bool modeChangesDisabled = false;
 
 PG_REGISTER_ARRAY(modeActivationCondition_t, MAX_MODE_ACTIVATION_CONDITION_COUNT, modeActivationConditions,
-                  PG_MODE_ACTIVATION_PROFILE, 0);
+                  PG_MODE_ACTIVATION_PROFILE, 1);
 
 bool IS_RC_MODE_ACTIVE(boxId_e boxId)
 {
@@ -48,6 +53,10 @@ bool IS_RC_MODE_ACTIVE(boxId_e boxId)
 void rcModeUpdate(boxBitmask_t *newState)
 {
     rcModeActivationMask = *newState;
+}
+
+void preventModeChanges(void) {
+    modeChangesDisabled = true;
 }
 
 bool isAirmodeActive(void) {
@@ -72,14 +81,24 @@ bool isRangeActive(uint8_t auxChannelIndex, const channelRange_t *range) {
 void updateActivatedModes(void)
 {
     boxBitmask_t newMask, andMask;
-    memset(&newMask, 0, sizeof(newMask));
     memset(&andMask, 0, sizeof(andMask));
+
+    if (!modeChangesDisabled) {
+        memset(&newMask, 0, sizeof(newMask));
+    } else {
+        memcpy(&newMask, &rcModeActivationMask, sizeof(newMask));
+    }
 
     // determine which conditions set/clear the mode
     for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
         const modeActivationCondition_t *mac = modeActivationConditions(i);
 
         boxId_e mode = mac->modeId;
+
+        if (modeChangesDisabled && mode != BOXBEEPERON) {
+            continue;
+        }
+
         if (mode < CHECKBOX_ITEM_COUNT) {
             bool bAnd = (mac->modeLogic == MODELOGIC_AND) || bitArrayGet(&andMask, mode);
             bool bAct = isRangeActive(mac->auxChannelIndex, &mac->range);
@@ -105,4 +124,28 @@ bool isModeActivationConditionPresent(boxId_e modeId)
     }
 
     return false;
+}
+
+void removeModeActivationCondition(const boxId_e modeId)
+{
+    unsigned offset = 0;
+    for (unsigned i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
+        modeActivationCondition_t *mac = modeActivationConditionsMutable(i);
+
+        if (mac->modeId == modeId && !offset) {
+            offset++;
+        }
+
+        if (offset) {
+            while (i + offset < MAX_MODE_ACTIVATION_CONDITION_COUNT && modeActivationConditions(i + offset)->modeId == modeId) {
+                offset++;
+            }
+
+            if (i + offset < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
+                memcpy(mac, modeActivationConditions(i + offset), sizeof(modeActivationCondition_t));
+            } else {
+                memset(mac, 0, sizeof(modeActivationCondition_t));
+            }
+        }
+    }
 }

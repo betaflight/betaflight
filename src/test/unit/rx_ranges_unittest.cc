@@ -22,10 +22,12 @@
 
 extern "C" {
     #include "platform.h"
-
+    #include "build/debug.h"
     #include "drivers/io.h"
     #include "common/maths.h"
+    #include "pg/pg.h"
     #include "pg/pg_ids.h"
+    #include "pg/rx.h"
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
     #include "rx/rx.h"
@@ -36,6 +38,8 @@ extern "C" {
 
 extern "C" {
 boxBitmask_t rcModeActivationMask;
+int16_t debug[DEBUG16_VALUE_COUNT];
+uint8_t debugMode = 0;
 
 extern uint16_t applyRxChannelRangeConfiguraton(int sample, const rxChannelRangeConfig_t *range);
 }

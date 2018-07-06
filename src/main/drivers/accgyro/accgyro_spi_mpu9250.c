@@ -1,20 +1,22 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
-
 
 /*
  * Authors:
@@ -106,7 +108,7 @@ void mpu9250SpiGyroInit(gyroDev_t *gyro)
 
 void mpu9250SpiAccInit(accDev_t *acc)
 {
-    acc->acc_1G = 512 * 8;
+    acc->acc_1G = 512 * 4;
 }
 
 bool mpu9250SpiWriteRegisterVerify(const busDevice_t *bus, uint8_t reg, uint8_t data)
@@ -142,30 +144,13 @@ static void mpu9250AccAndGyroInit(gyroDev_t *gyro) {
 
     mpu9250SpiWriteRegisterVerify(&gyro->bus, MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
 
-    //Fchoice_b defaults to 00 which makes fchoice 11
-    uint8_t raGyroConfigData = INV_FSR_2000DPS << 3;
-    if (gyro->gyroRateKHz > GYRO_RATE_8_kHz) {
-        // use otherwise redundant LPF value to configure FCHOICE_B
-        // see REGISTER 27 – GYROSCOPE CONFIGURATION in datasheet
-        if (gyro->lpf==GYRO_LPF_NONE) {
-            raGyroConfigData |= FCB_8800_32;
-        } else {
-            raGyroConfigData |= FCB_3600_32;
-        }
-    }
-    mpu9250SpiWriteRegisterVerify(&gyro->bus, MPU_RA_GYRO_CONFIG, raGyroConfigData);
+    mpu9250SpiWriteRegisterVerify(&gyro->bus, MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3 | mpuGyroFCHOICE(gyro));
 
-    if (gyro->lpf == 4) {
-        mpu9250SpiWriteRegisterVerify(&gyro->bus, MPU_RA_CONFIG, 1); //1KHz, 184DLPF
-    } else if (gyro->lpf < 4) {
-        mpu9250SpiWriteRegisterVerify(&gyro->bus, MPU_RA_CONFIG, 7); //8KHz, 3600DLPF
-    } else if (gyro->lpf > 4) {
-        mpu9250SpiWriteRegisterVerify(&gyro->bus, MPU_RA_CONFIG, 0); //8KHz, 250DLPF
-    }
+    mpu9250SpiWriteRegisterVerify(&gyro->bus, MPU_RA_CONFIG, mpuGyroDLPF(gyro));
 
     mpu9250SpiWriteRegisterVerify(&gyro->bus, MPU_RA_SMPLRT_DIV, gyro->mpuDividerDrops);
 
-    mpu9250SpiWriteRegisterVerify(&gyro->bus, MPU_RA_ACCEL_CONFIG, INV_FSR_8G << 3);
+    mpu9250SpiWriteRegisterVerify(&gyro->bus, MPU_RA_ACCEL_CONFIG, INV_FSR_16G << 3);
     mpu9250SpiWriteRegisterVerify(&gyro->bus, MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 1 << 1 | 0 << 0);  // INT_ANYRD_2CLEAR, BYPASS_EN
 
 #if defined(USE_MPU_DATA_READY_SIGNAL)
@@ -179,8 +164,11 @@ static void mpu9250AccAndGyroInit(gyroDev_t *gyro) {
 
 uint8_t mpu9250SpiDetect(const busDevice_t *bus)
 {
+#ifndef USE_DUAL_GYRO
     IOInit(bus->busdev_u.spi.csnPin, OWNER_MPU_CS, 0);
     IOConfigGPIO(bus->busdev_u.spi.csnPin, SPI_IO_CS_CFG);
+    IOHi(bus->busdev_u.spi.csnPin);
+#endif
 
     spiSetDivisor(bus->busdev_u.spi.instance, SPI_CLOCK_INITIALIZATON); //low speed
     mpu9250SpiWriteRegister(bus, MPU_RA_PWR_MGMT_1, MPU9250_BIT_RESET);

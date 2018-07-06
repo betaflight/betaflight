@@ -1,24 +1,28 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
 
 #include <stdbool.h>
 
+#include "common/filter.h"
 #include "pg/pg.h"
 
 typedef enum rc_alias {
@@ -35,6 +39,8 @@ typedef enum rc_alias {
     AUX7,
     AUX8
 } rc_alias_e;
+
+#define PRIMARY_CHANNEL_COUNT (THROTTLE + 1)
 
 typedef enum {
     THROTTLE_LOW = 0,
@@ -54,6 +60,28 @@ typedef enum {
     RC_SMOOTHING_AUTO,
     RC_SMOOTHING_MANUAL
 } rcSmoothing_t;
+
+typedef enum {
+    RC_SMOOTHING_TYPE_INTERPOLATION,
+    RC_SMOOTHING_TYPE_FILTER
+} rcSmoothingType_e;
+
+typedef enum {
+    RC_SMOOTHING_INPUT_PT1,
+    RC_SMOOTHING_INPUT_BIQUAD
+} rcSmoothingInputFilter_e;
+
+typedef enum {
+    RC_SMOOTHING_DERIVATIVE_OFF,
+    RC_SMOOTHING_DERIVATIVE_PT1,
+    RC_SMOOTHING_DERIVATIVE_BIQUAD
+} rcSmoothingDerivativeFilter_e;
+
+typedef enum {
+    RC_SMOOTHING_VALUE_INPUT_ACTIVE,
+    RC_SMOOTHING_VALUE_DERIVATIVE_ACTIVE,
+    RC_SMOOTHING_VALUE_AVERAGE_FRAME
+} rcSmoothingInfoType_e;
 
 #define ROL_LO (1 << (2 * ROLL))
 #define ROL_CE (3 << (2 * ROLL))
@@ -78,6 +106,27 @@ typedef enum {
 #define CONTROL_RATE_CONFIG_TPA_MAX              100
 
 extern float rcCommand[4];
+
+typedef struct rcSmoothingFilterTraining_s {
+    float sum;
+    int count;
+    uint16_t min;
+    uint16_t max;
+} rcSmoothingFilterTraining_t;
+
+typedef union rcSmoothingFilterTypes_u {
+    pt1Filter_t pt1Filter;
+    biquadFilter_t biquadFilter;
+} rcSmoothingFilterTypes_t;
+
+typedef struct rcSmoothingFilter_s {
+    bool filterInitialized;
+    rcSmoothingFilterTypes_t filter[4];
+    uint16_t inputCutoffFrequency;
+    uint16_t derivativeCutoffFrequency;
+    int averageFrameTimeUs;
+    rcSmoothingFilterTraining_t training;
+} rcSmoothingFilter_t;
 
 typedef struct rcControlsConfig_s {
     uint8_t deadband;                       // introduce a deadband around the stick center for pitch and roll axis. Must be greater than zero.

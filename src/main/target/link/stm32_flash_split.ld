@@ -35,6 +35,15 @@ SECTIONS
     . = ALIGN(4);
   } >FLASH
 
+  /* System memory (read-only bootloader) interrupt vector */
+  .system_isr_vector (NOLOAD) :
+  {
+    . = ALIGN(4);
+    PROVIDE (system_isr_vector_table_base = .);
+    KEEP(*(.system_isr_vector)) /* Bootloader code */
+    . = ALIGN(4);
+  } >SYSTEM_MEMORY
+
   /* The program code and other data goes into FLASH */
   .text :
   {
@@ -97,7 +106,7 @@ SECTIONS
   } >FLASH
 
   /* used by the startup to initialize data */
-  _sidata = .;
+  _sidata = LOADADDR(.data);
 
   /* Initialized data sections goes into RAM, load LMA copy after code */
   .data :
@@ -113,7 +122,7 @@ SECTIONS
 
   /* Uninitialized data section */
   . = ALIGN(4);
-  .bss :
+  .bss (NOLOAD) :
   {
     /* This is used by the startup in order to initialize the .bss secion */
     _sbss = .;         /* define a global symbol at bss start */
@@ -127,6 +136,22 @@ SECTIONS
     __bss_end__ = _ebss;
   } >RAM
 
+  /* used during startup to initialized fastram_data */
+  _sfastram_idata = LOADADDR(.fastram_data);
+
+  /* Initialized FAST_RAM section for unsuspecting developers */
+  .fastram_data :
+  {
+    . = ALIGN(4);
+    _sfastram_data = .;        /* create a global symbol at data start */
+    *(.fastram_data)           /* .data sections */
+    *(.fastram_data*)          /* .data* sections */
+
+    . = ALIGN(4);
+    _efastram_data = .;        /* define a global symbol at data end */
+  } >FASTRAM AT> FLASH1
+
+  . = ALIGN(4);
   .fastram_bss (NOLOAD) :
   {
     __fastram_bss_start__ = .;
@@ -135,6 +160,14 @@ SECTIONS
     . = ALIGN(4);
     __fastram_bss_end__ = .;
   } >FASTRAM
+
+  .persistent_data (NOLOAD) :
+  {
+    __persistent_data_start__ = .;
+    *(.persistent_data)
+    . = ALIGN(4);
+    __persistent_data_end__ = .;
+  } >RAM
 
   /* User_heap_stack section, used to check that there is enough RAM left */
   _heap_stack_end = ORIGIN(STACKRAM) + LENGTH(STACKRAM) - _Hot_Reboot_Flags_Size;

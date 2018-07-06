@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -21,7 +24,7 @@
 
 #include "platform.h"
 
-#ifdef USE_TELEMETRY
+#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_SRXL)
 
 #include "build/version.h"
 
@@ -45,6 +48,8 @@
 
 #include "io/gps.h"
 
+#include "pg/rx.h"
+
 #include "rx/rx.h"
 #include "rx/spektrum.h"
 #include "io/spektrum_vtx_control.h"
@@ -57,8 +62,6 @@
 #include "drivers/vtx_common.h"
 #include "io/vtx_tramp.h"
 #include "io/vtx_smartaudio.h"
-
-#define SRXL_CYCLETIME_US           33000 // 33ms, 30 Hz
 
 #define SRXL_ADDRESS_FIRST          0xA5
 #define SRXL_ADDRESS_SECOND         0x80
@@ -73,6 +76,13 @@
 
 static bool srxlTelemetryEnabled;
 static uint8_t srxlFrame[SRXL_FRAME_SIZE_MAX];
+static bool srxlTelemetryNow   = false;
+
+void srxlCollectTelemetryNow(void)
+{
+    srxlTelemetryNow   = true;
+}
+
 
 static void srxlInitializeFrame(sbuf_t *dst)
 {
@@ -191,8 +201,8 @@ bool srxlFrameFlightPackCurrent(sbuf_t *dst, timeUs_t currentTimeUs)
         sbufWriteU16(dst, amps);
         sbufWriteU16(dst, mah);
         sbufWriteU16(dst, 0x7fff);            // temp A
-        sbufWriteU16(dst, 0xffff);            // Amps B
-        sbufWriteU16(dst, 0xffff);            // mAH B
+        sbufWriteU16(dst, 0x7fff);            // Amps B
+        sbufWriteU16(dst, 0x7fff);            // mAH B
         sbufWriteU16(dst, 0x7fff);            // temp B
         sbufWriteU16(dst, 0xffff);
 
@@ -507,16 +517,11 @@ bool checkSrxlTelemetryState(void)
  */
 void handleSrxlTelemetry(timeUs_t currentTimeUs)
 {
-    static uint32_t srxlLastCycleTime;
-
-    if (!srxlTelemetryEnabled) {
+    if (!srxlTelemetryNow) {
         return;
     }
 
-    // Actual telemetry data only needs to be sent at a low frequency, ie 10Hz
-    if (currentTimeUs >= srxlLastCycleTime + SRXL_CYCLETIME_US) {
-        srxlLastCycleTime = currentTimeUs;
-        processSrxl(currentTimeUs);
-    }
+    srxlTelemetryNow   = false;
+    processSrxl(currentTimeUs);
 }
 #endif

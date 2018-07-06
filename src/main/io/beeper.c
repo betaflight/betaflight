@@ -1,24 +1,27 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "stdbool.h"
 #include "stdint.h"
 
-#include <platform.h>
+#include "platform.h"
 
 #include "common/utils.h"
 
@@ -33,6 +36,7 @@
 #include "flight/mixer.h"
 
 #include "fc/config.h"
+#include "fc/fc_core.h"
 #include "fc/runtime_config.h"
 
 #include "io/statusindicator.h"
@@ -74,6 +78,10 @@
 
 #define BEEPER_COMMAND_REPEAT 0xFE
 #define BEEPER_COMMAND_STOP   0xFF
+
+#ifdef USE_DSHOT
+static timeUs_t lastDshotBeaconCommandTimeUs;
+#endif
 
 #ifdef USE_BEEPER
 /* Beeper Sound Sequences: (Square wave generation)
@@ -191,7 +199,7 @@ typedef struct beeperTableEntry_s {
 #define BEEPER_ENTRY(a,b,c,d) a,b,c
 #endif
 
-/*static*/ const beeperTableEntry_t beeperTable[] = {
+static const beeperTableEntry_t beeperTable[] = {
     { BEEPER_ENTRY(BEEPER_GYRO_CALIBRATED,       0, beep_gyroCalibrated,   "GYRO_CALIBRATED") },
     { BEEPER_ENTRY(BEEPER_RX_LOST,               1, beep_txLostBeep,       "RX_LOST") },
     { BEEPER_ENTRY(BEEPER_RX_LOST_LANDING,       2, beep_sos,              "RX_LOST_LANDING") },
@@ -215,7 +223,6 @@ typedef struct beeperTableEntry_s {
     { BEEPER_ENTRY(BEEPER_CAM_CONNECTION_OPEN,   20, beep_camOpenBeep,     "CAM_CONNECTION_OPEN") },
     { BEEPER_ENTRY(BEEPER_CAM_CONNECTION_CLOSE,  21, beep_camCloseBeep,    "CAM_CONNECTION_CLOSED") },
     { BEEPER_ENTRY(BEEPER_ALL,                   22, NULL,                 "ALL") },
-    { BEEPER_ENTRY(BEEPER_PREFERENCE,            23, NULL,                 "PREFERRED") },
 };
 
 static const beeperTableEntry_t *currentBeeperEntry = NULL;
@@ -230,7 +237,7 @@ void beeper(beeperMode_e mode)
 {
     if (
         mode == BEEPER_SILENCE || (
-            (getBeeperOffMask() & (1 << (BEEPER_USB - 1)))
+            (beeperConfigMutable()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_USB))
             && getBatteryState() == BATTERY_NOT_PRESENT
         )
     ) {
@@ -343,7 +350,7 @@ void beeperWarningBeeps(uint8_t beepCount)
 #ifdef USE_GPS
 static void beeperGpsStatus(void)
 {
-    if (!(getBeeperOffMask() & (1 << (BEEPER_GPS_STATUS - 1)))) {
+    if (!(beeperConfigMutable()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_GPS_STATUS))) {
         // if GPS fix then beep out number of satellites
         if (STATE(GPS_FIX) && gpsSol.numSat >= 5) {
             uint8_t i = 0;
@@ -389,18 +396,19 @@ void beeperUpdate(timeUs_t currentTimeUs)
         beeperIsOn = 1;
 
 #ifdef USE_DSHOT
-        if (!areMotorsRunning() && beeperConfig()->dshotBeaconTone && (beeperConfig()->dshotBeaconTone <= DSHOT_CMD_BEACON5) && (currentBeeperEntry->mode == BEEPER_RX_SET || currentBeeperEntry->mode == BEEPER_RX_LOST)) {
-            pwmDisableMotors();
-            delay(1);
+        if (!areMotorsRunning()
+            && ((currentBeeperEntry->mode == BEEPER_RX_SET && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_SET)))
+            || (currentBeeperEntry->mode == BEEPER_RX_LOST && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_LOST))))) {
 
-            pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), beeperConfig()->dshotBeaconTone);
-
-            pwmEnableMotors();
+            if ((currentTimeUs - getLastDisarmTimeUs() > DSHOT_BEACON_GUARD_DELAY_US) && !isTryingToArm()) {
+                lastDshotBeaconCommandTimeUs = currentTimeUs;
+                pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), beeperConfig()->dshotBeaconTone, false);
+            }
         }
 #endif
 
         if (currentBeeperEntry->sequence[beeperPos] != 0) {
-            if (!(getBeeperOffMask() & (1 << (currentBeeperEntry->mode - 1))))
+            if (!(beeperConfigMutable()->beeper_off_flags & BEEPER_GET_FLAG(currentBeeperEntry->mode)))
                 BEEP_ON;
             warningLedEnable();
             warningLedRefresh();
@@ -467,7 +475,7 @@ uint32_t beeperModeMaskForTableIndex(int idx)
     beeperMode_e beeperMode = beeperModeForTableIndex(idx);
     if (beeperMode == BEEPER_SILENCE)
         return 0;
-    return 1 << (beeperMode - 1);
+    return BEEPER_GET_FLAG(beeperMode);
 }
 
 /*
@@ -514,4 +522,11 @@ const char *beeperNameForTableIndex(int idx) {UNUSED(idx); return NULL;}
 int beeperTableEntryCount(void) {return 0;}
 bool isBeeperOn(void) {return false;}
 
+#endif
+
+#ifdef USE_DSHOT
+timeUs_t getLastDshotBeaconCommandTimeUs(void)
+{
+    return lastDshotBeaconCommandTimeUs;
+}
 #endif

@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -670,7 +673,7 @@ static serialPort_t *openEscSerial(escSerialPortIndex_e portIndex, serialReceive
     }
 
     escSerial->mode = mode;
-    escSerial->txTimerHardware = timerGetByTag(escSerialConfig()->ioTag, TIM_USE_ANY);
+    escSerial->txTimerHardware = timerGetByTag(escSerialConfig()->ioTag);
 
 #ifdef USE_HAL_DRIVER
     escSerial->txTimerHandle = timerFindTimerHandle(escSerial->txTimerHardware->tim);
@@ -842,6 +845,8 @@ const struct serialPortVTable escSerialVTable[] = {
         .serialSetBaudRate = escSerialSetBaudRate,
         .isSerialTransmitBufferEmpty = isEscSerialTransmitBufferEmpty,
         .setMode = escSerialSetMode,
+        .setCtrlLineStateCb = NULL,
+        .setBaudRateCb = NULL,
         .writeBuf = NULL,
         .beginWrite = NULL,
         .endWrite = NULL
@@ -947,7 +952,7 @@ void escEnablePassthrough(serialPort_t *escPassthroughPort, uint16_t output, uin
     }
     else {
         uint8_t first_output = 0;
-        for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+        for (unsigned i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
             if (timerHardware[i].usageFlags & TIM_USE_MOTOR) {
                 first_output = i;
                 break;
