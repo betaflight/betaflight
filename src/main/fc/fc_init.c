@@ -112,7 +112,6 @@
 #include "io/beeper.h"
 #include "io/displayport_max7456.h"
 #include "io/displayport_srxl.h"
-#include "io/displayport_hott.h"
 #include "io/displayport_crsf.h"
 #include "io/serial.h"
 #include "io/flashfs.h"
@@ -606,10 +605,6 @@ void init(void)
 
 #if defined(USE_CMS) && defined(USE_CRSF_CMS_TELEMETRY) && defined(USE_TELEMETRY)
     cmsDisplayPortRegister(displayPortCrsfInit());
-#endif
-
-#if defined (USE_HOTT_TEXTMODE) && defined (USE_CMS)
-    cmsDisplayPortRegister(displayPortHottInit());
 #endif
 
 #ifdef USE_GPS

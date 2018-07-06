@@ -141,6 +141,11 @@ displayPort_t *displayPortHottInit()
     return &hottDisplayPort;
 }
 
+void hottDisplayportRegister()
+{
+    cmsDisplayPortRegister(displayPortHottInit());
+}
+
 void hottCmsOpen()
 {
     if (!cmsInMenu) {

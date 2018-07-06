@@ -21,5 +21,6 @@
 displayPort_t *displayPortHottInit();
 displayPort_t hottDisplayPort;
 
+void hottDisplayportRegister();
 void hottCmsOpen();
 void hottSetCmsKey(uint8_t hottKey, bool esc);
