@@ -754,4 +754,8 @@ int rcSmoothingGetValue(int whichValue)
             return 0;
     }
 }
+
+bool rcSmoothingInitializationComplete(void) {
+    return (rxConfig()->rc_smoothing_type != RC_SMOOTHING_TYPE_FILTER) || rcSmoothingData.filterInitialized;
+}
 #endif // USE_RC_SMOOTHING_FILTER

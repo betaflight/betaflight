@@ -848,6 +848,11 @@ bool processRx(timeUs_t currentTimeUs)
     pidSetAcroTrainerState(IS_RC_MODE_ACTIVE(BOXACROTRAINER) && sensors(SENSOR_ACC));
 #endif // USE_ACRO_TRAINER
 
+#ifdef USE_RC_SMOOTHING_FILTER
+    if (ARMING_FLAG(ARMED) && !rcSmoothingInitializationComplete()) {
+        beeper(BEEPER_RC_SMOOTHING_INIT_FAIL);
+    }
+#endif
     return true;
 }
 
