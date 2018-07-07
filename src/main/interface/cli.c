@@ -3634,6 +3634,8 @@ static void cliTasks(char *cmdline)
             if (taskId == TASK_GYROPID && pidConfig()->pid_process_denom > 1) {
                 cliPrintLinef("   - (%15s) %6d", taskInfo.subTaskName, subTaskFrequency);
             }
+
+            schedulerResetTaskMaxExecutionTime(taskId);
         }
     }
     if (systemConfig()->task_statistics) {
