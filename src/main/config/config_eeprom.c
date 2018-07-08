@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -91,8 +94,7 @@ void initEEPROM(void)
     BUILD_BUG_ON(sizeof(configRecord_t) != 6);
 }
 
-// Scan the EEPROM config. Returns true if the config is valid.
-bool isEEPROMContentValid(void)
+bool isEEPROMVersionValid(void)
 {
     const uint8_t *p = &__config_start;
     const configHeader_t *header = (const configHeader_t *)p;
@@ -100,6 +102,16 @@ bool isEEPROMContentValid(void)
     if (header->eepromConfigVersion != EEPROM_CONF_VERSION) {
         return false;
     }
+
+    return true;
+}
+
+// Scan the EEPROM config. Returns true if the config is valid.
+bool isEEPROMStructureValid(void)
+{
+    const uint8_t *p = &__config_start;
+    const configHeader_t *header = (const configHeader_t *)p;
+
     if (header->magic_be != 0xBE) {
         return false;
     }
@@ -173,16 +185,23 @@ static const configRecord_t *findEEPROM(const pgRegistry_t *reg, configRecordFla
 //   but each PG is loaded/initialized exactly once and in defined order.
 bool loadEEPROM(void)
 {
+    bool success = true;
+
     PG_FOREACH(reg) {
         const configRecord_t *rec = findEEPROM(reg, CR_CLASSICATION_SYSTEM);
         if (rec) {
             // config from EEPROM is available, use it to initialize PG. pgLoad will handle version mismatch
-            pgLoad(reg, rec->pg, rec->size - offsetof(configRecord_t, pg), rec->version);
+            if (!pgLoad(reg, rec->pg, rec->size - offsetof(configRecord_t, pg), rec->version)) {
+                success = false;
+            }
         } else {
             pgReset(reg);
+
+            success = false;
         }
     }
-    return true;
+
+    return success;
 }
 
 static bool writeSettingsToEEPROM(void)
@@ -244,7 +263,7 @@ void writeConfigToEEPROM(void)
         }
     }
 
-    if (success && isEEPROMContentValid()) {
+    if (success && isEEPROMVersionValid() && isEEPROMStructureValid()) {
         return;
     }
 

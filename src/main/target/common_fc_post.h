@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 // Touch up configuration
@@ -25,10 +28,6 @@
 #if defined(USE_VTX_RTC6705) && !defined(VTX_RTC6705_OPTIONAL)
 #undef USE_VTX_SMARTAUDIO
 #undef USE_VTX_TRAMP
-#endif
-
-#if defined(USE_QUAD_MIXER_ONLY) && defined(USE_SERVOS)
-#undef USE_SERVOS
 #endif
 
 #ifndef USE_DSHOT
@@ -75,11 +74,6 @@
 #undef USE_SPEKTRUM_CMS_TELEMETRY
 #endif
 
-// undefine USE_ALT_HOLD if there is no baro or rangefinder to support it
-#if defined(USE_ALT_HOLD) && !defined(USE_BARO) && !defined(USE_RANGEFINDER)
-#undef USE_ALT_HOLD
-#endif
-
 /* If either VTX_CONTROL or VTX_COMMON is undefined then remove common code and device drivers */
 #if !defined(USE_VTX_COMMON) || !defined(USE_VTX_CONTROL)
 #undef USE_VTX_COMMON
@@ -103,8 +97,12 @@
 #undef USE_ADC_INTERNAL
 #endif
 
-#if !defined(USE_SDCARD)
+#if !defined(USE_SDCARD) && !defined(USE_FLASHFS)
 #undef USE_USB_MSC
+#endif
+
+#if !defined(USE_VCP)
+#undef USE_USB_CDC_HID
 #endif
 
 #if defined(USE_USB_CDC_HID) || defined(USE_USB_MSC)
@@ -114,4 +112,17 @@
 // Determine if the target could have a 32KHz capable gyro
 #if defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20689)
 #define USE_32K_CAPABLE_GYRO
+#endif
+
+#if defined(USE_FLASH_W25M512)
+#define USE_FLASH_W25M
+#define USE_FLASH_M25P16
+#endif
+
+#if defined(USE_FLASH_M25P16)
+#define USE_FLASH
+#endif
+
+#if defined(USE_MAX7456)
+#define USE_OSD
 #endif

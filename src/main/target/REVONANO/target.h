@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
@@ -51,8 +54,10 @@
 #define USE_MPU_DATA_READY_SIGNAL
 
 #define USE_VCP
-//#define VBUS_SENSING_PIN        PA9
+#define USE_USB_DETECT
+//#define USB_DETECT_PIN          PA9
 
+// The Flexi Port can be used for either UART1 or I2CDEV_1, see I2C section below
 #define USE_UART1 // Flexi Port
 #define UART1_RX_PIN            PB7
 #define UART1_TX_PIN            PB6
@@ -75,8 +80,22 @@
 #define USE_SPI_DEVICE_2
 
 #define USE_I2C
+/* The Flexi Port can be used for either UART1 or I2CDEV_1
+ * I2C resources undefined by default
+ * To use I2C use the following CLI commands:
+ *   resource SERIAL_RX 1 NONE
+ *   resource SERIAL_TX 1 NONE
+ *   resource I2C1_SCL 1 PB6
+ *   resource I2C1_SDA 1 PB7
+ */
 #define USE_I2C_DEVICE_1        // UART1/FlexiPort (PB6,PB7)
-#define I2C_DEVICE (I2CDEV_1)
+#define I2C_DEVICE              I2CDEV_1
+#define I2C1_SCL                NONE // Define as PB6 if required
+#define I2C1_SDA                NONE // Define as PB7 if required
+#define USE_I2C_DEVICE_3
+#define I2C3_SCL                PA8
+#define I2C3_SDA                PB4
+#define BARO_I2C_INSTANCE       I2CDEV_3
 
 #undef USE_LED_STRIP
 

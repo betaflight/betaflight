@@ -56,6 +56,10 @@ defined in linker script */
 .word  _sbss
 /* end address for the .bss section. defined in linker script */
 .word  _ebss
+/* start address for the .fastram_bss section. defined in linker script */
+.word  __fastram_bss_start__
+/* end address for the .fastram_bss section. defined in linker script */
+.word  __fastram_bss_end__
 /* stack used for SystemInit_ExtMemCtl; always internal RAM used */
 
 /**
@@ -79,21 +83,8 @@ Reset_Handler:
   str     r1, [r0, #0x30]
   dsb
 
-  // Check for bootloader reboot
-  ldr r0, =0x2001FFFC         // mj666
-  ldr r1, =0xDEADBEEF         // mj666
-  ldr r2, [r0, #0]            // mj666
-  str r0, [r0, #0]            // mj666
-  cmp r2, r1                  // mj666
-  beq Reboot_Loader           // mj666
-
-  // Check for overclocking request
-  ldr r0, =0x2001FFF8         // Faduf
-  ldr r1, =0xBABEFACE         // Faduf
-  ldr r2, [r0, #0]            // Faduf
-  str r0, [r0, #0]            // Faduf
-  cmp r2, r1                  // Faduf
-  beq Boot_OC                 // Faduf
+  // Defined in C code
+  bl checkForBootLoaderRequest
 
 /* Copy the data segment initializers from flash to SRAM */  
   movs  r1, #0
@@ -111,6 +102,7 @@ LoopCopyDataInit:
   adds  r2, r0, r1
   cmp  r2, r3
   bcc  CopyDataInit
+
   ldr  r2, =_sbss
   b  LoopFillZerobss
 /* Zero fill the bss segment. */  
@@ -122,6 +114,18 @@ LoopFillZerobss:
   ldr  r3, = _ebss
   cmp  r2, r3
   bcc  FillZerobss
+
+  ldr  r2, =__fastram_bss_start__
+  b  LoopFillZerofastram_bss
+/* Zero fill the fastram_bss segment. */  
+FillZerofastram_bss:
+  movs  r3, #0
+  str  r3, [r2], #4
+    
+LoopFillZerofastram_bss:
+  ldr  r3, = __fastram_bss_end__
+  cmp  r2, r3
+  bcc  FillZerofastram_bss
 
 /* Mark the heap and stack */
     ldr	r2, =_heap_stack_begin
@@ -152,71 +156,6 @@ LoopMarkHeapStack:
 
 LoopForever:
   b LoopForever
-
-Boot_OC:
-/* Copy the data segment initializers from flash to SRAM */
-  movs  r1, #0
-  b  LoopCopyDataInitOC
-
-CopyDataInitOC:
-  ldr  r3, =_sidata
-  ldr  r3, [r3, r1]
-  str  r3, [r0, r1]
-  adds  r1, r1, #4
-
-LoopCopyDataInitOC:
-  ldr  r0, =_sdata
-  ldr  r3, =_edata
-  adds  r2, r0, r1
-  cmp  r2, r3
-  bcc  CopyDataInitOC
-  ldr  r2, =_sbss
-  b  LoopFillZerobssOC
-/* Zero fill the bss segment. */
-FillZerobssOC:
-  movs  r3, #0
-  str  r3, [r2], #4
-
-LoopFillZerobssOC:
-  ldr  r3, = _ebss
-  cmp  r2, r3
-  bcc  FillZerobssOC
-
-/* Mark the heap and stack */
-    ldr	r2, =_heap_stack_begin
-    b	LoopMarkHeapStackOC
-
-MarkHeapStackOC:
-	movs	r3, 0xa5a5a5a5
-	str	r3, [r2], #4
-
-LoopMarkHeapStackOC:
-	ldr	r3, = _heap_stack_end
-	cmp	r2, r3
-	bcc	MarkHeapStackOC
-
-/*FPU settings*/
- ldr     r0, =0xE000ED88           /* Enable CP10,CP11 */
- ldr     r1,[r0]
- orr     r1,r1,#(0xF << 20)
- str     r1,[r0]
-
-/* Call the clock system intitialization function.*/
-/* Done in system_stm32f4xx.c */
- bl  SystemInitOC
-
-/* Call the application's entry point.*/
-  bl  main
-  bx  lr
-
-
-Reboot_Loader:                // mj666
-
-  // Reboot to ROM            // mj666
-  ldr     r0, =0x1FFF0000     // mj666
-  ldr     sp,[r0, #0]         // mj666
-  ldr     r0,[r0, #4]         // mj666
-  bx      r0                  // mj666
 
 .size  Reset_Handler, .-Reset_Handler
 

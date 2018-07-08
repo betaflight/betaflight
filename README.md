@@ -11,7 +11,9 @@ This fork differs from Baseflight and Cleanflight in that it focuses on flight p
 
 | Date  | Event |
 | - | - |
-| 01 July 2018 | Planned [release](https://github.com/betaflight/betaflight/milestone/7) date for Betaflight 3.4 |
+| 22 July 2018 | Start of feature freeze / Release Candidate window for Betaflight 3.5 |
+| 05 August 2018 | Planned [release](https://github.com/betaflight/betaflight/milestone/21) date for Betaflight 3.5 |
+| 01 January 2019 | Planned [release](https://github.com/betaflight/betaflight/milestone/20) date for Betaflight 4.0 |
 
 ## Features
 
@@ -40,7 +42,7 @@ See: https://github.com/betaflight/betaflight/wiki
 
 There's a dedicated Slack chat channel here:
 
-http://www.betaflight.ch/
+https://slack.betaflight.com/
 
 Etiquette: Don't ask to ask and please wait around long enough for a reply - sometimes people are out flying, asleep or at work and can't answer immediately.
 

@@ -1,20 +1,22 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
-
 
 /*
 
@@ -35,21 +37,26 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #ifdef USE_TARGET_CONFIG
 
+#include "blackbox/blackbox.h"
 #include "fc/rc_modes.h"
 #include "common/axis.h"
+#include "common/filter.h"
 #include "config/feature.h"
 #include "drivers/pwm_esc_detect.h"
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
+#include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "io/beeper.h"
 #include "io/serial.h"
+#include "pg/rx.h"
 #include "rx/rx.h"
 #include "sensors/barometer.h"
 #include "sensors/boardalignment.h"
@@ -60,27 +67,29 @@
 #undef BRUSHED_MOTORS_PWM_RATE
 #endif
 
-#define BRUSHED_MOTORS_PWM_RATE 666           // 666Hz };-)>~ low PWM rate seems to give better power and cooler motors...
+#define BRUSHED_MOTORS_PWM_RATE 32000
 
 
 void targetConfiguration(void)
 {
     if (hardwareMotorType == MOTOR_BRUSHED) {
         motorConfigMutable()->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
-        motorConfigMutable()->minthrottle = 1080;
-        motorConfigMutable()->maxthrottle = 2000;
+        motorConfigMutable()->minthrottle = 1050; // for 6mm and 7mm brushed
     }
 
     /* Default to Spektrum */
-    rxConfigMutable()->serialrx_provider = SERIALRX_SPEKTRUM2048;
-    rxConfigMutable()->spektrum_sat_bind = 5;
+    rxConfigMutable()->serialrx_provider = SERIALRX_SPEKTRUM2048; // all DSM* except DSM2 22ms
+    rxConfigMutable()->spektrum_sat_bind = 5; // DSM2 11ms
     rxConfigMutable()->spektrum_sat_bind_autoreset = 1;
+    rxConfigMutable()->mincheck = 1025;
+    rxConfigMutable()->rcInterpolation = RC_SMOOTHING_MANUAL;
+    rxConfigMutable()->rcInterpolationInterval = 14;
     parseRcChannels("TAER1234", rxConfigMutable());
-#if defined(ALIENWHOOPF4)
-    rxConfigMutable()->serialrx_inverted = true; // TODO: what to do about F4 inversion?
-#endif
 
-    beeperOffSet((BEEPER_BAT_CRIT_LOW | BEEPER_BAT_LOW | BEEPER_RX_SET) ^ BEEPER_GYRO_CALIBRATED);
+    mixerConfigMutable()->yaw_motors_reversed = true;
+    imuConfigMutable()->small_angle = 180;
+
+    blackboxConfigMutable()->p_ratio = 128;
 
     /* Breadboard-specific settings for development purposes only
      */
@@ -91,59 +100,82 @@ void targetConfiguration(void)
     barometerConfigMutable()->baro_hardware = BARO_NONE;
 #endif
 
-    compassConfigMutable()->mag_hardware =  MAG_DEFAULT;
+    compassConfigMutable()->mag_hardware =  MAG_NONE;
 
-    /* F4 (especially overclocked) and F7 ALIENWHOOP perform splendidly with 32kHz gyro enabled */
-    gyroConfigMutable()->gyro_use_32khz = 1;
+    systemConfigMutable()->cpu_overclock = 2; //216MHZ
+
+    /* Default to 32kHz enabled at 16/16 */
+    gyroConfigMutable()->gyro_use_32khz = 1; // enable 32kHz sampling
+    gyroConfigMutable()->gyroMovementCalibrationThreshold = 200; // aka moron_threshold
     gyroConfigMutable()->gyro_sync_denom = 2;  // 16kHz gyro
     pidConfigMutable()->pid_process_denom = 1; // 16kHz PID
+    gyroConfigMutable()->gyro_lowpass2_hz = 751;
+
+    pidConfigMutable()->runaway_takeoff_prevention = false;
 
     featureSet((FEATURE_DYNAMIC_FILTER | FEATURE_AIRMODE | FEATURE_ANTI_GRAVITY) ^ FEATURE_RX_PARALLEL_PWM);
 
-    /* AlienWhoop PIDs based on Ole Gravy Leg (aka Matt Williamson's) PIDs
-     */
+    /* AlienWhoop PIDs tested with 6mm and 7mm motors on most frames */
     for (uint8_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
         pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
 
-        /* AlienWhoop PIDs tested with 6mm and 7mm motors on most frames */
-        pidProfile->pid[PID_PITCH].P = 75;
-        pidProfile->pid[PID_PITCH].I = 36;
-        pidProfile->pid[PID_PITCH].D = 25;
-        pidProfile->pid[PID_ROLL].P = 75;
-        pidProfile->pid[PID_ROLL].I = 36;
-        pidProfile->pid[PID_ROLL].D = 25;
-        pidProfile->pid[PID_YAW].P = 70;
-        pidProfile->pid[PID_YAW].I = 36;
+	pidProfile->pidSumLimit = 1000;
+	pidProfile->pidSumLimitYaw = 1000;
 
-        pidProfile->pid[PID_LEVEL].P = 30;
-        pidProfile->pid[PID_LEVEL].D = 30;
+        /* AlienWhoop PIDs tested with 6mm and 7mm motors on most frames */
+        pidProfile->pid[PID_PITCH].P = 115;
+        pidProfile->pid[PID_PITCH].I = 75;
+        pidProfile->pid[PID_PITCH].D = 95;
+        pidProfile->pid[PID_ROLL].P = 110;
+        pidProfile->pid[PID_ROLL].I = 75;
+        pidProfile->pid[PID_ROLL].D = 85;
+        pidProfile->pid[PID_YAW].P = 220;
+        pidProfile->pid[PID_YAW].I = 75;
+        pidProfile->pid[PID_YAW].D = 20;
+        pidProfile->pid[PID_LEVEL].P = 65;
+        pidProfile->pid[PID_LEVEL].I = 65;
+        pidProfile->pid[PID_LEVEL].D = 55;
 
         /* Setpoints */
+        pidProfile->dterm_filter_type = FILTER_BIQUAD;
+        pidProfile->dterm_notch_hz = 0;
         pidProfile->dtermSetpointWeight = 100;
-        pidProfile->setpointRelaxRatio = 100; // default to snappy for racers
+        pidProfile->setpointRelaxRatio = 0;
 
-        /* Throttle PID Attenuation (TPA) */
-        pidProfile->itermThrottleThreshold = 400;
+	/* Anti-Gravity */
+	pidProfile->itermThrottleThreshold = 500;
+	pidProfile->itermAcceleratorGain = 5000;
+
+	pidProfile->levelAngleLimit = 65;
     }
 
     for (uint8_t rateProfileIndex = 0; rateProfileIndex < CONTROL_RATE_PROFILE_COUNT; rateProfileIndex++) {
         controlRateConfig_t *controlRateConfig = controlRateProfilesMutable(rateProfileIndex);
 
         /* RC Rates */
-        controlRateConfig->rcRates[FD_ROLL] = 100;
-        controlRateConfig->rcRates[FD_PITCH] = 100;
-        controlRateConfig->rcRates[FD_YAW] = 100;
-        controlRateConfig->rcExpo[FD_ROLL] = 0;
-        controlRateConfig->rcExpo[FD_PITCH] = 0;
+        controlRateConfig->rcRates[FD_ROLL] = 218;
+        controlRateConfig->rcRates[FD_PITCH] = 218;
+        controlRateConfig->rcRates[FD_YAW] = 218;
+
+	/* Classic Expo */
+        controlRateConfig->rcExpo[FD_ROLL] = 45;
+        controlRateConfig->rcExpo[FD_PITCH] = 45;
+        controlRateConfig->rcExpo[FD_YAW] = 45;
 
         /* Super Expo Rates */
-        controlRateConfig->rates[FD_ROLL] = 80;
-        controlRateConfig->rates[FD_PITCH] = 80;
-        controlRateConfig->rates[FD_YAW] = 85;
+        controlRateConfig->rates[FD_ROLL] = 0;
+        controlRateConfig->rates[FD_PITCH] = 0;
+        controlRateConfig->rates[FD_YAW] = 0;
 
         /* Throttle PID Attenuation (TPA) */
         controlRateConfig->dynThrPID = 0; // tpa_rate off
         controlRateConfig->tpa_breakpoint = 1600;
+
+	/* Force the clipping mixer at 100% seems better for brushed than default (off) and scaling)? */
+        controlRateConfig->throttle_limit_type = THROTTLE_LIMIT_TYPE_CLIP;
+        //controlRateConfig->throttle_limit_percent = 100;
+
+        controlRateConfig->thrExpo8 = 20; // 20% throttle expo
     }
 }
 #endif

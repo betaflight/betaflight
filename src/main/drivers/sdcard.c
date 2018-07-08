@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -366,6 +369,14 @@ static sdcardReceiveBlockStatus_e sdcard_receiveDataBlock(uint8_t *buffer, int c
 
 static bool sdcard_sendDataBlockFinish(void)
 {
+#ifdef USE_HAL_DRIVER
+    // Drain anything left in the Rx FIFO (we didn't read it during the write)
+    //This is necessary here as when using msc there is timing issue
+    while (LL_SPI_IsActiveFlag_RXNE(sdcard.instance)) {
+        sdcard.instance->DR;
+    }
+#endif
+
     // Send a dummy CRC
     spiTransferByte(sdcard.instance, 0x00);
     spiTransferByte(sdcard.instance, 0x00);
@@ -670,7 +681,7 @@ bool sdcard_poll(void)
     if (!sdcard.enabled) {
         sdcard.state = SDCARD_STATE_NOT_PRESENT;
         return false;
-    } 
+    }
 
     uint8_t initStatus;
     bool sendComplete;
@@ -763,8 +774,10 @@ bool sdcard_poll(void)
             sendComplete = false;
 
 #if defined(USE_HAL_DRIVER)
-            // TODO : need to verify this
-            if (sdcard.useDMAForTx && LL_DMA_IsEnabledStream(sdcard.dma->dma, sdcard.dma->stream)) {
+            if (sdcard.useDMAForTx && DMA_GET_FLAG_STATUS(sdcard.dma, DMA_IT_TCIF)) {
+                //Clear both flags after transfer
+                DMA_CLEAR_FLAG(sdcard.dma, DMA_IT_TCIF);
+                DMA_CLEAR_FLAG(sdcard.dma, DMA_IT_HTIF);
                 // Drain anything left in the Rx FIFO (we didn't read it during the write)
                 while (LL_SPI_IsActiveFlag_RXNE(sdcard.instance)) {
                     sdcard.instance->DR;

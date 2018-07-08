@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdint.h>
@@ -25,6 +28,7 @@
 #include "build/build_config.h"
 
 #include "common/utils.h"
+
 #include "drivers/io.h"
 
 #if defined(STM32F4)
@@ -39,6 +43,11 @@
 #elif defined(STM32F7)
 #include "vcp_hal/usbd_cdc_interface.h"
 #include "usb_io.h"
+#ifdef USE_USB_CDC_HID
+#include "usbd_cdc_hid.h"
+#include "pg/pg.h"
+#include "pg/usb.h"
+#endif
 USBD_HandleTypeDef USBD_Device;
 #else
 #include "usb_core.h"
@@ -234,8 +243,16 @@ serialPort_t *usbVcpOpen(void)
     USBD_Init(&USBD_Device, &VCP_Desc, 0);
 
     /* Add Supported Class */
-    USBD_RegisterClass(&USBD_Device, USBD_CDC_CLASS);
+#ifdef USE_USB_CDC_HID
+    if (usbDevConfig()->type == COMPOSITE) {
+    	USBD_RegisterClass(&USBD_Device, USBD_HID_CDC_CLASS);
+    } else
+#endif
+    {
+        USBD_RegisterClass(&USBD_Device, USBD_CDC_CLASS);
+    }
 
+    /* HID Interface doesn't have any callbacks... */
     /* Add CDC Interface Class */
     USBD_CDC_RegisterInterface(&USBD_Device, &USBD_CDC_fops);
 
@@ -259,5 +276,10 @@ uint32_t usbVcpGetBaudRate(serialPort_t *instance)
     UNUSED(instance);
 
     return CDC_BaudRate();
+}
+
+uint8_t usbVcpIsConnected(void)
+{
+    return usbIsConnected();
 }
 #endif

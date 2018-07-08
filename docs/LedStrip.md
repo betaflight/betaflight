@@ -43,7 +43,7 @@ It could be possible to be able to specify the timings required via CLI if users
 
 The [WS2811](https://cdn-shop.adafruit.com/datasheets/WS2811.pdf) is a LED driver IC which is connected to an RGB LED. It accepts data in the form of 8 bits each of Red-Green-Blue.
 
-The [WS2812](https://cdn-shop.adafruit.com/datasheets/WS2812.pdf) is integrated into the package of a 50:50 LED rather than as a separate device.. It accepts data in the form of 8 bits each of Green-Red-Blue.
+The [WS2812](https://cdn-shop.adafruit.com/datasheets/WS2812.pdf) is integrated into the package of a 50:50 LED rather than as a separate device. It accepts data in the form of 8 bits each of Green-Red-Blue.
 
 It is thus possible, depending on the LED board/strip being used that either Red-Green-Blue or Green-Red-Blue encoding may be required. This may be controlled by setting the following.
 
@@ -56,7 +56,7 @@ or
 set ledstrip_grb_rgb = GRB
 ```
 
-The confirm the required setting simply set an LED to be green. If it lights up red, you have the wrong setting.
+Then confirm the required setting by simply setting an LED to be green. If it lights up red, you have the wrong setting.
 
 ## Connections
 

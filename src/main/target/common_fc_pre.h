@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
@@ -45,6 +48,10 @@
 #endif
 
 #ifdef STM32F4
+#define USE_SRAM2
+#if defined(STM32F40_41xxx)
+#define USE_FAST_RAM
+#endif
 #define USE_DSHOT
 #define I2C3_OVERCLOCK true
 #define USE_GYRO_DATA_ANALYSE
@@ -59,16 +66,18 @@
 
 #endif // STM32F4
 
-#ifdef STM32F722xx
-#define USE_ITCM_RAM
-#endif
 #ifdef STM32F7
+#define USE_SRAM2
+#define USE_ITCM_RAM
+#define USE_FAST_RAM
 #define USE_DSHOT
 #define I2C3_OVERCLOCK true
 #define I2C4_OVERCLOCK true
 #define USE_GYRO_DATA_ANALYSE
 #define USE_OVERCLOCK
 #define USE_ADC_INTERNAL
+#define USE_USB_CDC_HID
+#define USE_USB_MSC
 #endif
 
 #if defined(STM32F4) || defined(STM32F7)
@@ -86,22 +95,33 @@
 #endif
 
 #ifdef USE_ITCM_RAM
-#define FAST_CODE __attribute__((section(".tcm_code")))
+#define FAST_CODE                   __attribute__((section(".tcm_code")))
+#define FAST_CODE_NOINLINE          NOINLINE
 #else
 #define FAST_CODE
+#define FAST_CODE_NOINLINE
 #endif // USE_ITCM_RAM
 
 #ifdef USE_FAST_RAM
-#ifdef __APPLE__
-#define FAST_RAM                    __attribute__ ((section("__DATA,__.fastram_bss"), aligned(4)))
+#define FAST_RAM_ZERO_INIT             __attribute__ ((section(".fastram_bss"), aligned(4)))
+#define FAST_RAM                    __attribute__ ((section(".fastram_data"), aligned(4)))
 #else
-#define FAST_RAM                    __attribute__ ((section(".fastram_bss"), aligned(4)))
-#endif
-#else
+#define FAST_RAM_ZERO_INIT
 #define FAST_RAM
 #endif // USE_FAST_RAM
 
+#ifdef STM32F4
+// Data in RAM which is guaranteed to not be reset on hot reboot
+#define PERSISTENT                  __attribute__ ((section(".persistent_data"), aligned(4)))
+#endif
 
+#ifdef USE_SRAM2
+#define SRAM2                       __attribute__ ((section(".sram2"), aligned(4)))
+#else
+#define SRAM2
+#endif
+
+#define USE_BRUSHED_ESC_AUTODETECT  // Detect if brushed motors are connected and set defaults appropriately to avoid motors spinning on boot
 #define USE_CLI
 #define USE_GYRO_REGISTER_DUMP  // Adds gyroregisters command to cli to dump configured register values
 #define USE_PPM
@@ -115,6 +135,8 @@
 #define USE_SERIALRX_SUMH       // Graupner legacy protocol
 #define USE_SERIALRX_XBUS       // JR
 
+
+
 #if (FLASH_SIZE > 64)
 #define MAX_PROFILE_COUNT 3
 #else
@@ -122,6 +144,7 @@
 #endif
 
 #if (FLASH_SIZE > 64)
+#define USE_ACRO_TRAINER
 #define USE_BLACKBOX
 #define USE_LED_STRIP
 #define USE_RESOURCE_MGMT
@@ -137,15 +160,13 @@
 #if (FLASH_SIZE > 128)
 #define USE_CAMERA_CONTROL
 #define USE_CMS
-#define USE_COPY_PROFILE_CMS_MENU
 #define USE_EXTENDED_CMS_MENUS
 #define USE_DSHOT_DMAR
 #define USE_GYRO_OVERFLOW_CHECK
+#define USE_YAW_SPIN_RECOVERY
 #define USE_HUFFMAN
 #define USE_MSP_DISPLAYPORT
 #define USE_MSP_OVER_TELEMETRY
-#define USE_OSD
-#define USE_OSD_OVER_MSP_DISPLAYPORT
 #define USE_PINIO
 #define USE_PINIOBOX
 #define USE_RCDEVICE
@@ -162,6 +183,12 @@
 #define USE_GYRO_LPF2
 #define USE_ESC_SENSOR
 #define USE_ESC_SENSOR_INFO
+#define USE_CRSF_CMS_TELEMETRY
+#define USE_BOARD_INFO
+#define USE_SMART_FEEDFORWARD
+#define USE_THROTTLE_BOOST
+#define USE_RC_SMOOTHING_FILTER
+#define USE_ITERM_RELAX
 
 #ifdef USE_SERIALRX_SPEKTRUM
 #define USE_SPEKTRUM_BIND
@@ -176,12 +203,13 @@
 #endif
 
 #if (FLASH_SIZE > 256)
-#define USE_ALT_HOLD
 #define USE_DASHBOARD
 #define USE_GPS
 #define USE_GPS_NMEA
 #define USE_GPS_UBLOX
-#define USE_NAV
+#define USE_GPS_RESCUE
+#define USE_OSD
+#define USE_OSD_OVER_MSP_DISPLAYPORT
 #define USE_OSD_ADJUSTMENTS
 #define USE_SENSOR_NAMES
 #define USE_SERIALRX_JETIEXBUS
@@ -190,4 +218,6 @@
 #define USE_TELEMETRY_JETIEXBUS
 #define USE_TELEMETRY_MAVLINK
 #define USE_UNCOMMON_MIXERS
+#define USE_SIGNATURE
+#define USE_ABSOLUTE_CONTROL
 #endif

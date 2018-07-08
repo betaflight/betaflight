@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <string.h>
@@ -25,8 +28,13 @@
 #include "build/build_config.h"
 #include "build/debug.h"
 
+#include "pg/rx.h"
+#include "pg/rx_spi.h"
+
 #include "common/maths.h"
 #include "common/utils.h"
+
+#include "config/feature.h"
 
 #include "drivers/adc.h"
 #include "drivers/rx/rx_cc2500.h"
@@ -145,8 +153,9 @@ static bool telemetryEnabled = false;
 
 static uint16_t calculateCrc(uint8_t *data, uint8_t len) {
     uint16_t crc = 0;
-    for(uint8_t i=0; i < len; i++)
-        crc = (crc<<8) ^ (crcTable[((uint8_t)(crc>>8) ^ *data++) & 0xFF]);
+    for (unsigned i = 0; i < len; i++) {
+        crc = (crc << 8) ^ (crcTable[((uint8_t)(crc >> 8) ^ *data++) & 0xFF]);
+    }
     return crc;
 }
 
@@ -181,10 +190,15 @@ static void buildTelemetryFrame(uint8_t *packet)
     frame[3] = packet[3];
 
     if (evenRun) {
-        frame[4]=(uint8_t)rssiDbm|0x80;
+        frame[4] = (uint8_t)rssiDbm | 0x80;
     } else {
-        const uint16_t adcExternal1Sample = adcGetChannel(ADC_EXTERNAL1);
-        frame[4] = (uint8_t)((adcExternal1Sample & 0xfe0) >> 5); // A1;
+        uint8_t a1Value;
+        if (rxFrSkySpiConfig()->useExternalAdc) {
+            a1Value = (uint8_t)((adcGetChannel(ADC_EXTERNAL1) & 0xfe0) >> 5);
+        } else {
+            a1Value = getBatteryVoltage() & 0x7f;
+        }
+        frame[4] = a1Value;
     }
     evenRun = !evenRun;
 
@@ -258,7 +272,6 @@ static void frSkyXTelemetryWriteFrame(const smartPortPayload_t *payload)
 void frSkyXSetRcData(uint16_t *rcData, const uint8_t *packet)
 {
     uint16_t c[8];
-
     c[0] = (uint16_t)((packet[10] << 8) & 0xF00) | packet[9];
     c[1] = (uint16_t)((packet[11] << 4) & 0xFF0) | (packet[10] >> 4);
     c[2] = (uint16_t)((packet[13] << 8) & 0xF00) | packet[12];
@@ -268,18 +281,13 @@ void frSkyXSetRcData(uint16_t *rcData, const uint8_t *packet)
     c[6] = (uint16_t)((packet[19] << 8) & 0xF00) | packet[18];
     c[7] = (uint16_t)((packet[20] << 4) & 0xFF0) | (packet[19] >> 4);
 
-    uint8_t j = 0;
-    for(uint8_t i = 0; i < 8; i++) {
-        if(c[i] > 2047) {
-            j = 8;
-            c[i] = c[i] - 2048;
-        } else {
-            j = 0;
+    for (unsigned i = 0; i < 8; i++) {
+        bool channelIsShifted = false;
+        if (c[i] & 0x800) {
+            channelIsShifted = true;
         }
-        int16_t temp = (((c[i] - 64) << 1) / 3 + 860);
-        if ((temp > 800) && (temp < 2200)) {
-            rcData[i+j] = temp;
-        }
+        const uint16_t channelValue = c[i] & 0x7FF;
+        rcData[channelIsShifted ? i + 8 : i] = channelValue * 2.0f / 3 + 860 - 64 * 2 / 3;
     }
 }
 
@@ -300,6 +308,7 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
     static bool frameReceived;
     static timeDelta_t receiveDelayUs;
     static uint8_t channelsToSkip = 1;
+    static uint32_t packetErrors = 0;
 
     static telemetryBuffer_t telemetryRxBuffer[TELEMETRY_SEQUENCE_LENGTH];
 
@@ -420,6 +429,10 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
                             frameReceived = true; // no need to process frame again.
                         }
                     }
+                } 
+                if (!frameReceived) {
+                    packetErrors++;
+                    DEBUG_SET(DEBUG_RX_FRSKY_SPI, DEBUG_DATA_BAD_FRAME, packetErrors);
                 }
             }
         }
@@ -438,7 +451,7 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
             ledIsOn = !ledIsOn;
 
 #if defined(USE_RX_FRSKY_SPI_TELEMETRY)
-            setRssiFiltered(0, RSSI_SOURCE_RX_PROTOCOL);
+            setRssiDirect(0, RSSI_SOURCE_RX_PROTOCOL);
 #endif
             nextChannel(1);
             cc2500Strobe(CC2500_SRX);
@@ -487,7 +500,9 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
             }
 #endif
             *protocolState = STATE_RESUME;
-            ret = RX_SPI_RECEIVED_DATA;
+            if (frameReceived) {
+                ret = RX_SPI_RECEIVED_DATA;
+            }
         }
 
         break;
@@ -515,6 +530,8 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
                 break;
             }
             missingPackets++;
+            DEBUG_SET(DEBUG_RX_FRSKY_SPI, DEBUG_DATA_MISSING_PACKETS, missingPackets);
+            
             *protocolState = STATE_DATA;
         }
         break;
@@ -526,7 +543,9 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
 void frSkyXInit(void)
 {
 #if defined(USE_TELEMETRY_SMARTPORT)
-     telemetryEnabled = initSmartPortTelemetryExternal(frSkyXTelemetryWriteFrame);
+     if (feature(FEATURE_TELEMETRY)) {
+         telemetryEnabled = initSmartPortTelemetryExternal(frSkyXTelemetryWriteFrame);
+     }
 #endif
 }
 

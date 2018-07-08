@@ -1,22 +1,24 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
  *
- * Adaptation of original driver to SDIO: Chris Hockuba (https://github.com/conkerkh)
- *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
+
+/* Adaptation of original driver to SDIO: Chris Hockuba (https://github.com/conkerkh) */
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -38,12 +40,40 @@
 
 #include "drivers/sdmmc_sdio.h"
 
+#include "pg/pg.h"
+#include "pg/sdio.h"
+
 #ifdef AFATFS_USE_INTROSPECTIVE_LOGGING
     #define SDCARD_PROFILING
 #endif
 
 #define SDCARD_TIMEOUT_INIT_MILLIS      200
 #define SDCARD_MAX_CONSECUTIVE_FAILURES 8
+
+// Use this to speed up writing to SDCARD... asyncfatfs has limited support for multiblock write
+#define FATFS_BLOCK_CACHE_SIZE 16
+uint8_t writeCache[512 * FATFS_BLOCK_CACHE_SIZE] __attribute__ ((aligned (4)));
+uint32_t cacheCount = 0;
+
+void cache_write(uint8_t *buffer)
+{
+    if (cacheCount == sizeof(writeCache)) {
+        // Prevents overflow
+        return;
+    }
+    memcpy(&writeCache[cacheCount], buffer, 512);
+    cacheCount += 512;
+}
+
+uint16_t cache_getCount(void)
+{
+    return (cacheCount / 512);
+}
+
+void cache_reset(void)
+{
+    cacheCount = 0;
+}
 
 typedef enum {
     // In these states we run at the initialization 400kHz clockspeed:
@@ -97,6 +127,7 @@ typedef struct sdcard_t {
     IO_t cardDetectPin;
     dmaIdentifier_e dma;
     uint8_t dmaChannel;
+    uint8_t useCache;
 } sdcard_t;
 
 static sdcard_t sdcard;
@@ -267,6 +298,11 @@ void sdcard_init(const sdcardConfig_t *config)
     } else {
         sdcard.cardDetectPin = IO_NONE;
     }
+    if (sdioConfig()->useCache) {
+        sdcard.useCache = 1;
+    } else {
+        sdcard.useCache = 0;
+    }
     SD_Initialize_LL(dmaGetRefByIdentifier(sdcard.dma));
     if (SD_IsDetected()) {
         if (SD_Init() != 0) {
@@ -306,6 +342,9 @@ static bool sdcard_isReady()
 static sdcardOperationStatus_e sdcard_endWriteBlocks()
 {
     sdcard.multiWriteBlocksRemain = 0;
+    if (sdcard.useCache) {
+        cache_reset();
+    }
 
     // 8 dummy clocks to guarantee N_WR clocks between the last card response and this token
 
@@ -399,6 +438,9 @@ bool sdcard_poll(void)
                 if (sdcard.multiWriteBlocksRemain > 1) {
                     sdcard.multiWriteBlocksRemain--;
                     sdcard.multiWriteNextBlock++;
+                    if (sdcard.useCache) {
+                        cache_reset();
+                    }
                     sdcard.state = SDCARD_STATE_WRITING_MULTIPLE_BLOCKS;
                 } else if (sdcard.multiWriteBlocksRemain == 1) {
                     // This function changes the sd card state for us whether immediately succesful or delayed:
@@ -527,13 +569,31 @@ sdcardOperationStatus_e sdcard_writeBlock(uint32_t blockIndex, uint8_t *buffer, 
 
     sdcard.pendingOperation.buffer = buffer;
     sdcard.pendingOperation.blockIndex = blockIndex;
+
+    uint16_t block_count = 1;
+    if ((cache_getCount() < FATFS_BLOCK_CACHE_SIZE) &&
+        (sdcard.multiWriteBlocksRemain != 0) && sdcard.useCache) {
+        cache_write(buffer);
+        if (cache_getCount() == FATFS_BLOCK_CACHE_SIZE || sdcard.multiWriteBlocksRemain == 1) {
+            //Relocate buffer
+            buffer = (uint8_t*)writeCache;
+            //Recalculate block index
+            blockIndex -= cache_getCount() - 1;
+            block_count = cache_getCount();
+        } else {
+            sdcard.multiWriteBlocksRemain--;
+            sdcard.multiWriteNextBlock++;
+            sdcard.state = SDCARD_STATE_READY;
+            return SDCARD_OPERATION_SUCCESS;
+        }
+    }
+
     sdcard.pendingOperation.callback = callback;
     sdcard.pendingOperation.callbackData = callbackData;
     sdcard.pendingOperation.chunkIndex = 1; // (for non-DMA transfers) we've sent chunk #0 already
     sdcard.state = SDCARD_STATE_SENDING_WRITE;
 
-    //TODO: make sure buffer is aligned
-    if (SD_WriteBlocks_DMA(blockIndex, (uint32_t*) buffer, 512, 1) != SD_OK) {
+    if (SD_WriteBlocks_DMA(blockIndex, (uint32_t*) buffer, 512, block_count) != SD_OK) {
         /* Our write was rejected! This could be due to a bad address but we hope not to attempt that, so assume
          * the card is broken and needs reset.
          */

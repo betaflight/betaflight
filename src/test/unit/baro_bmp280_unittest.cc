@@ -150,6 +150,9 @@ bool busWriteRegister(const busDevice_t*, uint8_t, uint8_t) {return true;}
 void spiSetDivisor() {
 }
 
+void spiPreinitCsByIO() {
+}
+
 void IOConfigGPIO() {
 }
 

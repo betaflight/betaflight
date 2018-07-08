@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
@@ -23,8 +26,27 @@
 #else
     #define TARGET_BOARD_IDENTIFIER "FYF3"
 //    #define USBD_PRODUCT_STRING     "FuryF3"
-    #undef USE_OSD
 #endif
+
+// Removed to make the firmware fit into flash (in descending order of priority):
+//#undef USE_GYRO_OVERFLOW_CHECK
+//#undef USE_GYRO_LPF2
+
+//#undef USE_ITERM_RELAX
+//#undef USE_RC_SMOOTHING_FILTER
+
+//#undef USE_TELEMETRY_HOTT
+//#undef USE_TELEMETRY_MAVLINK
+//#undef USE_TELEMETRY_LTM
+#ifdef FURYF3OSD
+#undef USE_SERIALRX_XBUS
+
+#undef USE_BOARD_INFO
+#undef USE_EXTENDED_CMS_MENUS
+#undef USE_RTC_TIME
+#endif
+#undef USE_RX_MSP
+#undef USE_ESC_SENSOR_INFO
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 #define CONFIG_PREFER_ACC_ON
@@ -90,8 +112,8 @@
 
     #define USE_FLASHFS
     #define USE_FLASH_M25P16
-    #define M25P16_CS_PIN           PB12
-    #define M25P16_SPI_INSTANCE     SPI2
+    #define FLASH_CS_PIN            PB12
+    #define FLASH_SPI_INSTANCE      SPI2
 
     #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 

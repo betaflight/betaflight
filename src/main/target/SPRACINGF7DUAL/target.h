@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
@@ -30,6 +33,8 @@
 
 #define USE_DUAL_GYRO
 //#define DEBUG_MODE DEBUG_DUAL_GYRO_DIFF
+
+#define ENABLE_DSHOT_DMAR       true
 
 #define LED0_PIN                PC4
 
@@ -70,6 +75,8 @@
 #define GYRO_2_ALIGN                GYRO_MPU6500_2_ALIGN
 #define ACC_1_ALIGN                ACC_MPU6500_1_ALIGN
 #define ACC_2_ALIGN                ACC_MPU6500_2_ALIGN
+
+#define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_BOTH
 
 #define USE_BARO
 #define USE_BARO_BMP280
@@ -178,9 +185,9 @@
 //#define ADC_INSTANCE                        ADC1
 //#define ADC1_DMA_STREAM                     DMA2_Stream0
 
-// Using ADC3 frees up DMA2_Stream0 for SPI1_RX
+// Using ADC3 frees up DMA2_Stream0 for SPI1_RX (not necessarily, SPI1_RX has DMA2_Stream2 as well)
 #define ADC_INSTANCE                        ADC3
-#define ADC3_DMA_STREAM                     DMA2_Stream1
+#define ADC3_DMA_STREAM                     DMA2_Stream0
 
 #define VBAT_ADC_PIN                        PC1
 #define CURRENT_METER_ADC_PIN               PC2
@@ -199,8 +206,7 @@
 
 #define USE_LED_STRIP
 
-//TODO Implement transponder on F7
-//#define USE_TRANSPONDER
+#define USE_TRANSPONDER
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 //#define RX_CHANNELS_TAER
@@ -211,9 +217,6 @@
 
 #define SERIALRX_UART                       SERIAL_PORT_USART2
 #define SERIALRX_PROVIDER                   SERIALRX_SBUS
-
-#define TELEMETRY_UART                      SERIAL_PORT_UART5
-#define TELEMETRY_PROVIDER_DEFAULT          FUNCTION_TELEMETRY_SMARTPORT
 
 #define SPEKTRUM_BIND_PIN       UART2_RX_PIN
 

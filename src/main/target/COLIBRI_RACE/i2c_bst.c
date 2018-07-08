@@ -41,6 +41,8 @@
 #include "io/flashfs.h"
 #include "io/beeper.h"
 
+#include "pg/rx.h"
+
 #include "rx/rx.h"
 #include "rx/msp.h"
 
@@ -57,11 +59,10 @@
 
 #include "telemetry/telemetry.h"
 
-#include "flight/altitude.h"
+#include "flight/position.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
-#include "flight/navigation.h"
 #include "flight/pid.h"
 #include "flight/servos.h"
 

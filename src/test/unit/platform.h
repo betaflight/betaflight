@@ -18,6 +18,7 @@
 #pragma once
 
 #include <stdio.h>
+#include <stdint.h>
 
 #define USE_PARAMETER_GROUPS
 
@@ -25,7 +26,10 @@
 #define U_ID_1 1
 #define U_ID_2 2
 
+#define NOINLINE
 #define FAST_CODE
+#define FAST_CODE_NOINLINE
+#define FAST_RAM_ZERO_INIT
 #define FAST_RAM
 
 #define MAX_PROFILE_COUNT 3
@@ -105,3 +109,5 @@ typedef struct
 #define NVIC_PriorityGroup_2 0x500
 
 #include "target.h"
+
+#include "target/common_defaults_post.h"

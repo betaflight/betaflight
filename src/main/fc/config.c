@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -39,7 +42,6 @@
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
-#include "flight/navigation.h"
 #include "flight/pid.h"
 #include "flight/servos.h"
 
@@ -48,6 +50,8 @@
 #include "io/serial.h"
 
 #include "pg/beeper.h"
+#include "pg/beeper_dev.h"
+#include "pg/rx.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
@@ -83,31 +87,20 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .boardIdentifier = TARGET_BOARD_IDENTIFIER
 );
 
-#ifdef SWAP_SERIAL_PORT_0_AND_1_DEFAULTS
-#define FIRST_PORT_INDEX 1
-#define SECOND_PORT_INDEX 0
-#else
-#define FIRST_PORT_INDEX 0
-#define SECOND_PORT_INDEX 1
-#endif
-
 #ifndef USE_OSD_SLAVE
 uint8_t getCurrentPidProfileIndex(void)
 {
     return systemConfig()->pidProfileIndex;
 }
 
-static void setPidProfile(uint8_t pidProfileIndex)
+static void loadPidProfile(void)
 {
-    if (pidProfileIndex < MAX_PROFILE_COUNT) {
-        systemConfigMutable()->pidProfileIndex = pidProfileIndex;
-        currentPidProfile = pidProfilesMutable(pidProfileIndex);
-    }
+    currentPidProfile = pidProfilesMutable(systemConfig()->pidProfileIndex);
 }
 
 uint8_t getCurrentControlRateProfileIndex(void)
 {
-    return systemConfigMutable()->activeRateProfile;
+    return systemConfig()->activeRateProfile;
 }
 
 uint16_t getCurrentMinthrottle(void)
@@ -123,20 +116,14 @@ void resetConfigs(void)
 #if defined(USE_TARGET_CONFIG)
     targetConfiguration();
 #endif
-
-#ifndef USE_OSD_SLAVE
-    setPidProfile(0);
-    setControlRateProfile(0);
-#endif
-
-#ifdef USE_LED_STRIP
-    reevaluateLedConfig();
-#endif
 }
 
-void activateConfig(void)
+static void activateConfig(void)
 {
 #ifndef USE_OSD_SLAVE
+    loadPidProfile();
+    loadControlRateProfile();
+
     initRcProcessing();
 
     resetAdjustmentStates();
@@ -145,16 +132,16 @@ void activateConfig(void)
     useRcControlsConfig(currentPidProfile);
     useAdjustmentConfig(currentPidProfile);
 
-#ifdef USE_NAV
-    gpsUsePIDs(currentPidProfile);
-#endif
-
     failsafeReset();
     setAccelerationTrims(&accelerometerConfigMutable()->accZero);
     accInitFilters();
 
-    imuConfigure(throttleCorrectionConfig()->throttle_correction_angle);
+    imuConfigure(throttleCorrectionConfig()->throttle_correction_angle, throttleCorrectionConfig()->throttle_correction_value);
 #endif // USE_OSD_SLAVE
+
+#ifdef USE_LED_STRIP
+    reevaluateLedConfig();
+#endif
 }
 
 static void validateAndFixConfig(void)
@@ -176,24 +163,40 @@ static void validateAndFixConfig(void)
     }
 #endif
 
+    if (!isSerialConfigValid(serialConfig())) {
+        pgResetFn_serialConfig(serialConfigMutable());
+    }
+
+    if (
+#if defined(USE_GPS)
+        !findSerialPortConfig(FUNCTION_GPS) &&
+#endif
+        true) {
+        featureClear(FEATURE_GPS);
+    }
+
 #ifndef USE_OSD_SLAVE
     if (systemConfig()->activeRateProfile >= CONTROL_RATE_PROFILE_COUNT) {
         systemConfigMutable()->activeRateProfile = 0;
     }
-    setControlRateProfile(systemConfig()->activeRateProfile);
+    loadControlRateProfile();
 
     if (systemConfig()->pidProfileIndex >= MAX_PROFILE_COUNT) {
         systemConfigMutable()->pidProfileIndex = 0;
     }
-    setPidProfile(systemConfig()->pidProfileIndex);
+    loadPidProfile();
 
     // Prevent invalid notch cutoff
     if (currentPidProfile->dterm_notch_cutoff >= currentPidProfile->dterm_notch_hz) {
         currentPidProfile->dterm_notch_hz = 0;
     }
 
-    if ((motorConfig()->dev.motorPwmProtocol == PWM_TYPE_BRUSHED) && (motorConfig()->mincommand < 1000)) {
-        motorConfigMutable()->mincommand = 1000;
+    if (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_BRUSHED) {
+        featureClear(FEATURE_3D);
+
+        if (motorConfig()->mincommand < 1000) {
+            motorConfigMutable()->mincommand = 1000;
+        }
     }
 
     if ((motorConfig()->dev.motorPwmProtocol == PWM_TYPE_STANDARD) && (motorConfig()->dev.motorPwmRate > BRUSHLESS_MOTORS_PWM_RATE)) {
@@ -226,16 +229,6 @@ static void validateAndFixConfig(void)
 
     if (featureConfigured(FEATURE_RX_PARALLEL_PWM)) {
         featureClear(FEATURE_RX_SERIAL | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_SPI);
-#if defined(STM32F10X)
-        // rssi adc needs the same ports
-        featureClear(FEATURE_RSSI_ADC);
-        // current meter needs the same ports
-        if (batteryConfig()->currentMeterSource == CURRENT_METER_ADC) {
-            batteryConfigMutable()->currentMeterSource = CURRENT_METER_NONE;
-        }
-#endif // STM32F10X
-        // software serial needs free PWM ports
-        featureClear(FEATURE_SOFTSERIAL);
     }
 
 #ifdef USE_SOFTSPI
@@ -254,11 +247,58 @@ static void validateAndFixConfig(void)
     }
 #endif // USE_SOFTSPI
 
+#if defined(USE_ADC)
+    if (featureConfigured(FEATURE_RSSI_ADC)) {
+        rxConfigMutable()->rssi_channel = 0;
+        rxConfigMutable()->rssi_src_frame_errors = false;
+    } else
+#endif
+    if (rxConfigMutable()->rssi_channel
+#if defined(USE_PWM) || defined(USE_PPM)
+        || featureConfigured(FEATURE_RX_PPM) || featureConfigured(FEATURE_RX_PARALLEL_PWM)
+#endif
+        ) {
+        rxConfigMutable()->rssi_src_frame_errors = false;
+    }
+
+    if (!rcSmoothingIsEnabled() || rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_T) {
+        for (unsigned i = 0; i < MAX_PROFILE_COUNT; i++) {
+            pidProfilesMutable(i)->dtermSetpointWeight = 0;
+        }
+    }
+
+#if defined(USE_THROTTLE_BOOST)
+    if (!rcSmoothingIsEnabled() ||
+        !(rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_RPYT
+        || rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_T
+        || rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_RPT)) {
+        for (unsigned i = 0; i < MAX_PROFILE_COUNT; i++) {
+            pidProfilesMutable(i)->throttle_boost = 0;
+        }
+    }
+#endif
+
+    if (
+        featureConfigured(FEATURE_3D) || !featureConfigured(FEATURE_GPS)
+#if !defined(USE_GPS) || !defined(USE_GPS_RESCUE)
+        || true
+#endif
+        ) {
+        if (failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE) {
+            failsafeConfigMutable()->failsafe_procedure = FAILSAFE_PROCEDURE_DROP_IT;
+        }
+
+        if (isModeActivationConditionPresent(BOXGPSRESCUE)) {
+            removeModeActivationCondition(BOXGPSRESCUE);
+        }
+    }
 #endif // USE_OSD_SLAVE
 
-    if (!isSerialConfigValid(serialConfig())) {
-        pgResetFn_serialConfig(serialConfigMutable());
+#if defined(USE_ESC_SENSOR)
+    if (!findSerialPortConfig(FUNCTION_ESC_SENSOR)) {
+        featureClear(FEATURE_ESC_SENSOR);
     }
+#endif
 
 // clear features that are not supported.
 // I have kept them all here in one place, some could be moved to sections of code above.
@@ -273,10 +313,6 @@ static void validateAndFixConfig(void)
 
 #if !defined(USE_SOFTSERIAL1) && !defined(USE_SOFTSERIAL2)
     featureClear(FEATURE_SOFTSERIAL);
-#endif
-
-#ifndef USE_GPS
-    featureClear(FEATURE_GPS);
 #endif
 
 #ifndef USE_RANGEFINDER
@@ -329,6 +365,31 @@ static void validateAndFixConfig(void)
 
 #ifndef USE_GYRO_DATA_ANALYSE
     featureClear(FEATURE_DYNAMIC_FILTER);
+#endif
+
+#if !defined(USE_ADC)
+    featureClear(FEATURE_RSSI_ADC);
+#endif
+
+#if defined(USE_BEEPER)
+    if (beeperDevConfig()->frequency && !timerGetByTag(beeperDevConfig()->ioTag)) {
+        beeperDevConfigMutable()->frequency = 0;
+    }
+
+    if (beeperConfig()->beeper_off_flags & ~BEEPER_ALLOWED_MODES) {
+        beeperConfigMutable()->beeper_off_flags = 0;
+    }
+
+#ifdef USE_DSHOT
+    if (beeperConfig()->dshotBeaconOffFlags & ~DSHOT_BEACON_ALLOWED_MODES) {
+        beeperConfigMutable()->dshotBeaconOffFlags = 0;
+    }
+
+    if (beeperConfig()->dshotBeaconTone < DSHOT_CMD_BEACON1
+        || beeperConfig()->dshotBeaconTone > DSHOT_CMD_BEACON5) {
+        beeperConfigMutable()->dshotBeaconTone = DSHOT_CMD_BEACON1;
+    }
+#endif
 #endif
 
 #if defined(TARGET_VALIDATECONFIG)
@@ -433,27 +494,30 @@ void validateAndFixGyroConfig(void)
 }
 #endif // USE_OSD_SLAVE
 
-void readEEPROM(void)
+bool readEEPROM(void)
 {
 #ifndef USE_OSD_SLAVE
     suspendRxSignal();
 #endif
 
     // Sanity check, read flash
-    if (!loadEEPROM()) {
-        failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
-    }
+    bool success = loadEEPROM();
 
     validateAndFixConfig();
+
     activateConfig();
 
 #ifndef USE_OSD_SLAVE
     resumeRxSignal();
 #endif
+
+    return success;
 }
 
 void writeEEPROM(void)
 {
+    validateAndFixConfig();
+
 #ifndef USE_OSD_SLAVE
     suspendRxSignal();
 #endif
@@ -468,12 +532,15 @@ void writeEEPROM(void)
 void resetEEPROM(void)
 {
     resetConfigs();
+
     writeEEPROM();
+
+    activateConfig();
 }
 
-void ensureEEPROMContainsValidData(void)
+void ensureEEPROMStructureIsValid(void)
 {
-    if (isEEPROMContentValid()) {
+    if (isEEPROMStructureValid()) {
         return;
     }
     resetEEPROM();
@@ -489,81 +556,11 @@ void saveConfigAndNotify(void)
 #ifndef USE_OSD_SLAVE
 void changePidProfile(uint8_t pidProfileIndex)
 {
-    if (pidProfileIndex >= MAX_PROFILE_COUNT) {
-        pidProfileIndex = MAX_PROFILE_COUNT - 1;
+    if (pidProfileIndex < MAX_PROFILE_COUNT) {
+        systemConfigMutable()->pidProfileIndex = pidProfileIndex;
+        loadPidProfile();
     }
-    systemConfigMutable()->pidProfileIndex = pidProfileIndex;
-    currentPidProfile = pidProfilesMutable(pidProfileIndex);
+
     beeperConfirmationBeeps(pidProfileIndex + 1);
 }
 #endif
-
-void beeperOffSet(uint32_t mask)
-{
-#ifdef USE_BEEPER
-    beeperConfigMutable()->beeper_off_flags |= mask;
-#else
-    UNUSED(mask);
-#endif
-}
-
-void beeperOffSetAll(uint8_t beeperCount)
-{
-#ifdef USE_BEEPER
-    beeperConfigMutable()->beeper_off_flags = (1 << beeperCount) -1;
-#else
-    UNUSED(beeperCount);
-#endif
-}
-
-void beeperOffClear(uint32_t mask)
-{
-#ifdef USE_BEEPER
-    beeperConfigMutable()->beeper_off_flags &= ~(mask);
-#else
-    UNUSED(mask);
-#endif
-}
-
-void beeperOffClearAll(void)
-{
-#ifdef USE_BEEPER
-    beeperConfigMutable()->beeper_off_flags = 0;
-#endif
-}
-
-uint32_t getBeeperOffMask(void)
-{
-#ifdef USE_BEEPER
-    return beeperConfig()->beeper_off_flags;
-#else
-    return 0;
-#endif
-}
-
-void setBeeperOffMask(uint32_t mask)
-{
-#ifdef USE_BEEPER
-    beeperConfigMutable()->beeper_off_flags = mask;
-#else
-    UNUSED(mask);
-#endif
-}
-
-uint32_t getPreferredBeeperOffMask(void)
-{
-#ifdef USE_BEEPER
-    return beeperConfig()->preferred_beeper_off_flags;
-#else
-    return 0;
-#endif
-}
-
-void setPreferredBeeperOffMask(uint32_t mask)
-{
-#ifdef USE_BEEPER
-    beeperConfigMutable()->preferred_beeper_off_flags = mask;
-#else
-    UNUSED(mask);
-#endif
-}

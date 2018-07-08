@@ -1,28 +1,33 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
 
+#if defined(BEESTORM)
+#define TARGET_BOARD_IDENTIFIER "BEST" // Oversky BeeStorm
+#else
 #define TARGET_BOARD_IDENTIFIER "BBV2" // BeeBrain V2.
+#endif
 #define USE_TARGET_CONFIG
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
-
-#define USE_BRUSHED_ESC_AUTODETECT
 
 #define LED0_PIN                PB1
 #define LED1_PIN                PB2
@@ -33,11 +38,19 @@
 
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
+#if defined(BEESTORM)
+#define GYRO_MPU6500_ALIGN      CW180_DEG
+#else
 #define GYRO_MPU6500_ALIGN      CW270_DEG
+#endif
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6500
+#if defined(BEESTORM)
+#define ACC_MPU6500_ALIGN       CW180_DEG
+#else
 #define ACC_MPU6500_ALIGN       CW270_DEG
+#endif
 
 #define SERIAL_PORT_COUNT       4
 
@@ -80,12 +93,14 @@
 #define MAX7456_SPI_INSTANCE    SPI1
 #define MAX7456_SPI_CS_PIN      PA4
 
+#if !defined(BEESTORM)
 #define USE_VTX_RTC6705
 #define USE_VTX_RTC6705_SOFTSPI
 #define USE_VTX_CONTROL
 #define RTC6705_SPI_MOSI_PIN    PC15
 #define RTC6705_SPICLK_PIN      PC13
 #define RTC6705_CS_PIN          PB12
+#endif
 
 #define USE_ADC
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
@@ -96,7 +111,9 @@
 #define USE_TRANSPONDER
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_UART           SERIAL_PORT_USART2
+#if !defined(BEESTORM)
 #define RX_CHANNELS_TAER
+#endif
 
 #if defined(BEEBRAIN_V2D)
     // Receiver - DSM

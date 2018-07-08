@@ -1,25 +1,29 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
  *
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/*
  * Original author: Alain (https://github.com/aroyer-qc)
  * Modified for F4 and BF source: Chris Hockuba (https://github.com/conkerkh)
  *
  * Note: On F4 due to DMA issues it is recommended that motor timers don't run on DMA2.
  *         Therefore avoid using TIM1/TIM8, use TIM2/TIM3/TIM4/TIM5/TIM6/TIM7
- *
  */
 
 /* Include(s) -------------------------------------------------------------------------------------------------------*/
@@ -31,6 +35,9 @@
 
 #include "platform.h"
 #include "stm32f4xx_gpio.h"
+
+#include "pg/pg.h"
+#include "pg/sdio.h"
 
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
@@ -1122,8 +1129,7 @@ static SD_Error_t SD_WideBusOperationConfig(uint32_t WideMode)
   *         This API must be used after "Transfer State"
   * @retval SD Card error state
   */
-/*
-SD_Error_t HAL_SD_HighSpeed(void)
+SD_Error_t SD_HighSpeed(void)
 {
     SD_Error_t  ErrorState;
     uint8_t     SD_hs[64]  = {0};
@@ -1147,16 +1153,16 @@ SD_Error_t HAL_SD_HighSpeed(void)
     if(SD_SPEC != SD_ALLZERO)
     {
         // Set Block Size for Card
-        if((ErrorState = SD_TransmitCommand((SD_CMD_SET_BLOCKLEN | SDIO_CMD_RESPONSE_SHORT), 64, 1)) != SD_OK)
+        if((ErrorState = SD_TransmitCommand((SD_CMD_SET_BLOCKLEN | SD_CMD_RESPONSE_SHORT), 64, 1)) != SD_OK)
         {
             return ErrorState;
         }
 
         // Configure the SD DPSM (Data Path State Machine)
-        SD_DataTransferInit(64, SDIO_DATABLOCK_SIZE_64B, true);
+        SD_DataTransferInit(64, SD_DATABLOCK_SIZE_64B, true);
 
         // Send CMD6 switch mode
-        if((ErrorState =SD_TransmitCommand((SD_CMD_HS_SWITCH | SDIO_CMD_RESPONSE_SHORT), 0x80FFFF01, 1)) != SD_OK)
+        if((ErrorState =SD_TransmitCommand((SD_CMD_HS_SWITCH | SD_CMD_RESPONSE_SHORT), 0x80FFFF01, 1)) != SD_OK)
         {
             return ErrorState;
         }
@@ -1196,8 +1202,6 @@ SD_Error_t HAL_SD_HighSpeed(void)
 
     return ErrorState;
 }
-
-*/
 
 
 /** -----------------------------------------------------------------------------------------------------------------*/
@@ -1673,6 +1677,13 @@ bool SD_Init(void)
 	{
 		// Enable wide operation
 		ErrorState = SD_WideBusOperationConfig(SD_BUS_WIDE_4B);
+
+		if (ErrorState == SD_OK && sdioConfig()->clockBypass) {
+			if (SD_HighSpeed()) {
+				SDIO->CLKCR |= SDIO_CLKCR_BYPASS;
+				SDIO->CLKCR |= SDIO_CLKCR_NEGEDGE;
+			}
+		}
 	}
 
 	// Configure the SDCARD device

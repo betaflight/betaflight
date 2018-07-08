@@ -24,7 +24,10 @@ OPTIONS   ?=
 # compile for OpenPilot BootLoader support
 OPBL      ?= no
 
-# Debugger optons, must be empty or GDB
+# Debugger optons:
+#   empty           - ordinary build with all optimizations enabled
+#   RELWITHDEBINFO  - ordinary build with debug symbols and all optimizations enabled
+#   GDB             - debug build with minimum number of optimizations
 DEBUG     ?=
 
 # Insert the debugging hardfault debugger
@@ -117,6 +120,9 @@ OPTIMISE_DEFAULT      := -Og
 LTO_FLAGS             := $(OPTIMISE_DEFAULT)
 DEBUG_FLAGS            = -ggdb3 -DDEBUG
 else
+ifeq ($(DEBUG),INFO)
+DEBUG_FLAGS            = -ggdb3
+endif
 OPTIMISATION_BASE     := -flto -fuse-linker-plugin -ffast-math
 OPTIMISE_DEFAULT      := -O2
 OPTIMISE_SPEED        := -Ofast
@@ -236,6 +242,7 @@ LD_FLAGS     = -lm \
               -Wl,-L$(LINKER_DIR) \
               -Wl,--cref \
               -Wl,--no-wchar-size-warning \
+              -Wl,--print-memory-usage \
               -T$(LD_SCRIPT)
 endif
 
@@ -321,7 +328,7 @@ $(OBJECT_DIR)/$(TARGET)/%.o: %.S
 ## all               : Build all targets (excluding unsupported)
 all: $(SUPPORTED_TARGETS)
 
-## all_with_unsupported : Build all targets (excluding unsupported)
+## all_with_unsupported : Build all targets (including unsupported)
 all_with_unsupported: $(VALID_TARGETS)
 
 ## unsupported : Build unsupported targets
@@ -350,7 +357,7 @@ $(VALID_TARGETS):
 	$(MAKE) binary hex TARGET=$@ && \
 	echo "Building $@ succeeded."
 
-$(SKIP_TARGETS):
+$(NOBUILD_TARGETS):
 	$(MAKE) TARGET=$@
 
 CLEAN_TARGETS = $(addprefix clean_,$(VALID_TARGETS) )
@@ -466,6 +473,32 @@ targets:
 ## junittest         : run the cleanflight test suite, producing Junit XML result files.
 test junittest:
 	$(V0) cd src/test && $(MAKE) $@
+
+
+check-target-independence:
+	$(V1) for test_target in $(VALID_TARGETS); do \
+		FOUND=$$(grep -rE "\W$${test_target}\W?" src/main | grep -vE "(//)|(/\*).*\W$${test_target}\W?" | grep -vE "^src/main/target"); \
+		if [ "$${FOUND}" != "" ]; then \
+			echo "Target dependencies found:"; \
+			echo "$${FOUND}"; \
+			exit 1; \
+		fi; \
+	done
+
+check-fastram-usage-correctness:
+	$(V1) NON_TRIVIALLY_INITIALIZED=$$(grep -Ern "\W?FAST_RAM_ZERO_INIT\W.*=.*" src/main/ | grep -Ev "=\s*(false|NULL|0(\.0*f?)?)\s*[,;]"); \
+	if [ "$${NON_TRIVIALLY_INITIALIZED}" != "" ]; then \
+		echo "Non-trivially initialized FAST_RAM_ZERO_INIT variables found, use FAST_RAM instead:"; \
+		echo "$${NON_TRIVIALLY_INITIALIZED}"; \
+		exit 1; \
+	fi; \
+	TRIVIALLY_INITIALIZED=$$(grep -Ern "\W?FAST_RAM\W.*;" src/main/ | grep -v "="); \
+	EXPLICITLY_TRIVIALLY_INITIALIZED=$$(grep -Ern "\W?FAST_RAM\W.*;" src/main/ | grep -E "=\s*(false|NULL|0(\.0*f?)?)\s*[,;]"); \
+	if [ "$${TRIVIALLY_INITIALIZED}$${EXPLICITLY_TRIVIALLY_INITIALIZED}" != "" ]; then \
+		echo "Trivially initialized FAST_RAM variables found, use FAST_RAM_ZERO_INIT instead to save FLASH:"; \
+		echo "$${TRIVIALLY_INITIALIZED}\n$${EXPLICITLY_TRIVIALLY_INITIALIZED}"; \
+		exit 1; \
+	fi;
 
 # rebuild everything when makefile changes
 $(TARGET_OBJS) : Makefile

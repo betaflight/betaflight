@@ -24,12 +24,14 @@ extern "C" {
     #include "config/feature.h"
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
+    #include "pg/rx.h"
     #include "fc/config.h"
     #include "fc/controlrate_profile.h"
     #include "fc/fc_core.h"
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
+    #include "flight/failsafe.h"
     #include "flight/imu.h"
     #include "flight/mixer.h"
     #include "flight/pid.h"
@@ -51,6 +53,7 @@ extern "C" {
     PG_REGISTER(servoConfig_t, servoConfig, PG_SERVO_CONFIG, 0);
     PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
     PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
+    PG_REGISTER(failsafeConfig_t, failsafeConfig, PG_FAILSAFE_CONFIG, 0);
 
     float rcCommand[4];
     int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
@@ -609,6 +612,123 @@ TEST(ArmingPreventionTest, WhenUsingSwitched3DModeThenNormalThrottleArmingCondit
     EXPECT_EQ(0, getArmingDisableFlags());
 }
 
+TEST(ArmingPreventionTest, Paralyze)
+{
+    // given
+    simulationFeatureFlags = 0;
+    simulationTime = 30e6; // 30 seconds after boot
+    gyroCalibDone = true;
+
+    // and
+    modeActivationConditionsMutable(0)->auxChannelIndex = 0;
+    modeActivationConditionsMutable(0)->modeId = BOXARM;
+    modeActivationConditionsMutable(0)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
+    modeActivationConditionsMutable(0)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
+    modeActivationConditionsMutable(1)->auxChannelIndex = 1;
+    modeActivationConditionsMutable(1)->modeId = BOXPARALYZE;
+    modeActivationConditionsMutable(1)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
+    modeActivationConditionsMutable(1)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
+    modeActivationConditionsMutable(2)->auxChannelIndex = 2;
+    modeActivationConditionsMutable(2)->modeId = BOXBEEPERON;
+    modeActivationConditionsMutable(2)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
+    modeActivationConditionsMutable(2)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
+    modeActivationConditionsMutable(3)->auxChannelIndex = 3;
+    modeActivationConditionsMutable(3)->modeId = BOXVTXPITMODE;
+    modeActivationConditionsMutable(3)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
+    modeActivationConditionsMutable(3)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
+    useRcControlsConfig(NULL);
+
+    // and
+    rxConfigMutable()->mincheck = 1050;
+
+    // given
+    rcData[THROTTLE] = 1000;
+    rcData[AUX1] = 1000;
+    rcData[AUX2] = 1000;
+    rcData[AUX3] = 1000;
+    rcData[AUX4] = 1000;
+    ENABLE_STATE(SMALL_ANGLE);
+
+    // when
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+    EXPECT_FALSE(isArmingDisabled());
+    EXPECT_EQ(0, getArmingDisableFlags());
+
+    // given
+    // arm
+    rcData[AUX1] = 1800;
+
+    // when
+    tryArm();
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+    EXPECT_FALSE(isArmingDisabled());
+    EXPECT_EQ(0, getArmingDisableFlags());
+
+    // given
+    // disarm
+    rcData[AUX1] = 1000;
+
+    // when
+    disarm();
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+    EXPECT_FALSE(isArmingDisabled());
+    EXPECT_EQ(0, getArmingDisableFlags());
+
+    // given
+    // paraylze and enter pit mode
+    rcData[AUX2] = 1800;
+    rcData[AUX4] = 1800;
+
+    // when
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(ARMING_DISABLED_PARALYZE, getArmingDisableFlags());
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXVTXPITMODE));
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXBEEPERON));
+
+    // and
+    preventModeChanges();
+
+    // given
+    // Try exiting pit mode and enable beeper
+    rcData[AUX4] = 1000;
+    rcData[AUX3] = 1800;
+
+    // when
+    updateActivatedModes();
+
+    // expect
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXVTXPITMODE));
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXBEEPERON));
+    
+    // given
+    // exit paralyze mode and ensure arming is still disabled
+    rcData[AUX2] = 1000;
+
+    // when
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(ARMING_DISABLED_PARALYZE, getArmingDisableFlags());
+}
+
 // STUBS
 extern "C" {
     uint32_t micros(void) { return simulationTime; }
@@ -649,7 +769,7 @@ extern "C" {
     void updateAdjustmentStates(void) {}
     void processRcAdjustments(controlRateConfig_t *) {}
     void updateGpsWaypointsAndMode(void) {}
-    void releaseSharedTelemetryPorts(void) {}
+    void mspSerialReleaseSharedTelemetryPorts(void) {}
     void telemetryCheckState(void) {}
     void mspSerialAllocatePorts(void) {}
     void gyroReadTemperature(void) {}
@@ -670,4 +790,6 @@ extern "C" {
     void dashboardDisablePageCycling(void) {}
     bool imuQuaternionHeadfreeOffsetSet(void) { return true; }
     void rescheduleTask(cfTaskId_e, uint32_t) {}
+    bool usbCableIsInserted(void) { return false; }
+    bool usbVcpIsConnected(void) { return false; }
 }

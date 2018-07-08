@@ -1,3 +1,23 @@
+/*
+ * This file is part of Cleanflight and Betaflight.
+ *
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -239,7 +259,7 @@ bool blackboxDeviceOpen(void)
         break;
 #ifdef USE_FLASHFS
     case BLACKBOX_DEVICE_FLASH:
-        if (flashfsGetSize() == 0 || isBlackboxDeviceFull()) {
+        if (!flashfsIsSupported() || isBlackboxDeviceFull()) {
             return false;
         }
 
@@ -298,12 +318,13 @@ bool isBlackboxErased(void)
 #endif
 
 /**
- * Close the Blackbox logging device immediately without attempting to flush any remaining data.
+ * Close the Blackbox logging device.
  */
 void blackboxDeviceClose(void)
 {
     switch (blackboxConfig()->device) {
     case BLACKBOX_DEVICE_SERIAL:
+        // Can immediately close without attempting to flush any remaining data.
         // Since the serial port could be shared with other processes, we have to give it back here
         closeSerialPort(blackboxPort);
         blackboxPort = NULL;
@@ -316,6 +337,12 @@ void blackboxDeviceClose(void)
             mspSerialAllocatePorts();
         }
         break;
+#ifdef USE_FLASHFS
+    case BLACKBOX_DEVICE_FLASH:
+        // Some flash device, e.g., NAND devices, require explicit close to flush internally buffered data.
+        flashfsClose();
+        break;
+#endif
     default:
         ;
     }

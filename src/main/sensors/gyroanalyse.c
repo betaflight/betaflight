@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight. If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdint.h>
@@ -54,27 +57,27 @@
 
 #define BIQUAD_Q 1.0f / sqrtf(2.0f)         // quality factor - butterworth
 
-static FAST_RAM uint16_t fftSamplingScale;
+static FAST_RAM_ZERO_INIT uint16_t fftSamplingScale;
 
 // gyro data used for frequency analysis
-static float FAST_RAM gyroData[XYZ_AXIS_COUNT][FFT_WINDOW_SIZE];
+static float FAST_RAM_ZERO_INIT gyroData[XYZ_AXIS_COUNT][FFT_WINDOW_SIZE];
 
-static FAST_RAM arm_rfft_fast_instance_f32 fftInstance;
-static FAST_RAM float fftData[FFT_WINDOW_SIZE];
-static FAST_RAM float rfftData[FFT_WINDOW_SIZE];
-static FAST_RAM gyroFftData_t fftResult[XYZ_AXIS_COUNT];
+static FAST_RAM_ZERO_INIT arm_rfft_fast_instance_f32 fftInstance;
+static FAST_RAM_ZERO_INIT float fftData[FFT_WINDOW_SIZE];
+static FAST_RAM_ZERO_INIT float rfftData[FFT_WINDOW_SIZE];
+static FAST_RAM_ZERO_INIT gyroFftData_t fftResult[XYZ_AXIS_COUNT];
 
 // use a circular buffer for the last FFT_WINDOW_SIZE samples
-static FAST_RAM uint16_t fftIdx;
+static FAST_RAM_ZERO_INIT uint16_t fftIdx;
 
 // bandpass filter gyro data
-static FAST_RAM biquadFilter_t fftGyroFilter[XYZ_AXIS_COUNT];
+static FAST_RAM_ZERO_INIT biquadFilter_t fftGyroFilter[XYZ_AXIS_COUNT];
 
 // filter for smoothing frequency estimation
-static FAST_RAM biquadFilter_t fftFreqFilter[XYZ_AXIS_COUNT];
+static FAST_RAM_ZERO_INIT biquadFilter_t fftFreqFilter[XYZ_AXIS_COUNT];
 
 // Hanning window, see https://en.wikipedia.org/wiki/Window_function#Hann_.28Hanning.29_window
-static FAST_RAM float hanningWindow[FFT_WINDOW_SIZE];
+static FAST_RAM_ZERO_INIT float hanningWindow[FFT_WINDOW_SIZE];
 
 void initHanning(void)
 {
@@ -125,10 +128,10 @@ const gyroFftData_t *gyroFftData(int axis)
 void gyroDataAnalyse(const gyroDev_t *gyroDev, biquadFilter_t *notchFilterDyn)
 {
     // accumulator for oversampled data => no aliasing and less noise
-    static FAST_RAM float fftAcc[XYZ_AXIS_COUNT];
-    static FAST_RAM uint32_t fftAccCount;
+    static FAST_RAM_ZERO_INIT float fftAcc[XYZ_AXIS_COUNT];
+    static FAST_RAM_ZERO_INIT uint32_t fftAccCount;
 
-    static FAST_RAM uint32_t gyroDataAnalyseUpdateTicks;
+    static FAST_RAM_ZERO_INIT uint32_t gyroDataAnalyseUpdateTicks;
 
     // if gyro sampling is > 1kHz, accumulate multiple samples
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {

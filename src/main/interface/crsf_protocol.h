@@ -1,4 +1,24 @@
 /*
+ * This file is part of Cleanflight and Betaflight.
+ *
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/*
  * Crossfire constants provided by Team Black Sheep under terms of the 2-Clause BSD License
  */
 
@@ -31,8 +51,22 @@ typedef enum {
     // MSP commands
     CRSF_FRAMETYPE_MSP_REQ = 0x7A,   // response request using msp sequence as command
     CRSF_FRAMETYPE_MSP_RESP = 0x7B,  // reply with 58 byte chunked binary
-    CRSF_FRAMETYPE_MSP_WRITE = 0x7C  // write with 8 byte chunked binary (OpenTX outbound telemetry buffer limit)
+    CRSF_FRAMETYPE_MSP_WRITE = 0x7C,  // write with 8 byte chunked binary (OpenTX outbound telemetry buffer limit)
+    CRSF_FRAMETYPE_DISPLAYPORT_CMD = 0x7D, // displayport control command
 } crsfFrameType_e;
+
+enum {
+    CRSF_DISPLAYPORT_SUBCMD_UPDATE = 0x01, // transmit displayport buffer to remote
+    CRSF_DISPLAYPORT_SUBCMD_CLEAR = 0X02, // clear client screen
+    CRSF_DISPLAYPORT_SUBCMD_OPEN = 0x03,  // client request to open cms menu
+    CRSF_DISPLAYPORT_SUBCMD_CLOSE = 0x04,  // client request to close cms menu
+    CRSF_DISPLAYPORT_SUBCMD_POLL = 0x05,  // client request to poll/refresh cms menu
+};
+
+enum {
+    CRSF_DISPLAYPORT_OPEN_ROWS_OFFSET = 1,
+    CRSF_DISPLAYPORT_OPEN_COLS_OFFSET = 2,
+};
 
 enum {
     CRSF_FRAME_GPS_PAYLOAD_SIZE = 15,

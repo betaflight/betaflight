@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -37,6 +40,8 @@
 #include "common/streambuf.h"
 #include "common/utils.h"
 
+#include "cms/cms.h"
+
 #include "drivers/nvic.h"
 
 #include "fc/config.h"
@@ -47,6 +52,7 @@
 
 #include "interface/crsf_protocol.h"
 
+#include "io/displayport_crsf.h"
 #include "io/gps.h"
 #include "io/serial.h"
 
@@ -58,7 +64,6 @@
 #include "telemetry/telemetry.h"
 #include "telemetry/crsf.h"
 #include "telemetry/msp_shared.h"
-
 
 #define CRSF_CYCLETIME_US                   100000 // 100ms, 10 Hz
 #define CRSF_DEVICEINFO_VERSION             0x01
@@ -306,6 +311,37 @@ void crsfFrameDeviceInfo(sbuf_t *dst) {
     *lengthPtr = sbufPtr(dst) - lengthPtr;
 }
 
+#if defined(USE_CRSF_CMS_TELEMETRY)
+
+static void crsfFrameDisplayPortRow(sbuf_t *dst, uint8_t row)
+{
+    uint8_t *lengthPtr = sbufPtr(dst);
+    uint8_t buflen = crsfDisplayPortScreen()->cols;
+    char *rowStart = &crsfDisplayPortScreen()->buffer[row * buflen];
+    const uint8_t frameLength = CRSF_FRAME_LENGTH_EXT_TYPE_CRC + buflen;
+    sbufWriteU8(dst, frameLength);
+    sbufWriteU8(dst, CRSF_FRAMETYPE_DISPLAYPORT_CMD);
+    sbufWriteU8(dst, CRSF_ADDRESS_RADIO_TRANSMITTER);
+    sbufWriteU8(dst, CRSF_ADDRESS_FLIGHT_CONTROLLER);
+    sbufWriteU8(dst, CRSF_DISPLAYPORT_SUBCMD_UPDATE);
+    sbufWriteU8(dst, row);
+    sbufWriteData(dst, rowStart, buflen);
+    *lengthPtr = sbufPtr(dst) - lengthPtr;
+}
+
+static void crsfFrameDisplayPortClear(sbuf_t *dst)
+{
+    uint8_t *lengthPtr = sbufPtr(dst);
+    sbufWriteU8(dst, CRSF_DISPLAY_PORT_COLS_MAX + CRSF_FRAME_LENGTH_EXT_TYPE_CRC);
+    sbufWriteU8(dst, CRSF_FRAMETYPE_DISPLAYPORT_CMD);
+    sbufWriteU8(dst, CRSF_ADDRESS_RADIO_TRANSMITTER);
+    sbufWriteU8(dst, CRSF_ADDRESS_FLIGHT_CONTROLLER);
+    sbufWriteU8(dst, CRSF_DISPLAYPORT_SUBCMD_CLEAR);
+    *lengthPtr = sbufPtr(dst) - lengthPtr;
+}
+
+#endif
+
 #define BV(x)  (1 << (x)) // bit value
 
 // schedule array to decide how often each type of frame is sent
@@ -348,6 +384,7 @@ void crsfSendMspResponse(uint8_t *payload)
 static void processCrsf(void)
 {
     static uint8_t crsfScheduleIndex = 0;
+
     const uint8_t currentSchedule = crsfSchedule[crsfScheduleIndex];
 
     sbuf_t crsfPayloadBuf;
@@ -384,6 +421,7 @@ void crsfScheduleDeviceInfoResponse(void)
     deviceInfoReplyPending = true;
 }
 
+
 void initCrsfTelemetry(void)
 {
     // check if there is a serial port open for CRSF telemetry (ie opened by the CRSF RX)
@@ -393,6 +431,10 @@ void initCrsfTelemetry(void)
     deviceInfoReplyPending = false;
 #if defined(USE_MSP_OVER_TELEMETRY)
     mspReplyPending = false;
+#endif
+
+#if defined(USE_CMS) && defined(USE_CRSF_CMS_TELEMETRY)
+    cmsDisplayPortRegister(displayPortCrsfInit());
 #endif
 
     int index = 0;
@@ -414,6 +456,31 @@ bool checkCrsfTelemetryState(void)
 {
     return crsfTelemetryEnabled;
 }
+
+#if defined(USE_CRSF_CMS_TELEMETRY)
+void crsfProcessDisplayPortCmd(uint8_t *frameStart)
+{
+    uint8_t cmd = *frameStart;
+    switch (cmd) {
+    case CRSF_DISPLAYPORT_SUBCMD_OPEN: ;
+        const uint8_t rows = *(frameStart + CRSF_DISPLAYPORT_OPEN_ROWS_OFFSET);
+        const uint8_t cols = *(frameStart + CRSF_DISPLAYPORT_OPEN_COLS_OFFSET);
+        crsfDisplayPortSetDimensions(rows, cols);
+        crsfDisplayPortMenuOpen();
+        break;
+    case CRSF_DISPLAYPORT_SUBCMD_CLOSE:
+        crsfDisplayPortMenuExit();
+        break;
+    case CRSF_DISPLAYPORT_SUBCMD_POLL:
+        crsfDisplayPortRefresh();
+        break;
+    default:
+        break;
+    }
+
+}
+
+#endif
 
 /*
  * Called periodically by the scheduler
@@ -449,6 +516,30 @@ void handleCrsfTelemetry(timeUs_t currentTimeUs)
         crsfLastCycleTime = currentTimeUs; // reset telemetry timing due to ad-hoc request
         return;
     }
+
+#if defined(USE_CRSF_CMS_TELEMETRY)
+    if (crsfDisplayPortScreen()->reset) {
+        crsfDisplayPortScreen()->reset = false;
+        sbuf_t crsfDisplayPortBuf;
+        sbuf_t *dst = &crsfDisplayPortBuf;
+        crsfInitializeFrame(dst);
+        crsfFrameDisplayPortClear(dst);
+        crsfFinalize(dst);
+        crsfLastCycleTime = currentTimeUs;
+        return;
+    }
+    const int nextRow = crsfDisplayPortNextRow();
+    if (nextRow >= 0) {
+        sbuf_t crsfDisplayPortBuf;
+        sbuf_t *dst = &crsfDisplayPortBuf;
+        crsfInitializeFrame(dst);
+        crsfFrameDisplayPortRow(dst, nextRow);
+        crsfFinalize(dst);
+        crsfDisplayPortScreen()->pendingTransport[nextRow] = false;
+        crsfLastCycleTime = currentTimeUs;
+        return;
+    }
+#endif
 
     // Actual telemetry data only needs to be sent at a low frequency, ie 10Hz
     // Spread out scheduled frames evenly so each frame is sent at the same frequency.

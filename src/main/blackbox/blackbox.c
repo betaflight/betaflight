@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -42,6 +45,7 @@
 #include "config/feature.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/rx.h"
 
 #include "drivers/compass/compass.h"
 #include "drivers/sensor.h"
@@ -49,6 +53,7 @@
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
+#include "fc/fc_rc.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
@@ -82,7 +87,7 @@
 PG_REGISTER_WITH_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 1);
 
 PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
-    .p_denom = 32,
+    .p_ratio = 32,
     .device = DEFAULT_BLACKBOX_DEVICE,
     .record_acc = 1,
     .mode = BLACKBOX_MODE_NORMAL
@@ -185,7 +190,7 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
     {"rcCommand",   3, UNSIGNED, .Ipredict = PREDICT(MINTHROTTLE), .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),  .Pencode = ENCODING(TAG8_4S16), CONDITION(ALWAYS)},
 
     {"vbatLatest",    -1, UNSIGNED, .Ipredict = PREDICT(VBATREF),  .Iencode = ENCODING(NEG_14BIT),   .Ppredict = PREDICT(PREVIOUS),  .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_VBAT},
-    {"amperageLatest",-1, UNSIGNED, .Ipredict = PREDICT(0),        .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),  .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC},
+    {"amperageLatest",-1, SIGNED,   .Ipredict = PREDICT(0),        .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),  .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC},
 
 #ifdef USE_MAG
     {"magADC",      0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_MAG},
@@ -289,7 +294,7 @@ typedef struct blackboxMainState_s {
     int16_t servo[MAX_SUPPORTED_SERVOS];
 
     uint16_t vbatLatest;
-    uint16_t amperageLatest;
+    int32_t amperageLatest;
 
 #ifdef USE_BARO
     int32_t BaroAlt;
@@ -384,7 +389,7 @@ bool blackboxMayEditConfig(void)
 
 static bool blackboxIsOnlyLoggingIntraframes(void)
 {
-    return blackboxConfig()->p_denom == 0;
+    return blackboxConfig()->p_ratio == 0;
 }
 
 static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
@@ -442,7 +447,7 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
         return rxConfig()->rssi_channel > 0 || feature(FEATURE_RSSI_ADC);
 
     case FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME:
-        return blackboxConfig()->p_denom != 1;
+        return blackboxConfig()->p_ratio != 1;
 
     case FLIGHT_LOG_FIELD_CONDITION_ACC:
         return sensors(SENSOR_ACC) && blackboxConfig()->record_acc;
@@ -547,7 +552,7 @@ static void writeIntraframe(void)
 
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC)) {
         // 12bit value directly from ADC
-        blackboxWriteUnsignedVB(blackboxCurrent->amperageLatest);
+        blackboxWriteSignedVB(blackboxCurrent->amperageLatest);
     }
 
 #ifdef USE_MAG
@@ -675,7 +680,7 @@ static void writeInterframe(void)
     }
 
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC)) {
-        deltas[optionalFieldCount++] = (int32_t) blackboxCurrent->amperageLatest - blackboxLast->amperageLatest;
+        deltas[optionalFieldCount++] = blackboxCurrent->amperageLatest - blackboxLast->amperageLatest;
     }
 
 #ifdef USE_MAG
@@ -984,9 +989,9 @@ static void loadMainState(timeUs_t currentTimeUs)
     blackboxCurrent->time = currentTimeUs;
 
     for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
-        blackboxCurrent->axisPID_P[i] = axisPID_P[i];
-        blackboxCurrent->axisPID_I[i] = axisPID_I[i];
-        blackboxCurrent->axisPID_D[i] = axisPID_D[i];
+        blackboxCurrent->axisPID_P[i] = pidData[i].P;
+        blackboxCurrent->axisPID_I[i] = pidData[i].I;
+        blackboxCurrent->axisPID_D[i] = pidData[i].D;
         blackboxCurrent->gyroADC[i] = lrintf(gyro.gyroADCf[i]);
         blackboxCurrent->accADC[i] = lrintf(acc.accADC[i]);
 #ifdef USE_MAG
@@ -1196,8 +1201,8 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("Log start datetime", "%s",              blackboxGetStartDateTime(buf));
         BLACKBOX_PRINT_HEADER_LINE("Craft name", "%s",                      pilotConfig()->name);
         BLACKBOX_PRINT_HEADER_LINE("I interval", "%d",                      blackboxIInterval);
-        BLACKBOX_PRINT_HEADER_LINE("P interval", "%d/%d",                   blackboxGetRateNum(), blackboxGetRateDenom());
-        BLACKBOX_PRINT_HEADER_LINE("P denom", "%d",                         blackboxConfig()->p_denom);
+        BLACKBOX_PRINT_HEADER_LINE("P interval", "%d",                      blackboxPInterval);
+        BLACKBOX_PRINT_HEADER_LINE("P ratio", "%d",                         blackboxConfig()->p_ratio);
         BLACKBOX_PRINT_HEADER_LINE("minthrottle", "%d",                     motorConfig()->minthrottle);
         BLACKBOX_PRINT_HEADER_LINE("maxthrottle", "%d",                     motorConfig()->maxthrottle);
         BLACKBOX_PRINT_HEADER_LINE("gyro_scale","0x%x",                     castFloatBytesToInt(1.0f));
@@ -1268,8 +1273,9 @@ static bool blackboxWriteSysinfo(void)
                                                                             currentPidProfile->pid[PID_VEL].I,
                                                                             currentPidProfile->pid[PID_VEL].D);
         BLACKBOX_PRINT_HEADER_LINE("dterm_filter_type", "%d",               currentPidProfile->dterm_filter_type);
-        BLACKBOX_PRINT_HEADER_LINE("dterm_lowpass_hz", "%d",                    currentPidProfile->dterm_lowpass_hz);
-        BLACKBOX_PRINT_HEADER_LINE("yaw_lowpass_hz", "%d",                      currentPidProfile->yaw_lowpass_hz);
+        BLACKBOX_PRINT_HEADER_LINE("dterm_lowpass_hz", "%d",                currentPidProfile->dterm_lowpass_hz);
+        BLACKBOX_PRINT_HEADER_LINE("dterm_lowpass2_hz", "%d",               currentPidProfile->dterm_lowpass2_hz);
+        BLACKBOX_PRINT_HEADER_LINE("yaw_lowpass_hz", "%d",                  currentPidProfile->yaw_lowpass_hz);
         BLACKBOX_PRINT_HEADER_LINE("dterm_notch_hz", "%d",                  currentPidProfile->dterm_notch_hz);
         BLACKBOX_PRINT_HEADER_LINE("dterm_notch_cutoff", "%d",              currentPidProfile->dterm_notch_cutoff);
         BLACKBOX_PRINT_HEADER_LINE("iterm_windup", "%d",                    currentPidProfile->itermWindupPointPercent);
@@ -1317,6 +1323,19 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("dshot_idle_value", "%d",                motorConfig()->digitalIdleOffsetValue);
         BLACKBOX_PRINT_HEADER_LINE("debug_mode", "%d",                      systemConfig()->debug_mode);
         BLACKBOX_PRINT_HEADER_LINE("features", "%d",                        featureConfig()->enabledFeatures);
+
+#ifdef USE_RC_SMOOTHING_FILTER
+        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_type", "%d",               rxConfig()->rc_smoothing_type);
+        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_debug_axis", "%d",         rxConfig()->rc_smoothing_debug_axis);
+        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_cutoffs", "%d, %d",        rxConfig()->rc_smoothing_input_cutoff,
+                                                                            rxConfig()->rc_smoothing_derivative_cutoff);
+        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_filter_type", "%d, %d",    rxConfig()->rc_smoothing_input_type,
+                                                                            rxConfig()->rc_smoothing_derivative_type);
+        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_active_cutoffs", "%d, %d", rcSmoothingGetValue(RC_SMOOTHING_VALUE_INPUT_ACTIVE),
+                                                                            rcSmoothingGetValue(RC_SMOOTHING_VALUE_DERIVATIVE_ACTIVE));
+        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_rx_average", "%d",         rcSmoothingGetValue(RC_SMOOTHING_VALUE_AVERAGE_FRAME));
+#endif // USE_RC_SMOOTHING_FILTER
+
 
         default:
             return true;
@@ -1397,7 +1416,7 @@ static void blackboxCheckAndLogFlightMode(void)
 
 STATIC_UNIT_TESTED bool blackboxShouldLogPFrame(void)
 {
-    return blackboxPFrameIndex == 0 && blackboxConfig()->p_denom != 0;
+    return blackboxPFrameIndex == 0 && blackboxConfig()->p_ratio != 0;
 }
 
 STATIC_UNIT_TESTED bool blackboxShouldLogIFrame(void)
@@ -1651,16 +1670,15 @@ void blackboxUpdate(timeUs_t currentTimeUs)
 #ifdef USE_FLASHFS
         if (blackboxState != BLACKBOX_STATE_ERASING
             && blackboxState != BLACKBOX_STATE_START_ERASE
-            && blackboxState != BLACKBOX_STATE_ERASED) {
+            && blackboxState != BLACKBOX_STATE_ERASED)
 #endif
+        {
             blackboxSetState(BLACKBOX_STATE_STOPPED);
             // ensure we reset the test mode flag if we stop due to full memory card
             if (startedLoggingInTestMode) {
                 startedLoggingInTestMode = false;
             }
-#ifdef USE_FLASHFS
         }
-#endif
     } else { // Only log in test mode if there is room!
         switch (blackboxConfig()->mode) {
         case BLACKBOX_MODE_MOTOR_TEST:
@@ -1695,14 +1713,10 @@ int blackboxCalculatePDenom(int rateNum, int rateDenom)
     return blackboxIInterval * rateNum / rateDenom;
 }
 
-uint8_t blackboxGetRateNum(void)
-{
-    return blackboxGetRateDenom() * blackboxConfig()->p_denom / blackboxIInterval;
-}
-
 uint8_t blackboxGetRateDenom(void)
 {
-    return gcd(blackboxIInterval, blackboxPInterval);
+    return blackboxPInterval;
+
 }
 
 /**
@@ -1713,22 +1727,23 @@ void blackboxInit(void)
     blackboxResetIterationTimers();
 
     // an I-frame is written every 32ms
-    // gyro.targetLooptime is 1000 for 1kHz loop, 500 for 2kHz loop etc, gyro.targetLooptime is rounded for short looptimes
-    if (gyro.targetLooptime == 31) { // rounded from 31.25us
+    // blackboxUpdate() is run in synchronisation with the PID loop
+    // targetPidLooptime is 1000 for 1kHz loop, 500 for 2kHz loop etc, targetPidLooptime is rounded for short looptimes
+    if (targetPidLooptime == 31) { // rounded from 31.25us
         blackboxIInterval = 1024;
-    } else if (gyro.targetLooptime == 63) { // rounded from 62.5us
+    } else if (targetPidLooptime == 63) { // rounded from 62.5us
         blackboxIInterval = 512;
     } else {
-        blackboxIInterval = (uint16_t)(32 * 1000 / gyro.targetLooptime);
+        blackboxIInterval = (uint16_t)(32 * 1000 / targetPidLooptime);
     }
-    // by default p_denom is 32 and a P-frame is written every 1ms
-    // if p_denom is zero then no P-frames are logged
-    if (blackboxConfig()->p_denom == 0) {
-        blackboxPInterval = 0; // blackboxPInterval not used when p_denom is zero, so just set it to zero
-    } else if (blackboxConfig()->p_denom > blackboxIInterval && blackboxIInterval >= 32) {
+    // by default p_ratio is 32 and a P-frame is written every 1ms
+    // if p_ratio is zero then no P-frames are logged
+    if (blackboxConfig()->p_ratio == 0) {
+        blackboxPInterval = 0; // blackboxPInterval not used when p_ratio is zero, so just set it to zero
+    } else if (blackboxConfig()->p_ratio > blackboxIInterval && blackboxIInterval >= 32) {
         blackboxPInterval = 1;
     } else {
-        blackboxPInterval = blackboxIInterval /  blackboxConfig()->p_denom;
+        blackboxPInterval = blackboxIInterval /  blackboxConfig()->p_ratio;
     }
     if (blackboxConfig()->device) {
         blackboxSetState(BLACKBOX_STATE_STOPPED);

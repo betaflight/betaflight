@@ -1,25 +1,32 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
 
+#if defined(STACKX)
+#define TARGET_BOARD_IDENTIFIER "SXF4"
+#define USBD_PRODUCT_STRING     "Stack-X F4"
+#else
 #define TARGET_BOARD_IDENTIFIER "FDF4"
-
-#define USBD_PRODUCT_STRING  "FishDroneF4"
+#define USBD_PRODUCT_STRING     "FishDroneF4"
+#endif
 
 #define LED0_PIN                PC13
 #define LED1_PIN                PC14
@@ -51,8 +58,8 @@
 
 // *************** UART *****************************
 #define USE_VCP
-#define VBUS_SENSING_PIN        PA8
-#define VBUS_SENSING_ENABLED
+#define USB_DETECT_PIN          PA8
+#define USE_USB_DETECT
 
 #define USE_UART1
 #define UART1_RX_PIN            PA10
@@ -78,8 +85,8 @@
 #define USE_SPI_DEVICE_2
 #define SPI2_NSS_PIN            PB12
 #define SPI2_SCK_PIN            PB13
-#define SPI2_MISO_PIN       PC2
-#define SPI2_MOSI_PIN       PC3
+#define SPI2_MISO_PIN           PC2
+#define SPI2_MOSI_PIN           PC3
 
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI2
@@ -93,8 +100,8 @@
 
 #define USE_FLASH_M25P16
 #define USE_FLASHFS
-#define M25P16_CS_PIN           PD2
-#define M25P16_SPI_INSTANCE     SPI3
+#define FLASH_CS_PIN            PD2
+#define FLASH_SPI_INSTANCE      SPI3
 
 // *************** SDCARD *****************************
 #define USE_SDCARD
@@ -124,6 +131,11 @@
 #define USE_ADC
 #define VBAT_ADC_PIN            PC0
 #define RSSI_ADC_PIN            PC1
+#if defined(STACKX)
+#define CURRENT_METER_ADC_PIN   PA1
+#define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
+#define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
+#endif
 
 // *************** FEATURES ************************
 #define DEFAULT_FEATURES        (FEATURE_OSD)

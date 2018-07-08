@@ -46,13 +46,15 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
+#include "drivers/serial_usb_vcp.h"
+#include "drivers/time.h"
+
 #include "stm32f7xx_hal.h"
 #include "usbd_core.h"
 #include "usbd_desc.h"
 #include "usbd_cdc.h"
 #include "usbd_cdc_interface.h"
 #include "stdbool.h"
-#include "drivers/time.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -82,8 +84,6 @@ uint8_t* rxBuffPtr = NULL;
 
 /* TIM handler declaration */
 TIM_HandleTypeDef  TimHandle;
-/* USB handler declaration */
-extern USBD_HandleTypeDef  USBD_Device;
 
 static void (*ctrlLineStateCb)(void *context, uint16_t ctrlLineState);
 static void *ctrlLineStateCbContext;
@@ -191,7 +191,7 @@ static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
     break;
 
   case CDC_SET_LINE_CODING:
-    if (pbuf && (length == sizeof (LINE_CODING))) {
+    if (pbuf && (length == sizeof (*plc))) {
         LineCoding.bitrate    = plc->bitrate;
         LineCoding.format     = plc->format;
         LineCoding.paritytype = plc->paritytype;
@@ -206,7 +206,7 @@ static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
     break;
 
   case CDC_GET_LINE_CODING:
-    if (pbuf && (length == sizeof (LineCoding))) {
+    if (pbuf && (length == sizeof (*plc))) {
         plc->bitrate = LineCoding.bitrate;
         plc->format = LineCoding.format;
         plc->paritytype = LineCoding.paritytype;
@@ -379,7 +379,7 @@ uint32_t CDC_Send_FreeBytes(void)
  */
 uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength)
 {
-    USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*)USBD_Device.pClassData;
+    USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*)USBD_Device.pCDC_ClassData;
     while (hcdc->TxState != 0);
 
     for (uint32_t i = 0; i < sendLength; i++)

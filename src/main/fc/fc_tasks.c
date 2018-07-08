@@ -1,25 +1,28 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdint.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #include "build/debug.h"
 
@@ -35,18 +38,20 @@
 #include "drivers/compass/compass.h"
 #include "drivers/sensor.h"
 #include "drivers/serial.h"
+#include "drivers/serial_usb_vcp.h"
 #include "drivers/stack_check.h"
 #include "drivers/transponder_ir.h"
+#include "drivers/usb_io.h"
 #include "drivers/vtx_common.h"
 
 #include "fc/config.h"
 #include "fc/fc_core.h"
+#include "fc/fc_rc.h"
 #include "fc/fc_dispatch.h"
-#include "fc/fc_tasks.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "flight/altitude.h"
+#include "flight/position.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
@@ -54,6 +59,7 @@
 #include "interface/cli.h"
 #include "interface/msp.h"
 
+#include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/dashboard.h"
 #include "io/gps.h"
@@ -65,9 +71,12 @@
 #include "io/transponder_ir.h"
 #include "io/vtx_tramp.h" // Will be gone
 #include "io/rcdevice_cam.h"
+#include "io/usb_cdc_hid.h"
 #include "io/vtx.h"
 
 #include "msp/msp_serial.h"
+
+#include "pg/rx.h"
 
 #include "rx/rx.h"
 
@@ -78,34 +87,58 @@
 #include "sensors/compass.h"
 #include "sensors/esc_sensor.h"
 #include "sensors/gyro.h"
-#include "sensors/rangefinder.h"
 #include "sensors/sensors.h"
+#include "sensors/rangefinder.h"
 
 #include "scheduler/scheduler.h"
 
 #include "telemetry/telemetry.h"
 
+#ifdef USE_BST
+#include "i2c_bst.h"
+#endif
+
 #ifdef USE_USB_CDC_HID
 //TODO: Make it platform independent in the future
+#ifdef STM32F4
 #include "vcpf4/usbd_cdc_vcp.h"
 #include "usbd_hid_core.h"
+#elif defined(STM32F7)
+#include "usbd_cdc_interface.h"
+#include "usbd_hid.h"
+#endif
 #endif
 
-#ifdef USE_BST
-void taskBstMasterProcess(timeUs_t currentTimeUs);
-#endif
+#include "fc_tasks.h"
 
-bool taskSerialCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
+static void taskMain(timeUs_t currentTimeUs)
+{
+    UNUSED(currentTimeUs);
+
+#ifdef USE_SDCARD
+    afatfs_poll();
+#endif
+}
+
+#ifdef USE_OSD_SLAVE
+static bool taskSerialCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
 {
     UNUSED(currentTimeUs);
     UNUSED(currentDeltaTimeUs);
 
     return mspSerialWaiting();
 }
+#endif
 
 static void taskHandleSerial(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
+
+#if defined(USE_VCP)
+    DEBUG_SET(DEBUG_USB, 0, usbCableIsInserted());
+    DEBUG_SET(DEBUG_USB, 1, usbVcpIsConnected());
+#endif
+
 #ifdef USE_CLI
     // in cli mode, all serial stuff goes to here. enter cli mode by sending #
     if (cliMode) {
@@ -121,7 +154,7 @@ static void taskHandleSerial(timeUs_t currentTimeUs)
     mspSerialProcess(evaluateMspData, mspFcProcessCommand, mspFcProcessReply);
 }
 
-void taskBatteryAlerts(timeUs_t currentTimeUs)
+static void taskBatteryAlerts(timeUs_t currentTimeUs)
 {
     if (!ARMING_FLAG(ARMED)) {
         // the battery *might* fall out in flight, but if that happens the FC will likely be off too unless the user has battery backup.
@@ -143,37 +176,20 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
         return;
     }
 
+    static timeUs_t lastRxTimeUs;
+    currentRxRefreshRate = constrain(currentTimeUs - lastRxTimeUs, 1000, 30000);
+    lastRxTimeUs = currentTimeUs;
     isRXDataNew = true;
 
 #ifdef USE_USB_CDC_HID
     if (!ARMING_FLAG(ARMED)) {
-        int8_t report[8];
-        for (int i = 0; i < 8; i++) {
-	        	report[i] = scaleRange(constrain(rcData[i], 1000, 2000), 1000, 2000, -127, 127);
-        }
-        USBD_HID_SendReport(&USB_OTG_dev, (uint8_t*)report, sizeof(report));
+        sendRcDataToHid();
     }
 #endif
 
-#if !defined(USE_ALT_HOLD)
     // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
     updateRcCommands();
-#endif
     updateArmingStatus();
-
-#ifdef USE_ALT_HOLD
-#ifdef USE_BARO
-    if (sensors(SENSOR_BARO)) {
-        updateAltHoldState();
-    }
-#endif
-
-#ifdef USE_RANGEFINDER
-    if (sensors(SENSOR_RANGEFINDER)) {
-        updateRangefinderAltHoldState();
-    }
-#endif
-#endif // USE_ALT_HOLD
 }
 #endif
 
@@ -191,34 +207,26 @@ static void taskUpdateBaro(timeUs_t currentTimeUs)
 }
 #endif
 
-#if defined(USE_BARO) || defined(USE_RANGEFINDER)
+#if defined(USE_BARO) || defined(USE_GPS)
 static void taskCalculateAltitude(timeUs_t currentTimeUs)
 {
-    if (false
-#if defined(USE_BARO)
-        || (sensors(SENSOR_BARO) && isBaroReady())
-#endif
-#if defined(USE_RANGEFINDER)
-        || sensors(SENSOR_RANGEFINDER)
-#endif
-        ) {
-        calculateEstimatedAltitude(currentTimeUs);
-    }}
-#endif // USE_BARO || USE_RANGEFINDER
+    calculateEstimatedAltitude(currentTimeUs);
+}
+#endif // USE_BARO || USE_GPS
 
 #ifdef USE_TELEMETRY
 static void taskTelemetry(timeUs_t currentTimeUs)
 {
-    telemetryCheckState();
-
     if (!cliMode && feature(FEATURE_TELEMETRY)) {
+        subTaskTelemetryPollSensors(currentTimeUs);
+
         telemetryProcess(currentTimeUs);
     }
 }
 #endif
 
 #ifdef USE_CAMERA_CONTROL
-void taskCameraControl(uint32_t currentTime)
+static void taskCameraControl(uint32_t currentTime)
 {
     if (ARMING_FLAG(ARMED)) {
         return;
@@ -231,6 +239,9 @@ void taskCameraControl(uint32_t currentTime)
 void fcTasksInit(void)
 {
     schedulerInit();
+
+    setTaskEnabled(TASK_MAIN, true);
+
     setTaskEnabled(TASK_SERIAL, true);
     rescheduleTask(TASK_SERIAL, TASK_PERIOD_HZ(serialConfig()->serial_update_rate_hz));
 
@@ -283,11 +294,8 @@ void fcTasksInit(void)
 #ifdef USE_BARO
     setTaskEnabled(TASK_BARO, sensors(SENSOR_BARO));
 #endif
-#ifdef USE_RANGEFINDER
-    setTaskEnabled(TASK_RANGEFINDER, sensors(SENSOR_RANGEFINDER));
-#endif
-#if defined(USE_BARO) || defined(USE_RANGEFINDER)
-    setTaskEnabled(TASK_ALTITUDE, sensors(SENSOR_BARO) || sensors(SENSOR_RANGEFINDER));
+#if defined(USE_BARO) || defined(USE_GPS)
+    setTaskEnabled(TASK_ALTITUDE, sensors(SENSOR_BARO) || feature(FEATURE_GPS));
 #endif
 #ifdef USE_DASHBOARD
     setTaskEnabled(TASK_DASHBOARD, feature(FEATURE_DASHBOARD));
@@ -349,8 +357,17 @@ void fcTasksInit(void)
 cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_SYSTEM] = {
         .taskName = "SYSTEM",
-        .taskFunc = taskSystem,
+        .subTaskName = "LOAD",
+        .taskFunc = taskSystemLoad,
         .desiredPeriod = TASK_PERIOD_HZ(10),        // 10Hz, every 100 ms
+        .staticPriority = TASK_PRIORITY_MEDIUM_HIGH,
+    },
+
+    [TASK_MAIN] = {
+        .taskName = "SYSTEM",
+        .subTaskName = "UPDATE",
+        .taskFunc = taskMain,
+        .desiredPeriod = TASK_PERIOD_HZ(1000),
         .staticPriority = TASK_PRIORITY_MEDIUM_HIGH,
     },
 
@@ -442,7 +459,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskName = "RX",
         .checkFunc = rxUpdateCheck,
         .taskFunc = taskUpdateRxMain,
-        .desiredPeriod = TASK_PERIOD_HZ(50),        // If event-based scheduling doesn't work, fallback to periodic scheduling
+        .desiredPeriod = TASK_PERIOD_HZ(33),        // If event-based scheduling doesn't work, fallback to periodic scheduling
         .staticPriority = TASK_PRIORITY_HIGH,
     },
 
@@ -489,16 +506,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     },
 #endif
 
-#ifdef USE_RANGEFINDER
-    [TASK_RANGEFINDER] = {
-        .taskName = "RANGEFINDER",
-        .taskFunc = rangefinderUpdate,
-        .desiredPeriod = TASK_PERIOD_MS(70), // XXX HCSR04 sonar specific value.
-        .staticPriority = TASK_PRIORITY_LOW,
-    },
-#endif
-
-#if defined(USE_BARO) || defined(USE_RANGEFINDER)
+#if defined(USE_BARO) || defined(USE_GPS)
     [TASK_ALTITUDE] = {
         .taskName = "ALTITUDE",
         .taskFunc = taskCalculateAltitude,
@@ -583,7 +591,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_RCDEVICE] = {
         .taskName = "RCDEVICE",
         .taskFunc = rcdeviceUpdate,
-        .desiredPeriod = TASK_PERIOD_HZ(10),        // 10 Hz, 100ms
+        .desiredPeriod = TASK_PERIOD_HZ(20),
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 #endif

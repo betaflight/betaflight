@@ -4,23 +4,9 @@ COMMON_SRC = \
             build/version.c \
             $(TARGET_DIR_SRC) \
             main.c \
-            common/bitarray.c \
-            common/crc.c \
-            common/encoding.c \
-            common/filter.c \
-            common/huffman.c \
-            common/huffman_table.c \
-            common/maths.c \
-            common/explog_approx.c \
-            common/printf.c \
-            common/streambuf.c \
-            common/string_light.c \
-            common/strtol.c \
-            common/time.c \
-            common/typeconversion.c \
-            config/config_eeprom.c \
-            config/feature.c \
-            config/config_streamer.c \
+            $(addprefix pg/,$(notdir $(wildcard $(SRC_DIR)/pg/*.c))) \
+            $(addprefix common/,$(notdir $(wildcard $(SRC_DIR)/common/*.c))) \
+            $(addprefix config/,$(notdir $(wildcard $(SRC_DIR)/config/*.c))) \
             drivers/adc.c \
             drivers/buf_writer.c \
             drivers/bus.c \
@@ -30,7 +16,6 @@ COMMON_SRC = \
             drivers/bus_spi.c \
             drivers/bus_spi_config.c \
             drivers/bus_spi_pinconfig.c \
-            drivers/bus_spi_soft.c \
             drivers/buttons.c \
             drivers/display.c \
             drivers/exti.c \
@@ -46,11 +31,12 @@ COMMON_SRC = \
             drivers/sound_beeper.c \
             drivers/stack_check.c \
             drivers/system.c \
+            drivers/timer_common.c \
             drivers/timer.c \
-            drivers/transponder_ir.c \
             drivers/transponder_ir_arcitimer.c \
             drivers/transponder_ir_ilap.c \
             drivers/transponder_ir_erlt.c \
+            fc/board_info.c \
             fc/config.c \
             fc/fc_dispatch.c \
             fc/fc_hardfaults.c \
@@ -65,26 +51,14 @@ COMMON_SRC = \
             io/serial.c \
             io/statusindicator.c \
             io/transponder_ir.c \
+            io/usb_cdc_hid.c \
             msp/msp_serial.c \
-            pg/adc.c \
-            pg/beeper.c \
-            pg/beeper_dev.c \
-            pg/bus_i2c.c \
-            pg/bus_spi.c \
-            pg/dashboard.c \
-            pg/max7456.c \
-            pg/pinio.c \
-            pg/piniobox.c \
-            pg/pg.c \
-            pg/rx_pwm.c \
-            pg/sdcard.c \
-            pg/vcd.c \
-            pg/usb.c \
             scheduler/scheduler.c \
             sensors/adcinternal.c \
             sensors/battery.c \
             sensors/current.c \
             sensors/voltage.c \
+            target/config_helper.c
 
 OSD_SLAVE_SRC = \
             io/displayport_max7456.c \
@@ -107,8 +81,9 @@ FC_SRC = \
             fc/rc_adjustments.c \
             fc/rc_controls.c \
             fc/rc_modes.c \
-            flight/altitude.c \
+            flight/position.c \
             flight/failsafe.c \
+            flight/gps_rescue.c \
             flight/imu.c \
             flight/mixer.c \
             flight/mixer_tricopter.c \
@@ -156,24 +131,20 @@ FC_SRC = \
             cms/cms_menu_vtx_rtc6705.c \
             cms/cms_menu_vtx_smartaudio.c \
             cms/cms_menu_vtx_tramp.c \
-            common/colorconversion.c \
-            common/gps_conversion.c \
             drivers/display_ug2864hsweg01.c \
             drivers/light_ws2811strip.c \
             drivers/rangefinder/rangefinder_hcsr04.c \
             drivers/rangefinder/rangefinder_lidartf.c \
             drivers/serial_escserial.c \
             drivers/vtx_common.c \
-            flight/navigation.c \
             io/dashboard.c \
             io/displayport_max7456.c \
             io/displayport_msp.c \
             io/displayport_oled.c \
-            io/displayport_rcdevice.c \
             io/displayport_srxl.c \
+            io/displayport_crsf.c \
             io/rcdevice_cam.c \
             io/rcdevice.c \
-            io/rcdevice_osd.c \
             io/gps.c \
             io/ledstrip.c \
             io/osd.c \
@@ -211,6 +182,10 @@ else
 COMMON_SRC := $(COMMON_SRC) $(FC_SRC) $(COMMON_DEVICE_SRC)
 endif
 
+ifeq ($(SIMULATOR_BUILD),yes)
+TARGET_FLAGS := -DSIMULATOR_BUILD $(TARGET_FLAGS)
+endif
+
 SPEED_OPTIMISED_SRC := ""
 SIZE_OPTIMISED_SRC  := ""
 
@@ -220,22 +195,22 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             common/filter.c \
             common/maths.c \
             common/typeconversion.c \
-            drivers/accgyro/accgyro_adxl345.c \
-            drivers/accgyro/accgyro_bma280.c \
             drivers/accgyro/accgyro_fake.c \
-            drivers/accgyro/accgyro_l3g4200d.c \
-            drivers/accgyro/accgyro_l3gd20.c \
-            drivers/accgyro/accgyro_lsm303dlhc.c \
-            drivers/accgyro/accgyro_mma845x.c \
+            drivers/accgyro/accgyro_mpu.c \
             drivers/accgyro/accgyro_mpu3050.c \
             drivers/accgyro/accgyro_mpu6050.c \
             drivers/accgyro/accgyro_mpu6500.c \
-            drivers/accgyro/accgyro_mpu.c \
             drivers/accgyro/accgyro_spi_bmi160.c \
             drivers/accgyro/accgyro_spi_icm20689.c \
             drivers/accgyro/accgyro_spi_mpu6000.c \
             drivers/accgyro/accgyro_spi_mpu6500.c \
             drivers/accgyro/accgyro_spi_mpu9250.c \
+            drivers/accgyro_legacy/accgyro_adxl345.c \
+            drivers/accgyro_legacy/accgyro_bma280.c \
+            drivers/accgyro_legacy/accgyro_l3g4200d.c \
+            drivers/accgyro_legacy/accgyro_l3gd20.c \
+            drivers/accgyro_legacy/accgyro_lsm303dlhc.c \
+            drivers/accgyro_legacy/accgyro_mma845x.c \
             drivers/adc.c \
             drivers/buf_writer.c \
             drivers/bus.c \
@@ -256,7 +231,6 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             flight/imu.c \
             flight/mixer.c \
             flight/pid.c \
-            io/serial.c \
             rx/ibus.c \
             rx/rx.c \
             rx/rx_spi.c \
@@ -282,6 +256,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/barometer/barometer_fake.c \
             drivers/barometer/barometer_ms5611.c \
             drivers/barometer/barometer_lps.c \
+            drivers/barometer/barometer_qmp6988.c \
             drivers/bus_i2c_config.c \
             drivers/bus_spi_config.c \
             drivers/bus_spi_pinconfig.c \
@@ -294,17 +269,20 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/inverter.c \
             drivers/light_ws2811strip.c \
             drivers/light_ws2811strip_hal.c \
+            drivers/light_ws2811strip_stdperiph.c \
             drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
             drivers/serial_tcp.c \
             drivers/serial_uart_init.c \
             drivers/serial_uart_pinconfig.c \
             drivers/serial_usb_vcp.c \
-            drivers/transponder_ir.c \
+            drivers/transponder_ir_io_hal.c \
+            drivers/transponder_ir_io_stdperiph.c \
             drivers/vtx_rtc6705_soft_spi.c \
             drivers/vtx_rtc6705.c \
             drivers/vtx_common.c \
             fc/fc_init.c \
+            fc/board_info.c \
             config/config_eeprom.c \
             config/feature.c \
             config/config_streamer.c \
@@ -313,10 +291,12 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             interface/settings.c \
             io/dashboard.c \
             io/osd.c \
+            io/serial.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
             io/transponder_ir.c \
+            io/usb_cdc_hid.c \
             msp/msp_serial.c \
             cms/cms.c \
             cms/cms_menu_blackbox.c \
@@ -371,9 +351,12 @@ endif
 
 ifneq ($(filter ONBOARDFLASH,$(FEATURES)),)
 SRC += \
+            drivers/flash.c \
             drivers/flash_m25p16.c \
+            drivers/flash_w25m.c \
             io/flashfs.c \
-            pg/flash.c
+            pg/flash.c \
+            $(MSC_SRC)
 endif
 
 SRC += $(COMMON_SRC)
@@ -387,6 +370,16 @@ SRC += \
             drivers/sdcard_standard.c \
             io/asyncfatfs/asyncfatfs.c \
             io/asyncfatfs/fat_standard.c \
+            $(MSC_SRC)
+endif
+
+ifneq ($(filter SDIO,$(FEATURES)),)
+SRC += \
+            drivers/sdcard_sdio_baremetal.c \
+            drivers/sdcard_standard.c \
+            io/asyncfatfs/asyncfatfs.c \
+            io/asyncfatfs/fat_standard.c \
+            pg/sdio.c \
             $(MSC_SRC)
 endif
 

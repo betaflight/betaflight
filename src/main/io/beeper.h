@@ -1,24 +1,33 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
 
 #include "common/time.h"
-#include "pg/pg.h"
+
+#define BEEPER_GET_FLAG(mode) (1 << (mode - 1))
+
+#ifdef USE_DSHOT
+#define DSHOT_BEACON_GUARD_DELAY_US 1200000  // Time to separate dshot beacon and armining/disarming events
+                                             // to prevent interference with motor direction commands
+#endif
 
 typedef enum {
     // IMPORTANT: these are in priority order, 0 = Highest
@@ -46,10 +55,41 @@ typedef enum {
     BEEPER_CRASH_FLIP_MODE,         // Crash flip mode is active
     BEEPER_CAM_CONNECTION_OPEN,     // When the 5 key simulation stated
     BEEPER_CAM_CONNECTION_CLOSE,    // When the 5 key simulation stop
+    BEEPER_RC_SMOOTHING_INIT_FAIL,  // Warning beep pattern when armed and rc smoothing has not initialized filters
     BEEPER_ALL,                     // Turn ON or OFF all beeper conditions
-    BEEPER_PREFERENCE,              // Save preferred beeper configuration
-    // BEEPER_ALL and BEEPER_PREFERENCE must remain at the bottom of this enum
+    // BEEPER_ALL must remain at the bottom of this enum
 } beeperMode_e;
+
+
+#define BEEPER_ALLOWED_MODES ( \
+    BEEPER_GET_FLAG(BEEPER_GYRO_CALIBRATED) \
+    | BEEPER_GET_FLAG(BEEPER_RX_LOST) \
+    | BEEPER_GET_FLAG(BEEPER_RX_LOST_LANDING) \
+    | BEEPER_GET_FLAG(BEEPER_DISARMING) \
+    | BEEPER_GET_FLAG(BEEPER_ARMING) \
+    | BEEPER_GET_FLAG(BEEPER_ARMING_GPS_FIX) \
+    | BEEPER_GET_FLAG(BEEPER_BAT_CRIT_LOW) \
+    | BEEPER_GET_FLAG(BEEPER_BAT_LOW) \
+    | BEEPER_GET_FLAG(BEEPER_GPS_STATUS) \
+    | BEEPER_GET_FLAG(BEEPER_RX_SET) \
+    | BEEPER_GET_FLAG(BEEPER_ACC_CALIBRATION) \
+    | BEEPER_GET_FLAG(BEEPER_ACC_CALIBRATION_FAIL) \
+    | BEEPER_GET_FLAG(BEEPER_READY_BEEP) \
+    | BEEPER_GET_FLAG(BEEPER_MULTI_BEEPS) \
+    | BEEPER_GET_FLAG(BEEPER_DISARM_REPEAT) \
+    | BEEPER_GET_FLAG(BEEPER_ARMED) \
+    | BEEPER_GET_FLAG(BEEPER_SYSTEM_INIT) \
+    | BEEPER_GET_FLAG(BEEPER_USB) \
+    | BEEPER_GET_FLAG(BEEPER_BLACKBOX_ERASE) \
+    | BEEPER_GET_FLAG(BEEPER_CRASH_FLIP_MODE) \
+    | BEEPER_GET_FLAG(BEEPER_CAM_CONNECTION_OPEN) \
+    | BEEPER_GET_FLAG(BEEPER_CAM_CONNECTION_CLOSE) \
+    | BEEPER_GET_FLAG(BEEPER_RC_SMOOTHING_INIT_FAIL) \
+    )
+
+#define DSHOT_BEACON_ALLOWED_MODES ( \
+    BEEPER_GET_FLAG(BEEPER_RX_LOST) \
+    | BEEPER_GET_FLAG(BEEPER_RX_SET) )
 
 void beeper(beeperMode_e mode);
 void beeperSilence(void);
@@ -62,3 +102,4 @@ uint32_t beeperModeMaskForTableIndex(int idx);
 const char *beeperNameForTableIndex(int idx);
 int beeperTableEntryCount(void);
 bool isBeeperOn(void);
+timeUs_t getLastDshotBeaconCommandTimeUs(void);

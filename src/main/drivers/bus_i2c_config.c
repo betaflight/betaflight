@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -68,14 +71,14 @@ void i2cHardwareConfigure(const i2cConfig_t *i2cConfig)
         memset(pDev, 0, sizeof(*pDev));
 
         for (int pindex = 0 ; pindex < I2C_PIN_SEL_MAX ; pindex++) {
-            if (i2cConfig->ioTagScl[device] == hardware->sclPins[pindex].ioTag) {
-                pDev->scl = IOGetByTag(i2cConfig->ioTagScl[device]);
+            if (i2cConfig[device].ioTagScl == hardware->sclPins[pindex].ioTag) {
+                pDev->scl = IOGetByTag(i2cConfig[device].ioTagScl);
 #if defined(STM32F4)
                 pDev->sclAF = hardware->sclPins[pindex].af;
 #endif
             }
-            if (i2cConfig->ioTagSda[device] == hardware->sdaPins[pindex].ioTag) {
-                pDev->sda = IOGetByTag(i2cConfig->ioTagSda[device]);
+            if (i2cConfig[device].ioTagSda == hardware->sdaPins[pindex].ioTag) {
+                pDev->sda = IOGetByTag(i2cConfig[device].ioTagSda);
 #if defined(STM32F4)
                 pDev->sdaAF = hardware->sdaPins[pindex].af;
 #endif
@@ -85,8 +88,8 @@ void i2cHardwareConfigure(const i2cConfig_t *i2cConfig)
         if (pDev->scl && pDev->sda) {
             pDev->hardware = hardware;
             pDev->reg = hardware->reg;
-            pDev->overClock = i2cConfig->overClock[device];
-            pDev->pullUp = i2cConfig->pullUp[device];
+            pDev->overClock = i2cConfig[device].overClock;
+            pDev->pullUp = i2cConfig[device].pullUp;
         }
     }
 }

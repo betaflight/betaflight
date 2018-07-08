@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <string.h>
@@ -33,12 +36,13 @@
 
 #include "fc/config.h"
 
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+#include "pg/rx_spi.h"
+
 #include "rx/flysky_defs.h"
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
-
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
 
 #include "sensors/battery.h"
 
@@ -179,7 +183,7 @@ static void checkTimeout (void)
 
         if(countTimeout > 31) {
             timeout = timings->syncPacket;
-            setRssiFiltered(0, RSSI_SOURCE_RX_PROTOCOL);
+            setRssiDirect(0, RSSI_SOURCE_RX_PROTOCOL);
         } else {
             timeout = timings->packet;
             countTimeout++;
@@ -202,8 +206,8 @@ static void checkRSSI (void)
 
     rssi_dBm = 50 + sum / (3 * FLYSKY_RSSI_SAMPLE_COUNT); // range about [95...52], -dBm
 
-    int16_t tmp = 2280 - 24 * rssi_dBm;// convert to [0...1023]
-    setRssiFiltered(constrain(tmp, 0, 1023), RSSI_SOURCE_RX_PROTOCOL);
+    int16_t tmp = 2280 - 24 * rssi_dBm; // convert to [0...1023]
+    setRssiDirect(tmp, RSSI_SOURCE_RX_PROTOCOL);
 }
 
 static bool isValidPacket (const uint8_t *packet) {
@@ -352,9 +356,9 @@ static rx_spi_received_e flySkyReadAndProcess (uint8_t *payload, const uint32_t 
     return result;
 }
 
-bool flySkyInit (const struct rxConfig_s *rxConfig, struct rxRuntimeConfig_s *rxRuntimeConfig)
+bool flySkyInit (const rxSpiConfig_t *rxSpiConfig, struct rxRuntimeConfig_s *rxRuntimeConfig)
 {
-    protocol = rxConfig->rx_spi_protocol;
+    protocol = rxSpiConfig->rx_spi_protocol;
 
     if (protocol != flySkyConfig()->protocol) {
         PG_RESET(flySkyConfig);
