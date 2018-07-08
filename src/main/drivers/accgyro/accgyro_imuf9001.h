@@ -31,26 +31,20 @@ void imufStartCalibration(void);
 void imufEndCalibration(void);
 
 #ifndef IMUF_DEFAULT_PITCH_Q
-#define IMUF_DEFAULT_PITCH_Q  3500
+#define IMUF_DEFAULT_PITCH_Q  3000
 #endif
 #ifndef IMUF_DEFAULT_ROLL_Q
-#define IMUF_DEFAULT_ROLL_Q  3500
+#define IMUF_DEFAULT_ROLL_Q  3000
 #endif
 #ifndef IMUF_DEFAULT_YAW_Q
-#define IMUF_DEFAULT_YAW_Q  2500
+#define IMUF_DEFAULT_YAW_Q  3000
 #endif
-#ifndef IMUF_DEFAULT_PITCH_W
-#define IMUF_DEFAULT_PITCH_W  6
-#endif
-#ifndef IMUF_DEFAULT_ROLL_W
-#define IMUF_DEFAULT_ROLL_W  6
-#endif
-#ifndef IMUF_DEFAULT_YAW_W
-#define IMUF_DEFAULT_YAW_W  6
+#ifndef IMUF_IMUF_W
+#define IMUF_IMUF_W  32
 #endif
 
 
-#define IMUF_FIRMWARE_VERSION  107
+#define IMUF_FIRMWARE_VERSION  108
 extern volatile uint16_t imufCurrentVersion;
 typedef struct imufVersion
 {   

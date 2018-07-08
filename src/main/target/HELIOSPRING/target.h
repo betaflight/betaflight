@@ -202,6 +202,6 @@
 
 #define USE_BUTTERED_PIDS true
 
-#define DEFAULT_PIDS_ROLL   {50, 40, 20}
-#define DEFAULT_PIDS_PITCH  {50, 40, 22}
-#define DEFAULT_PIDS_YAW    {50, 40, 15}
+#define DEFAULT_PIDS_ROLL   {45, 50, 20}
+#define DEFAULT_PIDS_PITCH  {45, 50, 22}
+#define DEFAULT_PIDS_YAW    {45, 50, 15}
