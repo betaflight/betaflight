@@ -181,12 +181,6 @@ void initActiveBoxIds(void)
         BME(BOXHEADADJ);
     }
 
-#ifdef USE_BARO
-    if (sensors(SENSOR_BARO)) {
-        BME(BOXBARO);
-    }
-#endif
-
 #ifdef USE_MAG
     if (sensors(SENSOR_MAG)) {
         BME(BOXMAG);
@@ -195,8 +189,6 @@ void initActiveBoxIds(void)
 
 #ifdef USE_GPS
     if (feature(FEATURE_GPS)) {
-        BME(BOXGPSHOME);
-        BME(BOXGPSHOLD);
 #ifdef USE_GPS_RESCUE
         if (!feature(FEATURE_3D)) {
             BME(BOXGPSRESCUE);
