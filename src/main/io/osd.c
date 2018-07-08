@@ -828,7 +828,7 @@ static bool osdDrawSingleElement(uint8_t item)
 
 #ifdef USE_RC_SMOOTHING_FILTER
             // Show warning if rc smoothing hasn't initialized the filters
-            if (ARMING_FLAG(ARMED) && !rcSmoothingInitializationComplete()) {
+            if (osdWarnGetState(OSD_WARNING_RC_SMOOTHING) && ARMING_FLAG(ARMED) && !rcSmoothingInitializationComplete()) {
                 osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "RCSMOOTHING");
                 break;
             }
