@@ -42,3 +42,4 @@ bool isMotorsReversed(void);
 bool rcSmoothingIsEnabled(void);
 int rcSmoothingGetValue(int whichValue);
 bool rcSmoothingAutoCalculate(void);
+bool rcSmoothingInitializationComplete(void);

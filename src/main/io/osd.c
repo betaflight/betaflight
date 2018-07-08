@@ -63,6 +63,7 @@
 #include "fc/fc_core.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
+#include "fc/fc_rc.h"
 #include "fc/runtime_config.h"
 
 #include "flight/position.h"
@@ -824,6 +825,14 @@ static bool osdDrawSingleElement(uint8_t item)
                 osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "LOW BATTERY");
                 break;
             }
+
+#ifdef USE_RC_SMOOTHING_FILTER
+            // Show warning if rc smoothing hasn't initialized the filters
+            if (osdWarnGetState(OSD_WARNING_RC_SMOOTHING) && ARMING_FLAG(ARMED) && !rcSmoothingInitializationComplete()) {
+                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "RCSMOOTHING");
+                break;
+            }
+#endif
 
             // Show warning if battery is not fresh
             if (osdWarnGetState(OSD_WARNING_BATTERY_NOT_FULL) && !ARMING_FLAG(WAS_EVER_ARMED) && (getBatteryState() == BATTERY_OK)

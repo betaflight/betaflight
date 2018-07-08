@@ -55,6 +55,7 @@ typedef enum {
     BEEPER_CRASH_FLIP_MODE,         // Crash flip mode is active
     BEEPER_CAM_CONNECTION_OPEN,     // When the 5 key simulation stated
     BEEPER_CAM_CONNECTION_CLOSE,    // When the 5 key simulation stop
+    BEEPER_RC_SMOOTHING_INIT_FAIL,  // Warning beep pattern when armed and rc smoothing has not initialized filters
     BEEPER_ALL,                     // Turn ON or OFF all beeper conditions
     // BEEPER_ALL must remain at the bottom of this enum
 } beeperMode_e;
@@ -82,7 +83,9 @@ typedef enum {
     | BEEPER_GET_FLAG(BEEPER_BLACKBOX_ERASE) \
     | BEEPER_GET_FLAG(BEEPER_CRASH_FLIP_MODE) \
     | BEEPER_GET_FLAG(BEEPER_CAM_CONNECTION_OPEN) \
-    | BEEPER_GET_FLAG(BEEPER_CAM_CONNECTION_CLOSE) )
+    | BEEPER_GET_FLAG(BEEPER_CAM_CONNECTION_CLOSE) \
+    | BEEPER_GET_FLAG(BEEPER_RC_SMOOTHING_INIT_FAIL) \
+    )
 
 #define DSHOT_BEACON_ALLOWED_MODES ( \
     BEEPER_GET_FLAG(BEEPER_RX_LOST) \
