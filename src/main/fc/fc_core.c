@@ -558,7 +558,9 @@ bool isAirmodeActivated()
 bool processRx(timeUs_t currentTimeUs)
 {
     static bool armedBeeperOn = false;
+#ifdef USE_TELEMETRY
     static bool sharedPortTelemetryEnabled = false;
+#endif
 
     if (!calculateRxChannelsAndUpdateFailsafe(currentTimeUs)) {
         return false;

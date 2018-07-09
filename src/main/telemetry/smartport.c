@@ -478,6 +478,8 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
          uint8_t *frameStart = (uint8_t *)&payload->valueId;
          smartPortMspReplyPending = handleMspFrame(frameStart, SMARTPORT_MSP_PAYLOAD_SIZE);
     }
+#else
+    UNUSED(payload);
 #endif
 
     bool doRun = true;
