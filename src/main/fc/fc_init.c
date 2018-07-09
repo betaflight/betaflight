@@ -296,7 +296,7 @@ void init(void)
 #endif
 
 #if defined(USE_SPEKTRUM_BIND)
-    if (featureConfigured(FEATURE_RX_SERIAL)) {
+    if (featureIsEnabled(FEATURE_RX_SERIAL)) {
         switch (rxConfig()->serialrx_provider) {
         case SERIALRX_SPEKTRUM1024:
         case SERIALRX_SPEKTRUM2048:
@@ -327,23 +327,23 @@ void init(void)
 #endif
 
 #if defined(AVOID_UART1_FOR_PWM_PPM)
-    serialInit(featureConfigured(FEATURE_SOFTSERIAL),
-            featureConfigured(FEATURE_RX_PPM) || featureConfigured(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART1 : SERIAL_PORT_NONE);
+    serialInit(featureIsEnabled(FEATURE_SOFTSERIAL),
+            featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART1 : SERIAL_PORT_NONE);
 #elif defined(AVOID_UART2_FOR_PWM_PPM)
-    serialInit(featureConfigured(FEATURE_SOFTSERIAL),
-            featureConfigured(FEATURE_RX_PPM) || featureConfigured(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART2 : SERIAL_PORT_NONE);
+    serialInit(featureIsEnabled(FEATURE_SOFTSERIAL),
+            featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART2 : SERIAL_PORT_NONE);
 #elif defined(AVOID_UART3_FOR_PWM_PPM)
-    serialInit(featureConfigured(FEATURE_SOFTSERIAL),
-            featureConfigured(FEATURE_RX_PPM) || featureConfigured(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART3 : SERIAL_PORT_NONE);
+    serialInit(featureIsEnabled(FEATURE_SOFTSERIAL),
+            featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART3 : SERIAL_PORT_NONE);
 #else
-    serialInit(featureConfigured(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
+    serialInit(featureIsEnabled(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
 #endif
 
     mixerInit(mixerConfig()->mixerMode);
     mixerConfigureOutput();
 
     uint16_t idlePulse = motorConfig()->mincommand;
-    if (featureConfigured(FEATURE_3D)) {
+    if (featureIsEnabled(FEATURE_3D)) {
         idlePulse = flight3DConfig()->neutral3d;
     }
     if (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_BRUSHED) {
@@ -357,12 +357,12 @@ void init(void)
 
     if (0) {}
 #if defined(USE_PPM)
-    else if (featureConfigured(FEATURE_RX_PPM)) {
+    else if (featureIsEnabled(FEATURE_RX_PPM)) {
         ppmRxInit(ppmConfig());
     }
 #endif
 #if defined(USE_PWM)
-    else if (featureConfigured(FEATURE_RX_PARALLEL_PWM)) {
+    else if (featureIsEnabled(FEATURE_RX_PARALLEL_PWM)) {
         pwmRxInit(pwmConfig());
     }
 #endif
@@ -449,13 +449,13 @@ void init(void)
 // XXX These kind of code should goto target/config.c?
 // XXX And these no longer work properly as FEATURE_RANGEFINDER does control HCSR04 runtime configuration.
 #if defined(RANGEFINDER_HCSR04_SOFTSERIAL2_EXCLUSIVE) && defined(USE_RANGEFINDER_HCSR04) && defined(USE_SOFTSERIAL2)
-    if (featureConfigured(FEATURE_RANGEFINDER) && featureConfigured(FEATURE_SOFTSERIAL)) {
+    if (featureIsEnabled(FEATURE_RANGEFINDER) && featureIsEnabled(FEATURE_SOFTSERIAL)) {
         serialRemovePort(SERIAL_PORT_SOFTSERIAL2);
     }
 #endif
 
 #if defined(RANGEFINDER_HCSR04_SOFTSERIAL1_EXCLUSIVE) && defined(USE_RANGEFINDER_HCSR04) && defined(USE_SOFTSERIAL1)
-    if (featureConfigured(FEATURE_RANGEFINDER) && featureConfigured(FEATURE_SOFTSERIAL)) {
+    if (featureIsEnabled(FEATURE_RANGEFINDER) && featureIsEnabled(FEATURE_SOFTSERIAL)) {
         serialRemovePort(SERIAL_PORT_SOFTSERIAL1);
     }
 #endif
@@ -465,9 +465,9 @@ void init(void)
     adcConfigMutable()->current.enabled = (batteryConfig()->currentMeterSource == CURRENT_METER_ADC);
 
     // The FrSky D SPI RX sends RSSI_ADC_PIN (if configured) as A2
-    adcConfigMutable()->rssi.enabled = featureConfigured(FEATURE_RSSI_ADC);
+    adcConfigMutable()->rssi.enabled = featureIsEnabled(FEATURE_RSSI_ADC);
 #ifdef USE_RX_SPI
-    adcConfigMutable()->rssi.enabled |= (featureConfigured(FEATURE_RX_SPI) && rxSpiConfig()->rx_spi_protocol == RX_SPI_FRSKY_D);
+    adcConfigMutable()->rssi.enabled |= (featureIsEnabled(FEATURE_RX_SPI) && rxSpiConfig()->rx_spi_protocol == RX_SPI_FRSKY_D);
 #endif
     adcInit(adcConfig());
 #endif
@@ -496,7 +496,7 @@ void init(void)
     servosInit();
     servoConfigureOutput();
     if (isMixerUsingServos()) {
-        //pwm_params.useChannelForwarding = featureConfigured(FEATURE_CHANNEL_FORWARDING);
+        //pwm_params.useChannelForwarding = featureIsEnabled(FEATURE_CHANNEL_FORWARDING);
         servoDevInit(&servoConfig()->dev);
     }
     servosFilterInit();
@@ -558,7 +558,7 @@ void init(void)
 #if defined(USE_OSD) && !defined(USE_OSD_SLAVE)
     //The OSD need to be initialised after GYRO to avoid GYRO initialisation failure on some targets
 
-    if (featureConfigured(FEATURE_OSD)) {
+    if (featureIsEnabled(FEATURE_OSD)) {
 #if defined(USE_MAX7456)
         // If there is a max7456 chip for the OSD then use it
         osdDisplayPort = max7456DisplayPortInit(vcdProfile());
@@ -587,7 +587,7 @@ void init(void)
 
 #ifdef USE_DASHBOARD
     // Dashbord will register with CMS by itself.
-    if (featureConfigured(FEATURE_DASHBOARD)) {
+    if (featureIsEnabled(FEATURE_DASHBOARD)) {
         dashboardInit();
     }
 #endif
@@ -598,7 +598,7 @@ void init(void)
 #endif
 
 #ifdef USE_GPS
-    if (featureConfigured(FEATURE_GPS)) {
+    if (featureIsEnabled(FEATURE_GPS)) {
         gpsInit();
     }
 #endif
@@ -606,19 +606,19 @@ void init(void)
 #ifdef USE_LED_STRIP
     ledStripInit();
 
-    if (featureConfigured(FEATURE_LED_STRIP)) {
+    if (featureIsEnabled(FEATURE_LED_STRIP)) {
         ledStripEnable();
     }
 #endif
 
 #ifdef USE_TELEMETRY
-    if (featureConfigured(FEATURE_TELEMETRY)) {
+    if (featureIsEnabled(FEATURE_TELEMETRY)) {
         telemetryInit();
     }
 #endif
 
 #ifdef USE_ESC_SENSOR
-    if (featureConfigured(FEATURE_ESC_SENSOR)) {
+    if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
         escSensorInit();
     }
 #endif
@@ -628,7 +628,7 @@ void init(void)
 #endif
 
 #ifdef USE_TRANSPONDER
-    if (featureConfigured(FEATURE_TRANSPONDER)) {
+    if (featureIsEnabled(FEATURE_TRANSPONDER)) {
         transponderInit();
         transponderStartRepeating();
         systemState |= SYSTEM_STATE_TRANSPONDER_ENABLED;
@@ -711,7 +711,7 @@ void init(void)
     batteryInit(); // always needs doing, regardless of features.
 
 #ifdef USE_DASHBOARD
-    if (featureConfigured(FEATURE_DASHBOARD)) {
+    if (featureIsEnabled(FEATURE_DASHBOARD)) {
 #ifdef USE_OLED_GPS_DEBUG_PAGE_ONLY
         dashboardShowFixedPage(PAGE_GPS);
 #else

@@ -166,11 +166,11 @@ void initActiveBoxIds(void)
 #define BME(boxId) do { bitArraySet(&ena, boxId); } while (0)
     BME(BOXARM);
     BME(BOXPREARM);
-    if (!featureConfigured(FEATURE_AIRMODE)) {
+    if (!featureIsEnabled(FEATURE_AIRMODE)) {
         BME(BOXAIRMODE);
     }
 
-    if (!featureConfigured(FEATURE_ANTI_GRAVITY)) {
+    if (!featureIsEnabled(FEATURE_ANTI_GRAVITY)) {
         BME(BOXANTIGRAVITY);
     }
 
@@ -188,9 +188,9 @@ void initActiveBoxIds(void)
 #endif
 
 #ifdef USE_GPS
-    if (featureConfigured(FEATURE_GPS)) {
+    if (featureIsEnabled(FEATURE_GPS)) {
 #ifdef USE_GPS_RESCUE
-        if (!featureConfigured(FEATURE_3D)) {
+        if (!featureIsEnabled(FEATURE_3D)) {
             BME(BOXGPSRESCUE);
         }
 #endif
@@ -207,7 +207,7 @@ void initActiveBoxIds(void)
     BME(BOXBEEPERON);
 
 #ifdef USE_LED_STRIP
-    if (featureConfigured(FEATURE_LED_STRIP)) {
+    if (featureIsEnabled(FEATURE_LED_STRIP)) {
         BME(BOXLEDLOW);
     }
 #endif
@@ -221,7 +221,7 @@ void initActiveBoxIds(void)
 
     BME(BOXFPVANGLEMIX);
 
-    if (featureConfigured(FEATURE_3D)) {
+    if (featureIsEnabled(FEATURE_3D)) {
         BME(BOX3D);
     }
 
@@ -229,18 +229,18 @@ void initActiveBoxIds(void)
         BME(BOXFLIPOVERAFTERCRASH);
     }
 
-    if (featureConfigured(FEATURE_SERVO_TILT)) {
+    if (featureIsEnabled(FEATURE_SERVO_TILT)) {
         BME(BOXCAMSTAB);
     }
 
-    if (featureConfigured(FEATURE_INFLIGHT_ACC_CAL)) {
+    if (featureIsEnabled(FEATURE_INFLIGHT_ACC_CAL)) {
         BME(BOXCALIB);
     }
 
     BME(BOXOSD);
 
 #ifdef USE_TELEMETRY
-    if (featureConfigured(FEATURE_TELEMETRY)) {
+    if (featureIsEnabled(FEATURE_TELEMETRY)) {
         BME(BOXTELEMETRY);
     }
 #endif

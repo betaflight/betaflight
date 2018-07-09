@@ -744,7 +744,7 @@ static void gyroInitFilterNotch2(gyroSensor_t *gyroSensor, uint16_t notchHz, uin
 #ifdef USE_GYRO_DATA_ANALYSE
 static bool isDynamicFilterActive(void)
 {
-    return featureConfigured(FEATURE_DYNAMIC_FILTER);
+    return featureIsEnabled(FEATURE_DYNAMIC_FILTER);
 }
 
 static void gyroInitFilterDynamicNotch(gyroSensor_t *gyroSensor)

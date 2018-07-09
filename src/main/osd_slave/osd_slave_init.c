@@ -233,7 +233,7 @@ void init(void)
     adcConfigMutable()->vbat.enabled = (batteryConfig()->voltageMeterSource == VOLTAGE_METER_ADC);
     adcConfigMutable()->current.enabled = (batteryConfig()->currentMeterSource == CURRENT_METER_ADC);
 
-    adcConfigMutable()->rssi.enabled = featureConfigured(FEATURE_RSSI_ADC);
+    adcConfigMutable()->rssi.enabled = featureIsEnabled(FEATURE_RSSI_ADC);
     adcInit(adcConfig());
 #endif
 
@@ -275,7 +275,7 @@ void init(void)
 #ifdef USE_LED_STRIP
     ledStripInit();
 
-    if (featureConfigured(FEATURE_LED_STRIP)) {
+    if (featureIsEnabled(FEATURE_LED_STRIP)) {
         ledStripEnable();
     }
 #endif
@@ -285,7 +285,7 @@ void init(void)
 #endif
 
 #ifdef USE_TRANSPONDER
-    if (featureConfigured(FEATURE_TRANSPONDER)) {
+    if (featureIsEnabled(FEATURE_TRANSPONDER)) {
         transponderInit();
         transponderStartRepeating();
         systemState |= SYSTEM_STATE_TRANSPONDER_ENABLED;

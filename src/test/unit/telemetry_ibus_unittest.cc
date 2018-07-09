@@ -108,7 +108,7 @@ throttleStatus_e calculateThrottleStatus(void)
     return throttleStatus;
 }
 
-bool featureConfigured(uint32_t mask)
+bool featureIsEnabled(uint32_t mask)
 {
     return (definedFeatures & mask) != 0;
 }

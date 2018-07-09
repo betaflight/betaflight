@@ -448,7 +448,7 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
 #endif
 
     case FLIGHT_LOG_FIELD_CONDITION_RSSI:
-        return rxConfig()->rssi_channel > 0 || featureConfigured(FEATURE_RSSI_ADC);
+        return rxConfig()->rssi_channel > 0 || featureIsEnabled(FEATURE_RSSI_ADC);
 
     case FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME:
         return blackboxConfig()->p_ratio != 1;
@@ -1488,7 +1488,7 @@ STATIC_UNIT_TESTED void blackboxLogIteration(timeUs_t currentTimeUs)
             writeInterframe();
         }
 #ifdef USE_GPS
-        if (featureConfigured(FEATURE_GPS)) {
+        if (featureIsEnabled(FEATURE_GPS)) {
             if (blackboxShouldLogGpsHomeFrame()) {
                 writeGPSHomeFrame();
                 writeGPSFrame(currentTimeUs);
@@ -1554,7 +1554,7 @@ void blackboxUpdate(timeUs_t currentTimeUs)
         if (!sendFieldDefinition('I', 'P', blackboxMainFields, blackboxMainFields + 1, ARRAYLEN(blackboxMainFields),
                 &blackboxMainFields[0].condition, &blackboxMainFields[1].condition)) {
 #ifdef USE_GPS
-            if (featureConfigured(FEATURE_GPS)) {
+            if (featureIsEnabled(FEATURE_GPS)) {
                 blackboxSetState(BLACKBOX_STATE_SEND_GPS_H_HEADER);
             } else
 #endif

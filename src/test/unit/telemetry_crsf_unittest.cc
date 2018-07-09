@@ -293,7 +293,7 @@ void beeperConfirmationBeeps(uint8_t beepCount) {UNUSED(beepCount);}
 
 uint32_t micros(void) {return 0;}
 
-bool featureConfigured(uint32_t) {return true;}
+bool featureIsEnabled(uint32_t) {return true;}
 
 uint32_t serialRxBytesWaiting(const serialPort_t *) {return 0;}
 uint32_t serialTxBytesFree(const serialPort_t *) {return 0;}

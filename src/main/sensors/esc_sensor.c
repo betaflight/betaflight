@@ -148,7 +148,7 @@ bool isEscSensorActive(void)
 
 escSensorData_t *getEscSensorData(uint8_t motorNumber)
 {
-    if (!featureConfigured(FEATURE_ESC_SENSOR)) {
+    if (!featureIsEnabled(FEATURE_ESC_SENSOR)) {
         return NULL;
     }
 

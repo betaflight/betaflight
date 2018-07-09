@@ -203,7 +203,7 @@ static void checkForThrottleErrorResetState(uint16_t rxRefreshRate)
 
     const int rxRefreshRateMs = rxRefreshRate / 1000;
     const int indexMax = constrain(THROTTLE_DELTA_MS / rxRefreshRateMs, 1, THROTTLE_BUFFER_MAX);
-    const int16_t throttleVelocityThreshold = (featureConfigured(FEATURE_3D)) ? currentPidProfile->itermThrottleThreshold / 2 : currentPidProfile->itermThrottleThreshold;
+    const int16_t throttleVelocityThreshold = (featureIsEnabled(FEATURE_3D)) ? currentPidProfile->itermThrottleThreshold / 2 : currentPidProfile->itermThrottleThreshold;
 
     rcCommandThrottlePrevious[index++] = rcCommand[THROTTLE];
     if (index >= indexMax) {
@@ -621,7 +621,7 @@ FAST_CODE FAST_CODE_NOINLINE void updateRcCommands(void)
     }
 
     int32_t tmp;
-    if (featureConfigured(FEATURE_3D)) {
+    if (featureIsEnabled(FEATURE_3D)) {
         tmp = constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX);
         tmp = (uint32_t)(tmp - PWM_RANGE_MIN);
     } else {
@@ -635,7 +635,7 @@ FAST_CODE FAST_CODE_NOINLINE void updateRcCommands(void)
 
     rcCommand[THROTTLE] = rcLookupThrottle(tmp);
 
-    if (featureConfigured(FEATURE_3D) && !failsafeIsActive()) {
+    if (featureIsEnabled(FEATURE_3D) && !failsafeIsActive()) {
         if (!flight3DConfig()->switched_mode3d) {
             if (IS_RC_MODE_ACTIVE(BOX3D)) {
                 fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);

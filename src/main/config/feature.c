@@ -35,32 +35,32 @@ PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
     .enabledFeatures = DEFAULT_FEATURES | DEFAULT_RX_FEATURE | FEATURE_DYNAMIC_FILTER | FEATURE_ANTI_GRAVITY,
 );
 
-void featureSetLocal(const uint32_t mask, uint32_t *features)
+void featureSet(const uint32_t mask, uint32_t *features)
 {
     *features |= mask;
 }
 
-void featureClearLocal(const uint32_t mask, uint32_t *features)
+void featureClear(const uint32_t mask, uint32_t *features)
 {
     *features &= ~(mask);
 }
 
-bool featureConfigured(const uint32_t mask)
+bool featureIsEnabled(const uint32_t mask)
 {
     return featureConfig()->enabledFeatures & mask;
 }
 
-void featureSet(const uint32_t mask)
+void featureEnable(const uint32_t mask)
 {
-    featureSetLocal(mask, &featureConfigMutable()->enabledFeatures);
+    featureSet(mask, &featureConfigMutable()->enabledFeatures);
 }
 
-void featureClear(const uint32_t mask)
+void featureDisable(const uint32_t mask)
 {
-    featureClearLocal(mask, &featureConfigMutable()->enabledFeatures);
+    featureClear(mask, &featureConfigMutable()->enabledFeatures);
 }
 
-void featureClearAll(void)
+void featureDisableAll(void)
 {
     featureConfigMutable()->enabledFeatures = 0;
 }
