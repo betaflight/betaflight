@@ -71,7 +71,7 @@ static FAST_RAM_ZERO_INIT float pidFrequency;
 static FAST_RAM_ZERO_INIT uint8_t antiGravityMode;
 static FAST_RAM_ZERO_INIT float antiGravityThrottleHpf;
 static FAST_RAM_ZERO_INIT uint16_t itermAcceleratorGain;
-static FAST_RAM float antiGravityOSDCutoff = 1.0f;
+static FAST_RAM float antiGravityOsdCutoff = 1.0f;
 static FAST_RAM_ZERO_INIT bool antiGravityEnabled;
 
 PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 2);
@@ -193,7 +193,7 @@ void pidSetItermAccelerator(float newItermAccelerator)
 
 bool pidOsdAntiGravityActive(void)
 {
-    return (itermAccelerator > antiGravityOSDCutoff);
+    return (itermAccelerator > antiGravityOsdCutoff);
 }
 
 void pidStabilisationState(pidStabilisationState_e pidControllerState)
@@ -467,9 +467,9 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     // For the new AG it's a continuous floating value so we want to trigger the OSD
     // display when it exceeds 25% of its possible range. This gives a useful indication
     // of AG activity without excessive display.
-    antiGravityOSDCutoff = 1.0f;
+    antiGravityOsdCutoff = 1.0f;
     if (antiGravityMode == ANTI_GRAVITY_SMOOTH) {
-        antiGravityOSDCutoff += ((itermAcceleratorGain - 1000) / 1000.0f) * 0.25f;
+        antiGravityOsdCutoff += ((itermAcceleratorGain - 1000) / 1000.0f) * 0.25f;
     }
 
 #if defined(USE_SMART_FEEDFORWARD)
@@ -812,14 +812,12 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
 #endif
 
     // Dynamic i component,
-    // gradually scale back integration when above windup point
     if ((antiGravityMode == ANTI_GRAVITY_SMOOTH) && antiGravityEnabled) {
         itermAccelerator = 1 + fabsf(antiGravityThrottleHpf) * 0.01f * (itermAcceleratorGain - 1000);
         DEBUG_SET(DEBUG_ANTI_GRAVITY, 1, lrintf(antiGravityThrottleHpf * 1000));
     }
-    
     DEBUG_SET(DEBUG_ANTI_GRAVITY, 0, lrintf(itermAccelerator * 1000));
-
+    // gradually scale back integration when above windup point
     const float dynCi = MIN((1.0f - motorMixRange) * ITermWindupPointInv, 1.0f) * dT * itermAccelerator;
 
     // Dynamic d component, enable 2-DOF PID controller only for rate mode

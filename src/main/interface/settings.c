@@ -274,9 +274,8 @@ static const char * const lookupTableDtermLowpassType[] = {
 };
 
 static const char * const lookupTableAntiGravityMode[] = {
-    "OFF",
-    "STEP",
     "SMOOTH",
+    "STEP",
 };
 
 static const char * const lookupTableFailsafe[] = {

@@ -77,9 +77,8 @@ typedef struct pid8_s {
 } pid8_t;
 
 typedef enum {
-    ANTI_GRAVITY_OFF = 0,
-    ANTI_GRAVITY_STEP,
-    ANTI_GRAVITY_SMOOTH
+    ANTI_GRAVITY_SMOOTH,
+    ANTI_GRAVITY_STEP
 } antiGravityMode_e;
 
 typedef enum {
