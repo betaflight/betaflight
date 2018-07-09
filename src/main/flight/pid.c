@@ -825,19 +825,27 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
         float acCorrection = 0;
         float acErrorRate;
 #endif        
-        float itermErrorRate = 0.0f;
+
+        const float ITerm = pidData[axis].I;
+        float itermErrorRate = currentPidSetpoint - gyroRate;
 
 #if defined(USE_ITERM_RELAX)
-        if (itermRelax && (axis < FD_YAW || itermRelax == ITERM_RELAX_RPY )) {
+        if (itermRelax && (axis < FD_YAW || itermRelax == ITERM_RELAX_RPY || itermRelax == ITERM_RELAX_RPY_INC)) {
             const float setpointLpf = pt1FilterApply(&windupLpf[axis], currentPidSetpoint);
             const float setpointHpf = fabsf(currentPidSetpoint - setpointLpf);
             const float itermRelaxFactor = 1 - setpointHpf / 30.0f;
-            if (itermRelaxType == ITERM_RELAX_SETPOINT && setpointHpf < 30) {
-                itermErrorRate = itermRelaxFactor * (currentPidSetpoint - gyroRate);
+
+            const bool isDecreasingI = ((ITerm > 0) && (itermErrorRate < 0)) || ((ITerm < 0) && (itermErrorRate > 0));
+            if ((itermRelax >= ITERM_RELAX_RP_INC) && isDecreasingI) {
+                // Do Nothing, use the precalculed itermErrorRate
+            } else if (itermRelaxType == ITERM_RELAX_SETPOINT && setpointHpf < 30) {
+                itermErrorRate *= itermRelaxFactor;
             } else if (itermRelaxType == ITERM_RELAX_GYRO ) {
                 itermErrorRate = fapplyDeadband(setpointLpf - gyroRate, setpointHpf);
+            } else {
+                itermErrorRate = 0.0f;
             }
-            
+
             if (axis == FD_ROLL) {
                 DEBUG_SET(DEBUG_ITERM_RELAX, 0, lrintf(setpointHpf));
                 DEBUG_SET(DEBUG_ITERM_RELAX, 1, lrintf(itermRelaxFactor * 100.0f));
@@ -865,7 +873,6 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
         } else
 #endif // USE_ITERM_RELAX
         {
-            itermErrorRate = currentPidSetpoint - gyroRate;
 #if defined(USE_ABSOLUTE_CONTROL)
             acErrorRate = itermErrorRate;
 #endif // USE_ABSOLUTE_CONTROL
@@ -899,8 +906,6 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
         }
 
         // -----calculate I component
-
-        const float ITerm = pidData[axis].I;
         const float ITermNew = constrainf(ITerm + pidCoefficient[axis].Ki * itermErrorRate * dynCi, -itermLimit, itermLimit);
         const bool outputSaturated = mixerIsOutputSaturated(axis, errorRate);
         if (outputSaturated == false || ABS(ITermNew) < ABS(ITerm)) {

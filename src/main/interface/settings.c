@@ -340,7 +340,7 @@ static const char * const lookupTableVideoSystem[] = {
 
 #if defined(USE_ITERM_RELAX)
 static const char * const lookupTableItermRelax[] = {
-    "OFF", "RP", "RPY"
+    "OFF", "RP", "RPY", "RP_INC", "RPY_INC"
 };
 static const char * const lookupTableItermRelaxType[] = {
     "GYRO", "SETPOINT"
