@@ -806,10 +806,12 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
         motorMix[i] = mix;
     }
 
+    pidUpdateAntiGravityThrottleFilter(throttle);
+    
 #if defined(USE_THROTTLE_BOOST)
     if (throttleBoost > 0.0f) {
-        float throttlehpf = throttle - pt1FilterApply(&throttleLpf, throttle);
-        throttle = constrainf(throttle + throttleBoost * throttlehpf, 0.0f, 1.0f);
+        const float throttleHpf = throttle - pt1FilterApply(&throttleLpf, throttle);
+        throttle = constrainf(throttle + throttleBoost * throttleHpf, 0.0f, 1.0f);
     }
 #endif
 

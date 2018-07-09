@@ -105,7 +105,8 @@ void setDefaultTestSettings(void) {
     pidProfile->dtermSetpointWeight = 0;
     pidProfile->yawRateAccelLimit = 100;
     pidProfile->rateAccelLimit = 0;
-    pidProfile->itermThrottleThreshold = 350;
+    pidProfile->antiGravityMode = ANTI_GRAVITY_SMOOTH;
+    pidProfile->itermThrottleThreshold = 250;
     pidProfile->itermAcceleratorGain = 1000;
     pidProfile->crash_time = 500;
     pidProfile->crash_delay = 0;

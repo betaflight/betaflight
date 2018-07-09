@@ -62,10 +62,6 @@ bool isAirmodeActive(void) {
     return (IS_RC_MODE_ACTIVE(BOXAIRMODE) || feature(FEATURE_AIRMODE));
 }
 
-bool isAntiGravityModeActive(void) {
-    return (IS_RC_MODE_ACTIVE(BOXANTIGRAVITY) || feature(FEATURE_ANTI_GRAVITY));
-}
-
 bool isRangeActive(uint8_t auxChannelIndex, const channelRange_t *range) {
     if (!IS_RANGE_USABLE(range)) {
         return false;

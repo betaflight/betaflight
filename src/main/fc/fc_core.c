@@ -837,6 +837,9 @@ bool processRx(timeUs_t currentTimeUs)
         beeper(BEEPER_RC_SMOOTHING_INIT_FAIL);
     }
 #endif
+
+    pidSetAntiGravityState(IS_RC_MODE_ACTIVE(BOXANTIGRAVITY) || feature(FEATURE_ANTI_GRAVITY));
+    
     return true;
 }
 

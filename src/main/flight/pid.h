@@ -77,6 +77,12 @@ typedef struct pid8_s {
 } pid8_t;
 
 typedef enum {
+    ANTI_GRAVITY_OFF = 0,
+    ANTI_GRAVITY_STEP,
+    ANTI_GRAVITY_SMOOTH
+} antiGravityMode_e;
+
+typedef enum {
     ITERM_RELAX_OFF,
     ITERM_RELAX_RP,
     ITERM_RELAX_RPY,
@@ -108,6 +114,7 @@ typedef struct pidProfile_s {
     uint8_t horizon_tilt_expert_mode;       // OFF or ON
 
     // Betaflight PID controller parameters
+    uint8_t  antiGravityMode;             // type of anti gravity method
     uint16_t itermThrottleThreshold;        // max allowed throttle delta before iterm accelerated in ms
     uint16_t itermAcceleratorGain;          // Iterm Accelerator Gain when itermThrottlethreshold is hit
     uint16_t dtermSetpointWeight;           // Setpoint weight for Dterm (0= measurement, 1= full error, 1 > aggressive derivative)
@@ -128,8 +135,8 @@ typedef struct pidProfile_s {
     uint8_t crash_recovery;                 // off, on, on and beeps when it is in crash recovery mode
     uint8_t throttle_boost;                 // how much should throttle be boosted during transient changes 0-100, 100 adds 10x hpf filtered throttle
     uint8_t throttle_boost_cutoff;          // Which cutoff frequency to use for throttle boost. higher cutoffs keep the boost on for shorter. Specified in hz.
-    uint8_t  iterm_rotation;                // rotates iterm to translate world errors to local coordinate system
-    uint8_t  smart_feedforward;             // takes only the larger of P and the D weight feed forward term if they have the same sign.
+    uint8_t iterm_rotation;                 // rotates iterm to translate world errors to local coordinate system
+    uint8_t smart_feedforward;              // takes only the larger of P and the D weight feed forward term if they have the same sign.
     uint8_t iterm_relax_type;               // Specifies type of relax algorithm
     uint8_t iterm_relax_cutoff;             // This cutoff frequency specifies a low pass filter which predicts average response of the quad to setpoint
     uint8_t iterm_relax;                    // Enable iterm suppression during stick input
@@ -176,7 +183,6 @@ extern pt1Filter_t throttleLpf;
 void pidResetITerm(void);
 void pidStabilisationState(pidStabilisationState_e pidControllerState);
 void pidSetItermAccelerator(float newItermAccelerator);
-float pidItermAccelerator(void);
 void pidInitFilters(const pidProfile_t *pidProfile);
 void pidInitConfig(const pidProfile_t *pidProfile);
 void pidInit(const pidProfile_t *pidProfile);
@@ -186,3 +192,8 @@ void pidAcroTrainerInit(void);
 void pidSetAcroTrainerState(bool newState);
 void pidInitSetpointDerivativeLpf(uint16_t filterCutoff, uint8_t debugAxis, uint8_t filterType);
 void pidUpdateSetpointDerivativeLpf(uint16_t filterCutoff);
+void pidUpdateAntiGravityThrottleFilter(float throttle);
+bool pidOsdAntiGravityActive(void);
+bool pidOsdAntiGravityMode(void);
+void pidSetAntiGravityState(bool newState);
+bool pidAntiGravityEnabled(void);

@@ -273,6 +273,11 @@ static const char * const lookupTableDtermLowpassType[] = {
     "BIQUAD",
 };
 
+static const char * const lookupTableAntiGravityMode[] = {
+    "OFF",
+    "STEP",
+    "SMOOTH",
+};
 
 static const char * const lookupTableFailsafe[] = {
     "AUTO-LAND", "DROP", "GPS-RESCUE"
@@ -413,6 +418,7 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableRcInterpolationChannels),
     LOOKUP_TABLE_ENTRY(lookupTableLowpassType),
     LOOKUP_TABLE_ENTRY(lookupTableDtermLowpassType),
+    LOOKUP_TABLE_ENTRY(lookupTableAntiGravityMode),
     LOOKUP_TABLE_ENTRY(lookupTableFailsafe),
     LOOKUP_TABLE_ENTRY(lookupTableFailsafeSwitchMode),
     LOOKUP_TABLE_ENTRY(lookupTableCrashRecovery),
@@ -784,6 +790,7 @@ const clivalue_t valueTable[] = {
     { "dterm_notch_cutoff",         VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 0, 16000 }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_notch_cutoff) },
     { "vbat_pid_gain",              VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_PID_PROFILE, offsetof(pidProfile_t, vbatPidCompensation) },
     { "pid_at_min_throttle",        VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_PID_PROFILE, offsetof(pidProfile_t, pidAtMinThrottle) },
+    { "anti_gravity_mode",          VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ANTI_GRAVITY_MODE }, PG_PID_PROFILE, offsetof(pidProfile_t, antiGravityMode) },
     { "anti_gravity_threshold",     VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 20, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, itermThrottleThreshold) },
     { "anti_gravity_gain",          VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 1000, 30000 }, PG_PID_PROFILE, offsetof(pidProfile_t, itermAcceleratorGain) },
     { "setpoint_relax_ratio",       VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, setpointRelaxRatio) },
@@ -807,7 +814,7 @@ const clivalue_t valueTable[] = {
 #if defined(USE_ITERM_RELAX)
     { "iterm_relax",                VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ITERM_RELAX }, PG_PID_PROFILE, offsetof(pidProfile_t, iterm_relax) },
     { "iterm_relax_type",           VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ITERM_RELAX_TYPE }, PG_PID_PROFILE, offsetof(pidProfile_t, iterm_relax_type) },
-    { "iterm_relax_cutoff",     VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 1, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, iterm_relax_cutoff) },
+    { "iterm_relax_cutoff",         VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 1, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, iterm_relax_cutoff) },
 #endif
     { "iterm_windup",               VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 30, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, itermWindupPointPercent) },
     { "iterm_limit",                VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 0, 500 }, PG_PID_PROFILE, offsetof(pidProfile_t, itermLimit) },
