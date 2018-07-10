@@ -849,7 +849,7 @@ bool processRx(timeUs_t currentTimeUs)
     }
 #endif
 
-    pidSetAntiGravityState(IS_RC_MODE_ACTIVE(BOXANTIGRAVITY) || feature(FEATURE_ANTI_GRAVITY));
+    pidSetAntiGravityState(IS_RC_MODE_ACTIVE(BOXANTIGRAVITY) || featureIsEnabled(FEATURE_ANTI_GRAVITY));
     
     return true;
 }

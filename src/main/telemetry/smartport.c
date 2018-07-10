@@ -332,7 +332,7 @@ static void initSmartPortSensors(void)
 
     if (isBatteryVoltageConfigured()) {
 #ifdef USE_ESC_SENSOR
-        if (!featureIsEnabled(FEATURE_ESC_SENSOR)) {
+        if (!reportExtendedEscSensors())
 #endif
         {
             ADD_SENSOR(FSSP_DATAID_VFAS);

@@ -415,7 +415,7 @@ void validateAndFixGyroConfig(void)
 #ifdef USE_GYRO_DATA_ANALYSE
     // Disable dynamic filter if gyro loop is less than 2KHz
     if (gyro.targetLooptime > DYNAMIC_FILTER_MAX_SUPPORTED_LOOP_TIME) {
-        featureClear(FEATURE_DYNAMIC_FILTER);
+        featureDisable(FEATURE_DYNAMIC_FILTER);
     }
 #endif
     
