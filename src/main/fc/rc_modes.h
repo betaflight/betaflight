@@ -117,6 +117,7 @@ typedef struct modeActivationCondition_s {
     uint8_t auxChannelIndex;
     channelRange_t range;
     modeLogic_e modeLogic;
+    boxId_e linkedTo;
 } modeActivationCondition_t;
 
 PG_DECLARE_ARRAY(modeActivationCondition_t, MAX_MODE_ACTIVATION_CONDITION_COUNT, modeActivationConditions);
@@ -129,7 +130,6 @@ typedef struct modeActivationProfile_s {
 
 bool IS_RC_MODE_ACTIVE(boxId_e boxId);
 void rcModeUpdate(boxBitmask_t *newState);
-void preventModeChanges(void);
 
 bool isAirmodeActive(void);
 bool isAntiGravityModeActive(void);

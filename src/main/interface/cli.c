@@ -848,7 +848,7 @@ static void cliRxFailsafe(char *cmdline)
 
 static void printAux(uint8_t dumpMask, const modeActivationCondition_t *modeActivationConditions, const modeActivationCondition_t *defaultModeActivationConditions)
 {
-    const char *format = "aux %u %u %u %u %u %u";
+    const char *format = "aux %u %u %u %u %u %u %u";
     // print out aux channel settings
     for (uint32_t i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
         const modeActivationCondition_t *mac = &modeActivationConditions[i];
@@ -859,8 +859,10 @@ static void printAux(uint8_t dumpMask, const modeActivationCondition_t *modeActi
                 && mac->auxChannelIndex == macDefault->auxChannelIndex
                 && mac->range.startStep == macDefault->range.startStep
                 && mac->range.endStep == macDefault->range.endStep
-                && mac->modeLogic == macDefault->modeLogic;
+                && mac->modeLogic == macDefault->modeLogic
+                && mac->linkedTo == macDefault->linkedTo;
             const box_t *box = findBoxByBoxId(macDefault->modeId);
+            const box_t *linkedTo = findBoxByBoxId(macDefault->linkedTo);
             if (box) {
                 cliDefaultPrintLinef(dumpMask, equalsDefault, format,
                     i,
@@ -868,11 +870,13 @@ static void printAux(uint8_t dumpMask, const modeActivationCondition_t *modeActi
                     macDefault->auxChannelIndex,
                     MODE_STEP_TO_CHANNEL_VALUE(macDefault->range.startStep),
                     MODE_STEP_TO_CHANNEL_VALUE(macDefault->range.endStep),
-                    macDefault->modeLogic
+                    macDefault->modeLogic,
+                    linkedTo ? linkedTo->permanentId : 0
                 );
             }
         }
         const box_t *box = findBoxByBoxId(mac->modeId);
+        const box_t *linkedTo = findBoxByBoxId(mac->linkedTo);
         if (box) {
             cliDumpPrintLinef(dumpMask, equalsDefault, format,
                 i,
@@ -880,7 +884,8 @@ static void printAux(uint8_t dumpMask, const modeActivationCondition_t *modeActi
                 mac->auxChannelIndex,
                 MODE_STEP_TO_CHANNEL_VALUE(mac->range.startStep),
                 MODE_STEP_TO_CHANNEL_VALUE(mac->range.endStep),
-                mac->modeLogic
+                mac->modeLogic,
+                linkedTo ? linkedTo->permanentId : 0
             );
         }
     }
@@ -925,18 +930,30 @@ static void cliAux(char *cmdline)
                     validArgumentCount++;
                 }
             }
+            ptr = nextArg(ptr);
+            if (ptr) {
+                val = atoi(ptr);
+                const box_t *box = findBoxByPermanentId(val);
+                if (box) {
+                    mac->linkedTo = box->boxId;
+                    validArgumentCount++;
+                }
+            }
             if (validArgumentCount == 4) { // for backwards compatibility
                 mac->modeLogic = MODELOGIC_OR;
-            } else if (validArgumentCount != 5) {
+            } else if (validArgumentCount == 5) { // for backwards compatibility
+                mac->linkedTo = 0;
+            } else if (validArgumentCount != 6) {
                 memset(mac, 0, sizeof(modeActivationCondition_t));
             }
-            cliPrintLinef( "aux %u %u %u %u %u %u",
+            cliPrintLinef( "aux %u %u %u %u %u %u %u",
                 i,
                 mac->modeId,
                 mac->auxChannelIndex,
                 MODE_STEP_TO_CHANNEL_VALUE(mac->range.startStep),
                 MODE_STEP_TO_CHANNEL_VALUE(mac->range.endStep),
-                mac->modeLogic
+                mac->modeLogic,
+                mac->linkedTo
             );
         } else {
             cliShowArgumentRangeError("index", 0, MAX_MODE_ACTIVATION_CONDITION_COUNT - 1);

@@ -40,7 +40,8 @@
 #include "rx/rx.h"
 
 boxBitmask_t rcModeActivationMask; // one bit per mode defined in boxId_e
-static bool modeChangesDisabled = false;
+
+static bool paralyzeModeEverDisabled = false;
 
 PG_REGISTER_ARRAY(modeActivationCondition_t, MAX_MODE_ACTIVATION_CONDITION_COUNT, modeActivationConditions,
                   PG_MODE_ACTIVATION_PROFILE, 1);
@@ -53,10 +54,6 @@ bool IS_RC_MODE_ACTIVE(boxId_e boxId)
 void rcModeUpdate(boxBitmask_t *newState)
 {
     rcModeActivationMask = *newState;
-}
-
-void preventModeChanges(void) {
-    modeChangesDisabled = true;
 }
 
 bool isAirmodeActive(void) {
@@ -77,17 +74,22 @@ bool isRangeActive(uint8_t auxChannelIndex, const channelRange_t *range) {
             channelValue < 900 + (range->endStep * 25));
 }
 
+void updateMasksForMac(const modeActivationCondition_t *mac, boxBitmask_t *andMask, boxBitmask_t *newMask) {
+    boxId_e mode = mac->modeId;
+
+    bool bAnd = (mac->modeLogic == MODELOGIC_AND) || bitArrayGet(andMask, mode);
+    bool bAct = isRangeActive(mac->auxChannelIndex, &mac->range);
+    if (bAnd)
+        bitArraySet(andMask, mode);
+    if (bAnd != bAct)
+        bitArraySet(newMask, mode);
+}
 
 void updateActivatedModes(void)
 {
     boxBitmask_t newMask, andMask;
     memset(&andMask, 0, sizeof(andMask));
-
-    if (!modeChangesDisabled) {
-        memset(&newMask, 0, sizeof(newMask));
-    } else {
-        memcpy(&newMask, &rcModeActivationMask, sizeof(newMask));
-    }
+    memset(&newMask, 0, sizeof(newMask));
 
     // determine which conditions set/clear the mode
     for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
@@ -95,20 +97,43 @@ void updateActivatedModes(void)
 
         boxId_e mode = mac->modeId;
 
-        if (modeChangesDisabled && mode != BOXBEEPERON) {
+        // Skip linked macs for now to fully determine target states
+        boxId_e linkedTo = mac->linkedTo;
+        if (linkedTo) {
             continue;
         }
 
-        if (mode < CHECKBOX_ITEM_COUNT) {
-            bool bAnd = (mac->modeLogic == MODELOGIC_AND) || bitArrayGet(&andMask, mode);
-            bool bAct = isRangeActive(mac->auxChannelIndex, &mac->range);
-            if (bAnd)
-                bitArraySet(&andMask, mode);
-            if (bAnd != bAct)
+        // Ensure sticky modes are sticky
+        if (mode == BOXPARALYZE) {
+            if (IS_RC_MODE_ACTIVE(BOXPARALYZE)) {
+                bitArrayClr(&andMask, mode);
                 bitArraySet(&newMask, mode);
+            } else {
+                if (paralyzeModeEverDisabled) {
+                    updateMasksForMac(mac, &andMask, &newMask);
+                } else {
+                    paralyzeModeEverDisabled = !isRangeActive(mac->auxChannelIndex, &mac->range);
+                }
+            }
+        } else if (mode < CHECKBOX_ITEM_COUNT) {
+            updateMasksForMac(mac, &andMask, &newMask);
         }
     }
+
     bitArrayXor(&newMask, sizeof(&newMask), &newMask, &andMask);
+
+    // Update linked modes
+    for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
+        const modeActivationCondition_t *mac = modeActivationConditions(i);
+
+        boxId_e linkedTo = mac->linkedTo;
+        if (!linkedTo) {
+            continue;
+        }
+
+        boxId_e mode = mac->modeId;
+        bitArrayCopy(&newMask, linkedTo, mode);
+    }
 
     rcModeUpdate(&newMask);
 }
@@ -118,7 +143,7 @@ bool isModeActivationConditionPresent(boxId_e modeId)
     for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
         const modeActivationCondition_t *mac = modeActivationConditions(i);
 
-        if (mac->modeId == modeId && IS_RANGE_USABLE(&mac->range)) {
+        if (mac->modeId == modeId && (IS_RANGE_USABLE(&mac->range) || mac->linkedTo)) {
             return true;
         }
     }
