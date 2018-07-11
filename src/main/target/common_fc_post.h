@@ -165,3 +165,7 @@
 #if defined(USE_MAX7456)
 #define USE_OSD
 #endif
+
+#if defined(USE_GPS_RESCUE)
+#define USE_GPS
+#endif
