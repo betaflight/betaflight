@@ -22,7 +22,6 @@
 
 #define TARGET_BOARD_IDENTIFIER "FRF3"
 #define USE_TARGET_CONFIG
-#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
 // Removed to make the firmware fit into flash (in descending order of priority):
 //#undef USE_GYRO_OVERFLOW_CHECK

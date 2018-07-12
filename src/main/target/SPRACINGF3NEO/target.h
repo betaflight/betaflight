@@ -42,7 +42,6 @@
 #undef USE_RX_MSP
 #undef USE_ESC_SENSOR_INFO
 
-#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
 #define LED0_PIN                PB9
 #define LED1_PIN                PB2
