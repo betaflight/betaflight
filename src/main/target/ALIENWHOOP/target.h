@@ -48,7 +48,6 @@
 
 #define USE_TARGET_CONFIG // see config.c for target specific customizations
 
-#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 #define BRUSHED_MOTORS
 
 /* Visual Alerts - SMD LEDs

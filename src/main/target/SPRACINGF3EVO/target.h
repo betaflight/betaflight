@@ -63,7 +63,6 @@
 #endif // SPRACINGF3MQ
 
 
-#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
 #define LED0_PIN                PB8
 

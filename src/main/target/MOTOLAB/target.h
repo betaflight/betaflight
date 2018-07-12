@@ -22,7 +22,6 @@
 
 #define TARGET_BOARD_IDENTIFIER "MOTO" // MotoLab
 
-#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 #define USE_TARGET_CONFIG
 
 #define LED0_PIN                PB5 // Blue LEDs - PB5

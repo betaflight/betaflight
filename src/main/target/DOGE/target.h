@@ -22,7 +22,6 @@
 
 #define TARGET_BOARD_IDENTIFIER "DOGE"
 
-#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
 // tqfp48 pin 34
 #define LED0_PIN                PA13

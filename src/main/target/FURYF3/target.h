@@ -48,7 +48,6 @@
 #undef USE_RX_MSP
 #undef USE_ESC_SENSOR_INFO
 
-#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 #define CONFIG_PREFER_ACC_ON
 
 #define LED0_PIN                PC14
