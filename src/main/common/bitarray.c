@@ -47,3 +47,12 @@ void bitArrayXor(void *dest, size_t size, void *op1, void *op2)
         ((uint8_t*)dest)[i] = ((uint8_t*)op1)[i] ^ ((uint8_t*)op2)[i];
     }
 }
+
+void bitArrayCopy(void *array, unsigned from, unsigned to)
+{
+    if (bitArrayGet(array, from)) {
+        bitArraySet(array, to);
+    } else {
+        bitArrayClr(array, to);
+    }
+}
