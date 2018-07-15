@@ -105,12 +105,11 @@ typedef struct adjustmentState_s {
 #define MAX_SIMULTANEOUS_ADJUSTMENT_COUNT 4 // enough for 4 x 3position switches / 4 aux channel
 #endif
 
-extern const char *adjustmentRangeName;
-extern int adjustmentRangeValue;
-
 void resetAdjustmentStates(void);
 void updateAdjustmentStates(void);
 struct controlRateConfig_s;
 void processRcAdjustments(struct controlRateConfig_s *controlRateConfig);
 struct pidProfile_s;
 void useAdjustmentConfig(struct pidProfile_s *pidProfileToUse);
+const char *getAdjustmentsRangeName(void);
+int getAdjustmentsRangeValue(void);

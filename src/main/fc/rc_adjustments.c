@@ -247,11 +247,15 @@ static const char * const adjustmentLabels[] = {
     "D SETPOINT",
     "D SETPOINT TRANSITION",
     "HORIZON STRENGTH",
+    "ROLL RC RATE",
+    "PITCH RC RATE",
+    "ROLL RC EXPO",
+    "PITCH RC EXPO",
     "PID AUDIO",
 };
 
-const char *adjustmentRangeName;
-int adjustmentRangeValue = -1;
+static int adjustmentRangeNameIndex = 0;
+static int adjustmentRangeValue = -1;
 #endif
 
 #define ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET 1
@@ -680,7 +684,7 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig)
 
 #if defined(USE_OSD) && defined(USE_OSD_ADJUSTMENTS)
         if (newValue != -1 && adjustmentState->config->adjustmentFunction != ADJUSTMENT_RATE_PROFILE) { // Rate profile already has an OSD element
-            adjustmentRangeName = &adjustmentLabels[adjustmentFunction - 1][0];
+            adjustmentRangeNameIndex = adjustmentFunction;
             adjustmentRangeValue = newValue;
         }
 #else
@@ -733,3 +737,17 @@ void useAdjustmentConfig(pidProfile_t *pidProfileToUse)
 {
     pidProfile = pidProfileToUse;
 }
+
+#if defined(USE_OSD) && defined(USE_OSD_ADJUSTMENTS)
+const char *getAdjustmentsRangeName(void) {
+    if (adjustmentRangeNameIndex > 0) {
+        return &adjustmentLabels[adjustmentRangeNameIndex - 1][0];
+    } else {
+        return NULL;
+    }
+}
+
+int getAdjustmentsRangeValue(void) {
+    return adjustmentRangeValue;
+}
+#endif
