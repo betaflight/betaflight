@@ -1384,16 +1384,30 @@ static mspResult_e mspFcProcessOutCommandWithArg(uint8_t cmdMSP, sbuf_t *src, sb
         if (sbufBytesRemaining(src)) {
             rebootMode = sbufReadU8(src);
 
-            if (rebootMode >= MSP_REBOOT_COUNT || (rebootMode == MSP_REBOOT_MSC
-#if defined(USE_USB_MSC)
-                && !mscCheckFilesystemReady()
+            if (rebootMode >= MSP_REBOOT_COUNT
+#if !defined(USE_USB_MSC)
+                || rebootMode == MSP_REBOOT_MSC
 #endif
-                )) {
+                ) {
                 return MSP_RESULT_ERROR;
             }
         } else {
             rebootMode = MSP_REBOOT_FIRMWARE;
         }
+
+        sbufWriteU8(dst, rebootMode);
+
+#if defined(USE_USB_MSC)
+        if (rebootMode == MSP_REBOOT_MSC) {
+            if (mscCheckFilesystemReady()) {
+                sbufWriteU8(dst, 1);
+            } else {
+                sbufWriteU8(dst, 0);
+
+                return MSP_RESULT_ACK;
+            }
+        }
+#endif
 
         if (mspPostProcessFn) {
             *mspPostProcessFn = mspRebootFn;
