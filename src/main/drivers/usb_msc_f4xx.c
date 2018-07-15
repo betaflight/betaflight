@@ -44,21 +44,13 @@
 #include "drivers/time.h"
 #include "drivers/usb_msc.h"
 
+#include "drivers/accgyro/accgyro_mpu.h"
+
 #include "pg/usb.h"
 
-#if defined(STM32F4)
 #include "usb_core.h"
 #include "usbd_cdc_vcp.h"
 #include "usb_io.h"
-#elif defined(STM32F7)
-#include "vcp_hal/usbd_cdc_interface.h"
-#include "usb_io.h"
-USBD_HandleTypeDef USBD_Device;
-#else
-#include "usb_core.h"
-#include "usb_init.h"
-#include "hw_config.h"
-#endif
 
 #include "msc/usbd_storage.h"
 
@@ -151,5 +143,17 @@ void mscWaitForButton(void)
             NVIC_SystemReset();
         }
     }
+}
+
+void systemResetToMsc(void)
+{
+    if (mpuResetFn) {
+        mpuResetFn();
+    }
+
+    *((uint32_t *)0x2001FFF0) = MSC_MAGIC;
+
+    __disable_irq();
+    NVIC_SystemReset();
 }
 #endif

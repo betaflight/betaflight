@@ -52,6 +52,7 @@ COMMON_SRC = \
             io/statusindicator.c \
             io/transponder_ir.c \
             io/usb_cdc_hid.c \
+            io/usb_msc.c \
             msp/msp_serial.c \
             scheduler/scheduler.c \
             sensors/adcinternal.c \

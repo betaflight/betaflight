@@ -41,14 +41,10 @@
 
 #include "config/config_eeprom.h"
 #include "config/feature.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
-#include "pg/beeper.h"
-#include "pg/rx.h"
-#include "pg/rx_spi.h"
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/bus_i2c.h"
+#include "drivers/camera_control.h"
 #include "drivers/compass/compass.h"
 #include "drivers/flash.h"
 #include "drivers/io.h"
@@ -58,9 +54,9 @@
 #include "drivers/serial.h"
 #include "drivers/serial_escserial.h"
 #include "drivers/system.h"
-#include "drivers/vtx_common.h"
 #include "drivers/transponder_ir.h"
-#include "drivers/camera_control.h"
+#include "drivers/usb_msc.h"
+#include "drivers/vtx_common.h"
 
 #include "fc/board_info.h"
 #include "fc/config.h"
@@ -96,13 +92,19 @@
 #include "io/serial_4way.h"
 #include "io/servos.h"
 #include "io/transponder_ir.h"
+#include "io/usb_msc.h"
 #include "io/vtx_control.h"
 #include "io/vtx.h"
 #include "io/vtx_string.h"
 
 #include "msp/msp_serial.h"
 
+#include "pg/beeper.h"
 #include "pg/board.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+#include "pg/rx.h"
+#include "pg/rx_spi.h"
 #include "pg/vcd.h"
 
 #include "rx/rx.h"
@@ -128,6 +130,15 @@
 #endif
 
 static const char * const flightControllerIdentifier = BETAFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
+
+enum {
+    MSP_REBOOT_FIRMWARE = 0,
+    MSP_REBOOT_BOOTLOADER,
+    MSP_REBOOT_MSC,
+    MSP_REBOOT_COUNT,
+};
+
+static uint8_t rebootMode;
 
 #ifndef USE_OSD_SLAVE
 
@@ -232,7 +243,26 @@ static void mspRebootFn(serialPort_t *serialPort)
 #ifndef USE_OSD_SLAVE
     stopPwmAllMotors();
 #endif
-    systemReset();
+
+    switch (rebootMode) {
+    case MSP_REBOOT_FIRMWARE:
+        systemReset();
+
+        break;
+    case MSP_REBOOT_BOOTLOADER:
+        systemResetToBootloader();
+
+        break;
+#if defined(USE_USB_MSC)
+    case MSP_REBOOT_MSC:
+        systemResetToMsc();
+
+        break;
+#endif
+    default:
+    
+        break;
+    }
 
     // control should never return here.
     while (true) ;
@@ -410,6 +440,8 @@ static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, const uin
  */
 static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
 {
+    UNUSED(mspPostProcessFn);
+
     switch (cmdMSP) {
     case MSP_API_VERSION:
         sbufWriteU8(dst, MSP_PROTOCOL_VERSION);
@@ -484,12 +516,6 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteData(dst, buildDate, BUILD_DATE_LENGTH);
         sbufWriteData(dst, buildTime, BUILD_TIME_LENGTH);
         sbufWriteData(dst, shortGitRevision, GIT_SHORT_REVISION_LENGTH);
-        break;
-
-    case MSP_REBOOT:
-        if (mspPostProcessFn) {
-            *mspPostProcessFn = mspRebootFn;
-        }
         break;
 
     case MSP_ANALOG:
@@ -1331,28 +1357,54 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
     }
     return !unsupportedCommand;
 }
+#endif // USE_OSD_SLAVE
 
-static mspResult_e mspFcProcessOutCommandWithArg(uint8_t cmdMSP, sbuf_t *arg, sbuf_t *dst)
+static mspResult_e mspFcProcessOutCommandWithArg(uint8_t cmdMSP, sbuf_t *src, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
 {
+#if defined(USE_OSD_SLAVE)
+        UNUSED(dst);
+#endif
+
     switch (cmdMSP) {
+#if !defined(USE_OSD_SLAVE)
     case MSP_BOXNAMES:
         {
-            const int page = sbufBytesRemaining(arg) ? sbufReadU8(arg) : 0;
+            const int page = sbufBytesRemaining(src) ? sbufReadU8(src) : 0;
             serializeBoxReply(dst, page, &serializeBoxNameFn);
         }
         break;
     case MSP_BOXIDS:
         {
-            const int page = sbufBytesRemaining(arg) ? sbufReadU8(arg) : 0;
+            const int page = sbufBytesRemaining(src) ? sbufReadU8(src) : 0;
             serializeBoxReply(dst, page, &serializeBoxPermanentIdFn);
         }
+        break;
+#endif
+    case MSP_REBOOT:
+        if (sbufBytesRemaining(src)) {
+            rebootMode = sbufReadU8(src);
+
+            if (rebootMode >= MSP_REBOOT_COUNT || (rebootMode == MSP_REBOOT_MSC
+#if defined(USE_USB_MSC)
+                && !mscCheckFilesystemReady()
+#endif
+                )) {
+                return MSP_RESULT_ERROR;
+            }
+        } else {
+            rebootMode = MSP_REBOOT_FIRMWARE;
+        }
+
+        if (mspPostProcessFn) {
+            *mspPostProcessFn = mspRebootFn;
+        }
+
         break;
     default:
         return MSP_RESULT_CMD_UNKNOWN;
     }
     return MSP_RESULT_ACK;
 }
-#endif // USE_OSD_SLAVE
 
 #ifdef USE_FLASHFS
 static void mspFcDataFlashReadCommand(sbuf_t *dst, sbuf_t *src)
@@ -2130,8 +2182,9 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 }
 #endif // USE_OSD_SLAVE
 
-static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
+static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src, mspPostProcessFnPtr *mspPostProcessFn)
 {
+    UNUSED(mspPostProcessFn);
     const unsigned int dataSize = sbufBytesRemaining(src);
     UNUSED(dataSize); // maybe unused due to compiler options
 
@@ -2329,10 +2382,8 @@ mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostPro
         ret = MSP_RESULT_ACK;
     } else if (mspProcessOutCommand(cmdMSP, dst)) {
         ret = MSP_RESULT_ACK;
-#ifndef USE_OSD_SLAVE
-    } else if ((ret = mspFcProcessOutCommandWithArg(cmdMSP, src, dst)) != MSP_RESULT_CMD_UNKNOWN) {
+    } else if ((ret = mspFcProcessOutCommandWithArg(cmdMSP, src, dst, mspPostProcessFn)) != MSP_RESULT_CMD_UNKNOWN) {
         /* ret */;
-#endif
 #ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
     } else if (cmdMSP == MSP_SET_4WAY_IF) {
         mspFc4waySerialCommand(dst, src, mspPostProcessFn);
@@ -2344,7 +2395,7 @@ mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostPro
         ret = MSP_RESULT_ACK;
 #endif
     } else {
-        ret = mspCommonProcessInCommand(cmdMSP, src);
+        ret = mspCommonProcessInCommand(cmdMSP, src, mspPostProcessFn);
     }
     reply->result = ret;
     return ret;

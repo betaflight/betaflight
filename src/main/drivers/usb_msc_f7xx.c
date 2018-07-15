@@ -42,6 +42,8 @@
 #include "drivers/time.h"
 #include "drivers/usb_msc.h"
 
+#include "drivers/accgyro/accgyro_mpu.h"
+
 #include "pg/usb.h"
 
 #include "vcp_hal/usbd_cdc_interface.h"
@@ -147,5 +149,17 @@ void mscWaitForButton(void)
             NVIC_SystemReset();
         }
     }
+}
+
+void systemResetToMsc(void)
+{
+    if (mpuResetFn) {
+        mpuResetFn();
+    }
+
+    *((__IO uint32_t*) BKPSRAM_BASE + 16) = MSC_MAGIC;
+
+    __disable_irq();
+    NVIC_SystemReset();
 }
 #endif

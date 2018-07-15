@@ -18,17 +18,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
- * Author: Chris Hockuba (https://github.com/conkerkh)
- */
-
 #pragma once
 
-#define MSC_MAGIC 0xDDDD1010
-
-void mscInit(void);
-bool mscCheckBoot(void);
-uint8_t mscStart(void);
-bool mscCheckButton(void);
-void mscWaitForButton(void);
-void systemResetToMsc(void);
+bool mscCheckFilesystemReady(void);

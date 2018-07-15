@@ -11,7 +11,7 @@
  * will be useful, but WITHOUT ANY WARRANTY; without even the implied
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
- *
+*
  * You should have received a copy of the GNU General Public License
  * along with this software.
  *
@@ -62,28 +62,28 @@ extern uint8_t __config_end;
 #include "drivers/adc.h"
 #include "drivers/buf_writer.h"
 #include "drivers/bus_spi.h"
+#include "drivers/camera_control.h"
 #include "drivers/compass/compass.h"
 #include "drivers/display.h"
 #include "drivers/dma.h"
 #include "drivers/flash.h"
+#include "drivers/inverter.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
-#include "drivers/inverter.h"
+#include "drivers/light_led.h"
+#include "drivers/rangefinder/rangefinder_hcsr04.h"
 #include "drivers/sdcard.h"
 #include "drivers/sensor.h"
 #include "drivers/serial.h"
 #include "drivers/serial_escserial.h"
-#include "drivers/rangefinder/rangefinder_hcsr04.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/stack_check.h"
 #include "drivers/system.h"
-#include "drivers/transponder_ir.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
-#include "drivers/light_led.h"
-#include "drivers/camera_control.h"
-#include "drivers/vtx_common.h"
+#include "drivers/transponder_ir.h"
 #include "drivers/usb_msc.h"
+#include "drivers/vtx_common.h"
 
 #include "fc/board_info.h"
 #include "fc/config.h"
@@ -116,6 +116,7 @@ extern uint8_t __config_end;
 #include "io/osd.h"
 #include "io/serial.h"
 #include "io/transponder_ir.h"
+#include "io/usb_msc.h"
 #include "io/vtx_control.h"
 #include "io/vtx.h"
 
@@ -4364,40 +4365,21 @@ static void cliDiff(char *cmdline)
     printConfig(cmdline, true);
 }
 
-#ifdef USE_USB_MSC
+#if defined(USE_USB_MSC)
 static void cliMsc(char *cmdline)
 {
     UNUSED(cmdline);
 
-    if (false
-#ifdef USE_SDCARD
-        || sdcard_isFunctional()
-#endif
-#ifdef USE_FLASHFS
-        || flashfsGetSize() > 0
-#endif
-    ) {
-        cliPrintHashLine("restarting in mass storage mode");
+    if (mscCheckFilesystemReady()) {
+        cliPrintHashLine("Restarting in mass storage mode");
         cliPrint("\r\nRebooting");
         bufWriterFlush(cliWriter);
-        delay(1000);
         waitForSerialPortToFinishTransmitting(cliPort);
         stopPwmAllMotors();
-        if (mpuResetFn) {
-            mpuResetFn();
-        }
 
-#ifdef STM32F7
-        *((__IO uint32_t*) BKPSRAM_BASE + 16) = MSC_MAGIC;
-#elif defined(STM32F4)
-        *((uint32_t *)0x2001FFF0) = MSC_MAGIC;
-#endif
-
-        __disable_irq();
-        NVIC_SystemReset();
+        systemResetToMsc();
     } else {
-        cliPrint("\r\nStorage not present or failed to initialize!");
-        bufWriterFlush(cliWriter);
+        cliPrintHashLine("Storage not present or failed to initialize!");
     }
 }
 #endif
