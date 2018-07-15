@@ -1112,21 +1112,6 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteData(dst, rxConfig()->rcmap, RX_MAPPABLE_CHANNEL_COUNT);
         break;
 
-    case MSP_BF_CONFIG:
-        sbufWriteU8(dst, mixerConfig()->mixerMode);
-
-        sbufWriteU32(dst, featureMask());
-
-        sbufWriteU8(dst, rxConfig()->serialrx_provider);
-
-        sbufWriteU16(dst, boardAlignment()->rollDegrees);
-        sbufWriteU16(dst, boardAlignment()->pitchDegrees);
-        sbufWriteU16(dst, boardAlignment()->yawDegrees);
-
-        sbufWriteU16(dst, 0); // was currentMeterScale, see MSP_CURRENT_METER_CONFIG
-        sbufWriteU16(dst, 0); //was currentMeterOffset, see MSP_CURRENT_METER_CONFIG
-        break;
-
     case MSP_CF_SERIAL_CONFIG:
         for (int i = 0; i < SERIAL_PORT_COUNT; i++) {
             if (!serialIsPortAvailable(serialConfig()->portConfigs[i].identifier)) {
@@ -1996,25 +1981,6 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         for (int i = 0; i < RX_MAPPABLE_CHANNEL_COUNT; i++) {
             rxConfigMutable()->rcmap[i] = sbufReadU8(src);
         }
-        break;
-
-    case MSP_SET_BF_CONFIG:
-#ifdef USE_QUAD_MIXER_ONLY
-        sbufReadU8(src); // mixerMode ignored
-#else
-        mixerConfigMutable()->mixerMode = sbufReadU8(src); // mixerMode
-#endif
-
-        featureClearAll();
-        featureSet(sbufReadU32(src)); // features bitmap
-
-        rxConfigMutable()->serialrx_provider = sbufReadU8(src); // serialrx_type
-
-        boardAlignmentMutable()->rollDegrees = sbufReadU16(src); // board_align_roll
-        boardAlignmentMutable()->pitchDegrees = sbufReadU16(src); // board_align_pitch
-        boardAlignmentMutable()->yawDegrees = sbufReadU16(src); // board_align_
-        sbufReadU16(src); // was currentMeterScale, see MSP_SET_CURRENT_METER_CONFIG
-        sbufReadU16(src); // was currentMeterOffset see MSP_SET_CURRENT_METER_CONFIG
         break;
 
     case MSP_SET_CF_SERIAL_CONFIG:
