@@ -944,7 +944,9 @@ static bool osdDrawSingleElement(uint8_t item)
 
 #ifdef USE_OSD_ADJUSTMENTS
     case OSD_ADJUSTMENT_RANGE:
-        tfp_sprintf(buff, "%s: %3d", adjustmentRangeName, adjustmentRangeValue);
+        if (getAdjustmentsRangeName()) {
+            tfp_sprintf(buff, "%s: %3d", getAdjustmentsRangeName(), getAdjustmentsRangeValue());
+        }
         break;
 #endif
 
