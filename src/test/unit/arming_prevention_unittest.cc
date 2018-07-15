@@ -616,7 +616,7 @@ TEST(ArmingPreventionTest, ParalyzeOnAtBoot)
 {
     // given
     simulationFeatureFlags = 0;
-    simulationTime = 30e6; // 30 seconds after boot
+    simulationTime = 0;
     gyroCalibDone = true;
 
     // and
@@ -660,7 +660,7 @@ TEST(ArmingPreventionTest, Paralyze)
 {
     // given
     simulationFeatureFlags = 0;
-    simulationTime = 30e6; // 30 seconds after boot
+    simulationTime = 0;
     gyroCalibDone = true;
 
     // and
@@ -686,7 +686,7 @@ TEST(ArmingPreventionTest, Paralyze)
     // given
     rcData[THROTTLE] = 1000;
     rcData[AUX1] = 1000;
-    rcData[AUX2] = 1000;
+    rcData[AUX2] = 1800; // Start out with paralyze enabled
     rcData[AUX3] = 1000;
     ENABLE_STATE(SMALL_ANGLE);
 
@@ -726,9 +726,28 @@ TEST(ArmingPreventionTest, Paralyze)
     EXPECT_FALSE(ARMING_FLAG(ARMED));
     EXPECT_FALSE(isArmingDisabled());
     EXPECT_EQ(0, getArmingDisableFlags());
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXPARALYZE));
 
     // given
-    // paralyze (and activate linked vtx pit mode)
+    simulationTime = 10e6; // 10 seconds after boot
+
+    // when
+    updateActivatedModes();
+
+    // expect
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+    EXPECT_FALSE(isArmingDisabled());
+    EXPECT_EQ(0, getArmingDisableFlags());
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXPARALYZE));
+
+    // given
+    // disable paralyze once after the startup timer
+    rcData[AUX2] = 1000;
+
+    // when
+    updateActivatedModes();
+
+    // enable paralyze again
     rcData[AUX2] = 1800;
 
     // when
@@ -738,6 +757,7 @@ TEST(ArmingPreventionTest, Paralyze)
     // expect
     EXPECT_TRUE(isArmingDisabled());
     EXPECT_EQ(ARMING_DISABLED_PARALYZE, getArmingDisableFlags());
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXPARALYZE));
     EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXVTXPITMODE));
     EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXBEEPERON));
 

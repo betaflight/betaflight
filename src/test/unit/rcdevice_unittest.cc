@@ -888,6 +888,7 @@ extern "C" {
     }
     
     uint32_t millis(void) { return testData.millis++; }
+    uint32_t micros(void) { return millis() * 1000; }
     void beeper(beeperMode_e mode) { UNUSED(mode); }
     uint8_t armingFlags = 0;
     bool cmsInMenu;

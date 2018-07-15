@@ -555,6 +555,11 @@ uint32_t millis(void)
     return sysTickUptime;
 }
 
+uint32_t micros(void)
+{
+    return millis() * 1000;
+}
+
 throttleStatus_e calculateThrottleStatus()
 {
     return throttleStatus;

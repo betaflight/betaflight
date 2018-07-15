@@ -28,6 +28,7 @@
 
 #include "common/bitarray.h"
 #include "common/maths.h"
+#include "drivers/time.h"
 
 #include "config/feature.h"
 #include "pg/pg.h"
@@ -112,7 +113,7 @@ void updateActivatedModes(void)
                 if (paralyzeModeEverDisabled) {
                     updateMasksForMac(mac, &andMask, &newMask);
                 } else {
-                    paralyzeModeEverDisabled = !isRangeActive(mac->auxChannelIndex, &mac->range);
+                    paralyzeModeEverDisabled = micros() >= 5e6 && !isRangeActive(mac->auxChannelIndex, &mac->range);
                 }
             }
         } else if (mode < CHECKBOX_ITEM_COUNT) {
