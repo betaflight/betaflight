@@ -1126,6 +1126,11 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
 #endif
+#if defined(USE_USB_CDC_HID)
+        sbufWriteU8(dst, usbDevConfig()->type);
+#else
+        sbufWriteU8(dst, 0);
+#endif
 
         break;
     case MSP_FAILSAFE_CONFIG:
@@ -2054,6 +2059,11 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             sbufReadU8(src);
             sbufReadU8(src);
             sbufReadU8(src);
+            sbufReadU8(src);
+#endif
+#if defined(USE_USB_CDC_HID)
+            usbDevConfigMutable()->type = sbufReadU8(src);
+#else
             sbufReadU8(src);
 #endif
         }
