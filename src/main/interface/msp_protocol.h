@@ -161,10 +161,9 @@
 #define MSP_RX_MAP                      64 //out message get channel map (also returns number of channels total)
 #define MSP_SET_RX_MAP                  65 //in message set rx map, numchannels to set comes from MSP_RX_MAP
 
-// FIXME - Provided for backwards compatibility with configurator code until configurator is updated.
 // DEPRECATED - DO NOT USE "MSP_BF_CONFIG" and MSP_SET_BF_CONFIG.  In Cleanflight, isolated commands already exist and should be used instead.
-#define MSP_BF_CONFIG                   66 //out message baseflight-specific settings that aren't covered elsewhere
-#define MSP_SET_BF_CONFIG               67 //in message baseflight-specific settings save
+// DEPRECATED - #define MSP_BF_CONFIG                   66 //out message baseflight-specific settings that aren't covered elsewhere
+// DEPRECATED - #define MSP_SET_BF_CONFIG               67 //in message baseflight-specific settings save
 
 #define MSP_REBOOT                      68 //in message reboot settings
 
