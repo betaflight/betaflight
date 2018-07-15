@@ -530,9 +530,6 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         break;
 
     case MSP_DEBUG:
-        // output some useful QA statistics
-        // debug[x] = ((hse_value / 1000000) * 1000) + (SystemCoreClock / 1000000);         // XX0YY [crystal clock : core clock]
-
         for (int i = 0; i < DEBUG16_VALUE_COUNT; i++) {
             sbufWriteU16(dst, debug[i]);      // 4 variables are here for general monitoring purpose
         }
@@ -1302,11 +1299,38 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, currentPidProfile->itermThrottleThreshold);
         sbufWriteU16(dst, currentPidProfile->itermAcceleratorGain);
         sbufWriteU16(dst, currentPidProfile->dtermSetpointWeight);
+        sbufWriteU8(dst, currentPidProfile->iterm_rotation);
+#if defined(USE_SMART_FEEDFORWARD)
         sbufWriteU8(dst, currentPidProfile->smart_feedforward);
-        sbufWriteU8(dst, currentPidProfile->throttle_boost);
-        sbufWriteU8(dst, currentPidProfile->throttle_boost_cutoff);
-        break;
+#else
+        sbufWriteU8(dst, 0);
+#endif
+#if defined(USE_ITERM_RELAX)
+        sbufWriteU8(dst, currentPidProfile->iterm_relax);
+#else
+        sbufWriteU8(dst, 0);
+#endif
+#if defined(USE_ABSOLUTE_CONTROL)
+        sbufWriteU8(dst, currentPidProfile->abs_control_gain);
+        sbufWriteU8(dst, currentPidProfile->abs_control_limit);
+        sbufWriteU8(dst, currentPidProfile->abs_control_error_limit);
+#else
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
+#endif
+#if defined(USE_ACRO_TRAINER)
+        sbufWriteU8(dst, currentPidProfile->acro_trainer_angle_limit);
+        sbufWriteU16(dst, currentPidProfile->acro_trainer_lookahead_ms);
+        sbufWriteU8(dst, currentPidProfile->acro_trainer_gain);
+#else
+        sbufWriteU8(dst, 0);
+        sbufWriteU16(dst, 0);
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
+#endif
 
+        break;
     case MSP_SENSOR_CONFIG:
         sbufWriteU8(dst, accelerometerConfig()->acc_hardware);
         sbufWriteU8(dst, barometerConfig()->baro_hardware);
@@ -1825,14 +1849,41 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         if (sbufBytesRemaining(src) >= 2) {
             currentPidProfile->dtermSetpointWeight = sbufReadU16(src);
         }
-        if (sbufBytesRemaining(src) >= 3) {
+        if (sbufBytesRemaining(src) >= 10) {
+            // Added in MSP API 1.40
+            currentPidProfile->iterm_rotation = sbufReadU8(src);
+#if defined(USE_SMART_FEEDFORWARD)
             currentPidProfile->smart_feedforward = sbufReadU8(src);
-            currentPidProfile->throttle_boost = sbufReadU8(src);
-            currentPidProfile->throttle_boost_cutoff = sbufReadU8(src);
+#else
+            sbufReadU8(src);
+#endif
+#if defined(USE_ITERM_RELAX)
+            currentPidProfile->iterm_relax = sbufReadU8(src);
+#else
+            sbufReadU8(src);
+#endif
+#if defined(USE_ABSOLUTE_CONTROL)
+            currentPidProfile->abs_control_gain = sbufReadU8(src);
+            currentPidProfile->abs_control_limit = sbufReadU8(src);
+            currentPidProfile->abs_control_error_limit = sbufReadU8(src);
+#else
+            sbufReadU8(src);
+            sbufReadU8(src);
+            sbufReadU8(src);
+#endif
+#if defined(USE_ACRO_TRAINER)
+            currentPidProfile->acro_trainer_angle_limit = sbufReadU8(src);
+            currentPidProfile->acro_trainer_lookahead_ms = sbufReadU16(src);
+            currentPidProfile->acro_trainer_gain = sbufReadU8(src);
+#else
+            sbufReadU8(src);
+            sbufReadU16(src);
+            sbufReadU8(src);
+#endif
         }
         pidInitConfig(currentPidProfile);
-        break;
 
+        break;
     case MSP_SET_SENSOR_CONFIG:
         accelerometerConfigMutable()->acc_hardware = sbufReadU8(src);
         barometerConfigMutable()->baro_hardware = sbufReadU8(src);
@@ -2481,19 +2532,15 @@ void mspFcProcessReply(mspPacket_t *reply)
 
             switch (subCmd) {
             case 0: // HEARTBEAT
-                //debug[0]++;
                 osdSlaveHeartbeat();
                 break;
             case 1: // RELEASE
-                //debug[1]++;
                 break;
             case 2: // CLEAR
-                //debug[2]++;
                 osdSlaveClearScreen();
                 break;
             case 3:
                 {
-                    //debug[3]++;
 #define MSP_OSD_MAX_STRING_LENGTH 30 // FIXME move this
                     const uint8_t y = sbufReadU8(src); // row
                     const uint8_t x = sbufReadU8(src); // column
