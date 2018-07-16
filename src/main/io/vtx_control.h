@@ -40,6 +40,7 @@ typedef struct vtxChannelActivationCondition_s {
 typedef struct vtxConfig_s {
     vtxChannelActivationCondition_t vtxChannelActivationConditions[MAX_CHANNEL_ACTIVATION_CONDITION_COUNT];
     uint8_t halfDuplex;
+    uint8_t pullDown;
 } vtxConfig_t;
 
 PG_DECLARE(vtxConfig_t, vtxConfig);
