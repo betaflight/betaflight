@@ -18,28 +18,16 @@ addons:
 git:
   depth: 5
 
-# We use cpp for unit tests, and c for the main project.
-language: cpp
+language: cpp # We use cpp for unit tests, and c for the main project.
 compiler: clang
 
 env:
-#  - PUBLISHMETA=True
-#  - PUBLISHDOCS=True
-# Specify the main Mafile supported goals.
+  - GOAL=targets-group-rest
   - GOAL=test
   - GOAL=targets-group-1
   - GOAL=targets-group-2
   - GOAL=targets-group-3
   - GOAL=targets-group-4
-  - GOAL=targets-group-rest
-#  - GOAL=all
-#  - GOAL=AFROMINI
-#  - GOAL=AIORACERF3
-#  - GOAL=...
-# Or specify targets to run.
-#  - TARGET=AFROMINI
-#  - TARGET=AIORACERF3
-#  - TARGET=...
 
 before_install:
   - pip install --user cpp-coveralls
@@ -70,4 +58,4 @@ notifications:
       - https://webhooks.gitter.im/e/0c20f7a1a7e311499a88
     on_success: always  # options: [always|never|change] default: always
     on_failure: always  # options: [always|never|change] default: always
-    on_start: always     # options: [always|never|change] default: always
+    on_start: always    # options: [always|never|change] default: always
