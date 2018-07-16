@@ -1086,6 +1086,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, 0);
 #endif
         sbufWriteU8(dst, rxConfig()->fpvCamAngleDegrees);
+        sbufWriteU8(dst, rxConfig()->rcInterpolationChannels);
 #if defined(USE_RC_SMOOTHING_FILTER)
         sbufWriteU8(dst, rxConfig()->rc_smoothing_type);
         sbufWriteU8(dst, rxConfig()->rc_smoothing_input_cutoff);
@@ -1965,8 +1966,9 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         if (sbufBytesRemaining(src) >= 1) {
             rxConfigMutable()->fpvCamAngleDegrees = sbufReadU8(src);
         }
-        if (sbufBytesRemaining(src) >= 5) {
+        if (sbufBytesRemaining(src) >= 6) {
             // Added in MSP API 1.40
+            rxConfigMutable()->rcInterpolationChannels = sbufReadU8(src);
 #if defined(USE_RC_SMOOTHING_FILTER)
             rxConfigMutable()->rc_smoothing_type = sbufReadU8(src);
             rxConfigMutable()->rc_smoothing_input_cutoff = sbufReadU8(src);
