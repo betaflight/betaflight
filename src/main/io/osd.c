@@ -697,7 +697,7 @@ static bool osdDrawSingleElement(uint8_t item)
                 osdGForce += a * a;
             }
             osdGForce = sqrtf(osdGForce) / acc.dev.acc_1G;
-            tfp_sprintf(buff, "%01d.%01d%c", (int)osdGForce, (int)(osdGForce * 10) % 10, "G");
+            tfp_sprintf(buff, "%01d.%01d%c", (int)osdGForce, (int)(osdGForce * 10) % 10, "g");
             break;
         }
 
