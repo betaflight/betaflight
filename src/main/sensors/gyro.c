@@ -1003,6 +1003,18 @@ static FAST_CODE void checkForYawSpin(gyroSensor_t *gyroSensor, timeUs_t current
 }
 #endif // USE_YAW_SPIN_RECOVERY
 
+#define GYRO_FILTER_FUNCTION_NAME filterGyro
+#define GYRO_FILTER_DEBUG_SET(...)
+#include "gyro_filter_impl.h"
+#undef GYRO_FILTER_FUNCTION_NAME
+#undef GYRO_FILTER_DEBUG_SET
+
+#define GYRO_FILTER_FUNCTION_NAME filterGyroDebug
+#define GYRO_FILTER_DEBUG_SET DEBUG_SET
+#include "gyro_filter_impl.h"
+#undef GYRO_FILTER_FUNCTION_NAME
+#undef GYRO_FILTER_DEBUG_SET
+
 static FAST_CODE FAST_CODE_NOINLINE void gyroUpdateSensor(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
 {
     if (!gyroSensor->gyroDev.readFn(&gyroSensor->gyroDev)) {
@@ -1053,60 +1065,9 @@ static FAST_CODE FAST_CODE_NOINLINE void gyroUpdateSensor(gyroSensor_t *gyroSens
 #endif
 
     if (gyroDebugMode == DEBUG_NONE) {
-        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            // NOTE: this branch optimized for when there is no gyro debugging, ensure it is kept in step with non-optimized branch
-            float gyroADCf = gyroSensor->gyroDev.gyroADC[axis] * gyroSensor->gyroDev.scale;
-
-#ifdef USE_GYRO_DATA_ANALYSE
-            gyroADCf = gyroSensor->notchFilterDynApplyFn((filter_t *)&gyroSensor->notchFilterDyn[axis], gyroADCf);
-#endif
-            gyroADCf = gyroSensor->notchFilter1ApplyFn((filter_t *)&gyroSensor->notchFilter1[axis], gyroADCf);
-            gyroADCf = gyroSensor->notchFilter2ApplyFn((filter_t *)&gyroSensor->notchFilter2[axis], gyroADCf);
-            gyroADCf = gyroSensor->lowpassFilterApplyFn((filter_t *)&gyroSensor->lowpassFilter[axis], gyroADCf);
-            gyroADCf = gyroSensor->lowpass2FilterApplyFn((filter_t *)&gyroSensor->lowpass2Filter[axis], gyroADCf);
-            gyroSensor->gyroDev.gyroADCf[axis] = gyroADCf;
-
-            if (!gyroSensor->overflowDetected) {
-                // integrate using trapezium rule to avoid bias
-                accumulatedMeasurements[axis] += 0.5f * (gyroPrevious[axis] + gyroADCf) * sampleDeltaUs;
-                gyroPrevious[axis] = gyroADCf;
-            }
-        }
+        filterGyro(gyroSensor, sampleDeltaUs);
     } else {
-        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            DEBUG_SET(DEBUG_GYRO_RAW, axis, gyroSensor->gyroDev.gyroADCRaw[axis]);
-            // scale gyro output to degrees per second
-            float gyroADCf = gyroSensor->gyroDev.gyroADC[axis] * gyroSensor->gyroDev.scale;
-            // DEBUG_GYRO_SCALED records the unfiltered, scaled gyro output
-            DEBUG_SET(DEBUG_GYRO_SCALED, axis, lrintf(gyroADCf));
-
-#ifdef USE_GYRO_DATA_ANALYSE
-            // apply dynamic notch filter
-            if (isDynamicFilterActive()) {
-                if (axis == X) {
-                    DEBUG_SET(DEBUG_FFT, 0, lrintf(gyroADCf)); // store raw data
-                }
-                gyroADCf = gyroSensor->notchFilterDynApplyFn((filter_t *)&gyroSensor->notchFilterDyn[axis], gyroADCf);
-                if (axis == X) {
-                    DEBUG_SET(DEBUG_FFT, 1, lrintf(gyroADCf)); // store data after dynamic notch
-                }
-            }
-#endif
-            // apply static notch filters and software lowpass filters
-            gyroADCf = gyroSensor->notchFilter1ApplyFn((filter_t *)&gyroSensor->notchFilter1[axis], gyroADCf);
-            gyroADCf = gyroSensor->notchFilter2ApplyFn((filter_t *)&gyroSensor->notchFilter2[axis], gyroADCf);
-            gyroADCf = gyroSensor->lowpassFilterApplyFn((filter_t *)&gyroSensor->lowpassFilter[axis], gyroADCf);
-            gyroADCf = gyroSensor->lowpass2FilterApplyFn((filter_t *)&gyroSensor->lowpass2Filter[axis], gyroADCf);
-            // DEBUG_GYRO_FILTERED records the scaled, filtered, after all software filtering has been applied.
-            DEBUG_SET(DEBUG_GYRO_FILTERED, axis, lrintf(gyroADCf));
-
-            gyroSensor->gyroDev.gyroADCf[axis] = gyroADCf;
-            if (!gyroSensor->overflowDetected) {
-                // integrate using trapezium rule to avoid bias
-                accumulatedMeasurements[axis] += 0.5f * (gyroPrevious[axis] + gyroADCf) * sampleDeltaUs;
-                gyroPrevious[axis] = gyroADCf;
-            }
-        }
+        filterGyroDebug(gyroSensor, sampleDeltaUs);
     }
 }
 
