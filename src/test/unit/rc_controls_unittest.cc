@@ -224,6 +224,10 @@ extern "C" {
 uint32_t millis(void) {
     return fixedMillis;
 }
+
+uint32_t micros(void) {
+    return fixedMillis * 1000;
+}
 }
 
 void resetMillis(void) {

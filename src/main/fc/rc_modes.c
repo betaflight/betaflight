@@ -28,6 +28,7 @@
 
 #include "common/bitarray.h"
 #include "common/maths.h"
+#include "drivers/time.h"
 
 #include "config/feature.h"
 #include "pg/pg.h"
@@ -39,9 +40,10 @@
 
 #include "rx/rx.h"
 
-boxBitmask_t rcModeActivationMask; // one bit per mode defined in boxId_e
+#define STICKY_MODE_BOOT_DELAY_US 5e6
 
-static bool paralyzeModeEverDisabled = false;
+boxBitmask_t rcModeActivationMask; // one bit per mode defined in boxId_e
+static boxBitmask_t stickyModesEverDisabled;
 
 PG_REGISTER_ARRAY(modeActivationCondition_t, MAX_MODE_ACTIVATION_CONDITION_COUNT, modeActivationConditions,
                   PG_MODE_ACTIVATION_PROFILE, 1);
@@ -74,48 +76,52 @@ bool isRangeActive(uint8_t auxChannelIndex, const channelRange_t *range) {
             channelValue < 900 + (range->endStep * 25));
 }
 
-void updateMasksForMac(const modeActivationCondition_t *mac, boxBitmask_t *andMask, boxBitmask_t *newMask) {
-    boxId_e mode = mac->modeId;
-
-    bool bAnd = (mac->modeLogic == MODELOGIC_AND) || bitArrayGet(andMask, mode);
+void updateMasksForMac(const modeActivationCondition_t *mac, boxBitmask_t *andMask, boxBitmask_t *newMask)
+{
+    bool bAnd = (mac->modeLogic == MODELOGIC_AND) || bitArrayGet(andMask, mac->modeId);
     bool bAct = isRangeActive(mac->auxChannelIndex, &mac->range);
     if (bAnd)
-        bitArraySet(andMask, mode);
+        bitArraySet(andMask, mac->modeId);
     if (bAnd != bAct)
-        bitArraySet(newMask, mode);
+        bitArraySet(newMask, mac->modeId);
+}
+
+void updateMasksForStickyModes(const modeActivationCondition_t *mac, boxBitmask_t *andMask, boxBitmask_t *newMask)
+{
+    if (IS_RC_MODE_ACTIVE(mac->modeId)) {
+        bitArrayClr(andMask, mac->modeId);
+        bitArraySet(newMask, mac->modeId);
+    } else {
+        if (bitArrayGet(&stickyModesEverDisabled, mac->modeId)) {
+            updateMasksForMac(mac, andMask, newMask);
+        } else {
+            if (micros() >= STICKY_MODE_BOOT_DELAY_US && !isRangeActive(mac->auxChannelIndex, &mac->range)) {
+                bitArraySet(&stickyModesEverDisabled, mac->modeId);
+            }
+        }
+    }
 }
 
 void updateActivatedModes(void)
 {
-    boxBitmask_t newMask, andMask;
+    boxBitmask_t newMask, andMask, stickyModes;
     memset(&andMask, 0, sizeof(andMask));
     memset(&newMask, 0, sizeof(newMask));
+    memset(&stickyModes, 0, sizeof(stickyModes));
+    bitArraySet(&stickyModes, BOXPARALYZE);
 
     // determine which conditions set/clear the mode
     for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
         const modeActivationCondition_t *mac = modeActivationConditions(i);
 
-        boxId_e mode = mac->modeId;
-
         // Skip linked macs for now to fully determine target states
-        boxId_e linkedTo = mac->linkedTo;
-        if (linkedTo) {
+        if (mac->linkedTo) {
             continue;
         }
 
-        // Ensure sticky modes are sticky
-        if (mode == BOXPARALYZE) {
-            if (IS_RC_MODE_ACTIVE(BOXPARALYZE)) {
-                bitArrayClr(&andMask, mode);
-                bitArraySet(&newMask, mode);
-            } else {
-                if (paralyzeModeEverDisabled) {
-                    updateMasksForMac(mac, &andMask, &newMask);
-                } else {
-                    paralyzeModeEverDisabled = !isRangeActive(mac->auxChannelIndex, &mac->range);
-                }
-            }
-        } else if (mode < CHECKBOX_ITEM_COUNT) {
+        if (bitArrayGet(&stickyModes, mac->modeId)) {
+            updateMasksForStickyModes(mac, &andMask, &newMask);
+        } else if (mac->modeId < CHECKBOX_ITEM_COUNT) {
             updateMasksForMac(mac, &andMask, &newMask);
         }
     }
@@ -126,13 +132,11 @@ void updateActivatedModes(void)
     for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
         const modeActivationCondition_t *mac = modeActivationConditions(i);
 
-        boxId_e linkedTo = mac->linkedTo;
-        if (!linkedTo) {
+        if (!mac->linkedTo) {
             continue;
         }
 
-        boxId_e mode = mac->modeId;
-        bitArrayCopy(&newMask, linkedTo, mode);
+        bitArrayCopy(&newMask, mac->linkedTo, mac->modeId);
     }
 
     rcModeUpdate(&newMask);
