@@ -105,6 +105,7 @@
 #include "pg/pg_ids.h"
 #include "pg/rx.h"
 #include "pg/rx_spi.h"
+#include "pg/usb.h"
 #include "pg/vcd.h"
 
 #include "rx/rx.h"
