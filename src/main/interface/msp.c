@@ -1112,8 +1112,22 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, 0);
 #endif
         sbufWriteU8(dst, rxConfig()->fpvCamAngleDegrees);
-        break;
+        sbufWriteU8(dst, rxConfig()->rcInterpolationChannels);
+#if defined(USE_RC_SMOOTHING_FILTER)
+        sbufWriteU8(dst, rxConfig()->rc_smoothing_type);
+        sbufWriteU8(dst, rxConfig()->rc_smoothing_input_cutoff);
+        sbufWriteU8(dst, rxConfig()->rc_smoothing_derivative_cutoff);
+        sbufWriteU8(dst, rxConfig()->rc_smoothing_input_type);
+        sbufWriteU8(dst, rxConfig()->rc_smoothing_derivative_type);
+#else
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
+#endif
 
+        break;
     case MSP_FAILSAFE_CONFIG:
         sbufWriteU8(dst, failsafeConfig()->failsafe_delay);
         sbufWriteU8(dst, failsafeConfig()->failsafe_off_delay);
@@ -2026,8 +2040,25 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         if (sbufBytesRemaining(src) >= 1) {
             rxConfigMutable()->fpvCamAngleDegrees = sbufReadU8(src);
         }
-        break;
+        if (sbufBytesRemaining(src) >= 6) {
+            // Added in MSP API 1.40
+            rxConfigMutable()->rcInterpolationChannels = sbufReadU8(src);
+#if defined(USE_RC_SMOOTHING_FILTER)
+            rxConfigMutable()->rc_smoothing_type = sbufReadU8(src);
+            rxConfigMutable()->rc_smoothing_input_cutoff = sbufReadU8(src);
+            rxConfigMutable()->rc_smoothing_derivative_cutoff = sbufReadU8(src);
+            rxConfigMutable()->rc_smoothing_input_type = sbufReadU8(src);
+            rxConfigMutable()->rc_smoothing_derivative_type = sbufReadU8(src);
+#else
+            sbufReadU8(src);
+            sbufReadU8(src);
+            sbufReadU8(src);
+            sbufReadU8(src);
+            sbufReadU8(src);
+#endif
+        }
 
+        break;
     case MSP_SET_FAILSAFE_CONFIG:
         failsafeConfigMutable()->failsafe_delay = sbufReadU8(src);
         failsafeConfigMutable()->failsafe_off_delay = sbufReadU8(src);
