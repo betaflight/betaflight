@@ -17,7 +17,7 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "HKF4"
-#define USBD_PRODUCT_STRING  "HAKRCF405"
+#define USBD_PRODUCT_STRING  "HAKRCF4"
 
 
 #define LED0_PIN                PC13

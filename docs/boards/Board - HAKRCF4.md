@@ -1,9 +1,9 @@
-# Board - HAKRCF405
+# Board - HAKRCF4
 
 
 ### Hardware and Features
 
-  - Configuration	HAKRC F405 V2.5
+  - Configuration	HAKRCF4 V2.5
   - STM32CubeMX 	4.25.0
   - MCU	STM32F405RGTx
   - IMU: MPU6500/MPU6000 (SPI) 
