@@ -203,8 +203,6 @@ typedef struct smartPortFrame_s {
 
 static smartPortWriteFrameFn *smartPortWriteFrame;
 
-static timeUs_t lastTelemetryFrameReceivedUs;
-
 #if defined(USE_MSP_OVER_TELEMETRY)
 static bool smartPortMspReplyPending = false;
 #endif
@@ -234,7 +232,6 @@ smartPortPayload_t *smartPortDataReceive(uint16_t c, bool *clearToSend, smartPor
         if ((c == FSSP_SENSOR_ID1) && checkQueueEmpty()) {
             // our slot is starting, no need to decode more
             *clearToSend = true;
-            lastTelemetryFrameReceivedUs = micros();
             skipUntilStart = true;
         } else if (c == FSSP_SENSOR_ID2) {
             checksum = 0;
@@ -256,7 +253,6 @@ smartPortPayload_t *smartPortDataReceive(uint16_t c, bool *clearToSend, smartPor
             checksum += c;
 
             if (!useChecksum && (smartPortRxBytes == sizeof(smartPortPayload_t))) {
-                lastTelemetryFrameReceivedUs = micros();
                 skipUntilStart = true;
 
                 return (smartPortPayload_t *)&rxBuffer;
@@ -267,7 +263,6 @@ smartPortPayload_t *smartPortDataReceive(uint16_t c, bool *clearToSend, smartPor
             checksum += c;
             checksum = (checksum & 0xFF) + (checksum >> 8);
             if (checksum == 0xFF) {
-                lastTelemetryFrameReceivedUs = micros();
 
                 return (smartPortPayload_t *)&rxBuffer;
             }
@@ -816,21 +811,17 @@ static bool serialCheckQueueEmpty(void)
 
 void handleSmartPortTelemetry(void)
 {
-    static bool clearToSend = false;
-    static smartPortPayload_t *payload = NULL;
-
     const uint32_t requestTimeout = millis() + SMARTPORT_SERVICE_TIMEOUT_MS;
 
     if (telemetryState == TELEMETRY_STATE_INITIALIZED_SERIAL && smartPortSerialPort) {
+        smartPortPayload_t *payload = NULL;
+        bool clearToSend = false;
         while (serialRxBytesWaiting(smartPortSerialPort) > 0 && !payload) {
             uint8_t c = serialRead(smartPortSerialPort);
             payload = smartPortDataReceive(c, &clearToSend, serialCheckQueueEmpty, true);
         }
 
-        if (cmpTimeUs(micros(), lastTelemetryFrameReceivedUs) >= SMARTPORT_MIN_TELEMETRY_RESPONSE_DELAY_US) {
-            processSmartPortTelemetry(payload, &clearToSend, &requestTimeout);
-            payload = NULL;
-        }
+        processSmartPortTelemetry(payload, &clearToSend, &requestTimeout);
     }
 }
 #endif
