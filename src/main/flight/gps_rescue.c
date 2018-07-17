@@ -123,6 +123,13 @@ void updateGPSRescueState(void)
             hoverThrottle = gpsRescueConfig()->throttleHover;
         }
 
+        // Minimum distance detection (100m).  Disarm regardless of sanity check configuration.  Rescue too close is never a good idea.
+        if (rescueState.sensor.distanceToHome < 100) {
+            rescueState.failure = RESCUE_TOO_CLOSE;
+            setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+            disarm();
+        }
+
         rescueState.phase = RESCUE_ATTAIN_ALT;
         FALLTHROUGH;
     case RESCUE_ATTAIN_ALT:
@@ -283,11 +290,6 @@ void performSanityChecks()
 
     if (msI == 5) {
         rescueState.failure = RESCUE_FLYAWAY;
-    }
-
-    // Minimum distance detection (100m)
-    if (rescueState.sensor.distanceToHome < 100) {
-        rescueState.failure = RESCUE_TOO_CLOSE;
     }
 }
 
