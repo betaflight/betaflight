@@ -232,7 +232,7 @@ FAST_CODE void scheduler(void)
 
     // Check for realtime tasks
     bool outsideRealtimeGuardInterval = true;
-    for (const cfTask_t *task = queueFirst(); task != NULL && task->staticPriority >= TASK_PRIORITY_REALTIME; task = queueNext()) {
+    for (const cfTask_t *task = queueFirst(); task != NULL && task->staticPriority == TASK_PRIORITY_REALTIME; task = queueNext()) {
         const timeUs_t nextExecuteAt = task->lastExecutedAt + task->desiredPeriod;
         if ((timeDelta_t)(currentTimeUs - nextExecuteAt) >= 0) {
             outsideRealtimeGuardInterval = false;
@@ -255,7 +255,22 @@ FAST_CODE void scheduler(void)
             const timeUs_t currentTimeBeforeCheckFuncCall = currentTimeUs;
 #endif
             // Increase priority for event driven tasks
-            if (task->dynamicPriority > 0) {
+            if (task->staticPriority == TASK_PRIORITY_TRIGGER)
+            {
+                if (task->checkFunc(currentTimeBeforeCheckFuncCall, currentTimeBeforeCheckFuncCall - task->lastExecutedAt)) {
+                    task->taskAgeCycles = ((currentTimeUs - task->lastExecutedAt) / task->desiredPeriod);
+                    if (task->taskAgeCycles > 0) {
+                        task->dynamicPriority = 1 + task->staticPriority * task->taskAgeCycles;
+                        waitingTasks++;
+                    }
+                }
+                else
+                {
+                    task->taskAgeCycles = 0;
+                }
+            }
+            else if (task->dynamicPriority > 0) 
+            {
                 task->taskAgeCycles = 1 + ((currentTimeUs - task->lastSignaledAt) / task->desiredPeriod);
                 task->dynamicPriority = 1 + task->staticPriority * task->taskAgeCycles;
                 waitingTasks++;

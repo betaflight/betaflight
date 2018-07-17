@@ -19,29 +19,31 @@
 
 #include "common/axis.h"
 #include "common/time.h"
+#include "common/maths.h"
 #include "pg/pg.h"
 #include "drivers/bus.h"
 #include "drivers/sensor.h"
 
-typedef enum {
-    GYRO_NONE = 0,
-    GYRO_DEFAULT,
-    GYRO_MPU6050,
-    GYRO_L3G4200D,
-    GYRO_MPU3050,
-    GYRO_L3GD20,
-    GYRO_MPU6000,
-    GYRO_MPU6500,
-    GYRO_MPU9250,
-    GYRO_ICM20601,
-    GYRO_ICM20602,
-    GYRO_ICM20608G,
-    GYRO_ICM20649,
-    GYRO_ICM20689,
-    GYRO_BMI160,
-    GYRO_IMUF9001,
-    GYRO_FAKE
-} gyroSensor_e;
+extern float vGyroStdDevModulus;
+ typedef enum {
+     GYRO_NONE = 0,
+     GYRO_DEFAULT,
+     GYRO_MPU6050,
+     GYRO_L3G4200D,
+     GYRO_MPU3050,
+     GYRO_L3GD20,
+     GYRO_MPU6000,
+     GYRO_MPU6500,
+     GYRO_MPU9250,
+     GYRO_ICM20601,
+     GYRO_ICM20602,
+     GYRO_ICM20608G,
+     GYRO_ICM20649,
+     GYRO_ICM20689,
+     GYRO_BMI160,
+     GYRO_IMUF9001,
+     GYRO_FAKE
+ } gyroSensor_e;
 
 typedef struct gyro_s {
     uint32_t targetLooptime;
@@ -89,11 +91,9 @@ typedef struct gyroConfig_s {
     uint16_t imuf_mode;
     uint16_t imuf_rate;
     uint16_t imuf_pitch_q;
-    uint16_t imuf_pitch_w;
     uint16_t imuf_roll_q;
-    uint16_t imuf_roll_w;
     uint16_t imuf_yaw_q;
-    uint16_t imuf_yaw_w;
+    uint16_t imuf_w;
     uint16_t imuf_pitch_lpf_cutoff_hz;
     uint16_t imuf_roll_lpf_cutoff_hz;
     uint16_t imuf_yaw_lpf_cutoff_hz;
@@ -115,7 +115,7 @@ void gyroDmaSpiFinishRead(void);
 void gyroDmaSpiStartRead(void);
 #endif
 void gyroUpdate(timeUs_t currentTimeUs);
-bool gyroGetAccumulationAverage(float *accumulation);
+bool gyroGetAverage(quaternion *vAverage);
 const busDevice_t *gyroSensorBus(void);
 struct mpuConfiguration_s;
 const struct mpuConfiguration_s *gyroMpuConfiguration(void);
@@ -129,8 +129,3 @@ int16_t gyroGetTemperature(void);
 int16_t gyroRateDps(int axis);
 bool gyroOverflowDetected(void);
 uint16_t gyroAbsRateDps(int axis);
-#ifdef USE_GYRO_IMUF9001
-uint32_t lastImufExtiTime;
-bool gyroIsSane(void);
-uint16_t returnGyroAlignmentForImuf9001(void);
-#endif

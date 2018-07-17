@@ -18,9 +18,14 @@
 #pragma once
 
 #include "common/time.h"
+#include "common/maths.h"
 #include "pg/pg.h"
 #include "drivers/accgyro/accgyro.h"
 #include "sensors/sensors.h"
+
+#ifndef DEFAULT_ACC_SAMPLE_INTERVAL
+#define DEFAULT_ACC_SAMPLE_INTERVAL 1000
+#endif //DEFAULT_ACC_SAMPLE_INTERVAL 1000
 
 // Type of accelerometer used/detected
 typedef enum {
@@ -46,7 +51,6 @@ typedef enum {
 
 typedef struct acc_s {
     accDev_t dev;
-    uint32_t accSamplingInterval;
     float accADC[XYZ_AXIS_COUNT];
     bool isAccelUpdatedAtLeastOnce;
 } acc_t;
@@ -75,12 +79,13 @@ typedef struct accelerometerConfig_s {
 
 PG_DECLARE(accelerometerConfig_t, accelerometerConfig);
 
-bool accInit(uint32_t gyroTargetLooptime);
+bool accInit(void);
 bool accIsCalibrationComplete(void);
 void accSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims);
 void accUpdate(timeUs_t currentTimeUs, rollAndPitchTrims_t *rollAndPitchTrims);
-bool accGetAccumulationAverage(float *accumulation);
+bool accGetAverage(quaternion *average);
 union flightDynamicsTrims_u;
 void setAccelerationTrims(union flightDynamicsTrims_u *accelerationTrimsToUse);
 void accInitFilters(void);
+bool accIsHealthy(quaternion *q);

@@ -22,13 +22,16 @@
 #define UPT_ADDRESS  0x080F0000
 #define MSD_ADDRESS  0x080E0000
 
-#define LED0_PIN                PA8
+#define LED0_PIN                PB7
 
 #define BEEPER                  PC15
 #define BEEPER_INVERTED
 
 #define USE_GYRO
 #define USE_ACC
+
+#define DEFAULT_ATTITUDE_UPDATE_INTERVAL 1000 
+#define DEFAULT_ACC_SAMPLE_INTERVAL      1000
 
 #define USE_FAST_SPI_DRIVER
 #define USE_GYRO_IMUF9001
@@ -161,11 +164,12 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART2
-#define DEFAULT_FEATURES        (FEATURE_TELEMETRY | FEATURE_OSD | FEATURE_AIRMODE | FEATURE_LED_STRIP)
+#define DEFAULT_FEATURES        (FEATURE_TELEMETRY | FEATURE_OSD | FEATURE_AIRMODE)
 
-
+#define USE_GPS
+#define USE_MAG
 #define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_PIN  PB7  // (HARDARE=0,PPM)
+#define ESCSERIAL_TIMER_TX_PIN  NONE  // (HARDARE=0,PPM)
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA         0xffff
@@ -178,7 +182,6 @@
 
 #define IMUF_BIT_I2C_IF_DIS              (1 << 4)
 
-#define USE_QUAD_MIXER_ONLY
 
 #define USE_ADC
 #define ADC_INSTANCE                   ADC1
@@ -186,14 +189,19 @@
 #define DEFAULT_CURRENT_METER_SOURCE   CURRENT_METER_ADC
 #define CURRENT_METER_ADC_PIN          PA1
 #define VBAT_ADC_PIN                   PA0
-#define CURRENT_METER_SCALE_DEFAULT    400
+#define CURRENT_METER_SCALE_DEFAULT    250
 #define VBAT_SCALE                     109
 
 #define CAMERA_CONTROL_PIN             PB6    // define dedicated camera_osd_control pin
 
-#define IMUF_DEFAULT_PITCH_Q 1500
-#define IMUF_PROFILE_PITCH_W 10
-#define IMUF_PROFILE_ROLL_Q 1500
-#define IMUF_PROFILE_ROLL_W 10
-#define IMUF_PROFILE_YAW_Q 1000
-#define IMUF_PROFILE_YAW_W 10
+#define IMUF_DEFAULT_PITCH_Q  3000
+#define IMUF_DEFAULT_ROLL_Q   3000
+#define IMUF_DEFAULT_YAW_Q    3000
+#define IMUF_DEFAULT_W        32
+#define IMUF_DEFAULT_LPF_HZ   120.0f
+
+#define USE_BUTTERED_PIDS true
+
+#define DEFAULT_PIDS_ROLL   {45, 50, 20}
+#define DEFAULT_PIDS_PITCH  {45, 50, 22}
+#define DEFAULT_PIDS_YAW    {45, 50, 15}

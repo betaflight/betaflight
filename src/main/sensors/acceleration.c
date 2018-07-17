@@ -51,9 +51,9 @@
 #include "drivers/accgyro/accgyro_spi_mpu6000.h"
 #include "drivers/accgyro/accgyro_spi_mpu6500.h"
 #include "drivers/accgyro/accgyro_spi_mpu9250.h"
-#ifdef USE_GYRO_IMUF9001
+#ifdef USE_ACC_IMUF9001
 #include "drivers/accgyro/accgyro_imuf9001.h"
-#endif //USE_GYRO_IMUF9001
+#endif //USE_ACC_IMUF9001
 #include "drivers/bus_spi.h"
 
 #include "fc/config.h"
@@ -72,10 +72,8 @@
 
 
 FAST_RAM acc_t acc;                       // acc access functions
-
 static float accumulatedMeasurements[XYZ_AXIS_COUNT];
 static int accumulatedMeasurementCount;
-
 static uint16_t calibratingA = 0;      // the calibration is done is the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
 
 extern uint16_t InflightcalibratingA;
@@ -277,7 +275,7 @@ retry:
 #ifdef USE_ACC_IMUF9001
     case ACC_IMUF9001:
         if (imufSpiAccDetect(dev)) {
-            accHardware = ACC_ICM20689;
+            accHardware = ACC_IMUF9001;
             break;
         }
         FALLTHROUGH;
@@ -340,7 +338,7 @@ retry:
     return true;
 }
 
-bool accInit(uint32_t gyroSamplingInverval)
+bool accInit(void)
 {
     memset(&acc, 0, sizeof(acc));
     // copy over the common gyro mpu settings
@@ -353,29 +351,17 @@ bool accInit(uint32_t gyroSamplingInverval)
     acc.dev.acc_1G = 256; // set default
     acc.dev.initFn(&acc.dev); // driver initialisation
     // set the acc sampling interval according to the gyro sampling interval
-    switch (gyroSamplingInverval) {  // Switch statement kept in place to change acc sampling interval in the future
-    case 500:
-    case 375:
-    case 250:
-    case 125:
-        acc.accSamplingInterval = 1000;
-        break;
-    case 1000:
-    default:
-#ifdef STM32F10X
-        acc.accSamplingInterval = 1000;
-#else
-        acc.accSamplingInterval = 1000;
-#endif
-    }
     if (accLpfCutHz) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            biquadFilterInitLPF(&accFilter[axis], accLpfCutHz, acc.accSamplingInterval);
+            biquadFilterInitLPF(&accFilter[axis], accLpfCutHz, DEFAULT_ACC_SAMPLE_INTERVAL);
         }
     }
+    #ifndef USE_ACC_IMUF9001
     if (accelerometerConfig()->acc_align != ALIGN_DEFAULT) {
         acc.dev.accAlign = accelerometerConfig()->acc_align;
     }
+    #endif //USE_ACC_IMUF9001
+
     return true;
 }
 
@@ -399,7 +385,7 @@ static bool isOnFirstAccelerationCalibrationCycle(void)
     return calibratingA == CALIBRATING_ACC_CYCLES;
 }
 
-static void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims)
+static void performAccelerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims)
 {
     static int32_t a[3];
 
@@ -420,9 +406,9 @@ static void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims
 
     if (isOnFinalAccelerationCalibrationCycle()) {
         // Calculate average, shift Z down by acc_1G and store values in EEPROM at end of calibration
-        accelerationTrims->raw[X] = (a[X] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES;
-        accelerationTrims->raw[Y] = (a[Y] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES;
-        accelerationTrims->raw[Z] = (a[Z] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES - acc.dev.acc_1G;
+        accelerationTrims->raw[X] = a[X] / CALIBRATING_ACC_CYCLES;
+        accelerationTrims->raw[Y] = a[Y] / CALIBRATING_ACC_CYCLES;
+        accelerationTrims->raw[Z] = a[Z] / CALIBRATING_ACC_CYCLES - acc.dev.acc_1G;
 
         resetRollAndPitchTrims(rollAndPitchTrims);
 
@@ -484,13 +470,6 @@ static void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndP
     }
 }
 
-static void applyAccelerationTrims(const flightDynamicsTrims_t *accelerationTrims)
-{
-    acc.accADC[X] -= accelerationTrims->raw[X];
-    acc.accADC[Y] -= accelerationTrims->raw[Y];
-    acc.accADC[Z] -= accelerationTrims->raw[Z];
-}
-
 void accUpdate(timeUs_t currentTimeUs, rollAndPitchTrims_t *rollAndPitchTrims)
 {
     UNUSED(currentTimeUs);
@@ -499,59 +478,59 @@ void accUpdate(timeUs_t currentTimeUs, rollAndPitchTrims_t *rollAndPitchTrims)
     if (!acc.dev.readFn(&acc.dev)) {
         return;
     }
-    #endif
-
-    acc.isAccelUpdatedAtLeastOnce = true;
-
-    #ifndef USE_ACC_IMUF9001
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         DEBUG_SET(DEBUG_ACCELEROMETER, axis, acc.dev.ADCRaw[axis]);
         acc.accADC[axis] = acc.dev.ADCRaw[axis];
     }
+    alignSensors(acc.accADC, acc.dev.accAlign);
     #endif
 
     if (accLpfCutHz) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            acc.accADC[axis] = lrintf(biquadFilterApply(&accFilter[axis], (float)acc.accADC[axis]));
+            acc.accADC[axis] = biquadFilterApply(&accFilter[axis], (float)acc.accADC[axis]);
         }
     }
 
-    #ifndef USE_GYRO_IMUF9001
-    alignSensors(acc.accADC, acc.dev.accAlign);
-    #endif
-
     if (!accIsCalibrationComplete()) {
-        performAcclerationCalibration(rollAndPitchTrims);
-    }
-
-    if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
+        performAccelerationCalibration(rollAndPitchTrims);
+    } else if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
         performInflightAccelerationCalibration(rollAndPitchTrims);
     }
 
-    applyAccelerationTrims(accelerationTrims);
+    acc.accADC[X] -= accelerationTrims->raw[X];
+    acc.accADC[Y] -= accelerationTrims->raw[Y];
+    acc.accADC[Z] -= accelerationTrims->raw[Z];
 
+    #ifdef USE_GYRO_IMUF9001
+    if (gyroConfig()->imuf_mode != GTBCM_GYRO_ACC_QUAT_FILTER_F)
+    {
+    #endif
     ++accumulatedMeasurementCount;
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         accumulatedMeasurements[axis] += acc.accADC[axis];
     }
+    #ifdef USE_GYRO_IMUF9001
+    }
+    #endif
+    acc.isAccelUpdatedAtLeastOnce = true;
 }
 
-bool accGetAccumulationAverage(float *accumulationAverage)
-{
-    if (accumulatedMeasurementCount > 0) {
-        // If we have gyro data accumulated, calculate average rate that will yield the same rotation
-        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            accumulationAverage[axis] = accumulatedMeasurements[axis] / accumulatedMeasurementCount;
-            accumulatedMeasurements[axis] = 0.0f;
-        }
-        accumulatedMeasurementCount = 0;
-        return true;
-    } else {
-        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            accumulationAverage[axis] = 0.0f;
-        }
-        return false;
+bool accGetAverage(quaternion *vAverage) {
+  if (accumulatedMeasurementCount > 0) {
+    vAverage->w = 0;
+    vAverage->x = accumulatedMeasurements[X] / accumulatedMeasurementCount;
+    vAverage->y = accumulatedMeasurements[Y] / accumulatedMeasurementCount;
+    vAverage->z = accumulatedMeasurements[Z] / accumulatedMeasurementCount;
+
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+      accumulatedMeasurements[axis] = 0.0f;
     }
+    accumulatedMeasurementCount = 0;
+    return true;
+  } else {
+    quaternionInitVector(vAverage);
+    return false;
+  }
 }
 
 void setAccelerationTrims(flightDynamicsTrims_t *accelerationTrimsToUse)
@@ -562,9 +541,17 @@ void setAccelerationTrims(flightDynamicsTrims_t *accelerationTrimsToUse)
 void accInitFilters(void)
 {
     accLpfCutHz = accelerometerConfig()->acc_lpf_hz;
-    if (acc.accSamplingInterval) {
+    if (accLpfCutHz) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            biquadFilterInitLPF(&accFilter[axis], accLpfCutHz, acc.accSamplingInterval);
+            biquadFilterInitLPF(&accFilter[axis], accLpfCutHz, DEFAULT_ACC_SAMPLE_INTERVAL);
         }
     }
+}
+
+bool accIsHealthy(quaternion *q) {
+    // acc calibbration error max 2.4% (non Z axes)
+    // accept 7% deviation
+    float accModulus = quaternionModulus(q);
+    accModulus = accModulus / acc.dev.acc_1G;
+    return ((0.93f < accModulus) && (accModulus < 1.07f));
 }

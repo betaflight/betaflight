@@ -29,3 +29,4 @@ PG_DECLARE(boardAlignment_t, boardAlignment);
 
 void alignSensors(float *dest, uint8_t rotation);
 void initBoardAlignment(const boardAlignment_t *boardAlignment);
+bool isBoardAlignmentStandard(const boardAlignment_t *boardAlignment);

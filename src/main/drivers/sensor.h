@@ -29,7 +29,17 @@ typedef enum {
     CW0_DEG_FLIP = 5,
     CW90_DEG_FLIP = 6,
     CW180_DEG_FLIP = 7,
-    CW270_DEG_FLIP = 8
+    CW270_DEG_FLIP = 8,
+#ifdef USE_GYRO_IMUF9001
+    CW45_DEG = 9,
+    CW135_DEG = 10,
+    CW225_DEG = 11,
+    CW315_DEG = 12,
+    CW45_DEG_FLIP = 13,
+    CW135_DEG_FLIP = 14,
+    CW225_DEG_FLIP = 15,
+    CW315_DEG_FLIP = 16,
+#endif
 } sensor_align_e;
 
 typedef bool (*sensorInterruptFuncPtr)(void);

@@ -71,6 +71,9 @@
 #include "sensors/gyro.h"
 #include "sensors/rangefinder.h"
 
+#ifdef USE_GYRO_IMUF9001
+#include "drivers/accgyro/accgyro_imuf9001.h"
+#endif
 enum {
     BLACKBOX_MODE_NORMAL = 0,
     BLACKBOX_MODE_MOTOR_TEST,
@@ -994,9 +997,9 @@ static void loadMainState(timeUs_t currentTimeUs)
         blackboxCurrent->axisPID_I[i] = axisPID_I[i];
         blackboxCurrent->axisPID_D[i] = axisPID_D[i];
         blackboxCurrent->gyroADC[i] = lrintf(gyro.gyroADCf[i]);
-        blackboxCurrent->accADC[i] = acc.accADC[i];
+        blackboxCurrent->accADC[i] = lrintf(acc.accADC[i]);
 #ifdef USE_MAG
-        blackboxCurrent->magADC[i] = mag.magADC[i];
+        blackboxCurrent->magADC[i] = lrintf(mag.magADC[i]);
 #endif
     }
 
@@ -1291,7 +1294,6 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("acc_limit_yaw", "%d",                   currentPidProfile->yawRateAccelLimit);
         BLACKBOX_PRINT_HEADER_LINE("acc_limit", "%d",                       currentPidProfile->rateAccelLimit);
         BLACKBOX_PRINT_HEADER_LINE("pidsum_limit", "%d",                    currentPidProfile->pidSumLimit);
-        BLACKBOX_PRINT_HEADER_LINE("pidsum_limit_yaw", "%d",                currentPidProfile->pidSumLimitYaw);
         // End of Betaflight controller parameters
 
         BLACKBOX_PRINT_HEADER_LINE("deadband", "%d",                        rcControlsConfig()->deadband);
@@ -1318,7 +1320,14 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("dshot_idle_value", "%d",                motorConfig()->digitalIdleOffsetValue);
         BLACKBOX_PRINT_HEADER_LINE("debug_mode", "%d",                      systemConfig()->debug_mode);
         BLACKBOX_PRINT_HEADER_LINE("features", "%d",                        featureConfig()->enabledFeatures);
-
+        #ifdef USE_GYRO_IMUF9001
+        BLACKBOX_PRINT_HEADER_LINE("IMUF revision", " %d",                  imufCurrentVersion);
+        BLACKBOX_PRINT_HEADER_LINE("IMUF mode", " %d",                      gyroConfig()->imuf_mode);
+        BLACKBOX_PRINT_HEADER_LINE("IMUF roll q", " %d",                    gyroConfig()->imuf_roll_q);
+        BLACKBOX_PRINT_HEADER_LINE("IMUF pitch q", " %d",                   gyroConfig()->imuf_pitch_q);
+        BLACKBOX_PRINT_HEADER_LINE("IMUF yaw q", " %d",                     gyroConfig()->imuf_yaw_q);
+        BLACKBOX_PRINT_HEADER_LINE("IMUF w", " %d",                         gyroConfig()->imuf_w);
+        #endif
         default:
             return true;
     }
@@ -1717,10 +1726,10 @@ void blackboxInit(void)
     // gyro.targetLooptime is 1000 for 1kHz loop, 500 for 2kHz loop etc, gyro.targetLooptime is rounded for short looptimes
     if (gyro.targetLooptime == 31) { // rounded from 31.25us
         blackboxIInterval = 1024;
-    } else if (gyro.targetLooptime == 63) { // rounded from 62.5us
+    } else if (gyro.targetLooptime == 62) { // rounded from 62.5us
         blackboxIInterval = 512;
     } else {
-        blackboxIInterval = (uint16_t)(32 * 1000 / gyro.targetLooptime);
+        blackboxIInterval = (uint16_t)(32000 / gyro.targetLooptime);
     }
     // by default p_denom is 32 and a P-frame is written every 1ms
     // if p_denom is zero then no P-frames are logged

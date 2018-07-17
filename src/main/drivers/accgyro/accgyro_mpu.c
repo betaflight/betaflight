@@ -57,13 +57,13 @@
 #include "drivers/accgyro/accgyro_spi_mpu9250.h"
 #ifdef USE_GYRO_IMUF9001
 #include "drivers/accgyro/accgyro_imuf9001.h"
+#include "rx/rx.h"
+#include "fc/fc_rc.h"
+#include "fc/runtime_config.h"
 #endif //USE_GYRO_IMUF9001
-#include "drivers/accgyro/accgyro_mpu.h"
 
 
 #ifdef USE_DMA_SPI_DEVICE
-volatile int dmaSpiGyroDataReady = 0;
-volatile uint32_t imufCrcErrorCount = 0;
 #endif //USE_DMA_SPI_DEVICE
 
 mpuResetFnPtr mpuResetFn;
@@ -190,32 +190,43 @@ bool mpuAccRead(accDev_t *acc)
 }
 
 #ifdef USE_DMA_SPI_DEVICE
-bool mpuGyroDmaSpiReadStart(gyroDev_t * gyro)
+FAST_CODE bool mpuGyroDmaSpiReadStart(gyroDev_t * gyro)
 {
     (void)(gyro); ///not used at this time
     //no reason not to get acc and gyro data at the same time
-    lastImufExtiTime = micros();
     #ifdef USE_GYRO_IMUF9001
-    if (isImufCalibrating) //calibrating
+    if (isImufCalibrating == IMUF_IS_CALIBRATING) //calibrating
     {
         //two steps
         //step 1 is isImufCalibrating=1, this starts the calibration command and sends it to the IMU-f
         //step 2 is isImufCalibrating=2, this sets the tx buffer back to 0 so we don't keep sending the calibration command over and over
         memset(dmaTxBuffer, 0, sizeof(imufCommand_t)); //clear buffer
-        if (isImufCalibrating == IMUF_CALIBRATION_STEP1) //step 1, set the command to be sent
-        {
-            //set calibration command with CRC, typecast the dmaTxBuffer as imufCommand_t
-            (*(imufCommand_t *)(dmaTxBuffer)).command = IMUF_COMMAND_CALIBRATE;
-            (*(imufCommand_t *)(dmaTxBuffer)).crc     = getCrcImuf9001((uint32_t *)dmaTxBuffer, 11); //typecast the dmaTxBuffer as a uint32_t array which is what the crc command needs
-            //set isImufCalibrating to step 2, which is just used so the memset to 0 runs after the calibration commmand is sent
-            isImufCalibrating = IMUF_CALIBRATION_STEP2; //go to step two
-        }
-        else
-        {   //step 2, memset of the tx buffer has run, set isImufCalibrating to 0.
-            isImufCalibrating = IMUF_NOT_CALIBRATING;
-        }
-
+        //set calibration command with CRC, typecast the dmaTxBuffer as imufCommand_t
+        (*(imufCommand_t *)(dmaTxBuffer)).command = IMUF_COMMAND_CALIBRATE;
+        (*(imufCommand_t *)(dmaTxBuffer)).crc     = getCrcImuf9001((uint32_t *)dmaTxBuffer, 11); //typecast the dmaTxBuffer as a uint32_t array which is what the crc command needs
+        //set isImufCalibrating to step 2, which is just used so the memset to 0 runs after the calibration commmand is sent
+        isImufCalibrating = IMUF_DONE_CALIBRATING; //go to step two
     }
+    else if (isImufCalibrating == IMUF_DONE_CALIBRATING)
+    {
+        // step 2, memset of the tx buffer has run, set isImufCalibrating to 0.
+        (*(imufCommand_t *)(dmaTxBuffer)).command = 0;
+        (*(imufCommand_t *)(dmaTxBuffer)).crc     = 0; //typecast the dmaTxBuffer as a uint32_t array which is what the crc command needs
+        imufEndCalibration();
+    }
+    else
+    {
+        if (isSetpointNew) {
+            //send setpoint and arm status
+            (*(imufCommand_t *)(dmaTxBuffer)).command = IMUF_COMMAND_SETPOINT;
+            (*(imufCommand_t *)(dmaTxBuffer)).param1  = getSetpointRateInt(0);
+            (*(imufCommand_t *)(dmaTxBuffer)).param2  = getSetpointRateInt(1);
+            (*(imufCommand_t *)(dmaTxBuffer)).param3  = getSetpointRateInt(2);
+            (*(imufCommand_t *)(dmaTxBuffer)).crc     = getCrcImuf9001((uint32_t *)dmaTxBuffer, 11); //typecast the dmaTxBuffer as a uint32_t array which is what the crc command needs
+            isSetpointNew = 0;
+        }
+    }
+
     memset(dmaRxBuffer, 0, gyroConfig()->imuf_mode); //clear buffer
     //send and receive data using SPI and DMA
     dmaSpiTransmitReceive(dmaTxBuffer, dmaRxBuffer, gyroConfig()->imuf_mode, 0);
@@ -230,22 +241,18 @@ void mpuGyroDmaSpiReadFinish(gyroDev_t * gyro)
 {
     //spi rx dma callback
     #ifdef USE_GYRO_IMUF9001
-    volatile uint32_t crc1 = ( (*(uint32_t *)(dmaRxBuffer+gyroConfig()->imuf_mode-4)) & 0xFF );
-    volatile uint32_t crc2 = ( getCrcImuf9001((uint32_t *)(dmaRxBuffer), (gyroConfig()->imuf_mode >> 2)-1) & 0xFF );
-    if(crc1 == crc2)
-    {
-        memcpy(&imufData, dmaRxBuffer, sizeof(imufData_t));
-        acc.accADC[X]    = imufData.accX * acc.dev.acc_1G;
-        acc.accADC[Y]    = imufData.accY * acc.dev.acc_1G;
-        acc.accADC[Z]    = imufData.accZ * acc.dev.acc_1G;
-        gyro->gyroADC[X] = imufData.gyroX;
-        gyro->gyroADC[Y] = imufData.gyroY;
-        gyro->gyroADC[Z] = imufData.gyroZ;
-    }
-    else
-    {
-        //error handler
-        imufCrcErrorCount++; //check every so often and cause a failsafe is this number is above a certain ammount
+    memcpy(&imufData, dmaRxBuffer, sizeof(imufData_t));
+    acc.accADC[X]    = imufData.accX * acc.dev.acc_1G;
+    acc.accADC[Y]    = imufData.accY * acc.dev.acc_1G;
+    acc.accADC[Z]    = imufData.accZ * acc.dev.acc_1G;
+    gyro->gyroADC[X] = imufData.gyroX;
+    gyro->gyroADC[Y] = imufData.gyroY;
+    gyro->gyroADC[Z] = imufData.gyroZ;
+    if (gyroConfig()->imuf_mode == GTBCM_GYRO_ACC_QUAT_FILTER_F) {
+        imufQuat.w       = imufData.quaternionW;
+        imufQuat.x       = imufData.quaternionX;
+        imufQuat.y       = imufData.quaternionY;
+        imufQuat.z       = imufData.quaternionZ;
     }
     #else
     acc.dev.ADCRaw[X]   = (int16_t)((dmaRxBuffer[1] << 8)  | dmaRxBuffer[2]);
@@ -255,7 +262,6 @@ void mpuGyroDmaSpiReadFinish(gyroDev_t * gyro)
     gyro->gyroADCRaw[Y] = (int16_t)((dmaRxBuffer[11] << 8) | dmaRxBuffer[12]);
     gyro->gyroADCRaw[Z] = (int16_t)((dmaRxBuffer[13] << 8) | dmaRxBuffer[14]);
     #endif
-    dmaSpiGyroDataReady = 1; //set flag to tell scheduler data is ready
 }
 #endif
 
