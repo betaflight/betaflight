@@ -350,7 +350,7 @@ targets-group-3: $(GROUP_3_TARGETS)
 targets-group-4: $(GROUP_OTHER_TARGETS)
 
 $(VALID_TARGETS):
-	$(V0) @echo "Building $@" && \
+	$(V0) @echo "$(shell date +%FT%T%Z) Building $@" && \
 	$(MAKE) binary hex TARGET=$@ && \
 	echo "Building $@ succeeded."
 
