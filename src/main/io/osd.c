@@ -126,6 +126,7 @@ static uint32_t blinkBits[(OSD_ITEM_COUNT + 31)/32];
 #define IS_MID(X) (rcData[X] > 1250 && rcData[X] < 1750)
 
 static timeUs_t flyTime = 0;
+static float osdGForce = 0;
 
 typedef struct statistic_s {
     timeUs_t armed_time;
@@ -135,6 +136,7 @@ typedef struct statistic_s {
     int16_t min_rssi;
     int32_t max_altitude;
     int16_t max_distance;
+    float max_g_force;
 } statistic_t;
 
 static statistic_t stats;
@@ -694,7 +696,7 @@ static bool osdDrawSingleElement(uint8_t item)
 
     case OSD_G_FORCE:
         {
-            float osdGForce = 0;
+            osdGForce = 0.0f;
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
                 const float a = accAverage[axis];
                 osdGForce += a * a;
@@ -1233,6 +1235,7 @@ static void osdResetStats(void)
     stats.max_altitude = 0;
     stats.max_distance = 0;
     stats.armed_time   = 0;
+    stats.max_g_force  = 0;
 }
 
 static void osdUpdateStats(void)
@@ -1270,6 +1273,10 @@ static void osdUpdateStats(void)
     int altitude = getEstimatedAltitude();
     if (stats.max_altitude < altitude) {
         stats.max_altitude = altitude;
+    }
+
+    if (stats.max_g_force < osdGForce){
+        stats.max_g_force = osdGForce;
     }
 
 #ifdef USE_GPS
@@ -1438,6 +1445,11 @@ static void osdShowStats(uint16_t endBatteryVoltage)
         osdDisplayStatisticLabel(top++, "BB LOG NUM", buff);
     }
 #endif
+
+    if (osdStatGetState(OSD_STAT_MAX_G_FORCE)) {
+        tfp_sprintf(buff, "%01d.%01dG", (int)stats.max_g_force, (int)(stats.max_g_force * 10) % 10);
+        osdDisplayStatisticLabel(top++, "MAX G-FORCE", buff);
+    }
 
 }
 
