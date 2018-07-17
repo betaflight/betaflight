@@ -125,9 +125,15 @@ void updateGPSRescueState(void)
 
         // Minimum distance detection (100m).  Disarm regardless of sanity check configuration.  Rescue too close is never a good idea.
         if (rescueState.sensor.distanceToHome < 100) {
-            rescueState.failure = RESCUE_TOO_CLOSE;
-            setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
-            disarm();
+            // Never allow rescue mode to engage as a failsafe within 100 meters or when disarmed.
+            if (rescueState.isFailsafe || !ARMING_FLAG(ARMED)) {
+                rescueState.failure = RESCUE_TOO_CLOSE;
+                setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+                disarm();
+            } else {
+                // Leave it up to the sanity check setting
+                rescueState.failure = RESCUE_TOO_CLOSE;
+            }
         }
 
         rescueState.phase = RESCUE_ATTAIN_ALT;
