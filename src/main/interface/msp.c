@@ -1308,26 +1308,18 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 #if defined(USE_ITERM_RELAX)
         sbufWriteU8(dst, currentPidProfile->iterm_relax);
         sbufWriteU8(dst, currentPidProfile->iterm_relax_type);
-        sbufWriteU8(dst, currentPidProfile->iterm_relax_cutoff);
 #else
-        sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
 #endif
 #if defined(USE_ABSOLUTE_CONTROL)
         sbufWriteU8(dst, currentPidProfile->abs_control_gain);
-        sbufWriteU8(dst, currentPidProfile->abs_control_limit);
-        sbufWriteU8(dst, currentPidProfile->abs_control_error_limit);
 #else
-        sbufWriteU8(dst, 0);
-        sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
 #endif
 #if defined(USE_THROTTLE_BOOST)
         sbufWriteU8(dst, currentPidProfile->throttle_boost);
-        sbufWriteU8(dst, currentPidProfile->throttle_boost_cutoff);
 #else
-        sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
 #endif
 #if defined(USE_ACRO_TRAINER)
@@ -1855,7 +1847,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         if (sbufBytesRemaining(src) >= 2) {
             currentPidProfile->dtermSetpointWeight = sbufReadU16(src);
         }
-        if (sbufBytesRemaining(src) >= 11) {
+        if (sbufBytesRemaining(src) >= 7) {
             // Added in MSP API 1.40
             currentPidProfile->iterm_rotation = sbufReadU8(src);
 #if defined(USE_SMART_FEEDFORWARD)
@@ -1866,26 +1858,18 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #if defined(USE_ITERM_RELAX)
             currentPidProfile->iterm_relax = sbufReadU8(src);
             currentPidProfile->iterm_relax_type = sbufReadU8(src);
-            currentPidProfile->iterm_relax_cutoff = sbufReadU8(src);
 #else
-            sbufReadU8(src);
             sbufReadU8(src);
             sbufReadU8(src);
 #endif
 #if defined(USE_ABSOLUTE_CONTROL)
             currentPidProfile->abs_control_gain = sbufReadU8(src);
-            currentPidProfile->abs_control_limit = sbufReadU8(src);
-            currentPidProfile->abs_control_error_limit = sbufReadU8(src);
 #else
-            sbufReadU8(src);
-            sbufReadU8(src);
             sbufReadU8(src);
 #endif
 #if defined(USE_THROTTLE_BOOST)
             currentPidProfile->throttle_boost = sbufReadU8(src);
-            currentPidProfile->throttle_boost_cutoff = sbufReadU8(src);
 #else
-            sbufReadU8(src);
             sbufReadU8(src);
 #endif
 #if defined(USE_ACRO_TRAINER)
