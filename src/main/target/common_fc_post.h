@@ -136,7 +136,7 @@
 #undef USE_ADC_INTERNAL
 #endif
 
-#if !defined(USE_SDCARD) && !defined(USE_FLASHFS)
+#if (!defined(USE_SDCARD) && !defined(USE_FLASHFS)) || !(defined(STM32F4) || defined(STM32F7))
 #undef USE_USB_MSC
 #endif
 

@@ -18,17 +18,25 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
- * Author: Chris Hockuba (https://github.com/conkerkh)
- */
+#include <stdbool.h>
 
-#pragma once
+#include "platform.h"
 
-#define MSC_MAGIC 0xDDDD1010
+#include "drivers/sdcard.h"
 
-void mscInit(void);
-bool mscCheckBoot(void);
-uint8_t mscStart(void);
-bool mscCheckButton(void);
-void mscWaitForButton(void);
-void systemResetToMsc(void);
+#include "io/flashfs.h"
+
+#if defined(USE_USB_MSC)
+
+bool mscCheckFilesystemReady(void)
+{
+    return false
+#if defined(USE_SDCARD)
+        || sdcard_isFunctional()
+#endif
+#if defined(USE_FLASHFS)
+        || flashfsGetSize() > 0
+#endif
+        ;
+}
+#endif
