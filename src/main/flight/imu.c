@@ -85,6 +85,7 @@ static bool imuUpdated = false;
 #define GPS_COG_MIN_GROUNDSPEED 500        // 500cm/s minimum groundspeed for a gps heading to be considered valid
 
 int32_t accSum[XYZ_AXIS_COUNT];
+float accAverage[XYZ_AXIS_COUNT];
 
 uint32_t accTimeSum = 0;        // keep track for integration of acc
 int accSumCount = 0;
@@ -491,7 +492,6 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 #endif
     float gyroAverage[XYZ_AXIS_COUNT];
     gyroGetAccumulationAverage(gyroAverage);
-    float accAverage[XYZ_AXIS_COUNT];
     if (accGetAccumulationAverage(accAverage)) {
         useAcc = imuIsAccelerometerHealthy(accAverage);
     }
