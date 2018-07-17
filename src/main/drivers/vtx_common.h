@@ -166,7 +166,7 @@ vtxDevice_t *vtxCommonDevice(void);
 
 // VTable functions
 void vtxCommonProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs);
-uint8_t vtxCommonGetDeviceType(const vtxDevice_t *vtxDevice);
+vtxDevType_e vtxCommonGetDeviceType(const vtxDevice_t *vtxDevice);
 void vtxCommonSetBandAndChannel(vtxDevice_t *vtxDevice, uint8_t band, uint8_t channel);
 void vtxCommonSetPowerByIndex(vtxDevice_t *vtxDevice, uint8_t level);
 void vtxCommonSetPitMode(vtxDevice_t *vtxDevice, uint8_t onoff);

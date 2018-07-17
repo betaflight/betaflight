@@ -92,7 +92,7 @@ void vtxInit(void)
     }
 }
 
-static vtxSettingsConfig_t vtxGetSettings(void)
+STATIC_UNIT_TESTED vtxSettingsConfig_t vtxGetSettings(void)
 {
     vtxSettingsConfig_t settings = {
         .band = vtxSettingsConfig()->band,
