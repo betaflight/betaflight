@@ -71,7 +71,7 @@ PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
     .throttleMin = 1200,
     .throttleMax = 1600,
     .throttleHover = 1280,
-    .sanityChecks = 0,
+    .sanityChecks = RESCUE_SANITY_ON,
     .minSats = 8
 );
 
