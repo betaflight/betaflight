@@ -108,6 +108,7 @@ bool mpu6500SpiAccDetect(accDev_t *acc)
     case MPU_9250_SPI:
     case ICM_20608_SPI:
     case ICM_20602_SPI:
+    case ICM_20601_SPI:
         break;
     default:
         return false;
@@ -127,6 +128,7 @@ bool mpu6500SpiGyroDetect(gyroDev_t *gyro)
     case MPU_9250_SPI:
     case ICM_20608_SPI:
     case ICM_20602_SPI:
+    case ICM_20601_SPI:
         break;
     default:
         return false;
