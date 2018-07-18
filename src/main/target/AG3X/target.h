@@ -37,6 +37,7 @@
 // Note, beeper is on the LED pin
 #define LED0_PIN                PC13
 
+#define USE_BEEPER
 #define BEEPER                  NONE
 #define BEEPER_INVERTED
 
