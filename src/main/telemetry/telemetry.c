@@ -75,7 +75,8 @@ PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
             IBUS_SENSOR_TYPE_TEMPERATURE,
             IBUS_SENSOR_TYPE_RPM_FLYSKY,
             IBUS_SENSOR_TYPE_EXTERNAL_VOLTAGE
-    }
+    },
+    .smartport_use_extra_sensors = false,
 );
 
 void telemetryInit(void)

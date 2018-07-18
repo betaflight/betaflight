@@ -872,6 +872,9 @@ const clivalue_t valueTable[] = {
 #if defined(USE_TELEMETRY_IBUS)
     { "ibus_sensor",                VAR_UINT8  | MASTER_VALUE | MODE_ARRAY, .config.array.length = IBUS_SENSOR_COUNT, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, flysky_sensors)},
 #endif
+#if defined(USE_TELEMETRY_SMARTPORT)
+    { "smartport_use_extra_sensors", VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, smartport_use_extra_sensors)},
+#endif
 #endif // USE_TELEMETRY
 
 // PG_LED_STRIP_CONFIG
