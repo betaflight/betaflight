@@ -1275,7 +1275,7 @@ static void osdUpdateStats(void)
         stats.max_altitude = altitude;
     }
 
-    if (stats.max_g_force < osdGForce){
+    if (stats.max_g_force < osdGForce) {
         stats.max_g_force = osdGForce;
     }
 
