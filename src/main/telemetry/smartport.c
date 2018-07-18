@@ -676,31 +676,36 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                 } else {
                     tmpi += 2;
                 }
-                if (ARMING_FLAG(ARMED))
+                if (ARMING_FLAG(ARMED)) {
                     tmpi += 4;
+                }
 
-                if (FLIGHT_MODE(ANGLE_MODE))
+                if (FLIGHT_MODE(ANGLE_MODE)) {
                     tmpi += 10;
-                if (FLIGHT_MODE(HORIZON_MODE))
+                }
+                if (FLIGHT_MODE(HORIZON_MODE)) {
                     tmpi += 20;
-                if (FLIGHT_MODE(UNUSED_MODE))
+                }
+                if (FLIGHT_MODE(PASSTHRU_MODE)) {
                     tmpi += 40;
-                if (FLIGHT_MODE(PASSTHRU_MODE))
-                    tmpi += 40;
+                }
 
-                if (FLIGHT_MODE(MAG_MODE))
+                if (FLIGHT_MODE(MAG_MODE)) {
                     tmpi += 100;
-                if (FLIGHT_MODE(BARO_MODE))
+                }
+                if (FLIGHT_MODE(BARO_MODE)) {
                     tmpi += 200;
-                if (FLIGHT_MODE(RANGEFINDER_MODE))
-                    tmpi += 400;
+                }
 
-                if (FLIGHT_MODE(GPS_HOLD_MODE))
+                if (FLIGHT_MODE(GPS_HOLD_MODE)) {
                     tmpi += 1000;
-                if (FLIGHT_MODE(GPS_HOME_MODE))
+                }
+                if (FLIGHT_MODE(GPS_HOME_MODE)) {
                     tmpi += 2000;
-                if (FLIGHT_MODE(HEADFREE_MODE))
+                }
+                if (FLIGHT_MODE(HEADFREE_MODE)) {
                     tmpi += 4000;
+                }
 
                 smartPortSendPackage(id, (uint32_t)tmpi);
                 *clearToSend = false;
