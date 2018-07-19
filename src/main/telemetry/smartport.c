@@ -167,14 +167,13 @@ typedef struct frSkyTableInfo_s {
     uint8_t index;
 } frSkyTableInfo_t;
 
-static frSkyTableInfo_t frSkyDataIdTableInfo = {frSkyDataIdTable, 0, 0};
+static frSkyTableInfo_t frSkyDataIdTableInfo = { frSkyDataIdTable, 0, 0 };
 #ifdef USE_ESC_SENSOR
-#define ESC_DATAID_COUNT sizeof(frSkyEscDataIdTable)/sizeof(uint16_t)
+#define ESC_DATAID_COUNT ( sizeof(frSkyEscDataIdTable) / sizeof(uint16_t) )
 
 static frSkyTableInfo_t frSkyEscDataIdTableInfo = {frSkyEscDataIdTable, ESC_DATAID_COUNT, 0};
 #endif
 
-#define __USE_C99_MATH // for roundf()
 #define SMARTPORT_BAUD 57600
 #define SMARTPORT_UART_MODE MODE_RXTX
 #define SMARTPORT_SERVICE_TIMEOUT_MS 1 // max allowed time to find a value to send
@@ -329,7 +328,7 @@ static void initSmartPortSensors(void)
 
     if (isBatteryVoltageConfigured()) {
 #ifdef USE_ESC_SENSOR
-        if (!feature(FEATURE_ESC_SENSOR)) {
+        if (!feature(FEATURE_ESC_SENSOR) || !telemetryConfig()->smartport_use_extra_sensors) {
 #endif
             ADD_SENSOR(FSSP_DATAID_VFAS);
 #ifdef USE_ESC_SENSOR
@@ -340,7 +339,7 @@ static void initSmartPortSensors(void)
 
     if (isAmperageConfigured()) {
 #ifdef USE_ESC_SENSOR
-        if (!feature(FEATURE_ESC_SENSOR)) {
+        if (!feature(FEATURE_ESC_SENSOR) || !telemetryConfig()->smartport_use_extra_sensors) {
 #endif
             ADD_SENSOR(FSSP_DATAID_CURRENT);
 #ifdef USE_ESC_SENSOR
@@ -375,7 +374,7 @@ static void initSmartPortSensors(void)
     frSkyDataIdTableInfo.index = 0;
 
 #ifdef USE_ESC_SENSOR
-    if (feature(FEATURE_ESC_SENSOR)) {
+    if (feature(FEATURE_ESC_SENSOR && telemetryConfig()->smartport_use_extra_sensors)) {
         frSkyEscDataIdTableInfo.size = ESC_DATAID_COUNT;
     } else {
         frSkyEscDataIdTableInfo.size = 0;
