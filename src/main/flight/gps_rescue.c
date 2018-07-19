@@ -71,7 +71,7 @@ PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
     .throttleMin = 1200,
     .throttleMax = 1600,
     .throttleHover = 1280,
-    .sanityChecks = 0,
+    .sanityChecks = RESCUE_SANITY_ON,
     .minSats = 8
 );
 
@@ -121,6 +121,19 @@ void updateGPSRescueState(void)
     case RESCUE_INITIALIZE:
         if (hoverThrottle == 0) { //no actual throttle data yet, let's use the default.
             hoverThrottle = gpsRescueConfig()->throttleHover;
+        }
+
+        // Minimum distance detection (100m).  Disarm regardless of sanity check configuration.  Rescue too close is never a good idea.
+        if (rescueState.sensor.distanceToHome < 100) {
+            // Never allow rescue mode to engage as a failsafe within 100 meters or when disarmed.
+            if (rescueState.isFailsafe || !ARMING_FLAG(ARMED)) {
+                rescueState.failure = RESCUE_TOO_CLOSE;
+                setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+                disarm();
+            } else {
+                // Leave it up to the sanity check setting
+                rescueState.failure = RESCUE_TOO_CLOSE;
+            }
         }
 
         rescueState.phase = RESCUE_ATTAIN_ALT;
@@ -283,11 +296,6 @@ void performSanityChecks()
 
     if (msI == 5) {
         rescueState.failure = RESCUE_FLYAWAY;
-    }
-
-    // Minimum distance detection (100m)
-    if (rescueState.sensor.distanceToHome < 100) {
-        rescueState.failure = RESCUE_TOO_CLOSE;
     }
 }
 
