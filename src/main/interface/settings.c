@@ -761,7 +761,7 @@ const clivalue_t valueTable[] = {
     { "gps_rescue_throttle_hover",  VAR_UINT16 | MASTER_VALUE, .config.minmax = { 1000, 2000 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, throttleHover) },
     { "gps_rescue_sanity_checks",   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GPS_RESCUE }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, sanityChecks) },
     { "gps_rescue_min_sats",        VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 50 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, minSats) },
-    { "gps_rescue_min_dth",         VAR_UINT16  | MASTER_VALUE, .config.minmax = { 50, 32000 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, minRescueDTH) },
+    { "gps_rescue_min_dth",         VAR_UINT16  | MASTER_VALUE, .config.minmax = { 50, 1000 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, minRescueDTH) },
 #endif
 #endif
 
