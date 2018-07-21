@@ -520,6 +520,7 @@ bool gyroInit(void)
 
     switch (debugMode) {
     case DEBUG_FFT:
+    case DEBUG_FFT_FREQ:
     case DEBUG_GYRO_RAW:
     case DEBUG_GYRO_SCALED:
     case DEBUG_GYRO_FILTERED:
@@ -1042,12 +1043,6 @@ static FAST_CODE FAST_CODE_NOINLINE void gyroUpdateSensor(gyroSensor_t *gyroSens
         return;
     }
 
-#ifdef USE_GYRO_DATA_ANALYSE
-    if (isDynamicFilterActive()) {
-        gyroDataAnalyse(&gyroSensor->gyroDev, gyroSensor->notchFilterDyn);
-    }
-#endif
-
     const timeDelta_t sampleDeltaUs = currentTimeUs - accumulationLastTimeSampledUs;
     accumulationLastTimeSampledUs = currentTimeUs;
     accumulatedMeasurementTimeUs += sampleDeltaUs;
@@ -1069,6 +1064,11 @@ static FAST_CODE FAST_CODE_NOINLINE void gyroUpdateSensor(gyroSensor_t *gyroSens
     } else {
         filterGyroDebug(gyroSensor, sampleDeltaUs);
     }
+#ifdef USE_GYRO_DATA_ANALYSE
+    if (isDynamicFilterActive()) {
+        gyroDataAnalyse(gyroSensor->notchFilterDyn);
+    }
+#endif
 }
 
 FAST_CODE void gyroUpdate(timeUs_t currentTimeUs)
