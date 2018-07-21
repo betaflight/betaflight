@@ -1,3 +1,14 @@
+## Important: Feature freeze / release candidate phase for Betaflight 3.5
+
+From 22/07/2018 until the release of Betaflight 3.5.0 (scheduled for 05/08/2018), the project is in a 'feature freeze / release candidate' phase. This means:
+
+1. Pull requests can still be submitted as normal. Comments / discussions will probably be slower than normal due to shifted priorities;
+
+2. If your pull request is a fix for an existing bug, or an update for a single target that has a low risk of side effect for other targets, it will be reviewed, and if accepted merged into `master` for the 3.5 release;
+
+3. All other pull requests will be scheduled for 4.0, and discussed / reviewed / merged into `master` after 3.5.0 has been released. Please keep in mind that this potentially means that you will have to rebase your changes if they are broken by bugfixes made for 3.5.
+
+
 ## Important considerations when opening a pull request:
 
 1. Pull requests will only be accepted if they are opened against the `master` branch. Pull requests opened against other branches without prior consent from the maintainers will be closed;
