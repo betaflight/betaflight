@@ -35,6 +35,7 @@
 
 #undef USE_RC_SMOOTHING_FILTER
 #undef ITERM_RELAX
+#endif
 
 #undef USE_TELEMETRY_HOTT
 #undef USE_TELEMETRY_MAVLINK
@@ -42,8 +43,6 @@
 #undef USE_SERIALRX_XBUS
 
 #undef USE_BOARD_INFO
-#endif
-
 #undef USE_EXTENDED_CMS_MENUS
 #undef USE_RTC_TIME
 #undef USE_RX_MSP
