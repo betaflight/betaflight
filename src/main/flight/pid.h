@@ -47,13 +47,8 @@ typedef enum {
     PID_ROLL,
     PID_PITCH,
     PID_YAW,
-    PID_ALT,
-    PID_POS,
-    PID_POSR,
-    PID_NAVR,
     PID_LEVEL,
     PID_MAG,
-    PID_VEL,
     PID_ITEM_COUNT
 } pidIndex_e;
 
@@ -176,6 +171,8 @@ typedef struct pidAxisData_s {
 
     float Sum;
 } pidAxisData_t;
+
+extern const char pidNames[];
 
 extern pidAxisData_t pidData[3];
 
