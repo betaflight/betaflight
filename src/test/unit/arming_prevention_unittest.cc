@@ -850,4 +850,5 @@ extern "C" {
     void rescheduleTask(cfTaskId_e, uint32_t) {}
     bool usbCableIsInserted(void) { return false; }
     bool usbVcpIsConnected(void) { return false; }
+    void pidSetAntiGravityState(bool) {}
 }
