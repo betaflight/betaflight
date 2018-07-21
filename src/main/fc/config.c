@@ -263,10 +263,20 @@ static void validateAndFixConfig(void)
 
     if (!rcSmoothingIsEnabled() || rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_T) {
         for (unsigned i = 0; i < MAX_PROFILE_COUNT; i++) {
-            pidProfilesMutable(i)->dtermSetpointWeight = 0;
+            pidProfilesMutable(i)->pid[PID_ROLL].F = 0;
+            pidProfilesMutable(i)->pid[PID_PITCH].F = 0;
         }
     }
 
+    if (!rcSmoothingIsEnabled() ||
+        (rxConfig()->rcInterpolationChannels != INTERPOLATION_CHANNELS_RPY &&
+         rxConfig()->rcInterpolationChannels != INTERPOLATION_CHANNELS_RPYT)) {
+
+        for (unsigned i = 0; i < MAX_PROFILE_COUNT; i++) {
+            pidProfilesMutable(i)->pid[PID_YAW].F = 0;
+        }
+    }
+    
 #if defined(USE_THROTTLE_BOOST)
     if (!rcSmoothingIsEnabled() ||
         !(rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_RPYT

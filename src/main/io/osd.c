@@ -282,7 +282,7 @@ static void osdFormatAltitudeString(char * buff, int altitude)
     buff[4] = '.';
 }
 
-static void osdFormatPID(char * buff, const char * label, const pid8_t * pid)
+static void osdFormatPID(char * buff, const char * label, const pidf_t * pid)
 {
     tfp_sprintf(buff, "%s %3d %3d %3d", label, pid->P, pid->I, pid->D);
 }
