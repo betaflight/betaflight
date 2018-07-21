@@ -42,9 +42,9 @@
 #undef USE_SERIALRX_XBUS
 
 #undef USE_BOARD_INFO
+#endif
 #undef USE_EXTENDED_CMS_MENUS
 #undef USE_RTC_TIME
-#endif
 #undef USE_RX_MSP
 #undef USE_ESC_SENSOR_INFO
 
