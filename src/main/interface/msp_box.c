@@ -56,20 +56,20 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOXHEADFREE, "HEADFREE", 6 },
     { BOXHEADADJ, "HEADADJ", 7 },
     { BOXCAMSTAB, "CAMSTAB", 8 },
-    { BOXCAMTRIG, "CAMTRIG", 9 },
+//    { BOXCAMTRIG, "CAMTRIG", 9 },
     { BOXGPSHOME, "GPS HOME", 10 },
     { BOXGPSHOLD, "GPS HOLD", 11 },
     { BOXPASSTHRU, "PASSTHRU", 12 },
     { BOXBEEPERON, "BEEPER", 13 },
-    { BOXLEDMAX, "LEDMAX", 14 },
+//    { BOXLEDMAX, "LEDMAX", 14 }, (removed)
     { BOXLEDLOW, "LEDLOW", 15 },
-    { BOXLLIGHTS, "LLIGHTS", 16 },
+//    { BOXLLIGHTS, "LLIGHTS", 16 }, (removed)
     { BOXCALIB, "CALIB", 17 },
-    { BOXGOV, "GOVERNOR", 18 },
+//    { BOXGOV, "GOVERNOR", 18 }, (removed)
     { BOXOSD, "OSD DISABLE SW", 19 },
     { BOXTELEMETRY, "TELEMETRY", 20 },
-    { BOXGTUNE, "GTUNE", 21 },
-    { BOXRANGEFINDER, "RANGEFINDER", 22 },
+//    { BOXGTUNE, "GTUNE", 21 }, (removed)
+//    { BOXRANGEFINDER, "RANGEFINDER", 22 }, (removed)
     { BOXSERVO1, "SERVO1", 23 },
     { BOXSERVO2, "SERVO2", 24 },
     { BOXSERVO3, "SERVO3", 25 },
@@ -195,12 +195,6 @@ void initActiveBoxIds(void)
         }
 #endif
         BME(BOXBEEPGPSCOUNT);
-    }
-#endif
-
-#ifdef USE_RANGEFINDER
-    if (feature(FEATURE_RANGEFINDER)) { // XXX && sensors(SENSOR_RANGEFINDER)?
-        BME(BOXRANGEFINDER);
     }
 #endif
 

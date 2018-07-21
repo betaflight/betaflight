@@ -491,12 +491,15 @@ void mavlinkSendHUDAndHeartbeat(void)
         mavCustomMode = 0;      //Stabilize
         mavModes |= MAV_MODE_FLAG_STABILIZE_ENABLED;
     }
-    if (FLIGHT_MODE(BARO_MODE) || FLIGHT_MODE(RANGEFINDER_MODE))
+    if (FLIGHT_MODE(BARO_MODE)) {
         mavCustomMode = 2;      //Alt Hold
-    if (FLIGHT_MODE(GPS_HOME_MODE))
+    }
+    if (FLIGHT_MODE(GPS_HOME_MODE)) {
         mavCustomMode = 6;      //Return to Launch
-    if (FLIGHT_MODE(GPS_HOLD_MODE))
+    }
+    if (FLIGHT_MODE(GPS_HOLD_MODE)) {
         mavCustomMode = 16;     //Position Hold (Earlier called Hybrid)
+    }
 
     uint8_t mavSystemState = 0;
     if (ARMING_FLAG(ARMED)) {
