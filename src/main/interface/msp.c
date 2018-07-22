@@ -143,18 +143,6 @@ static uint8_t rebootMode;
 
 #ifndef USE_OSD_SLAVE
 
-static const char pidnames[] =
-    "ROLL;"
-    "PITCH;"
-    "YAW;"
-    "ALT;"
-    "Pos;"
-    "PosR;"
-    "NavR;"
-    "LEVEL;"
-    "MAG;"
-    "VEL;";
-
 typedef enum {
     MSP_SDCARD_STATE_NOT_PRESENT = 0,
     MSP_SDCARD_STATE_FATAL       = 1,
@@ -984,7 +972,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         break;
 
     case MSP_PIDNAMES:
-        for (const char *c = pidnames; *c; c++) {
+        for (const char *c = pidNames; *c; c++) {
             sbufWriteU8(dst, *c);
         }
         break;
@@ -1293,8 +1281,8 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, 0); // was pidProfile.yaw_p_limit
         sbufWriteU8(dst, 0); // reserved
         sbufWriteU8(dst, currentPidProfile->vbatPidCompensation);
-        sbufWriteU8(dst, currentPidProfile->setpointRelaxRatio);
-        sbufWriteU8(dst, MIN(currentPidProfile->dtermSetpointWeight, 255));
+        sbufWriteU8(dst, currentPidProfile->feedForwardTransition);
+        sbufWriteU8(dst, 0); // was low byte of currentPidProfile->dtermSetpointWeight
         sbufWriteU8(dst, 0); // reserved
         sbufWriteU8(dst, 0); // reserved
         sbufWriteU8(dst, 0); // reserved
@@ -1304,7 +1292,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, 0); // was pidProfile.levelSensitivity
         sbufWriteU16(dst, currentPidProfile->itermThrottleThreshold);
         sbufWriteU16(dst, currentPidProfile->itermAcceleratorGain);
-        sbufWriteU16(dst, currentPidProfile->dtermSetpointWeight);
+        sbufWriteU16(dst, 0); // was currentPidProfile->dtermSetpointWeight
         sbufWriteU8(dst, currentPidProfile->iterm_rotation);
 #if defined(USE_SMART_FEEDFORWARD)
         sbufWriteU8(dst, currentPidProfile->smart_feedforward);
@@ -1333,6 +1321,11 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 #else
         sbufWriteU8(dst, 0);
 #endif
+        sbufWriteU16(dst, currentPidProfile->pid[PID_ROLL].F);
+        sbufWriteU16(dst, currentPidProfile->pid[PID_PITCH].F);
+        sbufWriteU16(dst, currentPidProfile->pid[PID_YAW].F);
+
+        sbufWriteU8(dst, currentPidProfile->antiGravityMode);
 
         break;
     case MSP_SENSOR_CONFIG:
@@ -1835,8 +1828,8 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         sbufReadU16(src); // was pidProfile.yaw_p_limit
         sbufReadU8(src); // reserved
         currentPidProfile->vbatPidCompensation = sbufReadU8(src);
-        currentPidProfile->setpointRelaxRatio = sbufReadU8(src);
-        currentPidProfile->dtermSetpointWeight = sbufReadU8(src);
+        currentPidProfile->feedForwardTransition = sbufReadU8(src);
+        sbufReadU8(src); // was low byte of currentPidProfile->dtermSetpointWeight
         sbufReadU8(src); // reserved
         sbufReadU8(src); // reserved
         sbufReadU8(src); // reserved
@@ -1851,9 +1844,9 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             currentPidProfile->itermAcceleratorGain = sbufReadU16(src);
         }
         if (sbufBytesRemaining(src) >= 2) {
-            currentPidProfile->dtermSetpointWeight = sbufReadU16(src);
+            sbufReadU16(src); // was currentPidProfile->dtermSetpointWeight
         }
-        if (sbufBytesRemaining(src) >= 7) {
+        if (sbufBytesRemaining(src) >= 14) {
             // Added in MSP API 1.40
             currentPidProfile->iterm_rotation = sbufReadU8(src);
 #if defined(USE_SMART_FEEDFORWARD)
@@ -1883,6 +1876,12 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #else
             sbufReadU8(src);
 #endif
+            // PID controller feedforward terms
+            currentPidProfile->pid[PID_ROLL].F = sbufReadU16(src);
+            currentPidProfile->pid[PID_PITCH].F = sbufReadU16(src);
+            currentPidProfile->pid[PID_YAW].F = sbufReadU16(src);
+
+            currentPidProfile->antiGravityMode = sbufReadU8(src);
         }
         pidInitConfig(currentPidProfile);
 

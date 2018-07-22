@@ -38,7 +38,6 @@ typedef enum {
     BOXGPSHOLD,
     BOXHEADFREE,
     BOXPASSTHRU,
-    BOXRANGEFINDER,
     BOXFAILSAFE,
     BOXGPSRESCUE,
     BOXID_FLIGHTMODE_LAST = BOXGPSRESCUE,
@@ -49,16 +48,11 @@ typedef enum {
     BOXANTIGRAVITY,
     BOXHEADADJ,
     BOXCAMSTAB,
-    BOXCAMTRIG,
     BOXBEEPERON,
-    BOXLEDMAX,
     BOXLEDLOW,
-    BOXLLIGHTS,
     BOXCALIB,
-    BOXGOV,
     BOXOSD,
     BOXTELEMETRY,
-    BOXGTUNE,
     BOXSERVO1,
     BOXSERVO2,
     BOXSERVO3,
@@ -132,7 +126,6 @@ bool IS_RC_MODE_ACTIVE(boxId_e boxId);
 void rcModeUpdate(boxBitmask_t *newState);
 
 bool isAirmodeActive(void);
-bool isAntiGravityModeActive(void);
 
 bool isRangeActive(uint8_t auxChannelIndex, const channelRange_t *range);
 void updateActivatedModes(void);

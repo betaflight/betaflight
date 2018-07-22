@@ -39,17 +39,16 @@
 #define ITERM_SCALE 0.244381f
 #define DTERM_SCALE 0.000529f
 
+// The constant scale factor to replace the Kd component of the feedforward calculation.
+// This value gives the same "feel" as the previous Kd default of 26 (26 * DTERM_SCALE)
+#define FEEDFORWARD_SCALE 0.013754f
+
 typedef enum {
     PID_ROLL,
     PID_PITCH,
     PID_YAW,
-    PID_ALT,
-    PID_POS,
-    PID_POSR,
-    PID_NAVR,
     PID_LEVEL,
     PID_MAG,
-    PID_VEL,
     PID_ITEM_COUNT
 } pidIndex_e;
 
@@ -70,11 +69,17 @@ typedef enum {
     PID_CRASH_RECOVERY_BEEP
 } pidCrashRecovery_e;
 
-typedef struct pid8_s {
+typedef struct pidf_s {
     uint8_t P;
     uint8_t I;
     uint8_t D;
-} pid8_t;
+    uint16_t F;
+} pidf_t;
+
+typedef enum {
+    ANTI_GRAVITY_SMOOTH,
+    ANTI_GRAVITY_STEP
+} antiGravityMode_e;
 
 typedef enum {
     ITERM_RELAX_OFF,
@@ -95,7 +100,7 @@ typedef struct pidProfile_s {
     uint16_t dterm_notch_hz;                // Biquad dterm notch hz
     uint16_t dterm_notch_cutoff;            // Biquad dterm notch low cutoff
 
-    pid8_t  pid[PID_ITEM_COUNT];
+    pidf_t  pid[PID_ITEM_COUNT];
 
     uint8_t dterm_filter_type;              // Filter selection for dterm
     uint8_t itermWindupPointPercent;        // Experimental ITerm windup threshold, percent motor saturation
@@ -108,9 +113,9 @@ typedef struct pidProfile_s {
     uint8_t horizon_tilt_expert_mode;       // OFF or ON
 
     // Betaflight PID controller parameters
+    uint8_t  antiGravityMode;             // type of anti gravity method
     uint16_t itermThrottleThreshold;        // max allowed throttle delta before iterm accelerated in ms
     uint16_t itermAcceleratorGain;          // Iterm Accelerator Gain when itermThrottlethreshold is hit
-    uint16_t dtermSetpointWeight;           // Setpoint weight for Dterm (0= measurement, 1= full error, 1 > aggressive derivative)
     uint16_t yawRateAccelLimit;             // yaw accel limiter for deg/sec/ms
     uint16_t rateAccelLimit;                // accel limiter roll/pitch deg/sec/ms
     uint16_t crash_dthreshold;              // dterm crash value
@@ -121,15 +126,15 @@ typedef struct pidProfile_s {
     uint8_t crash_recovery_angle;           // degrees
     uint8_t crash_recovery_rate;            // degree/second
     uint8_t vbatPidCompensation;            // Scale PIDsum to battery voltage
-    uint8_t setpointRelaxRatio;             // Setpoint weight relaxation effect
+    uint8_t feedForwardTransition;          // Feed forward weight transition
     uint16_t crash_limit_yaw;               // limits yaw errorRate, so crashes don't cause huge throttle increase
     uint16_t itermLimit;
     uint16_t dterm_lowpass2_hz;             // Extra PT1 Filter on D in hz
     uint8_t crash_recovery;                 // off, on, on and beeps when it is in crash recovery mode
     uint8_t throttle_boost;                 // how much should throttle be boosted during transient changes 0-100, 100 adds 10x hpf filtered throttle
     uint8_t throttle_boost_cutoff;          // Which cutoff frequency to use for throttle boost. higher cutoffs keep the boost on for shorter. Specified in hz.
-    uint8_t  iterm_rotation;                // rotates iterm to translate world errors to local coordinate system
-    uint8_t  smart_feedforward;             // takes only the larger of P and the D weight feed forward term if they have the same sign.
+    uint8_t iterm_rotation;                 // rotates iterm to translate world errors to local coordinate system
+    uint8_t smart_feedforward;              // takes only the larger of P and the D weight feed forward term if they have the same sign.
     uint8_t iterm_relax_type;               // Specifies type of relax algorithm
     uint8_t iterm_relax_cutoff;             // This cutoff frequency specifies a low pass filter which predicts average response of the quad to setpoint
     uint8_t iterm_relax;                    // Enable iterm suppression during stick input
@@ -162,9 +167,12 @@ typedef struct pidAxisData_s {
     float P;
     float I;
     float D;
+    float F;
 
     float Sum;
 } pidAxisData_t;
+
+extern const char pidNames[];
 
 extern pidAxisData_t pidData[3];
 
@@ -176,7 +184,6 @@ extern pt1Filter_t throttleLpf;
 void pidResetITerm(void);
 void pidStabilisationState(pidStabilisationState_e pidControllerState);
 void pidSetItermAccelerator(float newItermAccelerator);
-float pidItermAccelerator(void);
 void pidInitFilters(const pidProfile_t *pidProfile);
 void pidInitConfig(const pidProfile_t *pidProfile);
 void pidInit(const pidProfile_t *pidProfile);
@@ -186,3 +193,8 @@ void pidAcroTrainerInit(void);
 void pidSetAcroTrainerState(bool newState);
 void pidInitSetpointDerivativeLpf(uint16_t filterCutoff, uint8_t debugAxis, uint8_t filterType);
 void pidUpdateSetpointDerivativeLpf(uint16_t filterCutoff);
+void pidUpdateAntiGravityThrottleFilter(float throttle);
+bool pidOsdAntiGravityActive(void);
+bool pidOsdAntiGravityMode(void);
+void pidSetAntiGravityState(bool newState);
+bool pidAntiGravityEnabled(void);
