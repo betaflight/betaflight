@@ -143,18 +143,6 @@ static uint8_t rebootMode;
 
 #ifndef USE_OSD_SLAVE
 
-static const char pidnames[] =
-    "ROLL;"
-    "PITCH;"
-    "YAW;"
-    "ALT;"
-    "Pos;"
-    "PosR;"
-    "NavR;"
-    "LEVEL;"
-    "MAG;"
-    "VEL;";
-
 typedef enum {
     MSP_SDCARD_STATE_NOT_PRESENT = 0,
     MSP_SDCARD_STATE_FATAL       = 1,
@@ -984,7 +972,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         break;
 
     case MSP_PIDNAMES:
-        for (const char *c = pidnames; *c; c++) {
+        for (const char *c = pidNames; *c; c++) {
             sbufWriteU8(dst, *c);
         }
         break;

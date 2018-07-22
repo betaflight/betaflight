@@ -58,6 +58,13 @@
 
 #define ITERM_RELAX_SETPOINT_THRESHOLD 30.0f
 
+const char pidNames[] =
+    "ROLL;"
+    "PITCH;"
+    "YAW;"
+    "LEVEL;"
+    "MAG;";
+
 FAST_RAM_ZERO_INIT uint32_t targetPidLooptime;
 FAST_RAM_ZERO_INIT pidAxisData_t pidData[XYZ_AXIS_COUNT];
 
@@ -113,13 +120,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
             [PID_ROLL] =  { 46, 45, 25, 60 },
             [PID_PITCH] = { 50, 50, 27, 60 },
             [PID_YAW] =   { 65, 45, 0 , 60 },
-            [PID_ALT] =   { 50, 0, 0, 0 },
-            [PID_POS] =   { 15, 0, 0, 0 },     // POSHOLD_P * 100, POSHOLD_I * 100,
-            [PID_POSR] =  { 34, 14, 53, 0 },   // POSHOLD_RATE_P * 10, POSHOLD_RATE_I * 100, POSHOLD_RATE_D * 1000,
-            [PID_NAVR] =  { 25, 33, 83, 0 },   // NAV_P * 10, NAV_I * 100, NAV_D * 1000
             [PID_LEVEL] = { 50, 50, 75, 0 },
             [PID_MAG] =   { 40, 0, 0, 0 },
-            [PID_VEL] =   { 55, 55, 75, 0 }
         },
 
         .pidSumLimit = PIDSUM_LIMIT,
