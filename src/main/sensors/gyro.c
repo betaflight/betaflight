@@ -197,6 +197,8 @@ PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
     .gyro_offset_yaw = 0,
     .yaw_spin_recovery = true,
     .yaw_spin_threshold = 1950,
+    .dyn_notch_quality = 70,
+    .dyn_notch_width_percent = 50,
 );
 
 
