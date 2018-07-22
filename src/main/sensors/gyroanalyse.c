@@ -52,14 +52,11 @@
 #define FFT_BIN_OFFSET            1 // compare 1 + this offset FFT bins for peak, ie if 1 start 2.5 * 41.655 or about 104Hz
 #define FFT_SAMPLING_RATE_HZ      1333  // analyse up to 666Hz, 16 bins each 41.655z wide
 #define FFT_BPF_HZ                (FFT_SAMPLING_RATE_HZ / 4)  // centre frequency of bandpass that constrains input to FFT
-#define FFT_BIQUAD_Q              0.05f  // bandpass quality factor, 0.1 for steep sided bandpass
 #define FFT_RESOLUTION            ((float)FFT_SAMPLING_RATE_HZ / FFT_WINDOW_SIZE) // hz per bin
 #define FFT_MIN_BIN_RISE          2 // following bin must be at least 2 times previous to indicate start of peak
 #define DYN_NOTCH_SMOOTH_FREQ_HZ  60  // lowpass frequency for smoothing notch centre point
 #define DYN_NOTCH_MIN_CENTRE_HZ   125  // notch centre point will not go below this, must be greater than cutoff, mid of bottom bin
 #define DYN_NOTCH_MAX_CENTRE_HZ   (FFT_SAMPLING_RATE_HZ / 2) // maximum notch centre frequency limited by nyquist
-#define DYN_NOTCH_WIDTH_PERCENT   25  //  maybe adjustable via CLI?
-#define DYN_NOTCH_CUTOFF          ((float)(100 - DYN_NOTCH_WIDTH_PERCENT) / 100)
 #define DYN_NOTCH_MIN_CUTOFF_HZ   105  // lowest allowed notch cutoff frequency
 #define DYN_NOTCH_CALC_TICKS      (XYZ_AXIS_COUNT * 4) // we need 4 steps for each axis
 
@@ -84,6 +81,8 @@ static FAST_RAM_ZERO_INIT biquadFilter_t fftFreqFilter[XYZ_AXIS_COUNT];
 
 // Hanning window, see https://en.wikipedia.org/wiki/Window_function#Hann_.28Hanning.29_window
 static FAST_RAM_ZERO_INIT float hanningWindow[FFT_WINDOW_SIZE];
+
+static FAST_RAM_ZERO_INIT float dynamicNotchCutoff;
 
 void initHanning(void)
 {
@@ -118,8 +117,10 @@ void gyroDataAnalyseInit(uint32_t targetLooptimeUs)
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         fftResult[axis].centerFreq = 200; // any init value
         biquadFilterInitLPF(&fftFreqFilter[axis], DYN_NOTCH_SMOOTH_FREQ_HZ, looptime);
-        biquadFilterInit(&fftGyroFilter[axis], FFT_BPF_HZ, 1000000 / FFT_SAMPLING_RATE_HZ, FFT_BIQUAD_Q, FILTER_BPF);
+        biquadFilterInit(&fftGyroFilter[axis], FFT_BPF_HZ, 1000000 / FFT_SAMPLING_RATE_HZ, 0.001f * gyroConfig()->dyn_notch_quality, FILTER_BPF);
     }
+
+    dynamicNotchCutoff = (100.0f - gyroConfig()->dyn_notch_width_percent) / 100;
 }
 
 // used in OSD
@@ -296,7 +297,7 @@ void gyroDataAnalyseUpdate(biquadFilter_t *notchFilterDyn)
         {
             // 7us
             // calculate cutoffFreq and notch Q, update notch filter
-            float cutoffFreq = fmax(fftResult[axis].centerFreq * DYN_NOTCH_CUTOFF, DYN_NOTCH_MIN_CUTOFF_HZ);
+            float cutoffFreq = fmax(fftResult[axis].centerFreq * dynamicNotchCutoff, DYN_NOTCH_MIN_CUTOFF_HZ);
             float notchQ = filterGetNotchQ(fftResult[axis].centerFreq, cutoffFreq);
             biquadFilterUpdate(&notchFilterDyn[axis], fftResult[axis].centerFreq, gyro.targetLooptime, notchQ, FILTER_NOTCH);
             DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
