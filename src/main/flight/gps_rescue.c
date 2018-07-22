@@ -73,7 +73,7 @@ PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
     .throttleHover = 1280,
     .sanityChecks = RESCUE_SANITY_ON,
     .minSats = 8,
-    .minRescueDTH = 100
+    .minRescueDth = 100
 );
 
 static uint16_t rescueThrottle;
@@ -125,7 +125,7 @@ void updateGPSRescueState(void)
         }
 
         // Minimum distance detection.  Disarm regardless of sanity check configuration.  Rescue too close is never a good idea.
-        if (rescueState.sensor.distanceToHome < gpsRescueConfig()->minRescueDTH) {
+        if (rescueState.sensor.distanceToHome < gpsRescueConfig()->minRescueDth) {
             // Never allow rescue mode to engage as a failsafe  when too close or when disarmed.
             if (rescueState.isFailsafe || !ARMING_FLAG(ARMED)) {
                 rescueState.failure = RESCUE_TOO_CLOSE;

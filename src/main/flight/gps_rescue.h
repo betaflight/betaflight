@@ -37,7 +37,7 @@ typedef struct gpsRescue_s {
     uint16_t throttleHover;
     uint16_t velP, velI, velD;
     uint8_t minSats;
-    uint16_t minRescueDTH; //meters
+    uint16_t minRescueDth; //meters
     gpsRescueSanity_e sanityChecks;
 } gpsRescueConfig_t;
 
