@@ -736,8 +736,7 @@ static void printRxFailsafe(uint8_t dumpMask, const rxFailsafeChannelConfig_t *r
     for (uint32_t channel = 0; channel < MAX_SUPPORTED_RC_CHANNEL_COUNT; channel++) {
         const rxFailsafeChannelConfig_t *channelFailsafeConfig = &rxFailsafeChannelConfigs[channel];
         const rxFailsafeChannelConfig_t *defaultChannelFailsafeConfig = &defaultRxFailsafeChannelConfigs[channel];
-        const bool equalsDefault = channelFailsafeConfig->mode == defaultChannelFailsafeConfig->mode
-                && channelFailsafeConfig->step == defaultChannelFailsafeConfig->step;
+        const bool equalsDefault = !memcmp(channelFailsafeConfig, defaultChannelFailsafeConfig, sizeof(rxFailsafeChannelConfig_t));
         const bool requireValue = channelFailsafeConfig->mode == RX_FAILSAFE_MODE_SET;
         if (requireValue) {
             const char *format = "rxfail %u %c %d";
@@ -856,12 +855,7 @@ static void printAux(uint8_t dumpMask, const modeActivationCondition_t *modeActi
         bool equalsDefault = false;
         if (defaultModeActivationConditions) {
             const modeActivationCondition_t *macDefault = &defaultModeActivationConditions[i];
-            equalsDefault = mac->modeId == macDefault->modeId
-                && mac->auxChannelIndex == macDefault->auxChannelIndex
-                && mac->range.startStep == macDefault->range.startStep
-                && mac->range.endStep == macDefault->range.endStep
-                && mac->modeLogic == macDefault->modeLogic
-                && mac->linkedTo == macDefault->linkedTo;
+            equalsDefault = !memcmp(mac, macDefault, sizeof(modeActivationCondition_t));
             const box_t *box = findBoxByBoxId(macDefault->modeId);
             const box_t *linkedTo = findBoxByBoxId(macDefault->linkedTo);
             if (box) {
@@ -971,12 +965,7 @@ static void printSerial(uint8_t dumpMask, const serialConfig_t *serialConfig, co
         };
         bool equalsDefault = false;
         if (serialConfigDefault) {
-            equalsDefault = serialConfig->portConfigs[i].identifier == serialConfigDefault->portConfigs[i].identifier
-                && serialConfig->portConfigs[i].functionMask == serialConfigDefault->portConfigs[i].functionMask
-                && serialConfig->portConfigs[i].msp_baudrateIndex == serialConfigDefault->portConfigs[i].msp_baudrateIndex
-                && serialConfig->portConfigs[i].gps_baudrateIndex == serialConfigDefault->portConfigs[i].gps_baudrateIndex
-                && serialConfig->portConfigs[i].telemetry_baudrateIndex == serialConfigDefault->portConfigs[i].telemetry_baudrateIndex
-                && serialConfig->portConfigs[i].blackbox_baudrateIndex == serialConfigDefault->portConfigs[i].blackbox_baudrateIndex;
+            equalsDefault = !memcmp(&serialConfig->portConfigs[i], &serialConfigDefault->portConfigs[i], sizeof(serialPortConfig_t));
             cliDefaultPrintLinef(dumpMask, equalsDefault, format,
                 serialConfigDefault->portConfigs[i].identifier,
                 serialConfigDefault->portConfigs[i].functionMask,
@@ -1225,14 +1214,7 @@ static void printAdjustmentRange(uint8_t dumpMask, const adjustmentRange_t *adju
         bool equalsDefault = false;
         if (defaultAdjustmentRanges) {
             const adjustmentRange_t *arDefault = &defaultAdjustmentRanges[i];
-            equalsDefault = ar->auxChannelIndex == arDefault->auxChannelIndex
-                && ar->range.startStep == arDefault->range.startStep
-                && ar->range.endStep == arDefault->range.endStep
-                && ar->adjustmentFunction == arDefault->adjustmentFunction
-                && ar->auxSwitchChannelIndex == arDefault->auxSwitchChannelIndex
-                && ar->adjustmentIndex == arDefault->adjustmentIndex
-                && ar->adjustmentCenter == arDefault->adjustmentCenter
-                && ar->adjustmentScale == arDefault->adjustmentScale;
+            equalsDefault = !memcmp(ar, arDefault, sizeof(adjustmentRange_t));
             cliDefaultPrintLinef(dumpMask, equalsDefault, format,
                 i,
                 arDefault->adjustmentIndex,
@@ -1465,8 +1447,7 @@ static void printRxRange(uint8_t dumpMask, const rxChannelRangeConfig_t *channel
     for (uint32_t i = 0; i < NON_AUX_CHANNEL_COUNT; i++) {
         bool equalsDefault = false;
         if (defaultChannelRangeConfigs) {
-            equalsDefault = channelRangeConfigs[i].min == defaultChannelRangeConfigs[i].min
-                && channelRangeConfigs[i].max == defaultChannelRangeConfigs[i].max;
+            equalsDefault = !memcmp(&channelRangeConfigs[i], &defaultChannelRangeConfigs[i], sizeof(rxChannelRangeConfig_t));
             cliDefaultPrintLinef(dumpMask, equalsDefault, format,
                 i,
                 defaultChannelRangeConfigs[i].min,
@@ -1584,9 +1565,7 @@ static void printColor(uint8_t dumpMask, const hsvColor_t *colors, const hsvColo
         bool equalsDefault = false;
         if (defaultColors) {
             const hsvColor_t *colorDefault = &defaultColors[i];
-            equalsDefault = color->h == colorDefault->h
-                && color->s == colorDefault->s
-                && color->v == colorDefault->v;
+            equalsDefault = !memcmp(color, colorDefault, sizeof(hsvColor_t));
             cliDefaultPrintLinef(dumpMask, equalsDefault, format, i,colorDefault->h, colorDefault->s, colorDefault->v);
         }
         cliDumpPrintLinef(dumpMask, equalsDefault, format, i, color->h, color->s, color->v);
@@ -1695,11 +1674,7 @@ static void printServo(uint8_t dumpMask, const servoParam_t *servoParams, const 
         bool equalsDefault = false;
         if (defaultServoParams) {
             const servoParam_t *defaultServoConf = &defaultServoParams[i];
-            equalsDefault = servoConf->min == defaultServoConf->min
-                && servoConf->max == defaultServoConf->max
-                && servoConf->middle == defaultServoConf->middle
-                && servoConf->rate == defaultServoConf->rate
-                && servoConf->forwardFromChannel == defaultServoConf->forwardFromChannel;
+            equalsDefault = !memcmp(servoConf, defaultServoConf, sizeof(servoParam_t));
             cliDefaultPrintLinef(dumpMask, equalsDefault, format,
                 i,
                 defaultServoConf->min,
@@ -1841,13 +1816,7 @@ static void printServoMix(uint8_t dumpMask, const servoMixer_t *customServoMixer
         bool equalsDefault = false;
         if (defaultCustomServoMixers) {
             servoMixer_t customServoMixerDefault = defaultCustomServoMixers[i];
-            equalsDefault = customServoMixer.targetChannel == customServoMixerDefault.targetChannel
-                && customServoMixer.inputSource == customServoMixerDefault.inputSource
-                && customServoMixer.rate == customServoMixerDefault.rate
-                && customServoMixer.speed == customServoMixerDefault.speed
-                && customServoMixer.min == customServoMixerDefault.min
-                && customServoMixer.max == customServoMixerDefault.max
-                && customServoMixer.box == customServoMixerDefault.box;
+            equalsDefault = !memcmp(&customServoMixer, &customServoMixerDefault, sizeof(servoMixer_t));
 
             cliDefaultPrintLinef(dumpMask, equalsDefault, format,
                 i,
@@ -2173,11 +2142,7 @@ static void printVtx(uint8_t dumpMask, const vtxConfig_t *vtxConfig, const vtxCo
         const vtxChannelActivationCondition_t *cac = &vtxConfig->vtxChannelActivationConditions[i];
         if (vtxConfigDefault) {
             const vtxChannelActivationCondition_t *cacDefault = &vtxConfigDefault->vtxChannelActivationConditions[i];
-            equalsDefault = cac->auxChannelIndex == cacDefault->auxChannelIndex
-                && cac->band == cacDefault->band
-                && cac->channel == cacDefault->channel
-                && cac->range.startStep == cacDefault->range.startStep
-                && cac->range.endStep == cacDefault->range.endStep;
+            equalsDefault = !memcmp(cac, cacDefault, sizeof(vtxChannelActivationCondition_t));
             cliDefaultPrintLinef(dumpMask, equalsDefault, format,
                 i,
                 cacDefault->auxChannelIndex,
