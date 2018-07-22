@@ -1325,6 +1325,8 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, currentPidProfile->pid[PID_PITCH].F);
         sbufWriteU16(dst, currentPidProfile->pid[PID_YAW].F);
 
+        sbufWriteU8(dst, currentPidProfile->antiGravityMode);
+
         break;
     case MSP_SENSOR_CONFIG:
         sbufWriteU8(dst, accelerometerConfig()->acc_hardware);
@@ -1844,7 +1846,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         if (sbufBytesRemaining(src) >= 2) {
             sbufReadU16(src); // was currentPidProfile->dtermSetpointWeight
         }
-        if (sbufBytesRemaining(src) >= 13) {
+        if (sbufBytesRemaining(src) >= 14) {
             // Added in MSP API 1.40
             currentPidProfile->iterm_rotation = sbufReadU8(src);
 #if defined(USE_SMART_FEEDFORWARD)
@@ -1878,6 +1880,8 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             currentPidProfile->pid[PID_ROLL].F = sbufReadU16(src);
             currentPidProfile->pid[PID_PITCH].F = sbufReadU16(src);
             currentPidProfile->pid[PID_YAW].F = sbufReadU16(src);
+
+            currentPidProfile->antiGravityMode = sbufReadU8(src);
         }
         pidInitConfig(currentPidProfile);
 
