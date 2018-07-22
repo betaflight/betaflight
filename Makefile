@@ -486,9 +486,10 @@ targets-by-mcu:
 	$(V1) for target in $(VALID_TARGETS); do \
 		TARGET_MCU_TYPE=$$($(MAKE) -s TARGET=$${target} target-mcu); \
 		if [ "$${TARGET_MCU_TYPE}" = "$${MCU_TYPE}" ]; then \
+			echo "Building target $${target}..."; \
 			$(MAKE) TARGET=$${target}; \
 			if [ $$? -ne 0 ]; then \
-				echo "Building $${target} failed, aborting."; \
+				echo "Building target $${target} failed, aborting."; \
 				exit 1; \
 			fi; \
 		fi; \
