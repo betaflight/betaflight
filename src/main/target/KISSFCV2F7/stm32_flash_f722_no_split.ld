@@ -16,8 +16,7 @@ ENTRY(Reset_Handler)
 /* Specify the memory areas */
 MEMORY
 {
-    ITCM_ISR (rx)     : ORIGIN = 0x00000000, LENGTH = 1K
-    ITCM_RAM (rx)     : ORIGIN = 0x00000400, LENGTH = 15K
+    ITCM_RAM (rx)     : ORIGIN = 0x00000000, LENGTH = 16K
 
     /* Bootloader stays in the first sector (16K) */
     FLASH_CONFIG (r)  : ORIGIN = 0x08004000, LENGTH = 16K /*second (16K) sector for eeprom emulation*/
