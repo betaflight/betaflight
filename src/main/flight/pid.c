@@ -70,7 +70,7 @@ static FAST_RAM_ZERO_INIT bool pidStabilisationEnabled;
 
 static FAST_RAM_ZERO_INIT bool inCrashRecoveryMode = false;
 
-static FAST_RAM_ZERO_INIT float dT;
+FAST_RAM_ZERO_INIT float dT;
 static FAST_RAM_ZERO_INIT float pidFrequency;
 
 static FAST_RAM_ZERO_INIT uint8_t antiGravityMode;
@@ -397,6 +397,8 @@ static FAST_RAM_ZERO_INIT float acErrorLimit;
 
 void pidResetITerm(void)
 {
+    extern float integratedYaw;
+    integratedYaw *= 0.99f;
     for (int axis = 0; axis < 3; axis++) {
         pidData[axis].I = 0.0f;
 #if defined(USE_ABSOLUTE_CONTROL)
@@ -836,6 +838,9 @@ void FAST_CODE applySmartFeedforward(int axis)
                 pidData[axis].F = 0;
             }
         }
+        /* else { */
+        /*     pidData[axis].F = 0; */
+        /* } */
     }
 }
 #endif // USE_SMART_FEEDFORWARD
