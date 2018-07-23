@@ -34,9 +34,6 @@
 #define USE_ACC
 #define USE_GYRO
 
-//define camera control
-#define CAMERA_CONTROL_PIN PE13
-
 // ICM-20689
 #define USE_ACC_SPI_ICM20689
 #define USE_GYRO_SPI_ICM20689
