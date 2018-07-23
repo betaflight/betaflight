@@ -166,12 +166,17 @@ static const displayPortVTable_t max7456VTable = {
 
 displayPort_t *max7456DisplayPortInit(const vcdProfile_t *vcdProfile)
 {
-    displayInit(&max7456DisplayPort, &max7456VTable);
 #ifdef USE_OSD_SLAVE
-    max7456Init(max7456Config(), vcdProfile, false);
+    if (!max7456Init(max7456Config(), vcdProfile, false))
 #else
-    max7456Init(max7456Config(), vcdProfile, systemConfig()->cpu_overclock);
+    if (!max7456Init(max7456Config(), vcdProfile, systemConfig()->cpu_overclock))
 #endif
+    {
+        return NULL;
+    }
+
+    displayInit(&max7456DisplayPort, &max7456VTable);
+
     resync(&max7456DisplayPort);
     return &max7456DisplayPort;
 }
