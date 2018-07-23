@@ -117,7 +117,7 @@ void gyroDataAnalyseInit(uint32_t targetLooptimeUs)
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         fftResult[axis].centerFreq = 200; // any init value
         biquadFilterInitLPF(&fftFreqFilter[axis], DYN_NOTCH_SMOOTH_FREQ_HZ, looptime);
-        biquadFilterInit(&fftGyroFilter[axis], FFT_BPF_HZ, 1000000 / FFT_SAMPLING_RATE_HZ, 0.001f * gyroConfig()->dyn_notch_quality, FILTER_BPF);
+        biquadFilterInit(&fftGyroFilter[axis], FFT_BPF_HZ, 1000000 / FFT_SAMPLING_RATE_HZ, 0.01f * gyroConfig()->dyn_notch_quality, FILTER_BPF);
     }
 
     dynamicNotchCutoff = (100.0f - gyroConfig()->dyn_notch_width_percent) / 100;
