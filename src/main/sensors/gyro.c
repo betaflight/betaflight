@@ -547,7 +547,6 @@ bool gyroInit(void)
     firstArmingCalibrationWasStarted = false;
 
     bool ret = false;
-    memset(&gyro, 0, sizeof(gyro));
     gyroToUse = gyroConfig()->gyro_to_use;
 
 #if defined(USE_DUAL_GYRO) && defined(GYRO_1_CS_PIN)
