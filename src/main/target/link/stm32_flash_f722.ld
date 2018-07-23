@@ -13,10 +13,10 @@
 ENTRY(Reset_Handler)
 
 /*
-0x08000000 to 0x0807FFFF  512K full flash,
-0x08000000 to 0x08003FFF   16K isr vector, startup code,
-0x08004000 to 0x08007FFF   16K config,                  // FLASH_Sector_1
-0x08008000 to 0x0807FFFF  480K firmware,
+0x08000000 to 0x0807FFFF  512K full flash
+0x08000000 to 0x08003FFF   16K ISR vector
+0x08004000 to 0x08007FFF   16K config
+0x08008000 to 0x0807FFFF  480K firmware
 */
 
 /* Specify the memory areas */

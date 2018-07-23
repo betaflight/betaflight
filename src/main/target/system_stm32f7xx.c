@@ -100,19 +100,6 @@
   * @{
   */
 
-/************************* Miscellaneous Configuration ************************/
-
-/*!< Uncomment the following line if you need to relocate your vector Table in
-     Internal SRAM. */
-/* #define VECT_TAB_SRAM */
-#ifdef CUSTOM_VECT_TAB_OFFSET
-#define VECT_TAB_OFFSET CUSTOM_VECT_TAB_OFFSET
-#else
-#define VECT_TAB_OFFSET  0x00 /*!< Vector Table base offset field.*/
-#endif
-                                   /*This value must be a multiple of 0x200. */
-/******************************************************************************/
-
 /**
   * @}
   */
@@ -346,12 +333,15 @@ void SystemInit(void)
     /* Disable all interrupts */
     RCC->CIR = 0x00000000;
 
-  /* Configure the Vector Table location add offset address ------------------*/
-#ifdef VECT_TAB_SRAM
-    SCB->VTOR = RAMDTCM_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal SRAM */
-#else
-    SCB->VTOR = FLASH_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal FLASH */
-#endif
+    /* Configure the Vector Table location add offset address ------------------*/
+    extern uint8_t isr_vector_table_base;
+    const uint32_t vtorOffset = (uint32_t) &isr_vector_table_base;
+#define VTOR_OFFSET_ALIGNMENT 0x200
+#define VTOR_OFFSET_MASK (VTOR_OFFSET_ALIGNMENT - 1)
+    STATIC_ASSERT((vtorOffset % VTOR_OFFSET_MASK) == 0, isr_vector_table_base_is_not_512_byte_aligned);
+    SCB->VTOR = vtorOffset;
+#undef VTOR_OFFSET_MASK
+#undef VTOR_OFFSET_ALIGNMENT
 
     /* Enable I-Cache */
     if (INSTRUCTION_CACHE_ENABLE) {
