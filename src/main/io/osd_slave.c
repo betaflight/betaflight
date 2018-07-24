@@ -120,6 +120,11 @@ void osdSlaveInit(displayPort_t *osdDisplayPortToUse)
     displayResync(osdDisplayPort);
 }
 
+bool osdSlaveInitialized(void)
+{
+    return osdDisplayPort;
+}
+
 bool osdSlaveCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
 {
     UNUSED(currentTimeUs);
