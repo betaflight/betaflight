@@ -84,8 +84,6 @@
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_SERIAL
 #endif
 
-PG_REGISTER_WITH_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 1);
-
 PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
     .p_ratio = 32,
     .device = DEFAULT_BLACKBOX_DEVICE,
@@ -1287,8 +1285,8 @@ static bool blackboxWriteSysinfo(void)
                                                                             currentPidProfile->pid[PID_PITCH].F,
                                                                             currentPidProfile->pid[PID_YAW].F);
 
-        BLACKBOX_PRINT_HEADER_LINE("acc_limit_yaw", "%d",                   currentPidProfile->yawRateAccelLimit);
-        BLACKBOX_PRINT_HEADER_LINE("acc_limit", "%d",                       currentPidProfile->rateAccelLimit);
+        BLACKBOX_PRINT_HEADER_LINE("acceleration_limit_yaw", "%d",          currentPidProfile->yawRateAccelLimit);
+        BLACKBOX_PRINT_HEADER_LINE("acceleration_limit", "%d",              currentPidProfile->rateAccelLimit);
         BLACKBOX_PRINT_HEADER_LINE("pidsum_limit", "%d",                    currentPidProfile->pidSumLimit);
         BLACKBOX_PRINT_HEADER_LINE("pidsum_limit_yaw", "%d",                currentPidProfile->pidSumLimitYaw);
         // End of Betaflight controller parameters
