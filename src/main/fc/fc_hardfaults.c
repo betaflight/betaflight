@@ -31,6 +31,31 @@
 
 #include "flight/mixer.h"
 
+#ifdef STM32F7
+void MemManage_Handler(void)
+{
+    LED2_ON;
+
+#ifdef USE_TRANSPONDER
+    // prevent IR LEDs from burning out.
+    uint8_t requiredStateForTransponder = SYSTEM_STATE_CONFIG_LOADED | SYSTEM_STATE_TRANSPONDER_ENABLED;
+    if ((systemState & requiredStateForTransponder) == requiredStateForTransponder) {
+        transponderIrDisable();
+    }
+#endif
+
+    LED1_OFF;
+    LED0_OFF;
+
+    while (1) {
+        delay(500);
+        LED2_TOGGLE;
+        delay(50);
+        LED2_TOGGLE;
+    }
+}
+#endif
+
 #ifdef DEBUG_HARDFAULTS
 //from: https://mcuoneclipse.com/2012/11/24/debugging-hard-faults-on-arm-cortex-m/
 /**
@@ -116,10 +141,8 @@ void HardFault_Handler(void)
     LED0_OFF;
 
     while (1) {
-#ifdef LED2
         delay(50);
         LED2_TOGGLE;
-#endif
     }
 }
 #endif

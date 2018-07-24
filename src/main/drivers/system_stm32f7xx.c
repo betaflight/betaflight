@@ -162,6 +162,10 @@ void systemInit(void)
 {
     checkForBootLoaderRequest();
 
+    //  Mark ITCM-RAM as read-only
+    LL_MPU_ConfigRegion(LL_MPU_REGION_NUMBER0, 0, RAMITCM_BASE, LL_MPU_REGION_SIZE_16KB | LL_MPU_REGION_PRIV_RO_URO);
+    LL_MPU_Enable(LL_MPU_CTRL_PRIVILEGED_DEFAULT);
+
     //SystemClock_Config();
 
     // Configure NVIC preempt/priority groups

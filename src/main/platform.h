@@ -31,6 +31,7 @@
 #include "stm32f7xx_hal.h"
 #include "system_stm32f7xx.h"
 
+#include "stm32f7xx_ll_cortex.h"
 #include "stm32f7xx_ll_spi.h"
 #include "stm32f7xx_ll_gpio.h"
 #include "stm32f7xx_ll_dma.h"
