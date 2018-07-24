@@ -28,7 +28,7 @@ SECTIONS
   /* The startup code goes first into FLASH */
   .isr_vector :
   {
-    . = ALIGN(4);
+    . = ALIGN(512);
     PROVIDE (isr_vector_table_base = .);
     KEEP(*(.isr_vector)) /* Startup code */
     . = ALIGN(4);
@@ -132,7 +132,6 @@ SECTIONS
     __sram2_start__ = _ssram2;
     *(.sram2)
     *(SORT_BY_ALIGNMENT(.sram2*))
-    *(COMMON)
 
     . = ALIGN(4);
     _esram2 = .;         /* define a global symbol at sram2 end */
