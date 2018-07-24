@@ -84,6 +84,8 @@
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_SERIAL
 #endif
 
+PG_REGISTER_WITH_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 1);
+
 PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
     .p_ratio = 32,
     .device = DEFAULT_BLACKBOX_DEVICE,
