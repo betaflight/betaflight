@@ -1131,6 +1131,11 @@ void osdInit(displayPort_t *osdDisplayPortToUse)
     resumeRefreshAt = micros() + (4 * REFRESH_1S);
 }
 
+bool osdInitialized(void)
+{
+    return osdDisplayPort;
+}
+
 void osdUpdateAlarms(void)
 {
     // This is overdone?

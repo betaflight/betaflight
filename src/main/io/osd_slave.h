@@ -29,6 +29,7 @@ extern bool osdSlaveIsLocked;
 
 // init
 void osdSlaveInit(struct displayPort_s *osdDisplayPort);
+bool osdSlaveInitialized(void);
 
 // task api
 bool osdSlaveCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
