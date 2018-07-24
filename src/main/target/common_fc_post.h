@@ -72,13 +72,10 @@
 #undef USE_TELEMETRY_CRSF
 #endif
 
-#if !defined(USE_SERIALRX_SPEKTRUM)
+#if !defined(USE_SERIALRX_JETIEXBUS)
 #undef USE_TELEMETRY_JETIEXBUS
 #endif
 
-#if !defined(USE_SERIALRX_JETIEXBUS)
-#undef USE_TELEMETRY_SRXL
-#endif
 
 #if !defined(USE_TELEMETRY)
 #undef USE_CRSF_CMS_TELEMETRY
@@ -111,6 +108,7 @@
 #undef USE_SPEKTRUM_VTX_CONTROL
 #undef USE_SPEKTRUM_VTX_TELEMETRY
 #undef USE_SPEKTRUM_CMS_TELEMETRY
+#undef USE_TELEMETRY_SRXL
 #endif
 
 /* If either VTX_CONTROL or VTX_COMMON is undefined then remove common code and device drivers */
