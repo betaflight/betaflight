@@ -72,7 +72,9 @@
 
 #include "sensors/boardalignment.h"
 #include "sensors/gyro.h"
+#ifdef USE_GYRO_DATA_ANALYSE
 #include "sensors/gyroanalyse.h"
+#endif
 #include "sensors/sensors.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
@@ -140,6 +142,10 @@ typedef struct gyroSensor_s {
     timeUs_t yawSpinTimeUs;
     bool yawSpinDetected;
 #endif // USE_YAW_SPIN_RECOVERY
+
+#ifdef USE_GYRO_DATA_ANALYSE
+    gyroAnalyseState_t gyroAnalyseState;
+#endif
 } gyroSensor_t;
 
 STATIC_UNIT_TESTED FAST_RAM_ZERO_INIT gyroSensor_t gyroSensor1;
@@ -503,8 +509,9 @@ static bool gyroInitSensor(gyroSensor_t *gyroSensor)
     gyroInitSensorFilters(gyroSensor);
 
 #ifdef USE_GYRO_DATA_ANALYSE
-    gyroDataAnalyseInit(gyro.targetLooptime);
+    gyroDataAnalyseStateInit(&gyroSensor->gyroAnalyseState, gyro.targetLooptime);
 #endif
+
     return true;
 }
 
@@ -518,6 +525,10 @@ bool gyroInit(void)
     } else {
         overflowAxisMask = 0;
     }
+#endif
+
+#ifdef USE_GYRO_DATA_ANALYSE
+    gyroDataAnalyseInit();
 #endif
 
     switch (debugMode) {
@@ -536,7 +547,6 @@ bool gyroInit(void)
     firstArmingCalibrationWasStarted = false;
 
     bool ret = false;
-    memset(&gyro, 0, sizeof(gyro));
     gyroToUse = gyroConfig()->gyro_to_use;
 
 #if defined(USE_DUAL_GYRO) && defined(GYRO_1_CS_PIN)
@@ -1066,9 +1076,10 @@ static FAST_CODE FAST_CODE_NOINLINE void gyroUpdateSensor(gyroSensor_t *gyroSens
     } else {
         filterGyroDebug(gyroSensor, sampleDeltaUs);
     }
+
 #ifdef USE_GYRO_DATA_ANALYSE
     if (isDynamicFilterActive()) {
-        gyroDataAnalyse(gyroSensor->notchFilterDyn);
+        gyroDataAnalyse(&gyroSensor->gyroAnalyseState, gyroSensor->notchFilterDyn);
     }
 #endif
 }

@@ -24,7 +24,7 @@ static FAST_CODE void GYRO_FILTER_FUNCTION_NAME(gyroSensor_t *gyroSensor, timeDe
 
 #ifdef USE_GYRO_DATA_ANALYSE
         if (isDynamicFilterActive()) {
-            gyroDataAnalysePush(axis, gyroADCf);
+            gyroDataAnalysePush(&gyroSensor->gyroAnalyseState, axis, gyroADCf);
             gyroADCf = gyroSensor->notchFilterDynApplyFn((filter_t *)&gyroSensor->notchFilterDyn[axis], gyroADCf);
             if (axis == X) {
                 GYRO_FILTER_DEBUG_SET(DEBUG_FFT, 1, lrintf(gyroADCf)); // store data after dynamic notch
