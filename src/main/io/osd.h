@@ -200,6 +200,7 @@ extern timeUs_t resumeRefreshAt;
 
 struct displayPort_s;
 void osdInit(struct displayPort_s *osdDisplayPort);
+bool osdInitialized(void);
 void osdResetAlarms(void);
 void osdUpdate(timeUs_t currentTimeUs);
 void osdStatSetState(uint8_t statIndex, bool enabled);
