@@ -215,7 +215,7 @@ void voltageMeterESCInit(void)
 {
 #ifdef USE_ESC_SENSOR
     memset(&voltageMeterESCState, 0, sizeof(voltageMeterESCState_t));
-    biquadFilterInitLPF(&voltageMeterESCState.filter, VBAT_LPF_FREQ, 50000); //50HZ Update
+    biquadFilterInitLPF(&voltageMeterESCState.filter, VBAT_LPF_FREQ, 20000); //50HZ Update
 #endif
 }
 
