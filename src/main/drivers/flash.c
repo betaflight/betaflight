@@ -31,6 +31,7 @@
 #include "flash_impl.h"
 #include "flash_m25p16.h"
 #include "flash_w25m.h"
+#include "flash_w25n.h"
 #include "drivers/bus_spi.h"
 #include "drivers/io.h"
 #include "drivers/time.h"
@@ -78,8 +79,9 @@ bool flashInit(const flashConfig_t *flashConfig)
     /* Just in case transfer fails and writes nothing, so we don't try to verify the ID against random garbage
      * from the stack:
      */
-    uint8_t in[4];
+    uint8_t in[5];
     in[1] = 0;
+    in[2] = 0;
 
     // Clearing the CS bit terminates the command early so we don't have to read the chip UID:
     spiBusTransfer(busdev, out, in, sizeof(out));
@@ -95,6 +97,14 @@ bool flashInit(const flashConfig_t *flashConfig)
 
 #ifdef USE_FLASH_W25M
     if (w25m_detect(&flashDevice, chipID)) {
+        return true;
+    }
+#endif
+
+#ifdef USE_FLASH_W25N
+    chipID = (in[2] << 16) | (in[3] << 8) | (in[4]);
+
+    if (w25n_detect(&flashDevice, chipID)) {
         return true;
     }
 #endif

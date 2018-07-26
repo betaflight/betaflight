@@ -43,12 +43,14 @@
 
 #include "flash_m25p16.h"
 #include "flash_w25m.h"
+#include "flash_w25n.h"
 
 #include "pg/flash.h"
 
 #define W25M_INSTRUCTION_SOFTWARE_DIE_SELECT         0xC2
 
 #define JEDEC_ID_WINBOND_W25M512                     0xEF7119 // W25Q256 x 2
+#define JEDEC_ID_WINBOND_W25N02GV                    0xEFAB21 // W25N01GV x 2
 
 static const flashVTable_t w25m_vTable;
 
@@ -110,7 +112,7 @@ bool w25m_detect(flashDevice_t *fdevice, uint32_t chipID)
         // W25Q256 x 2
         dieCount = 2;
 
-        for (int die = 0 ; die < dieCount ; die++) {
+        for (int die = 0; die < dieCount; die++) {
             w25m_dieSelect(fdevice->busdev, die);
             dieDevice[die].busdev = fdevice->busdev;
             m25p16_detect(&dieDevice[die], JEDEC_ID_WINBOND_W25Q256);
@@ -118,6 +120,21 @@ bool w25m_detect(flashDevice_t *fdevice, uint32_t chipID)
 
         fdevice->geometry.flashType = FLASH_TYPE_NOR;
         break;
+
+#ifdef USE_FLASH_W25N
+    case JEDEC_ID_WINBOND_W25N02GV:
+        // W25N01GV x 2
+        dieCount = 2;
+
+        for (int die = 0; die < dieCount; die++) {
+            w25m_dieSelect(fdevice->busdev, die);
+            dieDevice[die].busdev = fdevice->busdev;
+            w25n_detect(&dieDevice[die], JEDEC_ID_WINBOND_W25N01GV);
+        }
+
+        fdevice->geometry.flashType = FLASH_TYPE_NOR;
+        break;
+#endif
 
     default:
         // Not a valid W25M series device

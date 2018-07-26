@@ -103,6 +103,7 @@
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
+#define USE_FLASH_W25N
 
 #define USE_VCP
 
