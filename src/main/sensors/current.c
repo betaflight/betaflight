@@ -140,7 +140,7 @@ currentMeterADCState_t currentMeterADCState;
 void currentMeterADCInit(void)
 {
     memset(&currentMeterADCState, 0, sizeof(currentMeterADCState_t));
-    biquadFilterInitLPF(&adciBatFilter, IBAT_LPF_FREQ, 50000); //50HZ Update
+    biquadFilterInitLPF(&adciBatFilter, IBAT_LPF_FREQ, 20000); //50HZ Update
 }
 
 void currentMeterADCRefresh(int32_t lastUpdateAt)
