@@ -32,8 +32,6 @@
 
 #define INVERTER_PIN_UART1      PC0
 
-#define CAMERA_CONTROL_PIN      PB3
-
 #define USE_EXTI
 #define MPU_INT_EXTI            PC4
 #define USE_MPU_DATA_READY_SIGNAL

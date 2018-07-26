@@ -27,9 +27,6 @@
 
 #define LED0_PIN                PB4
 
-//define camera control
-#define CAMERA_CONTROL_PIN      PB7
-
 #define USE_BEEPER
 #define BEEPER_PIN              PB14
 #define BEEPER_PWM_HZ           3150

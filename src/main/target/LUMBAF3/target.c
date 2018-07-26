@@ -29,16 +29,16 @@
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 
-    DEF_TIM(TIM2,  CH2, PA1,  TIM_USE_PPM,   0), // PPM
-    DEF_TIM(TIM3,  CH3, PB0,  TIM_USE_PWM,   0), // SS1Rx
-    DEF_TIM(TIM3,  CH2, PB5,  TIM_USE_PWM,   0), // SS1Tx
+    DEF_TIM(TIM2,  CH2, PA1,  TIM_USE_PPM,            0), // PPM
+    DEF_TIM(TIM3,  CH3, PB0,  TIM_USE_PWM,            0), // SS1Rx
+    DEF_TIM(TIM3,  CH2, PB5,  TIM_USE_PWM,            0), // SS1Tx
 
-    DEF_TIM(TIM8,  CH3, PB9,  TIM_USE_MOTOR, 0), // S1
-    DEF_TIM(TIM4,  CH3, PB8,  TIM_USE_MOTOR, 0), // S2
-    DEF_TIM(TIM4,  CH2, PB7,  TIM_USE_MOTOR, 0), // S3
-    DEF_TIM(TIM1,  CH1, PA8,  TIM_USE_MOTOR, 0), // S4
-    DEF_TIM(TIM16, CH1, PB4,  TIM_USE_MOTOR, 0), // S5
+    DEF_TIM(TIM8,  CH3, PB9,  TIM_USE_MOTOR,          0), // S1
+    DEF_TIM(TIM4,  CH3, PB8,  TIM_USE_MOTOR,          0), // S2
+    DEF_TIM(TIM4,  CH2, PB7,  TIM_USE_MOTOR,          0), // S3
+    DEF_TIM(TIM1,  CH1, PA8,  TIM_USE_MOTOR,          0), // S4
+    DEF_TIM(TIM16, CH1, PB4,  TIM_USE_MOTOR,          0), // S5
 
-    DEF_TIM(TIM15, CH1, PA2,  TIM_USE_LED,   0), // LED_STRIP
-    DEF_TIM(TIM2,  CH1, PA15, TIM_USE_ANY,   0), // CAMERA CONTROL
+    DEF_TIM(TIM15, CH1, PA2,  TIM_USE_LED,            0), // LED_STRIP
+    DEF_TIM(TIM2,  CH1, PA15, TIM_USE_CAMERA_CONTROL, 0), // CAMERA CONTROL
 };

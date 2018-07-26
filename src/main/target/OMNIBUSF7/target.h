@@ -40,12 +40,6 @@
 #define BEEPER_PIN              PD15
 #define BEEPER_INVERTED
 
-//CAMERA CONTROL----------------------------
-#ifdef FPVM_BETAFLIGHTF7
-//define camera control
-#define CAMERA_CONTROL_PIN      PC8 // Camera control.
-#endif
-
 
 //GYRO & ACC--------------------------------
 #define USE_ACC

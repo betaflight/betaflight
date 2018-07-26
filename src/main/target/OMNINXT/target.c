@@ -47,7 +47,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM1,  CH2,  PA9,  TIM_USE_LED,                 0, 0),
 
     // CAMCTL
-    DEF_TIM(TIM12, CH2,  PB15, TIM_USE_NONE,                0, 0),
+    DEF_TIM(TIM12, CH2,  PB15, TIM_USE_CAMERA_CONTROL,      0, 0),
 
     // Backdoor timers on UARTs
     DEF_TIM(TIM4,  CH1,  PB6,  TIM_USE_NONE,                0, 0), // UART1_TX Collision with PPM
