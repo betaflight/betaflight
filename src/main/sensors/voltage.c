@@ -191,7 +191,7 @@ void voltageMeterADCInit(void)
         voltageMeterADCState_t *state = &voltageMeterADCStates[i];
         memset(state, 0, sizeof(voltageMeterADCState_t));
 
-        biquadFilterInitLPF(&state->filter, VBAT_LPF_FREQ, 50000);
+        biquadFilterInitLPF(&state->filter, VBAT_LPF_FREQ, 20000); //50HZ Update
     }
 }
 
