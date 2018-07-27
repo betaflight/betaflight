@@ -418,7 +418,7 @@ static FAST_RAM_ZERO_INIT float acroTrainerGain;
 
 void pidUpdateAntiGravityThrottleFilter(float throttle)
 {
-    if (antiGravityMode) {
+    if (antiGravityMode == ANTI_GRAVITY_SMOOTH) {
         antiGravityThrottleHpf = throttle - pt1FilterApply(&antiGravityThrottleLpf, throttle);
     }
 }
