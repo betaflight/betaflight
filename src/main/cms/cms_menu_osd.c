@@ -75,6 +75,7 @@ OSD_Entry menuOsdActiveElemsEntries[] =
     {"FLY MODE",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_FLYMODE], 0},
     {"NAME",               OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CRAFT_NAME], 0},
     {"THROTTLE",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_THROTTLE_POS], 0},
+	{"ARROW TURTLE MODE",  OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ARROW_TURTLE_MODE], 0},
 #ifdef USE_VTX_CONTROL
     {"VTX CHAN",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_VTX_CHANNEL], 0},
 #endif // VTX
