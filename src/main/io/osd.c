@@ -202,7 +202,7 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_NUMERICAL_VARIO,
     OSD_COMPASS_BAR,
     OSD_ANTI_GRAVITY,
-	OSD_ARROW_TURTLE_MODE
+    OSD_ARROW_TURTLE_MODE
 };
 
 PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 3);
