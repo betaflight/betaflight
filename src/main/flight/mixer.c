@@ -260,8 +260,8 @@ static const motorMixer_t mixerVtail4[] = {
 static const motorMixer_t mixerAtail4[] = {
     { 1.0f, -0.58f,  0.58f, -1.0f },          // REAR_R
     { 1.0f, -0.46f, -0.39f,  0.5f },          // FRONT_R
-    { 1.0f,  0.58f,  0.58f, -1.0f },          // REAR_L
-    { 1.0f,  0.46f, -0.39f,  0.5f },          // FRONT_L
+    { 1.0f,  0.58f,  0.58f,  1.0f },          // REAR_L
+    { 1.0f,  0.46f, -0.39f, -0.5f },          // FRONT_L
 };
 
 #if defined(USE_UNCOMMON_MIXERS)
