@@ -22,7 +22,7 @@
 
 #define TARGET_BOARD_IDENTIFIER "SKF4"
 
-#define USBD_PRODUCT_STRING     "skyzone SKY F405"
+#define USBD_PRODUCT_STRING     "skyzone F405"
 
 #define ENABLE_DSHOT_DMAR       true
 

@@ -1,24 +1,24 @@
-# SKYF405
+# SKYZONEF405
 
 ## Description
 
-The SKYF405 has been designed as a versatile flight controller, to allow efficient control of craft with 4, 6 or 8 motors.
+The SKYZONEF405 has been designed as a versatile flight controller, to allow efficient control of craft with 4, 6 or 8 motors.
 
 It is available in 2 variants:
 
-### SKYF405\_STD
+### SKYZONEF405\_STD
 
 Standard 30 * 30 mm size
 
-![SKYF405\_STD top](images/skyf405_std_front.jpg)
-![SKYF405\_STD bottom](images/skyf405_std_back.jpg)
+![SKYZONEF405\_STD top](images/skyzonef405_std_front.jpg)
+![SKYZONEF405\_STD bottom](images/skyzonef405_std_back.jpg)
 
-### SKYF405\_PDB
+### SKYZONEF405\_PDB
 
 30 x 30 mm 'extended corners' design with integrated PDB / current sensing shunt.
 
-![SKYF405\_PDB top](images/skyf405_pdb_front.jpg)
-![SKYF405\_PDB bottom](images/skyf405_pdb_back.jpg)
+![SKYZONEF405\_PDB top](images/skyzonef405_pdb_front.jpg)
+![SKYZONEF405\_PDB bottom](images/skyzonef405_pdb_back.jpg)
 
 
 ## Hardware
@@ -40,7 +40,7 @@ PPM in|yes
 Camera control output|yes
 LED strip (WS2811) output|yes
 Battery voltage sensor|yes
-Current sensor|yes (SKYF405\_PDB only)
+Current sensor|yes (SKYZONEF405\_PDB only)
 Integrated voltage regulator|yes
 Buttons|boot
 LEDs|power, activity
@@ -49,7 +49,7 @@ LEDs|power, activity
 
 Plenty of connectivity options, including 5 UARTs, most of them with through-hole solder points, minimising the risk of ripped off solder pads.
 
-ESC signal / telemetry solder points next to the corners for motors 1 - 4 (SKYF405\_PDB only).
+ESC signal / telemetry solder points next to the corners for motors 1 - 4 (SKYZONEF405\_PDB only).
 
 
 ## Manufacturers and Distributors
