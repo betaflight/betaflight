@@ -21,6 +21,7 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "SKF4"
+#define TARGET_MANUFACTURER_IDENTIFIER "SKYZ"
 
 #define USBD_PRODUCT_STRING     "skyzone F405"
 
