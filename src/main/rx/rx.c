@@ -72,6 +72,7 @@ const char rcChannelLetters[] = "AERT12345678abcdefgh";
 
 static uint16_t rssi = 0;                  // range: [0;1023]
 static timeUs_t lastMspRssiUpdateUs = 0;
+static uint8_t frameQuality = 0;
 
 #define MSP_RSSI_TIMEOUT_US 1500000   // 1.5 sec
 
@@ -338,6 +339,29 @@ void resumeRxSignal(void)
     failsafeOnRxResume();
 }
 
+#define FRAME_QUALITY_SAMPLE_COUNT 16
+
+static void setFrameQuality(bool validFrame)
+{
+    static uint8_t samples[FRAME_QUALITY_SAMPLE_COUNT];
+    static uint8_t sampleIndex = 0;
+    static unsigned sum = 0;
+
+    int8_t scaledValue = validFrame ? FRAME_QUALITY_MAX_VALUE : 0;
+    sum = sum + scaledValue;
+    sum = sum - samples[sampleIndex];
+    samples[sampleIndex] = scaledValue;
+    sampleIndex = (sampleIndex + 1) % FRAME_QUALITY_SAMPLE_COUNT;
+
+    int8_t mean = sum / FRAME_QUALITY_SAMPLE_COUNT;
+
+    frameQuality = mean;
+
+    if (rssiSource == RSSI_SOURCE_FRAME_ERRORS) {
+        setRssi(validFrame ? RSSI_MAX_VALUE : 0, RSSI_SOURCE_FRAME_ERRORS);
+    }
+}
+
 bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
 {
     UNUSED(currentDeltaTime);
@@ -374,10 +398,10 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
 
             if (frameStatus & (RX_FRAME_FAILSAFE | RX_FRAME_DROPPED)) {
             	// No (0%) signal
-            	setRssi(0, RSSI_SOURCE_FRAME_ERRORS);
+            	setFrameQuality(false);
             } else {
             	// Valid (100%) signal
-            	setRssi(RSSI_MAX_VALUE, RSSI_SOURCE_FRAME_ERRORS);
+            	setFrameQuality(true);
             }
         }
 
@@ -680,6 +704,11 @@ uint16_t getRssi(void)
 uint8_t getRssiPercent(void)
 {
     return scaleRange(getRssi(), 0, RSSI_MAX_VALUE, 0, 100);
+}
+
+uint8_t getFrameQuality(void)
+{
+    return frameQuality;
 }
 
 uint16_t rxGetRefreshRate(void)
