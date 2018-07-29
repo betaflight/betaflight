@@ -410,6 +410,11 @@ static void validateAndFixConfig(void)
 #ifndef USE_OSD_SLAVE
 void validateAndFixGyroConfig(void)
 {
+    // Disable dynamic filter if gyro loop is less than 2KHz
+    if (gyro.targetLooptime > GYRO_LOOPTIME_2KHZ) {
+        featureClear(FEATURE_DYNAMIC_FILTER);
+    }
+    
     // Prevent invalid notch cutoff
     if (gyroConfig()->gyro_soft_notch_cutoff_1 >= gyroConfig()->gyro_soft_notch_hz_1) {
         gyroConfigMutable()->gyro_soft_notch_hz_1 = 0;
