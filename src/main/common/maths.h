@@ -57,6 +57,8 @@
 
 #define Q12 (1 << 12)
 
+#define HZ_TO_INTERVAL_US(x) (1000000 / (x))
+
 typedef int32_t fix12_t;
 
 typedef struct stdev_s
