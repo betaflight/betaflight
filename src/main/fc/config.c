@@ -60,6 +60,7 @@
 #include "sensors/acceleration.h"
 #include "sensors/battery.h"
 #include "sensors/gyro.h"
+#include "sensors/gyroanalyse.h"
 
 #ifndef USE_OSD_SLAVE
 pidProfile_t *currentPidProfile;
@@ -410,10 +411,12 @@ static void validateAndFixConfig(void)
 #ifndef USE_OSD_SLAVE
 void validateAndFixGyroConfig(void)
 {
+#ifdef USE_GYRO_DATA_ANALYSE
     // Disable dynamic filter if gyro loop is less than 2KHz
-    if (gyro.targetLooptime > GYRO_LOOPTIME_2KHZ) {
+    if (!dynamicFilterAllowed()) {
         featureClear(FEATURE_DYNAMIC_FILTER);
     }
+#endif
     
     // Prevent invalid notch cutoff
     if (gyroConfig()->gyro_soft_notch_cutoff_1 >= gyroConfig()->gyro_soft_notch_hz_1) {

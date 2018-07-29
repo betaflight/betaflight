@@ -304,4 +304,7 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
     state->updateStep = (state->updateStep + 1) % STEP_COUNT;
 }
 
+bool dynamicFilterAllowed(void) {
+    return (gyro.targetLooptime <= HZ_TO_INTERVAL_US(2000));
+}
 #endif // USE_GYRO_DATA_ANALYSE

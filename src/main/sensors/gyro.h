@@ -26,8 +26,6 @@
 #include "drivers/bus.h"
 #include "drivers/sensor.h"
 
-#define GYRO_LOOPTIME_2KHZ 500
-
 typedef enum {
     GYRO_NONE = 0,
     GYRO_DEFAULT,
