@@ -135,12 +135,13 @@ typedef struct statistic_s {
     int16_t max_speed;
     int16_t min_voltage; // /10
     int16_t max_current; // /10
-    int16_t min_rssi;
+    uint8_t min_rssi;
     int32_t max_altitude;
     int16_t max_distance;
     float max_g_force;
     int16_t max_esc_temp;
     int32_t max_esc_rpm;
+    uint8_t min_link_quality;
 } statistic_t;
 
 static statistic_t stats;
@@ -216,6 +217,9 @@ static const uint8_t osdElementDisplayOrder[] = {
 #endif
 #ifdef USE_ADC_INTERNAL
     OSD_CORE_TEMPERATURE,
+#endif
+#ifdef USE_RX_LINK_QUALITY_INFO
+    OSD_LINK_QUALITY,
 #endif
 };
 
@@ -503,12 +507,27 @@ static bool osdDrawSingleElement(uint8_t item)
     case OSD_RSSI_VALUE:
         {
             uint16_t osdRssi = getRssi() * 100 / 1024; // change range
-            if (osdRssi >= 100)
+            if (osdRssi >= 100) {
                 osdRssi = 99;
+            }
 
             tfp_sprintf(buff, "%c%2d", SYM_RSSI, osdRssi);
             break;
         }
+
+#ifdef USE_RX_LINK_QUALITY_INFO
+    case OSD_LINK_QUALITY:
+        {
+            // change range to 0-9 (two sig. fig. adds little extra value, also reduces screen estate)
+            uint8_t osdLinkQuality = rxGetLinkQuality() * 10 / LINK_QUALITY_MAX_VALUE;
+            if (osdLinkQuality >= 10) {
+                osdLinkQuality = 9;
+            }
+
+            tfp_sprintf(buff, "%1d", osdLinkQuality);
+            break;
+        }
+#endif
 
     case OSD_MAIN_BATT_VOLTAGE:
         buff[0] = osdGetBatterySymbol(osdGetBatteryAverageCellVoltage());
@@ -1332,13 +1351,14 @@ static void osdResetStats(void)
     stats.max_current  = 0;
     stats.max_speed    = 0;
     stats.min_voltage  = 500;
-    stats.min_rssi     = 99;
+    stats.min_rssi     = 99; // percent
     stats.max_altitude = 0;
     stats.max_distance = 0;
     stats.armed_time   = 0;
     stats.max_g_force  = 0;
     stats.max_esc_temp = 0;
     stats.max_esc_rpm  = 0;
+    stats.min_link_quality = 99; // percent
 }
 
 static void osdUpdateStats(void)
@@ -1381,6 +1401,13 @@ static void osdUpdateStats(void)
     if (stats.max_g_force < osdGForce) {
         stats.max_g_force = osdGForce;
     }
+
+#ifdef USE_RX_LINK_QUALITY_INFO
+    value = rxGetLinkQualityPercent();
+    if (stats.min_link_quality > value) {
+        stats.min_link_quality = value;
+    }
+#endif
 
 #ifdef USE_GPS
     if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
@@ -1578,6 +1605,13 @@ static void osdShowStats(uint16_t endBatteryVoltage)
     }
 #endif
 
+#ifdef USE_RX_LINK_QUALITY_INFO
+    if (osdStatGetState(OSD_STAT_MIN_LINK_QUALITY)) {
+        itoa(stats.min_link_quality, buff, 10);
+        strcat(buff, "%");
+        osdDisplayStatisticLabel(top++, "MIN LINK", buff);
+    }
+#endif
 }
 
 static void osdShowArmed(void)

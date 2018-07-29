@@ -98,6 +98,7 @@ typedef enum {
     OSD_G_FORCE,
     OSD_LOG_STATUS,
     OSD_FLIP_ARROW,
+    OSD_LINK_QUALITY,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
@@ -128,6 +129,7 @@ typedef enum {
     OSD_STAT_MAX_G_FORCE,
     OSD_STAT_MAX_ESC_TEMP,
     OSD_STAT_MAX_ESC_RPM,
+    OSD_STAT_MIN_LINK_QUALITY,
     OSD_STAT_COUNT // MUST BE LAST
 } osd_stats_e;
 
