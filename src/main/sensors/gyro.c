@@ -527,10 +527,6 @@ bool gyroInit(void)
     }
 #endif
 
-#ifdef USE_GYRO_DATA_ANALYSE
-    gyroDataAnalyseInit();
-#endif
-
     switch (debugMode) {
     case DEBUG_FFT:
     case DEBUG_FFT_FREQ:
