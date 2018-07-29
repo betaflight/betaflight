@@ -156,6 +156,14 @@ enum gyro_fsr_e {
     NUM_GYRO_FSR
 };
 
+enum icm_high_range_gyro_fsr_e {
+    ICM_HIGH_RANGE_FSR_500DPS = 0,
+    ICM_HIGH_RANGE_FSR_1000DPS,
+    ICM_HIGH_RANGE_FSR_2000DPS,
+    ICM_HIGH_RANGE_FSR_4000DPS,
+    NUM_ICM_HIGH_RANGE_GYRO_FSR
+};
+
 enum fchoice_b {
     FCB_DISABLED = 0x00,
     FCB_8800_32 = 0x01,
@@ -174,6 +182,14 @@ enum accel_fsr_e {
     INV_FSR_8G,
     INV_FSR_16G,
     NUM_ACCEL_FSR
+};
+
+enum icm_high_range_accel_fsr_e {
+    ICM_HIGH_RANGE_FSR_4G = 0,
+    ICM_HIGH_RANGE_FSR_8G,
+    ICM_HIGH_RANGE_FSR_16G,
+    ICM_HIGH_RANGE_FSR_32G,
+    NUM_ICM_HIGH_RANGE_ACCEL_FSR
 };
 
 typedef enum {
