@@ -169,7 +169,7 @@ static void gyroInitLowpassFilterLpf(gyroSensor_t *gyroSensor, int slot, int typ
    || defined(USE_GYRO_SPI_ICM20689)
 #define GYRO_SYNC_DENOM_DEFAULT 1
 #else
-#define GYRO_SYNC_DENOM_DEFAULT 4
+#define GYRO_SYNC_DENOM_DEFAULT 3
 #endif
 
 #define GYRO_OVERFLOW_TRIGGER_THRESHOLD 31980  // 97.5% full scale (1950dps for 2000dps gyro)
