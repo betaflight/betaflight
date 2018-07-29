@@ -99,7 +99,7 @@
 // Support for iFlight OMNIBUS F4 V3
 // Has ICM20608 instead of MPU6000
 // OMNIBUSF4SD is linked with both MPU6000 and MPU6500 drivers
-#if defined (OMNIBUSF4SD)
+#if defined (OMNIBUSF4SD) || defined(OMNIBUSF4BASE)
 #define USE_ACC_SPI_MPU6500
 #define USE_GYRO_SPI_MPU6500
 #define MPU6500_CS_PIN          MPU6000_CS_PIN
@@ -238,7 +238,7 @@
 #define USE_I2C_DEVICE_2
 #define I2C2_SCL                NONE // PB10, shared with UART3TX
 #define I2C2_SDA                NONE // PB11, shared with UART3RX
-#if defined(OMNIBUSF4) || defined(OMNIBUSF4SD)
+#if defined(OMNIBUSF4BASE) || defined(OMNIBUSF4SD)
 #define USE_I2C_DEVICE_3
 #define I2C3_SCL                NONE // PA8, PWM6
 #define I2C3_SDA                NONE // PC9, CH6
