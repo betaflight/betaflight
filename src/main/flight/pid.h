@@ -145,6 +145,7 @@ typedef struct pidProfile_s {
     uint8_t abs_control_gain;               // How strongly should the absolute accumulated error be corrected for
     uint8_t abs_control_limit;              // Limit to the correction
     uint8_t abs_control_error_limit;        // Limit to the accumulated error
+    uint8_t tbh_enabled;                    // OFF or ON - Integral term non-linear take-back-half on zero error
 } pidProfile_t;
 
 #ifndef USE_OSD_SLAVE
@@ -168,6 +169,8 @@ typedef struct pidAxisData_s {
     float I;
     float D;
     float F;
+    float IPrevTBH;
+    float errorSignPrevTBH;
 
     float Sum;
 } pidAxisData_t;

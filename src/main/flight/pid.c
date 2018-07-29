@@ -168,6 +168,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .abs_control_limit = 90,
         .abs_control_error_limit = 20,
         .antiGravityMode = ANTI_GRAVITY_SMOOTH,
+        .tbh_enabled = 0, //Take-back-half OFF by default
     );
 }
 
@@ -990,6 +991,22 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
             // Only increase ITerm if output is not saturated
             pidData[axis].I = ITermNew;
         }
+        #if defined(USE_TBH)
+            if (pidProfile->tbh_enabled){
+                // Non-linear Take-Back Half algorithm
+                // When the error term crosses through zero, this algorithm causes
+                // the I term to non-linearly jump to half-way between the current
+                // accumulated error and the accumulated error at the last zero
+                // crossing.
+                const float ThisSign = copysign(1.0, itermErrorRate); //-1 or 1
+                if (ThisSign != pidData[axis].errorSignPrevTBH) { 
+                    const float lastCrossIValue = pidData[axis].IPrevTBH;
+                    pidData[axis].IPrevTBH = pidData[axis].I;
+                    pidData[axis].I = (pidData[axis].I + lastCrossIValue)*0.5; //TBH
+                }
+                pidData[axis].errorSignPrevTBH = ThisSign;
+            }
+        #endif
 
         // -----calculate D component
         if (pidCoefficient[axis].Kd > 0) {

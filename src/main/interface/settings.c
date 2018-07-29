@@ -862,6 +862,11 @@ const clivalue_t valueTable[] = {
     { "abs_control_error_limit",    VAR_UINT8 | PROFILE_VALUE,  .config.minmax = { 1, 45 }, PG_PID_PROFILE, offsetof(pidProfile_t, abs_control_error_limit) },
 #endif
 
+// Take-back-half non-linear integrator
+#if defined(USE_TBH)
+    { "tbh_enabled",                VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_PID_PROFILE, offsetof(pidProfile_t, tbh_enabled) },
+#endif
+
 
 // PG_TELEMETRY_CONFIG
 #ifdef USE_TELEMETRY
