@@ -998,13 +998,13 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
                 // the I term to non-linearly jump to half-way between the current
                 // accumulated error and the accumulated error at the last zero
                 // crossing.
-                const float ThisSign = copysign(1.0, itermErrorRate); //-1 or 1
-                if (ThisSign != pidData[axis].errorSignPrevTBH) { 
+                const float thisSign = copysign(1.0f, itermErrorRate); //-1 or 1
+                if (thisSign != pidData[axis].errorSignPrevTBH) { 
                     const float lastCrossIValue = pidData[axis].IPrevTBH;
                     pidData[axis].IPrevTBH = pidData[axis].I;
-                    pidData[axis].I = (pidData[axis].I + lastCrossIValue)*0.5; //TBH
+                    pidData[axis].I = (pidData[axis].I + lastCrossIValue)*0.5f; //TBH
                 }
-                pidData[axis].errorSignPrevTBH = ThisSign;
+                pidData[axis].errorSignPrevTBH = thisSign;
             }
         #endif
 
