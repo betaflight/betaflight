@@ -191,7 +191,7 @@ void voltageMeterADCInit(void)
         voltageMeterADCState_t *state = &voltageMeterADCStates[i];
         memset(state, 0, sizeof(voltageMeterADCState_t));
 
-        biquadFilterInitLPF(&state->filter, VBAT_LPF_FREQ, 50000);
+        biquadFilterInitLPF(&state->filter, VBAT_LPF_FREQ, HZ_TO_INTERVAL_US(50));
     }
 }
 
@@ -215,7 +215,7 @@ void voltageMeterESCInit(void)
 {
 #ifdef USE_ESC_SENSOR
     memset(&voltageMeterESCState, 0, sizeof(voltageMeterESCState_t));
-    biquadFilterInitLPF(&voltageMeterESCState.filter, VBAT_LPF_FREQ, 20000); //50HZ Update
+    biquadFilterInitLPF(&voltageMeterESCState.filter, VBAT_LPF_FREQ, HZ_TO_INTERVAL_US(50));
 #endif
 }
 
