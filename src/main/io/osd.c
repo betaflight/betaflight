@@ -198,7 +198,8 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_NUMERICAL_HEADING,
     OSD_NUMERICAL_VARIO,
     OSD_COMPASS_BAR,
-    OSD_ANTI_GRAVITY
+    OSD_ANTI_GRAVITY,
+    OSD_FRAME_QUALITY
 };
 
 PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 3);
@@ -465,6 +466,16 @@ static bool osdDrawSingleElement(uint8_t item)
                 osdRssi = 99;
 
             tfp_sprintf(buff, "%c%2d", SYM_RSSI, osdRssi);
+            break;
+        }
+
+    case OSD_FRAME_QUALITY:
+        {
+            uint8_t osdFrameQuality = getFrameQuality() * 10 / FRAME_QUALITY_MAX_VALUE; // change range
+            if (osdFrameQuality >= 10)
+                osdFrameQuality = 9;
+
+            tfp_sprintf(buff, "%1d", osdFrameQuality);
             break;
         }
 
