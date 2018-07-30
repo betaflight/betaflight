@@ -763,7 +763,9 @@ static void gyroInitFilterDynamic(gyroSensor_t *gyroSensor)
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
                 pt1FilterInit(&gyroSensor->dynFilter[axis].pt1FilterState, gain);
             }
-        } break;
+
+            break;
+        }
         case FILTER_BIQUAD: {
             const int dynamicNotchDefaultCenterHz = 400;
             const int dynamicNotchDefaultCutoffHz = 390;
@@ -774,7 +776,9 @@ static void gyroInitFilterDynamic(gyroSensor_t *gyroSensor)
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
                 biquadFilterInit(&gyroSensor->dynFilter[axis].biquadFilterState, dynamicNotchDefaultCenterHz, gyro.targetLooptime, notchQ, FILTER_NOTCH);
             }
-        } break;
+
+            break;
+        }
         }
     }
 }

@@ -285,13 +285,17 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
                 const float gain = pt1FilterGain(cutoffFreq, gyroDt);
 
                 pt1FilterUpdateCutoff(&dynFilter[state->updateAxis].pt1FilterState, gain);
-            } break;
+
+                break;
+            }
             case FILTER_BIQUAD: {
                 // calculate cutoffFreq and notch Q, update notch filter
                 const float cutoffFreq = fmax(state->centerFreq[state->updateAxis] * dynamicFilterCutoffFactor, DYN_NOTCH_MIN_CUTOFF_HZ);
                 const float notchQ = filterGetNotchQ(state->centerFreq[state->updateAxis], cutoffFreq);
                 biquadFilterUpdate(&dynFilter[state->updateAxis].biquadFilterState, state->centerFreq[state->updateAxis], gyro.targetLooptime, notchQ, FILTER_NOTCH);
-            } break;
+
+            break;
+            }
             }
 
             DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
