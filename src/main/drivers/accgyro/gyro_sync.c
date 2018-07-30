@@ -54,7 +54,7 @@ uint32_t gyroSetSampleRate(gyroDev_t *gyro, uint8_t lpf, uint8_t gyroSyncDenomin
     if (lpf == GYRO_HARDWARE_LPF_NORMAL || lpf == GYRO_HARDWARE_LPF_EXPERIMENTAL) {
         if (gyro_use_32khz) {
             gyro->gyroRateKHz = GYRO_RATE_32_kHz;
-            gyroSamplePeriod = 31.5f;
+            gyroSamplePeriod = 31.25f;
         } else {
             switch (gyro->mpuDetectionResult.sensor) {
             case BMI_160_SPI:
