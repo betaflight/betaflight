@@ -31,6 +31,15 @@
 #include "fc/controlrate_profile.h"
 #include "fc/fc_rc.h"
 
+
+
+#if defined(USE_TPA_CURVES)
+// defaults for rf1 things
+static uint8_t kpAttenuationCurveDefault[ATTENUATION_CURVE_SIZE] = {100, 100, 95, 95, 95, 95, 95, 100, 100};
+static uint8_t kiAttenuationCurveDefault[ATTENUATION_CURVE_SIZE] = {100, 100, 100, 100, 100, 100, 100, 100, 100};
+static uint8_t kdAttenuationCurveDefault[ATTENUATION_CURVE_SIZE] = {100, 95, 90, 85, 85, 85, 85, 100, 100};
+#endif
+
 controlRateConfig_t *currentControlRateProfile;
 
 PG_REGISTER_ARRAY_WITH_RESET_FN(controlRateConfig_t, CONTROL_RATE_PROFILE_COUNT, controlRateProfiles, PG_CONTROL_RATE_PROFILES, 1);
@@ -38,6 +47,7 @@ PG_REGISTER_ARRAY_WITH_RESET_FN(controlRateConfig_t, CONTROL_RATE_PROFILE_COUNT,
 void pgResetFn_controlRateProfiles(controlRateConfig_t *controlRateConfig)
 {
     for (int i = 0; i < CONTROL_RATE_PROFILE_COUNT; i++) {
+#if defined(USE_TPA_CURVES)
         RESET_CONFIG(controlRateConfig_t, &controlRateConfig[i],
             .thrMid8 = 50,
             .thrExpo8 = 0,
@@ -52,8 +62,31 @@ void pgResetFn_controlRateProfiles(controlRateConfig_t *controlRateConfig)
             .rcExpo[FD_YAW] = 0,
             .rates[FD_ROLL] = 70,
             .rates[FD_PITCH] = 70,
-            .rates[FD_YAW] = 70
+            .rates[FD_YAW] = 70,
+            .tpaCurveType = 1, // 0 for old BeF TPA, 1 for RF1 TPA curves
         );
+        memcpy(controlRateConfig[i].tpaKpCurve, kpAttenuationCurveDefault, sizeof(kpAttenuationCurveDefault));
+        memcpy(controlRateConfig[i].tpaKiCurve, kiAttenuationCurveDefault, sizeof(kiAttenuationCurveDefault));
+        memcpy(controlRateConfig[i].tpaKdCurve, kdAttenuationCurveDefault, sizeof(kdAttenuationCurveDefault));
+#else
+        RESET_CONFIG(controlRateConfig_t, &controlRateConfig[i],
+            .thrMid8 = 50,
+            .thrExpo8 = 0,
+            .dynThrPID = 10,
+            .tpa_breakpoint = 1650,
+            .rates_type = RATES_TYPE_BETAFLIGHT,
+            .rcRates[FD_ROLL] = 100,
+            .rcRates[FD_PITCH] = 100,
+            .rcRates[FD_YAW] = 100,
+            .rcExpo[FD_ROLL] = 0,
+            .rcExpo[FD_PITCH] = 0,
+            .rcExpo[FD_YAW] = 0,
+            .rates[FD_ROLL] = 70,
+            .rates[FD_PITCH] = 70,
+            .rates[FD_YAW] = 70,
+        );
+
+#endif
     }
 }
 
