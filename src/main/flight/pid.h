@@ -94,6 +94,12 @@ typedef enum {
     ITERM_RELAX_SETPOINT
 } itermRelaxType_e;
 
+typedef enum {
+    ITERM_TBH_OFF,
+    ITERM_TBH_RP,
+    ITERM_TBH_RPY
+} itermTBHType_e;
+
 typedef struct pidProfile_s {
     uint16_t yaw_lowpass_hz;                // Additional yaw filter when yaw axis too noisy
     uint16_t dterm_lowpass_hz;              // Delta Filter in hz
@@ -145,7 +151,7 @@ typedef struct pidProfile_s {
     uint8_t abs_control_gain;               // How strongly should the absolute accumulated error be corrected for
     uint8_t abs_control_limit;              // Limit to the correction
     uint8_t abs_control_error_limit;        // Limit to the accumulated error
-    uint8_t tbh_enabled;                    // OFF or ON - Integral term non-linear take-back-half on zero error
+    uint8_t iterm_tbh;                      // Integral term non-linear take-back-half on zero error
 } pidProfile_t;
 
 #ifndef USE_OSD_SLAVE
@@ -169,8 +175,6 @@ typedef struct pidAxisData_s {
     float I;
     float D;
     float F;
-    float IPrevTBH;
-    float errorSignPrevTBH;
 
     float Sum;
 } pidAxisData_t;
