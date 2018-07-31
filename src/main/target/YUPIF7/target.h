@@ -116,6 +116,7 @@
 #define MAG_HMC5883_ALIGN CW270_DEG_FLIP
 #define USE_MAG_QMC5883
 #define MAG_QMC5883_ALIGN CW270_DEG_FLIP
+#define USE_MAG_LIS3MDL
 
 // *************** OSD *****************************
 #define USE_MAX7456

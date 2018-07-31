@@ -3,6 +3,7 @@ FEATURES    = VCP SDCARD
 
 TARGET_SRC = \
             drivers/compass/compass_hmc5883l.c \
+            drivers/compass/compass_lis3mdl.c \
             drivers/accgyro/accgyro_mpu.c \
             drivers/accgyro/accgyro_mpu3050.c \
             drivers/accgyro/accgyro_mpu6050.c \

@@ -7,6 +7,7 @@ TARGET_SRC = \
            drivers/barometer/barometer_ms5611.c \
            drivers/compass/compass_hmc5883l.c \
            drivers/compass/compass_ak8975.c \
+           drivers/compass/compass_lis3mdl.c \
            drivers/display_ug2864hsweg01.c \
            drivers/serial_usb_vcp.c \
            drivers/flash_m25p16.c

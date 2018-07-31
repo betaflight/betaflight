@@ -76,6 +76,7 @@
 #define USE_MAG_AK8975
 #define USE_MAG_HMC5883
 #define USE_MAG_QMC5883
+#define USE_MAG_LIS3MDL
 
 //ON BOARD FLASH -----------------------------------
 #define USE_SPI_DEVICE_2
