@@ -60,7 +60,6 @@
 #include "sensors/acceleration.h"
 #include "sensors/battery.h"
 #include "sensors/gyro.h"
-#include "sensors/gyroanalyse.h"
 
 #ifndef USE_OSD_SLAVE
 pidProfile_t *currentPidProfile;
@@ -69,6 +68,8 @@ pidProfile_t *currentPidProfile;
 #ifndef RX_SPI_DEFAULT_PROTOCOL
 #define RX_SPI_DEFAULT_PROTOCOL 0
 #endif
+
+#define DYNAMIC_FILTER_MAX_SUPPORTED_LOOP_TIME HZ_TO_INTERVAL_US(2000)
 
 PG_REGISTER_WITH_RESET_TEMPLATE(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 0);
 
@@ -413,7 +414,7 @@ void validateAndFixGyroConfig(void)
 {
 #ifdef USE_GYRO_DATA_ANALYSE
     // Disable dynamic filter if gyro loop is less than 2KHz
-    if (!dynamicFilterAllowed()) {
+    if (gyro.targetLooptime > DYNAMIC_FILTER_MAX_SUPPORTED_LOOP_TIME) {
         featureClear(FEATURE_DYNAMIC_FILTER);
     }
 #endif

@@ -61,4 +61,3 @@ void gyroDataAnalyseInit(void);
 void gyroDataAnalyseStateInit(gyroAnalyseState_t *gyroAnalyse, uint32_t targetLooptime);
 void gyroDataAnalysePush(gyroAnalyseState_t *gyroAnalyse, int axis, float sample);
 void gyroDataAnalyse(gyroAnalyseState_t *gyroAnalyse, biquadFilter_t *notchFilterDyn);
-bool dynamicFilterAllowed(void);
