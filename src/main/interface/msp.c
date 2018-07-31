@@ -23,6 +23,7 @@
 #include <string.h>
 #include <math.h>
 #include <stdlib.h>
+#include <limits.h>
 
 #include "platform.h"
 
@@ -889,7 +890,11 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 #else
         sbufWriteU32(dst, 0);
 #endif
+#ifdef USE_VARIO
         sbufWriteU16(dst, getEstimatedVario());
+#else
+        sbufWriteU16(dst, 0);
+#endif
         break;
 
     case MSP_SONAR_ALTITUDE:

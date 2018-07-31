@@ -222,4 +222,5 @@
 #define USE_ABSOLUTE_CONTROL
 #define USE_HOTT_TEXTMODE
 #define USE_LED_STRIP
+#define USE_VARIO
 #endif

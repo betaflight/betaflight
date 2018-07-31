@@ -309,6 +309,7 @@ static inline void hottEAMUpdateAltitude(HOTT_EAM_MSG_t *hottEAMMessage)
     hottEAMMessage->altitude_H = hottEamAltitude >> 8;
 }
 
+#ifdef USE_VARIO
 static inline void hottEAMUpdateClimbrate(HOTT_EAM_MSG_t *hottEAMMessage)
 {
     const int32_t vario = getEstimatedVario();
@@ -316,6 +317,7 @@ static inline void hottEAMUpdateClimbrate(HOTT_EAM_MSG_t *hottEAMMessage)
     hottEAMMessage->climbrate_H = (30000 + vario) >> 8;
     hottEAMMessage->climbrate3s = 120 + (vario / 100);
 }
+#endif
 
 void hottPrepareEAMResponse(HOTT_EAM_MSG_t *hottEAMMessage)
 {
@@ -327,7 +329,9 @@ void hottPrepareEAMResponse(HOTT_EAM_MSG_t *hottEAMMessage)
     hottEAMUpdateCurrentMeter(hottEAMMessage);
     hottEAMUpdateBatteryDrawnCapacity(hottEAMMessage);
     hottEAMUpdateAltitude(hottEAMMessage);
+#ifdef USE_VARIO
     hottEAMUpdateClimbrate(hottEAMMessage);
+#endif
 }
 
 static void hottSerialWrite(uint8_t c)
