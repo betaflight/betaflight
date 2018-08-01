@@ -29,9 +29,9 @@
 #define LED0_PIN   PB7  // blue
 #define LED1_PIN   PB14 // red
 
-#define USE_BEEPER
-#define BEEPER_PIN PA0
-#define BEEPER_INVERTED
+//#define USE_BEEPER
+//#define BEEPER_PIN PA0
+//#define BEEPER_INVERTED
 
 #define USE_ACC
 #define USE_FAKE_ACC
@@ -77,12 +77,14 @@
 #define UART3_TX_PIN PD8
 
 #define USE_UART4
-#define UART4_RX_PIN PC11
-#define UART4_TX_PIN PC10
+//#define UART4_RX_PIN PC11  // Used for SDIO
+//#define UART4_TX_PIN PC10  // Used for SDIO
+#define UART4_RX_PIN PA1
+#define UART4_TX_PIN PA0
 
 //#define USE_UART5
-#define UART5_RX_PIN PD2
-#define UART5_TX_PIN PC12
+//#define UART5_RX_PIN PD2  // Used for SDIO
+//#define UART5_TX_PIN PC12  // Used for SDIO
 
 //#define USE_UART6
 #define UART6_RX_PIN PC7
@@ -99,7 +101,7 @@
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
 
-#define SERIAL_PORT_COUNT 6 //VCP, USART2, USART3, UART4,SOFTSERIAL x 2
+#define SERIAL_PORT_COUNT 6 //VCP, USART2, USART3, UART4, SOFTSERIAL x 2
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN  PB15 // (Hardware=0, PPM)
@@ -118,19 +120,24 @@
 #define SPI4_MISO_PIN           PE13
 #define SPI4_MOSI_PIN           PE14
 
-//#define USE_SDCARD
-#define SDCARD_DETECT_INVERTED
-#define SDCARD_DETECT_PIN                   PF14
+#define USE_SDCARD
 
-#define SDCARD_SPI_INSTANCE                 SPI4
-#define SDCARD_SPI_CS_PIN                   SPI4_NSS_PIN
+//#define SDCARD_DETECT_INVERTED
+//#define SDCARD_DETECT_PIN                   PF14
 
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 422kHz
+//#define SDCARD_SPI_INSTANCE                 SPI4
+//#define SDCARD_SPI_CS_PIN                   SPI4_NSS_PIN
+
+//#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 422kHz
 // Divide to under 25MHz for normal operation:
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 8 // 27MHz
+//#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 8 // 27MHz
 
-#define SDCARD_DMA_STREAM_TX_FULL           DMA2_Stream1
-#define SDCARD_DMA_CHANNEL                  4
+//#define SDCARD_DMA_STREAM_TX_FULL           DMA2_Stream1
+//#define SDCARD_DMA_CHANNEL                  4
+
+#define USE_SDCARD_SDIO
+#define SDIO_DMA          DMA2_Stream3
+#define SDCARD_SPI_CS_PIN NONE //This is not used on SDIO, has to be kept for now to keep compiler happy
 
 #define USE_I2C
 #define USE_I2C_DEVICE_1
