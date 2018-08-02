@@ -46,34 +46,59 @@
 // Eg [0,31), [31,62), [62, 93) etc
 
 #define FFT_BIN_COUNT             (FFT_WINDOW_SIZE / 2)
-// compare 1 + this offset FFT bins for peak, ie if 1 start 2.5 * 41.655 or about 104Hz
-#define FFT_BIN_OFFSET            1
-// analyse up to 666Hz, 16 bins each 41.625 Hz wide
+// for gyro loop >= 4KHz, analyse up to 666Hz, 16 bins each 41.625 Hz wide
 #define FFT_SAMPLING_RATE_HZ      1333
-// centre frequency of bandpass that constrains input to FFT
-#define FFT_BPF_HZ                (FFT_SAMPLING_RATE_HZ / 4)
-// Hz per bin
-#define FFT_RESOLUTION            ((float)FFT_SAMPLING_RATE_HZ / FFT_WINDOW_SIZE)
 // following bin must be at least 2 times previous to indicate start of peak
 #define FFT_MIN_BIN_RISE          2
-
+// the desired approimate lower frequency when calculating bin offset
+#define FFT_BIN_OFFSET_DESIRED_HZ 90
 // lowpass frequency for smoothing notch centre point
 #define DYN_NOTCH_SMOOTH_FREQ_HZ  60
 // notch centre point will not go below this, must be greater than cutoff, mid of bottom bin
 #define DYN_NOTCH_MIN_CENTRE_HZ   125
-// maximum notch centre frequency limited by Nyquist
-#define DYN_NOTCH_MAX_CENTRE_HZ   (FFT_SAMPLING_RATE_HZ / 2)
 // lowest allowed notch cutoff frequency
 #define DYN_NOTCH_MIN_CUTOFF_HZ   105
 // we need 4 steps for each axis
 #define DYN_NOTCH_CALC_TICKS      (XYZ_AXIS_COUNT * 4)
 
+static uint16_t FAST_RAM_ZERO_INIT fftSamplingRateHz;
+// centre frequency of bandpass that constrains input to FFT
+static uint16_t FAST_RAM_ZERO_INIT fftBpfHz;
+// Hz per bin
+static float FAST_RAM_ZERO_INIT    fftResolution;
+// maximum notch centre frequency limited by Nyquist
+static uint16_t FAST_RAM_ZERO_INIT dynNotchMaxCentreHz;
+static uint8_t  FAST_RAM_ZERO_INIT fftBinOffset;
+
 // Hanning window, see https://en.wikipedia.org/wiki/Window_function#Hann_.28Hanning.29_window
 static FAST_RAM_ZERO_INIT float hanningWindow[FFT_WINDOW_SIZE];
 static FAST_RAM_ZERO_INIT float dynamicNotchCutoff;
 
-void gyroDataAnalyseInit(void)
+void gyroDataAnalyseInit(uint32_t targetLooptimeUs)
 {
+#ifdef USE_DUAL_GYRO
+    static bool gyroAnalyseInitialized;
+    if (gyroAnalyseInitialized) {
+        return;
+    }
+    gyroAnalyseInitialized = true;
+#endif
+
+    const int gyroLoopRateHz = lrintf((1.0f / targetLooptimeUs) * 1e6f);
+
+    // If we get at least 3 samples then use the default FFT sample frequency
+    // otherwise we need to calculate a FFT sample frequency to ensure we get 3 samples (gyro loops < 4K)
+    fftSamplingRateHz = MIN((gyroLoopRateHz / 3), FFT_SAMPLING_RATE_HZ);
+
+    fftBpfHz = fftSamplingRateHz / 4;
+    fftResolution = (float)fftSamplingRateHz / FFT_WINDOW_SIZE;
+    dynNotchMaxCentreHz = fftSamplingRateHz / 2;
+
+    // Calculate the FFT bin offset to try and get the lowest bin used
+    // in the center calc close to 90hz
+    // > 1333hz = 1, 889hz (2.67K) = 2, 666hz (2K) = 3
+    fftBinOffset = MAX(1, lrintf(FFT_BIN_OFFSET_DESIRED_HZ / fftResolution - 1.5f));
+
     for (int i = 0; i < FFT_WINDOW_SIZE; i++) {
         hanningWindow[i] = (0.5f - 0.5f * cos_approx(2 * M_PIf * i / (FFT_WINDOW_SIZE - 1)));
     }
@@ -84,8 +109,10 @@ void gyroDataAnalyseInit(void)
 void gyroDataAnalyseStateInit(gyroAnalyseState_t *state, uint32_t targetLooptimeUs)
 {
     // initialise even if FEATURE_DYNAMIC_FILTER not set, since it may be set later
+    gyroDataAnalyseInit(targetLooptimeUs);
+
     const uint16_t samplingFrequency = 1000000 / targetLooptimeUs;
-    state->maxSampleCount = samplingFrequency / FFT_SAMPLING_RATE_HZ;
+    state->maxSampleCount = samplingFrequency / fftSamplingRateHz;
     state->maxSampleCountRcp = 1.f / state->maxSampleCount;
 
     arm_rfft_fast_init_f32(&state->fftInstance, FFT_WINDOW_SIZE);
@@ -93,11 +120,11 @@ void gyroDataAnalyseStateInit(gyroAnalyseState_t *state, uint32_t targetLooptime
     // recalculation of filters takes 4 calls per axis => each filter gets updated every DYN_NOTCH_CALC_TICKS calls
     // at 4khz gyro loop rate this means 4khz / 4 / 3 = 333Hz => update every 3ms
     // for gyro rate > 16kHz, we have update frequency of 1kHz => 1ms
-    const float looptime = MAX(1000000u / FFT_SAMPLING_RATE_HZ, targetLooptimeUs * DYN_NOTCH_CALC_TICKS);
+    const float looptime = MAX(1000000u / fftSamplingRateHz, targetLooptimeUs * DYN_NOTCH_CALC_TICKS);
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         // any init value
         state->centerFreq[axis] = 200;
-        biquadFilterInit(&state->gyroBandpassFilter[axis], FFT_BPF_HZ, 1000000 / FFT_SAMPLING_RATE_HZ, 0.01f * gyroConfig()->dyn_notch_quality, FILTER_BPF);
+        biquadFilterInit(&state->gyroBandpassFilter[axis], fftBpfHz, 1000000 / fftSamplingRateHz, 0.01f * gyroConfig()->dyn_notch_quality, FILTER_BPF);
         biquadFilterInitLPF(&state->detectedFrequencyFilter[axis], DYN_NOTCH_SMOOTH_FREQ_HZ, looptime);
     }
 }
@@ -231,7 +258,7 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
             bool fftIncreasing = false;
 
             // iterate over fft data and calculate weighted indices
-            for (int i = 1 + FFT_BIN_OFFSET; i < FFT_BIN_COUNT; i++) {
+            for (int i = 1 + fftBinOffset; i < FFT_BIN_COUNT; i++) {
                 const float data = state->fftData[i];
                 const float prevData = state->fftData[i - 1];
 
@@ -253,17 +280,18 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
 
             // get weighted center of relevant frequency range (this way we have a better resolution than 31.25Hz)
             // if no peak, go to highest point to minimise delay
-            float centerFreq = DYN_NOTCH_MAX_CENTRE_HZ;
+            float centerFreq = dynNotchMaxCentreHz;
             float fftMeanIndex = 0;
 
             if (fftSum > 0) {
                 // idx was shifted by 1 to start at 1, not 0
                 fftMeanIndex = (fftWeightedSum / fftSum) - 1;
                 // the index points at the center frequency of each bin so index 0 is actually 16.125Hz
-                centerFreq = constrain(fftMeanIndex * FFT_RESOLUTION, DYN_NOTCH_MIN_CENTRE_HZ, DYN_NOTCH_MAX_CENTRE_HZ);
+                centerFreq = constrain(fftMeanIndex * fftResolution, DYN_NOTCH_MIN_CENTRE_HZ, dynNotchMaxCentreHz);
             }
 
             centerFreq = biquadFilterApply(&state->detectedFrequencyFilter[state->updateAxis], centerFreq);
+            centerFreq = constrain(centerFreq, DYN_NOTCH_MIN_CENTRE_HZ, dynNotchMaxCentreHz);
             state->centerFreq[state->updateAxis] = centerFreq;
 
             if (state->updateAxis == 0) {
