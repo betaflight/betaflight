@@ -301,7 +301,7 @@ static OSD_Entry cmsx_menuProfileOtherEntries[] = {
     { "AG GAIN",     OME_UINT16, NULL, &(OSD_UINT16_t) { &cmsx_itermAcceleratorGain,   1000, 30000, 10 }   , 0 },
     { "AG THR",      OME_UINT16, NULL, &(OSD_UINT16_t) { &cmsx_itermThrottleThreshold, 20,   1000,  1  }   , 0 },
 #ifdef USE_THROTTLE_BOOST
-    { "THR BOOST",   OME_UINT16, NULL, &(OSD_UINT8_t)  { &cmsx_throttleBoost,          0,    100,   1  }   , 0 },
+    { "THR BOOST",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_throttleBoost,          0,    100,   1  }   , 0 },
 #endif
 
     { "BACK", OME_Back, NULL, NULL, 0 },
