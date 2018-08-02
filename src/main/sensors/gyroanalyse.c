@@ -308,5 +308,4 @@ void gyroDataAnalyseUpdate(biquadFilter_t *notchFilterDyn)
 
     step = (step + 1) % STEP_COUNT;
 }
-
 #endif // USE_GYRO_DATA_ANALYSE
