@@ -104,6 +104,9 @@ extern uint8_t __config_end;
 #include "interface/msp_box.h"
 #include "interface/msp_protocol.h"
 #include "interface/settings.h"
+#ifdef MSP_OVER_CLI
+#include "msp/msp_serial.h"
+#endif
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
@@ -2378,6 +2381,37 @@ static void cliBootloader(char *cmdLine)
     cliRebootEx(true);
 }
 
+#ifdef MSP_OVER_CLI
+sbuf_t buft;
+uint8_t bufPtr[256];
+
+void cliMsp(char *cmdline){
+    int len = strlen(cmdline);
+    if (len == 0) {
+        cliPrintLine("No MSP command present");
+
+        return;
+    } else {
+        uint8_t mspCommand = atoi(cmdline);
+        buft.ptr = buft.end = bufPtr;
+        if (mspCommonProcessOutCommand(mspCommand, &buft, NULL) || mspProcessOutCommand(mspCommand, &buft))
+        {
+
+            bufWriterAppend(cliWriter, '.');                 //"." is success
+            bufWriterAppend(cliWriter, mspCommand);          //msp command sent
+            bufWriterAppend(cliWriter, buft.ptr - buft.end); //number of chars
+
+            while (buft.end <= buft.ptr)
+                bufWriterAppend(cliWriter, *(buft.end)++); //send data
+        }
+        else
+        {
+            bufWriterAppend(cliWriter, '!'); //"!" is failure
+        }
+    }
+}
+#endif
+
 static void cliExit(char *cmdline)
 {
     UNUSED(cmdline);
@@ -3836,6 +3870,9 @@ const clicmd_t cmdTable[] = {
         "[master|profile|rates|all] {defaults}", cliDump),
 #ifdef USE_ESCSERIAL
     CLI_COMMAND_DEF("escprog", "passthrough esc to serial", "<mode [sk/bl/ki/cc]> <index>", cliEscPassthrough),
+#endif
+#ifdef MSP_OVER_CLI
+    CLI_COMMAND_DEF("msp", NULL, NULL, cliMsp),
 #endif
     CLI_COMMAND_DEF("exit", NULL, NULL, cliExit),
     CLI_COMMAND_DEF("feature", "configure features",

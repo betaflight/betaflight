@@ -48,3 +48,5 @@ typedef void (*mspProcessReplyFnPtr)(mspPacket_t *cmd);
 void mspInit(void);
 mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostProcessFnPtr *mspPostProcessFn);
 void mspFcProcessReply(mspPacket_t *reply);
+bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn);
+bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst);

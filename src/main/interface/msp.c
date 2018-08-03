@@ -392,7 +392,7 @@ static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, const uin
  * Returns true if the command was processd, false otherwise.
  * May set mspPostProcessFunc to a function to be called once the command has been processed
  */
-static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
+bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
 {
     switch (cmdMSP) {
     case MSP_API_VERSION:
@@ -691,7 +691,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 }
 
 #ifdef USE_OSD_SLAVE
-static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
+bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 {
     switch (cmdMSP) {
     case MSP_STATUS_EX:
@@ -722,7 +722,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 
 #else
 
-static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
+bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 {
     switch (cmdMSP) {
     case MSP_STATUS_EX:
