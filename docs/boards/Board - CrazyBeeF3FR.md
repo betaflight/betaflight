@@ -71,7 +71,11 @@ https://www.banggood.com/Racerstar-Crazybee-F3-Flight-Controller-4-IN-1-5A-1S-Bl
 
 Specific information for the factory supplied Betaflight 3.3.0 version:
 
-- The DSHOT beeper function does not work.
+- To activate DSHOT beeper, you need to go in CLI and write 
+
+	*set beeper_dshot_beacon_tone=1*<br/>*save*<br/>
+    
+	There is am [issue](https://github.com/betaflight/betaflight-configurator/issues/975) in Betaflight 3.3.0 that prevent of using the GUI slider to activate the DSHOT beacon in the "*configuration*" tab.
 - When turtle mode ("Flip over after Crash") is activated, the FC will only arm if the failsafe timeout is 1s (10 * 0.1s) or more. If the timeout is set lower than that, you may see the motors shortly try to spin up and then stop, and then the quad will not be armed. Rumour has it that this is fixed in BF 3.4 .
 
 FRSKY Version:
