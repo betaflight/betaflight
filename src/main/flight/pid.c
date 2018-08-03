@@ -226,7 +226,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
         for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
             dtermFilterNotch[axis] = &biquadFilterNotch[axis];
             biquadFilterInit(dtermFilterNotch[axis], dTermNotchHz, targetPidLooptime, notchQ, FILTER_NOTCH);
-        }    
+        }
     } else {
         dtermNotchFilterApplyFn = nullFilterApply;
     }
@@ -424,26 +424,37 @@ static FAST_RAM float previousRateError[3];
 static FAST_RAM timeUs_t crashDetectedAtUs;
 static FAST_RAM timeUs_t previousTimeUs;
 
-// Butterflight pid controlelr which uses measurement instead of error rate to calculate D
-float butteredPids(const pidProfile_t *pidProfile, int axis, float errorRate, float dynCi, float iDT, float currentPidSetpoint) 
+// Butterflight pid controller which uses measurement instead of error rate to calculate D
+float butteredPids(const pidProfile_t *pidProfile, int axis, float errorRate, float dynCi, float iDT, float currentPidSetpoint)
 {
     (void)(pidProfile);
     (void)(currentPidSetpoint);
     // -----calculate P component
+#if defined(USE_TPA_CURVES)
+    axisPID_P[axis] = (Kp[axis] * errorRate) * getThrottlePIDAttenuationKp();
+#else
     axisPID_P[axis] = (Kp[axis] * errorRate) * getThrottlePIDAttenuation();
-
+#endif
     // -----calculate I component
     float iterm = constrainf(axisPID_I[axis] + (Ki[axis] * errorRate) * dynCi, -itermLimit, itermLimit);
     if (!mixerIsOutputSaturated(axis, errorRate) || ABS(iterm) < ABS(axisPID_I[axis])) {
         // Only increase ITerm if output is not saturated
+#if defined(USE_TPA_CURVES)
+        axisPID_I[axis] = iterm * getThrottlePIDAttenuationKi();
+#else
         axisPID_I[axis] = iterm;
+#endif
     }
 
     // -----calculate D component
-    // use measurement and apply filters. mmmm gimme that butter.      
+    // use measurement and apply filters. mmmm gimme that butter.
     float dDelta = dtermLpfApplyFn(dtermFilterLpf[axis], -((gyro.gyroADCf[axis] - previousRateError[axis]) * iDT));
     previousRateError[axis] = gyro.gyroADCf[axis];
+#if defined(USE_TPA_CURVES)
+    axisPID_D[axis] = Kd[axis] * (dDelta) * getThrottlePIDAttenuationKd();
+#else
     axisPID_D[axis] = Kd[axis] * (dDelta) * getThrottlePIDAttenuation();
+#endif
     axisPIDSum[axis] = axisPID_P[axis] + axisPID_I[axis] + axisPID_D[axis];
     return dDelta;
 }
@@ -451,20 +462,27 @@ float butteredPids(const pidProfile_t *pidProfile, int axis, float errorRate, fl
 // Betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage.
 // Based on 2DOF reference design (matlab)
 
-float classicPids(const pidProfile_t *pidProfile, int axis, float errorRate, float dynCi, float iDT, float currentPidSetpoint) 
+float classicPids(const pidProfile_t *pidProfile, int axis, float errorRate, float dynCi, float iDT, float currentPidSetpoint)
 {
     // --------low-level gyro-based PID based on 2DOF PID controller. ----------
     // 2-DOF PID controller with optional filter on derivative term.
     // b = 1 and only c (dtermSetpointWeight) can be tuned (amount derivative on measurement or error).
 
     // -----calculate P component and add Dynamic Part based on stick input
+#if defined(USE_TPA_CURVES)
+    axisPID_P[axis] = Kp[axis] * errorRate * getThrottlePIDAttenuationKp();
+#else
     axisPID_P[axis] = Kp[axis] * errorRate * getThrottlePIDAttenuation();
-
+#endif
     // -----calculate I component
     float ITermNew = constrainf(axisPID_I[axis] + Ki[axis] * errorRate * dynCi, -itermLimit, itermLimit);
     if (!mixerIsOutputSaturated(axis, errorRate) || ABS(ITermNew) < ABS(axisPID_I[axis])) {
         // Only increase ITerm if output is not saturated
+#if defined(USE_TPA_CURVES)
+        axisPID_I[axis] = ITermNew * getThrottlePIDAttenuationKi();
+#else
         axisPID_I[axis] = ITermNew;
+#endif
     }
 
     // -----calculate D component
@@ -474,9 +492,9 @@ float classicPids(const pidProfile_t *pidProfile, int axis, float errorRate, flo
     {
         gyroRateFiltered = dtermLpfApplyFn(dtermFilterLpf[axis], gyroRateFiltered);
     }
-    
+
     float setpointT = flightModeFlags ? 0.0f : dtermSetpointWeight * MIN(getRcDeflectionAbs(axis) * relaxFactor, 1.0f);
-    float ornD = setpointT * currentPidSetpoint - gyroRateFiltered; 
+    float ornD = setpointT * currentPidSetpoint - gyroRateFiltered;
     float dDelta = 0.0f;
     switch (pidProfile->dterm_filter_style) {
         case KD_FILTER_SP:
@@ -485,7 +503,7 @@ float classicPids(const pidProfile_t *pidProfile, int axis, float errorRate, flo
             break;
         case KD_FILTER_NOSP:
             ornD = setpointT * getSetpointRate(axis) - gyroRateFiltered;    // cr - y
-            dDelta = dtermLpfApplyFn(dtermFilterLpf[axis], (ornD - previousRateError[axis]) * iDT );                
+            dDelta = dtermLpfApplyFn(dtermFilterLpf[axis], (ornD - previousRateError[axis]) * iDT );
             //filter Kd properly, no sp
             break;
         case KD_FILTER_CLASSIC:
@@ -494,7 +512,11 @@ float classicPids(const pidProfile_t *pidProfile, int axis, float errorRate, flo
             break;
     }
     previousRateError[axis] = ornD;
+#if defined(USE_TPA_CURVES)
+    axisPID_D[axis] = Kd[axis] * dDelta * getThrottlePIDAttenuationKd();
+#else
     axisPID_D[axis] = Kd[axis] * dDelta * getThrottlePIDAttenuation();
+#endif
     axisPIDSum[axis] = axisPID_P[axis] + axisPID_I[axis] + axisPID_D[axis];
     return dDelta;
 }
@@ -502,9 +524,9 @@ float classicPids(const pidProfile_t *pidProfile, int axis, float errorRate, flo
 
 void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, timeUs_t currentTimeUs)
 {
-    const float deltaT = (currentTimeUs - previousTimeUs) * 0.000001f;   
-    previousTimeUs = currentTimeUs;    
-    
+    const float deltaT = (currentTimeUs - previousTimeUs) * 0.000001f;
+    previousTimeUs = currentTimeUs;
+
     const float motorMixRange = getMotorMixRange();
     // calculate actual deltaT in seconds
     const float iDT = 1.0f/deltaT; //divide once

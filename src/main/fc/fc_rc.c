@@ -69,12 +69,74 @@ volatile int16_t rcInterpolationStepCount;
 volatile uint16_t rxRefreshRate;
 volatile uint16_t currentRxRefreshRate;
 
+
+#if defined(USE_TPA_CURVES)
+float throttleLookupKp[1024];
+float throttleLookupKi[1024];
+float throttleLookupKd[1024];
+uint16_t currentAdjustedThrottle; // rcData[THROTTLE] shifted to 0-1023 range
+
+static void  BuildTPACurveThrottleLookupTables(void);
+
+static float ApplyAttenuationCurve (float input, uint8_t curve[], uint32_t curveSize);
+
+static void BuildTPACurveThrottleLookupTables(void)
+{
+    for (int x = 0; x <= 1023; x++)
+    {
+        throttleLookupKp[x] = ApplyAttenuationCurve( ((float)x / 1023.0f), currentControlRateProfile->tpaKpCurve, ATTENUATION_CURVE_SIZE );
+        throttleLookupKi[x] = ApplyAttenuationCurve( ((float)x / 1023.0f), currentControlRateProfile->tpaKiCurve, ATTENUATION_CURVE_SIZE );
+        throttleLookupKd[x] = ApplyAttenuationCurve( ((float)x / 1023.0f), currentControlRateProfile->tpaKdCurve, ATTENUATION_CURVE_SIZE );
+    }
+}
+static float ApplyAttenuationCurve (float inputAttn, uint8_t curve[], uint32_t curveSize)
+{
+    // curve needs to be float'd
+    float floatCurve[curveSize];
+    for (uint8_t i = 0; i < curveSize; i++) {
+        floatCurve[i] = (float)curve[i] / 100.0f;
+    }
+
+    float attenuationValue = (inputAttn * (curveSize - 1));
+    float remainder = (float)((float)attenuationValue - (int)attenuationValue);
+    uint32_t position = (int)attenuationValue;
+
+    if (inputAttn == 1)
+        return(floatCurve[curveSize-1]);
+    else
+        return(floatCurve[position] + (((floatCurve[position+1] - floatCurve[position]) * remainder)));
+}
+
+float getThrottlePIDAttenuationKp(void) {
+    if (currentControlRateProfile->tpaCurveType == 0) {
+        return throttlePIDAttenuation;
+    }
+    return throttleLookupKp[currentAdjustedThrottle];
+}
+
+float getThrottlePIDAttenuationKi(void) {
+    if (currentControlRateProfile->tpaCurveType == 0) {
+        return 1.0f;
+    }
+    return throttleLookupKi[currentAdjustedThrottle];
+}
+
+float getThrottlePIDAttenuationKd(void) {
+    if (currentControlRateProfile->tpaCurveType == 0) {
+        return throttlePIDAttenuation;
+    }
+    return throttleLookupKd[currentAdjustedThrottle];
+}
+
+#endif  // USE_TPA_CURVES
+
+
 float getSetpointRate(int axis)
 {
     return setpointRate[axis];
 }
 
-uint32_t getSetpointRateInt(int axis) 
+uint32_t getSetpointRateInt(int axis)
 {
     return setpointRateInt[axis];
 }
@@ -307,18 +369,29 @@ void updateRcCommands(void)
     isRXDataNew = true;
     // PITCH & ROLL only dynamic PID adjustment,  depending on throttle value
     int32_t prop;
-    if (rcData[THROTTLE] < currentControlRateProfile->tpa_breakpoint) {
-        prop = 100;
-        throttlePIDAttenuation = 1.0f;
-    } else {
-        if (rcData[THROTTLE] < 2000) {
-            prop = 100 - (uint16_t)currentControlRateProfile->dynThrPID * (rcData[THROTTLE] - currentControlRateProfile->tpa_breakpoint) / (2000 - currentControlRateProfile->tpa_breakpoint);
+#if defined(USE_TPA_CURVES)
+    if (currentControlRateProfile->tpaCurveType == 0)
+    {
+#endif
+        if (rcData[THROTTLE] < currentControlRateProfile->tpa_breakpoint) {
+            prop = 100;
+            throttlePIDAttenuation = 1.0f;
         } else {
-            prop = 100 - currentControlRateProfile->dynThrPID;
+            if (rcData[THROTTLE] < 2000) {
+                prop = 100 - (uint16_t)currentControlRateProfile->dynThrPID * (rcData[THROTTLE] - currentControlRateProfile->tpa_breakpoint) / (2000 - currentControlRateProfile->tpa_breakpoint);
+            } else {
+                prop = 100 - currentControlRateProfile->dynThrPID;
+            }
+            throttlePIDAttenuation = prop / 100.0f;
         }
-        throttlePIDAttenuation = prop / 100.0f;
-    }
 
+#if defined(USE_TPA_CURVES)
+    } else {
+        // rcData is 1000,2000 range, subtract 1000 and clamp between 0 and 1023 (for TPA lookup table indexing)
+        uint16_t shift = rcData[THROTTLE] - 1000;
+        currentAdjustedThrottle = (shift <= 0) ? 0 : ((shift >= 1023) ? 1023 : shift );
+    }
+#endif
     for (int axis = 0; axis < 3; axis++) {
         // non coupled PID reduction scaler used in PID controller 1 and PID controller 2.
 
@@ -428,4 +501,8 @@ void initRcProcessing(void)
         break;
     }
     interpolationChannels = rxConfig()->rcInterpolationChannels + 2; //"RP", "RPY", "RPYT"
+
+#if defined(USE_TPA_CURVES)
+    BuildTPACurveThrottleLookupTables();
+#endif
 }

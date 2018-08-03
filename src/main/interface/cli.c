@@ -1541,6 +1541,122 @@ static void cliServo(char *cmdline)
 }
 #endif
 
+#ifdef USE_TPA_CURVES
+static void printTPACurve(void)
+{
+    cliPrintf("tpakp ");
+    for (int i = 0; i < ATTENUATION_CURVE_SIZE; i++) {
+        if (i == ATTENUATION_CURVE_SIZE - 1) {
+            cliPrintf("%d", currentControlRateProfile->tpaKpCurve[i]);
+        } else {
+            cliPrintf("%d=", currentControlRateProfile->tpaKpCurve[i]);
+        }
+    }
+    cliPrintLinefeed();
+
+    cliPrintf("tpaki ");
+    for (int i = 0; i < ATTENUATION_CURVE_SIZE; i++) {
+        if (i == ATTENUATION_CURVE_SIZE - 1) {
+            cliPrintf("%d", currentControlRateProfile->tpaKiCurve[i]);
+        } else {
+            cliPrintf("%d=", currentControlRateProfile->tpaKiCurve[i]);
+        }
+    }
+    cliPrintLinefeed();
+
+    cliPrintf("tpakd ");
+    for (int i = 0; i < ATTENUATION_CURVE_SIZE; i++) {
+        if (i == ATTENUATION_CURVE_SIZE - 1) {
+            cliPrintf("%d", currentControlRateProfile->tpaKdCurve[i]);
+        } else {
+            cliPrintf("%d=", currentControlRateProfile->tpaKdCurve[i]);
+        }
+    }
+    cliPrintLinefeed();
+}
+static void printTPACurveUsage(void)
+{
+    cliPrintf("Usage: tpacurve [kp|ki|kd] 100=100=100=100=100=100=100=100=100");
+    cliPrintLinefeed();
+}
+
+static void cliTPACurve(char *cmdLine)
+{
+    enum { KP = 0, KI, KD };
+    int type = -1;
+    int len = strlen(cmdLine);
+
+    if (len == 0) {
+        printTPACurve();
+        return;
+    } else {
+        if (strncasecmp(cmdLine, "kp", 2) == 0) {
+            type = KP;
+        }
+        else if (strncasecmp(cmdLine, "ki", 2) == 0) {
+            type = KI;
+        }
+        else if (strncasecmp(cmdLine, "kd", 2) == 0) {
+            type = KD;
+        }
+        else {
+            printTPACurveUsage();
+            return;
+        }
+
+
+        if (type > -1) {
+            // Bump pointer up to start of curve ignoring spaces
+            char* curveStr = cmdLine + 2;
+            int count = 0;
+            while (curveStr[count] == ' ') {
+                count++;
+            }
+            curveStr = curveStr + count;
+
+            // split by token
+            int i = 0;
+            char *p = strtok(curveStr, "=");
+            uint8_t tempCurve[9] = {0.0f,};
+
+            while (p != NULL && i < 9) {
+                tempCurve[i++] = atoi(p);
+                p = strtok (NULL, "=");
+            }
+            if (i < 9) {
+                printTPACurveUsage();
+                return;
+            }
+            else {
+                switch (type) {
+                    case KP:
+                        memcpy(currentControlRateProfile->tpaKpCurve, tempCurve, sizeof(tempCurve));
+                        cliPrintf("New TPA Saved");
+                        cliPrintLinefeed();
+                        printTPACurve();
+                        break;
+                    case KI:
+                        memcpy(currentControlRateProfile->tpaKiCurve, tempCurve, sizeof(tempCurve));
+                        cliPrintf("New TPA Saved");
+                        cliPrintLinefeed();
+                        printTPACurve();
+                        break;
+                    case KD:
+                        memcpy(currentControlRateProfile->tpaKdCurve, tempCurve, sizeof(tempCurve));
+                        cliPrintf("New TPA Saved");
+                        cliPrintLinefeed();
+                        printTPACurve();
+                        break;
+                    default:
+                        printTPACurveUsage();
+                }
+            }
+        }
+    }
+}
+#endif
+
+
 #ifdef USE_SERVOS
 static void printServoMix(uint8_t dumpMask, const servoMixer_t *customServoMixers, const servoMixer_t *defaultCustomServoMixers)
 {
@@ -3044,7 +3160,7 @@ static void cliStatus(char *cmdline)
             }
         }
     }
-#else 
+#else
     #if defined(USE_GYRO_IMUF9001)
     UNUSED(sensorHardwareNames);
     UNUSED(sensorTypeNames);
@@ -3743,6 +3859,9 @@ const clicmd_t cmdTable[] = {
 #ifdef USE_GYRO_IMUF9001
     CLI_COMMAND_DEF("reportimuferrors", "report imu-f comm errors", NULL, cliReportImufErrors),
     CLI_COMMAND_DEF("imufupdate", "update imu-f's firmware", NULL, cliImufUpdate),
+#endif
+#ifdef USE_TPA_CURVES
+    CLI_COMMAND_DEF("tpacurve", "set rf1 tpa", "[kp, ki, kd]", cliTPACurve),
 #endif
 #ifdef MSD_ADDRESS
     CLI_COMMAND_DEF("msd", "boot into USB drive mode to download log files", NULL, cliMsd),
