@@ -179,7 +179,6 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
     static timeUs_t lastRxTimeUs;
     currentRxRefreshRate = constrain(currentTimeUs - lastRxTimeUs, 1000, 30000);
     lastRxTimeUs = currentTimeUs;
-    isRXDataNew = true;
 
 #ifdef USE_USB_CDC_HID
     if (!ARMING_FLAG(ARMED)) {

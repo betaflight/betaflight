@@ -76,6 +76,10 @@
 #include "sensors/gyro.h"
 #include "sensors/rangefinder.h"
 
+#ifdef USE_GYRO_IMUF9001
+#include "drivers/accgyro/accgyro_imuf9001.h"
+#endif
+
 #if defined(ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT)
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_FLASH
 #elif defined(ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT)
@@ -1337,6 +1341,14 @@ static bool blackboxWriteSysinfo(void)
 #endif // USE_RC_SMOOTHING_FILTER
 
 
+#ifdef USE_GYRO_IMUF9001
+        BLACKBOX_PRINT_HEADER_LINE("IMUF revision", " %d",                  imufCurrentVersion);
+        BLACKBOX_PRINT_HEADER_LINE("IMUF mode", " %d",                      gyroConfig()->imuf_mode);
+        BLACKBOX_PRINT_HEADER_LINE("IMUF roll q", " %d",                    gyroConfig()->imuf_roll_q);
+        BLACKBOX_PRINT_HEADER_LINE("IMUF pitch q", " %d",                   gyroConfig()->imuf_pitch_q);
+        BLACKBOX_PRINT_HEADER_LINE("IMUF yaw q", " %d",                     gyroConfig()->imuf_yaw_q);
+        BLACKBOX_PRINT_HEADER_LINE("IMUF w", " %d",                         gyroConfig()->imuf_w);
+#endif
         default:
             return true;
     }
