@@ -378,7 +378,7 @@ static void initSmartPortSensors(void)
     frSkyDataIdTableInfo.index = 0;
 
 #ifdef USE_ESC_SENSOR
-    if (reportExtendedEscSensors())
+    if (reportExtendedEscSensors()) {
         frSkyEscDataIdTableInfo.size = ESC_DATAID_COUNT;
     } else {
         frSkyEscDataIdTableInfo.size = 0;
