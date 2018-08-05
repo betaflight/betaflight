@@ -11,7 +11,15 @@ static FAST_CODE void GYRO_FILTER_FUNCTION_NAME(gyroSensor_t *gyroSensor, timeDe
         if (isDynamicFilterActive()) {
             if (axis == X) {
                 GYRO_FILTER_DEBUG_SET(DEBUG_FFT, 0, lrintf(gyroADCf)); // store raw data
-                GYRO_FILTER_DEBUG_SET(DEBUG_FFT_FREQ, 3, lrintf(gyroADCf)); // store raw data
+                GYRO_FILTER_DEBUG_SET(DEBUG_FFT_FREQ, 3, lrintf(gyroADCf)); // store raw data in 3
+            }
+            if (gyroConfig()->dyn_filter_location == DYN_FILTER_BEFORE_STATIC_FILTERS) {
+                gyroDataAnalysePush(&gyroSensor->gyroAnalyseState, axis, gyroADCf);
+                gyroADCf = gyroSensor->dynFilterApplyFn((filter_t *)&gyroSensor->dynFilter[axis], gyroADCf);
+                if (axis == X) {
+                   GYRO_FILTER_DEBUG_SET(DEBUG_FFT, 1, lrintf(gyroADCf)); // store data after dynamic notch
+                   GYRO_FILTER_DEBUG_SET(DEBUG_FFT_FREQ, 2, lrintf(gyroADCf)); // store post-notch data in 2
+               }
             }
         }
 #endif
@@ -24,10 +32,13 @@ static FAST_CODE void GYRO_FILTER_FUNCTION_NAME(gyroSensor_t *gyroSensor, timeDe
 
 #ifdef USE_GYRO_DATA_ANALYSE
         if (isDynamicFilterActive()) {
-            gyroDataAnalysePush(&gyroSensor->gyroAnalyseState, axis, gyroADCf);
-            gyroADCf = gyroSensor->notchFilterDynApplyFn((filter_t *)&gyroSensor->notchFilterDyn[axis], gyroADCf);
-            if (axis == X) {
-                GYRO_FILTER_DEBUG_SET(DEBUG_FFT, 1, lrintf(gyroADCf)); // store data after dynamic notch
+            if (gyroConfig()->dyn_filter_location == DYN_FILTER_AFTER_STATIC_FILTERS){
+                if (axis == X) {
+                    GYRO_FILTER_DEBUG_SET(DEBUG_FFT_FREQ, 2, lrintf(gyroADCf)); // store post-static data in debug 2
+                    GYRO_FILTER_DEBUG_SET(DEBUG_FFT, 1, lrintf(gyroADCf)); // store data after statics
+                }
+                gyroDataAnalysePush(&gyroSensor->gyroAnalyseState, axis, gyroADCf);
+                gyroADCf = gyroSensor->dynFilterApplyFn((filter_t *)&gyroSensor->dynFilter[axis], gyroADCf);
             }
         }
 #endif

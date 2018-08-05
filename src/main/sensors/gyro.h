@@ -58,6 +58,11 @@ typedef enum {
     GYRO_OVERFLOW_CHECK_ALL_AXES
 } gyroOverflowCheck_e;
 
+enum {
+    DYN_FILTER_BEFORE_STATIC_FILTERS = 0,
+    DYN_FILTER_AFTER_STATIC_FILTERS
+} ;
+
 #define GYRO_CONFIG_USE_GYRO_1      0
 #define GYRO_CONFIG_USE_GYRO_2      1
 #define GYRO_CONFIG_USE_GYRO_BOTH   2
@@ -96,8 +101,12 @@ typedef struct gyroConfig_s {
     int16_t  yaw_spin_threshold;
 
     uint16_t gyroCalibrationDuration;  // Gyro calibration duration in 1/100 second
+    uint8_t dyn_filter_type;
+    uint8_t dyn_filter_width_percent;
     uint8_t dyn_notch_quality; // bandpass quality factor, 100 for steep sided bandpass
-    uint8_t dyn_notch_width_percent;
+    uint8_t dyn_filter_location; // before or after static filters
+    uint8_t dyn_filter_threshold; // divided by 10 then difference needed to detect peak
+    uint8_t dyn_filter_ignore; // ignore any FFT bin below this threshold
 } gyroConfig_t;
 
 PG_DECLARE(gyroConfig_t, gyroConfig);
