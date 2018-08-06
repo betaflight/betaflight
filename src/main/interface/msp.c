@@ -249,7 +249,7 @@ static void mspRebootFn(serialPort_t *serialPort)
         break;
 #endif
     default:
-    
+
         break;
     }
 
@@ -327,7 +327,7 @@ static void serializeDataflashSummaryReply(sbuf_t *dst)
         sbufWriteU32(dst, 0);
         sbufWriteU32(dst, 0);
         sbufWriteU32(dst, 0);
-    }    
+    }
 }
 
 #ifdef USE_FLASHFS
@@ -1338,21 +1338,20 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
     case MSP_VTX_CONFIG:
         {
             const vtxDevice_t *vtxDevice = vtxCommonDevice();
+            uint8_t pitmode=0;
+            vtxDevType_e vtxType = VTXDEV_UNKNOWN;
             if (vtxDevice) {
-                uint8_t pitmode=0;
                 vtxCommonGetPitMode(vtxDevice, &pitmode);
-                sbufWriteU8(dst, vtxCommonGetDeviceType(vtxDevice));
-                sbufWriteU8(dst, vtxSettingsConfig()->band);
-                sbufWriteU8(dst, vtxSettingsConfig()->channel);
-                sbufWriteU8(dst, vtxSettingsConfig()->power);
-                sbufWriteU8(dst, pitmode);
-                sbufWriteU16(dst, vtxSettingsConfig()->freq);
-                // future extensions here...
-            } else {
-                sbufWriteU8(dst, VTXDEV_UNKNOWN); // no VTX detected
+                vtxType = vtxCommonGetDeviceType(vtxDevice);
             }
+            sbufWriteU8(dst, vtxType);
+            sbufWriteU8(dst, vtxSettingsConfig()->band);
+            sbufWriteU8(dst, vtxSettingsConfig()->channel);
+            sbufWriteU8(dst, vtxSettingsConfig()->power);
+            sbufWriteU8(dst, pitmode);
+            sbufWriteU16(dst, vtxSettingsConfig()->freq);
+            // future extensions here...
         }
-
         break;
 #endif
 
@@ -1939,29 +1938,31 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_VTX_CONFIG:
         {
             vtxDevice_t *vtxDevice = vtxCommonDevice();
+            vtxDevType_e vtxType = VTXDEV_UNKNOWN;
             if (vtxDevice) {
-                if (vtxCommonGetDeviceType(vtxDevice) != VTXDEV_UNKNOWN) {
-                    uint16_t newFrequency = sbufReadU16(src);
-                    if (newFrequency <= VTXCOMMON_MSP_BANDCHAN_CHKVAL) {  //value is band and channel
-                        const uint8_t newBand = (newFrequency / 8) + 1;
-                        const uint8_t newChannel = (newFrequency % 8) + 1;
-                        vtxSettingsConfigMutable()->band = newBand;
-                        vtxSettingsConfigMutable()->channel = newChannel;
-                        vtxSettingsConfigMutable()->freq = vtx58_Bandchan2Freq(newBand, newChannel);
-                    } else {  //value is frequency in MHz
-                        vtxSettingsConfigMutable()->band = 0;
-                        vtxSettingsConfigMutable()->freq = newFrequency;
-                    }
+                vtxType = vtxCommonGetDeviceType(vtxDevice);
+            }
+            uint16_t newFrequency = sbufReadU16(src);
+            if (newFrequency <= VTXCOMMON_MSP_BANDCHAN_CHKVAL) {  //value is band and channel
+                const uint8_t newBand = (newFrequency / 8) + 1;
+                const uint8_t newChannel = (newFrequency % 8) + 1;
+                vtxSettingsConfigMutable()->band = newBand;
+                vtxSettingsConfigMutable()->channel = newChannel;
+                vtxSettingsConfigMutable()->freq = vtx58_Bandchan2Freq(newBand, newChannel);
+            } else {  //value is frequency in MHz
+                vtxSettingsConfigMutable()->band = 0;
+                vtxSettingsConfigMutable()->freq = newFrequency;
+            }
 
-                    if (sbufBytesRemaining(src) > 1) {
-                        vtxSettingsConfigMutable()->power = sbufReadU8(src);
-                        // Delegate pitmode to vtx directly
-                        const uint8_t newPitmode = sbufReadU8(src);
-                        uint8_t currentPitmode = 0;
-                        vtxCommonGetPitMode(vtxDevice, &currentPitmode);
-                        if (currentPitmode != newPitmode) {
-                            vtxCommonSetPitMode(vtxDevice, newPitmode);
-                        }
+            if (sbufBytesRemaining(src) > 1) {
+                vtxSettingsConfigMutable()->power = sbufReadU8(src);
+                if (vtxType != VTXDEV_UNKNOWN) {
+                    // Delegate pitmode to vtx directly
+                    const uint8_t newPitmode = sbufReadU8(src);
+                    uint8_t currentPitmode = 0;
+                    vtxCommonGetPitMode(vtxDevice, &currentPitmode);
+                    if (currentPitmode != newPitmode) {
+                        vtxCommonSetPitMode(vtxDevice, newPitmode);
                     }
                 }
             }
