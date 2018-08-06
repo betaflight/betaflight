@@ -96,8 +96,9 @@ typedef struct gyroConfig_s {
     int16_t  yaw_spin_threshold;
 
     uint16_t gyroCalibrationDuration;  // Gyro calibration duration in 1/100 second
+    uint8_t dyn_filter_type;
+    uint8_t dyn_filter_width_percent;
     uint8_t dyn_notch_quality; // bandpass quality factor, 100 for steep sided bandpass
-    uint8_t dyn_notch_width_percent;
 } gyroConfig_t;
 
 PG_DECLARE(gyroConfig_t, gyroConfig);

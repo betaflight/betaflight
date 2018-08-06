@@ -506,8 +506,9 @@ const clivalue_t valueTable[] = {
     { "gyro_to_use",                VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GYRO }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_to_use) },
 #endif
 #if defined(USE_GYRO_DATA_ANALYSE)
-    { "dyn_notch_quality",          VAR_UINT8 | MASTER_VALUE, .config.minmax = { 1, 70 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_notch_quality) },
-    { "dyn_notch_width_percent",    VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 99 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_notch_width_percent) },
+    { "dyn_filter_type",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LOWPASS_TYPE }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_filter_type) },
+    { "dyn_filter_width_percent",   VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 99 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_filter_width_percent) },
+    { "dyn_notch_quality",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 70 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_notch_quality) },
 #endif
 
 // PG_ACCELEROMETER_CONFIG
