@@ -157,7 +157,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .throttle_boost_cutoff = 15,
         .iterm_rotation = true,
         .smart_feedforward = false,
-        .iterm_relax = ITERM_RELAX_RP
+        .iterm_relax = ITERM_RELAX_RP,
         .iterm_relax_cutoff = 11,
         .iterm_relax_type = ITERM_RELAX_SETPOINT,
         .acro_trainer_angle_limit = 20,
