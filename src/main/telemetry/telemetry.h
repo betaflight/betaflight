@@ -54,6 +54,7 @@ typedef struct telemetryConfig_s {
     uint8_t report_cell_voltage;
     uint8_t flysky_sensors[IBUS_SENSOR_COUNT];
     uint8_t smartport_use_extra_sensors;
+    uint16_t mavlink_mah_as_heading_divisor;
 } telemetryConfig_t;
 
 PG_DECLARE(telemetryConfig_t, telemetryConfig);
