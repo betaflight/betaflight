@@ -98,6 +98,11 @@ enum {
     ALIGN_MAG = 2
 };
 
+enum {
+    ARMING_DELAYED_DISARMED = 0,
+    ARMING_DELAYED_NORMAL = 1,
+    ARMING_DELAYED_CRASHFLIP = 2
+};
 
 #define GYRO_WATCHDOG_DELAY 80 //  delay for gyro sync
 
@@ -130,7 +135,7 @@ static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the m
 bool isRXDataNew;
 static int lastArmingDisabledReason = 0;
 static timeUs_t lastDisarmTimeUs;
-static bool tryingToArm;
+static int tryingToArm = ARMING_DELAYED_DISARMED;
 
 #ifdef USE_RUNAWAY_TAKEOFF
 static timeUs_t runawayTakeoffDeactivateUs = 0;
@@ -335,11 +340,17 @@ void tryArm(void)
         }
 #ifdef USE_DSHOT
         if (micros() - getLastDshotBeaconCommandTimeUs() < DSHOT_BEACON_GUARD_DELAY_US) {
-            tryingToArm = true;
+            if (tryingToArm == ARMING_DELAYED_DISARMED) {
+                if (isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH) && IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
+                    tryingToArm = ARMING_DELAYED_CRASHFLIP;
+                } else {
+                    tryingToArm = ARMING_DELAYED_NORMAL;
+                }
+            }
             return;
         }
         if (isMotorProtocolDshot() && isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH)) {
-            if (!IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
+            if (!(IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH) || (tryingToArm == ARMING_DELAYED_CRASHFLIP))) {
                 flipOverAfterCrashMode = false;
                 if (!feature(FEATURE_3D)) {
                     pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL, false);
@@ -1025,10 +1036,10 @@ timeUs_t getLastDisarmTimeUs(void)
 
 bool isTryingToArm()
 {
-    return tryingToArm;
+    return (tryingToArm != ARMING_DELAYED_DISARMED);
 }
 
 void resetTryingToArm()
 {
-    tryingToArm = false;
+    tryingToArm = ARMING_DELAYED_DISARMED;
 }
