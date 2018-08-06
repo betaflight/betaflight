@@ -317,6 +317,10 @@ static void smartPortSendPackage(uint16_t id, uint32_t val)
     smartPortWriteFrame(&payload);
 }
 
+static bool reportExtendedEscSensors(void) {
+    return feature(FEATURE_ESC_SENSOR) && telemetryConfig()->smartport_use_extra_sensors;
+}
+
 #define ADD_SENSOR(dataId) frSkyDataIdTableInfo.table[frSkyDataIdTableInfo.index++] = dataId
 
 static void initSmartPortSensors(void)
@@ -328,23 +332,23 @@ static void initSmartPortSensors(void)
 
     if (isBatteryVoltageConfigured()) {
 #ifdef USE_ESC_SENSOR
-        if (!feature(FEATURE_ESC_SENSOR) || !telemetryConfig()->smartport_use_extra_sensors) {
+        if (!reportExtendedEscSensors())
 #endif
+        {
             ADD_SENSOR(FSSP_DATAID_VFAS);
-#ifdef USE_ESC_SENSOR
         }
-#endif
+
         ADD_SENSOR(FSSP_DATAID_A4);
     }
 
     if (isAmperageConfigured()) {
 #ifdef USE_ESC_SENSOR
-        if (!feature(FEATURE_ESC_SENSOR) || !telemetryConfig()->smartport_use_extra_sensors) {
+        if (!reportExtendedEscSensors())
 #endif
+        {
             ADD_SENSOR(FSSP_DATAID_CURRENT);
-#ifdef USE_ESC_SENSOR
         }
-#endif
+
         ADD_SENSOR(FSSP_DATAID_FUEL);
     }
 
@@ -374,7 +378,7 @@ static void initSmartPortSensors(void)
     frSkyDataIdTableInfo.index = 0;
 
 #ifdef USE_ESC_SENSOR
-    if (feature(FEATURE_ESC_SENSOR && telemetryConfig()->smartport_use_extra_sensors)) {
+    if (reportExtendedEscSensors()) {
         frSkyEscDataIdTableInfo.size = ESC_DATAID_COUNT;
     } else {
         frSkyEscDataIdTableInfo.size = 0;
