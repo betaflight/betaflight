@@ -122,27 +122,48 @@ static bool mspSerialProcessReceivedData(mspPort_t *mspPort, uint8_t c)
             }
             break;
 
-        case MSP_HEADER_M:      // Waiting for '<'
-            if (c == '<') {
-                mspPort->offset = 0;
-                mspPort->checksum1 = 0;
-                mspPort->checksum2 = 0;
-                mspPort->c_state = MSP_HEADER_V1;
-            }
-            else {
-                mspPort->c_state = MSP_IDLE;
+        case MSP_HEADER_M:      // Waiting for '<' / '>'
+            switch (c) {
+                case '<': // COMMAND
+                    mspPort->packetType = MSP_PACKET_COMMAND;
+                    mspPort->c_state = MSP_HEADER_V1;
+                    mspPort->offset = 0;
+                    mspPort->checksum1 = 0;
+                    mspPort->checksum2 = 0;
+                    break;
+                case '>': // REPLY
+                    mspPort->packetType = MSP_PACKET_REPLY;
+                    mspPort->c_state = MSP_HEADER_V1;
+                    mspPort->offset = 0;
+                    mspPort->checksum1 = 0;
+                    mspPort->checksum2 = 0;
+                    break;
+                default:
+                    mspPort->c_state = MSP_IDLE;
+                    break;
             }
             break;
 
         case MSP_HEADER_X:
-            if (c == '<') {
-                mspPort->offset = 0;
-                mspPort->checksum2 = 0;
-                mspPort->mspVersion = MSP_V2_NATIVE;
-                mspPort->c_state = MSP_HEADER_V2_NATIVE;
-            }
-            else {
-                mspPort->c_state = MSP_IDLE;
+            switch (c) {
+                case '<': // COMMAND
+                    mspPort->packetType = MSP_PACKET_COMMAND;
+                    mspPort->offset = 0;
+                    mspPort->checksum2 = 0;
+                    mspPort->mspVersion = MSP_V2_NATIVE;
+                    mspPort->c_state = MSP_HEADER_V2_NATIVE;
+                    break;
+                case '>': // REPLY
+                    mspPort->packetType = MSP_PACKET_REPLY;
+                    mspPort->c_state = MSP_HEADER_V1;
+                    mspPort->offset = 0;
+                    mspPort->checksum2 = 0;
+                    mspPort->mspVersion = MSP_V2_NATIVE;
+                    mspPort->c_state = MSP_HEADER_V2_NATIVE;
+                    break;
+                default:
+                    mspPort->c_state = MSP_IDLE;
+                    break;
             }
             break;
 
