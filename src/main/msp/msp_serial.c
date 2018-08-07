@@ -100,7 +100,6 @@ static bool mspSerialProcessReceivedData(mspPort_t *mspPort, uint8_t c)
         default:
         case MSP_IDLE:      // Waiting for '$' character
             if (c == '$') {
-                mspPort->mspVersion = MSP_V1;
                 mspPort->c_state = MSP_HEADER_START;
             }
             else {
@@ -109,12 +108,17 @@ static bool mspSerialProcessReceivedData(mspPort_t *mspPort, uint8_t c)
             break;
 
         case MSP_HEADER_START:  // Waiting for 'M' (MSPv1 / MSPv2_over_v1) or 'X' (MSPv2 native)
+            mspPort->offset = 0;
+            mspPort->checksum1 = 0;
+            mspPort->checksum2 = 0;
             switch (c) {
                 case 'M':
                     mspPort->c_state = MSP_HEADER_M;
+                    mspPort->mspVersion = MSP_V1;
                     break;
                 case 'X':
                     mspPort->c_state = MSP_HEADER_X;
+                    mspPort->mspVersion = MSP_V2_NATIVE;
                     break;
                 default:
                     mspPort->c_state = MSP_IDLE;
@@ -123,20 +127,13 @@ static bool mspSerialProcessReceivedData(mspPort_t *mspPort, uint8_t c)
             break;
 
         case MSP_HEADER_M:      // Waiting for '<' / '>'
+            mspPort->c_state = MSP_HEADER_V1;
             switch (c) {
-                case '<': // COMMAND
+                case '<':
                     mspPort->packetType = MSP_PACKET_COMMAND;
-                    mspPort->c_state = MSP_HEADER_V1;
-                    mspPort->offset = 0;
-                    mspPort->checksum1 = 0;
-                    mspPort->checksum2 = 0;
                     break;
-                case '>': // REPLY
+                case '>':
                     mspPort->packetType = MSP_PACKET_REPLY;
-                    mspPort->c_state = MSP_HEADER_V1;
-                    mspPort->offset = 0;
-                    mspPort->checksum1 = 0;
-                    mspPort->checksum2 = 0;
                     break;
                 default:
                     mspPort->c_state = MSP_IDLE;
@@ -145,21 +142,13 @@ static bool mspSerialProcessReceivedData(mspPort_t *mspPort, uint8_t c)
             break;
 
         case MSP_HEADER_X:
+            mspPort->c_state = MSP_HEADER_V2_NATIVE;
             switch (c) {
-                case '<': // COMMAND
+                case '<':
                     mspPort->packetType = MSP_PACKET_COMMAND;
-                    mspPort->offset = 0;
-                    mspPort->checksum2 = 0;
-                    mspPort->mspVersion = MSP_V2_NATIVE;
-                    mspPort->c_state = MSP_HEADER_V2_NATIVE;
                     break;
-                case '>': // REPLY
+                case '>':
                     mspPort->packetType = MSP_PACKET_REPLY;
-                    mspPort->c_state = MSP_HEADER_V1;
-                    mspPort->offset = 0;
-                    mspPort->checksum2 = 0;
-                    mspPort->mspVersion = MSP_V2_NATIVE;
-                    mspPort->c_state = MSP_HEADER_V2_NATIVE;
                     break;
                 default:
                     mspPort->c_state = MSP_IDLE;
