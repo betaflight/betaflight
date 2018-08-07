@@ -87,7 +87,6 @@
 #include "io/ledstrip.h"
 #include "io/motors.h"
 #include "io/osd.h"
-#include "io/osd_slave.h"
 #include "io/serial.h"
 #include "io/serial_4way.h"
 #include "io/servos.h"

@@ -2,7 +2,6 @@ OFFICIAL_TARGETS  = ALIENFLIGHTF3 ALIENFLIGHTF4 ANYFCF7 BETAFLIGHTF3 BLUEJAYF4 F
 ALT_TARGETS       = $(sort $(filter-out target, $(basename $(notdir $(wildcard $(ROOT)/src/main/target/*/*.mk)))))
 NOBUILD_TARGETS   = $(sort $(filter-out target, $(basename $(notdir $(wildcard $(ROOT)/src/main/target/*/*.nomk)))))
 OPBL_TARGETS      = $(filter %_OPBL, $(ALT_TARGETS))
-OSD_SLAVE_TARGETS = SPRACINGF3OSD
 
 VALID_TARGETS   = $(dir $(wildcard $(ROOT)/src/main/target/*/target.mk))
 VALID_TARGETS  := $(subst /,, $(subst ./src/main/target/,, $(VALID_TARGETS)))
@@ -58,14 +57,6 @@ endif
 
 ifeq ($(filter $(TARGET),$(OPBL_TARGETS)), $(TARGET))
 OPBL            = yes
-endif
-
-ifeq ($(filter $(TARGET),$(OSD_SLAVE_TARGETS)), $(TARGET))
-# build an OSD SLAVE
-OSD_SLAVE       = yes
-else
-# build an FC
-FC              = yes
 endif
 
 # silently ignore if the file is not present. Allows for target specific.

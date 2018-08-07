@@ -123,7 +123,6 @@
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/transponder_ir.h"
 #include "io/osd.h"
-#include "io/osd_slave.h"
 #include "io/pidaudio.h"
 #include "io/piniobox.h"
 #include "io/displayport_msp.h"
