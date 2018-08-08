@@ -59,8 +59,8 @@ typedef enum {
 } gyroOverflowCheck_e;
 
 enum {
-    DYN_FILTER_BEFORE_STATIC_FILTERS = 0,
-    DYN_FILTER_AFTER_STATIC_FILTERS
+    DYN_FFT_BEFORE_STATIC_FILTERS = 0,
+    DYN_FFT_AFTER_STATIC_FILTERS
 } ;
 
 #define GYRO_CONFIG_USE_GYRO_1      0
@@ -104,7 +104,7 @@ typedef struct gyroConfig_s {
     uint8_t dyn_filter_type;
     uint8_t dyn_filter_width_percent;
     uint8_t dyn_notch_quality; // bandpass quality factor, 100 for steep sided bandpass
-    uint8_t dyn_filter_location; // before or after static filters
+    uint8_t dyn_fft_location; // before or after static filters
     uint8_t dyn_filter_threshold; // divided by 10 then difference needed to detect peak
     uint8_t dyn_filter_ignore; // ignore any FFT bin below this threshold
 } gyroConfig_t;

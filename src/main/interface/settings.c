@@ -373,7 +373,7 @@ static const char * const lookupTableRcSmoothingDerivativeType[] = {
 #endif // USE_RC_SMOOTHING_FILTER
 
 #ifdef USE_GYRO_DATA_ANALYSE
-static const char * const lookupTableDynamicFilterLocation[] = {
+static const char * const lookupTableDynamicFftLocation[] = {
     "BEFORE_STATIC_FILTERS", "AFTER_STATIC_FILTERS"
 };
 #endif // USE_GYRO_DATA_ANALYSE
@@ -468,7 +468,7 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableRcSmoothingDerivativeType),
 #endif // USE_RC_SMOOTHING_FILTER
 #ifdef USE_GYRO_DATA_ANALYSE
-    LOOKUP_TABLE_ENTRY(lookupTableDynamicFilterLocation),
+    LOOKUP_TABLE_ENTRY(lookupTableDynamicFftLocation),
 #endif // USE_GYRO_DATA_ANALYSE
 
 };
@@ -516,12 +516,12 @@ const clivalue_t valueTable[] = {
     { "gyro_to_use",                VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GYRO }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_to_use) },
 #endif
 #if defined(USE_GYRO_DATA_ANALYSE)
+    { "dyn_fft_location",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_DYNAMIC_FFT_LOCATION }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_fft_location) },
     { "dyn_filter_type",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LOWPASS_TYPE }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_filter_type) },
     { "dyn_filter_width_percent",   VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 99 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_filter_width_percent) },
-    { "dyn_notch_quality",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 70 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_notch_quality) },
-    { "dyn_filter_location",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_DYNAMIC_FILTER_LOCATION }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_filter_location) },
     { "dyn_filter_threshold",       VAR_UINT8  | MASTER_VALUE, .config.minmax = { 10, 255 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_filter_threshold) },
     { "dyn_filter_ignore",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 255 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_filter_ignore) },
+    { "dyn_notch_quality",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 70 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_notch_quality) },
 #endif
 
 // PG_ACCELEROMETER_CONFIG
