@@ -89,11 +89,11 @@ typedef struct accDev_s {
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
     pthread_mutex_t lock;
 #endif
+    float acc_1G_rec;
     sensorAccInitFuncPtr initFn;                              // initialize function
     sensorAccReadFuncPtr readFn;                              // read 3 axis data function
     busDevice_t bus;
     uint16_t acc_1G;
-    float acc_1G_rec;
     int16_t ADCRaw[XYZ_AXIS_COUNT];
     mpuDetectionResult_t mpuDetectionResult;
     sensor_align_e accAlign;
