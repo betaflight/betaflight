@@ -171,7 +171,7 @@ void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correctio
 void imuInit(void)
 {
     smallAngleCosZ = cos_approx(degreesToRadians(imuRuntimeConfig.small_angle));
-    accVelScale = 9.80665f / acc.dev.acc_1G / 10000.0f;
+    accVelScale = 9.80665f * acc.dev.acc_1G_rec / 10000.0f;
 
 #ifdef USE_GPS
     canUseGPSHeading = true;
@@ -361,10 +361,10 @@ static bool imuIsAccelerometerHealthy(float *accAverage)
         accMagnitude += a * a;
     }
 
-    accMagnitude = accMagnitude * 100 / (sq((int32_t)acc.dev.acc_1G));
+    accMagnitude = sqrtf(accMagnitude) * acc.dev.acc_1G_rec;
 
-    // Accept accel readings only in range 0.90g - 1.10g
-    return (81 < accMagnitude) && (accMagnitude < 121);
+    // Accept accel readings only in range 0.80g - 1.20g
+    return (0.80f <= accMagnitude) && (accMagnitude <= 1.20f);
 }
 
 // Calculate the dcmKpGain to use. When armed, the gain is imuRuntimeConfig.dcm_kp * 1.0 scaling.

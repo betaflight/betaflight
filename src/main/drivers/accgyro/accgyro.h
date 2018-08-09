@@ -93,6 +93,7 @@ typedef struct accDev_s {
     sensorAccReadFuncPtr readFn;                              // read 3 axis data function
     busDevice_t bus;
     uint16_t acc_1G;
+    float acc_1G_rec;
     int16_t ADCRaw[XYZ_AXIS_COUNT];
     mpuDetectionResult_t mpuDetectionResult;
     sensor_align_e accAlign;

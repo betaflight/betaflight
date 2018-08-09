@@ -270,7 +270,7 @@ static uint16_t getMode()
 
 static int16_t getACC(uint8_t index)
 {
-    return (int16_t)((acc.accADC[index] / acc.dev.acc_1G) * 1000);
+    return (int16_t)((acc.accADC[index] * acc.dev.acc_1G_rec) * 1000);
 }
 
 #if defined(USE_TELEMETRY_IBUS_EXTENDED)
