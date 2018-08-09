@@ -1473,6 +1473,7 @@ static mspResult_e mspFcProcessOutCommandWithArg(uint8_t cmdMSP, sbuf_t *src, sb
         }
 
         break;
+        
     case MSP_MULTIPLE_MSP:
         {
             uint8_t maxMSPs = 0;
@@ -1507,6 +1508,22 @@ static mspResult_e mspFcProcessOutCommandWithArg(uint8_t cmdMSP, sbuf_t *src, sb
             dst->ptr = packetOut.buf.ptr;
         }
         break;
+
+    case MSP_OSD_CHAR_READ:
+#ifdef USE_MAX7456
+        {
+            uint8_t font_data[64];
+            const uint8_t addr = sbufReadU8(src);
+            max7456ReadNvm(addr, font_data);
+            for (int i = 0; i < 54; i++) {
+                sbufWriteU8(dst, font_data[i]);
+            }
+        }
+        break;
+#else
+        return MSP_RESULT_ERROR;
+#endif
+
     default:
         return MSP_RESULT_CMD_UNKNOWN;
     }
@@ -2545,6 +2562,7 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src, mspPos
 #else
         return MSP_RESULT_ERROR;
 #endif
+
 #endif // OSD || USE_OSD_SLAVE
 
     default:

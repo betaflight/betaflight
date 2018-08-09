@@ -141,9 +141,9 @@
 #define MAX7456ADD_DMDI         0x07
 #define MAX7456ADD_CMM          0x08
 #define MAX7456ADD_CMAH         0x09
-#define MAX7456ADD_CMAL         0x0a
-#define MAX7456ADD_CMDI         0x0b
-#define MAX7456ADD_OSDM         0x0c
+#define MAX7456ADD_CMAL         0x0A
+#define MAX7456ADD_CMDI         0x0B
+#define MAX7456ADD_OSDM         0x0C
 #define MAX7456ADD_RB0          0x10
 #define MAX7456ADD_RB1          0x11
 #define MAX7456ADD_RB2          0x12
@@ -154,17 +154,20 @@
 #define MAX7456ADD_RB7          0x17
 #define MAX7456ADD_RB8          0x18
 #define MAX7456ADD_RB9          0x19
-#define MAX7456ADD_RB10         0x1a
-#define MAX7456ADD_RB11         0x1b
-#define MAX7456ADD_RB12         0x1c
-#define MAX7456ADD_RB13         0x1d
-#define MAX7456ADD_RB14         0x1e
-#define MAX7456ADD_RB15         0x1f
-#define MAX7456ADD_OSDBL        0x6c
+#define MAX7456ADD_RB10         0x1A
+#define MAX7456ADD_RB11         0x1B
+#define MAX7456ADD_RB12         0x1C
+#define MAX7456ADD_RB13         0x1D
+#define MAX7456ADD_RB14         0x1E
+#define MAX7456ADD_RB15         0x1F
+#define MAX7456ADD_OSDBL        0x6C
 #define MAX7456ADD_STAT         0xA0
+#define MAX7456ADD_CMDO_R       0xC0
 
 #define NVM_RAM_SIZE            54
 #define WRITE_NVR               0xA0
+#define READ_NVR                0x50
+#define STAT_NVR_BUSY           0x20
 
 // Device type
 #define MAX7456_DEVICE_TYPE_MAX 0
@@ -751,6 +754,37 @@ void max7456WriteNvm(uint8_t char_address, const uint8_t *font_data)
     // Wait until bit 5 in the status register returns to 0 (12ms)
 
     while ((max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00);
+
+    __spiBusTransactionEnd(busdev);
+
+    max7456Lock = false;
+}
+
+void max7456ReadNvm(uint8_t char_address, uint8_t *font_data)
+{
+#ifdef MAX7456_DMA_CHANNEL_TX
+    while (dmaTransactionInProgress);
+#endif
+    while (max7456Lock);
+    max7456Lock = true;
+
+    __spiBusTransactionBegin(busdev);
+    // disable display
+    fontIsLoading = true;
+
+    max7456Send(MAX7456ADD_VM0, 0);                                         // disable display
+    max7456Send(MAX7456ADD_CMAH, char_address);                             // set start address high
+    max7456Send(MAX7456ADD_CMM, READ_NVR );                                 // copy from NVM to shadow ram
+    while ((max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00);   // wait until bit 5 in the status register returns to 0 (12ms)
+    for (int x = 0; x < 64; x++) {
+        max7456Send(MAX7456ADD_CMAL, x);                                    // select the offset address in the shadow RAM
+        *(font_data + x) = max7456Send(MAX7456ADD_CMDO_R, 0xFF);                // read the data from the shadow RAM
+#ifdef LED0_TOGGLE
+        LED0_TOGGLE;
+#else
+        LED1_TOGGLE;
+#endif
+    }
 
     __spiBusTransactionEnd(busdev);
 
