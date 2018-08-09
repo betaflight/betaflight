@@ -226,8 +226,8 @@ static FAST_RAM_ZERO_INIT uint8_t itermRelaxCutoff;
 #endif
 
 #if defined(USE_TBH)
-static FAST_RAM_ZERO_INIT float iPrevTBH[XYZ_AXIS_COUNT];
-static FAST_RAM_ZERO_INIT float errorSignPrevTBH[XYZ_AXIS_COUNT];
+static FAST_RAM_ZERO_INIT float iPrevTbh[XYZ_AXIS_COUNT];
+static FAST_RAM_ZERO_INIT bool tbhErrorSignPrev[XYZ_AXIS_COUNT];
 #endif
 
 #ifdef USE_RC_SMOOTHING_FILTER
@@ -1003,13 +1003,13 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
                 // the I term to non-linearly jump to half-way between the current
                 // accumulated error and the accumulated error at the last zero
                 // crossing.
-                const float thisSign = copysign(1.0f, itermErrorRate); //-1 or 1
-                if (thisSign != errorSignPrevTBH[axis]) { 
-                    const float lastCrossIValue = iPrevTBH[axis];
-                    iPrevTBH[axis] = pidData[axis].I;
+                const bool thisSign = itermErrorRate > 0; //T==Pos, F==Neg or zero
+                if (thisSign != tbhErrorSignPrev[axis]) { 
+                    const float lastCrossIValue = iPrevTbh[axis];
+                    iPrevTbh[axis] = pidData[axis].I;
                     pidData[axis].I = (pidData[axis].I + lastCrossIValue) * 0.5f; //Take-Back-Half error
                 }
-                errorSignPrevTBH[axis] = thisSign;
+                tbhErrorSignPrev[axis] = thisSign;
             }
         #endif
 
