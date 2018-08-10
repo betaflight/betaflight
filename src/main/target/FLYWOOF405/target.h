@@ -33,7 +33,7 @@
 #define INVERTER_PIN_UART3      PB15
 
 //define camera control
-#define CAMERA_CONTROL_PIN      PA9////////////
+#define CAMERA_CONTROL_PIN      PB5////////////
 
 
 // ICM20689 interrupt
@@ -43,34 +43,21 @@
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
-
-
-#define USE_GYRO
-#define USE_ACC
-//------ICM20689
-#define ICM20689_CS_PIN          PC4 
+#define ICM20689_CS_PIN          PC4
 #define ICM20689_SPI_INSTANCE    SPI1
 
+#define USE_ACC
+#define USE_ACC_SPI_ICM20689
+#define ACC_ICM20689_ALIGN       CW270_DEG
+
+#define USE_GYRO
 #define USE_GYRO_SPI_ICM20689
 #define GYRO_ICM20689_ALIGN      CW270_DEG
 
-#define USE_ACC_SPI_ICM20689
-#define ACC_ICM20689_ALIGN       CW270_DEG
-//------MPU6000
-#define MPU6000_CS_PIN           PC4 
-#define MPU6000_SPI_INSTANCE     SPI1
-
-#define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN      CW270_DEG
-
-#define USE_ACC_SPI_MPU6000
-#define ACC_MPU6000_ALIGN       CW270_DEG
-
-//Baro & MAG------------------------------- 
 #define USE_I2C    
 #define USE_I2C_DEVICE_1
 #define I2C_DEVICE              (I2CDEV_1)
-#define I2C1_SCL                PB6        // SCL pad
+#define I2C1_SCL                PB8        // SCL pad
 #define I2C1_SDA                PB9        // SDA pad
 #define BARO_I2C_INSTANCE       I2C_DEVICE
 #define MAG_I2C_INSTANCE        I2C_DEVICE
@@ -101,7 +88,7 @@
 
 #define USE_UART1
 #define UART1_RX_PIN            PA10
-#define UART1_TX_PIN            PB6 //SCL/UART1_TX/TIM4_CH1
+#define UART1_TX_PIN            PA9
 #define UART1_AHB1_PERIPHERALS  RCC_AHB1Periph_DMA2
 
 #define USE_UART3
@@ -125,11 +112,11 @@
 
 
 #define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_PIN  PB8  // (HARDARE=0,PPM)
+#define ESCSERIAL_TIMER_TX_PIN  PC7  // (HARDARE=0,PPM)
 
 #define USE_SPI
 
-#define USE_SPI_DEVICE_1 //ICM20689-MPU6000
+#define USE_SPI_DEVICE_1 //ICM20689
 #define SPI1_NSS_PIN            PC4
 #define SPI1_SCK_PIN            PA5
 #define SPI1_MISO_PIN           PA6
