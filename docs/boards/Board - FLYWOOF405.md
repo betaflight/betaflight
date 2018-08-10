@@ -16,7 +16,7 @@ This board use the STM32F405RGT6 microcontroller and have the following features
 ### All uarts have pad on board 
 | Value | Identifier   | RX   | TX   | Notes                                                                                       |
 | ----- | ------------ | -----| -----| ------------------------------------------------------------------------------------------- |
-| 1     | USART1       | PA10 |  PA9 | USE smartport/FPORT/TEL etc                                                      |
+| 1     | USART1       | PA10 |  PB6 | USE smartport/FPORT/TEL etc                                                      |
 | 2     | USART3       | PB11 |  PB10| FOR SBUS IN(inverter build in)                                                          |
 | 3     | USART4       | PA1  |  PA0 | PAD USE FOR TRAMP/smart audio                                                                           |
 | 4     | USART5       | PD2  |   /  | PAD ESC sensor                                                            |
@@ -27,7 +27,7 @@ This board use the STM32F405RGT6 microcontroller and have the following features
 | Value | Identifier   | function |  pin   | Notes                                                                                 |
 | ----- | ------------ | ---------| -------| ------------------------------------------------------------------------------------- |                                                                                      
 | 1     | I2C1         |    SDA   |  PB9   | with GPS outlet
-| 2     | I2C1         |    SCL   |  PB8   | with GPS outlet
+| 2     | I2C1         |    SCL   |  PB6   | with GPS outlet
 
 
 ### Buzzer/LED output 
@@ -48,17 +48,17 @@ This board use the STM32F405RGT6 microcontroller and have the following features
 ### 8 Outputs, 1 PPM input 
 | Value | Identifier   | function  |  pin  | Notes                                                                                 |
 | ----- | ------------ | ----------| ------| ------------------------------------------------------------------------------------- |                                                                                       
-| 1     | TIM8_CH2     |    PPM    |  PC7  |  PPM
+| 1     | TIM10_CH1    |    PPM    |  PB7  |  PPM
 | 2     | TIM3_CH3     |    OUPUT1 |  PB0  |  DMA1_Stream7
 | 3     | TIM3_CH4     |    OUPUT2 |  PB1  |  DMA1_Stream2
 | 4     | TIM2_CH4     |    OUPUT3 |  PA3  |  DMA1_Stream6
 | 5     | TIM2_CH3     |    OUPUT4 |  PA2  |  DMA1_Stream1
-| 6     | TIM4_CH1     |    OUPUT5 |  PB6  |  DMA1_Stream0
+| 6     | TIM3_CH2     |    OUPUT5 |  PB5  |  DMA1_Stream5
 | 7     | TIM4_CH2     |    OUPUT6 |  PB7  |  DMA1_Stream3
 | 8     | TIM8_CH4     |    OUPUT7 |  PC9  |  DMA2_Stream7   
 | 9     | TIM3_CH1     |    OUPUT8 |  PB4  |  DMA1_Stream4   
 | 10    | TIM8_CH3     |    LED    |  PC8  |  DMA2_Stream2   LED_STRIP
-| 11    | TIM3_CH2     |    PWM    |  PB5  |  FPV Camera Control(FCAM)
+| 11    | TIM1_CH2     |    PWM    |  PA9  |  FPV Camera Control(FCAM)
 
 
 ### Gyro & ACC  ICM20689
