@@ -36,12 +36,18 @@
 #define CAMERA_CONTROL_PIN      PA9////////////
 
 
-// ICM20689 interrupt
-#define USE_EXTI
-#define MPU_INT_EXTI            PC5
+
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
+
+#define USE_SPI
+
+#define USE_SPI_DEVICE_1 //ICM20689-MPU6000
+#define SPI1_NSS_PIN            PC4
+#define SPI1_SCK_PIN            PA5
+#define SPI1_MISO_PIN           PA6
+#define SPI1_MOSI_PIN           PA7
 
 
 
@@ -127,13 +133,7 @@
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN  PB8  // (HARDARE=0,PPM)
 
-#define USE_SPI
 
-#define USE_SPI_DEVICE_1 //ICM20689-MPU6000
-#define SPI1_NSS_PIN            PC4
-#define SPI1_SCK_PIN            PA5
-#define SPI1_MISO_PIN           PA6
-#define SPI1_MOSI_PIN           PA7
 
 #define USE_SPI_DEVICE_3 //dataflash
 #define SPI3_NSS_PIN            PB3
