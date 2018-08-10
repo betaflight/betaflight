@@ -164,7 +164,7 @@
 #define MAX7456ADD_STAT         0xA0
 #define MAX7456ADD_CMDO_R       0xC0
 
-#define NVM_RAM_SIZE            54
+#define NVM_RAM_SIZE            64
 #define WRITE_NVR               0xA0
 #define READ_NVR                0x50
 #define STAT_NVR_BUSY           0x20
@@ -737,7 +737,7 @@ void max7456WriteNvm(uint8_t char_address, const uint8_t *font_data)
 
     max7456Send(MAX7456ADD_CMAH, char_address); // set start address high
 
-    for (int x = 0; x < 54; x++) {
+    for (int x = 0; x < NVM_RAM_SIZE; x++) {
         max7456Send(MAX7456ADD_CMAL, x); //set start address low
         max7456Send(MAX7456ADD_CMDI, font_data[x]);
 #ifdef LED0_TOGGLE
@@ -776,7 +776,7 @@ void max7456ReadNvm(uint8_t char_address, uint8_t *font_data)
     max7456Send(MAX7456ADD_CMAH, char_address);                             // set start address high
     max7456Send(MAX7456ADD_CMM, READ_NVR );                                 // copy from NVM to shadow ram
     while ((max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00);   // wait until bit 5 in the status register returns to 0 (12ms)
-    for (int x = 0; x < 64; x++) {
+    for (int x = 0; x < NVM_RAM_SIZE; x++) {
         max7456Send(MAX7456ADD_CMAL, x);                                    // select the offset address in the shadow RAM
         *(font_data + x) = max7456Send(MAX7456ADD_CMDO_R, 0xFF);                // read the data from the shadow RAM
 #ifdef LED0_TOGGLE

@@ -1515,7 +1515,7 @@ static mspResult_e mspFcProcessOutCommandWithArg(uint8_t cmdMSP, sbuf_t *src, sb
             uint8_t font_data[64];
             const uint8_t addr = sbufReadU8(src);
             max7456ReadNvm(addr, font_data);
-            for (int i = 0; i < 54; i++) {
+            for (int i = 0; i < 64; i++) {
                 sbufWriteU8(dst, font_data[i]);
             }
         }
