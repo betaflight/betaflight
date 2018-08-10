@@ -52,7 +52,7 @@ This board use the STM32F722RET6 microcontroller and have the following features
 ### 8 Outputs 
 | Value | Identifier   | function  |  pin  | Notes                                                                                 |
 | ----- | ------------ | ----------| ------| ------------------------------------------------------------------------------------- |                                                                                       
-| 1     | TIM_CH2      |    PPM    |  PB7  |  PPM
+| 1     | TIM4_CH2     |    PPM    |  PB7  |  PPM
 | 2     | TIM8_CH1     |    OUPUT1 |  PC6  |  DMA
 | 3     | TIM8_CH2     |    OUPUT2 |  PC7  |  DMA
 | 4     | TIM8_CH3     |    OUPUT3 |  PC8  |  DMA
@@ -65,7 +65,7 @@ This board use the STM32F722RET6 microcontroller and have the following features
 | 11    | TIM3_CH4     |    PWM    |  PB1  |  FPV Camera Control(FCAM)
 
 
-### Gyro & ACC ,suppose ICM20602 and MPU6000
+### Gyro & ACC ,support ICM20602 and MPU6000
 | Value | Identifier   | function |  pin   | Notes                                                                                 |
 | ----- | ------------ | ---------| -------| ------------------------------------------------------------------------------------- |                                                                                      
 | 1     | SPI1         |    SCK   |  PA5   | MPU6000 & ICM20602
@@ -99,6 +99,10 @@ This board use the STM32F722RET6 microcontroller and have the following features
 | 2   | Ground         | PAD                                          |
 | 3   | SWDIO          | PAD                                          |
 | 4   | 3V3            | PAD                                          |
+
+![DALRCF722DUAL top](images/DALRCF722DUAL-Top.png)
+![DALRCF722DUAL bottom](images/DALRCF722DUAL-Botton.jpg)
+
 
 ###Designers
 * ZhengNyway(nyway@vip.qq.com)
