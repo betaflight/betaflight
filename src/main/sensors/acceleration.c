@@ -474,7 +474,6 @@ void accUpdate(timeUs_t currentTimeUs, rollAndPitchTrims_t *rollAndPitchTrims)
 {
     UNUSED(currentTimeUs);
 
-    #ifndef USE_ACC_IMUF9001
     if (!acc.dev.readFn(&acc.dev)) {
         return;
     }
@@ -482,6 +481,7 @@ void accUpdate(timeUs_t currentTimeUs, rollAndPitchTrims_t *rollAndPitchTrims)
         DEBUG_SET(DEBUG_ACCELEROMETER, axis, acc.dev.ADCRaw[axis]);
         acc.accADC[axis] = acc.dev.ADCRaw[axis];
     }
+    #ifndef USE_ACC_IMUF9001
     alignSensors(acc.accADC, acc.dev.accAlign);
     #endif
 
@@ -501,17 +501,10 @@ void accUpdate(timeUs_t currentTimeUs, rollAndPitchTrims_t *rollAndPitchTrims)
     acc.accADC[Y] -= accelerationTrims->raw[Y];
     acc.accADC[Z] -= accelerationTrims->raw[Z];
 
-    #ifdef USE_GYRO_IMUF9001
-    if (gyroConfig()->imuf_mode != GTBCM_GYRO_ACC_QUAT_FILTER_F)
-    {
-    #endif
     ++accumulatedMeasurementCount;
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         accumulatedMeasurements[axis] += acc.accADC[axis];
     }
-    #ifdef USE_GYRO_IMUF9001
-    }
-    #endif
     acc.isAccelUpdatedAtLeastOnce = true;
 }
 

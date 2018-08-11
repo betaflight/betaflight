@@ -198,7 +198,7 @@
 #define IMUF_DEFAULT_ROLL_Q   3000
 #define IMUF_DEFAULT_YAW_Q    3000
 #define IMUF_DEFAULT_W        32
-#define IMUF_DEFAULT_LPF_HZ   120.0f
+#define IMUF_DEFAULT_LPF_HZ   80.0f
 
 #define USE_BUTTERED_PIDS true
 

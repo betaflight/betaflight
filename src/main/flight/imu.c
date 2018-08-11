@@ -47,9 +47,6 @@
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
-#ifdef USE_ACC_IMUF9001
-#include "drivers/accgyro/accgyro_imuf9001.h"
-#endif
 
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
 #include <stdio.h>
@@ -372,11 +369,6 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 //  printf("[imu]deltaT = %u, imuDeltaT = %u, currentTimeUs = %u, micros64_real = %lu\n", deltaT, imuDeltaT, currentTimeUs, micros64_real());
     deltaT = imuDeltaT;
 #endif
-    // get sensor data
-#ifdef USE_GYRO_IMUF9001
-    if (gyroConfig()->imuf_mode != GTBCM_GYRO_ACC_QUAT_FILTER_F)
-    {
-#endif
     quaternion vError = VECTOR_INITIALIZE;
     quaternion vGyroAverage;
     quaternion vAccAverage;
@@ -388,22 +380,6 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     }
     applySensorCorrection(&vError);
     imuMahonyAHRSupdate(deltaT * 1e-6f, &vGyroAverage, &vError);
-#ifdef USE_GYRO_IMUF9001
-    } else {
-        UNUSED(deltaT);
-        UNUSED(applyAccError);
-        UNUSED(imuMahonyAHRSupdate);
-        qAttitude.w = imufQuat.w;
-        qAttitude.x = imufQuat.x;
-        qAttitude.y = imufQuat.y;
-        qAttitude.z = imufQuat.z;
-        quaternionNormalize(&qAttitude);
-        quaternionComputeProducts(&qAttitude, &qpAttitude);
-
-        DEBUG_SET(DEBUG_IMU, DEBUG_IMU0, lrintf(quaternionModulus(&qAttitude) * 1000));
-        DEBUG_SET(DEBUG_IMU, DEBUG_IMU1, lrintf(vGyroStdDevModulus * 1000));
-    }
-#endif
     imuUpdateEulerAngles();
 #endif
 
