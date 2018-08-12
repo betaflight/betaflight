@@ -257,41 +257,6 @@ void spiPreInit(void)
 }
 #endif
 
-void rebootUpdater(void)
-{
-    #ifdef UPT_ADDRESS
-    typedef void (*pFunction)(void);
-   	pFunction JumpToApplication;
-	uint32_t jumpAddress;
-
-    __disable_irq(); // disable interrupts for jump
-
-    jumpAddress = *(__IO uint32_t*)(UPT_ADDRESS + 4);
-    JumpToApplication = (pFunction)jumpAddress;
-
-    // Initialize user application's Stack Pointer
-    __set_MSP(*(__IO uint32_t*)UPT_ADDRESS);
-    JumpToApplication();
-    #endif
-}
-
-void rebootMsd(void)
-{
-    #ifdef MSD_ADDRESS
-    typedef void (*pFunction)(void);
-   	pFunction JumpToApplication;
-	uint32_t jumpAddress;
-
-    __disable_irq(); // disable interrupts for jump
-
-    jumpAddress = *(__IO uint32_t*)(MSD_ADDRESS + 4);
-    JumpToApplication = (pFunction)jumpAddress;
-
-    // Initialize user application's Stack Pointer
-    __set_MSP(*(__IO uint32_t*)MSD_ADDRESS);
-    JumpToApplication();
-    #endif
-}
 void init(void)
 {
 #ifdef USE_ITCM_RAM
@@ -310,7 +275,13 @@ void init(void)
 
     systemInit();
 
+    initEEPROM();
+
+    ensureEEPROMContainsValidData();
+    readEEPROM();
+
 #ifdef USE_GYRO_IMUF9001
+
     if (isMPUSoftReset()) {
         // reset imuf before befhal mucks with the pins
         initImuf9001();
@@ -327,11 +298,6 @@ void init(void)
 #ifdef USE_BRUSHED_ESC_AUTODETECT
     detectBrushedESC();
 #endif
-
-    initEEPROM();
-
-    ensureEEPROMContainsValidData();
-    readEEPROM();
 
     // !!TODO: Check to be removed when moving to generic targets
     if (strncasecmp(systemConfig()->boardIdentifier, TARGET_BOARD_IDENTIFIER, sizeof(TARGET_BOARD_IDENTIFIER))) {

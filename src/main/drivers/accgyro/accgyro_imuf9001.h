@@ -91,13 +91,19 @@ typedef struct imufData
 
 typedef enum gyroCommands
 {
+    BL_ERASE_ALL                 = 22,
+    BL_REPORT_INFO               = 24,
+    BL_WRITE_FIRMWARES           = 29,
+    BL_PREPARE_PROGRAM           = 30,
+    BL_END_PROGRAM               = 31,
+    BL_LISTENING                 = 32,
     IMUF_COMMAND_NONE            = 0,
     IMUF_COMMAND_CALIBRATE       = 99,
     IMUF_COMMAND_LISTENING       = 108,
     IMUF_COMMAND_REPORT_INFO     = 121,
     IMUF_COMMAND_SETUP           = 122,
     IMUF_COMMAND_SETPOINT        = 126,
-    IMUF_COMMAND_RESTART         = 127,
+    IMUF_COMMAND_RESTART         = 127
 } gyroCommands_t;
 
 typedef struct gyroFrame
@@ -216,3 +222,5 @@ volatile uint32_t isImufCalibrating;
 
 extern void initImuf9001(void);
 extern uint32_t getCrcImuf9001(uint32_t* data, uint32_t size);
+extern int imufUpdate(uint8_t *buff, uint32_t bin_length);
+extern int imufBootloader(void);

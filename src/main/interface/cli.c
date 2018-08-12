@@ -169,8 +169,20 @@ static uint32_t bufferIndex = 0;
 
 static bool configIsInCopy = false;
 
+#ifdef USE_GYRO_IMUF9001
+#define IMUF_CUSTOM_BUFF_LENGTH 26000
+volatile uint32_t imuf_index = 0;
+static   uint8_t  imuf_custom_buff[IMUF_CUSTOM_BUFF_LENGTH];
+static   uint32_t imuf_buff_ptr = 0;
+static   uint32_t imuf_checksum = 0;
+static   int      imuf_bin_safe = 0;
+
+#endif
+
 static const char* const emptyName = "-";
 static const char* const emptryString = "";
+
+int cliSmartMode = 0;
 
 #ifndef USE_QUAD_MIXER_ONLY
 // sync this with mixerMode_e
@@ -218,14 +230,36 @@ static const char * const *sensorHardwareNames[] = {
 static void cliPrint(const char *str)
 {
     while (*str) {
-        bufWriterAppend(cliWriter, *str++);
+        if(cliSmartMode)
+        {
+            //no carriage returns. Those are dumb.
+            if(*str == '\r')
+            {
+                (void)(*str++);
+            }
+            else
+            {
+                bufWriterAppend(cliWriter, *str++);
+            }
+        }
+        else
+        {
+            bufWriterAppend(cliWriter, *str++);
+        }
     }
     bufWriterFlush(cliWriter);
 }
 
 static void cliPrintLinefeed(void)
 {
+
     cliPrint("\r\n");
+
+    if(cliSmartMode)
+    {
+        bufWriterFlush(cliWriter);
+    }
+
 }
 
 static void cliPrintLine(const char *str)
@@ -2381,6 +2415,123 @@ static void cliBootloader(char *cmdLine)
     cliRebootEx(true);
 }
 
+#ifdef USE_GYRO_IMUF9001
+
+
+static void cliImufBootloaderMode(char *cmdline)
+{
+    (void)(cmdline);
+    if(imufBootloader())
+    {
+        cliPrintLine("BOOTLOADER");
+    }
+    else
+    {
+        cliPrintLine("FAIL");
+    }
+}
+
+static void imuf_to_char_from_hex_string(char *string, uint8_t *output)
+{
+    char tempBuff[3];
+    tempBuff[0] = string[0];
+    tempBuff[1] = string[1];
+    tempBuff[2] = 0;
+    *output = (uint8_t)strtol(tempBuff, NULL, 16);
+}
+
+static void cliImufLoadBin(char *cmdline)
+{
+    #define TEMP_BUFF 256
+    uint32_t dataSize;
+    uint8_t output;
+    uint8_t dataBuff[TEMP_BUFF] = {0,};
+    uint32_t x;
+
+    if(cmdline[0] == '!')
+    {
+        imuf_bin_safe = 1;
+        imuf_buff_ptr = 0;
+        imuf_checksum = 0;
+        memset(imuf_custom_buff, 0, IMUF_CUSTOM_BUFF_LENGTH);
+        cliPrintLine("SUCCESS");
+    }
+    else if(cmdline[0] == '.')
+    {
+        cliPrintLinef("%d", imuf_buff_ptr);
+    }
+    else if(cmdline[0] == 'c')
+    {
+        cliPrintLinef("%d", imuf_checksum);
+    }
+    else if(cmdline[0] == 'l')
+    {
+        if (imuf_bin_safe)
+        {
+            //get the datasize
+            imuf_to_char_from_hex_string(&cmdline[1], &output);
+            dataSize  = ((output & 0xff) << 0 );
+            imuf_to_char_from_hex_string(&cmdline[3], &output);
+            dataSize += ((output & 0xff) << 8 );
+            imuf_to_char_from_hex_string(&cmdline[5], &output);
+            dataSize += ((output & 0xff) << 16);
+            imuf_to_char_from_hex_string(&cmdline[7], &output);
+            dataSize += ((output & 0xff) << 24);
+            
+            if(dataSize < TEMP_BUFF)
+            {
+                //fill the temp buffer
+                for(x=0; x< dataSize; x++)
+                {
+                    imuf_to_char_from_hex_string(&cmdline[(x*2)+9], &output);
+                    dataBuff[x] = output;
+                    imuf_checksum += output;
+                    //cliPrintLinef("out:%d:%d:%d:%d", dataSize, x, (x*2)+9, output, checksum);
+                }
+                if ( (imuf_buff_ptr+dataSize) < IMUF_CUSTOM_BUFF_LENGTH )
+                {
+                    memcpy(imuf_custom_buff+imuf_buff_ptr, dataBuff, dataSize);
+                    imuf_buff_ptr += dataSize;
+                    cliPrintLine("LOADED");
+                }
+                else
+                {
+                    cliPrintLine("WOAH!");
+                }
+            }
+            else
+            {
+                cliPrintLine("CRAP!");
+            }
+        }
+        else
+        {
+            cliPrintLine("PFFFT!");
+        }
+    }
+}
+
+static void cliImufFlashBin(char *cmdline)
+{
+    (void)(cmdline);
+    if (imufUpdate(imuf_custom_buff, imuf_buff_ptr))
+    {
+        cliPrintLine("SUCCESS");
+        bufWriterFlush(cliWriter);
+        delay(5000);
+
+        *cliBuffer = '\0';
+        bufferIndex = 0;
+        cliMode = 0;
+        // incase a motor was left running during motortest, clear it here
+        mixerResetDisarmedMotors();
+        cliReboot();
+
+        cliWriter = NULL;
+    }
+}
+#endif
+
 #ifdef MSP_OVER_CLI
 sbuf_t buft;
 uint8_t bufPtr[256];
@@ -3841,10 +3992,6 @@ typedef struct {
 
 #ifdef USE_GYRO_IMUF9001
 static void cliReportImufErrors(char *cmdline);
-static void cliImufUpdate(char *cmdline);
-#endif
-#ifdef MSD_ADDRESS
-static void cliMsd(char *cmdline);
 #endif
 
 static void cliHelp(char *cmdline);
@@ -3871,6 +4018,11 @@ const clicmd_t cmdTable[] = {
 #ifdef USE_ESCSERIAL
     CLI_COMMAND_DEF("escprog", "passthrough esc to serial", "<mode [sk/bl/ki/cc]> <index>", cliEscPassthrough),
 #endif
+#ifdef USE_GYRO_IMUF9001
+    CLI_COMMAND_DEF("imufbootloader", NULL, NULL, cliImufBootloaderMode),
+    CLI_COMMAND_DEF("imufloadbin", NULL, NULL, cliImufLoadBin),
+    CLI_COMMAND_DEF("imufflashbin", NULL, NULL, cliImufFlashBin),
+#endif
 #ifdef MSP_OVER_CLI
     CLI_COMMAND_DEF("msp", NULL, NULL, cliMsp),
 #endif
@@ -3895,7 +4047,6 @@ const clicmd_t cmdTable[] = {
 #endif
 #ifdef USE_GYRO_IMUF9001
     CLI_COMMAND_DEF("reportimuferrors", "report imu-f comm errors", NULL, cliReportImufErrors),
-    CLI_COMMAND_DEF("imufupdate", "update imu-f's firmware", NULL, cliImufUpdate),
 #endif
 #ifdef USE_TPA_CURVES
     CLI_COMMAND_DEF("tpacurve", "set rf1 tpa", "[kp, ki, kd]", cliTPACurve),
@@ -3963,46 +4114,6 @@ static void cliReportImufErrors(char *cmdline)
     cliPrintf("Current Comm Errors: %lu", crcErrorCount);
     cliPrintLinefeed();
 }
-
-static void cliImufUpdate(char *cmdline)
-{
-    UNUSED(cmdline);
-
-    if( (*((__IO uint32_t *)UPT_ADDRESS)) != 0xFFFFFFFF )
-    {
-        cliPrint("I muff, you muff, we all muff for IMU-F!");
-        cliPrintLinefeed();
-        (*((__IO uint32_t *)0x2001FFEC)) = 0xF431FA77;
-        delay(1000);
-        cliReboot();
-    }
-    else
-    {
-        cliPrint("Improper hex detected, please use the full hex from https://heliorc.com/wiring/");
-        cliPrintLinefeed();
-    }
-}
-#endif
-
-#ifdef MSD_ADDRESS
-static void cliMsd(char *cmdline)
-{
-    UNUSED(cmdline);
-
-    if( (*((__IO uint32_t *)MSD_ADDRESS)) != 0xFFFFFFFF )
-    {
-        cliPrint("Loading as USB drive!");
-        cliPrintLinefeed();
-        (*((__IO uint32_t *)0x2001FFF0)) = 0xF431FA11;
-        delay(1000);
-        cliReboot();
-    }
-    else
-    {
-        cliPrint("Improper hex detected, please use the full hex from https://heliorc.com/wiring/");
-        cliPrintLinefeed();
-    }
-}
 #endif
 
 static void cliHelp(char *cmdline)
@@ -4033,7 +4144,9 @@ void cliProcess(void)
     bufWriterFlush(cliWriter);
 
     while (serialRxBytesWaiting(cliPort)) {
+
         uint8_t c = serialRead(cliPort);
+
         if (c == '\t' || c == '?') {
             // do tab completion
             const clicmd_t *cmd, *pstart = NULL, *pend = NULL;
@@ -4130,6 +4243,7 @@ void cliProcess(void)
             cliBuffer[bufferIndex++] = c;
             cliWrite(c);
         }
+
     }
 }
 
