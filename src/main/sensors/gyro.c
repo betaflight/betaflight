@@ -209,10 +209,8 @@ PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
     .yaw_spin_threshold = 1950,
     .dyn_filter_type = FILTER_BIQUAD,
     .dyn_filter_width_percent = 40,
-    .dyn_notch_quality = 20,
-    .dyn_fft_location = DYN_FFT_BEFORE_STATIC_FILTERS,
-    .dyn_filter_threshold = 30,
-    .dyn_filter_ignore = 20,
+    .dyn_fft_location = DYN_FFT_AFTER_STATIC_FILTERS,
+    .dyn_filter_range = DYN_FILTER_RANGE_MEDIUM,
 );
 
 
