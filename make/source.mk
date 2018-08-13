@@ -59,14 +59,7 @@ COMMON_SRC = \
             sensors/battery.c \
             sensors/current.c \
             sensors/voltage.c \
-            target/config_helper.c
-
-OSD_SLAVE_SRC = \
-            io/displayport_max7456.c \
-            osd_slave/osd_slave_init.c \
-            io/osd_slave.c
-
-FC_SRC = \
+            target/config_helper.c \
             fc/fc_init.c \
             fc/controlrate_profile.c \
             drivers/camera_control.c \
@@ -176,12 +169,7 @@ COMMON_DEVICE_SRC = \
             $(CMSIS_SRC) \
             $(DEVICE_STDPERIPH_SRC)
 
-ifeq ($(OSD_SLAVE),yes)
-TARGET_FLAGS := -DUSE_OSD_SLAVE $(TARGET_FLAGS)
-COMMON_SRC := $(COMMON_SRC) $(OSD_SLAVE_SRC) $(COMMON_DEVICE_SRC)
-else
-COMMON_SRC := $(COMMON_SRC) $(FC_SRC) $(COMMON_DEVICE_SRC)
-endif
+COMMON_SRC := $(COMMON_SRC) $(COMMON_DEVICE_SRC)
 
 ifeq ($(SIMULATOR_BUILD),yes)
 TARGET_FLAGS := -DSIMULATOR_BUILD $(TARGET_FLAGS)

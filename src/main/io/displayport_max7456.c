@@ -34,7 +34,6 @@
 
 #include "io/displayport_max7456.h"
 #include "io/osd.h"
-#include "io/osd_slave.h"
 
 #include "pg/max7456.h"
 #include "pg/pg.h"

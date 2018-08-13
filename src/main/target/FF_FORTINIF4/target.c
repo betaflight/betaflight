@@ -39,6 +39,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 #endif
     DEF_TIM(TIM4, CH4, PB9, TIM_USE_PPM,   0, 0 ), // PPM IN
 #if defined(FF_FORTINIF4_REV03)
+    DEF_TIM(TIM4, CH2, PB7, TIM_USE_ANY,   0, 0 ), // FC CAM - DMA1_ST3
     DEF_TIM(TIM4, CH1, PB6, TIM_USE_LED,   0, 0 ), // LED    - DMA1_ST0
 #else
     DEF_TIM(TIM4, CH2, PB7, TIM_USE_LED,   0, 0 ), // LED    - DMA1_ST3
