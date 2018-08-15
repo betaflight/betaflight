@@ -27,6 +27,7 @@ typedef struct dispatchEntry_s {
     dispatchFunc *dispatch;
     uint32_t delayedUntil;
     struct dispatchEntry_s *next;
+    bool inQue;
 } dispatchEntry_t;
 
 bool dispatchIsEnabled(void);
