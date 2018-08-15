@@ -18,6 +18,7 @@
 #pragma once
 
 extern uint8_t cliMode;
+extern int cliSmartMode;
 
 struct clivalue_s;
 void *cliGetValuePointer(const struct clivalue_s *value);

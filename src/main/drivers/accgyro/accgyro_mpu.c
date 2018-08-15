@@ -242,12 +242,15 @@ void mpuGyroDmaSpiReadFinish(gyroDev_t * gyro)
     //spi rx dma callback
     #ifdef USE_GYRO_IMUF9001
     memcpy(&imufData, dmaRxBuffer, sizeof(imufData_t));
-    acc.accADC[X]    = imufData.accX * acc.dev.acc_1G;
-    acc.accADC[Y]    = imufData.accY * acc.dev.acc_1G;
-    acc.accADC[Z]    = imufData.accZ * acc.dev.acc_1G;
-    gyro->gyroADC[X] = imufData.gyroX;
-    gyro->gyroADC[Y] = imufData.gyroY;
-    gyro->gyroADC[Z] = imufData.gyroZ;
+    acc.dev.ADCRaw[X]    = (int16_t)(imufData.accX * acc.dev.acc_1G);
+    acc.dev.ADCRaw[Y]    = (int16_t)(imufData.accY * acc.dev.acc_1G);
+    acc.dev.ADCRaw[Z]    = (int16_t)(imufData.accZ * acc.dev.acc_1G);
+    gyro->gyroADC[X]     = imufData.gyroX;
+    gyro->gyroADC[Y]     = imufData.gyroY;
+    gyro->gyroADC[Z]     = imufData.gyroZ;
+    gyro->gyroADCRaw[X]  = (int16_t)(imufData.gyroX * 16.4f);
+    gyro->gyroADCRaw[Y]  = (int16_t)(imufData.gyroY * 16.4f);
+    gyro->gyroADCRaw[Z]  = (int16_t)(imufData.gyroZ * 16.4f);
     if (gyroConfig()->imuf_mode == GTBCM_GYRO_ACC_QUAT_FILTER_F) {
         imufQuat.w       = imufData.quaternionW;
         imufQuat.x       = imufData.quaternionX;

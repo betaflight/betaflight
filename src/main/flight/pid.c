@@ -430,31 +430,34 @@ float butteredPids(const pidProfile_t *pidProfile, int axis, float errorRate, fl
     (void)(pidProfile);
     (void)(currentPidSetpoint);
     // -----calculate P component
-#if defined(USE_TPA_CURVES)
-    axisPID_P[axis] = (Kp[axis] * errorRate) * getThrottlePIDAttenuationKp();
-#else
-    axisPID_P[axis] = (Kp[axis] * errorRate) * getThrottlePIDAttenuation();
-#endif
+    axisPID_P[axis] = (Kp[axis] * errorRate);
+
     // -----calculate I component
+#if defined(USE_TPA_CURVES)
+    float iterm = constrainf(axisPID_I[axis] + (Ki[axis] * getThrottlePIDAttenuationKi() * errorRate) * dynCi, -itermLimit, itermLimit);
+#else
     float iterm = constrainf(axisPID_I[axis] + (Ki[axis] * errorRate) * dynCi, -itermLimit, itermLimit);
+#endif
     if (!mixerIsOutputSaturated(axis, errorRate) || ABS(iterm) < ABS(axisPID_I[axis])) {
         // Only increase ITerm if output is not saturated
-#if defined(USE_TPA_CURVES)
-        axisPID_I[axis] = iterm * getThrottlePIDAttenuationKi();
-#else
         axisPID_I[axis] = iterm;
-#endif
     }
 
     // -----calculate D component
     // use measurement and apply filters. mmmm gimme that butter.
     float dDelta = dtermLpfApplyFn(dtermFilterLpf[axis], -((gyro.gyroADCf[axis] - previousRateError[axis]) * iDT));
     previousRateError[axis] = gyro.gyroADCf[axis];
+    axisPID_D[axis] = Kd[axis] * (dDelta);
+
+// Apply TPA to P and D
 #if defined(USE_TPA_CURVES)
-    axisPID_D[axis] = Kd[axis] * (dDelta) * getThrottlePIDAttenuationKd();
+    axisPID_P[axis] = axisPID_P[axis] * getThrottlePIDAttenuationKp();
+    axisPID_D[axis] = axisPID_D[axis] * getThrottlePIDAttenuationKd();
 #else
-    axisPID_D[axis] = Kd[axis] * (dDelta) * getThrottlePIDAttenuation();
+    axisPID_P[axis] = axisPID_P[axis] * getThrottlePIDAttenuation();
+    axisPID_D[axis] = axisPID_D[axis] * getThrottlePIDAttenuation();
 #endif
+
     axisPIDSum[axis] = axisPID_P[axis] + axisPID_I[axis] + axisPID_D[axis];
     return dDelta;
 }
@@ -469,20 +472,17 @@ float classicPids(const pidProfile_t *pidProfile, int axis, float errorRate, flo
     // b = 1 and only c (dtermSetpointWeight) can be tuned (amount derivative on measurement or error).
 
     // -----calculate P component and add Dynamic Part based on stick input
-#if defined(USE_TPA_CURVES)
-    axisPID_P[axis] = Kp[axis] * errorRate * getThrottlePIDAttenuationKp();
-#else
-    axisPID_P[axis] = Kp[axis] * errorRate * getThrottlePIDAttenuation();
-#endif
+    axisPID_P[axis] = Kp[axis] * errorRate;
+
     // -----calculate I component
-    float ITermNew = constrainf(axisPID_I[axis] + Ki[axis] * errorRate * dynCi, -itermLimit, itermLimit);
+#if defined(USE_TPA_CURVES)
+    float ITermNew = constrainf(axisPID_I[axis] + (Ki[axis] * getThrottlePIDAttenuationKi() * errorRate * dynCi), -itermLimit, itermLimit);
+#else
+    float ITermNew = constrainf(axisPID_I[axis] + (Ki[axis] * errorRate * dynCi), -itermLimit, itermLimit);
+#endif
     if (!mixerIsOutputSaturated(axis, errorRate) || ABS(ITermNew) < ABS(axisPID_I[axis])) {
         // Only increase ITerm if output is not saturated
-#if defined(USE_TPA_CURVES)
-        axisPID_I[axis] = ITermNew * getThrottlePIDAttenuationKi();
-#else
         axisPID_I[axis] = ITermNew;
-#endif
     }
 
     // -----calculate D component
@@ -512,10 +512,16 @@ float classicPids(const pidProfile_t *pidProfile, int axis, float errorRate, flo
             break;
     }
     previousRateError[axis] = ornD;
+
+    axisPID_D[axis] = Kd[axis] * dDelta;
+
+// Apply TPA to P and D
 #if defined(USE_TPA_CURVES)
-    axisPID_D[axis] = Kd[axis] * dDelta * getThrottlePIDAttenuationKd();
+    axisPID_P[axis] = axisPID_P[axis] * getThrottlePIDAttenuationKp();
+    axisPID_D[axis] = axisPID_D[axis] * getThrottlePIDAttenuationKd();
 #else
-    axisPID_D[axis] = Kd[axis] * dDelta * getThrottlePIDAttenuation();
+    axisPID_P[axis] = axisPID_P[axis] * getThrottlePIDAttenuation();
+    axisPID_D[axis] = axisPID_D[axis] * getThrottlePIDAttenuation();
 #endif
     axisPIDSum[axis] = axisPID_P[axis] + axisPID_I[axis] + axisPID_D[axis];
     return dDelta;

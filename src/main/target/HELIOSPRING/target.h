@@ -19,8 +19,7 @@
 
 #define TARGET_BOARD_IDENTIFIER "HESP"
 #define USBD_PRODUCT_STRING     "HELIOSPRING"
-#define UPT_ADDRESS  0x080F0000
-#define MSD_ADDRESS  0x080E0000
+#define MSP_OVER_CLI
 
 #define LED0_PIN                PB7
 
@@ -180,8 +179,11 @@
 #define USABLE_TIMER_CHANNEL_COUNT 7
 #define USED_TIMERS             ( TIM_N(1) | TIM_N(8) | TIM_N(4) | TIM_N(12) )
 
-#define IMUF_BIT_I2C_IF_DIS              (1 << 4)
-
+#define USE_ACC_IMUF9001
+#define IMUF_RST_PIN              GPIO_Pin_4
+#define IMUF_RST_PORT             GPIOA
+#define IMUF_EXTI_PIN             GPIO_Pin_0
+#define IMUF_EXTI_PORT            GPIOB
 
 #define USE_ADC
 #define ADC_INSTANCE                   ADC1
@@ -198,7 +200,7 @@
 #define IMUF_DEFAULT_ROLL_Q   3000
 #define IMUF_DEFAULT_YAW_Q    3000
 #define IMUF_DEFAULT_W        32
-#define IMUF_DEFAULT_LPF_HZ   120.0f
+#define IMUF_DEFAULT_LPF_HZ   80.0f
 
 #define USE_BUTTERED_PIDS true
 
