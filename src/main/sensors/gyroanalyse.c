@@ -263,40 +263,46 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
             float fftWeightedSum = 0;
             float dataAvg = 0;
             float dataMax = 0;
-            float dynFiltThreshold = 0;
-            bool fftIncreasing = false;
+            float dataThreshold;
+            bool fftPeakDetected = false;
             bool fftPeakFinished = false;
 
-            //get simple average and max of bin amplitudes
+            //get average and max of bin amplitudes once they start increasing
             for (int i = 1 + fftBinOffset; i < FFT_BIN_COUNT; i++) {
-                dataAvg += state->fftData[i];
-                if (state->fftData[i] > dataMax) {
-                    dataMax = state->fftData[i];
+                if (fftPeakDetected || (state->fftData[i] > state->fftData[i - 1])) {
+                    dataAvg += state->fftData[i];
+                    fftPeakDetected = true;
+                    if (state->fftData[i] > dataMax) {
+                        dataMax = state->fftData[i];
+                    }
                 }
             }
-            // lower Max value to catch first peak close to max
-            dataMax = 0.8f * dataMax;
             dataAvg = dataAvg / FFT_BIN_COUNT;
-            // automatically set peak detection threshold at half difference between peak and average
-            dynFiltThreshold = 0.5f * (dataMax / dataAvg);
+
+            //peak, once increasing, must be more than 80% above average and 1.4 times average
+            dataThreshold = MAX(1.4f * dataAvg, (0.8f * dataMax + 0.2f * dataAvg));
             // iterate over fft data and calculate weighted indices
+            fftPeakDetected = false;
             for (int i = 1 + fftBinOffset; i < FFT_BIN_COUNT; i++) {
                 const float data = state->fftData[i];
-                const float prevData = state->fftData[i - 1];
-                // disregard fft bins after first peak
+                const float dataPrev = state->fftData[i - 1];
+                // include bins only after first peak detected
                 if (!fftPeakFinished) {
-                    // include bins around the first bin that exceeds 80% max bin height and increased compared to previous bin 
-                    if (fftIncreasing || ((data > prevData * dynFiltThreshold) && (data > dataMax))) {
+                    // peak must exceed thresholds and come after an increase in bin height 
+                    if (fftPeakDetected || (data > dataPrev && data > dataThreshold)) {
+                        // add current bin
                         float cubedData = data * data * data;
-                        // add previous bin
-                        if (!fftIncreasing) {
-                            cubedData += prevData * prevData * prevData;
-                            fftIncreasing = true;
+                        // indicate peak detected
+                        if (!fftPeakDetected) {
+                            fftPeakDetected = true;
+                            // accumulate previous bin
+                            cubedData += dataPrev * dataPrev * dataPrev;
                         }
-                        // peak over when incoming bin falls below average
+                        // terminate when peak ends ie data falls below average
                         if (data < dataAvg) {
                             fftPeakFinished = true;
                         }
+                        //calculate sums
                         fftSum += cubedData;
                         // calculate weighted index starting at 1, not 0
                         fftWeightedSum += cubedData * (i + 1);
