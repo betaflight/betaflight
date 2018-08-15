@@ -263,7 +263,6 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
             float fftWeightedSum = 0;
             float dataAvg = 0;
             float dataMax = 0;
-            float dataThreshold;
             bool fftPeakDetected = false;
             bool fftPeakFinished = false;
 
@@ -280,7 +279,7 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
             dataAvg = dataAvg / FFT_BIN_COUNT;
 
             //peak, once increasing, must be more than 80% above average and 1.4 times average
-            dataThreshold = MAX(1.4f * dataAvg, (0.8f * dataMax + 0.2f * dataAvg));
+            float dataThreshold = MAX(1.4f * dataAvg, (0.8f * dataMax + 0.2f * dataAvg));
             // iterate over fft data and calculate weighted indices
             fftPeakDetected = false;
             for (int i = 1 + fftBinOffset; i < FFT_BIN_COUNT; i++) {
