@@ -496,7 +496,11 @@ void writeMotors(void)
 {
     if (pwmAreMotorsEnabled()) {
         for (int i = 0; i < motorCount; i++) {
-            pwmWriteMotor(i, motor[i]);
+            if (IS_RC_MODE_ACTIVE(BOXJUSTSPIN)) {
+                pwmWriteMotor(i, motorOutputLow);
+            } else {
+                pwmWriteMotor(i, motor[i]);
+            }
         }
         pwmCompleteMotorUpdate(motorCount);
     }

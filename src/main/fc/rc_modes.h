@@ -49,6 +49,7 @@ typedef enum {
     BOXHEADADJ,
     BOXCAMSTAB,
     BOXBEEPERON,
+    BOXJUSTSPIN,
     BOXLEDLOW,
     BOXCALIB,
     BOXOSD,
