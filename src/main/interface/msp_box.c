@@ -95,6 +95,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOXPARALYZE, "PARALYZE", 45 },
     { BOXGPSRESCUE, "GPS RESCUE", 46 },
     { BOXACROTRAINER, "ACRO TRAINER", 47 },
+    { BOXJUSTSPIN, "JUST SPIN MOTORS", 48 },
 };
 
 // mask of enabled IDs, calculated on startup based on enabled features. boxId_e is used as bit index
@@ -264,6 +265,8 @@ void initActiveBoxIds(void)
 #endif
 
     BME(BOXPARALYZE);
+
+    BME(BOXJUSTSPIN);
 
 #ifdef USE_PINIOBOX
     // Turn BOXUSERx only if pinioBox facility monitors them, as the facility is the only BOXUSERx observer.
