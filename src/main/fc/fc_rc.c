@@ -388,7 +388,7 @@ void updateRcCommands(void)
 #if defined(USE_TPA_CURVES)
     } else {
         // rcData is 1000,2000 range, subtract 1000 and clamp between 0 and 1023 (for TPA lookup table indexing)
-        uint16_t shift = rcData[THROTTLE] - 1000;
+        int16_t shift = rcData[THROTTLE] - 1000;
         currentAdjustedThrottle = (shift <= 0) ? 0 : ((shift >= 1023) ? 1023 : shift );
     }
 #endif
