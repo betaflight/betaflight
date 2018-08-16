@@ -1315,6 +1315,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("gyro_cal_on_first_arm", "%d",           armingConfig()->gyro_cal_on_first_arm);
         BLACKBOX_PRINT_HEADER_LINE("rc_interpolation", "%d",                rxConfig()->rcInterpolation);
         BLACKBOX_PRINT_HEADER_LINE("rc_interpolation_interval", "%d",       rxConfig()->rcInterpolationInterval);
+        BLACKBOX_PRINT_HEADER_LINE("rc_interpolation_channels", "%d",       rxConfig()->rcInterpolationChannels);
         BLACKBOX_PRINT_HEADER_LINE("airmode_activate_throttle", "%d",       rxConfig()->airModeActivateThreshold);
         BLACKBOX_PRINT_HEADER_LINE("serialrx_provider", "%d",               rxConfig()->serialrx_provider);
         BLACKBOX_PRINT_HEADER_LINE("use_unsynced_pwm", "%d",                motorConfig()->dev.useUnsyncedPwm);
