@@ -21,10 +21,18 @@
 #pragma once
 
 #include "common/axis.h"
+#include "common/filter.h"
 #include "common/time.h"
-#include "pg/pg.h"
+
 #include "drivers/bus.h"
 #include "drivers/sensor.h"
+
+#include "pg/pg.h"
+
+typedef union gyroDynamicFilter_u {
+    pt1Filter_t pt1FilterState;
+    biquadFilter_t biquadFilterState;
+} gyroDynamicFilter_t;
 
 typedef enum {
     GYRO_NONE = 0,

@@ -22,16 +22,12 @@
 
 #include "arm_math.h"
 
-#include "common/time.h"
 #include "common/filter.h"
+
+#include "sensors/gyro.h"
 
 // max for F3 targets
 #define FFT_WINDOW_SIZE 32
-
-typedef union gyroDynamicFilter_u {
-    pt1Filter_t pt1FilterState;
-    biquadFilter_t biquadFilterState;
-} gyroDynamicFilter_t;
 
 typedef struct gyroAnalyseState_s {
     // accumulator for oversampled data => no aliasing and less noise
