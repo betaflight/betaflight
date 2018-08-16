@@ -77,6 +77,7 @@ PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
             IBUS_SENSOR_TYPE_EXTERNAL_VOLTAGE
     },
     .smartport_use_extra_sensors = false,
+    .mavlink_mah_as_heading_divisor = 0,
 );
 
 void telemetryInit(void)
