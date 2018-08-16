@@ -168,6 +168,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .abs_control_limit = 90,
         .abs_control_error_limit = 20,
         .antiGravityMode = ANTI_GRAVITY_SMOOTH,
+        .iterm_tbh = ITERM_TBH_OFF, //Take-back-half OFF by default
     );
 }
 
@@ -222,6 +223,11 @@ static FAST_RAM_ZERO_INIT pt1Filter_t windupLpf[XYZ_AXIS_COUNT];
 static FAST_RAM_ZERO_INIT uint8_t itermRelax;
 static FAST_RAM_ZERO_INIT uint8_t itermRelaxType;
 static FAST_RAM_ZERO_INIT uint8_t itermRelaxCutoff;
+#endif
+
+#if defined(USE_TBH)
+static FAST_RAM_ZERO_INIT float iPrevTbh[XYZ_AXIS_COUNT];
+static FAST_RAM_ZERO_INIT bool tbhErrorSignPrev[XYZ_AXIS_COUNT];
 #endif
 
 #ifdef USE_RC_SMOOTHING_FILTER
@@ -990,6 +996,22 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
             // Only increase ITerm if output is not saturated
             pidData[axis].I = ITermNew;
         }
+        #if defined(USE_TBH)
+            if (pidProfile->iterm_tbh && (axis < FD_YAW || pidProfile->iterm_tbh == ITERM_TBH_RPY)) {
+                // Non-linear Take-Back Half algorithm
+                // When the error term crosses through zero, this algorithm causes
+                // the I term to non-linearly jump to half-way between the current
+                // accumulated error and the accumulated error at the last zero
+                // crossing.
+                const bool thisSign = itermErrorRate > 0; //T==Pos, F==Neg or zero
+                if (thisSign != tbhErrorSignPrev[axis]) { 
+                    const float lastCrossIValue = iPrevTbh[axis];
+                    iPrevTbh[axis] = pidData[axis].I;
+                    pidData[axis].I = (pidData[axis].I + lastCrossIValue) * 0.5f; //Take-Back-Half error
+                }
+                tbhErrorSignPrev[axis] = thisSign;
+            }
+        #endif
 
         // -----calculate D component
         if (pidCoefficient[axis].Kd > 0) {

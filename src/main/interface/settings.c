@@ -351,6 +351,12 @@ static const char * const lookupTableItermRelaxType[] = {
 };
 #endif
 
+#if defined(USE_TBH)
+static const char * const lookupTableTBH[] = {
+    "OFF", "RP", "RPY"
+};
+#endif
+
 #ifdef USE_ACRO_TRAINER
 static const char * const lookupTableAcroTrainerDebug[] = {
     "ROLL", "PITCH"
@@ -451,6 +457,9 @@ const lookupTableEntry_t lookupTables[] = {
 #if defined(USE_ITERM_RELAX)
     LOOKUP_TABLE_ENTRY(lookupTableItermRelax),
     LOOKUP_TABLE_ENTRY(lookupTableItermRelaxType),
+#endif
+#if defined(USE_TBH)
+    LOOKUP_TABLE_ENTRY(lookupTableTBH),
 #endif
 #ifdef USE_ACRO_TRAINER
     LOOKUP_TABLE_ENTRY(lookupTableAcroTrainerDebug),
@@ -862,6 +871,9 @@ const clivalue_t valueTable[] = {
     { "abs_control_error_limit",    VAR_UINT8 | PROFILE_VALUE,  .config.minmax = { 1, 45 }, PG_PID_PROFILE, offsetof(pidProfile_t, abs_control_error_limit) },
 #endif
 
+#if defined(USE_TBH)
+    { "iterm_tbh",                  VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_TBH_TYPE }, PG_PID_PROFILE, offsetof(pidProfile_t, iterm_tbh) },
+#endif // Take-back-half non-linear integrator
 
 // PG_TELEMETRY_CONFIG
 #ifdef USE_TELEMETRY

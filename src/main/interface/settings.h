@@ -103,6 +103,9 @@ typedef enum {
     TABLE_ITERM_RELAX,
     TABLE_ITERM_RELAX_TYPE,
 #endif
+#if defined(USE_TBH)
+    TABLE_TBH_TYPE,
+#endif
 #ifdef USE_ACRO_TRAINER
     TABLE_ACRO_TRAINER_DEBUG,
 #endif // USE_ACRO_TRAINER
