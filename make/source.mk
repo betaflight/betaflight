@@ -137,6 +137,7 @@ COMMON_SRC = \
             io/displayport_oled.c \
             io/displayport_srxl.c \
             io/displayport_crsf.c \
+            io/displayport_hott.c \
             io/rcdevice_cam.c \
             io/rcdevice.c \
             io/gps.c \

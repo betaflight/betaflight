@@ -26,6 +26,7 @@
  * Carsten Giesen - cGiesen - Baseflight port
  * Oliver Bayer - oBayer - MultiWii-HoTT, HoTT reverse engineering
  * Adam Majerczyk - HoTT-for-ardupilot from which some information and ideas are borrowed.
+ * Scavanger & Ziege-One: CMS Textmode addon
  *
  * https://github.com/obayer/MultiWii-HoTT
  * https://github.com/oBayer/MultiHoTT-Module
@@ -87,12 +88,24 @@
 #include "telemetry/hott.h"
 #include "telemetry/telemetry.h"
 
+#if defined (USE_HOTT_TEXTMODE) && defined (USE_CMS)
+#include "scheduler/scheduler.h"
+#include "io/displayport_hott.h"
+
+#define HOTT_TEXTMODE_TASK_PERIOD 1000
+#define HOTT_TEXTMODE_RX_SCHEDULE 5000
+#define HOTT_TEXTMODE_TX_DELAY_US 1000
+#endif
+
 //#define HOTT_DEBUG
 
 #define HOTT_MESSAGE_PREPARATION_FREQUENCY_5_HZ ((1000 * 1000) / 5)
 #define HOTT_RX_SCHEDULE 4000
 #define HOTT_TX_DELAY_US 3000
 #define MILLISECONDS_IN_A_SECOND 1000
+
+static uint32_t rxSchedule = HOTT_RX_SCHEDULE;
+static uint32_t txDelayUs = HOTT_TX_DELAY_US;
 
 static uint32_t lastHoTTRequestCheckAt = 0;
 static uint32_t lastMessagesPreparedAt = 0;
@@ -117,6 +130,20 @@ static portSharing_e hottPortSharing;
 
 static HOTT_GPS_MSG_t hottGPSMessage;
 static HOTT_EAM_MSG_t hottEAMMessage;
+
+#if defined (USE_HOTT_TEXTMODE) && defined (USE_CMS)
+static hottTextModeMsg_t hottTextModeMessage;
+static bool textmodeIsAlive = false;
+static int32_t telemetryTaskPeriod = 0;
+
+static void initialiseTextmodeMessage(hottTextModeMsg_t *msg)
+{
+    msg->start = HOTT_TEXTMODE_START;
+    msg->esc = HOTT_EAM_SENSOR_TEXT_ID;
+    msg->warning = 0;
+    msg->stop = HOTT_TEXTMODE_STOP;
+}
+#endif
 
 static void initialiseEAMMessage(HOTT_EAM_MSG_t *msg, size_t size)
 {
@@ -150,6 +177,9 @@ static void initialiseMessages(void)
     initialiseEAMMessage(&hottEAMMessage, sizeof(hottEAMMessage));
 #ifdef USE_GPS
     initialiseGPSMessage(&hottGPSMessage, sizeof(hottGPSMessage));
+#endif
+#if defined (USE_HOTT_TEXTMODE) && defined (USE_CMS)
+    initialiseTextmodeMessage(&hottTextModeMessage);
 #endif
 }
 
@@ -312,6 +342,10 @@ void initHoTTTelemetry(void)
     portConfig = findSerialPortConfig(FUNCTION_TELEMETRY_HOTT);
     hottPortSharing = determinePortSharing(portConfig, FUNCTION_TELEMETRY_HOTT);
 
+#if defined (USE_HOTT_TEXTMODE) && defined (USE_CMS)
+    hottDisplayportRegister();
+#endif
+
     initialiseMessages();
 }
 
@@ -415,8 +449,90 @@ static void hottPrepareMessages(void) {
 #endif
 }
 
+#if defined (USE_HOTT_TEXTMODE) && defined (USE_CMS)
+static void hottTextmodeStart()
+{
+    // Increase menu speed
+    cfTaskInfo_t taskInfo;
+    getTaskInfo(TASK_TELEMETRY, &taskInfo);
+    telemetryTaskPeriod = taskInfo.desiredPeriod;
+    rescheduleTask(TASK_TELEMETRY, TASK_PERIOD_HZ(HOTT_TEXTMODE_TASK_PERIOD));
+
+    rxSchedule = HOTT_TEXTMODE_RX_SCHEDULE;
+    txDelayUs = HOTT_TEXTMODE_TX_DELAY_US;
+}
+
+static void hottTextmodeStop()
+{
+    // Set back to avoid slow down of the FC
+    if (telemetryTaskPeriod > 0) {
+        rescheduleTask(TASK_TELEMETRY, telemetryTaskPeriod);
+    }
+
+    rxSchedule = HOTT_RX_SCHEDULE;
+    txDelayUs = HOTT_TX_DELAY_US;
+}
+
+bool hottTextmodeIsAlive()
+{
+    return textmodeIsAlive;
+}
+
+void hottTextmodeGrab()
+{
+    hottTextModeMessage.esc = HOTT_EAM_SENSOR_TEXT_ID;
+}
+
+void hottTextmodeExit()
+{
+    hottTextModeMessage.esc = HOTT_TEXTMODE_ESC;
+}
+
+void hottTextmodeWriteChar(uint8_t column, uint8_t row, char c)
+{
+    if (column < HOTT_TEXTMODE_DISPLAY_COLUMNS && row < HOTT_TEXTMODE_DISPLAY_ROWS) {
+        if (hottTextModeMessage.txt[row][column] != c)
+            hottTextModeMessage.txt[row][column] = c;
+    }
+}
+
+static void processHottTextModeRequest(const uint8_t cmd)
+{
+    static bool setEscBack = false;
+
+    if (!textmodeIsAlive) {
+        hottTextmodeStart();
+        textmodeIsAlive = true;
+    }
+
+    if ((cmd & 0xF0) != HOTT_EAM_SENSOR_TEXT_ID) {
+        return;
+    }
+
+    if (setEscBack) {
+        hottTextModeMessage.esc = HOTT_EAM_SENSOR_TEXT_ID;
+        setEscBack = false;
+    }
+
+    if (hottTextModeMessage.esc != HOTT_TEXTMODE_ESC) {
+        hottCmsOpen();
+    } else {
+        setEscBack = true;
+    }
+
+    hottSetCmsKey(cmd & 0x0f, hottTextModeMessage.esc == HOTT_TEXTMODE_ESC);
+    hottSendResponse((uint8_t *)&hottTextModeMessage, sizeof(hottTextModeMessage));
+}
+#endif
+
 static void processBinaryModeRequest(uint8_t address)
 {
+#if defined (USE_HOTT_TEXTMODE) && defined (USE_CMS)
+    if (textmodeIsAlive) {
+        hottTextmodeStop();
+        textmodeIsAlive = false;
+    }
+#endif
 
 #ifdef HOTT_DEBUG
     static uint8_t hottBinaryRequests = 0;
@@ -474,7 +590,7 @@ static void hottCheckSerialData(uint32_t currentMicros)
         lookingForRequest = false;
         return;
     } else {
-        bool enoughTimePassed = currentMicros - lastHoTTRequestCheckAt >= HOTT_RX_SCHEDULE;
+        bool enoughTimePassed = currentMicros - lastHoTTRequestCheckAt >= rxSchedule;
 
         if (!enoughTimePassed) {
             return;
@@ -495,6 +611,11 @@ static void hottCheckSerialData(uint32_t currentMicros)
      */
         processBinaryModeRequest(address);
     }
+#if defined (USE_HOTT_TEXTMODE) && defined (USE_CMS)
+    else if (requestId == HOTTV4_TEXT_MODE_REQUEST_ID) {
+        processHottTextModeRequest(address);
+    }
+#endif
 }
 
 static void hottSendTelemetryData(void) {
@@ -568,7 +689,7 @@ void handleHoTTTelemetry(timeUs_t currentTimeUs)
         return;
 
     if (hottIsSending) {
-        if (currentTimeUs - serialTimer < HOTT_TX_DELAY_US) {
+        if (currentTimeUs - serialTimer < txDelayUs) {
             return;
         }
     }
