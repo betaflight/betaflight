@@ -70,6 +70,7 @@
 
 #include "flight/position.h"
 #include "flight/failsafe.h"
+#include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
@@ -1067,26 +1068,26 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 
 #ifdef USE_GPS_RESCUE
     case MSP_GPS_RESCUE:
-        sbufWriteU16(dst, gpsRescue()->angle);
-        sbufWriteU16(dst, gpsRescue()->initialAltitude);
-        sbufWriteU16(dst, gpsRescue()->descentDistance);
-        sbufWriteU16(dst, gpsRescue()->rescueGroundspeed);
-        sbufWriteU16(dst, gpsRescue()->throttleMin);
-        sbufWriteU16(dst, gpsRescue()->throttleMax);
-        sbufWriteU16(dst, gpsRescue()->throttleHover);
-        sbufWriteU16(dst, gpsRescue()->throttleMax);
-        sbufWriteU8(dst,  gpsRescue()->sanityChecks);
-        sbufWriteU8(dst,  gpsRescue()->minSats);
+        sbufWriteU16(dst, gpsRescueConfig()->angle);
+        sbufWriteU16(dst, gpsRescueConfig()->initialAltitude);
+        sbufWriteU16(dst, gpsRescueConfig()->descentDistance);
+        sbufWriteU16(dst, gpsRescueConfig()->rescueGroundspeed);
+        sbufWriteU16(dst, gpsRescueConfig()->throttleMin);
+        sbufWriteU16(dst, gpsRescueConfig()->throttleMax);
+        sbufWriteU16(dst, gpsRescueConfig()->throttleHover);
+        sbufWriteU16(dst, gpsRescueConfig()->throttleMax);
+        sbufWriteU8(dst,  gpsRescueConfig()->sanityChecks);
+        sbufWriteU8(dst,  gpsRescueConfig()->minSats);
         break;
 
     case MSP_GPS_RESCUE_PIDS:
-        sbufWriteU16(dst, gpsRescue()->throttleP);
-        sbufWriteU16(dst, gpsRescue()->throttleI);
-        sbufWriteU16(dst, gpsRescue()->throttleD);
-        sbufWriteU16(dst, gpsRescue()->velP);
-        sbufWriteU16(dst, gpsRescue()->velI);
-        sbufWriteU16(dst, gpsRescue()->velD);
-        sbufWriteU16(dst, gpsRescue()->yawP);
+        sbufWriteU16(dst, gpsRescueConfig()->throttleP);
+        sbufWriteU16(dst, gpsRescueConfig()->throttleI);
+        sbufWriteU16(dst, gpsRescueConfig()->throttleD);
+        sbufWriteU16(dst, gpsRescueConfig()->velP);
+        sbufWriteU16(dst, gpsRescueConfig()->velI);
+        sbufWriteU16(dst, gpsRescueConfig()->velD);
+        sbufWriteU16(dst, gpsRescueConfig()->yawP);
         break;
 #endif
 #endif
@@ -1745,25 +1746,25 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
 #ifdef USE_GPS_RESCUE
         case MSP_SET_GPS_RESCUE:
-        gpsRescueMutable()->angle = sbufReadU16(src);
-        gpsRescueMutable()->initialAltitude = sbufReadU16(src);
-        gpsRescueMutable()->descentDistance = sbufReadU16(src);
-        gpsRescueMutable()->rescueGroundspeed = sbufReadU16(src);
-        gpsRescueMutable()->throttleMin = sbufReadU16(src);
-        gpsRescueMutable()->throttleMax = sbufReadU16(src);
-        gpsRescueMutable()->throttleHover = sbufReadU16(src);
-        gpsRescueMutable()->sanityChecks = sbufReadU8(src);
-        gpsRescueMutable()->minSats = sbufReadU8(src);
+        gpsRescueConfigMutable()->angle = sbufReadU16(src);
+        gpsRescueConfigMutable()->initialAltitude = sbufReadU16(src);
+        gpsRescueConfigMutable()->descentDistance = sbufReadU16(src);
+        gpsRescueConfigMutable()->rescueGroundspeed = sbufReadU16(src);
+        gpsRescueConfigMutable()->throttleMin = sbufReadU16(src);
+        gpsRescueConfigMutable()->throttleMax = sbufReadU16(src);
+        gpsRescueConfigMutable()->throttleHover = sbufReadU16(src);
+        gpsRescueConfigMutable()->sanityChecks = sbufReadU8(src);
+        gpsRescueConfigMutable()->minSats = sbufReadU8(src);
         break;
 
     case MSP_SET_GPS_RESCUE_PIDS:
-        gpsRescueMutable()->throttleP = sbufReadU16(src);
-        gpsRescueMutable()->throttleI = sbufReadU16(src);
-        gpsRescueMutable()->throttleD = sbufReadU16(src);
-        gpsRescueMutable()->velP = sbufReadU16(src);
-        gpsRescueMutable()->velI = sbufReadU16(src);
-        gpsRescueMutable()->velD = sbufReadU16(src);
-        gpsRescueMutable()->yawP = sbufReadU16(src);
+        gpsRescueConfigMutable()->throttleP = sbufReadU16(src);
+        gpsRescueConfigMutable()->throttleI = sbufReadU16(src);
+        gpsRescueConfigMutable()->throttleD = sbufReadU16(src);
+        gpsRescueConfigMutable()->velP = sbufReadU16(src);
+        gpsRescueConfigMutable()->velI = sbufReadU16(src);
+        gpsRescueConfigMutable()->velD = sbufReadU16(src);
+        gpsRescueConfigMutable()->yawP = sbufReadU16(src);
         break;
 #endif
 #endif
