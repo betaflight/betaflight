@@ -265,6 +265,16 @@ batteryState_e getBatteryState(void)
 	return BATTERY_OK;
 }
 
+batteryState_e getVoltageState(void)
+{
+	return BATTERY_OK;
+}
+	
+batteryState_e getConsumptionState(void)	
+{
+	return BATTERY_OK;
+}
+	
 uint16_t getBatteryVoltage(void)
 {
     return testBatteryVoltage;
