@@ -35,9 +35,10 @@
 #include "common/axis.h"
 #include "common/bitarray.h"
 #include "common/color.h"
+#include "common/huffman.h"
 #include "common/maths.h"
 #include "common/streambuf.h"
-#include "common/huffman.h"
+#include "common/utils.h"
 
 #include "config/config_eeprom.h"
 #include "config/feature.h"
@@ -338,7 +339,7 @@ enum compressionType_e {
 
 static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, const uint16_t size, bool useLegacyFormat, bool allowCompression)
 {
-    BUILD_BUG_ON(MSP_PORT_DATAFLASH_INFO_SIZE < 16);
+    STATIC_ASSERT(MSP_PORT_DATAFLASH_INFO_SIZE >= 16, MSP_PORT_DATAFLASH_INFO_SIZE_invalid);
 
     uint16_t readLen = size;
     const int bytesRemainingInBuf = sbufBytesRemaining(dst) - MSP_PORT_DATAFLASH_INFO_SIZE;
@@ -596,25 +597,27 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
     }
 
     case MSP_VOLTAGE_METER_CONFIG:
-        // by using a sensor type and a sub-frame length it's possible to configure any type of voltage meter,
-        // e.g. an i2c/spi/can sensor or any sensor not built directly into the FC such as ESC/RX/SPort/SBus that has
-        // different configuration requirements.
-        BUILD_BUG_ON(VOLTAGE_SENSOR_ADC_VBAT != 0); // VOLTAGE_SENSOR_ADC_VBAT should be the first index,
-        sbufWriteU8(dst, MAX_VOLTAGE_SENSOR_ADC); // voltage meters in payload
-        for (int i = VOLTAGE_SENSOR_ADC_VBAT; i < MAX_VOLTAGE_SENSOR_ADC; i++) {
-            const uint8_t adcSensorSubframeLength = 1 + 1 + 1 + 1 + 1; // length of id, type, vbatscale, vbatresdivval, vbatresdivmultipler, in bytes
-            sbufWriteU8(dst, adcSensorSubframeLength); // ADC sensor sub-frame length
+        {
+            // by using a sensor type and a sub-frame length it's possible to configure any type of voltage meter,
+            // e.g. an i2c/spi/can sensor or any sensor not built directly into the FC such as ESC/RX/SPort/SBus that has
+            // different configuration requirements.
+            STATIC_ASSERT(VOLTAGE_SENSOR_ADC_VBAT == 0, VOLTAGE_SENSOR_ADC_VBAT_incorrect); // VOLTAGE_SENSOR_ADC_VBAT should be the first index
+            sbufWriteU8(dst, MAX_VOLTAGE_SENSOR_ADC); // voltage meters in payload
+            for (int i = VOLTAGE_SENSOR_ADC_VBAT; i < MAX_VOLTAGE_SENSOR_ADC; i++) {
+                const uint8_t adcSensorSubframeLength = 1 + 1 + 1 + 1 + 1; // length of id, type, vbatscale, vbatresdivval, vbatresdivmultipler, in bytes
+                sbufWriteU8(dst, adcSensorSubframeLength); // ADC sensor sub-frame length
 
-            sbufWriteU8(dst, voltageMeterADCtoIDMap[i]); // id of the sensor
-            sbufWriteU8(dst, VOLTAGE_SENSOR_TYPE_ADC_RESISTOR_DIVIDER); // indicate the type of sensor that the next part of the payload is for
+                sbufWriteU8(dst, voltageMeterADCtoIDMap[i]); // id of the sensor
+                sbufWriteU8(dst, VOLTAGE_SENSOR_TYPE_ADC_RESISTOR_DIVIDER); // indicate the type of sensor that the next part of the payload is for
 
-            sbufWriteU8(dst, voltageSensorADCConfig(i)->vbatscale);
-            sbufWriteU8(dst, voltageSensorADCConfig(i)->vbatresdivval);
-            sbufWriteU8(dst, voltageSensorADCConfig(i)->vbatresdivmultiplier);
+                sbufWriteU8(dst, voltageSensorADCConfig(i)->vbatscale);
+                sbufWriteU8(dst, voltageSensorADCConfig(i)->vbatresdivval);
+                sbufWriteU8(dst, voltageSensorADCConfig(i)->vbatresdivmultiplier);
+            }
+            // if we had any other voltage sensors, this is where we would output any needed configuration
         }
-        // if we had any other voltage sensors, this is where we would output any needed configuration
-        break;
 
+        break;
     case MSP_CURRENT_METER_CONFIG: {
         // the ADC and VIRTUAL sensors have the same configuration requirements, however this API reflects
         // that this situation may change and allows us to support configuration of any current sensor with

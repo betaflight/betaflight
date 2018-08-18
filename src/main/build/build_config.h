@@ -20,8 +20,6 @@
 
 #pragma once
 
-#define BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2*!!(condition)]))
-
 #ifdef UNIT_TEST
 // make these visible to unit test
 #define STATIC_UNIT_TESTED

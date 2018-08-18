@@ -59,7 +59,9 @@
 #endif
 
 #define STATIC_ASSERT(condition, name) \
-    typedef char assert_failed_ ## name [(condition) ? 1 : -1 ] __attribute__((unused))
+    enum { assert_failed_ ## name = sizeof(char [(condition) ? 1 : -1 ]) }
+// If it is decided to ditch the -Wpedantic build flag, this should be switched to:
+//    _Static_assert((condition), #name)
 
 
 #define BIT(x) (1 << (x))

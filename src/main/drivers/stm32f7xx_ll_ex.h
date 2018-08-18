@@ -37,11 +37,11 @@ __STATIC_INLINE DMA_TypeDef *LL_EX_DMA_Stream_to_DMA(DMA_Stream_TypeDef *DMAx_St
 
 __STATIC_INLINE uint32_t LL_EX_DMA_Stream_to_Stream(DMA_Stream_TypeDef *DMAx_Streamy)
 {
+	STATIC_ASSERT(DMA1_Stream0_BASE - DMA1_BASE == sizeof(DMA_TypeDef), DMA_TypeDef_has_padding);
+	STATIC_ASSERT(DMA1_Stream1_BASE - DMA1_Stream0_BASE == sizeof(DMA_Stream_TypeDef), DMA_Stream_TypeDef_has_padding);
+
 	const size_t firstStreamOffset = sizeof(DMA_TypeDef);
 	const size_t streamSize = sizeof(DMA_Stream_TypeDef);
-
-	STATIC_ASSERT(DMA1_Stream0_BASE - DMA1_BASE == firstStreamOffset, DMA_TypeDef_has_padding);
-	STATIC_ASSERT(DMA1_Stream1_BASE - DMA1_Stream0_BASE == streamSize, DMA_Stream_TypeDef_has_padding);
 
 	return (((uint32_t) DMAx_Streamy & DMA_STREAM_MASK) - firstStreamOffset) / streamSize;
 }
