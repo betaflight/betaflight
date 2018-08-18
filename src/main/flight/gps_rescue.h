@@ -27,8 +27,8 @@ typedef enum {
 
 typedef struct gpsRescue_s {
     uint16_t angle; //degrees
-    uint16_t initialAltitude; //meters
-    uint16_t descentDistance; //meters
+    uint16_t initialAltitudeM; //meters
+    uint16_t descentDistanceM; //meters
     uint16_t rescueGroundspeed; // centimeters per second
     uint16_t throttleP, throttleI, throttleD;
     uint16_t yawP;
@@ -62,7 +62,7 @@ typedef enum {
 } rescueFailureState_e;
 
 typedef struct {
-    int32_t targetAltitude;
+    int32_t targetAltitudeCm;
     int32_t targetGroundspeed;
     uint8_t minAngleDeg;
     uint8_t maxAngleDeg;
@@ -70,10 +70,10 @@ typedef struct {
 } rescueIntent_s;
 
 typedef struct {
-    int32_t maxAltitude;
-    int32_t currentAltitude;
-    uint16_t distanceToHome;
-    uint16_t maxDistanceToHome;
+    int32_t maxAltitudeCm;
+    int32_t currentAltitudeCm;
+    uint16_t distanceToHomeM;
+    uint16_t maxDistanceToHomeM;
     int16_t directionToHome;
     uint16_t groundSpeed;
     uint8_t numSat;

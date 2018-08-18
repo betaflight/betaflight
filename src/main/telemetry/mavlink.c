@@ -328,7 +328,7 @@ void mavlinkSendPosition(void)
         // lon Longitude in 1E7 degrees
         gpsSol.llh.lon,
         // alt Altitude in 1E3 meters (millimeters) above MSL
-        gpsSol.llh.alt * 1000,
+        gpsSol.llh.altCm * 10,
         // eph GPS HDOP horizontal dilution of position in cm (m*100). If unknown, set to: 65535
         65535,
         // epv GPS VDOP horizontal dilution of position in cm (m*100). If unknown, set to: 65535
@@ -351,12 +351,12 @@ void mavlinkSendPosition(void)
         // lon Longitude in 1E7 degrees
         gpsSol.llh.lon,
         // alt Altitude in 1E3 meters (millimeters) above MSL
-        gpsSol.llh.alt * 1000,
+        gpsSol.llh.altCm * 10,
         // relative_alt Altitude above ground in meters, expressed as * 1000 (millimeters)
 #if defined(USE_BARO) || defined(USE_RANGEFINDER)
-        (sensors(SENSOR_RANGEFINDER) || sensors(SENSOR_BARO)) ? getEstimatedAltitude() * 10 : gpsSol.llh.alt * 1000,
+        (sensors(SENSOR_RANGEFINDER) || sensors(SENSOR_BARO)) ? getEstimatedAltitudeCm() * 10 : gpsSol.llh.altCm * 10,
 #else
-        gpsSol.llh.alt * 1000,
+        gpsSol.llh.altCm * 10,
 #endif
         // Ground X Speed (Latitude), expressed as m/s * 100
         0,
@@ -423,18 +423,18 @@ void mavlinkSendHUDAndHeartbeat(void)
 #if defined(USE_BARO) || defined(USE_RANGEFINDER)
     if (sensors(SENSOR_RANGEFINDER) || sensors(SENSOR_BARO)) {
         // Baro or sonar generally is a better estimate of altitude than GPS MSL altitude
-        mavAltitude = getEstimatedAltitude() / 100.0;
+        mavAltitude = getEstimatedAltitudeCm() / 100.0;
     }
 #if defined(USE_GPS)
     else if (sensors(SENSOR_GPS)) {
         // No sonar or baro, just display altitude above MLS
-        mavAltitude = gpsSol.llh.alt;
+        mavAltitude = gpsSol.llh.altCm / 100.0;
     }
 #endif
 #elif defined(USE_GPS)
     if (sensors(SENSOR_GPS)) {
         // No sonar or baro, just display altitude above MLS
-        mavAltitude = gpsSol.llh.alt;
+        mavAltitude = gpsSol.llh.altCm / 100.0;
     }
 #endif
 

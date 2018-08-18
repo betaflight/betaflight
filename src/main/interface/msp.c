@@ -920,7 +920,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 
     case MSP_ALTITUDE:
 #if defined(USE_BARO) || defined(USE_RANGEFINDER)
-        sbufWriteU32(dst, getEstimatedAltitude());
+        sbufWriteU32(dst, getEstimatedAltitudeCm());
 #else
         sbufWriteU32(dst, 0);
 #endif
@@ -1045,7 +1045,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, gpsSol.numSat);
         sbufWriteU32(dst, gpsSol.llh.lat);
         sbufWriteU32(dst, gpsSol.llh.lon);
-        sbufWriteU16(dst, (uint16_t)constrain(gpsSol.llh.alt / 100, 0, UINT16_MAX)); // alt changed from 1m to 0.01m per lsb since MSP API 1.39 by RTH. To maintain backwards compatibility compensate to 1m per lsb in MSP again.
+        sbufWriteU16(dst, (uint16_t)constrain(gpsSol.llh.altCm / 100, 0, UINT16_MAX)); // alt changed from 1m to 0.01m per lsb since MSP API 1.39 by RTH. To maintain backwards compatibility compensate to 1m per lsb in MSP again.
         sbufWriteU16(dst, gpsSol.groundSpeed);
         sbufWriteU16(dst, gpsSol.groundCourse);
         break;
@@ -1069,8 +1069,8 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 #ifdef USE_GPS_RESCUE
     case MSP_GPS_RESCUE:
         sbufWriteU16(dst, gpsRescueConfig()->angle);
-        sbufWriteU16(dst, gpsRescueConfig()->initialAltitude);
-        sbufWriteU16(dst, gpsRescueConfig()->descentDistance);
+        sbufWriteU16(dst, gpsRescueConfig()->initialAltitudeM);
+        sbufWriteU16(dst, gpsRescueConfig()->descentDistanceM);
         sbufWriteU16(dst, gpsRescueConfig()->rescueGroundspeed);
         sbufWriteU16(dst, gpsRescueConfig()->throttleMin);
         sbufWriteU16(dst, gpsRescueConfig()->throttleMax);
@@ -1747,8 +1747,8 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #ifdef USE_GPS_RESCUE
         case MSP_SET_GPS_RESCUE:
         gpsRescueConfigMutable()->angle = sbufReadU16(src);
-        gpsRescueConfigMutable()->initialAltitude = sbufReadU16(src);
-        gpsRescueConfigMutable()->descentDistance = sbufReadU16(src);
+        gpsRescueConfigMutable()->initialAltitudeM = sbufReadU16(src);
+        gpsRescueConfigMutable()->descentDistanceM = sbufReadU16(src);
         gpsRescueConfigMutable()->rescueGroundspeed = sbufReadU16(src);
         gpsRescueConfigMutable()->throttleMin = sbufReadU16(src);
         gpsRescueConfigMutable()->throttleMax = sbufReadU16(src);
@@ -2109,7 +2109,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         gpsSol.numSat = sbufReadU8(src);
         gpsSol.llh.lat = sbufReadU32(src);
         gpsSol.llh.lon = sbufReadU32(src);
-        gpsSol.llh.alt = sbufReadU16(src) * 100; // alt changed from 1m to 0.01m per lsb since MSP API 1.39 by RTH. Received MSP altitudes in 1m per lsb have to upscaled.
+        gpsSol.llh.altCm = sbufReadU16(src) * 100; // alt changed from 1m to 0.01m per lsb since MSP API 1.39 by RTH. Received MSP altitudes in 1m per lsb have to upscaled.
         gpsSol.groundSpeed = sbufReadU16(src);
         GPS_update |= 2;        // New data signalisation to GPS functions // FIXME Magic Numbers
         break;

@@ -49,6 +49,7 @@
 #include "fc/runtime_config.h"
 
 #include "flight/imu.h"
+#include "flight/position.h"
 
 #include "interface/crsf_protocol.h"
 
@@ -181,8 +182,7 @@ void crsfFrameGps(sbuf_t *dst)
     sbufWriteU32BigEndian(dst, gpsSol.llh.lon);
     sbufWriteU16BigEndian(dst, (gpsSol.groundSpeed * 36 + 5) / 10); // gpsSol.groundSpeed is in 0.1m/s
     sbufWriteU16BigEndian(dst, gpsSol.groundCourse * 10); // gpsSol.groundCourse is degrees * 10
-    //Send real GPS altitude only if it's reliable (there's a GPS fix)
-    const uint16_t altitude = (STATE(GPS_FIX) ? gpsSol.llh.alt / 100 : 0) + 1000;
+    const uint16_t altitude = (constrain(getEstimatedAltitudeCm(), 0 * 100, 5000 * 100) / 100) + 1000; // constrain altitude from 0 to 5,000m
     sbufWriteU16BigEndian(dst, altitude);
     sbufWriteU8(dst, gpsSol.numSat);
 }

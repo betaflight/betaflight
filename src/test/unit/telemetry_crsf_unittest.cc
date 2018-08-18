@@ -124,7 +124,7 @@ TEST(TelemetryCrsfTest, TestGPS)
     gpsSol.llh.lat = 56 * GPS_DEGREES_DIVIDER;
     gpsSol.llh.lon = 163 * GPS_DEGREES_DIVIDER;
     ENABLE_STATE(GPS_FIX);
-    gpsSol.llh.alt = 2345 * 100;              // altitude in cm
+    gpsSol.llh.altCm = 2345 * 100;            // altitude in cm / 100 + 1000m offset, so CRSF value should be 3345
     gpsSol.groundSpeed = 163;                 // speed in 0.1m/s, 16.3 m/s = 58.68 km/h, so CRSF (km/h *10) value is 587
     gpsSol.numSat = 9;
     gpsSol.groundCourse = 1479;     // degrees * 10
@@ -330,6 +330,10 @@ uint8_t calculateBatteryPercentageRemaining(void) {
     return 67;
 }
 
+int32_t getEstimatedAltitudeCm(void) {
+	return gpsSol.llh.altCm;    // function returns cm not m.
+}
+    
 int32_t getMAhDrawn(void){
   return testmAhDrawn;
 }

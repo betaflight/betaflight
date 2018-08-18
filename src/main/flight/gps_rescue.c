@@ -58,8 +58,8 @@ PG_REGISTER_WITH_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCU
 
 PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
     .angle = 32,
-    .initialAltitude = 50,
-    .descentDistance = 200,
+    .initialAltitudeM = 50,
+    .descentDistanceM = 200,
     .rescueGroundspeed = 2000,
     .throttleP = 150,
     .throttleI = 20,
@@ -125,8 +125,8 @@ void updateGPSRescueState(void)
         }
 
         // Minimum distance detection.  Disarm regardless of sanity check configuration.  Rescue too close is never a good idea.
-        if (rescueState.sensor.distanceToHome < gpsRescueConfig()->minRescueDth) {
-            // Never allow rescue mode to engage as a failsafe  when too close or when disarmed.
+        if (rescueState.sensor.distanceToHomeM < gpsRescueConfig()->minRescueDth) {
+            // Never allow rescue mode to engage as a failsafe when too close or when disarmed.
             if (rescueState.isFailsafe || !ARMING_FLAG(ARMED)) {
                 rescueState.failure = RESCUE_TOO_CLOSE;
                 setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
@@ -141,40 +141,40 @@ void updateGPSRescueState(void)
         FALLTHROUGH;
     case RESCUE_ATTAIN_ALT:
         // Get to a safe altitude at a low velocity ASAP
-        if (ABS(rescueState.intent.targetAltitude - rescueState.sensor.currentAltitude) < 1000) {
+        if (ABS(rescueState.intent.targetAltitudeCm - rescueState.sensor.currentAltitudeCm) < 1000) {
             rescueState.phase = RESCUE_CROSSTRACK;
         }
 
         rescueState.intent.targetGroundspeed = 500;
-        rescueState.intent.targetAltitude = MAX(gpsRescueConfig()->initialAltitude * 100, rescueState.sensor.maxAltitude + 1500);
+        rescueState.intent.targetAltitudeCm = MAX(gpsRescueConfig()->initialAltitudeM * 100, rescueState.sensor.maxAltitudeCm + 1500);
         rescueState.intent.crosstrack = true;
         rescueState.intent.minAngleDeg = 10;
         rescueState.intent.maxAngleDeg = 15;
         break;
     case RESCUE_CROSSTRACK:
-        if (rescueState.sensor.distanceToHome < gpsRescueConfig()->descentDistance) {
+        if (rescueState.sensor.distanceToHomeM < gpsRescueConfig()->descentDistanceM) {
             rescueState.phase = RESCUE_LANDING_APPROACH;
         }
 
         // We can assume at this point that we are at or above our RTH height, so we need to try and point to home and tilt while maintaining alt
         // Is our altitude way off?  We should probably kick back to phase RESCUE_ATTAIN_ALT
         rescueState.intent.targetGroundspeed = gpsRescueConfig()->rescueGroundspeed;
-        rescueState.intent.targetAltitude = MAX(gpsRescueConfig()->initialAltitude * 100, rescueState.sensor.maxAltitude + 1500);
+        rescueState.intent.targetAltitudeCm = MAX(gpsRescueConfig()->initialAltitudeM * 100, rescueState.sensor.maxAltitudeCm + 1500);
         rescueState.intent.crosstrack = true;
         rescueState.intent.minAngleDeg = 15;
         rescueState.intent.maxAngleDeg = gpsRescueConfig()->angle;
         break;
     case RESCUE_LANDING_APPROACH:
         // We are getting close to home in the XY plane, get Z where it needs to be to move to landing phase
-        if (rescueState.sensor.distanceToHome < 10 && rescueState.sensor.currentAltitude <= 1000) {
+        if (rescueState.sensor.distanceToHomeM < 10 && rescueState.sensor.currentAltitudeCm <= 1000) {
             rescueState.phase = RESCUE_LANDING;
         }
 
         // Only allow new altitude and new speed to be equal or lower than the current values (to prevent parabolic movement on overshoot)
-        int32_t newAlt = gpsRescueConfig()->initialAltitude * 100  * rescueState.sensor.distanceToHome / gpsRescueConfig()->descentDistance;
-        int32_t newSpeed = gpsRescueConfig()->rescueGroundspeed * rescueState.sensor.distanceToHome / gpsRescueConfig()->descentDistance;
+        int32_t newAlt = gpsRescueConfig()->initialAltitudeM * 100  * rescueState.sensor.distanceToHomeM / gpsRescueConfig()->descentDistanceM;
+        int32_t newSpeed = gpsRescueConfig()->rescueGroundspeed * rescueState.sensor.distanceToHomeM / gpsRescueConfig()->descentDistanceM;
 
-        rescueState.intent.targetAltitude = constrain(newAlt, 100, rescueState.intent.targetAltitude);
+        rescueState.intent.targetAltitudeCm = constrain(newAlt, 100, rescueState.intent.targetAltitudeCm);
         rescueState.intent.targetGroundspeed = constrain(newSpeed, 100, rescueState.intent.targetGroundspeed);
         rescueState.intent.crosstrack = true;
         rescueState.intent.minAngleDeg = 10;
@@ -192,7 +192,7 @@ void updateGPSRescueState(void)
         }
 
         rescueState.intent.targetGroundspeed = 0;
-        rescueState.intent.targetAltitude = 0;
+        rescueState.intent.targetAltitudeCm = 0;
         rescueState.intent.crosstrack = true;
         rescueState.intent.minAngleDeg = 0;
         rescueState.intent.maxAngleDeg = 15;
@@ -220,28 +220,28 @@ void updateGPSRescueState(void)
 
 void sensorUpdate()
 {
-    rescueState.sensor.currentAltitude = getEstimatedAltitude();
+    rescueState.sensor.currentAltitudeCm = getEstimatedAltitudeCm();
 
     // Calculate altitude velocity
     static uint32_t previousTimeUs;
-    static int32_t previousAltitude;
+    static int32_t previousAltitudeCm;
 
     const uint32_t currentTimeUs = micros();
     const float dTime = currentTimeUs - previousTimeUs;
 
     if (newGPSData) { // Calculate velocity at lowest common denominator
-        rescueState.sensor.distanceToHome = GPS_distanceToHome;
+        rescueState.sensor.distanceToHomeM = GPS_distanceToHome;
         rescueState.sensor.directionToHome = GPS_directionToHome;
         rescueState.sensor.numSat = gpsSol.numSat;
         rescueState.sensor.groundSpeed = gpsSol.groundSpeed;
 
-        rescueState.sensor.zVelocity = (rescueState.sensor.currentAltitude - previousAltitude) * 1000000.0f / dTime;
+        rescueState.sensor.zVelocity = (rescueState.sensor.currentAltitudeCm - previousAltitudeCm) * 1000000.0f / dTime;
         rescueState.sensor.zVelocityAvg = 0.8f * rescueState.sensor.zVelocityAvg + rescueState.sensor.zVelocity * 0.2f;
 
         rescueState.sensor.accMagnitude = (float) sqrtf(sq(acc.accADC[Z]) + sq(acc.accADC[X]) + sq(acc.accADC[Y])) * acc.dev.acc_1G_rec;
         rescueState.sensor.accMagnitudeAvg = (rescueState.sensor.accMagnitudeAvg * 0.8f) + (rescueState.sensor.accMagnitude * 0.2f);
 
-        previousAltitude = rescueState.sensor.currentAltitude;
+        previousAltitudeCm = rescueState.sensor.currentAltitudeCm;
         previousTimeUs = currentTimeUs;
     }
 }
@@ -327,9 +327,9 @@ void idleTasks()
     gpsRescueAngle[AI_ROLL] = 0;
 
     // Store the max altitude we see not during RTH so we know our fly-back minimum alt
-    rescueState.sensor.maxAltitude = MAX(rescueState.sensor.currentAltitude, rescueState.sensor.maxAltitude);
+    rescueState.sensor.maxAltitudeCm = MAX(rescueState.sensor.currentAltitudeCm, rescueState.sensor.maxAltitudeCm);
     // Store the max distance to home during normal flight so we know if a flyaway is happening
-    rescueState.sensor.maxDistanceToHome = MAX(rescueState.sensor.distanceToHome, rescueState.sensor.maxDistanceToHome);
+    rescueState.sensor.maxDistanceToHomeM = MAX(rescueState.sensor.distanceToHomeM, rescueState.sensor.maxDistanceToHomeM);
 
     rescueThrottle = rcCommand[THROTTLE];
 
@@ -391,7 +391,7 @@ void rescueAttainPosition()
     static float previousAltitudeError = 0;
     static int16_t altitudeIntegral = 0;
 
-    const int16_t altitudeError = (rescueState.intent.targetAltitude - rescueState.sensor.currentAltitude) / 100; // Error in meters
+    const int16_t altitudeError = (rescueState.intent.targetAltitudeCm - rescueState.sensor.currentAltitudeCm) / 100; // Error in meters
     const int16_t altitudeDerivative = altitudeError - previousAltitudeError;
 
     // Only allow integral windup within +-15m absolute altitude error

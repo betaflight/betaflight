@@ -268,6 +268,10 @@ extern "C" {
         return 67;
     }
 
+    int32_t getEstimatedAltitudeCm(void) {
+    	return 0;
+    }
+
     bool feature(uint32_t) {return false;}
 
     bool isAirmodeActive(void) {return true;}
