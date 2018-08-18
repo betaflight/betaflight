@@ -51,7 +51,7 @@
 //#undef USE_TELEMETRY_LTM
 //#undef USE_SERIALRX_XBUS
 //#undef USE_SERIALRX_SUMH
-//#undef USE_PWM
+#undef USE_PWM
 
 #undef USE_BOARD_INFO
 #undef USE_EXTENDED_CMS_MENUS
