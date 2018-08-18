@@ -65,6 +65,9 @@
 #include "drivers/accgyro_legacy/accgyro_mma845x.h"
 #endif
 
+#ifdef USE_ACC_IMUF9001
+#include "drivers/accgyro/accgyro_imuf9001.h"
+#endif //USE_ACC_IMUF9001
 #include "drivers/bus_spi.h"
 
 #include "fc/config.h"
@@ -284,6 +287,15 @@ retry:
         FALLTHROUGH;
 #endif
 
+#ifdef USE_ACC_IMUF9001
+    case ACC_IMUF9001:
+        if (imufSpiAccDetect(dev)) {
+            accHardware = ACC_IMUF9001;
+            break;
+        }
+        FALLTHROUGH;
+#endif
+
 #ifdef USE_ACC_SPI_ICM20689
     case ACC_ICM20689:
         if (icm20689SpiAccDetect(dev)) {
@@ -364,7 +376,7 @@ bool accInit(uint32_t gyroSamplingInverval)
     acc.dev.initFn(&acc.dev); // driver initialisation
     acc.dev.acc_1G_rec = 1 / acc.dev.acc_1G;
     // set the acc sampling interval according to the gyro sampling interval
-    switch (gyroSamplingInverval) {  // Switch statement kept in place to change acc sampling interval in the future
+        switch (gyroSamplingInverval) {  // Switch statement kept in place to change acc sampling interval in the future
     case 500:
     case 375:
     case 250:
@@ -384,9 +396,11 @@ bool accInit(uint32_t gyroSamplingInverval)
             biquadFilterInitLPF(&accFilter[axis], accLpfCutHz, acc.accSamplingInterval);
         }
     }
+    #ifndef USE_ACC_IMUF9001
     if (accelerometerConfig()->acc_align != ALIGN_DEFAULT) {
         acc.dev.accAlign = accelerometerConfig()->acc_align;
     }
+    #endif //USE_ACC_IMUF9001
     return true;
 }
 
@@ -509,20 +523,21 @@ void accUpdate(timeUs_t currentTimeUs, rollAndPitchTrims_t *rollAndPitchTrims)
     if (!acc.dev.readFn(&acc.dev)) {
         return;
     }
-    acc.isAccelUpdatedAtLeastOnce = true;
+    acc.isAccelUpdatedAtLeastOnce = true;    
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         DEBUG_SET(DEBUG_ACCELEROMETER, axis, acc.dev.ADCRaw[axis]);
         acc.accADC[axis] = acc.dev.ADCRaw[axis];
     }
+    #ifndef USE_ACC_IMUF9001
+    alignSensors(acc.accADC, acc.dev.accAlign);
+    #endif
 
     if (accLpfCutHz) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
             acc.accADC[axis] = biquadFilterApply(&accFilter[axis], acc.accADC[axis]);
         }
     }
-
-    alignSensors(acc.accADC, acc.dev.accAlign);
 
     if (!accIsCalibrationComplete()) {
         performAcclerationCalibration(rollAndPitchTrims);

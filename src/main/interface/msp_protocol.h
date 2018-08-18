@@ -335,3 +335,7 @@
 #define MSP_RTC                  247    //out message         Gets the RTC clock
 #define MSP_SET_BOARD_INFO       248    //in message          Sets the board information for this board
 #define MSP_SET_SIGNATURE        249    //in message          Sets the signature of the board and serial number
+
+// ButterFlight
+#define MSP_IMUF_CONFIG          227    //out message
+#define MSP_SET_IMUF_CONFIG      228    //in message

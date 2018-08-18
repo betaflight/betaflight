@@ -61,6 +61,10 @@
 #include "sensors/battery.h"
 #include "sensors/gyro.h"
 
+#ifdef USE_GYRO_IMUF9001
+#include "drivers/accgyro/accgyro_imuf9001.h"
+#endif
+
 #ifndef USE_OSD_SLAVE
 pidProfile_t *currentPidProfile;
 #endif
@@ -409,6 +413,32 @@ static void validateAndFixConfig(void)
 #endif
 }
 
+#ifdef USE_GYRO_IMUF9001 
+int getImufRateFromGyroSyncDenom(int gyroSyncDenom){
+    switch (gyroSyncDenom) {
+        case 1:
+            return IMUF_RATE_32K;
+            break;
+        case 2:
+        default:
+            return IMUF_RATE_16K;
+            break;
+        case 4:
+            return IMUF_RATE_8K;
+            break;
+        case 8:
+            return IMUF_RATE_4K;
+            break;
+        case 16:
+            return IMUF_RATE_2K;
+            break;
+        case 32:
+            return IMUF_RATE_1K;
+            break;
+    }
+}
+#endif
+
 #ifndef USE_OSD_SLAVE
 void validateAndFixGyroConfig(void)
 {
@@ -419,6 +449,16 @@ void validateAndFixGyroConfig(void)
     }
 #endif
     
+#ifdef USE_GYRO_IMUF9001
+    //keeop imuf_rate in sync with the gyro.
+    uint8_t imuf_rate = getImufRateFromGyroSyncDenom(gyroConfigMutable()->gyro_sync_denom);
+    gyroConfigMutable()->imuf_rate = imuf_rate;
+    if (imuf_rate == IMUF_RATE_32K) {
+        gyroConfigMutable()->imuf_mode = GTBCM_GYRO_ACC_FILTER_F;
+    } else {
+        gyroConfigMutable()->imuf_mode = GTBCM_DEFAULT;
+    }
+#endif
     // Prevent invalid notch cutoff
     if (gyroConfig()->gyro_soft_notch_cutoff_1 >= gyroConfig()->gyro_soft_notch_hz_1) {
         gyroConfigMutable()->gyro_soft_notch_hz_1 = 0;

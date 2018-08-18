@@ -38,6 +38,12 @@
 #include "io/serial.h"
 
 #include "msp/msp_serial.h"
+#ifdef USE_GYRO_IMUF9001
+#include "drivers/light_led.h"
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/accgyro/accgyro_mpu.h"
+#include "drivers/accgyro/accgyro_imuf9001.h"
+#endif
 
 static mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
 
@@ -94,7 +100,7 @@ void mspSerialReleaseSharedTelemetryPorts(void) {
 }
 #endif
 
-static bool mspSerialProcessReceivedData(mspPort_t *mspPort, uint8_t c)
+static bool mspSerialProcessReceivedData(mspPort_t *mspPort, uint32_t c)
 {
     switch (mspPort->c_state) {
         default:
@@ -416,11 +422,16 @@ static void mspEvaluateNonMspData(mspPort_t * mspPort, uint8_t receivedChar)
 {
 #ifdef USE_CLI
     if (receivedChar == '#') {
+        cliSmartMode = 0;
+        mspPort->pendingRequest = MSP_PENDING_CLI;
+        return;
+    }
+    if (receivedChar == '!') {
+        cliSmartMode = 1;
         mspPort->pendingRequest = MSP_PENDING_CLI;
         return;
     }
 #endif
-
     if (receivedChar == serialConfig()->reboot_character) {
         mspPort->pendingRequest = MSP_PENDING_BOOTLOADER;
         return;
@@ -481,7 +492,7 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
 
         mspPostProcessFnPtr mspPostProcessFn = NULL;
 
-        if (serialRxBytesWaiting(mspPort->port)) {
+        if (!mspPort->pendingRequest && serialRxBytesWaiting(mspPort->port)) {
             // There are bytes incoming - abort pending request
             mspPort->lastActivityMs = millis();
             mspPort->pendingRequest = MSP_PENDING_NONE;
