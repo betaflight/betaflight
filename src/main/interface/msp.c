@@ -1473,7 +1473,6 @@ static mspResult_e mspFcProcessOutCommandWithArg(uint8_t cmdMSP, sbuf_t *src, sb
         }
 
         break;
-        
     case MSP_MULTIPLE_MSP:
         {
             uint8_t maxMSPs = 0;
@@ -1508,7 +1507,6 @@ static mspResult_e mspFcProcessOutCommandWithArg(uint8_t cmdMSP, sbuf_t *src, sb
             dst->ptr = packetOut.buf.ptr;
         }
         break;
-
     case MSP_OSD_CHAR_READ:
 #ifdef USE_MAX7456
         {
@@ -1523,7 +1521,6 @@ static mspResult_e mspFcProcessOutCommandWithArg(uint8_t cmdMSP, sbuf_t *src, sb
 #else
         return MSP_RESULT_ERROR;
 #endif
-
     default:
         return MSP_RESULT_CMD_UNKNOWN;
     }
@@ -2562,7 +2559,6 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src, mspPos
 #else
         return MSP_RESULT_ERROR;
 #endif
-
 #endif // OSD || USE_OSD_SLAVE
 
     default:
