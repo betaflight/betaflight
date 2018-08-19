@@ -41,6 +41,10 @@
 
 #include "msp/msp_serial.h"
 
+#ifdef USE_SDCARD
+#include "drivers/sdcard.h"
+#endif
+
 #define BLACKBOX_SERIAL_PORT_MODE MODE_TX
 
 // How many bytes can we transmit per loop iteration when writing headers?
@@ -532,6 +536,27 @@ bool isBlackboxDeviceFull(void)
     case BLACKBOX_DEVICE_SDCARD:
         return afatfs_isFull();
 #endif // USE_SDCARD
+
+    default:
+        return false;
+    }
+}
+
+bool isBlackboxDeviceWorking(void)
+{
+    switch (blackboxConfig()->device) {
+    case BLACKBOX_DEVICE_SERIAL:
+        return blackboxPort != NULL;
+
+#ifdef USE_SDCARD
+    case BLACKBOX_DEVICE_SDCARD:
+        return sdcard_isInserted() && sdcard_isFunctional() && (afatfs_getFilesystemState() == AFATFS_FILESYSTEM_STATE_READY);
+#endif
+
+#ifdef USE_FLASHFS
+    case BLACKBOX_DEVICE_FLASH:
+        return flashfsIsReady();
+#endif
 
     default:
         return false;
