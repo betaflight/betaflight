@@ -132,6 +132,7 @@ void gyroDataAnalyseStateInit(gyroAnalyseState_t *state, uint32_t targetLooptime
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         // any init value
         state->centerFreq[axis] = dynamicNotchMaxCenterHz;
+        state->prevCenterFreq[axis] = dynamicNotchMaxCenterHz;
         biquadFilterInitLPF(&state->detectedFrequencyFilter[axis], DYN_NOTCH_SMOOTH_FREQ_HZ, looptime);
     }
 }
@@ -257,20 +258,16 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
         case STEP_CALC_FREQUENCIES:
         {
             bool fftIncreased = false;
-            uint8_t binStart;
             float dataMax = 0;
-            uint8_t binMax;
-            float fftSum = 0;
-            float fftWeightedSum = 0;
-
-
+            uint8_t binStart = 0;
+            uint8_t binMax = 0;
             //for bins after initial decline, identify start bin and max bin 
             for (int i = 1 + fftBinOffset; i < FFT_BIN_COUNT; i++) {
                 if (fftIncreased || (state->fftData[i] > state->fftData[i - 1])) {
                     if (!fftIncreased) {
                         binStart = i; // first up-step bin
+                        fftIncreased = true;
                     }
-                    fftIncreased = true;
                     if (state->fftData[i] > dataMax) {
                         dataMax = state->fftData[i];
                         binMax = i;  // tallest bin
@@ -279,8 +276,8 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
             }
             // accumulate fftSum and fftWeightedSum from peak bin, and shoulder bins either side of peak
             float cubedData = state->fftData[binMax] * state->fftData[binMax] * state->fftData[binMax];
-            fftSum = cubedData;
-            fftWeightedSum += cubedData * (binMax + 1);
+            float fftSum = cubedData;
+            float fftWeightedSum = cubedData * (binMax + 1);
             // accumulate upper shoulder
             for (int i = binMax; i < FFT_BIN_COUNT - 1; i++) {
                 if (state->fftData[i] > state->fftData[i + 1]) {
@@ -305,10 +302,13 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
             float centerFreq = dynamicNotchMaxCenterHz;
             float fftMeanIndex = 0;
              // idx was shifted by 1 to start at 1, not 0
-            fftMeanIndex = (fftWeightedSum / fftSum) - 1;
-            // the index points at the center frequency of each bin so index 0 is actually 16.125Hz
-            centerFreq = fftMeanIndex * fftResolution;
-
+            if (fftSum > 0) {
+                fftMeanIndex = (fftWeightedSum / fftSum) - 1;
+                // the index points at the center frequency of each bin so index 0 is actually 16.125Hz
+                centerFreq = fftMeanIndex * fftResolution;
+            } else {
+                centerFreq = state->prevCenterFreq[state->updateAxis];
+            }
             // constrain and low-pass smooth centre frequency
             centerFreq = constrain(centerFreq, dynamicNotchMinCenterHz, dynamicNotchMaxCenterHz);
             centerFreq = biquadFilterApply(&state->detectedFrequencyFilter[state->updateAxis], centerFreq);
