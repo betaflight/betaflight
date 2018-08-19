@@ -546,7 +546,7 @@ bool isBlackboxDeviceWorking(void)
 {
     switch (blackboxConfig()->device) {
     case BLACKBOX_DEVICE_SERIAL:
-        return true;
+        return blackboxPort != NULL;
 
 #ifdef USE_SDCARD
     case BLACKBOX_DEVICE_SDCARD:
