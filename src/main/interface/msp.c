@@ -2552,7 +2552,7 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src, mspPos
         {
             uint8_t font_data[64];
             const uint8_t addr = sbufReadU8(src);
-            for (int i = 0; i < 54; i++) {
+            for (int i = 0; i < 64; i++) {
                 font_data[i] = sbufReadU8(src);
             }
             // !!TODO - replace this with a device independent implementation
