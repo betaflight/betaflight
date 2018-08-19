@@ -58,10 +58,7 @@
 #define UNUSED(x) (void)(x)
 #endif
 
-#define STATIC_ASSERT(condition, name) \
-    enum { assert_failed_ ## name = sizeof(char [(condition) ? 1 : -1 ]) }
-// If it is decided to ditch the -Wpedantic build flag, this should be switched to:
-//    _Static_assert((condition), #name)
+#define STATIC_ASSERT(condition, name) _Static_assert((condition), #name)
 
 
 #define BIT(x) (1 << (x))
