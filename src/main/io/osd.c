@@ -589,14 +589,21 @@ static bool osdDrawSingleElement(uint8_t item)
 
     case OSD_FLYMODE:
         {
+            // Note that flight mode display has precedence in what to display.
+            //  1. FS
+            //  2. GPS RESCUE
+            //  3. ANGLE, HORIZON, ACRO TRAINER
+            //  4. AIR
+            //  5. ACRO
+
             if (FLIGHT_MODE(FAILSAFE_MODE)) {
                 strcpy(buff, "!FS!");
+            } else if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
+                strcpy(buff, "RESC");
             } else if (FLIGHT_MODE(ANGLE_MODE)) {
                 strcpy(buff, "STAB");
             } else if (FLIGHT_MODE(HORIZON_MODE)) {
                 strcpy(buff, "HOR ");
-            } else if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
-                strcpy(buff, "RESC");
             } else if (IS_RC_MODE_ACTIVE(BOXACROTRAINER)) {
                 strcpy(buff, "ATRN");
             } else if (isAirmodeActive()) {
