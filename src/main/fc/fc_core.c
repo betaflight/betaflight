@@ -370,7 +370,7 @@ void tryArm(void)
                     pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_REVERSED, false);
                 }
             }
-        } else if (isMotorProtocolDshot() && isModeActivationConditionPresent(BOXCONSTANTIDLE)) {
+        } else if (isModeActivationConditionPresent(BOXCONSTANTIDLE)) {
             if (!(IS_RC_MODE_ACTIVE(BOXCONSTANTIDLE) || (tryingToArm == ARMING_DELAYED_CONSTANTIDLE))) {
                 constantIdleMode = false;
             } else {
