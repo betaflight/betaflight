@@ -693,9 +693,7 @@ static void applyFlipOverAfterCrashModeToMotors(void)
 static void applyConstantIdleModeToMotors(void)
 {
     if (ARMING_FLAG(ARMED)) {
-
         for (int i = 0; i < motorCount; ++i) {
-
             motor[i] = motorOutputLow;
         }
     } else {
