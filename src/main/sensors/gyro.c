@@ -1018,7 +1018,7 @@ static FAST_CODE void checkForYawSpin(gyroSensor_t *gyroSensor, timeUs_t current
 #endif // USE_YAW_SPIN_RECOVERY
 
 #define GYRO_FILTER_FUNCTION_NAME filterGyro
-#define GYRO_FILTER_DEBUG_SET(...)
+#define GYRO_FILTER_DEBUG_SET(mode, index, value) { UNUSED(mode); UNUSED(index); UNUSED(value); }
 #include "gyro_filter_impl.h"
 #undef GYRO_FILTER_FUNCTION_NAME
 #undef GYRO_FILTER_DEBUG_SET
