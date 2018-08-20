@@ -50,6 +50,7 @@ void updateArmingStatus(void);
 
 void taskMainPidLoop(timeUs_t currentTimeUs);
 bool isFlipOverAfterCrashMode(void);
+bool isConstantIdleMode(void);
 
 void runawayTakeoffTemporaryDisable(uint8_t disableFlag);
 bool isAirmodeActivated();

@@ -690,6 +690,22 @@ static void applyFlipOverAfterCrashModeToMotors(void)
     }
 }
 
+static void applyConstantIdleModeToMotors(void)
+{
+    if (ARMING_FLAG(ARMED)) {
+
+        for (int i = 0; i < motorCount; ++i) {
+
+            motor[i] = motorOutputLow;
+        }
+    } else {
+        // Disarmed mode
+        for (int i = 0; i < motorCount; i++) {
+            motor[i] = motor_disarmed[i];
+        }
+    }
+}
+
 static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS])
 {
     // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
@@ -743,6 +759,9 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
 {
     if (isFlipOverAfterCrashMode()) {
         applyFlipOverAfterCrashModeToMotors();
+        return;
+    } else if (isConstantIdleMode()) {
+        applyConstantIdleModeToMotors();
         return;
     }
 

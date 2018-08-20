@@ -101,7 +101,8 @@ enum {
 enum {
     ARMING_DELAYED_DISARMED = 0,
     ARMING_DELAYED_NORMAL = 1,
-    ARMING_DELAYED_CRASHFLIP = 2
+    ARMING_DELAYED_CRASHFLIP = 2,
+    ARMING_DELAYED_CONSTANTIDLE = 3
 };
 
 #define GYRO_WATCHDOG_DELAY 80 //  delay for gyro sync
@@ -129,6 +130,7 @@ int16_t magHold;
 #endif
 
 static bool flipOverAfterCrashMode = false;
+static bool constantIdleMode = false;
 
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
@@ -189,8 +191,9 @@ void updateArmingStatus(void)
             unsetArmingDisabled(ARMING_DISABLED_BOOT_GRACE_TIME);
         }
 
-        // Clear the crash flip active status
+        // Clear the crash flip active and constant idle active status
         flipOverAfterCrashMode = false;
+        constantIdleMode = false;
 
         // If switch is used for arming then check it is not defaulting to on when the RX link recovers from a fault
         if (!isUsingSticksForArming()) {
@@ -222,7 +225,7 @@ void updateArmingStatus(void)
             unsetArmingDisabled(ARMING_DISABLED_THROTTLE);
         }
 
-        if (!STATE(SMALL_ANGLE) && !IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
+        if (!STATE(SMALL_ANGLE) && !IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH) && !IS_RC_MODE_ACTIVE(BOXCONSTANTIDLE)) {
             setArmingDisabled(ARMING_DISABLED_ANGLE);
         } else {
             unsetArmingDisabled(ARMING_DISABLED_ANGLE);
@@ -318,6 +321,7 @@ void disarm(void)
         }
 #endif
         flipOverAfterCrashMode = false;
+        constantIdleMode = false;
 
         // if ARMING_DISABLED_RUNAWAY_TAKEOFF is set then we want to play it's beep pattern instead
         if (!(getArmingDisableFlags() & ARMING_DISABLED_RUNAWAY_TAKEOFF)) {
@@ -343,6 +347,8 @@ void tryArm(void)
             if (tryingToArm == ARMING_DELAYED_DISARMED) {
                 if (isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH) && IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
                     tryingToArm = ARMING_DELAYED_CRASHFLIP;
+                } else if (isModeActivationConditionPresent(BOXCONSTANTIDLE) && IS_RC_MODE_ACTIVE(BOXCONSTANTIDLE)) {
+                    tryingToArm = ARMING_DELAYED_CONSTANTIDLE;
                 } else {
                     tryingToArm = ARMING_DELAYED_NORMAL;
                 }
@@ -363,6 +369,15 @@ void tryArm(void)
                 if (!feature(FEATURE_3D)) {
                     pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_REVERSED, false);
                 }
+            }
+        } else if (isMotorProtocolDshot() && isModeActivationConditionPresent(BOXCONSTANTIDLE)) {
+            if (!(IS_RC_MODE_ACTIVE(BOXCONSTANTIDLE) || (tryingToArm == ARMING_DELAYED_CONSTANTIDLE))) {
+                constantIdleMode = false;
+            } else {
+                constantIdleMode = true;
+#ifdef USE_RUNAWAY_TAKEOFF
+                runawayTakeoffCheckDisabled = false;
+#endif
             }
         }
 #endif
@@ -606,6 +621,7 @@ bool processRx(timeUs_t currentTimeUs)
         && pidConfig()->runaway_takeoff_prevention
         && !runawayTakeoffCheckDisabled
         && !flipOverAfterCrashMode
+        && !constantIdleMode
         && !runawayTakeoffTemporarilyDisabled
         && !STATE(FIXED_WING)) {
 
@@ -871,6 +887,7 @@ static FAST_CODE void subTaskPidController(timeUs_t currentTimeUs)
         && pidConfig()->runaway_takeoff_prevention
         && !runawayTakeoffCheckDisabled
         && !flipOverAfterCrashMode
+        && !constantIdleMode
         && !runawayTakeoffTemporarilyDisabled
         && (!feature(FEATURE_MOTOR_STOP) || isAirmodeActive() || (calculateThrottleStatus() != THROTTLE_LOW))) {
 
@@ -1029,6 +1046,10 @@ bool isFlipOverAfterCrashMode(void)
     return flipOverAfterCrashMode;
 }
 
+bool isConstantIdleMode(void)
+{
+    return constantIdleMode;
+}
 timeUs_t getLastDisarmTimeUs(void)
 {
     return lastDisarmTimeUs;

@@ -825,6 +825,12 @@ static bool osdDrawSingleElement(uint8_t item)
                 break;
             }
 
+            // Warn when in constant idle mode
+            if (osdWarnGetState(OSD_WARNING_CONSTANT_IDLE) && isConstantIdleMode()) {
+                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "CONSTANT IDLE");
+                break;
+            }
+
             // Show most severe reason for arming being disabled
             if (osdWarnGetState(OSD_WARNING_ARMING_DISABLE) && IS_RC_MODE_ACTIVE(BOXARM) && isArmingDisabled()) {
                 const armingDisableFlags_e flags = getArmingDisableFlags();
