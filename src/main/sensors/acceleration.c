@@ -362,7 +362,7 @@ bool accInit(uint32_t gyroSamplingInverval)
     }
     acc.dev.acc_1G = 256; // set default
     acc.dev.initFn(&acc.dev); // driver initialisation
-    acc.dev.acc_1G_rec = 1 / acc.dev.acc_1G;
+    acc.dev.acc_1G_rec = 1.0f / acc.dev.acc_1G;
     // set the acc sampling interval according to the gyro sampling interval
     switch (gyroSamplingInverval) {  // Switch statement kept in place to change acc sampling interval in the future
     case 500:
