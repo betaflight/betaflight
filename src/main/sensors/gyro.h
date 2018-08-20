@@ -29,11 +29,6 @@
 
 #include "pg/pg.h"
 
-typedef union gyroDynamicFilter_u {
-    pt1Filter_t pt1FilterState;
-    biquadFilter_t biquadFilterState;
-} gyroDynamicFilter_t;
-
 typedef enum {
     GYRO_NONE = 0,
     GYRO_DEFAULT,
@@ -116,7 +111,6 @@ typedef struct gyroConfig_s {
 
     uint16_t gyroCalibrationDuration;  // Gyro calibration duration in 1/100 second
     
-    uint8_t dyn_filter_type;
     uint8_t dyn_filter_width_percent;
     uint8_t dyn_fft_location; // before or after static filters
     uint8_t dyn_filter_range; // ignore any FFT bin below this threshold
