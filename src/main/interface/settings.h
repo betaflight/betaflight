@@ -116,7 +116,9 @@ typedef enum {
     TABLE_DYNAMIC_FFT_LOCATION,
     TABLE_DYNAMIC_FILTER_RANGE,
 #endif // USE_GYRO_DATA_ANALYSE
-
+#ifdef USE_VTX_COMMON
+    TABLE_VTX_LOW_POWER_DISARM, 
+#endif
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 

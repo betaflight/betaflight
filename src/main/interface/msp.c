@@ -1363,11 +1363,13 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
     case MSP_VTX_CONFIG:
         {
             const vtxDevice_t *vtxDevice = vtxCommonDevice();
-            uint8_t pitmode=0;
+            uint8_t pitmode = 0;
             vtxDevType_e vtxType = VTXDEV_UNKNOWN;
+            uint8_t deviceIsReady = 0;
             if (vtxDevice) {
                 vtxCommonGetPitMode(vtxDevice, &pitmode);
                 vtxType = vtxCommonGetDeviceType(vtxDevice);
+                deviceIsReady = vtxCommonDeviceIsReady(vtxDevice) ? 1 : 0;
             }
             sbufWriteU8(dst, vtxType);
             sbufWriteU8(dst, vtxSettingsConfig()->band);
@@ -1375,6 +1377,8 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
             sbufWriteU8(dst, vtxSettingsConfig()->power);
             sbufWriteU8(dst, pitmode);
             sbufWriteU16(dst, vtxSettingsConfig()->freq);
+            sbufWriteU8(dst, deviceIsReady);
+            sbufWriteU8(dst, vtxSettingsConfig()->lowPowerDisarm);
             // future extensions here...
         }
         break;
@@ -2026,18 +2030,19 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 vtxType = vtxCommonGetDeviceType(vtxDevice);
             }
             uint16_t newFrequency = sbufReadU16(src);
-            if (newFrequency <= VTXCOMMON_MSP_BANDCHAN_CHKVAL) {  //value is band and channel
+            if (newFrequency <= VTXCOMMON_MSP_BANDCHAN_CHKVAL) {  // Value is band and channel
                 const uint8_t newBand = (newFrequency / 8) + 1;
                 const uint8_t newChannel = (newFrequency % 8) + 1;
                 vtxSettingsConfigMutable()->band = newBand;
                 vtxSettingsConfigMutable()->channel = newChannel;
                 vtxSettingsConfigMutable()->freq = vtx58_Bandchan2Freq(newBand, newChannel);
-            } else {  //value is frequency in MHz
+            } else if (newFrequency <= VTX_SETTINGS_MAX_FREQUENCY_MHZ) { // Value is frequency in MHz
                 vtxSettingsConfigMutable()->band = 0;
+                vtxSettingsConfigMutable()->channel = 0;
                 vtxSettingsConfigMutable()->freq = newFrequency;
             }
 
-            if (sbufBytesRemaining(src) > 1) {
+            if (sbufBytesRemaining(src) >= 2) {
                 vtxSettingsConfigMutable()->power = sbufReadU8(src);
                 if (vtxType != VTXDEV_UNKNOWN) {
                     // Delegate pitmode to vtx directly
@@ -2046,6 +2051,10 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                     vtxCommonGetPitMode(vtxDevice, &currentPitmode);
                     if (currentPitmode != newPitmode) {
                         vtxCommonSetPitMode(vtxDevice, newPitmode);
+                    }
+
+                    if (sbufBytesRemaining(src)) {
+                        vtxSettingsConfigMutable()->lowPowerDisarm = sbufReadU8(src);
                     }
                 }
             }
