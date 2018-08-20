@@ -22,8 +22,9 @@
 
 #include "arm_math.h"
 
-#include "common/time.h"
 #include "common/filter.h"
+
+#include "sensors/gyro.h"
 
 // max for F3 targets
 #define FFT_WINDOW_SIZE 32
@@ -34,9 +35,6 @@ typedef struct gyroAnalyseState_s {
     uint8_t maxSampleCount;
     float maxSampleCountRcp;
     float oversampledGyroAccumulator[XYZ_AXIS_COUNT];
-
-    // filter for downsampled accumulated gyro
-    biquadFilter_t gyroBandpassFilter[XYZ_AXIS_COUNT];
 
     // downsampled gyro data circular buffer for frequency analysis
     uint8_t circularBufferIdx;
@@ -53,6 +51,7 @@ typedef struct gyroAnalyseState_s {
 
     biquadFilter_t detectedFrequencyFilter[XYZ_AXIS_COUNT];
     uint16_t centerFreq[XYZ_AXIS_COUNT];
+    uint16_t prevCenterFreq[XYZ_AXIS_COUNT];
 } gyroAnalyseState_t;
 
 STATIC_ASSERT(FFT_WINDOW_SIZE <= (uint8_t) -1, window_size_greater_than_underlying_type);
