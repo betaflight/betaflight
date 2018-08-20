@@ -355,16 +355,16 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
 
 static bool imuIsAccelerometerHealthy(float *accAverage)
 {
-    float accMagnitude = 0;
+    float accMagnitudeSq = 0;
     for (int axis = 0; axis < 3; axis++) {
         const float a = accAverage[axis];
-        accMagnitude += a * a;
+        accMagnitudeSq += a * a;
     }
 
-    accMagnitude = sqrtf(accMagnitude) * acc.dev.acc_1G_rec;
+    accMagnitudeSq = accMagnitudeSq * sq(acc.dev.acc_1G_rec);
 
-    // Accept accel readings only in range 0.80g - 1.20g
-    return (0.80f <= accMagnitude) && (accMagnitude <= 1.20f);
+    // Accept accel readings only in range 0.9g - 1.1g
+    return (0.81f < accMagnitudeSq) && (accMagnitudeSq < 1.21f);
 }
 
 // Calculate the dcmKpGain to use. When armed, the gain is imuRuntimeConfig.dcm_kp * 1.0 scaling.
