@@ -375,9 +375,6 @@ void tryArm(void)
                 constantIdleMode = false;
             } else {
                 constantIdleMode = true;
-#ifdef USE_RUNAWAY_TAKEOFF
-                runawayTakeoffCheckDisabled = false;
-#endif
             }
         }
 #endif
