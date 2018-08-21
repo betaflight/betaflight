@@ -1047,6 +1047,7 @@ bool isConstantIdleMode(void)
 {
     return constantIdleMode;
 }
+
 timeUs_t getLastDisarmTimeUs(void)
 {
     return lastDisarmTimeUs;
