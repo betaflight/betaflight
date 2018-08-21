@@ -827,7 +827,7 @@ static bool osdDrawSingleElement(uint8_t item)
 
             // Warn when in constant idle mode
             if (osdWarnGetState(OSD_WARNING_CONSTANT_IDLE) && isConstantIdleMode()) {
-                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "CONSTANT IDLE");
+                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "CONST. IDLE");
                 break;
             }
 
