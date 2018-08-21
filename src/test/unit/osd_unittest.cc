@@ -1047,4 +1047,6 @@ extern "C" {
     }
 
     bool pidOsdAntiGravityActive(void) { return false; }
+
+    bool failsafeIsActive(void) { return false; }
 }
