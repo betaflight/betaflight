@@ -42,7 +42,7 @@ There are various modes that can be toggled on or off.  Modes can be enabled/dis
 | 45 | PARALYZE                 | Permanently disable a crashed craft until it is power cycled                         |
 | 46 | GPS RESCUE               | Enable 'GPS Rescue' to return the craft to the location where it was last armed      |
 | 47 | ACRO TRAINER             | Enable 'acro trainer' angle limiting in acro mode                                    |
-
+| 48 | CONSTANT IDLE            | Constantly spin the motors at idle throttle                                          |
 ## Auto-leveled flight
 
 The default flight mode does not stabilize the multicopter around the roll and the pitch axes. That is, the multicopter does not level on its own if you center the pitch and roll sticks on the radio. Rather, they work just like the yaw axis: the rate of rotation of each axis is controlled directly by the related stick on the radio, and by leaving them centered the flight controller will just try to keep the multicopter in whatever orientation it's in. This default mode is called "Rate" mode, also sometime called "Acro" (from "acrobatic") or "Manual" mode, and is active whenever no auto-leveled mode is enabled.
