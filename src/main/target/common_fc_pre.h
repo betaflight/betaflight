@@ -146,7 +146,6 @@
 #if (FLASH_SIZE > 64)
 #define USE_ACRO_TRAINER
 #define USE_BLACKBOX
-#define USE_LED_STRIP
 #define USE_RESOURCE_MGMT
 #define USE_RUNAWAY_TAKEOFF     // Runaway Takeoff Prevention (anti-taz)
 #define USE_SERVOS
@@ -221,4 +220,5 @@
 #define USE_SIGNATURE
 #define USE_ABSOLUTE_CONTROL
 #define USE_HOTT_TEXTMODE
+#define USE_LED_STRIP
 #endif
