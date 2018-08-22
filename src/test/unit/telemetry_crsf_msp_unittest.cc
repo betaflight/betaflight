@@ -272,7 +272,7 @@ extern "C" {
     	return 0;
     }
 
-    bool featureConfigured(uint32_t) {return false;}
+    bool featureIsEnabled(uint32_t) {return false;}
 
     bool isAirmodeActive(void) {return true;}
 
