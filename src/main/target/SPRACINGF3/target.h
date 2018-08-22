@@ -136,8 +136,9 @@
 #define RANGEFINDER_HCSR04_ECHO_PIN          PB1
 
 #elif defined(ZCOREF3)
-#define USE_MAG_DATA_READY_SIGNAL
-#define ENSURE_MAG_DATA_READY_IS_HIGH
+// MAG support disabled to reduce F3 flash usage
+//#define USE_MAG_DATA_READY_SIGNAL
+//#define ENSURE_MAG_DATA_READY_IS_HIGH
 
 #else //SPRACINGF3
 
@@ -149,15 +150,16 @@
 #define USE_BARO_MS5611
 #define USE_BARO_BMP085
 
-#define USE_MAG
-#define USE_MAG_AK8975
-#define USE_MAG_HMC5883
-#define USE_MAG_QMC5883
-#define MAG_HMC5883_ALIGN       CW270_DEG
+// MAG support disabled to reduce F3 flash usage
+//#define USE_MAG
+//#define USE_MAG_AK8975
+//#define USE_MAG_HMC5883
+//#define USE_MAG_QMC5883
+//#define MAG_HMC5883_ALIGN       CW270_DEG
 
-#define USE_MAG_DATA_READY_SIGNAL
-#define ENSURE_MAG_DATA_READY_IS_HIGH
-#define MAG_INT_EXTI            PC14
+//#define USE_MAG_DATA_READY_SIGNAL
+//#define ENSURE_MAG_DATA_READY_IS_HIGH
+//#define MAG_INT_EXTI            PC14
 #endif
 
 #if !defined(IRCSYNERGYF3)

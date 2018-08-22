@@ -85,8 +85,9 @@
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
-#define USE_MAG_DATA_READY_SIGNAL
-#define ENSURE_MAG_DATA_READY_IS_HIGH
+// MAG support disabled to reduce F3 flash usage
+//#define USE_MAG_DATA_READY_SIGNAL
+//#define ENSURE_MAG_DATA_READY_IS_HIGH
 
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
@@ -100,11 +101,12 @@
 #define USE_BARO
 #define USE_BARO_BMP280
 
-#define USE_MAG
-#define USE_MAG_AK8963
-//#define USE_MAG_HMC5883 // External
+// MAG support disabled to reduce F3 flash usage
+//#define USE_MAG
+//#define USE_MAG_AK8963
+////#define USE_MAG_HMC5883 // External
 
-#define MAG_AK8963_ALIGN CW270_DEG_FLIP
+//#define MAG_AK8963_ALIGN CW270_DEG_FLIP
 
 //#define USE_RANGEFINDER
 //#define USE_RANGEFINDER_HCSR04

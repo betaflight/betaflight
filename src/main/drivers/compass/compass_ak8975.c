@@ -25,7 +25,7 @@
 
 #include "platform.h"
 
-#ifdef USE_MAG_AK8975
+#if defined(USE_MAG) && defined(USE_MAG_AK8975)
 
 #include "common/axis.h"
 #include "common/maths.h"
