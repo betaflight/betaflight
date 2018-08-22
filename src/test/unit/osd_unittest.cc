@@ -1036,5 +1036,9 @@ extern "C" {
         return false;
     }
 
+    bool isConstantIdleMode(void) {
+        return false;
+    }
+
     bool pidOsdAntiGravityActive(void) { return false; }
 }
