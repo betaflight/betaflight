@@ -86,12 +86,12 @@ typedef struct {
 void initEEPROM(void)
 {
     // Verify that this architecture packs as expected.
-    BUILD_BUG_ON(offsetof(packingTest_t, byte) != 0);
-    BUILD_BUG_ON(offsetof(packingTest_t, word) != 1);
-    BUILD_BUG_ON(sizeof(packingTest_t) != 5);
+    STATIC_ASSERT(offsetof(packingTest_t, byte) == 0, byte_packing_test_failed);
+    STATIC_ASSERT(offsetof(packingTest_t, word) == 1, word_packing_test_failed);
+    STATIC_ASSERT(sizeof(packingTest_t) == 5, overall_packing_test_failed);
 
-    BUILD_BUG_ON(sizeof(configFooter_t) != 2);
-    BUILD_BUG_ON(sizeof(configRecord_t) != 6);
+    STATIC_ASSERT(sizeof(configFooter_t) == 2, footer_size_failed);
+    STATIC_ASSERT(sizeof(configRecord_t) == 6, record_size_failed);
 }
 
 bool isEEPROMVersionValid(void)

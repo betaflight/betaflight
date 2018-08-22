@@ -337,11 +337,11 @@ void SystemInit(void)
     extern uint8_t isr_vector_table_base;
     const uint32_t vtorOffset = (uint32_t) &isr_vector_table_base;
 #define VTOR_OFFSET_ALIGNMENT 0x200
-#define VTOR_OFFSET_MASK (VTOR_OFFSET_ALIGNMENT - 1)
-    STATIC_ASSERT((vtorOffset % VTOR_OFFSET_MASK) == 0, isr_vector_table_base_is_not_512_byte_aligned);
+    if (vtorOffset % VTOR_OFFSET_ALIGNMENT != 0) {
+        // ISR vector table base is not 512 byte aligned
+        while (1);
+    }
     SCB->VTOR = vtorOffset;
-#undef VTOR_OFFSET_MASK
-#undef VTOR_OFFSET_ALIGNMENT
 
     /* Enable I-Cache */
     if (INSTRUCTION_CACHE_ENABLE) {

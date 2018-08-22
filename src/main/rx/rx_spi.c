@@ -63,7 +63,7 @@ static protocolSetRcDataFromPayloadFnPtr protocolSetRcDataFromPayload;
 
 STATIC_UNIT_TESTED uint16_t rxSpiReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t channel)
 {
-    BUILD_BUG_ON(NRF24L01_MAX_PAYLOAD_SIZE > RX_SPI_MAX_PAYLOAD_SIZE);
+    STATIC_ASSERT(NRF24L01_MAX_PAYLOAD_SIZE <= RX_SPI_MAX_PAYLOAD_SIZE, NRF24L01_MAX_PAYLOAD_SIZE_larger_than_RX_SPI_MAX_PAYLOAD_SIZE);
 
     if (channel >= rxRuntimeConfig->channelCount) {
         return 0;
