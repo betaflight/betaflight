@@ -33,8 +33,6 @@
 #define BEEPER_PIN              PC13
 #define BEEPER_INVERTED
 
-#define CAMERA_CONTROL_PIN      PB3
-
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 

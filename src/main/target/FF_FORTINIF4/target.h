@@ -49,10 +49,6 @@
 #define BEEPER_INVERTED
 /*---------------------------------*/
 
-/*----------CAMERA CONTROL---------*/
-#define CAMERA_CONTROL_PIN      PB7
-/*---------------------------------*/
-
 /*------------SENSORS--------------*/
 // MPU interrupt
 #define USE_EXTI

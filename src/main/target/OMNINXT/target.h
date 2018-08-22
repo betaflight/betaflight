@@ -177,8 +177,6 @@
 #define RSSI_ADC_PIN            PC4
 #define EXTERNAL1_ADC_PIN       PA4
 
-#define CAMERA_CONTROL_PIN      PB15
-
 #define USE_TRANSPONDER
 
 #define USE_RANGEFINDER

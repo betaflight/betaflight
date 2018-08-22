@@ -150,8 +150,6 @@
 #define I2C2_SDA                NONE // PB11, shared with UART3RX
 #define I2C_DEVICE              (I2CDEV_2)
 
-#define CAMERA_CONTROL_PIN      PB9
-
 #define USE_ADC
 #define ADC_INSTANCE            ADC2
 #define CURRENT_METER_ADC_PIN   PC1  // Direct from CRNT pad (part of onboard sensor for Pro)
