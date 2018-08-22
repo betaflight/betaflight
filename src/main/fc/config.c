@@ -404,6 +404,16 @@ static void validateAndFixConfig(void)
 #endif
 #endif
 
+#ifdef USE_ABSOLUTE_CONTROL
+    // Iterm Rotation and Absolute control are mutually exclusive and should not both be enabled
+    // Disable Iterm Rotation if Absolute Control is enabled
+    for (unsigned i = 0; i < MAX_PROFILE_COUNT; i++) {
+        if (pidProfiles(i)->abs_control_gain > 0) {
+            pidProfilesMutable(i)->iterm_rotation = false;
+        }
+    }
+#endif
+
 #if defined(TARGET_VALIDATECONFIG)
     targetValidateConfiguration();
 #endif
