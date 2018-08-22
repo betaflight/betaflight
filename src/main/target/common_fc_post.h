@@ -45,6 +45,11 @@
 #endif
 #endif
 
+// Disable baro support for F3 or lower
+#if (FLASH_SIZE <= 256)
+#undef USE_BARO
+#endif
+
 // XXX Remove USE_BARO_BMP280 and USE_BARO_MS5611 if USE_I2C is not defined.
 // XXX This should go away buy editing relevant target.h files
 #if !defined(USE_I2C)
