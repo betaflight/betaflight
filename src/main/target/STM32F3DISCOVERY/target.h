@@ -43,8 +43,6 @@
 //#undef USE_ITERM_RELAX
 //#undef USE_RC_SMOOTHING_FILTER
 
-//#undef USE_LED_STRIP
-
 //#undef USE_HUFFMAN
 //#undef USE_PINIO
 //#undef USE_PINIOBOX
