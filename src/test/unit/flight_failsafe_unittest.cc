@@ -567,7 +567,7 @@ throttleStatus_e calculateThrottleStatus()
 
 void delay(uint32_t) {}
 
-bool feature(uint32_t mask) {
+bool featureIsEnabled(uint32_t mask) {
     return (mask & testFeatureMask);
 }
 

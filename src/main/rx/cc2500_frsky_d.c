@@ -305,7 +305,7 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
 void frSkyDInit(void)
 {
 #if defined(USE_RX_FRSKY_SPI_TELEMETRY) && defined(USE_TELEMETRY_FRSKY_HUB)
-    if (feature(FEATURE_TELEMETRY)) {
+    if (featureIsEnabled(FEATURE_TELEMETRY)) {
         telemetryEnabled = initFrSkyHubTelemetryExternal(frSkyDTelemetryWriteByte);
     }
 #endif

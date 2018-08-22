@@ -60,10 +60,10 @@ void rxPwmInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     rxRuntimeConfig->rxRefreshRate = 20000;
 
     // configure PWM/CPPM read function and max number of channels. serial rx below will override both of these, if enabled
-    if (feature(FEATURE_RX_PARALLEL_PWM)) {
+    if (featureIsEnabled(FEATURE_RX_PARALLEL_PWM)) {
         rxRuntimeConfig->channelCount = MAX_SUPPORTED_RC_PARALLEL_PWM_CHANNEL_COUNT;
         rxRuntimeConfig->rcReadRawFn = pwmReadRawRC;
-    } else if (feature(FEATURE_RX_PPM)) {
+    } else if (featureIsEnabled(FEATURE_RX_PPM)) {
         rxRuntimeConfig->channelCount = MAX_SUPPORTED_RC_PPM_CHANNEL_COUNT;
         rxRuntimeConfig->rcReadRawFn = ppmReadRawRC;
     }

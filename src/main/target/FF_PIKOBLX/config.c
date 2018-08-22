@@ -65,7 +65,7 @@ void targetConfiguration(void)
 #else
         serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(SERIAL_PORT_USART2)].functionMask = FUNCTION_TELEMETRY_FRSKY_HUB;
         rxConfigMutable()->serialrx_inverted = true;
-        featureSet(FEATURE_TELEMETRY);
+        featureEnable(FEATURE_TELEMETRY);
 #endif
         parseRcChannels("TAER1234", rxConfigMutable());
 

@@ -558,10 +558,10 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             readEEPROM();
             break;
         case BST_SET_FEATURE:
-            featureClearAll();
-            featureSet(bstRead32()); // features bitmap
+            featureDisableAll();
+            featureEnable(bstRead32()); // features bitmap
 #ifdef SERIALRX_UART
-            if (featureConfigured(FEATURE_RX_SERIAL)) {
+            if (featureIsEnabled(FEATURE_RX_SERIAL)) {
                 serialConfigMutable()->portConfigs[SERIALRX_UART].functionMask = FUNCTION_RX_SERIAL;
             } else {
                 serialConfigMutable()->portConfigs[SERIALRX_UART].functionMask = FUNCTION_NONE;

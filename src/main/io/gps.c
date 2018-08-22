@@ -1214,7 +1214,7 @@ static void gpsHandlePassthrough(uint8_t data)
 {
      gpsNewData(data);
  #ifdef USE_DASHBOARD
-     if (feature(FEATURE_DASHBOARD)) {
+     if (featureIsEnabled(FEATURE_DASHBOARD)) {
          dashboardUpdate(micros());
      }
  #endif
@@ -1230,7 +1230,7 @@ void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
         serialSetMode(gpsPort, gpsPort->mode | MODE_TX);
 
 #ifdef USE_DASHBOARD
-    if (feature(FEATURE_DASHBOARD)) {
+    if (featureIsEnabled(FEATURE_DASHBOARD)) {
         dashboardShowFixedPage(PAGE_GPS);
     }
 #endif

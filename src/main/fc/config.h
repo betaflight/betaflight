@@ -53,6 +53,7 @@ void initEEPROM(void);
 void resetEEPROM(void);
 bool readEEPROM(void);
 void writeEEPROM(void);
+void writeEEPROMWithFeatures(uint32_t features);
 void ensureEEPROMStructureIsValid(void);
 
 void saveConfigAndNotify(void);

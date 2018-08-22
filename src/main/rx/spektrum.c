@@ -238,7 +238,7 @@ void spektrumBind(rxConfig_t *rxConfig)
         switch (rxConfig->serialrx_provider) {
         case SERIALRX_SRXL:
 #if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_SRXL)
-            if (feature(FEATURE_TELEMETRY) && !telemetryCheckRxPortShared(portConfig)) {
+            if (featureIsEnabled(FEATURE_TELEMETRY) && !telemetryCheckRxPortShared(portConfig)) {
                 bindPin = txPin;
             }
             break;
@@ -322,7 +322,7 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
     switch (rxConfig->serialrx_provider) {
     case SERIALRX_SRXL:
 #if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_SRXL)
-        srxlEnabled = (feature(FEATURE_TELEMETRY) && !portShared);
+        srxlEnabled = (featureIsEnabled(FEATURE_TELEMETRY) && !portShared);
         FALLTHROUGH;
 #endif
     case SERIALRX_SPEKTRUM2048:

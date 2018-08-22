@@ -793,7 +793,7 @@ extern "C" {
     uint32_t millis(void) { return micros() / 1000; }
     bool rxIsReceivingSignal(void) { return simulationHaveRx; }
 
-    bool feature(uint32_t f) { return simulationFeatureFlags & f; }
+    bool featureIsEnabled(uint32_t f) { return simulationFeatureFlags & f; }
     void warningLedFlash(void) {}
     void warningLedDisable(void) {}
     void warningLedUpdate(void) {}

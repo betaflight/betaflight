@@ -273,7 +273,7 @@ uint8_t armingFlags = 0;
 float rcCommand[4] = {0,0,0,0};
 
 
-bool feature(uint32_t mask)
+bool featureIsEnabled(uint32_t mask)
 {
     UNUSED(mask);
     return false;

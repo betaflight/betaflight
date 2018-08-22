@@ -56,7 +56,7 @@ void targetPreInit(void)
     serialPortConfig_t *portConfig = serialFindPortConfiguration(SERIAL_PORT_USART1);
     if (portConfig) {
         bool smartportEnabled = (portConfig->functionMask & FUNCTION_TELEMETRY_SMARTPORT);
-        if (smartportEnabled && (!telemetryConfig()->telemetry_inverted) && (feature(FEATURE_TELEMETRY))) {
+        if (smartportEnabled && (!telemetryConfig()->telemetry_inverted) && (featureIsEnabled(FEATURE_TELEMETRY))) {
             high = true;
         }
     }
