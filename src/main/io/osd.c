@@ -67,6 +67,7 @@
 #include "fc/fc_rc.h"
 #include "fc/runtime_config.h"
 
+#include "flight/failsafe.h"
 #include "flight/position.h"
 #include "flight/imu.h"
 #ifdef USE_ESC_SENSOR
@@ -768,6 +769,10 @@ static bool osdDrawSingleElement(uint8_t item)
                 break;
             }
 #endif
+            if (osdWarnGetState(OSD_WARNING_FAIL_SAFE) && failsafeIsActive()) {
+                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "FAIL SAFE");
+                break;
+            }
 
             if (osdWarnGetState(OSD_WARNING_BATTERY_CRITICAL) && batteryState == BATTERY_CRITICAL) {
                 osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, " LAND NOW");
