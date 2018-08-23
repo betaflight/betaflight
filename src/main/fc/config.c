@@ -61,9 +61,7 @@
 #include "sensors/battery.h"
 #include "sensors/gyro.h"
 
-#ifndef USE_OSD_SLAVE
 pidProfile_t *currentPidProfile;
-#endif
 
 #ifndef RX_SPI_DEFAULT_PROTOCOL
 #define RX_SPI_DEFAULT_PROTOCOL 0
@@ -89,7 +87,6 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .boardIdentifier = TARGET_BOARD_IDENTIFIER
 );
 
-#ifndef USE_OSD_SLAVE
 uint8_t getCurrentPidProfileIndex(void)
 {
     return systemConfig()->pidProfileIndex;
@@ -109,7 +106,6 @@ uint16_t getCurrentMinthrottle(void)
 {
     return motorConfig()->minthrottle;
 }
-#endif // USE_OSD_SLAVE
 
 void resetConfigs(void)
 {
@@ -122,7 +118,6 @@ void resetConfigs(void)
 
 static void activateConfig(void)
 {
-#ifndef USE_OSD_SLAVE
     loadPidProfile();
     loadControlRateProfile();
 
@@ -139,7 +134,6 @@ static void activateConfig(void)
     accInitFilters();
 
     imuConfigure(throttleCorrectionConfig()->throttle_correction_angle, throttleCorrectionConfig()->throttle_correction_value);
-#endif // USE_OSD_SLAVE
 
 #ifdef USE_LED_STRIP
     reevaluateLedConfig();
@@ -148,7 +142,7 @@ static void activateConfig(void)
 
 static void validateAndFixConfig(void)
 {
-#if !defined(USE_QUAD_MIXER_ONLY) && !defined(USE_OSD_SLAVE)
+#if !defined(USE_QUAD_MIXER_ONLY)
     // Reset unsupported mixer mode to default.
     // This check will be gone when motor/servo mixers are loaded dynamically
     // by configurator as a part of configuration procedure.
@@ -177,7 +171,6 @@ static void validateAndFixConfig(void)
         featureDisable(FEATURE_GPS);
     }
 
-#ifndef USE_OSD_SLAVE
     if (systemConfig()->activeRateProfile >= CONTROL_RATE_PROFILE_COUNT) {
         systemConfigMutable()->activeRateProfile = 0;
     }
@@ -304,7 +297,6 @@ static void validateAndFixConfig(void)
             removeModeActivationCondition(BOXGPSRESCUE);
         }
     }
-#endif // USE_OSD_SLAVE
 
 #if defined(USE_ESC_SENSOR)
     if (!findSerialPortConfig(FUNCTION_ESC_SENSOR)) {
@@ -409,7 +401,6 @@ static void validateAndFixConfig(void)
 #endif
 }
 
-#ifndef USE_OSD_SLAVE
 void validateAndFixGyroConfig(void)
 {
 #ifdef USE_GYRO_DATA_ANALYSE
@@ -511,13 +502,10 @@ void validateAndFixGyroConfig(void)
         }
     }
 }
-#endif // USE_OSD_SLAVE
 
 bool readEEPROM(void)
 {
-#ifndef USE_OSD_SLAVE
     suspendRxSignal();
-#endif
 
     // Sanity check, read flash
     bool success = loadEEPROM();
@@ -526,9 +514,7 @@ bool readEEPROM(void)
 
     activateConfig();
 
-#ifndef USE_OSD_SLAVE
     resumeRxSignal();
-#endif
 
     return success;
 }
@@ -537,15 +523,11 @@ void writeEEPROM(void)
 {
     validateAndFixConfig();
 
-#ifndef USE_OSD_SLAVE
     suspendRxSignal();
-#endif
 
     writeConfigToEEPROM();
 
-#ifndef USE_OSD_SLAVE
     resumeRxSignal();
-#endif
 }
 
 void writeEEPROMWithFeatures(uint32_t features)
@@ -580,7 +562,6 @@ void saveConfigAndNotify(void)
     beeperConfirmationBeeps(1);
 }
 
-#ifndef USE_OSD_SLAVE
 void changePidProfile(uint8_t pidProfileIndex)
 {
     if (pidProfileIndex < MAX_PROFILE_COUNT) {
@@ -590,4 +571,3 @@ void changePidProfile(uint8_t pidProfileIndex)
 
     beeperConfirmationBeeps(pidProfileIndex + 1);
 }
-#endif
