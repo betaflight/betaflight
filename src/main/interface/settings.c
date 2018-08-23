@@ -229,11 +229,13 @@ static const char * const lookupTableRxSpi[] = {
 
 static const char * const lookupTableGyroHardwareLpf[] = {
     "NORMAL",
-    "EXPERIMENTAL",
-    "1KHZ_SAMPLING"
+    "1KHZ_SAMPLING",
+#ifdef USE_GYRO_DLPF_EXPERIMENTAL
+    "EXPERIMENTAL"
+#endif
 };
 
-#ifdef USE_32K_CAPABLE_GYRO
+#if defined(USE_32K_CAPABLE_GYRO) && defined(USE_GYRO_DLPF_EXPERIMENTAL)
 static const char * const lookupTableGyro32khzHardwareLpf[] = {
     "NORMAL",
     "EXPERIMENTAL"
@@ -416,7 +418,7 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableRxSpi),
 #endif
     LOOKUP_TABLE_ENTRY(lookupTableGyroHardwareLpf),
-#ifdef USE_32K_CAPABLE_GYRO
+#if defined(USE_32K_CAPABLE_GYRO) && defined(USE_GYRO_DLPF_EXPERIMENTAL)
     LOOKUP_TABLE_ENTRY(lookupTableGyro32khzHardwareLpf),
 #endif
     LOOKUP_TABLE_ENTRY(lookupTableAccHardware),
@@ -491,7 +493,7 @@ const clivalue_t valueTable[] = {
 // PG_GYRO_CONFIG
     { "align_gyro",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ALIGNMENT }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_align) },
     { "gyro_hardware_lpf",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GYRO_HARDWARE_LPF }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_hardware_lpf) },
-#ifdef USE_32K_CAPABLE_GYRO
+#if defined(USE_32K_CAPABLE_GYRO) && defined(USE_GYRO_DLPF_EXPERIMENTAL)
     { "gyro_32khz_hardware_lpf",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GYRO_32KHZ_HARDWARE_LPF }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_32khz_hardware_lpf) },
 #endif
 #if defined(USE_GYRO_SPI_ICM20649)
