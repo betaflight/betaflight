@@ -93,7 +93,7 @@ Origins for this fork (Thanks!):
 * **timecop** (for Baseflight),
 * **Dominic Clifton** (for Cleanflight), and
 * **Sambas** (for the original STM32F4 port).
-* **borisbstyle** (Fork from Cleanfligh).
+* **borisbstyle** (Fork from Cleanflight).
 
 The Betaflight Configurator is forked from Cleanflight Configurator and its origins.
 
