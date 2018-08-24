@@ -221,6 +221,19 @@ void schedulerResetTaskStatistics(cfTaskId_e taskId)
 #endif
 }
 
+void schedulerResetTaskMaxExecutionTime(cfTaskId_e taskId)
+{
+#ifdef SKIP_TASK_STATISTICS
+    UNUSED(taskId);
+#else
+    if (taskId == TASK_SELF) {
+        currentTask->maxExecutionTime = 0;
+    } else if (taskId < TASK_COUNT) {
+        cfTasks[taskId].maxExecutionTime = 0;
+    }
+#endif
+}
+
 void schedulerInit(void)
 {
     calculateTaskStatistics = true;

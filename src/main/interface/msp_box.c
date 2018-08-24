@@ -56,20 +56,20 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOXHEADFREE, "HEADFREE", 6 },
     { BOXHEADADJ, "HEADADJ", 7 },
     { BOXCAMSTAB, "CAMSTAB", 8 },
-    { BOXCAMTRIG, "CAMTRIG", 9 },
+//    { BOXCAMTRIG, "CAMTRIG", 9 },
     { BOXGPSHOME, "GPS HOME", 10 },
     { BOXGPSHOLD, "GPS HOLD", 11 },
     { BOXPASSTHRU, "PASSTHRU", 12 },
     { BOXBEEPERON, "BEEPER", 13 },
-    { BOXLEDMAX, "LEDMAX", 14 },
+//    { BOXLEDMAX, "LEDMAX", 14 }, (removed)
     { BOXLEDLOW, "LEDLOW", 15 },
-    { BOXLLIGHTS, "LLIGHTS", 16 },
+//    { BOXLLIGHTS, "LLIGHTS", 16 }, (removed)
     { BOXCALIB, "CALIB", 17 },
-    { BOXGOV, "GOVERNOR", 18 },
+//    { BOXGOV, "GOVERNOR", 18 }, (removed)
     { BOXOSD, "OSD DISABLE SW", 19 },
     { BOXTELEMETRY, "TELEMETRY", 20 },
-    { BOXGTUNE, "GTUNE", 21 },
-    { BOXRANGEFINDER, "RANGEFINDER", 22 },
+//    { BOXGTUNE, "GTUNE", 21 }, (removed)
+//    { BOXRANGEFINDER, "RANGEFINDER", 22 }, (removed)
     { BOXSERVO1, "SERVO1", 23 },
     { BOXSERVO2, "SERVO2", 24 },
     { BOXSERVO3, "SERVO3", 25 },
@@ -166,11 +166,11 @@ void initActiveBoxIds(void)
 #define BME(boxId) do { bitArraySet(&ena, boxId); } while (0)
     BME(BOXARM);
     BME(BOXPREARM);
-    if (!feature(FEATURE_AIRMODE)) {
+    if (!featureIsEnabled(FEATURE_AIRMODE)) {
         BME(BOXAIRMODE);
     }
 
-    if (!feature(FEATURE_ANTI_GRAVITY)) {
+    if (!featureIsEnabled(FEATURE_ANTI_GRAVITY)) {
         BME(BOXANTIGRAVITY);
     }
 
@@ -181,12 +181,6 @@ void initActiveBoxIds(void)
         BME(BOXHEADADJ);
     }
 
-#ifdef USE_BARO
-    if (sensors(SENSOR_BARO)) {
-        BME(BOXBARO);
-    }
-#endif
-
 #ifdef USE_MAG
     if (sensors(SENSOR_MAG)) {
         BME(BOXMAG);
@@ -194,21 +188,13 @@ void initActiveBoxIds(void)
 #endif
 
 #ifdef USE_GPS
-    if (feature(FEATURE_GPS)) {
-        BME(BOXGPSHOME);
-        BME(BOXGPSHOLD);
+    if (featureIsEnabled(FEATURE_GPS)) {
 #ifdef USE_GPS_RESCUE
-        if (!feature(FEATURE_3D)) {
+        if (!featureIsEnabled(FEATURE_3D)) {
             BME(BOXGPSRESCUE);
         }
 #endif
         BME(BOXBEEPGPSCOUNT);
-    }
-#endif
-
-#ifdef USE_RANGEFINDER
-    if (feature(FEATURE_RANGEFINDER)) { // XXX && sensors(SENSOR_RANGEFINDER)?
-        BME(BOXRANGEFINDER);
     }
 #endif
 
@@ -221,7 +207,7 @@ void initActiveBoxIds(void)
     BME(BOXBEEPERON);
 
 #ifdef USE_LED_STRIP
-    if (feature(FEATURE_LED_STRIP)) {
+    if (featureIsEnabled(FEATURE_LED_STRIP)) {
         BME(BOXLEDLOW);
     }
 #endif
@@ -235,7 +221,7 @@ void initActiveBoxIds(void)
 
     BME(BOXFPVANGLEMIX);
 
-    if (feature(FEATURE_3D)) {
+    if (featureIsEnabled(FEATURE_3D)) {
         BME(BOX3D);
     }
 
@@ -243,18 +229,18 @@ void initActiveBoxIds(void)
         BME(BOXFLIPOVERAFTERCRASH);
     }
 
-    if (feature(FEATURE_SERVO_TILT)) {
+    if (featureIsEnabled(FEATURE_SERVO_TILT)) {
         BME(BOXCAMSTAB);
     }
 
-    if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
+    if (featureIsEnabled(FEATURE_INFLIGHT_ACC_CAL)) {
         BME(BOXCALIB);
     }
 
     BME(BOXOSD);
 
 #ifdef USE_TELEMETRY
-    if (feature(FEATURE_TELEMETRY)) {
+    if (featureIsEnabled(FEATURE_TELEMETRY)) {
         BME(BOXTELEMETRY);
     }
 #endif

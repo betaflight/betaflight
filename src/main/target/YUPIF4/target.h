@@ -30,9 +30,6 @@
 #define LED1_PIN                PB4
 #define LED2_PIN                PB5
 
-//define camera control
-#define CAMERA_CONTROL_PIN      PB7 // Camera control
-
 #define USE_BEEPER
 #define BEEPER_PIN              PC9
 #define BEEPER_OPT              PB14

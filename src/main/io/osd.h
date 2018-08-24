@@ -95,6 +95,8 @@ typedef enum {
     OSD_ADJUSTMENT_RANGE,
     OSD_CORE_TEMPERATURE,
     OSD_ANTI_GRAVITY,
+    OSD_G_FORCE,
+    OSD_LOG_STATUS,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
@@ -122,6 +124,7 @@ typedef enum {
     OSD_STAT_MAX_ALTITUDE,
     OSD_STAT_BLACKBOX,
     OSD_STAT_BLACKBOX_NUMBER,
+    OSD_STAT_MAX_G_FORCE,
     OSD_STAT_COUNT // MUST BE LAST
 } osd_stats_e;
 
@@ -162,6 +165,7 @@ typedef enum {
     OSD_WARNING_ESC_FAIL,
     OSD_WARNING_CORE_TEMPERATURE,
     OSD_WARNING_RC_SMOOTHING,
+    OSD_WARNING_FAIL_SAFE,
     OSD_WARNING_COUNT // MUST BE LAST
 } osdWarningsFlags_e;
 
@@ -200,6 +204,7 @@ extern timeUs_t resumeRefreshAt;
 
 struct displayPort_s;
 void osdInit(struct displayPort_s *osdDisplayPort);
+bool osdInitialized(void);
 void osdResetAlarms(void);
 void osdUpdate(timeUs_t currentTimeUs);
 void osdStatSetState(uint8_t statIndex, bool enabled);

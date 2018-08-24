@@ -1,5 +1,5 @@
 F7X2RE_TARGETS += $(TARGET)
-FEATURES       += SDCARD VCP
+FEATURES       += VCP SDIO
 
 TARGET_SRC = \
             drivers/accgyro/accgyro_fake.c \

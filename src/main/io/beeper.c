@@ -224,9 +224,9 @@ static const beeperTableEntry_t beeperTable[] = {
     { BEEPER_ENTRY(BEEPER_SYSTEM_INIT,           16, NULL,                 "SYSTEM_INIT") },
     { BEEPER_ENTRY(BEEPER_USB,                   17, NULL,                 "ON_USB") },
     { BEEPER_ENTRY(BEEPER_BLACKBOX_ERASE,        18, beep_2shortBeeps,     "BLACKBOX_ERASE") },
-    { BEEPER_ENTRY(BEEPER_CRASH_FLIP_MODE,       19, beep_2longerBeeps,    "CRASH FLIP") },
+    { BEEPER_ENTRY(BEEPER_CRASH_FLIP_MODE,       19, beep_2longerBeeps,    "CRASH_FLIP") },
     { BEEPER_ENTRY(BEEPER_CAM_CONNECTION_OPEN,   20, beep_camOpenBeep,     "CAM_CONNECTION_OPEN") },
-    { BEEPER_ENTRY(BEEPER_CAM_CONNECTION_CLOSE,  21, beep_camCloseBeep,    "CAM_CONNECTION_CLOSED") },
+    { BEEPER_ENTRY(BEEPER_CAM_CONNECTION_CLOSE,  21, beep_camCloseBeep,    "CAM_CONNECTION_CLOSE") },
     { BEEPER_ENTRY(BEEPER_RC_SMOOTHING_INIT_FAIL,22, beep_rcSmoothingInitFail, "RC_SMOOTHING_INIT_FAIL") },
     { BEEPER_ENTRY(BEEPER_ALL,                   23, NULL,                 "ALL") },
 };
@@ -384,7 +384,7 @@ void beeperUpdate(timeUs_t currentTimeUs)
     if (IS_RC_MODE_ACTIVE(BOXBEEPERON)) {
         beeper(BEEPER_RX_SET);
 #ifdef USE_GPS
-    } else if (feature(FEATURE_GPS) && IS_RC_MODE_ACTIVE(BOXBEEPGPSCOUNT)) {
+    } else if (featureIsEnabled(FEATURE_GPS) && IS_RC_MODE_ACTIVE(BOXBEEPGPSCOUNT)) {
         beeperGpsStatus();
 #endif
     }

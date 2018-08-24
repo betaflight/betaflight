@@ -37,6 +37,7 @@
 // Note, beeper is on the LED pin
 #define LED0_PIN                PC13
 
+#define USE_BEEPER
 #define BEEPER                  NONE
 #define BEEPER_INVERTED
 
@@ -153,8 +154,6 @@
 #define USE_RANGEFINDER
 #define USE_RANGEFINDER_HCSR04
 //#define USE_RANGEFINDER_TF
-
-#define CAMERA_CONTROL_PIN      PA3
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS

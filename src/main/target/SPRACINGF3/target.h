@@ -26,6 +26,8 @@
 #define TARGET_BOARD_IDENTIFIER "ZCF3"
 #elif defined(FLIP32F3OSD)
 #define TARGET_BOARD_IDENTIFIER "FLF3"
+#elif defined(IRCSYNERGYF3)
+#define TARGET_BOARD_IDENTIFIER "ISF3"
 #else
 #define TARGET_BOARD_IDENTIFIER "SRF3"
 #endif
@@ -37,30 +39,40 @@
 //#undef USE_ITERM_RELAX
 //#undef USE_RC_SMOOTHING_FILTER
 
+//#undef USE_MSP_DISPLAYPORT
+//#undef USE_MSP_OVER_TELEMETRY
+
+#undef USE_LED_STRIP
+//#undef USE_HUFFMAN
+//#undef USE_PINIO
+//#undef USE_PINIOBOX
+
 //#undef USE_TELEMETRY_HOTT
 //#undef USE_TELEMETRY_MAVLINK
 //#undef USE_TELEMETRY_LTM
 //#undef USE_SERIALRX_XBUS
+//#undef USE_SERIALRX_SUMH
+#undef USE_PWM
 
-//#undef USE_BOARD_INFO
+#undef USE_BOARD_INFO
 #undef USE_EXTENDED_CMS_MENUS
 #undef USE_RTC_TIME
 #undef USE_RX_MSP
 #undef USE_ESC_SENSOR_INFO
 
 #if defined(ZCOREF3)
-#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
 #define LED0_PIN                PB8
 #else
-#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
 #define LED0_PIN                PB3
 #endif
 
+#if !defined(IRCSYNERGYF3)
 #define USE_BEEPER
 #define BEEPER_PIN              PC15
 #define BEEPER_INVERTED
+#endif
 
 #define USE_EXTI
 #define MPU_INT_EXTI            PC13
@@ -102,6 +114,17 @@
 #define MPU6500_CS_PIN          PB9
 #define MPU6500_SPI_INSTANCE    SPI1
 
+#elif defined(IRCSYNERGYF3)
+#define GYRO
+#define USE_GYRO_SPI_MPU6000
+#define GYRO_MPU6000_ALIGN      CW270_DEG
+
+#define ACC
+#define USE_ACC_SPI_MPU6000
+#define ACC_MPU6000_ALIGN       CW270_DEG
+
+#define MPU6000_CS_PIN           PB12
+#define MPU6000_SPI_INSTANCE     SPI2
 #else
 #define USE_GYRO_MPU6050
 #define GYRO_MPU6050_ALIGN      CW270_DEG
@@ -141,8 +164,10 @@
 #define MAG_INT_EXTI            PC14
 #endif
 
+#if !defined(IRCSYNERGYF3)
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
+#endif
 
 #define USE_UART1
 #define USE_UART2
@@ -181,6 +206,7 @@
 #define USE_SPI
 #define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5
 
+#if !defined(IRCSYNERGYF3)
 #define FLASH_CS_PIN            PB12
 #define FLASH_SPI_INSTANCE      SPI2
 
@@ -195,6 +221,7 @@
 #define USE_OSD
 #define USE_OSD_OVER_MSP_DISPLAYPORT
 #define USE_SLOW_MSP_DISPLAYPORT_RATE_WHEN_UNARMED
+#endif
 
 #define USE_MSP_CURRENT_METER
 
@@ -205,10 +232,12 @@
 #undef USE_UART1_TX_DMA
 #endif
 
+#if !defined(IRCSYNERGYF3)
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 #define DEFAULT_FEATURES        (FEATURE_RSSI_ADC | FEATURE_TELEMETRY)
+#endif
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

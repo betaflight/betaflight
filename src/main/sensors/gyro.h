@@ -21,10 +21,13 @@
 #pragma once
 
 #include "common/axis.h"
+#include "common/filter.h"
 #include "common/time.h"
-#include "pg/pg.h"
+
 #include "drivers/bus.h"
 #include "drivers/sensor.h"
+
+#include "pg/pg.h"
 
 typedef enum {
     GYRO_NONE = 0,
@@ -57,6 +60,17 @@ typedef enum {
     GYRO_OVERFLOW_CHECK_YAW,
     GYRO_OVERFLOW_CHECK_ALL_AXES
 } gyroOverflowCheck_e;
+
+enum {
+    DYN_FFT_BEFORE_STATIC_FILTERS = 0,
+    DYN_FFT_AFTER_STATIC_FILTERS
+} ;
+
+enum {
+    DYN_FILTER_RANGE_HIGH = 0,
+    DYN_FILTER_RANGE_MEDIUM,
+    DYN_FILTER_RANGE_LOW
+} ;
 
 #define GYRO_CONFIG_USE_GYRO_1      0
 #define GYRO_CONFIG_USE_GYRO_2      1
@@ -96,6 +110,10 @@ typedef struct gyroConfig_s {
     int16_t  yaw_spin_threshold;
 
     uint16_t gyroCalibrationDuration;  // Gyro calibration duration in 1/100 second
+    
+    uint8_t dyn_filter_width_percent;
+    uint8_t dyn_fft_location; // before or after static filters
+    uint8_t dyn_filter_range; // ignore any FFT bin below this threshold
 } gyroConfig_t;
 
 PG_DECLARE(gyroConfig_t, gyroConfig);

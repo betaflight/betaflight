@@ -177,7 +177,7 @@ static void frSkyHubWriteByteInternal(const char data)
 static void sendAccel(void)
 {
     for (unsigned i = 0; i < 3; i++) {
-        frSkyHubWriteFrame(ID_ACC_X + i, ((int16_t)(acc.accADC[i] / acc.dev.acc_1G) * 1000));
+        frSkyHubWriteFrame(ID_ACC_X + i, ((int16_t)(acc.accADC[i] * acc.dev.acc_1G_rec) * 1000));
     }
 }
 
@@ -193,7 +193,7 @@ static void sendThrottleOrBatterySizeAsRpm(void)
     if (ARMING_FLAG(ARMED)) {
         const throttleStatus_e throttleStatus = calculateThrottleStatus();
         uint16_t throttleForRPM = rcCommand[THROTTLE] / BLADE_NUMBER_DIVIDER;
-        if (throttleStatus == THROTTLE_LOW && feature(FEATURE_MOTOR_STOP)) {
+        if (throttleStatus == THROTTLE_LOW && featureIsEnabled(FEATURE_MOTOR_STOP)) {
             throttleForRPM = 0;
         }
         data = throttleForRPM;
@@ -269,14 +269,14 @@ static void sendLatLong(int32_t coord[2])
 #if defined(USE_GPS)
 static void sendGpsAltitude(void)
 {
-    uint16_t altitude = gpsSol.llh.alt;
+    int32_t altitudeCm = gpsSol.llh.altCm;
 
     // Send real GPS altitude only if it's reliable (there's a GPS fix)
     if (!STATE(GPS_FIX)) {
-        altitude = 0;
+        altitudeCm = 0;
     }
-    frSkyHubWriteFrame(ID_GPS_ALTIDUTE_BP, altitude);
-    frSkyHubWriteFrame(ID_GPS_ALTIDUTE_AP, 0);
+    frSkyHubWriteFrame(ID_GPS_ALTIDUTE_BP, altitudeCm / 100); // meters: integer part, eg. 123 from 123.45m
+    frSkyHubWriteFrame(ID_GPS_ALTIDUTE_AP, altitudeCm % 100); // meters: fractional part, eg. 45 from 123.45m
 }
 
 static void sendSatalliteSignalQualityAsTemperature2(uint8_t cycleNum)
@@ -338,17 +338,6 @@ static void sendGPSLatLong(void)
 }
 
 #endif
-#endif
-
-#if defined(USE_BARO) || defined(USE_RANGEFINDER)
-/*
- * Send vertical speed for opentx. ID_VERT_SPEED
- * Unit is cm/s
- */
-static void sendVario(void)
-{
-    frSkyHubWriteFrame(ID_VERT_SPEED, getEstimatedVario());
-}
 #endif
 
 /*
@@ -535,23 +524,25 @@ void processFrSkyHubTelemetry(timeUs_t currentTimeUs)
         sendAccel();
     }
 
-#if defined(USE_BARO) || defined(USE_RANGEFINDER)
-    if (sensors(SENSOR_BARO | SENSOR_RANGEFINDER)) {
+#if defined(USE_BARO) || defined(USE_RANGEFINDER) || defined(USE_GPS)
+    if (sensors(SENSOR_BARO | SENSOR_RANGEFINDER) | sensors(SENSOR_GPS)) {
         // Sent every 125ms
-        sendVario();
+        // Send vertical speed for opentx. ID_VERT_SPEED
+        // Unit is cm/s
+        frSkyHubWriteFrame(ID_VERT_SPEED, getEstimatedVario());
 
         // Sent every 500ms
         if ((cycleNum % 4) == 0) {
-            int16_t altitude = ABS(getEstimatedAltitude());
+            int32_t altitudeCm = getEstimatedAltitudeCm();
 
             /* Allow 5s to boot correctly othervise send zero to prevent OpenTX
              * sensor lost notifications after warm boot. */
             if (frSkyHubLastCycleTime < DELAY_FOR_BARO_INITIALISATION_US) {
-                altitude = 0;
+                altitudeCm = 0;
             }
 
-            frSkyHubWriteFrame(ID_ALTITUDE_BP, altitude / 100);
-            frSkyHubWriteFrame(ID_ALTITUDE_AP, altitude % 100);
+            frSkyHubWriteFrame(ID_ALTITUDE_BP, altitudeCm / 100); // meters: integer part, eg. 123 from 123.45m
+            frSkyHubWriteFrame(ID_ALTITUDE_AP, altitudeCm % 100); // meters: fractional part, eg. 45 from 123.45m
         }
     }
 #endif

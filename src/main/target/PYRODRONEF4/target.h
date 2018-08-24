@@ -28,7 +28,6 @@
 #define BEEPER_INVERTED
 
 #define INVERTER_PIN_UART1        PC3       // PC3 used as sBUS inverter select GPIO
-#define CAMERA_CONTROL_PIN        PB9       // define dedicated camera_osd_control pin
 
 #define USE_EXTI
 #define MPU_INT_EXTI            PC4

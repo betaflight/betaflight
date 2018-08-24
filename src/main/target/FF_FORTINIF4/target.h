@@ -49,10 +49,6 @@
 #define BEEPER_INVERTED
 /*---------------------------------*/
 
-/*----------CAMERA CONTROL---------*/
-#define CAMERA_CONTROL_PIN      PB7
-/*---------------------------------*/
-
 /*------------SENSORS--------------*/
 // MPU interrupt
 #define USE_EXTI
@@ -226,6 +222,10 @@
 /*---------------------------------*/
 
 /*--------------TIMERS-------------*/
+#if defined(FF_FORTINIF4_REV03)
+#define USABLE_TIMER_CHANNEL_COUNT  7
+#else
 #define USABLE_TIMER_CHANNEL_COUNT  6
+#endif
 #define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(4) )
 /*---------------------------------*/

@@ -36,7 +36,6 @@
 #undef USE_ESC_SENSOR_INFO
 
 
-#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
 #define LED0_PIN    PB4
 #define LED1_PIN    PB5

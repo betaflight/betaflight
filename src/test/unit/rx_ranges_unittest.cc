@@ -186,11 +186,11 @@ bool rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadR
     return true;
 }
 
-bool feature(uint32_t) {
+bool featureIsEnabled(uint32_t) {
     return false;
 }
 
-void featureClear(uint32_t) {
+void featureDisable(uint32_t) {
 }
 
 bool rxMspFrameComplete(void)

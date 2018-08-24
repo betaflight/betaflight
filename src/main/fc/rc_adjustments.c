@@ -203,11 +203,11 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
         .mode = ADJUSTMENT_MODE_STEP,
         .data = { .step = 1 }
     }, {
-        .adjustmentFunction = ADJUSTMENT_D_SETPOINT,
+        .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_F,
         .mode = ADJUSTMENT_MODE_STEP,
         .data = { .step = 1 }
     }, {
-        .adjustmentFunction = ADJUSTMENT_D_SETPOINT_TRANSITION,
+        .adjustmentFunction = ADJUSTMENT_FEEDFORWARD_TRANSITION,
         .mode = ADJUSTMENT_MODE_STEP,
         .data = { .step = 1 }
     }, {
@@ -218,6 +218,18 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
         .adjustmentFunction = ADJUSTMENT_PID_AUDIO,
         .mode = ADJUSTMENT_MODE_SELECT,
         .data = { .switchPositions = ARRAYLEN(pidAudioPositionToModeMap) }
+    }, {
+        .adjustmentFunction = ADJUSTMENT_PITCH_F,
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data = { .step = 1 }
+    }, {
+        .adjustmentFunction = ADJUSTMENT_ROLL_F,
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data = { .step = 1 }
+    }, {
+        .adjustmentFunction = ADJUSTMENT_YAW_F,
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data = { .step = 1 }
     }
 };
 
@@ -244,14 +256,21 @@ static const char * const adjustmentLabels[] = {
     "ROLL I",
     "ROLL D",
     "RC RATE YAW",
-    "D SETPOINT",
-    "D SETPOINT TRANSITION",
+    "PITCH/ROLL F",
+    "FF TRANSITION",
     "HORIZON STRENGTH",
+    "ROLL RC RATE",
+    "PITCH RC RATE",
+    "ROLL RC EXPO",
+    "PITCH RC EXPO",
     "PID AUDIO",
+    "PITCH F",
+    "ROLL F",
+    "YAW F"
 };
 
-const char *adjustmentRangeName;
-int adjustmentRangeValue = -1;
+static int adjustmentRangeNameIndex = 0;
+static int adjustmentRangeValue = -1;
 #endif
 
 #define ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET 1
@@ -401,15 +420,31 @@ static int applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t a
         controlRateConfig->rcRates[FD_YAW] = newValue;
         blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RC_RATE_YAW, newValue);
         break;
-    case ADJUSTMENT_D_SETPOINT:
-        newValue = constrain((int)pidProfile->dtermSetpointWeight + delta, 0, 2000); // FIXME magic numbers repeated in cli.c
-        pidProfile->dtermSetpointWeight = newValue;
-        blackboxLogInflightAdjustmentEvent(ADJUSTMENT_D_SETPOINT, newValue);
+    case ADJUSTMENT_PITCH_ROLL_F:
+    case ADJUSTMENT_PITCH_F:
+        newValue = constrain(pidProfile->pid[PID_PITCH].F + delta, 0, 2000);
+        pidProfile->pid[PID_PITCH].F = newValue;
+        blackboxLogInflightAdjustmentEvent(ADJUSTMENT_PITCH_F, newValue);
+
+        if (adjustmentFunction == ADJUSTMENT_PITCH_F) {
+            break;
+        }
+        // fall through for combined ADJUSTMENT_PITCH_ROLL_F
+        FALLTHROUGH;
+    case ADJUSTMENT_ROLL_F:
+        newValue = constrain(pidProfile->pid[PID_ROLL].F + delta, 0, 2000);
+        pidProfile->pid[PID_ROLL].F = newValue;
+        blackboxLogInflightAdjustmentEvent(ADJUSTMENT_ROLL_F, newValue);
         break;
-    case ADJUSTMENT_D_SETPOINT_TRANSITION:
-        newValue = constrain((int)pidProfile->setpointRelaxRatio + delta, 1, 100); // FIXME magic numbers repeated in cli.c
-        pidProfile->setpointRelaxRatio = newValue;
-        blackboxLogInflightAdjustmentEvent(ADJUSTMENT_D_SETPOINT_TRANSITION, newValue);
+    case ADJUSTMENT_YAW_F:
+        newValue = constrain(pidProfile->pid[PID_YAW].F + delta, 0, 2000);
+        pidProfile->pid[PID_YAW].F = newValue;
+        blackboxLogInflightAdjustmentEvent(ADJUSTMENT_YAW_F, newValue);
+        break;
+    case ADJUSTMENT_FEEDFORWARD_TRANSITION:
+        newValue = constrain(pidProfile->feedForwardTransition + delta, 1, 100); // FIXME magic numbers repeated in cli.c
+        pidProfile->feedForwardTransition = newValue;
+        blackboxLogInflightAdjustmentEvent(ADJUSTMENT_FEEDFORWARD_TRANSITION, newValue);
         break;
     default:
         newValue = -1;
@@ -550,15 +585,31 @@ static int applyAbsoluteAdjustment(controlRateConfig_t *controlRateConfig, adjus
         controlRateConfig->rcRates[FD_YAW] = newValue;
         blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RC_RATE_YAW, newValue);
         break;
-    case ADJUSTMENT_D_SETPOINT:
-        newValue = constrain(value, 0, 2000); // FIXME magic numbers repeated in cli.c
-        pidProfile->dtermSetpointWeight = newValue;
-        blackboxLogInflightAdjustmentEvent(ADJUSTMENT_D_SETPOINT, newValue);
+    case ADJUSTMENT_PITCH_ROLL_F:
+    case ADJUSTMENT_PITCH_F:
+        newValue = constrain(value, 0, 2000);
+        pidProfile->pid[PID_PITCH].F = newValue;
+        blackboxLogInflightAdjustmentEvent(ADJUSTMENT_PITCH_F, newValue);
+
+        if (adjustmentFunction == ADJUSTMENT_PITCH_F) {
+            break;
+        }
+        // fall through for combined ADJUSTMENT_PITCH_ROLL_F
+        FALLTHROUGH;
+    case ADJUSTMENT_ROLL_F:
+        newValue = constrain(value, 0, 2000);
+        pidProfile->pid[PID_ROLL].F = newValue;
+        blackboxLogInflightAdjustmentEvent(ADJUSTMENT_ROLL_F, newValue);
         break;
-    case ADJUSTMENT_D_SETPOINT_TRANSITION:
+    case ADJUSTMENT_YAW_F:
+        newValue = constrain(value, 0, 2000);
+        pidProfile->pid[PID_YAW].F = newValue;
+        blackboxLogInflightAdjustmentEvent(ADJUSTMENT_YAW_F, newValue);
+        break;
+    case ADJUSTMENT_FEEDFORWARD_TRANSITION:
         newValue = constrain(value, 1, 100); // FIXME magic numbers repeated in cli.c
-        pidProfile->setpointRelaxRatio = newValue;
-        blackboxLogInflightAdjustmentEvent(ADJUSTMENT_D_SETPOINT_TRANSITION, newValue);
+        pidProfile->feedForwardTransition = newValue;
+        blackboxLogInflightAdjustmentEvent(ADJUSTMENT_FEEDFORWARD_TRANSITION, newValue);
         break;
     default:
         newValue = -1;
@@ -680,7 +731,7 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig)
 
 #if defined(USE_OSD) && defined(USE_OSD_ADJUSTMENTS)
         if (newValue != -1 && adjustmentState->config->adjustmentFunction != ADJUSTMENT_RATE_PROFILE) { // Rate profile already has an OSD element
-            adjustmentRangeName = &adjustmentLabels[adjustmentFunction - 1][0];
+            adjustmentRangeNameIndex = adjustmentFunction;
             adjustmentRangeValue = newValue;
         }
 #else
@@ -733,3 +784,17 @@ void useAdjustmentConfig(pidProfile_t *pidProfileToUse)
 {
     pidProfile = pidProfileToUse;
 }
+
+#if defined(USE_OSD) && defined(USE_OSD_ADJUSTMENTS)
+const char *getAdjustmentsRangeName(void) {
+    if (adjustmentRangeNameIndex > 0) {
+        return &adjustmentLabels[adjustmentRangeNameIndex - 1][0];
+    } else {
+        return NULL;
+    }
+}
+
+int getAdjustmentsRangeValue(void) {
+    return adjustmentRangeValue;
+}
+#endif

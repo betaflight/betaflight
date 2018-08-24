@@ -167,6 +167,8 @@ Use a diode with cathode to receiver serial rx output (for example 1N4148),
 the anode is connected to the FC serial _TX_ pin, and also via a 
 resistor (10KOhm) to the receiver ibus sensor port.
 
+Note (2018-07-27): In some cases, the value of the series resistor may be too large, and going down to 1K[ohm] may provide a good result.
+
 Enable with cli:
 ```  
     serial 1 1088 115200 57600 115200 115200

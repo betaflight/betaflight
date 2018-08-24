@@ -159,20 +159,14 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXHEADFREE, "HEADFREE;", 6 },
     { BOXHEADADJ, "HEADADJ;", 7 },
     { BOXCAMSTAB, "CAMSTAB;", 8 },
-    { BOXCAMTRIG, "CAMTRIG;", 9 },
     { BOXGPSHOME, "GPS HOME;", 10 },
     { BOXGPSHOLD, "GPS HOLD;", 11 },
     { BOXPASSTHRU, "PASSTHRU;", 12 },
     { BOXBEEPERON, "BEEPER;", 13 },
-    { BOXLEDMAX, "LEDMAX;", 14 },
     { BOXLEDLOW, "LEDLOW;", 15 },
-    { BOXLLIGHTS, "LLIGHTS;", 16 },
     { BOXCALIB, "CALIB;", 17 },
-    { BOXGOV, "GOVERNOR;", 18 },
     { BOXOSD, "OSD DISABLE SW;", 19 },
     { BOXTELEMETRY, "TELEMETRY;", 20 },
-    { BOXGTUNE, "GTUNE;", 21 },
-    { BOXRANGEFINDER, "RANGEFINDER;", 22 },
     { BOXSERVO1, "SERVO1;", 23 },
     { BOXSERVO2, "SERVO2;", 24 },
     { BOXSERVO3, "SERVO3;", 25 },
@@ -305,20 +299,14 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
                     IS_ENABLED(FLIGHT_MODE(HEADFREE_MODE)) << BOXHEADFREE |
                     IS_ENABLED(IS_RC_MODE_ACTIVE(BOXHEADADJ)) << BOXHEADADJ |
                     IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCAMSTAB)) << BOXCAMSTAB |
-                    IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCAMTRIG)) << BOXCAMTRIG |
                     IS_ENABLED(FLIGHT_MODE(GPS_HOME_MODE)) << BOXGPSHOME |
                     IS_ENABLED(FLIGHT_MODE(GPS_HOLD_MODE)) << BOXGPSHOLD |
                     IS_ENABLED(FLIGHT_MODE(PASSTHRU_MODE)) << BOXPASSTHRU |
                     IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBEEPERON)) << BOXBEEPERON |
-                    IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLEDMAX)) << BOXLEDMAX |
                     IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLEDLOW)) << BOXLEDLOW |
-                    IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLLIGHTS)) << BOXLLIGHTS |
                     IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCALIB)) << BOXCALIB |
-                    IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGOV)) << BOXGOV |
                     IS_ENABLED(IS_RC_MODE_ACTIVE(BOXOSD)) << BOXOSD |
                     IS_ENABLED(IS_RC_MODE_ACTIVE(BOXTELEMETRY)) << BOXTELEMETRY |
-                    IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGTUNE)) << BOXGTUNE |
-                    IS_ENABLED(FLIGHT_MODE(RANGEFINDER_MODE)) << BOXRANGEFINDER |
                     IS_ENABLED(ARMING_FLAG(ARMED)) << BOXARM |
                     IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBLACKBOX)) << BOXBLACKBOX |
                     IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << BOXFAILSAFE;
@@ -570,10 +558,10 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             readEEPROM();
             break;
         case BST_SET_FEATURE:
-            featureClearAll();
-            featureSet(bstRead32()); // features bitmap
+            featureDisableAll();
+            featureEnable(bstRead32()); // features bitmap
 #ifdef SERIALRX_UART
-            if (featureConfigured(FEATURE_RX_SERIAL)) {
+            if (featureIsEnabled(FEATURE_RX_SERIAL)) {
                 serialConfigMutable()->portConfigs[SERIALRX_UART].functionMask = FUNCTION_RX_SERIAL;
             } else {
                 serialConfigMutable()->portConfigs[SERIALRX_UART].functionMask = FUNCTION_NONE;
@@ -808,23 +796,23 @@ static void bstMasterWrite32(uint32_t data)
 
 static int32_t lat = 0;
 static int32_t lon = 0;
-static uint16_t alt = 0;
+static uint16_t altM = 0;
 static uint8_t numOfSat = 0;
 #endif
 
 #ifdef USE_GPS
 bool writeGpsPositionPrameToBST(void)
 {
-    if ((lat != gpsSol.llh.lat) || (lon != gpsSol.llh.lon) || (alt != gpsSol.llh.alt) || (numOfSat != gpsSol.numSat)) {
+    if ((lat != gpsSol.llh.lat) || (lon != gpsSol.llh.lon) || (alt != (gpsSol.llh.altCm / 100)) || (numOfSat != gpsSol.numSat)) {
         lat = gpsSol.llh.lat;
         lon = gpsSol.llh.lon;
-        alt = gpsSol.llh.alt;
+        altM = gpsSol.llh.altCm / 100;
         numOfSat = gpsSol.numSat;
         uint16_t speed = (gpsSol.groundSpeed * 9 / 25);
         uint16_t gpsHeading = 0;
         uint16_t altitude = 0;
         gpsHeading = gpsSol.groundCourse * 10;
-        altitude = alt * 10 + 1000;
+        altitude = altM + 1000;  // To be verified: in m +1000m offset for neg. altitudes?
 
         bstMasterStartBuffer(PUBLIC_ADDRESS);
         bstMasterWrite8(GPS_POSITION_FRAME_ID);
@@ -878,7 +866,6 @@ bool writeFCModeToBST(void)
            IS_ENABLED(FLIGHT_MODE(BARO_MODE)) << 3 |
            IS_ENABLED(FLIGHT_MODE(MAG_MODE)) << 4 |
            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << 5 |
-           IS_ENABLED(FLIGHT_MODE(RANGEFINDER_MODE)) << 6 |
            IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << 7;
 
     bstMasterStartBuffer(PUBLIC_ADDRESS);

@@ -86,7 +86,7 @@ typedef struct gpsCoordinateDDDMMmmmm_s {
 typedef struct gpsLocation_s {
     int32_t lat;                    // latitude * 1e+7
     int32_t lon;                    // longitude * 1e+7
-    int32_t alt;                    // altitude in 0.01m
+    int32_t altCm;                  // altitude in 0.01m
 } gpsLocation_t;
 
 typedef struct gpsSolutionData_s {
@@ -137,10 +137,15 @@ typedef enum {
 } navigationMode_e;
 extern navigationMode_e nav_mode;          // Navigation mode
 
+typedef enum {
+    GPS_DIRECT_TICK = 1 << 0,
+    GPS_MSP_UPDATE = 1 << 1
+} gpsUpdateToggle_e;
+
 extern gpsData_t gpsData;
 extern gpsSolutionData_t gpsSol;
 
-extern uint8_t GPS_update;                 // it's a binary toogle to distinct a GPS position update
+extern uint8_t GPS_update;       // toogle to distinct a GPS position update (directly or via MSP)
 extern uint32_t GPS_packetCount;
 extern uint32_t GPS_svInfoReceivedCount;
 extern uint8_t GPS_numCh;                  // Number of channels

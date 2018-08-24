@@ -146,7 +146,6 @@
 #if (FLASH_SIZE > 64)
 #define USE_ACRO_TRAINER
 #define USE_BLACKBOX
-#define USE_LED_STRIP
 #define USE_RESOURCE_MGMT
 #define USE_RUNAWAY_TAKEOFF     // Runaway Takeoff Prevention (anti-taz)
 #define USE_SERVOS
@@ -208,6 +207,7 @@
 #define USE_GPS_NMEA
 #define USE_GPS_UBLOX
 #define USE_GPS_RESCUE
+#define USE_GYRO_DLPF_EXPERIMENTAL
 #define USE_OSD
 #define USE_OSD_OVER_MSP_DISPLAYPORT
 #define USE_OSD_ADJUSTMENTS
@@ -220,4 +220,6 @@
 #define USE_UNCOMMON_MIXERS
 #define USE_SIGNATURE
 #define USE_ABSOLUTE_CONTROL
+#define USE_HOTT_TEXTMODE
+#define USE_LED_STRIP
 #endif

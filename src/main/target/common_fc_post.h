@@ -56,6 +56,42 @@
 #endif
 #endif
 
+#if !defined(USE_SERIAL_RX)
+#undef USE_SERIALRX_CRSF
+#undef USE_SERIALRX_IBUS
+#undef USE_SERIALRX_JETIEXBUS
+#undef USE_SERIALRX_SBUS
+#undef USE_SERIALRX_SPEKTRUM
+#undef USE_SERIALRX_SUMD
+#undef USE_SERIALRX_SUMH
+#undef USE_SERIALRX_XBUS
+#undef USE_SERIALRX_FPORT
+#endif
+
+#if !defined(USE_SERIALRX_CRSF)
+#undef USE_TELEMETRY_CRSF
+#endif
+
+#if !defined(USE_SERIALRX_JETIEXBUS)
+#undef USE_TELEMETRY_JETIEXBUS
+#endif
+
+
+#if !defined(USE_TELEMETRY)
+#undef USE_CRSF_CMS_TELEMETRY
+#undef USE_TELEMETRY_CRSF
+#undef USE_TELEMETRY_FRSKY_HUB
+#undef USE_TELEMETRY_HOTT
+#undef USE_TELEMETRY_IBUS
+#undef USE_TELEMETRY_IBUS_EXTENDED
+#undef USE_TELEMETRY_JETIEXBUS
+#undef USE_TELEMETRY_LTM
+#undef USE_TELEMETRY_MAVLINK
+#undef USE_TELEMETRY_SMARTPORT
+#undef USE_TELEMETRY_SRXL
+#undef USE_SERIALRX_FPORT
+#endif
+
 #if defined(USE_MSP_OVER_TELEMETRY)
 #if !defined(USE_TELEMETRY_SMARTPORT) && !defined(USE_TELEMETRY_CRSF)
 #undef USE_MSP_OVER_TELEMETRY
@@ -72,6 +108,7 @@
 #undef USE_SPEKTRUM_VTX_CONTROL
 #undef USE_SPEKTRUM_VTX_TELEMETRY
 #undef USE_SPEKTRUM_CMS_TELEMETRY
+#undef USE_TELEMETRY_SRXL
 #endif
 
 /* If either VTX_CONTROL or VTX_COMMON is undefined then remove common code and device drivers */
@@ -97,7 +134,7 @@
 #undef USE_ADC_INTERNAL
 #endif
 
-#if !defined(USE_SDCARD) && !defined(USE_FLASHFS)
+#if (!defined(USE_SDCARD) && !defined(USE_FLASHFS)) || !(defined(STM32F4) || defined(STM32F7))
 #undef USE_USB_MSC
 #endif
 
@@ -125,4 +162,8 @@
 
 #if defined(USE_MAX7456)
 #define USE_OSD
+#endif
+
+#if defined(USE_GPS_RESCUE)
+#define USE_GPS
 #endif

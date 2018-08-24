@@ -85,6 +85,7 @@ static bool imuUpdated = false;
 #define GPS_COG_MIN_GROUNDSPEED 500        // 500cm/s minimum groundspeed for a gps heading to be considered valid
 
 int32_t accSum[XYZ_AXIS_COUNT];
+float accAverage[XYZ_AXIS_COUNT];
 
 uint32_t accTimeSum = 0;        // keep track for integration of acc
 int accSumCount = 0;
@@ -170,7 +171,7 @@ void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correctio
 void imuInit(void)
 {
     smallAngleCosZ = cos_approx(degreesToRadians(imuRuntimeConfig.small_angle));
-    accVelScale = 9.80665f / acc.dev.acc_1G / 10000.0f;
+    accVelScale = 9.80665f * acc.dev.acc_1G_rec / 10000.0f;
 
 #ifdef USE_GPS
     canUseGPSHeading = true;
@@ -354,16 +355,16 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
 
 static bool imuIsAccelerometerHealthy(float *accAverage)
 {
-    float accMagnitude = 0;
+    float accMagnitudeSq = 0;
     for (int axis = 0; axis < 3; axis++) {
         const float a = accAverage[axis];
-        accMagnitude += a * a;
+        accMagnitudeSq += a * a;
     }
 
-    accMagnitude = accMagnitude * 100 / (sq((int32_t)acc.dev.acc_1G));
+    accMagnitudeSq = accMagnitudeSq * sq(acc.dev.acc_1G_rec);
 
-    // Accept accel readings only in range 0.90g - 1.10g
-    return (81 < accMagnitude) && (accMagnitude < 121);
+    // Accept accel readings only in range 0.9g - 1.1g
+    return (0.81f < accMagnitudeSq) && (accMagnitudeSq < 1.21f);
 }
 
 // Calculate the dcmKpGain to use. When armed, the gain is imuRuntimeConfig.dcm_kp * 1.0 scaling.
@@ -491,7 +492,6 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 #endif
     float gyroAverage[XYZ_AXIS_COUNT];
     gyroGetAccumulationAverage(gyroAverage);
-    float accAverage[XYZ_AXIS_COUNT];
     if (accGetAccumulationAverage(accAverage)) {
         useAcc = imuIsAccelerometerHealthy(accAverage);
     }

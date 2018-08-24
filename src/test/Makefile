@@ -20,6 +20,7 @@ include $(ROOT)/make/system-id.mk
 # variables available:
 #   <test_name>_SRC
 #   <test_name>_DEFINES
+#   <test_name>_INCLUDE_DIRS
 
 
 alignsensor_unittest_SRC := \
@@ -302,6 +303,23 @@ pid_unittest_SRC :=  \
 rcdevice_unittest_DEFINES := \
 		USE_RCDEVICE
 
+vtx_unittest_SRC := \
+		$(USER_DIR)/fc/fc_core.c \
+		$(USER_DIR)/fc/fc_dispatch.c \
+		$(USER_DIR)/fc/rc_controls.c \
+		$(USER_DIR)/fc/rc_modes.c \
+		$(USER_DIR)/fc/runtime_config.c \
+		$(USER_DIR)/drivers/vtx_common.c \
+		$(USER_DIR)/io/vtx_control.c \
+		$(USER_DIR)/io/vtx_string.c \
+		$(USER_DIR)/io/vtx.c \
+		$(USER_DIR)/common/bitarray.c
+
+vtx_unittest_DEFINES := \
+		USE_VTX_COMMON \
+		USE_VTX_CONTROL \
+		USE_VTX_SMARTAUDIO
+
 # Please tweak the following variable definitions as needed by your
 # project, except GTEST_HEADERS, which you can use in your own targets
 # but shouldn't modify.
@@ -477,6 +495,7 @@ $(OBJECT_DIR)/$1/%.c.o: $(USER_DIR)/%.c
 	@echo "compiling $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
 	$(V1) $(CC) $(C_FLAGS) $(TEST_CFLAGS) \
+                $(foreach def,$($1_INCLUDE_DIRS),-I $(def)) \
                 $(foreach def,$($1_DEFINES),-D $(def)) \
                 -c $$< -o $$@
 
@@ -484,6 +503,7 @@ $(OBJECT_DIR)/$1/%.c.o: $(TEST_DIR)/%.c
 	@echo "compiling test c file: $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
 	$(V1) $(CC) $(C_FLAGS) $(TEST_CFLAGS) \
+                $(foreach def,$($1_INCLUDE_DIRS),-I $(def)) \
                 $(foreach def,$($1_DEFINES),-D $(def)) \
                 -c $$< -o $$@
 
@@ -491,8 +511,9 @@ $(OBJECT_DIR)/$1/$1.o: $(TEST_DIR)/$1.cc
 	@echo "compiling $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
 	$(V1) $(CXX) $(CXX_FLAGS) $(TEST_CFLAGS)  \
-                 $(foreach def,$($1_DEFINES),-D $(def)) \
-                 -c $$< -o $$@
+                $(foreach def,$($1_INCLUDE_DIRS),-I $(def)) \
+                $(foreach def,$($1_DEFINES),-D $(def)) \
+                -c $$< -o $$@
 
 
 $(OBJECT_DIR)/$1/$1 : $$($$1_OBJS) \

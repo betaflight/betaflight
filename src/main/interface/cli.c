@@ -11,7 +11,7 @@
  * will be useful, but WITHOUT ANY WARRANTY; without even the implied
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
- *
+*
  * You should have received a copy of the GNU General Public License
  * along with this software.
  *
@@ -62,28 +62,28 @@ extern uint8_t __config_end;
 #include "drivers/adc.h"
 #include "drivers/buf_writer.h"
 #include "drivers/bus_spi.h"
+#include "drivers/camera_control.h"
 #include "drivers/compass/compass.h"
 #include "drivers/display.h"
 #include "drivers/dma.h"
 #include "drivers/flash.h"
+#include "drivers/inverter.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
-#include "drivers/inverter.h"
+#include "drivers/light_led.h"
+#include "drivers/rangefinder/rangefinder_hcsr04.h"
 #include "drivers/sdcard.h"
 #include "drivers/sensor.h"
 #include "drivers/serial.h"
 #include "drivers/serial_escserial.h"
-#include "drivers/rangefinder/rangefinder_hcsr04.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/stack_check.h"
 #include "drivers/system.h"
-#include "drivers/transponder_ir.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
-#include "drivers/light_led.h"
-#include "drivers/camera_control.h"
-#include "drivers/vtx_common.h"
+#include "drivers/transponder_ir.h"
 #include "drivers/usb_msc.h"
+#include "drivers/vtx_common.h"
 
 #include "fc/board_info.h"
 #include "fc/config.h"
@@ -116,6 +116,7 @@ extern uint8_t __config_end;
 #include "io/osd.h"
 #include "io/serial.h"
 #include "io/transponder_ir.h"
+#include "io/usb_msc.h"
 #include "io/vtx_control.h"
 #include "io/vtx.h"
 
@@ -177,6 +178,9 @@ static bool configIsInCopy = false;
 #define CURRENT_PROFILE_INDEX -1
 static int8_t pidProfileIndexToUse = CURRENT_PROFILE_INDEX;
 static int8_t rateProfileIndexToUse = CURRENT_PROFILE_INDEX;
+
+static bool featureMaskIsCopied = false;
+static uint32_t featureMaskCopy;
 
 #if defined(USE_BOARD_INFO)
 static bool boardInformationUpdated = false;
@@ -735,8 +739,7 @@ static void printRxFailsafe(uint8_t dumpMask, const rxFailsafeChannelConfig_t *r
     for (uint32_t channel = 0; channel < MAX_SUPPORTED_RC_CHANNEL_COUNT; channel++) {
         const rxFailsafeChannelConfig_t *channelFailsafeConfig = &rxFailsafeChannelConfigs[channel];
         const rxFailsafeChannelConfig_t *defaultChannelFailsafeConfig = &defaultRxFailsafeChannelConfigs[channel];
-        const bool equalsDefault = channelFailsafeConfig->mode == defaultChannelFailsafeConfig->mode
-                && channelFailsafeConfig->step == defaultChannelFailsafeConfig->step;
+        const bool equalsDefault = !memcmp(channelFailsafeConfig, defaultChannelFailsafeConfig, sizeof(*channelFailsafeConfig));
         const bool requireValue = channelFailsafeConfig->mode == RX_FAILSAFE_MODE_SET;
         if (requireValue) {
             const char *format = "rxfail %u %c %d";
@@ -848,19 +851,16 @@ static void cliRxFailsafe(char *cmdline)
 
 static void printAux(uint8_t dumpMask, const modeActivationCondition_t *modeActivationConditions, const modeActivationCondition_t *defaultModeActivationConditions)
 {
-    const char *format = "aux %u %u %u %u %u %u";
+    const char *format = "aux %u %u %u %u %u %u %u";
     // print out aux channel settings
     for (uint32_t i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
         const modeActivationCondition_t *mac = &modeActivationConditions[i];
         bool equalsDefault = false;
         if (defaultModeActivationConditions) {
             const modeActivationCondition_t *macDefault = &defaultModeActivationConditions[i];
-            equalsDefault = mac->modeId == macDefault->modeId
-                && mac->auxChannelIndex == macDefault->auxChannelIndex
-                && mac->range.startStep == macDefault->range.startStep
-                && mac->range.endStep == macDefault->range.endStep
-                && mac->modeLogic == macDefault->modeLogic;
+            equalsDefault = !memcmp(mac, macDefault, sizeof(*mac));
             const box_t *box = findBoxByBoxId(macDefault->modeId);
+            const box_t *linkedTo = findBoxByBoxId(macDefault->linkedTo);
             if (box) {
                 cliDefaultPrintLinef(dumpMask, equalsDefault, format,
                     i,
@@ -868,11 +868,13 @@ static void printAux(uint8_t dumpMask, const modeActivationCondition_t *modeActi
                     macDefault->auxChannelIndex,
                     MODE_STEP_TO_CHANNEL_VALUE(macDefault->range.startStep),
                     MODE_STEP_TO_CHANNEL_VALUE(macDefault->range.endStep),
-                    macDefault->modeLogic
+                    macDefault->modeLogic,
+                    linkedTo ? linkedTo->permanentId : 0
                 );
             }
         }
         const box_t *box = findBoxByBoxId(mac->modeId);
+        const box_t *linkedTo = findBoxByBoxId(mac->linkedTo);
         if (box) {
             cliDumpPrintLinef(dumpMask, equalsDefault, format,
                 i,
@@ -880,7 +882,8 @@ static void printAux(uint8_t dumpMask, const modeActivationCondition_t *modeActi
                 mac->auxChannelIndex,
                 MODE_STEP_TO_CHANNEL_VALUE(mac->range.startStep),
                 MODE_STEP_TO_CHANNEL_VALUE(mac->range.endStep),
-                mac->modeLogic
+                mac->modeLogic,
+                linkedTo ? linkedTo->permanentId : 0
             );
         }
     }
@@ -925,18 +928,30 @@ static void cliAux(char *cmdline)
                     validArgumentCount++;
                 }
             }
+            ptr = nextArg(ptr);
+            if (ptr) {
+                val = atoi(ptr);
+                const box_t *box = findBoxByPermanentId(val);
+                if (box) {
+                    mac->linkedTo = box->boxId;
+                    validArgumentCount++;
+                }
+            }
             if (validArgumentCount == 4) { // for backwards compatibility
                 mac->modeLogic = MODELOGIC_OR;
-            } else if (validArgumentCount != 5) {
+            } else if (validArgumentCount == 5) { // for backwards compatibility
+                mac->linkedTo = 0;
+            } else if (validArgumentCount != 6) {
                 memset(mac, 0, sizeof(modeActivationCondition_t));
             }
-            cliPrintLinef( "aux %u %u %u %u %u %u",
+            cliPrintLinef( "aux %u %u %u %u %u %u %u",
                 i,
                 mac->modeId,
                 mac->auxChannelIndex,
                 MODE_STEP_TO_CHANNEL_VALUE(mac->range.startStep),
                 MODE_STEP_TO_CHANNEL_VALUE(mac->range.endStep),
-                mac->modeLogic
+                mac->modeLogic,
+                mac->linkedTo
             );
         } else {
             cliShowArgumentRangeError("index", 0, MAX_MODE_ACTIVATION_CONDITION_COUNT - 1);
@@ -953,12 +968,7 @@ static void printSerial(uint8_t dumpMask, const serialConfig_t *serialConfig, co
         };
         bool equalsDefault = false;
         if (serialConfigDefault) {
-            equalsDefault = serialConfig->portConfigs[i].identifier == serialConfigDefault->portConfigs[i].identifier
-                && serialConfig->portConfigs[i].functionMask == serialConfigDefault->portConfigs[i].functionMask
-                && serialConfig->portConfigs[i].msp_baudrateIndex == serialConfigDefault->portConfigs[i].msp_baudrateIndex
-                && serialConfig->portConfigs[i].gps_baudrateIndex == serialConfigDefault->portConfigs[i].gps_baudrateIndex
-                && serialConfig->portConfigs[i].telemetry_baudrateIndex == serialConfigDefault->portConfigs[i].telemetry_baudrateIndex
-                && serialConfig->portConfigs[i].blackbox_baudrateIndex == serialConfigDefault->portConfigs[i].blackbox_baudrateIndex;
+            equalsDefault = !memcmp(&serialConfig->portConfigs[i], &serialConfigDefault->portConfigs[i], sizeof(serialConfig->portConfigs[i]));
             cliDefaultPrintLinef(dumpMask, equalsDefault, format,
                 serialConfigDefault->portConfigs[i].identifier,
                 serialConfigDefault->portConfigs[i].functionMask,
@@ -1207,14 +1217,7 @@ static void printAdjustmentRange(uint8_t dumpMask, const adjustmentRange_t *adju
         bool equalsDefault = false;
         if (defaultAdjustmentRanges) {
             const adjustmentRange_t *arDefault = &defaultAdjustmentRanges[i];
-            equalsDefault = ar->auxChannelIndex == arDefault->auxChannelIndex
-                && ar->range.startStep == arDefault->range.startStep
-                && ar->range.endStep == arDefault->range.endStep
-                && ar->adjustmentFunction == arDefault->adjustmentFunction
-                && ar->auxSwitchChannelIndex == arDefault->auxSwitchChannelIndex
-                && ar->adjustmentIndex == arDefault->adjustmentIndex
-                && ar->adjustmentCenter == arDefault->adjustmentCenter
-                && ar->adjustmentScale == arDefault->adjustmentScale;
+            equalsDefault = !memcmp(ar, arDefault, sizeof(*ar));
             cliDefaultPrintLinef(dumpMask, equalsDefault, format,
                 i,
                 arDefault->adjustmentIndex,
@@ -1447,8 +1450,7 @@ static void printRxRange(uint8_t dumpMask, const rxChannelRangeConfig_t *channel
     for (uint32_t i = 0; i < NON_AUX_CHANNEL_COUNT; i++) {
         bool equalsDefault = false;
         if (defaultChannelRangeConfigs) {
-            equalsDefault = channelRangeConfigs[i].min == defaultChannelRangeConfigs[i].min
-                && channelRangeConfigs[i].max == defaultChannelRangeConfigs[i].max;
+            equalsDefault = !memcmp(&channelRangeConfigs[i], &defaultChannelRangeConfigs[i], sizeof(channelRangeConfigs[i]));
             cliDefaultPrintLinef(dumpMask, equalsDefault, format,
                 i,
                 defaultChannelRangeConfigs[i].min,
@@ -1566,9 +1568,7 @@ static void printColor(uint8_t dumpMask, const hsvColor_t *colors, const hsvColo
         bool equalsDefault = false;
         if (defaultColors) {
             const hsvColor_t *colorDefault = &defaultColors[i];
-            equalsDefault = color->h == colorDefault->h
-                && color->s == colorDefault->s
-                && color->v == colorDefault->v;
+            equalsDefault = !memcmp(color, colorDefault, sizeof(*color));
             cliDefaultPrintLinef(dumpMask, equalsDefault, format, i,colorDefault->h, colorDefault->s, colorDefault->v);
         }
         cliDumpPrintLinef(dumpMask, equalsDefault, format, i, color->h, color->s, color->v);
@@ -1677,11 +1677,7 @@ static void printServo(uint8_t dumpMask, const servoParam_t *servoParams, const 
         bool equalsDefault = false;
         if (defaultServoParams) {
             const servoParam_t *defaultServoConf = &defaultServoParams[i];
-            equalsDefault = servoConf->min == defaultServoConf->min
-                && servoConf->max == defaultServoConf->max
-                && servoConf->middle == defaultServoConf->middle
-                && servoConf->rate == defaultServoConf->rate
-                && servoConf->forwardFromChannel == defaultServoConf->forwardFromChannel;
+            equalsDefault = !memcmp(servoConf, defaultServoConf, sizeof(*servoConf));
             cliDefaultPrintLinef(dumpMask, equalsDefault, format,
                 i,
                 defaultServoConf->min,
@@ -1823,13 +1819,7 @@ static void printServoMix(uint8_t dumpMask, const servoMixer_t *customServoMixer
         bool equalsDefault = false;
         if (defaultCustomServoMixers) {
             servoMixer_t customServoMixerDefault = defaultCustomServoMixers[i];
-            equalsDefault = customServoMixer.targetChannel == customServoMixerDefault.targetChannel
-                && customServoMixer.inputSource == customServoMixerDefault.inputSource
-                && customServoMixer.rate == customServoMixerDefault.rate
-                && customServoMixer.speed == customServoMixerDefault.speed
-                && customServoMixer.min == customServoMixerDefault.min
-                && customServoMixer.max == customServoMixerDefault.max
-                && customServoMixer.box == customServoMixerDefault.box;
+            equalsDefault = !memcmp(&customServoMixer, &customServoMixerDefault, sizeof(customServoMixer));
 
             cliDefaultPrintLinef(dumpMask, equalsDefault, format,
                 i,
@@ -2155,11 +2145,7 @@ static void printVtx(uint8_t dumpMask, const vtxConfig_t *vtxConfig, const vtxCo
         const vtxChannelActivationCondition_t *cac = &vtxConfig->vtxChannelActivationConditions[i];
         if (vtxConfigDefault) {
             const vtxChannelActivationCondition_t *cacDefault = &vtxConfigDefault->vtxChannelActivationConditions[i];
-            equalsDefault = cac->auxChannelIndex == cacDefault->auxChannelIndex
-                && cac->band == cacDefault->band
-                && cac->channel == cacDefault->channel
-                && cac->range.startStep == cacDefault->range.startStep
-                && cac->range.endStep == cacDefault->range.endStep;
+            equalsDefault = !memcmp(cac, cacDefault, sizeof(*cac));
             cliDefaultPrintLinef(dumpMask, equalsDefault, format,
                 i,
                 cacDefault->auxChannelIndex,
@@ -2362,9 +2348,18 @@ static void cliMcuId(char *cmdline)
     cliPrintLinef("mcu_id %08x%08x%08x", U_ID_0, U_ID_1, U_ID_2);
 }
 
+static uint32_t getFeatureMask(const uint32_t featureMask)
+{
+    if (featureMaskIsCopied) {
+        return featureMaskCopy;
+    } else {
+        return featureMask;
+    }
+}
+
 static void printFeature(uint8_t dumpMask, const featureConfig_t *featureConfig, const featureConfig_t *featureConfigDefault)
 {
-    const uint32_t mask = featureConfig->enabledFeatures;
+    const uint32_t mask = getFeatureMask(featureConfig->enabledFeatures);
     const uint32_t defaultMask = featureConfigDefault->enabledFeatures;
     for (uint32_t i = 0; featureNames[i]; i++) { // disabled features first
         if (strcmp(featureNames[i], emptyString) != 0) { //Skip unused
@@ -2389,15 +2384,16 @@ static void printFeature(uint8_t dumpMask, const featureConfig_t *featureConfig,
 static void cliFeature(char *cmdline)
 {
     uint32_t len = strlen(cmdline);
-    uint32_t mask = featureMask();
-
+    const uint32_t mask = getFeatureMask(featureMask());
     if (len == 0) {
         cliPrint("Enabled: ");
         for (uint32_t i = 0; ; i++) {
-            if (featureNames[i] == NULL)
+            if (featureNames[i] == NULL) {
                 break;
-            if (mask & (1 << i))
+            }
+            if (mask & (1 << i)) {
                 cliPrintf("%s ", featureNames[i]);
+            }
         }
         cliPrintLinefeed();
     } else if (strncasecmp(cmdline, "list", len) == 0) {
@@ -2411,6 +2407,12 @@ static void cliFeature(char *cmdline)
         cliPrintLinefeed();
         return;
     } else {
+        if (!featureMaskIsCopied) {
+            featureMaskCopy = featureMask();
+            featureMaskIsCopied = true;
+        }
+        uint32_t feature;
+
         bool remove = false;
         if (cmdline[0] == '-') {
             // remove feature
@@ -2426,25 +2428,24 @@ static void cliFeature(char *cmdline)
             }
 
             if (strncasecmp(cmdline, featureNames[i], len) == 0) {
-
-                mask = 1 << i;
+                feature = 1 << i;
 #ifndef USE_GPS
-                if (mask & FEATURE_GPS) {
+                if (feature & FEATURE_GPS) {
                     cliPrintLine("unavailable");
                     break;
                 }
 #endif
 #ifndef USE_RANGEFINDER
-                if (mask & FEATURE_RANGEFINDER) {
+                if (feature & FEATURE_RANGEFINDER) {
                     cliPrintLine("unavailable");
                     break;
                 }
 #endif
                 if (remove) {
-                    featureClear(mask);
+                    featureClear(feature, &featureMaskCopy);
                     cliPrint("Disabled");
                 } else {
-                    featureSet(mask);
+                    featureSet(feature, &featureMaskCopy);
                     cliPrint("Enabled");
                 }
                 cliPrintLinef(" %s", featureNames[i]);
@@ -2963,7 +2964,7 @@ static void cliDshotProg(char *cmdline)
                         pwmWriteDshotCommand(escIndex, getMotorCount(), command, true);
                     } else {
 #if defined(USE_ESC_SENSOR) && defined(USE_ESC_SENSOR_INFO)
-                        if (feature(FEATURE_ESC_SENSOR)) {
+                        if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
                             if (escIndex != ALL_MOTORS) {
                                 executeEscInfoCommand(escIndex);
                             } else {
@@ -3255,7 +3256,11 @@ static void cliSave(char *cmdline)
 #endif
 #endif // USE_BOARD_INFO
 
-    writeEEPROM();
+    if (featureMaskIsCopied) {
+        writeEEPROMWithFeatures(featureMaskCopy);
+    } else {
+        writeEEPROM();
+    }
 
     cliReboot();
 }
@@ -3634,6 +3639,8 @@ static void cliTasks(char *cmdline)
             if (taskId == TASK_GYROPID && pidConfig()->pid_process_denom > 1) {
                 cliPrintLinef("   - (%15s) %6d", taskInfo.subTaskName, subTaskFrequency);
             }
+
+            schedulerResetTaskMaxExecutionTime(taskId);
         }
     }
     if (systemConfig()->task_statistics) {
@@ -3737,8 +3744,10 @@ const cliResourceValue_t resourceTable[] = {
 #ifdef USE_SERVOS
     DEFA( OWNER_SERVO,         PG_SERVO_CONFIG, servoConfig_t, dev.ioTags[0], MAX_SUPPORTED_SERVOS ),
 #endif
-#if defined(USE_PWM) || defined(USE_PPM)
+#if defined(USE_PPM)
     DEFS( OWNER_PPMINPUT,      PG_PPM_CONFIG, ppmConfig_t, ioTag ),
+#endif
+#if defined(USE_PWM)
     DEFA( OWNER_PWMINPUT,      PG_PWM_CONFIG, pwmConfig_t, ioTags[0], PWM_INPUT_PORT_COUNT ),
 #endif
 #ifdef USE_RANGEFINDER_HCSR04
@@ -4345,40 +4354,21 @@ static void cliDiff(char *cmdline)
     printConfig(cmdline, true);
 }
 
-#ifdef USE_USB_MSC
+#if defined(USE_USB_MSC)
 static void cliMsc(char *cmdline)
 {
     UNUSED(cmdline);
 
-    if (false
-#ifdef USE_SDCARD
-        || sdcard_isFunctional()
-#endif
-#ifdef USE_FLASHFS
-        || flashfsGetSize() > 0
-#endif
-    ) {
-        cliPrintHashLine("restarting in mass storage mode");
+    if (mscCheckFilesystemReady()) {
+        cliPrintHashLine("Restarting in mass storage mode");
         cliPrint("\r\nRebooting");
         bufWriterFlush(cliWriter);
-        delay(1000);
         waitForSerialPortToFinishTransmitting(cliPort);
         stopPwmAllMotors();
-        if (mpuResetFn) {
-            mpuResetFn();
-        }
 
-#ifdef STM32F7
-        *((__IO uint32_t*) BKPSRAM_BASE + 16) = MSC_MAGIC;
-#elif defined(STM32F4)
-        *((uint32_t *)0x2001FFF0) = MSC_MAGIC;
-#endif
-
-        __disable_irq();
-        NVIC_SystemReset();
+        systemResetToMsc();
     } else {
-        cliPrint("\r\nStorage not present or failed to initialize!");
-        bufWriterFlush(cliWriter);
+        cliPrintHashLine("Storage not present or failed to initialize!");
     }
 }
 #endif
@@ -4674,9 +4664,9 @@ void cliEnter(serialPort_t *serialPort)
 #else
     cliPrintLine("\r\nCLI");
 #endif
-    cliPrompt();
-
     setArmingDisabled(ARMING_DISABLED_CLI);
+
+    cliPrompt();
 }
 
 void cliInit(const serialConfig_t *serialConfig)

@@ -19,7 +19,12 @@ TARGET_SRC += \
             drivers/accgyro/accgyro_mpu6500.c \
             drivers/accgyro/accgyro_spi_mpu6500.c
 else
+ifeq ($(TARGET), IRCSYNERGYF3)
+TARGET_SRC += \
+			drivers/accgyro/accgyro_spi_mpu6000.c
+else
 TARGET_SRC += \
             drivers/accgyro/accgyro_mpu6050.c
+endif
 endif
 endif

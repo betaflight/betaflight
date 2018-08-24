@@ -47,14 +47,17 @@ typedef enum {
     ADJUSTMENT_ROLL_I,
     ADJUSTMENT_ROLL_D,
     ADJUSTMENT_RC_RATE_YAW,
-    ADJUSTMENT_D_SETPOINT,
-    ADJUSTMENT_D_SETPOINT_TRANSITION,
+    ADJUSTMENT_PITCH_ROLL_F,
+    ADJUSTMENT_FEEDFORWARD_TRANSITION,
     ADJUSTMENT_HORIZON_STRENGTH,
     ADJUSTMENT_ROLL_RC_RATE,
     ADJUSTMENT_PITCH_RC_RATE,
     ADJUSTMENT_ROLL_RC_EXPO,
     ADJUSTMENT_PITCH_RC_EXPO,
     ADJUSTMENT_PID_AUDIO,
+    ADJUSTMENT_PITCH_F,
+    ADJUSTMENT_ROLL_F,
+    ADJUSTMENT_YAW_F,
     ADJUSTMENT_FUNCTION_COUNT
 } adjustmentFunction_e;
 
@@ -105,12 +108,11 @@ typedef struct adjustmentState_s {
 #define MAX_SIMULTANEOUS_ADJUSTMENT_COUNT 4 // enough for 4 x 3position switches / 4 aux channel
 #endif
 
-extern const char *adjustmentRangeName;
-extern int adjustmentRangeValue;
-
 void resetAdjustmentStates(void);
 void updateAdjustmentStates(void);
 struct controlRateConfig_s;
 void processRcAdjustments(struct controlRateConfig_s *controlRateConfig);
 struct pidProfile_s;
 void useAdjustmentConfig(struct pidProfile_s *pidProfileToUse);
+const char *getAdjustmentsRangeName(void);
+int getAdjustmentsRangeValue(void);

@@ -352,7 +352,7 @@ void delay(uint32_t ms)
 
 uint32_t micros(void) { return 0; }
 bool shouldSoundBatteryAlarm(void) { return false; }
-bool feature(uint32_t mask) {
+bool featureIsEnabled(uint32_t mask) {
     UNUSED(mask);
     return false;
 }

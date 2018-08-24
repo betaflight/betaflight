@@ -22,18 +22,26 @@
 
 #define TARGET_BOARD_IDENTIFIER "FRF3"
 #define USE_TARGET_CONFIG
-#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
 // Removed to make the firmware fit into flash (in descending order of priority):
 //#undef USE_GYRO_OVERFLOW_CHECK
 //#undef USE_GYRO_LPF2
 
-//#undef USE_TELEMETRY_HOTT
-//#undef USE_TELEMETRY_MAVLINK
-//#undef USE_TELEMETRY_LTM
-//#undef USE_SERIALRX_XBUS
+//#undef USE_ITERM_RELAX
+//#undef USE_RC_SMOOTHING_FILTER
 
-//#undef USE_BOARD_INFO
+#undef USE_HUFFMAN
+#undef USE_PINIO
+#undef USE_PINIOBOX
+
+#undef USE_TELEMETRY_HOTT
+#undef USE_TELEMETRY_MAVLINK
+#undef USE_TELEMETRY_LTM
+#undef USE_SERIALRX_XBUS
+#undef USE_SERIALRX_SUMH
+#undef USE_PWM
+
+#undef USE_BOARD_INFO
 #undef USE_EXTENDED_CMS_MENUS
 #undef USE_RTC_TIME
 #undef USE_RX_MSP

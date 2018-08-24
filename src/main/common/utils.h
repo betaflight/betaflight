@@ -57,9 +57,8 @@
 #if !defined(UNUSED)
 #define UNUSED(x) (void)(x)
 #endif
-#define BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2*!!(condition)]))
-#define STATIC_ASSERT(condition, name) \
-    typedef char assert_failed_ ## name [(condition) ? 1 : -1 ] __attribute__((unused))
+
+#define STATIC_ASSERT(condition, name) _Static_assert((condition), #name)
 
 
 #define BIT(x) (1 << (x))

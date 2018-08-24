@@ -236,7 +236,7 @@ int32_t getSensorValue(uint8_t sensor)
         break;
 
     case EX_ALTITUDE:
-        return getEstimatedAltitude();
+        return getEstimatedAltitudeCm() / 100;
         break;
 
     case EX_CAPACITY:

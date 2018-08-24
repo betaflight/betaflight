@@ -29,57 +29,40 @@
 #include "pg/pg_ids.h"
 
 
-static uint32_t activeFeaturesLatch = 0;
-
 PG_REGISTER_WITH_RESET_TEMPLATE(featureConfig_t, featureConfig, PG_FEATURE_CONFIG, 0);
 
 PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
     .enabledFeatures = DEFAULT_FEATURES | DEFAULT_RX_FEATURE | FEATURE_DYNAMIC_FILTER | FEATURE_ANTI_GRAVITY,
 );
 
-void intFeatureSet(uint32_t mask, uint32_t *features)
+void featureSet(const uint32_t mask, uint32_t *features)
 {
     *features |= mask;
 }
 
-void intFeatureClear(uint32_t mask, uint32_t *features)
+void featureClear(const uint32_t mask, uint32_t *features)
 {
     *features &= ~(mask);
 }
 
-void intFeatureClearAll(uint32_t *features)
-{
-    *features = 0;
-}
-
-void latchActiveFeatures(void)
-{
-    activeFeaturesLatch = featureConfig()->enabledFeatures;
-}
-
-bool featureConfigured(uint32_t mask)
+bool featureIsEnabled(const uint32_t mask)
 {
     return featureConfig()->enabledFeatures & mask;
 }
 
-bool feature(uint32_t mask)
+void featureEnable(const uint32_t mask)
 {
-    return activeFeaturesLatch & mask;
+    featureSet(mask, &featureConfigMutable()->enabledFeatures);
 }
 
-void featureSet(uint32_t mask)
+void featureDisable(const uint32_t mask)
 {
-    intFeatureSet(mask, &featureConfigMutable()->enabledFeatures);
+    featureClear(mask, &featureConfigMutable()->enabledFeatures);
 }
 
-void featureClear(uint32_t mask)
+void featureDisableAll(void)
 {
-    intFeatureClear(mask, &featureConfigMutable()->enabledFeatures);
-}
-
-void featureClearAll(void)
-{
-    intFeatureClearAll(&featureConfigMutable()->enabledFeatures);
+    featureConfigMutable()->enabledFeatures = 0;
 }
 
 uint32_t featureMask(void)

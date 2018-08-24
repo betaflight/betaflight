@@ -543,7 +543,7 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
 void frSkyXInit(void)
 {
 #if defined(USE_TELEMETRY_SMARTPORT)
-     if (feature(FEATURE_TELEMETRY)) {
+     if (featureIsEnabled(FEATURE_TELEMETRY)) {
          telemetryEnabled = initSmartPortTelemetryExternal(frSkyXTelemetryWriteFrame);
      }
 #endif

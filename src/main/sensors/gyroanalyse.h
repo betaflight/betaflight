@@ -20,16 +20,42 @@
 
 #pragma once
 
-#include "common/time.h"
+#include "arm_math.h"
+
 #include "common/filter.h"
 
-typedef struct gyroFftData_s {
-    float maxVal;
-    uint16_t centerFreq;
-} gyroFftData_t;
+#include "sensors/gyro.h"
 
-void gyroDataAnalyseInit(uint32_t targetLooptime);
-const gyroFftData_t *gyroFftData(int axis);
-struct gyroDev_s;
-void gyroDataAnalyse(const struct gyroDev_s *gyroDev, biquadFilter_t *notchFilterDyn);
-void gyroDataAnalyseUpdate(biquadFilter_t *notchFilterDyn);
+// max for F3 targets
+#define FFT_WINDOW_SIZE 32
+
+typedef struct gyroAnalyseState_s {
+    // accumulator for oversampled data => no aliasing and less noise
+    uint8_t sampleCount;
+    uint8_t maxSampleCount;
+    float maxSampleCountRcp;
+    float oversampledGyroAccumulator[XYZ_AXIS_COUNT];
+
+    // downsampled gyro data circular buffer for frequency analysis
+    uint8_t circularBufferIdx;
+    float downsampledGyroData[XYZ_AXIS_COUNT][FFT_WINDOW_SIZE];
+
+    // update state machine step information
+    uint8_t updateTicks;
+    uint8_t updateStep;
+    uint8_t updateAxis;
+
+    arm_rfft_fast_instance_f32 fftInstance;
+    float fftData[FFT_WINDOW_SIZE];
+    float rfftData[FFT_WINDOW_SIZE];
+
+    biquadFilter_t detectedFrequencyFilter[XYZ_AXIS_COUNT];
+    uint16_t centerFreq[XYZ_AXIS_COUNT];
+    uint16_t prevCenterFreq[XYZ_AXIS_COUNT];
+} gyroAnalyseState_t;
+
+STATIC_ASSERT(FFT_WINDOW_SIZE <= (uint8_t) -1, window_size_greater_than_underlying_type);
+
+void gyroDataAnalyseStateInit(gyroAnalyseState_t *gyroAnalyse, uint32_t targetLooptime);
+void gyroDataAnalysePush(gyroAnalyseState_t *gyroAnalyse, int axis, float sample);
+void gyroDataAnalyse(gyroAnalyseState_t *gyroAnalyse, biquadFilter_t *notchFilterDyn);

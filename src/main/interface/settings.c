@@ -229,11 +229,13 @@ static const char * const lookupTableRxSpi[] = {
 
 static const char * const lookupTableGyroHardwareLpf[] = {
     "NORMAL",
-    "EXPERIMENTAL",
-    "1KHZ_SAMPLING"
+    "1KHZ_SAMPLING",
+#ifdef USE_GYRO_DLPF_EXPERIMENTAL
+    "EXPERIMENTAL"
+#endif
 };
 
-#ifdef USE_32K_CAPABLE_GYRO
+#if defined(USE_32K_CAPABLE_GYRO) && defined(USE_GYRO_DLPF_EXPERIMENTAL)
 static const char * const lookupTableGyro32khzHardwareLpf[] = {
     "NORMAL",
     "EXPERIMENTAL"
@@ -273,6 +275,10 @@ static const char * const lookupTableDtermLowpassType[] = {
     "BIQUAD",
 };
 
+static const char * const lookupTableAntiGravityMode[] = {
+    "SMOOTH",
+    "STEP",
+};
 
 static const char * const lookupTableFailsafe[] = {
     "AUTO-LAND", "DROP", "GPS-RESCUE"
@@ -340,7 +346,7 @@ static const char * const lookupTableVideoSystem[] = {
 
 #if defined(USE_ITERM_RELAX)
 static const char * const lookupTableItermRelax[] = {
-    "OFF", "RP", "RPY"
+    "OFF", "RP", "RPY", "RP_INC", "RPY_INC"
 };
 static const char * const lookupTableItermRelaxType[] = {
     "GYRO", "SETPOINT"
@@ -367,6 +373,21 @@ static const char * const lookupTableRcSmoothingDerivativeType[] = {
     "OFF", "PT1", "BIQUAD"
 };
 #endif // USE_RC_SMOOTHING_FILTER
+
+#ifdef USE_GYRO_DATA_ANALYSE
+static const char * const lookupTableDynamicFftLocation[] = {
+    "BEFORE_STATIC_FILTERS", "AFTER_STATIC_FILTERS"
+};
+static const char * const lookupTableDynamicFilterRange[] = {
+    "HIGH", "MEDIUM", "LOW"
+};
+#endif // USE_GYRO_DATA_ANALYSE
+
+#ifdef USE_VTX_COMMON
+static const char * const lookupTableVtxLowPowerDisarm[] = {
+    "OFF", "ON", "UNTIL_FIRST_ARM"
+};
+#endif
 
 #define LOOKUP_TABLE_ENTRY(name) { name, ARRAYLEN(name) }
 
@@ -397,7 +418,7 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableRxSpi),
 #endif
     LOOKUP_TABLE_ENTRY(lookupTableGyroHardwareLpf),
-#ifdef USE_32K_CAPABLE_GYRO
+#if defined(USE_32K_CAPABLE_GYRO) && defined(USE_GYRO_DLPF_EXPERIMENTAL)
     LOOKUP_TABLE_ENTRY(lookupTableGyro32khzHardwareLpf),
 #endif
     LOOKUP_TABLE_ENTRY(lookupTableAccHardware),
@@ -413,6 +434,7 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableRcInterpolationChannels),
     LOOKUP_TABLE_ENTRY(lookupTableLowpassType),
     LOOKUP_TABLE_ENTRY(lookupTableDtermLowpassType),
+    LOOKUP_TABLE_ENTRY(lookupTableAntiGravityMode),
     LOOKUP_TABLE_ENTRY(lookupTableFailsafe),
     LOOKUP_TABLE_ENTRY(lookupTableFailsafeSwitchMode),
     LOOKUP_TABLE_ENTRY(lookupTableCrashRecovery),
@@ -456,6 +478,13 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableRcSmoothingInputType),
     LOOKUP_TABLE_ENTRY(lookupTableRcSmoothingDerivativeType),
 #endif // USE_RC_SMOOTHING_FILTER
+#ifdef USE_GYRO_DATA_ANALYSE
+    LOOKUP_TABLE_ENTRY(lookupTableDynamicFftLocation),
+    LOOKUP_TABLE_ENTRY(lookupTableDynamicFilterRange),
+#endif // USE_GYRO_DATA_ANALYSE
+#ifdef USE_VTX_COMMON
+    LOOKUP_TABLE_ENTRY(lookupTableVtxLowPowerDisarm),
+#endif
 };
 
 #undef LOOKUP_TABLE_ENTRY
@@ -464,7 +493,7 @@ const clivalue_t valueTable[] = {
 // PG_GYRO_CONFIG
     { "align_gyro",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ALIGNMENT }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_align) },
     { "gyro_hardware_lpf",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GYRO_HARDWARE_LPF }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_hardware_lpf) },
-#ifdef USE_32K_CAPABLE_GYRO
+#if defined(USE_32K_CAPABLE_GYRO) && defined(USE_GYRO_DLPF_EXPERIMENTAL)
     { "gyro_32khz_hardware_lpf",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GYRO_32KHZ_HARDWARE_LPF }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_32khz_hardware_lpf) },
 #endif
 #if defined(USE_GYRO_SPI_ICM20649)
@@ -494,13 +523,16 @@ const clivalue_t valueTable[] = {
     { "yaw_spin_threshold",         VAR_UINT16 | MASTER_VALUE, .config.minmax = { 500,  1950 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, yaw_spin_threshold) },
 #endif
 
-#if defined(GYRO_USES_SPI)
-#ifdef USE_32K_CAPABLE_GYRO
+#if defined(GYRO_USES_SPI) && defined(USE_32K_CAPABLE_GYRO)
     { "gyro_use_32khz",             VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_use_32khz) },
-#endif
 #endif
 #ifdef USE_DUAL_GYRO
     { "gyro_to_use",                VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GYRO }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_to_use) },
+#endif
+#if defined(USE_GYRO_DATA_ANALYSE)
+    { "dyn_fft_location",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_DYNAMIC_FFT_LOCATION }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_fft_location) },
+    { "dyn_filter_width_percent",   VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 99 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_filter_width_percent) },
+    { "dyn_filter_range",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_DYNAMIC_FILTER_RANGE }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_filter_range) },
 #endif
 
 // PG_ACCELEROMETER_CONFIG
@@ -745,8 +777,8 @@ const clivalue_t valueTable[] = {
 #ifdef USE_GPS_RESCUE
     // PG_GPS_RESCUE
     { "gps_rescue_angle",           VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 200 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, angle) },
-    { "gps_rescue_initial_alt",     VAR_UINT16 | MASTER_VALUE, .config.minmax = { 20, 100 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, initialAltitude) },
-    { "gps_rescue_descent_dist",    VAR_UINT16 | MASTER_VALUE, .config.minmax = { 30, 500 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, descentDistance) },
+    { "gps_rescue_initial_alt",     VAR_UINT16 | MASTER_VALUE, .config.minmax = { 20, 100 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, initialAltitudeM) },
+    { "gps_rescue_descent_dist",    VAR_UINT16 | MASTER_VALUE, .config.minmax = { 30, 500 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, descentDistanceM) },
     { "gps_rescue_ground_speed",    VAR_UINT16 | MASTER_VALUE, .config.minmax = { 30, 3000 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, rescueGroundspeed) },
     { "gps_rescue_throttle_p",      VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 500 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, throttleP) },
     { "gps_rescue_throttle_i",      VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 500 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, throttleI) },
@@ -761,6 +793,7 @@ const clivalue_t valueTable[] = {
     { "gps_rescue_throttle_hover",  VAR_UINT16 | MASTER_VALUE, .config.minmax = { 1000, 2000 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, throttleHover) },
     { "gps_rescue_sanity_checks",   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GPS_RESCUE }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, sanityChecks) },
     { "gps_rescue_min_sats",        VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 50 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, minSats) },
+    { "gps_rescue_min_dth",         VAR_UINT16  | MASTER_VALUE, .config.minmax = { 50, 1000 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, minRescueDth) },
 #endif
 #endif
 
@@ -784,10 +817,10 @@ const clivalue_t valueTable[] = {
     { "dterm_notch_cutoff",         VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 0, 16000 }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_notch_cutoff) },
     { "vbat_pid_gain",              VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_PID_PROFILE, offsetof(pidProfile_t, vbatPidCompensation) },
     { "pid_at_min_throttle",        VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_PID_PROFILE, offsetof(pidProfile_t, pidAtMinThrottle) },
+    { "anti_gravity_mode",          VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ANTI_GRAVITY_MODE }, PG_PID_PROFILE, offsetof(pidProfile_t, antiGravityMode) },
     { "anti_gravity_threshold",     VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 20, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, itermThrottleThreshold) },
     { "anti_gravity_gain",          VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 1000, 30000 }, PG_PID_PROFILE, offsetof(pidProfile_t, itermAcceleratorGain) },
-    { "setpoint_relax_ratio",       VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, setpointRelaxRatio) },
-    { "dterm_setpoint_weight",      VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 0, 2000 }, PG_PID_PROFILE, offsetof(pidProfile_t, dtermSetpointWeight) },
+    { "feedforward_transition",     VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, feedForwardTransition) },
     { "acc_limit_yaw",              VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 0, 500 }, PG_PID_PROFILE, offsetof(pidProfile_t, yawRateAccelLimit) },
     { "acc_limit",                  VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 0, 500 }, PG_PID_PROFILE, offsetof(pidProfile_t, rateAccelLimit) },
     { "crash_dthreshold",           VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 0, 2000 }, PG_PID_PROFILE, offsetof(pidProfile_t, crash_dthreshold) },
@@ -807,7 +840,7 @@ const clivalue_t valueTable[] = {
 #if defined(USE_ITERM_RELAX)
     { "iterm_relax",                VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ITERM_RELAX }, PG_PID_PROFILE, offsetof(pidProfile_t, iterm_relax) },
     { "iterm_relax_type",           VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ITERM_RELAX_TYPE }, PG_PID_PROFILE, offsetof(pidProfile_t, iterm_relax_type) },
-    { "iterm_relax_cutoff",     VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 1, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, iterm_relax_cutoff) },
+    { "iterm_relax_cutoff",         VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 1, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, iterm_relax_cutoff) },
 #endif
     { "iterm_windup",               VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 30, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, itermWindupPointPercent) },
     { "iterm_limit",                VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 0, 500 }, PG_PID_PROFILE, offsetof(pidProfile_t, itermLimit) },
@@ -830,12 +863,15 @@ const clivalue_t valueTable[] = {
     { "p_pitch",                    VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_PITCH].P) },
     { "i_pitch",                    VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_PITCH].I) },
     { "d_pitch",                    VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_PITCH].D) },
+    { "f_pitch",                    VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 0, 2000 },PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_PITCH].F) },
     { "p_roll",                     VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_ROLL].P) },
     { "i_roll",                     VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_ROLL].I) },
     { "d_roll",                     VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_ROLL].D) },
+    { "f_roll",                     VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 0, 2000 },PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_ROLL].F) },
     { "p_yaw",                      VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_YAW].P) },
     { "i_yaw",                      VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_YAW].I) },
     { "d_yaw",                      VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_YAW].D) },
+    { "f_yaw",                      VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 0, 2000 },PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_YAW].F) },
 
     { "p_level",                    VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_LEVEL].P) },
     { "i_level",                    VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_LEVEL].I) },
@@ -872,6 +908,15 @@ const clivalue_t valueTable[] = {
 #if defined(USE_TELEMETRY_IBUS)
     { "ibus_sensor",                VAR_UINT8  | MASTER_VALUE | MODE_ARRAY, .config.array.length = IBUS_SENSOR_COUNT, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, flysky_sensors)},
 #endif
+#if defined(USE_TELEMETRY_SMARTPORT)
+    { "smartport_use_extra_sensors", VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, smartport_use_extra_sensors)},
+#endif
+#ifdef USE_TELEMETRY_MAVLINK
+    // Support for misusing the heading field in MAVlink to indicate mAh drawn for Connex Prosight OSD
+    // Set to 10 to show a tenth of your capacity drawn.
+    // Set to $size_of_battery to get a percentage of battery used.
+    { "mavlink_mah_as_heading_divisor", VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 30000 }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, mavlink_mah_as_heading_divisor) },
+#endif
 #endif // USE_TELEMETRY
 
 // PG_LED_STRIP_CONFIG
@@ -903,6 +948,7 @@ const clivalue_t valueTable[] = {
 #ifdef USE_ADC_INTERNAL
     { "osd_warn_core_temp",         VAR_UINT16  | MASTER_VALUE | MODE_BITSET, .config.bitpos = OSD_WARNING_CORE_TEMPERATURE, PG_OSD_CONFIG, offsetof(osdConfig_t, enabledWarnings)},
 #endif
+    { "osd_warn_fail_safe",         VAR_UINT16  | MASTER_VALUE | MODE_BITSET, .config.bitpos = OSD_WARNING_FAIL_SAFE,   PG_OSD_CONFIG, offsetof(osdConfig_t, enabledWarnings)},
 
     { "osd_rssi_alarm",             VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 100 }, PG_OSD_CONFIG, offsetof(osdConfig_t, rssi_alarm) },
     { "osd_cap_alarm",              VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 20000 }, PG_OSD_CONFIG, offsetof(osdConfig_t, cap_alarm) },
@@ -927,6 +973,7 @@ const clivalue_t valueTable[] = {
     { "osd_remaining_time_estimate_pos",        VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_REMAINING_TIME_ESTIMATE]) },
     { "osd_flymode_pos",            VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_FLYMODE]) },
     { "osd_anti_gravity_pos",       VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_ANTI_GRAVITY]) },
+    { "osd_g_force_pos",            VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_G_FORCE]) },
     { "osd_throttle_pos",           VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_THROTTLE_POS]) },
     { "osd_vtx_channel_pos",        VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_VTX_CHANNEL]) },
     { "osd_crosshairs_pos",         VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_CROSSHAIRS]) },
@@ -964,6 +1011,9 @@ const clivalue_t valueTable[] = {
 #ifdef USE_ADC_INTERNAL
     { "osd_core_temp_pos",          VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_CORE_TEMPERATURE]) },
 #endif
+#ifdef USE_BLACKBOX
+    { "osd_log_status_pos",         VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_LOG_STATUS]) },
+#endif
 
     // OSD stats enabled flags are stored as bitmapped values inside a 32bit parameter
     // It is recommended to keep the settings order the same as the enumeration. This way the settings are displayed in the cli in the same order making it easier on the users
@@ -981,6 +1031,7 @@ const clivalue_t valueTable[] = {
     { "osd_stat_max_alt",           VAR_UINT32  | MASTER_VALUE | MODE_BITSET, .config.bitpos = OSD_STAT_MAX_ALTITUDE,    PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats)},
     { "osd_stat_bbox",              VAR_UINT32  | MASTER_VALUE | MODE_BITSET, .config.bitpos = OSD_STAT_BLACKBOX,        PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats)},
     { "osd_stat_bb_no",             VAR_UINT32  | MASTER_VALUE | MODE_BITSET, .config.bitpos = OSD_STAT_BLACKBOX_NUMBER, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats)},
+    { "osd_stat_max_g_force",       VAR_UINT32  | MASTER_VALUE | MODE_BITSET, .config.bitpos = OSD_STAT_MAX_G_FORCE,     PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats)},
 
 #endif
 
@@ -1000,7 +1051,7 @@ const clivalue_t valueTable[] = {
     { "vtx_band",                   VAR_UINT8  | MASTER_VALUE, .config.minmax = { VTX_SETTINGS_NO_BAND, VTX_SETTINGS_MAX_BAND }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, band) },
     { "vtx_channel",                VAR_UINT8  | MASTER_VALUE, .config.minmax = { VTX_SETTINGS_MIN_CHANNEL, VTX_SETTINGS_MAX_CHANNEL }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, channel) },
     { "vtx_power",                  VAR_UINT8  | MASTER_VALUE, .config.minmax = { VTX_SETTINGS_MIN_POWER, VTX_SETTINGS_POWER_COUNT-1 }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, power) },
-    { "vtx_low_power_disarm",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, lowPowerDisarm) },
+    { "vtx_low_power_disarm",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_VTX_LOW_POWER_DISARM }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, lowPowerDisarm) },
 #ifdef VTX_SETTINGS_FREQCMD
     { "vtx_freq",                   VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, VTX_SETTINGS_MAX_FREQUENCY_MHZ }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, freq) },
     { "vtx_pit_mode_freq",          VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, VTX_SETTINGS_MAX_FREQUENCY_MHZ }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, pitModeFreq) },
@@ -1102,5 +1153,5 @@ const clivalue_t valueTable[] = {
 const uint16_t valueTableEntryCount = ARRAYLEN(valueTable);
 
 void settingsBuildCheck() {
-    BUILD_BUG_ON(LOOKUP_TABLE_COUNT != ARRAYLEN(lookupTables));
+    STATIC_ASSERT(LOOKUP_TABLE_COUNT == ARRAYLEN(lookupTables), LOOKUP_TABLE_COUNT_incorrect);
 }

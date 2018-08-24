@@ -84,10 +84,10 @@ int loopIter = 0;
 void setDefaultTestSettings(void) {
     pgResetAll();
     pidProfile = pidProfilesMutable(1);
-    pidProfile->pid[PID_ROLL]  =  { 40, 40, 30 };
-    pidProfile->pid[PID_PITCH] =  { 58, 50, 35 };
-    pidProfile->pid[PID_YAW]   =  { 70, 45, 0 };
-    pidProfile->pid[PID_LEVEL] =  { 50, 50, 75 };
+    pidProfile->pid[PID_ROLL]  =  { 40, 40, 30, 65 };
+    pidProfile->pid[PID_PITCH] =  { 58, 50, 35, 60 };
+    pidProfile->pid[PID_YAW]   =  { 70, 45, 20, 60 };
+    pidProfile->pid[PID_LEVEL] =  { 50, 50, 75, 0 };
 
     pidProfile->pidSumLimit = PIDSUM_LIMIT;
     pidProfile->pidSumLimitYaw = PIDSUM_LIMIT_YAW;
@@ -101,11 +101,11 @@ void setDefaultTestSettings(void) {
     pidProfile->vbatPidCompensation = 0;
     pidProfile->pidAtMinThrottle = PID_STABILISATION_ON;
     pidProfile->levelAngleLimit = 55;
-    pidProfile->setpointRelaxRatio = 100;
-    pidProfile->dtermSetpointWeight = 0;
+    pidProfile->feedForwardTransition = 100;
     pidProfile->yawRateAccelLimit = 100;
     pidProfile->rateAccelLimit = 0;
-    pidProfile->itermThrottleThreshold = 350;
+    pidProfile->antiGravityMode = ANTI_GRAVITY_SMOOTH;
+    pidProfile->itermThrottleThreshold = 250;
     pidProfile->itermAcceleratorGain = 1000;
     pidProfile->crash_time = 500;
     pidProfile->crash_delay = 0;
@@ -266,7 +266,7 @@ TEST(pidControllerTest, testPidLoop) {
     ASSERT_NEAR(-8.7, pidData[FD_YAW].I, calculateTolerance(-8.7));
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].D);
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
-    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].D);
+    EXPECT_FLOAT_EQ(-132.25, pidData[FD_YAW].D);
 
     // Match the stick to gyro to stop error
     simulatedSetpointRate[FD_ROLL] = 100;

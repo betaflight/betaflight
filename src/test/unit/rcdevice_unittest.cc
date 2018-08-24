@@ -845,7 +845,7 @@ extern "C" {
         sbufWriteU8(dst, (uint8_t)val);
     }
 
-    bool feature(uint32_t) { return false; }
+    bool featureIsEnabled(uint32_t) { return false; }
 
     void serialWriteBuf(serialPort_t *instance, const uint8_t *data, int count) 
     { 
@@ -888,6 +888,7 @@ extern "C" {
     }
     
     uint32_t millis(void) { return testData.millis++; }
+    uint32_t micros(void) { return millis() * 1000; }
     void beeper(beeperMode_e mode) { UNUSED(mode); }
     uint8_t armingFlags = 0;
     bool cmsInMenu;

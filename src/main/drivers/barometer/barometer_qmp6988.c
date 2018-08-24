@@ -139,8 +139,8 @@ bool qmp6988Detect(baroDev_t *baro)
     int Coe_b12_;
     int Coe_b21_;
     int Coe_bp3_;
-    u16 lb=0,hb=0;
-    u32 lw=0,hw=0,temp1,temp2;
+    uint16_t lb=0,hb=0;
+    uint32_t lw=0,hw=0,temp1,temp2;
 
     delay(20);
 

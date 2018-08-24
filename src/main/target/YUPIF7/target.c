@@ -35,7 +35,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM5,  CH4, PA3,  TIM_USE_MOTOR,               0, 1 ), // S4_OUT - DMA1_ST6
     DEF_TIM(TIM3,  CH3, PB0,  TIM_USE_MOTOR,               0, 0 ), // S5_OUT - DMA1_ST7 - LED Control
     DEF_TIM(TIM3,  CH4, PB1,  TIM_USE_MOTOR | TIM_USE_LED, 0, 0 ), // S6_OUT
-    DEF_TIM(TIM4,  CH2, PB7,  TIM_USE_ANY,                 0, 0 ), // Camera Control
+    DEF_TIM(TIM4,  CH2, PB7,  TIM_USE_CAMERA_CONTROL,      0, 0 ), // Camera Control
     DEF_TIM(TIM12, CH1, PB14, TIM_USE_BEEPER,              0, 0 ), // BEEPER PWM
 };
 

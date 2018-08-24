@@ -224,7 +224,7 @@ void servosInit(void)
     // enable servos for mixes that require them. note, this shifts motor counts.
     useServo = mixers[currentMixerMode].useServo;
     // if we want camstab/trig, that also enables servos, even if mixer doesn't
-    if (feature(FEATURE_SERVO_TILT) || feature(FEATURE_CHANNEL_FORWARDING)) {
+    if (featureIsEnabled(FEATURE_SERVO_TILT) || featureIsEnabled(FEATURE_CHANNEL_FORWARDING)) {
         useServo = 1;
     }
 
@@ -377,13 +377,13 @@ void writeServos(void)
     }
 
     // Two servos for SERVO_TILT, if enabled
-    if (feature(FEATURE_SERVO_TILT) || currentMixerMode == MIXER_GIMBAL) {
+    if (featureIsEnabled(FEATURE_SERVO_TILT) || currentMixerMode == MIXER_GIMBAL) {
         updateGimbalServos(servoIndex);
         servoIndex += 2;
     }
 
     // forward AUX to remaining servo outputs (not constrained)
-    if (feature(FEATURE_CHANNEL_FORWARDING)) {
+    if (featureIsEnabled(FEATURE_CHANNEL_FORWARDING)) {
         forwardAuxChannelsToServos(servoIndex);
         servoIndex += MAX_AUX_CHANNEL_COUNT;
     }
@@ -406,7 +406,7 @@ void servoMixer(void)
         input[INPUT_STABILIZED_YAW] = pidData[FD_YAW].Sum * PID_SERVO_MIXER_SCALING;
 
         // Reverse yaw servo when inverted in 3D mode
-        if (feature(FEATURE_3D) && (rcData[THROTTLE] < rxConfig()->midrc)) {
+        if (featureIsEnabled(FEATURE_3D) && (rcData[THROTTLE] < rxConfig()->midrc)) {
             input[INPUT_STABILIZED_YAW] *= -1;
         }
     }
@@ -498,7 +498,7 @@ static void servoTable(void)
     }
 
     // camera stabilization
-    if (feature(FEATURE_SERVO_TILT)) {
+    if (featureIsEnabled(FEATURE_SERVO_TILT)) {
         // center at fixed position, or vary either pitch or roll by RC channel
         servo[SERVO_GIMBAL_PITCH] = determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_PITCH);
         servo[SERVO_GIMBAL_ROLL] = determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_ROLL);

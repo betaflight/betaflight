@@ -38,8 +38,10 @@
 
 #include "common/color.h"
 #include "common/colorconversion.h"
-#include "dma.h"
+
+#include "drivers/dma.h"
 #include "drivers/io.h"
+
 #include "light_ws2811strip.h"
 
 #if defined(STM32F1) || defined(STM32F3)

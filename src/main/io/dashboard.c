@@ -357,7 +357,7 @@ static void showProfilePage(void)
 #ifdef USE_GPS
 static void showGpsPage(void)
 {
-    if (!feature(FEATURE_GPS)) {
+    if (!featureIsEnabled(FEATURE_GPS)) {
         pageState.pageFlags |= PAGE_STATE_FLAG_FORCE_PAGE_CHANGE;
         return;
     }

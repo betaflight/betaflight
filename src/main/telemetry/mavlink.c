@@ -136,6 +136,17 @@ static void mavlinkSerialWrite(uint8_t * buf, uint16_t length)
         serialWrite(mavlinkPort, buf[i]);
 }
 
+static int16_t headingOrScaledMilliAmpereHoursDrawn(void)
+{
+    if (isAmperageConfigured() && telemetryConfig()->mavlink_mah_as_heading_divisor > 0) {
+        // In the Connex Prosight OSD, this goes between 0 and 999, so it will need to be scaled in that range.
+        return getMAhDrawn() / telemetryConfig()->mavlink_mah_as_heading_divisor;
+    }
+    // heading Current heading in degrees, in compass units (0..360, 0=north)
+    return DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+}
+
+
 void freeMAVLinkTelemetryPort(void)
 {
     closeSerialPort(mavlinkPort);
@@ -317,7 +328,7 @@ void mavlinkSendPosition(void)
         // lon Longitude in 1E7 degrees
         gpsSol.llh.lon,
         // alt Altitude in 1E3 meters (millimeters) above MSL
-        gpsSol.llh.alt * 1000,
+        gpsSol.llh.altCm * 10,
         // eph GPS HDOP horizontal dilution of position in cm (m*100). If unknown, set to: 65535
         65535,
         // epv GPS VDOP horizontal dilution of position in cm (m*100). If unknown, set to: 65535
@@ -340,12 +351,12 @@ void mavlinkSendPosition(void)
         // lon Longitude in 1E7 degrees
         gpsSol.llh.lon,
         // alt Altitude in 1E3 meters (millimeters) above MSL
-        gpsSol.llh.alt * 1000,
+        gpsSol.llh.altCm * 10,
         // relative_alt Altitude above ground in meters, expressed as * 1000 (millimeters)
 #if defined(USE_BARO) || defined(USE_RANGEFINDER)
-        (sensors(SENSOR_RANGEFINDER) || sensors(SENSOR_BARO)) ? getEstimatedAltitude() * 10 : gpsSol.llh.alt * 1000,
+        (sensors(SENSOR_RANGEFINDER) || sensors(SENSOR_BARO)) ? getEstimatedAltitudeCm() * 10 : gpsSol.llh.altCm * 10,
 #else
-        gpsSol.llh.alt * 1000,
+        gpsSol.llh.altCm * 10,
 #endif
         // Ground X Speed (Latitude), expressed as m/s * 100
         0,
@@ -354,7 +365,7 @@ void mavlinkSendPosition(void)
         // Ground Z Speed (Altitude), expressed as m/s * 100
         0,
         // heading Current heading in degrees, in compass units (0..360, 0=north)
-        DECIDEGREES_TO_DEGREES(attitude.values.yaw)
+        headingOrScaledMilliAmpereHoursDrawn()
     );
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
@@ -412,18 +423,18 @@ void mavlinkSendHUDAndHeartbeat(void)
 #if defined(USE_BARO) || defined(USE_RANGEFINDER)
     if (sensors(SENSOR_RANGEFINDER) || sensors(SENSOR_BARO)) {
         // Baro or sonar generally is a better estimate of altitude than GPS MSL altitude
-        mavAltitude = getEstimatedAltitude() / 100.0;
+        mavAltitude = getEstimatedAltitudeCm() / 100.0;
     }
 #if defined(USE_GPS)
     else if (sensors(SENSOR_GPS)) {
         // No sonar or baro, just display altitude above MLS
-        mavAltitude = gpsSol.llh.alt;
+        mavAltitude = gpsSol.llh.altCm / 100.0;
     }
 #endif
 #elif defined(USE_GPS)
     if (sensors(SENSOR_GPS)) {
         // No sonar or baro, just display altitude above MLS
-        mavAltitude = gpsSol.llh.alt;
+        mavAltitude = gpsSol.llh.altCm / 100.0;
     }
 #endif
 
@@ -433,7 +444,7 @@ void mavlinkSendHUDAndHeartbeat(void)
         // groundspeed Current ground speed in m/s
         mavGroundSpeed,
         // heading Current heading in degrees, in compass units (0..360, 0=north)
-        DECIDEGREES_TO_DEGREES(attitude.values.yaw),
+        headingOrScaledMilliAmpereHoursDrawn(),
         // throttle Current throttle setting in integer percent, 0 to 100
         scaleRange(constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, 100),
         // alt Current altitude (MSL), in meters, if we have sonar or baro use them, otherwise use GPS (less accurate)
@@ -491,12 +502,15 @@ void mavlinkSendHUDAndHeartbeat(void)
         mavCustomMode = 0;      //Stabilize
         mavModes |= MAV_MODE_FLAG_STABILIZE_ENABLED;
     }
-    if (FLIGHT_MODE(BARO_MODE) || FLIGHT_MODE(RANGEFINDER_MODE))
+    if (FLIGHT_MODE(BARO_MODE)) {
         mavCustomMode = 2;      //Alt Hold
-    if (FLIGHT_MODE(GPS_HOME_MODE))
+    }
+    if (FLIGHT_MODE(GPS_HOME_MODE)) {
         mavCustomMode = 6;      //Return to Launch
-    if (FLIGHT_MODE(GPS_HOLD_MODE))
+    }
+    if (FLIGHT_MODE(GPS_HOLD_MODE)) {
         mavCustomMode = 16;     //Position Hold (Earlier called Hybrid)
+    }
 
     uint8_t mavSystemState = 0;
     if (ARMING_FLAG(ARMED)) {
