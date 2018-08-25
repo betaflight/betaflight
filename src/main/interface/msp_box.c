@@ -44,7 +44,6 @@
 #include "pg/piniobox.h"
 
 
-#ifndef USE_OSD_SLAVE
 // permanent IDs must uniquely identify BOX meaning, DO NOT REUSE THEM!
 static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOXARM, "ARM", 0 },
@@ -343,4 +342,3 @@ int packFlightModeFlags(boxBitmask_t *mspFlightModeFlags)
     // return count of used bits
     return mspBoxIdx;
 }
-#endif // USE_OSD_SLAVE
