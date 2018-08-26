@@ -106,7 +106,7 @@
 #error "Invalid chipset specified. Update platform.h"
 #endif
 
-#include "target/common_fc_pre.h"
+#include "target/common_pre.h"
 #include "target.h"
-#include "target/common_fc_post.h"
+#include "target/common_post.h"
 #include "target/common_defaults_post.h"
