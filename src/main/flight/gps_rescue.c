@@ -32,7 +32,7 @@
 #include "io/gps.h"
 
 #include "fc/config.h"
-#include "fc/fc_core.h"
+#include "fc/core.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"

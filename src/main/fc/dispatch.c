@@ -28,7 +28,7 @@
 
 #include "drivers/time.h"
 
-#include "fc/fc_dispatch.h"
+#include "fc/dispatch.h"
 
 static dispatchEntry_t *head = NULL;
 static bool dispatchEnabled = false;

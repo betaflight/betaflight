@@ -43,9 +43,9 @@
 #include "drivers/camera_control.h"
 
 #include "fc/config.h"
-#include "fc/fc_core.h"
+#include "fc/core.h"
 #include "fc/rc_controls.h"
-#include "fc/fc_rc.h"
+#include "fc/rc.h"
 #include "fc/runtime_config.h"
 
 #include "io/gps.h"

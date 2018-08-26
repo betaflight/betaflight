@@ -35,7 +35,7 @@ extern "C" {
 #include "sensors/barometer.h"
 #include "sensors/acceleration.h"
 #include "scheduler/scheduler.h"
-#include "fc/fc_tasks.h"
+#include "fc/tasks.h"
 }
 
 #include "unittest_macros.h"

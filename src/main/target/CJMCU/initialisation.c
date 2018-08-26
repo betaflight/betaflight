@@ -30,7 +30,7 @@
 #include "pg/bus_spi.h"
 
 
-extern void spiPreInit(void); // XXX In fc/fc_init.c
+extern void spiPreInit(void); // XXX In fc/init.c
 
 void targetBusInit(void)
 {

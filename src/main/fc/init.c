@@ -80,8 +80,8 @@
 
 #include "fc/board_info.h"
 #include "fc/config.h"
-#include "fc/fc_init.h"
-#include "fc/fc_tasks.h"
+#include "fc/init.h"
+#include "fc/tasks.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
