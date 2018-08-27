@@ -64,6 +64,7 @@
 #include "fc/core.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
 #include "fc/rc.h"
 #include "fc/runtime_config.h"
 
@@ -204,6 +205,7 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_NUMERICAL_VARIO,
     OSD_COMPASS_BAR,
     OSD_ANTI_GRAVITY,
+    OSD_FLIP_ARROW,
 #ifdef USE_RTC_TIME
     OSD_RTC_DATETIME,
 #endif
@@ -472,6 +474,30 @@ static bool osdDrawSingleElement(uint8_t item)
     char buff[OSD_ELEMENT_BUFFER_LENGTH] = "";
 
     switch (item) {
+    case OSD_FLIP_ARROW: 
+        {
+            const int angleR = attitude.values.roll;
+            const int angleP = attitude.values.pitch; // still gotta update all angleR and angleP pointers.
+            if (IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
+                if (angleP > 0 && ((angleR > 175 && angleR < 180) || (angleR > -180 && angleR < -175))) {
+                    buff[0] = SYM_ARROW_SOUTH;
+                } else if (angleP > 0 && angleR > 0 && angleR < 175) {
+                    buff[0] = (SYM_ARROW_EAST + 2);
+                } else if (angleP > 0 && angleR < 0 && angleR > -175) {
+                    buff[0] = (SYM_ARROW_WEST + 2);
+                } else if (angleP <= 0 && ((angleR > 175 && angleR < 180) || (angleR > -180 && angleR < -175))) {
+                    buff[0] = SYM_ARROW_NORTH;
+                } else if (angleP <= 0 && angleR > 0 && angleR < 175) {
+                    buff[0] = (SYM_ARROW_NORTH + 2);
+                } else if (angleP <= 0 && angleR < 0 && angleR > -175) {
+                    buff[0] = (SYM_ARROW_SOUTH + 2);
+                }
+            } else {
+                buff[0] = ' ';
+            }
+            buff[1] = '\0';
+            break;
+        }
     case OSD_RSSI_VALUE:
         {
             uint16_t osdRssi = getRssi() * 100 / 1024; // change range
