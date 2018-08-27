@@ -106,7 +106,7 @@ PG_RESET_TEMPLATE(batteryConfig_t, batteryConfig,
     .currentMeterSource = DEFAULT_CURRENT_METER_SOURCE,
 
     // cells
-    .setBatteryCellCount = 0, //0 will be ignored
+    .forceBatteryCellCount = 0, //0 will be ignored
 
     // warnings / alerts
     .useVBatAlerts = true,
@@ -190,12 +190,9 @@ void batteryUpdatePresence(void)
         }
 
         consumptionState = voltageState = BATTERY_OK;
-        if (batteryConfig()->setBatteryCellCount != 0)
-        {
-            batteryCellCount = batteryConfig()->setBatteryCellCount;
-        }
-        else
-        {
+        if (batteryConfig()->forceBatteryCellCount != 0) {
+            batteryCellCount = batteryConfig()->forceBatteryCellCount;
+        } else {
             batteryCellCount = cells;
         }
         batteryWarningVoltage = batteryCellCount * batteryConfig()->vbatwarningcellvoltage;

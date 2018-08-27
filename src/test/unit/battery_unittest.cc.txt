@@ -52,7 +52,6 @@ TEST(BatteryTest, BatteryADCToVoltage)
         .currentMeterType = CURRENT_SENSOR_NONE,
         .multiwiiCurrentMeterOutput = 0,
         .batteryCapacity = 2200,
-        .setBatteryCellCount = 0,
     };
 
     batteryInit(&batteryConfig);
@@ -113,7 +112,6 @@ TEST(BatteryTest, BatteryState)
         .currentMeterType = CURRENT_SENSOR_NONE,
         .multiwiiCurrentMeterOutput = 0,
         .batteryCapacity = 2200,
-        .setBatteryCellCount = 0,
     };
 
     batteryInit(&batteryConfig);
@@ -173,7 +171,6 @@ TEST(BatteryTest, CellCount)
         .currentMeterType = CURRENT_SENSOR_NONE,
         .multiwiiCurrentMeterOutput = 0,
         .batteryCapacity = 2200,
-        .setBatteryCellCount = 0,
     };
 
     batteryInit(&batteryConfig);

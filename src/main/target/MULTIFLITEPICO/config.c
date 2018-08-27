@@ -58,7 +58,6 @@ void targetConfiguration(void)
     batteryConfigMutable()->vbatmaxcellvoltage = 44;
     batteryConfigMutable()->vbatmincellvoltage = 32;
     batteryConfigMutable()->vbatwarningcellvoltage = 33;
-    batteryConfigMutable()->setBatteryCellCount = 0;
 
     rxConfigMutable()->spektrum_sat_bind = 5;
     rxConfigMutable()->spektrum_sat_bind_autoreset = 1;
