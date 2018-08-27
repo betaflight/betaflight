@@ -381,6 +381,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite8(batteryConfig()->vbatmincellvoltage);
             bstWrite8(batteryConfig()->vbatmaxcellvoltage);
             bstWrite8(batteryConfig()->vbatwarningcellvoltage);
+            bstWrite8(batteryConfig()->setBatteryCellCount);
             break;
 
         case BST_FEATURE:
@@ -538,6 +539,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             batteryConfigMutable()->vbatmincellvoltage = bstRead8();  // vbatlevel_warn1 in MWC2.3 GUI
             batteryConfigMutable()->vbatmaxcellvoltage = bstRead8();  // vbatlevel_warn2 in MWC2.3 GUI
             batteryConfigMutable()->vbatwarningcellvoltage = bstRead8();  // vbatlevel when buzzer starts to alert
+            batteryConfigMutable()->setBatteryCellCount = bstRead8(); 
             break;
 
         case BST_ACC_CALIBRATION:

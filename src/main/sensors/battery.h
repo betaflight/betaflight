@@ -40,6 +40,9 @@ typedef struct batteryConfig_s {
     currentMeterSource_e currentMeterSource; // source of battery current meter used, either ADC, Virtual or ESC
     uint16_t batteryCapacity;               // mAh
 
+    // cells
+    uint8_t setBatteryCellCount;            // number of cells in battery, used for overwriting auto-detected cell count if someone has issues with it.
+
     // warnings / alerts
     bool useVBatAlerts;                     // Issue alerts based on VBat readings
     bool useConsumptionAlerts;              // Issue alerts based on total power consumption
