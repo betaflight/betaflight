@@ -39,15 +39,13 @@
 #include "io/vtx_rtc6705.h"
 #include "io/vtx_string.h"
 
-
 #if defined(USE_CMS) || defined(USE_VTX_COMMON)
-const char * const rtc6705PowerNames[] = {
-    "OFF", "MIN", "MAX"
-};
+const char *const rtc6705PowerNames[] = {
+    "OFF", "MIN", "MAX"};
 #endif
 
 #ifdef USE_VTX_COMMON
-static vtxVTable_t rtc6705VTable;    // Forward
+static vtxVTable_t rtc6705VTable; // Forward
 static vtxDevice_t vtxRTC6705 = {
     .vTable = &rtc6705VTable,
     .capability.bandCount = VTX_SETTINGS_BAND_COUNT,
@@ -88,7 +86,8 @@ static void vtxRTC6705Configure(vtxDevice_t *vtxDevice)
 
 static void vtxRTC6705EnableAndConfigure(vtxDevice_t *vtxDevice)
 {
-    while (!vtxRTC6705CanUpdate());
+    while (!vtxRTC6705CanUpdate())
+        ;
 
     rtc6705Enable();
 
@@ -120,20 +119,22 @@ static bool vtxRTC6705IsReady(const vtxDevice_t *vtxDevice)
 
 static void vtxRTC6705SetBandAndChannel(vtxDevice_t *vtxDevice, uint8_t band, uint8_t channel)
 {
-    while (!vtxRTC6705CanUpdate());
+    while (!vtxRTC6705CanUpdate())
+        ;
 
     if (band >= 1 && band <= VTX_SETTINGS_BAND_COUNT && channel >= 1 && channel <= VTX_SETTINGS_CHANNEL_COUNT) {
         if (vtxDevice->powerIndex > 0) {
             vtxDevice->band = band;
             vtxDevice->channel = channel;
-            vtxRTC6705SetFrequency(vtxDevice, vtx58frequencyTable[band-1][channel-1]);
+            vtxRTC6705SetFrequency(vtxDevice, vtx58frequencyTable[band - 1][channel - 1]);
         }
     }
 }
 
 static void vtxRTC6705SetPowerByIndex(vtxDevice_t *vtxDevice, uint8_t index)
 {
-    while (!vtxRTC6705CanUpdate());
+    while (!vtxRTC6705CanUpdate())
+        ;
 
 #ifdef RTC6705_POWER_PIN
     if (index == 0) {
@@ -173,7 +174,7 @@ static void vtxRTC6705SetPitMode(vtxDevice_t *vtxDevice, uint8_t onoff)
 
 static void vtxRTC6705SetFrequency(vtxDevice_t *vtxDevice, uint16_t frequency)
 {
-    if (frequency >= VTX_RTC6705_FREQ_MIN &&  frequency <= VTX_RTC6705_FREQ_MAX) {
+    if (frequency >= VTX_RTC6705_FREQ_MIN && frequency <= VTX_RTC6705_FREQ_MAX) {
         frequency = constrain(frequency, VTX_RTC6705_FREQ_MIN, VTX_RTC6705_FREQ_MAX);
         vtxDevice->frequency = frequency;
         rtc6705SetFrequency(frequency);

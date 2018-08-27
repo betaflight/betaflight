@@ -25,49 +25,49 @@
 //
 // The protocol for Runcam Device definition
 //
-#define RCDEVICE_PROTOCOL_HEADER                                    0xCC
+#define RCDEVICE_PROTOCOL_HEADER 0xCC
 
-#define RCDEVICE_PROTOCOL_MAX_PACKET_SIZE                           64
-#define RCDEVICE_PROTOCOL_MAX_DATA_SIZE                             62
+#define RCDEVICE_PROTOCOL_MAX_PACKET_SIZE 64
+#define RCDEVICE_PROTOCOL_MAX_DATA_SIZE 62
 
 // Commands
-#define RCDEVICE_PROTOCOL_COMMAND_GET_DEVICE_INFO                   0x00
+#define RCDEVICE_PROTOCOL_COMMAND_GET_DEVICE_INFO 0x00
 // camera control
-#define RCDEVICE_PROTOCOL_COMMAND_CAMERA_CONTROL                    0x01
+#define RCDEVICE_PROTOCOL_COMMAND_CAMERA_CONTROL 0x01
 // 5 key osd cable simulation
-#define RCDEVICE_PROTOCOL_COMMAND_5KEY_SIMULATION_PRESS             0x02
-#define RCDEVICE_PROTOCOL_COMMAND_5KEY_SIMULATION_RELEASE           0x03
-#define RCDEVICE_PROTOCOL_COMMAND_5KEY_CONNECTION                   0x04
+#define RCDEVICE_PROTOCOL_COMMAND_5KEY_SIMULATION_PRESS 0x02
+#define RCDEVICE_PROTOCOL_COMMAND_5KEY_SIMULATION_RELEASE 0x03
+#define RCDEVICE_PROTOCOL_COMMAND_5KEY_CONNECTION 0x04
 
 // Feature Flag sets, it's a uint16_t flag
 typedef enum {
-    RCDEVICE_PROTOCOL_FEATURE_SIMULATE_POWER_BUTTON    = (1 << 0),
-    RCDEVICE_PROTOCOL_FEATURE_SIMULATE_WIFI_BUTTON     = (1 << 1),
-    RCDEVICE_PROTOCOL_FEATURE_CHANGE_MODE              = (1 << 2),
+    RCDEVICE_PROTOCOL_FEATURE_SIMULATE_POWER_BUTTON = (1 << 0),
+    RCDEVICE_PROTOCOL_FEATURE_SIMULATE_WIFI_BUTTON = (1 << 1),
+    RCDEVICE_PROTOCOL_FEATURE_CHANGE_MODE = (1 << 2),
     RCDEVICE_PROTOCOL_FEATURE_SIMULATE_5_KEY_OSD_CABLE = (1 << 3),
-    RCDEVICE_PROTOCOL_FEATURE_START_RECORDING          = (1 << 6),
-    RCDEVICE_PROTOCOL_FEATURE_STOP_RECORDING           = (1 << 7),
-    RCDEVICE_PROTOCOL_FEATURE_CMS_MENU                 = (1 << 8),
+    RCDEVICE_PROTOCOL_FEATURE_START_RECORDING = (1 << 6),
+    RCDEVICE_PROTOCOL_FEATURE_STOP_RECORDING = (1 << 7),
+    RCDEVICE_PROTOCOL_FEATURE_CMS_MENU = (1 << 8),
 } rcdevice_features_e;
 
 // Operation of Camera Button Simulation
 typedef enum {
-    RCDEVICE_PROTOCOL_CAM_CTRL_SIMULATE_WIFI_BTN        = 0x00,
-    RCDEVICE_PROTOCOL_CAM_CTRL_SIMULATE_POWER_BTN       = 0x01,
-    RCDEVICE_PROTOCOL_CAM_CTRL_CHANGE_MODE              = 0x02,
-    RCDEVICE_PROTOCOL_CAM_CTRL_START_RECORDING          = 0x03,
-    RCDEVICE_PROTOCOL_CAM_CTRL_STOP_RECORDING           = 0x04,
+    RCDEVICE_PROTOCOL_CAM_CTRL_SIMULATE_WIFI_BTN = 0x00,
+    RCDEVICE_PROTOCOL_CAM_CTRL_SIMULATE_POWER_BTN = 0x01,
+    RCDEVICE_PROTOCOL_CAM_CTRL_CHANGE_MODE = 0x02,
+    RCDEVICE_PROTOCOL_CAM_CTRL_START_RECORDING = 0x03,
+    RCDEVICE_PROTOCOL_CAM_CTRL_STOP_RECORDING = 0x04,
     RCDEVICE_PROTOCOL_CAM_CTRL_UNKNOWN_CAMERA_OPERATION = 0xFF
 } rcdevice_camera_control_opeation_e;
 
 // Operation Of 5 Key OSD Cable Simulation
 typedef enum {
-    RCDEVICE_PROTOCOL_5KEY_SIMULATION_NONE  = 0x00,
-    RCDEVICE_PROTOCOL_5KEY_SIMULATION_SET   = 0x01,
-    RCDEVICE_PROTOCOL_5KEY_SIMULATION_LEFT  = 0x02,
+    RCDEVICE_PROTOCOL_5KEY_SIMULATION_NONE = 0x00,
+    RCDEVICE_PROTOCOL_5KEY_SIMULATION_SET = 0x01,
+    RCDEVICE_PROTOCOL_5KEY_SIMULATION_LEFT = 0x02,
     RCDEVICE_PROTOCOL_5KEY_SIMULATION_RIGHT = 0x03,
-    RCDEVICE_PROTOCOL_5KEY_SIMULATION_UP    = 0x04,
-    RCDEVICE_PROTOCOL_5KEY_SIMULATION_DOWN  = 0x05
+    RCDEVICE_PROTOCOL_5KEY_SIMULATION_UP = 0x04,
+    RCDEVICE_PROTOCOL_5KEY_SIMULATION_DOWN = 0x05
 } rcdevice_5key_simulation_operation_e;
 
 // Operation of RCDEVICE_PROTOCOL_COMMAND_5KEY_CONNECTION
@@ -119,12 +119,12 @@ typedef enum {
 } rcdeviceResponseStatus_e;
 
 typedef struct rcdeviceResponseParseContext_s rcdeviceResponseParseContext_t;
-typedef void(*rcdeviceRespParseFunc)(rcdeviceResponseParseContext_t*);
+typedef void (*rcdeviceRespParseFunc)(rcdeviceResponseParseContext_t *);
 struct rcdeviceResponseParseContext_s {
     uint8_t command;
     uint8_t expectedRespLen; // total length of response data
-    uint8_t recvRespLen; // length of the data received
-    uint8_t *recvBuf; // response data buffer
+    uint8_t recvRespLen;     // length of the data received
+    uint8_t *recvBuf;        // response data buffer
     timeMs_t timeout;
     timeMs_t timeoutTimestamp; // if zero, it's means keep waiting for the response
     rcdeviceRespParseFunc parserFunc;

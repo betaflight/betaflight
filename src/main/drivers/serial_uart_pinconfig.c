@@ -51,7 +51,7 @@ void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig)
         const uartHardware_t *hardware = &uartHardware[hindex];
         const UARTDevice_e device = hardware->device;
 
-        for (int pindex = 0 ; pindex < UARTHARDWARE_MAX_PINS ; pindex++) {
+        for (int pindex = 0; pindex < UARTHARDWARE_MAX_PINS; pindex++) {
             if (hardware->rxPins[pindex] && (hardware->rxPins[pindex] == pSerialPinConfig->ioTagRx[device]))
                 uartdev->rx = pSerialPinConfig->ioTagRx[device];
 

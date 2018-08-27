@@ -27,7 +27,7 @@
 
 // Maximum page size of all supported SPI flash devices.
 // Used to detect flashfs allocation size being too small.
-#define FLASH_MAX_PAGE_SIZE       2048
+#define FLASH_MAX_PAGE_SIZE 2048
 
 #define SPIFLASH_INSTRUCTION_RDID 0x9F
 
@@ -37,8 +37,8 @@ typedef enum {
 } flashType_e;
 
 typedef struct flashGeometry_s {
-    uint16_t sectors; // Count of the number of erasable blocks on the device
-    uint16_t pageSize; // In bytes
+    uint16_t sectors;    // Count of the number of erasable blocks on the device
+    uint16_t pageSize;   // In bytes
     uint32_t sectorSize; // This is just pagesPerSector * pageSize
     uint32_t totalSize;  // This is just sectorSize * sectors
     uint16_t pagesPerSector;

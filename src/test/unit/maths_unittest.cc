@@ -25,12 +25,11 @@
 #define USE_BARO
 
 extern "C" {
-    #include "common/maths.h"
+#include "common/maths.h"
 }
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
-
 
 TEST(MathsUnittest, TestScaleRange)
 {
@@ -178,7 +177,7 @@ TEST(MathsUnittest, TestDegreesToRadians)
     EXPECT_FLOAT_EQ(degreesToRadians(0), 0.0f);
     EXPECT_FLOAT_EQ(degreesToRadians(90), 0.5f * M_PIf);
     EXPECT_FLOAT_EQ(degreesToRadians(180), M_PIf);
-    EXPECT_FLOAT_EQ(degreesToRadians(-180), - M_PIf);
+    EXPECT_FLOAT_EQ(degreesToRadians(-180), -M_PIf);
 }
 
 TEST(MathsUnittest, TestApplyDeadband)
@@ -205,7 +204,7 @@ void expectVectorsAreEqual(struct fp_vector *a, struct fp_vector *b, float absTo
 TEST(MathsUnittest, TestRotateVectorWithNoAngle)
 {
     fp_vector vector = {1.0f, 0.0f, 0.0f};
-    fp_angles_t euler_angles = {.raw={0.0f, 0.0f, 0.0f}};
+    fp_angles_t euler_angles = {.raw = {0.0f, 0.0f, 0.0f}};
 
     rotateV(&vector, &euler_angles);
     fp_vector expected_result = {1.0f, 0.0f, 0.0f};
@@ -217,7 +216,7 @@ TEST(MathsUnittest, TestRotateVectorAroundAxis)
 {
     // Rotate a vector <1, 0, 0> around an each axis x y and z.
     fp_vector vector = {1.0f, 0.0f, 0.0f};
-    fp_angles_t euler_angles = {.raw={90.0f, 0.0f, 0.0f}};
+    fp_angles_t euler_angles = {.raw = {90.0f, 0.0f, 0.0f}};
 
     rotateV(&vector, &euler_angles);
     fp_vector expected_result = {1.0f, 0.0f, 0.0f};

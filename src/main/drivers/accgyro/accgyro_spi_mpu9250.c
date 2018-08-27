@@ -46,7 +46,6 @@
 #include "drivers/time.h"
 #include "drivers/system.h"
 
-
 static void mpu9250AccAndGyroInit(gyroDev_t *gyro);
 
 static bool mpuSpi9250InitDone = false;
@@ -131,7 +130,8 @@ bool mpu9250SpiWriteRegisterVerify(const busDevice_t *bus, uint8_t reg, uint8_t 
     return false;
 }
 
-static void mpu9250AccAndGyroInit(gyroDev_t *gyro) {
+static void mpu9250AccAndGyroInit(gyroDev_t *gyro)
+{
 
     if (mpuSpi9250InitDone) {
         return;
@@ -151,7 +151,7 @@ static void mpu9250AccAndGyroInit(gyroDev_t *gyro) {
     mpu9250SpiWriteRegisterVerify(&gyro->bus, MPU_RA_SMPLRT_DIV, gyro->mpuDividerDrops);
 
     mpu9250SpiWriteRegisterVerify(&gyro->bus, MPU_RA_ACCEL_CONFIG, INV_FSR_16G << 3);
-    mpu9250SpiWriteRegisterVerify(&gyro->bus, MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 1 << 1 | 0 << 0);  // INT_ANYRD_2CLEAR, BYPASS_EN
+    mpu9250SpiWriteRegisterVerify(&gyro->bus, MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 1 << 1 | 0 << 0); // INT_ANYRD_2CLEAR, BYPASS_EN
 
 #if defined(USE_MPU_DATA_READY_SIGNAL)
     mpu9250SpiWriteRegisterVerify(&gyro->bus, MPU_RA_INT_ENABLE, 0x01); //this resets register MPU_RA_PWR_MGMT_1 and won't read back correctly.

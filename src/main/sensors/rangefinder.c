@@ -64,16 +64,15 @@ int16_t rangefinderCfAltCm; // Complimentary Filter altitude
 
 rangefinder_t rangefinder;
 
-#define RANGEFINDER_HARDWARE_TIMEOUT_MS         500     // Accept 500ms of non-responsive sensor, report HW failure otherwise
+#define RANGEFINDER_HARDWARE_TIMEOUT_MS 500 // Accept 500ms of non-responsive sensor, report HW failure otherwise
 
-#define RANGEFINDER_DYNAMIC_THRESHOLD           600     //Used to determine max. usable rangefinder disatance
-#define RANGEFINDER_DYNAMIC_FACTOR              75
+#define RANGEFINDER_DYNAMIC_THRESHOLD 600 //Used to determine max. usable rangefinder disatance
+#define RANGEFINDER_DYNAMIC_FACTOR 75
 
 PG_REGISTER_WITH_RESET_TEMPLATE(rangefinderConfig_t, rangefinderConfig, PG_RANGEFINDER_CONFIG, 0);
 
 PG_RESET_TEMPLATE(rangefinderConfig_t, rangefinderConfig,
-    .rangefinder_hardware = RANGEFINDER_NONE,
-);
+                  .rangefinder_hardware = RANGEFINDER_NONE, );
 
 #ifdef USE_RANGEFINDER_HCSR04
 PG_REGISTER_WITH_RESET_TEMPLATE(sonarConfig_t, sonarConfig, PG_SONAR_CONFIG, 1);
@@ -86,88 +85,87 @@ PG_REGISTER_WITH_RESET_TEMPLATE(sonarConfig_t, sonarConfig, PG_SONAR_CONFIG, 1);
 #endif
 
 PG_RESET_TEMPLATE(sonarConfig_t, sonarConfig,
-    .triggerTag = IO_TAG(RANGEFINDER_HCSR04_TRIGGER_PIN),
-    .echoTag = IO_TAG(RANGEFINDER_HCSR04_ECHO_PIN),
-);
+                  .triggerTag = IO_TAG(RANGEFINDER_HCSR04_TRIGGER_PIN),
+                  .echoTag = IO_TAG(RANGEFINDER_HCSR04_ECHO_PIN), );
 #endif
 
 /*
  * Detect which rangefinder is present
  */
-static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwareToUse)
+static bool rangefinderDetect(rangefinderDev_t *dev, uint8_t rangefinderHardwareToUse)
 {
     rangefinderType_e rangefinderHardware = RANGEFINDER_NONE;
     requestedSensors[SENSOR_INDEX_RANGEFINDER] = rangefinderHardwareToUse;
 
     switch (rangefinderHardwareToUse) {
-        case RANGEFINDER_HCSR04:
+    case RANGEFINDER_HCSR04:
 #ifdef USE_RANGEFINDER_HCSR04
-            {
-                if (hcsr04Detect(dev, sonarConfig())) {   // FIXME: Do actual detection if HC-SR04 is plugged in
-                    rangefinderHardware = RANGEFINDER_HCSR04;
-                    rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_HCSR04_TASK_PERIOD_MS));
-                }
-            }
+    {
+        if (hcsr04Detect(dev, sonarConfig())) { // FIXME: Do actual detection if HC-SR04 is plugged in
+            rangefinderHardware = RANGEFINDER_HCSR04;
+            rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_HCSR04_TASK_PERIOD_MS));
+        }
+    }
 #endif
-            break;
+    break;
 
-        case RANGEFINDER_SRF10:
+    case RANGEFINDER_SRF10:
 #ifdef USE_RANGEFINDER_SRF10
-            if (srf10Detect(dev)) {
-                rangefinderHardware = RANGEFINDER_SRF10;
-                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_SRF10_TASK_PERIOD_MS));
-            }
+        if (srf10Detect(dev)) {
+            rangefinderHardware = RANGEFINDER_SRF10;
+            rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_SRF10_TASK_PERIOD_MS));
+        }
 #endif
-            break;
+        break;
 
-            case RANGEFINDER_HCSR04I2C:
+    case RANGEFINDER_HCSR04I2C:
 #ifdef USE_RANGEFINDER_HCSR04_I2C
-            if (hcsr04i2c0Detect(dev)) {
-                rangefinderHardware = RANGEFINDER_HCSR04I2C;
-                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_HCSR04_i2C_TASK_PERIOD_MS));
-            }
+        if (hcsr04i2c0Detect(dev)) {
+            rangefinderHardware = RANGEFINDER_HCSR04I2C;
+            rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_HCSR04_i2C_TASK_PERIOD_MS));
+        }
 #endif
-            break;
+        break;
 
-            case RANGEFINDER_VL53L0X:
+    case RANGEFINDER_VL53L0X:
 #if defined(USE_RANGEFINDER_VL53L0X)
-            if (vl53l0xDetect(dev)) {
-                rangefinderHardware = RANGEFINDER_VL53L0X;
-                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_VL53L0X_TASK_PERIOD_MS));
-            }
+        if (vl53l0xDetect(dev)) {
+            rangefinderHardware = RANGEFINDER_VL53L0X;
+            rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_VL53L0X_TASK_PERIOD_MS));
+        }
 #endif
-            break;
+        break;
 
-        case RANGEFINDER_UIB:
+    case RANGEFINDER_UIB:
 #if defined(USE_RANGEFINDER_UIB)
-            if (uibRangefinderDetect(dev)) {
-                rangefinderHardware = RANGEFINDER_UIB;
-                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_UIB_TASK_PERIOD_MS));
-            }
+        if (uibRangefinderDetect(dev)) {
+            rangefinderHardware = RANGEFINDER_UIB;
+            rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_UIB_TASK_PERIOD_MS));
+        }
 #endif
-            break;
+        break;
 
-        case RANGEFINDER_TFMINI:
+    case RANGEFINDER_TFMINI:
 #if defined(USE_RANGEFINDER_TF)
-            if (lidarTFminiDetect(dev)) {
-                rangefinderHardware = RANGEFINDER_TFMINI;
-                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_TF_TASK_PERIOD_MS));
-            }
+        if (lidarTFminiDetect(dev)) {
+            rangefinderHardware = RANGEFINDER_TFMINI;
+            rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_TF_TASK_PERIOD_MS));
+        }
 #endif
-            break;
+        break;
 
-        case RANGEFINDER_TF02:
+    case RANGEFINDER_TF02:
 #if defined(USE_RANGEFINDER_TF)
-            if (lidarTF02Detect(dev)) {
-                rangefinderHardware = RANGEFINDER_TF02;
-                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_TF_TASK_PERIOD_MS));
-            }
+        if (lidarTF02Detect(dev)) {
+            rangefinderHardware = RANGEFINDER_TF02;
+            rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_TF_TASK_PERIOD_MS));
+        }
 #endif
-            break;
+        break;
 
-        case RANGEFINDER_NONE:
-            rangefinderHardware = RANGEFINDER_NONE;
-            break;
+    case RANGEFINDER_NONE:
+        rangefinderHardware = RANGEFINDER_NONE;
+        break;
     }
 
     if (rangefinderHardware == RANGEFINDER_NONE) {
@@ -205,19 +203,19 @@ bool rangefinderInit(void)
     // XXX Will be gone once iNav's estimator is ported.
     rangefinderMaxRangeCm = rangefinder.dev.maxRangeCm;
     rangefinderMaxAltWithTiltCm = rangefinderMaxRangeCm * rangefinder.maxTiltCos;
-    rangefinderCfAltCm = rangefinder.dev.maxRangeCm / 2 ; // Complimentary Filter altitude
+    rangefinderCfAltCm = rangefinder.dev.maxRangeCm / 2; // Complimentary Filter altitude
 
     return true;
 }
 
 static int32_t applyMedianFilter(int32_t newReading)
 {
-    #define DISTANCE_SAMPLES_MEDIAN 5
+#define DISTANCE_SAMPLES_MEDIAN 5
     static int32_t filterSamples[DISTANCE_SAMPLES_MEDIAN];
     static int filterSampleIndex = 0;
     static bool medianFilterReady = false;
 
-    if (newReading > RANGEFINDER_OUT_OF_RANGE) {// only accept samples that are in range
+    if (newReading > RANGEFINDER_OUT_OF_RANGE) { // only accept samples that are in range
         filterSamples[filterSampleIndex] = newReading;
         ++filterSampleIndex;
         if (filterSampleIndex == DISTANCE_SAMPLES_MEDIAN) {
@@ -228,8 +226,9 @@ static int32_t applyMedianFilter(int32_t newReading)
     return medianFilterReady ? quickMedianFilter5(filterSamples) : newReading;
 }
 
-static int16_t computePseudoSnr(int32_t newReading) {
-    #define SNR_SAMPLES 5
+static int16_t computePseudoSnr(int32_t newReading)
+{
+#define SNR_SAMPLES 5
     static int16_t snrSamples[SNR_SAMPLES];
     static uint8_t snrSampleIndex = 0;
     static int32_t previousReading = RANGEFINDER_OUT_OF_RANGE;
@@ -273,7 +272,8 @@ void rangefinderUpdate(timeUs_t currentTimeUs)
     // return rangefinder.dev.delayMs * 1000;  // to microseconds XXX iNav only
 }
 
-bool isSurfaceAltitudeValid() {
+bool isSurfaceAltitudeValid()
+{
 
     /*
      * Preconditions: raw and calculated altidude > 0
@@ -282,8 +282,7 @@ bool isSurfaceAltitudeValid() {
     if (
         rangefinder.calculatedAltitude > 0 &&
         rangefinder.rawAltitude > 0 &&
-        rangefinder.snr < RANGEFINDER_DYNAMIC_THRESHOLD
-    ) {
+        rangefinder.snr < RANGEFINDER_DYNAMIC_THRESHOLD) {
 
         /*
          * When critical altitude was determined, distance reported by rangefinder
@@ -298,7 +297,6 @@ bool isSurfaceAltitudeValid() {
     } else {
         return false;
     }
-
 }
 
 /**
@@ -317,12 +315,10 @@ bool rangefinderProcess(float cosTiltAngle)
         if (distance >= 0) {
             rangefinder.lastValidResponseTimeMs = millis();
             rangefinder.rawAltitude = applyMedianFilter(distance);
-        }
-        else if (distance == RANGEFINDER_OUT_OF_RANGE) {
+        } else if (distance == RANGEFINDER_OUT_OF_RANGE) {
             rangefinder.lastValidResponseTimeMs = millis();
             rangefinder.rawAltitude = RANGEFINDER_OUT_OF_RANGE;
-        }
-        else {
+        } else {
             // Invalid response / hardware failure
             rangefinder.rawAltitude = RANGEFINDER_HARDWARE_FAILURE;
         }
@@ -338,7 +334,6 @@ bool rangefinderProcess(float cosTiltAngle)
             if (rangefinder.snr >= RANGEFINDER_DYNAMIC_THRESHOLD) {
                 rangefinder.snrThresholdReached = true;
             }
-
         }
 
         DEBUG_SET(DEBUG_RANGEFINDER, 3, rangefinder.snr);
@@ -348,8 +343,7 @@ bool rangefinderProcess(float cosTiltAngle)
         DEBUG_SET(DEBUG_RANGEFINDER_QUALITY, 2, rangefinder.dynamicDistanceThreshold);
         DEBUG_SET(DEBUG_RANGEFINDER_QUALITY, 3, isSurfaceAltitudeValid());
 
-    }
-    else {
+    } else {
         // Bad configuration
         rangefinder.rawAltitude = RANGEFINDER_OUT_OF_RANGE;
     }
@@ -381,7 +375,8 @@ int32_t rangefinderGetLatestAltitude(void)
     return rangefinder.calculatedAltitude;
 }
 
-int32_t rangefinderGetLatestRawAltitude(void) {
+int32_t rangefinderGetLatestRawAltitude(void)
+{
     return rangefinder.rawAltitude;
 }
 
@@ -390,4 +385,3 @@ bool rangefinderIsHealthy(void)
     return (millis() - rangefinder.lastValidResponseTimeMs) < RANGEFINDER_HARDWARE_TIMEOUT_MS;
 }
 #endif
-

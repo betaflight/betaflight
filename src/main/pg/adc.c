@@ -33,7 +33,6 @@
 
 #include "pg/adc.h"
 
-
 PG_REGISTER_WITH_RESET_FN(adcConfig_t, adcConfig, PG_ADC_CONFIG, 0);
 
 void pgResetFn_adcConfig(adcConfig_t *adcConfig)
@@ -59,6 +58,5 @@ void pgResetFn_adcConfig(adcConfig_t *adcConfig)
     adcConfig->rssi.enabled = true;
     adcConfig->rssi.ioTag = IO_TAG(RSSI_ADC_PIN);
 #endif
-
 }
 #endif // USE_ADC

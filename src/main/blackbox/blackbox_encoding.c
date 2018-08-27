@@ -34,7 +34,6 @@
 #include "common/encoding.h"
 #include "common/printf.h"
 
-
 static void _putc(void *p, char c)
 {
     (void)p;
@@ -45,7 +44,6 @@ static int blackboxPrintfv(const char *fmt, va_list va)
 {
     return tfp_format(NULL, _putc, fmt, va);
 }
-
 
 //printf() to the blackbox serial port with no blocking shenanigans (so it's caller's responsibility to not write too fast!)
 int blackboxPrintf(const char *fmt, ...)
@@ -92,7 +90,7 @@ void blackboxWriteUnsignedVB(uint32_t value)
 {
     //While this isn't the final byte (we can only write 7 bits at a time)
     while (value > 127) {
-        blackboxWrite((uint8_t) (value | 0x80)); // Set the high bit to mean "more bytes follow"
+        blackboxWrite((uint8_t)(value | 0x80)); // Set the high bit to mean "more bytes follow"
         value >>= 7;
     }
     blackboxWrite(value);
@@ -136,17 +134,17 @@ void blackboxWriteTag2_3S32(int32_t *values)
 
     //Need to be enums rather than const ints if we want to switch on them (due to being C)
     enum {
-        BITS_2  = 0,
-        BITS_4  = 1,
-        BITS_6  = 2,
+        BITS_2 = 0,
+        BITS_4 = 1,
+        BITS_6 = 2,
         BITS_32 = 3
     };
 
     enum {
-        BYTES_1  = 0,
-        BYTES_2  = 1,
-        BYTES_3  = 2,
-        BYTES_4  = 3
+        BYTES_1 = 0,
+        BYTES_2 = 1,
+        BYTES_3 = 2,
+        BYTES_4 = 3
     };
 
     int selector = BITS_2, selector2;
@@ -171,9 +169,9 @@ void blackboxWriteTag2_3S32(int32_t *values)
 
         //Require more than 4 bits?
         if (values[x] >= 8 || values[x] < -8) {
-             if (selector < BITS_6) {
-                 selector = BITS_6;
-             }
+            if (selector < BITS_6) {
+                selector = BITS_6;
+            }
         } else if (values[x] >= 2 || values[x] < -2) { //Require more than 2 bits?
             if (selector < BITS_4) {
                 selector = BITS_4;
@@ -258,19 +256,18 @@ int blackboxWriteTag2_3SVariable(int32_t *values)
 {
     static const int FIELD_COUNT = 3;
     enum {
-        BITS_2  = 0,
-        BITS_554  = 1,
-        BITS_877  = 2,
+        BITS_2 = 0,
+        BITS_554 = 1,
+        BITS_877 = 2,
         BITS_32 = 3
     };
 
     enum {
-        BYTES_1  = 0,
-        BYTES_2  = 1,
-        BYTES_3  = 2,
-        BYTES_4  = 3
+        BYTES_1 = 0,
+        BYTES_2 = 1,
+        BYTES_3 = 2,
+        BYTES_4 = 3
     };
-
 
     /*
      * Find out how many bits the largest value requires to encode, and use it to choose one of the packing schemes
@@ -286,19 +283,13 @@ int blackboxWriteTag2_3SVariable(int32_t *values)
     int selector = BITS_2;
     int selector2 = 0;
     // Require more than 877 bits?
-    if (values[0] >= 256 || values[0] < -256
-            || values[1] >= 128 || values[1] < -128
-            || values[2] >= 128 || values[2] < -128) {
+    if (values[0] >= 256 || values[0] < -256 || values[1] >= 128 || values[1] < -128 || values[2] >= 128 || values[2] < -128) {
         selector = BITS_32;
-   // Require more than 554 bits?
-    } else if (values[0] >= 16 || values[0] < -16
-            || values[1] >= 16 || values[1] < -16
-            || values[2] >= 8 || values[2] < -8) {
+        // Require more than 554 bits?
+    } else if (values[0] >= 16 || values[0] < -16 || values[1] >= 16 || values[1] < -16 || values[2] >= 8 || values[2] < -8) {
         selector = BITS_877;
         // Require more than 2 bits?
-    } else if (values[0] >= 2 || values[0] < -2
-            || values[1] >= 2 || values[1] < -2
-            || values[2] >= 2 || values[2] < -2) {
+    } else if (values[0] >= 2 || values[0] < -2 || values[1] >= 2 || values[1] < -2 || values[2] >= 2 || values[2] < -2) {
         selector = BITS_554;
     }
 
@@ -369,7 +360,7 @@ int blackboxWriteTag2_3SVariable(int32_t *values)
                 break;
             }
         }
-    break;
+        break;
     }
     return selector;
 }
@@ -382,9 +373,9 @@ void blackboxWriteTag8_4S16(int32_t *values)
 
     //Need to be enums rather than const ints if we want to switch on them (due to being C)
     enum {
-        FIELD_ZERO  = 0,
-        FIELD_4BIT  = 1,
-        FIELD_8BIT  = 2,
+        FIELD_ZERO = 0,
+        FIELD_4BIT = 1,
+        FIELD_8BIT = 2,
         FIELD_16BIT = 3
     };
 

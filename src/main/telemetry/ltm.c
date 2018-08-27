@@ -79,9 +79,8 @@
 #include "telemetry/telemetry.h"
 #include "telemetry/ltm.h"
 
-
 #define TELEMETRY_LTM_INITIAL_PORT_MODE MODE_TX
-#define LTM_CYCLETIME   100
+#define LTM_CYCLETIME 100
 
 static serialPort_t *ltmPort;
 static serialPortConfig_t *portConfig;
@@ -188,16 +187,16 @@ static void ltm_sframe(void)
     else if (FLIGHT_MODE(HORIZON_MODE))
         lt_flightmode = 3;
     else
-        lt_flightmode = 1;      // Rate mode
+        lt_flightmode = 1; // Rate mode
 
     lt_statemode = (ARMING_FLAG(ARMED)) ? 1 : 0;
     if (failsafeIsActive())
         lt_statemode |= 2;
     ltm_initialise_packet('S');
-    ltm_serialise_16(getBatteryVoltage() * 100);    //vbat converted to mv
-    ltm_serialise_16(0);             //  current, not implemented
-    ltm_serialise_8(constrain(scaleRange(getRssi(), 0, RSSI_MAX_VALUE, 0, 255), 0, 255));        // scaled RSSI (uchar)
-    ltm_serialise_8(0);              // no airspeed
+    ltm_serialise_16(getBatteryVoltage() * 100);                                          //vbat converted to mv
+    ltm_serialise_16(0);                                                                  //  current, not implemented
+    ltm_serialise_8(constrain(scaleRange(getRssi(), 0, RSSI_MAX_VALUE, 0, 255), 0, 255)); // scaled RSSI (uchar)
+    ltm_serialise_8(0);                                                                   // no airspeed
     ltm_serialise_8((lt_flightmode << 2) | lt_statemode);
     ltm_finalise();
 }
@@ -230,8 +229,8 @@ static void ltm_oframe(void)
     ltm_serialise_32(0);
     ltm_serialise_32(0);
 #endif
-    ltm_serialise_32(0);                // Don't have GPS home altitude
-    ltm_serialise_8(1);                 // OSD always ON
+    ltm_serialise_32(0); // Don't have GPS home altitude
+    ltm_serialise_8(1);  // OSD always ON
     ltm_serialise_8(STATE(GPS_FIX_HOME) ? 1 : 0);
     ltm_finalise();
 }

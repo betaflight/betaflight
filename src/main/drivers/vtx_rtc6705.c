@@ -39,44 +39,47 @@
 #include "drivers/time.h"
 #include "drivers/vtx_rtc6705.h"
 
-
-#define RTC6705_SET_HEAD 0x3210 //fosc=8mhz r=400
-#define RTC6705_SET_R  400     //Reference clock
-#define RTC6705_SET_FDIV 1024  //128*(fosc/1000000)
-#define RTC6705_SET_NDIV 16    //Remainder divider to get 'A' part of equation
-#define RTC6705_SET_WRITE 0x11 //10001b to write to register
+#define RTC6705_SET_HEAD 0x3210     //fosc=8mhz r=400
+#define RTC6705_SET_R 400           //Reference clock
+#define RTC6705_SET_FDIV 1024       //128*(fosc/1000000)
+#define RTC6705_SET_NDIV 16         //Remainder divider to get 'A' part of equation
+#define RTC6705_SET_WRITE 0x11      //10001b to write to register
 #define RTC6705_SET_DIVMULT 1000000 //Division value (to fit into a uint32_t) (Hz to MHz)
 
 #ifdef RTC6705_POWER_PIN
-static IO_t vtxPowerPin     = IO_NONE;
+static IO_t vtxPowerPin = IO_NONE;
 #endif
-static IO_t vtxCSPin        = IO_NONE;
+static IO_t vtxCSPin = IO_NONE;
 
-#define DISABLE_RTC6705()   IOHi(vtxCSPin)
+#define DISABLE_RTC6705() IOHi(vtxCSPin)
 
 #ifdef USE_RTC6705_CLK_HACK
-static IO_t vtxCLKPin       = IO_NONE;
+static IO_t vtxCLKPin = IO_NONE;
 // HACK for missing pull up on CLK line - drive the CLK high *before* enabling the CS pin.
-#define ENABLE_RTC6705()    {IOHi(vtxCLKPin); delayMicroseconds(5); IOLo(vtxCSPin); }
+#define ENABLE_RTC6705()      \
+    {                         \
+        IOHi(vtxCLKPin);      \
+        delayMicroseconds(5); \
+        IOLo(vtxCSPin);       \
+    }
 #else
-#define ENABLE_RTC6705()    IOLo(vtxCSPin)
+#define ENABLE_RTC6705() IOLo(vtxCSPin)
 #endif
 
-#define DP_5G_MASK          0x7000 // b111000000000000
-#define PA5G_BS_MASK        0x0E00 // b000111000000000
-#define PA5G_PW_MASK        0x0180 // b000000110000000
-#define PD_Q5G_MASK         0x0040 // b000000001000000
-#define QI_5G_MASK          0x0038 // b000000000111000
-#define PA_BS_MASK          0x0007 // b000000000000111
+#define DP_5G_MASK 0x7000   // b111000000000000
+#define PA5G_BS_MASK 0x0E00 // b000111000000000
+#define PA5G_PW_MASK 0x0180 // b000000110000000
+#define PD_Q5G_MASK 0x0040  // b000000001000000
+#define QI_5G_MASK 0x0038   // b000000000111000
+#define PA_BS_MASK 0x0007   // b000000000000111
 
-#define PA_CONTROL_DEFAULT  0x4FBD
+#define PA_CONTROL_DEFAULT 0x4FBD
 
-#define RTC6705_RW_CONTROL_BIT      (1 << 4)
-#define RTC6705_ADDRESS             (0x07)
+#define RTC6705_RW_CONTROL_BIT (1 << 4)
+#define RTC6705_ADDRESS (0x07)
 
-#define ENABLE_VTX_POWER()          IOLo(vtxPowerPin)
-#define DISABLE_VTX_POWER()         IOHi(vtxPowerPin)
-
+#define ENABLE_VTX_POWER() IOLo(vtxPowerPin)
+#define DISABLE_VTX_POWER() IOHi(vtxPowerPin)
 
 /**
  * Reverse a uint32_t (LSB to MSB)
@@ -87,8 +90,8 @@ static uint32_t reverse32(uint32_t in)
 {
     uint32_t out = 0;
 
-    for (uint8_t i = 0 ; i < 32 ; i++) {
-        out |= ((in>>i) & 1)<<(31-i);
+    for (uint8_t i = 0; i < 32; i++) {
+        out |= ((in >> i) & 1) << (31 - i);
     }
 
     return out;
@@ -144,7 +147,7 @@ static void rtc6705Transfer(uint32_t command)
     delayMicroseconds(2);
 }
 
- /**
+/**
  * Set a frequency in Mhz
  * Formula derived from datasheet
  */
@@ -152,8 +155,8 @@ void rtc6705SetFrequency(uint16_t frequency)
 {
     frequency = constrain(frequency, VTX_RTC6705_FREQ_MIN, VTX_RTC6705_FREQ_MAX);
 
-    const uint32_t val_a = ((((uint64_t)frequency*(uint64_t)RTC6705_SET_DIVMULT*(uint64_t)RTC6705_SET_R)/(uint64_t)RTC6705_SET_DIVMULT) % RTC6705_SET_FDIV) / RTC6705_SET_NDIV; //Casts required to make sure correct math (large numbers)
-    const uint32_t val_n = (((uint64_t)frequency*(uint64_t)RTC6705_SET_DIVMULT*(uint64_t)RTC6705_SET_R)/(uint64_t)RTC6705_SET_DIVMULT) / RTC6705_SET_FDIV; //Casts required to make sure correct math (large numbers)
+    const uint32_t val_a = ((((uint64_t)frequency * (uint64_t)RTC6705_SET_DIVMULT * (uint64_t)RTC6705_SET_R) / (uint64_t)RTC6705_SET_DIVMULT) % RTC6705_SET_FDIV) / RTC6705_SET_NDIV; //Casts required to make sure correct math (large numbers)
+    const uint32_t val_n = (((uint64_t)frequency * (uint64_t)RTC6705_SET_DIVMULT * (uint64_t)RTC6705_SET_R) / (uint64_t)RTC6705_SET_DIVMULT) / RTC6705_SET_FDIV;                      //Casts required to make sure correct math (large numbers)
 
     uint32_t val_hex = RTC6705_SET_WRITE;
     val_hex |= (val_a << 5);
@@ -173,7 +176,7 @@ void rtc6705SetRFPower(uint8_t rf_power)
     spiSetDivisor(RTC6705_SPI_INSTANCE, SPI_CLOCK_SLOW);
 
     uint32_t val_hex = RTC6705_RW_CONTROL_BIT; // write
-    val_hex |= RTC6705_ADDRESS; // address
+    val_hex |= RTC6705_ADDRESS;                // address
     const uint32_t data = rf_power > 1 ? PA_CONTROL_DEFAULT : (PA_CONTROL_DEFAULT | PD_Q5G_MASK) & (~(PA5G_PW_MASK | PA5G_BS_MASK));
     val_hex |= data << 5; // 4 address bits and 1 rw bit.
 

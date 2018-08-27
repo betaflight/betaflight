@@ -18,22 +18,21 @@
 #include <string.h>
 
 extern "C" {
-    #include "platform.h"
+#include "platform.h"
 
-    #include "blackbox/blackbox.h"
-    #include "blackbox/blackbox_encoding.h"
-    #include "common/utils.h"
+#include "blackbox/blackbox.h"
+#include "blackbox/blackbox_encoding.h"
+#include "common/utils.h"
 
-    #include "pg/pg.h"
-    #include "pg/pg_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
-    #include "drivers/serial.h"
-    #include "io/serial.h"
+#include "drivers/serial.h"
+#include "io/serial.h"
 }
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
-
 
 static serialPort_t *blackboxPort;
 static int serialWritePos = 0;
@@ -54,7 +53,7 @@ void serialWrite(serialPort_t *instance, uint8_t ch)
 
 void serialWriteBuf(serialPort_t *instance, const uint8_t *data, int count)
 {
-    while(count--)
+    while (count--)
         serialWrite(instance, *data++);
 }
 
@@ -73,7 +72,8 @@ uint32_t serialRxBytesWaiting(const serialPort_t *instance)
     EXPECT_EQ(instance, &serialTestInstance);
     EXPECT_GE(serialReadEnd, serialReadPos);
     int ret = serialReadEnd - serialReadPos;
-    if (ret >= 0) return ret;
+    if (ret >= 0)
+        return ret;
     return 0;
 }
 
@@ -138,7 +138,7 @@ TEST(BlackboxTest, TestWriteTag2_3SVariable_BITS2)
     v[0] = 1;
     selector = blackboxWriteTag2_3SVariable(v);
     EXPECT_EQ(0x10, buf[0]); // 00010000
-    EXPECT_EQ(0, buf[1]); // ensure next byte has not been written
+    EXPECT_EQ(0, buf[1]);    // ensure next byte has not been written
     ++buf;
 
     v[0] = 1;
@@ -147,7 +147,7 @@ TEST(BlackboxTest, TestWriteTag2_3SVariable_BITS2)
     selector = blackboxWriteTag2_3SVariable(v);
     EXPECT_EQ(0, selector);
     EXPECT_EQ(0x15, buf[0]); // 00010101
-    EXPECT_EQ(0, buf[1]); // ensure next byte has not been written
+    EXPECT_EQ(0, buf[1]);    // ensure next byte has not been written
     ++buf;
 
     v[0] = -1;
@@ -156,7 +156,7 @@ TEST(BlackboxTest, TestWriteTag2_3SVariable_BITS2)
     selector = blackboxWriteTag2_3SVariable(v);
     EXPECT_EQ(0, selector);
     EXPECT_EQ(0x3F, buf[0]); // 00111111
-    EXPECT_EQ(0, buf[1]); // ensure next byte has not been written
+    EXPECT_EQ(0, buf[1]);    // ensure next byte has not been written
     ++buf;
 
     v[0] = -2;
@@ -165,7 +165,7 @@ TEST(BlackboxTest, TestWriteTag2_3SVariable_BITS2)
     selector = blackboxWriteTag2_3SVariable(v);
     EXPECT_EQ(0, selector);
     EXPECT_EQ(0x2A, buf[0]); // 00101010
-    EXPECT_EQ(0, buf[1]); // ensure next byte has not been written
+    EXPECT_EQ(0, buf[1]);    // ensure next byte has not been written
     ++buf;
 }
 
@@ -185,7 +185,7 @@ TEST(BlackboxTest, TestWriteTag2_3SVariable_BITS554)
     EXPECT_EQ(1, selector);
     EXPECT_EQ(0x5E, buf[0]); // 0101 1110
     EXPECT_EQ(0xF7, buf[1]); // 1111 0111
-    EXPECT_EQ(0, buf[2]); // ensure next byte has not been written
+    EXPECT_EQ(0, buf[2]);    // ensure next byte has not been written
     buf += 2;
 
     v[0] = -16;
@@ -195,7 +195,7 @@ TEST(BlackboxTest, TestWriteTag2_3SVariable_BITS554)
     EXPECT_EQ(1, selector);
     EXPECT_EQ(0x61, buf[0]); // 0110 0001
     EXPECT_EQ(0x08, buf[1]); // 0000 1000
-    EXPECT_EQ(0, buf[2]); // ensure next byte has not been written
+    EXPECT_EQ(0, buf[2]);    // ensure next byte has not been written
     buf += 2;
 
     v[0] = 7;
@@ -205,7 +205,7 @@ TEST(BlackboxTest, TestWriteTag2_3SVariable_BITS554)
     EXPECT_EQ(1, selector);
     EXPECT_EQ(0x4E, buf[0]); // 0100 1110
     EXPECT_EQ(0x85, buf[1]); // 1000 0101
-    EXPECT_EQ(0, buf[2]); // ensure next byte has not been written
+    EXPECT_EQ(0, buf[2]);    // ensure next byte has not been written
     buf += 2;
 }
 
@@ -226,7 +226,7 @@ TEST(BlackboxTest, TestWriteTag2_3SVariable_BITS887)
     EXPECT_EQ(0x9F, buf[0]); // 1001 1111
     EXPECT_EQ(0xDF, buf[1]); // 1101 1111
     EXPECT_EQ(0xBF, buf[2]); // 1011 1111
-    EXPECT_EQ(0, buf[3]); // ensure next byte has not been written
+    EXPECT_EQ(0, buf[3]);    // ensure next byte has not been written
     buf += 3;
 
     v[0] = -128;
@@ -237,7 +237,7 @@ TEST(BlackboxTest, TestWriteTag2_3SVariable_BITS887)
     EXPECT_EQ(0xA0, buf[0]); // 1010 0000
     EXPECT_EQ(0x20, buf[1]); // 0010 0000
     EXPECT_EQ(0x40, buf[2]); // 0100 0000
-    EXPECT_EQ(0, buf[3]); // ensure next byte has not been written
+    EXPECT_EQ(0, buf[3]);    // ensure next byte has not been written
     buf += 3;
 }
 // STUBS
@@ -245,15 +245,15 @@ extern "C" {
 PG_REGISTER(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
 int32_t blackboxHeaderBudget;
 void mspSerialAllocatePorts(void) {}
-void blackboxWrite(uint8_t value) {serialWrite(blackboxPort, value);}
+void blackboxWrite(uint8_t value) { serialWrite(blackboxPort, value); }
 int blackboxWriteString(const char *s)
 {
-    const uint8_t *pos = (uint8_t*)s;
+    const uint8_t *pos = (uint8_t *)s;
     while (*pos) {
         serialWrite(blackboxPort, *pos);
         pos++;
     }
-    const int length = pos - (uint8_t*)s;
+    const int length = pos - (uint8_t *)s;
     return length;
 }
 }

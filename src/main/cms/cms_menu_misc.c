@@ -68,22 +68,21 @@ static long cmsx_menuRcConfirmBack(const OSD_Entry *self)
 // RC preview
 //
 static OSD_Entry cmsx_menuRcEntries[] =
-{
-    { "-- RC PREV --", OME_Label, NULL, NULL, 0},
+    {
+        {"-- RC PREV --", OME_Label, NULL, NULL, 0},
 
-    { "ROLL",  OME_INT16, NULL, &(OSD_INT16_t){ &rcData[ROLL],     1, 2500, 0 }, DYNAMIC },
-    { "PITCH", OME_INT16, NULL, &(OSD_INT16_t){ &rcData[PITCH],    1, 2500, 0 }, DYNAMIC },
-    { "THR",   OME_INT16, NULL, &(OSD_INT16_t){ &rcData[THROTTLE], 1, 2500, 0 }, DYNAMIC },
-    { "YAW",   OME_INT16, NULL, &(OSD_INT16_t){ &rcData[YAW],      1, 2500, 0 }, DYNAMIC },
+        {"ROLL", OME_INT16, NULL, &(OSD_INT16_t){&rcData[ROLL], 1, 2500, 0}, DYNAMIC},
+        {"PITCH", OME_INT16, NULL, &(OSD_INT16_t){&rcData[PITCH], 1, 2500, 0}, DYNAMIC},
+        {"THR", OME_INT16, NULL, &(OSD_INT16_t){&rcData[THROTTLE], 1, 2500, 0}, DYNAMIC},
+        {"YAW", OME_INT16, NULL, &(OSD_INT16_t){&rcData[YAW], 1, 2500, 0}, DYNAMIC},
 
-    { "AUX1",  OME_INT16, NULL, &(OSD_INT16_t){ &rcData[AUX1],     1, 2500, 0 }, DYNAMIC },
-    { "AUX2",  OME_INT16, NULL, &(OSD_INT16_t){ &rcData[AUX2],     1, 2500, 0 }, DYNAMIC },
-    { "AUX3",  OME_INT16, NULL, &(OSD_INT16_t){ &rcData[AUX3],     1, 2500, 0 }, DYNAMIC },
-    { "AUX4",  OME_INT16, NULL, &(OSD_INT16_t){ &rcData[AUX4],     1, 2500, 0 }, DYNAMIC },
+        {"AUX1", OME_INT16, NULL, &(OSD_INT16_t){&rcData[AUX1], 1, 2500, 0}, DYNAMIC},
+        {"AUX2", OME_INT16, NULL, &(OSD_INT16_t){&rcData[AUX2], 1, 2500, 0}, DYNAMIC},
+        {"AUX3", OME_INT16, NULL, &(OSD_INT16_t){&rcData[AUX3], 1, 2500, 0}, DYNAMIC},
+        {"AUX4", OME_INT16, NULL, &(OSD_INT16_t){&rcData[AUX4], 1, 2500, 0}, DYNAMIC},
 
-    { "BACK",  OME_Back, NULL, NULL, 0},
-    {NULL, OME_END, NULL, NULL, 0}
-};
+        {"BACK", OME_Back, NULL, NULL, 0},
+        {NULL, OME_END, NULL, NULL, 0}};
 
 CMS_Menu cmsx_menuRcPreview = {
 #ifdef CMS_MENU_DEBUG
@@ -92,8 +91,7 @@ CMS_Menu cmsx_menuRcPreview = {
 #endif
     .onEnter = NULL,
     .onExit = cmsx_menuRcConfirmBack,
-    .entries = cmsx_menuRcEntries
-};
+    .entries = cmsx_menuRcEntries};
 
 static uint16_t motorConfig_minthrottle;
 static uint8_t motorConfig_digitalIdleOffsetValue;
@@ -119,18 +117,17 @@ static long cmsx_menuMiscOnExit(const OSD_Entry *self)
     return 0;
 }
 
-static OSD_Entry menuMiscEntries[]=
-{
-    { "-- MISC --", OME_Label, NULL, NULL, 0 },
+static OSD_Entry menuMiscEntries[] =
+    {
+        {"-- MISC --", OME_Label, NULL, NULL, 0},
 
-    { "MIN THR",      OME_UINT16,  NULL,          &(OSD_UINT16_t){ &motorConfig_minthrottle,              1000, 2000, 1 },      0 },
-    { "DIGITAL IDLE", OME_UINT8,   NULL,          &(OSD_UINT8_t) { &motorConfig_digitalIdleOffsetValue,      0,  200, 1 },      0 },
-    { "DEBUG MODE",   OME_TAB,     NULL,          &(OSD_TAB_t) { &systemConfig_debug_mode, DEBUG_COUNT - 1, debugModeNames },      0 },
-    { "RC PREV",      OME_Submenu, cmsMenuChange, &cmsx_menuRcPreview, 0},
+        {"MIN THR", OME_UINT16, NULL, &(OSD_UINT16_t){&motorConfig_minthrottle, 1000, 2000, 1}, 0},
+        {"DIGITAL IDLE", OME_UINT8, NULL, &(OSD_UINT8_t){&motorConfig_digitalIdleOffsetValue, 0, 200, 1}, 0},
+        {"DEBUG MODE", OME_TAB, NULL, &(OSD_TAB_t){&systemConfig_debug_mode, DEBUG_COUNT - 1, debugModeNames}, 0},
+        {"RC PREV", OME_Submenu, cmsMenuChange, &cmsx_menuRcPreview, 0},
 
-    { "BACK", OME_Back, NULL, NULL, 0},
-    { NULL, OME_END, NULL, NULL, 0}
-};
+        {"BACK", OME_Back, NULL, NULL, 0},
+        {NULL, OME_END, NULL, NULL, 0}};
 
 CMS_Menu cmsx_menuMisc = {
 #ifdef CMS_MENU_DEBUG
@@ -139,7 +136,6 @@ CMS_Menu cmsx_menuMisc = {
 #endif
     .onEnter = cmsx_menuMiscOnEnter,
     .onExit = cmsx_menuMiscOnExit,
-    .entries = menuMiscEntries
-};
+    .entries = menuMiscEntries};
 
 #endif // CMS

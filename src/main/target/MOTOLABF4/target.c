@@ -27,12 +27,12 @@
 #include "drivers/dma.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    DEF_TIM(TIM3, CH2, PB5, TIM_USE_MOTOR, 0, 0 ), // PWM1
-    DEF_TIM(TIM3, CH3, PB0, TIM_USE_MOTOR, 0, 0 ), // PWM2
-    DEF_TIM(TIM2, CH2, PB3, TIM_USE_MOTOR, 0, 0 ), // PWM3
-    DEF_TIM(TIM3, CH4, PB1, TIM_USE_MOTOR, 0, 0 ), // PWM4
-    DEF_TIM(TIM5, CH3, PA2, TIM_USE_NONE,  0, 0 ), // PWM5, UART 2 TX
-    DEF_TIM(TIM5, CH4, PA3, TIM_USE_NONE,  0, 0 ), // PWM6, UART 2 RX
-    DEF_TIM(TIM1, CH1, PA8, TIM_USE_LED,   0, 0 ), // Serial LED
-    DEF_TIM(TIM4, CH3, PB8, TIM_USE_NONE,  0, 0 ), // ESC serial (unwired)
+    DEF_TIM(TIM3, CH2, PB5, TIM_USE_MOTOR, 0, 0), // PWM1
+    DEF_TIM(TIM3, CH3, PB0, TIM_USE_MOTOR, 0, 0), // PWM2
+    DEF_TIM(TIM2, CH2, PB3, TIM_USE_MOTOR, 0, 0), // PWM3
+    DEF_TIM(TIM3, CH4, PB1, TIM_USE_MOTOR, 0, 0), // PWM4
+    DEF_TIM(TIM5, CH3, PA2, TIM_USE_NONE, 0, 0),  // PWM5, UART 2 TX
+    DEF_TIM(TIM5, CH4, PA3, TIM_USE_NONE, 0, 0),  // PWM6, UART 2 RX
+    DEF_TIM(TIM1, CH1, PA8, TIM_USE_LED, 0, 0),   // Serial LED
+    DEF_TIM(TIM4, CH3, PB8, TIM_USE_NONE, 0, 0),  // ESC serial (unwired)
 };

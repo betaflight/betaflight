@@ -81,13 +81,12 @@
 #include "hardware_revision.h"
 #endif
 
-
-FAST_RAM_ZERO_INIT acc_t acc;                       // acc access functions
+FAST_RAM_ZERO_INIT acc_t acc; // acc access functions
 
 static float accumulatedMeasurements[XYZ_AXIS_COUNT];
 static int accumulatedMeasurementCount;
 
-static uint16_t calibratingA = 0;      // the calibration is done is the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
+static uint16_t calibratingA = 0; // the calibration is done is the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
 
 extern uint16_t InflightcalibratingA;
 extern bool AccInflightCalibrationMeasurementDone;
@@ -104,9 +103,8 @@ PG_REGISTER_WITH_RESET_FN(accelerometerConfig_t, accelerometerConfig, PG_ACCELER
 void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
 {
     RESET_CONFIG_2(rollAndPitchTrims_t, rollAndPitchTrims,
-        .values.roll = 0,
-        .values.pitch = 0,
-    );
+                   .values.roll = 0,
+                   .values.pitch = 0, );
 }
 
 void accResetRollAndPitchTrims(void)
@@ -129,11 +127,10 @@ void accResetFlightDynamicsTrims(void)
 void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)
 {
     RESET_CONFIG_2(accelerometerConfig_t, instance,
-        .acc_lpf_hz = 10,
-        .acc_align = ALIGN_DEFAULT,
-        .acc_hardware = ACC_DEFAULT,
-        .acc_high_fsr = false,
-    );
+                   .acc_lpf_hz = 10,
+                   .acc_align = ALIGN_DEFAULT,
+                   .acc_hardware = ACC_DEFAULT,
+                   .acc_high_fsr = false, );
     resetRollAndPitchTrims(&instance->accelerometerTrims);
     resetFlightDynamicsTrims(&instance->accZero);
 }
@@ -360,11 +357,11 @@ bool accInit(uint32_t gyroSamplingInverval)
     if (!accDetect(&acc.dev, accelerometerConfig()->acc_hardware)) {
         return false;
     }
-    acc.dev.acc_1G = 256; // set default
+    acc.dev.acc_1G = 256;     // set default
     acc.dev.initFn(&acc.dev); // driver initialisation
     acc.dev.acc_1G_rec = 1.0f / acc.dev.acc_1G;
     // set the acc sampling interval according to the gyro sampling interval
-    switch (gyroSamplingInverval) {  // Switch statement kept in place to change acc sampling interval in the future
+    switch (gyroSamplingInverval) { // Switch statement kept in place to change acc sampling interval in the future
     case 500:
     case 375:
     case 250:
@@ -446,8 +443,8 @@ static void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims
 static void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims)
 {
     static int32_t b[3];
-    static int16_t accZero_saved[3] = { 0, 0, 0 };
-    static rollAndPitchTrims_t angleTrim_saved = { { 0, 0 } };
+    static int16_t accZero_saved[3] = {0, 0, 0};
+    static rollAndPitchTrims_t angleTrim_saved = {{0, 0}};
 
     // Saving old zeropoints before measurement
     if (InflightcalibratingA == 50) {
@@ -483,11 +480,11 @@ static void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndP
         InflightcalibratingA--;
     }
     // Calculate average, shift Z down by acc_1G and store values in EEPROM at end of calibration
-    if (AccInflightCalibrationSavetoEEProm) {      // the aircraft is landed, disarmed and the combo has been done again
+    if (AccInflightCalibrationSavetoEEProm) { // the aircraft is landed, disarmed and the combo has been done again
         AccInflightCalibrationSavetoEEProm = false;
         accelerationTrims->raw[X] = b[X] / 50;
         accelerationTrims->raw[Y] = b[Y] / 50;
-        accelerationTrims->raw[Z] = b[Z] / 50 - acc.dev.acc_1G;    // for nunchuck 200=1G
+        accelerationTrims->raw[Z] = b[Z] / 50 - acc.dev.acc_1G; // for nunchuck 200=1G
 
         resetRollAndPitchTrims(rollAndPitchTrims);
 

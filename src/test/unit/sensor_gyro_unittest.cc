@@ -22,38 +22,37 @@
 #include <algorithm>
 
 extern "C" {
-    #include <platform.h>
+#include <platform.h>
 
-    #include "build/build_config.h"
-    #include "build/debug.h"
-    #include "common/axis.h"
-    #include "common/maths.h"
-    #include "common/utils.h"
-    #include "drivers/accgyro/accgyro_fake.h"
-    #include "drivers/accgyro/accgyro_mpu.h"
-    #include "drivers/sensor.h"
-    #include "io/beeper.h"
-    #include "pg/pg.h"
-    #include "pg/pg_ids.h"
-    #include "scheduler/scheduler.h"
-    #include "sensors/gyro.h"
-    #include "sensors/acceleration.h"
-    #include "sensors/sensors.h"
+#include "build/build_config.h"
+#include "build/debug.h"
+#include "common/axis.h"
+#include "common/maths.h"
+#include "common/utils.h"
+#include "drivers/accgyro/accgyro_fake.h"
+#include "drivers/accgyro/accgyro_mpu.h"
+#include "drivers/sensor.h"
+#include "io/beeper.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+#include "scheduler/scheduler.h"
+#include "sensors/gyro.h"
+#include "sensors/acceleration.h"
+#include "sensors/sensors.h"
 
-    STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev);
-    struct gyroSensor_s;
-    STATIC_UNIT_TESTED void performGyroCalibration(struct gyroSensor_s *gyroSensor, uint8_t gyroMovementCalibrationThreshold);
-    STATIC_UNIT_TESTED bool fakeGyroRead(gyroDev_t *gyro);
+STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev);
+struct gyroSensor_s;
+STATIC_UNIT_TESTED void performGyroCalibration(struct gyroSensor_s *gyroSensor, uint8_t gyroMovementCalibrationThreshold);
+STATIC_UNIT_TESTED bool fakeGyroRead(gyroDev_t *gyro);
 
-    uint8_t debugMode;
-    int16_t debug[DEBUG16_VALUE_COUNT];
+uint8_t debugMode;
+int16_t debug[DEBUG16_VALUE_COUNT];
 }
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
-extern gyroSensor_s * const gyroSensorPtr;
-extern gyroDev_t * const gyroDevPtr;
-
+extern gyroSensor_s *const gyroSensorPtr;
+extern gyroDev_t *const gyroDevPtr;
 
 TEST(SensorGyro, Detect)
 {
@@ -154,11 +153,11 @@ TEST(SensorGyro, Update)
 
 extern "C" {
 
-uint32_t micros(void) {return 0;}
+uint32_t micros(void) { return 0; }
 void beeper(beeperMode_e) {}
-uint8_t detectedSensors[] = { GYRO_NONE, ACC_NONE };
-timeDelta_t getGyroUpdateRate(void) {return gyro.targetLooptime;}
+uint8_t detectedSensors[] = {GYRO_NONE, ACC_NONE};
+timeDelta_t getGyroUpdateRate(void) { return gyro.targetLooptime; }
 void sensorsSet(uint32_t) {}
 void schedulerResetTaskStatistics(cfTaskId_e) {}
-int getArmingDisableFlags(void) {return 0;}
+int getArmingDisableFlags(void) { return 0; }
 }

@@ -64,7 +64,7 @@ typedef enum {
 #define ICPOLARITY_FALLING false
 
 typedef struct softSerial_s {
-    serialPort_t     port;
+    serialPort_t port;
 
     IO_t rxIO;
     IO_t txIO;
@@ -78,23 +78,23 @@ typedef struct softSerial_s {
     volatile uint8_t rxBuffer[SOFTSERIAL_BUFFER_SIZE];
     volatile uint8_t txBuffer[SOFTSERIAL_BUFFER_SIZE];
 
-    uint8_t          isSearchingForStartBit;
-    uint8_t          rxBitIndex;
-    uint8_t          rxLastLeadingEdgeAtBitIndex;
-    uint8_t          rxEdge;
-    uint8_t          rxActive;
+    uint8_t isSearchingForStartBit;
+    uint8_t rxBitIndex;
+    uint8_t rxLastLeadingEdgeAtBitIndex;
+    uint8_t rxEdge;
+    uint8_t rxActive;
 
-    uint8_t          isTransmittingData;
-    int8_t           bitsLeftToTransmit;
+    uint8_t isTransmittingData;
+    int8_t bitsLeftToTransmit;
 
-    uint16_t         internalTxBuffer;  // includes start and stop bits
-    uint16_t         internalRxBuffer;  // includes start and stop bits
+    uint16_t internalTxBuffer; // includes start and stop bits
+    uint16_t internalRxBuffer; // includes start and stop bits
 
-    uint16_t         transmissionErrors;
-    uint16_t         receiveErrors;
+    uint16_t transmissionErrors;
+    uint16_t receiveErrors;
 
-    uint8_t          softSerialPortIndex;
-    timerMode_e      timerMode;
+    uint8_t softSerialPortIndex;
+    timerMode_e timerMode;
 
     timerOvrHandlerRec_t overCb;
     timerCCHandlerRec_t edgeCb;
@@ -209,11 +209,10 @@ static void serialTimerConfigureTimebase(const timerHardware_t *timerHardwarePtr
         timerPeriod = clock / baud;
         if (isTimerPeriodTooLarge(timerPeriod)) {
             if (clock > 1) {
-                clock = clock / 2;   // this is wrong - mhz stays the same ... This will double baudrate until ok (but minimum baudrate is < 1200)
+                clock = clock / 2; // this is wrong - mhz stays the same ... This will double baudrate until ok (but minimum baudrate is < 1200)
             } else {
                 // TODO unable to continue, unable to determine clock and timerPeriods for the given baud
             }
-
         }
     } while (isTimerPeriodTooLarge(timerPeriod));
 
@@ -346,7 +345,6 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
 
     return &softSerial->port;
 }
-
 
 /*
  * Serial Engine
@@ -555,7 +553,6 @@ void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
 #endif
 }
 
-
 /*
  * Standard serial driver API
  */
@@ -642,7 +639,6 @@ static const struct serialPortVTable softSerialVTable = {
     .setBaudRateCb = NULL,
     .writeBuf = NULL,
     .beginWrite = NULL,
-    .endWrite = NULL
-};
+    .endWrite = NULL};
 
 #endif

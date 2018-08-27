@@ -39,7 +39,6 @@
 
 #include "fc/config.h"
 
-
 #ifdef USE_LED_STRIP
 
 static bool featureRead = false;
@@ -69,13 +68,12 @@ static long cmsx_Ledstrip_FeatureWriteback(const OSD_Entry *self)
 }
 
 static OSD_Entry cmsx_menuLedstripEntries[] =
-{
-    { "-- LED STRIP --", OME_Label, NULL, NULL, 0 },
-    { "ENABLED",         OME_Bool,  NULL, &cmsx_FeatureLedstrip, 0 },
+    {
+        {"-- LED STRIP --", OME_Label, NULL, NULL, 0},
+        {"ENABLED", OME_Bool, NULL, &cmsx_FeatureLedstrip, 0},
 
-    { "BACK", OME_Back, NULL, NULL, 0 },
-    { NULL, OME_END, NULL, NULL, 0 }
-};
+        {"BACK", OME_Back, NULL, NULL, 0},
+        {NULL, OME_END, NULL, NULL, 0}};
 
 CMS_Menu cmsx_menuLedstrip = {
 #ifdef CMS_MENU_DEBUG
@@ -84,7 +82,6 @@ CMS_Menu cmsx_menuLedstrip = {
 #endif
     .onEnter = cmsx_Ledstrip_FeatureRead,
     .onExit = cmsx_Ledstrip_FeatureWriteback,
-    .entries = cmsx_menuLedstripEntries
-};
+    .entries = cmsx_menuLedstripEntries};
 #endif // LED_STRIP
 #endif // CMS

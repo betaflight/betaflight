@@ -66,12 +66,12 @@ bool flashInit(const flashConfig_t *flashConfig)
 #ifndef FLASH_SPI_SHARED
     //Maximum speed for standard READ command is 20mHz, other commands tolerate 25mHz
     //spiSetDivisor(busdev->busdev_u.spi.instance, SPI_CLOCK_FAST);
-    spiSetDivisor(busdev->busdev_u.spi.instance, SPI_CLOCK_STANDARD*2);
+    spiSetDivisor(busdev->busdev_u.spi.instance, SPI_CLOCK_STANDARD * 2);
 #endif
 
     flashDevice.busdev = busdev;
 
-    const uint8_t out[] = { SPIFLASH_INSTRUCTION_RDID, 0, 0, 0 };
+    const uint8_t out[] = {SPIFLASH_INSTRUCTION_RDID, 0, 0, 0};
 
     delay(50); // short delay required after initialisation of SPI device instance.
 

@@ -20,7 +20,7 @@
  */
 
 #ifdef USB_OTG_HS_INTERNAL_DMA_ENABLED
-#pragma     data_alignment = 4
+#pragma data_alignment = 4
 #endif /* USB_OTG_HS_INTERNAL_DMA_ENABLED */
 
 /* Includes ------------------------------------------------------------------*/
@@ -55,16 +55,15 @@ static uint32_t APP_Tx_ptr_in = 0;
 /* Private function prototypes -----------------------------------------------*/
 static uint16_t VCP_Init(void);
 static uint16_t VCP_DeInit(void);
-static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len);
-static uint16_t VCP_DataTx(const uint8_t* Buf, uint32_t Len);
-static uint16_t VCP_DataRx(uint8_t* Buf, uint32_t Len);
-static void (*ctrlLineStateCb)(void* context, uint16_t ctrlLineState);
+static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t *Buf, uint32_t Len);
+static uint16_t VCP_DataTx(const uint8_t *Buf, uint32_t Len);
+static uint16_t VCP_DataRx(uint8_t *Buf, uint32_t Len);
+static void (*ctrlLineStateCb)(void *context, uint16_t ctrlLineState);
 static void *ctrlLineStateCbContext;
 static void (*baudRateCb)(void *context, uint32_t baud);
 static void *baudRateCbContext;
 
-
-CDC_IF_Prop_TypeDef VCP_fops = {VCP_Init, VCP_DeInit, VCP_Ctrl, VCP_DataTx, VCP_DataRx };
+CDC_IF_Prop_TypeDef VCP_fops = {VCP_Init, VCP_DeInit, VCP_Ctrl, VCP_DataTx, VCP_DataRx};
 
 /* Private functions ---------------------------------------------------------*/
 /**
@@ -93,12 +92,12 @@ static uint16_t VCP_DeInit(void)
     return USBD_OK;
 }
 
-void ust_cpy(LINE_CODING* plc2, const LINE_CODING* plc1)
+void ust_cpy(LINE_CODING *plc2, const LINE_CODING *plc1)
 {
-   plc2->bitrate    = plc1->bitrate;
-   plc2->format     = plc1->format;
-   plc2->paritytype = plc1->paritytype;
-   plc2->datatype   = plc1->datatype;
+    plc2->bitrate = plc1->bitrate;
+    plc2->format = plc1->format;
+    plc2->paritytype = plc1->paritytype;
+    plc2->datatype = plc1->datatype;
 }
 
 /**
@@ -109,59 +108,56 @@ void ust_cpy(LINE_CODING* plc2, const LINE_CODING* plc1)
  * @param  Len: Number of data to be sent (in bytes)
  * @retval Result of the opeartion (USBD_OK in all cases)
  */
-static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len)
+static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t *Buf, uint32_t Len)
 {
-    LINE_CODING* plc = (LINE_CODING*)Buf;
+    LINE_CODING *plc = (LINE_CODING *)Buf;
 
-    assert_param(Len>=sizeof(LINE_CODING));
+    assert_param(Len >= sizeof(LINE_CODING));
 
     switch (Cmd) {
-       /* Not  needed for this driver, AT modem commands */
-      case SEND_ENCAPSULATED_COMMAND:
-      case GET_ENCAPSULATED_RESPONSE:
-         break;
+        /* Not  needed for this driver, AT modem commands */
+    case SEND_ENCAPSULATED_COMMAND:
+    case GET_ENCAPSULATED_RESPONSE:
+        break;
 
-      // Not needed for this driver
-      case SET_COMM_FEATURE:
-      case GET_COMM_FEATURE:
-      case CLEAR_COMM_FEATURE:
-         break;
+    // Not needed for this driver
+    case SET_COMM_FEATURE:
+    case GET_COMM_FEATURE:
+    case CLEAR_COMM_FEATURE:
+        break;
 
+    //Note - hw flow control on UART 1-3 and 6 only
+    case SET_LINE_CODING:
+        // If a callback is provided, tell the upper driver of changes in baud rate
+        if (plc && (Len == sizeof(*plc))) {
+            if (baudRateCb) {
+                baudRateCb(baudRateCbContext, plc->bitrate);
+            }
+            ust_cpy(&g_lc, plc); //Copy into structure to save for later
+        }
+        break;
 
-      //Note - hw flow control on UART 1-3 and 6 only
-      case SET_LINE_CODING:
-         // If a callback is provided, tell the upper driver of changes in baud rate
-         if (plc && (Len == sizeof (*plc))) {
-             if (baudRateCb) {
-                 baudRateCb(baudRateCbContext, plc->bitrate);
-             }
-             ust_cpy(&g_lc, plc);           //Copy into structure to save for later
-         }
-         break;
+    case GET_LINE_CODING:
+        if (plc && (Len == sizeof(*plc))) {
+            ust_cpy(plc, &g_lc);
+        }
+        break;
 
+    case SET_CONTROL_LINE_STATE:
+        // If a callback is provided, tell the upper driver of changes in DTR/RTS state
+        if (plc && (Len == sizeof(uint16_t))) {
+            if (ctrlLineStateCb) {
+                ctrlLineStateCb(ctrlLineStateCbContext, *((uint16_t *)Buf));
+            }
+        }
+        break;
 
-      case GET_LINE_CODING:
-         if (plc && (Len == sizeof (*plc))) {
-             ust_cpy(plc, &g_lc);
-         }
-         break;
+    case SEND_BREAK:
+        /* Not  needed for this driver */
+        break;
 
-
-      case SET_CONTROL_LINE_STATE:
-         // If a callback is provided, tell the upper driver of changes in DTR/RTS state
-         if (plc && (Len == sizeof (uint16_t))) {
-             if (ctrlLineStateCb) {
-                 ctrlLineStateCb(ctrlLineStateCbContext, *((uint16_t *)Buf));
-             }
-         }
-         break;
-
-      case SEND_BREAK:
-         /* Not  needed for this driver */
-         break;
-
-      default:
-         break;
+    default:
+        break;
     }
 
     return USBD_OK;
@@ -199,14 +195,15 @@ uint32_t CDC_Send_FreeBytes(void)
  * @param  Len: Number of data to be sent (in bytes)
  * @retval Result of the operation: USBD_OK if all operations are OK else VCP_FAIL
  */
-static uint16_t VCP_DataTx(const uint8_t* Buf, uint32_t Len)
+static uint16_t VCP_DataTx(const uint8_t *Buf, uint32_t Len)
 {
     /*
         make sure that any paragraph end frame is not in play
         could just check for: USB_CDC_ZLP, but better to be safe
         and wait for any existing transmission to complete.
     */
-    while (USB_Tx_State != 0);
+    while (USB_Tx_State != 0)
+        ;
 
     for (uint32_t i = 0; i < Len; i++) {
         APP_Rx_Buffer[APP_Rx_ptr_in] = Buf[i];
@@ -227,7 +224,7 @@ static uint16_t VCP_DataTx(const uint8_t* Buf, uint32_t Len)
  * Output         : None.
  * Return         : None.
  *******************************************************************************/
-uint32_t CDC_Receive_DATA(uint8_t* recvBuf, uint32_t len)
+uint32_t CDC_Receive_DATA(uint8_t *recvBuf, uint32_t len)
 {
     uint32_t count = 0;
 
@@ -260,7 +257,7 @@ uint32_t CDC_Receive_BytesAvailable(void)
  * @param  Len: Number of data received (in bytes)
  * @retval Result of the opeartion: USBD_OK if all operations are OK else VCP_FAIL
  */
-static uint16_t VCP_DataRx(uint8_t* Buf, uint32_t Len)
+static uint16_t VCP_DataRx(uint8_t *Buf, uint32_t Len)
 {
     if (CDC_Receive_BytesAvailable() + Len > APP_TX_DATA_SIZE) {
         return USBD_FAIL;

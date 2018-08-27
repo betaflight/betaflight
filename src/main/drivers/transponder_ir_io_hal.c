@@ -39,7 +39,6 @@
 
 volatile uint8_t transponderIrDataTransferInProgress = 0;
 
-
 static IO_t transponderIO = IO_NONE;
 static TIM_HandleTypeDef TimHandle;
 static uint16_t timerChannel = 0;
@@ -51,7 +50,7 @@ static uint16_t timerChannel = 0;
 transponder_t transponder;
 bool transponderInitialised = false;
 
-static void TRANSPONDER_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
+static void TRANSPONDER_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
 {
     HAL_DMA_IRQHandler(TimHandle.hdma[descriptor->userParam]);
     TIM_DMACmd(&TimHandle, timerChannel, DISABLE);
@@ -131,11 +130,10 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
         return;
     }
 
-
     RCC_ClockCmd(timerRCC(timer), ENABLE);
 
     /* PWM1 Mode configuration: Channel1 */
-    TIM_OC_InitTypeDef  TIM_OCInitStructure;
+    TIM_OC_InitTypeDef TIM_OCInitStructure;
 
     TIM_OCInitStructure.OCMode = TIM_OCMODE_PWM1;
     TIM_OCInitStructure.OCIdleState = TIM_OCIDLESTATE_RESET;
@@ -170,17 +168,17 @@ bool transponderIrInit(const ioTag_t ioTag, const transponderProvider_e provider
     }
 
     switch (provider) {
-        case TRANSPONDER_ARCITIMER:
-            transponderIrInitArcitimer(&transponder);
-            break;
-        case TRANSPONDER_ILAP:
-            transponderIrInitIlap(&transponder);
-            break;
-        case TRANSPONDER_ERLT:
-            transponderIrInitERLT(&transponder);
-            break;
-        default:
-            return false;
+    case TRANSPONDER_ARCITIMER:
+        transponderIrInitArcitimer(&transponder);
+        break;
+    case TRANSPONDER_ILAP:
+        transponderIrInitIlap(&transponder);
+        break;
+    case TRANSPONDER_ERLT:
+        transponderIrInitERLT(&transponder);
+        break;
+    default:
+        return false;
     }
 
     transponderIrHardwareInit(ioTag, &transponder);
@@ -204,10 +202,10 @@ void transponderIrWaitForTransmitComplete(void)
     }
 }
 
-void transponderIrUpdateData(const uint8_t* transponderData)
+void transponderIrUpdateData(const uint8_t *transponderData)
 {
-     transponderIrWaitForTransmitComplete();
-     transponder.vTable->updateTransponderDMABuffer(&transponder, transponderData);
+    transponderIrWaitForTransmitComplete();
+    transponder.vTable->updateTransponderDMABuffer(&transponder, transponderData);
 }
 
 void transponderIrDMAEnable(transponder_t *transponder)
@@ -240,7 +238,6 @@ void transponderIrDisable(void)
     } else {
         HAL_TIM_PWM_Stop(&TimHandle, timerChannel);
     }
-
 
     IOInit(transponderIO, OWNER_TRANSPONDER, 0);
 

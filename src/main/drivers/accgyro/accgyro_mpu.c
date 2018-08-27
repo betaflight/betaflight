@@ -61,10 +61,10 @@ mpuResetFnPtr mpuResetFn;
 #endif
 
 #ifndef MPU_ADDRESS
-#define MPU_ADDRESS             0x68
+#define MPU_ADDRESS 0x68
 #endif
 
-#define MPU_INQUIRY_MASK   0x7E
+#define MPU_INQUIRY_MASK 0x7E
 
 #ifdef USE_I2C
 static void mpu6050FindRevision(gyroDev_t *gyro)
@@ -137,13 +137,13 @@ static void mpuIntExtiInit(gyroDev_t *gyro)
     }
 #endif
 
-#if defined (STM32F7)
+#if defined(STM32F7)
     IOInit(mpuIntIO, OWNER_MPU_EXTI, 0);
     EXTIHandlerInit(&gyro->exti, mpuIntExtiHandler);
-    EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, IO_CONFIG(GPIO_MODE_INPUT,0,GPIO_NOPULL));   // TODO - maybe pullup / pulldown ?
+    EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, IO_CONFIG(GPIO_MODE_INPUT, 0, GPIO_NOPULL)); // TODO - maybe pullup / pulldown ?
 #else
     IOInit(mpuIntIO, OWNER_MPU_EXTI, 0);
-    IOConfigGPIO(mpuIntIO, IOCFG_IN_FLOATING);   // TODO - maybe pullup / pulldown ?
+    IOConfigGPIO(mpuIntIO, IOCFG_IN_FLOATING); // TODO - maybe pullup / pulldown ?
 
     EXTIHandlerInit(&gyro->exti, mpuIntExtiHandler);
     EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, EXTI_Trigger_Rising);
@@ -240,7 +240,7 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
     }
 #endif
 
-#ifdef  USE_GYRO_SPI_MPU9250
+#ifdef USE_GYRO_SPI_MPU9250
 #ifndef USE_DUAL_GYRO
     spiBusSetInstance(&gyro->bus, MPU9250_SPI_INSTANCE);
 #endif
@@ -360,29 +360,29 @@ void mpuGyroInit(gyroDev_t *gyro)
 uint8_t mpuGyroDLPF(gyroDev_t *gyro)
 {
     uint8_t ret = 0;
-    
+
     // If gyro is in 32KHz mode then the DLPF bits aren't used
     if (gyro->gyroRateKHz <= GYRO_RATE_8_kHz) {
         switch (gyro->hardware_lpf) {
 #ifdef USE_GYRO_DLPF_EXPERIMENTAL
-            case GYRO_HARDWARE_LPF_EXPERIMENTAL:
-                // experimental mode not supported for MPU60x0 family
-                if ((gyro->gyroHardware != GYRO_MPU6050) && (gyro->gyroHardware != GYRO_MPU6000)) {
-                    ret = 7;
-                } else {
-                    ret = 0;
-                }
-                break;
+        case GYRO_HARDWARE_LPF_EXPERIMENTAL:
+            // experimental mode not supported for MPU60x0 family
+            if ((gyro->gyroHardware != GYRO_MPU6050) && (gyro->gyroHardware != GYRO_MPU6000)) {
+                ret = 7;
+            } else {
+                ret = 0;
+            }
+            break;
 #endif
 
-            case GYRO_HARDWARE_LPF_1KHZ_SAMPLE:
-                ret = 1;
-                break;
-                
-            case GYRO_HARDWARE_LPF_NORMAL:
-            default:
-                ret = 0;
-                break;
+        case GYRO_HARDWARE_LPF_1KHZ_SAMPLE:
+            ret = 1;
+            break;
+
+        case GYRO_HARDWARE_LPF_NORMAL:
+        default:
+            ret = 0;
+            break;
         }
     }
     return ret;
@@ -401,7 +401,7 @@ uint8_t mpuGyroFCHOICE(gyroDev_t *gyro)
         return FCB_3600_32;
 #endif
     } else {
-        return FCB_DISABLED;  // Not in 32KHz mode, set FCHOICE to select 8KHz sampling
+        return FCB_DISABLED; // Not in 32KHz mode, set FCHOICE to select 8KHz sampling
     }
 }
 
@@ -415,6 +415,5 @@ uint8_t mpuGyroReadRegister(const busDevice_t *bus, uint8_t reg)
     } else {
         return 0;
     }
-
 }
 #endif

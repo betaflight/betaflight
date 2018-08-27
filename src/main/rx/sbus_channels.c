@@ -35,8 +35,8 @@
 
 #define DEBUG_SBUS_FRAME_INTERVAL 3
 
-#define SBUS_FLAG_CHANNEL_17        (1 << 0)
-#define SBUS_FLAG_CHANNEL_18        (1 << 1)
+#define SBUS_FLAG_CHANNEL_17 (1 << 0)
+#define SBUS_FLAG_CHANNEL_18 (1 << 1)
 
 #define SBUS_DIGITAL_CHANNEL_MIN 173
 #define SBUS_DIGITAL_CHANNEL_MAX 1812

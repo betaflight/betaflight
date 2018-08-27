@@ -60,8 +60,7 @@ USBD_HandleTypeDef USBD_Device;
 #include "serial.h"
 #include "serial_usb_vcp.h"
 
-
-#define USB_TIMEOUT  50
+#define USB_TIMEOUT 50
 
 static vcpPort_t vcpPort;
 
@@ -200,21 +199,18 @@ static void usbVcpEndWrite(serialPort_t *instance)
 }
 
 static const struct serialPortVTable usbVTable[] = {
-    {
-        .serialWrite = usbVcpWrite,
-        .serialTotalRxWaiting = usbVcpAvailable,
-        .serialTotalTxFree = usbTxBytesFree,
-        .serialRead = usbVcpRead,
-        .serialSetBaudRate = usbVcpSetBaudRate,
-        .isSerialTransmitBufferEmpty = isUsbVcpTransmitBufferEmpty,
-        .setMode = usbVcpSetMode,
-        .setCtrlLineStateCb = usbVcpSetCtrlLineStateCb,
-        .setBaudRateCb = usbVcpSetBaudRateCb,
-        .writeBuf = usbVcpWriteBuf,
-        .beginWrite = usbVcpBeginWrite,
-        .endWrite = usbVcpEndWrite
-    }
-};
+    {.serialWrite = usbVcpWrite,
+     .serialTotalRxWaiting = usbVcpAvailable,
+     .serialTotalTxFree = usbTxBytesFree,
+     .serialRead = usbVcpRead,
+     .serialSetBaudRate = usbVcpSetBaudRate,
+     .isSerialTransmitBufferEmpty = isUsbVcpTransmitBufferEmpty,
+     .setMode = usbVcpSetMode,
+     .setCtrlLineStateCb = usbVcpSetCtrlLineStateCb,
+     .setBaudRateCb = usbVcpSetBaudRateCb,
+     .writeBuf = usbVcpWriteBuf,
+     .beginWrite = usbVcpBeginWrite,
+     .endWrite = usbVcpEndWrite}};
 
 serialPort_t *usbVcpOpen(void)
 {
@@ -245,7 +241,7 @@ serialPort_t *usbVcpOpen(void)
     /* Add Supported Class */
 #ifdef USE_USB_CDC_HID
     if (usbDevConfig()->type == COMPOSITE) {
-    	USBD_RegisterClass(&USBD_Device, USBD_HID_CDC_CLASS);
+        USBD_RegisterClass(&USBD_Device, USBD_HID_CDC_CLASS);
     } else
 #endif
     {

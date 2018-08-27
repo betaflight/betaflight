@@ -63,8 +63,8 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
         return;
     }
 
-    TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
-    TIM_OCInitTypeDef  TIM_OCInitStructure;
+    TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
+    TIM_OCInitTypeDef TIM_OCInitStructure;
     DMA_InitTypeDef DMA_InitStructure;
 
     const timerHardware_t *timerHardware = timerGetByTag(ioTag);
@@ -109,11 +109,11 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
     if (timerHardware->output & TIMER_OUTPUT_N_CHANNEL) {
         TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Enable;
         TIM_OCInitStructure.TIM_OCNIdleState = TIM_OCNIdleState_Reset;
-        TIM_OCInitStructure.TIM_OCNPolarity =  (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPolarity_Low : TIM_OCNPolarity_High;
+        TIM_OCInitStructure.TIM_OCNPolarity = (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPolarity_Low : TIM_OCNPolarity_High;
     } else {
         TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
         TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Set;
-        TIM_OCInitStructure.TIM_OCPolarity =  (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIM_OCPolarity_Low : TIM_OCPolarity_High;
+        TIM_OCInitStructure.TIM_OCPolarity = (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIM_OCPolarity_Low : TIM_OCPolarity_High;
     }
 
     TIM_OCInitStructure.TIM_Pulse = 0;
@@ -175,7 +175,7 @@ void ws2811LedStripDMAEnable(void)
     if (!ws2811Initialised)
         return;
 
-    DMA_SetCurrDataCounter(dmaRef, WS2811_DMA_BUFFER_SIZE);  // load number of bytes to be transferred
+    DMA_SetCurrDataCounter(dmaRef, WS2811_DMA_BUFFER_SIZE); // load number of bytes to be transferred
     TIM_SetCounter(timer, 0);
     TIM_Cmd(timer, ENABLE);
     DMA_Cmd(dmaRef, ENABLE);

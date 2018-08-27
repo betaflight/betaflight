@@ -36,17 +36,17 @@
 extern "C" {
 #endif
 
-#define SECT              512
-#define CLUST             4096
-#define SECT_PER_CLUST    (CLUST / SECT)
-#define SIZE_TO_NSECT(s)  ((s) == 0 ? 1 : ((s) + SECT - 1) / SECT)
+#define SECT 512
+#define CLUST 4096
+#define SECT_PER_CLUST (CLUST / SECT)
+#define SIZE_TO_NSECT(s) ((s) == 0 ? 1 : ((s) + SECT - 1) / SECT)
 #define SIZE_TO_NCLUST(s) ((s) == 0 ? 1 : ((s) + CLUST - 1) / CLUST)
 
-#define CLUST_FREE     0x00000000
+#define CLUST_FREE 0x00000000
 #define CLUST_RESERVED 0x00000001
-#define CLUST_BAD      0x0FFFFFF7
+#define CLUST_BAD 0x0FFFFFF7
 #define CLUST_ROOT_END 0X0FFFFFF8
-#define CLUST_EOF      0x0FFFFFFF
+#define CLUST_EOF 0x0FFFFFFF
 
 #define MAX_DIR_ENTRY_CNT 16
 #define FILE_SYS_TYPE_OFF 82
@@ -121,25 +121,25 @@ extern "C" {
 
 typedef struct
 {
-    uint8_t  status;          // 0x80 for bootable, 0x00 for not bootable, anything else for invalid
-    uint8_t  start_head;      // The head of the start
-    uint8_t  start_sector;    // (S | ((C >> 2) & 0xC0)) where S is the sector of the start and C is the cylinder of the start. Note that S is counted from one.
-    uint8_t  start_cylinder;  // (C & 0xFF) where C is the cylinder of the start
-    uint8_t  PartType;
-    uint8_t  end_head;
-    uint8_t  end_sector;
-    uint8_t  end_cylinder;
-    uint32_t StartLBA;        // linear address of first sector in partition. Multiply by sector size (usually 512) for real offset
-    uint32_t EndLBA;          // linear address of last sector in partition. Multiply by sector size (usually 512) for real offset
+    uint8_t status;         // 0x80 for bootable, 0x00 for not bootable, anything else for invalid
+    uint8_t start_head;     // The head of the start
+    uint8_t start_sector;   // (S | ((C >> 2) & 0xC0)) where S is the sector of the start and C is the cylinder of the start. Note that S is counted from one.
+    uint8_t start_cylinder; // (C & 0xFF) where C is the cylinder of the start
+    uint8_t PartType;
+    uint8_t end_head;
+    uint8_t end_sector;
+    uint8_t end_cylinder;
+    uint32_t StartLBA; // linear address of first sector in partition. Multiply by sector size (usually 512) for real offset
+    uint32_t EndLBA;   // linear address of last sector in partition. Multiply by sector size (usually 512) for real offset
 } mbr_part_t;
 
 typedef struct
 {
-    uint8_t    Code[440];
-    uint32_t   DiskSig;  //This is optional
-    uint16_t   Reserved; //Usually 0x0000
+    uint8_t Code[440];
+    uint32_t DiskSig;  //This is optional
+    uint16_t Reserved; //Usually 0x0000
     mbr_part_t PartTable[4];
-    uint8_t    BootSignature[2]; //0x55 0xAA for bootable
+    uint8_t BootSignature[2]; //0x55 0xAA for bootable
 } mbr_t;
 
 typedef struct
@@ -221,7 +221,8 @@ bool emfat_init_entries(emfat_entry_t *entries)
     int i, n;
 
     e = &entries[0];
-    if (e->level != 0 || !e->dir || e->name == NULL) return false;
+    if (e->level != 0 || !e->dir || e->name == NULL)
+        return false;
 
     e->priv.top = NULL;
     e->priv.next = NULL;
@@ -235,13 +236,15 @@ bool emfat_init_entries(emfat_entry_t *entries)
         entries[i].priv.sub = NULL;
         entries[i].priv.num_subentry = 0;
         if (entries[i].level == n - 1) {
-            if (n == 0) return false;
+            if (n == 0)
+                return false;
             e = e->priv.top;
             n--;
         }
 
         if (entries[i].level == n + 1) {
-            if (!e->dir) return false;
+            if (!e->dir)
+                return false;
             e->priv.sub = &entries[i];
             entries[i].priv.top = e;
             e = &entries[i];
@@ -250,7 +253,8 @@ bool emfat_init_entries(emfat_entry_t *entries)
         }
 
         if (entries[i].level == n) {
-            if (n == 0) return false;
+            if (n == 0)
+                return false;
             e->priv.top->priv.num_subentry++;
             entries[i].priv.top = e->priv.top;
             e->priv.next = &entries[i];
@@ -274,8 +278,8 @@ static void lba_to_chs(int lba, uint8_t *cl, uint8_t *ch, uint8_t *dh)
     head = (lba / sectors) % heads;
     cylinder = lba / (sectors * heads);
     if (cylinder >= cylinders) {
-      *cl = *ch = *dh = 0xff;
-      return;
+        *cl = *ch = *dh = 0xff;
+        return;
     }
     *cl = sector | ((cylinder & 0x300) >> 2);
     *ch = cylinder & 0xFF;
@@ -332,8 +336,8 @@ bool emfat_init(emfat_t *emfat, const char *label, emfat_entry_t *entries)
     emfat->disk_sectors = clust * SECT_PER_CLUST + emfat->priv.root_lba;
     emfat->vol_size = (uint64_t)emfat->disk_sectors * SECT;
     /* calc cyl number */
-//    i = ((emfat->disk_sectors + 63*255 - 1) / (63*255));
-//    emfat->disk_sectors = i * 63*255;
+    //    i = ((emfat->disk_sectors + 63*255 - 1) / (63*255));
+    //    emfat->disk_sectors = i * 63*255;
     return true;
 }
 
@@ -507,8 +511,7 @@ void fill_entry(dir_entry *entry, const char *name, uint8_t attr, uint32_t clust
 
     if ((attr & ATTR_DIR) == 0) {
         for (i = l - 1; i >= 0; i--) {
-            if (name[i] == '.')
-            {
+            if (name[i] == '.') {
                 dot_pos = i;
                 break;
             }
@@ -667,7 +670,8 @@ void write_data_sector(emfat_t *emfat, const uint8_t *data, uint32_t rel_sect)
 
     if (!IS_CLUST_OF(cluster, le)) {
         le = find_entry(emfat, cluster, le);
-        if (le == NULL) return;
+        if (le == NULL)
+            return;
         emfat->priv.last_entry = le;
     }
 
@@ -681,17 +685,16 @@ void write_data_sector(emfat_t *emfat, const uint8_t *data, uint32_t rel_sect)
     }
 }
 
-#define FEBRUARY        2
-#define    STARTOFTIME        1970
-#define SECDAY            86400L
-#define SECYR            (SECDAY * 365)
-#define    leapyear(year)        ((year) % 4 == 0)
-#define    days_in_year(a)        (leapyear(a) ? 366 : 365)
-#define    days_in_month(a)    (month_days[(a) - 1])
+#define FEBRUARY 2
+#define STARTOFTIME 1970
+#define SECDAY 86400L
+#define SECYR (SECDAY * 365)
+#define leapyear(year) ((year) % 4 == 0)
+#define days_in_year(a) (leapyear(a) ? 366 : 365)
+#define days_in_month(a) (month_days[(a)-1])
 
 static int month_days[12] = {
-    31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
-};
+    31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
 uint32_t emfat_cma_time_from_unix(uint32_t tim)
 {
@@ -726,7 +729,7 @@ uint32_t emfat_cma_time_from_unix(uint32_t tim)
 
     /* Days are what is left over (+1) from all that. */
     ymd[2] = day + 1;
-    
+
     return EMFAT_ENCODE_CMA_TIME(ymd[2], ymd[1], ymd[0], hms[0], hms[1], hms[2]);
 }
 

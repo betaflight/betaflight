@@ -26,15 +26,15 @@
 #define USE_BARO
 
 extern "C" {
-    #include "platform.h"
-    #include "target.h"
-    #include "cms/cms.h"
-    #include "cms/cms_types.h"
-    #include "fc/runtime_config.h"
-    void cmsMenuOpen(void);
-    long cmsMenuBack(displayPort_t *pDisplay);
-    uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key);
-    extern CMS_Menu *currentMenu;    // Points to top entry of the current page
+#include "platform.h"
+#include "target.h"
+#include "cms/cms.h"
+#include "cms/cms_types.h"
+#include "fc/runtime_config.h"
+void cmsMenuOpen(void);
+long cmsMenuBack(displayPort_t *pDisplay);
+uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key);
+extern CMS_Menu *currentMenu; // Points to top entry of the current page
 }
 
 #include "unittest_macros.h"
@@ -70,7 +70,7 @@ TEST(CMSUnittest, TestCmsMenuExit0)
     cmsDisplayPortRegister(displayPort);
 
     cmsMenuOpen();
-    long exit = cmsMenuExit(displayPort, (void*)0);
+    long exit = cmsMenuExit(displayPort, (void *)0);
     EXPECT_EQ(0, exit);
 }
 
@@ -81,7 +81,7 @@ TEST(CMSUnittest, TestCmsMenuExit1)
     cmsDisplayPortRegister(displayPort);
 
     cmsMenuOpen();
-    long exit = cmsMenuExit(displayPort, (void*)0);
+    long exit = cmsMenuExit(displayPort, (void *)0);
     EXPECT_EQ(0, exit);
 }
 
@@ -98,14 +98,14 @@ TEST(CMSUnittest, TestCmsMenuBack)
 
 TEST(CMSUnittest, TestCmsMenuKey)
 {
-#define KEY_ENTER   0
-#define KEY_UP      1
-#define KEY_DOWN    2
-#define KEY_LEFT    3
-#define KEY_RIGHT   4
-#define KEY_ESC     5
-#define BUTTON_TIME   250 // msec
-#define BUTTON_PAUSE  500 // msec
+#define KEY_ENTER 0
+#define KEY_UP 1
+#define KEY_DOWN 2
+#define KEY_LEFT 3
+#define KEY_RIGHT 4
+#define KEY_ESC 5
+#define BUTTON_TIME 250  // msec
+#define BUTTON_PAUSE 500 // msec
     cmsInit();
     displayPort_t *displayPort = &testDisplayPort;
     cmsDisplayPortRegister(displayPort);
@@ -118,12 +118,11 @@ TEST(CMSUnittest, TestCmsMenuKey)
 
 extern "C" {
 static OSD_Entry menuMainEntries[] =
-{
-    {"-- MAIN MENU --", OME_Label, NULL, NULL, 0},
-    {"SAVE&REBOOT", OME_OSD_Exit, cmsMenuExit, (void*)1, 0},
-    {"EXIT", OME_OSD_Exit, cmsMenuExit, (void*)0, 0},
-    {NULL, OME_END, NULL, NULL, 0}
-};
+    {
+        {"-- MAIN MENU --", OME_Label, NULL, NULL, 0},
+        {"SAVE&REBOOT", OME_OSD_Exit, cmsMenuExit, (void *)1, 0},
+        {"EXIT", OME_OSD_Exit, cmsMenuExit, (void *)0, 0},
+        {NULL, OME_END, NULL, NULL, 0}};
 CMS_Menu menuMain = {
 #ifdef CMS_MENU_DEBUG
     "MENUMAIN",

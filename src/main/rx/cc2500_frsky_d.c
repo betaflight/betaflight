@@ -129,7 +129,7 @@ static void buildTelemetryFrame(uint8_t *packet)
     if (telemetryEnabled) {
         bytesUsed = appendFrSkyHubData(&frame[8]);
     }
- #endif
+#endif
     frame[6] = bytesUsed;
     frame[7] = telemetryId;
 }
@@ -137,7 +137,8 @@ static void buildTelemetryFrame(uint8_t *packet)
 
 #define FRSKY_D_CHANNEL_SCALING (2.0f / 3)
 
-static void decodeChannelPair(uint16_t *channels, const uint8_t *packet, const uint8_t highNibbleOffset) {
+static void decodeChannelPair(uint16_t *channels, const uint8_t *packet, const uint8_t highNibbleOffset)
+{
     channels[0] = FRSKY_D_CHANNEL_SCALING * (uint16_t)((packet[highNibbleOffset] & 0xf) << 8 | packet[0]);
     channels[1] = FRSKY_D_CHANNEL_SCALING * (uint16_t)((packet[highNibbleOffset] & 0xf0) << 4 | packet[1]);
 }
@@ -171,7 +172,7 @@ void frSkyDSetRcData(uint16_t *rcData, const uint8_t *packet)
     }
 }
 
-rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const protocolState)
+rx_spi_received_e frSkyDHandlePacket(uint8_t *const packet, uint8_t *const protocolState)
 {
     static timeUs_t lastPacketReceivedTime = 0;
     static timeUs_t telemetryTimeUs;

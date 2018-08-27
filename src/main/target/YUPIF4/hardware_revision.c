@@ -48,7 +48,7 @@ void detectHardwareRevision(void)
     IOConfigGPIO(pin3, IOCFG_IPU);
 
     // Check hardware revision
-    delayMicroseconds(10);  // allow configuration to settle
+    delayMicroseconds(10); // allow configuration to settle
 
     /*
         Hardware pins : Pin1 = PC13 / Pin2 = PC14 / Pin3 = PC15
@@ -72,5 +72,6 @@ void detectHardwareRevision(void)
     }
 }
 
-void updateHardwareRevision(void) {
+void updateHardwareRevision(void)
+{
 }

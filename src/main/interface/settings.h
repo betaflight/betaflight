@@ -24,7 +24,6 @@
 #include <stdbool.h>
 #include "pg/pg.h"
 
-
 typedef enum {
     TABLE_OFF_ON = 0,
     TABLE_UNIT,
@@ -117,16 +116,15 @@ typedef enum {
     TABLE_DYNAMIC_FILTER_RANGE,
 #endif // USE_GYRO_DATA_ANALYSE
 #ifdef USE_VTX_COMMON
-    TABLE_VTX_LOW_POWER_DISARM, 
+    TABLE_VTX_LOW_POWER_DISARM,
 #endif
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 
 typedef struct lookupTableEntry_s {
-    const char * const *values;
+    const char *const *values;
     const uint8_t valueCount;
 } lookupTableEntry_t;
-
 
 #define VALUE_TYPE_OFFSET 0
 #define VALUE_SECTION_OFFSET 3
@@ -151,7 +149,6 @@ typedef enum {
     MODE_ARRAY = (2 << VALUE_MODE_OFFSET),
     MODE_BITSET = (3 << VALUE_MODE_OFFSET)
 } cliValueFlag_e;
-
 
 #define VALUE_TYPE_MASK (0x07)
 #define VALUE_SECTION_MASK (0x18)
@@ -186,22 +183,21 @@ typedef struct clivalue_s {
     uint16_t offset;
 } __attribute__((packed)) clivalue_t;
 
-
 extern const lookupTableEntry_t lookupTables[];
 extern const uint16_t valueTableEntryCount;
 
 extern const clivalue_t valueTable[];
 //extern const uint8_t lookupTablesEntryCount;
 
-extern const char * const lookupTableGyroHardware[];
+extern const char *const lookupTableGyroHardware[];
 
-extern const char * const lookupTableAccHardware[];
+extern const char *const lookupTableAccHardware[];
 //extern const uint8_t lookupTableAccHardwareEntryCount;
 
-extern const char * const lookupTableBaroHardware[];
+extern const char *const lookupTableBaroHardware[];
 //extern const uint8_t lookupTableBaroHardwareEntryCount;
 
-extern const char * const lookupTableMagHardware[];
+extern const char *const lookupTableMagHardware[];
 //extern const uint8_t lookupTableMagHardwareEntryCount;
 
-extern const char * const lookupTableRangefinderHardware[];
+extern const char *const lookupTableRangefinderHardware[];

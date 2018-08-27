@@ -33,12 +33,10 @@
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
-
 PG_REGISTER_WITH_RESET_TEMPLATE(tricopterMixerConfig_t, tricopterMixerConfig, PG_TRICOPTER_CONFIG, 0);
 
 PG_RESET_TEMPLATE(tricopterMixerConfig_t, tricopterMixerConfig,
-    .dummy = 0
-);
+                  .dummy = 0);
 
 #define TRICOPTER_ERROR_RATE_YAW_SATURATED 75 // rate at which tricopter yaw axis becomes saturated, determined experimentally by TriFlight
 
@@ -55,7 +53,6 @@ float mixerTricopterMotorCorrection(int motor)
 
 void mixerTricopterInit(void)
 {
-
 }
 
 #endif // USE_SERVOS

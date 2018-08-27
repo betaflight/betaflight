@@ -54,7 +54,7 @@ typedef struct gyroAnalyseState_s {
     uint16_t prevCenterFreq[XYZ_AXIS_COUNT];
 } gyroAnalyseState_t;
 
-STATIC_ASSERT(FFT_WINDOW_SIZE <= (uint8_t) -1, window_size_greater_than_underlying_type);
+STATIC_ASSERT(FFT_WINDOW_SIZE <= (uint8_t)-1, window_size_greater_than_underlying_type);
 
 void gyroDataAnalyseStateInit(gyroAnalyseState_t *gyroAnalyse, uint32_t targetLooptime);
 void gyroDataAnalysePush(gyroAnalyseState_t *gyroAnalyse, int axis, float sample);

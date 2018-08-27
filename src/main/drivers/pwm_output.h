@@ -26,7 +26,6 @@
 #include "drivers/pwm_output_counts.h"
 #include "drivers/timer.h"
 
-
 #define ALL_MOTORS 255
 
 #define DSHOT_MAX_COMMAND 47
@@ -56,19 +55,18 @@ typedef enum {
     DSHOT_CMD_SAVE_SETTINGS,
     DSHOT_CMD_SPIN_DIRECTION_NORMAL = 20,
     DSHOT_CMD_SPIN_DIRECTION_REVERSED = 21,
-    DSHOT_CMD_LED0_ON, // BLHeli32 only
-    DSHOT_CMD_LED1_ON, // BLHeli32 only
-    DSHOT_CMD_LED2_ON, // BLHeli32 only
-    DSHOT_CMD_LED3_ON, // BLHeli32 only
-    DSHOT_CMD_LED0_OFF, // BLHeli32 only
-    DSHOT_CMD_LED1_OFF, // BLHeli32 only
-    DSHOT_CMD_LED2_OFF, // BLHeli32 only
-    DSHOT_CMD_LED3_OFF, // BLHeli32 only
+    DSHOT_CMD_LED0_ON,                       // BLHeli32 only
+    DSHOT_CMD_LED1_ON,                       // BLHeli32 only
+    DSHOT_CMD_LED2_ON,                       // BLHeli32 only
+    DSHOT_CMD_LED3_ON,                       // BLHeli32 only
+    DSHOT_CMD_LED0_OFF,                      // BLHeli32 only
+    DSHOT_CMD_LED1_OFF,                      // BLHeli32 only
+    DSHOT_CMD_LED2_OFF,                      // BLHeli32 only
+    DSHOT_CMD_LED3_OFF,                      // BLHeli32 only
     DSHOT_CMD_AUDIO_STREAM_MODE_ON_OFF = 30, // KISS audio Stream mode on/Off
-    DSHOT_CMD_SILENT_MODE_ON_OFF = 31, // KISS silent Mode on/Off
+    DSHOT_CMD_SILENT_MODE_ON_OFF = 31,       // KISS silent Mode on/Off
     DSHOT_CMD_MAX = 47
 } dshotCommands_e;
-
 
 typedef enum {
     PWM_TYPE_STANDARD = 0,
@@ -86,29 +84,28 @@ typedef enum {
     PWM_TYPE_MAX
 } motorPwmProtocolTypes_e;
 
-#define PWM_TIMER_1MHZ        MHZ_TO_HZ(1)
+#define PWM_TIMER_1MHZ MHZ_TO_HZ(1)
 
 #ifdef USE_DSHOT
-#define MAX_DMA_TIMERS        8
+#define MAX_DMA_TIMERS 8
 
-#define MOTOR_DSHOT1200_HZ    MHZ_TO_HZ(24)
-#define MOTOR_DSHOT600_HZ     MHZ_TO_HZ(12)
-#define MOTOR_DSHOT300_HZ     MHZ_TO_HZ(6)
-#define MOTOR_DSHOT150_HZ     MHZ_TO_HZ(3)
+#define MOTOR_DSHOT1200_HZ MHZ_TO_HZ(24)
+#define MOTOR_DSHOT600_HZ MHZ_TO_HZ(12)
+#define MOTOR_DSHOT300_HZ MHZ_TO_HZ(6)
+#define MOTOR_DSHOT150_HZ MHZ_TO_HZ(3)
 
-#define MOTOR_BIT_0           7
-#define MOTOR_BIT_1           14
-#define MOTOR_BITLENGTH       19
+#define MOTOR_BIT_0 7
+#define MOTOR_BIT_1 14
+#define MOTOR_BITLENGTH 19
 
-#define MOTOR_PROSHOT1000_HZ         MHZ_TO_HZ(24)
-#define PROSHOT_BASE_SYMBOL          24 // 1uS
-#define PROSHOT_BIT_WIDTH            3
-#define MOTOR_NIBBLE_LENGTH_PROSHOT  96 // 4uS
+#define MOTOR_PROSHOT1000_HZ MHZ_TO_HZ(24)
+#define PROSHOT_BASE_SYMBOL 24 // 1uS
+#define PROSHOT_BIT_WIDTH 3
+#define MOTOR_NIBBLE_LENGTH_PROSHOT 96 // 4uS
 #endif
 
-
-#define DSHOT_DMA_BUFFER_SIZE   18 /* resolution + frame reset (2us) */
-#define PROSHOT_DMA_BUFFER_SIZE 6  /* resolution + frame reset (2us) */
+#define DSHOT_DMA_BUFFER_SIZE 18  /* resolution + frame reset (2us) */
+#define PROSHOT_DMA_BUFFER_SIZE 6 /* resolution + frame reset (2us) */
 
 typedef struct {
     TIM_TypeDef *timer;
@@ -144,12 +141,12 @@ typedef struct {
 motorDmaOutput_t *getMotorDmaOutput(uint8_t index);
 
 struct timerHardware_s;
-typedef void pwmWriteFn(uint8_t index, float value);  // function pointer used to write motors
-typedef void pwmCompleteWriteFn(uint8_t motorCount);   // function pointer used after motors are written
+typedef void pwmWriteFn(uint8_t index, float value); // function pointer used to write motors
+typedef void pwmCompleteWriteFn(uint8_t motorCount); // function pointer used after motors are written
 
 typedef struct {
     volatile timCCR_t *ccr;
-    TIM_TypeDef       *tim;
+    TIM_TypeDef *tim;
 } timerChannel_t;
 
 typedef struct {
@@ -163,12 +160,12 @@ typedef struct {
 
 //CAVEAT: This is used in the `motorConfig_t` parameter group, so the parameter group constraints apply
 typedef struct motorDevConfig_s {
-    uint16_t motorPwmRate;                  // The update rate of motor outputs (50-498Hz)
-    uint8_t  motorPwmProtocol;              // Pwm Protocol
-    uint8_t  motorPwmInversion;             // Active-High vs Active-Low. Useful for brushed FCs converted for brushless operation
-    uint8_t  useUnsyncedPwm;
-    uint8_t  useBurstDshot;
-    ioTag_t  ioTags[MAX_SUPPORTED_MOTORS];
+    uint16_t motorPwmRate;     // The update rate of motor outputs (50-498Hz)
+    uint8_t motorPwmProtocol;  // Pwm Protocol
+    uint8_t motorPwmInversion; // Active-High vs Active-Low. Useful for brushed FCs converted for brushless operation
+    uint8_t useUnsyncedPwm;
+    uint8_t useBurstDshot;
+    ioTag_t ioTags[MAX_SUPPORTED_MOTORS];
 } motorDevConfig_t;
 
 extern bool useBurstDshot;
@@ -177,9 +174,9 @@ void motorDevInit(const motorDevConfig_t *motorDevConfig, uint16_t idlePulse, ui
 
 typedef struct servoDevConfig_s {
     // PWM values, in milliseconds, common range is 1000-2000 (1ms to 2ms)
-    uint16_t servoCenterPulse;              // This is the value for servos when they should be in the middle. e.g. 1500.
-    uint16_t servoPwmRate;                  // The update rate of servo outputs (50-498Hz)
-    ioTag_t  ioTags[MAX_SUPPORTED_SERVOS];
+    uint16_t servoCenterPulse; // This is the value for servos when they should be in the middle. e.g. 1500.
+    uint16_t servoPwmRate;     // The update rate of servo outputs (50-498Hz)
+    ioTag_t ioTags[MAX_SUPPORTED_SERVOS];
 } servoDevConfig_t;
 
 void servoDevInit(const servoDevConfig_t *servoDevConfig);
@@ -189,7 +186,7 @@ void pwmServoConfig(const struct timerHardware_s *timerHardware, uint8_t servoIn
 bool isMotorProtocolDshot(void);
 
 #ifdef USE_DSHOT
-typedef uint8_t loadDmaBufferFn(uint32_t *dmaBuffer, int stride, uint16_t packet);  // function pointer used to encode a digital motor value into the DMA buffer representation
+typedef uint8_t loadDmaBufferFn(uint32_t *dmaBuffer, int stride, uint16_t packet); // function pointer used to encode a digital motor value into the DMA buffer representation
 
 uint16_t prepareDshotPacket(motorDmaOutput_t *const motor);
 

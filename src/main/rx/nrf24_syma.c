@@ -48,7 +48,6 @@
  * Other transmitters may vary but should have similar characteristics.
  */
 
-
 /*
  * SymaX Protocol
  * No auto acknowledgment
@@ -79,18 +78,18 @@
 enum {
     RATE_LOW = 0,
     RATE_MID = 1,
-    RATE_HIGH= 2
+    RATE_HIGH = 2
 };
 
-#define FLAG_PICTURE    0x40
-#define FLAG_VIDEO      0x80
-#define FLAG_FLIP       0x40
-#define FLAG_HEADLESS   0x80
+#define FLAG_PICTURE 0x40
+#define FLAG_VIDEO 0x80
+#define FLAG_FLIP 0x40
+#define FLAG_HEADLESS 0x80
 
-#define FLAG_FLIP_X5C   0x01
+#define FLAG_FLIP_X5C 0x01
 #define FLAG_PICTURE_X5C 0x08
-#define FLAG_VIDEO_X5C  0x10
-#define FLAG_RATE_X5C   0x04
+#define FLAG_VIDEO_X5C 0x10
+#define FLAG_RATE_X5C 0x04
 
 STATIC_UNIT_TESTED rx_spi_protocol_e symaProtocol;
 
@@ -102,25 +101,25 @@ typedef enum {
 STATIC_UNIT_TESTED protocol_state_t protocolState;
 
 // X11, X12, X5C-1 have 10-byte payload, X5C has 16-byte payload
-#define SYMA_X_PROTOCOL_PAYLOAD_SIZE      10
-#define SYMA_X5C_PROTOCOL_PAYLOAD_SIZE    16
+#define SYMA_X_PROTOCOL_PAYLOAD_SIZE 10
+#define SYMA_X5C_PROTOCOL_PAYLOAD_SIZE 16
 STATIC_UNIT_TESTED uint8_t payloadSize;
 
-#define RX_TX_ADDR_LEN     5
+#define RX_TX_ADDR_LEN 5
 // set rxTxAddr to SymaX bind values
 STATIC_UNIT_TESTED uint8_t rxTxAddr[RX_TX_ADDR_LEN] = {0xab, 0xac, 0xad, 0xae, 0xaf};
-STATIC_UNIT_TESTED const uint8_t rxTxAddrX5C[RX_TX_ADDR_LEN] = {0x6d, 0x6a, 0x73, 0x73, 0x73};   // X5C uses same address for bind and data
+STATIC_UNIT_TESTED const uint8_t rxTxAddrX5C[RX_TX_ADDR_LEN] = {0x6d, 0x6a, 0x73, 0x73, 0x73}; // X5C uses same address for bind and data
 
 // radio channels for frequency hopping
-#define SYMA_X_RF_BIND_CHANNEL             8
-#define SYMA_X_RF_CHANNEL_COUNT            4
-#define SYMA_X5C_RF_BIND_CHANNEL_COUNT    16
-#define SYMA_X5C_RF_CHANNEL_COUNT         15
+#define SYMA_X_RF_BIND_CHANNEL 8
+#define SYMA_X_RF_CHANNEL_COUNT 4
+#define SYMA_X5C_RF_BIND_CHANNEL_COUNT 16
+#define SYMA_X5C_RF_CHANNEL_COUNT 15
 
 STATIC_UNIT_TESTED uint8_t symaRfChannelCount = SYMA_X_RF_CHANNEL_COUNT;
 STATIC_UNIT_TESTED uint8_t symaRfChannelIndex = 0;
 // set rfChannels to SymaX bind channels, reserve enough space for SymaX5C channels
-STATIC_UNIT_TESTED uint8_t symaRfChannels[SYMA_X5C_RF_BIND_CHANNEL_COUNT]  = {0x4b, 0x30, 0x40, 0x20};
+STATIC_UNIT_TESTED uint8_t symaRfChannels[SYMA_X5C_RF_BIND_CHANNEL_COUNT] = {0x4b, 0x30, 0x40, 0x20};
 STATIC_UNIT_TESTED const uint8_t symaRfChannelsX5C[SYMA_X5C_RF_CHANNEL_COUNT] = {0x1d, 0x2f, 0x26, 0x3d, 0x15, 0x2b, 0x25, 0x24, 0x27, 0x2c, 0x1c, 0x3e, 0x39, 0x2d, 0x22};
 
 static uint32_t packetCount = 0;
@@ -158,7 +157,7 @@ STATIC_UNIT_TESTED uint16_t symaConvertToPwmSigned(uint8_t val)
 {
     int32_t ret = val & 0x7f;
     ret = (ret * (PWM_RANGE_MAX - PWM_RANGE_MIN)) / (2 * INT8_MAX);
-    if (val & 0x80) {// sign bit set
+    if (val & 0x80) { // sign bit set
         ret = -ret;
     }
     return (uint16_t)(PWM_RANGE_MIDDLE + ret);
@@ -167,10 +166,10 @@ STATIC_UNIT_TESTED uint16_t symaConvertToPwmSigned(uint8_t val)
 void symaNrf24SetRcDataFromPayload(uint16_t *rcData, const uint8_t *packet)
 {
     rcData[RC_SPI_THROTTLE] = symaConvertToPwmUnsigned(packet[0]); // throttle
-    rcData[RC_SPI_ROLL] = symaConvertToPwmSigned(packet[3]); // aileron
+    rcData[RC_SPI_ROLL] = symaConvertToPwmSigned(packet[3]);       // aileron
     if (symaProtocol == RX_SPI_NRF24_SYMA_X) {
         rcData[RC_SPI_PITCH] = symaConvertToPwmSigned(packet[1]); // elevator
-        rcData[RC_SPI_YAW] = symaConvertToPwmSigned(packet[2]); // rudder
+        rcData[RC_SPI_YAW] = symaConvertToPwmSigned(packet[2]);   // rudder
         const uint8_t rate = (packet[5] & 0xc0) >> 6;
         if (rate == RATE_LOW) {
             rcData[RC_CHANNEL_RATE] = PWM_RANGE_MIN;
@@ -185,7 +184,7 @@ void symaNrf24SetRcDataFromPayload(uint16_t *rcData, const uint8_t *packet)
         rcData[RC_CHANNEL_HEADLESS] = packet[14] & FLAG_HEADLESS ? PWM_RANGE_MAX : PWM_RANGE_MIN;
     } else {
         rcData[RC_SPI_PITCH] = symaConvertToPwmSigned(packet[2]); // elevator
-        rcData[RC_SPI_YAW] = symaConvertToPwmSigned(packet[1]); // rudder
+        rcData[RC_SPI_YAW] = symaConvertToPwmSigned(packet[1]);   // rudder
         const uint8_t flags = packet[14];
         rcData[RC_CHANNEL_RATE] = flags & FLAG_RATE_X5C ? PWM_RANGE_MAX : PWM_RANGE_MIN;
         rcData[RC_CHANNEL_FLIP] = flags & FLAG_FLIP_X5C ? PWM_RANGE_MAX : PWM_RANGE_MIN;
@@ -215,7 +214,7 @@ static void setSymaXHoppingChannels(uint32_t addr)
         addr = 0x07;
     }
     const uint32_t inc = (addr << 24) | (addr << 16) | (addr << 8) | addr;
-    uint32_t * const prfChannels = (uint32_t *)symaRfChannels;
+    uint32_t *const prfChannels = (uint32_t *)symaRfChannels;
     if (addr == 0x16) {
         *prfChannels = 0x28481131;
     } else if (addr == 0x1e) {
@@ -274,7 +273,7 @@ rx_spi_received_e symaNrf24DataReceived(uint8_t *payload)
 static void symaNrf24Setup(rx_spi_protocol_e protocol)
 {
     symaProtocol = protocol;
-    NRF24L01_Initialize(BV(NRF24L01_00_CONFIG_EN_CRC) | BV( NRF24L01_00_CONFIG_CRCO)); // sets PWR_UP, EN_CRC, CRCO - 2 byte CRC
+    NRF24L01_Initialize(BV(NRF24L01_00_CONFIG_EN_CRC) | BV(NRF24L01_00_CONFIG_CRCO)); // sets PWR_UP, EN_CRC, CRCO - 2 byte CRC
     NRF24L01_SetupBasic();
 
     if (symaProtocol == RX_SPI_NRF24_SYMA_X) {

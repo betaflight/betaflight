@@ -53,9 +53,9 @@ typedef enum {
     SDCARD_OPERATION_FAILURE
 } sdcardOperationStatus_e;
 
-typedef void(*sdcard_operationCompleteCallback_c)(sdcardBlockOperation_e operation, uint32_t blockIndex, uint8_t *buffer, uint32_t callbackData);
+typedef void (*sdcard_operationCompleteCallback_c)(sdcardBlockOperation_e operation, uint32_t blockIndex, uint8_t *buffer, uint32_t callbackData);
 
-typedef void(*sdcard_profilerCallback_c)(sdcardBlockOperation_e operation, uint32_t blockIndex, uint32_t duration);
+typedef void (*sdcard_profilerCallback_c)(sdcardBlockOperation_e operation, uint32_t blockIndex, uint32_t duration);
 
 void sdcard_init(const sdcardConfig_t *config);
 
@@ -72,6 +72,6 @@ bool sdcard_isInitialized(void);
 bool sdcard_isFunctional(void);
 
 bool sdcard_poll(void);
-const sdcardMetadata_t* sdcard_getMetadata(void);
+const sdcardMetadata_t *sdcard_getMetadata(void);
 
 void sdcard_setProfilerCallback(sdcard_profilerCallback_c callback);

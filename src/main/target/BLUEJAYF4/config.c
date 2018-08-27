@@ -45,7 +45,7 @@ void targetConfiguration(void)
 {
     if (hardwareRevision == BJF4_REV1 || hardwareRevision == BJF4_REV2) {
         gyroConfigMutable()->gyro_align = CW180_DEG;
-        accelerometerConfigMutable()->acc_align  = CW180_DEG;
+        accelerometerConfigMutable()->acc_align = CW180_DEG;
         beeperDevConfigMutable()->ioTag = IO_TAG(BEEPER_OPT);
     }
 

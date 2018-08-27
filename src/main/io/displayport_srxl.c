@@ -23,7 +23,7 @@
 #include <string.h>
 
 #include "platform.h"
-#if defined (USE_SPEKTRUM_CMS_TELEMETRY) && defined (USE_CMS) && defined(USE_TELEMETRY_SRXL)
+#if defined(USE_SPEKTRUM_CMS_TELEMETRY) && defined(USE_CMS) && defined(USE_TELEMETRY_SRXL)
 
 #include "common/utils.h"
 
@@ -51,28 +51,27 @@ static int srxlWriteChar(displayPort_t *displayPort, uint8_t col, uint8_t row, u
     UNUSED(displayPort);
 }
 
-
 static int srxlWriteString(displayPort_t *displayPort, uint8_t col, uint8_t row, const char *s)
 {
     while (*s) {
-        srxlWriteChar(displayPort,  col++, row, *(s++));
+        srxlWriteChar(displayPort, col++, row, *(s++));
     }
     return 0;
 }
 
 static int srxlClearScreen(displayPort_t *displayPort)
 {
-    for (int row = 0;  row < SPEKTRUM_SRXL_TEXTGEN_BUFFER_ROWS; row++) {
-        for (int col= 0; col < SPEKTRUM_SRXL_TEXTGEN_BUFFER_COLS; col++) {
+    for (int row = 0; row < SPEKTRUM_SRXL_TEXTGEN_BUFFER_ROWS; row++) {
+        for (int col = 0; col < SPEKTRUM_SRXL_TEXTGEN_BUFFER_COLS; col++) {
             srxlWriteChar(displayPort, col, row, ' ');
         }
     }
-    srxlWriteString(displayPort, 1, 0,  "BETAFLIGHT");
+    srxlWriteString(displayPort, 1, 0, "BETAFLIGHT");
 
-    if ( displayPort->grabCount == 0 ) {
-        srxlWriteString(displayPort, 0, 2,  CMS_STARTUP_HELP_TEXT1);
-        srxlWriteString(displayPort, 2, 3,  CMS_STARTUP_HELP_TEXT2);
-        srxlWriteString(displayPort, 2, 4,  CMS_STARTUP_HELP_TEXT3);
+    if (displayPort->grabCount == 0) {
+        srxlWriteString(displayPort, 0, 2, CMS_STARTUP_HELP_TEXT1);
+        srxlWriteString(displayPort, 2, 3, CMS_STARTUP_HELP_TEXT2);
+        srxlWriteString(displayPort, 2, 4, CMS_STARTUP_HELP_TEXT3);
     }
     return 0;
 }
@@ -130,8 +129,7 @@ static const displayPortVTable_t srxlVTable = {
     .heartbeat = srxlHeartbeat,
     .resync = srxlResync,
     .isSynced = srxlIsSynced,
-    .txBytesFree = srxlTxBytesFree
-};
+    .txBytesFree = srxlTxBytesFree};
 
 displayPort_t *displayPortSrxlInit()
 {

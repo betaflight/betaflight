@@ -55,7 +55,7 @@
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 
-#define  USB_SIZ_STRING_SERIAL       0x1A
+#define USB_SIZ_STRING_SERIAL 0x1A
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
 extern USBD_DescriptorsTypeDef VCP_Desc;

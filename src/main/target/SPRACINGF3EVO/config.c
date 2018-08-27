@@ -29,13 +29,12 @@
 
 #include "pg/sdcard.h"
 
-
 #if defined(SPRACINGF3MQ)
 #ifdef BRUSHED_MOTORS_PWM_RATE
 #undef BRUSHED_MOTORS_PWM_RATE
 #endif
 
-#define BRUSHED_MOTORS_PWM_RATE 32000           // 32kHz
+#define BRUSHED_MOTORS_PWM_RATE 32000 // 32kHz
 #endif
 
 void targetConfiguration(void)

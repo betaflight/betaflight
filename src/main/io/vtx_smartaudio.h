@@ -36,29 +36,29 @@
 #define VTX_SMARTAUDIO_POWER_COUNT 4
 #define VTX_SMARTAUDIO_DEFAULT_POWER 1
 
-#define VTX_SMARTAUDIO_MIN_FREQUENCY_MHZ 5000        //min freq in MHz
-#define VTX_SMARTAUDIO_MAX_FREQUENCY_MHZ 5999        //max freq in MHz
+#define VTX_SMARTAUDIO_MIN_FREQUENCY_MHZ 5000 //min freq in MHz
+#define VTX_SMARTAUDIO_MAX_FREQUENCY_MHZ 5999 //max freq in MHz
 
 // opmode flags, GET side
-#define SA_MODE_GET_FREQ_BY_FREQ            1
-#define SA_MODE_GET_PITMODE                 2
-#define SA_MODE_GET_IN_RANGE_PITMODE        4
-#define SA_MODE_GET_OUT_RANGE_PITMODE       8
-#define SA_MODE_GET_UNLOCK                 16
-#define SA_MODE_GET_DEFERRED_FREQ          32
+#define SA_MODE_GET_FREQ_BY_FREQ 1
+#define SA_MODE_GET_PITMODE 2
+#define SA_MODE_GET_IN_RANGE_PITMODE 4
+#define SA_MODE_GET_OUT_RANGE_PITMODE 8
+#define SA_MODE_GET_UNLOCK 16
+#define SA_MODE_GET_DEFERRED_FREQ 32
 
 // opmode flags, SET side
-#define SA_MODE_SET_IN_RANGE_PITMODE        1 // Immediate
-#define SA_MODE_SET_OUT_RANGE_PITMODE        2 // Immediate
-#define SA_MODE_CLR_PITMODE                 4 // Immediate
-#define SA_MODE_SET_UNLOCK                  8
-#define SA_MODE_SET_LOCK                    0 // ~UNLOCK
-#define SA_MODE_SET_DEFERRED_FREQ          16
+#define SA_MODE_SET_IN_RANGE_PITMODE 1  // Immediate
+#define SA_MODE_SET_OUT_RANGE_PITMODE 2 // Immediate
+#define SA_MODE_CLR_PITMODE 4           // Immediate
+#define SA_MODE_SET_UNLOCK 8
+#define SA_MODE_SET_LOCK 0 // ~UNLOCK
+#define SA_MODE_SET_DEFERRED_FREQ 16
 
 // SetFrequency flags, for pit mode frequency manipulation
-#define SA_FREQ_GETPIT                      (1 << 14)
-#define SA_FREQ_SETPIT                      (1 << 15)
-#define SA_FREQ_MASK                        (~(SA_FREQ_GETPIT|SA_FREQ_SETPIT))
+#define SA_FREQ_GETPIT (1 << 14)
+#define SA_FREQ_SETPIT (1 << 15)
+#define SA_FREQ_MASK (~(SA_FREQ_GETPIT | SA_FREQ_SETPIT))
 
 // For generic API use, but here for now
 
@@ -89,7 +89,7 @@ typedef struct smartAudioStat_s {
 
 extern smartAudioDevice_t saDevice;
 extern saPowerTable_t saPowerTable[];
-extern const char * const saPowerNames[];
+extern const char *const saPowerNames[];
 extern smartAudioStat_t saStat;
 
 extern uint16_t sa_smartbaud;
@@ -105,7 +105,9 @@ bool vtxSmartAudioInit(void);
 
 #ifdef USE_SMARTAUDIO_DPRINTF
 extern serialPort_t *debugSerialPort;
-#define dprintf(x) if (debugSerialPort) printf x
+#define dprintf(x)       \
+    if (debugSerialPort) \
+    printf x
 #else
 #define dprintf(x)
 #endif // USE_SMARTAUDIO_DPRINTF

@@ -20,7 +20,6 @@
 
 #pragma once
 
-
 typedef enum {
     RGB_RED = 0,
     RGB_GREEN,
@@ -54,6 +53,6 @@ typedef enum {
 
 typedef struct hsvColor_s {
     uint16_t h; // 0 - 359
-    uint8_t s; // 0 - 255
-    uint8_t v; // 0 - 255
+    uint8_t s;  // 0 - 255
+    uint8_t v;  // 0 - 255
 } hsvColor_t;

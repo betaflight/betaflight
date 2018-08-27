@@ -53,13 +53,12 @@ static FAST_RAM_ZERO_INIT uint32_t totalWaitingTasksSamples;
 static FAST_RAM_ZERO_INIT bool calculateTaskStatistics;
 FAST_RAM_ZERO_INIT uint16_t averageSystemLoadPercent = 0;
 
-
 static FAST_RAM_ZERO_INIT int taskQueuePos = 0;
 STATIC_UNIT_TESTED FAST_RAM_ZERO_INIT int taskQueueSize = 0;
 
 // No need for a linked list for the queue, since items are only inserted at startup
 
-STATIC_UNIT_TESTED FAST_RAM_ZERO_INIT cfTask_t* taskQueueArray[TASK_COUNT + 1]; // extra item for NULL pointer at end of queue
+STATIC_UNIT_TESTED FAST_RAM_ZERO_INIT cfTask_t *taskQueueArray[TASK_COUNT + 1]; // extra item for NULL pointer at end of queue
 
 void queueClear(void)
 {
@@ -85,7 +84,7 @@ bool queueAdd(cfTask_t *task)
     }
     for (int ii = 0; ii <= taskQueueSize; ++ii) {
         if (taskQueueArray[ii] == NULL || taskQueueArray[ii]->staticPriority < task->staticPriority) {
-            memmove(&taskQueueArray[ii+1], &taskQueueArray[ii], sizeof(task) * (taskQueueSize - ii));
+            memmove(&taskQueueArray[ii + 1], &taskQueueArray[ii], sizeof(task) * (taskQueueSize - ii));
             taskQueueArray[ii] = task;
             ++taskQueueSize;
             return true;
@@ -98,7 +97,7 @@ bool queueRemove(cfTask_t *task)
 {
     for (int ii = 0; ii < taskQueueSize; ++ii) {
         if (taskQueueArray[ii] == task) {
-            memmove(&taskQueueArray[ii], &taskQueueArray[ii+1], sizeof(task) * (taskQueueSize - ii));
+            memmove(&taskQueueArray[ii], &taskQueueArray[ii + 1], sizeof(task) * (taskQueueSize - ii));
             --taskQueueSize;
             return true;
         }
@@ -151,7 +150,7 @@ void getCheckFuncInfo(cfCheckFuncInfo_t *checkFuncInfo)
     checkFuncInfo->averageExecutionTime = checkFuncMovingSumExecutionTime / MOVING_SUM_COUNT;
 }
 
-void getTaskInfo(cfTaskId_e taskId, cfTaskInfo_t * taskInfo)
+void getTaskInfo(cfTaskId_e taskId, cfTaskInfo_t *taskInfo)
 {
     taskInfo->taskName = cfTasks[taskId].taskName;
     taskInfo->subTaskName = cfTasks[taskId].subTaskName;
@@ -169,10 +168,10 @@ void rescheduleTask(cfTaskId_e taskId, uint32_t newPeriodMicros)
 {
     if (taskId == TASK_SELF) {
         cfTask_t *task = currentTask;
-        task->desiredPeriod = MAX(SCHEDULER_DELAY_LIMIT, (timeDelta_t)newPeriodMicros);  // Limit delay to 100us (10 kHz) to prevent scheduler clogging
+        task->desiredPeriod = MAX(SCHEDULER_DELAY_LIMIT, (timeDelta_t)newPeriodMicros); // Limit delay to 100us (10 kHz) to prevent scheduler clogging
     } else if (taskId < TASK_COUNT) {
         cfTask_t *task = &cfTasks[taskId];
-        task->desiredPeriod = MAX(SCHEDULER_DELAY_LIMIT, (timeDelta_t)newPeriodMicros);  // Limit delay to 100us (10 kHz) to prevent scheduler clogging
+        task->desiredPeriod = MAX(SCHEDULER_DELAY_LIMIT, (timeDelta_t)newPeriodMicros); // Limit delay to 100us (10 kHz) to prevent scheduler clogging
     }
 }
 
@@ -283,7 +282,7 @@ FAST_CODE void scheduler(void)
                 if (calculateTaskStatistics) {
                     const uint32_t checkFuncExecutionTime = micros() - currentTimeBeforeCheckFuncCall;
                     checkFuncMovingSumExecutionTime += checkFuncExecutionTime - checkFuncMovingSumExecutionTime / MOVING_SUM_COUNT;
-                    checkFuncTotalExecutionTime += checkFuncExecutionTime;   // time consumed by scheduler + task
+                    checkFuncTotalExecutionTime += checkFuncExecutionTime; // time consumed by scheduler + task
                     checkFuncMaxExecutionTime = MAX(checkFuncMaxExecutionTime, checkFuncExecutionTime);
                 }
 #endif
@@ -336,7 +335,7 @@ FAST_CODE void scheduler(void)
             selectedTask->taskFunc(currentTimeBeforeTaskCall);
             const timeUs_t taskExecutionTime = micros() - currentTimeBeforeTaskCall;
             selectedTask->movingSumExecutionTime += taskExecutionTime - selectedTask->movingSumExecutionTime / MOVING_SUM_COUNT;
-            selectedTask->totalExecutionTime += taskExecutionTime;   // time consumed by scheduler + task
+            selectedTask->totalExecutionTime += taskExecutionTime; // time consumed by scheduler + task
             selectedTask->maxExecutionTime = MAX(selectedTask->maxExecutionTime, taskExecutionTime);
         } else {
             selectedTask->taskFunc(currentTimeUs);

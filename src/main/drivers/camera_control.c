@@ -31,14 +31,14 @@
 #include "pg/pg_ids.h"
 
 #if defined(STM32F40_41xxx)
-#define CAMERA_CONTROL_TIMER_HZ   MHZ_TO_HZ(84)
+#define CAMERA_CONTROL_TIMER_HZ MHZ_TO_HZ(84)
 #elif defined(STM32F7)
-#define CAMERA_CONTROL_TIMER_HZ   MHZ_TO_HZ(216)
+#define CAMERA_CONTROL_TIMER_HZ MHZ_TO_HZ(216)
 #else
-#define CAMERA_CONTROL_TIMER_HZ   MHZ_TO_HZ(72)
+#define CAMERA_CONTROL_TIMER_HZ MHZ_TO_HZ(72)
 #endif
 
-#define CAMERA_CONTROL_PWM_RESOLUTION   128
+#define CAMERA_CONTROL_PWM_RESOLUTION 128
 #define CAMERA_CONTROL_SOFT_PWM_RESOLUTION 448
 
 #ifdef CURRENT_TARGET_CPU_VOLTAGE
@@ -68,7 +68,7 @@ void pgResetFn_cameraControlConfig(cameraControlConfig_t *cameraControlConfig)
     cameraControlConfig->keyDelayMs = 180;
     cameraControlConfig->internalResistance = 470;
     cameraControlConfig->ioTag = timerioTagGetByUsage(TIM_USE_CAMERA_CONTROL, 0);
-    cameraControlConfig->inverted = 0;   // Output is inverted externally
+    cameraControlConfig->inverted = 0; // Output is inverted externally
 }
 
 static struct {
@@ -132,11 +132,11 @@ void cameraControlInit(void)
             return;
         }
 
-        #ifdef STM32F1
-            IOConfigGPIO(cameraControlRuntime.io, IOCFG_AF_PP);
-        #else
-            IOConfigGPIOAF(cameraControlRuntime.io, IOCFG_AF_PP, timerHardware->alternateFunction);
-        #endif
+#ifdef STM32F1
+        IOConfigGPIO(cameraControlRuntime.io, IOCFG_AF_PP);
+#else
+        IOConfigGPIOAF(cameraControlRuntime.io, IOCFG_AF_PP, timerHardware->alternateFunction);
+#endif
 
         pwmOutConfig(&cameraControlRuntime.channel, timerHardware, CAMERA_CONTROL_TIMER_HZ, CAMERA_CONTROL_PWM_RESOLUTION, 0, cameraControlRuntime.inverted);
 
@@ -154,12 +154,10 @@ void cameraControlInit(void)
         cameraControlRuntime.enabled = true;
 
         NVIC_InitTypeDef nvicTIM6 = {
-            TIM6_DAC_IRQn, NVIC_PRIORITY_BASE(NVIC_PRIO_TIMER), NVIC_PRIORITY_SUB(NVIC_PRIO_TIMER), ENABLE
-        };
+            TIM6_DAC_IRQn, NVIC_PRIORITY_BASE(NVIC_PRIO_TIMER), NVIC_PRIORITY_SUB(NVIC_PRIO_TIMER), ENABLE};
         NVIC_Init(&nvicTIM6);
         NVIC_InitTypeDef nvicTIM7 = {
-            TIM7_IRQn, NVIC_PRIORITY_BASE(NVIC_PRIO_TIMER), NVIC_PRIORITY_SUB(NVIC_PRIO_TIMER), ENABLE
-        };
+            TIM7_IRQn, NVIC_PRIORITY_BASE(NVIC_PRIO_TIMER), NVIC_PRIORITY_SUB(NVIC_PRIO_TIMER), ENABLE};
         NVIC_Init(&nvicTIM7);
 
         RCC->APB1ENR |= RCC_APB1Periph_TIM6 | RCC_APB1Periph_TIM7;
@@ -177,14 +175,13 @@ void cameraControlProcess(uint32_t currentTimeUs)
         if (CAMERA_CONTROL_MODE_HARDWARE_PWM == cameraControlConfig()->mode) {
             *cameraControlRuntime.channel.ccr = cameraControlRuntime.period;
         } else if (CAMERA_CONTROL_MODE_SOFTWARE_PWM == cameraControlConfig()->mode) {
-
         }
 
         endTimeMillis = 0;
     }
 }
 
-static const int buttonResistanceValues[] = { 45000, 27000, 15000, 6810, 0 };
+static const int buttonResistanceValues[] = {45000, 27000, 15000, 6810, 0};
 
 static float calculateKeyPressVoltage(const cameraControlKey_e key)
 {
@@ -212,7 +209,7 @@ void cameraControlKeyPress(cameraControlKey_e key, uint32_t holdDurationMs)
 #if defined(CAMERA_CONTROL_HARDWARE_PWM_AVAILABLE) || defined(CAMERA_CONTROL_SOFTWARE_PWM_AVAILABLE)
     const float dutyCycle = calculatePWMDutyCycle(key);
 #else
-    (void) holdDurationMs;
+    (void)holdDurationMs;
 #endif
 
 #ifdef USE_OSD
@@ -241,7 +238,8 @@ void cameraControlKeyPress(cameraControlKey_e key, uint32_t holdDurationMs)
             TIM7->ARR = cameraControlRuntime.period;
 
             // Start two timers as simultaneously as possible
-            ATOMIC_BLOCK(NVIC_PRIO_TIMER) {
+            ATOMIC_BLOCK(NVIC_PRIO_TIMER)
+            {
                 TIM6->CR1 = TIM_CR1_CEN;
                 TIM7->CR1 = TIM_CR1_CEN;
             }
@@ -253,7 +251,8 @@ void cameraControlKeyPress(cameraControlKey_e key, uint32_t holdDurationMs)
             const uint32_t endTime = millis() + cameraControlConfig()->keyDelayMs + holdDurationMs;
 
             // Wait to give the camera a chance at registering the key press
-            while (millis() < endTime);
+            while (millis() < endTime)
+                ;
 
             // Disable timers and interrupt generation
             TIM6->CR1 &= ~TIM_CR1_CEN;

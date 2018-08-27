@@ -33,15 +33,15 @@
 #define VTX_TRAMP_POWER_COUNT 5
 #define VTX_TRAMP_DEFAULT_POWER 1
 
-#define VTX_TRAMP_MIN_FREQUENCY_MHZ 5000             //min freq in MHz
-#define VTX_TRAMP_MAX_FREQUENCY_MHZ 5999             //max freq in MHz
+#define VTX_TRAMP_MIN_FREQUENCY_MHZ 5000 //min freq in MHz
+#define VTX_TRAMP_MAX_FREQUENCY_MHZ 5999 //max freq in MHz
 
 extern const uint16_t trampPowerTable[VTX_TRAMP_POWER_COUNT];
-extern const char * const trampPowerNames[VTX_TRAMP_POWER_COUNT+1];
+extern const char *const trampPowerNames[VTX_TRAMP_POWER_COUNT + 1];
 
 extern uint8_t trampBand;
 extern uint8_t trampChannel;
-extern uint16_t trampPower;       // Actual transmitting power
+extern uint16_t trampPower; // Actual transmitting power
 extern uint8_t trampPitMode;
 extern uint32_t trampCurFreq;
 extern uint16_t trampConfiguredPower; // Configured transmitting power

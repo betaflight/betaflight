@@ -62,13 +62,13 @@ uint8_t pidAudioPositionToModeMap[7] = {
     // on a pot with a center detent, it's easy to have center area for off/default, then three positions to the left and three to the right.
     // current implementation yields RC values as below.
 
-    PID_AUDIO_PIDSUM_X,     //   900 - ~1071 - Min
-    PID_AUDIO_PIDSUM_Y,     // ~1071 - ~1242
-    PID_AUDIO_PIDSUM_XY,    // ~1242 - ~1414
-    PID_AUDIO_OFF,          // ~1414 - ~1585 - Center
-    PID_AUDIO_OFF,          // ~1585 - ~1757
-    PID_AUDIO_OFF,          // ~1757 - ~1928
-    PID_AUDIO_OFF,          // ~1928 -  2100 - Max
+    PID_AUDIO_PIDSUM_X,  //   900 - ~1071 - Min
+    PID_AUDIO_PIDSUM_Y,  // ~1071 - ~1242
+    PID_AUDIO_PIDSUM_XY, // ~1242 - ~1414
+    PID_AUDIO_OFF,       // ~1414 - ~1585 - Center
+    PID_AUDIO_OFF,       // ~1585 - ~1757
+    PID_AUDIO_OFF,       // ~1757 - ~1928
+    PID_AUDIO_OFF,       // ~1928 -  2100 - Max
 
     // Note: Last 3 positions are currently pending implementations and use PID_AUDIO_OFF for now.
 };
@@ -86,7 +86,7 @@ static void blackboxLogInflightAdjustmentEvent(adjustmentFunction_e adjustmentFu
         eventData.adjustmentFunction = adjustmentFunction;
         eventData.newValue = newValue;
         eventData.floatFlag = false;
-        blackboxLogEvent(FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT, (flightLogEventData_t*)&eventData);
+        blackboxLogEvent(FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT, (flightLogEventData_t *)&eventData);
     }
 #endif
 }
@@ -118,123 +118,93 @@ STATIC_UNIT_TESTED uint8_t adjustmentStateMask = 0;
 
 // sync with adjustmentFunction_e
 static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COUNT - 1] = {
-    {
-        .adjustmentFunction = ADJUSTMENT_RC_RATE,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .step = 1 }
-    }, {
-        .adjustmentFunction = ADJUSTMENT_RC_EXPO,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .step = 1 }
-    }, {
-        .adjustmentFunction = ADJUSTMENT_THROTTLE_EXPO,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .step = 1 }
-    }, {
-        .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_RATE,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .step = 1 }
-    }, {
-        .adjustmentFunction = ADJUSTMENT_YAW_RATE,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .step = 1 }
-    }, {
-        .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_P,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .step = 1 }
-    }, {
-        .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_I,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .step = 1 }
-    }, {
-        .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_D,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .step = 1 }
-    }, {
-        .adjustmentFunction = ADJUSTMENT_YAW_P,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .step = 1 }
-    }, {
-        .adjustmentFunction = ADJUSTMENT_YAW_I,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .step = 1 }
-    }, {
-        .adjustmentFunction = ADJUSTMENT_YAW_D,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .step = 1 }
-    }, {
-        .adjustmentFunction = ADJUSTMENT_RATE_PROFILE,
-        .mode = ADJUSTMENT_MODE_SELECT,
-        .data = { .switchPositions = 3 }
-    }, {
-        .adjustmentFunction = ADJUSTMENT_PITCH_RATE,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .step = 1 }
-    }, {
-        .adjustmentFunction = ADJUSTMENT_ROLL_RATE,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .step = 1 }
-    }, {
-        .adjustmentFunction = ADJUSTMENT_PITCH_P,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .step = 1 }
-    }, {
-        .adjustmentFunction = ADJUSTMENT_PITCH_I,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .step = 1 }
-    }, {
-        .adjustmentFunction = ADJUSTMENT_PITCH_D,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .step = 1 }
-    }, {
-        .adjustmentFunction = ADJUSTMENT_ROLL_P,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .step = 1 }
-    }, {
-        .adjustmentFunction = ADJUSTMENT_ROLL_I,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .step = 1 }
-    }, {
-        .adjustmentFunction = ADJUSTMENT_ROLL_D,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .step = 1 }
-    }, {
-        .adjustmentFunction = ADJUSTMENT_RC_RATE_YAW,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .step = 1 }
-    }, {
-        .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_F,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .step = 1 }
-    }, {
-        .adjustmentFunction = ADJUSTMENT_FEEDFORWARD_TRANSITION,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .step = 1 }
-    }, {
-        .adjustmentFunction = ADJUSTMENT_HORIZON_STRENGTH,
-        .mode = ADJUSTMENT_MODE_SELECT,
-        .data = { .switchPositions = 255 }
-    }, {
-        .adjustmentFunction = ADJUSTMENT_PID_AUDIO,
-        .mode = ADJUSTMENT_MODE_SELECT,
-        .data = { .switchPositions = ARRAYLEN(pidAudioPositionToModeMap) }
-    }, {
-        .adjustmentFunction = ADJUSTMENT_PITCH_F,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .step = 1 }
-    }, {
-        .adjustmentFunction = ADJUSTMENT_ROLL_F,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .step = 1 }
-    }, {
-        .adjustmentFunction = ADJUSTMENT_YAW_F,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .step = 1 }
-    }
-};
+    {.adjustmentFunction = ADJUSTMENT_RC_RATE,
+     .mode = ADJUSTMENT_MODE_STEP,
+     .data = {.step = 1}},
+    {.adjustmentFunction = ADJUSTMENT_RC_EXPO,
+     .mode = ADJUSTMENT_MODE_STEP,
+     .data = {.step = 1}},
+    {.adjustmentFunction = ADJUSTMENT_THROTTLE_EXPO,
+     .mode = ADJUSTMENT_MODE_STEP,
+     .data = {.step = 1}},
+    {.adjustmentFunction = ADJUSTMENT_PITCH_ROLL_RATE,
+     .mode = ADJUSTMENT_MODE_STEP,
+     .data = {.step = 1}},
+    {.adjustmentFunction = ADJUSTMENT_YAW_RATE,
+     .mode = ADJUSTMENT_MODE_STEP,
+     .data = {.step = 1}},
+    {.adjustmentFunction = ADJUSTMENT_PITCH_ROLL_P,
+     .mode = ADJUSTMENT_MODE_STEP,
+     .data = {.step = 1}},
+    {.adjustmentFunction = ADJUSTMENT_PITCH_ROLL_I,
+     .mode = ADJUSTMENT_MODE_STEP,
+     .data = {.step = 1}},
+    {.adjustmentFunction = ADJUSTMENT_PITCH_ROLL_D,
+     .mode = ADJUSTMENT_MODE_STEP,
+     .data = {.step = 1}},
+    {.adjustmentFunction = ADJUSTMENT_YAW_P,
+     .mode = ADJUSTMENT_MODE_STEP,
+     .data = {.step = 1}},
+    {.adjustmentFunction = ADJUSTMENT_YAW_I,
+     .mode = ADJUSTMENT_MODE_STEP,
+     .data = {.step = 1}},
+    {.adjustmentFunction = ADJUSTMENT_YAW_D,
+     .mode = ADJUSTMENT_MODE_STEP,
+     .data = {.step = 1}},
+    {.adjustmentFunction = ADJUSTMENT_RATE_PROFILE,
+     .mode = ADJUSTMENT_MODE_SELECT,
+     .data = {.switchPositions = 3}},
+    {.adjustmentFunction = ADJUSTMENT_PITCH_RATE,
+     .mode = ADJUSTMENT_MODE_STEP,
+     .data = {.step = 1}},
+    {.adjustmentFunction = ADJUSTMENT_ROLL_RATE,
+     .mode = ADJUSTMENT_MODE_STEP,
+     .data = {.step = 1}},
+    {.adjustmentFunction = ADJUSTMENT_PITCH_P,
+     .mode = ADJUSTMENT_MODE_STEP,
+     .data = {.step = 1}},
+    {.adjustmentFunction = ADJUSTMENT_PITCH_I,
+     .mode = ADJUSTMENT_MODE_STEP,
+     .data = {.step = 1}},
+    {.adjustmentFunction = ADJUSTMENT_PITCH_D,
+     .mode = ADJUSTMENT_MODE_STEP,
+     .data = {.step = 1}},
+    {.adjustmentFunction = ADJUSTMENT_ROLL_P,
+     .mode = ADJUSTMENT_MODE_STEP,
+     .data = {.step = 1}},
+    {.adjustmentFunction = ADJUSTMENT_ROLL_I,
+     .mode = ADJUSTMENT_MODE_STEP,
+     .data = {.step = 1}},
+    {.adjustmentFunction = ADJUSTMENT_ROLL_D,
+     .mode = ADJUSTMENT_MODE_STEP,
+     .data = {.step = 1}},
+    {.adjustmentFunction = ADJUSTMENT_RC_RATE_YAW,
+     .mode = ADJUSTMENT_MODE_STEP,
+     .data = {.step = 1}},
+    {.adjustmentFunction = ADJUSTMENT_PITCH_ROLL_F,
+     .mode = ADJUSTMENT_MODE_STEP,
+     .data = {.step = 1}},
+    {.adjustmentFunction = ADJUSTMENT_FEEDFORWARD_TRANSITION,
+     .mode = ADJUSTMENT_MODE_STEP,
+     .data = {.step = 1}},
+    {.adjustmentFunction = ADJUSTMENT_HORIZON_STRENGTH,
+     .mode = ADJUSTMENT_MODE_SELECT,
+     .data = {.switchPositions = 255}},
+    {.adjustmentFunction = ADJUSTMENT_PID_AUDIO,
+     .mode = ADJUSTMENT_MODE_SELECT,
+     .data = {.switchPositions = ARRAYLEN(pidAudioPositionToModeMap)}},
+    {.adjustmentFunction = ADJUSTMENT_PITCH_F,
+     .mode = ADJUSTMENT_MODE_STEP,
+     .data = {.step = 1}},
+    {.adjustmentFunction = ADJUSTMENT_ROLL_F,
+     .mode = ADJUSTMENT_MODE_STEP,
+     .data = {.step = 1}},
+    {.adjustmentFunction = ADJUSTMENT_YAW_F,
+     .mode = ADJUSTMENT_MODE_STEP,
+     .data = {.step = 1}}};
 
 #if defined(USE_OSD) && defined(USE_OSD_ADJUSTMENTS)
-static const char * const adjustmentLabels[] = {
+static const char *const adjustmentLabels[] = {
     "RC RATE",
     "RC EXPO",
     "THROTTLE EXPO",
@@ -266,8 +236,7 @@ static const char * const adjustmentLabels[] = {
     "PID AUDIO",
     "PITCH F",
     "ROLL F",
-    "YAW F"
-};
+    "YAW F"};
 
 static int adjustmentRangeNameIndex = 0;
 static int adjustmentRangeValue = -1;
@@ -458,7 +427,7 @@ static int applyAbsoluteAdjustment(controlRateConfig_t *controlRateConfig, adjus
 {
     int newValue;
 
-    if ( !controlRateConfig || !pidProfile) {
+    if (!controlRateConfig || !pidProfile) {
         return 0;
     }
 
@@ -632,26 +601,24 @@ static uint8_t applySelectAdjustment(adjustmentFunction_e adjustmentFunction, ui
             beeps = position + 1;
         }
         break;
-    case ADJUSTMENT_HORIZON_STRENGTH:
-        {
-            uint8_t newValue = constrain(position, 0, 200); // FIXME magic numbers repeated in serial_cli.c
-            if (pidProfile->pid[PID_LEVEL].D != newValue) {
-                beeps = ((newValue - pidProfile->pid[PID_LEVEL].D) / 8) + 1;
-                pidProfile->pid[PID_LEVEL].D = newValue;
-                blackboxLogInflightAdjustmentEvent(ADJUSTMENT_HORIZON_STRENGTH, position);
-            }
+    case ADJUSTMENT_HORIZON_STRENGTH: {
+        uint8_t newValue = constrain(position, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+        if (pidProfile->pid[PID_LEVEL].D != newValue) {
+            beeps = ((newValue - pidProfile->pid[PID_LEVEL].D) / 8) + 1;
+            pidProfile->pid[PID_LEVEL].D = newValue;
+            blackboxLogInflightAdjustmentEvent(ADJUSTMENT_HORIZON_STRENGTH, position);
         }
-        break;
+    } break;
     case ADJUSTMENT_PID_AUDIO:
 #ifdef USE_PID_AUDIO
-        {
-            pidAudioModes_e newMode = pidAudioPositionToModeMap[position];
-            if (newMode != pidAudioGetMode()) {
-                pidAudioSetMode(newMode);
-            }
+    {
+        pidAudioModes_e newMode = pidAudioPositionToModeMap[position];
+        if (newMode != pidAudioGetMode()) {
+            pidAudioSetMode(newMode);
         }
+    }
 #endif
-        break;
+    break;
 
     default:
         break;
@@ -722,7 +689,7 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig)
         } else if (adjustmentState->config->mode == ADJUSTMENT_MODE_SELECT) {
             int switchPositions = adjustmentState->config->data.switchPositions;
             if (adjustmentFunction == ADJUSTMENT_RATE_PROFILE && systemConfig()->rateProfile6PosSwitch) {
-                switchPositions =  6;
+                switchPositions = 6;
             }
             const uint16_t rangeWidth = (2100 - 900) / switchPositions;
             const uint8_t position = (constrain(rcData[channelIndex], 900, 2100 - 1) - 900) / rangeWidth;
@@ -742,9 +709,9 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig)
 
     // Process Absolute adjustments
     for (int index = 0; index < MAX_ADJUSTMENT_RANGE_COUNT; index++) {
-        static int16_t lastRcData[MAX_ADJUSTMENT_RANGE_COUNT] = { 0 };
+        static int16_t lastRcData[MAX_ADJUSTMENT_RANGE_COUNT] = {0};
 
-        const adjustmentRange_t * const adjustmentRange = adjustmentRanges(index);
+        const adjustmentRange_t *const adjustmentRange = adjustmentRanges(index);
         const uint8_t channelIndex = NON_AUX_CHANNEL_COUNT + adjustmentRange->auxSwitchChannelIndex;
         const adjustmentConfig_t *adjustmentConfig = &defaultAdjustmentConfigs[adjustmentRange->adjustmentFunction - ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET];
 
@@ -770,7 +737,7 @@ void resetAdjustmentStates(void)
 void updateAdjustmentStates(void)
 {
     for (int index = 0; index < MAX_ADJUSTMENT_RANGE_COUNT; index++) {
-        const adjustmentRange_t * const adjustmentRange = adjustmentRanges(index);
+        const adjustmentRange_t *const adjustmentRange = adjustmentRanges(index);
         // Only use slots if center value has not been specified, otherwise apply values directly (scaled) from aux channel
         if (isRangeActive(adjustmentRange->auxChannelIndex, &adjustmentRange->range) &&
             (adjustmentRange->adjustmentCenter == 0)) {
@@ -786,7 +753,8 @@ void useAdjustmentConfig(pidProfile_t *pidProfileToUse)
 }
 
 #if defined(USE_OSD) && defined(USE_OSD_ADJUSTMENTS)
-const char *getAdjustmentsRangeName(void) {
+const char *getAdjustmentsRangeName(void)
+{
     if (adjustmentRangeNameIndex > 0) {
         return &adjustmentLabels[adjustmentRangeNameIndex - 1][0];
     } else {
@@ -794,7 +762,8 @@ const char *getAdjustmentsRangeName(void) {
     }
 }
 
-int getAdjustmentsRangeValue(void) {
+int getAdjustmentsRangeValue(void)
+{
     return adjustmentRangeValue;
 }
 #endif

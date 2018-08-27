@@ -56,7 +56,8 @@ static volatile int sysTickPending = 0;
 
 void SysTick_Handler(void)
 {
-    ATOMIC_BLOCK(NVIC_PRIO_MAX) {
+    ATOMIC_BLOCK(NVIC_PRIO_MAX)
+    {
         sysTickUptime++;
         sysTickValStamp = SysTick->VAL;
         sysTickPending = 0;
@@ -74,7 +75,8 @@ uint32_t microsISR(void)
 {
     register uint32_t ms, pending, cycle_cnt;
 
-    ATOMIC_BLOCK(NVIC_PRIO_MAX) {
+    ATOMIC_BLOCK(NVIC_PRIO_MAX)
+    {
         cycle_cnt = SysTick->VAL;
 
         if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) {
@@ -125,7 +127,8 @@ uint32_t millis(void)
 void delayMicroseconds(uint32_t us)
 {
     uint32_t now = micros();
-    while (micros() - now < us);
+    while (micros() - now < us)
+        ;
 }
 #else
 void delayMicroseconds(uint32_t us)

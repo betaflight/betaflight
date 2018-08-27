@@ -44,15 +44,15 @@
 #ifdef USE_UART
 
 #ifdef USE_UART1_RX_DMA
-# define UART1_RX_DMA_CHANNEL DMA1_Channel5
+#define UART1_RX_DMA_CHANNEL DMA1_Channel5
 #else
-# define UART1_RX_DMA_CHANNEL 0
+#define UART1_RX_DMA_CHANNEL 0
 #endif
 
 #ifdef USE_UART1_TX_DMA
-# define UART1_TX_DMA_CHANNEL DMA1_Channel4
+#define UART1_TX_DMA_CHANNEL DMA1_Channel4
 #else
-# define UART1_TX_DMA_CHANNEL 0
+#define UART1_TX_DMA_CHANNEL 0
 #endif
 
 #define UART2_RX_DMA_CHANNEL 0
@@ -62,55 +62,49 @@
 
 const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART1
-    {
-        .device = UARTDEV_1,
-        .reg = USART1,
-        .rxDMAChannel = UART1_RX_DMA_CHANNEL,
-        .txDMAChannel = UART1_TX_DMA_CHANNEL,
-        .rxPins = { DEFIO_TAG_E(PA10), DEFIO_TAG_E(PB7), IO_TAG_NONE },
-        .txPins = { DEFIO_TAG_E(PA9), DEFIO_TAG_E(PB6), IO_TAG_NONE },
-        //.af = GPIO_AF_USART1,
-        .rcc = RCC_APB2(USART1),
-        .irqn = USART1_IRQn,
-        .txPriority = NVIC_PRIO_SERIALUART1_TXDMA,
-        .rxPriority = NVIC_PRIO_SERIALUART1
-    },
+    {.device = UARTDEV_1,
+     .reg = USART1,
+     .rxDMAChannel = UART1_RX_DMA_CHANNEL,
+     .txDMAChannel = UART1_TX_DMA_CHANNEL,
+     .rxPins = {DEFIO_TAG_E(PA10), DEFIO_TAG_E(PB7), IO_TAG_NONE},
+     .txPins = {DEFIO_TAG_E(PA9), DEFIO_TAG_E(PB6), IO_TAG_NONE},
+     //.af = GPIO_AF_USART1,
+     .rcc = RCC_APB2(USART1),
+     .irqn = USART1_IRQn,
+     .txPriority = NVIC_PRIO_SERIALUART1_TXDMA,
+     .rxPriority = NVIC_PRIO_SERIALUART1},
 #endif
 #ifdef USE_UART2
-    {
-        .device = UARTDEV_2,
-        .reg = USART2,
-        .rxDMAChannel = UART2_RX_DMA_CHANNEL,
-        .txDMAChannel = UART2_TX_DMA_CHANNEL,
-        .rxPins = { DEFIO_TAG_E(PA3), DEFIO_TAG_E(PD6), IO_TAG_NONE },
-        .txPins = { DEFIO_TAG_E(PA2), DEFIO_TAG_E(PD5), IO_TAG_NONE },
-        //.af = GPIO_AF_USART2,
-        .rcc = RCC_APB1(USART2),
-        .irqn = USART2_IRQn,
-        .txPriority = NVIC_PRIO_SERIALUART2,
-        .rxPriority = NVIC_PRIO_SERIALUART2
-    },
+    {.device = UARTDEV_2,
+     .reg = USART2,
+     .rxDMAChannel = UART2_RX_DMA_CHANNEL,
+     .txDMAChannel = UART2_TX_DMA_CHANNEL,
+     .rxPins = {DEFIO_TAG_E(PA3), DEFIO_TAG_E(PD6), IO_TAG_NONE},
+     .txPins = {DEFIO_TAG_E(PA2), DEFIO_TAG_E(PD5), IO_TAG_NONE},
+     //.af = GPIO_AF_USART2,
+     .rcc = RCC_APB1(USART2),
+     .irqn = USART2_IRQn,
+     .txPriority = NVIC_PRIO_SERIALUART2,
+     .rxPriority = NVIC_PRIO_SERIALUART2},
 #endif
 #ifdef USE_UART3
-    {
-        .device = UARTDEV_3,
-        .reg = USART3,
-        .rxDMAChannel = UART3_RX_DMA_CHANNEL,
-        .txDMAChannel = UART3_TX_DMA_CHANNEL,
-        .rxPins = { DEFIO_TAG_E(PB11), DEFIO_TAG_E(PD9), DEFIO_TAG_E(PC11) },
-        .txPins = { DEFIO_TAG_E(PB10), DEFIO_TAG_E(PD8), DEFIO_TAG_E(PC10) },
-        //.af = GPIO_AF_USART3,
-        .rcc = RCC_APB1(USART3),
-        .irqn = USART3_IRQn,
-        .txPriority = NVIC_PRIO_SERIALUART3,
-        .rxPriority = NVIC_PRIO_SERIALUART3
-    },
+    {.device = UARTDEV_3,
+     .reg = USART3,
+     .rxDMAChannel = UART3_RX_DMA_CHANNEL,
+     .txDMAChannel = UART3_TX_DMA_CHANNEL,
+     .rxPins = {DEFIO_TAG_E(PB11), DEFIO_TAG_E(PD9), DEFIO_TAG_E(PC11)},
+     .txPins = {DEFIO_TAG_E(PB10), DEFIO_TAG_E(PD8), DEFIO_TAG_E(PC10)},
+     //.af = GPIO_AF_USART3,
+     .rcc = RCC_APB1(USART3),
+     .irqn = USART3_IRQn,
+     .txPriority = NVIC_PRIO_SERIALUART3,
+     .rxPriority = NVIC_PRIO_SERIALUART3},
 #endif
 };
 
-void uart_tx_dma_IRQHandler(dmaChannelDescriptor_t* descriptor)
+void uart_tx_dma_IRQHandler(dmaChannelDescriptor_t *descriptor)
 {
-    uartPort_t *s = (uartPort_t*)(descriptor->userParam);
+    uartPort_t *s = (uartPort_t *)(descriptor->userParam);
     DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
     DMA_Cmd(descriptor->ref, DISABLE); // XXX F1 needs this!!!
 

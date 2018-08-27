@@ -22,25 +22,25 @@
 #include "common/crc.h"
 #include "interface/smartaudio_protocol.h"
 
-#define SMARTAUDIO_SYNC_BYTE            0xAA
-#define SMARTAUDIO_HEADER_BYTE          0x55
-#define SMARTAUDIO_START_CODE           SMARTAUDIO_SYNC_BYTE + SMARTAUDIO_HEADER_BYTE
-#define SMARTAUDIO_GET_PITMODE_FREQ     (1 << 14)
-#define SMARTAUDIO_SET_PITMODE_FREQ     (1 << 15)
-#define SMARTAUDIO_FREQUENCY_MASK       0x3FFF
+#define SMARTAUDIO_SYNC_BYTE 0xAA
+#define SMARTAUDIO_HEADER_BYTE 0x55
+#define SMARTAUDIO_START_CODE SMARTAUDIO_SYNC_BYTE + SMARTAUDIO_HEADER_BYTE
+#define SMARTAUDIO_GET_PITMODE_FREQ (1 << 14)
+#define SMARTAUDIO_SET_PITMODE_FREQ (1 << 15)
+#define SMARTAUDIO_FREQUENCY_MASK 0x3FFF
 
-#define SMARTAUDIO_CMD_GET_SETTINGS     0x03
-#define SMARTAUDIO_CMD_SET_POWER        0x05
-#define SMARTAUDIO_CMD_SET_CHANNEL      0x07
-#define SMARTAUDIO_CMD_SET_FREQUENCY    0x09
-#define SMARTAUDIO_CMD_SET_MODE         0x0B
+#define SMARTAUDIO_CMD_GET_SETTINGS 0x03
+#define SMARTAUDIO_CMD_SET_POWER 0x05
+#define SMARTAUDIO_CMD_SET_CHANNEL 0x07
+#define SMARTAUDIO_CMD_SET_FREQUENCY 0x09
+#define SMARTAUDIO_CMD_SET_MODE 0x0B
 
-#define SMARTAUDIO_RSP_GET_SETTINGS_V1  SMARTAUDIO_CMD_GET_SETTINGS >> 1
-#define SMARTAUDIO_RSP_GET_SETTINGS_V2  (SMARTAUDIO_CMD_GET_SETTINGS >> 1) | 0x08
-#define SMARTAUDIO_RSP_SET_POWER        SMARTAUDIO_CMD_SET_POWER >> 1
-#define SMARTAUDIO_RSP_SET_CHANNEL      SMARTAUDIO_CMD_SET_CHANNEL >> 1
-#define SMARTAUDIO_RSP_SET_FREQUENCY    SMARTAUDIO_CMD_SET_FREQUENCY >> 1
-#define SMARTAUDIO_RSP_SET_MODE         SMARTAUDIO_CMD_SET_MODE >> 1
+#define SMARTAUDIO_RSP_GET_SETTINGS_V1 SMARTAUDIO_CMD_GET_SETTINGS >> 1
+#define SMARTAUDIO_RSP_GET_SETTINGS_V2 (SMARTAUDIO_CMD_GET_SETTINGS >> 1) | 0x08
+#define SMARTAUDIO_RSP_SET_POWER SMARTAUDIO_CMD_SET_POWER >> 1
+#define SMARTAUDIO_RSP_SET_CHANNEL SMARTAUDIO_CMD_SET_CHANNEL >> 1
+#define SMARTAUDIO_RSP_SET_FREQUENCY SMARTAUDIO_CMD_SET_FREQUENCY >> 1
+#define SMARTAUDIO_RSP_SET_MODE SMARTAUDIO_CMD_SET_MODE >> 1
 
 #define SMARTAUDIO_BANDCHAN_TO_INDEX(band, channel) (band * 8 + (channel))
 #define U16BIGENDIAN(bytes) (bytes << 8) | ((bytes >> 8) & 0xFF)
@@ -160,41 +160,35 @@ bool smartaudioParseResponseBuffer(smartaudioSettings_t *settings, const uint8_t
         return false;
     }
     switch (header->command) {
-        case SMARTAUDIO_RSP_GET_SETTINGS_V1: {
-                const smartaudioSettingsResponseFrame_t *resp = (const smartaudioSettingsResponseFrame_t *)buffer;
-                settings->version = 1;
-                smartaudioUnpackSettings(settings, resp);
-            }
-            break;
-        case SMARTAUDIO_RSP_GET_SETTINGS_V2: {
-                const smartaudioSettingsResponseFrame_t *resp = (const smartaudioSettingsResponseFrame_t *)buffer;
-                settings->version = 2;
-                smartaudioUnpackSettings(settings, resp);
-            }
-            break;
-        case SMARTAUDIO_RSP_SET_POWER: {
-                const smartaudioU16ResponseFrame_t *resp = (const smartaudioU16ResponseFrame_t *)buffer;
-                settings->channel = (resp->payload >> 8) & 0xFF;
-                settings->power = resp->payload & 0xFF;
-            }
-            break;
-        case SMARTAUDIO_RSP_SET_CHANNEL: {
-                const smartaudioU8ResponseFrame_t *resp = (const smartaudioU8ResponseFrame_t *)buffer;
-                settings->channel = resp->payload;
-            }
-            break;
-        case SMARTAUDIO_RSP_SET_FREQUENCY: {
-                const smartaudioU16ResponseFrame_t *resp = (const smartaudioU16ResponseFrame_t *)buffer;
-                smartaudioUnpackFrequency(settings, resp->payload);
-            }
-            break;
-        case SMARTAUDIO_RSP_SET_MODE: {
-                const smartaudioU8ResponseFrame_t *resp = (const smartaudioU8ResponseFrame_t*)buffer;
-                smartaudioUnpackOperationMode(settings, resp->payload, false);
-            }
-            break;
-        default:
-            return false;
+    case SMARTAUDIO_RSP_GET_SETTINGS_V1: {
+        const smartaudioSettingsResponseFrame_t *resp = (const smartaudioSettingsResponseFrame_t *)buffer;
+        settings->version = 1;
+        smartaudioUnpackSettings(settings, resp);
+    } break;
+    case SMARTAUDIO_RSP_GET_SETTINGS_V2: {
+        const smartaudioSettingsResponseFrame_t *resp = (const smartaudioSettingsResponseFrame_t *)buffer;
+        settings->version = 2;
+        smartaudioUnpackSettings(settings, resp);
+    } break;
+    case SMARTAUDIO_RSP_SET_POWER: {
+        const smartaudioU16ResponseFrame_t *resp = (const smartaudioU16ResponseFrame_t *)buffer;
+        settings->channel = (resp->payload >> 8) & 0xFF;
+        settings->power = resp->payload & 0xFF;
+    } break;
+    case SMARTAUDIO_RSP_SET_CHANNEL: {
+        const smartaudioU8ResponseFrame_t *resp = (const smartaudioU8ResponseFrame_t *)buffer;
+        settings->channel = resp->payload;
+    } break;
+    case SMARTAUDIO_RSP_SET_FREQUENCY: {
+        const smartaudioU16ResponseFrame_t *resp = (const smartaudioU16ResponseFrame_t *)buffer;
+        smartaudioUnpackFrequency(settings, resp->payload);
+    } break;
+    case SMARTAUDIO_RSP_SET_MODE: {
+        const smartaudioU8ResponseFrame_t *resp = (const smartaudioU8ResponseFrame_t *)buffer;
+        smartaudioUnpackOperationMode(settings, resp->payload, false);
+    } break;
+    default:
+        return false;
     }
     return true;
 }

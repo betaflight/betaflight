@@ -27,7 +27,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define CRSF_BAUDRATE           420000
+#define CRSF_BAUDRATE 420000
 
 enum { CRSF_SYNC_BYTE = 0xC8 };
 
@@ -49,18 +49,18 @@ typedef enum {
     CRSF_FRAMETYPE_PARAMETER_WRITE = 0x2D,
     CRSF_FRAMETYPE_COMMAND = 0x32,
     // MSP commands
-    CRSF_FRAMETYPE_MSP_REQ = 0x7A,   // response request using msp sequence as command
-    CRSF_FRAMETYPE_MSP_RESP = 0x7B,  // reply with 58 byte chunked binary
-    CRSF_FRAMETYPE_MSP_WRITE = 0x7C,  // write with 8 byte chunked binary (OpenTX outbound telemetry buffer limit)
+    CRSF_FRAMETYPE_MSP_REQ = 0x7A,         // response request using msp sequence as command
+    CRSF_FRAMETYPE_MSP_RESP = 0x7B,        // reply with 58 byte chunked binary
+    CRSF_FRAMETYPE_MSP_WRITE = 0x7C,       // write with 8 byte chunked binary (OpenTX outbound telemetry buffer limit)
     CRSF_FRAMETYPE_DISPLAYPORT_CMD = 0x7D, // displayport control command
 } crsfFrameType_e;
 
 enum {
     CRSF_DISPLAYPORT_SUBCMD_UPDATE = 0x01, // transmit displayport buffer to remote
-    CRSF_DISPLAYPORT_SUBCMD_CLEAR = 0X02, // clear client screen
-    CRSF_DISPLAYPORT_SUBCMD_OPEN = 0x03,  // client request to open cms menu
+    CRSF_DISPLAYPORT_SUBCMD_CLEAR = 0X02,  // clear client screen
+    CRSF_DISPLAYPORT_SUBCMD_OPEN = 0x03,   // client request to open cms menu
     CRSF_DISPLAYPORT_SUBCMD_CLOSE = 0x04,  // client request to close cms menu
-    CRSF_DISPLAYPORT_SUBCMD_POLL = 0x05,  // client request to poll/refresh cms menu
+    CRSF_DISPLAYPORT_SUBCMD_POLL = 0x05,   // client request to poll/refresh cms menu
 };
 
 enum {
@@ -77,13 +77,13 @@ enum {
 };
 
 enum {
-    CRSF_FRAME_LENGTH_ADDRESS = 1, // length of ADDRESS field
-    CRSF_FRAME_LENGTH_FRAMELENGTH = 1, // length of FRAMELENGTH field
-    CRSF_FRAME_LENGTH_TYPE = 1, // length of TYPE field
-    CRSF_FRAME_LENGTH_CRC = 1, // length of CRC field
-    CRSF_FRAME_LENGTH_TYPE_CRC = 2, // length of TYPE and CRC fields combined
+    CRSF_FRAME_LENGTH_ADDRESS = 1,      // length of ADDRESS field
+    CRSF_FRAME_LENGTH_FRAMELENGTH = 1,  // length of FRAMELENGTH field
+    CRSF_FRAME_LENGTH_TYPE = 1,         // length of TYPE field
+    CRSF_FRAME_LENGTH_CRC = 1,          // length of CRC field
+    CRSF_FRAME_LENGTH_TYPE_CRC = 2,     // length of TYPE and CRC fields combined
     CRSF_FRAME_LENGTH_EXT_TYPE_CRC = 4, // length of Extended Dest/Origin, TYPE and CRC fields combined
-    CRSF_FRAME_LENGTH_NON_PAYLOAD = 4, // combined length of all fields except payload
+    CRSF_FRAME_LENGTH_NON_PAYLOAD = 4,  // combined length of all fields except payload
 };
 
 enum {
@@ -110,4 +110,3 @@ typedef enum {
     CRSF_ADDRESS_CRSF_RECEIVER = 0xEC,
     CRSF_ADDRESS_CRSF_TRANSMITTER = 0xEE
 } crsfAddress_e;
-

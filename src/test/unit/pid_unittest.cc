@@ -25,8 +25,8 @@
 #include "build/debug.h"
 
 bool simulateMixerSaturated = false;
-float simulatedSetpointRate[3] = { 0,0,0 };
-float simulatedRcDeflection[3] = { 0,0,0 };
+float simulatedSetpointRate[3] = {0, 0, 0};
+float simulatedRcDeflection[3] = {0, 0, 0};
 float simulatedThrottlePIDAttenuation = 1.0f;
 float simulatedMotorMixRange = 0.0f;
 
@@ -34,60 +34,61 @@ int16_t debug[DEBUG16_VALUE_COUNT];
 uint8_t debugMode;
 
 extern "C" {
-    #include "build/debug.h"
-    #include "common/axis.h"
-    #include "common/maths.h"
-    #include "common/filter.h"
+#include "build/debug.h"
+#include "common/axis.h"
+#include "common/maths.h"
+#include "common/filter.h"
 
-    #include "config/config_reset.h"
-    #include "pg/pg.h"
-    #include "pg/pg_ids.h"
+#include "config/config_reset.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
-    #include "drivers/sound_beeper.h"
-    #include "drivers/time.h"
+#include "drivers/sound_beeper.h"
+#include "drivers/time.h"
 
-    #include "fc/core.h"
-    #include "fc/rc.h"
+#include "fc/core.h"
+#include "fc/rc.h"
 
-    #include "fc/rc_controls.h"
-    #include "fc/runtime_config.h"
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
 
-    #include "flight/pid.h"
-    #include "flight/imu.h"
-    #include "flight/mixer.h"
+#include "flight/pid.h"
+#include "flight/imu.h"
+#include "flight/mixer.h"
 
-    #include "io/gps.h"
+#include "io/gps.h"
 
-    #include "sensors/gyro.h"
-    #include "sensors/acceleration.h"
+#include "sensors/gyro.h"
+#include "sensors/acceleration.h"
 
-    gyro_t gyro;
-    attitudeEulerAngles_t attitude;
+gyro_t gyro;
+attitudeEulerAngles_t attitude;
 
-    float getThrottlePIDAttenuation(void) { return simulatedThrottlePIDAttenuation; }
-    float getMotorMixRange(void) { return simulatedMotorMixRange; }
-    float getSetpointRate(int axis) { return simulatedSetpointRate[axis]; }
-    bool mixerIsOutputSaturated(int, float) { return simulateMixerSaturated; }
-    float getRcDeflectionAbs(int axis) { return ABS(simulatedRcDeflection[axis]); }
-    void systemBeep(bool) { }
-    bool gyroOverflowDetected(void) { return false; }
-    float getRcDeflection(int axis) { return simulatedRcDeflection[axis]; }
-    void beeperConfirmationBeeps(uint8_t) { }
+float getThrottlePIDAttenuation(void) { return simulatedThrottlePIDAttenuation; }
+float getMotorMixRange(void) { return simulatedMotorMixRange; }
+float getSetpointRate(int axis) { return simulatedSetpointRate[axis]; }
+bool mixerIsOutputSaturated(int, float) { return simulateMixerSaturated; }
+float getRcDeflectionAbs(int axis) { return ABS(simulatedRcDeflection[axis]); }
+void systemBeep(bool) {}
+bool gyroOverflowDetected(void) { return false; }
+float getRcDeflection(int axis) { return simulatedRcDeflection[axis]; }
+void beeperConfirmationBeeps(uint8_t) {}
 }
 
 pidProfile_t *pidProfile;
-rollAndPitchTrims_t rollAndPitchTrims = { { 0, 0 } };
+rollAndPitchTrims_t rollAndPitchTrims = {{0, 0}};
 
 int loopIter = 0;
 
 // Always use same defaults for testing in future releases even when defaults change
-void setDefaultTestSettings(void) {
+void setDefaultTestSettings(void)
+{
     pgResetAll();
     pidProfile = pidProfilesMutable(1);
-    pidProfile->pid[PID_ROLL]  =  { 40, 40, 30, 65 };
-    pidProfile->pid[PID_PITCH] =  { 58, 50, 35, 60 };
-    pidProfile->pid[PID_YAW]   =  { 70, 45, 20, 60 };
-    pidProfile->pid[PID_LEVEL] =  { 50, 50, 75, 0 };
+    pidProfile->pid[PID_ROLL] = {40, 40, 30, 65};
+    pidProfile->pid[PID_PITCH] = {58, 50, 35, 60};
+    pidProfile->pid[PID_YAW] = {70, 45, 20, 60};
+    pidProfile->pid[PID_LEVEL] = {50, 50, 75, 0};
 
     pidProfile->pidSumLimit = PIDSUM_LIMIT;
     pidProfile->pidSumLimitYaw = PIDSUM_LIMIT_YAW;
@@ -126,11 +127,13 @@ void setDefaultTestSettings(void) {
     gyro.targetLooptime = 4000;
 }
 
-timeUs_t currentTestTime(void) {
+timeUs_t currentTestTime(void)
+{
     return targetPidLooptime * loopIter++;
 }
 
-void resetTest(void) {
+void resetTest(void)
+{
     loopIter = 0;
     simulateMixerSaturated = false;
     simulatedThrottlePIDAttenuation = 1.0f;
@@ -162,13 +165,15 @@ void resetTest(void) {
     }
 }
 
-void setStickPosition(int axis, float stickRatio) {
+void setStickPosition(int axis, float stickRatio)
+{
     simulatedSetpointRate[axis] = 1998.0f * stickRatio;
     simulatedRcDeflection[axis] = stickRatio;
 }
 
 // All calculations will have 10% tolerance
-float calculateTolerance(float input) {
+float calculateTolerance(float input)
+{
     return fabs(input * 0.1f);
 }
 
@@ -184,7 +189,8 @@ TEST(pidControllerTest, testInitialisation)
     }
 }
 
-TEST(pidControllerTest, testStabilisationDisabled) {
+TEST(pidControllerTest, testStabilisationDisabled)
+{
     ENABLE_ARMING_FLAG(ARMED);
     // Run few loops to make sure there is no error building up when stabilisation disabled
 
@@ -204,7 +210,8 @@ TEST(pidControllerTest, testStabilisationDisabled) {
     }
 }
 
-TEST(pidControllerTest, testPidLoop) {
+TEST(pidControllerTest, testPidLoop)
+{
     // Make sure to start with fresh values
     resetTest();
     ENABLE_ARMING_FLAG(ARMED);
@@ -273,7 +280,7 @@ TEST(pidControllerTest, testPidLoop) {
     simulatedSetpointRate[FD_PITCH] = -100;
     simulatedSetpointRate[FD_YAW] = 100;
 
-    for(int loop = 0; loop < 5; loop++) {
+    for (int loop = 0; loop < 5; loop++) {
         pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
     }
 
@@ -304,7 +311,8 @@ TEST(pidControllerTest, testPidLoop) {
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].D);
 }
 
-TEST(pidControllerTest, testPidLevel) {
+TEST(pidControllerTest, testPidLevel)
+{
     // Make sure to start with fresh values
     resetTest();
     ENABLE_ARMING_FLAG(ARMED);
@@ -361,8 +369,8 @@ TEST(pidControllerTest, testPidLevel) {
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].D);
 }
 
-
-TEST(pidControllerTest, testPidHorizon) {
+TEST(pidControllerTest, testPidHorizon)
+{
     resetTest();
     ENABLE_ARMING_FLAG(ARMED);
     pidStabilisationState(PID_STABILISATION_ON);
@@ -415,7 +423,8 @@ TEST(pidControllerTest, testPidHorizon) {
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].D);
 }
 
-TEST(pidControllerTest, testMixerSaturation) {
+TEST(pidControllerTest, testMixerSaturation)
+{
     resetTest();
     ENABLE_ARMING_FLAG(ARMED);
     pidStabilisationState(PID_STABILISATION_ON);
@@ -434,7 +443,8 @@ TEST(pidControllerTest, testMixerSaturation) {
 }
 
 // TODO - Add more scenarios
-TEST(pidControllerTest, testCrashRecoveryMode) {
+TEST(pidControllerTest, testCrashRecoveryMode)
+{
     resetTest();
     pidProfile->crash_recovery = PID_CRASH_RECOVERY_ON;
     pidInit(pidProfile);
@@ -447,9 +457,9 @@ TEST(pidControllerTest, testCrashRecoveryMode) {
     int loopsToCrashTime = (int)((pidProfile->crash_time * 1000) / targetPidLooptime) + 1;
 
     // generate crash detection for roll axis
-    gyro.gyroADCf[FD_ROLL]  = 800;
+    gyro.gyroADCf[FD_ROLL] = 800;
     simulatedMotorMixRange = 1.2f;
-    for (int loop =0; loop <= loopsToCrashTime; loop++) {
+    for (int loop = 0; loop <= loopsToCrashTime; loop++) {
         gyro.gyroADCf[FD_ROLL] += gyro.gyroADCf[FD_ROLL];
         pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
     }
@@ -458,14 +468,17 @@ TEST(pidControllerTest, testCrashRecoveryMode) {
     // Add additional verifications
 }
 
-TEST(pidControllerTest, pidSetpointTransition) {
-// TODO
+TEST(pidControllerTest, pidSetpointTransition)
+{
+    // TODO
 }
 
-TEST(pidControllerTest, testDtermFiltering) {
-// TODO
+TEST(pidControllerTest, testDtermFiltering)
+{
+    // TODO
 }
 
-TEST(pidControllerTest, testItermRotationHandling) {
-// TODO
+TEST(pidControllerTest, testItermRotationHandling)
+{
+    // TODO
 }

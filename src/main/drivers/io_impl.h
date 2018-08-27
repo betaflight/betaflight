@@ -49,7 +49,7 @@ int IO_EXTI_PortSourceGPIO(IO_t io);
 int IO_EXTI_PinSource(IO_t io);
 #endif
 
-GPIO_TypeDef* IO_GPIO(IO_t io);
+GPIO_TypeDef *IO_GPIO(IO_t io);
 uint16_t IO_Pin(IO_t io);
 
 #define IO_GPIOBYTAG(tag) IO_GPIO(IOGetByTag(tag))

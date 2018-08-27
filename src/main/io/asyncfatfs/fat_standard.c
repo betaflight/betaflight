@@ -56,7 +56,7 @@ bool fat_isDirectoryEntryTerminator(fatDirectoryEntry_t *entry)
 
 bool fat_isDirectoryEntryEmpty(fatDirectoryEntry_t *entry)
 {
-    return (unsigned char) entry->filename[0] == FAT_DELETED_FILE_MARKER;
+    return (unsigned char)entry->filename[0] == FAT_DELETED_FILE_MARKER;
 }
 
 /**
@@ -81,12 +81,12 @@ void fat_convertFilenameToFATStyle(const char *filename, uint8_t *fatFilename)
     }
 
     for (int i = 0; i < 3; i++) {
-         if (*filename == '\0') {
-             *fatFilename = ' ';
-         } else {
-             *fatFilename = toupper((unsigned char)*filename);
-             filename++;
-         }
-         fatFilename++;
-     }
+        if (*filename == '\0') {
+            *fatFilename = ' ';
+        } else {
+            *fatFilename = toupper((unsigned char)*filename);
+            filename++;
+        }
+        fatFilename++;
+    }
 }

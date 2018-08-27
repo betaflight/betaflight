@@ -37,25 +37,25 @@
 #include "drivers/system.h"
 
 #ifndef EEPROM_IN_RAM
-extern uint8_t __config_start;   // configured via linker script when building binaries.
+extern uint8_t __config_start; // configured via linker script when building binaries.
 extern uint8_t __config_end;
 #endif
 
 static uint16_t eepromConfigSize;
 
 typedef enum {
-    CR_CLASSICATION_SYSTEM   = 0,
+    CR_CLASSICATION_SYSTEM = 0,
     CR_CLASSICATION_PROFILE_LAST = CR_CLASSICATION_SYSTEM,
 } configRecordFlags_e;
 
-#define CR_CLASSIFICATION_MASK  (0x3)
-#define CRC_START_VALUE         0xFFFF
-#define CRC_CHECK_VALUE         0x1D0F  // pre-calculated value of CRC that includes the CRC itself
+#define CR_CLASSIFICATION_MASK (0x3)
+#define CRC_START_VALUE 0xFFFF
+#define CRC_CHECK_VALUE 0x1D0F // pre-calculated value of CRC that includes the CRC itself
 
 // Header for the saved copy.
 typedef struct {
     uint8_t eepromConfigVersion;
-    uint8_t magic_be;           // magic number, should be 0xBE
+    uint8_t magic_be; // magic number, should be 0xBE
 } PG_PACKED configHeader_t;
 
 // Header for each stored PG.
@@ -127,8 +127,7 @@ bool isEEPROMStructureValid(void)
             // Found the end.  Stop scanning.
             break;
         }
-        if (p + record->size >= &__config_end
-            || record->size < sizeof(*record)) {
+        if (p + record->size >= &__config_end || record->size < sizeof(*record)) {
             // Too big or too small.
             return false;
         }
@@ -164,15 +163,12 @@ uint16_t getEEPROMConfigSize(void)
 static const configRecord_t *findEEPROM(const pgRegistry_t *reg, configRecordFlags_e classification)
 {
     const uint8_t *p = &__config_start;
-    p += sizeof(configHeader_t);             // skip header
+    p += sizeof(configHeader_t); // skip header
     while (true) {
         const configRecord_t *record = (const configRecord_t *)p;
-        if (record->size == 0
-            || p + record->size >= &__config_end
-            || record->size < sizeof(*record))
+        if (record->size == 0 || p + record->size >= &__config_end || record->size < sizeof(*record))
             break;
-        if (pgN(reg) == record->pgn
-            && (record->flags & CR_CLASSIFICATION_MASK) == classification)
+        if (pgN(reg) == record->pgn && (record->flags & CR_CLASSIFICATION_MASK) == classification)
             return record;
         p += record->size;
     }
@@ -187,7 +183,8 @@ bool loadEEPROM(void)
 {
     bool success = true;
 
-    PG_FOREACH(reg) {
+    PG_FOREACH(reg)
+    {
         const configRecord_t *rec = findEEPROM(reg, CR_CLASSICATION_SYSTEM);
         if (rec) {
             // config from EEPROM is available, use it to initialize PG. pgLoad will handle version mismatch
@@ -212,21 +209,21 @@ static bool writeSettingsToEEPROM(void)
     config_streamer_start(&streamer, (uintptr_t)&__config_start, &__config_end - &__config_start);
 
     configHeader_t header = {
-        .eepromConfigVersion =  EEPROM_CONF_VERSION,
-        .magic_be =             0xBE,
+        .eepromConfigVersion = EEPROM_CONF_VERSION,
+        .magic_be = 0xBE,
     };
 
     config_streamer_write(&streamer, (uint8_t *)&header, sizeof(header));
     uint16_t crc = CRC_START_VALUE;
     crc = crc16_ccitt_update(crc, (uint8_t *)&header, sizeof(header));
-    PG_FOREACH(reg) {
+    PG_FOREACH(reg)
+    {
         const uint16_t regSize = pgSize(reg);
         configRecord_t record = {
             .size = sizeof(configRecord_t) + regSize,
             .pgn = pgN(reg),
             .version = pgVersion(reg),
-            .flags = 0
-        };
+            .flags = 0};
 
         record.flags |= CR_CLASSICATION_SYSTEM;
         config_streamer_write(&streamer, (uint8_t *)&record, sizeof(record));

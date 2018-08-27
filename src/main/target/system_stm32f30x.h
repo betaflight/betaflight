@@ -40,11 +40,11 @@
 #define __SYSTEM_STM32F30X_H
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 
 /* Exported types ------------------------------------------------------------*/
-extern uint32_t SystemCoreClock;          /*!< System Clock Frequency (Core Clock) */
+extern uint32_t SystemCoreClock; /*!< System Clock Frequency (Core Clock) */
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */

@@ -24,8 +24,8 @@
 
 #define SBUS_MAX_CHANNEL 18
 
-#define SBUS_FLAG_SIGNAL_LOSS       (1 << 2)
-#define SBUS_FLAG_FAILSAFE_ACTIVE   (1 << 3)
+#define SBUS_FLAG_SIGNAL_LOSS (1 << 2)
+#define SBUS_FLAG_FAILSAFE_ACTIVE (1 << 3)
 
 typedef struct sbusChannels_s {
     // 176 bits of data (11 bits per channel * 16 channels) = 22 bytes.
@@ -53,4 +53,3 @@ typedef struct sbusChannels_s {
 uint8_t sbusChannelsDecode(rxRuntimeConfig_t *rxRuntimeConfig, const sbusChannels_t *channels);
 
 void sbusChannelsInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
-

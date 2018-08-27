@@ -71,8 +71,9 @@ FAST_RAM_ZERO_INIT bool useBurstDshot = false;
 static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8_t output)
 {
 #if defined(USE_HAL_DRIVER)
-    TIM_HandleTypeDef* Handle = timerFindTimerHandle(tim);
-    if (Handle == NULL) return;
+    TIM_HandleTypeDef *Handle = timerFindTimerHandle(tim);
+    if (Handle == NULL)
+        return;
 
     TIM_OC_InitTypeDef TIM_OCInitStructure;
 
@@ -98,7 +99,7 @@ static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8
     } else {
         TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
         TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Set;
-        TIM_OCInitStructure.TIM_OCPolarity =  (output & TIMER_OUTPUT_INVERTED) ? TIM_OCPolarity_Low : TIM_OCPolarity_High;
+        TIM_OCInitStructure.TIM_OCPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCPolarity_Low : TIM_OCPolarity_High;
     }
     TIM_OCInitStructure.TIM_Pulse = value;
 
@@ -110,16 +111,16 @@ static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8
 void pwmOutConfig(timerChannel_t *channel, const timerHardware_t *timerHardware, uint32_t hz, uint16_t period, uint16_t value, uint8_t inversion)
 {
 #if defined(USE_HAL_DRIVER)
-    TIM_HandleTypeDef* Handle = timerFindTimerHandle(timerHardware->tim);
-    if (Handle == NULL) return;
+    TIM_HandleTypeDef *Handle = timerFindTimerHandle(timerHardware->tim);
+    if (Handle == NULL)
+        return;
 #endif
 
     configTimeBase(timerHardware->tim, period, hz);
     pwmOCConfig(timerHardware->tim,
-        timerHardware->channel,
-        value,
-        inversion ? timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output
-        );
+                timerHardware->channel,
+                value,
+                inversion ? timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output);
 
 #if defined(USE_HAL_DRIVER)
     if (timerHardware->output & TIMER_OUTPUT_N_CHANNEL)
@@ -160,7 +161,7 @@ static FAST_CODE void pwmWriteDshot(uint8_t index, float value)
 static FAST_CODE uint8_t loadDmaBufferDshot(uint32_t *dmaBuffer, int stride, uint16_t packet)
 {
     for (int i = 0; i < 16; i++) {
-        dmaBuffer[i * stride] = (packet & 0x8000) ? MOTOR_BIT_1 : MOTOR_BIT_0;  // MSB first
+        dmaBuffer[i * stride] = (packet & 0x8000) ? MOTOR_BIT_1 : MOTOR_BIT_0; // MSB first
         packet <<= 1;
     }
 
@@ -170,8 +171,8 @@ static FAST_CODE uint8_t loadDmaBufferDshot(uint32_t *dmaBuffer, int stride, uin
 static uint8_t loadDmaBufferProshot(uint32_t *dmaBuffer, int stride, uint16_t packet)
 {
     for (int i = 0; i < 4; i++) {
-        dmaBuffer[i * stride] = PROSHOT_BASE_SYMBOL + ((packet & 0xF000) >> 12) * PROSHOT_BIT_WIDTH;  // Most significant nibble first
-        packet <<= 4;   // Shift 4 bits
+        dmaBuffer[i * stride] = PROSHOT_BASE_SYMBOL + ((packet & 0xF000) >> 12) * PROSHOT_BIT_WIDTH; // Most significant nibble first
+        packet <<= 4;                                                                                // Shift 4 bits
     }
 
     return PROSHOT_DMA_BUFFER_SIZE;
@@ -312,9 +313,9 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
 #ifdef USE_DSHOT
         if (isDshot) {
             pwmDshotMotorHardwareConfig(timerHardware,
-                motorIndex,
-                motorConfig->motorPwmProtocol,
-                motorConfig->motorPwmInversion ? timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output);
+                                        motorIndex,
+                                        motorConfig->motorPwmProtocol,
+                                        motorConfig->motorPwmInversion ? timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output);
             motors[motorIndex].enabled = true;
             continue;
         }
@@ -374,16 +375,16 @@ bool isMotorProtocolDshot(void)
 uint32_t getDshotHz(motorPwmProtocolTypes_e pwmProtocolType)
 {
     switch (pwmProtocolType) {
-    case(PWM_TYPE_PROSHOT1000):
+    case (PWM_TYPE_PROSHOT1000):
         return MOTOR_PROSHOT1000_HZ;
-    case(PWM_TYPE_DSHOT1200):
+    case (PWM_TYPE_DSHOT1200):
         return MOTOR_DSHOT1200_HZ;
-    case(PWM_TYPE_DSHOT600):
+    case (PWM_TYPE_DSHOT600):
         return MOTOR_DSHOT600_HZ;
-    case(PWM_TYPE_DSHOT300):
+    case (PWM_TYPE_DSHOT300):
         return MOTOR_DSHOT300_HZ;
     default:
-    case(PWM_TYPE_DSHOT150):
+    case (PWM_TYPE_DSHOT150):
         return MOTOR_DSHOT150_HZ;
     }
 }
@@ -497,8 +498,8 @@ FAST_CODE_NOINLINE bool pwmDshotCommandOutputIsEnabled(uint8_t motorCount)
     if (cmpTimeUs(timeNowUs, dshotCommandControl.nextCommandAtUs) < 0) {
         //Skip motor update because it isn't time yet for a new command
         return false;
-    }   
-  
+    }
+
     //Timed motor update happening with dshot command
     if (dshotCommandControl.repeats > 0) {
         dshotCommandControl.repeats--;
@@ -518,13 +519,13 @@ FAST_CODE_NOINLINE bool pwmDshotCommandOutputIsEnabled(uint8_t motorCount)
 FAST_CODE uint16_t prepareDshotPacket(motorDmaOutput_t *const motor)
 {
     uint16_t packet = (motor->value << 1) | (motor->requestTelemetry ? 1 : 0);
-    motor->requestTelemetry = false;    // reset telemetry request to make sure it's triggered only once in a row
+    motor->requestTelemetry = false; // reset telemetry request to make sure it's triggered only once in a row
 
     // compute checksum
     int csum = 0;
     int csum_data = packet;
     for (int i = 0; i < 3; i++) {
-        csum ^=  csum_data;   // xor data by nibbles
+        csum ^= csum_data; // xor data by nibbles
         csum_data >>= 4;
     }
     csum &= 0xf;

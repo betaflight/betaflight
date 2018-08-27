@@ -35,9 +35,9 @@ void uli2a(unsigned long int num, unsigned int base, int uc, char *bf)
 
     while (d != 0) {
         int dgt = num / d;
-    *bf++ = dgt + (dgt < 10 ? '0' : (uc ? 'A' : 'a') - 10);
+        *bf++ = dgt + (dgt < 10 ? '0' : (uc ? 'A' : 'a') - 10);
 
-    // Next digit
+        // Next digit
         num %= d;
         d /= base;
     }
@@ -64,9 +64,9 @@ void ui2a(unsigned int num, unsigned int base, int uc, char *bf)
 
     while (d != 0) {
         int dgt = num / d;
-    *bf++ = dgt + (dgt < 10 ? '0' : (uc ? 'A' : 'a') - 10);
+        *bf++ = dgt + (dgt < 10 ? '0' : (uc ? 'A' : 'a') - 10);
 
-    // Next digit
+        // Next digit
         num %= d;
         d /= base;
     }
@@ -140,7 +140,7 @@ char *itoa(int i, char *a, int base)
         base = 10;
     if (i < 0) {
         *a = '-';
-        *_i2a(-(unsigned) i, a + 1, base) = 0;
+        *_i2a(-(unsigned)i, a + 1, base) = 0;
     } else
         *_i2a(i, a, base) = 0;
     return a;
@@ -152,23 +152,25 @@ char *ftoa(float x, char *floatString)
 {
     int32_t value;
     char intString1[12];
-    char intString2[12] = { 0, };
+    char intString2[12] = {
+        0,
+    };
     char *decimalPoint = ".";
     uint8_t dpLocation;
 
-    if (x > 0)                  // Rounding for x.xxx display format
+    if (x > 0) // Rounding for x.xxx display format
         x += 0.0005f;
     else
         x -= 0.0005f;
 
-    value = (int32_t)(x * 1000.0f);    // Convert float * 1000 to an integer
+    value = (int32_t)(x * 1000.0f); // Convert float * 1000 to an integer
 
-    itoa(ABS(value), intString1, 10);   // Create string from abs of integer value
+    itoa(ABS(value), intString1, 10); // Create string from abs of integer value
 
     if (value >= 0)
-        intString2[0] = ' ';    // Positive number, add a pad space
+        intString2[0] = ' '; // Positive number, add a pad space
     else
-        intString2[0] = '-';    // Negative number, add a negative sign
+        intString2[0] = '-'; // Negative number, add a negative sign
 
     if (strlen(intString1) == 1) {
         intString2[1] = '0';

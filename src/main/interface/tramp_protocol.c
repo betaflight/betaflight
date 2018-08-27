@@ -23,12 +23,12 @@
 #include "common/utils.h"
 #include "interface/tramp_protocol.h"
 
-#define TRAMP_SYNC_START            0x0F
-#define TRAMP_SYNC_STOP             0x00
-#define TRAMP_COMMAND_SET_FREQ      'F' // 0x46
-#define TRAMP_COMMAND_SET_POWER     'P' // 0x50
-#define TRAMP_COMMAND_ACTIVE_STATE  'I' // 0x49
-#define TRAMP_COMMAND_GET_CONFIG    'v' // 0x76
+#define TRAMP_SYNC_START 0x0F
+#define TRAMP_SYNC_STOP 0x00
+#define TRAMP_COMMAND_SET_FREQ 'F'     // 0x46
+#define TRAMP_COMMAND_SET_POWER 'P'    // 0x50
+#define TRAMP_COMMAND_ACTIVE_STATE 'I' // 0x49
+#define TRAMP_COMMAND_GET_CONFIG 'v'   // 0x76
 
 static uint8_t trampCrc(const trampFrame_t *frame)
 {
@@ -45,7 +45,7 @@ static void trampFrameInit(uint8_t frameType, trampFrame_t *frame)
 {
     frame->header.syncStart = TRAMP_SYNC_START;
     frame->header.command = frameType;
-    const uint8_t emptyPayload[TRAMP_PAYLOAD_LENGTH] = { 0 };
+    const uint8_t emptyPayload[TRAMP_PAYLOAD_LENGTH] = {0};
     memcpy(frame->payload.buf, emptyPayload, sizeof(frame->payload.buf));
 }
 
@@ -78,7 +78,7 @@ void trampFrameSetPower(trampFrame_t *frame, const uint16_t power)
 void trampFrameSetActiveState(trampFrame_t *frame, const bool active)
 {
     trampFrameInit(TRAMP_COMMAND_ACTIVE_STATE, frame);
-    frame->payload.active = (uint8_t) active;
+    frame->payload.active = (uint8_t)active;
     trampFrameClose(frame);
 }
 

@@ -36,17 +36,16 @@
 
 #ifdef USE_RCDEVICE
 
-
 typedef struct runcamDeviceExpectedResponseLength_s {
     uint8_t command;
     uint8_t reponseLength;
 } runcamDeviceExpectedResponseLength_t;
 
 static runcamDeviceExpectedResponseLength_t expectedResponsesLength[] = {
-    { RCDEVICE_PROTOCOL_COMMAND_GET_DEVICE_INFO,            5},
-    { RCDEVICE_PROTOCOL_COMMAND_5KEY_SIMULATION_PRESS,      2},
-    { RCDEVICE_PROTOCOL_COMMAND_5KEY_SIMULATION_RELEASE,    2},
-    { RCDEVICE_PROTOCOL_COMMAND_5KEY_CONNECTION,            3},
+    {RCDEVICE_PROTOCOL_COMMAND_GET_DEVICE_INFO, 5},
+    {RCDEVICE_PROTOCOL_COMMAND_5KEY_SIMULATION_PRESS, 2},
+    {RCDEVICE_PROTOCOL_COMMAND_5KEY_SIMULATION_RELEASE, 2},
+    {RCDEVICE_PROTOCOL_COMMAND_5KEY_CONNECTION, 3},
 };
 
 rcdeviceWaitingResponseQueue watingResponseQueue;
@@ -77,11 +76,11 @@ static bool rcdeviceRespCtxQueuePushRespCtx(rcdeviceWaitingResponseQueue *queue,
     }
     queue->itemCount += 1;
     queue->tailPos = newTailPos;
-    
+
     return true;
 }
 
-static rcdeviceResponseParseContext_t* rcdeviceRespCtxQueuePeekFront(rcdeviceWaitingResponseQueue *queue)
+static rcdeviceResponseParseContext_t *rcdeviceRespCtxQueuePeekFront(rcdeviceWaitingResponseQueue *queue)
 {
     if (queue == NULL || queue->itemCount == 0) {
         return NULL;
@@ -91,7 +90,7 @@ static rcdeviceResponseParseContext_t* rcdeviceRespCtxQueuePeekFront(rcdeviceWai
     return ctx;
 }
 
-static rcdeviceResponseParseContext_t* rcdeviceRespCtxQueueShift(rcdeviceWaitingResponseQueue *queue)
+static rcdeviceResponseParseContext_t *rcdeviceRespCtxQueueShift(rcdeviceWaitingResponseQueue *queue)
 {
     if (queue == NULL || queue->itemCount == 0) {
         return NULL;
@@ -259,7 +258,7 @@ void runcamDeviceSimulate5KeyOSDCableButtonRelease(runcamDevice_t *device, rcdev
     runcamDeviceSendRequestAndWaitingResp(device, RCDEVICE_PROTOCOL_COMMAND_5KEY_SIMULATION_RELEASE, NULL, 0, 200, 0, NULL, parseFunc);
 }
 
-static rcdeviceResponseParseContext_t* getWaitingResponse(timeMs_t currentTimeMs)
+static rcdeviceResponseParseContext_t *getWaitingResponse(timeMs_t currentTimeMs)
 {
     rcdeviceResponseParseContext_t *respCtx = rcdeviceRespCtxQueuePeekFront(&watingResponseQueue);
     while (respCtx != NULL && respCtx->timeoutTimestamp != 0 && currentTimeMs > respCtx->timeoutTimestamp) {
@@ -284,7 +283,7 @@ static rcdeviceResponseParseContext_t* getWaitingResponse(timeMs_t currentTimeMs
     return respCtx;
 }
 
-void rcdeviceReceive(timeUs_t currentTimeUs) 
+void rcdeviceReceive(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
     rcdeviceResponseParseContext_t *respCtx = NULL;
@@ -292,7 +291,7 @@ void rcdeviceReceive(timeUs_t currentTimeUs)
         const uint8_t c = serialRead(respCtx->device->serialPort);
         respCtx->recvBuf[respCtx->recvRespLen] = c;
         respCtx->recvRespLen += 1;
-        
+
         // if data received done, trigger callback to parse response data, and update rcdevice state
         if (respCtx->recvRespLen == respCtx->expectedRespLen) {
             // verify the crc value

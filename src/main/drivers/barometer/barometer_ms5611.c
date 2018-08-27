@@ -36,18 +36,18 @@
 #include "drivers/io.h"
 #include "drivers/time.h"
 
-#define CMD_RESET               0x1E // ADC reset command
-#define CMD_ADC_READ            0x00 // ADC read command
-#define CMD_ADC_CONV            0x40 // ADC conversion command
-#define CMD_ADC_D1              0x00 // ADC D1 conversion
-#define CMD_ADC_D2              0x10 // ADC D2 conversion
-#define CMD_ADC_256             0x00 // ADC OSR=256
-#define CMD_ADC_512             0x02 // ADC OSR=512
-#define CMD_ADC_1024            0x04 // ADC OSR=1024
-#define CMD_ADC_2048            0x06 // ADC OSR=2048
-#define CMD_ADC_4096            0x08 // ADC OSR=4096
-#define CMD_PROM_RD             0xA0 // Prom read command
-#define PROM_NB                 8
+#define CMD_RESET 0x1E    // ADC reset command
+#define CMD_ADC_READ 0x00 // ADC read command
+#define CMD_ADC_CONV 0x40 // ADC conversion command
+#define CMD_ADC_D1 0x00   // ADC D1 conversion
+#define CMD_ADC_D2 0x10   // ADC D2 conversion
+#define CMD_ADC_256 0x00  // ADC OSR=256
+#define CMD_ADC_512 0x02  // ADC OSR=512
+#define CMD_ADC_1024 0x04 // ADC OSR=1024
+#define CMD_ADC_2048 0x06 // ADC OSR=2048
+#define CMD_ADC_4096 0x08 // ADC OSR=4096
+#define CMD_PROM_RD 0xA0  // Prom read command
+#define PROM_NB 8
 
 static void ms5611_reset(busDevice_t *busdev);
 static uint16_t ms5611_prom(busDevice_t *busdev, int8_t coef_num);
@@ -59,9 +59,9 @@ static void ms5611_start_up(baroDev_t *baro);
 static void ms5611_get_up(baroDev_t *baro);
 STATIC_UNIT_TESTED void ms5611_calculate(int32_t *pressure, int32_t *temperature);
 
-STATIC_UNIT_TESTED uint32_t ms5611_ut;  // static result of temperature measurement
-STATIC_UNIT_TESTED uint32_t ms5611_up;  // static result of pressure measurement
-STATIC_UNIT_TESTED uint16_t ms5611_c[PROM_NB];  // on-chip ROM
+STATIC_UNIT_TESTED uint32_t ms5611_ut;         // static result of temperature measurement
+STATIC_UNIT_TESTED uint32_t ms5611_up;         // static result of pressure measurement
+STATIC_UNIT_TESTED uint16_t ms5611_c[PROM_NB]; // on-chip ROM
 static uint8_t ms5611_osr = CMD_ADC_4096;
 
 void ms5611BusInit(busDevice_t *busdev)
@@ -152,7 +152,7 @@ static void ms5611_reset(busDevice_t *busdev)
 
 static uint16_t ms5611_prom(busDevice_t *busdev, int8_t coef_num)
 {
-    uint8_t rxbuf[2] = { 0, 0 };
+    uint8_t rxbuf[2] = {0, 0};
 
     busReadRegisterBuffer(busdev, CMD_PROM_RD + coef_num * 2, rxbuf, 2); // send PROM READ command
 
@@ -239,10 +239,9 @@ STATIC_UNIT_TESTED void ms5611_calculate(int32_t *pressure, int32_t *temperature
             off -= 7 * delt;
             sens -= (11 * delt) >> 1;
         }
-    temp -= ((dT * dT) >> 31);
+        temp -= ((dT * dT) >> 31);
     }
     press = ((((int64_t)ms5611_up * sens) >> 21) - off) >> 15;
-
 
     if (pressure)
         *pressure = press;

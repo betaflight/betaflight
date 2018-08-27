@@ -22,47 +22,46 @@
 #include <limits.h>
 
 extern "C" {
-    #include "platform.h"
+#include "platform.h"
 
-    #include "build/debug.h"
+#include "build/debug.h"
 
-    #include "common/axis.h"
-    #include "common/gps_conversion.h"
+#include "common/axis.h"
+#include "common/gps_conversion.h"
 
-    #include "pg/pg.h"
-    #include "pg/pg_ids.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
-    #include "drivers/system.h"
-    #include "drivers/serial.h"
-    #include "drivers/system.h"
+#include "drivers/system.h"
+#include "drivers/serial.h"
+#include "drivers/system.h"
 
-    #include "fc/runtime_config.h"
+#include "fc/runtime_config.h"
 
-    #include "flight/pid.h"
+#include "flight/pid.h"
 
-    #include "io/gps.h"
-    #include "io/serial.h"
+#include "io/gps.h"
+#include "io/serial.h"
 
-    #include "sensors/barometer.h"
-    #include "sensors/battery.h"
-    #include "sensors/sensors.h"
+#include "sensors/barometer.h"
+#include "sensors/battery.h"
+#include "sensors/sensors.h"
 
-    #include "telemetry/telemetry.h"
-    #include "telemetry/hott.h"
+#include "telemetry/telemetry.h"
+#include "telemetry/hott.h"
 
-    PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
+PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
 
-    uint16_t testBatteryVoltage = 0;
-    int32_t testAmperage = 0;
-    int32_t testMAhDrawn = 0;
-
+uint16_t testBatteryVoltage = 0;
+int32_t testAmperage = 0;
+int32_t testMAhDrawn = 0;
 }
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
 extern "C" {
-    void addGPSCoordinates(HOTT_GPS_MSG_t *hottGPSMessage, int32_t latitude, int32_t longitude);
+void addGPSCoordinates(HOTT_GPS_MSG_t *hottGPSMessage, int32_t latitude, int32_t longitude);
 }
 // See http://en.wikipedia.org/wiki/Geographic_coordinate_conversion
 
@@ -104,7 +103,7 @@ TEST(TelemetryHottTest, UpdateGPSCoordinates2)
     // Hampstead Heath, London
     // 51.563886, -0.159960
     uint32_t longitude = GPS_coord_to_degrees("5156.3886");
-    uint32_t latitude  = -GPS_coord_to_degrees("015.9960");
+    uint32_t latitude = -GPS_coord_to_degrees("015.9960");
 
     // when
     addGPSCoordinates(hottGPSMessage, longitude, latitude);
@@ -118,7 +117,6 @@ TEST(TelemetryHottTest, UpdateGPSCoordinates2)
     EXPECT_EQ((int16_t)(hottGPSMessage->pos_EW_dm_H << 8 | hottGPSMessage->pos_EW_dm_L), -15);
     EXPECT_EQ((int16_t)(hottGPSMessage->pos_EW_sec_H << 8 | hottGPSMessage->pos_EW_sec_L), -9960);
 }
-
 
 TEST(TelemetryHottTest, UpdateGPSCoordinates3)
 {
@@ -168,13 +166,11 @@ int16_t debug[DEBUG16_VALUE_COUNT];
 uint8_t stateFlags;
 
 uint16_t batteryWarningVoltage;
-uint8_t useHottAlarmSoundPeriod (void) { return 0; }
-
+uint8_t useHottAlarmSoundPeriod(void) { return 0; }
 
 gpsSolutionData_t gpsSol;
-uint16_t GPS_distanceToHome;        // distance to home point in meters
-int16_t GPS_directionToHome;        // direction to home or hol point in degrees
-
+uint16_t GPS_distanceToHome; // distance to home point in meters
+int16_t GPS_directionToHome; // direction to home or hol point in degrees
 
 uint32_t fixedMillis = 0;
 
@@ -183,7 +179,8 @@ baro_t baro;
 int32_t getEstimatedAltitudeCm() { return 0; }
 int16_t getEstimatedVario() { return 0; }
 
-uint32_t millis(void) {
+uint32_t millis(void)
+{
     return fixedMillis;
 }
 
@@ -262,30 +259,31 @@ portSharing_e determinePortSharing(const serialPortConfig_t *, serialPortFunctio
 
 batteryState_e getBatteryState(void)
 {
-	return BATTERY_OK;
+    return BATTERY_OK;
 }
 
 batteryState_e getVoltageState(void)
 {
-	return BATTERY_OK;
+    return BATTERY_OK;
 }
-	
-batteryState_e getConsumptionState(void)	
+
+batteryState_e getConsumptionState(void)
 {
-	return BATTERY_OK;
+    return BATTERY_OK;
 }
-	
+
 uint16_t getBatteryVoltage(void)
 {
     return testBatteryVoltage;
 }
 
-int32_t getAmperage(void) {
+int32_t getAmperage(void)
+{
     return testAmperage;
 }
 
-int32_t getMAhDrawn(void) {
+int32_t getMAhDrawn(void)
+{
     return testMAhDrawn;
 }
-
 }

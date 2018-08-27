@@ -29,14 +29,13 @@
 #define DEFIO_TAG_E(pinid) CONCAT(DEFIO_TAG_E__, pinid)
 #define DEFIO_TAG_E__NONE 0
 
-
 // return ioRec_t or NULL for given pinid
 // tags should be preferred, possibly removing it in future
 // io_impl.h must be included when this macro is used
 #define DEFIO_REC(pinid) CONCAT(DEFIO_REC__, pinid)
 #define DEFIO_REC__NONE NULL
 
-#define DEFIO_IO(pinid) (IO_t)DEFIO_REC(pinid)
+#define DEFIO_IO(pinid) (IO_t) DEFIO_REC(pinid)
 // TODO - macro to check for pinid NONE (fully in preprocessor)
 
 // get ioRec by index
@@ -46,7 +45,7 @@
 #define DEFIO_TAG_MAKE(gpioid, pin) ((ioTag_t)((((gpioid) + 1) << 4) | (pin)))
 #define DEFIO_TAG_ISEMPTY(tag) (!(tag))
 #define DEFIO_TAG_GPIOID(tag) (((tag) >> 4) - 1)
-#define DEFIO_TAG_PIN(tag) ((tag) & 0x0f)
+#define DEFIO_TAG_PIN(tag) ((tag)&0x0f)
 
 // TARGET must define used pins
 #include "target.h"

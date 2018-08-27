@@ -61,7 +61,6 @@ static uint32_t sumhChannels[SUMH_MAX_CHANNEL_COUNT];
 
 static serialPort_t *sumhPort;
 
-
 // Receive ISR callback
 static void sumhDataReceive(uint16_t c, void *data)
 {
@@ -78,7 +77,7 @@ static void sumhDataReceive(uint16_t c, void *data)
         sumhFramePosition = 0;
     }
 
-    sumhFrame[sumhFramePosition] = (uint8_t) c;
+    sumhFrame[sumhFramePosition] = (uint8_t)c;
     if (sumhFramePosition == SUMH_FRAME_SIZE - 1) {
         // FIXME at this point the value of 'c' is unused and un tested, what should it be, is it important?
         sumhFrameDone = true;
@@ -104,8 +103,7 @@ static uint8_t sumhFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
     }
 
     for (channelIndex = 0; channelIndex < SUMH_MAX_CHANNEL_COUNT; channelIndex++) {
-        sumhChannels[channelIndex] = (((uint32_t)(sumhFrame[(channelIndex << 1) + 3]) << 8)
-                + sumhFrame[(channelIndex << 1) + 4]) / 6.4f - 375;
+        sumhChannels[channelIndex] = (((uint32_t)(sumhFrame[(channelIndex << 1) + 3]) << 8) + sumhFrame[(channelIndex << 1) + 4]) / 6.4f - 375;
     }
     return RX_FRAME_COMPLETE;
 }

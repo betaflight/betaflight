@@ -88,16 +88,16 @@ extern uint16_t rssi; // FIXME dependency on mw.c
 static serialPort_t *mavlinkPort = NULL;
 static serialPortConfig_t *portConfig;
 
-static bool mavlinkTelemetryEnabled =  false;
+static bool mavlinkTelemetryEnabled = false;
 static portSharing_e mavlinkPortSharing;
 
 /* MAVLink datastream rates in Hz */
 static const uint8_t mavRates[] = {
     [MAV_DATA_STREAM_EXTENDED_STATUS] = 2, //2Hz
-    [MAV_DATA_STREAM_RC_CHANNELS] = 5, //5Hz
-    [MAV_DATA_STREAM_POSITION] = 2, //2Hz
-    [MAV_DATA_STREAM_EXTRA1] = 10, //10Hz
-    [MAV_DATA_STREAM_EXTRA2] = 10 //2Hz
+    [MAV_DATA_STREAM_RC_CHANNELS] = 5,     //5Hz
+    [MAV_DATA_STREAM_POSITION] = 2,        //2Hz
+    [MAV_DATA_STREAM_EXTRA1] = 10,         //10Hz
+    [MAV_DATA_STREAM_EXTRA2] = 10          //2Hz
 };
 
 #define MAXSTREAMS (sizeof(mavRates) / sizeof(mavRates[0]))
@@ -109,7 +109,7 @@ static uint32_t lastMavlinkMessage = 0;
 
 static int mavlinkStreamTrigger(enum MAV_DATA_STREAM streamNum)
 {
-    uint8_t rate = (uint8_t) mavRates[streamNum];
+    uint8_t rate = (uint8_t)mavRates[streamNum];
     if (rate == 0) {
         return 0;
     }
@@ -129,8 +129,7 @@ static int mavlinkStreamTrigger(enum MAV_DATA_STREAM streamNum)
     return 0;
 }
 
-
-static void mavlinkSerialWrite(uint8_t * buf, uint16_t length)
+static void mavlinkSerialWrite(uint8_t *buf, uint16_t length)
 {
     for (int i = 0; i < length; i++)
         serialWrite(mavlinkPort, buf[i]);
@@ -145,7 +144,6 @@ static int16_t headingOrScaledMilliAmpereHoursDrawn(void)
     // heading Current heading in degrees, in compass units (0..360, 0=north)
     return DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 }
-
 
 void freeMAVLinkTelemetryPort(void)
 {
@@ -218,9 +216,12 @@ void mavlinkSendSystemStatus(void)
     0000001111111111
     */
 
-    if (sensors(SENSOR_MAG))  onboardControlAndSensors |=  4100;
-    if (sensors(SENSOR_BARO)) onboardControlAndSensors |=  8200;
-    if (sensors(SENSOR_GPS))  onboardControlAndSensors |= 16416;
+    if (sensors(SENSOR_MAG))
+        onboardControlAndSensors |= 4100;
+    if (sensors(SENSOR_BARO))
+        onboardControlAndSensors |= 8200;
+    if (sensors(SENSOR_GPS))
+        onboardControlAndSensors |= 16416;
 
     uint16_t batteryVoltage = 0;
     int16_t batteryAmperage = -1;
@@ -233,36 +234,36 @@ void mavlinkSendSystemStatus(void)
     }
 
     mavlink_msg_sys_status_pack(0, 200, &mavMsg,
-        // onboard_control_sensors_present Bitmask showing which onboard controllers and sensors are present.
-        //Value of 0: not present. Value of 1: present. Indices: 0: 3D gyro, 1: 3D acc, 2: 3D mag, 3: absolute pressure,
-        // 4: differential pressure, 5: GPS, 6: optical flow, 7: computer vision position, 8: laser based position,
-        // 9: external ground-truth (Vicon or Leica). Controllers: 10: 3D angular rate control 11: attitude stabilization,
-        // 12: yaw position, 13: z/altitude control, 14: x/y position control, 15: motor outputs / control
-        onboardControlAndSensors,
-        // onboard_control_sensors_enabled Bitmask showing which onboard controllers and sensors are enabled
-        onboardControlAndSensors,
-        // onboard_control_sensors_health Bitmask showing which onboard controllers and sensors are operational or have an error.
-        onboardControlAndSensors & 1023,
-        // load Maximum usage in percent of the mainloop time, (0%: 0, 100%: 1000) should be always below 1000
-        0,
-        // voltage_battery Battery voltage, in millivolts (1 = 1 millivolt)
-        batteryVoltage,
-        // current_battery Battery current, in 10*milliamperes (1 = 10 milliampere), -1: autopilot does not measure the current
-        batteryAmperage,
-        // battery_remaining Remaining battery energy: (0%: 0, 100%: 100), -1: autopilot estimate the remaining battery
-        batteryRemaining,
-        // drop_rate_comm Communication drops in percent, (0%: 0, 100%: 10'000), (UART, I2C, SPI, CAN), dropped packets on all links (packets that were corrupted on reception on the MAV)
-        0,
-        // errors_comm Communication errors (UART, I2C, SPI, CAN), dropped packets on all links (packets that were corrupted on reception on the MAV)
-        0,
-        // errors_count1 Autopilot-specific errors
-        0,
-        // errors_count2 Autopilot-specific errors
-        0,
-        // errors_count3 Autopilot-specific errors
-        0,
-        // errors_count4 Autopilot-specific errors
-        0);
+                                // onboard_control_sensors_present Bitmask showing which onboard controllers and sensors are present.
+                                //Value of 0: not present. Value of 1: present. Indices: 0: 3D gyro, 1: 3D acc, 2: 3D mag, 3: absolute pressure,
+                                // 4: differential pressure, 5: GPS, 6: optical flow, 7: computer vision position, 8: laser based position,
+                                // 9: external ground-truth (Vicon or Leica). Controllers: 10: 3D angular rate control 11: attitude stabilization,
+                                // 12: yaw position, 13: z/altitude control, 14: x/y position control, 15: motor outputs / control
+                                onboardControlAndSensors,
+                                // onboard_control_sensors_enabled Bitmask showing which onboard controllers and sensors are enabled
+                                onboardControlAndSensors,
+                                // onboard_control_sensors_health Bitmask showing which onboard controllers and sensors are operational or have an error.
+                                onboardControlAndSensors & 1023,
+                                // load Maximum usage in percent of the mainloop time, (0%: 0, 100%: 1000) should be always below 1000
+                                0,
+                                // voltage_battery Battery voltage, in millivolts (1 = 1 millivolt)
+                                batteryVoltage,
+                                // current_battery Battery current, in 10*milliamperes (1 = 10 milliampere), -1: autopilot does not measure the current
+                                batteryAmperage,
+                                // battery_remaining Remaining battery energy: (0%: 0, 100%: 100), -1: autopilot estimate the remaining battery
+                                batteryRemaining,
+                                // drop_rate_comm Communication drops in percent, (0%: 0, 100%: 10'000), (UART, I2C, SPI, CAN), dropped packets on all links (packets that were corrupted on reception on the MAV)
+                                0,
+                                // errors_comm Communication errors (UART, I2C, SPI, CAN), dropped packets on all links (packets that were corrupted on reception on the MAV)
+                                0,
+                                // errors_count1 Autopilot-specific errors
+                                0,
+                                // errors_count2 Autopilot-specific errors
+                                0,
+                                // errors_count3 Autopilot-specific errors
+                                0,
+                                // errors_count4 Autopilot-specific errors
+                                0);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
@@ -271,28 +272,28 @@ void mavlinkSendRCChannelsAndRSSI(void)
 {
     uint16_t msgLength;
     mavlink_msg_rc_channels_raw_pack(0, 200, &mavMsg,
-        // time_boot_ms Timestamp (milliseconds since system boot)
-        millis(),
-        // port Servo output port (set of 8 outputs = 1 port). Most MAVs will just use one, but this allows to encode more than 8 servos.
-        0,
-        // chan1_raw RC channel 1 value, in microseconds
-        (rxRuntimeConfig.channelCount >= 1) ? rcData[0] : 0,
-        // chan2_raw RC channel 2 value, in microseconds
-        (rxRuntimeConfig.channelCount >= 2) ? rcData[1] : 0,
-        // chan3_raw RC channel 3 value, in microseconds
-        (rxRuntimeConfig.channelCount >= 3) ? rcData[2] : 0,
-        // chan4_raw RC channel 4 value, in microseconds
-        (rxRuntimeConfig.channelCount >= 4) ? rcData[3] : 0,
-        // chan5_raw RC channel 5 value, in microseconds
-        (rxRuntimeConfig.channelCount >= 5) ? rcData[4] : 0,
-        // chan6_raw RC channel 6 value, in microseconds
-        (rxRuntimeConfig.channelCount >= 6) ? rcData[5] : 0,
-        // chan7_raw RC channel 7 value, in microseconds
-        (rxRuntimeConfig.channelCount >= 7) ? rcData[6] : 0,
-        // chan8_raw RC channel 8 value, in microseconds
-        (rxRuntimeConfig.channelCount >= 8) ? rcData[7] : 0,
-        // rssi Receive signal strength indicator, 0: 0%, 255: 100%
-        constrain(scaleRange(getRssi(), 0, RSSI_MAX_VALUE, 0, 255), 0, 255));
+                                     // time_boot_ms Timestamp (milliseconds since system boot)
+                                     millis(),
+                                     // port Servo output port (set of 8 outputs = 1 port). Most MAVs will just use one, but this allows to encode more than 8 servos.
+                                     0,
+                                     // chan1_raw RC channel 1 value, in microseconds
+                                     (rxRuntimeConfig.channelCount >= 1) ? rcData[0] : 0,
+                                     // chan2_raw RC channel 2 value, in microseconds
+                                     (rxRuntimeConfig.channelCount >= 2) ? rcData[1] : 0,
+                                     // chan3_raw RC channel 3 value, in microseconds
+                                     (rxRuntimeConfig.channelCount >= 3) ? rcData[2] : 0,
+                                     // chan4_raw RC channel 4 value, in microseconds
+                                     (rxRuntimeConfig.channelCount >= 4) ? rcData[3] : 0,
+                                     // chan5_raw RC channel 5 value, in microseconds
+                                     (rxRuntimeConfig.channelCount >= 5) ? rcData[4] : 0,
+                                     // chan6_raw RC channel 6 value, in microseconds
+                                     (rxRuntimeConfig.channelCount >= 6) ? rcData[5] : 0,
+                                     // chan7_raw RC channel 7 value, in microseconds
+                                     (rxRuntimeConfig.channelCount >= 7) ? rcData[6] : 0,
+                                     // chan8_raw RC channel 8 value, in microseconds
+                                     (rxRuntimeConfig.channelCount >= 8) ? rcData[7] : 0,
+                                     // rssi Receive signal strength indicator, 0: 0%, 255: 100%
+                                     constrain(scaleRange(getRssi(), 0, RSSI_MAX_VALUE, 0, 255), 0, 255));
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
@@ -308,75 +309,72 @@ void mavlinkSendPosition(void)
 
     if (!STATE(GPS_FIX)) {
         gpsFixType = 1;
-    }
-    else {
+    } else {
         if (gpsSol.numSat < 5) {
             gpsFixType = 2;
-        }
-        else {
+        } else {
             gpsFixType = 3;
         }
     }
 
     mavlink_msg_gps_raw_int_pack(0, 200, &mavMsg,
-        // time_usec Timestamp (microseconds since UNIX epoch or microseconds since system boot)
-        micros(),
-        // fix_type 0-1: no fix, 2: 2D fix, 3: 3D fix. Some applications will not use the value of this field unless it is at least two, so always correctly fill in the fix.
-        gpsFixType,
-        // lat Latitude in 1E7 degrees
-        gpsSol.llh.lat,
-        // lon Longitude in 1E7 degrees
-        gpsSol.llh.lon,
-        // alt Altitude in 1E3 meters (millimeters) above MSL
-        gpsSol.llh.altCm * 10,
-        // eph GPS HDOP horizontal dilution of position in cm (m*100). If unknown, set to: 65535
-        65535,
-        // epv GPS VDOP horizontal dilution of position in cm (m*100). If unknown, set to: 65535
-        65535,
-        // vel GPS ground speed (m/s * 100). If unknown, set to: 65535
-        gpsSol.groundSpeed,
-        // cog Course over ground (NOT heading, but direction of movement) in degrees * 100, 0.0..359.99 degrees. If unknown, set to: 65535
-        gpsSol.groundCourse * 10,
-        // satellites_visible Number of satellites visible. If unknown, set to 255
-        gpsSol.numSat);
+                                 // time_usec Timestamp (microseconds since UNIX epoch or microseconds since system boot)
+                                 micros(),
+                                 // fix_type 0-1: no fix, 2: 2D fix, 3: 3D fix. Some applications will not use the value of this field unless it is at least two, so always correctly fill in the fix.
+                                 gpsFixType,
+                                 // lat Latitude in 1E7 degrees
+                                 gpsSol.llh.lat,
+                                 // lon Longitude in 1E7 degrees
+                                 gpsSol.llh.lon,
+                                 // alt Altitude in 1E3 meters (millimeters) above MSL
+                                 gpsSol.llh.altCm * 10,
+                                 // eph GPS HDOP horizontal dilution of position in cm (m*100). If unknown, set to: 65535
+                                 65535,
+                                 // epv GPS VDOP horizontal dilution of position in cm (m*100). If unknown, set to: 65535
+                                 65535,
+                                 // vel GPS ground speed (m/s * 100). If unknown, set to: 65535
+                                 gpsSol.groundSpeed,
+                                 // cog Course over ground (NOT heading, but direction of movement) in degrees * 100, 0.0..359.99 degrees. If unknown, set to: 65535
+                                 gpsSol.groundCourse * 10,
+                                 // satellites_visible Number of satellites visible. If unknown, set to 255
+                                 gpsSol.numSat);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
 
     // Global position
     mavlink_msg_global_position_int_pack(0, 200, &mavMsg,
-        // time_usec Timestamp (microseconds since UNIX epoch or microseconds since system boot)
-        micros(),
-        // lat Latitude in 1E7 degrees
-        gpsSol.llh.lat,
-        // lon Longitude in 1E7 degrees
-        gpsSol.llh.lon,
-        // alt Altitude in 1E3 meters (millimeters) above MSL
-        gpsSol.llh.altCm * 10,
-        // relative_alt Altitude above ground in meters, expressed as * 1000 (millimeters)
+                                         // time_usec Timestamp (microseconds since UNIX epoch or microseconds since system boot)
+                                         micros(),
+                                         // lat Latitude in 1E7 degrees
+                                         gpsSol.llh.lat,
+                                         // lon Longitude in 1E7 degrees
+                                         gpsSol.llh.lon,
+                                         // alt Altitude in 1E3 meters (millimeters) above MSL
+                                         gpsSol.llh.altCm * 10,
+    // relative_alt Altitude above ground in meters, expressed as * 1000 (millimeters)
 #if defined(USE_BARO) || defined(USE_RANGEFINDER)
-        (sensors(SENSOR_RANGEFINDER) || sensors(SENSOR_BARO)) ? getEstimatedAltitudeCm() * 10 : gpsSol.llh.altCm * 10,
+                                         (sensors(SENSOR_RANGEFINDER) || sensors(SENSOR_BARO)) ? getEstimatedAltitudeCm() * 10 : gpsSol.llh.altCm * 10,
 #else
-        gpsSol.llh.altCm * 10,
+                                         gpsSol.llh.altCm * 10,
 #endif
-        // Ground X Speed (Latitude), expressed as m/s * 100
-        0,
-        // Ground Y Speed (Longitude), expressed as m/s * 100
-        0,
-        // Ground Z Speed (Altitude), expressed as m/s * 100
-        0,
-        // heading Current heading in degrees, in compass units (0..360, 0=north)
-        headingOrScaledMilliAmpereHoursDrawn()
-    );
+                                         // Ground X Speed (Latitude), expressed as m/s * 100
+                                         0,
+                                         // Ground Y Speed (Longitude), expressed as m/s * 100
+                                         0,
+                                         // Ground Z Speed (Altitude), expressed as m/s * 100
+                                         0,
+                                         // heading Current heading in degrees, in compass units (0..360, 0=north)
+                                         headingOrScaledMilliAmpereHoursDrawn());
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
 
     mavlink_msg_gps_global_origin_pack(0, 200, &mavMsg,
-        // latitude Latitude (WGS84), expressed as * 1E7
-        GPS_home[LAT],
-        // longitude Longitude (WGS84), expressed as * 1E7
-        GPS_home[LON],
-        // altitude Altitude(WGS84), expressed as * 1000
-        0);
+                                       // latitude Latitude (WGS84), expressed as * 1E7
+                                       GPS_home[LAT],
+                                       // longitude Longitude (WGS84), expressed as * 1E7
+                                       GPS_home[LON],
+                                       // altitude Altitude(WGS84), expressed as * 1000
+                                       0);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
@@ -386,20 +384,20 @@ void mavlinkSendAttitude(void)
 {
     uint16_t msgLength;
     mavlink_msg_attitude_pack(0, 200, &mavMsg,
-        // time_boot_ms Timestamp (milliseconds since system boot)
-        millis(),
-        // roll Roll angle (rad)
-        DECIDEGREES_TO_RADIANS(attitude.values.roll),
-        // pitch Pitch angle (rad)
-        DECIDEGREES_TO_RADIANS(-attitude.values.pitch),
-        // yaw Yaw angle (rad)
-        DECIDEGREES_TO_RADIANS(attitude.values.yaw),
-        // rollspeed Roll angular speed (rad/s)
-        0,
-        // pitchspeed Pitch angular speed (rad/s)
-        0,
-        // yawspeed Yaw angular speed (rad/s)
-        0);
+                              // time_boot_ms Timestamp (milliseconds since system boot)
+                              millis(),
+                              // roll Roll angle (rad)
+                              DECIDEGREES_TO_RADIANS(attitude.values.roll),
+                              // pitch Pitch angle (rad)
+                              DECIDEGREES_TO_RADIANS(-attitude.values.pitch),
+                              // yaw Yaw angle (rad)
+                              DECIDEGREES_TO_RADIANS(attitude.values.yaw),
+                              // rollspeed Roll angular speed (rad/s)
+                              0,
+                              // pitchspeed Pitch angular speed (rad/s)
+                              0,
+                              // yawspeed Yaw angular speed (rad/s)
+                              0);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
@@ -439,103 +437,99 @@ void mavlinkSendHUDAndHeartbeat(void)
 #endif
 
     mavlink_msg_vfr_hud_pack(0, 200, &mavMsg,
-        // airspeed Current airspeed in m/s
-        mavAirSpeed,
-        // groundspeed Current ground speed in m/s
-        mavGroundSpeed,
-        // heading Current heading in degrees, in compass units (0..360, 0=north)
-        headingOrScaledMilliAmpereHoursDrawn(),
-        // throttle Current throttle setting in integer percent, 0 to 100
-        scaleRange(constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, 100),
-        // alt Current altitude (MSL), in meters, if we have sonar or baro use them, otherwise use GPS (less accurate)
-        mavAltitude,
-        // climb Current climb rate in meters/second
-        mavClimbRate);
+                             // airspeed Current airspeed in m/s
+                             mavAirSpeed,
+                             // groundspeed Current ground speed in m/s
+                             mavGroundSpeed,
+                             // heading Current heading in degrees, in compass units (0..360, 0=north)
+                             headingOrScaledMilliAmpereHoursDrawn(),
+                             // throttle Current throttle setting in integer percent, 0 to 100
+                             scaleRange(constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, 100),
+                             // alt Current altitude (MSL), in meters, if we have sonar or baro use them, otherwise use GPS (less accurate)
+                             mavAltitude,
+                             // climb Current climb rate in meters/second
+                             mavClimbRate);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
-
 
     uint8_t mavModes = MAV_MODE_FLAG_MANUAL_INPUT_ENABLED;
     if (ARMING_FLAG(ARMED))
         mavModes |= MAV_MODE_FLAG_SAFETY_ARMED;
 
     uint8_t mavSystemType;
-    switch (mixerConfig()->mixerMode)
-    {
-        case MIXER_TRI:
-            mavSystemType = MAV_TYPE_TRICOPTER;
-            break;
-        case MIXER_QUADP:
-        case MIXER_QUADX:
-        case MIXER_Y4:
-        case MIXER_VTAIL4:
-            mavSystemType = MAV_TYPE_QUADROTOR;
-            break;
-        case MIXER_Y6:
-        case MIXER_HEX6:
-        case MIXER_HEX6X:
-            mavSystemType = MAV_TYPE_HEXAROTOR;
-            break;
-        case MIXER_OCTOX8:
-        case MIXER_OCTOFLATP:
-        case MIXER_OCTOFLATX:
-            mavSystemType = MAV_TYPE_OCTOROTOR;
-            break;
-        case MIXER_FLYING_WING:
-        case MIXER_AIRPLANE:
-        case MIXER_CUSTOM_AIRPLANE:
-            mavSystemType = MAV_TYPE_FIXED_WING;
-            break;
-        case MIXER_HELI_120_CCPM:
-        case MIXER_HELI_90_DEG:
-            mavSystemType = MAV_TYPE_HELICOPTER;
-            break;
-        default:
-            mavSystemType = MAV_TYPE_GENERIC;
-            break;
+    switch (mixerConfig()->mixerMode) {
+    case MIXER_TRI:
+        mavSystemType = MAV_TYPE_TRICOPTER;
+        break;
+    case MIXER_QUADP:
+    case MIXER_QUADX:
+    case MIXER_Y4:
+    case MIXER_VTAIL4:
+        mavSystemType = MAV_TYPE_QUADROTOR;
+        break;
+    case MIXER_Y6:
+    case MIXER_HEX6:
+    case MIXER_HEX6X:
+        mavSystemType = MAV_TYPE_HEXAROTOR;
+        break;
+    case MIXER_OCTOX8:
+    case MIXER_OCTOFLATP:
+    case MIXER_OCTOFLATX:
+        mavSystemType = MAV_TYPE_OCTOROTOR;
+        break;
+    case MIXER_FLYING_WING:
+    case MIXER_AIRPLANE:
+    case MIXER_CUSTOM_AIRPLANE:
+        mavSystemType = MAV_TYPE_FIXED_WING;
+        break;
+    case MIXER_HELI_120_CCPM:
+    case MIXER_HELI_90_DEG:
+        mavSystemType = MAV_TYPE_HELICOPTER;
+        break;
+    default:
+        mavSystemType = MAV_TYPE_GENERIC;
+        break;
     }
 
     // Custom mode for compatibility with APM OSDs
-    uint8_t mavCustomMode = 1;  // Acro by default
+    uint8_t mavCustomMode = 1; // Acro by default
 
     if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
-        mavCustomMode = 0;      //Stabilize
+        mavCustomMode = 0; //Stabilize
         mavModes |= MAV_MODE_FLAG_STABILIZE_ENABLED;
     }
     if (FLIGHT_MODE(BARO_MODE)) {
-        mavCustomMode = 2;      //Alt Hold
+        mavCustomMode = 2; //Alt Hold
     }
     if (FLIGHT_MODE(GPS_HOME_MODE)) {
-        mavCustomMode = 6;      //Return to Launch
+        mavCustomMode = 6; //Return to Launch
     }
     if (FLIGHT_MODE(GPS_HOLD_MODE)) {
-        mavCustomMode = 16;     //Position Hold (Earlier called Hybrid)
+        mavCustomMode = 16; //Position Hold (Earlier called Hybrid)
     }
 
     uint8_t mavSystemState = 0;
     if (ARMING_FLAG(ARMED)) {
         if (failsafeIsActive()) {
             mavSystemState = MAV_STATE_CRITICAL;
-        }
-        else {
+        } else {
             mavSystemState = MAV_STATE_ACTIVE;
         }
-    }
-    else {
+    } else {
         mavSystemState = MAV_STATE_STANDBY;
     }
 
     mavlink_msg_heartbeat_pack(0, 200, &mavMsg,
-        // type Type of the MAV (quadrotor, helicopter, etc., up to 15 types, defined in MAV_TYPE ENUM)
-        mavSystemType,
-        // autopilot Autopilot type / class. defined in MAV_AUTOPILOT ENUM
-        MAV_AUTOPILOT_GENERIC,
-        // base_mode System mode bitfield, see MAV_MODE_FLAGS ENUM in mavlink/include/mavlink_types.h
-        mavModes,
-        // custom_mode A bitfield for use for autopilot-specific flags.
-        mavCustomMode,
-        // system_status System status flag, see MAV_STATE ENUM
-        mavSystemState);
+                               // type Type of the MAV (quadrotor, helicopter, etc., up to 15 types, defined in MAV_TYPE ENUM)
+                               mavSystemType,
+                               // autopilot Autopilot type / class. defined in MAV_AUTOPILOT ENUM
+                               MAV_AUTOPILOT_GENERIC,
+                               // base_mode System mode bitfield, see MAV_MODE_FLAGS ENUM in mavlink/include/mavlink_types.h
+                               mavModes,
+                               // custom_mode A bitfield for use for autopilot-specific flags.
+                               mavCustomMode,
+                               // system_status System status flag, see MAV_STATE ENUM
+                               mavSystemState);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
 }

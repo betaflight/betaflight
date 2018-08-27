@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Betaflight. If not, see <http://www.gnu.org/licenses/>.
  */
- 
+
 #include "common/axis.h"
 
 #include "pg/pg.h"
@@ -26,9 +26,9 @@ typedef enum {
 } gpsRescueSanity_e;
 
 typedef struct gpsRescue_s {
-    uint16_t angle; //degrees
-    uint16_t initialAltitudeM; //meters
-    uint16_t descentDistanceM; //meters
+    uint16_t angle;             //degrees
+    uint16_t initialAltitudeM;  //meters
+    uint16_t descentDistanceM;  //meters
     uint16_t rescueGroundspeed; // centimeters per second
     uint16_t throttleP, throttleI, throttleD;
     uint16_t yawP;
@@ -77,7 +77,7 @@ typedef struct {
     int16_t directionToHome;
     uint16_t groundSpeed;
     uint8_t numSat;
-    float zVelocity; // Up/down movement in cm/s
+    float zVelocity;    // Up/down movement in cm/s
     float zVelocityAvg; // Up/down average in cm/s
     float accMagnitude;
     float accMagnitudeAvg;

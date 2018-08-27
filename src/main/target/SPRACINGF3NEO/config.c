@@ -55,15 +55,15 @@
 
 #include "config_helper.h"
 
-#define GPS_UART                            SERIAL_PORT_USART3
+#define GPS_UART SERIAL_PORT_USART3
 
-#define TELEMETRY_UART                      SERIAL_PORT_UART5
-#define TELEMETRY_PROVIDER_DEFAULT          FUNCTION_TELEMETRY_SMARTPORT
+#define TELEMETRY_UART SERIAL_PORT_UART5
+#define TELEMETRY_PROVIDER_DEFAULT FUNCTION_TELEMETRY_SMARTPORT
 
 static targetSerialPortFunction_t targetSerialPortFunction[] = {
-    { SERIAL_PORT_USART1, FUNCTION_MSP },
-    { TELEMETRY_UART,     TELEMETRY_PROVIDER_DEFAULT },
-    { GPS_UART,           FUNCTION_GPS },
+    {SERIAL_PORT_USART1, FUNCTION_MSP},
+    {TELEMETRY_UART, TELEMETRY_PROVIDER_DEFAULT},
+    {GPS_UART, FUNCTION_GPS},
 };
 
 void targetConfiguration(void)

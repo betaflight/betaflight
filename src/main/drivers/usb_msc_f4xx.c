@@ -133,7 +133,8 @@ bool mscCheckButton(void)
 void mscWaitForButton(void)
 {
     // In order to exit MSC mode simply disconnect the board, or push the button again.
-    while (mscCheckButton());
+    while (mscCheckButton())
+        ;
     delay(DEBOUNCE_TIME_MS);
     while (true) {
         asm("NOP");

@@ -46,9 +46,9 @@
 
 #include "pg/flash.h"
 
-#define W25M_INSTRUCTION_SOFTWARE_DIE_SELECT         0xC2
+#define W25M_INSTRUCTION_SOFTWARE_DIE_SELECT 0xC2
 
-#define JEDEC_ID_WINBOND_W25M512                     0xEF7119 // W25Q256 x 2
+#define JEDEC_ID_WINBOND_W25M512 0xEF7119 // W25Q256 x 2
 
 static const flashVTable_t w25m_vTable;
 
@@ -67,7 +67,7 @@ static void w25m_dieSelect(busDevice_t *busdev, int die)
         return;
     }
 
-    uint8_t command[2] = { W25M_INSTRUCTION_SOFTWARE_DIE_SELECT, die };
+    uint8_t command[2] = {W25M_INSTRUCTION_SOFTWARE_DIE_SELECT, die};
 
     spiBusTransfer(busdev, command, NULL, 2);
 
@@ -78,7 +78,7 @@ static bool w25m_isReady(flashDevice_t *fdevice)
 {
     UNUSED(fdevice);
 
-    for (int die = 0 ; die < dieCount ; die++) {
+    for (int die = 0; die < dieCount; die++) {
         if (dieDevice[die].couldBeBusy) {
             w25m_dieSelect(fdevice->busdev, die);
             if (!dieDevice[die].vTable->isReady(&dieDevice[die])) {
@@ -110,7 +110,7 @@ bool w25m_detect(flashDevice_t *fdevice, uint32_t chipID)
         // W25Q256 x 2
         dieCount = 2;
 
-        for (int die = 0 ; die < dieCount ; die++) {
+        for (int die = 0; die < dieCount; die++) {
             w25m_dieSelect(fdevice->busdev, die);
             dieDevice[die].busdev = fdevice->busdev;
             m25p16_detect(&dieDevice[die], JEDEC_ID_WINBOND_W25Q256);
@@ -150,7 +150,7 @@ void w25m_eraseSector(flashDevice_t *fdevice, uint32_t address)
 
 void w25m_eraseCompletely(flashDevice_t *fdevice)
 {
-    for (int dieNumber = 0 ; dieNumber < dieCount ; dieNumber++) {
+    for (int dieNumber = 0; dieNumber < dieCount; dieNumber++) {
         w25m_dieSelect(fdevice->busdev, dieNumber);
         dieDevice[dieNumber].vTable->eraseCompletely(&dieDevice[dieNumber]);
     }
@@ -220,7 +220,7 @@ int w25m_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer, in
     return length;
 }
 
-const flashGeometry_t* w25m_getGeometry(flashDevice_t *fdevice)
+const flashGeometry_t *w25m_getGeometry(flashDevice_t *fdevice)
 {
     return &fdevice->geometry;
 }

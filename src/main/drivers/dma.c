@@ -31,17 +31,17 @@
  * DMA descriptors.
  */
 static dmaChannelDescriptor_t dmaDescriptors[DMA_LAST_HANDLER] = {
-    DEFINE_DMA_CHANNEL(DMA1, 1,  0),
-    DEFINE_DMA_CHANNEL(DMA1, 2,  4),
-    DEFINE_DMA_CHANNEL(DMA1, 3,  8),
+    DEFINE_DMA_CHANNEL(DMA1, 1, 0),
+    DEFINE_DMA_CHANNEL(DMA1, 2, 4),
+    DEFINE_DMA_CHANNEL(DMA1, 3, 8),
     DEFINE_DMA_CHANNEL(DMA1, 4, 12),
     DEFINE_DMA_CHANNEL(DMA1, 5, 16),
     DEFINE_DMA_CHANNEL(DMA1, 6, 20),
     DEFINE_DMA_CHANNEL(DMA1, 7, 24),
 #if defined(STM32F3) || defined(STM32F10X_CL)
-    DEFINE_DMA_CHANNEL(DMA2, 1,  0),
-    DEFINE_DMA_CHANNEL(DMA2, 2,  4),
-    DEFINE_DMA_CHANNEL(DMA2, 3,  8),
+    DEFINE_DMA_CHANNEL(DMA2, 1, 0),
+    DEFINE_DMA_CHANNEL(DMA2, 2, 4),
+    DEFINE_DMA_CHANNEL(DMA2, 3, 8),
     DEFINE_DMA_CHANNEL(DMA2, 4, 12),
     DEFINE_DMA_CHANNEL(DMA2, 5, 16),
 #endif
@@ -66,7 +66,9 @@ DEFINE_DMA_IRQ_HANDLER(2, 4, DMA2_CH4_HANDLER)
 DEFINE_DMA_IRQ_HANDLER(2, 5, DMA2_CH5_HANDLER)
 #endif
 
-#define RETURN_TCIF_FLAG(s, d, n) if (s == DMA ## d ## _Channel ## n) return DMA ## d ## _FLAG_TC ## n
+#define RETURN_TCIF_FLAG(s, d, n) \
+    if (s == DMA##d##_Channel##n) \
+    return DMA##d##_FLAG_TC##n
 
 uint32_t dmaFlag_IT_TCIF(const DMA_Channel_TypeDef *channel)
 {
@@ -123,7 +125,7 @@ uint8_t dmaGetResourceIndex(dmaIdentifier_e identifier)
     return dmaDescriptors[DMA_IDENTIFIER_TO_INDEX(identifier)].resourceIndex;
 }
 
-dmaIdentifier_e dmaGetIdentifier(const DMA_Channel_TypeDef* channel)
+dmaIdentifier_e dmaGetIdentifier(const DMA_Channel_TypeDef *channel)
 {
     for (int i = 0; i < DMA_LAST_HANDLER; i++) {
         if (dmaDescriptors[i].ref == channel) {
@@ -133,12 +135,12 @@ dmaIdentifier_e dmaGetIdentifier(const DMA_Channel_TypeDef* channel)
     return 0;
 }
 
-DMA_Channel_TypeDef* dmaGetRefByIdentifier(const dmaIdentifier_e identifier)
+DMA_Channel_TypeDef *dmaGetRefByIdentifier(const dmaIdentifier_e identifier)
 {
     return dmaDescriptors[DMA_IDENTIFIER_TO_INDEX(identifier)].ref;
 }
 
-dmaChannelDescriptor_t* dmaGetDescriptorByIdentifier(const dmaIdentifier_e identifier)
+dmaChannelDescriptor_t *dmaGetDescriptorByIdentifier(const dmaIdentifier_e identifier)
 {
     return &dmaDescriptors[DMA_IDENTIFIER_TO_INDEX(identifier)];
 }

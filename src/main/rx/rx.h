@@ -33,8 +33,8 @@
 #define PWM_RANGE_MAX 2000
 #define PWM_RANGE_MIDDLE (PWM_RANGE_MIN + ((PWM_RANGE_MAX - PWM_RANGE_MIN) / 2))
 
-#define PWM_PULSE_MIN   750       // minimum PWM pulse width which is considered valid
-#define PWM_PULSE_MAX   2250      // maximum PWM pulse width which is considered valid
+#define PWM_PULSE_MIN 750  // minimum PWM pulse width which is considered valid
+#define PWM_PULSE_MAX 2250 // maximum PWM pulse width which is considered valid
 
 #define RXFAIL_STEP_TO_CHANNEL_VALUE(step) (PWM_PULSE_MIN + 25 * step)
 #define CHANNEL_VALUE_TO_RXFAIL_STEP(channelValue) ((constrain(channelValue, PWM_PULSE_MIN, PWM_PULSE_MAX) - PWM_PULSE_MIN) / 25)
@@ -68,9 +68,9 @@ typedef enum {
     SERIALRX_FPORT = 12,
 } SerialRXType;
 
-#define MAX_SUPPORTED_RC_PPM_CHANNEL_COUNT          12
-#define MAX_SUPPORTED_RC_PARALLEL_PWM_CHANNEL_COUNT  8
-#define MAX_SUPPORTED_RC_CHANNEL_COUNT              18
+#define MAX_SUPPORTED_RC_PPM_CHANNEL_COUNT 12
+#define MAX_SUPPORTED_RC_PARALLEL_PWM_CHANNEL_COUNT 8
+#define MAX_SUPPORTED_RC_CHANNEL_COUNT 18
 
 #define NON_AUX_CHANNEL_COUNT 4
 #define MAX_AUX_CHANNEL_COUNT (MAX_SUPPORTED_RC_CHANNEL_COUNT - NON_AUX_CHANNEL_COUNT)
@@ -83,7 +83,7 @@ typedef enum {
 
 extern const char rcChannelLetters[];
 
-extern int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];       // interval [1000;2000]
+extern int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT]; // interval [1000;2000]
 
 #define RSSI_SCALE_MIN 1
 #define RSSI_SCALE_MAX 255
@@ -126,13 +126,13 @@ typedef uint8_t (*rcFrameStatusFnPtr)(struct rxRuntimeConfig_s *rxRuntimeConfig)
 typedef bool (*rcProcessFrameFnPtr)(const struct rxRuntimeConfig_s *rxRuntimeConfig);
 
 typedef struct rxRuntimeConfig_s {
-    uint8_t             channelCount; // number of RC channels as reported by current input driver
-    uint16_t            rxRefreshRate;
-    rcReadRawDataFnPtr  rcReadRawFn;
-    rcFrameStatusFnPtr  rcFrameStatusFn;
+    uint8_t channelCount; // number of RC channels as reported by current input driver
+    uint16_t rxRefreshRate;
+    rcReadRawDataFnPtr rcReadRawFn;
+    rcFrameStatusFnPtr rcFrameStatusFn;
     rcProcessFrameFnPtr rcProcessFrameFn;
-    uint16_t            *channelData;
-    void                *frameData;
+    uint16_t *channelData;
+    void *frameData;
 } rxRuntimeConfig_t;
 
 typedef enum {

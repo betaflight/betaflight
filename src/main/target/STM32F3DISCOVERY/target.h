@@ -60,26 +60,25 @@
 #undef USE_EXTENDED_CMS_MENUS
 #undef USE_ESC_SENSOR_INFO
 
-
 #define CURRENT_TARGET_CPU_VOLTAGE 3.0
 
-#define LED0_PIN                PE8  // Blue LEDs - PE8/PE12
+#define LED0_PIN PE8 // Blue LEDs - PE8/PE12
 #define LED0_INVERTED
-#define LED1_PIN                PE10 // Orange LEDs - PE10/PE14
+#define LED1_PIN PE10 // Orange LEDs - PE10/PE14
 #define LED1_INVERTED
 
 #define USE_BEEPER
-#define BEEPER_PIN              PD12
-#define BEEPER_PWM_HZ           2000  // Beeper PWM frequency in Hz
+#define BEEPER_PIN PD12
+#define BEEPER_PWM_HZ 2000 // Beeper PWM frequency in Hz
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
 
-#define SPI2_NSS_PIN            PB12
-#define SPI2_SCK_PIN            PB13
-#define SPI2_MISO_PIN           PB14
-#define SPI2_MOSI_PIN           PB15
+#define SPI2_NSS_PIN PB12
+#define SPI2_SCK_PIN PB13
+#define SPI2_MISO_PIN PB14
+#define SPI2_MOSI_PIN PB15
 
 //#define USE_SD_CARD
 //
@@ -90,8 +89,8 @@
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 
-#define FLASH_CS_PIN            PB12
-#define FLASH_SPI_INSTANCE      SPI2
+#define FLASH_CS_PIN PB12
+#define FLASH_SPI_INSTANCE SPI2
 // SPI1
 // PB5  SPI1_MOSI
 // PB4  SPI1_MISO
@@ -114,24 +113,24 @@
 #define USE_GYRO_MPU3050
 #define USE_GYRO_MPU6050
 #define USE_GYRO_SPI_MPU6000
-#define MPU6000_CS_PIN          SPI2_NSS_PIN
-#define MPU6000_SPI_INSTANCE    SPI2
+#define MPU6000_CS_PIN SPI2_NSS_PIN
+#define MPU6000_SPI_INSTANCE SPI2
 // Support the GY-91 MPU9250 dev board
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
-#define MPU6500_CS_PIN          PC14
-#define MPU6500_SPI_INSTANCE    SPI2
-#define GYRO_MPU6500_ALIGN      CW270_DEG_FLIP
+#define MPU6500_CS_PIN PC14
+#define MPU6500_SPI_INSTANCE SPI2
+#define GYRO_MPU6500_ALIGN CW270_DEG_FLIP
 #define USE_GYRO_SPI_MPU9250
-#define MPU9250_CS_PIN          SPI2_NSS_PIN
-#define MPU9250_SPI_INSTANCE    SPI2
+#define MPU9250_CS_PIN SPI2_NSS_PIN
+#define MPU9250_SPI_INSTANCE SPI2
 // BMI160 gyro support
 #define USE_ACCGYRO_BMI160
 #ifdef USE_ACCGYRO_BMI160
-#define BMI160_CS_PIN           SPI2_NSS_PIN
-#define BMI160_SPI_INSTANCE     SPI2
-#define BMI160_SPI_DIVISOR      16
-#define BMI160_INT_EXTI         PC13
+#define BMI160_CS_PIN SPI2_NSS_PIN
+#define BMI160_SPI_INSTANCE SPI2
+#define BMI160_SPI_DIVISOR 16
+#define BMI160_INT_EXTI PC13
 #define USE_MPU_DATA_READY_SIGNAL
 #define USE_EXTI
 #endif
@@ -149,7 +148,7 @@
 #define USE_ACC_SPI_MPU6500
 #define USE_ACC_MPU9250
 #define USE_ACC_SPI_MPU9250
-#define ACC_MPU6500_ALIGN       CW270_DEG_FLIP
+#define ACC_MPU6500_ALIGN CW270_DEG_FLIP
 
 #define USE_BARO
 #define USE_FAKE_BARO
@@ -192,48 +191,48 @@
 //#define USE_SOFTSERIAL1
 //#define USE_SOFTSERIAL2
 
-#define SERIAL_PORT_COUNT       6
+#define SERIAL_PORT_COUNT 6
 
 #define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_PIN  PB8  // (HARDARE=0,PPM)
+#define ESCSERIAL_TIMER_TX_PIN PB8 // (HARDARE=0,PPM)
 
-#define UART3_TX_PIN            PB10 // PB10 (AF7)
-#define UART3_RX_PIN            PB11 // PB11 (AF7)
+#define UART3_TX_PIN PB10 // PB10 (AF7)
+#define UART3_RX_PIN PB11 // PB11 (AF7)
 
 #define USE_I2C
 #define USE_I2C_DEVICE_1
-#define I2C_DEVICE              (I2CDEV_1)
+#define I2C_DEVICE (I2CDEV_1)
 
-#define LSM303DLHC_I2C                       I2C1
-#define LSM303DLHC_I2C_SCK_PIN               PB6
-#define LSM303DLHC_I2C_SDA_PIN               PB7
-#define LSM303DLHC_DRDY_PIN                  PE2
-#define LSM303DLHC_I2C_INT1_PIN              PE4
-#define LSM303DLHC_I2C_INT2_PIN              PE5
+#define LSM303DLHC_I2C I2C1
+#define LSM303DLHC_I2C_SCK_PIN PB6
+#define LSM303DLHC_I2C_SDA_PIN PB7
+#define LSM303DLHC_DRDY_PIN PE2
+#define LSM303DLHC_I2C_INT1_PIN PE4
+#define LSM303DLHC_I2C_INT2_PIN PE5
 
 #define USE_ADC
-#define ADC_INSTANCE            ADC1
-#define VBAT_ADC_PIN            PC0
-#define CURRENT_METER_ADC_PIN   PC1
-#define RSSI_ADC_PIN            PC2
-#define EXTERNAL1_ADC_PIN       PC3
+#define ADC_INSTANCE ADC1
+#define VBAT_ADC_PIN PC0
+#define CURRENT_METER_ADC_PIN PC1
+#define RSSI_ADC_PIN PC2
+#define EXTERNAL1_ADC_PIN PC3
 
 #define USE_RANGEFINDER
 #define USE_RANGEFINDER_HCSR04
-#define RANGEFINDER_HCSR04_TRIGGER_PIN       PB0
-#define RANGEFINDER_HCSR04_ECHO_PIN          PB1
+#define RANGEFINDER_HCSR04_TRIGGER_PIN PB0
+#define RANGEFINDER_HCSR04_ECHO_PIN PB1
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#define MAX_SUPPORTED_MOTORS    12
+#define MAX_SUPPORTED_MOTORS 12
 
 // IO - 303 in 100pin package
-#define TARGET_IO_PORTA         0xffff
-#define TARGET_IO_PORTB         0xffff
-#define TARGET_IO_PORTC         0xffff
-#define TARGET_IO_PORTD         0xffff
-#define TARGET_IO_PORTE         0xffff
-#define TARGET_IO_PORTF         0x00ff
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC 0xffff
+#define TARGET_IO_PORTD 0xffff
+#define TARGET_IO_PORTE 0xffff
+#define TARGET_IO_PORTF 0x00ff
 
 #define USABLE_TIMER_CHANNEL_COUNT 14
-#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(16) | TIM_N(17))
+#define USED_TIMERS (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(16) | TIM_N(17))

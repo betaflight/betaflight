@@ -66,8 +66,7 @@ static const uint8_t flySkyRegs[] = {
     0x62, 0x80, 0x80, 0x00, 0x0a, 0x32, 0xc3, 0x0f,
     0x13, 0xc3, 0x00, 0xff, 0x00, 0x00, 0x3b, 0x00,
     0x17, 0x47, 0x80, 0x03, 0x01, 0x45, 0x18, 0x00,
-    0x01, 0x0f
-};
+    0x01, 0x0f};
 
 static const uint8_t flySky2ARegs[] = {
     0xff, 0x62, 0x00, 0x25, 0x00, 0xff, 0xff, 0x00,
@@ -76,31 +75,28 @@ static const uint8_t flySky2ARegs[] = {
     0x62, 0x80, 0xff, 0xff, 0x2a, 0x32, 0xc3, 0x1f,
     0x1e, 0xff, 0x00, 0xff, 0x00, 0x00, 0x3b, 0x00,
     0x17, 0x47, 0x80, 0x03, 0x01, 0x45, 0x18, 0x00,
-    0x01, 0x0f
-};
+    0x01, 0x0f};
 
 static const uint8_t flySky2ABindChannels[] = {
-    0x0D, 0x8C
-};
+    0x0D, 0x8C};
 
 static const uint8_t flySkyRfChannels[16][16] = {
-    {   0x0a, 0x5a, 0x14, 0x64, 0x1e, 0x6e, 0x28, 0x78, 0x32, 0x82, 0x3c, 0x8c, 0x46, 0x96, 0x50, 0xa0},
-    {   0xa0, 0x50, 0x96, 0x46, 0x8c, 0x3c, 0x82, 0x32, 0x78, 0x28, 0x6e, 0x1e, 0x64, 0x14, 0x5a, 0x0a},
-    {   0x0a, 0x5a, 0x50, 0xa0, 0x14, 0x64, 0x46, 0x96, 0x1e, 0x6e, 0x3c, 0x8c, 0x28, 0x78, 0x32, 0x82},
-    {   0x82, 0x32, 0x78, 0x28, 0x8c, 0x3c, 0x6e, 0x1e, 0x96, 0x46, 0x64, 0x14, 0xa0, 0x50, 0x5a, 0x0a},
-    {   0x28, 0x78, 0x0a, 0x5a, 0x50, 0xa0, 0x14, 0x64, 0x1e, 0x6e, 0x3c, 0x8c, 0x32, 0x82, 0x46, 0x96},
-    {   0x96, 0x46, 0x82, 0x32, 0x8c, 0x3c, 0x6e, 0x1e, 0x64, 0x14, 0xa0, 0x50, 0x5a, 0x0a, 0x78, 0x28},
-    {   0x50, 0xa0, 0x28, 0x78, 0x0a, 0x5a, 0x1e, 0x6e, 0x3c, 0x8c, 0x32, 0x82, 0x46, 0x96, 0x14, 0x64},
-    {   0x64, 0x14, 0x96, 0x46, 0x82, 0x32, 0x8c, 0x3c, 0x6e, 0x1e, 0x5a, 0x0a, 0x78, 0x28, 0xa0, 0x50},
-    {   0x50, 0xa0, 0x46, 0x96, 0x3c, 0x8c, 0x28, 0x78, 0x0a, 0x5a, 0x32, 0x82, 0x1e, 0x6e, 0x14, 0x64},
-    {   0x64, 0x14, 0x6e, 0x1e, 0x82, 0x32, 0x5a, 0x0a, 0x78, 0x28, 0x8c, 0x3c, 0x96, 0x46, 0xa0, 0x50},
-    {   0x46, 0x96, 0x3c, 0x8c, 0x50, 0xa0, 0x28, 0x78, 0x0a, 0x5a, 0x1e, 0x6e, 0x32, 0x82, 0x14, 0x64},
-    {   0x64, 0x14, 0x82, 0x32, 0x6e, 0x1e, 0x5a, 0x0a, 0x78, 0x28, 0xa0, 0x50, 0x8c, 0x3c, 0x96, 0x46},
-    {   0x46, 0x96, 0x0a, 0x5a, 0x3c, 0x8c, 0x14, 0x64, 0x50, 0xa0, 0x28, 0x78, 0x1e, 0x6e, 0x32, 0x82},
-    {   0x82, 0x32, 0x6e, 0x1e, 0x78, 0x28, 0xa0, 0x50, 0x64, 0x14, 0x8c, 0x3c, 0x5a, 0x0a, 0x96, 0x46},
-    {   0x46, 0x96, 0x0a, 0x5a, 0x50, 0xa0, 0x3c, 0x8c, 0x28, 0x78, 0x1e, 0x6e, 0x32, 0x82, 0x14, 0x64},
-    {   0x64, 0x14, 0x82, 0x32, 0x6e, 0x1e, 0x78, 0x28, 0x8c, 0x3c, 0xa0, 0x50, 0x5a, 0x0a, 0x96, 0x46}
-};
+    {0x0a, 0x5a, 0x14, 0x64, 0x1e, 0x6e, 0x28, 0x78, 0x32, 0x82, 0x3c, 0x8c, 0x46, 0x96, 0x50, 0xa0},
+    {0xa0, 0x50, 0x96, 0x46, 0x8c, 0x3c, 0x82, 0x32, 0x78, 0x28, 0x6e, 0x1e, 0x64, 0x14, 0x5a, 0x0a},
+    {0x0a, 0x5a, 0x50, 0xa0, 0x14, 0x64, 0x46, 0x96, 0x1e, 0x6e, 0x3c, 0x8c, 0x28, 0x78, 0x32, 0x82},
+    {0x82, 0x32, 0x78, 0x28, 0x8c, 0x3c, 0x6e, 0x1e, 0x96, 0x46, 0x64, 0x14, 0xa0, 0x50, 0x5a, 0x0a},
+    {0x28, 0x78, 0x0a, 0x5a, 0x50, 0xa0, 0x14, 0x64, 0x1e, 0x6e, 0x3c, 0x8c, 0x32, 0x82, 0x46, 0x96},
+    {0x96, 0x46, 0x82, 0x32, 0x8c, 0x3c, 0x6e, 0x1e, 0x64, 0x14, 0xa0, 0x50, 0x5a, 0x0a, 0x78, 0x28},
+    {0x50, 0xa0, 0x28, 0x78, 0x0a, 0x5a, 0x1e, 0x6e, 0x3c, 0x8c, 0x32, 0x82, 0x46, 0x96, 0x14, 0x64},
+    {0x64, 0x14, 0x96, 0x46, 0x82, 0x32, 0x8c, 0x3c, 0x6e, 0x1e, 0x5a, 0x0a, 0x78, 0x28, 0xa0, 0x50},
+    {0x50, 0xa0, 0x46, 0x96, 0x3c, 0x8c, 0x28, 0x78, 0x0a, 0x5a, 0x32, 0x82, 0x1e, 0x6e, 0x14, 0x64},
+    {0x64, 0x14, 0x6e, 0x1e, 0x82, 0x32, 0x5a, 0x0a, 0x78, 0x28, 0x8c, 0x3c, 0x96, 0x46, 0xa0, 0x50},
+    {0x46, 0x96, 0x3c, 0x8c, 0x50, 0xa0, 0x28, 0x78, 0x0a, 0x5a, 0x1e, 0x6e, 0x32, 0x82, 0x14, 0x64},
+    {0x64, 0x14, 0x82, 0x32, 0x6e, 0x1e, 0x5a, 0x0a, 0x78, 0x28, 0xa0, 0x50, 0x8c, 0x3c, 0x96, 0x46},
+    {0x46, 0x96, 0x0a, 0x5a, 0x3c, 0x8c, 0x14, 0x64, 0x50, 0xa0, 0x28, 0x78, 0x1e, 0x6e, 0x32, 0x82},
+    {0x82, 0x32, 0x6e, 0x1e, 0x78, 0x28, 0xa0, 0x50, 0x64, 0x14, 0x8c, 0x3c, 0x5a, 0x0a, 0x96, 0x46},
+    {0x46, 0x96, 0x0a, 0x5a, 0x50, 0xa0, 0x3c, 0x8c, 0x28, 0x78, 0x1e, 0x6e, 0x32, 0x82, 0x14, 0x64},
+    {0x64, 0x14, 0x82, 0x32, 0x6e, 0x1e, 0x78, 0x28, 0x8c, 0x3c, 0xa0, 0x50, 0x5a, 0x0a, 0x96, 0x46}};
 
 const timings_t flySkyTimings = {.packet = 1500, .firstPacket = 1900, .syncPacket = 2250, .telemetry = 0xFFFFFFFF};
 const timings_t flySky2ATimings = {.packet = 3850, .firstPacket = 4850, .syncPacket = 5775, .telemetry = 57000};
@@ -125,15 +121,14 @@ static uint8_t rfChannelMap[FLYSKY_FREQUENCY_COUNT] = {0};
 static IO_t flySkyLedPin;
 #endif /* USE_RX_FLYSKY_SPI_LED */
 
-
-static uint8_t getNextChannel (uint8_t step)
+static uint8_t getNextChannel(uint8_t step)
 {
     static uint8_t channel = 0;
     channel = (channel + step) & 0x0F;
     return rfChannelMap[channel];
 }
 
-static void flySkyCalculateRfChannels (void)
+static void flySkyCalculateRfChannels(void)
 {
     uint32_t channelRow = txId & 0x0F;
     uint32_t channelOffset = ((txId & 0xF0) >> 4) + 1;
@@ -147,7 +142,7 @@ static void flySkyCalculateRfChannels (void)
     }
 }
 
-static void resetTimeout (const uint32_t timeStamp)
+static void resetTimeout(const uint32_t timeStamp)
 {
     timeLastPacket = timeStamp;
     timeout = timings->firstPacket;
@@ -155,7 +150,7 @@ static void resetTimeout (const uint32_t timeStamp)
     countPacket++;
 }
 
-static void checkTimeout (void)
+static void checkTimeout(void)
 {
     static uint32_t timeMeasuareErrRate = 0;
     static uint32_t timeLastTelemetry = 0;
@@ -181,7 +176,7 @@ static void checkTimeout (void)
         A7105WriteReg(A7105_0F_CHANNEL, getNextChannel(stepOver % FLYSKY_FREQUENCY_COUNT));
         A7105Strobe(A7105_RX);
 
-        if(countTimeout > 31) {
+        if (countTimeout > 31) {
             timeout = timings->syncPacket;
             setRssiDirect(0, RSSI_SOURCE_RX_PROTOCOL);
         } else {
@@ -191,7 +186,7 @@ static void checkTimeout (void)
     }
 }
 
-static void checkRSSI (void)
+static void checkRSSI(void)
 {
     static uint8_t buf[FLYSKY_RSSI_SAMPLE_COUNT] = {0};
     static int16_t sum = 0;
@@ -210,16 +205,17 @@ static void checkRSSI (void)
     setRssiDirect(tmp, RSSI_SOURCE_RX_PROTOCOL);
 }
 
-static bool isValidPacket (const uint8_t *packet) {
-    const flySky2ARcDataPkt_t *rcPacket = (const flySky2ARcDataPkt_t*) packet;
+static bool isValidPacket(const uint8_t *packet)
+{
+    const flySky2ARcDataPkt_t *rcPacket = (const flySky2ARcDataPkt_t *)packet;
     return (rcPacket->rxId == rxId && rcPacket->txId == txId);
 }
 
-static void buildAndWriteTelemetry (uint8_t *packet)
+static void buildAndWriteTelemetry(uint8_t *packet)
 {
     if (packet) {
         static uint8_t bytesToWrite = FLYSKY_2A_PAYLOAD_SIZE; // first time write full packet to buffer a7105
-        flySky2ATelemetryPkt_t *telemertyPacket = (flySky2ATelemetryPkt_t*) packet;
+        flySky2ATelemetryPkt_t *telemertyPacket = (flySky2ATelemetryPkt_t *)packet;
         uint16_t voltage = 10 * getBatteryVoltage();
 
         telemertyPacket->type = FLYSKY_2A_PACKET_TELEMETRY;
@@ -239,35 +235,35 @@ static void buildAndWriteTelemetry (uint8_t *packet)
         telemertyPacket->sens[2].valueL = errorRate & 0xFF;
         telemertyPacket->sens[2].valueH = (errorRate >> 8) & 0xFF;
 
-        memset (&telemertyPacket->sens[3], 0xFF, 4 * sizeof(flySky2ASens_t));
+        memset(&telemertyPacket->sens[3], 0xFF, 4 * sizeof(flySky2ASens_t));
 
         A7105WriteFIFO(packet, bytesToWrite);
 
-        bytesToWrite = 9 + 3 * sizeof(flySky2ASens_t);// next time write only bytes that could change, the others are already set as 0xFF in buffer a7105
+        bytesToWrite = 9 + 3 * sizeof(flySky2ASens_t); // next time write only bytes that could change, the others are already set as 0xFF in buffer a7105
     }
 }
 
-static rx_spi_received_e flySky2AReadAndProcess (uint8_t *payload, const uint32_t timeStamp)
+static rx_spi_received_e flySky2AReadAndProcess(uint8_t *payload, const uint32_t timeStamp)
 {
     rx_spi_received_e result = RX_SPI_RECEIVED_NONE;
     uint8_t packet[FLYSKY_2A_PAYLOAD_SIZE];
 
-    uint8_t bytesToRead = (bound) ? (9 + 2*FLYSKY_2A_CHANNEL_COUNT) : (11 + FLYSKY_FREQUENCY_COUNT);
+    uint8_t bytesToRead = (bound) ? (9 + 2 * FLYSKY_2A_CHANNEL_COUNT) : (11 + FLYSKY_FREQUENCY_COUNT);
     A7105ReadFIFO(packet, bytesToRead);
 
     switch (packet[0]) {
-        case FLYSKY_2A_PACKET_RC_DATA:
-        case FLYSKY_2A_PACKET_FS_SETTINGS: // failsafe settings
-        case FLYSKY_2A_PACKET_SETTINGS: // receiver settings
+    case FLYSKY_2A_PACKET_RC_DATA:
+    case FLYSKY_2A_PACKET_FS_SETTINGS: // failsafe settings
+    case FLYSKY_2A_PACKET_SETTINGS:    // receiver settings
         if (isValidPacket(packet)) {
             checkRSSI();
             resetTimeout(timeStamp);
 
-            const flySky2ARcDataPkt_t *rcPacket = (const flySky2ARcDataPkt_t*) packet;
+            const flySky2ARcDataPkt_t *rcPacket = (const flySky2ARcDataPkt_t *)packet;
 
             if (rcPacket->type == FLYSKY_2A_PACKET_RC_DATA) {
                 if (payload) {
-                    memcpy(payload, rcPacket->data, 2*FLYSKY_2A_CHANNEL_COUNT);
+                    memcpy(payload, rcPacket->data, 2 * FLYSKY_2A_CHANNEL_COUNT);
                 }
 
                 if (sendTelemetry) {
@@ -286,12 +282,12 @@ static rx_spi_received_e flySky2AReadAndProcess (uint8_t *payload, const uint32_
         }
         break;
 
-        case FLYSKY_2A_PACKET_BIND1:
-        case FLYSKY_2A_PACKET_BIND2:
+    case FLYSKY_2A_PACKET_BIND1:
+    case FLYSKY_2A_PACKET_BIND2:
         if (!bound) {
             resetTimeout(timeStamp);
 
-            flySky2ABindPkt_t *bindPacket = (flySky2ABindPkt_t*) packet;
+            flySky2ABindPkt_t *bindPacket = (flySky2ABindPkt_t *)packet;
 
             if (bindPacket->rfChannelMap[0] != 0xFF) {
                 memcpy(rfChannelMap, bindPacket->rfChannelMap, FLYSKY_FREQUENCY_COUNT); // get TX channels
@@ -308,32 +304,32 @@ static rx_spi_received_e flySky2AReadAndProcess (uint8_t *payload, const uint32_
         }
         break;
 
-        default:
+    default:
         break;
     }
 
-    if (!waitTx){
+    if (!waitTx) {
         A7105Strobe(A7105_RX);
     }
     return result;
 }
 
-static rx_spi_received_e flySkyReadAndProcess (uint8_t *payload, const uint32_t timeStamp)
+static rx_spi_received_e flySkyReadAndProcess(uint8_t *payload, const uint32_t timeStamp)
 {
     rx_spi_received_e result = RX_SPI_RECEIVED_NONE;
     uint8_t packet[FLYSKY_PAYLOAD_SIZE];
 
-    uint8_t bytesToRead = (bound) ? (5 + 2*FLYSKY_CHANNEL_COUNT) : (5);
+    uint8_t bytesToRead = (bound) ? (5 + 2 * FLYSKY_CHANNEL_COUNT) : (5);
     A7105ReadFIFO(packet, bytesToRead);
 
-    const flySkyRcDataPkt_t *rcPacket = (const flySkyRcDataPkt_t*) packet;
+    const flySkyRcDataPkt_t *rcPacket = (const flySkyRcDataPkt_t *)packet;
 
     if (bound && rcPacket->type == FLYSKY_PACKET_RC_DATA && rcPacket->txId == txId) {
         checkRSSI();
         resetTimeout(timeStamp);
 
         if (payload) {
-            memcpy(payload, rcPacket->data, 2*FLYSKY_CHANNEL_COUNT);
+            memcpy(payload, rcPacket->data, 2 * FLYSKY_CHANNEL_COUNT);
         }
 
         A7105WriteReg(A7105_0F_CHANNEL, getNextChannel(1));
@@ -356,7 +352,7 @@ static rx_spi_received_e flySkyReadAndProcess (uint8_t *payload, const uint32_t 
     return result;
 }
 
-bool flySkyInit (const rxSpiConfig_t *rxSpiConfig, struct rxRuntimeConfig_s *rxRuntimeConfig)
+bool flySkyInit(const rxSpiConfig_t *rxSpiConfig, struct rxRuntimeConfig_s *rxRuntimeConfig)
 {
     protocol = rxSpiConfig->rx_spi_protocol;
 
@@ -367,9 +363,9 @@ bool flySkyInit (const rxSpiConfig_t *rxSpiConfig, struct rxRuntimeConfig_s *rxR
     IO_t bindPin = IOGetByTag(IO_TAG(BINDPLUG_PIN));
     IOInit(bindPin, OWNER_RX_BIND, 0);
     IOConfigGPIO(bindPin, IOCFG_IPU);
-#ifdef USE_RX_FLYSKY_SPI_LED	
+#ifdef USE_RX_FLYSKY_SPI_LED
     flySkyLedPin = IOGetByTag(IO_TAG(RX_FLYSKY_SPI_LED_PIN));
-    IOInit(flySkyLedPin, OWNER_LED, 0); 
+    IOInit(flySkyLedPin, OWNER_LED, 0);
     IOConfigGPIO(flySkyLedPin, IOCFG_OUT_PP);
     IOLo(flySkyLedPin);
 #endif /* USE_RX_FLYSKY_SPI_LED */
@@ -391,12 +387,12 @@ bool flySkyInit (const rxSpiConfig_t *rxSpiConfig, struct rxRuntimeConfig_s *rxR
         A7105Config(flySkyRegs, sizeof(flySkyRegs));
     }
 
-    if ( !IORead(bindPin) || flySkyConfig()->txId == 0) {
+    if (!IORead(bindPin) || flySkyConfig()->txId == 0) {
         bound = false;
     } else {
         bound = true;
-        txId = flySkyConfig()->txId; // load TXID
-        memcpy (rfChannelMap, flySkyConfig()->rfChannelMap, FLYSKY_FREQUENCY_COUNT);// load channel map
+        txId = flySkyConfig()->txId;                                                // load TXID
+        memcpy(rfChannelMap, flySkyConfig()->rfChannelMap, FLYSKY_FREQUENCY_COUNT); // load channel map
         startRxChannel = getNextChannel(0);
     }
 
@@ -412,19 +408,19 @@ bool flySkyInit (const rxSpiConfig_t *rxSpiConfig, struct rxRuntimeConfig_s *rxR
     return true;
 }
 
-void flySkySetRcDataFromPayload (uint16_t *rcData, const uint8_t *payload)
+void flySkySetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
 {
     if (rcData && payload) {
         uint32_t channelCount;
         channelCount = (protocol == RX_SPI_A7105_FLYSKY_2A) ? (FLYSKY_2A_CHANNEL_COUNT) : (FLYSKY_CHANNEL_COUNT);
 
         for (uint8_t i = 0; i < channelCount; i++) {
-            rcData[i] = payload[2 * i + 1] << 8 | payload [2 * i + 0];
+            rcData[i] = payload[2 * i + 1] << 8 | payload[2 * i + 0];
         }
     }
 }
 
-rx_spi_received_e flySkyDataReceived (uint8_t *payload)
+rx_spi_received_e flySkyDataReceived(uint8_t *payload)
 {
 #ifdef USE_RX_FLYSKY_SPI_LED
     static uint16_t rxLossCount = 0;
@@ -442,7 +438,7 @@ rx_spi_received_e flySkyDataReceived (uint8_t *payload)
                 A7105WriteReg(A7105_0F_CHANNEL, getNextChannel(1));
             }
             A7105Strobe(A7105_RX);
-        } else if ((modeReg & (A7105_MODE_CRCF|A7105_MODE_TRER)) == 0) { // RX complete, CRC pass
+        } else if ((modeReg & (A7105_MODE_CRCF | A7105_MODE_TRER)) == 0) { // RX complete, CRC pass
             if (protocol == RX_SPI_A7105_FLYSKY_2A) {
                 result = flySky2AReadAndProcess(payload, timeStamp);
             } else {
@@ -465,8 +461,8 @@ rx_spi_received_e flySkyDataReceived (uint8_t *payload)
             rxLossCount = 0;
             IOHi(flySkyLedPin);
         } else {
-            if (rxLossCount  < RX_LOSS_COUNT) {
-                rxLossCount++;      
+            if (rxLossCount < RX_LOSS_COUNT) {
+                rxLossCount++;
             } else {
                 timeMs_t now = millis();
                 if (now - ledLastUpdate > INTERVAL_RX_LOSS_MS) {
@@ -485,8 +481,8 @@ rx_spi_received_e flySkyDataReceived (uint8_t *payload)
         if ((micros() - timeLastBind) > BIND_TIMEOUT && rfChannelMap[0] != 0 && txId != 0) {
             result = RX_SPI_RECEIVED_BIND;
             bound = true;
-            flySkyConfigMutable()->txId = txId; // store TXID
-            memcpy (flySkyConfigMutable()->rfChannelMap, rfChannelMap, FLYSKY_FREQUENCY_COUNT);// store channel map
+            flySkyConfigMutable()->txId = txId;                                                // store TXID
+            memcpy(flySkyConfigMutable()->rfChannelMap, rfChannelMap, FLYSKY_FREQUENCY_COUNT); // store channel map
             flySkyConfigMutable()->protocol = protocol;
             writeEEPROM();
         }
@@ -499,7 +495,7 @@ rx_spi_received_e flySkyDataReceived (uint8_t *payload)
             } else {
                 IOHi(flySkyLedPin);
             }
-                ledOn = !ledOn;
+            ledOn = !ledOn;
         }
 #endif /* USE_RX_FLYSKY_SPI_LED */
     }

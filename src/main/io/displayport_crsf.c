@@ -33,8 +33,8 @@
 #include "drivers/time.h"
 #include "io/displayport_crsf.h"
 
-#define CRSF_DISPLAY_PORT_OPEN_DELAY_MS     400
-#define CRSF_DISPLAY_PORT_CLEAR_DELAY_MS    45
+#define CRSF_DISPLAY_PORT_OPEN_DELAY_MS 400
+#define CRSF_DISPLAY_PORT_CLEAR_DELAY_MS 45
 
 static crsfDisplayPortScreen_t crsfScreen;
 static timeMs_t delayTransportUntilMs = 0;
@@ -73,14 +73,13 @@ static int crsfScreenSize(const displayPort_t *displayPort)
     return displayPort->rows * displayPort->cols;
 }
 
-
 static int crsfWriteString(displayPort_t *displayPort, uint8_t col, uint8_t row, const char *s)
 {
     UNUSED(displayPort);
     if (row >= crsfScreen.rows || col >= crsfScreen.cols) {
         return 0;
     }
-    const size_t truncLen = MIN((int)strlen(s), crsfScreen.cols-col);  // truncate at colCount
+    const size_t truncLen = MIN((int)strlen(s), crsfScreen.cols - col); // truncate at colCount
     char *rowStart = &crsfScreen.buffer[row * crsfScreen.cols + col];
     crsfScreen.pendingTransport[row] = memcmp(rowStart, s, truncLen);
     if (crsfScreen.pendingTransport[row]) {
@@ -138,8 +137,7 @@ static const displayPortVTable_t crsfDisplayPortVTable = {
     .heartbeat = crsfHeartbeat,
     .resync = crsfResync,
     .isSynced = crsfIsSynced,
-    .txBytesFree = crsfTxBytesFree
-};
+    .txBytesFree = crsfTxBytesFree};
 
 crsfDisplayPortScreen_t *crsfDisplayPortScreen(void)
 {
@@ -190,7 +188,7 @@ int crsfDisplayPortNextRow(void)
     if (currentTimeMs < delayTransportUntilMs) {
         return -1;
     }
-    for(unsigned int i=0; i<CRSF_DISPLAY_PORT_ROWS_MAX; i++) {
+    for (unsigned int i = 0; i < CRSF_DISPLAY_PORT_ROWS_MAX; i++) {
         if (crsfScreen.pendingTransport[i]) {
             return i;
         }

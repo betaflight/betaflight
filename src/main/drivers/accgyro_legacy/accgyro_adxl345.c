@@ -30,32 +30,32 @@
 #include "accgyro_adxl345.h"
 
 // ADXL345, Alternative address mode 0x53
-#define ADXL345_ADDRESS     0x53
+#define ADXL345_ADDRESS 0x53
 
 // Registers
-#define ADXL345_BW_RATE     0x2C
-#define ADXL345_POWER_CTL   0x2D
-#define ADXL345_INT_ENABLE  0x2E
+#define ADXL345_BW_RATE 0x2C
+#define ADXL345_POWER_CTL 0x2D
+#define ADXL345_INT_ENABLE 0x2E
 #define ADXL345_DATA_FORMAT 0x31
-#define ADXL345_DATA_OUT    0x32
-#define ADXL345_FIFO_CTL    0x38
+#define ADXL345_DATA_OUT 0x32
+#define ADXL345_FIFO_CTL 0x38
 
 // BW_RATE values
-#define ADXL345_RATE_50     0x09
-#define ADXL345_RATE_100    0x0A
-#define ADXL345_RATE_200    0x0B
-#define ADXL345_RATE_400    0x0C
-#define ADXL345_RATE_800    0x0D
-#define ADXL345_RATE_1600   0x0E
-#define ADXL345_RATE_3200   0x0F
+#define ADXL345_RATE_50 0x09
+#define ADXL345_RATE_100 0x0A
+#define ADXL345_RATE_200 0x0B
+#define ADXL345_RATE_400 0x0C
+#define ADXL345_RATE_800 0x0D
+#define ADXL345_RATE_1600 0x0E
+#define ADXL345_RATE_3200 0x0F
 
 // various register values
-#define ADXL345_POWER_MEAS  0x08
-#define ADXL345_FULL_RANGE  0x08
-#define ADXL345_RANGE_2G    0x00
-#define ADXL345_RANGE_4G    0x01
-#define ADXL345_RANGE_8G    0x02
-#define ADXL345_RANGE_16G   0x03
+#define ADXL345_POWER_MEAS 0x08
+#define ADXL345_FULL_RANGE 0x08
+#define ADXL345_RANGE_2G 0x00
+#define ADXL345_RANGE_4G 0x01
+#define ADXL345_RANGE_8G 0x02
+#define ADXL345_RANGE_16G 0x03
 #define ADXL345_FIFO_STREAM 0x80
 
 static bool useFifo = false;

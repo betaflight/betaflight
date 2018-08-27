@@ -55,11 +55,11 @@
 
 #include "config_helper.h"
 
-#define TELEMETRY_UART                      SERIAL_PORT_UART5
+#define TELEMETRY_UART SERIAL_PORT_UART5
 
 #ifdef USE_TELEMETRY
 static targetSerialPortFunction_t targetSerialPortFunction[] = {
-    { TELEMETRY_UART, FUNCTION_TELEMETRY_SMARTPORT },
+    {TELEMETRY_UART, FUNCTION_TELEMETRY_SMARTPORT},
 };
 #endif
 

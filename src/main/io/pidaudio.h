@@ -29,4 +29,3 @@ typedef enum {
 } pidAudioModes_e;
 pidAudioModes_e pidAudioGetMode(void);
 void pidAudioSetMode(pidAudioModes_e mode);
-

@@ -39,19 +39,19 @@
 #include "accgyro_mpu3050.h"
 
 // MPU3050, Standard address 0x68
-#define MPU3050_ADDRESS         0x68
+#define MPU3050_ADDRESS 0x68
 
 // Bits
-#define MPU3050_FS_SEL_2000DPS  0x18
-#define MPU3050_DLPF_10HZ       0x05
-#define MPU3050_DLPF_20HZ       0x04
-#define MPU3050_DLPF_42HZ       0x03
-#define MPU3050_DLPF_98HZ       0x02
-#define MPU3050_DLPF_188HZ      0x01
-#define MPU3050_DLPF_256HZ      0x00
+#define MPU3050_FS_SEL_2000DPS 0x18
+#define MPU3050_DLPF_10HZ 0x05
+#define MPU3050_DLPF_20HZ 0x04
+#define MPU3050_DLPF_42HZ 0x03
+#define MPU3050_DLPF_98HZ 0x02
+#define MPU3050_DLPF_188HZ 0x01
+#define MPU3050_DLPF_256HZ 0x00
 
-#define MPU3050_USER_RESET      0x01
-#define MPU3050_CLK_SEL_PLL_GX  0x01
+#define MPU3050_USER_RESET 0x01
+#define MPU3050_CLK_SEL_PLL_GX 0x01
 
 static uint8_t mpu3050GetDLPF(uint8_t lpf)
 {

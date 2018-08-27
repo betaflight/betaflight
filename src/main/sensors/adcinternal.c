@@ -50,11 +50,11 @@ uint16_t updateMovingAverageUint16(movingAverageStateUint16_t *state, uint16_t n
 
 static uint16_t adcVrefintValue;
 static uint16_t adcVrefintValues[8];
-movingAverageStateUint16_t adcVrefintAverageState = { 0, adcVrefintValues, 8, 0 } ;
+movingAverageStateUint16_t adcVrefintAverageState = {0, adcVrefintValues, 8, 0};
 
 static uint16_t adcTempsensorValue;
 static uint16_t adcTempsensorValues[8];
-movingAverageStateUint16_t adcTempsensorAverageState = { 0, adcTempsensorValues, 8, 0 } ;
+movingAverageStateUint16_t adcTempsensorAverageState = {0, adcTempsensorValues, 8, 0};
 
 static int16_t coreTemperature;
 
@@ -97,7 +97,7 @@ void adcInternalProcess(timeUs_t currentTimeUs)
 void adcInternalInit(void)
 {
     // Call adcInternalProcess repeatedly to fill moving average array
-    for (int i = 0 ; i < 9 ; i++) {
+    for (int i = 0; i < 9; i++) {
         while (adcInternalIsBusy()) {
             // empty
         }

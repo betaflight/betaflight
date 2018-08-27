@@ -24,7 +24,7 @@
 
 struct baroDev_s;
 
-typedef void (*baroOpFuncPtr)(struct baroDev_s *baro);                       // baro start operation
+typedef void (*baroOpFuncPtr)(struct baroDev_s *baro);                         // baro start operation
 typedef void (*baroCalculateFuncPtr)(int32_t *pressure, int32_t *temperature); // baro calculation (filled params are pressure and temperature)
 
 typedef struct baroDev_s {

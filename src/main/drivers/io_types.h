@@ -24,8 +24,8 @@
 
 // IO pin identification
 // make sure that ioTag_t can't be assigned into IO_t without warning
-typedef uint8_t ioTag_t;       // packet tag to specify IO pin
-typedef void* IO_t;            // type specifying IO pin. Currently ioRec_t pointer, but this may change
+typedef uint8_t ioTag_t; // packet tag to specify IO pin
+typedef void *IO_t;      // type specifying IO pin. Currently ioRec_t pointer, but this may change
 
 // NONE initializer for ioTag_t variables
 #define IO_TAG_NONE 0
@@ -45,4 +45,4 @@ typedef void* IO_t;            // type specifying IO pin. Currently ioRec_t poin
 // IOCFG_x macros are defined for common combinations for all CPUs; this
 //  helps masking CPU differences
 
-typedef uint8_t ioConfig_t;  // packed IO configuration
+typedef uint8_t ioConfig_t; // packed IO configuration

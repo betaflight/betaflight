@@ -29,24 +29,24 @@
 
 typedef struct batteryConfig_s {
     // voltage
-    uint8_t vbatmaxcellvoltage;             // maximum voltage per cell, used for auto-detecting battery voltage in 0.1V units, default is 43 (4.3V)
-    uint8_t vbatmincellvoltage;             // minimum voltage per cell, this triggers battery critical alarm, in 0.1V units, default is 33 (3.3V)
-    uint8_t vbatwarningcellvoltage;         // warning voltage per cell, this triggers battery warning alarm, in 0.1V units, default is 35 (3.5V)
-    uint8_t vbatnotpresentcellvoltage;      // Between vbatmaxcellvoltage and 2*this is considered to be USB powered. Below this it is notpresent
-    uint8_t lvcPercentage;                  // Percentage of throttle when lvc is triggered
+    uint8_t vbatmaxcellvoltage;              // maximum voltage per cell, used for auto-detecting battery voltage in 0.1V units, default is 43 (4.3V)
+    uint8_t vbatmincellvoltage;              // minimum voltage per cell, this triggers battery critical alarm, in 0.1V units, default is 33 (3.3V)
+    uint8_t vbatwarningcellvoltage;          // warning voltage per cell, this triggers battery warning alarm, in 0.1V units, default is 35 (3.5V)
+    uint8_t vbatnotpresentcellvoltage;       // Between vbatmaxcellvoltage and 2*this is considered to be USB powered. Below this it is notpresent
+    uint8_t lvcPercentage;                   // Percentage of throttle when lvc is triggered
     voltageMeterSource_e voltageMeterSource; // source of battery voltage meter used, either ADC or ESC
 
     // current
     currentMeterSource_e currentMeterSource; // source of battery current meter used, either ADC, Virtual or ESC
-    uint16_t batteryCapacity;               // mAh
+    uint16_t batteryCapacity;                // mAh
 
     // warnings / alerts
-    bool useVBatAlerts;                     // Issue alerts based on VBat readings
-    bool useConsumptionAlerts;              // Issue alerts based on total power consumption
-    uint8_t consumptionWarningPercentage;   // Percentage of remaining capacity that should trigger a battery warning
-    uint8_t vbathysteresis;                 // hysteresis for alarm, default 1 = 0.1V
+    bool useVBatAlerts;                   // Issue alerts based on VBat readings
+    bool useConsumptionAlerts;            // Issue alerts based on total power consumption
+    uint8_t consumptionWarningPercentage; // Percentage of remaining capacity that should trigger a battery warning
+    uint8_t vbathysteresis;               // hysteresis for alarm, default 1 = 0.1V
 
-    uint8_t vbatfullcellvoltage;            // Cell voltage at which the battery is deemed to be "full" 0.1V units, default is 41 (4.1V)
+    uint8_t vbatfullcellvoltage; // Cell voltage at which the battery is deemed to be "full" 0.1V units, default is 41 (4.1V)
 
 } batteryConfig_t;
 
@@ -73,7 +73,7 @@ void batteryUpdatePresence(void);
 batteryState_e getBatteryState(void);
 batteryState_e getVoltageState(void);
 batteryState_e getConsumptionState(void);
-const  char * getBatteryStateString(void);
+const char *getBatteryStateString(void);
 
 void batteryUpdateStates(timeUs_t currentTimeUs);
 void batteryUpdateAlarms(void);

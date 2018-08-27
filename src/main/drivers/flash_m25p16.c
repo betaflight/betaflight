@@ -37,41 +37,41 @@
 
 #include "flash_m25p16.h"
 
-#define M25P16_INSTRUCTION_RDID             SPIFLASH_INSTRUCTION_RDID
-#define M25P16_INSTRUCTION_READ_BYTES       0x03
-#define M25P16_INSTRUCTION_READ_STATUS_REG  0x05
+#define M25P16_INSTRUCTION_RDID SPIFLASH_INSTRUCTION_RDID
+#define M25P16_INSTRUCTION_READ_BYTES 0x03
+#define M25P16_INSTRUCTION_READ_STATUS_REG 0x05
 #define M25P16_INSTRUCTION_WRITE_STATUS_REG 0x01
-#define M25P16_INSTRUCTION_WRITE_ENABLE     0x06
-#define M25P16_INSTRUCTION_WRITE_DISABLE    0x04
-#define M25P16_INSTRUCTION_PAGE_PROGRAM     0x02
-#define M25P16_INSTRUCTION_SECTOR_ERASE     0xD8
-#define M25P16_INSTRUCTION_BULK_ERASE       0xC7
+#define M25P16_INSTRUCTION_WRITE_ENABLE 0x06
+#define M25P16_INSTRUCTION_WRITE_DISABLE 0x04
+#define M25P16_INSTRUCTION_PAGE_PROGRAM 0x02
+#define M25P16_INSTRUCTION_SECTOR_ERASE 0xD8
+#define M25P16_INSTRUCTION_BULK_ERASE 0xC7
 
 #define M25P16_STATUS_FLAG_WRITE_IN_PROGRESS 0x01
-#define M25P16_STATUS_FLAG_WRITE_ENABLED     0x02
+#define M25P16_STATUS_FLAG_WRITE_ENABLED 0x02
 
 #define W25Q256_INSTRUCTION_ENTER_4BYTE_ADDRESS_MODE 0xB7
 
 // Format is manufacturer, memory type, then capacity
 // See also flash_m25p16.h for additional JEDEC IDs.
-#define JEDEC_ID_MACRONIX_MX25L3206E   0xC22016
-#define JEDEC_ID_MACRONIX_MX25L6406E   0xC22017
-#define JEDEC_ID_MACRONIX_MX25L25635E  0xC22019
-#define JEDEC_ID_MICRON_M25P16         0x202015
-#define JEDEC_ID_MICRON_N25Q064        0x20BA17
-#define JEDEC_ID_MICRON_N25Q128        0x20ba18
-#define JEDEC_ID_WINBOND_W25Q16        0xEF4015
-#define JEDEC_ID_WINBOND_W25Q32        0xEF4016
-#define JEDEC_ID_WINBOND_W25Q64        0xEF4017
-#define JEDEC_ID_WINBOND_W25Q128       0xEF4018
-#define JEDEC_ID_CYPRESS_S25FL128L     0x016018
+#define JEDEC_ID_MACRONIX_MX25L3206E 0xC22016
+#define JEDEC_ID_MACRONIX_MX25L6406E 0xC22017
+#define JEDEC_ID_MACRONIX_MX25L25635E 0xC22019
+#define JEDEC_ID_MICRON_M25P16 0x202015
+#define JEDEC_ID_MICRON_N25Q064 0x20BA17
+#define JEDEC_ID_MICRON_N25Q128 0x20ba18
+#define JEDEC_ID_WINBOND_W25Q16 0xEF4015
+#define JEDEC_ID_WINBOND_W25Q32 0xEF4016
+#define JEDEC_ID_WINBOND_W25Q64 0xEF4017
+#define JEDEC_ID_WINBOND_W25Q128 0xEF4018
+#define JEDEC_ID_CYPRESS_S25FL128L 0x016018
 
 // The timeout we expect between being able to issue page program instructions
-#define DEFAULT_TIMEOUT_MILLIS       6
+#define DEFAULT_TIMEOUT_MILLIS 6
 
 // These take sooooo long:
-#define SECTOR_ERASE_TIMEOUT_MILLIS  5000
-#define BULK_ERASE_TIMEOUT_MILLIS    21000
+#define SECTOR_ERASE_TIMEOUT_MILLIS 5000
+#define BULK_ERASE_TIMEOUT_MILLIS 21000
 
 #define M25P16_PAGESIZE 256
 
@@ -124,7 +124,7 @@ static void m25p16_writeEnable(flashDevice_t *fdevice)
 
 static uint8_t m25p16_readStatus(busDevice_t *bus)
 {
-    const uint8_t command[2] = { M25P16_INSTRUCTION_READ_STATUS_REG, 0 };
+    const uint8_t command[2] = {M25P16_INSTRUCTION_READ_STATUS_REG, 0};
     uint8_t in[2];
 
     m25p16_transfer(bus, command, in, sizeof(command));
@@ -227,7 +227,7 @@ static void m25p16_setCommandAddress(uint8_t *buf, uint32_t address, bool useLon
  */
 static void m25p16_eraseSector(flashDevice_t *fdevice, uint32_t address)
 {
-    uint8_t out[5] = { M25P16_INSTRUCTION_SECTOR_ERASE };
+    uint8_t out[5] = {M25P16_INSTRUCTION_SECTOR_ERASE};
 
     m25p16_setCommandAddress(&out[1], address, fdevice->isLargeFlash);
 
@@ -256,7 +256,7 @@ static void m25p16_pageProgramBegin(flashDevice_t *fdevice, uint32_t address)
 
 static void m25p16_pageProgramContinue(flashDevice_t *fdevice, const uint8_t *data, int length)
 {
-    uint8_t command[5] = { M25P16_INSTRUCTION_PAGE_PROGRAM };
+    uint8_t command[5] = {M25P16_INSTRUCTION_PAGE_PROGRAM};
 
     m25p16_setCommandAddress(&command[1], fdevice->currentWriteAddress, fdevice->isLargeFlash);
 
@@ -314,7 +314,7 @@ static void m25p16_pageProgram(flashDevice_t *fdevice, uint32_t address, const u
  */
 static int m25p16_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer, int length)
 {
-    uint8_t command[5] = { M25P16_INSTRUCTION_READ_BYTES };
+    uint8_t command[5] = {M25P16_INSTRUCTION_READ_BYTES};
 
     m25p16_setCommandAddress(&command[1], address, fdevice->isLargeFlash);
 
@@ -337,7 +337,7 @@ static int m25p16_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *b
  *
  * Can be called before calling m25p16_init() (the result would have totalSize = 0).
  */
-static const flashGeometry_t* m25p16_getGeometry(flashDevice_t *fdevice)
+static const flashGeometry_t *m25p16_getGeometry(flashDevice_t *fdevice)
 {
     return &fdevice->geometry;
 }

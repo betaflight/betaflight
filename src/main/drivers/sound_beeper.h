@@ -21,13 +21,19 @@
 #pragma once
 
 #ifdef USE_BEEPER
-#define BEEP_TOGGLE              systemBeepToggle()
-#define BEEP_OFF                 systemBeep(false)
-#define BEEP_ON                  systemBeep(true)
+#define BEEP_TOGGLE systemBeepToggle()
+#define BEEP_OFF systemBeep(false)
+#define BEEP_ON systemBeep(true)
 #else
-#define BEEP_TOGGLE do {} while (0)
-#define BEEP_OFF    do {} while (0)
-#define BEEP_ON     do {} while (0)
+#define BEEP_TOGGLE \
+    do {            \
+    } while (0)
+#define BEEP_OFF \
+    do {         \
+    } while (0)
+#define BEEP_ON \
+    do {        \
+    } while (0)
 #endif
 
 void systemBeep(bool on);

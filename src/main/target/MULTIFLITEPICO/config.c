@@ -50,7 +50,7 @@
 // alternative defaults settings for MULTIFLITEPICO targets
 void targetConfiguration(void)
 {
-    compassConfigMutable()->mag_hardware = MAG_NONE;            // disabled by default
+    compassConfigMutable()->mag_hardware = MAG_NONE; // disabled by default
 
     voltageSensorADCConfigMutable(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale = VBAT_SCALE;
     voltageSensorADCConfigMutable(VOLTAGE_SENSOR_ADC_VBAT)->vbatresdivval = 15;
@@ -65,14 +65,14 @@ void targetConfiguration(void)
     rcControlsConfigMutable()->yaw_deadband = 2;
     rcControlsConfigMutable()->deadband = 2;
 
-    modeActivationConditionsMutable(0)->modeId          = BOXANGLE;
+    modeActivationConditionsMutable(0)->modeId = BOXANGLE;
     modeActivationConditionsMutable(0)->auxChannelIndex = AUX1 - NON_AUX_CHANNEL_COUNT;
     modeActivationConditionsMutable(0)->range.startStep = CHANNEL_VALUE_TO_STEP(900);
-    modeActivationConditionsMutable(0)->range.endStep   = CHANNEL_VALUE_TO_STEP(1400);
-    modeActivationConditionsMutable(1)->modeId          = BOXHORIZON;
+    modeActivationConditionsMutable(0)->range.endStep = CHANNEL_VALUE_TO_STEP(1400);
+    modeActivationConditionsMutable(1)->modeId = BOXHORIZON;
     modeActivationConditionsMutable(1)->auxChannelIndex = AUX1 - NON_AUX_CHANNEL_COUNT;
     modeActivationConditionsMutable(1)->range.startStep = CHANNEL_VALUE_TO_STEP(1425);
-    modeActivationConditionsMutable(1)->range.endStep   = CHANNEL_VALUE_TO_STEP(1575);
+    modeActivationConditionsMutable(1)->range.endStep = CHANNEL_VALUE_TO_STEP(1575);
 
     failsafeConfigMutable()->failsafe_delay = 2;
     failsafeConfigMutable()->failsafe_off_delay = 0;

@@ -31,14 +31,14 @@
 #define USE_DASHBOARD
 #define USE_SERIAL_RX
 #define USE_RX_MSP
-#define USE_SERIALRX_CRSF       // Team Black Sheep Crossfire protocol
-#define USE_SERIALRX_SPEKTRUM   // DSM2 and DSMX protocol
-#define USE_SERIALRX_SBUS       // Frsky and Futaba receivers
-#define USE_SERIALRX_IBUS       // FlySky and Turnigy receivers
+#define USE_SERIALRX_CRSF     // Team Black Sheep Crossfire protocol
+#define USE_SERIALRX_SPEKTRUM // DSM2 and DSMX protocol
+#define USE_SERIALRX_SBUS     // Frsky and Futaba receivers
+#define USE_SERIALRX_IBUS     // FlySky and Turnigy receivers
 #define USE_SERIALRX_JETIEXBUS
-#define USE_SERIALRX_SUMD       // Graupner Hott protocol
-#define USE_SERIALRX_SUMH       // Graupner legacy protocol
-#define USE_SERIALRX_XBUS       // JR
+#define USE_SERIALRX_SUMD // Graupner Hott protocol
+#define USE_SERIALRX_SUMH // Graupner legacy protocol
+#define USE_SERIALRX_XBUS // JR
 #define USE_TELEMETRY
 #define USE_TELEMETRY_CRSF
 #define USE_TELEMETRY_FRSKY_HUB
@@ -62,12 +62,12 @@
 
 #define SERIAL_PORT_COUNT 8
 
-#define DEFAULT_AUX_CHANNEL_COUNT       MAX_AUX_CHANNEL_COUNT
-#define MAX_SIMULTANEOUS_ADJUSTMENT_COUNT 6  // needed for unittest
+#define DEFAULT_AUX_CHANNEL_COUNT MAX_AUX_CHANNEL_COUNT
+#define MAX_SIMULTANEOUS_ADJUSTMENT_COUNT 6 // needed for unittest
 
 #define TARGET_BOARD_IDENTIFIER "TEST"
 
-#define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_SERIAL
+#define DEFAULT_BLACKBOX_DEVICE BLACKBOX_DEVICE_SERIAL
 
 #define LED_STRIP_TIMER 1
 #define SOFTSERIAL_1_TIMER 2
@@ -75,7 +75,6 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 0
 
-#define TARGET_IO_PORTA         0xffff
-#define TARGET_IO_PORTB         0xffff
-#define TARGET_IO_PORTC         0xffff
-
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC 0xffff

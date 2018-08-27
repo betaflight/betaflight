@@ -44,38 +44,38 @@
 // This driver only support I2C mode, direct and in bypass configuration.
 
 // AK8975, mag sensor address
-#define AK8975_MAG_I2C_ADDRESS          0x0C
-#define AK8975_DEVICE_ID                0x48
+#define AK8975_MAG_I2C_ADDRESS 0x0C
+#define AK8975_DEVICE_ID 0x48
 
 // Registers
-#define AK8975_MAG_REG_WIA              0x00
-#define AK8975_MAG_REG_INFO             0x01
-#define AK8975_MAG_REG_ST1              0x02
-#define AK8975_MAG_REG_HXL              0x03
-#define AK8975_MAG_REG_HXH              0x04
-#define AK8975_MAG_REG_HYL              0x05
-#define AK8975_MAG_REG_HYH              0x06
-#define AK8975_MAG_REG_HZL              0x07
-#define AK8975_MAG_REG_HZH              0x08
-#define AK8975_MAG_REG_ST2              0x09
-#define AK8975_MAG_REG_CNTL             0x0A
-#define AK8975_MAG_REG_ASTC             0x0C // self test
-#define AK8975_MAG_REG_I2CDIS           0x0F
-#define AK8975_MAG_REG_ASAX             0x10 // Fuse ROM x-axis sensitivity adjustment value
-#define AK8975_MAG_REG_ASAY             0x11 // Fuse ROM y-axis sensitivity adjustment value
-#define AK8975_MAG_REG_ASAZ             0x12 // Fuse ROM z-axis sensitivity adjustment value
+#define AK8975_MAG_REG_WIA 0x00
+#define AK8975_MAG_REG_INFO 0x01
+#define AK8975_MAG_REG_ST1 0x02
+#define AK8975_MAG_REG_HXL 0x03
+#define AK8975_MAG_REG_HXH 0x04
+#define AK8975_MAG_REG_HYL 0x05
+#define AK8975_MAG_REG_HYH 0x06
+#define AK8975_MAG_REG_HZL 0x07
+#define AK8975_MAG_REG_HZH 0x08
+#define AK8975_MAG_REG_ST2 0x09
+#define AK8975_MAG_REG_CNTL 0x0A
+#define AK8975_MAG_REG_ASTC 0x0C // self test
+#define AK8975_MAG_REG_I2CDIS 0x0F
+#define AK8975_MAG_REG_ASAX 0x10 // Fuse ROM x-axis sensitivity adjustment value
+#define AK8975_MAG_REG_ASAY 0x11 // Fuse ROM y-axis sensitivity adjustment value
+#define AK8975_MAG_REG_ASAZ 0x12 // Fuse ROM z-axis sensitivity adjustment value
 
-#define ST1_REG_DATA_READY              0x01
+#define ST1_REG_DATA_READY 0x01
 
-#define ST2_REG_DATA_ERROR              0x04
-#define ST2_REG_MAG_SENSOR_OVERFLOW     0x08
+#define ST2_REG_DATA_ERROR 0x04
+#define ST2_REG_MAG_SENSOR_OVERFLOW 0x08
 
-#define CNTL_MODE_POWER_DOWN            0x00
-#define CNTL_MODE_ONCE                  0x01
-#define CNTL_MODE_CONT1                 0x02
-#define CNTL_MODE_FUSE_ROM              0x0F
-#define CNTL_BIT_14_BIT                 0x00
-#define CNTL_BIT_16_BIT                 0x10
+#define CNTL_MODE_POWER_DOWN 0x00
+#define CNTL_MODE_ONCE 0x01
+#define CNTL_MODE_CONT1 0x02
+#define CNTL_MODE_FUSE_ROM 0x0F
+#define CNTL_BIT_14_BIT 0x00
+#define CNTL_BIT_16_BIT 0x10
 
 static bool ak8975Init(magDev_t *mag)
 {
@@ -109,9 +109,10 @@ static bool ak8975Init(magDev_t *mag)
     return true;
 }
 
-static int16_t parseMag(uint8_t *raw, int16_t gain) {
-  int ret = (int16_t)(raw[1] << 8 | raw[0]) * gain / 256;
-  return constrain(ret, INT16_MIN, INT16_MAX);
+static int16_t parseMag(uint8_t *raw, int16_t gain)
+{
+    int ret = (int16_t)(raw[1] << 8 | raw[0]) * gain / 256;
+    return constrain(ret, INT16_MIN, INT16_MAX);
 }
 
 static bool ak8975Read(magDev_t *mag, int16_t *magData)

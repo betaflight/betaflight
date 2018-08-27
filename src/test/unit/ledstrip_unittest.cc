@@ -22,52 +22,52 @@
 //#define DEBUG_LEDSTRIP
 
 extern "C" {
-    #include "platform.h"
-    #include "build/build_config.h"
+#include "platform.h"
+#include "build/build_config.h"
 
-    #include "common/axis.h"
-    #include "common/color.h"
+#include "common/axis.h"
+#include "common/color.h"
 
-    #include "pg/pg.h"
-    #include "pg/pg_ids.h"
-    #include "pg/rx.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+#include "pg/rx.h"
 
-    #include "drivers/io.h"
-    #include "drivers/light_ws2811strip.h"
-    #include "drivers/timer.h"
-    #include "drivers/timer_def.h"
+#include "drivers/io.h"
+#include "drivers/light_ws2811strip.h"
+#include "drivers/timer.h"
+#include "drivers/timer_def.h"
 
-    #include "fc/config.h"
-    #include "fc/rc_controls.h"
-    #include "fc/rc_modes.h"
-    #include "fc/runtime_config.h"
+#include "fc/config.h"
+#include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
+#include "fc/runtime_config.h"
 
-    #include "io/gps.h"
-    #include "io/ledstrip.h"
+#include "io/gps.h"
+#include "io/ledstrip.h"
 
-    #include "rx/rx.h"
+#include "rx/rx.h"
 
-    #include "sensors/battery.h"
+#include "sensors/battery.h"
 
-    #include "target.h"
+#include "target.h"
 }
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
 extern "C" {
-    extern uint8_t highestYValueForNorth;
-    extern uint8_t lowestYValueForSouth;
-    extern uint8_t highestXValueForWest;
-    extern uint8_t lowestXValueForEast;
+extern uint8_t highestYValueForNorth;
+extern uint8_t lowestYValueForSouth;
+extern uint8_t highestXValueForWest;
+extern uint8_t lowestXValueForEast;
 
-    extern uint8_t ledGridRows;
+extern uint8_t ledGridRows;
 
-    extern ledCounts_t ledCounts;
+extern ledCounts_t ledCounts;
 
-    void reevaluateLedConfig();
+void reevaluateLedConfig();
 
-    PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
+PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
 }
 
 TEST(LedStripTest, parseLedStripConfig)
@@ -77,92 +77,90 @@ TEST(LedStripTest, parseLedStripConfig)
 
     // and
     static const ledConfig_t expectedLedStripConfig[WS2811_LED_STRIP_LENGTH] = {
-            DEFINE_LED(9, 9, 0, LD(SOUTH), LF(FLIGHT_MODE), LO(WARNING), 0),
-            DEFINE_LED(10, 10, 0, LD(SOUTH), LF(FLIGHT_MODE), LO(WARNING), 0),
-            DEFINE_LED(11, 11, 0, LD(SOUTH), LF(ARM_STATE), LO(INDICATOR), 0),
-            DEFINE_LED(11, 11, 0, LD(EAST), LF(ARM_STATE), LO(INDICATOR), 0),
-            DEFINE_LED(10, 10, 0, LD(EAST), LF(FLIGHT_MODE), 0, 0),
+        DEFINE_LED(9, 9, 0, LD(SOUTH), LF(FLIGHT_MODE), LO(WARNING), 0),
+        DEFINE_LED(10, 10, 0, LD(SOUTH), LF(FLIGHT_MODE), LO(WARNING), 0),
+        DEFINE_LED(11, 11, 0, LD(SOUTH), LF(ARM_STATE), LO(INDICATOR), 0),
+        DEFINE_LED(11, 11, 0, LD(EAST), LF(ARM_STATE), LO(INDICATOR), 0),
+        DEFINE_LED(10, 10, 0, LD(EAST), LF(FLIGHT_MODE), 0, 0),
 
-            DEFINE_LED(10, 5, 0, LD(SOUTH), LF(FLIGHT_MODE), 0, 0),
-            DEFINE_LED(11, 4, 0, LD(SOUTH), LF(FLIGHT_MODE), 0, 0),
-            DEFINE_LED(12, 3, 0, LD(SOUTH), LF(ARM_STATE), LO(INDICATOR), 0),
-            DEFINE_LED(12, 2, 0, LD(NORTH), LF(ARM_STATE), LO(INDICATOR), 0),
-            DEFINE_LED(11, 1, 0, LD(NORTH), LF(FLIGHT_MODE), 0, 0),
-            DEFINE_LED(10, 0, 0, LD(NORTH), LF(FLIGHT_MODE), 0, 0),
+        DEFINE_LED(10, 5, 0, LD(SOUTH), LF(FLIGHT_MODE), 0, 0),
+        DEFINE_LED(11, 4, 0, LD(SOUTH), LF(FLIGHT_MODE), 0, 0),
+        DEFINE_LED(12, 3, 0, LD(SOUTH), LF(ARM_STATE), LO(INDICATOR), 0),
+        DEFINE_LED(12, 2, 0, LD(NORTH), LF(ARM_STATE), LO(INDICATOR), 0),
+        DEFINE_LED(11, 1, 0, LD(NORTH), LF(FLIGHT_MODE), 0, 0),
+        DEFINE_LED(10, 0, 0, LD(NORTH), LF(FLIGHT_MODE), 0, 0),
 
-            DEFINE_LED(7, 0, 0, LD(NORTH), LF(FLIGHT_MODE), LO(WARNING), 0),
-            DEFINE_LED(6, 0, 1, LD(NORTH), LF(COLOR), LO(WARNING), 0),
-            DEFINE_LED(5, 0, 1, LD(NORTH), LF(COLOR), LO(WARNING), 0),
-            DEFINE_LED(4, 0, 0, LD(NORTH), LF(FLIGHT_MODE), LO(WARNING), 0),
+        DEFINE_LED(7, 0, 0, LD(NORTH), LF(FLIGHT_MODE), LO(WARNING), 0),
+        DEFINE_LED(6, 0, 1, LD(NORTH), LF(COLOR), LO(WARNING), 0),
+        DEFINE_LED(5, 0, 1, LD(NORTH), LF(COLOR), LO(WARNING), 0),
+        DEFINE_LED(4, 0, 0, LD(NORTH), LF(FLIGHT_MODE), LO(WARNING), 0),
 
-            DEFINE_LED(2, 0, 0, LD(NORTH), LF(FLIGHT_MODE), 0, 0),
-            DEFINE_LED(1, 1, 0, LD(NORTH), LF(FLIGHT_MODE), 0, 0),
-            DEFINE_LED(0, 2, 0, LD(NORTH), LF(ARM_STATE), LO(INDICATOR), 0),
-            DEFINE_LED(0, 3, 0, LD(WEST), LF(ARM_STATE), LO(INDICATOR), 0),
-            DEFINE_LED(1, 4, 0, LD(WEST), LF(FLIGHT_MODE), 0, 0),
-            DEFINE_LED(2, 5, 0, LD(WEST), LF(FLIGHT_MODE), 0, 0),
+        DEFINE_LED(2, 0, 0, LD(NORTH), LF(FLIGHT_MODE), 0, 0),
+        DEFINE_LED(1, 1, 0, LD(NORTH), LF(FLIGHT_MODE), 0, 0),
+        DEFINE_LED(0, 2, 0, LD(NORTH), LF(ARM_STATE), LO(INDICATOR), 0),
+        DEFINE_LED(0, 3, 0, LD(WEST), LF(ARM_STATE), LO(INDICATOR), 0),
+        DEFINE_LED(1, 4, 0, LD(WEST), LF(FLIGHT_MODE), 0, 0),
+        DEFINE_LED(2, 5, 0, LD(WEST), LF(FLIGHT_MODE), 0, 0),
 
-            DEFINE_LED(1, 10, 0, LD(WEST), LF(FLIGHT_MODE), 0, 0),
-            DEFINE_LED(0, 11, 0, LD(WEST), LF(ARM_STATE), LO(INDICATOR), 0),
-            DEFINE_LED(0, 11, 0, LD(SOUTH), LF(ARM_STATE), LO(INDICATOR), 0),
-            DEFINE_LED(1, 10, 0, LD(SOUTH), LF(FLIGHT_MODE), LO(WARNING), 0),
-            DEFINE_LED(2, 9, 0, LD(SOUTH), LF(FLIGHT_MODE), LO(WARNING), 0),
+        DEFINE_LED(1, 10, 0, LD(WEST), LF(FLIGHT_MODE), 0, 0),
+        DEFINE_LED(0, 11, 0, LD(WEST), LF(ARM_STATE), LO(INDICATOR), 0),
+        DEFINE_LED(0, 11, 0, LD(SOUTH), LF(ARM_STATE), LO(INDICATOR), 0),
+        DEFINE_LED(1, 10, 0, LD(SOUTH), LF(FLIGHT_MODE), LO(WARNING), 0),
+        DEFINE_LED(2, 9, 0, LD(SOUTH), LF(FLIGHT_MODE), LO(WARNING), 0),
 
-            DEFINE_LED(7, 7, 14, 0, LF(THRUST_RING), 0, 0),
-            DEFINE_LED(8, 7, 15, 0, LF(THRUST_RING), 0, 0),
-            DEFINE_LED(8, 8, 14, 0, LF(THRUST_RING), 0, 0),
-            DEFINE_LED(7, 8, 15, 0, LF(THRUST_RING), 0, 0),
+        DEFINE_LED(7, 7, 14, 0, LF(THRUST_RING), 0, 0),
+        DEFINE_LED(8, 7, 15, 0, LF(THRUST_RING), 0, 0),
+        DEFINE_LED(8, 8, 14, 0, LF(THRUST_RING), 0, 0),
+        DEFINE_LED(7, 8, 15, 0, LF(THRUST_RING), 0, 0),
 
-            0,
-            0
-    };
+        0,
+        0};
 
     // and
     const char *ledStripConfigCommands[] = {
-            // Spider quad
+        // Spider quad
 
-            // right rear cluster
-            "9,9:S:FW:0",
-            "10,10:S:FW:0",
-            "11,11:S:IA:0",
-            "11,11:E:IA:0",
-            "10,10:E:F:0",
+        // right rear cluster
+        "9,9:S:FW:0",
+        "10,10:S:FW:0",
+        "11,11:S:IA:0",
+        "11,11:E:IA:0",
+        "10,10:E:F:0",
 
-            // right front cluster
-            "10,5:S:F:0",
-            "11,4:S:F:0",
-            "12,3:S:IA:0",
-            "12,2:N:IA:0",
-            "11,1:N:F:0",
-            "10,0:N:F:0",
+        // right front cluster
+        "10,5:S:F:0",
+        "11,4:S:F:0",
+        "12,3:S:IA:0",
+        "12,2:N:IA:0",
+        "11,1:N:F:0",
+        "10,0:N:F:0",
 
-            // center front cluster
-            "7,0:N:FW:0",
-            "6,0:N:CW:1",
-            "5,0:N:CW:1",
-            "4,0:N:FW:0",
+        // center front cluster
+        "7,0:N:FW:0",
+        "6,0:N:CW:1",
+        "5,0:N:CW:1",
+        "4,0:N:FW:0",
 
-            // left front cluster
-            "2,0:N:F:0",
-            "1,1:N:F:0",
-            "0,2:N:IA:0",
-            "0,3:W:IA:0",
-            "1,4:W:F:0",
-            "2,5:W:F:0",
+        // left front cluster
+        "2,0:N:F:0",
+        "1,1:N:F:0",
+        "0,2:N:IA:0",
+        "0,3:W:IA:0",
+        "1,4:W:F:0",
+        "2,5:W:F:0",
 
-            // left rear cluster
-            "1,10:W:F:0",
-            "0,11:W:IA:0",
-            "0,11:S:IA:0",
-            "1,10:S:FW:0",
-            "2,9:S:FW:0",
+        // left rear cluster
+        "1,10:W:F:0",
+        "0,11:W:IA:0",
+        "0,11:S:IA:0",
+        "1,10:S:FW:0",
+        "2,9:S:FW:0",
 
-            // thrust ring
-            "7,7::R:14",
-            "8,7::R:15",
-            "8,8::R:14",
-            "7,8::R:15"
-    };
+        // thrust ring
+        "7,7::R:14",
+        "8,7::R:15",
+        "8,8::R:14",
+        "7,8::R:15"};
 
     // when
     for (uint8_t index = 0; index < (sizeof(ledStripConfigCommands) / sizeof(ledStripConfigCommands[0])); index++) {
@@ -204,8 +202,7 @@ TEST(LedStripTest, smallestGridWithCenter)
         DEFINE_LED(1, 0, 0, LD(NORTH) | LD(WEST), LF(FLIGHT_MODE), LO(WARNING), 0),
         DEFINE_LED(0, 0, 0, LD(WEST), LF(ARM_STATE), LO(INDICATOR), 0),
         DEFINE_LED(0, 1, 0, LD(SOUTH) | LD(WEST), LF(FLIGHT_MODE), LO(WARNING), 0),
-        DEFINE_LED(0, 2, 0, LD(SOUTH), LF(ARM_STATE), LO(INDICATOR), 0)
-    };
+        DEFINE_LED(0, 2, 0, LD(SOUTH), LF(ARM_STATE), LO(INDICATOR), 0)};
     memcpy(&ledStripConfigMutable()->ledConfigs, &testLedConfigs, sizeof(testLedConfigs));
 
     // when
@@ -229,8 +226,7 @@ TEST(LedStripTest, smallestGrid)
         DEFINE_LED(1, 1, 0, LD(SOUTH) | LD(EAST), LF(FLIGHT_MODE), LO(INDICATOR), 0),
         DEFINE_LED(1, 0, 0, LD(NORTH) | LD(EAST), LF(FLIGHT_MODE), LO(INDICATOR), 0),
         DEFINE_LED(0, 0, 0, LD(NORTH) | LD(WEST), LF(FLIGHT_MODE), LO(INDICATOR), 0),
-        DEFINE_LED(0, 1, 0, LD(SOUTH) | LD(WEST), LF(FLIGHT_MODE), LO(INDICATOR), 0)
-    };
+        DEFINE_LED(0, 1, 0, LD(SOUTH) | LD(WEST), LF(FLIGHT_MODE), LO(INDICATOR), 0)};
     memcpy(&ledStripConfigMutable()->ledConfigs, &testLedConfigs, sizeof(testLedConfigs));
 
     // when
@@ -257,19 +253,17 @@ TEST(ColorTest, parseColor)
 
     // and
     const hsvColor_t expectedColors[TEST_COLOR_COUNT] = {
-            //  H    S    V
-            {   0,   0,   0 },
-            {   1,   1,   1 },
-            { 359, 255, 255 },
-            { 333,  22,   1 }
-    };
+        //  H    S    V
+        {0, 0, 0},
+        {1, 1, 1},
+        {359, 255, 255},
+        {333, 22, 1}};
 
     const char *testColors[TEST_COLOR_COUNT] = {
-            "0,0,0",
-            "1,1,1",
-            "359,255,255",
-            "333,22,1"
-    };
+        "0,0,0",
+        "1,1,1",
+        "359,255,255",
+        "333,22,1"};
 
     // when
     for (uint8_t index = 0; index < TEST_COLOR_COUNT; index++) {
@@ -303,42 +297,49 @@ int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 boxBitmask_t rcModeActivationMask;
 gpsSolutionData_t gpsSol;
 
-batteryState_e getBatteryState(void) {
+batteryState_e getBatteryState(void)
+{
     return BATTERY_OK;
 }
 
-void ws2811LedStripInit(ioTag_t ioTag) {
+void ws2811LedStripInit(ioTag_t ioTag)
+{
     UNUSED(ioTag);
 }
 
 void ws2811UpdateStrip(ledStripFormatRGB_e) {}
 
-void setLedValue(uint16_t index, const uint8_t value) {
+void setLedValue(uint16_t index, const uint8_t value)
+{
     UNUSED(index);
     UNUSED(value);
 }
 
-void setLedHsv(uint16_t index, const hsvColor_t *color) {
+void setLedHsv(uint16_t index, const hsvColor_t *color)
+{
     UNUSED(index);
     UNUSED(color);
 }
 
-void getLedHsv(uint16_t index, hsvColor_t *color) {
+void getLedHsv(uint16_t index, hsvColor_t *color)
+{
     UNUSED(index);
     UNUSED(color);
 }
 
-
-void scaleLedValue(uint16_t index, const uint8_t scalePercent) {
+void scaleLedValue(uint16_t index, const uint8_t scalePercent)
+{
     UNUSED(index);
     UNUSED(scalePercent);
 }
 
-void setStripColor(const hsvColor_t *color) {
+void setStripColor(const hsvColor_t *color)
+{
     UNUSED(color);
 }
 
-void setStripColors(const hsvColor_t *colors) {
+void setStripColors(const hsvColor_t *colors)
+{
     UNUSED(colors);
 }
 
@@ -352,14 +353,16 @@ void delay(uint32_t ms)
 
 uint32_t micros(void) { return 0; }
 bool shouldSoundBatteryAlarm(void) { return false; }
-bool featureIsEnabled(uint32_t mask) {
+bool featureIsEnabled(uint32_t mask)
+{
     UNUSED(mask);
     return false;
 }
 
-void tfp_sprintf(char *, char*, ...) { }
+void tfp_sprintf(char *, char *, ...) {}
 
-int scaleRange(int x, int srcMin, int srcMax, int destMin, int destMax) {
+int scaleRange(int x, int srcMin, int srcMax, int destMin, int destMax)
+{
     UNUSED(x);
     UNUSED(srcMin);
     UNUSED(srcMax);
@@ -387,5 +390,4 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {};
 bool isArmingDisabled(void) { return false; }
 
 uint8_t getRssiPercent(void) { return 0; }
-
 }

@@ -50,7 +50,7 @@
 #include "hardware_revision.h"
 #endif
 
-baro_t baro;                        // barometer access functions
+baro_t baro; // barometer access functions
 
 PG_REGISTER_WITH_RESET_FN(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 0);
 
@@ -119,7 +119,7 @@ void pgResetFn_barometerConfig(barometerConfig_t *barometerConfig)
     barometerConfig->baro_spi_csn = IO_TAG(LPS_CS_PIN);
     barometerConfig->baro_i2c_device = I2C_DEV_TO_CFG(I2CINVALID);
     barometerConfig->baro_i2c_address = 0;
-#elif defined(DEFAULT_BARO_MS5611) || defined(DEFAULT_BARO_BMP280) || defined(DEFAULT_BARO_BMP085)||defined(DEFAULT_BARO_QMP6988)
+#elif defined(DEFAULT_BARO_MS5611) || defined(DEFAULT_BARO_BMP280) || defined(DEFAULT_BARO_BMP085) || defined(DEFAULT_BARO_QMP6988)
     // All I2C devices shares a default config with address = 0 (per device default)
     barometerConfig->baro_bustype = BUSTYPE_I2C;
     barometerConfig->baro_i2c_device = I2C_DEV_TO_CFG(BARO_I2C_INSTANCE);
@@ -138,12 +138,12 @@ void pgResetFn_barometerConfig(barometerConfig_t *barometerConfig)
 
 #ifdef USE_BARO
 
-static uint16_t calibratingB = 0;      // baro calibration = get new ground pressure value
+static uint16_t calibratingB = 0; // baro calibration = get new ground pressure value
 static int32_t baroPressure = 0;
 static int32_t baroTemperature = 0;
 
 static int32_t baroGroundAltitude = 0;
-static int32_t baroGroundPressure = 8*101325;
+static int32_t baroGroundPressure = 8 * 101325;
 static uint32_t baroPressureSum = 0;
 
 bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
@@ -152,7 +152,7 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
 
     baroSensor_e baroHardware = baroHardwareToUse;
 
-#if !defined(USE_BARO_BMP085) && !defined(USE_BARO_MS5611) && !defined(USE_BARO_SPI_MS5611) && !defined(USE_BARO_BMP280) && !defined(USE_BARO_SPI_BMP280)&& !defined(USE_BARO_QMP6988) && !defined(USE_BARO_SPI_QMP6988)
+#if !defined(USE_BARO_BMP085) && !defined(USE_BARO_MS5611) && !defined(USE_BARO_SPI_MS5611) && !defined(USE_BARO_BMP280) && !defined(USE_BARO_SPI_BMP280) && !defined(USE_BARO_QMP6988) && !defined(USE_BARO_SPI_QMP6988)
     UNUSED(dev);
 #endif
 
@@ -183,22 +183,22 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
 
     case BARO_BMP085:
 #ifdef USE_BARO_BMP085
-        {
-            const bmp085Config_t *bmp085Config = NULL;
+    {
+        const bmp085Config_t *bmp085Config = NULL;
 
 #if defined(BARO_XCLR_GPIO) && defined(BARO_EOC_GPIO)
-            static const bmp085Config_t defaultBMP085Config = {
-                .xclrIO = IO_TAG(BARO_XCLR_PIN),
-                .eocIO = IO_TAG(BARO_EOC_PIN),
-            };
-            bmp085Config = &defaultBMP085Config;
+        static const bmp085Config_t defaultBMP085Config = {
+            .xclrIO = IO_TAG(BARO_XCLR_PIN),
+            .eocIO = IO_TAG(BARO_EOC_PIN),
+        };
+        bmp085Config = &defaultBMP085Config;
 #endif
 
-            if (bmp085Detect(bmp085Config, dev)) {
-                baroHardware = BARO_BMP085;
-                break;
-            }
+        if (bmp085Detect(bmp085Config, dev)) {
+            baroHardware = BARO_BMP085;
+            break;
         }
+    }
 #endif
         FALLTHROUGH;
 
@@ -228,15 +228,15 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
         }
 #endif
         FALLTHROUGH;
-	
-	 case BARO_QMP6988:
+
+    case BARO_QMP6988:
 #if defined(USE_BARO_QMP6988) || defined(USE_BARO_SPI_QMP6988)
         if (qmp6988Detect(dev)) {
             baroHardware = BARO_QMP6988;
             break;
         }
 #endif
-		FALLTHROUGH;
+        FALLTHROUGH;
     case BARO_NONE:
         baroHardware = BARO_NONE;
         break;
@@ -318,8 +318,8 @@ typedef enum {
     BAROMETER_NEEDS_CALCULATION
 } barometerState_e;
 
-
-bool isBaroReady(void) {
+bool isBaroReady(void)
+{
     return baroReady;
 }
 
@@ -328,23 +328,23 @@ uint32_t baroUpdate(void)
     static barometerState_e state = BAROMETER_NEEDS_SAMPLES;
 
     switch (state) {
-        default:
-        case BAROMETER_NEEDS_SAMPLES:
-            baro.dev.get_ut(&baro.dev);
-            baro.dev.start_up(&baro.dev);
-            state = BAROMETER_NEEDS_CALCULATION;
-            return baro.dev.up_delay;
+    default:
+    case BAROMETER_NEEDS_SAMPLES:
+        baro.dev.get_ut(&baro.dev);
+        baro.dev.start_up(&baro.dev);
+        state = BAROMETER_NEEDS_CALCULATION;
+        return baro.dev.up_delay;
         break;
 
-        case BAROMETER_NEEDS_CALCULATION:
-            baro.dev.get_up(&baro.dev);
-            baro.dev.start_ut(&baro.dev);
-            baro.dev.calculate(&baroPressure, &baroTemperature);
-            baro.baroPressure = baroPressure;
-            baro.baroTemperature = baroTemperature;
-            baroPressureSum = recalculateBarometerTotal(barometerConfig()->baro_sample_count, baroPressureSum, baroPressure);
-            state = BAROMETER_NEEDS_SAMPLES;
-            return baro.dev.ut_delay;
+    case BAROMETER_NEEDS_CALCULATION:
+        baro.dev.get_up(&baro.dev);
+        baro.dev.start_ut(&baro.dev);
+        baro.dev.calculate(&baroPressure, &baroTemperature);
+        baro.baroPressure = baroPressure;
+        baro.baroTemperature = baroTemperature;
+        baroPressureSum = recalculateBarometerTotal(barometerConfig()->baro_sample_count, baroPressureSum, baroPressure);
+        state = BAROMETER_NEEDS_SAMPLES;
+        return baro.dev.ut_delay;
         break;
     }
 }
@@ -359,8 +359,7 @@ int32_t baroCalculateAltitude(void)
         BaroAlt_tmp = lrintf((1.0f - pow_approx((float)(baroPressureSum / PRESSURE_SAMPLE_COUNT) / 101325.0f, 0.190295f)) * 4433000.0f); // in cm
         BaroAlt_tmp -= baroGroundAltitude;
         baro.BaroAlt = lrintf((float)baro.BaroAlt * CONVERT_PARAMETER_TO_FLOAT(barometerConfig()->baro_noise_lpf) + (float)BaroAlt_tmp * (1.0f - CONVERT_PARAMETER_TO_FLOAT(barometerConfig()->baro_noise_lpf))); // additional LPF to reduce baro noise
-    }
-    else {
+    } else {
         baro.BaroAlt = 0;
     }
     return baro.BaroAlt;
@@ -375,10 +374,10 @@ void performBaroCalibrationCycle(void)
     baroGroundAltitude = (1.0f - pow_approx((baroGroundPressure / 8) / 101325.0f, 0.190295f)) * 4433000.0f;
 
     if (baroGroundPressure == savedGroundPressure)
-      calibratingB = 0;
+        calibratingB = 0;
     else {
-      calibratingB--;
-      savedGroundPressure=baroGroundPressure;
+        calibratingB--;
+        savedGroundPressure = baroGroundPressure;
     }
 }
 

@@ -80,7 +80,7 @@ void audioGenerateWhiteNoise(void)
 
 void audioPlayTone(uint8_t tone)
 {
-    handle.Init.Period = 64 + (MAX(TONE_MIN,MIN(tone, TONE_MAX)) * TONE_SPREAD);
+    handle.Init.Period = 64 + (MAX(TONE_MIN, MIN(tone, TONE_MAX)) * TONE_SPREAD);
     TIM_Base_SetConfig(handle.Instance, &handle.Init);
 }
 

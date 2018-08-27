@@ -48,39 +48,39 @@
 // XXX Do these belong here?
 
 #ifdef USE_UART1_RX_DMA
-# define UART1_RX_DMA DMA1_Channel5
+#define UART1_RX_DMA DMA1_Channel5
 #else
-# define UART1_RX_DMA 0
+#define UART1_RX_DMA 0
 #endif
 
 #ifdef USE_UART1_TX_DMA
-# define UART1_TX_DMA DMA1_Channel4
+#define UART1_TX_DMA DMA1_Channel4
 #else
-# define UART1_TX_DMA 0
+#define UART1_TX_DMA 0
 #endif
 
 #ifdef USE_UART2_RX_DMA
-# define UART2_RX_DMA DMA1_Channel6
+#define UART2_RX_DMA DMA1_Channel6
 #else
-# define UART2_RX_DMA 0
+#define UART2_RX_DMA 0
 #endif
 
 #ifdef USE_UART2_TX_DMA
-# define UART2_TX_DMA DMA1_Channel7
+#define UART2_TX_DMA DMA1_Channel7
 #else
-# define UART2_TX_DMA 0
+#define UART2_TX_DMA 0
 #endif
 
 #ifdef USE_UART3_RX_DMA
-# define UART3_RX_DMA DMA1_Channel3
+#define UART3_RX_DMA DMA1_Channel3
 #else
-# define UART3_RX_DMA 0
+#define UART3_RX_DMA 0
 #endif
 
 #ifdef USE_UART3_TX_DMA
-# define UART3_TX_DMA DMA1_Channel2
+#define UART3_TX_DMA DMA1_Channel2
 #else
-# define UART3_TX_DMA 0
+#define UART3_TX_DMA 0
 #endif
 
 const uartHardware_t uartHardware[UARTDEV_COUNT] = {
@@ -90,8 +90,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .reg = USART1,
         .rxDMAChannel = UART1_RX_DMA,
         .txDMAChannel = UART1_TX_DMA,
-        .rxPins = { DEFIO_TAG_E(PA10), DEFIO_TAG_E(PB7), DEFIO_TAG_E(PC5), DEFIO_TAG_E(PE1) },
-        .txPins = { DEFIO_TAG_E(PA9), DEFIO_TAG_E(PB6), DEFIO_TAG_E(PC4), DEFIO_TAG_E(PE0) },
+        .rxPins = {DEFIO_TAG_E(PA10), DEFIO_TAG_E(PB7), DEFIO_TAG_E(PC5), DEFIO_TAG_E(PE1)},
+        .txPins = {DEFIO_TAG_E(PA9), DEFIO_TAG_E(PB6), DEFIO_TAG_E(PC4), DEFIO_TAG_E(PE0)},
         .rcc = RCC_APB2(USART1),
         .af = GPIO_AF_7,
         .irqn = USART1_IRQn,
@@ -106,8 +106,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .reg = USART2,
         .rxDMAChannel = UART2_RX_DMA,
         .txDMAChannel = UART2_TX_DMA,
-        .rxPins = { DEFIO_TAG_E(PA15), DEFIO_TAG_E(PA3), DEFIO_TAG_E(PB4), DEFIO_TAG_E(PD6) },
-        .txPins = { DEFIO_TAG_E(PA14), DEFIO_TAG_E(PA2), DEFIO_TAG_E(PB3), DEFIO_TAG_E(PD5) },
+        .rxPins = {DEFIO_TAG_E(PA15), DEFIO_TAG_E(PA3), DEFIO_TAG_E(PB4), DEFIO_TAG_E(PD6)},
+        .txPins = {DEFIO_TAG_E(PA14), DEFIO_TAG_E(PA2), DEFIO_TAG_E(PB3), DEFIO_TAG_E(PD5)},
         .rcc = RCC_APB1(USART2),
         .af = GPIO_AF_7,
         .irqn = USART2_IRQn,
@@ -122,8 +122,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .reg = USART3,
         .rxDMAChannel = UART3_RX_DMA,
         .txDMAChannel = UART3_TX_DMA,
-        .rxPins = { DEFIO_TAG_E(PB11), DEFIO_TAG_E(PC11), DEFIO_TAG_E(PD9), IO_TAG_NONE },
-        .txPins = { DEFIO_TAG_E(PB10), DEFIO_TAG_E(PC10), DEFIO_TAG_E(PD8), IO_TAG_NONE },
+        .rxPins = {DEFIO_TAG_E(PB11), DEFIO_TAG_E(PC11), DEFIO_TAG_E(PD9), IO_TAG_NONE},
+        .txPins = {DEFIO_TAG_E(PB10), DEFIO_TAG_E(PC10), DEFIO_TAG_E(PD8), IO_TAG_NONE},
         .rcc = RCC_APB1(USART3),
         .af = GPIO_AF_7,
         .irqn = USART3_IRQn,
@@ -139,8 +139,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .reg = UART4,
         .rxDMAChannel = 0, // XXX UART4_RX_DMA !?
         .txDMAChannel = 0, // XXX UART4_TX_DMA !?
-        .rxPins = { DEFIO_TAG_E(PC11), IO_TAG_NONE, IO_TAG_NONE, IO_TAG_NONE },
-        .txPins = { DEFIO_TAG_E(PC10), IO_TAG_NONE, IO_TAG_NONE, IO_TAG_NONE },
+        .rxPins = {DEFIO_TAG_E(PC11), IO_TAG_NONE, IO_TAG_NONE, IO_TAG_NONE},
+        .txPins = {DEFIO_TAG_E(PC10), IO_TAG_NONE, IO_TAG_NONE, IO_TAG_NONE},
         .rcc = RCC_APB1(UART4),
         .af = GPIO_AF_5,
         .irqn = UART4_IRQn,
@@ -156,8 +156,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .reg = UART5,
         .rxDMAChannel = 0,
         .txDMAChannel = 0,
-        .rxPins = { DEFIO_TAG_E(PD2), IO_TAG_NONE, IO_TAG_NONE, IO_TAG_NONE },
-        .txPins = { DEFIO_TAG_E(PC12), IO_TAG_NONE, IO_TAG_NONE, IO_TAG_NONE },
+        .rxPins = {DEFIO_TAG_E(PD2), IO_TAG_NONE, IO_TAG_NONE, IO_TAG_NONE},
+        .txPins = {DEFIO_TAG_E(PC12), IO_TAG_NONE, IO_TAG_NONE, IO_TAG_NONE},
         .rcc = RCC_APB1(UART5),
         .af = GPIO_AF_5,
         .irqn = UART5_IRQn,
@@ -167,9 +167,9 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #endif
 };
 
-static void handleUsartTxDma(dmaChannelDescriptor_t* descriptor)
+static void handleUsartTxDma(dmaChannelDescriptor_t *descriptor)
 {
-    uartPort_t *s = (uartPort_t*)(descriptor->userParam);
+    uartPort_t *s = (uartPort_t *)(descriptor->userParam);
     DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
     DMA_Cmd(descriptor->ref, DISABLE);
 
@@ -180,15 +180,14 @@ void serialUARTInitIO(IO_t txIO, IO_t rxIO, portMode_e mode, portOptions_e optio
 {
     if ((options & SERIAL_BIDIR) && txIO) {
         ioConfig_t ioCfg = IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz,
-            ((options & SERIAL_INVERTED) || (options & SERIAL_BIDIR_PP)) ? GPIO_OType_PP : GPIO_OType_OD,
-            ((options & SERIAL_INVERTED) || (options & SERIAL_BIDIR_PP)) ? GPIO_PuPd_DOWN : GPIO_PuPd_UP
-        );
+                                     ((options & SERIAL_INVERTED) || (options & SERIAL_BIDIR_PP)) ? GPIO_OType_PP : GPIO_OType_OD,
+                                     ((options & SERIAL_INVERTED) || (options & SERIAL_BIDIR_PP)) ? GPIO_PuPd_DOWN : GPIO_PuPd_UP);
 
         IOInit(txIO, OWNER_SERIAL_TX, RESOURCE_INDEX(index));
         IOConfigGPIOAF(txIO, ioCfg, af);
 
         if (!(options & SERIAL_INVERTED))
-            IOLo(txIO);   // OpenDrain output should be inactive
+            IOLo(txIO); // OpenDrain output should be inactive
     } else {
         ioConfig_t ioCfg = IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, (options & SERIAL_INVERTED) ? GPIO_PuPd_DOWN : GPIO_PuPd_UP);
         if ((mode & MODE_TX) && txIO) {
@@ -283,9 +282,8 @@ void uartIrqHandler(uartPort_t *s)
         }
     }
 
-    if (ISR & USART_FLAG_ORE)
-    {
-        USART_ClearITPendingBit (s->USARTx, USART_IT_ORE);
+    if (ISR & USART_FLAG_ORE) {
+        USART_ClearITPendingBit(s->USARTx, USART_IT_ORE);
     }
 }
 #endif // USE_UART

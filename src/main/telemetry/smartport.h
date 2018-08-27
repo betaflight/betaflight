@@ -33,17 +33,16 @@
 #define SMARTPORT_MSP_TX_BUF_SIZE 256
 #define SMARTPORT_MSP_RX_BUF_SIZE 64
 
-enum
-{
+enum {
     FSSP_START_STOP = 0x7E,
 
-    FSSP_DLE        = 0x7D,
-    FSSP_DLE_XOR    = 0x20,
+    FSSP_DLE = 0x7D,
+    FSSP_DLE_XOR = 0x20,
 
     FSSP_DATA_FRAME = 0x10,
     FSSP_MSPC_FRAME_SMARTPORT = 0x30, // MSP client frame
-    FSSP_MSPC_FRAME_FPORT = 0x31, // MSP client frame
-    FSSP_MSPS_FRAME = 0x32, // MSP server frame
+    FSSP_MSPC_FRAME_FPORT = 0x31,     // MSP client frame
+    FSSP_MSPS_FRAME = 0x32,           // MSP server frame
 
     // ID of sensor. Must be something that is polled by FrSky RX
     FSSP_SENSOR_ID1 = 0x1B,
@@ -55,7 +54,7 @@ enum
 };
 
 typedef struct smartPortPayload_s {
-    uint8_t  frameId;
+    uint8_t frameId;
     uint16_t valueId;
     uint32_t data;
 } __attribute__((packed)) smartPortPayload_t;

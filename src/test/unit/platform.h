@@ -42,15 +42,17 @@
 #define USE_SERVOS
 #define USE_TRANSPONDER
 
-typedef enum
-{
+typedef enum {
     Mode_TEST = 0x0,
     Mode_Out_PP = 0x10
 } GPIO_Mode;
 
-typedef enum {RESET = 0, SET = !RESET} FlagStatus, ITStatus;
-typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
-typedef enum {TEST_IRQ = 0 } IRQn_Type;
+typedef enum { RESET = 0,
+               SET = !RESET } FlagStatus,
+    ITStatus;
+typedef enum { DISABLE = 0,
+               ENABLE = !DISABLE } FunctionalState;
+typedef enum { TEST_IRQ = 0 } IRQn_Type;
 typedef enum {
     EXTI_Trigger_Rising = 0x08,
     EXTI_Trigger_Falling = 0x0C,
@@ -64,34 +66,34 @@ typedef struct
 
 typedef struct
 {
-    void* test;
+    void *test;
 } TIM_TypeDef;
 
 typedef struct
 {
-    void* test;
+    void *test;
 } TIM_OCInitTypeDef;
 
 typedef struct {
-    void* test;
+    void *test;
 } DMA_TypeDef;
 
 typedef struct {
-    void* test;
+    void *test;
 } DMA_Channel_TypeDef;
 
 uint8_t DMA_GetFlagStatus(void *);
-void DMA_Cmd(DMA_Channel_TypeDef*, FunctionalState );
+void DMA_Cmd(DMA_Channel_TypeDef *, FunctionalState);
 void DMA_ClearFlag(uint32_t);
 
 typedef struct
 {
-    void* test;
+    void *test;
 } SPI_TypeDef;
 
 typedef struct
 {
-    void* test;
+    void *test;
 } USART_TypeDef;
 
 typedef struct
@@ -101,7 +103,7 @@ typedef struct
 
 typedef struct
 {
-    void* test;
+    void *test;
 } ADC_TypeDef;
 
 #define WS2811_DMA_TC_FLAG (void *)1

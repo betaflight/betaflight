@@ -48,8 +48,8 @@ void detectHardwareRevision(void)
 
 #ifdef USE_SPI
 
-#define DISABLE_SPI_CS       IOHi(nazeSpiCsPin)
-#define ENABLE_SPI_CS        IOLo(nazeSpiCsPin)
+#define DISABLE_SPI_CS IOHi(nazeSpiCsPin)
+#define ENABLE_SPI_CS IOLo(nazeSpiCsPin)
 
 #define SPI_DEVICE_NONE (0)
 #define SPI_DEVICE_FLASH (1)
@@ -66,7 +66,7 @@ uint8_t detectSpiDevice(void)
     nazeSpiCsPin = IOGetByTag(IO_TAG(NAZE_SPI_CS_PIN));
 #endif
 
-    const uint8_t out[] = { M25P16_INSTRUCTION_RDID, 0, 0, 0 };
+    const uint8_t out[] = {M25P16_INSTRUCTION_RDID, 0, 0, 0};
     uint8_t in[4];
     uint32_t flash_id;
 
@@ -79,7 +79,6 @@ uint8_t detectSpiDevice(void)
     flash_id = in[1] << 16 | in[2] << 8 | in[3];
     if (flash_id == FLASH_M25P16_ID)
         return SPI_DEVICE_FLASH;
-
 
     // try autodetect MPU
     delay(50);

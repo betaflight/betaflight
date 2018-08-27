@@ -34,13 +34,12 @@
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/accgyro/gyro_sync.h"
 
-
 bool gyroSyncCheckUpdate(gyroDev_t *gyro)
 {
     bool ret;
     if (gyro->dataReady) {
         ret = true;
-        gyro->dataReady= false;
+        gyro->dataReady = false;
     } else {
         ret = false;
     }
@@ -86,7 +85,7 @@ uint32_t gyroSetSampleRate(gyroDev_t *gyro, uint8_t lpf, uint8_t gyroSyncDenomin
     }
 
     // calculate gyro divider and targetLooptime (expected cycleTime)
-    gyro->mpuDividerDrops  = gyroSyncDenominator - 1;
+    gyro->mpuDividerDrops = gyroSyncDenominator - 1;
     const uint32_t targetLooptime = (uint32_t)(gyroSyncDenominator * gyroSamplePeriod);
     return targetLooptime;
 }

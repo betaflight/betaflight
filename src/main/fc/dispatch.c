@@ -45,7 +45,7 @@ void dispatchEnable(void)
 
 void dispatchProcess(uint32_t currentTime)
 {
-    for (dispatchEntry_t **p = &head; *p; ) {
+    for (dispatchEntry_t **p = &head; *p;) {
         if (cmp32(currentTime, (*p)->delayedUntil) < 0)
             break;
         // unlink entry first, so handler can replan self

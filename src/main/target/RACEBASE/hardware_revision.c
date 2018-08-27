@@ -45,8 +45,7 @@ void detectHardwareRevision(void)
         .GPIO_Mode = GPIO_Mode_OUT,
         .GPIO_OType = GPIO_OType_PP,
         .GPIO_PuPd = GPIO_PuPd_NOPULL,
-        .GPIO_Speed = GPIO_Speed_2MHz
-    };
+        .GPIO_Speed = GPIO_Speed_2MHz};
 
     // GYRO CS as output
     GPIO_InitStructure.GPIO_Pin = (GPIO_Pin_5 | GPIO_Pin_12);
@@ -60,5 +59,4 @@ void detectHardwareRevision(void)
 
 void updateHardwareRevision(void)
 {
-
 }

@@ -31,7 +31,6 @@
 
 #include "fc/config.h"
 
-
 #ifdef USE_TARGET_CONFIG
 void targetConfiguration(void)
 {

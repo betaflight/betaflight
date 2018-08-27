@@ -31,7 +31,7 @@
 
 #include "io/osd.h"
 
-#define VBAT_SCALE       113
+#define VBAT_SCALE 113
 
 #ifdef USE_TARGET_CONFIG
 void targetConfiguration(void)

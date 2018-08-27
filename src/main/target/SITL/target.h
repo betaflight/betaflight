@@ -43,17 +43,17 @@
 // file name to save config
 #define EEPROM_FILENAME "eeprom.bin"
 #define EEPROM_IN_RAM
-#define EEPROM_SIZE     32768
+#define EEPROM_SIZE 32768
 
 #define U_ID_0 0
 #define U_ID_1 1
 #define U_ID_2 2
 
 #undef TASK_GYROPID_DESIRED_PERIOD
-#define TASK_GYROPID_DESIRED_PERIOD     100
+#define TASK_GYROPID_DESIRED_PERIOD 100
 
 #undef SCHEDULER_DELAY_LIMIT
-#define SCHEDULER_DELAY_LIMIT           1
+#define SCHEDULER_DELAY_LIMIT 1
 
 #define USE_FAKE_LED
 
@@ -85,8 +85,8 @@
 
 #define SERIAL_PORT_COUNT 8
 
-#define DEFAULT_RX_FEATURE      FEATURE_RX_MSP
-#define DEFAULT_FEATURES        (FEATURE_GPS | FEATURE_TELEMETRY)
+#define DEFAULT_RX_FEATURE FEATURE_RX_MSP
+#define DEFAULT_FEATURES (FEATURE_GPS | FEATURE_TELEMETRY)
 
 #define USE_PARAMETER_GROUPS
 
@@ -131,16 +131,14 @@
 
 #define FLASH_SIZE 2048
 
-
 #define LED_STRIP_TIMER 1
 #define SOFTSERIAL_1_TIMER 2
 #define SOFTSERIAL_2_TIMER 3
 
-#define DEFIO_NO_PORTS   // suppress 'no pins defined' warning
+#define DEFIO_NO_PORTS // suppress 'no pins defined' warning
 
 #define WS2811_DMA_TC_FLAG (void *)1
 #define WS2811_DMA_HANDLER_IDENTIFER 0
-
 
 // belows are internal stuff
 
@@ -151,19 +149,21 @@ extern uint8_t eepromData[EEPROM_SIZE];
 #define __config_start (*eepromData)
 #define __config_end (*ARRAYEND(eepromData))
 #else
-extern uint8_t __config_start;   // configured via linker script when building binaries.
+extern uint8_t __config_start; // configured via linker script when building binaries.
 extern uint8_t __config_end;
 #endif
 
-typedef enum
-{
+typedef enum {
     Mode_TEST = 0x0,
     Mode_Out_PP = 0x10
 } GPIO_Mode;
 
-typedef enum {RESET = 0, SET = !RESET} FlagStatus, ITStatus;
-typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
-typedef enum {TEST_IRQ = 0 } IRQn_Type;
+typedef enum { RESET = 0,
+               SET = !RESET } FlagStatus,
+    ITStatus;
+typedef enum { DISABLE = 0,
+               ENABLE = !DISABLE } FunctionalState;
+typedef enum { TEST_IRQ = 0 } IRQn_Type;
 typedef enum {
     EXTI_Trigger_Rising = 0x08,
     EXTI_Trigger_Falling = 0x0C,
@@ -172,44 +172,44 @@ typedef enum {
 
 typedef struct
 {
-  uint32_t IDR;
-  uint32_t ODR;
-  uint32_t BSRR;
-  uint32_t BRR;
+    uint32_t IDR;
+    uint32_t ODR;
+    uint32_t BSRR;
+    uint32_t BRR;
 } GPIO_TypeDef;
 
 #define GPIOA_BASE ((intptr_t)0x0001)
 
 typedef struct
 {
-    void* test;
+    void *test;
 } TIM_TypeDef;
 
 typedef struct
 {
-    void* test;
+    void *test;
 } TIM_OCInitTypeDef;
 
 typedef struct {
-    void* test;
+    void *test;
 } DMA_TypeDef;
 
 typedef struct {
-    void* test;
+    void *test;
 } DMA_Channel_TypeDef;
 
 uint8_t DMA_GetFlagStatus(void *);
-void DMA_Cmd(DMA_Channel_TypeDef*, FunctionalState );
+void DMA_Cmd(DMA_Channel_TypeDef *, FunctionalState);
 void DMA_ClearFlag(uint32_t);
 
 typedef struct
 {
-    void* test;
+    void *test;
 } SPI_TypeDef;
 
 typedef struct
 {
-    void* test;
+    void *test;
 } USART_TypeDef;
 
 #define USART1 ((USART_TypeDef *)0x0001)
@@ -228,28 +228,27 @@ typedef struct
 
 typedef struct
 {
-    void* test;
+    void *test;
 } I2C_TypeDef;
 
-typedef enum
-{
-  FLASH_BUSY = 1,
-  FLASH_ERROR_PG,
-  FLASH_ERROR_WRP,
-  FLASH_COMPLETE,
-  FLASH_TIMEOUT
+typedef enum {
+    FLASH_BUSY = 1,
+    FLASH_ERROR_PG,
+    FLASH_ERROR_WRP,
+    FLASH_COMPLETE,
+    FLASH_TIMEOUT
 } FLASH_Status;
 
 typedef struct {
-    double timestamp;                   // in seconds
-    double imu_angular_velocity_rpy[3]; // rad/s -> range: +/- 8192; +/- 2000 deg/se
-    double imu_linear_acceleration_xyz[3];    // m/s/s NED, body frame -> sim 1G = 9.80665, FC 1G = 256
-    double imu_orientation_quat[4];     //w, x, y, z
-    double velocity_xyz[3];             // m/s, earth frame
-    double position_xyz[3];             // meters, NED from origin
+    double timestamp;                      // in seconds
+    double imu_angular_velocity_rpy[3];    // rad/s -> range: +/- 8192; +/- 2000 deg/se
+    double imu_linear_acceleration_xyz[3]; // m/s/s NED, body frame -> sim 1G = 9.80665, FC 1G = 256
+    double imu_orientation_quat[4];        //w, x, y, z
+    double velocity_xyz[3];                // m/s, earth frame
+    double position_xyz[3];                // meters, NED from origin
 } fdm_packet;
 typedef struct {
-    float motor_speed[4];   // normal: [0.0, 1.0], 3D: [-1.0, 1.0]
+    float motor_speed[4]; // normal: [0.0, 1.0], 3D: [-1.0, 1.0]
 } servo_packet;
 
 void FLASH_Unlock(void);

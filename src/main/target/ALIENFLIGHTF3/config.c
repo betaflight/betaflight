@@ -54,8 +54,8 @@
 #undef BRUSHED_MOTORS_PWM_RATE
 #endif
 
-#define BRUSHED_MOTORS_PWM_RATE 32000           // 32kHz
-#define VBAT_SCALE              20
+#define BRUSHED_MOTORS_PWM_RATE 32000 // 32kHz
+#define VBAT_SCALE 20
 
 // alternative defaults settings for AlienFlight targets
 void targetConfiguration(void)
@@ -64,13 +64,13 @@ void targetConfiguration(void)
     if (hardwareRevision == AFF3_REV_2) {
         statusLedConfigMutable()->inversion = 0
 #ifdef LED0_A_INVERTED
-            | BIT(0)
+                                              | BIT(0)
 #endif
 #ifdef LED1_A_INVERTED
-            | BIT(1)
+                                              | BIT(1)
 #endif
 #ifdef LED2_A_INVERTED
-            | BIT(2)
+                                              | BIT(2)
 #endif
             ;
 
@@ -123,13 +123,13 @@ void targetConfiguration(void)
         pidProfile->pid[PID_PITCH].D = 60;
     }
 
-    *customMotorMixerMutable(0) = (motorMixer_t){ 1.0f, -0.414178f,  1.0f, -1.0f };    // REAR_R
-    *customMotorMixerMutable(1) = (motorMixer_t){ 1.0f, -0.414178f, -1.0f,  1.0f };    // FRONT_R
-    *customMotorMixerMutable(2) = (motorMixer_t){ 1.0f,  0.414178f,  1.0f,  1.0f };    // REAR_L
-    *customMotorMixerMutable(3) = (motorMixer_t){ 1.0f,  0.414178f, -1.0f, -1.0f };    // FRONT_L
-    *customMotorMixerMutable(4) = (motorMixer_t){ 1.0f, -1.0f, -0.414178f, -1.0f };    // MIDFRONT_R
-    *customMotorMixerMutable(5) = (motorMixer_t){ 1.0f,  1.0f, -0.414178f,  1.0f };    // MIDFRONT_L
-    *customMotorMixerMutable(6) = (motorMixer_t){ 1.0f, -1.0f,  0.414178f,  1.0f };    // MIDREAR_R
-    *customMotorMixerMutable(7) = (motorMixer_t){ 1.0f,  1.0f,  0.414178f, -1.0f };    // MIDREAR_L
+    *customMotorMixerMutable(0) = (motorMixer_t){1.0f, -0.414178f, 1.0f, -1.0f};  // REAR_R
+    *customMotorMixerMutable(1) = (motorMixer_t){1.0f, -0.414178f, -1.0f, 1.0f};  // FRONT_R
+    *customMotorMixerMutable(2) = (motorMixer_t){1.0f, 0.414178f, 1.0f, 1.0f};    // REAR_L
+    *customMotorMixerMutable(3) = (motorMixer_t){1.0f, 0.414178f, -1.0f, -1.0f};  // FRONT_L
+    *customMotorMixerMutable(4) = (motorMixer_t){1.0f, -1.0f, -0.414178f, -1.0f}; // MIDFRONT_R
+    *customMotorMixerMutable(5) = (motorMixer_t){1.0f, 1.0f, -0.414178f, 1.0f};   // MIDFRONT_L
+    *customMotorMixerMutable(6) = (motorMixer_t){1.0f, -1.0f, 0.414178f, 1.0f};   // MIDREAR_R
+    *customMotorMixerMutable(7) = (motorMixer_t){1.0f, 1.0f, 0.414178f, -1.0f};   // MIDREAR_L
 }
 #endif

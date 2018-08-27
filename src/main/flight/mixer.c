@@ -67,13 +67,12 @@
 PG_REGISTER_WITH_RESET_TEMPLATE(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 0);
 
 #ifndef TARGET_DEFAULT_MIXER
-#define TARGET_DEFAULT_MIXER    MIXER_QUADX
+#define TARGET_DEFAULT_MIXER MIXER_QUADX
 #endif
 PG_RESET_TEMPLATE(mixerConfig_t, mixerConfig,
-    .mixerMode = TARGET_DEFAULT_MIXER,
-    .yaw_motors_reversed = false,
-    .crashflip_motor_percent = 0,
-);
+                  .mixerMode = TARGET_DEFAULT_MIXER,
+                  .yaw_motors_reversed = false,
+                  .crashflip_motor_percent = 0, );
 
 PG_REGISTER_WITH_RESET_FN(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 1);
 
@@ -110,7 +109,7 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
         motorConfig->dev.ioTags[motorIndex] = timerioTagGetByUsage(TIM_USE_MOTOR, motorIndex);
     }
 
-    motorConfig->motorPoleCount = 14;   // Most brushes motors that we use are 14 poles
+    motorConfig->motorPoleCount = 14; // Most brushes motors that we use are 14 poles
 }
 
 PG_REGISTER_ARRAY(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer, PG_MOTOR_MIXER, 0);
@@ -128,79 +127,77 @@ static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
 
 static FAST_RAM_ZERO_INIT int throttleAngleCorrection;
 
-
 static const motorMixer_t mixerQuadX[] = {
-    { 1.0f, -1.0f,  1.0f, -1.0f },          // REAR_R
-    { 1.0f, -1.0f, -1.0f,  1.0f },          // FRONT_R
-    { 1.0f,  1.0f,  1.0f,  1.0f },          // REAR_L
-    { 1.0f,  1.0f, -1.0f, -1.0f },          // FRONT_L
+    {1.0f, -1.0f, 1.0f, -1.0f}, // REAR_R
+    {1.0f, -1.0f, -1.0f, 1.0f}, // FRONT_R
+    {1.0f, 1.0f, 1.0f, 1.0f},   // REAR_L
+    {1.0f, 1.0f, -1.0f, -1.0f}, // FRONT_L
 };
 #ifndef USE_QUAD_MIXER_ONLY
 static const motorMixer_t mixerTricopter[] = {
-    { 1.0f,  0.0f,  1.333333f,  0.0f },     // REAR
-    { 1.0f, -1.0f, -0.666667f,  0.0f },     // RIGHT
-    { 1.0f,  1.0f, -0.666667f,  0.0f },     // LEFT
+    {1.0f, 0.0f, 1.333333f, 0.0f},   // REAR
+    {1.0f, -1.0f, -0.666667f, 0.0f}, // RIGHT
+    {1.0f, 1.0f, -0.666667f, 0.0f},  // LEFT
 };
 
 static const motorMixer_t mixerQuadP[] = {
-    { 1.0f,  0.0f,  1.0f, -1.0f },          // REAR
-    { 1.0f, -1.0f,  0.0f,  1.0f },          // RIGHT
-    { 1.0f,  1.0f,  0.0f,  1.0f },          // LEFT
-    { 1.0f,  0.0f, -1.0f, -1.0f },          // FRONT
+    {1.0f, 0.0f, 1.0f, -1.0f},  // REAR
+    {1.0f, -1.0f, 0.0f, 1.0f},  // RIGHT
+    {1.0f, 1.0f, 0.0f, 1.0f},   // LEFT
+    {1.0f, 0.0f, -1.0f, -1.0f}, // FRONT
 };
 
 #if defined(USE_UNCOMMON_MIXERS)
 static const motorMixer_t mixerBicopter[] = {
-    { 1.0f,  1.0f,  0.0f,  0.0f },          // LEFT
-    { 1.0f, -1.0f,  0.0f,  0.0f },          // RIGHT
+    {1.0f, 1.0f, 0.0f, 0.0f},  // LEFT
+    {1.0f, -1.0f, 0.0f, 0.0f}, // RIGHT
 };
 #else
 #define mixerBicopter NULL
 #endif
 
 static const motorMixer_t mixerY4[] = {
-    { 1.0f,  0.0f,  1.0f, -1.0f },          // REAR_TOP CW
-    { 1.0f, -1.0f, -1.0f,  0.0f },          // FRONT_R CCW
-    { 1.0f,  0.0f,  1.0f,  1.0f },          // REAR_BOTTOM CCW
-    { 1.0f,  1.0f, -1.0f,  0.0f },          // FRONT_L CW
+    {1.0f, 0.0f, 1.0f, -1.0f},  // REAR_TOP CW
+    {1.0f, -1.0f, -1.0f, 0.0f}, // FRONT_R CCW
+    {1.0f, 0.0f, 1.0f, 1.0f},   // REAR_BOTTOM CCW
+    {1.0f, 1.0f, -1.0f, 0.0f},  // FRONT_L CW
 };
-
 
 #if (MAX_SUPPORTED_MOTORS >= 6)
 static const motorMixer_t mixerHex6X[] = {
-    { 1.0f, -0.5f,  0.866025f,  1.0f },     // REAR_R
-    { 1.0f, -0.5f, -0.866025f,  1.0f },     // FRONT_R
-    { 1.0f,  0.5f,  0.866025f, -1.0f },     // REAR_L
-    { 1.0f,  0.5f, -0.866025f, -1.0f },     // FRONT_L
-    { 1.0f, -1.0f,  0.0f,      -1.0f },     // RIGHT
-    { 1.0f,  1.0f,  0.0f,       1.0f },     // LEFT
+    {1.0f, -0.5f, 0.866025f, 1.0f},  // REAR_R
+    {1.0f, -0.5f, -0.866025f, 1.0f}, // FRONT_R
+    {1.0f, 0.5f, 0.866025f, -1.0f},  // REAR_L
+    {1.0f, 0.5f, -0.866025f, -1.0f}, // FRONT_L
+    {1.0f, -1.0f, 0.0f, -1.0f},      // RIGHT
+    {1.0f, 1.0f, 0.0f, 1.0f},        // LEFT
 };
 
 #if defined(USE_UNCOMMON_MIXERS)
 static const motorMixer_t mixerHex6H[] = {
-    { 1.0f, -1.0f,  1.0f, -1.0f },     // REAR_R
-    { 1.0f, -1.0f, -1.0f,  1.0f },     // FRONT_R
-    { 1.0f,  1.0f,  1.0f,  1.0f },     // REAR_L
-    { 1.0f,  1.0f, -1.0f, -1.0f },     // FRONT_L
-    { 1.0f,  0.0f,  0.0f,  0.0f },     // RIGHT
-    { 1.0f,  0.0f,  0.0f,  0.0f },     // LEFT
+    {1.0f, -1.0f, 1.0f, -1.0f}, // REAR_R
+    {1.0f, -1.0f, -1.0f, 1.0f}, // FRONT_R
+    {1.0f, 1.0f, 1.0f, 1.0f},   // REAR_L
+    {1.0f, 1.0f, -1.0f, -1.0f}, // FRONT_L
+    {1.0f, 0.0f, 0.0f, 0.0f},   // RIGHT
+    {1.0f, 0.0f, 0.0f, 0.0f},   // LEFT
 };
 
 static const motorMixer_t mixerHex6P[] = {
-    { 1.0f, -0.866025f,  0.5f,  1.0f },     // REAR_R
-    { 1.0f, -0.866025f, -0.5f, -1.0f },     // FRONT_R
-    { 1.0f,  0.866025f,  0.5f,  1.0f },     // REAR_L
-    { 1.0f,  0.866025f, -0.5f, -1.0f },     // FRONT_L
-    { 1.0f,  0.0f,      -1.0f,  1.0f },     // FRONT
-    { 1.0f,  0.0f,       1.0f, -1.0f },     // REAR
+    {1.0f, -0.866025f, 0.5f, 1.0f},   // REAR_R
+    {1.0f, -0.866025f, -0.5f, -1.0f}, // FRONT_R
+    {1.0f, 0.866025f, 0.5f, 1.0f},    // REAR_L
+    {1.0f, 0.866025f, -0.5f, -1.0f},  // FRONT_L
+    {1.0f, 0.0f, -1.0f, 1.0f},        // FRONT
+    {1.0f, 0.0f, 1.0f, -1.0f},        // REAR
 };
 static const motorMixer_t mixerY6[] = {
-    { 1.0f,  0.0f,  1.333333f,  1.0f },     // REAR
-    { 1.0f, -1.0f, -0.666667f, -1.0f },     // RIGHT
-    { 1.0f,  1.0f, -0.666667f, -1.0f },     // LEFT
-    { 1.0f,  0.0f,  1.333333f, -1.0f },     // UNDER_REAR
-    { 1.0f, -1.0f, -0.666667f,  1.0f },     // UNDER_RIGHT
-    { 1.0f,  1.0f, -0.666667f,  1.0f },     // UNDER_LEFT
+    {1.0f, 0.0f, 1.333333f, 1.0f},    // REAR
+    {1.0f, -1.0f, -0.666667f, -1.0f}, // RIGHT
+    {1.0f, 1.0f, -0.666667f, -1.0f},  // LEFT
+    {1.0f, 0.0f, 1.333333f, -1.0f},   // UNDER_REAR
+    {1.0f, -1.0f, -0.666667f, 1.0f},  // UNDER_RIGHT
+    {1.0f, 1.0f, -0.666667f, 1.0f},   // UNDER_LEFT
 };
 #else
 #define mixerHex6H NULL
@@ -213,36 +210,36 @@ static const motorMixer_t mixerY6[] = {
 
 #if defined(USE_UNCOMMON_MIXERS) && (MAX_SUPPORTED_MOTORS >= 8)
 static const motorMixer_t mixerOctoX8[] = {
-    { 1.0f, -1.0f,  1.0f, -1.0f },          // REAR_R
-    { 1.0f, -1.0f, -1.0f,  1.0f },          // FRONT_R
-    { 1.0f,  1.0f,  1.0f,  1.0f },          // REAR_L
-    { 1.0f,  1.0f, -1.0f, -1.0f },          // FRONT_L
-    { 1.0f, -1.0f,  1.0f,  1.0f },          // UNDER_REAR_R
-    { 1.0f, -1.0f, -1.0f, -1.0f },          // UNDER_FRONT_R
-    { 1.0f,  1.0f,  1.0f, -1.0f },          // UNDER_REAR_L
-    { 1.0f,  1.0f, -1.0f,  1.0f },          // UNDER_FRONT_L
+    {1.0f, -1.0f, 1.0f, -1.0f},  // REAR_R
+    {1.0f, -1.0f, -1.0f, 1.0f},  // FRONT_R
+    {1.0f, 1.0f, 1.0f, 1.0f},    // REAR_L
+    {1.0f, 1.0f, -1.0f, -1.0f},  // FRONT_L
+    {1.0f, -1.0f, 1.0f, 1.0f},   // UNDER_REAR_R
+    {1.0f, -1.0f, -1.0f, -1.0f}, // UNDER_FRONT_R
+    {1.0f, 1.0f, 1.0f, -1.0f},   // UNDER_REAR_L
+    {1.0f, 1.0f, -1.0f, 1.0f},   // UNDER_FRONT_L
 };
 
 static const motorMixer_t mixerOctoFlatP[] = {
-    { 1.0f,  0.707107f, -0.707107f,  1.0f },    // FRONT_L
-    { 1.0f, -0.707107f, -0.707107f,  1.0f },    // FRONT_R
-    { 1.0f, -0.707107f,  0.707107f,  1.0f },    // REAR_R
-    { 1.0f,  0.707107f,  0.707107f,  1.0f },    // REAR_L
-    { 1.0f,  0.0f, -1.0f, -1.0f },              // FRONT
-    { 1.0f, -1.0f,  0.0f, -1.0f },              // RIGHT
-    { 1.0f,  0.0f,  1.0f, -1.0f },              // REAR
-    { 1.0f,  1.0f,  0.0f, -1.0f },              // LEFT
+    {1.0f, 0.707107f, -0.707107f, 1.0f},  // FRONT_L
+    {1.0f, -0.707107f, -0.707107f, 1.0f}, // FRONT_R
+    {1.0f, -0.707107f, 0.707107f, 1.0f},  // REAR_R
+    {1.0f, 0.707107f, 0.707107f, 1.0f},   // REAR_L
+    {1.0f, 0.0f, -1.0f, -1.0f},           // FRONT
+    {1.0f, -1.0f, 0.0f, -1.0f},           // RIGHT
+    {1.0f, 0.0f, 1.0f, -1.0f},            // REAR
+    {1.0f, 1.0f, 0.0f, -1.0f},            // LEFT
 };
 
 static const motorMixer_t mixerOctoFlatX[] = {
-    { 1.0f,  1.0f, -0.414178f,  1.0f },      // MIDFRONT_L
-    { 1.0f, -0.414178f, -1.0f,  1.0f },      // FRONT_R
-    { 1.0f, -1.0f,  0.414178f,  1.0f },      // MIDREAR_R
-    { 1.0f,  0.414178f,  1.0f,  1.0f },      // REAR_L
-    { 1.0f,  0.414178f, -1.0f, -1.0f },      // FRONT_L
-    { 1.0f, -1.0f, -0.414178f, -1.0f },      // MIDFRONT_R
-    { 1.0f, -0.414178f,  1.0f, -1.0f },      // REAR_R
-    { 1.0f,  1.0f,  0.414178f, -1.0f },      // MIDREAR_L
+    {1.0f, 1.0f, -0.414178f, 1.0f},   // MIDFRONT_L
+    {1.0f, -0.414178f, -1.0f, 1.0f},  // FRONT_R
+    {1.0f, -1.0f, 0.414178f, 1.0f},   // MIDREAR_R
+    {1.0f, 0.414178f, 1.0f, 1.0f},    // REAR_L
+    {1.0f, 0.414178f, -1.0f, -1.0f},  // FRONT_L
+    {1.0f, -1.0f, -0.414178f, -1.0f}, // MIDFRONT_R
+    {1.0f, -0.414178f, 1.0f, -1.0f},  // REAR_R
+    {1.0f, 1.0f, 0.414178f, -1.0f},   // MIDREAR_L
 };
 #else
 #define mixerOctoX8 NULL
@@ -251,69 +248,69 @@ static const motorMixer_t mixerOctoFlatX[] = {
 #endif
 
 static const motorMixer_t mixerVtail4[] = {
-    { 1.0f,  -0.58f,  0.58f, 1.0f },        // REAR_R
-    { 1.0f,  -0.46f, -0.39f, -0.5f },       // FRONT_R
-    { 1.0f,  0.58f,  0.58f, -1.0f },        // REAR_L
-    { 1.0f,  0.46f, -0.39f, 0.5f },         // FRONT_L
+    {1.0f, -0.58f, 0.58f, 1.0f},   // REAR_R
+    {1.0f, -0.46f, -0.39f, -0.5f}, // FRONT_R
+    {1.0f, 0.58f, 0.58f, -1.0f},   // REAR_L
+    {1.0f, 0.46f, -0.39f, 0.5f},   // FRONT_L
 };
 
 static const motorMixer_t mixerAtail4[] = {
-    { 1.0f, -0.58f,  0.58f, -1.0f },          // REAR_R
-    { 1.0f, -0.46f, -0.39f,  0.5f },          // FRONT_R
-    { 1.0f,  0.58f,  0.58f,  1.0f },          // REAR_L
-    { 1.0f,  0.46f, -0.39f, -0.5f },          // FRONT_L
+    {1.0f, -0.58f, 0.58f, -1.0f}, // REAR_R
+    {1.0f, -0.46f, -0.39f, 0.5f}, // FRONT_R
+    {1.0f, 0.58f, 0.58f, 1.0f},   // REAR_L
+    {1.0f, 0.46f, -0.39f, -0.5f}, // FRONT_L
 };
 
 #if defined(USE_UNCOMMON_MIXERS)
 static const motorMixer_t mixerDualcopter[] = {
-    { 1.0f,  0.0f,  0.0f, -1.0f },          // LEFT
-    { 1.0f,  0.0f,  0.0f,  1.0f },          // RIGHT
+    {1.0f, 0.0f, 0.0f, -1.0f}, // LEFT
+    {1.0f, 0.0f, 0.0f, 1.0f},  // RIGHT
 };
 #else
 #define mixerDualcopter NULL
 #endif
 
 static const motorMixer_t mixerSingleProp[] = {
-    { 1.0f,  0.0f,  0.0f, 0.0f },
+    {1.0f, 0.0f, 0.0f, 0.0f},
 };
 
 static const motorMixer_t mixerQuadX1234[] = {
-    { 1.0f,  1.0f, -1.0f, -1.0f },          // FRONT_L
-    { 1.0f, -1.0f, -1.0f,  1.0f },          // FRONT_R
-    { 1.0f, -1.0f,  1.0f, -1.0f },          // REAR_R
-    { 1.0f,  1.0f,  1.0f,  1.0f },          // REAR_L
+    {1.0f, 1.0f, -1.0f, -1.0f}, // FRONT_L
+    {1.0f, -1.0f, -1.0f, 1.0f}, // FRONT_R
+    {1.0f, -1.0f, 1.0f, -1.0f}, // REAR_R
+    {1.0f, 1.0f, 1.0f, 1.0f},   // REAR_L
 };
 
 // Keep synced with mixerMode_e
 const mixer_t mixers[] = {
     // motors, use servo, motor mixer
-    { 0, false, NULL },                // entry 0
-    { 3, true,  mixerTricopter },      // MIXER_TRI
-    { 4, false, mixerQuadP },          // MIXER_QUADP
-    { 4, false, mixerQuadX },          // MIXER_QUADX
-    { 2, true,  mixerBicopter },       // MIXER_BICOPTER
-    { 0, true,  NULL },                // * MIXER_GIMBAL
-    { 6, false, mixerY6 },             // MIXER_Y6
-    { 6, false, mixerHex6P },          // MIXER_HEX6
-    { 1, true,  mixerSingleProp },     // * MIXER_FLYING_WING
-    { 4, false, mixerY4 },             // MIXER_Y4
-    { 6, false, mixerHex6X },          // MIXER_HEX6X
-    { 8, false, mixerOctoX8 },         // MIXER_OCTOX8
-    { 8, false, mixerOctoFlatP },      // MIXER_OCTOFLATP
-    { 8, false, mixerOctoFlatX },      // MIXER_OCTOFLATX
-    { 1, true,  mixerSingleProp },     // * MIXER_AIRPLANE
-    { 1, true,  mixerSingleProp },     // * MIXER_HELI_120_CCPM
-    { 0, true,  NULL },                // * MIXER_HELI_90_DEG
-    { 4, false, mixerVtail4 },         // MIXER_VTAIL4
-    { 6, false, mixerHex6H },          // MIXER_HEX6H
-    { 0, true,  NULL },                // * MIXER_PPM_TO_SERVO
-    { 2, true,  mixerDualcopter },     // MIXER_DUALCOPTER
-    { 1, true,  NULL },                // MIXER_SINGLECOPTER
-    { 4, false, mixerAtail4 },         // MIXER_ATAIL4
-    { 0, false, NULL },                // MIXER_CUSTOM
-    { 2, true,  NULL },                // MIXER_CUSTOM_AIRPLANE
-    { 3, true,  NULL },                // MIXER_CUSTOM_TRI
-    { 4, false, mixerQuadX1234 },
+    {0, false, NULL},           // entry 0
+    {3, true, mixerTricopter},  // MIXER_TRI
+    {4, false, mixerQuadP},     // MIXER_QUADP
+    {4, false, mixerQuadX},     // MIXER_QUADX
+    {2, true, mixerBicopter},   // MIXER_BICOPTER
+    {0, true, NULL},            // * MIXER_GIMBAL
+    {6, false, mixerY6},        // MIXER_Y6
+    {6, false, mixerHex6P},     // MIXER_HEX6
+    {1, true, mixerSingleProp}, // * MIXER_FLYING_WING
+    {4, false, mixerY4},        // MIXER_Y4
+    {6, false, mixerHex6X},     // MIXER_HEX6X
+    {8, false, mixerOctoX8},    // MIXER_OCTOX8
+    {8, false, mixerOctoFlatP}, // MIXER_OCTOFLATP
+    {8, false, mixerOctoFlatX}, // MIXER_OCTOFLATX
+    {1, true, mixerSingleProp}, // * MIXER_AIRPLANE
+    {1, true, mixerSingleProp}, // * MIXER_HELI_120_CCPM
+    {0, true, NULL},            // * MIXER_HELI_90_DEG
+    {4, false, mixerVtail4},    // MIXER_VTAIL4
+    {6, false, mixerHex6H},     // MIXER_HEX6H
+    {0, true, NULL},            // * MIXER_PPM_TO_SERVO
+    {2, true, mixerDualcopter}, // MIXER_DUALCOPTER
+    {1, true, NULL},            // MIXER_SINGLECOPTER
+    {4, false, mixerAtail4},    // MIXER_ATAIL4
+    {0, false, NULL},           // MIXER_CUSTOM
+    {2, true, NULL},            // MIXER_CUSTOM_AIRPLANE
+    {3, true, NULL},            // MIXER_CUSTOM_TRI
+    {4, false, mixerQuadX1234},
 };
 #endif // !USE_QUAD_MIXER_ONLY
 
@@ -532,8 +529,8 @@ static FAST_RAM_ZERO_INIT int8_t motorOutputMixSign;
 
 static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
 {
-    static uint16_t rcThrottlePrevious = 0;   // Store the last throttle direction for deadband transitions
-    static timeUs_t reversalTimeUs = 0; // time when motors last reversed in 3D mode
+    static uint16_t rcThrottlePrevious = 0; // Store the last throttle direction for deadband transitions
+    static timeUs_t reversalTimeUs = 0;     // time when motors last reversed in 3D mode
     float currentThrottleInputRange = 0;
 
     if (featureIsEnabled(FEATURE_3D)) {
@@ -573,8 +570,8 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             throttle = rcCommand[THROTTLE] - rcCommand3dDeadBandHigh;
             currentThrottleInputRange = rcCommandThrottleRange3dHigh;
         } else if ((rcThrottlePrevious <= rcCommand3dDeadBandLow &&
-                !flight3DConfigMutable()->switched_mode3d) ||
-                isMotorsReversed()) {
+                    !flight3DConfigMutable()->switched_mode3d) ||
+                   isMotorsReversed()) {
             // INVERTED_TO_DEADBAND
             motorRangeMin = motorOutputLow;
             motorRangeMax = deadbandMotor3dLow;
@@ -634,7 +631,7 @@ static void applyFlipOverAfterCrashModeToMotors(void)
         float signRoll = getRcDeflection(FD_ROLL) < 0 ? 1 : -1;
         float signYaw = (getRcDeflection(FD_YAW) < 0 ? 1 : -1) * (mixerConfig()->yaw_motors_reversed ? 1 : -1);
 
-        float stickDeflectionLength = sqrtf(stickDeflectionPitchAbs*stickDeflectionPitchAbs + stickDeflectionRollAbs*stickDeflectionRollAbs);
+        float stickDeflectionLength = sqrtf(stickDeflectionPitchAbs * stickDeflectionPitchAbs + stickDeflectionRollAbs * stickDeflectionRollAbs);
 
         if (stickDeflectionYawAbs > MAX(stickDeflectionPitchAbs, stickDeflectionRollAbs)) {
             // If yaw is the dominant, disable pitch and roll
@@ -647,7 +644,7 @@ static void applyFlipOverAfterCrashModeToMotors(void)
         }
 
         float cosPhi = (stickDeflectionPitchAbs + stickDeflectionRollAbs) / (sqrtf(2.0f) * stickDeflectionLength);
-        const float cosThreshold = sqrtf(3.0f)/2.0f; // cos(PI/6.0f)
+        const float cosThreshold = sqrtf(3.0f) / 2.0f; // cos(PI/6.0f)
 
         if (cosPhi < cosThreshold) {
             // Enforce either roll or pitch exclusively, if not on diagonal
@@ -664,17 +661,17 @@ static void applyFlipOverAfterCrashModeToMotors(void)
 
         for (int i = 0; i < motorCount; ++i) {
             float motorOutput =
-                signPitch*currentMixer[i].pitch +
-                signRoll*currentMixer[i].roll +
-                signYaw*currentMixer[i].yaw;
-                
+                signPitch * currentMixer[i].pitch +
+                signRoll * currentMixer[i].roll +
+                signYaw * currentMixer[i].yaw;
+
             if (motorOutput < 0) {
                 if (mixerConfig()->crashflip_motor_percent > 0) {
                     motorOutput = -motorOutput * (float)mixerConfig()->crashflip_motor_percent / 100.0f;
                 } else {
                     motorOutput = disarmMotorOutput;
                 }
-            } 
+            }
             motorOutput = MIN(1.0f, flipPower * motorOutput);
             motorOutput = motorOutputMin + motorOutput * motorOutputRange;
 
@@ -729,10 +726,10 @@ float applyThrottleLimit(float throttle)
     if (currentControlRateProfile->throttle_limit_percent < 100) {
         const float throttleLimitFactor = currentControlRateProfile->throttle_limit_percent / 100.0f;
         switch (currentControlRateProfile->throttle_limit_type) {
-            case THROTTLE_LIMIT_TYPE_SCALE:
-                return throttle * throttleLimitFactor;
-            case THROTTLE_LIMIT_TYPE_CLIP:
-                return MIN(throttle, throttleLimitFactor);
+        case THROTTLE_LIMIT_TYPE_SCALE:
+            return throttle * throttleLimitFactor;
+        case THROTTLE_LIMIT_TYPE_CLIP:
+            return MIN(throttle, throttleLimitFactor);
         }
     }
 
@@ -760,7 +757,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
 #ifdef USE_YAW_SPIN_RECOVERY
     const bool yawSpinDetected = gyroYawSpinDetected();
     if (yawSpinDetected) {
-        yawPidSumLimit = PIDSUM_LIMIT_MAX;   // Set to the maximum limit during yaw spin recovery to prevent limiting motor authority
+        yawPidSumLimit = PIDSUM_LIMIT_MAX; // Set to the maximum limit during yaw spin recovery to prevent limiting motor authority
     }
 #endif // USE_YAW_SPIN_RECOVERY
 
@@ -783,7 +780,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
     // 50% throttle provides the maximum authority for yaw recovery when airmode is not active.
     // When airmode is active the throttle setting doesn't impact recovery authority.
     if (yawSpinDetected && !isAirmodeActive()) {
-        throttle = 0.5f;   // 
+        throttle = 0.5f; //
     }
 #endif // USE_YAW_SPIN_RECOVERY
 
@@ -792,11 +789,11 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
     float motorMixMax = 0, motorMixMin = 0;
     for (int i = 0; i < motorCount; i++) {
         float mix =
-            scaledAxisPidRoll  * currentMixer[i].roll +
+            scaledAxisPidRoll * currentMixer[i].roll +
             scaledAxisPidPitch * currentMixer[i].pitch +
-            scaledAxisPidYaw   * currentMixer[i].yaw;
+            scaledAxisPidYaw * currentMixer[i].yaw;
 
-        mix *= vbatCompensationFactor;  // Add voltage compensation
+        mix *= vbatCompensationFactor; // Add voltage compensation
 
         if (mix > motorMixMax) {
             motorMixMax = mix;
@@ -807,7 +804,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
     }
 
     pidUpdateAntiGravityThrottleFilter(throttle);
-    
+
 #if defined(USE_THROTTLE_BOOST)
     if (throttleBoost > 0.0f) {
         const float throttleHpf = throttle - pt1FilterApply(&throttleLpf, throttle);
@@ -833,7 +830,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
             throttle = 0.5f;
         }
     } else {
-        if (isAirmodeActive() || throttle > 0.5f) {  // Only automatically adjust throttle when airmode enabled. Airmode logic is always active on high throttle
+        if (isAirmodeActive() || throttle > 0.5f) { // Only automatically adjust throttle when airmode enabled. Airmode logic is always active on high throttle
             const float throttleLimitOffset = motorMixRange / 2.0f;
             throttle = constrainf(throttle, 0.0f + throttleLimitOffset, 1.0f - throttleLimitOffset);
         }

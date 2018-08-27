@@ -106,31 +106,31 @@ enum {
 
 // Strobe commands
 #define CC2500_SRES 0x30 // Reset chip.
-#define CC2500_SFSTXON                                                         \
-    0x31 // Enable and calibrate frequency synthesizer (if MCSM0.FS_AUTOCAL=1).
-         // If in RX/TX: Go to a wait state where only the synthesizer is
-         // running (for quick RX / TX turnaround).
+#define CC2500_SFSTXON                                                                           \
+    0x31                  // Enable and calibrate frequency synthesizer (if MCSM0.FS_AUTOCAL=1). \
+                          // If in RX/TX: Go to a wait state where only the synthesizer is       \
+                          // running (for quick RX / TX turnaround).
 #define CC2500_SXOFF 0x32 // Turn off crystal oscillator.
-#define CC2500_SCAL 0x33  // Calibrate frequency synthesizer and turn it off
+#define CC2500_SCAL 0x33  // Calibrate frequency synthesizer and turn it off \
                           // (enables quick start).
-#define CC2500_SRX                                                             \
-    0x34 // Enable RX. Perform calibration first if coming from IDLE and
+#define CC2500_SRX                                                       \
+    0x34 // Enable RX. Perform calibration first if coming from IDLE and \
          // MCSM0.FS_AUTOCAL=1.
-#define CC2500_STX                                                             \
-    0x35 // In IDLE state: Enable TX. Perform calibration first if
-         // MCSM0.FS_AUTOCAL=1. If in RX state and CCA is enabled:
+#define CC2500_STX                                                 \
+    0x35 // In IDLE state: Enable TX. Perform calibration first if \
+         // MCSM0.FS_AUTOCAL=1. If in RX state and CCA is enabled: \
          // Only go to TX if channel is clear.
-#define CC2500_SIDLE                                                           \
-    0x36 // Exit RX / TX, turn off frequency synthesizer and exit
-         // Wake-On-Radio mode if applicable.
-#define CC2500_SAFC 0x37 // Perform AFC adjustment of the frequency synthesizer
-#define CC2500_SWOR 0x38 // Start automatic RX polling sequence (Wake-on-Radio)
-#define CC2500_SPWD 0x39 // Enter power down mode when CSn goes high.
-#define CC2500_SFRX 0x3A // Flush the RX FIFO buffer.
-#define CC2500_SFTX 0x3B // Flush the TX FIFO buffer.
+#define CC2500_SIDLE                                                                 \
+    0x36                    // Exit RX / TX, turn off frequency synthesizer and exit \
+                            // Wake-On-Radio mode if applicable.
+#define CC2500_SAFC 0x37    // Perform AFC adjustment of the frequency synthesizer
+#define CC2500_SWOR 0x38    // Start automatic RX polling sequence (Wake-on-Radio)
+#define CC2500_SPWD 0x39    // Enter power down mode when CSn goes high.
+#define CC2500_SFRX 0x3A    // Flush the RX FIFO buffer.
+#define CC2500_SFTX 0x3B    // Flush the TX FIFO buffer.
 #define CC2500_SWORRST 0x3C // Reset real time clock.
-#define CC2500_SNOP                                                            \
-    0x3D // No operation. May be used to pad strobe commands to two
+#define CC2500_SNOP                                                 \
+    0x3D // No operation. May be used to pad strobe commands to two \
          // bytes for simpler software.
 //----------------------------------------------------------------------------------
 // Chip Status Byte
@@ -161,9 +161,9 @@ uint8_t cc2500ReadFifo(uint8_t *dpbuffer, uint8_t len);
 uint8_t cc2500WriteFifo(uint8_t *dpbuffer, uint8_t len);
 
 uint8_t cc2500ReadRegisterMulti(uint8_t address, uint8_t *data,
-                                 uint8_t length);
+                                uint8_t length);
 uint8_t cc2500WriteRegisterMulti(uint8_t address, uint8_t *data,
-                                  uint8_t length);
+                                 uint8_t length);
 
 uint8_t cc2500ReadReg(uint8_t reg);
 void cc2500Strobe(uint8_t address);

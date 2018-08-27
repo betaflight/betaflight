@@ -20,13 +20,13 @@
 #include <string.h>
 
 extern "C" {
-    #include "drivers/display.h"
+#include "drivers/display.h"
 }
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-void displayPortTestBufferSubstring(int x, int y, const char * expectedFormat, ...) __attribute__ ((format (printf, 3, 4)));
+void displayPortTestBufferSubstring(int x, int y, const char *expectedFormat, ...) __attribute__((format(printf, 3, 4)));
 
 #define UNITTEST_DISPLAYPORT_ROWS 16
 #define UNITTEST_DISPLAYPORT_COLS 30
@@ -117,8 +117,7 @@ static const displayPortVTable_t testDisplayPortVTable = {
     .isTransferInProgress = displayPortTestIsTransferInProgress,
     .heartbeat = displayPortTestHeartbeat,
     .resync = displayPortTestResync,
-    .txBytesFree = displayPortTestTxBytesFree
-};
+    .txBytesFree = displayPortTestTxBytesFree};
 
 displayPort_t *displayPortTestInit(void)
 {
@@ -152,7 +151,7 @@ void displayPortTestBufferIsEmpty()
     }
 }
 
-void displayPortTestBufferSubstring(int x, int y, const char * expectedFormat, ...)
+void displayPortTestBufferSubstring(int x, int y, const char *expectedFormat, ...)
 {
     char expected[UNITTEST_DISPLAYPORT_BUFFER_LEN];
 

@@ -66,9 +66,9 @@
 #include "telemetry/crsf.h"
 #include "telemetry/msp_shared.h"
 
-#define CRSF_CYCLETIME_US                   100000 // 100ms, 10 Hz
-#define CRSF_DEVICEINFO_VERSION             0x01
-#define CRSF_DEVICEINFO_PARAMETER_COUNT     0
+#define CRSF_CYCLETIME_US 100000 // 100ms, 10 Hz
+#define CRSF_DEVICEINFO_VERSION 0x01
+#define CRSF_DEVICEINFO_PARAMETER_COUNT 0
 
 #define CRSF_MSP_BUFFER_SIZE 96
 #define CRSF_MSP_LENGTH_OFFSET 1
@@ -116,7 +116,8 @@ bool handleCrsfMspFrameBuffer(uint8_t payloadSize, mspResponseFnPtr responseFn)
             requestHandled |= sendMspReply(payloadSize, responseFn);
         }
         pos += CRSF_MSP_LENGTH_OFFSET + mspFrameLength;
-        ATOMIC_BLOCK(NVIC_PRIO_SERIALUART1) {
+        ATOMIC_BLOCK(NVIC_PRIO_SERIALUART1)
+        {
             if (pos >= mspRxBuffer.len) {
                 mspRxBuffer.len = 0;
                 return requestHandled;
@@ -180,8 +181,8 @@ void crsfFrameGps(sbuf_t *dst)
     sbufWriteU8(dst, CRSF_FRAMETYPE_GPS);
     sbufWriteU32BigEndian(dst, gpsSol.llh.lat); // CRSF and betaflight use same units for degrees
     sbufWriteU32BigEndian(dst, gpsSol.llh.lon);
-    sbufWriteU16BigEndian(dst, (gpsSol.groundSpeed * 36 + 5) / 10); // gpsSol.groundSpeed is in 0.1m/s
-    sbufWriteU16BigEndian(dst, gpsSol.groundCourse * 10); // gpsSol.groundCourse is degrees * 10
+    sbufWriteU16BigEndian(dst, (gpsSol.groundSpeed * 36 + 5) / 10);                                    // gpsSol.groundSpeed is in 0.1m/s
+    sbufWriteU16BigEndian(dst, gpsSol.groundCourse * 10);                                              // gpsSol.groundCourse is degrees * 10
     const uint16_t altitude = (constrain(getEstimatedAltitudeCm(), 0 * 100, 5000 * 100) / 100) + 1000; // constrain altitude from 0 to 5,000m
     sbufWriteU16BigEndian(dst, altitude);
     sbufWriteU8(dst, gpsSol.numSat);
@@ -239,15 +240,15 @@ int16_t     Roll angle ( rad / 10000 )
 int16_t     Yaw angle ( rad / 10000 )
 */
 
-#define DECIDEGREES_TO_RADIANS10000(angle) ((int16_t)(1000.0f * (angle) * RAD))
+#define DECIDEGREES_TO_RADIANS10000(angle) ((int16_t)(1000.0f * (angle)*RAD))
 
 void crsfFrameAttitude(sbuf_t *dst)
 {
-     sbufWriteU8(dst, CRSF_FRAME_ATTITUDE_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
-     sbufWriteU8(dst, CRSF_FRAMETYPE_ATTITUDE);
-     sbufWriteU16BigEndian(dst, DECIDEGREES_TO_RADIANS10000(attitude.values.pitch));
-     sbufWriteU16BigEndian(dst, DECIDEGREES_TO_RADIANS10000(attitude.values.roll));
-     sbufWriteU16BigEndian(dst, DECIDEGREES_TO_RADIANS10000(attitude.values.yaw));
+    sbufWriteU8(dst, CRSF_FRAME_ATTITUDE_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
+    sbufWriteU8(dst, CRSF_FRAMETYPE_ATTITUDE);
+    sbufWriteU16BigEndian(dst, DECIDEGREES_TO_RADIANS10000(attitude.values.pitch));
+    sbufWriteU16BigEndian(dst, DECIDEGREES_TO_RADIANS10000(attitude.values.roll));
+    sbufWriteU16BigEndian(dst, DECIDEGREES_TO_RADIANS10000(attitude.values.yaw));
 }
 
 /*
@@ -275,7 +276,7 @@ void crsfFrameFlightMode(sbuf_t *dst)
         flightMode = "HOR";
     }
     sbufWriteString(dst, flightMode);
-    sbufWriteU8(dst, '\0');     // zero-terminate string
+    sbufWriteU8(dst, '\0'); // zero-terminate string
     // write in the frame length
     *lengthPtr = sbufPtr(dst) - lengthPtr;
 }
@@ -292,7 +293,8 @@ uint32_t    Null Bytes
 uint8_t     255 (Max MSP Parameter)
 uint8_t     0x01 (Parameter version 1)
 */
-void crsfFrameDeviceInfo(sbuf_t *dst) {
+void crsfFrameDeviceInfo(sbuf_t *dst)
+{
 
     char buff[30];
     tfp_sprintf(buff, "%s %s: %s", FC_FIRMWARE_NAME, FC_VERSION_STRING, systemConfig()->boardIdentifier);
@@ -303,7 +305,7 @@ void crsfFrameDeviceInfo(sbuf_t *dst) {
     sbufWriteU8(dst, CRSF_ADDRESS_RADIO_TRANSMITTER);
     sbufWriteU8(dst, CRSF_ADDRESS_FLIGHT_CONTROLLER);
     sbufWriteStringWithZeroTerminator(dst, buff);
-    for (unsigned int ii=0; ii<12; ii++) {
+    for (unsigned int ii = 0; ii < 12; ii++) {
         sbufWriteU8(dst, 0x00);
     }
     sbufWriteU8(dst, CRSF_DEVICEINFO_PARAMETER_COUNT);
@@ -342,7 +344,7 @@ static void crsfFrameDisplayPortClear(sbuf_t *dst)
 
 #endif
 
-#define BV(x)  (1 << (x)) // bit value
+#define BV(x) (1 << (x)) // bit value
 
 // schedule array to decide how often each type of frame is sent
 typedef enum {
@@ -421,7 +423,6 @@ void crsfScheduleDeviceInfoResponse(void)
     deviceInfoReplyPending = true;
 }
 
-
 void initCrsfTelemetry(void)
 {
     // check if there is a serial port open for CRSF telemetry (ie opened by the CRSF RX)
@@ -449,8 +450,7 @@ void initCrsfTelemetry(void)
         crsfSchedule[index++] = BV(CRSF_FRAME_GPS_INDEX);
     }
     crsfScheduleCount = (uint8_t)index;
-
- }
+}
 
 bool checkCrsfTelemetryState(void)
 {
@@ -462,7 +462,7 @@ void crsfProcessDisplayPortCmd(uint8_t *frameStart)
 {
     uint8_t cmd = *frameStart;
     switch (cmd) {
-    case CRSF_DISPLAYPORT_SUBCMD_OPEN: ;
+    case CRSF_DISPLAYPORT_SUBCMD_OPEN:;
         const uint8_t rows = *(frameStart + CRSF_DISPLAYPORT_OPEN_ROWS_OFFSET);
         const uint8_t cols = *(frameStart + CRSF_DISPLAYPORT_OPEN_COLS_OFFSET);
         crsfDisplayPortSetDimensions(rows, cols);
@@ -477,7 +477,6 @@ void crsfProcessDisplayPortCmd(uint8_t *frameStart)
     default:
         break;
     }
-
 }
 
 #endif

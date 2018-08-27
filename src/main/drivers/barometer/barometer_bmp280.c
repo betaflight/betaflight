@@ -41,18 +41,18 @@
 
 typedef struct bmp280_calib_param_s {
     uint16_t dig_T1; /* calibration T1 data */
-    int16_t dig_T2; /* calibration T2 data */
-    int16_t dig_T3; /* calibration T3 data */
+    int16_t dig_T2;  /* calibration T2 data */
+    int16_t dig_T3;  /* calibration T3 data */
     uint16_t dig_P1; /* calibration P1 data */
-    int16_t dig_P2; /* calibration P2 data */
-    int16_t dig_P3; /* calibration P3 data */
-    int16_t dig_P4; /* calibration P4 data */
-    int16_t dig_P5; /* calibration P5 data */
-    int16_t dig_P6; /* calibration P6 data */
-    int16_t dig_P7; /* calibration P7 data */
-    int16_t dig_P8; /* calibration P8 data */
-    int16_t dig_P9; /* calibration P9 data */
-    int32_t t_fine; /* calibration t_fine data */
+    int16_t dig_P2;  /* calibration P2 data */
+    int16_t dig_P3;  /* calibration P3 data */
+    int16_t dig_P4;  /* calibration P4 data */
+    int16_t dig_P5;  /* calibration P5 data */
+    int16_t dig_P6;  /* calibration P6 data */
+    int16_t dig_P7;  /* calibration P7 data */
+    int16_t dig_P8;  /* calibration P8 data */
+    int16_t dig_P9;  /* calibration P9 data */
+    int32_t t_fine;  /* calibration t_fine data */
 } bmp280_calib_param_t;
 
 static uint8_t bmp280_chip_id = 0;
@@ -108,7 +108,7 @@ bool bmp280Detect(baroDev_t *baro)
         defaultAddressApplied = true;
     }
 
-    busReadRegisterBuffer(busdev, BMP280_CHIP_ID_REG, &bmp280_chip_id, 1);  /* read Chip Id */
+    busReadRegisterBuffer(busdev, BMP280_CHIP_ID_REG, &bmp280_chip_id, 1); /* read Chip Id */
 
     if (bmp280_chip_id != BMP280_DEFAULT_CHIP_ID) {
         bmp280BusDeinit(busdev);
@@ -173,7 +173,7 @@ static int32_t bmp280_compensate_T(int32_t adc_T)
     int32_t var1, var2, T;
 
     var1 = ((((adc_T >> 3) - ((int32_t)bmp280_cal.dig_T1 << 1))) * ((int32_t)bmp280_cal.dig_T2)) >> 11;
-    var2  = (((((adc_T >> 4) - ((int32_t)bmp280_cal.dig_T1)) * ((adc_T >> 4) - ((int32_t)bmp280_cal.dig_T1))) >> 12) * ((int32_t)bmp280_cal.dig_T3)) >> 14;
+    var2 = (((((adc_T >> 4) - ((int32_t)bmp280_cal.dig_T1)) * ((adc_T >> 4) - ((int32_t)bmp280_cal.dig_T1))) >> 12) * ((int32_t)bmp280_cal.dig_T3)) >> 14;
     bmp280_cal.t_fine = var1 + var2;
     T = (bmp280_cal.t_fine * 5 + 128) >> 8;
 
@@ -187,7 +187,7 @@ static uint32_t bmp280_compensate_P(int32_t adc_P)
     int64_t var1, var2, p;
     var1 = ((int64_t)bmp280_cal.t_fine) - 128000;
     var2 = var1 * var1 * (int64_t)bmp280_cal.dig_P6;
-    var2 = var2 + ((var1*(int64_t)bmp280_cal.dig_P5) << 17);
+    var2 = var2 + ((var1 * (int64_t)bmp280_cal.dig_P5) << 17);
     var2 = var2 + (((int64_t)bmp280_cal.dig_P4) << 35);
     var1 = ((var1 * var1 * (int64_t)bmp280_cal.dig_P3) >> 8) + ((var1 * (int64_t)bmp280_cal.dig_P2) << 12);
     var1 = (((((int64_t)1) << 47) + var1)) * ((int64_t)bmp280_cal.dig_P1) >> 33;

@@ -30,10 +30,8 @@
 #include "barometer.h"
 #include "barometer_fake.h"
 
-
 static int32_t fakePressure;
 static int32_t fakeTemperature;
-
 
 static void fakeBaroStartGet(baroDev_t *baro)
 {
@@ -56,8 +54,8 @@ void fakeBaroSet(int32_t pressure, int32_t temperature)
 
 bool fakeBaroDetect(baroDev_t *baro)
 {
-    fakePressure = 101325;    // pressure in Pa (0m MSL)
-    fakeTemperature = 2500;   // temperature in 0.01 C = 25 deg
+    fakePressure = 101325;  // pressure in Pa (0m MSL)
+    fakeTemperature = 2500; // temperature in 0.01 C = 25 deg
 
     // these are dummy as temperature is measured as part of pressure
     baro->ut_delay = 10000;

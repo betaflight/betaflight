@@ -29,18 +29,15 @@ void ms5611_calculate(int32_t *pressure, int32_t *temperature);
 extern uint16_t ms5611_c[8];
 extern uint32_t ms5611_up;
 extern uint32_t ms5611_ut;
-
 }
-
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-
 TEST(baroMS5611Test, TestValidMs5611Crc)
 {
     // given
-    uint16_t ms5611_prom[] = {0x3132,0x3334,0x3536,0x3738,0x3940,0x4142,0x4344,0x450B};
+    uint16_t ms5611_prom[] = {0x3132, 0x3334, 0x3536, 0x3738, 0x3940, 0x4142, 0x4344, 0x450B};
 
     // when
     int8_t result = ms5611_crc(ms5611_prom);
@@ -52,7 +49,7 @@ TEST(baroMS5611Test, TestValidMs5611Crc)
 TEST(baroMS5611Test, TestInvalidMs5611Crc)
 {
     // given
-    uint16_t ms5611_prom[] = {0x3132,0x3334,0x3536,0x3738,0x3940,0x4142,0x4344,0x4500};
+    uint16_t ms5611_prom[] = {0x3132, 0x3334, 0x3536, 0x3738, 0x3940, 0x4142, 0x4344, 0x4500};
 
     // when
     int8_t result = ms5611_crc(ms5611_prom);
@@ -64,7 +61,7 @@ TEST(baroMS5611Test, TestInvalidMs5611Crc)
 TEST(baroMS5611Test, TestMs5611AllZeroProm)
 {
     // given
-    uint16_t ms5611_prom[] = {0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000};
+    uint16_t ms5611_prom[] = {0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000};
 
     // when
     int8_t result = ms5611_crc(ms5611_prom);
@@ -76,7 +73,7 @@ TEST(baroMS5611Test, TestMs5611AllZeroProm)
 TEST(baroMS5611Test, TestMs5611AllOnesProm)
 {
     // given
-    uint16_t ms5611_prom[] = {0xFFFF,0xFFFF,0xFFFF,0xFFFF,0xFFFF,0xFFFF,0xFFFF,0xFFFF};
+    uint16_t ms5611_prom[] = {0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF};
 
     // when
     int8_t result = ms5611_crc(ms5611_prom);
@@ -136,7 +133,7 @@ TEST(baroMS5611Test, TestMs5611CalculatePressureLTMinus15Deg)
 
     // then
     EXPECT_EQ(-2710, temperature); // -27.10 deg C
-    EXPECT_EQ(90613, pressure);  // 906.13 mbar
+    EXPECT_EQ(90613, pressure);    // 906.13 mbar
 }
 
 // STUBS
@@ -146,25 +143,30 @@ extern "C" {
 void delay(uint32_t) {}
 void delayMicroseconds(uint32_t) {}
 
-bool busReadRegisterBuffer(const busDevice_t*, uint8_t, uint8_t*, uint8_t) {return true;}
-bool busWriteRegister(const busDevice_t*, uint8_t, uint8_t) {return true;}
+bool busReadRegisterBuffer(const busDevice_t *, uint8_t, uint8_t *, uint8_t) { return true; }
+bool busWriteRegister(const busDevice_t *, uint8_t, uint8_t) { return true; }
 
-void spiSetDivisor() {
+void spiSetDivisor()
+{
 }
 
-void spiPreinitCsByIO() {
+void spiPreinitCsByIO()
+{
 }
 
-void IOConfigGPIO() {
+void IOConfigGPIO()
+{
 }
 
-void IOHi() {
+void IOHi()
+{
 }
 
-void IOInit() {
+void IOInit()
+{
 }
 
-void IORelease() {
+void IORelease()
+{
 }
-
 }

@@ -23,73 +23,72 @@
 #include <algorithm>
 
 extern "C" {
-    #include <platform.h>
+#include <platform.h>
 
-    #include "build/debug.h"
-    #include "build/atomic.h"
+#include "build/debug.h"
+#include "build/atomic.h"
 
-    #include "common/crc.h"
-    #include "common/utils.h"
-    #include "common/printf.h"
-    #include "common/gps_conversion.h"
-    #include "common/streambuf.h"
-    #include "common/typeconversion.h"
+#include "common/crc.h"
+#include "common/utils.h"
+#include "common/printf.h"
+#include "common/gps_conversion.h"
+#include "common/streambuf.h"
+#include "common/typeconversion.h"
 
-    #include "pg/pg.h"
-    #include "pg/pg_ids.h"
-    #include "pg/rx.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+#include "pg/rx.h"
 
-    #include "drivers/nvic.h"
-    #include "drivers/serial.h"
-    #include "drivers/system.h"
+#include "drivers/nvic.h"
+#include "drivers/serial.h"
+#include "drivers/system.h"
 
-    #include "fc/runtime_config.h"
-    #include "fc/config.h"
-    #include "flight/imu.h"
+#include "fc/runtime_config.h"
+#include "fc/config.h"
+#include "flight/imu.h"
 
-    #include "interface/msp.h"
+#include "interface/msp.h"
 
-    #include "io/serial.h"
-    #include "io/gps.h"
+#include "io/serial.h"
+#include "io/gps.h"
 
-    #include "rx/rx.h"
-    #include "rx/crsf.h"
+#include "rx/rx.h"
+#include "rx/crsf.h"
 
-    #include "sensors/battery.h"
-    #include "sensors/sensors.h"
+#include "sensors/battery.h"
+#include "sensors/sensors.h"
 
-    #include "telemetry/telemetry.h"
-    #include "telemetry/msp_shared.h"
-    #include "telemetry/smartport.h"
-    #include "sensors/acceleration.h"
+#include "telemetry/telemetry.h"
+#include "telemetry/msp_shared.h"
+#include "telemetry/smartport.h"
+#include "sensors/acceleration.h"
 
-    bool handleMspFrame(uint8_t *frameStart, int frameLength);
-    bool sendMspReply(uint8_t payloadSize, mspResponseFnPtr responseFn);
-    uint8_t sbufReadU8(sbuf_t *src);
-    int sbufBytesRemaining(sbuf_t *buf);
-    void initSharedMsp();
-    uint16_t testBatteryVoltage = 0;
-    int32_t testAmperage = 0;
-    uint8_t mspTxData[64]; //max frame size
-    sbuf_t mspTxDataBuf;
-    uint8_t crsfFrameOut[CRSF_FRAME_SIZE_MAX];
-    uint8_t payloadOutput[64];
-    sbuf_t payloadOutputBuf;
-    int32_t testmAhDrawn = 0;
+bool handleMspFrame(uint8_t *frameStart, int frameLength);
+bool sendMspReply(uint8_t payloadSize, mspResponseFnPtr responseFn);
+uint8_t sbufReadU8(sbuf_t *src);
+int sbufBytesRemaining(sbuf_t *buf);
+void initSharedMsp();
+uint16_t testBatteryVoltage = 0;
+int32_t testAmperage = 0;
+uint8_t mspTxData[64]; //max frame size
+sbuf_t mspTxDataBuf;
+uint8_t crsfFrameOut[CRSF_FRAME_SIZE_MAX];
+uint8_t payloadOutput[64];
+sbuf_t payloadOutputBuf;
+int32_t testmAhDrawn = 0;
 
-    PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
-    PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
-    PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
-    PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
-    PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG,0);
+PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
+PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
+PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
+PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
+PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
 
-    extern bool crsfFrameDone;
-    extern crsfFrame_t crsfFrame;
-    extern mspPackage_t mspPackage;
-    extern uint8_t checksum;
+extern bool crsfFrameDone;
+extern crsfFrame_t crsfFrame;
+extern mspPackage_t mspPackage;
+extern uint8_t checksum;
 
-    uint32_t dummyTimeUs;
-
+uint32_t dummyTimeUs;
 }
 
 #include "unittest_macros.h"
@@ -105,16 +104,15 @@ typedef struct crsfMspFrame_s {
 } crsfMspFrame_t;
 
 const uint8_t crsfPidRequest[] = {
-    0x00,0x0D,0x7A,0xC8,0xEA,0x30,0x00,0x70,0x70,0x00,0x00,0x00,0x00,0x69
-};
+    0x00, 0x0D, 0x7A, 0xC8, 0xEA, 0x30, 0x00, 0x70, 0x70, 0x00, 0x00, 0x00, 0x00, 0x69};
 
 TEST(CrossFireMSPTest, RequestBufferTest)
 {
     atomic_BASEPRI = 0;
 
     initSharedMsp();
-    const crsfMspFrame_t *framePtr = (const crsfMspFrame_t*)crsfPidRequest;
-    crsfFrame = *(const crsfFrame_t*)framePtr;
+    const crsfMspFrame_t *framePtr = (const crsfMspFrame_t *)crsfPidRequest;
+    crsfFrame = *(const crsfFrame_t *)framePtr;
     crsfFrameDone = true;
     EXPECT_EQ(CRSF_ADDRESS_BROADCAST, crsfFrame.frame.deviceAddress);
     EXPECT_EQ(CRSF_FRAME_LENGTH_ADDRESS + CRSF_FRAME_LENGTH_EXT_TYPE_CRC + CRSF_FRAME_RX_MSP_FRAME_SIZE, crsfFrame.frame.frameLength);
@@ -132,28 +130,28 @@ TEST(CrossFireMSPTest, RequestBufferTest)
 TEST(CrossFireMSPTest, ResponsePacketTest)
 {
     initSharedMsp();
-    const crsfMspFrame_t *framePtr = (const crsfMspFrame_t*)crsfPidRequest;
-    crsfFrame = *(const crsfFrame_t*)framePtr;
+    const crsfMspFrame_t *framePtr = (const crsfMspFrame_t *)crsfPidRequest;
+    crsfFrame = *(const crsfFrame_t *)framePtr;
     crsfFrameDone = true;
     uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + 2;
     handleMspFrame(frameStart, CRSF_FRAME_RX_MSP_FRAME_SIZE);
-    for (unsigned int ii=1; ii<30; ii++) {
+    for (unsigned int ii = 1; ii < 30; ii++) {
         EXPECT_EQ(ii, sbufReadU8(&mspPackage.responsePacket->buf));
     }
     sbufSwitchToReader(&mspPackage.responsePacket->buf, mspPackage.responseBuffer);
 }
 
-const uint8_t crsfPidWrite1[] = {0x00,0x0D,0x7C,0xC8,0xEA,0x31,0x1E,0xCA,0x29,0x28,0x1E,0x3A,0x32};
-const uint8_t crsfPidWrite2[] = {0x00,0x0D,0x7C,0xC8,0xEA,0x22,0x23,0x46,0x2D,0x14,0x32,0x00,0x00};
-const uint8_t crsfPidWrite3[] = {0x00,0x0D,0x7C,0xC8,0xEA,0x23,0x0F,0x00,0x00,0x22,0x0E,0x35,0x19};
-const uint8_t crsfPidWrite4[] = {0x00,0x0D,0x7C,0xC8,0xEA,0x24,0x21,0x53,0x32,0x32,0x4B,0x28,0x00};
-const uint8_t crsfPidWrite5[] = {0x00,0x0D,0x7C,0xC8,0xEA,0x25,0x00,0x37,0x37,0x4B,0xF8,0x00,0x00};
+const uint8_t crsfPidWrite1[] = {0x00, 0x0D, 0x7C, 0xC8, 0xEA, 0x31, 0x1E, 0xCA, 0x29, 0x28, 0x1E, 0x3A, 0x32};
+const uint8_t crsfPidWrite2[] = {0x00, 0x0D, 0x7C, 0xC8, 0xEA, 0x22, 0x23, 0x46, 0x2D, 0x14, 0x32, 0x00, 0x00};
+const uint8_t crsfPidWrite3[] = {0x00, 0x0D, 0x7C, 0xC8, 0xEA, 0x23, 0x0F, 0x00, 0x00, 0x22, 0x0E, 0x35, 0x19};
+const uint8_t crsfPidWrite4[] = {0x00, 0x0D, 0x7C, 0xC8, 0xEA, 0x24, 0x21, 0x53, 0x32, 0x32, 0x4B, 0x28, 0x00};
+const uint8_t crsfPidWrite5[] = {0x00, 0x0D, 0x7C, 0xC8, 0xEA, 0x25, 0x00, 0x37, 0x37, 0x4B, 0xF8, 0x00, 0x00};
 
 TEST(CrossFireMSPTest, WriteResponseTest)
 {
     initSharedMsp();
-    const crsfMspFrame_t *framePtr1 = (const crsfMspFrame_t*)crsfPidWrite1;
-    crsfFrame = *(const crsfFrame_t*)framePtr1;
+    const crsfMspFrame_t *framePtr1 = (const crsfMspFrame_t *)crsfPidWrite1;
+    crsfFrame = *(const crsfFrame_t *)framePtr1;
     crsfFrameDone = true;
     uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + 2;
     bool pending1 = handleMspFrame(frameStart, CRSF_FRAME_RX_MSP_FRAME_SIZE);
@@ -164,8 +162,8 @@ TEST(CrossFireMSPTest, WriteResponseTest)
     EXPECT_EQ(0x3A, mspPackage.requestBuffer[3]);
     EXPECT_EQ(0x32, mspPackage.requestBuffer[4]);
 
-    const crsfMspFrame_t *framePtr2 = (const crsfMspFrame_t*)crsfPidWrite2;
-    crsfFrame = *(const crsfFrame_t*)framePtr2;
+    const crsfMspFrame_t *framePtr2 = (const crsfMspFrame_t *)crsfPidWrite2;
+    crsfFrame = *(const crsfFrame_t *)framePtr2;
     crsfFrameDone = true;
     uint8_t *frameStart2 = (uint8_t *)&crsfFrame.frame.payload + 2;
     bool pending2 = handleMspFrame(frameStart2, CRSF_FRAME_RX_MSP_FRAME_SIZE);
@@ -178,8 +176,8 @@ TEST(CrossFireMSPTest, WriteResponseTest)
     EXPECT_EQ(0x00, mspPackage.requestBuffer[10]);
     EXPECT_EQ(0x00, mspPackage.requestBuffer[11]);
 
-    const crsfMspFrame_t *framePtr3 = (const crsfMspFrame_t*)crsfPidWrite3;
-    crsfFrame = *(const crsfFrame_t*)framePtr3;
+    const crsfMspFrame_t *framePtr3 = (const crsfMspFrame_t *)crsfPidWrite3;
+    crsfFrame = *(const crsfFrame_t *)framePtr3;
     crsfFrameDone = true;
     uint8_t *frameStart3 = (uint8_t *)&crsfFrame.frame.payload + 2;
     bool pending3 = handleMspFrame(frameStart3, CRSF_FRAME_RX_MSP_FRAME_SIZE);
@@ -192,8 +190,8 @@ TEST(CrossFireMSPTest, WriteResponseTest)
     EXPECT_EQ(0x35, mspPackage.requestBuffer[17]);
     EXPECT_EQ(0x19, mspPackage.requestBuffer[18]);
 
-    const crsfMspFrame_t *framePtr4 = (const crsfMspFrame_t*)crsfPidWrite4;
-    crsfFrame = *(const crsfFrame_t*)framePtr4;
+    const crsfMspFrame_t *framePtr4 = (const crsfMspFrame_t *)crsfPidWrite4;
+    crsfFrame = *(const crsfFrame_t *)framePtr4;
     crsfFrameDone = true;
     uint8_t *frameStart4 = (uint8_t *)&crsfFrame.frame.payload + 2;
     bool pending4 = handleMspFrame(frameStart4, CRSF_FRAME_RX_MSP_FRAME_SIZE);
@@ -207,8 +205,8 @@ TEST(CrossFireMSPTest, WriteResponseTest)
     EXPECT_EQ(0x00, mspPackage.requestBuffer[25]);
     //EXPECT_EQ(0xB3,checksum);
 
-    const crsfMspFrame_t *framePtr5 = (const crsfMspFrame_t*)crsfPidWrite5;
-    crsfFrame = *(const crsfFrame_t*)framePtr5;
+    const crsfMspFrame_t *framePtr5 = (const crsfMspFrame_t *)crsfPidWrite5;
+    crsfFrame = *(const crsfFrame_t *)framePtr5;
     crsfFrameDone = true;
     uint8_t *frameStart5 = (uint8_t *)&crsfFrame.frame.payload + 2;
     bool pending5 = handleMspFrame(frameStart5, CRSF_FRAME_RX_MSP_FRAME_SIZE);
@@ -217,20 +215,21 @@ TEST(CrossFireMSPTest, WriteResponseTest)
     EXPECT_EQ(0x37, mspPackage.requestBuffer[27]);
     EXPECT_EQ(0x37, mspPackage.requestBuffer[28]);
     EXPECT_EQ(0x4B, mspPackage.requestBuffer[29]);
-    EXPECT_EQ(0xF8,checksum);
-
+    EXPECT_EQ(0xF8, checksum);
 }
 
-void testSendMspResponse(uint8_t *payload) {
+void testSendMspResponse(uint8_t *payload)
+{
     sbuf_t *plOut = sbufInit(&payloadOutputBuf, payloadOutput, payloadOutput + 64);
     sbufWriteData(plOut, payload, *payload + 64);
     sbufSwitchToReader(&payloadOutputBuf, payloadOutput);
 }
 
-TEST(CrossFireMSPTest, SendMspReply) {
+TEST(CrossFireMSPTest, SendMspReply)
+{
     initSharedMsp();
-    const crsfMspFrame_t *framePtr = (const crsfMspFrame_t*)crsfPidRequest;
-    crsfFrame = *(const crsfFrame_t*)framePtr;
+    const crsfMspFrame_t *framePtr = (const crsfMspFrame_t *)crsfPidRequest;
+    crsfFrame = *(const crsfFrame_t *)framePtr;
     crsfFrameDone = true;
     uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + 2;
     bool handled = handleMspFrame(frameStart, CRSF_FRAME_RX_MSP_FRAME_SIZE);
@@ -239,7 +238,7 @@ TEST(CrossFireMSPTest, SendMspReply) {
     EXPECT_FALSE(replyPending);
     EXPECT_EQ(0x10, sbufReadU8(&payloadOutputBuf));
     EXPECT_EQ(0x1E, sbufReadU8(&payloadOutputBuf));
-    for (unsigned int ii=1; ii<=30; ii++) {
+    for (unsigned int ii = 1; ii <= 30; ii++) {
         EXPECT_EQ(ii, sbufReadU8(&payloadOutputBuf));
     }
     EXPECT_EQ(0x71, sbufReadU8(&payloadOutputBuf)); // CRC
@@ -249,55 +248,61 @@ TEST(CrossFireMSPTest, SendMspReply) {
 
 extern "C" {
 
-    gpsSolutionData_t gpsSol;
-    attitudeEulerAngles_t attitude = { { 0, 0, 0 } };
+gpsSolutionData_t gpsSol;
+attitudeEulerAngles_t attitude = {{0, 0, 0}};
 
-    uint32_t micros(void) {return dummyTimeUs;}
-    serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) {return NULL;}
-    serialPortConfig_t *findSerialPortConfig(serialPortFunction_e ) {return NULL;}
-    bool isBatteryVoltageConfigured(void) { return true; }
-    uint16_t getBatteryVoltage(void) {
-        return testBatteryVoltage;
-    }
-    bool isAmperageConfigured(void) { return true; }
-    int32_t getAmperage(void) {
-        return testAmperage;
-    }
+uint32_t micros(void) { return dummyTimeUs; }
+serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) { return NULL; }
+serialPortConfig_t *findSerialPortConfig(serialPortFunction_e) { return NULL; }
+bool isBatteryVoltageConfigured(void) { return true; }
+uint16_t getBatteryVoltage(void)
+{
+    return testBatteryVoltage;
+}
+bool isAmperageConfigured(void) { return true; }
+int32_t getAmperage(void)
+{
+    return testAmperage;
+}
 
-    uint8_t calculateBatteryPercentageRemaining(void) {
-        return 67;
-    }
+uint8_t calculateBatteryPercentageRemaining(void)
+{
+    return 67;
+}
 
-    int32_t getEstimatedAltitudeCm(void) {
-    	return 0;
-    }
+int32_t getEstimatedAltitudeCm(void)
+{
+    return 0;
+}
 
-    bool featureIsEnabled(uint32_t) {return false;}
+bool featureIsEnabled(uint32_t) { return false; }
 
-    bool isAirmodeActive(void) {return true;}
+bool isAirmodeActive(void) { return true; }
 
-    mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostProcessFnPtr *mspPostProcessFn) {
+mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostProcessFnPtr *mspPostProcessFn)
+{
 
-        UNUSED(mspPostProcessFn);
+    UNUSED(mspPostProcessFn);
 
-        sbuf_t *dst = &reply->buf;
-        const uint8_t cmdMSP = cmd->cmd;
-        reply->cmd = cmd->cmd;
+    sbuf_t *dst = &reply->buf;
+    const uint8_t cmdMSP = cmd->cmd;
+    reply->cmd = cmd->cmd;
 
-        if (cmdMSP == 0x70) {
-            for (unsigned int ii=1; ii<=30; ii++) {
-                sbufWriteU8(dst, ii);
-            }
-        } else if (cmdMSP == 0xCA) {
-            return MSP_RESULT_ACK;
+    if (cmdMSP == 0x70) {
+        for (unsigned int ii = 1; ii <= 30; ii++) {
+            sbufWriteU8(dst, ii);
         }
-
+    } else if (cmdMSP == 0xCA) {
         return MSP_RESULT_ACK;
     }
 
-    void beeperConfirmationBeeps(uint8_t ) {}
+    return MSP_RESULT_ACK;
+}
 
-    int32_t getMAhDrawn(void) {
-      return testmAhDrawn;
-    }
+void beeperConfirmationBeeps(uint8_t) {}
+
+int32_t getMAhDrawn(void)
+{
+    return testmAhDrawn;
+}
 }

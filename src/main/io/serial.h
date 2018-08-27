@@ -33,22 +33,22 @@ typedef enum {
 } portSharing_e;
 
 typedef enum {
-    FUNCTION_NONE                = 0,
-    FUNCTION_MSP                 = (1 << 0),  // 1
-    FUNCTION_GPS                 = (1 << 1),  // 2
-    FUNCTION_TELEMETRY_FRSKY_HUB = (1 << 2),  // 4
-    FUNCTION_TELEMETRY_HOTT      = (1 << 3),  // 8
-    FUNCTION_TELEMETRY_LTM       = (1 << 4),  // 16
-    FUNCTION_TELEMETRY_SMARTPORT = (1 << 5),  // 32
-    FUNCTION_RX_SERIAL           = (1 << 6),  // 64
-    FUNCTION_BLACKBOX            = (1 << 7),  // 128
-    FUNCTION_TELEMETRY_MAVLINK   = (1 << 9),  // 512
-    FUNCTION_ESC_SENSOR          = (1 << 10), // 1024
-    FUNCTION_VTX_SMARTAUDIO      = (1 << 11), // 2048
-    FUNCTION_TELEMETRY_IBUS      = (1 << 12), // 4096
-    FUNCTION_VTX_TRAMP           = (1 << 13), // 8192
-    FUNCTION_RCDEVICE            = (1 << 14), // 16384
-    FUNCTION_LIDAR_TF            = (1 << 15), // 32768
+    FUNCTION_NONE = 0,
+    FUNCTION_MSP = (1 << 0),                 // 1
+    FUNCTION_GPS = (1 << 1),                 // 2
+    FUNCTION_TELEMETRY_FRSKY_HUB = (1 << 2), // 4
+    FUNCTION_TELEMETRY_HOTT = (1 << 3),      // 8
+    FUNCTION_TELEMETRY_LTM = (1 << 4),       // 16
+    FUNCTION_TELEMETRY_SMARTPORT = (1 << 5), // 32
+    FUNCTION_RX_SERIAL = (1 << 6),           // 64
+    FUNCTION_BLACKBOX = (1 << 7),            // 128
+    FUNCTION_TELEMETRY_MAVLINK = (1 << 9),   // 512
+    FUNCTION_ESC_SENSOR = (1 << 10),         // 1024
+    FUNCTION_VTX_SMARTAUDIO = (1 << 11),     // 2048
+    FUNCTION_TELEMETRY_IBUS = (1 << 12),     // 4096
+    FUNCTION_VTX_TRAMP = (1 << 13),          // 8192
+    FUNCTION_RCDEVICE = (1 << 14),           // 16384
+    FUNCTION_LIDAR_TF = (1 << 15),           // 32768
 } serialPortFunction_e;
 
 #define TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK (FUNCTION_TELEMETRY_FRSKY_HUB | FUNCTION_TELEMETRY_LTM | FUNCTION_TELEMETRY_MAVLINK)
@@ -93,9 +93,9 @@ typedef enum {
 
 extern const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT];
 
-#define SERIAL_PORT_IDENTIFIER_TO_INDEX(x) (((x) <= SERIAL_PORT_USART8) ? (x) : (RESOURCE_SOFT_OFFSET + ((x) - SERIAL_PORT_SOFTSERIAL1)))
+#define SERIAL_PORT_IDENTIFIER_TO_INDEX(x) (((x) <= SERIAL_PORT_USART8) ? (x) : (RESOURCE_SOFT_OFFSET + ((x)-SERIAL_PORT_SOFTSERIAL1)))
 
-#define SERIAL_PORT_IDENTIFIER_TO_UARTDEV(x) ((x) - SERIAL_PORT_USART1 + UARTDEV_1)
+#define SERIAL_PORT_IDENTIFIER_TO_UARTDEV(x) ((x)-SERIAL_PORT_USART1 + UARTDEV_1)
 
 //
 // runtime
@@ -123,7 +123,7 @@ typedef struct serialPortConfig_s {
 typedef struct serialConfig_s {
     serialPortConfig_t portConfigs[SERIAL_PORT_COUNT];
     uint16_t serial_update_rate_hz;
-    uint8_t reboot_character;               // which byte is used to reboot. Default 'R', could be changed carefully to something else.
+    uint8_t reboot_character; // which byte is used to reboot. Default 'R', could be changed carefully to something else.
 } serialConfig_t;
 
 PG_DECLARE(serialConfig_t, serialConfig);
@@ -159,14 +159,12 @@ serialPort_t *openSerialPort(
     void *rxCallbackData,
     uint32_t baudrate,
     portMode_e mode,
-    portOptions_e options
-);
+    portOptions_e options);
 void closeSerialPort(serialPort_t *serialPort);
 
 void waitForSerialPortToFinishTransmitting(serialPort_t *serialPort);
 
 baudRate_e lookupBaudRateIndex(uint32_t baudRate);
-
 
 //
 // msp/cli/bootloader

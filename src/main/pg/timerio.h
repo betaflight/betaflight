@@ -27,7 +27,7 @@
 
 #ifdef USE_TIMER_MGMT
 
-#define MAX_TIMER_PINMAP_COUNT   10
+#define MAX_TIMER_PINMAP_COUNT 10
 
 typedef struct timerIOConfig_s {
     ioTag_t ioTag;

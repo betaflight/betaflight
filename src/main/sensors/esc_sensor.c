@@ -69,8 +69,7 @@ Byte 9: 8-bit CRC
 PG_REGISTER_WITH_RESET_TEMPLATE(escSensorConfig_t, escSensorConfig, PG_ESC_SENSOR_CONFIG, 0);
 
 PG_RESET_TEMPLATE(escSensorConfig_t, escSensorConfig,
-        .halfDuplex = 0
-);
+                  .halfDuplex = 0);
 
 /*
 DEBUG INFORMATION
@@ -100,11 +99,13 @@ typedef enum {
 } escSensorTriggerState_t;
 
 #define ESC_SENSOR_BAUDRATE 115200
-#define ESC_BOOTTIME 5000               // 5 seconds
-#define ESC_REQUEST_TIMEOUT 100         // 100 ms (data transfer takes only 900us)
+#define ESC_BOOTTIME 5000       // 5 seconds
+#define ESC_REQUEST_TIMEOUT 100 // 100 ms (data transfer takes only 900us)
 
 #define TELEMETRY_FRAME_SIZE 10
-static uint8_t telemetryBuffer[TELEMETRY_FRAME_SIZE] = { 0, };
+static uint8_t telemetryBuffer[TELEMETRY_FRAME_SIZE] = {
+    0,
+};
 
 static volatile uint8_t *buffer;
 static volatile uint8_t bufferSize = 0;
@@ -116,7 +117,7 @@ static escSensorData_t escSensorData[MAX_SUPPORTED_MOTORS];
 
 static escSensorTriggerState_t escSensorTriggerState = ESC_SENSOR_TRIGGER_STARTUP;
 static uint32_t escTriggerTimestamp;
-static uint8_t escSensorMotor = 0;      // motor index
+static uint8_t escSensorMotor = 0; // motor index
 
 static escSensorData_t combinedEscSensorData;
 static bool combinedDataNeedsUpdate = true;
@@ -208,7 +209,7 @@ bool escSensorInit(void)
         return false;
     }
 
-    portOptions_e options = SERIAL_NOT_INVERTED  | (escSensorConfig()->halfDuplex ? SERIAL_BIDIR : 0);
+    portOptions_e options = SERIAL_NOT_INVERTED | (escSensorConfig()->halfDuplex ? SERIAL_BIDIR : 0);
 
     // Initialize serial port
     escSensorPort = openSerialPort(portConfig->identifier, FUNCTION_ESC_SENSOR, escSensorDataReceive, NULL, ESC_SENSOR_BAUDRATE, MODE_RX, options);
@@ -225,8 +226,8 @@ static uint8_t updateCrc8(uint8_t crc, uint8_t crc_seed)
     uint8_t crc_u = crc;
     crc_u ^= crc_seed;
 
-    for (int i=0; i<8; i++) {
-        crc_u = ( crc_u & 0x80 ) ? 0x7 ^ ( crc_u << 1 ) : ( crc_u << 1 );
+    for (int i = 0; i < 8; i++) {
+        crc_u = (crc_u & 0x80) ? 0x7 ^ (crc_u << 1) : (crc_u << 1);
     }
 
     return (crc_u);
@@ -250,7 +251,7 @@ static uint8_t decodeEscFrame(void)
 
     // Get CRC8 checksum
     uint16_t chksum = calculateCrc8(telemetryBuffer, TELEMETRY_FRAME_SIZE - 1);
-    uint16_t tlmsum = telemetryBuffer[TELEMETRY_FRAME_SIZE - 1];     // last byte contains CRC value
+    uint16_t tlmsum = telemetryBuffer[TELEMETRY_FRAME_SIZE - 1]; // last byte contains CRC value
     uint8_t frameStatus;
     if (chksum == tlmsum) {
         escSensorData[escSensorMotor].dataAge = 0;
@@ -299,55 +300,55 @@ void escSensorProcess(timeUs_t currentTimeUs)
     }
 
     switch (escSensorTriggerState) {
-        case ESC_SENSOR_TRIGGER_STARTUP:
-            // Wait period of time before requesting telemetry (let the system boot first)
-            if (currentTimeMs >= ESC_BOOTTIME) {
+    case ESC_SENSOR_TRIGGER_STARTUP:
+        // Wait period of time before requesting telemetry (let the system boot first)
+        if (currentTimeMs >= ESC_BOOTTIME) {
+            escSensorTriggerState = ESC_SENSOR_TRIGGER_READY;
+        }
+
+        break;
+    case ESC_SENSOR_TRIGGER_READY:
+        escTriggerTimestamp = currentTimeMs;
+
+        startEscDataRead(telemetryBuffer, TELEMETRY_FRAME_SIZE);
+        motorDmaOutput_t *const motor = getMotorDmaOutput(escSensorMotor);
+        motor->requestTelemetry = true;
+        escSensorTriggerState = ESC_SENSOR_TRIGGER_PENDING;
+
+        DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_MOTOR_INDEX, escSensorMotor + 1);
+
+        break;
+    case ESC_SENSOR_TRIGGER_PENDING:
+        if (currentTimeMs < escTriggerTimestamp + ESC_REQUEST_TIMEOUT) {
+            uint8_t state = decodeEscFrame();
+            switch (state) {
+            case ESC_SENSOR_FRAME_COMPLETE:
+                selectNextMotor();
                 escSensorTriggerState = ESC_SENSOR_TRIGGER_READY;
-            }
 
-            break;
-        case ESC_SENSOR_TRIGGER_READY:
-            escTriggerTimestamp = currentTimeMs;
-
-            startEscDataRead(telemetryBuffer, TELEMETRY_FRAME_SIZE);
-            motorDmaOutput_t * const motor = getMotorDmaOutput(escSensorMotor);
-            motor->requestTelemetry = true;
-            escSensorTriggerState = ESC_SENSOR_TRIGGER_PENDING;
-
-            DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_MOTOR_INDEX, escSensorMotor + 1);
-
-            break;
-        case ESC_SENSOR_TRIGGER_PENDING:
-            if (currentTimeMs < escTriggerTimestamp + ESC_REQUEST_TIMEOUT) {
-                uint8_t state = decodeEscFrame();
-                switch (state) {
-                    case ESC_SENSOR_FRAME_COMPLETE:
-                        selectNextMotor();
-                        escSensorTriggerState = ESC_SENSOR_TRIGGER_READY;
-
-                        break;
-                    case ESC_SENSOR_FRAME_FAILED:
-                        increaseDataAge();
-
-                        selectNextMotor();
-                        escSensorTriggerState = ESC_SENSOR_TRIGGER_READY;
-
-                        DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_NUM_CRC_ERRORS, ++totalCrcErrorCount);
-                        break;
-                    case ESC_SENSOR_FRAME_PENDING:
-                        break;
-                }
-            } else {
-                // Move on to next ESC, we'll come back to this one
+                break;
+            case ESC_SENSOR_FRAME_FAILED:
                 increaseDataAge();
 
                 selectNextMotor();
                 escSensorTriggerState = ESC_SENSOR_TRIGGER_READY;
 
-                DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_NUM_TIMEOUTS, ++totalTimeoutCount);
+                DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_NUM_CRC_ERRORS, ++totalCrcErrorCount);
+                break;
+            case ESC_SENSOR_FRAME_PENDING:
+                break;
             }
+        } else {
+            // Move on to next ESC, we'll come back to this one
+            increaseDataAge();
 
-            break;
+            selectNextMotor();
+            escSensorTriggerState = ESC_SENSOR_TRIGGER_READY;
+
+            DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_NUM_TIMEOUTS, ++totalTimeoutCount);
+        }
+
+        break;
     }
 }
 

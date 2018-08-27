@@ -127,7 +127,7 @@ void pwmCompleteDshotMotorUpdate(uint8_t motorCount)
 static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
 {
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
-        motorDmaOutput_t * const motor = &dmaMotors[descriptor->userParam];
+        motorDmaOutput_t *const motor = &dmaMotors[descriptor->userParam];
 
 #ifdef USE_DSHOT_DMAR
         if (useBurstDshot) {
@@ -170,7 +170,7 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     TIM_OCInitTypeDef TIM_OCInitStructure;
     DMA_InitTypeDef DMA_InitStructure;
 
-    motorDmaOutput_t * const motor = &dmaMotors[motorIndex];
+    motorDmaOutput_t *const motor = &dmaMotors[motorIndex];
     motor->timerHardware = timerHardware;
 
     TIM_TypeDef *timer = timerHardware->tim;
@@ -181,7 +181,7 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     // To fix this, getTimerIndex must be expanded to return if a new timer has been requested.
     // However, since the initialization is idempotent, it is left as is in a favor of flash space (for now).
     const uint8_t timerIndex = getTimerIndex(timer);
-    const bool configureTimer = (timerIndex == dmaMotorTimerCount-1);
+    const bool configureTimer = (timerIndex == dmaMotorTimerCount - 1);
 
     IOConfigGPIOAF(motorIO, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP), timerHardware->alternateFunction);
 
@@ -192,7 +192,7 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
         RCC_ClockCmd(timerRCC(timer), ENABLE);
         TIM_Cmd(timer, DISABLE);
 
-        TIM_TimeBaseStructure.TIM_Prescaler = (uint16_t)(lrintf((float) timerClock(timer) / getDshotHz(pwmProtocolType) + 0.01f) - 1);
+        TIM_TimeBaseStructure.TIM_Prescaler = (uint16_t)(lrintf((float)timerClock(timer) / getDshotHz(pwmProtocolType) + 0.01f) - 1);
         TIM_TimeBaseStructure.TIM_Period = pwmProtocolType == PWM_TYPE_PROSHOT1000 ? MOTOR_NIBBLE_LENGTH_PROSHOT : MOTOR_BITLENGTH;
         TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
         TIM_TimeBaseStructure.TIM_RepetitionCounter = 0;
@@ -209,7 +209,7 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     } else {
         TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
         TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Set;
-        TIM_OCInitStructure.TIM_OCPolarity =  (output & TIMER_OUTPUT_INVERTED) ? TIM_OCPolarity_Low : TIM_OCPolarity_High;
+        TIM_OCInitStructure.TIM_OCPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCPolarity_Low : TIM_OCPolarity_High;
     }
     TIM_OCInitStructure.TIM_Pulse = 0;
 

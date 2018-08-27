@@ -38,42 +38,42 @@
 #include "drivers/accgyro/accgyro.h"
 #include "accgyro_l3gd20.h"
 
-#define READ_CMD               ((uint8_t)0x80)
-#define MULTIPLEBYTE_CMD       ((uint8_t)0x40)
-#define DUMMY_BYTE             ((uint8_t)0x00)
+#define READ_CMD ((uint8_t)0x80)
+#define MULTIPLEBYTE_CMD ((uint8_t)0x40)
+#define DUMMY_BYTE ((uint8_t)0x00)
 
-#define CTRL_REG1_ADDR         0x20
-#define CTRL_REG4_ADDR         0x23
-#define CTRL_REG5_ADDR         0x24
-#define OUT_TEMP_ADDR          0x26
-#define OUT_X_L_ADDR           0x28
+#define CTRL_REG1_ADDR 0x20
+#define CTRL_REG4_ADDR 0x23
+#define CTRL_REG5_ADDR 0x24
+#define OUT_TEMP_ADDR 0x26
+#define OUT_X_L_ADDR 0x28
 
-#define MODE_ACTIVE                   ((uint8_t)0x08)
+#define MODE_ACTIVE ((uint8_t)0x08)
 
-#define OUTPUT_DATARATE_1             ((uint8_t)0x00)
-#define OUTPUT_DATARATE_2             ((uint8_t)0x40)
-#define OUTPUT_DATARATE_3             ((uint8_t)0x80)
-#define OUTPUT_DATARATE_4             ((uint8_t)0xC0)
+#define OUTPUT_DATARATE_1 ((uint8_t)0x00)
+#define OUTPUT_DATARATE_2 ((uint8_t)0x40)
+#define OUTPUT_DATARATE_3 ((uint8_t)0x80)
+#define OUTPUT_DATARATE_4 ((uint8_t)0xC0)
 
-#define AXES_ENABLE                   ((uint8_t)0x07)
+#define AXES_ENABLE ((uint8_t)0x07)
 
-#define BANDWIDTH_1                   ((uint8_t)0x00)
-#define BANDWIDTH_2                   ((uint8_t)0x10)
-#define BANDWIDTH_3                   ((uint8_t)0x20)
-#define BANDWIDTH_4                   ((uint8_t)0x30)
+#define BANDWIDTH_1 ((uint8_t)0x00)
+#define BANDWIDTH_2 ((uint8_t)0x10)
+#define BANDWIDTH_3 ((uint8_t)0x20)
+#define BANDWIDTH_4 ((uint8_t)0x30)
 
-#define FULLSCALE_250                 ((uint8_t)0x00)
-#define FULLSCALE_500                 ((uint8_t)0x10)
-#define FULLSCALE_2000                ((uint8_t)0x20)
+#define FULLSCALE_250 ((uint8_t)0x00)
+#define FULLSCALE_500 ((uint8_t)0x10)
+#define FULLSCALE_2000 ((uint8_t)0x20)
 
-#define BLOCK_DATA_UPDATE_CONTINUOUS  ((uint8_t)0x00)
+#define BLOCK_DATA_UPDATE_CONTINUOUS ((uint8_t)0x00)
 
-#define BLE_MSB                       ((uint8_t)0x40)
+#define BLE_MSB ((uint8_t)0x40)
 
-#define BOOT                          ((uint8_t)0x80)
+#define BOOT ((uint8_t)0x80)
 
-#define ENABLE_L3GD20        IOLo(mpul3gd20CsPin)
-#define DISABLE_L3GD20       IOHi(mpul3gd20CsPin)
+#define ENABLE_L3GD20 IOLo(mpul3gd20CsPin)
+#define DISABLE_L3GD20 IOHi(mpul3gd20CsPin)
 
 static IO_t mpul3gd20CsPin = IO_NONE;
 
@@ -156,7 +156,7 @@ static bool l3gd20GyroRead(gyroDev_t *gyro)
 }
 
 // Page 9 in datasheet, So - Sensitivity, Full Scale = 2000, 70 mdps/digit
-#define L3GD20_GYRO_SCALE_FACTOR  0.07f
+#define L3GD20_GYRO_SCALE_FACTOR 0.07f
 
 bool l3gd20Detect(gyroDev_t *gyro)
 {
@@ -165,7 +165,7 @@ bool l3gd20Detect(gyroDev_t *gyro)
 
     gyro->scale = L3GD20_GYRO_SCALE_FACTOR;
 
-    return true;  // blindly assume it's present, for now.
+    return true; // blindly assume it's present, for now.
 }
 
 #endif // USE_GYRO_L3GD20

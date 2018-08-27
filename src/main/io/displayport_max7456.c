@@ -166,8 +166,7 @@ static const displayPortVTable_t max7456VTable = {
 displayPort_t *max7456DisplayPortInit(const vcdProfile_t *vcdProfile)
 {
     if (
-        !max7456Init(max7456Config(), vcdProfile, systemConfig()->cpu_overclock)
-    ) {
+        !max7456Init(max7456Config(), vcdProfile, systemConfig()->cpu_overclock)) {
         return NULL;
     }
 

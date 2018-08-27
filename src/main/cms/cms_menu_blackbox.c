@@ -57,17 +57,16 @@
 
 #include "pg/pg.h"
 
-static const char * const cmsx_BlackboxDeviceNames[] = {
+static const char *const cmsx_BlackboxDeviceNames[] = {
     "NONE",
     "FLASH ",
     "SDCARD",
-    "SERIAL"
-};
+    "SERIAL"};
 
 static uint16_t blackboxConfig_p_ratio;
 
 static uint8_t cmsx_BlackboxDevice;
-static OSD_TAB_t cmsx_BlackboxDeviceTable = { &cmsx_BlackboxDevice, 2, cmsx_BlackboxDeviceNames };
+static OSD_TAB_t cmsx_BlackboxDeviceTable = {&cmsx_BlackboxDevice, 2, cmsx_BlackboxDeviceNames};
 
 #define CMS_BLACKBOX_STRING_LENGTH 8
 static char cmsx_BlackboxStatus[CMS_BLACKBOX_STRING_LENGTH];
@@ -76,15 +75,14 @@ static char cmsx_BlackboxDeviceStorageFree[CMS_BLACKBOX_STRING_LENGTH];
 
 static void cmsx_Blackbox_GetDeviceStatus(void)
 {
-    char * unit = "B";
+    char *unit = "B";
 #if defined(USE_SDCARD) || defined(USE_FLASHFS)
     bool storageDeviceIsWorking = false;
 #endif
     uint32_t storageUsed = 0;
     uint32_t storageFree = 0;
 
-    switch (blackboxConfig()->device)
-    {
+    switch (blackboxConfig()->device) {
 #ifdef USE_SDCARD
     case BLACKBOX_DEVICE_SDCARD:
         unit = "MB";
@@ -196,21 +194,20 @@ static long cmsx_Blackbox_onExit(const OSD_Entry *self)
 }
 
 static OSD_Entry cmsx_menuBlackboxEntries[] =
-{
-    { "-- BLACKBOX --", OME_Label, NULL, NULL, 0},
-    { "DEVICE",      OME_TAB,     NULL,            &cmsx_BlackboxDeviceTable,                                 0 },
-    { "(STATUS)",    OME_String,  NULL,            &cmsx_BlackboxStatus,                                      0 },
-    { "(USED)",      OME_String,  NULL,            &cmsx_BlackboxDeviceStorageUsed,                           0 },
-    { "(FREE)",      OME_String,  NULL,            &cmsx_BlackboxDeviceStorageFree,                           0 },
-    { "P RATIO",     OME_UINT16,  NULL,            &(OSD_UINT16_t){ &blackboxConfig_p_ratio, 1, INT16_MAX, 1 },0 },
+    {
+        {"-- BLACKBOX --", OME_Label, NULL, NULL, 0},
+        {"DEVICE", OME_TAB, NULL, &cmsx_BlackboxDeviceTable, 0},
+        {"(STATUS)", OME_String, NULL, &cmsx_BlackboxStatus, 0},
+        {"(USED)", OME_String, NULL, &cmsx_BlackboxDeviceStorageUsed, 0},
+        {"(FREE)", OME_String, NULL, &cmsx_BlackboxDeviceStorageFree, 0},
+        {"P RATIO", OME_UINT16, NULL, &(OSD_UINT16_t){&blackboxConfig_p_ratio, 1, INT16_MAX, 1}, 0},
 
 #ifdef USE_FLASHFS
-    { "ERASE FLASH", OME_Funcall, cmsx_EraseFlash, NULL,                                                      0 },
+        {"ERASE FLASH", OME_Funcall, cmsx_EraseFlash, NULL, 0},
 #endif // USE_FLASHFS
 
-    { "BACK", OME_Back, NULL, NULL, 0 },
-    { NULL, OME_END, NULL, NULL, 0 }
-};
+        {"BACK", OME_Back, NULL, NULL, 0},
+        {NULL, OME_END, NULL, NULL, 0}};
 
 CMS_Menu cmsx_menuBlackbox = {
 #ifdef CMS_MENU_DEBUG
@@ -219,7 +216,6 @@ CMS_Menu cmsx_menuBlackbox = {
 #endif
     .onEnter = cmsx_Blackbox_onEnter,
     .onExit = cmsx_Blackbox_onExit,
-    .entries = cmsx_menuBlackboxEntries
-};
+    .entries = cmsx_menuBlackboxEntries};
 
 #endif

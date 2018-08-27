@@ -81,7 +81,7 @@ FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
         motor->timer->dmaBurstLength = bufferSize * 4;
     } else
 #endif
-    {    
+    {
         bufferSize = loadDmaBuffer(motor->dmaBuffer, 1, packet);
         motor->timer->timerDmaSources |= motor->timerDmaSource;
         LL_EX_DMA_SetDataLength(motor->timerHardware->dmaRef, bufferSize);
@@ -122,10 +122,10 @@ FAST_CODE void pwmCompleteDshotMotorUpdate(uint8_t motorCount)
     }
 }
 
-static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
+static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
 {
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
-        motorDmaOutput_t * const motor = &dmaMotors[descriptor->userParam];
+        motorDmaOutput_t *const motor = &dmaMotors[descriptor->userParam];
 
 #ifdef USE_DSHOT_DMAR
         if (useBurstDshot) {
@@ -162,7 +162,7 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     LL_TIM_OC_InitTypeDef oc_init;
     LL_DMA_InitTypeDef dma_init;
 
-    motorDmaOutput_t * const motor = &dmaMotors[motorIndex];
+    motorDmaOutput_t *const motor = &dmaMotors[motorIndex];
     motor->timerHardware = timerHardware;
 
     TIM_TypeDef *timer = timerHardware->tim;
@@ -180,7 +180,7 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
         RCC_ClockCmd(timerRCC(timer), ENABLE);
         LL_TIM_DisableCounter(timer);
 
-        init.Prescaler = (uint16_t)(lrintf((float) timerClock(timer) / getDshotHz(pwmProtocolType) + 0.01f) - 1);
+        init.Prescaler = (uint16_t)(lrintf((float)timerClock(timer) / getDshotHz(pwmProtocolType) + 0.01f) - 1);
         init.Autoreload = pwmProtocolType == PWM_TYPE_PROSHOT1000 ? MOTOR_NIBBLE_LENGTH_PROSHOT : MOTOR_BITLENGTH;
         init.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
         init.RepetitionCounter = 0;
@@ -197,16 +197,24 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     } else {
         oc_init.OCState = LL_TIM_OCSTATE_ENABLE;
         oc_init.OCIdleState = LL_TIM_OCIDLESTATE_HIGH;
-        oc_init.OCPolarity =  (output & TIMER_OUTPUT_INVERTED) ? LL_TIM_OCPOLARITY_LOW : LL_TIM_OCPOLARITY_HIGH;
+        oc_init.OCPolarity = (output & TIMER_OUTPUT_INVERTED) ? LL_TIM_OCPOLARITY_LOW : LL_TIM_OCPOLARITY_HIGH;
     }
     oc_init.CompareValue = 0;
 
     uint32_t channel;
     switch (timerHardware->channel) {
-    case TIM_CHANNEL_1: channel = LL_TIM_CHANNEL_CH1; break;
-    case TIM_CHANNEL_2: channel = LL_TIM_CHANNEL_CH2; break;
-    case TIM_CHANNEL_3: channel = LL_TIM_CHANNEL_CH3; break;
-    case TIM_CHANNEL_4: channel = LL_TIM_CHANNEL_CH4; break;
+    case TIM_CHANNEL_1:
+        channel = LL_TIM_CHANNEL_CH1;
+        break;
+    case TIM_CHANNEL_2:
+        channel = LL_TIM_CHANNEL_CH2;
+        break;
+    case TIM_CHANNEL_3:
+        channel = LL_TIM_CHANNEL_CH3;
+        break;
+    case TIM_CHANNEL_4:
+        channel = LL_TIM_CHANNEL_CH4;
+        break;
     }
     LL_TIM_OC_Init(timer, channel, &oc_init);
     LL_TIM_OC_EnablePreload(timer, channel);

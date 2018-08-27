@@ -41,24 +41,24 @@ extern "C" {
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-
 extern "C" {
-    uint8_t armingFlags = 0;
-    uint8_t stateFlags = 0;
-    uint16_t flightModeFlags = 0;
-    uint8_t testBatteryCellCount =3;
-    float rcCommand[4] = {0, 0, 0, 0};
-    telemetryConfig_t telemetryConfig_System;
-    batteryConfig_s batteryConfig_System;
-    attitudeEulerAngles_t attitude = EULER_INITIALIZE;
-    acc_t acc;
-    baro_t baro;
-    gpsSolutionData_t gpsSol;
-    uint16_t GPS_distanceToHome;
+uint8_t armingFlags = 0;
+uint8_t stateFlags = 0;
+uint16_t flightModeFlags = 0;
+uint8_t testBatteryCellCount = 3;
+float rcCommand[4] = {0, 0, 0, 0};
+telemetryConfig_t telemetryConfig_System;
+batteryConfig_s batteryConfig_System;
+attitudeEulerAngles_t attitude = EULER_INITIALIZE;
+acc_t acc;
+baro_t baro;
+gpsSolutionData_t gpsSol;
+uint16_t GPS_distanceToHome;
 }
 
 static int16_t gyroTemperature;
-int16_t gyroGetTemperature(void) {
+int16_t gyroGetTemperature(void)
+{
     return gyroTemperature;
 }
 
@@ -72,11 +72,10 @@ extern "C" {
 static int32_t amperage = 100;
 static int32_t estimatedVario = 0;
 static uint8_t batteryRemaining = 0;
-static uint16_t avgCellVoltage = vbat/testBatteryCellCount;
+static uint16_t avgCellVoltage = vbat / testBatteryCellCount;
 static throttleStatus_e throttleStatus = THROTTLE_HIGH;
 static uint32_t definedFeatures = 0;
 static uint32_t definedSensors = SENSOR_GYRO | SENSOR_ACC | SENSOR_MAG | SENSOR_SONAR | SENSOR_GPS | SENSOR_GPSMAG;
-
 
 int32_t getAmperage(void)
 {
@@ -127,26 +126,25 @@ typedef struct serialPortStub_s {
     int end = 0;
 } serialPortStub_t;
 
-
 static uint16_t testBatteryVoltage = 100;
 uint16_t getBatteryVoltage(void)
 {
     return testBatteryVoltage;
 }
 
-uint8_t getBatteryCellCount(void) {
+uint8_t getBatteryCellCount(void)
+{
     return testBatteryCellCount;
 }
 
 static serialPortStub_t serialWriteStub;
 static serialPortStub_t serialReadStub;
 
-#define SERIAL_PORT_DUMMY_IDENTIFIER  (serialPortIdentifier_e)0x1234
+#define SERIAL_PORT_DUMMY_IDENTIFIER (serialPortIdentifier_e)0x1234
 serialPort_t serialTestInstance;
 serialPortConfig_t serialTestInstanceConfig = {
     .identifier = SERIAL_PORT_DUMMY_IDENTIFIER,
-    .functionMask = 0
-};
+    .functionMask = 0};
 
 static serialPortConfig_t *findSerialPortConfig_stub_retval;
 static portSharing_e determinePortSharing_stub_retval;
@@ -160,14 +158,11 @@ void rescheduleTask(cfTaskId_e taskId, uint32_t newPeriodMicros)
     EXPECT_EQ(1000, newPeriodMicros);
 }
 
-
-
 serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function)
 {
     EXPECT_EQ(FUNCTION_TELEMETRY_IBUS, function);
     return findSerialPortConfig_stub_retval;
 }
-
 
 portSharing_e determinePortSharing(const serialPortConfig_t *portConfig, serialPortFunction_e function)
 {
@@ -176,13 +171,11 @@ portSharing_e determinePortSharing(const serialPortConfig_t *portConfig, serialP
     return PORTSHARING_UNUSED;
 }
 
-
 bool telemetryDetermineEnabledState(portSharing_e portSharing)
 {
-    (void) portSharing;
+    (void)portSharing;
     return telemetryDetermineEnabledState_stub_retval;
 }
-
 
 bool isSerialPortShared(const serialPortConfig_t *portConfig,
                         uint16_t functionMask,
@@ -194,13 +187,11 @@ bool isSerialPortShared(const serialPortConfig_t *portConfig,
     return portIsShared;
 }
 
-
 serialPortConfig_t *findSerialPortConfig(uint16_t mask)
 {
     EXPECT_EQ(FUNCTION_TELEMETRY_IBUS, mask);
-    return findSerialPortConfig_stub_retval ;
+    return findSerialPortConfig_stub_retval;
 }
-
 
 serialPort_t *openSerialPort(
     serialPortIdentifier_e identifier,
@@ -209,8 +200,7 @@ serialPort_t *openSerialPort(
     void *callbackData,
     uint32_t baudrate,
     portMode_e mode,
-    portOptions_e options
-)
+    portOptions_e options)
 {
     openSerial_called = true;
     UNUSED(callback);
@@ -228,7 +218,6 @@ void closeSerialPort(serialPort_t *serialPort)
     EXPECT_EQ(&serialTestInstance, serialPort);
 }
 
-
 void serialWrite(serialPort_t *instance, uint8_t ch)
 {
     EXPECT_EQ(&serialTestInstance, instance);
@@ -237,7 +226,6 @@ void serialWrite(serialPort_t *instance, uint8_t ch)
     serialReadStub.buffer[serialReadStub.end++] = ch; //characters echoes back on the shared wire
     //printf("w: %02d 0x%02x\n", serialWriteStub.pos, ch);
 }
-
 
 uint32_t serialRxBytesWaiting(const serialPort_t *instance)
 {
@@ -251,7 +239,6 @@ uint32_t serialRxBytesWaiting(const serialPort_t *instance)
     return ret;
 }
 
-
 uint8_t serialRead(serialPort_t *instance)
 {
     EXPECT_EQ(&serialTestInstance, instance);
@@ -259,7 +246,6 @@ uint8_t serialRead(serialPort_t *instance)
     const uint8_t ch = serialReadStub.buffer[serialReadStub.pos++];
     return ch;
 }
-
 
 void serialTestResetBuffers()
 {
@@ -285,18 +271,15 @@ void serialTestResetPort()
     serialTestResetBuffers();
 }
 
-
-
 class IbusTelemteryInitUnitTest : public ::testing::Test
 {
-protected:
+  protected:
     virtual void SetUp()
     {
         serialTestResetPort();
         setTestSensors();
     }
 };
-
 
 TEST_F(IbusTelemteryInitUnitTest, Test_IbusInitNotEnabled)
 {
@@ -316,7 +299,6 @@ TEST_F(IbusTelemteryInitUnitTest, Test_IbusInitNotEnabled)
     EXPECT_FALSE(openSerial_called);
 }
 
-
 TEST_F(IbusTelemteryInitUnitTest, Test_IbusInitEnabled)
 {
     findSerialPortConfig_stub_retval = &serialTestInstanceConfig;
@@ -333,7 +315,6 @@ TEST_F(IbusTelemteryInitUnitTest, Test_IbusInitEnabled)
     EXPECT_EQ(serialReadStub.end, serialReadStub.pos);
     EXPECT_TRUE(openSerial_called);
 }
-
 
 TEST_F(IbusTelemteryInitUnitTest, Test_IbusInitSerialRxAndTelemetryEnabled)
 {
@@ -356,7 +337,7 @@ TEST_F(IbusTelemteryInitUnitTest, Test_IbusInitSerialRxAndTelemetryEnabled)
 
 class IbusTelemetryProtocolUnitTestBase : public ::testing::Test
 {
-protected:
+  protected:
     virtual void SetUp()
     {
         serialTestResetPort();
@@ -374,7 +355,7 @@ protected:
         serialReadStub.end += rxCnt;
 
         //when polling ibus
-        for (int i = 0; i<10; i++) {
+        for (int i = 0; i < 10; i++) {
             handleIbusTelemetry();
         }
 
@@ -395,18 +376,15 @@ protected:
     }
 };
 
-
-
 class IbusTelemteryProtocolUnitTest : public ::IbusTelemetryProtocolUnitTestBase
 {
-protected:
+  protected:
     virtual void SetUp()
     {
         IbusTelemetryProtocolUnitTestBase::SetUp();
         setupBaseAddressOne();
     }
 };
-
 
 TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusNoRespondToDiscoveryCrcErr)
 {
@@ -415,14 +393,12 @@ TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusNoRespondToDiscoveryCrcErr)
     checkResponseToCommand("\x04\x81\x00\x00", 4, NULL, 0);
 }
 
-
 TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToDiscovery)
 {
     //Given ibus command: Hello sensor at address 1, are you there?
     //then we respond with: Yes, i'm here, hello!
     checkResponseToCommand("\x04\x81\x7a\xff", 4, "\x04\x81\x7A\xFF", 4);
 }
-
 
 TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToSensorTypeQueryVbatt)
 {
@@ -431,7 +407,6 @@ TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToSensorTypeQueryVbatt)
     checkResponseToCommand("\x04\x91\x6A\xFF", 4, "\x06\x91\x03\x02\x63\xFF", 6);
 }
 
-
 TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToSensorTypeQueryTemperature)
 {
     //Given ibus command: Sensor at address 1, what type are you?
@@ -439,14 +414,12 @@ TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToSensorTypeQueryTemperatu
     checkResponseToCommand("\x04\x92\x69\xFF", 4, "\x06\x92\x01\x02\x64\xFF", 6);
 }
 
-
 TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToSensorTypeQueryRpm)
 {
     //Given ibus command: Sensor at address 3, what type are you?
     //then we respond with: I'm a rpm sensor
     checkResponseToCommand("\x04\x93\x68\xFF", 4, "\x06\x93\x02\x02\x62\xFF", 6);
 }
-
 
 TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementVbattZero)
 {
@@ -462,13 +435,13 @@ TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementVbattCellV
 
     //Given ibus command: Sensor at address 1, please send your measurement
     //then we respond with: I'm reading 0.1 volts
-    testBatteryCellCount =3;
+    testBatteryCellCount = 3;
     testBatteryVoltage = 30;
     checkResponseToCommand("\x04\xA1\x5a\xff", 4, "\x06\xA1\x64\x00\xf4\xFe", 6);
 
     //Given ibus command: Sensor at address 1, please send your measurement
     //then we respond with: I'm reading 0.1 volts
-    testBatteryCellCount =1;
+    testBatteryCellCount = 1;
     testBatteryVoltage = 10;
     checkResponseToCommand("\x04\xA1\x5a\xff", 4, "\x06\xA1\x64\x00\xf4\xFe", 6);
 }
@@ -479,17 +452,16 @@ TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementVbattPackV
 
     //Given ibus command: Sensor at address 1, please send your measurement
     //then we respond with: I'm reading 0.1 volts
-    testBatteryCellCount =3;
+    testBatteryCellCount = 3;
     testBatteryVoltage = 10;
     checkResponseToCommand("\x04\xA1\x5a\xff", 4, "\x06\xA1\x64\x00\xf4\xFe", 6);
 
     //Given ibus command: Sensor at address 1, please send your measurement
     //then we respond with: I'm reading 0.1 volts
-    testBatteryCellCount =1;
+    testBatteryCellCount = 1;
     testBatteryVoltage = 10;
     checkResponseToCommand("\x04\xA1\x5a\xff", 4, "\x06\xA1\x64\x00\xf4\xFe", 6);
 }
-
 
 TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementTemperature)
 {
@@ -500,7 +472,7 @@ TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementTemperatur
 
     //Given ibus command: Sensor at address 2, please send your measurement
     //then we respond
-    gyroTemperature = 59;  //test integer rounding
+    gyroTemperature = 59; //test integer rounding
     checkResponseToCommand("\x04\xA2\x59\xff", 4, "\x06\xA2\xde\x03\x76\xfe", 6);
 
     //Given ibus command: Sensor at address 2, please send your measurement
@@ -508,7 +480,6 @@ TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementTemperatur
     gyroTemperature = 150;
     checkResponseToCommand("\x04\xA2\x59\xff", 4, "\x06\xA2\x6c\x07\xe4\xfe", 6);
 }
-
 
 TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementRpm)
 {
@@ -523,18 +494,15 @@ TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementRpm)
     checkResponseToCommand("\x04\xA3\x58\xff", 4, "\x06\xA3\x64\x00\xf2\xFe", 6);
 }
 
-
-
 class IbusTelemteryProtocolUnitTestDaisyChained : public ::IbusTelemetryProtocolUnitTestBase
 {
-protected:
+  protected:
     virtual void SetUp()
     {
         IbusTelemetryProtocolUnitTestBase::SetUp();
         setupBaseAddressThree();
     }
 };
-
 
 TEST_F(IbusTelemteryProtocolUnitTestDaisyChained, Test_IbusRespondToDiscoveryBaseAddressThree)
 {
@@ -544,7 +512,6 @@ TEST_F(IbusTelemteryProtocolUnitTestDaisyChained, Test_IbusRespondToDiscoveryBas
     checkResponseToCommand("\x04\x84\x77\xff", 4, "\x04\x84\x77\xff", 4);
     checkResponseToCommand("\x04\x85\x76\xff", 4, "\x04\x85\x76\xff", 4);
 }
-
 
 TEST_F(IbusTelemteryProtocolUnitTestDaisyChained, Test_IbusRespondToSensorTypeQueryWrongAddress)
 {
@@ -556,7 +523,6 @@ TEST_F(IbusTelemteryProtocolUnitTestDaisyChained, Test_IbusRespondToSensorTypeQu
     checkResponseToCommand("\x04\x96\x65\xFF", 4, "", 0);
 }
 
-
 TEST_F(IbusTelemteryProtocolUnitTestDaisyChained, Test_IbusRespondToSensorTypeQueryVbattBaseThree)
 {
     //Given ibus commands: Sensor at address 3, 4, 5, what type are you?
@@ -567,7 +533,6 @@ TEST_F(IbusTelemteryProtocolUnitTestDaisyChained, Test_IbusRespondToSensorTypeQu
     //then we respond with: I'm a rpm sensor
     checkResponseToCommand("\x04\x95\x66\xFF", 4, "\x06\x95\x02\x02\x60\xFF", 6);
 }
-
 
 TEST_F(IbusTelemteryProtocolUnitTestDaisyChained, Test_IbusRespondToGetMeasurementsBaseThree)
 {

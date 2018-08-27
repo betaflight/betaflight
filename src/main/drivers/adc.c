@@ -109,7 +109,7 @@ bool adcVerifyPin(ioTag_t tag, ADCDevice device)
         return false;
     }
 
-    for (int map = 0 ; map < ADC_TAG_MAP_COUNT ; map++) {
+    for (int map = 0; map < ADC_TAG_MAP_COUNT; map++) {
 #if defined(STM32F1)
         UNUSED(device);
         if ((adcTagMap[map].tag == tag)) {

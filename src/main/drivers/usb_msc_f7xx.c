@@ -139,7 +139,8 @@ bool mscCheckButton(void)
 void mscWaitForButton(void)
 {
     // In order to exit MSC mode simply disconnect the board, or push the button again.
-    while (mscCheckButton());
+    while (mscCheckButton())
+        ;
     delay(DEBOUNCE_TIME_MS);
     while (true) {
         asm("NOP");
@@ -157,7 +158,7 @@ void systemResetToMsc(void)
         mpuResetFn();
     }
 
-    *((__IO uint32_t*) BKPSRAM_BASE + 16) = MSC_MAGIC;
+    *((__IO uint32_t *)BKPSRAM_BASE + 16) = MSC_MAGIC;
 
     __disable_irq();
     NVIC_SystemReset();

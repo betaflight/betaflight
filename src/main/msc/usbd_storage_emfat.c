@@ -44,22 +44,21 @@
 #include "usbd_storage_emfat.h"
 #include "emfat_file.h"
 
-
 #define STORAGE_LUN_NBR 1
 
-static const uint8_t STORAGE_Inquirydata[] = 
-{
-    0x00, 0x80, 0x02, 0x02,
+static const uint8_t STORAGE_Inquirydata[] =
+    {
+        0x00, 0x80, 0x02, 0x02,
 #ifdef USE_HAL_DRIVER
-    (STANDARD_INQUIRY_DATA_LEN - 5),
+        (STANDARD_INQUIRY_DATA_LEN - 5),
 #else
-    (USBD_STD_INQUIRY_LENGTH - 5),
+        (USBD_STD_INQUIRY_LENGTH - 5),
 #endif
-    0x00, 0x00, 0x00,
-    'B', 'E', 'T', 'A', 'F', 'L', 'T', ' ', // Manufacturer : 8 bytes
-    'O', 'n', 'b', 'o', 'a', 'r', 'd', ' ', // Product      : 16 Bytes
-    'F', 'l', 'a', 's', 'h', ' ', ' ', ' ', //
-    ' ', ' ', ' ' ,' ',                     // Version      : 4 Bytes
+        0x00, 0x00, 0x00,
+        'B', 'E', 'T', 'A', 'F', 'L', 'T', ' ', // Manufacturer : 8 bytes
+        'O', 'n', 'b', 'o', 'a', 'r', 'd', ' ', // Product      : 16 Bytes
+        'F', 'l', 'a', 's', 'h', ' ', ' ', ' ', //
+        ' ', ' ', ' ', ' ',                     // Version      : 4 Bytes
 };
 
 static int8_t STORAGE_Init(uint8_t lun)
@@ -68,7 +67,7 @@ static int8_t STORAGE_Init(uint8_t lun)
 
     LED0_ON;
 
-#ifdef USE_FLASHFS 
+#ifdef USE_FLASHFS
 #ifdef USE_FLASH
     flashInit(flashConfig());
 #endif
@@ -108,10 +107,10 @@ static int8_t STORAGE_IsWriteProtected(uint8_t lun)
 }
 
 static int8_t STORAGE_Read(
-    uint8_t lun,        // logical unit number
-    uint8_t *buf,       // Pointer to the buffer to save data
-    uint32_t blk_addr,  // address of 1st block to be read
-    uint16_t blk_len)   // nmber of blocks to be read
+    uint8_t lun,       // logical unit number
+    uint8_t *buf,      // Pointer to the buffer to save data
+    uint32_t blk_addr, // address of 1st block to be read
+    uint16_t blk_len)  // nmber of blocks to be read
 {
     UNUSED(lun);
     LED0_ON;
@@ -121,9 +120,9 @@ static int8_t STORAGE_Read(
 }
 
 static int8_t STORAGE_Write(uint8_t lun,
-    uint8_t *buf,
-    uint32_t blk_addr,
-    uint16_t blk_len)
+                            uint8_t *buf,
+                            uint32_t blk_addr,
+                            uint16_t blk_len)
 {
     UNUSED(lun);
     UNUSED(buf);
@@ -135,7 +134,7 @@ static int8_t STORAGE_Write(uint8_t lun,
 
 static int8_t STORAGE_GetMaxLun(void)
 {
-  return (STORAGE_LUN_NBR - 1);
+    return (STORAGE_LUN_NBR - 1);
 }
 
 #ifdef USE_HAL_DRIVER
@@ -143,14 +142,14 @@ USBD_StorageTypeDef
 #else
 USBD_STORAGE_cb_TypeDef
 #endif
-USBD_MSC_EMFAT_fops =
-{
-    STORAGE_Init,
-    STORAGE_GetCapacity,
-    STORAGE_IsReady,
-    STORAGE_IsWriteProtected,
-    STORAGE_Read,
-    STORAGE_Write,
-    STORAGE_GetMaxLun,
-    (int8_t *)STORAGE_Inquirydata,
+    USBD_MSC_EMFAT_fops =
+        {
+            STORAGE_Init,
+            STORAGE_GetCapacity,
+            STORAGE_IsReady,
+            STORAGE_IsWriteProtected,
+            STORAGE_Read,
+            STORAGE_Write,
+            STORAGE_GetMaxLun,
+            (int8_t *)STORAGE_Inquirydata,
 };

@@ -32,7 +32,6 @@
 #include "common/time.h"
 #include "drivers/vtx_common.h"
 
-
 static vtxDevice_t *vtxDevice = NULL;
 
 void vtxCommonInit(void)

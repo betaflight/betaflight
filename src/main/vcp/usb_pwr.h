@@ -61,8 +61,8 @@ RESULT PowerOn(void);
 RESULT PowerOff(void);
 
 /* External variables --------------------------------------------------------*/
-extern __IO uint32_t bDeviceState; /* USB device status */
-extern __IO boolean fSuspendEnabled; /* true when suspend is possible */  // HJI
-#endif  /*__USB_PWR_H*/
+extern __IO uint32_t bDeviceState;                                       /* USB device status */
+extern __IO boolean fSuspendEnabled; /* true when suspend is possible */ // HJI
+#endif                                                                   /*__USB_PWR_H*/
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

@@ -34,4 +34,4 @@ typedef struct sonarConfig_s {
 
 PG_DECLARE(sonarConfig_t, sonarConfig);
 
-bool hcsr04Detect(rangefinderDev_t *dev, const sonarConfig_t * sonarConfig);
+bool hcsr04Detect(rangefinderDev_t *dev, const sonarConfig_t *sonarConfig);

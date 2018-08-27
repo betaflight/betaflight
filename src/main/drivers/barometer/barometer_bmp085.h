@@ -22,7 +22,7 @@
 
 #include "drivers/io_types.h"
 
-#define BMP085_I2C_ADDR         0x77
+#define BMP085_I2C_ADDR 0x77
 
 typedef struct bmp085Config_s {
     ioTag_t xclrIO;

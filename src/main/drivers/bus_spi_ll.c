@@ -39,24 +39,24 @@
 spiDevice_t spiDevice[SPIDEV_COUNT];
 
 #ifndef SPI2_SCK_PIN
-#define SPI2_NSS_PIN    PB12
-#define SPI2_SCK_PIN    PB13
-#define SPI2_MISO_PIN   PB14
-#define SPI2_MOSI_PIN   PB15
+#define SPI2_NSS_PIN PB12
+#define SPI2_SCK_PIN PB13
+#define SPI2_MISO_PIN PB14
+#define SPI2_MOSI_PIN PB15
 #endif
 
 #ifndef SPI3_SCK_PIN
-#define SPI3_NSS_PIN    PA15
-#define SPI3_SCK_PIN    PB3
-#define SPI3_MISO_PIN   PB4
-#define SPI3_MOSI_PIN   PB5
+#define SPI3_NSS_PIN PA15
+#define SPI3_SCK_PIN PB3
+#define SPI3_MISO_PIN PB4
+#define SPI3_MOSI_PIN PB5
 #endif
 
 #ifndef SPI4_SCK_PIN
-#define SPI4_NSS_PIN    PA15
-#define SPI4_SCK_PIN    PB3
-#define SPI4_MISO_PIN   PB4
-#define SPI4_MOSI_PIN   PB5
+#define SPI4_NSS_PIN PA15
+#define SPI4_SCK_PIN PB3
+#define SPI4_MISO_PIN PB4
+#define SPI4_MOSI_PIN PB5
 #endif
 
 #ifndef SPI1_NSS_PIN
@@ -93,7 +93,7 @@ void spiInitDevice(SPIDevice device)
     RCC_ClockCmd(spi->rcc, ENABLE);
     RCC_ResetCmd(spi->rcc, ENABLE);
 
-    IOInit(IOGetByTag(spi->sck),  OWNER_SPI_SCK,  RESOURCE_INDEX(device));
+    IOInit(IOGetByTag(spi->sck), OWNER_SPI_SCK, RESOURCE_INDEX(device));
     IOInit(IOGetByTag(spi->miso), OWNER_SPI_MISO, RESOURCE_INDEX(device));
     IOInit(IOGetByTag(spi->mosi), OWNER_SPI_MOSI, RESOURCE_INDEX(device));
 
@@ -108,18 +108,18 @@ void spiInitDevice(SPIDevice device)
     LL_SPI_DeInit(spi->dev);
 
     LL_SPI_InitTypeDef init =
-    {
-        .TransferDirection = SPI_DIRECTION_2LINES,
-        .Mode = SPI_MODE_MASTER,
-        .DataWidth = SPI_DATASIZE_8BIT,
-        .ClockPolarity = spi->leadingEdge ? SPI_POLARITY_LOW : SPI_POLARITY_HIGH,
-        .ClockPhase = spi->leadingEdge ? SPI_PHASE_1EDGE : SPI_PHASE_2EDGE,
-        .NSS = SPI_NSS_SOFT,
-        .BaudRate = SPI_BAUDRATEPRESCALER_8,
-        .BitOrder = SPI_FIRSTBIT_MSB,
-        .CRCPoly = 7,
-        .CRCCalculation = SPI_CRCCALCULATION_DISABLE,
-    };
+        {
+            .TransferDirection = SPI_DIRECTION_2LINES,
+            .Mode = SPI_MODE_MASTER,
+            .DataWidth = SPI_DATASIZE_8BIT,
+            .ClockPolarity = spi->leadingEdge ? SPI_POLARITY_LOW : SPI_POLARITY_HIGH,
+            .ClockPhase = spi->leadingEdge ? SPI_PHASE_1EDGE : SPI_PHASE_2EDGE,
+            .NSS = SPI_NSS_SOFT,
+            .BaudRate = SPI_BAUDRATEPRESCALER_8,
+            .BitOrder = SPI_FIRSTBIT_MSB,
+            .CRCPoly = 7,
+            .CRCCalculation = SPI_CRCCALCULATION_DISABLE,
+        };
     LL_SPI_SetRxFIFOThreshold(spi->dev, SPI_RXFIFO_THRESHOLD_QF);
 
     LL_SPI_Init(spi->dev, &init);
@@ -149,8 +149,7 @@ uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t txByte)
  */
 bool spiIsBusBusy(SPI_TypeDef *instance)
 {
-    return LL_SPI_GetTxFIFOLevel(instance) != LL_SPI_TX_FIFO_EMPTY
-        || LL_SPI_IsActiveFlag_BSY(instance);
+    return LL_SPI_GetTxFIFOLevel(instance) != LL_SPI_TX_FIFO_EMPTY || LL_SPI_IsActiveFlag_BSY(instance);
 }
 
 bool spiTransfer(SPI_TypeDef *instance, const uint8_t *txData, uint8_t *rxData, int len)

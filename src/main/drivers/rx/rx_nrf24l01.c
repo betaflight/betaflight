@@ -41,24 +41,30 @@
 
 #include "rx_nrf24l01.h"
 
-#define NRF24_CE_HI()   {IOHi(DEFIO_IO(RX_CE_PIN));}
-#define NRF24_CE_LO()   {IOLo(DEFIO_IO(RX_CE_PIN));}
+#define NRF24_CE_HI()              \
+    {                              \
+        IOHi(DEFIO_IO(RX_CE_PIN)); \
+    }
+#define NRF24_CE_LO()              \
+    {                              \
+        IOLo(DEFIO_IO(RX_CE_PIN)); \
+    }
 
 // Instruction Mnemonics
 // nRF24L01:  Table 16. Command set for the nRF24L01 SPI. Product Specification, p46
 // nRF24L01+: Table 20. Command set for the nRF24L01+ SPI. Product Specification, p51
-#define R_REGISTER    0x00
-#define W_REGISTER    0x20
+#define R_REGISTER 0x00
+#define W_REGISTER 0x20
 #define REGISTER_MASK 0x1F
-#define ACTIVATE      0x50
-#define R_RX_PL_WID   0x60
-#define R_RX_PAYLOAD  0x61
-#define W_TX_PAYLOAD  0xA0
+#define ACTIVATE 0x50
+#define R_RX_PL_WID 0x60
+#define R_RX_PAYLOAD 0x61
+#define W_TX_PAYLOAD 0xA0
 #define W_ACK_PAYLOAD 0xA8
-#define FLUSH_TX      0xE1
-#define FLUSH_RX      0xE2
-#define REUSE_TX_PL   0xE3
-#define NOP           0xFF
+#define FLUSH_TX 0xE1
+#define FLUSH_RX 0xE2
+#define REUSE_TX_PL 0xE3
+#define NOP 0xFF
 
 static void NRF24L01_InitGpio(void)
 {
@@ -76,7 +82,7 @@ uint8_t NRF24L01_WriteReg(uint8_t reg, uint8_t data)
 
 uint8_t NRF24L01_WriteRegisterMulti(uint8_t reg, const uint8_t *data, uint8_t length)
 {
-    return rxSpiWriteCommandMulti(W_REGISTER | ( REGISTER_MASK & reg), data, length);
+    return rxSpiWriteCommandMulti(W_REGISTER | (REGISTER_MASK & reg), data, length);
 }
 
 /*
@@ -161,7 +167,7 @@ void NRF24L01_SetupBasic(void)
     NRF24L01_WriteReg(NRF24L01_01_EN_AA, 0x00); // No auto acknowledgment
     NRF24L01_WriteReg(NRF24L01_02_EN_RXADDR, BV(NRF24L01_02_EN_RXADDR_ERX_P0));
     NRF24L01_WriteReg(NRF24L01_03_SETUP_AW, NRF24L01_03_SETUP_AW_5BYTES); // 5-byte RX/TX address
-    NRF24L01_WriteReg(NRF24L01_1C_DYNPD, 0x00); // Disable dynamic payload length on all pipes
+    NRF24L01_WriteReg(NRF24L01_1C_DYNPD, 0x00);                           // Disable dynamic payload length on all pipes
 }
 
 /*
@@ -225,8 +231,14 @@ bool NRF24L01_ReadPayloadIfAvailable(uint8_t *data, uint8_t length)
 }
 
 #ifndef UNIT_TEST
-#define DISABLE_RX()    {IOHi(DEFIO_IO(RX_NSS_PIN));}
-#define ENABLE_RX()     {IOLo(DEFIO_IO(RX_NSS_PIN));}
+#define DISABLE_RX()                \
+    {                               \
+        IOHi(DEFIO_IO(RX_NSS_PIN)); \
+    }
+#define ENABLE_RX()                 \
+    {                               \
+        IOLo(DEFIO_IO(RX_NSS_PIN)); \
+    }
 /*
  * Fast read of payload, for use in interrupt service routine
  */

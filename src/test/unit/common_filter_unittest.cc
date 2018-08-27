@@ -23,7 +23,7 @@
 #include <math.h>
 
 extern "C" {
-    #include "common/filter.h"
+#include "common/filter.h"
 }
 
 #include "unittest_macros.h"

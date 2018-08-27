@@ -30,8 +30,8 @@
 #include "common/utils.h"
 
 #define M_LN2_FLOAT 0.69314718055994530942f
-#define M_PI_FLOAT  3.14159265358979323846f
-#define BIQUAD_Q 1.0f / sqrtf(2.0f)     /* quality factor - 2nd order butterworth*/
+#define M_PI_FLOAT 3.14159265358979323846f
+#define BIQUAD_Q 1.0f / sqrtf(2.0f) /* quality factor - 2nd order butterworth*/
 
 // NULL filter
 
@@ -41,12 +41,11 @@ FAST_CODE float nullFilterApply(filter_t *filter, float input)
     return input;
 }
 
-
 // PT1 Low Pass filter
 
 float pt1FilterGain(uint16_t f_cut, float dT)
 {
-    float RC = 1 / ( 2 * M_PI_FLOAT * f_cut);
+    float RC = 1 / (2 * M_PI_FLOAT * f_cut);
     return dT / (RC + dT);
 }
 
@@ -94,7 +93,8 @@ FAST_CODE float slewFilterApply(slewFilter_t *filter, float input)
 
 // get notch filter Q given center frequency (f0) and lower cutoff frequency (f1)
 // Q = f0 / (f2 - f1) ; f2 = f0^2 / f1
-float filterGetNotchQ(float centerFreq, float cutoffFreq) {
+float filterGetNotchQ(float centerFreq, float cutoffFreq)
+{
     return centerFreq * cutoffFreq / (centerFreq * centerFreq - cutoffFreq * cutoffFreq);
 }
 
@@ -126,12 +126,12 @@ void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refresh
         a2 = 1 - alpha;
         break;
     case FILTER_NOTCH:
-        b0 =  1;
+        b0 = 1;
         b1 = -2 * cs;
-        b2 =  1;
-        a0 =  1 + alpha;
+        b2 = 1;
+        a0 = 1 + alpha;
         a1 = -2 * cs;
-        a2 =  1 - alpha;
+        a2 = 1 - alpha;
         break;
     case FILTER_BPF:
         b0 = alpha;
@@ -223,5 +223,5 @@ FAST_CODE float laggedMovingAverageUpdate(laggedMovingAverage_t *filter, float i
     }
 
     const uint16_t denom = filter->primed ? filter->windowSize : filter->movingWindowIndex;
-    return filter->movingSum  / denom;
+    return filter->movingSum / denom;
 }

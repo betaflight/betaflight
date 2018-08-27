@@ -47,14 +47,14 @@ static bool isConversionComplete = false;
 static bool isEOCConnected = true;
 
 // EXTI14 for BMP085 End of Conversion Interrupt
-void bmp085_extiHandler(extiCallbackRec_t* cb)
+void bmp085_extiHandler(extiCallbackRec_t *cb)
 {
     UNUSED(cb);
     isConversionComplete = true;
 }
 
 bool bmp085TestEOCConnected(const bmp085Config_t *config);
-# endif
+#endif
 
 typedef struct {
     int16_t ac1;
@@ -79,49 +79,49 @@ typedef struct {
     int16_t oversampling_setting;
 } bmp085_t;
 
-#define BMP085_I2C_ADDR         0x77
-#define BMP085_CHIP_ID          0x55
-#define BOSCH_PRESSURE_BMP085   85
-#define BMP085_CHIP_ID_REG      0xD0
-#define BMP085_VERSION_REG      0xD1
-#define E_SENSOR_NOT_DETECTED   (char) 0
+#define BMP085_I2C_ADDR 0x77
+#define BMP085_CHIP_ID 0x55
+#define BOSCH_PRESSURE_BMP085 85
+#define BMP085_CHIP_ID_REG 0xD0
+#define BMP085_VERSION_REG 0xD1
+#define E_SENSOR_NOT_DETECTED (char)0
 #define BMP085_PROM_START__ADDR 0xaa
-#define BMP085_PROM_DATA__LEN   22
-#define BMP085_T_MEASURE        0x2E                // temperature measurent
-#define BMP085_P_MEASURE        0x34                // pressure measurement
-#define BMP085_CTRL_MEAS_REG    0xF4
-#define BMP085_ADC_OUT_MSB_REG  0xF6
-#define BMP085_ADC_OUT_LSB_REG  0xF7
-#define BMP085_CHIP_ID__POS     0
-#define BMP085_CHIP_ID__MSK     0xFF
-#define BMP085_CHIP_ID__LEN     8
-#define BMP085_CHIP_ID__REG     BMP085_CHIP_ID_REG
+#define BMP085_PROM_DATA__LEN 22
+#define BMP085_T_MEASURE 0x2E // temperature measurent
+#define BMP085_P_MEASURE 0x34 // pressure measurement
+#define BMP085_CTRL_MEAS_REG 0xF4
+#define BMP085_ADC_OUT_MSB_REG 0xF6
+#define BMP085_ADC_OUT_LSB_REG 0xF7
+#define BMP085_CHIP_ID__POS 0
+#define BMP085_CHIP_ID__MSK 0xFF
+#define BMP085_CHIP_ID__LEN 8
+#define BMP085_CHIP_ID__REG BMP085_CHIP_ID_REG
 
-#define BMP085_ML_VERSION__POS      0
-#define BMP085_ML_VERSION__LEN      4
-#define BMP085_ML_VERSION__MSK      0x0F
-#define BMP085_ML_VERSION__REG      BMP085_VERSION_REG
+#define BMP085_ML_VERSION__POS 0
+#define BMP085_ML_VERSION__LEN 4
+#define BMP085_ML_VERSION__MSK 0x0F
+#define BMP085_ML_VERSION__REG BMP085_VERSION_REG
 
-#define BMP085_AL_VERSION__POS      4
-#define BMP085_AL_VERSION__LEN      4
-#define BMP085_AL_VERSION__MSK      0xF0
-#define BMP085_AL_VERSION__REG      BMP085_VERSION_REG
+#define BMP085_AL_VERSION__POS 4
+#define BMP085_AL_VERSION__LEN 4
+#define BMP085_AL_VERSION__MSK 0xF0
+#define BMP085_AL_VERSION__REG BMP085_VERSION_REG
 
 #define BMP085_GET_BITSLICE(regvar, bitname) (regvar & bitname##__MSK) >> bitname##__POS
-#define BMP085_SET_BITSLICE(regvar, bitname, val) (regvar & ~bitname##__MSK) | ((val<<bitname##__POS)&bitname##__MSK)
+#define BMP085_SET_BITSLICE(regvar, bitname, val) (regvar & ~bitname##__MSK) | ((val << bitname##__POS) & bitname##__MSK)
 
-#define SMD500_PARAM_MG      3038        //calibration parameter
-#define SMD500_PARAM_MH     -7357        //calibration parameter
-#define SMD500_PARAM_MI      3791        //calibration parameter
+#define SMD500_PARAM_MG 3038  //calibration parameter
+#define SMD500_PARAM_MH -7357 //calibration parameter
+#define SMD500_PARAM_MI 3791  //calibration parameter
 
 STATIC_UNIT_TESTED bmp085_t bmp085;
 
-#define UT_DELAY    6000        // 1.5ms margin according to the spec (4.5ms T conversion time)
-#define UP_DELAY    27000       // 6000+21000=27000 1.5ms margin according to the spec (25.5ms P conversion time with OSS=3)
+#define UT_DELAY 6000  // 1.5ms margin according to the spec (4.5ms T conversion time)
+#define UP_DELAY 27000 // 6000+21000=27000 1.5ms margin according to the spec (25.5ms P conversion time with OSS=3)
 
 static bool bmp085InitDone = false;
-STATIC_UNIT_TESTED uint16_t bmp085_ut;  // static result of temperature measurement
-STATIC_UNIT_TESTED uint32_t bmp085_up;  // static result of pressure measurement
+STATIC_UNIT_TESTED uint16_t bmp085_ut; // static result of temperature measurement
+STATIC_UNIT_TESTED uint32_t bmp085_up; // static result of pressure measurement
 
 static void bmp085_get_cal_param(busDevice_t *busdev);
 static void bmp085_start_ut(baroDev_t *baro);
@@ -135,13 +135,12 @@ STATIC_UNIT_TESTED void bmp085_calculate(int32_t *pressure, int32_t *temperature
 static IO_t xclrIO;
 
 #ifdef BARO_XCLR_PIN
-#define BMP085_OFF  IOLo(xclrIO);
-#define BMP085_ON   IOHi(xclrIO);
+#define BMP085_OFF IOLo(xclrIO);
+#define BMP085_ON IOHi(xclrIO);
 #else
 #define BMP085_OFF
 #define BMP085_ON
 #endif
-
 
 void bmp085InitXclrIO(const bmp085Config_t *config)
 {
@@ -172,7 +171,7 @@ bool bmp085Detect(const bmp085Config_t *config, baroDev_t *baro)
         return true;
 
     bmp085InitXclrIO(config);
-    BMP085_ON;   // enable baro
+    BMP085_ON; // enable baro
 
 #if defined(BARO_EOC_GPIO) && defined(USE_EXTI)
     if (config && config->eocIO) {
@@ -203,11 +202,11 @@ bool bmp085Detect(const bmp085Config_t *config, baroDev_t *baro)
         bmp085.chip_id = BMP085_GET_BITSLICE(data, BMP085_CHIP_ID);
         bmp085.oversampling_setting = 3;
 
-        if (bmp085.chip_id == BMP085_CHIP_ID) { /* get bitslice */
-            busReadRegisterBuffer(busdev, BMP085_VERSION_REG, &data, 1); /* read Version reg */
+        if (bmp085.chip_id == BMP085_CHIP_ID) {                               /* get bitslice */
+            busReadRegisterBuffer(busdev, BMP085_VERSION_REG, &data, 1);      /* read Version reg */
             bmp085.ml_version = BMP085_GET_BITSLICE(data, BMP085_ML_VERSION); /* get ML Version */
             bmp085.al_version = BMP085_GET_BITSLICE(data, BMP085_AL_VERSION); /* get AL Version */
-            bmp085_get_cal_param(busdev); /* readout bmp085 calibparam structure */
+            bmp085_get_cal_param(busdev);                                     /* readout bmp085 calibparam structure */
             baro->ut_delay = UT_DELAY;
             baro->up_delay = UP_DELAY;
             baro->start_ut = bmp085_start_ut;
@@ -242,10 +241,10 @@ static int32_t bmp085_get_temperature(uint32_t ut)
     int32_t temperature;
     int32_t x1, x2;
 
-    x1 = (((int32_t) ut - (int32_t) bmp085.cal_param.ac6) * (int32_t) bmp085.cal_param.ac5) >> 15;
-    x2 = ((int32_t) bmp085.cal_param.mc << 11) / (x1 + bmp085.cal_param.md);
+    x1 = (((int32_t)ut - (int32_t)bmp085.cal_param.ac6) * (int32_t)bmp085.cal_param.ac5) >> 15;
+    x2 = ((int32_t)bmp085.cal_param.mc << 11) / (x1 + bmp085.cal_param.md);
     bmp085.param_b5 = x1 + x2;
-    temperature = ((bmp085.param_b5 * 10 + 8) >> 4);  // temperature in 0.01 C (make same as MS5611)
+    temperature = ((bmp085.param_b5 * 10 + 8) >> 4); // temperature in 0.01 C (make same as MS5611)
 
     return temperature;
 }
@@ -266,7 +265,7 @@ static int32_t bmp085_get_pressure(uint32_t up)
 
     x3 = x1 + x2;
 
-    b3 = (((((int32_t) bmp085.cal_param.ac1) * 4 + x3) << bmp085.oversampling_setting) + 2) >> 2;
+    b3 = (((((int32_t)bmp085.cal_param.ac1) * 4 + x3) << bmp085.oversampling_setting) + 2) >> 2;
 
     // *****calculate B4************
     x1 = (bmp085.cal_param.ac3 * b6) >> 13;
@@ -285,7 +284,7 @@ static int32_t bmp085_get_pressure(uint32_t up)
     x1 *= x1;
     x1 = (x1 * SMD500_PARAM_MG) >> 16;
     x2 = (pressure * SMD500_PARAM_MH) >> 16;
-    pressure += (x1 + x2 + SMD500_PARAM_MI) >> 4;   // pressure in Pa
+    pressure += (x1 + x2 + SMD500_PARAM_MI) >> 4; // pressure in Pa
 
     return pressure;
 }
@@ -342,8 +341,7 @@ static void bmp085_get_up(baroDev_t *baro)
 #endif
 
     busReadRegisterBuffer(&baro->busdev, BMP085_ADC_OUT_MSB_REG, data, 3);
-    bmp085_up = (((uint32_t) data[0] << 16) | ((uint32_t) data[1] << 8) | (uint32_t) data[2])
-            >> (8 - bmp085.oversampling_setting);
+    bmp085_up = (((uint32_t)data[0] << 16) | ((uint32_t)data[1] << 8) | (uint32_t)data[2]) >> (8 - bmp085.oversampling_setting);
 }
 
 STATIC_UNIT_TESTED void bmp085_calculate(int32_t *pressure, int32_t *temperature)

@@ -50,7 +50,7 @@
 #undef BRUSHED_MOTORS_PWM_RATE
 #endif
 
-#define BRUSHED_MOTORS_PWM_RATE 32000           // 32kHz
+#define BRUSHED_MOTORS_PWM_RATE 32000 // 32kHz
 
 void targetConfiguration(void)
 {

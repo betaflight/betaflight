@@ -45,7 +45,7 @@ void detectHardwareRevision(void)
     IOInit(HWDetectPinB, OWNER_SYSTEM, 0);
     IOConfigGPIO(HWDetectPinB, IOCFG_IPU);
 
-    delayMicroseconds(10);  // allow configuration to settle
+    delayMicroseconds(10); // allow configuration to settle
 
     // Check hardware revision
     if (IORead(HWDetectPinB)) {

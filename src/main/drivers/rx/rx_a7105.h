@@ -89,13 +89,13 @@ typedef enum {
 } A7105Reg_t;
 
 /* Register: A7105_00_MODE */
-#define A7105_MODE_FECF        0x40    // [0]: FEC pass. [1]: FEC error. (FECF is read only, it is updated internally while receiving every packet.)
-#define A7105_MODE_CRCF        0x20    // [0]: CRC pass. [1]: CRC error. (CRCF is read only, it is updated internally while receiving every packet.)
-#define A7105_MODE_CER         0x10    // [0]: RF chip is disabled. [1]: RF chip is enabled.
-#define A7105_MODE_XER         0x08    // [0]: Crystal oscillator is disabled. [1]: Crystal oscillator is enabled.
-#define A7105_MODE_PLLER       0x04    // [0]: PLL is disabled. [1]: PLL is enabled.
-#define A7105_MODE_TRSR        0x02    // [0]: RX state. [1]: TX state. Serviceable if TRER=1 (TRX is enable).
-#define A7105_MODE_TRER        0x01    // [0]: TRX is disabled. [1]: TRX is enabled.
+#define A7105_MODE_FECF 0x40  // [0]: FEC pass. [1]: FEC error. (FECF is read only, it is updated internally while receiving every packet.)
+#define A7105_MODE_CRCF 0x20  // [0]: CRC pass. [1]: CRC error. (CRCF is read only, it is updated internally while receiving every packet.)
+#define A7105_MODE_CER 0x10   // [0]: RF chip is disabled. [1]: RF chip is enabled.
+#define A7105_MODE_XER 0x08   // [0]: Crystal oscillator is disabled. [1]: Crystal oscillator is enabled.
+#define A7105_MODE_PLLER 0x04 // [0]: PLL is disabled. [1]: PLL is enabled.
+#define A7105_MODE_TRSR 0x02  // [0]: RX state. [1]: TX state. Serviceable if TRER=1 (TRX is enable).
+#define A7105_MODE_TRER 0x01  // [0]: TRX is disabled. [1]: TRX is enabled.
 
 void A7105Init(uint32_t id);
 void A7105SoftReset(void);

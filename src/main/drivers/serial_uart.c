@@ -63,7 +63,8 @@ void uartTryStartTxDMA(uartPort_t *s)
     // uartTryStartTxDMA must be protected, since it is called from
     // uartWrite and handleUsartTxDma (an ISR).
 
-    ATOMIC_BLOCK(NVIC_PRIO_SERIALUART_TXDMA) {
+    ATOMIC_BLOCK(NVIC_PRIO_SERIALUART_TXDMA)
+    {
 #ifdef STM32F4
         if (s->txDMAStream->CR & 1) {
             // DMA is already in progress
@@ -93,8 +94,7 @@ void uartTryStartTxDMA(uartPort_t *s)
         if (s->port.txBufferHead > s->port.txBufferTail) {
             s->txDMAStream->NDTR = s->port.txBufferHead - s->port.txBufferTail;
             s->port.txBufferTail = s->port.txBufferHead;
-        }
-        else {
+        } else {
             s->txDMAStream->NDTR = s->port.txBufferSize - s->port.txBufferTail;
             s->port.txBufferTail = 0;
         }
@@ -143,7 +143,7 @@ void uartTryStartTxDMA(uartPort_t *s)
 
 static uint32_t uartTotalRxBytesWaiting(const serialPort_t *instance)
 {
-    const uartPort_t *s = (const uartPort_t*)instance;
+    const uartPort_t *s = (const uartPort_t *)instance;
 #ifdef STM32F4
     if (s->rxDMAStream) {
         uint32_t rxDMAHead = s->rxDMAStream->NDTR;
@@ -167,7 +167,7 @@ static uint32_t uartTotalRxBytesWaiting(const serialPort_t *instance)
 
 static uint32_t uartTotalTxBytesFree(const serialPort_t *instance)
 {
-    const uartPort_t *s = (const uartPort_t*)instance;
+    const uartPort_t *s = (const uartPort_t *)instance;
 
     uint32_t bytesUsed;
 
@@ -282,8 +282,7 @@ const struct serialPortVTable uartVTable[] = {
         .writeBuf = NULL,
         .beginWrite = NULL,
         .endWrite = NULL,
-    }
-};
+    }};
 
 #ifdef USE_UART1
 // USART1 Rx/Tx IRQ Handler

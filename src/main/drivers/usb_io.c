@@ -30,7 +30,6 @@
 #include "usb_io.h"
 #include "sdcard.h"
 
-
 #ifdef USE_USB_DETECT
 static IO_t usbDetectPin = IO_NONE;
 #endif

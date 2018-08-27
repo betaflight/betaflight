@@ -69,7 +69,6 @@
 
 #define BRUSHED_MOTORS_PWM_RATE 32000
 
-
 void targetConfiguration(void)
 {
     if (hardwareMotorType == MOTOR_BRUSHED) {
@@ -79,7 +78,7 @@ void targetConfiguration(void)
 
     /* Default to Spektrum */
     rxConfigMutable()->serialrx_provider = SERIALRX_SPEKTRUM2048; // all DSM* except DSM2 22ms
-    rxConfigMutable()->spektrum_sat_bind = 5; // DSM2 11ms
+    rxConfigMutable()->spektrum_sat_bind = 5;                     // DSM2 11ms
     rxConfigMutable()->spektrum_sat_bind_autoreset = 1;
     rxConfigMutable()->mincheck = 1025;
     rxConfigMutable()->rcInterpolation = RC_SMOOTHING_MANUAL;
@@ -94,21 +93,21 @@ void targetConfiguration(void)
     /* Breadboard-specific settings for development purposes only
      */
 #if defined(BREADBOARD)
-    boardAlignmentMutable()->pitchDegrees = 90; // vertical breakout board
+    boardAlignmentMutable()->pitchDegrees = 90;             // vertical breakout board
     barometerConfigMutable()->baro_hardware = BARO_DEFAULT; // still testing not on V1 or V2 pcb
 #else
     barometerConfigMutable()->baro_hardware = BARO_NONE;
 #endif
 
-    compassConfigMutable()->mag_hardware =  MAG_NONE;
+    compassConfigMutable()->mag_hardware = MAG_NONE;
 
     systemConfigMutable()->cpu_overclock = 2; //216MHZ
 
     /* Default to 32kHz enabled at 16/16 */
-    gyroConfigMutable()->gyro_use_32khz = 1; // enable 32kHz sampling
+    gyroConfigMutable()->gyro_use_32khz = 1;                     // enable 32kHz sampling
     gyroConfigMutable()->gyroMovementCalibrationThreshold = 200; // aka moron_threshold
-    gyroConfigMutable()->gyro_sync_denom = 2;  // 16kHz gyro
-    pidConfigMutable()->pid_process_denom = 1; // 16kHz PID
+    gyroConfigMutable()->gyro_sync_denom = 2;                    // 16kHz gyro
+    pidConfigMutable()->pid_process_denom = 1;                   // 16kHz PID
     gyroConfigMutable()->gyro_lowpass2_hz = 751;
 
     pidConfigMutable()->runaway_takeoff_prevention = false;
@@ -119,8 +118,8 @@ void targetConfiguration(void)
     for (uint8_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
         pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
 
-	pidProfile->pidSumLimit = 1000;
-	pidProfile->pidSumLimitYaw = 1000;
+        pidProfile->pidSumLimit = 1000;
+        pidProfile->pidSumLimitYaw = 1000;
 
         /* AlienWhoop PIDs tested with 6mm and 7mm motors on most frames */
         pidProfile->pid[PID_PITCH].P = 115;
@@ -143,11 +142,11 @@ void targetConfiguration(void)
         pidProfile->pid[PID_ROLL].F = 100;
         pidProfile->feedForwardTransition = 0;
 
-	/* Anti-Gravity */
-	pidProfile->itermThrottleThreshold = 500;
-	pidProfile->itermAcceleratorGain = 5000;
+        /* Anti-Gravity */
+        pidProfile->itermThrottleThreshold = 500;
+        pidProfile->itermAcceleratorGain = 5000;
 
-	pidProfile->levelAngleLimit = 65;
+        pidProfile->levelAngleLimit = 65;
     }
 
     for (uint8_t rateProfileIndex = 0; rateProfileIndex < CONTROL_RATE_PROFILE_COUNT; rateProfileIndex++) {
@@ -158,7 +157,7 @@ void targetConfiguration(void)
         controlRateConfig->rcRates[FD_PITCH] = 218;
         controlRateConfig->rcRates[FD_YAW] = 218;
 
-	/* Classic Expo */
+        /* Classic Expo */
         controlRateConfig->rcExpo[FD_ROLL] = 45;
         controlRateConfig->rcExpo[FD_PITCH] = 45;
         controlRateConfig->rcExpo[FD_YAW] = 45;
@@ -172,7 +171,7 @@ void targetConfiguration(void)
         controlRateConfig->dynThrPID = 0; // tpa_rate off
         controlRateConfig->tpa_breakpoint = 1600;
 
-	/* Force the clipping mixer at 100% seems better for brushed than default (off) and scaling)? */
+        /* Force the clipping mixer at 100% seems better for brushed than default (off) and scaling)? */
         controlRateConfig->throttle_limit_type = THROTTLE_LIMIT_TYPE_CLIP;
         //controlRateConfig->throttle_limit_percent = 100;
 

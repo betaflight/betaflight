@@ -49,7 +49,6 @@
 #include "accgyro.h"
 #include "accgyro_spi_bmi160.h"
 
-
 /* BMI160 Registers */
 #define BMI160_REG_CHIPID 0x00
 #define BMI160_REG_PMU_STAT 0x03
@@ -118,7 +117,6 @@ uint8_t bmi160Detect(const busDevice_t *bus)
     return BMI_160_SPI;
 }
 
-
 /**
  * @brief Initialize the BMI160 6-axis sensor.
  * @return 0 for success, -1 for failure to allocate, -10 for failure to get irq
@@ -144,7 +142,6 @@ static void BMI160_Init(const busDevice_t *bus)
     BMI160InitDone = true;
 }
 
-
 /**
  * @brief Configure the sensor
  */
@@ -160,7 +157,7 @@ static int32_t BMI160_Config(const busDevice_t *bus)
 
     // Verify that normal power mode was entered
     uint8_t pmu_status = spiBusReadRegister(bus, BMI160_REG_PMU_STAT);
-    if ((pmu_status & 0x3C) != 0x14){
+    if ((pmu_status & 0x3C) != 0x14) {
         return -3;
     }
 
@@ -201,14 +198,15 @@ static int32_t BMI160_Config(const busDevice_t *bus)
 static int32_t BMI160_do_foc(const busDevice_t *bus)
 {
     // assume sensor is mounted on top
-    uint8_t val = 0x7D;;
+    uint8_t val = 0x7D;
+    ;
     spiBusWriteRegister(bus, BMI160_REG_FOC_CONF, val);
 
     // Start FOC
     spiBusWriteRegister(bus, BMI160_REG_CMD, BMI160_CMD_START_FOC);
 
     // Wait for FOC to complete
-    for (int i=0; i<50; i++) {
+    for (int i = 0; i < 50; i++) {
         val = spiBusReadRegister(bus, BMI160_REG_STATUS);
         if (val & BMI160_REG_STATUS_FOC_RDY) {
             break;
@@ -226,7 +224,7 @@ static int32_t BMI160_do_foc(const busDevice_t *bus)
     spiBusWriteRegister(bus, BMI160_REG_CMD, BMI160_CMD_PROG_NVM);
 
     // Wait for NVM programming to complete
-    for (int i=0; i<50; i++) {
+    for (int i = 0; i < 50; i++) {
         val = spiBusReadRegister(bus, BMI160_REG_STATUS);
         if (val & BMI160_REG_STATUS_NVM_RDY) {
             break;
@@ -259,7 +257,7 @@ static void bmi160IntExtiInit(gyroDev_t *gyro)
     IO_t mpuIntIO = IOGetByTag(IO_TAG(BMI160_INT_EXTI));
 
     IOInit(mpuIntIO, OWNER_MPU_EXTI, 0);
-    IOConfigGPIO(mpuIntIO, IOCFG_IN_FLOATING);   // TODO - maybe pullup / pulldown ?
+    IOConfigGPIO(mpuIntIO, IOCFG_IN_FLOATING); // TODO - maybe pullup / pulldown ?
 
     EXTIHandlerInit(&gyro->exti, bmi160ExtiHandler);
     EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, EXTI_Trigger_Rising);
@@ -267,7 +265,6 @@ static void bmi160IntExtiInit(gyroDev_t *gyro)
 
     bmi160ExtiInitDone = true;
 }
-
 
 bool bmi160AccRead(accDev_t *acc)
 {
@@ -286,7 +283,7 @@ bool bmi160AccRead(accDev_t *acc)
     static const uint8_t bmi160_tx_buf[BUFFER_SIZE] = {BMI160_REG_ACC_DATA_X_LSB | 0x80, 0, 0, 0, 0, 0, 0};
 
     IOLo(acc->bus.busdev_u.spi.csnPin);
-    spiTransfer(acc->bus.busdev_u.spi.instance, bmi160_tx_buf, bmi160_rx_buf, BUFFER_SIZE);   // receive response
+    spiTransfer(acc->bus.busdev_u.spi.instance, bmi160_tx_buf, bmi160_rx_buf, BUFFER_SIZE); // receive response
     IOHi(acc->bus.busdev_u.spi.csnPin);
 
     acc->ADCRaw[X] = (int16_t)((bmi160_rx_buf[IDX_ACCEL_XOUT_H] << 8) | bmi160_rx_buf[IDX_ACCEL_XOUT_L]);
@@ -295,7 +292,6 @@ bool bmi160AccRead(accDev_t *acc)
 
     return true;
 }
-
 
 bool bmi160GyroRead(gyroDev_t *gyro)
 {
@@ -314,7 +310,7 @@ bool bmi160GyroRead(gyroDev_t *gyro)
     static const uint8_t bmi160_tx_buf[BUFFER_SIZE] = {BMI160_REG_GYR_DATA_X_LSB | 0x80, 0, 0, 0, 0, 0, 0};
 
     IOLo(gyro->bus.busdev_u.spi.csnPin);
-    spiTransfer(gyro->bus.busdev_u.spi.instance, bmi160_tx_buf, bmi160_rx_buf, BUFFER_SIZE);   // receive response
+    spiTransfer(gyro->bus.busdev_u.spi.instance, bmi160_tx_buf, bmi160_rx_buf, BUFFER_SIZE); // receive response
     IOHi(gyro->bus.busdev_u.spi.csnPin);
 
     gyro->gyroADCRaw[X] = (int16_t)((bmi160_rx_buf[IDX_GYRO_XOUT_H] << 8) | bmi160_rx_buf[IDX_GYRO_XOUT_L]);
@@ -323,7 +319,6 @@ bool bmi160GyroRead(gyroDev_t *gyro)
 
     return true;
 }
-
 
 void bmi160SpiGyroInit(gyroDev_t *gyro)
 {
@@ -338,7 +333,6 @@ void bmi160SpiAccInit(accDev_t *acc)
     acc->acc_1G = 512 * 8;
 }
 
-
 bool bmi160SpiAccDetect(accDev_t *acc)
 {
     if (bmi160Detect(&acc->bus) == MPU_NONE) {
@@ -350,7 +344,6 @@ bool bmi160SpiAccDetect(accDev_t *acc)
 
     return true;
 }
-
 
 bool bmi160SpiGyroDetect(gyroDev_t *gyro)
 {

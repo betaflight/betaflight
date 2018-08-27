@@ -36,7 +36,6 @@
 #include "drivers/sensor.h"
 #include "drivers/time.h"
 
-
 static void icm20649SpiInit(const busDevice_t *bus)
 {
     static bool hardwareInitialised = false;
@@ -88,7 +87,6 @@ uint8_t icm20649SpiDetect(const busDevice_t *bus)
     } while (attemptsRemaining--);
 
     return icmDetected;
-
 }
 
 void icm20649AccInit(accDev_t *acc)
@@ -119,7 +117,6 @@ bool icm20649SpiAccDetect(accDev_t *acc)
 
     return true;
 }
-
 
 void icm20649GyroInit(gyroDev_t *gyro)
 {
@@ -153,7 +150,7 @@ void icm20649GyroInit(gyroDev_t *gyro)
     // back to bank 0
     spiBusWriteRegister(&gyro->bus, ICM20649_RA_REG_BANK_SEL, 0 << 4);
     delay(15);
-    spiBusWriteRegister(&gyro->bus, ICM20649_RA_INT_PIN_CFG, 0x11);  // INT_ANYRD_2CLEAR, BYPASS_EN
+    spiBusWriteRegister(&gyro->bus, ICM20649_RA_INT_PIN_CFG, 0x11); // INT_ANYRD_2CLEAR, BYPASS_EN
     delay(15);
 
 #ifdef USE_MPU_DATA_READY_SIGNAL

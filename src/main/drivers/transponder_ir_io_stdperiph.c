@@ -39,7 +39,6 @@
 
 volatile uint8_t transponderIrDataTransferInProgress = 0;
 
-
 static IO_t transponderIO = IO_NONE;
 static TIM_TypeDef *timer = NULL;
 #if defined(STM32F3)
@@ -52,7 +51,7 @@ static DMA_Stream_TypeDef *dmaRef = NULL;
 
 transponder_t transponder;
 
-static void TRANSPONDER_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
+static void TRANSPONDER_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
 {
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
         transponderIrDataTransferInProgress = 0;
@@ -68,8 +67,8 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
         return;
     }
 
-    TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
-    TIM_OCInitTypeDef  TIM_OCInitStructure;
+    TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
+    TIM_OCInitTypeDef TIM_OCInitStructure;
     DMA_InitTypeDef DMA_InitStructure;
 
     const timerHardware_t *timerHardware = timerGetByTag(ioTag);
@@ -111,7 +110,7 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
         TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Set;
     }
 
-    TIM_OCInitStructure.TIM_OCPolarity =  (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIM_OCPolarity_Low : TIM_OCPolarity_High;
+    TIM_OCInitStructure.TIM_OCPolarity = (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIM_OCPolarity_Low : TIM_OCPolarity_High;
     TIM_OCInitStructure.TIM_Pulse = 0;
 
     timerOCInit(timer, timerHardware->channel, &TIM_OCInitStructure);
@@ -126,12 +125,12 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     DMA_StructInit(&DMA_InitStructure);
     DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)timerCCR(timer, timerHardware->channel);
 #if defined(STM32F3)
-    DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)&(transponder->transponderIrDMABuffer);
+    DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t) & (transponder->transponderIrDMABuffer);
     DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
     DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
 #elif defined(STM32F4)
     DMA_InitStructure.DMA_Channel = timerHardware->dmaChannel;
-    DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)&(transponder->transponderIrDMABuffer);
+    DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t) & (transponder->transponderIrDMABuffer);
     DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
 #endif
     DMA_InitStructure.DMA_BufferSize = transponder->dma_buffer_size;
@@ -162,17 +161,17 @@ bool transponderIrInit(const ioTag_t ioTag, const transponderProvider_e provider
     }
 
     switch (provider) {
-        case TRANSPONDER_ARCITIMER:
-            transponderIrInitArcitimer(&transponder);
-            break;
-        case TRANSPONDER_ILAP:
-            transponderIrInitIlap(&transponder);
-            break;
-        case TRANSPONDER_ERLT:
-            transponderIrInitERLT(&transponder);
-            break;
-        default:
-            return false;
+    case TRANSPONDER_ARCITIMER:
+        transponderIrInitArcitimer(&transponder);
+        break;
+    case TRANSPONDER_ILAP:
+        transponderIrInitIlap(&transponder);
+        break;
+    case TRANSPONDER_ERLT:
+        transponderIrInitERLT(&transponder);
+        break;
+    default:
+        return false;
     }
 
     transponderIrHardwareInit(ioTag, &transponder);
@@ -196,15 +195,15 @@ void transponderIrWaitForTransmitComplete(void)
     }
 }
 
-void transponderIrUpdateData(const uint8_t* transponderData)
+void transponderIrUpdateData(const uint8_t *transponderData)
 {
-     transponderIrWaitForTransmitComplete();
-     transponder.vTable->updateTransponderDMABuffer(&transponder, transponderData);
+    transponderIrWaitForTransmitComplete();
+    transponder.vTable->updateTransponderDMABuffer(&transponder, transponderData);
 }
 
 void transponderIrDMAEnable(transponder_t *transponder)
 {
-    DMA_SetCurrDataCounter(dmaRef, transponder->dma_buffer_size);  // load number of bytes to be transferred
+    DMA_SetCurrDataCounter(dmaRef, transponder->dma_buffer_size); // load number of bytes to be transferred
     TIM_SetCounter(timer, 0);
     TIM_Cmd(timer, ENABLE);
     DMA_Cmd(dmaRef, ENABLE);

@@ -102,7 +102,6 @@ bool fakeGyroDetect(gyroDev_t *gyro)
 }
 #endif // USE_FAKE_GYRO
 
-
 #ifdef USE_FAKE_ACC
 
 static int16_t fakeAccData[XYZ_AXIS_COUNT];

@@ -60,53 +60,52 @@ static long menuOsdActiveElemsOnExit(const OSD_Entry *self)
 }
 
 OSD_Entry menuOsdActiveElemsEntries[] =
-{
-    {"--- ACTIV ELEM ---", OME_Label,   NULL, NULL, 0},
-    {"RSSI",               OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_RSSI_VALUE], 0},
-    {"BATTERY VOLTAGE",    OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAIN_BATT_VOLTAGE], 0},
-    {"BATTERY USAGE",      OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAIN_BATT_USAGE], 0},
-    {"AVG CELL VOLTAGE",   OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_AVG_CELL_VOLTAGE], 0},
-    {"CROSSHAIRS",         OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CROSSHAIRS], 0},
-    {"HORIZON",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ARTIFICIAL_HORIZON], 0},
-    {"HORIZON SIDEBARS",   OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HORIZON_SIDEBARS], 0},
-    {"TIMER 1",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ITEM_TIMER_1], 0},
-    {"TIMER 2",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ITEM_TIMER_2], 0},
-    {"REMAINING TIME ESTIMATE",       OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_REMAINING_TIME_ESTIMATE], 0},
-    {"FLY MODE",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_FLYMODE], 0},
-    {"NAME",               OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CRAFT_NAME], 0},
-    {"THROTTLE",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_THROTTLE_POS], 0},
+    {
+        {"--- ACTIV ELEM ---", OME_Label, NULL, NULL, 0},
+        {"RSSI", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_RSSI_VALUE], 0},
+        {"BATTERY VOLTAGE", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAIN_BATT_VOLTAGE], 0},
+        {"BATTERY USAGE", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAIN_BATT_USAGE], 0},
+        {"AVG CELL VOLTAGE", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_AVG_CELL_VOLTAGE], 0},
+        {"CROSSHAIRS", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CROSSHAIRS], 0},
+        {"HORIZON", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ARTIFICIAL_HORIZON], 0},
+        {"HORIZON SIDEBARS", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HORIZON_SIDEBARS], 0},
+        {"TIMER 1", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ITEM_TIMER_1], 0},
+        {"TIMER 2", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ITEM_TIMER_2], 0},
+        {"REMAINING TIME ESTIMATE", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_REMAINING_TIME_ESTIMATE], 0},
+        {"FLY MODE", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_FLYMODE], 0},
+        {"NAME", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CRAFT_NAME], 0},
+        {"THROTTLE", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_THROTTLE_POS], 0},
 #ifdef USE_VTX_CONTROL
-    {"VTX CHAN",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_VTX_CHANNEL], 0},
+        {"VTX CHAN", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_VTX_CHANNEL], 0},
 #endif // VTX
-    {"CURRENT (A)",        OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CURRENT_DRAW], 0},
-    {"USED MAH",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAH_DRAWN], 0},
+        {"CURRENT (A)", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CURRENT_DRAW], 0},
+        {"USED MAH", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAH_DRAWN], 0},
 #ifdef USE_GPS
-    {"GPS SPEED",          OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_SPEED], 0},
-    {"GPS SATS",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_SATS], 0},
-    {"GPS LAT",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_LAT], 0},
-    {"GPS LON",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_LON], 0},
-    {"HOME DIR",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HOME_DIR], 0},
-    {"HOME DIST",          OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HOME_DIST], 0},
+        {"GPS SPEED", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_SPEED], 0},
+        {"GPS SATS", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_SATS], 0},
+        {"GPS LAT", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_LAT], 0},
+        {"GPS LON", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_LON], 0},
+        {"HOME DIR", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HOME_DIR], 0},
+        {"HOME DIST", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HOME_DIST], 0},
 #endif // GPS
-    {"COMPASS BAR",        OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_COMPASS_BAR], 0},
-    {"ALTITUDE",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ALTITUDE], 0},
-    {"POWER",              OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_POWER], 0},
-    {"ROLL PID",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ROLL_PIDS], 0},
-    {"PITCH PID",          OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_PITCH_PIDS], 0},
-    {"YAW PID",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_YAW_PIDS], 0},
-    {"PROFILES",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_PIDRATE_PROFILE], 0},
-    {"DEBUG",              OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_DEBUG], 0},
-    {"WARNINGS",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_WARNINGS], 0},
-    {"DISARMED",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_DISARMED], 0},
-    {"PIT ANG",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_PITCH_ANGLE], 0},
-    {"ROL ANG",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ROLL_ANGLE], 0},
-    {"HEADING",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_NUMERICAL_HEADING], 0},
-    {"VARIO",              OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_NUMERICAL_VARIO], 0},
-    {"G-FORCE",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_G_FORCE], 0},
-    {"FLIP ARROW",         OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_FLIP_ARROW], 0},
-    {"BACK",               OME_Back,    NULL, NULL, 0},
-    {NULL,                 OME_END,     NULL, NULL, 0}
-};
+        {"COMPASS BAR", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_COMPASS_BAR], 0},
+        {"ALTITUDE", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ALTITUDE], 0},
+        {"POWER", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_POWER], 0},
+        {"ROLL PID", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ROLL_PIDS], 0},
+        {"PITCH PID", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_PITCH_PIDS], 0},
+        {"YAW PID", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_YAW_PIDS], 0},
+        {"PROFILES", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_PIDRATE_PROFILE], 0},
+        {"DEBUG", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_DEBUG], 0},
+        {"WARNINGS", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_WARNINGS], 0},
+        {"DISARMED", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_DISARMED], 0},
+        {"PIT ANG", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_PITCH_ANGLE], 0},
+        {"ROL ANG", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ROLL_ANGLE], 0},
+        {"HEADING", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_NUMERICAL_HEADING], 0},
+        {"VARIO", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_NUMERICAL_VARIO], 0},
+        {"G-FORCE", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_G_FORCE], 0},
+        {"FLIP ARROW", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_FLIP_ARROW], 0},
+        {"BACK", OME_Back, NULL, NULL, 0},
+        {NULL, OME_END, NULL, NULL, 0}};
 
 CMS_Menu menuOsdActiveElems = {
 #ifdef CMS_MENU_DEBUG
@@ -115,8 +114,7 @@ CMS_Menu menuOsdActiveElems = {
 #endif
     .onEnter = menuOsdActiveElemsOnEnter,
     .onExit = menuOsdActiveElemsOnExit,
-    .entries = menuOsdActiveElemsEntries
-};
+    .entries = menuOsdActiveElemsEntries};
 
 static uint8_t osdConfig_rssi_alarm;
 static uint16_t osdConfig_cap_alarm;
@@ -143,14 +141,13 @@ static long menuAlarmsOnExit(const OSD_Entry *self)
 }
 
 OSD_Entry menuAlarmsEntries[] =
-{
-    {"--- ALARMS ---", OME_Label, NULL, NULL, 0},
-    {"RSSI",     OME_UINT8,  NULL, &(OSD_UINT8_t){&osdConfig_rssi_alarm, 5, 90, 5}, 0},
-    {"MAIN BAT", OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_cap_alarm, 50, 30000, 50}, 0},
-    {"MAX ALT",  OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_alt_alarm, 1, 200, 1}, 0},
-    {"BACK", OME_Back, NULL, NULL, 0},
-    {NULL, OME_END, NULL, NULL, 0}
-};
+    {
+        {"--- ALARMS ---", OME_Label, NULL, NULL, 0},
+        {"RSSI", OME_UINT8, NULL, &(OSD_UINT8_t){&osdConfig_rssi_alarm, 5, 90, 5}, 0},
+        {"MAIN BAT", OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_cap_alarm, 50, 30000, 50}, 0},
+        {"MAX ALT", OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_alt_alarm, 1, 200, 1}, 0},
+        {"BACK", OME_Back, NULL, NULL, 0},
+        {NULL, OME_END, NULL, NULL, 0}};
 
 CMS_Menu menuAlarms = {
 #ifdef CMS_MENU_DEBUG
@@ -189,20 +186,19 @@ static long menuTimersOnExit(const OSD_Entry *self)
     return 0;
 }
 
-static const char * osdTimerPrecisionNames[] = {"SCND", "HDTH"};
+static const char *osdTimerPrecisionNames[] = {"SCND", "HDTH"};
 
 OSD_Entry menuTimersEntries[] =
-{
-    {"--- TIMERS ---", OME_Label, NULL, NULL, 0},
-    {"1 SRC",          OME_TAB,   NULL, &(OSD_TAB_t){&timerSource[OSD_TIMER_1], OSD_TIMER_SRC_COUNT - 1, osdTimerSourceNames}, 0 },
-    {"1 PREC",         OME_TAB,   NULL, &(OSD_TAB_t){&timerPrecision[OSD_TIMER_1], OSD_TIMER_PREC_COUNT - 1, osdTimerPrecisionNames}, 0},
-    {"1 ALARM",        OME_UINT8, NULL, &(OSD_UINT8_t){&timerAlarm[OSD_TIMER_1], 0, 0xFF, 1}, 0},
-    {"2 SRC",          OME_TAB,   NULL, &(OSD_TAB_t){&timerSource[OSD_TIMER_2], OSD_TIMER_SRC_COUNT - 1, osdTimerSourceNames}, 0 },
-    {"2 PREC",         OME_TAB,   NULL, &(OSD_TAB_t){&timerPrecision[OSD_TIMER_2], OSD_TIMER_PREC_COUNT - 1, osdTimerPrecisionNames}, 0},
-    {"2 ALARM",        OME_UINT8, NULL, &(OSD_UINT8_t){&timerAlarm[OSD_TIMER_2], 0, 0xFF, 1}, 0},
-    {"BACK", OME_Back, NULL, NULL, 0},
-    {NULL, OME_END, NULL, NULL, 0}
-};
+    {
+        {"--- TIMERS ---", OME_Label, NULL, NULL, 0},
+        {"1 SRC", OME_TAB, NULL, &(OSD_TAB_t){&timerSource[OSD_TIMER_1], OSD_TIMER_SRC_COUNT - 1, osdTimerSourceNames}, 0},
+        {"1 PREC", OME_TAB, NULL, &(OSD_TAB_t){&timerPrecision[OSD_TIMER_1], OSD_TIMER_PREC_COUNT - 1, osdTimerPrecisionNames}, 0},
+        {"1 ALARM", OME_UINT8, NULL, &(OSD_UINT8_t){&timerAlarm[OSD_TIMER_1], 0, 0xFF, 1}, 0},
+        {"2 SRC", OME_TAB, NULL, &(OSD_TAB_t){&timerSource[OSD_TIMER_2], OSD_TIMER_SRC_COUNT - 1, osdTimerSourceNames}, 0},
+        {"2 PREC", OME_TAB, NULL, &(OSD_TAB_t){&timerPrecision[OSD_TIMER_2], OSD_TIMER_PREC_COUNT - 1, osdTimerPrecisionNames}, 0},
+        {"2 ALARM", OME_UINT8, NULL, &(OSD_UINT8_t){&timerAlarm[OSD_TIMER_2], 0, 0xFF, 1}, 0},
+        {"BACK", OME_Back, NULL, NULL, 0},
+        {NULL, OME_END, NULL, NULL, 0}};
 
 CMS_Menu menuTimers = {
 #ifdef CMS_MENU_DEBUG
@@ -242,25 +238,24 @@ static long cmsx_menuOsdOnExit(const OSD_Entry *self)
     displayPortProfileMax7456Mutable()->whiteBrightness = displayPortProfileMax7456_whiteBrightness;
 #endif
 
-  return 0;
+    return 0;
 }
 
 OSD_Entry cmsx_menuOsdEntries[] =
-{
-    {"---OSD---",   OME_Label,   NULL,          NULL,                0},
+    {
+        {"---OSD---", OME_Label, NULL, NULL, 0},
 #ifdef USE_EXTENDED_CMS_MENUS
-    {"ACTIVE ELEM", OME_Submenu, cmsMenuChange, &menuOsdActiveElems, 0},
-    {"TIMERS",      OME_Submenu, cmsMenuChange, &menuTimers,         0},
-    {"ALARMS",      OME_Submenu, cmsMenuChange, &menuAlarms,         0},
+        {"ACTIVE ELEM", OME_Submenu, cmsMenuChange, &menuOsdActiveElems, 0},
+        {"TIMERS", OME_Submenu, cmsMenuChange, &menuTimers, 0},
+        {"ALARMS", OME_Submenu, cmsMenuChange, &menuAlarms, 0},
 #endif
 #ifdef USE_MAX7456
-    {"INVERT",    OME_Bool,  NULL, &displayPortProfileMax7456_invert,                                   0},
-    {"BRT BLACK", OME_UINT8, NULL, &(OSD_UINT8_t){&displayPortProfileMax7456_blackBrightness, 0, 3, 1}, 0},
-    {"BRT WHITE", OME_UINT8, NULL, &(OSD_UINT8_t){&displayPortProfileMax7456_whiteBrightness, 0, 3, 1}, 0},
+        {"INVERT", OME_Bool, NULL, &displayPortProfileMax7456_invert, 0},
+        {"BRT BLACK", OME_UINT8, NULL, &(OSD_UINT8_t){&displayPortProfileMax7456_blackBrightness, 0, 3, 1}, 0},
+        {"BRT WHITE", OME_UINT8, NULL, &(OSD_UINT8_t){&displayPortProfileMax7456_whiteBrightness, 0, 3, 1}, 0},
 #endif
-    {"BACK", OME_Back, NULL, NULL, 0},
-    {NULL,   OME_END,  NULL, NULL, 0}
-};
+        {"BACK", OME_Back, NULL, NULL, 0},
+        {NULL, OME_END, NULL, NULL, 0}};
 
 CMS_Menu cmsx_menuOsd = {
 #ifdef CMS_MENU_DEBUG
@@ -269,6 +264,5 @@ CMS_Menu cmsx_menuOsd = {
 #endif
     .onEnter = cmsx_menuOsdOnEnter,
     .onExit = cmsx_menuOsdOnExit,
-    .entries = cmsx_menuOsdEntries
-};
+    .entries = cmsx_menuOsdEntries};
 #endif // CMS

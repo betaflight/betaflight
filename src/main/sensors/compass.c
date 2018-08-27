@@ -54,12 +54,12 @@
 #endif
 
 magDev_t magDev;
-mag_t mag;                   // mag access functions
+mag_t mag; // mag access functions
 
 #ifdef MAG_INT_EXTI
-#define COMPASS_INTERRUPT_TAG   IO_TAG(MAG_INT_EXTI)
+#define COMPASS_INTERRUPT_TAG IO_TAG(MAG_INT_EXTI)
 #else
-#define COMPASS_INTERRUPT_TAG   IO_TAG_NONE
+#define COMPASS_INTERRUPT_TAG IO_TAG_NONE
 #endif
 
 PG_REGISTER_WITH_RESET_FN(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 1);
@@ -70,11 +70,11 @@ void pgResetFn_compassConfig(compassConfig_t *compassConfig)
     compassConfig->mag_declination = 0;
     compassConfig->mag_hardware = MAG_DEFAULT;
 
-// Generate a reasonable default for backward compatibility
-// Strategy is
-// 1. If SPI device is defined, it will take precedence, assuming it's onboard.
-// 2. I2C devices are will be handled by address = 0 (per device default).
-// 3. Slave I2C device on SPI gyro
+    // Generate a reasonable default for backward compatibility
+    // Strategy is
+    // 1. If SPI device is defined, it will take precedence, assuming it's onboard.
+    // 2. I2C devices are will be handled by address = 0 (per device default).
+    // 3. Slave I2C device on SPI gyro
 
 #if defined(USE_SPI) && (defined(USE_MAG_SPI_HMC5883) || defined(USE_MAG_SPI_AK8963))
     compassConfig->mag_bustype = BUSTYPE_SPI;
@@ -144,18 +144,17 @@ bool compassDetect(magDev_t *dev)
         break;
 
 #if defined(USE_MAG_AK8963) && (defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250))
-    case BUSTYPE_MPU_SLAVE:
-        {
-            if (gyroMpuDetectionResult()->sensor == MPU_9250_SPI) {
-                busdev->bustype = BUSTYPE_MPU_SLAVE;
-                busdev->busdev_u.mpuSlave.master = gyroSensorBus();
-                busdev->busdev_u.mpuSlave.address = compassConfig()->mag_i2c_address;
-            } else {
-                return false;
-            }
+    case BUSTYPE_MPU_SLAVE: {
+        if (gyroMpuDetectionResult()->sensor == MPU_9250_SPI) {
+            busdev->bustype = BUSTYPE_MPU_SLAVE;
+            busdev->busdev_u.mpuSlave.master = gyroSensorBus();
+            busdev->busdev_u.mpuSlave.address = compassConfig()->mag_i2c_address;
+        } else {
+            return false;
         }
+    }
 #endif
-        break;
+    break;
 
     default:
         return false;
@@ -170,7 +169,7 @@ bool compassDetect(magDev_t *dev)
     case MAG_HMC5883:
 #if defined(USE_MAG_HMC5883) || defined(USE_MAG_SPI_HMC5883)
         if (busdev->bustype == BUSTYPE_I2C) {
-                busdev->busdev_u.i2c.address = compassConfig()->mag_i2c_address;
+            busdev->busdev_u.i2c.address = compassConfig()->mag_i2c_address;
         }
 
         if (hmc5883lDetect(dev)) {
@@ -186,7 +185,7 @@ bool compassDetect(magDev_t *dev)
     case MAG_QMC5883:
 #ifdef USE_MAG_QMC5883
         if (busdev->bustype == BUSTYPE_I2C) {
-                busdev->busdev_u.i2c.address = compassConfig()->mag_i2c_address;
+            busdev->busdev_u.i2c.address = compassConfig()->mag_i2c_address;
         }
 
         if (qmc5883lDetect(dev)) {
@@ -202,7 +201,7 @@ bool compassDetect(magDev_t *dev)
     case MAG_AK8975:
 #ifdef USE_MAG_AK8975
         if (busdev->bustype == BUSTYPE_I2C) {
-                busdev->busdev_u.i2c.address = compassConfig()->mag_i2c_address;
+            busdev->busdev_u.i2c.address = compassConfig()->mag_i2c_address;
         }
 
         if (ak8975Detect(dev)) {
@@ -309,14 +308,14 @@ void compassUpdate(timeUs_t currentTimeUs)
         DISABLE_STATE(CALIBRATE_MAG);
     }
 
-    if (magInit) {              // we apply offset only once mag calibration is done
+    if (magInit) { // we apply offset only once mag calibration is done
         mag.magADC[X] -= magZero->raw[X];
         mag.magADC[Y] -= magZero->raw[Y];
         mag.magADC[Z] -= magZero->raw[Z];
     }
 
     if (tCal != 0) {
-        if ((currentTimeUs - tCal) < 30000000) {    // 30s: you have 30s to turn the multi in all directions
+        if ((currentTimeUs - tCal) < 30000000) { // 30s: you have 30s to turn the multi in all directions
             LED0_TOGGLE;
             for (int axis = 0; axis < 3; axis++) {
                 if (mag.magADC[axis] < magZeroTempMin.raw[axis])

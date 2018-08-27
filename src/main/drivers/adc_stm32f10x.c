@@ -38,22 +38,20 @@
 
 #include "pg/adc.h"
 
-
 const adcDevice_t adcHardware[] = {
-    { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .DMAy_Channelx = DMA1_Channel1 }
-};
+    {.ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .DMAy_Channelx = DMA1_Channel1}};
 
 const adcTagMap_t adcTagMap[] = {
-    { DEFIO_TAG_E__PA0, ADC_Channel_0 }, // ADC12
-    { DEFIO_TAG_E__PA1, ADC_Channel_1 }, // ADC12
-    { DEFIO_TAG_E__PA2, ADC_Channel_2 }, // ADC12
-    { DEFIO_TAG_E__PA3, ADC_Channel_3 }, // ADC12
-    { DEFIO_TAG_E__PA4, ADC_Channel_4 }, // ADC12
-    { DEFIO_TAG_E__PA5, ADC_Channel_5 }, // ADC12
-    { DEFIO_TAG_E__PA6, ADC_Channel_6 }, // ADC12
-    { DEFIO_TAG_E__PA7, ADC_Channel_7 }, // ADC12
-    { DEFIO_TAG_E__PB0, ADC_Channel_8 }, // ADC12
-    { DEFIO_TAG_E__PB1, ADC_Channel_9 }, // ADC12
+    {DEFIO_TAG_E__PA0, ADC_Channel_0}, // ADC12
+    {DEFIO_TAG_E__PA1, ADC_Channel_1}, // ADC12
+    {DEFIO_TAG_E__PA2, ADC_Channel_2}, // ADC12
+    {DEFIO_TAG_E__PA3, ADC_Channel_3}, // ADC12
+    {DEFIO_TAG_E__PA4, ADC_Channel_4}, // ADC12
+    {DEFIO_TAG_E__PA5, ADC_Channel_5}, // ADC12
+    {DEFIO_TAG_E__PA6, ADC_Channel_6}, // ADC12
+    {DEFIO_TAG_E__PA7, ADC_Channel_7}, // ADC12
+    {DEFIO_TAG_E__PB0, ADC_Channel_8}, // ADC12
+    {DEFIO_TAG_E__PB1, ADC_Channel_9}, // ADC12
 };
 
 // Driver for STM32F103CB onboard ADC
@@ -78,7 +76,7 @@ void adcInit(const adcConfig_t *config)
     }
 
     if (config->rssi.enabled) {
-        adcOperatingConfig[ADC_RSSI].tag = config->rssi.ioTag;  //RSSI_ADC_CHANNEL;
+        adcOperatingConfig[ADC_RSSI].tag = config->rssi.ioTag; //RSSI_ADC_CHANNEL;
     }
 
     if (config->external1.enabled) {
@@ -86,7 +84,7 @@ void adcInit(const adcConfig_t *config)
     }
 
     if (config->current.enabled) {
-        adcOperatingConfig[ADC_CURRENT].tag = config->current.ioTag;  //CURRENT_METER_ADC_CHANNEL;
+        adcOperatingConfig[ADC_CURRENT].tag = config->current.ioTag; //CURRENT_METER_ADC_CHANNEL;
     }
 
     ADCDevice device = adcDeviceByInstance(ADC_INSTANCE);
@@ -113,7 +111,7 @@ void adcInit(const adcConfig_t *config)
         return;
     }
 
-    RCC_ADCCLKConfig(RCC_PCLK2_Div8);  // 9MHz from 72MHz APB2 clock(HSE), 8MHz from 64MHz (HSI)
+    RCC_ADCCLKConfig(RCC_PCLK2_Div8); // 9MHz from 72MHz APB2 clock(HSE), 8MHz from 64MHz (HSI)
     RCC_ClockCmd(adc.rccADC, ENABLE);
 
     dmaInit(dmaGetIdentifier(adc.DMAy_Channelx), OWNER_ADC, 0);
@@ -157,9 +155,11 @@ void adcInit(const adcConfig_t *config)
     ADC_Cmd(adc.ADCx, ENABLE);
 
     ADC_ResetCalibration(adc.ADCx);
-    while (ADC_GetResetCalibrationStatus(adc.ADCx));
+    while (ADC_GetResetCalibrationStatus(adc.ADCx))
+        ;
     ADC_StartCalibration(adc.ADCx);
-    while (ADC_GetCalibrationStatus(adc.ADCx));
+    while (ADC_GetCalibrationStatus(adc.ADCx))
+        ;
 
     ADC_SoftwareStartConvCmd(adc.ADCx, ENABLE);
 }

@@ -42,7 +42,7 @@ bool ws2811Initialised = false;
 static TIM_HandleTypeDef TimHandle;
 static uint16_t timerChannel = 0;
 
-void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
+void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
 {
     HAL_DMA_IRQHandler(TimHandle.hdma[descriptor->userParam]);
     TIM_DMACmd(&TimHandle, timerChannel, DISABLE);
@@ -160,8 +160,8 @@ void ws2811LedStripDMAEnable(void)
         return;
     }
     /* Reset timer counter */
-    __HAL_TIM_SET_COUNTER(&TimHandle,0);
+    __HAL_TIM_SET_COUNTER(&TimHandle, 0);
     /* Enable channel DMA requests */
-    TIM_DMACmd(&TimHandle,timerChannel,ENABLE);
+    TIM_DMACmd(&TimHandle, timerChannel, ENABLE);
 }
 #endif

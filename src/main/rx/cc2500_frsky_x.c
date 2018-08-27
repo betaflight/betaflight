@@ -57,57 +57,56 @@
 #include "cc2500_frsky_x.h"
 
 const uint16_t crcTable[] = {
-        0x0000,0x1189,0x2312,0x329b,0x4624,0x57ad,0x6536,0x74bf,
-        0x8c48,0x9dc1,0xaf5a,0xbed3,0xca6c,0xdbe5,0xe97e,0xf8f7,
-        0x1081,0x0108,0x3393,0x221a,0x56a5,0x472c,0x75b7,0x643e,
-        0x9cc9,0x8d40,0xbfdb,0xae52,0xdaed,0xcb64,0xf9ff,0xe876,
-        0x2102,0x308b,0x0210,0x1399,0x6726,0x76af,0x4434,0x55bd,
-        0xad4a,0xbcc3,0x8e58,0x9fd1,0xeb6e,0xfae7,0xc87c,0xd9f5,
-        0x3183,0x200a,0x1291,0x0318,0x77a7,0x662e,0x54b5,0x453c,
-        0xbdcb,0xac42,0x9ed9,0x8f50,0xfbef,0xea66,0xd8fd,0xc974,
-        0x4204,0x538d,0x6116,0x709f,0x0420,0x15a9,0x2732,0x36bb,
-        0xce4c,0xdfc5,0xed5e,0xfcd7,0x8868,0x99e1,0xab7a,0xbaf3,
-        0x5285,0x430c,0x7197,0x601e,0x14a1,0x0528,0x37b3,0x263a,
-        0xdecd,0xcf44,0xfddf,0xec56,0x98e9,0x8960,0xbbfb,0xaa72,
-        0x6306,0x728f,0x4014,0x519d,0x2522,0x34ab,0x0630,0x17b9,
-        0xef4e,0xfec7,0xcc5c,0xddd5,0xa96a,0xb8e3,0x8a78,0x9bf1,
-        0x7387,0x620e,0x5095,0x411c,0x35a3,0x242a,0x16b1,0x0738,
-        0xffcf,0xee46,0xdcdd,0xcd54,0xb9eb,0xa862,0x9af9,0x8b70,
-        0x8408,0x9581,0xa71a,0xb693,0xc22c,0xd3a5,0xe13e,0xf0b7,
-        0x0840,0x19c9,0x2b52,0x3adb,0x4e64,0x5fed,0x6d76,0x7cff,
-        0x9489,0x8500,0xb79b,0xa612,0xd2ad,0xc324,0xf1bf,0xe036,
-        0x18c1,0x0948,0x3bd3,0x2a5a,0x5ee5,0x4f6c,0x7df7,0x6c7e,
-        0xa50a,0xb483,0x8618,0x9791,0xe32e,0xf2a7,0xc03c,0xd1b5,
-        0x2942,0x38cb,0x0a50,0x1bd9,0x6f66,0x7eef,0x4c74,0x5dfd,
-        0xb58b,0xa402,0x9699,0x8710,0xf3af,0xe226,0xd0bd,0xc134,
-        0x39c3,0x284a,0x1ad1,0x0b58,0x7fe7,0x6e6e,0x5cf5,0x4d7c,
-        0xc60c,0xd785,0xe51e,0xf497,0x8028,0x91a1,0xa33a,0xb2b3,
-        0x4a44,0x5bcd,0x6956,0x78df,0x0c60,0x1de9,0x2f72,0x3efb,
-        0xd68d,0xc704,0xf59f,0xe416,0x90a9,0x8120,0xb3bb,0xa232,
-        0x5ac5,0x4b4c,0x79d7,0x685e,0x1ce1,0x0d68,0x3ff3,0x2e7a,
-        0xe70e,0xf687,0xc41c,0xd595,0xa12a,0xb0a3,0x8238,0x93b1,
-        0x6b46,0x7acf,0x4854,0x59dd,0x2d62,0x3ceb,0x0e70,0x1ff9,
-        0xf78f,0xe606,0xd49d,0xc514,0xb1ab,0xa022,0x92b9,0x8330,
-        0x7bc7,0x6a4e,0x58d5,0x495c,0x3de3,0x2c6a,0x1ef1,0x0f78
-};
+    0x0000, 0x1189, 0x2312, 0x329b, 0x4624, 0x57ad, 0x6536, 0x74bf,
+    0x8c48, 0x9dc1, 0xaf5a, 0xbed3, 0xca6c, 0xdbe5, 0xe97e, 0xf8f7,
+    0x1081, 0x0108, 0x3393, 0x221a, 0x56a5, 0x472c, 0x75b7, 0x643e,
+    0x9cc9, 0x8d40, 0xbfdb, 0xae52, 0xdaed, 0xcb64, 0xf9ff, 0xe876,
+    0x2102, 0x308b, 0x0210, 0x1399, 0x6726, 0x76af, 0x4434, 0x55bd,
+    0xad4a, 0xbcc3, 0x8e58, 0x9fd1, 0xeb6e, 0xfae7, 0xc87c, 0xd9f5,
+    0x3183, 0x200a, 0x1291, 0x0318, 0x77a7, 0x662e, 0x54b5, 0x453c,
+    0xbdcb, 0xac42, 0x9ed9, 0x8f50, 0xfbef, 0xea66, 0xd8fd, 0xc974,
+    0x4204, 0x538d, 0x6116, 0x709f, 0x0420, 0x15a9, 0x2732, 0x36bb,
+    0xce4c, 0xdfc5, 0xed5e, 0xfcd7, 0x8868, 0x99e1, 0xab7a, 0xbaf3,
+    0x5285, 0x430c, 0x7197, 0x601e, 0x14a1, 0x0528, 0x37b3, 0x263a,
+    0xdecd, 0xcf44, 0xfddf, 0xec56, 0x98e9, 0x8960, 0xbbfb, 0xaa72,
+    0x6306, 0x728f, 0x4014, 0x519d, 0x2522, 0x34ab, 0x0630, 0x17b9,
+    0xef4e, 0xfec7, 0xcc5c, 0xddd5, 0xa96a, 0xb8e3, 0x8a78, 0x9bf1,
+    0x7387, 0x620e, 0x5095, 0x411c, 0x35a3, 0x242a, 0x16b1, 0x0738,
+    0xffcf, 0xee46, 0xdcdd, 0xcd54, 0xb9eb, 0xa862, 0x9af9, 0x8b70,
+    0x8408, 0x9581, 0xa71a, 0xb693, 0xc22c, 0xd3a5, 0xe13e, 0xf0b7,
+    0x0840, 0x19c9, 0x2b52, 0x3adb, 0x4e64, 0x5fed, 0x6d76, 0x7cff,
+    0x9489, 0x8500, 0xb79b, 0xa612, 0xd2ad, 0xc324, 0xf1bf, 0xe036,
+    0x18c1, 0x0948, 0x3bd3, 0x2a5a, 0x5ee5, 0x4f6c, 0x7df7, 0x6c7e,
+    0xa50a, 0xb483, 0x8618, 0x9791, 0xe32e, 0xf2a7, 0xc03c, 0xd1b5,
+    0x2942, 0x38cb, 0x0a50, 0x1bd9, 0x6f66, 0x7eef, 0x4c74, 0x5dfd,
+    0xb58b, 0xa402, 0x9699, 0x8710, 0xf3af, 0xe226, 0xd0bd, 0xc134,
+    0x39c3, 0x284a, 0x1ad1, 0x0b58, 0x7fe7, 0x6e6e, 0x5cf5, 0x4d7c,
+    0xc60c, 0xd785, 0xe51e, 0xf497, 0x8028, 0x91a1, 0xa33a, 0xb2b3,
+    0x4a44, 0x5bcd, 0x6956, 0x78df, 0x0c60, 0x1de9, 0x2f72, 0x3efb,
+    0xd68d, 0xc704, 0xf59f, 0xe416, 0x90a9, 0x8120, 0xb3bb, 0xa232,
+    0x5ac5, 0x4b4c, 0x79d7, 0x685e, 0x1ce1, 0x0d68, 0x3ff3, 0x2e7a,
+    0xe70e, 0xf687, 0xc41c, 0xd595, 0xa12a, 0xb0a3, 0x8238, 0x93b1,
+    0x6b46, 0x7acf, 0x4854, 0x59dd, 0x2d62, 0x3ceb, 0x0e70, 0x1ff9,
+    0xf78f, 0xe606, 0xd49d, 0xc514, 0xb1ab, 0xa022, 0x92b9, 0x8330,
+    0x7bc7, 0x6a4e, 0x58d5, 0x495c, 0x3de3, 0x2c6a, 0x1ef1, 0x0f78};
 
-#define TELEMETRY_OUT_BUFFER_SIZE  64
+#define TELEMETRY_OUT_BUFFER_SIZE 64
 
 #define TELEMETRY_SEQUENCE_LENGTH 4
 
 typedef struct telemetrySequenceMarkerData_s {
-    unsigned int packetSequenceId: 2;
-    unsigned int unused: 1;
-    unsigned int initRequest: 1;
-    unsigned int ackSequenceId: 2;
-    unsigned int retransmissionRequested: 1;
-    unsigned int initResponse: 1;
-} __attribute__ ((__packed__)) telemetrySequenceMarkerData_t;
+    unsigned int packetSequenceId : 2;
+    unsigned int unused : 1;
+    unsigned int initRequest : 1;
+    unsigned int ackSequenceId : 2;
+    unsigned int retransmissionRequested : 1;
+    unsigned int initResponse : 1;
+} __attribute__((__packed__)) telemetrySequenceMarkerData_t;
 
 typedef union telemetrySequenceMarker_s {
     uint8_t raw;
     telemetrySequenceMarkerData_t data;
-} __attribute__ ((__packed__)) telemetrySequenceMarker_t;
+} __attribute__((__packed__)) telemetrySequenceMarker_t;
 
 #define SEQUENCE_MARKER_REMOTE_PART 0xf0
 
@@ -116,14 +115,14 @@ typedef union telemetrySequenceMarker_s {
 typedef struct telemetryData_s {
     uint8_t dataLength;
     uint8_t data[TELEMETRY_DATA_SIZE];
-} __attribute__ ((__packed__)) telemetryData_t;
+} __attribute__((__packed__)) telemetryData_t;
 
 typedef struct telemetryBuffer_s {
     telemetryData_t data;
     uint8_t needsProcessing;
 } telemetryBuffer_t;
 
-#define TELEMETRY_FRAME_SIZE  sizeof(telemetryData_t)
+#define TELEMETRY_FRAME_SIZE sizeof(telemetryData_t)
 
 typedef struct telemetryPayload_s {
     uint8_t packetConst;
@@ -131,7 +130,7 @@ typedef struct telemetryPayload_s {
     telemetrySequenceMarker_t sequence;
     telemetryData_t data;
     uint8_t crc[2];
-} __attribute__ ((__packed__)) telemetryPayload_t;
+} __attribute__((__packed__)) telemetryPayload_t;
 
 #if defined(USE_RX_FRSKY_SPI_TELEMETRY)
 static telemetryData_t telemetryTxBuffer[TELEMETRY_SEQUENCE_LENGTH];
@@ -150,8 +149,8 @@ static bool telemetryEnabled = false;
 #endif
 #endif // USE_RX_FRSKY_SPI_TELEMETRY
 
-
-static uint16_t calculateCrc(uint8_t *data, uint8_t len) {
+static uint16_t calculateCrc(uint8_t *data, uint8_t len)
+{
     uint16_t crc = 0;
     for (unsigned i = 0; i < len; i++) {
         crc = (crc << 8) ^ (crcTable[((uint8_t)(crc >> 8) ^ *data++) & 0xFF]);
@@ -167,7 +166,7 @@ static uint8_t appendSmartPortData(uint8_t *buf)
 
     uint8_t index;
     for (index = 0; index < TELEMETRY_DATA_SIZE; index++) { // max 5 bytes in a frame
-        if (telemetryOutReader == telemetryOutWriter){ // no new data
+        if (telemetryOutReader == telemetryOutWriter) {     // no new data
             break;
         }
         buf[index] = telemetryOutBuffer[telemetryOutReader];
@@ -184,7 +183,7 @@ static void buildTelemetryFrame(uint8_t *packet)
 
     static bool evenRun = false;
 
-    frame[0] = 0x0E;//length
+    frame[0] = 0x0E; //length
     frame[1] = rxFrSkySpiConfig()->bindTxId[0];
     frame[2] = rxFrSkySpiConfig()->bindTxId[1];
     frame[3] = packet[3];
@@ -205,7 +204,7 @@ static void buildTelemetryFrame(uint8_t *packet)
     telemetrySequenceMarker_t *inFrameMarker = (telemetrySequenceMarker_t *)&packet[21];
     telemetrySequenceMarker_t *outFrameMarker = (telemetrySequenceMarker_t *)&frame[5];
     if (inFrameMarker->data.initRequest) { // check syncronization at startup ok if not no sport telemetry
-        outFrameMarker-> raw = 0;
+        outFrameMarker->raw = 0;
         outFrameMarker->data.initRequest = 1;
         outFrameMarker->data.initResponse = 1;
 
@@ -232,8 +231,8 @@ static void buildTelemetryFrame(uint8_t *packet)
     }
 
     uint16_t lcrc = calculateCrc(&frame[3], 10);
-    frame[13]=lcrc>>8;
-    frame[14]=lcrc;
+    frame[13] = lcrc >> 8;
+    frame[14] = lcrc;
 }
 
 static bool frSkyXCheckQueueEmpty(void)
@@ -242,7 +241,8 @@ static bool frSkyXCheckQueueEmpty(void)
 }
 
 #if defined(USE_TELEMETRY_SMARTPORT)
-static void frSkyXTelemetrySendByte(uint8_t c) {
+static void frSkyXTelemetrySendByte(uint8_t c)
+{
     if (c == FSSP_DLE || c == FSSP_START_STOP) {
         telemetryOutBuffer[telemetryOutWriter] = FSSP_DLE;
         telemetryOutWriter = (telemetryOutWriter + 1) % TELEMETRY_OUT_BUFFER_SIZE;
@@ -268,7 +268,6 @@ static void frSkyXTelemetryWriteFrame(const smartPortPayload_t *payload)
 #endif
 #endif // USE_RX_FRSKY_SPI_TELEMETRY
 
-
 void frSkyXSetRcData(uint16_t *rcData, const uint8_t *packet)
 {
     uint16_t c[8];
@@ -291,7 +290,7 @@ void frSkyXSetRcData(uint16_t *rcData, const uint8_t *packet)
     }
 }
 
-rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const protocolState)
+rx_spi_received_e frSkyXHandlePacket(uint8_t *const packet, uint8_t *const protocolState)
 {
     static unsigned receiveTelemetryRetryCount = 0;
     static timeMs_t pollingTimeMs = 0;
@@ -343,7 +342,7 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
         FALLTHROUGH;
         // here FS code could be
     case STATE_DATA:
-        if (IORead(gdoPin) && (frameReceived == false)){
+        if (IORead(gdoPin) && (frameReceived == false)) {
             uint8_t ccLen = cc2500ReadReg(CC2500_3B_RXBYTES | CC2500_READ_BURST) & 0x7F;
             ccLen = cc2500ReadReg(CC2500_3B_RXBYTES | CC2500_READ_BURST) & 0x7F; // read 2 times to avoid reading errors
             if (ccLen > 32) {
@@ -351,12 +350,12 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
             }
             if (ccLen) {
                 cc2500ReadFifo(packet, ccLen);
-                uint16_t lcrc= calculateCrc(&packet[3], (ccLen - 7));
-                if((lcrc >> 8) == packet[ccLen-4] && (lcrc&0x00FF) == packet[ccLen - 3]){ // check calculateCrc
+                uint16_t lcrc = calculateCrc(&packet[3], (ccLen - 7));
+                if ((lcrc >> 8) == packet[ccLen - 4] && (lcrc & 0x00FF) == packet[ccLen - 3]) { // check calculateCrc
                     if (packet[0] == 0x1D) {
                         if ((packet[1] == rxFrSkySpiConfig()->bindTxId[0]) &&
-                                (packet[2] == rxFrSkySpiConfig()->bindTxId[1]) &&
-                                (rxFrSkySpiConfig()->rxNum == 0 || packet[6] == 0 || packet[6] == rxFrSkySpiConfig()->rxNum)) {
+                            (packet[2] == rxFrSkySpiConfig()->bindTxId[1]) &&
+                            (rxFrSkySpiConfig()->rxNum == 0 || packet[6] == 0 || packet[6] == rxFrSkySpiConfig()->rxNum)) {
                             missingPackets = 0;
                             timeoutUs = 1;
                             receiveDelayUs = 0;
@@ -416,20 +415,20 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
                             }
 
                             if (receiveTelemetryRetryCount >= 5) {
-                                 remoteProcessedId =  TELEMETRY_SEQUENCE_LENGTH - 1;
-                                 remoteAckId =  TELEMETRY_SEQUENCE_LENGTH - 1;
-                                 for (unsigned i = 0; i < TELEMETRY_SEQUENCE_LENGTH; i++) {
-                                     telemetryRxBuffer[i].needsProcessing = false;
-                                 }
+                                remoteProcessedId = TELEMETRY_SEQUENCE_LENGTH - 1;
+                                remoteAckId = TELEMETRY_SEQUENCE_LENGTH - 1;
+                                for (unsigned i = 0; i < TELEMETRY_SEQUENCE_LENGTH; i++) {
+                                    telemetryRxBuffer[i].needsProcessing = false;
+                                }
 
-                                 receiveTelemetryRetryCount = 0;
-                             }
+                                receiveTelemetryRetryCount = 0;
+                            }
 
                             packetTimerUs = micros();
                             frameReceived = true; // no need to process frame again.
                         }
                     }
-                } 
+                }
                 if (!frameReceived) {
                     packetErrors++;
                     DEBUG_SET(DEBUG_RX_FRSKY_SPI, DEBUG_DATA_BAD_FRAME, packetErrors);
@@ -437,7 +436,7 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
             }
         }
         if (telemetryReceived) {
-            if(cmpTimeUs(micros(), packetTimerUs) > receiveDelayUs) { // if received or not received in this time sent telemetry data
+            if (cmpTimeUs(micros(), packetTimerUs) > receiveDelayUs) { // if received or not received in this time sent telemetry data
                 *protocolState = STATE_TELEMETRY;
                 buildTelemetryFrame(packet);
             }
@@ -460,7 +459,7 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
         break;
 #ifdef USE_RX_FRSKY_SPI_TELEMETRY
     case STATE_TELEMETRY:
-        if(cmpTimeUs(micros(), packetTimerUs) >= receiveDelayUs + 400) { // if received or not received in this time sent telemetry data
+        if (cmpTimeUs(micros(), packetTimerUs) >= receiveDelayUs + 400) { // if received or not received in this time sent telemetry data
             cc2500Strobe(CC2500_SIDLE);
             cc2500SetPower(6);
             cc2500Strobe(CC2500_SFRX);
@@ -531,7 +530,7 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
             }
             missingPackets++;
             DEBUG_SET(DEBUG_RX_FRSKY_SPI, DEBUG_DATA_MISSING_PACKETS, missingPackets);
-            
+
             *protocolState = STATE_DATA;
         }
         break;
@@ -543,9 +542,9 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
 void frSkyXInit(void)
 {
 #if defined(USE_TELEMETRY_SMARTPORT)
-     if (featureIsEnabled(FEATURE_TELEMETRY)) {
-         telemetryEnabled = initSmartPortTelemetryExternal(frSkyXTelemetryWriteFrame);
-     }
+    if (featureIsEnabled(FEATURE_TELEMETRY)) {
+        telemetryEnabled = initSmartPortTelemetryExternal(frSkyXTelemetryWriteFrame);
+    }
 #endif
 }
 

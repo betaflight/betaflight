@@ -29,10 +29,10 @@
 
 #include "config_helper.h"
 
-#define TELEMETRY_UART          SERIAL_PORT_USART6
+#define TELEMETRY_UART SERIAL_PORT_USART6
 
 static targetSerialPortFunction_t targetSerialPortFunction[] = {
-    { TELEMETRY_UART, FUNCTION_TELEMETRY_SMARTPORT },
+    {TELEMETRY_UART, FUNCTION_TELEMETRY_SMARTPORT},
 };
 
 void targetConfiguration(void)

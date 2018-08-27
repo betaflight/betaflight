@@ -29,7 +29,6 @@
 #include "pg/bus_i2c.h"
 #include "pg/bus_spi.h"
 
-
 extern void spiPreInit(void); // XXX In fc/init.c
 
 void targetBusInit(void)

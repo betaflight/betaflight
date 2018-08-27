@@ -64,7 +64,7 @@ uint8_t cc2500ReadRegisterMulti(uint8_t address, uint8_t *data, uint8_t length)
 }
 
 uint8_t cc2500WriteRegisterMulti(uint8_t address, uint8_t *data,
-                                  uint8_t length)
+                                 uint8_t length)
 {
     return rxSpiWriteCommandMulti(address, data, length);
 }

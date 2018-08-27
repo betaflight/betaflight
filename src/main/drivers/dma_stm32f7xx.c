@@ -32,8 +32,8 @@
  * DMA descriptors.
  */
 static dmaChannelDescriptor_t dmaDescriptors[DMA_LAST_HANDLER] = {
-    DEFINE_DMA_CHANNEL(DMA1, 0,  0),
-    DEFINE_DMA_CHANNEL(DMA1, 1,  6),
+    DEFINE_DMA_CHANNEL(DMA1, 0, 0),
+    DEFINE_DMA_CHANNEL(DMA1, 1, 6),
     DEFINE_DMA_CHANNEL(DMA1, 2, 16),
     DEFINE_DMA_CHANNEL(DMA1, 3, 22),
     DEFINE_DMA_CHANNEL(DMA1, 4, 32),
@@ -41,8 +41,8 @@ static dmaChannelDescriptor_t dmaDescriptors[DMA_LAST_HANDLER] = {
     DEFINE_DMA_CHANNEL(DMA1, 6, 48),
     DEFINE_DMA_CHANNEL(DMA1, 7, 54),
 
-    DEFINE_DMA_CHANNEL(DMA2, 0,  0),
-    DEFINE_DMA_CHANNEL(DMA2, 1,  6),
+    DEFINE_DMA_CHANNEL(DMA2, 0, 0),
+    DEFINE_DMA_CHANNEL(DMA2, 1, 6),
     DEFINE_DMA_CHANNEL(DMA2, 2, 16),
     DEFINE_DMA_CHANNEL(DMA2, 3, 22),
     DEFINE_DMA_CHANNEL(DMA2, 4, 32),
@@ -115,7 +115,7 @@ uint8_t dmaGetResourceIndex(dmaIdentifier_e identifier)
     return dmaDescriptors[DMA_IDENTIFIER_TO_INDEX(identifier)].resourceIndex;
 }
 
-dmaIdentifier_e dmaGetIdentifier(const DMA_Stream_TypeDef* stream)
+dmaIdentifier_e dmaGetIdentifier(const DMA_Stream_TypeDef *stream)
 {
     for (int i = 0; i < DMA_LAST_HANDLER; i++) {
         if (dmaDescriptors[i].ref == stream) {
@@ -125,17 +125,17 @@ dmaIdentifier_e dmaGetIdentifier(const DMA_Stream_TypeDef* stream)
     return 0;
 }
 
-DMA_Stream_TypeDef* dmaGetRefByIdentifier(const dmaIdentifier_e identifier)
+DMA_Stream_TypeDef *dmaGetRefByIdentifier(const dmaIdentifier_e identifier)
 {
     return dmaDescriptors[DMA_IDENTIFIER_TO_INDEX(identifier)].ref;
 }
 
-dmaChannelDescriptor_t* dmaGetDescriptorByIdentifier(const dmaIdentifier_e identifier)
+dmaChannelDescriptor_t *dmaGetDescriptorByIdentifier(const dmaIdentifier_e identifier)
 {
     return &dmaDescriptors[DMA_IDENTIFIER_TO_INDEX(identifier)];
 }
 
 uint32_t dmaGetChannel(const uint8_t channel)
 {
-    return ((uint32_t)channel*2)<<24;
+    return ((uint32_t)channel * 2) << 24;
 }

@@ -21,7 +21,7 @@
 #pragma once
 
 struct dispatchEntry_s;
-typedef void dispatchFunc(struct dispatchEntry_s* self);
+typedef void dispatchFunc(struct dispatchEntry_s *self);
 
 typedef struct dispatchEntry_s {
     dispatchFunc *dispatch;

@@ -63,26 +63,25 @@
 #include "io/vtx_tramp.h"
 #include "io/vtx_smartaudio.h"
 
-#define SRXL_ADDRESS_FIRST          0xA5
-#define SRXL_ADDRESS_SECOND         0x80
-#define SRXL_PACKET_LENGTH          0x15
+#define SRXL_ADDRESS_FIRST 0xA5
+#define SRXL_ADDRESS_SECOND 0x80
+#define SRXL_PACKET_LENGTH 0x15
 
-#define SRXL_FRAMETYPE_TELE_QOS     0x7F
-#define SRXL_FRAMETYPE_TELE_RPM     0x7E
-#define SRXL_FRAMETYPE_POWERBOX     0x0A
-#define SRXL_FRAMETYPE_TELE_FP_MAH  0x34
-#define TELE_DEVICE_VTX             0x0D   // Video Transmitter Status
-#define SRXL_FRAMETYPE_SID          0x00
+#define SRXL_FRAMETYPE_TELE_QOS 0x7F
+#define SRXL_FRAMETYPE_TELE_RPM 0x7E
+#define SRXL_FRAMETYPE_POWERBOX 0x0A
+#define SRXL_FRAMETYPE_TELE_FP_MAH 0x34
+#define TELE_DEVICE_VTX 0x0D // Video Transmitter Status
+#define SRXL_FRAMETYPE_SID 0x00
 
 static bool srxlTelemetryEnabled;
 static uint8_t srxlFrame[SRXL_FRAME_SIZE_MAX];
-static bool srxlTelemetryNow   = false;
+static bool srxlTelemetryNow = false;
 
 void srxlCollectTelemetryNow(void)
 {
-    srxlTelemetryNow   = true;
+    srxlTelemetryNow = true;
 }
-
 
 static void srxlInitializeFrame(sbuf_t *dst)
 {
@@ -159,9 +158,9 @@ bool srxlFrameRpm(sbuf_t *dst, timeUs_t currentTimeUs)
 
     sbufWriteU8(dst, SRXL_FRAMETYPE_TELE_RPM);
     sbufWriteU8(dst, SRXL_FRAMETYPE_SID);
-    sbufWriteU16BigEndian(dst, 0xFFFF);                     // pulse leading edges
-    sbufWriteU16BigEndian(dst, getBatteryVoltage() * 10);   // vbat is in units of 0.1V
-    sbufWriteU16BigEndian(dst, 0x7FFF);                     // temperature
+    sbufWriteU16BigEndian(dst, 0xFFFF);                   // pulse leading edges
+    sbufWriteU16BigEndian(dst, getBatteryVoltage() * 10); // vbat is in units of 0.1V
+    sbufWriteU16BigEndian(dst, 0x7FFF);                   // temperature
 
     sbufFill(dst, 0xFF, STRU_TELE_RPM_EMPTY_FIELDS_COUNT);
     return true;
@@ -187,23 +186,23 @@ typedef struct
 bool srxlFrameFlightPackCurrent(sbuf_t *dst, timeUs_t currentTimeUs)
 {
     uint16_t amps = getAmperage() / 10;
-    uint16_t mah  = getMAhDrawn();
+    uint16_t mah = getMAhDrawn();
     static uint16_t sentAmps;
     static uint16_t sentMah;
     static timeUs_t lastTimeSentFPmAh = 0;
 
     timeUs_t keepAlive = currentTimeUs - lastTimeSentFPmAh;
 
-    if ( (amps != sentAmps) || (mah != sentMah) ||
-         keepAlive > FP_MAH_KEEPALIVE_TIME_OUT ) {
+    if ((amps != sentAmps) || (mah != sentMah) ||
+        keepAlive > FP_MAH_KEEPALIVE_TIME_OUT) {
         sbufWriteU8(dst, SRXL_FRAMETYPE_TELE_FP_MAH);
         sbufWriteU8(dst, SRXL_FRAMETYPE_SID);
         sbufWriteU16(dst, amps);
         sbufWriteU16(dst, mah);
-        sbufWriteU16(dst, 0x7fff);            // temp A
-        sbufWriteU16(dst, 0x7fff);            // Amps B
-        sbufWriteU16(dst, 0x7fff);            // mAH B
-        sbufWriteU16(dst, 0x7fff);            // temp B
+        sbufWriteU16(dst, 0x7fff); // temp A
+        sbufWriteU16(dst, 0x7fff); // Amps B
+        sbufWriteU16(dst, 0x7fff); // mAH B
+        sbufWriteU16(dst, 0x7fff); // temp B
         sbufWriteU16(dst, 0xffff);
 
         sentAmps = amps;
@@ -214,13 +213,13 @@ bool srxlFrameFlightPackCurrent(sbuf_t *dst, timeUs_t currentTimeUs)
     return false;
 }
 
-#if defined (USE_SPEKTRUM_CMS_TELEMETRY) && defined (USE_CMS)
+#if defined(USE_SPEKTRUM_CMS_TELEMETRY) && defined(USE_CMS)
 
 // Betaflight CMS using Spektrum Tx telemetry TEXT_GEN sensor as display.
 
-#define SPEKTRUM_SRXL_DEVICE_TEXTGEN (0x0C)     // Text Generator
-#define SPEKTRUM_SRXL_DEVICE_TEXTGEN_ROWS (9)   // Text Generator ROWS
-#define SPEKTRUM_SRXL_DEVICE_TEXTGEN_COLS (13)  // Text Generator COLS
+#define SPEKTRUM_SRXL_DEVICE_TEXTGEN (0x0C)    // Text Generator
+#define SPEKTRUM_SRXL_DEVICE_TEXTGEN_ROWS (9)  // Text Generator ROWS
+#define SPEKTRUM_SRXL_DEVICE_TEXTGEN_COLS (13) // Text Generator COLS
 
 /*
 typedef struct
@@ -232,7 +231,7 @@ typedef struct
 } STRU_SPEKTRUM_SRXL_TEXTGEN;
 */
 
-#if ( SPEKTRUM_SRXL_TEXTGEN_BUFFER_COLS > SPEKTRUM_SRXL_DEVICE_TEXTGEN_COLS )
+#if (SPEKTRUM_SRXL_TEXTGEN_BUFFER_COLS > SPEKTRUM_SRXL_DEVICE_TEXTGEN_COLS)
 static char srxlTextBuff[SPEKTRUM_SRXL_TEXTGEN_BUFFER_ROWS][SPEKTRUM_SRXL_TEXTGEN_BUFFER_COLS];
 static bool lineSent[SPEKTRUM_SRXL_TEXTGEN_BUFFER_ROWS];
 #else
@@ -245,10 +244,10 @@ static bool lineSent[SPEKTRUM_SRXL_DEVICE_TEXTGEN_ROWS];
 int spektrumTmTextGenPutChar(uint8_t col, uint8_t row, char c)
 {
     if (row < SPEKTRUM_SRXL_TEXTGEN_BUFFER_ROWS && col < SPEKTRUM_SRXL_TEXTGEN_BUFFER_COLS) {
-      // Only update and force a tm transmision if something has actually changed.
+        // Only update and force a tm transmision if something has actually changed.
         if (srxlTextBuff[row][col] != c) {
-          srxlTextBuff[row][col] = c;
-          lineSent[row] = false;
+            srxlTextBuff[row][col] = c;
+            lineSent[row] = false;
         }
     }
     return 0;
@@ -287,21 +286,20 @@ bool srxlFrameText(sbuf_t *dst, timeUs_t currentTimeUs)
 
 static uint8_t vtxDeviceType;
 
-static void collectVtxTmData(spektrumVtx_t * vtx)
+static void collectVtxTmData(spektrumVtx_t *vtx)
 {
     const vtxDevice_t *vtxDevice = vtxCommonDevice();
     vtxDeviceType = vtxCommonGetDeviceType(vtxDevice);
 
     // Collect all data from VTX, if VTX is ready
     if (vtxDevice == NULL || !(vtxCommonGetBandAndChannel(vtxDevice, &vtx->band, &vtx->channel) &&
-           vtxCommonGetPitMode(vtxDevice, &vtx->pitMode) &&
-           vtxCommonGetPowerIndex(vtxDevice, &vtx->power)) )
-        {
-            vtx->band    = 0;
-            vtx->channel = 0;
-            vtx->power   = 0;
-            vtx->pitMode = 0;
-        }
+                               vtxCommonGetPitMode(vtxDevice, &vtx->pitMode) &&
+                               vtxCommonGetPowerIndex(vtxDevice, &vtx->power))) {
+        vtx->band = 0;
+        vtx->channel = 0;
+        vtx->power = 0;
+        vtx->pitMode = 0;
+    }
 
     vtx->powerValue = 0;
 #ifdef USE_SPEKTRUM_REGION_CODES
@@ -312,49 +310,48 @@ static void collectVtxTmData(spektrumVtx_t * vtx)
 }
 
 // Reverse lookup, device power index to Spektrum power range index.
-static void convertVtxPower(spektrumVtx_t * vtx)
-    {
-        uint8_t const * powerIndexTable = NULL;
+static void convertVtxPower(spektrumVtx_t *vtx)
+{
+    uint8_t const *powerIndexTable = NULL;
 
-        switch (vtxDeviceType) {
+    switch (vtxDeviceType) {
 
 #if defined(USE_VTX_TRAMP)
-        case VTXDEV_TRAMP:
-            powerIndexTable = vtxTrampPi;
-            vtx->powerValue = trampPowerTable[vtx->power -1];      // Lookup the device power value, 0-based table vs 1-based index. Doh.
-            break;
+    case VTXDEV_TRAMP:
+        powerIndexTable = vtxTrampPi;
+        vtx->powerValue = trampPowerTable[vtx->power - 1]; // Lookup the device power value, 0-based table vs 1-based index. Doh.
+        break;
 #endif
 #if defined(USE_VTX_SMARTAUDIO)
-        case VTXDEV_SMARTAUDIO:
-            powerIndexTable = vtxSaPi;
-            vtx->powerValue = saPowerTable[vtx->power -1].rfpower;
-            break;
+    case VTXDEV_SMARTAUDIO:
+        powerIndexTable = vtxSaPi;
+        vtx->powerValue = saPowerTable[vtx->power - 1].rfpower;
+        break;
 #endif
 #if defined(USE_VTX_RTC6705)
-        case VTXDEV_RTC6705:
-            powerIndexTable = vtxRTC6705Pi;
-            // No power value table available.Hard code some "knowledge" here. Doh.
-            vtx->powerValue = vtx->power == VTX_6705_POWER_200 ? 200 : 25;
-            break;
+    case VTXDEV_RTC6705:
+        powerIndexTable = vtxRTC6705Pi;
+        // No power value table available.Hard code some "knowledge" here. Doh.
+        vtx->powerValue = vtx->power == VTX_6705_POWER_200 ? 200 : 25;
+        break;
 #endif
 
-        case VTXDEV_UNKNOWN:
-        case VTXDEV_UNSUPPORTED:
-        default:
-          break;
-
-        }
-
-        if (powerIndexTable != NULL) {
-            for (int i = 0; i < SPEKTRUM_VTX_POWER_COUNT; i++)
-                if (powerIndexTable[i] >= vtx->power) {
-                    vtx->power = i;                                    // Translate device power index to Spektrum power index.
-                    break;
-                }
-        }
+    case VTXDEV_UNKNOWN:
+    case VTXDEV_UNSUPPORTED:
+    default:
+        break;
     }
 
-static void convertVtxTmData(spektrumVtx_t * vtx)
+    if (powerIndexTable != NULL) {
+        for (int i = 0; i < SPEKTRUM_VTX_POWER_COUNT; i++)
+            if (powerIndexTable[i] >= vtx->power) {
+                vtx->power = i; // Translate device power index to Spektrum power index.
+                break;
+            }
+    }
+}
+
+static void convertVtxTmData(spektrumVtx_t *vtx)
 {
     // Convert from internal band indexes to Spektrum indexes
     for (int i = 0; i < SPEKTRUM_VTX_BAND_COUNT; i++) {
@@ -401,16 +398,16 @@ static bool srxlFrameVTX(sbuf_t *dst, timeUs_t currentTimeUs)
         convertVtxTmData(&vtx);
 
         if ((memcmp(&vtxSent, &vtx, sizeof(spektrumVtx_t)) != 0) ||
-            ((currentTimeUs - lastTimeSentVtx) > VTX_KEEPALIVE_TIME_OUT) ) {
+            ((currentTimeUs - lastTimeSentVtx) > VTX_KEEPALIVE_TIME_OUT)) {
             // Fill in the VTX tm structure
             sbufWriteU8(dst, TELE_DEVICE_VTX);
             sbufWriteU8(dst, SRXL_FRAMETYPE_SID);
-            sbufWriteU8(dst,  vtx.band);
-            sbufWriteU8(dst,  vtx.channel);
-            sbufWriteU8(dst,  vtx.pitMode);
-            sbufWriteU8(dst,  vtx.power);
+            sbufWriteU8(dst, vtx.band);
+            sbufWriteU8(dst, vtx.channel);
+            sbufWriteU8(dst, vtx.pitMode);
+            sbufWriteU8(dst, vtx.power);
             sbufWriteU16(dst, vtx.powerValue);
-            sbufWriteU8(dst,  vtx.region);
+            sbufWriteU8(dst, vtx.region);
 
             sbufFill(dst, 0xFF, STRU_TELE_VTX_RESERVE_COUNT);
 
@@ -423,31 +420,30 @@ static bool srxlFrameVTX(sbuf_t *dst, timeUs_t currentTimeUs)
 }
 #endif // USE_SPEKTRUM_VTX_TELEMETRY && USE_SPEKTRUM_VTX_CONTROL && USE_VTX_COMMON
 
-
 // Schedule array to decide how often each type of frame is sent
 // The frames are scheduled in sets of 3 frames, 2 mandatory and 1 user frame.
 // The user frame type is cycled for each set.
 // Example. QOS, RPM,.CURRENT, QOS, RPM, TEXT. QOS, RPM, CURRENT, etc etc
 
-#define SRXL_SCHEDULE_MANDATORY_COUNT  2 // Mandatory QOS and RPM sensors
+#define SRXL_SCHEDULE_MANDATORY_COUNT 2 // Mandatory QOS and RPM sensors
 
-#define SRXL_FP_MAH_COUNT    1
+#define SRXL_FP_MAH_COUNT 1
 
-#if defined (USE_SPEKTRUM_CMS_TELEMETRY) && defined (USE_CMS)
-#define SRXL_SCHEDULE_CMS_COUNT  1
+#if defined(USE_SPEKTRUM_CMS_TELEMETRY) && defined(USE_CMS)
+#define SRXL_SCHEDULE_CMS_COUNT 1
 #else
-#define SRXL_SCHEDULE_CMS_COUNT  0
+#define SRXL_SCHEDULE_CMS_COUNT 0
 #endif
 
 #if defined(USE_SPEKTRUM_VTX_TELEMETRY) && defined(USE_SPEKTRUM_VTX_CONTROL) && defined(USE_VTX_COMMON)
-#define SRXL_VTX_TM_COUNT        1
+#define SRXL_VTX_TM_COUNT 1
 #else
-#define SRXL_VTX_TM_COUNT        0
+#define SRXL_VTX_TM_COUNT 0
 #endif
 
 #define SRXL_SCHEDULE_USER_COUNT (SRXL_FP_MAH_COUNT + SRXL_SCHEDULE_CMS_COUNT + SRXL_VTX_TM_COUNT)
-#define SRXL_SCHEDULE_COUNT_MAX  (SRXL_SCHEDULE_MANDATORY_COUNT + 1)
-#define SRXL_TOTAL_COUNT         (SRXL_SCHEDULE_MANDATORY_COUNT + SRXL_SCHEDULE_USER_COUNT)
+#define SRXL_SCHEDULE_COUNT_MAX (SRXL_SCHEDULE_MANDATORY_COUNT + 1)
+#define SRXL_TOTAL_COUNT (SRXL_SCHEDULE_MANDATORY_COUNT + SRXL_SCHEDULE_USER_COUNT)
 
 typedef bool (*srxlScheduleFnPtr)(sbuf_t *dst, timeUs_t currentTimeUs);
 
@@ -459,11 +455,10 @@ const srxlScheduleFnPtr srxlScheduleFuncs[SRXL_TOTAL_COUNT] = {
 #if defined(USE_SPEKTRUM_VTX_TELEMETRY) && defined(USE_SPEKTRUM_VTX_CONTROL) && defined(USE_VTX_COMMON)
     srxlFrameVTX,
 #endif
-#if defined (USE_SPEKTRUM_CMS_TELEMETRY) && defined (USE_CMS)
+#if defined(USE_SPEKTRUM_CMS_TELEMETRY) && defined(USE_CMS)
     srxlFrameText,
 #endif
 };
-
 
 static void processSrxl(timeUs_t currentTimeUs)
 {
@@ -480,7 +475,7 @@ static void processSrxl(timeUs_t currentTimeUs)
         srxlFnPtr = srxlScheduleFuncs[srxlScheduleIndex + srxlScheduleUserIndex];
         srxlScheduleUserIndex = (srxlScheduleUserIndex + 1) % SRXL_SCHEDULE_USER_COUNT;
 
-#if defined (USE_SPEKTRUM_CMS_TELEMETRY) && defined (USE_CMS)
+#if defined(USE_SPEKTRUM_CMS_TELEMETRY) && defined(USE_CMS)
         // Boost CMS performance by sending nothing else but CMS Text frames when in a CMS menu.
         // Sideeffect, all other reports are still not sent if user leaves CMS without a proper EXIT.
         if (cmsInMenu &&
@@ -488,7 +483,6 @@ static void processSrxl(timeUs_t currentTimeUs)
             srxlFnPtr = srxlFrameText;
         }
 #endif
-
     }
 
     if (srxlFnPtr) {
@@ -505,7 +499,7 @@ void initSrxlTelemetry(void)
     // check if there is a serial port open for SRXL telemetry (ie opened by the SRXL RX)
     // and feature is enabled, if so, set SRXL telemetry enabled
     srxlTelemetryEnabled = srxlRxIsActive();
- }
+}
 
 bool checkSrxlTelemetryState(void)
 {
@@ -521,7 +515,7 @@ void handleSrxlTelemetry(timeUs_t currentTimeUs)
         return;
     }
 
-    srxlTelemetryNow   = false;
+    srxlTelemetryNow = false;
     processSrxl(currentTimeUs);
 }
 #endif

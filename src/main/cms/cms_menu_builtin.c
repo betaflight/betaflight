@@ -54,7 +54,6 @@
 #include "cms/cms_menu_vtx_smartaudio.h"
 #include "cms/cms_menu_vtx_tramp.h"
 
-
 // Info
 
 static char infoGitRev[GIT_SHORT_REVISION_LENGTH + 1];
@@ -65,7 +64,7 @@ static char infoTargetName[] = __TARGET__;
 static long cmsx_InfoInit(void)
 {
     int i;
-    for ( i = 0 ; i < GIT_SHORT_REVISION_LENGTH ; i++) {
+    for (i = 0; i < GIT_SHORT_REVISION_LENGTH; i++) {
         if (shortGitRevision[i] >= 'a' && shortGitRevision[i] <= 'f')
             infoGitRev[i] = shortGitRevision[i] - 'a' + 'A';
         else
@@ -77,14 +76,13 @@ static long cmsx_InfoInit(void)
 }
 
 static OSD_Entry menuInfoEntries[] = {
-    { "--- INFO ---", OME_Label, NULL, NULL, 0 },
-    { "FWID", OME_String, NULL, BETAFLIGHT_IDENTIFIER, 0 },
-    { "FWVER", OME_String, NULL, FC_VERSION_STRING, 0 },
-    { "GITREV", OME_String, NULL, infoGitRev, 0 },
-    { "TARGET", OME_String, NULL, infoTargetName, 0 },
-    { "BACK", OME_Back, NULL, NULL, 0 },
-    { NULL, OME_END, NULL, NULL, 0 }
-};
+    {"--- INFO ---", OME_Label, NULL, NULL, 0},
+    {"FWID", OME_String, NULL, BETAFLIGHT_IDENTIFIER, 0},
+    {"FWVER", OME_String, NULL, FC_VERSION_STRING, 0},
+    {"GITREV", OME_String, NULL, infoGitRev, 0},
+    {"TARGET", OME_String, NULL, infoTargetName, 0},
+    {"BACK", OME_Back, NULL, NULL, 0},
+    {NULL, OME_END, NULL, NULL, 0}};
 
 static CMS_Menu menuInfo = {
 #ifdef CMS_MENU_DEBUG
@@ -93,36 +91,34 @@ static CMS_Menu menuInfo = {
 #endif
     .onEnter = cmsx_InfoInit,
     .onExit = NULL,
-    .entries = menuInfoEntries
-};
+    .entries = menuInfoEntries};
 
 // Features
 
 static OSD_Entry menuFeaturesEntries[] =
-{
-    {"--- FEATURES ---", OME_Label, NULL, NULL, 0},
+    {
+        {"--- FEATURES ---", OME_Label, NULL, NULL, 0},
 
 #if defined(USE_BLACKBOX)
-    {"BLACKBOX", OME_Submenu, cmsMenuChange, &cmsx_menuBlackbox, 0},
+        {"BLACKBOX", OME_Submenu, cmsMenuChange, &cmsx_menuBlackbox, 0},
 #endif
 #if defined(USE_VTX_CONTROL)
 #if defined(USE_VTX_RTC6705)
-    {"VTX", OME_Submenu, cmsMenuChange, &cmsx_menuVtxRTC6705, 0},
+        {"VTX", OME_Submenu, cmsMenuChange, &cmsx_menuVtxRTC6705, 0},
 #endif // VTX_RTC6705
 #if defined(USE_VTX_SMARTAUDIO)
-    {"VTX SA", OME_Submenu, cmsMenuChange, &cmsx_menuVtxSmartAudio, 0},
+        {"VTX SA", OME_Submenu, cmsMenuChange, &cmsx_menuVtxSmartAudio, 0},
 #endif
 #if defined(USE_VTX_TRAMP)
-    {"VTX TR", OME_Submenu, cmsMenuChange, &cmsx_menuVtxTramp, 0},
+        {"VTX TR", OME_Submenu, cmsMenuChange, &cmsx_menuVtxTramp, 0},
 #endif
 #endif // VTX_CONTROL
 #ifdef USE_LED_STRIP
-    {"LED STRIP", OME_Submenu, cmsMenuChange, &cmsx_menuLedstrip, 0},
+        {"LED STRIP", OME_Submenu, cmsMenuChange, &cmsx_menuLedstrip, 0},
 #endif // LED_STRIP
-    {"POWER", OME_Submenu, cmsMenuChange, &cmsx_menuPower, 0},
-    {"BACK", OME_Back, NULL, NULL, 0},
-    {NULL, OME_END, NULL, NULL, 0}
-};
+        {"POWER", OME_Submenu, cmsMenuChange, &cmsx_menuPower, 0},
+        {"BACK", OME_Back, NULL, NULL, 0},
+        {NULL, OME_END, NULL, NULL, 0}};
 
 static CMS_Menu menuFeatures = {
 #ifdef CMS_MENU_DEBUG
@@ -137,25 +133,24 @@ static CMS_Menu menuFeatures = {
 // Main
 
 static OSD_Entry menuMainEntries[] =
-{
-    {"-- MAIN --",  OME_Label, NULL, NULL, 0},
+    {
+        {"-- MAIN --", OME_Label, NULL, NULL, 0},
 
-    {"PROFILE",     OME_Submenu,  cmsMenuChange, &cmsx_menuImu, 0},
-    {"FEATURES",    OME_Submenu,  cmsMenuChange, &menuFeatures, 0},
+        {"PROFILE", OME_Submenu, cmsMenuChange, &cmsx_menuImu, 0},
+        {"FEATURES", OME_Submenu, cmsMenuChange, &menuFeatures, 0},
 #ifdef USE_OSD
-    {"OSD",         OME_Submenu,  cmsMenuChange, &cmsx_menuOsd, 0},
+        {"OSD", OME_Submenu, cmsMenuChange, &cmsx_menuOsd, 0},
 #endif
-    {"FC&FW INFO",  OME_Submenu,  cmsMenuChange, &menuInfo, 0},
-    {"MISC",        OME_Submenu,  cmsMenuChange, &cmsx_menuMisc, 0},
-    {"EXIT",        OME_OSD_Exit, cmsMenuExit,   (void *)CMS_EXIT, 0},
-    {"SAVE&EXIT",   OME_OSD_Exit, cmsMenuExit,   (void *)CMS_EXIT_SAVE, 0},
-    {"SAVE&REBOOT", OME_OSD_Exit, cmsMenuExit,   (void *)CMS_EXIT_SAVEREBOOT, 0},
+        {"FC&FW INFO", OME_Submenu, cmsMenuChange, &menuInfo, 0},
+        {"MISC", OME_Submenu, cmsMenuChange, &cmsx_menuMisc, 0},
+        {"EXIT", OME_OSD_Exit, cmsMenuExit, (void *)CMS_EXIT, 0},
+        {"SAVE&EXIT", OME_OSD_Exit, cmsMenuExit, (void *)CMS_EXIT_SAVE, 0},
+        {"SAVE&REBOOT", OME_OSD_Exit, cmsMenuExit, (void *)CMS_EXIT_SAVEREBOOT, 0},
 #ifdef CMS_MENU_DEBUG
-    {"ERR SAMPLE",  OME_Submenu,  cmsMenuChange, &menuInfoEntries[0], 0},
+        {"ERR SAMPLE", OME_Submenu, cmsMenuChange, &menuInfoEntries[0], 0},
 #endif
 
-    {NULL,OME_END, NULL, NULL, 0}
-};
+        {NULL, OME_END, NULL, NULL, 0}};
 
 CMS_Menu menuMain = {
 #ifdef CMS_MENU_DEBUG

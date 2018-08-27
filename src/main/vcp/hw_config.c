@@ -42,18 +42,17 @@
 
 #include "common/utils.h"
 
-
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 ErrorStatus HSEStartUpStatus;
 EXTI_InitTypeDef EXTI_InitStructure;
-__IO uint32_t packetSent;                                     // HJI
-extern __IO uint32_t receiveLength;                          // HJI
+__IO uint32_t packetSent;           // HJI
+extern __IO uint32_t receiveLength; // HJI
 
-uint8_t receiveBuffer[64];                                   // HJI
-uint32_t sendLength;                                          // HJI
+uint8_t receiveBuffer[64]; // HJI
+uint32_t sendLength;       // HJI
 static void IntToUnicode(uint32_t value, uint8_t *pbuf, uint8_t len);
 static void (*ctrlLineStateCb)(void *context, uint16_t ctrlLineState);
 static void *ctrlLineStateCbContext;
@@ -86,7 +85,7 @@ void Set_System(void)
      To reconfigure the default setting of SystemInit() function, refer to
      system_stm32f10x.c file
      */
-#if defined(STM32L1XX_MD) || defined(STM32L1XX_HD)|| defined(STM32L1XX_MD_PLUS) || defined(STM32F37X) || defined(STM32F303xC)
+#if defined(STM32L1XX_MD) || defined(STM32L1XX_HD) || defined(STM32L1XX_MD_PLUS) || defined(STM32F37X) || defined(STM32F303xC)
     /* Enable the SYSCFG module clock */
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
 #endif /* STM32L1XX_XD */
@@ -188,7 +187,7 @@ void USB_Interrupts_Config(void)
     NVIC_InitTypeDef NVIC_InitStructure;
 
     /* 2 bit for pre-emption priority, 2 bits for subpriority */
-    NVIC_PriorityGroupConfig(NVIC_PRIORITY_GROUPING);     // is this really neccesary?
+    NVIC_PriorityGroupConfig(NVIC_PRIORITY_GROUPING); // is this really neccesary?
 
     /* Enable the USB interrupt */
     NVIC_InitStructure.NVIC_IRQChannel = USB_LP_CAN1_RX0_IRQn;
@@ -217,12 +216,12 @@ void USB_Interrupts_Disable(void)
     NVIC_InitTypeDef NVIC_InitStructure;
 
     /* Disable the USB interrupt */
-    NVIC_InitStructure.NVIC_IRQChannel    = USB_LP_CAN1_RX0_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannel = USB_LP_CAN1_RX0_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelCmd = DISABLE;
     NVIC_Init(&NVIC_InitStructure);
 
     /* Disable the USB Wake-up interrupt */
-    NVIC_InitStructure.NVIC_IRQChannel    = USBWakeUp_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannel = USBWakeUp_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelCmd = DISABLE;
     NVIC_Init(&NVIC_InitStructure);
 }
@@ -250,9 +249,9 @@ void Get_SerialNum(void)
 {
     uint32_t Device_Serial0, Device_Serial1, Device_Serial2;
 
-    Device_Serial0 = *(uint32_t*)ID1;
-    Device_Serial1 = *(uint32_t*)ID2;
-    Device_Serial2 = *(uint32_t*)ID3;
+    Device_Serial0 = *(uint32_t *)ID1;
+    Device_Serial1 = *(uint32_t *)ID2;
+    Device_Serial2 = *(uint32_t *)ID3;
 
     Device_Serial0 += Device_Serial2;
 
@@ -329,7 +328,7 @@ uint32_t CDC_Send_FreeBytes(void)
  * Output         : None.
  * Return         : None.
  *******************************************************************************/
-uint32_t CDC_Receive_DATA(uint8_t* recvBuf, uint32_t len)
+uint32_t CDC_Receive_DATA(uint8_t *recvBuf, uint32_t len)
 {
     static uint8_t offset = 0;
     uint8_t i;
@@ -383,7 +382,6 @@ uint8_t usbIsConnected(void)
 {
     return (bDeviceState != UNCONNECTED);
 }
-
 
 /*******************************************************************************
  * Function Name  : CDC_BaudRate.

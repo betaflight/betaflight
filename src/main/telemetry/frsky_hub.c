@@ -83,57 +83,56 @@ static portSharing_e frSkyHubPortSharing;
 
 static frSkyHubWriteByteFn *frSkyHubWriteByte = NULL;
 
-#define FRSKY_HUB_CYCLETIME_US    125000
+#define FRSKY_HUB_CYCLETIME_US 125000
 
-#define PROTOCOL_HEADER       0x5E
-#define PROTOCOL_TAIL         0x5E
+#define PROTOCOL_HEADER 0x5E
+#define PROTOCOL_TAIL 0x5E
 
 // Data Ids  (bp = before decimal point; af = after decimal point)
 // Official data IDs
-#define ID_GPS_ALTIDUTE_BP    0x01
-#define ID_GPS_ALTIDUTE_AP    0x09
-#define ID_TEMPRATURE1        0x02
-#define ID_RPM                0x03
-#define ID_FUEL_LEVEL         0x04
-#define ID_TEMPRATURE2        0x05
-#define ID_VOLT               0x06
-#define ID_ALTITUDE_BP        0x10
-#define ID_ALTITUDE_AP        0x21
-#define ID_GPS_SPEED_BP       0x11
-#define ID_GPS_SPEED_AP       0x19
-#define ID_LONGITUDE_BP       0x12
-#define ID_LONGITUDE_AP       0x1A
-#define ID_E_W                0x22
-#define ID_LATITUDE_BP        0x13
-#define ID_LATITUDE_AP        0x1B
-#define ID_N_S                0x23
-#define ID_COURSE_BP          0x14
-#define ID_COURSE_AP          0x1C
-#define ID_DATE_MONTH         0x15
-#define ID_YEAR               0x16
-#define ID_HOUR_MINUTE        0x17
-#define ID_SECOND             0x18
-#define ID_ACC_X              0x24
-#define ID_ACC_Y              0x25
-#define ID_ACC_Z              0x26
-#define ID_VOLTAGE_AMP        0x39
-#define ID_VOLTAGE_AMP_BP     0x3A
-#define ID_VOLTAGE_AMP_AP     0x3B
-#define ID_CURRENT            0x28
+#define ID_GPS_ALTIDUTE_BP 0x01
+#define ID_GPS_ALTIDUTE_AP 0x09
+#define ID_TEMPRATURE1 0x02
+#define ID_RPM 0x03
+#define ID_FUEL_LEVEL 0x04
+#define ID_TEMPRATURE2 0x05
+#define ID_VOLT 0x06
+#define ID_ALTITUDE_BP 0x10
+#define ID_ALTITUDE_AP 0x21
+#define ID_GPS_SPEED_BP 0x11
+#define ID_GPS_SPEED_AP 0x19
+#define ID_LONGITUDE_BP 0x12
+#define ID_LONGITUDE_AP 0x1A
+#define ID_E_W 0x22
+#define ID_LATITUDE_BP 0x13
+#define ID_LATITUDE_AP 0x1B
+#define ID_N_S 0x23
+#define ID_COURSE_BP 0x14
+#define ID_COURSE_AP 0x1C
+#define ID_DATE_MONTH 0x15
+#define ID_YEAR 0x16
+#define ID_HOUR_MINUTE 0x17
+#define ID_SECOND 0x18
+#define ID_ACC_X 0x24
+#define ID_ACC_Y 0x25
+#define ID_ACC_Z 0x26
+#define ID_VOLTAGE_AMP 0x39
+#define ID_VOLTAGE_AMP_BP 0x3A
+#define ID_VOLTAGE_AMP_AP 0x3B
+#define ID_CURRENT 0x28
 // User defined data IDs
-#define ID_GYRO_X             0x40
-#define ID_GYRO_Y             0x41
-#define ID_GYRO_Z             0x42
+#define ID_GYRO_X 0x40
+#define ID_GYRO_Y 0x41
+#define ID_GYRO_Z 0x42
 
-#define ID_VERT_SPEED         0x30 // opentx vario
+#define ID_VERT_SPEED 0x30 // opentx vario
 
-#define GPS_BAD_QUALITY       300
-#define GPS_MAX_HDOP_VAL      9999
+#define GPS_BAD_QUALITY 300
+#define GPS_MAX_HDOP_VAL 9999
 #define DELAY_FOR_BARO_INITIALISATION_US 5000000
-#define BLADE_NUMBER_DIVIDER  5 // should set 12 blades in Taranis
+#define BLADE_NUMBER_DIVIDER 5 // should set 12 blades in Taranis
 
-enum
-{
+enum {
     TELEMETRY_STATE_UNINITIALIZED,
     TELEMETRY_STATE_INITIALIZED_SERIAL,
     TELEMETRY_STATE_INITIALIZED_EXTERNAL,
@@ -150,7 +149,7 @@ static void serializeFrSkyHub(uint8_t data)
     } else if (data == 0x5d) {
         frSkyHubWriteByte(0x5d);
         frSkyHubWriteByte(0x3d);
-    } else{
+    } else {
         frSkyHubWriteByte(data);
     }
 }
@@ -170,9 +169,9 @@ static void sendTelemetryTail(void)
 }
 
 static void frSkyHubWriteByteInternal(const char data)
- {
-   serialWrite(frSkyHubPort, data);
- }
+{
+    serialWrite(frSkyHubPort, data);
+}
 
 static void sendAccel(void)
 {
@@ -214,7 +213,7 @@ static void sendTemperature1(void)
         data = escData->dataAge < ESC_DATA_INVALID ? escData->temperature : 0;
     }
 #elif defined(USE_BARO)
-    data = (baro.baroTemperature + 50)/ 100; // Airmamaf
+    data = (baro.baroTemperature + 50) / 100; // Airmamaf
 #else
     data = gyroGetTemperature() / 10;
 #endif
@@ -239,9 +238,9 @@ static void GPStoDDDMM_MMMM(int32_t mwiigps, gpsCoordinateDDDMMmmmm_t *result)
     int32_t absgps, deg, min;
 
     absgps = ABS(mwiigps);
-    deg    = absgps / GPS_DEGREES_DIVIDER;
-    absgps = (absgps - deg * GPS_DEGREES_DIVIDER) * 60;        // absgps = Minutes left * 10^7
-    min    = absgps / GPS_DEGREES_DIVIDER;                     // minutes left
+    deg = absgps / GPS_DEGREES_DIVIDER;
+    absgps = (absgps - deg * GPS_DEGREES_DIVIDER) * 60; // absgps = Minutes left * 10^7
+    min = absgps / GPS_DEGREES_DIVIDER;                 // minutes left
 
     if (telemetryConfig()->frsky_coordinate_format == FRSKY_FORMAT_DMS) {
         result->dddmm = deg * 100 + min;
@@ -249,7 +248,7 @@ static void GPStoDDDMM_MMMM(int32_t mwiigps, gpsCoordinateDDDMMmmmm_t *result)
         result->dddmm = deg * 60 + min;
     }
 
-    result->mmmm  = (absgps - min * GPS_DEGREES_DIVIDER) / 1000;
+    result->mmmm = (absgps - min * GPS_DEGREES_DIVIDER) / 1000;
 }
 
 static void sendLatLong(int32_t coord[2])
@@ -283,7 +282,7 @@ static void sendSatalliteSignalQualityAsTemperature2(uint8_t cycleNum)
 {
     uint16_t satellite = gpsSol.numSat;
 
-    if (gpsSol.hdop > GPS_BAD_QUALITY && ( (cycleNum % 16 ) < 8)) { // Every 1s
+    if (gpsSol.hdop > GPS_BAD_QUALITY && ((cycleNum % 16) < 8)) { // Every 1s
         satellite = constrain(gpsSol.hdop, 0, GPS_MAX_HDOP_VAL);
     }
     int16_t data;
@@ -312,7 +311,7 @@ static void sendSpeed(void)
 static void sendFakeLatLong(void)
 {
     // Heading is only displayed on OpenTX if non-zero lat/long is also sent
-    int32_t coord[2] = {0,0};
+    int32_t coord[2] = {0, 0};
 
     coord[LAT] = ((0.01f * telemetryConfig()->gpsNoFixLatitude) * GPS_DEGREES_DIVIDER);
     coord[LON] = ((0.01f * telemetryConfig()->gpsNoFixLongitude) * GPS_DEGREES_DIVIDER);
@@ -323,7 +322,7 @@ static void sendFakeLatLong(void)
 static void sendGPSLatLong(void)
 {
     static uint8_t gpsFixOccured = 0;
-    int32_t coord[2] = {0,0};
+    int32_t coord[2] = {0, 0};
 
     if (STATE(GPS_FIX) || gpsFixOccured == 1) {
         // If we have ever had a fix, send the last known lat/long
@@ -432,8 +431,7 @@ static void sendFakeLatLongThatAllowsHeadingDisplay(void)
     // Heading is only displayed on OpenTX if non-zero lat/long is also sent
     int32_t coord[2] = {
         1 * GPS_DEGREES_DIVIDER,
-        1 * GPS_DEGREES_DIVIDER
-    };
+        1 * GPS_DEGREES_DIVIDER};
 
     sendLatLong(coord);
 }
@@ -580,11 +578,12 @@ void processFrSkyHubTelemetry(timeUs_t currentTimeUs)
         } else
 #endif
 #if defined(USE_MAG)
-        if (sensors(SENSOR_MAG)) {
+            if (sensors(SENSOR_MAG)) {
             sendFakeLatLongThatAllowsHeadingDisplay();
         }
 #else
-        {}
+        {
+        }
 #endif
     }
 

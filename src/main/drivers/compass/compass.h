@@ -25,8 +25,8 @@
 #include "drivers/exti.h"
 
 typedef struct magDev_s {
-    sensorMagInitFuncPtr init;                              // initialize function
-    sensorMagReadFuncPtr read;                              // read 3 axis data function
+    sensorMagInitFuncPtr init; // initialize function
+    sensorMagReadFuncPtr read; // read 3 axis data function
     extiCallbackRec_t exti;
     busDevice_t busdev;
     sensor_align_e magAlign;

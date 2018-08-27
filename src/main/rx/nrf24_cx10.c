@@ -67,16 +67,16 @@
 enum {
     RATE_LOW = 0,
     RATE_MID = 1,
-    RATE_HIGH= 2
+    RATE_HIGH = 2
 };
 
-#define FLAG_FLIP       0x10 // goes to rudder channel
+#define FLAG_FLIP 0x10 // goes to rudder channel
 // flags1
-#define FLAG_MODE_MASK  0x03
-#define FLAG_HEADLESS   0x04
+#define FLAG_MODE_MASK 0x03
+#define FLAG_HEADLESS 0x04
 // flags2
-#define FLAG_VIDEO      0x02
-#define FLAG_PICTURE    0x04
+#define FLAG_VIDEO 0x02
+#define FLAG_PICTURE 0x04
 
 static rx_spi_protocol_e cx10Protocol;
 
@@ -88,24 +88,24 @@ typedef enum {
 
 STATIC_UNIT_TESTED protocol_state_t protocolState;
 
-#define CX10_PROTOCOL_PAYLOAD_SIZE  15
+#define CX10_PROTOCOL_PAYLOAD_SIZE 15
 #define CX10A_PROTOCOL_PAYLOAD_SIZE 19
 static uint8_t payloadSize;
 #define ACK_TO_SEND_COUNT 8
 
 #define CRC_LEN 2
-#define RX_TX_ADDR_LEN     5
+#define RX_TX_ADDR_LEN 5
 STATIC_UNIT_TESTED uint8_t txAddr[RX_TX_ADDR_LEN] = {0x55, 0x0F, 0x71, 0x0C, 0x00}; // converted XN297 address, 0xC710F55 (28 bit)
 STATIC_UNIT_TESTED uint8_t rxAddr[RX_TX_ADDR_LEN] = {0x49, 0x26, 0x87, 0x7d, 0x2f}; // converted XN297 address
 #define TX_ID_LEN 4
 STATIC_UNIT_TESTED uint8_t txId[TX_ID_LEN];
 
-#define CX10_RF_BIND_CHANNEL           0x02
+#define CX10_RF_BIND_CHANNEL 0x02
 #define RF_CHANNEL_COUNT 4
 STATIC_UNIT_TESTED uint8_t cx10RfChannelIndex = 0;
 STATIC_UNIT_TESTED uint8_t cx10RfChannels[RF_CHANNEL_COUNT]; // channels are set using txId from bind packet
 
-#define CX10_PROTOCOL_HOP_TIMEOUT  1500 // 1.5ms
+#define CX10_PROTOCOL_HOP_TIMEOUT 1500  // 1.5ms
 #define CX10A_PROTOCOL_HOP_TIMEOUT 6500 // 6.5ms
 static uint32_t hopTimeout;
 static uint32_t timeOfLastHop;
@@ -138,8 +138,8 @@ void cx10Nrf24SetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
     const uint8_t offset = (cx10Protocol == RX_SPI_NRF24_CX10) ? 0 : 4;
     rcData[RC_SPI_ROLL] = (PWM_RANGE_MAX + PWM_RANGE_MIN) - cx10ConvertToPwmUnsigned(&payload[5 + offset]);  // aileron
     rcData[RC_SPI_PITCH] = (PWM_RANGE_MAX + PWM_RANGE_MIN) - cx10ConvertToPwmUnsigned(&payload[7 + offset]); // elevator
-    rcData[RC_SPI_THROTTLE] = cx10ConvertToPwmUnsigned(&payload[9 + offset]); // throttle
-    rcData[RC_SPI_YAW] = cx10ConvertToPwmUnsigned(&payload[11 + offset]);  // rudder
+    rcData[RC_SPI_THROTTLE] = cx10ConvertToPwmUnsigned(&payload[9 + offset]);                                // throttle
+    rcData[RC_SPI_YAW] = cx10ConvertToPwmUnsigned(&payload[11 + offset]);                                    // rudder
     const uint8_t flags1 = payload[13 + offset];
     const uint8_t rate = flags1 & FLAG_MODE_MASK; // takes values 0, 1, 2
     if (rate == RATE_LOW) {
@@ -231,7 +231,7 @@ rx_spi_received_e cx10Nrf24DataReceived(uint8_t *payload)
         NRF24L01_SetChannel(CX10_RF_BIND_CHANNEL);
         NRF24L01_FlushTx();
         XN297_WritePayload(payload, payloadSize, rxAddr);
-        NRF24L01_SetTxMode();// enter transmit mode to send the packet
+        NRF24L01_SetTxMode(); // enter transmit mode to send the packet
         // wait for the ACK packet to send before changing channel
         static const int fifoDelayUs = 100;
         while (!(NRF24L01_ReadReg(NRF24L01_17_FIFO_STATUS) & BV(NRF24L01_17_FIFO_STATUS_TX_EMPTY))) {
@@ -242,7 +242,7 @@ rx_spi_received_e cx10Nrf24DataReceived(uint8_t *payload)
         for (int ii = 0; ii < RF_CHANNEL_COUNT; ++ii) {
             NRF24L01_SetChannel(cx10RfChannels[ii]);
             XN297_WritePayload(payload, payloadSize, rxAddr);
-            NRF24L01_SetTxMode();// enter transmit mode to send the packet
+            NRF24L01_SetTxMode(); // enter transmit mode to send the packet
             // wait for the ACK packet to send before changing channel
             while (!(NRF24L01_ReadReg(NRF24L01_17_FIFO_STATUS) & BV(NRF24L01_17_FIFO_STATUS_TX_EMPTY))) {
                 delayMicroseconds(fifoDelayUs);
@@ -253,7 +253,7 @@ rx_spi_received_e cx10Nrf24DataReceived(uint8_t *payload)
         if (totalDelayUs < delayBetweenPacketsUs) {
             delayMicroseconds(delayBetweenPacketsUs - totalDelayUs);
         }
-        NRF24L01_SetRxMode();//reenter receive mode after sending ACKs
+        NRF24L01_SetRxMode(); //reenter receive mode after sending ACKs
         if (ackCount > ACK_TO_SEND_COUNT) {
             NRF24L01_SetChannel(cx10RfChannels[0]);
             // and go into data state to wait for first data packet

@@ -44,7 +44,7 @@ void detectHardwareRevision(void)
     IOConfigGPIO(pin1, IOCFG_IPU);
 
     // Check hardware revision
-    delayMicroseconds(10);  // allow configuration to settle
+    delayMicroseconds(10); // allow configuration to settle
 
     /*
         if both PB12 and 13 are tied to GND then it is Rev3A (mini)
@@ -87,7 +87,7 @@ void updateHardwareRevision(void)
     /*
         if flash exists on PB3 then Rev1
     */
-    flashConfig_t flashConfig = { .csTag = IO_TAG(PB3) };
+    flashConfig_t flashConfig = {.csTag = IO_TAG(PB3)};
     if (flashInit(&flashConfig)) {
         hardwareRevision = BJF4_REV1;
     } else {

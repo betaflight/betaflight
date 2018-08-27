@@ -33,61 +33,61 @@ struct ioPortDef_s {
 
 #if defined(STM32F1)
 const struct ioPortDef_s ioPortDefs[] = {
-    { RCC_APB2(IOPA) },
-    { RCC_APB2(IOPB) },
-    { RCC_APB2(IOPC) },
-    { RCC_APB2(IOPD) },
-    { RCC_APB2(IOPE) },
-{
-#if defined (STM32F10X_HD) || defined (STM32F10X_XL) || defined (STM32F10X_HD_VL)
-    RCC_APB2(IOPF),
+    {RCC_APB2(IOPA)},
+    {RCC_APB2(IOPB)},
+    {RCC_APB2(IOPC)},
+    {RCC_APB2(IOPD)},
+    {RCC_APB2(IOPE)},
+    {
+#if defined(STM32F10X_HD) || defined(STM32F10X_XL) || defined(STM32F10X_HD_VL)
+        RCC_APB2(IOPF),
 #else
-    0,
+        0,
 #endif
-},
-{
-#if defined (STM32F10X_HD) || defined (STM32F10X_XL) || defined (STM32F10X_HD_VL)
-    RCC_APB2(IOPG),
+    },
+    {
+#if defined(STM32F10X_HD) || defined(STM32F10X_XL) || defined(STM32F10X_HD_VL)
+        RCC_APB2(IOPG),
 #else
-    0,
+        0,
 #endif
-},
+    },
 };
 #elif defined(STM32F3)
 const struct ioPortDef_s ioPortDefs[] = {
-    { RCC_AHB(GPIOA) },
-    { RCC_AHB(GPIOB) },
-    { RCC_AHB(GPIOC) },
-    { RCC_AHB(GPIOD) },
-    { RCC_AHB(GPIOE) },
-    { RCC_AHB(GPIOF) },
+    {RCC_AHB(GPIOA)},
+    {RCC_AHB(GPIOB)},
+    {RCC_AHB(GPIOC)},
+    {RCC_AHB(GPIOD)},
+    {RCC_AHB(GPIOE)},
+    {RCC_AHB(GPIOF)},
 };
 #elif defined(STM32F4)
 const struct ioPortDef_s ioPortDefs[] = {
-    { RCC_AHB1(GPIOA) },
-    { RCC_AHB1(GPIOB) },
-    { RCC_AHB1(GPIOC) },
-    { RCC_AHB1(GPIOD) },
-    { RCC_AHB1(GPIOE) },
-    { RCC_AHB1(GPIOF) },
+    {RCC_AHB1(GPIOA)},
+    {RCC_AHB1(GPIOB)},
+    {RCC_AHB1(GPIOC)},
+    {RCC_AHB1(GPIOD)},
+    {RCC_AHB1(GPIOE)},
+    {RCC_AHB1(GPIOF)},
 };
 #elif defined(STM32F7)
 const struct ioPortDef_s ioPortDefs[] = {
-    { RCC_AHB1(GPIOA) },
-    { RCC_AHB1(GPIOB) },
-    { RCC_AHB1(GPIOC) },
-    { RCC_AHB1(GPIOD) },
-    { RCC_AHB1(GPIOE) },
-    { RCC_AHB1(GPIOF) },
+    {RCC_AHB1(GPIOA)},
+    {RCC_AHB1(GPIOB)},
+    {RCC_AHB1(GPIOC)},
+    {RCC_AHB1(GPIOD)},
+    {RCC_AHB1(GPIOE)},
+    {RCC_AHB1(GPIOF)},
 };
 #endif
 
-ioRec_t* IO_Rec(IO_t io)
+ioRec_t *IO_Rec(IO_t io)
 {
     return io;
 }
 
-GPIO_TypeDef* IO_GPIO(IO_t io)
+GPIO_TypeDef *IO_GPIO(IO_t io)
 {
     const ioRec_t *ioRec = IO_Rec(io);
     return ioRec->gpio;
@@ -105,7 +105,7 @@ int IO_GPIOPortIdx(IO_t io)
     if (!io) {
         return -1;
     }
-    return (((size_t)IO_GPIO(io) - GPIOA_BASE) >> 10);     // ports are 0x400 apart
+    return (((size_t)IO_GPIO(io) - GPIOA_BASE) >> 10); // ports are 0x400 apart
 }
 
 int IO_EXTI_PortSourceGPIO(IO_t io)
@@ -124,7 +124,7 @@ int IO_GPIOPinIdx(IO_t io)
     if (!io) {
         return -1;
     }
-    return 31 - __builtin_clz(IO_Pin(io));  // CLZ is a bit faster than FFS
+    return 31 - __builtin_clz(IO_Pin(io)); // CLZ is a bit faster than FFS
 }
 
 int IO_EXTI_PinSource(IO_t io)
@@ -154,7 +154,7 @@ uint32_t IO_EXTI_Line(IO_t io)
 #elif defined(SIMULATOR_BUILD)
     return 0;
 #else
-# error "Unknown target type"
+#error "Unknown target type"
 #endif
 }
 
@@ -180,8 +180,7 @@ void IOWrite(IO_t io, bool hi)
 #elif defined(STM32F4)
     if (hi) {
         IO_GPIO(io)->BSRRL = IO_Pin(io);
-    }
-    else {
+    } else {
         IO_GPIO(io)->BSRRH = IO_Pin(io);
     }
 #else
@@ -229,7 +228,7 @@ void IOToggle(IO_t io)
     // setting other pins incorrectly because it change all pins' state.
 #if defined(USE_HAL_DRIVER)
     if (LL_GPIO_ReadOutputPort(IO_GPIO(io)) & mask) {
-        mask <<= 16;   // bit is set, shift mask to reset half
+        mask <<= 16; // bit is set, shift mask to reset half
     }
     LL_GPIO_SetOutputPin(IO_GPIO(io), mask);
 #elif defined(STM32F4)
@@ -240,7 +239,7 @@ void IOToggle(IO_t io)
     }
 #else
     if (IO_GPIO(io)->ODR & mask)
-        mask <<= 16;   // bit is set, shift mask to reset half
+        mask <<= 16; // bit is set, shift mask to reset half
 
     IO_GPIO(io)->BSRR = mask;
 #endif
@@ -327,8 +326,7 @@ void IOConfigGPIOAF(IO_t io, ioConfig_t cfg, uint8_t af)
         .Speed = (cfg >> 2) & 0x03,
         .OutputType = (cfg >> 4) & 0x01,
         .Pull = (cfg >> 5) & 0x03,
-        .Alternate = af
-    };
+        .Alternate = af};
 
     LL_GPIO_Init(IO_GPIO(io), &init);
 }
@@ -376,8 +374,8 @@ void IOConfigGPIOAF(IO_t io, ioConfig_t cfg, uint8_t af)
 #endif
 
 #if DEFIO_PORT_USED_COUNT > 0
-static const uint16_t ioDefUsedMask[DEFIO_PORT_USED_COUNT] = { DEFIO_PORT_USED_LIST };
-static const uint8_t ioDefUsedOffset[DEFIO_PORT_USED_COUNT] = { DEFIO_PORT_OFFSET_LIST };
+static const uint16_t ioDefUsedMask[DEFIO_PORT_USED_COUNT] = {DEFIO_PORT_USED_LIST};
+static const uint8_t ioDefUsedOffset[DEFIO_PORT_USED_COUNT] = {DEFIO_PORT_OFFSET_LIST};
 #else
 // Avoid -Wpedantic warning
 static const uint16_t ioDefUsedMask[1] = {0};
@@ -399,7 +397,7 @@ void IOInitGlobal(void)
     for (unsigned port = 0; port < ARRAYLEN(ioDefUsedMask); port++) {
         for (unsigned pin = 0; pin < sizeof(ioDefUsedMask[0]) * 8; pin++) {
             if (ioDefUsedMask[port] & (1 << pin)) {
-                ioRec->gpio = (GPIO_TypeDef *)(GPIOA_BASE + (port << 10));   // ports are 0x400 apart
+                ioRec->gpio = (GPIO_TypeDef *)(GPIOA_BASE + (port << 10)); // ports are 0x400 apart
                 ioRec->pin = 1 << pin;
                 ioRec++;
             }
@@ -425,4 +423,3 @@ IO_t IOGetByTag(ioTag_t tag)
     offset += ioDefUsedOffset[portIdx];
     return ioRecs + offset;
 }
-

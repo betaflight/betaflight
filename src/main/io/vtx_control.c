@@ -45,16 +45,13 @@
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
-
 PG_REGISTER_WITH_RESET_TEMPLATE(vtxConfig_t, vtxConfig, PG_VTX_CONFIG, 1);
 
 PG_RESET_TEMPLATE(vtxConfig_t, vtxConfig,
-//    .vtxChannelActivationConditions = { 0 },
-    .halfDuplex = true
-);
+                  //    .vtxChannelActivationConditions = { 0 },
+                  .halfDuplex = true);
 
 static uint8_t locked = 0;
-
 
 void vtxControlInit(void)
 {
@@ -63,7 +60,7 @@ void vtxControlInit(void)
 
 void vtxControlInputPoll(void)
 {
-  // Check variuos input sources for VTX config updates
+    // Check variuos input sources for VTX config updates
 #if defined(USE_SPEKTRUM_VTX_CONTROL)
     // Get VTX updates
     spektrumVtxControl();
@@ -114,8 +111,7 @@ void vtxUpdateActivatedChannel(void)
         for (uint8_t index = 0; index < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT; index++) {
             const vtxChannelActivationCondition_t *vtxChannelActivationCondition = &vtxConfig()->vtxChannelActivationConditions[index];
 
-            if (isRangeActive(vtxChannelActivationCondition->auxChannelIndex, &vtxChannelActivationCondition->range)
-                && index != lastIndex) {
+            if (isRangeActive(vtxChannelActivationCondition->auxChannelIndex, &vtxChannelActivationCondition->range) && index != lastIndex) {
                 lastIndex = index;
 
                 vtxSettingsConfigMutable()->band = vtxChannelActivationCondition->band;

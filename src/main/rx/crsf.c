@@ -48,8 +48,8 @@
 
 #include "telemetry/crsf.h"
 
-#define CRSF_TIME_NEEDED_PER_FRAME_US   1100 // 700 ms + 400 ms for potential ad-hoc request
-#define CRSF_TIME_BETWEEN_FRAMES_US     6667 // At fastest, frames are sent by the transmitter every 6.667 milliseconds, 150 Hz
+#define CRSF_TIME_NEEDED_PER_FRAME_US 1100 // 700 ms + 400 ms for potential ad-hoc request
+#define CRSF_TIME_BETWEEN_FRAMES_US 6667   // At fastest, frames are sent by the transmitter every 6.667 milliseconds, 150 Hz
 
 #define CRSF_DIGITAL_CHANNEL_MIN 172
 #define CRSF_DIGITAL_CHANNEL_MAX 1811
@@ -110,7 +110,7 @@ struct crsfPayloadRcChannelsPacked_s {
     unsigned int chan13 : 11;
     unsigned int chan14 : 11;
     unsigned int chan15 : 11;
-} __attribute__ ((__packed__));
+} __attribute__((__packed__));
 
 typedef struct crsfPayloadRcChannelsPacked_s crsfPayloadRcChannelsPacked_t;
 
@@ -157,30 +157,29 @@ STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c, void *data)
             if (crsfFrame.frame.type != CRSF_FRAMETYPE_RC_CHANNELS_PACKED) {
                 const uint8_t crc = crsfFrameCRC();
                 if (crc == crsfFrame.bytes[fullFrameLength - 1]) {
-                    switch (crsfFrame.frame.type)
-                    {
+                    switch (crsfFrame.frame.type) {
 #if defined(USE_MSP_OVER_TELEMETRY)
-                        case CRSF_FRAMETYPE_MSP_REQ:
-                        case CRSF_FRAMETYPE_MSP_WRITE: {
-                            uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + CRSF_FRAME_ORIGIN_DEST_SIZE;
-                            if (bufferCrsfMspFrame(frameStart, CRSF_FRAME_RX_MSP_FRAME_SIZE)) {
-                                crsfScheduleMspResponse();
-                            }
-                            break;
+                    case CRSF_FRAMETYPE_MSP_REQ:
+                    case CRSF_FRAMETYPE_MSP_WRITE: {
+                        uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + CRSF_FRAME_ORIGIN_DEST_SIZE;
+                        if (bufferCrsfMspFrame(frameStart, CRSF_FRAME_RX_MSP_FRAME_SIZE)) {
+                            crsfScheduleMspResponse();
                         }
+                        break;
+                    }
 #endif
 #if defined(USE_CRSF_CMS_TELEMETRY)
-                        case CRSF_FRAMETYPE_DEVICE_PING:
-                            crsfScheduleDeviceInfoResponse();
-                            break;
-                        case CRSF_FRAMETYPE_DISPLAYPORT_CMD: {
-                            uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + CRSF_FRAME_ORIGIN_DEST_SIZE;
-                            crsfProcessDisplayPortCmd(frameStart);
-                            break;
-                        }
+                    case CRSF_FRAMETYPE_DEVICE_PING:
+                        crsfScheduleDeviceInfoResponse();
+                        break;
+                    case CRSF_FRAMETYPE_DISPLAYPORT_CMD: {
+                        uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + CRSF_FRAME_ORIGIN_DEST_SIZE;
+                        crsfProcessDisplayPortCmd(frameStart);
+                        break;
+                    }
 #endif
-                        default:
-                            break;
+                    default:
+                        break;
                     }
                 }
             }
@@ -201,7 +200,7 @@ STATIC_UNIT_TESTED uint8_t crsfFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
                 return RX_FRAME_PENDING;
             }
             // unpack the RC channels
-            const crsfPayloadRcChannelsPacked_t* const rcChannels = (crsfPayloadRcChannelsPacked_t*)&crsfFrame.frame.payload;
+            const crsfPayloadRcChannelsPacked_t *const rcChannels = (crsfPayloadRcChannelsPacked_t *)&crsfFrame.frame.payload;
             crsfChannelData[0] = rcChannels->chan0;
             crsfChannelData[1] = rcChannels->chan1;
             crsfChannelData[2] = rcChannels->chan2;
@@ -272,13 +271,12 @@ bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     }
 
     serialPort = openSerialPort(portConfig->identifier,
-        FUNCTION_RX_SERIAL,
-        crsfDataReceive,
-        NULL,
-        CRSF_BAUDRATE,
-        CRSF_PORT_MODE,
-        CRSF_PORT_OPTIONS | (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0)
-        );
+                                FUNCTION_RX_SERIAL,
+                                crsfDataReceive,
+                                NULL,
+                                CRSF_BAUDRATE,
+                                CRSF_PORT_MODE,
+                                CRSF_PORT_OPTIONS | (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0));
 
     return serialPort != NULL;
 }

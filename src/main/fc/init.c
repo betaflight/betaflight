@@ -187,7 +187,7 @@ void processLoopback(void)
 #ifdef BUS_SWITCH_PIN
 void busSwitchInit(void)
 {
-static IO_t busSwitchResetPin        = IO_NONE;
+    static IO_t busSwitchResetPin = IO_NONE;
 
     busSwitchResetPin = IOGetByTag(IO_TAG(BUS_SWITCH_PIN));
     IOInit(busSwitchResetPin, OWNER_SYSTEM, 0);
@@ -205,7 +205,7 @@ void init(void)
     extern uint8_t tcm_code_start;
     extern uint8_t tcm_code_end;
     extern uint8_t tcm_code;
-    memcpy(&tcm_code_start, &tcm_code, (size_t) (&tcm_code_end - &tcm_code_start));
+    memcpy(&tcm_code_start, &tcm_code, (size_t)(&tcm_code_end - &tcm_code_start));
 #endif
 
 #ifdef USE_FAST_RAM
@@ -213,7 +213,7 @@ void init(void)
     extern uint8_t _sfastram_data;
     extern uint8_t _efastram_data;
     extern uint8_t _sfastram_idata;
-    memcpy(&_sfastram_data, &_sfastram_idata, (size_t) (&_efastram_data - &_sfastram_data));
+    memcpy(&_sfastram_data, &_sfastram_idata, (size_t)(&_efastram_data - &_sfastram_data));
 #endif
 
 #ifdef USE_HAL_DRIVER
@@ -273,7 +273,7 @@ void init(void)
     buttonsInit();
 
     // Check status of bind plug and exit if not active
-    delayMicroseconds(10);  // allow configuration to settle
+    delayMicroseconds(10); // allow configuration to settle
 
     if (!isMPUSoftReset()) {
 #if defined(BUTTON_A_PIN) && defined(BUTTON_B_PIN)
@@ -316,7 +316,7 @@ void init(void)
 
     delay(100);
 
-    timerInit();  // timer must be initialized before any channel is allocated
+    timerInit(); // timer must be initialized before any channel is allocated
 
 #ifdef BUS_SWITCH_PIN
     busSwitchInit();
@@ -328,13 +328,13 @@ void init(void)
 
 #if defined(AVOID_UART1_FOR_PWM_PPM)
     serialInit(featureIsEnabled(FEATURE_SOFTSERIAL),
-            featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART1 : SERIAL_PORT_NONE);
+               featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART1 : SERIAL_PORT_NONE);
 #elif defined(AVOID_UART2_FOR_PWM_PPM)
     serialInit(featureIsEnabled(FEATURE_SOFTSERIAL),
-            featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART2 : SERIAL_PORT_NONE);
+               featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART2 : SERIAL_PORT_NONE);
 #elif defined(AVOID_UART3_FOR_PWM_PPM)
     serialInit(featureIsEnabled(FEATURE_SOFTSERIAL),
-            featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART3 : SERIAL_PORT_NONE);
+               featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART3 : SERIAL_PORT_NONE);
 #else
     serialInit(featureIsEnabled(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
 #endif
@@ -355,7 +355,8 @@ void init(void)
     motorDevInit(&motorConfig()->dev, idlePulse, getMotorCount());
     systemState |= SYSTEM_STATE_MOTORS_READY;
 
-    if (0) {}
+    if (0) {
+    }
 #if defined(USE_PPM)
     else if (featureIsEnabled(FEATURE_RX_PPM)) {
         ppmRxInit(ppmConfig());
@@ -400,14 +401,14 @@ void init(void)
 #endif // USE_SPI
 
 #ifdef USE_USB_MSC
-/* MSC mode will start after init, but will not allow scheduler to run,
+    /* MSC mode will start after init, but will not allow scheduler to run,
  *  so there is no bottleneck in reading and writing data */
     mscInit();
     if (mscCheckBoot() || mscCheckButton()) {
         if (mscStart() == 0) {
-             mscWaitForButton();
+            mscWaitForButton();
         } else {
-             NVIC_SystemReset();
+            NVIC_SystemReset();
         }
     }
 #endif
@@ -692,7 +693,7 @@ void init(void)
 
 #ifdef SOFTSERIAL_LOOPBACK
     // FIXME this is a hack, perhaps add a FUNCTION_LOOPBACK to support it properly
-    loopbackPort = (serialPort_t*)&(softSerialPorts[0]);
+    loopbackPort = (serialPort_t *)&(softSerialPorts[0]);
     if (!loopbackPort->vTable) {
         loopbackPort = openSoftSerial(0, NULL, 19200, SERIAL_NOT_INVERTED);
     }

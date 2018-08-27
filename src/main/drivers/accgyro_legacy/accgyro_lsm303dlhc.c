@@ -110,9 +110,9 @@ uint8_t accelCalibrating = false;
 
 float accelOneG = 9.8065;
 
-int32_t accelSum100Hz[3] = { 0, 0, 0 };
+int32_t accelSum100Hz[3] = {0, 0, 0};
 
-int32_t accelSum500Hz[3] = { 0, 0, 0 };
+int32_t accelSum500Hz[3] = {0, 0, 0};
 
 int32_t accelSummedSamples100Hz[3];
 

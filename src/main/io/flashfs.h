@@ -35,7 +35,7 @@ uint32_t flashfsGetWriteBufferFreeSpace(void);
 uint32_t flashfsGetWriteBufferSize(void);
 int flashfsIdentifyStartOfFreeSpace(void);
 struct flashGeometry_s;
-const struct flashGeometry_s* flashfsGetGeometry(void);
+const struct flashGeometry_s *flashfsGetGeometry(void);
 
 void flashfsSeekAbs(uint32_t offset);
 void flashfsSeekRel(int32_t offset);

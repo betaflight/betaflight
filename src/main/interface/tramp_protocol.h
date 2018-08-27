@@ -22,9 +22,9 @@
 
 #include "drivers/serial.h"
 
-#define TRAMP_SERIAL_OPTIONS    SERIAL_NOT_INVERTED | SERIAL_BIDIR
-#define TRAMP_BAUD              9600
-#define TRAMP_PAYLOAD_LENGTH    12
+#define TRAMP_SERIAL_OPTIONS SERIAL_NOT_INVERTED | SERIAL_BIDIR
+#define TRAMP_BAUD 9600
+#define TRAMP_PAYLOAD_LENGTH 12
 
 typedef struct trampSettings_s {
     uint16_t frequency;

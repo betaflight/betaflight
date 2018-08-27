@@ -40,57 +40,55 @@
 
 #include "pg/adc.h"
 
-
 const adcDevice_t adcHardware[] = {
-    { .ADCx = ADC1, .rccADC = RCC_AHB(ADC12), .DMAy_Channelx = DMA1_Channel1 },
+    {.ADCx = ADC1, .rccADC = RCC_AHB(ADC12), .DMAy_Channelx = DMA1_Channel1},
 #ifdef ADC24_DMA_REMAP
-    { .ADCx = ADC2, .rccADC = RCC_AHB(ADC12), .DMAy_Channelx = DMA2_Channel3 },
+    {.ADCx = ADC2, .rccADC = RCC_AHB(ADC12), .DMAy_Channelx = DMA2_Channel3},
 #else
-    { .ADCx = ADC2, .rccADC = RCC_AHB(ADC12), .DMAy_Channelx = DMA2_Channel1 },
+    {.ADCx = ADC2, .rccADC = RCC_AHB(ADC12), .DMAy_Channelx = DMA2_Channel1},
 #endif
-    { .ADCx = ADC3, .rccADC = RCC_AHB(ADC34), .DMAy_Channelx = DMA2_Channel5 }
-};
+    {.ADCx = ADC3, .rccADC = RCC_AHB(ADC34), .DMAy_Channelx = DMA2_Channel5}};
 
 const adcTagMap_t adcTagMap[] = {
-    { DEFIO_TAG_E__PA0,  ADC_DEVICES_1,  ADC_Channel_1  }, // ADC1
-    { DEFIO_TAG_E__PA1,  ADC_DEVICES_1,  ADC_Channel_2  }, // ADC1
-    { DEFIO_TAG_E__PA2,  ADC_DEVICES_1,  ADC_Channel_3  }, // ADC1
-    { DEFIO_TAG_E__PA3,  ADC_DEVICES_1,  ADC_Channel_4  }, // ADC1
-    { DEFIO_TAG_E__PA4,  ADC_DEVICES_2,  ADC_Channel_1  }, // ADC2
-    { DEFIO_TAG_E__PA5,  ADC_DEVICES_2,  ADC_Channel_2  }, // ADC2
-    { DEFIO_TAG_E__PA6,  ADC_DEVICES_2,  ADC_Channel_3  }, // ADC2
-    { DEFIO_TAG_E__PA7,  ADC_DEVICES_4,  ADC_Channel_4  }, // ADC2
-    { DEFIO_TAG_E__PB0,  ADC_DEVICES_3,  ADC_Channel_12 }, // ADC3
-    { DEFIO_TAG_E__PB1,  ADC_DEVICES_3,  ADC_Channel_1  }, // ADC3
-    { DEFIO_TAG_E__PB2,  ADC_DEVICES_2,  ADC_Channel_12 }, // ADC2
-    { DEFIO_TAG_E__PB12, ADC_DEVICES_4,  ADC_Channel_3  }, // ADC4
-    { DEFIO_TAG_E__PB13, ADC_DEVICES_3,  ADC_Channel_5  }, // ADC3
-    { DEFIO_TAG_E__PB14, ADC_DEVICES_4,  ADC_Channel_4  }, // ADC4
-    { DEFIO_TAG_E__PB15, ADC_DEVICES_4,  ADC_Channel_5  }, // ADC4
-    { DEFIO_TAG_E__PC0,  ADC_DEVICES_12, ADC_Channel_6  }, // ADC12
-    { DEFIO_TAG_E__PC1,  ADC_DEVICES_12, ADC_Channel_7  }, // ADC12
-    { DEFIO_TAG_E__PC2,  ADC_DEVICES_12, ADC_Channel_8  }, // ADC12
-    { DEFIO_TAG_E__PC3,  ADC_DEVICES_12, ADC_Channel_9  }, // ADC12
-    { DEFIO_TAG_E__PC4,  ADC_DEVICES_2,  ADC_Channel_5  }, // ADC2
-    { DEFIO_TAG_E__PC5,  ADC_DEVICES_2,  ADC_Channel_11 }, // ADC2
-    { DEFIO_TAG_E__PD8,  ADC_DEVICES_4,  ADC_Channel_12 }, // ADC4
-    { DEFIO_TAG_E__PD9,  ADC_DEVICES_4,  ADC_Channel_13 }, // ADC4
-    { DEFIO_TAG_E__PD10, ADC_DEVICES_34, ADC_Channel_7  }, // ADC34
-    { DEFIO_TAG_E__PD11, ADC_DEVICES_34, ADC_Channel_8  }, // ADC34
-    { DEFIO_TAG_E__PD12, ADC_DEVICES_34, ADC_Channel_9  }, // ADC34
-    { DEFIO_TAG_E__PD13, ADC_DEVICES_34, ADC_Channel_10 }, // ADC34
-    { DEFIO_TAG_E__PD14, ADC_DEVICES_34, ADC_Channel_11 }, // ADC34
-    { DEFIO_TAG_E__PE7,  ADC_DEVICES_3,  ADC_Channel_13 }, // ADC3
-    { DEFIO_TAG_E__PE8,  ADC_DEVICES_34, ADC_Channel_6  }, // ADC34
-    { DEFIO_TAG_E__PE9,  ADC_DEVICES_3,  ADC_Channel_2  }, // ADC3
-    { DEFIO_TAG_E__PE10, ADC_DEVICES_3,  ADC_Channel_14 }, // ADC3
-    { DEFIO_TAG_E__PE11, ADC_DEVICES_3,  ADC_Channel_15 }, // ADC3
-    { DEFIO_TAG_E__PE12, ADC_DEVICES_3,  ADC_Channel_16 }, // ADC3
-    { DEFIO_TAG_E__PE13, ADC_DEVICES_3,  ADC_Channel_3  }, // ADC3
-    { DEFIO_TAG_E__PE14, ADC_DEVICES_4,  ADC_Channel_1  }, // ADC4
-    { DEFIO_TAG_E__PE15, ADC_DEVICES_4,  ADC_Channel_2  }, // ADC4
-    { DEFIO_TAG_E__PF2,  ADC_DEVICES_12, ADC_Channel_10 }, // ADC12
-    { DEFIO_TAG_E__PF4,  ADC_DEVICES_1,  ADC_Channel_5  }, // ADC1
+    {DEFIO_TAG_E__PA0, ADC_DEVICES_1, ADC_Channel_1},    // ADC1
+    {DEFIO_TAG_E__PA1, ADC_DEVICES_1, ADC_Channel_2},    // ADC1
+    {DEFIO_TAG_E__PA2, ADC_DEVICES_1, ADC_Channel_3},    // ADC1
+    {DEFIO_TAG_E__PA3, ADC_DEVICES_1, ADC_Channel_4},    // ADC1
+    {DEFIO_TAG_E__PA4, ADC_DEVICES_2, ADC_Channel_1},    // ADC2
+    {DEFIO_TAG_E__PA5, ADC_DEVICES_2, ADC_Channel_2},    // ADC2
+    {DEFIO_TAG_E__PA6, ADC_DEVICES_2, ADC_Channel_3},    // ADC2
+    {DEFIO_TAG_E__PA7, ADC_DEVICES_4, ADC_Channel_4},    // ADC2
+    {DEFIO_TAG_E__PB0, ADC_DEVICES_3, ADC_Channel_12},   // ADC3
+    {DEFIO_TAG_E__PB1, ADC_DEVICES_3, ADC_Channel_1},    // ADC3
+    {DEFIO_TAG_E__PB2, ADC_DEVICES_2, ADC_Channel_12},   // ADC2
+    {DEFIO_TAG_E__PB12, ADC_DEVICES_4, ADC_Channel_3},   // ADC4
+    {DEFIO_TAG_E__PB13, ADC_DEVICES_3, ADC_Channel_5},   // ADC3
+    {DEFIO_TAG_E__PB14, ADC_DEVICES_4, ADC_Channel_4},   // ADC4
+    {DEFIO_TAG_E__PB15, ADC_DEVICES_4, ADC_Channel_5},   // ADC4
+    {DEFIO_TAG_E__PC0, ADC_DEVICES_12, ADC_Channel_6},   // ADC12
+    {DEFIO_TAG_E__PC1, ADC_DEVICES_12, ADC_Channel_7},   // ADC12
+    {DEFIO_TAG_E__PC2, ADC_DEVICES_12, ADC_Channel_8},   // ADC12
+    {DEFIO_TAG_E__PC3, ADC_DEVICES_12, ADC_Channel_9},   // ADC12
+    {DEFIO_TAG_E__PC4, ADC_DEVICES_2, ADC_Channel_5},    // ADC2
+    {DEFIO_TAG_E__PC5, ADC_DEVICES_2, ADC_Channel_11},   // ADC2
+    {DEFIO_TAG_E__PD8, ADC_DEVICES_4, ADC_Channel_12},   // ADC4
+    {DEFIO_TAG_E__PD9, ADC_DEVICES_4, ADC_Channel_13},   // ADC4
+    {DEFIO_TAG_E__PD10, ADC_DEVICES_34, ADC_Channel_7},  // ADC34
+    {DEFIO_TAG_E__PD11, ADC_DEVICES_34, ADC_Channel_8},  // ADC34
+    {DEFIO_TAG_E__PD12, ADC_DEVICES_34, ADC_Channel_9},  // ADC34
+    {DEFIO_TAG_E__PD13, ADC_DEVICES_34, ADC_Channel_10}, // ADC34
+    {DEFIO_TAG_E__PD14, ADC_DEVICES_34, ADC_Channel_11}, // ADC34
+    {DEFIO_TAG_E__PE7, ADC_DEVICES_3, ADC_Channel_13},   // ADC3
+    {DEFIO_TAG_E__PE8, ADC_DEVICES_34, ADC_Channel_6},   // ADC34
+    {DEFIO_TAG_E__PE9, ADC_DEVICES_3, ADC_Channel_2},    // ADC3
+    {DEFIO_TAG_E__PE10, ADC_DEVICES_3, ADC_Channel_14},  // ADC3
+    {DEFIO_TAG_E__PE11, ADC_DEVICES_3, ADC_Channel_15},  // ADC3
+    {DEFIO_TAG_E__PE12, ADC_DEVICES_3, ADC_Channel_16},  // ADC3
+    {DEFIO_TAG_E__PE13, ADC_DEVICES_3, ADC_Channel_3},   // ADC3
+    {DEFIO_TAG_E__PE14, ADC_DEVICES_4, ADC_Channel_1},   // ADC4
+    {DEFIO_TAG_E__PE15, ADC_DEVICES_4, ADC_Channel_2},   // ADC4
+    {DEFIO_TAG_E__PF2, ADC_DEVICES_12, ADC_Channel_10},  // ADC12
+    {DEFIO_TAG_E__PF4, ADC_DEVICES_1, ADC_Channel_5},    // ADC1
 };
 
 void adcInit(const adcConfig_t *config)
@@ -107,7 +105,7 @@ void adcInit(const adcConfig_t *config)
     }
 
     if (config->rssi.enabled) {
-        adcOperatingConfig[ADC_RSSI].tag = config->rssi.ioTag;  //RSSI_ADC_CHANNEL;
+        adcOperatingConfig[ADC_RSSI].tag = config->rssi.ioTag; //RSSI_ADC_CHANNEL;
     }
 
     if (config->external1.enabled) {
@@ -115,7 +113,7 @@ void adcInit(const adcConfig_t *config)
     }
 
     if (config->current.enabled) {
-        adcOperatingConfig[ADC_CURRENT].tag = config->current.ioTag;  //CURRENT_METER_ADC_CHANNEL;
+        adcOperatingConfig[ADC_CURRENT].tag = config->current.ioTag; //CURRENT_METER_ADC_CHANNEL;
     }
 
     ADCDevice device = adcDeviceByInstance(ADC_INSTANCE);
@@ -148,10 +146,10 @@ void adcInit(const adcConfig_t *config)
 
     if ((device == ADCDEV_1) || (device == ADCDEV_2)) {
         // enable clock for ADC1+2
-        RCC_ADCCLKConfig(RCC_ADC12PLLCLK_Div256);  // 72 MHz divided by 256 = 281.25 kHz
+        RCC_ADCCLKConfig(RCC_ADC12PLLCLK_Div256); // 72 MHz divided by 256 = 281.25 kHz
     } else {
         // enable clock for ADC3+4
-        RCC_ADCCLKConfig(RCC_ADC34PLLCLK_Div256);  // 72 MHz divided by 256 = 281.25 kHz
+        RCC_ADCCLKConfig(RCC_ADC34PLLCLK_Div256); // 72 MHz divided by 256 = 281.25 kHz
     }
 
     RCC_ClockCmd(adc.rccADC, ENABLE);
@@ -183,7 +181,8 @@ void adcInit(const adcConfig_t *config)
     delay(10);
     ADC_SelectCalibrationMode(adc.ADCx, ADC_CalibrationMode_Single);
     ADC_StartCalibration(adc.ADCx);
-    while (ADC_GetCalibrationStatus(adc.ADCx) != RESET);
+    while (ADC_GetCalibrationStatus(adc.ADCx) != RESET)
+        ;
     ADC_VoltageRegulatorCmd(adc.ADCx, DISABLE);
 
     ADC_CommonInitTypeDef ADC_CommonInitStructure;
@@ -198,14 +197,14 @@ void adcInit(const adcConfig_t *config)
 
     ADC_StructInit(&ADC_InitStructure);
 
-    ADC_InitStructure.ADC_ContinuousConvMode    = ADC_ContinuousConvMode_Enable;
-    ADC_InitStructure.ADC_Resolution            = ADC_Resolution_12b;
+    ADC_InitStructure.ADC_ContinuousConvMode = ADC_ContinuousConvMode_Enable;
+    ADC_InitStructure.ADC_Resolution = ADC_Resolution_12b;
     ADC_InitStructure.ADC_ExternalTrigConvEvent = ADC_ExternalTrigConvEvent_0;
     ADC_InitStructure.ADC_ExternalTrigEventEdge = ADC_ExternalTrigEventEdge_None;
-    ADC_InitStructure.ADC_DataAlign             = ADC_DataAlign_Right;
-    ADC_InitStructure.ADC_OverrunMode           = ADC_OverrunMode_Disable;
-    ADC_InitStructure.ADC_AutoInjMode           = ADC_AutoInjec_Disable;
-    ADC_InitStructure.ADC_NbrOfRegChannel       = adcChannelCount;
+    ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;
+    ADC_InitStructure.ADC_OverrunMode = ADC_OverrunMode_Disable;
+    ADC_InitStructure.ADC_AutoInjMode = ADC_AutoInjec_Disable;
+    ADC_InitStructure.ADC_NbrOfRegChannel = adcChannelCount;
 
     ADC_Init(adc.ADCx, &ADC_InitStructure);
 
@@ -219,7 +218,8 @@ void adcInit(const adcConfig_t *config)
 
     ADC_Cmd(adc.ADCx, ENABLE);
 
-    while (!ADC_GetFlagStatus(adc.ADCx, ADC_FLAG_RDY));
+    while (!ADC_GetFlagStatus(adc.ADCx, ADC_FLAG_RDY))
+        ;
 
     ADC_DMAConfig(adc.ADCx, ADC_DMAMode_Circular);
 

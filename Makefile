@@ -187,12 +187,13 @@ CCACHE :=
 endif
 
 # Tool names
-CROSS_CC    := $(CCACHE) $(ARM_SDK_PREFIX)gcc
-CROSS_CXX   := $(CCACHE) $(ARM_SDK_PREFIX)g++
-CROSS_GDB   := $(ARM_SDK_PREFIX)gdb
-OBJCOPY     := $(ARM_SDK_PREFIX)objcopy
-OBJDUMP     := $(ARM_SDK_PREFIX)objdump
-SIZE        := $(ARM_SDK_PREFIX)size
+CROSS_CC    	:= $(CCACHE) $(ARM_SDK_PREFIX)gcc
+CROSS_CXX   	:= $(CCACHE) $(ARM_SDK_PREFIX)g++
+CROSS_GDB   	:= $(ARM_SDK_PREFIX)gdb
+OBJCOPY     	:= $(ARM_SDK_PREFIX)objcopy
+OBJDUMP     	:= $(ARM_SDK_PREFIX)objdump
+SIZE        	:= $(ARM_SDK_PREFIX)size
+CLANG_FORMAT 	:= clang-format
 
 #
 # Tool options.
@@ -427,6 +428,21 @@ cppcheck: $(CSOURCES)
 
 cppcheck-result.xml: $(CSOURCES)
 	$(V0) $(CPPCHECK) --xml-version=2 2> cppcheck-result.xml
+
+## Code formatting
+
+CLANG_FORMAT_FLAGS		:= --style=file
+CLANG_FORMAT_FIND_OPTS 	:= \( -name "*.c" -o -name "*.h" -o -name "*.cc" -o -name "*.cpp" \)
+CLANG_FORMAT_CMD 		:= $(CLANG_FORMAT) $(CLANG_FORMAT_FLAGS)
+
+codeformat:
+	$(V1) find src $(CLANG_FORMAT_FIND_OPTS) -print0 | xargs -0 $(CLANG_FORMAT_CMD) -i
+
+codeformat-check:
+	$(V1) find src $(CLANG_FORMAT_FIND_OPTS) -print0 | xargs -0 -n 1 sh -c 'if $(CLANG_FORMAT) $(CLANG_FORMAT_FLAGS) $$0 -output-replacements-xml | grep -q "</replacement>"; then \
+			echo "Incorrectly formatted file $$0" 1>&2; \
+			exit 255; \
+		fi';
 
 # mkdirs
 $(DL_DIR):

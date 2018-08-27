@@ -21,52 +21,55 @@
 //#define DEBUG_RC_CONTROLS
 
 extern "C" {
-    #include "platform.h"
+#include "platform.h"
 
-    #include "common/maths.h"
-    #include "common/axis.h"
-    #include "common/bitarray.h"
+#include "common/maths.h"
+#include "common/axis.h"
+#include "common/bitarray.h"
 
-    #include "pg/pg.h"
-    #include "pg/pg_ids.h"
-    #include "pg/rx.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+#include "pg/rx.h"
 
-    #include "blackbox/blackbox.h"
-    #include "blackbox/blackbox_fielddefs.h"
+#include "blackbox/blackbox.h"
+#include "blackbox/blackbox_fielddefs.h"
 
-    #include "drivers/sensor.h"
+#include "drivers/sensor.h"
 
-    #include "sensors/sensors.h"
-    #include "sensors/acceleration.h"
+#include "sensors/sensors.h"
+#include "sensors/acceleration.h"
 
-    #include "io/beeper.h"
+#include "io/beeper.h"
 
-    #include "rx/rx.h"
+#include "rx/rx.h"
 
-    #include "flight/pid.h"
+#include "flight/pid.h"
 
-    #include "fc/config.h"
-    #include "fc/controlrate_profile.h"
-    #include "fc/rc_modes.h"
-    #include "fc/rc_adjustments.h"
+#include "fc/config.h"
+#include "fc/controlrate_profile.h"
+#include "fc/rc_modes.h"
+#include "fc/rc_adjustments.h"
 
-    #include "fc/rc_controls.h"
-    #include "fc/runtime_config.h"
-    #include "fc/core.h"
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
+#include "fc/core.h"
 
-    #include "scheduler/scheduler.h"
+#include "scheduler/scheduler.h"
 }
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-void unsetArmingDisabled(armingDisableFlags_e flag) {
-  UNUSED(flag);
+void unsetArmingDisabled(armingDisableFlags_e flag)
+{
+    UNUSED(flag);
 }
 
-class RcControlsModesTest : public ::testing::Test {
-protected:
-    virtual void SetUp() {
+class RcControlsModesTest : public ::testing::Test
+{
+  protected:
+    virtual void SetUp()
+    {
     }
 };
 
@@ -163,9 +166,9 @@ TEST_F(RcControlsModesTest, updateActivatedModesUsingValidAuxConfigurationAndRXV
     rcData[AUX2] = PWM_RANGE_MIDDLE;
     rcData[AUX3] = PWM_RANGE_MIN;
     rcData[AUX4] = PWM_RANGE_MAX;
-    rcData[AUX5] = 899; // value lower that range minimum should be treated the same as the lowest range value
+    rcData[AUX5] = 899;  // value lower that range minimum should be treated the same as the lowest range value
     rcData[AUX6] = 2101; // value higher than the range maximum should be treated the same as the highest range value
-    rcData[AUX7] = 950; // value equal to range step upper boundary should not activate the mode
+    rcData[AUX7] = 950;  // value equal to range step upper boundary should not activate the mode
 
     // and
     boxBitmask_t activeBoxIds;
@@ -200,37 +203,43 @@ static int callCounts[CALL_COUNT_ITEM_COUNT];
 #define CALL_COUNTER(item) (callCounts[item])
 
 extern "C" {
-void beeperConfirmationBeeps(uint8_t) {
+void beeperConfirmationBeeps(uint8_t)
+{
     callCounts[COUNTER_QUEUE_CONFIRMATION_BEEP]++;
 }
 
-void beeper(beeperMode_e mode) {
+void beeper(beeperMode_e mode)
+{
     UNUSED(mode);
 }
 
-void changeControlRateProfile(uint8_t) {
+void changeControlRateProfile(uint8_t)
+{
     callCounts[COUNTER_CHANGE_CONTROL_RATE_PROFILE]++;
 }
-
 }
 
-void resetCallCounters(void) {
+void resetCallCounters(void)
+{
     memset(&callCounts, 0, sizeof(callCounts));
 }
 
 uint32_t fixedMillis;
 
 extern "C" {
-uint32_t millis(void) {
+uint32_t millis(void)
+{
     return fixedMillis;
 }
 
-uint32_t micros(void) {
+uint32_t micros(void)
+{
     return fixedMillis * 1000;
 }
 }
 
-void resetMillis(void) {
+void resetMillis(void)
+{
     fixedMillis = 0;
 }
 
@@ -238,34 +247,34 @@ void resetMillis(void) {
 #define DEFAULT_MAX_CHECK 1900
 
 extern "C" {
-    PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
-    void configureAdjustment(uint8_t index, uint8_t auxSwitchChannelIndex, const adjustmentConfig_t *adjustmentConfig);
+PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
+void configureAdjustment(uint8_t index, uint8_t auxSwitchChannelIndex, const adjustmentConfig_t *adjustmentConfig);
 
-    extern uint8_t adjustmentStateMask;
-    extern adjustmentState_t adjustmentStates[MAX_SIMULTANEOUS_ADJUSTMENT_COUNT];
+extern uint8_t adjustmentStateMask;
+extern adjustmentState_t adjustmentStates[MAX_SIMULTANEOUS_ADJUSTMENT_COUNT];
 
-    static const adjustmentConfig_t rateAdjustmentConfig = {
-        .adjustmentFunction = ADJUSTMENT_RC_RATE,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { 1 }
-    };
+static const adjustmentConfig_t rateAdjustmentConfig = {
+    .adjustmentFunction = ADJUSTMENT_RC_RATE,
+    .mode = ADJUSTMENT_MODE_STEP,
+    .data = {1}};
 }
-class RcControlsAdjustmentsTest : public ::testing::Test {
-protected:
+class RcControlsAdjustmentsTest : public ::testing::Test
+{
+  protected:
     controlRateConfig_t controlRateConfig = {
-            .rcRates[FD_ROLL] = 90,
-            .rcRates[FD_PITCH] = 90,
-            .rcExpo[FD_ROLL] = 0,
-            .rcExpo[FD_PITCH] = 0,
-            .thrMid8 = 0,
-            .thrExpo8 = 0,
-            .rates = {0, 0, 0},
-            .dynThrPID = 0,
-            .rcExpo[FD_YAW] = 0,
-            .tpa_breakpoint = 0
-    };
+        .rcRates[FD_ROLL] = 90,
+        .rcRates[FD_PITCH] = 90,
+        .rcExpo[FD_ROLL] = 0,
+        .rcExpo[FD_PITCH] = 0,
+        .thrMid8 = 0,
+        .thrExpo8 = 0,
+        .rates = {0, 0, 0},
+        .dynThrPID = 0,
+        .rcExpo[FD_YAW] = 0,
+        .tpa_breakpoint = 0};
 
-    virtual void SetUp() {
+    virtual void SetUp()
+    {
         adjustmentStateMask = 0;
         memset(&adjustmentStates, 0, sizeof(adjustmentStates));
 
@@ -286,7 +295,6 @@ protected:
         controlRateConfig.rates[2] = 0;
         controlRateConfig.dynThrPID = 0;
         controlRateConfig.tpa_breakpoint = 0;
-
     }
 };
 
@@ -318,17 +326,16 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
 {
     // given
     controlRateConfig_t controlRateConfig = {
-            .rcRates[FD_ROLL] = 90,
-            .rcRates[FD_PITCH] = 90,
-            .rcExpo[FD_ROLL] = 0,
-            .rcExpo[FD_PITCH] = 0,
-            .thrMid8 = 0,
-            .thrExpo8 = 0,
-            .rates = {0,0,0},
-            .dynThrPID = 0,
-            .rcExpo[FD_YAW] = 0,
-            .tpa_breakpoint = 0
-    };
+        .rcRates[FD_ROLL] = 90,
+        .rcRates[FD_PITCH] = 90,
+        .rcExpo[FD_ROLL] = 0,
+        .rcExpo[FD_PITCH] = 0,
+        .thrMid8 = 0,
+        .thrExpo8 = 0,
+        .rates = {0, 0, 0},
+        .dynThrPID = 0,
+        .rcExpo[FD_YAW] = 0,
+        .tpa_breakpoint = 0};
 
     // and
     PG_RESET(rxConfig);
@@ -355,7 +362,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
 
     // and
     uint8_t expectedAdjustmentStateMask =
-            (1 << 0);
+        (1 << 0);
 
     // and
     fixedMillis = 496;
@@ -383,11 +390,9 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     EXPECT_EQ(controlRateConfig.rcRates[FD_PITCH], 91);
     EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
 
-
     //
     // moving the switch back to the middle should immediately reset the state flag without increasing the value
     //
-
 
     // given
     rcData[AUX3] = PWM_RANGE_MIDDLE;
@@ -397,7 +402,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
 
     // and
     expectedAdjustmentStateMask = adjustmentStateMask &
-            ~(1 << 0);
+                                  ~(1 << 0);
 
     // when
     processRcAdjustments(&controlRateConfig);
@@ -405,7 +410,6 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     EXPECT_EQ(controlRateConfig.rcRates[FD_ROLL], 91);
     EXPECT_EQ(controlRateConfig.rcRates[FD_PITCH], 91);
     EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
-
 
     //
     // flipping the switch again, before the state reset would have occurred, allows the value to be increased again
@@ -415,7 +419,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
 
     // and
     expectedAdjustmentStateMask =
-            (1 << 0);
+        (1 << 0);
 
     // and
     fixedMillis = 499;
@@ -482,8 +486,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
 static const adjustmentConfig_t rateProfileAdjustmentConfig = {
     .adjustmentFunction = ADJUSTMENT_RATE_PROFILE,
     .mode = ADJUSTMENT_MODE_SELECT,
-    .data = { 3 }
-};
+    .data = {3}};
 
 TEST_F(RcControlsAdjustmentsTest, processRcRateProfileAdjustments)
 {
@@ -505,7 +508,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcRateProfileAdjustments)
 
     // and
     uint8_t expectedAdjustmentStateMask =
-            (1 << adjustmentIndex);
+        (1 << adjustmentIndex);
 
     // when
     processRcAdjustments(&controlRateConfig);
@@ -519,44 +522,38 @@ TEST_F(RcControlsAdjustmentsTest, processRcRateProfileAdjustments)
 static const adjustmentConfig_t pidPitchAndRollPAdjustmentConfig = {
     .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_P,
     .mode = ADJUSTMENT_MODE_STEP,
-    .data = { 1 }
-};
+    .data = {1}};
 
 static const adjustmentConfig_t pidPitchAndRollIAdjustmentConfig = {
     .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_I,
     .mode = ADJUSTMENT_MODE_STEP,
-    .data = { 1 }
-};
+    .data = {1}};
 
 static const adjustmentConfig_t pidPitchAndRollDAdjustmentConfig = {
     .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_D,
     .mode = ADJUSTMENT_MODE_STEP,
-    .data = { 1 }
-};
+    .data = {1}};
 
 static const adjustmentConfig_t pidYawPAdjustmentConfig = {
     .adjustmentFunction = ADJUSTMENT_YAW_P,
     .mode = ADJUSTMENT_MODE_STEP,
-    .data = { 1 }
-};
+    .data = {1}};
 
 static const adjustmentConfig_t pidYawIAdjustmentConfig = {
     .adjustmentFunction = ADJUSTMENT_YAW_I,
     .mode = ADJUSTMENT_MODE_STEP,
-    .data = { 1 }
-};
+    .data = {1}};
 
 static const adjustmentConfig_t pidYawDAdjustmentConfig = {
     .adjustmentFunction = ADJUSTMENT_YAW_D,
     .mode = ADJUSTMENT_MODE_STEP,
-    .data = { 1 }
-};
+    .data = {1}};
 
 TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0)
 {
     // given
     pidProfile_t pidProfile;
-    memset(&pidProfile, 0, sizeof (pidProfile));
+    memset(&pidProfile, 0, sizeof(pidProfile));
     pidProfile.pid[PID_PITCH].P = 0;
     pidProfile.pid[PID_PITCH].I = 10;
     pidProfile.pid[PID_PITCH].D = 20;
@@ -569,7 +566,7 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0)
     useAdjustmentConfig(&pidProfile);
     // and
     controlRateConfig_t controlRateConfig;
-    memset(&controlRateConfig, 0, sizeof (controlRateConfig));
+    memset(&controlRateConfig, 0, sizeof(controlRateConfig));
 
     configureAdjustment(0, AUX1 - NON_AUX_CHANNEL_COUNT, &pidPitchAndRollPAdjustmentConfig);
     configureAdjustment(1, AUX2 - NON_AUX_CHANNEL_COUNT, &pidPitchAndRollIAdjustmentConfig);
@@ -594,12 +591,12 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0)
 
     // and
     uint8_t expectedAdjustmentStateMask =
-            (1 << 0) |
-            (1 << 1) |
-            (1 << 2) |
-            (1 << 3) |
-            (1 << 4) |
-            (1 << 5);
+        (1 << 0) |
+        (1 << 1) |
+        (1 << 2) |
+        (1 << 3) |
+        (1 << 4) |
+        (1 << 5);
 
     // when
     useRcControlsConfig(&pidProfile);
@@ -610,13 +607,13 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0)
     EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
 
     // and
-    EXPECT_EQ(1,  pidProfile.pid[PID_PITCH].P);
+    EXPECT_EQ(1, pidProfile.pid[PID_PITCH].P);
     EXPECT_EQ(11, pidProfile.pid[PID_PITCH].I);
     EXPECT_EQ(21, pidProfile.pid[PID_PITCH].D);
-    EXPECT_EQ(6,  pidProfile.pid[PID_ROLL].P);
+    EXPECT_EQ(6, pidProfile.pid[PID_ROLL].P);
     EXPECT_EQ(16, pidProfile.pid[PID_ROLL].I);
     EXPECT_EQ(26, pidProfile.pid[PID_ROLL].D);
-    EXPECT_EQ(8,  pidProfile.pid[PID_YAW].P);
+    EXPECT_EQ(8, pidProfile.pid[PID_YAW].P);
     EXPECT_EQ(18, pidProfile.pid[PID_YAW].I);
     EXPECT_EQ(28, pidProfile.pid[PID_YAW].D);
 }
@@ -707,10 +704,10 @@ void gyroStartCalibration(bool isFirstArmingCalibration)
 {
     UNUSED(isFirstArmingCalibration);
 }
-void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t*) {}
+void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *) {}
 void handleInflightCalibrationStickPosition(void) {}
-bool featureIsEnabled(uint32_t) { return false;}
-bool sensors(uint32_t) { return false;}
+bool featureIsEnabled(uint32_t) { return false; }
+bool sensors(uint32_t) { return false; }
 void tryArm(void) {}
 void disarm(void) {}
 void dashboardDisablePageCycling() {}
@@ -719,7 +716,8 @@ void dashboardEnablePageCycling() {}
 bool failsafeIsActive() { return false; }
 bool rxIsReceivingSignal() { return true; }
 
-uint8_t getCurrentControlRateProfileIndex(void) {
+uint8_t getCurrentControlRateProfileIndex(void)
+{
     return 0;
 }
 void GPS_reset_home_position(void) {}
@@ -739,8 +737,9 @@ PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 2);
 void resetArmingDisabled(void) {}
 timeDelta_t getTaskDeltaTime(cfTaskId_e) { return 20000; }
 }
-armingDisableFlags_e getArmingDisableFlags(void) {
-    return (armingDisableFlags_e) 0;
+armingDisableFlags_e getArmingDisableFlags(void)
+{
+    return (armingDisableFlags_e)0;
 }
 bool isTryingToArm(void) { return false; }
 void resetTryingToArm(void) {}

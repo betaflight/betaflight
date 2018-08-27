@@ -44,7 +44,6 @@
 #include "sensors/boardalignment.h"
 #include "sensors/compass.h"
 
-
 // alternative defaults settings for Colibri/Gemini targets
 void targetConfiguration(void)
 {

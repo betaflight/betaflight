@@ -42,22 +42,22 @@ typedef struct adcTagMap_s {
 
 // Encoding for adcTagMap_t.devices
 
-#define ADC_DEVICES_1   (1 << ADCDEV_1)
-#define ADC_DEVICES_2   (1 << ADCDEV_2)
-#define ADC_DEVICES_3   (1 << ADCDEV_3)
-#define ADC_DEVICES_4   (1 << ADCDEV_4)
-#define ADC_DEVICES_12  ((1 << ADCDEV_1)|(1 << ADCDEV_2))
-#define ADC_DEVICES_34  ((1 << ADCDEV_3)|(1 << ADCDEV_4))
-#define ADC_DEVICES_123 ((1 << ADCDEV_1)|(1 << ADCDEV_2)|(1 << ADCDEV_3))
+#define ADC_DEVICES_1 (1 << ADCDEV_1)
+#define ADC_DEVICES_2 (1 << ADCDEV_2)
+#define ADC_DEVICES_3 (1 << ADCDEV_3)
+#define ADC_DEVICES_4 (1 << ADCDEV_4)
+#define ADC_DEVICES_12 ((1 << ADCDEV_1) | (1 << ADCDEV_2))
+#define ADC_DEVICES_34 ((1 << ADCDEV_3) | (1 << ADCDEV_4))
+#define ADC_DEVICES_123 ((1 << ADCDEV_1) | (1 << ADCDEV_2) | (1 << ADCDEV_3))
 
 typedef struct adcDevice_s {
-    ADC_TypeDef* ADCx;
+    ADC_TypeDef *ADCx;
     rccPeriphTag_t rccADC;
 #if defined(STM32F4) || defined(STM32F7)
-    DMA_Stream_TypeDef* DMAy_Streamx;
+    DMA_Stream_TypeDef *DMAy_Streamx;
     uint32_t channel;
 #else
-    DMA_Channel_TypeDef* DMAy_Channelx;
+    DMA_Channel_TypeDef *DMAy_Channelx;
 #endif
 #if defined(STM32F7)
     ADC_HandleTypeDef ADCHandle;

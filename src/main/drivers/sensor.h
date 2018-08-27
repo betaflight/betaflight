@@ -24,7 +24,7 @@
 #include <stdint.h>
 
 typedef enum {
-    ALIGN_DEFAULT = 0,                                      // driver-provided alignment
+    ALIGN_DEFAULT = 0, // driver-provided alignment
     CW0_DEG = 1,
     CW90_DEG = 2,
     CW180_DEG = 3,

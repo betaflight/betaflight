@@ -41,9 +41,8 @@
 
 #include "pg/adc.h"
 
-
 #ifndef ADC_INSTANCE
-#define ADC_INSTANCE                ADC1
+#define ADC_INSTANCE ADC1
 #endif
 
 #ifndef ADC1_DMA_STREAM
@@ -52,34 +51,33 @@
 
 // Copied from stm32f7xx_ll_adc.h
 
-#define VREFINT_CAL_VREF                   ( 3300U)                    /* Analog voltage reference (Vref+) value with which temperature sensor has been calibrated in production (tolerance: +-10 mV) (unit: mV). */
-#define TEMPSENSOR_CAL1_TEMP               (( int32_t)   30)           /* Internal temperature sensor, temperature at which temperature sensor has been calibrated in production for data into TEMPSENSOR_CAL1_ADDR (tolerance: +-5 DegC) (unit: DegC). */
-#define TEMPSENSOR_CAL2_TEMP               (( int32_t)  110)           /* Internal temperature sensor, temperature at which temperature sensor has been calibrated in production for data into TEMPSENSOR_CAL2_ADDR (tolerance: +-5 DegC) (unit: DegC). */
-#define TEMPSENSOR_CAL_VREFANALOG          ( 3300U)                    /* Analog voltage reference (Vref+) voltage with which temperature sensor has been calibrated in production (+-10 mV) (unit: mV). */
+#define VREFINT_CAL_VREF (3300U)            /* Analog voltage reference (Vref+) value with which temperature sensor has been calibrated in production (tolerance: +-10 mV) (unit: mV). */
+#define TEMPSENSOR_CAL1_TEMP ((int32_t)30)  /* Internal temperature sensor, temperature at which temperature sensor has been calibrated in production for data into TEMPSENSOR_CAL1_ADDR (tolerance: +-5 DegC) (unit: DegC). */
+#define TEMPSENSOR_CAL2_TEMP ((int32_t)110) /* Internal temperature sensor, temperature at which temperature sensor has been calibrated in production for data into TEMPSENSOR_CAL2_ADDR (tolerance: +-5 DegC) (unit: DegC). */
+#define TEMPSENSOR_CAL_VREFANALOG (3300U)   /* Analog voltage reference (Vref+) voltage with which temperature sensor has been calibrated in production (+-10 mV) (unit: mV). */
 
 // These addresses are incorrectly defined in stm32f7xx_ll_adc.h
 
 #if defined(STM32F745xx) || defined(STM32F746xx)
 // F745xx_F746xx
-#define VREFINT_CAL_ADDR                   ((uint16_t*) (0x1FF0F44A))
-#define TEMPSENSOR_CAL1_ADDR               ((uint16_t*) (0x1FF0F44C))
-#define TEMPSENSOR_CAL2_ADDR               ((uint16_t*) (0x1FF0F44E))
+#define VREFINT_CAL_ADDR ((uint16_t *)(0x1FF0F44A))
+#define TEMPSENSOR_CAL1_ADDR ((uint16_t *)(0x1FF0F44C))
+#define TEMPSENSOR_CAL2_ADDR ((uint16_t *)(0x1FF0F44E))
 #elif defined(STM32F722xx)
 // F72x_F73x
-#define VREFINT_CAL_ADDR                   ((uint16_t*) (0x1FF07A2A))
-#define TEMPSENSOR_CAL1_ADDR               ((uint16_t*) (0x1FF07A2C))
-#define TEMPSENSOR_CAL2_ADDR               ((uint16_t*) (0x1FF07A2E))
+#define VREFINT_CAL_ADDR ((uint16_t *)(0x1FF07A2A))
+#define TEMPSENSOR_CAL1_ADDR ((uint16_t *)(0x1FF07A2C))
+#define TEMPSENSOR_CAL2_ADDR ((uint16_t *)(0x1FF07A2E))
 #endif
 
 const adcDevice_t adcHardware[] = {
-    { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .DMAy_Streamx = ADC1_DMA_STREAM, .channel = DMA_CHANNEL_0 },
-    { .ADCx = ADC2, .rccADC = RCC_APB2(ADC2), .DMAy_Streamx = ADC2_DMA_STREAM, .channel = DMA_CHANNEL_1 },
-    { .ADCx = ADC3, .rccADC = RCC_APB2(ADC3), .DMAy_Streamx = ADC3_DMA_STREAM, .channel = DMA_CHANNEL_2 }
-};
+    {.ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .DMAy_Streamx = ADC1_DMA_STREAM, .channel = DMA_CHANNEL_0},
+    {.ADCx = ADC2, .rccADC = RCC_APB2(ADC2), .DMAy_Streamx = ADC2_DMA_STREAM, .channel = DMA_CHANNEL_1},
+    {.ADCx = ADC3, .rccADC = RCC_APB2(ADC3), .DMAy_Streamx = ADC3_DMA_STREAM, .channel = DMA_CHANNEL_2}};
 
 /* note these could be packed up for saving space */
 const adcTagMap_t adcTagMap[] = {
-/*
+    /*
     { DEFIO_TAG_E__PF3, ADC_DEVICES_3,   ADC_CHANNEL_9  },
     { DEFIO_TAG_E__PF4, ADC_DEVICES_3,   ADC_CHANNEL_14 },
     { DEFIO_TAG_E__PF5, ADC_DEVICES_3,   ADC_CHANNEL_15 },
@@ -89,49 +87,48 @@ const adcTagMap_t adcTagMap[] = {
     { DEFIO_TAG_E__PF9, ADC_DEVICES_3,   ADC_CHANNEL_7  },
     { DEFIO_TAG_E__PF10,ADC_DEVICES_3,   ADC_CHANNEL_8  },
 */
-    { DEFIO_TAG_E__PC0, ADC_DEVICES_123, ADC_CHANNEL_10 },
-    { DEFIO_TAG_E__PC1, ADC_DEVICES_123, ADC_CHANNEL_11 },
-    { DEFIO_TAG_E__PC2, ADC_DEVICES_123, ADC_CHANNEL_12 },
-    { DEFIO_TAG_E__PC3, ADC_DEVICES_123, ADC_CHANNEL_13 },
-    { DEFIO_TAG_E__PC4, ADC_DEVICES_12,  ADC_CHANNEL_14 },
-    { DEFIO_TAG_E__PC5, ADC_DEVICES_12,  ADC_CHANNEL_15 },
-    { DEFIO_TAG_E__PB0, ADC_DEVICES_12,  ADC_CHANNEL_8  },
-    { DEFIO_TAG_E__PB1, ADC_DEVICES_12,  ADC_CHANNEL_9  },
-    { DEFIO_TAG_E__PA0, ADC_DEVICES_123, ADC_CHANNEL_0  },
-    { DEFIO_TAG_E__PA1, ADC_DEVICES_123, ADC_CHANNEL_1  },
-    { DEFIO_TAG_E__PA2, ADC_DEVICES_123, ADC_CHANNEL_2  },
-    { DEFIO_TAG_E__PA3, ADC_DEVICES_123, ADC_CHANNEL_3  },
-    { DEFIO_TAG_E__PA4, ADC_DEVICES_12,  ADC_CHANNEL_4  },
-    { DEFIO_TAG_E__PA5, ADC_DEVICES_12,  ADC_CHANNEL_5  },
-    { DEFIO_TAG_E__PA6, ADC_DEVICES_12,  ADC_CHANNEL_6  },
-    { DEFIO_TAG_E__PA7, ADC_DEVICES_12,  ADC_CHANNEL_7  },
+    {DEFIO_TAG_E__PC0, ADC_DEVICES_123, ADC_CHANNEL_10},
+    {DEFIO_TAG_E__PC1, ADC_DEVICES_123, ADC_CHANNEL_11},
+    {DEFIO_TAG_E__PC2, ADC_DEVICES_123, ADC_CHANNEL_12},
+    {DEFIO_TAG_E__PC3, ADC_DEVICES_123, ADC_CHANNEL_13},
+    {DEFIO_TAG_E__PC4, ADC_DEVICES_12, ADC_CHANNEL_14},
+    {DEFIO_TAG_E__PC5, ADC_DEVICES_12, ADC_CHANNEL_15},
+    {DEFIO_TAG_E__PB0, ADC_DEVICES_12, ADC_CHANNEL_8},
+    {DEFIO_TAG_E__PB1, ADC_DEVICES_12, ADC_CHANNEL_9},
+    {DEFIO_TAG_E__PA0, ADC_DEVICES_123, ADC_CHANNEL_0},
+    {DEFIO_TAG_E__PA1, ADC_DEVICES_123, ADC_CHANNEL_1},
+    {DEFIO_TAG_E__PA2, ADC_DEVICES_123, ADC_CHANNEL_2},
+    {DEFIO_TAG_E__PA3, ADC_DEVICES_123, ADC_CHANNEL_3},
+    {DEFIO_TAG_E__PA4, ADC_DEVICES_12, ADC_CHANNEL_4},
+    {DEFIO_TAG_E__PA5, ADC_DEVICES_12, ADC_CHANNEL_5},
+    {DEFIO_TAG_E__PA6, ADC_DEVICES_12, ADC_CHANNEL_6},
+    {DEFIO_TAG_E__PA7, ADC_DEVICES_12, ADC_CHANNEL_7},
 };
 
 void adcInitDevice(adcDevice_t *adcdev, int channelCount)
 {
-    adcdev->ADCHandle.Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV8;
-    adcdev->ADCHandle.Init.ContinuousConvMode    = ENABLE;
-    adcdev->ADCHandle.Init.Resolution            = ADC_RESOLUTION_12B;
-    adcdev->ADCHandle.Init.ExternalTrigConv      = ADC_EXTERNALTRIGCONV_T1_CC1;
-    adcdev->ADCHandle.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_NONE;
-    adcdev->ADCHandle.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
-    adcdev->ADCHandle.Init.NbrOfConversion       = channelCount;
+    adcdev->ADCHandle.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV8;
+    adcdev->ADCHandle.Init.ContinuousConvMode = ENABLE;
+    adcdev->ADCHandle.Init.Resolution = ADC_RESOLUTION_12B;
+    adcdev->ADCHandle.Init.ExternalTrigConv = ADC_EXTERNALTRIGCONV_T1_CC1;
+    adcdev->ADCHandle.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+    adcdev->ADCHandle.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+    adcdev->ADCHandle.Init.NbrOfConversion = channelCount;
 #ifdef USE_ADC_INTERNAL
     // Multiple injected channel seems to require scan conversion mode to be
     // enabled even if main (non-injected) channel count is 1.
-    adcdev->ADCHandle.Init.ScanConvMode          = ENABLE;
+    adcdev->ADCHandle.Init.ScanConvMode = ENABLE;
 #else
-    adcdev->ADCHandle.Init.ScanConvMode          = channelCount > 1 ? ENABLE : DISABLE; // 1=scan more that one channel in group
+    adcdev->ADCHandle.Init.ScanConvMode = channelCount > 1 ? ENABLE : DISABLE; // 1=scan more that one channel in group
 #endif
     adcdev->ADCHandle.Init.DiscontinuousConvMode = DISABLE;
-    adcdev->ADCHandle.Init.NbrOfDiscConversion   = 0;
+    adcdev->ADCHandle.Init.NbrOfDiscConversion = 0;
     adcdev->ADCHandle.Init.DMAContinuousRequests = ENABLE;
-    adcdev->ADCHandle.Init.EOCSelection          = DISABLE;
+    adcdev->ADCHandle.Init.EOCSelection = DISABLE;
     adcdev->ADCHandle.Instance = adcdev->ADCx;
 
-    if (HAL_ADC_Init(&adcdev->ADCHandle) != HAL_OK)
-    {
-      /* Initialization Error */
+    if (HAL_ADC_Init(&adcdev->ADCHandle) != HAL_OK) {
+        /* Initialization Error */
     }
 }
 
@@ -148,13 +145,13 @@ void adcInitInternalInjected(adcDevice_t *adcdev)
 
     ADC_InjectionConfTypeDef iConfig;
 
-    iConfig.InjectedChannel      = ADC_CHANNEL_VREFINT;
-    iConfig.InjectedRank         = 1;
+    iConfig.InjectedChannel = ADC_CHANNEL_VREFINT;
+    iConfig.InjectedRank = 1;
     iConfig.InjectedSamplingTime = ADC_SAMPLETIME_480CYCLES;
-    iConfig.InjectedOffset       = 0;
+    iConfig.InjectedOffset = 0;
     iConfig.InjectedNbrOfConversion = 2;
     iConfig.InjectedDiscontinuousConvMode = DISABLE;
-    iConfig.AutoInjectedConv     = DISABLE;
+    iConfig.AutoInjectedConv = DISABLE;
     iConfig.ExternalTrigInjecConv = 0;     // Don't care
     iConfig.ExternalTrigInjecConvEdge = 0; // Don't care
 
@@ -162,8 +159,8 @@ void adcInitInternalInjected(adcDevice_t *adcdev)
         /* Channel Configuration Error */
     }
 
-    iConfig.InjectedChannel      = ADC_CHANNEL_TEMPSENSOR;
-    iConfig.InjectedRank         = 2;
+    iConfig.InjectedChannel = ADC_CHANNEL_TEMPSENSOR;
+    iConfig.InjectedRank = 2;
 
     if (HAL_ADCEx_InjectedConfigChannel(adcInternalHandle, &iConfig) != HAL_OK) {
         /* Channel Configuration Error */
@@ -226,7 +223,7 @@ void adcInit(const adcConfig_t *config)
     }
 
     if (config->rssi.enabled) {
-        adcOperatingConfig[ADC_RSSI].tag = config->rssi.ioTag;  //RSSI_ADC_CHANNEL;
+        adcOperatingConfig[ADC_RSSI].tag = config->rssi.ioTag; //RSSI_ADC_CHANNEL;
     }
 
     if (config->external1.enabled) {
@@ -234,7 +231,7 @@ void adcInit(const adcConfig_t *config)
     }
 
     if (config->current.enabled) {
-        adcOperatingConfig[ADC_CURRENT].tag = config->current.ioTag;  //CURRENT_METER_ADC_CHANNEL;
+        adcOperatingConfig[ADC_CURRENT].tag = config->current.ioTag; //CURRENT_METER_ADC_CHANNEL;
     }
 
     ADCDevice device = adcDeviceByInstance(ADC_INSTANCE);
@@ -288,14 +285,13 @@ void adcInit(const adcConfig_t *config)
 
         ADC_ChannelConfTypeDef sConfig;
 
-        sConfig.Channel      = adcOperatingConfig[i].adcChannel;
-        sConfig.Rank         = rank++;
+        sConfig.Channel = adcOperatingConfig[i].adcChannel;
+        sConfig.Rank = rank++;
         sConfig.SamplingTime = adcOperatingConfig[i].sampleTime;
-        sConfig.Offset       = 0;
+        sConfig.Offset = 0;
 
-        if (HAL_ADC_ConfigChannel(&adc.ADCHandle, &sConfig) != HAL_OK)
-        {
-          /* Channel Configuration Error */
+        if (HAL_ADC_ConfigChannel(&adc.ADCHandle, &sConfig) != HAL_OK) {
+            /* Channel Configuration Error */
         }
     }
 
@@ -315,8 +311,7 @@ void adcInit(const adcConfig_t *config)
     adc.DmaHandle.Init.PeriphBurst = DMA_PBURST_SINGLE;
     adc.DmaHandle.Instance = adc.DMAy_Streamx;
 
-    if (HAL_DMA_Init(&adc.DmaHandle) != HAL_OK)
-    {
+    if (HAL_DMA_Init(&adc.DmaHandle) != HAL_OK) {
         /* Initialization Error */
     }
 
@@ -324,8 +319,7 @@ void adcInit(const adcConfig_t *config)
 
     //HAL_CLEANINVALIDATECACHE((uint32_t*)&adcValues, configuredAdcChannels);
 
-    if (HAL_ADC_Start_DMA(&adc.ADCHandle, (uint32_t*)&adcValues, configuredAdcChannels) != HAL_OK)
-    {
+    if (HAL_ADC_Start_DMA(&adc.ADCHandle, (uint32_t *)&adcValues, configuredAdcChannels) != HAL_OK) {
         /* Start Conversation Error */
     }
 }

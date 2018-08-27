@@ -44,23 +44,24 @@ static extiCallbackRec_t a7105extiCallbackRec;
 static volatile uint32_t timeEvent = 0;
 static volatile bool occurEvent = false;
 
-void a7105extiHandler(extiCallbackRec_t* cb)
+void a7105extiHandler(extiCallbackRec_t *cb)
 {
     UNUSED(cb);
 
-    if (IORead (rxIntIO) != 0) {
+    if (IORead(rxIntIO) != 0) {
         timeEvent = micros();
         occurEvent = true;
     }
 }
 
-void A7105Init (uint32_t id) {
+void A7105Init(uint32_t id)
+{
     spiDeviceByInstance(RX_SPI_INSTANCE);
     rxIntIO = IOGetByTag(IO_TAG(RX_IRQ_PIN)); /* config receiver IRQ pin */
     IOInit(rxIntIO, OWNER_RX_SPI_CS, 0);
 #ifdef STM32F7
     EXTIHandlerInit(&a7105extiCallbackRec, a7105extiHandler);
-    EXTIConfig(rxIntIO, &a7105extiCallbackRec, NVIC_PRIO_MPU_INT_EXTI, IO_CONFIG(GPIO_MODE_INPUT,0,GPIO_PULLDOWN));
+    EXTIConfig(rxIntIO, &a7105extiCallbackRec, NVIC_PRIO_MPU_INT_EXTI, IO_CONFIG(GPIO_MODE_INPUT, 0, GPIO_PULLDOWN));
 #else
     IOConfigGPIO(rxIntIO, IOCFG_IPD);
     EXTIHandlerInit(&a7105extiCallbackRec, a7105extiHandler);
@@ -78,14 +79,14 @@ void A7105Init (uint32_t id) {
     A7105WriteID(id);
 }
 
-void A7105Config (const uint8_t *regsTable, uint8_t size)
+void A7105Config(const uint8_t *regsTable, uint8_t size)
 {
     if (regsTable) {
         uint32_t timeout = 1000;
 
         for (uint8_t i = 0; i < size; i++) {
             if (regsTable[i] != 0xFF) {
-                A7105WriteReg ((A7105Reg_t)i, regsTable[i]);
+                A7105WriteReg((A7105Reg_t)i, regsTable[i]);
             }
         }
 
@@ -93,7 +94,8 @@ void A7105Config (const uint8_t *regsTable, uint8_t size)
 
         A7105WriteReg(A7105_02_CALC, 0x01);
 
-        while ((A7105ReadReg(A7105_02_CALC) != 0) && timeout--) {}
+        while ((A7105ReadReg(A7105_02_CALC) != 0) && timeout--) {
+        }
 
         A7105ReadReg(A7105_22_IF_CALIB_I);
 
@@ -103,7 +105,8 @@ void A7105Config (const uint8_t *regsTable, uint8_t size)
     }
 }
 
-bool A7105RxTxFinished (uint32_t *timeStamp) {
+bool A7105RxTxFinished(uint32_t *timeStamp)
+{
     bool result = false;
 
     if (occurEvent) {
@@ -117,22 +120,22 @@ bool A7105RxTxFinished (uint32_t *timeStamp) {
     return result;
 }
 
-void A7105SoftReset (void)
+void A7105SoftReset(void)
 {
     rxSpiWriteCommand((uint8_t)A7105_00_MODE, 0x00);
 }
 
-uint8_t A7105ReadReg (A7105Reg_t reg)
+uint8_t A7105ReadReg(A7105Reg_t reg)
 {
     return rxSpiReadCommand((uint8_t)reg | 0x40, 0xFF);
 }
 
-void A7105WriteReg (A7105Reg_t reg, uint8_t data)
+void A7105WriteReg(A7105Reg_t reg, uint8_t data)
 {
     rxSpiWriteCommand((uint8_t)reg, data);
 }
 
-void A7105Strobe (A7105State_t state)
+void A7105Strobe(A7105State_t state)
 {
     if (A7105_TX == state || A7105_RX == state) {
         EXTIEnable(rxIntIO, true);
@@ -161,7 +164,7 @@ void A7105WriteID(uint32_t id)
     rxSpiWriteCommandMulti((uint8_t)A7105_06_ID_DATA, &data[0], sizeof(data));
 }
 
-uint32_t A7105ReadID (void)
+uint32_t A7105ReadID(void)
 {
     uint32_t id;
     uint8_t data[4];
@@ -170,10 +173,10 @@ uint32_t A7105ReadID (void)
     return id;
 }
 
-void A7105ReadFIFO (uint8_t *data, uint8_t num)
+void A7105ReadFIFO(uint8_t *data, uint8_t num)
 {
     if (data) {
-        if(num > 64) {
+        if (num > 64) {
             num = 64;
         }
 
@@ -182,10 +185,10 @@ void A7105ReadFIFO (uint8_t *data, uint8_t num)
     }
 }
 
-void A7105WriteFIFO (uint8_t *data, uint8_t num)
+void A7105WriteFIFO(uint8_t *data, uint8_t num)
 {
     if (data) {
-        if(num > 64) {
+        if (num > 64) {
             num = 64;
         }
 

@@ -36,18 +36,18 @@
 #include "telemetry/msp_shared.h"
 #include "telemetry/smartport.h"
 
-#define TELEMETRY_MSP_VERSION    1
-#define TELEMETRY_MSP_VER_SHIFT  5
-#define TELEMETRY_MSP_VER_MASK   (0x7 << TELEMETRY_MSP_VER_SHIFT)
+#define TELEMETRY_MSP_VERSION 1
+#define TELEMETRY_MSP_VER_SHIFT 5
+#define TELEMETRY_MSP_VER_MASK (0x7 << TELEMETRY_MSP_VER_SHIFT)
 #define TELEMETRY_MSP_ERROR_FLAG (1 << 5)
 #define TELEMETRY_MSP_START_FLAG (1 << 4)
-#define TELEMETRY_MSP_SEQ_MASK   0x0F
+#define TELEMETRY_MSP_SEQ_MASK 0x0F
 #define TELEMETRY_MSP_RES_ERROR (-10)
 
 enum {
-    TELEMETRY_MSP_VER_MISMATCH=0,
-    TELEMETRY_MSP_CRC_ERROR=1,
-    TELEMETRY_MSP_ERROR=2
+    TELEMETRY_MSP_VER_MISMATCH = 0,
+    TELEMETRY_MSP_CRC_ERROR = 1,
+    TELEMETRY_MSP_ERROR = 2
 };
 
 STATIC_UNIT_TESTED uint8_t checksum = 0;
@@ -230,10 +230,9 @@ bool sendMspReply(uint8_t payloadSize, mspResponseFnPtr responseFn)
         }
         sbufWriteU8(payloadBuf, checksum);
 
-        while (sbufBytesRemaining(payloadBuf)>1) {
+        while (sbufBytesRemaining(payloadBuf) > 1) {
             sbufWriteU8(payloadBuf, 0);
         }
-
     }
 
     responseFn(payloadOut);

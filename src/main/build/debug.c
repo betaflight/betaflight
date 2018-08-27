@@ -20,7 +20,6 @@
 
 #include "stdint.h"
 
-
 #include "debug.h"
 
 int16_t debug[DEBUG16_VALUE_COUNT];
@@ -30,7 +29,7 @@ uint8_t debugMode;
 uint32_t sectionTimes[2][4];
 #endif
 
-const char * const debugModeNames[DEBUG_COUNT] = {
+const char *const debugModeNames[DEBUG_COUNT] = {
     "NONE",
     "CYCLETIME",
     "BATTERY",

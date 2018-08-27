@@ -21,35 +21,34 @@
 #include <limits.h>
 
 extern "C" {
-    #include "platform.h"
+#include "platform.h"
 
-    #include "pg/rx.h"
-    #include "build/debug.h"
-    #include "drivers/io.h"
-    #include "rx/rx.h"
-    #include "fc/rc_modes.h"
-    #include "common/maths.h"
-    #include "common/utils.h"
-    #include "config/feature.h"
-    #include "pg/pg.h"
-    #include "pg/pg_ids.h"
-    #include "io/beeper.h"
+#include "pg/rx.h"
+#include "build/debug.h"
+#include "drivers/io.h"
+#include "rx/rx.h"
+#include "fc/rc_modes.h"
+#include "common/maths.h"
+#include "common/utils.h"
+#include "config/feature.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+#include "io/beeper.h"
 
-    boxBitmask_t rcModeActivationMask;
-    int16_t debug[DEBUG16_VALUE_COUNT];
-    uint8_t debugMode = 0;
+boxBitmask_t rcModeActivationMask;
+int16_t debug[DEBUG16_VALUE_COUNT];
+uint8_t debugMode = 0;
 
-    bool isPulseValid(uint16_t pulseDuration);
+bool isPulseValid(uint16_t pulseDuration);
 
-    PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
-        .enabledFeatures = 0
-    );
+PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
+                  .enabledFeatures = 0);
 }
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-#define DE_ACTIVATE_ALL_BOXES   0
+#define DE_ACTIVATE_ALL_BOXES 0
 
 typedef struct testData_s {
     bool isPPMDataBeingReceived;
@@ -196,34 +195,36 @@ TEST(RxTest, TestInvalidFlightChannels)
 // STUBS
 
 extern "C" {
-    void failsafeOnValidDataFailed() {}
-    void failsafeOnValidDataReceived() {}
+void failsafeOnValidDataFailed() {}
+void failsafeOnValidDataReceived() {}
 
-    void failsafeOnRxSuspend(uint32_t ) {}
-    void failsafeOnRxResume(void) {}
+void failsafeOnRxSuspend(uint32_t) {}
+void failsafeOnRxResume(void) {}
 
-    uint32_t micros(void) { return 0; }
-    uint32_t millis(void) { return 0; }
+uint32_t micros(void) { return 0; }
+uint32_t millis(void) { return 0; }
 
-    bool isPPMDataBeingReceived(void) {
-        return testData.isPPMDataBeingReceived;
-    }
+bool isPPMDataBeingReceived(void)
+{
+    return testData.isPPMDataBeingReceived;
+}
 
-    bool isPWMDataBeingReceived(void) {
-        return testData.isPWMDataBeingReceived;
-    }
+bool isPWMDataBeingReceived(void)
+{
+    return testData.isPWMDataBeingReceived;
+}
 
-    void resetPPMDataReceivedState(void) {}
-    bool rxMspFrameComplete(void) { return false; }
+void resetPPMDataReceivedState(void) {}
+bool rxMspFrameComplete(void) { return false; }
 
-    void crsfRxInit(const rxConfig_t *, rxRuntimeConfig_t *) {}
-    void ibusInit(const rxConfig_t *, rxRuntimeConfig_t *) {}
-    void jetiExBusInit(const rxConfig_t *, rxRuntimeConfig_t *) {}
-    void sbusInit(const rxConfig_t *, rxRuntimeConfig_t *) {}
-    void spektrumInit(const rxConfig_t *, rxRuntimeConfig_t *) {}
-    void sumdInit(const rxConfig_t *, rxRuntimeConfig_t *) {}
-    void sumhInit(const rxConfig_t *, rxRuntimeConfig_t *) {}
-    void xBusInit(const rxConfig_t *, rxRuntimeConfig_t *) {}
-    void rxMspInit(const rxConfig_t *, rxRuntimeConfig_t *) {}
-    void rxPwmInit(const rxConfig_t *, rxRuntimeConfig_t *) {}
+void crsfRxInit(const rxConfig_t *, rxRuntimeConfig_t *) {}
+void ibusInit(const rxConfig_t *, rxRuntimeConfig_t *) {}
+void jetiExBusInit(const rxConfig_t *, rxRuntimeConfig_t *) {}
+void sbusInit(const rxConfig_t *, rxRuntimeConfig_t *) {}
+void spektrumInit(const rxConfig_t *, rxRuntimeConfig_t *) {}
+void sumdInit(const rxConfig_t *, rxRuntimeConfig_t *) {}
+void sumhInit(const rxConfig_t *, rxRuntimeConfig_t *) {}
+void xBusInit(const rxConfig_t *, rxRuntimeConfig_t *) {}
+void rxMspInit(const rxConfig_t *, rxRuntimeConfig_t *) {}
+void rxPwmInit(const rxConfig_t *, rxRuntimeConfig_t *) {}
 }
