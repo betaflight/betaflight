@@ -81,7 +81,9 @@ typedef enum {
     PASSTHRU_MODE   = (1 << 8),
 //    RANGEFINDER_MODE= (1 << 9),
     FAILSAFE_MODE   = (1 << 10),
-    GPS_RESCUE_MODE = (1 << 11)
+    GPS_RESCUE_MODE = (1 << 11),
+    AUTO_LAND = (1 << 12),
+    DROP = (1 << 13),
 } flightModeFlags_e;
 
 extern uint16_t flightModeFlags;
@@ -103,6 +105,8 @@ extern uint16_t flightModeFlags;
    [BOXPASSTHRU]    = LOG2(PASSTHRU_MODE),               \
    [BOXFAILSAFE]    = LOG2(FAILSAFE_MODE),               \
    [BOXGPSRESCUE]   = LOG2(GPS_RESCUE_MODE),             \
+   [BOXAUTOLAND]    = LOG2(AUTO_LAND),                   \
+   [BOXDROP]        = LOG2(DROP),                        \
 }                                                        \
 /**/
 
