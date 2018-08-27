@@ -32,7 +32,7 @@
 #include "hardware_revision.h"
 
 uint8_t hardwareRevision = AFF3_UNKNOWN;
-bool haveFrSkyRX = true;
+bool haveFrSkyRX         = true;
 
 static IO_t HWDetectPin = IO_NONE;
 static IO_t RXDetectPin = IO_NONE;
@@ -47,7 +47,7 @@ void detectHardwareRevision(void)
     IOInit(RXDetectPin, OWNER_SYSTEM, 0);
     IOConfigGPIO(RXDetectPin, IOCFG_IPU);
 
-    delayMicroseconds(40);  // allow configuration to settle
+    delayMicroseconds(40); // allow configuration to settle
 
     // Check hardware revision
     if (IORead(HWDetectPin)) {

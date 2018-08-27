@@ -25,19 +25,19 @@
 //
 // The protocol for Runcam Device definition
 //
-#define RCDEVICE_PROTOCOL_HEADER                                    0xCC
+#define RCDEVICE_PROTOCOL_HEADER 0xCC
 
-#define RCDEVICE_PROTOCOL_MAX_PACKET_SIZE                           64
-#define RCDEVICE_PROTOCOL_MAX_DATA_SIZE                             62
+#define RCDEVICE_PROTOCOL_MAX_PACKET_SIZE 64
+#define RCDEVICE_PROTOCOL_MAX_DATA_SIZE 62
 
 // Commands
-#define RCDEVICE_PROTOCOL_COMMAND_GET_DEVICE_INFO                   0x00
+#define RCDEVICE_PROTOCOL_COMMAND_GET_DEVICE_INFO 0x00
 // camera control
-#define RCDEVICE_PROTOCOL_COMMAND_CAMERA_CONTROL                    0x01
+#define RCDEVICE_PROTOCOL_COMMAND_CAMERA_CONTROL 0x01
 // 5 key osd cable simulation
-#define RCDEVICE_PROTOCOL_COMMAND_5KEY_SIMULATION_PRESS             0x02
-#define RCDEVICE_PROTOCOL_COMMAND_5KEY_SIMULATION_RELEASE           0x03
-#define RCDEVICE_PROTOCOL_COMMAND_5KEY_CONNECTION                   0x04
+#define RCDEVICE_PROTOCOL_COMMAND_5KEY_SIMULATION_PRESS 0x02
+#define RCDEVICE_PROTOCOL_COMMAND_5KEY_SIMULATION_RELEASE 0x03
+#define RCDEVICE_PROTOCOL_COMMAND_5KEY_CONNECTION 0x04
 
 // Feature Flag sets, it's a uint16_t flag
 typedef enum {
@@ -72,7 +72,7 @@ typedef enum {
 
 // Operation of RCDEVICE_PROTOCOL_COMMAND_5KEY_CONNECTION
 typedef enum {
-    RCDEVICE_PROTOCOL_5KEY_CONNECTION_OPEN = 0x01,
+    RCDEVICE_PROTOCOL_5KEY_CONNECTION_OPEN  = 0x01,
     RCDEVICE_PROTOCOL_5KEY_CONNECTION_CLOSE = 0x02
 } RCDEVICE_5key_connection_event_e;
 
@@ -113,18 +113,18 @@ typedef struct runcamDevice_s {
 #define MAX_WAITING_RESPONSES 5
 
 typedef enum {
-    RCDEVICE_RESP_SUCCESS = 0,
+    RCDEVICE_RESP_SUCCESS       = 0,
     RCDEVICE_RESP_INCORRECT_CRC = 1,
-    RCDEVICE_RESP_TIMEOUT = 2
+    RCDEVICE_RESP_TIMEOUT       = 2
 } rcdeviceResponseStatus_e;
 
 typedef struct rcdeviceResponseParseContext_s rcdeviceResponseParseContext_t;
-typedef void(*rcdeviceRespParseFunc)(rcdeviceResponseParseContext_t*);
+typedef void (*rcdeviceRespParseFunc)(rcdeviceResponseParseContext_t *);
 struct rcdeviceResponseParseContext_s {
     uint8_t command;
     uint8_t expectedRespLen; // total length of response data
-    uint8_t recvRespLen; // length of the data received
-    uint8_t *recvBuf; // response data buffer
+    uint8_t recvRespLen;     // length of the data received
+    uint8_t *recvBuf;        // response data buffer
     timeMs_t timeout;
     timeMs_t timeoutTimestamp; // if zero, it's means keep waiting for the response
     rcdeviceRespParseFunc parserFunc;

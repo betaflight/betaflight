@@ -24,7 +24,7 @@
 
 #include "pg/pg.h"
 
-#define CONTROL_RATE_PROFILE_COUNT  6
+#define CONTROL_RATE_PROFILE_COUNT 6
 
 typedef enum {
     RATES_TYPE_BETAFLIGHT = 0,
@@ -45,9 +45,9 @@ typedef struct controlRateConfig_s {
     uint8_t rcExpo[3];
     uint8_t rates[3];
     uint8_t dynThrPID;
-    uint16_t tpa_breakpoint;                // Breakpoint where TPA is activated
-    uint8_t throttle_limit_type;            // Sets the throttle limiting type - off, scale or clip
-    uint8_t throttle_limit_percent;         // Sets the maximum pilot commanded throttle limit
+    uint16_t tpa_breakpoint;        // Breakpoint where TPA is activated
+    uint8_t throttle_limit_type;    // Sets the throttle limiting type - off, scale or clip
+    uint8_t throttle_limit_percent; // Sets the maximum pilot commanded throttle limit
 } controlRateConfig_t;
 
 PG_DECLARE_ARRAY(controlRateConfig_t, CONTROL_RATE_PROFILE_COUNT, controlRateProfiles);

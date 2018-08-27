@@ -29,12 +29,11 @@
 #define TRANSPONDER_GAP_TOGGLES_ARCITIMER 0
 #define TRANSPONDER_TOGGLES_ARCITIMER (TRANSPONDER_TOGGLES_PER_BIT_ARCITIMER + TRANSPONDER_GAP_TOGGLES_ARCITIMER)
 #define TRANSPONDER_DMA_BUFFER_SIZE_ARCITIMER 155 * TRANSPONDER_TOGGLES_PER_BIT_ARCITIMER // 620
-#define TRANSPONDER_TIMER_MHZ_ARCITIMER       24
-#define TRANSPONDER_CARRIER_HZ_ARCITIMER      41886
-#define TRANSPONDER_TRANSMIT_DELAY_ARCITIMER  4500
+#define TRANSPONDER_TIMER_MHZ_ARCITIMER 24
+#define TRANSPONDER_CARRIER_HZ_ARCITIMER 41886
+#define TRANSPONDER_TRANSMIT_DELAY_ARCITIMER 4500
 #define TRANSPONDER_TRANSMIT_JITTER_ARCITIMER 10000
 /*** ******** ***/
-
 
 /*** ILAP ***/
 #define TRANSPONDER_BITS_PER_BYTE_ILAP 10 // start + 8 data + stop
@@ -43,26 +42,24 @@
 #define TRANSPONDER_GAP_TOGGLES_ILAP 1
 #define TRANSPONDER_TOGGLES_ILAP (TRANSPONDER_TOGGLES_PER_BIT_ILAP + TRANSPONDER_GAP_TOGGLES_ILAP)
 #define TRANSPONDER_DMA_BUFFER_SIZE_ILAP ((TRANSPONDER_TOGGLES_PER_BIT_ILAP + 1) * TRANSPONDER_BITS_PER_BYTE_ILAP * TRANSPONDER_DATA_LENGTH_ILAP) //720
-#define TRANSPONDER_TIMER_MHZ_ILAP       24
-#define TRANSPONDER_CARRIER_HZ_ILAP      460750
-#define TRANSPONDER_TRANSMIT_DELAY_ILAP   4500
-#define TRANSPONDER_TRANSMIT_JITTER_ILAP  10000
+#define TRANSPONDER_TIMER_MHZ_ILAP 24
+#define TRANSPONDER_CARRIER_HZ_ILAP 460750
+#define TRANSPONDER_TRANSMIT_DELAY_ILAP 4500
+#define TRANSPONDER_TRANSMIT_JITTER_ILAP 10000
 /*** ******** ***/
-
 
 /*** ERLT ***/
-#define TRANSPONDER_DATA_LENGTH_ERLT        1
+#define TRANSPONDER_DATA_LENGTH_ERLT 1
 
-#define ERLTBitQuiet                        0
-#define ERLTCyclesForOneBit                 25
-#define ERLTCyclesForZeroBit                10
-#define TRANSPONDER_DMA_BUFFER_SIZE_ERLT    200 // actually ERLT is variable length 91-196 depending on the ERLT id
-#define TRANSPONDER_TIMER_MHZ_ERLT          18
-#define TRANSPONDER_CARRIER_HZ_ERLT         38000
-#define TRANSPONDER_TRANSMIT_DELAY_ERLT     22500
-#define TRANSPONDER_TRANSMIT_JITTER_ERLT    5000
+#define ERLTBitQuiet 0
+#define ERLTCyclesForOneBit 25
+#define ERLTCyclesForZeroBit 10
+#define TRANSPONDER_DMA_BUFFER_SIZE_ERLT 200 // actually ERLT is variable length 91-196 depending on the ERLT id
+#define TRANSPONDER_TIMER_MHZ_ERLT 18
+#define TRANSPONDER_CARRIER_HZ_ERLT 38000
+#define TRANSPONDER_TRANSMIT_DELAY_ERLT 22500
+#define TRANSPONDER_TRANSMIT_JITTER_ERLT 5000
 /*** ******** ***/
-
 
 /*
  * Implementation note:
@@ -74,19 +71,19 @@
  */
 #if defined(STM32F3) || defined(UNIT_TEST)
 
-    typedef union transponderIrDMABuffer_s {
-        uint8_t arcitimer[TRANSPONDER_DMA_BUFFER_SIZE_ARCITIMER]; // 620
-        uint8_t ilap[TRANSPONDER_DMA_BUFFER_SIZE_ILAP]; // 720
-        uint8_t erlt[TRANSPONDER_DMA_BUFFER_SIZE_ERLT]; // 91-200
-    } transponderIrDMABuffer_t;
+typedef union transponderIrDMABuffer_s {
+    uint8_t arcitimer[TRANSPONDER_DMA_BUFFER_SIZE_ARCITIMER]; // 620
+    uint8_t ilap[TRANSPONDER_DMA_BUFFER_SIZE_ILAP];           // 720
+    uint8_t erlt[TRANSPONDER_DMA_BUFFER_SIZE_ERLT];           // 91-200
+} transponderIrDMABuffer_t;
 
 #elif defined(STM32F4) || defined(STM32F7)
 
-    typedef union transponderIrDMABuffer_s {
-        uint32_t arcitimer[TRANSPONDER_DMA_BUFFER_SIZE_ARCITIMER]; // 620
-        uint32_t ilap[TRANSPONDER_DMA_BUFFER_SIZE_ILAP]; // 720
-        uint32_t erlt[TRANSPONDER_DMA_BUFFER_SIZE_ERLT]; // 91-200
-    } transponderIrDMABuffer_t;
+typedef union transponderIrDMABuffer_s {
+    uint32_t arcitimer[TRANSPONDER_DMA_BUFFER_SIZE_ARCITIMER]; // 620
+    uint32_t ilap[TRANSPONDER_DMA_BUFFER_SIZE_ILAP];           // 720
+    uint32_t erlt[TRANSPONDER_DMA_BUFFER_SIZE_ERLT];           // 91-200
+} transponderIrDMABuffer_t;
 #endif
 
 typedef struct transponder_s {
@@ -96,9 +93,9 @@ typedef struct transponder_s {
     uint16_t bitToggleOne;
     uint32_t dma_buffer_size;
 
-    #if defined(STM32F3) || defined(STM32F4)|| defined(STM32F7) || defined(UNIT_TEST)
-        transponderIrDMABuffer_t transponderIrDMABuffer;
-    #endif
+#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7) || defined(UNIT_TEST)
+    transponderIrDMABuffer_t transponderIrDMABuffer;
+#endif
 
     const struct transponderVTable *vTable;
 } transponder_t;
@@ -113,7 +110,7 @@ typedef enum {
 #define TRANSPONDER_PROVIDER_COUNT 3
 
 struct transponderVTable {
-    void (*updateTransponderDMABuffer)(transponder_t *transponder, const uint8_t* transponderData);
+    void (*updateTransponderDMABuffer)(transponder_t *transponder, const uint8_t *transponderData);
 };
 
 bool transponderIrInit(const ioTag_t ioTag, const transponderProvider_e provider);
@@ -124,7 +121,7 @@ void transponderIrDMAEnable(transponder_t *transponder);
 
 void transponderIrWaitForTransmitComplete(void);
 
-void transponderIrUpdateData(const uint8_t* transponderData);
+void transponderIrUpdateData(const uint8_t *transponderData);
 void transponderIrTransmit(void);
 
 bool isTransponderIrReady(void);

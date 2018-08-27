@@ -44,8 +44,14 @@
 static busDevice_t rxSpiDevice;
 static busDevice_t *busdev = &rxSpiDevice;
 
-#define DISABLE_RX()    {IOHi(busdev->busdev_u.spi.csnPin);}
-#define ENABLE_RX()     {IOLo(busdev->busdev_u.spi.csnPin);}
+#define DISABLE_RX()                       \
+    {                                      \
+        IOHi(busdev->busdev_u.spi.csnPin); \
+    }
+#define ENABLE_RX()                        \
+    {                                      \
+        IOLo(busdev->busdev_u.spi.csnPin); \
+    }
 
 bool rxSpiDeviceInit(const rxSpiConfig_t *rxSpiConfig)
 {

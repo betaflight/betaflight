@@ -52,7 +52,6 @@
 #define XBUS_FRAME_SIZE_A1 27
 #define XBUS_FRAME_SIZE_A2 35
 
-
 #define XBUS_RJ01_FRAME_SIZE 33
 #define XBUS_RJ01_MESSAGE_LENGTH 30
 #define XBUS_RJ01_OFFSET_BYTES 3
@@ -69,8 +68,8 @@
 // However, the JR XG14 that is used for test at the moment
 // does only use 0xA1 as its output. This is why the implementation
 // is based on these numbers only. Maybe update this in the future?
-#define XBUS_START_OF_FRAME_BYTE_A1 (0xA1)      //12 channels
-#define XBUS_START_OF_FRAME_BYTE_A2 (0xA2)      //16 channels transfare, but only 12 channels use for
+#define XBUS_START_OF_FRAME_BYTE_A1 (0xA1) //12 channels
+#define XBUS_START_OF_FRAME_BYTE_A2 (0xA2) //16 channels transfare, but only 12 channels use for
 
 // Pulse length convertion from [0...4095] to µs:
 //      800µs  -> 0x000
@@ -81,15 +80,14 @@
 #define XBUS_CONVERT_TO_USEC(V) (800 + ((V * 1400) >> 12))
 
 static bool xBusFrameReceived = false;
-static bool xBusDataIncoming = false;
+static bool xBusDataIncoming  = false;
 static uint8_t xBusFramePosition;
 static uint8_t xBusFrameLength;
 static uint8_t xBusChannelCount;
 static uint8_t xBusProvider;
 
-
 // Use max values for ram areas
-static volatile uint8_t xBusFrame[XBUS_FRAME_SIZE_A2];  //size 35 for 16 channels in xbus_Mode_B
+static volatile uint8_t xBusFrame[XBUS_FRAME_SIZE_A2]; //size 35 for 16 channels in xbus_Mode_B
 static uint16_t xBusChannelData[XBUS_RJ01_CHANNEL_COUNT];
 
 // Full RJ01 message CRC calculations
@@ -112,12 +110,11 @@ static uint8_t xBusRj01CRC8(uint8_t inData, uint8_t seed)
     return seed;
 }
 
-
 static void xBusUnpackModeBFrame(uint8_t offsetBytes)
 {
     // Calculate the CRC of the incoming frame
     // Calculate on all bytes except the final two CRC bytes
-    const uint16_t inCrc = crc16_ccitt_update(0, (uint8_t*)&xBusFrame[offsetBytes], xBusFrameLength - 2);
+    const uint16_t inCrc = crc16_ccitt_update(0, (uint8_t *)&xBusFrame[offsetBytes], xBusFrameLength - 2);
 
     // Get the received CRC
     const uint16_t crc = (((uint16_t)xBusFrame[offsetBytes + xBusFrameLength - 2]) << 8) + ((uint16_t)xBusFrame[offsetBytes + xBusFrameLength - 1]);
@@ -127,8 +124,8 @@ static void xBusUnpackModeBFrame(uint8_t offsetBytes)
         for (int i = 0; i < xBusChannelCount; i++) {
 
             const uint8_t frameAddr = offsetBytes + 1 + i * 2;
-            uint16_t value = ((uint16_t)xBusFrame[frameAddr]) << 8;
-            value = value + ((uint16_t)xBusFrame[frameAddr + 1]);
+            uint16_t value          = ((uint16_t)xBusFrame[frameAddr]) << 8;
+            value                   = value + ((uint16_t)xBusFrame[frameAddr + 1]);
 
             // Convert to internal format
             xBusChannelData[i] = XBUS_CONVERT_TO_USEC(value);
@@ -142,7 +139,7 @@ static void xBusUnpackRJ01Frame(void)
 {
     // Calculate the CRC of the incoming frame
     uint8_t outerCrc = 0;
-    uint8_t i = 0;
+    uint8_t i        = 0;
 
     // When using the Align RJ01 receiver with
     // a MODE B setting in the radio (XG14 tested)
@@ -162,8 +159,7 @@ static void xBusUnpackRJ01Frame(void)
     //
     // Check we have correct length of message
     //
-    if (xBusFrame[1] != XBUS_RJ01_MESSAGE_LENGTH)
-    {
+    if (xBusFrame[1] != XBUS_RJ01_MESSAGE_LENGTH) {
         // Unknown package as length is not ok
         return;
     }
@@ -175,8 +171,7 @@ static void xBusUnpackRJ01Frame(void)
         outerCrc = xBusRj01CRC8(outerCrc, xBusFrame[i]);
     }
 
-    if (outerCrc != xBusFrame[xBusFrameLength - 1])
-    {
+    if (outerCrc != xBusFrame[xBusFrameLength - 1]) {
         // CRC does not match, skip this frame
         return;
     }
@@ -194,22 +189,22 @@ static void xBusDataReceive(uint16_t c, void *data)
     static uint32_t xBusTimeLast, xBusTimeInterval;
 
     // Check if we shall reset frame position due to time
-    now = micros();
+    now              = micros();
     xBusTimeInterval = now - xBusTimeLast;
-    xBusTimeLast = now;
+    xBusTimeLast     = now;
     if (xBusTimeInterval > XBUS_MAX_FRAME_TIME) {
         xBusFramePosition = 0;
-        xBusDataIncoming = false;
+        xBusDataIncoming  = false;
     }
 
     // Check if we shall start a frame?
     if (xBusFramePosition == 0) {
         if (c == XBUS_START_OF_FRAME_BYTE_A1) {
             xBusDataIncoming = true;
-            xBusFrameLength = XBUS_FRAME_SIZE_A1;   //decrease framesize (when receiver change, otherwise board must reboot)
-        } else if (c == XBUS_START_OF_FRAME_BYTE_A2) {//16channel packet
+            xBusFrameLength  = XBUS_FRAME_SIZE_A1;     //decrease framesize (when receiver change, otherwise board must reboot)
+        } else if (c == XBUS_START_OF_FRAME_BYTE_A2) { //16channel packet
             xBusDataIncoming = true;
-            xBusFrameLength = XBUS_FRAME_SIZE_A2;   //increase framesize
+            xBusFrameLength  = XBUS_FRAME_SIZE_A2; //increase framesize
         }
     }
 
@@ -229,7 +224,7 @@ static void xBusDataReceive(uint16_t c, void *data)
         case SERIALRX_XBUS_MODE_B_RJ01:
             xBusUnpackRJ01Frame();
         }
-        xBusDataIncoming = false;
+        xBusDataIncoming  = false;
         xBusFramePosition = 0;
     }
 }
@@ -269,23 +264,23 @@ bool xBusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     switch (rxConfig->serialrx_provider) {
     case SERIALRX_XBUS_MODE_B:
         rxRuntimeConfig->channelCount = XBUS_CHANNEL_COUNT;
-        xBusFrameReceived = false;
-        xBusDataIncoming = false;
-        xBusFramePosition = 0;
-        baudRate = XBUS_BAUDRATE;
-        xBusFrameLength = XBUS_FRAME_SIZE_A1;
-        xBusChannelCount = XBUS_CHANNEL_COUNT;
-        xBusProvider = SERIALRX_XBUS_MODE_B;
+        xBusFrameReceived             = false;
+        xBusDataIncoming              = false;
+        xBusFramePosition             = 0;
+        baudRate                      = XBUS_BAUDRATE;
+        xBusFrameLength               = XBUS_FRAME_SIZE_A1;
+        xBusChannelCount              = XBUS_CHANNEL_COUNT;
+        xBusProvider                  = SERIALRX_XBUS_MODE_B;
         break;
     case SERIALRX_XBUS_MODE_B_RJ01:
         rxRuntimeConfig->channelCount = XBUS_RJ01_CHANNEL_COUNT;
-        xBusFrameReceived = false;
-        xBusDataIncoming = false;
-        xBusFramePosition = 0;
-        baudRate = XBUS_RJ01_BAUDRATE;
-        xBusFrameLength = XBUS_RJ01_FRAME_SIZE;
-        xBusChannelCount = XBUS_RJ01_CHANNEL_COUNT;
-        xBusProvider = SERIALRX_XBUS_MODE_B_RJ01;
+        xBusFrameReceived             = false;
+        xBusDataIncoming              = false;
+        xBusFramePosition             = 0;
+        baudRate                      = XBUS_RJ01_BAUDRATE;
+        xBusFrameLength               = XBUS_RJ01_FRAME_SIZE;
+        xBusChannelCount              = XBUS_RJ01_CHANNEL_COUNT;
+        xBusProvider                  = SERIALRX_XBUS_MODE_B_RJ01;
         break;
     default:
         return false;
@@ -294,7 +289,7 @@ bool xBusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 
     rxRuntimeConfig->rxRefreshRate = 11000;
 
-    rxRuntimeConfig->rcReadRawFn = xBusReadRawRC;
+    rxRuntimeConfig->rcReadRawFn     = xBusReadRawRC;
     rxRuntimeConfig->rcFrameStatusFn = xBusFrameStatus;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
@@ -309,13 +304,12 @@ bool xBusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 #endif
 
     serialPort_t *xBusPort = openSerialPort(portConfig->identifier,
-        FUNCTION_RX_SERIAL,
-        xBusDataReceive,
-        NULL,
-        baudRate,
-        portShared ? MODE_RXTX : MODE_RX,
-        (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0)
-        );
+                                            FUNCTION_RX_SERIAL,
+                                            xBusDataReceive,
+                                            NULL,
+                                            baudRate,
+                                            portShared ? MODE_RXTX : MODE_RX,
+                                            (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0));
 
 #ifdef USE_TELEMETRY
     if (portShared) {

@@ -64,17 +64,17 @@ typedef enum {
 enum {
     DYN_FFT_BEFORE_STATIC_FILTERS = 0,
     DYN_FFT_AFTER_STATIC_FILTERS
-} ;
+};
 
 enum {
     DYN_FILTER_RANGE_HIGH = 0,
     DYN_FILTER_RANGE_MEDIUM,
     DYN_FILTER_RANGE_LOW
-} ;
+};
 
-#define GYRO_CONFIG_USE_GYRO_1      0
-#define GYRO_CONFIG_USE_GYRO_2      1
-#define GYRO_CONFIG_USE_GYRO_BOTH   2
+#define GYRO_CONFIG_USE_GYRO_1 0
+#define GYRO_CONFIG_USE_GYRO_2 1
+#define GYRO_CONFIG_USE_GYRO_BOTH 2
 
 typedef enum {
     FILTER_LOWPASS = 0,
@@ -82,15 +82,15 @@ typedef enum {
 } filterSlots;
 
 typedef struct gyroConfig_s {
-    uint8_t  gyro_align;                       // gyro alignment
-    uint8_t  gyroMovementCalibrationThreshold; // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
-    uint8_t  gyro_sync_denom;                  // Gyro sample divider
-    uint8_t  gyro_hardware_lpf;                // gyro DLPF setting
-    uint8_t  gyro_32khz_hardware_lpf;          // gyro 32khz DLPF setting
+    uint8_t gyro_align;                       // gyro alignment
+    uint8_t gyroMovementCalibrationThreshold; // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
+    uint8_t gyro_sync_denom;                  // Gyro sample divider
+    uint8_t gyro_hardware_lpf;                // gyro DLPF setting
+    uint8_t gyro_32khz_hardware_lpf;          // gyro 32khz DLPF setting
 
-    uint8_t  gyro_high_fsr;
-    uint8_t  gyro_use_32khz;
-    uint8_t  gyro_to_use;
+    uint8_t gyro_high_fsr;
+    uint8_t gyro_use_32khz;
+    uint8_t gyro_to_use;
 
     uint16_t gyro_lowpass_hz;
     uint16_t gyro_lowpass2_hz;
@@ -99,18 +99,18 @@ typedef struct gyroConfig_s {
     uint16_t gyro_soft_notch_cutoff_1;
     uint16_t gyro_soft_notch_hz_2;
     uint16_t gyro_soft_notch_cutoff_2;
-    int16_t  gyro_offset_yaw;
-    uint8_t  checkOverflow;
+    int16_t gyro_offset_yaw;
+    uint8_t checkOverflow;
 
     // Lowpass primary/secondary
-    uint8_t  gyro_lowpass_type;
-    uint8_t  gyro_lowpass2_type;
+    uint8_t gyro_lowpass_type;
+    uint8_t gyro_lowpass2_type;
 
-    uint8_t  yaw_spin_recovery;
-    int16_t  yaw_spin_threshold;
+    uint8_t yaw_spin_recovery;
+    int16_t yaw_spin_threshold;
 
-    uint16_t gyroCalibrationDuration;  // Gyro calibration duration in 1/100 second
-    
+    uint16_t gyroCalibrationDuration; // Gyro calibration duration in 1/100 second
+
     uint8_t dyn_filter_width_percent;
     uint8_t dyn_fft_location; // before or after static filters
     uint8_t dyn_filter_range; // ignore any FFT bin below this threshold

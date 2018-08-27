@@ -40,8 +40,7 @@
 PG_REGISTER_WITH_RESET_TEMPLATE(usbDev_t, usbDevConfig, PG_USB_CONFIG, 0);
 
 PG_RESET_TEMPLATE(usbDev_t, usbDevConfig,
-    .type = DEFAULT,
-    .mscButtonPin = IO_TAG(USB_MSC_BUTTON_PIN),
-    .mscButtonUsePullup = MSC_BUTTON_IPU,
-);
+                  .type               = DEFAULT,
+                  .mscButtonPin       = IO_TAG(USB_MSC_BUTTON_PIN),
+                  .mscButtonUsePullup = MSC_BUTTON_IPU, );
 #endif

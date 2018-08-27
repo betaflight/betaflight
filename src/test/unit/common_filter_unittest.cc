@@ -15,15 +15,15 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #include <limits.h>
 
 #include <math.h>
 
 extern "C" {
-    #include "common/filter.h"
+#include "common/filter.h"
 }
 
 #include "unittest_macros.h"

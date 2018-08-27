@@ -26,14 +26,14 @@
 
 #include "build/build_config.h"
 
-#include "drivers/time.h"
-#include "drivers/bus_spi.h"
-#include "drivers/sensor.h"
-#include "drivers/io.h"
-#include "drivers/exti.h"
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/accgyro/accgyro_mpu.h"
 #include "drivers/accgyro/accgyro_mpu6500.h"
+#include "drivers/bus_spi.h"
+#include "drivers/exti.h"
+#include "drivers/io.h"
+#include "drivers/sensor.h"
+#include "drivers/time.h"
 
 #include "hardware_revision.h"
 
@@ -42,11 +42,10 @@ uint8_t hardwareRevision = 1;
 void detectHardwareRevision(void)
 {
     GPIO_InitTypeDef GPIO_InitStructure = {
-        .GPIO_Mode = GPIO_Mode_OUT,
+        .GPIO_Mode  = GPIO_Mode_OUT,
         .GPIO_OType = GPIO_OType_PP,
-        .GPIO_PuPd = GPIO_PuPd_NOPULL,
-        .GPIO_Speed = GPIO_Speed_2MHz
-    };
+        .GPIO_PuPd  = GPIO_PuPd_NOPULL,
+        .GPIO_Speed = GPIO_Speed_2MHz};
 
     // GYRO CS as output
     GPIO_InitStructure.GPIO_Pin = (GPIO_Pin_5 | GPIO_Pin_12);
@@ -60,5 +59,4 @@ void detectHardwareRevision(void)
 
 void updateHardwareRevision(void)
 {
-
 }

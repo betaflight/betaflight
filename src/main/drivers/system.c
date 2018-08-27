@@ -34,7 +34,7 @@
 // cycles per microsecond
 static uint32_t usTicks = 0;
 // current uptime for 1kHz systick timer. will rollover after 49 days. hopefully we won't care.
-static volatile uint32_t sysTickUptime = 0;
+static volatile uint32_t sysTickUptime   = 0;
 static volatile uint32_t sysTickValStamp = 0;
 // cached value of RCC->CSR
 uint32_t cachedRccCsrValue;
@@ -56,10 +56,11 @@ static volatile int sysTickPending = 0;
 
 void SysTick_Handler(void)
 {
-    ATOMIC_BLOCK(NVIC_PRIO_MAX) {
+    ATOMIC_BLOCK(NVIC_PRIO_MAX)
+    {
         sysTickUptime++;
         sysTickValStamp = SysTick->VAL;
-        sysTickPending = 0;
+        sysTickPending  = 0;
         (void)(SysTick->CTRL);
     }
 #ifdef USE_HAL_DRIVER
@@ -74,7 +75,8 @@ uint32_t microsISR(void)
 {
     register uint32_t ms, pending, cycle_cnt;
 
-    ATOMIC_BLOCK(NVIC_PRIO_MAX) {
+    ATOMIC_BLOCK(NVIC_PRIO_MAX)
+    {
         cycle_cnt = SysTick->VAL;
 
         if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) {
@@ -90,7 +92,7 @@ uint32_t microsISR(void)
             cycle_cnt = SysTick->VAL;
         }
 
-        ms = sysTickUptime;
+        ms      = sysTickUptime;
         pending = sysTickPending;
     }
 
@@ -108,7 +110,7 @@ uint32_t micros(void)
     }
 
     do {
-        ms = sysTickUptime;
+        ms        = sysTickUptime;
         cycle_cnt = SysTick->VAL;
     } while (ms != sysTickUptime || cycle_cnt > sysTickValStamp);
 
@@ -125,7 +127,8 @@ uint32_t millis(void)
 void delayMicroseconds(uint32_t us)
 {
     uint32_t now = micros();
-    while (micros() - now < us);
+    while (micros() - now < us)
+        ;
 }
 #else
 void delayMicroseconds(uint32_t us)

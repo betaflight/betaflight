@@ -43,57 +43,56 @@
 
 #include "pg/piniobox.h"
 
-
 // permanent IDs must uniquely identify BOX meaning, DO NOT REUSE THEM!
 static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
-    { BOXARM, "ARM", 0 },
-    { BOXANGLE, "ANGLE", 1 },
-    { BOXHORIZON, "HORIZON", 2 },
-    { BOXBARO, "BARO", 3 },
-    { BOXANTIGRAVITY, "ANTI GRAVITY", 4 },
-    { BOXMAG, "MAG", 5 },
-    { BOXHEADFREE, "HEADFREE", 6 },
-    { BOXHEADADJ, "HEADADJ", 7 },
-    { BOXCAMSTAB, "CAMSTAB", 8 },
-//    { BOXCAMTRIG, "CAMTRIG", 9 },
-    { BOXGPSHOME, "GPS HOME", 10 },
-    { BOXGPSHOLD, "GPS HOLD", 11 },
-    { BOXPASSTHRU, "PASSTHRU", 12 },
-    { BOXBEEPERON, "BEEPER", 13 },
-//    { BOXLEDMAX, "LEDMAX", 14 }, (removed)
-    { BOXLEDLOW, "LEDLOW", 15 },
-//    { BOXLLIGHTS, "LLIGHTS", 16 }, (removed)
-    { BOXCALIB, "CALIB", 17 },
-//    { BOXGOV, "GOVERNOR", 18 }, (removed)
-    { BOXOSD, "OSD DISABLE SW", 19 },
-    { BOXTELEMETRY, "TELEMETRY", 20 },
-//    { BOXGTUNE, "GTUNE", 21 }, (removed)
-//    { BOXRANGEFINDER, "RANGEFINDER", 22 }, (removed)
-    { BOXSERVO1, "SERVO1", 23 },
-    { BOXSERVO2, "SERVO2", 24 },
-    { BOXSERVO3, "SERVO3", 25 },
-    { BOXBLACKBOX, "BLACKBOX", 26 },
-    { BOXFAILSAFE, "FAILSAFE", 27 },
-    { BOXAIRMODE, "AIR MODE", 28 },
-    { BOX3D, "DISABLE / SWITCH 3D", 29},
-    { BOXFPVANGLEMIX, "FPV ANGLE MIX", 30},
-    { BOXBLACKBOXERASE, "BLACKBOX ERASE (>30s)", 31 },
-    { BOXCAMERA1, "CAMERA CONTROL 1", 32},
-    { BOXCAMERA2, "CAMERA CONTROL 2", 33},
-    { BOXCAMERA3, "CAMERA CONTROL 3", 34 },
-    { BOXFLIPOVERAFTERCRASH, "FLIP OVER AFTER CRASH", 35 },
-    { BOXPREARM, "PREARM", 36 },
-    { BOXBEEPGPSCOUNT, "BEEP GPS SATELLITE COUNT", 37 },
-//    { BOX3DONASWITCH, "3D ON A SWITCH", 38 }, (removed)
-    { BOXVTXPITMODE, "VTX PIT MODE", 39 },
-    { BOXUSER1, "USER1", 40 },
-    { BOXUSER2, "USER2", 41 },
-    { BOXUSER3, "USER3", 42 },
-    { BOXUSER4, "USER4", 43 },
-    { BOXPIDAUDIO, "PID AUDIO", 44 },
-    { BOXPARALYZE, "PARALYZE", 45 },
-    { BOXGPSRESCUE, "GPS RESCUE", 46 },
-    { BOXACROTRAINER, "ACRO TRAINER", 47 },
+    {BOXARM, "ARM", 0},
+    {BOXANGLE, "ANGLE", 1},
+    {BOXHORIZON, "HORIZON", 2},
+    {BOXBARO, "BARO", 3},
+    {BOXANTIGRAVITY, "ANTI GRAVITY", 4},
+    {BOXMAG, "MAG", 5},
+    {BOXHEADFREE, "HEADFREE", 6},
+    {BOXHEADADJ, "HEADADJ", 7},
+    {BOXCAMSTAB, "CAMSTAB", 8},
+    //    { BOXCAMTRIG, "CAMTRIG", 9 },
+    {BOXGPSHOME, "GPS HOME", 10},
+    {BOXGPSHOLD, "GPS HOLD", 11},
+    {BOXPASSTHRU, "PASSTHRU", 12},
+    {BOXBEEPERON, "BEEPER", 13},
+    //    { BOXLEDMAX, "LEDMAX", 14 }, (removed)
+    {BOXLEDLOW, "LEDLOW", 15},
+    //    { BOXLLIGHTS, "LLIGHTS", 16 }, (removed)
+    {BOXCALIB, "CALIB", 17},
+    //    { BOXGOV, "GOVERNOR", 18 }, (removed)
+    {BOXOSD, "OSD DISABLE SW", 19},
+    {BOXTELEMETRY, "TELEMETRY", 20},
+    //    { BOXGTUNE, "GTUNE", 21 }, (removed)
+    //    { BOXRANGEFINDER, "RANGEFINDER", 22 }, (removed)
+    {BOXSERVO1, "SERVO1", 23},
+    {BOXSERVO2, "SERVO2", 24},
+    {BOXSERVO3, "SERVO3", 25},
+    {BOXBLACKBOX, "BLACKBOX", 26},
+    {BOXFAILSAFE, "FAILSAFE", 27},
+    {BOXAIRMODE, "AIR MODE", 28},
+    {BOX3D, "DISABLE / SWITCH 3D", 29},
+    {BOXFPVANGLEMIX, "FPV ANGLE MIX", 30},
+    {BOXBLACKBOXERASE, "BLACKBOX ERASE (>30s)", 31},
+    {BOXCAMERA1, "CAMERA CONTROL 1", 32},
+    {BOXCAMERA2, "CAMERA CONTROL 2", 33},
+    {BOXCAMERA3, "CAMERA CONTROL 3", 34},
+    {BOXFLIPOVERAFTERCRASH, "FLIP OVER AFTER CRASH", 35},
+    {BOXPREARM, "PREARM", 36},
+    {BOXBEEPGPSCOUNT, "BEEP GPS SATELLITE COUNT", 37},
+    //    { BOX3DONASWITCH, "3D ON A SWITCH", 38 }, (removed)
+    {BOXVTXPITMODE, "VTX PIT MODE", 39},
+    {BOXUSER1, "USER1", 40},
+    {BOXUSER2, "USER2", 41},
+    {BOXUSER3, "USER3", 42},
+    {BOXUSER4, "USER4", 43},
+    {BOXPIDAUDIO, "PID AUDIO", 44},
+    {BOXPARALYZE, "PARALYZE", 45},
+    {BOXGPSRESCUE, "GPS RESCUE", 46},
+    {BOXACROTRAINER, "ACRO TRAINER", 47},
 };
 
 // mask of enabled IDs, calculated on startup based on enabled features. boxId_e is used as bit index
@@ -142,15 +141,15 @@ void serializeBoxPermanentIdFn(sbuf_t *dst, const box_t *box)
 // Each page contains at most 32 boxes
 void serializeBoxReply(sbuf_t *dst, int page, serializeBoxFn *serializeBox)
 {
-    unsigned boxIdx = 0;
+    unsigned boxIdx    = 0;
     unsigned pageStart = page * 32;
-    unsigned pageEnd = pageStart + 32;
+    unsigned pageEnd   = pageStart + 32;
     for (boxId_e id = 0; id < CHECKBOX_ITEM_COUNT; id++) {
         if (activeBoxIdGet(id)) {
             if (boxIdx >= pageStart && boxIdx < pageEnd) {
                 (*serializeBox)(dst, findBoxByBoxId(id));
             }
-            boxIdx++;                 // count active boxes
+            boxIdx++; // count active boxes
         }
     }
 }
@@ -158,11 +157,14 @@ void serializeBoxReply(sbuf_t *dst, int page, serializeBoxFn *serializeBox)
 void initActiveBoxIds(void)
 {
     // calculate used boxes based on features and set corresponding activeBoxIds bits
-    boxBitmask_t ena;  // temporary variable to collect result
+    boxBitmask_t ena; // temporary variable to collect result
     memset(&ena, 0, sizeof(ena));
 
     // macro to enable boxId (BoxidMaskEnable). Reference to ena is hidden, local use only
-#define BME(boxId) do { bitArraySet(&ena, boxId); } while (0)
+#define BME(boxId)                \
+    do {                          \
+        bitArraySet(&ena, boxId); \
+    } while (0)
     BME(BOXARM);
     BME(BOXPREARM);
     if (!featureIsEnabled(FEATURE_AIRMODE)) {
@@ -271,7 +273,7 @@ void initActiveBoxIds(void)
         if (pinioBoxConfig()->permanentId[i] != PERMANENT_ID_NONE) {
             const box_t *box = findBoxByPermanentId(pinioBoxConfig()->permanentId[i]);
             if (box) {
-                switch(box->boxId) {
+                switch (box->boxId) {
                 case BOXUSER1:
                 case BOXUSER2:
                 case BOXUSER3:
@@ -298,12 +300,11 @@ void initActiveBoxIds(void)
 
 #undef BME
     // check that all enabled IDs are in boxes array (check may be skipped when using findBoxById() functions)
-    for (boxId_e boxId = 0;  boxId < CHECKBOX_ITEM_COUNT; boxId++)
-        if (bitArrayGet(&ena, boxId)
-            && findBoxByBoxId(boxId) == NULL)
-            bitArrayClr(&ena, boxId);                 // this should not happen, but handle it gracefully
+    for (boxId_e boxId = 0; boxId < CHECKBOX_ITEM_COUNT; boxId++)
+        if (bitArrayGet(&ena, boxId) && findBoxByBoxId(boxId) == NULL)
+            bitArrayClr(&ena, boxId); // this should not happen, but handle it gracefully
 
-    activeBoxIds = ena;                               // set global variable
+    activeBoxIds = ena; // set global variable
 }
 
 // return state of given boxId box, handling ARM and FLIGHT_MODE
@@ -331,12 +332,12 @@ int packFlightModeFlags(boxBitmask_t *mspFlightModeFlags)
     memset(mspFlightModeFlags, 0, sizeof(boxBitmask_t));
     // map boxId_e enabled bits to MSP status indexes
     // only active boxIds are sent in status over MSP, other bits are not counted
-    unsigned mspBoxIdx = 0;           // index of active boxId (matches sent permanentId and boxNames)
+    unsigned mspBoxIdx = 0; // index of active boxId (matches sent permanentId and boxNames)
     for (boxId_e boxId = 0; boxId < CHECKBOX_ITEM_COUNT; boxId++) {
         if (activeBoxIdGet(boxId)) {
             if (getBoxIdState(boxId))
-                bitArraySet(mspFlightModeFlags, mspBoxIdx);       // box is enabled
-            mspBoxIdx++;                                          // box is active, count it
+                bitArraySet(mspFlightModeFlags, mspBoxIdx); // box is enabled
+            mspBoxIdx++;                                    // box is active, count it
         }
     }
     // return count of used bits

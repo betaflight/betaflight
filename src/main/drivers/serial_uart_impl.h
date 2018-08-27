@@ -26,37 +26,37 @@
 #define UARTDEV_COUNT_MAX 3
 #define UARTHARDWARE_MAX_PINS 3
 #ifndef UART_RX_BUFFER_SIZE
-#define UART_RX_BUFFER_SIZE     128
+#define UART_RX_BUFFER_SIZE 128
 #endif
 #ifndef UART_TX_BUFFER_SIZE
-#define UART_TX_BUFFER_SIZE     256
+#define UART_TX_BUFFER_SIZE 256
 #endif
 #elif defined(STM32F3)
 #define UARTDEV_COUNT_MAX 5
 #define UARTHARDWARE_MAX_PINS 4
 #ifndef UART_RX_BUFFER_SIZE
-#define UART_RX_BUFFER_SIZE     128
+#define UART_RX_BUFFER_SIZE 128
 #endif
 #ifndef UART_TX_BUFFER_SIZE
-#define UART_TX_BUFFER_SIZE     256
+#define UART_TX_BUFFER_SIZE 256
 #endif
 #elif defined(STM32F4)
 #define UARTDEV_COUNT_MAX 6
 #define UARTHARDWARE_MAX_PINS 4
 #ifndef UART_RX_BUFFER_SIZE
-#define UART_RX_BUFFER_SIZE     128
+#define UART_RX_BUFFER_SIZE 128
 #endif
 #ifndef UART_TX_BUFFER_SIZE
-#define UART_TX_BUFFER_SIZE     256
+#define UART_TX_BUFFER_SIZE 256
 #endif
 #elif defined(STM32F7)
 #define UARTDEV_COUNT_MAX 8
 #define UARTHARDWARE_MAX_PINS 3
 #ifndef UART_RX_BUFFER_SIZE
-#define UART_RX_BUFFER_SIZE     128
+#define UART_RX_BUFFER_SIZE 128
 #endif
 #ifndef UART_TX_BUFFER_SIZE
-#define UART_TX_BUFFER_SIZE     256
+#define UART_TX_BUFFER_SIZE 256
 #endif
 #else
 #error unknown MCU family
@@ -115,8 +115,8 @@
 #define UARTDEV_COUNT (UARTDEV_COUNT_1 + UARTDEV_COUNT_2 + UARTDEV_COUNT_3 + UARTDEV_COUNT_4 + UARTDEV_COUNT_5 + UARTDEV_COUNT_6 + UARTDEV_COUNT_7 + UARTDEV_COUNT_8)
 
 typedef struct uartHardware_s {
-    UARTDevice_e device;    // XXX Not required for full allocation
-    USART_TypeDef* reg;
+    UARTDevice_e device; // XXX Not required for full allocation
+    USART_TypeDef *reg;
 #if defined(STM32F1) || defined(STM32F3)
     DMA_Channel_TypeDef *txDMAChannel;
     DMA_Channel_TypeDef *rxDMAChannel;

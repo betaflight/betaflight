@@ -35,8 +35,8 @@
 
 #define DEBUG_SBUS_FRAME_INTERVAL 3
 
-#define SBUS_FLAG_CHANNEL_17        (1 << 0)
-#define SBUS_FLAG_CHANNEL_18        (1 << 1)
+#define SBUS_FLAG_CHANNEL_17 (1 << 0)
+#define SBUS_FLAG_CHANNEL_18 (1 << 1)
 
 #define SBUS_DIGITAL_CHANNEL_MIN 173
 #define SBUS_DIGITAL_CHANNEL_MAX 1812
@@ -44,22 +44,22 @@
 uint8_t sbusChannelsDecode(rxRuntimeConfig_t *rxRuntimeConfig, const sbusChannels_t *channels)
 {
     uint16_t *sbusChannelData = rxRuntimeConfig->channelData;
-    sbusChannelData[0] = channels->chan0;
-    sbusChannelData[1] = channels->chan1;
-    sbusChannelData[2] = channels->chan2;
-    sbusChannelData[3] = channels->chan3;
-    sbusChannelData[4] = channels->chan4;
-    sbusChannelData[5] = channels->chan5;
-    sbusChannelData[6] = channels->chan6;
-    sbusChannelData[7] = channels->chan7;
-    sbusChannelData[8] = channels->chan8;
-    sbusChannelData[9] = channels->chan9;
-    sbusChannelData[10] = channels->chan10;
-    sbusChannelData[11] = channels->chan11;
-    sbusChannelData[12] = channels->chan12;
-    sbusChannelData[13] = channels->chan13;
-    sbusChannelData[14] = channels->chan14;
-    sbusChannelData[15] = channels->chan15;
+    sbusChannelData[0]        = channels->chan0;
+    sbusChannelData[1]        = channels->chan1;
+    sbusChannelData[2]        = channels->chan2;
+    sbusChannelData[3]        = channels->chan3;
+    sbusChannelData[4]        = channels->chan4;
+    sbusChannelData[5]        = channels->chan5;
+    sbusChannelData[6]        = channels->chan6;
+    sbusChannelData[7]        = channels->chan7;
+    sbusChannelData[8]        = channels->chan8;
+    sbusChannelData[9]        = channels->chan9;
+    sbusChannelData[10]       = channels->chan10;
+    sbusChannelData[11]       = channels->chan11;
+    sbusChannelData[12]       = channels->chan12;
+    sbusChannelData[13]       = channels->chan13;
+    sbusChannelData[14]       = channels->chan14;
+    sbusChannelData[15]       = channels->chan15;
 
     if (channels->flags & SBUS_FLAG_CHANNEL_17) {
         sbusChannelData[16] = SBUS_DIGITAL_CHANNEL_MAX;

@@ -23,8 +23,8 @@
  *
  */
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 
 #include "platform.h"
@@ -46,10 +46,10 @@
 
 #include "pg/usb.h"
 
-#include "vcp_hal/usbd_cdc_interface.h"
+#include "msc/usbd_storage.h"
 #include "usb_io.h"
 #include "usbd_msc.h"
-#include "msc/usbd_storage.h"
+#include "vcp_hal/usbd_cdc_interface.h"
 
 USBD_HandleTypeDef USBD_Device;
 
@@ -139,7 +139,8 @@ bool mscCheckButton(void)
 void mscWaitForButton(void)
 {
     // In order to exit MSC mode simply disconnect the board, or push the button again.
-    while (mscCheckButton());
+    while (mscCheckButton())
+        ;
     delay(DEBOUNCE_TIME_MS);
     while (true) {
         asm("NOP");
@@ -157,7 +158,7 @@ void systemResetToMsc(void)
         mpuResetFn();
     }
 
-    *((__IO uint32_t*) BKPSRAM_BASE + 16) = MSC_MAGIC;
+    *((__IO uint32_t *)BKPSRAM_BASE + 16) = MSC_MAGIC;
 
     __disable_irq();
     NVIC_SystemReset();

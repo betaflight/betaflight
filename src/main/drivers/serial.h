@@ -24,20 +24,20 @@
 #include "pg/pg.h"
 
 typedef enum {
-    MODE_RX = 1 << 0,
-    MODE_TX = 1 << 1,
+    MODE_RX   = 1 << 0,
+    MODE_TX   = 1 << 1,
     MODE_RXTX = MODE_RX | MODE_TX
 } portMode_e;
 
 typedef enum {
-    SERIAL_NOT_INVERTED  = 0 << 0,
-    SERIAL_INVERTED      = 1 << 0,
-    SERIAL_STOPBITS_1    = 0 << 1,
-    SERIAL_STOPBITS_2    = 1 << 1,
-    SERIAL_PARITY_NO     = 0 << 2,
-    SERIAL_PARITY_EVEN   = 1 << 2,
-    SERIAL_UNIDIR        = 0 << 3,
-    SERIAL_BIDIR         = 1 << 3,
+    SERIAL_NOT_INVERTED = 0 << 0,
+    SERIAL_INVERTED     = 1 << 0,
+    SERIAL_STOPBITS_1   = 0 << 1,
+    SERIAL_STOPBITS_2   = 1 << 1,
+    SERIAL_PARITY_NO    = 0 << 2,
+    SERIAL_PARITY_EVEN  = 1 << 2,
+    SERIAL_UNIDIR       = 0 << 3,
+    SERIAL_BIDIR        = 1 << 3,
 
     /*
      * Note on SERIAL_BIDIR_PP
@@ -46,16 +46,16 @@ typedef enum {
      * To ensure the first start bit to be sent, prepend a zero byte (0x00)
      * to actual data bytes.
      */
-    SERIAL_BIDIR_OD        = 0 << 4,
-    SERIAL_BIDIR_PP        = 1 << 4,
-    SERIAL_BIDIR_NOPULL    = 1 << 5, // disable pulls in BIDIR RX mode
+    SERIAL_BIDIR_OD     = 0 << 4,
+    SERIAL_BIDIR_PP     = 1 << 4,
+    SERIAL_BIDIR_NOPULL = 1 << 5, // disable pulls in BIDIR RX mode
 } portOptions_e;
 
 // Define known line control states which may be passed up by underlying serial driver callback
 #define CTRL_LINE_STATE_DTR (1 << 0)
 #define CTRL_LINE_STATE_RTS (1 << 1)
 
-typedef void (*serialReceiveCallbackPtr)(uint16_t data, void *rxCallbackData);   // used by serial drivers to return frames to app
+typedef void (*serialReceiveCallbackPtr)(uint16_t data, void *rxCallbackData); // used by serial drivers to return frames to app
 
 typedef struct serialPort_s {
 
@@ -82,13 +82,13 @@ typedef struct serialPort_s {
 } serialPort_t;
 
 #if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
-# ifdef USE_SOFTSERIAL2
-#  define SERIAL_PORT_MAX_INDEX (RESOURCE_SOFT_OFFSET + 2)
-# else
-#  define SERIAL_PORT_MAX_INDEX (RESOURCE_SOFT_OFFSET + 1)
-# endif
+#ifdef USE_SOFTSERIAL2
+#define SERIAL_PORT_MAX_INDEX (RESOURCE_SOFT_OFFSET + 2)
 #else
-# define SERIAL_PORT_MAX_INDEX RESOURCE_SOFT_OFFSET
+#define SERIAL_PORT_MAX_INDEX (RESOURCE_SOFT_OFFSET + 1)
+#endif
+#else
+#define SERIAL_PORT_MAX_INDEX RESOURCE_SOFT_OFFSET
 #endif
 
 typedef struct serialPinConfig_s {

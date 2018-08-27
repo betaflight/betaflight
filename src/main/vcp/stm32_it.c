@@ -28,8 +28,8 @@
  */
 
 /* Includes ------------------------------------------------------------------*/
-#include "hw_config.h"
 #include "stm32_it.h"
+#include "hw_config.h"
 #include "usb_lib.h"
 #include "vcp/usb_istr.h"
 
@@ -53,8 +53,6 @@
 void NMI_Handler(void)
 {
 }
-
-
 
 /*******************************************************************************
  * Function Name  : MemManage_Handler
@@ -131,7 +129,6 @@ void PendSV_Handler(void)
 {
 }
 
-
 /*******************************************************************************
  * Function Name  : USB_IRQHandler
  * Description    : This function handles USB Low Priority interrupts
@@ -140,7 +137,7 @@ void PendSV_Handler(void)
  * Output         : None
  * Return         : None
  *******************************************************************************/
-#if defined(STM32L1XX_MD) || defined(STM32L1XX_HD)|| defined(STM32L1XX_MD_PLUS)|| defined (STM32F37X)
+#if defined(STM32L1XX_MD) || defined(STM32L1XX_HD) || defined(STM32L1XX_MD_PLUS) || defined(STM32F37X)
 void USB_LP_IRQHandler(void)
 #else
 void USB_LP_CAN1_RX0_IRQHandler(void)
@@ -157,7 +154,7 @@ void USB_LP_CAN1_RX0_IRQHandler(void)
  * Return         : None
  *******************************************************************************/
 
-#if defined(STM32L1XX_MD) || defined(STM32L1XX_HD)|| defined(STM32L1XX_MD_PLUS)
+#if defined(STM32L1XX_MD) || defined(STM32L1XX_HD) || defined(STM32L1XX_MD_PLUS)
 void USB_FS_WKUP_IRQHandler(void)
 #else
 void USBWakeUp_IRQHandler(void)

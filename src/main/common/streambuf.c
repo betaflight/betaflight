@@ -18,8 +18,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <string.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "streambuf.h"
 
@@ -63,7 +63,6 @@ void sbufWriteU32BigEndian(sbuf_t *dst, uint32_t val)
     sbufWriteU8(dst, (uint8_t)val);
 }
 
-
 void sbufFill(sbuf_t *dst, uint8_t data, int len)
 {
     memset(dst->ptr, data, len);
@@ -103,7 +102,7 @@ uint32_t sbufReadU32(sbuf_t *src)
 {
     uint32_t ret;
     ret = sbufReadU8(src);
-    ret |= sbufReadU8(src) <<  8;
+    ret |= sbufReadU8(src) << 8;
     ret |= sbufReadU8(src) << 16;
     ret |= sbufReadU8(src) << 24;
     return ret;
@@ -121,12 +120,12 @@ int sbufBytesRemaining(sbuf_t *buf)
     return buf->end - buf->ptr;
 }
 
-uint8_t* sbufPtr(sbuf_t *buf)
+uint8_t *sbufPtr(sbuf_t *buf)
 {
     return buf->ptr;
 }
 
-const uint8_t* sbufConstPtr(const sbuf_t *buf)
+const uint8_t *sbufConstPtr(const sbuf_t *buf)
 {
     return buf->ptr;
 }

@@ -20,11 +20,11 @@
 
 #pragma once
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
-#define MBR_PARTITION_TYPE_FAT16     0x06
-#define MBR_PARTITION_TYPE_FAT32     0x0B
+#define MBR_PARTITION_TYPE_FAT16 0x06
+#define MBR_PARTITION_TYPE_FAT32 0x0B
 #define MBR_PARTITION_TYPE_FAT32_LBA 0x0C
 #define MBR_PARTITION_TYPE_FAT16_LBA 0x0E
 
@@ -41,16 +41,16 @@
 #define FAT16_MAX_CLUSTERS 65524
 
 #define FAT_FILE_ATTRIBUTE_READ_ONLY 0x01
-#define FAT_FILE_ATTRIBUTE_HIDDEN    0x02
-#define FAT_FILE_ATTRIBUTE_SYSTEM    0x04
+#define FAT_FILE_ATTRIBUTE_HIDDEN 0x02
+#define FAT_FILE_ATTRIBUTE_SYSTEM 0x04
 #define FAT_FILE_ATTRIBUTE_VOLUME_ID 0x08
 #define FAT_FILE_ATTRIBUTE_DIRECTORY 0x10
-#define FAT_FILE_ATTRIBUTE_ARCHIVE   0x20
+#define FAT_FILE_ATTRIBUTE_ARCHIVE 0x20
 
 #define FAT_FILENAME_LENGTH 11
 #define FAT_DELETED_FILE_MARKER 0xE5
 
-#define FAT_MAKE_DATE(year, month, day)     (day | (month << 5) | ((year - 1980) << 9))
+#define FAT_MAKE_DATE(year, month, day) (day | (month << 5) | ((year - 1980) << 9))
 #define FAT_MAKE_TIME(hour, minute, second) ((second / 2) | (minute << 5) | (hour << 11))
 
 typedef enum {

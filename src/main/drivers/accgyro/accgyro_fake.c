@@ -24,8 +24,8 @@
 #include "platform.h"
 
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
-#include <stdio.h>
 #include <pthread.h>
+#include <stdio.h>
 #endif
 
 #ifdef USE_FAKE_GYRO
@@ -90,8 +90,8 @@ static bool fakeGyroReadTemperature(gyroDev_t *gyro, int16_t *temperatureData)
 
 bool fakeGyroDetect(gyroDev_t *gyro)
 {
-    gyro->initFn = fakeGyroInit;
-    gyro->readFn = fakeGyroRead;
+    gyro->initFn        = fakeGyroInit;
+    gyro->readFn        = fakeGyroRead;
     gyro->temperatureFn = fakeGyroReadTemperature;
 #if defined(SIMULATOR_BUILD)
     gyro->scale = 1.0f / 16.4f;
@@ -101,7 +101,6 @@ bool fakeGyroDetect(gyroDev_t *gyro)
     return true;
 }
 #endif // USE_FAKE_GYRO
-
 
 #ifdef USE_FAKE_ACC
 
@@ -150,8 +149,8 @@ static bool fakeAccRead(accDev_t *acc)
 
 bool fakeAccDetect(accDev_t *acc)
 {
-    acc->initFn = fakeAccInit;
-    acc->readFn = fakeAccRead;
+    acc->initFn       = fakeAccInit;
+    acc->readFn       = fakeAccRead;
     acc->revisionCode = 0;
     return true;
 }

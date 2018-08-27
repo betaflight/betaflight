@@ -18,10 +18,10 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-#include <math.h>
 
 #include "platform.h"
 
@@ -54,17 +54,16 @@
 
 #include "rx/rx.h"
 
-
 extern mixerMode_e currentMixerMode;
 
 PG_REGISTER_WITH_RESET_FN(servoConfig_t, servoConfig, PG_SERVO_CONFIG, 0);
 
 void pgResetFn_servoConfig(servoConfig_t *servoConfig)
 {
-    servoConfig->dev.servoCenterPulse = 1500;
-    servoConfig->dev.servoPwmRate = 50;
-    servoConfig->tri_unarmed_servo = 1;
-    servoConfig->servo_lowpass_freq = 0;
+    servoConfig->dev.servoCenterPulse          = 1500;
+    servoConfig->dev.servoPwmRate              = 50;
+    servoConfig->tri_unarmed_servo             = 1;
+    servoConfig->servo_lowpass_freq            = 0;
     servoConfig->channelForwardingStartChannel = AUX1;
 
     for (unsigned servoIndex = 0; servoIndex < MAX_SUPPORTED_SERVOS; servoIndex++) {
@@ -80,12 +79,11 @@ void pgResetFn_servoParams(servoParam_t *instance)
 {
     for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
         RESET_CONFIG(servoParam_t, &instance[i],
-            .min = DEFAULT_SERVO_MIN,
-            .max = DEFAULT_SERVO_MAX,
-            .middle = DEFAULT_SERVO_MIDDLE,
-            .rate = 100,
-            .forwardFromChannel = CHANNEL_FORWARDING_DISABLED
-        );
+                     .min                = DEFAULT_SERVO_MIN,
+                     .max                = DEFAULT_SERVO_MAX,
+                     .middle             = DEFAULT_SERVO_MIDDLE,
+                     .rate               = 100,
+                     .forwardFromChannel = CHANNEL_FORWARDING_DISABLED);
     }
 }
 
@@ -98,63 +96,62 @@ static uint8_t servoRuleCount = 0;
 static servoMixer_t currentServoMixer[MAX_SERVO_RULES];
 static int useServo;
 
-
 #define COUNT_SERVO_RULES(rules) (sizeof(rules) / sizeof(servoMixer_t))
 // mixer rule format servo, input, rate, speed, min, max, box
 static const servoMixer_t servoMixerAirplane[] = {
-    { SERVO_FLAPPERON_1, INPUT_STABILIZED_ROLL,  100, 0, 0, 100, 0 },
-    { SERVO_FLAPPERON_2, INPUT_STABILIZED_ROLL,  100, 0, 0, 100, 0 },
-    { SERVO_RUDDER,      INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
-    { SERVO_ELEVATOR,    INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
-    { SERVO_THROTTLE,    INPUT_STABILIZED_THROTTLE, 100, 0, 0, 100, 0 },
+    {SERVO_FLAPPERON_1, INPUT_STABILIZED_ROLL, 100, 0, 0, 100, 0},
+    {SERVO_FLAPPERON_2, INPUT_STABILIZED_ROLL, 100, 0, 0, 100, 0},
+    {SERVO_RUDDER, INPUT_STABILIZED_YAW, 100, 0, 0, 100, 0},
+    {SERVO_ELEVATOR, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0},
+    {SERVO_THROTTLE, INPUT_STABILIZED_THROTTLE, 100, 0, 0, 100, 0},
 };
 
 static const servoMixer_t servoMixerFlyingWing[] = {
-    { SERVO_FLAPPERON_1, INPUT_STABILIZED_ROLL,  100, 0, 0, 100, 0 },
-    { SERVO_FLAPPERON_1, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
-    { SERVO_FLAPPERON_2, INPUT_STABILIZED_ROLL, -100, 0, 0, 100, 0 },
-    { SERVO_FLAPPERON_2, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
-    { SERVO_THROTTLE,    INPUT_STABILIZED_THROTTLE, 100, 0, 0, 100, 0 },
+    {SERVO_FLAPPERON_1, INPUT_STABILIZED_ROLL, 100, 0, 0, 100, 0},
+    {SERVO_FLAPPERON_1, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0},
+    {SERVO_FLAPPERON_2, INPUT_STABILIZED_ROLL, -100, 0, 0, 100, 0},
+    {SERVO_FLAPPERON_2, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0},
+    {SERVO_THROTTLE, INPUT_STABILIZED_THROTTLE, 100, 0, 0, 100, 0},
 };
 
 static const servoMixer_t servoMixerTri[] = {
-    { SERVO_RUDDER, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
+    {SERVO_RUDDER, INPUT_STABILIZED_YAW, 100, 0, 0, 100, 0},
 };
 
 #if defined(USE_UNCOMMON_MIXERS)
 static const servoMixer_t servoMixerBI[] = {
-    { SERVO_BICOPTER_LEFT, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
-    { SERVO_BICOPTER_LEFT, INPUT_STABILIZED_PITCH, -100, 0, 0, 100, 0 },
-    { SERVO_BICOPTER_RIGHT, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
-    { SERVO_BICOPTER_RIGHT, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
+    {SERVO_BICOPTER_LEFT, INPUT_STABILIZED_YAW, 100, 0, 0, 100, 0},
+    {SERVO_BICOPTER_LEFT, INPUT_STABILIZED_PITCH, -100, 0, 0, 100, 0},
+    {SERVO_BICOPTER_RIGHT, INPUT_STABILIZED_YAW, 100, 0, 0, 100, 0},
+    {SERVO_BICOPTER_RIGHT, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0},
 };
 
 static const servoMixer_t servoMixerDual[] = {
-    { SERVO_DUALCOPTER_LEFT, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
-    { SERVO_DUALCOPTER_RIGHT, INPUT_STABILIZED_ROLL,  100, 0, 0, 100, 0 },
+    {SERVO_DUALCOPTER_LEFT, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0},
+    {SERVO_DUALCOPTER_RIGHT, INPUT_STABILIZED_ROLL, 100, 0, 0, 100, 0},
 };
 
 static const servoMixer_t servoMixerSingle[] = {
-    { SERVO_SINGLECOPTER_1, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
-    { SERVO_SINGLECOPTER_1, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
-    { SERVO_SINGLECOPTER_2, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
-    { SERVO_SINGLECOPTER_2, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
-    { SERVO_SINGLECOPTER_3, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
-    { SERVO_SINGLECOPTER_3, INPUT_STABILIZED_ROLL,  100, 0, 0, 100, 0 },
-    { SERVO_SINGLECOPTER_4, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
-    { SERVO_SINGLECOPTER_4, INPUT_STABILIZED_ROLL,  100, 0, 0, 100, 0 },
+    {SERVO_SINGLECOPTER_1, INPUT_STABILIZED_YAW, 100, 0, 0, 100, 0},
+    {SERVO_SINGLECOPTER_1, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0},
+    {SERVO_SINGLECOPTER_2, INPUT_STABILIZED_YAW, 100, 0, 0, 100, 0},
+    {SERVO_SINGLECOPTER_2, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0},
+    {SERVO_SINGLECOPTER_3, INPUT_STABILIZED_YAW, 100, 0, 0, 100, 0},
+    {SERVO_SINGLECOPTER_3, INPUT_STABILIZED_ROLL, 100, 0, 0, 100, 0},
+    {SERVO_SINGLECOPTER_4, INPUT_STABILIZED_YAW, 100, 0, 0, 100, 0},
+    {SERVO_SINGLECOPTER_4, INPUT_STABILIZED_ROLL, 100, 0, 0, 100, 0},
 };
 
 static const servoMixer_t servoMixerHeli[] = {
-    { SERVO_HELI_LEFT, INPUT_STABILIZED_PITCH,   -50, 0, 0, 100, 0 },
-    { SERVO_HELI_LEFT, INPUT_STABILIZED_ROLL,    -87, 0, 0, 100, 0 },
-    { SERVO_HELI_LEFT, INPUT_RC_AUX1,    100, 0, 0, 100, 0 },
-    { SERVO_HELI_RIGHT, INPUT_STABILIZED_PITCH,  -50, 0, 0, 100, 0 },
-    { SERVO_HELI_RIGHT, INPUT_STABILIZED_ROLL,  87, 0, 0, 100, 0 },
-    { SERVO_HELI_RIGHT, INPUT_RC_AUX1,    100, 0, 0, 100, 0 },
-    { SERVO_HELI_TOP, INPUT_STABILIZED_PITCH,   100, 0, 0, 100, 0 },
-    { SERVO_HELI_TOP, INPUT_RC_AUX1,    100, 0, 0, 100, 0 },
-    { SERVO_HELI_RUD, INPUT_STABILIZED_YAW, 100, 0, 0, 100, 0 },
+    {SERVO_HELI_LEFT, INPUT_STABILIZED_PITCH, -50, 0, 0, 100, 0},
+    {SERVO_HELI_LEFT, INPUT_STABILIZED_ROLL, -87, 0, 0, 100, 0},
+    {SERVO_HELI_LEFT, INPUT_RC_AUX1, 100, 0, 0, 100, 0},
+    {SERVO_HELI_RIGHT, INPUT_STABILIZED_PITCH, -50, 0, 0, 100, 0},
+    {SERVO_HELI_RIGHT, INPUT_STABILIZED_ROLL, 87, 0, 0, 100, 0},
+    {SERVO_HELI_RIGHT, INPUT_RC_AUX1, 100, 0, 0, 100, 0},
+    {SERVO_HELI_TOP, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0},
+    {SERVO_HELI_TOP, INPUT_RC_AUX1, 100, 0, 0, 100, 0},
+    {SERVO_HELI_RUD, INPUT_STABILIZED_YAW, 100, 0, 0, 100, 0},
 };
 #else
 #define servoMixerBI NULL
@@ -164,38 +161,38 @@ static const servoMixer_t servoMixerHeli[] = {
 #endif // USE_UNCOMMON_MIXERS
 
 static const servoMixer_t servoMixerGimbal[] = {
-    { SERVO_GIMBAL_PITCH, INPUT_GIMBAL_PITCH, 125, 0, 0, 100, 0 },
-    { SERVO_GIMBAL_ROLL, INPUT_GIMBAL_ROLL,  125, 0, 0, 100, 0 },
+    {SERVO_GIMBAL_PITCH, INPUT_GIMBAL_PITCH, 125, 0, 0, 100, 0},
+    {SERVO_GIMBAL_ROLL, INPUT_GIMBAL_ROLL, 125, 0, 0, 100, 0},
 };
 
 const mixerRules_t servoMixers[] = {
-    { 0, NULL },                // entry 0
-    { COUNT_SERVO_RULES(servoMixerTri), servoMixerTri },       // MULTITYPE_TRI
-    { 0, NULL },                // MULTITYPE_QUADP
-    { 0, NULL },                // MULTITYPE_QUADX
-    { COUNT_SERVO_RULES(servoMixerBI), servoMixerBI },        // MULTITYPE_BI
-    { COUNT_SERVO_RULES(servoMixerGimbal), servoMixerGimbal },    // * MULTITYPE_GIMBAL
-    { 0, NULL },                // MULTITYPE_Y6
-    { 0, NULL },                // MULTITYPE_HEX6
-    { COUNT_SERVO_RULES(servoMixerFlyingWing), servoMixerFlyingWing },// * MULTITYPE_FLYING_WING
-    { 0, NULL },                // MULTITYPE_Y4
-    { 0, NULL },                // MULTITYPE_HEX6X
-    { 0, NULL },                // MULTITYPE_OCTOX8
-    { 0, NULL },                // MULTITYPE_OCTOFLATP
-    { 0, NULL },                // MULTITYPE_OCTOFLATX
-    { COUNT_SERVO_RULES(servoMixerAirplane), servoMixerAirplane },  // * MULTITYPE_AIRPLANE
-    { COUNT_SERVO_RULES(servoMixerHeli), servoMixerHeli },                // * MULTITYPE_HELI_120_CCPM
-    { 0, NULL },                // * MULTITYPE_HELI_90_DEG
-    { 0, NULL },                // MULTITYPE_VTAIL4
-    { 0, NULL },                // MULTITYPE_HEX6H
-    { 0, NULL },                // * MULTITYPE_PPM_TO_SERVO
-    { COUNT_SERVO_RULES(servoMixerDual), servoMixerDual },      // MULTITYPE_DUALCOPTER
-    { COUNT_SERVO_RULES(servoMixerSingle), servoMixerSingle },    // MULTITYPE_SINGLECOPTER
-    { 0, NULL },                // MULTITYPE_ATAIL4
-    { 0, NULL },                // MULTITYPE_CUSTOM
-    { 0, NULL },                // MULTITYPE_CUSTOM_PLANE
-    { 0, NULL },                // MULTITYPE_CUSTOM_TRI
-    { 0, NULL },
+    {0, NULL},                                                       // entry 0
+    {COUNT_SERVO_RULES(servoMixerTri), servoMixerTri},               // MULTITYPE_TRI
+    {0, NULL},                                                       // MULTITYPE_QUADP
+    {0, NULL},                                                       // MULTITYPE_QUADX
+    {COUNT_SERVO_RULES(servoMixerBI), servoMixerBI},                 // MULTITYPE_BI
+    {COUNT_SERVO_RULES(servoMixerGimbal), servoMixerGimbal},         // * MULTITYPE_GIMBAL
+    {0, NULL},                                                       // MULTITYPE_Y6
+    {0, NULL},                                                       // MULTITYPE_HEX6
+    {COUNT_SERVO_RULES(servoMixerFlyingWing), servoMixerFlyingWing}, // * MULTITYPE_FLYING_WING
+    {0, NULL},                                                       // MULTITYPE_Y4
+    {0, NULL},                                                       // MULTITYPE_HEX6X
+    {0, NULL},                                                       // MULTITYPE_OCTOX8
+    {0, NULL},                                                       // MULTITYPE_OCTOFLATP
+    {0, NULL},                                                       // MULTITYPE_OCTOFLATX
+    {COUNT_SERVO_RULES(servoMixerAirplane), servoMixerAirplane},     // * MULTITYPE_AIRPLANE
+    {COUNT_SERVO_RULES(servoMixerHeli), servoMixerHeli},             // * MULTITYPE_HELI_120_CCPM
+    {0, NULL},                                                       // * MULTITYPE_HELI_90_DEG
+    {0, NULL},                                                       // MULTITYPE_VTAIL4
+    {0, NULL},                                                       // MULTITYPE_HEX6H
+    {0, NULL},                                                       // * MULTITYPE_PPM_TO_SERVO
+    {COUNT_SERVO_RULES(servoMixerDual), servoMixerDual},             // MULTITYPE_DUALCOPTER
+    {COUNT_SERVO_RULES(servoMixerSingle), servoMixerSingle},         // MULTITYPE_SINGLECOPTER
+    {0, NULL},                                                       // MULTITYPE_ATAIL4
+    {0, NULL},                                                       // MULTITYPE_CUSTOM
+    {0, NULL},                                                       // MULTITYPE_CUSTOM_PLANE
+    {0, NULL},                                                       // MULTITYPE_CUSTOM_TRI
+    {0, NULL},
 };
 
 int16_t determineServoMiddleOrForwardFromChannel(servoIndex_e servoIndex)
@@ -268,8 +265,7 @@ void servoConfigureOutput(void)
     // set flag that we're on something with wings
     if (currentMixerMode == MIXER_FLYING_WING ||
         currentMixerMode == MIXER_AIRPLANE ||
-        currentMixerMode == MIXER_CUSTOM_AIRPLANE
-    ) {
+        currentMixerMode == MIXER_CUSTOM_AIRPLANE) {
         ENABLE_STATE(FIXED_WING);
         if (currentMixerMode == MIXER_CUSTOM_AIRPLANE) {
             loadCustomServoMixer();
@@ -281,7 +277,6 @@ void servoConfigureOutput(void)
         }
     }
 }
-
 
 void servoMixerLoadMix(int index)
 {
@@ -396,14 +391,14 @@ void servoMixer(void)
 
     if (FLIGHT_MODE(PASSTHRU_MODE)) {
         // Direct passthru from RX
-        input[INPUT_STABILIZED_ROLL] = rcCommand[ROLL];
+        input[INPUT_STABILIZED_ROLL]  = rcCommand[ROLL];
         input[INPUT_STABILIZED_PITCH] = rcCommand[PITCH];
-        input[INPUT_STABILIZED_YAW] = rcCommand[YAW];
+        input[INPUT_STABILIZED_YAW]   = rcCommand[YAW];
     } else {
         // Assisted modes (gyro only or gyro+acc according to AUX configuration in Gui
-        input[INPUT_STABILIZED_ROLL] = pidData[FD_ROLL].Sum * PID_SERVO_MIXER_SCALING;
+        input[INPUT_STABILIZED_ROLL]  = pidData[FD_ROLL].Sum * PID_SERVO_MIXER_SCALING;
         input[INPUT_STABILIZED_PITCH] = pidData[FD_PITCH].Sum * PID_SERVO_MIXER_SCALING;
-        input[INPUT_STABILIZED_YAW] = pidData[FD_YAW].Sum * PID_SERVO_MIXER_SCALING;
+        input[INPUT_STABILIZED_YAW]   = pidData[FD_YAW].Sum * PID_SERVO_MIXER_SCALING;
 
         // Reverse yaw servo when inverted in 3D mode
         if (featureIsEnabled(FEATURE_3D) && (rcData[THROTTLE] < rxConfig()->midrc)) {
@@ -412,9 +407,9 @@ void servoMixer(void)
     }
 
     input[INPUT_GIMBAL_PITCH] = scaleRange(attitude.values.pitch, -1800, 1800, -500, +500);
-    input[INPUT_GIMBAL_ROLL] = scaleRange(attitude.values.roll, -1800, 1800, -500, +500);
+    input[INPUT_GIMBAL_ROLL]  = scaleRange(attitude.values.roll, -1800, 1800, -500, +500);
 
-    input[INPUT_STABILIZED_THROTTLE] = motor[0] - 1000 - 500;  // Since it derives from rcCommand or mincommand and must be [-500:+500]
+    input[INPUT_STABILIZED_THROTTLE] = motor[0] - 1000 - 500; // Since it derives from rcCommand or mincommand and must be [-500:+500]
 
     // center the RC input value around the RC middle value
     // by subtracting the RC middle value from the RC input value, we get:
@@ -422,14 +417,14 @@ void servoMixer(void)
     // 2000 - 1500 = +500
     // 1500 - 1500 = 0
     // 1000 - 1500 = -500
-    input[INPUT_RC_ROLL]     = rcData[ROLL]     - rxConfig()->midrc;
-    input[INPUT_RC_PITCH]    = rcData[PITCH]    - rxConfig()->midrc;
-    input[INPUT_RC_YAW]      = rcData[YAW]      - rxConfig()->midrc;
+    input[INPUT_RC_ROLL]     = rcData[ROLL] - rxConfig()->midrc;
+    input[INPUT_RC_PITCH]    = rcData[PITCH] - rxConfig()->midrc;
+    input[INPUT_RC_YAW]      = rcData[YAW] - rxConfig()->midrc;
     input[INPUT_RC_THROTTLE] = rcData[THROTTLE] - rxConfig()->midrc;
-    input[INPUT_RC_AUX1]     = rcData[AUX1]     - rxConfig()->midrc;
-    input[INPUT_RC_AUX2]     = rcData[AUX2]     - rxConfig()->midrc;
-    input[INPUT_RC_AUX3]     = rcData[AUX3]     - rxConfig()->midrc;
-    input[INPUT_RC_AUX4]     = rcData[AUX4]     - rxConfig()->midrc;
+    input[INPUT_RC_AUX1]     = rcData[AUX1] - rxConfig()->midrc;
+    input[INPUT_RC_AUX2]     = rcData[AUX2] - rxConfig()->midrc;
+    input[INPUT_RC_AUX3]     = rcData[AUX3] - rxConfig()->midrc;
+    input[INPUT_RC_AUX4]     = rcData[AUX4] - rxConfig()->midrc;
 
     for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
         servo[i] = 0;
@@ -439,11 +434,11 @@ void servoMixer(void)
     for (int i = 0; i < servoRuleCount; i++) {
         // consider rule if no box assigned or box is active
         if (currentServoMixer[i].box == 0 || IS_RC_MODE_ACTIVE(BOXSERVO1 + currentServoMixer[i].box - 1)) {
-            uint8_t target = currentServoMixer[i].targetChannel;
-            uint8_t from = currentServoMixer[i].inputSource;
+            uint8_t target       = currentServoMixer[i].targetChannel;
+            uint8_t from         = currentServoMixer[i].inputSource;
             uint16_t servo_width = servoParams(target)->max - servoParams(target)->min;
-            int16_t min = currentServoMixer[i].min * servo_width / 100 - servo_width / 2;
-            int16_t max = currentServoMixer[i].max * servo_width / 100 - servo_width / 2;
+            int16_t min          = currentServoMixer[i].min * servo_width / 100 - servo_width / 2;
+            int16_t max          = currentServoMixer[i].max * servo_width / 100 - servo_width / 2;
 
             if (currentServoMixer[i].speed == 0)
                 currentOutput[i] = input[from];
@@ -466,7 +461,6 @@ void servoMixer(void)
     }
 }
 
-
 static void servoTable(void)
 {
     // airplane / servo mixes
@@ -486,7 +480,7 @@ static void servoTable(void)
         servoMixer();
         break;
 
-    /*
+        /*
     case MIXER_GIMBAL:
         servo[SERVO_GIMBAL_PITCH] = (((int32_t)servoParams(SERVO_GIMBAL_PITCH)->rate * attitude.values.pitch) / 50) + determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_PITCH);
         servo[SERVO_GIMBAL_ROLL] = (((int32_t)servoParams(SERVO_GIMBAL_ROLL)->rate * attitude.values.roll) / 50) + determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_ROLL);
@@ -501,7 +495,7 @@ static void servoTable(void)
     if (featureIsEnabled(FEATURE_SERVO_TILT)) {
         // center at fixed position, or vary either pitch or roll by RC channel
         servo[SERVO_GIMBAL_PITCH] = determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_PITCH);
-        servo[SERVO_GIMBAL_ROLL] = determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_ROLL);
+        servo[SERVO_GIMBAL_ROLL]  = determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_ROLL);
 
         if (IS_RC_MODE_ACTIVE(BOXCAMSTAB)) {
             if (gimbalConfig()->mode == GIMBAL_MODE_MIXTILT) {
@@ -509,7 +503,7 @@ static void servoTable(void)
                 servo[SERVO_GIMBAL_ROLL] += (-(int32_t)servoParams(SERVO_GIMBAL_PITCH)->rate) * attitude.values.pitch / 50 + (int32_t)servoParams(SERVO_GIMBAL_ROLL)->rate * attitude.values.roll / 50;
             } else {
                 servo[SERVO_GIMBAL_PITCH] += (int32_t)servoParams(SERVO_GIMBAL_PITCH)->rate * attitude.values.pitch / 50;
-                servo[SERVO_GIMBAL_ROLL] += (int32_t)servoParams(SERVO_GIMBAL_ROLL)->rate * attitude.values.roll  / 50;
+                servo[SERVO_GIMBAL_ROLL] += (int32_t)servoParams(SERVO_GIMBAL_ROLL)->rate * attitude.values.roll / 50;
             }
         }
     }
@@ -534,7 +528,6 @@ void servosFilterInit(void)
             biquadFilterInitLPF(&servoFilter[servoIdx], servoConfig()->servo_lowpass_freq, targetPidLooptime);
         }
     }
-
 }
 static void filterServos(void)
 {

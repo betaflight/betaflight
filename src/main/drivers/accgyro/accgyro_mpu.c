@@ -43,6 +43,7 @@
 #include "drivers/time.h"
 
 #include "drivers/accgyro/accgyro.h"
+#include "drivers/accgyro/accgyro_mpu.h"
 #include "drivers/accgyro/accgyro_mpu3050.h"
 #include "drivers/accgyro/accgyro_mpu6050.h"
 #include "drivers/accgyro/accgyro_mpu6500.h"
@@ -52,7 +53,6 @@
 #include "drivers/accgyro/accgyro_spi_mpu6000.h"
 #include "drivers/accgyro/accgyro_spi_mpu6500.h"
 #include "drivers/accgyro/accgyro_spi_mpu9250.h"
-#include "drivers/accgyro/accgyro_mpu.h"
 
 mpuResetFnPtr mpuResetFn;
 
@@ -61,10 +61,10 @@ mpuResetFnPtr mpuResetFn;
 #endif
 
 #ifndef MPU_ADDRESS
-#define MPU_ADDRESS             0x68
+#define MPU_ADDRESS 0x68
 #endif
 
-#define MPU_INQUIRY_MASK   0x7E
+#define MPU_INQUIRY_MASK 0x7E
 
 #ifdef USE_I2C
 static void mpu6050FindRevision(gyroDev_t *gyro)
@@ -74,7 +74,7 @@ static void mpu6050FindRevision(gyroDev_t *gyro)
 
     // determine product ID and revision
     uint8_t readBuffer[6];
-    bool ack = busReadRegisterBuffer(&gyro->bus, MPU_RA_XA_OFFS_H, readBuffer, 6);
+    bool ack         = busReadRegisterBuffer(&gyro->bus, MPU_RA_XA_OFFS_H, readBuffer, 6);
     uint8_t revision = ((readBuffer[5] & 0x01) << 2) | ((readBuffer[3] & 0x01) << 1) | (readBuffer[1] & 0x01);
     if (ack && revision) {
         // Congrats, these parts are better
@@ -89,7 +89,7 @@ static void mpu6050FindRevision(gyroDev_t *gyro)
         }
     } else {
         uint8_t productId;
-        ack = busReadRegisterBuffer(&gyro->bus, MPU_RA_PRODUCT_ID, &productId, 1);
+        ack      = busReadRegisterBuffer(&gyro->bus, MPU_RA_PRODUCT_ID, &productId, 1);
         revision = productId & 0x0F;
         if (!ack || revision == 0) {
             failureMode(FAILURE_ACC_INCOMPATIBLE);
@@ -110,15 +110,15 @@ static void mpuIntExtiHandler(extiCallbackRec_t *cb)
 {
 #ifdef DEBUG_MPU_DATA_READY_INTERRUPT
     static uint32_t lastCalledAtUs = 0;
-    const uint32_t nowUs = micros();
-    debug[0] = (uint16_t)(nowUs - lastCalledAtUs);
-    lastCalledAtUs = nowUs;
+    const uint32_t nowUs           = micros();
+    debug[0]                       = (uint16_t)(nowUs - lastCalledAtUs);
+    lastCalledAtUs                 = nowUs;
 #endif
     gyroDev_t *gyro = container_of(cb, gyroDev_t, exti);
     gyro->dataReady = true;
 #ifdef DEBUG_MPU_DATA_READY_INTERRUPT
     const uint32_t now2Us = micros();
-    debug[1] = (uint16_t)(now2Us - nowUs);
+    debug[1]              = (uint16_t)(now2Us - nowUs);
 #endif
 }
 
@@ -137,13 +137,13 @@ static void mpuIntExtiInit(gyroDev_t *gyro)
     }
 #endif
 
-#if defined (STM32F7)
+#if defined(STM32F7)
     IOInit(mpuIntIO, OWNER_MPU_EXTI, 0);
     EXTIHandlerInit(&gyro->exti, mpuIntExtiHandler);
-    EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, IO_CONFIG(GPIO_MODE_INPUT,0,GPIO_NOPULL));   // TODO - maybe pullup / pulldown ?
+    EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, IO_CONFIG(GPIO_MODE_INPUT, 0, GPIO_NOPULL)); // TODO - maybe pullup / pulldown ?
 #else
     IOInit(mpuIntIO, OWNER_MPU_EXTI, 0);
-    IOConfigGPIO(mpuIntIO, IOCFG_IN_FLOATING);   // TODO - maybe pullup / pulldown ?
+    IOConfigGPIO(mpuIntIO, IOCFG_IN_FLOATING); // TODO - maybe pullup / pulldown ?
 
     EXTIHandlerInit(&gyro->exti, mpuIntExtiHandler);
     EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, EXTI_Trigger_Rising);
@@ -240,7 +240,7 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
     }
 #endif
 
-#ifdef  USE_GYRO_SPI_MPU9250
+#ifdef USE_GYRO_SPI_MPU9250
 #ifndef USE_DUAL_GYRO
     spiBusSetInstance(&gyro->bus, MPU9250_SPI_INSTANCE);
 #endif
@@ -250,7 +250,7 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
     sensor = mpu9250SpiDetect(&gyro->bus);
     if (sensor != MPU_NONE) {
         gyro->mpuDetectionResult.sensor = sensor;
-        gyro->mpuConfiguration.resetFn = mpu9250SpiResetGyro;
+        gyro->mpuConfiguration.resetFn  = mpu9250SpiResetGyro;
         return true;
     }
 #endif
@@ -314,11 +314,11 @@ void mpuDetect(gyroDev_t *gyro)
     }
 
     if (gyro->bus.bustype == BUSTYPE_I2C) {
-        gyro->bus.busdev_u.i2c.device = MPU_I2C_INSTANCE;
+        gyro->bus.busdev_u.i2c.device  = MPU_I2C_INSTANCE;
         gyro->bus.busdev_u.i2c.address = MPU_ADDRESS;
 
         uint8_t sig = 0;
-        bool ack = busReadRegisterBuffer(&gyro->bus, MPU_RA_WHO_AM_I, &sig, 1);
+        bool ack    = busReadRegisterBuffer(&gyro->bus, MPU_RA_WHO_AM_I, &sig, 1);
 
         if (ack) {
             // If an MPU3050 is connected sig will contain 0.
@@ -360,29 +360,29 @@ void mpuGyroInit(gyroDev_t *gyro)
 uint8_t mpuGyroDLPF(gyroDev_t *gyro)
 {
     uint8_t ret = 0;
-    
+
     // If gyro is in 32KHz mode then the DLPF bits aren't used
     if (gyro->gyroRateKHz <= GYRO_RATE_8_kHz) {
         switch (gyro->hardware_lpf) {
 #ifdef USE_GYRO_DLPF_EXPERIMENTAL
-            case GYRO_HARDWARE_LPF_EXPERIMENTAL:
-                // experimental mode not supported for MPU60x0 family
-                if ((gyro->gyroHardware != GYRO_MPU6050) && (gyro->gyroHardware != GYRO_MPU6000)) {
-                    ret = 7;
-                } else {
-                    ret = 0;
-                }
-                break;
+        case GYRO_HARDWARE_LPF_EXPERIMENTAL:
+            // experimental mode not supported for MPU60x0 family
+            if ((gyro->gyroHardware != GYRO_MPU6050) && (gyro->gyroHardware != GYRO_MPU6000)) {
+                ret = 7;
+            } else {
+                ret = 0;
+            }
+            break;
 #endif
 
-            case GYRO_HARDWARE_LPF_1KHZ_SAMPLE:
-                ret = 1;
-                break;
-                
-            case GYRO_HARDWARE_LPF_NORMAL:
-            default:
-                ret = 0;
-                break;
+        case GYRO_HARDWARE_LPF_1KHZ_SAMPLE:
+            ret = 1;
+            break;
+
+        case GYRO_HARDWARE_LPF_NORMAL:
+        default:
+            ret = 0;
+            break;
         }
     }
     return ret;
@@ -401,7 +401,7 @@ uint8_t mpuGyroFCHOICE(gyroDev_t *gyro)
         return FCB_3600_32;
 #endif
     } else {
-        return FCB_DISABLED;  // Not in 32KHz mode, set FCHOICE to select 8KHz sampling
+        return FCB_DISABLED; // Not in 32KHz mode, set FCHOICE to select 8KHz sampling
     }
 }
 
@@ -415,6 +415,5 @@ uint8_t mpuGyroReadRegister(const busDevice_t *bus, uint8_t reg)
     } else {
         return 0;
     }
-
 }
 #endif

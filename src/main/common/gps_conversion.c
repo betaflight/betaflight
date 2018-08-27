@@ -18,18 +18,17 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <ctype.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <ctype.h>
 #include <string.h>
 
 #include "platform.h"
 
 #ifdef USE_GPS
 
-
-#define DIGIT_TO_VAL(_x)    (_x - '0')
-uint32_t GPS_coord_to_degrees(const char* coordinateString)
+#define DIGIT_TO_VAL(_x) (_x - '0')
+uint32_t GPS_coord_to_degrees(const char *coordinateString)
 {
     const char *fieldSeparator, *remainingString;
     uint8_t degress = 0, minutes = 0;

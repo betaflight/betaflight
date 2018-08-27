@@ -30,8 +30,8 @@ typedef struct max7456Config_s {
 } max7456Config_t;
 
 // clockConfig values
-#define MAX7456_CLOCK_CONFIG_HALF 0  // Force half clock
-#define MAX7456_CLOCK_CONFIG_OC   1  // Half clock if OC
-#define MAX7456_CLOCK_CONFIG_FULL 2  // Force full clock
+#define MAX7456_CLOCK_CONFIG_HALF 0 // Force half clock
+#define MAX7456_CLOCK_CONFIG_OC 1   // Half clock if OC
+#define MAX7456_CLOCK_CONFIG_FULL 2 // Force full clock
 
 PG_DECLARE(max7456Config_t, max7456Config);

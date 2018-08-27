@@ -17,7 +17,7 @@
 #include <stdint.h>
 
 extern "C" {
-    #include "common/encoding.h"
+#include "common/encoding.h"
 }
 
 #include "unittest_macros.h"
@@ -37,15 +37,15 @@ TEST(EncodingTest, ZigzagEncodingTest)
 {
     // given
     zigzagEncodingExpectation_t expectations[] = {
-        { 0, 0},
+        {0, 0},
         {-1, 1},
-        { 1, 2},
+        {1, 2},
         {-2, 3},
-        { 2, 4},
+        {2, 4},
 
-        { 2147483646, 4294967292},
+        {2147483646, 4294967292},
         {-2147483647, 4294967293},
-        { 2147483647, 4294967294},
+        {2147483647, 4294967294},
         {-2147483648, 4294967295},
     };
     int expectationCount = sizeof(expectations) / sizeof(expectations[0]);
@@ -65,8 +65,7 @@ TEST(EncodingTest, FloatToIntEncodingTest)
     floatToIntEncodingExpectation_t expectations[] = {
         {0.0, 0x00000000},
         {2.0, 0x40000000}, // Exponent should be in the top bits
-        {4.5, 0x40900000}
-    };
+        {4.5, 0x40900000}};
     int expectationCount = sizeof(expectations) / sizeof(expectations[0]);
 
     // expect

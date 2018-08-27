@@ -18,10 +18,10 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdint.h>
-#include <stdbool.h>
-#include <stdlib.h>
 #include <stdarg.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "platform.h"
@@ -118,26 +118,26 @@ int blackboxWriteString(const char *s)
 #ifdef USE_FLASHFS
     case BLACKBOX_DEVICE_FLASH:
         length = strlen(s);
-        flashfsWrite((const uint8_t*) s, length, false); // Write asynchronously
+        flashfsWrite((const uint8_t *)s, length, false); // Write asynchronously
         break;
 #endif // USE_FLASHFS
 
 #ifdef USE_SDCARD
     case BLACKBOX_DEVICE_SDCARD:
         length = strlen(s);
-        afatfs_fwrite(blackboxSDCard.logFile, (const uint8_t*) s, length); // Ignore failures due to buffers filling up
+        afatfs_fwrite(blackboxSDCard.logFile, (const uint8_t *)s, length); // Ignore failures due to buffers filling up
         break;
 #endif // USE_SDCARD
 
     case BLACKBOX_DEVICE_SERIAL:
     default:
-        pos = (uint8_t*) s;
+        pos = (uint8_t *)s;
         while (*pos) {
             serialWrite(blackboxPort, *pos);
             pos++;
         }
 
-        length = pos - (uint8_t*) s;
+        length = pos - (uint8_t *)s;
         break;
     }
 
@@ -162,8 +162,7 @@ void blackboxDeviceFlush(void)
         break;
 #endif // USE_FLASHFS
 
-    default:
-        ;
+    default:;
     }
 }
 
@@ -203,33 +202,32 @@ bool blackboxDeviceFlushForce(void)
 bool blackboxDeviceOpen(void)
 {
     switch (blackboxConfig()->device) {
-    case BLACKBOX_DEVICE_SERIAL:
-        {
-            serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_BLACKBOX);
-            baudRate_e baudRateIndex;
-            portOptions_e portOptions = SERIAL_PARITY_NO | SERIAL_NOT_INVERTED;
+    case BLACKBOX_DEVICE_SERIAL: {
+        serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_BLACKBOX);
+        baudRate_e baudRateIndex;
+        portOptions_e portOptions = SERIAL_PARITY_NO | SERIAL_NOT_INVERTED;
 
-            if (!portConfig) {
-                return false;
-            }
+        if (!portConfig) {
+            return false;
+        }
 
-            blackboxPortSharing = determinePortSharing(portConfig, FUNCTION_BLACKBOX);
-            baudRateIndex = portConfig->blackbox_baudrateIndex;
+        blackboxPortSharing = determinePortSharing(portConfig, FUNCTION_BLACKBOX);
+        baudRateIndex       = portConfig->blackbox_baudrateIndex;
 
-            if (baudRates[baudRateIndex] == 230400) {
-                /*
+        if (baudRates[baudRateIndex] == 230400) {
+            /*
                  * OpenLog's 230400 baud rate is very inaccurate, so it requires a larger inter-character gap in
                  * order to maintain synchronization.
                  */
-                portOptions |= SERIAL_STOPBITS_2;
-            } else {
-                portOptions |= SERIAL_STOPBITS_1;
-            }
+            portOptions |= SERIAL_STOPBITS_2;
+        } else {
+            portOptions |= SERIAL_STOPBITS_1;
+        }
 
-            blackboxPort = openSerialPort(portConfig->identifier, FUNCTION_BLACKBOX, NULL, NULL, baudRates[baudRateIndex],
-                BLACKBOX_SERIAL_PORT_MODE, portOptions);
+        blackboxPort = openSerialPort(portConfig->identifier, FUNCTION_BLACKBOX, NULL, NULL, baudRates[baudRateIndex],
+                                      BLACKBOX_SERIAL_PORT_MODE, portOptions);
 
-            /*
+        /*
              * The slowest MicroSD cards have a write latency approaching 400ms. The OpenLog's buffer is about 900
              * bytes. In order for its buffer to be able to absorb this latency we must write slower than 6000 B/s.
              *
@@ -244,23 +242,21 @@ bool blackboxDeviceOpen(void)
              *                              = (looptime_ns * 3) / 500
              */
 
+        switch (baudRateIndex) {
+        case BAUD_1000000:
+        case BAUD_1500000:
+        case BAUD_2000000:
+        case BAUD_2470000:
+            // assume OpenLager in use, so do not constrain writes
+            blackboxMaxHeaderBytesPerIteration = BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION;
+            break;
+        default:
+            blackboxMaxHeaderBytesPerIteration = constrain((targetPidLooptime * 3) / 500, 1, BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION);
+            break;
+        };
 
-            switch (baudRateIndex) {
-            case BAUD_1000000:
-            case BAUD_1500000:
-            case BAUD_2000000:
-            case BAUD_2470000:
-                // assume OpenLager in use, so do not constrain writes
-                blackboxMaxHeaderBytesPerIteration = BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION;
-                break;
-            default:
-                blackboxMaxHeaderBytesPerIteration = constrain((targetPidLooptime * 3) / 500, 1, BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION);
-                break;
-            };
-
-            return blackboxPort != NULL;
-        }
-        break;
+        return blackboxPort != NULL;
+    } break;
 #ifdef USE_FLASHFS
     case BLACKBOX_DEVICE_FLASH:
         if (!flashfsIsSupported() || isBlackboxDeviceFull()) {
@@ -314,7 +310,7 @@ bool isBlackboxErased(void)
         return flashfsIsReady();
         break;
     default:
-    //not supported
+        //not supported
         return true;
         break;
     }
@@ -347,8 +343,7 @@ void blackboxDeviceClose(void)
         flashfsClose();
         break;
 #endif
-    default:
-        ;
+    default:;
     }
 }
 
@@ -407,7 +402,7 @@ static bool blackboxSDCardBeginLog(void)
 {
     fatDirectoryEntry_t *directoryEntry;
 
-    doMore:
+doMore:
     switch (blackboxSDCard.state) {
     case BLACKBOX_SDCARD_INITIAL:
         if (afatfs_getFilesystemState() == AFATFS_FILESYSTEM_STATE_READY) {
@@ -425,14 +420,13 @@ static bool blackboxSDCardBeginLog(void)
         while (afatfs_findNext(blackboxSDCard.logDirectory, &blackboxSDCard.logDirectoryFinder, &directoryEntry) == AFATFS_OPERATION_SUCCESS) {
             if (directoryEntry && !fat_isDirectoryEntryTerminator(directoryEntry)) {
                 // If this is a log file, parse the log number from the filename
-                if (strncmp(directoryEntry->filename, LOGFILE_PREFIX, strlen(LOGFILE_PREFIX)) == 0
-                    && strncmp(directoryEntry->filename + 8, LOGFILE_SUFFIX, strlen(LOGFILE_SUFFIX)) == 0) {
+                if (strncmp(directoryEntry->filename, LOGFILE_PREFIX, strlen(LOGFILE_PREFIX)) == 0 && strncmp(directoryEntry->filename + 8, LOGFILE_SUFFIX, strlen(LOGFILE_SUFFIX)) == 0) {
                     char logSequenceNumberString[6];
 
                     memcpy(logSequenceNumberString, directoryEntry->filename + 3, 5);
                     logSequenceNumberString[5] = '\0';
 
-                    blackboxSDCard.largestLogFileNumber = MAX((uint32_t) atoi(logSequenceNumberString), blackboxSDCard.largestLogFileNumber);
+                    blackboxSDCard.largestLogFileNumber = MAX((uint32_t)atoi(logSequenceNumberString), blackboxSDCard.largestLogFileNumber);
                 }
             } else {
                 // We're done checking all the files on the card, now we can create a new log file
@@ -485,7 +479,6 @@ bool blackboxDeviceBeginLog(void)
     default:
         return true;
     }
-
 }
 
 /**
@@ -506,12 +499,10 @@ bool blackboxDeviceEndLog(bool retainLog)
     case BLACKBOX_DEVICE_SDCARD:
         // Keep retrying until the close operation queues
         if (
-            (retainLog && afatfs_fclose(blackboxSDCard.logFile, NULL))
-            || (!retainLog && afatfs_funlink(blackboxSDCard.logFile, NULL))
-        ) {
+            (retainLog && afatfs_fclose(blackboxSDCard.logFile, NULL)) || (!retainLog && afatfs_funlink(blackboxSDCard.logFile, NULL))) {
             // Don't bother waiting the for the close to complete, it's queued now and will complete eventually
             blackboxSDCard.logFile = NULL;
-            blackboxSDCard.state = BLACKBOX_SDCARD_READY_TO_CREATE_LOG;
+            blackboxSDCard.state   = BLACKBOX_SDCARD_READY_TO_CREATE_LOG;
             return true;
         }
         return false;
@@ -630,18 +621,18 @@ blackboxBufferReserveStatus_e blackboxDeviceReserveBufferSpace(int32_t bytes)
          * One byte of the tx buffer isn't available for user data (due to its circular list implementation),
          * hence the -1. Note that the USB VCP implementation doesn't use a buffer and has txBufferSize set to zero.
          */
-        if (blackboxPort->txBufferSize && bytes > (int32_t) blackboxPort->txBufferSize - 1) {
+        if (blackboxPort->txBufferSize && bytes > (int32_t)blackboxPort->txBufferSize - 1) {
             return BLACKBOX_RESERVE_PERMANENT_FAILURE;
         }
         return BLACKBOX_RESERVE_TEMPORARY_FAILURE;
 
 #ifdef USE_FLASHFS
     case BLACKBOX_DEVICE_FLASH:
-        if (bytes > (int32_t) flashfsGetWriteBufferSize()) {
+        if (bytes > (int32_t)flashfsGetWriteBufferSize()) {
             return BLACKBOX_RESERVE_PERMANENT_FAILURE;
         }
 
-        if (bytes > (int32_t) flashfsGetWriteBufferFreeSpace()) {
+        if (bytes > (int32_t)flashfsGetWriteBufferFreeSpace()) {
             /*
              * The write doesn't currently fit in the buffer, so try to make room for it. Our flushing here means
              * that the Blackbox header writing code doesn't have to guess about the best time to ask flashfs to

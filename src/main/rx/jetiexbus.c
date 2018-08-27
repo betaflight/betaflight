@@ -57,28 +57,24 @@
 
 #include "io/serial.h"
 
-#include "rx/rx.h"
 #include "rx/jetiexbus.h"
-
+#include "rx/rx.h"
 
 //
 // Serial driver for Jeti EX Bus receiver
 //
-#define JETIEXBUS_BAUDRATE 125000                       // EX Bus 125000; EX Bus HS 250000 not supported
+#define JETIEXBUS_BAUDRATE 125000 // EX Bus 125000; EX Bus HS 250000 not supported
 #define JETIEXBUS_OPTIONS (SERIAL_STOPBITS_1 | SERIAL_PARITY_NO)
-#define JETIEXBUS_MIN_FRAME_GAP     1000
-#define JETIEXBUS_CHANNEL_COUNT     16                  // most Jeti TX transmit 16 channels
+#define JETIEXBUS_MIN_FRAME_GAP 1000
+#define JETIEXBUS_CHANNEL_COUNT 16 // most Jeti TX transmit 16 channels
 
+#define EXBUS_START_CHANNEL_FRAME (0x3E)
+#define EXBUS_START_REQUEST_FRAME (0x3D)
+#define EXBUS_JETIBOX_REQUEST (0x3B)
 
-#define EXBUS_START_CHANNEL_FRAME       (0x3E)
-#define EXBUS_START_REQUEST_FRAME       (0x3D)
-#define EXBUS_JETIBOX_REQUEST           (0x3B)
-
-#define EXBUS_CHANNELDATA               (0x3E03)        // Frame contains Channel Data
-#define EXBUS_CHANNELDATA_DATA_REQUEST  (0x3E01)        // Frame contains Channel Data, but with a request for data
-#define EXBUS_TELEMETRY_REQUEST         (0x3D01)        // Frame is a request Frame
-
-
+#define EXBUS_CHANNELDATA (0x3E03)              // Frame contains Channel Data
+#define EXBUS_CHANNELDATA_DATA_REQUEST (0x3E01) // Frame contains Channel Data, but with a request for data
+#define EXBUS_TELEMETRY_REQUEST (0x3D01)        // Frame is a request Frame
 
 serialPort_t *jetiExBusPort;
 
@@ -88,7 +84,7 @@ static uint8_t jetiExBusFramePosition;
 static uint8_t jetiExBusFrameLength;
 
 static uint8_t jetiExBusFrameState = EXBUS_STATE_ZERO;
-uint8_t jetiExBusRequestState = EXBUS_STATE_ZERO;
+uint8_t jetiExBusRequestState      = EXBUS_STATE_ZERO;
 
 // Use max values for ram areas
 static uint8_t jetiExBusChannelFrame[EXBUS_MAX_CHANNEL_FRAME_SIZE];
@@ -96,21 +92,18 @@ uint8_t jetiExBusRequestFrame[EXBUS_MAX_REQUEST_FRAME_SIZE];
 
 static uint16_t jetiExBusChannelData[JETIEXBUS_CHANNEL_COUNT];
 
-
 // Jeti Ex Bus CRC calculations for a frame
 uint16_t jetiExBusCalcCRC16(uint8_t *pt, uint8_t msgLen)
 {
     uint16_t crc16_data = 0;
-    uint8_t data=0;
+    uint8_t data        = 0;
 
     for (uint8_t mlen = 0; mlen < msgLen; mlen++) {
         data = pt[mlen] ^ ((uint8_t)(crc16_data) & (uint8_t)(0xFF));
         data ^= data << 4;
-        crc16_data = ((((uint16_t)data << 8) | ((crc16_data & 0xFF00) >> 8))
-                      ^ (uint8_t)(data >> 4)
-                      ^ ((uint16_t)data << 3));
+        crc16_data = ((((uint16_t)data << 8) | ((crc16_data & 0xFF00) >> 8)) ^ (uint8_t)(data >> 4) ^ ((uint16_t)data << 3));
     }
-    return(crc16_data);
+    return (crc16_data);
 }
 
 void jetiExBusDecodeChannelFrame(uint8_t *exBusFrame)
@@ -121,11 +114,11 @@ void jetiExBusDecodeChannelFrame(uint8_t *exBusFrame)
     // Decode header
     switch (((uint16_t)exBusFrame[EXBUS_HEADER_SYNC] << 8) | ((uint16_t)exBusFrame[EXBUS_HEADER_REQ])) {
 
-    case EXBUS_CHANNELDATA_DATA_REQUEST:                   // not yet specified
+    case EXBUS_CHANNELDATA_DATA_REQUEST: // not yet specified
     case EXBUS_CHANNELDATA:
         for (uint8_t i = 0; i < JETIEXBUS_CHANNEL_COUNT; i++) {
             frameAddr = EXBUS_HEADER_LEN + i * 2;
-            value = ((uint16_t)exBusFrame[frameAddr + 1]) << 8;
+            value     = ((uint16_t)exBusFrame[frameAddr + 1]) << 8;
             value += (uint16_t)exBusFrame[frameAddr];
             // Convert to internal format
             jetiExBusChannelData[i] = value >> 3;
@@ -137,7 +130,7 @@ void jetiExBusDecodeChannelFrame(uint8_t *exBusFrame)
 void jetiExBusFrameReset(void)
 {
     jetiExBusFramePosition = 0;
-    jetiExBusFrameLength = EXBUS_MAX_CHANNEL_FRAME_SIZE;
+    jetiExBusFrameLength   = EXBUS_MAX_CHANNEL_FRAME_SIZE;
 }
 
 /*
@@ -166,11 +159,11 @@ static void jetiExBusDataReceive(uint16_t c, void *data)
     now = micros();
 
     jetiExBusTimeInterval = now - jetiExBusTimeLast;
-    jetiExBusTimeLast = now;
+    jetiExBusTimeLast     = now;
 
     if (jetiExBusTimeInterval > JETIEXBUS_MIN_FRAME_GAP) {
         jetiExBusFrameReset();
-        jetiExBusFrameState = EXBUS_STATE_ZERO;
+        jetiExBusFrameState   = EXBUS_STATE_ZERO;
         jetiExBusRequestState = EXBUS_STATE_ZERO;
     }
 
@@ -179,12 +172,12 @@ static void jetiExBusDataReceive(uint16_t c, void *data)
         switch (c) {
         case EXBUS_START_CHANNEL_FRAME:
             jetiExBusFrameState = EXBUS_STATE_IN_PROGRESS;
-            jetiExBusFrame = jetiExBusChannelFrame;
+            jetiExBusFrame      = jetiExBusChannelFrame;
             break;
 
         case EXBUS_START_REQUEST_FRAME:
             jetiExBusRequestState = EXBUS_STATE_IN_PROGRESS;
-            jetiExBusFrame = jetiExBusRequestFrame;
+            jetiExBusFrame        = jetiExBusRequestFrame;
             break;
 
         default:
@@ -209,8 +202,8 @@ static void jetiExBusDataReceive(uint16_t c, void *data)
             return;
         }
 
-        jetiExBusFrameReset();                  // not a valid frame
-        jetiExBusFrameState = EXBUS_STATE_ZERO;
+        jetiExBusFrameReset(); // not a valid frame
+        jetiExBusFrameState   = EXBUS_STATE_ZERO;
         jetiExBusRequestState = EXBUS_STATE_ZERO;
         return;
     }
@@ -221,7 +214,7 @@ static void jetiExBusDataReceive(uint16_t c, void *data)
             jetiExBusFrameState = EXBUS_STATE_RECEIVED;
         if (jetiExBusRequestState == EXBUS_STATE_IN_PROGRESS) {
             jetiExBusRequestState = EXBUS_STATE_RECEIVED;
-            jetiTimeStampRequest = micros();
+            jetiTimeStampRequest  = micros();
         }
 
         jetiExBusFrameReset();
@@ -258,10 +251,10 @@ bool jetiExBusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfi
 {
     UNUSED(rxConfig);
 
-    rxRuntimeConfig->channelCount = JETIEXBUS_CHANNEL_COUNT;
+    rxRuntimeConfig->channelCount  = JETIEXBUS_CHANNEL_COUNT;
     rxRuntimeConfig->rxRefreshRate = 5500;
 
-    rxRuntimeConfig->rcReadRawFn = jetiExBusReadRawRC;
+    rxRuntimeConfig->rcReadRawFn     = jetiExBusReadRawRC;
     rxRuntimeConfig->rcFrameStatusFn = jetiExBusFrameStatus;
 
     jetiExBusFrameReset();
@@ -273,13 +266,12 @@ bool jetiExBusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfi
     }
 
     jetiExBusPort = openSerialPort(portConfig->identifier,
-        FUNCTION_RX_SERIAL,
-        jetiExBusDataReceive,
-        NULL,
-        JETIEXBUS_BAUDRATE,
-        MODE_RXTX,
-        JETIEXBUS_OPTIONS | (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0)
-        );
+                                   FUNCTION_RX_SERIAL,
+                                   jetiExBusDataReceive,
+                                   NULL,
+                                   JETIEXBUS_BAUDRATE,
+                                   MODE_RXTX,
+                                   JETIEXBUS_OPTIONS | (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0));
     serialSetMode(jetiExBusPort, MODE_RX);
     return jetiExBusPort != NULL;
 }

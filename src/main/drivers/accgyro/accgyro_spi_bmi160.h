@@ -48,22 +48,22 @@ enum pios_bmi160_orientation { // clockwise rotation from board forward
 };
 
 enum bmi160_odr {
-    BMI160_ODR_800_Hz = 0x0B,
+    BMI160_ODR_800_Hz  = 0x0B,
     BMI160_ODR_1600_Hz = 0x0C,
     BMI160_ODR_3200_Hz = 0x0D,
 };
 
 enum bmi160_acc_range {
-    BMI160_RANGE_2G = 0x03,
-    BMI160_RANGE_4G = 0x05,
-    BMI160_RANGE_8G = 0x08,
+    BMI160_RANGE_2G  = 0x03,
+    BMI160_RANGE_4G  = 0x05,
+    BMI160_RANGE_8G  = 0x08,
     BMI160_RANGE_16G = 0x0C,
 };
 
 enum bmi160_gyro_range {
-    BMI160_RANGE_125DPS = 0x04,
-    BMI160_RANGE_250DPS = 0x03,
-    BMI160_RANGE_500DPS = 0x02,
+    BMI160_RANGE_125DPS  = 0x04,
+    BMI160_RANGE_250DPS  = 0x03,
+    BMI160_RANGE_500DPS  = 0x02,
     BMI160_RANGE_1000DPS = 0x01,
     BMI160_RANGE_2000DPS = 0x00,
 };

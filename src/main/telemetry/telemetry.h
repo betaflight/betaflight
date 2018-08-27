@@ -27,8 +27,8 @@
 
 #pragma once
 
-#include "pg/pg.h"
 #include "io/serial.h"
+#include "pg/pg.h"
 #include "telemetry/ibus_shared.h"
 
 typedef enum {

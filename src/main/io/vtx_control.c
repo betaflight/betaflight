@@ -45,16 +45,13 @@
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
-
 PG_REGISTER_WITH_RESET_TEMPLATE(vtxConfig_t, vtxConfig, PG_VTX_CONFIG, 1);
 
 PG_RESET_TEMPLATE(vtxConfig_t, vtxConfig,
-//    .vtxChannelActivationConditions = { 0 },
-    .halfDuplex = true
-);
+                  //    .vtxChannelActivationConditions = { 0 },
+                  .halfDuplex = true);
 
 static uint8_t locked = 0;
-
 
 void vtxControlInit(void)
 {
@@ -63,7 +60,7 @@ void vtxControlInit(void)
 
 void vtxControlInputPoll(void)
 {
-  // Check variuos input sources for VTX config updates
+    // Check variuos input sources for VTX config updates
 #if defined(USE_SPEKTRUM_VTX_CONTROL)
     // Get VTX updates
     spektrumVtxControl();
@@ -114,11 +111,10 @@ void vtxUpdateActivatedChannel(void)
         for (uint8_t index = 0; index < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT; index++) {
             const vtxChannelActivationCondition_t *vtxChannelActivationCondition = &vtxConfig()->vtxChannelActivationConditions[index];
 
-            if (isRangeActive(vtxChannelActivationCondition->auxChannelIndex, &vtxChannelActivationCondition->range)
-                && index != lastIndex) {
+            if (isRangeActive(vtxChannelActivationCondition->auxChannelIndex, &vtxChannelActivationCondition->range) && index != lastIndex) {
                 lastIndex = index;
 
-                vtxSettingsConfigMutable()->band = vtxChannelActivationCondition->band;
+                vtxSettingsConfigMutable()->band    = vtxChannelActivationCondition->band;
                 vtxSettingsConfigMutable()->channel = vtxChannelActivationCondition->channel;
                 break;
             }
@@ -152,7 +148,7 @@ void vtxCycleBandOrChannel(const uint8_t bandStep, const uint8_t channelStep)
             newBand = capability.bandCount;
         }
 
-        vtxSettingsConfigMutable()->band = newBand;
+        vtxSettingsConfigMutable()->band    = newBand;
         vtxSettingsConfigMutable()->channel = newChannel;
     }
 }
@@ -199,10 +195,10 @@ void handleVTXControlButton(void)
 {
 #if defined(USE_VTX_RTC6705) && defined(BUTTON_A_PIN)
     bool buttonWasPressed = false;
-    const timeMs_t start = millis();
-    timeMs_t ledToggleAt = start;
-    bool ledEnabled = false;
-    uint8_t flashesDone = 0;
+    const timeMs_t start  = millis();
+    timeMs_t ledToggleAt  = start;
+    bool ledEnabled       = false;
+    uint8_t flashesDone   = 0;
 
     uint8_t actionCounter = 0;
     bool buttonHeld;

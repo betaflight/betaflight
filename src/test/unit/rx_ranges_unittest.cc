@@ -15,22 +15,22 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #include <limits.h>
 
 extern "C" {
-    #include "platform.h"
-    #include "build/debug.h"
-    #include "drivers/io.h"
-    #include "common/maths.h"
-    #include "pg/pg.h"
-    #include "pg/pg_ids.h"
-    #include "pg/rx.h"
-    #include "fc/rc_controls.h"
-    #include "fc/rc_modes.h"
-    #include "rx/rx.h"
+#include "build/debug.h"
+#include "common/maths.h"
+#include "drivers/io.h"
+#include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+#include "pg/rx.h"
+#include "platform.h"
+#include "rx/rx.h"
 }
 
 #include "unittest_macros.h"
@@ -44,7 +44,8 @@ uint8_t debugMode = 0;
 extern uint16_t applyRxChannelRangeConfiguraton(int sample, const rxChannelRangeConfig_t *range);
 }
 
-#define RANGE_CONFIGURATION(min, max) new (rxChannelRangeConfig_t) {min, max}
+#define RANGE_CONFIGURATION(min, max) \
+    new (rxChannelRangeConfig_t) { min, max }
 
 TEST(RxChannelRangeTest, TestRxChannelRanges)
 {
@@ -98,11 +99,10 @@ TEST(RxChannelRangeTest, TestRxChannelRanges)
     EXPECT_EQ(2250, applyRxChannelRangeConfiguraton(10000, RANGE_CONFIGURATION(900, 2100)));
 }
 
-
 // stubs
 extern "C" {
 
-void failsafeOnRxSuspend(uint32_t ) {}
+void failsafeOnRxSuspend(uint32_t) {}
 void failsafeOnRxResume(void) {}
 
 uint32_t micros(void) { return 0; }
@@ -186,11 +186,13 @@ bool rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadR
     return true;
 }
 
-bool featureIsEnabled(uint32_t) {
+bool featureIsEnabled(uint32_t)
+{
     return false;
 }
 
-void featureDisable(uint32_t) {
+void featureDisable(uint32_t)
+{
 }
 
 bool rxMspFrameComplete(void)
@@ -219,5 +221,4 @@ void failsafeOnValidDataReceived(void)
 void failsafeOnValidDataFailed(void)
 {
 }
-
 }

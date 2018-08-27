@@ -29,9 +29,9 @@
 #include "build/debug.h"
 
 #include "drivers/adc_impl.h"
-#include "drivers/io_types.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
+#include "drivers/io_types.h"
 #include "drivers/rcc.h"
 #include "drivers/time.h"
 
@@ -59,15 +59,15 @@ typedef struct idDetect_s {
 // - Do some planning on revision numbering scheme.
 // - Divider value planning for the scheme (separation).
 
-#define IDDET_RATIO(highside, lowside) ((lowside) * 1000 / ((lowside) + (highside)))
+#define IDDET_RATIO(highside, lowside) ((lowside)*1000 / ((lowside) + (highside)))
 #define IDDET_ERROR 12
 
 static idDetect_t idDetectTable[] = {
 #ifdef OMNINXT7
-    { IDDET_RATIO(10000, 10000), 1 },
+    {IDDET_RATIO(10000, 10000), 1},
 #endif
 #ifdef OMNINXT4
-    { IDDET_RATIO(10000, 10000), 1 },
+    {IDDET_RATIO(10000, 10000), 1},
 #endif
 };
 
@@ -75,7 +75,7 @@ ioTag_t idDetectTag;
 
 #if defined(OMNINXT4)
 
-#define VREFINT_CAL_ADDR  0x1FFF7A2A
+#define VREFINT_CAL_ADDR 0x1FFF7A2A
 
 static void adcIDDetectInit(void)
 {
@@ -94,15 +94,15 @@ static void adcIDDetectInit(void)
     ADC_CommonInit(&ADC_CommonInitStructure);
 
     ADC_InitTypeDef ADC_InitStructure;
-    
+
     ADC_StructInit(&ADC_InitStructure);
-    ADC_InitStructure.ADC_ContinuousConvMode       = ENABLE;
-    ADC_InitStructure.ADC_Resolution               = ADC_Resolution_12b;
-    ADC_InitStructure.ADC_ExternalTrigConv         = ADC_ExternalTrigConv_T1_CC1;
-    ADC_InitStructure.ADC_ExternalTrigConvEdge     = ADC_ExternalTrigConvEdge_None;
-    ADC_InitStructure.ADC_DataAlign                = ADC_DataAlign_Right;
-    ADC_InitStructure.ADC_NbrOfConversion          = 2; // Not used
-    ADC_InitStructure.ADC_ScanConvMode             = ENABLE;
+    ADC_InitStructure.ADC_ContinuousConvMode   = ENABLE;
+    ADC_InitStructure.ADC_Resolution           = ADC_Resolution_12b;
+    ADC_InitStructure.ADC_ExternalTrigConv     = ADC_ExternalTrigConv_T1_CC1;
+    ADC_InitStructure.ADC_ExternalTrigConvEdge = ADC_ExternalTrigConvEdge_None;
+    ADC_InitStructure.ADC_DataAlign            = ADC_DataAlign_Right;
+    ADC_InitStructure.ADC_NbrOfConversion      = 2; // Not used
+    ADC_InitStructure.ADC_ScanConvMode         = ENABLE;
     ADC_Init(ADC1, &ADC_InitStructure);
 
     ADC_Cmd(ADC1, ENABLE);
@@ -150,40 +150,39 @@ static uint16_t adcIDDetectReadVrefint(void)
 #endif
 
 #if defined(OMNINXT7)
-#define VREFINT_CAL_ADDR  0x1FF07A2A
+#define VREFINT_CAL_ADDR 0x1FF07A2A
 
 #include "drivers/adc_impl.h"
 
-static adcDevice_t adcIDDetHardware = 
-    { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .DMAy_Streamx = ADC1_DMA_STREAM, .channel = DMA_CHANNEL_0 };
+static adcDevice_t adcIDDetHardware =
+    {.ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .DMAy_Streamx = ADC1_DMA_STREAM, .channel = DMA_CHANNEL_0};
 
 // XXX adcIDDetectInitDevice is an exact copy of adcInitDevice() from adc_stm32f7xx.c. Export and use?
 
 static void adcIDDetectInitDevice(adcDevice_t *adcdev, int channelCount)
 {
-    adcdev->ADCHandle.Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV8;
-    adcdev->ADCHandle.Init.ContinuousConvMode    = ENABLE;
-    adcdev->ADCHandle.Init.Resolution            = ADC_RESOLUTION_12B;
-    adcdev->ADCHandle.Init.ExternalTrigConv      = ADC_EXTERNALTRIGCONV_T1_CC1;
-    adcdev->ADCHandle.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_NONE;
-    adcdev->ADCHandle.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
-    adcdev->ADCHandle.Init.NbrOfConversion       = channelCount;
+    adcdev->ADCHandle.Init.ClockPrescaler       = ADC_CLOCK_SYNC_PCLK_DIV8;
+    adcdev->ADCHandle.Init.ContinuousConvMode   = ENABLE;
+    adcdev->ADCHandle.Init.Resolution           = ADC_RESOLUTION_12B;
+    adcdev->ADCHandle.Init.ExternalTrigConv     = ADC_EXTERNALTRIGCONV_T1_CC1;
+    adcdev->ADCHandle.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+    adcdev->ADCHandle.Init.DataAlign            = ADC_DATAALIGN_RIGHT;
+    adcdev->ADCHandle.Init.NbrOfConversion      = channelCount;
 #ifdef USE_ADC_INTERNAL
     // Multiple injected channel seems to require scan conversion mode to be
     // enabled even if main (non-injected) channel count is 1.
-    adcdev->ADCHandle.Init.ScanConvMode          = ENABLE;
+    adcdev->ADCHandle.Init.ScanConvMode = ENABLE;
 #else
-    adcdev->ADCHandle.Init.ScanConvMode          = channelCount > 1 ? ENABLE : DISABLE; // 1=scan more that one channel in group
+    adcdev->ADCHandle.Init.ScanConvMode = channelCount > 1 ? ENABLE : DISABLE; // 1=scan more that one channel in group
 #endif
     adcdev->ADCHandle.Init.DiscontinuousConvMode = DISABLE;
     adcdev->ADCHandle.Init.NbrOfDiscConversion   = 0;
     adcdev->ADCHandle.Init.DMAContinuousRequests = ENABLE;
     adcdev->ADCHandle.Init.EOCSelection          = DISABLE;
-    adcdev->ADCHandle.Instance = adcdev->ADCx;
+    adcdev->ADCHandle.Instance                   = adcdev->ADCx;
 
-    if (HAL_ADC_Init(&adcdev->ADCHandle) != HAL_OK)
-    {
-      /* Initialization Error */
+    if (HAL_ADC_Init(&adcdev->ADCHandle) != HAL_OK) {
+        /* Initialization Error */
     }
 }
 
@@ -197,23 +196,23 @@ static void adcIDDetectInit(void)
 
     ADC_InjectionConfTypeDef iConfig;
 
-    iConfig.InjectedSamplingTime = ADC_SAMPLETIME_480CYCLES;
-    iConfig.InjectedOffset       = 0;
-    iConfig.InjectedNbrOfConversion = 2;
+    iConfig.InjectedSamplingTime          = ADC_SAMPLETIME_480CYCLES;
+    iConfig.InjectedOffset                = 0;
+    iConfig.InjectedNbrOfConversion       = 2;
     iConfig.InjectedDiscontinuousConvMode = DISABLE;
-    iConfig.AutoInjectedConv     = DISABLE;
-    iConfig.ExternalTrigInjecConv = 0;     // Don't care
-    iConfig.ExternalTrigInjecConvEdge = 0; // Don't care
+    iConfig.AutoInjectedConv              = DISABLE;
+    iConfig.ExternalTrigInjecConv         = 0; // Don't care
+    iConfig.ExternalTrigInjecConvEdge     = 0; // Don't care
 
-    iConfig.InjectedChannel      = ADC_CHANNEL_VREFINT;
-    iConfig.InjectedRank         = 1;
+    iConfig.InjectedChannel = ADC_CHANNEL_VREFINT;
+    iConfig.InjectedRank    = 1;
 
     if (HAL_ADCEx_InjectedConfigChannel(&adcIDDetHardware.ADCHandle, &iConfig) != HAL_OK) {
         /* Channel Configuration Error */
     }
 
-    iConfig.InjectedChannel      = adcChannelByTag(idDetectTag);
-    iConfig.InjectedRank         = 2;
+    iConfig.InjectedChannel = adcChannelByTag(idDetectTag);
+    iConfig.InjectedRank    = 2;
 
     if (HAL_ADCEx_InjectedConfigChannel(&adcIDDetHardware.ADCHandle, &iConfig) != HAL_OK) {
         /* Channel Configuration Error */
@@ -250,13 +249,13 @@ static uint16_t adcIDDetectReadIDDet(void)
 #endif
 
 void detectHardwareRevision(void)
-{        
+{
     adcIDDetectInit();
 
     uint32_t vrefintValue = 0;
-    uint32_t iddetValue = 0;
+    uint32_t iddetValue   = 0;
 
-    for (int i = 0 ; i < 16 ; i++) {
+    for (int i = 0; i < 16; i++) {
         adcIDDetectStart();
         adcIDDetectWait();
         iddetValue += adcIDDetectReadIDDet();
@@ -267,7 +266,7 @@ void detectHardwareRevision(void)
     iddetValue /= 16;
 
     uint32_t iddetRatio = (iddetValue * vrefintValue) / *(uint16_t *)VREFINT_CAL_ADDR;
-    iddetRatio = iddetRatio * 1000 / 4096;
+    iddetRatio          = iddetRatio * 1000 / 4096;
 
 #ifdef DEBUG_HARDWARE_REVISION_ADC
     debug[0] = *(uint16_t *)VREFINT_CAL_ADDR;

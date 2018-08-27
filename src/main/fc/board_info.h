@@ -30,7 +30,7 @@ bool setBoardName(char *newBoardName);
 bool setManufacturerId(char *newManufacturerId);
 bool persistBoardInformation(void);
 
-uint8_t * getSignature(void);
+uint8_t *getSignature(void);
 bool signatureIsSet(void);
 
 bool setSignature(uint8_t *newSignature);

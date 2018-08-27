@@ -20,16 +20,16 @@
 
 #include <stdint.h>
 
-#include "platform.h"
-#include "drivers/io.h"
 #include "drivers/dma.h"
+#include "drivers/io.h"
+#include "platform.h"
 
 #include "drivers/timer.h"
 #include "drivers/timer_def.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-// Auto-generated from 'timer_def.h'
-//PORTA
+    // Auto-generated from 'timer_def.h'
+    //PORTA
     DEF_TIM(TIM2, CH1, PA0, TIM_USE_ANY, 0, 0),
     DEF_TIM(TIM2, CH2, PA1, TIM_USE_ANY, 0, 0),
     DEF_TIM(TIM2, CH3, PA2, TIM_USE_ANY, 0, 0),
@@ -57,7 +57,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM13, CH1, PA6, TIM_USE_ANY, 0, 0),
     DEF_TIM(TIM14, CH1, PA7, TIM_USE_ANY, 0, 0),
 
-//PORTB
+    //PORTB
     DEF_TIM(TIM1, CH2N, PB0, TIM_USE_ANY, 0, 0),
     DEF_TIM(TIM1, CH3N, PB1, TIM_USE_ANY, 0, 0),
     DEF_TIM(TIM2, CH2, PB3, TIM_USE_ANY, 0, 0),
@@ -86,7 +86,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM12, CH1, PB14, TIM_USE_ANY, 0, 0),
     DEF_TIM(TIM12, CH2, PB15, TIM_USE_ANY, 0, 0),
 
-//PORTC
+    //PORTC
     DEF_TIM(TIM3, CH1, PC6, TIM_USE_ANY, 0, 0),
     DEF_TIM(TIM3, CH2, PC7, TIM_USE_ANY, 0, 0),
     DEF_TIM(TIM3, CH3, PC8, TIM_USE_ANY, 0, 0),
@@ -97,13 +97,13 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM8, CH3, PC8, TIM_USE_ANY, 0, 0),
     DEF_TIM(TIM8, CH4, PC9, TIM_USE_ANY, 0, 0),
 
-//PORTD
+    //PORTD
     DEF_TIM(TIM4, CH1, PD12, TIM_USE_ANY, 0, 0),
     DEF_TIM(TIM4, CH2, PD13, TIM_USE_ANY, 0, 0),
     DEF_TIM(TIM4, CH3, PD14, TIM_USE_ANY, 0, 0),
     DEF_TIM(TIM4, CH4, PD15, TIM_USE_ANY, 0, 0),
 
-//PORTE
+    //PORTE
     DEF_TIM(TIM1, CH1N, PE8, TIM_USE_ANY, 0, 0),
     DEF_TIM(TIM1, CH1, PE9, TIM_USE_ANY, 0, 0),
     DEF_TIM(TIM1, CH2N, PE10, TIM_USE_ANY, 0, 0),
@@ -115,7 +115,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM9, CH1, PE5, TIM_USE_ANY, 0, 0),
     DEF_TIM(TIM9, CH2, PE6, TIM_USE_ANY, 0, 0),
 
-//PORTF
+    //PORTF
     DEF_TIM(TIM10, CH1, PF6, TIM_USE_ANY, 0, 0),
     DEF_TIM(TIM11, CH1, PF7, TIM_USE_ANY, 0, 0),
 };

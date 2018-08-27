@@ -15,99 +15,99 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
 extern "C" {
-    #include "platform.h"
+#include "platform.h"
 
-    #include "build/debug.h"
+#include "build/debug.h"
 
-    #include "blackbox/blackbox.h"
-    #include "blackbox/blackbox_io.h"
+#include "blackbox/blackbox.h"
+#include "blackbox/blackbox_io.h"
 
-    #include "pg/pg.h"
-    #include "pg/pg_ids.h"
-    #include "pg/rx.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+#include "pg/rx.h"
 
-    #include "common/time.h"
+#include "common/time.h"
 
-    #include "drivers/max7456_symbols.h"
-    #include "drivers/serial.h"
+#include "drivers/max7456_symbols.h"
+#include "drivers/serial.h"
 
-    #include "fc/config.h"
-    #include "fc/core.h"
-    #include "fc/rc_controls.h"
-    #include "fc/rc_modes.h"
-    #include "fc/runtime_config.h"
+#include "fc/config.h"
+#include "fc/core.h"
+#include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
+#include "fc/runtime_config.h"
 
-    #include "flight/pid.h"
-    #include "flight/imu.h"
+#include "flight/imu.h"
+#include "flight/pid.h"
 
-    #include "io/beeper.h"
-    #include "io/gps.h"
-    #include "io/osd.h"
+#include "io/beeper.h"
+#include "io/gps.h"
+#include "io/osd.h"
 
-    #include "sensors/acceleration.h"
-    #include "sensors/battery.h"
+#include "sensors/acceleration.h"
+#include "sensors/battery.h"
 
-    #include "rx/rx.h"
+#include "rx/rx.h"
 
-    void osdRefresh(timeUs_t currentTimeUs);
-    void osdFormatTime(char * buff, osd_timer_precision_e precision, timeUs_t time);
-    void osdFormatTimer(char *buff, bool showSymbol, int timerIndex);
-    int osdConvertTemperatureToSelectedUnit(int tempInDeciDegrees);
+void osdRefresh(timeUs_t currentTimeUs);
+void osdFormatTime(char *buff, osd_timer_precision_e precision, timeUs_t time);
+void osdFormatTimer(char *buff, bool showSymbol, int timerIndex);
+int osdConvertTemperatureToSelectedUnit(int tempInDeciDegrees);
 
-    uint16_t rssi;
-    attitudeEulerAngles_t attitude;
-    pidProfile_t *currentPidProfile;
-    int16_t debug[DEBUG16_VALUE_COUNT];
-    int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
-    uint8_t GPS_numSat;
-    uint16_t GPS_distanceToHome;
-    int16_t GPS_directionToHome;
-    int32_t GPS_coord[2];
-    gpsSolutionData_t gpsSol;
+uint16_t rssi;
+attitudeEulerAngles_t attitude;
+pidProfile_t *currentPidProfile;
+int16_t debug[DEBUG16_VALUE_COUNT];
+int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
+uint8_t GPS_numSat;
+uint16_t GPS_distanceToHome;
+int16_t GPS_directionToHome;
+int32_t GPS_coord[2];
+gpsSolutionData_t gpsSol;
 
-    acc_t acc;
-    float accAverage[XYZ_AXIS_COUNT];
+acc_t acc;
+float accAverage[XYZ_AXIS_COUNT];
 
-    PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
-    PG_REGISTER(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
-    PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
-    PG_REGISTER(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 0);
+PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
+PG_REGISTER(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
+PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
+PG_REGISTER(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 0);
 
-    timeUs_t simulationTime = 0;
-    batteryState_e simulationBatteryState;
-    uint8_t simulationBatteryCellCount;
-    uint16_t simulationBatteryVoltage;
-    uint32_t simulationBatteryAmperage;
-    uint32_t simulationMahDrawn;
-    int32_t simulationAltitude;
-    int32_t simulationVerticalSpeed;
-    uint16_t simulationCoreTemperature;
+timeUs_t simulationTime = 0;
+batteryState_e simulationBatteryState;
+uint8_t simulationBatteryCellCount;
+uint16_t simulationBatteryVoltage;
+uint32_t simulationBatteryAmperage;
+uint32_t simulationMahDrawn;
+int32_t simulationAltitude;
+int32_t simulationVerticalSpeed;
+uint16_t simulationCoreTemperature;
 }
 
 /* #define DEBUG_OSD */
 
-#include "unittest_macros.h"
 #include "unittest_displayport.h"
+#include "unittest_macros.h"
 #include "gtest/gtest.h"
 
 void setDefualtSimulationState()
 {
     rssi = 1024;
 
-    simulationBatteryState = BATTERY_OK;
+    simulationBatteryState     = BATTERY_OK;
     simulationBatteryCellCount = 4;
-    simulationBatteryVoltage = 168;
-    simulationBatteryAmperage = 0;
-    simulationMahDrawn = 0;
-    simulationAltitude = 0;
-    simulationVerticalSpeed = 0;
-    simulationCoreTemperature = 0;
+    simulationBatteryVoltage   = 168;
+    simulationBatteryAmperage  = 0;
+    simulationMahDrawn         = 0;
+    simulationAltitude         = 0;
+    simulationVerticalSpeed    = 0;
+    simulationCoreTemperature  = 0;
 }
 
 /*
@@ -149,7 +149,8 @@ void doTestArm(bool testEmpty = true)
 /*
  * Auxiliary function. Test is there're stats that must be shown
  */
-bool isSomeStatEnabled(void) {
+bool isSomeStatEnabled(void)
+{
     return (osdConfigMutable()->enabled_stats != 0);
 }
 
@@ -325,13 +326,13 @@ TEST(OsdTest, TestStatsImperial)
     // and
     // this RTC time
     dateTime_t dateTime;
-    dateTime.year = 2017;
-    dateTime.month = 11;
-    dateTime.day = 19;
-    dateTime.hours = 10;
+    dateTime.year    = 2017;
+    dateTime.month   = 11;
+    dateTime.day     = 19;
+    dateTime.hours   = 10;
     dateTime.minutes = 12;
     dateTime.seconds = 0;
-    dateTime.millis = 0;
+    dateTime.millis  = 0;
     rtcSetDateTime(&dateTime);
 
     // when
@@ -340,27 +341,27 @@ TEST(OsdTest, TestStatsImperial)
 
     // and
     // these conditions occur during flight
-    rssi = 1024;
-    gpsSol.groundSpeed = 500;
-    GPS_distanceToHome = 20;
+    rssi                     = 1024;
+    gpsSol.groundSpeed       = 500;
+    GPS_distanceToHome       = 20;
     simulationBatteryVoltage = 158;
-    simulationAltitude = 100;
+    simulationAltitude       = 100;
     simulationTime += 1e6;
     osdRefresh(simulationTime);
 
-    rssi = 512;
-    gpsSol.groundSpeed = 800;
-    GPS_distanceToHome = 50;
+    rssi                     = 512;
+    gpsSol.groundSpeed       = 800;
+    GPS_distanceToHome       = 50;
     simulationBatteryVoltage = 147;
-    simulationAltitude = 150;
+    simulationAltitude       = 150;
     simulationTime += 1e6;
     osdRefresh(simulationTime);
 
-    rssi = 256;
-    gpsSol.groundSpeed = 200;
-    GPS_distanceToHome = 100;
+    rssi                     = 256;
+    gpsSol.groundSpeed       = 200;
+    GPS_distanceToHome       = 100;
     simulationBatteryVoltage = 152;
-    simulationAltitude = 200;
+    simulationAltitude       = 200;
     simulationTime += 1e6;
     osdRefresh(simulationTime);
 
@@ -402,11 +403,11 @@ TEST(OsdTest, TestStatsMetric)
 
     // and
     // these conditions occur during flight (simplified to less assignments than previous test)
-    rssi = 256;
-    gpsSol.groundSpeed = 800;
-    GPS_distanceToHome = 100;
+    rssi                     = 256;
+    gpsSol.groundSpeed       = 800;
+    GPS_distanceToHome       = 100;
     simulationBatteryVoltage = 147;
-    simulationAltitude = 200;
+    simulationAltitude       = 200;
     simulationTime += 1e6;
     osdRefresh(simulationTime);
     osdRefresh(simulationTime);
@@ -444,10 +445,10 @@ TEST(OsdTest, TestAlarms)
 
     // and
     // the following OSD elements are visible
-    osdConfigMutable()->item_pos[OSD_RSSI_VALUE]              = OSD_POS(8, 1)  | VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_RSSI_VALUE]              = OSD_POS(8, 1) | VISIBLE_FLAG;
     osdConfigMutable()->item_pos[OSD_MAIN_BATT_VOLTAGE]       = OSD_POS(12, 1) | VISIBLE_FLAG;
     osdConfigMutable()->item_pos[OSD_ITEM_TIMER_1]            = OSD_POS(20, 1) | VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_ITEM_TIMER_2]            = OSD_POS(1, 1)  | VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_ITEM_TIMER_2]            = OSD_POS(1, 1) | VISIBLE_FLAG;
     osdConfigMutable()->item_pos[OSD_REMAINING_TIME_ESTIMATE] = OSD_POS(1, 2) | VISIBLE_FLAG;
     osdConfigMutable()->item_pos[OSD_ALTITUDE]                = OSD_POS(23, 7) | VISIBLE_FLAG;
 
@@ -489,19 +490,19 @@ TEST(OsdTest, TestAlarms)
 #ifdef DEBUG_OSD
         printf("%d\n", i);
 #endif
-        displayPortTestBufferSubstring(8,  1, "%c99", SYM_RSSI);
+        displayPortTestBufferSubstring(8, 1, "%c99", SYM_RSSI);
         displayPortTestBufferSubstring(12, 1, "%c16.8%c", SYM_BATT_FULL, SYM_VOLT);
-        displayPortTestBufferSubstring(1,  1, "%c00:", SYM_FLY_M); // only test the minute part of the timer
+        displayPortTestBufferSubstring(1, 1, "%c00:", SYM_FLY_M); // only test the minute part of the timer
         displayPortTestBufferSubstring(20, 1, "%c01:", SYM_ON_M); // only test the minute part of the timer
         displayPortTestBufferSubstring(23, 7, "    .0%c", SYM_M);
     }
 
     // when
     // all values are out of range
-    rssi = 128;
-    simulationBatteryState = BATTERY_CRITICAL;
+    rssi                     = 128;
+    simulationBatteryState   = BATTERY_CRITICAL;
     simulationBatteryVoltage = 135;
-    simulationAltitude = 12000;
+    simulationAltitude       = 12000;
     simulationTime += 60e6;
     osdRefresh(simulationTime);
     simulationMahDrawn = 999999;
@@ -518,9 +519,9 @@ TEST(OsdTest, TestAlarms)
         displayPortTestPrint();
 #endif
         if (i % 2 == 0) {
-            displayPortTestBufferSubstring(8,  1, "%c12", SYM_RSSI);
+            displayPortTestBufferSubstring(8, 1, "%c12", SYM_RSSI);
             displayPortTestBufferSubstring(12, 1, "%c13.5%c", SYM_MAIN_BATT, SYM_VOLT);
-            displayPortTestBufferSubstring(1,  1, "%c01:", SYM_FLY_M); // only test the minute part of the timer
+            displayPortTestBufferSubstring(1, 1, "%c01:", SYM_FLY_M); // only test the minute part of the timer
             displayPortTestBufferSubstring(20, 1, "%c02:", SYM_ON_M); // only test the minute part of the timer
             displayPortTestBufferSubstring(23, 7, " 120.0%c", SYM_M);
         } else {
@@ -536,7 +537,7 @@ TEST(OsdTest, TestElementRssi)
 {
     // given
     osdConfigMutable()->item_pos[OSD_RSSI_VALUE] = OSD_POS(8, 1) | VISIBLE_FLAG;
-    osdConfigMutable()->rssi_alarm = 0;
+    osdConfigMutable()->rssi_alarm               = 0;
 
     // when
     rssi = 1024;
@@ -651,7 +652,7 @@ TEST(OsdTest, TestElementMahDrawn)
 TEST(OsdTest, TestElementPower)
 {
     // given
-    osdConfigMutable()->item_pos[OSD_POWER] = OSD_POS(1, 10)  | VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_POWER] = OSD_POS(1, 10) | VISIBLE_FLAG;
 
     // and
     simulationBatteryVoltage = 100; // 10V
@@ -808,7 +809,7 @@ TEST(OsdTest, TestElementWarningsBattery)
 {
     // given
     osdConfigMutable()->item_pos[OSD_WARNINGS] = OSD_POS(9, 10) | VISIBLE_FLAG;
-    osdConfigMutable()->enabledWarnings = 0;  // disable all warnings
+    osdConfigMutable()->enabledWarnings        = 0; // disable all warnings
     osdWarnSetState(OSD_WARNING_BATTERY_WARNING, true);
     osdWarnSetState(OSD_WARNING_BATTERY_CRITICAL, true);
     osdWarnSetState(OSD_WARNING_BATTERY_NOT_FULL, true);
@@ -823,7 +824,7 @@ TEST(OsdTest, TestElementWarningsBattery)
     // and
     // full battery
     simulationBatteryVoltage = 168;
-    simulationBatteryState = BATTERY_OK;
+    simulationBatteryState   = BATTERY_OK;
 
     // when
     displayClearScreen(&testDisplayPort);
@@ -835,7 +836,7 @@ TEST(OsdTest, TestElementWarningsBattery)
     // given
     // low battery
     simulationBatteryVoltage = 140;
-    simulationBatteryState = BATTERY_WARNING;
+    simulationBatteryState   = BATTERY_WARNING;
 
     // when
     displayClearScreen(&testDisplayPort);
@@ -847,7 +848,7 @@ TEST(OsdTest, TestElementWarningsBattery)
     // given
     // crtical battery
     simulationBatteryVoltage = 132;
-    simulationBatteryState = BATTERY_CRITICAL;
+    simulationBatteryState   = BATTERY_CRITICAL;
 
     // when
     displayClearScreen(&testDisplayPort);
@@ -859,7 +860,7 @@ TEST(OsdTest, TestElementWarningsBattery)
     // given
     // used battery
     simulationBatteryVoltage = ((batteryConfig()->vbatmaxcellvoltage - 2) * simulationBatteryCellCount) - 1;
-    simulationBatteryState = BATTERY_OK;
+    simulationBatteryState   = BATTERY_OK;
 
     // when
     displayClearScreen(&testDisplayPort);
@@ -871,7 +872,7 @@ TEST(OsdTest, TestElementWarningsBattery)
     // given
     // full battery
     simulationBatteryVoltage = ((batteryConfig()->vbatmaxcellvoltage - 2) * simulationBatteryCellCount);
-    simulationBatteryState = BATTERY_OK;
+    simulationBatteryState   = BATTERY_OK;
 
     // when
     displayClearScreen(&testDisplayPort);
@@ -948,105 +949,127 @@ TEST(OsdTest, TestConvertTemperatureUnits)
 
 // STUBS
 extern "C" {
-    void beeperConfirmationBeeps(uint8_t) {}
+void beeperConfirmationBeeps(uint8_t) {}
 
-    bool isModeActivationConditionPresent(boxId_e) {
-        return false;
-    }
+bool isModeActivationConditionPresent(boxId_e)
+{
+    return false;
+}
 
-    bool IS_RC_MODE_ACTIVE(boxId_e) {
-        return false;
-    }
+bool IS_RC_MODE_ACTIVE(boxId_e)
+{
+    return false;
+}
 
-    uint32_t micros() {
-        return simulationTime;
-    }
+uint32_t micros()
+{
+    return simulationTime;
+}
 
-    uint32_t millis() {
-        return micros() / 1000;
-    }
+uint32_t millis()
+{
+    return micros() / 1000;
+}
 
-    bool isBeeperOn() {
-        return false;
-    }
+bool isBeeperOn()
+{
+    return false;
+}
 
-    bool isAirmodeActive() {
-        return false;
-    }
+bool isAirmodeActive()
+{
+    return false;
+}
 
-    uint8_t getCurrentPidProfileIndex() {
-        return 0;
-    }
+uint8_t getCurrentPidProfileIndex()
+{
+    return 0;
+}
 
-    uint8_t getCurrentControlRateProfileIndex() {
-        return 0;
-    }
+uint8_t getCurrentControlRateProfileIndex()
+{
+    return 0;
+}
 
-    batteryState_e getBatteryState() {
-        return simulationBatteryState;
-    }
+batteryState_e getBatteryState()
+{
+    return simulationBatteryState;
+}
 
-    uint8_t getBatteryCellCount() {
-        return simulationBatteryCellCount;
-    }
+uint8_t getBatteryCellCount()
+{
+    return simulationBatteryCellCount;
+}
 
-    uint16_t getBatteryVoltage() {
-        return simulationBatteryVoltage;
-    }
+uint16_t getBatteryVoltage()
+{
+    return simulationBatteryVoltage;
+}
 
-    uint16_t getBatteryAverageCellVoltage() {
-        return simulationBatteryVoltage / simulationBatteryCellCount;
-    }
+uint16_t getBatteryAverageCellVoltage()
+{
+    return simulationBatteryVoltage / simulationBatteryCellCount;
+}
 
-    int32_t getAmperage() {
-        return simulationBatteryAmperage;
-    }
+int32_t getAmperage()
+{
+    return simulationBatteryAmperage;
+}
 
-    int32_t getMAhDrawn() {
-        return simulationMahDrawn;
-    }
+int32_t getMAhDrawn()
+{
+    return simulationMahDrawn;
+}
 
-    int32_t getEstimatedAltitudeCm() {
-        return simulationAltitude;
-    }
+int32_t getEstimatedAltitudeCm()
+{
+    return simulationAltitude;
+}
 
-    int32_t getEstimatedVario() {
-        return simulationVerticalSpeed;
-    }
+int32_t getEstimatedVario()
+{
+    return simulationVerticalSpeed;
+}
 
-    unsigned int blackboxGetLogNumber() {
-        return 0;
-    }
+unsigned int blackboxGetLogNumber()
+{
+    return 0;
+}
 
-    bool isBlackboxDeviceWorking() {
-        return true;
-    }
+bool isBlackboxDeviceWorking()
+{
+    return true;
+}
 
-    bool isBlackboxDeviceFull() {
-        return false;
-    }
+bool isBlackboxDeviceFull()
+{
+    return false;
+}
 
-    bool isSerialTransmitBufferEmpty(const serialPort_t *) {
-        return false;
-    }
+bool isSerialTransmitBufferEmpty(const serialPort_t *)
+{
+    return false;
+}
 
-    void serialWrite(serialPort_t *, uint8_t) {}
+void serialWrite(serialPort_t *, uint8_t) {}
 
-    bool cmsDisplayPortRegister(displayPort_t *) {
-        return false;
-    }
+bool cmsDisplayPortRegister(displayPort_t *)
+{
+    return false;
+}
 
-    uint16_t getRssi(void) { return rssi; }
+uint16_t getRssi(void) { return rssi; }
 
-    uint8_t getRssiPercent(void) { return scaleRange(rssi, 0, RSSI_MAX_VALUE, 0, 100); }
+uint8_t getRssiPercent(void) { return scaleRange(rssi, 0, RSSI_MAX_VALUE, 0, 100); }
 
-    uint16_t getCoreTemperatureCelsius(void) { return simulationCoreTemperature; }
+uint16_t getCoreTemperatureCelsius(void) { return simulationCoreTemperature; }
 
-    bool isFlipOverAfterCrashMode(void) {
-        return false;
-    }
+bool isFlipOverAfterCrashMode(void)
+{
+    return false;
+}
 
-    bool pidOsdAntiGravityActive(void) { return false; }
+bool pidOsdAntiGravityActive(void) { return false; }
 
-    bool failsafeIsActive(void) { return false; }
+bool failsafeIsActive(void) { return false; }
 }

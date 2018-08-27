@@ -20,8 +20,8 @@
 
 #pragma once
 
-#include "pg/pg.h"
 #include "drivers/io.h"
+#include "pg/pg.h"
 
 typedef struct sdcardConfig_s {
     uint8_t useDma;

@@ -21,39 +21,39 @@
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "ELL0"
 
-#define TARGET_XTAL_MHZ         25
+#define TARGET_XTAL_MHZ 25
 
 #define USBD_PRODUCT_STRING "Elle0"
 
-#define LED0_PIN                PA8
-#define LED1_PIN                PB4
-#define LED2_PIN                PC2
+#define LED0_PIN PA8
+#define LED1_PIN PB4
+#define LED2_PIN PC2
 
 // MPU9250 interrupt
 #define USE_EXTI
-#define MPU_INT_EXTI            PB5
+#define MPU_INT_EXTI PB5
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
-#define MPU6500_CS_PIN          PB12
-#define MPU6500_SPI_INSTANCE    SPI2
+#define MPU6500_CS_PIN PB12
+#define MPU6500_SPI_INSTANCE SPI2
 
 // Using MPU6050 for the moment.
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN      CW270_DEG
+#define GYRO_MPU6500_ALIGN CW270_DEG
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN       CW270_DEG
+#define ACC_MPU6500_ALIGN CW270_DEG
 
 //#define USE_BARO
 //#define USE_BARO_MS5611
 
 #define USE_MAG
 #define USE_MAG_AK8963
-#define MAG_AK8963_ALIGN        CW0_DEG_FLIP
+#define MAG_AK8963_ALIGN CW0_DEG_FLIP
 
 #define USE_VCP
 
@@ -65,13 +65,13 @@
 
 /* RX1 */
 #define USE_UART2
-#define UART2_RX_PIN        PA3
-#define UART2_TX_PIN        PA2
+#define UART2_RX_PIN PA3
+#define UART2_TX_PIN PA2
 
 /* I2C */
 #define USE_UART3
-#define UART3_RX_PIN            PB11
-#define UART3_TX_PIN            PB10
+#define UART3_RX_PIN PB11
+#define UART3_TX_PIN PB10
 
 /* RX2 */
 //#define USE_UART5
@@ -86,26 +86,26 @@
 #define USE_SPI
 
 #define USE_SPI_DEVICE_2 //MPU9250
-#define SPI2_NSS_PIN            PB12
-#define SPI2_SCK_PIN            PB13
-#define SPI2_MISO_PIN           PB14
-#define SPI2_MOSI_PIN           PB15
+#define SPI2_NSS_PIN PB12
+#define SPI2_SCK_PIN PB13
+#define SPI2_MISO_PIN PB14
+#define SPI2_MOSI_PIN PB15
 
 #define USE_ADC
-#define VBAT_ADC_PIN            PC4
-#define CURRENT_METER_ADC_PIN   PC5
+#define VBAT_ADC_PIN PC4
+#define CURRENT_METER_ADC_PIN PC5
 
 #undef USE_LED_STRIP
 
-#define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
-#define SERIALRX_PROVIDER    SERIALRX_SPEKTRUM2048
-#define SERIALRX_UART           SERIAL_PORT_USART2
+#define DEFAULT_RX_FEATURE FEATURE_RX_SERIAL
+#define SERIALRX_PROVIDER SERIALRX_SPEKTRUM2048
+#define SERIALRX_UART SERIAL_PORT_USART2
 #define RX_CHANNELS_TAER
 
-#define TARGET_IO_PORTA         0xffff
-#define TARGET_IO_PORTB         0xffff
-#define TARGET_IO_PORTC         0xffff
-#define TARGET_IO_PORTD         (BIT(2))
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC 0xffff
+#define TARGET_IO_PORTD (BIT(2))
 
 #define USABLE_TIMER_CHANNEL_COUNT 9
-#define USED_TIMERS  (TIM_N(2) | TIM_N(4) | TIM_N(5) | TIM_N(8))
+#define USED_TIMERS (TIM_N(2) | TIM_N(4) | TIM_N(5) | TIM_N(8))

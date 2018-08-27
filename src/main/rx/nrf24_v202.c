@@ -39,9 +39,9 @@
 #include "drivers/rx/rx_nrf24l01.h"
 #include "drivers/time.h"
 
+#include "rx/nrf24_v202.h"
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
-#include "rx/nrf24_v202.h"
 
 /*
  * V202 Protocol
@@ -90,14 +90,14 @@ enum {
 // The pattern is defined by 5 least significant bits of
 // sum of 3 bytes comprising TX id
 static const uint8_t v2x2_freq_hopping[][V2X2_NFREQCHANNELS] = {
- { 0x27, 0x1B, 0x39, 0x28, 0x24, 0x22, 0x2E, 0x36,
-   0x19, 0x21, 0x29, 0x14, 0x1E, 0x12, 0x2D, 0x18 }, //  00
- { 0x2E, 0x33, 0x25, 0x38, 0x19, 0x12, 0x18, 0x16,
-   0x2A, 0x1C, 0x1F, 0x37, 0x2F, 0x23, 0x34, 0x10 }, //  01
- { 0x11, 0x1A, 0x35, 0x24, 0x28, 0x18, 0x25, 0x2A,
-   0x32, 0x2C, 0x14, 0x27, 0x36, 0x34, 0x1C, 0x17 }, //  02
- { 0x22, 0x27, 0x17, 0x39, 0x34, 0x28, 0x2B, 0x1D,
-   0x18, 0x2A, 0x21, 0x38, 0x10, 0x26, 0x20, 0x1F }  //  03
+    {0x27, 0x1B, 0x39, 0x28, 0x24, 0x22, 0x2E, 0x36,
+     0x19, 0x21, 0x29, 0x14, 0x1E, 0x12, 0x2D, 0x18}, //  00
+    {0x2E, 0x33, 0x25, 0x38, 0x19, 0x12, 0x18, 0x16,
+     0x2A, 0x1C, 0x1F, 0x37, 0x2F, 0x23, 0x34, 0x10}, //  01
+    {0x11, 0x1A, 0x35, 0x24, 0x28, 0x18, 0x25, 0x2A,
+     0x32, 0x2C, 0x14, 0x27, 0x36, 0x34, 0x1C, 0x17}, //  02
+    {0x22, 0x27, 0x17, 0x39, 0x34, 0x28, 0x2B, 0x1D,
+     0x18, 0x2A, 0x21, 0x38, 0x10, 0x26, 0x20, 0x1F} //  03
 };
 
 STATIC_UNIT_TESTED uint8_t rf_channels[V2X2_NFREQCHANNELS];
@@ -108,8 +108,8 @@ STATIC_UNIT_TESTED uint8_t txid[TXIDSIZE];
 static uint32_t rx_timeout;
 extern uint16_t rxSpiRcData[];
 
-static const unsigned char v2x2_channelindex[] = {RC_SPI_THROTTLE,RC_SPI_YAW,RC_SPI_PITCH,RC_SPI_ROLL,
-        RC_SPI_AUX1,RC_SPI_AUX2,RC_SPI_AUX3,RC_SPI_AUX4,RC_SPI_AUX5,RC_SPI_AUX6,RC_SPI_AUX7};
+static const unsigned char v2x2_channelindex[] = {RC_SPI_THROTTLE, RC_SPI_YAW, RC_SPI_PITCH, RC_SPI_ROLL,
+                                                  RC_SPI_AUX1, RC_SPI_AUX2, RC_SPI_AUX3, RC_SPI_AUX4, RC_SPI_AUX5, RC_SPI_AUX6, RC_SPI_AUX7};
 
 static void prepare_to_bind(void)
 {
@@ -123,7 +123,8 @@ static void prepare_to_bind(void)
 static void switch_channel(void)
 {
     NRF24L01_WriteReg(NRF24L01_05_RF_CH, rf_channels[rf_ch_num]);
-    if (++rf_ch_num >= V2X2_NFREQCHANNELS) rf_ch_num = 0;
+    if (++rf_ch_num >= V2X2_NFREQCHANNELS)
+        rf_ch_num = 0;
 }
 
 static void v2x2_set_tx_id(uint8_t *id)
@@ -132,7 +133,7 @@ static void v2x2_set_tx_id(uint8_t *id)
     txid[0] = id[0];
     txid[1] = id[1];
     txid[2] = id[2];
-    sum = id[0] + id[1] + id[2];
+    sum     = id[0] + id[1] + id[2];
 
     // Base row is defined by lowest 2 bits
     const uint8_t *fh_row = v2x2_freq_hopping[sum & 0x03];
@@ -178,16 +179,16 @@ static rx_spi_received_e decode_packet(uint8_t *packet)
     // Throttle 0..255 to 1000..2000
     rxSpiRcData[v2x2_channelindex[0]] = ((uint16_t)packet[0]) * 1000 / 255 + 1000;
     for (int i = 1; i < 4; ++i) {
-        uint8_t a = packet[i];
+        uint8_t a                         = packet[i];
         rxSpiRcData[v2x2_channelindex[i]] = ((uint16_t)(a < 0x80 ? 0x7f - a : a)) * 1000 / 255 + 1000;
     }
     const uint8_t flags[] = {V2X2_FLAG_LED, V2X2_FLAG_FLIP, V2X2_FLAG_CAMERA, V2X2_FLAG_VIDEO}; // two more unknown bits
     for (int i = 4; i < 8; ++i) {
-        rxSpiRcData[v2x2_channelindex[i]] = (packet[14] & flags[i-4]) ? PWM_RANGE_MAX : PWM_RANGE_MIN;
+        rxSpiRcData[v2x2_channelindex[i]] = (packet[14] & flags[i - 4]) ? PWM_RANGE_MAX : PWM_RANGE_MIN;
     }
     const uint8_t flags10[] = {V2X2_FLAG_HEADLESS, V2X2_FLAG_MAG_CAL_X, V2X2_FLAG_MAG_CAL_Y};
     for (int i = 8; i < 11; ++i) {
-        rxSpiRcData[v2x2_channelindex[i]] = (packet[10] & flags10[i-8]) ? PWM_RANGE_MAX : PWM_RANGE_MIN;
+        rxSpiRcData[v2x2_channelindex[i]] = (packet[10] & flags10[i - 8]) ? PWM_RANGE_MAX : PWM_RANGE_MIN;
     }
     packet_timer = micros();
     return RX_SPI_RECEIVED_DATA;
@@ -232,18 +233,18 @@ static void v202Nrf24Setup(rx_spi_protocol_e protocol)
 {
     NRF24L01_Initialize(BV(NRF24L01_00_CONFIG_EN_CRC) | BV(NRF24L01_00_CONFIG_CRCO)); // 2-bytes CRC
 
-    NRF24L01_WriteReg(NRF24L01_01_EN_AA, 0x00);      // No Auto Acknowledgment
-    NRF24L01_WriteReg(NRF24L01_02_EN_RXADDR, BV(NRF24L01_02_EN_RXADDR_ERX_P0));  // Enable data pipe 0
-    NRF24L01_WriteReg(NRF24L01_03_SETUP_AW, NRF24L01_03_SETUP_AW_5BYTES);   // 5-byte RX/TX address
-    NRF24L01_WriteReg(NRF24L01_04_SETUP_RETR, 0xFF); // 4ms retransmit t/o, 15 tries
+    NRF24L01_WriteReg(NRF24L01_01_EN_AA, 0x00);                                 // No Auto Acknowledgment
+    NRF24L01_WriteReg(NRF24L01_02_EN_RXADDR, BV(NRF24L01_02_EN_RXADDR_ERX_P0)); // Enable data pipe 0
+    NRF24L01_WriteReg(NRF24L01_03_SETUP_AW, NRF24L01_03_SETUP_AW_5BYTES);       // 5-byte RX/TX address
+    NRF24L01_WriteReg(NRF24L01_04_SETUP_RETR, 0xFF);                            // 4ms retransmit t/o, 15 tries
     if (protocol == RX_SPI_NRF24_V202_250K) {
         NRF24L01_WriteReg(NRF24L01_06_RF_SETUP, NRF24L01_06_RF_SETUP_RF_DR_250Kbps | NRF24L01_06_RF_SETUP_RF_PWR_n12dbm);
     } else {
         NRF24L01_WriteReg(NRF24L01_06_RF_SETUP, NRF24L01_06_RF_SETUP_RF_DR_1Mbps | NRF24L01_06_RF_SETUP_RF_PWR_n12dbm);
     }
-    NRF24L01_WriteReg(NRF24L01_07_STATUS, BV(NRF24L01_07_STATUS_RX_DR) | BV(NRF24L01_07_STATUS_TX_DS) | BV(NRF24L01_07_STATUS_MAX_RT));     // Clear data ready, data sent, and retransmit
-    NRF24L01_WriteReg(NRF24L01_11_RX_PW_P0, V2X2_PAYLOAD_SIZE);  // bytes of data payload for pipe 0
-    NRF24L01_WriteReg(NRF24L01_17_FIFO_STATUS, 0x00); // Just in case, no real bits to write here
+    NRF24L01_WriteReg(NRF24L01_07_STATUS, BV(NRF24L01_07_STATUS_RX_DR) | BV(NRF24L01_07_STATUS_TX_DS) | BV(NRF24L01_07_STATUS_MAX_RT)); // Clear data ready, data sent, and retransmit
+    NRF24L01_WriteReg(NRF24L01_11_RX_PW_P0, V2X2_PAYLOAD_SIZE);                                                                         // bytes of data payload for pipe 0
+    NRF24L01_WriteReg(NRF24L01_17_FIFO_STATUS, 0x00);                                                                                   // Just in case, no real bits to write here
 #define RX_TX_ADDR_LEN 5
     const uint8_t rx_tx_addr[RX_TX_ADDR_LEN] = {0x66, 0x88, 0x68, 0x68, 0x68};
     NRF24L01_WriteRegisterMulti(NRF24L01_0A_RX_ADDR_P0, rx_tx_addr, RX_TX_ADDR_LEN);
@@ -252,7 +253,7 @@ static void v202Nrf24Setup(rx_spi_protocol_e protocol)
     NRF24L01_FlushTx();
     NRF24L01_FlushRx();
 
-    rf_ch_num = 0;
+    rf_ch_num  = 0;
     bind_phase = PHASE_NOT_BOUND;
     prepare_to_bind();
     switch_channel();

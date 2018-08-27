@@ -31,8 +31,8 @@
 #include "sound_beeper.h"
 
 #ifdef USE_BEEPER
-static IO_t beeperIO = DEFIO_IO(NONE);
-static bool beeperInverted = false;
+static IO_t beeperIO            = DEFIO_IO(NONE);
+static bool beeperInverted      = false;
 static uint16_t beeperFrequency = 0;
 #endif
 
@@ -65,7 +65,7 @@ void beeperInit(const beeperDevConfig_t *config)
 #ifdef USE_BEEPER
     beeperFrequency = config->frequency;
     if (beeperFrequency == 0) {
-        beeperIO = IOGetByTag(config->ioTag);
+        beeperIO       = IOGetByTag(config->ioTag);
         beeperInverted = config->isInverted;
         if (beeperIO) {
             IOInit(beeperIO, OWNER_BEEPER, 0);

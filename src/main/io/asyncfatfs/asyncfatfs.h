@@ -20,8 +20,8 @@
 
 #pragma once
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "fat_standard.h"
 
@@ -41,9 +41,9 @@ typedef enum {
 } afatfsOperationStatus_e;
 
 typedef enum {
-    AFATFS_ERROR_NONE = 0,
-    AFATFS_ERROR_GENERIC = 1,
-    AFATFS_ERROR_BAD_MBR = 2,
+    AFATFS_ERROR_NONE                  = 0,
+    AFATFS_ERROR_GENERIC               = 1,
+    AFATFS_ERROR_BAD_MBR               = 2,
     AFATFS_ERROR_BAD_FILESYSTEM_HEADER = 3
 } afatfsError_e;
 

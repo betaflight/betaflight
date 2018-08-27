@@ -38,7 +38,7 @@ typedef struct busDevice_s {
         struct deviceSpi_s {
             SPI_TypeDef *instance;
 #if defined(USE_HAL_DRIVER)
-            SPI_HandleTypeDef* handle; // cached here for efficiency
+            SPI_HandleTypeDef *handle; // cached here for efficiency
 #endif
             IO_t csnPin;
         } spi;

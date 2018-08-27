@@ -18,10 +18,10 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdint.h>
-#include <stdbool.h>
-#include <stdlib.h>
 #include <stdarg.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "platform.h"
@@ -34,7 +34,6 @@
 #include "common/encoding.h"
 #include "common/printf.h"
 
-
 static void _putc(void *p, char c)
 {
     (void)p;
@@ -45,7 +44,6 @@ static int blackboxPrintfv(const char *fmt, va_list va)
 {
     return tfp_format(NULL, _putc, fmt, va);
 }
-
 
 //printf() to the blackbox serial port with no blocking shenanigans (so it's caller's responsibility to not write too fast!)
 int blackboxPrintf(const char *fmt, ...)
@@ -92,7 +90,7 @@ void blackboxWriteUnsignedVB(uint32_t value)
 {
     //While this isn't the final byte (we can only write 7 bits at a time)
     while (value > 127) {
-        blackboxWrite((uint8_t) (value | 0x80)); // Set the high bit to mean "more bytes follow"
+        blackboxWrite((uint8_t)(value | 0x80)); // Set the high bit to mean "more bytes follow"
         value >>= 7;
     }
     blackboxWrite(value);
@@ -143,10 +141,10 @@ void blackboxWriteTag2_3S32(int32_t *values)
     };
 
     enum {
-        BYTES_1  = 0,
-        BYTES_2  = 1,
-        BYTES_3  = 2,
-        BYTES_4  = 3
+        BYTES_1 = 0,
+        BYTES_2 = 1,
+        BYTES_3 = 2,
+        BYTES_4 = 3
     };
 
     int selector = BITS_2, selector2;
@@ -171,9 +169,9 @@ void blackboxWriteTag2_3S32(int32_t *values)
 
         //Require more than 4 bits?
         if (values[x] >= 8 || values[x] < -8) {
-             if (selector < BITS_6) {
-                 selector = BITS_6;
-             }
+            if (selector < BITS_6) {
+                selector = BITS_6;
+            }
         } else if (values[x] >= 2 || values[x] < -2) { //Require more than 2 bits?
             if (selector < BITS_4) {
                 selector = BITS_4;
@@ -258,19 +256,18 @@ int blackboxWriteTag2_3SVariable(int32_t *values)
 {
     static const int FIELD_COUNT = 3;
     enum {
-        BITS_2  = 0,
-        BITS_554  = 1,
-        BITS_877  = 2,
-        BITS_32 = 3
+        BITS_2   = 0,
+        BITS_554 = 1,
+        BITS_877 = 2,
+        BITS_32  = 3
     };
 
     enum {
-        BYTES_1  = 0,
-        BYTES_2  = 1,
-        BYTES_3  = 2,
-        BYTES_4  = 3
+        BYTES_1 = 0,
+        BYTES_2 = 1,
+        BYTES_3 = 2,
+        BYTES_4 = 3
     };
-
 
     /*
      * Find out how many bits the largest value requires to encode, and use it to choose one of the packing schemes
@@ -283,22 +280,16 @@ int blackboxWriteTag2_3SVariable(int32_t *values)
      * 877 bits per field  ss11 1111 1122 2222 2333 3333
      * 32 bits per field sstt tttt followed by fields of various byte counts
      */
-    int selector = BITS_2;
+    int selector  = BITS_2;
     int selector2 = 0;
     // Require more than 877 bits?
-    if (values[0] >= 256 || values[0] < -256
-            || values[1] >= 128 || values[1] < -128
-            || values[2] >= 128 || values[2] < -128) {
+    if (values[0] >= 256 || values[0] < -256 || values[1] >= 128 || values[1] < -128 || values[2] >= 128 || values[2] < -128) {
         selector = BITS_32;
-   // Require more than 554 bits?
-    } else if (values[0] >= 16 || values[0] < -16
-            || values[1] >= 16 || values[1] < -16
-            || values[2] >= 8 || values[2] < -8) {
+        // Require more than 554 bits?
+    } else if (values[0] >= 16 || values[0] < -16 || values[1] >= 16 || values[1] < -16 || values[2] >= 8 || values[2] < -8) {
         selector = BITS_877;
         // Require more than 2 bits?
-    } else if (values[0] >= 2 || values[0] < -2
-            || values[1] >= 2 || values[1] < -2
-            || values[2] >= 2 || values[2] < -2) {
+    } else if (values[0] >= 2 || values[0] < -2 || values[1] >= 2 || values[1] < -2 || values[2] >= 2 || values[2] < -2) {
         selector = BITS_554;
     }
 
@@ -369,7 +360,7 @@ int blackboxWriteTag2_3SVariable(int32_t *values)
                 break;
             }
         }
-    break;
+        break;
     }
     return selector;
 }
@@ -407,7 +398,7 @@ void blackboxWriteTag8_4S16(int32_t *values)
     blackboxWrite(selector);
 
     int nibbleIndex = 0;
-    uint8_t buffer = 0;
+    uint8_t buffer  = 0;
     for (int x = 0; x < 4; x++, selector >>= 2) {
         switch (selector & 0x03) {
         case FIELD_ZERO:
@@ -416,7 +407,7 @@ void blackboxWriteTag8_4S16(int32_t *values)
         case FIELD_4BIT:
             if (nibbleIndex == 0) {
                 //We fill high-bits first
-                buffer = values[x] << 4;
+                buffer      = values[x] << 4;
                 nibbleIndex = 1;
             } else {
                 blackboxWrite(buffer | (values[x] & 0x0F));

@@ -47,8 +47,8 @@
 #include "telemetry/telemetry.h"
 #endif
 
-#include "rx/rx.h"
 #include "rx/ibus.h"
+#include "rx/rx.h"
 #include "telemetry/ibus.h"
 #include "telemetry/ibus_shared.h"
 
@@ -72,14 +72,14 @@ static uint16_t ibusChecksum;
 static bool ibusFrameDone = false;
 static uint32_t ibusChannelData[IBUS_MAX_CHANNEL];
 
-static uint8_t ibus[IBUS_BUFFSIZE] = { 0, };
-
+static uint8_t ibus[IBUS_BUFFSIZE] = {
+    0,
+};
 
 static bool isValidIa6bIbusPacketLength(uint8_t length)
 {
     return (length == IBUS_TELEMETRY_PACKET_LENGTH) || (length == IBUS_SERIAL_RX_PACKET_LENGTH);
 }
-
 
 // Receive ISR callback
 static void ibusDataReceive(uint16_t c, void *data)
@@ -94,7 +94,7 @@ static void ibusDataReceive(uint16_t c, void *data)
 
     if ((ibusTime - ibusTimeLast) > IBUS_FRAME_GAP) {
         ibusFramePosition = 0;
-        rxBytesToIgnore = 0;
+        rxBytesToIgnore   = 0;
     } else if (rxBytesToIgnore) {
         rxBytesToIgnore--;
         return;
@@ -104,16 +104,16 @@ static void ibusDataReceive(uint16_t c, void *data)
 
     if (ibusFramePosition == 0) {
         if (isValidIa6bIbusPacketLength(c)) {
-            ibusModel = IBUS_MODEL_IA6B;
-            ibusSyncByte = c;
-            ibusFrameSize = c;
+            ibusModel         = IBUS_MODEL_IA6B;
+            ibusSyncByte      = c;
+            ibusFrameSize     = c;
             ibusChannelOffset = 2;
-            ibusChecksum = 0xFFFF;
+            ibusChecksum      = 0xFFFF;
         } else if ((ibusSyncByte == 0) && (c == 0x55)) {
-            ibusModel = IBUS_MODEL_IA6;
-            ibusSyncByte = 0x55;
-            ibusFrameSize = 31;
-            ibusChecksum = 0x0000;
+            ibusModel         = IBUS_MODEL_IA6;
+            ibusSyncByte      = 0x55;
+            ibusFrameSize     = 31;
+            ibusChecksum      = 0x0000;
             ibusChannelOffset = 1;
         } else if (ibusSyncByte != c) {
             return;
@@ -129,31 +129,30 @@ static void ibusDataReceive(uint16_t c, void *data)
     }
 }
 
-
 static bool isChecksumOkIa6(void)
 {
     uint8_t offset;
     uint8_t i;
     uint16_t chksum, rxsum;
     chksum = ibusChecksum;
-    rxsum = ibus[ibusFrameSize - 2] + (ibus[ibusFrameSize - 1] << 8);
+    rxsum  = ibus[ibusFrameSize - 2] + (ibus[ibusFrameSize - 1] << 8);
     for (i = 0, offset = ibusChannelOffset; i < IBUS_MAX_CHANNEL; i++, offset += 2) {
         chksum += ibus[offset] + (ibus[offset + 1] << 8);
     }
     return chksum == rxsum;
 }
 
-
-static bool checksumIsOk(void) {
-    if (ibusModel == IBUS_MODEL_IA6 ) {
+static bool checksumIsOk(void)
+{
+    if (ibusModel == IBUS_MODEL_IA6) {
         return isChecksumOkIa6();
     } else {
         return isChecksumOkIa6b(ibus, ibusFrameSize);
     }
 }
 
-
-static void updateChannelData(void) {
+static void updateChannelData(void)
+{
     uint8_t i;
     uint8_t offset;
 
@@ -178,9 +177,7 @@ static uint8_t ibusFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
         if (ibusModel == IBUS_MODEL_IA6 || ibusSyncByte == 0x20) {
             updateChannelData();
             frameStatus = RX_FRAME_COMPLETE;
-        }
-        else
-        {
+        } else {
 #if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_IBUS)
             rxBytesToIgnore = respondToIbusRequest(ibus);
 #endif
@@ -190,23 +187,21 @@ static uint8_t ibusFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
     return frameStatus;
 }
 
-
 static uint16_t ibusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
 {
     UNUSED(rxRuntimeConfig);
     return ibusChannelData[chan];
 }
 
-
 bool ibusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     UNUSED(rxConfig);
     ibusSyncByte = 0;
 
-    rxRuntimeConfig->channelCount = IBUS_MAX_CHANNEL;
+    rxRuntimeConfig->channelCount  = IBUS_MAX_CHANNEL;
     rxRuntimeConfig->rxRefreshRate = 20000; // TODO - Verify speed
 
-    rxRuntimeConfig->rcReadRawFn = ibusReadRawRC;
+    rxRuntimeConfig->rcReadRawFn     = ibusReadRawRC;
     rxRuntimeConfig->rcFrameStatusFn = ibusFrameStatus;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
@@ -221,16 +216,14 @@ bool ibusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     bool portShared = false;
 #endif
 
-
-    rxBytesToIgnore = 0;
+    rxBytesToIgnore        = 0;
     serialPort_t *ibusPort = openSerialPort(portConfig->identifier,
-        FUNCTION_RX_SERIAL,
-        ibusDataReceive,
-        NULL,
-        IBUS_BAUDRATE,
-        portShared ? MODE_RXTX : MODE_RX,
-        (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | (rxConfig->halfDuplex || portShared ? SERIAL_BIDIR : 0)
-        );
+                                            FUNCTION_RX_SERIAL,
+                                            ibusDataReceive,
+                                            NULL,
+                                            IBUS_BAUDRATE,
+                                            portShared ? MODE_RXTX : MODE_RX,
+                                            (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | (rxConfig->halfDuplex || portShared ? SERIAL_BIDIR : 0));
 
 #if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_IBUS)
     if (portShared) {

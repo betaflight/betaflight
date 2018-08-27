@@ -26,7 +26,7 @@
 #include "drivers/nvic.h"
 #include "drivers/system.h"
 
-#define AIRCR_VECTKEY_MASK    ((uint32_t)0x05FA0000)
+#define AIRCR_VECTKEY_MASK ((uint32_t)0x05FA0000)
 
 // from system_stm32f10x.c
 void SetSysClock(bool overclock);
@@ -52,8 +52,7 @@ void enableGPIOPowerUsageAndNoiseReductions(void)
 
     GPIO_InitTypeDef GPIO_InitStructure = {
         .GPIO_Mode = GPIO_Mode_AIN,
-        .GPIO_Pin = GPIO_Pin_All
-    };
+        .GPIO_Pin  = GPIO_Pin_All};
 
     GPIO_Init(GPIOA, &GPIO_InitStructure);
     GPIO_Init(GPIOB, &GPIO_InitStructure);
@@ -95,16 +94,15 @@ void systemInit(void)
     // Set USART1 TX (PA9) to output and high state to prevent a rs232 break condition on reset.
     // See issue https://github.com/cleanflight/cleanflight/issues/1433
     GPIO_InitTypeDef GPIO_InitStructure = {
-        .GPIO_Mode = GPIO_Mode_Out_PP,
-        .GPIO_Pin = GPIO_Pin_9,
-        .GPIO_Speed = GPIO_Speed_2MHz
-    };
+        .GPIO_Mode  = GPIO_Mode_Out_PP,
+        .GPIO_Pin   = GPIO_Pin_9,
+        .GPIO_Speed = GPIO_Speed_2MHz};
 
     GPIOA->BSRR = GPIO_InitStructure.GPIO_Pin;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
     // Turn off JTAG port 'cause we're using the GPIO for leds
-#define AFIO_MAPR_SWJ_CFG_NO_JTAG_SW            (0x2 << 24)
+#define AFIO_MAPR_SWJ_CFG_NO_JTAG_SW (0x2 << 24)
     AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_NO_JTAG_SW;
 
     // Init cycle counter
@@ -116,7 +114,7 @@ void systemInit(void)
 
 void checkForBootLoaderRequest(void)
 {
-    void(*bootJump)(void);
+    void (*bootJump)(void);
 
     if (*((uint32_t *)0x20004FF0) == 0xDEADBEEF) {
 
@@ -125,8 +123,9 @@ void checkForBootLoaderRequest(void)
         __enable_irq();
         __set_MSP(*((uint32_t *)0x1FFFF000));
 
-        bootJump = (void(*)(void))(*((uint32_t *) 0x1FFFF004));
+        bootJump = (void (*)(void))(*((uint32_t *)0x1FFFF004));
         bootJump();
-        while (1);
+        while (1)
+            ;
     }
 }

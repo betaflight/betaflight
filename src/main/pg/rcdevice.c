@@ -18,13 +18,13 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "pg/pg_ids.h"
 #include "pg/rcdevice.h"
+#include "pg/pg_ids.h"
 
 PG_REGISTER_WITH_RESET_FN(rcdeviceConfig_t, rcdeviceConfig, PG_RCDEVICE_CONFIG, 0);
 
 void pgResetFn_rcdeviceConfig(rcdeviceConfig_t *rcdeviceConfig)
 {
-    rcdeviceConfig->initDeviceAttempts = 4;
+    rcdeviceConfig->initDeviceAttempts        = 4;
     rcdeviceConfig->initDeviceAttemptInterval = 1000;
 }

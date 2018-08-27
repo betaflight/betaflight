@@ -21,8 +21,8 @@
 #pragma once
 
 #include "common/axis.h"
-#include "common/time.h"
 #include "common/maths.h"
+#include "common/time.h"
 #include "pg/pg.h"
 
 // Exported symbols
@@ -34,14 +34,20 @@ extern bool canUseGPSHeading;
 extern float accAverage[XYZ_AXIS_COUNT];
 
 typedef struct {
-    float w,x,y,z;
+    float w, x, y, z;
 } quaternion;
-#define QUATERNION_INITIALIZE  {.w=1, .x=0, .y=0,.z=0}
+#define QUATERNION_INITIALIZE          \
+    {                                  \
+        .w = 1, .x = 0, .y = 0, .z = 0 \
+    }
 
 typedef struct {
-    float ww,wx,wy,wz,xx,xy,xz,yy,yz,zz;
+    float ww, wx, wy, wz, xx, xy, xz, yy, yz, zz;
 } quaternionProducts;
-#define QUATERNION_PRODUCTS_INITIALIZE  {.ww=1, .wx=0, .wy=0, .wz=0, .xx=0, .xy=0, .xz=0, .yy=0, .yz=0, .zz=0}
+#define QUATERNION_PRODUCTS_INITIALIZE                                                           \
+    {                                                                                            \
+        .ww = 1, .wx = 0, .wy = 0, .wz = 0, .xx = 0, .xy = 0, .xz = 0, .yy = 0, .yz = 0, .zz = 0 \
+    }
 
 typedef union {
     int16_t raw[XYZ_AXIS_COUNT];
@@ -52,20 +58,25 @@ typedef union {
         int16_t yaw;
     } values;
 } attitudeEulerAngles_t;
-#define EULER_INITIALIZE  { { 0, 0, 0 } }
+#define EULER_INITIALIZE \
+    {                    \
+        {                \
+            0, 0, 0      \
+        }                \
+    }
 
 extern attitudeEulerAngles_t attitude;
 
 typedef struct accDeadband_s {
-    uint8_t xy;                 // set the acc deadband for xy-Axis
-    uint8_t z;                  // set the acc deadband for z-Axis, this ignores small accelerations
+    uint8_t xy; // set the acc deadband for xy-Axis
+    uint8_t z;  // set the acc deadband for z-Axis, this ignores small accelerations
 } accDeadband_t;
 
 typedef struct imuConfig_s {
-    uint16_t dcm_kp;                        // DCM filter proportional gain ( x 10000)
-    uint16_t dcm_ki;                        // DCM filter integral gain ( x 10000)
+    uint16_t dcm_kp; // DCM filter proportional gain ( x 10000)
+    uint16_t dcm_ki; // DCM filter integral gain ( x 10000)
     uint8_t small_angle;
-    uint8_t acc_unarmedcal;                 // turn automatic acc compensation on/off
+    uint8_t acc_unarmedcal; // turn automatic acc compensation on/off
     accDeadband_t accDeadband;
 } imuConfig_t;
 
@@ -82,14 +93,14 @@ typedef struct imuRuntimeConfig_s {
 void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correction_value);
 
 float getCosTiltAngle(void);
-void getQuaternion(quaternion * q);
+void getQuaternion(quaternion *q);
 void imuUpdateAttitude(timeUs_t currentTimeUs);
 
 void imuResetAccelerationSum(void);
 void imuInit(void);
 
 #ifdef SIMULATOR_BUILD
-void imuSetAttitudeRPY(float roll, float pitch, float yaw);  // in deg
+void imuSetAttitudeRPY(float roll, float pitch, float yaw); // in deg
 void imuSetAttitudeQuat(float w, float x, float y, float z);
 #if defined(SIMULATOR_IMU_SYNC)
 void imuSetHasNewData(uint32_t dt);
@@ -98,6 +109,6 @@ void imuSetHasNewData(uint32_t dt);
 
 void imuQuaternionComputeProducts(quaternion *quat, quaternionProducts *quatProd);
 bool imuQuaternionHeadfreeOffsetSet(void);
-void imuQuaternionHeadfreeTransformVectorEarthToBody(t_fp_vector_def * v);
+void imuQuaternionHeadfreeTransformVectorEarthToBody(t_fp_vector_def *v);
 void imuComputeQuaternionFromRPY(quaternionProducts *qP, int16_t initialRoll, int16_t initialPitch, int16_t initialYaw);
 bool shouldInitializeGPSHeading(void);

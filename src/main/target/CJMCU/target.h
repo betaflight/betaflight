@@ -24,9 +24,9 @@
 #define USE_HARDWARE_REVISION_DETECTION
 #define TARGET_BUS_INIT
 
-#define LED0_PIN                PC14
-#define LED1_PIN                PC13
-#define LED2_PIN                PC15
+#define LED0_PIN PC14
+#define LED1_PIN PC13
+#define LED2_PIN PC15
 
 #undef USE_BEEPER
 
@@ -44,11 +44,11 @@
 #define USE_UART1
 #define USE_UART2
 
-#define SERIAL_PORT_COUNT       2
+#define SERIAL_PORT_COUNT 2
 
 #define USE_I2C
 #define USE_I2C_DEVICE_1
-#define I2C_DEVICE              (I2CDEV_1)
+#define I2C_DEVICE (I2CDEV_1)
 
 // #define SOFT_I2C // enable to test software i2c
 // #define SOFT_I2C_PB1011 // If SOFT_I2C is enabled above, need to define pinout as well (I2C1 = PB67, I2C2 = PB1011)
@@ -61,20 +61,20 @@
 #ifdef USE_RX_NRF24
 
 #define USE_RX_SPI
-#define RX_SPI_INSTANCE         SPI1
+#define RX_SPI_INSTANCE SPI1
 
 // Nordic Semiconductor uses 'CSN', STM uses 'NSS'
-#define RX_CE_PIN               PA4
-#define RX_NSS_PIN              PA11
-#define RX_SCK_PIN              PA5
-#define RX_MISO_PIN             PA6
-#define RX_MOSI_PIN             PA7
-#define RX_IRQ_PIN              PA8
+#define RX_CE_PIN PA4
+#define RX_NSS_PIN PA11
+#define RX_SCK_PIN PA5
+#define RX_MISO_PIN PA6
+#define RX_MOSI_PIN PA7
+#define RX_IRQ_PIN PA8
 // CJMCU has NSS on PA11, rather than the standard PA4
-#define SPI1_NSS_PIN            RX_NSS_PIN
-#define SPI1_SCK_PIN            RX_SCK_PIN
-#define SPI1_MISO_PIN           RX_MISO_PIN
-#define SPI1_MOSI_PIN           RX_MOSI_PIN
+#define SPI1_NSS_PIN RX_NSS_PIN
+#define SPI1_SCK_PIN RX_SCK_PIN
+#define SPI1_MISO_PIN RX_MISO_PIN
+#define SPI1_MOSI_PIN RX_MOSI_PIN
 
 #define USE_RX_NRF24
 #define USE_RX_CX10
@@ -89,7 +89,7 @@
 //#define RX_SPI_DEFAULT_PROTOCOL RX_SPI_NRF24_CX10A
 //#define RX_SPI_DEFAULT_PROTOCOL RX_SPI_NRF24_V202_1M
 
-#define DEFAULT_RX_FEATURE      FEATURE_RX_SPI
+#define DEFAULT_RX_FEATURE FEATURE_RX_SPI
 //#define USE_TELEMETRY
 //#define USE_TELEMETRY_LTM
 //#define USE_TELEMETRY_NRF24_LTM
@@ -108,13 +108,13 @@
 
 #else
 
-#define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
+#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
 #define USE_RX_MSP
 
 #endif //USE_RX_NRF24
 
 #define BRUSHED_MOTORS
-#define DEFAULT_FEATURES        FEATURE_MOTOR_STOP
+#define DEFAULT_FEATURES FEATURE_MOTOR_STOP
 #define SKIP_SERIAL_PASSTHROUGH
 #undef USE_CLI
 
@@ -126,9 +126,9 @@
 //#define MAX_PWM_OUTPUT_PORTS    4
 
 // IO - assuming all IOs on 48pin package TODO
-#define TARGET_IO_PORTA         0xffff
-#define TARGET_IO_PORTB         0xffff
-#define TARGET_IO_PORTC         (BIT(13)|BIT(14)|BIT(15))
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC (BIT(13) | BIT(14) | BIT(15))
 
 #define USABLE_TIMER_CHANNEL_COUNT 14
-#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4))
+#define USED_TIMERS (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4))

@@ -26,44 +26,44 @@
  */
 
 /* Includes ------------------------------------------------------------------*/
+#include "usb_istr.h"
 #include "usb_lib.h"
 #include "usb_prop.h"
 #include "usb_pwr.h"
-#include "usb_istr.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-__IO uint16_t wIstr; /* ISTR register last read value */
-__IO uint8_t bIntPackSOF = 0; /* SOFs received between 2 consecutive packets */
+__IO uint16_t wIstr;            /* ISTR register last read value */
+__IO uint8_t bIntPackSOF   = 0; /* SOFs received between 2 consecutive packets */
 __IO uint32_t esof_counter = 0; /* expected SOF counter */
-__IO uint32_t wCNTR = 0;
+__IO uint32_t wCNTR        = 0;
 
 /* Extern variables ----------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 /* function pointers to non-control endpoints service routines */
 void (*pEpInt_IN[7])(void) =
-{
-    EP1_IN_Callback,
-    EP2_IN_Callback,
-    EP3_IN_Callback,
-    EP4_IN_Callback,
-    EP5_IN_Callback,
-    EP6_IN_Callback,
-    EP7_IN_Callback,
+    {
+        EP1_IN_Callback,
+        EP2_IN_Callback,
+        EP3_IN_Callback,
+        EP4_IN_Callback,
+        EP5_IN_Callback,
+        EP6_IN_Callback,
+        EP7_IN_Callback,
 };
 
 void (*pEpInt_OUT[7])(void) =
-{
-    EP1_OUT_Callback,
-    EP2_OUT_Callback,
-    EP3_OUT_Callback,
-    EP4_OUT_Callback,
-    EP5_OUT_Callback,
-    EP6_OUT_Callback,
-    EP7_OUT_Callback,
+    {
+        EP1_OUT_Callback,
+        EP2_OUT_Callback,
+        EP3_OUT_Callback,
+        EP4_OUT_Callback,
+        EP5_OUT_Callback,
+        EP6_OUT_Callback,
+        EP7_OUT_Callback,
 };
 
 /*******************************************************************************
@@ -111,8 +111,7 @@ void USB_Istr(void)
 #endif
     /*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*/
 #if (IMR_MSK & ISTR_DOVR)
-    if (wIstr & ISTR_DOVR & wInterrupt_Mask)
-    {
+    if (wIstr & ISTR_DOVR & wInterrupt_Mask) {
         _SetISTR((uint16_t)CLR_DOVR);
 #ifdef DOVR_CALLBACK
         DOVR_Callback();
@@ -140,16 +139,12 @@ void USB_Istr(void)
 #endif
     /*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*/
 #if (IMR_MSK & ISTR_SUSP)
-    if (wIstr & ISTR_SUSP & wInterrupt_Mask)
-    {
+    if (wIstr & ISTR_SUSP & wInterrupt_Mask) {
 
         /* check if SUSPEND is possible */
-        if (fSuspendEnabled)
-        {
+        if (fSuspendEnabled) {
             Suspend();
-        }
-        else
-        {
+        } else {
             /* if not possible then resume after xx ms */
             Resume(RESUME_LATER);
         }
@@ -163,49 +158,46 @@ void USB_Istr(void)
     /*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*/
 
 #if (IMR_MSK & ISTR_ESOF)
-    if (wIstr & ISTR_ESOF & wInterrupt_Mask)
-    {
+    if (wIstr & ISTR_ESOF & wInterrupt_Mask) {
         /* clear ESOF flag in ISTR */
         _SetISTR((uint16_t)CLR_ESOF);
 
-        if ((_GetFNR()&FNR_RXDP)!=0)
-        {
+        if ((_GetFNR() & FNR_RXDP) != 0) {
             /* increment ESOF counter */
-            esof_counter ++;
+            esof_counter++;
 
             /* test if we enter in ESOF more than 3 times with FSUSP =0 and RXDP =1=>> possible missing SUSP flag*/
-            if ((esof_counter >3)&&((_GetCNTR()&CNTR_FSUSP)==0))
-            {
+            if ((esof_counter > 3) && ((_GetCNTR() & CNTR_FSUSP) == 0)) {
                 /* this a sequence to apply a force RESET*/
 
                 /*Store CNTR value */
                 wCNTR = _GetCNTR();
 
                 /*Store endpoints registers status */
-                for (i=0;i<8;i++) EP[i] = _GetENDPOINT(i);
+                for (i = 0; i < 8; i++)
+                    EP[i] = _GetENDPOINT(i);
 
                 /*apply FRES */
-                wCNTR|=CNTR_FRES;
+                wCNTR |= CNTR_FRES;
                 _SetCNTR(wCNTR);
 
                 /*clear FRES*/
-                wCNTR&=~CNTR_FRES;
+                wCNTR &= ~CNTR_FRES;
                 _SetCNTR(wCNTR);
 
                 /*poll for RESET flag in ISTR*/
-                while ((_GetISTR()&ISTR_RESET) == 0);
+                while ((_GetISTR() & ISTR_RESET) == 0)
+                    ;
                 /* clear RESET flag in ISTR */
                 _SetISTR((uint16_t)CLR_RESET);
 
                 /*restore Enpoints*/
-                for (i=0;i<8;i++)
-                _SetENDPOINT(i, EP[i]);
+                for (i = 0; i < 8; i++)
+                    _SetENDPOINT(i, EP[i]);
 
                 esof_counter = 0;
             }
-        }
-        else
-        {
+        } else {
             esof_counter = 0;
         }
 

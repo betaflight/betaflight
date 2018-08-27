@@ -28,11 +28,11 @@ typedef enum {
 } escSerialPortIndex_e;
 
 typedef enum {
-    PROTOCOL_SIMONK = 0,
-    PROTOCOL_BLHELI = 1,
-    PROTOCOL_KISS = 2,
+    PROTOCOL_SIMONK  = 0,
+    PROTOCOL_BLHELI  = 1,
+    PROTOCOL_KISS    = 2,
     PROTOCOL_KISSALL = 3,
-    PROTOCOL_CASTLE = 4,
+    PROTOCOL_CASTLE  = 4,
     PROTOCOL_COUNT
 } escProtocol_e;
 

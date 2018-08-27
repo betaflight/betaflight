@@ -24,16 +24,16 @@
 
 #include "platform.h"
 
-#include "drivers/nvic.h"
 #include "dma.h"
+#include "drivers/nvic.h"
 #include "resource.h"
 
 /*
  * DMA descriptors.
  */
 static dmaChannelDescriptor_t dmaDescriptors[DMA_LAST_HANDLER] = {
-    DEFINE_DMA_CHANNEL(DMA1, 0,  0),
-    DEFINE_DMA_CHANNEL(DMA1, 1,  6),
+    DEFINE_DMA_CHANNEL(DMA1, 0, 0),
+    DEFINE_DMA_CHANNEL(DMA1, 1, 6),
     DEFINE_DMA_CHANNEL(DMA1, 2, 16),
     DEFINE_DMA_CHANNEL(DMA1, 3, 22),
     DEFINE_DMA_CHANNEL(DMA1, 4, 32),
@@ -41,8 +41,8 @@ static dmaChannelDescriptor_t dmaDescriptors[DMA_LAST_HANDLER] = {
     DEFINE_DMA_CHANNEL(DMA1, 6, 48),
     DEFINE_DMA_CHANNEL(DMA1, 7, 54),
 
-    DEFINE_DMA_CHANNEL(DMA2, 0,  0),
-    DEFINE_DMA_CHANNEL(DMA2, 1,  6),
+    DEFINE_DMA_CHANNEL(DMA2, 0, 0),
+    DEFINE_DMA_CHANNEL(DMA2, 1, 6),
     DEFINE_DMA_CHANNEL(DMA2, 2, 16),
     DEFINE_DMA_CHANNEL(DMA2, 3, 22),
     DEFINE_DMA_CHANNEL(DMA2, 4, 32),
@@ -76,11 +76,13 @@ void dmaInit(dmaIdentifier_e identifier, resourceOwner_e owner, uint8_t resource
 {
     const int index = DMA_IDENTIFIER_TO_INDEX(identifier);
     RCC_AHB1PeriphClockCmd(DMA_RCC(dmaDescriptors[index].dma), ENABLE);
-    dmaDescriptors[index].owner = owner;
+    dmaDescriptors[index].owner         = owner;
     dmaDescriptors[index].resourceIndex = resourceIndex;
 }
 
-#define RETURN_TCIF_FLAG(s, n) if (s == DMA1_Stream ## n || s == DMA2_Stream ## n) return DMA_IT_TCIF ## n
+#define RETURN_TCIF_FLAG(s, n)                      \
+    if (s == DMA1_Stream##n || s == DMA2_Stream##n) \
+    return DMA_IT_TCIF##n
 
 uint32_t dmaFlag_IT_TCIF(const DMA_Stream_TypeDef *stream)
 {
@@ -103,13 +105,13 @@ void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callbac
 
     RCC_AHB1PeriphClockCmd(DMA_RCC(dmaDescriptors[index].dma), ENABLE);
     dmaDescriptors[index].irqHandlerCallback = callback;
-    dmaDescriptors[index].userParam = userParam;
-    dmaDescriptors[index].completeFlag = dmaFlag_IT_TCIF(dmaDescriptors[index].ref);
+    dmaDescriptors[index].userParam          = userParam;
+    dmaDescriptors[index].completeFlag       = dmaFlag_IT_TCIF(dmaDescriptors[index].ref);
 
-    NVIC_InitStructure.NVIC_IRQChannel = dmaDescriptors[index].irqN;
+    NVIC_InitStructure.NVIC_IRQChannel                   = dmaDescriptors[index].irqN;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(priority);
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(priority);
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority        = NVIC_PRIORITY_SUB(priority);
+    NVIC_InitStructure.NVIC_IRQChannelCmd                = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 }
 
@@ -123,7 +125,7 @@ uint8_t dmaGetResourceIndex(dmaIdentifier_e identifier)
     return dmaDescriptors[DMA_IDENTIFIER_TO_INDEX(identifier)].resourceIndex;
 }
 
-dmaIdentifier_e dmaGetIdentifier(const DMA_Stream_TypeDef* stream)
+dmaIdentifier_e dmaGetIdentifier(const DMA_Stream_TypeDef *stream)
 {
     for (int i = 0; i < DMA_LAST_HANDLER; i++) {
         if (dmaDescriptors[i].ref == stream) {
@@ -133,7 +135,7 @@ dmaIdentifier_e dmaGetIdentifier(const DMA_Stream_TypeDef* stream)
     return 0;
 }
 
-dmaChannelDescriptor_t* dmaGetDescriptor(const DMA_Stream_TypeDef* stream)
+dmaChannelDescriptor_t *dmaGetDescriptor(const DMA_Stream_TypeDef *stream)
 {
     for (int i = 0; i < DMA_LAST_HANDLER; i++) {
         if (dmaDescriptors[i].ref == stream) {
@@ -143,17 +145,17 @@ dmaChannelDescriptor_t* dmaGetDescriptor(const DMA_Stream_TypeDef* stream)
     return NULL;
 }
 
-DMA_Stream_TypeDef* dmaGetRefByIdentifier(const dmaIdentifier_e identifier)
+DMA_Stream_TypeDef *dmaGetRefByIdentifier(const dmaIdentifier_e identifier)
 {
     return dmaDescriptors[DMA_IDENTIFIER_TO_INDEX(identifier)].ref;
 }
 
-dmaChannelDescriptor_t* dmaGetDescriptorByIdentifier(const dmaIdentifier_e identifier)
+dmaChannelDescriptor_t *dmaGetDescriptorByIdentifier(const dmaIdentifier_e identifier)
 {
     return &dmaDescriptors[DMA_IDENTIFIER_TO_INDEX(identifier)];
 }
 
 uint32_t dmaGetChannel(const uint8_t channel)
 {
-    return ((uint32_t)channel*2)<<24;
+    return ((uint32_t)channel * 2) << 24;
 }

@@ -21,8 +21,8 @@
 #pragma once
 
 #include "pg/rx.h"
-#include "rx/rx.h"
 #include "pg/rx_spi.h"
+#include "rx/rx.h"
 
 // Used in MSP. Append at end.
 typedef enum {
@@ -71,11 +71,11 @@ typedef enum {
 } rc_spi_aetr_e;
 
 // RC channels as used by deviation
-#define RC_CHANNEL_RATE        RC_SPI_AUX1
-#define RC_CHANNEL_FLIP        RC_SPI_AUX2
-#define RC_CHANNEL_PICTURE     RC_SPI_AUX3
-#define RC_CHANNEL_VIDEO       RC_SPI_AUX4
-#define RC_CHANNEL_HEADLESS    RC_SPI_AUX5
-#define RC_CHANNEL_RTH         RC_SPI_AUX6 // return to home
+#define RC_CHANNEL_RATE RC_SPI_AUX1
+#define RC_CHANNEL_FLIP RC_SPI_AUX2
+#define RC_CHANNEL_PICTURE RC_SPI_AUX3
+#define RC_CHANNEL_VIDEO RC_SPI_AUX4
+#define RC_CHANNEL_HEADLESS RC_SPI_AUX5
+#define RC_CHANNEL_RTH RC_SPI_AUX6 // return to home
 
 bool rxSpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeConfig_t *rxRuntimeConfig);

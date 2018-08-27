@@ -15,44 +15,44 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
-#include <limits.h>
 #include <algorithm>
+#include <limits.h>
 
 extern "C" {
-    #include <platform.h>
+#include <platform.h>
 
-    #include "build/debug.h"
+#include "build/debug.h"
 
-    #include "pg/pg.h"
-    #include "pg/pg_ids.h"
-    #include "pg/rx.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+#include "pg/rx.h"
 
-    #include "common/crc.h"
-    #include "common/utils.h"
+#include "common/crc.h"
+#include "common/utils.h"
 
-    #include "drivers/serial.h"
-    #include "io/serial.h"
+#include "drivers/serial.h"
+#include "io/serial.h"
 
-    #include "rx/rx.h"
-    #include "rx/crsf.h"
+#include "rx/crsf.h"
+#include "rx/rx.h"
 
-    #include "telemetry/msp_shared.h"
+#include "telemetry/msp_shared.h"
 
-    void crsfDataReceive(uint16_t c);
-    uint8_t crsfFrameCRC(void);
-    uint8_t crsfFrameStatus(void);
-    uint16_t crsfReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
+void crsfDataReceive(uint16_t c);
+uint8_t crsfFrameCRC(void);
+uint8_t crsfFrameStatus(void);
+uint16_t crsfReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
-    extern bool crsfFrameDone;
-    extern crsfFrame_t crsfFrame;
-    extern uint32_t crsfChannelData[CRSF_MAX_CHANNEL];
+extern bool crsfFrameDone;
+extern crsfFrame_t crsfFrame;
+extern uint32_t crsfChannelData[CRSF_MAX_CHANNEL];
 
-    uint32_t dummyTimeUs;
+uint32_t dummyTimeUs;
 
-    PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
+PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
 }
 
 #include "unittest_macros.h"
@@ -75,22 +75,21 @@ const unsigned char crc8tab[256] = {
     0x72, 0xA7, 0x0D, 0xD8, 0x8C, 0x59, 0xF3, 0x26, 0x5B, 0x8E, 0x24, 0xF1, 0xA5, 0x70, 0xDA, 0x0F,
     0x20, 0xF5, 0x5F, 0x8A, 0xDE, 0x0B, 0xA1, 0x74, 0x09, 0xDC, 0x76, 0xA3, 0xF7, 0x22, 0x88, 0x5D,
     0xD6, 0x03, 0xA9, 0x7C, 0x28, 0xFD, 0x57, 0x82, 0xFF, 0x2A, 0x80, 0x55, 0x01, 0xD4, 0x7E, 0xAB,
-    0x84, 0x51, 0xFB, 0x2E, 0x7A, 0xAF, 0x05, 0xD0, 0xAD, 0x78, 0xD2, 0x07, 0x53, 0x86, 0x2C, 0xF9
-};
+    0x84, 0x51, 0xFB, 0x2E, 0x7A, 0xAF, 0x05, 0xD0, 0xAD, 0x78, 0xD2, 0x07, 0x53, 0x86, 0x2C, 0xF9};
 
-uint8_t crc8_buf(const uint8_t * ptr, uint8_t len)
+uint8_t crc8_buf(const uint8_t *ptr, uint8_t len)
 {
     uint8_t crc = 0;
-    for (uint8_t i=0; i<len; i++) {
+    for (uint8_t i = 0; i < len; i++) {
         crc = crc8tab[crc ^ *ptr++];
     }
     return crc;
 }
 
-uint8_t crc8_dvb_s2_buf(const uint8_t * ptr, uint8_t len)
+uint8_t crc8_dvb_s2_buf(const uint8_t *ptr, uint8_t len)
 {
     uint8_t crc = 0;
-    for (uint8_t i=0; i<len; i++) {
+    for (uint8_t i = 0; i < len; i++) {
         crc = crc8_dvb_s2(crc, *ptr++);
     }
     return crc;
@@ -98,7 +97,7 @@ uint8_t crc8_dvb_s2_buf(const uint8_t * ptr, uint8_t len)
 
 TEST(CrossFireTest, CRC)
 {
-    static const uint8_t buf1[] ="abcdefghijklmnopqrstuvwxyz";
+    static const uint8_t buf1[] = "abcdefghijklmnopqrstuvwxyz";
 
     uint8_t crc1 = 0;
     uint8_t crc2 = 0;
@@ -118,12 +117,12 @@ TEST(CrossFireTest, CRC)
 
 TEST(CrossFireTest, TestCrsfFrameStatus)
 {
-    crsfFrameDone = true;
+    crsfFrameDone                 = true;
     crsfFrame.frame.deviceAddress = CRSF_ADDRESS_CRSF_RECEIVER;
-    crsfFrame.frame.frameLength = 0;
-    crsfFrame.frame.type = CRSF_FRAMETYPE_RC_CHANNELS_PACKED;
+    crsfFrame.frame.frameLength   = 0;
+    crsfFrame.frame.type          = CRSF_FRAMETYPE_RC_CHANNELS_PACKED;
     memset(crsfFrame.frame.payload, 0, CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE);
-    const uint8_t crc = crsfFrameCRC();
+    const uint8_t crc                                            = crsfFrameCRC();
     crsfFrame.frame.payload[CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE] = crc;
 
     const uint8_t status = crsfFrameStatus();
@@ -146,34 +145,35 @@ TEST(CrossFireTest, TestCrsfFrameStatus)
  */
 TEST(CrossFireTest, TestCrsfFrameStatusUnpacking)
 {
-    crsfFrameDone = true;
+    crsfFrameDone                 = true;
     crsfFrame.frame.deviceAddress = CRSF_ADDRESS_CRSF_RECEIVER;
-    crsfFrame.frame.frameLength = CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC;;
+    crsfFrame.frame.frameLength   = CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC;
+    ;
     crsfFrame.frame.type = CRSF_FRAMETYPE_RC_CHANNELS_PACKED;
     // 16 11-bit channels packed into 22 bytes of data
-    crsfFrame.frame.payload[0]  = 0xFF; // bits 0-7
-    crsfFrame.frame.payload[1]  = 0xFF; // bits 8-15
-    crsfFrame.frame.payload[2]  = 0x00; // bits 16-23
-    crsfFrame.frame.payload[3]  = 0x00; // bits 24-31
-    crsfFrame.frame.payload[4]  = 0x58; // bits 32-39  0101100.
-    crsfFrame.frame.payload[5]  = 0x01; // bits 40-47  ....0001
-    crsfFrame.frame.payload[6]  = 0x00; // bits 48-55  0.......
-    crsfFrame.frame.payload[7]  = 0xf0; // bits 56-64  11110000
-    crsfFrame.frame.payload[8]  = 0x01; // bits 65-71  ......01
-    crsfFrame.frame.payload[9]  = 0x60; // bits 72-79  011.....
-    crsfFrame.frame.payload[10] = 0xe2; // bits 80-87  11100010
-    crsfFrame.frame.payload[11] = 0;
-    crsfFrame.frame.payload[12] = 0;
-    crsfFrame.frame.payload[13] = 0;
-    crsfFrame.frame.payload[14] = 0;
-    crsfFrame.frame.payload[15] = 0;
-    crsfFrame.frame.payload[16] = 0;
-    crsfFrame.frame.payload[17] = 0;
-    crsfFrame.frame.payload[18] = 0;
-    crsfFrame.frame.payload[19] = 0;
-    crsfFrame.frame.payload[20] = 0;
-    crsfFrame.frame.payload[21] = 0;
-    const uint8_t crc = crsfFrameCRC();
+    crsfFrame.frame.payload[0]                                   = 0xFF; // bits 0-7
+    crsfFrame.frame.payload[1]                                   = 0xFF; // bits 8-15
+    crsfFrame.frame.payload[2]                                   = 0x00; // bits 16-23
+    crsfFrame.frame.payload[3]                                   = 0x00; // bits 24-31
+    crsfFrame.frame.payload[4]                                   = 0x58; // bits 32-39  0101100.
+    crsfFrame.frame.payload[5]                                   = 0x01; // bits 40-47  ....0001
+    crsfFrame.frame.payload[6]                                   = 0x00; // bits 48-55  0.......
+    crsfFrame.frame.payload[7]                                   = 0xf0; // bits 56-64  11110000
+    crsfFrame.frame.payload[8]                                   = 0x01; // bits 65-71  ......01
+    crsfFrame.frame.payload[9]                                   = 0x60; // bits 72-79  011.....
+    crsfFrame.frame.payload[10]                                  = 0xe2; // bits 80-87  11100010
+    crsfFrame.frame.payload[11]                                  = 0;
+    crsfFrame.frame.payload[12]                                  = 0;
+    crsfFrame.frame.payload[13]                                  = 0;
+    crsfFrame.frame.payload[14]                                  = 0;
+    crsfFrame.frame.payload[15]                                  = 0;
+    crsfFrame.frame.payload[16]                                  = 0;
+    crsfFrame.frame.payload[17]                                  = 0;
+    crsfFrame.frame.payload[18]                                  = 0;
+    crsfFrame.frame.payload[19]                                  = 0;
+    crsfFrame.frame.payload[20]                                  = 0;
+    crsfFrame.frame.payload[21]                                  = 0;
+    const uint8_t crc                                            = crsfFrameCRC();
     crsfFrame.frame.payload[CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE] = crc;
 
     const uint8_t status = crsfFrameStatus();
@@ -186,9 +186,9 @@ TEST(CrossFireTest, TestCrsfFrameStatusUnpacking)
     EXPECT_EQ(0x7ff, crsfChannelData[0]);
     EXPECT_EQ(0x1f, crsfChannelData[1]);
     EXPECT_EQ(0, crsfChannelData[2]);
-    EXPECT_EQ(172, crsfChannelData[3]);  //  172 = 0x0ac, 0001 0101100, bits 33-43
+    EXPECT_EQ(172, crsfChannelData[3]); //  172 = 0x0ac, 0001 0101100, bits 33-43
     EXPECT_EQ(0, crsfChannelData[4]);
-    EXPECT_EQ(992, crsfChannelData[5]);  //  992 = 0x3e0, 01 1110000 0, bits 55-65
+    EXPECT_EQ(992, crsfChannelData[5]); //  992 = 0x3e0, 01 1110000 0, bits 55-65
     EXPECT_EQ(0, crsfChannelData[6]);
     EXPECT_EQ(1811, crsfChannelData[7]); // 1811 = 0x713, 1110 0010 011, bits 77-87
     EXPECT_EQ(0, crsfChannelData[8]);
@@ -202,8 +202,58 @@ TEST(CrossFireTest, TestCrsfFrameStatusUnpacking)
 }
 
 const uint8_t capturedData[] = {
-    0x00,0x18,0x16,0xBD,0x08,0x9F,0xF4,0xAE,0xF7,0xBD,0xEF,0x7D,0xEF,0xFB,0xAD,0xFD,0x45,0x2B,0x5A,0x01,0x00,0x00,0x00,0x00,0x00,0x6C,
-    0x00,0x18,0x16,0xBD,0x08,0x9F,0xF4,0xAA,0xF7,0xBD,0xEF,0x7D,0xEF,0xFB,0xAD,0xFD,0x45,0x2B,0x5A,0x01,0x00,0x00,0x00,0x00,0x00,0x94,
+    0x00,
+    0x18,
+    0x16,
+    0xBD,
+    0x08,
+    0x9F,
+    0xF4,
+    0xAE,
+    0xF7,
+    0xBD,
+    0xEF,
+    0x7D,
+    0xEF,
+    0xFB,
+    0xAD,
+    0xFD,
+    0x45,
+    0x2B,
+    0x5A,
+    0x01,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x6C,
+    0x00,
+    0x18,
+    0x16,
+    0xBD,
+    0x08,
+    0x9F,
+    0xF4,
+    0xAA,
+    0xF7,
+    0xBD,
+    0xEF,
+    0x7D,
+    0xEF,
+    0xFB,
+    0xAD,
+    0xFD,
+    0x45,
+    0x2B,
+    0x5A,
+    0x01,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x94,
 };
 
 typedef struct crsfRcChannelsFrame_s {
@@ -213,14 +263,13 @@ typedef struct crsfRcChannelsFrame_s {
     uint8_t payload[CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_CRC];
 } crsfRcChannelsFrame_t;
 
-
 TEST(CrossFireTest, TestCapturedData)
 {
     //const int frameCount = sizeof(capturedData) / sizeof(crsfRcChannelsFrame_t);
-    const crsfRcChannelsFrame_t *framePtr = (const crsfRcChannelsFrame_t*)capturedData;
-    crsfFrame = *(const crsfFrame_t*)framePtr;
-    crsfFrameDone = true;
-    uint8_t status = crsfFrameStatus();
+    const crsfRcChannelsFrame_t *framePtr = (const crsfRcChannelsFrame_t *)capturedData;
+    crsfFrame                             = *(const crsfFrame_t *)framePtr;
+    crsfFrameDone                         = true;
+    uint8_t status                        = crsfFrameStatus();
     EXPECT_EQ(RX_FRAME_COMPLETE, status);
     EXPECT_EQ(false, crsfFrameDone);
     EXPECT_EQ(RX_FRAME_COMPLETE, status);
@@ -240,9 +289,9 @@ TEST(CrossFireTest, TestCapturedData)
     EXPECT_EQ(1495, crsfReadRawRC(NULL, 3));
 
     ++framePtr;
-    crsfFrame = *(const crsfFrame_t*)framePtr;
+    crsfFrame     = *(const crsfFrame_t *)framePtr;
     crsfFrameDone = true;
-    status = crsfFrameStatus();
+    status        = crsfFrameStatus();
     EXPECT_EQ(RX_FRAME_COMPLETE, status);
     EXPECT_EQ(false, crsfFrameDone);
     EXPECT_EQ(RX_FRAME_COMPLETE, status);
@@ -258,10 +307,9 @@ TEST(CrossFireTest, TestCapturedData)
     EXPECT_EQ(crc, crsfFrame.frame.payload[CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE]);
 }
 
-
 TEST(CrossFireTest, TestCrsfDataReceive)
 {
-    crsfFrameDone = false;
+    crsfFrameDone        = false;
     const uint8_t *pData = capturedData;
     for (unsigned int ii = 0; ii < sizeof(crsfRcChannelsFrame_t); ++ii) {
         crsfDataReceive(*pData++);
@@ -282,14 +330,14 @@ TEST(CrossFireTest, TestCrsfDataReceive)
 extern "C" {
 
 int16_t debug[DEBUG16_VALUE_COUNT];
-uint32_t micros(void) {return dummyTimeUs;}
-serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) {return NULL;}
-serialPortConfig_t *findSerialPortConfig(serialPortFunction_e ) {return NULL;}
-bool telemetryCheckRxPortShared(const serialPortConfig_t *) {return false;}
+uint32_t micros(void) { return dummyTimeUs; }
+serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) { return NULL; }
+serialPortConfig_t *findSerialPortConfig(serialPortFunction_e) { return NULL; }
+bool telemetryCheckRxPortShared(const serialPortConfig_t *) { return false; }
 serialPort_t *telemetrySharedPort = NULL;
-void crsfScheduleDeviceInfoResponse(void) {};
-void crsfScheduleMspResponse(void) {};
-bool bufferMspFrame(uint8_t *, int) {return true;}
+void crsfScheduleDeviceInfoResponse(void){};
+void crsfScheduleMspResponse(void){};
+bool bufferMspFrame(uint8_t *, int) { return true; }
 bool isBatteryVoltageAvailable(void) { return true; }
 bool isAmperageAvailable(void) { return true; }
 }

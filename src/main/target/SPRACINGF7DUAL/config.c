@@ -25,8 +25,8 @@
 
 #include "common/axis.h"
 
-#include "drivers/sensor.h"
 #include "drivers/compass/compass.h"
+#include "drivers/sensor.h"
 #include "drivers/serial.h"
 
 #include "fc/rc_controls.h"
@@ -43,9 +43,9 @@
 
 #include "telemetry/telemetry.h"
 
-#include "sensors/sensors.h"
-#include "sensors/compass.h"
 #include "sensors/barometer.h"
+#include "sensors/compass.h"
+#include "sensors/sensors.h"
 
 #include "config/feature.h"
 
@@ -55,11 +55,11 @@
 
 #include "config_helper.h"
 
-#define TELEMETRY_UART                      SERIAL_PORT_UART5
+#define TELEMETRY_UART SERIAL_PORT_UART5
 
 #ifdef USE_TELEMETRY
 static targetSerialPortFunction_t targetSerialPortFunction[] = {
-    { TELEMETRY_UART, FUNCTION_TELEMETRY_SMARTPORT },
+    {TELEMETRY_UART, FUNCTION_TELEMETRY_SMARTPORT},
 };
 #endif
 
@@ -71,7 +71,7 @@ void targetConfiguration(void)
     targetSerialPortFunctionConfig(targetSerialPortFunction, ARRAYLEN(targetSerialPortFunction));
     // change telemetry settings
     telemetryConfigMutable()->telemetry_inverted = 1;
-    telemetryConfigMutable()->halfDuplex = 1;
+    telemetryConfigMutable()->halfDuplex         = 1;
 #endif
 }
 #endif

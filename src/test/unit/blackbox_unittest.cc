@@ -18,36 +18,36 @@
 #include <string.h>
 
 extern "C" {
-    #include "platform.h"
+#include "platform.h"
 
-    #include "blackbox/blackbox.h"
-    #include "common/utils.h"
+#include "blackbox/blackbox.h"
+#include "common/utils.h"
 
-    #include "pg/pg.h"
-    #include "pg/pg_ids.h"
-    #include "pg/rx.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+#include "pg/rx.h"
 
-    #include "drivers/accgyro/accgyro.h"
-    #include "drivers/accgyro/gyro_sync.h"
-    #include "drivers/serial.h"
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/accgyro/gyro_sync.h"
+#include "drivers/serial.h"
 
-    #include "flight/failsafe.h"
-    #include "flight/mixer.h"
-    #include "flight/pid.h"
+#include "flight/failsafe.h"
+#include "flight/mixer.h"
+#include "flight/pid.h"
 
-    #include "fc/rc_controls.h"
-    #include "fc/rc_modes.h"
+#include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
 
-    #include "io/gps.h"
-    #include "io/serial.h"
+#include "io/gps.h"
+#include "io/serial.h"
 
-    #include "rx/rx.h"
+#include "rx/rx.h"
 
-    #include "sensors/battery.h"
-    #include "sensors/gyro.h"
+#include "sensors/battery.h"
+#include "sensors/gyro.h"
 
-    extern int16_t blackboxIInterval;
-    extern int16_t blackboxPInterval;
+extern int16_t blackboxIInterval;
+extern int16_t blackboxPInterval;
 }
 
 #include "unittest_macros.h"
@@ -74,7 +74,7 @@ TEST(BlackboxTest, TestInitIntervals)
 
     // 1kHz PIDloop
     gyro.targetLooptime = gyroSetSampleRate(&gyroDev, GYRO_HARDWARE_LPF_1KHZ_SAMPLE, 1, false);
-    targetPidLooptime = gyro.targetLooptime * 1;
+    targetPidLooptime   = gyro.targetLooptime * 1;
     blackboxInit();
     EXPECT_EQ(32, blackboxIInterval);
     EXPECT_EQ(1, blackboxPInterval);
@@ -284,7 +284,7 @@ TEST(BlackboxTest, Test_CalculatePDenom)
 TEST(BlackboxTest, Test_CalculateRates)
 {
     // 1kHz PIDloop
-    targetPidLooptime = 1000;
+    targetPidLooptime                = 1000;
     blackboxConfigMutable()->p_ratio = 32;
     blackboxInit();
     EXPECT_EQ(32, blackboxIInterval);
@@ -303,9 +303,8 @@ TEST(BlackboxTest, Test_CalculateRates)
     EXPECT_EQ(4, blackboxPInterval);
     EXPECT_EQ(4, blackboxGetRateDenom());
 
-
     // 8kHz PIDloop
-    targetPidLooptime = 125;
+    targetPidLooptime                = 125;
     blackboxConfigMutable()->p_ratio = 32; // 1kHz logging
     blackboxInit();
     EXPECT_EQ(256, blackboxIInterval);
@@ -337,15 +336,13 @@ TEST(BlackboxTest, Test_CalculateRates)
     EXPECT_EQ(1, blackboxGetRateDenom());
 
     // 0.126 PIDloop
-    targetPidLooptime = 126;
+    targetPidLooptime                = 126;
     blackboxConfigMutable()->p_ratio = 32; // 1kHz logging
     blackboxInit();
     EXPECT_EQ(253, blackboxIInterval);
     EXPECT_EQ(7, blackboxPInterval);
     EXPECT_EQ(7, blackboxGetRateDenom());
-
 }
-
 
 // STUBS
 extern "C" {
@@ -360,7 +357,7 @@ PG_REGISTER_ARRAY(modeActivationCondition_t, MAX_MODE_ACTIVATION_CONDITION_COUNT
 uint8_t armingFlags;
 uint8_t stateFlags;
 const uint32_t baudRates[] = {0, 9600, 19200, 38400, 57600, 115200, 230400, 250000,
-        400000, 460800, 500000, 921600, 1000000, 1500000, 2000000, 2470000}; // see baudRate_e
+                              400000, 460800, 500000, 921600, 1000000, 1500000, 2000000, 2470000}; // see baudRate_e
 uint8_t debugMode;
 int32_t blackboxHeaderBudget;
 gpsSolutionData_t gpsSol;
@@ -377,26 +374,25 @@ uint32_t targetPidLooptime;
 boxBitmask_t rcModeActivationMask;
 
 void mspSerialAllocatePorts(void) {}
-uint32_t getArmingBeepTimeMicros(void) {return 0;}
-uint16_t getBatteryVoltageLatest(void) {return 0;}
-uint8_t getMotorCount(void) {return 4;}
+uint32_t getArmingBeepTimeMicros(void) { return 0; }
+uint16_t getBatteryVoltageLatest(void) { return 0; }
+uint8_t getMotorCount(void) { return 4; }
 bool areMotorsRunning(void) { return false; }
-bool IS_RC_MODE_ACTIVE(boxId_e) {return false;}
-bool isModeActivationConditionPresent(boxId_e) {return false;}
-uint32_t millis(void) {return 0;}
-bool sensors(uint32_t) {return false;}
+bool IS_RC_MODE_ACTIVE(boxId_e) { return false; }
+bool isModeActivationConditionPresent(boxId_e) { return false; }
+uint32_t millis(void) { return 0; }
+bool sensors(uint32_t) { return false; }
 void serialWrite(serialPort_t *, uint8_t) {}
-uint32_t serialTxBytesFree(const serialPort_t *) {return 0;}
-bool isSerialTransmitBufferEmpty(const serialPort_t *) {return false;}
-bool featureIsEnabled(uint32_t) {return false;}
+uint32_t serialTxBytesFree(const serialPort_t *) { return 0; }
+bool isSerialTransmitBufferEmpty(const serialPort_t *) { return false; }
+bool featureIsEnabled(uint32_t) { return false; }
 void mspSerialReleasePortIfAllocated(serialPort_t *) {}
-serialPortConfig_t *findSerialPortConfig(serialPortFunction_e ) {return NULL;}
-serialPort_t *findSharedSerialPort(uint16_t , serialPortFunction_e ) {return NULL;}
-serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) {return NULL;}
+serialPortConfig_t *findSerialPortConfig(serialPortFunction_e) { return NULL; }
+serialPort_t *findSharedSerialPort(uint16_t, serialPortFunction_e) { return NULL; }
+serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) { return NULL; }
 void closeSerialPort(serialPort_t *) {}
-portSharing_e determinePortSharing(const serialPortConfig_t *, serialPortFunction_e ) {return PORTSHARING_UNUSED;}
-failsafePhase_e failsafePhase(void) {return FAILSAFE_IDLE;}
-bool rxAreFlightChannelsValid(void) {return false;}
-bool rxIsReceivingSignal(void) {return false;}
-
+portSharing_e determinePortSharing(const serialPortConfig_t *, serialPortFunction_e) { return PORTSHARING_UNUSED; }
+failsafePhase_e failsafePhase(void) { return FAILSAFE_IDLE; }
+bool rxAreFlightChannelsValid(void) { return false; }
+bool rxIsReceivingSignal(void) { return false; }
 }

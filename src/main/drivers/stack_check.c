@@ -32,7 +32,7 @@
 
 #define STACK_FILL_CHAR 0xa5
 
-extern char _estack; // end of stack, declared in .LD file
+extern char _estack;         // end of stack, declared in .LD file
 extern char _Min_Stack_Size; // declared in .LD file
 
 /*
@@ -65,10 +65,10 @@ void taskStackCheck(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
 
-    char * const stackHighMem = &_estack;
-    const uint32_t stackSize = (uint32_t)&_Min_Stack_Size;
-    char * const stackLowMem = stackHighMem - stackSize;
-    const char * const stackCurrent = (char *)&stackLowMem;
+    char *const stackHighMem       = &_estack;
+    const uint32_t stackSize       = (uint32_t)&_Min_Stack_Size;
+    char *const stackLowMem        = stackHighMem - stackSize;
+    const char *const stackCurrent = (char *)&stackLowMem;
 
     char *p;
     for (p = stackLowMem; p < stackCurrent; ++p) {

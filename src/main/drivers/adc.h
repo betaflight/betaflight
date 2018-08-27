@@ -26,7 +26,7 @@
 #include "drivers/time.h"
 
 #ifndef ADC_INSTANCE
-#define ADC_INSTANCE                ADC1
+#define ADC_INSTANCE ADC1
 #endif
 
 #if defined(STM32F4) || defined(STM32F7)
@@ -56,21 +56,21 @@ typedef enum ADCDevice {
     ADCDEV_COUNT
 } ADCDevice;
 
-#define ADC_CFG_TO_DEV(x) ((x) - 1)
+#define ADC_CFG_TO_DEV(x) ((x)-1)
 #define ADC_DEV_TO_CFG(x) ((x) + 1)
 
 typedef enum {
-    ADC_BATTERY = 0,
-    ADC_CURRENT = 1,
+    ADC_BATTERY   = 0,
+    ADC_CURRENT   = 1,
     ADC_EXTERNAL1 = 2,
-    ADC_RSSI = 3,
+    ADC_RSSI      = 3,
     ADC_CHANNEL_COUNT
 } AdcChannel;
 
 typedef struct adcOperatingConfig_s {
     ioTag_t tag;
-    uint8_t adcChannel;         // ADC1_INxx channel number
-    uint8_t dmaIndex;           // index into DMA buffer in case of sparse channels
+    uint8_t adcChannel; // ADC1_INxx channel number
+    uint8_t dmaIndex;   // index into DMA buffer in case of sparse channels
     bool enabled;
     uint8_t sampleTime;
 } adcOperatingConfig_t;

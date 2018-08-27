@@ -33,9 +33,9 @@ void targetConfiguration(void)
 {
 #ifdef KISSCC
     // alternative defaults settings for Beebrain target
-    boardAlignmentMutable()->rollDegrees = 180;
+    boardAlignmentMutable()->rollDegrees  = 180;
     boardAlignmentMutable()->pitchDegrees = 0;
-    boardAlignmentMutable()->yawDegrees = 0;
+    boardAlignmentMutable()->yawDegrees   = 0;
 #endif
 }
 #endif

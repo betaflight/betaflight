@@ -22,7 +22,6 @@
 
 #include "streambuf.h"
 
-
 uint16_t crc16_ccitt(uint16_t crc, unsigned char a)
 {
     crc ^= (uint16_t)a << 8;
@@ -38,7 +37,7 @@ uint16_t crc16_ccitt(uint16_t crc, unsigned char a)
 
 uint16_t crc16_ccitt_update(uint16_t crc, const void *data, uint32_t length)
 {
-    const uint8_t *p = (const uint8_t *)data;
+    const uint8_t *p    = (const uint8_t *)data;
     const uint8_t *pend = p + length;
 
     for (; p != pend; p++) {
@@ -49,8 +48,8 @@ uint16_t crc16_ccitt_update(uint16_t crc, const void *data, uint32_t length)
 
 void crc16_ccitt_sbuf_append(sbuf_t *dst, uint8_t *start)
 {
-    uint16_t crc = 0;
-    const uint8_t * const end = sbufPtr(dst);
+    uint16_t crc             = 0;
+    const uint8_t *const end = sbufPtr(dst);
     for (const uint8_t *ptr = start; ptr < end; ++ptr) {
         crc = crc16_ccitt(crc, *ptr);
     }
@@ -72,7 +71,7 @@ uint8_t crc8_dvb_s2(uint8_t crc, unsigned char a)
 
 uint8_t crc8_dvb_s2_update(uint8_t crc, const void *data, uint32_t length)
 {
-    const uint8_t *p = (const uint8_t *)data;
+    const uint8_t *p    = (const uint8_t *)data;
     const uint8_t *pend = p + length;
 
     for (; p != pend; p++) {
@@ -83,8 +82,8 @@ uint8_t crc8_dvb_s2_update(uint8_t crc, const void *data, uint32_t length)
 
 void crc8_dvb_s2_sbuf_append(sbuf_t *dst, uint8_t *start)
 {
-    uint8_t crc = 0;
-    const uint8_t * const end = dst->ptr;
+    uint8_t crc              = 0;
+    const uint8_t *const end = dst->ptr;
     for (const uint8_t *ptr = start; ptr < end; ++ptr) {
         crc = crc8_dvb_s2(crc, *ptr);
     }
@@ -93,7 +92,7 @@ void crc8_dvb_s2_sbuf_append(sbuf_t *dst, uint8_t *start)
 
 uint8_t crc8_xor_update(uint8_t crc, const void *data, uint32_t length)
 {
-    const uint8_t *p = (const uint8_t *)data;
+    const uint8_t *p    = (const uint8_t *)data;
     const uint8_t *pend = p + length;
 
     for (; p != pend; p++) {
@@ -104,11 +103,10 @@ uint8_t crc8_xor_update(uint8_t crc, const void *data, uint32_t length)
 
 void crc8_xor_sbuf_append(sbuf_t *dst, uint8_t *start)
 {
-    uint8_t crc = 0;
+    uint8_t crc        = 0;
     const uint8_t *end = dst->ptr;
     for (uint8_t *ptr = start; ptr < end; ++ptr) {
         crc ^= *ptr;
     }
     sbufWriteU8(dst, crc);
 }
-

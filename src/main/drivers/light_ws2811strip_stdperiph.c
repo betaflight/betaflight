@@ -37,7 +37,7 @@
 
 #include "light_ws2811strip.h"
 
-static IO_t ws2811IO = IO_NONE;
+static IO_t ws2811IO   = IO_NONE;
 bool ws2811Initialised = false;
 #if defined(STM32F4)
 static DMA_Stream_TypeDef *dmaRef = NULL;
@@ -63,12 +63,12 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
         return;
     }
 
-    TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
-    TIM_OCInitTypeDef  TIM_OCInitStructure;
+    TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
+    TIM_OCInitTypeDef TIM_OCInitStructure;
     DMA_InitTypeDef DMA_InitStructure;
 
     const timerHardware_t *timerHardware = timerGetByTag(ioTag);
-    timer = timerHardware->tim;
+    timer                                = timerHardware->tim;
 
     if (timerHardware->dmaRef == NULL) {
         return;
@@ -89,17 +89,17 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
 
     /* Compute the prescaler value */
     uint16_t prescaler = timerGetPrescalerByDesiredMhz(timer, WS2811_TIMER_MHZ);
-    uint16_t period = timerGetPeriodByPrescaler(timer, prescaler, WS2811_CARRIER_HZ);
+    uint16_t period    = timerGetPeriodByPrescaler(timer, prescaler, WS2811_CARRIER_HZ);
 
     BIT_COMPARE_1 = period / 3 * 2;
     BIT_COMPARE_0 = period / 3;
 
     /* Time base configuration */
     TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
-    TIM_TimeBaseStructure.TIM_Period = period; // 800kHz
-    TIM_TimeBaseStructure.TIM_Prescaler = prescaler;
+    TIM_TimeBaseStructure.TIM_Period        = period; // 800kHz
+    TIM_TimeBaseStructure.TIM_Prescaler     = prescaler;
     TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
-    TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
+    TIM_TimeBaseStructure.TIM_CounterMode   = TIM_CounterMode_Up;
     TIM_TimeBaseInit(timer, &TIM_TimeBaseStructure);
 
     /* PWM1 Mode configuration */
@@ -109,11 +109,11 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
     if (timerHardware->output & TIMER_OUTPUT_N_CHANNEL) {
         TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Enable;
         TIM_OCInitStructure.TIM_OCNIdleState = TIM_OCNIdleState_Reset;
-        TIM_OCInitStructure.TIM_OCNPolarity =  (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPolarity_Low : TIM_OCNPolarity_High;
+        TIM_OCInitStructure.TIM_OCNPolarity  = (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPolarity_Low : TIM_OCNPolarity_High;
     } else {
         TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
         TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Set;
-        TIM_OCInitStructure.TIM_OCPolarity =  (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIM_OCPolarity_Low : TIM_OCPolarity_High;
+        TIM_OCInitStructure.TIM_OCPolarity  = (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIM_OCPolarity_Low : TIM_OCPolarity_High;
     }
 
     TIM_OCInitStructure.TIM_Pulse = 0;
@@ -143,24 +143,24 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
     DMA_DeInit(dmaRef);
     DMA_StructInit(&DMA_InitStructure);
     DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)timerCCR(timer, timerHardware->channel);
-    DMA_InitStructure.DMA_BufferSize = WS2811_DMA_BUFFER_SIZE;
-    DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
-    DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
+    DMA_InitStructure.DMA_BufferSize         = WS2811_DMA_BUFFER_SIZE;
+    DMA_InitStructure.DMA_PeripheralInc      = DMA_PeripheralInc_Disable;
+    DMA_InitStructure.DMA_MemoryInc          = DMA_MemoryInc_Enable;
 
 #if defined(STM32F4)
-    DMA_InitStructure.DMA_Channel = timerHardware->dmaChannel;
-    DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)ledStripDMABuffer;
-    DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
+    DMA_InitStructure.DMA_Channel            = timerHardware->dmaChannel;
+    DMA_InitStructure.DMA_Memory0BaseAddr    = (uint32_t)ledStripDMABuffer;
+    DMA_InitStructure.DMA_DIR                = DMA_DIR_MemoryToPeripheral;
     DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Word;
-    DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Word;
-    DMA_InitStructure.DMA_Priority = DMA_Priority_VeryHigh;
+    DMA_InitStructure.DMA_MemoryDataSize     = DMA_MemoryDataSize_Word;
+    DMA_InitStructure.DMA_Priority           = DMA_Priority_VeryHigh;
 #elif defined(STM32F3) || defined(STM32F1)
-    DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)ledStripDMABuffer;
-    DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
+    DMA_InitStructure.DMA_MemoryBaseAddr     = (uint32_t)ledStripDMABuffer;
+    DMA_InitStructure.DMA_DIR                = DMA_DIR_PeripheralDST;
     DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Word;
-    DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
-    DMA_InitStructure.DMA_Priority = DMA_Priority_High;
-    DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
+    DMA_InitStructure.DMA_MemoryDataSize     = DMA_MemoryDataSize_Byte;
+    DMA_InitStructure.DMA_Priority           = DMA_Priority_High;
+    DMA_InitStructure.DMA_M2M                = DMA_M2M_Disable;
 #endif
     DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
 
@@ -175,7 +175,7 @@ void ws2811LedStripDMAEnable(void)
     if (!ws2811Initialised)
         return;
 
-    DMA_SetCurrDataCounter(dmaRef, WS2811_DMA_BUFFER_SIZE);  // load number of bytes to be transferred
+    DMA_SetCurrDataCounter(dmaRef, WS2811_DMA_BUFFER_SIZE); // load number of bytes to be transferred
     TIM_SetCounter(timer, 0);
     TIM_Cmd(timer, ENABLE);
     DMA_Cmd(dmaRef, ENABLE);

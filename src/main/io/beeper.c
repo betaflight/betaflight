@@ -54,30 +54,30 @@
 #include "beeper.h"
 
 #ifdef BEEPER_INVERTED
-#define IS_OPEN_DRAIN   false
-#define IS_INVERTED     true
+#define IS_OPEN_DRAIN false
+#define IS_INVERTED true
 #else
-#define IS_OPEN_DRAIN   true
-#define IS_INVERTED     false
+#define IS_OPEN_DRAIN true
+#define IS_INVERTED false
 #endif
 
 #ifdef USE_BEEPER
 #ifndef BEEPER_PWM_HZ
-#define BEEPER_PWM_HZ   0
+#define BEEPER_PWM_HZ 0
 #endif
 #else
-#define BEEPER_PIN      NONE
-#define BEEPER_PWM_HZ   0
+#define BEEPER_PIN NONE
+#define BEEPER_PWM_HZ 0
 #endif
 
 #if FLASH_SIZE > 64
 #define BEEPER_NAMES
 #endif
 
-#define MAX_MULTI_BEEPS 64   //size limit for 'beep_multiBeeps[]'
+#define MAX_MULTI_BEEPS 64 //size limit for 'beep_multiBeeps[]'
 
 #define BEEPER_COMMAND_REPEAT 0xFE
-#define BEEPER_COMMAND_STOP   0xFF
+#define BEEPER_COMMAND_STOP 0xFF
 
 #ifdef USE_DSHOT
 static timeUs_t lastDshotBeaconCommandTimeUs;
@@ -94,76 +94,59 @@ static timeUs_t lastDshotBeaconCommandTimeUs;
  */
 // short fast beep
 static const uint8_t beep_shortBeep[] = {
-    10, 10, BEEPER_COMMAND_STOP
-};
+    10, 10, BEEPER_COMMAND_STOP};
 // arming beep
 static const uint8_t beep_armingBeep[] = {
-    30, 5, 5, 5, BEEPER_COMMAND_STOP
-};
+    30, 5, 5, 5, BEEPER_COMMAND_STOP};
 // armed beep (first pause, then short beep)
 static const uint8_t beep_armedBeep[] = {
-    0, 245, 10, 5, BEEPER_COMMAND_STOP
-};
+    0, 245, 10, 5, BEEPER_COMMAND_STOP};
 // disarming beeps
 static const uint8_t beep_disarmBeep[] = {
-    15, 5, 15, 5, BEEPER_COMMAND_STOP
-};
+    15, 5, 15, 5, BEEPER_COMMAND_STOP};
 // beeps while stick held in disarm position (after pause)
 static const uint8_t beep_disarmRepeatBeep[] = {
-    0, 100, 10, BEEPER_COMMAND_STOP
-};
+    0, 100, 10, BEEPER_COMMAND_STOP};
 // Long beep and pause after that
 static const uint8_t beep_lowBatteryBeep[] = {
-    25, 50, BEEPER_COMMAND_STOP
-};
+    25, 50, BEEPER_COMMAND_STOP};
 // critical battery beep
 static const uint8_t beep_critBatteryBeep[] = {
-    50, 2, BEEPER_COMMAND_STOP
-};
+    50, 2, BEEPER_COMMAND_STOP};
 
 // transmitter-signal-lost tone
 static const uint8_t beep_txLostBeep[] = {
-    50, 50, BEEPER_COMMAND_STOP
-};
+    50, 50, BEEPER_COMMAND_STOP};
 // SOS morse code:
 static const uint8_t beep_sos[] = {
-    10, 10, 10, 10, 10, 40, 40, 10, 40, 10, 40, 40, 10, 10, 10, 10, 10, 70, BEEPER_COMMAND_STOP
-};
+    10, 10, 10, 10, 10, 40, 40, 10, 40, 10, 40, 40, 10, 10, 10, 10, 10, 70, BEEPER_COMMAND_STOP};
 // Arming when GPS is fixed
 static const uint8_t beep_armedGpsFix[] = {
-    5, 5, 15, 5, 5, 5, 15, 30, BEEPER_COMMAND_STOP
-};
+    5, 5, 15, 5, 5, 5, 15, 30, BEEPER_COMMAND_STOP};
 // Ready beeps. When gps has fix and copter is ready to fly.
 static const uint8_t beep_readyBeep[] = {
-    4, 5, 4, 5, 8, 5, 15, 5, 8, 5, 4, 5, 4, 5, BEEPER_COMMAND_STOP
-};
+    4, 5, 4, 5, 8, 5, 15, 5, 8, 5, 4, 5, 4, 5, BEEPER_COMMAND_STOP};
 // 2 fast short beeps
 static const uint8_t beep_2shortBeeps[] = {
-    5, 5, 5, 5, BEEPER_COMMAND_STOP
-};
+    5, 5, 5, 5, BEEPER_COMMAND_STOP};
 // 2 longer beeps
 static const uint8_t beep_2longerBeeps[] = {
-    20, 15, 35, 5, BEEPER_COMMAND_STOP
-};
+    20, 15, 35, 5, BEEPER_COMMAND_STOP};
 // 3 beeps
 static const uint8_t beep_gyroCalibrated[] = {
-    20, 10, 20, 10, 20, 10, BEEPER_COMMAND_STOP
-};
+    20, 10, 20, 10, 20, 10, BEEPER_COMMAND_STOP};
 
 // Cam connection opened
 static const uint8_t beep_camOpenBeep[] = {
-    5, 15, 10, 15, 20, BEEPER_COMMAND_STOP
-};
+    5, 15, 10, 15, 20, BEEPER_COMMAND_STOP};
 
 // Cam connection close
 static const uint8_t beep_camCloseBeep[] = {
-    10, 8, 5, BEEPER_COMMAND_STOP
-};
+    10, 8, 5, BEEPER_COMMAND_STOP};
 
 // RC Smoothing filter not initialized - 3 short + 1 long
 static const uint8_t beep_rcSmoothingInitFail[] = {
-    10, 10, 10, 10, 10, 10, 50, 25, BEEPER_COMMAND_STOP
-};
+    10, 10, 10, 10, 10, 10, 50, 25, BEEPER_COMMAND_STOP};
 
 // array used for variable # of beeps (reporting GPS sat count, etc)
 static uint8_t beep_multiBeeps[MAX_MULTI_BEEPS + 1];
@@ -199,36 +182,36 @@ typedef struct beeperTableEntry_s {
 } beeperTableEntry_t;
 
 #ifdef BEEPER_NAMES
-#define BEEPER_ENTRY(a,b,c,d) a,b,c,d
+#define BEEPER_ENTRY(a, b, c, d) a, b, c, d
 #else
-#define BEEPER_ENTRY(a,b,c,d) a,b,c
+#define BEEPER_ENTRY(a, b, c, d) a, b, c
 #endif
 
 static const beeperTableEntry_t beeperTable[] = {
-    { BEEPER_ENTRY(BEEPER_GYRO_CALIBRATED,       0, beep_gyroCalibrated,   "GYRO_CALIBRATED") },
-    { BEEPER_ENTRY(BEEPER_RX_LOST,               1, beep_txLostBeep,       "RX_LOST") },
-    { BEEPER_ENTRY(BEEPER_RX_LOST_LANDING,       2, beep_sos,              "RX_LOST_LANDING") },
-    { BEEPER_ENTRY(BEEPER_DISARMING,             3, beep_disarmBeep,       "DISARMING") },
-    { BEEPER_ENTRY(BEEPER_ARMING,                4, beep_armingBeep,       "ARMING")  },
-    { BEEPER_ENTRY(BEEPER_ARMING_GPS_FIX,        5, beep_armedGpsFix,      "ARMING_GPS_FIX") },
-    { BEEPER_ENTRY(BEEPER_BAT_CRIT_LOW,          6, beep_critBatteryBeep,  "BAT_CRIT_LOW") },
-    { BEEPER_ENTRY(BEEPER_BAT_LOW,               7, beep_lowBatteryBeep,   "BAT_LOW") },
-    { BEEPER_ENTRY(BEEPER_GPS_STATUS,            8, beep_multiBeeps,       "GPS_STATUS") },
-    { BEEPER_ENTRY(BEEPER_RX_SET,                9, beep_shortBeep,        "RX_SET") },
-    { BEEPER_ENTRY(BEEPER_ACC_CALIBRATION,       10, beep_2shortBeeps,     "ACC_CALIBRATION") },
-    { BEEPER_ENTRY(BEEPER_ACC_CALIBRATION_FAIL,  11, beep_2longerBeeps,    "ACC_CALIBRATION_FAIL") },
-    { BEEPER_ENTRY(BEEPER_READY_BEEP,            12, beep_readyBeep,       "READY_BEEP") },
-    { BEEPER_ENTRY(BEEPER_MULTI_BEEPS,           13, beep_multiBeeps,      "MULTI_BEEPS") }, // FIXME having this listed makes no sense since the beep array will not be initialised.
-    { BEEPER_ENTRY(BEEPER_DISARM_REPEAT,         14, beep_disarmRepeatBeep, "DISARM_REPEAT") },
-    { BEEPER_ENTRY(BEEPER_ARMED,                 15, beep_armedBeep,       "ARMED") },
-    { BEEPER_ENTRY(BEEPER_SYSTEM_INIT,           16, NULL,                 "SYSTEM_INIT") },
-    { BEEPER_ENTRY(BEEPER_USB,                   17, NULL,                 "ON_USB") },
-    { BEEPER_ENTRY(BEEPER_BLACKBOX_ERASE,        18, beep_2shortBeeps,     "BLACKBOX_ERASE") },
-    { BEEPER_ENTRY(BEEPER_CRASH_FLIP_MODE,       19, beep_2longerBeeps,    "CRASH_FLIP") },
-    { BEEPER_ENTRY(BEEPER_CAM_CONNECTION_OPEN,   20, beep_camOpenBeep,     "CAM_CONNECTION_OPEN") },
-    { BEEPER_ENTRY(BEEPER_CAM_CONNECTION_CLOSE,  21, beep_camCloseBeep,    "CAM_CONNECTION_CLOSE") },
-    { BEEPER_ENTRY(BEEPER_RC_SMOOTHING_INIT_FAIL,22, beep_rcSmoothingInitFail, "RC_SMOOTHING_INIT_FAIL") },
-    { BEEPER_ENTRY(BEEPER_ALL,                   23, NULL,                 "ALL") },
+    {BEEPER_ENTRY(BEEPER_GYRO_CALIBRATED, 0, beep_gyroCalibrated, "GYRO_CALIBRATED")},
+    {BEEPER_ENTRY(BEEPER_RX_LOST, 1, beep_txLostBeep, "RX_LOST")},
+    {BEEPER_ENTRY(BEEPER_RX_LOST_LANDING, 2, beep_sos, "RX_LOST_LANDING")},
+    {BEEPER_ENTRY(BEEPER_DISARMING, 3, beep_disarmBeep, "DISARMING")},
+    {BEEPER_ENTRY(BEEPER_ARMING, 4, beep_armingBeep, "ARMING")},
+    {BEEPER_ENTRY(BEEPER_ARMING_GPS_FIX, 5, beep_armedGpsFix, "ARMING_GPS_FIX")},
+    {BEEPER_ENTRY(BEEPER_BAT_CRIT_LOW, 6, beep_critBatteryBeep, "BAT_CRIT_LOW")},
+    {BEEPER_ENTRY(BEEPER_BAT_LOW, 7, beep_lowBatteryBeep, "BAT_LOW")},
+    {BEEPER_ENTRY(BEEPER_GPS_STATUS, 8, beep_multiBeeps, "GPS_STATUS")},
+    {BEEPER_ENTRY(BEEPER_RX_SET, 9, beep_shortBeep, "RX_SET")},
+    {BEEPER_ENTRY(BEEPER_ACC_CALIBRATION, 10, beep_2shortBeeps, "ACC_CALIBRATION")},
+    {BEEPER_ENTRY(BEEPER_ACC_CALIBRATION_FAIL, 11, beep_2longerBeeps, "ACC_CALIBRATION_FAIL")},
+    {BEEPER_ENTRY(BEEPER_READY_BEEP, 12, beep_readyBeep, "READY_BEEP")},
+    {BEEPER_ENTRY(BEEPER_MULTI_BEEPS, 13, beep_multiBeeps, "MULTI_BEEPS")}, // FIXME having this listed makes no sense since the beep array will not be initialised.
+    {BEEPER_ENTRY(BEEPER_DISARM_REPEAT, 14, beep_disarmRepeatBeep, "DISARM_REPEAT")},
+    {BEEPER_ENTRY(BEEPER_ARMED, 15, beep_armedBeep, "ARMED")},
+    {BEEPER_ENTRY(BEEPER_SYSTEM_INIT, 16, NULL, "SYSTEM_INIT")},
+    {BEEPER_ENTRY(BEEPER_USB, 17, NULL, "ON_USB")},
+    {BEEPER_ENTRY(BEEPER_BLACKBOX_ERASE, 18, beep_2shortBeeps, "BLACKBOX_ERASE")},
+    {BEEPER_ENTRY(BEEPER_CRASH_FLIP_MODE, 19, beep_2longerBeeps, "CRASH_FLIP")},
+    {BEEPER_ENTRY(BEEPER_CAM_CONNECTION_OPEN, 20, beep_camOpenBeep, "CAM_CONNECTION_OPEN")},
+    {BEEPER_ENTRY(BEEPER_CAM_CONNECTION_CLOSE, 21, beep_camCloseBeep, "CAM_CONNECTION_CLOSE")},
+    {BEEPER_ENTRY(BEEPER_RC_SMOOTHING_INIT_FAIL, 22, beep_rcSmoothingInitFail, "RC_SMOOTHING_INIT_FAIL")},
+    {BEEPER_ENTRY(BEEPER_ALL, 23, NULL, "ALL")},
 };
 
 static const beeperTableEntry_t *currentBeeperEntry = NULL;
@@ -242,11 +225,7 @@ static const beeperTableEntry_t *currentBeeperEntry = NULL;
 void beeper(beeperMode_e mode)
 {
     if (
-        mode == BEEPER_SILENCE || (
-            (beeperConfigMutable()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_USB))
-            && getBatteryState() == BATTERY_NOT_PRESENT
-        )
-    ) {
+        mode == BEEPER_SILENCE || ((beeperConfigMutable()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_USB)) && getBatteryState() == BATTERY_NOT_PRESENT)) {
         beeperSilence();
         return;
     }
@@ -276,7 +255,7 @@ void beeper(beeperMode_e mode)
 
     currentBeeperEntry = selectedCandidate;
 
-    beeperPos = 0;
+    beeperPos            = 0;
     beeperNextToggleTime = 0;
 }
 
@@ -286,11 +265,10 @@ void beeperSilence(void)
     warningLedDisable();
     warningLedRefresh();
 
-
     beeperIsOn = 0;
 
     beeperNextToggleTime = 0;
-    beeperPos = 0;
+    beeperPos            = 0;
 
     currentBeeperEntry = NULL;
 }
@@ -301,7 +279,7 @@ void beeperSilence(void)
  */
 void beeperConfirmationBeeps(uint8_t beepCount)
 {
-    uint32_t i = 0;
+    uint32_t i      = 0;
     uint32_t cLimit = beepCount * 2;
     if (cLimit > MAX_MULTI_BEEPS) {
         cLimit = MAX_MULTI_BEEPS;
@@ -317,7 +295,7 @@ void beeperConfirmationBeeps(uint8_t beepCount)
 
 void beeperWarningBeeps(uint8_t beepCount)
 {
-    uint8_t longBeepCount = beepCount / BEEPER_WARNING_LONG_BEEP_MULTIPLIER;
+    uint8_t longBeepCount  = beepCount / BEEPER_WARNING_LONG_BEEP_MULTIPLIER;
     uint8_t shortBeepCount = beepCount % BEEPER_WARNING_LONG_BEEP_MULTIPLIER;
 
     unsigned i = 0;
@@ -366,9 +344,9 @@ static void beeperGpsStatus(void)
             } while (i < MAX_MULTI_BEEPS && gpsSol.numSat > i / 2);
 
             beep_multiBeeps[i - 1] = 50; // extend last pause
-            beep_multiBeeps[i] = BEEPER_COMMAND_STOP;
+            beep_multiBeeps[i]     = BEEPER_COMMAND_STOP;
 
-            beeper(BEEPER_MULTI_BEEPS);    //initiate sequence
+            beeper(BEEPER_MULTI_BEEPS); //initiate sequence
         }
     }
 }
@@ -402,9 +380,7 @@ void beeperUpdate(timeUs_t currentTimeUs)
         beeperIsOn = 1;
 
 #ifdef USE_DSHOT
-        if (!areMotorsRunning()
-            && ((currentBeeperEntry->mode == BEEPER_RX_SET && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_SET)))
-            || (currentBeeperEntry->mode == BEEPER_RX_LOST && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_LOST))))) {
+        if (!areMotorsRunning() && ((currentBeeperEntry->mode == BEEPER_RX_SET && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_SET))) || (currentBeeperEntry->mode == BEEPER_RX_LOST && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_LOST))))) {
 
             if ((currentTimeUs - getLastDisarmTimeUs() > DSHOT_BEACON_GUARD_DELAY_US) && !isTryingToArm()) {
                 lastDshotBeaconCommandTimeUs = currentTimeUs;
@@ -420,9 +396,7 @@ void beeperUpdate(timeUs_t currentTimeUs)
             warningLedRefresh();
             // if this was arming beep then mark time (for blackbox)
             if (
-                beeperPos == 0
-                && (currentBeeperEntry->mode == BEEPER_ARMING || currentBeeperEntry->mode == BEEPER_ARMING_GPS_FIX)
-            ) {
+                beeperPos == 0 && (currentBeeperEntry->mode == BEEPER_ARMING || currentBeeperEntry->mode == BEEPER_ARMING_GPS_FIX)) {
                 armingBeepTimeMicros = micros();
             }
         }
@@ -516,17 +490,29 @@ bool isBeeperOn(void)
 #else
 
 // Stub out beeper functions if #BEEPER not defined
-void beeper(beeperMode_e mode) {UNUSED(mode);}
+void beeper(beeperMode_e mode) { UNUSED(mode); }
 void beeperSilence(void) {}
-void beeperConfirmationBeeps(uint8_t beepCount) {UNUSED(beepCount);}
-void beeperWarningBeeps(uint8_t beepCount) {UNUSED(beepCount);}
-void beeperUpdate(timeUs_t currentTimeUs) {UNUSED(currentTimeUs);}
-uint32_t getArmingBeepTimeMicros(void) {return 0;}
-beeperMode_e beeperModeForTableIndex(int idx) {UNUSED(idx); return BEEPER_SILENCE;}
-uint32_t beeperModeMaskForTableIndex(int idx) {UNUSED(idx); return 0;}
-const char *beeperNameForTableIndex(int idx) {UNUSED(idx); return NULL;}
-int beeperTableEntryCount(void) {return 0;}
-bool isBeeperOn(void) {return false;}
+void beeperConfirmationBeeps(uint8_t beepCount) { UNUSED(beepCount); }
+void beeperWarningBeeps(uint8_t beepCount) { UNUSED(beepCount); }
+void beeperUpdate(timeUs_t currentTimeUs) { UNUSED(currentTimeUs); }
+uint32_t getArmingBeepTimeMicros(void) { return 0; }
+beeperMode_e beeperModeForTableIndex(int idx)
+{
+    UNUSED(idx);
+    return BEEPER_SILENCE;
+}
+uint32_t beeperModeMaskForTableIndex(int idx)
+{
+    UNUSED(idx);
+    return 0;
+}
+const char *beeperNameForTableIndex(int idx)
+{
+    UNUSED(idx);
+    return NULL;
+}
+int beeperTableEntryCount(void) { return 0; }
+bool isBeeperOn(void) { return false; }
 
 #endif
 

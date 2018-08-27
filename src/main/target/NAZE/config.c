@@ -31,8 +31,8 @@
 #include "drivers/io.h"
 
 #include "fc/config.h"
-#include "fc/rc_controls.h"
 #include "fc/controlrate_profile.h"
+#include "fc/rc_controls.h"
 
 #include "flight/failsafe.h"
 #include "flight/mixer.h"
@@ -55,14 +55,14 @@ void targetConfiguration(void)
 {
 #ifdef BEEBRAIN
     // alternative defaults settings for Beebrain target
-    motorConfigMutable()->dev.motorPwmRate = 4000;
-    failsafeConfigMutable()->failsafe_delay = 2;
+    motorConfigMutable()->dev.motorPwmRate      = 4000;
+    failsafeConfigMutable()->failsafe_delay     = 2;
     failsafeConfigMutable()->failsafe_off_delay = 0;
 
     motorConfigMutable()->minthrottle = 1049;
 
-    gyroConfigMutable()->gyro_hardware_lpf = GYRO_HARDWARE_LPF_1KHZ_SAMPLE;
-    gyroConfigMutable()->gyro_soft_lpf_hz = 100;
+    gyroConfigMutable()->gyro_hardware_lpf    = GYRO_HARDWARE_LPF_1KHZ_SAMPLE;
+    gyroConfigMutable()->gyro_soft_lpf_hz     = 100;
     gyroConfigMutable()->gyro_soft_notch_hz_1 = 0;
     gyroConfigMutable()->gyro_soft_notch_hz_2 = 0;
 
@@ -74,33 +74,33 @@ void targetConfiguration(void)
     for (uint8_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
         pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
 
-        pidProfile->pid[PID_ROLL].P = 60;
-        pidProfile->pid[PID_ROLL].I = 70;
-        pidProfile->pid[PID_ROLL].D = 17;
+        pidProfile->pid[PID_ROLL].P  = 60;
+        pidProfile->pid[PID_ROLL].I  = 70;
+        pidProfile->pid[PID_ROLL].D  = 17;
         pidProfile->pid[PID_PITCH].P = 80;
         pidProfile->pid[PID_PITCH].I = 90;
         pidProfile->pid[PID_PITCH].D = 18;
-        pidProfile->pid[PID_YAW].P = 200;
-        pidProfile->pid[PID_YAW].I = 45;
+        pidProfile->pid[PID_YAW].P   = 200;
+        pidProfile->pid[PID_YAW].I   = 45;
         pidProfile->pid[PID_LEVEL].P = 30;
         pidProfile->pid[PID_LEVEL].D = 30;
 
-        pidProfile->pid[PID_PITCH].F = 200;
-        pidProfile->pid[PID_ROLL].F = 200;
+        pidProfile->pid[PID_PITCH].F      = 200;
+        pidProfile->pid[PID_ROLL].F       = 200;
         pidProfile->feedForwardTransition = 50;
     }
 
     for (uint8_t rateProfileIndex = 0; rateProfileIndex < CONTROL_RATE_PROFILE_COUNT; rateProfileIndex++) {
         controlRateConfig_t *controlRateConfig = controlRateProfilesMutable(rateProfileIndex);
 
-        controlRateConfig->rcRates[FD_ROLL] = 100;
+        controlRateConfig->rcRates[FD_ROLL]  = 100;
         controlRateConfig->rcRates[FD_PITCH] = 100;
-        controlRateConfig->rcRates[FD_YAW] = 110;
-        controlRateConfig->rcExpo[FD_ROLL] = 0;
-        controlRateConfig->rcExpo[FD_PITCH] = 0;
-        controlRateConfig->rates[FD_ROLL] = 77;
-        controlRateConfig->rates[FD_PITCH] = 77;
-        controlRateConfig->rates[FD_YAW] = 80;
+        controlRateConfig->rcRates[FD_YAW]   = 110;
+        controlRateConfig->rcExpo[FD_ROLL]   = 0;
+        controlRateConfig->rcExpo[FD_PITCH]  = 0;
+        controlRateConfig->rates[FD_ROLL]    = 77;
+        controlRateConfig->rates[FD_PITCH]   = 77;
+        controlRateConfig->rates[FD_YAW]     = 80;
     }
 #endif
 
@@ -108,11 +108,11 @@ void targetConfiguration(void)
     if (hardwareRevision >= NAZE32_REV5) {
         // naze rev4 and below used opendrain to PNP for buzzer. Rev5 and above use PP to NPN.
         beeperDevConfigMutable()->isOpenDrain = false;
-        beeperDevConfigMutable()->isInverted = true;
+        beeperDevConfigMutable()->isInverted  = true;
     } else {
         beeperDevConfigMutable()->isOpenDrain = true;
-        beeperDevConfigMutable()->isInverted = false;
-        flashConfigMutable()->csTag = IO_TAG_NONE;
+        beeperDevConfigMutable()->isInverted  = false;
+        flashConfigMutable()->csTag           = IO_TAG_NONE;
     }
 #endif
 

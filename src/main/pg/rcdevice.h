@@ -20,8 +20,8 @@
 
 #pragma once
 
-#include "pg/pg.h"
 #include "common/time.h"
+#include "pg/pg.h"
 
 typedef struct rcdeviceConfig_s {
     uint8_t initDeviceAttempts;

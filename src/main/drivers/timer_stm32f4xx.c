@@ -22,28 +22,28 @@
 
 #include "common/utils.h"
 
-#include "stm32f4xx.h"
 #include "rcc.h"
+#include "stm32f4xx.h"
 #include "timer.h"
 
 const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
-    { .TIMx = TIM1,  .rcc = RCC_APB2(TIM1),  .inputIrq = TIM1_CC_IRQn},
-    { .TIMx = TIM2,  .rcc = RCC_APB1(TIM2),  .inputIrq = TIM2_IRQn},
-    { .TIMx = TIM3,  .rcc = RCC_APB1(TIM3),  .inputIrq = TIM3_IRQn},
-    { .TIMx = TIM4,  .rcc = RCC_APB1(TIM4),  .inputIrq = TIM4_IRQn},
-    { .TIMx = TIM5,  .rcc = RCC_APB1(TIM5),  .inputIrq = TIM5_IRQn},
-    { .TIMx = TIM6,  .rcc = RCC_APB1(TIM6),  .inputIrq = 0},
-    { .TIMx = TIM7,  .rcc = RCC_APB1(TIM7),  .inputIrq = 0},
+    {.TIMx = TIM1, .rcc = RCC_APB2(TIM1), .inputIrq = TIM1_CC_IRQn},
+    {.TIMx = TIM2, .rcc = RCC_APB1(TIM2), .inputIrq = TIM2_IRQn},
+    {.TIMx = TIM3, .rcc = RCC_APB1(TIM3), .inputIrq = TIM3_IRQn},
+    {.TIMx = TIM4, .rcc = RCC_APB1(TIM4), .inputIrq = TIM4_IRQn},
+    {.TIMx = TIM5, .rcc = RCC_APB1(TIM5), .inputIrq = TIM5_IRQn},
+    {.TIMx = TIM6, .rcc = RCC_APB1(TIM6), .inputIrq = 0},
+    {.TIMx = TIM7, .rcc = RCC_APB1(TIM7), .inputIrq = 0},
 #if !defined(STM32F411xE) && !defined(STM32F446xx)
-    { .TIMx = TIM8,  .rcc = RCC_APB2(TIM8),  .inputIrq = TIM8_CC_IRQn},
+    {.TIMx = TIM8, .rcc = RCC_APB2(TIM8), .inputIrq = TIM8_CC_IRQn},
 #endif
-    { .TIMx = TIM9,  .rcc = RCC_APB2(TIM9),  .inputIrq = TIM1_BRK_TIM9_IRQn},
-    { .TIMx = TIM10, .rcc = RCC_APB2(TIM10), .inputIrq = TIM1_UP_TIM10_IRQn},
-    { .TIMx = TIM11, .rcc = RCC_APB2(TIM11), .inputIrq = TIM1_TRG_COM_TIM11_IRQn},
+    {.TIMx = TIM9, .rcc = RCC_APB2(TIM9), .inputIrq = TIM1_BRK_TIM9_IRQn},
+    {.TIMx = TIM10, .rcc = RCC_APB2(TIM10), .inputIrq = TIM1_UP_TIM10_IRQn},
+    {.TIMx = TIM11, .rcc = RCC_APB2(TIM11), .inputIrq = TIM1_TRG_COM_TIM11_IRQn},
 #ifndef STM32F411xE
-    { .TIMx = TIM12, .rcc = RCC_APB1(TIM12), .inputIrq = TIM8_BRK_TIM12_IRQn},
-    { .TIMx = TIM13, .rcc = RCC_APB1(TIM13), .inputIrq = TIM8_UP_TIM13_IRQn},
-    { .TIMx = TIM14, .rcc = RCC_APB1(TIM14), .inputIrq = TIM8_TRG_COM_TIM14_IRQn},
+    {.TIMx = TIM12, .rcc = RCC_APB1(TIM12), .inputIrq = TIM8_BRK_TIM12_IRQn},
+    {.TIMx = TIM13, .rcc = RCC_APB1(TIM13), .inputIrq = TIM8_UP_TIM13_IRQn},
+    {.TIMx = TIM14, .rcc = RCC_APB1(TIM14), .inputIrq = TIM8_TRG_COM_TIM14_IRQn},
 #endif
 };
 
@@ -85,16 +85,16 @@ const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
 
 uint32_t timerClock(TIM_TypeDef *tim)
 {
-#if defined (STM32F411xE)
+#if defined(STM32F411xE)
     UNUSED(tim);
     return SystemCoreClock;
-#elif defined (STM32F40_41xxx) || defined (STM32F446xx)
+#elif defined(STM32F40_41xxx) || defined(STM32F446xx)
     if (tim == TIM8 || tim == TIM1 || tim == TIM9 || tim == TIM10 || tim == TIM11) {
         return SystemCoreClock;
     } else {
         return SystemCoreClock / 2;
     }
 #else
-    #error "No timer clock defined correctly for MCU"
+#error "No timer clock defined correctly for MCU"
 #endif
 }

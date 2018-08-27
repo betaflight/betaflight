@@ -44,62 +44,59 @@
 
 #include "fc/config.h"
 #include "fc/core.h"
-#include "fc/rc_controls.h"
 #include "fc/rc.h"
+#include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "io/gps.h"
 #include "io/beeper.h"
+#include "io/dashboard.h"
+#include "io/gps.h"
 #include "io/motors.h"
 #include "io/vtx_control.h"
-#include "io/dashboard.h"
 
+#include "sensors/acceleration.h"
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
-#include "sensors/sensors.h"
 #include "sensors/gyro.h"
-#include "sensors/acceleration.h"
+#include "sensors/sensors.h"
 
 #include "rx/rx.h"
 #include "scheduler/scheduler.h"
 
-#include "flight/pid.h"
 #include "flight/failsafe.h"
+#include "flight/pid.h"
 
 static pidProfile_t *pidProfile;
 
 // true if arming is done via the sticks (as opposed to a switch)
 static bool isUsingSticksToArm = true;
 
-float rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW
+float rcCommand[4]; // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW
 
 PG_REGISTER_WITH_RESET_TEMPLATE(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
 
 PG_RESET_TEMPLATE(rcControlsConfig_t, rcControlsConfig,
-    .deadband = 0,
-    .yaw_deadband = 0,
-    .alt_hold_deadband = 40,
-    .alt_hold_fast_change = 1,
-    .yaw_control_reversed = false,
-);
+                  .deadband             = 0,
+                  .yaw_deadband         = 0,
+                  .alt_hold_deadband    = 40,
+                  .alt_hold_fast_change = 1,
+                  .yaw_control_reversed = false, );
 
 PG_REGISTER_WITH_RESET_TEMPLATE(armingConfig_t, armingConfig, PG_ARMING_CONFIG, 1);
 
 PG_RESET_TEMPLATE(armingConfig_t, armingConfig,
-    .gyro_cal_on_first_arm = 0,  // TODO - Cleanup retarded arm support
-    .auto_disarm_delay = 5
-);
+                  .gyro_cal_on_first_arm = 0, // TODO - Cleanup retarded arm support
+                  .auto_disarm_delay     = 5);
 
 PG_REGISTER_WITH_RESET_TEMPLATE(flight3DConfig_t, flight3DConfig, PG_MOTOR_3D_CONFIG, 0);
 PG_RESET_TEMPLATE(flight3DConfig_t, flight3DConfig,
-    .deadband3d_low = 1406,
-    .deadband3d_high = 1514,
-    .neutral3d = 1460,
-    .deadband3d_throttle = 50,
-    .limit3d_low = 1000,
-    .limit3d_high = 2000,
-    .switched_mode3d = false
-);
+                  .deadband3d_low      = 1406,
+                  .deadband3d_high     = 1514,
+                  .neutral3d           = 1460,
+                  .deadband3d_throttle = 50,
+                  .limit3d_low         = 1000,
+                  .limit3d_high        = 2000,
+                  .switched_mode3d     = false);
 
 bool isUsingSticksForArming(void)
 {
@@ -128,13 +125,14 @@ throttleStatus_e calculateThrottleStatus(void)
     return THROTTLE_HIGH;
 }
 
-#define ARM_DELAY_MS        500
-#define STICK_DELAY_MS      50
+#define ARM_DELAY_MS 500
+#define STICK_DELAY_MS 50
 #define STICK_AUTOREPEAT_MS 250
-#define repeatAfter(t) { \
-    rcDelayMs -= (t); \
-    doNotRepeat = false; \
-}
+#define repeatAfter(t)       \
+    {                        \
+        rcDelayMs -= (t);    \
+        doNotRepeat = false; \
+    }
 void processRcStickPositions()
 {
     // time the sticks are maintained
@@ -156,10 +154,10 @@ void processRcStickPositions()
     for (int i = 0; i < 4; i++) {
         stTmp >>= 2;
         if (rcData[i] > rxConfig()->mincheck) {
-            stTmp |= 0x80;  // check for MIN
+            stTmp |= 0x80; // check for MIN
         }
         if (rcData[i] < rxConfig()->maxcheck) {
-            stTmp |= 0x40;  // check for MAX
+            stTmp |= 0x40; // check for MAX
         }
     }
     if (stTmp == rcSticks) {
@@ -167,7 +165,7 @@ void processRcStickPositions()
             rcDelayMs += getTaskDeltaTime(TASK_SELF) / 1000;
         }
     } else {
-        rcDelayMs = 0;
+        rcDelayMs   = 0;
         doNotRepeat = false;
     }
     rcSticks = stTmp;
@@ -182,7 +180,7 @@ void processRcStickPositions()
             resetTryingToArm();
             // Disarming via ARM BOX
             resetArmingDisabled();
-            if (ARMING_FLAG(ARMED) && rxIsReceivingSignal() && !failsafeIsActive()  ) {
+            if (ARMING_FLAG(ARMED) && rxIsReceivingSignal() && !failsafeIsActive()) {
                 rcDisarmTicks++;
                 if (rcDisarmTicks > 3) {
                     disarm();
@@ -285,15 +283,13 @@ void processRcStickPositions()
         return;
     }
 
-
     if (rcSticks == THR_HI + YAW_HI + PIT_LO + ROL_CE) {
         // Calibrating Mag
         ENABLE_STATE(CALIBRATE_MAG);
         return;
     }
 
-
-    if (FLIGHT_MODE(ANGLE_MODE|HORIZON_MODE)) {
+    if (FLIGHT_MODE(ANGLE_MODE | HORIZON_MODE)) {
         // in ANGLE or HORIZON mode, so use sticks to apply accelerometer trims
         rollAndPitchTrims_t accelerometerTrimsDelta;
         memset(&accelerometerTrimsDelta, 0, sizeof(accelerometerTrimsDelta));
@@ -302,19 +298,19 @@ void processRcStickPositions()
         switch (rcSticks) {
         case THR_HI + YAW_CE + PIT_HI + ROL_CE:
             accelerometerTrimsDelta.values.pitch = 2;
-            shouldApplyRollAndPitchTrimDelta = true;
+            shouldApplyRollAndPitchTrimDelta     = true;
             break;
         case THR_HI + YAW_CE + PIT_LO + ROL_CE:
             accelerometerTrimsDelta.values.pitch = -2;
-            shouldApplyRollAndPitchTrimDelta = true;
+            shouldApplyRollAndPitchTrimDelta     = true;
             break;
         case THR_HI + YAW_CE + PIT_CE + ROL_HI:
             accelerometerTrimsDelta.values.roll = 2;
-            shouldApplyRollAndPitchTrimDelta = true;
+            shouldApplyRollAndPitchTrimDelta    = true;
             break;
         case THR_HI + YAW_CE + PIT_CE + ROL_LO:
             accelerometerTrimsDelta.values.roll = -2;
-            shouldApplyRollAndPitchTrimDelta = true;
+            shouldApplyRollAndPitchTrimDelta    = true;
             break;
         }
         if (shouldApplyRollAndPitchTrimDelta) {
@@ -351,16 +347,16 @@ void processRcStickPositions()
 #endif
 
 #ifdef USE_VTX_CONTROL
-    if (rcSticks ==  THR_HI + YAW_LO + PIT_CE + ROL_HI) {
+    if (rcSticks == THR_HI + YAW_LO + PIT_CE + ROL_HI) {
         vtxIncrementBand();
     }
-    if (rcSticks ==  THR_HI + YAW_LO + PIT_CE + ROL_LO) {
+    if (rcSticks == THR_HI + YAW_LO + PIT_CE + ROL_LO) {
         vtxDecrementBand();
     }
-    if (rcSticks ==  THR_HI + YAW_HI + PIT_CE + ROL_HI) {
+    if (rcSticks == THR_HI + YAW_HI + PIT_CE + ROL_HI) {
         vtxIncrementChannel();
     }
-    if (rcSticks ==  THR_HI + YAW_HI + PIT_CE + ROL_LO) {
+    if (rcSticks == THR_HI + YAW_HI + PIT_CE + ROL_LO) {
         vtxDecrementChannel();
     }
 #endif
@@ -387,7 +383,8 @@ void processRcStickPositions()
 #endif
 }
 
-int32_t getRcStickDeflection(int32_t axis, uint16_t midrc) {
+int32_t getRcStickDeflection(int32_t axis, uint16_t midrc)
+{
     return MIN(ABS(rcData[axis] - midrc), 500);
 }
 

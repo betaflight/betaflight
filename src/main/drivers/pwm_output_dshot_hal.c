@@ -18,21 +18,21 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <math.h>
 
 #include "platform.h"
 
 #ifdef USE_DSHOT
 
+#include "dma.h"
 #include "drivers/io.h"
-#include "timer.h"
-#include "pwm_output.h"
 #include "drivers/nvic.h"
 #include "drivers/time.h"
-#include "dma.h"
+#include "pwm_output.h"
 #include "rcc.h"
+#include "timer.h"
 
 static FAST_RAM_ZERO_INIT uint8_t dmaMotorTimerCount = 0;
 static FAST_RAM_ZERO_INIT motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];
@@ -77,11 +77,11 @@ FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
 
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
-        bufferSize = loadDmaBuffer(&motor->timer->dmaBurstBuffer[timerLookupChannelIndex(motor->timerHardware->channel)], 4, packet);
+        bufferSize                   = loadDmaBuffer(&motor->timer->dmaBurstBuffer[timerLookupChannelIndex(motor->timerHardware->channel)], 4, packet);
         motor->timer->dmaBurstLength = bufferSize * 4;
     } else
 #endif
-    {    
+    {
         bufferSize = loadDmaBuffer(motor->dmaBuffer, 1, packet);
         motor->timer->timerDmaSources |= motor->timerDmaSource;
         LL_EX_DMA_SetDataLength(motor->timerHardware->dmaRef, bufferSize);
@@ -122,10 +122,10 @@ FAST_CODE void pwmCompleteDshotMotorUpdate(uint8_t motorCount)
     }
 }
 
-static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
+static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
 {
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
-        motorDmaOutput_t * const motor = &dmaMotors[descriptor->userParam];
+        motorDmaOutput_t *const motor = &dmaMotors[descriptor->userParam];
 
 #ifdef USE_DSHOT_DMAR
         if (useBurstDshot) {
@@ -162,13 +162,13 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     LL_TIM_OC_InitTypeDef oc_init;
     LL_DMA_InitTypeDef dma_init;
 
-    motorDmaOutput_t * const motor = &dmaMotors[motorIndex];
-    motor->timerHardware = timerHardware;
+    motorDmaOutput_t *const motor = &dmaMotors[motorIndex];
+    motor->timerHardware          = timerHardware;
 
     TIM_TypeDef *timer = timerHardware->tim;
     const IO_t motorIO = IOGetByTag(timerHardware->tag);
 
-    const uint8_t timerIndex = getTimerIndex(timer);
+    const uint8_t timerIndex  = getTimerIndex(timer);
     const bool configureTimer = (timerIndex == dmaMotorTimerCount - 1);
 
     IOConfigGPIOAF(motorIO, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLDOWN), timerHardware->alternateFunction);
@@ -180,33 +180,41 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
         RCC_ClockCmd(timerRCC(timer), ENABLE);
         LL_TIM_DisableCounter(timer);
 
-        init.Prescaler = (uint16_t)(lrintf((float) timerClock(timer) / getDshotHz(pwmProtocolType) + 0.01f) - 1);
-        init.Autoreload = pwmProtocolType == PWM_TYPE_PROSHOT1000 ? MOTOR_NIBBLE_LENGTH_PROSHOT : MOTOR_BITLENGTH;
-        init.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
+        init.Prescaler         = (uint16_t)(lrintf((float)timerClock(timer) / getDshotHz(pwmProtocolType) + 0.01f) - 1);
+        init.Autoreload        = pwmProtocolType == PWM_TYPE_PROSHOT1000 ? MOTOR_NIBBLE_LENGTH_PROSHOT : MOTOR_BITLENGTH;
+        init.ClockDivision     = LL_TIM_CLOCKDIVISION_DIV1;
         init.RepetitionCounter = 0;
-        init.CounterMode = LL_TIM_COUNTERMODE_UP;
+        init.CounterMode       = LL_TIM_COUNTERMODE_UP;
         LL_TIM_Init(timer, &init);
     }
 
     LL_TIM_OC_StructInit(&oc_init);
     oc_init.OCMode = LL_TIM_OCMODE_PWM1;
     if (output & TIMER_OUTPUT_N_CHANNEL) {
-        oc_init.OCNState = LL_TIM_OCSTATE_ENABLE;
+        oc_init.OCNState     = LL_TIM_OCSTATE_ENABLE;
         oc_init.OCNIdleState = LL_TIM_OCIDLESTATE_LOW;
-        oc_init.OCNPolarity = (output & TIMER_OUTPUT_INVERTED) ? LL_TIM_OCPOLARITY_LOW : LL_TIM_OCPOLARITY_HIGH;
+        oc_init.OCNPolarity  = (output & TIMER_OUTPUT_INVERTED) ? LL_TIM_OCPOLARITY_LOW : LL_TIM_OCPOLARITY_HIGH;
     } else {
-        oc_init.OCState = LL_TIM_OCSTATE_ENABLE;
+        oc_init.OCState     = LL_TIM_OCSTATE_ENABLE;
         oc_init.OCIdleState = LL_TIM_OCIDLESTATE_HIGH;
-        oc_init.OCPolarity =  (output & TIMER_OUTPUT_INVERTED) ? LL_TIM_OCPOLARITY_LOW : LL_TIM_OCPOLARITY_HIGH;
+        oc_init.OCPolarity  = (output & TIMER_OUTPUT_INVERTED) ? LL_TIM_OCPOLARITY_LOW : LL_TIM_OCPOLARITY_HIGH;
     }
     oc_init.CompareValue = 0;
 
     uint32_t channel;
     switch (timerHardware->channel) {
-    case TIM_CHANNEL_1: channel = LL_TIM_CHANNEL_CH1; break;
-    case TIM_CHANNEL_2: channel = LL_TIM_CHANNEL_CH2; break;
-    case TIM_CHANNEL_3: channel = LL_TIM_CHANNEL_CH3; break;
-    case TIM_CHANNEL_4: channel = LL_TIM_CHANNEL_CH4; break;
+    case TIM_CHANNEL_1:
+        channel = LL_TIM_CHANNEL_CH1;
+        break;
+    case TIM_CHANNEL_2:
+        channel = LL_TIM_CHANNEL_CH2;
+        break;
+    case TIM_CHANNEL_3:
+        channel = LL_TIM_CHANNEL_CH3;
+        break;
+    case TIM_CHANNEL_4:
+        channel = LL_TIM_CHANNEL_CH4;
+        break;
     }
     LL_TIM_OC_Init(timer, channel, &oc_init);
     LL_TIM_OC_EnablePreload(timer, channel);
@@ -249,9 +257,9 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
         dmaInit(timerHardware->dmaTimUPIrqHandler, OWNER_TIMUP, timerGetTIMNumber(timerHardware->tim));
         dmaSetHandler(timerHardware->dmaTimUPIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
 
-        dma_init.Channel = timerHardware->dmaTimUPChannel;
+        dma_init.Channel               = timerHardware->dmaTimUPChannel;
         dma_init.MemoryOrM2MDstAddress = (uint32_t)motor->timer->dmaBurstBuffer;
-        dma_init.FIFOThreshold = LL_DMA_FIFOTHRESHOLD_FULL;
+        dma_init.FIFOThreshold         = LL_DMA_FIFOTHRESHOLD_FULL;
         dma_init.PeriphOrM2MSrcAddress = (uint32_t)&timerHardware->tim->DMAR;
     } else
 #endif
@@ -259,23 +267,23 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
         dmaInit(timerHardware->dmaIrqHandler, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
         dmaSetHandler(timerHardware->dmaIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
 
-        dma_init.Channel = timerHardware->dmaChannel;
+        dma_init.Channel               = timerHardware->dmaChannel;
         dma_init.MemoryOrM2MDstAddress = (uint32_t)motor->dmaBuffer;
-        dma_init.FIFOThreshold = LL_DMA_FIFOTHRESHOLD_1_4;
+        dma_init.FIFOThreshold         = LL_DMA_FIFOTHRESHOLD_1_4;
         dma_init.PeriphOrM2MSrcAddress = (uint32_t)timerChCCR(timerHardware);
     }
 
-    dma_init.Direction = LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
-    dma_init.FIFOMode = LL_DMA_FIFOMODE_ENABLE;
-    dma_init.MemBurst = LL_DMA_MBURST_SINGLE;
-    dma_init.PeriphBurst = LL_DMA_PBURST_SINGLE;
-    dma_init.NbData = pwmProtocolType == PWM_TYPE_PROSHOT1000 ? PROSHOT_DMA_BUFFER_SIZE : DSHOT_DMA_BUFFER_SIZE;
-    dma_init.PeriphOrM2MSrcIncMode = LL_DMA_PERIPH_NOINCREMENT;
-    dma_init.MemoryOrM2MDstIncMode = LL_DMA_MEMORY_INCREMENT;
+    dma_init.Direction              = LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
+    dma_init.FIFOMode               = LL_DMA_FIFOMODE_ENABLE;
+    dma_init.MemBurst               = LL_DMA_MBURST_SINGLE;
+    dma_init.PeriphBurst            = LL_DMA_PBURST_SINGLE;
+    dma_init.NbData                 = pwmProtocolType == PWM_TYPE_PROSHOT1000 ? PROSHOT_DMA_BUFFER_SIZE : DSHOT_DMA_BUFFER_SIZE;
+    dma_init.PeriphOrM2MSrcIncMode  = LL_DMA_PERIPH_NOINCREMENT;
+    dma_init.MemoryOrM2MDstIncMode  = LL_DMA_MEMORY_INCREMENT;
     dma_init.PeriphOrM2MSrcDataSize = LL_DMA_PDATAALIGN_WORD;
     dma_init.MemoryOrM2MDstDataSize = LL_DMA_MDATAALIGN_WORD;
-    dma_init.Mode = LL_DMA_MODE_NORMAL;
-    dma_init.Priority = LL_DMA_PRIORITY_HIGH;
+    dma_init.Mode                   = LL_DMA_MODE_NORMAL;
+    dma_init.Priority               = LL_DMA_PRIORITY_HIGH;
 
     LL_EX_DMA_Init(dmaRef, &dma_init);
     LL_EX_DMA_EnableIT_TC(dmaRef);

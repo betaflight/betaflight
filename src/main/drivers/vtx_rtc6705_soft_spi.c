@@ -31,34 +31,34 @@
 #include "drivers/time.h"
 #include "drivers/vtx_rtc6705.h"
 
-#define DP_5G_MASK                  0x7000
-#define PA5G_BS_MASK                0x0E00
-#define PA5G_PW_MASK                0x0180
-#define PD_Q5G_MASK                 0x0040
-#define QI_5G_MASK                  0x0038
-#define PA_BS_MASK                  0x0007
+#define DP_5G_MASK 0x7000
+#define PA5G_BS_MASK 0x0E00
+#define PA5G_PW_MASK 0x0180
+#define PD_Q5G_MASK 0x0040
+#define QI_5G_MASK 0x0038
+#define PA_BS_MASK 0x0007
 
-#define PA_CONTROL_DEFAULT          0x4FBD
+#define PA_CONTROL_DEFAULT 0x4FBD
 
-#define RTC6705_SPICLK_ON     IOHi(rtc6705ClkPin)
-#define RTC6705_SPICLK_OFF    IOLo(rtc6705ClkPin)
+#define RTC6705_SPICLK_ON IOHi(rtc6705ClkPin)
+#define RTC6705_SPICLK_OFF IOLo(rtc6705ClkPin)
 
-#define RTC6705_SPIDATA_ON    IOHi(rtc6705DataPin)
-#define RTC6705_SPIDATA_OFF   IOLo(rtc6705DataPin)
+#define RTC6705_SPIDATA_ON IOHi(rtc6705DataPin)
+#define RTC6705_SPIDATA_OFF IOLo(rtc6705DataPin)
 
-#define DISABLE_RTC6705       IOHi(rtc6705CsnPin)
-#define ENABLE_RTC6705        IOLo(rtc6705CsnPin)
+#define DISABLE_RTC6705 IOHi(rtc6705CsnPin)
+#define ENABLE_RTC6705 IOLo(rtc6705CsnPin)
 
 #ifdef RTC6705_POWER_PIN
-static IO_t vtxPowerPin     = IO_NONE;
+static IO_t vtxPowerPin = IO_NONE;
 #endif
 
-#define ENABLE_VTX_POWER()          IOLo(vtxPowerPin)
-#define DISABLE_VTX_POWER()         IOHi(vtxPowerPin)
+#define ENABLE_VTX_POWER() IOLo(vtxPowerPin)
+#define DISABLE_VTX_POWER() IOHi(vtxPowerPin)
 
 static IO_t rtc6705DataPin = IO_NONE;
-static IO_t rtc6705CsnPin = IO_NONE;
-static IO_t rtc6705ClkPin = IO_NONE;
+static IO_t rtc6705CsnPin  = IO_NONE;
+static IO_t rtc6705ClkPin  = IO_NONE;
 
 void rtc6705IOInit(void)
 {
@@ -152,6 +152,5 @@ void rtc6705Enable(void)
     ENABLE_VTX_POWER();
 #endif
 }
-
 
 #endif

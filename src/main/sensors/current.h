@@ -32,18 +32,18 @@ typedef enum {
     CURRENT_METER_COUNT
 } currentMeterSource_e;
 
-extern const char * const currentMeterSourceNames[CURRENT_METER_COUNT];
+extern const char *const currentMeterSourceNames[CURRENT_METER_COUNT];
 
 typedef struct currentMeter_s {
-    int32_t amperage;           // current read by current sensor in centiampere (1/100th A)
-    int32_t amperageLatest;     // current read by current sensor in centiampere (1/100th A) (unfiltered)
-    int32_t mAhDrawn;           // milliampere hours drawn from the battery since start
+    int32_t amperage;       // current read by current sensor in centiampere (1/100th A)
+    int32_t amperageLatest; // current read by current sensor in centiampere (1/100th A) (unfiltered)
+    int32_t mAhDrawn;       // milliampere hours drawn from the battery since start
 } currentMeter_t;
 
 // WARNING - do not mix usage of CURRENT_SENSOR_* and CURRENT_METER_*, they are separate concerns.
 
 typedef struct currentMeterMAhDrawnState_s {
-    int32_t mAhDrawn;           // milliampere hours drawn from the battery since start
+    int32_t mAhDrawn; // milliampere hours drawn from the battery since start
     float mAhDrawnF;
 } currentMeterMAhDrawnState_t;
 
@@ -58,20 +58,19 @@ typedef enum {
     CURRENT_SENSOR_MSP
 } currentSensor_e;
 
-
 //
 // ADC
 //
 
 typedef struct currentMeterADCState_s {
     currentMeterMAhDrawnState_t mahDrawnState;
-    int32_t amperage;           // current read by current sensor in centiampere (1/100th A)
-    int32_t amperageLatest;     // current read by current sensor in centiampere (1/100th A) (unfiltered)
+    int32_t amperage;       // current read by current sensor in centiampere (1/100th A)
+    int32_t amperageLatest; // current read by current sensor in centiampere (1/100th A) (unfiltered)
 } currentMeterADCState_t;
 
 typedef struct currentSensorADCConfig_s {
-    int16_t scale;              // scale the current sensor output voltage to milliamps. Value in mV/10A
-    int16_t offset;             // offset of the current sensor in mA
+    int16_t scale;  // scale the current sensor output voltage to milliamps. Value in mV/10A
+    int16_t offset; // offset of the current sensor in mA
 } currentSensorADCConfig_t;
 
 PG_DECLARE(currentSensorADCConfig_t, currentSensorADCConfig);
@@ -82,12 +81,12 @@ PG_DECLARE(currentSensorADCConfig_t, currentSensorADCConfig);
 
 typedef struct currentMeterVirtualState_s {
     currentMeterMAhDrawnState_t mahDrawnState;
-    int32_t amperage;           // current read by current sensor in centiampere (1/100th A)
+    int32_t amperage; // current read by current sensor in centiampere (1/100th A)
 } currentSensorVirtualState_t;
 
 typedef struct currentSensorVirtualConfig_s {
-    int16_t scale;              // scale the current sensor output voltage to milliamps. Value in 1/10th mV/A
-    uint16_t offset;            // offset of the current sensor in millivolt steps
+    int16_t scale;   // scale the current sensor output voltage to milliamps. Value in 1/10th mV/A
+    uint16_t offset; // offset of the current sensor in millivolt steps
 } currentSensorVirtualConfig_t;
 
 PG_DECLARE(currentSensorVirtualConfig_t, currentSensorVirtualConfig);
@@ -97,20 +96,18 @@ PG_DECLARE(currentSensorVirtualConfig_t, currentSensorVirtualConfig);
 //
 
 typedef struct currentMeterESCState_s {
-    int32_t mAhDrawn;           // milliampere hours drawn from the battery since start
-    int32_t amperage;           // current read by current sensor in centiampere (1/100th A)
+    int32_t mAhDrawn; // milliampere hours drawn from the battery since start
+    int32_t amperage; // current read by current sensor in centiampere (1/100th A)
 } currentMeterESCState_t;
-
 
 //
 // MSP
 //
 
 typedef struct currentMeterMSPState_s {
-    int32_t mAhDrawn;           // milliampere hours drawn from the battery since start
-    int32_t amperage;           // current read by current sensor in centiampere (1/100th A)
+    int32_t mAhDrawn; // milliampere hours drawn from the battery since start
+    int32_t amperage; // current read by current sensor in centiampere (1/100th A)
 } currentMeterMSPState_t;
-
 
 //
 // Current Meter API

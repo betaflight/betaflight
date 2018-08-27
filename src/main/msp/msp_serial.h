@@ -86,12 +86,12 @@ typedef struct __attribute__((packed)) {
 } mspHeaderJUMBO_t;
 
 typedef struct __attribute__((packed)) {
-    uint8_t  flags;
+    uint8_t flags;
     uint16_t cmd;
     uint16_t size;
 } mspHeaderV2_t;
 
-#define MSP_MAX_HEADER_SIZE     9
+#define MSP_MAX_HEADER_SIZE 9
 
 struct serialPort_s;
 typedef struct mspPort_s {

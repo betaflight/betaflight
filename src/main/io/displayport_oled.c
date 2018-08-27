@@ -103,19 +103,18 @@ static uint32_t oledTxBytesFree(const displayPort_t *displayPort)
 }
 
 static const displayPortVTable_t oledVTable = {
-    .grab = oledGrab,
-    .release = oledRelease,
-    .clearScreen = oledClearScreen,
-    .drawScreen = oledDrawScreen,
-    .screenSize = oledScreenSize,
-    .writeString = oledWriteString,
-    .writeChar = oledWriteChar,
+    .grab                 = oledGrab,
+    .release              = oledRelease,
+    .clearScreen          = oledClearScreen,
+    .drawScreen           = oledDrawScreen,
+    .screenSize           = oledScreenSize,
+    .writeString          = oledWriteString,
+    .writeChar            = oledWriteChar,
     .isTransferInProgress = oledIsTransferInProgress,
-    .heartbeat = oledHeartbeat,
-    .resync = oledResync,
-    .isSynced = oledIsSynced,
-    .txBytesFree = oledTxBytesFree
-};
+    .heartbeat            = oledHeartbeat,
+    .resync               = oledResync,
+    .isSynced             = oledIsSynced,
+    .txBytesFree          = oledTxBytesFree};
 
 displayPort_t *displayPortOledInit(void *device)
 {

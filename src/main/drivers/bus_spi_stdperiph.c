@@ -54,12 +54,12 @@ void spiInitDevice(SPIDevice device)
     RCC_ClockCmd(spi->rcc, ENABLE);
     RCC_ResetCmd(spi->rcc, ENABLE);
 
-    IOInit(IOGetByTag(spi->sck),  OWNER_SPI_SCK,  RESOURCE_INDEX(device));
+    IOInit(IOGetByTag(spi->sck), OWNER_SPI_SCK, RESOURCE_INDEX(device));
     IOInit(IOGetByTag(spi->miso), OWNER_SPI_MISO, RESOURCE_INDEX(device));
     IOInit(IOGetByTag(spi->mosi), OWNER_SPI_MOSI, RESOURCE_INDEX(device));
 
 #if defined(STM32F3) || defined(STM32F4)
-    IOConfigGPIOAF(IOGetByTag(spi->sck),  SPI_IO_AF_CFG, spi->af);
+    IOConfigGPIOAF(IOGetByTag(spi->sck), SPI_IO_AF_CFG, spi->af);
     IOConfigGPIOAF(IOGetByTag(spi->miso), SPI_IO_AF_CFG, spi->af);
     IOConfigGPIOAF(IOGetByTag(spi->mosi), SPI_IO_AF_CFG, spi->af);
 #elif defined(STM32F10X)
@@ -74,12 +74,12 @@ void spiInitDevice(SPIDevice device)
     SPI_I2S_DeInit(spi->dev);
 
     SPI_InitTypeDef spiInit;
-    spiInit.SPI_Mode = SPI_Mode_Master;
-    spiInit.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
-    spiInit.SPI_DataSize = SPI_DataSize_8b;
-    spiInit.SPI_NSS = SPI_NSS_Soft;
-    spiInit.SPI_FirstBit = SPI_FirstBit_MSB;
-    spiInit.SPI_CRCPolynomial = 7;
+    spiInit.SPI_Mode              = SPI_Mode_Master;
+    spiInit.SPI_Direction         = SPI_Direction_2Lines_FullDuplex;
+    spiInit.SPI_DataSize          = SPI_DataSize_8b;
+    spiInit.SPI_NSS               = SPI_NSS_Soft;
+    spiInit.SPI_FirstBit          = SPI_FirstBit_MSB;
+    spiInit.SPI_CRCPolynomial     = 7;
     spiInit.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_8;
 
     if (spi->leadingEdge) {
@@ -135,7 +135,6 @@ bool spiIsBusBusy(SPI_TypeDef *instance)
 #else
     return SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_TXE) == RESET || SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_BSY) == SET;
 #endif
-
 }
 
 bool spiTransfer(SPI_TypeDef *instance, const uint8_t *txData, uint8_t *rxData, int len)
@@ -187,7 +186,7 @@ void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
     SPI_Cmd(instance, DISABLE);
 
     const uint16_t tempRegister = (instance->CR1 & ~BR_BITS);
-    instance->CR1 = tempRegister | (divisor ? ((ffs(divisor | 0x100) - 2) << 3) : 0);
+    instance->CR1               = tempRegister | (divisor ? ((ffs(divisor | 0x100) - 2) << 3) : 0);
 
     SPI_Cmd(instance, ENABLE);
 

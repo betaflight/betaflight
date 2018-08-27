@@ -20,8 +20,8 @@
 
 #pragma once
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "pg/pg.h"
 

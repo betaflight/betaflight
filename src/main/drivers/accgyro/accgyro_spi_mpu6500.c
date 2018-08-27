@@ -37,7 +37,7 @@
 #include "accgyro_mpu6500.h"
 #include "accgyro_spi_mpu6500.h"
 
-#define BIT_SLEEP                   0x40
+#define BIT_SLEEP 0x40
 
 static void mpu6500SpiInit(const busDevice_t *bus)
 {

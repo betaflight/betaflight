@@ -27,8 +27,7 @@
 
 //type of elements
 
-typedef enum
-{
+typedef enum {
     OME_Label,
     OME_Back,
     OME_OSD_Exit,
@@ -41,7 +40,7 @@ typedef enum
     OME_INT16,
     OME_String,
     OME_FLOAT, //only up to 255 value and cant be 2.55 or 25.5, just for PID's
-    //wlasciwosci elementow
+//wlasciwosci elementow
 #ifdef USE_OSD
     OME_VISIBLE,
 #endif
@@ -58,7 +57,7 @@ typedef long (*CMSEntryFuncPtr)(displayPort_t *displayPort, const void *ptr);
 
 typedef struct
 {
-    const char * const text;
+    const char *const text;
     const OSD_MenuElement type;
     const CMSEntryFuncPtr func;
     void *data;
@@ -66,25 +65,37 @@ typedef struct
 } OSD_Entry;
 
 // Bits in flags
-#define PRINT_VALUE    0x01  // Value has been changed, need to redraw
-#define PRINT_LABEL    0x02  // Text label should be printed
-#define DYNAMIC        0x04  // Value should be updated dynamically
-#define OPTSTRING      0x08  // (Temporary) Flag for OME_Submenu, indicating func should be called to get a string to display.
+#define PRINT_VALUE 0x01 // Value has been changed, need to redraw
+#define PRINT_LABEL 0x02 // Text label should be printed
+#define DYNAMIC 0x04     // Value should be updated dynamically
+#define OPTSTRING 0x08   // (Temporary) Flag for OME_Submenu, indicating func should be called to get a string to display.
 
 #define IS_PRINTVALUE(p) ((p)->flags & PRINT_VALUE)
-#define SET_PRINTVALUE(p) { (p)->flags |= PRINT_VALUE; }
-#define CLR_PRINTVALUE(p) { (p)->flags &= ~PRINT_VALUE; }
+#define SET_PRINTVALUE(p)          \
+    {                              \
+        (p)->flags |= PRINT_VALUE; \
+    }
+#define CLR_PRINTVALUE(p)           \
+    {                               \
+        (p)->flags &= ~PRINT_VALUE; \
+    }
 
 #define IS_PRINTLABEL(p) ((p)->flags & PRINT_LABEL)
-#define SET_PRINTLABEL(p) { (p)->flags |= PRINT_LABEL; }
-#define CLR_PRINTLABEL(p) { (p)->flags &= ~PRINT_LABEL; }
+#define SET_PRINTLABEL(p)          \
+    {                              \
+        (p)->flags |= PRINT_LABEL; \
+    }
+#define CLR_PRINTLABEL(p)           \
+    {                               \
+        (p)->flags &= ~PRINT_LABEL; \
+    }
 
 #define IS_DYNAMIC(p) ((p)->flags & DYNAMIC)
 
 typedef long (*CMSMenuFuncPtr)(void);
 
 // Special return value(s) for function chaining by CMSMenuFuncPtr
-#define MENU_CHAIN_BACK  (-1) // Causes automatic cmsMenuBack
+#define MENU_CHAIN_BACK (-1) // Causes automatic cmsMenuBack
 
 /*
 onExit function is called with self:
@@ -152,7 +163,7 @@ typedef struct
 {
     uint8_t *val;
     uint8_t max;
-    const char * const *names;
+    const char *const *names;
 } OSD_TAB_t;
 
 typedef struct
@@ -162,4 +173,4 @@ typedef struct
 
 // This is a function used in the func member if the type is OME_Submenu.
 
-typedef char * (*CMSMenuOptFuncPtr)(void);
+typedef char *(*CMSMenuOptFuncPtr)(void);

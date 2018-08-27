@@ -58,11 +58,13 @@ void rcModeUpdate(boxBitmask_t *newState)
     rcModeActivationMask = *newState;
 }
 
-bool isAirmodeActive(void) {
+bool isAirmodeActive(void)
+{
     return (IS_RC_MODE_ACTIVE(BOXAIRMODE) || featureIsEnabled(FEATURE_AIRMODE));
 }
 
-bool isRangeActive(uint8_t auxChannelIndex, const channelRange_t *range) {
+bool isRangeActive(uint8_t auxChannelIndex, const channelRange_t *range)
+{
     if (!IS_RANGE_USABLE(range)) {
         return false;
     }

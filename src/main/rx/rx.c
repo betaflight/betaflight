@@ -52,61 +52,60 @@
 #include "pg/pg_ids.h"
 #include "pg/rx.h"
 
-#include "rx/rx.h"
-#include "rx/pwm.h"
+#include "rx/crsf.h"
 #include "rx/fport.h"
+#include "rx/ibus.h"
+#include "rx/jetiexbus.h"
+#include "rx/msp.h"
+#include "rx/pwm.h"
+#include "rx/rx.h"
+#include "rx/rx_spi.h"
 #include "rx/sbus.h"
 #include "rx/spektrum.h"
 #include "rx/sumd.h"
 #include "rx/sumh.h"
-#include "rx/msp.h"
-#include "rx/xbus.h"
-#include "rx/ibus.h"
-#include "rx/jetiexbus.h"
-#include "rx/crsf.h"
-#include "rx/rx_spi.h"
 #include "rx/targetcustomserial.h"
-
+#include "rx/xbus.h"
 
 const char rcChannelLetters[] = "AERT12345678abcdefgh";
 
-static uint16_t rssi = 0;                  // range: [0;1023]
+static uint16_t rssi                = 0; // range: [0;1023]
 static timeUs_t lastMspRssiUpdateUs = 0;
 
-#define MSP_RSSI_TIMEOUT_US 1500000   // 1.5 sec
+#define MSP_RSSI_TIMEOUT_US 1500000 // 1.5 sec
 
 #define RSSI_ADC_DIVISOR (4096 / 1024)
 #define RSSI_OFFSET_SCALING (1024 / 100.0f)
 
 rssiSource_e rssiSource;
 
-static bool rxDataProcessingRequired = false;
+static bool rxDataProcessingRequired    = false;
 static bool auxiliaryProcessingRequired = false;
 
-static bool rxSignalReceived = false;
+static bool rxSignalReceived      = false;
 static bool rxFlightChannelsValid = false;
-static bool rxIsInFailsafeMode = true;
+static bool rxIsInFailsafeMode    = true;
 static uint8_t rxChannelCount;
 
-static timeUs_t rxNextUpdateAtUs = 0;
+static timeUs_t rxNextUpdateAtUs   = 0;
 static uint32_t needRxSignalBefore = 0;
 static uint32_t needRxSignalMaxDelayUs;
 static uint32_t suspendRxSignalUntil = 0;
-static uint8_t  skipRxSamples = 0;
+static uint8_t skipRxSamples         = 0;
 
-static int16_t rcRaw[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
-int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
+static int16_t rcRaw[MAX_SUPPORTED_RC_CHANNEL_COUNT]; // interval [1000;2000]
+int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];       // interval [1000;2000]
 uint32_t rcInvalidPulsPeriod[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 
-#define MAX_INVALID_PULS_TIME    300
+#define MAX_INVALID_PULS_TIME 300
 #define PPM_AND_PWM_SAMPLE_COUNT 3
 
 #define DELAY_50_HZ (1000000 / 50)
 #define DELAY_33_HZ (1000000 / 33)
 #define DELAY_10_HZ (1000000 / 10)
 #define DELAY_5_HZ (1000000 / 5)
-#define SKIP_RC_ON_SUSPEND_PERIOD 1500000           // 1.5 second period in usec (call frequency independent)
-#define SKIP_RC_SAMPLES_ON_RESUME  2                // flush 2 samples to drop wrong measurements (timing independent)
+#define SKIP_RC_ON_SUSPEND_PERIOD 1500000 // 1.5 second period in usec (call frequency independent)
+#define SKIP_RC_SAMPLES_ON_RESUME 2       // flush 2 samples to drop wrong measurements (timing independent)
 
 rxRuntimeConfig_t rxRuntimeConfig;
 static uint8_t rcSampleIndex = 0;
@@ -127,12 +126,13 @@ void pgResetFn_rxFailsafeChannelConfigs(rxFailsafeChannelConfig_t *rxFailsafeCha
     for (int i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
         rxFailsafeChannelConfigs[i].mode = (i < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_MODE_AUTO : RX_FAILSAFE_MODE_HOLD;
         rxFailsafeChannelConfigs[i].step = (i == THROTTLE)
-            ? CHANNEL_VALUE_TO_RXFAIL_STEP(RX_MIN_USEC)
-            : CHANNEL_VALUE_TO_RXFAIL_STEP(RX_MID_USEC);
+                                               ? CHANNEL_VALUE_TO_RXFAIL_STEP(RX_MIN_USEC)
+                                               : CHANNEL_VALUE_TO_RXFAIL_STEP(RX_MID_USEC);
     }
 }
 
-void resetAllRxChannelRangeConfigurations(rxChannelRangeConfig_t *rxChannelRangeConfig) {
+void resetAllRxChannelRangeConfigurations(rxChannelRangeConfig_t *rxChannelRangeConfig)
+{
     // set default calibration to full range and 1:1 mapping
     for (int i = 0; i < NON_AUX_CHANNEL_COUNT; i++) {
         rxChannelRangeConfig->min = PWM_RANGE_MIN;
@@ -165,8 +165,8 @@ static bool nullProcessFrame(const rxRuntimeConfig_t *rxRuntimeConfig)
 
 STATIC_UNIT_TESTED bool isPulseValid(uint16_t pulseDuration)
 {
-    return  pulseDuration >= rxConfig()->rx_min_usec &&
-            pulseDuration <= rxConfig()->rx_max_usec;
+    return pulseDuration >= rxConfig()->rx_min_usec &&
+           pulseDuration <= rxConfig()->rx_max_usec;
 }
 
 #ifdef USE_SERIAL_RX
@@ -237,14 +237,14 @@ bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
 
 void rxInit(void)
 {
-    rxRuntimeConfig.rcReadRawFn = nullReadRawRC;
-    rxRuntimeConfig.rcFrameStatusFn = nullFrameStatus;
+    rxRuntimeConfig.rcReadRawFn      = nullReadRawRC;
+    rxRuntimeConfig.rcFrameStatusFn  = nullFrameStatus;
     rxRuntimeConfig.rcProcessFrameFn = nullProcessFrame;
-    rcSampleIndex = 0;
-    needRxSignalMaxDelayUs = DELAY_10_HZ;
+    rcSampleIndex                    = 0;
+    needRxSignalMaxDelayUs           = DELAY_10_HZ;
 
     for (int i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
-        rcData[i] = rxConfig()->midrc;
+        rcData[i]              = rxConfig()->midrc;
         rcInvalidPulsPeriod[i] = millis() + MAX_INVALID_PULS_TIME;
     }
 
@@ -271,7 +271,7 @@ void rxInit(void)
     if (featureIsEnabled(FEATURE_RX_SERIAL)) {
         const bool enabled = serialRxInit(rxConfig(), &rxRuntimeConfig);
         if (!enabled) {
-            rxRuntimeConfig.rcReadRawFn = nullReadRawRC;
+            rxRuntimeConfig.rcReadRawFn     = nullReadRawRC;
             rxRuntimeConfig.rcFrameStatusFn = nullFrameStatus;
         }
     }
@@ -288,7 +288,7 @@ void rxInit(void)
     if (featureIsEnabled(FEATURE_RX_SPI)) {
         const bool enabled = rxSpiInit(rxSpiConfig(), &rxRuntimeConfig);
         if (!enabled) {
-            rxRuntimeConfig.rcReadRawFn = nullReadRawRC;
+            rxRuntimeConfig.rcReadRawFn     = nullReadRawRC;
             rxRuntimeConfig.rcFrameStatusFn = nullFrameStatus;
         }
     }
@@ -305,7 +305,7 @@ void rxInit(void)
         rssiSource = RSSI_SOURCE_ADC;
     } else
 #endif
-    if (rxConfig()->rssi_channel > 0) {
+        if (rxConfig()->rssi_channel > 0) {
         rssiSource = RSSI_SOURCE_RX_CHANNEL;
     }
 
@@ -325,14 +325,14 @@ bool rxAreFlightChannelsValid(void)
 void suspendRxSignal(void)
 {
     suspendRxSignalUntil = micros() + SKIP_RC_ON_SUSPEND_PERIOD;
-    skipRxSamples = SKIP_RC_SAMPLES_ON_RESUME;
+    skipRxSamples        = SKIP_RC_SAMPLES_ON_RESUME;
     failsafeOnRxSuspend(SKIP_RC_ON_SUSPEND_PERIOD);
 }
 
 void resumeRxSignal(void)
 {
     suspendRxSignalUntil = micros();
-    skipRxSamples = SKIP_RC_SAMPLES_ON_RESUME;
+    skipRxSamples        = SKIP_RC_SAMPLES_ON_RESUME;
     failsafeOnRxResume();
 }
 
@@ -340,22 +340,22 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
 {
     UNUSED(currentDeltaTime);
 
-    bool signalReceived = false;
+    bool signalReceived          = false;
     bool useDataDrivenProcessing = true;
 
 #if defined(USE_PWM) || defined(USE_PPM)
     if (featureIsEnabled(FEATURE_RX_PPM)) {
         if (isPPMDataBeingReceived()) {
-            signalReceived = true;
+            signalReceived     = true;
             rxIsInFailsafeMode = false;
             needRxSignalBefore = currentTimeUs + needRxSignalMaxDelayUs;
             resetPPMDataReceivedState();
         }
     } else if (featureIsEnabled(FEATURE_RX_PARALLEL_PWM)) {
         if (isPWMDataBeingReceived()) {
-            signalReceived = true;
-            rxIsInFailsafeMode = false;
-            needRxSignalBefore = currentTimeUs + needRxSignalMaxDelayUs;
+            signalReceived          = true;
+            rxIsInFailsafeMode      = false;
+            needRxSignalBefore      = currentTimeUs + needRxSignalMaxDelayUs;
             useDataDrivenProcessing = false;
         }
     } else
@@ -363,19 +363,19 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
     {
         const uint8_t frameStatus = rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig);
         if (frameStatus & RX_FRAME_COMPLETE) {
-            rxIsInFailsafeMode = (frameStatus & RX_FRAME_FAILSAFE) != 0;
+            rxIsInFailsafeMode  = (frameStatus & RX_FRAME_FAILSAFE) != 0;
             bool rxFrameDropped = (frameStatus & RX_FRAME_DROPPED) != 0;
-            signalReceived = !(rxIsInFailsafeMode || rxFrameDropped);
+            signalReceived      = !(rxIsInFailsafeMode || rxFrameDropped);
             if (signalReceived) {
                 needRxSignalBefore = currentTimeUs + needRxSignalMaxDelayUs;
             }
 
             if (frameStatus & (RX_FRAME_FAILSAFE | RX_FRAME_DROPPED)) {
-            	// No (0%) signal
-            	setRssi(0, RSSI_SOURCE_FRAME_ERRORS);
+                // No (0%) signal
+                setRssi(0, RSSI_SOURCE_FRAME_ERRORS);
             } else {
-            	// Valid (100%) signal
-            	setRssi(RSSI_MAX_VALUE, RSSI_SOURCE_FRAME_ERRORS);
+                // Valid (100%) signal
+                setRssi(RSSI_MAX_VALUE, RSSI_SOURCE_FRAME_ERRORS);
             }
         }
 
@@ -502,9 +502,9 @@ static void detectAndApplySignalLossBehaviour(void)
             rcInvalidPulsPeriod[channel] = currentTimeMs + MAX_INVALID_PULS_TIME;
         } else {
             if (cmp32(currentTimeMs, rcInvalidPulsPeriod[channel]) < 0) {
-                continue;           // skip to next channel to hold channel value MAX_INVALID_PULS_TIME
+                continue; // skip to next channel to hold channel value MAX_INVALID_PULS_TIME
             } else {
-                sample = getRxfailValue(channel);   // after that apply rxfail value
+                sample = getRxfailValue(channel); // after that apply rxfail value
                 if (channel < NON_AUX_CHANNEL_COUNT) {
                     rxFlightChannelsValid = false;
                 }
@@ -541,7 +541,7 @@ bool calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs)
     }
 
     rxDataProcessingRequired = false;
-    rxNextUpdateAtUs = currentTimeUs + DELAY_33_HZ;
+    rxNextUpdateAtUs         = currentTimeUs + DELAY_33_HZ;
 
     // only proceed when no more samples to skip and suspend period is over
     if (skipRxSamples) {
@@ -589,12 +589,12 @@ void setRssi(uint16_t rssiValue, rssiSource_e source)
 
     static uint16_t rssiSamples[RSSI_SAMPLE_COUNT];
     static uint8_t rssiSampleIndex = 0;
-    static unsigned sum = 0;
+    static unsigned sum            = 0;
 
-    sum = sum + rssiValue;
-    sum = sum - rssiSamples[rssiSampleIndex];
+    sum                          = sum + rssiValue;
+    sum                          = sum - rssiSamples[rssiSampleIndex];
     rssiSamples[rssiSampleIndex] = rssiValue;
-    rssiSampleIndex = (rssiSampleIndex + 1) % RSSI_SAMPLE_COUNT;
+    rssiSampleIndex              = (rssiSampleIndex + 1) % RSSI_SAMPLE_COUNT;
 
     int16_t rssiMean = sum / RSSI_SAMPLE_COUNT;
 
@@ -608,7 +608,7 @@ void setRssiMsp(uint8_t newMspRssi)
     }
 
     if (rssiSource == RSSI_SOURCE_MSP) {
-        rssi = ((uint16_t)newMspRssi) << 2;
+        rssi                = ((uint16_t)newMspRssi) << 2;
         lastMspRssiUpdateUs = micros();
     }
 }
@@ -640,7 +640,7 @@ static void updateRSSIADC(timeUs_t currentTimeUs)
     rssiUpdateAt = currentTimeUs + DELAY_50_HZ;
 
     const uint16_t adcRssiSample = adcGetChannel(ADC_RSSI);
-    uint16_t rssiValue = adcRssiSample / RSSI_ADC_DIVISOR;
+    uint16_t rssiValue           = adcRssiSample / RSSI_ADC_DIVISOR;
 
     // RSSI_Invert option
     if (rxConfig()->rssi_invert) {

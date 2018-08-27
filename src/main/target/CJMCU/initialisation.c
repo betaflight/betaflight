@@ -21,14 +21,13 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "platform.h"
 #include "drivers/bus.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
 #include "io/serial.h"
 #include "pg/bus_i2c.h"
 #include "pg/bus_spi.h"
-
+#include "platform.h"
 
 extern void spiPreInit(void); // XXX In fc/init.c
 

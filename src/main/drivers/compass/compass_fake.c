@@ -33,7 +33,6 @@
 #include "compass.h"
 #include "compass_fake.h"
 
-
 static int16_t fakeMagData[XYZ_AXIS_COUNT];
 
 static bool fakeMagInit(magDev_t *mag)
@@ -71,4 +70,3 @@ bool fakeMagDetect(magDev_t *mag)
     return true;
 }
 #endif // USE_FAKE_MAG
-

@@ -22,9 +22,9 @@
 
 // FIXME some of these are flight modes, some of these are general status indicators
 typedef enum {
-    ARMED                       = (1 << 0),
-    WAS_EVER_ARMED              = (1 << 1),
-    WAS_ARMED_WITH_PREARM       = (1 << 2)
+    ARMED                 = (1 << 0),
+    WAS_EVER_ARMED        = (1 << 1),
+    WAS_ARMED_WITH_PREARM = (1 << 2)
 } armingFlag_e;
 
 extern uint8_t armingFlags;
@@ -70,16 +70,16 @@ bool isArmingDisabled(void);
 armingDisableFlags_e getArmingDisableFlags(void);
 
 typedef enum {
-    ANGLE_MODE      = (1 << 0),
-    HORIZON_MODE    = (1 << 1),
-    MAG_MODE        = (1 << 2),
-    BARO_MODE       = (1 << 3),
-    GPS_HOME_MODE   = (1 << 4),
-    GPS_HOLD_MODE   = (1 << 5),
-    HEADFREE_MODE   = (1 << 6),
-//    UNUSED_MODE     = (1 << 7), // old autotune
-    PASSTHRU_MODE   = (1 << 8),
-//    RANGEFINDER_MODE= (1 << 9),
+    ANGLE_MODE    = (1 << 0),
+    HORIZON_MODE  = (1 << 1),
+    MAG_MODE      = (1 << 2),
+    BARO_MODE     = (1 << 3),
+    GPS_HOME_MODE = (1 << 4),
+    GPS_HOLD_MODE = (1 << 5),
+    HEADFREE_MODE = (1 << 6),
+    //    UNUSED_MODE     = (1 << 7), // old autotune
+    PASSTHRU_MODE = (1 << 8),
+    //    RANGEFINDER_MODE= (1 << 9),
     FAILSAFE_MODE   = (1 << 10),
     GPS_RESCUE_MODE = (1 << 11)
 } flightModeFlags_e;
@@ -92,26 +92,27 @@ extern uint16_t flightModeFlags;
 
 // macro to initialize map from boxId_e to log2(flightModeFlags). Keep it in sync with flightModeFlags_e enum.
 // [BOXARM] is left unpopulated
-#define BOXID_TO_FLIGHT_MODE_MAP_INITIALIZER {           \
-   [BOXANGLE]       = LOG2(ANGLE_MODE),                  \
-   [BOXHORIZON]     = LOG2(HORIZON_MODE),                \
-   [BOXMAG]         = LOG2(MAG_MODE),                    \
-   [BOXBARO]        = LOG2(BARO_MODE),                   \
-   [BOXGPSHOME]     = LOG2(GPS_HOME_MODE),               \
-   [BOXGPSHOLD]     = LOG2( GPS_HOLD_MODE),              \
-   [BOXHEADFREE]    = LOG2(HEADFREE_MODE),               \
-   [BOXPASSTHRU]    = LOG2(PASSTHRU_MODE),               \
-   [BOXFAILSAFE]    = LOG2(FAILSAFE_MODE),               \
-   [BOXGPSRESCUE]   = LOG2(GPS_RESCUE_MODE),             \
-}                                                        \
-/**/
+#define BOXID_TO_FLIGHT_MODE_MAP_INITIALIZER    \
+    {                                           \
+        [BOXANGLE]     = LOG2(ANGLE_MODE),      \
+        [BOXHORIZON]   = LOG2(HORIZON_MODE),    \
+        [BOXMAG]       = LOG2(MAG_MODE),        \
+        [BOXBARO]      = LOG2(BARO_MODE),       \
+        [BOXGPSHOME]   = LOG2(GPS_HOME_MODE),   \
+        [BOXGPSHOLD]   = LOG2(GPS_HOLD_MODE),   \
+        [BOXHEADFREE]  = LOG2(HEADFREE_MODE),   \
+        [BOXPASSTHRU]  = LOG2(PASSTHRU_MODE),   \
+        [BOXFAILSAFE]  = LOG2(FAILSAFE_MODE),   \
+        [BOXGPSRESCUE] = LOG2(GPS_RESCUE_MODE), \
+    }                                           \
+    /**/
 
 typedef enum {
-    GPS_FIX_HOME   = (1 << 0),
-    GPS_FIX        = (1 << 1),
-    CALIBRATE_MAG  = (1 << 2),
-    SMALL_ANGLE    = (1 << 3),
-    FIXED_WING     = (1 << 4)                    // set when in flying_wing or airplane mode. currently used by althold selection code
+    GPS_FIX_HOME  = (1 << 0),
+    GPS_FIX       = (1 << 1),
+    CALIBRATE_MAG = (1 << 2),
+    SMALL_ANGLE   = (1 << 3),
+    FIXED_WING    = (1 << 4) // set when in flying_wing or airplane mode. currently used by althold selection code
 } stateFlags_t;
 
 #define DISABLE_STATE(mask) (stateFlags &= ~(mask))

@@ -19,29 +19,29 @@
  */
 
 #include <stdbool.h>
-#include <string.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "platform.h"
 
-#include "drivers/nvic.h"
 #include "dma.h"
+#include "drivers/nvic.h"
 
 /*
  * DMA descriptors.
  */
 static dmaChannelDescriptor_t dmaDescriptors[DMA_LAST_HANDLER] = {
-    DEFINE_DMA_CHANNEL(DMA1, 1,  0),
-    DEFINE_DMA_CHANNEL(DMA1, 2,  4),
-    DEFINE_DMA_CHANNEL(DMA1, 3,  8),
+    DEFINE_DMA_CHANNEL(DMA1, 1, 0),
+    DEFINE_DMA_CHANNEL(DMA1, 2, 4),
+    DEFINE_DMA_CHANNEL(DMA1, 3, 8),
     DEFINE_DMA_CHANNEL(DMA1, 4, 12),
     DEFINE_DMA_CHANNEL(DMA1, 5, 16),
     DEFINE_DMA_CHANNEL(DMA1, 6, 20),
     DEFINE_DMA_CHANNEL(DMA1, 7, 24),
 #if defined(STM32F3) || defined(STM32F10X_CL)
-    DEFINE_DMA_CHANNEL(DMA2, 1,  0),
-    DEFINE_DMA_CHANNEL(DMA2, 2,  4),
-    DEFINE_DMA_CHANNEL(DMA2, 3,  8),
+    DEFINE_DMA_CHANNEL(DMA2, 1, 0),
+    DEFINE_DMA_CHANNEL(DMA2, 2, 4),
+    DEFINE_DMA_CHANNEL(DMA2, 3, 8),
     DEFINE_DMA_CHANNEL(DMA2, 4, 12),
     DEFINE_DMA_CHANNEL(DMA2, 5, 16),
 #endif
@@ -66,7 +66,9 @@ DEFINE_DMA_IRQ_HANDLER(2, 4, DMA2_CH4_HANDLER)
 DEFINE_DMA_IRQ_HANDLER(2, 5, DMA2_CH5_HANDLER)
 #endif
 
-#define RETURN_TCIF_FLAG(s, d, n) if (s == DMA ## d ## _Channel ## n) return DMA ## d ## _FLAG_TC ## n
+#define RETURN_TCIF_FLAG(s, d, n) \
+    if (s == DMA##d##_Channel##n) \
+    return DMA##d##_FLAG_TC##n
 
 uint32_t dmaFlag_IT_TCIF(const DMA_Channel_TypeDef *channel)
 {
@@ -91,7 +93,7 @@ void dmaInit(dmaIdentifier_e identifier, resourceOwner_e owner, uint8_t resource
     const int index = DMA_IDENTIFIER_TO_INDEX(identifier);
 
     RCC_AHBPeriphClockCmd(DMA_RCC(dmaDescriptors[index].dma), ENABLE);
-    dmaDescriptors[index].owner = owner;
+    dmaDescriptors[index].owner         = owner;
     dmaDescriptors[index].resourceIndex = resourceIndex;
 }
 
@@ -103,13 +105,13 @@ void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callbac
     /* TODO: remove this - enforce the init */
     RCC_AHBPeriphClockCmd(DMA_RCC(dmaDescriptors[index].dma), ENABLE);
     dmaDescriptors[index].irqHandlerCallback = callback;
-    dmaDescriptors[index].userParam = userParam;
-    dmaDescriptors[index].completeFlag = dmaFlag_IT_TCIF(dmaDescriptors[index].ref);
+    dmaDescriptors[index].userParam          = userParam;
+    dmaDescriptors[index].completeFlag       = dmaFlag_IT_TCIF(dmaDescriptors[index].ref);
 
-    NVIC_InitStructure.NVIC_IRQChannel = dmaDescriptors[index].irqN;
+    NVIC_InitStructure.NVIC_IRQChannel                   = dmaDescriptors[index].irqN;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(priority);
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(priority);
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority        = NVIC_PRIORITY_SUB(priority);
+    NVIC_InitStructure.NVIC_IRQChannelCmd                = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 }
 
@@ -123,7 +125,7 @@ uint8_t dmaGetResourceIndex(dmaIdentifier_e identifier)
     return dmaDescriptors[DMA_IDENTIFIER_TO_INDEX(identifier)].resourceIndex;
 }
 
-dmaIdentifier_e dmaGetIdentifier(const DMA_Channel_TypeDef* channel)
+dmaIdentifier_e dmaGetIdentifier(const DMA_Channel_TypeDef *channel)
 {
     for (int i = 0; i < DMA_LAST_HANDLER; i++) {
         if (dmaDescriptors[i].ref == channel) {
@@ -133,12 +135,12 @@ dmaIdentifier_e dmaGetIdentifier(const DMA_Channel_TypeDef* channel)
     return 0;
 }
 
-DMA_Channel_TypeDef* dmaGetRefByIdentifier(const dmaIdentifier_e identifier)
+DMA_Channel_TypeDef *dmaGetRefByIdentifier(const dmaIdentifier_e identifier)
 {
     return dmaDescriptors[DMA_IDENTIFIER_TO_INDEX(identifier)].ref;
 }
 
-dmaChannelDescriptor_t* dmaGetDescriptorByIdentifier(const dmaIdentifier_e identifier)
+dmaChannelDescriptor_t *dmaGetDescriptorByIdentifier(const dmaIdentifier_e identifier)
 {
     return &dmaDescriptors[DMA_IDENTIFIER_TO_INDEX(identifier)];
 }

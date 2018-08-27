@@ -18,9 +18,9 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <math.h>
 
 #include "platform.h"
 
@@ -84,24 +84,21 @@ void FAST_CODE_NOINLINE pidAudioUpdate(void)
     uint8_t tone = TONE_MID;
 
     switch (pidAudioMode) {
-    case PID_AUDIO_PIDSUM_X:
-        {
-            const uint32_t pidSumX = MIN(ABS(pidData[FD_ROLL].Sum), PIDSUM_LIMIT);
-            tone = scaleRange(pidSumX, 0, PIDSUM_LIMIT, TONE_MAX, TONE_MIN);
-            break;
-        }
-    case PID_AUDIO_PIDSUM_Y:
-        {
-            const uint32_t pidSumY = MIN(ABS(pidData[FD_PITCH].Sum), PIDSUM_LIMIT);
-            tone = scaleRange(pidSumY, 0, PIDSUM_LIMIT, TONE_MAX, TONE_MIN);
-            break;
-        }
-    case PID_AUDIO_PIDSUM_XY:
-        {
-            const uint32_t pidSumXY = MIN((ABS(pidData[FD_ROLL].Sum) + ABS(pidData[FD_PITCH].Sum)) / 2, PIDSUM_LIMIT);
-            tone = scaleRange(pidSumXY, 0, PIDSUM_LIMIT, TONE_MAX, TONE_MIN);
-            break;
-        }
+    case PID_AUDIO_PIDSUM_X: {
+        const uint32_t pidSumX = MIN(ABS(pidData[FD_ROLL].Sum), PIDSUM_LIMIT);
+        tone                   = scaleRange(pidSumX, 0, PIDSUM_LIMIT, TONE_MAX, TONE_MIN);
+        break;
+    }
+    case PID_AUDIO_PIDSUM_Y: {
+        const uint32_t pidSumY = MIN(ABS(pidData[FD_PITCH].Sum), PIDSUM_LIMIT);
+        tone                   = scaleRange(pidSumY, 0, PIDSUM_LIMIT, TONE_MAX, TONE_MIN);
+        break;
+    }
+    case PID_AUDIO_PIDSUM_XY: {
+        const uint32_t pidSumXY = MIN((ABS(pidData[FD_ROLL].Sum) + ABS(pidData[FD_PITCH].Sum)) / 2, PIDSUM_LIMIT);
+        tone                    = scaleRange(pidSumXY, 0, PIDSUM_LIMIT, TONE_MAX, TONE_MIN);
+        break;
+    }
     default:
         break;
     }

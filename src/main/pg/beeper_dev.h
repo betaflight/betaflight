@@ -22,8 +22,8 @@
 
 #include "drivers/io_types.h"
 
-#include "pg/pg.h"
 #include "drivers/io_types.h"
+#include "pg/pg.h"
 
 typedef struct beeperDevConfig_s {
     ioTag_t ioTag;

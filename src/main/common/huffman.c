@@ -27,17 +27,16 @@
 
 #include "huffman.h"
 
-
 int huffmanEncodeBuf(uint8_t *outBuf, int outBufLen, const uint8_t *inBuf, int inLen, const huffmanTable_t *huffmanTable)
 {
     int ret = 0;
 
     uint8_t *outByte = outBuf;
-    *outByte = 0;
-    uint8_t outBit = 0x80;
+    *outByte         = 0;
+    uint8_t outBit   = 0x80;
 
     for (int ii = 0; ii < inLen; ++ii) {
-        const int huffCodeLen = huffmanTable[*inBuf].codeLen;
+        const int huffCodeLen   = huffmanTable[*inBuf].codeLen;
         const uint16_t huffCode = huffmanTable[*inBuf].code;
         ++inBuf;
         uint16_t testBit = 0x8000;
@@ -71,12 +70,12 @@ int huffmanEncodeBuf(uint8_t *outBuf, int outBufLen, const uint8_t *inBuf, int i
 int huffmanEncodeBufStreaming(huffmanState_t *state, const uint8_t *inBuf, int inLen, const huffmanTable_t *huffmanTable)
 {
     uint8_t *savedOutBytePtr = state->outByte;
-    uint8_t savedOutByte = *savedOutBytePtr;
+    uint8_t savedOutByte     = *savedOutBytePtr;
 
     for (const uint8_t *pos = inBuf, *end = inBuf + inLen; pos < end; ++pos) {
-        const int huffCodeLen = huffmanTable[*pos].codeLen;
+        const int huffCodeLen   = huffmanTable[*pos].codeLen;
         const uint16_t huffCode = huffmanTable[*pos].code;
-        uint16_t testBit = 0x8000;
+        uint16_t testBit        = 0x8000;
 
         for (int jj = 0; jj < huffCodeLen; ++jj) {
             if (huffCode & testBit) {

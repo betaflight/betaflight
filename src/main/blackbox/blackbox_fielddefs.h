@@ -51,45 +51,45 @@ typedef enum FlightLogFieldCondition {
     FLIGHT_LOG_FIELD_CONDITION_NEVER,
 
     FLIGHT_LOG_FIELD_CONDITION_FIRST = FLIGHT_LOG_FIELD_CONDITION_ALWAYS,
-    FLIGHT_LOG_FIELD_CONDITION_LAST = FLIGHT_LOG_FIELD_CONDITION_NEVER
+    FLIGHT_LOG_FIELD_CONDITION_LAST  = FLIGHT_LOG_FIELD_CONDITION_NEVER
 } FlightLogFieldCondition;
 
 typedef enum FlightLogFieldPredictor {
     //No prediction:
-    FLIGHT_LOG_FIELD_PREDICTOR_0              = 0,
+    FLIGHT_LOG_FIELD_PREDICTOR_0 = 0,
 
     //Predict that the field is the same as last frame:
-    FLIGHT_LOG_FIELD_PREDICTOR_PREVIOUS       = 1,
+    FLIGHT_LOG_FIELD_PREDICTOR_PREVIOUS = 1,
 
     //Predict that the slope between this field and the previous item is the same as that between the past two history items:
-    FLIGHT_LOG_FIELD_PREDICTOR_STRAIGHT_LINE  = 2,
+    FLIGHT_LOG_FIELD_PREDICTOR_STRAIGHT_LINE = 2,
 
     //Predict that this field is the same as the average of the last two history items:
-    FLIGHT_LOG_FIELD_PREDICTOR_AVERAGE_2      = 3,
+    FLIGHT_LOG_FIELD_PREDICTOR_AVERAGE_2 = 3,
 
     //Predict that this field is minthrottle
-    FLIGHT_LOG_FIELD_PREDICTOR_MINTHROTTLE    = 4,
+    FLIGHT_LOG_FIELD_PREDICTOR_MINTHROTTLE = 4,
 
     //Predict that this field is the same as motor 0
-    FLIGHT_LOG_FIELD_PREDICTOR_MOTOR_0        = 5,
+    FLIGHT_LOG_FIELD_PREDICTOR_MOTOR_0 = 5,
 
     //This field always increments
-    FLIGHT_LOG_FIELD_PREDICTOR_INC            = 6,
+    FLIGHT_LOG_FIELD_PREDICTOR_INC = 6,
 
     //Predict this GPS co-ordinate is the GPS home co-ordinate (or no prediction if that coordinate is not set)
-    FLIGHT_LOG_FIELD_PREDICTOR_HOME_COORD     = 7,
+    FLIGHT_LOG_FIELD_PREDICTOR_HOME_COORD = 7,
 
     //Predict 1500
-    FLIGHT_LOG_FIELD_PREDICTOR_1500           = 8,
+    FLIGHT_LOG_FIELD_PREDICTOR_1500 = 8,
 
     //Predict vbatref, the reference ADC level stored in the header
-    FLIGHT_LOG_FIELD_PREDICTOR_VBATREF        = 9,
+    FLIGHT_LOG_FIELD_PREDICTOR_VBATREF = 9,
 
     //Predict the last time value written in the main stream
     FLIGHT_LOG_FIELD_PREDICTOR_LAST_MAIN_FRAME_TIME = 10,
 
     //Predict that this field is the minimum motor output
-    FLIGHT_LOG_FIELD_PREDICTOR_MINMOTOR       = 11
+    FLIGHT_LOG_FIELD_PREDICTOR_MINMOTOR = 11
 
 } FlightLogFieldPredictor;
 

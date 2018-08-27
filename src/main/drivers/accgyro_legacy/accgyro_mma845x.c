@@ -23,12 +23,12 @@
 
 #include "platform.h"
 
-#include "drivers/io.h"
 #include "drivers/bus_i2c.h"
+#include "drivers/io.h"
 
-#include "drivers/sensor.h"
-#include "drivers/accgyro/accgyro.h"
 #include "accgyro_mma845x.h"
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/sensor.h"
 
 #ifndef MMA8452_I2C_INSTANCE
 #define MMA8452_I2C_INSTANCE I2CDEV_1
@@ -37,49 +37,49 @@
 // MMA8452QT, Standard address 0x1C
 // ACC_INT2 routed to PA5
 
-#define MMA8452_ADDRESS     0x1C
+#define MMA8452_ADDRESS 0x1C
 
-#define MMA8452_DEVICE_SIGNATURE    0x2A
-#define MMA8451_DEVICE_SIGNATURE    0x1A
+#define MMA8452_DEVICE_SIGNATURE 0x2A
+#define MMA8451_DEVICE_SIGNATURE 0x1A
 
-#define MMA8452_STATUS              0x00
-#define MMA8452_OUT_X_MSB           0x01
-#define MMA8452_WHO_AM_I            0x0D
-#define MMA8452_XYZ_DATA_CFG        0x0E
-#define MMA8452_HP_FILTER_CUTOFF    0x0F
-#define MMA8452_CTRL_REG1           0x2A
-#define MMA8452_CTRL_REG2           0x2B
-#define MMA8452_CTRL_REG3           0x2C
-#define MMA8452_CTRL_REG4           0x2D
-#define MMA8452_CTRL_REG5           0x2E
+#define MMA8452_STATUS 0x00
+#define MMA8452_OUT_X_MSB 0x01
+#define MMA8452_WHO_AM_I 0x0D
+#define MMA8452_XYZ_DATA_CFG 0x0E
+#define MMA8452_HP_FILTER_CUTOFF 0x0F
+#define MMA8452_CTRL_REG1 0x2A
+#define MMA8452_CTRL_REG2 0x2B
+#define MMA8452_CTRL_REG3 0x2C
+#define MMA8452_CTRL_REG4 0x2D
+#define MMA8452_CTRL_REG5 0x2E
 
-#define MMA8452_FS_RANGE_8G         0x02
-#define MMA8452_FS_RANGE_4G         0x01
-#define MMA8452_FS_RANGE_2G         0x00
+#define MMA8452_FS_RANGE_8G 0x02
+#define MMA8452_FS_RANGE_4G 0x01
+#define MMA8452_FS_RANGE_2G 0x00
 
-#define MMA8452_HPF_CUTOFF_LV1      0x00
-#define MMA8452_HPF_CUTOFF_LV2      0x01
-#define MMA8452_HPF_CUTOFF_LV3      0x02
-#define MMA8452_HPF_CUTOFF_LV4      0x03
+#define MMA8452_HPF_CUTOFF_LV1 0x00
+#define MMA8452_HPF_CUTOFF_LV2 0x01
+#define MMA8452_HPF_CUTOFF_LV3 0x02
+#define MMA8452_HPF_CUTOFF_LV4 0x03
 
-#define MMA8452_CTRL_REG2_B7_ST     0x80
-#define MMA8452_CTRL_REG2_B6_RST    0x40
+#define MMA8452_CTRL_REG2_B7_ST 0x80
+#define MMA8452_CTRL_REG2_B6_RST 0x40
 #define MMA8452_CTRL_REG2_B4_SMODS1 0x10
 #define MMA8452_CTRL_REG2_B3_SMODS0 0x08
-#define MMA8452_CTRL_REG2_B2_SLPE   0x04
-#define MMA8452_CTRL_REG2_B1_MODS1  0x02
-#define MMA8452_CTRL_REG2_B0_MODS0  0x01
+#define MMA8452_CTRL_REG2_B2_SLPE 0x04
+#define MMA8452_CTRL_REG2_B1_MODS1 0x02
+#define MMA8452_CTRL_REG2_B0_MODS0 0x01
 
-#define MMA8452_CTRL_REG2_MODS_LP   0x03
-#define MMA8452_CTRL_REG2_MODS_HR   0x02
+#define MMA8452_CTRL_REG2_MODS_LP 0x03
+#define MMA8452_CTRL_REG2_MODS_HR 0x02
 #define MMA8452_CTRL_REG2_MODS_LNLP 0x01
-#define MMA8452_CTRL_REG2_MODS_NOR  0x00
+#define MMA8452_CTRL_REG2_MODS_NOR 0x00
 
-#define MMA8452_CTRL_REG3_IPOL          0x02
-#define MMA8452_CTRL_REG4_INT_EN_DRDY   0x01
+#define MMA8452_CTRL_REG3_IPOL 0x02
+#define MMA8452_CTRL_REG4_INT_EN_DRDY 0x01
 
-#define MMA8452_CTRL_REG1_LNOISE        0x04
-#define MMA8452_CTRL_REG1_ACTIVE        0x01
+#define MMA8452_CTRL_REG1_LNOISE 0x04
+#define MMA8452_CTRL_REG1_ACTIVE 0x01
 
 static uint8_t device_id;
 
@@ -91,9 +91,9 @@ static inline void mma8451ConfigureInterrupt(void)
     IOConfigGPIO(IOGetByTag(IO_TAG(MMA8451_INT_PIN)), IOCFG_IN_FLOATING);
 #endif
 
-    i2cWrite(MPU_I2C_INSTANCE, MMA8452_ADDRESS, MMA8452_CTRL_REG3, MMA8452_CTRL_REG3_IPOL); // Interrupt polarity (active HIGH)
+    i2cWrite(MPU_I2C_INSTANCE, MMA8452_ADDRESS, MMA8452_CTRL_REG3, MMA8452_CTRL_REG3_IPOL);        // Interrupt polarity (active HIGH)
     i2cWrite(MPU_I2C_INSTANCE, MMA8452_ADDRESS, MMA8452_CTRL_REG4, MMA8452_CTRL_REG4_INT_EN_DRDY); // Enable DRDY interrupt (unused by this driver)
-    i2cWrite(MPU_I2C_INSTANCE, MMA8452_ADDRESS, MMA8452_CTRL_REG5, 0); // DRDY routed to INT2
+    i2cWrite(MPU_I2C_INSTANCE, MMA8452_ADDRESS, MMA8452_CTRL_REG5, 0);                             // DRDY routed to INT2
 }
 
 static void mma8452Init(accDev_t *acc)
@@ -129,13 +129,13 @@ static bool mma8452Read(accDev_t *acc)
 bool mma8452Detect(accDev_t *acc)
 {
     uint8_t sig = 0;
-    bool ack = i2cRead(MPU_I2C_INSTANCE, MMA8452_ADDRESS, MMA8452_WHO_AM_I, 1, &sig);
+    bool ack    = i2cRead(MPU_I2C_INSTANCE, MMA8452_ADDRESS, MMA8452_WHO_AM_I, 1, &sig);
 
     if (!ack || (sig != MMA8452_DEVICE_SIGNATURE && sig != MMA8451_DEVICE_SIGNATURE))
         return false;
 
     acc->initFn = mma8452Init;
     acc->readFn = mma8452Read;
-    device_id = sig;
+    device_id   = sig;
     return true;
 }

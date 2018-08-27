@@ -20,8 +20,8 @@
 
 #include <stdint.h>
 
-#include "sdcard_standard.h"
 #include "common/maths.h"
+#include "sdcard_standard.h"
 
 /**
  * Read a bitfield from an array of bits (the bit at index 0 being the most-significant bit of the first byte in
@@ -29,7 +29,7 @@
  */
 uint32_t readBitfield(uint8_t *buffer, unsigned bitIndex, unsigned bitLen)
 {
-    uint32_t result = 0;
+    uint32_t result          = 0;
     unsigned bitInByteOffset = bitIndex % 8;
     uint8_t bufferByte;
 

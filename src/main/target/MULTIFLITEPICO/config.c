@@ -30,8 +30,8 @@
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
-#include "fc/rc_modes.h"
 #include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
 
 #include "flight/failsafe.h"
 #include "flight/mixer.h"
@@ -50,20 +50,20 @@
 // alternative defaults settings for MULTIFLITEPICO targets
 void targetConfiguration(void)
 {
-    compassConfigMutable()->mag_hardware = MAG_NONE;            // disabled by default
+    compassConfigMutable()->mag_hardware = MAG_NONE; // disabled by default
 
-    voltageSensorADCConfigMutable(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale = VBAT_SCALE;
-    voltageSensorADCConfigMutable(VOLTAGE_SENSOR_ADC_VBAT)->vbatresdivval = 15;
+    voltageSensorADCConfigMutable(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale            = VBAT_SCALE;
+    voltageSensorADCConfigMutable(VOLTAGE_SENSOR_ADC_VBAT)->vbatresdivval        = 15;
     voltageSensorADCConfigMutable(VOLTAGE_SENSOR_ADC_VBAT)->vbatresdivmultiplier = 4;
-    batteryConfigMutable()->vbatmaxcellvoltage = 44;
-    batteryConfigMutable()->vbatmincellvoltage = 32;
-    batteryConfigMutable()->vbatwarningcellvoltage = 33;
+    batteryConfigMutable()->vbatmaxcellvoltage                                   = 44;
+    batteryConfigMutable()->vbatmincellvoltage                                   = 32;
+    batteryConfigMutable()->vbatwarningcellvoltage                               = 33;
 
-    rxConfigMutable()->spektrum_sat_bind = 5;
+    rxConfigMutable()->spektrum_sat_bind           = 5;
     rxConfigMutable()->spektrum_sat_bind_autoreset = 1;
 
     rcControlsConfigMutable()->yaw_deadband = 2;
-    rcControlsConfigMutable()->deadband = 2;
+    rcControlsConfigMutable()->deadband     = 2;
 
     modeActivationConditionsMutable(0)->modeId          = BOXANGLE;
     modeActivationConditionsMutable(0)->auxChannelIndex = AUX1 - NON_AUX_CHANNEL_COUNT;
@@ -74,20 +74,20 @@ void targetConfiguration(void)
     modeActivationConditionsMutable(1)->range.startStep = CHANNEL_VALUE_TO_STEP(1425);
     modeActivationConditionsMutable(1)->range.endStep   = CHANNEL_VALUE_TO_STEP(1575);
 
-    failsafeConfigMutable()->failsafe_delay = 2;
+    failsafeConfigMutable()->failsafe_delay     = 2;
     failsafeConfigMutable()->failsafe_off_delay = 0;
 
     motorConfigMutable()->dev.motorPwmRate = 17000;
 
-    gyroConfigMutable()->gyro_sync_denom = 4;
+    gyroConfigMutable()->gyro_sync_denom  = 4;
     pidConfigMutable()->pid_process_denom = 1;
 
     for (uint8_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
         pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
 
-        pidProfile->pid[PID_ROLL].P = 70;
-        pidProfile->pid[PID_ROLL].I = 62;
-        pidProfile->pid[PID_ROLL].D = 19;
+        pidProfile->pid[PID_ROLL].P  = 70;
+        pidProfile->pid[PID_ROLL].I  = 62;
+        pidProfile->pid[PID_ROLL].D  = 19;
         pidProfile->pid[PID_PITCH].P = 70;
         pidProfile->pid[PID_PITCH].I = 62;
         pidProfile->pid[PID_PITCH].D = 19;
@@ -97,7 +97,7 @@ void targetConfiguration(void)
     for (uint8_t rateProfileIndex = 0; rateProfileIndex < CONTROL_RATE_PROFILE_COUNT; rateProfileIndex++) {
         controlRateConfig_t *controlRateConfig = controlRateProfilesMutable(rateProfileIndex);
 
-        controlRateConfig->rcRates[FD_ROLL] = 70;
+        controlRateConfig->rcRates[FD_ROLL]  = 70;
         controlRateConfig->rcRates[FD_PITCH] = 70;
     }
 }

@@ -43,13 +43,13 @@
 
 #include "io/serial.h"
 
-#include "rx/rx.h"
 #include "rx/crsf.h"
+#include "rx/rx.h"
 
 #include "telemetry/crsf.h"
 
-#define CRSF_TIME_NEEDED_PER_FRAME_US   1100 // 700 ms + 400 ms for potential ad-hoc request
-#define CRSF_TIME_BETWEEN_FRAMES_US     6667 // At fastest, frames are sent by the transmitter every 6.667 milliseconds, 150 Hz
+#define CRSF_TIME_NEEDED_PER_FRAME_US 1100 // 700 ms + 400 ms for potential ad-hoc request
+#define CRSF_TIME_BETWEEN_FRAMES_US 6667   // At fastest, frames are sent by the transmitter every 6.667 milliseconds, 150 Hz
 
 #define CRSF_DIGITAL_CHANNEL_MIN 172
 #define CRSF_DIGITAL_CHANNEL_MAX 1811
@@ -110,7 +110,7 @@ struct crsfPayloadRcChannelsPacked_s {
     unsigned int chan13 : 11;
     unsigned int chan14 : 11;
     unsigned int chan15 : 11;
-} __attribute__ ((__packed__));
+} __attribute__((__packed__));
 
 typedef struct crsfPayloadRcChannelsPacked_s crsfPayloadRcChannelsPacked_t;
 
@@ -130,7 +130,7 @@ STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c, void *data)
     UNUSED(data);
 
     static uint8_t crsfFramePosition = 0;
-    const uint32_t currentTimeUs = micros();
+    const uint32_t currentTimeUs     = micros();
 
 #ifdef DEBUG_CRSF_PACKETS
     debug[2] = currentTimeUs - crsfFrameStartAtUs;
@@ -151,36 +151,35 @@ STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c, void *data)
 
     if (crsfFramePosition < fullFrameLength) {
         crsfFrame.bytes[crsfFramePosition++] = (uint8_t)c;
-        crsfFrameDone = crsfFramePosition < fullFrameLength ? false : true;
+        crsfFrameDone                        = crsfFramePosition < fullFrameLength ? false : true;
         if (crsfFrameDone) {
             crsfFramePosition = 0;
             if (crsfFrame.frame.type != CRSF_FRAMETYPE_RC_CHANNELS_PACKED) {
                 const uint8_t crc = crsfFrameCRC();
                 if (crc == crsfFrame.bytes[fullFrameLength - 1]) {
-                    switch (crsfFrame.frame.type)
-                    {
+                    switch (crsfFrame.frame.type) {
 #if defined(USE_MSP_OVER_TELEMETRY)
-                        case CRSF_FRAMETYPE_MSP_REQ:
-                        case CRSF_FRAMETYPE_MSP_WRITE: {
-                            uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + CRSF_FRAME_ORIGIN_DEST_SIZE;
-                            if (bufferCrsfMspFrame(frameStart, CRSF_FRAME_RX_MSP_FRAME_SIZE)) {
-                                crsfScheduleMspResponse();
-                            }
-                            break;
+                    case CRSF_FRAMETYPE_MSP_REQ:
+                    case CRSF_FRAMETYPE_MSP_WRITE: {
+                        uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + CRSF_FRAME_ORIGIN_DEST_SIZE;
+                        if (bufferCrsfMspFrame(frameStart, CRSF_FRAME_RX_MSP_FRAME_SIZE)) {
+                            crsfScheduleMspResponse();
                         }
+                        break;
+                    }
 #endif
 #if defined(USE_CRSF_CMS_TELEMETRY)
-                        case CRSF_FRAMETYPE_DEVICE_PING:
-                            crsfScheduleDeviceInfoResponse();
-                            break;
-                        case CRSF_FRAMETYPE_DISPLAYPORT_CMD: {
-                            uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + CRSF_FRAME_ORIGIN_DEST_SIZE;
-                            crsfProcessDisplayPortCmd(frameStart);
-                            break;
-                        }
+                    case CRSF_FRAMETYPE_DEVICE_PING:
+                        crsfScheduleDeviceInfoResponse();
+                        break;
+                    case CRSF_FRAMETYPE_DISPLAYPORT_CMD: {
+                        uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + CRSF_FRAME_ORIGIN_DEST_SIZE;
+                        crsfProcessDisplayPortCmd(frameStart);
+                        break;
+                    }
 #endif
-                        default:
-                            break;
+                    default:
+                        break;
                     }
                 }
             }
@@ -201,23 +200,23 @@ STATIC_UNIT_TESTED uint8_t crsfFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
                 return RX_FRAME_PENDING;
             }
             // unpack the RC channels
-            const crsfPayloadRcChannelsPacked_t* const rcChannels = (crsfPayloadRcChannelsPacked_t*)&crsfFrame.frame.payload;
-            crsfChannelData[0] = rcChannels->chan0;
-            crsfChannelData[1] = rcChannels->chan1;
-            crsfChannelData[2] = rcChannels->chan2;
-            crsfChannelData[3] = rcChannels->chan3;
-            crsfChannelData[4] = rcChannels->chan4;
-            crsfChannelData[5] = rcChannels->chan5;
-            crsfChannelData[6] = rcChannels->chan6;
-            crsfChannelData[7] = rcChannels->chan7;
-            crsfChannelData[8] = rcChannels->chan8;
-            crsfChannelData[9] = rcChannels->chan9;
-            crsfChannelData[10] = rcChannels->chan10;
-            crsfChannelData[11] = rcChannels->chan11;
-            crsfChannelData[12] = rcChannels->chan12;
-            crsfChannelData[13] = rcChannels->chan13;
-            crsfChannelData[14] = rcChannels->chan14;
-            crsfChannelData[15] = rcChannels->chan15;
+            const crsfPayloadRcChannelsPacked_t *const rcChannels = (crsfPayloadRcChannelsPacked_t *)&crsfFrame.frame.payload;
+            crsfChannelData[0]                                    = rcChannels->chan0;
+            crsfChannelData[1]                                    = rcChannels->chan1;
+            crsfChannelData[2]                                    = rcChannels->chan2;
+            crsfChannelData[3]                                    = rcChannels->chan3;
+            crsfChannelData[4]                                    = rcChannels->chan4;
+            crsfChannelData[5]                                    = rcChannels->chan5;
+            crsfChannelData[6]                                    = rcChannels->chan6;
+            crsfChannelData[7]                                    = rcChannels->chan7;
+            crsfChannelData[8]                                    = rcChannels->chan8;
+            crsfChannelData[9]                                    = rcChannels->chan9;
+            crsfChannelData[10]                                   = rcChannels->chan10;
+            crsfChannelData[11]                                   = rcChannels->chan11;
+            crsfChannelData[12]                                   = rcChannels->chan12;
+            crsfChannelData[13]                                   = rcChannels->chan13;
+            crsfChannelData[14]                                   = rcChannels->chan14;
+            crsfChannelData[15]                                   = rcChannels->chan15;
             return RX_FRAME_COMPLETE;
         }
     }
@@ -260,10 +259,10 @@ bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
         crsfChannelData[ii] = (16 * rxConfig->midrc) / 10 - 1408;
     }
 
-    rxRuntimeConfig->channelCount = CRSF_MAX_CHANNEL;
+    rxRuntimeConfig->channelCount  = CRSF_MAX_CHANNEL;
     rxRuntimeConfig->rxRefreshRate = CRSF_TIME_BETWEEN_FRAMES_US; //!!TODO this needs checking
 
-    rxRuntimeConfig->rcReadRawFn = crsfReadRawRC;
+    rxRuntimeConfig->rcReadRawFn     = crsfReadRawRC;
     rxRuntimeConfig->rcFrameStatusFn = crsfFrameStatus;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
@@ -272,13 +271,12 @@ bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     }
 
     serialPort = openSerialPort(portConfig->identifier,
-        FUNCTION_RX_SERIAL,
-        crsfDataReceive,
-        NULL,
-        CRSF_BAUDRATE,
-        CRSF_PORT_MODE,
-        CRSF_PORT_OPTIONS | (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0)
-        );
+                                FUNCTION_RX_SERIAL,
+                                crsfDataReceive,
+                                NULL,
+                                CRSF_BAUDRATE,
+                                CRSF_PORT_MODE,
+                                CRSF_PORT_OPTIONS | (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0));
 
     return serialPort != NULL;
 }

@@ -22,7 +22,7 @@
 
 #include "drivers/bus.h"
 
-#define mpu9250_CONFIG                      0x1A
+#define mpu9250_CONFIG 0x1A
 
 /* We should probably use these. :)
 #define BITS_DLPF_CFG_256HZ         0x00
@@ -35,9 +35,9 @@
 #define BITS_DLPF_CFG_2100HZ_NOLPF  0x07
 */
 
-#define GYRO_SCALE_FACTOR  0.00053292f  // (4/131) * pi/180   (32.75 LSB = 1 DPS)
+#define GYRO_SCALE_FACTOR 0.00053292f // (4/131) * pi/180   (32.75 LSB = 1 DPS)
 
-#define MPU9250_BIT_RESET                   (0x80)
+#define MPU9250_BIT_RESET (0x80)
 
 // RF = Register Flag
 #define MPU_RF_DATA_RDY_EN (1 << 0)

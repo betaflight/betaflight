@@ -20,7 +20,7 @@
 #include <string.h>
 
 #include "platform.h"
-#if defined (USE_HOTT_TEXTMODE) && defined (USE_CMS)
+#if defined(USE_HOTT_TEXTMODE) && defined(USE_CMS)
 
 // Fixme:
 // Let the CMS believe we have a bigger display to avoid empty rows and columns
@@ -28,8 +28,8 @@
 #define ROW_CORRECTION 1
 #define COL_CORRECTION 2
 
-#include "common/utils.h"
 #include "cms/cms.h"
+#include "common/utils.h"
 #include "telemetry/hott.h"
 
 displayPort_t hottDisplayPort;
@@ -49,9 +49,8 @@ static int hottWriteChar(displayPort_t *displayPort, uint8_t col, uint8_t row, u
 {
     UNUSED(displayPort);
 
-    if (row < ROW_CORRECTION || row >= HOTT_TEXTMODE_DISPLAY_ROWS + ROW_CORRECTION
-        || col < COL_CORRECTION || col >= HOTT_TEXTMODE_DISPLAY_COLUMNS + COL_CORRECTION) {
-       return 0;
+    if (row < ROW_CORRECTION || row >= HOTT_TEXTMODE_DISPLAY_ROWS + ROW_CORRECTION || col < COL_CORRECTION || col >= HOTT_TEXTMODE_DISPLAY_COLUMNS + COL_CORRECTION) {
+        return 0;
     }
     row -= ROW_CORRECTION;
     col -= COL_CORRECTION;
@@ -63,7 +62,7 @@ static int hottWriteChar(displayPort_t *displayPort, uint8_t col, uint8_t row, u
 static int hottWriteString(displayPort_t *displayPort, uint8_t col, uint8_t row, const char *s)
 {
     while (*s) {
-        hottWriteChar(displayPort,  col++, row, *(s++));
+        hottWriteChar(displayPort, col++, row, *(s++));
     }
     return 0;
 }
@@ -71,7 +70,7 @@ static int hottWriteString(displayPort_t *displayPort, uint8_t col, uint8_t row,
 static int hottClearScreen(displayPort_t *displayPort)
 {
     for (int row = 0; row < displayPort->rows; row++) {
-        for (int col= 0; col < displayPort->cols; col++) {
+        for (int col = 0; col < displayPort->cols; col++) {
             hottWriteChar(displayPort, col, row, ' ');
         }
     }
@@ -87,7 +86,7 @@ static bool hottIsTransferInProgress(const displayPort_t *displayPort)
 static int hottHeartbeat(displayPort_t *displayPort)
 {
     if (!hottTextmodeIsAlive()) {
-        cmsMenuExit(displayPort, (void*)CMS_EXIT_SAVE);
+        cmsMenuExit(displayPort, (void *)CMS_EXIT_SAVE);
     }
 
     return 0;
@@ -119,18 +118,17 @@ static int hottRelease(displayPort_t *displayPort)
 }
 
 static const displayPortVTable_t hottVTable = {
-    .grab = hottGrab,
-    .release = hottRelease,
-    .clearScreen = hottClearScreen,
-    .drawScreen = hottDrawScreen,
-    .screenSize = hottScreenSize,
-    .writeString = hottWriteString,
-    .writeChar = hottWriteChar,
+    .grab                 = hottGrab,
+    .release              = hottRelease,
+    .clearScreen          = hottClearScreen,
+    .drawScreen           = hottDrawScreen,
+    .screenSize           = hottScreenSize,
+    .writeString          = hottWriteString,
+    .writeChar            = hottWriteChar,
     .isTransferInProgress = hottIsTransferInProgress,
-    .heartbeat = hottHeartbeat,
-    .resync = hottResync,
-    .txBytesFree = hottTxBytesFree
-};
+    .heartbeat            = hottHeartbeat,
+    .resync               = hottResync,
+    .txBytesFree          = hottTxBytesFree};
 
 displayPort_t *displayPortHottInit()
 {
@@ -157,31 +155,31 @@ void hottCmsOpen()
 void hottSetCmsKey(uint8_t hottKey, bool keepCmsOpen)
 {
     switch (hottKey) {
-        case HOTTV4_BUTTON_DEC:
-            cmsSetExternKey(CMS_KEY_UP);
-            break;
-        case HOTTV4_BUTTON_INC:
-            cmsSetExternKey(CMS_KEY_DOWN);
-            break;
-        case HOTTV4_BUTTON_SET:
-            if (cmsInMenu) {
-                cmsMenuExit(pCurrentDisplay, (void*)CMS_EXIT_SAVE);
-            }
-            cmsSetExternKey(CMS_KEY_NONE);
-            break;
-        case HOTTV4_BUTTON_NEXT:
-            cmsSetExternKey(CMS_KEY_RIGHT);
-            break;
-        case HOTTV4_BUTTON_PREV:
-            cmsSetExternKey(CMS_KEY_LEFT);
-            if (keepCmsOpen) { // Make sure CMS is open until textmode is closed.
-                cmsMenuOpen();
-            }
-            break;
-         default:
-            cmsSetExternKey(CMS_KEY_NONE);
-            break;
+    case HOTTV4_BUTTON_DEC:
+        cmsSetExternKey(CMS_KEY_UP);
+        break;
+    case HOTTV4_BUTTON_INC:
+        cmsSetExternKey(CMS_KEY_DOWN);
+        break;
+    case HOTTV4_BUTTON_SET:
+        if (cmsInMenu) {
+            cmsMenuExit(pCurrentDisplay, (void *)CMS_EXIT_SAVE);
         }
+        cmsSetExternKey(CMS_KEY_NONE);
+        break;
+    case HOTTV4_BUTTON_NEXT:
+        cmsSetExternKey(CMS_KEY_RIGHT);
+        break;
+    case HOTTV4_BUTTON_PREV:
+        cmsSetExternKey(CMS_KEY_LEFT);
+        if (keepCmsOpen) { // Make sure CMS is open until textmode is closed.
+            cmsMenuOpen();
+        }
+        break;
+    default:
+        cmsSetExternKey(CMS_KEY_NONE);
+        break;
+    }
 }
 
 #endif

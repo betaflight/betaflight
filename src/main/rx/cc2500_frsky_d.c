@@ -39,8 +39,8 @@
 #include "config/feature.h"
 
 #include "drivers/adc.h"
-#include "drivers/rx/rx_cc2500.h"
 #include "drivers/io.h"
+#include "drivers/rx/rx_cc2500.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
 
@@ -69,9 +69,9 @@ static uint8_t serialBuffer[MAX_SERIAL_BYTES]; // buffer for telemetry serial da
 
 static uint8_t appendFrSkyHubData(uint8_t *buf)
 {
-    static uint8_t telemetryBytesSent = 0;
+    static uint8_t telemetryBytesSent         = 0;
     static uint8_t telemetryBytesAcknowledged = 0;
-    static uint8_t telemetryIdExpected = 0;
+    static uint8_t telemetryIdExpected        = 0;
 
     if (telemetryId == telemetryIdExpected) {
         telemetryBytesAcknowledged = telemetryBytesSent;
@@ -93,7 +93,7 @@ static uint8_t appendFrSkyHubData(uint8_t *buf)
 
             break;
         }
-        buf[i] = serialBuffer[telemetryBytesSent];
+        buf[i]             = serialBuffer[telemetryBytesSent];
         telemetryBytesSent = (telemetryBytesSent + 1) & (MAX_SERIAL_BYTES - 1);
         index++;
     }
@@ -117,19 +117,19 @@ static void buildTelemetryFrame(uint8_t *packet)
         a1Value = (2 * getBatteryVoltage()) & 0xff;
     }
     const uint8_t a2Value = (adcGetChannel(ADC_RSSI)) >> 4;
-    telemetryId = packet[4];
-    frame[0] = 0x11; // length
-    frame[1] = rxFrSkySpiConfig()->bindTxId[0];
-    frame[2] = rxFrSkySpiConfig()->bindTxId[1];
-    frame[3] = a1Value;
-    frame[4] = a2Value;
-    frame[5] = (uint8_t)rssiDbm;
-    uint8_t bytesUsed = 0;
+    telemetryId           = packet[4];
+    frame[0]              = 0x11; // length
+    frame[1]              = rxFrSkySpiConfig()->bindTxId[0];
+    frame[2]              = rxFrSkySpiConfig()->bindTxId[1];
+    frame[3]              = a1Value;
+    frame[4]              = a2Value;
+    frame[5]              = (uint8_t)rssiDbm;
+    uint8_t bytesUsed     = 0;
 #if defined(USE_TELEMETRY_FRSKY_HUB)
     if (telemetryEnabled) {
         bytesUsed = appendFrSkyHubData(&frame[8]);
     }
- #endif
+#endif
     frame[6] = bytesUsed;
     frame[7] = telemetryId;
 }
@@ -137,7 +137,8 @@ static void buildTelemetryFrame(uint8_t *packet)
 
 #define FRSKY_D_CHANNEL_SCALING (2.0f / 3)
 
-static void decodeChannelPair(uint16_t *channels, const uint8_t *packet, const uint8_t highNibbleOffset) {
+static void decodeChannelPair(uint16_t *channels, const uint8_t *packet, const uint8_t highNibbleOffset)
+{
     channels[0] = FRSKY_D_CHANNEL_SCALING * (uint16_t)((packet[highNibbleOffset] & 0xf) << 8 | packet[0]);
     channels[1] = FRSKY_D_CHANNEL_SCALING * (uint16_t)((packet[highNibbleOffset] & 0xf0) << 4 | packet[1]);
 }
@@ -171,7 +172,7 @@ void frSkyDSetRcData(uint16_t *rcData, const uint8_t *packet)
     }
 }
 
-rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const protocolState)
+rx_spi_received_e frSkyDHandlePacket(uint8_t *const packet, uint8_t *const protocolState)
 {
     static timeUs_t lastPacketReceivedTime = 0;
     static timeUs_t telemetryTimeUs;
@@ -193,12 +194,12 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
         break;
     case STATE_UPDATE:
         lastPacketReceivedTime = currentPacketReceivedTime;
-        *protocolState = STATE_DATA;
+        *protocolState         = STATE_DATA;
 
         if (checkBindRequested(false)) {
             lastPacketReceivedTime = 0;
-            timeoutUs = 50;
-            missingPackets = 0;
+            timeoutUs              = 50;
+            missingPackets         = 0;
 
             *protocolState = STATE_INIT;
 
@@ -213,7 +214,7 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
                 cc2500ReadFifo(packet, 20);
                 if (packet[19] & 0x80) {
                     missingPackets = 0;
-                    timeoutUs = 1;
+                    timeoutUs      = 1;
                     if (packet[0] == 0x11) {
                         if ((packet[1] == rxFrSkySpiConfig()->bindTxId[0]) &&
                             (packet[2] == rxFrSkySpiConfig()->bindTxId[1])) {
@@ -231,7 +232,7 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
                                 cc2500Strobe(CC2500_SRX);
                                 *protocolState = STATE_UPDATE;
                             }
-                            ret = RX_SPI_RECEIVED_DATA;
+                            ret                    = RX_SPI_RECEIVED_DATA;
                             lastPacketReceivedTime = currentPacketReceivedTime;
                         }
                     }
@@ -289,8 +290,8 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
 #endif
             cc2500Strobe(CC2500_SIDLE);
             cc2500WriteFifo(frame, frame[0] + 1);
-            *protocolState = STATE_DATA;
-            ret = RX_SPI_RECEIVED_DATA;
+            *protocolState         = STATE_DATA;
+            ret                    = RX_SPI_RECEIVED_DATA;
             lastPacketReceivedTime = currentPacketReceivedTime;
         }
 

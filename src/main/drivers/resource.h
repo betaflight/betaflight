@@ -79,7 +79,7 @@ typedef enum {
     OWNER_TOTAL_COUNT
 } resourceOwner_e;
 
-extern const char * const ownerNames[OWNER_TOTAL_COUNT];
+extern const char *const ownerNames[OWNER_TOTAL_COUNT];
 
 #define RESOURCE_INDEX(x) (x + 1)
-#define RESOURCE_SOFT_OFFSET    10
+#define RESOURCE_SOFT_OFFSET 10
