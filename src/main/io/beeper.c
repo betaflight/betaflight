@@ -36,7 +36,7 @@
 #include "flight/mixer.h"
 
 #include "fc/config.h"
-#include "fc/fc_core.h"
+#include "fc/core.h"
 #include "fc/runtime_config.h"
 
 #include "io/statusindicator.h"

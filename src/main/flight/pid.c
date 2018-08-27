@@ -39,8 +39,8 @@
 #include "drivers/sound_beeper.h"
 #include "drivers/time.h"
 
-#include "fc/fc_core.h"
-#include "fc/fc_rc.h"
+#include "fc/core.h"
+#include "fc/rc.h"
 
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"

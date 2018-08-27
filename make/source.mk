@@ -38,9 +38,9 @@ COMMON_SRC = \
             drivers/transponder_ir_erlt.c \
             fc/board_info.c \
             fc/config.c \
-            fc/fc_dispatch.c \
-            fc/fc_hardfaults.c \
-            fc/fc_tasks.c \
+            fc/dispatch.c \
+            fc/hardfaults.c \
+            fc/tasks.c \
             fc/runtime_config.c \
             interface/msp.c \
             interface/msp_box.c \
@@ -60,7 +60,7 @@ COMMON_SRC = \
             sensors/current.c \
             sensors/voltage.c \
             target/config_helper.c \
-            fc/fc_init.c \
+            fc/init.c \
             fc/controlrate_profile.c \
             drivers/camera_control.c \
             drivers/accgyro/gyro_sync.c \
@@ -70,8 +70,8 @@ COMMON_SRC = \
             drivers/rx/rx_xn297.c \
             drivers/rx/rx_pwm.c \
             drivers/serial_softserial.c \
-            fc/fc_core.c \
-            fc/fc_rc.c \
+            fc/core.c \
+            fc/rc.c \
             fc/rc_adjustments.c \
             fc/rc_controls.c \
             fc/rc_modes.c \
@@ -213,9 +213,9 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             drivers/serial_uart.c \
             drivers/system.c \
             drivers/timer.c \
-            fc/fc_core.c \
-            fc/fc_tasks.c \
-            fc/fc_rc.c \
+            fc/core.c \
+            fc/tasks.c \
+            fc/rc.c \
             fc/rc_controls.c \
             fc/runtime_config.c \
             flight/imu.c \
@@ -271,7 +271,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/vtx_rtc6705_soft_spi.c \
             drivers/vtx_rtc6705.c \
             drivers/vtx_common.c \
-            fc/fc_init.c \
+            fc/init.c \
             fc/board_info.c \
             config/config_eeprom.c \
             config/feature.c \

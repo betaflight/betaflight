@@ -27,7 +27,7 @@
 #include "drivers/time.h"
 #include "drivers/transponder_ir.h"
 
-#include "fc/fc_init.h"
+#include "fc/init.h"
 
 #include "flight/mixer.h"
 
