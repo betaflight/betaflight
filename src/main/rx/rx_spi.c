@@ -31,23 +31,22 @@
 
 #include "config/feature.h"
 
-#include "drivers/rx/rx_spi.h"
 #include "drivers/rx/rx_nrf24l01.h"
+#include "drivers/rx/rx_spi.h"
 
 #include "fc/config.h"
 
 #include "pg/rx_spi.h"
 
-#include "rx/rx_spi.h"
 #include "rx/cc2500_frsky_common.h"
+#include "rx/flysky.h"
 #include "rx/nrf24_cx10.h"
-#include "rx/nrf24_syma.h"
-#include "rx/nrf24_v202.h"
 #include "rx/nrf24_h8_3d.h"
 #include "rx/nrf24_inav.h"
 #include "rx/nrf24_kn.h"
-#include "rx/flysky.h"
-
+#include "rx/nrf24_syma.h"
+#include "rx/nrf24_v202.h"
+#include "rx/rx_spi.h"
 
 uint16_t rxSpiRcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 STATIC_UNIT_TESTED uint8_t rxSpiPayload[RX_SPI_MAX_PAYLOAD_SIZE];
@@ -82,45 +81,45 @@ STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
 #ifdef USE_RX_V202
     case RX_SPI_NRF24_V202_250K:
     case RX_SPI_NRF24_V202_1M:
-        protocolInit = v202Nrf24Init;
-        protocolDataReceived = v202Nrf24DataReceived;
+        protocolInit                 = v202Nrf24Init;
+        protocolDataReceived         = v202Nrf24DataReceived;
         protocolSetRcDataFromPayload = v202Nrf24SetRcDataFromPayload;
         break;
 #endif
 #ifdef USE_RX_SYMA
     case RX_SPI_NRF24_SYMA_X:
     case RX_SPI_NRF24_SYMA_X5C:
-        protocolInit = symaNrf24Init;
-        protocolDataReceived = symaNrf24DataReceived;
+        protocolInit                 = symaNrf24Init;
+        protocolDataReceived         = symaNrf24DataReceived;
         protocolSetRcDataFromPayload = symaNrf24SetRcDataFromPayload;
         break;
 #endif
 #ifdef USE_RX_CX10
     case RX_SPI_NRF24_CX10:
     case RX_SPI_NRF24_CX10A:
-        protocolInit = cx10Nrf24Init;
-        protocolDataReceived = cx10Nrf24DataReceived;
+        protocolInit                 = cx10Nrf24Init;
+        protocolDataReceived         = cx10Nrf24DataReceived;
         protocolSetRcDataFromPayload = cx10Nrf24SetRcDataFromPayload;
         break;
 #endif
 #ifdef USE_RX_H8_3D
     case RX_SPI_NRF24_H8_3D:
-        protocolInit = h8_3dNrf24Init;
-        protocolDataReceived = h8_3dNrf24DataReceived;
+        protocolInit                 = h8_3dNrf24Init;
+        protocolDataReceived         = h8_3dNrf24DataReceived;
         protocolSetRcDataFromPayload = h8_3dNrf24SetRcDataFromPayload;
         break;
 #endif
 #ifdef USE_RX_KN
     case RX_SPI_NRF24_KN:
-        protocolInit = knNrf24Init;
-        protocolDataReceived = knNrf24DataReceived;
+        protocolInit                 = knNrf24Init;
+        protocolDataReceived         = knNrf24DataReceived;
         protocolSetRcDataFromPayload = knNrf24SetRcDataFromPayload;
         break;
 #endif
 #ifdef USE_RX_INAV
     case RX_SPI_NRF24_INAV:
-        protocolInit = inavNrf24Init;
-        protocolDataReceived = inavNrf24DataReceived;
+        protocolInit                 = inavNrf24Init;
+        protocolDataReceived         = inavNrf24DataReceived;
         protocolSetRcDataFromPayload = inavNrf24SetRcDataFromPayload;
         break;
 #endif
@@ -131,8 +130,8 @@ STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
 #if defined(USE_RX_FRSKY_SPI_X)
     case RX_SPI_FRSKY_X:
 #endif
-        protocolInit = frSkySpiInit;
-        protocolDataReceived = frSkySpiDataReceived;
+        protocolInit                 = frSkySpiInit;
+        protocolDataReceived         = frSkySpiDataReceived;
         protocolSetRcDataFromPayload = frSkySpiSetRcData;
 
         break;
@@ -140,8 +139,8 @@ STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
 #ifdef USE_RX_FLYSKY
     case RX_SPI_A7105_FLYSKY:
     case RX_SPI_A7105_FLYSKY_2A:
-        protocolInit = flySkyInit;
-        protocolDataReceived = flySkyDataReceived;
+        protocolInit                 = flySkyInit;
+        protocolDataReceived         = flySkyDataReceived;
         protocolSetRcDataFromPayload = flySkySetRcDataFromPayload;
         break;
 #endif
@@ -179,10 +178,10 @@ bool rxSpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeConfig_t *rxRuntimeCon
     if (rxSpiSetProtocol(rxSpiConfig->rx_spi_protocol)) {
         ret = protocolInit(rxSpiConfig, rxRuntimeConfig);
     }
-    rxSpiNewPacketAvailable = false;
+    rxSpiNewPacketAvailable        = false;
     rxRuntimeConfig->rxRefreshRate = 20000;
 
-    rxRuntimeConfig->rcReadRawFn = rxSpiReadRawRC;
+    rxRuntimeConfig->rcReadRawFn     = rxSpiReadRawRC;
     rxRuntimeConfig->rcFrameStatusFn = rxSpiFrameStatus;
 
     return ret;

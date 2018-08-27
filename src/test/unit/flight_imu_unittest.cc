@@ -15,57 +15,56 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdint.h>
-#include <stdbool.h>
-#include <limits.h>
 #include <cmath>
+#include <limits.h>
+#include <stdbool.h>
+#include <stdint.h>
 
 extern "C" {
-    #include "platform.h"
-    #include "build/debug.h"
+#include "build/debug.h"
+#include "platform.h"
 
-    #include "common/axis.h"
-    #include "common/maths.h"
+#include "common/axis.h"
+#include "common/maths.h"
 
-    #include "config/feature.h"
-    #include "pg/pg.h"
-    #include "pg/pg_ids.h"
-    #include "pg/rx.h"
+#include "config/feature.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+#include "pg/rx.h"
 
-    #include "drivers/accgyro/accgyro.h"
-    #include "drivers/compass/compass.h"
-    #include "drivers/sensor.h"
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/compass/compass.h"
+#include "drivers/sensor.h"
 
-    #include "fc/rc_controls.h"
-    #include "fc/rc_modes.h"
-    #include "fc/runtime_config.h"
+#include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
+#include "fc/runtime_config.h"
 
-    #include "flight/mixer.h"
-    #include "flight/pid.h"
-    #include "flight/imu.h"
+#include "flight/imu.h"
+#include "flight/mixer.h"
+#include "flight/pid.h"
 
-    #include "io/gps.h"
+#include "io/gps.h"
 
-    #include "rx/rx.h"
+#include "rx/rx.h"
 
-    #include "sensors/acceleration.h"
-    #include "sensors/barometer.h"
-    #include "sensors/compass.h"
-    #include "sensors/gyro.h"
-    #include "sensors/sensors.h"
+#include "sensors/acceleration.h"
+#include "sensors/barometer.h"
+#include "sensors/compass.h"
+#include "sensors/gyro.h"
+#include "sensors/sensors.h"
 
-    void imuComputeRotationMatrix(void);
-    void imuUpdateEulerAngles(void);
+void imuComputeRotationMatrix(void);
+void imuUpdateEulerAngles(void);
 
-    extern quaternion q;
-    extern float rMat[3][3];
+extern quaternion q;
+extern float rMat[3][3];
 
-    PG_REGISTER(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
-    PG_REGISTER(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 0);
+PG_REGISTER(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
+PG_REGISTER(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 0);
 
-    PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
-        .enabledFeatures = 0
-    );
+PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
+                  .enabledFeatures = 0);
 }
 
 #include "unittest_macros.h"
@@ -75,7 +74,7 @@ const float sqrt2over2 = sqrt(2) / 2.0f;
 
 TEST(FlightImuTest, TestCalculateRotationMatrix)
 {
-    #define TOL 1e-6
+#define TOL 1e-6
 
     // No rotation
     q.w = 1.0f;
@@ -243,5 +242,5 @@ void performBaroCalibrationCycle(void) {}
 int32_t baroCalculateAltitude(void) { return 0; }
 bool gyroGetAccumulationAverage(float *) { return false; }
 bool accGetAccumulationAverage(float *) { return false; }
-void mixerSetThrottleAngleCorrection(int) {};
+void mixerSetThrottleAngleCorrection(int){};
 }

@@ -81,30 +81,30 @@
 #endif
 
 #if defined(STM32F4) || defined(STM32F7)
-#define TASK_GYROPID_DESIRED_PERIOD     125 // 125us = 8kHz
-#define SCHEDULER_DELAY_LIMIT           10
+#define TASK_GYROPID_DESIRED_PERIOD 125 // 125us = 8kHz
+#define SCHEDULER_DELAY_LIMIT 10
 #else
-#define TASK_GYROPID_DESIRED_PERIOD     1000 // 1000us = 1kHz
-#define SCHEDULER_DELAY_LIMIT           100
+#define TASK_GYROPID_DESIRED_PERIOD 1000 // 1000us = 1kHz
+#define SCHEDULER_DELAY_LIMIT 100
 #endif
 
 #if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
-#define DEFAULT_AUX_CHANNEL_COUNT       MAX_AUX_CHANNEL_COUNT
+#define DEFAULT_AUX_CHANNEL_COUNT MAX_AUX_CHANNEL_COUNT
 #else
-#define DEFAULT_AUX_CHANNEL_COUNT       6
+#define DEFAULT_AUX_CHANNEL_COUNT 6
 #endif
 
 #ifdef USE_ITCM_RAM
-#define FAST_CODE                   __attribute__((section(".tcm_code")))
-#define FAST_CODE_NOINLINE          NOINLINE
+#define FAST_CODE __attribute__((section(".tcm_code")))
+#define FAST_CODE_NOINLINE NOINLINE
 #else
 #define FAST_CODE
 #define FAST_CODE_NOINLINE
 #endif // USE_ITCM_RAM
 
 #ifdef USE_FAST_RAM
-#define FAST_RAM_ZERO_INIT             __attribute__ ((section(".fastram_bss"), aligned(4)))
-#define FAST_RAM                    __attribute__ ((section(".fastram_data"), aligned(4)))
+#define FAST_RAM_ZERO_INIT __attribute__((section(".fastram_bss"), aligned(4)))
+#define FAST_RAM __attribute__((section(".fastram_data"), aligned(4)))
 #else
 #define FAST_RAM_ZERO_INIT
 #define FAST_RAM
@@ -112,30 +112,28 @@
 
 #ifdef STM32F4
 // Data in RAM which is guaranteed to not be reset on hot reboot
-#define PERSISTENT                  __attribute__ ((section(".persistent_data"), aligned(4)))
+#define PERSISTENT __attribute__((section(".persistent_data"), aligned(4)))
 #endif
 
 #ifdef USE_SRAM2
-#define SRAM2                       __attribute__ ((section(".sram2"), aligned(4)))
+#define SRAM2 __attribute__((section(".sram2"), aligned(4)))
 #else
 #define SRAM2
 #endif
 
-#define USE_BRUSHED_ESC_AUTODETECT  // Detect if brushed motors are connected and set defaults appropriately to avoid motors spinning on boot
+#define USE_BRUSHED_ESC_AUTODETECT // Detect if brushed motors are connected and set defaults appropriately to avoid motors spinning on boot
 #define USE_CLI
-#define USE_GYRO_REGISTER_DUMP  // Adds gyroregisters command to cli to dump configured register values
+#define USE_GYRO_REGISTER_DUMP // Adds gyroregisters command to cli to dump configured register values
 #define USE_PPM
 #define USE_PWM
 #define USE_SERIAL_RX
-#define USE_SERIALRX_CRSF       // Team Black Sheep Crossfire protocol
-#define USE_SERIALRX_IBUS       // FlySky and Turnigy receivers
-#define USE_SERIALRX_SBUS       // Frsky and Futaba receivers
-#define USE_SERIALRX_SPEKTRUM   // SRXL, DSM2 and DSMX protocol
-#define USE_SERIALRX_SUMD       // Graupner Hott protocol
-#define USE_SERIALRX_SUMH       // Graupner legacy protocol
-#define USE_SERIALRX_XBUS       // JR
-
-
+#define USE_SERIALRX_CRSF     // Team Black Sheep Crossfire protocol
+#define USE_SERIALRX_IBUS     // FlySky and Turnigy receivers
+#define USE_SERIALRX_SBUS     // Frsky and Futaba receivers
+#define USE_SERIALRX_SPEKTRUM // SRXL, DSM2 and DSMX protocol
+#define USE_SERIALRX_SUMD     // Graupner Hott protocol
+#define USE_SERIALRX_SUMH     // Graupner legacy protocol
+#define USE_SERIALRX_XBUS     // JR
 
 #if (FLASH_SIZE > 64)
 #define MAX_PROFILE_COUNT 3
@@ -147,7 +145,7 @@
 #define USE_ACRO_TRAINER
 #define USE_BLACKBOX
 #define USE_RESOURCE_MGMT
-#define USE_RUNAWAY_TAKEOFF     // Runaway Takeoff Prevention (anti-taz)
+#define USE_RUNAWAY_TAKEOFF // Runaway Takeoff Prevention (anti-taz)
 #define USE_SERVOS
 #define USE_TELEMETRY
 #define USE_TELEMETRY_FRSKY_HUB
@@ -171,7 +169,7 @@
 #define USE_RCDEVICE
 #define USE_RTC_TIME
 #define USE_RX_MSP
-#define USE_SERIALRX_FPORT      // FrSky FPort
+#define USE_SERIALRX_FPORT // FrSky FPort
 #define USE_TELEMETRY_CRSF
 #define USE_TELEMETRY_SRXL
 #define USE_VIRTUAL_CURRENT_METER

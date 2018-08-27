@@ -23,8 +23,8 @@
  *
  */
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 
 #include "platform.h"
@@ -49,8 +49,8 @@
 #include "pg/usb.h"
 
 #include "usb_core.h"
-#include "usbd_cdc_vcp.h"
 #include "usb_io.h"
+#include "usbd_cdc_vcp.h"
 
 #include "msc/usbd_storage.h"
 
@@ -133,7 +133,8 @@ bool mscCheckButton(void)
 void mscWaitForButton(void)
 {
     // In order to exit MSC mode simply disconnect the board, or push the button again.
-    while (mscCheckButton());
+    while (mscCheckButton())
+        ;
     delay(DEBOUNCE_TIME_MS);
     while (true) {
         asm("NOP");

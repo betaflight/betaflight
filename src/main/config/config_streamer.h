@@ -20,8 +20,8 @@
 
 #pragma once
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 // Streams data out to the EEPROM, padding to the write size as
 // needed, and updating the checksum as it goes.

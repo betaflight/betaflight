@@ -22,11 +22,11 @@
 
 #ifdef USE_MAX7456
 #ifndef MAX7456_CLOCK_CONFIG_DEFAULT
-#define MAX7456_CLOCK_CONFIG_DEFAULT    MAX7456_CLOCK_CONFIG_OC
+#define MAX7456_CLOCK_CONFIG_DEFAULT MAX7456_CLOCK_CONFIG_OC
 #endif
 
 #ifndef MAX7456_SPI_CS_PIN
-#define MAX7456_SPI_CS_PIN              NONE
+#define MAX7456_SPI_CS_PIN NONE
 #endif
 #endif
 
@@ -156,27 +156,27 @@
 #ifdef SPI_FULL_RECONFIGURABILITY
 
 #ifdef USE_SPI_DEVICE_1
-#define SPI1_SCK_PIN    NONE
-#define SPI1_MISO_PIN   NONE
-#define SPI1_MOSI_PIN   NONE
+#define SPI1_SCK_PIN NONE
+#define SPI1_MISO_PIN NONE
+#define SPI1_MOSI_PIN NONE
 #endif
 
 #ifdef USE_SPI_DEVICE_2
-#define SPI2_SCK_PIN    NONE
-#define SPI2_MISO_PIN   NONE
-#define SPI2_MOSI_PIN   NONE
+#define SPI2_SCK_PIN NONE
+#define SPI2_MISO_PIN NONE
+#define SPI2_MOSI_PIN NONE
 #endif
 
 #ifdef USE_SPI_DEVICE_3
-#define SPI3_SCK_PIN    NONE
-#define SPI3_MISO_PIN   NONE
-#define SPI3_MOSI_PIN   NONE
+#define SPI3_SCK_PIN NONE
+#define SPI3_MISO_PIN NONE
+#define SPI3_MOSI_PIN NONE
 #endif
 
 #ifdef USE_SPI_DEVICE_4
-#define SPI4_SCK_PIN    NONE
-#define SPI4_MISO_PIN   NONE
-#define SPI4_MOSI_PIN   NONE
+#define SPI4_SCK_PIN NONE
+#define SPI4_MISO_PIN NONE
+#define SPI4_MOSI_PIN NONE
 #endif
 
 #else
@@ -184,21 +184,21 @@
 // Pin defaults for backward compatibility
 
 #ifndef SPI1_SCK_PIN
-#define SPI1_SCK_PIN    PA5
-#define SPI1_MISO_PIN   PA6
-#define SPI1_MOSI_PIN   PA7
+#define SPI1_SCK_PIN PA5
+#define SPI1_MISO_PIN PA6
+#define SPI1_MOSI_PIN PA7
 #endif
 
 #ifndef SPI2_SCK_PIN
-#define SPI2_SCK_PIN    PB13
-#define SPI2_MISO_PIN   PB14
-#define SPI2_MOSI_PIN   PB15
+#define SPI2_SCK_PIN PB13
+#define SPI2_MISO_PIN PB14
+#define SPI2_MOSI_PIN PB15
 #endif
 
 #ifndef SPI3_SCK_PIN
-#define SPI3_SCK_PIN    PB3
-#define SPI3_MISO_PIN   PB4
-#define SPI3_MOSI_PIN   PB5
+#define SPI3_SCK_PIN PB3
+#define SPI3_MISO_PIN PB4
+#define SPI3_MOSI_PIN PB5
 #endif
 #endif
 

@@ -49,14 +49,14 @@
 // In the windows joystick driver, the axes are defined as shown in the second column.
 
 const uint8_t hidChannelMapping[] = {
-    ROLL,     // X
-    PITCH,    // Y
+    ROLL,  // X
+    PITCH, // Y
     AUX3,
     YAW,      // X Rotation
     AUX1,     // Z Rotation
     THROTTLE, // Y Rotation
     AUX4,
-    AUX2,     // Wheel
+    AUX2, // Wheel
 };
 
 void sendRcDataToHid(void)
@@ -64,18 +64,18 @@ void sendRcDataToHid(void)
     int8_t report[8];
     for (unsigned i = 0; i < USB_CDC_HID_NUM_AXES; i++) {
         const uint8_t channel = hidChannelMapping[i];
-        report[i] = scaleRange(constrain(rcData[channel], PWM_RANGE_MIN, PWM_RANGE_MAX), PWM_RANGE_MIN, PWM_RANGE_MAX, USB_CDC_HID_RANGE_MIN, USB_CDC_HID_RANGE_MAX);
+        report[i]             = scaleRange(constrain(rcData[channel], PWM_RANGE_MIN, PWM_RANGE_MAX), PWM_RANGE_MIN, PWM_RANGE_MAX, USB_CDC_HID_RANGE_MIN, USB_CDC_HID_RANGE_MAX);
         if (i == 1) {
             // For some reason ROLL is inverted in Windows
             report[i] = -report[i];
         }
     }
 #if defined(STM32F4)
-    USBD_HID_SendReport(&USB_OTG_dev, (uint8_t*)report, sizeof(report));
+    USBD_HID_SendReport(&USB_OTG_dev, (uint8_t *)report, sizeof(report));
 #elif defined(STM32F7)
-    USBD_HID_SendReport(&USBD_Device, (uint8_t*)report, sizeof(report));
+    USBD_HID_SendReport(&USBD_Device, (uint8_t *)report, sizeof(report));
 #else
-# error "MCU does not support USB HID."
+#error "MCU does not support USB HID."
 #endif
 }
 #endif

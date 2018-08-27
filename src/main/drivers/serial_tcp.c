@@ -23,11 +23,11 @@
  * Dominic Clifton - Serial port abstraction, Separation of common STM32 code for cleanflight, various cleanups.
  * Hamasaki/Timecop - Initial baseflight code
 */
+#include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
 
 #include "platform.h"
 
@@ -44,15 +44,18 @@ static const struct serialPortVTable tcpVTable; // Forward
 static tcpPort_t tcpSerialPorts[SERIAL_PORT_COUNT];
 static bool tcpPortInitialized[SERIAL_PORT_COUNT];
 static bool tcpStart = false;
-bool tcpIsStart(void) {
+bool tcpIsStart(void)
+{
     return tcpStart;
 }
-static void onData(dyad_Event *e) {
-    tcpPort_t* s = (tcpPort_t*)(e->udata);
-    tcpDataIn(s, (uint8_t*)e->data, e->size);
+static void onData(dyad_Event *e)
+{
+    tcpPort_t *s = (tcpPort_t *)(e->udata);
+    tcpDataIn(s, (uint8_t *)e->data, e->size);
 }
-static void onClose(dyad_Event *e) {
-    tcpPort_t* s = (tcpPort_t*)(e->udata);
+static void onClose(dyad_Event *e)
+{
+    tcpPort_t *s = (tcpPort_t *)(e->udata);
     s->clientCount--;
     s->conn = NULL;
     fprintf(stderr, "[CLS]UART%u: %d,%d\n", s->id + 1, s->connected, s->clientCount);
@@ -60,8 +63,9 @@ static void onClose(dyad_Event *e) {
         s->connected = false;
     }
 }
-static void onAccept(dyad_Event *e) {
-    tcpPort_t* s = (tcpPort_t*)(e->udata);
+static void onAccept(dyad_Event *e)
+{
+    tcpPort_t *s = (tcpPort_t *)(e->udata);
     fprintf(stderr, "New connection on UART%u, %d\n", s->id + 1, s->clientCount);
 
     s->connected = true;
@@ -77,7 +81,7 @@ static void onAccept(dyad_Event *e) {
     dyad_addListener(e->remote, DYAD_EVENT_DATA, onData, e->udata);
     dyad_addListener(e->remote, DYAD_EVENT_CLOSE, onClose, e->udata);
 }
-static tcpPort_t* tcpReconfigure(tcpPort_t *s, int id)
+static tcpPort_t *tcpReconfigure(tcpPort_t *s, int id)
 {
     if (tcpPortInitialized[id]) {
         fprintf(stderr, "port is already initialized!\n");
@@ -95,14 +99,14 @@ static tcpPort_t* tcpReconfigure(tcpPort_t *s, int id)
         return NULL;
     }
 
-    tcpStart = true;
+    tcpStart               = true;
     tcpPortInitialized[id] = true;
 
-    s->connected = false;
+    s->connected   = false;
     s->clientCount = 0;
-    s->id = id;
-    s->conn = NULL;
-    s->serv = dyad_newStream();
+    s->id          = id;
+    s->conn        = NULL;
+    s->serv        = dyad_newStream();
     dyad_setNoDelay(s->serv, 1);
     dyad_addListener(s->serv, DYAD_EVENT_ACCEPT, onAccept, s);
 
@@ -120,7 +124,7 @@ serialPort_t *serTcpOpen(int id, serialReceiveCallbackPtr rxCallback, void *rxCa
 
 #if defined(USE_UART1) || defined(USE_UART2) || defined(USE_UART3) || defined(USE_UART4) || defined(USE_UART5) || defined(USE_UART6) || defined(USE_UART7) || defined(USE_UART8)
     if (id >= 0 && id < SERIAL_PORT_COUNT) {
-    s = tcpReconfigure(&tcpSerialPorts[id], id);
+        s = tcpReconfigure(&tcpSerialPorts[id], id);
     }
 #endif
     if (!s)
@@ -131,24 +135,24 @@ serialPort_t *serTcpOpen(int id, serialReceiveCallbackPtr rxCallback, void *rxCa
     // common serial initialisation code should move to serialPort::init()
     s->port.rxBufferHead = s->port.rxBufferTail = 0;
     s->port.txBufferHead = s->port.txBufferTail = 0;
-    s->port.rxBufferSize = RX_BUFFER_SIZE;
-    s->port.txBufferSize = TX_BUFFER_SIZE;
-    s->port.rxBuffer = s->rxBuffer;
-    s->port.txBuffer = s->txBuffer;
+    s->port.rxBufferSize                        = RX_BUFFER_SIZE;
+    s->port.txBufferSize                        = TX_BUFFER_SIZE;
+    s->port.rxBuffer                            = s->rxBuffer;
+    s->port.txBuffer                            = s->txBuffer;
 
     // callback works for IRQ-based RX ONLY
-    s->port.rxCallback = rxCallback;
+    s->port.rxCallback     = rxCallback;
     s->port.rxCallbackData = rxCallbackData;
-    s->port.mode = mode;
-    s->port.baudRate = baudRate;
-    s->port.options = options;
+    s->port.mode           = mode;
+    s->port.baudRate       = baudRate;
+    s->port.options        = options;
 
     return (serialPort_t *)s;
 }
 
 uint32_t tcpTotalRxBytesWaiting(const serialPort_t *instance)
 {
-    tcpPort_t *s = (tcpPort_t*)instance;
+    tcpPort_t *s = (tcpPort_t *)instance;
     uint32_t count;
     pthread_mutex_lock(&s->rxLock);
     if (s->port.rxBufferHead >= s->port.rxBufferTail) {
@@ -163,7 +167,7 @@ uint32_t tcpTotalRxBytesWaiting(const serialPort_t *instance)
 
 uint32_t tcpTotalTxBytesFree(const serialPort_t *instance)
 {
-    tcpPort_t *s = (tcpPort_t*)instance;
+    tcpPort_t *s = (tcpPort_t *)instance;
     uint32_t bytesUsed;
 
     pthread_mutex_lock(&s->txLock);
@@ -223,7 +227,8 @@ void tcpWrite(serialPort_t *instance, uint8_t ch)
 void tcpDataOut(tcpPort_t *instance)
 {
     tcpPort_t *s = (tcpPort_t *)instance;
-    if (s->conn == NULL) return;
+    if (s->conn == NULL)
+        return;
     pthread_mutex_lock(&s->txLock);
 
     if (s->port.txBufferHead < s->port.txBufferTail) {
@@ -234,19 +239,19 @@ void tcpDataOut(tcpPort_t *instance)
     }
     int chunk = s->port.txBufferHead - s->port.txBufferTail;
     if (chunk)
-        dyad_write(s->conn, (const void*)&s->port.txBuffer[s->port.txBufferTail], chunk);
+        dyad_write(s->conn, (const void *)&s->port.txBuffer[s->port.txBufferTail], chunk);
     s->port.txBufferTail = s->port.txBufferHead;
 
     pthread_mutex_unlock(&s->txLock);
 }
 
-void tcpDataIn(tcpPort_t *instance, uint8_t* ch, int size)
+void tcpDataIn(tcpPort_t *instance, uint8_t *ch, int size)
 {
     tcpPort_t *s = (tcpPort_t *)instance;
     pthread_mutex_lock(&s->rxLock);
 
     while (size--) {
-//        printf("%c", *ch);
+        //        printf("%c", *ch);
         s->port.rxBuffer[s->port.rxBufferHead] = *(ch++);
         if (s->port.rxBufferHead + 1 >= s->port.rxBufferSize) {
             s->port.rxBufferHead = 0;
@@ -255,20 +260,20 @@ void tcpDataIn(tcpPort_t *instance, uint8_t* ch, int size)
         }
     }
     pthread_mutex_unlock(&s->rxLock);
-//    printf("\n");
+    //    printf("\n");
 }
 
 static const struct serialPortVTable tcpVTable = {
-        .serialWrite = tcpWrite,
-        .serialTotalRxWaiting = tcpTotalRxBytesWaiting,
-        .serialTotalTxFree = tcpTotalTxBytesFree,
-        .serialRead = tcpRead,
-        .serialSetBaudRate = NULL,
-        .isSerialTransmitBufferEmpty = isTcpTransmitBufferEmpty,
-        .setMode = NULL,
-        .setCtrlLineStateCb = NULL,
-        .setBaudRateCb = NULL,
-        .writeBuf = NULL,
-        .beginWrite = NULL,
-        .endWrite = NULL,
+    .serialWrite                 = tcpWrite,
+    .serialTotalRxWaiting        = tcpTotalRxBytesWaiting,
+    .serialTotalTxFree           = tcpTotalTxBytesFree,
+    .serialRead                  = tcpRead,
+    .serialSetBaudRate           = NULL,
+    .isSerialTransmitBufferEmpty = isTcpTransmitBufferEmpty,
+    .setMode                     = NULL,
+    .setCtrlLineStateCb          = NULL,
+    .setBaudRateCb               = NULL,
+    .writeBuf                    = NULL,
+    .beginWrite                  = NULL,
+    .endWrite                    = NULL,
 };

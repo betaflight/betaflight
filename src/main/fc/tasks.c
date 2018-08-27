@@ -19,8 +19,8 @@
  */
 
 #include <stdbool.h>
-#include <stdlib.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "platform.h"
 
@@ -46,15 +46,15 @@
 
 #include "fc/config.h"
 #include "fc/core.h"
-#include "fc/rc.h"
 #include "fc/dispatch.h"
+#include "fc/rc.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "flight/position.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
+#include "flight/position.h"
 
 #include "interface/cli.h"
 #include "interface/msp.h"
@@ -66,12 +66,12 @@
 #include "io/ledstrip.h"
 #include "io/osd.h"
 #include "io/piniobox.h"
+#include "io/rcdevice_cam.h"
 #include "io/serial.h"
 #include "io/transponder_ir.h"
-#include "io/vtx_tramp.h" // Will be gone
-#include "io/rcdevice_cam.h"
 #include "io/usb_cdc_hid.h"
 #include "io/vtx.h"
+#include "io/vtx_tramp.h" // Will be gone
 
 #include "msp/msp_serial.h"
 
@@ -86,8 +86,8 @@
 #include "sensors/compass.h"
 #include "sensors/esc_sensor.h"
 #include "sensors/gyro.h"
-#include "sensors/sensors.h"
 #include "sensors/rangefinder.h"
+#include "sensors/sensors.h"
 
 #include "scheduler/scheduler.h"
 
@@ -100,8 +100,8 @@
 #ifdef USE_USB_CDC_HID
 //TODO: Make it platform independent in the future
 #ifdef STM32F4
-#include "vcpf4/usbd_cdc_vcp.h"
 #include "usbd_hid_core.h"
+#include "vcpf4/usbd_cdc_vcp.h"
 #elif defined(STM32F7)
 #include "usbd_cdc_interface.h"
 #include "usbd_hid.h"
@@ -162,8 +162,8 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
 
     static timeUs_t lastRxTimeUs;
     currentRxRefreshRate = constrain(currentTimeUs - lastRxTimeUs, 1000, 30000);
-    lastRxTimeUs = currentTimeUs;
-    isRXDataNew = true;
+    lastRxTimeUs         = currentTimeUs;
+    isRXDataNew          = true;
 
 #ifdef USE_USB_CDC_HID
     if (!ARMING_FLAG(ARMED)) {
@@ -348,253 +348,238 @@ void fcTasksInit(void)
 
 cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_SYSTEM] = {
-        .taskName = "SYSTEM",
-        .subTaskName = "LOAD",
-        .taskFunc = taskSystemLoad,
-        .desiredPeriod = TASK_PERIOD_HZ(10),        // 10Hz, every 100 ms
+        .taskName       = "SYSTEM",
+        .subTaskName    = "LOAD",
+        .taskFunc       = taskSystemLoad,
+        .desiredPeriod  = TASK_PERIOD_HZ(10), // 10Hz, every 100 ms
         .staticPriority = TASK_PRIORITY_MEDIUM_HIGH,
     },
 
     [TASK_MAIN] = {
-        .taskName = "SYSTEM",
-        .subTaskName = "UPDATE",
-        .taskFunc = taskMain,
-        .desiredPeriod = TASK_PERIOD_HZ(1000),
+        .taskName       = "SYSTEM",
+        .subTaskName    = "UPDATE",
+        .taskFunc       = taskMain,
+        .desiredPeriod  = TASK_PERIOD_HZ(1000),
         .staticPriority = TASK_PRIORITY_MEDIUM_HIGH,
     },
 
     [TASK_SERIAL] = {
-        .taskName = "SERIAL",
-        .taskFunc = taskHandleSerial,
-        .desiredPeriod = TASK_PERIOD_HZ(100),       // 100 Hz should be enough to flush up to 115 bytes @ 115200 baud
+        .taskName       = "SERIAL",
+        .taskFunc       = taskHandleSerial,
+        .desiredPeriod  = TASK_PERIOD_HZ(100), // 100 Hz should be enough to flush up to 115 bytes @ 115200 baud
         .staticPriority = TASK_PRIORITY_LOW,
     },
 
     [TASK_BATTERY_ALERTS] = {
-        .taskName = "BATTERY_ALERTS",
-        .taskFunc = taskBatteryAlerts,
-        .desiredPeriod = TASK_PERIOD_HZ(5),        // 5 Hz
+        .taskName       = "BATTERY_ALERTS",
+        .taskFunc       = taskBatteryAlerts,
+        .desiredPeriod  = TASK_PERIOD_HZ(5), // 5 Hz
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
     [TASK_BATTERY_VOLTAGE] = {
-        .taskName = "BATTERY_VOLTAGE",
-        .taskFunc = batteryUpdateVoltage,
-        .desiredPeriod = TASK_PERIOD_HZ(50),
+        .taskName       = "BATTERY_VOLTAGE",
+        .taskFunc       = batteryUpdateVoltage,
+        .desiredPeriod  = TASK_PERIOD_HZ(50),
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
     [TASK_BATTERY_CURRENT] = {
-        .taskName = "BATTERY_CURRENT",
-        .taskFunc = batteryUpdateCurrentMeter,
-        .desiredPeriod = TASK_PERIOD_HZ(50),
+        .taskName       = "BATTERY_CURRENT",
+        .taskFunc       = batteryUpdateCurrentMeter,
+        .desiredPeriod  = TASK_PERIOD_HZ(50),
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
 #ifdef USE_TRANSPONDER
     [TASK_TRANSPONDER] = {
-        .taskName = "TRANSPONDER",
-        .taskFunc = transponderUpdate,
-        .desiredPeriod = TASK_PERIOD_HZ(250),       // 250 Hz, 4ms
+        .taskName       = "TRANSPONDER",
+        .taskFunc       = transponderUpdate,
+        .desiredPeriod  = TASK_PERIOD_HZ(250), // 250 Hz, 4ms
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
 
 #ifdef STACK_CHECK
     [TASK_STACK_CHECK] = {
-        .taskName = "STACKCHECK",
-        .taskFunc = taskStackCheck,
-        .desiredPeriod = TASK_PERIOD_HZ(10),          // 10 Hz
+        .taskName       = "STACKCHECK",
+        .taskFunc       = taskStackCheck,
+        .desiredPeriod  = TASK_PERIOD_HZ(10), // 10 Hz
         .staticPriority = TASK_PRIORITY_IDLE,
     },
 #endif
 
     [TASK_GYROPID] = {
-        .taskName = "PID",
-        .subTaskName = "GYRO",
-        .taskFunc = taskMainPidLoop,
-        .desiredPeriod = TASK_GYROPID_DESIRED_PERIOD,
+        .taskName       = "PID",
+        .subTaskName    = "GYRO",
+        .taskFunc       = taskMainPidLoop,
+        .desiredPeriod  = TASK_GYROPID_DESIRED_PERIOD,
         .staticPriority = TASK_PRIORITY_REALTIME,
     },
 
     [TASK_ACCEL] = {
-        .taskName = "ACC",
-        .taskFunc = taskUpdateAccelerometer,
-        .desiredPeriod = TASK_PERIOD_HZ(1000),      // 1000Hz, every 1ms
+        .taskName       = "ACC",
+        .taskFunc       = taskUpdateAccelerometer,
+        .desiredPeriod  = TASK_PERIOD_HZ(1000), // 1000Hz, every 1ms
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
     [TASK_ATTITUDE] = {
-        .taskName = "ATTITUDE",
-        .taskFunc = imuUpdateAttitude,
-        .desiredPeriod = TASK_PERIOD_HZ(100),
+        .taskName       = "ATTITUDE",
+        .taskFunc       = imuUpdateAttitude,
+        .desiredPeriod  = TASK_PERIOD_HZ(100),
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
     [TASK_RX] = {
-        .taskName = "RX",
-        .checkFunc = rxUpdateCheck,
-        .taskFunc = taskUpdateRxMain,
-        .desiredPeriod = TASK_PERIOD_HZ(33),        // If event-based scheduling doesn't work, fallback to periodic scheduling
+        .taskName       = "RX",
+        .checkFunc      = rxUpdateCheck,
+        .taskFunc       = taskUpdateRxMain,
+        .desiredPeriod  = TASK_PERIOD_HZ(33), // If event-based scheduling doesn't work, fallback to periodic scheduling
         .staticPriority = TASK_PRIORITY_HIGH,
     },
 
     [TASK_DISPATCH] = {
-        .taskName = "DISPATCH",
-        .taskFunc = dispatchProcess,
-        .desiredPeriod = TASK_PERIOD_HZ(1000),
+        .taskName       = "DISPATCH",
+        .taskFunc       = dispatchProcess,
+        .desiredPeriod  = TASK_PERIOD_HZ(1000),
         .staticPriority = TASK_PRIORITY_HIGH,
     },
 
 #ifdef USE_BEEPER
     [TASK_BEEPER] = {
-        .taskName = "BEEPER",
-        .taskFunc = beeperUpdate,
-        .desiredPeriod = TASK_PERIOD_HZ(100),       // 100 Hz
+        .taskName       = "BEEPER",
+        .taskFunc       = beeperUpdate,
+        .desiredPeriod  = TASK_PERIOD_HZ(100), // 100 Hz
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
 
 #ifdef USE_GPS
     [TASK_GPS] = {
-        .taskName = "GPS",
-        .taskFunc = gpsUpdate,
-        .desiredPeriod = TASK_PERIOD_HZ(100),        // Required to prevent buffer overruns if running at 115200 baud (115 bytes / period < 256 bytes buffer)
+        .taskName       = "GPS",
+        .taskFunc       = gpsUpdate,
+        .desiredPeriod  = TASK_PERIOD_HZ(100), // Required to prevent buffer overruns if running at 115200 baud (115 bytes / period < 256 bytes buffer)
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 #endif
 
 #ifdef USE_MAG
     [TASK_COMPASS] = {
-        .taskName = "COMPASS",
-        .taskFunc = compassUpdate,
-        .desiredPeriod = TASK_PERIOD_HZ(10),        // Compass is updated at 10 Hz
+        .taskName       = "COMPASS",
+        .taskFunc       = compassUpdate,
+        .desiredPeriod  = TASK_PERIOD_HZ(10), // Compass is updated at 10 Hz
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
 
 #ifdef USE_BARO
     [TASK_BARO] = {
-        .taskName = "BARO",
-        .taskFunc = taskUpdateBaro,
-        .desiredPeriod = TASK_PERIOD_HZ(20),
+        .taskName       = "BARO",
+        .taskFunc       = taskUpdateBaro,
+        .desiredPeriod  = TASK_PERIOD_HZ(20),
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
 
 #if defined(USE_BARO) || defined(USE_GPS)
     [TASK_ALTITUDE] = {
-        .taskName = "ALTITUDE",
-        .taskFunc = taskCalculateAltitude,
-        .desiredPeriod = TASK_PERIOD_HZ(40),
+        .taskName       = "ALTITUDE",
+        .taskFunc       = taskCalculateAltitude,
+        .desiredPeriod  = TASK_PERIOD_HZ(40),
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
 
 #ifdef USE_DASHBOARD
     [TASK_DASHBOARD] = {
-        .taskName = "DASHBOARD",
-        .taskFunc = dashboardUpdate,
-        .desiredPeriod = TASK_PERIOD_HZ(10),
+        .taskName       = "DASHBOARD",
+        .taskFunc       = dashboardUpdate,
+        .desiredPeriod  = TASK_PERIOD_HZ(10),
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
 
 #ifdef USE_OSD
     [TASK_OSD] = {
-        .taskName = "OSD",
-        .taskFunc = osdUpdate,
-        .desiredPeriod = TASK_PERIOD_HZ(60),        // 60 Hz
+        .taskName       = "OSD",
+        .taskFunc       = osdUpdate,
+        .desiredPeriod  = TASK_PERIOD_HZ(60), // 60 Hz
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
 
 #ifdef USE_TELEMETRY
     [TASK_TELEMETRY] = {
-        .taskName = "TELEMETRY",
-        .taskFunc = taskTelemetry,
-        .desiredPeriod = TASK_PERIOD_HZ(250),       // 250 Hz, 4ms
+        .taskName       = "TELEMETRY",
+        .taskFunc       = taskTelemetry,
+        .desiredPeriod  = TASK_PERIOD_HZ(250), // 250 Hz, 4ms
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
 
 #ifdef USE_LED_STRIP
     [TASK_LEDSTRIP] = {
-        .taskName = "LEDSTRIP",
-        .taskFunc = ledStripUpdate,
-        .desiredPeriod = TASK_PERIOD_HZ(100),       // 100 Hz, 10ms
+        .taskName       = "LEDSTRIP",
+        .taskFunc       = ledStripUpdate,
+        .desiredPeriod  = TASK_PERIOD_HZ(100), // 100 Hz, 10ms
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
 
 #ifdef USE_BST
     [TASK_BST_MASTER_PROCESS] = {
-        .taskName = "BST_MASTER_PROCESS",
-        .taskFunc = taskBstMasterProcess,
-        .desiredPeriod = TASK_PERIOD_HZ(50),        // 50 Hz, 20ms
+        .taskName       = "BST_MASTER_PROCESS",
+        .taskFunc       = taskBstMasterProcess,
+        .desiredPeriod  = TASK_PERIOD_HZ(50), // 50 Hz, 20ms
         .staticPriority = TASK_PRIORITY_IDLE,
     },
 #endif
 
 #ifdef USE_ESC_SENSOR
     [TASK_ESC_SENSOR] = {
-        .taskName = "ESC_SENSOR",
-        .taskFunc = escSensorProcess,
-        .desiredPeriod = TASK_PERIOD_HZ(100),       // 100 Hz, 10ms
+        .taskName       = "ESC_SENSOR",
+        .taskFunc       = escSensorProcess,
+        .desiredPeriod  = TASK_PERIOD_HZ(100), // 100 Hz, 10ms
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
 
 #ifdef USE_CMS
     [TASK_CMS] = {
-        .taskName = "CMS",
-        .taskFunc = cmsHandler,
-        .desiredPeriod = TASK_PERIOD_HZ(60),        // 60 Hz
+        .taskName       = "CMS",
+        .taskFunc       = cmsHandler,
+        .desiredPeriod  = TASK_PERIOD_HZ(60), // 60 Hz
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
 
 #ifdef USE_VTX_CONTROL
     [TASK_VTXCTRL] = {
-        .taskName = "VTXCTRL",
-        .taskFunc = vtxUpdate,
-        .desiredPeriod = TASK_PERIOD_HZ(5),          // 5 Hz, 200ms
+        .taskName       = "VTXCTRL",
+        .taskFunc       = vtxUpdate,
+        .desiredPeriod  = TASK_PERIOD_HZ(5), // 5 Hz, 200ms
         .staticPriority = TASK_PRIORITY_IDLE,
     },
 #endif
 
 #ifdef USE_RCDEVICE
     [TASK_RCDEVICE] = {
-        .taskName = "RCDEVICE",
-        .taskFunc = rcdeviceUpdate,
-        .desiredPeriod = TASK_PERIOD_HZ(20),
+        .taskName       = "RCDEVICE",
+        .taskFunc       = rcdeviceUpdate,
+        .desiredPeriod  = TASK_PERIOD_HZ(20),
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 #endif
 
 #ifdef USE_CAMERA_CONTROL
-    [TASK_CAMCTRL] = {
-        .taskName = "CAMCTRL",
-        .taskFunc = taskCameraControl,
-        .desiredPeriod = TASK_PERIOD_HZ(5),
-        .staticPriority = TASK_PRIORITY_IDLE
-    },
+    [TASK_CAMCTRL] = {.taskName = "CAMCTRL", .taskFunc = taskCameraControl, .desiredPeriod = TASK_PERIOD_HZ(5), .staticPriority = TASK_PRIORITY_IDLE},
 #endif
 
 #ifdef USE_ADC_INTERNAL
-    [TASK_ADC_INTERNAL] = {
-        .taskName = "ADCINTERNAL",
-        .taskFunc = adcInternalProcess,
-        .desiredPeriod = TASK_PERIOD_HZ(1),
-        .staticPriority = TASK_PRIORITY_IDLE
-    },
+    [TASK_ADC_INTERNAL] = {.taskName = "ADCINTERNAL", .taskFunc = adcInternalProcess, .desiredPeriod = TASK_PERIOD_HZ(1), .staticPriority = TASK_PRIORITY_IDLE},
 #endif
 
 #ifdef USE_PINIOBOX
-    [TASK_PINIOBOX] = {
-        .taskName = "PINIOBOX",
-        .taskFunc = pinioBoxUpdate,
-        .desiredPeriod = TASK_PERIOD_HZ(20),
-        .staticPriority = TASK_PRIORITY_IDLE
-    },
+    [TASK_PINIOBOX] = {.taskName = "PINIOBOX", .taskFunc = pinioBoxUpdate, .desiredPeriod = TASK_PERIOD_HZ(20), .staticPriority = TASK_PRIORITY_IDLE},
 #endif
 };

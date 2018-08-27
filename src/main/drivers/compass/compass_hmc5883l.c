@@ -109,44 +109,44 @@
  *              1  |  1  |  Sleep Mode
  */
 
-#define HMC5883_MAG_I2C_ADDRESS     0x1E
-#define HMC5883_DEVICE_ID           0x48
+#define HMC5883_MAG_I2C_ADDRESS 0x1E
+#define HMC5883_DEVICE_ID 0x48
 
-#define HMC58X3_REG_CONFA           0x00
-#define HMC58X3_REG_CONFB           0x01
-#define HMC58X3_REG_MODE            0x02
-#define HMC58X3_REG_DATA            0x03
-#define HMC58X3_REG_IDA             0x0A
+#define HMC58X3_REG_CONFA 0x00
+#define HMC58X3_REG_CONFB 0x01
+#define HMC58X3_REG_MODE 0x02
+#define HMC58X3_REG_DATA 0x03
+#define HMC58X3_REG_IDA 0x0A
 
-#define HMC_CONFA_NORMAL            0x00
-#define HMC_CONFA_POS_BIAS          0x01
-#define HMC_CONFA_NEG_BIAS          0x02
-#define HMC_CONFA_DOR_15HZ          0X10
-#define HMC_CONFA_8_SAMLES          0X60
-#define HMC_CONFB_GAIN_2_5GA        0X60
-#define HMC_CONFB_GAIN_1_3GA        0X20
-#define HMC_MODE_CONTINOUS          0X00
-#define HMC_MODE_SINGLE             0X01
+#define HMC_CONFA_NORMAL 0x00
+#define HMC_CONFA_POS_BIAS 0x01
+#define HMC_CONFA_NEG_BIAS 0x02
+#define HMC_CONFA_DOR_15HZ 0X10
+#define HMC_CONFA_8_SAMLES 0X60
+#define HMC_CONFB_GAIN_2_5GA 0X60
+#define HMC_CONFB_GAIN_1_3GA 0X20
+#define HMC_MODE_CONTINOUS 0X00
+#define HMC_MODE_SINGLE 0X01
 
-#define HMC58X3_X_SELF_TEST_GAUSS   (+1.16f)            // X axis level when bias current is applied.
-#define HMC58X3_Y_SELF_TEST_GAUSS   (+1.16f)            // Y axis level when bias current is applied.
-#define HMC58X3_Z_SELF_TEST_GAUSS   (+1.08f)            // Z axis level when bias current is applied.
-#define SELF_TEST_LOW_LIMIT         (243.0f / 390.0f)   // Low limit when gain is 5.
-#define SELF_TEST_HIGH_LIMIT        (575.0f / 390.0f)   // High limit when gain is 5.
+#define HMC58X3_X_SELF_TEST_GAUSS (+1.16f)     // X axis level when bias current is applied.
+#define HMC58X3_Y_SELF_TEST_GAUSS (+1.16f)     // Y axis level when bias current is applied.
+#define HMC58X3_Z_SELF_TEST_GAUSS (+1.08f)     // Z axis level when bias current is applied.
+#define SELF_TEST_LOW_LIMIT (243.0f / 390.0f)  // Low limit when gain is 5.
+#define SELF_TEST_HIGH_LIMIT (575.0f / 390.0f) // High limit when gain is 5.
 
 #ifdef USE_MAG_DATA_READY_SIGNAL
 
-static void hmc5883_extiHandler(extiCallbackRec_t* cb)
+static void hmc5883_extiHandler(extiCallbackRec_t *cb)
 {
     UNUSED(cb);
 #ifdef DEBUG_MAG_DATA_READY_INTERRUPT
     // Measure the delta between calls to the interrupt handler
     // currently should be around 65/66 milli seconds / 15hz output rate
     static uint32_t lastCalledAt = 0;
-    static int32_t callDelta = 0;
+    static int32_t callDelta     = 0;
 
     uint32_t now = millis();
-    callDelta = now - lastCalledAt;
+    callDelta    = now - lastCalledAt;
 
     //UNUSED(callDelta);
     debug[0] = callDelta;
@@ -156,7 +156,7 @@ static void hmc5883_extiHandler(extiCallbackRec_t* cb)
 }
 #endif
 
-static void hmc5883lConfigureDataReadyInterruptHandling(magDev_t* mag)
+static void hmc5883lConfigureDataReadyInterruptHandling(magDev_t *mag)
 {
 #ifdef USE_MAG_DATA_READY_SIGNAL
     if (mag->magIntExtiTag == IO_TAG_NONE) {
@@ -172,10 +172,10 @@ static void hmc5883lConfigureDataReadyInterruptHandling(magDev_t* mag)
     }
 #endif
 
-#if defined (STM32F7)
+#if defined(STM32F7)
     IOInit(magIntIO, OWNER_COMPASS_EXTI, 0);
     EXTIHandlerInit(&mag->exti, hmc5883_extiHandler);
-    EXTIConfig(magIntIO, &mag->exti, NVIC_PRIO_MPU_INT_EXTI, IO_CONFIG(GPIO_MODE_INPUT,0,GPIO_NOPULL));
+    EXTIConfig(magIntIO, &mag->exti, NVIC_PRIO_MPU_INT_EXTI, IO_CONFIG(GPIO_MODE_INPUT, 0, GPIO_NOPULL));
     EXTIEnable(magIntIO, true);
 #else
     IOInit(magIntIO, OWNER_COMPASS_EXTI, 0);
@@ -225,11 +225,10 @@ static bool hmc5883lInit(magDev_t *mag)
 
     busDevice_t *busdev = &mag->busdev;
 
-
     // leave test mode
-    busWriteRegister(busdev, HMC58X3_REG_CONFA, HMC_CONFA_8_SAMLES | HMC_CONFA_DOR_15HZ | HMC_CONFA_NORMAL);    // Configuration Register A  -- 0 11 100 00  num samples: 8 ; output rate: 15Hz ; normal measurement mode
-    busWriteRegister(busdev, HMC58X3_REG_CONFB, HMC_CONFB_GAIN_1_3GA);                                          // Configuration Register B  -- 001 00000    configuration gain 1.3Ga
-    busWriteRegister(busdev, HMC58X3_REG_MODE, HMC_MODE_CONTINOUS);                                             // Mode register             -- 000000 00    continuous Conversion Mode
+    busWriteRegister(busdev, HMC58X3_REG_CONFA, HMC_CONFA_8_SAMLES | HMC_CONFA_DOR_15HZ | HMC_CONFA_NORMAL); // Configuration Register A  -- 0 11 100 00  num samples: 8 ; output rate: 15Hz ; normal measurement mode
+    busWriteRegister(busdev, HMC58X3_REG_CONFB, HMC_CONFB_GAIN_1_3GA);                                       // Configuration Register B  -- 001 00000    configuration gain 1.3Ga
+    busWriteRegister(busdev, HMC58X3_REG_MODE, HMC_MODE_CONTINOUS);                                          // Mode register             -- 000000 00    continuous Conversion Mode
 
     delay(100);
 
@@ -237,7 +236,7 @@ static bool hmc5883lInit(magDev_t *mag)
     return true;
 }
 
-bool hmc5883lDetect(magDev_t* mag)
+bool hmc5883lDetect(magDev_t *mag)
 {
     busDevice_t *busdev = &mag->busdev;
 

@@ -49,41 +49,41 @@
 #include "drivers/serial_usb_vcp.h"
 #include "drivers/time.h"
 
+#include "stdbool.h"
 #include "stm32f7xx_hal.h"
-#include "usbd_core.h"
-#include "usbd_desc.h"
 #include "usbd_cdc.h"
 #include "usbd_cdc_interface.h"
-#include "stdbool.h"
+#include "usbd_core.h"
+#include "usbd_desc.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-#define APP_RX_DATA_SIZE  2048
-#define APP_TX_DATA_SIZE  2048
+#define APP_RX_DATA_SIZE 2048
+#define APP_TX_DATA_SIZE 2048
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 USBD_CDC_LineCodingTypeDef LineCoding =
-{
-  115200, /* baud rate*/
-  0x00,   /* stop bits-1*/
-  0x00,   /* parity - none*/
-  0x08    /* nb. of bits 8*/
+    {
+        115200, /* baud rate*/
+        0x00,   /* stop bits-1*/
+        0x00,   /* parity - none*/
+        0x08    /* nb. of bits 8*/
 };
 
-uint8_t UserRxBuffer[APP_RX_DATA_SIZE];/* Received Data over USB are stored in this buffer */
-uint8_t UserTxBuffer[APP_TX_DATA_SIZE];/* Received Data over UART (CDC interface) are stored in this buffer */
+uint8_t UserRxBuffer[APP_RX_DATA_SIZE]; /* Received Data over USB are stored in this buffer */
+uint8_t UserTxBuffer[APP_TX_DATA_SIZE]; /* Received Data over UART (CDC interface) are stored in this buffer */
 uint32_t BuffLength;
-uint32_t UserTxBufPtrIn = 0;/* Increment this pointer or roll it back to
+uint32_t UserTxBufPtrIn  = 0; /* Increment this pointer or roll it back to
                                start address when data are received over USART */
 uint32_t UserTxBufPtrOut = 0; /* Increment this pointer or roll it back to
                                  start address when data are sent over USB */
 
 uint32_t rxAvailable = 0;
-uint8_t* rxBuffPtr = NULL;
+uint8_t *rxBuffPtr   = NULL;
 
 /* TIM handler declaration */
-TIM_HandleTypeDef  TimHandle;
+TIM_HandleTypeDef TimHandle;
 
 static void (*ctrlLineStateCb)(void *context, uint16_t ctrlLineState);
 static void *ctrlLineStateCbContext;
@@ -93,20 +93,18 @@ static void *baudRateCbContext;
 /* Private function prototypes -----------------------------------------------*/
 static int8_t CDC_Itf_Init(void);
 static int8_t CDC_Itf_DeInit(void);
-static int8_t CDC_Itf_Control(uint8_t cmd, uint8_t* pbuf, uint16_t length);
-static int8_t CDC_Itf_Receive(uint8_t* pbuf, uint32_t *Len);
+static int8_t CDC_Itf_Control(uint8_t cmd, uint8_t *pbuf, uint16_t length);
+static int8_t CDC_Itf_Receive(uint8_t *pbuf, uint32_t *Len);
 
 static void TIM_Config(void);
 static void Error_Handler(void);
 
 USBD_CDC_ItfTypeDef USBD_CDC_fops =
-{
-  CDC_Itf_Init,
-  CDC_Itf_DeInit,
-  CDC_Itf_Control,
-  CDC_Itf_Receive
-};
-
+    {
+        CDC_Itf_Init,
+        CDC_Itf_DeInit,
+        CDC_Itf_Control,
+        CDC_Itf_Receive};
 
 void TIMx_IRQHandler(void)
 {
@@ -123,25 +121,24 @@ void TIMx_IRQHandler(void)
   */
 static int8_t CDC_Itf_Init(void)
 {
-  /*##-3- Configure the TIM Base generation  #################################*/
-  TIM_Config();
+    /*##-3- Configure the TIM Base generation  #################################*/
+    TIM_Config();
 
-  /*##-4- Start the TIM Base generation in interrupt mode ####################*/
-  /* Start Channel1 */
-  if (HAL_TIM_Base_Start_IT(&TimHandle) != HAL_OK)
-  {
-    /* Starting Error */
-    Error_Handler();
-  }
+    /*##-4- Start the TIM Base generation in interrupt mode ####################*/
+    /* Start Channel1 */
+    if (HAL_TIM_Base_Start_IT(&TimHandle) != HAL_OK) {
+        /* Starting Error */
+        Error_Handler();
+    }
 
-  /*##-5- Set Application Buffers ############################################*/
-  USBD_CDC_SetTxBuffer(&USBD_Device, UserTxBuffer, 0);
-  USBD_CDC_SetRxBuffer(&USBD_Device, UserRxBuffer);
+    /*##-5- Set Application Buffers ############################################*/
+    USBD_CDC_SetTxBuffer(&USBD_Device, UserTxBuffer, 0);
+    USBD_CDC_SetRxBuffer(&USBD_Device, UserRxBuffer);
 
-  ctrlLineStateCb = NULL;
-  baudRateCb = NULL;
+    ctrlLineStateCb = NULL;
+    baudRateCb      = NULL;
 
-  return (USBD_OK);
+    return (USBD_OK);
 }
 
 /**
@@ -153,7 +150,7 @@ static int8_t CDC_Itf_Init(void)
 static int8_t CDC_Itf_DeInit(void)
 {
 
-  return (USBD_OK);
+    return (USBD_OK);
 }
 
 /**
@@ -164,74 +161,73 @@ static int8_t CDC_Itf_DeInit(void)
   * @param  Len: Number of data to be sent (in bytes)
   * @retval Result of the operation: USBD_OK if all operations are OK else USBD_FAIL
   */
-static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
+static int8_t CDC_Itf_Control(uint8_t cmd, uint8_t *pbuf, uint16_t length)
 {
-  LINE_CODING* plc = (LINE_CODING*)pbuf;
+    LINE_CODING *plc = (LINE_CODING *)pbuf;
 
-  switch (cmd)
-  {
-  case CDC_SEND_ENCAPSULATED_COMMAND:
-    /* Add your code here */
-    break;
+    switch (cmd) {
+    case CDC_SEND_ENCAPSULATED_COMMAND:
+        /* Add your code here */
+        break;
 
-  case CDC_GET_ENCAPSULATED_RESPONSE:
-    /* Add your code here */
-    break;
+    case CDC_GET_ENCAPSULATED_RESPONSE:
+        /* Add your code here */
+        break;
 
-  case CDC_SET_COMM_FEATURE:
-    /* Add your code here */
-    break;
+    case CDC_SET_COMM_FEATURE:
+        /* Add your code here */
+        break;
 
-  case CDC_GET_COMM_FEATURE:
-    /* Add your code here */
-    break;
+    case CDC_GET_COMM_FEATURE:
+        /* Add your code here */
+        break;
 
-  case CDC_CLEAR_COMM_FEATURE:
-    /* Add your code here */
-    break;
+    case CDC_CLEAR_COMM_FEATURE:
+        /* Add your code here */
+        break;
 
-  case CDC_SET_LINE_CODING:
-    if (pbuf && (length == sizeof (*plc))) {
-        LineCoding.bitrate    = plc->bitrate;
-        LineCoding.format     = plc->format;
-        LineCoding.paritytype = plc->paritytype;
-        LineCoding.datatype   = plc->datatype;
+    case CDC_SET_LINE_CODING:
+        if (pbuf && (length == sizeof(*plc))) {
+            LineCoding.bitrate    = plc->bitrate;
+            LineCoding.format     = plc->format;
+            LineCoding.paritytype = plc->paritytype;
+            LineCoding.datatype   = plc->datatype;
 
-        // If a callback is provided, tell the upper driver of changes in baud rate
-        if (baudRateCb) {
-            baudRateCb(baudRateCbContext, LineCoding.bitrate);
+            // If a callback is provided, tell the upper driver of changes in baud rate
+            if (baudRateCb) {
+                baudRateCb(baudRateCbContext, LineCoding.bitrate);
+            }
         }
+
+        break;
+
+    case CDC_GET_LINE_CODING:
+        if (pbuf && (length == sizeof(*plc))) {
+            plc->bitrate    = LineCoding.bitrate;
+            plc->format     = LineCoding.format;
+            plc->paritytype = LineCoding.paritytype;
+            plc->datatype   = LineCoding.datatype;
+        }
+        break;
+
+    case CDC_SET_CONTROL_LINE_STATE:
+        // If a callback is provided, tell the upper driver of changes in DTR/RTS state
+        if (pbuf && (length == sizeof(uint16_t))) {
+            if (ctrlLineStateCb) {
+                ctrlLineStateCb(ctrlLineStateCbContext, *((uint16_t *)pbuf));
+            }
+        }
+        break;
+
+    case CDC_SEND_BREAK:
+        /* Add your code here */
+        break;
+
+    default:
+        break;
     }
 
-    break;
-
-  case CDC_GET_LINE_CODING:
-    if (pbuf && (length == sizeof (*plc))) {
-        plc->bitrate = LineCoding.bitrate;
-        plc->format = LineCoding.format;
-        plc->paritytype = LineCoding.paritytype;
-        plc->datatype = LineCoding.datatype;
-    }
-    break;
-
-  case CDC_SET_CONTROL_LINE_STATE:
-    // If a callback is provided, tell the upper driver of changes in DTR/RTS state
-    if (pbuf && (length == sizeof (uint16_t))) {
-         if (ctrlLineStateCb) {
-             ctrlLineStateCb(ctrlLineStateCbContext, *((uint16_t *)pbuf));
-         }
-    }
-    break;
-
-  case CDC_SEND_BREAK:
-     /* Add your code here */
-    break;
-
-  default:
-    break;
-  }
-
-  return (USBD_OK);
+    return (USBD_OK);
 }
 
 /**
@@ -241,31 +237,27 @@ static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
   */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-    if (htim->Instance != TIMusb) return;
+    if (htim->Instance != TIMusb)
+        return;
 
     uint32_t buffptr;
     uint32_t buffsize;
 
-    if (UserTxBufPtrOut != UserTxBufPtrIn)
-    {
+    if (UserTxBufPtrOut != UserTxBufPtrIn) {
         if (UserTxBufPtrOut > UserTxBufPtrIn) /* Roll-back */
         {
             buffsize = APP_RX_DATA_SIZE - UserTxBufPtrOut;
-        }
-        else
-        {
+        } else {
             buffsize = UserTxBufPtrIn - UserTxBufPtrOut;
         }
 
         buffptr = UserTxBufPtrOut;
 
-        USBD_CDC_SetTxBuffer(&USBD_Device, (uint8_t*)&UserTxBuffer[buffptr], buffsize);
+        USBD_CDC_SetTxBuffer(&USBD_Device, (uint8_t *)&UserTxBuffer[buffptr], buffsize);
 
-        if (USBD_CDC_TransmitPacket(&USBD_Device) == USBD_OK)
-        {
+        if (USBD_CDC_TransmitPacket(&USBD_Device) == USBD_OK) {
             UserTxBufPtrOut += buffsize;
-            if (UserTxBufPtrOut == APP_TX_DATA_SIZE)
-            {
+            if (UserTxBufPtrOut == APP_TX_DATA_SIZE) {
                 UserTxBufPtrOut = 0;
             }
         }
@@ -280,10 +272,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   * @param  Len: Number of data received (in bytes)
   * @retval Result of the operation: USBD_OK if all operations are OK else USBD_FAIL
   */
-static int8_t CDC_Itf_Receive(uint8_t* Buf, uint32_t *Len)
+static int8_t CDC_Itf_Receive(uint8_t *Buf, uint32_t *Len)
 {
     rxAvailable = *Len;
-    rxBuffPtr = Buf;
+    rxBuffPtr   = Buf;
     return (USBD_OK);
 }
 
@@ -294,34 +286,33 @@ static int8_t CDC_Itf_Receive(uint8_t* Buf, uint32_t *Len)
   */
 static void TIM_Config(void)
 {
-  /* Set TIMusb instance */
-  TimHandle.Instance = TIMusb;
+    /* Set TIMusb instance */
+    TimHandle.Instance = TIMusb;
 
-  /* Initialize TIMx peripheral as follow:
+    /* Initialize TIMx peripheral as follow:
        + Period = 10000 - 1
        + Prescaler = ((SystemCoreClock/2)/10000) - 1
        + ClockDivision = 0
        + Counter direction = Up
   */
-  TimHandle.Init.Period = (CDC_POLLING_INTERVAL*1000) - 1;
-  TimHandle.Init.Prescaler = (SystemCoreClock / 2 / (1000000)) - 1;
-  TimHandle.Init.ClockDivision = 0;
-  TimHandle.Init.CounterMode = TIM_COUNTERMODE_UP;
-  if (HAL_TIM_Base_Init(&TimHandle) != HAL_OK)
-  {
-    /* Initialization Error */
-    Error_Handler();
-  }
+    TimHandle.Init.Period        = (CDC_POLLING_INTERVAL * 1000) - 1;
+    TimHandle.Init.Prescaler     = (SystemCoreClock / 2 / (1000000)) - 1;
+    TimHandle.Init.ClockDivision = 0;
+    TimHandle.Init.CounterMode   = TIM_COUNTERMODE_UP;
+    if (HAL_TIM_Base_Init(&TimHandle) != HAL_OK) {
+        /* Initialization Error */
+        Error_Handler();
+    }
 
-  /*##-6- Enable TIM peripherals Clock #######################################*/
-  TIMx_CLK_ENABLE();
+    /*##-6- Enable TIM peripherals Clock #######################################*/
+    TIMx_CLK_ENABLE();
 
-  /*##-7- Configure the NVIC for TIMx ########################################*/
-  /* Set Interrupt Group Priority */
-  HAL_NVIC_SetPriority(TIMx_IRQn, 6, 0);
+    /*##-7- Configure the NVIC for TIMx ########################################*/
+    /* Set Interrupt Group Priority */
+    HAL_NVIC_SetPriority(TIMx_IRQn, 6, 0);
 
-  /* Enable the TIMx global Interrupt */
-  HAL_NVIC_EnableIRQ(TIMx_IRQn);
+    /* Enable the TIMx global Interrupt */
+    HAL_NVIC_EnableIRQ(TIMx_IRQn);
 }
 
 /**
@@ -331,16 +322,14 @@ static void TIM_Config(void)
   */
 static void Error_Handler(void)
 {
-  /* Add your own code here */
+    /* Add your own code here */
 }
 
-uint32_t CDC_Receive_DATA(uint8_t* recvBuf, uint32_t len)
+uint32_t CDC_Receive_DATA(uint8_t *recvBuf, uint32_t len)
 {
     uint32_t count = 0;
-    if ( (rxBuffPtr != NULL))
-    {
-        while ((rxAvailable > 0) && count < len)
-        {
+    if ((rxBuffPtr != NULL)) {
+        while ((rxAvailable > 0) && count < len) {
             recvBuf[count] = rxBuffPtr[0];
             rxBuffPtr++;
             rxAvailable--;
@@ -379,20 +368,19 @@ uint32_t CDC_Send_FreeBytes(void)
  */
 uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength)
 {
-    USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*)USBD_Device.pCDC_ClassData;
-    while (hcdc->TxState != 0);
+    USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef *)USBD_Device.pCDC_ClassData;
+    while (hcdc->TxState != 0)
+        ;
 
-    for (uint32_t i = 0; i < sendLength; i++)
-    {
+    for (uint32_t i = 0; i < sendLength; i++) {
         UserTxBuffer[UserTxBufPtrIn] = ptrBuffer[i];
-        UserTxBufPtrIn = (UserTxBufPtrIn + 1) % APP_TX_DATA_SIZE;
+        UserTxBufPtrIn               = (UserTxBufPtrIn + 1) % APP_TX_DATA_SIZE;
         while (CDC_Send_FreeBytes() == 0) {
             delay(1);
         }
     }
     return sendLength;
 }
-
 
 /*******************************************************************************
  * Function Name  : usbIsConfigured.
@@ -440,7 +428,7 @@ uint32_t CDC_BaudRate(void)
 void CDC_SetBaudRateCb(void (*cb)(void *context, uint32_t baud), void *context)
 {
     baudRateCbContext = context;
-    baudRateCb = cb;
+    baudRateCb        = cb;
 }
 
 /*******************************************************************************
@@ -453,7 +441,7 @@ void CDC_SetBaudRateCb(void (*cb)(void *context, uint32_t baud), void *context)
 void CDC_SetCtrlLineStateCb(void (*cb)(void *context, uint16_t ctrlLineState), void *context)
 {
     ctrlLineStateCbContext = context;
-    ctrlLineStateCb = cb;
+    ctrlLineStateCb        = cb;
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

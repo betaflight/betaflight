@@ -20,15 +20,15 @@
 
 #include <stdint.h>
 
-#include "platform.h"
 #include "drivers/io.h"
+#include "platform.h"
 
+#include "drivers/dma.h"
 #include "drivers/timer.h"
 #include "drivers/timer_def.h"
-#include "drivers/dma.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-/*
+    /*
     { TIM2,  IO_TAG(PA0),  TIM_Channel_1, TIM_USE_PPM | TIM_USE_PWM, 0, GPIO_AF_1,  NULL, 0},  // PWM1 - RC1
     { TIM2,  IO_TAG(PA1),  TIM_Channel_2, TIM_USE_PWM,    0, GPIO_AF_1,  NULL, 0},  // PWM2 - RC2
     { TIM2,  IO_TAG(PA2),  TIM_Channel_3, TIM_USE_PWM,    0, GPIO_AF_1,  NULL, 0},  // PWM3 - RC3
@@ -44,18 +44,18 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM4,  IO_TAG(PB8),  TIM_Channel_3, TIM_USE_MOTOR,  1, GPIO_AF_2,  NULL, 0},  // PWM13 - OUT5
     { TIM4,  IO_TAG(PB9),  TIM_Channel_4, TIM_USE_MOTOR,  1, GPIO_AF_2,  NULL, 0}   // PWM14 - OUT6
 */
-    DEF_TIM(TIM2, CH1, PA0,  TIM_USE_PPM | TIM_USE_PWM, 0),
-    DEF_TIM(TIM2, CH2, PA1,  TIM_USE_PWM,               0),
-    DEF_TIM(TIM2, CH3, PA2,  TIM_USE_PWM,               0),
-    DEF_TIM(TIM2, CH4, PA3,  TIM_USE_PWM,               0),
-    DEF_TIM(TIM3, CH1, PA6,  TIM_USE_PWM | TIM_USE_LED, 0),
-    DEF_TIM(TIM3, CH2, PA7,  TIM_USE_PWM,               0),
-    DEF_TIM(TIM3, CH3, PB0,  TIM_USE_PWM,               0),
-    DEF_TIM(TIM3, CH4, PB1,  TIM_USE_PWM,               0),
-    DEF_TIM(TIM1, CH1, PA8,  TIM_USE_MOTOR,             0), // DMA1_CH2
-    DEF_TIM(TIM4, CH1, PA11, TIM_USE_MOTOR,             0), // DMA1_CH1
-    DEF_TIM(TIM8, CH1, PB6,  TIM_USE_MOTOR,             0), // DMA2_CH3
-    DEF_TIM(TIM4, CH2, PB7,  TIM_USE_MOTOR,             0), // DMA1_CH4
-    DEF_TIM(TIM8, CH2, PB8,  TIM_USE_MOTOR,             0), // DMA2_CH5
-    DEF_TIM(TIM8, CH3, PB9,  TIM_USE_MOTOR,             0), // DMA2_CH1
+    DEF_TIM(TIM2, CH1, PA0, TIM_USE_PPM | TIM_USE_PWM, 0),
+    DEF_TIM(TIM2, CH2, PA1, TIM_USE_PWM, 0),
+    DEF_TIM(TIM2, CH3, PA2, TIM_USE_PWM, 0),
+    DEF_TIM(TIM2, CH4, PA3, TIM_USE_PWM, 0),
+    DEF_TIM(TIM3, CH1, PA6, TIM_USE_PWM | TIM_USE_LED, 0),
+    DEF_TIM(TIM3, CH2, PA7, TIM_USE_PWM, 0),
+    DEF_TIM(TIM3, CH3, PB0, TIM_USE_PWM, 0),
+    DEF_TIM(TIM3, CH4, PB1, TIM_USE_PWM, 0),
+    DEF_TIM(TIM1, CH1, PA8, TIM_USE_MOTOR, 0),  // DMA1_CH2
+    DEF_TIM(TIM4, CH1, PA11, TIM_USE_MOTOR, 0), // DMA1_CH1
+    DEF_TIM(TIM8, CH1, PB6, TIM_USE_MOTOR, 0),  // DMA2_CH3
+    DEF_TIM(TIM4, CH2, PB7, TIM_USE_MOTOR, 0),  // DMA1_CH4
+    DEF_TIM(TIM8, CH2, PB8, TIM_USE_MOTOR, 0),  // DMA2_CH5
+    DEF_TIM(TIM8, CH3, PB9, TIM_USE_MOTOR, 0),  // DMA2_CH1
 };

@@ -22,11 +22,10 @@
 
 #include "interface/crsf_protocol.h"
 
+#define CRSF_PORT_OPTIONS (SERIAL_STOPBITS_1 | SERIAL_PARITY_NO)
+#define CRSF_PORT_MODE MODE_RXTX
 
-#define CRSF_PORT_OPTIONS       (SERIAL_STOPBITS_1 | SERIAL_PARITY_NO)
-#define CRSF_PORT_MODE          MODE_RXTX
-
-#define CRSF_MAX_CHANNEL        16
+#define CRSF_MAX_CHANNEL 16
 
 typedef struct crsfFrameDef_s {
     uint8_t deviceAddress;

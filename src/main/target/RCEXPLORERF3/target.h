@@ -35,13 +35,11 @@
 #undef USE_RX_MSP
 #undef USE_ESC_SENSOR_INFO
 
-
-
-#define LED0_PIN    PB4
-#define LED1_PIN    PB5
+#define LED0_PIN PB4
+#define LED1_PIN PB5
 
 #define USE_BEEPER
-#define BEEPER_PIN  PA0
+#define BEEPER_PIN PA0
 #define BEEPER_INVERTED
 
 #define USE_EXTI
@@ -52,8 +50,8 @@
 #define USE_GYRO_SPI_MPU6000
 #define USE_ACC_SPI_MPU6000
 
-#define MPU6000_CS_PIN          PB12
-#define MPU6000_SPI_INSTANCE    SPI2
+#define MPU6000_CS_PIN PB12
+#define MPU6000_SPI_INSTANCE SPI2
 
 #define USE_ACC
 
@@ -71,8 +69,8 @@
 
 #define USE_RANGEFINDER
 #define USE_RANGEFINDER_HCSR04
-#define RANGEFINDER_HCSR04_TRIGGER_PIN           PA6   // RC_CH7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
-#define RANGEFINDER_HCSR04_ECHO_PIN              PB1   // RC_CH8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
+#define RANGEFINDER_HCSR04_TRIGGER_PIN PA6 // RC_CH7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
+#define RANGEFINDER_HCSR04_ECHO_PIN PB1    // RC_CH8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
 
 #define USE_VCP
 #define USE_UART1
@@ -84,43 +82,43 @@
 #define SERIAL_PORT_COUNT 6
 
 #define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_PIN  PA8  // (HARDARE=0)
+#define ESCSERIAL_TIMER_TX_PIN PA8 // (HARDARE=0)
 
-#define UART1_TX_PIN            PB6
-#define UART1_RX_PIN            PB7
+#define UART1_TX_PIN PB6
+#define UART1_RX_PIN PB7
 
-#define UART2_TX_PIN            PA2
-#define UART2_RX_PIN            PA3
+#define UART2_TX_PIN PA2
+#define UART2_RX_PIN PA3
 
-#define UART3_TX_PIN            PB10 // PB10 (AF7)
-#define UART3_RX_PIN            PB11 // PB11 (AF7)
+#define UART3_TX_PIN PB10 // PB10 (AF7)
+#define UART3_RX_PIN PB11 // PB11 (AF7)
 
 #define USE_I2C
 #define USE_I2C_DEVICE_2
-#define I2C_DEVICE              (I2CDEV_2)
+#define I2C_DEVICE (I2CDEV_2)
 
-#define I2C2_SCL                PA9
-#define I2C2_SDA                PA10
+#define I2C2_SCL PA9
+#define I2C2_SDA PA10
 
 #define USE_SPI
 #define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5
 
-#define SPI2_NSS_PIN            PB12
-#define SPI2_SCK_PIN            PB13
-#define SPI2_MISO_PIN           PB14
-#define SPI2_MOSI_PIN           PB15
+#define SPI2_NSS_PIN PB12
+#define SPI2_SCK_PIN PB13
+#define SPI2_MISO_PIN PB14
+#define SPI2_MOSI_PIN PB15
 
 #define USE_ADC
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 
-#define ADC_INSTANCE                ADC2
-#define VBAT_ADC_PIN                PA5
-#define CURRENT_METER_ADC_PIN       PB2
-#define RSSI_ADC_PIN                PA6
+#define ADC_INSTANCE ADC2
+#define VBAT_ADC_PIN PA5
+#define CURRENT_METER_ADC_PIN PB2
+#define RSSI_ADC_PIN PA6
 
-#define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
-#define SERIALRX_PROVIDER       SERIALRX_SBUS
-#define SERIALRX_UART           SERIAL_PORT_USART1
+#define DEFAULT_RX_FEATURE FEATURE_RX_SERIAL
+#define SERIALRX_PROVIDER SERIALRX_SBUS
+#define SERIALRX_UART SERIAL_PORT_USART1
 
 #define USE_GPS_UBLOX
 #define USE_GPS_NMEA
@@ -129,8 +127,8 @@
 
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff
-#define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))
-#define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(4))
+#define TARGET_IO_PORTC (BIT(13) | BIT(14) | BIT(15))
+#define TARGET_IO_PORTF (BIT(0) | BIT(1) | BIT(4))
 
 #define USABLE_TIMER_CHANNEL_COUNT 7
-#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(17))
+#define USED_TIMERS (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(17))

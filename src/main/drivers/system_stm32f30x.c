@@ -26,7 +26,7 @@
 #include "drivers/nvic.h"
 #include "drivers/system.h"
 
-#define AIRCR_VECTKEY_MASK    ((uint32_t)0x05FA0000)
+#define AIRCR_VECTKEY_MASK ((uint32_t)0x05FA0000)
 void SetSysClock();
 
 void systemReset(void)
@@ -45,26 +45,23 @@ void systemResetToBootloader(void)
     systemReset();
 }
 
-
 void enableGPIOPowerUsageAndNoiseReductions(void)
 {
     RCC_AHBPeriphClockCmd(
         RCC_AHBPeriph_GPIOA |
-        RCC_AHBPeriph_GPIOB |
-        RCC_AHBPeriph_GPIOC |
-        RCC_AHBPeriph_GPIOD |
-        RCC_AHBPeriph_GPIOE |
-        RCC_AHBPeriph_GPIOF,
-        ENABLE
-    );
+            RCC_AHBPeriph_GPIOB |
+            RCC_AHBPeriph_GPIOC |
+            RCC_AHBPeriph_GPIOD |
+            RCC_AHBPeriph_GPIOE |
+            RCC_AHBPeriph_GPIOF,
+        ENABLE);
 
     GPIO_InitTypeDef GPIO_InitStructure = {
-        .GPIO_Mode = GPIO_Mode_AN,
+        .GPIO_Mode  = GPIO_Mode_AN,
         .GPIO_OType = GPIO_OType_OD,
-        .GPIO_PuPd = GPIO_PuPd_NOPULL
-    };
+        .GPIO_PuPd  = GPIO_PuPd_NOPULL};
 
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_All & ~(GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15);  // Leave JTAG pins alone
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_All & ~(GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15); // Leave JTAG pins alone
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_All;
@@ -109,7 +106,7 @@ void systemInit(void)
 
 void checkForBootLoaderRequest(void)
 {
-    void(*bootJump)(void);
+    void (*bootJump)(void);
 
     if (*((uint32_t *)0x20009FFC) == 0xDEADBEEF) {
 
@@ -118,8 +115,9 @@ void checkForBootLoaderRequest(void)
         __enable_irq();
         __set_MSP(*((uint32_t *)0x1FFFD800));
 
-        bootJump = (void(*)(void))(*((uint32_t *) 0x1FFFD804));
+        bootJump = (void (*)(void))(*((uint32_t *)0x1FFFD804));
         bootJump();
-        while (1);
+        while (1)
+            ;
     }
 }

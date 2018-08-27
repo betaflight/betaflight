@@ -29,9 +29,9 @@
  * OF SUCH DAMAGE.
  */
 
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdarg.h>
 #include <stdlib.h>
 
 #include "platform.h"
@@ -53,7 +53,7 @@ static serialPort_t *printfSerialPort;
 
 #ifdef REQUIRE_CC_ARM_PRINTF_SUPPORT
 
-typedef void (*putcf) (void *, char);
+typedef void (*putcf)(void *, char);
 static putcf stdout_putf;
 static void *stdout_putp;
 
@@ -62,16 +62,18 @@ static void *stdout_putp;
 static int putchw(void *putp, putcf putf, int n, char z, char *bf)
 {
     int written = 0;
-    char fc = z ? '0' : ' ';
+    char fc     = z ? '0' : ' ';
     char ch;
     char *p = bf;
     while (*p++ && n > 0)
         n--;
     while (n-- > 0) {
-        putf(putp, fc); written++;
+        putf(putp, fc);
+        written++;
     }
     while ((ch = *bf++)) {
-        putf(putp, ch); written++;
+        putf(putp, ch);
+        written++;
     }
     return written;
 }
@@ -85,14 +87,15 @@ int tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
 
     while ((ch = *(fmt++))) {
         if (ch != '%') {
-            putf(putp, ch); written++;
+            putf(putp, ch);
+            written++;
         } else {
             char lz = 0;
-#ifdef  REQUIRE_PRINTF_LONG_SUPPORT
+#ifdef REQUIRE_PRINTF_LONG_SUPPORT
             char lng = 0;
 #endif
             int w = 0;
-            ch = *(fmt++);
+            ch    = *(fmt++);
             if (ch == '0') {
                 ch = *(fmt++);
                 lz = 1;
@@ -100,38 +103,38 @@ int tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
             if (ch >= '0' && ch <= '9') {
                 ch = a2i(ch, &fmt, 10, &w);
             }
-#ifdef  REQUIRE_PRINTF_LONG_SUPPORT
+#ifdef REQUIRE_PRINTF_LONG_SUPPORT
             if (ch == 'l') {
-                ch = *(fmt++);
+                ch  = *(fmt++);
                 lng = 1;
             }
 #endif
             switch (ch) {
             case 0:
                 goto abort;
-            case 'u':{
-#ifdef  REQUIRE_PRINTF_LONG_SUPPORT
-                    if (lng)
-                        uli2a(va_arg(va, unsigned long int), 10, 0, bf);
-                    else
+            case 'u': {
+#ifdef REQUIRE_PRINTF_LONG_SUPPORT
+                if (lng)
+                    uli2a(va_arg(va, unsigned long int), 10, 0, bf);
+                else
 #endif
-                        ui2a(va_arg(va, unsigned int), 10, 0, bf);
-                    written += putchw(putp, putf, w, lz, bf);
-                    break;
-                }
-            case 'd':{
-#ifdef  REQUIRE_PRINTF_LONG_SUPPORT
-                    if (lng)
-                        li2a(va_arg(va, unsigned long int), bf);
-                    else
+                    ui2a(va_arg(va, unsigned int), 10, 0, bf);
+                written += putchw(putp, putf, w, lz, bf);
+                break;
+            }
+            case 'd': {
+#ifdef REQUIRE_PRINTF_LONG_SUPPORT
+                if (lng)
+                    li2a(va_arg(va, unsigned long int), bf);
+                else
 #endif
-                        i2a(va_arg(va, int), bf);
-                    written += putchw(putp, putf, w, lz, bf);
-                    break;
-                }
+                    i2a(va_arg(va, int), bf);
+                written += putchw(putp, putf, w, lz, bf);
+                break;
+            }
             case 'x':
             case 'X':
-#ifdef  REQUIRE_PRINTF_LONG_SUPPORT
+#ifdef REQUIRE_PRINTF_LONG_SUPPORT
                 if (lng)
                     uli2a(va_arg(va, unsigned long int), 16, (ch == 'X'), bf);
                 else
@@ -140,16 +143,18 @@ int tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
                 written += putchw(putp, putf, w, lz, bf);
                 break;
             case 'c':
-                putf(putp, (char) (va_arg(va, int))); written++;
+                putf(putp, (char)(va_arg(va, int)));
+                written++;
                 break;
             case 's':
                 written += putchw(putp, putf, w, 0, va_arg(va, char *));
                 break;
             case '%':
-                putf(putp, ch); written++;
+                putf(putp, ch);
+                written++;
                 break;
             case 'n':
-                *va_arg(va, int*) = written;
+                *va_arg(va, int *) = written;
                 break;
             default:
                 break;
@@ -160,7 +165,7 @@ abort:
     return written;
 }
 
-void init_printf(void *putp, void (*putf) (void *, char))
+void init_printf(void *putp, void (*putf)(void *, char))
 {
     stdout_putf = putf;
     stdout_putp = putp;
@@ -172,13 +177,14 @@ int tfp_printf(const char *fmt, ...)
     va_start(va, fmt);
     int written = tfp_format(stdout_putp, stdout_putf, fmt, va);
     va_end(va);
-    while (!isSerialTransmitBufferEmpty(printfSerialPort));
+    while (!isSerialTransmitBufferEmpty(printfSerialPort))
+        ;
     return written;
 }
 
 static void putcp(void *p, char c)
 {
-    *(*((char **) p))++ = c;
+    *(*((char **)p))++ = c;
 }
 
 int tfp_sprintf(char *s, const char *fmt, ...)
@@ -191,7 +197,6 @@ int tfp_sprintf(char *s, const char *fmt, ...)
     va_end(va);
     return written;
 }
-
 
 static void _putc(void *p, char c)
 {
@@ -210,7 +215,8 @@ void printfSupportInit(void)
 int fputc(int c, FILE *f)
 {
     // let DMA catch up a bit when using set or dump, we're too fast.
-    while (!isSerialTransmitBufferEmpty(printfSerialPort));
+    while (!isSerialTransmitBufferEmpty(printfSerialPort))
+        ;
     serialWrite(printfSerialPort, c);
     return c;
 }

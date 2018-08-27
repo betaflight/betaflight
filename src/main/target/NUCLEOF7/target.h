@@ -24,8 +24,8 @@
 
 #define USBD_PRODUCT_STRING "NucleoF7"
 
-#define LED0_PIN   PB7
-#define LED1_PIN   PB14
+#define LED0_PIN PB7
+#define LED1_PIN PB14
 #define LED0_INVERTED
 #define LED1_INVERTED
 
@@ -62,7 +62,7 @@
 
 #define USE_VCP
 #define USE_USB_DETECT
-#define USB_DETECT_PIN   PA9
+#define USB_DETECT_PIN PA9
 
 //#define USE_UART1
 //#define UART1_RX_PIN PA10
@@ -102,51 +102,51 @@
 #define SERIAL_PORT_COUNT 10 //VCP, USART2, USART3, UART4, UART5, USART6, USART7, USART8, SOFTSERIAL x 2
 
 #define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_PIN  PB15 // (Hardware=0, PPM)
+#define ESCSERIAL_TIMER_TX_PIN PB15 // (Hardware=0, PPM)
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_4
 
-#define SPI1_NSS_PIN            PA4
-#define SPI1_SCK_PIN            PA5
-#define SPI1_MISO_PIN           PA6
-#define SPI1_MOSI_PIN           PA7
+#define SPI1_NSS_PIN PA4
+#define SPI1_SCK_PIN PA5
+#define SPI1_MISO_PIN PA6
+#define SPI1_MOSI_PIN PA7
 
-#define SPI4_NSS_PIN            PE11
-#define SPI4_SCK_PIN            PE12
-#define SPI4_MISO_PIN           PE13
-#define SPI4_MOSI_PIN           PE14
+#define SPI4_NSS_PIN PE11
+#define SPI4_SCK_PIN PE12
+#define SPI4_MISO_PIN PE13
+#define SPI4_MOSI_PIN PE14
 
 #define USE_SDCARD
 #define SDCARD_DETECT_INVERTED
-#define SDCARD_DETECT_PIN                   PF14
+#define SDCARD_DETECT_PIN PF14
 
-#define SDCARD_SPI_INSTANCE                 SPI4
-#define SDCARD_SPI_CS_PIN                   SPI4_NSS_PIN
+#define SDCARD_SPI_INSTANCE SPI4
+#define SDCARD_SPI_CS_PIN SPI4_NSS_PIN
 
 #define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 422kHz
 // Divide to under 25MHz for normal operation:
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 8 // 27MHz
 
-#define SDCARD_DMA_STREAM_TX_FULL           DMA2_Stream1
-#define SDCARD_DMA_CHANNEL                  4
+#define SDCARD_DMA_STREAM_TX_FULL DMA2_Stream1
+#define SDCARD_DMA_CHANNEL 4
 
 #define USE_I2C
 #define USE_I2C_DEVICE_1
-#define I2C_DEVICE                  (I2CDEV_1)
-#define I2C1_SCL                    PB8
-#define I2C1_SDA                    PB9
+#define I2C_DEVICE (I2CDEV_1)
+#define I2C1_SCL PB8
+#define I2C1_SDA PB9
 
 #define USE_ADC
-#define VBAT_ADC_PIN                PA3
-#define CURRENT_METER_ADC_PIN       PC0
-#define RSSI_ADC_GPIO_PIN           PC3
+#define VBAT_ADC_PIN PA3
+#define CURRENT_METER_ADC_PIN PC0
+#define RSSI_ADC_GPIO_PIN PC3
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
-#define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
-#define SERIALRX_PROVIDER       SERIALRX_SBUS
+#define DEFAULT_RX_FEATURE FEATURE_RX_SERIAL
+#define SERIALRX_PROVIDER SERIALRX_SBUS
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
@@ -158,4 +158,4 @@
 #define TARGET_IO_PORTF 0xffff
 #define TARGET_IO_PORTG 0xffff
 
-#define USED_TIMERS  ( TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9) | TIM_N(10) | TIM_N(11))
+#define USED_TIMERS (TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9) | TIM_N(10) | TIM_N(11))

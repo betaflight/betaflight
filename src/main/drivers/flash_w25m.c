@@ -46,9 +46,9 @@
 
 #include "pg/flash.h"
 
-#define W25M_INSTRUCTION_SOFTWARE_DIE_SELECT         0xC2
+#define W25M_INSTRUCTION_SOFTWARE_DIE_SELECT 0xC2
 
-#define JEDEC_ID_WINBOND_W25M512                     0xEF7119 // W25Q256 x 2
+#define JEDEC_ID_WINBOND_W25M512 0xEF7119 // W25Q256 x 2
 
 static const flashVTable_t w25m_vTable;
 
@@ -67,7 +67,7 @@ static void w25m_dieSelect(busDevice_t *busdev, int die)
         return;
     }
 
-    uint8_t command[2] = { W25M_INSTRUCTION_SOFTWARE_DIE_SELECT, die };
+    uint8_t command[2] = {W25M_INSTRUCTION_SOFTWARE_DIE_SELECT, die};
 
     spiBusTransfer(busdev, command, NULL, 2);
 
@@ -78,7 +78,7 @@ static bool w25m_isReady(flashDevice_t *fdevice)
 {
     UNUSED(fdevice);
 
-    for (int die = 0 ; die < dieCount ; die++) {
+    for (int die = 0; die < dieCount; die++) {
         if (dieDevice[die].couldBeBusy) {
             w25m_dieSelect(fdevice->busdev, die);
             if (!dieDevice[die].vTable->isReady(&dieDevice[die])) {
@@ -110,7 +110,7 @@ bool w25m_detect(flashDevice_t *fdevice, uint32_t chipID)
         // W25Q256 x 2
         dieCount = 2;
 
-        for (int die = 0 ; die < dieCount ; die++) {
+        for (int die = 0; die < dieCount; die++) {
             w25m_dieSelect(fdevice->busdev, die);
             dieDevice[die].busdev = fdevice->busdev;
             m25p16_detect(&dieDevice[die], JEDEC_ID_WINBOND_W25Q256);
@@ -121,20 +121,20 @@ bool w25m_detect(flashDevice_t *fdevice, uint32_t chipID)
 
     default:
         // Not a valid W25M series device
-        fdevice->geometry.sectors = 0;
+        fdevice->geometry.sectors        = 0;
         fdevice->geometry.pagesPerSector = 0;
-        fdevice->geometry.sectorSize = 0;
-        fdevice->geometry.totalSize = 0;
+        fdevice->geometry.sectorSize     = 0;
+        fdevice->geometry.totalSize      = 0;
         return false;
     }
 
-    fdevice->geometry.sectors = dieDevice[0].geometry.sectors;
-    fdevice->geometry.sectorSize = dieDevice[0].geometry.sectorSize;
+    fdevice->geometry.sectors        = dieDevice[0].geometry.sectors;
+    fdevice->geometry.sectorSize     = dieDevice[0].geometry.sectorSize;
     fdevice->geometry.pagesPerSector = dieDevice[0].geometry.pagesPerSector;
-    fdevice->geometry.pageSize = dieDevice[0].geometry.pageSize;
-    dieSize = dieDevice[0].geometry.totalSize;
-    fdevice->geometry.totalSize = dieSize * dieCount;
-    fdevice->vTable = &w25m_vTable;
+    fdevice->geometry.pageSize       = dieDevice[0].geometry.pageSize;
+    dieSize                          = dieDevice[0].geometry.totalSize;
+    fdevice->geometry.totalSize      = dieSize * dieCount;
+    fdevice->vTable                  = &w25m_vTable;
 
     return true;
 }
@@ -150,7 +150,7 @@ void w25m_eraseSector(flashDevice_t *fdevice, uint32_t address)
 
 void w25m_eraseCompletely(flashDevice_t *fdevice)
 {
-    for (int dieNumber = 0 ; dieNumber < dieCount ; dieNumber++) {
+    for (int dieNumber = 0; dieNumber < dieCount; dieNumber++) {
         w25m_dieSelect(fdevice->busdev, dieNumber);
         dieDevice[dieNumber].vTable->eraseCompletely(&dieDevice[dieNumber]);
     }
@@ -202,9 +202,9 @@ int w25m_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer, in
     // The loop is executed twice at the most for decent 'length'.
 
     for (rlen = length; rlen; rlen -= tlen) {
-        int dieNumber = address / dieSize;
+        int dieNumber       = address / dieSize;
         uint32_t dieAddress = address % dieSize;
-        tlen = MIN(dieAddress + rlen, dieSize) - dieAddress;
+        tlen                = MIN(dieAddress + rlen, dieSize) - dieAddress;
 
         w25m_dieSelect(fdevice->busdev, dieNumber);
 
@@ -220,21 +220,21 @@ int w25m_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer, in
     return length;
 }
 
-const flashGeometry_t* w25m_getGeometry(flashDevice_t *fdevice)
+const flashGeometry_t *w25m_getGeometry(flashDevice_t *fdevice)
 {
     return &fdevice->geometry;
 }
 
 static const flashVTable_t w25m_vTable = {
-    .isReady = w25m_isReady,
-    .waitForReady = w25m_waitForReady,
-    .eraseSector = w25m_eraseSector,
-    .eraseCompletely = w25m_eraseCompletely,
-    .pageProgramBegin = w25m_pageProgramBegin,
+    .isReady             = w25m_isReady,
+    .waitForReady        = w25m_waitForReady,
+    .eraseSector         = w25m_eraseSector,
+    .eraseCompletely     = w25m_eraseCompletely,
+    .pageProgramBegin    = w25m_pageProgramBegin,
     .pageProgramContinue = w25m_pageProgramContinue,
-    .pageProgramFinish = w25m_pageProgramFinish,
-    .pageProgram = w25m_pageProgram,
-    .readBytes = w25m_readBytes,
-    .getGeometry = w25m_getGeometry,
+    .pageProgramFinish   = w25m_pageProgramFinish,
+    .pageProgram         = w25m_pageProgram,
+    .readBytes           = w25m_readBytes,
+    .getGeometry         = w25m_getGeometry,
 };
 #endif

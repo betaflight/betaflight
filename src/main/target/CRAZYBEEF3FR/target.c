@@ -22,10 +22,10 @@
 
 #include "platform.h"
 
+#include "drivers/dma.h"
 #include "drivers/io.h"
 #include "drivers/timer.h"
 #include "drivers/timer_def.h"
-#include "drivers/dma.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     // TIM8_UP, DMA2_CH1

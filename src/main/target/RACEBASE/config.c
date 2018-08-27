@@ -34,7 +34,7 @@
 void targetConfiguration(void)
 {
     rxConfigMutable()->serialrx_inverted = true;
-    rxConfigMutable()->rssi_scale = 19;
+    rxConfigMutable()->rssi_scale        = 19;
     rxConfigMutable()->serialrx_provider = SERIALRX_SBUS;
 }
 #endif

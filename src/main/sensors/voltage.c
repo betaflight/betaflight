@@ -26,23 +26,22 @@
 
 #include "build/build_config.h"
 
-#include "common/maths.h"
 #include "common/filter.h"
+#include "common/maths.h"
 #include "common/utils.h"
 
 #include "drivers/adc.h"
 
+#include "config/config_reset.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
-#include "config/config_reset.h"
 
 #include "sensors/adcinternal.h"
-#include "sensors/voltage.h"
 #include "sensors/esc_sensor.h"
+#include "sensors/voltage.h"
 
-const char * const voltageMeterSourceNames[VOLTAGE_METER_COUNT] = {
-    "NONE", "ADC", "ESC"
-};
+const char *const voltageMeterSourceNames[VOLTAGE_METER_COUNT] = {
+    "NONE", "ADC", "ESC"};
 
 const uint8_t voltageMeterIds[] = {
     VOLTAGE_METER_ID_BATTERY_1,
@@ -74,14 +73,13 @@ const uint8_t voltageMeterIds[] = {
 
 const uint8_t supportedVoltageMeterCount = ARRAYLEN(voltageMeterIds);
 
-
 //
 // ADC/ESC shared
 //
 
 void voltageMeterReset(voltageMeter_t *meter)
 {
-    meter->filtered = 0;
+    meter->filtered   = 0;
     meter->unfiltered = 0;
 }
 //
@@ -101,8 +99,8 @@ void voltageMeterReset(voltageMeter_t *meter)
 #endif
 
 typedef struct voltageMeterADCState_s {
-    uint16_t voltageFiltered;         // battery voltage in 0.1V steps (filtered)
-    uint16_t voltageUnfiltered;       // battery voltage in 0.1V steps (unfiltered)
+    uint16_t voltageFiltered;   // battery voltage in 0.1V steps (filtered)
+    uint16_t voltageUnfiltered; // battery voltage in 0.1V steps (unfiltered)
     biquadFilter_t filter;
 } voltageMeterADCState_t;
 
@@ -121,13 +119,11 @@ void pgResetFn_voltageSensorADCConfig(voltageSensorADCConfig_t *instance)
 {
     for (int i = 0; i < MAX_VOLTAGE_SENSOR_ADC; i++) {
         RESET_CONFIG(voltageSensorADCConfig_t, &instance[i],
-            .vbatscale = VBAT_SCALE_DEFAULT,
-            .vbatresdivval = VBAT_RESDIVVAL_DEFAULT,
-            .vbatresdivmultiplier = VBAT_RESDIVMULTIPLIER_DEFAULT,
-        );
+                     .vbatscale            = VBAT_SCALE_DEFAULT,
+                     .vbatresdivval        = VBAT_RESDIVVAL_DEFAULT,
+                     .vbatresdivmultiplier = VBAT_RESDIVMULTIPLIER_DEFAULT, );
     }
 }
-
 
 static const uint8_t voltageMeterAdcChannelMap[] = {
     ADC_BATTERY,
@@ -158,18 +154,18 @@ void voltageMeterADCRefresh(void)
 
         const voltageSensorADCConfig_t *config = voltageSensorADCConfig(i);
 
-        uint8_t channel = voltageMeterAdcChannelMap[i];
+        uint8_t channel    = voltageMeterAdcChannelMap[i];
         uint16_t rawSample = adcGetChannel(channel);
 
         uint16_t filteredSample = biquadFilterApply(&state->filter, rawSample);
 
         // always calculate the latest voltage, see getLatestVoltage() which does the calculation on demand.
-        state->voltageFiltered = voltageAdcToVoltage(filteredSample, config);
+        state->voltageFiltered   = voltageAdcToVoltage(filteredSample, config);
         state->voltageUnfiltered = voltageAdcToVoltage(rawSample, config);
 #else
         UNUSED(voltageAdcToVoltage);
 
-        state->voltageFiltered = 0;
+        state->voltageFiltered   = 0;
         state->voltageUnfiltered = 0;
 #endif
     }
@@ -179,7 +175,7 @@ void voltageMeterADCRead(voltageSensorADC_e adcChannel, voltageMeter_t *voltageM
 {
     voltageMeterADCState_t *state = &voltageMeterADCStates[adcChannel];
 
-    voltageMeter->filtered = state->voltageFiltered;
+    voltageMeter->filtered   = state->voltageFiltered;
     voltageMeter->unfiltered = state->voltageUnfiltered;
 }
 
@@ -201,15 +197,13 @@ void voltageMeterADCInit(void)
 
 #ifdef USE_ESC_SENSOR
 typedef struct voltageMeterESCState_s {
-    uint16_t voltageFiltered;         // battery voltage in 0.1V steps (filtered)
-    uint16_t voltageUnfiltered;       // battery voltage in 0.1V steps (unfiltered)
+    uint16_t voltageFiltered;   // battery voltage in 0.1V steps (filtered)
+    uint16_t voltageUnfiltered; // battery voltage in 0.1V steps (unfiltered)
     biquadFilter_t filter;
 } voltageMeterESCState_t;
 
 static voltageMeterESCState_t voltageMeterESCState;
 #endif
-
-
 
 void voltageMeterESCInit(void)
 {
@@ -225,7 +219,7 @@ void voltageMeterESCRefresh(void)
     escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
     if (escData) {
         voltageMeterESCState.voltageUnfiltered = escData->dataAge <= ESC_BATTERY_AGE_MAX ? escData->voltage / 10 : 0;
-        voltageMeterESCState.voltageFiltered = biquadFilterApply(&voltageMeterESCState.filter, voltageMeterESCState.voltageUnfiltered);
+        voltageMeterESCState.voltageFiltered   = biquadFilterApply(&voltageMeterESCState.filter, voltageMeterESCState.voltageUnfiltered);
     }
 #endif
 }
@@ -263,7 +257,6 @@ void voltageMeterESCReadCombined(voltageMeter_t *voltageMeter)
 // This API is used by MSP, for configuration/status.
 //
 
-
 // the order of these much match the indexes in voltageSensorADC_e
 const uint8_t voltageMeterADCtoIDMap[MAX_VOLTAGE_SENSOR_ADC] = {
     VOLTAGE_METER_ID_BATTERY_1,
@@ -284,25 +277,24 @@ void voltageMeterRead(voltageMeterId_e id, voltageMeter_t *meter)
         voltageMeterADCRead(VOLTAGE_SENSOR_ADC_VBAT, meter);
     } else
 #ifdef ADC_POWER_12V
-    if (id == VOLTAGE_METER_ID_12V_1) {
+        if (id == VOLTAGE_METER_ID_12V_1) {
         voltageMeterADCRead(VOLTAGE_SENSOR_ADC_12V, meter);
     } else
 #endif
 #ifdef ADC_POWER_9V
-    if (id == VOLTAGE_METER_ID_9V_1) {
+        if (id == VOLTAGE_METER_ID_9V_1) {
         voltageMeterADCRead(VOLTAGE_SENSOR_ADC_9V, meter);
     } else
 #endif
 #ifdef ADC_POWER_5V
-    if (id == VOLTAGE_METER_ID_5V_1) {
+        if (id == VOLTAGE_METER_ID_5V_1) {
         voltageMeterADCRead(VOLTAGE_SENSOR_ADC_5V, meter);
     } else
 #endif
 #ifdef USE_ESC_SENSOR
-    if (id == VOLTAGE_METER_ID_ESC_COMBINED_1) {
+        if (id == VOLTAGE_METER_ID_ESC_COMBINED_1) {
         voltageMeterESCReadCombined(meter);
-    } else
-    if (id >= VOLTAGE_METER_ID_ESC_MOTOR_1 && id <= VOLTAGE_METER_ID_ESC_MOTOR_20 ) {
+    } else if (id >= VOLTAGE_METER_ID_ESC_MOTOR_1 && id <= VOLTAGE_METER_ID_ESC_MOTOR_20) {
         int motor = id - VOLTAGE_METER_ID_ESC_MOTOR_1;
         voltageMeterESCReadMotor(motor, meter);
     } else

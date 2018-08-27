@@ -27,7 +27,7 @@
 
 #include "usbd_cdc.h"
 
-extern USBD_HandleTypeDef  USBD_Device;
+extern USBD_HandleTypeDef USBD_Device;
 #endif
 
 typedef struct {

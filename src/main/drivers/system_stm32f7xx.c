@@ -18,10 +18,10 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <string.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -32,8 +32,7 @@
 
 #include "stm32f7xx_ll_cortex.h"
 
-
-#define AIRCR_VECTKEY_MASK    ((uint32_t)0x05FA0000)
+#define AIRCR_VECTKEY_MASK ((uint32_t)0x05FA0000)
 void SystemClock_Config(void);
 
 void systemReset(void)
@@ -52,7 +51,7 @@ void systemResetToBootloader(void)
         mpuResetFn();
     }
 
-    (*(__IO uint32_t *) (BKPSRAM_BASE + 4)) = 0xDEADBEEF;   // flag that will be readable after reboot
+    (*(__IO uint32_t *)(BKPSRAM_BASE + 4)) = 0xDEADBEEF; // flag that will be readable after reboot
 
     __disable_irq();
     NVIC_SystemReset();
@@ -132,24 +131,24 @@ void enableGPIOPowerUsageAndNoiseReductions(void)
 #ifndef STM32F722xx
     __HAL_RCC_SPI6_CLK_ENABLE();
 #endif
-//
-//    GPIO_InitTypeDef GPIO_InitStructure;
-//    GPIO_StructInit(&GPIO_InitStructure);
-//    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP; // default is un-pulled input
-//
-//    GPIO_InitStructure.GPIO_Pin  = GPIO_Pin_All;
-//    GPIO_InitStructure.GPIO_Pin &= ~(GPIO_Pin_11 | GPIO_Pin_12); // leave USB D+/D- alone
-//
-//    GPIO_InitStructure.GPIO_Pin &= ~(GPIO_Pin_13 | GPIO_Pin_14); // leave JTAG pins alone
-//    GPIO_Init(GPIOA, &GPIO_InitStructure);
-//
-//    GPIO_InitStructure.GPIO_Pin  = GPIO_Pin_All;
-//    GPIO_Init(GPIOB, &GPIO_InitStructure);
-//
-//    GPIO_InitStructure.GPIO_Pin  = GPIO_Pin_All;
-//    GPIO_Init(GPIOC, &GPIO_InitStructure);
-//    GPIO_Init(GPIOD, &GPIO_InitStructure);
-//    GPIO_Init(GPIOE, &GPIO_InitStructure);
+    //
+    //    GPIO_InitTypeDef GPIO_InitStructure;
+    //    GPIO_StructInit(&GPIO_InitStructure);
+    //    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP; // default is un-pulled input
+    //
+    //    GPIO_InitStructure.GPIO_Pin  = GPIO_Pin_All;
+    //    GPIO_InitStructure.GPIO_Pin &= ~(GPIO_Pin_11 | GPIO_Pin_12); // leave USB D+/D- alone
+    //
+    //    GPIO_InitStructure.GPIO_Pin &= ~(GPIO_Pin_13 | GPIO_Pin_14); // leave JTAG pins alone
+    //    GPIO_Init(GPIOA, &GPIO_InitStructure);
+    //
+    //    GPIO_InitStructure.GPIO_Pin  = GPIO_Pin_All;
+    //    GPIO_Init(GPIOB, &GPIO_InitStructure);
+    //
+    //    GPIO_InitStructure.GPIO_Pin  = GPIO_Pin_All;
+    //    GPIO_Init(GPIOC, &GPIO_InitStructure);
+    //    GPIO_Init(GPIOD, &GPIO_InitStructure);
+    //    GPIO_Init(GPIOE, &GPIO_InitStructure);
 }
 
 bool isMPUSoftReset(void)
@@ -190,12 +189,12 @@ void systemInit(void)
 
     // SysTick
     //SysTick_Config(SystemCoreClock / 1000);
-    HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
+    HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq() / 1000);
 
     HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
 }
 
-void(*bootJump)(void);
+void (*bootJump)(void);
 void checkForBootLoaderRequest(void)
 {
     uint32_t bt;
@@ -203,20 +202,21 @@ void checkForBootLoaderRequest(void)
     __BKPSRAM_CLK_ENABLE();
     HAL_PWR_EnableBkUpAccess();
 
-    bt = (*(__IO uint32_t *) (BKPSRAM_BASE + 4)) ;
-    if ( bt == 0xDEADBEEF ) {
-        (*(__IO uint32_t *) (BKPSRAM_BASE + 4)) =  0xCAFEFEED; // Reset our trigger
+    bt = (*(__IO uint32_t *)(BKPSRAM_BASE + 4));
+    if (bt == 0xDEADBEEF) {
+        (*(__IO uint32_t *)(BKPSRAM_BASE + 4)) = 0xCAFEFEED; // Reset our trigger
         // Backup SRAM is write-back by default, ensure value actually reaches memory
         // Another solution would be marking BKPSRAM as write-through in Memory Protection Unit settings
-        SCB_CleanDCache_by_Addr((uint32_t *) (BKPSRAM_BASE + 4), sizeof(uint32_t));
+        SCB_CleanDCache_by_Addr((uint32_t *)(BKPSRAM_BASE + 4), sizeof(uint32_t));
 
         void (*SysMemBootJump)(void);
         __SYSCFG_CLK_ENABLE();
-        SYSCFG->MEMRMP |= SYSCFG_MEM_BOOT_ADD0 ;
-        uint32_t p =  (*((uint32_t *) 0x1ff00000));
-        __set_MSP(p); //Set the main stack pointer to its defualt values
-        SysMemBootJump = (void (*)(void)) (*((uint32_t *) 0x1ff00004)); // Point the PC to the System Memory reset vector (+4)
+        SYSCFG->MEMRMP |= SYSCFG_MEM_BOOT_ADD0;
+        uint32_t p = (*((uint32_t *)0x1ff00000));
+        __set_MSP(p);                                                 //Set the main stack pointer to its defualt values
+        SysMemBootJump = (void (*)(void))(*((uint32_t *)0x1ff00004)); // Point the PC to the System Memory reset vector (+4)
         SysMemBootJump();
-        while (1);
+        while (1)
+            ;
     }
 }

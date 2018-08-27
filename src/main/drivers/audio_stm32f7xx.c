@@ -18,9 +18,9 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <math.h>
 
 #include "platform.h"
 
@@ -41,7 +41,7 @@ void audioSetupIO(void)
     HAL_DAC_Init(&hdac);
 
     GPIO_InitTypeDef GPIO_InitStruct;
-    GPIO_InitStruct.Pin = GPIO_PIN_4;
+    GPIO_InitStruct.Pin  = GPIO_PIN_4;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
@@ -50,23 +50,23 @@ void audioSetupIO(void)
 void audioGenerateWhiteNoise(void)
 {
     // TIM6 runs on APB2 at 42Mhz
-    handle.Instance = TIM6;
-    handle.Init.Period = 0xFF;
+    handle.Instance       = TIM6;
+    handle.Init.Period    = 0xFF;
     handle.Init.Prescaler = 0;
 
-    handle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-    handle.Init.CounterMode = TIM_COUNTERMODE_UP;
+    handle.Init.ClockDivision     = TIM_CLOCKDIVISION_DIV1;
+    handle.Init.CounterMode       = TIM_COUNTERMODE_UP;
     handle.Init.RepetitionCounter = 0;
     HAL_TIM_Base_Init(&handle);
 
     TIM_MasterConfigTypeDef sMasterConfig;
-    sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_ENABLE;
+    sMasterConfig.MasterSlaveMode     = TIM_MASTERSLAVEMODE_ENABLE;
     sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
     HAL_TIMEx_MasterConfigSynchronization(&handle, &sMasterConfig);
 
     HAL_TIM_Base_Start(&handle);
 
-    sConfig.DAC_Trigger = DAC_TRIGGER_T6_TRGO;
+    sConfig.DAC_Trigger      = DAC_TRIGGER_T6_TRGO;
     sConfig.DAC_OutputBuffer = DAC_OUTPUTBUFFER_ENABLE;
     HAL_DAC_ConfigChannel(&hdac, &sConfig, DAC_CHANNEL_1);
 
@@ -80,7 +80,7 @@ void audioGenerateWhiteNoise(void)
 
 void audioPlayTone(uint8_t tone)
 {
-    handle.Init.Period = 64 + (MAX(TONE_MIN,MIN(tone, TONE_MAX)) * TONE_SPREAD);
+    handle.Init.Period = 64 + (MAX(TONE_MIN, MIN(tone, TONE_MAX)) * TONE_SPREAD);
     TIM_Base_SetConfig(handle.Instance, &handle.Init);
 }
 

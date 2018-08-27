@@ -27,16 +27,16 @@
 
 #include "build/debug.h"
 
-#include "common/maths.h"
 #include "common/axis.h"
+#include "common/maths.h"
 
-#include "drivers/time.h"
-#include "drivers/io.h"
 #include "drivers/bus_i2c.h"
+#include "drivers/io.h"
+#include "drivers/time.h"
 
-#include "drivers/sensor.h"
-#include "drivers/accgyro/accgyro.h"
 #include "accgyro_lsm303dlhc.h"
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/sensor.h"
 
 // Addresses (7 bit address format)
 
@@ -110,9 +110,9 @@ uint8_t accelCalibrating = false;
 
 float accelOneG = 9.8065;
 
-int32_t accelSum100Hz[3] = { 0, 0, 0 };
+int32_t accelSum100Hz[3] = {0, 0, 0};
 
-int32_t accelSum500Hz[3] = { 0, 0, 0 };
+int32_t accelSum500Hz[3] = {0, 0, 0};
 
 int32_t accelSummedSamples100Hz[3];
 

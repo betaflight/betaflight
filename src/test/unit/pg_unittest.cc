@@ -22,25 +22,23 @@
 #include <limits.h>
 
 extern "C" {
-    #include <platform.h>
-    #include "build/debug.h"
-    #include "pg/pg.h"
-    #include "pg/pg_ids.h"
+#include "build/debug.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+#include <platform.h>
 
-    #include "flight/mixer.h"
+#include "flight/mixer.h"
 
 //PG_DECLARE(motorConfig_t, motorConfig);
 
 PG_REGISTER_WITH_RESET_TEMPLATE(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 1);
 
 PG_RESET_TEMPLATE(motorConfig_t, motorConfig,
-    .minthrottle = 1150,
-    .maxthrottle = 1850,
-    .mincommand = 1000,
-    .dev = {.motorPwmRate = 400}
-);
+                  .minthrottle = 1150,
+                  .maxthrottle = 1850,
+                  .mincommand  = 1000,
+                  .dev         = {.motorPwmRate = 400});
 }
-
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"

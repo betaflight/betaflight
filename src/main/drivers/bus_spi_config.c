@@ -67,13 +67,13 @@ static void spiPreInitCsOPU(ioTag_t iotag, int index)
 
 void spiPreInit(void)
 {
-    for (int i = 0 ; i < SPI_PREINIT_IPU_COUNT ; i++) {
+    for (int i = 0; i < SPI_PREINIT_IPU_COUNT; i++) {
         if (spiPreinitIPUConfig(i)->csnTag) {
             spiPreInitCsIPU(spiPreinitIPUConfig(i)->csnTag, i);
         }
     }
 
-    for (int i = 0 ; i < SPI_PREINIT_OPU_COUNT ; i++) {
+    for (int i = 0; i < SPI_PREINIT_OPU_COUNT; i++) {
         if (spiPreinitOPUConfig(i)->csnTag) {
             spiPreInitCsOPU(spiPreinitOPUConfig(i)->csnTag, i);
         }
@@ -84,14 +84,14 @@ void spiPreInit(void)
 
 void spiPreinitCsByIO(IO_t io)
 {
-    for (int i = 0 ; i < SPI_PREINIT_IPU_COUNT ; i++) {
+    for (int i = 0; i < SPI_PREINIT_IPU_COUNT; i++) {
         if (IOGetByTag(spiPreinitIPUConfig(i)->csnTag) == io) {
             spiPreInitCsIPU(spiPreinitIPUConfig(i)->csnTag, i);
             return;
         }
     }
 
-    for (int i = 0 ; i < SPI_PREINIT_OPU_COUNT ; i++) {
+    for (int i = 0; i < SPI_PREINIT_OPU_COUNT; i++) {
         if (IOGetByTag(spiPreinitOPUConfig(i)->csnTag) == io) {
             spiPreInitCsOPU(spiPreinitOPUConfig(i)->csnTag, i);
             return;

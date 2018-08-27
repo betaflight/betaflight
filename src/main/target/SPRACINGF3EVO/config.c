@@ -29,13 +29,12 @@
 
 #include "pg/sdcard.h"
 
-
 #if defined(SPRACINGF3MQ)
 #ifdef BRUSHED_MOTORS_PWM_RATE
 #undef BRUSHED_MOTORS_PWM_RATE
 #endif
 
-#define BRUSHED_MOTORS_PWM_RATE 32000           // 32kHz
+#define BRUSHED_MOTORS_PWM_RATE 32000 // 32kHz
 #endif
 
 void targetConfiguration(void)
@@ -50,9 +49,9 @@ void targetConfiguration(void)
     for (uint8_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
         pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
 
-        pidProfile->pid[FD_ROLL].P = 90;
-        pidProfile->pid[FD_ROLL].I = 44;
-        pidProfile->pid[FD_ROLL].D = 60;
+        pidProfile->pid[FD_ROLL].P  = 90;
+        pidProfile->pid[FD_ROLL].I  = 44;
+        pidProfile->pid[FD_ROLL].D  = 60;
         pidProfile->pid[FD_PITCH].P = 90;
         pidProfile->pid[FD_PITCH].I = 44;
         pidProfile->pid[FD_PITCH].D = 60;

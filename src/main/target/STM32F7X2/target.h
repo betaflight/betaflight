@@ -26,7 +26,7 @@
 
 #define TARGET_BOARD_IDENTIFIER "S7X2"
 
-#define USBD_PRODUCT_STRING     "S7X2"
+#define USBD_PRODUCT_STRING "S7X2"
 
 #define USE_BEEPER
 
@@ -46,11 +46,10 @@
 // Other USE_ACCs and USE_GYROs should follow
 
 // Should be gone
-#define MPU6500_CS_PIN          PC4  // XXX Should be gone
-#define MPU6500_SPI_INSTANCE    SPI1 // XXX Should be gone
+#define MPU6500_CS_PIN PC4        // XXX Should be gone
+#define MPU6500_SPI_INSTANCE SPI1 // XXX Should be gone
 #define ACC_MPU6500_ALIGN CW0_DEG
 #define GYRO_MPU6500_ALIGN CW0_DEG
-
 
 #define USE_MAG
 #define USE_MAG_HMC5883
@@ -65,7 +64,7 @@
 #define USE_SDCARD
 
 #define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 328kHz
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     4 // 21MHz
+#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 4       // 21MHz
 
 #define USE_I2C
 #define USE_I2C_DEVICE_1
@@ -84,7 +83,7 @@
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
 
-#define SERIAL_PORT_COUNT       9
+#define SERIAL_PORT_COUNT 9
 
 #define USE_ESCSERIAL
 

@@ -36,17 +36,16 @@
 
 #ifdef USE_RCDEVICE
 
-
 typedef struct runcamDeviceExpectedResponseLength_s {
     uint8_t command;
     uint8_t reponseLength;
 } runcamDeviceExpectedResponseLength_t;
 
 static runcamDeviceExpectedResponseLength_t expectedResponsesLength[] = {
-    { RCDEVICE_PROTOCOL_COMMAND_GET_DEVICE_INFO,            5},
-    { RCDEVICE_PROTOCOL_COMMAND_5KEY_SIMULATION_PRESS,      2},
-    { RCDEVICE_PROTOCOL_COMMAND_5KEY_SIMULATION_RELEASE,    2},
-    { RCDEVICE_PROTOCOL_COMMAND_5KEY_CONNECTION,            3},
+    {RCDEVICE_PROTOCOL_COMMAND_GET_DEVICE_INFO, 5},
+    {RCDEVICE_PROTOCOL_COMMAND_5KEY_SIMULATION_PRESS, 2},
+    {RCDEVICE_PROTOCOL_COMMAND_5KEY_SIMULATION_RELEASE, 2},
+    {RCDEVICE_PROTOCOL_COMMAND_5KEY_CONNECTION, 3},
 };
 
 rcdeviceWaitingResponseQueue watingResponseQueue;
@@ -77,11 +76,11 @@ static bool rcdeviceRespCtxQueuePushRespCtx(rcdeviceWaitingResponseQueue *queue,
     }
     queue->itemCount += 1;
     queue->tailPos = newTailPos;
-    
+
     return true;
 }
 
-static rcdeviceResponseParseContext_t* rcdeviceRespCtxQueuePeekFront(rcdeviceWaitingResponseQueue *queue)
+static rcdeviceResponseParseContext_t *rcdeviceRespCtxQueuePeekFront(rcdeviceWaitingResponseQueue *queue)
 {
     if (queue == NULL || queue->itemCount == 0) {
         return NULL;
@@ -91,14 +90,14 @@ static rcdeviceResponseParseContext_t* rcdeviceRespCtxQueuePeekFront(rcdeviceWai
     return ctx;
 }
 
-static rcdeviceResponseParseContext_t* rcdeviceRespCtxQueueShift(rcdeviceWaitingResponseQueue *queue)
+static rcdeviceResponseParseContext_t *rcdeviceRespCtxQueueShift(rcdeviceWaitingResponseQueue *queue)
 {
     if (queue == NULL || queue->itemCount == 0) {
         return NULL;
     }
 
     rcdeviceResponseParseContext_t *ctx = &queue->buffer[queue->headPos];
-    int newHeadPos = queue->headPos + 1;
+    int newHeadPos                      = queue->headPos + 1;
     if (newHeadPos >= MAX_WAITING_RESPONSES) {
         newHeadPos = 0;
     }
@@ -156,18 +155,18 @@ static void runcamDeviceSendRequestAndWaitingResp(runcamDevice_t *device, uint8_
 
     rcdeviceResponseParseContext_t responseCtx;
     memset(&responseCtx, 0, sizeof(rcdeviceResponseParseContext_t));
-    responseCtx.recvBuf = recvBuf;
-    responseCtx.command = commandID;
-    responseCtx.maxRetryTimes = maxRetryTimes;
-    responseCtx.expectedRespLen = runcamDeviceGetRespLen(commandID);
-    responseCtx.timeout = tiemout;
+    responseCtx.recvBuf          = recvBuf;
+    responseCtx.command          = commandID;
+    responseCtx.maxRetryTimes    = maxRetryTimes;
+    responseCtx.expectedRespLen  = runcamDeviceGetRespLen(commandID);
+    responseCtx.timeout          = tiemout;
     responseCtx.timeoutTimestamp = millis() + tiemout;
-    responseCtx.parserFunc = parseFunc;
-    responseCtx.device = device;
-    responseCtx.protocolVer = RCDEVICE_PROTOCOL_VERSION_1_0;
+    responseCtx.parserFunc       = parseFunc;
+    responseCtx.device           = device;
+    responseCtx.protocolVer      = RCDEVICE_PROTOCOL_VERSION_1_0;
     memcpy(responseCtx.paramData, paramData, paramDataLen);
     responseCtx.paramDataLen = paramDataLen;
-    responseCtx.userInfo = userInfo;
+    responseCtx.userInfo     = userInfo;
     rcdeviceRespCtxQueuePushRespCtx(&watingResponseQueue, &responseCtx);
 
     // send packet
@@ -180,13 +179,13 @@ static void runcamDeviceParseV2DeviceInfo(rcdeviceResponseParseContext_t *ctx)
         ctx->device->isReady = false;
         return;
     }
-    runcamDevice_t *device = ctx->device;
+    runcamDevice_t *device       = ctx->device;
     device->info.protocolVersion = ctx->recvBuf[1];
 
-    uint8_t featureLowBits = ctx->recvBuf[2];
+    uint8_t featureLowBits  = ctx->recvBuf[2];
     uint8_t featureHighBits = ctx->recvBuf[3];
-    device->info.features = (featureHighBits << 8) | featureLowBits;
-    device->isReady = true;
+    device->info.features   = (featureHighBits << 8) | featureLowBits;
+    device->isReady         = true;
 }
 
 // get the device info(firmware version, protocol version and features, see the
@@ -202,8 +201,8 @@ static void runcamDeviceGetDeviceInfo(runcamDevice_t *device)
 // and then we can send/receive from it.
 void runcamDeviceInit(runcamDevice_t *device)
 {
-    device->isReady = false;
-    serialPortFunction_e portID = FUNCTION_RCDEVICE;
+    device->isReady                = false;
+    serialPortFunction_e portID    = FUNCTION_RCDEVICE;
     serialPortConfig_t *portConfig = findSerialPortConfig(portID);
     if (portConfig != NULL) {
         device->serialPort = openSerialPort(portConfig->identifier, portID, NULL, NULL, 115200, MODE_RXTX, SERIAL_NOT_INVERTED);
@@ -259,7 +258,7 @@ void runcamDeviceSimulate5KeyOSDCableButtonRelease(runcamDevice_t *device, rcdev
     runcamDeviceSendRequestAndWaitingResp(device, RCDEVICE_PROTOCOL_COMMAND_5KEY_SIMULATION_RELEASE, NULL, 0, 200, 0, NULL, parseFunc);
 }
 
-static rcdeviceResponseParseContext_t* getWaitingResponse(timeMs_t currentTimeMs)
+static rcdeviceResponseParseContext_t *getWaitingResponse(timeMs_t currentTimeMs)
 {
     rcdeviceResponseParseContext_t *respCtx = rcdeviceRespCtxQueuePeekFront(&watingResponseQueue);
     while (respCtx != NULL && respCtx->timeoutTimestamp != 0 && currentTimeMs > respCtx->timeoutTimestamp) {
@@ -284,15 +283,15 @@ static rcdeviceResponseParseContext_t* getWaitingResponse(timeMs_t currentTimeMs
     return respCtx;
 }
 
-void rcdeviceReceive(timeUs_t currentTimeUs) 
+void rcdeviceReceive(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
     rcdeviceResponseParseContext_t *respCtx = NULL;
     while ((respCtx = getWaitingResponse(millis())) != NULL && serialRxBytesWaiting(respCtx->device->serialPort)) {
-        const uint8_t c = serialRead(respCtx->device->serialPort);
+        const uint8_t c                        = serialRead(respCtx->device->serialPort);
         respCtx->recvBuf[respCtx->recvRespLen] = c;
         respCtx->recvRespLen += 1;
-        
+
         // if data received done, trigger callback to parse response data, and update rcdevice state
         if (respCtx->recvRespLen == respCtx->expectedRespLen) {
             // verify the crc value

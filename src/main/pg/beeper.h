@@ -20,8 +20,8 @@
 
 #pragma once
 
-#include "pg/pg.h"
 #include "drivers/io_types.h"
+#include "pg/pg.h"
 
 typedef struct beeperConfig_s {
     uint32_t beeper_off_flags;

@@ -18,21 +18,21 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdint.h>
 #include "platform.h"
+#include <stdint.h>
 
 #ifdef USE_TARGET_CONFIG
 #include "drivers/io.h"
+#include "io/serial.h"
 #include "pg/rx.h"
 #include "rx/rx.h"
-#include "io/serial.h"
 
 #include "config_helper.h"
 
-#define TELEMETRY_UART          SERIAL_PORT_USART3
+#define TELEMETRY_UART SERIAL_PORT_USART3
 
 static targetSerialPortFunction_t targetSerialPortFunction[] = {
-    { TELEMETRY_UART, FUNCTION_TELEMETRY_SMARTPORT },
+    {TELEMETRY_UART, FUNCTION_TELEMETRY_SMARTPORT},
 };
 
 void targetConfiguration(void)

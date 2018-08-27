@@ -20,11 +20,11 @@
 
 #pragma once
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
-#include "pg/pg.h"
 #include "drivers/io_types.h"
+#include "pg/pg.h"
 
 typedef struct adcChannelConfig_t {
     bool enabled;

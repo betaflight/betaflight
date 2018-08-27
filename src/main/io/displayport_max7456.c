@@ -50,7 +50,7 @@ void pgResetFn_displayPortProfileMax7456(displayPortProfile_t *displayPortProfil
     displayPortProfile->rowAdjust = 0;
 
     // Set defaults as per MAX7456 datasheet
-    displayPortProfile->invert = false;
+    displayPortProfile->invert          = false;
     displayPortProfile->blackBrightness = 0;
     displayPortProfile->whiteBrightness = 2;
 }
@@ -149,25 +149,24 @@ static uint32_t txBytesFree(const displayPort_t *displayPort)
 }
 
 static const displayPortVTable_t max7456VTable = {
-    .grab = grab,
-    .release = release,
-    .clearScreen = clearScreen,
-    .drawScreen = drawScreen,
-    .screenSize = screenSize,
-    .writeString = writeString,
-    .writeChar = writeChar,
+    .grab                 = grab,
+    .release              = release,
+    .clearScreen          = clearScreen,
+    .drawScreen           = drawScreen,
+    .screenSize           = screenSize,
+    .writeString          = writeString,
+    .writeChar            = writeChar,
     .isTransferInProgress = isTransferInProgress,
-    .heartbeat = heartbeat,
-    .resync = resync,
-    .isSynced = isSynced,
-    .txBytesFree = txBytesFree,
+    .heartbeat            = heartbeat,
+    .resync               = resync,
+    .isSynced             = isSynced,
+    .txBytesFree          = txBytesFree,
 };
 
 displayPort_t *max7456DisplayPortInit(const vcdProfile_t *vcdProfile)
 {
     if (
-        !max7456Init(max7456Config(), vcdProfile, systemConfig()->cpu_overclock)
-    ) {
+        !max7456Init(max7456Config(), vcdProfile, systemConfig()->cpu_overclock)) {
         return NULL;
     }
 

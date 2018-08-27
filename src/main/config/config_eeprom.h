@@ -20,8 +20,8 @@
 
 #pragma once
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #define EEPROM_CONF_VERSION 171
 

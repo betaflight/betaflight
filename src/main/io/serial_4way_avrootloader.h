@@ -26,11 +26,11 @@
 
 #pragma once
 // Bootloader result codes
-#define brSUCCESS           0x30
-#define brERRORVERIFY       0xC0
-#define brERRORCOMMAND      0xC1
-#define brERRORCRC          0xC2
-#define brNONE              0xFF
+#define brSUCCESS 0x30
+#define brERRORVERIFY 0xC0
+#define brERRORCOMMAND 0xC1
+#define brERRORCRC 0xC2
+#define brNONE 0xFF
 
 void BL_SendBootInit(void);
 uint8_t BL_ConnectEx(uint8_32_u *pDeviceInfo);

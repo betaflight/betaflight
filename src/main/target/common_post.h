@@ -76,7 +76,6 @@
 #undef USE_TELEMETRY_JETIEXBUS
 #endif
 
-
 #if !defined(USE_TELEMETRY)
 #undef USE_CRSF_CMS_TELEMETRY
 #undef USE_TELEMETRY_CRSF

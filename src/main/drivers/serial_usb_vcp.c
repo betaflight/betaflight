@@ -18,8 +18,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "platform.h"
 
@@ -35,24 +35,24 @@
 #include "usb_core.h"
 #include "usbd_cdc_vcp.h"
 #ifdef USE_USB_CDC_HID
-#include "usbd_hid_cdc_wrapper.h"
 #include "pg/pg.h"
 #include "pg/usb.h"
+#include "usbd_hid_cdc_wrapper.h"
 #endif
 #include "usb_io.h"
 #elif defined(STM32F7)
-#include "vcp_hal/usbd_cdc_interface.h"
 #include "usb_io.h"
+#include "vcp_hal/usbd_cdc_interface.h"
 #ifdef USE_USB_CDC_HID
-#include "usbd_cdc_hid.h"
 #include "pg/pg.h"
 #include "pg/usb.h"
+#include "usbd_cdc_hid.h"
 #endif
 USBD_HandleTypeDef USBD_Device;
 #else
+#include "hw_config.h"
 #include "usb_core.h"
 #include "usb_init.h"
-#include "hw_config.h"
 #endif
 
 #include "drivers/time.h"
@@ -60,8 +60,7 @@ USBD_HandleTypeDef USBD_Device;
 #include "serial.h"
 #include "serial_usb_vcp.h"
 
-
-#define USB_TIMEOUT  50
+#define USB_TIMEOUT 50
 
 static vcpPort_t vcpPort;
 
@@ -130,7 +129,7 @@ static void usbVcpWriteBuf(serialPort_t *instance, const void *data, int count)
         return;
     }
 
-    uint32_t start = millis();
+    uint32_t start   = millis();
     const uint8_t *p = data;
     while (count > 0) {
         uint32_t txed = CDC_Send_DATA(p, count);
@@ -146,7 +145,7 @@ static void usbVcpWriteBuf(serialPort_t *instance, const void *data, int count)
 static bool usbVcpFlush(vcpPort_t *port)
 {
     uint32_t count = port->txAt;
-    port->txAt = 0;
+    port->txAt     = 0;
 
     if (count == 0) {
         return true;
@@ -157,7 +156,7 @@ static bool usbVcpFlush(vcpPort_t *port)
     }
 
     uint32_t start = millis();
-    uint8_t *p = port->txBuf;
+    uint8_t *p     = port->txBuf;
     while (count > 0) {
         uint32_t txed = CDC_Send_DATA(p, count);
         count -= txed;
@@ -200,21 +199,18 @@ static void usbVcpEndWrite(serialPort_t *instance)
 }
 
 static const struct serialPortVTable usbVTable[] = {
-    {
-        .serialWrite = usbVcpWrite,
-        .serialTotalRxWaiting = usbVcpAvailable,
-        .serialTotalTxFree = usbTxBytesFree,
-        .serialRead = usbVcpRead,
-        .serialSetBaudRate = usbVcpSetBaudRate,
-        .isSerialTransmitBufferEmpty = isUsbVcpTransmitBufferEmpty,
-        .setMode = usbVcpSetMode,
-        .setCtrlLineStateCb = usbVcpSetCtrlLineStateCb,
-        .setBaudRateCb = usbVcpSetBaudRateCb,
-        .writeBuf = usbVcpWriteBuf,
-        .beginWrite = usbVcpBeginWrite,
-        .endWrite = usbVcpEndWrite
-    }
-};
+    {.serialWrite                 = usbVcpWrite,
+     .serialTotalRxWaiting        = usbVcpAvailable,
+     .serialTotalTxFree           = usbTxBytesFree,
+     .serialRead                  = usbVcpRead,
+     .serialSetBaudRate           = usbVcpSetBaudRate,
+     .isSerialTransmitBufferEmpty = isUsbVcpTransmitBufferEmpty,
+     .setMode                     = usbVcpSetMode,
+     .setCtrlLineStateCb          = usbVcpSetCtrlLineStateCb,
+     .setBaudRateCb               = usbVcpSetBaudRateCb,
+     .writeBuf                    = usbVcpWriteBuf,
+     .beginWrite                  = usbVcpBeginWrite,
+     .endWrite                    = usbVcpEndWrite}};
 
 serialPort_t *usbVcpOpen(void)
 {
@@ -245,7 +241,7 @@ serialPort_t *usbVcpOpen(void)
     /* Add Supported Class */
 #ifdef USE_USB_CDC_HID
     if (usbDevConfig()->type == COMPOSITE) {
-    	USBD_RegisterClass(&USBD_Device, USBD_HID_CDC_CLASS);
+        USBD_RegisterClass(&USBD_Device, USBD_HID_CDC_CLASS);
     } else
 #endif
     {
@@ -265,7 +261,7 @@ serialPort_t *usbVcpOpen(void)
     USB_Interrupts_Config();
 #endif
 
-    s = &vcpPort;
+    s              = &vcpPort;
     s->port.vTable = usbVTable;
 
     return (serialPort_t *)s;

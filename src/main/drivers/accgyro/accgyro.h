@@ -23,10 +23,10 @@
 #include "platform.h"
 
 #include "common/axis.h"
-#include "drivers/exti.h"
-#include "drivers/bus.h"
-#include "drivers/sensor.h"
 #include "drivers/accgyro/accgyro_mpu.h"
+#include "drivers/bus.h"
+#include "drivers/exti.h"
+#include "drivers/sensor.h"
 #include "sensors/gyro.h"
 #pragma GCC diagnostic push
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
@@ -65,14 +65,14 @@ typedef struct gyroDev_s {
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
     pthread_mutex_t lock;
 #endif
-    sensorGyroInitFuncPtr initFn;                             // initialize function
-    sensorGyroReadFuncPtr readFn;                             // read 3 axis data function
-    sensorGyroReadDataFuncPtr temperatureFn;                  // read temperature if available
+    sensorGyroInitFuncPtr initFn;            // initialize function
+    sensorGyroReadFuncPtr readFn;            // read 3 axis data function
+    sensorGyroReadDataFuncPtr temperatureFn; // read temperature if available
     extiCallbackRec_t exti;
     busDevice_t bus;
-    float scale;                                            // scalefactor
+    float scale; // scalefactor
     float gyroZero[XYZ_AXIS_COUNT];
-    float gyroADC[XYZ_AXIS_COUNT];                        // gyro data after calibration and alignment
+    float gyroADC[XYZ_AXIS_COUNT]; // gyro data after calibration and alignment
     float gyroADCf[XYZ_AXIS_COUNT];
     int32_t gyroADCRawPrevious[XYZ_AXIS_COUNT];
     int16_t gyroADCRaw[XYZ_AXIS_COUNT];
@@ -96,8 +96,8 @@ typedef struct accDev_s {
     pthread_mutex_t lock;
 #endif
     float acc_1G_rec;
-    sensorAccInitFuncPtr initFn;                              // initialize function
-    sensorAccReadFuncPtr readFn;                              // read 3 axis data function
+    sensorAccInitFuncPtr initFn; // initialize function
+    sensorAccReadFuncPtr readFn; // read 3 axis data function
     busDevice_t bus;
     uint16_t acc_1G;
     int16_t ADCRaw[XYZ_AXIS_COUNT];
@@ -105,7 +105,7 @@ typedef struct accDev_s {
     sensor_align_e accAlign;
     bool dataReady;
     bool acc_high_fsr;
-    char revisionCode;                                      // a revision code for the sensor, if known
+    char revisionCode; // a revision code for the sensor, if known
     uint8_t filler[2];
 } accDev_t;
 

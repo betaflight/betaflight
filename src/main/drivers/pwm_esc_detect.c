@@ -26,8 +26,8 @@
 
 #include "build/build_config.h"
 
-#include "drivers/time.h"
 #include "drivers/io.h"
+#include "drivers/time.h"
 #include "pwm_esc_detect.h"
 #include "timer.h"
 
@@ -45,7 +45,7 @@ void detectBrushedESC(void)
     IOInit(MotorDetectPin, OWNER_SYSTEM, 0);
     IOConfigGPIO(MotorDetectPin, IOCFG_IPU);
 
-    delayMicroseconds(10);  // allow configuration to settle
+    delayMicroseconds(10); // allow configuration to settle
 
     // Check presence of brushed ESC's
     if (IORead(MotorDetectPin)) {

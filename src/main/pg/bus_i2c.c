@@ -48,16 +48,16 @@ typedef struct i2cDefaultConfig_s {
 
 static const i2cDefaultConfig_t i2cDefaultConfig[] = {
 #ifdef USE_I2C_DEVICE_1
-    { I2CDEV_1, IO_TAG(I2C1_SCL), IO_TAG(I2C1_SDA), I2C1_OVERCLOCK, I2C1_PULLUP },
+    {I2CDEV_1, IO_TAG(I2C1_SCL), IO_TAG(I2C1_SDA), I2C1_OVERCLOCK, I2C1_PULLUP},
 #endif
 #ifdef USE_I2C_DEVICE_2
-    { I2CDEV_2, IO_TAG(I2C2_SCL), IO_TAG(I2C2_SDA), I2C2_OVERCLOCK, I2C2_PULLUP },
+    {I2CDEV_2, IO_TAG(I2C2_SCL), IO_TAG(I2C2_SDA), I2C2_OVERCLOCK, I2C2_PULLUP},
 #endif
 #ifdef USE_I2C_DEVICE_3
-    { I2CDEV_3, IO_TAG(I2C3_SCL), IO_TAG(I2C3_SDA), I2C3_OVERCLOCK, I2C3_PULLUP },
+    {I2CDEV_3, IO_TAG(I2C3_SCL), IO_TAG(I2C3_SDA), I2C3_OVERCLOCK, I2C3_PULLUP},
 #endif
 #ifdef USE_I2C_DEVICE_4
-    { I2CDEV_4, IO_TAG(I2C4_SCL), IO_TAG(I2C4_SDA), I2C4_OVERCLOCK, I2C4_PULLUP },
+    {I2CDEV_4, IO_TAG(I2C4_SCL), IO_TAG(I2C4_SDA), I2C4_OVERCLOCK, I2C4_PULLUP},
 #endif
 };
 
@@ -65,13 +65,13 @@ void pgResetFn_i2cConfig(i2cConfig_t *i2cConfig)
 {
     memset(i2cConfig, 0, sizeof(*i2cConfig));
 
-    for (size_t index = 0 ; index < ARRAYLEN(i2cDefaultConfig) ; index++) {
+    for (size_t index = 0; index < ARRAYLEN(i2cDefaultConfig); index++) {
         const i2cDefaultConfig_t *defconf = &i2cDefaultConfig[index];
-        int device = defconf->device;
-        i2cConfig[device].ioTagScl = defconf->ioTagScl;
-        i2cConfig[device].ioTagSda = defconf->ioTagSda;
-        i2cConfig[device].overClock = defconf->overClock;
-        i2cConfig[device].pullUp = defconf->pullUp;
+        int device                        = defconf->device;
+        i2cConfig[device].ioTagScl        = defconf->ioTagScl;
+        i2cConfig[device].ioTagSda        = defconf->ioTagSda;
+        i2cConfig[device].overClock       = defconf->overClock;
+        i2cConfig[device].pullUp          = defconf->pullUp;
     }
 }
 

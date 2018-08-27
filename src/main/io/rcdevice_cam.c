@@ -33,8 +33,8 @@
 #include "fc/runtime_config.h"
 
 #include "io/beeper.h"
-#include "io/serial.h"
 #include "io/rcdevice_cam.h"
+#include "io/serial.h"
 
 #include "rx/rx.h"
 
@@ -44,14 +44,12 @@
 #define IS_LO(X) (rcData[X] < FIVE_KEY_CABLE_JOYSTICK_MIN)
 #define IS_MID(X) (rcData[X] > FIVE_KEY_CABLE_JOYSTICK_MID_START && rcData[X] < FIVE_KEY_CABLE_JOYSTICK_MID_END)
 
-
 static runcamDevice_t runcamDevice;
 runcamDevice_t *camDevice = &runcamDevice;
 rcdeviceSwitchState_t switchStates[BOXCAMERA3 - BOXCAMERA1 + 1];
-bool rcdeviceInMenu = false;
-bool isButtonPressed = false;
+bool rcdeviceInMenu        = false;
+bool isButtonPressed       = false;
 bool waitingDeviceResponse = false;
-
 
 static bool isFeatureSupported(uint8_t feature)
 {
@@ -82,7 +80,7 @@ static void rcdeviceCameraControlProcess(void)
         uint8_t switchIndex = i - BOXCAMERA1;
 
         if (IS_RC_MODE_ACTIVE(i)) {
-            
+
             // check last state of this mode, if it's true, then ignore it.
             // Here is a logic to make a toggle control for this mode
             if (switchStates[switchIndex].isActivated) {
@@ -94,7 +92,7 @@ static void rcdeviceCameraControlProcess(void)
             case BOXCAMERA1:
                 if (isFeatureSupported(RCDEVICE_PROTOCOL_FEATURE_SIMULATE_WIFI_BUTTON)) {
                     // avoid display wifi page when arming, in the next firmware(>2.0) of rcsplit we have change the wifi page logic:
-                    // when the wifi was turn on it won't turn off the analog video output, 
+                    // when the wifi was turn on it won't turn off the analog video output,
                     // and just put a wifi indicator on the right top of the video output. here is for the old split firmware
                     if (!ARMING_FLAG(ARMED) && ((getArmingDisableFlags() & ARMING_DISABLED_RUNAWAY_TAKEOFF) == 0)) {
                         behavior = RCDEVICE_PROTOCOL_CAM_CTRL_SIMULATE_WIFI_BTN;
@@ -103,7 +101,7 @@ static void rcdeviceCameraControlProcess(void)
                 break;
             case BOXCAMERA2:
                 if (isFeatureSupported(RCDEVICE_PROTOCOL_FEATURE_SIMULATE_POWER_BUTTON)) {
-                    behavior = RCDEVICE_PROTOCOL_CAM_CTRL_SIMULATE_POWER_BTN;        
+                    behavior = RCDEVICE_PROTOCOL_CAM_CTRL_SIMULATE_POWER_BTN;
                 }
                 break;
             case BOXCAMERA3:
@@ -136,7 +134,7 @@ static void rcdeviceSimulationOSDCableFailed(rcdeviceResponseParseContext_t *ctx
             return;
         }
     } else {
-        rcdeviceInMenu = false;
+        rcdeviceInMenu        = false;
         waitingDeviceResponse = false;
     }
 }
@@ -152,13 +150,12 @@ static void rcdeviceSimulationRespHandle(rcdeviceResponseParseContext_t *ctx)
     case RCDEVICE_PROTOCOL_COMMAND_5KEY_SIMULATION_RELEASE:
         isButtonPressed = false;
         break;
-    case RCDEVICE_PROTOCOL_COMMAND_5KEY_CONNECTION:
-    {
+    case RCDEVICE_PROTOCOL_COMMAND_5KEY_CONNECTION: {
         // the high 4 bits is the operationID that we sent
         // the low 4 bits is the result code
-        isButtonPressed = true;
+        isButtonPressed     = true;
         uint8_t operationID = ctx->paramData[0];
-        bool errorCode = (ctx->recvBuf[1] & 0x0F);
+        bool errorCode      = (ctx->recvBuf[1] & 0x0F);
         if (operationID == RCDEVICE_PROTOCOL_5KEY_CONNECTION_OPEN) {
             if (errorCode == 1) {
                 rcdeviceInMenu = true;
@@ -173,8 +170,7 @@ static void rcdeviceSimulationRespHandle(rcdeviceResponseParseContext_t *ctx)
                 beeper(BEEPER_CAM_CONNECTION_CLOSE);
             }
         }
-    }
-        break;
+    } break;
     case RCDEVICE_PROTOCOL_COMMAND_5KEY_SIMULATION_PRESS:
         isButtonPressed = true;
         break;
@@ -300,7 +296,7 @@ static void rcdevice5KeySimulationProcess(timeUs_t currentTimeUs)
 void rcdeviceUpdate(timeUs_t currentTimeUs)
 {
     rcdeviceReceive(currentTimeUs);
-    
+
     rcdeviceCameraControlProcess();
     rcdevice5KeySimulationProcess(currentTimeUs);
 }
@@ -311,7 +307,7 @@ void rcdeviceInit(void)
     runcamDeviceInit(camDevice);
 
     for (boxId_e i = BOXCAMERA1; i <= BOXCAMERA3; i++) {
-        uint8_t switchIndex = i - BOXCAMERA1;
+        uint8_t switchIndex                   = i - BOXCAMERA1;
         switchStates[switchIndex].isActivated = true;
     }
 }

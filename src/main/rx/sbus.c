@@ -80,7 +80,6 @@ enum {
     DEBUG_SBUS_FRAME_TIME,
 };
 
-
 struct sbusFrame_s {
     uint8_t syncByte;
     sbusChannels_t channels;
@@ -92,7 +91,7 @@ struct sbusFrame_s {
      * https://github.com/cleanflight/cleanflight/issues/590#issuecomment-101706023
      */
     uint8_t endByte;
-} __attribute__ ((__packed__));
+} __attribute__((__packed__));
 
 typedef union sbusFrame_u {
     uint8_t bytes[SBUS_FRAME_SIZE];
@@ -106,7 +105,6 @@ typedef struct sbusFrameData_s {
     uint8_t position;
     bool done;
 } sbusFrameData_t;
-
 
 // Receive ISR callback
 static void sbusDataReceive(uint16_t c, void *data)
@@ -169,10 +167,10 @@ bool sbusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     static sbusFrameData_t sbusFrameData;
 
     rxRuntimeConfig->channelData = sbusChannelData;
-    rxRuntimeConfig->frameData = &sbusFrameData;
+    rxRuntimeConfig->frameData   = &sbusFrameData;
     sbusChannelsInit(rxConfig, rxRuntimeConfig);
 
-    rxRuntimeConfig->channelCount = SBUS_MAX_CHANNEL;
+    rxRuntimeConfig->channelCount  = SBUS_MAX_CHANNEL;
     rxRuntimeConfig->rxRefreshRate = 11000;
 
     rxRuntimeConfig->rcFrameStatusFn = sbusFrameStatus;
@@ -189,13 +187,12 @@ bool sbusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 #endif
 
     serialPort_t *sBusPort = openSerialPort(portConfig->identifier,
-        FUNCTION_RX_SERIAL,
-        sbusDataReceive,
-        &sbusFrameData,
-        SBUS_BAUDRATE,
-        portShared ? MODE_RXTX : MODE_RX,
-        SBUS_PORT_OPTIONS | (rxConfig->serialrx_inverted ? 0 : SERIAL_INVERTED) | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0)
-        );
+                                            FUNCTION_RX_SERIAL,
+                                            sbusDataReceive,
+                                            &sbusFrameData,
+                                            SBUS_BAUDRATE,
+                                            portShared ? MODE_RXTX : MODE_RX,
+                                            SBUS_PORT_OPTIONS | (rxConfig->serialrx_inverted ? 0 : SERIAL_INVERTED) | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0));
 
     if (rxConfig->rssi_src_frame_errors) {
         rssiSource = RSSI_SOURCE_FRAME_ERRORS;

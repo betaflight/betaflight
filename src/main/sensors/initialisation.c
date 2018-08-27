@@ -33,18 +33,18 @@
 #include "fc/config.h"
 #include "fc/runtime_config.h"
 
-#include "sensors/sensors.h"
-#include "sensors/adcinternal.h"
 #include "sensors/acceleration.h"
+#include "sensors/adcinternal.h"
 #include "sensors/barometer.h"
-#include "sensors/gyro.h"
 #include "sensors/compass.h"
-#include "sensors/rangefinder.h"
+#include "sensors/gyro.h"
 #include "sensors/initialisation.h"
+#include "sensors/rangefinder.h"
+#include "sensors/sensors.h"
 
 // requestedSensors is not actually used
-uint8_t requestedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE, RANGEFINDER_NONE };
-uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE, RANGEFINDER_NONE };
+uint8_t requestedSensors[SENSOR_INDEX_COUNT] = {GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE, RANGEFINDER_NONE};
+uint8_t detectedSensors[SENSOR_INDEX_COUNT]  = {GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE, RANGEFINDER_NONE};
 
 bool sensorsAutodetect(void)
 {

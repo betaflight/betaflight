@@ -30,19 +30,18 @@
 
 #include "common/time.h"
 
-#include "drivers/time.h"
 #include "drivers/exti.h"
 #include "drivers/io.h"
 #include "drivers/nvic.h"
 #include "drivers/rcc.h"
+#include "drivers/time.h"
 
 #include "drivers/rangefinder/rangefinder.h"
 #include "drivers/rangefinder/rangefinder_hcsr04.h"
 
-#define HCSR04_MAX_RANGE_CM 400 // 4m, from HC-SR04 spec sheet
-#define HCSR04_DETECTION_CONE_DECIDEGREES 300 // recommended cone angle30 degrees, from HC-SR04 spec sheet
+#define HCSR04_MAX_RANGE_CM 400                        // 4m, from HC-SR04 spec sheet
+#define HCSR04_DETECTION_CONE_DECIDEGREES 300          // recommended cone angle30 degrees, from HC-SR04 spec sheet
 #define HCSR04_DETECTION_CONE_EXTENDED_DECIDEGREES 450 // in practice 45 degrees seems to work well
-
 
 /* HC-SR04 consists of ultrasonic transmitter, receiver, and control circuits.
  * When triggered it sends out a series of 40KHz ultrasonic pulses and receives
@@ -56,7 +55,7 @@
 static volatile timeDelta_t hcsr04SonarPulseTravelTime = 0;
 static volatile timeMs_t lastMeasurementReceivedAt;
 static volatile int32_t lastCalculatedDistance = RANGEFINDER_OUT_OF_RANGE;
-static timeMs_t lastMeasurementStartedAt = 0;
+static timeMs_t lastMeasurementStartedAt       = 0;
 
 #ifdef USE_EXTI
 static extiCallbackRec_t hcsr04_extiCallbackRec;
@@ -66,7 +65,7 @@ static IO_t echoIO;
 static IO_t triggerIO;
 
 #if !defined(UNIT_TEST)
-void hcsr04_extiHandler(extiCallbackRec_t* cb)
+void hcsr04_extiHandler(extiCallbackRec_t *cb)
 {
     static timeUs_t timing_start;
     UNUSED(cb);
@@ -76,7 +75,7 @@ void hcsr04_extiHandler(extiCallbackRec_t* cb)
     } else {
         const timeUs_t timing_stop = micros();
         if (timing_stop > timing_start) {
-            lastMeasurementReceivedAt = millis();
+            lastMeasurementReceivedAt  = millis();
             hcsr04SonarPulseTravelTime = timing_stop - timing_start;
         }
     }
@@ -129,8 +128,7 @@ void hcsr04_update(rangefinderDev_t *dev)
             if (lastCalculatedDistance > HCSR04_MAX_RANGE_CM) {
                 lastCalculatedDistance = RANGEFINDER_OUT_OF_RANGE;
             }
-        }
-        else {
+        } else {
             // No measurement within reasonable time - indicate failure
             lastCalculatedDistance = RANGEFINDER_HARDWARE_FAILURE;
         }
@@ -150,7 +148,7 @@ int32_t hcsr04_get_distance(rangefinderDev_t *dev)
     return lastCalculatedDistance;
 }
 
-bool hcsr04Detect(rangefinderDev_t *dev, const sonarConfig_t * rangefinderHardwarePins)
+bool hcsr04Detect(rangefinderDev_t *dev, const sonarConfig_t *rangefinderHardwarePins)
 {
     bool detected = false;
 
@@ -164,7 +162,7 @@ bool hcsr04Detect(rangefinderDev_t *dev, const sonarConfig_t * rangefinderHardwa
 #endif
 
     triggerIO = IOGetByTag(rangefinderHardwarePins->triggerTag);
-    echoIO = IOGetByTag(rangefinderHardwarePins->echoTag);
+    echoIO    = IOGetByTag(rangefinderHardwarePins->echoTag);
 
     if (IOGetOwner(triggerIO) != OWNER_FREE) {
         return false;
@@ -207,18 +205,17 @@ bool hcsr04Detect(rangefinderDev_t *dev, const sonarConfig_t * rangefinderHardwa
         EXTIEnable(echoIO, true);
 #endif
 
-        dev->delayMs = 100;
-        dev->maxRangeCm = HCSR04_MAX_RANGE_CM;
-        dev->detectionConeDeciDegrees = HCSR04_DETECTION_CONE_DECIDEGREES;
+        dev->delayMs                          = 100;
+        dev->maxRangeCm                       = HCSR04_MAX_RANGE_CM;
+        dev->detectionConeDeciDegrees         = HCSR04_DETECTION_CONE_DECIDEGREES;
         dev->detectionConeExtendedDeciDegrees = HCSR04_DETECTION_CONE_EXTENDED_DECIDEGREES;
 
-        dev->init = &hcsr04_init;
+        dev->init   = &hcsr04_init;
         dev->update = &hcsr04_update;
-        dev->read = &hcsr04_get_distance;
+        dev->read   = &hcsr04_get_distance;
 
         return true;
-    }
-    else {
+    } else {
         // Not detected - free resources
         IORelease(triggerIO);
         IORelease(echoIO);

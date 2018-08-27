@@ -44,11 +44,10 @@
 #include "sensors/boardalignment.h"
 #include "sensors/compass.h"
 
-
 // alternative defaults settings for Colibri/Gemini targets
 void targetConfiguration(void)
 {
-    mixerConfigMutable()->mixerMode = MIXER_HEX6X;
+    mixerConfigMutable()->mixerMode      = MIXER_HEX6X;
     rxConfigMutable()->serialrx_provider = 2;
 
     motorConfigMutable()->minthrottle = 1070;
@@ -62,7 +61,7 @@ void targetConfiguration(void)
     for (uint8_t rateProfileIndex = 0; rateProfileIndex < CONTROL_RATE_PROFILE_COUNT; rateProfileIndex++) {
         controlRateConfig_t *controlRateConfig = controlRateProfilesMutable(rateProfileIndex);
 
-        controlRateConfig->dynThrPID = 45;
+        controlRateConfig->dynThrPID      = 45;
         controlRateConfig->tpa_breakpoint = 1700;
     }
 

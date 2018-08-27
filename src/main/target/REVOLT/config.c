@@ -31,11 +31,9 @@
 
 #include "fc/config.h"
 
-
 #ifdef USE_TARGET_CONFIG
 
 #include "pg/pg.h"
-
 
 void targetConfiguration(void)
 {

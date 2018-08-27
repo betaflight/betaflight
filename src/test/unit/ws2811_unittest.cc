@@ -20,11 +20,11 @@
 #include <limits.h>
 
 extern "C" {
-    #include "build/build_config.h"
+#include "build/build_config.h"
 
-    #include "common/color.h"
+#include "common/color.h"
 
-    #include "drivers/light_ws2811strip.h"
+#include "drivers/light_ws2811strip.h"
 }
 
 #include "unittest_macros.h"
@@ -37,9 +37,10 @@ STATIC_UNIT_TESTED void fastUpdateLEDDMABuffer(rgbColor24bpp_t *color);
 STATIC_UNIT_TESTED void updateLEDDMABuffer(uint8_t componentValue);
 }
 
-TEST(WS2812, updateDMABuffer) {
+TEST(WS2812, updateDMABuffer)
+{
     // given
-    rgbColor24bpp_t color1 = { .raw = {0xFF,0xAA,0x55} };
+    rgbColor24bpp_t color1 = {.raw = {0xFF, 0xAA, 0x55}};
 
     // and
     dmaBufferOffset = 0;
@@ -91,12 +92,14 @@ TEST(WS2812, updateDMABuffer) {
 }
 
 extern "C" {
-rgbColor24bpp_t* hsvToRgb24(const hsvColor_t *c) {
+rgbColor24bpp_t *hsvToRgb24(const hsvColor_t *c)
+{
     UNUSED(c);
     return NULL;
 }
 
-void ws2811LedStripHardwareInit(ioTag_t ioTag) {
+void ws2811LedStripHardwareInit(ioTag_t ioTag)
+{
     UNUSED(ioTag);
 }
 

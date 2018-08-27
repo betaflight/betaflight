@@ -18,10 +18,10 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-#include <math.h>
 
 #include "platform.h"
 
@@ -39,10 +39,6 @@
 #include "cms/cms_types.h"
 
 #include "drivers/accgyro/accgyro.h"
-#include "drivers/camera_control.h"
-#include "drivers/compass/compass.h"
-#include "drivers/pwm_esc_detect.h"
-#include "drivers/pwm_output.h"
 #include "drivers/adc.h"
 #include "drivers/bus.h"
 #include "drivers/bus_i2c.h"
@@ -60,20 +56,19 @@
 #include "drivers/pwm_esc_detect.h"
 #include "drivers/pwm_output.h"
 #include "drivers/rx/rx_pwm.h"
+#include "drivers/sdcard.h"
 #include "drivers/sensor.h"
 #include "drivers/serial.h"
 #include "drivers/serial_softserial.h"
 #include "drivers/serial_uart.h"
-#include "drivers/sdcard.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
 #include "drivers/transponder_ir.h"
-#include "drivers/exti.h"
 #include "drivers/usb_io.h"
-#include "drivers/vtx_rtc6705.h"
 #include "drivers/vtx_common.h"
+#include "drivers/vtx_rtc6705.h"
 #ifdef USE_USB_MSC
 #include "drivers/usb_msc.h"
 #endif
@@ -81,9 +76,9 @@
 #include "fc/board_info.h"
 #include "fc/config.h"
 #include "fc/init.h"
-#include "fc/tasks.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
+#include "fc/tasks.h"
 
 #include "interface/cli.h"
 #include "interface/msp.h"
@@ -96,12 +91,12 @@
 #include "pg/bus_i2c.h"
 #include "pg/bus_spi.h"
 #include "pg/flash.h"
+#include "pg/pg.h"
 #include "pg/pinio.h"
 #include "pg/piniobox.h"
-#include "pg/pg.h"
 #include "pg/rx.h"
-#include "pg/rx_spi.h"
 #include "pg/rx_pwm.h"
+#include "pg/rx_spi.h"
 #include "pg/sdcard.h"
 #include "pg/vcd.h"
 
@@ -109,26 +104,26 @@
 #include "rx/rx_spi.h"
 #include "rx/spektrum.h"
 
-#include "io/beeper.h"
-#include "io/displayport_max7456.h"
-#include "io/displayport_srxl.h"
-#include "io/serial.h"
-#include "io/flashfs.h"
-#include "io/gps.h"
-#include "io/motors.h"
-#include "io/servos.h"
-#include "io/gimbal.h"
-#include "io/ledstrip.h"
-#include "io/dashboard.h"
 #include "io/asyncfatfs/asyncfatfs.h"
-#include "io/transponder_ir.h"
+#include "io/beeper.h"
+#include "io/dashboard.h"
+#include "io/displayport_max7456.h"
+#include "io/displayport_msp.h"
+#include "io/displayport_srxl.h"
+#include "io/flashfs.h"
+#include "io/gimbal.h"
+#include "io/gps.h"
+#include "io/ledstrip.h"
+#include "io/motors.h"
 #include "io/osd.h"
 #include "io/pidaudio.h"
 #include "io/piniobox.h"
-#include "io/displayport_msp.h"
+#include "io/serial.h"
+#include "io/servos.h"
+#include "io/transponder_ir.h"
 #include "io/vtx.h"
-#include "io/vtx_rtc6705.h"
 #include "io/vtx_control.h"
+#include "io/vtx_rtc6705.h"
 #include "io/vtx_smartaudio.h"
 #include "io/vtx_tramp.h"
 
@@ -187,7 +182,7 @@ void processLoopback(void)
 #ifdef BUS_SWITCH_PIN
 void busSwitchInit(void)
 {
-static IO_t busSwitchResetPin        = IO_NONE;
+    static IO_t busSwitchResetPin = IO_NONE;
 
     busSwitchResetPin = IOGetByTag(IO_TAG(BUS_SWITCH_PIN));
     IOInit(busSwitchResetPin, OWNER_SYSTEM, 0);
@@ -205,7 +200,7 @@ void init(void)
     extern uint8_t tcm_code_start;
     extern uint8_t tcm_code_end;
     extern uint8_t tcm_code;
-    memcpy(&tcm_code_start, &tcm_code, (size_t) (&tcm_code_end - &tcm_code_start));
+    memcpy(&tcm_code_start, &tcm_code, (size_t)(&tcm_code_end - &tcm_code_start));
 #endif
 
 #ifdef USE_FAST_RAM
@@ -213,7 +208,7 @@ void init(void)
     extern uint8_t _sfastram_data;
     extern uint8_t _efastram_data;
     extern uint8_t _sfastram_idata;
-    memcpy(&_sfastram_data, &_sfastram_idata, (size_t) (&_efastram_data - &_sfastram_data));
+    memcpy(&_sfastram_data, &_sfastram_idata, (size_t)(&_efastram_data - &_sfastram_data));
 #endif
 
 #ifdef USE_HAL_DRIVER
@@ -273,7 +268,7 @@ void init(void)
     buttonsInit();
 
     // Check status of bind plug and exit if not active
-    delayMicroseconds(10);  // allow configuration to settle
+    delayMicroseconds(10); // allow configuration to settle
 
     if (!isMPUSoftReset()) {
 #if defined(BUTTON_A_PIN) && defined(BUTTON_B_PIN)
@@ -316,7 +311,7 @@ void init(void)
 
     delay(100);
 
-    timerInit();  // timer must be initialized before any channel is allocated
+    timerInit(); // timer must be initialized before any channel is allocated
 
 #ifdef BUS_SWITCH_PIN
     busSwitchInit();
@@ -328,13 +323,13 @@ void init(void)
 
 #if defined(AVOID_UART1_FOR_PWM_PPM)
     serialInit(featureIsEnabled(FEATURE_SOFTSERIAL),
-            featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART1 : SERIAL_PORT_NONE);
+               featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART1 : SERIAL_PORT_NONE);
 #elif defined(AVOID_UART2_FOR_PWM_PPM)
     serialInit(featureIsEnabled(FEATURE_SOFTSERIAL),
-            featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART2 : SERIAL_PORT_NONE);
+               featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART2 : SERIAL_PORT_NONE);
 #elif defined(AVOID_UART3_FOR_PWM_PPM)
     serialInit(featureIsEnabled(FEATURE_SOFTSERIAL),
-            featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART3 : SERIAL_PORT_NONE);
+               featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART3 : SERIAL_PORT_NONE);
 #else
     serialInit(featureIsEnabled(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
 #endif
@@ -355,7 +350,8 @@ void init(void)
     motorDevInit(&motorConfig()->dev, idlePulse, getMotorCount());
     systemState |= SYSTEM_STATE_MOTORS_READY;
 
-    if (0) {}
+    if (0) {
+    }
 #if defined(USE_PPM)
     else if (featureIsEnabled(FEATURE_RX_PPM)) {
         ppmRxInit(ppmConfig());
@@ -400,14 +396,14 @@ void init(void)
 #endif // USE_SPI
 
 #ifdef USE_USB_MSC
-/* MSC mode will start after init, but will not allow scheduler to run,
+    /* MSC mode will start after init, but will not allow scheduler to run,
  *  so there is no bottleneck in reading and writing data */
     mscInit();
     if (mscCheckBoot() || mscCheckButton()) {
         if (mscStart() == 0) {
-             mscWaitForButton();
+            mscWaitForButton();
         } else {
-             NVIC_SystemReset();
+            NVIC_SystemReset();
         }
     }
 #endif
@@ -461,7 +457,7 @@ void init(void)
 #endif
 
 #ifdef USE_ADC
-    adcConfigMutable()->vbat.enabled = (batteryConfig()->voltageMeterSource == VOLTAGE_METER_ADC);
+    adcConfigMutable()->vbat.enabled    = (batteryConfig()->voltageMeterSource == VOLTAGE_METER_ADC);
     adcConfigMutable()->current.enabled = (batteryConfig()->currentMeterSource == CURRENT_METER_ADC);
 
     // The FrSky D SPI RX sends RSSI_ADC_PIN (if configured) as A2
@@ -692,7 +688,7 @@ void init(void)
 
 #ifdef SOFTSERIAL_LOOPBACK
     // FIXME this is a hack, perhaps add a FUNCTION_LOOPBACK to support it properly
-    loopbackPort = (serialPort_t*)&(softSerialPorts[0]);
+    loopbackPort = (serialPort_t *)&(softSerialPorts[0]);
     if (!loopbackPort->vTable) {
         loopbackPort = openSoftSerial(0, NULL, 19200, SERIAL_NOT_INVERTED);
     }

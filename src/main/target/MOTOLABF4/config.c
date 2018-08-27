@@ -18,8 +18,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "platform.h"
 
@@ -31,7 +31,7 @@
 
 void targetConfiguration(void)
 {
-    sdcardConfigMutable()->useDma = true;
+    sdcardConfigMutable()->useDma        = true;
     telemetryConfigMutable()->halfDuplex = 0;
 }
 #endif

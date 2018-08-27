@@ -38,11 +38,11 @@ void setEscLo(uint8_t selEsc);
 void setEscInput(uint8_t selEsc);
 void setEscOutput(uint8_t selEsc);
 
-#define ESC_IS_HI  isEscHi(selected_esc)
-#define ESC_IS_LO  isEscLo(selected_esc)
+#define ESC_IS_HI isEscHi(selected_esc)
+#define ESC_IS_LO isEscLo(selected_esc)
 #define ESC_SET_HI setEscHi(selected_esc)
 #define ESC_SET_LO setEscLo(selected_esc)
-#define ESC_INPUT  setEscInput(selected_esc)
+#define ESC_INPUT setEscInput(selected_esc)
 #define ESC_OUTPUT setEscOutput(selected_esc)
 
 typedef struct ioMem_s {

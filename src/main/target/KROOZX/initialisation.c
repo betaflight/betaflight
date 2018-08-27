@@ -18,11 +18,11 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdbool.h>
-#include <stdint.h>
-#include "drivers/io.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
+#include "drivers/io.h"
+#include <stdbool.h>
+#include <stdint.h>
 
 void targetPreInit(void)
 {

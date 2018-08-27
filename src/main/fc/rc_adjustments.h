@@ -20,9 +20,9 @@
 
 #pragma once
 
-#include <stdbool.h>
-#include "pg/pg.h"
 #include "fc/rc_modes.h"
+#include "pg/pg.h"
+#include <stdbool.h>
 
 typedef enum {
     ADJUSTMENT_NONE = 0,

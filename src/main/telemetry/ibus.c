@@ -51,8 +51,8 @@
 #include "io/serial.h"
 
 #include "sensors/acceleration.h"
-#include "sensors/battery.h"
 #include "sensors/barometer.h"
+#include "sensors/battery.h"
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
 
@@ -62,18 +62,16 @@
 #include "telemetry/ibus_shared.h"
 #include "telemetry/telemetry.h"
 
-
 #define IBUS_TASK_PERIOD_US (1000)
 
-#define IBUS_UART_MODE     (MODE_RXTX)
-#define IBUS_BAUDRATE      (115200)
+#define IBUS_UART_MODE (MODE_RXTX)
+#define IBUS_BAUDRATE (115200)
 #define IBUS_CYCLE_TIME_MS (8)
 
-#define IBUS_MIN_LEN       (2 + IBUS_CHECKSUM_SIZE)
-#define IBUS_MAX_TX_LEN    (6)
-#define IBUS_MAX_RX_LEN    (4)
-#define IBUS_RX_BUF_LEN    (IBUS_MAX_RX_LEN)
-
+#define IBUS_MIN_LEN (2 + IBUS_CHECKSUM_SIZE)
+#define IBUS_MAX_TX_LEN (6)
+#define IBUS_MAX_RX_LEN (4)
+#define IBUS_RX_BUF_LEN (IBUS_MAX_RX_LEN)
 
 static serialPort_t *ibusSerialPort = NULL;
 static serialPortConfig_t *ibusSerialPortConfig;
@@ -85,9 +83,7 @@ static uint8_t outboundBytesToIgnoreOnRxCount = 0;
 static bool ibusTelemetryEnabled = false;
 static portSharing_e ibusPortSharing;
 
-static uint8_t ibusReceiveBuffer[IBUS_RX_BUF_LEN] = { 0x0 };
-
-
+static uint8_t ibusReceiveBuffer[IBUS_RX_BUF_LEN] = {0x0};
 
 static void pushOntoTail(uint8_t buffer[IBUS_MIN_LEN], size_t bufferLength, uint8_t value)
 {
@@ -95,14 +91,12 @@ static void pushOntoTail(uint8_t buffer[IBUS_MIN_LEN], size_t bufferLength, uint
     ibusReceiveBuffer[bufferLength - 1] = value;
 }
 
-
 void initIbusTelemetry(void)
 {
     ibusSerialPortConfig = findSerialPortConfig(FUNCTION_TELEMETRY_IBUS);
-    ibusPortSharing = determinePortSharing(ibusSerialPortConfig, FUNCTION_TELEMETRY_IBUS);
+    ibusPortSharing      = determinePortSharing(ibusSerialPortConfig, FUNCTION_TELEMETRY_IBUS);
     ibusTelemetryEnabled = false;
 }
-
 
 void handleIbusTelemetry(void)
 {
@@ -126,7 +120,6 @@ void handleIbusTelemetry(void)
     }
 }
 
-
 bool checkIbusTelemetryState(void)
 {
     bool newTelemetryEnabledValue = telemetryDetermineEnabledState(ibusPortSharing);
@@ -144,7 +137,6 @@ bool checkIbusTelemetryState(void)
 
     return true;
 }
-
 
 void configureIbusTelemetryPort(void)
 {
@@ -164,15 +156,14 @@ void configureIbusTelemetryPort(void)
     }
 
     initSharedIbusTelemetry(ibusSerialPort);
-    ibusTelemetryEnabled = true;
+    ibusTelemetryEnabled           = true;
     outboundBytesToIgnoreOnRxCount = 0;
 }
-
 
 void freeIbusTelemetryPort(void)
 {
     closeSerialPort(ibusSerialPort);
-    ibusSerialPort = NULL;
+    ibusSerialPort       = NULL;
     ibusTelemetryEnabled = false;
 }
 

@@ -38,8 +38,8 @@
 
 #include "fc/config.h"
 
-#include "rx/rx.h"
 #include "rx/pwm.h"
+#include "rx/rx.h"
 
 static uint16_t pwmReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t channel)
 {
@@ -62,10 +62,10 @@ void rxPwmInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     // configure PWM/CPPM read function and max number of channels. serial rx below will override both of these, if enabled
     if (featureIsEnabled(FEATURE_RX_PARALLEL_PWM)) {
         rxRuntimeConfig->channelCount = MAX_SUPPORTED_RC_PARALLEL_PWM_CHANNEL_COUNT;
-        rxRuntimeConfig->rcReadRawFn = pwmReadRawRC;
+        rxRuntimeConfig->rcReadRawFn  = pwmReadRawRC;
     } else if (featureIsEnabled(FEATURE_RX_PPM)) {
         rxRuntimeConfig->channelCount = MAX_SUPPORTED_RC_PPM_CHANNEL_COUNT;
-        rxRuntimeConfig->rcReadRawFn = ppmReadRawRC;
+        rxRuntimeConfig->rcReadRawFn  = ppmReadRawRC;
     }
 }
 #endif

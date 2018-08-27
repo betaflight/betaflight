@@ -41,8 +41,8 @@
 #include "io/spektrum_rssi.h"
 #include "io/spektrum_vtx_control.h"
 
-#include "telemetry/telemetry.h"
 #include "telemetry/srxl.h"
+#include "telemetry/telemetry.h"
 
 #include "pg/rx.h"
 
@@ -60,7 +60,7 @@ uint8_t rssi_channel;
 static uint8_t spek_chan_shift;
 static uint8_t spek_chan_mask;
 static bool rcFrameComplete = false;
-static bool spekHiRes = false;
+static bool spekHiRes       = false;
 
 static volatile uint8_t spekFrame[SPEK_FRAME_SIZE];
 
@@ -72,7 +72,7 @@ static uint8_t telemetryBuf[SRXL_FRAME_SIZE_MAX];
 static uint8_t telemetryBufLen = 0;
 
 void srxlRxSendTelemetryDataDispatch(dispatchEntry_t *self);
-static dispatchEntry_t srxlTelemetryDispatch = { .dispatch = srxlRxSendTelemetryDataDispatch};
+static dispatchEntry_t srxlTelemetryDispatch = {.dispatch = srxlRxSendTelemetryDataDispatch};
 #endif
 
 // Receive ISR callback
@@ -81,12 +81,12 @@ static void spektrumDataReceive(uint16_t c, void *data)
     UNUSED(data);
 
     uint32_t spekTime, spekTimeInterval;
-    static uint32_t spekTimeLast = 0;
+    static uint32_t spekTimeLast     = 0;
     static uint8_t spekFramePosition = 0;
 
-    spekTime = micros();
+    spekTime         = micros();
     spekTimeInterval = spekTime - spekTimeLast;
-    spekTimeLast = spekTime;
+    spekTimeLast     = spekTime;
 
     if (spekTimeInterval > SPEKTRUM_NEEDED_FRAME_INTERVAL) {
         spekFramePosition = 0;
@@ -101,7 +101,6 @@ static void spektrumDataReceive(uint16_t c, void *data)
         }
     }
 }
-
 
 uint32_t spekChannelData[SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT];
 
@@ -122,19 +121,19 @@ static uint8_t spektrumFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
     // Get the VTX control bytes in a frame
     uint32_t vtxControl = ((spekFrame[SPEKTRUM_VTX_CONTROL_1] << 24) |
                            (spekFrame[SPEKTRUM_VTX_CONTROL_2] << 16) |
-                           (spekFrame[SPEKTRUM_VTX_CONTROL_3] <<  8) |
-                           (spekFrame[SPEKTRUM_VTX_CONTROL_4] <<  0) );
+                           (spekFrame[SPEKTRUM_VTX_CONTROL_3] << 8) |
+                           (spekFrame[SPEKTRUM_VTX_CONTROL_4] << 0));
 
     int8_t spektrumRcDataSize;
     // Handle VTX control frame.
     if ((vtxControl & SPEKTRUM_VTX_CONTROL_FRAME_MASK) == SPEKTRUM_VTX_CONTROL_FRAME &&
-        (spekFrame[2] & 0x80) == 0 )  {
+        (spekFrame[2] & 0x80) == 0) {
 #if defined(USE_SPEKTRUM_VTX_CONTROL) && defined(USE_VTX_COMMON)
-      spektrumHandleVtxControl(vtxControl);
+        spektrumHandleVtxControl(vtxControl);
 #endif
-      spektrumRcDataSize = SPEK_FRAME_SIZE - SPEKTRUM_VTX_CONTROL_SIZE;
+        spektrumRcDataSize = SPEK_FRAME_SIZE - SPEKTRUM_VTX_CONTROL_SIZE;
     } else {
-      spektrumRcDataSize = SPEK_FRAME_SIZE;
+        spektrumRcDataSize = SPEK_FRAME_SIZE;
     }
 
     // Get the RC control channel inputs
@@ -174,9 +173,9 @@ static uint16_t spektrumReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint
     }
 
     if (spekHiRes)
-        data = 988 + (spekChannelData[chan] >> 1);   // 2048 mode
+        data = 988 + (spekChannelData[chan] >> 1); // 2048 mode
     else
-        data = 988 + spekChannelData[chan];          // 1024 mode
+        data = 988 + spekChannelData[chan]; // 1024 mode
 
     return data;
 }
@@ -193,7 +192,7 @@ bool spekShouldBind(uint8_t spektrum_sat_bind)
         IOConfigGPIO(BindPlug, IOCFG_IPU);
 
         // Check status of bind plug and exit if not active
-        delayMicroseconds(10);  // allow configuration to settle
+        delayMicroseconds(10); // allow configuration to settle
         if (IORead(BindPlug)) {
             return false;
         }
@@ -203,8 +202,7 @@ bool spekShouldBind(uint8_t spektrum_sat_bind)
     return !(
         isMPUSoftReset() ||
         spektrum_sat_bind == SPEKTRUM_SAT_BIND_DISABLED ||
-        spektrum_sat_bind > SPEKTRUM_SAT_BIND_MAX
-    );
+        spektrum_sat_bind > SPEKTRUM_SAT_BIND_MAX);
 }
 
 /* spektrumBind function ported from Baseflight. It's used to bind satellite receiver to TX.
@@ -230,7 +228,7 @@ void spektrumBind(rxConfig_t *rxConfig)
             return;
         }
 
-        int index = SERIAL_PORT_IDENTIFIER_TO_INDEX(portConfig->identifier);
+        int index     = SERIAL_PORT_IDENTIFIER_TO_INDEX(portConfig->identifier);
         ioTag_t txPin = serialPinConfig()->ioTagTx[index];
         ioTag_t rxPin = serialPinConfig()->ioTagRx[index];
 
@@ -279,9 +277,7 @@ void spektrumBind(rxConfig_t *rxConfig)
         // RX line, drive high for 120us
         IOWrite(bindIO, true);
         delayMicroseconds(120);
-
     }
-
 
     // Release the bind pin to avoid interference with an actual rx pin,
     // when rxConfig->spektrum_bind_pin_override_ioTag is used.
@@ -327,35 +323,34 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
 #endif
     case SERIALRX_SPEKTRUM2048:
         // 11 bit frames
-        spek_chan_shift = 3;
-        spek_chan_mask = 0x07;
-        spekHiRes = true;
-        resolution = 2048;
-        rxRuntimeConfig->channelCount = SPEKTRUM_2048_CHANNEL_COUNT;
+        spek_chan_shift                = 3;
+        spek_chan_mask                 = 0x07;
+        spekHiRes                      = true;
+        resolution                     = 2048;
+        rxRuntimeConfig->channelCount  = SPEKTRUM_2048_CHANNEL_COUNT;
         rxRuntimeConfig->rxRefreshRate = 11000;
         break;
     case SERIALRX_SPEKTRUM1024:
         // 10 bit frames
-        spek_chan_shift = 2;
-        spek_chan_mask = 0x03;
-        spekHiRes = false;
-        resolution = 1024;
-        rxRuntimeConfig->channelCount = SPEKTRUM_1024_CHANNEL_COUNT;
+        spek_chan_shift                = 2;
+        spek_chan_mask                 = 0x03;
+        spekHiRes                      = false;
+        resolution                     = 1024;
+        rxRuntimeConfig->channelCount  = SPEKTRUM_1024_CHANNEL_COUNT;
         rxRuntimeConfig->rxRefreshRate = 22000;
         break;
     }
 
-    rxRuntimeConfig->rcReadRawFn = spektrumReadRawRC;
+    rxRuntimeConfig->rcReadRawFn     = spektrumReadRawRC;
     rxRuntimeConfig->rcFrameStatusFn = spektrumFrameStatus;
 
     serialPort = openSerialPort(portConfig->identifier,
-        FUNCTION_RX_SERIAL,
-        spektrumDataReceive,
-        NULL,
-        SPEKTRUM_BAUDRATE,
-        portShared || srxlEnabled ? MODE_RXTX : MODE_RX,
-        (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | ((srxlEnabled || rxConfig->halfDuplex) ? SERIAL_BIDIR : 0)
-        );
+                                FUNCTION_RX_SERIAL,
+                                spektrumDataReceive,
+                                NULL,
+                                SPEKTRUM_BAUDRATE,
+                                portShared || srxlEnabled ? MODE_RXTX : MODE_RX,
+                                (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | ((srxlEnabled || rxConfig->halfDuplex) ? SERIAL_BIDIR : 0));
 #if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_SRXL)
     if (portShared) {
         telemetrySharedPort = serialPort;
@@ -381,7 +376,7 @@ void srxlRxWriteTelemetryData(const void *data, int len)
     telemetryBufLen = len;
 }
 
-void srxlRxSendTelemetryDataDispatch(dispatchEntry_t* self)
+void srxlRxSendTelemetryDataDispatch(dispatchEntry_t *self)
 {
     UNUSED(self);
     // if there is telemetry data to write

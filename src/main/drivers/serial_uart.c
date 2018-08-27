@@ -30,8 +30,8 @@
 
 #include "platform.h"
 
-#include "build/build_config.h"
 #include "build/atomic.h"
+#include "build/build_config.h"
 
 #include "common/utils.h"
 
@@ -46,7 +46,7 @@
 
 static void uartSetBaudRate(serialPort_t *instance, uint32_t baudRate)
 {
-    uartPort_t *uartPort = (uartPort_t *)instance;
+    uartPort_t *uartPort    = (uartPort_t *)instance;
     uartPort->port.baudRate = baudRate;
     uartReconfigure(uartPort);
 }
@@ -54,7 +54,7 @@ static void uartSetBaudRate(serialPort_t *instance, uint32_t baudRate)
 static void uartSetMode(serialPort_t *instance, portMode_e mode)
 {
     uartPort_t *uartPort = (uartPort_t *)instance;
-    uartPort->port.mode = mode;
+    uartPort->port.mode  = mode;
     uartReconfigure(uartPort);
 }
 
@@ -63,7 +63,8 @@ void uartTryStartTxDMA(uartPort_t *s)
     // uartTryStartTxDMA must be protected, since it is called from
     // uartWrite and handleUsartTxDma (an ISR).
 
-    ATOMIC_BLOCK(NVIC_PRIO_SERIALUART_TXDMA) {
+    ATOMIC_BLOCK(NVIC_PRIO_SERIALUART_TXDMA)
+    {
 #ifdef STM32F4
         if (s->txDMAStream->CR & 1) {
             // DMA is already in progress
@@ -93,8 +94,7 @@ void uartTryStartTxDMA(uartPort_t *s)
         if (s->port.txBufferHead > s->port.txBufferTail) {
             s->txDMAStream->NDTR = s->port.txBufferHead - s->port.txBufferTail;
             s->port.txBufferTail = s->port.txBufferHead;
-        }
-        else {
+        } else {
             s->txDMAStream->NDTR = s->port.txBufferSize - s->port.txBufferTail;
             s->port.txBufferTail = 0;
         }
@@ -128,10 +128,10 @@ void uartTryStartTxDMA(uartPort_t *s)
         s->txDMAChannel->CMAR = (uint32_t)&s->port.txBuffer[s->port.txBufferTail];
         if (s->port.txBufferHead > s->port.txBufferTail) {
             s->txDMAChannel->CNDTR = s->port.txBufferHead - s->port.txBufferTail;
-            s->port.txBufferTail = s->port.txBufferHead;
+            s->port.txBufferTail   = s->port.txBufferHead;
         } else {
             s->txDMAChannel->CNDTR = s->port.txBufferSize - s->port.txBufferTail;
-            s->port.txBufferTail = 0;
+            s->port.txBufferTail   = 0;
         }
         s->txDMAEmpty = false;
 
@@ -143,7 +143,7 @@ void uartTryStartTxDMA(uartPort_t *s)
 
 static uint32_t uartTotalRxBytesWaiting(const serialPort_t *instance)
 {
-    const uartPort_t *s = (const uartPort_t*)instance;
+    const uartPort_t *s = (const uartPort_t *)instance;
 #ifdef STM32F4
     if (s->rxDMAStream) {
         uint32_t rxDMAHead = s->rxDMAStream->NDTR;
@@ -167,7 +167,7 @@ static uint32_t uartTotalRxBytesWaiting(const serialPort_t *instance)
 
 static uint32_t uartTotalTxBytesFree(const serialPort_t *instance)
 {
-    const uartPort_t *s = (const uartPort_t*)instance;
+    const uartPort_t *s = (const uartPort_t *)instance;
 
     uint32_t bytesUsed;
 
@@ -248,7 +248,7 @@ static uint8_t uartRead(serialPort_t *instance)
 
 static void uartWrite(serialPort_t *instance, uint8_t ch)
 {
-    uartPort_t *s = (uartPort_t *)instance;
+    uartPort_t *s                          = (uartPort_t *)instance;
     s->port.txBuffer[s->port.txBufferHead] = ch;
     if (s->port.txBufferHead + 1 >= s->port.txBufferSize) {
         s->port.txBufferHead = 0;
@@ -270,20 +270,19 @@ static void uartWrite(serialPort_t *instance, uint8_t ch)
 
 const struct serialPortVTable uartVTable[] = {
     {
-        .serialWrite = uartWrite,
-        .serialTotalRxWaiting = uartTotalRxBytesWaiting,
-        .serialTotalTxFree = uartTotalTxBytesFree,
-        .serialRead = uartRead,
-        .serialSetBaudRate = uartSetBaudRate,
+        .serialWrite                 = uartWrite,
+        .serialTotalRxWaiting        = uartTotalRxBytesWaiting,
+        .serialTotalTxFree           = uartTotalTxBytesFree,
+        .serialRead                  = uartRead,
+        .serialSetBaudRate           = uartSetBaudRate,
         .isSerialTransmitBufferEmpty = isUartTransmitBufferEmpty,
-        .setMode = uartSetMode,
-        .setCtrlLineStateCb = NULL,
-        .setBaudRateCb = NULL,
-        .writeBuf = NULL,
-        .beginWrite = NULL,
-        .endWrite = NULL,
-    }
-};
+        .setMode                     = uartSetMode,
+        .setCtrlLineStateCb          = NULL,
+        .setBaudRateCb               = NULL,
+        .writeBuf                    = NULL,
+        .beginWrite                  = NULL,
+        .endWrite                    = NULL,
+    }};
 
 #ifdef USE_UART1
 // USART1 Rx/Tx IRQ Handler

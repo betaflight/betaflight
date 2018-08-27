@@ -27,43 +27,43 @@
 #include "config/config_streamer.h"
 
 #ifndef EEPROM_IN_RAM
-extern uint8_t __config_start;   // configured via linker script when building binaries.
+extern uint8_t __config_start; // configured via linker script when building binaries.
 extern uint8_t __config_end;
 #endif
 
 #if !defined(FLASH_PAGE_SIZE)
 // F1
-# if defined(STM32F10X_MD)
-#  define FLASH_PAGE_SIZE                 (0x400)
-# elif defined(STM32F10X_HD)
-#  define FLASH_PAGE_SIZE                 (0x800)
+#if defined(STM32F10X_MD)
+#define FLASH_PAGE_SIZE (0x400)
+#elif defined(STM32F10X_HD)
+#define FLASH_PAGE_SIZE (0x800)
 // F3
-# elif defined(STM32F303xC)
-#  define FLASH_PAGE_SIZE                 (0x800)
+#elif defined(STM32F303xC)
+#define FLASH_PAGE_SIZE (0x800)
 // F4
-# elif defined(STM32F40_41xxx)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x4000) // 16K sectors
-# elif defined (STM32F411xE)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x4000)
-# elif defined(STM32F427_437xx)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x4000)
-# elif defined (STM32F446xx)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x4000)
+#elif defined(STM32F40_41xxx)
+#define FLASH_PAGE_SIZE ((uint32_t)0x4000) // 16K sectors
+#elif defined(STM32F411xE)
+#define FLASH_PAGE_SIZE ((uint32_t)0x4000)
+#elif defined(STM32F427_437xx)
+#define FLASH_PAGE_SIZE ((uint32_t)0x4000)
+#elif defined(STM32F446xx)
+#define FLASH_PAGE_SIZE ((uint32_t)0x4000)
 // F7
 #elif defined(STM32F722xx)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x4000) // 16K sectors
-# elif defined(STM32F745xx)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x8000) // 32K sectors
-# elif defined(STM32F746xx)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x8000)
-# elif defined(UNIT_TEST)
-#  define FLASH_PAGE_SIZE                 (0x400)
+#define FLASH_PAGE_SIZE ((uint32_t)0x4000) // 16K sectors
+#elif defined(STM32F745xx)
+#define FLASH_PAGE_SIZE ((uint32_t)0x8000) // 32K sectors
+#elif defined(STM32F746xx)
+#define FLASH_PAGE_SIZE ((uint32_t)0x8000)
+#elif defined(UNIT_TEST)
+#define FLASH_PAGE_SIZE (0x400)
 // SIMULATOR
-# elif defined(SIMULATOR_BUILD)
-#  define FLASH_PAGE_SIZE                 (0x400)
-# else
-#  error "Flash page size not defined for target."
-# endif
+#elif defined(SIMULATOR_BUILD)
+#define FLASH_PAGE_SIZE (0x400)
+#else
+#error "Flash page size not defined for target."
+#endif
 #endif
 
 void config_streamer_init(config_streamer_t *c)
@@ -75,7 +75,7 @@ void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
 {
     // base must start at FLASH_PAGE_SIZE boundary
     c->address = base;
-    c->size = size;
+    c->size    = size;
     if (!c->unlocked) {
 #if defined(STM32F7)
         HAL_FLASH_Unlock();
@@ -96,7 +96,7 @@ void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
 #elif defined(UNIT_TEST) || defined(SIMULATOR_BUILD)
     // NOP
 #else
-# error "Unsupported CPU"
+#error "Unsupported CPU"
 #endif
     c->err = 0;
 }
@@ -233,10 +233,9 @@ static int write_word(config_streamer_t *c, uint32_t value)
 #if defined(STM32F7)
     if (c->address % FLASH_PAGE_SIZE == 0) {
         FLASH_EraseInitTypeDef EraseInitStruct = {
-            .TypeErase     = FLASH_TYPEERASE_SECTORS,
-            .VoltageRange  = FLASH_VOLTAGE_RANGE_3, // 2.7-3.6V
-            .NbSectors     = 1
-        };
+            .TypeErase    = FLASH_TYPEERASE_SECTORS,
+            .VoltageRange = FLASH_VOLTAGE_RANGE_3, // 2.7-3.6V
+            .NbSectors    = 1};
         EraseInitStruct.Sector = getFLASHSectorForEEPROM();
         uint32_t SECTORError;
         const HAL_StatusTypeDef status = HAL_FLASHEx_Erase(&EraseInitStruct, &SECTORError);
@@ -270,12 +269,12 @@ static int write_word(config_streamer_t *c, uint32_t value)
 
 int config_streamer_write(config_streamer_t *c, const uint8_t *p, uint32_t size)
 {
-    for (const uint8_t *pat = p; pat != (uint8_t*)p + size; pat++) {
+    for (const uint8_t *pat = p; pat != (uint8_t *)p + size; pat++) {
         c->buffer.b[c->at++] = *pat;
 
         if (c->at == sizeof(c->buffer)) {
             c->err = write_word(c, c->buffer.w);
-            c->at = 0;
+            c->at  = 0;
         }
     }
     return c->err;
@@ -291,9 +290,9 @@ int config_streamer_flush(config_streamer_t *c)
     if (c->at != 0) {
         memset(c->buffer.b + c->at, 0, sizeof(c->buffer) - c->at);
         c->err = write_word(c, c->buffer.w);
-        c->at = 0;
+        c->at  = 0;
     }
-    return c-> err;
+    return c->err;
 }
 
 int config_streamer_finish(config_streamer_t *c)

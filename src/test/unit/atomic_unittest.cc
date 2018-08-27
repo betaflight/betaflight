@@ -15,8 +15,8 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
@@ -27,38 +27,44 @@ extern "C" {
 
 TEST(AtomicUnittest, TestAtomicBlock)
 {
-    atomic_BASEPRI = 0;    // reset BASEPRI
+    atomic_BASEPRI = 0; // reset BASEPRI
 
-    ATOMIC_BLOCK(10) {
-        EXPECT_EQ(atomic_BASEPRI, 10);     // locked
-        ATOMIC_BLOCK(5) {
-            EXPECT_EQ(atomic_BASEPRI, 5);  // priority increase
+    ATOMIC_BLOCK(10)
+    {
+        EXPECT_EQ(atomic_BASEPRI, 10); // locked
+        ATOMIC_BLOCK(5)
+        {
+            EXPECT_EQ(atomic_BASEPRI, 5); // priority increase
         }
-        EXPECT_EQ(atomic_BASEPRI, 10);     // restore priority
-        ATOMIC_BLOCK(20) {
+        EXPECT_EQ(atomic_BASEPRI, 10); // restore priority
+        ATOMIC_BLOCK(20)
+        {
             EXPECT_EQ(atomic_BASEPRI, 10); // lower priority, no change to value
         }
-        EXPECT_EQ(atomic_BASEPRI, 10);     // restore priority
+        EXPECT_EQ(atomic_BASEPRI, 10); // restore priority
     }
-    EXPECT_EQ(atomic_BASEPRI, 0);          // restore priority to unlocked
+    EXPECT_EQ(atomic_BASEPRI, 0); // restore priority to unlocked
 }
 
 TEST(AtomicUnittest, TestAtomicBlockNB)
 {
-    atomic_BASEPRI = 0;    // reset BASEPRI
+    atomic_BASEPRI = 0; // reset BASEPRI
 
-    ATOMIC_BLOCK_NB(10) {
-        EXPECT_EQ(atomic_BASEPRI, 10);     // locked
-        ATOMIC_BLOCK_NB(5) {
-            EXPECT_EQ(atomic_BASEPRI, 5);  // priority increase
+    ATOMIC_BLOCK_NB(10)
+    {
+        EXPECT_EQ(atomic_BASEPRI, 10); // locked
+        ATOMIC_BLOCK_NB(5)
+        {
+            EXPECT_EQ(atomic_BASEPRI, 5); // priority increase
         }
-        EXPECT_EQ(atomic_BASEPRI, 10);     // restore priority
-        ATOMIC_BLOCK_NB(20) {
+        EXPECT_EQ(atomic_BASEPRI, 10); // restore priority
+        ATOMIC_BLOCK_NB(20)
+        {
             EXPECT_EQ(atomic_BASEPRI, 10); // lower priority, no change to value
         }
-        EXPECT_EQ(atomic_BASEPRI, 10);     // restore priority
+        EXPECT_EQ(atomic_BASEPRI, 10); // restore priority
     }
-    EXPECT_EQ(atomic_BASEPRI, 0);          // restore priority to unlocked
+    EXPECT_EQ(atomic_BASEPRI, 0); // restore priority to unlocked
 }
 
 struct barrierTrace {
@@ -66,15 +72,15 @@ struct barrierTrace {
 };
 
 extern "C" {
-    int testAtomicBarrier_C(struct barrierTrace *b0, struct barrierTrace *b1, struct barrierTrace sample[][2]);
+int testAtomicBarrier_C(struct barrierTrace *b0, struct barrierTrace *b1, struct barrierTrace sample[][2]);
 }
 
 TEST(AtomicUnittest, TestAtomicBarrier)
 {
-    barrierTrace b0,b1,sample[10][2];
+    barrierTrace b0, b1, sample[10][2];
 
-    int sampled = testAtomicBarrier_C(&b0,&b1,sample);
-    int sIdx = 0;
+    int sampled = testAtomicBarrier_C(&b0, &b1, sample);
+    int sIdx    = 0;
     EXPECT_EQ(sample[sIdx][0].enter, 0);
     EXPECT_EQ(sample[sIdx][0].leave, 0);
     EXPECT_EQ(sample[sIdx][1].enter, 0);

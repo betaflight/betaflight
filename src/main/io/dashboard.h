@@ -21,8 +21,8 @@
 #pragma once
 
 #include "common/time.h"
-#include "pg/pg.h"
 #include "drivers/bus_i2c.h"
+#include "pg/pg.h"
 
 #define ENABLE_DEBUG_DASHBOARD_PAGE
 
@@ -34,7 +34,7 @@
 #endif
 #endif
 
-#define DASHBOARD_I2C_ADDRESS   0x3C     // OLED at address 0x3C in 7bit
+#define DASHBOARD_I2C_ADDRESS 0x3C // OLED at address 0x3C in 7bit
 
 typedef enum {
     PAGE_WELCOME,

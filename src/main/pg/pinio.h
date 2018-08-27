@@ -20,9 +20,9 @@
 
 #pragma once
 
-#include "pg/pg.h"
 #include "drivers/io_types.h"
 #include "drivers/pinio.h"
+#include "pg/pg.h"
 
 typedef struct pinioConfig_s {
     ioTag_t ioTag[PINIO_COUNT];

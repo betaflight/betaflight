@@ -20,28 +20,28 @@
 
 //VTX control frame bits and pieces
 #define SPEKTRUM_VTX_CONTROL_FRAME_MASK 0xf000f000
-#define SPEKTRUM_VTX_CONTROL_FRAME      0xe000e000
+#define SPEKTRUM_VTX_CONTROL_FRAME 0xe000e000
 
-#define SPEKTRUM_VTX_CONTROL_1          (SPEK_FRAME_SIZE - 4)
-#define SPEKTRUM_VTX_CONTROL_2          (SPEK_FRAME_SIZE - 3)
-#define SPEKTRUM_VTX_CONTROL_3          (SPEK_FRAME_SIZE - 2)
-#define SPEKTRUM_VTX_CONTROL_4          (SPEK_FRAME_SIZE - 1)
-#define SPEKTRUM_VTX_CONTROL_SIZE       4
+#define SPEKTRUM_VTX_CONTROL_1 (SPEK_FRAME_SIZE - 4)
+#define SPEKTRUM_VTX_CONTROL_2 (SPEK_FRAME_SIZE - 3)
+#define SPEKTRUM_VTX_CONTROL_3 (SPEK_FRAME_SIZE - 2)
+#define SPEKTRUM_VTX_CONTROL_4 (SPEK_FRAME_SIZE - 1)
+#define SPEKTRUM_VTX_CONTROL_SIZE 4
 
-#define SPEKTRUM_VTX_BAND_MASK          0x00e00000
-#define SPEKTRUM_VTX_CHANNEL_MASK       0x000f0000
-#define SPEKTRUM_VTX_PIT_MODE_MASK      0x00000010
-#define SPEKTRUM_VTX_REGION_MASK        0x00000008
-#define SPEKTRUM_VTX_POWER_MASK         0x00000007
+#define SPEKTRUM_VTX_BAND_MASK 0x00e00000
+#define SPEKTRUM_VTX_CHANNEL_MASK 0x000f0000
+#define SPEKTRUM_VTX_PIT_MODE_MASK 0x00000010
+#define SPEKTRUM_VTX_REGION_MASK 0x00000008
+#define SPEKTRUM_VTX_POWER_MASK 0x00000007
 
-#define SPEKTRUM_VTX_BAND_SHIFT         21
-#define SPEKTRUM_VTX_CHANNEL_SHIFT      16
-#define SPEKTRUM_VTX_PIT_MODE_SHIFT     4
-#define SPEKTRUM_VTX_REGION_SHIFT       3
-#define SPEKTRUM_VTX_POWER_SHIFT        0
+#define SPEKTRUM_VTX_BAND_SHIFT 21
+#define SPEKTRUM_VTX_CHANNEL_SHIFT 16
+#define SPEKTRUM_VTX_PIT_MODE_SHIFT 4
+#define SPEKTRUM_VTX_REGION_SHIFT 3
+#define SPEKTRUM_VTX_POWER_SHIFT 0
 
-#define SPEKTRUM_VTX_BAND_COUNT  5
-#define SPEKTRUM_VTX_CHAN_COUNT  8
+#define SPEKTRUM_VTX_BAND_COUNT 5
+#define SPEKTRUM_VTX_CHAN_COUNT 8
 
 /*
 Channels vs Band according to spektrum spec.
@@ -55,30 +55,30 @@ Channels vs Band according to spektrum spec.
 
 // Band translation to BF internal vtx_common needed
 // Spektrum order, zero based.
-#define SPEKTRUM_VTX_BAND_FS      0
-#define SPEKTRUM_VTX_BAND_RACE    1
-#define SPEKTRUM_VTX_BAND_E       2
-#define SPEKTRUM_VTX_BAND_B       3
-#define SPEKTRUM_VTX_BAND_A       4
-#define SPEKTRUM_VTX_BAND_COUNT   5
+#define SPEKTRUM_VTX_BAND_FS 0
+#define SPEKTRUM_VTX_BAND_RACE 1
+#define SPEKTRUM_VTX_BAND_E 2
+#define SPEKTRUM_VTX_BAND_B 3
+#define SPEKTRUM_VTX_BAND_A 4
+#define SPEKTRUM_VTX_BAND_COUNT 5
 
 // Spektrum Max power index
-#define SPEKTRUM_VTX_POWER_OFF    0
-#define SPEKTRUM_VTX_POWER_14     1
-#define SPEKTRUM_VTX_POWER_25     2
-#define SPEKTRUM_VTX_POWER_99     3
-#define SPEKTRUM_VTX_POWER_299    4
-#define SPEKTRUM_VTX_POWER_600    5
-#define SPEKTRUM_VTX_POWER_MAXIT  6
-#define SPEKTRUM_VTX_POWER_MAN    7
-#define SPEKTRUM_VTX_POWER_COUNT  8
+#define SPEKTRUM_VTX_POWER_OFF 0
+#define SPEKTRUM_VTX_POWER_14 1
+#define SPEKTRUM_VTX_POWER_25 2
+#define SPEKTRUM_VTX_POWER_99 3
+#define SPEKTRUM_VTX_POWER_299 4
+#define SPEKTRUM_VTX_POWER_600 5
+#define SPEKTRUM_VTX_POWER_MAXIT 6
+#define SPEKTRUM_VTX_POWER_MAN 7
+#define SPEKTRUM_VTX_POWER_COUNT 8
 
-#define SPEKTRUM_VTX_REGION_USA   0
-#define SPEKTRUM_VTX_REGION_EU    1
-#define SPEKTRUM_VTX_REGION_NONE  0xff
+#define SPEKTRUM_VTX_REGION_USA 0
+#define SPEKTRUM_VTX_REGION_EU 1
+#define SPEKTRUM_VTX_REGION_NONE 0xff
 
-#define SPEKTRUM_VTX_PITMODE_OFF  0 // Power on, race
-#define SPEKTRUM_VTX_PITMODE_ON   1 // Power off, pit
+#define SPEKTRUM_VTX_PITMODE_OFF 0 // Power on, race
+#define SPEKTRUM_VTX_PITMODE_ON 1  // Power off, pit
 
 typedef struct
 {
@@ -90,7 +90,6 @@ typedef struct
     uint16_t powerValue;
 } spektrumVtx_t;
 
-
 extern const uint16_t SpektrumVtxfrequencyTable[SPEKTRUM_VTX_BAND_COUNT][SPEKTRUM_VTX_CHAN_COUNT];
 extern const uint8_t spek2commonBand[SPEKTRUM_VTX_BAND_COUNT];
 extern const uint8_t vtxTrampPi[SPEKTRUM_VTX_POWER_COUNT];
@@ -100,6 +99,3 @@ extern uint8_t SpektrumRegion;
 
 void spektrumHandleVtxControl(uint32_t vtxControl);
 void spektrumVtxControl(void);
-
-
-

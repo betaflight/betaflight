@@ -37,16 +37,15 @@
 #include "io/serial.h"
 
 #ifdef USE_TELEMETRY
-#include "telemetry/telemetry.h"
 #include "telemetry/smartport.h"
+#include "telemetry/telemetry.h"
 #endif
 
 #include "pg/rx.h"
 
+#include "rx/fport.h"
 #include "rx/rx.h"
 #include "rx/sbus_channels.h"
-#include "rx/fport.h"
-
 
 #define FPORT_TIME_NEEDED_PER_FRAME_US 3000
 #define FPORT_MAX_TELEMETRY_RESPONSE_DELAY_US 2000
@@ -54,7 +53,6 @@
 #define FPORT_MAX_TELEMETRY_AGE_MS 500
 
 #define FPORT_TELEMETRY_MAX_CONSECUTIVE_TELEMETRY_FRAMES 2
-
 
 #define FPORT_FRAME_MARKER 0x7E
 
@@ -85,17 +83,17 @@ enum {
 };
 
 enum {
-    FPORT_FRAME_TYPE_CONTROL = 0x00,
-    FPORT_FRAME_TYPE_TELEMETRY_REQUEST = 0x01,
+    FPORT_FRAME_TYPE_CONTROL            = 0x00,
+    FPORT_FRAME_TYPE_TELEMETRY_REQUEST  = 0x01,
     FPORT_FRAME_TYPE_TELEMETRY_RESPONSE = 0x81,
 
 };
 
 enum {
-    FPORT_FRAME_ID_NULL = 0x00,     // (master/slave)
-    FPORT_FRAME_ID_DATA = 0x10,     // (master/slave)
-    FPORT_FRAME_ID_READ = 0x30,     // (master)
-    FPORT_FRAME_ID_WRITE = 0x31,    // (master)
+    FPORT_FRAME_ID_NULL     = 0x00, // (master/slave)
+    FPORT_FRAME_ID_DATA     = 0x10, // (master/slave)
+    FPORT_FRAME_ID_READ     = 0x30, // (master)
+    FPORT_FRAME_ID_WRITE    = 0x31, // (master)
     FPORT_FRAME_ID_RESPONSE = 0x32, // (slave)
 };
 
@@ -115,7 +113,7 @@ typedef struct fportFrame_s {
 } fportFrame_t;
 
 #ifdef USE_TELEMETRY_SMARTPORT
-static const smartPortPayload_t emptySmartPortFrame = { .frameId = 0, .valueId = 0, .data = 0 };
+static const smartPortPayload_t emptySmartPortFrame = {.frameId = 0, .valueId = 0, .data = 0};
 #endif
 
 #define FPORT_REQUEST_FRAME_LENGTH sizeof(fportFrame_t)
@@ -135,7 +133,7 @@ typedef struct fportBuffer_s {
 static fportBuffer_t rxBuffer[NUM_RX_BUFFERS];
 
 static volatile uint8_t rxBufferWriteIndex = 0;
-static volatile uint8_t rxBufferReadIndex = 0;
+static volatile uint8_t rxBufferReadIndex  = 0;
 
 static volatile timeUs_t lastTelemetryFrameReceivedUs;
 static volatile bool clearToSend = false;
@@ -150,7 +148,8 @@ static serialPort_t *fportPort;
 static bool telemetryEnabled = false;
 #endif
 
-static void reportFrameError(uint8_t errorReason) {
+static void reportFrameError(uint8_t errorReason)
+{
     static volatile uint16_t frameErrors = 0;
 
     frameErrors++;
@@ -164,10 +163,10 @@ static void fportDataReceive(uint16_t c, void *data)
 {
     UNUSED(data);
 
-    static timeUs_t frameStartAt = 0;
-    static bool escapedCharacter = false;
+    static timeUs_t frameStartAt        = 0;
+    static bool escapedCharacter        = false;
     static timeUs_t lastFrameReceivedUs = 0;
-    static bool telemetryFrame = false;
+    static bool telemetryFrame          = false;
 
     const timeUs_t currentTimeUs = micros();
 
@@ -177,7 +176,7 @@ static void fportDataReceive(uint16_t c, void *data)
         reportFrameError(DEBUG_FPORT_ERROR_TIMEOUT);
 
         framePosition = 0;
-     }
+    }
 
     uint8_t val = (uint8_t)c;
 
@@ -186,13 +185,13 @@ static void fportDataReceive(uint16_t c, void *data)
             const uint8_t nextWriteIndex = (rxBufferWriteIndex + 1) % NUM_RX_BUFFERS;
             if (nextWriteIndex != rxBufferReadIndex) {
                 rxBuffer[rxBufferWriteIndex].length = framePosition - 1;
-                rxBufferWriteIndex = nextWriteIndex;
+                rxBufferWriteIndex                  = nextWriteIndex;
             }
 
             if (telemetryFrame) {
-                clearToSend = true;
+                clearToSend                  = true;
                 lastTelemetryFrameReceivedUs = currentTimeUs;
-                telemetryFrame = false;
+                telemetryFrame               = false;
             }
 
             DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_FRAME_INTERVAL, currentTimeUs - lastFrameReceivedUs);
@@ -201,16 +200,16 @@ static void fportDataReceive(uint16_t c, void *data)
             escapedCharacter = false;
         }
 
-        frameStartAt = currentTimeUs;
+        frameStartAt  = currentTimeUs;
         framePosition = 1;
     } else if (framePosition > 0) {
         if (framePosition >= BUFFER_SIZE + 1) {
-                framePosition = 0;
+            framePosition = 0;
 
-                reportFrameError(DEBUG_FPORT_ERROR_OVERSIZE);
+            reportFrameError(DEBUG_FPORT_ERROR_OVERSIZE);
         } else {
             if (escapedCharacter) {
-                val = val ^ FPORT_ESCAPE_MASK;
+                val              = val ^ FPORT_ESCAPE_MASK;
                 escapedCharacter = false;
             } else if (val == FPORT_ESCAPE_CHAR) {
                 escapedCharacter = true;
@@ -223,7 +222,7 @@ static void fportDataReceive(uint16_t c, void *data)
             }
 
             rxBuffer[rxBufferWriteIndex].data[framePosition - 1] = val;
-            framePosition = framePosition + 1;
+            framePosition                                        = framePosition + 1;
         }
     }
 }
@@ -261,12 +260,12 @@ static uint8_t fportFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
 
     uint8_t result = RX_FRAME_PENDING;
 
-    static bool rxDrivenFrameRate = false;
+    static bool rxDrivenFrameRate                 = false;
     static uint8_t consecutiveTelemetryFrameCount = 0;
 
     if (rxBufferReadIndex != rxBufferWriteIndex) {
         uint8_t bufferLength = rxBuffer[rxBufferReadIndex].length;
-        uint8_t frameLength = rxBuffer[rxBufferReadIndex].data[0];
+        uint8_t frameLength  = rxBuffer[rxBufferReadIndex].data[0];
         if (frameLength != bufferLength - 2) {
             reportFrameError(DEBUG_FPORT_ERROR_SIZE);
         } else {
@@ -297,7 +296,7 @@ static uint8_t fportFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
                             break;
                         }
 
-                        switch(frame->data.telemetryData.frameId) {
+                        switch (frame->data.telemetryData.frameId) {
                         case FPORT_FRAME_ID_DATA:
                             if (!rxDrivenFrameRate) {
                                 rxDrivenFrameRate = true;
@@ -326,7 +325,7 @@ static uint8_t fportFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
                             break;
                         default:
 
-                           break;
+                            break;
                         }
 #endif
                     }
@@ -338,7 +337,6 @@ static uint8_t fportFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
                     break;
                 }
             }
-
         }
 
         rxBufferReadIndex = (rxBufferReadIndex + 1) % NUM_RX_BUFFERS;
@@ -367,7 +365,7 @@ static bool fportProcessFrame(const rxRuntimeConfig_t *rxRuntimeConfig)
 
     timeUs_t currentTimeUs = micros();
     if (cmpTimeUs(currentTimeUs, lastTelemetryFrameReceivedUs) > FPORT_MAX_TELEMETRY_RESPONSE_DELAY_US) {
-       clearToSend = false;
+        clearToSend = false;
     }
 
     if (clearToSend) {
@@ -395,10 +393,10 @@ bool fportRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     rxRuntimeConfig->channelData = sbusChannelData;
     sbusChannelsInit(rxConfig, rxRuntimeConfig);
 
-    rxRuntimeConfig->channelCount = SBUS_MAX_CHANNEL;
+    rxRuntimeConfig->channelCount  = SBUS_MAX_CHANNEL;
     rxRuntimeConfig->rxRefreshRate = 11000;
 
-    rxRuntimeConfig->rcFrameStatusFn = fportFrameStatus;
+    rxRuntimeConfig->rcFrameStatusFn  = fportFrameStatus;
     rxRuntimeConfig->rcProcessFrameFn = fportProcessFrame;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
@@ -407,13 +405,12 @@ bool fportRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     }
 
     fportPort = openSerialPort(portConfig->identifier,
-        FUNCTION_RX_SERIAL,
-        fportDataReceive,
-        NULL,
-        FPORT_BAUDRATE,
-        MODE_RXTX,
-        FPORT_PORT_OPTIONS | (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0)
-    );
+                               FUNCTION_RX_SERIAL,
+                               fportDataReceive,
+                               NULL,
+                               FPORT_BAUDRATE,
+                               MODE_RXTX,
+                               FPORT_PORT_OPTIONS | (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0));
 
     if (fportPort) {
 #if defined(USE_TELEMETRY_SMARTPORT)

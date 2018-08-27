@@ -35,10 +35,10 @@
 #include "drivers/time.h"
 
 //====================================Registers Addresses=========================================//
-#define LPS_REF_P_XL    0x08
-#define LPS_REF_P_L     0x09
-#define LPS_REF_P_H     0x0A
-#define LPS_WHO_AM_I    0x0F
+#define LPS_REF_P_XL 0x08
+#define LPS_REF_P_L 0x09
+#define LPS_REF_P_H 0x0A
+#define LPS_WHO_AM_I 0x0F
 /*
  * RES_CONF (10h)
  *
@@ -48,7 +48,7 @@
  *      Default: 11 (512)
  *
  */
-#define LPS_RES_CONF    0x10
+#define LPS_RES_CONF 0x10
 /*
  * CTRL_REG1(20h)
  *
@@ -77,7 +77,7 @@
  *      (0: 4-wire interface; 1: 3-wire interface)
  *
  */
-#define LPS_CTRL1       0x20
+#define LPS_CTRL1 0x20
 /*
  * CTRL_REG2(21h)
  *
@@ -109,7 +109,7 @@
  *      (0: idle mode; 1: a new dataset is acquired)
  *
  */
-#define LPS_CTRL2       0x21
+#define LPS_CTRL2 0x21
 /*
  * CTRL_REG3(21h)
  *
@@ -122,7 +122,7 @@
  *  Bits 1-0 INT_S - Data signal on INT_DRDY pin control bits.
  *      Default value: 00.
  */
-#define LPS_CTRL3       0x22
+#define LPS_CTRL3 0x22
 /*
  * CTRL_REG4(23h)
  *
@@ -139,51 +139,51 @@
  *      Default value: 0.
  *      (0: disable; 1: enable)
  */
-#define LPS_CTRL4       0x23
-#define LPS_INT_CFG     0x24
-#define LPS_INT_SOURCE  0x25
-#define LPS_STATUS      0x27
-#define LPS_OUT_XL      0x28
-#define LPS_OUT_L       0x29
-#define LPS_OUT_H       0x2A
-#define LPS_TEMP_OUT_L  0x2B
-#define LPS_TEMP_OUT_H  0x2C
-#define LPS_FIFO_CTRL   0x2E
+#define LPS_CTRL4 0x23
+#define LPS_INT_CFG 0x24
+#define LPS_INT_SOURCE 0x25
+#define LPS_STATUS 0x27
+#define LPS_OUT_XL 0x28
+#define LPS_OUT_L 0x29
+#define LPS_OUT_H 0x2A
+#define LPS_TEMP_OUT_L 0x2B
+#define LPS_TEMP_OUT_H 0x2C
+#define LPS_FIFO_CTRL 0x2E
 #define LPS_FIFO_STATUS 0x2F
-#define LPS_THS_PL      0x30
-#define LPS_THS_PH      0x31
-#define LPS_RPDS_L      0x39
-#define LPS_RPDS_H      0x3A
+#define LPS_THS_PL 0x30
+#define LPS_THS_PH 0x31
+#define LPS_RPDS_L 0x39
+#define LPS_RPDS_H 0x3A
 //=======================================Constants=============================================//
-#define LPS22_ID        0xB1
-#define LPS25_ID        0xBD
-#define LPS33_ID        0xB1
-#define LPS35_ID        0xB1
-#define LPS_READ        0x80
-#define LPS_MULT        0x40
+#define LPS22_ID 0xB1
+#define LPS25_ID 0xBD
+#define LPS33_ID 0xB1
+#define LPS35_ID 0xB1
+#define LPS_READ 0x80
+#define LPS_MULT 0x40
 //======================================ODR Values=============================================//
 // CTRL1 value
-#define LPS_ODR_ONE_SHOT        0x00
-#define LPS_ODR_1               0x10
-#define LPS_ODR_7               0x20
-#define LPS_ODR_12_5            0x30
-#define LPS_ODR_25              0x40
+#define LPS_ODR_ONE_SHOT 0x00
+#define LPS_ODR_1 0x10
+#define LPS_ODR_7 0x20
+#define LPS_ODR_12_5 0x30
+#define LPS_ODR_25 0x40
 //======================================Average number=============================================//
-#define LPS_AVP_8               0x00
-#define LPS_AVP_32              0x01
-#define LPS_AVP_128             0x02
-#define LPS_AVP_512             0x03
-#define LPS_AVT_8               0x00
-#define LPS_AVT_16              0x04
-#define LPS_AVT_32              0x08
-#define LPS_AVT_64              0x0C
+#define LPS_AVP_8 0x00
+#define LPS_AVP_32 0x01
+#define LPS_AVP_128 0x02
+#define LPS_AVP_512 0x03
+#define LPS_AVT_8 0x00
+#define LPS_AVT_16 0x04
+#define LPS_AVT_32 0x08
+#define LPS_AVT_64 0x0C
 //======================================Moving average number=============================================//
-#define LPS_NO_MA               0x00
-#define LPS_MA_2                0x01
-#define LPS_MA_4                0x03
-#define LPS_MA_8                0x07
-#define LPS_MA_16               0x0F
-#define LPS_MA_32               0x1F
+#define LPS_NO_MA 0x00
+#define LPS_MA_2 0x01
+#define LPS_MA_4 0x03
+#define LPS_MA_8 0x07
+#define LPS_MA_16 0x0F
+#define LPS_MA_32 0x1F
 
 //Raw register values
 static uint32_t rawP = 0;
@@ -204,7 +204,8 @@ bool lpsWriteVerify(busDevice_t *busdev, uint8_t cmd, uint8_t byte)
     uint8_t temp = 0xff;
     spiBusWriteRegister(busdev, cmd, byte);
     spiBusReadRegisterBuffer(busdev, cmd, &temp, 1);
-    if (byte == temp) return true;
+    if (byte == temp)
+        return true;
     return false;
 }
 
@@ -244,7 +245,7 @@ static void lps_read(baroDev_t *baro)
 
 static void lps_calculate(int32_t *pressure, int32_t *temperature)
 {
-    *pressure = (int32_t)rawP * 100 / 4096;
+    *pressure    = (int32_t)rawP * 100 / 4096;
     *temperature = (int32_t)rawT * 10 / 48 + 4250;
 }
 
@@ -254,7 +255,7 @@ bool lpsDetect(baroDev_t *baro)
     busDevice_t *busdev = &baro->busdev;
     IOInit(busdev->busdev_u.spi.csnPin, OWNER_BARO_CS, 0);
     IOConfigGPIO(busdev->busdev_u.spi.csnPin, IOCFG_OUT_PP);
-    IOHi(busdev->busdev_u.spi.csnPin); // Disable
+    IOHi(busdev->busdev_u.spi.csnPin);                                // Disable
     spiSetDivisor(busdev->busdev_u.spi.instance, SPI_CLOCK_STANDARD); // Baro can work only on up to 10Mhz SPI bus
 
     uint8_t temp = 0x00;
@@ -266,24 +267,31 @@ bool lpsDetect(baroDev_t *baro)
     //Init, if writeVerify is false fallback to false on detect
     bool ret = false;
     lpsOff(busdev);
-    ret = lpsWriteVerify(busdev, LPS_CTRL2, (0x00 << 1)); if (ret != true) return false;
-    ret = lpsWriteVerify(busdev, LPS_RES_CONF, (LPS_AVT_64 | LPS_AVP_512)); if (ret != true) return false;
-    ret = lpsWriteVerify(busdev, LPS_CTRL4, 0x01); if (ret != true) return false;
+    ret = lpsWriteVerify(busdev, LPS_CTRL2, (0x00 << 1));
+    if (ret != true)
+        return false;
+    ret = lpsWriteVerify(busdev, LPS_RES_CONF, (LPS_AVT_64 | LPS_AVP_512));
+    if (ret != true)
+        return false;
+    ret = lpsWriteVerify(busdev, LPS_CTRL4, 0x01);
+    if (ret != true)
+        return false;
     lpsOn(busdev, (0x04 << 4) | (0x01 << 1) | (0x01 << 2) | (0x01 << 3));
 
     lpsReadCommand(busdev, LPS_CTRL1, &temp, 1);
 
-    baro->ut_delay = 1;
-    baro->up_delay = 1000000 / 24;
-    baro->start_ut = lps_nothing;
-    baro->get_ut = lps_nothing;
-    baro->start_up = lps_nothing;
-    baro->get_up = lps_read;
-    baro->calculate = lps_calculate;
+    baro->ut_delay   = 1;
+    baro->up_delay   = 1000000 / 24;
+    baro->start_ut   = lps_nothing;
+    baro->get_ut     = lps_nothing;
+    baro->start_up   = lps_nothing;
+    baro->get_up     = lps_read;
+    baro->calculate  = lps_calculate;
     uint32_t timeout = millis();
     do {
         lps_read(baro);
-        if ((millis() - timeout) > 500) return false;
+        if ((millis() - timeout) > 500)
+            return false;
     } while (rawT == 0 && rawP == 0);
     rawT = 0;
     rawP = 0;

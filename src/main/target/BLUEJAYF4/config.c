@@ -18,8 +18,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "platform.h"
 
@@ -44,9 +44,9 @@
 void targetConfiguration(void)
 {
     if (hardwareRevision == BJF4_REV1 || hardwareRevision == BJF4_REV2) {
-        gyroConfigMutable()->gyro_align = CW180_DEG;
-        accelerometerConfigMutable()->acc_align  = CW180_DEG;
-        beeperDevConfigMutable()->ioTag = IO_TAG(BEEPER_OPT);
+        gyroConfigMutable()->gyro_align         = CW180_DEG;
+        accelerometerConfigMutable()->acc_align = CW180_DEG;
+        beeperDevConfigMutable()->ioTag         = IO_TAG(BEEPER_OPT);
     }
 
     if (hardwareRevision == BJF4_MINI_REV3A || hardwareRevision == BJF4_REV1) {

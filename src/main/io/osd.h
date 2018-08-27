@@ -24,28 +24,28 @@
 #include "pg/pg.h"
 
 #define OSD_NUM_TIMER_TYPES 3
-extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
+extern const char *const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 
 #define OSD_ELEMENT_BUFFER_LENGTH 32
 
-#define VISIBLE_FLAG  0x0800
-#define VISIBLE(x)    (x & VISIBLE_FLAG)
-#define OSD_POS_MAX   0x3FF
-#define OSD_POSCFG_MAX   (VISIBLE_FLAG|0x3FF) // For CLI values
+#define VISIBLE_FLAG 0x0800
+#define VISIBLE(x) (x & VISIBLE_FLAG)
+#define OSD_POS_MAX 0x3FF
+#define OSD_POSCFG_MAX (VISIBLE_FLAG | 0x3FF) // For CLI values
 
 // Character coordinate
 #define OSD_POSITION_BITS 5 // 5 bits gives a range 0-31
 #define OSD_POSITION_XY_MASK ((1 << OSD_POSITION_BITS) - 1)
-#define OSD_POS(x,y)  ((x & OSD_POSITION_XY_MASK) | ((y & OSD_POSITION_XY_MASK) << OSD_POSITION_BITS))
-#define OSD_X(x)      (x & OSD_POSITION_XY_MASK)
-#define OSD_Y(x)      ((x >> OSD_POSITION_BITS) & OSD_POSITION_XY_MASK)
+#define OSD_POS(x, y) ((x & OSD_POSITION_XY_MASK) | ((y & OSD_POSITION_XY_MASK) << OSD_POSITION_BITS))
+#define OSD_X(x) (x & OSD_POSITION_XY_MASK)
+#define OSD_Y(x) ((x >> OSD_POSITION_BITS) & OSD_POSITION_XY_MASK)
 
 // Timer configuration
 // Stored as 15[alarm:8][precision:4][source:4]0
-#define OSD_TIMER(src, prec, alarm) ((src & 0x0F) | ((prec & 0x0F) << 4) | ((alarm & 0xFF ) << 8))
-#define OSD_TIMER_SRC(timer)        (timer & 0x0F)
-#define OSD_TIMER_PRECISION(timer)  ((timer >> 4) & 0x0F)
-#define OSD_TIMER_ALARM(timer)      ((timer >> 8) & 0xFF)
+#define OSD_TIMER(src, prec, alarm) ((src & 0x0F) | ((prec & 0x0F) << 4) | ((alarm & 0xFF) << 8))
+#define OSD_TIMER_SRC(timer) (timer & 0x0F)
+#define OSD_TIMER_PRECISION(timer) ((timer >> 4) & 0x0F)
+#define OSD_TIMER_ALARM(timer) ((timer >> 8) & 0xFF)
 
 // NB: to ensure backwards compatibility, new enum values must be appended at the end but before the OSD_XXXX_COUNT entry.
 
@@ -212,5 +212,3 @@ void osdStatSetState(uint8_t statIndex, bool enabled);
 bool osdStatGetState(uint8_t statIndex);
 void osdWarnSetState(uint8_t warningIndex, bool enabled);
 bool osdWarnGetState(uint8_t warningIndex);
-
-

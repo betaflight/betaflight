@@ -25,10 +25,10 @@
 bufWriter_t *bufWriterInit(uint8_t *b, int total_size, bufWrite_t writer, void *arg)
 {
     bufWriter_t *buf = (bufWriter_t *)b;
-    buf->writer = writer;
-    buf->arg = arg;
-    buf->at = 0;
-    buf->capacity = total_size - sizeof(*buf);
+    buf->writer      = writer;
+    buf->arg         = arg;
+    buf->at          = 0;
+    buf->capacity    = total_size - sizeof(*buf);
 
     return buf;
 }

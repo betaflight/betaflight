@@ -20,8 +20,8 @@
 
 #pragma once
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 void systemInit(void);
 
@@ -60,5 +60,5 @@ extern uint32_t cachedRccCsrValue;
 
 typedef void extiCallbackHandlerFunc(void);
 
-void registerExtiCallbackHandler(IRQn_Type irqn, extiCallbackHandlerFunc *fn);void unregisterExtiCallbackHandler(IRQn_Type irqn, extiCallbackHandlerFunc *fn);
-
+void registerExtiCallbackHandler(IRQn_Type irqn, extiCallbackHandlerFunc *fn);
+void unregisterExtiCallbackHandler(IRQn_Type irqn, extiCallbackHandlerFunc *fn);

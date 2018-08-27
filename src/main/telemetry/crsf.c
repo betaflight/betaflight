@@ -62,13 +62,13 @@
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 
-#include "telemetry/telemetry.h"
 #include "telemetry/crsf.h"
 #include "telemetry/msp_shared.h"
+#include "telemetry/telemetry.h"
 
-#define CRSF_CYCLETIME_US                   100000 // 100ms, 10 Hz
-#define CRSF_DEVICEINFO_VERSION             0x01
-#define CRSF_DEVICEINFO_PARAMETER_COUNT     0
+#define CRSF_CYCLETIME_US 100000 // 100ms, 10 Hz
+#define CRSF_DEVICEINFO_VERSION 0x01
+#define CRSF_DEVICEINFO_PARAMETER_COUNT 0
 
 #define CRSF_MSP_BUFFER_SIZE 96
 #define CRSF_MSP_LENGTH_OFFSET 1
@@ -96,7 +96,7 @@ bool bufferCrsfMspFrame(uint8_t *frameStart, int frameLength)
         return false;
     } else {
         uint8_t *p = mspRxBuffer.bytes + mspRxBuffer.len;
-        *p++ = frameLength;
+        *p++       = frameLength;
         memcpy(p, frameStart, frameLength);
         mspRxBuffer.len += CRSF_MSP_LENGTH_OFFSET + frameLength;
         return true;
@@ -116,7 +116,8 @@ bool handleCrsfMspFrameBuffer(uint8_t payloadSize, mspResponseFnPtr responseFn)
             requestHandled |= sendMspReply(payloadSize, responseFn);
         }
         pos += CRSF_MSP_LENGTH_OFFSET + mspFrameLength;
-        ATOMIC_BLOCK(NVIC_PRIO_SERIALUART1) {
+        ATOMIC_BLOCK(NVIC_PRIO_SERIALUART1)
+        {
             if (pos >= mspRxBuffer.len) {
                 mspRxBuffer.len = 0;
                 return requestHandled;
@@ -180,8 +181,8 @@ void crsfFrameGps(sbuf_t *dst)
     sbufWriteU8(dst, CRSF_FRAMETYPE_GPS);
     sbufWriteU32BigEndian(dst, gpsSol.llh.lat); // CRSF and betaflight use same units for degrees
     sbufWriteU32BigEndian(dst, gpsSol.llh.lon);
-    sbufWriteU16BigEndian(dst, (gpsSol.groundSpeed * 36 + 5) / 10); // gpsSol.groundSpeed is in 0.1m/s
-    sbufWriteU16BigEndian(dst, gpsSol.groundCourse * 10); // gpsSol.groundCourse is degrees * 10
+    sbufWriteU16BigEndian(dst, (gpsSol.groundSpeed * 36 + 5) / 10);                                    // gpsSol.groundSpeed is in 0.1m/s
+    sbufWriteU16BigEndian(dst, gpsSol.groundCourse * 10);                                              // gpsSol.groundCourse is degrees * 10
     const uint16_t altitude = (constrain(getEstimatedAltitudeCm(), 0 * 100, 5000 * 100) / 100) + 1000; // constrain altitude from 0 to 5,000m
     sbufWriteU16BigEndian(dst, altitude);
     sbufWriteU8(dst, gpsSol.numSat);
@@ -202,7 +203,7 @@ void crsfFrameBatterySensor(sbuf_t *dst)
     sbufWriteU8(dst, CRSF_FRAMETYPE_BATTERY_SENSOR);
     sbufWriteU16BigEndian(dst, getBatteryVoltage()); // vbat is in units of 0.1V
     sbufWriteU16BigEndian(dst, getAmperage() / 10);
-    const uint32_t mAhDrawn = getMAhDrawn();
+    const uint32_t mAhDrawn                  = getMAhDrawn();
     const uint8_t batteryRemainingPercentage = calculateBatteryPercentageRemaining();
     sbufWriteU8(dst, (mAhDrawn >> 16));
     sbufWriteU8(dst, (mAhDrawn >> 8));
@@ -216,17 +217,17 @@ typedef enum {
 } crsfActiveAntenna_e;
 
 typedef enum {
-    CRSF_RF_MODE_4_HZ = 0,
-    CRSF_RF_MODE_50_HZ = 1,
+    CRSF_RF_MODE_4_HZ   = 0,
+    CRSF_RF_MODE_50_HZ  = 1,
     CRSF_RF_MODE_150_HZ = 2
 } crsrRfMode_e;
 
 typedef enum {
-    CRSF_RF_POWER_0_mW = 0,
-    CRSF_RF_POWER_10_mW = 1,
-    CRSF_RF_POWER_25_mW = 2,
-    CRSF_RF_POWER_100_mW = 3,
-    CRSF_RF_POWER_500_mW = 4,
+    CRSF_RF_POWER_0_mW    = 0,
+    CRSF_RF_POWER_10_mW   = 1,
+    CRSF_RF_POWER_25_mW   = 2,
+    CRSF_RF_POWER_100_mW  = 3,
+    CRSF_RF_POWER_500_mW  = 4,
     CRSF_RF_POWER_1000_mW = 5,
     CRSF_RF_POWER_2000_mW = 6
 } crsrRfPower_e;
@@ -239,15 +240,15 @@ int16_t     Roll angle ( rad / 10000 )
 int16_t     Yaw angle ( rad / 10000 )
 */
 
-#define DECIDEGREES_TO_RADIANS10000(angle) ((int16_t)(1000.0f * (angle) * RAD))
+#define DECIDEGREES_TO_RADIANS10000(angle) ((int16_t)(1000.0f * (angle)*RAD))
 
 void crsfFrameAttitude(sbuf_t *dst)
 {
-     sbufWriteU8(dst, CRSF_FRAME_ATTITUDE_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
-     sbufWriteU8(dst, CRSF_FRAMETYPE_ATTITUDE);
-     sbufWriteU16BigEndian(dst, DECIDEGREES_TO_RADIANS10000(attitude.values.pitch));
-     sbufWriteU16BigEndian(dst, DECIDEGREES_TO_RADIANS10000(attitude.values.roll));
-     sbufWriteU16BigEndian(dst, DECIDEGREES_TO_RADIANS10000(attitude.values.yaw));
+    sbufWriteU8(dst, CRSF_FRAME_ATTITUDE_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
+    sbufWriteU8(dst, CRSF_FRAMETYPE_ATTITUDE);
+    sbufWriteU16BigEndian(dst, DECIDEGREES_TO_RADIANS10000(attitude.values.pitch));
+    sbufWriteU16BigEndian(dst, DECIDEGREES_TO_RADIANS10000(attitude.values.roll));
+    sbufWriteU16BigEndian(dst, DECIDEGREES_TO_RADIANS10000(attitude.values.yaw));
 }
 
 /*
@@ -275,7 +276,7 @@ void crsfFrameFlightMode(sbuf_t *dst)
         flightMode = "HOR";
     }
     sbufWriteString(dst, flightMode);
-    sbufWriteU8(dst, '\0');     // zero-terminate string
+    sbufWriteU8(dst, '\0'); // zero-terminate string
     // write in the frame length
     *lengthPtr = sbufPtr(dst) - lengthPtr;
 }
@@ -292,7 +293,8 @@ uint32_t    Null Bytes
 uint8_t     255 (Max MSP Parameter)
 uint8_t     0x01 (Parameter version 1)
 */
-void crsfFrameDeviceInfo(sbuf_t *dst) {
+void crsfFrameDeviceInfo(sbuf_t *dst)
+{
 
     char buff[30];
     tfp_sprintf(buff, "%s %s: %s", FC_FIRMWARE_NAME, FC_VERSION_STRING, systemConfig()->boardIdentifier);
@@ -303,7 +305,7 @@ void crsfFrameDeviceInfo(sbuf_t *dst) {
     sbufWriteU8(dst, CRSF_ADDRESS_RADIO_TRANSMITTER);
     sbufWriteU8(dst, CRSF_ADDRESS_FLIGHT_CONTROLLER);
     sbufWriteStringWithZeroTerminator(dst, buff);
-    for (unsigned int ii=0; ii<12; ii++) {
+    for (unsigned int ii = 0; ii < 12; ii++) {
         sbufWriteU8(dst, 0x00);
     }
     sbufWriteU8(dst, CRSF_DEVICEINFO_PARAMETER_COUNT);
@@ -315,9 +317,9 @@ void crsfFrameDeviceInfo(sbuf_t *dst) {
 
 static void crsfFrameDisplayPortRow(sbuf_t *dst, uint8_t row)
 {
-    uint8_t *lengthPtr = sbufPtr(dst);
-    uint8_t buflen = crsfDisplayPortScreen()->cols;
-    char *rowStart = &crsfDisplayPortScreen()->buffer[row * buflen];
+    uint8_t *lengthPtr        = sbufPtr(dst);
+    uint8_t buflen            = crsfDisplayPortScreen()->cols;
+    char *rowStart            = &crsfDisplayPortScreen()->buffer[row * buflen];
     const uint8_t frameLength = CRSF_FRAME_LENGTH_EXT_TYPE_CRC + buflen;
     sbufWriteU8(dst, frameLength);
     sbufWriteU8(dst, CRSF_FRAMETYPE_DISPLAYPORT_CMD);
@@ -342,11 +344,11 @@ static void crsfFrameDisplayPortClear(sbuf_t *dst)
 
 #endif
 
-#define BV(x)  (1 << (x)) // bit value
+#define BV(x) (1 << (x)) // bit value
 
 // schedule array to decide how often each type of frame is sent
 typedef enum {
-    CRSF_FRAME_START_INDEX = 0,
+    CRSF_FRAME_START_INDEX    = 0,
     CRSF_FRAME_ATTITUDE_INDEX = CRSF_FRAME_START_INDEX,
     CRSF_FRAME_BATTERY_SENSOR_INDEX,
     CRSF_FRAME_FLIGHT_MODE_INDEX,
@@ -421,7 +423,6 @@ void crsfScheduleDeviceInfoResponse(void)
     deviceInfoReplyPending = true;
 }
 
-
 void initCrsfTelemetry(void)
 {
     // check if there is a serial port open for CRSF telemetry (ie opened by the CRSF RX)
@@ -449,8 +450,7 @@ void initCrsfTelemetry(void)
         crsfSchedule[index++] = BV(CRSF_FRAME_GPS_INDEX);
     }
     crsfScheduleCount = (uint8_t)index;
-
- }
+}
 
 bool checkCrsfTelemetryState(void)
 {
@@ -462,7 +462,7 @@ void crsfProcessDisplayPortCmd(uint8_t *frameStart)
 {
     uint8_t cmd = *frameStart;
     switch (cmd) {
-    case CRSF_DISPLAYPORT_SUBCMD_OPEN: ;
+    case CRSF_DISPLAYPORT_SUBCMD_OPEN:;
         const uint8_t rows = *(frameStart + CRSF_DISPLAYPORT_OPEN_ROWS_OFFSET);
         const uint8_t cols = *(frameStart + CRSF_DISPLAYPORT_OPEN_COLS_OFFSET);
         crsfDisplayPortSetDimensions(rows, cols);
@@ -477,7 +477,6 @@ void crsfProcessDisplayPortCmd(uint8_t *frameStart)
     default:
         break;
     }
-
 }
 
 #endif
@@ -500,7 +499,7 @@ void handleCrsfTelemetry(timeUs_t currentTimeUs)
     // Send ad-hoc response frames as soon as possible
 #if defined(USE_MSP_OVER_TELEMETRY)
     if (mspReplyPending) {
-        mspReplyPending = handleCrsfMspFrameBuffer(CRSF_FRAME_TX_MSP_FRAME_SIZE, &crsfSendMspResponse);
+        mspReplyPending   = handleCrsfMspFrameBuffer(CRSF_FRAME_TX_MSP_FRAME_SIZE, &crsfSendMspResponse);
         crsfLastCycleTime = currentTimeUs; // reset telemetry timing due to ad-hoc request
         return;
     }
@@ -513,7 +512,7 @@ void handleCrsfTelemetry(timeUs_t currentTimeUs)
         crsfFrameDeviceInfo(dst);
         crsfFinalize(dst);
         deviceInfoReplyPending = false;
-        crsfLastCycleTime = currentTimeUs; // reset telemetry timing due to ad-hoc request
+        crsfLastCycleTime      = currentTimeUs; // reset telemetry timing due to ad-hoc request
         return;
     }
 
@@ -536,7 +535,7 @@ void handleCrsfTelemetry(timeUs_t currentTimeUs)
         crsfFrameDisplayPortRow(dst, nextRow);
         crsfFinalize(dst);
         crsfDisplayPortScreen()->pendingTransport[nextRow] = false;
-        crsfLastCycleTime = currentTimeUs;
+        crsfLastCycleTime                                  = currentTimeUs;
         return;
     }
 #endif

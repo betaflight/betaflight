@@ -26,23 +26,23 @@
  */
 
 /* Includes ------------------------------------------------------------------*/
-#include "usb_lib.h"
-#include "usb_desc.h"
-#include "usb_mem.h"
 #include "hw_config.h"
+#include "usb_desc.h"
 #include "usb_istr.h"
+#include "usb_lib.h"
+#include "usb_mem.h"
 #include "usb_pwr.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 
 /* Interval between sending IN packets in frame number (1 frame = 1ms) */
-#define VCOMPORT_IN_FRAME_INTERVAL             5
+#define VCOMPORT_IN_FRAME_INTERVAL 5
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-extern __IO uint32_t packetSent;         // HJI
-extern __IO uint8_t receiveBuffer[64];  // HJI
-__IO uint32_t receiveLength;             // HJI
+extern __IO uint32_t packetSent;       // HJI
+extern __IO uint8_t receiveBuffer[64]; // HJI
+__IO uint32_t receiveLength;           // HJI
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
@@ -56,7 +56,7 @@ __IO uint32_t receiveLength;             // HJI
 
 void EP1_IN_Callback(void)
 {
-    packetSent = 0;  // HJI
+    packetSent = 0; // HJI
 }
 
 /*******************************************************************************
@@ -69,7 +69,7 @@ void EP1_IN_Callback(void)
 void EP3_OUT_Callback(void)
 {
     receiveLength = GetEPRxCount(ENDP3);                                              // HJI
-    PMAToUserBufferCopy((unsigned char*)receiveBuffer, ENDP3_RXADDR, receiveLength);  // HJI
+    PMAToUserBufferCopy((unsigned char *)receiveBuffer, ENDP3_RXADDR, receiveLength); // HJI
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

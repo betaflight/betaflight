@@ -37,14 +37,14 @@ static IO_t scl;
 static IO_t sda;
 static volatile uint16_t i2cErrorCount = 0;
 
-#define SCL_H         IOHi(scl)
-#define SCL_L         IOLo(scl)
+#define SCL_H IOHi(scl)
+#define SCL_L IOLo(scl)
 
-#define SDA_H         IOHi(sda)
-#define SDA_L         IOLo(sda)
+#define SDA_H IOHi(sda)
+#define SDA_L IOLo(sda)
 
-#define SCL_read      IORead(scl)
-#define SDA_read      IORead(sda)
+#define SCL_read IORead(scl)
+#define SDA_read IORead(sda)
 
 #if !defined(SOFT_I2C_SCL) || !defined(SOFT_I2C_SDA)
 #error "Must define the software i2c pins (SOFT_I2C_SCL and SOFT_I2C_SDA) in target.h"
@@ -136,8 +136,7 @@ static void I2C_SendByte(uint8_t byte)
         I2C_delay();
         if (byte & 0x80) {
             SDA_H;
-        }
-        else {
+        } else {
             SDA_L;
         }
         byte <<= 1;
@@ -150,7 +149,7 @@ static void I2C_SendByte(uint8_t byte)
 
 static uint8_t I2C_ReceiveByte(void)
 {
-    uint8_t i = 8;
+    uint8_t i    = 8;
     uint8_t byte = 0;
 
     SDA_H;
@@ -179,7 +178,7 @@ void i2cInit(I2CDevice device)
     IOConfigGPIO(sda, IOCFG_OUT_OD);
 }
 
-bool i2cWriteBuffer(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t len, uint8_t * data)
+bool i2cWriteBuffer(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t len, uint8_t *data)
 {
     UNUSED(device);
 
@@ -250,8 +249,7 @@ bool i2cRead(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t len, uint8_t *
         *buf = I2C_ReceiveByte();
         if (len == 1) {
             I2C_NoAck();
-        }
-        else {
+        } else {
             I2C_Ack();
         }
         buf++;

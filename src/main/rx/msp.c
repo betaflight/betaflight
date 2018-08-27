@@ -29,9 +29,8 @@
 
 #include "drivers/io.h"
 #include "pg/rx.h"
-#include "rx/rx.h"
 #include "rx/msp.h"
-
+#include "rx/rx.h"
 
 static uint16_t mspFrame[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 static bool rxMspFrameDone = false;
@@ -75,10 +74,10 @@ void rxMspInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     UNUSED(rxConfig);
 
-    rxRuntimeConfig->channelCount = MAX_SUPPORTED_RC_CHANNEL_COUNT;
+    rxRuntimeConfig->channelCount  = MAX_SUPPORTED_RC_CHANNEL_COUNT;
     rxRuntimeConfig->rxRefreshRate = 20000;
 
-    rxRuntimeConfig->rcReadRawFn = rxMspReadRawRC;
+    rxRuntimeConfig->rcReadRawFn     = rxMspReadRawRC;
     rxRuntimeConfig->rcFrameStatusFn = rxMspFrameStatus;
 }
 #endif

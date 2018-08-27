@@ -55,15 +55,14 @@ void pinioInit(const pinioConfig_t *pinioConfig)
             break;
         }
 
-        if (pinioConfig->config[i] & PINIO_CONFIG_OUT_INVERTED)
-        {
+        if (pinioConfig->config[i] & PINIO_CONFIG_OUT_INVERTED) {
             pinioRuntime[i].inverted = true;
             IOHi(io);
         } else {
             pinioRuntime[i].inverted = false;
             IOLo(io);
         }
-        pinioRuntime[i].io = io;
+        pinioRuntime[i].io    = io;
         pinioRuntime[i].state = false;
     }
 }

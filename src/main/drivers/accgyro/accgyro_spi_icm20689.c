@@ -36,7 +36,6 @@
 #include "drivers/sensor.h"
 #include "drivers/time.h"
 
-
 static void icm20689SpiInit(const busDevice_t *bus)
 {
     static bool hardwareInitialised = false;
@@ -64,7 +63,7 @@ uint8_t icm20689SpiDetect(const busDevice_t *bus)
 
     spiBusWriteRegister(bus, MPU_RA_PWR_MGMT_1, ICM20689_BIT_RESET);
 
-    uint8_t icmDetected = MPU_NONE;
+    uint8_t icmDetected       = MPU_NONE;
     uint8_t attemptsRemaining = 20;
     do {
         delay(150);
@@ -130,8 +129,8 @@ void icm20689GyroInit(gyroDev_t *gyro)
     delay(100);
     spiBusWriteRegister(&gyro->bus, MPU_RA_SIGNAL_PATH_RESET, 0x03);
     delay(100);
-//    spiBusWriteRegister(&gyro->bus, MPU_RA_PWR_MGMT_1, 0);
-//    delay(100);
+    //    spiBusWriteRegister(&gyro->bus, MPU_RA_PWR_MGMT_1, 0);
+    //    delay(100);
     spiBusWriteRegister(&gyro->bus, MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
     delay(15);
     spiBusWriteRegister(&gyro->bus, MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3 | mpuGyroFCHOICE(gyro));
@@ -144,8 +143,8 @@ void icm20689GyroInit(gyroDev_t *gyro)
     delay(100);
 
     // Data ready interrupt configuration
-//    spiBusWriteRegister(&gyro->bus, MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 0 << 1 | 0 << 0);  // INT_ANYRD_2CLEAR, BYPASS_EN
-    spiBusWriteRegister(&gyro->bus, MPU_RA_INT_PIN_CFG, 0x10);  // INT_ANYRD_2CLEAR, BYPASS_EN
+    //    spiBusWriteRegister(&gyro->bus, MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 0 << 1 | 0 << 0);  // INT_ANYRD_2CLEAR, BYPASS_EN
+    spiBusWriteRegister(&gyro->bus, MPU_RA_INT_PIN_CFG, 0x10); // INT_ANYRD_2CLEAR, BYPASS_EN
 
     delay(15);
 

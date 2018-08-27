@@ -20,7 +20,7 @@
 
 #include "resource.h"
 
-const char * const ownerNames[OWNER_TOTAL_COUNT] = {
+const char *const ownerNames[OWNER_TOTAL_COUNT] = {
     "FREE",
     "PWM",
     "PPM",

@@ -27,15 +27,15 @@
 #include "pg/pg.h"
 
 typedef enum {
-    RANGEFINDER_NONE        = 0,
-    RANGEFINDER_HCSR04      = 1,
-    RANGEFINDER_TFMINI      = 2,
-    RANGEFINDER_TF02        = 3,
+    RANGEFINDER_NONE   = 0,
+    RANGEFINDER_HCSR04 = 1,
+    RANGEFINDER_TFMINI = 2,
+    RANGEFINDER_TF02   = 3,
     // Following sensors are to be ported from iNav
-    RANGEFINDER_SRF10       = 4,
-    RANGEFINDER_HCSR04I2C   = 5,
-    RANGEFINDER_VL53L0X     = 6,
-    RANGEFINDER_UIB         = 7,
+    RANGEFINDER_SRF10     = 4,
+    RANGEFINDER_HCSR04I2C = 5,
+    RANGEFINDER_VL53L0X   = 6,
+    RANGEFINDER_UIB       = 7,
 } rangefinderType_e;
 
 typedef struct rangefinderConfig_s {

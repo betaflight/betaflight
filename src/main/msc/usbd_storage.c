@@ -25,8 +25,8 @@
 #ifdef USE_HAL_DRIVER
 #include "usbd_msc.h"
 #else
-#include "usbd_msc_mem.h"
 #include "usbd_msc_core.h"
+#include "usbd_msc_mem.h"
 #endif
 
 #include "usbd_storage.h"

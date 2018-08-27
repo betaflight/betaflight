@@ -18,10 +18,10 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <math.h>
 
 #include "build/debug.h"
 
@@ -29,19 +29,18 @@
 
 #include "fc/runtime_config.h"
 
-#include "flight/position.h"
 #include "flight/imu.h"
 #include "flight/pid.h"
+#include "flight/position.h"
 
 #include "io/gps.h"
 
-#include "sensors/sensors.h"
 #include "sensors/barometer.h"
+#include "sensors/sensors.h"
 
-static int32_t estimatedAltitudeCm = 0;                // in cm
+static int32_t estimatedAltitudeCm = 0; // in cm
 
 #define BARO_UPDATE_FREQUENCY_40HZ (1000 * 25)
-
 
 #if defined(USE_BARO) || defined(USE_GPS)
 static bool altitudeOffsetSet = false;
@@ -49,8 +48,8 @@ static bool altitudeOffsetSet = false;
 void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 {
     static timeUs_t previousTimeUs = 0;
-    static int32_t baroAltOffset = 0;
-    static int32_t gpsAltOffset = 0;
+    static int32_t baroAltOffset   = 0;
+    static int32_t gpsAltOffset    = 0;
 
     const uint32_t dTime = currentTimeUs - previousTimeUs;
     if (dTime < BARO_UPDATE_FREQUENCY_40HZ) {
@@ -60,44 +59,44 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 
     int32_t baroAlt = 0;
 
-    int32_t gpsAlt = 0;
-    float gpsTrust = 0.3; //conservative default
+    int32_t gpsAlt   = 0;
+    float gpsTrust   = 0.3; //conservative default
     bool haveBaroAlt = false;
-    bool haveGpsAlt = false;
+    bool haveGpsAlt  = false;
 #ifdef USE_BARO
     if (sensors(SENSOR_BARO)) {
         if (!isBaroCalibrationComplete()) {
             performBaroCalibrationCycle();
         } else {
-            baroAlt = baroCalculateAltitude();
+            baroAlt     = baroCalculateAltitude();
             haveBaroAlt = true;
         }
     }
 #endif
 
 #ifdef USE_GPS
-if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
-    gpsAlt = gpsSol.llh.altCm;
-    haveGpsAlt = true;
+    if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
+        gpsAlt     = gpsSol.llh.altCm;
+        haveGpsAlt = true;
 
-    if (gpsSol.hdop != 0) {
-        gpsTrust = 100.0 / gpsSol.hdop;
+        if (gpsSol.hdop != 0) {
+            gpsTrust = 100.0 / gpsSol.hdop;
+        }
+        // always use at least 10% of other sources besides gps if available
+        gpsTrust = MIN(gpsTrust, 0.9f);
     }
-    // always use at least 10% of other sources besides gps if available
-    gpsTrust = MIN(gpsTrust, 0.9f);
-}
 #endif
 
     if (ARMING_FLAG(ARMED) && !altitudeOffsetSet) {
-        baroAltOffset = baroAlt;
-        gpsAltOffset = gpsAlt;
+        baroAltOffset     = baroAlt;
+        gpsAltOffset      = gpsAlt;
         altitudeOffsetSet = true;
     } else if (!ARMING_FLAG(ARMED) && altitudeOffsetSet) {
         altitudeOffsetSet = false;
     }
     baroAlt -= baroAltOffset;
     gpsAlt -= gpsAltOffset;
-    
+
     if (haveGpsAlt && haveBaroAlt) {
         estimatedAltitudeCm = gpsAlt * gpsTrust + baroAlt * (1 - gpsTrust);
     } else if (haveGpsAlt) {
@@ -105,7 +104,7 @@ if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
     } else if (haveBaroAlt) {
         estimatedAltitudeCm = baroAlt;
     }
-    
+
     DEBUG_SET(DEBUG_ALTITUDE, 0, (int32_t)(100 * gpsTrust));
     DEBUG_SET(DEBUG_ALTITUDE, 1, baroAlt);
     DEBUG_SET(DEBUG_ALTITUDE, 2, gpsAlt);

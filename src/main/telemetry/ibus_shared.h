@@ -28,8 +28,8 @@
 
 #pragma once
 
-#include "platform.h"
 #include "drivers/serial.h"
+#include "platform.h"
 
 #define IBUS_CHECKSUM_SIZE (2)
 #define IBUS_SENSOR_COUNT 15
@@ -63,27 +63,26 @@ typedef enum {
     IBUS_SENSOR_TYPE_ODO2             = 0x7d, // Odometer2
     IBUS_SENSOR_TYPE_SPE              = 0x7e, // Speed 2bytes km/h
 
-    IBUS_SENSOR_TYPE_GPS_LAT          = 0x80, //4bytes signed WGS84 in degrees * 1E7
-    IBUS_SENSOR_TYPE_GPS_LON          = 0x81, //4bytes signed WGS84 in degrees * 1E7
-    IBUS_SENSOR_TYPE_GPS_ALT          = 0x82, //4bytes signed!!! GPS alt m*100
-    IBUS_SENSOR_TYPE_ALT              = 0x83, //4bytes signed!!! Alt m*100
-    IBUS_SENSOR_TYPE_ALT_MAX          = 0x84, //4bytes signed MaxAlt m*100
+    IBUS_SENSOR_TYPE_GPS_LAT = 0x80, //4bytes signed WGS84 in degrees * 1E7
+    IBUS_SENSOR_TYPE_GPS_LON = 0x81, //4bytes signed WGS84 in degrees * 1E7
+    IBUS_SENSOR_TYPE_GPS_ALT = 0x82, //4bytes signed!!! GPS alt m*100
+    IBUS_SENSOR_TYPE_ALT     = 0x83, //4bytes signed!!! Alt m*100
+    IBUS_SENSOR_TYPE_ALT_MAX = 0x84, //4bytes signed MaxAlt m*100
 
-    IBUS_SENSOR_TYPE_ALT_FLYSKY       = 0xf9, // Altitude 2 bytes signed in m
+    IBUS_SENSOR_TYPE_ALT_FLYSKY = 0xf9, // Altitude 2 bytes signed in m
 #if defined(USE_TELEMETRY_IBUS_EXTENDED)
-    IBUS_SENSOR_TYPE_GPS_FULL         = 0xfd,
-    IBUS_SENSOR_TYPE_VOLT_FULL        = 0xf0,
-    IBUS_SENSOR_TYPE_ACC_FULL         = 0xef,
+    IBUS_SENSOR_TYPE_GPS_FULL  = 0xfd,
+    IBUS_SENSOR_TYPE_VOLT_FULL = 0xf0,
+    IBUS_SENSOR_TYPE_ACC_FULL  = 0xef,
 #endif //defined(TELEMETRY_IBUS_EXTENDED)
-    IBUS_SENSOR_TYPE_UNKNOWN          = 0xff
+    IBUS_SENSOR_TYPE_UNKNOWN = 0xff
 } ibusSensorType_e;
 
 #if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_IBUS)
 
-uint8_t respondToIbusRequest(uint8_t const * const ibusPacket);
-void initSharedIbusTelemetry(serialPort_t * port);
+uint8_t respondToIbusRequest(uint8_t const *const ibusPacket);
+void initSharedIbusTelemetry(serialPort_t *port);
 
 #endif //defined(TELEMETRY) && defined(TELEMETRY_IBUS)
-
 
 bool isChecksumOkIa6b(const uint8_t *ibusPacket, const uint8_t length);

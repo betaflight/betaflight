@@ -23,7 +23,7 @@
 #include "pg/pg.h"
 
 typedef enum {
-    GIMBAL_MODE_NORMAL = 0,
+    GIMBAL_MODE_NORMAL  = 0,
     GIMBAL_MODE_MIXTILT = 1
 } gimbalMode_e;
 

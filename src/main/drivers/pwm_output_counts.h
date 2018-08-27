@@ -22,7 +22,6 @@
 
 #include "platform.h"
 
-
 #if defined(USE_QUAD_MIXER_ONLY)
 #define MAX_SUPPORTED_MOTORS 4
 #define MAX_SUPPORTED_SERVOS 1

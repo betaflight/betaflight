@@ -32,10 +32,10 @@ bool mscCheckFilesystemReady(void)
 {
     return false
 #if defined(USE_SDCARD)
-        || sdcard_isFunctional()
+           || sdcard_isFunctional()
 #endif
 #if defined(USE_FLASHFS)
-        || flashfsGetSize() > 0
+           || flashfsGetSize() > 0
 #endif
         ;
 }

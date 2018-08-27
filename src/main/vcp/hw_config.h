@@ -44,8 +44,8 @@
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported define -----------------------------------------------------------*/
-#define MASS_MEMORY_START     0x04002000
-#define BULK_MAX_PACKET_SIZE  0x00000040
+#define MASS_MEMORY_START 0x04002000
+#define BULK_MAX_PACKET_SIZE 0x00000040
 
 /* Exported functions ------------------------------------------------------- */
 void Set_System(void);
@@ -58,19 +58,19 @@ void USB_Interrupts_Disable(void);
 #endif
 void USB_Cable_Config(FunctionalState NewState);
 void Get_SerialNum(void);
-uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength);  // HJI
+uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength); // HJI
 uint32_t CDC_Send_FreeBytes(void);
-uint32_t CDC_Receive_DATA(uint8_t* recvBuf, uint32_t len);       // HJI
+uint32_t CDC_Receive_DATA(uint8_t *recvBuf, uint32_t len); // HJI
 uint32_t CDC_Receive_BytesAvailable(void);
 
-uint8_t usbIsConfigured(void);  // HJI
-uint8_t usbIsConnected(void);   // HJI
+uint8_t usbIsConfigured(void); // HJI
+uint8_t usbIsConnected(void);  // HJI
 uint32_t CDC_BaudRate(void);
 void CDC_SetCtrlLineStateCb(void (*cb)(void *context, uint16_t ctrlLineState), void *context);
 void CDC_SetBaudRateCb(void (*cb)(void *context, uint32_t baud), void *context);
 
 /* External variables --------------------------------------------------------*/
-extern __IO uint32_t packetSent;     // HJI
+extern __IO uint32_t packetSent; // HJI
 
-#endif  /*__HW_CONFIG_H*/
+#endif /*__HW_CONFIG_H*/
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

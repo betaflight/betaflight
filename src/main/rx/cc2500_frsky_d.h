@@ -28,4 +28,4 @@
 void frSkyDSetRcData(uint16_t *rcData, const uint8_t *payload);
 
 void frSkyDInit(void);
-rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const protocolState);
+rx_spi_received_e frSkyDHandlePacket(uint8_t *const packet, uint8_t *const protocolState);

@@ -52,7 +52,7 @@ void targetPreInit(void)
     IOInit(inverter, OWNER_INVERTER, 1);
     IOConfigGPIO(inverter, IOCFG_OUT_PP);
 
-    bool high = false;
+    bool high                      = false;
     serialPortConfig_t *portConfig = serialFindPortConfiguration(SERIAL_PORT_USART1);
     if (portConfig) {
         bool smartportEnabled = (portConfig->functionMask & FUNCTION_TELEMETRY_SMARTPORT);

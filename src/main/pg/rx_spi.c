@@ -22,8 +22,8 @@
 
 #ifdef USE_RX_SPI
 
-#include "drivers/io.h"
 #include "drivers/bus_spi.h"
+#include "drivers/io.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"

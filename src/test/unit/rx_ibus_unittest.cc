@@ -18,43 +18,41 @@
 #include <stdint.h>
 
 extern "C" {
-#include "platform.h"
-#include "pg/pg.h"
-#include "pg/rx.h"
 #include "drivers/serial.h"
 #include "drivers/time.h"
-#include "io/serial.h"
-#include "rx/rx.h"
-#include "rx/ibus.h"
-#include "telemetry/ibus_shared.h"
-#include "telemetry/telemetry.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
+#include "io/serial.h"
+#include "pg/pg.h"
+#include "pg/rx.h"
+#include "platform.h"
+#include "rx/ibus.h"
+#include "rx/rx.h"
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
+#include "telemetry/ibus_shared.h"
+#include "telemetry/telemetry.h"
 }
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-
 extern "C" {
-    uint8_t batteryCellCount = 3;
-    float rcCommand[4] = {0, 0, 0, 0};
-    int16_t telemTemperature1 = 0;
-    baro_t baro = { .baroTemperature = 50 };
-    telemetryConfig_t telemetryConfig_System;
+uint8_t batteryCellCount  = 3;
+float rcCommand[4]        = {0, 0, 0, 0};
+int16_t telemTemperature1 = 0;
+baro_t baro               = {.baroTemperature = 50};
+telemetryConfig_t telemetryConfig_System;
 }
-
 
 bool telemetryCheckRxPortShared(const serialPortConfig_t *portConfig)
 {
     //TODO: implement
-    (void) portConfig;
+    (void)portConfig;
     return false;
 }
 
-serialPort_t * telemetrySharedPort = NULL;
+serialPort_t *telemetrySharedPort = NULL;
 
 static uint16_t vbat = 100;
 uint16_t getVbat(void)
@@ -69,7 +67,7 @@ uint32_t micros(void)
 }
 
 #define SERIAL_BUFFER_SIZE 256
-#define SERIAL_PORT_DUMMY_IDENTIFIER  (serialPortIdentifier_e)0x1234
+#define SERIAL_PORT_DUMMY_IDENTIFIER (serialPortIdentifier_e)0x1234
 
 typedef struct serialPortStub_s {
     uint8_t buffer[SERIAL_BUFFER_SIZE];
@@ -79,9 +77,8 @@ typedef struct serialPortStub_s {
 
 static serialPort_t serialTestInstance;
 static serialPortConfig_t serialTestInstanceConfig = {
-    .identifier = SERIAL_PORT_DUMMY_IDENTIFIER,
-    .functionMask = 0
-};
+    .identifier   = SERIAL_PORT_DUMMY_IDENTIFIER,
+    .functionMask = 0};
 
 static serialReceiveCallbackPtr stub_serialRxCallback;
 static serialPortConfig_t *findSerialPortConfig_stub_retval;
@@ -105,7 +102,7 @@ serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function)
     return findSerialPortConfig_stub_retval;
 }
 
-static portMode_e serialExpectedMode = MODE_RX;
+static portMode_e serialExpectedMode       = MODE_RX;
 static portOptions_e serialExpectedOptions = SERIAL_UNIDIR;
 
 serialPort_t *openSerialPort(
@@ -115,8 +112,7 @@ serialPort_t *openSerialPort(
     void *callbackData,
     uint32_t baudrate,
     portMode_e mode,
-    portOptions_e options
-)
+    portOptions_e options)
 {
     openSerial_called = true;
     EXPECT_FALSE(NULL == callback);
@@ -139,38 +135,36 @@ void serialWrite(serialPort_t *instance, uint8_t ch)
     //printf("w: %02d 0x%02x\n", serialWriteStub.pos, ch);
 }
 
-
 void serialTestResetPort()
 {
-    openSerial_called = false;
+    openSerial_called     = false;
     stub_serialRxCallback = NULL;
-    portIsShared = false;
-    serialExpectedMode = MODE_RX;
+    portIsShared          = false;
+    serialExpectedMode    = MODE_RX;
     serialExpectedOptions = SERIAL_UNIDIR;
 }
-
 
 static bool isChecksumOkReturnValue = true;
 bool isChecksumOkIa6b(const uint8_t *ibusPacket, const uint8_t length)
 {
-    (void) ibusPacket;
-    (void) length;
+    (void)ibusPacket;
+    (void)length;
     return isChecksumOkReturnValue;
 }
 
-
 static bool initSharedIbusTelemetryCalled = false;
-void initSharedIbusTelemetry(serialPort_t * port)
+void initSharedIbusTelemetry(serialPort_t *port)
 {
     EXPECT_EQ(port, &serialTestInstance);
     initSharedIbusTelemetryCalled = true;
 }
 
-static bool    stubTelemetryCalled = false;
+static bool stubTelemetryCalled = false;
 static uint8_t stubTelemetryPacket[100];
 static uint8_t stubTelemetryIgnoreRxChars = 0;
 
-uint8_t respondToIbusRequest(uint8_t const * const ibusPacket) {
+uint8_t respondToIbusRequest(uint8_t const *const ibusPacket)
+{
     uint8_t len = ibusPacket[0];
     EXPECT_LT(len, sizeof(stubTelemetryPacket));
     memcpy(stubTelemetryPacket, ibusPacket, len);
@@ -181,28 +175,26 @@ uint8_t respondToIbusRequest(uint8_t const * const ibusPacket) {
 void resetStubTelemetry(void)
 {
     memset(stubTelemetryPacket, 0, sizeof(stubTelemetryPacket));
-    stubTelemetryCalled = false;
-    stubTelemetryIgnoreRxChars = 0;
+    stubTelemetryCalled           = false;
+    stubTelemetryIgnoreRxChars    = 0;
     initSharedIbusTelemetryCalled = false;
-    isChecksumOkReturnValue = true;
+    isChecksumOkReturnValue       = true;
 }
-
 
 class IbusRxInitUnitTest : public ::testing::Test
 {
-protected:
+  protected:
     virtual void SetUp()
     {
         serialTestResetPort();
     }
 };
 
-
 TEST_F(IbusRxInitUnitTest, Test_IbusRxNotEnabled)
 {
-    const rxConfig_t initialRxConfig = {};
+    const rxConfig_t initialRxConfig  = {};
     rxRuntimeConfig_t rxRuntimeConfig = {};
-    findSerialPortConfig_stub_retval = NULL;
+    findSerialPortConfig_stub_retval  = NULL;
 
     EXPECT_FALSE(ibusInit(&initialRxConfig, &rxRuntimeConfig));
 
@@ -218,12 +210,11 @@ TEST_F(IbusRxInitUnitTest, Test_IbusRxNotEnabled)
     EXPECT_FALSE(NULL == rxRuntimeConfig.rcFrameStatusFn);
 }
 
-
 TEST_F(IbusRxInitUnitTest, Test_IbusRxEnabled)
 {
-    const rxConfig_t initialRxConfig = {};
+    const rxConfig_t initialRxConfig  = {};
     rxRuntimeConfig_t rxRuntimeConfig = {};
-    findSerialPortConfig_stub_retval = &serialTestInstanceConfig;
+    findSerialPortConfig_stub_retval  = &serialTestInstanceConfig;
 
     EXPECT_TRUE(ibusInit(&initialRxConfig, &rxRuntimeConfig));
 
@@ -235,19 +226,17 @@ TEST_F(IbusRxInitUnitTest, Test_IbusRxEnabled)
     EXPECT_TRUE(openSerial_called);
 }
 
-
-
 class IbusRxProtocollUnitTest : public ::testing::Test
 {
-protected:
+  protected:
     rxRuntimeConfig_t rxRuntimeConfig = {};
     virtual void SetUp()
     {
         serialTestResetPort();
         resetStubTelemetry();
-        portIsShared = true;
+        portIsShared          = true;
         serialExpectedOptions = SERIAL_BIDIR;
-        serialExpectedMode = MODE_RXTX;
+        serialExpectedMode    = MODE_RXTX;
 
         const rxConfig_t initialRxConfig = {};
         findSerialPortConfig_stub_retval = &serialTestInstanceConfig;
@@ -261,16 +250,15 @@ protected:
         EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
     }
 
-    virtual void receivePacket(uint8_t const * const packet, const size_t length)
+    virtual void receivePacket(uint8_t const *const packet, const size_t length)
     {
         EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
-        for (size_t i=0; i < length; i++) {
+        for (size_t i = 0; i < length; i++) {
             EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
             stub_serialRxCallback(packet[i], NULL);
         }
     }
 };
-
 
 TEST_F(IbusRxProtocollUnitTest, Test_InitialFrameState)
 {
@@ -279,16 +267,15 @@ TEST_F(IbusRxProtocollUnitTest, Test_InitialFrameState)
     //TODO: is it ok to have undefined channel values after init?
 }
 
-
 TEST_F(IbusRxProtocollUnitTest, Test_IA6B_OnePacketReceived)
 {
-    uint8_t packet[] = {0x20, 0x00, //length and reserved (unknown) bits
+    uint8_t packet[] = {0x20, 0x00,                                                 //length and reserved (unknown) bits
                         0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x03, 0x00, 0x04, 0x00, //channel 1..5
                         0x05, 0x00, 0x06, 0x00, 0x07, 0x00, 0x08, 0x00, 0x09, 0x00, //channel 6..10
                         0x0a, 0x00, 0x0b, 0x00, 0x0c, 0x00, 0x0d, 0x00,             //channel 11..14
-                        0x84, 0xff}; //checksum
+                        0x84, 0xff};                                                //checksum
 
-    for (size_t i=0; i < sizeof(packet); i++) {
+    for (size_t i = 0; i < sizeof(packet); i++) {
         EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
         stub_serialRxCallback(packet[i], NULL);
     }
@@ -298,22 +285,21 @@ TEST_F(IbusRxProtocollUnitTest, Test_IA6B_OnePacketReceived)
     EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
 
     //check that channel values have been updated
-    for (int i=0; i<14; i++) {
+    for (int i = 0; i < 14; i++) {
         ASSERT_EQ(i, rxRuntimeConfig.rcReadRawFn(&rxRuntimeConfig, i));
     }
 }
 
-
 TEST_F(IbusRxProtocollUnitTest, Test_IA6B_OnePacketReceivedWithBadCrc)
 {
-    uint8_t packet[] = {0x20, 0x00, //length and reserved (unknown) bits
+    uint8_t packet[] = {0x20, 0x00,                                                 //length and reserved (unknown) bits
                         0x00, 0x33, 0x01, 0x33, 0x02, 0x33, 0x03, 0x33, 0x04, 0x33, //channel 1..5
                         0x05, 0x33, 0x06, 0x33, 0x07, 0x33, 0x08, 0x33, 0x09, 0x33, //channel 6..10
                         0x0a, 0x33, 0x0b, 0x33, 0x0c, 0x33, 0x0d, 0x33,             //channel 11..14
-                        0x00, 0x00}; //checksum
+                        0x00, 0x00};                                                //checksum
 
     isChecksumOkReturnValue = false;
-    for (size_t i=0; i < sizeof(packet); i++) {
+    for (size_t i = 0; i < sizeof(packet); i++) {
         EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
         stub_serialRxCallback(packet[i], NULL);
     }
@@ -322,24 +308,23 @@ TEST_F(IbusRxProtocollUnitTest, Test_IA6B_OnePacketReceivedWithBadCrc)
     EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
 
     //check that channel values have not been updated
-    for (int i=0; i<14; i++) {
+    for (int i = 0; i < 14; i++) {
         ASSERT_NE(i + (0x33 << 8), rxRuntimeConfig.rcReadRawFn(&rxRuntimeConfig, i));
     }
 }
 
-
 TEST_F(IbusRxProtocollUnitTest, Test_IA6B_HalfPacketReceived_then_interPacketGapReset)
 {
-    const uint8_t packet_half[] = {0x20, 0x00, //length and reserved (unknown) bits
-                                    0x00, 0xab, 0x01, 0xab, 0x02, 0xab, 0x03, 0xab, 0x04, 0xab, //channel 1..5
-                                    0x05, 0xab};
-    const uint8_t packet_full[] = {0x20, 0x00, //length and reserved (unknown) bits
-                                    0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x03, 0x00, 0x04, 0x00, //channel 1..5
-                                    0x05, 0x00, 0x06, 0x00, 0x07, 0x00, 0x08, 0x00, 0x09, 0x00, //channel 6..10
-                                    0x0a, 0x00, 0x0b, 0x00, 0x0c, 0x00, 0x0d, 0x00,             //channel 11..14
-                                    0x84, 0xff}; //checksum
+    const uint8_t packet_half[] = {0x20, 0x00,                                                 //length and reserved (unknown) bits
+                                   0x00, 0xab, 0x01, 0xab, 0x02, 0xab, 0x03, 0xab, 0x04, 0xab, //channel 1..5
+                                   0x05, 0xab};
+    const uint8_t packet_full[] = {0x20, 0x00,                                                 //length and reserved (unknown) bits
+                                   0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x03, 0x00, 0x04, 0x00, //channel 1..5
+                                   0x05, 0x00, 0x06, 0x00, 0x07, 0x00, 0x08, 0x00, 0x09, 0x00, //channel 6..10
+                                   0x0a, 0x00, 0x0b, 0x00, 0x0c, 0x00, 0x0d, 0x00,             //channel 11..14
+                                   0x84, 0xff};                                                //checksum
 
-    for (size_t i=0; i < sizeof(packet_half); i++) {
+    for (size_t i = 0; i < sizeof(packet_half); i++) {
         EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
         stub_serialRxCallback(packet_half[i], NULL);
     }
@@ -347,7 +332,7 @@ TEST_F(IbusRxProtocollUnitTest, Test_IA6B_HalfPacketReceived_then_interPacketGap
     microseconds_stub_value += 5000;
     EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
 
-    for (size_t i=0; i < sizeof(packet_full); i++) {
+    for (size_t i = 0; i < sizeof(packet_full); i++) {
         EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
         stub_serialRxCallback(packet_full[i], NULL);
     }
@@ -357,21 +342,20 @@ TEST_F(IbusRxProtocollUnitTest, Test_IA6B_HalfPacketReceived_then_interPacketGap
     EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
 
     //check that channel values have been updated
-    for (int i=0; i<14; i++) {
+    for (int i = 0; i < 14; i++) {
         ASSERT_EQ(i, rxRuntimeConfig.rcReadRawFn(&rxRuntimeConfig, i));
     }
 }
 
-
 TEST_F(IbusRxProtocollUnitTest, Test_IA6_OnePacketReceived)
 {
-    uint8_t packet[] = {0x55, //sync character
+    uint8_t packet[] = {0x55,                                                       //sync character
                         0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x03, 0x00, 0x04, 0x00, //channel 1..5
                         0x05, 0x00, 0x06, 0x00, 0x07, 0x00, 0x08, 0x00, 0x09, 0x00, //channel 6..10
                         0x0a, 0x00, 0x0b, 0x00, 0x0c, 0x00, 0x0d, 0x00,             //channel 11..14
-                        0x5b, 0x00}; //checksum
+                        0x5b, 0x00};                                                //checksum
 
-    for (size_t i=0; i < sizeof(packet); i++) {
+    for (size_t i = 0; i < sizeof(packet); i++) {
         EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
         stub_serialRxCallback(packet[i], NULL);
     }
@@ -381,21 +365,20 @@ TEST_F(IbusRxProtocollUnitTest, Test_IA6_OnePacketReceived)
     EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
 
     //check that channel values have been updated
-    for (int i=0; i<14; i++) {
+    for (int i = 0; i < 14; i++) {
         ASSERT_EQ(i, rxRuntimeConfig.rcReadRawFn(&rxRuntimeConfig, i));
     }
 }
 
-
 TEST_F(IbusRxProtocollUnitTest, Test_IA6_OnePacketReceivedBadCrc)
 {
-    uint8_t packet[] = {0x55, //sync character
+    uint8_t packet[] = {0x55,                                                       //sync character
                         0x00, 0x33, 0x01, 0x33, 0x02, 0x33, 0x03, 0x33, 0x04, 0x33, //channel 1..5
                         0x05, 0x33, 0x06, 0x33, 0x07, 0x33, 0x08, 0x33, 0x09, 0x33, //channel 6..10
                         0x0a, 0x33, 0x0b, 0x33, 0x0c, 0x33, 0x0d, 0x33,             //channel 11..14
-                        0x00, 0x00}; //checksum
+                        0x00, 0x00};                                                //checksum
 
-    for (size_t i=0; i < sizeof(packet); i++) {
+    for (size_t i = 0; i < sizeof(packet); i++) {
         EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
         stub_serialRxCallback(packet[i], NULL);
     }
@@ -404,27 +387,26 @@ TEST_F(IbusRxProtocollUnitTest, Test_IA6_OnePacketReceivedBadCrc)
     EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
 
     //check that channel values have not been updated
-    for (int i=0; i<14; i++) {
+    for (int i = 0; i < 14; i++) {
         ASSERT_NE(i + (0x33 << 8), rxRuntimeConfig.rcReadRawFn(&rxRuntimeConfig, i));
     }
 }
 
-
 TEST_F(IbusRxProtocollUnitTest, Test_IA6B_OnePacketReceived_not_shared_port)
 {
-    uint8_t packet[] = {0x20, 0x00, //length and reserved (unknown) bits
+    uint8_t packet[] = {0x20, 0x00,                                                 //length and reserved (unknown) bits
                         0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x03, 0x00, 0x04, 0x00, //channel 1..5
                         0x05, 0x00, 0x06, 0x00, 0x07, 0x00, 0x08, 0x00, 0x09, 0x00, //channel 6..10
                         0x0a, 0x00, 0x0b, 0x00, 0x0c, 0x00, 0x0d, 0x00,             //channel 11..14
-                        0x84, 0xff}; //checksum
+                        0x84, 0xff};                                                //checksum
 
     {
 
         serialTestResetPort();
         resetStubTelemetry();
-        portIsShared = false;
+        portIsShared          = false;
         serialExpectedOptions = SERIAL_NOT_INVERTED;
-        serialExpectedMode = MODE_RX;
+        serialExpectedMode    = MODE_RX;
 
         const rxConfig_t initialRxConfig = {};
         findSerialPortConfig_stub_retval = &serialTestInstanceConfig;
@@ -437,7 +419,7 @@ TEST_F(IbusRxProtocollUnitTest, Test_IA6B_OnePacketReceived_not_shared_port)
         EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
     }
 
-    for (size_t i=0; i < sizeof(packet); i++) {
+    for (size_t i = 0; i < sizeof(packet); i++) {
         EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
         stub_serialRxCallback(packet[i], NULL);
     }
@@ -447,11 +429,10 @@ TEST_F(IbusRxProtocollUnitTest, Test_IA6B_OnePacketReceived_not_shared_port)
     EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
 
     //check that channel values have been updated
-    for (int i=0; i<14; i++) {
+    for (int i = 0; i < 14; i++) {
         ASSERT_EQ(i, rxRuntimeConfig.rcReadRawFn(&rxRuntimeConfig, i));
     }
 }
-
 
 TEST_F(IbusRxProtocollUnitTest, Test_OneTelemetryPacketReceived)
 {
@@ -463,9 +444,8 @@ TEST_F(IbusRxProtocollUnitTest, Test_OneTelemetryPacketReceived)
     //no frame complete signal to rx system, but telemetry system is called
     EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
     EXPECT_TRUE(stubTelemetryCalled);
-    EXPECT_TRUE( 0 == memcmp( stubTelemetryPacket, packet, sizeof(packet)));
+    EXPECT_TRUE(0 == memcmp(stubTelemetryPacket, packet, sizeof(packet)));
 }
-
 
 TEST_F(IbusRxProtocollUnitTest, Test_OneTelemetryIgnoreTxEchoToRx)
 {
@@ -491,7 +471,6 @@ TEST_F(IbusRxProtocollUnitTest, Test_OneTelemetryIgnoreTxEchoToRx)
     rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig);
     EXPECT_TRUE(stubTelemetryCalled);
 }
-
 
 TEST_F(IbusRxProtocollUnitTest, Test_OneTelemetryShouldNotIgnoreTxEchoAfterInterFrameGap)
 {

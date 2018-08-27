@@ -27,9 +27,8 @@
 
 #include "drivers/io.h"
 #include "drivers/time.h"
-#include "usb_io.h"
 #include "sdcard.h"
-
+#include "usb_io.h"
 
 #ifdef USE_USB_DETECT
 static IO_t usbDetectPin = IO_NONE;

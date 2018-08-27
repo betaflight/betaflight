@@ -38,16 +38,16 @@ typedef struct spiDefaultConfig_s {
 
 const spiDefaultConfig_t spiDefaultConfig[] = {
 #ifdef USE_SPI_DEVICE_1
-    { SPIDEV_1, IO_TAG(SPI1_SCK_PIN), IO_TAG(SPI1_MISO_PIN), IO_TAG(SPI1_MOSI_PIN) },
+    {SPIDEV_1, IO_TAG(SPI1_SCK_PIN), IO_TAG(SPI1_MISO_PIN), IO_TAG(SPI1_MOSI_PIN)},
 #endif
 #ifdef USE_SPI_DEVICE_2
-    { SPIDEV_2, IO_TAG(SPI2_SCK_PIN), IO_TAG(SPI2_MISO_PIN), IO_TAG(SPI2_MOSI_PIN) },
+    {SPIDEV_2, IO_TAG(SPI2_SCK_PIN), IO_TAG(SPI2_MISO_PIN), IO_TAG(SPI2_MOSI_PIN)},
 #endif
 #ifdef USE_SPI_DEVICE_3
-    { SPIDEV_3, IO_TAG(SPI3_SCK_PIN), IO_TAG(SPI3_MISO_PIN), IO_TAG(SPI3_MOSI_PIN) },
+    {SPIDEV_3, IO_TAG(SPI3_SCK_PIN), IO_TAG(SPI3_MISO_PIN), IO_TAG(SPI3_MOSI_PIN)},
 #endif
 #ifdef USE_SPI_DEVICE_4
-    { SPIDEV_4, IO_TAG(SPI4_SCK_PIN), IO_TAG(SPI4_MISO_PIN), IO_TAG(SPI4_MOSI_PIN) },
+    {SPIDEV_4, IO_TAG(SPI4_SCK_PIN), IO_TAG(SPI4_MISO_PIN), IO_TAG(SPI4_MOSI_PIN)},
 #endif
 };
 
@@ -55,9 +55,9 @@ PG_REGISTER_ARRAY_WITH_RESET_FN(spiPinConfig_t, SPIDEV_COUNT, spiPinConfig, PG_S
 
 void pgResetFn_spiPinConfig(spiPinConfig_t *spiPinConfig)
 {
-    for (size_t i = 0 ; i < ARRAYLEN(spiDefaultConfig) ; i++) {
-        const spiDefaultConfig_t *defconf = &spiDefaultConfig[i];
-        spiPinConfig[defconf->device].ioTagSck = defconf->sck;
+    for (size_t i = 0; i < ARRAYLEN(spiDefaultConfig); i++) {
+        const spiDefaultConfig_t *defconf       = &spiDefaultConfig[i];
+        spiPinConfig[defconf->device].ioTagSck  = defconf->sck;
         spiPinConfig[defconf->device].ioTagMiso = defconf->miso;
         spiPinConfig[defconf->device].ioTagMosi = defconf->mosi;
     }
@@ -128,15 +128,14 @@ ioTag_t preinitIPUList[SPI_PREINIT_IPU_COUNT] = {
 #if defined(MAX7456_SPI_CS_PIN)
     IO_TAG(MAX7456_SPI_CS_PIN),
 #endif
-    IO_TAG(NONE)
-};
+    IO_TAG(NONE)};
 
 void pgResetFn_spiPreinitIPUConfig(spiCs_t *config)
 {
     int puPins = 0;
 
-    for (int i = 0 ; i < SPI_PREINIT_IPU_COUNT ; i++) {
-        for (int j = 0 ; j < i ; j++) {
+    for (int i = 0; i < SPI_PREINIT_IPU_COUNT; i++) {
+        for (int j = 0; j < i; j++) {
             if (config[j].csnTag == preinitIPUList[i]) {
                 goto next;
             }

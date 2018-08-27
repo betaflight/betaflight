@@ -25,8 +25,8 @@ typedef enum {
     INPUT_FILTERING_ENABLED
 } inputFilteringMode_e;
 
-#define PPM_RCVR_TIMEOUT            0
-#define PWM_INPUT_PORT_COUNT        8
+#define PPM_RCVR_TIMEOUT 0
+#define PWM_INPUT_PORT_COUNT 8
 
 struct ppmConfig_s;
 void ppmRxInit(const struct ppmConfig_s *ppmConfig);

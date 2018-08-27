@@ -32,8 +32,8 @@
  * and make calls through that, at the moment flashfs just calls m25p16_* routines explicitly.
  */
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 
 #include "drivers/flash.h"
@@ -93,7 +93,7 @@ void flashfsEraseRange(uint32_t start, uint32_t end)
     int startSector = start / geometry->sectorSize;
 
     // And the end upward
-    int endSector = end / geometry->sectorSize;
+    int endSector    = end / geometry->sectorSize;
     int endRemainder = end % geometry->sectorSize;
 
     if (endRemainder > 0) {
@@ -147,7 +147,7 @@ uint32_t flashfsGetWriteBufferFreeSpace(void)
     return flashfsGetWriteBufferSize() - flashfsTransmitBufferUsed();
 }
 
-const flashGeometry_t* flashfsGetGeometry(void)
+const flashGeometry_t *flashfsGetGeometry(void)
 {
     return flashGetGeometry();
 }
@@ -281,7 +281,7 @@ static void flashfsGetDirtyDataBuffers(uint8_t const *buffers[], uint32_t buffer
  */
 uint32_t flashfsGetOffset(void)
 {
-    uint8_t const * buffers[2];
+    uint8_t const *buffers[2];
     uint32_t bufferSizes[2];
 
     // Dirty data in the buffers contributes to the offset
@@ -320,7 +320,7 @@ bool flashfsFlushAsync(void)
         return true; // Nothing to flush
     }
 
-    uint8_t const * buffers[2];
+    uint8_t const *buffers[2];
     uint32_t bufferSizes[2];
     uint32_t bytesWritten;
 
@@ -343,7 +343,7 @@ void flashfsFlushSync(void)
         return; // Nothing to flush
     }
 
-    uint8_t const * buffers[2];
+    uint8_t const *buffers[2];
     uint32_t bufferSizes[2];
 
     flashfsGetDirtyDataBuffers(buffers, bufferSizes);
@@ -391,14 +391,14 @@ void flashfsWriteByte(uint8_t byte)
  */
 void flashfsWrite(const uint8_t *data, unsigned int len, bool sync)
 {
-    uint8_t const * buffers[3];
+    uint8_t const *buffers[3];
     uint32_t bufferSizes[3];
 
     // There could be two dirty buffers to write out already:
     flashfsGetDirtyDataBuffers(buffers, bufferSizes);
 
     // Plus the buffer the user supplied:
-    buffers[2] = data;
+    buffers[2]     = data;
     bufferSizes[2] = len;
 
     /*
@@ -442,7 +442,7 @@ void flashfsWrite(const uint8_t *data, unsigned int len, bool sync)
 
         // Fall through and add the remainder of the incoming data to our buffer
         data = buffers[2];
-        len = bufferSizes[2];
+        len  = bufferSizes[2];
     }
 
     // Buffer up the data the user supplied instead of writing it right away
@@ -511,7 +511,7 @@ int flashfsIdentifyStartOfFreeSpace(void)
         FREE_BLOCK_SIZE = 2048, // XXX This can't be smaller than page size for underlying flash device.
 
         /* We don't expect valid data to ever contain this many consecutive uint32_t's of all 1 bits: */
-        FREE_BLOCK_TEST_SIZE_INTS = 4, // i.e. 16 bytes
+        FREE_BLOCK_TEST_SIZE_INTS  = 4, // i.e. 16 bytes
         FREE_BLOCK_TEST_SIZE_BYTES = FREE_BLOCK_TEST_SIZE_INTS * sizeof(uint32_t)
     };
 
@@ -522,7 +522,7 @@ int flashfsIdentifyStartOfFreeSpace(void)
         uint32_t ints[FREE_BLOCK_TEST_SIZE_INTS];
     } testBuffer;
 
-    int left = 0; // Smallest block index in the search region
+    int left  = 0;                                  // Smallest block index in the search region
     int right = flashfsGetSize() / FREE_BLOCK_SIZE; // One past the largest block index in the search region
     int mid;
     int result = right;
@@ -571,7 +571,7 @@ bool flashfsIsEOF(void)
 
 void flashfsClose(void)
 {
-    switch(flashfsGetGeometry()->flashType) {
+    switch (flashfsGetGeometry()->flashType) {
     case FLASH_TYPE_NOR:
         break;
 

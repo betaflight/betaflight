@@ -23,9 +23,9 @@
 
 #include "platform.h"
 
-#include "io/serial.h" // For SERIAL_PORT_IDENTIFIER_TO_INDEX
 #include "drivers/io.h"
 #include "drivers/serial.h"
+#include "io/serial.h" // For SERIAL_PORT_IDENTIFIER_TO_INDEX
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
@@ -48,7 +48,7 @@ static void inverterSet(int identifier, bool on)
 static void initInverter(int identifier)
 {
     int uartIndex = SERIAL_PORT_IDENTIFIER_TO_INDEX(identifier);
-    IO_t pin = IOGetByTag(pSerialPinConfig->ioTagInverter[uartIndex]);
+    IO_t pin      = IOGetByTag(pSerialPinConfig->ioTagInverter[uartIndex]);
 
     if (pin) {
         IOInit(pin, OWNER_INVERTER, RESOURCE_INDEX(uartIndex));

@@ -20,11 +20,11 @@
 
 #pragma once
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
-#include "pg/pg.h"
 #include "drivers/serial.h"
+#include "pg/pg.h"
 
 typedef enum {
     PORTSHARING_UNUSED = 0,
@@ -77,7 +77,7 @@ extern const uint32_t baudRates[];
 
 // serial port identifiers are now fixed, these values are used by MSP commands.
 typedef enum {
-    SERIAL_PORT_NONE = -1,
+    SERIAL_PORT_NONE   = -1,
     SERIAL_PORT_USART1 = 0,
     SERIAL_PORT_USART2,
     SERIAL_PORT_USART3,
@@ -86,16 +86,16 @@ typedef enum {
     SERIAL_PORT_USART6,
     SERIAL_PORT_USART7,
     SERIAL_PORT_USART8,
-    SERIAL_PORT_USB_VCP = 20,
+    SERIAL_PORT_USB_VCP     = 20,
     SERIAL_PORT_SOFTSERIAL1 = 30,
     SERIAL_PORT_SOFTSERIAL2
 } serialPortIdentifier_e;
 
 extern const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT];
 
-#define SERIAL_PORT_IDENTIFIER_TO_INDEX(x) (((x) <= SERIAL_PORT_USART8) ? (x) : (RESOURCE_SOFT_OFFSET + ((x) - SERIAL_PORT_SOFTSERIAL1)))
+#define SERIAL_PORT_IDENTIFIER_TO_INDEX(x) (((x) <= SERIAL_PORT_USART8) ? (x) : (RESOURCE_SOFT_OFFSET + ((x)-SERIAL_PORT_SOFTSERIAL1)))
 
-#define SERIAL_PORT_IDENTIFIER_TO_UARTDEV(x) ((x) - SERIAL_PORT_USART1 + UARTDEV_1)
+#define SERIAL_PORT_IDENTIFIER_TO_UARTDEV(x) ((x)-SERIAL_PORT_USART1 + UARTDEV_1)
 
 //
 // runtime
@@ -123,7 +123,7 @@ typedef struct serialPortConfig_s {
 typedef struct serialConfig_s {
     serialPortConfig_t portConfigs[SERIAL_PORT_COUNT];
     uint16_t serial_update_rate_hz;
-    uint8_t reboot_character;               // which byte is used to reboot. Default 'R', could be changed carefully to something else.
+    uint8_t reboot_character; // which byte is used to reboot. Default 'R', could be changed carefully to something else.
 } serialConfig_t;
 
 PG_DECLARE(serialConfig_t, serialConfig);
@@ -159,14 +159,12 @@ serialPort_t *openSerialPort(
     void *rxCallbackData,
     uint32_t baudrate,
     portMode_e mode,
-    portOptions_e options
-);
+    portOptions_e options);
 void closeSerialPort(serialPort_t *serialPort);
 
 void waitForSerialPortToFinishTransmitting(serialPort_t *serialPort);
 
 baudRate_e lookupBaudRateIndex(uint32_t baudRate);
-
 
 //
 // msp/cli/bootloader

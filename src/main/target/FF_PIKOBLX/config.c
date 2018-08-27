@@ -18,8 +18,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "platform.h"
 
@@ -50,21 +50,21 @@
 #undef BRUSHED_MOTORS_PWM_RATE
 #endif
 
-#define BRUSHED_MOTORS_PWM_RATE 32000           // 32kHz
+#define BRUSHED_MOTORS_PWM_RATE 32000 // 32kHz
 
 void targetConfiguration(void)
 {
     if (hardwareMotorType == MOTOR_BRUSHED) {
         motorConfigMutable()->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
-        motorConfigMutable()->minthrottle = 1049;
+        motorConfigMutable()->minthrottle      = 1049;
 
 #if defined(FF_ACROWHOOPSP)
-        rxConfigMutable()->serialrx_provider = SERIALRX_SPEKTRUM2048;
-        rxConfigMutable()->spektrum_sat_bind = 5;
+        rxConfigMutable()->serialrx_provider           = SERIALRX_SPEKTRUM2048;
+        rxConfigMutable()->spektrum_sat_bind           = 5;
         rxConfigMutable()->spektrum_sat_bind_autoreset = 1;
 #else
         serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(SERIAL_PORT_USART2)].functionMask = FUNCTION_TELEMETRY_FRSKY_HUB;
-        rxConfigMutable()->serialrx_inverted = true;
+        rxConfigMutable()->serialrx_inverted                                                                 = true;
         featureEnable(FEATURE_TELEMETRY);
 #endif
         parseRcChannels("TAER1234", rxConfigMutable());
@@ -72,28 +72,28 @@ void targetConfiguration(void)
         for (uint8_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
             pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
 
-            pidProfile->pid[PID_ROLL].P = 80;
-            pidProfile->pid[PID_ROLL].I = 37;
-            pidProfile->pid[PID_ROLL].D = 35;
+            pidProfile->pid[PID_ROLL].P  = 80;
+            pidProfile->pid[PID_ROLL].I  = 37;
+            pidProfile->pid[PID_ROLL].D  = 35;
             pidProfile->pid[PID_PITCH].P = 100;
             pidProfile->pid[PID_PITCH].I = 37;
             pidProfile->pid[PID_PITCH].D = 35;
-            pidProfile->pid[PID_YAW].P = 180;
-            pidProfile->pid[PID_YAW].D = 45;
+            pidProfile->pid[PID_YAW].P   = 180;
+            pidProfile->pid[PID_YAW].D   = 45;
         }
 
         for (uint8_t rateProfileIndex = 0; rateProfileIndex < CONTROL_RATE_PROFILE_COUNT; rateProfileIndex++) {
             controlRateConfig_t *controlRateConfig = controlRateProfilesMutable(rateProfileIndex);
 
-            controlRateConfig->rcRates[FD_ROLL] = 100;
+            controlRateConfig->rcRates[FD_ROLL]  = 100;
             controlRateConfig->rcRates[FD_PITCH] = 100;
-            controlRateConfig->rcRates[FD_YAW] = 100;
-            controlRateConfig->rcExpo[FD_ROLL] = 15;
-            controlRateConfig->rcExpo[FD_PITCH] = 15;
-            controlRateConfig->rcExpo[FD_YAW] = 15;
-            controlRateConfig->rates[PID_ROLL] = 80;
-            controlRateConfig->rates[PID_PITCH] = 80;
-            controlRateConfig->rates[PID_YAW] = 80;
+            controlRateConfig->rcRates[FD_YAW]   = 100;
+            controlRateConfig->rcExpo[FD_ROLL]   = 15;
+            controlRateConfig->rcExpo[FD_PITCH]  = 15;
+            controlRateConfig->rcExpo[FD_YAW]    = 15;
+            controlRateConfig->rates[PID_ROLL]   = 80;
+            controlRateConfig->rates[PID_PITCH]  = 80;
+            controlRateConfig->rates[PID_YAW]    = 80;
         }
     }
 }

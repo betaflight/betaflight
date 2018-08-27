@@ -44,17 +44,16 @@ static void rotateVector(int32_t mat[3][3], float vec[3], float *out)
 {
     float tmp[3];
 
-    for(int i=0; i<3; i++) {
+    for (int i = 0; i < 3; i++) {
         tmp[i] = 0;
-        for(int j=0; j<3; j++) {
+        for (int j = 0; j < 3; j++) {
             tmp[i] += mat[j][i] * vec[j];
         }
     }
 
-    out[0]=tmp[0];
-    out[1]=tmp[1];
-    out[2]=tmp[2];
-
+    out[0] = tmp[0];
+    out[1] = tmp[1];
+    out[2] = tmp[2];
 }
 
 //static void initXAxisRotation(int32_t mat[][3], int32_t angle)
@@ -72,28 +71,28 @@ static void rotateVector(int32_t mat[3][3], float vec[3], float *out)
 
 static void initYAxisRotation(int32_t mat[][3], int32_t angle)
 {
-    mat[0][0] =  cos(angle*DEG2RAD);
-    mat[0][1] =  0;
-    mat[0][2] =  sin(angle*DEG2RAD);
-    mat[1][0] =  0;
-    mat[1][1] =  1;
-    mat[1][2] =  0;
-    mat[2][0] = -sin(angle*DEG2RAD);
-    mat[2][1] =  0;
-    mat[2][2] =  cos(angle*DEG2RAD);
+    mat[0][0] = cos(angle * DEG2RAD);
+    mat[0][1] = 0;
+    mat[0][2] = sin(angle * DEG2RAD);
+    mat[1][0] = 0;
+    mat[1][1] = 1;
+    mat[1][2] = 0;
+    mat[2][0] = -sin(angle * DEG2RAD);
+    mat[2][1] = 0;
+    mat[2][2] = cos(angle * DEG2RAD);
 }
 
 static void initZAxisRotation(int32_t mat[][3], int32_t angle)
 {
-    mat[0][0] =  cos(angle*DEG2RAD);
-    mat[0][1] = -sin(angle*DEG2RAD);
-    mat[0][2] =  0;
-    mat[1][0] =  sin(angle*DEG2RAD);
-    mat[1][1] =  cos(angle*DEG2RAD);
-    mat[1][2] =  0;
-    mat[2][0] =  0;
-    mat[2][1] =  0;
-    mat[2][2] =  1;
+    mat[0][0] = cos(angle * DEG2RAD);
+    mat[0][1] = -sin(angle * DEG2RAD);
+    mat[0][2] = 0;
+    mat[1][0] = sin(angle * DEG2RAD);
+    mat[1][1] = cos(angle * DEG2RAD);
+    mat[1][2] = 0;
+    mat[2][0] = 0;
+    mat[2][1] = 0;
+    mat[2][2] = 1;
 }
 
 static void testCW(sensor_align_e rotation, int32_t angle)
@@ -143,7 +142,7 @@ static void testCW(sensor_align_e rotation, int32_t angle)
     src[Z] = rand() % 5;
 
     rotateVector(matrix, src, test);
-    alignSensors(src,  rotation);
+    alignSensors(src, rotation);
     EXPECT_EQ(test[X], src[X]) << "Random alignment does not match in X-Axis. " << test[X] << " " << src[X];
     EXPECT_EQ(test[Y], src[Y]) << "Random alignment does not match in Y-Axis. " << test[Y] << " " << src[Y];
     EXPECT_EQ(test[Z], src[Z]) << "Random alignment does not match in Z-Axis. " << test[Z] << " " << src[Z];
@@ -207,7 +206,7 @@ static void testCWFlip(sensor_align_e rotation, int32_t angle)
     EXPECT_EQ(test[Y], src[Y]) << "Z-Unit alignment does not match in Y-Axis. " << test[Y] << " " << src[Y];
     EXPECT_EQ(test[Z], src[Z]) << "Z-Unit alignment does not match in Z-Axis. " << test[Z] << " " << src[Z];
 
-     // random vector to test
+    // random vector to test
     src[X] = rand() % 5;
     src[Y] = rand() % 5;
     src[Z] = rand() % 5;
@@ -223,7 +222,6 @@ static void testCWFlip(sensor_align_e rotation, int32_t angle)
     EXPECT_EQ(test[Y], src[Y]) << "Random alignment does not match in Y-Axis. " << test[Y] << " " << src[Y];
     EXPECT_EQ(test[Z], src[Z]) << "Random alignment does not match in Z-Axis. " << test[Z] << " " << src[Z];
 }
-
 
 TEST(AlignSensorTest, ClockwiseZeroDegrees)
 {

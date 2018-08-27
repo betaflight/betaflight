@@ -18,10 +18,10 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-#include <math.h>
 
 #include "platform.h"
 
@@ -51,9 +51,9 @@
 
 #include "pg/beeper.h"
 #include "pg/beeper_dev.h"
-#include "pg/rx.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/rx.h"
 
 #include "rx/rx.h"
 
@@ -72,20 +72,18 @@ pidProfile_t *currentPidProfile;
 PG_REGISTER_WITH_RESET_TEMPLATE(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 0);
 
 PG_RESET_TEMPLATE(pilotConfig_t, pilotConfig,
-    .name = { 0 }
-);
+                  .name = {0});
 
 PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 2);
 
 PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
-    .pidProfileIndex = 0,
-    .activeRateProfile = 0,
-    .debug_mode = DEBUG_MODE,
-    .task_statistics = true,
-    .cpu_overclock = 0,
-    .powerOnArmingGraceTime = 5,
-    .boardIdentifier = TARGET_BOARD_IDENTIFIER
-);
+                  .pidProfileIndex        = 0,
+                  .activeRateProfile      = 0,
+                  .debug_mode             = DEBUG_MODE,
+                  .task_statistics        = true,
+                  .cpu_overclock          = 0,
+                  .powerOnArmingGraceTime = 5,
+                  .boardIdentifier        = TARGET_BOARD_IDENTIFIER);
 
 uint8_t getCurrentPidProfileIndex(void)
 {
@@ -244,13 +242,13 @@ static void validateAndFixConfig(void)
 
 #if defined(USE_ADC)
     if (featureIsEnabled(FEATURE_RSSI_ADC)) {
-        rxConfigMutable()->rssi_channel = 0;
+        rxConfigMutable()->rssi_channel          = 0;
         rxConfigMutable()->rssi_src_frame_errors = false;
     } else
 #endif
-    if (rxConfigMutable()->rssi_channel
+        if (rxConfigMutable()->rssi_channel
 #if defined(USE_PWM) || defined(USE_PPM)
-        || featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_PARALLEL_PWM)
+            || featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_PARALLEL_PWM)
 #endif
         ) {
         rxConfigMutable()->rssi_src_frame_errors = false;
@@ -258,7 +256,7 @@ static void validateAndFixConfig(void)
 
     if (!rcSmoothingIsEnabled() || rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_T) {
         for (unsigned i = 0; i < MAX_PROFILE_COUNT; i++) {
-            pidProfilesMutable(i)->pid[PID_ROLL].F = 0;
+            pidProfilesMutable(i)->pid[PID_ROLL].F  = 0;
             pidProfilesMutable(i)->pid[PID_PITCH].F = 0;
         }
     }
@@ -271,12 +269,10 @@ static void validateAndFixConfig(void)
             pidProfilesMutable(i)->pid[PID_YAW].F = 0;
         }
     }
-    
+
 #if defined(USE_THROTTLE_BOOST)
     if (!rcSmoothingIsEnabled() ||
-        !(rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_RPYT
-        || rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_T
-        || rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_RPT)) {
+        !(rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_RPYT || rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_T || rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_RPT)) {
         for (unsigned i = 0; i < MAX_PROFILE_COUNT; i++) {
             pidProfilesMutable(i)->throttle_boost = 0;
         }
@@ -288,7 +284,7 @@ static void validateAndFixConfig(void)
 #if !defined(USE_GPS) || !defined(USE_GPS_RESCUE)
         || true
 #endif
-        ) {
+    ) {
         if (failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE) {
             failsafeConfigMutable()->failsafe_procedure = FAILSAFE_PROCEDURE_DROP_IT;
         }
@@ -304,8 +300,8 @@ static void validateAndFixConfig(void)
     }
 #endif
 
-// clear features that are not supported.
-// I have kept them all here in one place, some could be moved to sections of code above.
+    // clear features that are not supported.
+    // I have kept them all here in one place, some could be moved to sections of code above.
 
 #ifndef USE_PPM
     featureDisable(FEATURE_RX_PPM);
@@ -389,8 +385,7 @@ static void validateAndFixConfig(void)
         beeperConfigMutable()->dshotBeaconOffFlags = 0;
     }
 
-    if (beeperConfig()->dshotBeaconTone < DSHOT_CMD_BEACON1
-        || beeperConfig()->dshotBeaconTone > DSHOT_CMD_BEACON5) {
+    if (beeperConfig()->dshotBeaconTone < DSHOT_CMD_BEACON1 || beeperConfig()->dshotBeaconTone > DSHOT_CMD_BEACON5) {
         beeperConfigMutable()->dshotBeaconTone = DSHOT_CMD_BEACON1;
     }
 #endif
@@ -409,7 +404,7 @@ void validateAndFixGyroConfig(void)
         featureDisable(FEATURE_DYNAMIC_FILTER);
     }
 #endif
-    
+
     // Prevent invalid notch cutoff
     if (gyroConfig()->gyro_soft_notch_cutoff_1 >= gyroConfig()->gyro_soft_notch_hz_1) {
         gyroConfigMutable()->gyro_soft_notch_hz_1 = 0;
@@ -420,8 +415,8 @@ void validateAndFixGyroConfig(void)
 
     if (gyroConfig()->gyro_hardware_lpf == GYRO_HARDWARE_LPF_1KHZ_SAMPLE) {
         pidConfigMutable()->pid_process_denom = 1; // When gyro set to 1khz always set pid speed 1:1 to sampling speed
-        gyroConfigMutable()->gyro_sync_denom = 1;
-        gyroConfigMutable()->gyro_use_32khz = false;
+        gyroConfigMutable()->gyro_sync_denom  = 1;
+        gyroConfigMutable()->gyro_use_32khz   = false;
     }
 
     if (gyroConfig()->gyro_use_32khz) {
@@ -467,21 +462,21 @@ void validateAndFixGyroConfig(void)
     float motorUpdateRestriction;
     switch (motorConfig()->dev.motorPwmProtocol) {
     case PWM_TYPE_STANDARD:
-            motorUpdateRestriction = 1.0f / BRUSHLESS_MOTORS_PWM_RATE;
-            break;
+        motorUpdateRestriction = 1.0f / BRUSHLESS_MOTORS_PWM_RATE;
+        break;
     case PWM_TYPE_ONESHOT125:
-            motorUpdateRestriction = 0.0005f;
-            break;
+        motorUpdateRestriction = 0.0005f;
+        break;
     case PWM_TYPE_ONESHOT42:
-            motorUpdateRestriction = 0.0001f;
-            break;
+        motorUpdateRestriction = 0.0001f;
+        break;
 #ifdef USE_DSHOT
     case PWM_TYPE_DSHOT150:
-            motorUpdateRestriction = 0.000250f;
-            break;
+        motorUpdateRestriction = 0.000250f;
+        break;
     case PWM_TYPE_DSHOT300:
-            motorUpdateRestriction = 0.0001f;
-            break;
+        motorUpdateRestriction = 0.0001f;
+        break;
 #endif
     default:
         motorUpdateRestriction = 0.00003125f;
@@ -491,13 +486,13 @@ void validateAndFixGyroConfig(void)
     if (motorConfig()->dev.useUnsyncedPwm) {
         // Prevent overriding the max rate of motors
         if ((motorConfig()->dev.motorPwmProtocol <= PWM_TYPE_BRUSHED) && (motorConfig()->dev.motorPwmProtocol != PWM_TYPE_STANDARD)) {
-            const uint32_t maxEscRate = lrintf(1.0f / motorUpdateRestriction);
+            const uint32_t maxEscRate              = lrintf(1.0f / motorUpdateRestriction);
             motorConfigMutable()->dev.motorPwmRate = MIN(motorConfig()->dev.motorPwmRate, maxEscRate);
         }
     } else {
         const float pidLooptime = samplingTime * gyroConfig()->gyro_sync_denom * pidConfig()->pid_process_denom;
         if (pidLooptime < motorUpdateRestriction) {
-            const uint8_t minPidProcessDenom = constrain(motorUpdateRestriction / (samplingTime * gyroConfig()->gyro_sync_denom), 1, MAX_PID_PROCESS_DENOM);
+            const uint8_t minPidProcessDenom      = constrain(motorUpdateRestriction / (samplingTime * gyroConfig()->gyro_sync_denom), 1, MAX_PID_PROCESS_DENOM);
             pidConfigMutable()->pid_process_denom = MAX(pidConfigMutable()->pid_process_denom, minPidProcessDenom);
         }
     }

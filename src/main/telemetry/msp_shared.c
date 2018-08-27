@@ -36,18 +36,18 @@
 #include "telemetry/msp_shared.h"
 #include "telemetry/smartport.h"
 
-#define TELEMETRY_MSP_VERSION    1
-#define TELEMETRY_MSP_VER_SHIFT  5
-#define TELEMETRY_MSP_VER_MASK   (0x7 << TELEMETRY_MSP_VER_SHIFT)
+#define TELEMETRY_MSP_VERSION 1
+#define TELEMETRY_MSP_VER_SHIFT 5
+#define TELEMETRY_MSP_VER_MASK (0x7 << TELEMETRY_MSP_VER_SHIFT)
 #define TELEMETRY_MSP_ERROR_FLAG (1 << 5)
 #define TELEMETRY_MSP_START_FLAG (1 << 4)
-#define TELEMETRY_MSP_SEQ_MASK   0x0F
+#define TELEMETRY_MSP_SEQ_MASK 0x0F
 #define TELEMETRY_MSP_RES_ERROR (-10)
 
 enum {
-    TELEMETRY_MSP_VER_MISMATCH=0,
-    TELEMETRY_MSP_CRC_ERROR=1,
-    TELEMETRY_MSP_ERROR=2
+    TELEMETRY_MSP_VER_MISMATCH = 0,
+    TELEMETRY_MSP_CRC_ERROR    = 1,
+    TELEMETRY_MSP_ERROR        = 2
 };
 
 STATIC_UNIT_TESTED uint8_t checksum = 0;
@@ -59,21 +59,21 @@ static mspPacket_t mspTxPacket;
 
 void initSharedMsp(void)
 {
-    mspPackage.requestBuffer = (uint8_t *)&mspRxBuffer;
-    mspPackage.requestPacket = &mspRxPacket;
+    mspPackage.requestBuffer          = (uint8_t *)&mspRxBuffer;
+    mspPackage.requestPacket          = &mspRxPacket;
     mspPackage.requestPacket->buf.ptr = mspPackage.requestBuffer;
     mspPackage.requestPacket->buf.end = mspPackage.requestBuffer;
 
-    mspPackage.responseBuffer = (uint8_t *)&mspTxBuffer;
-    mspPackage.responsePacket = &mspTxPacket;
+    mspPackage.responseBuffer          = (uint8_t *)&mspTxBuffer;
+    mspPackage.responsePacket          = &mspTxPacket;
     mspPackage.responsePacket->buf.ptr = mspPackage.responseBuffer;
     mspPackage.responsePacket->buf.end = mspPackage.responseBuffer;
 }
 
 static void processMspPacket(void)
 {
-    mspPackage.responsePacket->cmd = 0;
-    mspPackage.responsePacket->result = 0;
+    mspPackage.responsePacket->cmd     = 0;
+    mspPackage.responsePacket->result  = 0;
     mspPackage.responsePacket->buf.end = mspPackage.responseBuffer;
 
     mspPostProcessFnPtr mspPostProcessFn = NULL;
@@ -89,8 +89,8 @@ static void processMspPacket(void)
 
 void sendMspErrorResponse(uint8_t error, int16_t cmd)
 {
-    mspPackage.responsePacket->cmd = cmd;
-    mspPackage.responsePacket->result = 0;
+    mspPackage.responsePacket->cmd     = cmd;
+    mspPackage.responsePacket->result  = 0;
     mspPackage.responsePacket->buf.end = mspPackage.responseBuffer;
 
     sbufWriteU8(&mspPackage.responsePacket->buf, error);
@@ -101,7 +101,7 @@ void sendMspErrorResponse(uint8_t error, int16_t cmd)
 bool handleMspFrame(uint8_t *frameStart, int frameLength)
 {
     static uint8_t mspStarted = 0;
-    static uint8_t lastSeq = 0;
+    static uint8_t lastSeq    = 0;
 
     if (sbufBytesRemaining(&mspPackage.responsePacket->buf) > 0) {
         mspStarted = 0;
@@ -111,12 +111,12 @@ bool handleMspFrame(uint8_t *frameStart, int frameLength)
         initSharedMsp();
     }
 
-    mspPacket_t *packet = mspPackage.requestPacket;
-    sbuf_t *frameBuf = sbufInit(&mspPackage.requestFrame, frameStart, frameStart + (uint8_t)frameLength);
-    sbuf_t *rxBuf = &mspPackage.requestPacket->buf;
-    const uint8_t header = sbufReadU8(frameBuf);
+    mspPacket_t *packet     = mspPackage.requestPacket;
+    sbuf_t *frameBuf        = sbufInit(&mspPackage.requestFrame, frameStart, frameStart + (uint8_t)frameLength);
+    sbuf_t *rxBuf           = &mspPackage.requestPacket->buf;
+    const uint8_t header    = sbufReadU8(frameBuf);
     const uint8_t seqNumber = header & TELEMETRY_MSP_SEQ_MASK;
-    const uint8_t version = (header & TELEMETRY_MSP_VER_MASK) >> TELEMETRY_MSP_VER_SHIFT;
+    const uint8_t version   = (header & TELEMETRY_MSP_VER_MASK) >> TELEMETRY_MSP_VER_SHIFT;
 
     if (version != TELEMETRY_MSP_VERSION) {
         sendMspErrorResponse(TELEMETRY_MSP_VER_MISMATCH, 0);
@@ -127,12 +127,12 @@ bool handleMspFrame(uint8_t *frameStart, int frameLength)
         // first packet in sequence
         uint8_t mspPayloadSize = sbufReadU8(frameBuf);
 
-        packet->cmd = sbufReadU8(frameBuf);
-        packet->result = 0;
+        packet->cmd     = sbufReadU8(frameBuf);
+        packet->result  = 0;
         packet->buf.ptr = mspPackage.requestBuffer;
         packet->buf.end = mspPackage.requestBuffer + mspPayloadSize;
 
-        checksum = mspPayloadSize ^ packet->cmd;
+        checksum   = mspPayloadSize ^ packet->cmd;
         mspStarted = 1;
     } else if (!mspStarted) {
         // no start packet yet, throw this one away
@@ -144,7 +144,7 @@ bool handleMspFrame(uint8_t *frameStart, int frameLength)
     }
 
     const uint8_t bufferBytesRemaining = sbufBytesRemaining(rxBuf);
-    const uint8_t frameBytesRemaining = sbufBytesRemaining(frameBuf);
+    const uint8_t frameBytesRemaining  = sbufBytesRemaining(frameBuf);
     uint8_t payload[frameBytesRemaining];
 
     if (bufferBytesRemaining >= frameBytesRemaining) {
@@ -179,12 +179,12 @@ bool handleMspFrame(uint8_t *frameStart, int frameLength)
 bool sendMspReply(uint8_t payloadSize, mspResponseFnPtr responseFn)
 {
     static uint8_t checksum = 0;
-    static uint8_t seq = 0;
+    static uint8_t seq      = 0;
 
     uint8_t payloadOut[payloadSize];
     sbuf_t payload;
     sbuf_t *payloadBuf = sbufInit(&payload, payloadOut, payloadOut + payloadSize);
-    sbuf_t *txBuf = &mspPackage.responsePacket->buf;
+    sbuf_t *txBuf      = &mspPackage.responsePacket->buf;
 
     // detect first reply packet
     if (txBuf->ptr == mspPackage.responseBuffer) {
@@ -203,7 +203,7 @@ bool sendMspReply(uint8_t payloadSize, mspResponseFnPtr responseFn)
         sbufWriteU8(payloadBuf, (seq++ & TELEMETRY_MSP_SEQ_MASK));
     }
 
-    const uint8_t bufferBytesRemaining = sbufBytesRemaining(txBuf);
+    const uint8_t bufferBytesRemaining  = sbufBytesRemaining(txBuf);
     const uint8_t payloadBytesRemaining = sbufBytesRemaining(payloadBuf);
     uint8_t frame[payloadBytesRemaining];
 
@@ -230,10 +230,9 @@ bool sendMspReply(uint8_t payloadSize, mspResponseFnPtr responseFn)
         }
         sbufWriteU8(payloadBuf, checksum);
 
-        while (sbufBytesRemaining(payloadBuf)>1) {
+        while (sbufBytesRemaining(payloadBuf) > 1) {
             sbufWriteU8(payloadBuf, 0);
         }
-
     }
 
     responseFn(payloadOut);

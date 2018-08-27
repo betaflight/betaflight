@@ -28,4 +28,3 @@ bool writeGpsPositionPrameToBST(void);
 bool writeRollPitchYawToBST(void);
 bool writeRCChannelToBST(void);
 bool writeFCModeToBST(void);
-

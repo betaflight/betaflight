@@ -56,11 +56,11 @@ void mpu6500GyroInit(gyroDev_t *gyro)
 {
     mpuGyroInit(gyro);
 
-    int gyro_range = INV_FSR_2000DPS;
+    int gyro_range  = INV_FSR_2000DPS;
     int accel_range = INV_FSR_16G;
 
     if (gyro->mpuDetectionResult.sensor == ICM_20601_SPI) {
-        gyro_range = gyro->gyro_high_fsr ? ICM_HIGH_RANGE_FSR_4000DPS : ICM_HIGH_RANGE_FSR_2000DPS;
+        gyro_range  = gyro->gyro_high_fsr ? ICM_HIGH_RANGE_FSR_4000DPS : ICM_HIGH_RANGE_FSR_2000DPS;
         accel_range = ICM_HIGH_RANGE_FSR_16G;
     }
 
@@ -83,9 +83,9 @@ void mpu6500GyroInit(gyroDev_t *gyro)
 
     // Data ready interrupt configuration
 #ifdef USE_MPU9250_MAG
-    busWriteRegister(&gyro->bus, MPU_RA_INT_PIN_CFG, MPU6500_BIT_INT_ANYRD_2CLEAR | MPU6500_BIT_BYPASS_EN);  // INT_ANYRD_2CLEAR, BYPASS_EN
+    busWriteRegister(&gyro->bus, MPU_RA_INT_PIN_CFG, MPU6500_BIT_INT_ANYRD_2CLEAR | MPU6500_BIT_BYPASS_EN); // INT_ANYRD_2CLEAR, BYPASS_EN
 #else
-    busWriteRegister(&gyro->bus, MPU_RA_INT_PIN_CFG, MPU6500_BIT_INT_ANYRD_2CLEAR);  // INT_ANYRD_2CLEAR
+    busWriteRegister(&gyro->bus, MPU_RA_INT_PIN_CFG, MPU6500_BIT_INT_ANYRD_2CLEAR); // INT_ANYRD_2CLEAR
 #endif
     delay(15);
 

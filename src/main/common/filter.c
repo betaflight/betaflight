@@ -18,10 +18,10 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-#include <math.h>
 
 #include "platform.h"
 
@@ -30,8 +30,8 @@
 #include "common/utils.h"
 
 #define M_LN2_FLOAT 0.69314718055994530942f
-#define M_PI_FLOAT  3.14159265358979323846f
-#define BIQUAD_Q 1.0f / sqrtf(2.0f)     /* quality factor - 2nd order butterworth*/
+#define M_PI_FLOAT 3.14159265358979323846f
+#define BIQUAD_Q 1.0f / sqrtf(2.0f) /* quality factor - 2nd order butterworth*/
 
 // NULL filter
 
@@ -41,19 +41,18 @@ FAST_CODE float nullFilterApply(filter_t *filter, float input)
     return input;
 }
 
-
 // PT1 Low Pass filter
 
 float pt1FilterGain(uint16_t f_cut, float dT)
 {
-    float RC = 1 / ( 2 * M_PI_FLOAT * f_cut);
+    float RC = 1 / (2 * M_PI_FLOAT * f_cut);
     return dT / (RC + dT);
 }
 
 void pt1FilterInit(pt1Filter_t *filter, float k)
 {
     filter->state = 0.0f;
-    filter->k = k;
+    filter->k     = k;
 }
 
 void pt1FilterUpdateCutoff(pt1Filter_t *filter, float k)
@@ -71,7 +70,7 @@ FAST_CODE float pt1FilterApply(pt1Filter_t *filter, float input)
 
 void slewFilterInit(slewFilter_t *filter, float slewLimit, float threshold)
 {
-    filter->state = 0.0f;
+    filter->state     = 0.0f;
     filter->slewLimit = slewLimit;
     filter->threshold = threshold;
 }
@@ -94,7 +93,8 @@ FAST_CODE float slewFilterApply(slewFilter_t *filter, float input)
 
 // get notch filter Q given center frequency (f0) and lower cutoff frequency (f1)
 // Q = f0 / (f2 - f1) ; f2 = f0^2 / f1
-float filterGetNotchQ(float centerFreq, float cutoffFreq) {
+float filterGetNotchQ(float centerFreq, float cutoffFreq)
+{
     return centerFreq * cutoffFreq / (centerFreq * centerFreq - cutoffFreq * cutoffFreq);
 }
 
@@ -108,8 +108,8 @@ void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refresh
 {
     // setup variables
     const float omega = 2.0f * M_PI_FLOAT * filterFreq * refreshRate * 0.000001f;
-    const float sn = sin_approx(omega);
-    const float cs = cos_approx(omega);
+    const float sn    = sin_approx(omega);
+    const float cs    = cos_approx(omega);
     const float alpha = sn / (2.0f * Q);
 
     float b0 = 0, b1 = 0, b2 = 0, a0 = 0, a1 = 0, a2 = 0;
@@ -126,12 +126,12 @@ void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refresh
         a2 = 1 - alpha;
         break;
     case FILTER_NOTCH:
-        b0 =  1;
+        b0 = 1;
         b1 = -2 * cs;
-        b2 =  1;
-        a0 =  1 + alpha;
+        b2 = 1;
+        a0 = 1 + alpha;
         a1 = -2 * cs;
-        a2 =  1 - alpha;
+        a2 = 1 - alpha;
         break;
     case FILTER_BPF:
         b0 = alpha;
@@ -198,17 +198,17 @@ FAST_CODE float biquadFilterApplyDF1(biquadFilter_t *filter, float input)
 FAST_CODE float biquadFilterApply(biquadFilter_t *filter, float input)
 {
     const float result = filter->b0 * input + filter->x1;
-    filter->x1 = filter->b1 * input - filter->a1 * result + filter->x2;
-    filter->x2 = filter->b2 * input - filter->a2 * result;
+    filter->x1         = filter->b1 * input - filter->a1 * result + filter->x2;
+    filter->x2         = filter->b2 * input - filter->a2 * result;
     return result;
 }
 
 void laggedMovingAverageInit(laggedMovingAverage_t *filter, uint16_t windowSize, float *buf)
 {
     filter->movingWindowIndex = 0;
-    filter->windowSize = windowSize;
-    filter->buf = buf;
-    filter->primed = false;
+    filter->windowSize        = windowSize;
+    filter->buf               = buf;
+    filter->primed            = false;
 }
 
 FAST_CODE float laggedMovingAverageUpdate(laggedMovingAverage_t *filter, float input)
@@ -219,9 +219,9 @@ FAST_CODE float laggedMovingAverageUpdate(laggedMovingAverage_t *filter, float i
 
     if (++filter->movingWindowIndex == filter->windowSize) {
         filter->movingWindowIndex = 0;
-        filter->primed = true;
+        filter->primed            = true;
     }
 
     const uint16_t denom = filter->primed ? filter->windowSize : filter->movingWindowIndex;
-    return filter->movingSum  / denom;
+    return filter->movingSum / denom;
 }

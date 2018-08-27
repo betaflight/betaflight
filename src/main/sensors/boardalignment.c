@@ -18,15 +18,15 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <math.h>
 #include <string.h>
 
 #include "platform.h"
 
-#include "common/maths.h"
 #include "common/axis.h"
+#include "common/maths.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
@@ -35,8 +35,8 @@
 
 #include "boardalignment.h"
 
-static bool standardBoardAlignment = true;     // board orientation correction
-static float boardRotation[3][3];              // matrix
+static bool standardBoardAlignment = true; // board orientation correction
+static float boardRotation[3][3];          // matrix
 
 // no template required since defaults are zero
 PG_REGISTER(boardAlignment_t, boardAlignment, PG_BOARD_ALIGNMENT, 0);
@@ -55,9 +55,9 @@ void initBoardAlignment(const boardAlignment_t *boardAlignment)
     standardBoardAlignment = false;
 
     fp_angles_t rotationAngles;
-    rotationAngles.angles.roll  = degreesToRadians(boardAlignment->rollDegrees );
+    rotationAngles.angles.roll  = degreesToRadians(boardAlignment->rollDegrees);
     rotationAngles.angles.pitch = degreesToRadians(boardAlignment->pitchDegrees);
-    rotationAngles.angles.yaw   = degreesToRadians(boardAlignment->yawDegrees  );
+    rotationAngles.angles.yaw   = degreesToRadians(boardAlignment->yawDegrees);
 
     buildRotationMatrix(&rotationAngles, boardRotation);
 }
