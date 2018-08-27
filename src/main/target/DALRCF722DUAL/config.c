@@ -31,14 +31,8 @@
 
 void targetValidateConfiguration(void)
 {
-	if(gyroConfigMutable()->gyro_to_use == GYRO_CONFIG_USE_GYRO_2) {
-		if((gyroConfigMutable()->gyroMovementCalibrationThreshold ==48) && (gyroConfigMutable()->gyroMovementCalibrationThreshold !=148)) {
-            gyroConfigMutable()->gyroMovementCalibrationThreshold = 148; //for cli set
-		}
-    } else {
-		if((gyroConfigMutable()->gyroMovementCalibrationThreshold ==148) && (gyroConfigMutable()->gyroMovementCalibrationThreshold !=48)) {
-			gyroConfigMutable()->gyroMovementCalibrationThreshold = 48; //for cli set
-		}
+    if (gyroConfig()->gyro_use_32khz && gyroConfig()->gyroMovementCalibrationThreshold < 148) {
+        gyroConfigMutable()->gyroMovementCalibrationThreshold = 148;
     }
 }
 
