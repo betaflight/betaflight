@@ -69,6 +69,7 @@ extern "C" {
     int sbufBytesRemaining(sbuf_t *buf);
     void initSharedMsp();
     uint16_t testBatteryVoltage = 0;
+
     int32_t testAmperage = 0;
     uint8_t mspTxData[64]; //max frame size
     sbuf_t mspTxDataBuf;
@@ -258,6 +259,9 @@ extern "C" {
     bool isBatteryVoltageConfigured(void) { return true; }
     uint16_t getBatteryVoltage(void) {
         return testBatteryVoltage;
+    }
+    uint16_t getBatteryAverageCellVoltage(void) {
+        return 0;
     }
     bool isAmperageConfigured(void) { return true; }
     int32_t getAmperage(void) {
