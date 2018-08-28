@@ -266,7 +266,7 @@ TEST(pidControllerTest, testPidLoop) {
     ASSERT_NEAR(-8.7, pidData[FD_YAW].I, calculateTolerance(-8.7));
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].D);
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
-    EXPECT_FLOAT_EQ(-132.25, pidData[FD_YAW].D);
+    ASSERT_NEAR(-132.25, pidData[FD_YAW].D, calculateTolerance(-132.25));
 
     // Match the stick to gyro to stop error
     simulatedSetpointRate[FD_ROLL] = 100;
@@ -458,7 +458,7 @@ TEST(pidControllerTest, testCrashRecoveryMode) {
     // Add additional verifications
 }
 
-TEST(pidControllerTest, pidSetpointTransition) {
+TEST(pidControllerTest, testFeedForward) {
 // TODO
 }
 
