@@ -144,6 +144,7 @@ void resetTest(void) {
         pidData[axis].P = 0;
         pidData[axis].I = 0;
         pidData[axis].D = 0;
+        pidData[axis].F = 0;
         pidData[axis].Sum = 0;
         simulatedSetpointRate[axis] = 0;
         simulatedRcDeflection[axis] = 0;
@@ -459,7 +460,45 @@ TEST(pidControllerTest, testCrashRecoveryMode) {
 }
 
 TEST(pidControllerTest, testFeedForward) {
-// TODO
+    resetTest();
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+
+    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].F);
+    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].F);
+    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].F);
+
+    // Match the stick to gyro to stop error
+    setStickPosition(FD_ROLL, 1.0f);
+    setStickPosition(FD_PITCH, -1.0f);
+    setStickPosition(FD_YAW, -1.0f);
+
+    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+
+    ASSERT_NEAR(2232.78, pidData[FD_ROLL].F, calculateTolerance(2232.78));
+    ASSERT_NEAR(-2061.03, pidData[FD_PITCH].F, calculateTolerance(-2061.03));
+    ASSERT_NEAR(-82.52, pidData[FD_YAW].F, calculateTolerance(-82.5));
+
+    // Match the stick to gyro to stop error
+    setStickPosition(FD_ROLL, 0.5f);
+    setStickPosition(FD_PITCH, -0.5f);
+    setStickPosition(FD_YAW, -0.5f);
+
+    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+
+    ASSERT_NEAR(-558.20, pidData[FD_ROLL].F, calculateTolerance(-558.20));
+    ASSERT_NEAR(515.26, pidData[FD_PITCH].F, calculateTolerance(515.26));
+    ASSERT_NEAR(-41.26, pidData[FD_YAW].F, calculateTolerance(-41.26));
+
+    for (int loop =0; loop <= 15; loop++) {
+        gyro.gyroADCf[FD_ROLL] += gyro.gyroADCf[FD_ROLL];
+        pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+    }
+
+    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].F);
+    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].F);
+    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].F);
+
 }
 
 TEST(pidControllerTest, testDtermFiltering) {
