@@ -10,7 +10,7 @@ A simple report for a single test can for example be made using this command:
 gcov -s src/main/sensors -o obj/test/ battery_unittest.cc
 ```
 
-To produce an coverage report in xml format usable by the Cobertura plugin in Jenkins requires installation of a  Python script called "gcovr" from github:
+To produce a coverage report in XML format usable by the Cobertura plugin in Jenkins requires installation of a  Python script called "gcovr" from github:
 
 https://github.com/gcovr/gcovr/tree/dev
 
@@ -20,4 +20,4 @@ Example usage in Jenkins:
 /gcovr-install-path/gcovr/scripts/gcovr obj/test --root=src/main -x > coverage.xml
 ```
 
-There are many other ways to produce test coverage reports in other formats, like html etc etc. 
+There are many other ways to produce test coverage reports in other formats, like html etc. 

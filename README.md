@@ -94,9 +94,9 @@ Betaflight is forked from Cleanflight, so thanks goes to all those whom have con
 Origins for this fork (Thanks!):
 * **Alexinparis** (for MultiWii),
 * **timecop** (for Baseflight),
-* **Dominic Clifton** (for Cleanflight), and
+* **Dominic Clifton** (for Cleanflight),
+* **borisbstyle** (for Betaflight), and
 * **Sambas** (for the original STM32F4 port).
-* **borisbstyle** (Fork from Cleanflight).
 
 The Betaflight Configurator is forked from Cleanflight Configurator and its origins.
 
