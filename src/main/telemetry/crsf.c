@@ -449,11 +449,12 @@ void initCrsfTelemetry(void)
         crsfSchedule[index++] = BV(CRSF_FRAME_BATTERY_SENSOR_INDEX);
     }
     crsfSchedule[index++] = BV(CRSF_FRAME_FLIGHT_MODE_INDEX);
+#ifdef USE_GPS
     if (featureIsEnabled(FEATURE_GPS)) {
         crsfSchedule[index++] = BV(CRSF_FRAME_GPS_INDEX);
     }
+#endif
     crsfScheduleCount = (uint8_t)index;
-
  }
 
 bool checkCrsfTelemetryState(void)

@@ -224,6 +224,7 @@ static const uint8_t ubloxGalileoInit[] = {
 typedef enum {
     GPS_UNKNOWN,
     GPS_INITIALIZING,
+    GPS_INITIALIZED,
     GPS_CHANGE_BAUD,
     GPS_CONFIGURE,
     GPS_RECEIVING_DATA,
@@ -280,6 +281,11 @@ void gpsInit(void)
     gpsSetState(GPS_UNKNOWN);
 
     gpsData.lastMessage = millis();
+    
+    if (gpsConfig()->provider == GPS_MSP) { // no serial ports used when GPS_MSP is configured
+        gpsSetState(GPS_INITIALIZED);
+        return;
+    }
 
     serialPortConfig_t *gpsPortConfig = findSerialPortConfig(FUNCTION_GPS);
     if (!gpsPortConfig) {
@@ -474,6 +480,8 @@ void gpsInitHardware(void)
         gpsInitUblox();
 #endif
         break;
+    default:
+        break;
     }
 }
 
@@ -502,6 +510,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
 
     switch (gpsData.state) {
         case GPS_UNKNOWN:
+        case GPS_INITIALIZED:
             break;
 
         case GPS_INITIALIZING:
@@ -574,6 +583,8 @@ bool gpsNewFrame(uint8_t c)
 #ifdef USE_GPS_UBLOX
         return gpsNewFrameUBLOX(c);
 #endif
+        break;
+    default:
         break;
     }
     return false;
