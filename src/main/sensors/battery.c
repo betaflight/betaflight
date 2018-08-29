@@ -183,17 +183,20 @@ void batteryUpdatePresence(void)
         /* battery has just been connected - calculate cells, warning voltages and reset state */
 
 
-        unsigned cells = (voltageMeter.filtered / batteryConfig()->vbatmaxcellvoltage) + 1;
-        if (cells > 8) {
-            // something is wrong, we expect 8 cells maximum (and autodetection will be problematic at 6+ cells)
-            cells = 8;
-        }
 
         consumptionState = voltageState = BATTERY_OK;
         if (batteryConfig()->forceBatteryCellCount != 0) {
             batteryCellCount = batteryConfig()->forceBatteryCellCount;
         } else {
-            batteryCellCount = cells;
+            unsigned cells = (voltageMeter.filtered / batteryConfig()->vbatmaxcellvoltage) + 1;
+            if (cells > 8) {
+                // something is wrong, we expect 8 cells maximum (and autodetection will be problematic at 6+ cells)
+                cells = 8;
+            }
+            else
+            {
+                batteryCellCount = cells;
+            }
         }
         batteryWarningVoltage = batteryCellCount * batteryConfig()->vbatwarningcellvoltage;
         batteryCriticalVoltage = batteryCellCount * batteryConfig()->vbatmincellvoltage;

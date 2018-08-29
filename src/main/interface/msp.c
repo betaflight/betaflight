@@ -654,7 +654,6 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU16(dst, batteryConfig()->batteryCapacity);
         sbufWriteU8(dst, batteryConfig()->voltageMeterSource);
         sbufWriteU8(dst, batteryConfig()->currentMeterSource);
-        sbufWriteU8(dst, batteryConfig()->forceBatteryCellCount);
         break;
 
     case MSP_TRANSPONDER_CONFIG: {
@@ -2419,7 +2418,6 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src, mspPos
         batteryConfigMutable()->batteryCapacity = sbufReadU16(src);
         batteryConfigMutable()->voltageMeterSource = sbufReadU8(src);
         batteryConfigMutable()->currentMeterSource = sbufReadU8(src);
-        batteryConfigMutable()->forceBatteryCellCount = sbufReadU8(src);
         break;
 
 #if defined(USE_OSD)
