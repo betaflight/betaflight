@@ -193,10 +193,7 @@ void batteryUpdatePresence(void)
                 // something is wrong, we expect 8 cells maximum (and autodetection will be problematic at 6+ cells)
                 cells = 8;
             }
-            else
-            {
-                batteryCellCount = cells;
-            }
+            batteryCellCount = cells;
         }
         batteryWarningVoltage = batteryCellCount * batteryConfig()->vbatwarningcellvoltage;
         batteryCriticalVoltage = batteryCellCount * batteryConfig()->vbatmincellvoltage;
