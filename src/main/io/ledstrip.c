@@ -77,6 +77,10 @@
 
 PG_REGISTER_WITH_RESET_FN(ledStripConfig_t, ledStripConfig, PG_LED_STRIP_CONFIG, 0);
 
+hsvColor_t *colors;
+const modeColorIndexes_t *modeColors;
+specialColorIndexes_t specialColors;
+
 static bool ledStripInitialised = false;
 static bool ledStripEnabled = true;
 

@@ -38,7 +38,8 @@ extern bool cmsInMenu;
 
 // Device management
 bool cmsDisplayPortRegister(displayPort_t *pDisplay);
-displayPort_t *pCurrentDisplay;
+
+extern displayPort_t *pCurrentDisplay;
 
 // For main.c and scheduler
 void cmsInit(void);

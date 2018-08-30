@@ -39,6 +39,7 @@
 #include "drivers/io.h"
 #include "drivers/light_led.h"
 #include "drivers/nvic.h"
+#include "drivers/serial_usb_vcp.h"
 #include "drivers/time.h"
 #include "drivers/usb_msc.h"
 
@@ -50,8 +51,6 @@
 #include "usb_io.h"
 #include "usbd_msc.h"
 #include "msc/usbd_storage.h"
-
-USBD_HandleTypeDef USBD_Device;
 
 #define DEBOUNCE_TIME_MS 20
 

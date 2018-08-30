@@ -36,8 +36,6 @@
 #include "drivers/nvic.h"
 #include "drivers/rcc.h"
 
-spiDevice_t spiDevice[SPIDEV_COUNT];
-
 #ifndef SPI2_SCK_PIN
 #define SPI2_NSS_PIN    PB12
 #define SPI2_SCK_PIN    PB13
