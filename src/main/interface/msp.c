@@ -1265,6 +1265,15 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, currentPidProfile->dterm_lowpass2_hz);
 
         break;
+
+    case MSP_ADVANCED_FILTER_CONFIG :
+#if defined(USE_GYRO_DATA_ANALYSE)
+        sbufWriteU8(dst, gyroConfig()->dyn_fft_location);
+        sbufWriteU8(dst, gyroConfig()->dyn_filter_width_percent);
+        sbufWriteU8(dst, gyroConfig()->dyn_filter_range);
+#endif
+        break;
+
     case MSP_PID_ADVANCED:
         sbufWriteU16(dst, 0);
         sbufWriteU16(dst, 0);
@@ -1843,6 +1852,15 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         pidInitFilters(currentPidProfile);
 
         break;
+        
+    case MSP_SET_ADVANCED_FILTER_CONFIG :
+#if defined(USE_GYRO_DATA_ANALYSE)
+            gyroConfigMutable()->dyn_fft_location = sbufReadU8(src);
+            gyroConfigMutable()->dyn_filter_width_percent = sbufReadU8(src);
+            gyroConfigMutable()->dyn_filter_range = sbufReadU8(src);
+#endif
+        break;
+
     case MSP_SET_PID_ADVANCED:
         sbufReadU16(src);
         sbufReadU16(src);

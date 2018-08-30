@@ -218,6 +218,9 @@
 
 #define MSP_SET_ARMING_DISABLED         99
 
+#define MSP_ADVANCED_FILTER_CONFIG      227
+#define MSP_SET_ADVANCED_FILTER_CONFIG  228
+
 //
 // OSD specific
 //
