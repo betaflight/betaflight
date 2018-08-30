@@ -210,7 +210,7 @@ CFLAGS     += $(ARCH_FLAGS) \
               -Wall -Wextra -Wunsafe-loop-optimizations -Wdouble-promotion \
               -ffunction-sections \
               -fdata-sections \
-			  -fno-common \
+              -fno-common \
               -pedantic \
               $(DEVICE_FLAGS) \
               -D_GNU_SOURCE \
