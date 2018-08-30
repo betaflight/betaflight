@@ -353,7 +353,7 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
                 cc2500ReadFifo(packet, ccLen);
                 uint16_t lcrc= calculateCrc(&packet[3], (ccLen - 7));
                 if((lcrc >> 8) == packet[ccLen-4] && (lcrc&0x00FF) == packet[ccLen - 3]){ // check calculateCrc
-                    if (packet[0] == 0x1D) {
+                    if (packet[0] == 0x20) {
                         if ((packet[1] == rxFrSkySpiConfig()->bindTxId[0]) &&
                                 (packet[2] == rxFrSkySpiConfig()->bindTxId[1]) &&
                                 (rxFrSkySpiConfig()->rxNum == 0 || packet[6] == 0 || packet[6] == rxFrSkySpiConfig()->rxNum)) {
