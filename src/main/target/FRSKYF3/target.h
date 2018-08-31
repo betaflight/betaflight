@@ -54,7 +54,7 @@
 
 #define USE_EXTI
 #define USE_GYRO_EXTI
-#define GYRO_1_EXTI_PINPC13
+#define GYRO_1_EXTI_PIN         PC13
 #define USE_MPU_DATA_READY_SIGNAL
 #define EXTI15_10_CALLBACK_HANDLER_COUNT 1 // MPU_INT, SDCardDetect
 #define MPU_ADDRESS             0x69

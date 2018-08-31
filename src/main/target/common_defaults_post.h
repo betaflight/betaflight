@@ -251,3 +251,9 @@
 #else
 #define GYRO_I2C_ADDRESS 0 // AUTO
 #endif
+
+#ifdef USE_MULTI_GYRO
+#define MAX_GYRODEV_COUNT 2
+#else
+#define MAX_GYRODEV_COUNT 1
+#endif

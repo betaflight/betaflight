@@ -37,7 +37,7 @@
 #define USE_MPU_DATA_READY_SIGNAL
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_GYRO_EXTI
-#define GYRO_1_EXTI_PINPB15 // XXX Should be gone
+#define GYRO_1_EXTI_PIN         PB15 // XXX Should be gone
 
 #define USE_ACC
 #define USE_GYRO

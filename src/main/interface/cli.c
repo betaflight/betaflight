@@ -3824,7 +3824,6 @@ const cliResourceValue_t resourceTable[] = {
 #ifdef USE_RX_SPI
     DEFS( OWNER_RX_SPI_CS,     PG_RX_SPI_CONFIG, rxSpiConfig_t, csnTag ),
 #endif
-#define PG_ARRAY_OFFSET(type, index, member) (index * sizeof(type) + offsetof(type, member))
     DEFW( OWNER_GYRO_CS,       PG_GYRO_DEVICE_CONFIG, gyroDeviceConfig_t, csnTag, 2 ),
 };
 

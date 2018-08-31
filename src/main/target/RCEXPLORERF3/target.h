@@ -47,7 +47,7 @@
 #define USE_EXTI
 #define USE_MPU_DATA_READY_SIGNAL
 #define USE_GYRO_EXTI
-#define GYRO_1_EXTI_PINPA15
+#define GYRO_1_EXTI_PIN         PA15
 
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6000

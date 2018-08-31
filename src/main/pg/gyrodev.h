@@ -22,12 +22,9 @@
 
 
 #include <stdint.h>
-//#include <stdbool.h>
 
 #include "pg/pg.h"
 #include "drivers/io_types.h"
-#include "drivers/sensor.h"
-#include "sensors/gyro.h"
 
 typedef struct gyroDeviceConfig_s {
     int8_t index;
@@ -37,13 +34,7 @@ typedef struct gyroDeviceConfig_s {
     uint8_t i2cBus;
     uint8_t i2cAddress;
     ioTag_t extiTag;
-    sensor_align_e align;
+    uint8_t align;        // sensor_align_e
 } gyroDeviceConfig_t;
-
-#ifdef USE_MULTI_GYRO
-#define MAX_GYRODEV_COUNT 2
-#else
-#define MAX_GYRODEV_COUNT 1
-#endif
 
 PG_DECLARE_ARRAY(gyroDeviceConfig_t, MAX_GYRODEV_COUNT, gyroDeviceConfig);
