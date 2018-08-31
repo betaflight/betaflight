@@ -115,13 +115,13 @@
 
 #elif defined(IRCSYNERGYF3)
 #define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN      CW270_DEG
+#define GYRO_1_ALIGN            CW270_DEG
 
 #define USE_ACC_SPI_MPU6000
-#define ACC_MPU6000_ALIGN       CW270_DEG
+#define ACC_1_ALIGN             CW270_DEG
 
-#define MPU6000_CS_PIN           PB12
-#define MPU6000_SPI_INSTANCE     SPI2
+#define GYRO_1_CS_PIN           PB12
+#define GYRO_1_SPI_INSTANCE     SPI2
 #else
 #define USE_GYRO_MPU6050
 #define GYRO_1_ALIGN            CW270_DEG
