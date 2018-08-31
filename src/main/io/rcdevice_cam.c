@@ -145,6 +145,7 @@ static void rcdeviceSimulationRespHandle(rcdeviceResponseParseContext_t *ctx)
 {
     if (ctx->result != RCDEVICE_RESP_SUCCESS) {
         rcdeviceSimulationOSDCableFailed(ctx);
+        waitingDeviceResponse = false;
         return;
     }
 
@@ -250,21 +251,19 @@ static void rcdevice5KeySimulationProcess(timeUs_t currentTimeUs)
         return;
     }
 
-    if (waitingDeviceResponse) {
-        return;
-    }
-
     if (isButtonPressed) {
         if (IS_MID(YAW) && IS_MID(PITCH) && IS_MID(ROLL)) {
-            if (rcdeviceIs5KeyEnabled()) {
-                rcdeviceSend5KeyOSDCableSimualtionEvent(RCDEVICE_CAM_KEY_RELEASE);
-                waitingDeviceResponse = true;
-            }
+            rcdeviceSend5KeyOSDCableSimualtionEvent(RCDEVICE_CAM_KEY_RELEASE);
+            waitingDeviceResponse = true;
         }
     } else {
+        if (waitingDeviceResponse) {
+            return;
+        }
+
         rcdeviceCamSimulationKeyEvent_e key = RCDEVICE_CAM_KEY_NONE;
 
-        if (IS_MID(THROTTLE) && IS_MID(ROLL) && IS_MID(PITCH) && IS_LO(YAW)) { // Disconnect HI YAW
+        if (IS_MID(THROTTLE) && IS_MID(ROLL) && IS_MID(PITCH) && IS_LO(YAW)) { // Disconnect Lo YAW
             if (rcdeviceInMenu) {
                 key = RCDEVICE_CAM_KEY_CONNECTION_CLOSE;
             }
@@ -289,10 +288,9 @@ static void rcdevice5KeySimulationProcess(timeUs_t currentTimeUs)
         }
 
         if (key != RCDEVICE_CAM_KEY_NONE) {
-            if (rcdeviceIs5KeyEnabled()) {
-                rcdeviceSend5KeyOSDCableSimualtionEvent(key);
-                waitingDeviceResponse = true;
-            }
+            rcdeviceSend5KeyOSDCableSimualtionEvent(key);
+            isButtonPressed = true;
+            waitingDeviceResponse = true;
         }
     }
 }
@@ -300,9 +298,12 @@ static void rcdevice5KeySimulationProcess(timeUs_t currentTimeUs)
 void rcdeviceUpdate(timeUs_t currentTimeUs)
 {
     rcdeviceReceive(currentTimeUs);
-    
+
     rcdeviceCameraControlProcess();
-    rcdevice5KeySimulationProcess(currentTimeUs);
+
+    if (rcdeviceIs5KeyEnabled()) {
+        rcdevice5KeySimulationProcess(currentTimeUs);
+    }
 }
 
 void rcdeviceInit(void)

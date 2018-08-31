@@ -39,6 +39,11 @@
 #define RCDEVICE_PROTOCOL_COMMAND_5KEY_SIMULATION_RELEASE           0x03
 #define RCDEVICE_PROTOCOL_COMMAND_5KEY_CONNECTION                   0x04
 
+// Old protocol defines
+#define RCSPLIT_PACKET_HEADER           0x55
+#define RCSPLIT_PACKET_CMD_CTRL  0x01
+#define RCSPLIT_PACKET_TAIL     0xaa
+
 // Feature Flag sets, it's a uint16_t flag
 typedef enum {
     RCDEVICE_PROTOCOL_FEATURE_SIMULATE_POWER_BUTTON    = (1 << 0),
@@ -99,7 +104,7 @@ typedef enum {
 // end of Runcam Device definition
 
 typedef struct runcamDeviceInfo_s {
-    rcdevice_protocol_version_e protocolVersion;
+    rcdevice_protocol_version_e protocolVer;
     uint16_t features;
 } runcamDeviceInfo_t;
 
@@ -110,7 +115,7 @@ typedef struct runcamDevice_s {
     bool isReady;
 } runcamDevice_t;
 
-#define MAX_WAITING_RESPONSES 5
+#define MAX_WAITING_RESPONSES 20
 
 typedef enum {
     RCDEVICE_RESP_SUCCESS = 0,

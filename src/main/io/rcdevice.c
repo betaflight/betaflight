@@ -165,8 +165,10 @@ static void runcamDeviceSendRequestAndWaitingResp(runcamDevice_t *device, uint8_
     responseCtx.parserFunc = parseFunc;
     responseCtx.device = device;
     responseCtx.protocolVer = RCDEVICE_PROTOCOL_VERSION_1_0;
-    memcpy(responseCtx.paramData, paramData, paramDataLen);
-    responseCtx.paramDataLen = paramDataLen;
+    if (paramData != NULL) {
+        memcpy(responseCtx.paramData, paramData, paramDataLen);
+        responseCtx.paramDataLen = paramDataLen;
+    }
     responseCtx.userInfo = userInfo;
     rcdeviceRespCtxQueuePushRespCtx(&watingResponseQueue, &responseCtx);
 
@@ -174,14 +176,81 @@ static void runcamDeviceSendRequestAndWaitingResp(runcamDevice_t *device, uint8_
     runcamDeviceSendPacket(device, commandID, paramData, paramDataLen);
 }
 
+static void runcamDeviceParseV1DeviceInfo(rcdeviceResponseParseContext_t *ctx)
+{
+    if (ctx->result != RCDEVICE_RESP_SUCCESS) {
+        return;
+    }
+
+    runcamDevice_t *device = ctx->device;
+    device->info.protocolVer = RCDEVICE_PROTOCOL_RCSPLIT_VERSION;
+    device->info.features = RCDEVICE_PROTOCOL_FEATURE_SIMULATE_POWER_BUTTON | RCDEVICE_PROTOCOL_FEATURE_SIMULATE_WIFI_BUTTON | RCDEVICE_PROTOCOL_FEATURE_CHANGE_MODE;
+    device->isReady = true;
+}
+
+static uint8_t crc_high_first(uint8_t *ptr, uint8_t len)
+{
+    uint8_t i;
+    uint8_t crc=0x00;
+    while (len--) {
+        crc ^= *ptr++;
+        for (i=8; i>0; --i) {
+            if (crc & 0x80)
+                crc = (crc << 1) ^ 0x31;
+            else
+                crc = (crc << 1);
+        }
+    }
+    return (crc);
+}
+
+// for the rcsplits that firmware <= 1.1.0
+static void runcamSplitSendCommand(runcamDevice_t *device, uint8_t argument)
+{
+    if (!device->serialPort) {
+        return;
+    }
+
+    uint8_t uart_buffer[5] = {0};
+    uint8_t crc = 0;
+
+    uart_buffer[0] = RCSPLIT_PACKET_HEADER;
+    uart_buffer[1] = RCSPLIT_PACKET_CMD_CTRL;
+    uart_buffer[2] = argument;
+    uart_buffer[3] = RCSPLIT_PACKET_TAIL;
+    crc = crc_high_first(uart_buffer, 4);
+
+    // build up a full request [header]+[command]+[argument]+[crc]+[tail]
+    uart_buffer[3] = crc;
+    uart_buffer[4] = RCSPLIT_PACKET_TAIL;
+
+    // write to device
+    serialWriteBuf(device->serialPort, uart_buffer, 5);
+}
+
 static void runcamDeviceParseV2DeviceInfo(rcdeviceResponseParseContext_t *ctx)
 {
     if (ctx->result != RCDEVICE_RESP_SUCCESS) {
-        ctx->device->isReady = false;
+        runcamDeviceFlushRxBuffer(ctx->device);
+
+        rcdeviceResponseParseContext_t responseCtx;
+        memset(&responseCtx, 0, sizeof(rcdeviceResponseParseContext_t));
+        responseCtx.recvBuf = recvBuf;
+        responseCtx.command = 0xFF;
+        responseCtx.maxRetryTimes = rcdeviceConfig()->initDeviceAttempts;
+        responseCtx.expectedRespLen = 5;
+        responseCtx.timeout = rcdeviceConfig()->initDeviceAttemptInterval;
+        responseCtx.timeoutTimestamp = millis() + rcdeviceConfig()->initDeviceAttemptInterval;
+        responseCtx.parserFunc = runcamDeviceParseV1DeviceInfo;
+        responseCtx.device = ctx->device;
+        responseCtx.protocolVer = RCDEVICE_PROTOCOL_RCSPLIT_VERSION;
+        rcdeviceRespCtxQueuePushRespCtx(&watingResponseQueue, &responseCtx);
+
+        runcamSplitSendCommand(ctx->device, 0xFF);
         return;
     }
     runcamDevice_t *device = ctx->device;
-    device->info.protocolVersion = ctx->recvBuf[1];
+    device->info.protocolVer = ctx->recvBuf[1];
 
     uint8_t featureLowBits = ctx->recvBuf[2];
     uint8_t featureHighBits = ctx->recvBuf[3];
@@ -216,10 +285,13 @@ void runcamDeviceInit(runcamDevice_t *device)
     }
 }
 
+
 bool runcamDeviceSimulateCameraButton(runcamDevice_t *device, uint8_t operation)
 {
-    if (device->info.protocolVersion == RCDEVICE_PROTOCOL_VERSION_1_0) {
+    if (device->info.protocolVer == RCDEVICE_PROTOCOL_VERSION_1_0) {
         runcamDeviceSendPacket(device, RCDEVICE_PROTOCOL_COMMAND_CAMERA_CONTROL, &operation, sizeof(operation));
+    } else if (device->info.protocolVer == RCDEVICE_PROTOCOL_RCSPLIT_VERSION) {
+        runcamSplitSendCommand(device, operation + 1);
     } else {
         return false;
     }
@@ -232,7 +304,7 @@ bool runcamDeviceSimulateCameraButton(runcamDevice_t *device, uint8_t operation)
 void runcamDeviceOpen5KeyOSDCableConnection(runcamDevice_t *device, rcdeviceRespParseFunc parseFunc)
 {
     uint8_t operation = RCDEVICE_PROTOCOL_5KEY_CONNECTION_OPEN;
-    runcamDeviceSendRequestAndWaitingResp(device, RCDEVICE_PROTOCOL_COMMAND_5KEY_CONNECTION, &operation, sizeof(uint8_t), 200, 0, NULL, parseFunc);
+    runcamDeviceSendRequestAndWaitingResp(device, RCDEVICE_PROTOCOL_COMMAND_5KEY_CONNECTION, &operation, sizeof(uint8_t), 400, 2, NULL, parseFunc);
 }
 
 // when the control was stop, must call this method to the camera to disconnect
@@ -240,7 +312,7 @@ void runcamDeviceOpen5KeyOSDCableConnection(runcamDevice_t *device, rcdeviceResp
 void runcamDeviceClose5KeyOSDCableConnection(runcamDevice_t *device, rcdeviceRespParseFunc parseFunc)
 {
     uint8_t operation = RCDEVICE_PROTOCOL_5KEY_CONNECTION_CLOSE;
-    runcamDeviceSendRequestAndWaitingResp(device, RCDEVICE_PROTOCOL_COMMAND_5KEY_CONNECTION, &operation, sizeof(uint8_t), 200, 0, NULL, parseFunc);
+    runcamDeviceSendRequestAndWaitingResp(device, RCDEVICE_PROTOCOL_COMMAND_5KEY_CONNECTION, &operation, sizeof(uint8_t), 400, 2, NULL, parseFunc);
 }
 
 // simulate button press event of 5 key osd cable with special button
@@ -250,13 +322,13 @@ void runcamDeviceSimulate5KeyOSDCableButtonPress(runcamDevice_t *device, uint8_t
         return;
     }
 
-    runcamDeviceSendRequestAndWaitingResp(device, RCDEVICE_PROTOCOL_COMMAND_5KEY_SIMULATION_PRESS, &operation, sizeof(uint8_t), 200, 0, NULL, parseFunc);
+    runcamDeviceSendRequestAndWaitingResp(device, RCDEVICE_PROTOCOL_COMMAND_5KEY_SIMULATION_PRESS, &operation, sizeof(uint8_t), 400, 2, NULL, parseFunc);
 }
 
 // simulate button release event of 5 key osd cable
 void runcamDeviceSimulate5KeyOSDCableButtonRelease(runcamDevice_t *device, rcdeviceRespParseFunc parseFunc)
 {
-    runcamDeviceSendRequestAndWaitingResp(device, RCDEVICE_PROTOCOL_COMMAND_5KEY_SIMULATION_RELEASE, NULL, 0, 200, 0, NULL, parseFunc);
+    runcamDeviceSendRequestAndWaitingResp(device, RCDEVICE_PROTOCOL_COMMAND_5KEY_SIMULATION_RELEASE, NULL, 0, 400, 2, NULL, parseFunc);
 }
 
 static rcdeviceResponseParseContext_t* getWaitingResponse(timeMs_t currentTimeMs)
@@ -264,7 +336,13 @@ static rcdeviceResponseParseContext_t* getWaitingResponse(timeMs_t currentTimeMs
     rcdeviceResponseParseContext_t *respCtx = rcdeviceRespCtxQueuePeekFront(&watingResponseQueue);
     while (respCtx != NULL && respCtx->timeoutTimestamp != 0 && currentTimeMs > respCtx->timeoutTimestamp) {
         if (respCtx->maxRetryTimes > 0) {
-            runcamDeviceSendPacket(respCtx->device, respCtx->command, respCtx->paramData, respCtx->paramDataLen);
+            if (respCtx->protocolVer == RCDEVICE_PROTOCOL_VERSION_1_0) {
+                runcamDeviceSendPacket(respCtx->device, respCtx->command, respCtx->paramData, respCtx->paramDataLen);
+            } else if (respCtx->protocolVer == RCDEVICE_PROTOCOL_RCSPLIT_VERSION) {
+                runcamSplitSendCommand(respCtx->device, respCtx->command);
+            }
+
+            respCtx->recvRespLen = 0;
             respCtx->timeoutTimestamp = currentTimeMs + respCtx->timeout;
             respCtx->maxRetryTimes -= 1;
             respCtx = NULL;
@@ -290,6 +368,14 @@ void rcdeviceReceive(timeUs_t currentTimeUs)
     rcdeviceResponseParseContext_t *respCtx = NULL;
     while ((respCtx = getWaitingResponse(millis())) != NULL && serialRxBytesWaiting(respCtx->device->serialPort)) {
         const uint8_t c = serialRead(respCtx->device->serialPort);
+
+        if (respCtx->recvRespLen == 0) {
+            // Only start receiving packet when we found a header
+            if ((respCtx->protocolVer == RCDEVICE_PROTOCOL_VERSION_1_0 && c != RCDEVICE_PROTOCOL_HEADER) || (respCtx->protocolVer == RCDEVICE_PROTOCOL_RCSPLIT_VERSION && c != RCSPLIT_PACKET_HEADER)) {
+                continue;
+            }
+        }
+        
         respCtx->recvBuf[respCtx->recvRespLen] = c;
         respCtx->recvRespLen += 1;
         
@@ -302,6 +388,9 @@ void rcdeviceReceive(timeUs_t currentTimeUs)
                     crc = crc8_dvb_s2(crc, respCtx->recvBuf[i]);
                 }
                 respCtx->result = (crc == 0) ? RCDEVICE_RESP_SUCCESS : RCDEVICE_RESP_INCORRECT_CRC;
+            } else if (respCtx->protocolVer == RCDEVICE_PROTOCOL_RCSPLIT_VERSION) {
+                // do nothing, just call parserFunc
+                respCtx->result = RCDEVICE_RESP_SUCCESS;
             }
 
             if (respCtx->parserFunc != NULL) {
