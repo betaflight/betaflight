@@ -37,7 +37,6 @@
 #define USE_MPU_DATA_READY_SIGNAL
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_GYRO_EXTI
-#define GYRO_1_EXTI_PIN         PB15 // XXX Should be gone
 
 #define USE_ACC
 #define USE_GYRO
@@ -50,7 +49,7 @@
 #define GYRO_1_CS_PIN           NONE
 #define GYRO_1_ALIGN            ALIGN_DEFAULT
 #define ACC_1_ALIGN             ALIGN_DEFAULT
-#define GYRO_1_EXTI_PIN         NONE
+#define GYRO_1_EXTI_PIN         PB15 // XXX Should be gone
 
 #define GYRO_2_SPI_INSTANCE     SPI1
 #define GYRO_2_CS_PIN           NONE
