@@ -1266,7 +1266,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 
         break;
 
-    case MSP_ADVANCED_FILTER_CONFIG :
+    case MSP_DYN_FILTER_CONFIG :
 #if defined(USE_GYRO_DATA_ANALYSE)
         sbufWriteU8(dst, gyroConfig()->dyn_fft_location);
         sbufWriteU8(dst, gyroConfig()->dyn_filter_width_percent);
@@ -1852,8 +1852,8 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         pidInitFilters(currentPidProfile);
 
         break;
-        
-    case MSP_SET_ADVANCED_FILTER_CONFIG :
+
+    case MSP_SET_DYN_FILTER_CONFIG :
 #if defined(USE_GYRO_DATA_ANALYSE)
             gyroConfigMutable()->dyn_fft_location = sbufReadU8(src);
             gyroConfigMutable()->dyn_filter_width_percent = sbufReadU8(src);

@@ -218,8 +218,8 @@
 
 #define MSP_SET_ARMING_DISABLED         99
 
-#define MSP_ADVANCED_FILTER_CONFIG      227
-#define MSP_SET_ADVANCED_FILTER_CONFIG  228
+#define MSP_DYN_FILTER_CONFIG           227 //out message         Get dynamics settings - betaflight - for test only
+#define MSP_SET_DYN_FILTER_CONFIG       228 //in message          Set dynamics settings - betaflight - for test only
 
 //
 // OSD specific
