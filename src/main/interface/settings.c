@@ -528,6 +528,7 @@ const clivalue_t valueTable[] = {
 #endif
 #ifdef USE_DUAL_GYRO
     { "gyro_to_use",                VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GYRO }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_to_use) },
+    { "gyro_for_axis",              VAR_UINT8  | MASTER_VALUE | MODE_ARRAY,  .config.array.length = { XYZ_AXIS_COUNT }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_for_axis[3]) }
 #endif
 #if defined(USE_GYRO_DATA_ANALYSE)
     { "dyn_fft_location",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_DYNAMIC_FFT_LOCATION }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_fft_location) },

@@ -90,6 +90,8 @@ static FAST_RAM_ZERO_INIT uint8_t gyroDebugMode;
 
 static uint8_t gyroToUse = 0;
 
+static uint8_t gyroForAxis[XYZ_AXIS_COUNT] = {0, 0, 0}; 
+
 #ifdef USE_GYRO_OVERFLOW_CHECK
 static FAST_RAM_ZERO_INIT uint8_t overflowAxisMask;
 #endif
@@ -549,6 +551,11 @@ bool gyroInit(void)
 
     bool ret = false;
     gyroToUse = gyroConfig()->gyro_to_use;
+    
+    for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+        gyroForAxis[i] = gyroConfig()->gyro_for_axis[i];
+    }
+
 
 #if defined(USE_DUAL_GYRO) && defined(GYRO_1_CS_PIN)
     if (gyroToUse == GYRO_CONFIG_USE_GYRO_1 || gyroToUse == GYRO_CONFIG_USE_GYRO_BOTH) {
@@ -1121,9 +1128,19 @@ FAST_CODE void gyroUpdate(timeUs_t currentTimeUs)
         gyroUpdateSensor(&gyroSensor1, currentTimeUs);
         gyroUpdateSensor(&gyroSensor2, currentTimeUs);
         if (isGyroSensorCalibrationComplete(&gyroSensor1) && isGyroSensorCalibrationComplete(&gyroSensor2)) {
-            gyro.gyroADCf[X] = (gyroSensor1.gyroDev.gyroADCf[X] + gyroSensor2.gyroDev.gyroADCf[X]) / 2.0f;
-            gyro.gyroADCf[Y] = (gyroSensor1.gyroDev.gyroADCf[Y] + gyroSensor2.gyroDev.gyroADCf[Y]) / 2.0f;
-            gyro.gyroADCf[Z] = (gyroSensor1.gyroDev.gyroADCf[Z] + gyroSensor2.gyroDev.gyroADCf[Z]) / 2.0f;
+            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+                switch (gyroForAxis[axis]) {
+                case GYRO_CONFIG_USE_GYRO_BOTH:
+                    gyro.gyroADCf[axis] = (gyroSensor1.gyroDev.gyroADCf[axis] + gyroSensor2.gyroDev.gyroADCf[axis]) / 2.0f;
+                    break;
+                case GYRO_CONFIG_USE_GYRO_1:
+                    gyro.gyroADCf[axis] = gyroSensor1.gyroDev.gyroADCf[axis];
+                    break;
+                case GYRO_CONFIG_USE_GYRO_2;
+                    gyro.gyroADCf[axis] = gyroSensor2.gyroDev.gyroADCf[axis];
+                    break;
+                }
+            }
         }
         DEBUG_SET(DEBUG_DUAL_GYRO_RAW, 0, gyroSensor1.gyroDev.gyroADCRaw[X]);
         DEBUG_SET(DEBUG_DUAL_GYRO_RAW, 1, gyroSensor1.gyroDev.gyroADCRaw[Y]);
