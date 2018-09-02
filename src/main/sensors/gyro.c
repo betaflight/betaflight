@@ -1136,7 +1136,7 @@ FAST_CODE void gyroUpdate(timeUs_t currentTimeUs)
                 case GYRO_CONFIG_USE_GYRO_1:
                     gyro.gyroADCf[axis] = gyroSensor1.gyroDev.gyroADCf[axis];
                     break;
-                case GYRO_CONFIG_USE_GYRO_2;
+                case GYRO_CONFIG_USE_GYRO_2:
                     gyro.gyroADCf[axis] = gyroSensor2.gyroDev.gyroADCf[axis];
                     break;
                 }
