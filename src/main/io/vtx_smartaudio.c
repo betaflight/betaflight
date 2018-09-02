@@ -268,6 +268,12 @@ static void saProcessResponse(uint8_t *buf, int len)
 {
     uint8_t resp = buf[0];
 
+    if (IS_RC_MODE_ACTIVE(BOXVTXCONTROLDISABLE)) {
+        sa_outstanding = SA_CMD_NONE;
+
+        return;
+    }
+
     if (resp == sa_outstanding) {
         sa_outstanding = SA_CMD_NONE;
     } else if ((resp == SA_CMD_GET_SETTINGS_V2) && (sa_outstanding == SA_CMD_GET_SETTINGS)) {
@@ -355,7 +361,7 @@ static void saProcessResponse(uint8_t *buf, int len)
 // Datalink
 //
 
-static void saReceiveFramer(uint8_t c)
+static void saReceiveFrame(uint8_t c)
 {
 
     static enum saFramerState_e {
@@ -435,21 +441,26 @@ static void saReceiveFramer(uint8_t c)
 
 static void saSendFrame(uint8_t *buf, int len)
 {
-    switch (smartAudioSerialPort->identifier) {
-        case SERIAL_PORT_SOFTSERIAL1:
-        case SERIAL_PORT_SOFTSERIAL2:
-            break;
-        default:
-            serialWrite(smartAudioSerialPort, 0x00); // Generate 1st start bit
-            break;
-    }
+    if (!IS_RC_MODE_ACTIVE(BOXVTXCONTROLDISABLE)) {
+        switch (smartAudioSerialPort->identifier) {
+            case SERIAL_PORT_SOFTSERIAL1:
+            case SERIAL_PORT_SOFTSERIAL2:
+                break;
+            default:
+                serialWrite(smartAudioSerialPort, 0x00); // Generate 1st start bit
+                break;
+        }
 
-    for (int i = 0 ; i < len ; i++) {
-        serialWrite(smartAudioSerialPort, buf[i]);
+        for (int i = 0 ; i < len ; i++) {
+            serialWrite(smartAudioSerialPort, buf[i]);
+        }
+
+        saStat.pktsent++;
+    } else {
+        sa_outstanding = SA_CMD_NONE;
     }
 
     sa_lastTransmissionMs = millis();
-    saStat.pktsent++;
 }
 
 /*
@@ -525,7 +536,7 @@ static void saQueueCmd(uint8_t *buf, int len)
 static void saSendQueue(void)
 {
     if (saQueueEmpty()) {
-         return;
+        return;
     }
 
     saSendCmd(sa_queue[sa_qtail].buf, sa_queue[sa_qtail].len);
@@ -703,7 +714,7 @@ static void vtxSAProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
 
     while (serialRxBytesWaiting(smartAudioSerialPort) > 0) {
         uint8_t c = serialRead(smartAudioSerialPort);
-        saReceiveFramer((uint16_t)c);
+        saReceiveFrame((uint16_t)c);
     }
 
     // Re-evaluate baudrate after each frame reception
