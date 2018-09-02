@@ -1,6 +1,6 @@
 # Building in Eclipse
 
-How to build, test & debug Cleanflight in Eclipse on Linux, Windows & MacOS.
+How to build, test & debug Betaflight in Eclipse on Linux, Windows & MacOS.
 
 ## Checklist
 
@@ -17,7 +17,7 @@ Use this checklist to make sure you didn't miss a step. Versions mandated below 
 - [ ] Optionally [Download and Install](https://github.com/gnuarmeclipse/qemu/releases) the latest GNU ARM Eclipse QEMU [read more](#install-qemu)
 - [ ] Add a new update site to Eclipse named "GNU ARM Eclipse Plugins" with the URL "http://gnuarmeclipse.sourceforge.net/updates" and install all the features offered
 - [ ] Configure [the recommended workspace settings](http://gnuarmeclipse.github.io/eclipse/workspace/preferences/)
-- [ ] Checkout the cleanflight source code [read more](#checkout-cleanflight)
+- [ ] Checkout the betaflight source code [read more](#checkout-betaflight)
  - [ ] *Windows platform only:* Add the msys or cygwin bin directory to the project path
 - [ ] Build the code by going to *Project menu -> Build All* [read more](#build)
 - [ ] Run the tests by creating and running a make target named "test"
@@ -47,85 +47,85 @@ Retain the default installation directories so that the GNU ARM Plugins can loca
 
 ### Install OpenOCD
 
-You should install OpenOCD If you will be debugging on real hardware, such as the STM32F3DISCOVERY dev board. It is not required to simply build Cleanflight or run the tests.
+You should install OpenOCD If you will be debugging on real hardware, such as the STM32F3DISCOVERY dev board. It is not required to simply build Betaflight or run the tests.
 
 ### Install QEMU
 
 No tests currently run on the QEMU emulator therefore this install is entirely optional. It is useful to test your installation, since you can compile and run a blinky demo.
 
-### Checkout Cleanflight
+### Checkout Betaflight
 
-If you'll be submitting changes to cleanflight, [fork the repository](https://help.github.com/articles/fork-a-repo/) on GitHub and checkout your copy.
+If you'll be submitting changes to betaflight, [fork the repository](https://help.github.com/articles/fork-a-repo/) on GitHub and checkout your copy.
 
 In Eclipse go to *File -> Import* choose *Git -> Projects from Git*
 
-![projects from git](assets/building-in-eclipse/checkout-cleanflight-001.PNG)
+![projects from git](assets/building-in-eclipse/checkout-betaflight-001.PNG)
 
 Choose *Clone URI*
 
-![clone uri](assets/building-in-eclipse/checkout-cleanflight-002.PNG)
+![clone uri](assets/building-in-eclipse/checkout-betaflight-002.PNG)
 
-Enter the URI https://github.com/cleanflight/cleanflight or if you've forked the repo, enter your URI instead. With a fork, you will need to specify your authentication details
+Enter the URI https://github.com/betaflight/betaflight or if you've forked the repo, enter your URI instead. With a fork, you will need to specify your authentication details
 
-![enter uri](assets/building-in-eclipse/checkout-cleanflight-003.PNG)
+![enter uri](assets/building-in-eclipse/checkout-betaflight-003.PNG)
 
 On the branch selection dialog, de-select all branches and select only *master*
 
-![choose branches to clone](assets/building-in-eclipse/checkout-cleanflight-004.PNG)
+![choose branches to clone](assets/building-in-eclipse/checkout-betaflight-004.PNG)
 
 Select the default destination directory
 
-![destination](assets/building-in-eclipse/checkout-cleanflight-005.PNG)
+![destination](assets/building-in-eclipse/checkout-betaflight-005.PNG)
 
 When the download completes, choose *Use the New Project wizard* and click Finish
 
-![finish](assets/building-in-eclipse/checkout-cleanflight-006.PNG)
+![finish](assets/building-in-eclipse/checkout-betaflight-006.PNG)
 
 Choose *C/C++ -> Makefile Project with Existing Code*
 
-![makefile project](assets/building-in-eclipse/checkout-cleanflight-007.PNG)
+![makefile project](assets/building-in-eclipse/checkout-betaflight-007.PNG)
 
-Enter cleanflight as the project name and browse to your home directory -> git -> cleanflight for the existing code location. Ensure the C (cleanflight) and C++ (tests) languages are checked. Choose the Cross ARM GCC toolchain for the Indexer Settings. Click finish.
+Enter betaflight as the project name and browse to your home directory -> git -> betaflight for the existing code location. Ensure the C (betaflight) and C++ (tests) languages are checked. Choose the Cross ARM GCC toolchain for the Indexer Settings. Click finish.
 
-![finish checkout](assets/building-in-eclipse/checkout-cleanflight-008.PNG)
+![finish checkout](assets/building-in-eclipse/checkout-betaflight-008.PNG)
 
 Set your build and debug targets by going to project properties -> C/C++ Build and choose the Behaviour tab. Replace "all" in the build box with "TARGET=xxx DEBUG=GDB" where xxx is your platform such as NAZE
 
-![build](assets/building-in-eclipse/checkout-cleanflight-012.PNG)
+![build](assets/building-in-eclipse/checkout-betaflight-012.PNG)
 
 On Windows only, add msys or cygwin bin directory to the project's path by right clicking the project and choosing properties
 
-![properties](assets/building-in-eclipse/checkout-cleanflight-009.PNG)
+![properties](assets/building-in-eclipse/checkout-betaflight-009.PNG)
 
 Edit the path variable in *C/C++ Build -> Environment*
 
-![edit path](assets/building-in-eclipse/checkout-cleanflight-010.PNG)
+![edit path](assets/building-in-eclipse/checkout-betaflight-010.PNG)
 
 Append the full path to the relevant bin dir
 
-![append bin dir](assets/building-in-eclipse/checkout-cleanflight-011.PNG)
+![append bin dir](assets/building-in-eclipse/checkout-betaflight-011.PNG)
 
 ### Build
 
 Choose project -> build all
 
-![build all](assets/building-in-eclipse/checkout-cleanflight-013.PNG)
+![build all](assets/building-in-eclipse/checkout-betaflight-013.PNG)
 
 ### Configure Debugging
 
 Choose debug -> debug configurations
 
-![debug configurations](assets/building-in-eclipse/checkout-cleanflight-014.PNG)
+![debug configurations](assets/building-in-eclipse/checkout-betaflight-014.PNG)
 
-Create a new OpenOCD configuration for the obj\main\cleanflight_XXX.elf application (this file is generated by the build step above)
+Create a new OpenOCD configuration for the obj\main\betaflight_XXX.elf application (this file is generated by the build step above)
 
-![debug configurations](assets/building-in-eclipse/checkout-cleanflight-015.PNG)
+![debug configurations](assets/building-in-eclipse/checkout-betaflight-015.PNG)
 
 Add the appropriate openocd board configuration parameter for your dev platform
 
-![openocd target](assets/building-in-eclipse/checkout-cleanflight-016.PNG)
+![openocd target](assets/building-in-eclipse/checkout-betaflight-016.PNG)
 
 Add the target to your debug menu favourites
 
-![debug favs](assets/building-in-eclipse/checkout-cleanflight-017.PNG)
+![debug favs](assets/building-in-eclipse/checkout-betaflight-017.PNG)
 
