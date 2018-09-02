@@ -34,7 +34,8 @@
 
 typedef enum {
     GPS_NMEA = 0,
-    GPS_UBLOX
+    GPS_UBLOX,
+    GPS_MSP
 } gpsProvider_e;
 
 typedef enum {
