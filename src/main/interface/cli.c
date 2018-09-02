@@ -2713,7 +2713,7 @@ static void cliDumpGyroRegisters(char *cmdline)
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         const char axisName[XYZ_AXIS_COUNT] = {'X','Y','Z'};
         const char * const gyroNames[XYZ_AXIS_COUNT] = {"Both gyros", "Gyro 1", "Gyro 2"};
-        cliPrintLinef("# %s for %c-axis.", gyroNames[gyroConfig()->gyro_for_axis[i]], axisName(axis));
+        cliPrintLinef("# %s for %c-axis.", gyroNames[gyroConfig()->gyro_for_axis[axis]], axisName(axis));
     }
    
 
