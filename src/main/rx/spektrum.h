@@ -32,7 +32,6 @@
 #define SRXL_FRAME_SIZE_MAX (SPEK_FRAME_SIZE + SRXL_FRAME_OVERHEAD)
 
 #define SPEKTRUM_NEEDED_FRAME_INTERVAL     5000
-#define SPEKTRUM_TELEMETRY_FRAME_DELAY     1000   // Gap between received Rc frame and transmited TM frame, uS
 
 #define SPEKTRUM_BAUDRATE                115200
 
