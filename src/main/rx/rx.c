@@ -295,7 +295,7 @@ void rxInit(void)
 #endif
 
 #if defined(USE_PWM) || defined(USE_PPM)
-    if (featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_PARALLEL_PWM)) {
+    if (featureIsEnabled(FEATURE_RX_PPM | FEATURE_RX_PARALLEL_PWM)) {
         rxPwmInit(rxConfig(), &rxRuntimeConfig);
     }
 #endif
@@ -325,14 +325,22 @@ bool rxAreFlightChannelsValid(void)
 void suspendRxSignal(void)
 {
     suspendRxSignalUntil = micros() + SKIP_RC_ON_SUSPEND_PERIOD;
-    skipRxSamples = SKIP_RC_SAMPLES_ON_RESUME;
+#if defined(USE_PWM) || defined(USE_PPM)
+    if (featureIsEnabled(FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM)) {
+        skipRxSamples = SKIP_RC_SAMPLES_ON_RESUME;
+    }
+#endif
     failsafeOnRxSuspend(SKIP_RC_ON_SUSPEND_PERIOD);
 }
 
 void resumeRxSignal(void)
 {
     suspendRxSignalUntil = micros();
-    skipRxSamples = SKIP_RC_SAMPLES_ON_RESUME;
+#if defined(USE_PWM) || defined(USE_PPM)
+    if (featureIsEnabled(FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM)) {
+        skipRxSamples = SKIP_RC_SAMPLES_ON_RESUME;
+    }
+#endif
     failsafeOnRxResume();
 }
 
@@ -510,10 +518,13 @@ static void detectAndApplySignalLossBehaviour(void)
                 }
             }
         }
+#if defined(USE_PWM) || defined(USE_PPM)
         if (featureIsEnabled(FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM)) {
             // smooth output for PWM and PPM
             rcData[channel] = calculateChannelMovingAverage(channel, sample);
-        } else {
+        } else
+#endif
+        {
             rcData[channel] = sample;
         }
     }
@@ -544,7 +555,7 @@ bool calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs)
     rxNextUpdateAtUs = currentTimeUs + DELAY_33_HZ;
 
     // only proceed when no more samples to skip and suspend period is over
-    if (skipRxSamples) {
+    if (skipRxSamples || currentTimeUs <= suspendRxSignalUntil) {
         if (currentTimeUs > suspendRxSignalUntil) {
             skipRxSamples--;
         }
