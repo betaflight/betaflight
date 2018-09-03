@@ -322,26 +322,26 @@ bool rxAreFlightChannelsValid(void)
     return rxFlightChannelsValid;
 }
 
-void suspendRxSignal(void)
+void suspendRxPwmPpmSignal(void)
 {
-    suspendRxSignalUntil = micros() + SKIP_RC_ON_SUSPEND_PERIOD;
 #if defined(USE_PWM) || defined(USE_PPM)
     if (featureIsEnabled(FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM)) {
+        suspendRxSignalUntil = micros() + SKIP_RC_ON_SUSPEND_PERIOD;
         skipRxSamples = SKIP_RC_SAMPLES_ON_RESUME;
+        failsafeOnRxSuspend(SKIP_RC_ON_SUSPEND_PERIOD);
     }
 #endif
-    failsafeOnRxSuspend(SKIP_RC_ON_SUSPEND_PERIOD);
 }
 
-void resumeRxSignal(void)
+void resumeRxPwmPpmSignal(void)
 {
-    suspendRxSignalUntil = micros();
 #if defined(USE_PWM) || defined(USE_PPM)
     if (featureIsEnabled(FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM)) {
+        suspendRxSignalUntil = micros();
         skipRxSamples = SKIP_RC_SAMPLES_ON_RESUME;
+        failsafeOnRxResume();
     }
 #endif
-    failsafeOnRxResume();
 }
 
 bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)

@@ -512,7 +512,7 @@ void validateAndFixGyroConfig(void)
 
 bool readEEPROM(void)
 {
-    suspendRxSignal();
+    suspendRxPwmPpmSignal();
 
     // Sanity check, read flash
     bool success = loadEEPROM();
@@ -521,7 +521,7 @@ bool readEEPROM(void)
 
     activateConfig();
 
-    resumeRxSignal();
+    resumeRxPwmPpmSignal();
 
     return success;
 }
@@ -530,11 +530,11 @@ void writeEEPROM(void)
 {
     validateAndFixConfig();
 
-    suspendRxSignal();
+    suspendRxPwmPpmSignal();
 
     writeConfigToEEPROM();
 
-    resumeRxSignal();
+    resumeRxPwmPpmSignal();
 }
 
 void writeEEPROMWithFeatures(uint32_t features)
