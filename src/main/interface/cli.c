@@ -318,6 +318,12 @@ static void cliPrintfva(const char *format, va_list va)
     bufWriterFlush(cliWriter);
 }
 
+static void cliPrintfvabuf(const char *format, va_list va)
+{
+    tfp_format(cliWriter, cliPutp, format, va);
+    bufWriterFlush(cliWriter);
+}
+
 static bool cliDumpPrintLinef(uint8_t dumpMask, bool equalsDefault, const char *format, ...)
 {
     if (!((dumpMask & DO_DIFF) && equalsDefault)) {
@@ -361,6 +367,14 @@ static void cliPrintf(const char *format, ...)
     va_end(va);
 }
 
+void cliBufPrintf(const char *format, ...)
+{
+    return;
+    va_list va;
+    va_start(va, format);
+    cliPrintfvabuf(format, va);
+    va_end(va);
+}
 
 static void cliPrintLinef(const char *format, ...)
 {

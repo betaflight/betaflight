@@ -22,7 +22,7 @@
 
 #include <stdint.h>
 
-#define RX_SPI_MAX_PAYLOAD_SIZE 32
+#define RX_SPI_MAX_PAYLOAD_SIZE 48 // TODO: check if 35 is enough
 
 struct rxSpiConfig_s;
 

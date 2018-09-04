@@ -291,6 +291,9 @@ void frSkyXSetRcData(uint16_t *rcData, const uint8_t *packet)
     }
 }
 
+void cliBufPrintf(const char *format, ...);
+
+
 rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const protocolState)
 {
     static unsigned receiveTelemetryRetryCount = 0;
@@ -346,11 +349,21 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
         if (IORead(gdoPin) && (frameReceived == false)){
             uint8_t ccLen = cc2500ReadReg(CC2500_3B_RXBYTES | CC2500_READ_BURST) & 0x7F;
             ccLen = cc2500ReadReg(CC2500_3B_RXBYTES | CC2500_READ_BURST) & 0x7F; // read 2 times to avoid reading errors
-            if (ccLen > 32) {
-                ccLen = 32;
+
+            cliBufPrintf("SD: %d\r\n", ccLen);
+
+            if (ccLen > 35) {
+                ccLen = 35;
             }
             if (ccLen) {
                 cc2500ReadFifo(packet, ccLen);
+
+            for (int i = 0; i < ccLen; i++)
+            {
+               cliBufPrintf("%02X ", packet[i]);
+            }
+            cliBufPrintf("\r\n");
+
                 uint16_t lcrc= calculateCrc(&packet[3], (ccLen - 7));
                 if((lcrc >> 8) == packet[ccLen-4] && (lcrc&0x00FF) == packet[ccLen - 3]){ // check calculateCrc
                     if (packet[0] == 0x20) {
@@ -426,6 +439,7 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
                              }
 
                             packetTimerUs = micros();
+                            cliBufPrintf("FR\r\n");
                             frameReceived = true; // no need to process frame again.
                         }
                     }
@@ -460,7 +474,10 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
         break;
 #ifdef USE_RX_FRSKY_SPI_TELEMETRY
     case STATE_TELEMETRY:
+
         if(cmpTimeUs(micros(), packetTimerUs) >= receiveDelayUs + 400) { // if received or not received in this time sent telemetry data
+
+#if 1
             cc2500Strobe(CC2500_SIDLE);
             cc2500SetPower(6);
             cc2500Strobe(CC2500_SFRX);
@@ -498,6 +515,8 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
                 }
                 processSmartPortTelemetry(payload, &clearToSend, NULL);
             }
+#endif
+
 #endif
             *protocolState = STATE_RESUME;
             if (frameReceived) {

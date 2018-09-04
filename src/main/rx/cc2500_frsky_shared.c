@@ -46,6 +46,9 @@
 
 #include "cc2500_frsky_shared.h"
 
+void cliBufPrintf(const char *format, ...);
+
+
 static rx_spi_protocol_e spiProtocol;
 
 static timeMs_t start_time;
@@ -148,7 +151,7 @@ void frSkySpiBind(void)
 static void initialise() {
     cc2500Reset();
     cc2500WriteReg(CC2500_02_IOCFG0,   0x01);
-    cc2500WriteReg(CC2500_17_MCSM1,    0x0E);
+    cc2500WriteReg(CC2500_17_MCSM1,    0x0C); // 0x0e in diy-multiprotocol
     cc2500WriteReg(CC2500_18_MCSM0,    0x18);
     cc2500WriteReg(CC2500_07_PKTCTRL1, 0x04);
     cc2500WriteReg(CC2500_3E_PATABLE,  0xFF);
@@ -173,7 +176,7 @@ static void initialise() {
     cc2500WriteReg(CC2500_2C_TEST2,    0x88);
     cc2500WriteReg(CC2500_2D_TEST1,    0x31);
     cc2500WriteReg(CC2500_2E_TEST0,    0x0B);
-    cc2500WriteReg(CC2500_03_FIFOTHR,  0x07);
+    cc2500WriteReg(CC2500_03_FIFOTHR,  0x09); // from 7, now threshold should be big enough for packet
     cc2500WriteReg(CC2500_09_ADDR,     0x00);
 
     switch (spiProtocol) {
@@ -188,7 +191,7 @@ static void initialise() {
 
         break;
     case RX_SPI_FRSKY_X:
-        cc2500WriteReg(CC2500_06_PKTLEN,   0x23);
+        cc2500WriteReg(CC2500_06_PKTLEN,   0x30); // 23 in multiprotocol-diy, check if enough
         cc2500WriteReg(CC2500_08_PKTCTRL0, 0x01);
         cc2500WriteReg(CC2500_0B_FSCTRL1,  0x08);
         cc2500WriteReg(CC2500_10_MDMCFG4,  0x7B);
@@ -242,6 +245,9 @@ static void initTuneRx(void)
     cc2500Strobe(CC2500_SRX);
 }
 
+
+
+
 static bool tuneRx(uint8_t *packet)
 {
     if (bindOffset >= 126) {
@@ -254,8 +260,24 @@ static bool tuneRx(uint8_t *packet)
     }
     if (IORead(gdoPin)) {
         uint8_t ccLen = cc2500ReadReg(CC2500_3B_RXBYTES | CC2500_READ_BURST) & 0x7F;
+
+        cliBufPrintf("tuneRx: %d\r\n", ccLen);
+
         if (ccLen) {
+    //        cc2500ReadFifo(packet+0, 1);
+  //          cc2500ReadFifo(packet+1, packet[0]);
+//            cc2500ReadFifo(packet+packet[0]+1, 2);
+
             cc2500ReadFifo(packet, ccLen);
+
+//            ccLen = packet[0] + 1 + 2;
+
+//            for (int i = 0; i < ccLen; i++)
+//            {
+//               cliBufPrintf("%02X ", packet[i]);
+//            }
+//            cliBufPrintf("\r\n");
+
             if (packet[ccLen - 1] & 0x80) {
                 if (packet[2] == 0x01) {
                     uint8_t Lqi = packet[ccLen - 1] & 0x7F;
@@ -390,9 +412,11 @@ bool checkBindRequested(bool reset)
     }
 }
 
+
 rx_spi_received_e frSkySpiDataReceived(uint8_t *packet)
 {
     rx_spi_received_e ret = RX_SPI_RECEIVED_NONE;
+
 
     switch (protocolState) {
     case STATE_INIT:
@@ -407,6 +431,8 @@ rx_spi_received_e frSkySpiDataReceived(uint8_t *packet)
         if (checkBindRequested(true) || rxFrSkySpiConfig()->autoBind) {
             LedOn();
             initTuneRx();
+
+//        cliBufPrintf("mode: %d\r\n", protocolState);
 
             protocolState = STATE_BIND_TUNING;
         } else {
