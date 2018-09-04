@@ -405,6 +405,7 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
     return rxDataProcessingRequired || auxiliaryProcessingRequired; // data driven or 50Hz
 }
 
+#if defined(USE_PWM) || defined(USE_PPM)
 static uint16_t calculateChannelMovingAverage(uint8_t chan, uint16_t sample)
 {
     static int16_t rcSamples[MAX_SUPPORTED_RX_PARALLEL_PWM_OR_PPM_CHANNEL_COUNT][PPM_AND_PWM_SAMPLE_COUNT];
@@ -430,6 +431,7 @@ static uint16_t calculateChannelMovingAverage(uint8_t chan, uint16_t sample)
     }
     return rcDataMean[chan] / PPM_AND_PWM_SAMPLE_COUNT;
 }
+#endif
 
 static uint16_t getRxfailValue(uint8_t channel)
 {
