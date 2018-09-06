@@ -34,10 +34,6 @@ void SetSysClock(void);
 
 void systemReset(void)
 {
-    if (mpuResetFn) {
-        mpuResetFn();
-    }
-
     __disable_irq();
     NVIC_SystemReset();
 }
@@ -47,10 +43,6 @@ PERSISTENT uint32_t bootloaderRequest = 0;
 
 void systemResetToBootloader(void)
 {
-    if (mpuResetFn) {
-        mpuResetFn();
-    }
-
     bootloaderRequest = BOOTLOADER_REQUEST_COOKIE;
 
     __disable_irq();

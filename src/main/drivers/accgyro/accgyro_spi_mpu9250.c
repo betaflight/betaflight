@@ -75,19 +75,6 @@ static bool mpu9250SpiSlowReadRegisterBuffer(const busDevice_t *bus, uint8_t reg
     return true;
 }
 
-void mpu9250SpiResetGyro(void)
-{
-#if 0
-// XXX This doesn't work. Need a proper busDevice_t.
-    // Device Reset
-#ifdef MPU9250_CS_PIN
-    busDevice_t bus = { .spi = { .csnPin = IOGetByTag(IO_TAG(MPU9250_CS_PIN)) } };
-    mpu9250SpiWriteRegister(&bus, MPU_RA_PWR_MGMT_1, MPU9250_BIT_RESET);
-    delay(150);
-#endif
-#endif
-}
-
 void mpu9250SpiGyroInit(gyroDev_t *gyro)
 {
     mpuGyroInit(gyro);

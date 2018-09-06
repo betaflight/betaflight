@@ -140,14 +140,6 @@
 // RF = Register Flag
 #define MPU_RF_DATA_RDY_EN (1 << 0)
 
-typedef void (*mpuResetFnPtr)(void);
-
-extern mpuResetFnPtr mpuResetFn;
-
-typedef struct mpuConfiguration_s {
-    mpuResetFnPtr resetFn;
-} mpuConfiguration_t;
-
 enum gyro_fsr_e {
     INV_FSR_250DPS = 0,
     INV_FSR_500DPS,
