@@ -267,9 +267,9 @@ const mpuDetectionResult_t *gyroMpuDetectionResult(void)
 #endif
 }
 
-STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev)
+STATIC_UNIT_TESTED gyroHardware_e gyroDetect(gyroDev_t *dev)
 {
-    gyroSensor_e gyroHardware = GYRO_DEFAULT;
+    gyroHardware_e gyroHardware = GYRO_DEFAULT;
 
     switch (gyroHardware) {
     case GYRO_DEFAULT:
@@ -450,7 +450,7 @@ static bool gyroInitSensor(gyroSensor_t *gyroSensor)
     mpuResetFn = gyroSensor->gyroDev.mpuConfiguration.resetFn; // must be set after mpuDetect
 #endif
 
-    const gyroSensor_e gyroHardware = gyroDetect(&gyroSensor->gyroDev);
+    const gyroHardware_e gyroHardware = gyroDetect(&gyroSensor->gyroDev);
     gyroSensor->gyroDev.gyroHardware = gyroHardware;
     if (gyroHardware == GYRO_NONE) {
         return false;
