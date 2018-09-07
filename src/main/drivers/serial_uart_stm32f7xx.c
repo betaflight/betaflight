@@ -54,24 +54,19 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .txDMAStream = DMA2_Stream7,
 #endif
         .rxPins = {
-            DEFIO_TAG_E(PA10), DEFIO_TAG_E(PB7),
+            { DEFIO_TAG_E(PA10), GPIO_AF7_USART1 },
+            { DEFIO_TAG_E(PB7), GPIO_AF7_USART1 },
 #ifdef STM32F765xx
-            DEFIO_TAG_E(PB15),
-#else
-            IO_TAG_NONE,
+            { DEFIO_TAG_E(PB15), GPIO_AF4_USART1 }
 #endif
-            IO_TAG_NONE
         },
         .txPins = {
-            DEFIO_TAG_E(PA9), DEFIO_TAG_E(PB6),
+            { DEFIO_TAG_E(PA9), GPIO_AF7_USART1 },
+            { DEFIO_TAG_E(PB6), GPIO_AF7_USART1 },
 #ifdef STM32F765xx
-            DEFIO_TAG_E(PB14),
-#else
-            IO_TAG_NONE,
+            { DEFIO_TAG_E(PB14), GPIO_AF4_USART1 }
 #endif
-            IO_TAG_NONE
         },
-        .afs = { GPIO_AF7_USART1, GPIO_AF7_USART1, GPIO_AF4_USART1 },
 #ifdef UART1_AHB1_PERIPHERALS
         .rcc_ahb1 = UART1_AHB1_PERIPHERALS,
 #endif
@@ -94,9 +89,14 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART2_TX_DMA
         .txDMAStream = DMA1_Stream6,
 #endif
-        .rxPins = { DEFIO_TAG_E(PA3), DEFIO_TAG_E(PD6), IO_TAG_NONE, IO_TAG_NONE },
-        .txPins = { DEFIO_TAG_E(PA2), DEFIO_TAG_E(PD5), IO_TAG_NONE, IO_TAG_NONE },
-        .afs = { GPIO_AF7_USART2, GPIO_AF7_USART2 },
+        .rxPins = {
+            { DEFIO_TAG_E(PA3), GPIO_AF7_USART2 },
+            { DEFIO_TAG_E(PD6), GPIO_AF7_USART2 }
+        },
+        .txPins = {
+            { DEFIO_TAG_E(PA2), GPIO_AF7_USART2 },
+            { DEFIO_TAG_E(PD5), GPIO_AF7_USART2 }
+        },
 #ifdef UART2_AHB1_PERIPHERALS
         .rcc_ahb1 = UART2_AHB1_PERIPHERALS,
 #endif
@@ -119,9 +119,16 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART3_TX_DMA
         .txDMAStream = DMA1_Stream3,
 #endif
-        .rxPins = { DEFIO_TAG_E(PB11), DEFIO_TAG_E(PC11), DEFIO_TAG_E(PD9), IO_TAG_NONE },
-        .txPins = { DEFIO_TAG_E(PB10), DEFIO_TAG_E(PC10), DEFIO_TAG_E(PD8), IO_TAG_NONE },
-        .afs = { GPIO_AF7_USART3, GPIO_AF7_USART3, GPIO_AF7_USART3 },
+        .rxPins = {
+            { DEFIO_TAG_E(PB11), GPIO_AF7_USART3 },
+            { DEFIO_TAG_E(PC11), GPIO_AF7_USART3 },
+            { DEFIO_TAG_E(PD9), GPIO_AF7_USART3 }
+        },
+        .txPins = {
+            { DEFIO_TAG_E(PB10), GPIO_AF7_USART3 },
+            { DEFIO_TAG_E(PC10), GPIO_AF7_USART3 },
+            { DEFIO_TAG_E(PD8), GPIO_AF7_USART3 }
+        },
 #ifdef UART3_AHB1_PERIPHERALS
         .rcc_ahb1 = UART3_AHB1_PERIPHERALS,
 #endif
@@ -145,26 +152,21 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .txDMAStream = DMA1_Stream4,
 #endif
         .rxPins = {
-            DEFIO_TAG_E(PA1), DEFIO_TAG_E(PC11),
+            { DEFIO_TAG_E(PA1), GPIO_AF8_UART4 },
+            { DEFIO_TAG_E(PC11), GPIO_AF8_UART4 },         
 #ifdef STM32F765xx
-            DEFIO_TAG_E(PA11),
-            DEFIO_TAG_E(PD0),
-#else
-            IO_TAG_NONE,
-            IO_TAG_NONE
+            { DEFIO_TAG_E(PA11), GPIO_AF6_UART4 },
+            { DEFIO_TAG_E(PD0), GPIO_AF8_UART4 }         
 #endif
         },
         .txPins = {
-            DEFIO_TAG_E(PA0), DEFIO_TAG_E(PC10),
+            { DEFIO_TAG_E(PA0), GPIO_AF8_UART4 },
+            { DEFIO_TAG_E(PC10), GPIO_AF8_UART4 },         
 #ifdef STM32F765xx
-            DEFIO_TAG_E(PA12),
-            DEFIO_TAG_E(PD0),
-#else
-            IO_TAG_NONE,
-            IO_TAG_NONE
+            { DEFIO_TAG_E(PA12), GPIO_AF6_UART4 },
+            { DEFIO_TAG_E(PD1), GPIO_AF8_UART4 }
 #endif
         },
-        .afs = { GPIO_AF8_UART4, GPIO_AF8_UART4, GPIO_AF6_UART4, GPIO_AF8_UART4 },
 #ifdef UART4_AHB1_PERIPHERALS
         .rcc_ahb1 = UART4_AHB1_PERIPHERALS,
 #endif
@@ -188,22 +190,21 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .txDMAStream = DMA1_Stream7,
 #endif
         .rxPins = {
-            DEFIO_TAG_E(PD2),
+            { DEFIO_TAG_E(PD2), GPIO_AF8_UART5 },
 #ifdef STM32F765xx
-            DEFIO_TAG_E(PB5), DEFIO_TAG_E(PB8), DEFIO_TAG_E(PB12),
-#else
-            IO_TAG_NONE, IO_TAG_NONE, IO_TAG_NONE
+            { DEFIO_TAG_E(PB5), GPIO_AF1_UART5 },
+            { DEFIO_TAG_E(PB8), GPIO_AF7_UART5 },
+            { DEFIO_TAG_E(PB12), GPIO_AF8_UART5 }
 #endif
         },
         .txPins = {
-            DEFIO_TAG_E(PC12),
+            { DEFIO_TAG_E(PC12), GPIO_AF8_UART5 },
 #ifdef STM32F765xx
-            DEFIO_TAG_E(PB6), DEFIO_TAG_E(PB9), DEFIO_TAG_E(PB13),
-#else
-            IO_TAG_NONE, IO_TAG_NONE, IO_TAG_NONE
+            { DEFIO_TAG_E(PB6), GPIO_AF1_UART5 },
+            { DEFIO_TAG_E(PB9), GPIO_AF7_UART5 },
+            { DEFIO_TAG_E(PB13), GPIO_AF8_UART5 }
 #endif
         },
-        .afs = { GPIO_AF8_UART5, GPIO_AF1_UART5, GPIO_AF7_UART5, GPIO_AF8_UART5 },
 #ifdef UART5_AHB1_PERIPHERALS
         .rcc_ahb1 = UART5_AHB1_PERIPHERALS,
 #endif
@@ -226,9 +227,14 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART6_TX_DMA
         .txDMAStream = DMA2_Stream6,
 #endif
-        .rxPins = { DEFIO_TAG_E(PC7), DEFIO_TAG_E(PG9), IO_TAG_NONE },
-        .txPins = { DEFIO_TAG_E(PC6), DEFIO_TAG_E(PG14), IO_TAG_NONE },
-        .afs = { GPIO_AF8_USART6, GPIO_AF8_USART6 },
+        .rxPins = {
+            { DEFIO_TAG_E(PC7), GPIO_AF8_USART6  },
+            { DEFIO_TAG_E(PG9), GPIO_AF8_USART6 }
+        },
+        .txPins = {
+            { DEFIO_TAG_E(PC6), GPIO_AF8_USART6 },
+            { DEFIO_TAG_E(PG14), GPIO_AF8_USART6 }
+        },
 #ifdef UART6_AHB1_PERIPHERALS
         .rcc_ahb1 = UART6_AHB1_PERIPHERALS,
 #endif
@@ -252,22 +258,21 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .txDMAStream = DMA1_Stream1,
 #endif
         .rxPins = {
-            DEFIO_TAG_E(PE7), DEFIO_TAG_E(PF6),
+            { DEFIO_TAG_E(PE7), GPIO_AF8_UART7 },
+            { DEFIO_TAG_E(PF6), GPIO_AF8_UART7 },
 #ifdef STM32F765xx
-            DEFIO_TAG_E(PA8), DEFIO_TAG_E(PB3),
-#else
-            IO_TAG_NONE, IO_TAG_NONE
+            { DEFIO_TAG_E(PA8), GPIO_AF12_UART7 },
+            { DEFIO_TAG_E(PB3), GPIO_AF12_UART7 }
 #endif
         },
         .txPins = {
-            DEFIO_TAG_E(PE8), DEFIO_TAG_E(PF7),
+            { DEFIO_TAG_E(PE8), GPIO_AF8_UART7 },
+            { DEFIO_TAG_E(PF7), GPIO_AF8_UART7 },
 #ifdef STM32F765xx
-            DEFIO_TAG_E(PA15), DEFIO_TAG_E(PB4),
-#else
-            IO_TAG_NONE, IO_TAG_NONE
+            { DEFIO_TAG_E(PA15), GPIO_AF12_UART7 },
+            { DEFIO_TAG_E(PB4), GPIO_AF12_UART7 }
 #endif
         },
-        .afs = { GPIO_AF8_UART7, GPIO_AF8_UART7, GPIO_AF12_UART7, GPIO_AF12_UART7 },
 #ifdef UART7_AHB1_PERIPHERALS
         .rcc_ahb1 = UART7_AHB1_PERIPHERALS,
 #endif
@@ -290,9 +295,12 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART8_TX_DMA
         .txDMAStream = DMA1_Stream0,
 #endif
-        .rxPins = { DEFIO_TAG_E(PE0), IO_TAG_NONE, IO_TAG_NONE },
-        .txPins = { DEFIO_TAG_E(PE1), IO_TAG_NONE, IO_TAG_NONE },
-        .afs = { GPIO_AF8_UART8, GPIO_AF8_UART8, 0 },
+        .rxPins = {
+            { DEFIO_TAG_E(PE0), GPIO_AF8_UART8 }
+        },
+        .txPins = {
+            { DEFIO_TAG_E(PE1), GPIO_AF8_UART8 }
+        },
 #ifdef UART8_AHB1_PERIPHERALS
         .rcc_ahb1 = UART8_AHB1_PERIPHERALS,
 #endif
@@ -433,20 +441,6 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
 
     s->Handle.Instance = hardware->reg;
 
-    size_t txPinIndex;
-    for (txPinIndex = 0; txPinIndex < UARTHARDWARE_MAX_PINS; ++txPinIndex) {
-        if (hardware->txPins[txPinIndex] == uartdev->tx) {
-            break;
-        }
-    }
-
-    size_t rxPinIndex;
-    for (rxPinIndex = 0; rxPinIndex < UARTHARDWARE_MAX_PINS; ++rxPinIndex) {
-        if (hardware->rxPins[rxPinIndex] == uartdev->rx) {
-            break;
-        }
-    }
-
     IO_t txIO = IOGetByTag(uartdev->tx);
     IO_t rxIO = IOGetByTag(uartdev->rx);
 
@@ -458,17 +452,17 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
         );
 
         IOInit(txIO, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
-        IOConfigGPIOAF(txIO, ioCfg, hardware->afs[txPinIndex]);
+        IOConfigGPIOAF(txIO, ioCfg, uartdev->txAF);
     }
     else {
         if ((mode & MODE_TX) && txIO) {
             IOInit(txIO, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
-            IOConfigGPIOAF(txIO, IOCFG_AF_PP, hardware->afs[txPinIndex]);
+            IOConfigGPIOAF(txIO, IOCFG_AF_PP, uartdev->txAF);
         }
 
         if ((mode & MODE_RX) && rxIO) {
             IOInit(rxIO, OWNER_SERIAL_RX, RESOURCE_INDEX(device));
-            IOConfigGPIOAF(rxIO, IOCFG_AF_PP, hardware->afs[rxPinIndex]);
+            IOConfigGPIOAF(rxIO, IOCFG_AF_PP, uartdev->rxAF);
         }
     }
 

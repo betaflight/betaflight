@@ -52,11 +52,19 @@ void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig)
         const UARTDevice_e device = hardware->device;
 
         for (int pindex = 0 ; pindex < UARTHARDWARE_MAX_PINS ; pindex++) {
-            if (hardware->rxPins[pindex] && (hardware->rxPins[pindex] == pSerialPinConfig->ioTagRx[device]))
+            if (hardware->rxPins[pindex].pin == pSerialPinConfig->ioTagRx[device]) {
                 uartdev->rx = pSerialPinConfig->ioTagRx[device];
+#if defined(STM32F7)
+                uartdev->rxAF = hardware->rxPins[pindex].af;
+#endif
+            }
 
-            if (hardware->txPins[pindex] && (hardware->txPins[pindex] == pSerialPinConfig->ioTagTx[device]))
+            if (hardware->txPins[pindex].pin == pSerialPinConfig->ioTagTx[device]) {
                 uartdev->tx = pSerialPinConfig->ioTagTx[device];
+#if defined(STM32F7)
+                uartdev->txAF = hardware->txPins[pindex].af;
+#endif
+            }
         }
 
         if (uartdev->rx || uartdev->tx) {
