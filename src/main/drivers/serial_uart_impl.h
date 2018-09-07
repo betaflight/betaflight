@@ -51,7 +51,7 @@
 #endif
 #elif defined(STM32F7)
 #define UARTDEV_COUNT_MAX 8
-#define UARTHARDWARE_MAX_PINS 3
+#define UARTHARDWARE_MAX_PINS 4
 #ifndef UART_RX_BUFFER_SIZE
 #define UART_RX_BUFFER_SIZE     128
 #endif
@@ -134,7 +134,11 @@ typedef struct uartHardware_s {
 #else
     rccPeriphTag_t rcc;
 #endif
+#if defined(STM32F7)
+    uint8_t afs[UARTHARDWARE_MAX_PINS];
+#else
     uint8_t af;
+#endif
 #if defined(STM32F7)
     uint8_t txIrq;
     uint8_t rxIrq;
