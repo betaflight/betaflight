@@ -54,8 +54,6 @@
 #include "drivers/accgyro/accgyro_spi_mpu9250.h"
 #include "drivers/accgyro/accgyro_mpu.h"
 
-mpuResetFnPtr mpuResetFn;
-
 #ifndef MPU_I2C_INSTANCE
 #define MPU_I2C_INSTANCE I2C_DEVICE
 #endif
@@ -250,7 +248,6 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
     sensor = mpu9250SpiDetect(&gyro->bus);
     if (sensor != MPU_NONE) {
         gyro->mpuDetectionResult.sensor = sensor;
-        gyro->mpuConfiguration.resetFn = mpu9250SpiResetGyro;
         return true;
     }
 #endif
