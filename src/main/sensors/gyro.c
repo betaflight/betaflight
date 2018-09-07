@@ -241,19 +241,6 @@ const busDevice_t *gyroSensorBusByDevice(uint8_t whichSensor)
 }
 #endif // USE_GYRO_REGISTER_DUMP
 
-const mpuConfiguration_t *gyroMpuConfiguration(void)
-{
-#ifdef USE_DUAL_GYRO
-    if (gyroToUse == GYRO_CONFIG_USE_GYRO_2) {
-        return &gyroSensor2.gyroDev.mpuConfiguration;
-    } else {
-        return &gyroSensor1.gyroDev.mpuConfiguration;
-    }
-#else
-    return &gyroSensor1.gyroDev.mpuConfiguration;
-#endif
-}
-
 const mpuDetectionResult_t *gyroMpuDetectionResult(void)
 {
 #ifdef USE_DUAL_GYRO
@@ -267,9 +254,9 @@ const mpuDetectionResult_t *gyroMpuDetectionResult(void)
 #endif
 }
 
-STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev)
+STATIC_UNIT_TESTED gyroHardware_e gyroDetect(gyroDev_t *dev)
 {
-    gyroSensor_e gyroHardware = GYRO_DEFAULT;
+    gyroHardware_e gyroHardware = GYRO_DEFAULT;
 
     switch (gyroHardware) {
     case GYRO_DEFAULT:
@@ -447,10 +434,9 @@ static bool gyroInitSensor(gyroSensor_t *gyroSensor)
  || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20601) || defined(USE_GYRO_SPI_ICM20649) || defined(USE_GYRO_SPI_ICM20689)
 
     mpuDetect(&gyroSensor->gyroDev);
-    mpuResetFn = gyroSensor->gyroDev.mpuConfiguration.resetFn; // must be set after mpuDetect
 #endif
 
-    const gyroSensor_e gyroHardware = gyroDetect(&gyroSensor->gyroDev);
+    const gyroHardware_e gyroHardware = gyroDetect(&gyroSensor->gyroDev);
     gyroSensor->gyroDev.gyroHardware = gyroHardware;
     if (gyroHardware == GYRO_NONE) {
         return false;
