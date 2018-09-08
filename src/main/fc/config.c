@@ -516,7 +516,7 @@ void validateAndFixGyroConfig(void)
 bool readEEPROM(void)
 {
 #ifndef USE_OSD_SLAVE
-    suspendRxSignal();
+    suspendRxPwmPpmSignal();
 #endif
 
     // Sanity check, read flash
@@ -527,7 +527,7 @@ bool readEEPROM(void)
     activateConfig();
 
 #ifndef USE_OSD_SLAVE
-    resumeRxSignal();
+    resumeRxPwmPpmSignal();
 #endif
 
     return success;
@@ -538,13 +538,13 @@ void writeEEPROM(void)
     validateAndFixConfig();
 
 #ifndef USE_OSD_SLAVE
-    suspendRxSignal();
+    suspendRxPwmPpmSignal();
 #endif
 
     writeConfigToEEPROM();
 
 #ifndef USE_OSD_SLAVE
-    resumeRxSignal();
+    resumeRxPwmPpmSignal();
 #endif
 }
 
