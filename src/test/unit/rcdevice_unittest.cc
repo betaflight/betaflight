@@ -74,6 +74,8 @@ extern "C" {
 
     uint32_t millis(void);
     int minTimeout = 180;
+
+    void rcdeviceSend5KeyOSDCableSimualtionEvent(rcdeviceCamSimulationKeyEvent_e key);
 }
 
 #define MAX_RESPONSES_COUNT 10

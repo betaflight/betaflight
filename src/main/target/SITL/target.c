@@ -55,6 +55,8 @@ const timerHardware_t timerHardware[1]; // unused
 #include "dyad.h"
 #include "target/SITL/udplink.h"
 
+uint32_t SystemCoreClock;
+
 static fdm_packet fdmPkt;
 static servo_packet pwmPkt;
 
