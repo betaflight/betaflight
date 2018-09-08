@@ -169,7 +169,7 @@ uint8_t getRssiPercent(void);
 
 void resetAllRxChannelRangeConfigurations(rxChannelRangeConfig_t *rxChannelRangeConfig);
 
-void suspendRxSignal(void);
-void resumeRxSignal(void);
+void suspendRxPwmPpmSignal(void);
+void resumeRxPwmPpmSignal(void);
 
 uint16_t rxGetRefreshRate(void);
