@@ -191,6 +191,11 @@ static int8_t rateProfileIndexToUse = CURRENT_PROFILE_INDEX;
 static bool featureMaskIsCopied = false;
 static uint32_t featureMaskCopy;
 
+#ifdef USE_CLI_BATCH
+static bool commandBatchActive = false;
+static bool commandBatchError = false;
+#endif
+
 #if defined(USE_BOARD_INFO)
 static bool boardInformationUpdated = false;
 #if defined(USE_SIGNATURE)
@@ -399,6 +404,12 @@ static void cliPrintErrorVa(const char *format, va_list va)
     cliPrintfva(format, va);
     va_end(va);
     cliPrint("###");
+
+#ifdef USE_CLI_BATCH
+    if (commandBatchActive) {
+        commandBatchError = true;
+    }
+#endif
 }
 
 static void cliPrintError(const char *format, ...)
@@ -3764,9 +3775,53 @@ static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask)
     rateProfileIndexToUse = CURRENT_PROFILE_INDEX;
 }
 
+#ifdef USE_CLI_BATCH
+static void cliPrintCommandBatchWarning(const char *warning)
+{
+    cliPrintErrorLinef("ERRORS WERE DETECTED - PLEASE REVIEW BEFORE CONTINUING");
+    if (warning) {
+        cliPrintErrorLinef(warning);
+    }
+}
+
+static void resetCommandBatch(void)
+{
+    commandBatchActive = false;
+    commandBatchError = false;
+}
+
+static void cliBatch(char *cmdline)
+{
+    if (strncasecmp(cmdline, "start", 5) == 0) {
+        if (!commandBatchActive) {
+            commandBatchActive = true;
+            commandBatchError = false;
+        }
+        cliPrintLine("Command batch started");
+    } else if (strncasecmp(cmdline, "end", 3) == 0) {
+        if (commandBatchActive && commandBatchError) {
+            cliPrintCommandBatchWarning(NULL);
+        } else {
+            cliPrintLine("Command batch ended");
+        }
+        resetCommandBatch();
+    } else {
+        cliPrintErrorLinef("Invalid option");
+    }
+}
+#endif
+
 static void cliSave(char *cmdline)
 {
     UNUSED(cmdline);
+
+#ifdef USE_CLI_BATCH
+    if (commandBatchActive && commandBatchError) {
+        cliPrintCommandBatchWarning("PLEASE FIX ERRORS THEN 'SAVE'");
+        resetCommandBatch();
+        return;
+    }
+#endif
 
     cliPrintHashLine("saving");
 
@@ -3805,6 +3860,14 @@ static void cliDefaults(char *cmdline)
     cliPrintHashLine("resetting to defaults");
 
     resetConfigs();
+
+#ifdef USE_CLI_BATCH
+    // Reset only the error state and allow the batch active state to remain.
+    // This way if a "defaults nosave" was issued after the "batch on" we'll
+    // only reset the current error state but the batch will still be active
+    // for subsequent commands.
+    commandBatchError = false;
+#endif
 
     if (saveConfigs) {
         cliSave(NULL);
@@ -5238,6 +5301,11 @@ static void printConfig(char *cmdline, bool doDiff)
                 cliPrintLinefeed();
             }
 
+#ifdef USE_CLI_BATCH
+            cliPrintHashLine("start the command batch");
+            cliPrintLine("batch start");
+#endif
+
             cliPrintHashLine("name");
             printName(dumpMask, &pilotConfig_Copy);
         }
@@ -5382,6 +5450,11 @@ static void printConfig(char *cmdline, bool doDiff)
 
         if (dumpMask & DUMP_RATES) {
             cliDumpRateProfile(systemConfig_Copy.activeRateProfile, dumpMask);
+
+#ifdef USE_CLI_BATCH
+            cliPrintHashLine("end the command batch");
+            cliPrintLine("batch end");
+#endif
         }
     }
 
@@ -5461,6 +5534,9 @@ static void cliHelp(char *cmdline);
 const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("adjrange", "configure adjustment ranges", NULL, cliAdjustmentRange),
     CLI_COMMAND_DEF("aux", "configure modes", "<index> <mode> <aux> <start> <end> <logic>", cliAux),
+#ifdef USE_CLI_BATCH
+    CLI_COMMAND_DEF("batch", "start or end a batch of commands", "start | end", cliBatch),
+#endif
 #if defined(USE_BEEPER)
 #if defined(USE_DSHOT)
     CLI_COMMAND_DEF("beacon", "enable/disable Dshot beacon for a condition", "list\r\n"
@@ -5743,6 +5819,10 @@ void cliEnter(serialPort_t *serialPort)
     setArmingDisabled(ARMING_DISABLED_CLI);
 
     cliPrompt();
+
+#ifdef USE_CLI_BATCH
+    resetCommandBatch();
+#endif
 }
 
 void cliInit(const serialConfig_t *serialConfig)
