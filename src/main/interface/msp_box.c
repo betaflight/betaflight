@@ -94,6 +94,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOXPARALYZE, "PARALYZE", 45 },
     { BOXGPSRESCUE, "GPS RESCUE", 46 },
     { BOXACROTRAINER, "ACRO TRAINER", 47 },
+    { BOXVTXCONTROLDISABLE, "DISABLE VTX CONTROL", 48},
 };
 
 // mask of enabled IDs, calculated on startup based on enabled features. boxId_e is used as bit index
@@ -260,6 +261,7 @@ void initActiveBoxIds(void)
 
 #if defined(USE_VTX_SMARTAUDIO) || defined(USE_VTX_TRAMP)
     BME(BOXVTXPITMODE);
+    BME(BOXVTXCONTROLDISABLE);
 #endif
 
     BME(BOXPARALYZE);
