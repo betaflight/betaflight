@@ -242,7 +242,7 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
         s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->TDR;
     }
 
-    serialUARTInitIO(IOGetByTag(uartDev->tx), IOGetByTag(uartDev->rx), mode, options, hardware->af, device);
+    serialUARTInitIO(IOGetByTag(uartDev->tx.pin), IOGetByTag(uartDev->rx.pin), mode, options, hardware->af, device);
 
     if (!s->rxDMAChannel || !s->txDMAChannel) {
         NVIC_InitTypeDef NVIC_InitStructure;

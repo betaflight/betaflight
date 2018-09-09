@@ -162,12 +162,8 @@ extern const uartHardware_t uartHardware[];
 typedef struct uartDevice_s {
     uartPort_t port;
     const uartHardware_t *hardware;
-    ioTag_t rx;
-    ioTag_t tx;
-#if defined(STM32F7)
-    uint8_t rxAF;
-    uint8_t txAF;
-#endif
+    uartPinDef_t rx;
+    uartPinDef_t tx;
     volatile uint8_t rxBuffer[UART_RX_BUFFER_SIZE];
     volatile uint8_t txBuffer[UART_TX_BUFFER_SIZE];
 } uartDevice_t;

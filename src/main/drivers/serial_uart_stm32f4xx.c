@@ -234,8 +234,8 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
         s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
     }
 
-    IO_t txIO = IOGetByTag(uart->tx);
-    IO_t rxIO = IOGetByTag(uart->rx);
+    IO_t txIO = IOGetByTag(uart->tx.pin);
+    IO_t rxIO = IOGetByTag(uart->rx.pin);
 
     if (hardware->rcc) {
         RCC_ClockCmd(hardware->rcc, ENABLE);

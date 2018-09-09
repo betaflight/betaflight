@@ -157,8 +157,8 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
         s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
     }
 
-    IO_t rxIO = IOGetByTag(uartdev->rx);
-    IO_t txIO = IOGetByTag(uartdev->tx);
+    IO_t rxIO = IOGetByTag(uartdev->rx.pin);
+    IO_t txIO = IOGetByTag(uartdev->tx.pin);
 
     if (options & SERIAL_BIDIR) {
         IOInit(txIO, OWNER_SERIAL_TX, RESOURCE_INDEX(device));

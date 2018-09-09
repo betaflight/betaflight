@@ -53,21 +53,15 @@ void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig)
 
         for (int pindex = 0 ; pindex < UARTHARDWARE_MAX_PINS ; pindex++) {
             if (hardware->rxPins[pindex].pin == pSerialPinConfig->ioTagRx[device]) {
-                uartdev->rx = pSerialPinConfig->ioTagRx[device];
-#if defined(STM32F7)
-                uartdev->rxAF = hardware->rxPins[pindex].af;
-#endif
+                uartdev->rx = hardware->rxPins[pindex];
             }
 
             if (hardware->txPins[pindex].pin == pSerialPinConfig->ioTagTx[device]) {
-                uartdev->tx = pSerialPinConfig->ioTagTx[device];
-#if defined(STM32F7)
-                uartdev->txAF = hardware->txPins[pindex].af;
-#endif
+                uartdev->tx = hardware->txPins[pindex];
             }
         }
 
-        if (uartdev->rx || uartdev->tx) {
+        if (uartdev->rx.pin || uartdev->tx.pin) {
             uartdev->hardware = hardware;
             uartDevmap[device] = uartdev++;
         }

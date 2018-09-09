@@ -441,8 +441,8 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
 
     s->Handle.Instance = hardware->reg;
 
-    IO_t txIO = IOGetByTag(uartdev->tx);
-    IO_t rxIO = IOGetByTag(uartdev->rx);
+    IO_t txIO = IOGetByTag(uartdev->tx.pin);
+    IO_t rxIO = IOGetByTag(uartdev->rx.pin);
 
     if ((options & SERIAL_BIDIR) && txIO) {
         ioConfig_t ioCfg = IO_CONFIG(
@@ -452,17 +452,17 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
         );
 
         IOInit(txIO, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
-        IOConfigGPIOAF(txIO, ioCfg, uartdev->txAF);
+        IOConfigGPIOAF(txIO, ioCfg, uartdev->tx.af);
     }
     else {
         if ((mode & MODE_TX) && txIO) {
             IOInit(txIO, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
-            IOConfigGPIOAF(txIO, IOCFG_AF_PP, uartdev->txAF);
+            IOConfigGPIOAF(txIO, IOCFG_AF_PP, uartdev->tx.af);
         }
 
         if ((mode & MODE_RX) && rxIO) {
             IOInit(rxIO, OWNER_SERIAL_RX, RESOURCE_INDEX(device));
-            IOConfigGPIOAF(rxIO, IOCFG_AF_PP, uartdev->rxAF);
+            IOConfigGPIOAF(rxIO, IOCFG_AF_PP, uartdev->rx.af);
         }
     }
 
