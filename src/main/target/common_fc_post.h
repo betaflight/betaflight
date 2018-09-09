@@ -167,3 +167,9 @@
 #if defined(USE_GPS_RESCUE)
 #define USE_GPS
 #endif
+
+// Disable filters for IMUF
+#ifdef USE_GYRO_IMUF9001
+#undef USE_GYRO_FAST_KALMAN
+#undef USE_GYRO_BIQUAD_RC_FIR2
+#endif

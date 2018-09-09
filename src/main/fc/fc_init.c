@@ -74,9 +74,18 @@
 #include "drivers/usb_io.h"
 #include "drivers/vtx_rtc6705.h"
 #include "drivers/vtx_common.h"
+
 #ifdef USE_USB_MSC
 #include "drivers/usb_msc.h"
 #endif
+
+#ifdef USE_DMA_SPI_DEVICE
+#include "drivers/dma_spi.h"
+#endif //USE_DMA_SPI_DEVICE
+
+#ifdef USE_GYRO_IMUF9001
+#include "drivers/accgyro/accgyro_imuf9001.h"
+#endif //USE_GYRO_IMUF9001
 
 #include "fc/board_info.h"
 #include "fc/config.h"
@@ -223,6 +232,19 @@ void init(void)
     printfSupportInit();
 
     systemInit();
+
+    initEEPROM();
+
+    ensureEEPROMStructureIsValid();
+    readEEPROM();
+
+#ifdef USE_GYRO_IMUF9001
+
+    if (isMPUSoftReset()) {
+        // reset imuf before befhal mucks with the pins
+        initImuf9001();
+    }
+#endif
 
     // initialize IO (needed for all IO operations)
     IOInitGlobal();
@@ -390,6 +412,9 @@ void init(void)
 
 #ifdef USE_SPI_DEVICE_1
     spiInit(SPIDEV_1);
+#endif
+#ifdef USE_DMA_SPI_DEVICE
+    dmaSpiInit();
 #endif
 #ifdef USE_SPI_DEVICE_2
     spiInit(SPIDEV_2);

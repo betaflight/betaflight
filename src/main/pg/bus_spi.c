@@ -98,6 +98,9 @@ ioTag_t preinitIPUList[SPI_PREINIT_IPU_COUNT] = {
 #ifdef L3GD20_CS_PIN
     IO_TAG(L3GD20_CS_PIN),
 #endif
+#if defined(MAX7456_SPI_CS_PIN)
+    IO_TAG(MAX7456_SPI_CS_PIN),
+#endif
 #ifdef SDCARD_SPI_CS_PIN
     IO_TAG(SDCARD_SPI_CS_PIN),
 #endif
@@ -124,9 +127,6 @@ ioTag_t preinitIPUList[SPI_PREINIT_IPU_COUNT] = {
 #endif
 #if defined(USE_RX_SPI) && !defined(USE_RX_SOFTSPI)
     IO_TAG(RX_NSS_PIN),
-#endif
-#if defined(MAX7456_SPI_CS_PIN)
-    IO_TAG(MAX7456_SPI_CS_PIN),
 #endif
     IO_TAG(NONE)
 };

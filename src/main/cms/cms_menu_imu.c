@@ -379,6 +379,84 @@ static CMS_Menu cmsx_menuFilterGlobal = {
     .entries = cmsx_menuFilterGlobalEntries,
 };
 
+//
+// SPRING Imuf
+//
+
+#if defined(USE_GYRO_IMUF9001)
+static uint16_t gyroConfig_imuf_roll_q;
+static uint16_t gyroConfig_imuf_pitch_q;
+static uint16_t gyroConfig_imuf_yaw_q;
+static uint16_t gyroConfig_imuf_w;
+static uint16_t gyroConfig_imuf_pitch_lpf_cutoff_hz;
+static uint16_t gyroConfig_imuf_roll_lpf_cutoff_hz;
+static uint16_t gyroConfig_imuf_yaw_lpf_cutoff_hz;
+#endif
+
+#if defined(USE_GYRO_IMUF9001)
+static long cmsx_menuImuf_onEnter(void)
+{
+    gyroConfig_imuf_roll_q = gyroConfig()->imuf_roll_q;
+    gyroConfig_imuf_pitch_q = gyroConfig()->imuf_pitch_q;
+    gyroConfig_imuf_yaw_q = gyroConfig()->imuf_yaw_q;
+    gyroConfig_imuf_w = gyroConfig()->imuf_w;
+    gyroConfig_imuf_pitch_lpf_cutoff_hz = gyroConfig()->imuf_pitch_lpf_cutoff_hz;
+    gyroConfig_imuf_roll_lpf_cutoff_hz = gyroConfig()->imuf_roll_lpf_cutoff_hz;
+    gyroConfig_imuf_yaw_lpf_cutoff_hz = gyroConfig()->imuf_yaw_lpf_cutoff_hz;
+
+    return 0;
+}
+#endif
+
+#if defined(USE_GYRO_IMUF9001)
+static long cmsx_menuImuf_onExit(const OSD_Entry *self)
+{
+    UNUSED(self);
+
+    gyroConfigMutable()->imuf_roll_q = gyroConfig_imuf_roll_q;
+    gyroConfigMutable()->imuf_pitch_q = gyroConfig_imuf_pitch_q;
+    gyroConfigMutable()->imuf_yaw_q = gyroConfig_imuf_yaw_q;
+    gyroConfigMutable()->imuf_w = gyroConfig_imuf_w;
+    gyroConfigMutable()->imuf_pitch_lpf_cutoff_hz = gyroConfig_imuf_pitch_lpf_cutoff_hz;
+    gyroConfigMutable()->imuf_roll_lpf_cutoff_hz = gyroConfig_imuf_roll_lpf_cutoff_hz;
+    gyroConfigMutable()->imuf_yaw_lpf_cutoff_hz = gyroConfig_imuf_yaw_lpf_cutoff_hz;
+
+    return 0;
+}
+#endif
+
+#if defined(USE_GYRO_IMUF9001)
+static OSD_Entry cmsx_menuImufEntries[] =
+{
+    { "-- SPRING IMU-F --", OME_Label, NULL, NULL, 0 },
+    { "-- CHANGES REQUIRE REBOOT --", OME_Label, NULL, NULL, 0 },
+    { "IMUF W",    OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_imuf_w,                   0, 300,    1 }, 0 },
+    { "ROLL Q",    OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_imuf_roll_q,              0, 16000, 50 }, 0 },
+    { "PITCH Q",   OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_imuf_pitch_q,             0, 16000, 50 }, 0 },
+    { "YAW Q",     OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_imuf_yaw_q,               0, 16000, 50 }, 0 },
+    { "ROLL LPF",  OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_imuf_roll_lpf_cutoff_hz,  0, 450,    1 }, 0 },
+    { "PITCH LPF", OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_imuf_pitch_lpf_cutoff_hz, 0, 450,    1 }, 0 },
+    { "YAW LPF",   OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_imuf_yaw_lpf_cutoff_hz,   0, 450,    1 }, 0 },
+
+    
+    { "BACK",        OME_Back,            NULL,   NULL,             0},
+    { "SAVE&REBOOT", OME_OSD_Exit, cmsMenuExit,   (void *)CMS_EXIT_SAVEREBOOT, 0},
+    { NULL, OME_END, NULL, NULL, 0 }
+};
+#endif
+
+#if defined(USE_GYRO_IMUF9001)
+static CMS_Menu cmsx_menuImuf = {
+#ifdef CMS_MENU_DEBUG
+    .GUARD_text = "XIMUF",
+    .GUARD_type = OME_MENU,
+#endif
+    .onEnter = cmsx_menuImuf_onEnter,
+    .onExit = cmsx_menuImuf_onExit,
+    .entries = cmsx_menuImufEntries,
+};
+#endif
+
 static uint16_t cmsx_dterm_lowpass_hz;
 static uint16_t cmsx_dterm_lowpass2_hz;
 static uint16_t cmsx_dterm_notch_hz;
@@ -523,7 +601,12 @@ static OSD_Entry cmsx_menuImuEntries[] =
 
     {"FILT GLB",  OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterGlobal,                                        0},
 #ifdef USE_EXTENDED_CMS_MENUS
+#if defined(USE_GYRO_IMUF9001)
+    {"IMUF",      OME_Submenu, cmsMenuChange,                 &cmsx_menuImuf,                                                0},
+#endif
+#ifdef USE_COPY_PROFILE_CMS_MENU
     {"COPY PROF", OME_Submenu, cmsMenuChange,                 &cmsx_menuCopyProfile,                                         0},
+#endif /* USE_COPY_PROFILE_CMS_MENU */
 #endif /* USE_EXTENDED_CMS_MENUS */
 
     {"BACK", OME_Back, NULL, NULL, 0},

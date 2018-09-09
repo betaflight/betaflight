@@ -16,7 +16,7 @@
 #
 
 # The target to build, see VALID_TARGETS below
-TARGET    ?= BETAFLIGHTF3
+TARGET    ?= HELIOSPRING
 
 # Compile-time options
 OPTIONS   ?=
@@ -181,6 +181,7 @@ include $(ROOT)/make/source.mk
 
 # Find out if ccache is installed on the system
 CCACHE := ccache
+CCACHE :=
 RESULT = $(shell (which $(CCACHE) > /dev/null 2>&1; echo $$?) )
 ifneq ($(RESULT),0)
 CCACHE :=
