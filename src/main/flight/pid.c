@@ -449,7 +449,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     if (ITermWindupPoint == 1.0f) {
         ITermWindupPointInv = 1.0f;
     } else {
-        ITermWindupPointInv = 1 / (1 - ITermWindupPoint);
+        ITermWindupPointInv = 1.0f / (1.0f - ITermWindupPoint);
     }
     itermAcceleratorGain = pidProfile->itermAcceleratorGain;
     crashTimeLimitUs = pidProfile->crash_time * 1000;
@@ -849,7 +849,13 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
     static float previousPidSetpoint[XYZ_AXIS_COUNT];
 
     const float tpaFactor = getThrottlePIDAttenuation();
+
+    // Anti Windup
     const float motorMixRange = getMotorMixRange();
+    float antiWindup = 1.0f;
+    if (ITermWindupPointInv > 1.0f) {
+        antiWindup = constrainf((1.0f - motorMixRange) * ITermWindupPointInv, 0.0f, 1.0f);
+    }
 
 #ifdef USE_YAW_SPIN_RECOVERY
     const bool yawSpinActive = gyroYawSpinDetected();
@@ -979,20 +985,18 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
         // 2-DOF PID controller with optional filter on derivative term.
         // b = 1 and only c (feedforward weight) can be tuned (amount derivative on measurement or error).
 
-        // -----calculate P component and clear antigravity on yaw, note dynCi carries antigravity boost factor
-        float dynCiNew = dynCi;
+        // -----calculate P component
         pidData[axis].P = pidCoefficient[axis].Kp * errorRate * tpaFactor;
         if (axis == FD_YAW) {
             pidData[axis].P = ptermYawLowpassApplyFn((filter_t *) &ptermYawLowpass, pidData[axis].P);
-            dynCiNew = 1;
         }
 
         // -----calculate I component
-        // iterm_windup constrains I accumulation, only on pitch and roll, only when < 100
-        if ((axis <= FD_PITCH) && (ITermWindupPointInv > 1.0f)) {
-            dynCiNew = dynCi * constrainf((1.0f - motorMixRange) * ITermWindupPointInv, 0.0f, 1.0f);
+        // iterm_windup constrains I accumulation only on pitch and roll
+        if (axis == FD_YAW) {
+            antiWindup = 1.0f;
         }
-        pidData[axis].I = constrainf(ITerm + pidCoefficient[axis].Ki * itermErrorRate * dynCiNew, -itermLimit, itermLimit);
+        pidData[axis].I = constrainf(ITerm + pidCoefficient[axis].Ki * itermErrorRate * dynCi * antiWindup, -itermLimit, itermLimit);
 
         // -----calculate D component
         if (pidCoefficient[axis].Kd > 0) {
