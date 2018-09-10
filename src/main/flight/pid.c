@@ -119,7 +119,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .pid = {
             [PID_ROLL] =  { 46, 45, 25, 60 },
             [PID_PITCH] = { 50, 50, 27, 60 },
-            [PID_YAW] =   { 65, 45, 0 , 60 },
+            [PID_YAW] =   { 50, 150, 0, 120 },
             [PID_LEVEL] = { 50, 50, 75, 0 },
             [PID_MAG] =   { 40, 0, 0, 0 },
         },
@@ -132,12 +132,12 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .dterm_notch_hz = 0,
         .dterm_notch_cutoff = 160,
         .dterm_filter_type = FILTER_PT1,
-        .itermWindupPointPercent = 40,
+        .itermWindupPointPercent = 100,
         .vbatPidCompensation = 0,
         .pidAtMinThrottle = PID_STABILISATION_ON,
         .levelAngleLimit = 55,
         .feedForwardTransition = 0,
-        .yawRateAccelLimit = 100,
+        .yawRateAccelLimit = 0,
         .rateAccelLimit = 0,
         .itermThrottleThreshold = 250,
         .itermAcceleratorGain = 5000,
@@ -152,7 +152,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .horizon_tilt_effect = 75,
         .horizon_tilt_expert_mode = false,
         .crash_limit_yaw = 200,
-        .itermLimit = 150,
+        .itermLimit = 300,
         .throttle_boost = 5,
         .throttle_boost_cutoff = 15,
         .iterm_rotation = true,
@@ -445,8 +445,12 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     horizonFactorRatio = (100 - pidProfile->horizon_tilt_effect) * 0.01f;
     maxVelocity[FD_ROLL] = maxVelocity[FD_PITCH] = pidProfile->rateAccelLimit * 100 * dT;
     maxVelocity[FD_YAW] = pidProfile->yawRateAccelLimit * 100 * dT;
-    const float ITermWindupPoint = (float)pidProfile->itermWindupPointPercent / 100.0f;
-    ITermWindupPointInv = 1.0f / (1.0f - ITermWindupPoint);
+    const float ITermWindupPoint = pidProfile->itermWindupPointPercent / 100.0f;
+    if (ITermWindupPoint == 1.0f) {
+        ITermWindupPointInv = 1.0f;
+    } else {
+        ITermWindupPointInv = 1 / (1 - ITermWindupPoint);
+    }
     itermAcceleratorGain = pidProfile->itermAcceleratorGain;
     crashTimeLimitUs = pidProfile->crash_time * 1000;
     crashTimeDelayUs = pidProfile->crash_delay * 1000;
@@ -851,14 +855,13 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
     const bool yawSpinActive = gyroYawSpinDetected();
 #endif
 
-    // Dynamic i component,
+    // Anti Gravity
     if ((antiGravityMode == ANTI_GRAVITY_SMOOTH) && antiGravityEnabled) {
         itermAccelerator = 1 + fabsf(antiGravityThrottleHpf) * 0.01f * (itermAcceleratorGain - 1000);
         DEBUG_SET(DEBUG_ANTI_GRAVITY, 1, lrintf(antiGravityThrottleHpf * 1000));
     }
     DEBUG_SET(DEBUG_ANTI_GRAVITY, 0, lrintf(itermAccelerator * 1000));
-    // gradually scale back integration when above windup point
-    const float dynCi = MIN((1.0f - motorMixRange) * ITermWindupPointInv, 1.0f) * dT * itermAccelerator;
+    float dynCi = dT * itermAccelerator;
 
     // Precalculate gyro deta for D-term here, this allows loop unrolling
     float gyroRateDterm[XYZ_AXIS_COUNT];
@@ -983,12 +986,11 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
         }
 
         // -----calculate I component
-        const float ITermNew = constrainf(ITerm + pidCoefficient[axis].Ki * itermErrorRate * dynCi, -itermLimit, itermLimit);
-        const bool outputSaturated = mixerIsOutputSaturated(axis, errorRate);
-        if (outputSaturated == false || ABS(ITermNew) < ABS(ITerm)) {
-            // Only increase ITerm if output is not saturated
-            pidData[axis].I = ITermNew;
+        // iterm_windup constrains I accumulation, only on pitch and roll, only when < 100
+        if ((axis <= FD_PITCH) && (ITermWindupPoint < 1.0f)) {
+            dynCi *= constrainf((1.0f - motorMixRange) * ITermWindupPointInv, 0.0f, 1.0f);
         }
+        pidData[axis].I = constrainf(ITerm + pidCoefficient[axis].Ki * itermErrorRate * dynCi, -itermLimit, itermLimit);
 
         // -----calculate D component
         if (pidCoefficient[axis].Kd > 0) {

@@ -361,15 +361,6 @@ bool mixerIsTricopter(void)
 #endif
 }
 
-bool mixerIsOutputSaturated(int axis, float errorRate)
-{
-    if (axis == FD_YAW && mixerIsTricopter()) {
-        return mixerTricopterIsServoSaturated(errorRate);
-    }
-
-    return motorMixRange >= 1.0f;
-}
-
 // All PWM motor scaling is done to standard PWM range of 1000-2000 for easier tick conversion with legacy code / configurator
 // DSHOT scaling is done to the actual dshot range
 void initEscEndpoints(void)
