@@ -67,7 +67,6 @@ extern "C" {
     float getThrottlePIDAttenuation(void) { return simulatedThrottlePIDAttenuation; }
     float getMotorMixRange(void) { return simulatedMotorMixRange; }
     float getSetpointRate(int axis) { return simulatedSetpointRate[axis]; }
-    bool mixerIsOutputSaturated(int, float) { return simulateMixerSaturated; }
     float getRcDeflectionAbs(int axis) { return ABS(simulatedRcDeflection[axis]); }
     void systemBeep(bool) { }
     bool gyroOverflowDetected(void) { return false; }
@@ -430,14 +429,41 @@ TEST(pidControllerTest, testMixerSaturation) {
     // Test full stick response
     setStickPosition(FD_ROLL, 1.0f);
     setStickPosition(FD_PITCH, -1.0f);
-    simulateMixerSaturated = true;
+    setStickPosition(FD_YAW, 1.0f);
+    simulatedMotorMixRange = 2.0f;
     pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
 
     // Expect no iterm accumulation
-    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].I);
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].I);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
+
+    // Test itermWindup limit
+    // First store values without exceeding iterm windup limit
+    resetTest();
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+    setStickPosition(FD_ROLL, 0.1f);
+    setStickPosition(FD_PITCH, -0.1f);
+    setStickPosition(FD_YAW, 0.1f);
+    simulatedMotorMixRange = 0.0f;
+    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+    float rollTestIterm = pidData[FD_ROLL].I;
+    float pitchTestIterm = pidData[FD_PITCH].I;
+    float yawTestIterm = pidData[FD_YAW].I;
+
+    // Now compare values when exceeding the limit
+    resetTest();
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+    setStickPosition(FD_ROLL, 0.1f);
+    setStickPosition(FD_PITCH, -0.1f);
+    setStickPosition(FD_YAW, 0.1f);
+    simulatedMotorMixRange = (pidProfile->itermWindupPointPercent + 1) / 100.0f;
+    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+    ASSERT_LT(pidData[FD_ROLL].I, rollTestIterm);
+    ASSERT_GE(pidData[FD_PITCH].I, pitchTestIterm);
+    ASSERT_LT(pidData[FD_YAW].I, yawTestIterm);
 }
 
 // TODO - Add more scenarios
