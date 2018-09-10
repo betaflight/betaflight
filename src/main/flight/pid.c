@@ -445,8 +445,13 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     horizonFactorRatio = (100 - pidProfile->horizon_tilt_effect) * 0.01f;
     maxVelocity[FD_ROLL] = maxVelocity[FD_PITCH] = pidProfile->rateAccelLimit * 100 * dT;
     maxVelocity[FD_YAW] = pidProfile->yawRateAccelLimit * 100 * dT;
-    const float ITermWindupPoint = (float)pidProfile->itermWindupPointPercent / 100.0f;
-    ITermWindupPointInv = 1.0f / (1.0f - ITermWindupPoint);
+    ITermWindupPointInv = 0.0f;
+    if (pidProfile->itermWindupPointPercent < 100) {
+        float ITermWindupPoint = (float)pidProfile->itermWindupPointPercent / 100.0f;
+        ITermWindupPointInv = 1.0f / (1.0f - ITermWindupPoint);
+    } else {
+        ITermWindupPointInv = 0.0f;
+    }
     itermAcceleratorGain = pidProfile->itermAcceleratorGain;
     crashTimeLimitUs = pidProfile->crash_time * 1000;
     crashTimeDelayUs = pidProfile->crash_delay * 1000;
@@ -859,8 +864,10 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
     DEBUG_SET(DEBUG_ANTI_GRAVITY, 0, lrintf(itermAccelerator * 1000));
 
     // gradually scale back integration when above windup point
-    const float dynCi = constrainf((1.0f - motorMixRange) * ITermWindupPointInv, 0.0f, 1.0f)
-        * dT * itermAccelerator;
+    float dynCi = dT * itermAccelerator;
+    if (ITermWindupPointInv > 0) {
+        dynCi *= constrainf((1.0f - motorMixRange) * ITermWindupPointInv, 0.0f, 1.0f);
+    }
 
     // Precalculate gyro deta for D-term here, this allows loop unrolling
     float gyroRateDterm[XYZ_AXIS_COUNT];
@@ -985,12 +992,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
         }
 
         // -----calculate I component
-        const float ITermNew = constrainf(ITerm + pidCoefficient[axis].Ki * itermErrorRate * dynCi, -itermLimit, itermLimit);
-        const bool outputSaturated = mixerIsOutputSaturated(axis, errorRate);
-        if (outputSaturated == false || ABS(ITermNew) < ABS(ITerm)) {
-            // Only increase ITerm if output is not saturated
-            pidData[axis].I = ITermNew;
-        }
+        pidData[axis].I = constrainf(ITerm + pidCoefficient[axis].Ki * itermErrorRate * dynCi, -itermLimit, itermLimit);
 
         // -----calculate D component
         if (pidCoefficient[axis].Kd > 0) {
