@@ -130,7 +130,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .dterm_lowpass_hz = 100,    // dual PT1 filtering ON by default
         .dterm_lowpass2_hz = 200,   // second Dterm LPF ON by default
         .dterm_notch_hz = 0,
-        .dterm_notch_cutoff = 160,
+        .dterm_notch_cutoff = 0,
         .dterm_filter_type = FILTER_PT1,
         .itermWindupPointPercent = 40,
         .vbatPidCompensation = 0,
