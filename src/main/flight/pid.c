@@ -987,7 +987,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
 
         // -----calculate I component
         // iterm_windup constrains I accumulation, only on pitch and roll, only when < 100
-        if ((axis <= FD_PITCH) && (ITermWindupPointInv < 1.0f)) {
+        if ((axis <= FD_PITCH) && (ITermWindupPoint < 1.0f)) {
             dynCi *= constrainf((1.0f - motorMixRange) * ITermWindupPointInv, 0.0f, 1.0f);
         }
         pidData[axis].I = constrainf(ITerm + pidCoefficient[axis].Ki * itermErrorRate * dynCi, -itermLimit, itermLimit);
