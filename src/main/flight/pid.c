@@ -861,7 +861,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
         DEBUG_SET(DEBUG_ANTI_GRAVITY, 1, lrintf(antiGravityThrottleHpf * 1000));
     }
     DEBUG_SET(DEBUG_ANTI_GRAVITY, 0, lrintf(itermAccelerator * 1000));
-    float dynCi = dT * itermAccelerator;
+    const float dynCi = dT * itermAccelerator;
 
     // Precalculate gyro deta for D-term here, this allows loop unrolling
     float gyroRateDterm[XYZ_AXIS_COUNT];
@@ -979,18 +979,20 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
         // 2-DOF PID controller with optional filter on derivative term.
         // b = 1 and only c (feedforward weight) can be tuned (amount derivative on measurement or error).
 
-        // -----calculate P component and add Dynamic Part based on stick input
+        // -----calculate P component and clear antigravity on yaw, note dynCi carries antigravity boost factor
+        float dynCiNew = dynCi;
         pidData[axis].P = pidCoefficient[axis].Kp * errorRate * tpaFactor;
         if (axis == FD_YAW) {
             pidData[axis].P = ptermYawLowpassApplyFn((filter_t *) &ptermYawLowpass, pidData[axis].P);
+            dynCiNew = 1;
         }
 
         // -----calculate I component
         // iterm_windup constrains I accumulation, only on pitch and roll, only when < 100
-        if ((axis <= FD_PITCH) && (ITermWindupPoint < 1.0f)) {
-            dynCi *= constrainf((1.0f - motorMixRange) * ITermWindupPointInv, 0.0f, 1.0f);
+        if ((axis <= FD_PITCH) && (ITermWindupPointInv > 1.0f)) {
+            dynCiNew = dynCi * constrainf((1.0f - motorMixRange) * ITermWindupPointInv, 0.0f, 1.0f);
         }
-        pidData[axis].I = constrainf(ITerm + pidCoefficient[axis].Ki * itermErrorRate * dynCi, -itermLimit, itermLimit);
+        pidData[axis].I = constrainf(ITerm + pidCoefficient[axis].Ki * itermErrorRate * dynCiNew, -itermLimit, itermLimit);
 
         // -----calculate D component
         if (pidCoefficient[axis].Kd > 0) {
