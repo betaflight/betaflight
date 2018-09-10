@@ -460,11 +460,11 @@ TEST(pidControllerTest, testMixerSaturation) {
     setStickPosition(FD_ROLL, 0.1f);
     setStickPosition(FD_PITCH, -0.1f);
     setStickPosition(FD_YAW, 0.1f);
-    simulatedMotorMixRange = (pidProfile->itermWindupPointPercent + 1 / 100.0f);
+    simulatedMotorMixRange = (pidProfile->itermWindupPointPercent + 1) / 100.0f;
     pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
-    ASSERT_NE(pidData[FD_ROLL].I, rollTestIterm);
-    ASSERT_NE(pidData[FD_PITCH].I, pitchTestIterm);
-    ASSERT_NE(pidData[FD_YAW].I, yawTestIterm);
+    ASSERT_LT(pidData[FD_ROLL].I, rollTestIterm);
+    ASSERT_GE(pidData[FD_PITCH].I, pitchTestIterm);
+    ASSERT_LT(pidData[FD_YAW].I, yawTestIterm);
 }
 
 // TODO - Add more scenarios
