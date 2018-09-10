@@ -90,8 +90,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .reg = USART1,
         .rxDMAChannel = UART1_RX_DMA,
         .txDMAChannel = UART1_TX_DMA,
-        .rxPins = { DEFIO_TAG_E(PA10), DEFIO_TAG_E(PB7), DEFIO_TAG_E(PC5), DEFIO_TAG_E(PE1) },
-        .txPins = { DEFIO_TAG_E(PA9), DEFIO_TAG_E(PB6), DEFIO_TAG_E(PC4), DEFIO_TAG_E(PE0) },
+        .rxPins = { { DEFIO_TAG_E(PA10) }, { DEFIO_TAG_E(PB7) }, { DEFIO_TAG_E(PC5) }, { DEFIO_TAG_E(PE1) } },
+        .txPins = { { DEFIO_TAG_E(PA9) }, { DEFIO_TAG_E(PB6) }, { DEFIO_TAG_E(PC4) }, { DEFIO_TAG_E(PE0) } },
         .rcc = RCC_APB2(USART1),
         .af = GPIO_AF_7,
         .irqn = USART1_IRQn,
@@ -106,8 +106,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .reg = USART2,
         .rxDMAChannel = UART2_RX_DMA,
         .txDMAChannel = UART2_TX_DMA,
-        .rxPins = { DEFIO_TAG_E(PA15), DEFIO_TAG_E(PA3), DEFIO_TAG_E(PB4), DEFIO_TAG_E(PD6) },
-        .txPins = { DEFIO_TAG_E(PA14), DEFIO_TAG_E(PA2), DEFIO_TAG_E(PB3), DEFIO_TAG_E(PD5) },
+        .rxPins = { { DEFIO_TAG_E(PA15) }, { DEFIO_TAG_E(PA3) }, { DEFIO_TAG_E(PB4) }, { DEFIO_TAG_E(PD6) } },
+        .txPins = { { DEFIO_TAG_E(PA14) }, { DEFIO_TAG_E(PA2) }, { DEFIO_TAG_E(PB3) }, { DEFIO_TAG_E(PD5) } },
         .rcc = RCC_APB1(USART2),
         .af = GPIO_AF_7,
         .irqn = USART2_IRQn,
@@ -122,8 +122,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .reg = USART3,
         .rxDMAChannel = UART3_RX_DMA,
         .txDMAChannel = UART3_TX_DMA,
-        .rxPins = { DEFIO_TAG_E(PB11), DEFIO_TAG_E(PC11), DEFIO_TAG_E(PD9), IO_TAG_NONE },
-        .txPins = { DEFIO_TAG_E(PB10), DEFIO_TAG_E(PC10), DEFIO_TAG_E(PD8), IO_TAG_NONE },
+        .rxPins = { { DEFIO_TAG_E(PB11) }, { DEFIO_TAG_E(PC11) }, { DEFIO_TAG_E(PD9) } },
+        .txPins = { { DEFIO_TAG_E(PB10) }, { DEFIO_TAG_E(PC10) }, { DEFIO_TAG_E(PD8) } },
         .rcc = RCC_APB1(USART3),
         .af = GPIO_AF_7,
         .irqn = USART3_IRQn,
@@ -139,8 +139,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .reg = UART4,
         .rxDMAChannel = 0, // XXX UART4_RX_DMA !?
         .txDMAChannel = 0, // XXX UART4_TX_DMA !?
-        .rxPins = { DEFIO_TAG_E(PC11), IO_TAG_NONE, IO_TAG_NONE, IO_TAG_NONE },
-        .txPins = { DEFIO_TAG_E(PC10), IO_TAG_NONE, IO_TAG_NONE, IO_TAG_NONE },
+        .rxPins = { { DEFIO_TAG_E(PC11) } },
+        .txPins = { { DEFIO_TAG_E(PC10) } },
         .rcc = RCC_APB1(UART4),
         .af = GPIO_AF_5,
         .irqn = UART4_IRQn,
@@ -156,8 +156,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .reg = UART5,
         .rxDMAChannel = 0,
         .txDMAChannel = 0,
-        .rxPins = { DEFIO_TAG_E(PD2), IO_TAG_NONE, IO_TAG_NONE, IO_TAG_NONE },
-        .txPins = { DEFIO_TAG_E(PC12), IO_TAG_NONE, IO_TAG_NONE, IO_TAG_NONE },
+        .rxPins = { { DEFIO_TAG_E(PD2) } },
+        .txPins = { { DEFIO_TAG_E(PC12) } },
         .rcc = RCC_APB1(UART5),
         .af = GPIO_AF_5,
         .irqn = UART5_IRQn,
@@ -242,7 +242,7 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
         s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->TDR;
     }
 
-    serialUARTInitIO(IOGetByTag(uartDev->tx), IOGetByTag(uartDev->rx), mode, options, hardware->af, device);
+    serialUARTInitIO(IOGetByTag(uartDev->tx.pin), IOGetByTag(uartDev->rx.pin), mode, options, hardware->af, device);
 
     if (!s->rxDMAChannel || !s->txDMAChannel) {
         NVIC_InitTypeDef NVIC_InitStructure;

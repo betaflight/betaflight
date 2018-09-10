@@ -127,7 +127,12 @@ endif
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16 -fsingle-precision-constant -Wdouble-promotion
 
 DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER
-ifeq ($(TARGET),$(filter $(TARGET),$(F7X5XG_TARGETS)))
+ifeq ($(TARGET),$(filter $(TARGET),$(F7X5XI_TARGETS)))
+DEVICE_FLAGS   += -DSTM32F765xx
+LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f765.ld
+STARTUP_SRC     = startup_stm32f765xx.s
+TARGET_FLASH	= 2048
+else ifeq ($(TARGET),$(filter $(TARGET),$(F7X5XG_TARGETS)))
 DEVICE_FLAGS   += -DSTM32F745xx
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f74x.ld
 STARTUP_SRC     = startup_stm32f745xx.s

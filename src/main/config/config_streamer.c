@@ -31,6 +31,7 @@ extern uint8_t __config_start;   // configured via linker script when building b
 extern uint8_t __config_end;
 #endif
 
+// @todo this is not strictly correct for F4/F7, where sector sizes are variable
 #if !defined(FLASH_PAGE_SIZE)
 // F1
 # if defined(STM32F10X_MD)
@@ -55,6 +56,8 @@ extern uint8_t __config_end;
 # elif defined(STM32F745xx)
 #  define FLASH_PAGE_SIZE                 ((uint32_t)0x8000) // 32K sectors
 # elif defined(STM32F746xx)
+#  define FLASH_PAGE_SIZE                 ((uint32_t)0x8000)
+# elif defined(STM32F765xx)
 #  define FLASH_PAGE_SIZE                 ((uint32_t)0x8000)
 # elif defined(UNIT_TEST)
 #  define FLASH_PAGE_SIZE                 (0x400)
@@ -101,7 +104,7 @@ void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
     c->err = 0;
 }
 
-#if defined(STM32F745xx) || defined(STM32F746xx)
+#if defined(STM32F745xx) || defined(STM32F746xx) || defined(STM32F765xx)
 /*
 Sector 0    0x08000000 - 0x08007FFF 32 Kbytes
 Sector 1    0x08008000 - 0x0800FFFF 32 Kbytes
@@ -111,6 +114,12 @@ Sector 4    0x08020000 - 0x0803FFFF 128 Kbytes
 Sector 5    0x08040000 - 0x0807FFFF 256 Kbytes
 Sector 6    0x08080000 - 0x080BFFFF 256 Kbytes
 Sector 7    0x080C0000 - 0x080FFFFF 256 Kbytes
+
+F7X5XI device with 2M flash
+Sector 8    0x08100000 - 0x0813FFFF 256 Kbytes
+Sector 9    0x08140000 - 0x0817FFFF 256 Kbytes
+Sector 10   0x08180000 - 0x081BFFFF 256 Kbytes
+Sector 11   0x081C0000 - 0x081FFFFF 256 Kbytes
 */
 
 static uint32_t getFLASHSectorForEEPROM(void)
@@ -131,6 +140,16 @@ static uint32_t getFLASHSectorForEEPROM(void)
         return FLASH_SECTOR_6;
     if ((uint32_t)&__config_start <= 0x080FFFFF)
         return FLASH_SECTOR_7;
+#if defined(STM32F765xx)
+    if ((uint32_t)&__config_start <= 0x0813FFFF)
+        return FLASH_SECTOR_8;
+    if ((uint32_t)&__config_start <= 0x0817FFFF)
+        return FLASH_SECTOR_9;
+    if ((uint32_t)&__config_start <= 0x081BFFFF)
+        return FLASH_SECTOR_10;
+    if ((uint32_t)&__config_start <= 0x081FFFFF)
+        return FLASH_SECTOR_11;
+#endif
 
     // Not good
     while (1) {

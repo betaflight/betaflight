@@ -51,8 +51,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART1_TX_DMA
         .txDMAStream = DMA2_Stream7,
 #endif
-        .rxPins = { DEFIO_TAG_E(PA10), DEFIO_TAG_E(PB7), IO_TAG_NONE },
-        .txPins = { DEFIO_TAG_E(PA9), DEFIO_TAG_E(PB6), IO_TAG_NONE },
+        .rxPins = { { DEFIO_TAG_E(PA10) }, { DEFIO_TAG_E(PB7) } },
+        .txPins = { { DEFIO_TAG_E(PA9) }, { DEFIO_TAG_E(PB6) } },
         .af = GPIO_AF_USART1,
         .rcc = RCC_APB2(USART1),
         .irqn = USART1_IRQn,
@@ -72,8 +72,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART2_TX_DMA
         .txDMAStream = DMA1_Stream6,
 #endif
-        .rxPins = { DEFIO_TAG_E(PA3), DEFIO_TAG_E(PD6), IO_TAG_NONE },
-        .txPins = { DEFIO_TAG_E(PA2), DEFIO_TAG_E(PD5), IO_TAG_NONE },
+        .rxPins = { { DEFIO_TAG_E(PA3) }, { DEFIO_TAG_E(PD6) } },
+        .txPins = { { DEFIO_TAG_E(PA2) }, { DEFIO_TAG_E(PD5) } },
         .af = GPIO_AF_USART2,
         .rcc = RCC_APB1(USART2),
         .irqn = USART2_IRQn,
@@ -93,8 +93,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART3_TX_DMA
         .txDMAStream = DMA1_Stream3,
 #endif
-        .rxPins = { DEFIO_TAG_E(PB11), DEFIO_TAG_E(PC11), DEFIO_TAG_E(PD9) },
-        .txPins = { DEFIO_TAG_E(PB10), DEFIO_TAG_E(PC10), DEFIO_TAG_E(PD8) },
+        .rxPins = { { DEFIO_TAG_E(PB11) }, { DEFIO_TAG_E(PC11) }, { DEFIO_TAG_E(PD9) } },
+        .txPins = { { DEFIO_TAG_E(PB10) }, { DEFIO_TAG_E(PC10) }, { DEFIO_TAG_E(PD8) } },
         .af = GPIO_AF_USART3,
         .rcc = RCC_APB1(USART3),
         .irqn = USART3_IRQn,
@@ -114,8 +114,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART4_TX_DMA
         .txDMAStream = DMA1_Stream4,
 #endif
-        .rxPins = { DEFIO_TAG_E(PA1), DEFIO_TAG_E(PC11), IO_TAG_NONE },
-        .txPins = { DEFIO_TAG_E(PA0), DEFIO_TAG_E(PC10), IO_TAG_NONE },
+        .rxPins = { { DEFIO_TAG_E(PA1) }, { DEFIO_TAG_E(PC11) } },
+        .txPins = { { DEFIO_TAG_E(PA0) }, { DEFIO_TAG_E(PC10) } },
         .af = GPIO_AF_UART4,
         .rcc = RCC_APB1(UART4),
         .irqn = UART4_IRQn,
@@ -135,8 +135,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART5_TX_DMA
         .txDMAStream = DMA1_Stream7,
 #endif
-        .rxPins = { DEFIO_TAG_E(PD2), IO_TAG_NONE, IO_TAG_NONE },
-        .txPins = { DEFIO_TAG_E(PC12), IO_TAG_NONE, IO_TAG_NONE },
+        .rxPins = { { DEFIO_TAG_E(PD2) } },
+        .txPins = { { DEFIO_TAG_E(PC12) } },
         .af = GPIO_AF_UART5,
         .rcc = RCC_APB1(UART5),
         .irqn = UART5_IRQn,
@@ -156,8 +156,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART6_TX_DMA
         .txDMAStream = DMA2_Stream6,
 #endif
-        .rxPins = { DEFIO_TAG_E(PC7), DEFIO_TAG_E(PG9), IO_TAG_NONE },
-        .txPins = { DEFIO_TAG_E(PC6), DEFIO_TAG_E(PG14), IO_TAG_NONE },
+        .rxPins = { { DEFIO_TAG_E(PC7) }, { DEFIO_TAG_E(PG9) } },
+        .txPins = { { DEFIO_TAG_E(PC6) }, { DEFIO_TAG_E(PG14) } },
         .af = GPIO_AF_USART6,
         .rcc = RCC_APB2(USART6),
         .irqn = USART6_IRQn,
@@ -234,8 +234,8 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
         s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
     }
 
-    IO_t txIO = IOGetByTag(uart->tx);
-    IO_t rxIO = IOGetByTag(uart->rx);
+    IO_t txIO = IOGetByTag(uart->tx.pin);
+    IO_t rxIO = IOGetByTag(uart->rx.pin);
 
     if (hardware->rcc) {
         RCC_ClockCmd(hardware->rcc, ENABLE);

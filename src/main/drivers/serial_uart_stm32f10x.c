@@ -67,8 +67,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .reg = USART1,
         .rxDMAChannel = UART1_RX_DMA_CHANNEL,
         .txDMAChannel = UART1_TX_DMA_CHANNEL,
-        .rxPins = { DEFIO_TAG_E(PA10), DEFIO_TAG_E(PB7), IO_TAG_NONE },
-        .txPins = { DEFIO_TAG_E(PA9), DEFIO_TAG_E(PB6), IO_TAG_NONE },
+        .rxPins = { { DEFIO_TAG_E(PA10) }, { DEFIO_TAG_E(PB7) } },
+        .txPins = { { DEFIO_TAG_E(PA9) }, { DEFIO_TAG_E(PB6) } },
         //.af = GPIO_AF_USART1,
         .rcc = RCC_APB2(USART1),
         .irqn = USART1_IRQn,
@@ -82,8 +82,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .reg = USART2,
         .rxDMAChannel = UART2_RX_DMA_CHANNEL,
         .txDMAChannel = UART2_TX_DMA_CHANNEL,
-        .rxPins = { DEFIO_TAG_E(PA3), DEFIO_TAG_E(PD6), IO_TAG_NONE },
-        .txPins = { DEFIO_TAG_E(PA2), DEFIO_TAG_E(PD5), IO_TAG_NONE },
+        .rxPins = { { DEFIO_TAG_E(PA3) }, { DEFIO_TAG_E(PD6) } },
+        .txPins = { { DEFIO_TAG_E(PA2) }, { DEFIO_TAG_E(PD5) } },
         //.af = GPIO_AF_USART2,
         .rcc = RCC_APB1(USART2),
         .irqn = USART2_IRQn,
@@ -97,8 +97,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .reg = USART3,
         .rxDMAChannel = UART3_RX_DMA_CHANNEL,
         .txDMAChannel = UART3_TX_DMA_CHANNEL,
-        .rxPins = { DEFIO_TAG_E(PB11), DEFIO_TAG_E(PD9), DEFIO_TAG_E(PC11) },
-        .txPins = { DEFIO_TAG_E(PB10), DEFIO_TAG_E(PD8), DEFIO_TAG_E(PC10) },
+        .rxPins = { { DEFIO_TAG_E(PB11) }, { DEFIO_TAG_E(PD9) }, { DEFIO_TAG_E(PC11) } },
+        .txPins = { { DEFIO_TAG_E(PB10) }, { DEFIO_TAG_E(PD8) }, { DEFIO_TAG_E(PC10) } },
         //.af = GPIO_AF_USART3,
         .rcc = RCC_APB1(USART3),
         .irqn = USART3_IRQn,
@@ -157,8 +157,8 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
         s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
     }
 
-    IO_t rxIO = IOGetByTag(uartdev->rx);
-    IO_t txIO = IOGetByTag(uartdev->tx);
+    IO_t rxIO = IOGetByTag(uartdev->rx.pin);
+    IO_t txIO = IOGetByTag(uartdev->tx.pin);
 
     if (options & SERIAL_BIDIR) {
         IOInit(txIO, OWNER_SERIAL_TX, RESOURCE_INDEX(device));

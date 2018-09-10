@@ -51,7 +51,7 @@
 #endif
 #elif defined(STM32F7)
 #define UARTDEV_COUNT_MAX 8
-#define UARTHARDWARE_MAX_PINS 3
+#define UARTHARDWARE_MAX_PINS 4
 #ifndef UART_RX_BUFFER_SIZE
 #define UART_RX_BUFFER_SIZE     128
 #endif
@@ -114,6 +114,13 @@
 
 #define UARTDEV_COUNT (UARTDEV_COUNT_1 + UARTDEV_COUNT_2 + UARTDEV_COUNT_3 + UARTDEV_COUNT_4 + UARTDEV_COUNT_5 + UARTDEV_COUNT_6 + UARTDEV_COUNT_7 + UARTDEV_COUNT_8)
 
+typedef struct uartPinDef_s {
+    ioTag_t pin;
+#if defined(STM32F7)
+    uint8_t af;
+#endif
+} uartPinDef_t;
+
 typedef struct uartHardware_s {
     UARTDevice_e device;    // XXX Not required for full allocation
     USART_TypeDef* reg;
@@ -125,8 +132,8 @@ typedef struct uartHardware_s {
     DMA_Stream_TypeDef *txDMAStream;
     DMA_Stream_TypeDef *rxDMAStream;
 #endif
-    ioTag_t rxPins[UARTHARDWARE_MAX_PINS];
-    ioTag_t txPins[UARTHARDWARE_MAX_PINS];
+    uartPinDef_t rxPins[UARTHARDWARE_MAX_PINS];
+    uartPinDef_t txPins[UARTHARDWARE_MAX_PINS];
 #if defined(STM32F7)
     uint32_t rcc_ahb1;
     rccPeriphTag_t rcc_apb2;
@@ -134,7 +141,9 @@ typedef struct uartHardware_s {
 #else
     rccPeriphTag_t rcc;
 #endif
+#if !defined(STM32F7)
     uint8_t af;
+#endif
 #if defined(STM32F7)
     uint8_t txIrq;
     uint8_t rxIrq;
@@ -153,8 +162,8 @@ extern const uartHardware_t uartHardware[];
 typedef struct uartDevice_s {
     uartPort_t port;
     const uartHardware_t *hardware;
-    ioTag_t rx;
-    ioTag_t tx;
+    uartPinDef_t rx;
+    uartPinDef_t tx;
     volatile uint8_t rxBuffer[UART_RX_BUFFER_SIZE];
     volatile uint8_t txBuffer[UART_TX_BUFFER_SIZE];
 } uartDevice_t;
