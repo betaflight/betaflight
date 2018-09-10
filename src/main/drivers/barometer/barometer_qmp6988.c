@@ -115,9 +115,7 @@ void qmp6988BusDeinit(busDevice_t *busdev)
 {
 #ifdef USE_BARO_SPI_QMP6988
     if (busdev->bustype == BUSTYPE_SPI) {
-        IOConfigGPIO(busdev->busdev_u.spi.csnPin, IOCFG_IPU);
-        IORelease(busdev->busdev_u.spi.csnPin);
-        IOInit(busdev->busdev_u.spi.csnPin, OWNER_SPI_PREINIT, 0);
+        spiPreinitCsByIO(busdev->busdev_u.spi.csnPin);
     }
 #else
     UNUSED(busdev);
