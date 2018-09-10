@@ -445,11 +445,11 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     horizonFactorRatio = (100 - pidProfile->horizon_tilt_effect) * 0.01f;
     maxVelocity[FD_ROLL] = maxVelocity[FD_PITCH] = pidProfile->rateAccelLimit * 100 * dT;
     maxVelocity[FD_YAW] = pidProfile->yawRateAccelLimit * 100 * dT;
-    float ITermWindupPoint = (float)pidProfile->itermWindupPointPercent / 100.0f;
+    const float ITermWindupPoint = pidProfile->itermWindupPointPercent / 100.0f;
     if (ITermWindupPoint == 1.0f) {
         ITermWindupPointInv = 1.0f;
     } else {
-        ITermWindupPointInv = 1.0f / (1.0f - ITermWindupPoint);
+        ITermWindupPointInv = 1 / (1 - ITermWindupPoint);
     }
     itermAcceleratorGain = pidProfile->itermAcceleratorGain;
     crashTimeLimitUs = pidProfile->crash_time * 1000;
