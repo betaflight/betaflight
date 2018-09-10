@@ -269,6 +269,14 @@ TEST(pidControllerTest, testPidLoop) {
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
     ASSERT_NEAR(-132.25, pidData[FD_YAW].D, calculateTolerance(-132.25));
 
+    // Simulate Iterm behaviour during mixer saturation
+    simulatedMotorMixRange = 1.2f;
+    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+    ASSERT_NEAR(-23.5, pidData[FD_ROLL].I, calculateTolerance(-23.5));
+    ASSERT_NEAR(19.6, pidData[FD_PITCH].I, calculateTolerance(19.6));
+    ASSERT_NEAR(-8.8, pidData[FD_YAW].I, calculateTolerance(-8.8));
+    simulatedMotorMixRange = 0;
+
     // Match the stick to gyro to stop error
     simulatedSetpointRate[FD_ROLL] = 100;
     simulatedSetpointRate[FD_PITCH] = -100;
@@ -277,14 +285,13 @@ TEST(pidControllerTest, testPidLoop) {
     for(int loop = 0; loop < 5; loop++) {
         pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
     }
-
     // Iterm is stalled as it is not accumulating anymore
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].P);
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].P);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
     ASSERT_NEAR(-23.5, pidData[FD_ROLL].I, calculateTolerance(-23.5));
     ASSERT_NEAR(19.6, pidData[FD_PITCH].I, calculateTolerance(19.6));
-    ASSERT_NEAR(-10.6, pidData[FD_YAW].I, calculateTolerance(-10.5));
+    ASSERT_NEAR(-10.6, pidData[FD_YAW].I, calculateTolerance(-10.6));
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].D);
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].D);
