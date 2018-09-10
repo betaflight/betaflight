@@ -220,11 +220,12 @@ serialPort_t *usbVcpOpen(void)
 {
     vcpPort_t *s;
 
+    IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, 0);
+    IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, 0);
+
 #if defined(STM32F4)
     usbGenerateDisconnectPulse();
 
-    IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, 0);
-    IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, 0);
 #ifdef USE_USB_CDC_HID
     if (usbDevConfig()->type == COMPOSITE) {
         USBD_Init(&USB_OTG_dev, USB_OTG_FS_CORE_ID, &USR_desc, &USBD_HID_CDC_cb, &USR_cb);
@@ -237,8 +238,6 @@ serialPort_t *usbVcpOpen(void)
 #elif defined(STM32F7)
     usbGenerateDisconnectPulse();
 
-    IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, 0);
-    IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, 0);
     /* Init Device Library */
     USBD_Init(&USBD_Device, &VCP_Desc, 0);
 
