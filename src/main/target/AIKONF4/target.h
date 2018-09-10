@@ -141,5 +141,5 @@
 #define TARGET_IO_PORTC         ( BIT(12) | BIT(11) | BIT(10) | BIT(9) | BIT(8) | BIT(7) | BIT(6) | BIT(4) | BIT(3) | BIT(2) | BIT(1) | BIT(0) )
 #define TARGET_IO_PORTD         ( BIT(2) )
 
-#define USABLE_TIMER_CHANNEL_COUNT 16
+#define USABLE_TIMER_CHANNEL_COUNT 13
 #define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(8) | TIM_N(9) )
