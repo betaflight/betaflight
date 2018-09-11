@@ -115,12 +115,14 @@
 
 #define USE_BARO
 #if defined(OMNIBUSF4SD)
+#define USE_BARO_SPI_QMP6988
 #define USE_BARO_SPI_BMP280
 #define BMP280_SPI_INSTANCE     SPI3
 #define BMP280_CS_PIN           PB3 // v1
 #endif
 #define USE_BARO_BMP085
 #define USE_BARO_BMP280
+#define USE_BARO_QMP6988
 #define USE_BARO_MS5611
 #define BARO_I2C_INSTANCE       (I2CDEV_2)
 
