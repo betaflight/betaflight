@@ -920,7 +920,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
             const float itermRelaxFactor = 1 - setpointHpf / ITERM_RELAX_SETPOINT_THRESHOLD;
 
             const bool isDecreasingI = ((ITerm > 0) && (itermErrorRate < 0)) || ((ITerm < 0) && (itermErrorRate > 0));
-            if ((itermRelax >= ITERM_RELAX_RP_INC) && isDecreasingI) {
+            if ((itermRelaxType >= ITERM_RELAX_RP_INC) && isDecreasingI) {
                 // Do Nothing, use the precalculed itermErrorRate
             } else if (itermRelaxType == ITERM_RELAX_SETPOINT && setpointHpf < ITERM_RELAX_SETPOINT_THRESHOLD) {
                 itermErrorRate *= itermRelaxFactor;
