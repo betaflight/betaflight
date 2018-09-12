@@ -300,6 +300,11 @@ pid_unittest_SRC :=  \
 		$(USER_DIR)/pg/pg.c \
 		$(USER_DIR)/fc/runtime_config.c
 
+pid_unittest_DEFINES := \
+		USE_ITERM_RELAX \
+		USE_RC_SMOOTHING_FILTER \
+		USE_ABSOLUTE_CONTROL
+
 rcdevice_unittest_DEFINES := \
 		USE_RCDEVICE
 

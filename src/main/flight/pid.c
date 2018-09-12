@@ -56,8 +56,6 @@
 #include "sensors/acceleration.h"
 
 
-#define ITERM_RELAX_SETPOINT_THRESHOLD 30.0f
-
 const char pidNames[] =
     "ROLL;"
     "PITCH;"
@@ -842,6 +840,89 @@ void FAST_CODE applySmartFeedforward(int axis)
 }
 #endif // USE_SMART_FEEDFORWARD
 
+#if defined(USE_ABSOLUTE_CONTROL)
+static void applyAbsoluteControl(const int axis, const float gyroRate, const bool itermRelaxIsEnabled,
+    const float setpointLpf, const float setpointHpf,
+    float *currentPidSetpoint, float *itermErrorRate)
+{
+    if (acGain > 0) {
+        float acErrorRate = 0;
+        if (itermRelaxIsEnabled) {
+            const float gmaxac = setpointLpf + 2 * setpointHpf;
+            const float gminac = setpointLpf - 2 * setpointHpf;
+            if (gyroRate >= gminac && gyroRate <= gmaxac) {
+                const float acErrorRate1 = gmaxac - gyroRate;
+                const float acErrorRate2 = gminac - gyroRate;
+                if (acErrorRate1 * axisError[axis] < 0) {
+                    acErrorRate = acErrorRate1;
+                } else {
+                    acErrorRate = acErrorRate2;
+                }
+                if (fabsf(acErrorRate * dT) > fabsf(axisError[axis]) ) {
+                    acErrorRate = -axisError[axis] * pidFrequency;
+                }
+            } else {
+                acErrorRate = (gyroRate > gmaxac ? gmaxac : gminac ) - gyroRate;
+            }
+        } else {
+            acErrorRate = *itermErrorRate;
+        }
+
+        if (isAirmodeActivated()) {
+            axisError[axis] = constrainf(axisError[axis] + acErrorRate * dT,
+                -acErrorLimit, acErrorLimit);
+            const float acCorrection = constrainf(axisError[axis] * acGain, -acLimit, acLimit);
+            *currentPidSetpoint += acCorrection;
+            *itermErrorRate += acCorrection;
+            if (axis == FD_ROLL) {
+                DEBUG_SET(DEBUG_ITERM_RELAX, 3, lrintf(axisError[axis] * 10));
+            }
+        }
+    }
+}
+#endif
+
+#if defined(USE_ITERM_RELAX)
+static void applyItermRelax(const int axis, const float ITerm,
+    const float gyroRate, float *itermErrorRate, float *currentPidSetpoint)
+{
+    const float setpointLpf = pt1FilterApply(&windupLpf[axis], *currentPidSetpoint);
+    const float setpointHpf = fabsf(*currentPidSetpoint - setpointLpf);
+    bool itermRelaxIsEnabled = false;
+
+    if (itermRelax &&
+       (axis < FD_YAW || itermRelax == ITERM_RELAX_RPY ||
+       itermRelax == ITERM_RELAX_RPY_INC)) {
+        itermRelaxIsEnabled = true;
+        const float itermRelaxFactor = 1 - setpointHpf / ITERM_RELAX_SETPOINT_THRESHOLD;
+
+        const bool isDecreasingI =
+            ((ITerm > 0) && (*itermErrorRate < 0)) || ((ITerm < 0) && (*itermErrorRate > 0));
+        if ((itermRelax >= ITERM_RELAX_RP_INC) && isDecreasingI) {
+            // Do Nothing, use the precalculed itermErrorRate
+        } else if (itermRelaxType == ITERM_RELAX_SETPOINT && setpointHpf < ITERM_RELAX_SETPOINT_THRESHOLD) {
+            *itermErrorRate *= itermRelaxFactor;
+        } else if (itermRelaxType == ITERM_RELAX_GYRO ) {
+            *itermErrorRate = fapplyDeadband(setpointLpf - gyroRate, setpointHpf);
+        } else {
+            *itermErrorRate = 0.0f;
+        }
+
+        if (axis == FD_ROLL) {
+            DEBUG_SET(DEBUG_ITERM_RELAX, 0, lrintf(setpointHpf));
+            DEBUG_SET(DEBUG_ITERM_RELAX, 1, lrintf(itermRelaxFactor * 100.0f));
+            DEBUG_SET(DEBUG_ITERM_RELAX, 2, lrintf(*itermErrorRate));
+        }
+    } else {
+#if defined(USE_ABSOLUTE_CONTROL)
+        applyAbsoluteControl(axis, gyroRate, setpointLpf, setpointHpf, itermRelaxIsEnabled, currentPidSetpoint, itermErrorRate);
+#else
+    UNUSED(itermRelaxIsEnabled);
+#endif
+    }
+}
+#endif
+
 // Betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage.
 // Based on 2DOF reference design (matlab)
 void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, timeUs_t currentTimeUs)
@@ -912,73 +993,11 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
             pidProfile->crash_recovery, angleTrim, axis, currentTimeUs, gyroRate,
             &currentPidSetpoint, &errorRate);
 
-#ifdef USE_ABSOLUTE_CONTROL
-        float acCorrection = 0;
-        float acErrorRate;
-#endif        
-
         const float ITerm = pidData[axis].I;
         float itermErrorRate = errorRate;
 
 #if defined(USE_ITERM_RELAX)
-        if (itermRelax && (axis < FD_YAW || itermRelax == ITERM_RELAX_RPY || itermRelax == ITERM_RELAX_RPY_INC)) {
-            const float setpointLpf = pt1FilterApply(&windupLpf[axis], currentPidSetpoint);
-            const float setpointHpf = fabsf(currentPidSetpoint - setpointLpf);
-            const float itermRelaxFactor = 1 - setpointHpf / ITERM_RELAX_SETPOINT_THRESHOLD;
-
-            const bool isDecreasingI = ((ITerm > 0) && (itermErrorRate < 0)) || ((ITerm < 0) && (itermErrorRate > 0));
-            if ((itermRelax >= ITERM_RELAX_RP_INC) && isDecreasingI) {
-                // Do Nothing, use the precalculed itermErrorRate
-            } else if (itermRelaxType == ITERM_RELAX_SETPOINT && setpointHpf < ITERM_RELAX_SETPOINT_THRESHOLD) {
-                itermErrorRate *= itermRelaxFactor;
-            } else if (itermRelaxType == ITERM_RELAX_GYRO ) {
-                itermErrorRate = fapplyDeadband(setpointLpf - gyroRate, setpointHpf);
-            } else {
-                itermErrorRate = 0.0f;
-            }
-
-            if (axis == FD_ROLL) {
-                DEBUG_SET(DEBUG_ITERM_RELAX, 0, lrintf(setpointHpf));
-                DEBUG_SET(DEBUG_ITERM_RELAX, 1, lrintf(itermRelaxFactor * 100.0f));
-                DEBUG_SET(DEBUG_ITERM_RELAX, 2, lrintf(itermErrorRate));
-            }
-
-#if defined(USE_ABSOLUTE_CONTROL)
-            const float gmaxac = setpointLpf + 2 * setpointHpf;
-            const float gminac = setpointLpf - 2 * setpointHpf;
-            if (gyroRate >= gminac && gyroRate <= gmaxac) {
-                float acErrorRate1 = gmaxac - gyroRate;
-                float acErrorRate2 = gminac - gyroRate;
-                if (acErrorRate1 * axisError[axis] < 0) {
-                    acErrorRate = acErrorRate1;
-                } else {
-                    acErrorRate = acErrorRate2;
-                }
-                if (fabsf(acErrorRate * dT) > fabsf(axisError[axis]) ) {
-                    acErrorRate = -axisError[axis] / dT;
-                }
-            } else {
-                acErrorRate = (gyroRate > gmaxac ? gmaxac : gminac ) - gyroRate;
-            }
-#endif // USE_ABSOLUTE_CONTROL             
-        } else
-#endif // USE_ITERM_RELAX
-        {
-#if defined(USE_ABSOLUTE_CONTROL)
-            acErrorRate = itermErrorRate;
-#endif // USE_ABSOLUTE_CONTROL
-        }
-        
-#if defined(USE_ABSOLUTE_CONTROL)
-        if (acGain > 0 && isAirmodeActivated()) {
-            axisError[axis] = constrainf(axisError[axis] + acErrorRate * dT, -acErrorLimit, acErrorLimit);
-            acCorrection = constrainf(axisError[axis] * acGain, -acLimit, acLimit);
-            currentPidSetpoint += acCorrection;
-            itermErrorRate += acCorrection;
-            if (axis == FD_ROLL) {
-                DEBUG_SET(DEBUG_ITERM_RELAX, 3, lrintf(axisError[axis] * 10));
-            }
-        }
+        applyItermRelax(axis, ITerm, gyroRate, &itermErrorRate, &currentPidSetpoint);
 #endif
 
         // --------low-level gyro-based PID based on 2DOF PID controller. ----------
