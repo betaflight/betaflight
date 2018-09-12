@@ -444,7 +444,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     maxVelocity[FD_ROLL] = maxVelocity[FD_PITCH] = pidProfile->rateAccelLimit * 100 * dT;
     maxVelocity[FD_YAW] = pidProfile->yawRateAccelLimit * 100 * dT;
     if (pidProfile->itermWindupPointPercent < 100) {
-        float ITermWindupPoint = (float)pidProfile->itermWindupPointPercent / 100.0f;
+        const float ITermWindupPoint = pidProfile->itermWindupPointPercent / 100.0f;
         ITermWindupPointInv = 1.0f / (1.0f - ITermWindupPoint);
     }
     itermAcceleratorGain = pidProfile->itermAcceleratorGain;
