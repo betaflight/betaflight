@@ -730,8 +730,6 @@ float applyThrottleLimit(float throttle)
     return throttle;
 }
 
-
-float integratedYaw;
 FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensation)
 {
     if (isFlipOverAfterCrashMode()) {
@@ -782,16 +780,12 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
 
     // Find roll/pitch/yaw desired output
     float motorMix[MAX_SUPPORTED_MOTORS];
-    float motorMixMax = 0, motorMixMin = 0; 
-    extern float dT;
-    integratedYaw =
-        constrainf(integratedYaw + scaledAxisPidYaw * dT * 100.0f, -currentPidProfile->pidSumLimitYaw / PID_MIXER_SCALING, currentPidProfile->pidSumLimitYaw / PID_MIXER_SCALING);
-    
+    float motorMixMax = 0, motorMixMin = 0;
     for (int i = 0; i < motorCount; i++) {
         float mix =
             scaledAxisPidRoll  * currentMixer[i].roll +
             scaledAxisPidPitch * currentMixer[i].pitch +
-            integratedYaw * currentMixer[i].yaw;
+            scaledAxisPidYaw   * currentMixer[i].yaw;
 
         mix *= vbatCompensationFactor;  // Add voltage compensation
 

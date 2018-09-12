@@ -70,8 +70,11 @@ static FAST_RAM_ZERO_INIT bool pidStabilisationEnabled;
 
 static FAST_RAM_ZERO_INIT bool inCrashRecoveryMode = false;
 
-FAST_RAM_ZERO_INIT float dT;
+static FAST_RAM_ZERO_INIT float dT;
 static FAST_RAM_ZERO_INIT float pidFrequency;
+
+static FAST_RAM_ZERO_INIT float integratedYawSum;
+static FAST_RAM_ZERO_INIT float integratedYawGain;
 
 static FAST_RAM_ZERO_INIT uint8_t antiGravityMode;
 static FAST_RAM_ZERO_INIT float antiGravityThrottleHpf;
@@ -166,6 +169,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .abs_control_limit = 90,
         .abs_control_error_limit = 20,
         .antiGravityMode = ANTI_GRAVITY_SMOOTH,
+        .integrated_yaw_gain = 0,
     );
 }
 
@@ -397,14 +401,13 @@ static FAST_RAM_ZERO_INIT float acErrorLimit;
 
 void pidResetITerm(void)
 {
-    extern float integratedYaw;
-    integratedYaw *= 0.99f;
     for (int axis = 0; axis < 3; axis++) {
         pidData[axis].I = 0.0f;
 #if defined(USE_ABSOLUTE_CONTROL)
         axisError[axis] = 0.0f;
 #endif
     }
+    integratedYawSum = 0.0f;
 }
 
 #ifdef USE_ACRO_TRAINER
@@ -467,6 +470,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 #endif
     itermRotation = pidProfile->iterm_rotation;
     antiGravityMode = pidProfile->antiGravityMode;
+    integratedYawGain = pidProfile->integrated_yaw_gain * 0.1f;
     
     // Calculate the anti-gravity value that will trigger the OSD display.
     // For classic AG it's either 1.0 for off and > 1.0 for on.
@@ -838,9 +842,6 @@ void FAST_CODE applySmartFeedforward(int axis)
                 pidData[axis].F = 0;
             }
         }
-        /* else { */
-        /*     pidData[axis].F = 0; */
-        /* } */
     }
 }
 #endif // USE_SMART_FEEDFORWARD
@@ -1079,6 +1080,11 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
         pidData[axis].Sum = pidData[axis].P + pidData[axis].I + pidData[axis].D + pidData[axis].F;
     }
 
+    if (integratedYawGain > 0) {
+        integratedYawSum = integratedYawSum + integratedYawGain * pidData[FD_YAW].Sum;
+        pidData[FD_YAW].Sum = integratedYawSum;
+    }
+
     // Disable PID control if at zero throttle or if gyro overflow detected
     // This may look very innefficient, but it is done on purpose to always show real CPU usage as in flight
     if (!pidStabilisationEnabled || gyroOverflowDetected()) {
@@ -1123,3 +1129,4 @@ bool pidAntiGravityEnabled(void)
 {
     return antiGravityEnabled;
 }
+
