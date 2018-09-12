@@ -389,7 +389,7 @@ static FAST_RAM_ZERO_INIT bool itermRotation;
 static FAST_RAM_ZERO_INIT bool smartFeedforward;
 #endif
 #if defined(USE_ABSOLUTE_CONTROL)
-static FAST_RAM_ZERO_INIT float axisError[XYZ_AXIS_COUNT];
+STATIC_UNIT_TESTED FAST_RAM_ZERO_INIT float axisError[XYZ_AXIS_COUNT];
 static FAST_RAM_ZERO_INIT float acGain;
 static FAST_RAM_ZERO_INIT float acLimit;
 static FAST_RAM_ZERO_INIT float acErrorLimit;
@@ -522,7 +522,7 @@ void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex)
 }
 
 // calculates strength of horizon leveling; 0 = none, 1.0 = most leveling
-static float calcHorizonLevelStrength(void)
+STATIC_UNIT_TESTED float calcHorizonLevelStrength(void)
 {
     // start with 1.0 at center stick, 0.0 at max stick deflection:
     float horizonLevelStrength = 1.0f - MAX(getRcDeflectionAbs(FD_ROLL), getRcDeflectionAbs(FD_PITCH));
@@ -577,7 +577,7 @@ static float calcHorizonLevelStrength(void)
     return constrainf(horizonLevelStrength, 0, 1);
 }
 
-static float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, float currentPidSetpoint) {
+STATIC_UNIT_TESTED float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, float currentPidSetpoint) {
     // calculate error angle and limit the angle to the max inclination
     // rcDeflection is in range [-1.0, 1.0]
     float angle = pidProfile->levelAngleLimit * getRcDeflection(axis);
@@ -682,7 +682,7 @@ static void detectAndSetCrashRecovery(
     }
 }
 
-static void rotateVector(float v[XYZ_AXIS_COUNT], float rotation[XYZ_AXIS_COUNT]) 
+static void rotateVector(float v[XYZ_AXIS_COUNT], float rotation[XYZ_AXIS_COUNT])
 {
     // rotate v around rotation vector rotation
     // rotation in radians, all elements must be small
@@ -695,7 +695,7 @@ static void rotateVector(float v[XYZ_AXIS_COUNT], float rotation[XYZ_AXIS_COUNT]
     }
 }
 
-static void rotateItermAndAxisError() 
+STATIC_UNIT_TESTED void rotateItermAndAxisError()
 {
     if (itermRotation
 #if defined(USE_ABSOLUTE_CONTROL)
@@ -839,7 +839,7 @@ void FAST_CODE applySmartFeedforward(int axis)
 #endif // USE_SMART_FEEDFORWARD
 
 #if defined(USE_ABSOLUTE_CONTROL)
-static void applyAbsoluteControl(const int axis, const float gyroRate, const bool itermRelaxIsEnabled,
+STATIC_UNIT_TESTED void applyAbsoluteControl(const int axis, const float gyroRate, const bool itermRelaxIsEnabled,
     const float setpointLpf, const float setpointHpf,
     float *currentPidSetpoint, float *itermErrorRate)
 {
@@ -881,7 +881,7 @@ static void applyAbsoluteControl(const int axis, const float gyroRate, const boo
 #endif
 
 #if defined(USE_ITERM_RELAX)
-static void applyItermRelax(const int axis, const float iterm,
+STATIC_UNIT_TESTED void applyItermRelax(const int axis, const float iterm,
     const float gyroRate, float *itermErrorRate, float *currentPidSetpoint)
 {
     const float setpointLpf = pt1FilterApply(&windupLpf[axis], *currentPidSetpoint);
