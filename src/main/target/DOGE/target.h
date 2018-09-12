@@ -140,4 +140,4 @@
 // channel mapping in drivers/pwm_mapping.c
 // only 6 outputs available on hardware
 #define USABLE_TIMER_CHANNEL_COUNT 10
-#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15))
+#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(8) | TIM_N(16))

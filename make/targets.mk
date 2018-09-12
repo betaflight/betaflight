@@ -1,58 +1,13 @@
-OFFICIAL_TARGETS  = ALIENFLIGHTF3 ALIENFLIGHTF4 ANYFCF7 BETAFLIGHTF3 BLUEJAYF4 FURYF4 REVO SIRINFPV SPARKY SPRACINGF3 SPRACINGF3EVO SPRACINGF3NEO SPRACINGF4EVO SPRACINGF7DUAL STM32F3DISCOVERY
-ALT_TARGETS       = $(sort $(filter-out target, $(basename $(notdir $(wildcard $(ROOT)/src/main/target/*/*.mk)))))
-NOBUILD_TARGETS   = $(sort $(filter-out target, $(basename $(notdir $(wildcard $(ROOT)/src/main/target/*/*.nomk)))))
-OPBL_TARGETS      = $(filter %_OPBL, $(ALT_TARGETS))
-
-VALID_TARGETS   = $(dir $(wildcard $(ROOT)/src/main/target/*/target.mk))
-VALID_TARGETS  := $(subst /,, $(subst ./src/main/target/,, $(VALID_TARGETS)))
-VALID_TARGETS  := $(VALID_TARGETS) $(ALT_TARGETS)
-VALID_TARGETS  := $(sort $(VALID_TARGETS))
-VALID_TARGETS  := $(filter-out $(NOBUILD_TARGETS), $(VALID_TARGETS))
+include $(ROOT)/make/targets_list.mk
 
 ifeq ($(filter $(TARGET),$(NOBUILD_TARGETS)), $(TARGET))
 ALTERNATES    := $(sort $(filter-out target, $(basename $(notdir $(wildcard $(ROOT)/src/main/target/$(TARGET)/*.mk)))))
 $(error The target specified, $(TARGET), cannot be built. Use one of the ALT targets: $(ALTERNATES))
 endif
 
-UNSUPPORTED_TARGETS := \
-	AFROMINI \
-	ALIENFLIGHTF1 \
-	BEEBRAIN \
-	CC3D \
-	CC3D_OPBL \
-	CJMCU \
-	MICROSCISKY \
-	NAZE
-
-SUPPORTED_TARGETS := $(filter-out $(UNSUPPORTED_TARGETS), $(VALID_TARGETS))
-
-TARGETS_TOTAL := $(words $(SUPPORTED_TARGETS))
-TARGET_GROUPS := 5
-TARGETS_PER_GROUP := $(shell expr $(TARGETS_TOTAL) / $(TARGET_GROUPS) )
-
-ST := 1
-ET := $(shell expr $(ST) + $(TARGETS_PER_GROUP))
-GROUP_1_TARGETS := $(wordlist  $(ST), $(ET), $(SUPPORTED_TARGETS))
-
-ST := $(shell expr $(ET) + 1)
-ET := $(shell expr $(ST) + $(TARGETS_PER_GROUP))
-GROUP_2_TARGETS := $(wordlist $(ST), $(ET), $(SUPPORTED_TARGETS))
-
-ST := $(shell expr $(ET) + 1)
-ET := $(shell expr $(ST) + $(TARGETS_PER_GROUP))
-GROUP_3_TARGETS := $(wordlist $(ST), $(ET), $(SUPPORTED_TARGETS))
-
-ST := $(shell expr $(ET) + 1)
-ET := $(shell expr $(ST) + $(TARGETS_PER_GROUP))
-GROUP_4_TARGETS := $(wordlist $(ST), $(ET), $(SUPPORTED_TARGETS))
-
-GROUP_OTHER_TARGETS := $(filter-out $(GROUP_1_TARGETS) $(GROUP_2_TARGETS) $(GROUP_3_TARGETS) $(GROUP_4_TARGETS), $(SUPPORTED_TARGETS))
-
-ifeq ($(filter $(TARGET),$(ALT_TARGETS)), $(TARGET))
-BASE_TARGET    := $(firstword $(subst /,, $(subst ./src/main/target/,, $(dir $(wildcard $(ROOT)/src/main/target/*/$(TARGET).mk)))))
+BASE_TARGET   := $(call get_base_target,$(TARGET))
+ifneq ($(TARGET),$(BASE_TARGET))
 include $(ROOT)/src/main/target/$(BASE_TARGET)/$(TARGET).mk
-else
-BASE_TARGET    := $(TARGET)
 endif
 
 ifeq ($(filter $(TARGET),$(OPBL_TARGETS)), $(TARGET))

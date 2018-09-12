@@ -178,5 +178,9 @@
 #define TARGET_IO_PORTC (0xffff & ~(BIT(15)|BIT(14)|BIT(13)))
 #define TARGET_IO_PORTD BIT(2)
 
+#if defined(OMNIBUSF4FW) || defined(OMNIBUSF4FW1)
 #define USABLE_TIMER_CHANNEL_COUNT 15
+#else
+#define USABLE_TIMER_CHANNEL_COUNT 14
+#endif
 #define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(8) | TIM_N(9) | TIM_N(10) | TIM_N(11))
