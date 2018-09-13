@@ -368,7 +368,7 @@ static FAST_RAM_ZERO_INIT pidCoefficient_t pidCoefficient[XYZ_AXIS_COUNT];
 static FAST_RAM_ZERO_INIT float maxVelocity[XYZ_AXIS_COUNT];
 static FAST_RAM_ZERO_INIT float feedForwardTransition;
 static FAST_RAM_ZERO_INIT float levelGain, horizonGain, horizonTransition, horizonCutoffDegrees, horizonFactorRatio;
-static FAST_RAM_ZERO_INIT float ITermWindupPointInv;
+static FAST_RAM float ITermWindupPointInv = 1.0f;
 static FAST_RAM_ZERO_INIT uint8_t horizonTiltExpertMode;
 static FAST_RAM_ZERO_INIT timeDelta_t crashTimeLimitUs;
 static FAST_RAM_ZERO_INIT timeDelta_t crashTimeDelayUs;
@@ -928,7 +928,6 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
     static float previousPidSetpoint[XYZ_AXIS_COUNT];
 
     const float tpaFactor = getThrottlePIDAttenuation();
-    const float motorMixRange = getMotorMixRange();
 
 #ifdef USE_YAW_SPIN_RECOVERY
     const bool yawSpinActive = gyroYawSpinDetected();
@@ -943,7 +942,8 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
 
     // gradually scale back integration when above windup point
     float dynCi = dT * itermAccelerator;
-    if (ITermWindupPointInv > 0) {
+    if (ITermWindupPointInv > 1.0f) {
+        const float motorMixRange = getMotorMixRange();
         dynCi *= constrainf((1.0f - motorMixRange) * ITermWindupPointInv, 0.0f, 1.0f);
     }
 
@@ -1001,7 +1001,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
         // 2-DOF PID controller with optional filter on derivative term.
         // b = 1 and only c (feedforward weight) can be tuned (amount derivative on measurement or error).
 
-        // -----calculate P component and add Dynamic Part based on stick input
+        // -----calculate P component
         pidData[axis].P = pidCoefficient[axis].Kp * errorRate * tpaFactor;
         if (axis == FD_YAW) {
             pidData[axis].P = ptermYawLowpassApplyFn((filter_t *) &ptermYawLowpass, pidData[axis].P);
