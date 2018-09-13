@@ -134,7 +134,8 @@
 #define PG_RX_SPI_CONFIG 537
 #define PG_BOARD_CONFIG 538
 #define PG_RCDEVICE_CONFIG 539
-#define PG_BETAFLIGHT_END 539
+#define PG_GYRO_DEVICE_CONFIG 540
+#define PG_BETAFLIGHT_END 540
 
 
 // OSD configuration (subject to change)

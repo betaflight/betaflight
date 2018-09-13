@@ -32,20 +32,21 @@
 
 #define INVERTER_PIN_UART6 PD7
 
-#define MPU6500_CS_PIN        PE10
-#define MPU6500_SPI_INSTANCE  SPI2
+#define GYRO_1_CS_PIN         PE10
+#define GYRO_1_SPI_INSTANCE   SPI2
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN CW270_DEG
+#define ACC_1_ALIGN       CW270_DEG
 
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN CW270_DEG
+#define GYRO_1_ALIGN       CW270_DEG
 
 // MPU6500 interrupts
 #define USE_EXTI
-#define MPU_INT_EXTI PD10
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN       PD10
 #define USE_MPU_DATA_READY_SIGNAL
 
 /*

@@ -81,7 +81,8 @@
 #define BEEPER_INVERTED
 
 #define USE_EXTI
-#define MPU_INT_EXTI            PC13
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC13
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
@@ -94,8 +95,8 @@
 #define USE_ACC
 #define USE_ACC_SPI_MPU6500
 
-#define ACC_MPU6500_ALIGN       CW180_DEG
-#define GYRO_MPU6500_ALIGN      CW180_DEG
+#define ACC_1_ALIGN             CW180_DEG
+#define GYRO_1_ALIGN            CW180_DEG
 
 #define USE_BARO
 #define USE_BARO_BMP280
@@ -171,8 +172,8 @@
 // Note, this is the same DMA channel as UART1_RX. Luckily we don't use DMA for USART Rx.
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
 
-#define MPU6500_CS_PIN                   PB9
-#define MPU6500_SPI_INSTANCE             SPI1
+#define GYRO_1_CS_PIN                    PB9
+#define GYRO_1_SPI_INSTANCE              SPI1
 
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 

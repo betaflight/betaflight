@@ -56,21 +56,22 @@
 
 // ICM20689 interrupt
 #define USE_EXTI
-#define MPU_INT_EXTI            PC5
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC5
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
-#define  ICM20689_CS_PIN          PC4
-#define ICM20689_SPI_INSTANCE    SPI1
+#define GYRO_1_CS_PIN           PC4
+#define GYRO_1_SPI_INSTANCE     SPI1
 
 #define USE_ACC
 #define USE_ACC_SPI_ICM20689
-#define ACC_ICM20689_ALIGN       CW270_DEG
+#define ACC_1_ALIGN             CW270_DEG
 
 #define USE_GYRO
 #define USE_GYRO_SPI_ICM20689
-#define GYRO_ICM20689_ALIGN      CW270_DEG
+#define GYRO_1_ALIGN            CW270_DEG
 
 #if defined(FLYWOOF405)
 //------MPU6000

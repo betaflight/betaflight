@@ -49,15 +49,15 @@
 #define USE_GYRO_MPU6050
 #define USE_GYRO_SPI_MPU6500
 
-#define GYRO_MPU6050_ALIGN      CW270_DEG
-#define GYRO_MPU6500_ALIGN      CW270_DEG
+#define GYRO_1_ALIGN            CW270_DEG
+#define GYRO_1_ALIGN            CW270_DEG
 
 #define USE_ACC
 #define USE_ACC_MPU6050
 #define USE_ACC_SPI_MPU6500
 
-#define ACC_MPU6050_ALIGN       CW270_DEG
-#define ACC_MPU6500_ALIGN       CW270_DEG
+#define ACC_1_ALIGN             CW270_DEG
+#define ACC_1_ALIGN             CW270_DEG
 
 // No baro support.
 //#define USE_BARO
@@ -106,8 +106,8 @@
 #define SPI3_MISO_PIN           PB4
 #define SPI3_MOSI_PIN           PB5
 
-#define MPU6500_CS_PIN          SPI3_NSS_PIN
-#define MPU6500_SPI_INSTANCE    SPI3
+#define GYRO_1_CS_PIN           SPI3_NSS_PIN
+#define GYRO_1_SPI_INSTANCE     SPI3
 
 #define USE_ADC
 

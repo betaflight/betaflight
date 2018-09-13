@@ -82,17 +82,20 @@
 #define USE_I2C_DEVICE_3
 #define I2C_DEVICE              (I2CDEV_3)
 
+// This board only uses I2C acc/gyro
+#undef USE_MULTI_GYRO
+
 // MPU9250 has the AD0 pin held high so the
 // address is 0x69 instead of the default 0x68
 #define MPU_ADDRESS             0x69
 
 #define USE_GYRO
 #define USE_GYRO_MPU6500
-#define GYRO_MPU6500_ALIGN      CW270_DEG
+#define GYRO_1_ALIGN            CW270_DEG
 
 #define USE_ACC
 #define USE_ACC_MPU6500
-#define ACC_MPU6500_ALIGN       CW270_DEG
+#define ACC_1_ALIGN             CW270_DEG
 
 #define USE_MAG
 #define USE_MPU9250_MAG // Enables bypass configuration on the MPU9250 I2C bus
@@ -100,7 +103,8 @@
 #define MAG_AK8963_ALIGN        CW270_DEG
 
 #define USE_EXTI
-#define MPU_INT_EXTI            PC13
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC13
 
 #define USE_SERIALRX_TARGET_CUSTOM
 #define SERIALRX_UART           SERIAL_PORT_USART6

@@ -126,6 +126,7 @@ extern uint8_t __config_end;
 #include "pg/board.h"
 #include "pg/bus_i2c.h"
 #include "pg/bus_spi.h"
+#include "pg/gyrodev.h"
 #include "pg/max7456.h"
 #include "pg/pinio.h"
 #include "pg/pg.h"
@@ -2701,7 +2702,7 @@ static void cliPrintGyroRegisters(uint8_t whichSensor)
 
 static void cliDumpGyroRegisters(char *cmdline)
 {
-#ifdef USE_DUAL_GYRO
+#ifdef USE_MULTI_GYRO
     if ((gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_1) || (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_BOTH)) {
         cliPrintLinef("\r\n# Gyro 1");
         cliPrintGyroRegisters(GYRO_CONFIG_USE_GYRO_1);
@@ -2712,7 +2713,7 @@ static void cliDumpGyroRegisters(char *cmdline)
     }
 #else
     cliPrintGyroRegisters(GYRO_CONFIG_USE_GYRO_1);
-#endif // USE_DUAL_GYRO
+#endif
     UNUSED(cmdline);
 }
 #endif
@@ -3823,6 +3824,7 @@ const cliResourceValue_t resourceTable[] = {
 #ifdef USE_RX_SPI
     DEFS( OWNER_RX_SPI_CS,     PG_RX_SPI_CONFIG, rxSpiConfig_t, csnTag ),
 #endif
+    DEFW( OWNER_GYRO_CS,       PG_GYRO_DEVICE_CONFIG, gyroDeviceConfig_t, csnTag, 2 ),
 };
 
 #undef DEFS

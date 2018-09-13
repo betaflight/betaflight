@@ -222,7 +222,8 @@ sensor_gyro_unittest_SRC := \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/drivers/accgyro/accgyro_fake.c \
 		$(USER_DIR)/drivers/accgyro/gyro_sync.c \
-		$(USER_DIR)/pg/pg.c
+		$(USER_DIR)/pg/pg.c \
+		$(USER_DIR)/pg/gyrodev.c
 
 telemetry_crsf_unittest_SRC := \
 		$(USER_DIR)/rx/crsf.c \

@@ -38,23 +38,24 @@
 #define INVERTER_PIN_UART6      PC8
 
 #define USE_EXTI
-#define MPU_INT_EXTI            PC4
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC4
 #define USE_MPU_DATA_READY_SIGNAL
 
 // *************** Gyro & ACC **********************
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 
-#define MPU6500_CS_PIN          PA4
-#define MPU6500_SPI_INSTANCE    SPI1
+#define GYRO_1_CS_PIN           PA4
+#define GYRO_1_SPI_INSTANCE     SPI1
 
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN      CW90_DEG
+#define GYRO_1_ALIGN            CW90_DEG
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN       CW90_DEG
+#define ACC_1_ALIGN             CW90_DEG
 
 // *************** UART *****************************
 #define USE_VCP

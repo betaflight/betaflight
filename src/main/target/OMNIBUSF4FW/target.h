@@ -68,7 +68,9 @@
 
 // MPU6000 interrupts
 #define USE_EXTI
-#define MPU_INT_EXTI            PC4
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC4
+#define GYRO_2_EXTI_PIN         NONE
 #define USE_MPU_DATA_READY_SIGNAL
 
 #define USE_MAG

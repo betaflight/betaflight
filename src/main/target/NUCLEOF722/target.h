@@ -33,19 +33,23 @@
 //#define BEEPER_PIN PA0
 //#define BEEPER_INVERTED
 
+#undef USE_MULTI_GYRO
+
 #define USE_ACC
 #define USE_FAKE_ACC
 #define USE_ACC_MPU6050
-#define ACC_MPU6050_ALIGN CW270_DEG
+#define ACC_1_ALIGN       CW270_DEG
 
 #define USE_GYRO
 #define USE_FAKE_GYRO
 #define USE_GYRO_MPU6050
-#define GYRO_MPU6050_ALIGN CW270_DEG
+#define GYRO_1_ALIGN       CW270_DEG
 
 // MPU6050 interrupts
 #define USE_MPU_DATA_READY_SIGNAL
-#define MPU_INT_EXTI PB15
+#define USE_EXTI
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN PB15
 #define USE_EXTI
 
 #define USE_MAG

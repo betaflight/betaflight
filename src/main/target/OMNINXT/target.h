@@ -46,6 +46,10 @@
 
 #define USE_ACC
 #define USE_GYRO
+// MPU interrupts
+//#define USE_EXTI
+//#define USE_GYRO_EXTI
+//#define USE_MPU_DATA_READY_SIGNAL
 
 // For debugging with NUC405RG
 #define USE_FAKE_ACC
@@ -57,24 +61,19 @@
 #define USE_ACC_SPI_MPU6500
 #define USE_GYRO_SPI_MPU6500
 
-#define USE_DUAL_GYRO
-
 #define GYRO_1_SPI_INSTANCE     SPI1
 #define GYRO_1_CS_PIN           PB12          // Onboard IMU
 #define GYRO_1_ALIGN            CW0_DEG
 #define ACC_1_ALIGN             CW0_DEG
+#define GYRO_1_EXTI_PIN         NONE
 
 #define GYRO_2_SPI_INSTANCE     SPI1
 #define GYRO_2_CS_PIN           PA8           // External IMU
-#define GYRO_2_ALIGN            CW0_DEG
-#define ACC_2_ALIGN             CW0_DEG
+#define GYRO_2_ALIGN            CW270_DEG
+#define ACC_2_ALIGN             CW270_DEG
+#define GYRO_2_EXTI_PIN         NONE
 
 #define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_1
-
-// MPU interrupts
-//#define USE_EXTI
-//#define MPU_INT_EXTI            PC4
-//#define USE_MPU_DATA_READY_SIGNAL
 
 #define USE_MAG
 #define MAG_I2C_INSTANCE        (I2CDEV_1) 
