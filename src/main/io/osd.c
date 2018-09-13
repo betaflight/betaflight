@@ -476,8 +476,8 @@ static bool osdDrawSingleElement(uint8_t item)
     switch (item) {
     case OSD_FLIP_ARROW: 
         {
-            const int angleR = attitude.values.roll;
-            const int angleP = attitude.values.pitch; // still gotta update all angleR and angleP pointers.
+            const int angleR = attitude.values.roll / 10;
+            const int angleP = attitude.values.pitch / 10; // still gotta update all angleR and angleP pointers.
             if (IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
                 if (angleP > 0 && ((angleR > 175 && angleR < 180) || (angleR > -180 && angleR < -175))) {
                     buff[0] = SYM_ARROW_SOUTH;
