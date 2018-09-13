@@ -43,6 +43,9 @@ atomic_unittest_SRC := \
 		$(USER_DIR)/build/atomic.c \
 		$(TEST_DIR)/atomic_unittest_c.c
 
+# This test is disabled due to build errors.
+# Its source code is archived in unit/baro_bmp085_unittest.cc.txt
+#
 #baro_bmp085_unittest_SRC := \
 #		$(USER_DIR)/drivers/barometer/barometer_bmp085.c \
 #		$(USER_DIR)/drivers/io.c
@@ -62,6 +65,9 @@ baro_ms5611_unittest_DEFINES := \
                 USE_BARO_MS5611 \
                 USE_BARO_SPI_MS5611
 
+# This test is disabled due to build errors.
+# Its source code is archived in unit/battery_unittest.cc.txt
+#
 #battery_unittest_SRC := \
 #		$(USER_DIR)/sensors/battery.c \
 #		$(USER_DIR)/common/maths.c
@@ -271,14 +277,16 @@ telemetry_ibus_unittest_SRC := \
 
 timer_definition_unittest_EXPAND := yes
 
-# SITL is a simulator; NERO and STM32F7X2 don't define USED_TIMERS in target.h.
-timer_definition_unittest_BLACKLIST := STM32F7X2 SITL NERO
+# NERO and STM32F7X2 are universal targets with dynamic timer management.
+# SITL is a simulator with empty timerHardware and many hearders in target.c.
+timer_definition_unittest_BLACKLIST := NERO SITL STM32F7X2
 
 timer_definition_unittest_SRC = \
 		$(TARGET_DIR)/$(call get_base_target,$1)/target.c
 
 timer_definition_unittest_DEFINES = \
-		TARGET=$(call get_base_target,$1)
+		TARGET=$1 \
+		BASE_TARGET=$(call get_base_target,$1)
 
 timer_definition_unittest_INCLUDE_DIRS = \
 		$(TEST_DIR)/timer_definition_unittest.include \
