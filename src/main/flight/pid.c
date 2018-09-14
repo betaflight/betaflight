@@ -130,7 +130,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .dterm_notch_hz = 0,
         .dterm_notch_cutoff = 0,
         .dterm_filter_type = FILTER_PT1,
-        .itermWindupPointPercent = 100,
+        .itermWindupPointPercent = 40,
         .vbatPidCompensation = 0,
         .pidAtMinThrottle = PID_STABILISATION_ON,
         .levelAngleLimit = 55,
