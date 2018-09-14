@@ -130,7 +130,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .dterm_notch_hz = 0,
         .dterm_notch_cutoff = 0,
         .dterm_filter_type = FILTER_PT1,
-        .itermWindupPointPercent = 100,
+        .iTermWindupPointPercent = 100,
         .vbatPidCompensation = 0,
         .pidAtMinThrottle = PID_STABILISATION_ON,
         .levelAngleLimit = 55,
@@ -368,7 +368,7 @@ static FAST_RAM_ZERO_INIT pidCoefficient_t pidCoefficient[XYZ_AXIS_COUNT];
 static FAST_RAM_ZERO_INIT float maxVelocity[XYZ_AXIS_COUNT];
 static FAST_RAM_ZERO_INIT float feedForwardTransition;
 static FAST_RAM_ZERO_INIT float levelGain, horizonGain, horizonTransition, horizonCutoffDegrees, horizonFactorRatio;
-static FAST_RAM float ITermWindupPointInv = 1.0f;
+static FAST_RAM float iTermWindupPointInv = 1.0f;
 static FAST_RAM_ZERO_INIT uint8_t horizonTiltExpertMode;
 static FAST_RAM_ZERO_INIT timeDelta_t crashTimeLimitUs;
 static FAST_RAM_ZERO_INIT timeDelta_t crashTimeDelayUs;
@@ -443,9 +443,11 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     horizonFactorRatio = (100 - pidProfile->horizon_tilt_effect) * 0.01f;
     maxVelocity[FD_ROLL] = maxVelocity[FD_PITCH] = pidProfile->rateAccelLimit * 100 * dT;
     maxVelocity[FD_YAW] = pidProfile->yawRateAccelLimit * 100 * dT;
-    if (pidProfile->itermWindupPointPercent < 100) {
-        const float ITermWindupPoint = pidProfile->itermWindupPointPercent / 100.0f;
-        ITermWindupPointInv = 1.0f / (1.0f - ITermWindupPoint);
+    if (pidProfile->iTermWindupPointPercent < 100) {
+        const float iTermWindupPoint = pidProfile->iTermWindupPointPercent / 100.0f;
+        iTermWindupPointInv = 1.0f / (1.0f - iTermWindupPoint);
+    } else {
+        iTermWindupPointInv = 1.0f;
     }
     itermAcceleratorGain = pidProfile->itermAcceleratorGain;
     crashTimeLimitUs = pidProfile->crash_time * 1000;
@@ -942,9 +944,8 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
 
     // gradually scale back integration when above windup point
     float dynCi = dT * itermAccelerator;
-    if (ITermWindupPointInv > 1.0f) {
-        const float motorMixRange = getMotorMixRange();
-        dynCi *= constrainf((1.0f - motorMixRange) * ITermWindupPointInv, 0.0f, 1.0f);
+    if (iTermWindupPointInv > 1.0f) {
+        dynCi *= constrainf((1.0f - getMotorMixRange()) * iTermWindupPointInv, 0.0f, 1.0f);
     }
 
     // Precalculate gyro deta for D-term here, this allows loop unrolling

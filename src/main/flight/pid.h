@@ -105,7 +105,7 @@ typedef struct pidProfile_s {
     pidf_t  pid[PID_ITEM_COUNT];
 
     uint8_t dterm_filter_type;              // Filter selection for dterm
-    uint8_t itermWindupPointPercent;        // Experimental ITerm windup threshold, percent motor saturation
+    uint8_t itermWindupPointPercent;        // ITerm windup threshold, percent motor saturation
     uint16_t pidSumLimit;
     uint16_t pidSumLimitYaw;
     uint8_t pidAtMinThrottle;               // Disable/Enable pids on zero throttle. Normally even without airmode P and D would be active.
