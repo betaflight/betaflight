@@ -16,8 +16,21 @@
  */
 
 extern "C" {
+    // target.h is included from src/main/target/${TARGET}.
     #include <target.h>
+
+    // Files below are header mocks under timer_definition_unittest.include/.
+    #include <drivers/dma.h>
+    #include <drivers/io.h>
     #include <drivers/timer.h>
+    #include <drivers/timer_def.h>
+    #include <mock_enums.h>
+    #include <pg/bus_bst.h>
+    #include <pg/bus_i2c.h>
+    #include <pg/bus_spi.h>
+    #include <platform.h>
+
+    // This is defined in each target's target.c
     extern const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT];
 }
 
