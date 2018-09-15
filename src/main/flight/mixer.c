@@ -596,8 +596,8 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             currentThrottleInputRange = rcCommandThrottleRange3dHigh;
         }
         if (currentTimeUs - reversalTimeUs < 250000) {
-            // keep ITerm zero for 250ms after motor reversal
-            pidResetITerm();
+            // keep iterm zero for 250ms after motor reversal
+            pidResetIterm();
         }
     } else {
         throttle = rcCommand[THROTTLE] - rxConfig()->mincheck + throttleAngleCorrection;

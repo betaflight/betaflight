@@ -130,7 +130,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .dterm_notch_hz = 0,
         .dterm_notch_cutoff = 0,
         .dterm_filter_type = FILTER_PT1,
-        .iTermWindupPointPercent = 100,
+        .itermWindupPointPercent = 100,
         .vbatPidCompensation = 0,
         .pidAtMinThrottle = PID_STABILISATION_ON,
         .levelAngleLimit = 55,
@@ -368,7 +368,7 @@ static FAST_RAM_ZERO_INIT pidCoefficient_t pidCoefficient[XYZ_AXIS_COUNT];
 static FAST_RAM_ZERO_INIT float maxVelocity[XYZ_AXIS_COUNT];
 static FAST_RAM_ZERO_INIT float feedForwardTransition;
 static FAST_RAM_ZERO_INIT float levelGain, horizonGain, horizonTransition, horizonCutoffDegrees, horizonFactorRatio;
-static FAST_RAM float iTermWindupPointInv = 1.0f;
+static FAST_RAM_ZERO_INIT float itermWindupPointInv;
 static FAST_RAM_ZERO_INIT uint8_t horizonTiltExpertMode;
 static FAST_RAM_ZERO_INIT timeDelta_t crashTimeLimitUs;
 static FAST_RAM_ZERO_INIT timeDelta_t crashTimeDelayUs;
@@ -395,7 +395,7 @@ static FAST_RAM_ZERO_INIT float acLimit;
 static FAST_RAM_ZERO_INIT float acErrorLimit;
 #endif
 
-void pidResetITerm(void)
+void pidResetIterm(void)
 {
     for (int axis = 0; axis < 3; axis++) {
         pidData[axis].I = 0.0f;
@@ -443,11 +443,10 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     horizonFactorRatio = (100 - pidProfile->horizon_tilt_effect) * 0.01f;
     maxVelocity[FD_ROLL] = maxVelocity[FD_PITCH] = pidProfile->rateAccelLimit * 100 * dT;
     maxVelocity[FD_YAW] = pidProfile->yawRateAccelLimit * 100 * dT;
-    if (pidProfile->iTermWindupPointPercent < 100) {
-        const float iTermWindupPoint = pidProfile->iTermWindupPointPercent / 100.0f;
-        iTermWindupPointInv = 1.0f / (1.0f - iTermWindupPoint);
-    } else {
-        iTermWindupPointInv = 1.0f;
+    itermWindupPointInv = 1.0f;
+    if (pidProfile->itermWindupPointPercent < 100) {
+        const float itermWindupPoint = pidProfile->itermWindupPointPercent / 100.0f;
+        itermWindupPointInv = 1.0f / (1.0f - itermWindupPoint);
     }
     itermAcceleratorGain = pidProfile->itermAcceleratorGain;
     crashTimeLimitUs = pidProfile->crash_time * 1000;
@@ -633,8 +632,8 @@ static void handleCrashRecovery(
                 *errorRate = *currentPidSetpoint - gyroRate;
             }
         }
-        // reset ITerm, since accumulated error before crash is now meaningless
-        // and ITerm windup during crash recovery can be extreme, especially on yaw axis
+        // reset iterm, since accumulated error before crash is now meaningless
+        // and iterm windup during crash recovery can be extreme, especially on yaw axis
         pidData[axis].I = 0.0f;
         if (cmpTimeUs(currentTimeUs, crashDetectedAtUs) > crashTimeLimitUs
             || (getMotorMixRange() < 1.0f
@@ -696,7 +695,7 @@ static void rotateVector(float v[XYZ_AXIS_COUNT], float rotation[XYZ_AXIS_COUNT]
     }
 }
 
-static void rotateITermAndAxisError() 
+static void rotateItermAndAxisError() 
 {
     if (itermRotation
 #if defined(USE_ABSOLUTE_CONTROL)
@@ -882,7 +881,7 @@ static void applyAbsoluteControl(const int axis, const float gyroRate, const boo
 #endif
 
 #if defined(USE_ITERM_RELAX)
-static void applyItermRelax(const int axis, const float ITerm,
+static void applyItermRelax(const int axis, const float iterm,
     const float gyroRate, float *itermErrorRate, float *currentPidSetpoint)
 {
     const float setpointLpf = pt1FilterApply(&windupLpf[axis], *currentPidSetpoint);
@@ -896,7 +895,7 @@ static void applyItermRelax(const int axis, const float ITerm,
         const float itermRelaxFactor = 1 - setpointHpf / ITERM_RELAX_SETPOINT_THRESHOLD;
 
         const bool isDecreasingI =
-            ((ITerm > 0) && (*itermErrorRate < 0)) || ((ITerm < 0) && (*itermErrorRate > 0));
+            ((iterm > 0) && (*itermErrorRate < 0)) || ((iterm < 0) && (*itermErrorRate > 0));
         if ((itermRelax >= ITERM_RELAX_RP_INC) && isDecreasingI) {
             // Do Nothing, use the precalculed itermErrorRate
         } else if (itermRelaxType == ITERM_RELAX_SETPOINT && setpointHpf < ITERM_RELAX_SETPOINT_THRESHOLD) {
@@ -944,8 +943,8 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
 
     // gradually scale back integration when above windup point
     float dynCi = dT * itermAccelerator;
-    if (iTermWindupPointInv > 1.0f) {
-        dynCi *= constrainf((1.0f - getMotorMixRange()) * iTermWindupPointInv, 0.0f, 1.0f);
+    if (itermWindupPointInv > 1.0f) {
+        dynCi *= constrainf((1.0f - getMotorMixRange()) * itermWindupPointInv, 0.0f, 1.0f);
     }
 
     // Precalculate gyro deta for D-term here, this allows loop unrolling
@@ -956,7 +955,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
         gyroRateDterm[axis] = dtermLowpass2ApplyFn((filter_t *) &dtermLowpass2[axis], gyroRateDterm[axis]);
     }
 
-    rotateITermAndAxisError();
+    rotateItermAndAxisError();
 
     // ----------PID controller----------
     for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
@@ -991,12 +990,12 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
             pidProfile->crash_recovery, angleTrim, axis, currentTimeUs, gyroRate,
             &currentPidSetpoint, &errorRate);
 
-        const float ITerm = pidData[axis].I;
+        const float iterm = pidData[axis].I;
         float itermErrorRate = errorRate;
 
 #if defined(USE_ITERM_RELAX)
-        applyItermRelax(axis, ITerm, gyroRate, &itermErrorRate, &currentPidSetpoint);
-#endif
+        applyItermRelax(axis, iterm, gyroRate, &itermErrorRate, &currentPidSetpoint);
+#endif        
 
         // --------low-level gyro-based PID based on 2DOF PID controller. ----------
         // 2-DOF PID controller with optional filter on derivative term.
@@ -1009,7 +1008,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
         }
 
         // -----calculate I component
-        pidData[axis].I = constrainf(ITerm + pidCoefficient[axis].Ki * itermErrorRate * dynCi, -itermLimit, itermLimit);
+        pidData[axis].I = constrainf(iterm + pidCoefficient[axis].Ki * itermErrorRate * dynCi, -itermLimit, itermLimit);
 
         // -----calculate D component
         if (pidCoefficient[axis].Kd > 0) {
