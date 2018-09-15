@@ -995,7 +995,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
 
 #if defined(USE_ITERM_RELAX)
         applyItermRelax(axis, iterm, gyroRate, &itermErrorRate, &currentPidSetpoint);
-#endif        
+#endif
 
         // --------low-level gyro-based PID based on 2DOF PID controller. ----------
         // 2-DOF PID controller with optional filter on derivative term.
