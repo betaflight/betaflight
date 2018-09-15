@@ -37,6 +37,10 @@ void spiInitDevice(SPIDevice device)
 {
     spiDevice_t *spi = &(spiDevice[device]);
 
+    if (!spi->dev) {
+        return;
+    }
+
 #ifdef SDCARD_SPI_INSTANCE
     if (spi->dev == SDCARD_SPI_INSTANCE) {
         spi->leadingEdge = true;

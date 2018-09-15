@@ -62,7 +62,7 @@ SPIDevice spiDeviceByInstance(SPI_TypeDef *instance)
 
 SPI_TypeDef *spiInstanceByDevice(SPIDevice device)
 {
-    if (device >= SPIDEV_COUNT) {
+    if (device == SPIINVALID || device >= SPIDEV_COUNT) {
         return NULL;
     }
 
