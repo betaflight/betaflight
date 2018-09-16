@@ -150,16 +150,8 @@ static uint8_t spektrumFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
         }
 
 #if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_SRXL)
-        if (srxlEnabled) {
-            if (telemetryBufLen) {
-                if ((spekFrame[2] & 0x80) == 0) {
-                    telemetryFrameRequestedUs = currentTimeUs;
-                }
-            }
-            else {
-                // Trigger tm data collection if buffer is empty.
-                srxlCollectTelemetryNow();
-            }
+        if (srxlEnabled && (spekFrame[2] & 0x80) == 0) {
+            telemetryFrameRequestedUs = currentTimeUs;
         }
 #endif
 
