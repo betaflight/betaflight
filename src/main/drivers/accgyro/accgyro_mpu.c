@@ -228,6 +228,12 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro, const gyro
     gyro->bus.bustype = BUSTYPE_SPI;
 
     spiBusSetInstance(&gyro->bus, spiInstanceByDevice(SPI_CFG_TO_DEV(config->spiBus)));
+
+    // SPI instance may be NULL if the bus is non-existent
+    if (!gyro->bus.busdev_u.spi.instance) {
+        return false;
+    }
+
     gyro->bus.busdev_u.spi.csnPin = IOGetByTag(config->csnTag);
     IOInit(gyro->bus.busdev_u.spi.csnPin, OWNER_GYRO_CS, RESOURCE_INDEX(config->index));
     IOConfigGPIO(gyro->bus.busdev_u.spi.csnPin, SPI_IO_CS_CFG);
