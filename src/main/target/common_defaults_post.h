@@ -269,3 +269,9 @@
 #define MSC_BUTTON_IPU true
 #endif
 #endif
+
+#ifdef USE_TIMER_MGMT
+#ifndef MAX_TIMER_PINMAP_COUNT
+#define MAX_TIMER_PINMAP_COUNT 21 // Largest known for F405RG (OMNINXT)
+#endif
+#endif
