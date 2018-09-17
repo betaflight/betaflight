@@ -27,14 +27,14 @@
 #define BEEPER                  PB0
 #define BEEPER_INVERTED
 
-#define MPU6000_CS_PIN          PA4
-#define MPU6000_SPI_INSTANCE    SPI1
-
 #define ACC
 #define USE_ACC_SPI_MPU6000
 
 #define GYRO
 #define USE_GYRO_SPI_MPU6000
+
+#define GYRO_1_CS_PIN          PA4
+#define GYRO_1_SPI_INSTANCE    SPI1
 
 // TODO
 #define GYRO_MPU6000_ALIGN       CW180_DEG
