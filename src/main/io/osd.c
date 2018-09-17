@@ -738,16 +738,8 @@ static bool osdDrawSingleElement(uint8_t item)
         }
 
     case OSD_G_FORCE:
-        {
-            osdGForce = 0.0f;
-            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                const float a = accAverage[axis];
-                osdGForce += a * a;
-            }
-            osdGForce = sqrtf(osdGForce) * acc.dev.acc_1G_rec;
-            tfp_sprintf(buff, "%01d.%01dG", (int)osdGForce, (int)(osdGForce * 10) % 10);
-            break;
-        }
+        tfp_sprintf(buff, "%01d.%01dG", (int)osdGForce, (int)(osdGForce * 10) % 10);
+        break;
 
     case OSD_ROLL_PIDS:
         osdFormatPID(buff, "ROL", &currentPidProfile->pid[PID_ROLL]);
@@ -1050,6 +1042,12 @@ static void osdDrawElements(void)
     }
 
     if (sensors(SENSOR_ACC)) {
+        osdGForce = 0.0f;
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            const float a = accAverage[axis];
+            osdGForce += a * a;
+        }
+        osdGForce = sqrtf(osdGForce) * acc.dev.acc_1G_rec;
         osdDrawSingleElement(OSD_ARTIFICIAL_HORIZON);
         osdDrawSingleElement(OSD_G_FORCE);
     }
