@@ -125,7 +125,7 @@ TEST(TelemetryCrsfTest, TestGPS)
     gpsSol.llh.lon = 163 * GPS_DEGREES_DIVIDER;
     ENABLE_STATE(GPS_FIX);
     gpsSol.llh.altCm = 2345 * 100;            // altitude in cm / 100 + 1000m offset, so CRSF value should be 3345
-    gpsSol.groundSpeed = 163;                 // speed in 0.1m/s, 16.3 m/s = 58.68 km/h, so CRSF (km/h *10) value is 587
+    gpsSol.groundSpeed = 1630;                // speed in cm/s, 16.3 m/s = 58.68 km/h, so CRSF (km/h *10) value is 587
     gpsSol.numSat = 9;
     gpsSol.groundCourse = 1479;     // degrees * 10
     frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_GPS);
