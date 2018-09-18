@@ -23,7 +23,10 @@
 #if defined(CRAZYBEEF3FS)
 #define TARGET_BOARD_IDENTIFIER "CBFS"
 #define USBD_PRODUCT_STRING     "CrazyBee F3 FS"
-#else //CRAZYBEEF3FS
+#elif defined(CRAZYBEEF3DX)
+#define TARGET_BOARD_IDENTIFIER "CBDX"
+#define USBD_PRODUCT_STRING     "CrazyBee F3 DX"
+#else
 #define TARGET_BOARD_IDENTIFIER "CBFR"
 #define USBD_PRODUCT_STRING     "CrazyBee F3 FR"
 #endif
@@ -57,6 +60,7 @@
 
 #define ENABLE_DSHOT_DMAR       true
 
+#define USE_LED_STRIP
 #define LED0_PIN                PB3
 #define USE_BEEPER 
 #define BEEPER_PIN              PC15
@@ -76,8 +80,11 @@
 #define ACC_1_ALIGN             CW90_DEG
 
 #define USE_VCP
+#define USE_UART2
 #define USE_UART3
-#define SERIAL_PORT_COUNT       2
+#define SERIAL_PORT_COUNT       3
+#define UART2_TX_PIN            PA14
+#define UART2_RX_PIN            PA15
 #define UART3_TX_PIN            PB10
 #define UART3_RX_PIN            PB11
 
@@ -97,6 +104,8 @@
 #if defined(CRAZYBEEF3FS)
 #define USE_RX_SPI
 #define USE_RX_FLYSKY
+#define RX_CHANNELS_AETR
+#define DEFAULT_RX_FEATURE      FEATURE_RX_SPI
 #define RX_SPI_DEFAULT_PROTOCOL RX_SPI_A7105_FLYSKY_2A
 #define FLYSKY_2A_CHANNEL_COUNT 14
 #define RX_SPI_INSTANCE         SPI2
@@ -105,6 +114,13 @@
 #define BINDPLUG_PIN            PA9
 #define USE_RX_FLYSKY_SPI_LED
 #define RX_FLYSKY_SPI_LED_PIN   PA10
+#define DEFAULT_FEATURES        (FEATURE_TELEMETRY | FEATURE_OSD | FEATURE_MOTOR_STOP)
+#elif defined(CRAZYBEEF3DX)
+#define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
+#define SERIALRX_PROVIDER       SERIALRX_SPEKTRUM2048
+#define SERIALRX_UART           SERIAL_PORT_USART3
+#define RX_CHANNELS_TAER
+#define DEFAULT_FEATURES        (FEATURE_OSD | FEATURE_MOTOR_STOP)
 #else
 #define USE_RX_SPI
 #define USE_RX_FRSKY_SPI_D
@@ -120,6 +136,7 @@
 #define RX_FRSKY_SPI_GDO_0_PIN  PA8
 #define RX_FRSKY_SPI_LED_PIN    PA10
 #define BINDPLUG_PIN            PA9
+#define DEFAULT_FEATURES        (FEATURE_TELEMETRY | FEATURE_OSD | FEATURE_MOTOR_STOP)
 #endif
 
 #define USE_MAX7456
@@ -134,13 +151,12 @@
 #define VBAT_ADC_PIN            PA0
 #define CURRENT_METER_ADC_PIN   PA1
 #define ADC_INSTANCE            ADC1
-#define CURRENT_METER_SCALE_DEFAULT 2350
+#define CURRENT_METER_SCALE_DEFAULT 1175
 
-#define DEFAULT_FEATURES        (FEATURE_TELEMETRY | FEATURE_OSD | FEATURE_RX_SPI | FEATURE_MOTOR_STOP)
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         (BIT(13)|BIT(14)|BIT(15))
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
-#define USABLE_TIMER_CHANNEL_COUNT 4
-#define USED_TIMERS             (TIM_N(2) | TIM_N(8))
+#define USABLE_TIMER_CHANNEL_COUNT 6
+#define USED_TIMERS             (TIM_N(2) |TIM_N(3) |TIM_N(4) | TIM_N(8) | TIM_N(15))
