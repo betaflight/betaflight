@@ -53,7 +53,7 @@ static void gyroResetSpiDeviceConfig(gyroDeviceConfig_t *devconf, SPI_TypeDef *i
 }
 #endif
 
-#ifdef USE_I2C_GYRO
+#if defined(USE_I2C_GYRO) && !defined(USE_MULTI_GYRO)
 static void gyroResetI2cDeviceConfig(gyroDeviceConfig_t *devconf, I2CDevice i2cbus, ioTag_t extiTag, uint8_t align)
 {
     devconf->bustype = BUSTYPE_I2C;
