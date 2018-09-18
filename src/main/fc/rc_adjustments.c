@@ -56,6 +56,8 @@
 
 #include "rx/rx.h"
 
+#define ADJUSTMENT_RANGE_COUNT_INVALID -1
+
 PG_REGISTER_ARRAY(adjustmentRange_t, MAX_ADJUSTMENT_RANGE_COUNT, adjustmentRanges, PG_ADJUSTMENT_RANGE_CONFIG, 0);
 
 uint8_t pidAudioPositionToModeMap[7] = {
@@ -74,6 +76,9 @@ uint8_t pidAudioPositionToModeMap[7] = {
 };
 
 static pidProfile_t *pidProfile;
+
+static int activeAdjustmentRangeCount = ADJUSTMENT_RANGE_COUNT_INVALID;
+static uint8_t activeAdjustmentRangeArray[MAX_ADJUSTMENT_RANGE_COUNT];
 
 static void blackboxLogInflightAdjustmentEvent(adjustmentFunction_e adjustmentFunction, int32_t newValue)
 {
@@ -664,6 +669,33 @@ static uint8_t applySelectAdjustment(adjustmentFunction_e adjustmentFunction, ui
     return position;
 }
 
+static void calcActiveAdjustmentRanges(void)
+{
+    adjustmentRange_t defaultAdjustmentRange;
+    memset(&defaultAdjustmentRange, 0, sizeof(defaultAdjustmentRange));
+
+    activeAdjustmentRangeCount = 0;
+    for (int i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
+        const adjustmentRange_t * const adjustmentRange = adjustmentRanges(i);
+        if (memcmp(adjustmentRange, &defaultAdjustmentRange, sizeof(defaultAdjustmentRange)) != 0) {
+            activeAdjustmentRangeArray[activeAdjustmentRangeCount++] = i;
+        }
+    }
+}
+
+static void updateAdjustmentStates(void)
+{
+    for (int index = 0; index < activeAdjustmentRangeCount; index++) {
+        const adjustmentRange_t * const adjustmentRange = adjustmentRanges(activeAdjustmentRangeArray[index]);
+        // Only use slots if center value has not been specified, otherwise apply values directly (scaled) from aux channel
+        if (isRangeActive(adjustmentRange->auxChannelIndex, &adjustmentRange->range) &&
+            (adjustmentRange->adjustmentCenter == 0)) {
+            const adjustmentConfig_t *adjustmentConfig = &defaultAdjustmentConfigs[adjustmentRange->adjustmentFunction - ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET];
+            configureAdjustment(adjustmentRange->adjustmentIndex, adjustmentRange->auxSwitchChannelIndex, adjustmentConfig);
+        }
+    }
+}
+
 #define RESET_FREQUENCY_2HZ (1000 / 2)
 
 void processRcAdjustments(controlRateConfig_t *controlRateConfig)
@@ -674,6 +706,13 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig)
 
     const bool canUseRxData = rxIsReceivingSignal();
 
+    // Calculate the new activeAdjustmentRangeCount if required
+    if (activeAdjustmentRangeCount == ADJUSTMENT_RANGE_COUNT_INVALID) {
+        calcActiveAdjustmentRanges();
+    }
+
+    updateAdjustmentStates();
+    
     // Process Increment/Decrement adjustments
     for (int adjustmentIndex = 0; adjustmentIndex < MAX_SIMULTANEOUS_ADJUSTMENT_COUNT; adjustmentIndex++) {
         adjustmentState_t *adjustmentState = &adjustmentStates[adjustmentIndex];
@@ -741,21 +780,21 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig)
     }
 
     // Process Absolute adjustments
-    for (int index = 0; index < MAX_ADJUSTMENT_RANGE_COUNT; index++) {
+    for (int index = 0; index < activeAdjustmentRangeCount; index++) {
         static int16_t lastRcData[MAX_ADJUSTMENT_RANGE_COUNT] = { 0 };
 
-        const adjustmentRange_t * const adjustmentRange = adjustmentRanges(index);
+        const adjustmentRange_t * const adjustmentRange = adjustmentRanges(activeAdjustmentRangeArray[index]);
         const uint8_t channelIndex = NON_AUX_CHANNEL_COUNT + adjustmentRange->auxSwitchChannelIndex;
         const adjustmentConfig_t *adjustmentConfig = &defaultAdjustmentConfigs[adjustmentRange->adjustmentFunction - ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET];
 
         // If setting is defined for step adjustment and center value has been specified, apply values directly (scaled) from aux channel
-        if ((rcData[channelIndex] != lastRcData[index]) &&
+        if ((rcData[channelIndex] != lastRcData[activeAdjustmentRangeArray[index]]) &&
             adjustmentRange->adjustmentCenter &&
             (adjustmentConfig->mode == ADJUSTMENT_MODE_STEP) &&
             isRangeActive(adjustmentRange->auxChannelIndex, &adjustmentRange->range)) {
             int value = (((rcData[channelIndex] - PWM_RANGE_MIDDLE) * adjustmentRange->adjustmentScale) / (PWM_RANGE_MIDDLE - PWM_RANGE_MIN)) + adjustmentRange->adjustmentCenter;
 
-            lastRcData[index] = rcData[channelIndex];
+            lastRcData[activeAdjustmentRangeArray[index]] = rcData[channelIndex];
             applyAbsoluteAdjustment(controlRateConfig, adjustmentRange->adjustmentFunction, value);
             pidInitConfig(pidProfile);
         }
@@ -767,26 +806,14 @@ void resetAdjustmentStates(void)
     memset(adjustmentStates, 0, sizeof(adjustmentStates));
 }
 
-void updateAdjustmentStates(void)
-{
-    for (int index = 0; index < MAX_ADJUSTMENT_RANGE_COUNT; index++) {
-        const adjustmentRange_t * const adjustmentRange = adjustmentRanges(index);
-        // Only use slots if center value has not been specified, otherwise apply values directly (scaled) from aux channel
-        if (isRangeActive(adjustmentRange->auxChannelIndex, &adjustmentRange->range) &&
-            (adjustmentRange->adjustmentCenter == 0)) {
-            const adjustmentConfig_t *adjustmentConfig = &defaultAdjustmentConfigs[adjustmentRange->adjustmentFunction - ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET];
-            configureAdjustment(adjustmentRange->adjustmentIndex, adjustmentRange->auxSwitchChannelIndex, adjustmentConfig);
-        }
-    }
-}
-
 void useAdjustmentConfig(pidProfile_t *pidProfileToUse)
 {
     pidProfile = pidProfileToUse;
 }
 
 #if defined(USE_OSD) && defined(USE_OSD_ADJUSTMENTS)
-const char *getAdjustmentsRangeName(void) {
+const char *getAdjustmentsRangeName(void)
+{
     if (adjustmentRangeNameIndex > 0) {
         return &adjustmentLabels[adjustmentRangeNameIndex - 1][0];
     } else {
@@ -794,7 +821,13 @@ const char *getAdjustmentsRangeName(void) {
     }
 }
 
-int getAdjustmentsRangeValue(void) {
+int getAdjustmentsRangeValue(void)
+{
     return adjustmentRangeValue;
 }
 #endif
+
+void activeAdjustmentRangeReset(void)
+{
+    activeAdjustmentRangeCount = ADJUSTMENT_RANGE_COUNT_INVALID;
+}
