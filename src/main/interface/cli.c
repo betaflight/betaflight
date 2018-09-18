@@ -385,6 +385,10 @@ static void cliPrintErrorLinef(const char *format, ...)
     cliPrintLinefeed();
 }
 
+static void cliPrintCorruptMessage(int value)
+{
+    cliPrintf("%d ###CORRUPTED CONFIG###", value);
+}
 
 static void printValuePointer(const clivalue_t *var, const void *valuePointer, bool full)
 {
@@ -440,13 +444,21 @@ static void printValuePointer(const clivalue_t *var, const void *valuePointer, b
 
         switch (var->type & VALUE_MODE_MASK) {
         case MODE_DIRECT:
-            cliPrintf("%d", value);
-            if (full) {
-                cliPrintf(" %d %d", var->config.minmax.min, var->config.minmax.max);
+            if ((value < var->config.minmax.min) || (value > var->config.minmax.max)) {
+                cliPrintCorruptMessage(value);
+            } else {
+                cliPrintf("%d", value);
+                if (full) {
+                    cliPrintf(" %d %d", var->config.minmax.min, var->config.minmax.max);
+                }
             }
             break;
         case MODE_LOOKUP:
-            cliPrint(lookupTables[var->config.lookup.tableIndex].values[value]);
+            if (value < lookupTables[var->config.lookup.tableIndex].valueCount) {
+                cliPrint(lookupTables[var->config.lookup.tableIndex].values[value]);
+            } else {
+                cliPrintCorruptMessage(value);
+            }
             break;
         case MODE_BITSET:
             if (value & 1 << var->config.bitpos) {
