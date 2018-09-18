@@ -196,7 +196,9 @@ void initJetiExBusTelemetry(void)
     }
     if (sensors(SENSOR_BARO)) {
         bitArraySet(&exSensorEnabled, EX_ALTITUDE);
+#ifdef USE_VARIO
         bitArraySet(&exSensorEnabled, EX_VARIO);
+#endif
     }
     if (sensors(SENSOR_ACC)) {
         bitArraySet(&exSensorEnabled, EX_ROLL_ANGLE);
@@ -259,9 +261,11 @@ int32_t getSensorValue(uint8_t sensor)
         return attitude.values.yaw;
         break;
 
+#ifdef USE_VARIO
     case EX_VARIO:
         return getEstimatedVario();
         break;
+#endif
 
     default:
         return -1;
