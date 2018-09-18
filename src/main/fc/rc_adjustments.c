@@ -77,8 +77,10 @@ uint8_t pidAudioPositionToModeMap[7] = {
 
 static pidProfile_t *pidProfile;
 
-static int activeAdjustmentRangeCount = ADJUSTMENT_RANGE_COUNT_INVALID;
-static uint8_t activeAdjustmentRangeArray[MAX_ADJUSTMENT_RANGE_COUNT];
+static int activeAdjustmentCount = ADJUSTMENT_RANGE_COUNT_INVALID;
+static uint8_t activeAdjustmentArray[MAX_ADJUSTMENT_RANGE_COUNT];
+static int activeAbsoluteAdjustmentCount;
+static uint8_t activeAbsoluteAdjustmentArray[MAX_ADJUSTMENT_RANGE_COUNT];
 
 static void blackboxLogInflightAdjustmentEvent(adjustmentFunction_e adjustmentFunction, int32_t newValue)
 {
@@ -674,19 +676,24 @@ static void calcActiveAdjustmentRanges(void)
     adjustmentRange_t defaultAdjustmentRange;
     memset(&defaultAdjustmentRange, 0, sizeof(defaultAdjustmentRange));
 
-    activeAdjustmentRangeCount = 0;
+    activeAdjustmentCount = 0;
+    activeAbsoluteAdjustmentCount = 0;
     for (int i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
         const adjustmentRange_t * const adjustmentRange = adjustmentRanges(i);
         if (memcmp(adjustmentRange, &defaultAdjustmentRange, sizeof(defaultAdjustmentRange)) != 0) {
-            activeAdjustmentRangeArray[activeAdjustmentRangeCount++] = i;
+            if (adjustmentRange->adjustmentCenter == 0) {
+                activeAdjustmentArray[activeAdjustmentCount++] = i;
+            } else {
+                activeAbsoluteAdjustmentArray[activeAbsoluteAdjustmentCount++] = i;
+            }
         }
     }
 }
 
 static void updateAdjustmentStates(void)
 {
-    for (int index = 0; index < activeAdjustmentRangeCount; index++) {
-        const adjustmentRange_t * const adjustmentRange = adjustmentRanges(activeAdjustmentRangeArray[index]);
+    for (int index = 0; index < activeAdjustmentCount; index++) {
+        const adjustmentRange_t * const adjustmentRange = adjustmentRanges(activeAdjustmentArray[index]);
         // Only use slots if center value has not been specified, otherwise apply values directly (scaled) from aux channel
         if (isRangeActive(adjustmentRange->auxChannelIndex, &adjustmentRange->range) &&
             (adjustmentRange->adjustmentCenter == 0)) {
@@ -706,8 +713,8 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig)
 
     const bool canUseRxData = rxIsReceivingSignal();
 
-    // Calculate the new activeAdjustmentRangeCount if required
-    if (activeAdjustmentRangeCount == ADJUSTMENT_RANGE_COUNT_INVALID) {
+    // Recalculate the new active adjustments if required
+    if (activeAdjustmentCount == ADJUSTMENT_RANGE_COUNT_INVALID) {
         calcActiveAdjustmentRanges();
     }
 
@@ -780,21 +787,21 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig)
     }
 
     // Process Absolute adjustments
-    for (int index = 0; index < activeAdjustmentRangeCount; index++) {
+    for (int i = 0; i < activeAbsoluteAdjustmentCount; i++) {
         static int16_t lastRcData[MAX_ADJUSTMENT_RANGE_COUNT] = { 0 };
-
-        const adjustmentRange_t * const adjustmentRange = adjustmentRanges(activeAdjustmentRangeArray[index]);
+        int index = activeAbsoluteAdjustmentArray[i];
+        const adjustmentRange_t * const adjustmentRange = adjustmentRanges(index);
         const uint8_t channelIndex = NON_AUX_CHANNEL_COUNT + adjustmentRange->auxSwitchChannelIndex;
         const adjustmentConfig_t *adjustmentConfig = &defaultAdjustmentConfigs[adjustmentRange->adjustmentFunction - ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET];
 
         // If setting is defined for step adjustment and center value has been specified, apply values directly (scaled) from aux channel
-        if ((rcData[channelIndex] != lastRcData[activeAdjustmentRangeArray[index]]) &&
+        if ((rcData[channelIndex] != lastRcData[index]) &&
             adjustmentRange->adjustmentCenter &&
             (adjustmentConfig->mode == ADJUSTMENT_MODE_STEP) &&
             isRangeActive(adjustmentRange->auxChannelIndex, &adjustmentRange->range)) {
             int value = (((rcData[channelIndex] - PWM_RANGE_MIDDLE) * adjustmentRange->adjustmentScale) / (PWM_RANGE_MIDDLE - PWM_RANGE_MIN)) + adjustmentRange->adjustmentCenter;
 
-            lastRcData[activeAdjustmentRangeArray[index]] = rcData[channelIndex];
+            lastRcData[index] = rcData[channelIndex];
             applyAbsoluteAdjustment(controlRateConfig, adjustmentRange->adjustmentFunction, value);
             pidInitConfig(pidProfile);
         }
@@ -829,5 +836,5 @@ int getAdjustmentsRangeValue(void)
 
 void activeAdjustmentRangeReset(void)
 {
-    activeAdjustmentRangeCount = ADJUSTMENT_RANGE_COUNT_INVALID;
+    activeAdjustmentCount = ADJUSTMENT_RANGE_COUNT_INVALID;
 }
