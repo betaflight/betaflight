@@ -26,7 +26,7 @@
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM3,  CH1, PA2,  TIM_USE_PPM,   0, 0), // PPM_IN_A
-    DEF_TIM(TIM3,  CH1, PA3,  TIM_USE_PPM,   0, 0), // PPM_IN_B
+    DEF_TIM(TIM3,  CH1, PA3,  TIM_USE_ANY,   0, 0), // Secondary PPM input PPM_IN_B (user can assign this as he wants)
 
     DEF_TIM(TIM3,  CH3, PA8,  TIM_USE_MOTOR, 0, 0), // PPM_OUT_A
     DEF_TIM(TIM1,  CH2, PE11, TIM_USE_MOTOR, 0, 0), // PPM_OUT_B
