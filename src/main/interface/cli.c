@@ -377,12 +377,12 @@ static void cliPrintLinef(const char *format, ...)
 
 static void cliPrintErrorLinef(const char *format, ...)
 {
-    cliPrint("###ERROR### ");
+    cliPrint("###");
     va_list va;
     va_start(va, format);
     cliPrintfva(format, va);
     va_end(va);
-    cliPrintLinefeed();
+    cliPrintLine("###");
 }
 
 static void cliPrintCorruptMessage(int value)
@@ -701,12 +701,12 @@ static void cliPrompt(void)
 
 static void cliShowParseError(void)
 {
-    cliPrintErrorLinef("Parse error");
+    cliPrintErrorLinef("PARSE ERROR");
 }
 
 static void cliShowArgumentRangeError(char *name, int min, int max)
 {
-    cliPrintErrorLinef("%s not between %d and %d", name, min, max);
+    cliPrintErrorLinef("%s NOT BETWEEN %d AND %d", name, min, max);
 }
 
 static const char *nextArg(const char *currentArg)
@@ -857,7 +857,7 @@ static void cliRxFailsafe(char *cmdline)
                 );
             }
         } else {
-            cliShowArgumentRangeError("channel", 0, MAX_SUPPORTED_RC_CHANNEL_COUNT - 1);
+            cliShowArgumentRangeError("CHANNEL", 0, MAX_SUPPORTED_RC_CHANNEL_COUNT - 1);
         }
     }
 }
@@ -967,7 +967,7 @@ static void cliAux(char *cmdline)
                 mac->linkedTo
             );
         } else {
-            cliShowArgumentRangeError("index", 0, MAX_MODE_ACTIVATION_CONDITION_COUNT - 1);
+            cliShowArgumentRangeError("INDEX", 0, MAX_MODE_ACTIVATION_CONDITION_COUNT - 1);
         }
     }
 }
@@ -1343,7 +1343,7 @@ static void cliAdjustmentRange(char *cmdline)
             );
 
         } else {
-            cliShowArgumentRangeError("index", 0, MAX_ADJUSTMENT_RANGE_COUNT - 1);
+            cliShowArgumentRangeError("INDEX", 0, MAX_ADJUSTMENT_RANGE_COUNT - 1);
         }
     }
 }
@@ -1410,7 +1410,7 @@ static void cliMotorMix(char *cmdline)
             len = strlen(ptr);
             for (uint32_t i = 0; ; i++) {
                 if (mixerNames[i] == NULL) {
-                    cliPrintErrorLinef("Invalid name");
+                    cliPrintErrorLinef("INVALID NAME");
                     break;
                 }
                 if (strncasecmp(ptr, mixerNames[i], len) == 0) {
@@ -1451,7 +1451,7 @@ static void cliMotorMix(char *cmdline)
                 printMotorMix(DUMP_MASTER, customMotorMixer(0), NULL);
             }
         } else {
-            cliShowArgumentRangeError("index", 0, MAX_SUPPORTED_MOTORS - 1);
+            cliShowArgumentRangeError("INDEX", 0, MAX_SUPPORTED_MOTORS - 1);
         }
     }
 #endif
@@ -1522,7 +1522,7 @@ static void cliRxRange(char *cmdline)
 
             }
         } else {
-            cliShowArgumentRangeError("channel", 0, NON_AUX_CHANNEL_COUNT - 1);
+            cliShowArgumentRangeError("CHANNEL", 0, NON_AUX_CHANNEL_COUNT - 1);
         }
     }
 }
@@ -1568,7 +1568,7 @@ static void cliLed(char *cmdline)
                 cliShowParseError();
             }
         } else {
-            cliShowArgumentRangeError("index", 0, LED_MAX_STRIP_LENGTH - 1);
+            cliShowArgumentRangeError("INDEX", 0, LED_MAX_STRIP_LENGTH - 1);
         }
     }
 }
@@ -1605,7 +1605,7 @@ static void cliColor(char *cmdline)
                 cliShowParseError();
             }
         } else {
-            cliShowArgumentRangeError("index", 0, LED_CONFIGURABLE_COLOR_COUNT - 1);
+            cliShowArgumentRangeError("INDEX", 0, LED_CONFIGURABLE_COLOR_COUNT - 1);
         }
     }
 }
@@ -1879,7 +1879,7 @@ static void cliServoMix(char *cmdline)
             len = strlen(ptr);
             for (uint32_t i = 0; ; i++) {
                 if (mixerNames[i] == NULL) {
-                    cliPrintErrorLinef("Invalid name");
+                    cliPrintErrorLinef("INVALID NAME");
                     break;
                 }
                 if (strncasecmp(ptr, mixerNames[i], len) == 0) {
@@ -2235,7 +2235,7 @@ static void cliVtx(char *cmdline)
                 );
             }
         } else {
-            cliShowArgumentRangeError("index", 0, MAX_CHANNEL_ACTIVATION_CONDITION_COUNT - 1);
+            cliShowArgumentRangeError("INDEX", 0, MAX_CHANNEL_ACTIVATION_CONDITION_COUNT - 1);
         }
     }
 }
@@ -2262,13 +2262,13 @@ static void cliName(char *cmdline)
 
 #if defined(USE_BOARD_INFO)
 
-#define ERROR_MESSAGE "%s cannot be changed. Current value: '%s'"
+#define ERROR_MESSAGE "%s CANNOT BE CHANGED. CURRENT VALUE: '%s'"
 
 static void cliBoardName(char *cmdline)
 {
     const unsigned int len = strlen(cmdline);
     if (len > 0 && boardInformationIsSet() && (len != strlen(getBoardName()) || strncmp(getBoardName(), cmdline, len))) {
-        cliPrintErrorLinef(ERROR_MESSAGE, "board_name", getBoardName());
+        cliPrintErrorLinef(ERROR_MESSAGE, "BOARD_NAME", getBoardName());
     } else {
         if (len > 0) {
             setBoardName(cmdline);
@@ -2282,7 +2282,7 @@ static void cliManufacturerId(char *cmdline)
 {
     const unsigned int len = strlen(cmdline);
     if (len > 0 && boardInformationIsSet() && (len != strlen(getManufacturerId()) || strncmp(getManufacturerId(), cmdline, len))) {
-        cliPrintErrorLinef(ERROR_MESSAGE, "manufacturer_id", getManufacturerId());
+        cliPrintErrorLinef(ERROR_MESSAGE, "MANUFACTURER_ID", getManufacturerId());
     } else {
         if (len > 0) {
             setManufacturerId(cmdline);
@@ -2307,7 +2307,7 @@ static void cliSignature(char *cmdline)
     uint8_t signature[SIGNATURE_LENGTH] = {0};
     if (len > 0) {
         if (len != 2 * SIGNATURE_LENGTH) {
-            cliPrintErrorLinef("Invalid length: %d (expected: %d)", len, 2 * SIGNATURE_LENGTH);
+            cliPrintErrorLinef("INVALID LENGTH: %d (EXPECTED: %d)", len, 2 * SIGNATURE_LENGTH);
 
             return;
         }
@@ -2322,7 +2322,7 @@ static void cliSignature(char *cmdline)
             if (end == &temp[BLOCK_SIZE]) {
                 signature[i] = result;
             } else {
-                cliPrintErrorLinef("Invalid character found: %c", end[0]);
+                cliPrintErrorLinef("INVALID CHARACTER FOUND: %c", end[0]);
 
                 return;
             }
@@ -2333,7 +2333,7 @@ static void cliSignature(char *cmdline)
     char signatureStr[SIGNATURE_LENGTH * 2 + 1] = {0};
     if (len > 0 && signatureIsSet() && memcmp(signature, getSignature(), SIGNATURE_LENGTH)) {
         writeSignature(signatureStr, getSignature());
-        cliPrintErrorLinef(ERROR_MESSAGE, "signature", signatureStr);
+        cliPrintErrorLinef(ERROR_MESSAGE, "SIGNATURE", signatureStr);
     } else {
         if (len > 0) {
             setSignature(signature);
@@ -2436,7 +2436,7 @@ static void cliFeature(char *cmdline)
 
         for (uint32_t i = 0; ; i++) {
             if (featureNames[i] == NULL) {
-                cliPrintErrorLinef("Invalid name");
+                cliPrintErrorLinef("INVALID NAME");
                 break;
             }
 
@@ -2517,7 +2517,7 @@ static void processBeeperCommand(char *cmdline, uint32_t *offFlags, const uint32
 
         for (uint32_t i = 0; ; i++) {
             if (i == beeperCount) {
-                cliPrintErrorLinef("Invalid name");
+                cliPrintErrorLinef("INVALID NAME");
                 break;
             }
             if (strncasecmp(cmdline, beeperNameForTableIndex(i), len) == 0 && beeperModeMaskForTableIndex(i) & (allowedFlags | BEEPER_GET_FLAG(BEEPER_ALL))) {
@@ -2738,7 +2738,7 @@ static int parseOutputIndex(char *pch, bool allowAllEscs) {
     } else if (allowAllEscs && outputIndex == ALL_MOTORS) {
         cliPrintLinef("Using all outputs.");
     } else {
-        cliPrintErrorLinef("Invalid output number. Range: 0  %d.", getMotorCount() - 1);
+        cliPrintErrorLinef("INVALID OUTPUT NUMBER. RANGE: 0 - %d.", getMotorCount() - 1);
 
         return -1;
     }
@@ -2909,7 +2909,7 @@ void printEscInfo(const uint8_t *escInfoBuffer, uint8_t bytesRead)
                     }
                 }
             } else {
-                cliPrintErrorLinef("Checksum Error.");
+                cliPrintErrorLinef("CHECKSUM ERROR.");
             }
         }
     }
@@ -2995,7 +2995,7 @@ static void cliDshotProg(char *cmdline)
                     cliPrintLinef("Command Sent: %d", command);
 
                 } else {
-                    cliPrintErrorLinef("Invalid command. Range: 1 - %d.", DSHOT_MIN_THROTTLE - 1);
+                    cliPrintErrorLinef("INVALID COMMAND. RANGE: 1 - %d.", DSHOT_MIN_THROTTLE - 1);
                 }
             }
 
@@ -3087,7 +3087,7 @@ static void cliMixer(char *cmdline)
 
     for (uint32_t i = 0; ; i++) {
         if (mixerNames[i] == NULL) {
-            cliPrintErrorLinef("Invalid name");
+            cliPrintErrorLinef("INVALID NAME");
             return;
         }
         if (strncasecmp(cmdline, mixerNames[i], len) == 0) {
@@ -3134,7 +3134,7 @@ static void cliMotor(char *cmdline)
 
     if (index == 2) {
         if (motorValue < PWM_RANGE_MIN || motorValue > PWM_RANGE_MAX) {
-            cliShowArgumentRangeError("value", 1000, 2000);
+            cliShowArgumentRangeError("VALUE", 1000, 2000);
         } else {
             uint32_t motorOutputValue = convertExternalToMotor(motorValue);
 
@@ -3171,7 +3171,7 @@ static void cliPlaySound(char *cmdline)
                 if ((name=beeperNameForTableIndex(i)) != NULL)
                     break;   //if name OK then play sound below
                 if (i == lastSoundIdx + 1) {     //prevent infinite loop
-                    cliPrintErrorLinef("Error playing sound");
+                    cliPrintErrorLinef("ERROR PLAYING SOUND");
                     return;
                 }
             }
@@ -3361,7 +3361,7 @@ STATIC_UNIT_TESTED void cliGet(char *cmdline)
         return;
     }
 
-    cliPrintErrorLinef("Invalid name");
+    cliPrintErrorLinef("INVALID NAME");
 }
 
 static uint8_t getWordLength(char *bufBegin, char *bufEnd)
@@ -3509,14 +3509,14 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
                     cliPrintf("%s set to ", val->name);
                     cliPrintVar(val, 0);
                 } else {
-                    cliPrintErrorLinef("Invalid value");
+                    cliPrintErrorLinef("INVALID VALUE");
                     cliPrintVarRange(val);
                 }
 
                 return;
             }
         }
-        cliPrintErrorLinef("Invalid name");
+        cliPrintErrorLinef("INVALID NAME");
     } else {
         // no equals, check for matching variables.
         cliGet(cmdline);
@@ -3994,7 +3994,7 @@ static void cliResource(char *cmdline)
     pch = strtok_r(cmdline, " ", &saveptr);
     for (resourceIndex = 0; ; resourceIndex++) {
         if (resourceIndex >= ARRAYLEN(resourceTable)) {
-            cliPrintErrorLinef("Invalid");
+            cliPrintErrorLinef("INVALID");
             return;
         }
 
@@ -4008,7 +4008,7 @@ static void cliResource(char *cmdline)
 
     if (resourceTable[resourceIndex].maxIndex > 0 || index > 0) {
         if (index <= 0 || index > MAX_RESOURCE_INDEX(resourceTable[resourceIndex].maxIndex)) {
-            cliShowArgumentRangeError("index", 1, MAX_RESOURCE_INDEX(resourceTable[resourceIndex].maxIndex));
+            cliShowArgumentRangeError("INDEX", 1, MAX_RESOURCE_INDEX(resourceTable[resourceIndex].maxIndex));
             return;
         }
         index -= 1;
@@ -4145,7 +4145,7 @@ static void cliTimer(char *cmdline)
     }
 
     if (timerIOIndex < 0) {
-        cliPrintErrorLinef("Index out of range.");
+        cliPrintErrorLinef("INDEX OUT OF RANGE.");
         return;
     }
 
