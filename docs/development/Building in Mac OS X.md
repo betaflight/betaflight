@@ -4,7 +4,7 @@ Building in Mac OS X can be accomplished in just a few steps:
 
 * Install general development tools (clang, make, git)
 * Install ARM GCC 4.9 series compiler
-* Checkout Cleanflight sourcecode through git
+* Checkout Betaflight sourcecode through git
 * Build the code
 
 ## Install general development tools (clang, make, git)
@@ -37,7 +37,7 @@ installation, open up XCode and enter its preferences menu. Go to the "downloads
 
 ## Install ARM GCC 4.9 series compiler
 
-Cleanflight is built using the 4.9 series GCC compiler provided by the [GNU Tools for ARM Embedded Processors project][].
+Betaflight is built using the 4.9 series GCC compiler provided by the [GNU Tools for ARM Embedded Processors project][].
 
 Hit the "all downloads" link on the right side of the GNU Tools for ARM page to view [the older releases][]. Grab the
 Mac installation tarball for the latest version in the 4.9 series (e.g. 4.9-2015q2). Move it somewhere useful 
@@ -73,29 +73,29 @@ If `arm-none-eabi-gcc` couldn't be found, go back and check that you entered the
 [GNU Tools for ARM Embedded Processors project]: https://launchpad.net/gcc-arm-embedded
 [the older releases]: https://launchpad.net/gcc-arm-embedded/+download
 
-## Checkout CleanFlight sourcecode through git
+## Checkout Betaflight sourcecode through git
 
-Enter your development directory and clone the [Cleanflight repository][] using the "HTTPS clone URL" which is shown on
-the right side of the Cleanflight GitHub page, like so:
+Enter your development directory and clone the [Betaflight repository][] using the "HTTPS clone URL" which is shown on
+the right side of the Betaflight GitHub page, like so:
 
 ```
-git clone https://github.com/cleanflight/cleanflight.git
+git clone https://github.com/betaflight/betaflight.git
 ```
 
-This will download the entire Cleanflight repository for you into a new folder called "cleanflight".
+This will download the entire betaflight repository for you into a new folder called "betaflight".
 
-[CleanFlight repository]: https://github.com/cleanflight/cleanflight
+[Betaflight repository]: https://github.com/betaflight/betaflight
 
 ## Build the code
 
-Enter the cleanflight directory and run `make TARGET=NAZE` to build firmware for the Naze32. When the build completes,
-the .hex firmware should be available as `obj/cleanflight_NAZE.hex` for you to flash using the Cleanflight
+Enter the betaflight directory and run `make TARGET=NAZE` to build firmware for the Naze32. When the build completes,
+the .hex firmware should be available as `obj/betaflight_NAZE.hex` for you to flash using the Betaflight
 Configurator.
 
 ## Updating to the latest source
 
-If you want to erase your local changes and update to the latest version of the Cleanflight source, enter your
-cleanflight directory and run these commands to first erase your local changes, fetch and merge the latest
+If you want to erase your local changes and update to the latest version of the Betaflight source, enter your
+betaflight directory and run these commands to first erase your local changes, fetch and merge the latest
 changes from the repository, then rebuild the firmware:
 
 ```
