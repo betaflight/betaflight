@@ -63,7 +63,6 @@
 #if 0 // TODO: Enable SDCard and blackbox logging
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #define USE_SDCARD
-#define USE_SDCARD_SPI2
 #define SDCARD_DETECT_INVERTED
 #define SDCARD_DETECT_PIN               PE2
 #define SDCARD_SPI_INSTANCE             SPI2
@@ -74,15 +73,7 @@
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 4 // 21MHz
 
 #define SDCARD_DMA_CHANNEL_TX                   DMA1_Stream4
-#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG     DMA_FLAG_TCIF4
-#define SDCARD_DMA_CLK                          RCC_AHB1Periph_DMA1
 #define SDCARD_DMA_CHANNEL                      DMA_Channel_0
-#elif defined(LUXF4OSD)
-#define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
-#define FLASH_CS_PIN            PB12
-#define FLASH_SPI_INSTANCE      SPI2
-#define USE_FLASHFS
-#define USE_FLASH_M25P16
 #endif
 
 #define USE_VCP
