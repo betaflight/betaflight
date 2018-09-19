@@ -125,6 +125,7 @@
 //SD CARD
 #define USE_SDCARD
 #define USE_SDCARD_SDIO
+
 #define SDIO_DMA          DMA2_Stream3
 #define SDCARD_SPI_CS_PIN NONE //This is not used on SDIO, has to be kept for now to keep compiler happy
 #define SDCARD_DETECT_PIN PB15

@@ -125,14 +125,8 @@
 #define USE_SDCARD
 #define SDCARD_DETECT_INVERTED
 #define SDCARD_DETECT_PIN                   PD8
-
 #define SDCARD_SPI_INSTANCE                 SPI1
 #define SDCARD_SPI_CS_PIN                   SPI1_NSS_PIN
-
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 422kHz
-
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER      8 // 27MHz
-
 #define SDCARD_DMA_STREAM_TX_FULL             DMA2_Stream5
 #define SDCARD_DMA_CHANNEL                    3
 

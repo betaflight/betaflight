@@ -50,7 +50,7 @@
   Flash M25p16 tolerates 20mhz, SPI_CLOCK_FAST should sit around 20 or less.
 */
 typedef enum {
-    SPI_CLOCK_INITIALIZATON = 256,
+    SPI_CLOCK_INITIALIZATION = 256,
 #if defined(STM32F4)
     SPI_CLOCK_SLOW          = 128, //00.65625 MHz
     SPI_CLOCK_STANDARD      = 8,   //10.50000 MHz

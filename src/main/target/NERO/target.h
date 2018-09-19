@@ -54,17 +54,10 @@
 #define GYRO_1_ALIGN            CW0_DEG
 
 #define USE_SDCARD
-
 #define SDCARD_DETECT_INVERTED
 #define SDCARD_DETECT_PIN                   PD2
 #define SDCARD_SPI_INSTANCE                 SPI3
 #define SDCARD_SPI_CS_PIN                   PA15
-
-// SPI2 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 328kHz
-// Divide to under 25MHz for normal operation:
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     4 // 21MHz
-
 //#define SDCARD_DMA_STREAM_TX_FULL           DMA1_Stream5
 //#define SDCARD_DMA_CHANNEL                  0
 

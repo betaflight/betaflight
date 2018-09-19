@@ -76,24 +76,14 @@
     #define MS5611_I2C_INSTANCE     I2CDEV_1
 
     #define USE_SDCARD
-
     #define SDCARD_DETECT_INVERTED
-
     #define SDCARD_DETECT_PIN                   PD2
     #define SDCARD_SPI_INSTANCE                 SPI2
     #define SDCARD_SPI_CS_PIN                   PB12
-
-    // SPI2 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
-    #define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 328kHz
-    // Divide to under 25MHz for normal operation:
-    #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     4 // 21MHz
-
     //#define SDCARD_DMA_CHANNEL_TX               DMA1_Stream5
     //#define SDCARD_DMA_CHANNEL                  0
-
     #define SDCARD_DMA_CHANNEL_TX               DMA1_Stream4
     #define SDCARD_DMA_CHANNEL                  0
-
     #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
 #endif
