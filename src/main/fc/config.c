@@ -112,9 +112,14 @@ void resetConfigs(void)
 {
     pgResetAll();
 
+#if defined(USE_TARGET_MIGRATION_CONFIG)
+    targetMigrationConfiguration();
+#endif
+
 #if defined(USE_TARGET_CONFIG)
     targetConfiguration();
 #endif
+
 }
 
 static void activateConfig(void)

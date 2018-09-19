@@ -20,7 +20,7 @@
 
 #include "config_helper.h"
 
-#ifdef USE_TARGET_CONFIG
+#if defined(USE_TARGET_CONFIG) || defined(USE_TARGET_MIGRATION_CONFIG)
 
 void targetSerialPortFunctionConfig(targetSerialPortFunction_t *config, size_t count)
 {

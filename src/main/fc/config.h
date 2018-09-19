@@ -74,3 +74,5 @@ uint16_t getCurrentMinthrottle(void);
 void resetConfigs(void);
 void targetConfiguration(void);
 void targetValidateConfiguration(void);
+
+void targetMigrationConfiguration(void);

@@ -25,8 +25,6 @@
 
 #define HW_PIN                  PB2
 
-#define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
-
 #define LED0_PIN                PB6
 #define LED1_PIN                PB5
 #define LED2_PIN                PB4
@@ -121,12 +119,6 @@
 #define USE_ADC
 #define VBAT_ADC_PIN            PC3
 
-#define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
-
-#define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
-#define SERIALRX_PROVIDER       SERIALRX_SBUS
-#define SERIALRX_UART           SERIAL_PORT_USART6
-
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA         0xffff
@@ -137,3 +129,5 @@
 #define USABLE_TIMER_CHANNEL_COUNT 9
 
 #define USE_TIMER_MGMT
+
+#define USE_TARGET_MIGRATION_CONFIG
