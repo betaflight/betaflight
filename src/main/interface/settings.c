@@ -393,6 +393,25 @@ static const char * const lookupTableVtxLowPowerDisarm[] = {
 };
 #endif
 
+// DMA spec table. Indices are coherent with respective dmaIndentifier_e value.
+#if defined(STM32F3)
+static const char * const lookupTableDmaChannel[] = {
+    "NONE",
+    "DMA1_CH1", "DMA1_CH2", "DMA1_CH3", "DMA1_CH4",
+    "DMA1_CH5", "DMA1_CH6", "DMA1_CH7",
+    "DMA2_CH1", "DMA2_CH2", "DMA2_CH3", "DMA2_CH4",
+    "DMA2_CH5",
+};
+#elif defined(STM32F4) || defined(STM32F7)
+static const char * const lookupTableDmaStream[] = {
+    "NONE",
+    "DMA1_ST0", "DMA1_ST1", "DMA1_ST2", "DMA1_ST3",
+    "DMA1_ST4", "DMA1_ST5", "DMA1_ST6", "DMA1_ST7",
+    "DMA2_ST0", "DMA2_ST1", "DMA2_ST2", "DMA2_ST3",
+    "DMA2_ST4", "DMA2_ST5", "DMA2_ST6", "DMA2_ST7",
+};
+#endif
+
 #define LOOKUP_TABLE_ENTRY(name) { name, ARRAYLEN(name) }
 
 const lookupTableEntry_t lookupTables[] = {
@@ -490,6 +509,12 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableVtxLowPowerDisarm),
 #endif
     LOOKUP_TABLE_ENTRY(lookupTableGyroHardware),
+#if defined(STM32F3)
+    LOOKUP_TABLE_ENTRY(lookupTableDmaChannel),
+#endif
+#if defined(STM32F4) || defined(STM32F7)
+    LOOKUP_TABLE_ENTRY(lookupTableDmaStream),
+#endif
 };
 
 #undef LOOKUP_TABLE_ENTRY
@@ -936,7 +961,14 @@ const clivalue_t valueTable[] = {
 
 // PG_SDCARD_CONFIG
 #ifdef USE_SDCARD
+    { "sdcard_card_detect_inverted", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SDCARD_CONFIG, offsetof(sdcardConfig_t, cardDetectInverted) },
     { "sdcard_dma",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SDCARD_CONFIG, offsetof(sdcardConfig_t, useDma) },
+#if defined(STM32F3)
+    { "sdcard_dma_channel",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_DMA_CHANNEL }, PG_SDCARD_CONFIG, offsetof(sdcardConfig_t, dmaIdentifier) },
+#elif defined(STM32F4) || defined(STM32F7)
+    { "sdcard_dma_stream",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_DMA_STREAM }, PG_SDCARD_CONFIG, offsetof(sdcardConfig_t, dmaIdentifier) },
+    { "sdcard_dma_channel",         VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 7 }, PG_SDCARD_CONFIG, offsetof(sdcardConfig_t, dmaChannel) },
+#endif
 #endif
 #ifdef USE_SDCARD_SDIO
     { "sdio_clk_bypass",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SDIO_CONFIG, offsetof(sdioConfig_t, clockBypass) },

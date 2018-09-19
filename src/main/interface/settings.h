@@ -120,6 +120,11 @@ typedef enum {
     TABLE_VTX_LOW_POWER_DISARM, 
 #endif
     TABLE_GYRO_HARDWARE,
+#if defined(STM32F3)
+    TABLE_DMA_CHANNEL,
+#elif defined(STM32F4) || defined(STM32F7)
+    TABLE_DMA_STREAM,
+#endif
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 
