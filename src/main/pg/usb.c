@@ -28,7 +28,7 @@
 
 #include "usb.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(usbDev_t, usbDevConfig, PG_USB_CONFIG, 1);
+PG_REGISTER_WITH_RESET_TEMPLATE(usbDev_t, usbDevConfig, PG_USB_CONFIG, 0);
 
 PG_RESET_TEMPLATE(usbDev_t, usbDevConfig,
     .type = DEFAULT,
