@@ -550,6 +550,12 @@ const clivalue_t valueTable[] = {
     { "dyn_filter_width_percent",   VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 99 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_filter_width_percent) },
     { "dyn_filter_range",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_DYNAMIC_FILTER_RANGE }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_filter_range) },
 #endif
+#ifdef USE_DYN_LPF
+    { "dyn_lpf_gyro_max_hz",        VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 1000 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_lpf_gyro_max_hz) },
+    { "dyn_lpf_gyro_idle",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 100 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_lpf_gyro_idle) },
+    { "dyn_lpf_dterm_max_hz",       VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 0, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, dyn_lpf_dterm_max_hz) },
+    { "dyn_lpf_dterm_idle",         VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, dyn_lpf_dterm_idle) },
+#endif
 
 // PG_ACCELEROMETER_CONFIG
     { "align_acc",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ALIGNMENT }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, acc_align) },

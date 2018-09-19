@@ -815,7 +815,11 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
     }
 
     pidUpdateAntiGravityThrottleFilter(throttle);
-    
+#ifdef USE_DYN_LPF
+    dynLpfGyroUpdate(throttle);
+    dynLpfDTermUpdate(throttle);
+#endif
+
 #if defined(USE_THROTTLE_BOOST)
     if (throttleBoost > 0.0f) {
         const float throttleHpf = throttle - pt1FilterApply(&throttleLpf, throttle);
