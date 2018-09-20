@@ -23,6 +23,7 @@
 #include <stdbool.h>
 #include "common/time.h"
 #include "common/filter.h"
+#include "common/axis.h"
 #include "pg/pg.h"
 
 #define MAX_PID_PROCESS_DENOM       16
@@ -198,3 +199,17 @@ bool pidOsdAntiGravityActive(void);
 bool pidOsdAntiGravityMode(void);
 void pidSetAntiGravityState(bool newState);
 bool pidAntiGravityEnabled(void);
+
+#ifdef UNIT_TEST
+#include "sensors/acceleration.h"
+extern float axisError[XYZ_AXIS_COUNT];
+void applyItermRelax(const int axis, const float iterm,
+    const float gyroRate, float *itermErrorRate, float *currentPidSetpoint);
+void applyAbsoluteControl(const int axis, const float gyroRate, const bool itermRelaxIsEnabled,
+    const float setpointLpf, const float setpointHpf,
+    float *currentPidSetpoint, float *itermErrorRate);
+void rotateItermAndAxisError();
+float pidLevel(int axis, const pidProfile_t *pidProfile,
+    const rollAndPitchTrims_t *angleTrim, float currentPidSetpoint);
+float calcHorizonLevelStrength(void);
+#endif
