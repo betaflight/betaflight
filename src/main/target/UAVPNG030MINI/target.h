@@ -24,13 +24,14 @@
 #define LED2_PIN                PE6
 #define LED3_PIN                PE8
 
-#define BEEPER                  PB0
+#define USE_BEEPER
+#define BEEPER_PIN              PB0
 #define BEEPER_INVERTED
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 
 #define GYRO_1_CS_PIN          PA4
@@ -45,7 +46,7 @@
 #define MPU_INT_EXTI             PE0
 #define USE_MPU_DATA_READY_SIGNAL
 
-#define MAG
+#define USE_MAG
 #define USE_MAG_HMC5883
 #define MAG_HMC5883_ALIGN        CW90_DEG
 #define MAG_I2C_INSTANCE         I2CDEV_2
@@ -53,7 +54,7 @@
 #define MAG_INT_EXTI             PE12
 #define USE_MAG_DATA_READY_SIGNAL
 
-#define BARO
+#define USE_BARO
 #define USE_BARO_MS5611
 #define USE_BARO_SPI_MS5611
 #define MS5611_CS_PIN           PE1
@@ -78,8 +79,8 @@
 #define SDCARD_DMA_CHANNEL                      DMA_Channel_0
 #elif defined(LUXF4OSD)
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
-#define M25P16_CS_PIN           PB12
-#define M25P16_SPI_INSTANCE     SPI2
+#define FLASH_CS_PIN            PB12
+#define FLASH_SPI_INSTANCE      SPI2
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 #endif

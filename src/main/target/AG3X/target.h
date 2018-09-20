@@ -38,7 +38,7 @@
 #define LED0_PIN                PC13
 
 #define USE_BEEPER
-#define BEEPER                  NONE
+#define BEEPER_PIN              NONE
 #define BEEPER_INVERTED
 
 #define USE_ACC
