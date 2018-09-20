@@ -193,6 +193,29 @@ uint8_t calcCRC8(uint8_t *pt, uint8_t msgLen)
     return(crc);
 }
 
+void enableGpsTelemetry(bool enable)
+{
+    if (enable) {
+        bitArraySet(&exSensorEnabled, EX_GPS_SATS);
+        bitArraySet(&exSensorEnabled, EX_GPS_LONG);
+        bitArraySet(&exSensorEnabled, EX_GPS_LAT);
+        bitArraySet(&exSensorEnabled, EX_GPS_SPEED);
+        bitArraySet(&exSensorEnabled, EX_GPS_DISTANCE_TO_HOME);
+        bitArraySet(&exSensorEnabled, EX_GPS_DIRECTION_TO_HOME);
+        bitArraySet(&exSensorEnabled, EX_GPS_HEADING);
+        bitArraySet(&exSensorEnabled, EX_GPS_ALTITUDE);
+    } else {
+        bitArrayClr(&exSensorEnabled, EX_GPS_SATS);
+        bitArrayClr(&exSensorEnabled, EX_GPS_LONG);
+        bitArrayClr(&exSensorEnabled, EX_GPS_LAT);
+        bitArrayClr(&exSensorEnabled, EX_GPS_SPEED);
+        bitArrayClr(&exSensorEnabled, EX_GPS_DISTANCE_TO_HOME);
+        bitArrayClr(&exSensorEnabled, EX_GPS_DIRECTION_TO_HOME);
+        bitArrayClr(&exSensorEnabled, EX_GPS_HEADING);
+        bitArrayClr(&exSensorEnabled, EX_GPS_ALTITUDE);
+    }
+}
+
 /*
  * -----------------------------------------------
  *  Jeti Ex Bus Telemetry
@@ -241,16 +264,7 @@ void initJetiExBusTelemetry(void)
         bitArraySet(&exSensorEnabled, EX_HEADING);
     }
 
-    if (featureIsEnabled(FEATURE_GPS)) {
-        bitArraySet(&exSensorEnabled, EX_GPS_SATS);
-        bitArraySet(&exSensorEnabled, EX_GPS_LONG);
-        bitArraySet(&exSensorEnabled, EX_GPS_LAT);
-        bitArraySet(&exSensorEnabled, EX_GPS_SPEED);
-        bitArraySet(&exSensorEnabled, EX_GPS_DISTANCE_TO_HOME);
-        bitArraySet(&exSensorEnabled, EX_GPS_DIRECTION_TO_HOME);
-        bitArraySet(&exSensorEnabled, EX_GPS_HEADING);
-        bitArraySet(&exSensorEnabled, EX_GPS_ALTITUDE);
-        }
+    enableGpsTelemetry(featureIsEnabled(FEATURE_GPS));
 
     firstActiveSensor = getNextActiveSensor(0);     // find the first active sensor
 }
@@ -289,7 +303,7 @@ uint32_t calcGpsDDMMmmm(int32_t value, bool isLong)
 
 int32_t getSensorValue(uint8_t sensor)
 {
-    switch(sensor) {
+    switch (sensor) {
     case EX_VOLTAGE:
         return getBatteryVoltage();
         break;
@@ -410,9 +424,9 @@ uint8_t createExTelemetryValueMessage(uint8_t *exMessage, uint8_t item)
             sensorValue = sensorValue >> 8;
             iCount--;
         }
-        if(jetiExSensors[item].exDataType != EX_TYPE_GPS){
+        if (jetiExSensors[item].exDataType != EX_TYPE_GPS) {
             *p++ = (sensorValue & 0x9F) | jetiExSensors[item].decimals;
-        }else{
+        } else {
             *p++ = sensorValue;
         }
 
@@ -495,6 +509,7 @@ uint8_t sendJetiExBusTelemetry(uint8_t packetID, uint8_t item)
 {
     static uint8_t sensorDescriptionCounter = 0xFF;
     static uint8_t requestLoop = 0xFF;
+    static bool allSensorsActive = true;
     uint8_t *jetiExTelemetryFrame = &jetiExBusTelemetryFrame[EXBUS_HEADER_DATA];
 
     if (requestLoop) {
@@ -510,12 +525,23 @@ uint8_t sendJetiExBusTelemetry(uint8_t packetID, uint8_t item)
         createExTelemetryTextMessage(jetiExTelemetryFrame, sensorDescriptionCounter, &jetiExSensors[sensorDescriptionCounter]);
         createExBusMessage(jetiExBusTelemetryFrame, jetiExTelemetryFrame, packetID);
         requestLoop--;
-        if (requestLoop == 0){
+        if (requestLoop == 0) {
             item = firstActiveSensor;
+            if (featureIsEnabled(FEATURE_GPS)) {
+                enableGpsTelemetry(false);
+                allSensorsActive = false;
+            }   
         }
     } else {
         item = createExTelemetryValueMessage(jetiExTelemetryFrame, item);
         createExBusMessage(jetiExBusTelemetryFrame, jetiExTelemetryFrame, packetID);
+        
+        if (!allSensorsActive) {
+            if (sensors(SENSOR_GPS)) {
+                enableGpsTelemetry(true);
+                allSensorsActive = true;
+            }
+        }
     }
 
     serialWriteBuf(jetiExBusPort, jetiExBusTelemetryFrame, jetiExBusTelemetryFrame[EXBUS_HEADER_MSG_LEN]);
