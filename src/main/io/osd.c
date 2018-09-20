@@ -139,6 +139,8 @@ typedef struct statistic_s {
     int32_t max_altitude;
     int16_t max_distance;
     float max_g_force;
+    int16_t max_esc_temp;
+    int32_t max_esc_rpm;
 } statistic_t;
 
 static statistic_t stats;
@@ -1293,6 +1295,8 @@ static void osdResetStats(void)
     stats.max_distance = 0;
     stats.armed_time   = 0;
     stats.max_g_force  = 0;
+    stats.max_esc_temp = 0;
+    stats.max_esc_rpm  = 0;
 }
 
 static void osdUpdateStats(void)
@@ -1342,6 +1346,18 @@ static void osdUpdateStats(void)
 
         if (stats.max_distance < GPS_distanceToHome) {
             stats.max_distance = GPS_distanceToHome;
+        }
+    }
+#endif
+#ifdef USE_ESC_SENSOR
+    if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
+        value = (escDataCombined->temperature * 10) / 10;
+        if (stats.max_esc_temp < value) {
+            stats.max_esc_temp = value;
+        }
+        value = calcEscRpm(escDataCombined->rpm);
+        if (stats.max_esc_rpm < value) {
+            stats.max_esc_rpm = value;
         }
     }
 #endif
@@ -1444,6 +1460,16 @@ static void osdShowStats(uint16_t endBatteryVoltage)
     if (osdStatGetState(OSD_STAT_MAX_SPEED) && STATE(GPS_FIX)) {
         itoa(stats.max_speed, buff, 10);
         osdDisplayStatisticLabel(top++, "MAX SPEED", buff);
+    }
+
+    if (osdStatGetState(OSD_STAT_MAX_ESC_TEMP)) {
+        tfp_sprintf(buff, "%3d%c", osdConvertTemperatureToSelectedUnit(stats.max_esc_temp * 10) / 10, osdGetTemperatureSymbolForSelectedUnit());
+        osdDisplayStatisticLabel(top++, "MAX ESC TEMP", buff);
+    }
+
+    if (osdStatGetState(OSD_STAT_MAX_ESC_RPM)) {
+        itoa(stats.max_esc_rpm, buff, 10);
+        osdDisplayStatisticLabel(top++, "MAX ESC RPM", buff);
     }
 
     if (osdStatGetState(OSD_STAT_MAX_DISTANCE)) {

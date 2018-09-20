@@ -305,6 +305,8 @@ TEST(OsdTest, TestStatsImperial)
     osdStatSetState(OSD_STAT_MAX_DISTANCE, true);
     osdStatSetState(OSD_STAT_BLACKBOX_NUMBER, false);
     osdStatSetState(OSD_STAT_MAX_G_FORCE, false);
+    osdStatSetState(OSD_STAT_MAX_ESC_TEMP, false);
+    osdStatSetState(OSD_STAT_MAX_ESC_RPM, false);
 
     // and
     // using imperial unit system
