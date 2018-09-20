@@ -78,6 +78,7 @@
 #define USE_MAG
 #define MAG_I2C_INSTANCE        (I2CDEV_1) 
 #define USE_MAG_HMC5883
+#define USE_MAG_LIS3MDL
 
 #define USE_BARO
 #define USE_BARO_SPI_LPS

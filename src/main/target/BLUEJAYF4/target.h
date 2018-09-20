@@ -67,6 +67,7 @@
 #define USE_MAG_HMC5883
 #define USE_MAG_QMC5883
 //#define USE_MAG_AK8963
+#define USE_MAG_LIS3MDL
 #define HMC5883_I2C_INSTANCE    I2CDEV_1
 
 #define USE_BARO
