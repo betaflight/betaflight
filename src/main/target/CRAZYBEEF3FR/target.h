@@ -80,6 +80,7 @@
 #define ACC_1_ALIGN             CW90_DEG
 
 #define USE_VCP
+#if defined(CRAZYBEEF3DX)
 #define USE_UART2
 #define USE_UART3
 #define SERIAL_PORT_COUNT       3
@@ -87,6 +88,12 @@
 #define UART2_RX_PIN            PA15
 #define UART3_TX_PIN            PB10
 #define UART3_RX_PIN            PB11
+#else
+#define USE_UART3
+#define SERIAL_PORT_COUNT       2
+#define UART3_TX_PIN            PB10
+#define UART3_RX_PIN            PB11
+#endif
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
