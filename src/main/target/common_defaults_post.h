@@ -262,13 +262,10 @@
 #ifndef USB_DETECT_PIN
 #define USB_DETECT_PIN NONE
 #endif
-
 #ifndef USB_MSC_BUTTON_PIN
 #define USB_MSC_BUTTON_PIN NONE
 #endif
-#if defined(USE_USB_MSC_BUTTON_IPU) && !defined(MSC_BUTTON_IPU)
+#if !defined(MSC_BUTTON_IPU)
 #define MSC_BUTTON_IPU true
-#else
-#define MSC_BUTTON_IPU false
 #endif
 #endif
