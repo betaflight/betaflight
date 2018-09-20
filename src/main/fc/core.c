@@ -725,7 +725,6 @@ bool processRx(timeUs_t currentTimeUs)
 #endif
 
     if (!cliMode) {
-        updateAdjustmentStates();
         processRcAdjustments(currentControlRateProfile);
     }
 

@@ -1330,6 +1330,9 @@ static void cliAdjustmentRange(char *cmdline)
                 ar->adjustmentScale = val;
                 validArgumentCount++;
             }
+
+            activeAdjustmentRangeReset();
+
             cliDumpPrintLinef(0, false, format,
                 i,
                 ar->adjustmentIndex,

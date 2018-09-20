@@ -1623,6 +1623,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             } else {
                 return MSP_RESULT_ERROR;
             }
+            activeAdjustmentRangeReset();
         } else {
             return MSP_RESULT_ERROR;
         }
