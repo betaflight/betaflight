@@ -243,7 +243,7 @@
 #endif
 
 #if !defined(ACC_1_ALIGN)
-#define ACC_1_ALIGN            ALIGN_DEFAULT
+#define ACC_1_ALIGN             ALIGN_DEFAULT
 #endif
 
 #if defined(MPU_ADDRESS)
@@ -256,4 +256,16 @@
 #define MAX_GYRODEV_COUNT 2
 #else
 #define MAX_GYRODEV_COUNT 1
+#endif
+
+#if !defined(SDCARD_SPI_INSTANCE)
+#define SDCARD_SPI_INSTANCE     NULL
+#endif
+
+#if !defined(SDCARD_SPI_CS_PIN)
+#define SDCARD_SPI_CS_PIN       NONE
+#endif
+
+#if !defined(SDCARD_DETECT_PIN)
+#define SDCARD_DETECT_PIN       NONE
 #endif
