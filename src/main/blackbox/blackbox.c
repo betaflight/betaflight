@@ -448,7 +448,7 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
 #endif
 
     case FLIGHT_LOG_FIELD_CONDITION_RSSI:
-        return rxConfig()->rssi_channel > 0 || featureIsEnabled(FEATURE_RSSI_ADC);
+        return isRssiConfigured();
 
     case FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME:
         return blackboxConfig()->p_ratio != 1;
