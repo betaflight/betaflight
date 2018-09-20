@@ -58,7 +58,6 @@
 #define USE_MAG
 //#define USE_MAG_HMC5883
 #define USE_MAG_AK8963
-#define USE_MAG_LIS3MDL
 
 //#define MAG_HMC5883_ALIGN       CW180_DEG
 #define MAG_AK8963_ALIGN        CW270_DEG

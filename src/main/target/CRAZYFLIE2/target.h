@@ -100,7 +100,6 @@
 #define USE_MAG
 #define USE_MPU9250_MAG // Enables bypass configuration on the MPU9250 I2C bus
 #define USE_MAG_AK8963
-#define USE_MAG_LIS3MDL
 #define MAG_AK8963_ALIGN        CW270_DEG
 
 #define USE_EXTI
