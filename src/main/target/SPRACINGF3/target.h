@@ -118,11 +118,11 @@
 #define MPU6500_SPI_INSTANCE    SPI1
 
 #elif defined(IRCSYNERGYF3)
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 #define GYRO_MPU6000_ALIGN      CW270_DEG
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
 #define ACC_MPU6000_ALIGN       CW270_DEG
 
