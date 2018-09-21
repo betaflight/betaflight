@@ -154,7 +154,7 @@
 #define USE_ADC
 #define VBAT_ADC_PIN                PC0
 #define CURRENT_METER_ADC_PIN       PC1
-#define RSSI_ADC_GPIO_PIN           PC2
+#define RSSI_ADC_PIN                PC2
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
