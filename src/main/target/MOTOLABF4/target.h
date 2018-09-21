@@ -139,7 +139,7 @@
 #define VBAT_ADC_PIN            PC0
 #define CURRENT_METER_ADC_PIN   PC1
 // Reserved pins, not connected
-//#define RSSI_ADC_GPIO_PIN       PC2
+//#define RSSI_ADC_PIN            PC2
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
