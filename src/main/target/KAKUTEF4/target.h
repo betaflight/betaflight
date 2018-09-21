@@ -133,8 +133,6 @@
 #define UART1_TX_PIN            PA9
 #endif
 
-#define UART1_AHB1_PERIPHERALS  RCC_AHB1Periph_DMA2
-
 #define USE_UART3
 #define UART3_RX_PIN            PB11
 #define UART3_TX_PIN            PB10
