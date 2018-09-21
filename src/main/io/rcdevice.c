@@ -91,7 +91,7 @@ static rcdeviceResponseParseContext_t* rcdeviceRespCtxQueuePeekFront(rcdeviceWai
     return ctx;
 }
 
-static rcdeviceResponseParseContext_t* rcdeviceRespCtxQueueShift(rcdeviceWaitingResponseQueue *queue)
+rcdeviceResponseParseContext_t* rcdeviceRespCtxQueueShift(rcdeviceWaitingResponseQueue *queue)
 {
     if (queue == NULL || queue->itemCount == 0) {
         return NULL;
@@ -387,6 +387,7 @@ void rcdeviceReceive(timeUs_t currentTimeUs)
                 for (int i = 0; i < respCtx->recvRespLen; i++) {
                     crc = crc8_dvb_s2(crc, respCtx->recvBuf[i]);
                 }
+                
                 respCtx->result = (crc == 0) ? RCDEVICE_RESP_SUCCESS : RCDEVICE_RESP_INCORRECT_CRC;
             } else if (respCtx->protocolVer == RCDEVICE_PROTOCOL_RCSPLIT_VERSION) {
                 // do nothing, just call parserFunc

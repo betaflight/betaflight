@@ -129,16 +129,13 @@ static void rcdeviceCameraControlProcess(void)
 
 static void rcdeviceSimulationOSDCableFailed(rcdeviceResponseParseContext_t *ctx)
 {
+    waitingDeviceResponse = false;
     if (ctx->command == RCDEVICE_PROTOCOL_COMMAND_5KEY_CONNECTION) {
         uint8_t operationID = ctx->paramData[0];
         if (operationID == RCDEVICE_PROTOCOL_5KEY_CONNECTION_CLOSE) {
-            waitingDeviceResponse = false;
             return;
         }
-    } else {
-        rcdeviceInMenu = false;
-        waitingDeviceResponse = false;
-    }
+    } 
 }
 
 static void rcdeviceSimulationRespHandle(rcdeviceResponseParseContext_t *ctx)
@@ -165,7 +162,6 @@ static void rcdeviceSimulationRespHandle(rcdeviceResponseParseContext_t *ctx)
                 rcdeviceInMenu = true;
                 beeper(BEEPER_CAM_CONNECTION_OPEN);
             } else {
-                rcdeviceInMenu = false;
                 beeper(BEEPER_CAM_CONNECTION_CLOSE);
             }
         } else if (operationID == RCDEVICE_PROTOCOL_5KEY_CONNECTION_CLOSE) {
