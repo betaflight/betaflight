@@ -98,14 +98,6 @@
 #define CURRENT_METER_ADC_PIN       PA5
 #define RSSI_ADC_PIN                PB2
 
-#define WS2811_PIN                      PA8
-#define WS2811_TIMER                    TIM1
-#define WS2811_DMA_CHANNEL              DMA1_Channel2
-#define WS2811_IRQ                      DMA1_Channel2_IRQn
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
-#define WS2811_TIMER_GPIO_AF            GPIO_AF_6
-
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
