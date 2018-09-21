@@ -147,10 +147,6 @@ void mscWaitForButton(void)
 
 void systemResetToMsc(void)
 {
-    if (mpuResetFn) {
-        mpuResetFn();
-    }
-
     *((uint32_t *)0x2001FFF0) = MSC_MAGIC;
 
     __disable_irq();

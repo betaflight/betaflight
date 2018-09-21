@@ -54,8 +54,6 @@
 #include "drivers/accgyro/accgyro_spi_mpu9250.h"
 #include "drivers/accgyro/accgyro_mpu.h"
 
-mpuResetFnPtr mpuResetFn;
-
 #ifndef MPU_I2C_INSTANCE
 #define MPU_I2C_INSTANCE I2C_DEVICE
 #endif
@@ -250,7 +248,6 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
     sensor = mpu9250SpiDetect(&gyro->bus);
     if (sensor != MPU_NONE) {
         gyro->mpuDetectionResult.sensor = sensor;
-        gyro->mpuConfiguration.resetFn = mpu9250SpiResetGyro;
         return true;
     }
 #endif
@@ -359,20 +356,27 @@ void mpuGyroInit(gyroDev_t *gyro)
 
 uint8_t mpuGyroDLPF(gyroDev_t *gyro)
 {
-    uint8_t ret;
-    if (gyro->gyroRateKHz > GYRO_RATE_8_kHz) {
-        ret = 0;  // If gyro is in 32KHz mode then the DLPF bits aren't used - set to 0
-    } else {
+    uint8_t ret = 0;
+    
+    // If gyro is in 32KHz mode then the DLPF bits aren't used
+    if (gyro->gyroRateKHz <= GYRO_RATE_8_kHz) {
         switch (gyro->hardware_lpf) {
-            case GYRO_HARDWARE_LPF_NORMAL:
-                ret = 0;
-                break;
+#ifdef USE_GYRO_DLPF_EXPERIMENTAL
             case GYRO_HARDWARE_LPF_EXPERIMENTAL:
-                ret = 7;
+                // experimental mode not supported for MPU60x0 family
+                if ((gyro->gyroHardware != GYRO_MPU6050) && (gyro->gyroHardware != GYRO_MPU6000)) {
+                    ret = 7;
+                } else {
+                    ret = 0;
+                }
                 break;
+#endif
+
             case GYRO_HARDWARE_LPF_1KHZ_SAMPLE:
                 ret = 1;
                 break;
+                
+            case GYRO_HARDWARE_LPF_NORMAL:
             default:
                 ret = 0;
                 break;
@@ -384,11 +388,15 @@ uint8_t mpuGyroDLPF(gyroDev_t *gyro)
 uint8_t mpuGyroFCHOICE(gyroDev_t *gyro)
 {
     if (gyro->gyroRateKHz > GYRO_RATE_8_kHz) {
+#ifdef USE_GYRO_DLPF_EXPERIMENTAL
         if (gyro->hardware_32khz_lpf == GYRO_32KHZ_HARDWARE_LPF_EXPERIMENTAL) {
             return FCB_8800_32;
         } else {
             return FCB_3600_32;
         }
+#else
+        return FCB_3600_32;
+#endif
     } else {
         return FCB_DISABLED;  // Not in 32KHz mode, set FCHOICE to select 8KHz sampling
     }

@@ -151,6 +151,7 @@ void targetConfiguration(void)
     osdConfigMutable()->item_pos[OSD_ESC_TMP]            &= ~VISIBLE_FLAG;
     osdConfigMutable()->item_pos[OSD_ESC_RPM]            &= ~VISIBLE_FLAG;
     osdConfigMutable()->item_pos[OSD_G_FORCE]            &= ~VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_FLIP_ARROW]         &= ~VISIBLE_FLAG;
 
     modeActivationConditionsMutable(0)->modeId           = BOXANGLE;
     modeActivationConditionsMutable(0)->auxChannelIndex  = AUX2 - NON_AUX_CHANNEL_COUNT;

@@ -103,32 +103,32 @@ https://help.github.com/articles/creating-a-pull-request/
 
 The main flow for a contributing is as follows:
 
-1. Login to github, go to the cleanflight repository and press `fork`.
+1. Login to github, go to the betaflight repository and press `fork`.
 2. Then using the command line/terminal on your computer: `git clone <url to YOUR fork>`
-3. `cd cleanflight`
+3. `cd betaflight`
 4. `git checkout master`
 5. `git checkout -b my-new-code`
 6. Make changes
 7. `git add <files that have changed>`
 8. `git commit`
 9. `git push origin my-new-code`
-10. Create pull request using github UI to merge your changes from your new branch into `cleanflight/master`
+10. Create pull request using github UI to merge your changes from your new branch into `betaflight/master`
 11. Repeat from step 4 for new other changes.
 
 The primary thing to remember is that separate pull requests should be created for separate branches.  Never create a pull request from your `master` branch.
 
 Once you have created the PR,
-every new commit/push in your branch will propagate from your fork into the PR in the main github/cleanflight repo.
+every new commit/push in your branch will propagate from your fork into the PR in the main github/betaflight repo.
 Checkout another branch first if you want something else.
 
 Push will often fail if you edit or squash commits in a branch already pushed. Never do such things after creating the PR.
 
-Later, you can get the changes from the cleanflight repo into your `master` branch by adding cleanflight as a git remote and merging from it as follows:
+Later, you can get the changes from the betaflight repo into your `master` branch by adding betaflight as a git remote and merging from it as follows:
 
-1. `git remote add cleanflight https://github.com/cleanflight/cleanflight.git`
+1. `git remote add betaflight https://github.com/betaflight/betaflight.git`
 2. `git checkout master`
-3. `git fetch cleanflight`
-4. `git merge cleanflight/master`
+3. `git fetch betaflight`
+4. `git merge betaflight/master`
 5. `git push origin master` is an optional step that will update your fork on github
  
 

@@ -105,6 +105,9 @@ PG_RESET_TEMPLATE(batteryConfig_t, batteryConfig,
     .batteryCapacity = 0,
     .currentMeterSource = DEFAULT_CURRENT_METER_SOURCE,
 
+    // cells
+    .forceBatteryCellCount = 0, //0 will be ignored
+
     // warnings / alerts
     .useVBatAlerts = true,
     .useConsumptionAlerts = false,
@@ -180,14 +183,18 @@ void batteryUpdatePresence(void)
         /* battery has just been connected - calculate cells, warning voltages and reset state */
 
 
-        unsigned cells = (voltageMeter.filtered / batteryConfig()->vbatmaxcellvoltage) + 1;
-        if (cells > 8) {
-            // something is wrong, we expect 8 cells maximum (and autodetection will be problematic at 6+ cells)
-            cells = 8;
-        }
 
         consumptionState = voltageState = BATTERY_OK;
-        batteryCellCount = cells;
+        if (batteryConfig()->forceBatteryCellCount != 0) {
+            batteryCellCount = batteryConfig()->forceBatteryCellCount;
+        } else {
+            unsigned cells = (voltageMeter.filtered / batteryConfig()->vbatmaxcellvoltage) + 1;
+            if (cells > 8) {
+                // something is wrong, we expect 8 cells maximum (and autodetection will be problematic at 6+ cells)
+                cells = 8;
+            }
+            batteryCellCount = cells;
+        }
         batteryWarningVoltage = batteryCellCount * batteryConfig()->vbatwarningcellvoltage;
         batteryCriticalVoltage = batteryCellCount * batteryConfig()->vbatmincellvoltage;
         lowVoltageCutoff.percentage = 100;

@@ -97,6 +97,7 @@ typedef enum {
     OSD_ANTI_GRAVITY,
     OSD_G_FORCE,
     OSD_LOG_STATUS,
+    OSD_FLIP_ARROW,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
@@ -165,6 +166,7 @@ typedef enum {
     OSD_WARNING_ESC_FAIL,
     OSD_WARNING_CORE_TEMPERATURE,
     OSD_WARNING_RC_SMOOTHING,
+    OSD_WARNING_FAIL_SAFE,
     OSD_WARNING_COUNT // MUST BE LAST
 } osdWarningsFlags_e;
 

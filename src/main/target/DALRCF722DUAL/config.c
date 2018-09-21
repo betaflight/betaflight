@@ -18,31 +18,22 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdbool.h>
 #include <stdint.h>
 
-#include "platform.h"
-#include "drivers/bus.h"
-#include "drivers/bus_i2c.h"
-#include "drivers/bus_spi.h"
-#include "io/serial.h"
-#include "pg/bus_i2c.h"
-#include "pg/bus_spi.h"
+#include "platform.h" 
 
 
-extern void spiPreInit(void); // XXX In fc/init.c
+#ifdef TARGET_VALIDATECONFIG
 
-void targetBusInit(void)
+#include "fc/config.h"
+
+#include "sensors/gyro.h"
+
+void targetValidateConfiguration(void)
 {
-#if defined(USE_SPI) && defined(USE_SPI_DEVICE_1)
-    spiPinConfigure(spiPinConfig(0));
-    spiPreInit();
-    spiInit(SPIDEV_1);
-#endif
-
-    if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
-        serialRemovePort(SERIAL_PORT_USART3);
-        i2cHardwareConfigure(i2cConfig(0));
-        i2cInit(I2C_DEVICE);
+    if (gyroConfig()->gyro_use_32khz && gyroConfig()->gyroMovementCalibrationThreshold < 148) {
+        gyroConfigMutable()->gyroMovementCalibrationThreshold = 148;
     }
 }
+
+#endif

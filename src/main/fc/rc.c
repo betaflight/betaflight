@@ -35,8 +35,8 @@
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "drivers/time.h"
-#include "fc/fc_core.h"
-#include "fc/fc_rc.h"
+#include "fc/core.h"
+#include "fc/rc.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
@@ -111,7 +111,9 @@ static int16_t rcLookupThrottle(int32_t tmp)
     return lookupThrottleRC[tmp2] + (tmp - tmp2 * 100) * (lookupThrottleRC[tmp2 + 1] - lookupThrottleRC[tmp2]) / 100;
 }
 
-#define SETPOINT_RATE_LIMIT 1998.0f
+#define SETPOINT_RATE_LIMIT 1998
+STATIC_ASSERT(CONTROL_RATE_CONFIG_RATE_LIMIT_MAX <= SETPOINT_RATE_LIMIT, CONTROL_RATE_CONFIG_RATE_LIMIT_MAX_too_large);
+
 #define RC_RATE_INCREMENTAL 14.54f
 
 float applyBetaflightRates(const int axis, float rcCommandf, const float rcCommandfAbs)
@@ -169,7 +171,8 @@ static void calculateSetpointRate(int axis)
 
         angleRate = applyRates(axis, rcCommandf, rcCommandfAbs);
     }
-    setpointRate[axis] = constrainf(angleRate, -SETPOINT_RATE_LIMIT, SETPOINT_RATE_LIMIT); // Rate limit protection (deg/sec)
+    // Rate limit from profile (deg/sec)
+    setpointRate[axis] = constrainf(angleRate, -1.0f * currentControlRateProfile->rate_limit[axis], 1.0f * currentControlRateProfile->rate_limit[axis]);
 
     DEBUG_SET(DEBUG_ANGLERATE, axis, angleRate);
 }
@@ -189,8 +192,8 @@ static void scaleRcCommandToFpvCamAngle(void)
 
     float roll = setpointRate[ROLL];
     float yaw = setpointRate[YAW];
-    setpointRate[ROLL] = constrainf(roll * cosFactor -  yaw * sinFactor, -SETPOINT_RATE_LIMIT, SETPOINT_RATE_LIMIT);
-    setpointRate[YAW]  = constrainf(yaw  * cosFactor + roll * sinFactor, -SETPOINT_RATE_LIMIT, SETPOINT_RATE_LIMIT);
+    setpointRate[ROLL] = constrainf(roll * cosFactor -  yaw * sinFactor, -SETPOINT_RATE_LIMIT * 1.0f, SETPOINT_RATE_LIMIT * 1.0f);
+    setpointRate[YAW]  = constrainf(yaw  * cosFactor + roll * sinFactor, -SETPOINT_RATE_LIMIT * 1.0f, SETPOINT_RATE_LIMIT * 1.0f);
 }
 
 #define THROTTLE_BUFFER_MAX 20

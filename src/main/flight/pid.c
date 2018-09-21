@@ -39,8 +39,8 @@
 #include "drivers/sound_beeper.h"
 #include "drivers/time.h"
 
-#include "fc/fc_core.h"
-#include "fc/fc_rc.h"
+#include "fc/core.h"
+#include "fc/rc.h"
 
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
@@ -898,6 +898,10 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
 
         // -----calculate error rate
         const float gyroRate = gyro.gyroADCf[axis]; // Process variable from gyro output in deg/sec
+        float errorRate = currentPidSetpoint - gyroRate; // r - y
+        handleCrashRecovery(
+            pidProfile->crash_recovery, angleTrim, axis, currentTimeUs, gyroRate,
+            &currentPidSetpoint, &errorRate);
 
 #ifdef USE_ABSOLUTE_CONTROL
         float acCorrection = 0;
@@ -905,7 +909,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
 #endif        
 
         const float ITerm = pidData[axis].I;
-        float itermErrorRate = currentPidSetpoint - gyroRate;
+        float itermErrorRate = errorRate;
 
 #if defined(USE_ITERM_RELAX)
         if (itermRelax && (axis < FD_YAW || itermRelax == ITERM_RELAX_RPY || itermRelax == ITERM_RELAX_RPY_INC)) {
@@ -967,11 +971,6 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
             }
         }
 #endif
-
-        float errorRate = currentPidSetpoint - gyroRate; // r - y
-        handleCrashRecovery(
-            pidProfile->crash_recovery, angleTrim, axis, currentTimeUs, gyroRate,
-            &currentPidSetpoint, &errorRate);
 
         // --------low-level gyro-based PID based on 2DOF PID controller. ----------
         // 2-DOF PID controller with optional filter on derivative term.

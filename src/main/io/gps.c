@@ -98,7 +98,7 @@ static uint16_t fraction3[2];
 gpsSolutionData_t gpsSol;
 uint32_t GPS_packetCount = 0;
 uint32_t GPS_svInfoReceivedCount = 0; // SV = Space Vehicle, counter increments each time SV info is received.
-uint8_t GPS_update = 0;             // it's a binary toggle to distinct a GPS position update
+uint8_t GPS_update = 0;             // toogle to distinct a GPS position update (directly or via MSP)
 
 uint8_t GPS_numCh;                          // Number of channels
 uint8_t GPS_svinfo_chn[GPS_SV_MAXSATS];     // Channel number
@@ -224,6 +224,7 @@ static const uint8_t ubloxGalileoInit[] = {
 typedef enum {
     GPS_UNKNOWN,
     GPS_INITIALIZING,
+    GPS_INITIALIZED,
     GPS_CHANGE_BAUD,
     GPS_CONFIGURE,
     GPS_RECEIVING_DATA,
@@ -280,6 +281,11 @@ void gpsInit(void)
     gpsSetState(GPS_UNKNOWN);
 
     gpsData.lastMessage = millis();
+    
+    if (gpsConfig()->provider == GPS_MSP) { // no serial ports used when GPS_MSP is configured
+        gpsSetState(GPS_INITIALIZED);
+        return;
+    }
 
     serialPortConfig_t *gpsPortConfig = findSerialPortConfig(FUNCTION_GPS);
     if (!gpsPortConfig) {
@@ -474,6 +480,8 @@ void gpsInitHardware(void)
         gpsInitUblox();
 #endif
         break;
+    default:
+        break;
     }
 }
 
@@ -492,10 +500,17 @@ void gpsUpdate(timeUs_t currentTimeUs)
     if (gpsPort) {
         while (serialRxBytesWaiting(gpsPort))
             gpsNewData(serialRead(gpsPort));
+    } else if (GPS_update & GPS_MSP_UPDATE) { // GPS data received via MSP
+        gpsSetState(GPS_RECEIVING_DATA);
+        gpsData.lastMessage = millis();
+        sensorsSet(SENSOR_GPS);
+        onGpsNewData();
+        GPS_update &= ~GPS_MSP_UPDATE;
     }
 
     switch (gpsData.state) {
         case GPS_UNKNOWN:
+        case GPS_INITIALIZED:
             break;
 
         case GPS_INITIALIZING:
@@ -547,10 +562,7 @@ static void gpsNewData(uint16_t c)
     gpsData.lastMessage = millis();
     sensorsSet(SENSOR_GPS);
 
-    if (GPS_update == 1)
-        GPS_update = 0;
-    else
-        GPS_update = 1;
+    GPS_update ^= GPS_DIRECT_TICK;
 
 #if 0
     debug[3] = GPS_update;
@@ -571,6 +583,8 @@ bool gpsNewFrame(uint8_t c)
 #ifdef USE_GPS_UBLOX
         return gpsNewFrameUBLOX(c);
 #endif
+        break;
+    default:
         break;
     }
     return false;

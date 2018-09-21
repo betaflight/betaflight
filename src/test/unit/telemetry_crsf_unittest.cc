@@ -322,6 +322,10 @@ uint16_t getBatteryVoltage(void) {
     return testBatteryVoltage;
 }
 
+uint16_t getBatteryAverageCellVoltage(void) {
+    return 0;
+}
+
 batteryState_e getBatteryState(void) {
     return BATTERY_OK;
 }

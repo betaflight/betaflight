@@ -80,8 +80,8 @@
 
 #include "fc/board_info.h"
 #include "fc/config.h"
-#include "fc/fc_init.h"
-#include "fc/fc_tasks.h"
+#include "fc/init.h"
+#include "fc/tasks.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
@@ -551,11 +551,11 @@ void init(void)
     cmsInit();
 #endif
 
-#if (defined(USE_OSD) || (defined(USE_MSP_DISPLAYPORT) && defined(USE_CMS)) || defined(USE_OSD_SLAVE))
+#if (defined(USE_OSD) || (defined(USE_MSP_DISPLAYPORT) && defined(USE_CMS)))
     displayPort_t *osdDisplayPort = NULL;
 #endif
 
-#if defined(USE_OSD) && !defined(USE_OSD_SLAVE)
+#if defined(USE_OSD)
     //The OSD need to be initialised after GYRO to avoid GYRO initialisation failure on some targets
 
     if (featureIsEnabled(FEATURE_OSD)) {
@@ -568,15 +568,6 @@ void init(void)
         // osdInit  will register with CMS by itself.
         osdInit(osdDisplayPort);
     }
-#endif
-
-#if defined(USE_OSD_SLAVE) && !defined(USE_OSD)
-#if defined(USE_MAX7456)
-    // If there is a max7456 chip for the OSD then use it
-    osdDisplayPort = max7456DisplayPortInit(vcdProfile());
-    // osdInit  will register with CMS by itself.
-    osdSlaveInit(osdDisplayPort);
-#endif
 #endif
 
 #if defined(USE_CMS) && defined(USE_MSP_DISPLAYPORT)

@@ -34,7 +34,8 @@
 
 typedef enum {
     GPS_NMEA = 0,
-    GPS_UBLOX
+    GPS_UBLOX,
+    GPS_MSP
 } gpsProvider_e;
 
 typedef enum {
@@ -137,10 +138,15 @@ typedef enum {
 } navigationMode_e;
 extern navigationMode_e nav_mode;          // Navigation mode
 
+typedef enum {
+    GPS_DIRECT_TICK = 1 << 0,
+    GPS_MSP_UPDATE = 1 << 1
+} gpsUpdateToggle_e;
+
 extern gpsData_t gpsData;
 extern gpsSolutionData_t gpsSol;
 
-extern uint8_t GPS_update;                 // it's a binary toogle to distinct a GPS position update
+extern uint8_t GPS_update;       // toogle to distinct a GPS position update (directly or via MSP)
 extern uint32_t GPS_packetCount;
 extern uint32_t GPS_svInfoReceivedCount;
 extern uint8_t GPS_numCh;                  // Number of channels

@@ -28,7 +28,7 @@
 
 #include "drivers/time.h"
 
-#include "fc/fc_dispatch.h"
+#include "fc/dispatch.h"
 
 static dispatchEntry_t *head = NULL;
 static bool dispatchEnabled = false;
@@ -51,6 +51,7 @@ void dispatchProcess(uint32_t currentTime)
         // unlink entry first, so handler can replan self
         dispatchEntry_t *current = *p;
         *p = (*p)->next;
+        current->inQue = false;
         (*current->dispatch)(current);
     }
 }
@@ -58,10 +59,17 @@ void dispatchProcess(uint32_t currentTime)
 void dispatchAdd(dispatchEntry_t *entry, int delayUs)
 {
     uint32_t delayedUntil = micros() + delayUs;
-    entry->delayedUntil = delayedUntil;
     dispatchEntry_t **p = &head;
+
+    if (entry->inQue) {
+      return;    // Allready in Queue, abort
+    }
+
     while (*p && cmp32((*p)->delayedUntil, delayedUntil) < 0)
         p = &(*p)->next;
+
     entry->next = *p;
+    entry->delayedUntil = delayedUntil;
+    entry->inQue = true;
     *p = entry;
 }

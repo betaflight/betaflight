@@ -52,7 +52,7 @@ extern "C" {
 
     #include "fc/rc_controls.h"
     #include "fc/runtime_config.h"
-    #include "fc/fc_core.h"
+    #include "fc/core.h"
 
     #include "scheduler/scheduler.h"
 }

@@ -153,10 +153,6 @@ void mscWaitForButton(void)
 
 void systemResetToMsc(void)
 {
-    if (mpuResetFn) {
-        mpuResetFn();
-    }
-
     *((__IO uint32_t*) BKPSRAM_BASE + 16) = MSC_MAGIC;
 
     __disable_irq();
