@@ -64,7 +64,6 @@
 #define USE_GYRO_MPU6050
 
 //#define L3GD20_SPI                      SPI1
-//#define L3GD20_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOE
 //#define L3GD20_CS_GPIO                  GPIOE
 //#define L3GD20_CS_PIN                   PE3
 
