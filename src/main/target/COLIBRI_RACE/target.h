@@ -25,10 +25,8 @@
 #undef USE_RTC_TIME
 
 #define TARGET_BOARD_IDENTIFIER "CLBR"
-#define BST_DEVICE_NAME         "COLIBRI RACE"
-#define BST_DEVICE_NAME_LENGTH  12
-#define TARGET_BUS_INIT
 
+#define TARGET_BUS_INIT
 
 #define LED0_PIN                PC15
 #define LED1_PIN                PC14
@@ -106,9 +104,6 @@
 #define I2C2_SDA_PIN            PA10
 
 #define USE_BST
-#define BST_DEVICE              (BSTDEV_1)
-/* Configure the CRC peripheral to use the polynomial x8 + x7 + x6 + x4 + x2 + 1 */
-#define BST_CRC_POLYNOM         0xD5
 
 #define USE_ADC
 #define ADC_INSTANCE            ADC1

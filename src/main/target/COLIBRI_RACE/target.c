@@ -52,22 +52,3 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM16, CH1, PA6,  TIM_USE_LED,   0), // PWM11 - PB15
 
 };
-
-// XXX Requires some additional work here.
-// XXX Can't do this now without proper semantics about I2C on this target.
-#ifdef USE_BST
-void targetBusInit(void)
-{
-#ifdef USE_SPI
-    spiPinConfigure(spiPinConfig(0));
-#ifdef USE_SPI_DEVICE_1
-    spiInit(SPIDEV_1);
-#endif
-#endif
-
-    i2cHardwareConfigure(i2cConfig(0));
-    i2cInit(I2CDEV_2);
-
-    bstInit(BST_DEVICE);
-}
-#endif
