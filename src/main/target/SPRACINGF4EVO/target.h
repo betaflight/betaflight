@@ -41,11 +41,11 @@
 #define INVERTER_PIN_UART2      PB2
 
 #define USE_EXTI
+#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PC13
 #ifdef USE_MULTI_GYRO
 #define GYRO_2_EXTI_PIN         PC5 // GYRO 2 / NC on prototype boards, but if it was it'd be here.
 #endif
-#define MPU_INT_EXTI
 
 #ifndef SPRACINGF4EVODG
 #define USE_MPU_DATA_READY_SIGNAL
