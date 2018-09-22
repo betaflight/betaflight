@@ -76,6 +76,7 @@ extern "C" {
     int minTimeout = 180;
 
     void rcdeviceSend5KeyOSDCableSimualtionEvent(rcdeviceCamSimulationKeyEvent_e key);
+    rcdeviceResponseParseContext_t* rcdeviceRespCtxQueueShift(rcdeviceWaitingResponseQueue *queue);
 }
 
 #define MAX_RESPONSES_COUNT 10

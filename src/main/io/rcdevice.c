@@ -63,7 +63,7 @@ static uint8_t runcamDeviceGetRespLen(uint8_t command)
     return 0;
 }
 
-static bool rcdeviceRespCtxQueuePushRespCtx(rcdeviceWaitingResponseQueue *queue, rcdeviceResponseParseContext_t *respCtx)
+static bool rcdeviceRespCtxQueuePush(rcdeviceWaitingResponseQueue *queue, rcdeviceResponseParseContext_t *respCtx)
 {
     if (queue == NULL || (queue->itemCount + 1) > MAX_WAITING_RESPONSES) {
         return false;
@@ -91,7 +91,7 @@ static rcdeviceResponseParseContext_t* rcdeviceRespCtxQueuePeekFront(rcdeviceWai
     return ctx;
 }
 
-rcdeviceResponseParseContext_t* rcdeviceRespCtxQueueShift(rcdeviceWaitingResponseQueue *queue)
+STATIC_UNIT_TESTED rcdeviceResponseParseContext_t* rcdeviceRespCtxQueueShift(rcdeviceWaitingResponseQueue *queue)
 {
     if (queue == NULL || queue->itemCount == 0) {
         return NULL;
@@ -170,7 +170,7 @@ static void runcamDeviceSendRequestAndWaitingResp(runcamDevice_t *device, uint8_
         responseCtx.paramDataLen = paramDataLen;
     }
     responseCtx.userInfo = userInfo;
-    rcdeviceRespCtxQueuePushRespCtx(&watingResponseQueue, &responseCtx);
+    rcdeviceRespCtxQueuePush(&watingResponseQueue, &responseCtx);
 
     // send packet
     runcamDeviceSendPacket(device, commandID, paramData, paramDataLen);
@@ -188,13 +188,12 @@ static void runcamDeviceParseV1DeviceInfo(rcdeviceResponseParseContext_t *ctx)
     device->isReady = true;
 }
 
-static uint8_t crc_high_first(uint8_t *ptr, uint8_t len)
+static uint8_t crc8HighFirst(uint8_t *ptr, uint8_t len)
 {
-    uint8_t i;
-    uint8_t crc=0x00;
+    uint8_t crc = 0x00;
     while (len--) {
         crc ^= *ptr++;
-        for (i=8; i>0; --i) {
+        for (unsigned i = 8; i > 0; --i) {
             if (crc & 0x80)
                 crc = (crc << 1) ^ 0x31;
             else
@@ -218,7 +217,7 @@ static void runcamSplitSendCommand(runcamDevice_t *device, uint8_t argument)
     uart_buffer[1] = RCSPLIT_PACKET_CMD_CTRL;
     uart_buffer[2] = argument;
     uart_buffer[3] = RCSPLIT_PACKET_TAIL;
-    crc = crc_high_first(uart_buffer, 4);
+    crc = crc8HighFirst(uart_buffer, 4);
 
     // build up a full request [header]+[command]+[argument]+[crc]+[tail]
     uart_buffer[3] = crc;
@@ -244,7 +243,7 @@ static void runcamDeviceParseV2DeviceInfo(rcdeviceResponseParseContext_t *ctx)
         responseCtx.parserFunc = runcamDeviceParseV1DeviceInfo;
         responseCtx.device = ctx->device;
         responseCtx.protocolVer = RCDEVICE_PROTOCOL_RCSPLIT_VERSION;
-        rcdeviceRespCtxQueuePushRespCtx(&watingResponseQueue, &responseCtx);
+        rcdeviceRespCtxQueuePush(&watingResponseQueue, &responseCtx);
 
         runcamSplitSendCommand(ctx->device, 0xFF);
         return;
