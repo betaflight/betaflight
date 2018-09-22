@@ -41,9 +41,7 @@
 #define BEEPER_INVERTED
 
 #define INVERTER_PIN_UART6      PB15
-//#define INVERTER_PIN_UART1     PC9
-
-#define UART1_INVERTER          PC9
+//#define INVERTER_PIN_UART1     PC9 // Polarity depends on revision; handled in config.c
 
 // MPU6500 interrupt
 #define USE_EXTI
