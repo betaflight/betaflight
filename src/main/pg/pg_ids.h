@@ -136,7 +136,8 @@
 #define PG_RCDEVICE_CONFIG 539
 #define PG_GYRO_DEVICE_CONFIG 540
 #define PG_MCO_CONFIG 541
-#define PG_BETAFLIGHT_END 541
+#define PG_RX_SPEKTRUM_SPI_CONFIG 542
+#define PG_BETAFLIGHT_END 542
 
 
 // OSD configuration (subject to change)

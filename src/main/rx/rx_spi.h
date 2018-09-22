@@ -40,6 +40,7 @@ typedef enum {
     RX_SPI_A7105_FLYSKY_2A,
     RX_SPI_NRF24_KN,
     RX_SPI_SFHSS,
+    RX_SPI_CYRF6936_DSM,
     RX_SPI_PROTOCOL_COUNT
 } rx_spi_protocol_e;
 

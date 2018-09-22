@@ -353,6 +353,13 @@ vtx_unittest_DEFINES := \
 		USE_VTX_CONTROL= \
 		USE_VTX_SMARTAUDIO=
 
+rx_spi_spektrum_unittest_SRC := \
+		$(USER_DIR)/rx/cyrf6936_spektrum.c
+
+rx_spi_spektrum_unittest_DEFINES := \
+		USE_RX_SPI \
+		USE_RX_SPEKTRUM
+
 # Please tweak the following variable definitions as needed by your
 # project, except GTEST_HEADERS, which you can use in your own targets
 # but shouldn't modify.
