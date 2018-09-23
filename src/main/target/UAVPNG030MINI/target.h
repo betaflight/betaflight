@@ -38,12 +38,13 @@
 #define GYRO_1_SPI_INSTANCE    SPI1
 
 // TODO
-#define GYRO_MPU6000_ALIGN       CW180_DEG
-#define ACC_MPU6000_ALIGN        CW180_DEG
+#define GYRO_1_ALIGN           CW180_DEG
+#define ACC_1_ALIGN            CW180_DEG
 
 // MPU6000 interrupts
 #define USE_EXTI
-#define MPU_INT_EXTI             PE0
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN          PE0
 #define USE_MPU_DATA_READY_SIGNAL
 
 #define USE_MAG
@@ -82,7 +83,6 @@
 #define USE_UART1
 #define UART1_RX_PIN            PB7
 #define UART1_TX_PIN            PB6
-//#define UART1_AHB1_PERIPHERALS  RCC_AHB1Periph_DMA2
 
 #define USE_UART2
 #define UART2_RX_PIN            PD6
@@ -100,7 +100,7 @@
 
 // TODO
 #define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+#define ESCSERIAL_TIMER_TX_PIN  PA2
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1

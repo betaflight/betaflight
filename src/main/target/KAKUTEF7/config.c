@@ -18,22 +18,25 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <stdbool.h>
+#include <stdint.h>
 
-#include "drivers/io_types.h"
+#include "platform.h"
 
-#include "pg/pg.h"
+#ifdef USE_TARGET_CONFIG
 
-enum USB_DEV {
-    DEFAULT,
-    COMPOSITE
+#include "config_helper.h"
+
+#include "io/serial.h"
+
+#define ESC_SENSOR_UART         SERIAL_PORT_USART7
+
+static targetSerialPortFunction_t targetSerialPortFunction[] = {
+    { ESC_SENSOR_UART, FUNCTION_ESC_SENSOR },
 };
 
-typedef struct usbDev_s {
-    uint8_t type;
-    ioTag_t mscButtonPin;
-    uint8_t mscButtonUsePullup;
-    ioTag_t detectPin;
-} usbDev_t;
-
-PG_DECLARE(usbDev_t, usbDevConfig);
+void targetConfiguration(void)
+{
+    targetSerialPortFunctionConfig(targetSerialPortFunction, ARRAYLEN(targetSerialPortFunction));
+}
+#endif

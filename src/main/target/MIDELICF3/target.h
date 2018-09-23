@@ -108,8 +108,6 @@
 
 #define USE_RX_SPI
 #define RX_SPI_INSTANCE         SPI1
-#define RX_NSS_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOA
-
 
 #define USE_RX_FRSKY_SPI_D
 #define USE_RX_FRSKY_SPI_X
@@ -142,7 +140,7 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 #define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_HARDWARE 0
+#define ESCSERIAL_TIMER_TX_PIN   PB9 // Motor 6, can't use escserial for hexa
 
 #define DEFAULT_FEATURES        (FEATURE_AIRMODE | FEATURE_TELEMETRY)
 

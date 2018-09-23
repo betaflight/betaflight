@@ -138,10 +138,6 @@
 
 #define DEFIO_NO_PORTS   // suppress 'no pins defined' warning
 
-#define WS2811_DMA_TC_FLAG (void *)1
-#define WS2811_DMA_HANDLER_IDENTIFER 0
-
-
 // belows are internal stuff
 
 extern uint32_t SystemCoreClock;

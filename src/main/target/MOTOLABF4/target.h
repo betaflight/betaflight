@@ -76,7 +76,6 @@
 #define USE_UART1
 #define UART1_RX_PIN            PA10
 #define UART1_TX_PIN            PA9
-#define UART1_AHB1_PERIPHERALS  RCC_AHB1Periph_DMA2
 
 #define USE_UART2
 #define UART2_RX_PIN            PA3
@@ -139,7 +138,7 @@
 #define VBAT_ADC_PIN            PC0
 #define CURRENT_METER_ADC_PIN   PC1
 // Reserved pins, not connected
-//#define RSSI_ADC_GPIO_PIN       PC2
+//#define RSSI_ADC_PIN            PC2
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

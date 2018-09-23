@@ -398,5 +398,6 @@ portSharing_e determinePortSharing(const serialPortConfig_t *, serialPortFunctio
 failsafePhase_e failsafePhase(void) {return FAILSAFE_IDLE;}
 bool rxAreFlightChannelsValid(void) {return false;}
 bool rxIsReceivingSignal(void) {return false;}
+bool isRssiConfigured(void) {return false;}
 
 }

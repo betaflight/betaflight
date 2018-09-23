@@ -37,6 +37,8 @@
 
 #include "hardware_revision.h"
 
+#define UART1_INVERTER          PC9
+
 void targetPreInit(void)
 {
     switch (hardwareRevision) {
