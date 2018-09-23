@@ -351,6 +351,11 @@ void freeHoTTTelemetryPort(void)
 void initHoTTTelemetry(void)
 {
     portConfig = findSerialPortConfig(FUNCTION_TELEMETRY_HOTT);
+
+    if (!portConfig) {
+        return;
+    }
+
     hottPortSharing = determinePortSharing(portConfig, FUNCTION_TELEMETRY_HOTT);
 
 #if defined (USE_HOTT_TEXTMODE) && defined (USE_CMS)
