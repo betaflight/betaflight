@@ -50,6 +50,12 @@
 #define SDCARD_TIMEOUT_INIT_MILLIS                  200
 #define SDCARD_MAX_CONSECUTIVE_FAILURES             8
 
+/* SPI_CLOCK_INITIALIZATION (256) is the slowest (Spec calls for under 400KHz) */
+#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER     SPI_CLOCK_INITIALIZATION
+
+/* Operational speed <= 25MHz */
+#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER         SPI_CLOCK_FAST
+
 /* Break up 512-byte SD card sectors into chunks of this size when writing without DMA to reduce the peak overhead
  * per call to sdcard_poll().
  */
