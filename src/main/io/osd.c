@@ -1462,16 +1462,6 @@ static void osdShowStats(uint16_t endBatteryVoltage)
         osdDisplayStatisticLabel(top++, "MAX SPEED", buff);
     }
 
-    if (osdStatGetState(OSD_STAT_MAX_ESC_TEMP)) {
-        tfp_sprintf(buff, "%3d%c", osdConvertTemperatureToSelectedUnit(stats.max_esc_temp * 10) / 10, osdGetTemperatureSymbolForSelectedUnit());
-        osdDisplayStatisticLabel(top++, "MAX ESC TEMP", buff);
-    }
-
-    if (osdStatGetState(OSD_STAT_MAX_ESC_RPM)) {
-        itoa(stats.max_esc_rpm, buff, 10);
-        osdDisplayStatisticLabel(top++, "MAX ESC RPM", buff);
-    }
-
     if (osdStatGetState(OSD_STAT_MAX_DISTANCE)) {
         tfp_sprintf(buff, "%d%c", osdGetMetersToSelectedUnit(stats.max_distance), osdGetMetersToSelectedUnitSymbol());
         osdDisplayStatisticLabel(top++, "MAX DISTANCE", buff);
@@ -1531,6 +1521,16 @@ static void osdShowStats(uint16_t endBatteryVoltage)
     if (osdStatGetState(OSD_STAT_MAX_G_FORCE)) {
         tfp_sprintf(buff, "%01d.%01dG", (int)stats.max_g_force, (int)(stats.max_g_force * 10) % 10);
         osdDisplayStatisticLabel(top++, "MAX G-FORCE", buff);
+    }
+
+    if (osdStatGetState(OSD_STAT_MAX_ESC_TEMP)) {
+        tfp_sprintf(buff, "%3d%c", osdConvertTemperatureToSelectedUnit(stats.max_esc_temp * 10) / 10, osdGetTemperatureSymbolForSelectedUnit());
+        osdDisplayStatisticLabel(top++, "MAX ESC TEMP", buff);
+    }
+
+    if (osdStatGetState(OSD_STAT_MAX_ESC_RPM)) {
+        itoa(stats.max_esc_rpm, buff, 10);
+        osdDisplayStatisticLabel(top++, "MAX ESC RPM", buff);
     }
 
 }
