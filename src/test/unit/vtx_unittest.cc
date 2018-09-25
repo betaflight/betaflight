@@ -145,7 +145,7 @@ extern "C" {
     void failsafeStartMonitoring(void) {}
     void failsafeUpdateState(void) {}
     bool failsafeIsActive(void) { return false; }
-    void pidResetITerm(void) {}
+    void pidResetIterm(void) {}
     void updateAdjustmentStates(void) {}
     void processRcAdjustments(controlRateConfig_t *) {}
     void updateGpsWaypointsAndMode(void) {}

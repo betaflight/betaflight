@@ -320,9 +320,7 @@ const mixer_t mixers[] = {
 FAST_RAM_ZERO_INIT float motorOutputHigh, motorOutputLow;
 
 static FAST_RAM_ZERO_INIT float disarmMotorOutput, deadbandMotor3dHigh, deadbandMotor3dLow;
-static FAST_RAM_ZERO_INIT uint16_t rcCommand3dDeadBandLow;
-static FAST_RAM_ZERO_INIT uint16_t rcCommand3dDeadBandHigh;
-static FAST_RAM_ZERO_INIT float rcCommandThrottleRange, rcCommandThrottleRange3dLow, rcCommandThrottleRange3dHigh;
+static FAST_RAM_ZERO_INIT float rcCommandThrottleRange;
 
 uint8_t getMotorCount(void)
 {
@@ -401,12 +399,6 @@ void initEscEndpoints(void)
     }
 
     rcCommandThrottleRange = PWM_RANGE_MAX - rxConfig()->mincheck;
-
-    rcCommand3dDeadBandLow = rxConfig()->midrc - flight3DConfig()->deadband3d_throttle;
-    rcCommand3dDeadBandHigh = rxConfig()->midrc + flight3DConfig()->deadband3d_throttle;
-
-    rcCommandThrottleRange3dLow = rcCommand3dDeadBandLow - PWM_RANGE_MIN;
-    rcCommandThrottleRange3dHigh = PWM_RANGE_MAX - rcCommand3dDeadBandHigh;
 }
 
 void mixerInit(mixerMode_e mixerMode)
@@ -528,9 +520,27 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
     float currentThrottleInputRange = 0;
 
     if (featureIsEnabled(FEATURE_3D)) {
+        uint16_t rcCommand3dDeadBandLow;
+        uint16_t rcCommand3dDeadBandHigh;
+
         if (!ARMING_FLAG(ARMED)) {
             rcThrottlePrevious = rxConfig()->midrc; // When disarmed set to mid_rc. It always results in positive direction after arming.
         }
+
+        if (IS_RC_MODE_ACTIVE(BOX3D) || flight3DConfig()->switched_mode3d) {
+            // The min_check range is halved because the output throttle is scaled to 500us.
+            // So by using half of min_check we maintain the same low-throttle deadband
+            // stick travel as normal non-3D mode.
+            const int mincheckOffset = (rxConfig()->mincheck - PWM_RANGE_MIN) / 2;
+            rcCommand3dDeadBandLow = rxConfig()->midrc - mincheckOffset;
+            rcCommand3dDeadBandHigh = rxConfig()->midrc + mincheckOffset;
+        } else {
+            rcCommand3dDeadBandLow = rxConfig()->midrc - flight3DConfig()->deadband3d_throttle;
+            rcCommand3dDeadBandHigh = rxConfig()->midrc + flight3DConfig()->deadband3d_throttle;
+        }
+
+        const float rcCommandThrottleRange3dLow = rcCommand3dDeadBandLow - PWM_RANGE_MIN;
+        const float rcCommandThrottleRange3dHigh = PWM_RANGE_MAX - rcCommand3dDeadBandHigh;
 
         if (rcCommand[THROTTLE] <= rcCommand3dDeadBandLow) {
             // INVERTED
@@ -596,8 +606,8 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             currentThrottleInputRange = rcCommandThrottleRange3dHigh;
         }
         if (currentTimeUs - reversalTimeUs < 250000) {
-            // keep ITerm zero for 250ms after motor reversal
-            pidResetITerm();
+            // keep iterm zero for 250ms after motor reversal
+            pidResetIterm();
         }
     } else {
         throttle = rcCommand[THROTTLE] - rxConfig()->mincheck + throttleAngleCorrection;

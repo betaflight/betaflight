@@ -23,6 +23,7 @@
 #include <stdbool.h>
 #include "common/time.h"
 #include "common/filter.h"
+#include "common/axis.h"
 #include "pg/pg.h"
 
 #define MAX_PID_PROCESS_DENOM       16
@@ -105,7 +106,7 @@ typedef struct pidProfile_s {
     pidf_t  pid[PID_ITEM_COUNT];
 
     uint8_t dterm_filter_type;              // Filter selection for dterm
-    uint8_t itermWindupPointPercent;        // Experimental ITerm windup threshold, percent motor saturation
+    uint8_t itermWindupPointPercent;        // iterm windup threshold, percent motor saturation
     uint16_t pidSumLimit;
     uint16_t pidSumLimitYaw;
     uint8_t pidAtMinThrottle;               // Disable/Enable pids on zero throttle. Normally even without airmode P and D would be active.
@@ -181,7 +182,7 @@ extern uint32_t targetPidLooptime;
 extern float throttleBoost;
 extern pt1Filter_t throttleLpf;
 
-void pidResetITerm(void);
+void pidResetIterm(void);
 void pidStabilisationState(pidStabilisationState_e pidControllerState);
 void pidSetItermAccelerator(float newItermAccelerator);
 void pidInitFilters(const pidProfile_t *pidProfile);
@@ -198,3 +199,17 @@ bool pidOsdAntiGravityActive(void);
 bool pidOsdAntiGravityMode(void);
 void pidSetAntiGravityState(bool newState);
 bool pidAntiGravityEnabled(void);
+
+#ifdef UNIT_TEST
+#include "sensors/acceleration.h"
+extern float axisError[XYZ_AXIS_COUNT];
+void applyItermRelax(const int axis, const float iterm,
+    const float gyroRate, float *itermErrorRate, float *currentPidSetpoint);
+void applyAbsoluteControl(const int axis, const float gyroRate, const bool itermRelaxIsEnabled,
+    const float setpointLpf, const float setpointHpf,
+    float *currentPidSetpoint, float *itermErrorRate);
+void rotateItermAndAxisError();
+float pidLevel(int axis, const pidProfile_t *pidProfile,
+    const rollAndPitchTrims_t *angleTrim, float currentPidSetpoint);
+float calcHorizonLevelStrength(void);
+#endif

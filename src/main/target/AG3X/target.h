@@ -38,7 +38,7 @@
 #define LED0_PIN                PC13
 
 #define USE_BEEPER
-#define BEEPER                  NONE
+#define BEEPER_PIN              NONE
 #define BEEPER_INVERTED
 
 #define USE_ACC
@@ -67,6 +67,7 @@
 
 #define USE_MAG
 #define USE_MAG_HMC5883
+#define USE_MAG_LIS3MDL
 
 #define USE_BARO
 #define USE_BARO_SPI_BMP280

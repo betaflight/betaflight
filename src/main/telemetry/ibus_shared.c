@@ -31,6 +31,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <limits.h>
 // #include <string.h>
 
 #include "platform.h"
@@ -420,10 +421,10 @@ static void setValue(uint8_t* bufferPtr, uint8_t sensorType, uint8_t length)
             break;
         case IBUS_SENSOR_TYPE_VERTICAL_SPEED:
         case IBUS_SENSOR_TYPE_CLIMB_RATE:
-            if(sensors(SENSOR_SONAR) || sensors(SENSOR_BARO)) {
-                value.int16 = (int16_t)getEstimatedVario();
-            }
+#ifdef USE_VARIO
+            value.int16 = (int16_t) constrain(getEstimatedVario(), SHRT_MIN, SHRT_MAX);
             break;
+#endif
         case IBUS_SENSOR_TYPE_ALT:
         case IBUS_SENSOR_TYPE_ALT_MAX:
             value.int32 = baro.BaroAlt;

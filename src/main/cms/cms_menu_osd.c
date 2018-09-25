@@ -101,7 +101,9 @@ OSD_Entry menuOsdActiveElemsEntries[] =
     {"PIT ANG",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_PITCH_ANGLE], 0},
     {"ROL ANG",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ROLL_ANGLE], 0},
     {"HEADING",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_NUMERICAL_HEADING], 0},
+#ifdef USE_VARIO
     {"VARIO",              OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_NUMERICAL_VARIO], 0},
+#endif
     {"G-FORCE",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_G_FORCE], 0},
     {"FLIP ARROW",         OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_FLIP_ARROW], 0},
     {"BACK",               OME_Back,    NULL, NULL, 0},

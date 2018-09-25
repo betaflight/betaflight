@@ -577,16 +577,16 @@ bool processRx(timeUs_t currentTimeUs)
 
     if (isAirmodeActive() && ARMING_FLAG(ARMED)) {
         if (throttlePercent >= rxConfig()->airModeActivateThreshold) {
-            airmodeIsActivated = true; // Prevent Iterm from being reset
+            airmodeIsActivated = true; // Prevent iterm from being reset
         }
     } else {
         airmodeIsActivated = false;
     }
 
-    /* In airmode Iterm should be prevented to grow when Low thottle and Roll + Pitch Centered.
-     This is needed to prevent Iterm winding on the ground, but keep full stabilisation on 0 throttle while in air */
+    /* In airmode iterm should be prevented to grow when Low thottle and Roll + Pitch Centered.
+     This is needed to prevent iterm winding on the ground, but keep full stabilisation on 0 throttle while in air */
     if (throttleStatus == THROTTLE_LOW && !airmodeIsActivated) {
-        pidResetITerm();
+        pidResetIterm();
         if (currentPidProfile->pidAtMinThrottle)
             pidStabilisationState(PID_STABILISATION_ON);
         else
@@ -725,7 +725,6 @@ bool processRx(timeUs_t currentTimeUs)
 #endif
 
     if (!cliMode) {
-        updateAdjustmentStates();
         processRcAdjustments(currentControlRateProfile);
     }
 

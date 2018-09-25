@@ -82,7 +82,7 @@
 #define SERIAL_PORT_COUNT       6 //VCP, USART1, USART3, USART4, USART6
 
 #define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+#define ESCSERIAL_TIMER_TX_PIN  PB9
 
 //SPI
 #define USE_SPI
@@ -97,18 +97,12 @@
 #define USE_SDCARD
 #define SDCARD_SPI_INSTANCE             SPI2
 #define SDCARD_SPI_CS_PIN               PD8
-// SPI2 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 328kHz
-// Divide to under 25MHz for normal operation:
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 4 // 5,5MHz
-
 #define SDCARD_DMA_CHANNEL_TX                   DMA1_Stream5
 #define SDCARD_DMA_CHANNEL                      0
 
 #define USE_ADC
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
-#define BOARD_HAS_VOLTAGE_DIVIDER
 #define VBAT_ADC_PIN            PC1
 #define CURRENT_METER_ADC_PIN   PC2
 

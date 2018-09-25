@@ -69,19 +69,11 @@
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define USE_SDCARD
-
 #define SDCARD_DETECT_INVERTED
 #define SDCARD_DETECT_PIN        PC14
-
 #define SDCARD_SPI_INSTANCE      SPI1
 #define SDCARD_SPI_CS_GPIO       GPIOB
 #define SDCARD_SPI_CS_PIN        SPI1_NSS_PIN
-
-// SPI2 is on the APB1 bus whose clock runs at 36MHz. Divide to under 400kHz for init:
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 128
-// Divide to under 25MHz for normal operation:
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     2
-
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel3
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
@@ -115,12 +107,10 @@
 #define I2C2_SCL_GPIO_AF         GPIO_AF_4
 #define I2C2_SCL_PIN             GPIO_Pin_9
 #define I2C2_SCL_PIN_SOURCE      GPIO_PinSource9
-#define I2C2_SCL_CLK_SOURCE      RCC_AHBPeriph_GPIOA
 #define I2C2_SDA_GPIO            GPIOA
 #define I2C2_SDA_GPIO_AF         GPIO_AF_4
 #define I2C2_SDA_PIN             GPIO_Pin_10
 #define I2C2_SDA_PIN_SOURCE      GPIO_PinSource10
-#define I2C2_SDA_CLK_SOURCE      RCC_AHBPeriph_GPIOA
 
 #define USE_ADC
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC

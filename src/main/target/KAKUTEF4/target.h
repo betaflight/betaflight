@@ -101,6 +101,7 @@
 #define USE_MAG
 #define USE_MAG_HMC5883                   //External, connect to I2C1
 #define USE_MAG_QMC5883
+#define USE_MAG_LIS3MDL
 #define MAG_HMC5883_ALIGN       CW180_DEG
 
 #define USE_BARO
@@ -131,8 +132,6 @@
 #else
 #define UART1_TX_PIN            PA9
 #endif
-
-#define UART1_AHB1_PERIPHERALS  RCC_AHB1Periph_DMA2
 
 #define USE_UART3
 #define UART3_RX_PIN            PB11

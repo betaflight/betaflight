@@ -56,6 +56,10 @@
 #endif
 #endif
 
+#ifndef USE_BARO
+#undef USE_VARIO
+#endif
+
 #if !defined(USE_SERIAL_RX)
 #undef USE_SERIALRX_CRSF
 #undef USE_SERIALRX_IBUS

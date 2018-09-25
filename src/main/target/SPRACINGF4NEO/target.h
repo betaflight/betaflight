@@ -161,18 +161,10 @@
 //#define MAX7456_DMA_IRQ_HANDLER_ID          DMA1_ST0_HANDLER
 
 #define USE_SDCARD
-
 #define SDCARD_DETECT_INVERTED
 #define SDCARD_DETECT_PIN                   PC14
-
 #define SDCARD_SPI_INSTANCE                 SPI2
 #define SDCARD_SPI_CS_PIN                   SPI2_NSS_PIN
-
-// SPI3 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 328kHz
-// Divide to under 25MHz for normal operation:
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     4 // 21MHz
-
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Stream4
 #define SDCARD_DMA_CHANNEL                  0
 
@@ -199,13 +191,8 @@
 #define DEFAULT_RX_FEATURE                  FEATURE_RX_SERIAL
 #define DEFAULT_FEATURES                    (FEATURE_TRANSPONDER | FEATURE_RSSI_ADC | FEATURE_TELEMETRY | FEATURE_LED_STRIP)
 
-#define GPS_UART                            SERIAL_PORT_USART3
-
 #define SERIALRX_UART                       SERIAL_PORT_USART2
 #define SERIALRX_PROVIDER                   SERIALRX_SBUS
-
-#define TELEMETRY_UART                      SERIAL_PORT_UART5
-#define TELEMETRY_PROVIDER_DEFAULT          FUNCTION_TELEMETRY_SMARTPORT
 
 #define USE_BUTTONS // Physically located on the optional OSD/VTX board.
 #if (SPRACINGF4NEO_REV >= 3)

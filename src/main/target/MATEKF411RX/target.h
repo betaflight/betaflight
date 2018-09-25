@@ -71,7 +71,6 @@
 
 #define USE_RX_SPI
 #define RX_SPI_INSTANCE         SPI3
-#define RX_NSS_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOA
 
 #define RX_SCK_PIN              SPI3_SCK_PIN
 #define RX_MISO_PIN             SPI3_MISO_PIN

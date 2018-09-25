@@ -40,10 +40,10 @@
 #define SPI1_MOSI_PIN           PA7
 
 #define USE_EXTI
-#define MPU_INT_EXTI            PC4
-#define USE_MPU_DATA_READY_SIGNAL
 #define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PC4
+
+#define USE_MPU_DATA_READY_SIGNAL
 
 // ICM 20689
 #define GYRO_1_CS_PIN           PA4
@@ -116,6 +116,7 @@
 #define MAG_HMC5883_ALIGN CW270_DEG_FLIP
 #define USE_MAG_QMC5883
 #define MAG_QMC5883_ALIGN CW270_DEG_FLIP
+#define USE_MAG_LIS3MDL
 
 // *************** OSD *****************************
 #define USE_MAX7456
@@ -125,7 +126,7 @@
 // *************** ADC *****************************
 #define USE_ADC
 #define ADC1_DMA_STREAM         DMA2_Stream0
-#define RSSI_ADC_GPIO_PIN               PC0
+#define RSSI_ADC_PIN                    PC0
 #define VBAT_ADC_PIN                    PC1
 #define CURRENT_METER_ADC_PIN           PC2
 #define CURRENT_METER_SCALE_DEFAULT     235

@@ -55,7 +55,7 @@ uint8_t icm20689SpiDetect(const busDevice_t *bus)
 {
     icm20689SpiInit(bus);
 
-    spiSetDivisor(bus->busdev_u.spi.instance, SPI_CLOCK_INITIALIZATON); //low speed
+    spiSetDivisor(bus->busdev_u.spi.instance, SPI_CLOCK_INITIALIZATION); //low speed
 
     spiBusWriteRegister(bus, MPU_RA_PWR_MGMT_1, ICM20689_BIT_RESET);
 
@@ -119,7 +119,7 @@ void icm20689GyroInit(gyroDev_t *gyro)
 {
     mpuGyroInit(gyro);
 
-    spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_INITIALIZATON);
+    spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_INITIALIZATION);
 
     spiBusWriteRegister(&gyro->bus, MPU_RA_PWR_MGMT_1, ICM20689_BIT_RESET);
     delay(100);

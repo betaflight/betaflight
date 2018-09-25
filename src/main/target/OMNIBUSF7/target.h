@@ -186,14 +186,8 @@
 #define USE_SDCARD
 #define SDCARD_DETECT_INVERTED
 #define SDCARD_DETECT_PIN                   PE3
-
 #define SDCARD_SPI_INSTANCE                 SPI4
 #define SDCARD_SPI_CS_PIN                   SPI4_NSS_PIN
-
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 422kHz
-// Divide to under 25MHz for normal operation:
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 8 // 27MHz
-
 #define SDCARD_DMA_STREAM_TX_FULL           DMA2_Stream1
 #define SDCARD_DMA_CHANNEL                  4
 
@@ -216,6 +210,7 @@
 #define USE_MAG
 #define USE_MAG_HMC5883
 #define USE_MAG_QMC5883
+#define USE_MAG_LIS3MDL
 
 #define SENSORS_SET (SENSOR_ACC | SENSOR_BARO)
 //ADC---------------------------------------
@@ -236,12 +231,10 @@
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 #define SERIALRX_UART           SERIAL_PORT_USART6
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
-#define ESC_SENSOR_UART         SERIAL_PORT_USART1
 #else
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #define SERIALRX_UART           SERIAL_PORT_USART2
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
-#define ESC_SENSOR_UART         SERIAL_PORT_USART7
 #endif
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE

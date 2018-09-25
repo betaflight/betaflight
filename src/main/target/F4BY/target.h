@@ -54,25 +54,17 @@
 #define USE_MAG
 #define USE_MAG_HMC5883
 #define USE_MAG_QMC5883
+#define USE_MAG_LIS3MDL
 #define MAG_HMC5883_ALIGN       CW90_DEG
 
 #define USE_BARO
 #define USE_BARO_MS5611
 
 #define USE_SDCARD
-
 #define SDCARD_SPI_INSTANCE     SPI2
 #define SDCARD_SPI_CS_PIN       PE15
-
-// SPI2 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 328kHz
-// Divide to under 25MHz for normal operation:
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     4 // 21MHz
-
-
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Stream3
 #define SDCARD_DMA_CHANNEL                  0
-
 
 #define USE_VCP
 #define USE_USB_DETECT
@@ -81,7 +73,6 @@
 #define USE_UART1
 #define UART1_RX_PIN            PB7
 #define UART1_TX_PIN            PB6
-#define UART1_AHB1_PERIPHERALS  RCC_AHB1Periph_DMA2
 
 #define USE_UART2
 #define UART2_RX_PIN            PD6

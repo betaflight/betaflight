@@ -89,7 +89,7 @@
 #define SERIAL_PORT_COUNT       5 //VCP, USART1, USART3, USART4, USART6
 
 #define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+#define ESCSERIAL_TIMER_TX_PIN  PB9
 
 //SPI
 #define USE_SPI
@@ -111,7 +111,6 @@
 #define USE_ADC
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
-#define BOARD_HAS_VOLTAGE_DIVIDER
 #define VBAT_ADC_PIN            PC1
 //#define RSSI_ADC_PIN            PC2
 #define CURRENT_METER_ADC_PIN   PC2
@@ -125,6 +124,7 @@
 //SD CARD
 #define USE_SDCARD
 #define USE_SDCARD_SDIO
+
 #define SDIO_DMA          DMA2_Stream3
 #define SDCARD_SPI_CS_PIN NONE //This is not used on SDIO, has to be kept for now to keep compiler happy
 #define SDCARD_DETECT_PIN PB15

@@ -38,6 +38,7 @@
 #include "drivers/compass/compass_fake.h"
 #include "drivers/compass/compass_hmc5883l.h"
 #include "drivers/compass/compass_qmc5883l.h"
+#include "drivers/compass/compass_lis3mdl.h"
 #include "drivers/io.h"
 #include "drivers/light_led.h"
 
@@ -178,6 +179,22 @@ bool compassDetect(magDev_t *dev)
             dev->magAlign = MAG_HMC5883_ALIGN;
 #endif
             magHardware = MAG_HMC5883;
+            break;
+        }
+#endif
+        FALLTHROUGH;
+
+    case MAG_LIS3MDL:
+#if defined(USE_MAG_LIS3MDL)
+        if (busdev->bustype == BUSTYPE_I2C) {
+                busdev->busdev_u.i2c.address = compassConfig()->mag_i2c_address;
+        }
+
+        if (lis3mdlDetect(dev)) {
+#ifdef MAG_LIS3MDL_ALIGN
+            dev->magAlign = MAG_LIS3MDL_ALIGN;
+#endif
+            magHardware = MAG_LIS3MDL;
             break;
         }
 #endif

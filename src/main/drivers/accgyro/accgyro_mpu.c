@@ -225,14 +225,11 @@ static gyroSpiDetectFn_t gyroSpiDetectFnTable[] = {
 
 static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro, const gyroDeviceConfig_t *config)
 {
-    gyro->bus.bustype = BUSTYPE_SPI;
-
-    spiBusSetInstance(&gyro->bus, spiInstanceByDevice(SPI_CFG_TO_DEV(config->spiBus)));
-
-    // SPI instance may be NULL if the bus is non-existent
-    if (!gyro->bus.busdev_u.spi.instance) {
+    SPI_TypeDef *instance = spiInstanceByDevice(SPI_CFG_TO_DEV(config->spiBus));
+    if (!instance) {
         return false;
     }
+    spiBusSetInstance(&gyro->bus, instance);
 
     gyro->bus.busdev_u.spi.csnPin = IOGetByTag(config->csnTag);
     IOInit(gyro->bus.busdev_u.spi.csnPin, OWNER_GYRO_CS, RESOURCE_INDEX(config->index));

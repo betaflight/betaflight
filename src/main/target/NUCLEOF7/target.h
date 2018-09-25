@@ -56,6 +56,7 @@
 #define USE_FAKE_MAG
 #define USE_MAG_HMC5883
 #define USE_MAG_QMC5883
+#define USE_MAG_LIS3MDL
 #define MAG_HMC5883_ALIGN CW270_DEG_FLIP
 
 #define USE_BARO
@@ -125,14 +126,8 @@
 #define USE_SDCARD
 #define SDCARD_DETECT_INVERTED
 #define SDCARD_DETECT_PIN                   PF14
-
 #define SDCARD_SPI_INSTANCE                 SPI4
 #define SDCARD_SPI_CS_PIN                   SPI4_NSS_PIN
-
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 422kHz
-// Divide to under 25MHz for normal operation:
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 8 // 27MHz
-
 #define SDCARD_DMA_STREAM_TX_FULL           DMA2_Stream1
 #define SDCARD_DMA_CHANNEL                  4
 
@@ -145,7 +140,7 @@
 #define USE_ADC
 #define VBAT_ADC_PIN                PA3
 #define CURRENT_METER_ADC_PIN       PC0
-#define RSSI_ADC_GPIO_PIN           PC3
+#define RSSI_ADC_PIN                PC3
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 

@@ -140,17 +140,10 @@
 #define SPI_SHARED_MAX7456_AND_RTC6705
 
 #define USE_SDCARD
-
 #define SDCARD_DETECT_INVERTED
 #define SDCARD_DETECT_PIN                   PC14
-
 #define SDCARD_SPI_INSTANCE                 SPI2
 #define SDCARD_SPI_CS_PIN                   SPI2_NSS_PIN
-
-// SPI2 is on the APB1 bus whose clock runs at 36MHz. Divide to under 400kHz for init:
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 128
-// Divide to under 25MHz for normal operation:
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     2
 
 // Note, this is the same DMA channel as UART1_RX. Luckily we don't use DMA for USART Rx.
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
@@ -168,15 +161,6 @@
 #define VBAT_ADC_PIN            PC1
 #define CURRENT_METER_ADC_PIN   PC2
 #define RSSI_ADC_PIN            PC0
-
-#define USE_LED_STRIP_ON_DMA1_CHANNEL2
-#define WS2811_PIN                      PA8
-#define WS2811_TIMER                    TIM1
-#define WS2811_DMA_CHANNEL              DMA1_Channel2
-#define WS2811_IRQ                      DMA1_Channel2_IRQn
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
-#define WS2811_TIMER_GPIO_AF            GPIO_AF_6
 
 #define USE_TRANSPONDER
 

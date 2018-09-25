@@ -84,16 +84,8 @@
 #define SPI2_MOSI_PIN           PB15
 
 #define USE_SDCARD
-#define USE_SDCARD_SPI2
-
 #define SDCARD_SPI_INSTANCE                 SPI2
 #define SDCARD_SPI_CS_PIN                   SPI2_NSS_PIN
-
-// SPI2 is on the APB1 bus whose clock runs at 36MHz. Divide to under 400kHz for init:
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 128
-// // Divide to under 25MHz for normal operation:
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     2
-
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
 
 #define USE_ADC
@@ -110,8 +102,6 @@
 
 #define USE_RX_SPI
 #define RX_SPI_INSTANCE         SPI1
-#define RX_NSS_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOA
-
 
 #define USE_RX_FRSKY_SPI_D
 #define USE_RX_FRSKY_SPI_X
@@ -144,7 +134,7 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 #define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_HARDWARE 0
+#define ESCSERIAL_TIMER_TX_PIN   PB9 // Motor 6, can't use escserial for hexa
 
 #define DEFAULT_FEATURES        (FEATURE_AIRMODE | FEATURE_TELEMETRY)
 
