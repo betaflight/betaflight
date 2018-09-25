@@ -45,7 +45,7 @@
 
 #define LED_POS_BITCNT                  8
 #define LED_FUNCTION_BITCNT             4
-#define LED_OVERLAY_BITCNT              6
+#define LED_OVERLAY_BITCNT              7
 #define LED_COLOR_BITCNT                4
 #define LED_DIRECTION_BITCNT            6
 #define LED_PARAMS_BITCNT               4
@@ -124,7 +124,8 @@ typedef enum {
     LED_OVERLAY_BLINK,
     LED_OVERLAY_VTX,
     LED_OVERLAY_INDICATOR,
-    LED_OVERLAY_WARNING
+    LED_OVERLAY_WARNING,
+    LED_OVERLAY_RAINBOW
 } ledOverlayId_e;
 
 typedef struct modeColorIndexes_s {

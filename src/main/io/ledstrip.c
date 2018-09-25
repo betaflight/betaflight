@@ -938,6 +938,30 @@ static void applyLarsonScannerLayer(bool updateNow, timeUs_t *timer)
     }
 }
 
+static void applyRainbowLayer(bool updateNow, timeUs_t *timer)
+{
+    int delta = 24;
+    static int offset = 0;
+
+    if (updateNow) {
+        *timer += HZ_TO_US(60);
+    }
+
+    for (unsigned i = 0; i < ledCounts.count; i++) {
+
+        const ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[i];
+
+        if (ledGetOverlayBit(ledConfig, LED_OVERLAY_RAINBOW)) {
+            hsvColor_t ledColor;
+            ledColor.h = (offset + (i * delta)) % HSV_HUE_MAX;
+            ledColor.s = 0;
+            ledColor.v = HSV_VALUE_MAX;
+            setLedHsv(i, &ledColor);
+        }
+    }
+    offset++;
+}
+
 // blink twice, then wait ; either always or just when landing
 static void applyLedBlinkLayer(bool updateNow, timeUs_t *timer)
 {
@@ -999,6 +1023,7 @@ static void applyLedAnimationLayer(bool updateNow, timeUs_t *timer)
 typedef enum {
     timBlink,
     timLarson,
+    timRainbow,
     timBattery,
     timRssi,
 #ifdef USE_GPS
@@ -1031,6 +1056,7 @@ typedef void applyLayerFn_timed(bool updateNow, timeUs_t *timer);
 static applyLayerFn_timed* layerTable[] = {
     [timBlink] = &applyLedBlinkLayer,
     [timLarson] = &applyLarsonScannerLayer,
+    [timRainbow] = &applyRainbowLayer,
     [timBattery] = &applyLedBatteryLayer,
     [timRssi] = &applyLedRssiLayer,
 #ifdef USE_GPS
@@ -1063,6 +1089,7 @@ void updateRequiredOverlay(void)
     disabledTimerMask = 0;
     disabledTimerMask |= !isOverlayTypeUsed(LED_OVERLAY_BLINK) << timBlink;
     disabledTimerMask |= !isOverlayTypeUsed(LED_OVERLAY_LARSON_SCANNER) << timLarson;
+    disabledTimerMask |= !isOverlayTypeUsed(LED_OVERLAY_RAINBOW) << timRainbow;
     disabledTimerMask |= !isOverlayTypeUsed(LED_OVERLAY_WARNING) << timWarning;
 #ifdef USE_VTX_COMMON
     disabledTimerMask |= !isOverlayTypeUsed(LED_OVERLAY_VTX) << timVtx;
