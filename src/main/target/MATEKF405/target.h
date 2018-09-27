@@ -104,6 +104,7 @@
 
 // *************** SD Card **************************
 #define USE_SDCARD
+#define USE_SDCARD_SPI
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #define SDCARD_SPI_INSTANCE     SPI3
 #define SDCARD_SPI_CS_PIN       PC1

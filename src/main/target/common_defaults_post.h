@@ -275,3 +275,22 @@
 #define MAX_TIMER_PINMAP_COUNT 21 // Largest known for F405RG (OMNINXT)
 #endif
 #endif
+
+#ifdef USE_SDCARD
+#ifndef SDCARD_DETECT_PIN
+#define SDCARD_DETECT_PIN NONE
+#endif
+#ifndef SDCARD_SPI_CS_PIN
+#define SDCARD_SPI_CS_PIN NONE
+#endif
+#ifdef SDCARD_DETECT_INVERTED
+#define SDCARD_DETECT_IS_INVERTED 1
+#else
+#define SDCARD_DETECT_IS_INVERTED 0
+#endif
+#ifdef USE_SDCARD_SPI
+#ifndef SDCARD_SPI_INSTANCE
+#define SDCARD_SPI_INSTANCE NULL
+#endif
+#endif
+#endif

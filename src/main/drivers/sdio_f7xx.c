@@ -28,9 +28,11 @@
 #include "stdbool.h"
 #include <string.h>
 
-#include "sdmmc_sdio.h"
-
 #include "platform.h"
+
+#ifdef USE_SDCARD_SDIO
+
+#include "sdmmc_sdio.h"
 #include "stm32f7xx.h"
 
 #include "drivers/io.h"
@@ -1899,3 +1901,4 @@ void SDMMC_DMA_ST6_IRQHandler(dmaChannelDescriptor_t *dma)
 }
 
 /* ------------------------------------------------------------------------------------------------------------------*/
+#endif

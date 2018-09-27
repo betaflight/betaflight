@@ -26,7 +26,6 @@
 
 #include "platform.h"
 
-#define USE_SDCARD_SDIO
 #ifdef USE_SDCARD_SDIO
 
 #include "drivers/nvic.h"
@@ -36,19 +35,13 @@
 #include "drivers/time.h"
 
 #include "drivers/sdcard.h"
+#include "drivers/sdcard_impl.h"
 #include "drivers/sdcard_standard.h"
 
 #include "drivers/sdmmc_sdio.h"
 
 #include "pg/pg.h"
 #include "pg/sdio.h"
-
-#ifdef AFATFS_USE_INTROSPECTIVE_LOGGING
-    #define SDCARD_PROFILING
-#endif
-
-#define SDCARD_TIMEOUT_INIT_MILLIS      200
-#define SDCARD_MAX_CONSECUTIVE_FAILURES 8
 
 // Use this to speed up writing to SDCARD... asyncfatfs has limited support for multiblock write
 #define FATFS_BLOCK_CACHE_SIZE 16
@@ -73,93 +66,6 @@ uint16_t cache_getCount(void)
 void cache_reset(void)
 {
     cacheCount = 0;
-}
-
-typedef enum {
-    // In these states we run at the initialization 400kHz clockspeed:
-    SDCARD_STATE_NOT_PRESENT = 0,
-    SDCARD_STATE_RESET,
-    SDCARD_STATE_CARD_INIT_IN_PROGRESS,
-    SDCARD_STATE_INITIALIZATION_RECEIVE_CID,
-
-    // In these states we run at full clock speed
-    SDCARD_STATE_READY,
-    SDCARD_STATE_READING,
-    SDCARD_STATE_SENDING_WRITE,
-    SDCARD_STATE_WAITING_FOR_WRITE,
-    SDCARD_STATE_WRITING_MULTIPLE_BLOCKS,
-    SDCARD_STATE_STOPPING_MULTIPLE_BLOCK_WRITE
-} sdcardState_e;
-
-typedef struct sdcard_t {
-    struct {
-        uint8_t *buffer;
-        uint32_t blockIndex;
-        uint8_t chunkIndex;
-
-        sdcard_operationCompleteCallback_c callback;
-        uint32_t callbackData;
-
-#ifdef SDCARD_PROFILING
-        uint32_t profileStartTime;
-#endif
-    } pendingOperation;
-
-    uint32_t operationStartTime;
-
-    uint8_t failureCount;
-
-    uint8_t version;
-    bool highCapacity;
-
-    uint32_t multiWriteNextBlock;
-    uint32_t multiWriteBlocksRemain;
-
-    sdcardState_e state;
-
-    sdcardMetadata_t metadata;
-    sdcardCSD_t csd;
-
-#ifdef SDCARD_PROFILING
-    sdcard_profilerCallback_c profiler;
-#endif
-    bool enabled;
-    IO_t cardDetectPin;
-    dmaIdentifier_e dma;
-    uint8_t dmaChannel;
-    uint8_t useCache;
-} sdcard_t;
-
-static sdcard_t sdcard;
-
-STATIC_ASSERT(sizeof(sdcardCSD_t) == 16, sdcard_csd_bitfields_didnt_pack_properly);
-
-void sdcardInsertionDetectDeinit(void)
-{
-    if (sdcard.cardDetectPin) {
-        IOInit(sdcard.cardDetectPin, OWNER_FREE, 0);
-        IOConfigGPIO(sdcard.cardDetectPin, IOCFG_IN_FLOATING);
-    }
-}
-
-void sdcardInsertionDetectInit(void)
-{
-    if (sdcard.cardDetectPin) {
-        IOInit(sdcard.cardDetectPin, OWNER_SDCARD_DETECT, 0);
-        IOConfigGPIO(sdcard.cardDetectPin, IOCFG_IPU);
-    }
-}
-
-/**
- * Detect if a SD card is physically present in the memory slot.
- */
-bool sdcard_isInserted(void)
-{
-    bool ret = true;
-    if (sdcard.cardDetectPin) {
-        ret = IORead(sdcard.cardDetectPin) == 0;
-    }
-    return ret;
 }
 
 /**
@@ -288,8 +194,8 @@ void sdcard_init(const sdcardConfig_t *config)
         sdcard.state = SDCARD_STATE_NOT_PRESENT;
         return;
     }
-    sdcard.dma = config->dmaIdentifier;
-    if (sdcard.dma == 0) {
+    sdcard.dmaIdentifier = config->dmaIdentifier;
+    if (sdcard.dmaIdentifier == 0) {
         sdcard.state = SDCARD_STATE_NOT_PRESENT;
         return;
     }
@@ -303,7 +209,7 @@ void sdcard_init(const sdcardConfig_t *config)
     } else {
         sdcard.useCache = 0;
     }
-    SD_Initialize_LL(dmaGetRefByIdentifier(sdcard.dma));
+    SD_Initialize_LL(dmaGetRefByIdentifier(sdcard.dmaIdentifier));
     if (SD_IsDetected()) {
         if (SD_Init() != 0) {
             sdcard.state = SDCARD_STATE_NOT_PRESENT;

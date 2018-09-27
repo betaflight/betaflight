@@ -61,6 +61,7 @@
 #define USE_BARO_MS5611
 
 #define USE_SDCARD
+#define USE_SDCARD_SPI
 #define SDCARD_SPI_INSTANCE     SPI2
 #define SDCARD_SPI_CS_PIN       PE15
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Stream3

@@ -69,6 +69,7 @@
 #define USE_BARO_LPS
 
 #define USE_SDCARD
+#define USE_SDCARD_SPI
 
 #define USE_I2C
 #define USE_I2C_DEVICE_1

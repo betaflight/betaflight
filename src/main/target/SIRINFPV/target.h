@@ -143,6 +143,7 @@
 #define RTC6705_CS_PIN          PC14
 
 #define USE_SDCARD
+#define USE_SDCARD_SPI
 #define SDCARD_SPI_INSTANCE                 SPI2
 #define SDCARD_SPI_CS_GPIO                  SPI2_GPIO
 #define SDCARD_SPI_CS_PIN                   SPI2_NSS_PIN

@@ -149,6 +149,7 @@
 #define SPI3_MOSI_PIN           PB5
 
 #define USE_SDCARD
+#define USE_SDCARD_SPI
 #define SDCARD_SPI_INSTANCE                 SPI3
 #define SDCARD_SPI_CS_PIN                   PC3
 #define SDCARD_DMA_STREAM_TX_FULL           DMA1_Stream7
