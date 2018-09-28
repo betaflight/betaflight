@@ -940,23 +940,22 @@ static void applyLarsonScannerLayer(bool updateNow, timeUs_t *timer)
 
 static void applyRainbowLayer(bool updateNow, timeUs_t *timer)
 {
-    int delta = 24;
     static int offset = 0;
 
     if (updateNow) {
-        *timer += HZ_TO_US(60);
+        *timer += HZ_TO_US(ledStripConfig()->ledstrip_grb_rgb);
     }
 
+    int rainbowLedIndex = 0;
     for (unsigned i = 0; i < ledCounts.count; i++) {
-
         const ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[i];
-
         if (ledGetOverlayBit(ledConfig, LED_OVERLAY_RAINBOW)) {
             hsvColor_t ledColor;
-            ledColor.h = (offset + (i * delta)) % HSV_HUE_MAX;
+            ledColor.h = (offset + (rainbowLedIndex * ledStripConfig()->ledstrip_rainbow_delta)) % HSV_HUE_MAX;
             ledColor.s = 0;
             ledColor.v = HSV_VALUE_MAX;
             setLedHsv(i, &ledColor);
+            rainbowLedIndex++;
         }
     }
     offset++;
