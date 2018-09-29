@@ -43,9 +43,9 @@
 #define BEEPER_INVERTED
 
 #define USE_EXTI
+#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PC13
 #define GYRO_2_EXTI_PIN         PC14
-#define MPU_INT_EXTI
 
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
@@ -69,7 +69,6 @@
 #define ACC_MPU6500_2_ALIGN         CW270_DEG
 #define GYRO_MPU6500_2_ALIGN        CW270_DEG
 #endif
-
 
 #define GYRO_1_ALIGN                GYRO_MPU6500_1_ALIGN
 #define GYRO_2_ALIGN                GYRO_MPU6500_2_ALIGN
