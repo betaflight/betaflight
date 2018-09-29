@@ -114,8 +114,14 @@ SPI_TypeDef *spiInstanceByDevice(SPIDevice device);
 
 bool spiBusTransfer(const busDevice_t *bus, const uint8_t *txData, uint8_t *rxData, int length);
 
+uint8_t spiBusTransferByte(const busDevice_t *bus, uint8_t data);
+void spiBusWriteByte(const busDevice_t *bus, uint8_t data);
+
 bool spiBusWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data);
+bool spiBusRawReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t *data, uint8_t length);
 bool spiBusReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t *data, uint8_t length);
+void spiBusWriteRegisterBuffer(const busDevice_t *bus, uint8_t reg, const uint8_t *data, uint8_t length);
+uint8_t spiBusRawReadRegister(const busDevice_t *bus, uint8_t reg);
 uint8_t spiBusReadRegister(const busDevice_t *bus, uint8_t reg);
 void spiBusSetInstance(busDevice_t *bus, SPI_TypeDef *instance);
 
