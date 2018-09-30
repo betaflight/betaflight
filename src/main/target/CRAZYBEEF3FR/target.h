@@ -137,9 +137,6 @@
 #define RX_SPI_DEFAULT_PROTOCOL RX_SPI_FRSKY_X
 #define RX_SPI_INSTANCE         SPI2
 #define RX_NSS_PIN              SPI2_NSS_PIN
-#define RX_SCK_PIN              SPI2_SCK_PIN
-#define RX_MISO_PIN             SPI2_MISO_PIN
-#define RX_MOSI_PIN             SPI2_MOSI_PIN
 #define RX_FRSKY_SPI_GDO_0_PIN  PA8
 #define RX_FRSKY_SPI_LED_PIN    PA10
 #define BINDPLUG_PIN            PA9

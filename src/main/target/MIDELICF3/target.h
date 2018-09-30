@@ -72,21 +72,19 @@
 #define USE_SPI
 
 #define USE_SPI_DEVICE_1
-#define SPI1_NSS_PIN            PA4
 #define SPI1_SCK_PIN            PA5
 #define SPI1_MISO_PIN           PA6
 #define SPI1_MOSI_PIN           PA7
 
 #define USE_SPI_DEVICE_2
-#define SPI2_NSS_PIN            PB12
 #define SPI2_SCK_PIN            PB13
 #define SPI2_MISO_PIN           PB14
 #define SPI2_MOSI_PIN           PB15
 
 #define USE_SDCARD
-#define SDCARD_SPI_INSTANCE                 SPI2
-#define SDCARD_SPI_CS_PIN                   SPI2_NSS_PIN
-#define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
+#define SDCARD_SPI_INSTANCE     SPI2
+#define SDCARD_SPI_CS_PIN       PB12
+#define SDCARD_DMA_CHANNEL_TX   DMA1_Channel5
 
 #define USE_ADC
 #define ADC_INSTANCE            ADC1
@@ -109,10 +107,7 @@
 #define RX_SPI_DEFAULT_PROTOCOL RX_SPI_FRSKY_X
 #define USE_RX_FRSKY_SPI_TELEMETRY
 
-#define RX_NSS_PIN               SPI1_NSS_PIN
-#define RX_SCK_PIN               SPI1_SCK_PIN
-#define RX_MISO_PIN              SPI1_MISO_PIN
-#define RX_MOSI_PIN              SPI1_MOSI_PIN
+#define RX_NSS_PIN               PA4
 
 #define RX_FRSKY_SPI_GDO_0_PIN   PB0
 
