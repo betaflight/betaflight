@@ -4109,7 +4109,7 @@ static void printTimer(uint8_t dumpMask)
             cliDumpPrintLinef(dumpMask, false, format, 
                 IO_GPIOPortIdxByTag(ioTag) + 'A', 
                 IO_GPIOPinIdxByTag(ioTag),
-                timerIndex
+                timerIndex - 1
                 );
         }
     }
@@ -4160,13 +4160,13 @@ static void cliTimer(char *cmdline)
     if (pch) {
         if (strcasecmp(pch, "list") == 0) {
             /* output the list of available options */
-            uint8_t index = 1;
+            uint8_t index = 0;
             for (unsigned i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
                 if (timerHardware[i].tag == ioTag) {
                     cliPrintLinef("# %d. TIM%d CH%d",
                         index,
                         timerGetTIMNumber(timerHardware[i].tim),
-                        CC_INDEX_FROM_CHANNEL(timerHardware[i].channel)
+                        CC_INDEX_FROM_CHANNEL(timerHardware[i].channel) + 1
                     );
                     index++;
                 }
@@ -4175,7 +4175,7 @@ static void cliTimer(char *cmdline)
         } else if (strcasecmp(pch, "none") == 0) {
             goto success;
         } else {
-            timerIndex = atoi(pch);
+            timerIndex = atoi(pch) + 1;
         }
     } else {
         goto error;
