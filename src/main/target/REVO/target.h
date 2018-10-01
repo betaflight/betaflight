@@ -249,7 +249,6 @@
 #define VBAT_ADC_PIN            PC2
 #else
 #define VBAT_ADC_PIN            PC3
-#define VBAT_ADC_CHANNEL        ADC_Channel_13
 #endif
 
 #if defined(AIRBOTF4SD)
