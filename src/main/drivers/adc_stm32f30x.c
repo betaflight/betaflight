@@ -118,9 +118,10 @@ void adcInit(const adcConfig_t *config)
         adcOperatingConfig[ADC_CURRENT].tag = config->current.ioTag;  //CURRENT_METER_ADC_CHANNEL;
     }
 
-    ADCDevice device = adcDeviceByInstance(ADC_INSTANCE);
-    if (device == ADCINVALID)
+    ADCDevice device = ADC_CFG_TO_DEV(config->device);
+    if (device == ADCINVALID) {
         return;
+    }
 
 #ifdef ADC24_DMA_REMAP
     SYSCFG_DMAChannelRemapConfig(SYSCFG_DMARemap_ADC2ADC4, ENABLE);

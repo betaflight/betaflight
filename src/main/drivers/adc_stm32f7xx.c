@@ -237,8 +237,9 @@ void adcInit(const adcConfig_t *config)
     }
 
     ADCDevice device = adcDeviceByInstance(ADC_INSTANCE);
-    if (device == ADCINVALID)
+    if (device == ADCINVALID) {
         return;
+    }
 
     adc = adcHardware[device];
 
