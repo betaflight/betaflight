@@ -1,4 +1,4 @@
-static FAST_CODE void GYRO_FILTER_FUNCTION_NAME(gyroSensor_t *gyroSensor, timeDelta_t sampleDeltaUs)
+static FAST_CODE void GYRO_FILTER_FUNCTION_NAME(gyroSensor_t *gyroSensor)
 {
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         GYRO_FILTER_DEBUG_SET(DEBUG_GYRO_RAW, axis, gyroSensor->gyroDev.gyroADCRaw[axis]);
@@ -44,10 +44,5 @@ static FAST_CODE void GYRO_FILTER_FUNCTION_NAME(gyroSensor_t *gyroSensor, timeDe
         GYRO_FILTER_DEBUG_SET(DEBUG_GYRO_FILTERED, axis, lrintf(gyroADCf));
 
         gyroSensor->gyroDev.gyroADCf[axis] = gyroADCf;
-        if (!gyroSensor->overflowDetected) {
-            // integrate using trapezium rule to avoid bias
-            accumulatedMeasurements[axis] += 0.5f * (gyroPrevious[axis] + gyroADCf) * sampleDeltaUs;
-            gyroPrevious[axis] = gyroADCf;
-        }
     }
 }
