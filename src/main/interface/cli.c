@@ -4467,8 +4467,8 @@ const clicmd_t cmdTable[] = {
 #endif
 #endif
 #ifdef USE_RX_BIND
-    CLI_COMMAND_DEF("frsky_bind", "initiate binding for FrSky SPI RX", NULL, cliRxBind),        /* legacy */
-    CLI_COMMAND_DEF("rx_bind", "initiate binding for RX", NULL, cliRxBind),
+    CLI_COMMAND_DEF("frsky_bind", "initiate binding for FrSky SPI RX", NULL, cliRxBind),
+    CLI_COMMAND_DEF("sfhss_bind", "initiate binding for S-FHSS SPI RX", NULL, cliRxBind),
 #endif
     CLI_COMMAND_DEF("get", "get variable value", "[name]", cliGet),
 #ifdef USE_GPS

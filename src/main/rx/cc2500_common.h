@@ -40,4 +40,3 @@ void cc2500LedOn(void);
 void cc2500LedOff(void);
 void cc2500LedBlink(timeMs_t blinkms);
 bool cc2500SpiInit(void);
-

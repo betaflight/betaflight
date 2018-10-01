@@ -1116,8 +1116,8 @@ const clivalue_t valueTable[] = {
     { "frsky_spi_use_external_adc",     VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_RX_FRSKY_SPI_CONFIG, offsetof(rxFrSkySpiConfig_t, useExternalAdc) },
 #endif
 #ifdef USE_RX_SFHSS_SPI
-    { "sfhss_spi_tx_id",                VAR_UINT8   | MASTER_VALUE | MODE_ARRAY, .config.array.length = 2, PG_RX_SFHSS_SPI_CONFIG, offsetof(rxSfhssSpiConfig_t, bindTxId) },
-    { "sfhss_spi_offset",               VAR_INT8    | MASTER_VALUE, .config.minmax = { -127, 127 }, PG_RX_SFHSS_SPI_CONFIG, offsetof(rxSfhssSpiConfig_t, bindOffset) },
+    { "sfhss_tx_id",                    VAR_UINT8   | MASTER_VALUE | MODE_ARRAY, .config.array.length = 2, PG_RX_SFHSS_SPI_CONFIG, offsetof(rxSfhssSpiConfig_t, bindTxId) },
+    { "sfhss_offset",                   VAR_INT8    | MASTER_VALUE, .config.minmax = { -127, 127 }, PG_RX_SFHSS_SPI_CONFIG, offsetof(rxSfhssSpiConfig_t, bindOffset) },
 #endif
     { "led_inversion",                  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, ((1 << STATUS_LED_NUMBER) - 1) }, PG_STATUS_LED_CONFIG, offsetof(statusLedConfig_t, inversion) },
 #ifdef USE_DASHBOARD
