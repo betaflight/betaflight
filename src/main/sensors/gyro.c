@@ -1094,6 +1094,7 @@ FAST_CODE void gyroUpdate(timeUs_t currentTimeUs)
     accumulationLastTimeSampledUs = currentTimeUs;
     accumulatedMeasurementTimeUs += sampleDeltaUs;
 
+#ifdef USE_DUAL_GYRO
     switch (gyroToUse) {
     case GYRO_CONFIG_USE_GYRO_1:
         gyroUpdateSensor(&gyroSensor1, currentTimeUs);
@@ -1165,6 +1166,19 @@ FAST_CODE void gyroUpdate(timeUs_t currentTimeUs)
         DEBUG_SET(DEBUG_DUAL_GYRO_DIFF, 2, lrintf(gyroSensor1.gyroDev.gyroADCf[Z] - gyroSensor2.gyroDev.gyroADCf[Z]));
         break;
     }
+#else
+    gyroUpdateSensor(&gyroSensor1, currentTimeUs);
+    gyro.gyroADCf[X] = gyroSensor1.gyroDev.gyroADCf[X];
+    gyro.gyroADCf[Y] = gyroSensor1.gyroDev.gyroADCf[Y];
+    gyro.gyroADCf[Z] = gyroSensor1.gyroDev.gyroADCf[Z];
+
+#ifdef USE_GYRO_OVERFLOW_CHECK
+    overflowDetected = gyroSensor1.overflowDetected;
+#endif
+#ifdef USE_YAW_SPIN_RECOVERY
+    yawSpinDetected = gyroSensor1.yawSpinDetected;
+#endif
+#endif
 
     if (!overflowDetected) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
