@@ -91,14 +91,12 @@
 // Nordic Semiconductor uses 'CSN', STM uses 'NSS'
 #define RX_CE_PIN               PC7 // D9
 #define RX_NSS_PIN              PB6 // D10
-#define RX_SCK_PIN              PA5 // D13
-#define RX_MISO_PIN             PA6 // D12
-#define RX_MOSI_PIN             PA7 // D11
 // NUCLEO has NSS on PB6, rather than the standard PA4
+
 #define SPI1_NSS_PIN            RX_NSS_PIN
-#define SPI1_SCK_PIN            RX_SCK_PIN
-#define SPI1_MISO_PIN           RX_MISO_PIN
-#define SPI1_MOSI_PIN           RX_MOSI_PIN
+#define SPI1_SCK_PIN            PA5 // D13
+#define SPI1_MISO_PIN           PA6 // D12
+#define SPI1_MOSI_PIN           PA7 // D11
 
 #define USE_RX_NRF24
 #define USE_RX_CX10

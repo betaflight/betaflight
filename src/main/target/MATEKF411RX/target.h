@@ -67,15 +67,10 @@
 #define SPI3_SCK_PIN            PB3
 #define SPI3_MISO_PIN           PB4
 #define SPI3_MOSI_PIN           PB5
-#define SPI3_NSS_PIN            PA15
 
 #define USE_RX_SPI
 #define RX_SPI_INSTANCE         SPI3
-
-#define RX_SCK_PIN              SPI3_SCK_PIN
-#define RX_MISO_PIN             SPI3_MISO_PIN
-#define RX_MOSI_PIN             SPI3_MOSI_PIN
-#define RX_NSS_PIN              SPI3_NSS_PIN
+#define RX_NSS_PIN              PA15
 
 #define RX_FRSKY_SPI_DISABLE_CHIP_DETECTION
 #define RX_FRSKY_SPI_GDO_0_PIN     PC14
