@@ -87,6 +87,7 @@
 
 #include "rx/rx.h"
 #include "rx/cc2500_frsky_common.h"
+#include "rx/cc2500_sfhss.h"
 #include "rx/spektrum.h"
 
 #include "sensors/acceleration.h"
@@ -224,7 +225,8 @@ static const char * const lookupTableRxSpi[] = {
     "FRSKY_X",
     "FLYSKY",
     "FLYSKY_2A",
-    "KN"
+    "KN",
+    "SFHSS"
 };
 #endif
 
@@ -1112,6 +1114,10 @@ const clivalue_t valueTable[] = {
     { "frsky_spi_bind_hop_data",        VAR_UINT8   | MASTER_VALUE | MODE_ARRAY, .config.array.length = 50, PG_RX_FRSKY_SPI_CONFIG, offsetof(rxFrSkySpiConfig_t, bindHopData) },
     { "frsky_x_rx_num",                 VAR_UINT8   | MASTER_VALUE, .config.minmax = { 0, 255 }, PG_RX_FRSKY_SPI_CONFIG, offsetof(rxFrSkySpiConfig_t, rxNum) },
     { "frsky_spi_use_external_adc",     VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_RX_FRSKY_SPI_CONFIG, offsetof(rxFrSkySpiConfig_t, useExternalAdc) },
+#endif
+#ifdef USE_RX_SFHSS_SPI
+    { "sfhss_spi_tx_id",                VAR_UINT8   | MASTER_VALUE | MODE_ARRAY, .config.array.length = 2, PG_RX_SFHSS_SPI_CONFIG, offsetof(rxSfhssSpiConfig_t, bindTxId) },
+    { "sfhss_spi_offset",               VAR_INT8    | MASTER_VALUE, .config.minmax = { -127, 127 }, PG_RX_SFHSS_SPI_CONFIG, offsetof(rxSfhssSpiConfig_t, bindOffset) },
 #endif
     { "led_inversion",                  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, ((1 << STATUS_LED_NUMBER) - 1) }, PG_STATUS_LED_CONFIG, offsetof(statusLedConfig_t, inversion) },
 #ifdef USE_DASHBOARD
