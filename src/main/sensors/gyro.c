@@ -1171,6 +1171,13 @@ FAST_CODE void gyroUpdate(timeUs_t currentTimeUs)
     gyro.gyroADCf[X] = gyroSensor1.gyroDev.gyroADCf[X];
     gyro.gyroADCf[Y] = gyroSensor1.gyroDev.gyroADCf[Y];
     gyro.gyroADCf[Z] = gyroSensor1.gyroDev.gyroADCf[Z];
+
+#ifdef USE_GYRO_OVERFLOW_CHECK
+    overflowDetected = gyroSensor1.overflowDetected;
+#endif
+#ifdef USE_YAW_SPIN_RECOVERY
+    yawSpinDetected = gyroSensor1.yawSpinDetected;
+#endif
 #endif
 
     if (!overflowDetected) {
