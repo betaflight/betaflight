@@ -75,11 +75,8 @@
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
 
-#define MS5611_CS_PIN           SPI3_NSS_PIN
-#define MS5611_SPI_INSTANCE     SPI3
-
-#define BMP280_CS_PIN           SPI3_NSS_PIN
-#define BMP280_SPI_INSTANCE     SPI3
+#define BARO_CS_PIN             SPI3_NSS_PIN
+#define BARO_SPI_INSTANCE       SPI3
 
 #define USE_SDCARD
 #define USE_SDCARD_SPI

@@ -37,7 +37,3 @@ typedef struct baroDev_s {
     baroOpFuncPtr get_up;
     baroCalculateFuncPtr calculate;
 } baroDev_t;
-
-#ifndef BARO_I2C_INSTANCE
-#define BARO_I2C_INSTANCE I2C_DEVICE
-#endif

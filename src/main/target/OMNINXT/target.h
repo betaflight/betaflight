@@ -82,8 +82,8 @@
 
 #define USE_BARO
 #define USE_BARO_SPI_LPS
-#define LPS_SPI_INSTANCE        SPI2
-#define LPS_CS_PIN              PA10
+#define BARO_SPI_INSTANCE       SPI2
+#define BARO_CS_PIN             PA10
 #define DEFAULT_BARO_SPI_LPS
 
 #define BARO_I2C_INSTANCE       (I2CDEV_1)

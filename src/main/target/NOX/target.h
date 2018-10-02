@@ -52,8 +52,8 @@
 #define USE_BARO
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
-#define BMP280_SPI_INSTANCE     SPI2
-#define BMP280_CS_PIN           PA9
+#define BARO_SPI_INSTANCE       SPI2
+#define BARO_CS_PIN             PA9
 
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI2

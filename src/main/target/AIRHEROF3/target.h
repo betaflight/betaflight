@@ -54,8 +54,8 @@
 #define USE_BARO
 #define USE_BARO_SPI_BMP280
 
-#define BMP280_SPI_INSTANCE     SPI2
-#define BMP280_CS_PIN           PB5
+#define BARO_SPI_INSTANCE       SPI2
+#define BARO_CS_PIN             PB5
 
 #define USE_UART1
 #define USE_UART2

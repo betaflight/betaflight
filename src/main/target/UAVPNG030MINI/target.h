@@ -58,8 +58,8 @@
 #define USE_BARO
 #define USE_BARO_MS5611
 #define USE_BARO_SPI_MS5611
-#define MS5611_CS_PIN           PE1
-#define MS5611_SPI_INSTANCE     SPI1
+#define BARO_CS_PIN             PE1
+#define BARO_SPI_INSTANCE       SPI1
 
 #if 0 // TODO: Enable SDCard and blackbox logging
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT

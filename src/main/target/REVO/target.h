@@ -151,8 +151,8 @@
 
 #if defined(AIRBOTF4) || defined(AIRBOTF4SD)
 #define USE_BARO_SPI_BMP280
-#define BMP280_SPI_INSTANCE     SPI1
-#define BMP280_CS_PIN           PC13
+#define BARO_SPI_INSTANCE       SPI1
+#define BARO_CS_PIN             PC13
 #endif
 
 #if defined(AIRBOTF4SD)

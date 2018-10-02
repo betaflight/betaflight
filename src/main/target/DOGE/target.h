@@ -61,8 +61,8 @@
 #define GYRO_1_SPI_INSTANCE     SPI1
 
 // tqfp48 pin 25
-#define BMP280_CS_PIN           SPI2_NSS_PIN
-#define BMP280_SPI_INSTANCE     SPI2
+#define BARO_CS_PIN             SPI2_NSS_PIN
+#define BARO_SPI_INSTANCE       SPI2
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16

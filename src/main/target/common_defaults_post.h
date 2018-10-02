@@ -355,3 +355,16 @@
 #define RANGEFINDER_HCSR04_ECHO_PIN        NONE
 #endif
 #endif
+
+// Baro
+#if defined(USE_BARO)
+#ifndef BARO_SPI_INSTANCE
+#define BARO_SPI_INSTANCE       NULL
+#endif
+#ifndef BARO_CS_PIN
+#define BARO_CS_PIN             NONE
+#endif
+#ifndef BARO_I2C_INSTANCE
+#define BARO_I2C_INSTANCE       I2C_DEVICE
+#endif
+#endif
