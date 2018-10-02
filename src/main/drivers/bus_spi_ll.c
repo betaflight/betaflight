@@ -27,6 +27,7 @@
 #if defined(USE_SPI)
 
 #include "common/utils.h"
+#include "common/maths.h"
 
 #include "drivers/bus.h"
 #include "drivers/bus_spi.h"
@@ -226,8 +227,10 @@ void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
     }
 #endif
 
+    divisor = constrain(divisor, 2, 256);
+
     LL_SPI_Disable(instance);
-    LL_SPI_SetBaudRatePrescaler(instance, divisor ? (ffs(divisor | 0x100) - 2) << SPI_CR1_BR_Pos : 0);
+    LL_SPI_SetBaudRatePrescaler(instance, (ffs(divisor) - 2) << SPI_CR1_BR_Pos);
     LL_SPI_Enable(instance);
 }
 #endif
