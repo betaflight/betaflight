@@ -44,6 +44,7 @@
 #include "rx/rx_spi.h"
 
 #include "rx/cc2500_common.h"
+#include "rx/cc2500_frsky_common.h"
 #include "rx/cc2500_sfhss.h"
 
 //void cliPrintLinef(const char *format, ...);
@@ -82,13 +83,6 @@ static timeMs_t timeTunedMs;
 static int8_t bindOffset_max=0;
 static int8_t bindOffset_min=0;
 
-PG_REGISTER_WITH_RESET_TEMPLATE(rxSfhssSpiConfig_t, rxSfhssSpiConfig, PG_RX_SFHSS_SPI_CONFIG, 1);
-
-PG_RESET_TEMPLATE(rxSfhssSpiConfig_t, rxSfhssSpiConfig,
-    .bindTxId = {0, 0},
-    .bindOffset = 0,
-);
-
 static void initialise() {
     cc2500Reset();
 
@@ -101,7 +95,7 @@ static void initialise() {
     cc2500WriteReg(CC2500_08_PKTCTRL0, 0x0C);
     cc2500WriteReg(CC2500_09_ADDR,     0x29);
     cc2500WriteReg(CC2500_0B_FSCTRL1,  0x06);
-    cc2500WriteReg(CC2500_0C_FSCTRL0,  (rxSfhssSpiConfigMutable()->bindOffset));
+    cc2500WriteReg(CC2500_0C_FSCTRL0,  (rxFrSkySpiConfigMutable()->bindOffset));
     cc2500WriteReg(CC2500_0D_FREQ2,    0x5C);
     cc2500WriteReg(CC2500_0E_FREQ1,    0x4E);
     cc2500WriteReg(CC2500_0F_FREQ0,    0xC4);
@@ -130,7 +124,7 @@ static void initialise() {
     cc2500WriteReg(CC2500_2E_TEST0,    0x0B);
     cc2500WriteReg(CC2500_3E_PATABLE,  0xFF);
 
-    for(unsigned c = 0;c < 30; c++){
+    for(unsigned c = 0;c < 30; c++) {
         //calibrate all channels
         cc2500Strobe(CC2500_SIDLE);
         cc2500WriteReg(CC2500_0A_CHANNR, SFHSSCH2CHANNR(c));
@@ -171,8 +165,8 @@ static bool sfhssPacketParse(uint8_t *packet, bool check_txid)
     }
 
     if (check_txid){
-        if ((rxSfhssSpiConfigMutable()->bindTxId[0] != GET_TXID1(packet)) ||
-            (rxSfhssSpiConfigMutable()->bindTxId[1] != GET_TXID2(packet))){
+        if ((rxFrSkySpiConfigMutable()->bindTxId[0] != GET_TXID1(packet)) ||
+            (rxFrSkySpiConfigMutable()->bindTxId[1] != GET_TXID2(packet))){
                 return false;           /* txid fail */
         }
     }
@@ -220,8 +214,8 @@ static bool tune1Rx(uint8_t *packet)
     if (sfhssRecv(packet)){
         if (sfhssPacketParse(packet, false)){
             if ((packet[SFHSS_PACKET_LEN - 1] & 0x7F) > 40 ){    /* lqi */
-                rxSfhssSpiConfigMutable()->bindTxId[0] = GET_TXID1(packet);
-                rxSfhssSpiConfigMutable()->bindTxId[1] = GET_TXID2(packet);
+                rxFrSkySpiConfigMutable()->bindTxId[0] = GET_TXID1(packet);
+                rxFrSkySpiConfigMutable()->bindTxId[1] = GET_TXID2(packet);
                 bindOffset_max = bindOffset_min;
                 DEBUG_SET(DEBUG_RX_SFHSS_SPI, DEBUG_DATA_OFFSET_MAX, bindOffset_max);
                 cc2500Strobe(CC2500_SRX);
@@ -347,7 +341,7 @@ rx_spi_received_e sfhssSpiDataReceived(uint8_t *packet)
                     initTuneRx();
                     SET_STATE(STATE_BIND_TUNING1);    // retry
                 } else {
-                    rxSfhssSpiConfigMutable()->bindOffset = ((int16_t)bindOffset_max + (int16_t)bindOffset_min)/2 ;
+                    rxFrSkySpiConfigMutable()->bindOffset = ((int16_t)bindOffset_max + (int16_t)bindOffset_min)/2 ;
                     SET_STATE(STATE_BIND_COMPLETE);
                 }
             }

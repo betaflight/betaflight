@@ -2561,25 +2561,23 @@ static void cliBeeper(char *cmdline)
 }
 #endif
 
-#ifdef USE_RX_BIND
 void cliRxBind(char *cmdline){
     UNUSED(cmdline);
     switch (rxSpiConfig()->rx_spi_protocol) {
+#ifdef USE_RX_CC2500_BIND
     case RX_SPI_FRSKY_D:
     case RX_SPI_FRSKY_X:
     case RX_SPI_SFHSS:
         cc2500SpiBind();
-
         cliPrint("Binding...");
-
         break;
+#endif
     default:
         cliPrint("Not supported.");
 
         break;
     }
 }
-#endif
 
 static void printMap(uint8_t dumpMask, const rxConfig_t *rxConfig, const rxConfig_t *defaultRxConfig)
 {
@@ -4466,9 +4464,8 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("flash_write", NULL, "<address> <message>", cliFlashWrite),
 #endif
 #endif
-#ifdef USE_RX_BIND
-    CLI_COMMAND_DEF("frsky_bind", "initiate binding for FrSky SPI RX", NULL, cliRxBind),
-    CLI_COMMAND_DEF("sfhss_bind", "initiate binding for S-FHSS SPI RX", NULL, cliRxBind),
+#ifdef USE_RX_CC2500_BIND
+    CLI_COMMAND_DEF("bind", "initiate binding for RX", NULL, cliRxBind),
 #endif
     CLI_COMMAND_DEF("get", "get variable value", "[name]", cliGet),
 #ifdef USE_GPS
