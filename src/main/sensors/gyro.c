@@ -1059,6 +1059,12 @@ static FAST_CODE FAST_CODE_NOINLINE void gyroUpdateSensor(gyroSensor_t *gyroSens
         return;
     }
 
+    if (gyroDebugMode == DEBUG_NONE) {
+        filterGyro(gyroSensor);
+    } else {
+        filterGyroDebug(gyroSensor);
+    }
+
 #ifdef USE_GYRO_OVERFLOW_CHECK
     if (gyroConfig()->checkOverflow && !gyroHasOverflowProtection) {
         checkForOverflow(gyroSensor, currentTimeUs);
@@ -1070,12 +1076,6 @@ static FAST_CODE FAST_CODE_NOINLINE void gyroUpdateSensor(gyroSensor_t *gyroSens
         checkForYawSpin(gyroSensor, currentTimeUs);
     }
 #endif
-
-    if (gyroDebugMode == DEBUG_NONE) {
-        filterGyro(gyroSensor);
-    } else {
-        filterGyroDebug(gyroSensor);
-    }
 
 #ifdef USE_GYRO_DATA_ANALYSE
     if (isDynamicFilterActive()) {
