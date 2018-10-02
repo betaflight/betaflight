@@ -41,11 +41,11 @@
 
 #include "rx_spi.h"
 
+#define ENABLE_RX() IOLo(busdev->busdev_u.spi.csnPin)
+#define DISABLE_RX() IOHi(busdev->busdev_u.spi.csnPin)
+
 static busDevice_t rxSpiDevice;
 static busDevice_t *busdev = &rxSpiDevice;
-
-#define DISABLE_RX()    {IOHi(busdev->busdev_u.spi.csnPin);}
-#define ENABLE_RX()     {IOLo(busdev->busdev_u.spi.csnPin);}
 
 bool rxSpiDeviceInit(const rxSpiConfig_t *rxSpiConfig)
 {
@@ -60,7 +60,7 @@ bool rxSpiDeviceInit(const rxSpiConfig_t *rxSpiConfig)
     IOConfigGPIO(rxCsPin, SPI_IO_CS_CFG);
     busdev->busdev_u.spi.csnPin = rxCsPin;
 
-    DISABLE_RX();
+    IOHi(rxCsPin);
 
     spiSetDivisor(busdev->busdev_u.spi.instance, SPI_CLOCK_STANDARD);
 
@@ -69,54 +69,33 @@ bool rxSpiDeviceInit(const rxSpiConfig_t *rxSpiConfig)
 
 uint8_t rxSpiTransferByte(uint8_t data)
 {
-    return spiTransferByte(busdev->busdev_u.spi.instance, data);
+    return spiBusTransferByte(busdev, data);
 }
 
-uint8_t rxSpiWriteByte(uint8_t data)
+void rxSpiWriteByte(uint8_t data)
 {
-    ENABLE_RX();
-    const uint8_t ret = rxSpiTransferByte(data);
-    DISABLE_RX();
-    return ret;
+    spiBusWriteByte(busdev, data);
 }
 
-uint8_t rxSpiWriteCommand(uint8_t command, uint8_t data)
+void rxSpiWriteCommand(uint8_t command, uint8_t data)
 {
-    ENABLE_RX();
-    const uint8_t ret = rxSpiTransferByte(command);
-    rxSpiTransferByte(data);
-    DISABLE_RX();
-    return ret;
+    spiBusWriteRegister(busdev, command, data);
 }
 
-uint8_t rxSpiWriteCommandMulti(uint8_t command, const uint8_t *data, uint8_t length)
+void rxSpiWriteCommandMulti(uint8_t command, const uint8_t *data, uint8_t length)
 {
-    ENABLE_RX();
-    const uint8_t ret = rxSpiTransferByte(command);
-    for (uint8_t i = 0; i < length; i++) {
-        rxSpiTransferByte(data[i]);
-    }
-    DISABLE_RX();
-    return ret;
+    spiBusWriteRegisterBuffer(busdev, command, data, length);
 }
 
 uint8_t rxSpiReadCommand(uint8_t command, uint8_t data)
 {
-    ENABLE_RX();
-    rxSpiTransferByte(command);
-    const uint8_t ret = rxSpiTransferByte(data);
-    DISABLE_RX();
-    return ret;
+    UNUSED(data);
+    return spiBusRawReadRegister(busdev, command);
 }
 
-uint8_t rxSpiReadCommandMulti(uint8_t command, uint8_t commandData, uint8_t *retData, uint8_t length)
+void rxSpiReadCommandMulti(uint8_t command, uint8_t commandData, uint8_t *retData, uint8_t length)
 {
-    ENABLE_RX();
-    const uint8_t ret = rxSpiTransferByte(command);
-    for (uint8_t i = 0; i < length; i++) {
-        retData[i] = rxSpiTransferByte(commandData);
-    }
-    DISABLE_RX();
-    return ret;
+    UNUSED(commandData);
+    spiBusRawReadRegisterBuffer(busdev, command, retData, length);
 }
 #endif
