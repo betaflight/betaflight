@@ -120,6 +120,9 @@ typedef enum {
     TABLE_VTX_LOW_POWER_DISARM, 
 #endif
     TABLE_GYRO_HARDWARE,
+#ifdef USE_SDCARD
+    TABLE_SDCARD_MODE,
+#endif
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 

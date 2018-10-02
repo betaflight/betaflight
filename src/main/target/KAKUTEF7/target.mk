@@ -4,7 +4,7 @@ else
 F7X5XG_TARGETS += $(TARGET)
 endif
 
-FEATURES       += SDCARD VCP
+FEATURES       += SDCARD_SPI VCP
 
 TARGET_SRC = \
             drivers/accgyro/accgyro_mpu.c \

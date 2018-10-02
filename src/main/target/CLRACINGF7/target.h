@@ -65,6 +65,7 @@
 //define use SD card
 
 #define USE_SDCARD
+#define USE_SDCARD_SPI
 #define SDCARD_DETECT_PIN                     PA8
 #define SDCARD_SPI_INSTANCE                 SPI2
 #define SDCARD_SPI_CS_PIN                       SPI2_NSS_PIN

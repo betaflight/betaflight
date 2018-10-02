@@ -106,6 +106,7 @@
 
 // *************** SDCARD *****************************
 #define USE_SDCARD
+#define USE_SDCARD_SPI
 #define SDCARD_DETECT_INVERTED
 #define SDCARD_DETECT_PIN       PB7
 #define SDCARD_SPI_INSTANCE     SPI3

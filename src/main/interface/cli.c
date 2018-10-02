@@ -3816,7 +3816,7 @@ const cliResourceValue_t resourceTable[] = {
     DEFS( OWNER_COMPASS_EXTI,  PG_COMPASS_CONFIG, compassConfig_t, interruptTag ),
 #endif
 #endif
-#ifdef USE_SDCARD
+#ifdef USE_SDCARD_SPI
     DEFS( OWNER_SDCARD_CS,     PG_SDCARD_CONFIG, sdcardConfig_t, chipSelectTag ),
     DEFS( OWNER_SDCARD_DETECT, PG_SDCARD_CONFIG, sdcardConfig_t, cardDetectTag ),
 #endif

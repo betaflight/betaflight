@@ -64,6 +64,7 @@
 #if 0 // TODO: Enable SDCard and blackbox logging
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #define USE_SDCARD
+#define USE_SDCARD_SPI
 #define SDCARD_DETECT_INVERTED
 #define SDCARD_DETECT_PIN               PE2
 #define SDCARD_SPI_INSTANCE             SPI2

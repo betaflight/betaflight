@@ -82,9 +82,10 @@
 #define SPI2_MOSI_PIN           PB15
 
 #define USE_SDCARD
-#define SDCARD_SPI_INSTANCE     SPI2
-#define SDCARD_SPI_CS_PIN       PB12
-#define SDCARD_DMA_CHANNEL_TX   DMA1_Channel5
+#define USE_SDCARD_SPI
+#define SDCARD_SPI_INSTANCE                 SPI2
+#define SDCARD_SPI_CS_PIN                   PB12
+#define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
 
 #define USE_ADC
 #define ADC_INSTANCE            ADC1

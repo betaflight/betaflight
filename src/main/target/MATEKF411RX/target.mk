@@ -1,6 +1,6 @@
 F411_TARGETS    += $(TARGET)
 
-FEATURES        += VCP SDCARD
+FEATURES        += VCP SDCARD_SPI
 
 TARGET_SRC = \
             drivers/accgyro/accgyro_spi_mpu6000.c \
