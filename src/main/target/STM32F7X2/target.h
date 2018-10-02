@@ -43,18 +43,6 @@
 #define USE_GYRO_SPI_MPU6500
 // Other USE_ACCs and USE_GYROs should follow
 
-#define GYRO_1_SPI_INSTANCE     NULL
-#define GYRO_1_CS_PIN           NONE
-#define GYRO_1_ALIGN            ALIGN_DEFAULT
-#define ACC_1_ALIGN             ALIGN_DEFAULT
-#define GYRO_1_EXTI_PIN         PB15 // XXX Should be gone
-
-#define GYRO_2_SPI_INSTANCE     NULL
-#define GYRO_2_CS_PIN           NONE
-#define GYRO_2_ALIGN            ALIGN_DEFAULT
-#define ACC_2_ALIGN             ALIGN_DEFAULT
-#define GYRO_2_EXTI_PIN         NONE
-
 #define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_1
 
 #define USE_MAG
