@@ -167,3 +167,8 @@
 #if defined(USE_GPS_RESCUE)
 #define USE_GPS
 #endif
+
+// CX10 is a special case of SPI RX which requires XN297
+#if defined(USE_RX_CX10)
+#define USE_RX_XN297
+#endif
