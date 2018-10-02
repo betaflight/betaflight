@@ -32,6 +32,8 @@
 #include "drivers/bus_spi.h"
 #include "drivers/time.h"
 
+#include "pg/sdcard.h"
+
 #include "sdcard.h"
 #include "sdcard_impl.h"
 #include "sdcard_standard.h"
@@ -92,5 +94,77 @@ bool sdcard_isInserted(void)
         }
     }
     return result;
+}
+
+/**
+ * Dispatch
+ */
+sdcardVTable_t *sdcardVTable;
+
+void sdcard_init(const sdcardConfig_t *config)
+{
+    switch (config->mode) {
+#ifdef USE_SDCARD_SPI
+    case SDCARD_MODE_SPI:
+        sdcardVTable = &sdcardSpiVTable;
+        break;
+#endif
+#ifdef USE_SDCARD_SDIO
+    case SDCARD_MODE_SDIO:
+        sdcardVTable = &sdcardSdioVTable;
+        break;
+#endif
+    default:
+        break;
+    }
+
+    if (sdcardVTable) {
+        sdcardVTable->sdcard_init(config);
+    }
+}
+
+bool sdcard_readBlock(uint32_t blockIndex, uint8_t *buffer, sdcard_operationCompleteCallback_c callback, uint32_t callbackData)
+{
+    return sdcardVTable->sdcard_readBlock(blockIndex, buffer, callback, callbackData);
+}
+
+sdcardOperationStatus_e sdcard_beginWriteBlocks(uint32_t blockIndex, uint32_t blockCount)
+{
+    return sdcardVTable->sdcard_beginWriteBlocks(blockIndex, blockCount);
+}
+
+sdcardOperationStatus_e sdcard_writeBlock(uint32_t blockIndex, uint8_t *buffer, sdcard_operationCompleteCallback_c callback, uint32_t callbackData)
+{
+    return sdcardVTable->sdcard_writeBlock(blockIndex, buffer, callback, callbackData);
+}
+
+bool sdcard_poll(void)
+{
+    // sdcard_poll is called from taskMain() via afatfs_poll() and  for USE_SDCARD.
+    if (sdcardVTable) {
+        return sdcardVTable->sdcard_poll();
+    } else {
+        return false;
+    }
+}
+
+bool sdcard_isFunctional(void)
+{
+    // sdcard_isFunctional is called from multiple places
+    if (sdcardVTable) {
+        return sdcardVTable->sdcard_isFunctional();
+    } else {
+        return false;
+    }
+}
+
+bool sdcard_isInitialized(void)
+{
+    return sdcardVTable->sdcard_isInitialized();
+}
+
+const sdcardMetadata_t* sdcard_getMetadata(void)
+{
+    return sdcardVTable->sdcard_getMetadata();
 }
 #endif
