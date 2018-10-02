@@ -473,7 +473,7 @@ static bool sdcard_checkInitDone(void)
  */
 void sdcard_init(const sdcardConfig_t *config)
 {
-    sdcard.enabled = config->enabled;
+    sdcard.enabled = config->mode;
     if (!sdcard.enabled) {
         sdcard.state = SDCARD_STATE_NOT_PRESENT;
         return;
