@@ -180,3 +180,8 @@
 #if defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250)
 #define USE_SPI_GYRO
 #endif
+
+// CX10 is a special case of SPI RX which requires XN297
+#if defined(USE_RX_CX10)
+#define USE_RX_XN297
+#endif
