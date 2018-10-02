@@ -42,8 +42,8 @@
 //#undef USE_MSP_OVER_TELEMETRY
 
 //#undef USE_HUFFMAN
-//#undef USE_PINIO
-//#undef USE_PINIOBOX
+#undef USE_PINIO
+#undef USE_PINIOBOX
 
 #undef USE_TELEMETRY_HOTT
 #undef USE_TELEMETRY_MAVLINK
@@ -56,7 +56,7 @@
 //#undef USE_EXTENDED_CMS_MENUS
 //#undef USE_RTC_TIME
 //#undef USE_RX_MSP
-//#undef USE_ESC_SENSOR_INFO
+#undef USE_ESC_SENSOR_INFO
 
 #define ENABLE_DSHOT_DMAR       true
 
