@@ -152,8 +152,8 @@ STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
         protocolDataReceived = sfhssSpiDataReceived;
         protocolSetRcDataFromPayload = sfhssSpiSetRcData;
         break;
-    }
 #endif
+    }
     return true;
 }
 
