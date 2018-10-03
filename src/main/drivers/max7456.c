@@ -186,10 +186,6 @@
     #define __spiBusTransactionEnd(busdev)       IOHi((busdev)->busdev_u.spi.csnPin)
 #endif
 
-#ifndef MAX7456_SPI_CLK
-#define MAX7456_SPI_CLK           (SPI_CLOCK_STANDARD)
-#endif
-
 busDevice_t max7456BusDevice;
 busDevice_t *busdev = &max7456BusDevice;
 
