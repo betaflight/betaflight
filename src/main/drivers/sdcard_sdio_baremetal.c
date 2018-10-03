@@ -204,6 +204,9 @@ void sdcard_init(const sdcardConfig_t *config)
     } else {
         sdcard.cardDetectPin = IO_NONE;
     }
+    if (config->cardDetectInverted) {
+    	sdcard.detectionInverted = 1;
+    }
     if (sdioConfig()->useCache) {
         sdcard.useCache = 1;
     } else {
