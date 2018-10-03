@@ -2561,6 +2561,7 @@ static void cliBeeper(char *cmdline)
 }
 #endif
 
+#ifdef USE_RX_SPI
 void cliRxBind(char *cmdline){
     UNUSED(cmdline);
     switch (rxSpiConfig()->rx_spi_protocol) {
@@ -2578,6 +2579,7 @@ void cliRxBind(char *cmdline){
         break;
     }
 }
+#endif
 
 static void printMap(uint8_t dumpMask, const rxConfig_t *rxConfig, const rxConfig_t *defaultRxConfig)
 {
