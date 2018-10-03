@@ -220,10 +220,10 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
                             (packet[2] == rxFrSkySpiConfig()->bindTxId[1])) {
                             cc2500LedOn();
                             nextChannel(1);
+                            cc2500setRssiDbm(packet[18]);
 #if defined(USE_RX_FRSKY_SPI_TELEMETRY)
                             if ((packet[3] % 4) == 2) {
                                 telemetryTimeUs = micros();
-                                cc2500setRssiDbm(packet[18]);
                                 buildTelemetryFrame(packet);
                                 *protocolState = STATE_TELEMETRY;
                             } else
@@ -254,9 +254,7 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
                 if (missingPackets > MAX_MISSING_PKT) {
                     timeoutUs = 50;
 
-#if defined(USE_RX_FRSKY_SPI_TELEMETRY)
                     setRssiDirect(0, RSSI_SOURCE_RX_PROTOCOL);
-#endif
                 }
 
                 missingPackets++;
@@ -269,9 +267,7 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
                 }
                 ledIsOn = !ledIsOn;
 
-#if defined(USE_RX_FRSKY_SPI_TELEMETRY)
                 setRssi(0, RSSI_SOURCE_RX_PROTOCOL);
-#endif
                 nextChannel(13);
             }
 

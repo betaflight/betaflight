@@ -124,7 +124,7 @@ static void initialise() {
     cc2500WriteReg(CC2500_2E_TEST0,    0x0B);
     cc2500WriteReg(CC2500_3E_PATABLE,  0xFF);
 
-    for(unsigned c = 0;c < 30; c++) {
+    for (unsigned c = 0;c < 30; c++) {
         //calibrate all channels
         cc2500Strobe(CC2500_SIDLE);
         cc2500WriteReg(CC2500_0A_CHANNR, SFHSSCH2CHANNR(c));
@@ -140,11 +140,11 @@ static bool sfhssRecv(uint8_t *packet)
 {
  uint8_t ccLen;
 
-    if (!(cc2500getGdo())){
+    if (!(cc2500getGdo())) {
         return false;
     }
     ccLen = cc2500ReadReg(CC2500_3B_RXBYTES | CC2500_READ_BURST) & 0x7F;
-    if (ccLen < SFHSS_PACKET_LEN){
+    if (ccLen < SFHSS_PACKET_LEN) {
         return false;
     }
 
@@ -154,17 +154,17 @@ static bool sfhssRecv(uint8_t *packet)
 
 static bool sfhssPacketParse(uint8_t *packet, bool check_txid)
 {
-    if (!(packet[SFHSS_PACKET_LEN - 1] & 0x80)){
+    if (!(packet[SFHSS_PACKET_LEN - 1] & 0x80)) {
         return false;      /* crc fail */
     }
-    if (packet[0] != 0x81){
+    if (packet[0] != 0x81) {
         return false;              /* sfhss header fail */
     }
-    if (GET_CHAN(packet) != sfhss_channel){
+    if (GET_CHAN(packet) != sfhss_channel) {
         return false;           /* channel fail */
     }
 
-    if (check_txid){
+    if (check_txid) {
         if ((rxFrSkySpiConfigMutable()->bindTxId[0] != GET_TXID1(packet)) ||
             (rxFrSkySpiConfigMutable()->bindTxId[1] != GET_TXID2(packet))){
                 return false;           /* txid fail */
@@ -211,9 +211,9 @@ static bool tune1Rx(uint8_t *packet)
         cc2500WriteReg(CC2500_0C_FSCTRL0, (uint8_t)bindOffset_min);
         cc2500Strobe(CC2500_SRX);
     }
-    if (sfhssRecv(packet)){
-        if (sfhssPacketParse(packet, false)){
-            if ((packet[SFHSS_PACKET_LEN - 1] & 0x7F) > 40 ){    /* lqi */
+    if (sfhssRecv(packet)) {
+        if (sfhssPacketParse(packet, false)) {
+            if ((packet[SFHSS_PACKET_LEN - 1] & 0x7F) > 40 ) {    /* lqi */
                 rxFrSkySpiConfigMutable()->bindTxId[0] = GET_TXID1(packet);
                 rxFrSkySpiConfigMutable()->bindTxId[1] = GET_TXID2(packet);
                 bindOffset_max = bindOffset_min;
@@ -237,8 +237,8 @@ static bool tune2Rx(uint8_t *packet)
         cc2500Strobe(CC2500_SRX);
         return true;
     }
-    if (sfhssRecv(packet)){
-        if (sfhssPacketParse(packet, true)){
+    if (sfhssRecv(packet)) {
+        if (sfhssPacketParse(packet, true)) {
             timeTunedMs = millis();
             bindOffset_max += BIND_TUNE_STEP;
             DEBUG_SET(DEBUG_RX_SFHSS_SPI, DEBUG_DATA_OFFSET_MAX, bindOffset_max);
@@ -255,8 +255,8 @@ static bool tune3Rx(uint8_t *packet)
     if (((millis() - timeTunedMs) > 880) || bindOffset_min < (-126+BIND_TUNE_STEP)) {   // 220ms *4
         return true;
     }
-    if (sfhssRecv(packet)){
-        if (sfhssPacketParse(packet, true)){
+    if (sfhssRecv(packet)) {
+        if (sfhssPacketParse(packet, true)) {
             timeTunedMs = millis();
             bindOffset_min -= BIND_TUNE_STEP;
             DEBUG_SET(DEBUG_RX_SFHSS_SPI, DEBUG_DATA_OFFSET_MIN, bindOffset_min);
@@ -281,7 +281,7 @@ void sfhssnextChannel(void)
 
 void sfhssSpiSetRcData(uint16_t *rcData, const uint8_t *payload)
 {
-    if( GET_COMMAND(payload) & 0x8 ){
+    if ( GET_COMMAND(payload) & 0x8 ) {
         rcData[4] = GET_CH1(payload);
         rcData[5] = GET_CH2(payload);
         rcData[6] = GET_CH3(payload);
@@ -337,7 +337,7 @@ rx_spi_received_e sfhssSpiDataReceived(uint8_t *packet)
             break;
         case STATE_BIND_TUNING3:
            if (tune3Rx(packet)) {
-                if(((int16_t)bindOffset_max - (int16_t)bindOffset_min) <= 2){
+                if (((int16_t)bindOffset_max - (int16_t)bindOffset_min) <= 2) {
                     initTuneRx();
                     SET_STATE(STATE_BIND_TUNING1);    // retry
                 } else {
@@ -352,9 +352,9 @@ rx_spi_received_e sfhssSpiDataReceived(uint8_t *packet)
             SET_STATE(STATE_INIT);
             break;
         case STATE_HUNT:
-            if (sfhssRecv(packet)){
-                if (sfhssPacketParse(packet, true)){
-                    if (GET_COMMAND(packet) & 0x8){       /* ch=5-8 */
+            if (sfhssRecv(packet)) {
+                if (sfhssPacketParse(packet, true)) {
+                    if (GET_COMMAND(packet) & 0x8) {       /* ch=5-8 */
                         missingPackets = 0;
                         cc2500LedOn();
                         frame_recvd = 0x3;
@@ -377,10 +377,10 @@ rx_spi_received_e sfhssSpiDataReceived(uint8_t *packet)
             }
             break;
         case STATE_SYNC:
-            if (sfhssRecv(packet)){
-                if (sfhssPacketParse(packet, true)){
+            if (sfhssRecv(packet)) {
+                if (sfhssPacketParse(packet, true)) {
                     missingPackets = 0;
-                    if( GET_COMMAND(packet) & 0x8 ){
+                    if ( GET_COMMAND(packet) & 0x8 ) {
                         nextFrameReceiveStartTime = currentPacketReceivedTime + NEXT_CH_TIME_SYNC2;
                         frame_recvd |= 0x2;     /* ch5-8 */
                     } else {
@@ -388,7 +388,7 @@ rx_spi_received_e sfhssSpiDataReceived(uint8_t *packet)
                         cc2500Strobe(CC2500_SRX);
                         frame_recvd |= 0x1;     /* ch1-4 */
                     }
-                    if (GET_COMMAND(packet) & 0x4){
+                    if (GET_COMMAND(packet) & 0x4) {
                         return RX_SPI_RECEIVED_NONE; /* failsafe data */
                     }
                     return RX_SPI_RECEIVED_DATA;
@@ -396,10 +396,10 @@ rx_spi_received_e sfhssSpiDataReceived(uint8_t *packet)
                 cc2500Strobe(CC2500_SRX);
             } else if (cmpTimeUs(currentPacketReceivedTime, nextFrameReceiveStartTime) > 0) {
                 nextFrameReceiveStartTime += NEXT_CH_TIME_SYNC0;
-                if (frame_recvd != 0x3){
+                if (frame_recvd != 0x3) {
                     DEBUG_SET(DEBUG_RX_SFHSS_SPI, DEBUG_DATA_MISSING_FRAME, ++dataMissingFrame);
                 }
-                if (frame_recvd == 0){
+                if (frame_recvd == 0) {
                     if (++missingPackets > MAX_MISSING_PKT) {
                         SET_STATE(STATE_HUNT);
                         sfhssnextChannel();
