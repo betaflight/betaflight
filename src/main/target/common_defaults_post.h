@@ -246,6 +246,14 @@
 #define ACC_2_ALIGN             ALIGN_DEFAULT
 #endif
 
+#if !defined(GYRO_1_SPI_INSTANCE)
+#define GYRO_1_SPI_INSTANCE     NULL
+#endif
+
+#if !defined(GYRO_1_CS_PIN)
+#define GYRO_1_CS_PIN           NONE
+#endif
+
 #if !defined(GYRO_1_EXTI_PIN)
 #define GYRO_1_EXTI_PIN         NONE
 #endif
