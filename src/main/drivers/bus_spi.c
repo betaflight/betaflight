@@ -141,6 +141,11 @@ void spiResetErrorCounter(SPI_TypeDef *instance)
     }
 }
 
+bool spiBusIsBusBusy(const busDevice_t *bus)
+{
+    return spiIsBusBusy(bus->busdev_u.spi.instance);
+}
+
 uint8_t spiBusTransferByte(const busDevice_t *bus, uint8_t data)
 {
     return spiTransferByte(bus->busdev_u.spi.instance, data);
@@ -151,6 +156,11 @@ void spiBusWriteByte(const busDevice_t *bus, uint8_t data)
     IOLo(bus->busdev_u.spi.csnPin);
     spiBusTransferByte(bus, data);
     IOHi(bus->busdev_u.spi.csnPin);
+}
+
+bool spiBusRawTransfer(const busDevice_t *bus, const uint8_t *txData, uint8_t *rxData, int len)
+{
+    return spiTransfer(bus->busdev_u.spi.instance, txData, rxData, len);
 }
 
 bool spiBusWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data)
