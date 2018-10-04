@@ -31,7 +31,6 @@ typedef enum {
 
 typedef struct sdcardConfig_s {
     uint8_t useDma;
-    uint8_t enabled;
     int8_t  device;
     ioTag_t cardDetectTag;
     ioTag_t chipSelectTag;
