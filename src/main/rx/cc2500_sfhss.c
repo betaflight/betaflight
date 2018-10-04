@@ -53,14 +53,14 @@
 #define SFHSS_PACKET_LEN   15
 #define BIND_TUNE_STEP 4
 
-#define SFHSSCH2CHANNR(ch)   (ch*6+16)
-#define GET_CHAN(x)     ((int)((x[5]>>3)&0x1f))
-#define GET_CODE(x)     (((x[11] & 0x7) <<2 ) | ((x[12]>>6) & 0x3))
+#define SFHSSCH2CHANNR(ch)   (ch * 6 + 16)
+#define GET_CHAN(x)     ((int)((x[5]>>3) & 0x1f))
+#define GET_CODE(x)     (((x[11] & 0x7)<<2 ) | ((x[12]>>6) & 0x3))
 #define GET_COMMAND(x)  (x[12] & 0xf)
-#define GET_CH1(x)      ((uint16_t)(((x[5] & 0x07) << 9 | x[6]<<1) | (x[7] & 0x80)>>7))
-#define GET_CH2(x)      (uint16_t)(((x[7] & 0x7f) << 5 | (x[8] & 0xf8)>>3))
-#define GET_CH3(x)      (uint16_t)(((x[8] & 0x07) << 9 | x[9]<<1) | (x[10] & 0x80)>>7)
-#define GET_CH4(x)      (uint16_t)(((x[10] & 0x7f) << 5 | (x[11] & 0xf8)>>3))
+#define GET_CH1(x)      ((uint16_t)(((x[5] & 0x07)<<9 | x[6]<<1) | (x[7] & 0x80)>>7))
+#define GET_CH2(x)      (uint16_t)(((x[7] & 0x7f)<<5 | (x[8] & 0xf8)>>3))
+#define GET_CH3(x)      (uint16_t)(((x[8] & 0x07)<<9 | x[9]<<1) | (x[10] & 0x80)>>7)
+#define GET_CH4(x)      (uint16_t)(((x[10] & 0x7f)<<5 | (x[11] & 0xf8)>>3))
 #define GET_TXID1(x)    (uint8_t)(x[1])
 #define GET_TXID2(x)    (uint8_t)(x[2])
 #define SET_STATE(x)    {protocolState = x; DEBUG_SET(DEBUG_RX_SFHSS_SPI, DEBUG_DATA_STATE, x);}
@@ -80,8 +80,8 @@ static uint32_t missingPackets;
 
 static uint8_t calData[32][3];
 static timeMs_t timeTunedMs;
-static int8_t bindOffset_max=0;
-static int8_t bindOffset_min=0;
+static int8_t bindOffset_max = 0;
+static int8_t bindOffset_min = 0;
 
 static void initialise() {
     cc2500Reset();
@@ -231,7 +231,7 @@ static bool tune1Rx(uint8_t *packet)
 static bool tune2Rx(uint8_t *packet)
 {
     cc2500LedBlink(100);
-    if (((millis() - timeTunedMs) > 880) || bindOffset_max > (126-BIND_TUNE_STEP)) {   // 220ms *4
+    if (((millis() - timeTunedMs) > 880) || bindOffset_max > (126 - BIND_TUNE_STEP)) {   // 220ms *4
         timeTunedMs = millis();
         cc2500WriteReg(CC2500_0C_FSCTRL0, (uint8_t)bindOffset_min);
         cc2500Strobe(CC2500_SRX);
@@ -252,7 +252,7 @@ static bool tune2Rx(uint8_t *packet)
 static bool tune3Rx(uint8_t *packet)
 {
     cc2500LedBlink(100);
-    if (((millis() - timeTunedMs) > 880) || bindOffset_min < (-126+BIND_TUNE_STEP)) {   // 220ms *4
+    if (((millis() - timeTunedMs) > 880) || bindOffset_min < (-126 + BIND_TUNE_STEP)) {   // 220ms *4
         return true;
     }
     if (sfhssRecv(packet)) {
@@ -341,7 +341,7 @@ rx_spi_received_e sfhssSpiDataReceived(uint8_t *packet)
                     initTuneRx();
                     SET_STATE(STATE_BIND_TUNING1);    // retry
                 } else {
-                    rxFrSkySpiConfigMutable()->bindOffset = ((int16_t)bindOffset_max + (int16_t)bindOffset_min)/2 ;
+                    rxFrSkySpiConfigMutable()->bindOffset = ((int16_t)bindOffset_max + (int16_t)bindOffset_min) / 2 ;
                     SET_STATE(STATE_BIND_COMPLETE);
                 }
             }
