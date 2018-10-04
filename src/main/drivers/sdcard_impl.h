@@ -111,3 +111,24 @@ STATIC_ASSERT(sizeof(sdcardCSD_t) == 16, sdcard_csd_bitfields_didnt_pack_properl
 void sdcardInsertionDetectInit(void);
 void sdcardInsertionDetectDeinit(void);
 bool sdcard_isInserted(void);
+
+typedef struct sdcardVTable_s {
+    void (*sdcard_init)(const sdcardConfig_t *config);
+    bool (*sdcard_readBlock)(uint32_t blockIndex, uint8_t *buffer, sdcard_operationCompleteCallback_c callback, uint32_t callbackData);
+    sdcardOperationStatus_e (*sdcard_beginWriteBlocks)(uint32_t blockIndex, uint32_t blockCount);
+    sdcardOperationStatus_e (*sdcard_writeBlock)(uint32_t blockIndex, uint8_t *buffer, sdcard_operationCompleteCallback_c callback, uint32_t callbackData);
+    bool (*sdcard_poll)(void);
+    bool (*sdcard_isFunctional)(void);
+    bool (*sdcard_isInitialized)(void);
+    const sdcardMetadata_t* (*sdcard_getMetadata)(void);
+#ifdef SDCARD_PROFILING
+    void (*sdcardSdio_setProfilerCallback)(sdcard_profilerCallback_c callback);
+#endif
+} sdcardVTable_t;
+
+#ifdef USE_SDCARD_SPI
+extern sdcardVTable_t sdcardSpiVTable;
+#endif
+#ifdef USE_SDCARD_SDIO
+extern sdcardVTable_t sdcardSdioVTable;
+#endif
