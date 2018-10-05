@@ -23,11 +23,11 @@
 #undef USE_DSHOT_DMAR           // OMNIBUS (F3) does not benefit from burst Dshot
 
 // Removed to make the firmware fit into flash (in descending order of priority):
-#undef USE_GYRO_OVERFLOW_CHECK
-#undef USE_GYRO_LPF2
+//#undef USE_GYRO_OVERFLOW_CHECK
+//#undef USE_GYRO_LPF2
 
-#undef USE_ITERM_RELAX
-#undef USE_RC_SMOOTHING_FILTER
+//#undef USE_ITERM_RELAX
+//#undef USE_RC_SMOOTHING_FILTER
 
 #undef USE_HUFFMAN
 #undef USE_PINIO
@@ -41,10 +41,10 @@
 #undef USE_PWM
 
 #undef USE_BOARD_INFO
-#undef USE_EXTENDED_CMS_MENUS
-#undef USE_RTC_TIME
-#undef USE_RX_MSP
-#undef USE_ESC_SENSOR_INFO
+//#undef USE_EXTENDED_CMS_MENUS
+//#undef USE_RTC_TIME
+//#undef USE_RX_MSP
+//#undef USE_ESC_SENSOR_INFO
 
 #define TARGET_BOARD_IDENTIFIER "OMNI" // https://en.wikipedia.org/wiki/Omnibus
 
