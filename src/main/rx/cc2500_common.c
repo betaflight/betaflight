@@ -147,8 +147,8 @@ void cc2500LedOff(void)
 
 void cc2500LedBlink(timeMs_t blinkms)
 {
- static bool ledIsOn = true;
- static timeMs_t ledBlinkMs = 0;
+    static bool ledIsOn = true;
+    static timeMs_t ledBlinkMs = 0;
 
     if ( (ledBlinkMs + blinkms) > millis() ) {
         return;

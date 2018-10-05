@@ -83,7 +83,8 @@ static timeMs_t timeTunedMs;
 static int8_t bindOffset_max = 0;
 static int8_t bindOffset_min = 0;
 
-static void initialise() {
+static void initialise()
+{
     cc2500Reset();
 
     cc2500WriteReg(CC2500_02_IOCFG0,   0x01);
@@ -124,7 +125,7 @@ static void initialise() {
     cc2500WriteReg(CC2500_2E_TEST0,    0x0B);
     cc2500WriteReg(CC2500_3E_PATABLE,  0xFF);
 
-    for (unsigned c = 0;c < 30; c++) {
+    for (unsigned c = 0; c < 30; c++) {
         //calibrate all channels
         cc2500Strobe(CC2500_SIDLE);
         cc2500WriteReg(CC2500_0A_CHANNR, SFHSSCH2CHANNR(c));
@@ -138,7 +139,7 @@ static void initialise() {
 
 static bool sfhssRecv(uint8_t *packet)
 {
- uint8_t ccLen;
+    uint8_t ccLen;
 
     if (!(cc2500getGdo())) {
         return false;
@@ -166,8 +167,8 @@ static bool sfhssPacketParse(uint8_t *packet, bool check_txid)
 
     if (check_txid) {
         if ((rxFrSkySpiConfigMutable()->bindTxId[0] != GET_TXID1(packet)) ||
-            (rxFrSkySpiConfigMutable()->bindTxId[1] != GET_TXID2(packet))){
-                return false;           /* txid fail */
+            (rxFrSkySpiConfigMutable()->bindTxId[1] != GET_TXID2(packet))) {
+            return false;           /* txid fail */
         }
     }
 
@@ -206,7 +207,7 @@ static bool tune1Rx(uint8_t *packet)
     }
     if ((millis() - timeTunedMs) > 220) {   // 220ms
         timeTunedMs = millis();
-        bindOffset_min += BIND_TUNE_STEP<<2;
+        bindOffset_min += BIND_TUNE_STEP << 2;
         DEBUG_SET(DEBUG_RX_SFHSS_SPI, DEBUG_DATA_OFFSET_MIN, bindOffset_min);
         cc2500WriteReg(CC2500_0C_FSCTRL0, (uint8_t)bindOffset_min);
         cc2500Strobe(CC2500_SRX);
@@ -326,17 +327,17 @@ rx_spi_received_e sfhssSpiDataReceived(uint8_t *packet)
             }
             break;
         case STATE_BIND_TUNING1:
-           if (tune1Rx(packet)) {
+            if (tune1Rx(packet)) {
                 SET_STATE(STATE_BIND_TUNING2);
             }
             break;
         case STATE_BIND_TUNING2:
-           if (tune2Rx(packet)) {
+            if (tune2Rx(packet)) {
                 SET_STATE(STATE_BIND_TUNING3);
             }
             break;
         case STATE_BIND_TUNING3:
-           if (tune3Rx(packet)) {
+            if (tune3Rx(packet)) {
                 if (((int16_t)bindOffset_max - (int16_t)bindOffset_min) <= 2) {
                     initTuneRx();
                     SET_STATE(STATE_BIND_TUNING1);    // retry
