@@ -627,6 +627,8 @@ static bool osdDrawSingleElement(uint8_t item)
                 strcpy(buff, "!FS!");
             } else if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
                 strcpy(buff, "RESC");
+            } else if (FLIGHT_MODE(HEADFREE_MODE)) {
+                strcpy(buff, "HEAD");
             } else if (FLIGHT_MODE(ANGLE_MODE)) {
                 strcpy(buff, "STAB");
             } else if (FLIGHT_MODE(HORIZON_MODE)) {
@@ -794,6 +796,12 @@ static bool osdDrawSingleElement(uint8_t item)
 
             if (osdWarnGetState(OSD_WARNING_BATTERY_CRITICAL) && batteryState == BATTERY_CRITICAL) {
                 osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, " LAND NOW");
+                break;
+            }
+
+            // Show warning if in HEADFREE flight mode
+            if (FLIGHT_MODE(HEADFREE_MODE)) {
+                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "HEADFREE");
                 break;
             }
 
