@@ -76,8 +76,6 @@ typedef enum {
     OWNER_USB_MSC_PIN,
     OWNER_SPI_PREINIT_IPU,
     OWNER_SPI_PREINIT_OPU,
-    OWNER_GYRO1_CS,
-    OWNER_GYRO2_CS,
     OWNER_TOTAL_COUNT
 } resourceOwner_e;
 
