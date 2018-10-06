@@ -150,7 +150,8 @@ bool sdcard_poll(void)
 
 bool sdcard_isFunctional(void)
 {
-    // sdcard_isFunctional is called from multiple places
+    // sdcard_isFunctional is called from multiple places, including the case of hardware implementation
+    // without a detect pin in which case sdcard_isInserted() always returns true.
     if (sdcardVTable) {
         return sdcardVTable->sdcard_isFunctional();
     } else {
