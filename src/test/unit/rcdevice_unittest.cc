@@ -76,6 +76,7 @@ extern "C" {
     int minTimeout = 180;
 
     void rcdeviceSend5KeyOSDCableSimualtionEvent(rcdeviceCamSimulationKeyEvent_e key);
+    rcdeviceResponseParseContext_t* rcdeviceRespCtxQueueShift(rcdeviceWaitingResponseQueue *queue);
 }
 
 #define MAX_RESPONSES_COUNT 10
@@ -97,6 +98,13 @@ typedef struct testData_s {
 } testData_t;
 
 static testData_t testData;
+extern rcdeviceWaitingResponseQueue watingResponseQueue;
+
+static void resetRCDeviceStatus()
+{
+    isButtonPressed = false;
+    rcdeviceInMenu = false;
+}
 
 static void clearResponseBuff()
 {
@@ -104,6 +112,10 @@ static void clearResponseBuff()
     testData.responseBufCount = 0;
     memset(testData.responseBufsLen, 0, MAX_RESPONSES_COUNT);
     memset(testData.responesBufs, 0, MAX_RESPONSES_COUNT * 60);
+
+    while (rcdeviceRespCtxQueueShift(&watingResponseQueue)) {
+
+    }
 }
 
 static void addResponseData(uint8_t *data, uint8_t dataLen, bool withDataForFlushSerial)
@@ -117,6 +129,9 @@ static void addResponseData(uint8_t *data, uint8_t dataLen, bool withDataForFlus
 TEST(RCDeviceTest, TestRCSplitInitWithoutPortConfigurated)
 {
     runcamDevice_t device;
+    
+    resetRCDeviceStatus();
+
     watingResponseQueue.headPos = 0;
     watingResponseQueue.tailPos = 0;
     watingResponseQueue.itemCount = 0;
@@ -128,6 +143,8 @@ TEST(RCDeviceTest, TestRCSplitInitWithoutPortConfigurated)
 TEST(RCDeviceTest, TestRCSplitInitWithoutOpenPortConfigurated)
 {
     runcamDevice_t device;
+
+    resetRCDeviceStatus();
 
     watingResponseQueue.headPos = 0;
     watingResponseQueue.tailPos = 0;
@@ -143,6 +160,8 @@ TEST(RCDeviceTest, TestRCSplitInitWithoutOpenPortConfigurated)
 TEST(RCDeviceTest, TestInitDevice)
 {
     runcamDevice_t device;
+
+    resetRCDeviceStatus();
 
     // test correct response
     watingResponseQueue.headPos = 0;
@@ -168,6 +187,8 @@ TEST(RCDeviceTest, TestInitDevice)
 TEST(RCDeviceTest, TestInitDeviceWithInvalidResponse)
 {
     runcamDevice_t device;
+
+    resetRCDeviceStatus();
 
     // test correct response data with incorrect len
     watingResponseQueue.headPos = 0;
@@ -235,6 +256,8 @@ TEST(RCDeviceTest, TestInitDeviceWithInvalidResponse)
 
 TEST(RCDeviceTest, TestWifiModeChangeWithDeviceUnready)
 {
+    resetRCDeviceStatus();
+
     // test correct response
     watingResponseQueue.headPos = 0;
     watingResponseQueue.tailPos = 0;
@@ -295,6 +318,8 @@ TEST(RCDeviceTest, TestWifiModeChangeWithDeviceUnready)
 
 TEST(RCDeviceTest, TestWifiModeChangeWithDeviceReady)
 {
+    resetRCDeviceStatus();
+
     // test correct response
     memset(&testData, 0, sizeof(testData));
     testData.isRunCamSplitOpenPortSupported = true;
@@ -355,6 +380,8 @@ TEST(RCDeviceTest, TestWifiModeChangeWithDeviceReady)
 
 TEST(RCDeviceTest, TestWifiModeChangeCombine)
 {
+    resetRCDeviceStatus();
+
     memset(&testData, 0, sizeof(testData));
     testData.isRunCamSplitOpenPortSupported = true;
     testData.isRunCamSplitPortConfigurated = true;
@@ -437,6 +464,8 @@ TEST(RCDeviceTest, TestWifiModeChangeCombine)
 
 TEST(RCDeviceTest, Test5KeyOSDCableSimulationProtocol)
 {
+    resetRCDeviceStatus();
+
     memset(&testData, 0, sizeof(testData));
     testData.isRunCamSplitOpenPortSupported = true;
     testData.isRunCamSplitPortConfigurated = true;
@@ -627,12 +656,14 @@ TEST(RCDeviceTest, Test5KeyOSDCableSimulationProtocol)
 
 TEST(RCDeviceTest, Test5KeyOSDCableSimulationWithout5KeyFeatureSupport)
 {
+    resetRCDeviceStatus();
+    
     // test simulation without device init
     rcData[THROTTLE] = FIVE_KEY_JOYSTICK_MID; // THROTTLE Mid
     rcData[ROLL] = FIVE_KEY_JOYSTICK_MID; // ROLL Mid
     rcData[PITCH] = FIVE_KEY_JOYSTICK_MID; // PITCH Mid
     rcData[YAW] = FIVE_KEY_JOYSTICK_MAX; // Yaw High
-    rcdeviceUpdate(0);
+    rcdeviceUpdate(millis() * 1000);
     EXPECT_EQ(false, rcdeviceInMenu);
     
     // init device that have not 5 key OSD cable simulation feature
@@ -656,7 +687,7 @@ TEST(RCDeviceTest, Test5KeyOSDCableSimulationWithout5KeyFeatureSupport)
     // open connection, rcdeviceInMenu will be false if the codes is right
     uint8_t responseDataOfOpenConnection[] = { 0xCC, 0x11, 0xe7 };
     addResponseData(responseDataOfOpenConnection, sizeof(responseDataOfOpenConnection), false);
-    rcdeviceUpdate(0);
+    rcdeviceUpdate(millis() * 1000);
     EXPECT_EQ(false, rcdeviceInMenu);
     clearResponseBuff();
 }
