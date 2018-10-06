@@ -770,10 +770,47 @@ static bool osdDrawSingleElement(uint8_t item)
             STATIC_ASSERT(OSD_FORMAT_MESSAGE_BUFFER_SIZE <= sizeof(buff), osd_warnings_size_exceeds_buffer_size);
 
             const batteryState_e batteryState = getBatteryState();
+            const timeUs_t currentTimeUs = micros();
+
+            static timeUs_t armingDisabledUpdateTimeUs;
+            static unsigned armingDisabledDisplayIndex;
+
+            // Cycle through the arming disabled reasons
+            if (osdWarnGetState(OSD_WARNING_ARMING_DISABLE)) {
+                if (IS_RC_MODE_ACTIVE(BOXARM) && isArmingDisabled()) {
+                    const armingDisableFlags_e armSwitchOnlyFlag = 1 << (ARMING_DISABLE_FLAGS_COUNT - 1);
+                    armingDisableFlags_e flags = getArmingDisableFlags();
+
+                    // Remove the ARMSWITCH flag unless it's the only one
+                    if ((flags & armSwitchOnlyFlag) && (flags != armSwitchOnlyFlag)) {
+                        flags -= armSwitchOnlyFlag;
+                    }
+
+                    // Rotate to the next arming disabled reason after a 0.5 second time delay
+                    // or if the current flag is no longer set
+                    if ((currentTimeUs - armingDisabledUpdateTimeUs > 5e5) || !(flags & (1 << armingDisabledDisplayIndex))) {
+                        if (armingDisabledUpdateTimeUs == 0) {
+                            armingDisabledDisplayIndex = ARMING_DISABLE_FLAGS_COUNT - 1;
+                        }
+                        armingDisabledUpdateTimeUs = currentTimeUs;
+
+                        do {
+                            if (++armingDisabledDisplayIndex >= ARMING_DISABLE_FLAGS_COUNT) {
+                                armingDisabledDisplayIndex = 0;
+                            }
+                        } while (!(flags & (1 << armingDisabledDisplayIndex)));
+                    }
+
+                    osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, armingDisableFlagNames[armingDisabledDisplayIndex]);
+                    break;
+                } else {
+                    armingDisabledUpdateTimeUs = 0;
+                }
+            }
 
 #ifdef USE_DSHOT
             if (isTryingToArm() && !ARMING_FLAG(ARMED)) {
-                int armingDelayTime = (getLastDshotBeaconCommandTimeUs() + DSHOT_BEACON_GUARD_DELAY_US - micros()) / 1e5;
+                int armingDelayTime = (getLastDshotBeaconCommandTimeUs() + DSHOT_BEACON_GUARD_DELAY_US - currentTimeUs) / 1e5;
                 if (armingDelayTime < 0) {
                     armingDelayTime = 0;
                 }
@@ -863,18 +900,6 @@ static bool osdDrawSingleElement(uint8_t item)
             // Warn when in flip over after crash mode
             if (osdWarnGetState(OSD_WARNING_CRASH_FLIP) && isFlipOverAfterCrashMode()) {
                 osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "CRASH FLIP");
-                break;
-            }
-
-            // Show most severe reason for arming being disabled
-            if (osdWarnGetState(OSD_WARNING_ARMING_DISABLE) && IS_RC_MODE_ACTIVE(BOXARM) && isArmingDisabled()) {
-                const armingDisableFlags_e flags = getArmingDisableFlags();
-                for (int i = 0; i < ARMING_DISABLE_FLAGS_COUNT; i++) {
-                    if (flags & (1 << i)) {
-                        osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, armingDisableFlagNames[i]);
-                        break;
-                    }
-                }
                 break;
             }
 
