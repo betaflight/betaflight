@@ -1980,7 +1980,7 @@ static void cliSdInfo(char *cmdline)
         return;
     }
 
-    if (!sdcard_isInitialized()) {
+    if (!sdcard_isFunctional() || !sdcard_isInitialized()) {
         cliPrintLine("Startup failed");
         return;
     }
