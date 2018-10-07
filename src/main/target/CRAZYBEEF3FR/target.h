@@ -52,10 +52,10 @@
 #undef USE_SERIALRX_SUMH
 #undef USE_PWM
 
-//#undef USE_BOARD_INFO
+#undef USE_BOARD_INFO
 //#undef USE_EXTENDED_CMS_MENUS
 //#undef USE_RTC_TIME
-//#undef USE_RX_MSP
+#undef USE_RX_MSP
 #undef USE_ESC_SENSOR_INFO
 
 #define ENABLE_DSHOT_DMAR       true
