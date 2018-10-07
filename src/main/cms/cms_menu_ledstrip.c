@@ -34,6 +34,7 @@
 #include "cms/cms_menu_ledstrip.h"
 
 #include "config/feature.h"
+#include "io/ledstrip.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
@@ -44,6 +45,8 @@
 
 static bool featureRead = false;
 static uint8_t cmsx_FeatureLedstrip;
+static int configuredRaceColor = 0;
+static uint8_t cmsx_Ledstrip_RaceColor = 0;
 
 static long cmsx_Ledstrip_FeatureRead(void)
 {
@@ -51,6 +54,30 @@ static long cmsx_Ledstrip_FeatureRead(void)
         cmsx_FeatureLedstrip = featureIsEnabled(FEATURE_LED_STRIP) ? 1 : 0;
         featureRead = true;
     }
+
+    // Race color mode is enabled only if all "Color" function LEDs have the same non-black color. 
+    if (configuredRaceColor == 0) {
+        for (int ledIndex = 0; ledIndex < LED_MAX_STRIP_LENGTH; ledIndex++) {
+            const ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[ledIndex];
+            if (ledGetFunction(ledConfig) == LED_FUNCTION_COLOR) {
+                if (ledGetColor(ledConfig) == 0) {
+                    continue;
+                }
+                if (configuredRaceColor == 0) {
+                    // First non-black color
+                    configuredRaceColor = ledGetColor(ledConfig);
+                } else {
+                    if (configuredRaceColor != ledGetColor(ledConfig)) {
+                        // Different color found. Disable race color.
+                        configuredRaceColor = 0;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    cmsx_Ledstrip_RaceColor = configuredRaceColor;
 
     return 0;
 }
@@ -68,10 +95,84 @@ static long cmsx_Ledstrip_FeatureWriteback(const OSD_Entry *self)
     return 0;
 }
 
+// Names for colorId_e. Zero (black position) is used for disabled.
+static const char * const cmsx_Ledstrip_ColorNames[] = {
+    "   DISABLED",
+    " 1 WHITE   ",
+    " 2 RED     ",
+    " 3 ORANGE  ",
+    " 4 YELLOW  ",
+    " 5 LIME GRN",
+    " 6 GREEN   ",
+    " 7 MINT GRN",
+    " 8 CYAN    ",
+    " 9 LT BLUE ",
+    "10 BLUE    ",
+    "11 DK VIOLT",
+    "12 MAGENTA ",
+    "13 DEEP PNK"
+};
+
+static OSD_TAB_t cmsx_Ledstrip_RaceColorTab = { &cmsx_Ledstrip_RaceColor, ARRAYLEN(cmsx_Ledstrip_ColorNames) - 1, cmsx_Ledstrip_ColorNames};
+
+static long cmsx_Ledstrip_ApplyColor(displayPort_t *pDisp, const void *self)
+{
+    UNUSED(pDisp);
+    UNUSED(self);
+
+    // If race color is disabled, bounce back.
+    if (configuredRaceColor == 0) {
+        cmsx_Ledstrip_RaceColor = 0;
+        return 0;
+    }
+
+    // If race color is enabled, don't go back to disabled
+    if (configuredRaceColor) {
+        if (cmsx_Ledstrip_RaceColor == 0) {
+            cmsx_Ledstrip_RaceColor = configuredRaceColor;
+            return 0;
+        }
+    }
+
+    for (int ledIndex = 0; ledIndex < LED_MAX_STRIP_LENGTH; ledIndex++) {
+        ledConfig_t *ledConfig = &ledStripConfigMutable()->ledConfigs[ledIndex];
+        if (ledGetFunction(ledConfig) == LED_FUNCTION_COLOR) {
+            *ledConfig = DEFINE_LED(ledGetX(ledConfig), ledGetY(ledConfig), cmsx_Ledstrip_RaceColor, ledGetDirection(ledConfig), ledGetFunction(ledConfig), ledGetOverlay(ledConfig), ledGetParams(ledConfig));
+        }
+    }
+
+    reevaluateLedConfig();
+
+    configuredRaceColor = cmsx_Ledstrip_RaceColor;
+
+    return 0;
+}
+
+static long cmsx_Ledstrip_AllSolid(displayPort_t *pDisp, const void *self)
+{
+    UNUSED(pDisp);
+    UNUSED(self);
+
+    if (configuredRaceColor == 0) {
+        // No color is currently configured; default to 1 (white)
+        configuredRaceColor = 1;
+        cmsx_Ledstrip_RaceColor = configuredRaceColor;
+    }
+
+    for (int ledIndex = 0; ledIndex < LED_MAX_STRIP_LENGTH; ledIndex++) {
+        ledConfig_t *ledConfig = &ledStripConfigMutable()->ledConfigs[ledIndex];
+        *ledConfig = DEFINE_LED(ledGetX(ledConfig), ledGetY(ledConfig), cmsx_Ledstrip_RaceColor, 0, LED_FUNCTION_COLOR, 0, 0);
+    }
+
+    return 0;
+}
+
 static OSD_Entry cmsx_menuLedstripEntries[] =
 {
-    { "-- LED STRIP --", OME_Label, NULL, NULL, 0 },
-    { "ENABLED",         OME_Bool,  NULL, &cmsx_FeatureLedstrip, 0 },
+    { "-- LED STRIP --", OME_Label,   NULL, NULL, 0 },
+    { "ENABLED",         OME_Bool,    NULL, &cmsx_FeatureLedstrip, 0 },
+    { "RACE COLOR",      OME_TAB,     cmsx_Ledstrip_ApplyColor, &cmsx_Ledstrip_RaceColorTab, DYNAMIC },
+    { "ALL SOLID",       OME_Funcall, cmsx_Ledstrip_AllSolid, NULL, 0 },
 
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
