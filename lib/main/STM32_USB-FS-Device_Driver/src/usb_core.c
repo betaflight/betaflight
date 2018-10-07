@@ -46,6 +46,8 @@
 #define StatusInfo0 StatusInfo.bw.bb1 /* Reverse bb0 & bb1 */
 #define StatusInfo1 StatusInfo.bw.bb0
 
+extern uint16_t debug[4];
+
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 uint16_t_uint8_t StatusInfo;
@@ -580,6 +582,7 @@ void NoData_Setup0(void)
           || (pInformation->Current_Configuration != 0))
         /* Device Address should be 127 or less*/
       {
+        debug[0] = 11;
         ControlState = STALLED;
         goto exit_NoData_Setup0;
       }
@@ -660,6 +663,7 @@ void NoData_Setup0(void)
 
   if (Result != USB_SUCCESS)
   {
+    debug[0] = 12;
     ControlState = STALLED;
     goto exit_NoData_Setup0;
   }
@@ -812,6 +816,9 @@ void Data_Setup0(void)
   if ((Result == USB_UNSUPPORT) || (pInformation->Ctrl_Info.Usb_wLength == 0))
   {
     /* Unsupported request */
+    debug[0] = 13;
+    debug[1] = Result;
+    debug[2] = 
     pInformation->ControlState = STALLED;
     return;
   }
@@ -924,11 +931,13 @@ uint8_t In0_Process(void)
       pUser_Standard_Requests->User_SetDeviceAddress();
     }
     (*pProperty->Process_Status_IN)();
+    debug[0] = 14;
     ControlState = STALLED;
   }
 
   else
   {
+    debug[0] = 15;
     ControlState = STALLED;
   }
 
@@ -951,6 +960,7 @@ uint8_t Out0_Process(void)
   if ((ControlState == IN_DATA) || (ControlState == LAST_IN_DATA))
   {
     /* host aborts the transfer before finish */
+    debug[0] = 16;
     ControlState = STALLED;
   }
   else if ((ControlState == OUT_DATA) || (ControlState == LAST_OUT_DATA))
@@ -962,6 +972,7 @@ uint8_t Out0_Process(void)
   else if (ControlState == WAIT_STATUS_OUT)
   {
     (*pProperty->Process_Status_OUT)();
+    debug[0] = 17;
     ControlState = STALLED;
   }
 
@@ -969,6 +980,7 @@ uint8_t Out0_Process(void)
   /* Unexpect state, STALL the endpoint */
   else
   {
+    debug[0] = 18;
     ControlState = STALLED;
   }
 
