@@ -141,6 +141,7 @@ extern uint8_t __config_end;
 #include "rx/spektrum.h"
 #include "rx/cc2500_frsky_common.h"
 #include "rx/cc2500_frsky_x.h"
+#include "rx/cc2500_common.h"
 
 #include "scheduler/scheduler.h"
 
@@ -2560,17 +2561,18 @@ static void cliBeeper(char *cmdline)
 }
 #endif
 
-#ifdef USE_RX_FRSKY_SPI
-void cliFrSkyBind(char *cmdline){
+#ifdef USE_RX_SPI
+void cliRxBind(char *cmdline){
     UNUSED(cmdline);
     switch (rxSpiConfig()->rx_spi_protocol) {
+#ifdef USE_RX_CC2500_BIND
     case RX_SPI_FRSKY_D:
     case RX_SPI_FRSKY_X:
-        frSkySpiBind();
-
+    case RX_SPI_SFHSS:
+        cc2500SpiBind();
         cliPrint("Binding...");
-
         break;
+#endif
     default:
         cliPrint("Not supported.");
 
@@ -4469,8 +4471,8 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("flash_write", NULL, "<address> <message>", cliFlashWrite),
 #endif
 #endif
-#ifdef USE_RX_FRSKY_SPI
-    CLI_COMMAND_DEF("frsky_bind", "initiate binding for FrSky SPI RX", NULL, cliFrSkyBind),
+#ifdef USE_RX_CC2500_BIND
+    CLI_COMMAND_DEF("bind", "initiate binding for RX", NULL, cliRxBind),
 #endif
     CLI_COMMAND_DEF("get", "get variable value", "[name]", cliGet),
 #ifdef USE_GPS

@@ -24,17 +24,32 @@
 
 #include "rx/rx_spi.h"
 
-typedef struct rxFrSkySpiConfig_s {
-    uint8_t autoBind;
+#define MAX_MISSING_PKT 100
+#define RC_CHANNEL_COUNT_SFHSS 8
+
+#define DEBUG_DATA_STATE            0
+#define DEBUG_DATA_MISSING_FRAME    1
+#define DEBUG_DATA_OFFSET_MAX       2
+#define DEBUG_DATA_OFFSET_MIN       3
+
+#define STATE_INIT          0
+#define STATE_HUNT          1
+#define STATE_SYNC          2
+#define STATE_BIND          10
+#define STATE_BIND_TUNING1  11
+#define STATE_BIND_TUNING2  12
+#define STATE_BIND_TUNING3  13
+#define STATE_BIND_COMPLETE 14
+
+typedef struct rxSfhssSpiConfig_s {
     uint8_t bindTxId[2];
     int8_t  bindOffset;
-    uint8_t bindHopData[50];
-    uint8_t rxNum;
-    uint8_t useExternalAdc;
-} rxFrSkySpiConfig_t;
+} rxSfhssSpiConfig_t;
 
-PG_DECLARE(rxFrSkySpiConfig_t, rxFrSkySpiConfig);
+PG_DECLARE(rxSfhssSpiConfig_t, rxSfhssSpiConfig);
 
-bool frSkySpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeConfig_t *rxRuntimeConfig);
-rx_spi_received_e frSkySpiDataReceived(uint8_t *packet);
-void frSkySpiSetRcData(uint16_t *rcData, const uint8_t *payload);
+bool sfhssSpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeConfig_t *rxRuntimeConfig);
+rx_spi_received_e sfhssSpiDataReceived(uint8_t *packet);
+void sfhssSpiSetRcData(uint16_t *rcData, const uint8_t *payload);
+
+void sfhssSpiBind(void);

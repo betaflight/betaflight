@@ -47,6 +47,7 @@
 
 #include "fc/config.h"
 
+#include "rx/cc2500_common.h"
 #include "rx/cc2500_frsky_common.h"
 #include "rx/cc2500_frsky_shared.h"
 
@@ -190,7 +191,7 @@ static void buildTelemetryFrame(uint8_t *packet)
     frame[3] = packet[3];
 
     if (evenRun) {
-        frame[4] = (uint8_t)rssiDbm | 0x80;
+        frame[4] = (uint8_t)cc2500getRssiDbm() | 0x80;
     } else {
         uint8_t a1Value;
         if (rxFrSkySpiConfig()->useExternalAdc) {
@@ -331,7 +332,7 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
         *protocolState = STATE_DATA;
         frameReceived = false; // again set for receive
         receiveDelayUs = 5300;
-        if (checkBindRequested(false)) {
+        if (cc2500checkBindRequested(false)) {
             packetTimerUs = 0;
             timeoutUs = 50;
             missingPackets = 0;
@@ -343,7 +344,7 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
         FALLTHROUGH;
         // here FS code could be
     case STATE_DATA:
-        if (IORead(gdoPin) && (frameReceived == false)){
+        if (cc2500getGdo() && (frameReceived == false)){
             uint8_t ccLen = cc2500ReadReg(CC2500_3B_RXBYTES | CC2500_READ_BURST) & 0x7F;
             ccLen = cc2500ReadReg(CC2500_3B_RXBYTES | CC2500_READ_BURST) & 0x7F; // read 2 times to avoid reading errors
             if (ccLen > 32) {
@@ -360,7 +361,7 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
                             missingPackets = 0;
                             timeoutUs = 1;
                             receiveDelayUs = 0;
-                            LedOn();
+                            cc2500LedOn();
                             if (skipChannels) {
                                 channelsToSkip = packet[5] << 2;
                                 if (packet[4] >= listLength) {
@@ -375,9 +376,7 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
                                 telemetryReceived = true; // now telemetry can be sent
                                 skipChannels = false;
                             }
-#ifdef USE_RX_FRSKY_SPI_TELEMETRY
-                            setRssiDbm(packet[ccLen - 2]);
-#endif
+                            cc2500setRssiDbm(packet[ccLen - 2]);
 
                             telemetrySequenceMarker_t *inFrameMarker = (telemetrySequenceMarker_t *)&packet[21];
 
@@ -444,15 +443,13 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
         }
         if (cmpTimeUs(micros(), packetTimerUs) > timeoutUs * SYNC_DELAY_MAX) {
             if (ledIsOn) {
-                LedOff();
+                cc2500LedOff();
             } else {
-                LedOn();
+                cc2500LedOn();
             }
             ledIsOn = !ledIsOn;
 
-#if defined(USE_RX_FRSKY_SPI_TELEMETRY)
             setRssiDirect(0, RSSI_SOURCE_RX_PROTOCOL);
-#endif
             nextChannel(1);
             cc2500Strobe(CC2500_SRX);
             *protocolState = STATE_UPDATE;
@@ -465,8 +462,8 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
             cc2500SetPower(6);
             cc2500Strobe(CC2500_SFRX);
             delayMicroseconds(30);
-#if defined(USE_RX_FRSKY_SPI_PA_LNA)
-            TxEnable();
+#if defined(USE_RX_CC2500_SPI_PA_LNA)
+            cc2500TxEnable();
 #endif
             cc2500Strobe(CC2500_SIDLE);
             cc2500WriteFifo(frame, frame[0] + 1);
@@ -514,14 +511,14 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
             frameReceived = false; // again set for receive
             nextChannel(channelsToSkip);
             cc2500Strobe(CC2500_SRX);
-#ifdef USE_RX_FRSKY_SPI_PA_LNA
-            TxDisable();
-#if defined(USE_RX_FRSKY_SPI_DIVERSITY)
+#ifdef USE_RX_CC2500_SPI_PA_LNA
+            cc2500TxDisable();
+#if defined(USE_RX_CC2500_SPI_DIVERSITY)
             if (missingPackets >= 2) {
-                switchAntennae();
+                cc2500switchAntennae();
             }
 #endif
-#endif // USE_RX_FRSKY_SPI_PA_LNA
+#endif // USE_RX_CC2500_SPI_PA_LNA
             if (missingPackets > MAX_MISSING_PKT) {
                 timeoutUs = 50;
                 skipChannels = true;

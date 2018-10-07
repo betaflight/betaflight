@@ -87,6 +87,7 @@
 
 #include "rx/rx.h"
 #include "rx/cc2500_frsky_common.h"
+#include "rx/cc2500_sfhss.h"
 #include "rx/spektrum.h"
 
 #include "sensors/acceleration.h"
@@ -224,7 +225,8 @@ static const char * const lookupTableRxSpi[] = {
     "FRSKY_X",
     "FLYSKY",
     "FLYSKY_2A",
-    "KN"
+    "KN",
+    "SFHSS"
 };
 #endif
 
