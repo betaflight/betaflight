@@ -184,7 +184,13 @@ static bool isCalibrating(void)
 
     // Note: compass calibration is handled completely differently, outside of the main loop, see f.CALIBRATE_MAG
 
-    return (!accIsCalibrationComplete() && sensors(SENSOR_ACC)) || (!isGyroCalibrationComplete());
+    return (
+#ifdef USE_ACC
+        !accIsCalibrationComplete()
+#else
+        false
+#endif
+            && sensors(SENSOR_ACC)) || (!isGyroCalibrationComplete());
 }
 
 #ifdef USE_LAUNCH_CONTROL

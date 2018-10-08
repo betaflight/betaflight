@@ -138,6 +138,8 @@ void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)
     resetFlightDynamicsTrims(&instance->accZero);
 }
 
+#ifdef USE_ACC
+
 bool accDetect(accDev_t *dev, accelerationSensor_e accHardwareToUse)
 {
     accelerationSensor_e accHardware = ACC_NONE;
@@ -536,3 +538,4 @@ void accInitFilters(void)
         }
     }
 }
+#endif
