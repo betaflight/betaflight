@@ -317,9 +317,11 @@ static void smartPortSendPackage(uint16_t id, uint32_t val)
     smartPortWriteFrame(&payload);
 }
 
+#ifdef USE_ESC_SENSOR
 static bool reportExtendedEscSensors(void) {
     return featureIsEnabled(FEATURE_ESC_SENSOR) && telemetryConfig()->smartport_use_extra_sensors;
 }
+#endif
 
 #define ADD_SENSOR(dataId) frSkyDataIdTableInfo.table[frSkyDataIdTableInfo.index++] = dataId
 
