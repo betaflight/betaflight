@@ -516,6 +516,7 @@ void mixerResetDisarmedMotors(void)
 
 void writeMotors(void)
 {
+#ifdef USE_PWM_OUTPUT
     if (pwmAreMotorsEnabled()) {
 #if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
         if (!pwmStartMotorUpdate(motorCount)) {
@@ -527,6 +528,7 @@ void writeMotors(void)
         }
         pwmCompleteMotorUpdate(motorCount);
     }
+#endif
 }
 
 static void writeAllMotors(int16_t mc)
@@ -546,8 +548,10 @@ void stopMotors(void)
 
 void stopPwmAllMotors(void)
 {
+#ifdef USE_PWM_OUTPUT
     pwmShutdownPulsesForAllMotors(motorCount);
     delayMicroseconds(1500);
+#endif
 }
 
 static FAST_RAM_ZERO_INIT float throttle = 0;
