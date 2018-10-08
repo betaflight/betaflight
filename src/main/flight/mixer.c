@@ -285,6 +285,8 @@ static const motorMixer_t mixerQuadX1234[] = {
 };
 
 // Keep synced with mixerMode_e
+// Some of these entries are bogus when servos (USE_SERVOS) are not configured,
+// but left untouched to keep ordinals synced with mixerMode_e (and configurator).
 const mixer_t mixers[] = {
     // motors, use servo, motor mixer
     { 0, false, NULL },                // entry 0
@@ -350,14 +352,12 @@ bool areMotorsRunning(void)
     return motorsRunning;
 }
 
+#ifdef USE_SERVOS
 bool mixerIsTricopter(void)
 {
-#ifdef USE_SERVOS
     return (currentMixerMode == MIXER_TRI || currentMixerMode == MIXER_CUSTOM_TRI);
-#else
-    return false;
-#endif
 }
+#endif
 
 // All PWM motor scaling is done to standard PWM range of 1000-2000 for easier tick conversion with legacy code / configurator
 // DSHOT scaling is done to the actual dshot range
@@ -406,9 +406,11 @@ void mixerInit(mixerMode_e mixerMode)
     currentMixerMode = mixerMode;
 
     initEscEndpoints();
+#ifdef USE_SERVOS
     if (mixerIsTricopter()) {
         mixerTricopterInit();
     }
+#endif
 }
 
 #ifndef USE_QUAD_MIXER_ONLY
@@ -697,9 +699,11 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS])
     // roll/pitch/yaw. This could move throttle down, but also up for those low throttle flips.
     for (int i = 0; i < motorCount; i++) {
         float motorOutput = motorOutputMin + (motorOutputRange * (motorOutputMixSign * motorMix[i] + throttle * currentMixer[i].throttle));
+#ifdef USE_SERVOS
         if (mixerIsTricopter()) {
             motorOutput += mixerTricopterMotorCorrection(i);
         }
+#endif
         if (failsafeIsActive()) {
             if (isMotorProtocolDshot()) {
                 motorOutput = (motorOutput < motorRangeMin) ? disarmMotorOutput : motorOutput; // Prevent getting into special reserved range
