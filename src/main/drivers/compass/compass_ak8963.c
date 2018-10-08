@@ -25,7 +25,7 @@
 
 #include "platform.h"
 
-#if defined(USE_MAG_AK8963) || defined(USE_MAG_SPI_AK8963)
+#if defined(USE_MAG) && (defined(USE_MAG_AK8963) || defined(USE_MAG_SPI_AK8963))
 
 #include "build/debug.h"
 

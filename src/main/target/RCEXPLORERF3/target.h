@@ -64,11 +64,12 @@
 #define USE_BARO
 #define USE_BARO_MS5611
 
-#define USE_MAG
-#define USE_MAG_AK8975
-#define USE_MAG_HMC5883 // External
+// MAG support disabled to reduce F3 flash usage
+//#define USE_MAG
+//#define USE_MAG_AK8975
+//#define USE_MAG_HMC5883 // External
 
-#define MAG_AK8975_ALIGN CW180_DEG
+//#define MAG_AK8975_ALIGN CW180_DEG
 
 #define USE_RANGEFINDER
 #define USE_RANGEFINDER_HCSR04

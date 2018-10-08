@@ -49,10 +49,11 @@
 #define USE_BARO_MS5611
 #define USE_BARO_BMP280
 
-#define USE_MAG
-#define USE_MAG_AK8975
+// MAG support disabled to reduce F3 flash usage
+//#define USE_MAG
+//#define USE_MAG_AK8975
 
-#define MAG_AK8975_ALIGN        CW180_DEG_FLIP
+//#define MAG_AK8975_ALIGN        CW180_DEG_FLIP
 
 #define USE_VCP
 #define USE_UART1 // Conn 1 - TX (PB6) RX PB7 (AF7)

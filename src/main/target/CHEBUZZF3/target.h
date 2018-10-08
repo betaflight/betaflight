@@ -80,9 +80,10 @@
 #define USE_BARO
 #define USE_BARO_MS5611
 
-#define USE_MAG
-#define USE_MAG_AK8975
-#define MAG_AK8975_ALIGN        CW90_DEG_FLIP
+// MAG support disabled to reduce F3 flash usage
+//#define USE_MAG
+//#define USE_MAG_AK8975
+//#define MAG_AK8975_ALIGN        CW90_DEG_FLIP
 
 #define USE_VCP
 #define USE_UART1

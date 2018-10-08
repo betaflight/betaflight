@@ -23,7 +23,7 @@
 
 #include "platform.h"
 
-#ifdef USE_FAKE_MAG
+#if defined(USE_MAG) && defined(USE_FAKE_MAG)
 
 #include "build/build_config.h"
 

@@ -165,12 +165,13 @@
 // Performance logging for SD card operations:
 // #define AFATFS_USE_INTROSPECTIVE_LOGGING
 
-#define USE_MAG
-#define USE_FAKE_MAG
-#define USE_MAG_AK8963
-#define USE_MAG_AK8975
-#define USE_MAG_HMC5883
-#define USE_MAG_QMC5883
+// MAG support disabled to reduce F3 flash usage
+//#define USE_MAG
+//#define USE_FAKE_MAG
+//#define USE_MAG_AK8963
+//#define USE_MAG_AK8975
+//#define USE_MAG_HMC5883
+//#define USE_MAG_QMC5883
 
 #define USE_VCP
 #define USE_UART1
