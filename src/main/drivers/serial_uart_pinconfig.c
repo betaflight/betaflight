@@ -32,6 +32,8 @@
 
 #include "platform.h"
 
+#ifdef USE_UART
+
 #include "build/build_config.h"
 
 #include "drivers/rcc.h"
@@ -67,3 +69,4 @@ void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig)
         }
     }
 }
+#endif

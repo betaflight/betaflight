@@ -31,6 +31,8 @@
 
 #include "platform.h"
 
+#ifdef USE_UART
+
 #include "drivers/system.h"
 #include "drivers/io.h"
 #include "drivers/nvic.h"
@@ -40,8 +42,6 @@
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
-
-#ifdef USE_UART
 
 #ifdef USE_UART1_RX_DMA
 # define UART1_RX_DMA_CHANNEL DMA1_Channel5

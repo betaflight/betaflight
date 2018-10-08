@@ -27,6 +27,8 @@
 
 #include "platform.h"
 
+#ifdef USE_UART
+
 #include "drivers/system.h"
 #include "drivers/io.h"
 #include "drivers/dma.h"
@@ -36,8 +38,6 @@
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
-
-#ifdef USE_UART
 
 const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART1

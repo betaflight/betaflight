@@ -32,6 +32,8 @@
 
 #include "platform.h"
 
+#ifdef USE_UART
+
 #include "drivers/system.h"
 #include "drivers/io.h"
 #include "drivers/nvic.h"
@@ -41,8 +43,6 @@
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
-
-#ifdef USE_UART
 
 // XXX Will DMA eventually be configurable?
 // XXX Do these belong here?
