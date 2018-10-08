@@ -505,7 +505,7 @@ void OverclockRebootIfNecessary(uint32_t overclockLevel)
   const pllConfig_t * const pll = overclockLevels + overclockLevel;
 
   // Reboot to adjust overclock frequency
-  if (SystemCoreClock != (pll->n / pll->p) * 1000000) {
+  if (SystemCoreClock != (pll->n / pll->p) * 1000000U) {
     currentOverclockLevel = overclockLevel;
     __disable_irq();
     NVIC_SystemReset();
