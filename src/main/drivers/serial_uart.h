@@ -41,6 +41,7 @@ typedef enum {
 typedef struct uartPort_s {
     serialPort_t port;
 
+#ifdef USE_DMA
 #if defined(STM32F7)
     DMA_HandleTypeDef rxDMAHandle;
     DMA_HandleTypeDef txDMAHandle;
@@ -61,6 +62,7 @@ typedef struct uartPort_s {
 
     uint32_t txDMAPeripheralBaseAddr;
     uint32_t rxDMAPeripheralBaseAddr;
+#endif // USE_DMA
 
 #ifdef USE_HAL_DRIVER
     // All USARTs can also be used as UART, and we use them only as UART.

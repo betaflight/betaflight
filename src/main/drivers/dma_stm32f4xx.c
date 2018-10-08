@@ -24,6 +24,8 @@
 
 #include "platform.h"
 
+#ifdef USE_DMA
+
 #include "drivers/nvic.h"
 #include "dma.h"
 #include "resource.h"
@@ -157,3 +159,4 @@ uint32_t dmaGetChannel(const uint8_t channel)
 {
     return ((uint32_t)channel*2)<<24;
 }
+#endif

@@ -141,6 +141,7 @@
 #define USE_BRUSHED_ESC_AUTODETECT  // Detect if brushed motors are connected and set defaults appropriately to avoid motors spinning on boot
 
 #define USE_PWM_OUTPUT
+#define USE_DMA
 
 #define USE_CLI
 #define USE_SERIAL_PASSTHROUGH
