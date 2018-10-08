@@ -19,7 +19,8 @@
  */
 
 #include "platform.h"
-#ifdef USE_SERIAL_RX
+
+#ifdef USE_SERIALRX_SPEKTRUM
 
 #include <string.h>
 

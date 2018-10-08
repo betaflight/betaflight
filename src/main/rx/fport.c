@@ -25,7 +25,7 @@
 
 #include "platform.h"
 
-#if defined(USE_SERIALRX_FPORT)
+#ifdef USE_SERIALRX_FPORT
 
 #include "build/debug.h"
 
