@@ -126,6 +126,10 @@ float motor_disarmed[MAX_SUPPORTED_MOTORS];
 mixerMode_e currentMixerMode;
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
 
+#ifdef USE_LAUNCH_CONTROL
+static motorMixer_t launchControlMixer[MAX_SUPPORTED_MOTORS];
+#endif
+
 static FAST_RAM_ZERO_INIT int throttleAngleCorrection;
 
 
@@ -413,6 +417,23 @@ void mixerInit(mixerMode_e mixerMode)
 #endif
 }
 
+#ifdef USE_LAUNCH_CONTROL
+// Create a custom mixer for launch control based on the current settings
+// but disable the front motors. We don't care about roll or yaw because they
+// are limited in the PID controller.
+void loadLaunchControlMixer(void)
+{
+    for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
+        launchControlMixer[i] = currentMixer[i];
+        // limit the front motors to minimum output
+        if (launchControlMixer[i].pitch < 0.0f) {
+            launchControlMixer[i].pitch = 0.0f;
+            launchControlMixer[i].throttle = 0.0f;
+        }
+    }
+}
+#endif
+
 #ifndef USE_QUAD_MIXER_ONLY
 
 void mixerConfigureOutput(void)
@@ -440,6 +461,9 @@ void mixerConfigureOutput(void)
                 currentMixer[i] = mixers[currentMixerMode].motor[i];
         }
     }
+#ifdef USE_LAUNCH_CONTROL
+    loadLaunchControlMixer();
+#endif
     mixerResetDisarmedMotors();
 }
 
@@ -465,6 +489,9 @@ void mixerConfigureOutput(void)
     for (int i = 0; i < motorCount; i++) {
         currentMixer[i] = mixerQuadX[i];
     }
+#ifdef USE_LAUNCH_CONTROL
+    loadLaunchControlMixer();
+#endif
     mixerResetDisarmedMotors();
 }
 #endif // USE_QUAD_MIXER_ONLY
@@ -693,12 +720,12 @@ static void applyFlipOverAfterCrashModeToMotors(void)
     }
 }
 
-static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS])
+static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS], motorMixer_t *activeMixer)
 {
     // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
     // roll/pitch/yaw. This could move throttle down, but also up for those low throttle flips.
     for (int i = 0; i < motorCount; i++) {
-        float motorOutput = motorOutputMin + (motorOutputRange * (motorOutputMixSign * motorMix[i] + throttle * currentMixer[i].throttle));
+        float motorOutput = motorOutputMin + (motorOutputRange * (motorOutputMixSign * motorMix[i] + throttle * activeMixer[i].throttle));
 #ifdef USE_SERVOS
         if (mixerIsTricopter()) {
             motorOutput += mixerTricopterMotorCorrection(i);
@@ -752,6 +779,15 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
         return;
     }
 
+    const bool launchControlActive = isLaunchControlActive();
+
+    motorMixer_t * activeMixer = &currentMixer[0];
+#ifdef USE_LAUNCH_CONTROL
+    if (launchControlActive && (currentPidProfile->launchControlMode == LAUNCH_CONTROL_MODE_PITCHONLY)) {
+        activeMixer = &launchControlMixer[0];
+    }
+#endif
+    
     // Find min and max throttle based on conditions. Throttle has to be known before mixing
     calculateThrottleAndCurrentMotorEndpoints(currentTimeUs);
 
@@ -785,7 +821,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
         throttle = applyThrottleLimit(throttle);
     }
 
-    const bool airmodeEnabled = airmodeIsEnabled();
+    const bool airmodeEnabled = airmodeIsEnabled() || launchControlActive;
 
 #ifdef USE_YAW_SPIN_RECOVERY
     // 50% throttle provides the maximum authority for yaw recovery when airmode is not active.
@@ -795,14 +831,23 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
     }
 #endif // USE_YAW_SPIN_RECOVERY
 
+#ifdef USE_LAUNCH_CONTROL
+    // While launch control is active keep the throttle at minimum.
+    // Once the pilot triggers the launch throttle control will be reactivated.
+    if (launchControlActive) {
+        throttle = 0.0f;
+    }
+#endif
+
     // Find roll/pitch/yaw desired output
     float motorMix[MAX_SUPPORTED_MOTORS];
     float motorMixMax = 0, motorMixMin = 0;
     for (int i = 0; i < motorCount; i++) {
+
         float mix =
-            scaledAxisPidRoll  * currentMixer[i].roll +
-            scaledAxisPidPitch * currentMixer[i].pitch +
-            scaledAxisPidYaw   * currentMixer[i].yaw;
+            scaledAxisPidRoll  * activeMixer[i].roll +
+            scaledAxisPidPitch * activeMixer[i].pitch +
+            scaledAxisPidYaw   * activeMixer[i].yaw;
 
         mix *= vbatCompensationFactor;  // Add voltage compensation
 
@@ -861,7 +906,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
         applyMotorStop();
     } else {
         // Apply the mix to motor endpoints
-        applyMixToMotors(motorMix);
+        applyMixToMotors(motorMix, activeMixer);
     }
 }
 

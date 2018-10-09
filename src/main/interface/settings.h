@@ -123,6 +123,10 @@ typedef enum {
 #ifdef USE_SDCARD
     TABLE_SDCARD_MODE,
 #endif
+#ifdef USE_LAUNCH_CONTROL
+    TABLE_LAUNCH_CONTROL_MODE,
+    TABLE_LAUNCH_CONTROL_TRIGGER_MODE,
+#endif
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 
