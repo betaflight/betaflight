@@ -26,12 +26,20 @@
 // Streams data out to the EEPROM, padding to the write size as
 // needed, and updating the checksum as it goes.
 
+#ifdef STM32H7
+#define CONFIG_STREAMER_BUFFER_SIZE 32  // Flash word = 256-bits
+typedef uint64_t config_streamer_buffer_align_type_t;
+#else
+#define CONFIG_STREAMER_BUFFER_SIZE 4
+typedef uint32_t config_streamer_buffer_align_type_t;
+#endif
+
 typedef struct config_streamer_s {
     uintptr_t address;
     int size;
     union {
-        uint8_t b[4];
-        uint32_t w;
+        uint8_t b[CONFIG_STREAMER_BUFFER_SIZE];
+        config_streamer_buffer_align_type_t w;
     } buffer;
     int at;
     int err;
