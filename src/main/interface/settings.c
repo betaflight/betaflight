@@ -588,7 +588,7 @@ const clivalue_t valueTable[] = {
 #endif
 
 // PG_ADC_CONFIG
-#if defined(ADC)
+#if defined(USE_ADC)
     { "adc_device",                 VAR_INT8   | MASTER_VALUE, .config.minmax = { 0, ADCDEV_COUNT }, PG_ADC_CONFIG, offsetof(adcConfig_t, device) },
 #endif
 
