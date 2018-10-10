@@ -27,6 +27,8 @@
 
 #include "platform.h"
 
+#ifdef USE_UART
+
 #include "drivers/system.h"
 #include "drivers/dma.h"
 #include "drivers/io.h"
@@ -36,8 +38,6 @@
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
-
-#ifdef USE_UART
 
 static void handleUsartTxDma(uartPort_t *s);
 
