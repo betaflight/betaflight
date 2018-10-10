@@ -150,24 +150,15 @@ static uint8_t spektrumFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
         }
 
 #if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_SRXL)
-        if (srxlEnabled) {
-            if (telemetryBufLen) {
-                if ((spekFrame[2] & 0x80) == 0) {
+        if (srxlEnabled && (spekFrame[2] & 0x80) == 0) {
                     telemetryFrameRequestedUs = currentTimeUs;
-                }
-            }
-            else {
-                // Trigger tm data collection if buffer is empty.
-                srxlCollectTelemetryNow();
-            }
         }
 #endif
-
         result = RX_FRAME_COMPLETE;
     }
 
 #if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_SRXL)
-    if (telemetryFrameRequestedUs && cmpTimeUs(currentTimeUs, telemetryFrameRequestedUs) >= SPEKTRUM_TELEMETRY_FRAME_DELAY_US) {
+    if (telemetryBufLen && telemetryFrameRequestedUs && cmpTimeUs(currentTimeUs, telemetryFrameRequestedUs) >= SPEKTRUM_TELEMETRY_FRAME_DELAY_US) {
         telemetryFrameRequestedUs = 0;
 
         result = (result & ~RX_FRAME_PENDING) | RX_FRAME_PROCESSING_REQUIRED;
@@ -324,11 +315,18 @@ static bool spektrumProcessFrame(const rxRuntimeConfig_t *rxRuntimeConfig)
     if (telemetryBufLen > 0) {
         serialWriteBuf(serialPort, telemetryBuf, telemetryBufLen);
         telemetryBufLen = 0; // reset telemetry buffer
-
-        srxlCollectTelemetryNow();
     }
 
     return true;
+}
+
+bool srxlTelemetryBufferEmpty()
+{
+  if (telemetryBufLen == 0) {
+      return true;
+  } else {
+      return false;
+  }
 }
 
 void srxlRxWriteTelemetryData(const void *data, int len)
