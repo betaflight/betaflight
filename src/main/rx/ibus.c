@@ -31,7 +31,7 @@
 
 #include "platform.h"
 
-#ifdef USE_SERIAL_RX
+#ifdef USE_SERIALRX_IBUS
 
 #include "pg/rx.h"
 

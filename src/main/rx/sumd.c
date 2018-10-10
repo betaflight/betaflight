@@ -24,7 +24,7 @@
 
 #include "platform.h"
 
-#ifdef USE_SERIAL_RX
+#ifdef USE_SERIALRX_SUMD
 
 #include "common/crc.h"
 #include "common/utils.h"
