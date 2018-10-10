@@ -25,7 +25,7 @@
 
 #include "platform.h"
 
-#ifdef USE_SERIAL_RX
+#ifdef USE_SERIALRX_CRSF
 
 #include "build/build_config.h"
 #include "build/debug.h"
