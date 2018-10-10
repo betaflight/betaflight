@@ -76,11 +76,11 @@
 
 static bool srxlTelemetryEnabled;
 static uint8_t srxlFrame[SRXL_FRAME_SIZE_MAX];
-static bool srxlTelemetryNow   = false;
+static bool srxlTelemetryNow = true;
 
 void srxlCollectTelemetryNow(void)
 {
-    srxlTelemetryNow   = true;
+    srxlTelemetryNow = true;
 }
 
 
@@ -521,7 +521,7 @@ void handleSrxlTelemetry(timeUs_t currentTimeUs)
         return;
     }
 
-    srxlTelemetryNow   = false;
+    srxlTelemetryNow = false;
     processSrxl(currentTimeUs);
 }
 #endif
