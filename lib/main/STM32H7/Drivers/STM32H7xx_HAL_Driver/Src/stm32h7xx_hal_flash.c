@@ -162,6 +162,8 @@ static void FLASH_SetErrorCode(uint32_t Bank);
   */
 HAL_StatusTypeDef HAL_FLASH_Program(uint32_t TypeProgram, uint32_t FlashAddress, uint64_t DataAddress)
 {
+  UNUSED(TypeProgram);
+
   HAL_StatusTypeDef status = HAL_ERROR;
   __IO uint64_t *dest_addr = (__IO uint64_t *)FlashAddress;
   __IO uint64_t *src_addr = (__IO uint64_t*)((uint32_t)DataAddress);
@@ -260,6 +262,8 @@ HAL_StatusTypeDef HAL_FLASH_Program(uint32_t TypeProgram, uint32_t FlashAddress,
   */
 HAL_StatusTypeDef HAL_FLASH_Program_IT(uint32_t TypeProgram, uint32_t FlashAddress, uint64_t DataAddress)
 {
+  UNUSED(TypeProgram);
+
   HAL_StatusTypeDef status = HAL_OK;
   __IO uint64_t *dest_addr = (__IO uint64_t*)FlashAddress;
   __IO uint64_t *src_addr = (__IO uint64_t*)((uint32_t)DataAddress);
@@ -550,6 +554,8 @@ __weak void HAL_FLASH_EndOfOperationCallback(uint32_t ReturnValue)
   /* NOTE : This function Should not be modified, when the callback is needed,
             the HAL_FLASH_EndOfOperationCallback could be implemented in the user file
    */ 
+
+  UNUSED(ReturnValue);
 }
 
 /**
@@ -562,6 +568,8 @@ __weak void HAL_FLASH_EndOfOperationCallback(uint32_t ReturnValue)
   */
 __weak void HAL_FLASH_OperationErrorCallback(uint32_t ReturnValue)
 {
+  UNUSED(ReturnValue);
+
   /* NOTE : This function Should not be modified, when the callback is needed,
             the HAL_FLASH_OperationErrorCallback could be implemented in the user file
    */ 

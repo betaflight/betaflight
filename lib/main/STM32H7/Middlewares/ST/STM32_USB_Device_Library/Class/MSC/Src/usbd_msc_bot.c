@@ -166,6 +166,8 @@ void MSC_BOT_DeInit (USBD_HandleTypeDef  *pdev)
 void MSC_BOT_DataIn (USBD_HandleTypeDef  *pdev, 
                      uint8_t epnum)
 {
+  UNUSED(epnum);
+
   USBD_MSC_BOT_HandleTypeDef  *hmsc = (USBD_MSC_BOT_HandleTypeDef*)pdev->pClassData;  
   
   switch (hmsc->bot_state)
@@ -199,6 +201,8 @@ void MSC_BOT_DataIn (USBD_HandleTypeDef  *pdev,
 void MSC_BOT_DataOut (USBD_HandleTypeDef  *pdev, 
                       uint8_t epnum)
 {
+  UNUSED(epnum);
+
   USBD_MSC_BOT_HandleTypeDef  *hmsc = (USBD_MSC_BOT_HandleTypeDef*)pdev->pClassData;
   
   switch (hmsc->bot_state)

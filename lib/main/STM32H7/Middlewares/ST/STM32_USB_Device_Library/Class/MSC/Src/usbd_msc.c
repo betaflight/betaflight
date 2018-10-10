@@ -298,6 +298,8 @@ __ALIGN_BEGIN  uint8_t USBD_MSC_DeviceQualifierDesc[USB_LEN_DEV_QUALIFIER_DESC] 
 uint8_t  USBD_MSC_Init (USBD_HandleTypeDef *pdev, 
                             uint8_t cfgidx)
 {
+  UNUSED(cfgidx);
+
   int16_t ret = 0;
    
   if(pdev->dev_speed == USBD_SPEED_HIGH  ) 
@@ -354,6 +356,8 @@ uint8_t  USBD_MSC_Init (USBD_HandleTypeDef *pdev,
 uint8_t  USBD_MSC_DeInit (USBD_HandleTypeDef *pdev, 
                               uint8_t cfgidx)
 {
+  UNUSED(cfgidx);
+
   /* Close MSC EPs */
   USBD_LL_CloseEP(pdev,
                   MSC_EPOUT_ADDR);
