@@ -166,6 +166,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .abs_control_limit = 90,
         .abs_control_error_limit = 20,
         .antiGravityMode = ANTI_GRAVITY_SMOOTH,
+        .dterm_relax_threshold = 0,
     );
 }
 
@@ -231,6 +232,7 @@ static FAST_RAM_ZERO_INIT uint8_t rcSmoothingFilterType;
 #endif // USE_RC_SMOOTHING_FILTER
 
 static FAST_RAM_ZERO_INIT pt1Filter_t antiGravityThrottleLpf;
+static FAST_RAM_ZERO_INIT uint16_t dtermRelaxThreshold;
 
 void pidInitFilters(const pidProfile_t *pidProfile)
 {
@@ -495,6 +497,8 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     acLimit = (float)pidProfile->abs_control_limit;
     acErrorLimit = (float)pidProfile->abs_control_error_limit;
 #endif
+
+    dtermRelaxThreshold = pidProfile->dterm_relax_threshold;
 }
 
 void pidInit(const pidProfile_t *pidProfile)
@@ -1029,29 +1033,45 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
         }
         previousGyroRateDterm[axis] = gyroRateDterm[axis];
 
-        // -----calculate feedforward component
-        
+               
         // Only enable feedforward for rate mode
         const float feedforwardGain = flightModeFlags ? 0.0f : pidCoefficient[axis].Kf;
         
-        if (feedforwardGain > 0) {
-
-            // no transition if feedForwardTransition == 0
-            float transition = feedForwardTransition > 0 ? MIN(1.f, getRcDeflectionAbs(axis) * feedForwardTransition) : 1;
-
+        if (feedforwardGain > 0 || dtermRelaxThreshold > 0) {
             float pidSetpointDelta = currentPidSetpoint - previousPidSetpoint[axis];
-
 #ifdef USE_RC_SMOOTHING_FILTER
             pidSetpointDelta = applyRcSmoothingDerivativeFilter(axis, pidSetpointDelta);
 #endif // USE_RC_SMOOTHING_FILTER
+            float pidSetpointSpeed = pidSetpointDelta * pidFrequency;
+            
+        
+            // -----calculate feedforward component
+            if (feedforwardGain > 0) {
 
-            pidData[axis].F = feedforwardGain * transition * pidSetpointDelta * pidFrequency;
+                // no transition if feedForwardTransition == 0
+                float transition = feedForwardTransition > 0 ? MIN(1.f, getRcDeflectionAbs(axis) * feedForwardTransition) : 1;
+
+                pidData[axis].F = feedforwardGain * transition * pidSetpointSpeed;
 
 #if defined(USE_SMART_FEEDFORWARD)
-            applySmartFeedforward(axis);
+                applySmartFeedforward(axis);
 #endif
-        } else {
-            pidData[axis].F = 0;
+            } else {
+                pidData[axis].F = 0;
+            }
+            
+            
+            // -----apply D term relaxation
+            if (dtermRelaxThreshold > 0) {
+                if(pidSetpointSpeed * pidData[axis].D < 0) {
+                    // D is opposing the setpoint direction
+                    float dTermRelax = MAX(0.0f, 1.0f - ABS(pidSetpointSpeed)/dtermRelaxThreshold);
+                    pidData[axis].D *= dTermRelax;
+                }
+                // else
+                //      both setpoint and D are acting in the same direction - no need to attenuate D
+                
+            }
         }
         previousPidSetpoint[axis] = currentPidSetpoint;
 
