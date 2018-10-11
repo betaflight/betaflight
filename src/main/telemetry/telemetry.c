@@ -102,6 +102,9 @@ void telemetryInit(void)
 #endif
 #ifdef USE_TELEMETRY_CRSF
     initCrsfTelemetry();
+#if defined(USE_MSP_OVER_TELEMETRY)
+    initCrsfMspBuffer();
+#endif
 #endif
 #ifdef USE_TELEMETRY_SRXL
     initSrxlTelemetry();
@@ -111,7 +114,6 @@ void telemetryInit(void)
 #endif
 #if defined(USE_MSP_OVER_TELEMETRY)
     initSharedMsp();
-    initCrsfMspBuffer();
 #endif
 
     telemetryCheckState();

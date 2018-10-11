@@ -24,8 +24,7 @@
 
 #include "platform.h"
 
-#ifdef USE_SERIAL_RX
-#ifdef USE_TELEMETRY
+#if defined(USE_TELEMETRY_JETIEXBUS)
 
 #include "build/build_config.h"
 #include "build/debug.h"
@@ -553,5 +552,4 @@ uint8_t sendJetiExBusTelemetry(uint8_t packetID, uint8_t item)
 
     return item;
 }
-#endif // TELEMETRY
-#endif // SERIAL_RX
+#endif
