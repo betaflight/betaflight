@@ -30,6 +30,10 @@
 #define TARGET_BOARD_IDENTIFIER "DYS4"
 #elif defined(XRACERF4)
 #define TARGET_BOARD_IDENTIFIER "XRF4"
+#elif defined(IFLIGHTF4)
+#define TARGET_BOARD_IDENTIFIER "IFF4"
+#elif defined(GEPRCF4)
+#define TARGET_BOARD_IDENTIFIER "GPF4"
 #elif defined(EXUAVF4PRO)
 #define TARGET_BOARD_IDENTIFIER "EXF4"
 #else
@@ -45,6 +49,10 @@
 #define USBD_PRODUCT_STRING "DysF4Pro"
 #elif defined(XRACERF4)
 #define USBD_PRODUCT_STRING "XRACERF4"
+#elif defined(IFLIGHTF4)
+#define USBD_PRODUCT_STRING "IFLIGHTF4"
+#elif defined(GEPRCF4)
+#define USBD_PRODUCT_STRING "GEPRCF4"
 #elif defined(EXUAVF4PRO)
 #define USBD_PRODUCT_STRING "ExuavF4Pro"
 #else
@@ -56,11 +64,11 @@
 #define BEEPER_PIN              PB4
 #define BEEPER_INVERTED
 
-#if defined(OMNIBUSF4SD) || defined(DYSF4PRO)
+#if defined(OMNIBUSF4SD) || defined(DYSF4PRO) || defined(IFLIGHTF4) || defined(GEPRCF4)
 #define ENABLE_DSHOT_DMAR       true
 #endif
 
-#ifdef OMNIBUSF4SD
+#if defined(OMNIBUSF4SD) || defined(IFLIGHTF4) || defined(GEPRCF4)
 // These inverter control pins collide with timer channels on CH5 and CH6 pads.
 // Users of these timers/pads must un-map the inverter assignment explicitly.
 #define INVERTER_PIN_UART6      PC8 // Omnibus F4 V3 and later
@@ -89,7 +97,7 @@
 #define GYRO_1_EXTI_PIN         PC4
 #define USE_MPU_DATA_READY_SIGNAL
 
-#if defined(OMNIBUSF4SD)
+#if defined(OMNIBUSF4SD) || defined(IFLIGHTF4) || defined(GEPRCF4)
 #define GYRO_1_ALIGN            CW270_DEG
 #define ACC_1_ALIGN             CW270_DEG
 #elif defined(XRACERF4) || defined(EXUAVF4PRO)
@@ -103,7 +111,7 @@
 // Support for iFlight OMNIBUS F4 V3
 // Has ICM20608 instead of MPU6000
 // OMNIBUSF4SD is linked with both MPU6000 and MPU6500 drivers
-#if defined (OMNIBUSF4SD) || defined(OMNIBUSF4BASE)
+#if defined (OMNIBUSF4SD) || defined(OMNIBUSF4BASE) || defined(IFLIGHTF4) || defined(GEPRCF4)
 #define USE_ACC_SPI_MPU6500
 #define USE_GYRO_SPI_MPU6500
 #endif
@@ -122,7 +130,7 @@
 #define MAG_HMC5883_ALIGN       CW90_DEG
 
 #define USE_BARO
-#if defined(OMNIBUSF4SD)
+#if defined(OMNIBUSF4SD) || defined(IFLIGHTF4) || defined(GEPRCF4)
 #define USE_BARO_SPI_BMP280
 #define BMP280_SPI_INSTANCE     SPI3
 #define BMP280_CS_PIN           PB3 // v1
@@ -132,7 +140,7 @@
 #define USE_BARO_MS5611
 #define BARO_I2C_INSTANCE       (I2CDEV_2)
 
-#if defined(OMNIBUSF4SD)
+#if defined(OMNIBUSF4SD) || defined(IFLIGHTF4) || defined(GEPRCF4)
 #define DEFAULT_BARO_SPI_BMP280
 #else
 #define DEFAULT_BARO_BMP280
@@ -149,7 +157,7 @@
 #define USE_FLASH_M25P16
 #define USE_FLASH_W25M512
 
-#if defined(OMNIBUSF4SD)
+#if defined(OMNIBUSF4SD) || defined(IFLIGHTF4) || defined(GEPRCF4)
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #define USE_SDCARD
 #define USE_SDCARD_SPI
@@ -211,7 +219,7 @@
 #endif
 
 #define USE_ESCSERIAL
-#if defined(OMNIBUSF4SD)
+#if defined(OMNIBUSF4SD) || defined(IFLIGHTF4) || defined(GEPRCF4)
 #define ESCSERIAL_TIMER_TX_PIN  PB8  // (Hardware=0)
 #else
 #define ESCSERIAL_TIMER_TX_PIN  PB14 // (Hardware=0)
@@ -220,7 +228,7 @@
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 
-#if defined(OMNIBUSF4SD) || defined(LUXF4OSD)
+#if defined(OMNIBUSF4SD) || defined(LUXF4OSD) || defined(IFLIGHTF4) || defined(GEPRCF4)
 #define USE_SPI_DEVICE_2
 #define SPI2_NSS_PIN            PB12
 #define SPI2_SCK_PIN            PB13
@@ -229,7 +237,7 @@
 #endif
 
 #define USE_SPI_DEVICE_3
-#if defined(OMNIBUSF4SD)
+#if defined(OMNIBUSF4SD) || defined(IFLIGHTF4) || defined(GEPRCF4)
   #define SPI3_NSS_PIN          PA15
 #else
   #define SPI3_NSS_PIN          PB3
@@ -242,7 +250,7 @@
 #define USE_I2C_DEVICE_2
 #define I2C2_SCL                NONE // PB10, shared with UART3TX
 #define I2C2_SDA                NONE // PB11, shared with UART3RX
-#if defined(OMNIBUSF4BASE) || defined(OMNIBUSF4SD)
+#if defined(OMNIBUSF4BASE) || defined(OMNIBUSF4SD) || defined(IFLIGHTF4) || defined(GEPRCF4)
 #define USE_I2C_DEVICE_3
 #define I2C3_SCL                NONE // PA8, PWM6
 #define I2C3_SDA                NONE // PC9, CH6
@@ -281,7 +289,7 @@
 #define TARGET_IO_PORTC (0xffff & ~(BIT(15)|BIT(14)|BIT(13)))
 #define TARGET_IO_PORTD BIT(2)
 
-#if defined(OMNIBUSF4SD) || defined(EXUAVF4PRO)
+#if defined(OMNIBUSF4SD) || defined(EXUAVF4PRO) || defined(IFLIGHTF4) || defined(GEPRCF4)
 #define USABLE_TIMER_CHANNEL_COUNT 15
 #define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(10) | TIM_N(12) | TIM_N(8) | TIM_N(9))
 #else
