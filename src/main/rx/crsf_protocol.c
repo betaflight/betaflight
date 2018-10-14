@@ -4,13 +4,14 @@
 
 #include "platform.h"
 
+#include "cli/cli.h"
+#include "cli/settings.h"
+
 #include "common/crc.h"
 #include "common/streambuf.h"
 #include "common/utils.h"
 
-#include "interface/cli.h"
-#include "interface/crsf_protocol.h"
-#include "interface/settings.h"
+#include "crsf_protocol.h"
 
 
 static uint8_t currentParamIndex;

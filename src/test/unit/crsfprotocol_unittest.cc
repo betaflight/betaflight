@@ -4,13 +4,13 @@
 extern "C" {
     #include "platform.h"
 
+    #include "cli/cli.h"
+    #include "cli/settings.h"
+
     #include "common/crc.h"
     #include "common/filter.h"
     #include "common/streambuf.h"
     #include "common/utils.h"
-
-    #include "config/parameter_group.h"
-    #include "config/parameter_group_ids.h"
 
     #include "drivers/sensor.h"
 
@@ -19,28 +19,48 @@ extern "C" {
 
     #include "flight/pid.h"
 
-    #include "interface/cli.h"
-    #include "interface/crsf_protocol.h"
-    #include "interface/settings.h"
+    #include "pg/pg.h"
+    #include "pg/pg_ids.h"
 
     #include "rx/crsf.h"
+    #include "rx/crsf_protocol.h"
 
+    #include "sensors/current.h"
     #include "sensors/gyro.h"
+    #include "sensors/voltage.h"
+
+#define GYRO_SYNC_DENOM_DEFAULT 3
+
+#ifndef GYRO_CONFIG_USE_GYRO_DEFAULT
+#define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_1
+#endif
+
     PG_REGISTER_WITH_RESET_TEMPLATE(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
 
     PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
         .gyro_align = ALIGN_DEFAULT,
+        .gyroCalibrationDuration = 125,        // 1.25 seconds
         .gyroMovementCalibrationThreshold = 48,
-        .gyro_sync_denom = 8,
-        .gyro_lpf = 0,
-        .gyro_soft_lpf_type = FILTER_PT1,
-        .gyro_soft_lpf_hz = 90,
+        .gyro_sync_denom = GYRO_SYNC_DENOM_DEFAULT,
+        .gyro_hardware_lpf = GYRO_HARDWARE_LPF_NORMAL,
+        .gyro_32khz_hardware_lpf = GYRO_32KHZ_HARDWARE_LPF_NORMAL,
+        .gyro_lowpass_type = FILTER_PT1,
+        .gyro_lowpass_hz = 100,
+        .gyro_lowpass2_type = FILTER_PT1,
+        .gyro_lowpass2_hz = 300,
+        .gyro_high_fsr = false,
         .gyro_use_32khz = false,
-        .gyro_to_use = 0,
-        .gyro_soft_notch_hz_1 = 400,
-        .gyro_soft_notch_cutoff_1 = 300,
-        .gyro_soft_notch_hz_2 = 200,
-        .gyro_soft_notch_cutoff_2 = 100
+        .gyro_to_use = GYRO_CONFIG_USE_GYRO_DEFAULT,
+        .gyro_soft_notch_hz_1 = 0,
+        .gyro_soft_notch_cutoff_1 = 0,
+        .gyro_soft_notch_hz_2 = 0,
+        .gyro_soft_notch_cutoff_2 = 0,
+        .checkOverflow = GYRO_OVERFLOW_CHECK_ALL_AXES,
+        .gyro_offset_yaw = 0,
+        .yaw_spin_recovery = true,
+        .yaw_spin_threshold = 1950,
+        .dyn_notch_width_percent = 40,
+        .dyn_notch_range = DYN_NOTCH_RANGE_MEDIUM,
     );
 }
 
@@ -48,7 +68,7 @@ extern "C" {
 #include "gtest/gtest.h"
 
 #define GYRO_SYNC_DENOM_INDEX 4
-#define GYRO_NOTCH1_CUTOFF_INDEX 8
+#define GYRO_NOTCH1_CUTOFF_INDEX 10
 
 static uint8_t crsfPayload[CRSF_PAYLOAD_SIZE_MAX];
 static uint8_t crsfFrame[CRSF_FRAME_SIZE_MAX];
@@ -74,17 +94,17 @@ TEST(CRSF, packU8)
     const clivalue_t *value = &valueTable[GYRO_SYNC_DENOM_INDEX];
     EXPECT_EQ(1, value->config.minmax.min);
     EXPECT_EQ(32, value->config.minmax.max);
-    EXPECT_EQ(8, *(uint8_t*)cliGetDefaultPointer(value)); // default
+    EXPECT_EQ(GYRO_SYNC_DENOM_DEFAULT, *(uint8_t*)cliGetDefaultPointer(value)); // default
 //!!    EXPECT_EQ(crsf_c::PARAM_DONT_SAVE, param->eepromAdd);
 //!!    EXPECT_EQ(nullptr, param->hiddenIndex);
 
     crsfProtocolPackU8Cli(sbuf, value, CRSF_PARAM_SKIP_STRING);
     EXPECT_EQ(CRSF_UINT8, crsfPayload[0]);
     EXPECT_EQ(0, crsfPayload[1]); // name, zero since PARAM_SKIP_STRING used
-    EXPECT_EQ(8, crsfPayload[2]); // value
+    EXPECT_EQ(GYRO_SYNC_DENOM_DEFAULT, crsfPayload[2]); // value
     EXPECT_EQ(1, crsfPayload[3]); // min
     EXPECT_EQ(32, crsfPayload[4]); // max
-    EXPECT_EQ(8, crsfPayload[5]); // default
+    EXPECT_EQ(GYRO_SYNC_DENOM_DEFAULT, crsfPayload[5]); // default
     EXPECT_EQ(0, crsfPayload[6]); // units, zero since PARAM_SKIP_STRING used
 }
 
@@ -155,7 +175,7 @@ TEST(CRSF, ParameterRead)
     EXPECT_EQ(22, crsfReadFrame[9]); // value = 22
     EXPECT_EQ(1, crsfReadFrame[10]); // min = 1
     EXPECT_EQ(32, crsfReadFrame[11]); // max = 32
-    EXPECT_EQ(8, crsfReadFrame[12]); // default = 8
+    EXPECT_EQ(GYRO_SYNC_DENOM_DEFAULT, crsfReadFrame[12]); // default = 8
     EXPECT_EQ(0, crsfReadFrame[13]); // unit, zero since PARAM_SKIP_STRING used
     EXPECT_EQ(crc8_dvb_s2_update(0, &crsfReadFrame[1], 13), crsfReadFrame[14]); // CRC
 }
@@ -259,8 +279,8 @@ TEST(CRSF, InterpretExtendedFrameRead)
     EXPECT_EQ(0, crsfReadFrame[30]);
     EXPECT_EQ(0x3E, crsfReadFrame[31]); // max 16000 = 0x3E80
     EXPECT_EQ(0x80, crsfReadFrame[32]);
-    EXPECT_EQ(0x01, crsfReadFrame[33]); // default 300 = 0x012C
-    EXPECT_EQ(0x2C, crsfReadFrame[34]);
+    EXPECT_EQ(0, crsfReadFrame[33]); // default 0
+    EXPECT_EQ(0, crsfReadFrame[34]);
     EXPECT_EQ(0, crsfReadFrame[35]); // unit, zero since units not currently supported
     EXPECT_EQ(crc8_dvb_s2_update(0, &crsfReadFrame[1], 35), crsfReadFrame[36]); // CRC
 }
@@ -270,6 +290,9 @@ extern "C" {
 // STUBS
 uint8_t getCurrentPidProfileIndex(void) {return 0;}
 uint8_t getCurrentControlRateProfileIndex(void) {return 0;}
+
+const char * const voltageMeterSourceNames[VOLTAGE_METER_COUNT] = {};
+const char * const currentMeterSourceNames[CURRENT_METER_COUNT] = {};
 
 static uint16_t cliGetValueOffset(const clivalue_t *value)
 {
