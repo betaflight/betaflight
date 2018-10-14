@@ -30,7 +30,7 @@
 
 #include "platform.h"
 
-#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_SMARTPORT)
+#if defined(USE_TELEMETRY_SMARTPORT)
 
 #include "common/axis.h"
 #include "common/color.h"
