@@ -36,7 +36,7 @@
 
 #include "platform.h"
 
-#ifdef USE_TELEMETRY
+#ifdef USE_TELEMETRY_LTM
 
 #include "build/build_config.h"
 

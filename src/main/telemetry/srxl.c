@@ -24,7 +24,7 @@
 
 #include "platform.h"
 
-#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_SRXL)
+#if defined(USE_TELEMETRY_SRXL)
 
 #include "build/version.h"
 

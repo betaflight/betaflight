@@ -32,16 +32,14 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <limits.h>
-// #include <string.h>
 
 #include "platform.h"
-//#include "common/utils.h"
 #include "telemetry/telemetry.h"
 #include "telemetry/ibus_shared.h"
 
 static uint16_t calculateChecksum(const uint8_t *ibusPacket);
 
-#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_IBUS)
+#if defined(USE_TELEMETRY_IBUS)
 #include "config/feature.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
