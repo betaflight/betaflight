@@ -36,6 +36,7 @@
 //#undef USE_GYRO_OVERFLOW_CHECK
 //#undef USE_GYRO_LPF2
 
+#if !(defined(ZCOREF3) || defined(FLIP32F3OSD) || defined(IRCSYNERGYF3))
 //#undef USE_ITERM_RELAX
 //#undef USE_RC_SMOOTHING_FILTER
 
@@ -54,9 +55,12 @@
 //#undef USE_SERIALRX_SUMH
 #undef USE_PWM
 
-#undef USE_BOARD_INFO
 #undef USE_EXTENDED_CMS_MENUS
+#endif
+
+#undef USE_BOARD_INFO
 #undef USE_RTC_TIME
+
 #undef USE_RX_MSP
 #undef USE_ESC_SENSOR_INFO
 

@@ -37,7 +37,7 @@
 
 //#undef USE_BOARD_INFO
 #undef USE_EXTENDED_CMS_MENUS
-#undef USE_RTC_TIME
+//#undef USE_RTC_TIME
 #undef USE_RX_MSP
 #undef USE_ESC_SENSOR_INFO
 
