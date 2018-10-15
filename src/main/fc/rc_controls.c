@@ -216,7 +216,8 @@ void processRcStickPositions()
             if (!ARMING_FLAG(ARMED)) {
                 // Arm via YAW
                 tryArm();
-                if (isTryingToArm()) {
+                if (isTryingToArm() ||
+                    ((getArmingDisableFlags() == ARMING_DISABLED_CALIBRATING) && armingConfig()->gyro_cal_on_first_arm)) {
                     doNotRepeat = false;
                 }
             } else {
