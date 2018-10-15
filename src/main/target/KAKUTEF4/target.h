@@ -88,12 +88,7 @@
 #define USE_I2C_DEVICE_1
 #define I2C_DEVICE              (I2CDEV_1)
 
-#if defined(FLYWOOF405)
-#define I2C1_SCL                PB6
-#else 
 #define I2C1_SCL                PB8        // SCL pad
-#endif
-
 #define I2C1_SDA                PB9        // SDA pad
 #define BARO_I2C_INSTANCE       I2C_DEVICE
 #define MAG_I2C_INSTANCE        I2C_DEVICE
