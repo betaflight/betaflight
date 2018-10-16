@@ -62,6 +62,7 @@
 #include "drivers/vtx_common.h"
 #include "io/vtx_tramp.h"
 #include "io/vtx_smartaudio.h"
+#include "io/vtx_beesign.h"
 
 #define SRXL_ADDRESS_FIRST          0xA5
 #define SRXL_ADDRESS_SECOND         0x80
@@ -321,6 +322,12 @@ static void convertVtxPower(spektrumVtx_t * vtx)
         case VTXDEV_SMARTAUDIO:
             powerIndexTable = vtxSaPi;
             vtx->powerValue = saPowerTable[vtx->power -1].rfpower;
+            break;
+#endif
+#if defined(USE_VTX_BEESIGN)
+        case VTXDEV_BEESIGN:
+            powerIndexTable = vtxBsPi;
+            vtx->powerValue = bsPowerTable[vtx->power -1];
             break;
 #endif
 #if defined(USE_VTX_RTC6705)

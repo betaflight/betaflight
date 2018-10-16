@@ -96,6 +96,7 @@ extern const uint8_t spek2commonBand[SPEKTRUM_VTX_BAND_COUNT];
 extern const uint8_t vtxTrampPi[SPEKTRUM_VTX_POWER_COUNT];
 extern const uint8_t vtxRTC6705Pi[SPEKTRUM_VTX_POWER_COUNT];
 extern const uint8_t vtxSaPi[SPEKTRUM_VTX_POWER_COUNT];
+extern const uint8_t vtxBsPi[SPEKTRUM_VTX_POWER_COUNT];
 extern uint8_t SpektrumRegion;
 
 void spektrumHandleVtxControl(uint32_t vtxControl);
