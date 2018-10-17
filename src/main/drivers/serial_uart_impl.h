@@ -145,7 +145,6 @@ typedef struct uartHardware_s {
     uint8_t af;
 #endif
 #if defined(STM32F7)
-    uint8_t txIrq;
     uint8_t rxIrq;
 #else
     uint8_t irqn;
