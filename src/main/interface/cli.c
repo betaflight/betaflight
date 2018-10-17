@@ -119,6 +119,7 @@ extern uint8_t __config_end;
 #include "io/usb_msc.h"
 #include "io/vtx_control.h"
 #include "io/vtx.h"
+#include "io/vtx_beesign.h"
 
 #include "pg/adc.h"
 #include "pg/beeper.h"
@@ -4202,6 +4203,19 @@ error:
 }
 #endif
 
+#ifdef USE_VTX_BEESIGN
+static void beesignSetVTxLock(char *cmdline) {
+    UNUSED(cmdline);
+    bsSetVTxLock();
+    cliPrintLine("beesign vtx lock success");
+}
+ static void beesignSetVTxUnlock(char *cmdline) {
+    UNUSED(cmdline);
+    bsSetVTxUnlock();
+    cliPrintLine("beesign vtx unlock success");
+}
+#endif // USE_VTX_BEESIGN
+
 static void printConfig(char *cmdline, bool doDiff)
 {
     uint8_t dumpMask = DUMP_MASTER;
@@ -4548,6 +4562,10 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("version", "show version", NULL, cliVersion),
 #ifdef USE_VTX_CONTROL
     CLI_COMMAND_DEF("vtx", "vtx channels on switch", NULL, cliVtx),
+#endif
+#ifdef USE_VTX_BEESIGN
+    CLI_COMMAND_DEF("beesign_vtx_lock", "beesign", NULL, beesignSetVTxLock),
+    CLI_COMMAND_DEF("beesign_vtx_unlock", "beesign", NULL, beesignSetVTxUnlock),
 #endif
 };
 
