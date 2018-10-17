@@ -693,7 +693,7 @@ static void applyFlipOverAfterCrashModeToMotors(void)
     }
 }
 
-static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS])
+static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS], bool airmodeActive)
 {
     // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
     // roll/pitch/yaw. This could move throttle down, but also up for those low throttle flips.
@@ -713,7 +713,7 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS])
             motorOutput = constrain(motorOutput, motorRangeMin, motorRangeMax);
         }
         // Motor stop handling
-        if (featureIsEnabled(FEATURE_MOTOR_STOP) && ARMING_FLAG(ARMED) && !featureIsEnabled(FEATURE_3D) && !isAirmodeActive()) {
+        if (featureIsEnabled(FEATURE_MOTOR_STOP) && ARMING_FLAG(ARMED) && !featureIsEnabled(FEATURE_3D) && !airmodeActive) {
             if (((rcData[THROTTLE]) < rxConfig()->mincheck)) {
                 motorOutput = disarmMotorOutput;
             }
@@ -751,6 +751,8 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
         return;
     }
 
+    const bool airmodeActive = isAirmodeActive();
+
     // Find min and max throttle based on conditions. Throttle has to be known before mixing
     calculateThrottleAndCurrentMotorEndpoints(currentTimeUs);
 
@@ -787,7 +789,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
 #ifdef USE_YAW_SPIN_RECOVERY
     // 50% throttle provides the maximum authority for yaw recovery when airmode is not active.
     // When airmode is active the throttle setting doesn't impact recovery authority.
-    if (yawSpinDetected && !isAirmodeActive()) {
+    if (yawSpinDetected && !airmodeActive) {
         throttle = 0.5f;   // 
     }
 #endif // USE_YAW_SPIN_RECOVERY
@@ -834,18 +836,18 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
             motorMix[i] /= motorMixRange;
         }
         // Get the maximum correction by setting offset to center when airmode enabled
-        if (isAirmodeActive()) {
+        if (airmodeActive) {
             throttle = 0.5f;
         }
     } else {
-        if (isAirmodeActive() || throttle > 0.5f) {  // Only automatically adjust throttle when airmode enabled. Airmode logic is always active on high throttle
+        if (airmodeActive || throttle > 0.5f) {  // Only automatically adjust throttle when airmode enabled. Airmode logic is always active on high throttle
             const float throttleLimitOffset = motorMixRange / 2.0f;
             throttle = constrainf(throttle, 0.0f + throttleLimitOffset, 1.0f - throttleLimitOffset);
         }
     }
 
     // Apply the mix to motor endpoints
-    applyMixToMotors(motorMix);
+    applyMixToMotors(motorMix, airmodeActive);
 }
 
 float convertExternalToMotor(uint16_t externalValue)
