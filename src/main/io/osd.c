@@ -247,6 +247,7 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_ANTI_GRAVITY,
     OSD_MOTOR_DIAG,
     OSD_FLIP_ARROW,
+    OSD_DISPLAY_NAME,
 #ifdef USE_RTC_TIME
     OSD_RTC_DATETIME,
 #endif
@@ -820,6 +821,26 @@ static bool osdDrawSingleElement(uint8_t item)
             for (i = 0; i < MAX_NAME_LENGTH; i++) {
                 if (pilotConfig()->name[i]) {
                     buff[i] = toupper((unsigned char)pilotConfig()->name[i]);
+                } else {
+                    break;
+                }    
+            }    
+            buff[i] = '\0';
+        }
+
+        break;
+
+    case OSD_DISPLAY_NAME:
+        // This does not strictly support iterative updating if the display name changes at run time. But since the display name is not supposed to be changing this should not matter, and blanking the entire length of the display name string on update will make it impossible to configure elements to be displayed on the right hand side of the display name.
+        //TODO: When iterative updating is implemented, change this so the display name is only printed once whenever the OSD 'flight' screen is entered.
+
+        if (strlen(pilotConfig()->displayName) == 0) {
+            strcpy(buff, "DISPLAY_NAME");
+        } else {
+            unsigned i;
+            for (i = 0; i < MAX_NAME_LENGTH; i++) {
+                if (pilotConfig()->displayName[i]) {
+                    buff[i] = toupper((unsigned char)pilotConfig()->displayName[i]);
                 } else {
                     break;
                 }    
