@@ -73,8 +73,7 @@
 /*
 */
 /*
-#define SDCARD_DMA_CHANNEL_TX               DMA1_Stream4
-#define SDCARD_DMA_CHANNEL                  0
+#define SPI3_TX_DMA_OPT                     0     // DMA 1 Stream 4 Channel 0
 */
 
 

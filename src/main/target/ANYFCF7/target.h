@@ -140,8 +140,7 @@
 #define SDCARD_DETECT_PIN                   PD3
 #define SDCARD_SPI_INSTANCE                 SPI4
 #define SDCARD_SPI_CS_PIN                   SPI4_NSS_PIN
-#define SDCARD_DMA_STREAM_TX_FULL           DMA2_Stream1
-#define SDCARD_DMA_CHANNEL                  4
+#define SPI4_TX_DMA_OPT                     0     // DMA 2 Stream 1 Channel 4
 
 #define USE_I2C
 #define USE_I2C_DEVICE_2  // External I2C

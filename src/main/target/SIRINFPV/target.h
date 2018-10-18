@@ -124,15 +124,14 @@
 #define SPI3_SCK_PIN            PB3
 #define SPI3_MISO_PIN           PB4
 #define SPI3_MOSI_PIN           PB5
+#define SPI3_TX_DMA_OPT         0 // DMA2_Channel2
+#define SPI3_RX_DMA_OPT         0 // DMA2_Channel1
 
 #define REMAP_TIM17_DMA
 
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI3
 #define MAX7456_SPI_CS_PIN      PA15
-
-#define MAX7456_DMA_CHANNEL_TX              DMA2_Channel2
-#define MAX7456_DMA_CHANNEL_RX              DMA2_Channel1
 #define MAX7456_DMA_IRQ_HANDLER_ID          DMA2_CH1_HANDLER
 
 #define USE_VTX_RTC6705
@@ -149,7 +148,7 @@
 #define SDCARD_SPI_CS_PIN                   SPI2_NSS_PIN
 
 // Note, this is the same DMA channel as UART1_RX. Luckily we don't use DMA for USART Rx.
-#define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
+#define SDCARD_SPI_DMA_OPT                  0    // DMA 1 Channel 5
 
 // Performance logging for SD card operations:
 // #define AFATFS_USE_INTROSPECTIVE_LOGGING

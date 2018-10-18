@@ -28,10 +28,12 @@
 #include "drivers/nvic.h"
 #include "drivers/io.h"
 #include "dma.h"
+#include "dma_reqmap.h"
 
 #include "drivers/bus_spi.h"
 #include "drivers/time.h"
 
+#include "pg/bus_spi.h"
 #include "pg/sdcard.h"
 
 #include "sdcard.h"
@@ -128,7 +130,7 @@ void sdcard_init(const sdcardConfig_t *config)
     }
 
     if (sdcardVTable) {
-        sdcardVTable->sdcard_init(config);
+        sdcardVTable->sdcard_init(config, spiPinConfig(0));
     }
 }
 

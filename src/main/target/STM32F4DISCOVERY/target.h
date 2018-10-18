@@ -98,8 +98,7 @@
 #define USE_SDCARD_SPI
 #define SDCARD_SPI_INSTANCE             SPI2
 #define SDCARD_SPI_CS_PIN               PD8
-#define SDCARD_DMA_CHANNEL_TX                   DMA1_Stream5
-#define SDCARD_DMA_CHANNEL                      0
+#define SPI2_TX_DMA_OPT                         0     // DMA 1 Stream 5 Channel 0
 
 #define USE_ADC
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC

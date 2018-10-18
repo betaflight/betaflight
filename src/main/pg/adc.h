@@ -41,6 +41,8 @@ typedef struct adcConfig_s {
     uint16_t vrefIntCalibration;
     uint16_t tempSensorCalibration1;
     uint16_t tempSensorCalibration2;
+
+    uint8_t dmaopt[3]; // One per ADCDEV_x
 } adcConfig_t;
 
 PG_DECLARE(adcConfig_t, adcConfig);

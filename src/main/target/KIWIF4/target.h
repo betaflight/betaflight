@@ -74,9 +74,8 @@
 #else
 #define MAX7456_SPI_INSTANCE                SPI2
 #define MAX7456_SPI_CS_PIN                  PB12
-//#define MAX7456_DMA_CHANNEL_TX              DMA1_Stream5
-//#define MAX7456_DMA_CHANNEL_RX              DMA1_Stream0
-//#define MAX7456_DMA_IRQ_HANDLER_ID          DMA1_ST0_HANDLER
+//#define MAX7456_DMA_CHANNEL_TX              DMA1_Stream5 // Can't convert to dmaopt
+//#define MAX7456_DMA_CHANNEL_RX              DMA1_Stream0 // Can't convert to dmaopt
 #endif
 
 #if defined(KIWIF4V2)
@@ -85,10 +84,8 @@
 //#define SDCARD_DETECT_PIN                   PB9
 #define SDCARD_SPI_INSTANCE                 SPI2
 #define SDCARD_SPI_CS_PIN                   PB12
-//#define SDCARD_DMA_CHANNEL_TX               DMA1_Stream5
-//#define SDCARD_DMA_CHANNEL                  0
-#define SDCARD_DMA_CHANNEL_TX               DMA1_Stream4
-#define SDCARD_DMA_CHANNEL                  0
+#define SPI2_TX_DMA_OPT                     0     // DMA 1 Stream 4 Channel 0
+#define SPI2_TX_DMA_OPT                     0     // DMA 1 Stream 4 Channel 0
 
 #else
 #define USE_FLASHFS
