@@ -126,7 +126,7 @@ typedef struct modeActivationProfile_s {
 bool IS_RC_MODE_ACTIVE(boxId_e boxId);
 void rcModeUpdate(boxBitmask_t *newState);
 
-bool isAirmodeActive(void);
+bool airmodeIsEnabled(void);
 
 bool isRangeActive(uint8_t auxChannelIndex, const channelRange_t *range);
 void updateActivatedModes(void);

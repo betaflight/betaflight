@@ -637,7 +637,7 @@ static bool osdDrawSingleElement(uint8_t item)
                 strcpy(buff, "HOR ");
             } else if (IS_RC_MODE_ACTIVE(BOXACROTRAINER)) {
                 strcpy(buff, "ATRN");
-            } else if (isAirmodeActive()) {
+            } else if (airmodeIsEnabled()) {
                 strcpy(buff, "AIR ");
             } else {
                 strcpy(buff, "ACRO");

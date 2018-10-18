@@ -712,6 +712,7 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS])
         } else {
             motorOutput = constrain(motorOutput, motorRangeMin, motorRangeMax);
         }
+
         motor[i] = motorOutput;
     }
 
@@ -788,7 +789,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
 #ifdef USE_YAW_SPIN_RECOVERY
     // 50% throttle provides the maximum authority for yaw recovery when airmode is not active.
     // When airmode is active the throttle setting doesn't impact recovery authority.
-    if (yawSpinDetected && !isAirmodeActive()) {
+    if (yawSpinDetected && !airmodeIsEnabled()) {
         throttle = 0.5f;   // 
     }
 #endif // USE_YAW_SPIN_RECOVERY
@@ -835,11 +836,11 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
             motorMix[i] /= motorMixRange;
         }
         // Get the maximum correction by setting offset to center when airmode enabled
-        if (isAirmodeActive()) {
+        if (airmodeIsEnabled()) {
             throttle = 0.5f;
         }
     } else {
-        if (isAirmodeActive() || throttle > 0.5f) {  // Only automatically adjust throttle when airmode enabled. Airmode logic is always active on high throttle
+        if (airmodeIsEnabled() || throttle > 0.5f) {  // Only automatically adjust throttle when airmode enabled. Airmode logic is always active on high throttle
             const float throttleLimitOffset = motorMixRange / 2.0f;
             throttle = constrainf(throttle, 0.0f + throttleLimitOffset, 1.0f - throttleLimitOffset);
         }
