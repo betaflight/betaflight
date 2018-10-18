@@ -177,7 +177,6 @@ static uint8_t beep_multiBeeps[MAX_MULTI_BEEPS + 1];
 #define BEEPER_WARNING_BEEP_2_DURATION 5
 #define BEEPER_WARNING_BEEP_GAP_DURATION 10
 
-// Beeper off = 0 Beeper on = 1
 static bool beeperIsOn = false;
 
 // Place in current sequence
