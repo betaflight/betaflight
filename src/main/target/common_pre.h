@@ -78,6 +78,7 @@
 #define USE_ADC_INTERNAL
 #define USE_USB_CDC_HID
 #define USE_USB_MSC
+#define USE_MCO
 #endif
 
 #if defined(STM32F4) || defined(STM32F7)

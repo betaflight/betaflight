@@ -128,6 +128,7 @@ extern uint8_t __config_end;
 #include "pg/bus_spi.h"
 #include "pg/gyrodev.h"
 #include "pg/max7456.h"
+#include "pg/mco.h"
 #include "pg/pinio.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"

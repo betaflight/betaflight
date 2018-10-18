@@ -56,6 +56,7 @@
 #include "drivers/inverter.h"
 #include "drivers/io.h"
 #include "drivers/light_led.h"
+#include "drivers/mco.h"
 #include "drivers/nvic.h"
 #include "drivers/pwm_esc_detect.h"
 #include "drivers/pwm_output.h"
@@ -96,6 +97,7 @@
 #include "pg/bus_i2c.h"
 #include "pg/bus_spi.h"
 #include "pg/flash.h"
+#include "pg/mco.h"
 #include "pg/pinio.h"
 #include "pg/piniobox.h"
 #include "pg/pg.h"
@@ -293,6 +295,12 @@ void init(void)
         } while (bothButtonsHeld);
 #endif
     }
+#endif
+
+    // Configure MCO output after config is stable
+
+#ifdef USE_MCO
+    mcoInit(mcoConfig());
 #endif
 
 #if defined(USE_SPEKTRUM_BIND)
