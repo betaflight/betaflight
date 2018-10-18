@@ -712,12 +712,6 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS])
         } else {
             motorOutput = constrain(motorOutput, motorRangeMin, motorRangeMax);
         }
-        // Motor stop handling
-        if (featureIsEnabled(FEATURE_MOTOR_STOP) && ARMING_FLAG(ARMED) && !featureIsEnabled(FEATURE_3D) && !isAirmodeActive()) {
-            if (((rcData[THROTTLE]) < rxConfig()->mincheck)) {
-                motorOutput = disarmMotorOutput;
-            }
-        }
         motor[i] = motorOutput;
     }
 
@@ -742,6 +736,13 @@ float applyThrottleLimit(float throttle)
     }
 
     return throttle;
+}
+
+void applyMotorStop(void)
+{
+    for (int i = 0; i < motorCount; i++) {
+        motor[i] = disarmMotorOutput;
+    }
 }
 
 FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensation)
@@ -844,8 +845,17 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
         }
     }
 
-    // Apply the mix to motor endpoints
-    applyMixToMotors(motorMix);
+    if (featureIsEnabled(FEATURE_MOTOR_STOP)
+        && ARMING_FLAG(ARMED)
+        && !featureIsEnabled(FEATURE_3D)
+        && !isAirmodeActive()
+        && (rcData[THROTTLE] < rxConfig()->mincheck)) {
+        // motor_stop handling
+        applyMotorStop();
+    } else {
+        // Apply the mix to motor endpoints
+        applyMixToMotors(motorMix);
+    }
 }
 
 float convertExternalToMotor(uint16_t externalValue)
