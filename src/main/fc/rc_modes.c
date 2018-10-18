@@ -45,6 +45,8 @@
 boxBitmask_t rcModeActivationMask; // one bit per mode defined in boxId_e
 static boxBitmask_t stickyModesEverDisabled;
 
+static bool airmodeActive;
+
 PG_REGISTER_ARRAY(modeActivationCondition_t, MAX_MODE_ACTIVATION_CONDITION_COUNT, modeActivationConditions,
                   PG_MODE_ACTIVATION_PROFILE, 1);
 
@@ -59,7 +61,7 @@ void rcModeUpdate(boxBitmask_t *newState)
 }
 
 bool isAirmodeActive(void) {
-    return (IS_RC_MODE_ACTIVE(BOXAIRMODE) || featureIsEnabled(FEATURE_AIRMODE));
+    return airmodeActive;
 }
 
 bool isRangeActive(uint8_t auxChannelIndex, const channelRange_t *range) {
@@ -136,6 +138,8 @@ void updateActivatedModes(void)
     }
 
     rcModeUpdate(&newMask);
+
+    airmodeActive = featureIsEnabled(FEATURE_AIRMODE) || IS_RC_MODE_ACTIVE(BOXAIRMODE);
 }
 
 bool isModeActivationConditionPresent(boxId_e modeId)
