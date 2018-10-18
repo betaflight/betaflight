@@ -122,8 +122,6 @@
 #define DEFAULT_CURRENT_METER_SOURCE    CURRENT_METER_ADC
 #define CURRENT_METER_SCALE_DEFAULT 179
 
-#define USE_LED_STRIP
-
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         0xffff
