@@ -376,12 +376,7 @@ void uartIrqHandler(uartPort_t *s)
 
 static void handleUsartTxDma(uartPort_t *s)
 {
-    if (s->port.txBufferHead != s->port.txBufferTail)
-        uartStartTxDMA(s);
-    else
-    {
-        s->txDMAEmpty = true;
-    }
+    uartTryStartTxDMA(s);
 }
 
 void dmaIRQHandler(dmaChannelDescriptor_t* descriptor)
