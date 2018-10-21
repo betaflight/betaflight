@@ -278,7 +278,7 @@ extern "C" {
 
     bool featureIsEnabled(uint32_t) {return false;}
 
-    bool isAirmodeActive(void) {return true;}
+    bool airmodeIsEnabled(void) {return true;}
 
     mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostProcessFnPtr *mspPostProcessFn) {
 
