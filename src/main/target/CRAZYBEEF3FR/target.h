@@ -83,7 +83,6 @@
 
 #define ENABLE_DSHOT_DMAR       true
 
-#define USE_LED_STRIP
 #define LED0_PIN                PB3
 #define USE_BEEPER 
 #define BEEPER_PIN              PC15
