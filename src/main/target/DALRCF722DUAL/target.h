@@ -144,8 +144,6 @@
 
 #define USE_OSD
 
-#define USE_LED_STRIP
-
 #define DEFAULT_RX_FEATURE                  FEATURE_RX_SERIAL
 #define DEFAULT_FEATURES                    FEATURE_OSD
 #define SERIALRX_UART                       SERIAL_PORT_USART1
