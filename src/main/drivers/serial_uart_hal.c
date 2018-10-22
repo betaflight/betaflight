@@ -33,6 +33,7 @@
 #ifdef USE_UART
 
 #include "build/build_config.h"
+#include "build/atomic.h"
 
 #include "common/utils.h"
 #include "drivers/io.h"
@@ -232,26 +233,40 @@ void uartSetMode(serialPort_t *instance, portMode_e mode)
     uartReconfigure(uartPort);
 }
 
-void uartStartTxDMA(uartPort_t *s)
+void uartTryStartTxDMA(uartPort_t *s)
 {
-    uint16_t size = 0;
-    uint32_t fromwhere=0;
-    HAL_UART_StateTypeDef state = HAL_UART_GetState(&s->Handle);
-    if ((state & HAL_UART_STATE_BUSY_TX) == HAL_UART_STATE_BUSY_TX)
-        return;
+    ATOMIC_BLOCK(NVIC_PRIO_SERIALUART_TXDMA) {
+        if (s->txDMAStream->CR & DMA_SxCR_EN) {
+            // DMA is already in progress
+            return;
+        }
 
-    if (s->port.txBufferHead > s->port.txBufferTail) {
-        size = s->port.txBufferHead - s->port.txBufferTail;
-        fromwhere = s->port.txBufferTail;
-        s->port.txBufferTail = s->port.txBufferHead;
-    } else {
-        size = s->port.txBufferSize - s->port.txBufferTail;
-        fromwhere = s->port.txBufferTail;
-        s->port.txBufferTail = 0;
+        HAL_UART_StateTypeDef state = HAL_UART_GetState(&s->Handle);
+        if ((state & HAL_UART_STATE_BUSY_TX) == HAL_UART_STATE_BUSY_TX) {
+            return;
+        }
+
+        if (s->port.txBufferHead == s->port.txBufferTail) {
+            // No more data to transmit
+            s->txDMAEmpty = true;
+            return;
+        }
+
+        uint16_t size;
+        uint32_t fromWhere = s->port.txBufferTail;
+
+        if (s->port.txBufferHead > s->port.txBufferTail) {
+            size = s->port.txBufferHead - s->port.txBufferTail;
+            s->port.txBufferTail = s->port.txBufferHead;
+        } else {
+            size = s->port.txBufferSize - s->port.txBufferTail;
+            s->port.txBufferTail = 0;
+        }
+
+        s->txDMAEmpty = false;
+
+        HAL_UART_Transmit_DMA(&s->Handle, (uint8_t *)&s->port.txBuffer[fromWhere], size);
     }
-    s->txDMAEmpty = false;
-    //HAL_CLEANCACHE((uint8_t *)&s->port.txBuffer[fromwhere],size);
-    HAL_UART_Transmit_DMA(&s->Handle, (uint8_t *)&s->port.txBuffer[fromwhere], size);
 }
 
 uint32_t uartTotalRxBytesWaiting(const serialPort_t *instance)
@@ -351,8 +366,7 @@ void uartWrite(serialPort_t *instance, uint8_t ch)
     }
 
     if (s->txDMAStream) {
-        if (!(s->txDMAStream->CR & 1))
-            uartStartTxDMA(s);
+        uartTryStartTxDMA(s);
     } else {
         __HAL_UART_ENABLE_IT(&s->Handle, UART_IT_TXE);
     }
