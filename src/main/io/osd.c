@@ -742,8 +742,11 @@ static bool osdDrawSingleElement(uint8_t item)
         }
 
     case OSD_G_FORCE:
-        tfp_sprintf(buff, "%01d.%01dG", (int)osdGForce, (int)(osdGForce * 10) % 10);
-        break;
+        {
+            const int gForce = lrintf(osdGForce * 10);
+            tfp_sprintf(buff, "%01d.%01dG", gForce / 10, gForce % 10);
+            break;
+        }
 
     case OSD_ROLL_PIDS:
         osdFormatPID(buff, "ROL", &currentPidProfile->pid[PID_ROLL]);
@@ -1077,13 +1080,16 @@ static void osdDrawElements(void)
         return;
     }
 
+    osdGForce = 0.0f;
     if (sensors(SENSOR_ACC)) {
-        osdGForce = 0.0f;
-        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            const float a = accAverage[axis];
-            osdGForce += a * a;
+        // only calculate the G force if the element is visible or the stat is enabled
+        if (VISIBLE(osdConfig()->item_pos[OSD_G_FORCE]) || osdStatGetState(OSD_STAT_MAX_G_FORCE)) {
+            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+                const float a = accAverage[axis];
+                osdGForce += a * a;
+            }
+            osdGForce = sqrtf(osdGForce) * acc.dev.acc_1G_rec;
         }
-        osdGForce = sqrtf(osdGForce) * acc.dev.acc_1G_rec;
         osdDrawSingleElement(OSD_ARTIFICIAL_HORIZON);
         osdDrawSingleElement(OSD_G_FORCE);
     }
@@ -1551,8 +1557,9 @@ static void osdShowStats(uint16_t endBatteryVoltage)
     }
 #endif
 
-    if (osdStatGetState(OSD_STAT_MAX_G_FORCE)) {
-        tfp_sprintf(buff, "%01d.%01dG", (int)stats.max_g_force, (int)(stats.max_g_force * 10) % 10);
+    if (osdStatGetState(OSD_STAT_MAX_G_FORCE) && sensors(SENSOR_ACC)) {
+        const int gForce = lrintf(stats.max_g_force * 10);
+        tfp_sprintf(buff, "%01d.%01dG", gForce / 10, gForce % 10);
         osdDisplayStatisticLabel(top++, "MAX G-FORCE", buff);
     }
 
