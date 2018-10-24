@@ -1559,6 +1559,7 @@ static void osdShowStats(uint16_t endBatteryVoltage)
         osdDisplayStatisticLabel(top++, "MAX G-FORCE", buff);
     }
 
+#ifdef USE_ESC_SENSOR
     if (osdStatGetState(OSD_STAT_MAX_ESC_TEMP)) {
         tfp_sprintf(buff, "%3d%c", osdConvertTemperatureToSelectedUnit(stats.max_esc_temp * 10) / 10, osdGetTemperatureSymbolForSelectedUnit());
         osdDisplayStatisticLabel(top++, "MAX ESC TEMP", buff);
@@ -1568,6 +1569,7 @@ static void osdShowStats(uint16_t endBatteryVoltage)
         itoa(stats.max_esc_rpm, buff, 10);
         osdDisplayStatisticLabel(top++, "MAX ESC RPM", buff);
     }
+#endif
 
 }
 
