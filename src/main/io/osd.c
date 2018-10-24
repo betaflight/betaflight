@@ -252,13 +252,13 @@ static int32_t osdGetMetersToSelectedUnit(int32_t meters)
 }
 
 #if defined(USE_ADC_INTERNAL) || defined(USE_ESC_SENSOR)
-STATIC_UNIT_TESTED int osdConvertTemperatureToSelectedUnit(int tempInDeciDegrees)
+STATIC_UNIT_TESTED int osdConvertTemperatureToSelectedUnit(int tempInDegreesCelcius)
 {
     switch (osdConfig()->units) {
     case OSD_UNIT_IMPERIAL:
-        return ((tempInDeciDegrees * 9) / 5) + 320;
+        return lrintf(((tempInDegreesCelcius * 9.0f) / 5) + 32);
     default:
-        return tempInDeciDegrees;
+        return tempInDegreesCelcius;
     }
 }
 
@@ -800,10 +800,10 @@ static bool osdDrawSingleElement(uint8_t item)
             }
 
 #ifdef USE_ADC_INTERNAL
-            uint8_t coreTemperature = getCoreTemperatureCelsius();
+            const int16_t coreTemperature = getCoreTemperatureCelsius();
             if (osdWarnGetState(OSD_WARNING_CORE_TEMPERATURE) && coreTemperature >= osdConfig()->core_temp_alarm) {
                 char coreTemperatureWarningMsg[OSD_FORMAT_MESSAGE_BUFFER_SIZE];
-                tfp_sprintf(coreTemperatureWarningMsg, "CORE: %3d%c", osdConvertTemperatureToSelectedUnit(getCoreTemperatureCelsius() * 10) / 10, osdGetTemperatureSymbolForSelectedUnit());
+                tfp_sprintf(coreTemperatureWarningMsg, "CORE: %3d%c", osdConvertTemperatureToSelectedUnit(coreTemperature), osdGetTemperatureSymbolForSelectedUnit());
 
                 osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, coreTemperatureWarningMsg);
 
@@ -992,7 +992,7 @@ static bool osdDrawSingleElement(uint8_t item)
 #ifdef USE_ESC_SENSOR
     case OSD_ESC_TMP:
         if (feature(FEATURE_ESC_SENSOR)) {
-            tfp_sprintf(buff, "%3d%c", osdConvertTemperatureToSelectedUnit(escDataCombined->temperature * 10) / 10, osdGetTemperatureSymbolForSelectedUnit());
+            tfp_sprintf(buff, "%3d%c", osdConvertTemperatureToSelectedUnit(escDataCombined->temperature), osdGetTemperatureSymbolForSelectedUnit());
         }
         break;
 
@@ -1019,7 +1019,7 @@ static bool osdDrawSingleElement(uint8_t item)
 
 #ifdef USE_ADC_INTERNAL
     case OSD_CORE_TEMPERATURE:
-        tfp_sprintf(buff, "%3d%c", osdConvertTemperatureToSelectedUnit(getCoreTemperatureCelsius() * 10) / 10, osdGetTemperatureSymbolForSelectedUnit());
+        tfp_sprintf(buff, "%3d%c", osdConvertTemperatureToSelectedUnit(getCoreTemperatureCelsius()), osdGetTemperatureSymbolForSelectedUnit());
         break;
 #endif
 
@@ -1496,7 +1496,6 @@ static void osdShowStats(uint16_t endBatteryVoltage)
         osdDisplayStatisticLabel(top++, "BB LOG NUM", buff);
     }
 #endif
-
 }
 
 static void osdShowArmed(void)
