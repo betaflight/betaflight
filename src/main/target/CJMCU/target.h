@@ -103,8 +103,6 @@
 #ifdef USE_SERIAL_RX
 #undef USE_SERIAL_RX
 #endif
-//#undef SKIP_TASK_STATISTICS
-
 #else
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
@@ -114,7 +112,7 @@
 
 #define BRUSHED_MOTORS
 #define DEFAULT_FEATURES        FEATURE_MOTOR_STOP
-#define SKIP_SERIAL_PASSTHROUGH
+#undef USE_SERIAL_PASSTHROUGH
 #undef USE_CLI
 
 // Since the CJMCU PCB has holes for 4 motors in each corner we can save same flash space by disabling support for other mixers.

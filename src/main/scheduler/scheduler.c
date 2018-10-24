@@ -138,7 +138,7 @@ void taskSystemLoad(timeUs_t currentTimeUs)
 #endif
 }
 
-#ifndef SKIP_TASK_STATISTICS
+#if defined(USE_TASK_STATISTICS)
 #define MOVING_SUM_COUNT 32
 timeUs_t checkFuncMaxExecutionTime;
 timeUs_t checkFuncTotalExecutionTime;
@@ -206,9 +206,7 @@ void schedulerSetCalulateTaskStatistics(bool calculateTaskStatisticsToUse)
 
 void schedulerResetTaskStatistics(cfTaskId_e taskId)
 {
-#ifdef SKIP_TASK_STATISTICS
-    UNUSED(taskId);
-#else
+#if defined(USE_TASK_STATISTICS)
     if (taskId == TASK_SELF) {
         currentTask->movingSumExecutionTime = 0;
         currentTask->totalExecutionTime = 0;
@@ -218,19 +216,21 @@ void schedulerResetTaskStatistics(cfTaskId_e taskId)
         cfTasks[taskId].totalExecutionTime = 0;
         cfTasks[taskId].maxExecutionTime = 0;
     }
+#else
+    UNUSED(taskId);
 #endif
 }
 
 void schedulerResetTaskMaxExecutionTime(cfTaskId_e taskId)
 {
-#ifdef SKIP_TASK_STATISTICS
-    UNUSED(taskId);
-#else
+#if defined(USE_TASK_STATISTICS)
     if (taskId == TASK_SELF) {
         currentTask->maxExecutionTime = 0;
     } else if (taskId < TASK_COUNT) {
         cfTasks[taskId].maxExecutionTime = 0;
     }
+#else
+    UNUSED(taskId);
 #endif
 }
 
@@ -279,7 +279,7 @@ FAST_CODE void scheduler(void)
 #if defined(SCHEDULER_DEBUG)
                 DEBUG_SET(DEBUG_SCHEDULER, 3, micros() - currentTimeBeforeCheckFuncCall);
 #endif
-#ifndef SKIP_TASK_STATISTICS
+#if defined(USE_TASK_STATISTICS)
                 if (calculateTaskStatistics) {
                     const uint32_t checkFuncExecutionTime = micros() - currentTimeBeforeCheckFuncCall;
                     checkFuncMovingSumExecutionTime += checkFuncExecutionTime - checkFuncMovingSumExecutionTime / MOVING_SUM_COUNT;
@@ -328,9 +328,7 @@ FAST_CODE void scheduler(void)
         selectedTask->dynamicPriority = 0;
 
         // Execute task
-#ifdef SKIP_TASK_STATISTICS
-        selectedTask->taskFunc(currentTimeUs);
-#else
+#if defined(USE_TASK_STATISTICS)
         if (calculateTaskStatistics) {
             const timeUs_t currentTimeBeforeTaskCall = micros();
             selectedTask->taskFunc(currentTimeBeforeTaskCall);
@@ -338,11 +336,12 @@ FAST_CODE void scheduler(void)
             selectedTask->movingSumExecutionTime += taskExecutionTime - selectedTask->movingSumExecutionTime / MOVING_SUM_COUNT;
             selectedTask->totalExecutionTime += taskExecutionTime;   // time consumed by scheduler + task
             selectedTask->maxExecutionTime = MAX(selectedTask->maxExecutionTime, taskExecutionTime);
-        } else {
+        } else
+#endif
+        {
             selectedTask->taskFunc(currentTimeUs);
         }
 
-#endif
 #if defined(SCHEDULER_DEBUG)
         DEBUG_SET(DEBUG_SCHEDULER, 2, micros() - currentTimeUs - taskExecutionTime); // time spent in scheduler
     } else {

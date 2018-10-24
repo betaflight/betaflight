@@ -1094,7 +1094,7 @@ static void cliSerial(char *cmdline)
 
 }
 
-#ifndef SKIP_SERIAL_PASSTHROUGH
+#if defined(USE_SERIAL_PASSTHROUGH)
 #ifdef USE_PINIO
 static void cbCtrlLine(void *context, uint16_t ctrl)
 {
@@ -3608,7 +3608,7 @@ static void cliStatus(char *cmdline)
     cliPrintLinefeed();
 }
 
-#ifndef SKIP_TASK_STATISTICS
+#if defined(USE_TASK_STATISTICS)
 static void cliTasks(char *cmdline)
 {
     UNUSED(cmdline);
@@ -4522,7 +4522,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("sd_info", "sdcard info", NULL, cliSdInfo),
 #endif
     CLI_COMMAND_DEF("serial", "configure serial ports", NULL, cliSerial),
-#ifndef SKIP_SERIAL_PASSTHROUGH
+#if defined(USE_SERIAL_PASSTHROUGH)
     CLI_COMMAND_DEF("serialpassthrough", "passthrough serial data to port", "<id> [baud] [mode] [DTR PINIO]: passthrough to serial", cliSerialPassthrough),
 #endif
 #ifdef USE_SERVOS
@@ -4539,7 +4539,7 @@ const clicmd_t cmdTable[] = {
         "\treverse <servo> <source> r|n", cliServoMix),
 #endif
     CLI_COMMAND_DEF("status", "show status", NULL, cliStatus),
-#ifndef SKIP_TASK_STATISTICS
+#if defined(USE_TASK_STATISTICS)
     CLI_COMMAND_DEF("tasks", "show task stats", NULL, cliTasks),
 #endif
 #ifdef USE_TIMER_MGMT
