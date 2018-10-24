@@ -564,13 +564,13 @@ static bool osdDrawSingleElement(uint8_t item)
     case OSD_REMAINING_TIME_ESTIMATE:
         {
             const int mAhDrawn = getMAhDrawn();
-            const int remaining_time = (int)((osdConfig()->cap_alarm - mAhDrawn) * ((float)flyTime) / mAhDrawn);
 
-            if (mAhDrawn < 0.1 * osdConfig()->cap_alarm) {
+            if (mAhDrawn <= 0.1 * osdConfig()->cap_alarm) {  // also handles the mAhDrawn == 0 condition
                 tfp_sprintf(buff, "--:--");
             } else if (mAhDrawn > osdConfig()->cap_alarm) {
                 tfp_sprintf(buff, "00:00");
             } else {
+                const int remaining_time = (int)((osdConfig()->cap_alarm - mAhDrawn) * ((float)flyTime) / mAhDrawn);
                 osdFormatTime(buff, OSD_TIMER_PREC_SECOND, remaining_time);
             }
             break;
