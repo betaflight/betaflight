@@ -312,7 +312,7 @@ bool telemetryCheckRxPortShared(const serialPortConfig_t *) {return true;}
 
 portSharing_e determinePortSharing(const serialPortConfig_t *, serialPortFunction_e) {return PORTSHARING_NOT_SHARED;}
 
-bool isAirmodeActive(void) {return airMode;}
+bool airmodeIsEnabled(void) {return airMode;}
 
 int32_t getAmperage(void) {
     return testAmperage;

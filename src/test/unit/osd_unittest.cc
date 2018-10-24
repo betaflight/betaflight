@@ -976,7 +976,7 @@ extern "C" {
         return false;
     }
 
-    bool isAirmodeActive() {
+    bool airmodeIsEnabled() {
         return false;
     }
 
