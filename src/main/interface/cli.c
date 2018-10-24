@@ -1095,14 +1095,20 @@ static void cliSerial(char *cmdline)
 }
 
 #if defined(USE_SERIAL_PASSTHROUGH)
-#ifdef USE_PINIO
 static void cbCtrlLine(void *context, uint16_t ctrl)
 {
-    int pinioDtr = (int)(long)context;
-
-    pinioSet(pinioDtr, !(ctrl & CTRL_LINE_STATE_DTR));
-}
+#ifdef USE_PINIO
+    int contextValue = (int)(long)context;
+    if (contextValue) {
+        pinioSet(contextValue - 1, !(ctrl & CTRL_LINE_STATE_DTR));
+    } else
 #endif /* USE_PINIO */
+    UNUSED(context);
+
+    if (!(ctrl & CTRL_LINE_STATE_DTR)) {
+        systemReset();
+    }
+}
 
 static void cliSerialPassthrough(char *cmdline)
 {
@@ -1114,9 +1120,8 @@ static void cliSerialPassthrough(char *cmdline)
     int id = -1;
     uint32_t baud = 0;
     bool enableBaudCb = false;
-#ifdef USE_PINIO
     int pinioDtr = 0;
-#endif /* USE_PINIO */
+    bool resetOnDtr = false;
     unsigned mode = 0;
     char *saveptr;
     char* tok = strtok_r(cmdline, " ", &saveptr);
@@ -1131,16 +1136,23 @@ static void cliSerialPassthrough(char *cmdline)
             baud = atoi(tok);
             break;
         case 2:
-            if (strstr(tok, "rx") || strstr(tok, "RX"))
+            if (strcasestr(tok, "rx")) {
                 mode |= MODE_RX;
-            if (strstr(tok, "tx") || strstr(tok, "TX"))
+            }
+            if (strcasestr(tok, "tx")) {
                 mode |= MODE_TX;
+            }
             break;
-#ifdef USE_PINIO
         case 3:
-            pinioDtr = atoi(tok);
-            break;
+            if (strncasecmp(tok, "reset", strlen(tok)) == 0) {
+                resetOnDtr = true;
+#ifdef USE_PINIO
+            } else {
+                pinioDtr = atoi(tok);
 #endif /* USE_PINIO */
+            }
+
+            break;
         }
         index++;
         tok = strtok_r(NULL, " ", &saveptr);
@@ -1209,14 +1221,21 @@ static void cliSerialPassthrough(char *cmdline)
         serialSetBaudRateCb(cliPort, serialSetBaudRate, passThroughPort);
     }
 
-    cliPrintLine("Forwarding, power cycle to exit.");
-
-#ifdef USE_PINIO
-    // Register control line state callback
-    if (pinioDtr) {
-        serialSetCtrlLineStateCb(cliPort, cbCtrlLine, (void *)(intptr_t)(pinioDtr - 1));
+    char *resetMessage = "";
+    if (resetOnDtr) {
+        resetMessage = "or drop DTR ";
     }
+
+    cliPrintLinef("Forwarding, power cycle %sto exit.", resetMessage);
+
+    if (resetOnDtr
+#ifdef USE_PINIO
+        || pinioDtr
 #endif /* USE_PINIO */
+        ) {
+        // Register control line state callback
+        serialSetCtrlLineStateCb(cliPort, cbCtrlLine, (void *)(intptr_t)(pinioDtr));
+    }
 
     serialPassthrough(cliPort, passThroughPort, NULL, NULL);
 }
@@ -4523,7 +4542,11 @@ const clicmd_t cmdTable[] = {
 #endif
     CLI_COMMAND_DEF("serial", "configure serial ports", NULL, cliSerial),
 #if defined(USE_SERIAL_PASSTHROUGH)
-    CLI_COMMAND_DEF("serialpassthrough", "passthrough serial data to port", "<id> [baud] [mode] [DTR PINIO]: passthrough to serial", cliSerialPassthrough),
+#if defined(USE_PINIO)
+    CLI_COMMAND_DEF("serialpassthrough", "passthrough serial data to port", "<id> [baud] [mode] [dtr pinio|'reset']", cliSerialPassthrough),
+#else
+    CLI_COMMAND_DEF("serialpassthrough", "passthrough serial data to port", "<id> [baud] [mode] ['reset']", cliSerialPassthrough),
+#endif
 #endif
 #ifdef USE_SERVOS
     CLI_COMMAND_DEF("servo", "configure servos", NULL, cliServo),
