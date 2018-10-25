@@ -20,6 +20,9 @@
 
 #pragma once
 
+// This is only to be enabled for all targets in this branch, so that it can be used in cases where the on board USB port is unusable
+#define USE_MSP_UART
+
 #define USE_PARAMETER_GROUPS
 // type conversion warnings.
 // -Wconversion can be turned on to enable the process of eliminating these warnings
