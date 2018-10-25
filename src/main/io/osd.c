@@ -268,13 +268,13 @@ static int32_t osdGetMetersToSelectedUnit(int32_t meters)
 }
 
 #if defined(USE_ADC_INTERNAL) || defined(USE_ESC_SENSOR)
-STATIC_UNIT_TESTED int osdConvertTemperatureToSelectedUnit(int tempInDeciDegrees)
+STATIC_UNIT_TESTED int osdConvertTemperatureToSelectedUnit(int tempInDegreesCelcius)
 {
     switch (osdConfig()->units) {
     case OSD_UNIT_IMPERIAL:
-        return ((tempInDeciDegrees * 9) / 5) + 320;
+        return lrintf(((tempInDegreesCelcius * 9.0f) / 5) + 32);
     default:
-        return tempInDeciDegrees;
+        return tempInDegreesCelcius;
     }
 }
 
@@ -604,13 +604,13 @@ static bool osdDrawSingleElement(uint8_t item)
     case OSD_REMAINING_TIME_ESTIMATE:
         {
             const int mAhDrawn = getMAhDrawn();
-            const int remaining_time = (int)((osdConfig()->cap_alarm - mAhDrawn) * ((float)flyTime) / mAhDrawn);
 
-            if (mAhDrawn < 0.1 * osdConfig()->cap_alarm) {
+            if (mAhDrawn <= 0.1 * osdConfig()->cap_alarm) {  // also handles the mAhDrawn == 0 condition
                 tfp_sprintf(buff, "--:--");
             } else if (mAhDrawn > osdConfig()->cap_alarm) {
                 tfp_sprintf(buff, "00:00");
             } else {
+                const int remaining_time = (int)((osdConfig()->cap_alarm - mAhDrawn) * ((float)flyTime) / mAhDrawn);
                 osdFormatTime(buff, OSD_TIMER_PREC_SECOND, remaining_time);
             }
             break;
@@ -637,7 +637,7 @@ static bool osdDrawSingleElement(uint8_t item)
                 strcpy(buff, "HOR ");
             } else if (IS_RC_MODE_ACTIVE(BOXACROTRAINER)) {
                 strcpy(buff, "ATRN");
-            } else if (isAirmodeActive()) {
+            } else if (airmodeIsEnabled()) {
                 strcpy(buff, "AIR ");
             } else {
                 strcpy(buff, "ACRO");
@@ -745,8 +745,11 @@ static bool osdDrawSingleElement(uint8_t item)
         }
 
     case OSD_G_FORCE:
-        tfp_sprintf(buff, "%01d.%01dG", (int)osdGForce, (int)(osdGForce * 10) % 10);
-        break;
+        {
+            const int gForce = lrintf(osdGForce * 10);
+            tfp_sprintf(buff, "%01d.%01dG", gForce / 10, gForce % 10);
+            break;
+        }
 
     case OSD_ROLL_PIDS:
         osdFormatPID(buff, "ROL", &currentPidProfile->pid[PID_ROLL]);
@@ -848,10 +851,10 @@ static bool osdDrawSingleElement(uint8_t item)
             }
 
 #ifdef USE_ADC_INTERNAL
-            uint8_t coreTemperature = getCoreTemperatureCelsius();
+            const int16_t coreTemperature = getCoreTemperatureCelsius();
             if (osdWarnGetState(OSD_WARNING_CORE_TEMPERATURE) && coreTemperature >= osdConfig()->core_temp_alarm) {
                 char coreTemperatureWarningMsg[OSD_FORMAT_MESSAGE_BUFFER_SIZE];
-                tfp_sprintf(coreTemperatureWarningMsg, "CORE: %3d%c", osdConvertTemperatureToSelectedUnit(getCoreTemperatureCelsius() * 10) / 10, osdGetTemperatureSymbolForSelectedUnit());
+                tfp_sprintf(coreTemperatureWarningMsg, "CORE: %3d%c", osdConvertTemperatureToSelectedUnit(coreTemperature), osdGetTemperatureSymbolForSelectedUnit());
 
                 osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, coreTemperatureWarningMsg);
 
@@ -1019,7 +1022,7 @@ static bool osdDrawSingleElement(uint8_t item)
 #ifdef USE_ESC_SENSOR
     case OSD_ESC_TMP:
         if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
-            tfp_sprintf(buff, "%3d%c", osdConvertTemperatureToSelectedUnit(escDataCombined->temperature * 10) / 10, osdGetTemperatureSymbolForSelectedUnit());
+            tfp_sprintf(buff, "%3d%c", osdConvertTemperatureToSelectedUnit(escDataCombined->temperature), osdGetTemperatureSymbolForSelectedUnit());
         }
         break;
 
@@ -1046,7 +1049,7 @@ static bool osdDrawSingleElement(uint8_t item)
 
 #ifdef USE_ADC_INTERNAL
     case OSD_CORE_TEMPERATURE:
-        tfp_sprintf(buff, "%3d%c", osdConvertTemperatureToSelectedUnit(getCoreTemperatureCelsius() * 10) / 10, osdGetTemperatureSymbolForSelectedUnit());
+        tfp_sprintf(buff, "%3d%c", osdConvertTemperatureToSelectedUnit(getCoreTemperatureCelsius()), osdGetTemperatureSymbolForSelectedUnit());
         break;
 #endif
 
@@ -1080,13 +1083,16 @@ static void osdDrawElements(void)
         return;
     }
 
+    osdGForce = 0.0f;
     if (sensors(SENSOR_ACC)) {
-        osdGForce = 0.0f;
-        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            const float a = accAverage[axis];
-            osdGForce += a * a;
+        // only calculate the G force if the element is visible or the stat is enabled
+        if (VISIBLE(osdConfig()->item_pos[OSD_G_FORCE]) || osdStatGetState(OSD_STAT_MAX_G_FORCE)) {
+            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+                const float a = accAverage[axis];
+                osdGForce += a * a;
+            }
+            osdGForce = sqrtf(osdGForce) * acc.dev.acc_1G_rec;
         }
-        osdGForce = sqrtf(osdGForce) * acc.dev.acc_1G_rec;
         osdDrawSingleElement(OSD_ARTIFICIAL_HORIZON);
         osdDrawSingleElement(OSD_G_FORCE);
     }
@@ -1387,7 +1393,7 @@ static void osdUpdateStats(void)
 #endif
 #ifdef USE_ESC_SENSOR
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
-        value = (escDataCombined->temperature * 10) / 10;
+        value = escDataCombined->temperature;
         if (stats.max_esc_temp < value) {
             stats.max_esc_temp = value;
         }
@@ -1554,13 +1560,15 @@ static void osdShowStats(uint16_t endBatteryVoltage)
     }
 #endif
 
-    if (osdStatGetState(OSD_STAT_MAX_G_FORCE)) {
-        tfp_sprintf(buff, "%01d.%01dG", (int)stats.max_g_force, (int)(stats.max_g_force * 10) % 10);
+    if (osdStatGetState(OSD_STAT_MAX_G_FORCE) && sensors(SENSOR_ACC)) {
+        const int gForce = lrintf(stats.max_g_force * 10);
+        tfp_sprintf(buff, "%01d.%01dG", gForce / 10, gForce % 10);
         osdDisplayStatisticLabel(top++, "MAX G-FORCE", buff);
     }
 
+#ifdef USE_ESC_SENSOR
     if (osdStatGetState(OSD_STAT_MAX_ESC_TEMP)) {
-        tfp_sprintf(buff, "%3d%c", osdConvertTemperatureToSelectedUnit(stats.max_esc_temp * 10) / 10, osdGetTemperatureSymbolForSelectedUnit());
+        tfp_sprintf(buff, "%3d%c", osdConvertTemperatureToSelectedUnit(stats.max_esc_temp), osdGetTemperatureSymbolForSelectedUnit());
         osdDisplayStatisticLabel(top++, "MAX ESC TEMP", buff);
     }
 
@@ -1568,6 +1576,7 @@ static void osdShowStats(uint16_t endBatteryVoltage)
         itoa(stats.max_esc_rpm, buff, 10);
         osdDisplayStatisticLabel(top++, "MAX ESC RPM", buff);
     }
+#endif
 
 }
 

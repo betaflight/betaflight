@@ -785,10 +785,12 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
         throttle = applyThrottleLimit(throttle);
     }
 
+    const bool airmodeEnabled = airmodeIsEnabled();
+
 #ifdef USE_YAW_SPIN_RECOVERY
     // 50% throttle provides the maximum authority for yaw recovery when airmode is not active.
     // When airmode is active the throttle setting doesn't impact recovery authority.
-    if (yawSpinDetected && !isAirmodeActive()) {
+    if (yawSpinDetected && !airmodeEnabled) {
         throttle = 0.5f;   // 
     }
 #endif // USE_YAW_SPIN_RECOVERY
@@ -835,11 +837,11 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
             motorMix[i] /= motorMixRange;
         }
         // Get the maximum correction by setting offset to center when airmode enabled
-        if (isAirmodeActive()) {
+        if (airmodeEnabled) {
             throttle = 0.5f;
         }
     } else {
-        if (isAirmodeActive() || throttle > 0.5f) {  // Only automatically adjust throttle when airmode enabled. Airmode logic is always active on high throttle
+        if (airmodeEnabled || throttle > 0.5f) {  // Only automatically adjust throttle when airmode enabled. Airmode logic is always active on high throttle
             throttle = constrainf(throttle, -motorMixMin, 1.0f - motorMixMax);
         }
     }
@@ -847,7 +849,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
     if (featureIsEnabled(FEATURE_MOTOR_STOP)
         && ARMING_FLAG(ARMED)
         && !featureIsEnabled(FEATURE_3D)
-        && !isAirmodeActive()
+        && !airmodeEnabled
         && (rcData[THROTTLE] < rxConfig()->mincheck)) {
         // motor_stop handling
         applyMotorStop();
