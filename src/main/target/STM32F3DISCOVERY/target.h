@@ -122,8 +122,6 @@
 #define GYRO_1_ALIGN            CW0_DEG
 #define USE_ACCGYRO_BMI160
 #ifdef USE_ACCGYRO_BMI160
-#define BMI160_CS_PIN           SPI2_NSS_PIN
-#define BMI160_SPI_INSTANCE     SPI2
 #define BMI160_SPI_DIVISOR      16
 #define USE_EXTI
 #define USE_GYRO_EXTI

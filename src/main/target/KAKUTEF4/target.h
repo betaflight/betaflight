@@ -64,23 +64,19 @@
 
 #define GYRO_1_CS_PIN           PC4
 #define GYRO_1_SPI_INSTANCE     SPI1
+#define ACC_1_ALIGN             CW270_DEG
+#define GYRO_1_ALIGN            CW270_DEG
 
 #define USE_ACC
 #define USE_ACC_SPI_ICM20689
-#define ACC_1_ALIGN             CW270_DEG
 
 #define USE_GYRO
 #define USE_GYRO_SPI_ICM20689
-#define GYRO_1_ALIGN            CW270_DEG
 
 #if defined(FLYWOOF405)
 //------MPU6000
-#define MPU6000_CS_PIN           PC4 
-#define MPU6000_SPI_INSTANCE     SPI1
 #define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN      CW270_DEG
 #define USE_ACC_SPI_MPU6000								  
-#define ACC_MPU6000_ALIGN       CW270_DEG
 #endif
 
 #if defined(KAKUTEF4V2) || defined(FLYWOOF405)       // There is invertor on RXD3(PB11), so PB10/PB11 can't be used as I2C2.

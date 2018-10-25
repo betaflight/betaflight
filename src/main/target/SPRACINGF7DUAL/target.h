@@ -57,23 +57,18 @@
 #define USE_ACC_SPI_MPU6500
 
 #if (SPRACINGF7DUAL_REV >= 2)
-#define ACC_MPU6500_1_ALIGN           CW0_DEG
-#define GYRO_MPU6500_1_ALIGN          CW0_DEG
+#define GYRO_1_ALIGN        CW0_DEG
+#define ACC_1_ALIGN         CW0_DEG
 
-#define ACC_MPU6500_2_ALIGN         CW270_DEG
-#define GYRO_MPU6500_2_ALIGN        CW270_DEG
+#define GYRO_2_ALIGN        CW270_DEG
+#define ACC_2_ALIGN         CW270_DEG
 #else
-#define ACC_MPU6500_1_ALIGN           CW180_DEG
-#define GYRO_MPU6500_1_ALIGN          CW180_DEG
+#define GYRO_1_ALIGN        CW180_DEG
+#define ACC_1_ALIGN         CW180_DEG
 
-#define ACC_MPU6500_2_ALIGN         CW270_DEG
-#define GYRO_MPU6500_2_ALIGN        CW270_DEG
+#define GYRO_2_ALIGN        CW270_DEG
+#define ACC_2_ALIGN         CW270_DEG
 #endif
-
-#define GYRO_1_ALIGN                GYRO_MPU6500_1_ALIGN
-#define GYRO_2_ALIGN                GYRO_MPU6500_2_ALIGN
-#define ACC_1_ALIGN                ACC_MPU6500_1_ALIGN
-#define ACC_2_ALIGN                ACC_MPU6500_2_ALIGN
 
 #define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_BOTH
 
