@@ -192,7 +192,7 @@ PG_REGISTER_WITH_RESET_FN(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 5);
 void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
 { 
     gyroConfig->gyro_align = ALIGN_DEFAULT;
-    gyroConfig->gyroCalibrationDuration = 125;        // 1gyroConfig->25 seconds
+    gyroConfig->gyroCalibrationDuration = 125;        // 1.25 seconds
     gyroConfig->gyroMovementCalibrationThreshold = 48;
     gyroConfig->gyro_sync_denom = GYRO_SYNC_DENOM_DEFAULT;
     gyroConfig->gyro_hardware_lpf = GYRO_HARDWARE_LPF_NORMAL;
@@ -218,7 +218,7 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
     gyroConfig->dyn_lpf_gyro_max_hz = 400;
     gyroConfig->dyn_lpf_gyro_idle = 20;
 #ifdef USE_DYN_LPF
-    gyroConfig->gyro_lowpass_hz = 150;
+    gyroConfig->gyro_lowpass_hz = 120;
 #endif
 }
 
@@ -543,8 +543,7 @@ bool gyroInit(void)
 static FAST_RAM int8_t dynLpfFilter = DYN_LPF_NONE;
 static FAST_RAM_ZERO_INIT float dynLpfIdle;
 static FAST_RAM_ZERO_INIT float dynLpfIdlePoint;
-static FAST_RAM_ZERO_INIT float dynLpfInvIdlePoint;
-static FAST_RAM_ZERO_INIT int16_t dynLpfDiff;
+static FAST_RAM_ZERO_INIT float dynLpfInvIdlePointScaled;
 static FAST_RAM_ZERO_INIT uint16_t dynLpfMin;
 
 static void dynLpfFilterInit()
@@ -553,15 +552,15 @@ static void dynLpfFilterInit()
         if (gyroConfig()->gyro_lowpass_hz > 0 ) {
             dynLpfMin = gyroConfig()->gyro_lowpass_hz;
             switch (gyroConfig()->gyro_lowpass_type) {
-                case FILTER_PT1:
-                    dynLpfFilter = DYN_LPF_PT1;
-                    break;
-                case FILTER_BIQUAD:
-                    dynLpfFilter = DYN_LPF_BIQUAD;
-                    break;
-                default:
-                    dynLpfFilter = DYN_LPF_NONE;
-                    break;
+            case FILTER_PT1:
+                dynLpfFilter = DYN_LPF_PT1;
+                break;
+            case FILTER_BIQUAD:
+                dynLpfFilter = DYN_LPF_BIQUAD;
+                break;
+            default:
+                dynLpfFilter = DYN_LPF_NONE;
+                break;
             }
         }
     } else {
@@ -569,8 +568,7 @@ static void dynLpfFilterInit()
     }
     dynLpfIdle = gyroConfig()->dyn_lpf_gyro_idle / 100.0f;
     dynLpfIdlePoint = (dynLpfIdle - (dynLpfIdle * dynLpfIdle * dynLpfIdle) / 3.0f) * 1.5f;
-    dynLpfInvIdlePoint = 1 / (1 - dynLpfIdlePoint);
-    dynLpfDiff = gyroConfig()->dyn_lpf_gyro_max_hz - dynLpfMin;
+    dynLpfInvIdlePointScaled = 1 / (1 - dynLpfIdlePoint) * (gyroConfig()->dyn_lpf_gyro_max_hz - dynLpfMin);
 }
 #endif
 
@@ -1202,13 +1200,13 @@ uint8_t gyroReadRegister(uint8_t whichSensor, uint8_t reg)
 #ifdef USE_DYN_LPF
 void dynLpfGyroUpdate(float throttle)
 {
-    if (dynLpfFilter == DYN_LPF_PT1 || dynLpfFilter == DYN_LPF_BIQUAD) {
+    if (dynLpfFilter != DYN_LPF_NONE) {
         uint16_t cutoffFreq = dynLpfMin;
         if (throttle > dynLpfIdle) {
-            const float dynThrottle = (throttle - (throttle * throttle * throttle) * 0.333f) * 1.5f;
-            cutoffFreq += (dynThrottle - dynLpfIdlePoint) * dynLpfInvIdlePoint * dynLpfDiff;
-         }
-         if (dynLpfFilter == DYN_LPF_PT1) {
+            const float dynThrottle = (throttle - (throttle * throttle * throttle) / 3.0f) * 1.5f;
+            cutoffFreq += (dynThrottle - dynLpfIdlePoint) * dynLpfInvIdlePointScaled;
+        }
+        if (dynLpfFilter == DYN_LPF_PT1) {
             const float gyroDt = gyro.targetLooptime * 1e-6f;
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
 #ifdef USE_MULTI_GYRO

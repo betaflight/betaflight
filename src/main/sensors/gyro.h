@@ -57,7 +57,7 @@ enum {
     DYN_LPF_NONE = 0,
     DYN_LPF_PT1,
     DYN_LPF_BIQUAD
-} ;
+};
 
 #define GYRO_CONFIG_USE_GYRO_1      0
 #define GYRO_CONFIG_USE_GYRO_2      1
