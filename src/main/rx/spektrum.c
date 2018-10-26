@@ -145,7 +145,10 @@ static uint8_t spektrumFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
         for (int b = 3; b < spektrumRcDataSize; b += 2) {
             const uint8_t spekChannel = 0x0F & (spekFrame[b - 1] >> spek_chan_shift);
             if (spekChannel < rxRuntimeConfigPtr->channelCount && spekChannel < SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT) {
-                if (rssi_channel == 0 || spekChannel != rssi_channel) {
+#if defined(USE_SPEKTRUM_REAL_RSSI) || defined(USE_SPEKTRUM_FAKE_RSSI)
+                if (rssi_channel == 0 || spekChannel != rssi_channel)
+#endif
+                {
                     spekChannelData[spekChannel] = ((uint32_t)(spekFrame[b - 1] & spek_chan_mask) << 8) + spekFrame[b];
                 }
             }
