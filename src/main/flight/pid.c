@@ -167,8 +167,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .abs_control_limit = 90,
         .abs_control_error_limit = 20,
         .antiGravityMode = ANTI_GRAVITY_SMOOTH,
-        .dyn_lpf_dterm_max_hz = 200,
-        .dyn_lpf_dterm_idle = 20,
+        .dyn_lpf_dterm_max_hz = 250,
         .dterm_lowpass_hz = 100,    // dual PT1 filtering ON by default
         .dterm_lowpass2_hz = 200,   // second Dterm LPF ON by default
         .dterm_filter_type = FILTER_PT1,
@@ -180,8 +179,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .launchControlAllowTriggerReset = true,
     );
 #ifdef USE_DYN_LPF
-    pidProfile->dterm_lowpass_hz = 120;
-    pidProfile->dterm_lowpass2_hz = 180;
+    pidProfile->dterm_lowpass_hz = 150;
+    pidProfile->dterm_lowpass2_hz = 150;
     pidProfile->dterm_filter_type = FILTER_BIQUAD;
     pidProfile->dterm_filter2_type = FILTER_BIQUAD;
 #endif
@@ -464,11 +463,9 @@ void pidUpdateAntiGravityThrottleFilter(float throttle)
 }
 
 #ifdef USE_DYN_LPF
-static FAST_RAM int8_t dynLpfFilter = DYN_LPF_NONE;
-static FAST_RAM_ZERO_INIT float dynLpfIdle;
-static FAST_RAM_ZERO_INIT float dynLpfIdlePoint;
-static FAST_RAM_ZERO_INIT float dynLpfInvIdlePointScaled;
+static FAST_RAM uint8_t dynLpfFilter = DYN_LPF_NONE;
 static FAST_RAM_ZERO_INIT uint16_t dynLpfMin;
+static FAST_RAM_ZERO_INIT uint16_t dynLpfMax;
 #endif
 
 void pidInitConfig(const pidProfile_t *pidProfile)
@@ -547,27 +544,23 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 #endif
 
 #ifdef USE_DYN_LPF
-    if (pidProfile->dyn_lpf_dterm_idle > 0 && pidProfile->dyn_lpf_dterm_max_hz > 0) {
-        if (pidProfile->dterm_lowpass_hz > 0 ) {
-            dynLpfMin = pidProfile->dterm_lowpass_hz;
-            switch (pidProfile->dterm_filter_type) {
-            case FILTER_PT1:
-                dynLpfFilter = DYN_LPF_PT1;
-                break;
-            case FILTER_BIQUAD:
-                dynLpfFilter = DYN_LPF_BIQUAD;
-                break;
-            default:
-                dynLpfFilter = DYN_LPF_NONE;
-                break;
-            }
+    if (pidProfile->dterm_lowpass_hz > 0 && pidProfile->dyn_lpf_dterm_max_hz > pidProfile->dterm_lowpass_hz) {
+        switch (pidProfile->dterm_filter_type) {
+        case FILTER_PT1:
+            dynLpfFilter = DYN_LPF_PT1;
+            break;
+        case FILTER_BIQUAD:
+            dynLpfFilter = DYN_LPF_BIQUAD;
+            break;
+        default:
+            dynLpfFilter = DYN_LPF_NONE;
+            break;
         }
     } else {
         dynLpfFilter = DYN_LPF_NONE;
     }
-    dynLpfIdle = pidProfile->dyn_lpf_dterm_idle / 100.0f;
-    dynLpfIdlePoint = (dynLpfIdle - (dynLpfIdle * dynLpfIdle * dynLpfIdle) / 3.0f) * 1.5f;
-    dynLpfInvIdlePointScaled = 1 / (1 - dynLpfIdlePoint) * (pidProfile->dyn_lpf_dterm_max_hz - dynLpfMin);
+    dynLpfMin = pidProfile->dterm_lowpass_hz;
+    dynLpfMax = pidProfile->dyn_lpf_dterm_max_hz;
 #endif
 
 #ifdef USE_LAUNCH_CONTROL
@@ -1299,17 +1292,13 @@ bool pidAntiGravityEnabled(void)
 void dynLpfDTermUpdate(float throttle)
 {
     if (dynLpfFilter != DYN_LPF_NONE) {
-        uint16_t cutoffFreq = dynLpfMin;
-        if (throttle > dynLpfIdle) {
-            const float dynThrottle = (throttle - (throttle * throttle * throttle) / 3.0f) * 1.5f;
-            cutoffFreq += (dynThrottle - dynLpfIdlePoint) * dynLpfInvIdlePointScaled;
-         }
+        const unsigned int cutoffFreq = fmax(dynThrottle(throttle) * dynLpfMax, dynLpfMin);
 
          if (dynLpfFilter == DYN_LPF_PT1) {
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
                 pt1FilterUpdateCutoff(&dtermLowpass[axis].pt1Filter, pt1FilterGain(cutoffFreq, dT));
             }
-        } else {
+        } else if (dynLpfFilter == DYN_LPF_BIQUAD) {
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
                 biquadFilterUpdateLPF(&dtermLowpass[axis].biquadFilter, cutoffFreq, targetPidLooptime);
             }

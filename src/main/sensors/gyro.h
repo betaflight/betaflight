@@ -43,15 +43,15 @@ typedef enum {
 } gyroOverflowCheck_e;
 
 enum {
-    DYN_FFT_BEFORE_STATIC_FILTERS = 0,
-    DYN_FFT_AFTER_STATIC_FILTERS
+    DYN_NOTCH_RANGE_HIGH = 0,
+    DYN_NOTCH_RANGE_MEDIUM,
+    DYN_NOTCH_RANGE_LOW,
+    DYN_NOTCH_RANGE_AUTO
 } ;
 
-enum {
-    DYN_FILTER_RANGE_HIGH = 0,
-    DYN_FILTER_RANGE_MEDIUM,
-    DYN_FILTER_RANGE_LOW
-} ;
+#define DYN_NOTCH_RANGE_HZ_HIGH 2000
+#define DYN_NOTCH_RANGE_HZ_MEDIUM 1333
+#define DYN_NOTCH_RANGE_HZ_LOW 1000
 
 enum {
     DYN_LPF_NONE = 0,
@@ -96,13 +96,13 @@ typedef struct gyroConfig_s {
     uint8_t  yaw_spin_recovery;
     int16_t  yaw_spin_threshold;
 
-    uint16_t gyroCalibrationDuration;  // Gyro calibration duration in 1/100 second
+    uint16_t gyroCalibrationDuration;   // Gyro calibration duration in 1/100 second
     
-    uint8_t dyn_filter_width_percent;
-    uint8_t dyn_fft_location; // before or after static filters
-    uint8_t dyn_filter_range; // ignore any FFT bin below this threshold
+    uint8_t dyn_notch_range;            // ignore any FFT bin below this threshold
     uint16_t dyn_lpf_gyro_max_hz;
-    uint8_t  dyn_lpf_gyro_idle;
+    uint8_t dyn_notch_width_percent;
+    uint16_t dyn_notch_q;
+    uint16_t dyn_notch_min_hz;
 } gyroConfig_t;
 
 PG_DECLARE(gyroConfig_t, gyroConfig);
@@ -126,5 +126,6 @@ bool gyroYawSpinDetected(void);
 uint16_t gyroAbsRateDps(int axis);
 uint8_t gyroReadRegister(uint8_t whichSensor, uint8_t reg);
 #ifdef USE_DYN_LPF
+float dynThrottle(float throttle);
 void dynLpfGyroUpdate(float throttle);
 #endif
