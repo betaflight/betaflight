@@ -718,7 +718,9 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS])
             motorOutput = constrain(motorOutput, motorRangeMin, motorRangeMax);
         }
         // Motor stop handling
-        if (feature(FEATURE_MOTOR_STOP) && ARMING_FLAG(ARMED) && !feature(FEATURE_3D) && !isAirmodeActive()) {
+        if (feature(FEATURE_MOTOR_STOP) && ARMING_FLAG(ARMED) && !feature(FEATURE_3D) && !isAirmodeActive()
+            && !FLIGHT_MODE(GPS_RESCUE_MODE)) {   // disable motor_stop while GPS Rescue is active
+
             if (((rcData[THROTTLE]) < rxConfig()->mincheck)) {
                 motorOutput = disarmMotorOutput;
             }
