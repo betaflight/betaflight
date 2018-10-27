@@ -53,6 +53,12 @@ enum {
     DYN_FILTER_RANGE_LOW
 } ;
 
+enum {
+    DYN_LPF_NONE = 0,
+    DYN_LPF_PT1,
+    DYN_LPF_BIQUAD
+};
+
 #define GYRO_CONFIG_USE_GYRO_1      0
 #define GYRO_CONFIG_USE_GYRO_2      1
 #define GYRO_CONFIG_USE_GYRO_BOTH   2
@@ -95,6 +101,8 @@ typedef struct gyroConfig_s {
     uint8_t dyn_filter_width_percent;
     uint8_t dyn_fft_location; // before or after static filters
     uint8_t dyn_filter_range; // ignore any FFT bin below this threshold
+    uint16_t dyn_lpf_gyro_max_hz;
+    uint8_t  dyn_lpf_gyro_idle;
 } gyroConfig_t;
 
 PG_DECLARE(gyroConfig_t, gyroConfig);
@@ -117,3 +125,6 @@ bool gyroOverflowDetected(void);
 bool gyroYawSpinDetected(void);
 uint16_t gyroAbsRateDps(int axis);
 uint8_t gyroReadRegister(uint8_t whichSensor, uint8_t reg);
+#ifdef USE_DYN_LPF
+void dynLpfGyroUpdate(float throttle);
+#endif

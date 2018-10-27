@@ -149,6 +149,8 @@ typedef struct pidProfile_s {
     uint8_t abs_control_limit;              // Limit to the correction
     uint8_t abs_control_error_limit;        // Limit to the accumulated error
     uint8_t dterm_filter2_type;             // Filter selection for 2nd dterm
+    uint16_t dyn_lpf_dterm_max_hz;
+    uint8_t  dyn_lpf_dterm_idle;
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles);
@@ -214,3 +216,5 @@ float pidLevel(int axis, const pidProfile_t *pidProfile,
     const rollAndPitchTrims_t *angleTrim, float currentPidSetpoint);
 float calcHorizonLevelStrength(void);
 #endif
+void dynLpfDTermUpdate(float throttle);
+

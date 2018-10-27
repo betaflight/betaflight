@@ -121,16 +121,11 @@ void resetPidProfile(pidProfile_t *pidProfile)
             [PID_LEVEL] = { 50, 50, 75, 0 },
             [PID_MAG] =   { 40, 0, 0, 0 },
         },
-
         .pidSumLimit = PIDSUM_LIMIT,
         .pidSumLimitYaw = PIDSUM_LIMIT_YAW,
         .yaw_lowpass_hz = 0,
-        .dterm_lowpass_hz = 100,    // dual PT1 filtering ON by default
-        .dterm_lowpass2_hz = 200,   // second Dterm LPF ON by default
         .dterm_notch_hz = 0,
         .dterm_notch_cutoff = 0,
-        .dterm_filter_type = FILTER_PT1,
-        .dterm_filter2_type = FILTER_PT1,
         .itermWindupPointPercent = 40,
         .vbatPidCompensation = 0,
         .pidAtMinThrottle = PID_STABILISATION_ON,
@@ -167,7 +162,19 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .abs_control_limit = 90,
         .abs_control_error_limit = 20,
         .antiGravityMode = ANTI_GRAVITY_SMOOTH,
+        .dyn_lpf_dterm_max_hz = 200,
+        .dyn_lpf_dterm_idle = 20,
+        .dterm_lowpass_hz = 100,    // dual PT1 filtering ON by default
+        .dterm_lowpass2_hz = 200,   // second Dterm LPF ON by default
+        .dterm_filter_type = FILTER_PT1,
+        .dterm_filter2_type = FILTER_PT1,
     );
+#ifdef USE_DYN_LPF
+    pidProfile->dterm_lowpass_hz = 120;
+    pidProfile->dterm_lowpass2_hz = 180;
+    pidProfile->dterm_filter_type = FILTER_BIQUAD;
+    pidProfile->dterm_filter2_type = FILTER_BIQUAD;
+#endif
 }
 
 void pgResetFn_pidProfiles(pidProfile_t *pidProfiles)
@@ -280,7 +287,11 @@ void pidInitFilters(const pidProfile_t *pidProfile)
             }
             break;
         case FILTER_BIQUAD:
+#ifdef USE_DYN_LPF
+            dtermLowpassApplyFn = (filterApplyFnPtr)biquadFilterApplyDF1;
+#else
             dtermLowpassApplyFn = (filterApplyFnPtr)biquadFilterApply;
+#endif
             for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
                 biquadFilterInitLPF(&dtermLowpass[axis].biquadFilter, pidProfile->dterm_lowpass_hz, targetPidLooptime);
             }
@@ -436,6 +447,14 @@ void pidUpdateAntiGravityThrottleFilter(float throttle)
     }
 }
 
+#ifdef USE_DYN_LPF
+static FAST_RAM int8_t dynLpfFilter = DYN_LPF_NONE;
+static FAST_RAM_ZERO_INIT float dynLpfIdle;
+static FAST_RAM_ZERO_INIT float dynLpfIdlePoint;
+static FAST_RAM_ZERO_INIT float dynLpfInvIdlePointScaled;
+static FAST_RAM_ZERO_INIT uint16_t dynLpfMin;
+#endif
+
 void pidInitConfig(const pidProfile_t *pidProfile)
 {
     if (pidProfile->feedForwardTransition == 0) {
@@ -509,6 +528,30 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     acGain = (float)pidProfile->abs_control_gain;
     acLimit = (float)pidProfile->abs_control_limit;
     acErrorLimit = (float)pidProfile->abs_control_error_limit;
+#endif
+
+#ifdef USE_DYN_LPF
+    if (pidProfile->dyn_lpf_dterm_idle > 0 && pidProfile->dyn_lpf_dterm_max_hz > 0) {
+        if (pidProfile->dterm_lowpass_hz > 0 ) {
+            dynLpfMin = pidProfile->dterm_lowpass_hz;
+            switch (pidProfile->dterm_filter_type) {
+            case FILTER_PT1:
+                dynLpfFilter = DYN_LPF_PT1;
+                break;
+            case FILTER_BIQUAD:
+                dynLpfFilter = DYN_LPF_BIQUAD;
+                break;
+            default:
+                dynLpfFilter = DYN_LPF_NONE;
+                break;
+            }
+        }
+    } else {
+        dynLpfFilter = DYN_LPF_NONE;
+    }
+    dynLpfIdle = pidProfile->dyn_lpf_dterm_idle / 100.0f;
+    dynLpfIdlePoint = (dynLpfIdle - (dynLpfIdle * dynLpfIdle * dynLpfIdle) / 3.0f) * 1.5f;
+    dynLpfInvIdlePointScaled = 1 / (1 - dynLpfIdlePoint) * (pidProfile->dyn_lpf_dterm_max_hz - dynLpfMin);
 #endif
 }
 
@@ -1130,3 +1173,26 @@ bool pidAntiGravityEnabled(void)
 {
     return antiGravityEnabled;
 }
+
+#ifdef USE_DYN_LPF
+void dynLpfDTermUpdate(float throttle)
+{
+    if (dynLpfFilter != DYN_LPF_NONE) {
+        uint16_t cutoffFreq = dynLpfMin;
+        if (throttle > dynLpfIdle) {
+            const float dynThrottle = (throttle - (throttle * throttle * throttle) / 3.0f) * 1.5f;
+            cutoffFreq += (dynThrottle - dynLpfIdlePoint) * dynLpfInvIdlePointScaled;
+         }
+
+         if (dynLpfFilter == DYN_LPF_PT1) {
+            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+                pt1FilterUpdateCutoff(&dtermLowpass[axis].pt1Filter, pt1FilterGain(cutoffFreq, dT));
+            }
+        } else {
+            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+                biquadFilterUpdateLPF(&dtermLowpass[axis].biquadFilter, cutoffFreq, targetPidLooptime);
+            }
+        }
+    }
+}
+#endif
