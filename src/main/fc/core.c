@@ -675,6 +675,7 @@ bool processRx(timeUs_t currentTimeUs)
         && !STATE(FIXED_WING)
         && !featureIsEnabled(FEATURE_3D)
         && !airmodeIsEnabled()
+        && !FLIGHT_MODE(GPS_RESCUE_MODE)  // disable auto-disarm when GPS Rescue is active
     ) {
         if (isUsingSticksForArming()) {
             if (throttleStatus == THROTTLE_LOW) {
