@@ -57,12 +57,13 @@
 static uint16_t FAST_RAM_ZERO_INIT   fftSamplingRateHz;
 static float FAST_RAM_ZERO_INIT      fftResolution;
 static uint8_t FAST_RAM_ZERO_INIT    fftBinOffset;
-static uint16_t FAST_RAM_ZERO_INIT   dynamicNotchMaxCenterHz;
+static uint16_t FAST_RAM_ZERO_INIT   dynNotchMaxCtrHz;
 static uint8_t dynamicFilterRange;
-static float FAST_RAM_ZERO_INIT      dynamicFilterNotchQ;
-static float FAST_RAM_ZERO_INIT      dynamicFilterNotch1Center;
-static float FAST_RAM_ZERO_INIT      dynamicFilterNotch2Center;
-static uint16_t FAST_RAM_ZERO_INIT   dynFilterNotchMinHz;
+static float FAST_RAM_ZERO_INIT      dynNotchQ;
+static float FAST_RAM_ZERO_INIT      dynNotch1Ctr;
+static float FAST_RAM_ZERO_INIT      dynNotch2Ctr;
+static uint16_t FAST_RAM_ZERO_INIT   dynNotchMinHz;
+static bool FAST_RAM dualNotch = true;
 
 // Hanning window, see https://en.wikipedia.org/wiki/Window_function#Hann_.28Hanning.29_window
 static FAST_RAM_ZERO_INIT float hanningWindow[FFT_WINDOW_SIZE];
@@ -80,10 +81,14 @@ void gyroDataAnalyseInit(uint32_t targetLooptimeUs)
     dynamicFilterRange = gyroConfig()->dyn_notch_range;
     fftSamplingRateHz = DYN_NOTCH_RANGE_HZ_LOW;
     fftBinOffset = FFT_BIN_OFFSET;
-    dynamicFilterNotch1Center = 1 - gyroConfig()->dyn_notch_width_percent / 100.0f;
-    dynamicFilterNotch2Center = 1 + gyroConfig()->dyn_notch_width_percent / 100.0f;
-    dynamicFilterNotchQ = gyroConfig()->dyn_notch_q / 100.0f;
-    dynFilterNotchMinHz = gyroConfig()->dyn_notch_min_hz;
+    dynNotch1Ctr = 1 - gyroConfig()->dyn_notch_width_percent / 100.0f;
+    dynNotch2Ctr = 1 + gyroConfig()->dyn_notch_width_percent / 100.0f;
+    dynNotchQ = gyroConfig()->dyn_notch_q / 100.0f;
+    dynNotchMinHz = gyroConfig()->dyn_notch_min_hz;
+
+    if (gyroConfig()->dyn_notch_width_percent == 0) {
+        dualNotch = false;
+    }
 
     if (dynamicFilterRange == DYN_NOTCH_RANGE_AUTO) {
         if (gyroConfig()->dyn_lpf_gyro_max_hz > 333) {
@@ -110,7 +115,7 @@ void gyroDataAnalyseInit(uint32_t targetLooptimeUs)
 
     fftResolution = (float)fftSamplingRateHz / FFT_WINDOW_SIZE;
 
-    dynamicNotchMaxCenterHz = fftSamplingRateHz / 2; //Nyquist
+    dynNotchMaxCtrHz = fftSamplingRateHz / 2; //Nyquist
 
     for (int i = 0; i < FFT_WINDOW_SIZE; i++) {
         hanningWindow[i] = (0.5f - 0.5f * cos_approx(2 * M_PIf * i / (FFT_WINDOW_SIZE - 1)));
@@ -135,8 +140,8 @@ void gyroDataAnalyseStateInit(gyroAnalyseState_t *state, uint32_t targetLooptime
     const float looptime = MAX(1000000u / fftSamplingRateHz, targetLooptimeUs * DYN_NOTCH_CALC_TICKS);
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         // any init value
-        state->centerFreq[axis] = dynamicNotchMaxCenterHz;
-        state->prevCenterFreq[axis] = dynamicNotchMaxCenterHz;
+        state->centerFreq[axis] = dynNotchMaxCtrHz;
+        state->prevCenterFreq[axis] = dynNotchMaxCtrHz;
         biquadFilterInitLPF(&state->detectedFrequencyFilter[axis], DYN_NOTCH_SMOOTH_FREQ_HZ, looptime);
     }
 }
@@ -303,7 +308,7 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
                 }
             }
             // get weighted center of relevant frequency range (this way we have a better resolution than 31.25Hz)
-            float centerFreq = dynamicNotchMaxCenterHz;
+            float centerFreq = dynNotchMaxCtrHz;
             float fftMeanIndex = 0;
              // idx was shifted by 1 to start at 1, not 0
             if (fftSum > 0) {
@@ -313,7 +318,7 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
             } else {
                 centerFreq = state->prevCenterFreq[state->updateAxis];
             }
-            centerFreq = fmax(centerFreq, dynFilterNotchMinHz);
+            centerFreq = fmax(centerFreq, dynNotchMinHz);
             centerFreq = biquadFilterApply(&state->detectedFrequencyFilter[state->updateAxis], centerFreq);
             state->prevCenterFreq[state->updateAxis] = state->centerFreq[state->updateAxis];
             state->centerFreq[state->updateAxis] = centerFreq;
@@ -335,8 +340,12 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
             // 7us
             // calculate cutoffFreq and notch Q, update notch filter  =1.8+((A2-150)*0.004)
             if (state->prevCenterFreq[state->updateAxis] != state->centerFreq[state->updateAxis]) {
-                    biquadFilterUpdate(&notchFilterDyn[state->updateAxis], state->centerFreq[state->updateAxis] * dynamicFilterNotch1Center, gyro.targetLooptime, dynamicFilterNotchQ, FILTER_NOTCH);
-                    biquadFilterUpdate(&notchFilterDyn2[state->updateAxis], state->centerFreq[state->updateAxis] * dynamicFilterNotch2Center, gyro.targetLooptime, dynamicFilterNotchQ, FILTER_NOTCH);
+                if (dualNotch) {
+                    biquadFilterUpdate(&notchFilterDyn[state->updateAxis], state->centerFreq[state->updateAxis] * dynNotch1Ctr, gyro.targetLooptime, dynNotchQ, FILTER_NOTCH);
+                    biquadFilterUpdate(&notchFilterDyn2[state->updateAxis], state->centerFreq[state->updateAxis] * dynNotch2Ctr, gyro.targetLooptime, dynNotchQ, FILTER_NOTCH);
+                } else {
+                    biquadFilterUpdate(&notchFilterDyn[state->updateAxis], state->centerFreq[state->updateAxis], gyro.targetLooptime, dynNotchQ, FILTER_NOTCH);
+                }
             }
             DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
 

@@ -167,11 +167,12 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .abs_control_limit = 90,
         .abs_control_error_limit = 20,
         .antiGravityMode = ANTI_GRAVITY_SMOOTH,
-        .dyn_lpf_dterm_max_hz = 250,
         .dterm_lowpass_hz = 100,    // dual PT1 filtering ON by default
         .dterm_lowpass2_hz = 200,   // second Dterm LPF ON by default
         .dterm_filter_type = FILTER_PT1,
         .dterm_filter2_type = FILTER_PT1,
+        .dyn_lpf_dterm_min_hz = 150,
+        .dyn_lpf_dterm_max_hz = 250,
         .launchControlMode = LAUNCH_CONTROL_MODE_NORMAL,
         .launchControlThrottlePercent = 20,
         .launchControlAngleLimit = 0,
@@ -544,7 +545,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 #endif
 
 #ifdef USE_DYN_LPF
-    if (pidProfile->dterm_lowpass_hz > 0 && pidProfile->dyn_lpf_dterm_max_hz > pidProfile->dterm_lowpass_hz) {
+    if (pidProfile->dyn_lpf_dterm_min_hz > 0 && pidProfile->dyn_lpf_dterm_max_hz > pidProfile->dyn_lpf_dterm_min_hz) {
         switch (pidProfile->dterm_filter_type) {
         case FILTER_PT1:
             dynLpfFilter = DYN_LPF_PT1;
@@ -559,7 +560,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     } else {
         dynLpfFilter = DYN_LPF_NONE;
     }
-    dynLpfMin = pidProfile->dterm_lowpass_hz;
+    dynLpfMin = pidProfile->dyn_lpf_dterm_min_hz;
     dynLpfMax = pidProfile->dyn_lpf_dterm_max_hz;
 #endif
 

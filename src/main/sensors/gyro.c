@@ -140,6 +140,7 @@ typedef struct gyroSensor_s {
     biquadFilter_t notchFilter2[XYZ_AXIS_COUNT];
 
     filterApplyFnPtr notchFilterDynApplyFn;
+    filterApplyFnPtr notchFilterDynApplyFn2;
     biquadFilter_t notchFilterDyn[XYZ_AXIS_COUNT];
     biquadFilter_t notchFilterDyn2[XYZ_AXIS_COUNT];
 
@@ -215,11 +216,12 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
     gyroConfig->gyro_offset_yaw = 0;
     gyroConfig->yaw_spin_recovery = true;
     gyroConfig->yaw_spin_threshold = 1950;
+    gyroConfig->dyn_lpf_gyro_min_hz = 150;
+    gyroConfig->dyn_lpf_gyro_max_hz = 450;
     gyroConfig->dyn_notch_range = DYN_NOTCH_RANGE_AUTO;
     gyroConfig->dyn_notch_width_percent = 8;
     gyroConfig->dyn_notch_q = 120;
     gyroConfig->dyn_notch_min_hz = 150;
-    gyroConfig->dyn_lpf_gyro_max_hz = 450;
 #ifdef USE_DYN_LPF
     gyroConfig->gyro_lowpass_hz = 150;
     gyroConfig->gyro_lowpass_type = FILTER_BIQUAD;
@@ -557,7 +559,7 @@ static FAST_RAM_ZERO_INIT uint16_t dynLpfMax;
 
 static void dynLpfFilterInit()
 {
-    if (gyroConfig()->gyro_lowpass_hz > 0 && gyroConfig()->dyn_lpf_gyro_max_hz > gyroConfig()->gyro_lowpass_hz) {
+    if (gyroConfig()->dyn_lpf_gyro_min_hz > 0 && gyroConfig()->dyn_lpf_gyro_max_hz > gyroConfig()->dyn_lpf_gyro_min_hz) {
         switch (gyroConfig()->gyro_lowpass_type) {
         case FILTER_PT1:
             dynLpfFilter = DYN_LPF_PT1;
@@ -572,7 +574,7 @@ static void dynLpfFilterInit()
     } else {
         dynLpfFilter = DYN_LPF_NONE;
     }
-    dynLpfMin = gyroConfig()->gyro_lowpass_hz;
+    dynLpfMin = gyroConfig()->dyn_lpf_gyro_min_hz;
     dynLpfMax = gyroConfig()->dyn_lpf_gyro_max_hz;
 }
 #endif
@@ -693,9 +695,13 @@ static bool isDynamicFilterActive(void)
 static void gyroInitFilterDynamicNotch(gyroSensor_t *gyroSensor)
 {
     gyroSensor->notchFilterDynApplyFn = nullFilterApply;
+    gyroSensor->notchFilterDynApplyFn2 = nullFilterApply;
 
     if (isDynamicFilterActive()) {
         gyroSensor->notchFilterDynApplyFn = (filterApplyFnPtr)biquadFilterApplyDF1; // must be this function, not DF2
+        if(gyroConfig()->dyn_notch_width_percent != 0) {
+            gyroSensor->notchFilterDynApplyFn2 = (filterApplyFnPtr)biquadFilterApplyDF1; // must be this function, not DF2
+        }
         const float notchQ = filterGetNotchQ(DYNAMIC_NOTCH_DEFAULT_CENTER_HZ, DYNAMIC_NOTCH_DEFAULT_CUTOFF_HZ); // any defaults OK here
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
             biquadFilterInit(&gyroSensor->notchFilterDyn[axis], DYNAMIC_NOTCH_DEFAULT_CENTER_HZ, gyro.targetLooptime, notchQ, FILTER_NOTCH);

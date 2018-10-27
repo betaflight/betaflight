@@ -98,9 +98,10 @@ typedef struct gyroConfig_s {
 
     uint16_t gyroCalibrationDuration;   // Gyro calibration duration in 1/100 second
     
-    uint8_t dyn_notch_range;            // ignore any FFT bin below this threshold
+    uint16_t dyn_lpf_gyro_min_hz;
     uint16_t dyn_lpf_gyro_max_hz;
-    uint8_t dyn_notch_width_percent;
+    uint8_t  dyn_notch_range;            // ignore any FFT bin below this threshold
+    uint8_t  dyn_notch_width_percent;
     uint16_t dyn_notch_q;
     uint16_t dyn_notch_min_hz;
 } gyroConfig_t;
