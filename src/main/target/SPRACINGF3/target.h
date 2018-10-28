@@ -36,7 +36,7 @@
 //#undef USE_GYRO_OVERFLOW_CHECK
 //#undef USE_GYRO_LPF2
 
-#if !(defined(ZCOREF3) || defined(IRCSYNERGYF3))
+#if !defined(IRCSYNERGYF3)
 //#undef USE_ITERM_RELAX
 //#undef USE_RC_SMOOTHING_FILTER
 
@@ -51,7 +51,7 @@
 //#undef USE_TELEMETRY_MAVLINK
 //#undef USE_TELEMETRY_LTM
 //#undef USE_SERIALRX_XBUS
-//#undef USE_SERIALRX_SUMH
+#undef USE_SERIALRX_SUMH
 //#undef USE_PWM
 
 #undef USE_BOARD_INFO
