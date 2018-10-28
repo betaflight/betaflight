@@ -33,7 +33,7 @@
 
 // use simulatior's attitude directly
 // disable this if wants to test AHRS algorithm
-#define SKIP_IMU_CALC
+#undef USE_IMU_CALC
 
 //#define SIMULATOR_ACC_SYNC
 //#define SIMULATOR_GYRO_SYNC

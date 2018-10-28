@@ -108,7 +108,6 @@
 #undef USE_MAG
 
 #ifdef CC3D_OPBL
-#define SKIP_CLI_COMMAND_HELP
 //#undef USE_SERVOS
 #undef USE_BARO
 #undef USE_RANGEFINDER

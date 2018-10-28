@@ -114,7 +114,7 @@ void updateState(const fdm_packet* pkt) {
     fakeGyroSet(fakeGyroDev, x, y, z);
 //    printf("[gyr]%lf,%lf,%lf\n", pkt->imu_angular_velocity_rpy[0], pkt->imu_angular_velocity_rpy[1], pkt->imu_angular_velocity_rpy[2]);
 
-#if defined(SKIP_IMU_CALC)
+#if !defined(USE_IMU_CALC)
 #if defined(SET_IMU_FROM_EULER)
     // set from Euler
     double qw = pkt->imu_orientation_quat[0];
