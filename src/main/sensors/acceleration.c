@@ -157,9 +157,6 @@ retry:
         acc_params.useFifo = false;
         acc_params.dataRate = 800; // unused currently
         if (adxl345Detect(&acc_params, dev)) {
-#ifdef ACC_ADXL345_ALIGN
-            dev->accAlign = ACC_ADXL345_ALIGN;
-#endif
             accHardware = ACC_ADXL345;
             break;
         }
@@ -169,9 +166,6 @@ retry:
 #ifdef USE_ACC_LSM303DLHC
     case ACC_LSM303DLHC:
         if (lsm303dlhcAccDetect(dev)) {
-#ifdef ACC_LSM303DLHC_ALIGN
-            dev->accAlign = ACC_LSM303DLHC_ALIGN;
-#endif
             accHardware = ACC_LSM303DLHC;
             break;
         }
@@ -181,9 +175,6 @@ retry:
 #ifdef USE_ACC_MPU6050
     case ACC_MPU6050: // MPU6050
         if (mpu6050AccDetect(dev)) {
-#ifdef ACC_MPU6050_ALIGN
-            dev->accAlign = ACC_MPU6050_ALIGN;
-#endif
             accHardware = ACC_MPU6050;
             break;
         }
@@ -193,9 +184,6 @@ retry:
 #ifdef USE_ACC_MMA8452
     case ACC_MMA8452: // MMA8452
         if (mma8452Detect(dev)) {
-#ifdef ACC_MMA8452_ALIGN
-            dev->accAlign = ACC_MMA8452_ALIGN;
-#endif
             accHardware = ACC_MMA8452;
             break;
         }
@@ -205,9 +193,6 @@ retry:
 #ifdef USE_ACC_BMA280
     case ACC_BMA280: // BMA280
         if (bma280Detect(dev)) {
-#ifdef ACC_BMA280_ALIGN
-            dev->accAlign = ACC_BMA280_ALIGN;
-#endif
             accHardware = ACC_BMA280;
             break;
         }
@@ -217,9 +202,6 @@ retry:
 #ifdef USE_ACC_SPI_MPU6000
     case ACC_MPU6000:
         if (mpu6000SpiAccDetect(dev)) {
-#ifdef ACC_MPU6000_ALIGN
-            dev->accAlign = ACC_MPU6000_ALIGN;
-#endif
             accHardware = ACC_MPU6000;
             break;
         }
@@ -229,9 +211,6 @@ retry:
 #ifdef USE_ACC_SPI_MPU9250
     case ACC_MPU9250:
         if (mpu9250SpiAccDetect(dev)) {
-#ifdef ACC_MPU9250_ALIGN
-            dev->accAlign = ACC_MPU9250_ALIGN;
-#endif
             accHardware = ACC_MPU9250;
             break;
         }
@@ -247,9 +226,6 @@ retry:
         if (mpu6500AccDetect(dev) || mpu6500SpiAccDetect(dev)) {
 #else
         if (mpu6500AccDetect(dev)) {
-#endif
-#ifdef ACC_MPU6500_ALIGN
-            dev->accAlign = ACC_MPU6500_ALIGN;
 #endif
             switch (dev->mpuDetectionResult.sensor) {
             case MPU_9250_SPI:
@@ -276,9 +252,6 @@ retry:
     case ACC_ICM20649:
         if (icm20649SpiAccDetect(dev)) {
             accHardware = ACC_ICM20649;
-#ifdef ACC_ICM20649_ALIGN
-            dev->accAlign = ACC_ICM20649_ALIGN;
-#endif
             break;
         }
         FALLTHROUGH;
@@ -288,9 +261,6 @@ retry:
     case ACC_ICM20689:
         if (icm20689SpiAccDetect(dev)) {
             accHardware = ACC_ICM20689;
-#ifdef ACC_ICM20689_ALIGN
-            dev->accAlign = ACC_ICM20689_ALIGN;
-#endif
             break;
         }
         FALLTHROUGH;
@@ -300,9 +270,6 @@ retry:
     case ACC_BMI160:
         if (bmi160SpiAccDetect(dev)) {
             accHardware = ACC_BMI160;
-#ifdef ACC_BMI160_ALIGN
-            dev->accAlign = ACC_BMI160_ALIGN;
-#endif
             break;
         }
         FALLTHROUGH;

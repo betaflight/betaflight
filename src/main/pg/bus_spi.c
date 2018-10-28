@@ -77,24 +77,6 @@ ioTag_t preinitIPUList[SPI_PREINIT_IPU_COUNT] = {
 #ifdef GYRO_2_CS_PIN
     IO_TAG(GYRO_2_CS_PIN),
 #endif
-#ifdef MPU6000_CS_PIN
-    IO_TAG(MPU6000_CS_PIN),
-#endif
-#ifdef MPU6500_CS_PIN
-    IO_TAG(MPU6500_CS_PIN),
-#endif
-#ifdef MPU9250_CS_PIN
-    IO_TAG(MPU9250_CS_PIN),
-#endif
-#ifdef ICM20649_CS_PIN
-    IO_TAG(ICM20649_CS_PIN),
-#endif
-#ifdef ICM20689_CS_PIN
-    IO_TAG(ICM20689_CS_PIN),
-#endif
-#ifdef BMI160_CS_PIN
-    IO_TAG(BMI160_CS_PIN),
-#endif
 #ifdef L3GD20_CS_PIN
     IO_TAG(L3GD20_CS_PIN),
 #endif

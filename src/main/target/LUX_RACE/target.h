@@ -91,23 +91,21 @@
 #define GYRO_1_SPI_INSTANCE     SPI1
 
 #define USE_GYRO
+#define GYRO_1_ALIGN       CW270_DEG
 #ifdef LUXV2_RACE
 #define USE_GYRO_SPI_MPU6000
-#define GYRO_1_ALIGN       CW270_DEG
 #else
 #define USE_GYRO_SPI_MPU6500
-#define GYRO_1_ALIGN       CW270_DEG
 #endif
 
 #define USE_ACC
+#define ACC_1_ALIGN       CW270_DEG
 #ifdef LUXV2_RACE
 #define USE_ACC_MPU6000
 #define USE_ACC_SPI_MPU6000
-#define ACC_1_ALIGN       CW270_DEG
 #else
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
-#define ACC_1_ALIGN       CW270_DEG
 #endif
 
 #define USE_VCP
