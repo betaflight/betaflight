@@ -42,9 +42,9 @@
 #undef USE_HUFFMAN
 #undef USE_PINIO
 #undef USE_PINIOBOX
+#endif
 
 #undef USE_VIRTUAL_CURRENT_METER
-#endif
 
 #undef USE_TELEMETRY_HOTT
 #undef USE_TELEMETRY_MAVLINK
