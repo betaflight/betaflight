@@ -36,7 +36,7 @@
 //#undef USE_GYRO_OVERFLOW_CHECK
 //#undef USE_GYRO_LPF2
 
-#if !(defined(ZCOREF3) || defined(IRCSYNERGYF3))
+#if !defined(IRCSYNERGYF3)
 //#undef USE_ITERM_RELAX
 //#undef USE_RC_SMOOTHING_FILTER
 
