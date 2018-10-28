@@ -116,6 +116,10 @@
 #undef USE_TELEMETRY_SRXL
 #endif
 
+#if defined(USE_SERIALRX_SBUS) || defined(USE_SERIALRX_FPORT)
+#define USE_SBUS_CHANNELS
+#endif
+
 #if !defined(USE_TELEMETRY_SMARTPORT) && !defined(USE_TELEMETRY_CRSF)
 #undef USE_MSP_OVER_TELEMETRY
 #endif

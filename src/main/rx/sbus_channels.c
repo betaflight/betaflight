@@ -24,7 +24,7 @@
 
 #include "platform.h"
 
-#ifdef USE_SERIALRX_SBUS
+#ifdef USE_SBUS_CHANNELS
 
 #include "common/utils.h"
 

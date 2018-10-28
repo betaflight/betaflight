@@ -254,15 +254,16 @@ static bool checkChecksum(uint8_t *data, uint8_t length)
 
 static uint8_t fportFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
 {
+    static bool hasTelemetryRequest = false;
+
 #ifdef USE_TELEMETRY_SMARTPORT
     static smartPortPayload_t payloadBuffer;
+    static bool rxDrivenFrameRate = false;
+    static uint8_t consecutiveTelemetryFrameCount = 0;
 #endif
-    static bool hasTelemetryRequest = false;
 
     uint8_t result = RX_FRAME_PENDING;
 
-    static bool rxDrivenFrameRate = false;
-    static uint8_t consecutiveTelemetryFrameCount = 0;
 
     if (rxBufferReadIndex != rxBufferWriteIndex) {
         uint8_t bufferLength = rxBuffer[rxBufferReadIndex].length;
