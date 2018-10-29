@@ -87,7 +87,7 @@
 #undef USE_TELEMETRY_CRSF
 #endif
 
-#if !defined(USE_TELEMETRY_CRSF)
+#if !defined(USE_TELEMETRY_CRSF) || !defined(USE_CMS)
 #undef USE_CRSF_CMS_TELEMETRY
 #endif
 
