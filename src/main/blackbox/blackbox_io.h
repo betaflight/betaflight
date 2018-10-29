@@ -56,6 +56,7 @@ bool blackboxDeviceBeginLog(void);
 bool blackboxDeviceEndLog(bool retainLog);
 
 bool isBlackboxDeviceFull(void);
+bool isBlackboxDeviceWorking(void);
 unsigned int blackboxGetLogNumber(void);
 
 void blackboxReplenishHeaderBudget(void);

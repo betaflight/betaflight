@@ -52,7 +52,7 @@ extern "C" {
 
     #include "fc/rc_controls.h"
     #include "fc/runtime_config.h"
-    #include "fc/fc_core.h"
+    #include "fc/core.h"
 
     #include "scheduler/scheduler.h"
 }
@@ -223,6 +223,10 @@ uint32_t fixedMillis;
 extern "C" {
 uint32_t millis(void) {
     return fixedMillis;
+}
+
+uint32_t micros(void) {
+    return fixedMillis * 1000;
 }
 }
 
@@ -705,7 +709,7 @@ void gyroStartCalibration(bool isFirstArmingCalibration)
 }
 void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t*) {}
 void handleInflightCalibrationStickPosition(void) {}
-bool feature(uint32_t) { return false;}
+bool featureIsEnabled(uint32_t) { return false;}
 bool sensors(uint32_t) { return false;}
 void tryArm(void) {}
 void disarm(void) {}

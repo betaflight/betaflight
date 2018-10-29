@@ -58,6 +58,7 @@ typedef struct {
 typedef enum {
     /* Actual tasks */
     TASK_SYSTEM = 0,
+    TASK_MAIN,
     TASK_GYROPID,
     TASK_ACCEL,
     TASK_ATTITUDE,
@@ -102,9 +103,6 @@ typedef enum {
 #endif
 #ifdef USE_OSD
     TASK_OSD,
-#endif
-#ifdef USE_OSD_SLAVE
-    TASK_OSD_SLAVE,
 #endif
 #ifdef USE_BST
     TASK_BST_MASTER_PROCESS,
@@ -158,7 +156,7 @@ typedef struct {
     timeUs_t lastExecutedAt;        // last time of invocation
     timeUs_t lastSignaledAt;        // time of invocation event for event-driven tasks
 
-#ifndef SKIP_TASK_STATISTICS
+#if defined(USE_TASK_STATISTICS)
     // Statistics
     timeUs_t movingSumExecutionTime;  // moving sum over 32 samples
     timeUs_t maxExecutionTime;
@@ -176,10 +174,11 @@ void setTaskEnabled(cfTaskId_e taskId, bool newEnabledState);
 timeDelta_t getTaskDeltaTime(cfTaskId_e taskId);
 void schedulerSetCalulateTaskStatistics(bool calculateTaskStatistics);
 void schedulerResetTaskStatistics(cfTaskId_e taskId);
+void schedulerResetTaskMaxExecutionTime(cfTaskId_e taskId);
 
 void schedulerInit(void);
 void scheduler(void);
-void taskSystem(timeUs_t currentTime);
+void taskSystemLoad(timeUs_t currentTime);
 
 #define LOAD_PERCENTAGE_ONE 100
 

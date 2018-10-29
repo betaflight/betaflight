@@ -25,19 +25,28 @@
 
 // Removed to make the firmware fit into flash (in descending order of priority):
 // NOTE: Don't disable USE_GYRO_OVERFLOW_CHECK - board has ICM20602 gyro
-#undef USE_GYRO_LPF2
+//#undef USE_GYRO_OVERFLOW_CHECK
+//#undef USE_GYRO_LPF2
 
+#undef USE_ITERM_RELAX
+#undef USE_RC_SMOOTHING_FILTER
+
+#undef USE_HUFFMAN
+#undef USE_PINIO
+#undef USE_PINIOBOX
+
+#undef USE_TELEMETRY_HOTT
 #undef USE_TELEMETRY_MAVLINK
 #undef USE_TELEMETRY_LTM
 #undef USE_SERIALRX_XBUS
+#undef USE_SERIALRX_SUMH
+#undef USE_PWM
 
+#undef USE_BOARD_INFO
 #undef USE_EXTENDED_CMS_MENUS
 #undef USE_RTC_TIME
 #undef USE_RX_MSP
 #undef USE_ESC_SENSOR_INFO
-
-
-#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
 #define LED0_PIN                PB9
 #define LED1_PIN                PB2
@@ -47,7 +56,8 @@
 #define BEEPER_INVERTED
 
 //#define USE_EXTI
-//#define MPU_INT_EXTI            PC13
+//#define USE_GYRO_EXTI
+//#define GYRO_1_EXTI_PIN       PC13
 //#define USE_MPU_DATA_READY_SIGNAL
 //#define ENSURE_MPU_DATA_READY_IS_LOW
 
@@ -60,8 +70,8 @@
 #define USE_ACC
 #define USE_ACC_SPI_MPU6500
 
-#define ACC_MPU6500_ALIGN       CW0_DEG
-#define GYRO_MPU6500_ALIGN      CW0_DEG
+#define ACC_1_ALIGN             CW0_DEG
+#define GYRO_1_ALIGN            CW0_DEG
 
 #define USE_VCP
 #define USE_UART1
@@ -131,23 +141,17 @@
 #define SPI_SHARED_MAX7456_AND_RTC6705
 
 #define USE_SDCARD
-
+#define USE_SDCARD_SPI
 #define SDCARD_DETECT_INVERTED
 #define SDCARD_DETECT_PIN                   PC14
-
 #define SDCARD_SPI_INSTANCE                 SPI2
 #define SDCARD_SPI_CS_PIN                   SPI2_NSS_PIN
-
-// SPI2 is on the APB1 bus whose clock runs at 36MHz. Divide to under 400kHz for init:
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 128
-// Divide to under 25MHz for normal operation:
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     2
 
 // Note, this is the same DMA channel as UART1_RX. Luckily we don't use DMA for USART Rx.
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
 
-#define MPU6500_CS_PIN                   SPI1_NSS_PIN
-#define MPU6500_SPI_INSTANCE             SPI1
+#define GYRO_1_CS_PIN                    SPI1_NSS_PIN
+#define GYRO_1_SPI_INSTANCE              SPI1
 
 #define CURRENT_METER_SCALE_DEFAULT 300
 
@@ -159,15 +163,6 @@
 #define VBAT_ADC_PIN            PC1
 #define CURRENT_METER_ADC_PIN   PC2
 #define RSSI_ADC_PIN            PC0
-
-#define USE_LED_STRIP_ON_DMA1_CHANNEL2
-#define WS2811_PIN                      PA8
-#define WS2811_TIMER                    TIM1
-#define WS2811_DMA_CHANNEL              DMA1_Channel2
-#define WS2811_IRQ                      DMA1_Channel2_IRQn
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
-#define WS2811_TIMER_GPIO_AF            GPIO_AF_6
 
 #define USE_TRANSPONDER
 

@@ -23,6 +23,8 @@
 
 #include "platform.h"
 
+#ifdef USE_INVERTER
+
 #include "io/serial.h" // For SERIAL_PORT_IDENTIFIER_TO_INDEX
 #include "drivers/io.h"
 #include "drivers/serial.h"
@@ -31,8 +33,6 @@
 #include "pg/pg_ids.h"
 
 #include "inverter.h"
-
-#ifdef USE_INVERTER
 
 static const serialPinConfig_t *pSerialPinConfig;
 

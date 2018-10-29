@@ -39,8 +39,11 @@
 #include "drivers/io.h"
 #include "drivers/light_led.h"
 #include "drivers/nvic.h"
+#include "drivers/serial_usb_vcp.h"
 #include "drivers/time.h"
 #include "drivers/usb_msc.h"
+
+#include "drivers/accgyro/accgyro_mpu.h"
 
 #include "pg/usb.h"
 
@@ -48,8 +51,6 @@
 #include "usb_io.h"
 #include "usbd_msc.h"
 #include "msc/usbd_storage.h"
-
-USBD_HandleTypeDef USBD_Device;
 
 #define DEBOUNCE_TIME_MS 20
 
@@ -147,5 +148,13 @@ void mscWaitForButton(void)
             NVIC_SystemReset();
         }
     }
+}
+
+void systemResetToMsc(void)
+{
+    *((__IO uint32_t*) BKPSRAM_BASE + 16) = MSC_MAGIC;
+
+    __disable_irq();
+    NVIC_SystemReset();
 }
 #endif

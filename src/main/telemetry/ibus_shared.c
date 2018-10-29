@@ -31,16 +31,15 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-// #include <string.h>
+#include <limits.h>
 
 #include "platform.h"
-//#include "common/utils.h"
 #include "telemetry/telemetry.h"
 #include "telemetry/ibus_shared.h"
 
 static uint16_t calculateChecksum(const uint8_t *ibusPacket);
 
-#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_IBUS)
+#if defined(USE_TELEMETRY_IBUS)
 #include "config/feature.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
@@ -228,7 +227,7 @@ static uint16_t getRPM()
     if (ARMING_FLAG(ARMED)) {
         const throttleStatus_e throttleStatus = calculateThrottleStatus();
         rpm = rcCommand[THROTTLE];  // / BLADE_NUMBER_DIVIDER;
-        if (throttleStatus == THROTTLE_LOW && feature(FEATURE_MOTOR_STOP)) rpm = 0;
+        if (throttleStatus == THROTTLE_LOW && featureIsEnabled(FEATURE_MOTOR_STOP)) rpm = 0;
     } else {
         rpm = (uint16_t)(batteryConfig()->batteryCapacity); //  / BLADE_NUMBER_DIVIDER
     }
@@ -241,26 +240,14 @@ static uint16_t getMode()
     if (FLIGHT_MODE(ANGLE_MODE)) {
          flightMode = 0; //Stab
     }
-    if (FLIGHT_MODE(BARO_MODE)) {
-         flightMode = 2; //AltHold
-    }
     if (FLIGHT_MODE(PASSTHRU_MODE)) {
         flightMode = 3; //Auto
     }
     if (FLIGHT_MODE(HEADFREE_MODE) || FLIGHT_MODE(MAG_MODE)) {
         flightMode = 4; //Guided! (there in no HEAD, MAG so use Guided)
     }
-    if (FLIGHT_MODE(GPS_HOLD_MODE) && FLIGHT_MODE(BARO_MODE)) {
-        flightMode = 5; //Loiter
-    }
-    if (FLIGHT_MODE(GPS_HOME_MODE)) {
-        flightMode = 6; //RTL
-    }
     if (FLIGHT_MODE(HORIZON_MODE)) {
         flightMode = 7; //Circle! (there in no horizon so use Circle)
-    }
-    if (FLIGHT_MODE(GPS_HOLD_MODE)) {
-        flightMode = 8; //PosHold
     }
     if (FLIGHT_MODE(FAILSAFE_MODE)) {
         flightMode = 9; //Land
@@ -270,7 +257,7 @@ static uint16_t getMode()
 
 static int16_t getACC(uint8_t index)
 {
-    return (int16_t)((acc.accADC[index] / acc.dev.acc_1G) * 1000);
+    return (int16_t)((acc.accADC[index] * acc.dev.acc_1G_rec) * 1000);
 }
 
 #if defined(USE_TELEMETRY_IBUS_EXTENDED)
@@ -318,7 +305,7 @@ static bool setGPS(uint8_t sensorType, ibusTelemetry_s* value)
                 value->int32 = gpsSol.llh.lon;
                 break;
             case IBUS_SENSOR_TYPE_GPS_ALT:
-                value->int32 = (int32_t)gpsSol.llh.alt;
+                value->int32 = (int32_t)gpsSol.llh.altCm;
                 break;
             case IBUS_SENSOR_TYPE_GROUND_SPEED:
                 value->uint16 = gpsSol.groundSpeed;
@@ -420,10 +407,10 @@ static void setValue(uint8_t* bufferPtr, uint8_t sensorType, uint8_t length)
             break;
         case IBUS_SENSOR_TYPE_VERTICAL_SPEED:
         case IBUS_SENSOR_TYPE_CLIMB_RATE:
-            if(sensors(SENSOR_SONAR) || sensors(SENSOR_BARO)) {
-                value.int16 = (int16_t)getEstimatedVario();
-            }
+#ifdef USE_VARIO
+            value.int16 = (int16_t) constrain(getEstimatedVario(), SHRT_MIN, SHRT_MAX);
             break;
+#endif
         case IBUS_SENSOR_TYPE_ALT:
         case IBUS_SENSOR_TYPE_ALT_MAX:
             value.int32 = baro.BaroAlt;

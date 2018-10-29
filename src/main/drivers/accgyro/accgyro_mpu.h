@@ -140,20 +140,20 @@
 // RF = Register Flag
 #define MPU_RF_DATA_RDY_EN (1 << 0)
 
-typedef void (*mpuResetFnPtr)(void);
-
-extern mpuResetFnPtr mpuResetFn;
-
-typedef struct mpuConfiguration_s {
-    mpuResetFnPtr resetFn;
-} mpuConfiguration_t;
-
 enum gyro_fsr_e {
     INV_FSR_250DPS = 0,
     INV_FSR_500DPS,
     INV_FSR_1000DPS,
     INV_FSR_2000DPS,
     NUM_GYRO_FSR
+};
+
+enum icm_high_range_gyro_fsr_e {
+    ICM_HIGH_RANGE_FSR_500DPS = 0,
+    ICM_HIGH_RANGE_FSR_1000DPS,
+    ICM_HIGH_RANGE_FSR_2000DPS,
+    ICM_HIGH_RANGE_FSR_4000DPS,
+    NUM_ICM_HIGH_RANGE_GYRO_FSR
 };
 
 enum fchoice_b {
@@ -174,6 +174,14 @@ enum accel_fsr_e {
     INV_FSR_8G,
     INV_FSR_16G,
     NUM_ACCEL_FSR
+};
+
+enum icm_high_range_accel_fsr_e {
+    ICM_HIGH_RANGE_FSR_4G = 0,
+    ICM_HIGH_RANGE_FSR_8G,
+    ICM_HIGH_RANGE_FSR_16G,
+    ICM_HIGH_RANGE_FSR_32G,
+    NUM_ICM_HIGH_RANGE_ACCEL_FSR
 };
 
 typedef enum {
@@ -210,10 +218,11 @@ typedef struct mpuDetectionResult_s {
 } mpuDetectionResult_t;
 
 struct gyroDev_s;
+struct gyroDeviceConfig_s;
 void mpuGyroInit(struct gyroDev_s *gyro);
 bool mpuGyroRead(struct gyroDev_s *gyro);
 bool mpuGyroReadSPI(struct gyroDev_s *gyro);
-void mpuDetect(struct gyroDev_s *gyro);
+void mpuDetect(struct gyroDev_s *gyro, const struct gyroDeviceConfig_s *config);
 uint8_t mpuGyroDLPF(struct gyroDev_s *gyro);
 uint8_t mpuGyroFCHOICE(struct gyroDev_s *gyro);
 uint8_t mpuGyroReadRegister(const busDevice_t *bus, uint8_t reg);

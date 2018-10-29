@@ -77,6 +77,10 @@
 
 PG_REGISTER_WITH_RESET_FN(ledStripConfig_t, ledStripConfig, PG_LED_STRIP_CONFIG, 0);
 
+hsvColor_t *colors;
+const modeColorIndexes_t *modeColors;
+specialColorIndexes_t specialColors;
+
 static bool ledStripInitialised = false;
 static bool ledStripEnabled = true;
 
@@ -145,7 +149,6 @@ static const modeColorIndexes_t defaultModeColors[] = {
     [LED_MODE_HORIZON]     = {{ COLOR_BLUE,       COLOR_DARK_VIOLET, COLOR_YELLOW,    COLOR_DEEP_PINK, COLOR_BLUE, COLOR_ORANGE }},
     [LED_MODE_ANGLE]       = {{ COLOR_CYAN,       COLOR_DARK_VIOLET, COLOR_YELLOW,    COLOR_DEEP_PINK, COLOR_BLUE, COLOR_ORANGE }},
     [LED_MODE_MAG]         = {{ COLOR_MINT_GREEN, COLOR_DARK_VIOLET, COLOR_ORANGE,    COLOR_DEEP_PINK, COLOR_BLUE, COLOR_ORANGE }},
-    [LED_MODE_BARO]        = {{ COLOR_LIGHT_BLUE, COLOR_DARK_VIOLET, COLOR_RED,       COLOR_DEEP_PINK, COLOR_BLUE, COLOR_ORANGE }},
 };
 
 static const specialColorIndexes_t defaultSpecialColors[] = {
@@ -165,7 +168,7 @@ void pgResetFn_ledStripConfig(ledStripConfig_t *ledStripConfig)
     memset(ledStripConfig->ledConfigs, 0, LED_MAX_STRIP_LENGTH * sizeof(ledConfig_t));
     // copy hsv colors as default
     memset(ledStripConfig->colors, 0, ARRAYLEN(hsv) * sizeof(hsvColor_t));
-    BUILD_BUG_ON(LED_CONFIGURABLE_COLOR_COUNT < ARRAYLEN(hsv));
+    STATIC_ASSERT(LED_CONFIGURABLE_COLOR_COUNT >= ARRAYLEN(hsv), LED_CONFIGURABLE_COLOR_COUNT_invalid);
     for (unsigned colorIndex = 0; colorIndex < ARRAYLEN(hsv); colorIndex++) {
         ledStripConfig->colors[colorIndex] = hsv[colorIndex];
     }
@@ -432,9 +435,6 @@ static const struct {
     {HEADFREE_MODE, LED_MODE_HEADFREE},
 #ifdef USE_MAG
     {MAG_MODE,      LED_MODE_MAG},
-#endif
-#ifdef USE_BARO
-    {BARO_MODE,     LED_MODE_BARO},
 #endif
     {HORIZON_MODE,  LED_MODE_HORIZON},
     {ANGLE_MODE,    LED_MODE_ANGLE},

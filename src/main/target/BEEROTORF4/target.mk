@@ -1,5 +1,5 @@
 F405_TARGETS    += $(TARGET)
-FEATURES        += VCP SDCARD
+FEATURES        += VCP SDCARD_SPI
 
 TARGET_SRC = \
             drivers/accgyro/accgyro_spi_icm20689.c \

@@ -38,14 +38,15 @@
 
 #define USE_GYRO
 #define USE_GYRO_MPU6050
-#define GYRO_MPU6050_ALIGN      CW270_DEG
+#define GYRO_1_ALIGN            CW270_DEG
 
 #define USE_ACC
 #define USE_ACC_MPU6050
-#define ACC_MPU6050_ALIGN       CW270_DEG
+#define ACC_1_ALIGN             CW270_DEG
 
 #define USE_EXTI
-#define MPU_INT_EXTI            PA13
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PA13
 #define USE_MPU_DATA_READY_SIGNAL
 
 #define USE_VCP
@@ -71,28 +72,19 @@
 #define USE_SPI
 
 #define USE_SPI_DEVICE_1
-#define SPI1_NSS_PIN            PA4
 #define SPI1_SCK_PIN            PA5
 #define SPI1_MISO_PIN           PA6
 #define SPI1_MOSI_PIN           PA7
 
 #define USE_SPI_DEVICE_2
-#define SPI2_NSS_PIN            PB12
 #define SPI2_SCK_PIN            PB13
 #define SPI2_MISO_PIN           PB14
 #define SPI2_MOSI_PIN           PB15
 
 #define USE_SDCARD
-#define USE_SDCARD_SPI2
-
+#define USE_SDCARD_SPI
 #define SDCARD_SPI_INSTANCE                 SPI2
-#define SDCARD_SPI_CS_PIN                   SPI2_NSS_PIN
-
-// SPI2 is on the APB1 bus whose clock runs at 36MHz. Divide to under 400kHz for init:
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 128
-// // Divide to under 25MHz for normal operation:
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     2
-
+#define SDCARD_SPI_CS_PIN                   PB12
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
 
 #define USE_ADC
@@ -109,41 +101,37 @@
 
 #define USE_RX_SPI
 #define RX_SPI_INSTANCE         SPI1
-#define RX_NSS_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOA
-
 
 #define USE_RX_FRSKY_SPI_D
 #define USE_RX_FRSKY_SPI_X
+#define USE_RX_SFHSS_SPI
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SPI
 #define RX_SPI_DEFAULT_PROTOCOL RX_SPI_FRSKY_X
 #define USE_RX_FRSKY_SPI_TELEMETRY
 
-#define RX_NSS_PIN               SPI1_NSS_PIN
-#define RX_SCK_PIN               SPI1_SCK_PIN
-#define RX_MISO_PIN              SPI1_MISO_PIN
-#define RX_MOSI_PIN              SPI1_MOSI_PIN
+#define RX_NSS_PIN               PA4
 
-#define RX_FRSKY_SPI_GDO_0_PIN   PB0
+#define RX_CC2500_SPI_GDO_0_PIN   PB0
 
-#define RX_FRSKY_SPI_LED_PIN     PB6
+#define RX_CC2500_SPI_LED_PIN     PB6
 
 
-#define USE_RX_FRSKY_SPI_PA_LNA
+#define USE_RX_CC2500_SPI_PA_LNA
 
-#define RX_FRSKY_SPI_TX_EN_PIN   PB1
-#define RX_FRSKY_SPI_LNA_EN_PIN  PB11
+#define RX_CC2500_SPI_TX_EN_PIN   PB1
+#define RX_CC2500_SPI_LNA_EN_PIN  PB11
 
 
-#define USE_RX_FRSKY_SPI_DIVERSITY
+#define USE_RX_CC2500_SPI_DIVERSITY
 
-#define RX_FRSKY_SPI_ANT_SEL_PIN PB2
+#define RX_CC2500_SPI_ANT_SEL_PIN PB2
 
 
 #define BINDPLUG_PIN             PC13
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 #define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_HARDWARE 0
+#define ESCSERIAL_TIMER_TX_PIN   PB9 // Motor 6, can't use escserial for hexa
 
 #define DEFAULT_FEATURES        (FEATURE_AIRMODE | FEATURE_TELEMETRY)
 

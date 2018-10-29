@@ -56,6 +56,11 @@ void pt1FilterInit(pt1Filter_t *filter, float k)
     filter->k = k;
 }
 
+void pt1FilterUpdateCutoff(pt1Filter_t *filter, float k)
+{
+    filter->k = k;
+}
+
 FAST_CODE float pt1FilterApply(pt1Filter_t *filter, float input)
 {
     filter->state = filter->state + filter->k * (input - filter->state);
@@ -165,6 +170,11 @@ FAST_CODE void biquadFilterUpdate(biquadFilter_t *filter, float filterFreq, uint
     filter->x2 = x2;
     filter->y1 = y1;
     filter->y2 = y2;
+}
+
+FAST_CODE void biquadFilterUpdateLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate)
+{
+    biquadFilterUpdate(filter, filterFreq, refreshRate, BIQUAD_Q, FILTER_LPF);
 }
 
 /* Computes a biquadFilter_t filter on a sample (slightly less precise than df2 but works in dynamic mode) */

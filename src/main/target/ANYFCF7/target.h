@@ -31,20 +31,22 @@
 #define BEEPER_PIN PB2 // Unused pin, can be mapped to elsewhere
 #define BEEPER_INVERTED
 
-#define MPU6000_CS_PIN        PA4
-#define MPU6000_SPI_INSTANCE  SPI1
+#define GYRO_1_CS_PIN         PA4
+#define GYRO_1_SPI_INSTANCE   SPI1
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
-#define ACC_MPU6000_ALIGN CW270_DEG
+#define ACC_1_ALIGN       CW270_DEG
 
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN CW270_DEG
+#define GYRO_1_ALIGN       CW270_DEG
 
 // MPU6000 interrupts
 #define USE_MPU_DATA_READY_SIGNAL
-#define MPU_INT_EXTI PC4
+#define USE_EXTI
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN       PC4
 #define USE_EXTI
 
 #define USE_MAG
@@ -133,16 +135,11 @@
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
 #define USE_SDCARD
+#define USE_SDCARD_SPI
 #define SDCARD_DETECT_INVERTED
 #define SDCARD_DETECT_PIN                   PD3
-
 #define SDCARD_SPI_INSTANCE                 SPI4
 #define SDCARD_SPI_CS_PIN                   SPI4_NSS_PIN
-
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 422kHz
-// Divide to under 25MHz for normal operation:
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 8 // 27MHz
-
 #define SDCARD_DMA_STREAM_TX_FULL           DMA2_Stream1
 #define SDCARD_DMA_CHANNEL                  4
 
@@ -154,7 +151,7 @@
 #define USE_ADC
 #define VBAT_ADC_PIN                PC0
 #define CURRENT_METER_ADC_PIN       PC1
-#define RSSI_ADC_GPIO_PIN           PC2
+#define RSSI_ADC_PIN                PC2
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
@@ -169,4 +166,4 @@
 #define TARGET_IO_PORTD 0xffff
 #define TARGET_IO_PORTE 0xffff
 
-#define USED_TIMERS  ( TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9) | TIM_N(10) | TIM_N(11))
+#define USED_TIMERS  ( TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(8) | TIM_N(9) | TIM_N(12) )

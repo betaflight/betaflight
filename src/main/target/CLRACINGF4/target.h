@@ -38,34 +38,29 @@
 
 #define INVERTER_PIN_UART1        PC0 // PC0 used as inverter select GPIO
 
-#define CAMERA_CONTROL_PIN    PB9    // define dedicated camera_osd_control pin
+#define CAMERA_CONTROL_PIN        PB9    // define dedicated camera_osd_control pin
 
 
 #define USE_EXTI
-#define MPU_INT_EXTI            PC4
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN           PC4
 #define USE_MPU_DATA_READY_SIGNAL
 
-//  MPU 6000
-#define MPU6000_CS_PIN            PA4
-#define MPU6000_SPI_INSTANCE      SPI1
 #define USE_ACC
-#define USE_ACC_SPI_MPU6000
 #define USE_GYRO
+
+//  MPU 6000
+#define USE_ACC_SPI_MPU6000
 #define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN       CW0_DEG
-#define ACC_MPU6000_ALIGN        CW0_DEG
 
 // ICM-20602
-#define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
-#define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
 
-#define ACC_MPU6500_ALIGN       CW0_DEG
-#define GYRO_MPU6500_ALIGN      CW0_DEG
-#define MPU6500_CS_PIN          PA4
-#define MPU6500_SPI_INSTANCE    SPI1
-
+#define GYRO_1_CS_PIN             PA4
+#define GYRO_1_SPI_INSTANCE       SPI1
+#define GYRO_1_ALIGN              CW0_DEG
+#define ACC_1_ALIGN               CW0_DEG
 
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI3
@@ -75,13 +70,10 @@
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #define USE_SDCARD
+#define USE_SDCARD_SPI
 #define SDCARD_DETECT_PIN             PB7
 #define SDCARD_SPI_INSTANCE           SPI2
 #define SDCARD_SPI_CS_PIN             SPI2_NSS_PIN
-// SPI2 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER  256 // 328kHz
-// Divide to under 25MHz for normal operation:
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER  4 // 21MHz
 #define SDCARD_DMA_CHANNEL_TX                DMA1_Stream4
 #define SDCARD_DMA_CHANNEL                   0
 
@@ -98,7 +90,6 @@
 #define USE_UART1
 #define UART1_RX_PIN            PA10
 #define UART1_TX_PIN            PA9
-#define UART1_AHB1_PERIPHERALS  RCC_AHB1Periph_DMA2
 
 #define USE_UART3
 #define UART3_RX_PIN            PB11

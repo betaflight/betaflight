@@ -47,6 +47,7 @@
 #include "rx/nrf24_inav.h"
 #include "rx/nrf24_kn.h"
 #include "rx/flysky.h"
+#include "rx/cc2500_sfhss.h"
 
 
 uint16_t rxSpiRcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
@@ -63,7 +64,7 @@ static protocolSetRcDataFromPayloadFnPtr protocolSetRcDataFromPayload;
 
 STATIC_UNIT_TESTED uint16_t rxSpiReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t channel)
 {
-    BUILD_BUG_ON(NRF24L01_MAX_PAYLOAD_SIZE > RX_SPI_MAX_PAYLOAD_SIZE);
+    STATIC_ASSERT(NRF24L01_MAX_PAYLOAD_SIZE <= RX_SPI_MAX_PAYLOAD_SIZE, NRF24L01_MAX_PAYLOAD_SIZE_larger_than_RX_SPI_MAX_PAYLOAD_SIZE);
 
     if (channel >= rxRuntimeConfig->channelCount) {
         return 0;
@@ -143,6 +144,13 @@ STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
         protocolInit = flySkyInit;
         protocolDataReceived = flySkyDataReceived;
         protocolSetRcDataFromPayload = flySkySetRcDataFromPayload;
+        break;
+#endif
+#ifdef USE_RX_SFHSS_SPI
+    case RX_SPI_SFHSS:
+        protocolInit = sfhssSpiInit;
+        protocolDataReceived = sfhssSpiDataReceived;
+        protocolSetRcDataFromPayload = sfhssSpiSetRcData;
         break;
 #endif
     }

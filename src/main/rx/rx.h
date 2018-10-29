@@ -166,11 +166,11 @@ void setRssiMsp(uint8_t newMspRssi);
 void updateRSSI(timeUs_t currentTimeUs);
 uint16_t getRssi(void);
 uint8_t getRssiPercent(void);
+bool isRssiConfigured(void);
 
 void resetAllRxChannelRangeConfigurations(rxChannelRangeConfig_t *rxChannelRangeConfig);
 
-void suspendRxSignal(void);
-void resumeRxSignal(void);
+void suspendRxPwmPpmSignal(void);
+void resumeRxPwmPpmSignal(void);
 
 uint16_t rxGetRefreshRate(void);
-

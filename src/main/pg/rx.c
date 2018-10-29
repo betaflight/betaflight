@@ -29,7 +29,7 @@
 #include "config/config_reset.h"
 
 #include "drivers/io.h"
-#include "fc/fc_rc.h"
+#include "fc/rc.h"
 #include "fc/rc_controls.h"
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
@@ -56,12 +56,12 @@ void pgResetFn_rxConfig(rxConfig_t *rxConfig)
         .rssi_offset = 0,
         .rssi_invert = 0,
         .rcInterpolation = RC_SMOOTHING_AUTO,
-        .rcInterpolationChannels = INTERPOLATION_CHANNELS_RPT,
+        .rcInterpolationChannels = INTERPOLATION_CHANNELS_RPYT,
         .rcInterpolationInterval = 19,
         .fpvCamAngleDegrees = 0,
         .airModeActivateThreshold = 32,
         .max_aux_channel = DEFAULT_AUX_CHANNEL_COUNT,
-        .rc_smoothing_type = RC_SMOOTHING_TYPE_INTERPOLATION,
+        .rc_smoothing_type = RC_SMOOTHING_TYPE_FILTER,
         .rc_smoothing_input_cutoff = 0,      // automatically calculate the cutoff by default
         .rc_smoothing_derivative_cutoff = 0, // automatically calculate the cutoff by default
         .rc_smoothing_debug_axis = ROLL,     // default to debug logging for the roll axis

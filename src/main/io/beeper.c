@@ -36,7 +36,7 @@
 #include "flight/mixer.h"
 
 #include "fc/config.h"
-#include "fc/fc_core.h"
+#include "fc/core.h"
 #include "fc/runtime_config.h"
 
 #include "io/statusindicator.h"
@@ -160,6 +160,11 @@ static const uint8_t beep_camCloseBeep[] = {
     10, 8, 5, BEEPER_COMMAND_STOP
 };
 
+// RC Smoothing filter not initialized - 3 short + 1 long
+static const uint8_t beep_rcSmoothingInitFail[] = {
+    10, 10, 10, 10, 10, 10, 50, 25, BEEPER_COMMAND_STOP
+};
+
 // array used for variable # of beeps (reporting GPS sat count, etc)
 static uint8_t beep_multiBeeps[MAX_MULTI_BEEPS + 1];
 
@@ -172,8 +177,7 @@ static uint8_t beep_multiBeeps[MAX_MULTI_BEEPS + 1];
 #define BEEPER_WARNING_BEEP_2_DURATION 5
 #define BEEPER_WARNING_BEEP_GAP_DURATION 10
 
-// Beeper off = 0 Beeper on = 1
-static uint8_t beeperIsOn = 0;
+static bool beeperIsOn = false;
 
 // Place in current sequence
 static uint16_t beeperPos = 0;
@@ -219,10 +223,11 @@ static const beeperTableEntry_t beeperTable[] = {
     { BEEPER_ENTRY(BEEPER_SYSTEM_INIT,           16, NULL,                 "SYSTEM_INIT") },
     { BEEPER_ENTRY(BEEPER_USB,                   17, NULL,                 "ON_USB") },
     { BEEPER_ENTRY(BEEPER_BLACKBOX_ERASE,        18, beep_2shortBeeps,     "BLACKBOX_ERASE") },
-    { BEEPER_ENTRY(BEEPER_CRASH_FLIP_MODE,       19, beep_2longerBeeps,    "CRASH FLIP") },
+    { BEEPER_ENTRY(BEEPER_CRASH_FLIP_MODE,       19, beep_2longerBeeps,    "CRASH_FLIP") },
     { BEEPER_ENTRY(BEEPER_CAM_CONNECTION_OPEN,   20, beep_camOpenBeep,     "CAM_CONNECTION_OPEN") },
-    { BEEPER_ENTRY(BEEPER_CAM_CONNECTION_CLOSE,  21, beep_camCloseBeep,    "CAM_CONNECTION_CLOSED") },
-    { BEEPER_ENTRY(BEEPER_ALL,                   22, NULL,                 "ALL") },
+    { BEEPER_ENTRY(BEEPER_CAM_CONNECTION_CLOSE,  21, beep_camCloseBeep,    "CAM_CONNECTION_CLOSE") },
+    { BEEPER_ENTRY(BEEPER_RC_SMOOTHING_INIT_FAIL,22, beep_rcSmoothingInitFail, "RC_SMOOTHING_INIT_FAIL") },
+    { BEEPER_ENTRY(BEEPER_ALL,                   23, NULL,                 "ALL") },
 };
 
 static const beeperTableEntry_t *currentBeeperEntry = NULL;
@@ -277,11 +282,10 @@ void beeper(beeperMode_e mode)
 void beeperSilence(void)
 {
     BEEP_OFF;
+    beeperIsOn = false;
+
     warningLedDisable();
     warningLedRefresh();
-
-
-    beeperIsOn = 0;
 
     beeperNextToggleTime = 0;
     beeperPos = 0;
@@ -378,7 +382,7 @@ void beeperUpdate(timeUs_t currentTimeUs)
     if (IS_RC_MODE_ACTIVE(BOXBEEPERON)) {
         beeper(BEEPER_RX_SET);
 #ifdef USE_GPS
-    } else if (feature(FEATURE_GPS) && IS_RC_MODE_ACTIVE(BOXBEEPGPSCOUNT)) {
+    } else if (featureIsEnabled(FEATURE_GPS) && IS_RC_MODE_ACTIVE(BOXBEEPGPSCOUNT)) {
         beeperGpsStatus();
 #endif
     }
@@ -393,8 +397,6 @@ void beeperUpdate(timeUs_t currentTimeUs)
     }
 
     if (!beeperIsOn) {
-        beeperIsOn = 1;
-
 #ifdef USE_DSHOT
         if (!areMotorsRunning()
             && ((currentBeeperEntry->mode == BEEPER_RX_SET && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_SET)))
@@ -408,8 +410,11 @@ void beeperUpdate(timeUs_t currentTimeUs)
 #endif
 
         if (currentBeeperEntry->sequence[beeperPos] != 0) {
-            if (!(beeperConfigMutable()->beeper_off_flags & BEEPER_GET_FLAG(currentBeeperEntry->mode)))
+            if (!(beeperConfigMutable()->beeper_off_flags & BEEPER_GET_FLAG(currentBeeperEntry->mode))) {
                 BEEP_ON;
+                beeperIsOn = true;
+            }
+
             warningLedEnable();
             warningLedRefresh();
             // if this was arming beep then mark time (for blackbox)
@@ -421,9 +426,10 @@ void beeperUpdate(timeUs_t currentTimeUs)
             }
         }
     } else {
-        beeperIsOn = 0;
         if (currentBeeperEntry->sequence[beeperPos] != 0) {
             BEEP_OFF;
+            beeperIsOn = false;
+
             warningLedDisable();
             warningLedRefresh();
         }

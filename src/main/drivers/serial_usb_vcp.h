@@ -22,6 +22,14 @@
 
 #include "drivers/serial.h"
 
+#if defined(STM32F7)
+#include "common/maths.h"
+
+#include "usbd_cdc.h"
+
+extern USBD_HandleTypeDef  USBD_Device;
+#endif
+
 typedef struct {
     serialPort_t port;
 

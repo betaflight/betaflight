@@ -98,7 +98,7 @@ static uint16_t fraction3[2];
 gpsSolutionData_t gpsSol;
 uint32_t GPS_packetCount = 0;
 uint32_t GPS_svInfoReceivedCount = 0; // SV = Space Vehicle, counter increments each time SV info is received.
-uint8_t GPS_update = 0;             // it's a binary toggle to distinct a GPS position update
+uint8_t GPS_update = 0;             // toogle to distinct a GPS position update (directly or via MSP)
 
 uint8_t GPS_numCh;                          // Number of channels
 uint8_t GPS_svinfo_chn[GPS_SV_MAXSATS];     // Channel number
@@ -224,6 +224,7 @@ static const uint8_t ubloxGalileoInit[] = {
 typedef enum {
     GPS_UNKNOWN,
     GPS_INITIALIZING,
+    GPS_INITIALIZED,
     GPS_CHANGE_BAUD,
     GPS_CONFIGURE,
     GPS_RECEIVING_DATA,
@@ -280,10 +281,14 @@ void gpsInit(void)
     gpsSetState(GPS_UNKNOWN);
 
     gpsData.lastMessage = millis();
+    
+    if (gpsConfig()->provider == GPS_MSP) { // no serial ports used when GPS_MSP is configured
+        gpsSetState(GPS_INITIALIZED);
+        return;
+    }
 
     serialPortConfig_t *gpsPortConfig = findSerialPortConfig(FUNCTION_GPS);
     if (!gpsPortConfig) {
-        featureClear(FEATURE_GPS);
         return;
     }
 
@@ -305,7 +310,6 @@ void gpsInit(void)
     // no callback - buffer will be consumed in gpsUpdate()
     gpsPort = openSerialPort(gpsPortConfig->identifier, FUNCTION_GPS, NULL, NULL, baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex], mode, SERIAL_NOT_INVERTED);
     if (!gpsPort) {
-        featureClear(FEATURE_GPS);
         return;
     }
 
@@ -476,6 +480,8 @@ void gpsInitHardware(void)
         gpsInitUblox();
 #endif
         break;
+    default:
+        break;
     }
 }
 
@@ -494,10 +500,17 @@ void gpsUpdate(timeUs_t currentTimeUs)
     if (gpsPort) {
         while (serialRxBytesWaiting(gpsPort))
             gpsNewData(serialRead(gpsPort));
+    } else if (GPS_update & GPS_MSP_UPDATE) { // GPS data received via MSP
+        gpsSetState(GPS_RECEIVING_DATA);
+        gpsData.lastMessage = millis();
+        sensorsSet(SENSOR_GPS);
+        onGpsNewData();
+        GPS_update &= ~GPS_MSP_UPDATE;
     }
 
     switch (gpsData.state) {
         case GPS_UNKNOWN:
+        case GPS_INITIALIZED:
             break;
 
         case GPS_INITIALIZING:
@@ -531,6 +544,11 @@ void gpsUpdate(timeUs_t currentTimeUs)
     if (sensors(SENSOR_GPS)) {
         updateGpsIndicator(currentTimeUs);
     }
+#if defined(USE_GPS_RESCUE)
+    if (gpsRescueIsConfigured()) {
+        updateGPSRescueState();
+    }
+#endif
 }
 
 static void gpsNewData(uint16_t c)
@@ -544,10 +562,7 @@ static void gpsNewData(uint16_t c)
     gpsData.lastMessage = millis();
     sensorsSet(SENSOR_GPS);
 
-    if (GPS_update == 1)
-        GPS_update = 0;
-    else
-        GPS_update = 1;
+    GPS_update ^= GPS_DIRECT_TICK;
 
 #if 0
     debug[3] = GPS_update;
@@ -568,6 +583,8 @@ bool gpsNewFrame(uint8_t c)
 #ifdef USE_GPS_UBLOX
         return gpsNewFrameUBLOX(c);
 #endif
+        break;
+    default:
         break;
     }
     return false;
@@ -641,28 +658,36 @@ static uint32_t grab_fields(char *src, uint8_t mult)
 {                               // convert string to uint32
     uint32_t i;
     uint32_t tmp = 0;
+    int isneg = 0;
     for (i = 0; src[i] != 0; i++) {
+        if ((i == 0) && (src[0] == '-')) { // detect negative sign
+            isneg = 1;
+            continue; // jump to next character if the first one was a negative sign
+        }
         if (src[i] == '.') {
             i++;
-            if (mult == 0)
+            if (mult == 0) {
                 break;
-            else
+            } else {
                 src[i + mult] = 0;
+            }
         }
         tmp *= 10;
-        if (src[i] >= '0' && src[i] <= '9')
+        if (src[i] >= '0' && src[i] <= '9') {
             tmp += src[i] - '0';
-        if (i >= 15)
+        }
+        if (i >= 15) {
             return 0; // out of bounds
+        }
     }
-    return tmp;
+    return isneg ? -tmp : tmp;    // handle negative altitudes
 }
 
 typedef struct gpsDataNmea_s {
     int32_t latitude;
     int32_t longitude;
     uint8_t numSat;
-    uint16_t altitude;
+    int32_t altitudeCm;
     uint16_t speed;
     uint16_t hdop;
     uint16_t ground_course;
@@ -692,12 +717,13 @@ static bool gpsNewFrameNMEA(char c)
             string[offset] = 0;
             if (param == 0) {       //frame identification
                 gps_frame = NO_FRAME;
-                if (string[0] == 'G' && string[1] == 'P' && string[2] == 'G' && string[3] == 'G' && string[4] == 'A')
+                if (0 == strcmp(string, "GPGGA") || 0 == strcmp(string, "GNGGA")) {
                     gps_frame = FRAME_GGA;
-                if (string[0] == 'G' && string[1] == 'P' && string[2] == 'R' && string[3] == 'M' && string[4] == 'C')
+                } else if (0 == strcmp(string, "GPRMC") || 0 == strcmp(string, "GNRMC")) {
                     gps_frame = FRAME_RMC;
-                if (string[0] == 'G' && string[1] == 'P' && string[2] == 'G' && string[3] == 'S' && string[4] == 'V')
+                } else if (0 == strcmp(string, "GPGSV")) {
                     gps_frame = FRAME_GSV;
+                }
             }
 
             switch (gps_frame) {
@@ -733,7 +759,7 @@ static bool gpsNewFrameNMEA(char c)
                             gps_Msg.hdop = grab_fields(string, 1) * 100;          // hdop
                             break;
                         case 9:
-                            gps_Msg.altitude = grab_fields(string, 0);     // altitude in meters added by Mis
+                            gps_Msg.altitudeCm = grab_fields(string, 1) * 10;     // altitude in centimeters. Note: NMEA delivers altitude with 1 or 3 decimals. It's safer to cut at 0.1m and multiply by 10
                             break;
                     }
                     break;
@@ -824,7 +850,7 @@ static bool gpsNewFrameNMEA(char c)
                             gpsSol.llh.lat = gps_Msg.latitude;
                             gpsSol.llh.lon = gps_Msg.longitude;
                             gpsSol.numSat = gps_Msg.numSat;
-                            gpsSol.llh.alt = gps_Msg.altitude;
+                            gpsSol.llh.altCm = gps_Msg.altitudeCm;
                             gpsSol.hdop = gps_Msg.hdop;
                         }
                         break;
@@ -879,7 +905,7 @@ typedef struct {
     int32_t longitude;
     int32_t latitude;
     int32_t altitude_ellipsoid;
-    int32_t altitude_msl;
+    int32_t altitudeMslMm;
     uint32_t horizontal_accuracy;
     uint32_t vertical_accuracy;
 } ubx_nav_posllh;
@@ -1048,7 +1074,7 @@ static bool UBLOX_parse_gps(void)
         //i2c_dataset.time                = _buffer.posllh.time;
         gpsSol.llh.lon = _buffer.posllh.longitude;
         gpsSol.llh.lat = _buffer.posllh.latitude;
-        gpsSol.llh.alt = _buffer.posllh.altitude_msl / 10;  //alt in cm
+        gpsSol.llh.altCm = _buffer.posllh.altitudeMslMm / 10;  //alt in cm
         if (next_fix) {
             ENABLE_STATE(GPS_FIX);
         } else {
@@ -1202,7 +1228,7 @@ static void gpsHandlePassthrough(uint8_t data)
 {
      gpsNewData(data);
  #ifdef USE_DASHBOARD
-     if (feature(FEATURE_DASHBOARD)) {
+     if (featureIsEnabled(FEATURE_DASHBOARD)) {
          dashboardUpdate(micros());
      }
  #endif
@@ -1218,7 +1244,7 @@ void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
         serialSetMode(gpsPort, gpsPort->mode | MODE_TX);
 
 #ifdef USE_DASHBOARD
-    if (feature(FEATURE_DASHBOARD)) {
+    if (featureIsEnabled(FEATURE_DASHBOARD)) {
         dashboardShowFixedPage(PAGE_GPS);
     }
 #endif

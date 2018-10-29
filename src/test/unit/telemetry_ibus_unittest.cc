@@ -35,7 +35,7 @@ extern "C" {
 #include "sensors/barometer.h"
 #include "sensors/acceleration.h"
 #include "scheduler/scheduler.h"
-#include "fc/fc_tasks.h"
+#include "fc/tasks.h"
 }
 
 #include "unittest_macros.h"
@@ -108,7 +108,7 @@ throttleStatus_e calculateThrottleStatus(void)
     return throttleStatus;
 }
 
-bool feature(uint32_t mask)
+bool featureIsEnabled(uint32_t mask)
 {
     return (definedFeatures & mask) != 0;
 }

@@ -25,7 +25,7 @@
 
 #include "platform.h"
 
-#if defined(USE_SERIAL_RX)
+#ifdef USE_SERIALRX_FPORT
 
 #include "build/debug.h"
 
@@ -53,7 +53,7 @@
 #define FPORT_MIN_TELEMETRY_RESPONSE_DELAY_US 500
 #define FPORT_MAX_TELEMETRY_AGE_MS 500
 
-#define FPORT_TELEMETRY_MAX_CONSECUTIVE_SENSORS 2
+#define FPORT_TELEMETRY_MAX_CONSECUTIVE_TELEMETRY_FRAMES 2
 
 
 #define FPORT_FRAME_MARKER 0x7E
@@ -71,7 +71,7 @@ enum {
     DEBUG_FPORT_FRAME_INTERVAL = 0,
     DEBUG_FPORT_FRAME_ERRORS,
     DEBUG_FPORT_FRAME_LAST_ERROR,
-    DEBUG_FPORT_TELEMETRY_DELAY,
+    DEBUG_FPORT_TELEMETRY_INTERVAL,
 };
 
 enum {
@@ -114,7 +114,9 @@ typedef struct fportFrame_s {
     fportData_t data;
 } fportFrame_t;
 
+#ifdef USE_TELEMETRY_SMARTPORT
 static const smartPortPayload_t emptySmartPortFrame = { .frameId = 0, .valueId = 0, .data = 0 };
+#endif
 
 #define FPORT_REQUEST_FRAME_LENGTH sizeof(fportFrame_t)
 #define FPORT_RESPONSE_FRAME_LENGTH (sizeof(uint8_t) + sizeof(smartPortPayload_t))
@@ -144,12 +146,16 @@ static smartPortPayload_t *mspPayload = NULL;
 static timeUs_t lastRcFrameReceivedMs = 0;
 
 static serialPort_t *fportPort;
+#ifdef USE_TELEMETRY_SMARTPORT
 static bool telemetryEnabled = false;
+#endif
 
 static void reportFrameError(uint8_t errorReason) {
     static volatile uint16_t frameErrors = 0;
 
-    DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_FRAME_ERRORS, ++frameErrors);
+    frameErrors++;
+
+    DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_FRAME_ERRORS, frameErrors);
     DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_FRAME_LAST_ERROR, errorReason);
 }
 
@@ -248,10 +254,16 @@ static bool checkChecksum(uint8_t *data, uint8_t length)
 
 static uint8_t fportFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
 {
-    static smartPortPayload_t payloadBuffer;
     static bool hasTelemetryRequest = false;
 
+#ifdef USE_TELEMETRY_SMARTPORT
+    static smartPortPayload_t payloadBuffer;
+    static bool rxDrivenFrameRate = false;
+    static uint8_t consecutiveTelemetryFrameCount = 0;
+#endif
+
     uint8_t result = RX_FRAME_PENDING;
+
 
     if (rxBufferReadIndex != rxBufferWriteIndex) {
         uint8_t bufferLength = rxBuffer[rxBufferReadIndex].length;
@@ -287,9 +299,24 @@ static uint8_t fportFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
                         }
 
                         switch(frame->data.telemetryData.frameId) {
-                        case FPORT_FRAME_ID_NULL:
-                        case FPORT_FRAME_ID_DATA: // never used
+                        case FPORT_FRAME_ID_DATA:
+                            if (!rxDrivenFrameRate) {
+                                rxDrivenFrameRate = true;
+                            }
+
                             hasTelemetryRequest = true;
+
+                            break;
+                        case FPORT_FRAME_ID_NULL:
+                            if (!rxDrivenFrameRate) {
+                                if (consecutiveTelemetryFrameCount >= FPORT_TELEMETRY_MAX_CONSECUTIVE_TELEMETRY_FRAMES && !(mspPayload && smartPortPayloadContainsMSP(mspPayload))) {
+                                    consecutiveTelemetryFrameCount = 0;
+                                } else {
+                                    hasTelemetryRequest = true;
+
+                                    consecutiveTelemetryFrameCount++;
+                                }
+                            }
 
                             break;
                         case FPORT_FRAME_ID_READ:
@@ -337,7 +364,7 @@ static bool fportProcessFrame(const rxRuntimeConfig_t *rxRuntimeConfig)
     UNUSED(rxRuntimeConfig);
 
 #if defined(USE_TELEMETRY_SMARTPORT)
-    static uint8_t consecutiveSensorCount = 0;
+    static timeUs_t lastTelemetryFrameSentUs;
 
     timeUs_t currentTimeUs = micros();
     if (cmpTimeUs(currentTimeUs, lastTelemetryFrameReceivedUs) > FPORT_MAX_TELEMETRY_RESPONSE_DELAY_US) {
@@ -345,24 +372,16 @@ static bool fportProcessFrame(const rxRuntimeConfig_t *rxRuntimeConfig)
     }
 
     if (clearToSend) {
-        DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_TELEMETRY_DELAY, currentTimeUs - lastTelemetryFrameReceivedUs);
-
-        if (consecutiveSensorCount >= FPORT_TELEMETRY_MAX_CONSECUTIVE_SENSORS && !(mspPayload && smartPortPayloadContainsMSP(mspPayload))) {
-// Stop one cycle to avoid saturating the buffer in the RX, since the
-// downstream bandwidth doesn't allow sensor sensors on every cycle.
-// We allow MSP frames to run over the resting period, expecting that
-// the caller won't flood us with requests.
-            consecutiveSensorCount = 0;
-        } else {
-            consecutiveSensorCount++;
-            processSmartPortTelemetry(mspPayload, &clearToSend, NULL);
-        }
+        processSmartPortTelemetry(mspPayload, &clearToSend, NULL);
 
         if (clearToSend) {
             smartPortWriteFrameFport(&emptySmartPortFrame);
 
             clearToSend = false;
         }
+
+        DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_TELEMETRY_INTERVAL, currentTimeUs - lastTelemetryFrameSentUs);
+        lastTelemetryFrameSentUs = currentTimeUs;
     }
 
     mspPayload = NULL;

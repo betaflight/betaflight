@@ -24,7 +24,7 @@
 
 #include "platform.h"
 
-#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_SRXL)
+#if defined(USE_TELEMETRY_SRXL)
 
 #include "build/version.h"
 
@@ -76,13 +76,6 @@
 
 static bool srxlTelemetryEnabled;
 static uint8_t srxlFrame[SRXL_FRAME_SIZE_MAX];
-static bool srxlTelemetryNow   = false;
-
-void srxlCollectTelemetryNow(void)
-{
-    srxlTelemetryNow   = true;
-}
-
 
 static void srxlInitializeFrame(sbuf_t *dst)
 {
@@ -517,11 +510,8 @@ bool checkSrxlTelemetryState(void)
  */
 void handleSrxlTelemetry(timeUs_t currentTimeUs)
 {
-    if (!srxlTelemetryNow) {
-        return;
-    }
-
-    srxlTelemetryNow   = false;
-    processSrxl(currentTimeUs);
+  if (srxlTelemetryBufferEmpty()) {
+      processSrxl(currentTimeUs);
+  }
 }
 #endif

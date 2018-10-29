@@ -51,15 +51,13 @@
 #define USE_ACC_SPI_MPU6500
 #define USE_ACC_SPI_MPU9250
 
-#define MPU9250_CS_PIN PB12
-#define MPU9250_SPI_INSTANCE SPI2
-
-#define MPU6500_CS_PIN PB12
-#define MPU6500_SPI_INSTANCE SPI2
+#define GYRO_1_SPI_INSTANCE     SPI2
+#define GYRO_1_CS_PIN           PB12
 
 #define USE_EXTI
 
-//#define MPU_INT_EXTI PC13
+//#define USE_GYRO_EXTI
+//#define GYRO_1_EXTI_PIN PC13
 //#define USE_MPU_DATA_READY_SIGNAL
 //#define ENSURE_MPU_DATA_READY_IS_LOW
 
@@ -76,17 +74,10 @@
 #define USE_CMS
 
 //#define USE_SDCARD
-//
 //#define SDCARD_SPI_INSTANCE     SPI2
 //#define SDCARD_SPI_CS_PIN       PB12
-//// SPI2 is on the APB1 bus whose clock runs at 36MHz. Divide to under 400kHz for init:
-//#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 128
-//// Divide to under 25MHz for normal operation:
-//#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 2
-//
 //// Note, this is the same DMA channel as UART1_RX. Luckily we don't use DMA for USART Rx.
 //#define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
-
 // Performance logging for SD card operations:
 // #define AFATFS_USE_INTROSPECTIVE_LOGGING
 
@@ -101,14 +92,12 @@
 // Nordic Semiconductor uses 'CSN', STM uses 'NSS'
 #define RX_CE_PIN               PC7 // D9
 #define RX_NSS_PIN              PB6 // D10
-#define RX_SCK_PIN              PA5 // D13
-#define RX_MISO_PIN             PA6 // D12
-#define RX_MOSI_PIN             PA7 // D11
 // NUCLEO has NSS on PB6, rather than the standard PA4
+
 #define SPI1_NSS_PIN            RX_NSS_PIN
-#define SPI1_SCK_PIN            RX_SCK_PIN
-#define SPI1_MISO_PIN           RX_MISO_PIN
-#define SPI1_MOSI_PIN           RX_MOSI_PIN
+#define SPI1_SCK_PIN            PA5 // D13
+#define SPI1_MISO_PIN           PA6 // D12
+#define SPI1_MOSI_PIN           PA7 // D11
 
 #define USE_RX_NRF24
 #define USE_RX_CX10
@@ -174,5 +163,5 @@
 #define TARGET_IO_PORTC (0xffff & ~(BIT(15)|BIT(14)|BIT(13)))
 #define TARGET_IO_PORTD BIT(2)
 
-#define USABLE_TIMER_CHANNEL_COUNT 12
-#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) )
+#define USABLE_TIMER_CHANNEL_COUNT 8
+#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(8))

@@ -104,7 +104,7 @@ TEST(TelemetryCrsfTest, TestGPS)
 
     int frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_GPS);
     EXPECT_EQ(CRSF_FRAME_GPS_PAYLOAD_SIZE + FRAME_HEADER_FOOTER_LEN, frameLen);
-    EXPECT_EQ(CRSF_ADDRESS_BROADCAST, frame[0]); // address
+    EXPECT_EQ(CRSF_SYNC_BYTE, frame[0]); // address
     EXPECT_EQ(17, frame[1]); // length
     EXPECT_EQ(0x02, frame[2]); // type
     int32_t lattitude = frame[3] << 24 | frame[4] << 16 | frame[5] << 8 | frame[6];
@@ -124,8 +124,8 @@ TEST(TelemetryCrsfTest, TestGPS)
     gpsSol.llh.lat = 56 * GPS_DEGREES_DIVIDER;
     gpsSol.llh.lon = 163 * GPS_DEGREES_DIVIDER;
     ENABLE_STATE(GPS_FIX);
-    gpsSol.llh.alt = 2345;              // altitude in m
-    gpsSol.groundSpeed = 163;                 // speed in 0.1m/s, 16.3 m/s = 58.68 km/h, so CRSF (km/h *10) value is 587
+    gpsSol.llh.altCm = 2345 * 100;            // altitude in cm / 100 + 1000m offset, so CRSF value should be 3345
+    gpsSol.groundSpeed = 1630;                // speed in cm/s, 16.3 m/s = 58.68 km/h, so CRSF (km/h *10) value is 587
     gpsSol.numSat = 9;
     gpsSol.groundCourse = 1479;     // degrees * 10
     frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_GPS);
@@ -151,7 +151,7 @@ TEST(TelemetryCrsfTest, TestBattery)
     testBatteryVoltage = 0; // 0.1V units
     int frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_BATTERY_SENSOR);
     EXPECT_EQ(CRSF_FRAME_BATTERY_SENSOR_PAYLOAD_SIZE + FRAME_HEADER_FOOTER_LEN, frameLen);
-    EXPECT_EQ(CRSF_ADDRESS_BROADCAST, frame[0]); // address
+    EXPECT_EQ(CRSF_SYNC_BYTE, frame[0]); // address
     EXPECT_EQ(10, frame[1]); // length
     EXPECT_EQ(0x08, frame[2]); // type
     uint16_t voltage = frame[3] << 8 | frame[4]; // mV * 100
@@ -188,7 +188,7 @@ TEST(TelemetryCrsfTest, TestAttitude)
     attitude.values.yaw = 0;
     int frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_ATTITUDE);
     EXPECT_EQ(CRSF_FRAME_ATTITUDE_PAYLOAD_SIZE + FRAME_HEADER_FOOTER_LEN, frameLen);
-    EXPECT_EQ(CRSF_ADDRESS_BROADCAST, frame[0]); // address
+    EXPECT_EQ(CRSF_SYNC_BYTE, frame[0]); // address
     EXPECT_EQ(8, frame[1]); // length
     EXPECT_EQ(0x1e, frame[2]); // type
     int16_t pitch = frame[3] << 8 | frame[4]; // rad / 10000
@@ -220,7 +220,7 @@ TEST(TelemetryCrsfTest, TestFlightMode)
     airMode = false;
     int frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_FLIGHT_MODE);
     EXPECT_EQ(5 + FRAME_HEADER_FOOTER_LEN, frameLen);
-    EXPECT_EQ(CRSF_ADDRESS_BROADCAST, frame[0]); // address
+    EXPECT_EQ(CRSF_SYNC_BYTE, frame[0]); // address
     EXPECT_EQ(7, frame[1]); // length
     EXPECT_EQ(0x21, frame[2]); // type
     EXPECT_EQ('A', frame[3]);
@@ -235,7 +235,7 @@ TEST(TelemetryCrsfTest, TestFlightMode)
     EXPECT_EQ(ANGLE_MODE, FLIGHT_MODE(ANGLE_MODE));
     frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_FLIGHT_MODE);
     EXPECT_EQ(5 + FRAME_HEADER_FOOTER_LEN, frameLen);
-    EXPECT_EQ(CRSF_ADDRESS_BROADCAST, frame[0]); // address
+    EXPECT_EQ(CRSF_SYNC_BYTE, frame[0]); // address
     EXPECT_EQ(7, frame[1]); // length
     EXPECT_EQ(0x21, frame[2]); // type
     EXPECT_EQ('S', frame[3]);
@@ -250,7 +250,7 @@ TEST(TelemetryCrsfTest, TestFlightMode)
     EXPECT_EQ(HORIZON_MODE, FLIGHT_MODE(HORIZON_MODE));
     frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_FLIGHT_MODE);
     EXPECT_EQ(4 + FRAME_HEADER_FOOTER_LEN, frameLen);
-    EXPECT_EQ(CRSF_ADDRESS_BROADCAST, frame[0]); // address
+    EXPECT_EQ(CRSF_SYNC_BYTE, frame[0]); // address
     EXPECT_EQ(6, frame[1]); // length
     EXPECT_EQ(0x21, frame[2]); // type
     EXPECT_EQ('H', frame[3]);
@@ -263,7 +263,7 @@ TEST(TelemetryCrsfTest, TestFlightMode)
     airMode = true;
     frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_FLIGHT_MODE);
     EXPECT_EQ(4 + FRAME_HEADER_FOOTER_LEN, frameLen);
-    EXPECT_EQ(CRSF_ADDRESS_BROADCAST, frame[0]); // address
+    EXPECT_EQ(CRSF_SYNC_BYTE, frame[0]); // address
     EXPECT_EQ(6, frame[1]); // length
     EXPECT_EQ(0x21, frame[2]); // type
     EXPECT_EQ('A', frame[3]);
@@ -293,7 +293,7 @@ void beeperConfirmationBeeps(uint8_t beepCount) {UNUSED(beepCount);}
 
 uint32_t micros(void) {return 0;}
 
-bool feature(uint32_t) {return true;}
+bool featureIsEnabled(uint32_t) {return true;}
 
 uint32_t serialRxBytesWaiting(const serialPort_t *) {return 0;}
 uint32_t serialTxBytesFree(const serialPort_t *) {return 0;}
@@ -312,7 +312,7 @@ bool telemetryCheckRxPortShared(const serialPortConfig_t *) {return true;}
 
 portSharing_e determinePortSharing(const serialPortConfig_t *, serialPortFunction_e) {return PORTSHARING_NOT_SHARED;}
 
-bool isAirmodeActive(void) {return airMode;}
+bool airmodeIsEnabled(void) {return airMode;}
 
 int32_t getAmperage(void) {
     return testAmperage;
@@ -320,6 +320,10 @@ int32_t getAmperage(void) {
 
 uint16_t getBatteryVoltage(void) {
     return testBatteryVoltage;
+}
+
+uint16_t getBatteryAverageCellVoltage(void) {
+    return 0;
 }
 
 batteryState_e getBatteryState(void) {
@@ -330,6 +334,10 @@ uint8_t calculateBatteryPercentageRemaining(void) {
     return 67;
 }
 
+int32_t getEstimatedAltitudeCm(void) {
+	return gpsSol.llh.altCm;    // function returns cm not m.
+}
+    
 int32_t getMAhDrawn(void){
   return testmAhDrawn;
 }

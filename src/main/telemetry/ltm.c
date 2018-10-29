@@ -36,7 +36,7 @@
 
 #include "platform.h"
 
-#ifdef USE_TELEMETRY
+#ifdef USE_TELEMETRY_LTM
 
 #include "build/build_config.h"
 
@@ -148,9 +148,9 @@ static void ltm_gframe(void)
     ltm_serialise_8((uint8_t)(gpsSol.groundSpeed / 100));
 
 #if defined(USE_BARO) || defined(USE_RANGEFINDER)
-    ltm_alt = (sensors(SENSOR_RANGEFINDER) || sensors(SENSOR_BARO)) ? getEstimatedAltitude() : gpsSol.llh.alt * 100;
+    ltm_alt = (sensors(SENSOR_RANGEFINDER) || sensors(SENSOR_BARO)) ? getEstimatedAltitudeCm() : gpsSol.llh.altCm;
 #else
-    ltm_alt = gpsSol.llh.alt * 100;
+    ltm_alt = gpsSol.llh.altCm;
 #endif
     ltm_serialise_32(ltm_alt);
     ltm_serialise_8((gpsSol.numSat << 2) | gps_fix_type);
@@ -175,14 +175,8 @@ static void ltm_sframe(void)
     uint8_t lt_statemode;
     if (FLIGHT_MODE(PASSTHRU_MODE))
         lt_flightmode = 0;
-    else if (FLIGHT_MODE(GPS_HOME_MODE))
-        lt_flightmode = 13;
-    else if (FLIGHT_MODE(GPS_HOLD_MODE))
-        lt_flightmode = 9;
     else if (FLIGHT_MODE(HEADFREE_MODE))
         lt_flightmode = 4;
-    else if (FLIGHT_MODE(BARO_MODE))
-        lt_flightmode = 8;
     else if (FLIGHT_MODE(ANGLE_MODE))
         lt_flightmode = 2;
     else if (FLIGHT_MODE(HORIZON_MODE))

@@ -30,13 +30,11 @@
 
 #define USE_BEEPER
 
-#define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
-
 // MPU interrupt
 #define USE_EXTI
 #define USE_MPU_DATA_READY_SIGNAL
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
-#define MPU_INT_EXTI PB15 // XXX Should be gone
+#define USE_GYRO_EXTI
 
 #define USE_ACC
 #define USE_GYRO
@@ -45,16 +43,12 @@
 #define USE_GYRO_SPI_MPU6500
 // Other USE_ACCs and USE_GYROs should follow
 
-// Should be gone
-#define MPU6500_CS_PIN          PC4  // XXX Should be gone
-#define MPU6500_SPI_INSTANCE    SPI1 // XXX Should be gone
-#define ACC_MPU6500_ALIGN CW0_DEG
-#define GYRO_MPU6500_ALIGN CW0_DEG
-
+#define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_1
 
 #define USE_MAG
 #define USE_MAG_HMC5883
 #define USE_MAG_QMC5883
+#define USE_MAG_LIS3MDL
 #define MAG_HMC5883_ALIGN CW270_DEG_FLIP
 
 #define USE_BARO
@@ -63,9 +57,7 @@
 #define USE_BARO_LPS
 
 #define USE_SDCARD
-
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 328kHz
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     4 // 21MHz
+#define USE_SDCARD_SPI
 
 #define USE_I2C
 #define USE_I2C_DEVICE_1

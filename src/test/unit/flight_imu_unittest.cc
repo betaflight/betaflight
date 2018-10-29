@@ -243,4 +243,5 @@ void performBaroCalibrationCycle(void) {}
 int32_t baroCalculateAltitude(void) { return 0; }
 bool gyroGetAccumulationAverage(float *) { return false; }
 bool accGetAccumulationAverage(float *) { return false; }
+void mixerSetThrottleAngleCorrection(int) {};
 }

@@ -1,6 +1,3 @@
-![Important Notice: Support for STM32F1 based flight controllers has been dropped in Betaflight release 3.3. This includes NAZE, CC3D (original) and CJMCU like flight controllers](https://raw.githubusercontent.com/wiki/betaflight/betaflight/images/betaflight/stm32f1_support_notice.png)
-
-
 ![Betaflight](https://raw.githubusercontent.com/wiki/betaflight/betaflight/images/betaflight/bf_logo.png)
 
 Betaflight is flight controller software (firmware) used to fly multi-rotor craft and fixed wing craft.
@@ -11,7 +8,8 @@ This fork differs from Baseflight and Cleanflight in that it focuses on flight p
 
 | Date  | Event |
 | - | - |
-| 01 July 2018 | Planned [release](https://github.com/betaflight/betaflight/milestone/7) date for Betaflight 3.4 |
+| 01 December 2018 | Start of feature freeze / Release Candidate window for Betaflight 4.0 |
+| 01 January 2019 | Planned [release](https://github.com/betaflight/betaflight/milestone/20) date for Betaflight 4.0 |
 
 ## Features
 
@@ -20,7 +18,7 @@ Betaflight has the following features:
 * Multi-color RGB LED strip support (each LED can be a different color using variable length WS2811 Addressable RGB strips - use for Orientation Indicators, Low Battery Warning, Flight Mode Status, Initialization Troubleshooting, etc)
 * DShot (150, 300, 600 and 1200), Multishot, and Oneshot (125 and 42) motor protocol support
 * Blackbox flight recorder logging (to onboard flash or external microSD card where equipped)
-* Support for targets that use the STM32 F7, F4, F3 and F1 processors
+* Support for targets that use the STM32 F7, F4 and F3 processors
 * PWM, PPM, and Serial (SBus, SumH, SumD, Spektrum 1024/2048, XBus, etc) RX connection with failsafe detection
 * Multiple telemetry protocols (CSRF, FrSky, HoTT smart-port, MSP, etc)
 * RSSI via ADC - Uses ADC to read PWM RSSI signals, tested with FrSky D4R-II, X8R, X4R-SB, & XSR
@@ -95,6 +93,7 @@ Origins for this fork (Thanks!):
 * **timecop** (for Baseflight),
 * **Dominic Clifton** (for Cleanflight), and
 * **Sambas** (for the original STM32F4 port).
+* **borisbstyle** (Fork from Cleanflight).
 
 The Betaflight Configurator is forked from Cleanflight Configurator and its origins.
 

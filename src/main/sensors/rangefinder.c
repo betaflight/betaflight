@@ -46,7 +46,7 @@
 
 #include "fc/config.h"
 #include "fc/runtime_config.h"
-#include "fc/fc_tasks.h"
+#include "fc/tasks.h"
 
 #include "sensors/sensors.h"
 #include "sensors/rangefinder.h"

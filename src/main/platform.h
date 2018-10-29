@@ -26,7 +26,7 @@
 #pragma GCC poison sprintf snprintf
 #endif
 
-#if defined(STM32F745xx) || defined(STM32F746xx) || defined(STM32F722xx)
+#if defined(STM32F722xx) || defined(STM32F745xx) || defined(STM32F746xx) || defined(STM32F765xx)
 #include "stm32f7xx.h"
 #include "stm32f7xx_hal.h"
 #include "system_stm32f7xx.h"
@@ -106,12 +106,7 @@
 #error "Invalid chipset specified. Update platform.h"
 #endif
 
-#ifdef USE_OSD_SLAVE
-#include "target/common_osd_slave.h"
+#include "target/common_pre.h"
 #include "target.h"
-#else
-#include "target/common_fc_pre.h"
-#include "target.h"
-#include "target/common_fc_post.h"
-#endif
+#include "target/common_post.h"
 #include "target/common_defaults_post.h"

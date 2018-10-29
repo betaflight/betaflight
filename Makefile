@@ -206,10 +206,11 @@ CFLAGS     += $(ARCH_FLAGS) \
               $(addprefix -D,$(OPTIONS)) \
               $(addprefix -I,$(INCLUDE_DIRS)) \
               $(DEBUG_FLAGS) \
-              -std=gnu99 \
+              -std=gnu11 \
               -Wall -Wextra -Wunsafe-loop-optimizations -Wdouble-promotion \
               -ffunction-sections \
               -fdata-sections \
+              -fno-common \
               -pedantic \
               $(DEVICE_FLAGS) \
               -D_GNU_SOURCE \
@@ -468,6 +469,44 @@ targets:
 	@echo "targets-group-3:     $(GROUP_3_TARGETS)"
 	@echo "targets-group-4:     $(GROUP_4_TARGETS)"
 	@echo "targets-group-rest:  $(GROUP_OTHER_TARGETS)"
+
+	@echo "targets-group-1:     $(words $(GROUP_1_TARGETS)) targets"
+	@echo "targets-group-2:     $(words $(GROUP_2_TARGETS)) targets"
+	@echo "targets-group-3:     $(words $(GROUP_3_TARGETS)) targets"
+	@echo "targets-group-4:     $(words $(GROUP_4_TARGETS)) targets"
+	@echo "targets-group-rest:  $(words $(GROUP_OTHER_TARGETS)) targets"
+	@echo "total in all groups  $(words $(SUPPORTED_TARGETS)) targets"
+
+## target-mcu        : print the MCU type of the target
+target-mcu:
+	@echo $(TARGET_MCU)
+
+## targets-by-mcu    : make all targets that have a MCU_TYPE mcu
+targets-by-mcu:
+	@echo "Building all $(MCU_TYPE) targets..."
+	$(V1) for target in $(VALID_TARGETS); do \
+		TARGET_MCU_TYPE=$$($(MAKE) -s TARGET=$${target} target-mcu); \
+		if [ "$${TARGET_MCU_TYPE}" = "$${MCU_TYPE}" ]; then \
+			echo "Building target $${target}..."; \
+			$(MAKE) TARGET=$${target}; \
+			if [ $$? -ne 0 ]; then \
+				echo "Building target $${target} failed, aborting."; \
+				exit 1; \
+			fi; \
+		fi; \
+	done
+
+## targets-f3        : make all F3 targets
+targets-f3:
+	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F3
+
+## targets-f4        : make all F4 targets
+targets-f4:
+	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F4
+
+## targets-f7        : make all F7 targets
+targets-f7:
+	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F7
 
 ## test              : run the cleanflight test suite
 ## junittest         : run the cleanflight test suite, producing Junit XML result files.

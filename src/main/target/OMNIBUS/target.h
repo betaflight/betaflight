@@ -26,10 +26,19 @@
 #undef USE_GYRO_OVERFLOW_CHECK
 #undef USE_GYRO_LPF2
 
+//#undef USE_ITERM_RELAX
+#undef USE_RC_SMOOTHING_FILTER
+
+#undef USE_HUFFMAN
+#undef USE_PINIO
+#undef USE_PINIOBOX
+
 #undef USE_TELEMETRY_HOTT
 #undef USE_TELEMETRY_MAVLINK
 #undef USE_TELEMETRY_LTM
 #undef USE_SERIALRX_XBUS
+#undef USE_SERIALRX_SUMH
+#undef USE_PWM
 
 #undef USE_BOARD_INFO
 #undef USE_EXTENDED_CMS_MENUS
@@ -37,10 +46,8 @@
 #undef USE_RX_MSP
 #undef USE_ESC_SENSOR_INFO
 
-
 #define TARGET_BOARD_IDENTIFIER "OMNI" // https://en.wikipedia.org/wiki/Omnibus
 
-#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
 #define LED0_PIN                PB3
 
@@ -49,19 +56,20 @@
 #define BEEPER_INVERTED
 
 #define USE_EXTI
-#define MPU_INT_EXTI PC13
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC13
 #define USE_MPU_DATA_READY_SIGNAL
 
-#define MPU6000_SPI_INSTANCE    SPI1
-#define MPU6000_CS_PIN          PA4
+#define GYRO_1_SPI_INSTANCE     SPI1
+#define GYRO_1_CS_PIN           PA4
 
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN      CW90_DEG
+#define GYRO_1_ALIGN            CW90_DEG
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
-#define ACC_MPU6000_ALIGN       CW90_DEG
+#define ACC_1_ALIGN             CW90_DEG
 
 #define BMP280_SPI_INSTANCE     SPI1
 #define BMP280_CS_PIN           PA13
@@ -134,19 +142,13 @@
 #define SPI2_MOSI_PIN           PB15
 
 #define USE_SDCARD
-
+#define USE_SDCARD_SPI
 #define SDCARD_DETECT_INVERTED
 #define SDCARD_DETECT_PIN                   PC14
-
 #define SDCARD_SPI_INSTANCE                 SPI2
 #define SDCARD_SPI_CS_PIN                   SPI2_NSS_PIN
-
-// SPI2 is on the APB1 bus whose clock runs at 36MHz. Divide to under 400kHz for init:
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 128
-// Divide to under 25MHz for normal operation:
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     2
-
 // DSHOT output 4 uses DMA1_Channel5, so don't use it for the SDCARD until we find an alternative
+
 #ifndef USE_DSHOT
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
 #endif

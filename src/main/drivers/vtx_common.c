@@ -57,6 +57,15 @@ vtxDevType_e vtxCommonGetDeviceType(const vtxDevice_t *vtxDevice)
     return vtxDevice->vTable->getDeviceType(vtxDevice);
 }
 
+bool vtxCommonDeviceIsReady(const vtxDevice_t *vtxDevice)
+{
+    if (vtxDevice && vtxDevice->vTable->isReady) {
+        return vtxDevice->vTable->isReady(vtxDevice);
+    }
+
+    return false;
+}
+
 void vtxCommonProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
 {
     if (vtxDevice) {

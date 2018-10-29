@@ -43,9 +43,9 @@
 #define BEEPER_INVERTED
 
 #define USE_EXTI
+#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PC13
 #define GYRO_2_EXTI_PIN         PC14
-#define MPU_INT_EXTI
 
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
@@ -57,24 +57,18 @@
 #define USE_ACC_SPI_MPU6500
 
 #if (SPRACINGF7DUAL_REV >= 2)
-#define ACC_MPU6500_1_ALIGN           CW0_DEG
-#define GYRO_MPU6500_1_ALIGN          CW0_DEG
+#define GYRO_1_ALIGN        CW0_DEG
+#define ACC_1_ALIGN         CW0_DEG
 
-#define ACC_MPU6500_2_ALIGN         CW270_DEG
-#define GYRO_MPU6500_2_ALIGN        CW270_DEG
+#define GYRO_2_ALIGN        CW270_DEG
+#define ACC_2_ALIGN         CW270_DEG
 #else
-#define ACC_MPU6500_1_ALIGN           CW180_DEG
-#define GYRO_MPU6500_1_ALIGN          CW180_DEG
+#define GYRO_1_ALIGN        CW180_DEG
+#define ACC_1_ALIGN         CW180_DEG
 
-#define ACC_MPU6500_2_ALIGN         CW270_DEG
-#define GYRO_MPU6500_2_ALIGN        CW270_DEG
+#define GYRO_2_ALIGN        CW270_DEG
+#define ACC_2_ALIGN         CW270_DEG
 #endif
-
-
-#define GYRO_1_ALIGN                GYRO_MPU6500_1_ALIGN
-#define GYRO_2_ALIGN                GYRO_MPU6500_2_ALIGN
-#define ACC_1_ALIGN                ACC_MPU6500_1_ALIGN
-#define ACC_2_ALIGN                ACC_MPU6500_2_ALIGN
 
 #define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_BOTH
 
@@ -86,6 +80,7 @@
 
 #define USE_MAG
 #define USE_MAG_HMC5883
+#define USE_MAG_LIS3MDL
 
 #define USE_VCP
 #define USE_UART1
@@ -148,22 +143,10 @@
 #define SPI3_MOSI_PIN           PB5
 
 #define USE_SDCARD
-
+#define USE_SDCARD_SPI
 #define SDCARD_SPI_INSTANCE                 SPI3
 #define SDCARD_SPI_CS_PIN                   PC3
-
-
-// SPI3 is on the APB1 bus whose clock runs at 54MHz. Divide to under 400kHz for init:
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 54Mhz/256 = 210kHz
-// Divide to under 25MHz for normal operation:
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     4 // 54Mhz/3 = 18Mhz // FIXME currently running slower than 18mhz for testing.
-
 #define SDCARD_DMA_STREAM_TX_FULL           DMA1_Stream7
-#define SDCARD_DMA_TX                       DMA1
-#define SDCARD_DMA_STREAM_TX                7
-#define SDCARD_DMA_CLK                      LL_AHB1_GRP1_PERIPH_DMA1
-
-#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF7_4
 #define SDCARD_DMA_CHANNEL                  DMA_CHANNEL_0
 
 #define USE_VTX_RTC6705
@@ -204,16 +187,12 @@
 
 #define USE_PID_AUDIO
 
-#define USE_LED_STRIP
-
 #define USE_TRANSPONDER
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 //#define RX_CHANNELS_TAER
 #define DEFAULT_RX_FEATURE                  FEATURE_RX_SERIAL
 #define DEFAULT_FEATURES                    (FEATURE_TRANSPONDER | FEATURE_RSSI_ADC | FEATURE_TELEMETRY | FEATURE_OSD | FEATURE_LED_STRIP)
-
-#define GPS_UART                            SERIAL_PORT_USART3
 
 #define SERIALRX_UART                       SERIAL_PORT_USART2
 #define SERIALRX_PROVIDER                   SERIALRX_SBUS
@@ -231,7 +210,7 @@
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         (BIT(2))
 
-//#define USABLE_TIMER_CHANNEL_COUNT 16 // 4xPWM, 8xESC, 2xESC via UART3 RX/TX, 1xLED Strip, 1xIR.
-#define USABLE_TIMER_CHANNEL_COUNT 16
-#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(9))
+//#define USABLE_TIMER_CHANNEL_COUNT 17 // 4xPWM, 8xESC, 2xESC via UART3 RX/TX, 1xLED Strip, 1xIR, CAM_C
+#define USABLE_TIMER_CHANNEL_COUNT 17
+#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(8) | TIM_N(9))
 

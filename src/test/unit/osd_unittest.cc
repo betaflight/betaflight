@@ -26,6 +26,7 @@ extern "C" {
     #include "build/debug.h"
 
     #include "blackbox/blackbox.h"
+    #include "blackbox/blackbox_io.h"
 
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
@@ -37,7 +38,7 @@ extern "C" {
     #include "drivers/serial.h"
 
     #include "fc/config.h"
-    #include "fc/fc_core.h"
+    #include "fc/core.h"
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
@@ -45,9 +46,11 @@ extern "C" {
     #include "flight/pid.h"
     #include "flight/imu.h"
 
+    #include "io/beeper.h"
     #include "io/gps.h"
     #include "io/osd.h"
 
+    #include "sensors/acceleration.h"
     #include "sensors/battery.h"
 
     #include "rx/rx.h"
@@ -56,7 +59,7 @@ extern "C" {
     void osdRefresh(timeUs_t currentTimeUs);
     void osdFormatTime(char * buff, osd_timer_precision_e precision, timeUs_t time);
     void osdFormatTimer(char *buff, bool showSymbol, int timerIndex);
-    int osdConvertTemperatureToSelectedUnit(int tempInDeciDegrees);
+    int osdConvertTemperatureToSelectedUnit(int tempInDegreesCelcius);
 
     uint16_t rssi;
     attitudeEulerAngles_t attitude;
@@ -72,6 +75,9 @@ extern "C" {
     float motorOutputHigh = 2047;
     float motorOutputLow = 1000;
 
+
+    acc_t acc;
+    float accAverage[XYZ_AXIS_COUNT];
 
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
     PG_REGISTER(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
@@ -303,6 +309,9 @@ TEST(OsdTest, TestStatsImperial)
     osdStatSetState(OSD_STAT_RTC_DATE_TIME, true);
     osdStatSetState(OSD_STAT_MAX_DISTANCE, true);
     osdStatSetState(OSD_STAT_BLACKBOX_NUMBER, false);
+    osdStatSetState(OSD_STAT_MAX_G_FORCE, false);
+    osdStatSetState(OSD_STAT_MAX_ESC_TEMP, false);
+    osdStatSetState(OSD_STAT_MAX_ESC_RPM, false);
 
     // and
     // using imperial unit system
@@ -937,11 +946,15 @@ TEST(OsdTest, TestConvertTemperatureUnits)
 {
     /* In Celsius */
     osdConfigMutable()->units = OSD_UNIT_METRIC;
-    EXPECT_EQ(osdConvertTemperatureToSelectedUnit(330), 330);
+    EXPECT_EQ(osdConvertTemperatureToSelectedUnit(40), 40);
 
     /* In Fahrenheit */
     osdConfigMutable()->units = OSD_UNIT_IMPERIAL;
-    EXPECT_EQ(osdConvertTemperatureToSelectedUnit(330), 914);
+    EXPECT_EQ(osdConvertTemperatureToSelectedUnit(40), 104);
+
+    /* In Fahrenheit with rounding */
+    osdConfigMutable()->units = OSD_UNIT_IMPERIAL;
+    EXPECT_EQ(osdConvertTemperatureToSelectedUnit(41), 106);
 }
 
 // STUBS
@@ -968,7 +981,7 @@ extern "C" {
         return false;
     }
 
-    bool isAirmodeActive() {
+    bool airmodeIsEnabled() {
         return false;
     }
 
@@ -1004,7 +1017,7 @@ extern "C" {
         return simulationMahDrawn;
     }
 
-    int32_t getEstimatedAltitude() {
+    int32_t getEstimatedAltitudeCm() {
         return simulationAltitude;
     }
 
@@ -1014,6 +1027,14 @@ extern "C" {
 
     unsigned int blackboxGetLogNumber() {
         return 0;
+    }
+
+    bool isBlackboxDeviceWorking() {
+        return true;
+    }
+
+    bool isBlackboxDeviceFull() {
+        return false;
     }
 
     bool isSerialTransmitBufferEmpty(const serialPort_t *) {
@@ -1039,4 +1060,6 @@ extern "C" {
     float pidItermAccelerator(void) { return 1.0; }
     uint8_t getMotorCount(void){ return 4; }
     bool areMotorsRunning(void){ return true; }
+    bool pidOsdAntiGravityActive(void) { return false; }
+    bool failsafeIsActive(void) { return false; }
 }

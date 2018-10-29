@@ -41,11 +41,6 @@
 
 static void mpu6500SpiInit(const busDevice_t *bus)
 {
-#ifndef USE_DUAL_GYRO
-    IOInit(bus->busdev_u.spi.csnPin, OWNER_MPU_CS, 0);
-    IOConfigGPIO(bus->busdev_u.spi.csnPin, SPI_IO_CS_CFG);
-    IOHi(bus->busdev_u.spi.csnPin);
-#endif
 
     spiSetDivisor(bus->busdev_u.spi.instance, SPI_CLOCK_FAST);
 }
@@ -108,6 +103,7 @@ bool mpu6500SpiAccDetect(accDev_t *acc)
     case MPU_9250_SPI:
     case ICM_20608_SPI:
     case ICM_20602_SPI:
+    case ICM_20601_SPI:
         break;
     default:
         return false;
@@ -127,6 +123,11 @@ bool mpu6500SpiGyroDetect(gyroDev_t *gyro)
     case MPU_9250_SPI:
     case ICM_20608_SPI:
     case ICM_20602_SPI:
+        // 16.4 dps/lsb scalefactor
+        gyro->scale = 1.0f / 16.4f;
+        break;
+    case ICM_20601_SPI:
+        gyro->scale = 1.0f / (gyro->gyro_high_fsr ? 8.2f : 16.4f);
         break;
     default:
         return false;
@@ -134,9 +135,6 @@ bool mpu6500SpiGyroDetect(gyroDev_t *gyro)
 
     gyro->initFn = mpu6500SpiGyroInit;
     gyro->readFn = mpuGyroReadSPI;
-
-    // 16.4 dps/lsb scalefactor
-    gyro->scale = 1.0f / 16.4f;
 
     return true;
 }

@@ -63,12 +63,16 @@ FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
     }
 
     /*If there is a command ready to go overwrite the value and send that instead*/
-    if (pwmIsProcessingDshotCommand()) {
+    if (pwmDshotCommandIsProcessing()) {
         value = pwmGetDshotCommand(index);
-        motor->requestTelemetry = true;
+        if (value) {
+            motor->requestTelemetry = true;
+        }
     }
 
-    uint16_t packet = prepareDshotPacket(motor, value);
+    motor->value = value;
+
+    uint16_t packet = prepareDshotPacket(motor);
     uint8_t bufferSize;
 
 #ifdef USE_DSHOT_DMAR
@@ -90,8 +94,8 @@ FAST_CODE void pwmCompleteDshotMotorUpdate(uint8_t motorCount)
     UNUSED(motorCount);
 
     /* If there is a dshot command loaded up, time it correctly with motor update*/
-    if (pwmIsProcessingDshotCommand()) {
-        if (!pwmProcessDshotCommand(motorCount)) {
+    if (pwmDshotCommandIsQueued()) {
+        if (!pwmDshotCommandOutputIsEnabled(motorCount)) {
             return;
         }
     }

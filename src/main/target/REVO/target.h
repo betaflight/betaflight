@@ -76,69 +76,67 @@
 #define INVERTER_PIN_UART1      PC0
 #endif
 
-#define MPU6000_CS_PIN          PA4
-#define MPU6000_SPI_INSTANCE    SPI1
-
-#define MPU6500_CS_PIN          PA4
-#define MPU6500_SPI_INSTANCE    SPI1
-
 #define USE_GYRO
 #define USE_ACC
 
 #ifdef AIRBOTF4SD
-#undef MPU6000_CS_PIN
-#define MPU6000_CS_PIN          PB13
-#define USE_GYRO_SPI_ICM20601
-#define ICM20601_CS_PIN         PA4 // served through MPU6500 code
-#define ICM20601_SPI_INSTANCE   SPI1
-#define USE_DUAL_GYRO
-#define GYRO_1_CS_PIN           MPU6000_CS_PIN
-#define GYRO_2_CS_PIN           ICM20601_CS_PIN
-#define GYRO_1_SPI_INSTANCE     MPU6000_SPI_INSTANCE
-#define GYRO_2_SPI_INSTANCE     ICM20601_SPI_INSTANCE
-#define ACC_1_ALIGN             ALIGN_DEFAULT
-#define ACC_2_ALIGN             ALIGN_DEFAULT
-#endif
-
-#if defined(SOULF4)
 #define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN      CW180_DEG
+#define USE_ACC_SPI_MPU6000
+#define USE_GYRO_SPI_MPU6500
+#define USE_ACC_SPI_MPU6500
+
+#define GYRO_1_CS_PIN           PB13
+#define GYRO_2_CS_PIN           PA4
+#define GYRO_1_SPI_INSTANCE     SPI1
+#define GYRO_2_SPI_INSTANCE     SPI1
+
+#define GYRO_1_ALIGN            CW270_DEG
+#define GYRO_2_ALIGN            CW270_DEG
+#define ACC_1_ALIGN             CW270_DEG
+#define ACC_2_ALIGN             CW270_DEG
+
+#elif defined(SOULF4)
+
+#define USE_GYRO_SPI_MPU6000
+#define GYRO_1_ALIGN            CW180_DEG
 
 #define USE_ACC_SPI_MPU6000
-#define ACC_MPU6000_ALIGN       CW180_DEG
+#define ACC_1_ALIGN             CW180_DEG
+
+#define GYRO_1_CS_PIN           PA4
+#define GYRO_1_SPI_INSTANCE     SPI1
 
 #elif defined(PODIUMF4)
 
-#define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN      CW0_DEG
+#define GYRO_1_ALIGN            CW0_DEG
 
-#define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN       CW0_DEG
+#define ACC_1_ALIGN             CW0_DEG
+
+#define GYRO_1_CS_PIN           PA4
+#define GYRO_1_SPI_INSTANCE     SPI1
 
 #else
 
 #define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN      CW270_DEG
-
-#define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN      CW270_DEG
-
 #define USE_ACC_SPI_MPU6000
-#define ACC_MPU6000_ALIGN       CW270_DEG
-
-#define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN       CW270_DEG
+#define GYRO_1_CS_PIN           PA4
+#define GYRO_1_SPI_INSTANCE     SPI1
+#define GYRO_1_ALIGN            CW270_DEG
+#define ACC_1_ALIGN             CW270_DEG
 
 #endif
 
 // MPU6000 interrupts
 #define USE_EXTI
-#define MPU_INT_EXTI            PC4
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC4
 #define USE_MPU_DATA_READY_SIGNAL
+
+#define GYRO_2_EXTI_PIN         NONE
 
 // Configure MAG and BARO unconditionally.
 #define USE_MAG
@@ -161,16 +159,11 @@
 // SDCARD support for AIRBOTF4SD
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #define USE_SDCARD
+#define USE_SDCARD_SPI
 #define SDCARD_DETECT_INVERTED
 #define SDCARD_DETECT_PIN       PC0
 #define SDCARD_SPI_INSTANCE     SPI3
 #define SDCARD_SPI_CS_PIN       SPI3_NSS_PIN
-
-// SPI2 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 328kHz
-// Divide to under 25MHz for normal operation:
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 4 // 21MHz
-
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Stream5
 #define SDCARD_DMA_CHANNEL                  0
 
@@ -196,7 +189,6 @@
 #define USE_UART1
 #define UART1_RX_PIN            PA10
 #define UART1_TX_PIN            PA9
-#define UART1_AHB1_PERIPHERALS  RCC_AHB1Periph_DMA2
 
 #define USE_UART3
 #define UART3_RX_PIN            PB11
@@ -258,7 +250,6 @@
 #define VBAT_ADC_PIN            PC2
 #else
 #define VBAT_ADC_PIN            PC3
-#define VBAT_ADC_CHANNEL        ADC_Channel_13
 #endif
 
 #if defined(AIRBOTF4SD)

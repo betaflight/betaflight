@@ -555,6 +555,11 @@ uint32_t millis(void)
     return sysTickUptime;
 }
 
+uint32_t micros(void)
+{
+    return millis() * 1000;
+}
+
 throttleStatus_e calculateThrottleStatus()
 {
     return throttleStatus;
@@ -562,7 +567,7 @@ throttleStatus_e calculateThrottleStatus()
 
 void delay(uint32_t) {}
 
-bool feature(uint32_t mask) {
+bool featureIsEnabled(uint32_t mask) {
     return (mask & testFeatureMask);
 }
 

@@ -21,29 +21,13 @@
 #pragma once
 
 #include "common/axis.h"
+#include "common/filter.h"
 #include "common/time.h"
-#include "pg/pg.h"
+
 #include "drivers/bus.h"
 #include "drivers/sensor.h"
 
-typedef enum {
-    GYRO_NONE = 0,
-    GYRO_DEFAULT,
-    GYRO_MPU6050,
-    GYRO_L3G4200D,
-    GYRO_MPU3050,
-    GYRO_L3GD20,
-    GYRO_MPU6000,
-    GYRO_MPU6500,
-    GYRO_MPU9250,
-    GYRO_ICM20601,
-    GYRO_ICM20602,
-    GYRO_ICM20608G,
-    GYRO_ICM20649,
-    GYRO_ICM20689,
-    GYRO_BMI160,
-    GYRO_FAKE
-} gyroSensor_e;
+#include "pg/pg.h"
 
 typedef struct gyro_s {
     uint32_t targetLooptime;
@@ -57,6 +41,23 @@ typedef enum {
     GYRO_OVERFLOW_CHECK_YAW,
     GYRO_OVERFLOW_CHECK_ALL_AXES
 } gyroOverflowCheck_e;
+
+enum {
+    DYN_FFT_BEFORE_STATIC_FILTERS = 0,
+    DYN_FFT_AFTER_STATIC_FILTERS
+} ;
+
+enum {
+    DYN_FILTER_RANGE_HIGH = 0,
+    DYN_FILTER_RANGE_MEDIUM,
+    DYN_FILTER_RANGE_LOW
+} ;
+
+enum {
+    DYN_LPF_NONE = 0,
+    DYN_LPF_PT1,
+    DYN_LPF_BIQUAD
+};
 
 #define GYRO_CONFIG_USE_GYRO_1      0
 #define GYRO_CONFIG_USE_GYRO_2      1
@@ -96,6 +97,12 @@ typedef struct gyroConfig_s {
     int16_t  yaw_spin_threshold;
 
     uint16_t gyroCalibrationDuration;  // Gyro calibration duration in 1/100 second
+    
+    uint8_t dyn_filter_width_percent;
+    uint8_t dyn_fft_location; // before or after static filters
+    uint8_t dyn_filter_range; // ignore any FFT bin below this threshold
+    uint16_t dyn_lpf_gyro_max_hz;
+    uint8_t  dyn_lpf_gyro_idle;
 } gyroConfig_t;
 
 PG_DECLARE(gyroConfig_t, gyroConfig);
@@ -106,8 +113,6 @@ void gyroInitFilters(void);
 void gyroUpdate(timeUs_t currentTimeUs);
 bool gyroGetAccumulationAverage(float *accumulation);
 const busDevice_t *gyroSensorBus(void);
-struct mpuConfiguration_s;
-const struct mpuConfiguration_s *gyroMpuConfiguration(void);
 struct mpuDetectionResult_s;
 const struct mpuDetectionResult_s *gyroMpuDetectionResult(void);
 void gyroStartCalibration(bool isFirstArmingCalibration);
@@ -120,3 +125,6 @@ bool gyroOverflowDetected(void);
 bool gyroYawSpinDetected(void);
 uint16_t gyroAbsRateDps(int axis);
 uint8_t gyroReadRegister(uint8_t whichSensor, uint8_t reg);
+#ifdef USE_DYN_LPF
+void dynLpfGyroUpdate(float throttle);
+#endif

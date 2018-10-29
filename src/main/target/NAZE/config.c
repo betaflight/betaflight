@@ -61,6 +61,8 @@ void targetConfiguration(void)
 
     motorConfigMutable()->minthrottle = 1049;
 
+    gyroDeviceConfigMutable()->extiTag = selectMPUIntExtiConfigByHardwareRevision();
+
     gyroConfigMutable()->gyro_hardware_lpf = GYRO_HARDWARE_LPF_1KHZ_SAMPLE;
     gyroConfigMutable()->gyro_soft_lpf_hz = 100;
     gyroConfigMutable()->gyro_soft_notch_hz_1 = 0;
@@ -85,8 +87,9 @@ void targetConfiguration(void)
         pidProfile->pid[PID_LEVEL].P = 30;
         pidProfile->pid[PID_LEVEL].D = 30;
 
-        pidProfile->dtermSetpointWeight = 200;
-        pidProfile->setpointRelaxRatio = 50;
+        pidProfile->pid[PID_PITCH].F = 200;
+        pidProfile->pid[PID_ROLL].F = 200;
+        pidProfile->feedForwardTransition = 50;
     }
 
     for (uint8_t rateProfileIndex = 0; rateProfileIndex < CONTROL_RATE_PROFILE_COUNT; rateProfileIndex++) {

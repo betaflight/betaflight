@@ -32,8 +32,9 @@
 #include "io/gps.h"
 
 #include "fc/config.h"
-#include "fc/fc_core.h"
+#include "fc/core.h"
 #include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
 #include "flight/failsafe.h"
@@ -50,12 +51,74 @@
 
 #include "gps_rescue.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 0);
+typedef enum {
+    RESCUE_SANITY_OFF = 0,
+    RESCUE_SANITY_ON,
+    RESCUE_SANITY_FS_ONLY
+} gpsRescueSanity_e;
+
+typedef enum {
+    RESCUE_IDLE,
+    RESCUE_INITIALIZE,
+    RESCUE_ATTAIN_ALT,
+    RESCUE_CROSSTRACK,
+    RESCUE_LANDING_APPROACH,
+    RESCUE_LANDING,
+    RESCUE_ABORT,
+    RESCUE_COMPLETE
+} rescuePhase_e;
+
+typedef enum {
+    RESCUE_HEALTHY,
+    RESCUE_FLYAWAY,
+    RESCUE_CRASH_DETECTED,
+    RESCUE_TOO_CLOSE
+} rescueFailureState_e;
+
+typedef struct {
+    int32_t targetAltitudeCm;
+    int32_t targetGroundspeed;
+    uint8_t minAngleDeg;
+    uint8_t maxAngleDeg;
+    bool crosstrack;
+} rescueIntent_s;
+
+typedef struct {
+    int32_t maxAltitudeCm;
+    int32_t currentAltitudeCm;
+    uint16_t distanceToHomeM;
+    uint16_t maxDistanceToHomeM;
+    int16_t directionToHome;
+    uint16_t groundSpeed;
+    uint8_t numSat;
+    float zVelocity; // Up/down movement in cm/s
+    float zVelocityAvg; // Up/down average in cm/s
+    float accMagnitude;
+    float accMagnitudeAvg;
+} rescueSensorData_s;
+
+typedef struct {
+    bool bumpDetection;
+    bool convergenceDetection;
+} rescueSanityFlags;
+
+typedef struct {
+    rescuePhase_e phase;
+    rescueFailureState_e failure;
+    rescueSensorData_s sensor;
+    rescueIntent_s intent;
+    bool isFailsafe;
+} rescueState_s;
+
+#define GPS_RESCUE_MAX_YAW_RATE       360  // deg/sec max yaw rate
+#define GPS_RESCUE_RATE_SCALE_DEGREES 45   // Scale the commanded yaw rate when the error is less then this angle
+
+PG_REGISTER_WITH_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 1);
 
 PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
     .angle = 32,
-    .initialAltitude = 50,
-    .descentDistance = 200,
+    .initialAltitudeM = 50,
+    .descentDistanceM = 200,
     .rescueGroundspeed = 2000,
     .throttleP = 150,
     .throttleI = 20,
@@ -67,9 +130,13 @@ PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
     .throttleMin = 1200,
     .throttleMax = 1600,
     .throttleHover = 1280,
-    .sanityChecks = 0,
-    .minSats = 8
+    .sanityChecks = RESCUE_SANITY_ON,
+    .minSats = 8,
+    .minRescueDth = 100
 );
+
+static uint16_t rescueThrottle;
+static float    rescueYaw;
 
 int32_t       gpsRescueAngle[ANGLE_INDEX_COUNT] = { 0, 0 };
 uint16_t      hoverThrottle = 0;
@@ -92,140 +159,143 @@ void rescueNewGpsData(void)
     newGPSData = true;
 }
 
-/*
-    Determine what phase we are in, determine if all criteria are met to move to the next phase
-*/
-void updateGPSRescueState(void)
+static void rescueStart()
 {
-    if (!FLIGHT_MODE(GPS_RESCUE_MODE)) {
-        rescueStop();
-    } else if (FLIGHT_MODE(GPS_RESCUE_MODE) && rescueState.phase == RESCUE_IDLE) {
-        rescueStart();
-    }
-
-    rescueState.isFailsafe = failsafeIsActive();
-
-    sensorUpdate();
-
-    switch (rescueState.phase) {
-    case RESCUE_IDLE:
-	idleTasks();
-	break;
-    case RESCUE_INITIALIZE:
-	if (hoverThrottle == 0) { //no actual throttle data yet, let's use the default.
-	    hoverThrottle = gpsRescueConfig()->throttleHover;
-	}
-	
-	rescueState.phase = RESCUE_ATTAIN_ALT;
-	FALLTHROUGH;
-    case RESCUE_ATTAIN_ALT:
-	// Get to a safe altitude at a low velocity ASAP
-	if (ABS(rescueState.intent.targetAltitude - rescueState.sensor.currentAltitude) < 1000) {
-	    rescueState.phase = RESCUE_CROSSTRACK;
-	}
-	
-	rescueState.intent.targetGroundspeed = 500;
-	rescueState.intent.targetAltitude = MAX(gpsRescueConfig()->initialAltitude * 100, rescueState.sensor.maxAltitude + 1500);
-	rescueState.intent.crosstrack = true;
-	rescueState.intent.minAngleDeg = 10;
-	rescueState.intent.maxAngleDeg = 15;
-	break;
-    case RESCUE_CROSSTRACK:
-	if (rescueState.sensor.distanceToHome < gpsRescueConfig()->descentDistance) {
-	    rescueState.phase = RESCUE_LANDING_APPROACH;
-	}
-	
-	// We can assume at this point that we are at or above our RTH height, so we need to try and point to home and tilt while maintaining alt
-	// Is our altitude way off?  We should probably kick back to phase RESCUE_ATTAIN_ALT
-	rescueState.intent.targetGroundspeed = gpsRescueConfig()->rescueGroundspeed;
-	rescueState.intent.targetAltitude = MAX(gpsRescueConfig()->initialAltitude * 100, rescueState.sensor.maxAltitude + 1500);
-	rescueState.intent.crosstrack = true;
-	rescueState.intent.minAngleDeg = 15;
-	rescueState.intent.maxAngleDeg = gpsRescueConfig()->angle;
-	break;
-    case RESCUE_LANDING_APPROACH:
-	// We are getting close to home in the XY plane, get Z where it needs to be to move to landing phase
-	if (rescueState.sensor.distanceToHome < 10 && rescueState.sensor.currentAltitude <= 1000) {
-	    rescueState.phase = RESCUE_LANDING;
-	}
-	
-	// Only allow new altitude and new speed to be equal or lower than the current values (to prevent parabolic movement on overshoot)
-	int32_t newAlt = gpsRescueConfig()->initialAltitude * 100  * rescueState.sensor.distanceToHome / gpsRescueConfig()->descentDistance;
-	int32_t newSpeed = gpsRescueConfig()->rescueGroundspeed * rescueState.sensor.distanceToHome / gpsRescueConfig()->descentDistance;
-	
-	rescueState.intent.targetAltitude = constrain(newAlt, 100, rescueState.intent.targetAltitude);
-	rescueState.intent.targetGroundspeed = constrain(newSpeed, 100, rescueState.intent.targetGroundspeed);
-	rescueState.intent.crosstrack = true;
-	rescueState.intent.minAngleDeg = 10;
-	rescueState.intent.maxAngleDeg = 20;
-	break;
-    case RESCUE_LANDING:
-	// We have reached the XYZ envelope to be considered at "home".  We need to land gently and check our accelerometer for abnormal data.
-	// At this point, do not let the target altitude go up anymore, so if we overshoot, we dont' move in a parabolic trajectory
-	
-	// If we are over 120% of average magnitude, just disarm since we're pretty much home
-	if (rescueState.sensor.accMagnitude > rescueState.sensor.accMagnitudeAvg * 1.5) {
-	    disarm();
-	    rescueState.phase = RESCUE_COMPLETE;
-	}
-	
-	rescueState.intent.targetGroundspeed = 0;
-	rescueState.intent.targetAltitude = 0;
-	rescueState.intent.crosstrack = true;
-	rescueState.intent.minAngleDeg = 0;
-	rescueState.intent.maxAngleDeg = 15;
-	break;
-    case RESCUE_COMPLETE:
-	rescueStop();
-	break;
-    case RESCUE_ABORT:
-	disarm();
-	rescueStop();
-	break;
-    }
-    
-    performSanityChecks();
-    
-    if (rescueState.phase != RESCUE_IDLE) {
-        rescueAttainPosition();
-    }
-    
-    newGPSData = false;
+    rescueState.phase = RESCUE_INITIALIZE;
 }
 
-void sensorUpdate()
+static void rescueStop()
 {
-    rescueState.sensor.currentAltitude = getEstimatedAltitude();
-
-    // Calculate altitude velocity
-    static uint32_t previousTimeUs;
-    static int32_t previousAltitude;
-
-    const uint32_t currentTimeUs = micros();
-    const float dTime = currentTimeUs - previousTimeUs;
-
-    if (newGPSData) { // Calculate velocity at lowest common denominator
-        rescueState.sensor.distanceToHome = GPS_distanceToHome;
-        rescueState.sensor.directionToHome = GPS_directionToHome;
-        rescueState.sensor.numSat = gpsSol.numSat;
-        rescueState.sensor.groundSpeed = gpsSol.groundSpeed;
-
-        rescueState.sensor.zVelocity = (rescueState.sensor.currentAltitude - previousAltitude) * 1000000.0f / dTime;
-        rescueState.sensor.zVelocityAvg = 0.8f * rescueState.sensor.zVelocityAvg + rescueState.sensor.zVelocity * 0.2f;
-
-        previousAltitude = rescueState.sensor.currentAltitude;
-        previousTimeUs = currentTimeUs;
-    }
-
-    rescueState.sensor.accMagnitude = (float) sqrt(sq(acc.accADC[Z]) + sq(acc.accADC[X]) + sq(acc.accADC[Y]) / sq(acc.dev.acc_1G));
-    rescueState.sensor.accMagnitudeAvg = (rescueState.sensor.accMagnitudeAvg * 0.998f) + (rescueState.sensor.accMagnitude * 0.002f);
+    rescueState.phase = RESCUE_IDLE;
 }
 
-void performSanityChecks()
+// Things that need to run regardless of GPS rescue mode being enabled or not
+static void idleTasks()
+{
+    // Do not calculate any of the idle task values when we are not flying
+    if (!ARMING_FLAG(ARMED)) {
+        return;
+    }
+
+    // Don't update any rescue flight statistics if we haven't applied a proper altitude offset yet
+    if (!isAltitudeOffset()) {
+        return;
+    }
+
+    gpsRescueAngle[AI_PITCH] = 0;
+    gpsRescueAngle[AI_ROLL] = 0;
+
+    // Store the max altitude we see not during RTH so we know our fly-back minimum alt
+    rescueState.sensor.maxAltitudeCm = MAX(rescueState.sensor.currentAltitudeCm, rescueState.sensor.maxAltitudeCm);
+    // Store the max distance to home during normal flight so we know if a flyaway is happening
+    rescueState.sensor.maxDistanceToHomeM = MAX(rescueState.sensor.distanceToHomeM, rescueState.sensor.maxDistanceToHomeM);
+
+    rescueThrottle = rcCommand[THROTTLE];
+
+    //to do: have a default value for hoverThrottle
+
+    // FIXME: GPS Rescue throttle handling should take into account min_check as the
+    // active throttle is from min_check through PWM_RANGE_MAX. Currently adjusting for this
+    // in gpsRescueGetThrottle() but it would be better handled here.
+
+    float ct = getCosTiltAngle();
+    if (ct > 0.5 && ct < 0.96 && throttleSamples < 1E6 && rescueThrottle > 1070) { //5 to 45 degrees tilt
+        //TO DO: only sample when acceleration is low
+        uint16_t adjustedThrottle = 1000 + (rescueThrottle - PWM_RANGE_MIN) * ct;
+        if (throttleSamples == 0) {
+            averageThrottle = adjustedThrottle;
+        } else {
+            averageThrottle += (adjustedThrottle - averageThrottle) / (throttleSamples + 1);
+        }
+        hoverThrottle = lrintf(averageThrottle);
+        throttleSamples++;
+    }
+}
+
+// Very similar to maghold function on betaflight/cleanflight
+static void setBearing(int16_t desiredHeading)
+{
+    float errorAngle = (attitude.values.yaw / 10.0f) - desiredHeading;
+
+    // Determine the most efficient direction to rotate
+    if (errorAngle <= -180) {
+        errorAngle += 360;
+    } else if (errorAngle > 180) {
+        errorAngle -= 360;
+    }
+
+    errorAngle *= -GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
+        
+    // Calculate a desired yaw rate based on a maximum limit beyond
+    // an error window and then scale the requested rate down inside
+    // the window as error approaches 0.
+    rescueYaw = -constrainf(errorAngle / GPS_RESCUE_RATE_SCALE_DEGREES * GPS_RESCUE_MAX_YAW_RATE, -GPS_RESCUE_MAX_YAW_RATE, GPS_RESCUE_MAX_YAW_RATE);
+}
+
+static void rescueAttainPosition()
+{
+    // Point to home if that is in our intent
+    if (rescueState.intent.crosstrack) {
+        setBearing(rescueState.sensor.directionToHome);
+    }
+
+    if (!newGPSData) {
+        return;
+    }
+
+    /**
+        Speed controller
+    */
+    static float previousSpeedError = 0;
+    static int16_t speedIntegral = 0;
+
+    const int16_t speedError = (rescueState.intent.targetGroundspeed - rescueState.sensor.groundSpeed) / 100;
+    const int16_t speedDerivative = speedError - previousSpeedError;
+
+    speedIntegral = constrain(speedIntegral + speedError, -100, 100);
+
+    previousSpeedError = speedError;
+
+    int16_t angleAdjustment =  gpsRescueConfig()->velP * speedError + (gpsRescueConfig()->velI * speedIntegral) / 100 +  gpsRescueConfig()->velD * speedDerivative;
+
+    gpsRescueAngle[AI_PITCH] = constrain(gpsRescueAngle[AI_PITCH] + MIN(angleAdjustment, 80), rescueState.intent.minAngleDeg * 100, rescueState.intent.maxAngleDeg * 100);
+
+    float ct = cos(DECIDEGREES_TO_RADIANS(gpsRescueAngle[AI_PITCH] / 10));
+
+    /**
+        Altitude controller
+    */
+    static float previousAltitudeError = 0;
+    static int16_t altitudeIntegral = 0;
+
+    const int16_t altitudeError = (rescueState.intent.targetAltitudeCm - rescueState.sensor.currentAltitudeCm) / 100; // Error in meters
+    const int16_t altitudeDerivative = altitudeError - previousAltitudeError;
+
+    // Only allow integral windup within +-15m absolute altitude error
+    if (ABS(altitudeError) < 25) {
+        altitudeIntegral = constrain(altitudeIntegral + altitudeError, -250, 250);
+    } else {
+        altitudeIntegral = 0;
+    }
+
+    previousAltitudeError = altitudeError;
+
+    int16_t altitudeAdjustment = (gpsRescueConfig()->throttleP * altitudeError + (gpsRescueConfig()->throttleI * altitudeIntegral) / 10 *  + gpsRescueConfig()->throttleD * altitudeDerivative) / ct / 20;
+    int16_t hoverAdjustment = (hoverThrottle - 1000) / ct;
+
+    rescueThrottle = constrain(1000 + altitudeAdjustment + hoverAdjustment, gpsRescueConfig()->throttleMin, gpsRescueConfig()->throttleMax);
+
+    DEBUG_SET(DEBUG_RTH, 0, rescueThrottle);
+    DEBUG_SET(DEBUG_RTH, 1, gpsRescueAngle[AI_PITCH]);
+    DEBUG_SET(DEBUG_RTH, 2, altitudeAdjustment);
+    DEBUG_SET(DEBUG_RTH, 3, rescueState.failure);
+}
+
+static void performSanityChecks()
 {
     if (rescueState.phase == RESCUE_IDLE) {
         rescueState.failure = RESCUE_HEALTHY;
-        
+
         return;
     }
 
@@ -273,131 +343,173 @@ void performSanityChecks()
     if (msI == 5) {
         rescueState.failure = RESCUE_FLYAWAY;
     }
+}
 
-    // Minimum distance detection (100m)
-    if (rescueState.sensor.distanceToHome < 100) {
-        rescueState.failure = RESCUE_TOO_CLOSE;
+static void sensorUpdate()
+{
+    rescueState.sensor.currentAltitudeCm = getEstimatedAltitudeCm();
+
+    // Calculate altitude velocity
+    static uint32_t previousTimeUs;
+    static int32_t previousAltitudeCm;
+
+    const uint32_t currentTimeUs = micros();
+    const float dTime = currentTimeUs - previousTimeUs;
+
+    if (newGPSData) { // Calculate velocity at lowest common denominator
+        rescueState.sensor.distanceToHomeM = GPS_distanceToHome;
+        rescueState.sensor.directionToHome = GPS_directionToHome;
+        rescueState.sensor.numSat = gpsSol.numSat;
+        rescueState.sensor.groundSpeed = gpsSol.groundSpeed;
+
+        rescueState.sensor.zVelocity = (rescueState.sensor.currentAltitudeCm - previousAltitudeCm) * 1000000.0f / dTime;
+        rescueState.sensor.zVelocityAvg = 0.8f * rescueState.sensor.zVelocityAvg + rescueState.sensor.zVelocity * 0.2f;
+
+        rescueState.sensor.accMagnitude = (float) sqrtf(sq(acc.accADC[Z]) + sq(acc.accADC[X]) + sq(acc.accADC[Y])) * acc.dev.acc_1G_rec;
+        rescueState.sensor.accMagnitudeAvg = (rescueState.sensor.accMagnitudeAvg * 0.8f) + (rescueState.sensor.accMagnitude * 0.2f);
+
+        previousAltitudeCm = rescueState.sensor.currentAltitudeCm;
+        previousTimeUs = currentTimeUs;
     }
 }
 
-void rescueStart()
+/*
+    Determine what phase we are in, determine if all criteria are met to move to the next phase
+*/
+void updateGPSRescueState(void)
 {
-    rescueState.phase = RESCUE_INITIALIZE;
-}
-
-void rescueStop()
-{
-    rescueState.phase = RESCUE_IDLE;
-}
-
-// Things that need to run regardless of GPS rescue mode being enabled or not
-void idleTasks()
-{
-    // Do not calculate any of the idle task values when we are not flying
-    if (!ARMING_FLAG(ARMED)) {
-        return;
+    if (!FLIGHT_MODE(GPS_RESCUE_MODE)) {
+        rescueStop();
+    } else if (FLIGHT_MODE(GPS_RESCUE_MODE) && rescueState.phase == RESCUE_IDLE) {
+        rescueStart();
     }
 
-    gpsRescueAngle[AI_PITCH] = 0;
-    gpsRescueAngle[AI_ROLL] = 0;
+    rescueState.isFailsafe = failsafeIsActive();
 
-    // Store the max altitude we see not during RTH so we know our fly-back minimum alt
-    rescueState.sensor.maxAltitude = MAX(rescueState.sensor.currentAltitude, rescueState.sensor.maxAltitude);
-    // Store the max distance to home during normal flight so we know if a flyaway is happening
-    rescueState.sensor.maxDistanceToHome = MAX(rescueState.sensor.distanceToHome, rescueState.sensor.maxDistanceToHome);
+    sensorUpdate();
 
-    rescueThrottle = rcCommand[THROTTLE];
-
-    //to do: have a default value for hoverThrottle
-    float ct = getCosTiltAngle();
-    if (ct > 0.5 && ct < 0.96 && throttleSamples < 1E6 && rescueThrottle > 1070) { //5 to 45 degrees tilt
-        //TO DO: only sample when acceleration is low
-        uint16_t adjustedThrottle = 1000 + (rescueThrottle - PWM_RANGE_MIN) * ct;
-        if (throttleSamples == 0) {
-            averageThrottle = adjustedThrottle;
-        } else {
-            averageThrottle += (adjustedThrottle - averageThrottle) / (throttleSamples + 1);
+    switch (rescueState.phase) {
+    case RESCUE_IDLE:
+        idleTasks();
+        break;
+    case RESCUE_INITIALIZE:
+        if (hoverThrottle == 0) { //no actual throttle data yet, let's use the default.
+            hoverThrottle = gpsRescueConfig()->throttleHover;
         }
-        hoverThrottle = lrintf(averageThrottle);
-        throttleSamples++;
+
+        // Minimum distance detection.  Disarm regardless of sanity check configuration.  Rescue too close is never a good idea.
+        if (rescueState.sensor.distanceToHomeM < gpsRescueConfig()->minRescueDth) {
+            // Never allow rescue mode to engage as a failsafe when too close or when disarmed.
+            if (rescueState.isFailsafe || !ARMING_FLAG(ARMED)) {
+                rescueState.failure = RESCUE_TOO_CLOSE;
+                setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+                disarm();
+            } else {
+                // Leave it up to the sanity check setting
+                rescueState.failure = RESCUE_TOO_CLOSE;
+            }
+        }
+
+        rescueState.phase = RESCUE_ATTAIN_ALT;
+        FALLTHROUGH;
+    case RESCUE_ATTAIN_ALT:
+        // Get to a safe altitude at a low velocity ASAP
+        if (ABS(rescueState.intent.targetAltitudeCm - rescueState.sensor.currentAltitudeCm) < 1000) {
+            rescueState.phase = RESCUE_CROSSTRACK;
+        }
+
+        rescueState.intent.targetGroundspeed = 500;
+        rescueState.intent.targetAltitudeCm = MAX(gpsRescueConfig()->initialAltitudeM * 100, rescueState.sensor.maxAltitudeCm + 1500);
+        rescueState.intent.crosstrack = true;
+        rescueState.intent.minAngleDeg = 10;
+        rescueState.intent.maxAngleDeg = 15;
+        break;
+    case RESCUE_CROSSTRACK:
+        if (rescueState.sensor.distanceToHomeM < gpsRescueConfig()->descentDistanceM) {
+            rescueState.phase = RESCUE_LANDING_APPROACH;
+        }
+
+        // We can assume at this point that we are at or above our RTH height, so we need to try and point to home and tilt while maintaining alt
+        // Is our altitude way off?  We should probably kick back to phase RESCUE_ATTAIN_ALT
+        rescueState.intent.targetGroundspeed = gpsRescueConfig()->rescueGroundspeed;
+        rescueState.intent.targetAltitudeCm = MAX(gpsRescueConfig()->initialAltitudeM * 100, rescueState.sensor.maxAltitudeCm + 1500);
+        rescueState.intent.crosstrack = true;
+        rescueState.intent.minAngleDeg = 15;
+        rescueState.intent.maxAngleDeg = gpsRescueConfig()->angle;
+        break;
+    case RESCUE_LANDING_APPROACH:
+        // We are getting close to home in the XY plane, get Z where it needs to be to move to landing phase
+        if (rescueState.sensor.distanceToHomeM < 10 && rescueState.sensor.currentAltitudeCm <= 1000) {
+            rescueState.phase = RESCUE_LANDING;
+        }
+
+        // Only allow new altitude and new speed to be equal or lower than the current values (to prevent parabolic movement on overshoot)
+        int32_t newAlt = gpsRescueConfig()->initialAltitudeM * 100  * rescueState.sensor.distanceToHomeM / gpsRescueConfig()->descentDistanceM;
+        int32_t newSpeed = gpsRescueConfig()->rescueGroundspeed * rescueState.sensor.distanceToHomeM / gpsRescueConfig()->descentDistanceM;
+
+        rescueState.intent.targetAltitudeCm = constrain(newAlt, 100, rescueState.intent.targetAltitudeCm);
+        rescueState.intent.targetGroundspeed = constrain(newSpeed, 100, rescueState.intent.targetGroundspeed);
+        rescueState.intent.crosstrack = true;
+        rescueState.intent.minAngleDeg = 10;
+        rescueState.intent.maxAngleDeg = 20;
+        break;
+    case RESCUE_LANDING:
+        // We have reached the XYZ envelope to be considered at "home".  We need to land gently and check our accelerometer for abnormal data.
+        // At this point, do not let the target altitude go up anymore, so if we overshoot, we dont' move in a parabolic trajectory
+
+        // If we are over 120% of average magnitude, just disarm since we're pretty much home
+        if (rescueState.sensor.accMagnitude > rescueState.sensor.accMagnitudeAvg * 1.5) {
+            setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+            disarm();
+            rescueState.phase = RESCUE_COMPLETE;
+        }
+
+        rescueState.intent.targetGroundspeed = 0;
+        rescueState.intent.targetAltitudeCm = 0;
+        rescueState.intent.crosstrack = true;
+        rescueState.intent.minAngleDeg = 0;
+        rescueState.intent.maxAngleDeg = 15;
+        break;
+    case RESCUE_COMPLETE:
+        rescueStop();
+        break;
+    case RESCUE_ABORT:
+        setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+        disarm();
+        rescueStop();
+        break;
+    default:
+        break;
     }
 
+    performSanityChecks();
+
+    if (rescueState.phase != RESCUE_IDLE) {
+        rescueAttainPosition();
+    }
+
+    newGPSData = false;
 }
 
-void rescueAttainPosition()
+float gpsRescueGetYawRate(void)
 {
-    // Point to home if that is in our intent
-    if (rescueState.intent.crosstrack) {
-        setBearing(rescueState.sensor.directionToHome);
-    }
+    return rescueYaw;
+}
 
-    if (!newGPSData) {
-        return;
-    }
-
+float gpsRescueGetThrottle(void)
+{
+    // Calculated a desired commanded throttle scaled from 0.0 to 1.0 for use in the mixer.
+    // We need to compensate for min_check since the throttle value set by gps rescue
+    // is based on the raw rcCommand value commanded by the pilot.
+    float commandedThrottle = scaleRangef(rescueThrottle, MAX(rxConfig()->mincheck, PWM_RANGE_MIN), PWM_RANGE_MAX, 0.0f, 1.0f);
+    commandedThrottle = constrainf(commandedThrottle, 0.0f, 1.0f);
     
-    /**
-        Speed controller
-    */
-    static float previousSpeedError = 0;
-    static int16_t speedIntegral = 0;
-
-    const int16_t speedError = (rescueState.intent.targetGroundspeed - rescueState.sensor.groundSpeed) / 100;
-    const int16_t speedDerivative = speedError - previousSpeedError;
-
-    speedIntegral = constrain(speedIntegral + speedError, -100, 100);
-
-    previousSpeedError = speedError;
-
-    int16_t angleAdjustment =  gpsRescueConfig()->velP * speedError + (gpsRescueConfig()->velI * speedIntegral) / 100 +  gpsRescueConfig()->velD * speedDerivative;
-
-    gpsRescueAngle[AI_PITCH] = constrain(gpsRescueAngle[AI_PITCH] + MIN(angleAdjustment, 80), rescueState.intent.minAngleDeg * 100, rescueState.intent.maxAngleDeg * 100);
-
-    float ct = cos(DECIDEGREES_TO_RADIANS(gpsRescueAngle[AI_PITCH] / 10));
-
-    /**
-        Altitude controller
-    */
-    static float previousAltitudeError = 0;
-    static int16_t altitudeIntegral = 0;
-
-    const int16_t altitudeError = (rescueState.intent.targetAltitude - rescueState.sensor.currentAltitude) / 100; // Error in meters
-    const int16_t altitudeDerivative = altitudeError - previousAltitudeError;
-
-    // Only allow integral windup within +-15m absolute altitude error
-    if (ABS(altitudeError) < 25) {
-        altitudeIntegral = constrain(altitudeIntegral + altitudeError, -250, 250);
-    } else {
-        altitudeIntegral = 0;
-    }
-
-    previousAltitudeError = altitudeError;
-
-    int16_t altitudeAdjustment = (gpsRescueConfig()->throttleP * altitudeError + (gpsRescueConfig()->throttleI * altitudeIntegral) / 10 *  + gpsRescueConfig()->throttleD * altitudeDerivative) / ct / 20;
-    int16_t hoverAdjustment = (hoverThrottle - 1000) / ct;
-
-    rescueThrottle = constrain(1000 + altitudeAdjustment + hoverAdjustment, gpsRescueConfig()->throttleMin, gpsRescueConfig()->throttleMax);
-
-    DEBUG_SET(DEBUG_RTH, 0, rescueThrottle);
-    DEBUG_SET(DEBUG_RTH, 1, gpsRescueAngle[AI_PITCH]);
-    DEBUG_SET(DEBUG_RTH, 2, altitudeAdjustment);
-    DEBUG_SET(DEBUG_RTH, 3, rescueState.failure);
+    return commandedThrottle;
 }
 
-// Very similar to maghold function on betaflight/cleanflight
-void setBearing(int16_t deg)
+bool gpsRescueIsConfigured(void)
 {
-    int16_t dif = DECIDEGREES_TO_DEGREES(attitude.values.yaw) - deg;
-
-    if (dif <= -180)
-        dif += 360;
-    if (dif >= +180)
-        dif -= 360;
-
-    dif *= -GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
-
-    rcCommand[YAW] = - (dif * gpsRescueConfig()->yawP / 20);
+    return failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE || isModeActivationConditionPresent(BOXGPSRESCUE);
 }
-
 #endif
 

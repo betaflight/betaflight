@@ -47,6 +47,8 @@ typedef struct batteryConfig_s {
     uint8_t vbathysteresis;                 // hysteresis for alarm, default 1 = 0.1V
 
     uint8_t vbatfullcellvoltage;            // Cell voltage at which the battery is deemed to be "full" 0.1V units, default is 41 (4.1V)
+    
+    uint8_t forceBatteryCellCount;            // number of cells in battery, used for overwriting auto-detected cell count if someone has issues with it.
 
 } batteryConfig_t;
 
@@ -71,6 +73,8 @@ void batteryUpdateVoltage(timeUs_t currentTimeUs);
 void batteryUpdatePresence(void);
 
 batteryState_e getBatteryState(void);
+batteryState_e getVoltageState(void);
+batteryState_e getConsumptionState(void);
 const  char * getBatteryStateString(void);
 
 void batteryUpdateStates(timeUs_t currentTimeUs);

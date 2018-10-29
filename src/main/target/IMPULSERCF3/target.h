@@ -22,7 +22,25 @@
 
 #define TARGET_BOARD_IDENTIFIER "IMF3"
 
-#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
+
+// Removed to make the firmware fit into flash (in descending order of priority):
+//#undef USE_GYRO_OVERFLOW_CHECK
+//#undef USE_GYRO_LPF2
+
+//#undef USE_ITERM_RELAX
+//#undef USE_RC_SMOOTHING_FILTER
+
+//#undef USE_TELEMETRY_HOTT
+//#undef USE_TELEMETRY_MAVLINK
+//#undef USE_TELEMETRY_LTM
+//#undef USE_SERIALRX_XBUS
+
+//#undef USE_BOARD_INFO
+#undef USE_EXTENDED_CMS_MENUS
+//#undef USE_RTC_TIME
+#undef USE_RX_MSP
+#undef USE_ESC_SENSOR_INFO
+
 
 #define ENABLE_DSHOT_DMAR       true
 
@@ -32,17 +50,18 @@
 #define BEEPER_PIN              PC15
 
 #define USE_EXTI
-#define MPU_INT_EXTI            PC13
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC13
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN      CW0_DEG
+#define GYRO_1_ALIGN            CW0_DEG
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
-#define ACC_MPU6000_ALIGN       CW0_DEG
+#define ACC_1_ALIGN             CW0_DEG
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
@@ -75,8 +94,8 @@
 #define FLASH_CS_PIN            PB12
 #define FLASH_SPI_INSTANCE      SPI2
 
-#define MPU6000_CS_PIN          PA4
-#define MPU6000_SPI_INSTANCE    SPI1
+#define GYRO_1_CS_PIN           PA4
+#define GYRO_1_SPI_INSTANCE     SPI1
 
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI1

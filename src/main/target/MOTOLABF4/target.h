@@ -38,20 +38,21 @@
 #define BEEPER_PIN              PB4
 #define BEEPER_INVERTED
 
-#define MPU6000_CS_PIN          PA4
-#define MPU6000_SPI_INSTANCE    SPI1
+#define GYRO_1_CS_PIN           PA4
+#define GYRO_1_SPI_INSTANCE     SPI1
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN      CW180_DEG
+#define GYRO_1_ALIGN            CW180_DEG
 
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
-#define ACC_MPU6000_ALIGN       CW180_DEG
+#define ACC_1_ALIGN             CW180_DEG
 
 // MPU6000 interrupts
 #define USE_EXTI
-#define MPU_INT_EXTI            PC5
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC5
 #define USE_MPU_DATA_READY_SIGNAL
 //#define ENSURE_MPU_DATA_READY_IS_LOW
 //#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
@@ -75,7 +76,6 @@
 #define USE_UART1
 #define UART1_RX_PIN            PA10
 #define UART1_TX_PIN            PA9
-#define UART1_AHB1_PERIPHERALS  RCC_AHB1Periph_DMA2
 
 #define USE_UART2
 #define UART2_RX_PIN            PA3
@@ -116,16 +116,12 @@
 #define USE_SPI_DEVICE_2        // SDcard
 
 #define USE_SDCARD
+#define USE_SDCARD_SPI
 #define SDCARD_DETECT_INVERTED
 #define SDCARD_DETECT_PIN                   PC13
 #define SDCARD_SPI_INSTANCE                 SPI2
 #define SDCARD_SPI_CS_PIN                   PB12
 #define SDCARD_SPI_CS_CFG                   IOCFG_OUT_OD
-// SPI2 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 328kHz
-// Divide to under 25MHz for normal operation:
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     4 // 21MHz
-
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Stream4
 #define SDCARD_DMA_CHANNEL                  0
 
@@ -134,11 +130,11 @@
 //#define I2C_DEVICE (I2CDEV_2)
 
 #define USE_ADC
-#define BOARD_HAS_VOLTAGE_DIVIDER
+#define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define VBAT_ADC_PIN            PC0
 #define CURRENT_METER_ADC_PIN   PC1
 // Reserved pins, not connected
-//#define RSSI_ADC_GPIO_PIN       PC2
+//#define RSSI_ADC_PIN            PC2
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

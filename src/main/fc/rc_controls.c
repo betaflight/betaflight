@@ -43,9 +43,9 @@
 #include "drivers/camera_control.h"
 
 #include "fc/config.h"
-#include "fc/fc_core.h"
+#include "fc/core.h"
 #include "fc/rc_controls.h"
-#include "fc/fc_rc.h"
+#include "fc/rc.h"
 #include "fc/runtime_config.h"
 
 #include "io/gps.h"
@@ -113,7 +113,7 @@ bool areSticksInApModePosition(uint16_t ap_mode)
 
 throttleStatus_e calculateThrottleStatus(void)
 {
-    if (feature(FEATURE_3D)) {
+    if (featureIsEnabled(FEATURE_3D)) {
         if (IS_RC_MODE_ACTIVE(BOX3D) || flight3DConfig()->switched_mode3d) {
             if (rcData[THROTTLE] < rxConfig()->mincheck) {
                 return THROTTLE_LOW;
@@ -216,7 +216,8 @@ void processRcStickPositions()
             if (!ARMING_FLAG(ARMED)) {
                 // Arm via YAW
                 tryArm();
-                if (isTryingToArm()) {
+                if (isTryingToArm() ||
+                    ((getArmingDisableFlags() == ARMING_DISABLED_CALIBRATING) && armingConfig()->gyro_cal_on_first_arm)) {
                     doNotRepeat = false;
                 }
             } else {
@@ -240,7 +241,7 @@ void processRcStickPositions()
         gyroStartCalibration(false);
 
 #ifdef USE_GPS
-        if (feature(FEATURE_GPS)) {
+        if (featureIsEnabled(FEATURE_GPS)) {
             GPS_reset_home_position();
         }
 #endif
@@ -253,7 +254,7 @@ void processRcStickPositions()
         return;
     }
 
-    if (feature(FEATURE_INFLIGHT_ACC_CAL) && (rcSticks == THR_LO + YAW_LO + PIT_HI + ROL_HI)) {
+    if (featureIsEnabled(FEATURE_INFLIGHT_ACC_CAL) && (rcSticks == THR_LO + YAW_LO + PIT_HI + ROL_HI)) {
         // Inflight ACC Calibration
         handleInflightCalibrationStickPosition();
         return;

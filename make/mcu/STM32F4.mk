@@ -137,7 +137,13 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(ROOT)/src/main/vcpf4
 endif
 
-ifneq ($(filter SDCARD,$(FEATURES)),)
+ifneq ($(filter SDCARD_SPI,$(FEATURES)),)
+INCLUDE_DIRS    := $(INCLUDE_DIRS) \
+                   $(FATFS_DIR)
+VPATH           := $(VPATH):$(FATFS_DIR)
+endif
+
+ifneq ($(filter SDCARD_SDIO,$(FEATURES)),)
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(FATFS_DIR)
 VPATH           := $(VPATH):$(FATFS_DIR)
@@ -202,12 +208,12 @@ MSC_SRC = \
             msc/usbd_msc_desc.c \
             msc/usbd_storage.c
 
-ifneq ($(filter SDCARD,$(FEATURES)),)
+ifneq ($(filter SDCARD_SPI,$(FEATURES)),)
 MSC_SRC += \
             msc/usbd_storage_sd_spi.c
 endif
 
-ifneq ($(filter SDIO,$(FEATURES)),)
+ifneq ($(filter SDCARD_SDIO,$(FEATURES)),)
 MSC_SRC += \
             msc/usbd_storage_sdio.c
 MCU_COMMON_SRC += \

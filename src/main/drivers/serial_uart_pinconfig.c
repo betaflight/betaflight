@@ -32,6 +32,8 @@
 
 #include "platform.h"
 
+#ifdef USE_UART
+
 #include "build/build_config.h"
 
 #include "drivers/rcc.h"
@@ -52,16 +54,19 @@ void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig)
         const UARTDevice_e device = hardware->device;
 
         for (int pindex = 0 ; pindex < UARTHARDWARE_MAX_PINS ; pindex++) {
-            if (hardware->rxPins[pindex] && (hardware->rxPins[pindex] == pSerialPinConfig->ioTagRx[device]))
-                uartdev->rx = pSerialPinConfig->ioTagRx[device];
+            if (hardware->rxPins[pindex].pin == pSerialPinConfig->ioTagRx[device]) {
+                uartdev->rx = hardware->rxPins[pindex];
+            }
 
-            if (hardware->txPins[pindex] && (hardware->txPins[pindex] == pSerialPinConfig->ioTagTx[device]))
-                uartdev->tx = pSerialPinConfig->ioTagTx[device];
+            if (hardware->txPins[pindex].pin == pSerialPinConfig->ioTagTx[device]) {
+                uartdev->tx = hardware->txPins[pindex];
+            }
         }
 
-        if (uartdev->rx || uartdev->tx) {
+        if (uartdev->rx.pin || uartdev->tx.pin) {
             uartdev->hardware = hardware;
             uartDevmap[device] = uartdev++;
         }
     }
 }
+#endif

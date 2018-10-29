@@ -1,5 +1,5 @@
 F3_TARGETS  += $(TARGET)
-FEATURES    = VCP SDCARD ONBOARDFLASH
+FEATURES    = VCP SDCARD_SPI ONBOARDFLASH
 
 TARGET_SRC = \
             drivers/accgyro/accgyro_fake.c \
@@ -11,14 +11,6 @@ TARGET_SRC = \
             drivers/accgyro/accgyro_spi_mpu6000.c \
             drivers/accgyro/accgyro_spi_mpu6500.c \
             drivers/accgyro/accgyro_spi_mpu9250.c \
-            drivers/accgyro_legacy/accgyro_adxl345.c \
-            drivers/accgyro_legacy/accgyro_bma280.c \
-            drivers/accgyro_legacy/accgyro_l3gd20.c \
-            drivers/accgyro_legacy/accgyro_l3g4200d.c \
-            drivers/accgyro_legacy/accgyro_lsm303dlhc.c \
-            drivers/accgyro_legacy/accgyro_adxl345.c \
-            drivers/accgyro_legacy/accgyro_bma280.c \
-            drivers/accgyro_legacy/accgyro_mma845x.c \
             drivers/barometer/barometer_bmp085.c \
             drivers/barometer/barometer_bmp280.c \
             drivers/barometer/barometer_fake.c \

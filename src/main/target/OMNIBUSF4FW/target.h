@@ -68,11 +68,14 @@
 
 // MPU6000 interrupts
 #define USE_EXTI
-#define MPU_INT_EXTI            PC4
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC4
+#define GYRO_2_EXTI_PIN         NONE
 #define USE_MPU_DATA_READY_SIGNAL
 
 #define USE_MAG
 #define USE_MAG_HMC5883
+#define USE_MAG_LIS3MDL
 #define MAG_HMC5883_ALIGN       CW90_DEG
 
 #define USE_BARO
@@ -81,7 +84,6 @@
 #define BMP280_CS_PIN           PB3
 #define DEFAULT_BARO_SPI_BMP280
 
-#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI3
 #define MAX7456_SPI_CS_PIN      PA15
@@ -151,8 +153,6 @@
 #define I2C2_SDA                NONE // PB11, shared with UART3RX
 #define I2C_DEVICE              (I2CDEV_2)
 
-#define CAMERA_CONTROL_PIN      PB9
-
 #define USE_ADC
 #define ADC_INSTANCE            ADC2
 #define CURRENT_METER_ADC_PIN   PC1  // Direct from CRNT pad (part of onboard sensor for Pro)
@@ -178,8 +178,12 @@
 
 #define TARGET_IO_PORTA (0xffff & ~(BIT(14)|BIT(13)))
 #define TARGET_IO_PORTB (0xffff & ~(BIT(2)))
-#define TARGET_IO_PORTC (0xffff & ~(BIT(15)|BIT(14)|BIT(13)))
+#define TARGET_IO_PORTC (0xffff & ~(BIT(15)))
 #define TARGET_IO_PORTD BIT(2)
 
+#if defined(OMNIBUSF4FW) || defined(OMNIBUSF4FW1)
 #define USABLE_TIMER_CHANNEL_COUNT 15
+#else
+#define USABLE_TIMER_CHANNEL_COUNT 14
+#endif
 #define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(8) | TIM_N(9) | TIM_N(10) | TIM_N(11))

@@ -1,39 +1,47 @@
 # Modes
 
-Cleanflight has various modes that can be toggled on or off.  Modes can be enabled/disabled by stick positions,
-auxillary receiver channels and other events such as failsafe detection.
+There are various modes that can be toggled on or off.  Modes can be enabled/disabled by stick positions, auxillary receiver channels and other events such as failsafe detection.
 
-| MSP ID  | CLI ID | Short Name | Function                                                             |
-| ------- | ------ | ---------- | -------------------------------------------------------------------- |
-| 0       | 0      | ARM        | Enables motors and flight stabilisation                              |
-| 1       | 1      | ANGLE      | Legacy auto-level flight mode                                        |
-| 2       | 2      | HORIZON    | Auto-level flight mode                                               |
-| 3       | 3      | BARO       | Altitude hold mode (Requires barometer sensor)                       |
-| 4       | N/A    | VARIO      | Unused                                                               |
-| 5       | 4      | MAG        | Heading lock                                                         |
-| 6       | 5      | HEADFREE   | Head Free - When enabled yaw has no effect on pitch/roll inputs      |
-| 7       | 6      | HEADADJ    | Heading Adjust - Sets a new yaw origin for HEADFREE mode             |
-| 8       | 7      | CAMSTAB    | Camera Stabilisation                                                 |
-| 9       | 8      | CAMTRIG    | Unused                                                               |
-| 10      | 9      | GPSHOME    | Autonomous flight to HOME position                                   |
-| 11      | 10     | GPSHOLD    | Maintain the same longitude/lattitude                                |
-| 12      | 11     | PASSTHRU   | Pass roll, yaw, and pitch directly from rx to servos in airplane mix |
-| 13      | 12     | BEEPERON   | Enable beeping - useful for locating a crashed aircraft              |
-| 14      | 13     | LEDMAX     |                                                                      |
-| 15      | 14     | LEDLOW     |                                                                      |
-| 16      | 15     | LLIGHTS    |                                                                      |
-| 17      | 16     | CALIB      |                                                                      |
-| 18      | 17     | GOV        | Unused                                                               |
-| 19      | 18     | OSD        | Enable/Disable On-Screen-Display (OSD)                               |
-| 20      | 19     | TELEMETRY  | Enable telemetry via switch                                          |
-| 21      | 20     | GTUNE      | G-Tune - auto tuning of Pitch/Roll/Yaw P values                      |
-| 22      | 21     | SONAR      | Altitude hold mode (sonar sensor only)                               |
-| 23      | 22     | SERVO1     | Servo 1                                                              |
-| 24      | 23     | SERVO2     | Servo 2                                                              |
-| 25      | 24     | SERVO3     | Servo 3                                                              |
-| 26      | 25     | BLACKBOX   | Enable BlackBox logging                                              |
-| 27      | 26     | FAILSAFE   | Enter failsafe stage 2 manually                                      |
-| 28      | 27     | AIRMODE    | Alternative mixer and additional PID logic for more stable copter    |
+| ID | Short Name               | Function                                                             |
+| -- | ------------------------ | ------------------------------------------------------------------------------------ |
+| 0  | ARM                      | Enables motors and flight stabilisation                                              |
+| 1  | ANGLE                    | Legacy auto-level flight mode                                                        |
+| 2  | HORIZON                  | Auto-level flight mode                                                               |
+| 4  | ANTI GRAVITY             | Prevents dips and rolls on fast throttle changes                                     |
+| 5  | MAG                      | Heading lock                                                                         |
+| 6  | HEADFREE                 | Head Free - When enabled yaw has no effect on pitch/roll inputs                      |
+| 7  | HEADADJ                  | Heading Adjust - Sets a new yaw origin for HEADFREE mode                             |
+| 8  | CAMSTAB                  | Camera Stabilisation                                                                 |
+| 12 | PASSTHRU                 | Pass roll, yaw, and pitch directly from rx to servos in airplane mix                 |
+| 13 | BEEPERON                 | Enable beeping - useful for locating a crashed aircraft                              |
+| 15 | LEDLOW                   | Switch off LED\_STRIP output                                                         |
+| 17 | CALIB                    | Start in-flight calibration                                                          |
+| 19 | OSD                      | Enable/Disable On-Screen-Display (OSD)                                               |
+| 20 | TELEMETRY                | Enable telemetry via switch                                                          |
+| 23 | SERVO1                   | Servo 1                                                                              |
+| 24 | SERVO2                   | Servo 2                                                                              |
+| 25 | SERVO3                   | Servo 3                                                                              |
+| 26 | BLACKBOX                 | Enable BlackBox logging                                                              |
+| 27 | FAILSAFE                 | Enter failsafe stage 2 manually                                                      |
+| 28 | AIRMODE                  | Alternative mixer and additional PID logic for more stable copter                    |
+| 29 | 3D                       | Enable 3D mode                                                                       |
+| 30 | FPV ANGLE MIX            | Apply yaw rotation relative to a FPV camera mounted at a preset angle                |
+| 31 | BLACKBOX ERASE           | Erase the contents of the onboard flash log chip (takes > 30 s)                      |
+| 32 | CAMERA CONTROL 1         | Control function 1 of the onboard camera (if supported)                              |
+| 33 | CAMERA CONTROL 2         | Control function 2 of the onboard camera (if supported)                              |
+| 34 | CAMERA CONTROL 3         | Control function 3 of the onboard camera (if supported)                              |
+| 35 | FLIP OVER AFTER CRASH    | Reverse the motors to flip over an upside down craft after a crash (DShot required)  |
+| 36 | BOXPREARM                | When arming, wait for this switch to be activated before actually arming             |
+| 37 | BEEP GPS SATELLITE COUNT | Use a number of beeps to indicate the number of GPS satellites found                 |
+| 39 | VTX PIT MODE             | Switch the VTX into pit mode (low output power, if supported)                        |
+| 40 | USER1                    | User defined switch 1. Intended to be used to control an arbitrary output with PINIO |
+| 41 | USER2                    | User defined switch 2. Intended to be used to control an arbitrary output with PINIO |
+| 42 | USER3                    | User defined switch 3. Intended to be used to control an arbitrary output with PINIO |
+| 43 | USER4                    | User defined switch 4. Intended to be used to control an arbitrary output with PINIO |
+| 44 | PID AUDIO                | Enable output of PID controller state as audio                                       |
+| 45 | PARALYZE                 | Permanently disable a crashed craft until it is power cycled                         |
+| 46 | GPS RESCUE               | Enable 'GPS Rescue' to return the craft to the location where it was last armed      |
+| 47 | ACRO TRAINER             | Enable 'acro trainer' angle limiting in acro mode                                    |
 
 ## Auto-leveled flight
 
@@ -57,29 +65,7 @@ In this mode, the "head" of the multicopter is always pointing to the same direc
 
 With this mode it is easier to control the multicopter, even fly it with the physical head towards you since the controls always respond the same. This is a friendly mode to new users of multicopters and can prevent losing the control when you don't know the head direction. 
 
-### GPS Return To Home
-
-WORK-IN-PROGRESS.  This mode is not reliable yet, please share your experiences with the developers.
-
-In this mode the aircraft attempts to return to the GPS position recorded when the aircraft was armed.
-
-This mode should be enabled in conjunction with Angle or Horizon modes and an Altitude hold mode.
-
-Requires a 3D GPS fix and minimum of 5 satellites in view.
-
-### GPS Position Hold
-
-WORK-IN-PROGRESS.  This mode is not reliable yet, please share your experiences with the developers.
-
-In this mode the aircraft attempts to stay at the same GPS position, as recorded when the mode is enabled.
-
-Disabling and re-enabling the mode will reset the GPS hold position.
-
-This mode should be enabled in conjunction with Angle or Horizon modes and an Altitude hold mode.
-
-Requires a 3D GPS fix and minimum of 5 satellites in view.
-
-## Airmode
+### Airmode
 
 In the standard mixer / mode, when the roll, pitch and yaw gets calculated and saturates a motor, all motors
 will be reduced equally. When motor goes below minimum it gets clipped off.
@@ -92,14 +78,14 @@ gliding and actobatics. But also the cornering / turns will be much tighter now 
 possible correction performed. Airmode can also be enabled to work at all times by always putting it on the
 same switch like your arm switch or you can enable/disable it in air. Additional things and benefits: Airmode
 will additionally fully enable Iterm at zero throttle. Note that there is still some protection on the ground
-when throttle zeroed (below min_check) and roll/pitch sticks centered. This is a basic protection to limit
+when throttle zeroed (below min\check) and roll/pitch sticks centered. This is a basic protection to limit
 motors spooling up on the ground. Also the Iterm will be reset above 70% of stick input in acro mode to prevent
 quick Iterm windups during finishes of rolls and flips, which will provide much cleaner and more natural stops
 of flips and rolls what again opens the ability to have higher I gains for some.
 Note that AIRMODE will also overrule motor stop function! It will basically also act as an idle up switch.
 
 
-## Auxillary Configuration
+## Auxiliary Configuration
 
 Spare auxillary receiver channels can be used to enable/disable modes.  Some modes can only be enabled this way.
 
@@ -134,4 +120,3 @@ aux 0 0 0 1700 2100
 ```
 
 You can display the AUX configuration by using the `aux` command with no arguments.
-

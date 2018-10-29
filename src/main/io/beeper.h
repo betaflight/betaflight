@@ -25,7 +25,7 @@
 #define BEEPER_GET_FLAG(mode) (1 << (mode - 1))
 
 #ifdef USE_DSHOT
-#define DSHOT_BEACON_GUARD_DELAY_US 2000000  // Time to separate dshot beacon and armining/disarming events
+#define DSHOT_BEACON_GUARD_DELAY_US 1200000  // Time to separate dshot beacon and armining/disarming events
                                              // to prevent interference with motor direction commands
 #endif
 
@@ -41,20 +41,21 @@ typedef enum {
     BEEPER_ARMING_GPS_FIX,          // Beep a special tone when arming the board and GPS has fix
     BEEPER_BAT_CRIT_LOW,            // Longer warning beeps when battery is critically low (repeats)
     BEEPER_BAT_LOW,                 // Warning beeps when battery is getting low (repeats)
-    BEEPER_GPS_STATUS,              // FIXME **** Disable beeper when connected to USB ****
-    BEEPER_RX_SET,                  // Beeps when aux channel is set for beep or beep sequence how many satellites has found if GPS enabled
+    BEEPER_GPS_STATUS,              // Use the number of beeps to indicate how many GPS satellites were found
+    BEEPER_RX_SET,                  // Beeps when aux channel is set for beep
     BEEPER_ACC_CALIBRATION,         // ACC inflight calibration completed confirmation
     BEEPER_ACC_CALIBRATION_FAIL,    // ACC inflight calibration failed
     BEEPER_READY_BEEP,              // Ring a tone when GPS is locked and ready
     BEEPER_MULTI_BEEPS,             // Internal value used by 'beeperConfirmationBeeps()'.
     BEEPER_DISARM_REPEAT,           // Beeps sounded while stick held in disarm position
-    BEEPER_ARMED,                   // Warning beeps when board is armed (repeats until board is disarmed or throttle is increased)
+    BEEPER_ARMED,                   // Warning beeps when board is armed with motors off when idle (repeats until board is disarmed or throttle is increased)
     BEEPER_SYSTEM_INIT,             // Initialisation beeps when board is powered on
     BEEPER_USB,                     // Some boards have beeper powered USB connected
     BEEPER_BLACKBOX_ERASE,          // Beep when blackbox erase completes
     BEEPER_CRASH_FLIP_MODE,         // Crash flip mode is active
     BEEPER_CAM_CONNECTION_OPEN,     // When the 5 key simulation stated
     BEEPER_CAM_CONNECTION_CLOSE,    // When the 5 key simulation stop
+    BEEPER_RC_SMOOTHING_INIT_FAIL,  // Warning beep pattern when armed and rc smoothing has not initialized filters
     BEEPER_ALL,                     // Turn ON or OFF all beeper conditions
     // BEEPER_ALL must remain at the bottom of this enum
 } beeperMode_e;
@@ -82,7 +83,9 @@ typedef enum {
     | BEEPER_GET_FLAG(BEEPER_BLACKBOX_ERASE) \
     | BEEPER_GET_FLAG(BEEPER_CRASH_FLIP_MODE) \
     | BEEPER_GET_FLAG(BEEPER_CAM_CONNECTION_OPEN) \
-    | BEEPER_GET_FLAG(BEEPER_CAM_CONNECTION_CLOSE) )
+    | BEEPER_GET_FLAG(BEEPER_CAM_CONNECTION_CLOSE) \
+    | BEEPER_GET_FLAG(BEEPER_RC_SMOOTHING_INIT_FAIL) \
+    )
 
 #define DSHOT_BEACON_ALLOWED_MODES ( \
     BEEPER_GET_FLAG(BEEPER_RX_LOST) \

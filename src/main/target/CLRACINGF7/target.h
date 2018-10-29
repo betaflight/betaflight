@@ -29,33 +29,28 @@
 #define BEEPER_PIN                  PB4
 #define BEEPER_INVERTED
 
-//define camera control
-#define CAMERA_CONTROL_PIN PB3
-
 #define USE_EXTI
-#define MPU_INT_EXTI            PC4
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC4
 #define USE_MPU_DATA_READY_SIGNAL
-//MPU-6000
+
 #define USE_ACC
-#define USE_ACC_SPI_MPU6000
 #define USE_GYRO
+
+//MPU-6000
+#define USE_ACC_SPI_MPU6000
 #define USE_GYRO_SPI_MPU6000
 
-#define GYRO_MPU6000_ALIGN      CW0_DEG
-#define ACC_MPU6000_ALIGN       CW0_DEG
-#define MPU6000_CS_PIN          PA4
-#define MPU6000_SPI_INSTANCE    SPI1
-
 // ICM-20602
-#define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
-#define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
 
-#define ACC_MPU6500_ALIGN       CW0_DEG
-#define GYRO_MPU6500_ALIGN      CW0_DEG
-#define MPU6500_CS_PIN          SPI1_NSS_PIN
-#define MPU6500_SPI_INSTANCE    SPI1
+#define GYRO_1_CS_PIN           PA4
+#define GYRO_1_SPI_INSTANCE     SPI1
+
+#define GYRO_1_ALIGN            CW0_DEG
+#define ACC_1_ALIGN             CW0_DEG
+
 
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI3
@@ -70,12 +65,10 @@
 //define use SD card
 
 #define USE_SDCARD
+#define USE_SDCARD_SPI
 #define SDCARD_DETECT_PIN                     PA8
 #define SDCARD_SPI_INSTANCE                 SPI2
 #define SDCARD_SPI_CS_PIN                       SPI2_NSS_PIN
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 422kHz
-// Divide to under 25MHz for normal operation:
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 8      // 27MHz
 #define SDCARD_DMA_STREAM_TX_FULL           DMA1_Stream4
 #define SDCARD_DMA_CHANNEL                  0
 
