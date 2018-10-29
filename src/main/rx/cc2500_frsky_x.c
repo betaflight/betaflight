@@ -283,12 +283,9 @@ void frSkyXSetRcData(uint16_t *rcData, const uint8_t *packet)
     c[7] = (uint16_t)((packet[20] << 4) & 0xFF0) | (packet[19] >> 4);
 
     for (unsigned i = 0; i < 8; i++) {
-        bool channelIsShifted = false;
-        if (c[i] & 0x800) {
-            channelIsShifted = true;
-        }
+        const bool channelIsShifted = c[i] & 0x800;
         const uint16_t channelValue = c[i] & 0x7FF;
-        rcData[channelIsShifted ? i + 8 : i] = channelValue * 2.0f / 3 + 860 - 64 * 2 / 3;
+        rcData[channelIsShifted ? i + 8 : i] = ((channelValue - 64) * 2 + 860 * 3) / 3;
     }
 }
 
