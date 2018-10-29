@@ -846,8 +846,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
         }
     } else {
         if (airmodeEnabled || throttle > 0.5f) {  // Only automatically adjust throttle when airmode enabled. Airmode logic is always active on high throttle
-            const float throttleLimitOffset = motorMixRange / 2.0f;
-            throttle = constrainf(throttle, 0.0f + throttleLimitOffset, 1.0f - throttleLimitOffset);
+            throttle = constrainf(throttle, -motorMixMin, 1.0f - motorMixMax);
         }
     }
 
