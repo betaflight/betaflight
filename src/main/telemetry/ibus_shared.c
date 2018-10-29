@@ -240,26 +240,14 @@ static uint16_t getMode()
     if (FLIGHT_MODE(ANGLE_MODE)) {
          flightMode = 0; //Stab
     }
-    if (FLIGHT_MODE(BARO_MODE)) {
-         flightMode = 2; //AltHold
-    }
     if (FLIGHT_MODE(PASSTHRU_MODE)) {
         flightMode = 3; //Auto
     }
     if (FLIGHT_MODE(HEADFREE_MODE) || FLIGHT_MODE(MAG_MODE)) {
         flightMode = 4; //Guided! (there in no HEAD, MAG so use Guided)
     }
-    if (FLIGHT_MODE(GPS_HOLD_MODE) && FLIGHT_MODE(BARO_MODE)) {
-        flightMode = 5; //Loiter
-    }
-    if (FLIGHT_MODE(GPS_HOME_MODE)) {
-        flightMode = 6; //RTL
-    }
     if (FLIGHT_MODE(HORIZON_MODE)) {
         flightMode = 7; //Circle! (there in no horizon so use Circle)
-    }
-    if (FLIGHT_MODE(GPS_HOLD_MODE)) {
-        flightMode = 8; //PosHold
     }
     if (FLIGHT_MODE(FAILSAFE_MODE)) {
         flightMode = 9; //Land

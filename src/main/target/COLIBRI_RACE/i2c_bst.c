@@ -153,14 +153,11 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXARM, "ARM;", 0 },
     { BOXANGLE, "ANGLE;", 1 },
     { BOXHORIZON, "HORIZON;", 2 },
-    { BOXBARO, "BARO;", 3 },
     //{ BOXVARIO, "VARIO;", 4 },
     { BOXMAG, "MAG;", 5 },
     { BOXHEADFREE, "HEADFREE;", 6 },
     { BOXHEADADJ, "HEADADJ;", 7 },
     { BOXCAMSTAB, "CAMSTAB;", 8 },
-    { BOXGPSHOME, "GPS HOME;", 10 },
-    { BOXGPSHOLD, "GPS HOLD;", 11 },
     { BOXPASSTHRU, "PASSTHRU;", 12 },
     { BOXBEEPERON, "BEEPER;", 13 },
     { BOXLEDLOW, "LEDLOW;", 15 },
@@ -294,13 +291,10 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             junk = 0;
             tmp = IS_ENABLED(FLIGHT_MODE(ANGLE_MODE)) << BOXANGLE |
                     IS_ENABLED(FLIGHT_MODE(HORIZON_MODE)) << BOXHORIZON |
-                    IS_ENABLED(FLIGHT_MODE(BARO_MODE)) << BOXBARO |
                     IS_ENABLED(FLIGHT_MODE(MAG_MODE)) << BOXMAG |
                     IS_ENABLED(FLIGHT_MODE(HEADFREE_MODE)) << BOXHEADFREE |
                     IS_ENABLED(IS_RC_MODE_ACTIVE(BOXHEADADJ)) << BOXHEADADJ |
                     IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCAMSTAB)) << BOXCAMSTAB |
-                    IS_ENABLED(FLIGHT_MODE(GPS_HOME_MODE)) << BOXGPSHOME |
-                    IS_ENABLED(FLIGHT_MODE(GPS_HOLD_MODE)) << BOXGPSHOLD |
                     IS_ENABLED(FLIGHT_MODE(PASSTHRU_MODE)) << BOXPASSTHRU |
                     IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBEEPERON)) << BOXBEEPERON |
                     IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLEDLOW)) << BOXLEDLOW |
@@ -863,7 +857,6 @@ bool writeFCModeToBST(void)
     tmp = IS_ENABLED(ARMING_FLAG(ARMED)) |
            IS_ENABLED(FLIGHT_MODE(ANGLE_MODE)) << 1 |
            IS_ENABLED(FLIGHT_MODE(HORIZON_MODE)) << 2 |
-           IS_ENABLED(FLIGHT_MODE(BARO_MODE)) << 3 |
            IS_ENABLED(FLIGHT_MODE(MAG_MODE)) << 4 |
            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << 5 |
            IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << 7;
