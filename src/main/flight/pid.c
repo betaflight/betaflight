@@ -117,8 +117,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
 {
     RESET_CONFIG(pidProfile_t, pidProfile,
         .pid = {
-            [PID_ROLL] =  { 46, 65, 25, 60 },
-            [PID_PITCH] = { 50, 75, 27, 60 },
+            [PID_ROLL] =  { 46, 65, 30, 60 },
+            [PID_PITCH] = { 50, 75, 32, 60 },
             [PID_YAW] =   { 45, 100, 0, 100 },
             [PID_LEVEL] = { 50, 50, 75, 0 },
             [PID_MAG] =   { 40, 0, 0, 0 },
@@ -1145,7 +1145,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
         // b = 1 and only c (feedforward weight) can be tuned (amount derivative on measurement or error).
 
         // -----calculate P component
-        pidData[axis].P = pidCoefficient[axis].Kp * errorRate * tpaFactor;
+        pidData[axis].P = pidCoefficient[axis].Kp * errorRate;
         if (axis == FD_YAW) {
             pidData[axis].P = ptermYawLowpassApplyFn((filter_t *) &ptermYawLowpass, pidData[axis].P);
         }
