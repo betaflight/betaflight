@@ -71,9 +71,7 @@
 #include "flight/failsafe.h"
 #include "flight/position.h"
 #include "flight/imu.h"
-#ifdef USE_ESC_SENSOR
 #include "flight/mixer.h"
-#endif
 #include "flight/pid.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
@@ -207,6 +205,7 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_NUMERICAL_VARIO,
     OSD_COMPASS_BAR,
     OSD_ANTI_GRAVITY,
+    OSD_MOTOR_DIAG,
     OSD_FLIP_ARROW,
 #ifdef USE_RTC_TIME
     OSD_RTC_DATETIME,
@@ -654,6 +653,20 @@ static bool osdDrawSingleElement(uint8_t item)
 
             break;
         }
+		
+    case OSD_MOTOR_DIAG:
+        if(areMotorsRunning()) {
+            int maxIdx = 0;
+            int i = 0;
+            for(; i < getMotorCount(); i++) {
+                if(motor[i] > motor[maxIdx]) {
+                    maxIdx = i;
+                }
+                buff[i] =  0x88 - scaleRange(motor[i], motorOutputLow, motorOutputHigh, 0, 8);
+            }
+            buff[i] = '\0';
+        }
+        break;
 
     case OSD_CRAFT_NAME:
         // This does not strictly support iterative updating if the craft name changes at run time. But since the craft name is not supposed to be changing this should not matter, and blanking the entire length of the craft name string on update will make it impossible to configure elements to be displayed on the right hand side of the craft name.

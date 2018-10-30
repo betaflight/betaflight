@@ -54,6 +54,7 @@ extern "C" {
     #include "sensors/battery.h"
 
     #include "rx/rx.h"
+    #include "flight/mixer.h"
 
     void osdRefresh(timeUs_t currentTimeUs);
     void osdFormatTime(char * buff, osd_timer_precision_e precision, timeUs_t time);
@@ -70,6 +71,10 @@ extern "C" {
     int16_t GPS_directionToHome;
     int32_t GPS_coord[2];
     gpsSolutionData_t gpsSol;
+    float motor[8];
+    float motorOutputHigh = 2047;
+    float motorOutputLow = 1000;
+
 
     acc_t acc;
     float accAverage[XYZ_AXIS_COUNT];
@@ -1052,7 +1057,9 @@ extern "C" {
         return false;
     }
 
+    float pidItermAccelerator(void) { return 1.0; }
+    uint8_t getMotorCount(void){ return 4; }
+    bool areMotorsRunning(void){ return true; }
     bool pidOsdAntiGravityActive(void) { return false; }
-
     bool failsafeIsActive(void) { return false; }
 }
