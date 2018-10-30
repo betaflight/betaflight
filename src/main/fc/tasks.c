@@ -254,6 +254,13 @@ void fcTasksInit(void)
         setTaskEnabled(TASK_ATTITUDE, true);
     }
 
+
+#ifdef USE_RANGEFINDER
+    if (sensors(SENSOR_RANGEFINDER)) {
+        setTaskEnabled(TASK_RANGEFINDER, featureIsEnabled(FEATURE_RANGEFINDER));
+    }
+#endif
+
     setTaskEnabled(TASK_RX, true);
 
     setTaskEnabled(TASK_DISPATCH, dispatchIsEnabled());
@@ -594,6 +601,15 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskName = "PINIOBOX",
         .taskFunc = pinioBoxUpdate,
         .desiredPeriod = TASK_PERIOD_HZ(20),
+        .staticPriority = TASK_PRIORITY_IDLE
+    },
+#endif
+
+#ifdef USE_RANGEFINDER
+    [TASK_RANGEFINDER] = {
+        .taskName = "RANGEFINDER",
+        .taskFunc = rangefinderUpdate,
+        .desiredPeriod = TASK_PERIOD_HZ(10),
         .staticPriority = TASK_PRIORITY_IDLE
     },
 #endif
