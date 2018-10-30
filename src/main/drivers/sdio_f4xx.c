@@ -1574,16 +1574,20 @@ void SD_Initialize_LL(DMA_Stream_TypeDef *dma)
     RCC->AHB1ENR |= RCC_AHB1ENR_GPIOCEN | RCC_AHB1ENR_GPIODEN;
 
     const IO_t d0 = IOGetByTag(IO_TAG(PC8));
+#ifndef USE_SDIO_1BIT
     const IO_t d1 = IOGetByTag(IO_TAG(PC9));
     const IO_t d2 = IOGetByTag(IO_TAG(PC10));
     const IO_t d3 = IOGetByTag(IO_TAG(PC11));
+#endif
     const IO_t clk = IOGetByTag(IO_TAG(PC12));
     const IO_t cmd = IOGetByTag(IO_TAG(PD2));
 
     IOInit(d0, OWNER_SDCARD, 0);
+#ifndef USE_SDIO_1BIT
     IOInit(d1, OWNER_SDCARD, 0);
     IOInit(d2, OWNER_SDCARD, 0);
     IOInit(d3, OWNER_SDCARD, 0);
+#endif
     IOInit(clk, OWNER_SDCARD, 0);
     IOInit(cmd, OWNER_SDCARD, 0);
 
@@ -1592,9 +1596,11 @@ void SD_Initialize_LL(DMA_Stream_TypeDef *dma)
 #define SDIO_CLK        IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_100MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
 
     IOConfigGPIOAF(d0, SDIO_DATA, GPIO_AF_SDIO);
+#ifndef USE_SDIO_1BIT
     IOConfigGPIOAF(d1, SDIO_DATA, GPIO_AF_SDIO);
     IOConfigGPIOAF(d2, SDIO_DATA, GPIO_AF_SDIO);
     IOConfigGPIOAF(d3, SDIO_DATA, GPIO_AF_SDIO);
+#endif
     IOConfigGPIOAF(clk, SDIO_CLK, GPIO_AF_SDIO);
     IOConfigGPIOAF(cmd, SDIO_CMD, GPIO_AF_SDIO);
 
@@ -1678,7 +1684,11 @@ bool SD_Init(void)
 	if(ErrorState == SD_OK)
 	{
 		// Enable wide operation
+#ifdef USE_SDIO_1BIT
+		ErrorState = SD_WideBusOperationConfig(SD_BUS_WIDE_1B);
+#else
 		ErrorState = SD_WideBusOperationConfig(SD_BUS_WIDE_4B);
+#endif
 
 		if (ErrorState == SD_OK && sdioConfig()->clockBypass) {
 			if (SD_HighSpeed()) {
