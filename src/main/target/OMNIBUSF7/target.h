@@ -223,6 +223,12 @@
 #define VBAT_ADC_PIN            PC3
 #define RSSI_ADC_PIN            PC5
 
+// Additional sensors ----------------------
+#define USE_RANGEFINDER
+#define USE_RANGEFINDER_HCSR04
+#define RANGEFINDER_HCSR04_TRIGGER_PIN     PB10 // TX3 for testing
+#define RANGEFINDER_HCSR04_ECHO_PIN        PB11 // RX3 for testing
+
 //DEFAULTS----------------------------------
 
 #define DEFAULT_FEATURES        (FEATURE_OSD)
