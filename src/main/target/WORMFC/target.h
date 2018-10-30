@@ -79,7 +79,7 @@
 #define USE_ACC
 #define USE_ACC_SPI_MPU6500
 #if defined(PIRXF4)
-#define ACC_1_ALIGN       CW180_DEG
+#define ACC_1_ALIGN       CW0_DEG
 #else
 #define ACC_1_ALIGN       CW180_DEG_FLIP
 #endif
@@ -89,7 +89,7 @@
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
 #if defined(PIRXF4)
-#define GYRO_1_ALIGN      CW180_DEG
+#define GYRO_1_ALIGN      CW0_DEG
 #else
 #define GYRO_1_ALIGN      CW180_DEG_FLIP
 #endif
