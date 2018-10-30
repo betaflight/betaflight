@@ -102,7 +102,7 @@ enum {
     ARMING_DELAYED_DISARMED = 0,
     ARMING_DELAYED_NORMAL = 1,
     ARMING_DELAYED_CRASHFLIP = 2,
-    ARMING_DELAYED_LAUNCH_CONTROL = 3
+    ARMING_DELAYED_LAUNCH_CONTROL = 3,
 };
 
 #define GYRO_WATCHDOG_DELAY 80 //  delay for gyro sync
@@ -154,10 +154,6 @@ const char * const osdLaunchControlModeNames[] = {
     "PITCHONLY",
     "FULL"
 };
-const char * const osdLaunchControlTriggerModeNames[] = {
-    "MULTIPLE",
-    "SINGLE"
-};
 #endif
 
 PG_REGISTER_WITH_RESET_TEMPLATE(throttleCorrectionConfig_t, throttleCorrectionConfig, PG_THROTTLE_CORRECTION_CONFIG, 0);
@@ -197,11 +193,9 @@ bool canUseLaunchControl(void)
         && (!featureIsEnabled(FEATURE_MOTOR_STOP) || airmodeIsEnabled())  // can't use when motors are stopped
         && !featureIsEnabled(FEATURE_3D) // pitch control is not 3D aware
         && (flightModeFlags == 0)) {     // don't want to use unless in acro mode
-        
         return true;
-    } else {
-        return false;
     }
+    return false;
 }
 #endif
 
@@ -714,7 +708,7 @@ bool processRx(timeUs_t currentTimeUs)
 
 #ifdef USE_LAUNCH_CONTROL
     if (ARMING_FLAG(ARMED)) {
-        if (launchControlActive && (throttlePercent > currentPidProfile->launchControlThrottlePct)) {
+        if (launchControlActive && (throttlePercent > currentPidProfile->launchControlThrottlePercent)) {
             // throttle limit trigger reached, launch triggered
             // reset the iterms as they may be at high values from holding the launch position
             launchControlState = LAUNCH_CONTROL_TRIGGERED;
@@ -726,7 +720,7 @@ bool processRx(timeUs_t currentTimeUs)
             // and the mode switch is turned off.
             // For trigger mode SINGLE we never reset the state and only a single
             // launch is allowed until a reboot.
-            if ((currentPidProfile->launchControlTriggerMode == LAUNCH_CONTROL_TRIGGER_MODE_MULTIPLE) && !IS_RC_MODE_ACTIVE(BOXLAUNCHCONTROL)) {
+            if (currentPidProfile->launchControlAllowTriggerReset && !IS_RC_MODE_ACTIVE(BOXLAUNCHCONTROL)) {
                 launchControlState = LAUNCH_CONTROL_DISABLED;
             }
         } else {

@@ -405,9 +405,6 @@ static const char * const lookupTableSdcardMode[] = {
 static const char * const lookupTableLaunchControlMode[] = {
     "NORMAL", "PITCHONLY", "FULL"
 };
-static const char * const lookupTableLaunchControlTriggerMode[] = {
-    "MULTIPLE", "SINGLE"
-};
 #endif
 
 #define LOOKUP_TABLE_ENTRY(name) { name, ARRAYLEN(name) }
@@ -512,7 +509,6 @@ const lookupTableEntry_t lookupTables[] = {
 #endif
 #ifdef USE_LAUNCH_CONTROL
     LOOKUP_TABLE_ENTRY(lookupTableLaunchControlMode),
-    LOOKUP_TABLE_ENTRY(lookupTableLaunchControlTriggerMode),
 #endif
 };
 
@@ -927,8 +923,8 @@ const clivalue_t valueTable[] = {
 
 #ifdef USE_LAUNCH_CONTROL
     { "launch_control_mode",        VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LAUNCH_CONTROL_MODE }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlMode) },
-    { "launch_trigger_mode",        VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LAUNCH_CONTROL_TRIGGER_MODE }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlTriggerMode) },
-    { "launch_trigger_throttle_percent", VAR_UINT8 | PROFILE_VALUE,  .config.minmax = { 0, 50 }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlThrottlePct) },
+    { "launch_trigger_allow_reset", VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlAllowTriggerReset) },
+    { "launch_trigger_throttle_percent", VAR_UINT8 | PROFILE_VALUE,  .config.minmax = { 0, 50 }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlThrottlePercent) },
     { "launch_angle_limit",         VAR_UINT8 | PROFILE_VALUE,  .config.minmax = { 0, 80 }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlAngleLimit) },
     { "launch_control_gain",        VAR_UINT8 | PROFILE_VALUE,  .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlGain) },
 #endif

@@ -169,10 +169,10 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .dterm_filter_type = FILTER_PT1,
         .dterm_filter2_type = FILTER_PT1,
         .launchControlMode = LAUNCH_CONTROL_MODE_NORMAL,
-        .launchControlThrottlePct = 20,
+        .launchControlThrottlePercent = 20,
         .launchControlAngleLimit = 0,
         .launchControlGain = 40,
-        .launchControlTriggerMode = LAUNCH_CONTROL_TRIGGER_MODE_MULTIPLE,
+        .launchControlAllowTriggerReset = true,
     );
 #ifdef USE_DYN_LPF
     pidProfile->dterm_lowpass_hz = 120;
@@ -1019,7 +1019,7 @@ static float applyLaunchControl(int axis, const rollAndPitchTrims_t *angleTrim)
 
     // If ACC is enabled and a limit angle is set, then try to limit forward tilt
     // to that angle and slow down the rate as the limit is approached to reduce overshoot
-    if ((axis == FD_PITCH) && (launchControlAngleLimit > 0) && (ret > 0.0f)) {
+    if ((axis == FD_PITCH) && (launchControlAngleLimit > 0) && (ret > 0)) {
         const float currentAngle = (attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f;
         if (currentAngle >= launchControlAngleLimit) {
             ret = 0.0f;

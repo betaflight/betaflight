@@ -152,10 +152,10 @@ typedef struct pidProfile_s {
     uint16_t dyn_lpf_dterm_max_hz;
     uint8_t  dyn_lpf_dterm_idle;
     uint8_t launchControlMode;              // Whether launch control is limited to pitch only (launch stand or top-mount) or all axes (on battery)
-    uint8_t launchControlThrottlePct;       // Throttle percentage to trigger launch for launch control
+    uint8_t launchControlThrottlePercent;   // Throttle percentage to trigger launch for launch control
     uint8_t launchControlAngleLimit;        // Optional launch control angle limit (requires ACC)
     uint8_t launchControlGain;              // Iterm gain used while launch control is active
-    uint8_t launchControlTriggerMode;       // Controls trigger behavior and whether the trigger can be reset
+    uint8_t launchControlAllowTriggerReset; // Controls trigger behavior and whether the trigger can be reset
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles);

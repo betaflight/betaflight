@@ -47,15 +47,8 @@ typedef enum {
     LAUNCH_CONTROL_MODE_COUNT // must be the last element
 } launchControlMode_e;
 
-typedef enum {
-    LAUNCH_CONTROL_TRIGGER_MODE_MULTIPLE = 0,
-    LAUNCH_CONTROL_TRIGGER_MODE_SINGLE,
-    LAUNCH_CONTROL_TRIGGER_MODE_COUNT  // must be the last element
-} launchControlTriggerMode_e;
-
 #ifdef USE_LAUNCH_CONTROL
 extern const char * const osdLaunchControlModeNames[LAUNCH_CONTROL_MODE_COUNT];
-extern const char * const osdLaunchControlTriggerModeNames[LAUNCH_CONTROL_TRIGGER_MODE_COUNT];
 #endif
 
 PG_DECLARE(throttleCorrectionConfig_t, throttleCorrectionConfig);

@@ -246,8 +246,8 @@ static CMS_Menu cmsx_menuRateProfile = {
 
 #ifdef USE_LAUNCH_CONTROL
 static uint8_t cmsx_launchControlMode;
-static uint8_t cmsx_launchControlTriggerMode;
-static uint8_t cmsx_launchControlThrottlePct;
+static uint8_t cmsx_launchControlAllowTriggerReset;
+static uint8_t cmsx_launchControlThrottlePercent;
 static uint8_t cmsx_launchControlAngleLimit;
 static uint8_t cmsx_launchControlGain;
 
@@ -256,8 +256,8 @@ static long cmsx_launchControlOnEnter(void)
     const pidProfile_t *pidProfile = pidProfiles(pidProfileIndex);
     
     cmsx_launchControlMode  = pidProfile->launchControlMode;
-    cmsx_launchControlTriggerMode  = pidProfile->launchControlTriggerMode;
-    cmsx_launchControlThrottlePct  = pidProfile->launchControlThrottlePct;
+    cmsx_launchControlAllowTriggerReset  = pidProfile->launchControlAllowTriggerReset;
+    cmsx_launchControlThrottlePercent  = pidProfile->launchControlThrottlePercent;
     cmsx_launchControlAngleLimit  = pidProfile->launchControlAngleLimit;
     cmsx_launchControlGain  = pidProfile->launchControlGain;
 
@@ -271,8 +271,8 @@ static long cmsx_launchControlOnExit(const OSD_Entry *self)
     pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
 
     pidProfile->launchControlMode = cmsx_launchControlMode;
-    pidProfile->launchControlTriggerMode = cmsx_launchControlTriggerMode;
-    pidProfile->launchControlThrottlePct = cmsx_launchControlThrottlePct;
+    pidProfile->launchControlAllowTriggerReset = cmsx_launchControlAllowTriggerReset;
+    pidProfile->launchControlThrottlePercent = cmsx_launchControlThrottlePercent;
     pidProfile->launchControlAngleLimit = cmsx_launchControlAngleLimit;
     pidProfile->launchControlGain = cmsx_launchControlGain;
 
@@ -283,10 +283,10 @@ static OSD_Entry cmsx_menuLaunchControlEntries[] = {
     { "-- LAUNCH CONTROL --", OME_Label, NULL, pidProfileIndexString, 0 },
 
     { "MODE",             OME_TAB,   NULL, &(OSD_TAB_t)   { &cmsx_launchControlMode, LAUNCH_CONTROL_MODE_COUNT - 1, osdLaunchControlModeNames}, 0 },
-    { "TRIGGER MODE",     OME_TAB,   NULL, &(OSD_TAB_t)   { &cmsx_launchControlTriggerMode, LAUNCH_CONTROL_TRIGGER_MODE_COUNT - 1, osdLaunchControlTriggerModeNames}, 0 },
-    { "TRIGGER THROTTLE", OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_launchControlThrottlePct, 0,  50, 1 } , 0 },
-    { "ANGLE LIMIT",      OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_launchControlAngleLimit,  0,  80, 1 } , 0 },
-    { "ITERM GAIN",       OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_launchControlGain,        0, 200, 1 } , 0 },
+    { "ALLOW RESET",      OME_Bool,  NULL, &cmsx_launchControlAllowTriggerReset, 0 },
+    { "TRIGGER THROTTLE", OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_launchControlThrottlePercent, 0,  50, 1 } , 0 },
+    { "ANGLE LIMIT",      OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_launchControlAngleLimit,      0,  80, 1 } , 0 },
+    { "ITERM GAIN",       OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_launchControlGain,            0, 200, 1 } , 0 },
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
 };

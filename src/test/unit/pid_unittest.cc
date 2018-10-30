@@ -64,6 +64,9 @@ extern "C" {
     gyro_t gyro;
     attitudeEulerAngles_t attitude;
 
+    bool unitLaunchControlActive = false;
+    launchControlMode_e unitLaunchControlMode = LAUNCH_CONTROL_MODE_NORMAL;
+
     float getThrottlePIDAttenuation(void) { return simulatedThrottlePIDAttenuation; }
     float getMotorMixRange(void) { return simulatedMotorMixRange; }
     float getSetpointRate(int axis) { return simulatedSetpointRate[axis]; }
@@ -73,7 +76,7 @@ extern "C" {
     bool gyroOverflowDetected(void) { return false; }
     float getRcDeflection(int axis) { return simulatedRcDeflection[axis]; }
     void beeperConfirmationBeeps(uint8_t) { }
-    bool isLaunchControlActive() {return false; }
+    bool isLaunchControlActive(void) {return unitLaunchControlActive; }
 }
 
 pidProfile_t *pidProfile;
@@ -128,6 +131,8 @@ void setDefaultTestSettings(void) {
     pidProfile->iterm_relax_cutoff = 11,
     pidProfile->iterm_relax_type = ITERM_RELAX_SETPOINT,
     pidProfile->abs_control_gain = 0,
+    pidProfile->launchControlMode = LAUNCH_CONTROL_MODE_NORMAL,
+    pidProfile->launchControlGain = 40,
 
     gyro.targetLooptime = 4000;
 }
@@ -160,6 +165,8 @@ void resetTest(void) {
     attitude.values.yaw = 0;
 
     flightModeFlags = 0;
+    unitLaunchControlActive = false;
+    pidProfile->launchControlMode = unitLaunchControlMode;
     pidInit(pidProfile);
 
     // Run pidloop for a while after reset
@@ -652,4 +659,119 @@ TEST(pidControllerTest, testItermRotationHandling) {
     EXPECT_FLOAT_EQ(pidData[FD_ROLL].I, 10);
     ASSERT_NEAR(860.37, pidData[FD_PITCH].I, calculateTolerance(860.37));
     ASSERT_NEAR(1139.6, pidData[FD_YAW].I, calculateTolerance(1139.6));
+}
+
+TEST(pidControllerTest, testLaunchControl) {
+    // The launchControlGain is indirectly tested since when launch control is active the
+    // the gain overrides the PID settings. If the logic to use launchControlGain wasn't
+    // working then any I calculations would be incorrect.
+
+    resetTest();
+    unitLaunchControlActive = true;
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+
+    // test that feedforward and D are disabled (always zero) when launch control is active
+    // set initial state
+    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+
+    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].F);
+    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].F);
+    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].F);
+    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].D);
+    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
+    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].D);
+
+    // Move the sticks to induce feedforward
+    setStickPosition(FD_ROLL, 0.5f);
+    setStickPosition(FD_PITCH, -0.5f);
+    setStickPosition(FD_YAW, -0.5f);
+
+    // add gyro activity to induce D
+    gyro.gyroADCf[FD_ROLL] = -1000;
+    gyro.gyroADCf[FD_PITCH] = 1000;
+    gyro.gyroADCf[FD_YAW] = -1000;
+
+    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+
+    // validate that feedforwad is still 0
+    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].F);
+    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].F);
+    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].F);
+
+    // validate that D is still 0
+    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].D);
+    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
+    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].D);
+
+    // test NORMAL mode - expect P/I on roll and pitch, P on yaw but I == 0
+    unitLaunchControlMode = LAUNCH_CONTROL_MODE_NORMAL;
+    resetTest();
+    unitLaunchControlActive = true;
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+
+    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+
+    gyro.gyroADCf[FD_ROLL] = -20;
+    gyro.gyroADCf[FD_PITCH] = 20;
+    gyro.gyroADCf[FD_YAW] = -20;
+    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+
+    ASSERT_NEAR(25.62,  pidData[FD_ROLL].P,  calculateTolerance(25.62));
+    ASSERT_NEAR(1.56,   pidData[FD_ROLL].I,  calculateTolerance(1.56));
+    ASSERT_NEAR(-37.15, pidData[FD_PITCH].P, calculateTolerance(-37.15));
+    ASSERT_NEAR(-1.56,  pidData[FD_PITCH].I, calculateTolerance(-1.56));
+    ASSERT_NEAR(44.84,  pidData[FD_YAW].P,   calculateTolerance(44.84));
+    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
+
+    // test PITCHONLY mode - expect P/I only on pitch; I cannot go negative
+    unitLaunchControlMode = LAUNCH_CONTROL_MODE_PITCHONLY;
+    resetTest();
+    unitLaunchControlActive = true;
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+
+    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+
+    // first test that pitch I is prevented from going negative
+    gyro.gyroADCf[FD_ROLL] = 0;
+    gyro.gyroADCf[FD_PITCH] = 20;
+    gyro.gyroADCf[FD_YAW] = 0;
+    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+
+    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].I);
+
+    gyro.gyroADCf[FD_ROLL] = 20;
+    gyro.gyroADCf[FD_PITCH] = -20;
+    gyro.gyroADCf[FD_YAW] = 20;
+    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+
+    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].P);
+    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].I);
+    ASSERT_NEAR(37.15, pidData[FD_PITCH].P, calculateTolerance(37.15));
+    ASSERT_NEAR(1.56,  pidData[FD_PITCH].I, calculateTolerance(1.56));
+    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
+    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
+
+    // test FULL mode - expect P/I on all axes
+    unitLaunchControlMode = LAUNCH_CONTROL_MODE_FULL;
+    resetTest();
+    unitLaunchControlActive = true;
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+
+    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+
+    gyro.gyroADCf[FD_ROLL] = -20;
+    gyro.gyroADCf[FD_PITCH] = 20;
+    gyro.gyroADCf[FD_YAW] = -20;
+    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+
+    ASSERT_NEAR(25.62,  pidData[FD_ROLL].P,  calculateTolerance(25.62));
+    ASSERT_NEAR(1.56,   pidData[FD_ROLL].I,  calculateTolerance(1.56));
+    ASSERT_NEAR(-37.15, pidData[FD_PITCH].P, calculateTolerance(-37.15));
+    ASSERT_NEAR(-1.56,  pidData[FD_PITCH].I, calculateTolerance(-1.56));
+    ASSERT_NEAR(44.84,  pidData[FD_YAW].P,   calculateTolerance(44.84));
+    ASSERT_NEAR(1.56,   pidData[FD_YAW].I,  calculateTolerance(1.56));
 }
