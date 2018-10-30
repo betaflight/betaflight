@@ -343,6 +343,7 @@ int32_t getSensorValue(uint8_t sensor)
         break;
 #endif
 
+#ifdef USE_GPS
     case EX_GPS_SATS:
         return gpsSol.numSat;
     break;
@@ -374,6 +375,7 @@ int32_t getSensorValue(uint8_t sensor)
     case EX_GPS_ALTITUDE:
         return gpsSol.llh.altCm;
     break;
+#endif
 
     case EX_GFORCE_X:
        return (int16_t)(((float)acc.accADC[0] / acc.dev.acc_1G) * 1000);
