@@ -316,3 +316,47 @@ These receivers are reported to work with i-bus telemetry:
 
 
 Note that the FlySky/Turnigy FS-iA4B 4-Channel Receiver (http://www.flysky-cn.com/products_detail/productId=46.html) seems to work but has a bug that might lose the binding, DO NOT FLY the FS-iA4B!
+
+
+## Jeti EX Bus telemetry
+
+If telemetry is to be used, only the telemetry feature needs to be activated.
+The telemetry names will be transmitted for the first 5-10 seconds.
+
+The following values are available:
+
+| Name            | Unit|
+| --------------- | ----|
+| Voltage         | [V]|
+| Current         | [A]|
+| Altitude        | [m]|
+| Capacity        | [mAh]|
+| Power           | [W]|
+| Roll angle      | [°]|
+| Pitch angle     | [°]|
+| Heading         | [°]|
+| Vario           | [m/s]|
+| GPS Sats        | [1]|
+| GPS Long        | |
+| GPS Lat         | |
+| GPS Speed       | [m/s]|
+| GPS H-Distance  | [m]|
+| GPS H-Direction | [°]|
+| GPS Heading     | [°]|
+| GPS Altitude    | [m]|
+| G-Force X       | |
+| G-Force Y       | |
+| G-Force Z       | |
+
+The telemetry values that are transmitted depend on whether a suitable sensor is available.
+
+| Value                                       | Sensor |
+| ------------------------------------------- | ------ |
+| Voltage                                     | Voltage measurement|
+| Current                                     | Current measurement|
+| Capacity and Power                          | Voltage & Current Measurement|
+| Heading                                     | Magnetometer|
+| Altitude and Vario                          | Barometer|
+| Roll angle, pitch angle and G-Froce X, Y, Z | ACC|
+| GPS Sats, GPS...                            | GPS|
+
