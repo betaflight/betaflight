@@ -71,7 +71,8 @@ typedef enum {
 typedef enum {
     RESCUE_HEALTHY,
     RESCUE_FLYAWAY,
-    RESCUE_CRASH_DETECTED,
+    RESCUE_CRASH_FLIP_DETECTED,
+    RESCUE_STALLED,
     RESCUE_TOO_CLOSE
 } rescueFailureState_e;
 
@@ -253,6 +254,8 @@ static void rescueAttainPosition()
         setBearing(rescueState.sensor.directionToHome);
     }
 
+    DEBUG_SET(DEBUG_RTH, 3, rescueState.failure); //Failure can change with no new GPS Data
+
     if (!newGPSData) {
         return;
     }
@@ -296,7 +299,6 @@ static void rescueAttainPosition()
     DEBUG_SET(DEBUG_RTH, 0, rescueThrottle);
     DEBUG_SET(DEBUG_RTH, 1, gpsRescueAngle[AI_PITCH]);
     DEBUG_SET(DEBUG_RTH, 2, altitudeAdjustment);
-    DEBUG_SET(DEBUG_RTH, 3, rescueState.failure);
 }
 
 static void performSanityChecks()
@@ -327,7 +329,7 @@ static void performSanityChecks()
 
     // Check if crash recovery mode is active, disarm if so.
     if (crashRecoveryModeActive()) {
-        rescueState.failure = RESCUE_CRASH_DETECTED;
+        rescueState.failure = RESCUE_CRASH_FLIP_DETECTED;
     }
 
     //  Things that should run at a low refresh rate (such as flyaway detection, etc)
@@ -345,7 +347,7 @@ static void performSanityChecks()
     secondsStalled = constrain(secondsStalled + (rescueState.sensor.groundSpeed < 150) ? 1 : -1, -10, 10);
 
     if (secondsStalled == 10) {
-        rescueState.failure = RESCUE_CRASH_DETECTED;
+        rescueState.failure = RESCUE_STALLED;
     }
 
     secondsLowSats = constrain(secondsLowSats + (rescueState.sensor.numSat < gpsRescueConfig()->minSats) ? 1 : -1, -5, 5);
