@@ -69,6 +69,10 @@ PG_REGISTER_WITH_RESET_TEMPLATE(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 0);
 #ifndef TARGET_DEFAULT_MIXER
 #define TARGET_DEFAULT_MIXER    MIXER_QUADX
 #endif
+
+#define DYN_LPF_THROTTLE_STEPS           100
+#define DYN_LPF_THROTTLE_UPDATE_DELAY_US 5000 // minimum of 5ms between updates
+
 PG_RESET_TEMPLATE(mixerConfig_t, mixerConfig,
     .mixerMode = TARGET_DEFAULT_MIXER,
     .yaw_motors_reversed = false,
@@ -745,13 +749,28 @@ void applyMotorStop(void)
     }
 }
 
-FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensation)
-{
 #ifdef USE_DYN_LPF
-#define DYN_LPF_THROTTLE_STEPS 100
+void updateDynLpfCutoffs(timeUs_t currentTimeUs, float throttle)
+{
+    static timeUs_t lastDynLpfUpdateUs = 0;
     static int dynLpfPreviousQuantizedThrottle = -1;  // to allow an initial zero throttle to set the filter cutoff
+
+    if (cmpTimeUs(currentTimeUs, lastDynLpfUpdateUs) >= DYN_LPF_THROTTLE_UPDATE_DELAY_US) {
+        const int quantizedThrottle = lrintf(throttle * DYN_LPF_THROTTLE_STEPS); // quantize the throttle reduce the number of filter updates
+        if (quantizedThrottle != dynLpfPreviousQuantizedThrottle) {
+            // scale the quantized value back to the throttle range so the filter cutoff steps are repeatable
+            const float dynLpfThrottle = (float)quantizedThrottle / DYN_LPF_THROTTLE_STEPS;
+            dynLpfGyroUpdate(dynLpfThrottle);
+            dynLpfDTermUpdate(dynLpfThrottle);
+            dynLpfPreviousQuantizedThrottle = quantizedThrottle;
+            lastDynLpfUpdateUs = currentTimeUs;
+        }
+    }
+}
 #endif
 
+FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensation)
+{
     if (isFlipOverAfterCrashMode()) {
         applyFlipOverAfterCrashModeToMotors();
         return;
@@ -820,15 +839,9 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
     }
 
     pidUpdateAntiGravityThrottleFilter(throttle);
+
 #ifdef USE_DYN_LPF
-    const int quantizedThrottle = lrintf(throttle * DYN_LPF_THROTTLE_STEPS); // quantize the throttle reduce the number of filter updates
-    if (quantizedThrottle != dynLpfPreviousQuantizedThrottle) {
-        // scale the quantized value back to the throttle range so the filter cutoff steps are repeatable
-        const float dynLpfThrottle = (float)quantizedThrottle / DYN_LPF_THROTTLE_STEPS;
-        dynLpfGyroUpdate(dynLpfThrottle);
-        dynLpfDTermUpdate(dynLpfThrottle);
-        dynLpfPreviousQuantizedThrottle = quantizedThrottle;
-    }
+    updateDynLpfCutoffs(currentTimeUs, throttle);
 #endif
 
 #if defined(USE_THROTTLE_BOOST)
