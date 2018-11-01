@@ -26,7 +26,7 @@ Standard 30 * 30 mm size
 Type|Description
 ---|---
 MCU|STM32F405
-IMU|ICM-20689
+IMU|available with MPU6000 or ICM-20689
 IMU Interrupt|yes
 Motor outputs|up to 8
 Barometer|optional
