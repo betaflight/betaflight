@@ -94,7 +94,6 @@
 #define USE_MAG
 #define USE_MAG_HMC5883
 #define USE_MAG_QMC5883
-#define USE_MAG_LIS3MDL
 
 // *************** SPI2 OSD ***********************
 
@@ -112,7 +111,6 @@
 // *************** SPI3 SD BLACKBOX****************
 
 #define USE_SDCARD
-#define USE_SDCARD_SPI
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
 #define USE_SPI_DEVICE_3
@@ -125,6 +123,11 @@
 
 #define SDCARD_DMA_STREAM_TX_FULL           DMA1_Stream5
 #define SDCARD_DMA_CHANNEL                  0
+
+// SPI3 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
+#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 328kHz
+// Divide to under 25MHz for normal operation:
+#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     4 // 21MHz
 
 // *************** UART *****************************
 
