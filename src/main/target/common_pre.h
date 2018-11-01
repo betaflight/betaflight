@@ -229,4 +229,5 @@
 #define USE_HOTT_TEXTMODE
 #define USE_LED_STRIP
 #define USE_VARIO
+#define USE_RX_LINK_QUALITY_INFO
 #endif
