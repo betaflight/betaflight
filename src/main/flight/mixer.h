@@ -36,8 +36,7 @@
 #define DSHOT_DISARM_COMMAND      0
 #define DSHOT_MIN_THROTTLE       48
 #define DSHOT_MAX_THROTTLE     2047
-#define DSHOT_3D_DEADBAND_LOW  1047
-#define DSHOT_3D_DEADBAND_HIGH 1048
+#define DSHOT_3D_FORWARD_MIN_THROTTLE 1048
 
 // Note: this is called MultiType/MULTITYPE_* in baseflight.
 typedef enum mixerMode
