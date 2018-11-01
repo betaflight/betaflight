@@ -234,6 +234,20 @@ static void setBearing(int16_t desiredHeading)
 
 static void rescueAttainPosition()
 {
+    // Speed and altitude controller internal variables
+    static float previousSpeedError = 0;
+    static int16_t speedIntegral = 0;
+    static float previousAltitudeError = 0;
+    static int16_t altitudeIntegral = 0;
+
+    if (rescueState.phase == RESCUE_INITIALIZE) {
+        // Initialize internal variables each time GPS Rescue is started
+        previousSpeedError = 0;
+        speedIntegral = 0;
+        previousAltitudeError = 0;
+        altitudeIntegral = 0;
+    }
+
     // Point to home if that is in our intent
     if (rescueState.intent.crosstrack) {
         setBearing(rescueState.sensor.directionToHome);
@@ -246,9 +260,6 @@ static void rescueAttainPosition()
     /**
         Speed controller
     */
-    static float previousSpeedError = 0;
-    static int16_t speedIntegral = 0;
-
     const int16_t speedError = (rescueState.intent.targetGroundspeed - rescueState.sensor.groundSpeed) / 100;
     const int16_t speedDerivative = speedError - previousSpeedError;
 
@@ -265,9 +276,6 @@ static void rescueAttainPosition()
     /**
         Altitude controller
     */
-    static float previousAltitudeError = 0;
-    static int16_t altitudeIntegral = 0;
-
     const int16_t altitudeError = (rescueState.intent.targetAltitudeCm - rescueState.sensor.currentAltitudeCm) / 100; // Error in meters
     const int16_t altitudeDerivative = altitudeError - previousAltitudeError;
 
@@ -293,9 +301,19 @@ static void rescueAttainPosition()
 
 static void performSanityChecks()
 {
+    static uint32_t previousTimeUs = 0; // Last time Stalled/LowSat was checked
+    static int8_t secondsStalled = 0; // Stalled movement detection
+    static int8_t secondsLowSats = 0; // Minimum sat detection
+
     if (rescueState.phase == RESCUE_IDLE) {
         rescueState.failure = RESCUE_HEALTHY;
-
+        return;
+    } else if (rescueState.phase == RESCUE_INITIALIZE) {
+        // Initialize internal variables each time GPS Rescue is started
+        const uint32_t currentTimeUs = micros();
+        previousTimeUs = currentTimeUs;
+        secondsStalled = 0;
+        secondsLowSats = 0;
         return;
     }
 
@@ -315,8 +333,6 @@ static void performSanityChecks()
     //  Things that should run at a low refresh rate (such as flyaway detection, etc)
     //  This runs at ~1hz
 
-    static uint32_t previousTimeUs;
-
     const uint32_t currentTimeUs = micros();
     const uint32_t dTime = currentTimeUs - previousTimeUs;
 
@@ -326,21 +342,15 @@ static void performSanityChecks()
 
     previousTimeUs = currentTimeUs;
 
-     // Stalled movement detection
-    static int8_t gsI = 0;
+    secondsStalled = constrain(secondsStalled + (rescueState.sensor.groundSpeed < 150) ? 1 : -1, -10, 10);
 
-    gsI = constrain(gsI + (rescueState.sensor.groundSpeed < 150) ? 1 : -1, -10, 10);
-
-    if (gsI == 10) {
+    if (secondsStalled == 10) {
         rescueState.failure = RESCUE_CRASH_DETECTED;
     }
 
-    // Minimum sat detection
-    static int8_t msI = 0;
+    secondsLowSats = constrain(secondsLowSats + (rescueState.sensor.numSat < gpsRescueConfig()->minSats) ? 1 : -1, -5, 5);
 
-    msI = constrain(msI + (rescueState.sensor.numSat < gpsRescueConfig()->minSats) ? 1 : -1, -5, 5);
-
-    if (msI == 5) {
+    if (secondsLowSats == 5) {
         rescueState.failure = RESCUE_FLYAWAY;
     }
 }
@@ -382,6 +392,8 @@ void updateGPSRescueState(void)
         rescueStop();
     } else if (FLIGHT_MODE(GPS_RESCUE_MODE) && rescueState.phase == RESCUE_IDLE) {
         rescueStart();
+        rescueAttainPosition(); // Initialize
+        performSanityChecks(); // Initialize
     }
 
     rescueState.isFailsafe = failsafeIsActive();
