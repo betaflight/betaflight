@@ -1,4 +1,4 @@
-# Board - Matek F405-CTR
+# Board - MATEKSYS F722-SE
 
 Full details on the MATEKSYS F722-SE can be found on the Matek Website: [mateksys.com/?portfolio=f722-se](http://www.mateksys.com/?portfolio=f722-se). Betaflight Target: `MATEKF722SE`
 
