@@ -740,7 +740,11 @@ static void detectAndSetCrashRecovery(
 {
     // if crash recovery is on and accelerometer enabled and there is no gyro overflow, then check for a crash
     // no point in trying to recover if the crash is so severe that the gyro overflows
-    if ((crash_recovery || FLIGHT_MODE(GPS_RESCUE_MODE)) && !gyroOverflowDetected()) {
+    if ((crash_recovery || FLIGHT_MODE(GPS_RESCUE_MODE)) && !gyroOverflowDetected()
+#ifdef USE_GPS_RESCUE
+        && !gpsRescueInStartup(currentTimeUs)
+#endif
+        ) {
         if (ARMING_FLAG(ARMED)) {
             if (getMotorMixRange() >= 1.0f && !inCrashRecoveryMode
                 && ABS(delta) > crashDtermThreshold

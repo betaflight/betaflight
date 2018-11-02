@@ -112,6 +112,7 @@ typedef struct {
 
 #define GPS_RESCUE_MAX_YAW_RATE       360  // deg/sec max yaw rate
 #define GPS_RESCUE_RATE_SCALE_DEGREES 45   // Scale the commanded yaw rate when the error is less then this angle
+#define GPS_RESCUE_INITIALIZE_DELAY_US 1000000  // 1 second - used to prevent crash recovery for being triggered prematurely
 
 PG_REGISTER_WITH_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 1);
 
@@ -147,6 +148,7 @@ uint32_t      throttleSamples = 0;
 static bool newGPSData = false;
 
 rescueState_s rescueState;
+static timeUs_t gpsRescueInitTimeUs = 0;
 
 /*
  If we have new GPS data, update home heading
@@ -423,6 +425,7 @@ void updateGPSRescueState(void)
         }
 
         rescueState.phase = RESCUE_ATTAIN_ALT;
+        gpsRescueInitTimeUs = micros();
         FALLTHROUGH;
     case RESCUE_ATTAIN_ALT:
         // Get to a safe altitude at a low velocity ASAP
@@ -522,6 +525,14 @@ float gpsRescueGetThrottle(void)
 bool gpsRescueIsConfigured(void)
 {
     return failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE || isModeActivationConditionPresent(BOXGPSRESCUE);
+}
+
+bool gpsRescueInStartup(timeUs_t currentTimeUs)
+{
+    if (FLIGHT_MODE(GPS_RESCUE_MODE) && (currentTimeUs - gpsRescueInitTimeUs < GPS_RESCUE_INITIALIZE_DELAY_US)) {
+        return true;
+    }
+    return false;
 }
 #endif
 
