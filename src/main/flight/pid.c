@@ -109,6 +109,8 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 
 #define ANTI_GRAVITY_THROTTLE_FILTER_CUTOFF 15  // The anti gravity throttle highpass filter cutoff
 
+#define CRASH_RECOVERY_DETECTION_DELAY_US 1000000  // 1 second delay before crash recovery detection is active after entering a self-level mode
+
 PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 5);
 
 void resetPidProfile(pidProfile_t *pidProfile)
@@ -1041,6 +1043,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
 {
     static float previousGyroRateDterm[XYZ_AXIS_COUNT];
     static float previousPidSetpoint[XYZ_AXIS_COUNT];
+    static timeUs_t levelModeStartTimeUs = 0;
 
     const float tpaFactor = getThrottlePIDAttenuation();
 
@@ -1049,6 +1052,17 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
 #endif
 
     const bool launchControlActive = isLaunchControlActive();
+    const bool levelModeActive = FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE) || FLIGHT_MODE(GPS_RESCUE_MODE);
+
+    // keep track of when we entered a self-level mode so that we can
+    // add a guard time before crash recovery can activate
+    if (levelModeActive) {
+        if (levelModeStartTimeUs == 0) {
+            levelModeStartTimeUs = currentTimeUs;
+        }
+    } else {
+        levelModeStartTimeUs = 0;
+    }
 
     // Dynamic i component,
     if ((antiGravityMode == ANTI_GRAVITY_SMOOTH) && antiGravityEnabled) {
@@ -1081,7 +1095,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
             currentPidSetpoint = accelerationLimit(axis, currentPidSetpoint);
         }
         // Yaw control is GYRO based, direct sticks control is applied to rate PID
-        if ((FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE) || FLIGHT_MODE(GPS_RESCUE_MODE)) && axis != FD_YAW) {
+        if (levelModeActive && (axis != FD_YAW)) {
             currentPidSetpoint = pidLevel(axis, pidProfile, angleTrim, currentPidSetpoint);
         }
 
@@ -1152,7 +1166,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
             const float delta =
                 - (gyroRateDterm[axis] - previousGyroRateDterm[axis]) * pidFrequency;
 
-            detectAndSetCrashRecovery(pidProfile->crash_recovery, axis, currentTimeUs, delta, errorRate);
+            if (currentTimeUs - levelModeStartTimeUs > CRASH_RECOVERY_DETECTION_DELAY_US) {
+                detectAndSetCrashRecovery(pidProfile->crash_recovery, axis, currentTimeUs, delta, errorRate);
+            }
 
             pidData[axis].D = pidCoefficient[axis].Kd * delta * tpaFactor;
         } else {
