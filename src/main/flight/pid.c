@@ -1044,6 +1044,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
     static float previousGyroRateDterm[XYZ_AXIS_COUNT];
     static float previousPidSetpoint[XYZ_AXIS_COUNT];
     static timeUs_t levelModeStartTimeUs = 0;
+    static bool gpsRescuePreviousState = false;
 
     const float tpaFactor = getThrottlePIDAttenuation();
 
@@ -1052,17 +1053,21 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
 #endif
 
     const bool launchControlActive = isLaunchControlActive();
-    const bool levelModeActive = FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE) || FLIGHT_MODE(GPS_RESCUE_MODE);
 
-    // keep track of when we entered a self-level mode so that we can
-    // add a guard time before crash recovery can activate
+    const bool gpsRescueIsActive = FLIGHT_MODE(GPS_RESCUE_MODE);
+    const bool levelModeActive = FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE) || gpsRescueIsActive;
+
+    // Keep track of when we entered a self-level mode so that we can
+    // add a guard time before crash recovery can activate.
+    // Also reset the guard time whenever GPS Rescue is activated.
     if (levelModeActive) {
-        if (levelModeStartTimeUs == 0) {
+        if ((levelModeStartTimeUs == 0) || (gpsRescueIsActive && !gpsRescuePreviousState)) {
             levelModeStartTimeUs = currentTimeUs;
         }
     } else {
         levelModeStartTimeUs = 0;
     }
+    gpsRescuePreviousState = gpsRescueIsActive;
 
     // Dynamic i component,
     if ((antiGravityMode == ANTI_GRAVITY_SMOOTH) && antiGravityEnabled) {
@@ -1166,7 +1171,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
             const float delta =
                 - (gyroRateDterm[axis] - previousGyroRateDterm[axis]) * pidFrequency;
 
-            if (currentTimeUs - levelModeStartTimeUs > CRASH_RECOVERY_DETECTION_DELAY_US) {
+            if (cmpTimeUs(currentTimeUs, levelModeStartTimeUs) > CRASH_RECOVERY_DETECTION_DELAY_US) {
                 detectAndSetCrashRecovery(pidProfile->crash_recovery, axis, currentTimeUs, delta, errorRate);
             }
 
