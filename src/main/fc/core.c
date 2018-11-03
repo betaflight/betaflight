@@ -370,7 +370,7 @@ void tryArm(void)
 #ifdef USE_DSHOT
         if (currentTimeUs - getLastDshotBeaconCommandTimeUs() < DSHOT_BEACON_GUARD_DELAY_US) {
             if (tryingToArm == ARMING_DELAYED_DISARMED) {
-                if (isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH) && IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
+                if (IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
                     tryingToArm = ARMING_DELAYED_CRASHFLIP;
 #ifdef USE_LAUNCH_CONTROL
                 } else if (canUseLaunchControl()) {
@@ -784,7 +784,7 @@ bool processRx(timeUs_t currentTimeUs)
 
 #ifdef USE_DSHOT
     /* Enable beep warning when the crash flip mode is active */
-    if (isMotorProtocolDshot() && isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH) && IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
+    if (isFlipOverAfterCrashWarningActive()) {
         beeper(BEEPER_CRASH_FLIP_MODE);
     }
 #endif
@@ -1091,6 +1091,11 @@ FAST_CODE void taskMainPidLoop(timeUs_t currentTimeUs)
 bool isFlipOverAfterCrashMode(void)
 {
     return flipOverAfterCrashMode;
+}
+
+bool isFlipOverAfterCrashWarningActive(void)
+{
+    return flipOverAfterCrashMode || IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH);
 }
 
 timeUs_t getLastDisarmTimeUs(void)

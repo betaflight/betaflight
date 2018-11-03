@@ -1055,9 +1055,8 @@ extern "C" {
 
     uint16_t getCoreTemperatureCelsius(void) { return simulationCoreTemperature; }
 
-    bool isFlipOverAfterCrashMode(void) {
-        return false;
-    }
+    bool isFlipOverAfterCrashMode(void) { return false; } 
+    bool isFlipOverAfterCrashWarningActive(void) { return false; }
 
     float pidItermAccelerator(void) { return 1.0; }
     uint8_t getMotorCount(void){ return 4; }

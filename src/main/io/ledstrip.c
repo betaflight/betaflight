@@ -47,6 +47,7 @@
 #include "drivers/vtx_common.h"
 
 #include "fc/config.h"
+#include "fc/core.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
@@ -548,7 +549,7 @@ static void applyLedWarningLayer(bool updateNow, timeUs_t *timer)
             if (!ARMING_FLAG(ARMED) && isArmingDisabled()) {
                 warningFlags |= 1 << WARNING_ARMING_DISABLED;
             }
-            if (IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
+            if (isFlipOverAfterCrashWarningActive()) {
                 warningFlags |= 1 << WARNING_CRASH_FLIP_ACTIVE;
             }
         }
