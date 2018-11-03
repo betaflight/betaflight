@@ -60,16 +60,12 @@
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
 #define USE_ACC_SPI_MPU6500
+ 
+#define GYRO_1_ALIGN            CW180_DEG_FLIP
+#define ACC_1_ALIGN             CW180_DEG_FLIP
 
-#define GYRO_MPU6000_1_ALIGN    CW180_DEG_FLIP
-#define ACC_MPU6000_1_ALIGN     CW180_DEG_FLIP
-#define GYRO_1_ALIGN            GYRO_MPU6000_1_ALIGN
-#define ACC_1_ALIGN             ACC_MPU6000_1_ALIGN
-
-#define GYRO_MPU6500_2_ALIGN    CW90_DEG
-#define ACC_MPU6500_2_ALIGN     CW90_DEG
-#define GYRO_2_ALIGN            GYRO_MPU6500_2_ALIGN
-#define ACC_2_ALIGN             ACC_MPU6500_2_ALIGN
+#define GYRO_2_ALIGN            CW90_DEG
+#define ACC_2_ALIGN             CW90_DEG
 
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
