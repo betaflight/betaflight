@@ -605,6 +605,19 @@ static bool osdDrawSingleElement(uint8_t item)
         }
         break;
 
+    case OSD_TOTAL_DIST:
+        if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
+            const int32_t distance = osdGetMetersToSelectedUnit(GPS_distanceFlownInCm / 100);
+            tfp_sprintf(buff, "%d%c", distance, osdGetMetersToSelectedUnitSymbol());
+        } else {
+            // We use this symbol when we don't have a FIX
+            buff[0] = SYM_COLON;
+            // overwrite any previous distance with blanks
+            memset(buff + 1, SYM_BLANK, 6);
+            buff[7] = '\0';
+        }
+        break;
+
 #endif // GPS
 
     case OSD_COMPASS_BAR:
@@ -1159,6 +1172,7 @@ static void osdDrawElements(void)
         osdDrawSingleElement(OSD_GPS_LON);
         osdDrawSingleElement(OSD_HOME_DIST);
         osdDrawSingleElement(OSD_HOME_DIR);
+        osdDrawSingleElement(OSD_TOTAL_DIST);
     }
 #endif // GPS
 
@@ -1556,15 +1570,17 @@ static void osdShowStats(uint16_t endBatteryVoltage)
         osdDisplayStatisticLabel(top++, osdTimerSourceNames[OSD_TIMER_SRC(osdConfig()->timers[OSD_TIMER_2])], buff);
     }
 
-    if (osdStatGetState(OSD_STAT_MAX_SPEED) && STATE(GPS_FIX)) {
-        itoa(stats.max_speed, buff, 10);
+#ifdef USE_GPS
+    if (osdStatGetState(OSD_STAT_MAX_SPEED) && featureIsEnabled(FEATURE_GPS)) {
+        itoa(stats.max_speed, buff, 10);    
         osdDisplayStatisticLabel(top++, "MAX SPEED", buff);
     }
 
-    if (osdStatGetState(OSD_STAT_MAX_DISTANCE)) {
+    if (osdStatGetState(OSD_STAT_MAX_DISTANCE) && featureIsEnabled(FEATURE_GPS)) {
         tfp_sprintf(buff, "%d%c", osdGetMetersToSelectedUnit(stats.max_distance), osdGetMetersToSelectedUnitSymbol());
         osdDisplayStatisticLabel(top++, "MAX DISTANCE", buff);
     }
+#endif
 
     if (osdStatGetState(OSD_STAT_MIN_BATTERY)) {
         tfp_sprintf(buff, "%d.%1d%c", stats.min_voltage / 10, stats.min_voltage % 10, SYM_VOLT);
@@ -1642,6 +1658,15 @@ static void osdShowStats(uint16_t endBatteryVoltage)
         osdDisplayStatisticLabel(top++, "MIN LINK", buff);
     }
 #endif
+
+#ifdef USE_GPS
+    if (osdStatGetState(OSD_STAT_TOTAL_DISTANCE) && featureIsEnabled(FEATURE_GPS)) {
+        const uint32_t distanceFlown = GPS_distanceFlownInCm / 100;
+        tfp_sprintf(buff, "%d%c", osdGetMetersToSelectedUnit(distanceFlown), osdGetMetersToSelectedUnitSymbol());
+        osdDisplayStatisticLabel(top++, "TOTAL DISTANCE", buff);
+    }
+#endif
+
 }
 
 static void osdShowArmed(void)
