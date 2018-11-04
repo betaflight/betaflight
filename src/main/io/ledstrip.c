@@ -47,6 +47,7 @@
 #include "drivers/vtx_common.h"
 
 #include "fc/config.h"
+#include "fc/core.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
@@ -522,6 +523,7 @@ typedef enum {
     WARNING_ARMING_DISABLED,
     WARNING_LOW_BATTERY,
     WARNING_FAILSAFE,
+    WARNING_CRASH_FLIP_ACTIVE,
 } warningFlags_e;
 
 static void applyLedWarningLayer(bool updateNow, timeUs_t *timer)
@@ -536,12 +538,18 @@ static void applyLedWarningLayer(bool updateNow, timeUs_t *timer)
 
         if (warningFlashCounter == 0) {      // update when old flags was processed
             warningFlags = 0;
-            if (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE && getBatteryState() != BATTERY_OK)
+            if (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE && getBatteryState() != BATTERY_OK) {
                 warningFlags |= 1 << WARNING_LOW_BATTERY;
-            if (failsafeIsActive())
+            }
+            if (failsafeIsActive()) {
                 warningFlags |= 1 << WARNING_FAILSAFE;
-            if (!ARMING_FLAG(ARMED) && isArmingDisabled())
+            }
+            if (!ARMING_FLAG(ARMED) && isArmingDisabled()) {
                 warningFlags |= 1 << WARNING_ARMING_DISABLED;
+            }
+            if (isFlipOverAfterCrashActive()) {
+                warningFlags |= 1 << WARNING_CRASH_FLIP_ACTIVE;
+            }
         }
         *timer += HZ_TO_US(10);
     }
@@ -554,10 +562,13 @@ static void applyLedWarningLayer(bool updateNow, timeUs_t *timer)
         if (warningFlags & (1 << warningId)) {
             switch (warningId) {
                 case WARNING_ARMING_DISABLED:
-                    warningColor = colorOn ? &HSV(GREEN)  : &HSV(BLACK);
+                    warningColor = colorOn ? &HSV(GREEN) : &HSV(BLACK);
+                    break;
+                case WARNING_CRASH_FLIP_ACTIVE:
+                    warningColor = colorOn ? &HSV(MAGENTA) : &HSV(BLACK);
                     break;
                 case WARNING_LOW_BATTERY:
-                    warningColor = colorOn ? &HSV(RED)    : &HSV(BLACK);
+                    warningColor = colorOn ? &HSV(RED) : &HSV(BLACK);
                     break;
                 case WARNING_FAILSAFE:
                     warningColor = colorOn ? &HSV(YELLOW) : &HSV(BLUE);

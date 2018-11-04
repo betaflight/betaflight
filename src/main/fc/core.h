@@ -66,7 +66,8 @@ bool processRx(timeUs_t currentTimeUs);
 void updateArmingStatus(void);
 
 void taskMainPidLoop(timeUs_t currentTimeUs);
-bool isFlipOverAfterCrashMode(void);
+
+bool isFlipOverAfterCrashActive(void);
 
 void runawayTakeoffTemporaryDisable(uint8_t disableFlag);
 bool isAirmodeActivated();
