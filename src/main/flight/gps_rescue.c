@@ -111,7 +111,7 @@ typedef struct {
     bool isFailsafe;
 } rescueState_s;
 
-#define GPS_RESCUE_MAX_YAW_RATE       360  // deg/sec max yaw rate
+#define GPS_RESCUE_MAX_YAW_RATE       180  // deg/sec max yaw rate
 #define GPS_RESCUE_RATE_SCALE_DEGREES 45   // Scale the commanded yaw rate when the error is less then this angle
 
 PG_REGISTER_WITH_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 1);
