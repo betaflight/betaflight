@@ -314,8 +314,8 @@ static void performSanityChecks()
         // Initialize internal variables each time GPS Rescue is started
         const uint32_t currentTimeUs = micros();
         previousTimeUs = currentTimeUs;
-        secondsStalled = 0;
-        secondsLowSats = 0;
+        secondsStalled = 10; // Start the count at 10 to be less forgiving at the beginning
+        secondsLowSats = 5;  // Start the count at 5 to be less forgiving at the beginning
         return;
     }
 
@@ -344,15 +344,15 @@ static void performSanityChecks()
 
     previousTimeUs = currentTimeUs;
 
-    secondsStalled = constrain(secondsStalled + (rescueState.sensor.groundSpeed < 150) ? 1 : -1, -10, 10);
+    secondsStalled = constrain(secondsStalled + (rescueState.sensor.groundSpeed < 150) ? 1 : -1, 0, 20);
 
-    if (secondsStalled == 10) {
+    if (secondsStalled == 20) {
         rescueState.failure = RESCUE_STALLED;
     }
 
-    secondsLowSats = constrain(secondsLowSats + (rescueState.sensor.numSat < gpsRescueConfig()->minSats) ? 1 : -1, -5, 5);
+    secondsLowSats = constrain(secondsLowSats + (rescueState.sensor.numSat < gpsRescueConfig()->minSats) ? 1 : -1, 0, 10);
 
-    if (secondsLowSats == 5) {
+    if (secondsLowSats == 10) {
         rescueState.failure = RESCUE_FLYAWAY;
     }
 }
