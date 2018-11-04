@@ -457,7 +457,8 @@ TEST(pidControllerTest, testCrashRecoveryMode) {
     simulatedMotorMixRange = 1.2f;
     for (int loop =0; loop <= loopsToCrashTime; loop++) {
         gyro.gyroADCf[FD_ROLL] += gyro.gyroADCf[FD_ROLL];
-        pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+        // advance the time to avoid initialized state prevention of crash recovery
+        pidController(pidProfile, &rollAndPitchTrims, currentTestTime() + 2000000);
     }
 
     EXPECT_TRUE(crashRecoveryModeActive());
