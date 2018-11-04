@@ -28,6 +28,8 @@ extern "C" {
     #include "blackbox/blackbox.h"
     #include "blackbox/blackbox_io.h"
 
+    #include "config/feature.h"
+
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
     #include "pg/rx.h"
@@ -69,6 +71,7 @@ extern "C" {
     uint8_t GPS_numSat;
     uint16_t GPS_distanceToHome;
     int16_t GPS_directionToHome;
+    uint32_t GPS_distanceFlownInCm;
     int32_t GPS_coord[2];
     gpsSolutionData_t gpsSol;
     float motor[8];
@@ -95,13 +98,15 @@ extern "C" {
     uint16_t simulationCoreTemperature;
 }
 
+uint32_t simulationFeatureFlags = FEATURE_GPS;
+
 /* #define DEBUG_OSD */
 
 #include "unittest_macros.h"
 #include "unittest_displayport.h"
 #include "gtest/gtest.h"
 
-void setDefualtSimulationState()
+void setDefaultSimulationState()
 {
     rssi = 1024;
 
@@ -190,7 +195,7 @@ TEST(OsdTest, TestInit)
 
     // and
     // default state values are set
-    setDefualtSimulationState();
+    setDefaultSimulationState();
 
     // and
     // this battery configuration (used for battery voltage elements)
@@ -308,11 +313,12 @@ TEST(OsdTest, TestStatsImperial)
     osdStatSetState(OSD_STAT_TIMER_2, true);
     osdStatSetState(OSD_STAT_RTC_DATE_TIME, true);
     osdStatSetState(OSD_STAT_MAX_DISTANCE, true);
+    osdStatSetState(OSD_STAT_TOTAL_DISTANCE, true);
     osdStatSetState(OSD_STAT_BLACKBOX_NUMBER, false);
     osdStatSetState(OSD_STAT_MAX_G_FORCE, false);
     osdStatSetState(OSD_STAT_MAX_ESC_TEMP, false);
     osdStatSetState(OSD_STAT_MAX_ESC_RPM, false);
-
+ 
     // and
     // using imperial unit system
     osdConfigMutable()->units = OSD_UNIT_IMPERIAL;
@@ -350,6 +356,7 @@ TEST(OsdTest, TestStatsImperial)
     rssi = 1024;
     gpsSol.groundSpeed = 500;
     GPS_distanceToHome = 20;
+    GPS_distanceFlownInCm = 2000;
     simulationBatteryVoltage = 158;
     simulationAltitude = 100;
     simulationTime += 1e6;
@@ -358,6 +365,7 @@ TEST(OsdTest, TestStatsImperial)
     rssi = 512;
     gpsSol.groundSpeed = 800;
     GPS_distanceToHome = 50;
+    GPS_distanceFlownInCm = 10000;
     simulationBatteryVoltage = 147;
     simulationAltitude = 150;
     simulationTime += 1e6;
@@ -366,6 +374,7 @@ TEST(OsdTest, TestStatsImperial)
     rssi = 256;
     gpsSol.groundSpeed = 200;
     GPS_distanceToHome = 100;
+    GPS_distanceFlownInCm = 20000;
     simulationBatteryVoltage = 152;
     simulationAltitude = 200;
     simulationTime += 1e6;
@@ -387,6 +396,7 @@ TEST(OsdTest, TestStatsImperial)
     displayPortTestBufferSubstring(2, row++, "END BATTERY       : 15.2%c", SYM_VOLT);
     displayPortTestBufferSubstring(2, row++, "MIN RSSI          : 25%%");
     displayPortTestBufferSubstring(2, row++, "MAX ALTITUDE      :    6.5%c", SYM_FT);
+    displayPortTestBufferSubstring(2, row++, "TOTAL DISTANCE    : 656%c", SYM_FT);
 }
 
 /*
@@ -401,7 +411,7 @@ TEST(OsdTest, TestStatsMetric)
 
     // and
     // default state values are set
-    setDefualtSimulationState();
+    setDefaultSimulationState();
 
     // when
     // the craft is armed
@@ -412,6 +422,7 @@ TEST(OsdTest, TestStatsMetric)
     rssi = 256;
     gpsSol.groundSpeed = 800;
     GPS_distanceToHome = 100;
+    GPS_distanceFlownInCm = 10000;
     simulationBatteryVoltage = 147;
     simulationAltitude = 200;
     simulationTime += 1e6;
@@ -438,6 +449,7 @@ TEST(OsdTest, TestStatsMetric)
     displayPortTestBufferSubstring(2, row++, "END BATTERY       : 15.2%c", SYM_VOLT);
     displayPortTestBufferSubstring(2, row++, "MIN RSSI          : 25%%");
     displayPortTestBufferSubstring(2, row++, "MAX ALTITUDE      :    2.0%c", SYM_M);
+    displayPortTestBufferSubstring(2, row++, "TOTAL DISTANCE    : 100%c", SYM_M);
 }
 
 /*
@@ -447,7 +459,7 @@ TEST(OsdTest, TestAlarms)
 {
     // given
     // default state is set
-    setDefualtSimulationState();
+    setDefaultSimulationState();
 
     // and
     // the following OSD elements are visible
@@ -959,6 +971,8 @@ TEST(OsdTest, TestConvertTemperatureUnits)
 
 // STUBS
 extern "C" {
+    bool featureIsEnabled(uint32_t f) { return simulationFeatureFlags & f; }
+
     void beeperConfirmationBeeps(uint8_t) {}
 
     bool isModeActivationConditionPresent(boxId_e) {

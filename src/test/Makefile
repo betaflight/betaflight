@@ -167,6 +167,7 @@ osd_unittest_SRC := \
 
 osd_unittest_DEFINES := \
 		USE_OSD \
+		USE_GPS= \
 		USE_RTC_TIME \
 		USE_ADC_INTERNAL
 

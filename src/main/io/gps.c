@@ -77,6 +77,7 @@ static char *gpsPacketLogChar = gpsPacketLog;
 int32_t GPS_home[2];
 uint16_t GPS_distanceToHome;        // distance to home point in meters
 int16_t GPS_directionToHome;        // direction to home or hol point in degrees
+uint32_t GPS_distanceFlownInCm;     // distance flown since armed in centimeters
 float dTnav;             // Delta Time in milliseconds for navigation computations, updated with every good GPS read
 int16_t actual_speed[2] = { 0, 0 };
 int16_t nav_takeoff_bearing;
@@ -1267,6 +1268,7 @@ void GPS_reset_home_position(void)
         GPS_home[LAT] = gpsSol.llh.lat;
         GPS_home[LON] = gpsSol.llh.lon;
         GPS_calc_longitude_scaling(gpsSol.llh.lat); // need an initial value for distance and bearing calc
+        GPS_distanceFlownInCm = 0;
         // Set ground altitude
         ENABLE_STATE(GPS_FIX_HOME);
     }
@@ -1303,9 +1305,9 @@ void GPS_calculateDistanceAndDirectionToHome(void)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
-// Calculate our current speed vector from gps position data
+// Calculate our current speed vector and the distance flown from gps position data
 //
-static void GPS_calc_velocity(void)
+static void GPS_calculateVelocityAndDistanceFlown(void)
 {
     static int16_t speed_old[2] = { 0, 0 };
     static int32_t last_coord[2] = { 0, 0 };
@@ -1321,6 +1323,11 @@ static void GPS_calc_velocity(void)
 
         speed_old[GPS_X] = actual_speed[GPS_X];
         speed_old[GPS_Y] = actual_speed[GPS_Y];
+
+        uint32_t dist;
+        int32_t dir;
+        GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &last_coord[LAT], &last_coord[LON], &dist, &dir);
+        GPS_distanceFlownInCm += dist;
     }
     init = 1;
 
@@ -1379,7 +1386,7 @@ void onGpsNewData(void)
 
     GPS_calculateDistanceAndDirectionToHome();
     // calculate the current velocity based on gps coordinates continously to get a valid speed at the moment when we start navigating
-    GPS_calc_velocity();
+    GPS_calculateVelocityAndDistanceFlown();
 
 #ifdef USE_GPS_RESCUE
     rescueNewGpsData();
