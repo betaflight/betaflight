@@ -152,6 +152,8 @@ static bool lastArmState;
 
 static displayPort_t *osdDisplayPort;
 
+static bool suppressStatsDisplay = false;
+
 #ifdef USE_ESC_SENSOR
 static escSensorData_t *escDataCombined;
 #endif
@@ -1665,6 +1667,7 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
             osdShowArmed();
             resumeRefreshAt = currentTimeUs + (REFRESH_1S / 2);
         } else if (isSomeStatEnabled()
+                   && !suppressStatsDisplay
                    && (!(getArmingDisableFlags() & ARMING_DISABLED_RUNAWAY_TAKEOFF)
                        || !VISIBLE(osdConfig()->item_pos[OSD_WARNINGS]))) { // suppress stats if runaway takeoff triggered disarm and WARNINGS element is visible
             osdStatsEnabled = true;
@@ -1796,4 +1799,8 @@ void osdUpdate(timeUs_t currentTimeUs)
 #endif
 }
 
+void osdSuppressStats(bool flag)
+{
+    suppressStatsDisplay = flag;
+}
 #endif // USE_OSD
