@@ -483,7 +483,7 @@ static bool osdDrawSingleElement(uint8_t item)
         {
             const int angleR = attitude.values.roll / 10;
             const int angleP = attitude.values.pitch / 10; // still gotta update all angleR and angleP pointers.
-            if (isFlipOverAfterCrashMode()) {
+            if (isFlipOverAfterCrashActive()) {
                 if (angleP > 0 && ((angleR > 175 && angleR < 180) || (angleR > -180 && angleR < -175))) {
                     buff[0] = SYM_ARROW_SOUTH;
                 } else if (angleP > 0 && angleR > 0 && angleR < 175) {
@@ -946,7 +946,7 @@ static bool osdDrawSingleElement(uint8_t item)
 #endif
 
             // Warn when in flip over after crash mode
-            if (osdWarnGetState(OSD_WARNING_CRASH_FLIP) && isFlipOverAfterCrashWarningActive()) {
+            if (osdWarnGetState(OSD_WARNING_CRASH_FLIP) && isFlipOverAfterCrashActive()) {
                 osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "CRASH FLIP");
                 break;
             }

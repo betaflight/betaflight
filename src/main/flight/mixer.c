@@ -774,7 +774,7 @@ void applyMotorStop(void)
 
 FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensation)
 {
-    if (isFlipOverAfterCrashMode()) {
+    if (isFlipOverAfterCrashActive()) {
         applyFlipOverAfterCrashModeToMotors();
         return;
     }

@@ -129,7 +129,7 @@ enum {
 int16_t magHold;
 #endif
 
-static bool flipOverAfterCrashMode = false;
+static bool flipOverAfterCrashActive = false;
 
 static timeUs_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
@@ -216,7 +216,7 @@ void updateArmingStatus(void)
         }
 
         // Clear the crash flip active status
-        flipOverAfterCrashMode = false;
+        flipOverAfterCrashActive = false;
 
         // If switch is used for arming then check it is not defaulting to on when the RX link recovers from a fault
         if (!isUsingSticksForArming()) {
@@ -339,11 +339,11 @@ void disarm(void)
 #endif
         BEEP_OFF;
 #ifdef USE_DSHOT
-        if (isMotorProtocolDshot() && flipOverAfterCrashMode && !featureIsEnabled(FEATURE_3D)) {
+        if (isMotorProtocolDshot() && flipOverAfterCrashActive && !featureIsEnabled(FEATURE_3D)) {
             pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL, false);
         }
 #endif
-        flipOverAfterCrashMode = false;
+        flipOverAfterCrashActive = false;
 
         // if ARMING_DISABLED_RUNAWAY_TAKEOFF is set then we want to play it's beep pattern instead
         if (!(getArmingDisableFlags() & ARMING_DISABLED_RUNAWAY_TAKEOFF)) {
@@ -384,12 +384,12 @@ void tryArm(void)
         }
         if (isMotorProtocolDshot() && isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH)) {
             if (!(IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH) || (tryingToArm == ARMING_DELAYED_CRASHFLIP))) {
-                flipOverAfterCrashMode = false;
+                flipOverAfterCrashActive = false;
                 if (!featureIsEnabled(FEATURE_3D)) {
                     pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL, false);
                 }
             } else {
-                flipOverAfterCrashMode = true;
+                flipOverAfterCrashActive = true;
 #ifdef USE_RUNAWAY_TAKEOFF
                 runawayTakeoffCheckDisabled = false;
 #endif
@@ -401,7 +401,7 @@ void tryArm(void)
 #endif
 
 #ifdef USE_LAUNCH_CONTROL
-        if (!flipOverAfterCrashMode && (canUseLaunchControl() || (tryingToArm == ARMING_DELAYED_LAUNCH_CONTROL))) {
+        if (!flipOverAfterCrashActive && (canUseLaunchControl() || (tryingToArm == ARMING_DELAYED_LAUNCH_CONTROL))) {
             if (launchControlState == LAUNCH_CONTROL_DISABLED) {  // only activate if it hasn't already been triggered
                 launchControlState = LAUNCH_CONTROL_ACTIVE;
             }
@@ -648,7 +648,7 @@ bool processRx(timeUs_t currentTimeUs)
     if (ARMING_FLAG(ARMED)
         && pidConfig()->runaway_takeoff_prevention
         && !runawayTakeoffCheckDisabled
-        && !flipOverAfterCrashMode
+        && !flipOverAfterCrashActive
         && !runawayTakeoffTemporarilyDisabled
         && !STATE(FIXED_WING)) {
 
@@ -784,7 +784,7 @@ bool processRx(timeUs_t currentTimeUs)
 
 #ifdef USE_DSHOT
     /* Enable beep warning when the crash flip mode is active */
-    if (isFlipOverAfterCrashWarningActive()) {
+    if (flipOverAfterCrashActive) {
         beeper(BEEPER_CRASH_FLIP_MODE);
     }
 #endif
@@ -934,7 +934,7 @@ static FAST_CODE void subTaskPidController(timeUs_t currentTimeUs)
         && !STATE(FIXED_WING)
         && pidConfig()->runaway_takeoff_prevention
         && !runawayTakeoffCheckDisabled
-        && !flipOverAfterCrashMode
+        && !flipOverAfterCrashActive
         && !runawayTakeoffTemporarilyDisabled
         && (!featureIsEnabled(FEATURE_MOTOR_STOP) || airmodeIsEnabled() || (calculateThrottleStatus() != THROTTLE_LOW))) {
 
@@ -1088,14 +1088,9 @@ FAST_CODE void taskMainPidLoop(timeUs_t currentTimeUs)
 }
 
 
-bool isFlipOverAfterCrashMode(void)
+bool isFlipOverAfterCrashActive(void)
 {
-    return flipOverAfterCrashMode;
-}
-
-bool isFlipOverAfterCrashWarningActive(void)
-{
-    return flipOverAfterCrashMode || IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH);
+    return flipOverAfterCrashActive;
 }
 
 timeUs_t getLastDisarmTimeUs(void)

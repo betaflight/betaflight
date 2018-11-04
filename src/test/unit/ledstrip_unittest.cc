@@ -388,6 +388,6 @@ bool isArmingDisabled(void) { return false; }
 
 uint8_t getRssiPercent(void) { return 0; }
 
-bool isFlipOverAfterCrashWarningActive(void) { return false; }
+bool isFlipOverAfterCrashActive(void) { return false; }
 
 }

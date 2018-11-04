@@ -549,7 +549,7 @@ static void applyLedWarningLayer(bool updateNow, timeUs_t *timer)
             if (!ARMING_FLAG(ARMED) && isArmingDisabled()) {
                 warningFlags |= 1 << WARNING_ARMING_DISABLED;
             }
-            if (isFlipOverAfterCrashWarningActive()) {
+            if (isFlipOverAfterCrashActive()) {
                 warningFlags |= 1 << WARNING_CRASH_FLIP_ACTIVE;
             }
         }
