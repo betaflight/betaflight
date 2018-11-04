@@ -71,6 +71,7 @@ typedef enum {
 typedef enum {
     RESCUE_HEALTHY,
     RESCUE_FLYAWAY,
+    RESCUE_LOWSATS,
     RESCUE_CRASH_FLIP_DETECTED,
     RESCUE_STALLED,
     RESCUE_TOO_CLOSE
@@ -305,6 +306,8 @@ static void performSanityChecks()
 {
     static uint32_t previousTimeUs = 0; // Last time Stalled/LowSat was checked
     static int8_t secondsStalled = 0; // Stalled movement detection
+    static uint16_t lastDistanceToHomeM = 0; // Fly Away detection
+    static int8_t secondsFlyingAway = 0; 
     static int8_t secondsLowSats = 0; // Minimum sat detection
 
     if (rescueState.phase == RESCUE_IDLE) {
@@ -315,6 +318,8 @@ static void performSanityChecks()
         const uint32_t currentTimeUs = micros();
         previousTimeUs = currentTimeUs;
         secondsStalled = 10; // Start the count at 10 to be less forgiving at the beginning
+        lastDistanceToHomeM = rescueState.sensor.distanceToHomeM;
+        secondsFlyingAway = 0;
         secondsLowSats = 5;  // Start the count at 5 to be less forgiving at the beginning
         return;
     }
@@ -350,10 +355,17 @@ static void performSanityChecks()
         rescueState.failure = RESCUE_STALLED;
     }
 
+    secondsFlyingAway = constrain(secondsFlyingAway + (lastDistanceToHomeM < rescueState.sensor.distanceToHomeM) ? 1 : -1, 0, 10);
+    lastDistanceToHomeM = rescueState.sensor.distanceToHomeM;
+
+    if (secondsFlyingAway == 10) {
+        rescueState.failure = RESCUE_FLYAWAY;
+    }
+
     secondsLowSats = constrain(secondsLowSats + (rescueState.sensor.numSat < gpsRescueConfig()->minSats) ? 1 : -1, 0, 10);
 
     if (secondsLowSats == 10) {
-        rescueState.failure = RESCUE_FLYAWAY;
+        rescueState.failure = RESCUE_LOWSATS;
     }
 }
 
