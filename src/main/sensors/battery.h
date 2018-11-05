@@ -50,6 +50,11 @@ typedef struct batteryConfig_s {
     
     uint8_t forceBatteryCellCount;            // number of cells in battery, used for overwriting auto-detected cell count if someone has issues with it.
 
+    uint8_t vbat_warn_delay;                // warn delay for allarm default 0 off 0.1 second 
+    uint8_t vbat_crit_delay;                // warn delay for allarm default 0 off 0.1 second  
+    uint8_t vbat_high_hysteresis;           // hysteresis for alarm High, default 1 = 0.1V	
+    bool use_vbat_unfiltered;               // osd telemertry alerts based on VBat unfilterd readings
+
 } batteryConfig_t;
 
 typedef struct lowVoltageCutoff_s {
@@ -87,6 +92,7 @@ uint8_t calculateBatteryPercentageRemaining(void);
 bool isBatteryVoltageConfigured(void);
 uint16_t getBatteryVoltage(void);
 uint16_t getBatteryVoltageLatest(void);
+uint16_t getOptionBatteryVoltage(void); 
 uint8_t getBatteryCellCount(void);
 uint16_t getBatteryAverageCellVoltage(void);
 

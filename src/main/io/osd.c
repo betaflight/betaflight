@@ -530,7 +530,7 @@ static bool osdDrawSingleElement(uint8_t item)
 
     case OSD_MAIN_BATT_VOLTAGE:
         buff[0] = osdGetBatterySymbol(osdGetBatteryAverageCellVoltage());
-        tfp_sprintf(buff + 1, "%2d.%1d%c", getBatteryVoltage() / 10, getBatteryVoltage() % 10, SYM_VOLT);
+        tfp_sprintf(buff + 1, "%2d.%1d%c", getOptionBatteryVoltage() / 10, getOptionBatteryVoltage() % 10, SYM_VOLT);
         break;
 
     case OSD_CURRENT_DRAW:

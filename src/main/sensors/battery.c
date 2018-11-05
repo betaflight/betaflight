@@ -74,6 +74,8 @@ static batteryState_e batteryState;
 static batteryState_e voltageState;
 static batteryState_e consumptionState;
 
+static timeUs_t warn_alarm_timeout;            //  last time of the delay 0 = reset 
+
 #ifndef DEFAULT_CURRENT_METER_SOURCE
 #ifdef USE_VIRTUAL_CURRENT_METER
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_VIRTUAL
@@ -114,6 +116,10 @@ PG_RESET_TEMPLATE(batteryConfig_t, batteryConfig,
     .consumptionWarningPercentage = 10,
     .vbathysteresis = 1,
 
+	.vbat_warn_delay = 0,
+	.vbat_crit_delay = 0,
+	.use_vbat_unfiltered = 0,
+	.vbat_high_hysteresis = 1,
     .vbatfullcellvoltage = 41
 );
 
@@ -248,6 +254,112 @@ static void batteryUpdateVoltageState(void)
 
 }
 
+////////
+#ifdef USE_VBAT_ALARM_DELAY
+			//			https ://github.com/betaflight/betaflight/issues/1887
+			//			https ://github.com/betaflight/betaflight/pull/6691
+// uses unfilterd 
+static void batteryUpdateVoltageStateDelay(timeUs_t currentTimeUs)
+{
+	// alerts are currently used by beeper, osd and other subsystems
+	switch (voltageState) {
+	case BATTERY_OK:
+		if (getOptionBatteryVoltage() <= (batteryWarningVoltage - batteryConfig()->vbathysteresis)) {
+
+			if (batteryConfig()->vbat_warn_delay > 0) { // if we have a vbat_warn_delay time 
+
+
+				if (warn_alarm_timeout != 0) {
+					//  check latest battery  for recovery 
+					if ( getOptionBatteryVoltage()   > ( (batteryWarningVoltage - batteryConfig()->vbathysteresis ) + batteryConfig()->vbat_high_hysteresis)) {
+
+							warn_alarm_timeout = 0;
+							//voltageState = BATTERY_WARNING;
+
+					}
+
+					if (currentTimeUs >= warn_alarm_timeout)  {
+
+						warn_alarm_timeout = 0;
+						voltageState = BATTERY_WARNING;
+
+					}
+				}
+				else {
+
+					warn_alarm_timeout = currentTimeUs + (batteryConfig()->vbat_warn_delay * 1000 * 100);  // set timeout .1 sec * bat config
+					 
+				}
+
+			}
+			else { // vbat_warn_delay not configured 
+
+				warn_alarm_timeout = 0; /// reset just in case 
+				voltageState = BATTERY_WARNING;
+			} //
+
+
+			}
+		else { // batery filetr recovered 
+			
+
+			warn_alarm_timeout = 0; // reset  
+			voltageState = BATTERY_OK;
+		}
+		break;
+
+	case BATTERY_WARNING:
+		if (getOptionBatteryVoltage() <= (batteryCriticalVoltage - batteryConfig()->vbathysteresis)) { 
+			if (batteryConfig()->vbat_crit_delay > 0) { // if we have a vbat_crit_delay time 
+
+
+				if (warn_alarm_timeout != 0) {
+					// in critical not checking batterylatest
+
+					if (currentTimeUs >= warn_alarm_timeout) {
+
+						warn_alarm_timeout = 0;
+						voltageState = BATTERY_CRITICAL;
+
+					}
+				}
+				else {
+
+					warn_alarm_timeout = currentTimeUs + (batteryConfig()->vbat_crit_delay  * 1000 * 100);  // set timeout .1 sec * bat config
+					 
+				}
+
+			}
+			else { // vbat_crit_delay not configured 
+
+				warn_alarm_timeout = 0; /// reset just in case 
+				voltageState = BATTERY_CRITICAL;
+			} //
+ 
+		}
+		else if (getOptionBatteryVoltage() > batteryWarningVoltage  ) {
+
+			warn_alarm_timeout = 0;
+			voltageState = BATTERY_OK;
+		}
+		break;
+
+	case BATTERY_CRITICAL:
+		if (getOptionBatteryVoltage() > batteryCriticalVoltage  ) {
+ 
+			warn_alarm_timeout = 0;
+			voltageState = BATTERY_WARNING;
+		}
+		break;
+
+	default:
+		break;
+		}
+
+	}
+
+#endif
+
 static void batteryUpdateLVC(timeUs_t currentTimeUs)
 {
     if (batteryConfig()->lvcPercentage < 100) {
@@ -270,7 +382,20 @@ static void batteryUpdateLVC(timeUs_t currentTimeUs)
 
 void batteryUpdateStates(timeUs_t currentTimeUs)
 {
-    batteryUpdateVoltageState();
+#ifdef USE_VBAT_ALARM_DELAY	
+	
+	if ( (batteryConfig()->vbat_warn_delay != 0 ) || ((batteryConfig()->vbat_crit_delay != 0 ))) {
+	batteryUpdateVoltageStateDelay(currentTimeUs);
+}else{
+	batteryUpdateVoltageState();
+	}
+ 
+ 
+#else
+	
+	batteryUpdateVoltageState(); 
+
+#endif
     batteryUpdateConsumptionState();
     batteryUpdateLVC(currentTimeUs);
     batteryState = MAX(voltageState, consumptionState);
@@ -317,6 +442,10 @@ void batteryInit(void)
     voltageState = BATTERY_INIT;
     batteryWarningVoltage = 0;
     batteryCriticalVoltage = 0;
+
+    warn_alarm_timeout = 0;
+ 
+
     lowVoltageCutoff.enabled = false;
     lowVoltageCutoff.percentage = 100;
     lowVoltageCutoff.startTime = 0;
@@ -484,6 +613,26 @@ uint16_t getBatteryVoltageLatest(void)
 {
     return voltageMeter.unfiltered;
 }
+
+uint16_t getOptionBatteryVoltage(void) /// wat to call osd ant telemitry
+{
+#ifndef USE_VBAT_ALARM_DELAY 
+
+  return voltageMeter.filtered;
+#else
+    if ( batteryConfig()->use_vbat_unfiltered == 1  ) {
+       return voltageMeter.unfiltered;
+
+	}else{
+
+	   return voltageMeter.filtered;
+    }
+	
+#endif
+
+}
+
+
 
 uint8_t getBatteryCellCount(void)
 {
