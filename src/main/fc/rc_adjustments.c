@@ -307,7 +307,7 @@ static int applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t a
     switch (adjustmentFunction) {
     case ADJUSTMENT_RC_RATE:
     case ADJUSTMENT_ROLL_RC_RATE:
-        newValue = constrain((int)controlRateConfig->rcRates[FD_ROLL] + delta, 0, CONTROL_RATE_CONFIG_RC_RATES_MAX);
+        newValue = constrain((int)controlRateConfig->rcRates[FD_ROLL] + delta, 1, CONTROL_RATE_CONFIG_RC_RATES_MAX);
         controlRateConfig->rcRates[FD_ROLL] = newValue;
         blackboxLogInflightAdjustmentEvent(ADJUSTMENT_ROLL_RC_RATE, newValue);
         if (adjustmentFunction == ADJUSTMENT_ROLL_RC_RATE) {
@@ -316,7 +316,7 @@ static int applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t a
         // fall through for combined ADJUSTMENT_RC_EXPO
         FALLTHROUGH;
     case ADJUSTMENT_PITCH_RC_RATE:
-        newValue = constrain((int)controlRateConfig->rcRates[FD_PITCH] + delta, 0, CONTROL_RATE_CONFIG_RC_RATES_MAX);
+        newValue = constrain((int)controlRateConfig->rcRates[FD_PITCH] + delta, 1, CONTROL_RATE_CONFIG_RC_RATES_MAX);
         controlRateConfig->rcRates[FD_PITCH] = newValue;
         blackboxLogInflightAdjustmentEvent(ADJUSTMENT_PITCH_RC_RATE, newValue);
         break;
@@ -423,7 +423,7 @@ static int applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t a
         blackboxLogInflightAdjustmentEvent(ADJUSTMENT_YAW_D, newValue);
         break;
     case ADJUSTMENT_RC_RATE_YAW:
-        newValue = constrain((int)controlRateConfig->rcRates[FD_YAW] + delta, 0, CONTROL_RATE_CONFIG_RC_RATES_MAX);
+        newValue = constrain((int)controlRateConfig->rcRates[FD_YAW] + delta, 1, CONTROL_RATE_CONFIG_RC_RATES_MAX);
         controlRateConfig->rcRates[FD_YAW] = newValue;
         blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RC_RATE_YAW, newValue);
         break;
@@ -472,7 +472,7 @@ static int applyAbsoluteAdjustment(controlRateConfig_t *controlRateConfig, adjus
     switch (adjustmentFunction) {
     case ADJUSTMENT_RC_RATE:
     case ADJUSTMENT_ROLL_RC_RATE:
-        newValue = constrain(value, 0, CONTROL_RATE_CONFIG_RC_RATES_MAX);
+        newValue = constrain(value, 1, CONTROL_RATE_CONFIG_RC_RATES_MAX);
         controlRateConfig->rcRates[FD_ROLL] = newValue;
         blackboxLogInflightAdjustmentEvent(ADJUSTMENT_ROLL_RC_RATE, newValue);
         if (adjustmentFunction == ADJUSTMENT_ROLL_RC_RATE) {
@@ -481,13 +481,13 @@ static int applyAbsoluteAdjustment(controlRateConfig_t *controlRateConfig, adjus
         // fall through for combined ADJUSTMENT_RC_EXPO
         FALLTHROUGH;
     case ADJUSTMENT_PITCH_RC_RATE:
-        newValue = constrain(value, 0, CONTROL_RATE_CONFIG_RC_RATES_MAX);
+        newValue = constrain(value, 1, CONTROL_RATE_CONFIG_RC_RATES_MAX);
         controlRateConfig->rcRates[FD_PITCH] = newValue;
         blackboxLogInflightAdjustmentEvent(ADJUSTMENT_PITCH_RC_RATE, newValue);
         break;
     case ADJUSTMENT_RC_EXPO:
     case ADJUSTMENT_ROLL_RC_EXPO:
-        newValue = constrain(value, 0, CONTROL_RATE_CONFIG_RC_EXPO_MAX);
+        newValue = constrain(value, 1, CONTROL_RATE_CONFIG_RC_EXPO_MAX);
         controlRateConfig->rcExpo[FD_ROLL] = newValue;
         blackboxLogInflightAdjustmentEvent(ADJUSTMENT_ROLL_RC_EXPO, newValue);
         if (adjustmentFunction == ADJUSTMENT_ROLL_RC_EXPO) {
@@ -588,7 +588,7 @@ static int applyAbsoluteAdjustment(controlRateConfig_t *controlRateConfig, adjus
         blackboxLogInflightAdjustmentEvent(ADJUSTMENT_YAW_D, newValue);
         break;
     case ADJUSTMENT_RC_RATE_YAW:
-        newValue = constrain(value, 0, CONTROL_RATE_CONFIG_RC_RATES_MAX);
+        newValue = constrain(value, 1, CONTROL_RATE_CONFIG_RC_RATES_MAX);
         controlRateConfig->rcRates[FD_YAW] = newValue;
         blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RC_RATE_YAW, newValue);
         break;
