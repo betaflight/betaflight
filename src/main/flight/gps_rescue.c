@@ -471,7 +471,7 @@ void updateGPSRescueState(void)
         // We have reached the XYZ envelope to be considered at "home".  We need to land gently and check our accelerometer for abnormal data.
         // At this point, do not let the target altitude go up anymore, so if we overshoot, we dont' move in a parabolic trajectory
 
-        // If we are over 120% of average magnitude, just disarm since we're pretty much home
+        // If we are over 150% of average magnitude, just disarm since we're pretty much home
         if (rescueState.sensor.accMagnitude > rescueState.sensor.accMagnitudeAvg * 1.5) {
             setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
             disarm();
