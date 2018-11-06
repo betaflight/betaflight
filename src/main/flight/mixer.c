@@ -764,6 +764,8 @@ float applyThrottleLimit(float throttle)
                 return throttle * throttleLimitFactor;
             case THROTTLE_LIMIT_TYPE_CLIP:
                 return MIN(throttle, throttleLimitFactor);
+            case THROTTLE_LIMIT_TYPE_COMPENSATE:
+                return throttle * calculateThrottleLimitBatteryCompensatedFactor(throttleLimitFactor);
         }
     }
 

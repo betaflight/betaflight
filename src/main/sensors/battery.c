@@ -513,3 +513,19 @@ int32_t getMAhDrawn(void)
 {
     return currentMeter.mAhDrawn;
 }
+
+float calculateThrottleLimitBatteryCompensatedFactor(const float throttleLimitFactor)
+{
+    float batteryCompensationFactor = 0.0f;
+    if (batteryCellCount > 0) {
+        uint16_t batteryCapacity = batteryConfig()->batteryCapacity;
+
+        if (batteryCapacity > 0) {
+            batteryCompensationFactor = (float) currentMeter.mAhDrawn / batteryCapacity;
+        } else {
+            uint8_t maxCellVoltage = batteryConfig()->vbatmaxcellvoltage;
+            batteryCompensationFactor = ((float) (maxCellVoltage * batteryCellCount) - voltageMeter.filtered) / ((maxCellVoltage - batteryConfig()->vbatmincellvoltage) * batteryCellCount);
+        }
+    }
+    return constrainf(throttleLimitFactor + (1.0f - throttleLimitFactor) * batteryCompensationFactor, throttleLimitFactor, 1.0f);
+}

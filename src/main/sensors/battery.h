@@ -98,3 +98,4 @@ int32_t getMAhDrawn(void);
 void batteryUpdateCurrentMeter(timeUs_t currentTimeUs);
 
 const lowVoltageCutoff_t *getLowVoltageCutoff(void);
+float calculateThrottleLimitBatteryCompensatedFactor(float throttleLimitFactor);

@@ -68,10 +68,8 @@ baro_ms5611_unittest_DEFINES := \
 # This test is disabled due to build errors.
 # Its source code is archived in unit/battery_unittest.cc.txt
 #
-#battery_unittest_SRC := \
-#		$(USER_DIR)/sensors/battery.c \
-#		$(USER_DIR)/common/maths.c
-
+battery_unittest_SRC := \
+		$(USER_DIR)/sensors/battery.c
 
 blackbox_unittest_SRC :=  \
 		$(USER_DIR)/blackbox/blackbox.c \

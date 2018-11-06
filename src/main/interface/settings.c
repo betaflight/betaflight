@@ -334,7 +334,7 @@ static const char * const lookupOverclock[] = {
 #endif
 
 static const char * const lookupTableThrottleLimitType[] = {
-    "OFF", "SCALE", "CLIP"
+    "OFF", "SCALE", "CLIP", "COMPENSATE"
 };
 
 
