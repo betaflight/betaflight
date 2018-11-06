@@ -575,7 +575,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
         const float rcCommandThrottleRange3dLow = rcCommand3dDeadBandLow - PWM_RANGE_MIN;
         const float rcCommandThrottleRange3dHigh = PWM_RANGE_MAX - rcCommand3dDeadBandHigh;
 
-        if (rcCommand[THROTTLE] <= rcCommand3dDeadBandLow) {
+        if (rcCommand[THROTTLE] <= rcCommand3dDeadBandLow || isFlipOverAfterCrashActive()) {
             // INVERTED
             motorRangeMin = motorOutputLow;
             motorRangeMax = deadbandMotor3dLow;
@@ -712,20 +712,8 @@ static void applyFlipOverAfterCrashModeToMotors(void)
             motorOutputNormalised = MIN(1.0f, flipPower * motorOutputNormalised);
             float motorOutput = motorOutputMin + motorOutputNormalised * motorOutputRange;
 
-            if (motorOutput < motorOutputMin + CRASH_FLIP_DEADBAND) {
-                motorOutput = disarmMotorOutput;
-            } else {
-                // Add a little bit to the motorOutputMin so props aren't spinning when sticks are centered
-                motorOutput = motorOutput - CRASH_FLIP_DEADBAND;
-
-                if (featureIsEnabled(FEATURE_3D)) {
-                    if (motorOutput < DSHOT_3D_FORWARD_MIN_THROTTLE) {
-                        motorOutput = motorOutput + DSHOT_3D_FORWARD_MIN_THROTTLE;
-                    } else {
-                        motorOutput = motorOutput - DSHOT_3D_FORWARD_MIN_THROTTLE;
-                    }
-                }
-            }
+            // Add a little bit to the motorOutputMin so props aren't spinning when sticks are centered
+            motorOutput = (motorOutput < motorOutputMin + CRASH_FLIP_DEADBAND) ? disarmMotorOutput : (motorOutput - CRASH_FLIP_DEADBAND);
 
             motor[i] = motorOutput;
         }
@@ -811,8 +799,12 @@ void updateDynLpfCutoffs(timeUs_t currentTimeUs, float throttle)
 
 FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensation)
 {
+    // Find min and max throttle based on conditions. Throttle has to be known before mixing
+    calculateThrottleAndCurrentMotorEndpoints(currentTimeUs);
+
     if (isFlipOverAfterCrashActive()) {
         applyFlipOverAfterCrashModeToMotors();
+
         return;
     }
 
@@ -825,9 +817,6 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
     }
 #endif
     
-    // Find min and max throttle based on conditions. Throttle has to be known before mixing
-    calculateThrottleAndCurrentMotorEndpoints(currentTimeUs);
-
     // Calculate and Limit the PID sum
     const float scaledAxisPidRoll =
         constrainf(pidData[FD_ROLL].Sum, -currentPidProfile->pidSumLimit, currentPidProfile->pidSumLimit) / PID_MIXER_SCALING;
