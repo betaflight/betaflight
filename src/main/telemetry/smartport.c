@@ -486,7 +486,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
     while (doRun && *clearToSend) {
         // Ensure we won't get stuck in the loop if there happens to be nothing available to send in a timely manner - dump the slot if we loop in there for too long.
         if (requestTimeout) {
-            if (millis() >= *requestTimeout) {
+            if ((int32_t)(micros() - *requestTimeout) >= 0) {
                 *clearToSend = false;
 
                 return;
@@ -812,7 +812,7 @@ static bool serialCheckQueueEmpty(void)
 
 void handleSmartPortTelemetry(void)
 {
-    const uint32_t requestTimeout = millis() + SMARTPORT_SERVICE_TIMEOUT_MS;
+    const uint32_t requestTimeout = micros() + SMARTPORT_SERVICE_TIMEOUT_MS * 1000;
 
     if (telemetryState == TELEMETRY_STATE_INITIALIZED_SERIAL && smartPortSerialPort) {
         smartPortPayload_t *payload = NULL;
