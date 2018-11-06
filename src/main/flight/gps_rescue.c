@@ -71,7 +71,8 @@ typedef enum {
 typedef enum {
     RESCUE_HEALTHY,
     RESCUE_FLYAWAY,
-    RESCUE_CRASH_DETECTED,
+    RESCUE_CRASH_FLIP_DETECTED,
+    RESCUE_STALLED,
     RESCUE_TOO_CLOSE
 } rescueFailureState_e;
 
@@ -110,7 +111,7 @@ typedef struct {
     bool isFailsafe;
 } rescueState_s;
 
-#define GPS_RESCUE_MAX_YAW_RATE       360  // deg/sec max yaw rate
+#define GPS_RESCUE_MAX_YAW_RATE       180  // deg/sec max yaw rate
 #define GPS_RESCUE_RATE_SCALE_DEGREES 45   // Scale the commanded yaw rate when the error is less then this angle
 
 PG_REGISTER_WITH_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 1);
@@ -234,10 +235,26 @@ static void setBearing(int16_t desiredHeading)
 
 static void rescueAttainPosition()
 {
+    // Speed and altitude controller internal variables
+    static float previousSpeedError = 0;
+    static int16_t speedIntegral = 0;
+    static float previousAltitudeError = 0;
+    static int16_t altitudeIntegral = 0;
+
+    if (rescueState.phase == RESCUE_INITIALIZE) {
+        // Initialize internal variables each time GPS Rescue is started
+        previousSpeedError = 0;
+        speedIntegral = 0;
+        previousAltitudeError = 0;
+        altitudeIntegral = 0;
+    }
+
     // Point to home if that is in our intent
     if (rescueState.intent.crosstrack) {
         setBearing(rescueState.sensor.directionToHome);
     }
+
+    DEBUG_SET(DEBUG_RTH, 3, rescueState.failure); //Failure can change with no new GPS Data
 
     if (!newGPSData) {
         return;
@@ -246,9 +263,6 @@ static void rescueAttainPosition()
     /**
         Speed controller
     */
-    static float previousSpeedError = 0;
-    static int16_t speedIntegral = 0;
-
     const int16_t speedError = (rescueState.intent.targetGroundspeed - rescueState.sensor.groundSpeed) / 100;
     const int16_t speedDerivative = speedError - previousSpeedError;
 
@@ -265,9 +279,6 @@ static void rescueAttainPosition()
     /**
         Altitude controller
     */
-    static float previousAltitudeError = 0;
-    static int16_t altitudeIntegral = 0;
-
     const int16_t altitudeError = (rescueState.intent.targetAltitudeCm - rescueState.sensor.currentAltitudeCm) / 100; // Error in meters
     const int16_t altitudeDerivative = altitudeError - previousAltitudeError;
 
@@ -288,14 +299,23 @@ static void rescueAttainPosition()
     DEBUG_SET(DEBUG_RTH, 0, rescueThrottle);
     DEBUG_SET(DEBUG_RTH, 1, gpsRescueAngle[AI_PITCH]);
     DEBUG_SET(DEBUG_RTH, 2, altitudeAdjustment);
-    DEBUG_SET(DEBUG_RTH, 3, rescueState.failure);
 }
 
 static void performSanityChecks()
 {
+    static uint32_t previousTimeUs = 0; // Last time Stalled/LowSat was checked
+    static int8_t secondsStalled = 0; // Stalled movement detection
+    static int8_t secondsLowSats = 0; // Minimum sat detection
+
     if (rescueState.phase == RESCUE_IDLE) {
         rescueState.failure = RESCUE_HEALTHY;
-
+        return;
+    } else if (rescueState.phase == RESCUE_INITIALIZE) {
+        // Initialize internal variables each time GPS Rescue is started
+        const uint32_t currentTimeUs = micros();
+        previousTimeUs = currentTimeUs;
+        secondsStalled = 10; // Start the count at 10 to be less forgiving at the beginning
+        secondsLowSats = 5;  // Start the count at 5 to be less forgiving at the beginning
         return;
     }
 
@@ -309,13 +329,11 @@ static void performSanityChecks()
 
     // Check if crash recovery mode is active, disarm if so.
     if (crashRecoveryModeActive()) {
-        rescueState.failure = RESCUE_CRASH_DETECTED;
+        rescueState.failure = RESCUE_CRASH_FLIP_DETECTED;
     }
 
     //  Things that should run at a low refresh rate (such as flyaway detection, etc)
     //  This runs at ~1hz
-
-    static uint32_t previousTimeUs;
 
     const uint32_t currentTimeUs = micros();
     const uint32_t dTime = currentTimeUs - previousTimeUs;
@@ -326,21 +344,15 @@ static void performSanityChecks()
 
     previousTimeUs = currentTimeUs;
 
-     // Stalled movement detection
-    static int8_t gsI = 0;
+    secondsStalled = constrain(secondsStalled + (rescueState.sensor.groundSpeed < 150) ? 1 : -1, 0, 20);
 
-    gsI = constrain(gsI + (rescueState.sensor.groundSpeed < 150) ? 1 : -1, -10, 10);
-
-    if (gsI == 10) {
-        rescueState.failure = RESCUE_CRASH_DETECTED;
+    if (secondsStalled == 20) {
+        rescueState.failure = RESCUE_STALLED;
     }
 
-    // Minimum sat detection
-    static int8_t msI = 0;
+    secondsLowSats = constrain(secondsLowSats + (rescueState.sensor.numSat < gpsRescueConfig()->minSats) ? 1 : -1, 0, 10);
 
-    msI = constrain(msI + (rescueState.sensor.numSat < gpsRescueConfig()->minSats) ? 1 : -1, -5, 5);
-
-    if (msI == 5) {
+    if (secondsLowSats == 10) {
         rescueState.failure = RESCUE_FLYAWAY;
     }
 }
@@ -382,6 +394,8 @@ void updateGPSRescueState(void)
         rescueStop();
     } else if (FLIGHT_MODE(GPS_RESCUE_MODE) && rescueState.phase == RESCUE_IDLE) {
         rescueStart();
+        rescueAttainPosition(); // Initialize
+        performSanityChecks(); // Initialize
     }
 
     rescueState.isFailsafe = failsafeIsActive();
@@ -457,7 +471,7 @@ void updateGPSRescueState(void)
         // We have reached the XYZ envelope to be considered at "home".  We need to land gently and check our accelerometer for abnormal data.
         // At this point, do not let the target altitude go up anymore, so if we overshoot, we dont' move in a parabolic trajectory
 
-        // If we are over 120% of average magnitude, just disarm since we're pretty much home
+        // If we are over 150% of average magnitude, just disarm since we're pretty much home
         if (rescueState.sensor.accMagnitude > rescueState.sensor.accMagnitudeAvg * 1.5) {
             setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
             disarm();

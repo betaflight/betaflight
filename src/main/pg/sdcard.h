@@ -23,15 +23,21 @@
 #include "pg/pg.h"
 #include "drivers/io.h"
 
+typedef enum {
+    SDCARD_MODE_NONE = 0,
+    SDCARD_MODE_SPI,
+    SDCARD_MODE_SDIO
+} sdcardMode_e;
+
 typedef struct sdcardConfig_s {
     uint8_t useDma;
-    uint8_t enabled;
-    uint8_t device;
+    int8_t  device;
     ioTag_t cardDetectTag;
     ioTag_t chipSelectTag;
     uint8_t cardDetectInverted;
     uint8_t dmaIdentifier;
     uint8_t dmaChannel;
+    sdcardMode_e mode;
 } sdcardConfig_t;
 
 PG_DECLARE(sdcardConfig_t, sdcardConfig);

@@ -27,6 +27,7 @@
 #if defined(USE_SPI)
 
 #include "common/utils.h"
+#include "common/maths.h"
 
 #include "drivers/bus.h"
 #include "drivers/bus_spi.h"
@@ -35,8 +36,6 @@
 #include "drivers/io.h"
 #include "drivers/nvic.h"
 #include "drivers/rcc.h"
-
-spiDevice_t spiDevice[SPIDEV_COUNT];
 
 #ifndef SPI2_SCK_PIN
 #define SPI2_NSS_PIN    PB12
@@ -77,6 +76,10 @@ spiDevice_t spiDevice[SPIDEV_COUNT];
 void spiInitDevice(SPIDevice device)
 {
     spiDevice_t *spi = &(spiDevice[device]);
+
+    if (!spi->dev) {
+        return;
+    }
 
 #ifdef SDCARD_SPI_INSTANCE
     if (spi->dev == SDCARD_SPI_INSTANCE) {
@@ -224,8 +227,10 @@ void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
     }
 #endif
 
+    divisor = constrain(divisor, 2, 256);
+
     LL_SPI_Disable(instance);
-    LL_SPI_SetBaudRatePrescaler(instance, divisor ? (ffs(divisor | 0x100) - 2) << SPI_CR1_BR_Pos : 0);
+    LL_SPI_SetBaudRatePrescaler(instance, (ffs(divisor) - 2) << SPI_CR1_BR_Pos);
     LL_SPI_Enable(instance);
 }
 #endif

@@ -122,8 +122,12 @@
 #endif
 
 #define USE_BRUSHED_ESC_AUTODETECT  // Detect if brushed motors are connected and set defaults appropriately to avoid motors spinning on boot
+
 #define USE_CLI
+#define USE_SERIAL_PASSTHROUGH
+#define USE_TASK_STATISTICS
 #define USE_GYRO_REGISTER_DUMP  // Adds gyroregisters command to cli to dump configured register values
+#define USE_IMU_CALC
 #define USE_PPM
 #define USE_PWM
 #define USE_SERIAL_RX
@@ -164,6 +168,7 @@
 #define USE_GYRO_OVERFLOW_CHECK
 #define USE_YAW_SPIN_RECOVERY
 #define USE_HUFFMAN
+#define USE_LAUNCH_CONTROL
 #define USE_MSP_DISPLAYPORT
 #define USE_MSP_OVER_TELEMETRY
 #define USE_PINIO
@@ -188,6 +193,7 @@
 #define USE_THROTTLE_BOOST
 #define USE_RC_SMOOTHING_FILTER
 #define USE_ITERM_RELAX
+#define USE_DYN_LPF
 
 #ifdef USE_SERIALRX_SPEKTRUM
 #define USE_SPEKTRUM_BIND
@@ -210,6 +216,7 @@
 #define USE_GYRO_DLPF_EXPERIMENTAL
 #define USE_OSD
 #define USE_OSD_OVER_MSP_DISPLAYPORT
+#define USE_MULTI_GYRO
 #define USE_OSD_ADJUSTMENTS
 #define USE_SENSOR_NAMES
 #define USE_SERIALRX_JETIEXBUS
@@ -222,4 +229,6 @@
 #define USE_ABSOLUTE_CONTROL
 #define USE_HOTT_TEXTMODE
 #define USE_LED_STRIP
+#define USE_VARIO
+#define USE_RX_LINK_QUALITY_INFO
 #endif

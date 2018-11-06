@@ -166,10 +166,16 @@ void setRssiMsp(uint8_t newMspRssi);
 void updateRSSI(timeUs_t currentTimeUs);
 uint16_t getRssi(void);
 uint8_t getRssiPercent(void);
+bool isRssiConfigured(void);
+
+#define LINK_QUALITY_MAX_VALUE 255
+
+uint8_t rxGetLinkQuality(void);
+uint8_t rxGetLinkQualityPercent(void);
 
 void resetAllRxChannelRangeConfigurations(rxChannelRangeConfig_t *rxChannelRangeConfig);
 
-void suspendRxSignal(void);
-void resumeRxSignal(void);
+void suspendRxPwmPpmSignal(void);
+void resumeRxPwmPpmSignal(void);
 
 uint16_t rxGetRefreshRate(void);

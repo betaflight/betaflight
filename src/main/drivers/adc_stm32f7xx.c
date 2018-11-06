@@ -58,9 +58,8 @@
 #define TEMPSENSOR_CAL_VREFANALOG          ( 3300U)                    /* Analog voltage reference (Vref+) voltage with which temperature sensor has been calibrated in production (+-10 mV) (unit: mV). */
 
 // These addresses are incorrectly defined in stm32f7xx_ll_adc.h
-
-#if defined(STM32F745xx) || defined(STM32F746xx)
-// F745xx_F746xx
+#if defined(STM32F745xx) || defined(STM32F746xx) || defined(STM32F765xx)
+// F745xx_F746xx and  F765xx_F767xx_F769xx
 #define VREFINT_CAL_ADDR                   ((uint16_t*) (0x1FF0F44A))
 #define TEMPSENSOR_CAL1_ADDR               ((uint16_t*) (0x1FF0F44C))
 #define TEMPSENSOR_CAL2_ADDR               ((uint16_t*) (0x1FF0F44E))
@@ -238,8 +237,9 @@ void adcInit(const adcConfig_t *config)
     }
 
     ADCDevice device = adcDeviceByInstance(ADC_INSTANCE);
-    if (device == ADCINVALID)
+    if (device == ADCINVALID) {
         return;
+    }
 
     adc = adcHardware[device];
 

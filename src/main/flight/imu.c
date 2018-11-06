@@ -111,14 +111,12 @@ quaternion offset = QUATERNION_INITIALIZE;
 // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 attitudeEulerAngles_t attitude = EULER_INITIALIZE;
 
-PG_REGISTER_WITH_RESET_TEMPLATE(imuConfig_t, imuConfig, PG_IMU_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(imuConfig_t, imuConfig, PG_IMU_CONFIG, 1);
 
 PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
     .dcm_kp = 2500,                // 1.0 * 10000
     .dcm_ki = 0,                   // 0.003 * 10000
     .small_angle = 25,
-    .accDeadband = {.xy = 40, .z= 40},
-    .acc_unarmedcal = 1
 );
 
 STATIC_UNIT_TESTED void imuComputeRotationMatrix(void){
@@ -136,7 +134,7 @@ STATIC_UNIT_TESTED void imuComputeRotationMatrix(void){
     rMat[2][1] = 2.0f * (qP.yz - -qP.wx);
     rMat[2][2] = 1.0f - 2.0f * qP.xx - 2.0f * qP.yy;
 
-#if defined(SIMULATOR_BUILD) && defined(SKIP_IMU_CALC) && !defined(SET_IMU_FROM_EULER)
+#if defined(SIMULATOR_BUILD) && !defined(USE_IMU_CALC) && !defined(SET_IMU_FROM_EULER)
     rMat[1][0] = -2.0f * (qP.xy - -qP.wz);
     rMat[2][0] = -2.0f * (qP.xz + -qP.wy);
 #endif
@@ -159,7 +157,6 @@ void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correctio
 {
     imuRuntimeConfig.dcm_kp = imuConfig()->dcm_kp / 10000.0f;
     imuRuntimeConfig.dcm_ki = imuConfig()->dcm_ki / 10000.0f;
-    imuRuntimeConfig.acc_unarmedcal = imuConfig()->acc_unarmedcal;
     imuRuntimeConfig.small_angle = imuConfig()->small_angle;
 
     fc_acc = calculateAccZLowPassFilterRCTimeConstant(5.0f); // Set to fix value
@@ -475,7 +472,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     }
 #endif
 
-#if defined(SIMULATOR_BUILD) && defined(SKIP_IMU_CALC)
+#if defined(SIMULATOR_BUILD) && !defined(USE_IMU_CALC)
     UNUSED(imuMahonyAHRSupdate);
     UNUSED(imuIsAccelerometerHealthy);
     UNUSED(useAcc);

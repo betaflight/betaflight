@@ -36,42 +36,36 @@
 
 // MPU6000 interrupts
 #define USE_EXTI
-#define MPU_INT_EXTI            PB0
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PB0
 #define USE_MPU_DATA_READY_SIGNAL
 
-#define MPU6000_CS_PIN          PA4
-#define MPU6000_SPI_INSTANCE    SPI1
+#define GYRO_1_CS_PIN           PA4
+#define GYRO_1_SPI_INSTANCE     SPI1
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
-#define ACC_MPU6000_ALIGN       CW90_DEG
+#define ACC_1_ALIGN             CW90_DEG
 
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN      CW90_DEG
+#define GYRO_1_ALIGN            CW90_DEG
 
 #define USE_MAG
 #define USE_MAG_HMC5883
 #define USE_MAG_QMC5883
+#define USE_MAG_LIS3MDL
 #define MAG_HMC5883_ALIGN       CW90_DEG
 
 #define USE_BARO
 #define USE_BARO_MS5611
 
 #define USE_SDCARD
-
+#define USE_SDCARD_SPI
 #define SDCARD_SPI_INSTANCE     SPI2
 #define SDCARD_SPI_CS_PIN       PE15
-
-// SPI2 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 328kHz
-// Divide to under 25MHz for normal operation:
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     4 // 21MHz
-
-
-#define SDCARD_DMA_CHANNEL_TX               DMA1_Stream3
+#define SDCARD_DMA_CHANNEL_TX               DMA1_Stream4
 #define SDCARD_DMA_CHANNEL                  0
-
 
 #define USE_VCP
 #define USE_USB_DETECT
@@ -80,7 +74,6 @@
 #define USE_UART1
 #define UART1_RX_PIN            PB7
 #define UART1_TX_PIN            PB6
-#define UART1_AHB1_PERIPHERALS  RCC_AHB1Periph_DMA2
 
 #define USE_UART2
 #define UART2_RX_PIN            PD6
@@ -159,4 +152,4 @@
 #define TARGET_IO_PORTE         0xffff
 
 #define USABLE_TIMER_CHANNEL_COUNT 17
-#define USED_TIMERS             ( TIM_N(1) |TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(8) | TIM_N(9))
+#define USED_TIMERS             ( TIM_N(1) |TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(9) )

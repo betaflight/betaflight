@@ -56,30 +56,27 @@
 
 // ICM20689 interrupt
 #define USE_EXTI
-#define MPU_INT_EXTI            PC5
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC5
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
-#define  ICM20689_CS_PIN          PC4
-#define ICM20689_SPI_INSTANCE    SPI1
+#define GYRO_1_CS_PIN           PC4
+#define GYRO_1_SPI_INSTANCE     SPI1
+#define ACC_1_ALIGN             CW270_DEG
+#define GYRO_1_ALIGN            CW270_DEG
 
 #define USE_ACC
 #define USE_ACC_SPI_ICM20689
-#define ACC_ICM20689_ALIGN       CW270_DEG
 
 #define USE_GYRO
 #define USE_GYRO_SPI_ICM20689
-#define GYRO_ICM20689_ALIGN      CW270_DEG
 
 #if defined(FLYWOOF405)
 //------MPU6000
-#define MPU6000_CS_PIN           PC4 
-#define MPU6000_SPI_INSTANCE     SPI1
 #define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN      CW270_DEG
 #define USE_ACC_SPI_MPU6000								  
-#define ACC_MPU6000_ALIGN       CW270_DEG
 #endif
 
 #if defined(KAKUTEF4V2) || defined(FLYWOOF405)       // There is invertor on RXD3(PB11), so PB10/PB11 can't be used as I2C2.
@@ -87,12 +84,7 @@
 #define USE_I2C_DEVICE_1
 #define I2C_DEVICE              (I2CDEV_1)
 
-#if defined(FLYWOOF405)
-#define I2C1_SCL                PB6
-#else 
 #define I2C1_SCL                PB8        // SCL pad
-#endif
-
 #define I2C1_SDA                PB9        // SDA pad
 #define BARO_I2C_INSTANCE       I2C_DEVICE
 #define MAG_I2C_INSTANCE        I2C_DEVICE
@@ -100,6 +92,7 @@
 #define USE_MAG
 #define USE_MAG_HMC5883                   //External, connect to I2C1
 #define USE_MAG_QMC5883
+#define USE_MAG_LIS3MDL
 #define MAG_HMC5883_ALIGN       CW180_DEG
 
 #define USE_BARO
@@ -130,8 +123,6 @@
 #else
 #define UART1_TX_PIN            PA9
 #endif
-
-#define UART1_AHB1_PERIPHERALS  RCC_AHB1Periph_DMA2
 
 #define USE_UART3
 #define UART3_RX_PIN            PB11

@@ -30,9 +30,8 @@
 #include "usb_io.h"
 #include "sdcard.h"
 
-
 #ifdef USE_USB_DETECT
-static IO_t usbDetectPin = IO_NONE;
+static IO_t usbDetectPin;
 #endif
 
 void usbCableDetectDeinit(void)
@@ -47,9 +46,6 @@ void usbCableDetectDeinit(void)
 void usbCableDetectInit(void)
 {
 #ifdef USE_USB_DETECT
-#ifndef USB_DETECT_PIN
-#define USB_DETECT_PIN NONE
-#endif
     usbDetectPin = IOGetByTag(IO_TAG(USB_DETECT_PIN));
 
     IOInit(usbDetectPin, OWNER_USB_DETECT, 0);

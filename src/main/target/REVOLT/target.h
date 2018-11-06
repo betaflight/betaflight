@@ -83,26 +83,21 @@
 #define I2C1_SDA                PB9
 
 /*----------Gyro Config--------*/
-#define MPU6000_CS_PIN          PA4
-#define MPU6000_SPI_INSTANCE    SPI1
-
-#define MPU6500_CS_PIN          PA4
-#define MPU6500_SPI_INSTANCE    SPI1
-
 #define USE_GYRO
 #define USE_ACC
 
-#define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN      CW0_DEG
-
-#define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN       CW0_DEG
 
+#define GYRO_1_CS_PIN           PA4
+#define GYRO_1_SPI_INSTANCE     SPI1
+
+#define GYRO_1_ALIGN            CW0_DEG
+#define ACC_1_ALIGN             CW0_DEG
 
 #define USE_EXTI
-#define MPU_INT_EXTI            PC4
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC4
 #define USE_MPU_DATA_READY_SIGNAL
 
 /*----------Flash Config--------*/
@@ -133,7 +128,6 @@
 #define USE_UART1
 #define UART1_RX_PIN            PA10
 #define UART1_TX_PIN            PA9
-#define UART1_AHB1_PERIPHERALS  RCC_AHB1Periph_DMA2
 
 #define USE_UART3
 #define UART3_RX_PIN            PB11
@@ -171,5 +165,5 @@
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         (BIT(2))
 
-#define USABLE_TIMER_CHANNEL_COUNT 11
-#define USED_TIMERS             ( TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(8) | TIM_N(11) )
+#define USABLE_TIMER_CHANNEL_COUNT 6
+#define USED_TIMERS             ( TIM_N(2) | TIM_N(4) | TIM_N(8) | TIM_N(11) )

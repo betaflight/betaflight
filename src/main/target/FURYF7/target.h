@@ -32,19 +32,20 @@
 #define BEEPER_INVERTED
 
 #define USE_EXTI
-#define MPU_INT_EXTI            PC4
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC4
 #define USE_MPU_DATA_READY_SIGNAL
 
-#define ICM20689_CS_PIN          PA4
-#define ICM20689_SPI_INSTANCE    SPI1
+#define GYRO_1_CS_PIN           PA4
+#define GYRO_1_SPI_INSTANCE     SPI1
 
 #define USE_GYRO
 #define USE_GYRO_SPI_ICM20689
-#define GYRO_ICM20689_ALIGN      CW180_DEG
+#define GYRO_1_ALIGN            CW180_DEG
 
 #define USE_ACC
 #define USE_ACC_SPI_ICM20689
-#define ACC_ICM20689_ALIGN       CW180_DEG
+#define ACC_1_ALIGN             CW180_DEG
 
 //#define USE_BARO
 //#define USE_BARO_MS5611
@@ -77,16 +78,11 @@
 #define SPI4_MOSI_PIN           PE14
 
 #define USE_SDCARD
+#define USE_SDCARD_SPI
 #define SDCARD_DETECT_INVERTED
 #define SDCARD_DETECT_PIN                   PD2
-
 #define SDCARD_SPI_INSTANCE                 SPI4
 #define SDCARD_SPI_CS_PIN                   SPI4_NSS_PIN
-
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 422kHz
-// Divide to under 25MHz for normal operation:
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 8 // 13.5MHz
-
 #define SDCARD_DMA_STREAM_TX_FULL           DMA2_Stream1
 #define SDCARD_DMA_CHANNEL                  4
 

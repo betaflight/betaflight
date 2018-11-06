@@ -19,7 +19,8 @@
  */
 
 #include "platform.h"
-#ifdef USE_SERIAL_RX
+
+#ifdef USE_SERIALRX_SPEKTRUM
 
 #include <string.h>
 
@@ -68,7 +69,7 @@ static volatile uint8_t spekFrame[SPEK_FRAME_SIZE];
 static rxRuntimeConfig_t *rxRuntimeConfigPtr;
 static serialPort_t *serialPort;
 
-#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_SRXL)
+#if defined(USE_TELEMETRY_SRXL)
 static uint8_t telemetryBuf[SRXL_FRAME_SIZE_MAX];
 static uint8_t telemetryBufLen = 0;
 #endif
@@ -107,12 +108,13 @@ static uint8_t spektrumFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
 {
     UNUSED(rxRuntimeConfig);
 
+#if defined(USE_TELEMETRY_SRXL)
     static timeUs_t telemetryFrameRequestedUs = 0;
 
-    uint8_t result = RX_FRAME_PENDING;
-#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_SRXL)
     timeUs_t currentTimeUs = micros();
 #endif
+
+    uint8_t result = RX_FRAME_PENDING;
 
     if (rcFrameComplete) {
         rcFrameComplete = false;
@@ -149,17 +151,16 @@ static uint8_t spektrumFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
             }
         }
 
-#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_SRXL)
-        if (srxlEnabled && telemetryBufLen && (spekFrame[2] & 0x80) == 0) {
-            telemetryFrameRequestedUs = currentTimeUs;
+#if defined(USE_TELEMETRY_SRXL)
+        if (srxlEnabled && (spekFrame[2] & 0x80) == 0) {
+                    telemetryFrameRequestedUs = currentTimeUs;
         }
 #endif
-
         result = RX_FRAME_COMPLETE;
     }
 
-#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_SRXL)
-    if (telemetryFrameRequestedUs && cmpTimeUs(currentTimeUs, telemetryFrameRequestedUs) >= SPEKTRUM_TELEMETRY_FRAME_DELAY_US) {
+#if defined(USE_TELEMETRY_SRXL)
+    if (telemetryBufLen && telemetryFrameRequestedUs && cmpTimeUs(currentTimeUs, telemetryFrameRequestedUs) >= SPEKTRUM_TELEMETRY_FRAME_DELAY_US) {
         telemetryFrameRequestedUs = 0;
 
         result = (result & ~RX_FRAME_PENDING) | RX_FRAME_PROCESSING_REQUIRED;
@@ -241,12 +242,12 @@ void spektrumBind(rxConfig_t *rxConfig)
         // Take care half-duplex case
         switch (rxConfig->serialrx_provider) {
         case SERIALRX_SRXL:
-#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_SRXL)
+#if defined(USE_TELEMETRY_SRXL)
             if (featureIsEnabled(FEATURE_TELEMETRY) && !telemetryCheckRxPortShared(portConfig)) {
                 bindPin = txPin;
             }
             break;
-#endif // USE_TELEMETRY && USE_TELEMETRY_SRXL
+#endif // USE_TELEMETRY_SRXL
 
         default:
             bindPin = rxConfig->halfDuplex ? txPin : rxPin;
@@ -307,7 +308,7 @@ void spektrumBind(rxConfig_t *rxConfig)
 }
 #endif // USE_SPEKTRUM_BIND
 
-#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_SRXL)
+#if defined(USE_TELEMETRY_SRXL)
 static bool spektrumProcessFrame(const rxRuntimeConfig_t *rxRuntimeConfig)
 {
     UNUSED(rxRuntimeConfig);
@@ -316,11 +317,18 @@ static bool spektrumProcessFrame(const rxRuntimeConfig_t *rxRuntimeConfig)
     if (telemetryBufLen > 0) {
         serialWriteBuf(serialPort, telemetryBuf, telemetryBufLen);
         telemetryBufLen = 0; // reset telemetry buffer
-
-        srxlCollectTelemetryNow();
     }
 
     return true;
+}
+
+bool srxlTelemetryBufferEmpty()
+{
+  if (telemetryBufLen == 0) {
+      return true;
+  } else {
+      return false;
+  }
 }
 
 void srxlRxWriteTelemetryData(const void *data, int len)
@@ -341,7 +349,7 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
     }
 
     srxlEnabled = false;
-#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_SRXL)
+#if defined(USE_TELEMETRY_SRXL)
     bool portShared = telemetryCheckRxPortShared(portConfig);
 #else
     bool portShared = false;
@@ -349,7 +357,7 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
 
     switch (rxConfig->serialrx_provider) {
     case SERIALRX_SRXL:
-#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_SRXL)
+#if defined(USE_TELEMETRY_SRXL)
         srxlEnabled = (featureIsEnabled(FEATURE_TELEMETRY) && !portShared);
         FALLTHROUGH;
 #endif
@@ -375,7 +383,7 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
 
     rxRuntimeConfig->rcReadRawFn = spektrumReadRawRC;
     rxRuntimeConfig->rcFrameStatusFn = spektrumFrameStatus;
-#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_SRXL)
+#if defined(USE_TELEMETRY_SRXL)
     rxRuntimeConfig->rcProcessFrameFn = spektrumProcessFrame;
 #endif
 
@@ -387,7 +395,7 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
         portShared || srxlEnabled ? MODE_RXTX : MODE_RX,
         (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | ((srxlEnabled || rxConfig->halfDuplex) ? SERIAL_BIDIR : 0)
         );
-#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_SRXL)
+#if defined(USE_TELEMETRY_SRXL)
     if (portShared) {
         telemetrySharedPort = serialPort;
     }

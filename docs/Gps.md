@@ -153,6 +153,7 @@ Module | Comments
 -------|--------
 U-blox Neo-M8N w/Compass | Pinout can be found in Pixfalcon manual. SDA and SCL can be attached to I2C bus for compass, TX and RX can be attached to UART for GPS. Power must be applied for either to function.
 Reyax RY825AI | NEO-M8N, 18Hz UART USB interface GPS Glonass BeiDou QZSS antenna module flash. [eBay](http://www.ebay.com/itm/RY825AI-18Hz-UART-USB-interface-GPS-Glonass-BeiDou-QZSS-antenna-module-flash/181566850426)
+mRo uGPS w/ LIS3MDL | Ultra compact and weights just 7.7 grams. Multiple constellation capabilities (GPS and GLONASS).  Includes JST-GH pigtail. Available from [mRobotics](https://store.mrobotics.io/product-p/mro-ugps-samm8q-01.htm).
 
 #### NEO-7
 Module | Comments

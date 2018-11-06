@@ -26,6 +26,7 @@
 
 #ifdef USE_SPI
 
+#include "common/maths.h"
 #include "drivers/bus.h"
 #include "drivers/bus_spi.h"
 #include "drivers/bus_spi_impl.h"
@@ -33,11 +34,13 @@
 #include "drivers/io.h"
 #include "drivers/rcc.h"
 
-spiDevice_t spiDevice[SPIDEV_COUNT];
-
 void spiInitDevice(SPIDevice device)
 {
     spiDevice_t *spi = &(spiDevice[device]);
+
+    if (!spi->dev) {
+        return;
+    }
 
 #ifdef SDCARD_SPI_INSTANCE
     if (spi->dev == SDCARD_SPI_INSTANCE) {
@@ -184,10 +187,12 @@ void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
     }
 #endif
 
+    divisor = constrain(divisor, 2, 256);
+
     SPI_Cmd(instance, DISABLE);
 
     const uint16_t tempRegister = (instance->CR1 & ~BR_BITS);
-    instance->CR1 = tempRegister | (divisor ? ((ffs(divisor | 0x100) - 2) << 3) : 0);
+    instance->CR1 = tempRegister | ((ffs(divisor) - 2) << 3);
 
     SPI_Cmd(instance, ENABLE);
 

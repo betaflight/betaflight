@@ -36,7 +36,7 @@
 
 #include "platform.h"
 
-#ifdef USE_TELEMETRY
+#ifdef USE_TELEMETRY_LTM
 
 #include "build/build_config.h"
 
@@ -175,14 +175,8 @@ static void ltm_sframe(void)
     uint8_t lt_statemode;
     if (FLIGHT_MODE(PASSTHRU_MODE))
         lt_flightmode = 0;
-    else if (FLIGHT_MODE(GPS_HOME_MODE))
-        lt_flightmode = 13;
-    else if (FLIGHT_MODE(GPS_HOLD_MODE))
-        lt_flightmode = 9;
     else if (FLIGHT_MODE(HEADFREE_MODE))
         lt_flightmode = 4;
-    else if (FLIGHT_MODE(BARO_MODE))
-        lt_flightmode = 8;
     else if (FLIGHT_MODE(ANGLE_MODE))
         lt_flightmode = 2;
     else if (FLIGHT_MODE(HORIZON_MODE))

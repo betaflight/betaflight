@@ -55,7 +55,8 @@
 #endif
 
 #define USE_EXTI
-#define MPU_INT_EXTI                        PC13
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN                     PC13
 
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
@@ -69,8 +70,8 @@
 #define USE_ACC
 #define USE_ACC_SPI_MPU6500
 
-#define ACC_MPU6500_ALIGN                   CW0_DEG
-#define GYRO_MPU6500_ALIGN                  CW0_DEG
+#define ACC_1_ALIGN                         CW0_DEG
+#define GYRO_1_ALIGN                        CW0_DEG
 
 #define USE_BARO
 #define USE_BARO_BMP280
@@ -160,23 +161,16 @@
 //#define MAX7456_DMA_IRQ_HANDLER_ID          DMA1_ST0_HANDLER
 
 #define USE_SDCARD
-
+#define USE_SDCARD_SPI
 #define SDCARD_DETECT_INVERTED
 #define SDCARD_DETECT_PIN                   PC14
-
 #define SDCARD_SPI_INSTANCE                 SPI2
 #define SDCARD_SPI_CS_PIN                   SPI2_NSS_PIN
-
-// SPI3 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 328kHz
-// Divide to under 25MHz for normal operation:
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     4 // 21MHz
-
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Stream4
 #define SDCARD_DMA_CHANNEL                  0
 
-#define MPU6500_CS_PIN                      SPI1_NSS_PIN
-#define MPU6500_SPI_INSTANCE                SPI1
+#define GYRO_1_CS_PIN                       SPI1_NSS_PIN
+#define GYRO_1_SPI_INSTANCE                 SPI1
 
 #define USE_ADC
 #define ADC_INSTANCE                        ADC1
@@ -198,13 +192,8 @@
 #define DEFAULT_RX_FEATURE                  FEATURE_RX_SERIAL
 #define DEFAULT_FEATURES                    (FEATURE_TRANSPONDER | FEATURE_RSSI_ADC | FEATURE_TELEMETRY | FEATURE_LED_STRIP)
 
-#define GPS_UART                            SERIAL_PORT_USART3
-
 #define SERIALRX_UART                       SERIAL_PORT_USART2
 #define SERIALRX_PROVIDER                   SERIALRX_SBUS
-
-#define TELEMETRY_UART                      SERIAL_PORT_UART5
-#define TELEMETRY_PROVIDER_DEFAULT          FUNCTION_TELEMETRY_SMARTPORT
 
 #define USE_BUTTONS // Physically located on the optional OSD/VTX board.
 #if (SPRACINGF4NEO_REV >= 3)
@@ -224,4 +213,8 @@
 #define TARGET_IO_PORTD                     (BIT(2))
 
 #define USABLE_TIMER_CHANNEL_COUNT          14 // 4xPWM, 6xESC, 2xESC via UART3 RX/TX, 1xLED Strip, 1xIR.
+#if (SPRACINGF4NEO_REV >= 3)
+#define USED_TIMERS                         (TIM_N(1) | TIM_N(2) | TIM_N(4) | TIM_N(8) | TIM_N(9))
+#else
 #define USED_TIMERS                         (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(8) | TIM_N(9))
+#endif

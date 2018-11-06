@@ -46,6 +46,7 @@
 
 #include "fc/config.h"
 
+#include "rx/cc2500_common.h"
 #include "rx/cc2500_frsky_common.h"
 #include "rx/cc2500_frsky_shared.h"
 
@@ -123,7 +124,7 @@ static void buildTelemetryFrame(uint8_t *packet)
     frame[2] = rxFrSkySpiConfig()->bindTxId[1];
     frame[3] = a1Value;
     frame[4] = a2Value;
-    frame[5] = (uint8_t)rssiDbm;
+    frame[5] = (uint8_t)cc2500getRssiDbm();
     uint8_t bytesUsed = 0;
 #if defined(USE_TELEMETRY_FRSKY_HUB)
     if (telemetryEnabled) {
@@ -195,7 +196,7 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
         lastPacketReceivedTime = currentPacketReceivedTime;
         *protocolState = STATE_DATA;
 
-        if (checkBindRequested(false)) {
+        if (cc2500checkBindRequested(false)) {
             lastPacketReceivedTime = 0;
             timeoutUs = 50;
             missingPackets = 0;
@@ -207,7 +208,7 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
         FALLTHROUGH; //!!TODO -check this fall through is correct
     // here FS code could be
     case STATE_DATA:
-        if (IORead(gdoPin)) {
+        if (cc2500getGdo()) {
             uint8_t ccLen = cc2500ReadReg(CC2500_3B_RXBYTES | CC2500_READ_BURST) & 0x7F;
             if (ccLen >= 20) {
                 cc2500ReadFifo(packet, 20);
@@ -217,12 +218,12 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
                     if (packet[0] == 0x11) {
                         if ((packet[1] == rxFrSkySpiConfig()->bindTxId[0]) &&
                             (packet[2] == rxFrSkySpiConfig()->bindTxId[1])) {
-                            LedOn();
+                            cc2500LedOn();
                             nextChannel(1);
+                            cc2500setRssiDbm(packet[18]);
 #if defined(USE_RX_FRSKY_SPI_TELEMETRY)
                             if ((packet[3] % 4) == 2) {
                                 telemetryTimeUs = micros();
-                                setRssiDbm(packet[18]);
                                 buildTelemetryFrame(packet);
                                 *protocolState = STATE_TELEMETRY;
                             } else
@@ -240,37 +241,33 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
         }
 
         if (cmpTimeUs(currentPacketReceivedTime, lastPacketReceivedTime) > (timeoutUs * SYNC_DELAY_MAX)) {
-#if defined(USE_RX_FRSKY_SPI_PA_LNA)
-            TxDisable();
+#if defined(USE_RX_CC2500_SPI_PA_LNA)
+            cc2500TxDisable();
 #endif
             if (timeoutUs == 1) {
-#if defined(USE_RX_FRSKY_SPI_PA_LNA) && defined(USE_RX_FRSKY_SPI_DIVERSITY) // SE4311 chip
+#if defined(USE_RX_CC2500_SPI_PA_LNA) && defined(USE_RX_CC2500_SPI_DIVERSITY) // SE4311 chip
                 if (missingPackets >= 2) {
-                    switchAntennae();
+                    cc2500switchAntennae();
                 }
 #endif
 
                 if (missingPackets > MAX_MISSING_PKT) {
                     timeoutUs = 50;
 
-#if defined(USE_RX_FRSKY_SPI_TELEMETRY)
                     setRssiDirect(0, RSSI_SOURCE_RX_PROTOCOL);
-#endif
                 }
 
                 missingPackets++;
                 nextChannel(1);
             } else {
                 if (ledIsOn) {
-                    LedOff();
+                    cc2500LedOff();
                 } else {
-                    LedOn();
+                    cc2500LedOn();
                 }
                 ledIsOn = !ledIsOn;
 
-#if defined(USE_RX_FRSKY_SPI_TELEMETRY)
                 setRssi(0, RSSI_SOURCE_RX_PROTOCOL);
-#endif
                 nextChannel(13);
             }
 
@@ -284,8 +281,8 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
             cc2500Strobe(CC2500_SIDLE);
             cc2500SetPower(6);
             cc2500Strobe(CC2500_SFRX);
-#if defined(USE_RX_FRSKY_SPI_PA_LNA)
-            TxEnable();
+#if defined(USE_RX_CC2500_SPI_PA_LNA)
+            cc2500TxEnable();
 #endif
             cc2500Strobe(CC2500_SIDLE);
             cc2500WriteFifo(frame, frame[0] + 1);

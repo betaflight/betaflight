@@ -177,8 +177,7 @@ static uint8_t beep_multiBeeps[MAX_MULTI_BEEPS + 1];
 #define BEEPER_WARNING_BEEP_2_DURATION 5
 #define BEEPER_WARNING_BEEP_GAP_DURATION 10
 
-// Beeper off = 0 Beeper on = 1
-static uint8_t beeperIsOn = 0;
+static bool beeperIsOn = false;
 
 // Place in current sequence
 static uint16_t beeperPos = 0;
@@ -283,11 +282,10 @@ void beeper(beeperMode_e mode)
 void beeperSilence(void)
 {
     BEEP_OFF;
+    beeperIsOn = false;
+
     warningLedDisable();
     warningLedRefresh();
-
-
-    beeperIsOn = 0;
 
     beeperNextToggleTime = 0;
     beeperPos = 0;
@@ -399,8 +397,6 @@ void beeperUpdate(timeUs_t currentTimeUs)
     }
 
     if (!beeperIsOn) {
-        beeperIsOn = 1;
-
 #ifdef USE_DSHOT
         if (!areMotorsRunning()
             && ((currentBeeperEntry->mode == BEEPER_RX_SET && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_SET)))
@@ -414,8 +410,11 @@ void beeperUpdate(timeUs_t currentTimeUs)
 #endif
 
         if (currentBeeperEntry->sequence[beeperPos] != 0) {
-            if (!(beeperConfigMutable()->beeper_off_flags & BEEPER_GET_FLAG(currentBeeperEntry->mode)))
+            if (!(beeperConfigMutable()->beeper_off_flags & BEEPER_GET_FLAG(currentBeeperEntry->mode))) {
                 BEEP_ON;
+                beeperIsOn = true;
+            }
+
             warningLedEnable();
             warningLedRefresh();
             // if this was arming beep then mark time (for blackbox)
@@ -427,9 +426,10 @@ void beeperUpdate(timeUs_t currentTimeUs)
             }
         }
     } else {
-        beeperIsOn = 0;
         if (currentBeeperEntry->sequence[beeperPos] != 0) {
             BEEP_OFF;
+            beeperIsOn = false;
+
             warningLedDisable();
             warningLedRefresh();
         }

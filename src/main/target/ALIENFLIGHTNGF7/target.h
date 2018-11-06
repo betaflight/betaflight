@@ -36,21 +36,22 @@
 
 // MPU interrupt
 #define USE_EXTI
-#define MPU_INT_EXTI            PC14
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC14
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
-#define MPU6500_CS_PIN          SPI1_NSS_PIN
-#define MPU6500_SPI_INSTANCE    SPI1
+#define GYRO_1_CS_PIN           SPI1_NSS_PIN
+#define GYRO_1_SPI_INSTANCE     SPI1
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN       CW270_DEG
+#define ACC_1_ALIGN             CW270_DEG
 
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN      CW270_DEG
+#define GYRO_1_ALIGN            CW270_DEG
 
 #define USE_MAG
 #define USE_MAG_HMC5883
@@ -58,6 +59,7 @@
 #define USE_MAG_QMC5883
 #define USE_MAG_AK8963
 #define USE_MAG_SPI_AK8963
+#define USE_MAG_LIS3MDL
 
 #define HMC5883_CS_PIN          PC15
 #define HMC5883_SPI_INSTANCE    SPI3
@@ -80,18 +82,11 @@
 #define BMP280_SPI_INSTANCE     SPI3
 
 #define USE_SDCARD
-
+#define USE_SDCARD_SPI
 #define SDCARD_DETECT_INVERTED
 #define SDCARD_DETECT_PIN               PB11
-
 #define SDCARD_SPI_INSTANCE             SPI2
 #define SDCARD_SPI_CS_PIN               PB10
-
-// SPI2 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 422kHz
-// Divide to under 25MHz for normal operation:
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 8 // 27MHz
-
 #define SDCARD_DMA_STREAM_TX_FULL           DMA1_Stream4
 #define SDCARD_DMA_CHANNEL                  0
 

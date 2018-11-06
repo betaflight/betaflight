@@ -37,6 +37,7 @@
 #include "flight/pid.h"
 
 #include "pg/beeper_dev.h"
+#include "pg/gyrodev.h"
 #include "pg/rx.h"
 
 #include "rx/rx.h"
@@ -60,6 +61,8 @@
 // alternative defaults settings for AlienFlight targets
 void targetConfiguration(void)
 {
+    gyroDeviceConfigMutable(0)->extiTag = selectMPUIntExtiConfigByHardwareRevision();
+
     /* depending on revision ... depends on the LEDs to be utilised. */
     if (hardwareRevision == AFF3_REV_2) {
         statusLedConfigMutable()->inversion = 0

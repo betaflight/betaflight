@@ -26,6 +26,8 @@
 
 #include "platform.h"
 
+#if defined(USE_RX_XN297)
+
 #include "common/crc.h"
 
 #include "pg/rx.h"
@@ -77,7 +79,7 @@ uint16_t XN297_UnscramblePayload(uint8_t *data, int len, const uint8_t *rxAddr)
     return crc;
 }
 
-uint8_t XN297_WritePayload(uint8_t *data, int len, const uint8_t *rxAddr)
+void XN297_WritePayload(uint8_t *data, int len, const uint8_t *rxAddr)
 {
     uint8_t packet[NRF24L01_MAX_PAYLOAD_SIZE];
     uint16_t crc = 0xb5d2;
@@ -93,5 +95,6 @@ uint8_t XN297_WritePayload(uint8_t *data, int len, const uint8_t *rxAddr)
     crc ^= xn297_crc_xorout[len];
     packet[RX_TX_ADDR_LEN + len] = crc >> 8;
     packet[RX_TX_ADDR_LEN + len + 1] = crc & 0xff;
-    return NRF24L01_WritePayload(packet, RX_TX_ADDR_LEN + len + 2);
+    NRF24L01_WritePayload(packet, RX_TX_ADDR_LEN + len + 2);
 }
+#endif

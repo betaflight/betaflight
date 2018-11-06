@@ -33,9 +33,9 @@
 
 #define USE_DUAL_GYRO
 #define USE_EXTI
+#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PB10
 #define GYRO_2_EXTI_PIN         PC4
-#define MPU_INT_EXTI
 
 #define GYRO_1_CS_PIN                       PB0   
 #define GYRO_1_SPI_INSTANCE                 SPI1
@@ -53,15 +53,11 @@
 #define USE_ACC_SPI_MPU6000
 #define USE_ACC_SPI_MPU6500
 
-#define ACC_MPU6000_1_ALIGN           CW180_DEG
-#define GYRO_MPU6000_1_ALIGN          CW180_DEG
-#define GYRO_1_ALIGN                GYRO_MPU6000_1_ALIGN
-#define ACC_1_ALIGN                 ACC_MPU6000_1_ALIGN
+#define GYRO_1_ALIGN                CW180_DEG
+#define ACC_1_ALIGN                 CW180_DEG
 
-#define ACC_MPU6500_2_ALIGN         CW0_DEG
-#define GYRO_MPU6500_2_ALIGN        CW0_DEG
-#define GYRO_2_ALIGN                GYRO_MPU6500_2_ALIGN 
-#define ACC_2_ALIGN                 ACC_MPU6500_2_ALIGN
+#define GYRO_2_ALIGN                CW0_DEG
+#define ACC_2_ALIGN                 CW0_DEG
 
 #define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_1 
 
@@ -70,6 +66,7 @@
 
 #define USE_MAG
 #define USE_MAG_HMC5883
+#define USE_MAG_LIS3MDL
 
 #define USE_VCP
 #define USE_UART1
@@ -143,8 +140,6 @@
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 
 #define USE_OSD
-
-#define USE_LED_STRIP
 
 #define DEFAULT_RX_FEATURE                  FEATURE_RX_SERIAL
 #define DEFAULT_FEATURES                    FEATURE_OSD

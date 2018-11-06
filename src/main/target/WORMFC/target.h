@@ -36,25 +36,24 @@
 
 // MPU6500 interrupt
 #define USE_EXTI
-#define MPU_INT_EXTI            PC4
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC4
 #define USE_MPU_DATA_READY_SIGNAL
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 
-#define MPU6500_CS_PIN          PA4
-#define MPU6500_SPI_INSTANCE    SPI1
+#define GYRO_1_CS_PIN           PA4
+#define GYRO_1_SPI_INSTANCE     SPI1
 
 // ACC section -- start
 #define USE_ACC
-#define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN       CW180_DEG_FLIP
+#define ACC_1_ALIGN             CW180_DEG_FLIP
 // ACC section -- end
 
 // GYRO section -- start
 #define USE_GYRO
-#define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN      CW180_DEG_FLIP
+#define GYRO_1_ALIGN            CW180_DEG_FLIP
 // GYRO section -- end
 
 //BARO
@@ -90,7 +89,7 @@
 #define SERIAL_PORT_COUNT       5 //VCP, USART1, USART3, USART4, USART6
 
 #define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+#define ESCSERIAL_TIMER_TX_PIN  PB9
 
 //SPI
 #define USE_SPI
@@ -112,7 +111,6 @@
 #define USE_ADC
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
-#define BOARD_HAS_VOLTAGE_DIVIDER
 #define VBAT_ADC_PIN            PC1
 //#define RSSI_ADC_PIN            PC2
 #define CURRENT_METER_ADC_PIN   PC2
@@ -126,6 +124,7 @@
 //SD CARD
 #define USE_SDCARD
 #define USE_SDCARD_SDIO
+
 #define SDIO_DMA          DMA2_Stream3
 #define SDCARD_SPI_CS_PIN NONE //This is not used on SDIO, has to be kept for now to keep compiler happy
 #define SDCARD_DETECT_PIN PB15
@@ -136,4 +135,4 @@
 #define TARGET_IO_PORTD         (BIT(2))
 
 #define USABLE_TIMER_CHANNEL_COUNT 7
-#define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(8))
+#define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) )

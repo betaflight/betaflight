@@ -30,9 +30,9 @@
 //#undef USE_ITERM_RELAX
 //#undef USE_RC_SMOOTHING_FILTER
 
-#undef USE_HUFFMAN
-#undef USE_PINIO
-#undef USE_PINIOBOX
+//#undef USE_HUFFMAN
+//#undef USE_PINIO
+//#undef USE_PINIOBOX
 
 #undef USE_TELEMETRY_HOTT
 #undef USE_TELEMETRY_MAVLINK
@@ -53,29 +53,30 @@
 #define BEEPER_INVERTED
 
 #define USE_EXTI
-#define MPU_INT_EXTI PC13
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC13
 #define USE_MPU_DATA_READY_SIGNAL
 #define EXTI15_10_CALLBACK_HANDLER_COUNT 1 // MPU_INT, SDCardDetect
 #define MPU_ADDRESS             0x69
 
 #ifdef MYMPU6000
-#define MPU6000_SPI_INSTANCE    SPI2
-#define MPU6000_CS_PIN          PB12
+#define GYRO_1_SPI_INSTANCE     SPI2
+#define GYRO_1_CS_PIN           PB12
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN      CW270_DEG
+#define GYRO_1_ALIGN            CW270_DEG
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
-#define ACC_MPU6000_ALIGN       CW270_DEG
+#define ACC_1_ALIGN             CW270_DEG
 #else
 #define USE_GYRO
 #define USE_GYRO_MPU6050
-#define GYRO_MPU6050_ALIGN      CW270_DEG
+#define GYRO_1_ALIGN            CW270_DEG
 
 #define USE_ACC
 #define USE_ACC_MPU6050
-#define ACC_MPU6050_ALIGN       CW270_DEG
+#define ACC_1_ALIGN             CW270_DEG
 #endif
 
 #define USE_VCP
@@ -126,14 +127,11 @@
 #define SPI1_MOSI_PIN           PA7
 
 #define USE_SDCARD
-
+#define USE_SDCARD_SPI
 #define SDCARD_DETECT_INVERTED
 #define SDCARD_DETECT_PIN                   PB5
 #define SDCARD_SPI_INSTANCE                 SPI1
 #define SDCARD_SPI_CS_PIN                   SPI1_NSS_PIN
-
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     4
 
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_NONE
@@ -165,4 +163,4 @@
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
 
 #define USABLE_TIMER_CHANNEL_COUNT 9
-#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(8) | TIM_N(17))
+#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(8))

@@ -104,7 +104,7 @@ STATIC_UNIT_TESTED vtxSettingsConfig_t vtxGetSettings(void)
     };
 
 #if defined(VTX_SETTINGS_FREQCMD)
-    if (IS_RC_MODE_ACTIVE(BOXVTXPITMODE) && isModeActivationConditionPresent(BOXVTXPITMODE) && settings.pitModeFreq) {
+    if (IS_RC_MODE_ACTIVE(BOXVTXPITMODE) && settings.pitModeFreq) {
         settings.band = 0;
         settings.freq = settings.pitModeFreq;
         settings.power = VTX_SETTINGS_DEFAULT_POWER;
@@ -168,13 +168,11 @@ static bool vtxProcessPower(vtxDevice_t *vtxDevice)
 
 static bool vtxProcessPitMode(vtxDevice_t *vtxDevice)
 {
-    uint8_t pitOnOff;
-
-    bool        currPmSwitchState;
     static bool prevPmSwitchState = false;
 
+    uint8_t pitOnOff;
     if (!ARMING_FLAG(ARMED) && vtxCommonGetPitMode(vtxDevice, &pitOnOff)) {
-        currPmSwitchState = IS_RC_MODE_ACTIVE(BOXVTXPITMODE);
+        bool currPmSwitchState = IS_RC_MODE_ACTIVE(BOXVTXPITMODE);
 
         if (currPmSwitchState != prevPmSwitchState) {
             prevPmSwitchState = currPmSwitchState;
@@ -185,20 +183,21 @@ static bool vtxProcessPitMode(vtxDevice_t *vtxDevice)
                     return false;
                 }
 #endif
-                if (isModeActivationConditionPresent(BOXVTXPITMODE)) {
-                    if (!pitOnOff) {
-                        vtxCommonSetPitMode(vtxDevice, true);
-                        return true;
-                    }
+                if (!pitOnOff) {
+                    vtxCommonSetPitMode(vtxDevice, true);
+
+                    return true;
                 }
             } else {
                 if (pitOnOff) {
                     vtxCommonSetPitMode(vtxDevice, false);
+
                     return true;
                 }
             }
         }
     }
+
     return false;
 }
 

@@ -186,10 +186,6 @@
     #define __spiBusTransactionEnd(busdev)       IOHi((busdev)->busdev_u.spi.csnPin)
 #endif
 
-#ifndef MAX7456_SPI_CLK
-#define MAX7456_SPI_CLK           (SPI_CLOCK_STANDARD)
-#endif
-
 busDevice_t max7456BusDevice;
 busDevice_t *busdev = &max7456BusDevice;
 
@@ -439,6 +435,8 @@ bool max7456Init(const max7456Config_t *max7456Config, const vcdProfile_t *pVcdP
     // Do this at half the speed for safety.
     spiSetDivisor(busdev->busdev_u.spi.instance, MAX7456_SPI_CLK * 2);
 
+    __spiBusTransactionBegin(busdev);
+
     max7456Send(MAX7456ADD_CMAL, (1 << 6)); // CA[8] bit
 
     if (max7456Send(MAX7456ADD_CMAL|MAX7456ADD_READ, 0xff) & (1 << 6)) {
@@ -446,6 +444,8 @@ bool max7456Init(const max7456Config_t *max7456Config, const vcdProfile_t *pVcdP
     } else {
         max7456DeviceType = MAX7456_DEVICE_TYPE_MAX;
     }
+
+    __spiBusTransactionEnd(busdev);
 
 #if defined(USE_OVERCLOCK)
     // Determine SPI clock divisor based on config and the device type.

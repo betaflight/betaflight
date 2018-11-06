@@ -92,7 +92,7 @@ typedef enum {
 #ifdef USE_LED_STRIP
     TABLE_RGB_GRB,
 #endif
-#ifdef USE_DUAL_GYRO
+#ifdef USE_MULTI_GYRO
     TABLE_GYRO,
 #endif
     TABLE_THROTTLE_LIMIT_TYPE,
@@ -118,6 +118,13 @@ typedef enum {
 #endif // USE_GYRO_DATA_ANALYSE
 #ifdef USE_VTX_COMMON
     TABLE_VTX_LOW_POWER_DISARM, 
+#endif
+    TABLE_GYRO_HARDWARE,
+#ifdef USE_SDCARD
+    TABLE_SDCARD_MODE,
+#endif
+#ifdef USE_LAUNCH_CONTROL
+    TABLE_LAUNCH_CONTROL_MODE,
 #endif
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;

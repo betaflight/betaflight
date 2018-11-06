@@ -71,29 +71,33 @@
 #define INVERTER_PIN_UART1      PC0 // DYS F4 Pro; Omnibus F4 AIO (1st gen) have a FIXED inverter on UART1
 #endif
 
+#define USE_EXTI
+
+#define USE_MULTI_GYRO
+
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
 
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 
-#define MPU6000_CS_PIN          PA4
-#define MPU6000_SPI_INSTANCE    SPI1
+#define GYRO_1_CS_PIN           PA4
+#define GYRO_1_SPI_INSTANCE     SPI1
 
 // MPU6000 interrupts
-#define USE_EXTI
-#define MPU_INT_EXTI            PC4
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC4
 #define USE_MPU_DATA_READY_SIGNAL
 
 #if defined(OMNIBUSF4SD)
-#define GYRO_MPU6000_ALIGN       CW270_DEG
-#define ACC_MPU6000_ALIGN        CW270_DEG
+#define GYRO_1_ALIGN            CW270_DEG
+#define ACC_1_ALIGN             CW270_DEG
 #elif defined(XRACERF4) || defined(EXUAVF4PRO)
-#define GYRO_MPU6000_ALIGN       CW90_DEG
-#define ACC_MPU6000_ALIGN        CW90_DEG
+#define GYRO_1_ALIGN            CW90_DEG
+#define ACC_1_ALIGN             CW90_DEG
 #else
-#define GYRO_MPU6000_ALIGN       CW180_DEG
-#define ACC_MPU6000_ALIGN        CW180_DEG
+#define GYRO_1_ALIGN            CW180_DEG
+#define ACC_1_ALIGN             CW180_DEG
 #endif
 
 // Support for iFlight OMNIBUS F4 V3
@@ -102,15 +106,19 @@
 #if defined (OMNIBUSF4SD) || defined(OMNIBUSF4BASE)
 #define USE_ACC_SPI_MPU6500
 #define USE_GYRO_SPI_MPU6500
-#define MPU6500_CS_PIN          MPU6000_CS_PIN
-#define MPU6500_SPI_INSTANCE    MPU6000_SPI_INSTANCE
-#define GYRO_MPU6500_ALIGN      GYRO_MPU6000_ALIGN
-#define ACC_MPU6500_ALIGN       ACC_MPU6000_ALIGN
 #endif
+
+// Dummy defines
+#define GYRO_2_SPI_INSTANCE     GYRO_1_SPI_INSTANCE
+#define GYRO_2_CS_PIN           NONE
+#define GYRO_2_ALIGN            ALIGN_DEFAULT
+#define GYRO_2_EXTI_PIN         NONE
+#define ACC_2_ALIGN             ALIGN_DEFAULT
 
 #define USE_MAG
 #define USE_MAG_HMC5883
 #define USE_MAG_QMC5883
+#define USE_MAG_LIS3MDL
 #define MAG_HMC5883_ALIGN       CW90_DEG
 
 #define USE_BARO
@@ -144,15 +152,11 @@
 #if defined(OMNIBUSF4SD)
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #define USE_SDCARD
+#define USE_SDCARD_SPI
 #define SDCARD_DETECT_INVERTED
 #define SDCARD_DETECT_PIN               PB7
 #define SDCARD_SPI_INSTANCE             SPI2
 #define SDCARD_SPI_CS_PIN               SPI2_NSS_PIN
-// SPI2 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 328kHz
-// Divide to under 25MHz for normal operation:
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 4 // 21MHz
-
 #define SDCARD_DMA_CHANNEL_TX                   DMA1_Stream4
 #define SDCARD_DMA_CHANNEL                      0
 
@@ -282,5 +286,5 @@
 #define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(10) | TIM_N(12) | TIM_N(8) | TIM_N(9))
 #else
 #define USABLE_TIMER_CHANNEL_COUNT 14
-#define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9))
+#define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8) | TIM_N(12) )
 #endif

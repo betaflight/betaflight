@@ -41,19 +41,22 @@
 #define SPI1_MOSI_PIN           PA7
 
 #define USE_EXTI
-#define MPU_INT_EXTI            PC4
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC4
 #define USE_MPU_DATA_READY_SIGNAL
 
 #define USE_GYRO
 #define USE_ACC
-#define ICM20689_CS_PIN          PA4
-#define ICM20689_SPI_INSTANCE    SPI1
-
+#define USE_GYRO_SPI_MPU6000
+#define USE_ACC_SPI_MPU6000
 #define USE_GYRO_SPI_ICM20689
-#define GYRO_ICM20689_ALIGN      CW90_DEG
-
 #define USE_ACC_SPI_ICM20689
-#define ACC_ICM20689_ALIGN       CW90_DEG
+
+#define GYRO_1_CS_PIN           PA4
+#define GYRO_1_SPI_INSTANCE     SPI1
+
+#define GYRO_1_ALIGN            CW90_DEG
+#define ACC_1_ALIGN             CW90_DEG
 
 #define USE_I2C
 #define USE_I2C_DEVICE_1
@@ -70,6 +73,7 @@
 #define USE_MAG
 #define MAG_I2C_INSTANCE        (I2CDEV_1) 
 #define USE_MAG_HMC5883
+#define USE_MAG_LIS3MDL
 
 #define USE_SPI_DEVICE_2
 #define SPI2_SCK_PIN            PB13

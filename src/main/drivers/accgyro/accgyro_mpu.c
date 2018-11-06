@@ -54,9 +54,8 @@
 #include "drivers/accgyro/accgyro_spi_mpu9250.h"
 #include "drivers/accgyro/accgyro_mpu.h"
 
-#ifndef MPU_I2C_INSTANCE
-#define MPU_I2C_INSTANCE I2C_DEVICE
-#endif
+#include "pg/pg.h"
+#include "pg/gyrodev.h"
 
 #ifndef MPU_ADDRESS
 #define MPU_ADDRESS             0x68
@@ -64,7 +63,7 @@
 
 #define MPU_INQUIRY_MASK   0x7E
 
-#ifdef USE_I2C
+#ifdef USE_I2C_GYRO
 static void mpu6050FindRevision(gyroDev_t *gyro)
 {
     // There is a map of revision contained in the android source tree which is quite comprehensive and may help to understand this code
@@ -103,7 +102,7 @@ static void mpu6050FindRevision(gyroDev_t *gyro)
 /*
  * Gyro interrupt service routine
  */
-#if defined(MPU_INT_EXTI)
+#ifdef USE_GYRO_EXTI
 static void mpuIntExtiHandler(extiCallbackRec_t *cb)
 {
 #ifdef DEBUG_MPU_DATA_READY_INTERRUPT
@@ -135,17 +134,9 @@ static void mpuIntExtiInit(gyroDev_t *gyro)
     }
 #endif
 
-#if defined (STM32F7)
-    IOInit(mpuIntIO, OWNER_MPU_EXTI, 0);
+    IOInit(mpuIntIO, OWNER_GYRO_EXTI, 0);
     EXTIHandlerInit(&gyro->exti, mpuIntExtiHandler);
-    EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, IO_CONFIG(GPIO_MODE_INPUT,0,GPIO_NOPULL));   // TODO - maybe pullup / pulldown ?
-#else
-    IOInit(mpuIntIO, OWNER_MPU_EXTI, 0);
-    IOConfigGPIO(mpuIntIO, IOCFG_IN_FLOATING);   // TODO - maybe pullup / pulldown ?
-
-    EXTIHandlerInit(&gyro->exti, mpuIntExtiHandler);
-    EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, EXTI_Trigger_Rising);
-#endif
+    EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, IOCFG_IN_FLOATING, EXTI_TRIGGER_RISING);
     EXTIEnable(mpuIntIO, true);
 }
 #endif // MPU_INT_EXTI
@@ -182,6 +173,7 @@ bool mpuGyroRead(gyroDev_t *gyro)
     return true;
 }
 
+#ifdef USE_SPI_GYRO
 bool mpuGyroReadSPI(gyroDev_t *gyro)
 {
     static const uint8_t dataToSend[7] = {MPU_RA_GYRO_XOUT_H | 0x80, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
@@ -199,120 +191,81 @@ bool mpuGyroReadSPI(gyroDev_t *gyro)
     return true;
 }
 
-#ifdef USE_SPI
-static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
+typedef uint8_t (*gyroSpiDetectFn_t)(const busDevice_t *bus);
+
+static gyroSpiDetectFn_t gyroSpiDetectFnTable[] = {
+#ifdef USE_GYRO_SPI_MPU6000
+    mpu6000SpiDetect,
+#endif
+#ifdef USE_GYRO_SPI_MPU6500
+    mpu6500SpiDetect,   // some targets using MPU_9250_SPI, ICM_20608_SPI or ICM_20602_SPI state sensor is MPU_65xx_SPI
+#endif
+#ifdef  USE_GYRO_SPI_MPU9250
+    mpu9250SpiDetect,
+#endif
+#ifdef USE_GYRO_SPI_ICM20649
+    icm20649SpiDetect,
+#endif
+#ifdef USE_GYRO_SPI_ICM20689
+    icm20689SpiDetect,  // icm20689SpiDetect detects ICM20602 and ICM20689
+#endif
+#ifdef USE_ACCGYRO_BMI160
+    bmi160Detect,
+#endif
+    NULL // Avoid an empty array
+};
+
+static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro, const gyroDeviceConfig_t *config)
 {
-    UNUSED(gyro); // since there are FCs which have gyro on I2C but other devices on SPI
+    SPI_TypeDef *instance = spiInstanceByDevice(SPI_CFG_TO_DEV(config->spiBus));
+    if (!instance) {
+        return false;
+    }
+    spiBusSetInstance(&gyro->bus, instance);
+
+    gyro->bus.busdev_u.spi.csnPin = IOGetByTag(config->csnTag);
+    IOInit(gyro->bus.busdev_u.spi.csnPin, OWNER_GYRO_CS, RESOURCE_INDEX(config->index));
+    IOConfigGPIO(gyro->bus.busdev_u.spi.csnPin, SPI_IO_CS_CFG);
+    IOHi(gyro->bus.busdev_u.spi.csnPin); // Ensure device is disabled, important when two devices are on the same bus.
 
     uint8_t sensor = MPU_NONE;
-    UNUSED(sensor);
 
-    // note, when USE_DUAL_GYRO is enabled the gyro->bus must already be initialised.
+    // It is hard to use hardware to optimize the detection loop here,
+    // as hardware type and detection function name doesn't match.
+    // May need a bitmap of hardware to detection function to do it right?
 
-#ifdef USE_GYRO_SPI_MPU6000
-#ifndef USE_DUAL_GYRO
-    spiBusSetInstance(&gyro->bus, MPU6000_SPI_INSTANCE);
-#endif
-#ifdef MPU6000_CS_PIN
-    gyro->bus.busdev_u.spi.csnPin = gyro->bus.busdev_u.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(MPU6000_CS_PIN)) : gyro->bus.busdev_u.spi.csnPin;
-#endif
-    sensor = mpu6000SpiDetect(&gyro->bus);
-    if (sensor != MPU_NONE) {
-        gyro->mpuDetectionResult.sensor = sensor;
-        return true;
+    for (size_t index = 0 ; gyroSpiDetectFnTable[index] ; index++) {
+        sensor = (gyroSpiDetectFnTable[index])(&gyro->bus);
+        if (sensor != MPU_NONE) {
+            gyro->mpuDetectionResult.sensor = sensor;
+            return true;
+        }
     }
-#endif
 
-#ifdef USE_GYRO_SPI_MPU6500
-#ifndef USE_DUAL_GYRO
-    spiBusSetInstance(&gyro->bus, MPU6500_SPI_INSTANCE);
-#endif
-#ifdef MPU6500_CS_PIN
-    gyro->bus.busdev_u.spi.csnPin = gyro->bus.busdev_u.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(MPU6500_CS_PIN)) : gyro->bus.busdev_u.spi.csnPin;
-#endif
-    sensor = mpu6500SpiDetect(&gyro->bus);
-    // some targets using MPU_9250_SPI, ICM_20608_SPI or ICM_20602_SPI state sensor is MPU_65xx_SPI
-    if (sensor != MPU_NONE) {
-        gyro->mpuDetectionResult.sensor = sensor;
-        return true;
-    }
-#endif
-
-#ifdef  USE_GYRO_SPI_MPU9250
-#ifndef USE_DUAL_GYRO
-    spiBusSetInstance(&gyro->bus, MPU9250_SPI_INSTANCE);
-#endif
-#ifdef MPU9250_CS_PIN
-    gyro->bus.busdev_u.spi.csnPin = gyro->bus.busdev_u.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(MPU9250_CS_PIN)) : gyro->bus.busdev_u.spi.csnPin;
-#endif
-    sensor = mpu9250SpiDetect(&gyro->bus);
-    if (sensor != MPU_NONE) {
-        gyro->mpuDetectionResult.sensor = sensor;
-        return true;
-    }
-#endif
-
-#ifdef USE_GYRO_SPI_ICM20649
-#ifdef ICM20649_SPI_INSTANCE
-    spiBusSetInstance(&gyro->bus, ICM20649_SPI_INSTANCE);
-#endif
-#ifdef ICM20649_CS_PIN
-    gyro->bus.busdev_u.spi.csnPin = gyro->bus.busdev_u.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(ICM20649_CS_PIN)) : gyro->bus.busdev_u.spi.csnPin;
-#endif
-    sensor = icm20649SpiDetect(&gyro->bus);
-    if (sensor != MPU_NONE) {
-        gyro->mpuDetectionResult.sensor = sensor;
-        return true;
-    }
-#endif
-
-#ifdef USE_GYRO_SPI_ICM20689
-#ifndef USE_DUAL_GYRO
-    spiBusSetInstance(&gyro->bus, ICM20689_SPI_INSTANCE);
-#endif
-#ifdef ICM20689_CS_PIN
-    gyro->bus.busdev_u.spi.csnPin = gyro->bus.busdev_u.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(ICM20689_CS_PIN)) : gyro->bus.busdev_u.spi.csnPin;
-#endif
-    sensor = icm20689SpiDetect(&gyro->bus);
-    // icm20689SpiDetect detects ICM20602 and ICM20689
-    if (sensor != MPU_NONE) {
-        gyro->mpuDetectionResult.sensor = sensor;
-        return true;
-    }
-#endif
-
-#ifdef USE_ACCGYRO_BMI160
-#ifndef USE_DUAL_GYRO
-    spiBusSetInstance(&gyro->bus, BMI160_SPI_INSTANCE);
-#endif
-#ifdef BMI160_CS_PIN
-    gyro->bus.busdev_u.spi.csnPin = gyro->bus.busdev_u.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(BMI160_CS_PIN)) : gyro->bus.busdev_u.spi.csnPin;
-#endif
-    sensor = bmi160Detect(&gyro->bus);
-    if (sensor != MPU_NONE) {
-        gyro->mpuDetectionResult.sensor = sensor;
-        return true;
-    }
-#endif
+    spiPreinitCsByTag(config->csnTag);
 
     return false;
 }
 #endif
 
-void mpuDetect(gyroDev_t *gyro)
+void mpuDetect(gyroDev_t *gyro, const gyroDeviceConfig_t *config)
 {
     // MPU datasheet specifies 30ms.
     delay(35);
 
-#ifdef USE_I2C
-    if (gyro->bus.bustype == BUSTYPE_NONE) {
-        // if no bustype is selected try I2C first.
-        gyro->bus.bustype = BUSTYPE_I2C;
+    if (config->bustype == BUSTYPE_NONE) {
+        return;
     }
 
+    if (config->bustype == BUSTYPE_GYRO_AUTO) {
+        gyro->bus.bustype = BUSTYPE_I2C;
+    } else {
+        gyro->bus.bustype = config->bustype;
+    }
+
+#ifdef USE_I2C_GYRO
     if (gyro->bus.bustype == BUSTYPE_I2C) {
-        gyro->bus.busdev_u.i2c.device = MPU_I2C_INSTANCE;
-        gyro->bus.busdev_u.i2c.address = MPU_ADDRESS;
+        gyro->bus.busdev_u.i2c.address = config->i2cAddress ? config->i2cAddress : MPU_ADDRESS;
 
         uint8_t sig = 0;
         bool ack = busReadRegisterBuffer(&gyro->bus, MPU_RA_WHO_AM_I, &sig, 1);
@@ -339,15 +292,15 @@ void mpuDetect(gyroDev_t *gyro)
     }
 #endif
 
-#ifdef USE_SPI
+#ifdef USE_SPI_GYRO
     gyro->bus.bustype = BUSTYPE_SPI;
-    detectSPISensorsAndUpdateDetectionResult(gyro);
+    detectSPISensorsAndUpdateDetectionResult(gyro, config);
 #endif
 }
 
 void mpuGyroInit(gyroDev_t *gyro)
 {
-#ifdef MPU_INT_EXTI
+#ifdef USE_GYRO_EXTI
     mpuIntExtiInit(gyro);
 #else
     UNUSED(gyro);

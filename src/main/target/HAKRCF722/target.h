@@ -47,23 +47,23 @@
 #define SPI1_MISO_PIN           PA6
 #define SPI1_MOSI_PIN           PA7
 
-#define MPU6000_CS_PIN          PA4
-#define MPU6000_SPI_INSTANCE    SPI1
+#define GYRO_1_CS_PIN           PA4
+#define GYRO_1_SPI_INSTANCE     SPI1
 
 #define USE_EXTI
-#define MPU_INT_EXTI            PC4
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC4
 #define USE_MPU_DATA_READY_SIGNAL
 
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN      CW270_DEG
+#define GYRO_1_ALIGN            CW270_DEG
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
-#define ACC_MPU6000_ALIGN       CW270_DEG
+#define ACC_1_ALIGN             CW270_DEG
 
-
-#define LED0_PIN                PC14
+#define LED0_PIN                PC13
 
 #define USE_SPI_DEVICE_3
 #define SPI3_SCK_PIN            PC10
@@ -116,7 +116,7 @@
 #define SERIAL_PORT_COUNT       8
 
 #define USE_BEEPER
-#define BEEPER_PIN              PC13
+#define BEEPER_PIN              PC14
 #define BEEPER_INVERTED
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
@@ -142,5 +142,5 @@
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         0xffff
 
-#define USABLE_TIMER_CHANNEL_COUNT 10
+#define USABLE_TIMER_CHANNEL_COUNT 9
 #define USED_TIMERS             (TIM_N(1)|TIM_N(2)|TIM_N(3)|TIM_N(4)|TIM_N(8)|TIM_N(12))

@@ -24,7 +24,7 @@
 
 #include "platform.h"
 
-#ifdef USE_TELEMETRY
+#ifdef USE_TELEMETRY_CRSF
 
 #include "build/atomic.h"
 #include "build/build_config.h"
@@ -180,7 +180,7 @@ void crsfFrameGps(sbuf_t *dst)
     sbufWriteU8(dst, CRSF_FRAMETYPE_GPS);
     sbufWriteU32BigEndian(dst, gpsSol.llh.lat); // CRSF and betaflight use same units for degrees
     sbufWriteU32BigEndian(dst, gpsSol.llh.lon);
-    sbufWriteU16BigEndian(dst, (gpsSol.groundSpeed * 36 + 5) / 10); // gpsSol.groundSpeed is in 0.1m/s
+    sbufWriteU16BigEndian(dst, (gpsSol.groundSpeed * 36 + 50) / 100); // gpsSol.groundSpeed is in cm/s
     sbufWriteU16BigEndian(dst, gpsSol.groundCourse * 10); // gpsSol.groundCourse is degrees * 10
     const uint16_t altitude = (constrain(getEstimatedAltitudeCm(), 0 * 100, 5000 * 100) / 100) + 1000; // constrain altitude from 0 to 5,000m
     sbufWriteU16BigEndian(dst, altitude);
@@ -268,7 +268,7 @@ void crsfFrameFlightMode(sbuf_t *dst)
 
     // use same logic as OSD, so telemetry displays same flight text as OSD
     const char *flightMode = "ACRO";
-    if (isAirmodeActive()) {
+    if (airmodeIsEnabled()) {
         flightMode = "AIR";
     }
     if (FLIGHT_MODE(FAILSAFE_MODE)) {
@@ -431,6 +431,10 @@ void initCrsfTelemetry(void)
     // check if there is a serial port open for CRSF telemetry (ie opened by the CRSF RX)
     // and feature is enabled, if so, set CRSF telemetry enabled
     crsfTelemetryEnabled = crsfRxIsActive();
+
+    if (!crsfTelemetryEnabled) {
+        return;
+    }
 
     deviceInfoReplyPending = false;
 #if defined(USE_MSP_OVER_TELEMETRY)

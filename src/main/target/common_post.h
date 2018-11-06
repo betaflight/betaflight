@@ -56,6 +56,10 @@
 #endif
 #endif
 
+#ifndef USE_BARO
+#undef USE_VARIO
+#endif
+
 #if !defined(USE_SERIAL_RX)
 #undef USE_SERIALRX_CRSF
 #undef USE_SERIALRX_IBUS
@@ -67,15 +71,6 @@
 #undef USE_SERIALRX_XBUS
 #undef USE_SERIALRX_FPORT
 #endif
-
-#if !defined(USE_SERIALRX_CRSF)
-#undef USE_TELEMETRY_CRSF
-#endif
-
-#if !defined(USE_SERIALRX_JETIEXBUS)
-#undef USE_TELEMETRY_JETIEXBUS
-#endif
-
 
 #if !defined(USE_TELEMETRY)
 #undef USE_CRSF_CMS_TELEMETRY
@@ -92,10 +87,20 @@
 #undef USE_SERIALRX_FPORT
 #endif
 
-#if defined(USE_MSP_OVER_TELEMETRY)
-#if !defined(USE_TELEMETRY_SMARTPORT) && !defined(USE_TELEMETRY_CRSF)
-#undef USE_MSP_OVER_TELEMETRY
+#if !defined(USE_SERIALRX_CRSF)
+#undef USE_TELEMETRY_CRSF
 #endif
+
+#if !defined(USE_TELEMETRY_CRSF) || !defined(USE_CMS)
+#undef USE_CRSF_CMS_TELEMETRY
+#endif
+
+#if !defined(USE_SERIALRX_JETIEXBUS)
+#undef USE_TELEMETRY_JETIEXBUS
+#endif
+
+#if !defined(USE_TELEMETRY_IBUS)
+#undef USE_TELEMETRY_IBUS_EXTENDED
 #endif
 
 // If USE_SERIALRX_SPEKTRUM was dropped by a target, drop all related options
@@ -111,6 +116,18 @@
 #undef USE_TELEMETRY_SRXL
 #endif
 
+#if defined(USE_SERIALRX_SBUS) || defined(USE_SERIALRX_FPORT)
+#define USE_SBUS_CHANNELS
+#endif
+
+#if !defined(USE_TELEMETRY_SMARTPORT) && !defined(USE_TELEMETRY_CRSF)
+#undef USE_MSP_OVER_TELEMETRY
+#endif
+
+#if !defined(USE_OSD)
+#undef USE_RX_LINK_QUALITY_INFO
+#endif
+
 /* If either VTX_CONTROL or VTX_COMMON is undefined then remove common code and device drivers */
 #if !defined(USE_VTX_COMMON) || !defined(USE_VTX_CONTROL)
 #undef USE_VTX_COMMON
@@ -121,7 +138,13 @@
 
 #if defined(USE_RX_FRSKY_SPI_D) || defined(USE_RX_FRSKY_SPI_X)
 #define USE_RX_CC2500
+#define USE_RX_CC2500_BIND
 #define USE_RX_FRSKY_SPI
+#endif
+
+#if defined(USE_RX_SFHSS_SPI)
+#define USE_RX_CC2500
+#define USE_RX_CC2500_BIND
 #endif
 
 // Burst dshot to default off if not configured explicitly by target
@@ -166,4 +189,18 @@
 
 #if defined(USE_GPS_RESCUE)
 #define USE_GPS
+#endif
+
+// Generate USE_SPI_GYRO or USE_I2C_GYRO
+#if defined(USE_GYRO_L3G4200D) || defined(USE_GYRO_L3GD20) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6000) || defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU6500)
+#define USE_I2C_GYRO
+#endif
+
+#if defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250)
+#define USE_SPI_GYRO
+#endif
+
+// CX10 is a special case of SPI RX which requires XN297
+#if defined(USE_RX_CX10)
+#define USE_RX_XN297
 #endif

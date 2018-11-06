@@ -54,11 +54,12 @@ extern "C" {
     #include "sensors/battery.h"
 
     #include "rx/rx.h"
+    #include "flight/mixer.h"
 
     void osdRefresh(timeUs_t currentTimeUs);
     void osdFormatTime(char * buff, osd_timer_precision_e precision, timeUs_t time);
     void osdFormatTimer(char *buff, bool showSymbol, int timerIndex);
-    int osdConvertTemperatureToSelectedUnit(int tempInDeciDegrees);
+    int osdConvertTemperatureToSelectedUnit(int tempInDegreesCelcius);
 
     uint16_t rssi;
     attitudeEulerAngles_t attitude;
@@ -70,6 +71,10 @@ extern "C" {
     int16_t GPS_directionToHome;
     int32_t GPS_coord[2];
     gpsSolutionData_t gpsSol;
+    float motor[8];
+    float motorOutputHigh = 2047;
+    float motorOutputLow = 1000;
+
 
     acc_t acc;
     float accAverage[XYZ_AXIS_COUNT];
@@ -305,6 +310,8 @@ TEST(OsdTest, TestStatsImperial)
     osdStatSetState(OSD_STAT_MAX_DISTANCE, true);
     osdStatSetState(OSD_STAT_BLACKBOX_NUMBER, false);
     osdStatSetState(OSD_STAT_MAX_G_FORCE, false);
+    osdStatSetState(OSD_STAT_MAX_ESC_TEMP, false);
+    osdStatSetState(OSD_STAT_MAX_ESC_RPM, false);
 
     // and
     // using imperial unit system
@@ -939,11 +946,15 @@ TEST(OsdTest, TestConvertTemperatureUnits)
 {
     /* In Celsius */
     osdConfigMutable()->units = OSD_UNIT_METRIC;
-    EXPECT_EQ(osdConvertTemperatureToSelectedUnit(330), 330);
+    EXPECT_EQ(osdConvertTemperatureToSelectedUnit(40), 40);
 
     /* In Fahrenheit */
     osdConfigMutable()->units = OSD_UNIT_IMPERIAL;
-    EXPECT_EQ(osdConvertTemperatureToSelectedUnit(330), 914);
+    EXPECT_EQ(osdConvertTemperatureToSelectedUnit(40), 104);
+
+    /* In Fahrenheit with rounding */
+    osdConfigMutable()->units = OSD_UNIT_IMPERIAL;
+    EXPECT_EQ(osdConvertTemperatureToSelectedUnit(41), 106);
 }
 
 // STUBS
@@ -970,7 +981,7 @@ extern "C" {
         return false;
     }
 
-    bool isAirmodeActive() {
+    bool airmodeIsEnabled() {
         return false;
     }
 
@@ -1040,13 +1051,15 @@ extern "C" {
 
     uint8_t getRssiPercent(void) { return scaleRange(rssi, 0, RSSI_MAX_VALUE, 0, 100); }
 
+    uint8_t rxGetLinkQuality(void) { return LINK_QUALITY_MAX_VALUE; }
+
     uint16_t getCoreTemperatureCelsius(void) { return simulationCoreTemperature; }
 
-    bool isFlipOverAfterCrashMode(void) {
-        return false;
-    }
+    bool isFlipOverAfterCrashActive(void) { return false; }
 
+    float pidItermAccelerator(void) { return 1.0; }
+    uint8_t getMotorCount(void){ return 4; }
+    bool areMotorsRunning(void){ return true; }
     bool pidOsdAntiGravityActive(void) { return false; }
-
     bool failsafeIsActive(void) { return false; }
 }

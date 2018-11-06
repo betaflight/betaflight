@@ -120,8 +120,8 @@
     IO_TAG(pin),                                                        \
     DEF_TIM_CHANNEL(CH_ ## chan),                                       \
     flags,                                                              \
-    (DEF_TIM_OUTPUT(CH_ ## chan) | out),                                \
-    DEF_TIM_DMA_COND(                                                   \
+    (DEF_TIM_OUTPUT(CH_ ## chan) | out)                                 \
+    DEF_TIM_DMA_COND(/* add comma */ ,                                  \
         DEF_TIM_DMA_CHANNEL(TCH_## tim ## _ ## chan),                   \
         DEF_TIM_DMA_HANDLER(TCH_## tim ## _ ## chan)                    \
     )                                                                   \
@@ -169,12 +169,12 @@
     DEF_TIM_CHANNEL(CH_ ## chan),                                       \
     flags,                                                              \
     (DEF_TIM_OUTPUT(CH_ ## chan) | out),                                \
-    DEF_TIM_AF(TCH_## tim ## _ ## chan, pin),                           \
-    DEF_TIM_DMA_COND(                                                   \
+    DEF_TIM_AF(TCH_## tim ## _ ## chan, pin)                            \
+    DEF_TIM_DMA_COND(/* add comma */ ,                                  \
         DEF_TIM_DMA_CHANNEL(TCH_## tim ## _ ## chan),                   \
         DEF_TIM_DMA_HANDLER(TCH_## tim ## _ ## chan)                    \
-    ),                                                                  \
-    DEF_TIM_DMA_COND(                                                   \
+    )                                                                   \
+    DEF_TIM_DMA_COND(/* add comma */ ,                                  \
         DEF_TIM_DMA_CHANNEL(TCH_## tim ## _UP),                         \
         DEF_TIM_DMA_HANDLER(TCH_## tim ## _UP)                          \
     )                                                                   \
@@ -386,13 +386,13 @@
     DEF_TIM_CHANNEL(CH_ ## chan),                               \
     flags,                                                      \
     (DEF_TIM_OUTPUT(CH_ ## chan) | out),                        \
-    DEF_TIM_AF(TIM_ ## tim),                                    \
-    DEF_TIM_DMA_COND(                                           \
+    DEF_TIM_AF(TIM_ ## tim)                                     \
+    DEF_TIM_DMA_COND(/* add comma */ ,                          \
         DEF_TIM_DMA_STREAM(dmaopt, TCH_## tim ## _ ## chan),    \
         DEF_TIM_DMA_CHANNEL(dmaopt, TCH_## tim ## _ ## chan),   \
         DEF_TIM_DMA_HANDLER(dmaopt, TCH_## tim ## _ ## chan)    \
-    ),                                                          \
-    DEF_TIM_DMA_COND(                                           \
+    )                                                           \
+    DEF_TIM_DMA_COND(/* add comma */ ,                          \
         DEF_TIM_DMA_STREAM(0, TCH_## tim ## _UP),               \
         DEF_TIM_DMA_CHANNEL(0, TCH_## tim ## _UP),              \
         DEF_TIM_DMA_HANDLER(0, TCH_## tim ## _UP)               \
@@ -492,13 +492,13 @@
     DEF_TIM_CHANNEL(CH_ ## chan),                                       \
     flags,                                                              \
     (DEF_TIM_OUTPUT(CH_ ## chan) | out),                                \
-    DEF_TIM_AF(TCH_## tim ## _ ## chan, pin),                           \
-    DEF_TIM_DMA_COND(                                                   \
+    DEF_TIM_AF(TCH_## tim ## _ ## chan, pin)                            \
+    DEF_TIM_DMA_COND(/* add comma */ ,                                  \
         DEF_TIM_DMA_STREAM(dmaopt, TCH_## tim ## _ ## chan),            \
         DEF_TIM_DMA_CHANNEL(dmaopt, TCH_## tim ## _ ## chan),           \
         DEF_TIM_DMA_HANDLER(dmaopt, TCH_## tim ## _ ## chan)            \
-    ),                                                                  \
-    DEF_TIM_DMA_COND(                                                   \
+    )                                                                   \
+    DEF_TIM_DMA_COND(/* add comma */ ,                                  \
         DEF_TIM_DMA_STREAM(0, TCH_## tim ## _UP),                       \
         DEF_TIM_DMA_CHANNEL(0, TCH_## tim ## _UP),                      \
         DEF_TIM_DMA_HANDLER(0, TCH_## tim ## _UP)                       \

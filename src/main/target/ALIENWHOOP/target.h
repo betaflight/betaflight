@@ -121,26 +121,28 @@
  */
 // Interrupt
 #define USE_EXTI
-#define MPU_INT_EXTI            PC14
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC14
 // MPU
-#define MPU6500_CS_PIN          SPI1_NSS_PIN
-#define MPU6500_SPI_INSTANCE    SPI1
+#define GYRO_1_CS_PIN           SPI1_NSS_PIN
+#define GYRO_1_SPI_INSTANCE     SPI1
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 // MAG
 #define USE_MAG
 #define USE_MAG_AK8963
+#define USE_MAG_LIS3MDL
 #define MAG_AK8963_ALIGN        CW0_DEG
 #define USE_MAG_DATA_READY_SIGNAL
 #define ENSURE_MAG_DATA_READY_IS_HIGH
 // GYRO
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN      CW0_DEG
+#define GYRO_1_ALIGN            CW0_DEG
 // ACC
 #define USE_ACC
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN       CW0_DEG
+#define ACC_1_ALIGN             CW0_DEG
 
 /* Optional Digital Pressure Sensor (barometer) - Bosch BMP280
  * TODO: not implemented on V1 or V2 pcb

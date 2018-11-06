@@ -29,7 +29,7 @@
 
 #include "platform.h"
 
-#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_FRSKY_HUB)
+#if defined(USE_TELEMETRY_FRSKY_HUB)
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -529,7 +529,9 @@ void processFrSkyHubTelemetry(timeUs_t currentTimeUs)
         // Sent every 125ms
         // Send vertical speed for opentx. ID_VERT_SPEED
         // Unit is cm/s
+#ifdef USE_VARIO
         frSkyHubWriteFrame(ID_VERT_SPEED, getEstimatedVario());
+#endif
 
         // Sent every 500ms
         if ((cycleNum % 4) == 0) {

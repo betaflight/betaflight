@@ -34,6 +34,23 @@ typedef struct throttleCorrectionConfig_s {
     uint8_t throttle_correction_value;      // the correction that will be applied at throttle_correction_angle.
 } throttleCorrectionConfig_t;
 
+typedef enum {
+    LAUNCH_CONTROL_DISABLED = 0,
+    LAUNCH_CONTROL_ACTIVE,
+    LAUNCH_CONTROL_TRIGGERED,
+} launchControlState_e;
+
+typedef enum {
+    LAUNCH_CONTROL_MODE_NORMAL = 0,
+    LAUNCH_CONTROL_MODE_PITCHONLY,
+    LAUNCH_CONTROL_MODE_FULL,
+    LAUNCH_CONTROL_MODE_COUNT // must be the last element
+} launchControlMode_e;
+
+#ifdef USE_LAUNCH_CONTROL
+extern const char * const osdLaunchControlModeNames[LAUNCH_CONTROL_MODE_COUNT];
+#endif
+
 PG_DECLARE(throttleCorrectionConfig_t, throttleCorrectionConfig);
 
 union rollAndPitchTrims_u;
@@ -49,7 +66,8 @@ bool processRx(timeUs_t currentTimeUs);
 void updateArmingStatus(void);
 
 void taskMainPidLoop(timeUs_t currentTimeUs);
-bool isFlipOverAfterCrashMode(void);
+
+bool isFlipOverAfterCrashActive(void);
 
 void runawayTakeoffTemporaryDisable(uint8_t disableFlag);
 bool isAirmodeActivated();
@@ -58,3 +76,6 @@ bool isTryingToArm();
 void resetTryingToArm();
 
 void subTaskTelemetryPollSensors(timeUs_t currentTimeUs);
+
+bool isLaunchControlActive(void);
+

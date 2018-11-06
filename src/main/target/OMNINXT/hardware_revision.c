@@ -296,6 +296,7 @@ void updateHardwareRevision(void)
     // Empty
 }
 
+// XXX Can be gone as sensors/gyro.c is not calling this anymore
 ioTag_t selectMPUIntExtiConfigByHardwareRevision(void)
 {
     return IO_TAG_NONE;

@@ -40,11 +40,12 @@
 #define SPI1_MISO_PIN           PA6
 #define SPI1_MOSI_PIN           PA7
 
-#define MPU6000_CS_PIN          PB11
-#define MPU6000_SPI_INSTANCE    SPI1
+#define GYRO_1_CS_PIN           PB11
+#define GYRO_1_SPI_INSTANCE     SPI1
 
 #define USE_EXTI
-#define MPU_INT_EXTI            PC4
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC4
 #define USE_MPU_DATA_READY_SIGNAL
 
 #define USE_GYRO
@@ -56,6 +57,7 @@
 #define USE_MAG
 #define USE_MAG_HMC5883
 #define USE_MAG_QMC5883
+#define USE_MAG_LIS3MDL
 
 // *************** Baro **************************
 #define USE_I2C

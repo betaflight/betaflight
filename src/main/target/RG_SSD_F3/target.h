@@ -23,9 +23,9 @@
 #define TARGET_BOARD_IDENTIFIER "RGF3" // rgSSD_F3
 
 // Removed to make the firmware fit into flash (in descending order of priority):
-#undef USE_RTC_TIME
+//#undef USE_RTC_TIME
 #undef USE_RX_MSP
-#undef USE_ESC_SENSOR_INFO
+//#undef USE_ESC_SENSOR_INFO
 
 #define LED0_PIN                 PC1
 #define LED1_PIN                 PC0
@@ -34,8 +34,8 @@
 #define BEEPER_PIN               PA8
 #define BEEPER_INVERTED
 
-#define MPU6000_CS_PIN           PB2
-#define MPU6000_SPI_INSTANCE     SPI2
+#define GYRO_1_CS_PIN            PB2
+#define GYRO_1_SPI_INSTANCE      SPI2
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
@@ -54,32 +54,27 @@
 
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN CW180_DEG
+#define GYRO_1_ALIGN       CW180_DEG
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
-#define ACC_MPU6000_ALIGN CW180_DEG
+#define ACC_1_ALIGN       CW180_DEG
+#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 #define USE_TARGET_CONFIG
 
 #define USE_EXTI
-#define MPU_INT_EXTI PC13
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN          PC13
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define USE_SDCARD
-
+#define USE_SDCARD_SPI
 #define SDCARD_DETECT_INVERTED
 #define SDCARD_DETECT_PIN        PC14
-
 #define SDCARD_SPI_INSTANCE      SPI1
 #define SDCARD_SPI_CS_GPIO       GPIOB
 #define SDCARD_SPI_CS_PIN        SPI1_NSS_PIN
-
-// SPI2 is on the APB1 bus whose clock runs at 36MHz. Divide to under 400kHz for init:
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 128
-// Divide to under 25MHz for normal operation:
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     2
-
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel3
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
@@ -113,12 +108,10 @@
 #define I2C2_SCL_GPIO_AF         GPIO_AF_4
 #define I2C2_SCL_PIN             GPIO_Pin_9
 #define I2C2_SCL_PIN_SOURCE      GPIO_PinSource9
-#define I2C2_SCL_CLK_SOURCE      RCC_AHBPeriph_GPIOA
 #define I2C2_SDA_GPIO            GPIOA
 #define I2C2_SDA_GPIO_AF         GPIO_AF_4
 #define I2C2_SDA_PIN             GPIO_Pin_10
 #define I2C2_SDA_PIN_SOURCE      GPIO_PinSource10
-#define I2C2_SDA_CLK_SOURCE      RCC_AHBPeriph_GPIOA
 
 #define USE_ADC
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
@@ -146,6 +139,6 @@
 #define TARGET_IO_PORTD (BIT(2))
 #define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(4))
 
-#define USED_TIMERS  (TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(16) | TIM_N(17))
+#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(16))
 
 #define USABLE_TIMER_CHANNEL_COUNT 9

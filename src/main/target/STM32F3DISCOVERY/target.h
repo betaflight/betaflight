@@ -43,9 +43,9 @@
 //#undef USE_ITERM_RELAX
 //#undef USE_RC_SMOOTHING_FILTER
 
-//#undef USE_HUFFMAN
-//#undef USE_PINIO
-//#undef USE_PINIOBOX
+#undef USE_HUFFMAN
+#undef USE_PINIO
+#undef USE_PINIOBOX
 
 #undef USE_TELEMETRY_HOTT
 #undef USE_TELEMETRY_MAVLINK
@@ -56,7 +56,7 @@
 
 #undef USE_BOARD_INFO
 //#undef USE_RX_MSP
-#undef USE_RTC_TIME
+//#undef USE_RTC_TIME
 #undef USE_EXTENDED_CMS_MENUS
 #undef USE_ESC_SENSOR_INFO
 
@@ -113,25 +113,19 @@
 //#define USE_GYRO_L3G4200D
 #define USE_GYRO_MPU3050
 #define USE_GYRO_MPU6050
-#define USE_GYRO_SPI_MPU6000
-#define MPU6000_CS_PIN          SPI2_NSS_PIN
-#define MPU6000_SPI_INSTANCE    SPI2
-// Support the GY-91 MPU9250 dev board
 #define USE_GYRO_MPU6500
+#define USE_GYRO_SPI_MPU6000
 #define USE_GYRO_SPI_MPU6500
-#define MPU6500_CS_PIN          PC14
-#define MPU6500_SPI_INSTANCE    SPI2
-#define GYRO_MPU6500_ALIGN      CW270_DEG_FLIP
 #define USE_GYRO_SPI_MPU9250
-#define MPU9250_CS_PIN          SPI2_NSS_PIN
-#define MPU9250_SPI_INSTANCE    SPI2
-// BMI160 gyro support
+#define GYRO_1_CS_PIN           SPI2_NSS_PIN
+#define GYRO_1_SPI_INSTANCE     SPI2
+#define GYRO_1_ALIGN            CW0_DEG
 #define USE_ACCGYRO_BMI160
 #ifdef USE_ACCGYRO_BMI160
-#define BMI160_CS_PIN           SPI2_NSS_PIN
-#define BMI160_SPI_INSTANCE     SPI2
 #define BMI160_SPI_DIVISOR      16
-#define BMI160_INT_EXTI         PC13
+#define USE_EXTI
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC13
 #define USE_MPU_DATA_READY_SIGNAL
 #define USE_EXTI
 #endif
@@ -149,7 +143,7 @@
 #define USE_ACC_SPI_MPU6500
 #define USE_ACC_MPU9250
 #define USE_ACC_SPI_MPU9250
-#define ACC_MPU6500_ALIGN       CW270_DEG_FLIP
+#define ACC_1_ALIGN             CW270_DEG_FLIP
 
 #define USE_BARO
 #define USE_FAKE_BARO
@@ -162,17 +156,10 @@
 //#define MAX7456_SPI_CS_PIN      SPI2_NSS_PIN
 
 //#define USE_SDCARD
-//
 //#define SDCARD_SPI_INSTANCE     SPI2
 //#define SDCARD_SPI_CS_PIN       PB12
-//// SPI2 is on the APB1 bus whose clock runs at 36MHz. Divide to under 400kHz for init:
-//#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 128
-//// Divide to under 25MHz for normal operation:
-//#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 2
-//
 //// Note, this is the same DMA channel as UART1_RX. Luckily we don't use DMA for USART Rx.
 //#define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
-
 // Performance logging for SD card operations:
 // #define AFATFS_USE_INTROSPECTIVE_LOGGING
 

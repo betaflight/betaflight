@@ -24,12 +24,12 @@
 
 #include "platform.h"
 
-#ifdef USE_SERIAL_RX
-#ifdef USE_TELEMETRY
+#if defined(USE_TELEMETRY_JETIEXBUS)
 
 #include "build/build_config.h"
 #include "build/debug.h"
 #include "fc/runtime_config.h"
+#include "config/feature.h"
 
 #include "common/utils.h"
 #include "common/bitarray.h"
@@ -38,17 +38,19 @@
 #include "drivers/serial_uart.h"
 #include "drivers/time.h"
 
+
 #include "flight/position.h"
 #include "flight/imu.h"
 
-#include "pg/rx.h"
-
 #include "io/serial.h"
+#include "io/gps.h"
+
 #include "rx/rx.h"
 #include "rx/jetiexbus.h"
 
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
+#include "sensors/acceleration.h"
 
 #include "telemetry/jetiexbus.h"
 #include "telemetry/telemetry.h"
@@ -58,7 +60,7 @@
 #define EXTEL_SYNC_LEN      1
 #define EXTEL_CRC_LEN       1
 #define EXTEL_HEADER_LEN    6
-#define EXTEL_MAX_LEN       28
+#define EXTEL_MAX_LEN       26
 #define EXTEL_OVERHEAD      (EXTEL_SYNC_LEN + EXTEL_HEADER_LEN + EXTEL_CRC_LEN)
 #define EXTEL_MAX_PAYLOAD   (EXTEL_MAX_LEN - EXTEL_OVERHEAD)
 #define EXBUS_MAX_REQUEST_BUFFER_SIZE   (EXBUS_OVERHEAD + EXTEL_MAX_LEN)
@@ -114,16 +116,28 @@ typedef struct exBusSensor_s {
 // list of telemetry messages
 // after every 15 sensors a new header has to be inserted (e.g. "BF D2")
 const exBusSensor_t jetiExSensors[] = {
-    {"BF D1",       "",      EX_TYPE_DES,   0              },     // device descripton
-    {"Voltage",     "V",     EX_TYPE_14b,   DECIMAL_MASK(1)},
-    {"Current",     "A",     EX_TYPE_14b,   DECIMAL_MASK(2)},
-    {"Altitude",    "m",     EX_TYPE_14b,   DECIMAL_MASK(2)},
-    {"Capacity",    "mAh",   EX_TYPE_22b,   DECIMAL_MASK(0)},
-    {"Power",       "W",     EX_TYPE_22b,   DECIMAL_MASK(1)},
-    {"Roll angle",  "\xB0",  EX_TYPE_14b,   DECIMAL_MASK(1)},
-    {"Pitch angle", "\xB0",  EX_TYPE_14b,   DECIMAL_MASK(1)},
-    {"Heading",     "\xB0",  EX_TYPE_14b,   DECIMAL_MASK(1)},
-    {"Vario",       "m/s",   EX_TYPE_22b,   DECIMAL_MASK(2)}
+    {"BF D1",           "",         EX_TYPE_DES,   0              },     // device descripton
+    {"Voltage",         "V",        EX_TYPE_22b,   DECIMAL_MASK(1)},
+    {"Current",         "A",        EX_TYPE_22b,   DECIMAL_MASK(2)},
+    {"Altitude",        "m",        EX_TYPE_22b,   DECIMAL_MASK(2)},
+    {"Capacity",        "mAh",      EX_TYPE_22b,   DECIMAL_MASK(0)},
+    {"Power",           "W",        EX_TYPE_22b,   DECIMAL_MASK(1)},
+    {"Roll angle",      "\xB0",     EX_TYPE_22b,   DECIMAL_MASK(1)},
+    {"Pitch angle",     "\xB0",     EX_TYPE_22b,   DECIMAL_MASK(1)},
+    {"Heading",         "\xB0",     EX_TYPE_22b,   DECIMAL_MASK(1)},
+    {"Vario",           "m/s",      EX_TYPE_22b,   DECIMAL_MASK(2)},
+    {"GPS Sats",        "",         EX_TYPE_22b,   DECIMAL_MASK(0)},
+    {"GPS Long",        "",         EX_TYPE_GPS,   DECIMAL_MASK(0)},
+    {"GPS Lat",         "",         EX_TYPE_GPS,   DECIMAL_MASK(0)},
+    {"GPS Speed",       "m/s",      EX_TYPE_22b,   DECIMAL_MASK(2)},
+    {"GPS H-Distance",  "m",        EX_TYPE_22b,   DECIMAL_MASK(0)},
+    {"GPS H-Direction", "\xB0",     EX_TYPE_22b,   DECIMAL_MASK(1)},
+    {"BF D2",           "",         EX_TYPE_DES,   0              },     // device descripton
+    {"GPS Heading",     "\xB0",     EX_TYPE_22b,   DECIMAL_MASK(1)},
+    {"GPS Altitude",    "m",        EX_TYPE_22b,   DECIMAL_MASK(2)},
+    {"G-Force X",       "",         EX_TYPE_22b,   DECIMAL_MASK(3)},
+    {"G-Force Y",       "",         EX_TYPE_22b,   DECIMAL_MASK(3)},
+    {"G-Force Z",       "",         EX_TYPE_22b,   DECIMAL_MASK(3)}
 };
 
 // after every 15 sensors increment the step by 2 (e.g. ...EX_VAL15, EX_VAL16 = 17) to skip the device description
@@ -136,8 +150,26 @@ enum exSensors_e {
     EX_ROLL_ANGLE,
     EX_PITCH_ANGLE,
     EX_HEADING,
-    EX_VARIO
+    EX_VARIO,
+    EX_GPS_SATS,
+    EX_GPS_LONG,
+    EX_GPS_LAT,
+    EX_GPS_SPEED,
+    EX_GPS_DISTANCE_TO_HOME,
+    EX_GPS_DIRECTION_TO_HOME,
+    EX_GPS_HEADING = 17,
+    EX_GPS_ALTITUDE,
+    EX_GFORCE_X,
+    EX_GFORCE_Y,
+    EX_GFORCE_Z
 };
+
+union{
+    int32_t vInt;
+    uint16_t vWord[2];
+    char    vBytes[4];
+} exGps;
+
 
 #define JETI_EX_SENSOR_COUNT (ARRAYLEN(jetiExSensors))
 
@@ -158,6 +190,29 @@ uint8_t calcCRC8(uint8_t *pt, uint8_t msgLen)
         crc = crc ^ (crc << 1) ^ (crc << 2) ^ (0x0e090700 >> ((crc >> 3) & 0x18));
     }
     return(crc);
+}
+
+void enableGpsTelemetry(bool enable)
+{
+    if (enable) {
+        bitArraySet(&exSensorEnabled, EX_GPS_SATS);
+        bitArraySet(&exSensorEnabled, EX_GPS_LONG);
+        bitArraySet(&exSensorEnabled, EX_GPS_LAT);
+        bitArraySet(&exSensorEnabled, EX_GPS_SPEED);
+        bitArraySet(&exSensorEnabled, EX_GPS_DISTANCE_TO_HOME);
+        bitArraySet(&exSensorEnabled, EX_GPS_DIRECTION_TO_HOME);
+        bitArraySet(&exSensorEnabled, EX_GPS_HEADING);
+        bitArraySet(&exSensorEnabled, EX_GPS_ALTITUDE);
+    } else {
+        bitArrayClr(&exSensorEnabled, EX_GPS_SATS);
+        bitArrayClr(&exSensorEnabled, EX_GPS_LONG);
+        bitArrayClr(&exSensorEnabled, EX_GPS_LAT);
+        bitArrayClr(&exSensorEnabled, EX_GPS_SPEED);
+        bitArrayClr(&exSensorEnabled, EX_GPS_DISTANCE_TO_HOME);
+        bitArrayClr(&exSensorEnabled, EX_GPS_DIRECTION_TO_HOME);
+        bitArrayClr(&exSensorEnabled, EX_GPS_HEADING);
+        bitArrayClr(&exSensorEnabled, EX_GPS_ALTITUDE);
+    }
 }
 
 /*
@@ -182,7 +237,6 @@ void initJetiExBusTelemetry(void)
     jetiExTelemetryFrame[EXTEL_HEADER_LSN_HB] = 0x00;
     jetiExTelemetryFrame[EXTEL_HEADER_RES] = 0x00;               // reserved, by default 0x00
 
-    //exSensorEnabled = 0x3fe;
     // Check which sensors are available
     if (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE) {
         bitArraySet(&exSensorEnabled, EX_VOLTAGE);
@@ -196,15 +250,23 @@ void initJetiExBusTelemetry(void)
     }
     if (sensors(SENSOR_BARO)) {
         bitArraySet(&exSensorEnabled, EX_ALTITUDE);
+#ifdef USE_VARIO
         bitArraySet(&exSensorEnabled, EX_VARIO);
+#endif
     }
     if (sensors(SENSOR_ACC)) {
         bitArraySet(&exSensorEnabled, EX_ROLL_ANGLE);
         bitArraySet(&exSensorEnabled, EX_PITCH_ANGLE);
+        bitArraySet(&exSensorEnabled, EX_GFORCE_X);
+        bitArraySet(&exSensorEnabled, EX_GFORCE_Y);
+        bitArraySet(&exSensorEnabled, EX_GFORCE_Z);
     }
     if (sensors(SENSOR_MAG)) {
         bitArraySet(&exSensorEnabled, EX_HEADING);
     }
+
+    enableGpsTelemetry(featureIsEnabled(FEATURE_GPS));
+
     firstActiveSensor = getNextActiveSensor(0);     // find the first active sensor
 }
 
@@ -224,19 +286,35 @@ void createExTelemetryTextMessage(uint8_t *exMessage, uint8_t messageID, const e
     exMessage[exMessage[EXTEL_HEADER_TYPE_LEN] + EXTEL_CRC_LEN] = calcCRC8(&exMessage[EXTEL_HEADER_TYPE_LEN], exMessage[EXTEL_HEADER_TYPE_LEN]);
 }
 
+uint32_t calcGpsDDMMmmm(int32_t value, bool isLong)
+{
+    uint32_t absValue = ABS(value);
+    uint16_t deg16 = absValue / GPS_DEGREES_DIVIDER;
+    uint16_t min16 = (absValue - deg16 * GPS_DEGREES_DIVIDER) * 6 / 1000;
+
+    exGps.vInt = 0;
+    exGps.vWord[0] = min16;
+    exGps.vWord[1] = deg16;
+    exGps.vWord[1] |= isLong ? 0x2000 : 0;
+    exGps.vWord[1] |= (value < 0) ? 0x4000 : 0;
+
+    return exGps.vInt;
+}
+
+
 int32_t getSensorValue(uint8_t sensor)
 {
-    switch(sensor) {
+    switch (sensor) {
     case EX_VOLTAGE:
-        return getBatteryVoltageLatest();
+        return getBatteryVoltage();
         break;
 
     case EX_CURRENT:
-        return getAmperageLatest();
+        return getAmperage();
         break;
 
     case EX_ALTITUDE:
-        return getEstimatedAltitudeCm() / 100;
+        return getEstimatedAltitudeCm();
         break;
 
     case EX_CAPACITY:
@@ -244,7 +322,7 @@ int32_t getSensorValue(uint8_t sensor)
         break;
 
     case EX_POWER:
-        return (getBatteryVoltageLatest() * getAmperageLatest() / 100);
+        return (getBatteryVoltage() * getAmperage() / 100);
         break;
 
     case EX_ROLL_ANGLE:
@@ -259,9 +337,57 @@ int32_t getSensorValue(uint8_t sensor)
         return attitude.values.yaw;
         break;
 
+#ifdef USE_VARIO
     case EX_VARIO:
         return getEstimatedVario();
         break;
+#endif
+
+#ifdef USE_GPS
+    case EX_GPS_SATS:
+        return gpsSol.numSat;
+    break;
+
+    case EX_GPS_LONG:
+        return calcGpsDDMMmmm(gpsSol.llh.lon, true);
+    break;
+
+    case EX_GPS_LAT:
+        return calcGpsDDMMmmm(gpsSol.llh.lat, false);
+    break;
+
+    case EX_GPS_SPEED:
+        return gpsSol.groundSpeed;
+    break;
+
+    case EX_GPS_DISTANCE_TO_HOME:
+        return GPS_distanceToHome;
+    break;
+
+    case EX_GPS_DIRECTION_TO_HOME:
+        return GPS_directionToHome;
+    break;
+
+    case EX_GPS_HEADING:
+        return gpsSol.groundCourse;
+    break;
+
+    case EX_GPS_ALTITUDE:
+        return gpsSol.llh.altCm;
+    break;
+#endif
+
+    case EX_GFORCE_X:
+       return (int16_t)(((float)acc.accADC[0] / acc.dev.acc_1G) * 1000);
+    break;
+
+    case EX_GFORCE_Y:
+       return (int16_t)(((float)acc.accADC[1] / acc.dev.acc_1G) * 1000);
+    break;
+
+    case EX_GFORCE_Z:
+        return (int16_t)(((float)acc.accADC[2] / acc.dev.acc_1G) * 1000);
+    break;
 
     default:
         return -1;
@@ -289,7 +415,7 @@ uint8_t createExTelemetryValueMessage(uint8_t *exMessage, uint8_t item)
     uint8_t messageSize;
     uint32_t sensorValue;
 
-    exMessage[EXTEL_HEADER_LSN_LB] = item & 0xF0;                                   // Device ID
+    exMessage[EXTEL_HEADER_LSN_LB] = item & 0xF0;                       // Device ID
     uint8_t *p = &exMessage[EXTEL_HEADER_ID];
 
     while (item < sensorItemMaxGroup) {
@@ -303,7 +429,11 @@ uint8_t createExTelemetryValueMessage(uint8_t *exMessage, uint8_t item)
             sensorValue = sensorValue >> 8;
             iCount--;
         }
-        *p++ = (sensorValue & 0x9F) | jetiExSensors[item].decimals;
+        if (jetiExSensors[item].exDataType != EX_TYPE_GPS) {
+            *p++ = (sensorValue & 0x9F) | jetiExSensors[item].decimals;
+        } else {
+            *p++ = sensorValue;
+        }
 
         item = getNextActiveSensor(item);
 
@@ -359,9 +489,7 @@ void handleJetiExBusTelemetry(void)
         }
 
         if ((jetiExBusRequestFrame[EXBUS_HEADER_DATA_ID] == EXBUS_EX_REQUEST) && (jetiExBusCalcCRC16(jetiExBusRequestFrame, jetiExBusRequestFrame[EXBUS_HEADER_MSG_LEN]) == 0)) {
-            // switch to TX mode
             if (serialRxBytesWaiting(jetiExBusPort) == 0) {
-                serialSetMode(jetiExBusPort, MODE_TX);
                 jetiExBusTransceiveState = EXBUS_TRANS_TX;
                 item = sendJetiExBusTelemetry(jetiExBusRequestFrame[EXBUS_HEADER_PACKET_ID], item);
                 jetiExBusRequestState = EXBUS_STATE_PROCESSED;
@@ -376,7 +504,6 @@ void handleJetiExBusTelemetry(void)
     // check the state if transmit is ready
     if (jetiExBusTransceiveState == EXBUS_TRANS_IS_TX_COMPLETED) {
         if (isSerialTransmitBufferEmpty(jetiExBusPort)) {
-            serialSetMode(jetiExBusPort, MODE_RX);
             jetiExBusTransceiveState = EXBUS_TRANS_RX;
             jetiExBusRequestState = EXBUS_STATE_ZERO;
         }
@@ -387,6 +514,7 @@ uint8_t sendJetiExBusTelemetry(uint8_t packetID, uint8_t item)
 {
     static uint8_t sensorDescriptionCounter = 0xFF;
     static uint8_t requestLoop = 0xFF;
+    static bool allSensorsActive = true;
     uint8_t *jetiExTelemetryFrame = &jetiExBusTelemetryFrame[EXBUS_HEADER_DATA];
 
     if (requestLoop) {
@@ -402,12 +530,23 @@ uint8_t sendJetiExBusTelemetry(uint8_t packetID, uint8_t item)
         createExTelemetryTextMessage(jetiExTelemetryFrame, sensorDescriptionCounter, &jetiExSensors[sensorDescriptionCounter]);
         createExBusMessage(jetiExBusTelemetryFrame, jetiExTelemetryFrame, packetID);
         requestLoop--;
-        if (requestLoop == 0){
+        if (requestLoop == 0) {
             item = firstActiveSensor;
+            if (featureIsEnabled(FEATURE_GPS)) {
+                enableGpsTelemetry(false);
+                allSensorsActive = false;
+            }   
         }
     } else {
         item = createExTelemetryValueMessage(jetiExTelemetryFrame, item);
         createExBusMessage(jetiExBusTelemetryFrame, jetiExTelemetryFrame, packetID);
+        
+        if (!allSensorsActive) {
+            if (sensors(SENSOR_GPS)) {
+                enableGpsTelemetry(true);
+                allSensorsActive = true;
+            }
+        }
     }
 
     serialWriteBuf(jetiExBusPort, jetiExBusTelemetryFrame, jetiExBusTelemetryFrame[EXBUS_HEADER_MSG_LEN]);
@@ -415,7 +554,4 @@ uint8_t sendJetiExBusTelemetry(uint8_t packetID, uint8_t item)
 
     return item;
 }
-#endif // TELEMETRY
-#endif // SERIAL_RX
-
-
+#endif

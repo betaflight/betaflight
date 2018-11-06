@@ -23,6 +23,7 @@
 #include <string.h>
 #include <math.h>
 #include <stdlib.h>
+#include <limits.h>
 
 #include "platform.h"
 
@@ -303,8 +304,13 @@ static void serializeSDCardSummaryReply(sbuf_t *dst)
     sbufWriteU8(dst, state);
     sbufWriteU8(dst, afatfs_getLastError());
     // Write free space and total space in kilobytes
-    sbufWriteU32(dst, afatfs_getContiguousFreeSpace() / 1024);
-    sbufWriteU32(dst, sdcard_getMetadata()->numBlocks / 2); // Block size is half a kilobyte
+    if (state == MSP_SDCARD_STATE_READY) {
+        sbufWriteU32(dst, afatfs_getContiguousFreeSpace() / 1024);
+        sbufWriteU32(dst, sdcard_getMetadata()->numBlocks / 2); // Block size is half a kilobyte
+    } else {
+        sbufWriteU32(dst, 0);
+        sbufWriteU32(dst, 0);
+    }
 #else
     sbufWriteU8(dst, 0);
     sbufWriteU8(dst, 0);
@@ -889,7 +895,11 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 #else
         sbufWriteU32(dst, 0);
 #endif
+#ifdef USE_VARIO
         sbufWriteU16(dst, getEstimatedVario());
+#else
+        sbufWriteU16(dst, 0);
+#endif
         break;
 
     case MSP_SONAR_ALTITUDE:
@@ -1618,6 +1628,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             } else {
                 return MSP_RESULT_ERROR;
             }
+            activeAdjustmentRangeReset();
         } else {
             return MSP_RESULT_ERROR;
         }

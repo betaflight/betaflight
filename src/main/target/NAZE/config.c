@@ -61,6 +61,8 @@ void targetConfiguration(void)
 
     motorConfigMutable()->minthrottle = 1049;
 
+    gyroDeviceConfigMutable()->extiTag = selectMPUIntExtiConfigByHardwareRevision();
+
     gyroConfigMutable()->gyro_hardware_lpf = GYRO_HARDWARE_LPF_1KHZ_SAMPLE;
     gyroConfigMutable()->gyro_soft_lpf_hz = 100;
     gyroConfigMutable()->gyro_soft_notch_hz_1 = 0;

@@ -47,14 +47,14 @@ if (x is true) {
 
 ```
 switch (action) {
-    case ADD:
-        return "add";
-    case REMOVE:
-        return "remove";
-    case CHANGE:
-        return "change";
-    default:
-        return NULL;
+case ADD:
+    return "add";
+case REMOVE:
+    return "remove";
+case CHANGE:
+    return "change";
+default:
+    return NULL;
 }
 ```
 

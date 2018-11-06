@@ -281,7 +281,7 @@ void OverclockRebootIfNecessary(uint32_t overclockLevel)
     const pllConfig_t * const pll = overclockLevels + overclockLevel;
 
     // Reboot to adjust overclock frequency
-    if (SystemCoreClock != (pll->n / pll->p) * 1000000) {
+    if (SystemCoreClock != (pll->n / pll->p) * 1000000U) {
         REQUEST_OVERCLOCK = REQUEST_OVERCLOCK_MAGIC_COOKIE;
         CURRENT_OVERCLOCK_LEVEL = overclockLevel;
         __disable_irq();

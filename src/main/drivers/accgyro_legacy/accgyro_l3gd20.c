@@ -82,12 +82,6 @@ static void l3gd20SpiInit(SPI_TypeDef *SPIx)
     UNUSED(SPIx); // FIXME
 
     mpul3gd20CsPin = IOGetByTag(IO_TAG(L3GD20_CS_PIN));
-#ifndef USE_DUAL_GYRO
-    IOInit(mpul3gd20CsPin, OWNER_MPU_CS, 0);
-    IOConfigGPIO(mpul3gd20CsPin, SPI_IO_CS_CFG);
-
-    DISABLE_L3GD20;
-#endif
 
     spiSetDivisor(L3GD20_SPI, SPI_CLOCK_STANDARD);
 }

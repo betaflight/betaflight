@@ -1,5 +1,5 @@
 F7X2RE_TARGETS += $(TARGET)
-FEATURES    = VCP SDCARD
+FEATURES    = VCP SDCARD_SPI
 
 TARGET_SRC = \
             drivers/accgyro/accgyro_fake.c \
@@ -10,6 +10,7 @@ TARGET_SRC = \
             drivers/barometer/barometer_bmp280.c \
             drivers/barometer/barometer_ms5611.c \
             drivers/compass/compass_hmc5883l.c \
+            drivers/compass/compass_lis3mdl.c \
             drivers/max7456.c \
             drivers/vtx_rtc6705_soft_spi.c
 

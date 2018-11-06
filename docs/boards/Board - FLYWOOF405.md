@@ -27,7 +27,7 @@ This board use the STM32F405RGT6 microcontroller and have the following features
 | Value | Identifier   | function |  pin   | Notes                                                                                 |
 | ----- | ------------ | ---------| -------| ------------------------------------------------------------------------------------- |                                                                                      
 | 1     | I2C1         |    SDA   |  PB9   | with GPS outlet
-| 2     | I2C1         |    SCL   |  PB6   | with GPS outlet
+| 2     | I2C1         |    SCL   |  PB8   | with GPS outlet
 
 
 ### Buzzer/LED output 

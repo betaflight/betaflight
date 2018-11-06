@@ -33,21 +33,22 @@
 
 // ICM20689 interrupt
 #define USE_EXTI
-#define MPU_INT_EXTI            PA8
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PA8
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
-#define ICM20689_CS_PIN          SPI1_NSS_PIN
-#define ICM20689_SPI_INSTANCE    SPI1
+#define GYRO_1_CS_PIN           SPI1_NSS_PIN
+#define GYRO_1_SPI_INSTANCE     SPI1
 
 #define USE_ACC
 #define USE_ACC_SPI_ICM20689
-#define ACC_ICM20689_ALIGN       CW270_DEG
+#define ACC_1_ALIGN             CW270_DEG
 
 #define USE_GYRO
 #define USE_GYRO_SPI_ICM20689
-#define GYRO_ICM20689_ALIGN      CW270_DEG
+#define GYRO_1_ALIGN            CW270_DEG
 
 #define USE_BARO
 #define USE_BARO_BMP280
@@ -61,17 +62,11 @@
 #define MAX7456_DMA_IRQ_HANDLER_ID          DMA1_ST0_HANDLER
 
 #define USE_SDCARD
-
+#define USE_SDCARD_SPI
 #define SDCARD_DETECT_PIN       PC3
 #define SDCARD_DETECT_INVERTED
 #define SDCARD_SPI_INSTANCE     SPI2
 #define SDCARD_SPI_CS_PIN       SPI2_NSS_PIN
-
-// SPI2 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 328kHz
-// Divide to under 25MHz for normal operation:
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     4 // 21MHz
-
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Stream4
 #define SDCARD_DMA_CHANNEL                  0
 
@@ -82,7 +77,6 @@
 #define USE_UART1
 #define UART1_RX_PIN            PA10
 #define UART1_TX_PIN            PA9
-#define UART1_AHB1_PERIPHERALS  RCC_AHB1Periph_DMA2
 
 //SerialRX
 #define USE_UART2
@@ -162,4 +156,4 @@
 #define TARGET_IO_PORTD (BIT(2))
 
 #define USABLE_TIMER_CHANNEL_COUNT 10
-#define USED_TIMERS  ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4)  |  TIM_N(5) | TIM_N(8) | TIM_N(9))
+#define USED_TIMERS  ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(9) )

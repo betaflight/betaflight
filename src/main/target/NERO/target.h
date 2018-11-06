@@ -37,35 +37,28 @@
 
 // MPU6500 interrupt
 #define USE_EXTI
-#define MPU_INT_EXTI            PB2
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PB2
 #define USE_MPU_DATA_READY_SIGNAL
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 
-#define MPU6500_CS_PIN          PC4
-#define MPU6500_SPI_INSTANCE    SPI1
+#define GYRO_1_CS_PIN           PC4
+#define GYRO_1_SPI_INSTANCE     SPI1
 
 #define USE_ACC
-#define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN       CW0_DEG
+#define ACC_1_ALIGN             CW0_DEG
 
 #define USE_GYRO
-#define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN      CW0_DEG
+#define GYRO_1_ALIGN            CW0_DEG
 
 #define USE_SDCARD
-
+#define USE_SDCARD_SPI
 #define SDCARD_DETECT_INVERTED
 #define SDCARD_DETECT_PIN                   PD2
 #define SDCARD_SPI_INSTANCE                 SPI3
 #define SDCARD_SPI_CS_PIN                   PA15
-
-// SPI2 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 328kHz
-// Divide to under 25MHz for normal operation:
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     4 // 21MHz
-
 //#define SDCARD_DMA_STREAM_TX_FULL           DMA1_Stream5
 //#define SDCARD_DMA_CHANNEL                  0
 

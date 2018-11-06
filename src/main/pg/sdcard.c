@@ -33,36 +33,33 @@
 #include "drivers/io.h"
 #include "drivers/dma.h"
 
-PG_REGISTER_WITH_RESET_FN(sdcardConfig_t, sdcardConfig, PG_SDCARD_CONFIG, 0);
+PG_REGISTER_WITH_RESET_FN(sdcardConfig_t, sdcardConfig, PG_SDCARD_CONFIG, 1);
 
 void pgResetFn_sdcardConfig(sdcardConfig_t *config)
 {
     config->useDma = false;
-#ifdef SDCARD_SPI_INSTANCE
-    config->enabled = 1;
-    config->device = spiDeviceByInstance(SDCARD_SPI_INSTANCE);
-#elif defined(USE_SDCARD_SDIO)
-    config->enabled = 1;
-#else
-    config->enabled = 0;
-    config->device = 0;
-#endif
-#ifdef SDCARD_DETECT_PIN
-    config->cardDetectTag = IO_TAG(SDCARD_DETECT_PIN);
-#else
-    config->cardDetectTag = IO_TAG_NONE;
-#endif
-#ifdef SDCARD_SPI_CS_PIN
-    config->chipSelectTag = IO_TAG(SDCARD_SPI_CS_PIN);
-#else
-    config->chipSelectTag = IO_TAG_NONE;
+    config->device = SPI_DEV_TO_CFG(SPIINVALID);
+    config->mode = SDCARD_MODE_NONE;
+
+    // We can safely handle SPI and SDIO cases separately on custom targets, as these are exclusive per target.
+    // On generic targets, SPI has precedence over SDIO; SDIO must be post-flash configured.
+
+#ifdef USE_SDCARD_SDIO
+    config->mode = SDCARD_MODE_SDIO;
 #endif
 
-#ifdef SDCARD_DETECT_INVERTED
-    config->cardDetectInverted = 1;
-#else
-    config->cardDetectInverted = 0;
+#ifdef USE_SDCARD_SPI
+    SPIDevice spidevice = spiDeviceByInstance(SDCARD_SPI_INSTANCE);
+    config->device = SPI_DEV_TO_CFG(spidevice);
+    config->chipSelectTag = IO_TAG(SDCARD_SPI_CS_PIN);
+
+    if (spidevice != SPIINVALID && config->chipSelectTag) {
+        config->mode = SDCARD_MODE_SPI;
+    }
 #endif
+
+    config->cardDetectTag = IO_TAG(SDCARD_DETECT_PIN);
+    config->cardDetectInverted = SDCARD_DETECT_IS_INVERTED;
 
 #if defined(SDCARD_DMA_STREAM_TX_FULL)
     config->dmaIdentifier = (uint8_t)dmaGetIdentifier(SDCARD_DMA_STREAM_TX_FULL);

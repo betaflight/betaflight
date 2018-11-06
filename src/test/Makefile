@@ -13,15 +13,19 @@
 USER_DIR = ../main
 TEST_DIR = unit
 ROOT = ../..
+OBJECT_DIR = ../../obj/test
+TARGET_DIR = $(USER_DIR)/target
 
 include $(ROOT)/make/system-id.mk
+include $(ROOT)/make/targets_list.mk
 
 # specify which files that are included in the test in addition to the unittest file.
 # variables available:
 #   <test_name>_SRC
 #   <test_name>_DEFINES
 #   <test_name>_INCLUDE_DIRS
-
+#   <test_name>_EXPAND (run for each target, call the above with target as $1)
+#   <test_name>_BLACKLIST (targets to exclude from an expanded test's run)
 
 alignsensor_unittest_SRC := \
 		$(USER_DIR)/sensors/boardalignment.c \
@@ -39,9 +43,12 @@ atomic_unittest_SRC := \
 		$(USER_DIR)/build/atomic.c \
 		$(TEST_DIR)/atomic_unittest_c.c
 
-baro_bmp085_unittest_SRC := \
-		$(USER_DIR)/drivers/barometer/barometer_bmp085.c \
-		$(USER_DIR)/drivers/io.c
+# This test is disabled due to build errors.
+# Its source code is archived in unit/baro_bmp085_unittest.cc.txt
+#
+#baro_bmp085_unittest_SRC := \
+#		$(USER_DIR)/drivers/barometer/barometer_bmp085.c \
+#		$(USER_DIR)/drivers/io.c
 
 
 baro_bmp280_unittest_SRC := \
@@ -58,9 +65,12 @@ baro_ms5611_unittest_DEFINES := \
                 USE_BARO_MS5611 \
                 USE_BARO_SPI_MS5611
 
-battery_unittest_SRC := \
-		$(USER_DIR)/sensors/battery.c \
-		$(USER_DIR)/common/maths.c
+# This test is disabled due to build errors.
+# Its source code is archived in unit/battery_unittest.cc.txt
+#
+#battery_unittest_SRC := \
+#		$(USER_DIR)/sensors/battery.c \
+#		$(USER_DIR)/common/maths.c
 
 
 blackbox_unittest_SRC :=  \
@@ -218,7 +228,8 @@ sensor_gyro_unittest_SRC := \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/drivers/accgyro/accgyro_fake.c \
 		$(USER_DIR)/drivers/accgyro/gyro_sync.c \
-		$(USER_DIR)/pg/pg.c
+		$(USER_DIR)/pg/pg.c \
+		$(USER_DIR)/pg/gyrodev.c
 
 telemetry_crsf_unittest_SRC := \
 		$(USER_DIR)/rx/crsf.c \
@@ -265,15 +276,26 @@ telemetry_ibus_unittest_SRC := \
 		$(USER_DIR)/telemetry/ibus_shared.c \
 		$(USER_DIR)/telemetry/ibus.c
 
+timer_definition_unittest_EXPAND := yes
+
+# NERO and STM32F7X2 are universal targets with dynamic timer management.
+# SITL is a simulator with empty timerHardware and many hearders in target.c.
+timer_definition_unittest_BLACKLIST := NERO SITL STM32F7X2
+
+timer_definition_unittest_SRC = \
+		$(TARGET_DIR)/$(call get_base_target,$1)/target.c
+
+timer_definition_unittest_DEFINES = \
+		TARGET=$1 \
+		BASE_TARGET=$(call get_base_target,$1)
+
+timer_definition_unittest_INCLUDE_DIRS = \
+		$(TEST_DIR)/timer_definition_unittest.include \
+		$(TARGET_DIR)/$(call get_base_target,$1)
 
 transponder_ir_unittest_SRC := \
-	        $(USER_DIR)/drivers/transponder_ir_ilap.c \
-	        $(USER_DIR)/drivers/transponder_ir_arcitimer.c
-
-
-type_conversion_unittest_SRC := \
-		$(USER_DIR)/common/typeconversion.c
-
+		$(USER_DIR)/drivers/transponder_ir_ilap.c \
+		$(USER_DIR)/drivers/transponder_ir_arcitimer.c
 
 ws2811_unittest_SRC := \
 		$(USER_DIR)/drivers/light_ws2811strip.c
@@ -299,6 +321,12 @@ pid_unittest_SRC :=  \
 		$(USER_DIR)/flight/pid.c \
 		$(USER_DIR)/pg/pg.c \
 		$(USER_DIR)/fc/runtime_config.c
+
+pid_unittest_DEFINES := \
+		USE_ITERM_RELAX \
+		USE_RC_SMOOTHING_FILTER \
+		USE_ABSOLUTE_CONTROL\
+		USE_LAUNCH_CONTROL
 
 rcdevice_unittest_DEFINES := \
 		USE_RCDEVICE
@@ -327,11 +355,6 @@ vtx_unittest_DEFINES := \
 # Points to the root of Google Test, relative to where this file is.
 # Remember to tweak this if you move this file.
 GTEST_DIR = ../../lib/test/gtest
-
-
-USER_INCLUDE_DIR = $(USER_DIR)
-
-OBJECT_DIR = ../../obj/test
 
 # Use clang/clang++ by default
 CC  := clang
@@ -383,8 +406,10 @@ LDFLAGS  += -Wl,-T,$(TEST_DIR)/pg.ld -Wl,-Map,$(OBJECT_DIR)/$@.map
 endif
 
 # Gather up all of the tests.
-TEST_SRC = $(sort $(wildcard $(TEST_DIR)/*.cc))
-TESTS = $(TEST_SRC:$(TEST_DIR)/%.cc=%)
+TEST_SRCS = $(sort $(wildcard $(TEST_DIR)/*.cc))
+TEST_BASENAMES = $(TEST_SRCS:$(TEST_DIR)/%.cc=%)
+TESTS = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),$(foreach \
+		target,$(filter-out $($(test)_BLACKLIST),$(VALID_TARGETS)),$(test).$(target)),$(test)))
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -465,69 +490,119 @@ $(OBJECT_DIR)/gtest_main.a : $(OBJECT_DIR)/gtest-all.o $(OBJECT_DIR)/gtest_main.
          $(OBJECT_DIR)/gtest_main.d
 
 
-# includes in test dir must override includes in user dir
-TEST_INCLUDE_DIRS := $(TEST_DIR) \
-	$(USER_INCLUDE_DIR)
-
-TEST_CFLAGS	 = $(addprefix -I,$(TEST_INCLUDE_DIRS))
-
+# includes in test dir must override includes in user dir, unless the user
+# specifies a list of endorsed directories in ${target}_INCLUDE_DIRS.
+test_include_dirs  = $1 $(TEST_DIR) $(USER_DIR)
+test_cflags	   = $(addprefix -I,$(call test_include_dirs,$1))
 
 
+# target name extractor
+# param $1 = expanded test name in the form of test.target
+target = $(1:$(basename $1).%=%)
 
 # canned recipe for all test builds
-# param $1 = testname
+#
+# variable expansion rules of thumb (number of $'s):
+# * parameters: one $, e.g. $1
+# * statically accessed variables set elsewhere: one $, e.g. $(C_FLAGS)
+# * dynamically accessed variables set elsewhere: one $, e.g. $($1_SRC)
+# * make functions accessing only the above: one $, e.g. $(basename $1)
+# * dynamically set and accessed variables: two $, e.g. $$($1_OBJS)
+# * make functions accessing dynamically set variables: two $,
+#   e.g. $$(call test_cflags,$$($1_INCLUDE_DIRS))
+#
+# param $1 = plain test name for global tests, test.target for per-target tests
 define test-specific-stuff
 
-$$1_OBJS = $$(patsubst $$(TEST_DIR)%,$$(OBJECT_DIR)/$1%, $$(patsubst $$(USER_DIR)%,$$(OBJECT_DIR)/$1%,$$($1_SRC:=.o)))
+ifeq ($1,$(basename $1))
+# standard global test
+$1_OBJS = $(patsubst \
+	$(TEST_DIR)/%,$(OBJECT_DIR)/$1/%,$(patsubst \
+	$(USER_DIR)/%,$(OBJECT_DIR)/$1/%,$($1_SRC:=.o)))
+else
+# test executed for each target, $1 has the form of test.target
+$1_SRC = $(addsuffix .o,$(call $(basename $1)_SRC,$(call target,$1)))
+$1_OBJS = $$(patsubst \
+	$(TEST_DIR)/%,$(OBJECT_DIR)/$1/%,$$(patsubst \
+	$(USER_DIR)/%,$(OBJECT_DIR)/$1/%,$$(patsubst \
+	$(TARGET_DIR)/$(call get_base_target,$(call target,$1))/%,$(OBJECT_DIR)/$1/%,$$($1_SRC))))
+$1_DEFINES = $(call $(basename $1)_DEFINES,$(call target,$1))
+$1_INCLUDE_DIRS = $(call $(basename $1)_INCLUDE_DIRS,$(call target,$1))
+endif
 
 # $$(info $1 -v-v-------)
-# $$(info $1_SRC:  $($1_SRC))
-# $$(info $1_OBJS: $$($$1_OBJS))
+# $$(info $1_SRC:  $$($1_SRC))
+# $$(info $1_OBJS: $$($1_OBJS))
 # $$(info $1 -^-^-------)
 
-
-#include generated dependencies
--include $$($$1_OBJS:.o=.d)
--include $(OBJECT_DIR)/$1/$1.d
-
+# include generated dependencies
+-include $$($1_OBJS:.o=.d)
+-include $(OBJECT_DIR)/$1/$(basename $1).d
 
 $(OBJECT_DIR)/$1/%.c.o: $(USER_DIR)/%.c
 	@echo "compiling $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
-	$(V1) $(CC) $(C_FLAGS) $(TEST_CFLAGS) \
-                $(foreach def,$($1_INCLUDE_DIRS),-I $(def)) \
-                $(foreach def,$($1_DEFINES),-D $(def)) \
+	$(V1) $(CC) $(C_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
+                $$(foreach def,$$($1_DEFINES),-D $$(def)) \
                 -c $$< -o $$@
 
 $(OBJECT_DIR)/$1/%.c.o: $(TEST_DIR)/%.c
 	@echo "compiling test c file: $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
-	$(V1) $(CC) $(C_FLAGS) $(TEST_CFLAGS) \
-                $(foreach def,$($1_INCLUDE_DIRS),-I $(def)) \
-                $(foreach def,$($1_DEFINES),-D $(def)) \
+	$(V1) $(CC) $(C_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
+                $$(foreach def,$$($1_DEFINES),-D $$(def)) \
                 -c $$< -o $$@
 
-$(OBJECT_DIR)/$1/$1.o: $(TEST_DIR)/$1.cc
+ifneq ($1,$(basename $1))
+# per-target tests may compile files from the target directory
+$(OBJECT_DIR)/$1/%.c.o: $(TARGET_DIR)/$(call get_base_target,$(call target,$1))/%.c
+	@echo "compiling target c file: $$<" "$(STDOUT)"
+	$(V1) mkdir -p $$(dir $$@)
+	$(V1) $(CC) $(C_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
+                $$(foreach def,$$($1_DEFINES),-D $$(def)) \
+                -c $$< -o $$@
+endif
+
+$(OBJECT_DIR)/$1/$(basename $1).o: $(TEST_DIR)/$(basename $1).cc
 	@echo "compiling $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
-	$(V1) $(CXX) $(CXX_FLAGS) $(TEST_CFLAGS)  \
-                $(foreach def,$($1_INCLUDE_DIRS),-I $(def)) \
-                $(foreach def,$($1_DEFINES),-D $(def)) \
+	$(V1) $(CXX) $(CXX_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
+                $$(foreach def,$$($1_DEFINES),-D $$(def)) \
                 -c $$< -o $$@
 
-
-$(OBJECT_DIR)/$1/$1 : $$($$1_OBJS) \
-    $(OBJECT_DIR)/$1/$1.o \
+$(OBJECT_DIR)/$1/$(basename $1): $$($1_OBJS) \
+	$(OBJECT_DIR)/$1/$(basename $1).o \
 	$(OBJECT_DIR)/gtest_main.a
 
 	@echo "linking $$@" "$(STDOUT)"
 	$(V1) mkdir -p $(dir $$@)
 	$(V1) $(CXX) $(CXX_FLAGS) $(LDFLAGS) $$^ -o $$@
 
-test_$1: $(OBJECT_DIR)/$1/$1
+test_$1: $(OBJECT_DIR)/$1/$(basename $1)
 	$(V1) $$< $$(EXEC_OPTS) "$(STDOUT)" && echo "running $$@: PASS"
 
 endef
 
-#apply the canned recipe above to all tests
+
 $(eval $(foreach test,$(TESTS),$(call test-specific-stuff,$(test))))
+
+$(foreach test,$(TESTS),$(if $($(basename $(test))_SRC),,$(error \
+	Test 'unit/$(basename $(test)).cc' has no '$(basename $(test))_SRC' variable defined)))
+$(foreach var,$(filter-out TARGET_SRC,$(filter %_SRC,$(.VARIABLES))),$(if $(filter $(var:_SRC=)%,$(TESTS)),,$(error \
+	Variable '$(var)' has no 'unit/$(var:_SRC=).cc' test)))
+
+
+target_list:
+	@echo ========== BASE TARGETS ==========
+	@echo $(BASE_TARGETS)
+	@echo ========== ALT TARGETS ==========
+	@echo $(ALT_TARGETS)
+	@echo ========== VALID_TARGETS ==========
+	@echo $(VALID_TARGETS)
+	@echo ========== BASE/ALT PAIRS ==========
+	@echo $(BASE_ALT_PAIRS)
+	@echo ========== ALT/BASE MAPPING ==========
+	@echo $(foreach target,$(ALT_TARGETS),$(target)\>$(call get_base_target,$(target)))
+	@echo ========== ALT/BASE FULL MAPPING ==========
+	@echo $(foreach target,$(VALID_TARGETS),$(target)\>$(call get_base_target,$(target)))
+

@@ -38,28 +38,36 @@
 #define LED0_PIN                PC13
 
 #define USE_BEEPER
-#define BEEPER                  NONE
+#define BEEPER_PIN              NONE
 #define BEEPER_INVERTED
 
 #define USE_ACC
-#define USE_GYRO
-
 #define USE_ACC_SPI_MPU6000
-#define USE_GYRO_SPI_MPU6000
-#define MPU6000_CS_PIN          PA4
-#define MPU6000_SPI_INSTANCE    SPI1
-#define ACC_MPU6000_ALIGN       CW0_DEG_FLIP
-#define GYRO_MPU6000_ALIGN      CW0_DEG_FLIP
-
 #define USE_ACC_SPI_MPU6500
+
+#define USE_GYRO
+#define USE_GYRO_SPI_MPU6000
 #define USE_GYRO_SPI_MPU6500
-#define MPU6500_CS_PIN          MPU6000_CS_PIN
-#define MPU6500_SPI_INSTANCE    MPU6000_SPI_INSTANCE
-#define ACC_MPU6500_ALIGN       CW0_DEG_FLIP
-#define GYRO_MPU6500_ALIGN      CW0_DEG_FLIP
+
+#define USE_MULTI_GYRO
+
+#define GYRO_1_SPI_INSTANCE     SPI1
+#define GYRO_1_CS_PIN           PA4
+#define GYRO_1_EXTI_PIN         NONE
+
+#define ACC_1_ALIGN             CW0_DEG_FLIP
+#define GYRO_1_ALIGN            CW0_DEG_FLIP
+
+#define GYRO_2_SPI_INSTANCE     SPI1
+#define GYRO_2_CS_PIN           PC15
+#define GYRO_2_EXTI_PIN         NONE
+
+#define ACC_2_ALIGN             CW0_DEG_FLIP
+#define GYRO_2_ALIGN            CW0_DEG_FLIP
 
 #define USE_MAG
 #define USE_MAG_HMC5883
+#define USE_MAG_LIS3MDL
 
 #define USE_BARO
 #define USE_BARO_SPI_BMP280
