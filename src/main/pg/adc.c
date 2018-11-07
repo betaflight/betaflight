@@ -60,5 +60,8 @@ void pgResetFn_adcConfig(adcConfig_t *adcConfig)
     adcConfig->rssi.ioTag = IO_TAG(RSSI_ADC_PIN);
 #endif
 
+    adcConfig->vrefIntCalibration = 0;
+    adcConfig->tempSensorCalibration1 = 0;
+    adcConfig->tempSensorCalibration2 = 0;
 }
 #endif // USE_ADC
