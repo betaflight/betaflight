@@ -646,6 +646,9 @@ const clivalue_t valueTable[] = {
 // PG_ADC_CONFIG
 #if defined(USE_ADC)
     { "adc_device",                 VAR_INT8   | MASTER_VALUE, .config.minmax = { 0, ADCDEV_COUNT }, PG_ADC_CONFIG, offsetof(adcConfig_t, device) },
+    { "adc_vrefint_calibration",    VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 2000 }, PG_ADC_CONFIG, offsetof(adcConfig_t, vrefIntCalibration) },
+    { "adc_tempsensor_calibration30", VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 2000 }, PG_ADC_CONFIG, offsetof(adcConfig_t, tempSensorCalibration1) },
+    { "adc_tempsensor_calibration110", VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 2000 }, PG_ADC_CONFIG, offsetof(adcConfig_t, tempSensorCalibration2) },
 #endif
 
 // PG_PWM_CONFIG

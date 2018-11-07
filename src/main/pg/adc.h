@@ -37,6 +37,10 @@ typedef struct adcConfig_s {
     adcChannelConfig_t current;
     adcChannelConfig_t external1;
     int8_t device; // ADCDevice
+
+    uint16_t vrefIntCalibration;
+    uint16_t tempSensorCalibration1;
+    uint16_t tempSensorCalibration2;
 } adcConfig_t;
 
 PG_DECLARE(adcConfig_t, adcConfig);
