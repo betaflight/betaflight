@@ -52,13 +52,13 @@ typedef struct batteryConfig_s {
 
 } batteryConfig_t;
 
+PG_DECLARE(batteryConfig_t, batteryConfig);
+
 typedef struct lowVoltageCutoff_s {
     bool enabled;
     uint8_t percentage;
     timeUs_t startTime;
 } lowVoltageCutoff_t;
-
-PG_DECLARE(batteryConfig_t, batteryConfig);
 
 typedef enum {
     BATTERY_OK = 0,
