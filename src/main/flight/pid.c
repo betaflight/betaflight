@@ -919,6 +919,7 @@ void FAST_CODE applySmartFeedforward(int axis)
 }
 #endif // USE_SMART_FEEDFORWARD
 
+#if defined(USE_ITERM_RELAX)
 #if defined(USE_ABSOLUTE_CONTROL)
 STATIC_UNIT_TESTED void applyAbsoluteControl(const int axis, const float gyroRate, const bool itermRelaxIsEnabled,
     const float setpointLpf, const float setpointHpf,
@@ -961,7 +962,6 @@ STATIC_UNIT_TESTED void applyAbsoluteControl(const int axis, const float gyroRat
 }
 #endif
 
-#if defined(USE_ITERM_RELAX)
 STATIC_UNIT_TESTED void applyItermRelax(const int axis, const float iterm,
     const float gyroRate, float *itermErrorRate, float *currentPidSetpoint)
 {
