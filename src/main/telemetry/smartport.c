@@ -153,12 +153,10 @@ static uint16_t frSkyDataIdTable[MAX_DATAIDS];
 // number of sensors to send between sending the ESC sensors
 #define ESC_SENSOR_PERIOD 7
 
-static uint16_t frSkyEscDataIdTable[] = {
-    FSSP_DATAID_CURRENT   ,
-    FSSP_DATAID_RPM       ,
-    FSSP_DATAID_VFAS      ,
-    FSSP_DATAID_TEMP
-};
+// if adding more esc sensors then increase this value
+#define MAX_ESC_DATAIDS 4
+
+static uint16_t frSkyEscDataIdTable[MAX_ESC_DATAIDS];
 #endif
 
 typedef struct frSkyTableInfo_s {
@@ -169,9 +167,7 @@ typedef struct frSkyTableInfo_s {
 
 static frSkyTableInfo_t frSkyDataIdTableInfo = { frSkyDataIdTable, 0, 0 };
 #ifdef USE_ESC_SENSOR_TELEMETRY
-#define ESC_DATAID_COUNT ( sizeof(frSkyEscDataIdTable) / sizeof(uint16_t) )
-
-static frSkyTableInfo_t frSkyEscDataIdTableInfo = {frSkyEscDataIdTable, ESC_DATAID_COUNT, 0};
+static frSkyTableInfo_t frSkyEscDataIdTableInfo = {frSkyEscDataIdTable, 0, 0};
 #endif
 
 #define SMARTPORT_BAUD 57600
@@ -317,13 +313,8 @@ static void smartPortSendPackage(uint16_t id, uint32_t val)
     smartPortWriteFrame(&payload);
 }
 
-#ifdef USE_ESC_SENSOR_TELEMETRY
-static bool reportExtendedEscSensors(void) {
-    return featureIsEnabled(FEATURE_ESC_SENSOR) && telemetryConfig()->smartport_use_extra_sensors;
-}
-#endif
-
 #define ADD_SENSOR(dataId) frSkyDataIdTableInfo.table[frSkyDataIdTableInfo.index++] = dataId
+#define ADD_ESC_SENSOR(dataId) frSkyEscDataIdTableInfo.table[frSkyEscDataIdTableInfo.index++] = dataId
 
 static void initSmartPortSensors(void)
 {
@@ -334,7 +325,7 @@ static void initSmartPortSensors(void)
 
     if (isBatteryVoltageConfigured()) {
 #ifdef USE_ESC_SENSOR_TELEMETRY
-        if (!reportExtendedEscSensors())
+        if (!telemetryIsSensorEnabled(ESC_SENSOR_VOLTAGE))
 #endif
         {
             ADD_SENSOR(FSSP_DATAID_VFAS);
@@ -345,7 +336,7 @@ static void initSmartPortSensors(void)
 
     if (isAmperageConfigured()) {
 #ifdef USE_ESC_SENSOR_TELEMETRY
-        if (!reportExtendedEscSensors())
+        if (!telemetryIsSensorEnabled(ESC_SENSOR_CURRENT))
 #endif
         {
             ADD_SENSOR(FSSP_DATAID_CURRENT);
@@ -380,11 +371,23 @@ static void initSmartPortSensors(void)
     frSkyDataIdTableInfo.index = 0;
 
 #ifdef USE_ESC_SENSOR_TELEMETRY
-    if (reportExtendedEscSensors()) {
-        frSkyEscDataIdTableInfo.size = ESC_DATAID_COUNT;
-    } else {
-        frSkyEscDataIdTableInfo.size = 0;
+    frSkyEscDataIdTableInfo.index = 0;
+
+    if (telemetryIsSensorEnabled(ESC_SENSOR_VOLTAGE)) {
+        ADD_ESC_SENSOR(FSSP_DATAID_VFAS);
     }
+    if (telemetryIsSensorEnabled(ESC_SENSOR_CURRENT)) {
+        ADD_ESC_SENSOR(FSSP_DATAID_CURRENT);
+    }
+    if (telemetryIsSensorEnabled(ESC_SENSOR_RPM)) {
+        ADD_ESC_SENSOR(FSSP_DATAID_RPM);
+    }
+    if (telemetryIsSensorEnabled(ESC_SENSOR_TEMPERATURE)) {
+        ADD_ESC_SENSOR(FSSP_DATAID_TEMP);
+    }
+
+    frSkyEscDataIdTableInfo.size = frSkyEscDataIdTableInfo.index;
+    frSkyEscDataIdTableInfo.index = 0;
 #endif
 }
 
