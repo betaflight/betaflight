@@ -149,7 +149,7 @@ enum
 
 static uint16_t frSkyDataIdTable[MAX_DATAIDS];
 
-#ifdef USE_ESC_SENSOR
+#ifdef USE_ESC_SENSOR_TELEMETRY
 // number of sensors to send between sending the ESC sensors
 #define ESC_SENSOR_PERIOD 7
 
@@ -168,7 +168,7 @@ typedef struct frSkyTableInfo_s {
 } frSkyTableInfo_t;
 
 static frSkyTableInfo_t frSkyDataIdTableInfo = { frSkyDataIdTable, 0, 0 };
-#ifdef USE_ESC_SENSOR
+#ifdef USE_ESC_SENSOR_TELEMETRY
 #define ESC_DATAID_COUNT ( sizeof(frSkyEscDataIdTable) / sizeof(uint16_t) )
 
 static frSkyTableInfo_t frSkyEscDataIdTableInfo = {frSkyEscDataIdTable, ESC_DATAID_COUNT, 0};
@@ -317,7 +317,7 @@ static void smartPortSendPackage(uint16_t id, uint32_t val)
     smartPortWriteFrame(&payload);
 }
 
-#ifdef USE_ESC_SENSOR
+#ifdef USE_ESC_SENSOR_TELEMETRY
 static bool reportExtendedEscSensors(void) {
     return featureIsEnabled(FEATURE_ESC_SENSOR) && telemetryConfig()->smartport_use_extra_sensors;
 }
@@ -333,7 +333,7 @@ static void initSmartPortSensors(void)
     ADD_SENSOR(FSSP_DATAID_T2);
 
     if (isBatteryVoltageConfigured()) {
-#ifdef USE_ESC_SENSOR
+#ifdef USE_ESC_SENSOR_TELEMETRY
         if (!reportExtendedEscSensors())
 #endif
         {
@@ -344,7 +344,7 @@ static void initSmartPortSensors(void)
     }
 
     if (isAmperageConfigured()) {
-#ifdef USE_ESC_SENSOR
+#ifdef USE_ESC_SENSOR_TELEMETRY
         if (!reportExtendedEscSensors())
 #endif
         {
@@ -379,7 +379,7 @@ static void initSmartPortSensors(void)
     frSkyDataIdTableInfo.size = frSkyDataIdTableInfo.index;
     frSkyDataIdTableInfo.index = 0;
 
-#ifdef USE_ESC_SENSOR
+#ifdef USE_ESC_SENSOR_TELEMETRY
     if (reportExtendedEscSensors()) {
         frSkyEscDataIdTableInfo.size = ESC_DATAID_COUNT;
     } else {
@@ -466,7 +466,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
     static uint8_t smartPortIdCycleCnt = 0;
     static uint8_t t1Cnt = 0;
     static uint8_t t2Cnt = 0;
-#ifdef USE_ESC_SENSOR
+#ifdef USE_ESC_SENSOR_TELEMETRY
     static uint8_t smartPortIdOffset = 0;
 #endif
 
@@ -507,7 +507,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
         // we can send back any data we want, our tables keep track of the order and frequency of each data type we send
         frSkyTableInfo_t * tableInfo = &frSkyDataIdTableInfo;
 
-#ifdef USE_ESC_SENSOR
+#ifdef USE_ESC_SENSOR_TELEMETRY
         if (smartPortIdCycleCnt >= ESC_SENSOR_PERIOD) {
             // send ESC sensors
             tableInfo = &frSkyEscDataIdTableInfo;
@@ -527,11 +527,11 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
             if (tableInfo->index == tableInfo->size) { // end of table reached, loop back
                 tableInfo->index = 0;
             }
-#ifdef USE_ESC_SENSOR
+#ifdef USE_ESC_SENSOR_TELEMETRY
         }
 #endif
         uint16_t id = tableInfo->table[tableInfo->index];
-#ifdef USE_ESC_SENSOR
+#ifdef USE_ESC_SENSOR_TELEMETRY
         if (smartPortIdCycleCnt >= ESC_SENSOR_PERIOD) {
             id += smartPortIdOffset;
         }
@@ -544,7 +544,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
         uint16_t vfasVoltage;
         uint8_t cellCount;
 
-#ifdef USE_ESC_SENSOR
+#ifdef USE_ESC_SENSOR_TELEMETRY
         escSensorData_t *escData;
 #endif
 
@@ -558,7 +558,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                 smartPortSendPackage(id, vfasVoltage * 10); // given in 0.1V, convert to volts
                 *clearToSend = false;
                 break;
-#ifdef USE_ESC_SENSOR
+#ifdef USE_ESC_SENSOR_TELEMETRY
             case FSSP_DATAID_VFAS1      :
             case FSSP_DATAID_VFAS2      :
             case FSSP_DATAID_VFAS3      :
@@ -578,7 +578,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                 smartPortSendPackage(id, getAmperage() / 10); // given in 10mA steps, unknown requested unit
                 *clearToSend = false;
                 break;
-#ifdef USE_ESC_SENSOR
+#ifdef USE_ESC_SENSOR_TELEMETRY
             case FSSP_DATAID_CURRENT1   :
             case FSSP_DATAID_CURRENT2   :
             case FSSP_DATAID_CURRENT3   :

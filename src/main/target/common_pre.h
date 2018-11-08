@@ -231,4 +231,5 @@
 #define USE_LED_STRIP
 #define USE_VARIO
 #define USE_RX_LINK_QUALITY_INFO
+#define USE_ESC_SENSOR_TELEMETRY
 #endif
