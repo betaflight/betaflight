@@ -97,11 +97,6 @@ typedef enum {
     ITERM_RELAX_SETPOINT
 } itermRelaxType_e;
 
-typedef enum {
-    TPA_MODE_PD,
-    TPA_MODE_D
-} tpaMode_e;
-
 typedef struct pidProfile_s {
     uint16_t yaw_lowpass_hz;                // Additional yaw filter when yaw axis too noisy
     uint16_t dterm_lowpass_hz;              // Delta Filter in hz
@@ -161,7 +156,6 @@ typedef struct pidProfile_s {
     uint8_t launchControlAngleLimit;        // Optional launch control angle limit (requires ACC)
     uint8_t launchControlGain;              // Iterm gain used while launch control is active
     uint8_t launchControlAllowTriggerReset; // Controls trigger behavior and whether the trigger can be reset
-    uint8_t tpaMode;                        // Controls which PID terms TPA effects
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles);
