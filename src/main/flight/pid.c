@@ -39,6 +39,7 @@
 #include "drivers/sound_beeper.h"
 #include "drivers/time.h"
 
+#include "fc/controlrate_profile.h"
 #include "fc/core.h"
 #include "fc/rc.h"
 
@@ -175,7 +176,6 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .launchControlAngleLimit = 0,
         .launchControlGain = 40,
         .launchControlAllowTriggerReset = true,
-        .tpaMode = TPA_MODE_PD,
     );
 #ifdef USE_DYN_LPF
     pidProfile->dterm_lowpass_hz = 120;
@@ -435,10 +435,6 @@ static FAST_RAM_ZERO_INIT uint8_t launchControlAngleLimit;
 static FAST_RAM_ZERO_INIT float launchControlKi;
 #endif
 
-#ifdef USE_TPA_MODE
-static FAST_RAM_ZERO_INIT uint8_t tpaMode;
-#endif
-
 void pidResetIterm(void)
 {
     for (int axis = 0; axis < 3; axis++) {
@@ -580,10 +576,6 @@ void pidInitConfig(const pidProfile_t *pidProfile)
         launchControlAngleLimit = 0;
     }
     launchControlKi = ITERM_SCALE * pidProfile->launchControlGain;
-#endif
-
-#ifdef USE_TPA_MODE
-    tpaMode = pidProfile->tpaMode;
 #endif
 }
 
@@ -1058,7 +1050,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
     const float tpaFactor = getThrottlePIDAttenuation();
 
 #ifdef USE_TPA_MODE
-    const float tpaFactorKp = (tpaMode == TPA_MODE_PD) ? tpaFactor : 1.0f;
+    const float tpaFactorKp = (currentControlRateProfile->tpaMode == TPA_MODE_PD) ? tpaFactor : 1.0f;
 #else
     const float tpaFactorKp = tpaFactor;
 #endif
