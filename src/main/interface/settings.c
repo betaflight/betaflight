@@ -407,6 +407,12 @@ static const char * const lookupTableLaunchControlMode[] = {
 };
 #endif
 
+#ifdef USE_TPA_MODE
+static const char * const lookupTableTpaMode[] = {
+    "PD", "D"
+};
+#endif
+
 #define LOOKUP_TABLE_ENTRY(name) { name, ARRAYLEN(name) }
 
 const lookupTableEntry_t lookupTables[] = {
@@ -509,6 +515,9 @@ const lookupTableEntry_t lookupTables[] = {
 #endif
 #ifdef USE_LAUNCH_CONTROL
     LOOKUP_TABLE_ENTRY(lookupTableLaunchControlMode),
+#endif
+#ifdef USE_TPA_MODE
+    LOOKUP_TABLE_ENTRY(lookupTableTpaMode),
 #endif
 };
 
@@ -927,6 +936,10 @@ const clivalue_t valueTable[] = {
     { "launch_trigger_throttle_percent", VAR_UINT8 | PROFILE_VALUE,  .config.minmax = { 0, 50 }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlThrottlePercent) },
     { "launch_angle_limit",         VAR_UINT8 | PROFILE_VALUE,  .config.minmax = { 0, 80 }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlAngleLimit) },
     { "launch_control_gain",        VAR_UINT8 | PROFILE_VALUE,  .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlGain) },
+#endif
+
+#ifdef USE_TPA_MODE
+    { "tpa_mode",                   VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_TPA_MODE }, PG_PID_PROFILE, offsetof(pidProfile_t, tpaMode) },
 #endif
 
 // PG_TELEMETRY_CONFIG
