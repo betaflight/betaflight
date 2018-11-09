@@ -176,7 +176,7 @@ static frSkyTableInfo_t frSkyEscDataIdTableInfo = {frSkyEscDataIdTable, ESC_DATA
 
 #define SMARTPORT_BAUD 57600
 #define SMARTPORT_UART_MODE MODE_RXTX
-#define SMARTPORT_SERVICE_TIMEOUT_MS 1 // max allowed time to find a value to send
+#define SMARTPORT_SERVICE_TIMEOUT_US 1000 // max allowed time to find a value to send
 
 static serialPort_t *smartPortSerialPort = NULL; // The 'SmartPort'(tm) Port.
 static serialPortConfig_t *portConfig;
@@ -461,7 +461,7 @@ static void smartPortSendMspResponse(uint8_t *data) {
 }
 #endif
 
-void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clearToSend, const uint32_t *requestTimeout)
+void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clearToSend, const timeUs_t *requestTimeout)
 {
     static uint8_t smartPortIdCycleCnt = 0;
     static uint8_t t1Cnt = 0;
@@ -486,7 +486,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
     while (doRun && *clearToSend) {
         // Ensure we won't get stuck in the loop if there happens to be nothing available to send in a timely manner - dump the slot if we loop in there for too long.
         if (requestTimeout) {
-            if (millis() >= *requestTimeout) {
+            if (cmpTimeUs(micros(), *requestTimeout) >= 0) {
                 *clearToSend = false;
 
                 return;
@@ -812,7 +812,7 @@ static bool serialCheckQueueEmpty(void)
 
 void handleSmartPortTelemetry(void)
 {
-    const uint32_t requestTimeout = millis() + SMARTPORT_SERVICE_TIMEOUT_MS;
+    const timeUs_t requestTimeout = micros() + SMARTPORT_SERVICE_TIMEOUT_US;
 
     if (telemetryState == TELEMETRY_STATE_INITIALIZED_SERIAL && smartPortSerialPort) {
         smartPortPayload_t *payload = NULL;
