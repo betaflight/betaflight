@@ -832,6 +832,8 @@ static bool osdDrawSingleElement(uint8_t item)
             static timeUs_t armingDisabledUpdateTimeUs;
             static unsigned armingDisabledDisplayIndex;
 
+            CLR_BLINK(OSD_WARNINGS);
+
             // Cycle through the arming disabled reasons
             if (osdWarnGetState(OSD_WARNING_ARMING_DISABLE)) {
                 if (IS_RC_MODE_ACTIVE(BOXARM) && isArmingDisabled()) {
@@ -883,17 +885,20 @@ static bool osdDrawSingleElement(uint8_t item)
 #endif
             if (osdWarnGetState(OSD_WARNING_FAIL_SAFE) && failsafeIsActive()) {
                 osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "FAIL SAFE");
+                SET_BLINK(OSD_WARNINGS);
                 break;
             }
 
             if (osdWarnGetState(OSD_WARNING_BATTERY_CRITICAL) && batteryState == BATTERY_CRITICAL) {
                 osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, " LAND NOW");
+                SET_BLINK(OSD_WARNINGS);
                 break;
             }
 
             // Show warning if in HEADFREE flight mode
             if (FLIGHT_MODE(HEADFREE_MODE)) {
                 osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "HEADFREE");
+                SET_BLINK(OSD_WARNINGS);
                 break;
             }
 
@@ -904,7 +909,7 @@ static bool osdDrawSingleElement(uint8_t item)
                 tfp_sprintf(coreTemperatureWarningMsg, "CORE: %3d%c", osdConvertTemperatureToSelectedUnit(coreTemperature), osdGetTemperatureSymbolForSelectedUnit());
 
                 osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, coreTemperatureWarningMsg);
-
+                SET_BLINK(OSD_WARNINGS);
                 break;
             }
 #endif
@@ -955,6 +960,7 @@ static bool osdDrawSingleElement(uint8_t item)
 
                 if (escWarningCount > 0) {
                     osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, escWarningMsg);
+                    SET_BLINK(OSD_WARNINGS);
                     break;
                 }
             }
@@ -983,6 +989,7 @@ static bool osdDrawSingleElement(uint8_t item)
 
             if (osdWarnGetState(OSD_WARNING_BATTERY_WARNING) && batteryState == BATTERY_WARNING) {
                 osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "LOW BATTERY");
+                SET_BLINK(OSD_WARNINGS);
                 break;
             }
 
@@ -990,6 +997,7 @@ static bool osdDrawSingleElement(uint8_t item)
             // Show warning if rc smoothing hasn't initialized the filters
             if (osdWarnGetState(OSD_WARNING_RC_SMOOTHING) && ARMING_FLAG(ARMED) && !rcSmoothingInitializationComplete()) {
                 osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "RCSMOOTHING");
+                SET_BLINK(OSD_WARNINGS);
                 break;
             }
 #endif
@@ -1307,18 +1315,6 @@ void osdUpdateAlarms(void)
         SET_BLINK(OSD_RSSI_VALUE);
     } else {
         CLR_BLINK(OSD_RSSI_VALUE);
-    }
-
-    // Determine if the OSD_WARNINGS should blink
-    if (getBatteryState() != BATTERY_OK
-           && (osdWarnGetState(OSD_WARNING_BATTERY_CRITICAL) || osdWarnGetState(OSD_WARNING_BATTERY_WARNING))
-#ifdef USE_DSHOT
-           && (!isTryingToArm())
-#endif
-       ) {
-        SET_BLINK(OSD_WARNINGS);
-    } else {
-        CLR_BLINK(OSD_WARNINGS);
     }
 
     if (getBatteryState() == BATTERY_OK) {
