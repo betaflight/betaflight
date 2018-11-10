@@ -1257,7 +1257,7 @@ static void printAdjustmentRange(uint8_t dumpMask, const adjustmentRange_t *adju
                 arDefault->auxChannelIndex,
                 MODE_STEP_TO_CHANNEL_VALUE(arDefault->range.startStep),
                 MODE_STEP_TO_CHANNEL_VALUE(arDefault->range.endStep),
-                arDefault->adjustmentFunction,
+                arDefault->adjustmentConfig,
                 arDefault->auxSwitchChannelIndex,
                 arDefault->adjustmentCenter,
                 arDefault->adjustmentScale
@@ -1269,7 +1269,7 @@ static void printAdjustmentRange(uint8_t dumpMask, const adjustmentRange_t *adju
             ar->auxChannelIndex,
             MODE_STEP_TO_CHANNEL_VALUE(ar->range.startStep),
             MODE_STEP_TO_CHANNEL_VALUE(ar->range.endStep),
-            ar->adjustmentFunction,
+            ar->adjustmentConfig,
             ar->auxSwitchChannelIndex,
             ar->adjustmentCenter,
             ar->adjustmentScale
@@ -1315,7 +1315,7 @@ static void cliAdjustmentRange(char *cmdline)
             if (ptr) {
                 val = atoi(ptr);
                 if (val >= 0 && val < ADJUSTMENT_FUNCTION_COUNT) {
-                    ar->adjustmentFunction = val;
+                    ar->adjustmentConfig = val;
                     validArgumentCount++;
                 }
             }
@@ -1359,7 +1359,7 @@ static void cliAdjustmentRange(char *cmdline)
                 ar->auxChannelIndex,
                 MODE_STEP_TO_CHANNEL_VALUE(ar->range.startStep),
                 MODE_STEP_TO_CHANNEL_VALUE(ar->range.endStep),
-                ar->adjustmentFunction,
+                ar->adjustmentConfig,
                 ar->auxSwitchChannelIndex,
                 ar->adjustmentCenter,
                 ar->adjustmentScale

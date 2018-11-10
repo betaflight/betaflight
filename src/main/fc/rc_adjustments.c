@@ -697,7 +697,7 @@ static void updateAdjustmentStates(void)
         // Only use slots if center value has not been specified, otherwise apply values directly (scaled) from aux channel
         if (isRangeActive(adjustmentRange->auxChannelIndex, &adjustmentRange->range) &&
             (adjustmentRange->adjustmentCenter == 0)) {
-            const adjustmentConfig_t *adjustmentConfig = &defaultAdjustmentConfigs[adjustmentRange->adjustmentFunction - ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET];
+            const adjustmentConfig_t *adjustmentConfig = &defaultAdjustmentConfigs[adjustmentRange->adjustmentConfig - ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET];
             configureAdjustment(adjustmentRange->adjustmentIndex, adjustmentRange->auxSwitchChannelIndex, adjustmentConfig);
         }
     }
@@ -792,7 +792,7 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig)
         int index = activeAbsoluteAdjustmentArray[i];
         const adjustmentRange_t * const adjustmentRange = adjustmentRanges(index);
         const uint8_t channelIndex = NON_AUX_CHANNEL_COUNT + adjustmentRange->auxSwitchChannelIndex;
-        const adjustmentConfig_t *adjustmentConfig = &defaultAdjustmentConfigs[adjustmentRange->adjustmentFunction - ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET];
+        const adjustmentConfig_t *adjustmentConfig = &defaultAdjustmentConfigs[adjustmentRange->adjustmentConfig - ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET];
 
         // If setting is defined for step adjustment and center value has been specified, apply values directly (scaled) from aux channel
         if ((rcData[channelIndex] != lastRcData[index]) &&
@@ -802,7 +802,7 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig)
             int value = (((rcData[channelIndex] - PWM_RANGE_MIDDLE) * adjustmentRange->adjustmentScale) / (PWM_RANGE_MIDDLE - PWM_RANGE_MIN)) + adjustmentRange->adjustmentCenter;
 
             lastRcData[index] = rcData[channelIndex];
-            applyAbsoluteAdjustment(controlRateConfig, adjustmentRange->adjustmentFunction, value);
+            applyAbsoluteAdjustment(controlRateConfig, adjustmentConfig->adjustmentFunction, value);
             pidInitConfig(pidProfile);
         }
     }
