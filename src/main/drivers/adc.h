@@ -83,7 +83,7 @@ uint16_t adcGetChannel(uint8_t channel);
 extern uint16_t adcVREFINTCAL;
 extern uint16_t adcTSCAL1;
 extern uint16_t adcTSCAL2;
-extern uint16_t adcTSSlopeK;
+extern int16_t  adcTSSlopeK;
 
 bool adcInternalIsBusy(void);
 void adcInternalStartConversion(void);
