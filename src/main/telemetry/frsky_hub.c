@@ -67,7 +67,7 @@
 
 #include "telemetry/telemetry.h"
 
-#if defined(USE_ESC_SENSOR)
+#if defined(USE_ESC_SENSOR_TELEMETRY)
 #include "sensors/esc_sensor.h"
 #endif
 
@@ -184,7 +184,7 @@ static void sendAccel(void)
 static void sendThrottleOrBatterySizeAsRpm(void)
 {
     int16_t data = 0;
-#if defined(USE_ESC_SENSOR)
+#if defined(USE_ESC_SENSOR_TELEMETRY)
     escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
     if (escData) {
         data = escData->dataAge < ESC_DATA_INVALID ? (calcEscRpm(escData->rpm) / 10) : 0;
@@ -208,7 +208,7 @@ static void sendThrottleOrBatterySizeAsRpm(void)
 static void sendTemperature1(void)
 {
     int16_t data = 0;
-#if defined(USE_ESC_SENSOR)
+#if defined(USE_ESC_SENSOR_TELEMETRY)
     escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
     if (escData) {
         data = escData->dataAge < ESC_DATA_INVALID ? escData->temperature : 0;
