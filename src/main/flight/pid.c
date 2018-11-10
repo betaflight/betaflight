@@ -39,6 +39,7 @@
 #include "drivers/sound_beeper.h"
 #include "drivers/time.h"
 
+#include "fc/controlrate_profile.h"
 #include "fc/core.h"
 #include "fc/rc.h"
 
@@ -1048,6 +1049,12 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
 
     const float tpaFactor = getThrottlePIDAttenuation();
 
+#ifdef USE_TPA_MODE
+    const float tpaFactorKp = (currentControlRateProfile->tpaMode == TPA_MODE_PD) ? tpaFactor : 1.0f;
+#else
+    const float tpaFactorKp = tpaFactor;
+#endif
+
 #ifdef USE_YAW_SPIN_RECOVERY
     const bool yawSpinActive = gyroYawSpinDetected();
 #endif
@@ -1145,7 +1152,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
         // b = 1 and only c (feedforward weight) can be tuned (amount derivative on measurement or error).
 
         // -----calculate P component
-        pidData[axis].P = pidCoefficient[axis].Kp * errorRate * tpaFactor;
+        pidData[axis].P = pidCoefficient[axis].Kp * errorRate * tpaFactorKp;
         if (axis == FD_YAW) {
             pidData[axis].P = ptermYawLowpassApplyFn((filter_t *) &ptermYawLowpass, pidData[axis].P);
         }
