@@ -1112,6 +1112,7 @@ const clivalue_t valueTable[] = {
 #endif
 
 // PG_SYSTEM_CONFIG
+    { "system_hse_mhz",             VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 30 }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, hseMhz) },
 #if defined(USE_TASK_STATISTICS)
     { "task_statistics",            VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, task_statistics) },
 #endif

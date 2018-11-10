@@ -318,8 +318,6 @@
 #include "system_stm32f4xx.h"
 #include "platform.h"
 
-uint32_t hse_value = HSE_VALUE;
-
 /**
   * @}
   */
@@ -352,59 +350,6 @@ uint32_t hse_value = HSE_VALUE;
 /* #define VECT_TAB_SRAM */
 #define VECT_TAB_OFFSET  0x00 /*!< Vector Table base offset field.
                                    This value must be a multiple of 0x200. */
-/******************************************************************************/
-
-/************************* PLL Parameters *************************************/
-#if defined(TARGET_XTAL_MHZ)
- #define PLL_M      TARGET_XTAL_MHZ
-#else
-#if defined(STM32F40_41xxx) || defined(STM32F427_437xx) || defined(STM32F429_439xx) || defined(STM32F401xx) || defined(STM32F469_479xx)
- #define PLL_M      8
-#elif defined (STM32F446xx)
- #define PLL_M      8
-#elif defined (STM32F410xx) || defined (STM32F411xE)
- #define PLL_M      8
-#else
-#endif /* STM32F40_41xxx || STM32F427_437xx || STM32F429_439xx || STM32F401xx || STM32F469_479xx */
-#endif
-
-#if defined(STM32F446xx)
-/* PLL division factor for I2S, SAI, SYSTEM and SPDIF: Clock =  PLL_VCO / PLLR */
-#define PLL_R      7
-#endif /* STM32F446xx */
-
-#if defined(STM32F427_437xx) || defined(STM32F429_439xx) || defined(STM32F446xx) || defined(STM32F469_479xx)
-#define PLL_N      360
-/* SYSCLK = PLL_VCO / PLL_P */
-#define PLL_P      2
-/* USB OTG FS, SDIO and RNG Clock =  PLL_VCO / PLLQ */
-#define PLL_Q      7
-#endif /* STM32F427_437x || STM32F429_439xx || STM32F446xx || STM32F469_479xx */
-
-#if defined (STM32F40_41xxx)
-#define PLL_N      336
-/* SYSCLK = PLL_VCO / PLL_P */
-#define PLL_P      2
-/* USB OTG FS, SDIO and RNG Clock =  PLL_VCO / PLLQ */
-#define PLL_Q      7
-#endif /* STM32F40_41xxx */
-
-#if defined(STM32F401xx)
-#define PLL_N      336
-/* SYSCLK = PLL_VCO / PLL_P */
-#define PLL_P      4
-/* USB OTG FS, SDIO and RNG Clock =  PLL_VCO / PLLQ */
-#define PLL_Q      7
-#endif /* STM32F401xx */
-
-#if defined(STM32F410xx) || defined(STM32F411xE)
-#define PLL_N      384
-/* SYSCLK = PLL_VCO / PLL_P */
-#define PLL_P      4
-/* USB OTG FS, SDIO and RNG Clock =  PLL_VCO / PLLQ */
-#define PLL_Q      8
-#endif /* STM32F410xx || STM32F411xE */
-
 /******************************************************************************/
 
 /**
@@ -456,33 +401,69 @@ static void SystemInit_ExtMemCtl(void);
   */
 
 uint32_t SystemCoreClock;
-uint32_t pll_p = PLL_P, pll_n = PLL_N, pll_q = PLL_Q;
+uint32_t pll_src, pll_input, pll_m, pll_p, pll_n, pll_q;
+
+// SystemSYSCLKSource
+// 0: HSI
+// 1; HSE
+// 2: PLLP
+// 3: PLLR (F446 only)
+
+int SystemSYSCLKSource(void)
+{
+    return (RCC->CFGR & RCC_CFGR_SWS) >> 2;
+}
+
+// SystemPLLSource
+//   0: HSI
+//   1: HSE
+
+int SystemPLLSource(void)
+{
+    return (RCC->PLLCFGR & RCC_PLLCFGR_PLLSRC) >> 22;
+}
 
 typedef struct pllConfig_s {
+  uint16_t mhz; // target SYSCLK
   uint16_t n;
   uint16_t p;
   uint16_t q;
 } pllConfig_t;
 
+// PLL parameters for PLL input = 1MHz.
+// For PLL input = 2MHz, divide n by 2; see SystemInitPLLParameters below.
+
 static const pllConfig_t overclockLevels[] = {
-  { PLL_N, PLL_P, PLL_Q },    // default
-
 #if defined(STM32F40_41xxx)
-  { 384, 2, 8 },              // 192 MHz
-  { 432, 2, 9 },              // 216 MHz
-  { 480, 2, 10 }              // 240 MHz
+  { 168, 336, 2,  7 },  // 168 MHz
+  { 192, 384, 2,  8 },  // 192 MHz
+  { 216, 432, 2,  9 },  // 216 MHz
+  { 240, 480, 2,  10 }  // 240 MHz
 #elif defined(STM32F411xE)
-  { 432, 4, 9 },              // 108 MHz
-  { 480, 4, 10 },             // 120 MHz
+  {  84, 336, 4,  7 },  // 84 MHz
+  {  96, 384, 4,  8 },  // 96 MHz
+  { 108, 432, 4,  9 },  // 108 MHz
+  { 120, 480, 4, 10 },  // 120 MHz
+#elif defined(STM32F446xx)
+  // Main PLL for F446 is not constrained by USB clock generation,
+  // as we generate it with PLLSAI.
+  // Here, for the moment, we start with default 180MHz and increment in steps of 24MHz.
+  // May be made variable in steps of 1MHz in the future...
+  { 180, 360, 2,  2 },  // 180 MHz
+  { 202, 404, 2,  2 },  // 202 MHz
+  { 226, 452, 2,  2 },  // 226 MHz
+  { 250, 500, 2,  2 },  // 250 MHz, operation not verified
 #endif
-
-  // XXX Doesn't work for F446 with this configuration.
-  // XXX Need to use smaller M to reduce N?
 };
 
-static PERSISTENT uint32_t currentOverclockLevel = 0;
+#if defined(STM32F446xx)
+#define PLL_R      7 // PLL_R output is not used, can be any descent number
+#endif
 
-void SystemInitOC(void)
+static PERSISTENT uint32_t currentOverclockLevel = 0;
+static PERSISTENT uint32_t hse_value = 8000000;
+
+void SystemInitPLLParameters(void)
 {
     /* PLL setting for overclocking */
     if (currentOverclockLevel >= ARRAYLEN(overclockLevels)) {
@@ -491,7 +472,7 @@ void SystemInitOC(void)
 
     const pllConfig_t * const pll = overclockLevels + currentOverclockLevel;
 
-    pll_n = pll->n;
+    pll_n = pll->n / pll_input;
     pll_p = pll->p;
     pll_q = pll->q;
 }
@@ -505,19 +486,28 @@ void OverclockRebootIfNecessary(uint32_t overclockLevel)
   const pllConfig_t * const pll = overclockLevels + overclockLevel;
 
   // Reboot to adjust overclock frequency
-  if (SystemCoreClock != (pll->n / pll->p) * 1000000U) {
+  if (SystemCoreClock != pll->mhz * 1000000U) {
     currentOverclockLevel = overclockLevel;
     __disable_irq();
     NVIC_SystemReset();
   }
 }
 
+void systemClockSetHSEValue(uint32_t frequency)
+{
+    if (hse_value != frequency) {
+        hse_value = frequency;
+        __disable_irq();
+        NVIC_SystemReset();
+    }
+}
+
 void SystemInit(void)
 {
-  SystemInitOC();
-
-  /* core clock is simply a mhz of PLL_N / PLL_P */
-  SystemCoreClock = (pll_n / pll_p) * 1000000;
+    if (!(RCC->CSR & RCC_CSR_SFTRSTF)) {
+        currentOverclockLevel = 0;
+        hse_value = 0;
+    }
 
   /* FPU settings ------------------------------------------------------------*/
   #if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
@@ -556,6 +546,8 @@ void SystemInit(void)
 #else
   SCB->VTOR = FLASH_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal FLASH */
 #endif
+
+    SystemCoreClockUpdate();
 }
 
 /**
@@ -609,7 +601,7 @@ void SystemCoreClockUpdate(void)
       SystemCoreClock = HSI_VALUE;
       break;
     case 0x04:  /* HSE used as system clock source */
-      SystemCoreClock = HSE_VALUE;
+      SystemCoreClock = hse_value;
       break;
     case 0x08:  /* PLL P used as system clock source */
        /* PLL_VCO = (HSE_VALUE or HSI_VALUE / PLL_M) * PLL_N
@@ -621,7 +613,7 @@ void SystemCoreClockUpdate(void)
       if (pllsource != 0)
       {
         /* HSE used as PLL clock source */
-        pllvco = (HSE_VALUE / pllm) * ((RCC->PLLCFGR & RCC_PLLCFGR_PLLN) >> 6);
+        pllvco = (hse_value / pllm) * ((RCC->PLLCFGR & RCC_PLLCFGR_PLLN) >> 6);
       }
       else
       {
@@ -642,7 +634,7 @@ void SystemCoreClockUpdate(void)
       if (pllsource != 0)
       {
         /* HSE used as PLL clock source */
-        pllvco = (HSE_VALUE / pllm) * ((RCC->PLLCFGR & RCC_PLLCFGR_PLLN) >> 6);
+        pllvco = (hse_value / pllm) * ((RCC->PLLCFGR & RCC_PLLCFGR_PLLN) >> 6);
       }
       else
       {
@@ -658,11 +650,17 @@ void SystemCoreClockUpdate(void)
       SystemCoreClock = HSI_VALUE;
       break;
   }
-  /* Compute HCLK frequency --------------------------------------------------*/
-  /* Get HCLK prescaler */
-  tmp = AHBPrescTable[((RCC->CFGR & RCC_CFGR_HPRE) >> 4)];
-  /* HCLK frequency */
-  SystemCoreClock >>= tmp;
+}
+
+static int StartHSx(uint32_t onBit, uint32_t readyBit, int maxWaitCount)
+{
+    RCC->CR |= onBit;
+    for (int waitCounter = 0 ; waitCounter < maxWaitCount ; waitCounter++) {
+        if (RCC->CR & readyBit) {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 /**
@@ -675,32 +673,51 @@ void SystemCoreClockUpdate(void)
   */
 void SetSysClock(void)
 {
-/******************************************************************************/
-/*            PLL (clocked by HSE) used as System clock source                */
-/******************************************************************************/
-  __IO uint32_t StartUpCounter = 0, HSEStatus = 0;
+    uint32_t hse_mhz = hse_value / 1000000;
 
-  /* Enable HSE */
-  RCC->CR |= ((uint32_t)RCC_CR_HSEON);
+    // Switch to HSI during clock manipulation
 
-  /* Wait till HSE is ready and if Time out is reached exit */
-  do
-  {
-    HSEStatus = RCC->CR & RCC_CR_HSERDY;
-    StartUpCounter++;
-  } while ((HSEStatus == 0) && (StartUpCounter != HSE_STARTUP_TIMEOUT));
+    RCC->CFGR = (RCC->CFGR & ~RCC_CFGR_SW) | RCC_CFGR_SW_HSI;
+    while ((RCC->CFGR & (uint32_t)RCC_CFGR_SWS ) != RCC_CFGR_SWS_HSI);
 
-  if ((RCC->CR & RCC_CR_HSERDY) != RESET)
-  {
-    HSEStatus = (uint32_t)0x01;
-  }
-  else
-  {
-    HSEStatus = (uint32_t)0x00;
-  }
+    // We want to use 2MHz input to PLL, as it will provide greater
+    // flexibility in choice of PLL_N and compatible with generation
+    // of 48MHz for USB requirement at the same time.
+    //
+    // Here, if the frequency (in MHz) is multiples of 2, then pll_m is
+    // set to a value that derives 2MHz as input to PLL.
+    // Otherwise, pll_m is set to the frequency (in MHz) to derive
+    // 1MHz as input to PLL.
 
-  if (HSEStatus == (uint32_t)0x01)
-  {
+    if (hse_value == 0) {
+        // HSE frequency unknown; use PLL with HSI as source
+        if (!StartHSx(RCC_CR_HSION, RCC_CR_HSIRDY, 5000)) {
+            return;
+        }
+
+        pll_src = RCC_PLLCFGR_PLLSRC_HSI;
+
+        // HSI is fixed at 16MHz.
+        pll_m = 8;
+        pll_input = 2;
+    } else {
+        // HSE frequency is given.
+
+        if (!StartHSx(RCC_CR_HSEON, RCC_CR_HSERDY, 5000)) {
+            return;
+        }
+
+        pll_src = RCC_PLLCFGR_PLLSRC_HSE;
+
+        pll_m = hse_mhz / 2;
+        if (pll_m * 2 != hse_mhz) {
+            pll_m = hse_mhz;
+        }
+        pll_input = hse_mhz / pll_m;
+    }
+
+    SystemInitPLLParameters();
+
     /* Select regulator voltage output Scale 1 mode */
     RCC->APB1ENR |= RCC_APB1ENR_PWREN;
     PWR->CR |= PWR_CR_VOS;
@@ -734,12 +751,12 @@ void SetSysClock(void)
 
 #if defined(STM32F446xx)
     /* Configure the main PLL */
-    RCC->PLLCFGR = PLL_M | (pll_n << 6) | (((pll_p >> 1) -1) << 16) |
-                   (RCC_PLLCFGR_PLLSRC_HSE) | (pll_q << 24) | (PLL_R << 28);
+    RCC->PLLCFGR = pll_m | (pll_n << 6) | (((pll_p >> 1) -1) << 16) |
+                   (pll_src) | (pll_q << 24) | (PLL_R << 28);
 #else
     /* Configure the main PLL */
-    RCC->PLLCFGR = PLL_M | (pll_n << 6) | (((pll_p >> 1) -1) << 16) |
-                   (RCC_PLLCFGR_PLLSRC_HSE) | (pll_q << 24);
+    RCC->PLLCFGR = pll_m | (pll_n << 6) | (((pll_p >> 1) -1) << 16) |
+                   (pll_src) | (pll_q << 24);
 #endif /* STM32F446xx */
 
     /* Enable the main PLL */
@@ -780,16 +797,13 @@ void SetSysClock(void)
     while ((RCC->CFGR & (uint32_t)RCC_CFGR_SWS ) != RCC_CFGR_SWS_PLL);
     {
     }
-  }
-  else
-  { /* If HSE fails to start-up, the application will have wrong clock
-         configuration. User can add here some code to deal with this error */
-  }
 
 #if defined(STM32F446xx)
 // Always use PLLSAI to derive USB 48MHz clock.
 // - This also works under arbitral overclocking situations.
 // - Only handles HSE case.
+
+uint32_t pllsai_m;
 
 #ifdef TARGET_XTAL_MHZ
 #define PLLSAI_M      TARGET_XTAL_MHZ
@@ -802,7 +816,13 @@ void SetSysClock(void)
 
 #define RCC_PLLSAI_IS_READY() ((RCC->CR & (RCC_CR_PLLSAIRDY)) == (RCC_CR_PLLSAIRDY))
 
-    /* Configure 48MHz clock for USB */
+    // Scale PLLSAI input to 1MHz.
+    if (hse_value) {
+        pllsai_m = hse_value / 1000000U;
+    } else {
+        pllsai_m = 16;
+    }
+
     // Set 48MHz clock source
     RCC_48MHzClockSourceConfig(RCC_48MHZCLKSource_PLLSAI);
 
@@ -812,7 +832,7 @@ void SetSysClock(void)
     // wait for PLLSAI to be disabled
     while (RCC_PLLSAI_IS_READY()) {}
 
-    RCC_PLLSAIConfig(PLLSAI_M, PLLSAI_N, PLLSAI_P, PLLSAI_Q);
+    RCC_PLLSAIConfig(pllsai_m, PLLSAI_N, PLLSAI_P, PLLSAI_Q);
 
     RCC_PLLSAICmd(ENABLE);
 
@@ -823,6 +843,8 @@ void SetSysClock(void)
 
 #undef  RCC_PLLSAI_GET_FLAG
 #endif /* STM32F446xx */
+
+    SystemCoreClockUpdate();
 }
 
 /**
