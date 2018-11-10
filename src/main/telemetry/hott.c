@@ -483,6 +483,7 @@ static void hottTextmodeStop()
     // Set back to avoid slow down of the FC
     if (telemetryTaskPeriod > 0) {
         rescheduleTask(TASK_TELEMETRY, telemetryTaskPeriod);
+        telemetryTaskPeriod = 0;
     }
 
     rxSchedule = HOTT_RX_SCHEDULE;
