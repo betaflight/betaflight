@@ -755,8 +755,9 @@ static bool osdDrawSingleElement(uint8_t item)
             // Get pitch and roll limits in tenths of degrees
             const int maxPitch = osdConfig()->ahMaxPitch * 10;
             const int maxRoll = osdConfig()->ahMaxRoll * 10;
-            const int rollAngle = constrain(attitude.values.roll, -maxRoll, maxRoll);
-            int pitchAngle = constrain(attitude.values.pitch, -maxPitch, maxPitch);
+            const int ahSign = osdConfig()->ahInvert ? -1 : 1;
+            const int rollAngle = constrain(attitude.values.roll * ahSign, -maxRoll, maxRoll);
+            int pitchAngle = constrain(attitude.values.pitch * ahSign, -maxPitch, maxPitch);
             // Convert pitchAngle to y compensation value
             // (maxPitch / 25) divisor matches previous settings of fixed divisor of 8 and fixed max AHI pitch angle of 20.0 degrees
             if (maxPitch > 0) {
@@ -1244,6 +1245,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 
     osdConfig->ahMaxPitch = 20; // 20 degrees
     osdConfig->ahMaxRoll = 40; // 40 degrees
+    osdConfig->ahInvert = false;
 }
 
 static void osdDrawLogo(int x, int y)

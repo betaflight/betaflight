@@ -205,6 +205,7 @@ typedef struct osdConfig_s {
     int16_t esc_rpm_alarm;
     int16_t esc_current_alarm;
     uint8_t core_temp_alarm;
+    uint8_t ahInvert;         // invert the artificial horizon
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);
