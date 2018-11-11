@@ -45,8 +45,8 @@ void pgResetFn_controlRateProfiles(controlRateConfig_t *controlRateConfig)
         RESET_CONFIG(controlRateConfig_t, &controlRateConfig[i],
             .thrMid8 = 50,
             .thrExpo8 = 0,
-            .dynThrPID = 10,
-            .tpa_breakpoint = 1650,
+            .dynThrPID = 50,
+            .tpa_breakpoint = 1500,
             .rates_type = RATES_TYPE_BETAFLIGHT,
             .rcRates[FD_ROLL] = 100,
             .rcRates[FD_PITCH] = 100,
@@ -62,7 +62,7 @@ void pgResetFn_controlRateProfiles(controlRateConfig_t *controlRateConfig)
             .rate_limit[FD_ROLL] = CONTROL_RATE_CONFIG_RATE_LIMIT_MAX,
             .rate_limit[FD_PITCH] = CONTROL_RATE_CONFIG_RATE_LIMIT_MAX,
             .rate_limit[FD_YAW] = CONTROL_RATE_CONFIG_RATE_LIMIT_MAX,
-            .tpaMode = TPA_MODE_PD,
+            .tpaMode = TPA_MODE_D,
         );
     }
 }
