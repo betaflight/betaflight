@@ -85,7 +85,7 @@ typedef struct adjustmentRange_s {
     channelRange_t range;
 
     // ..then apply the adjustment function to the auxSwitchChannel ...
-    uint8_t adjustmentFunction;
+    uint8_t adjustmentConfig;
     uint8_t auxSwitchChannelIndex;
 
     // ... via slot
