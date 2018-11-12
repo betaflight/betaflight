@@ -148,16 +148,6 @@
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN  PB9
 
-//GPS ----------------------------------------------
-#define USE_GPS
-#define USE_GPS_UBLOX
-#define USE_GPS_NMEA
-
-//GPS ----------------------------------------------
-#define USE_GPS
-#define USE_GPS_UBLOX
-#define USE_GPS_NMEA
-
 //SPI
 #define USE_SPI
 
