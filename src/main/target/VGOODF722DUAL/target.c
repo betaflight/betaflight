@@ -26,17 +26,17 @@
 #include "drivers/dma.h"
 #include "drivers/timer.h"
 #include "drivers/timer_def.h"
-const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-	DEF_TIM(TIM3, CH1, PB4,   	TIM_USE_MOTOR, 0, 0),   // S1   D1C5S4
-    DEF_TIM(TIM3, CH2, PB5,   	TIM_USE_MOTOR, 0, 0),   // S2   D1C5S5
-    DEF_TIM(TIM3, CH3, PB0,   	TIM_USE_MOTOR, 0, 0),   // S3   D1C5S7
-    DEF_TIM(TIM3, CH4, PB1, 	TIM_USE_MOTOR, 0, 0),   // S4   D1C5S2
 
-	DEF_TIM(TIM4, CH1, PB6,   	TIM_USE_MOTOR, 0, 0),   // S5   D1C2S1
-    DEF_TIM(TIM4, CH2, PB7,   	TIM_USE_MOTOR, 0, 0),   // S6   D1C2S3
+const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
+    DEF_TIM(TIM3, CH1, PB4,  TIM_USE_MOTOR,         0, 0 ), // S1	D1C5S4
+    DEF_TIM(TIM3, CH2, PB5,  TIM_USE_MOTOR,         0, 0 ), // S2	D1C5S5
+    DEF_TIM(TIM3, CH3, PB0,  TIM_USE_MOTOR,         0, 0 ), // S3	D1C5S7
+    DEF_TIM(TIM3, CH4, PB1,  TIM_USE_MOTOR,         0, 0 ), // S4	D1C5S2
+    DEF_TIM(TIM4, CH1, PB6,  TIM_USE_MOTOR,         0, 0 ), // S5	D1C2S1
+    DEF_TIM(TIM4, CH2, PB7,  TIM_USE_MOTOR,         0, 0 ), // S6	D1C2S3
+
+    DEF_TIM(TIM1, CH1, PA8,  TIM_USE_LED,           0, 2 ), // LEDSTRIP	D2C6S1
 	
-	DEF_TIM(TIM1, CH1, PA8,  	TIM_USE_LED, 0, 2),   	// LEDSTRIP	D2C6S1
-	
-	DEF_TIM(TIM9, CH2, PA3,  	TIM_USE_PPM, 0, 0),   	// PPM&SBUS
-    DEF_TIM(TIM9, CH1, PA2,  	TIM_USE_PWM, 0, 0),   	// TX2
+    DEF_TIM(TIM9, CH2, PA3,  TIM_USE_PPM,          0, 0 ), // PPM&SBUS
+    DEF_TIM(TIM9, CH1, PA2,  TIM_USE_PWM,          0, 0 ), // TX2
 };

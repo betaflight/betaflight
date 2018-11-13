@@ -43,11 +43,3 @@ void targetValidateConfiguration(void)
     }
 }
 #endif
-
-
-
-
-
-
-
-
