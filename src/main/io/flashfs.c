@@ -110,7 +110,9 @@ void flashfsEraseRange(uint32_t start, uint32_t end)
  */
 bool flashfsIsReady(void)
 {
-    return flashIsReady();
+    // Check for flash chip existence first, then check if ready.
+
+    return (flashfsIsSupported() && flashIsReady());
 }
 
 bool flashfsIsSupported(void)
