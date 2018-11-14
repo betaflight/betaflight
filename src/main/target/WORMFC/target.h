@@ -96,8 +96,7 @@
 // GYRO section -- end
 
 //BARO
-#if defined(PIRXF4)
-#else
+#if !defined(PIRXF4)
 #define USE_BARO
 #define USE_BARO_SPI_LPS
 #define LPS_SPI_INSTANCE SPI3
