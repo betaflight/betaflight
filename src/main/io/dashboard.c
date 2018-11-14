@@ -317,6 +317,11 @@ static void showProfilePage(void)
         i2c_OLED_set_line(bus, rowIndex++);
         i2c_OLED_send_string(bus, lineBuffer);
     }
+}
+
+static void showRateProfilePage(void)
+{
+    uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
 
     const uint8_t currentRateProfileIndex = getCurrentControlRateProfileIndex();
     tfp_sprintf(lineBuffer, "Rate profile: %d", currentRateProfileIndex);
@@ -324,7 +329,13 @@ static void showProfilePage(void)
     i2c_OLED_send_string(bus, lineBuffer);
 
     const controlRateConfig_t *controlRateConfig = controlRateProfiles(currentRateProfileIndex);
-    tfp_sprintf(lineBuffer, "RRr:%d PRR:%d YRR:%d",
+
+    tfp_sprintf(lineBuffer, "         R   P   Y");
+    padLineBuffer();
+    i2c_OLED_set_line(bus, rowIndex++);
+    i2c_OLED_send_string(bus, lineBuffer);
+
+    tfp_sprintf(lineBuffer, "RcRate %3d %3d %3d",
         controlRateConfig->rcRates[FD_ROLL],
         controlRateConfig->rcRates[FD_PITCH],
         controlRateConfig->rcRates[FD_YAW]
@@ -333,16 +344,7 @@ static void showProfilePage(void)
     i2c_OLED_set_line(bus, rowIndex++);
     i2c_OLED_send_string(bus, lineBuffer);
 
-    tfp_sprintf(lineBuffer, "RE:%d PE:%d YE:%d",
-        controlRateConfig->rcExpo[FD_ROLL],
-        controlRateConfig->rcExpo[FD_PITCH],
-        controlRateConfig->rcExpo[FD_YAW]
-    );
-    padLineBuffer();
-    i2c_OLED_set_line(bus, rowIndex++);
-    i2c_OLED_send_string(bus, lineBuffer);
-
-    tfp_sprintf(lineBuffer, "RR:%d PR:%d YR:%d",
+    tfp_sprintf(lineBuffer, "Super  %3d %3d %3d",
         controlRateConfig->rates[FD_ROLL],
         controlRateConfig->rates[FD_PITCH],
         controlRateConfig->rates[FD_YAW]
@@ -350,7 +352,17 @@ static void showProfilePage(void)
     padLineBuffer();
     i2c_OLED_set_line(bus, rowIndex++);
     i2c_OLED_send_string(bus, lineBuffer);
+
+    tfp_sprintf(lineBuffer, "Expo   %3d %3d %3d",
+        controlRateConfig->rcExpo[FD_ROLL],
+        controlRateConfig->rcExpo[FD_PITCH],
+        controlRateConfig->rcExpo[FD_YAW]
+    );
+    padLineBuffer();
+    i2c_OLED_set_line(bus, rowIndex++);
+    i2c_OLED_send_string(bus, lineBuffer);
 }
+
 #define SATELLITE_COUNT (sizeof(GPS_svinfo_cno) / sizeof(GPS_svinfo_cno[0]))
 #define SATELLITE_GRAPH_LEFT_OFFSET ((SCREEN_CHARACTER_COLUMN_COUNT - SATELLITE_COUNT) / 2)
 
@@ -451,7 +463,9 @@ static void showBatteryPage(void)
     if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
 
         int32_t amperage = getAmperage();
-        tfp_sprintf(lineBuffer, "Amps: %d.%2d mAh: %d", amperage / 100, amperage % 100, getMAhDrawn());
+        // 123456789012345678901
+        // Amp: DDD.D mAh: DDDDD
+        tfp_sprintf(lineBuffer, "Amp: %d.%d mAh: %d", amperage / 100, (amperage % 100) / 10, getMAhDrawn());
         padLineBuffer();
         i2c_OLED_set_line(bus, rowIndex++);
         i2c_OLED_send_string(bus, lineBuffer);
@@ -570,6 +584,7 @@ static const pageEntry_t pages[PAGE_COUNT] = {
     { PAGE_WELCOME, FC_FIRMWARE_NAME,  showWelcomePage,    PAGE_FLAGS_SKIP_CYCLING },
     { PAGE_ARMED,   "ARMED",           showArmedPage,      PAGE_FLAGS_SKIP_CYCLING },
     { PAGE_PROFILE, "PROFILE",         showProfilePage,    PAGE_FLAGS_NONE },
+    { PAGE_RPROF,   "RATE PROFILE",    showRateProfilePage,PAGE_FLAGS_NONE },
 #ifdef USE_GPS
     { PAGE_GPS,     "GPS",             showGpsPage,        PAGE_FLAGS_NONE },
 #endif
