@@ -3579,20 +3579,9 @@ static void cliStatus(char *cmdline)
 {
     UNUSED(cmdline);
 
-    cliPrintLinef("System Uptime: %d seconds", millis() / 1000);
+    // MCU type, clock, vrefint, core temperature
 
-    #ifdef USE_RTC_TIME
-    char buf[FORMATTED_DATE_TIME_BUFSIZE];
-    dateTime_t dt;
-    if (rtcGetDateTime(&dt)) {
-        dateTimeFormatLocal(buf, &dt);
-        cliPrintLinef("Current Time: %s", buf);
-    }
-    #endif
-
-    cliPrintLinef("Voltage: %d * 0.1V (%dS battery - %s)", getBatteryVoltage(), getBatteryCellCount(), getBatteryStateString());
-
-    cliPrintf("CPU Clock=%dMHz", (SystemCoreClock / 1000000));
+    cliPrintf("MCU %s Clock=%dMHz", MCU_TYPE_NAME, (SystemCoreClock / 1000000));
 
 #ifdef STM32F4
     // Only F4 is capable of switching between HSE/HSI (for now)
@@ -3613,8 +3602,27 @@ static void cliStatus(char *cmdline)
 #ifdef USE_ADC_INTERNAL
     uint16_t vrefintMv = getVrefMv();
     int16_t coretemp = getCoreTemperatureCelsius();
-    cliPrintf(", Vref=%d.%2dV, Core temp=%ddegC", vrefintMv / 1000, (vrefintMv % 1000) / 10, coretemp);
+    cliPrintLinef(", Vref=%d.%2dV, Core temp=%ddegC", vrefintMv / 1000, (vrefintMv % 1000) / 10, coretemp);
+#else
+    cliPrintLinefeed();
 #endif
+
+    // Stack and config sizes and usages
+
+    cliPrintf("Stack size: %d, Stack address: 0x%x", stackTotalSize(), stackHighMem());
+#ifdef STACK_CHECK
+    cliPrintf(", Stack used: %d", stackUsedSize());
+#endif
+    cliPrintLinefeed();
+
+#ifdef EEPROM_IN_RAM
+#define CONFIG_SIZE EEPROM_SIZE
+#else
+#define CONFIG_SIZE (&__config_end - &__config_start)
+#endif
+    cliPrintLinef("Config size: %d, Max available config: %d", getEEPROMConfigSize(), CONFIG_SIZE);
+
+    // Sensors
 
 #if defined(USE_SENSOR_NAMES)
     const uint32_t detectedSensorsMask = sensorsMask();
@@ -3626,41 +3634,57 @@ static void cliStatus(char *cmdline)
         if ((detectedSensorsMask & mask) && (mask & SENSOR_NAMES_MASK)) {
             const uint8_t sensorHardwareIndex = detectedSensors[i];
             const char *sensorHardware = sensorHardwareNames[i][sensorHardwareIndex];
-            cliPrintf(", %s=%s", sensorTypeNames[i], sensorHardware);
+            if (i) {
+                cliPrint(", ");
+            }
+            cliPrintf("%s=%s", sensorTypeNames[i], sensorHardware);
             if (mask == SENSOR_ACC && acc.dev.revisionCode) {
                 cliPrintf(".%c", acc.dev.revisionCode);
             }
         }
     }
+    cliPrintLinefeed();
 #endif /* USE_SENSOR_NAMES */
+
+    // Uptime and wall clock
+
+    cliPrintf("System Uptime: %d seconds", millis() / 1000);
+
+#ifdef USE_RTC_TIME
+    char buf[FORMATTED_DATE_TIME_BUFSIZE];
+    dateTime_t dt;
+    if (rtcGetDateTime(&dt)) {
+        dateTimeFormatLocal(buf, &dt);
+        cliPrintf(", Current Time: %s", buf);
+    }
+#endif
     cliPrintLinefeed();
 
-#ifdef USE_SDCARD
-    cliSdInfo(NULL);
-#endif
-
-#ifdef USE_I2C
-    const uint16_t i2cErrorCounter = i2cGetErrorCounter();
-#else
-    const uint16_t i2cErrorCounter = 0;
-#endif
-
-#ifdef STACK_CHECK
-    cliPrintf("Stack used: %d, ", stackUsedSize());
-#endif
-    cliPrintLinef("Stack size: %d, Stack address: 0x%x", stackTotalSize(), stackHighMem());
-#ifdef EEPROM_IN_RAM
-#define CONFIG_SIZE EEPROM_SIZE
-#else
-#define CONFIG_SIZE (&__config_end - &__config_start)
-#endif
-    cliPrintLinef("I2C Errors: %d, config size: %d, max available config: %d", i2cErrorCounter, getEEPROMConfigSize(), CONFIG_SIZE);
+    // Run status
 
     const int gyroRate = getTaskDeltaTime(TASK_GYROPID) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_GYROPID)));
     const int rxRate = currentRxRefreshRate == 0 ? 0 : (int)(1000000.0f / ((float)currentRxRefreshRate));
     const int systemRate = getTaskDeltaTime(TASK_SYSTEM) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_SYSTEM)));
     cliPrintLinef("CPU:%d%%, cycle time: %d, GYRO rate: %d, RX rate: %d, System rate: %d",
             constrain(averageSystemLoadPercent, 0, 100), getTaskDeltaTime(TASK_GYROPID), gyroRate, rxRate, systemRate);
+
+    // Battery meter
+
+    cliPrintLinef("Voltage: %d * 0.1V (%dS battery - %s)", getBatteryVoltage(), getBatteryCellCount(), getBatteryStateString());
+
+    // Other devices and status
+
+#ifdef USE_I2C
+    const uint16_t i2cErrorCounter = i2cGetErrorCounter();
+#else
+    const uint16_t i2cErrorCounter = 0;
+#endif
+    cliPrintLinef("I2C Errors: %d", i2cErrorCounter);
+
+#ifdef USE_SDCARD
+    cliSdInfo(NULL);
+#endif
+
     cliPrint("Arming disable flags:");
     armingDisableFlags_e flags = getArmingDisableFlags();
     while (flags) {
