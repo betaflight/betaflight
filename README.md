@@ -1,4 +1,4 @@
-![Faguflight](https://raw.githubusercontent.com/wiki/betaflight/betaflight/images/betaflight/bf_logo.png)
+![Faguflight](https://github.com/faguflight/faguflight/blob/master/docs/fagu-flight.png)
 
 Faguflight is flight controller software (firmware) used to fly multi-rotor craft and fixed wing craft.
 
