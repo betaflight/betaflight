@@ -1,6 +1,6 @@
-![Betaflight](https://raw.githubusercontent.com/wiki/betaflight/betaflight/images/betaflight/bf_logo.png)
+![Faguflight](https://raw.githubusercontent.com/wiki/betaflight/betaflight/images/betaflight/bf_logo.png)
 
-Betaflight is flight controller software (firmware) used to fly multi-rotor craft and fixed wing craft.
+Faguflight is flight controller software (firmware) used to fly multi-rotor craft and fixed wing craft.
 
 This fork differs from Baseflight and Cleanflight in that it focuses on flight performance, leading-edge feature additions, and wide target support.
 
@@ -8,12 +8,12 @@ This fork differs from Baseflight and Cleanflight in that it focuses on flight p
 
 | Date  | Event |
 | - | - |
-| 01 December 2018 | Start of feature freeze / Release Candidate window for Betaflight 4.0 |
-| 01 January 2019 | Planned [release](https://github.com/betaflight/betaflight/milestone/20) date for Betaflight 4.0 |
+| 01 December 2018 | Start of feature freeze / Release Candidate window for Faguflight 4.0 |
+| 01 January 2019 | Planned [release](https://github.com/betaflight/betaflight/milestone/20) date for Faguflight 4.0 |
 
 ## Features
 
-Betaflight has the following features:
+Faguflight has the following features:
 
 * Multi-color RGB LED strip support (each LED can be a different color using variable length WS2811 Addressable RGB strips - use for Orientation Indicators, Low Battery Warning, Flight Mode Status, Initialization Troubleshooting, etc)
 * DShot (150, 300, 600 and 1200), Multishot, and Oneshot (125 and 42) motor protocol support
@@ -44,7 +44,7 @@ Etiquette: Don't ask to ask and please wait around long enough for a reply - som
 
 ## Configuration Tool
 
-To configure Betaflight you should use the Betaflight-configurator GUI tool (Windows/OSX/Linux) that can be found here:
+To configure Faguflight you should use the Faguflight-configurator GUI tool (Windows/OSX/Linux) that can be found here:
 
 https://chrome.google.com/webstore/detail/betaflight-configurator/kdaghagfopacdngbohiknlhcocjccjao
 
@@ -78,15 +78,15 @@ https://travis-ci.org/betaflight/betaflight
 
 [![Build Status](https://travis-ci.org/betaflight/betaflight.svg?branch=master)](https://travis-ci.org/betaflight/betaflight)
 
-## Betaflight Releases
+## Faguflight Releases
 
 https://github.com/betaflight/betaflight/releases
 
 ## Open Source / Contributors
 
-Betaflight is software that is **open source** and is available free of charge without warranty to all users.
+Faguflight is software that is **open source** and is available free of charge without warranty to all users.
 
-Betaflight is forked from Cleanflight, so thanks goes to all those whom have contributed to Cleanflight and its origins.
+Faguflight is forked from Cleanflight, so thanks goes to all those whom have contributed to Cleanflight and its origins.
 
 Origins for this fork (Thanks!):
 * **Alexinparis** (for MultiWii),
@@ -95,9 +95,9 @@ Origins for this fork (Thanks!):
 * **Sambas** (for the original STM32F4 port).
 * **borisbstyle** (Fork from Cleanflight).
 
-The Betaflight Configurator is forked from Cleanflight Configurator and its origins.
+The Faguflight Configurator is forked from Cleanflight Configurator and its origins.
 
-Origins for Betaflight Configurator:
+Origins for Faguflight Configurator:
 * **Dominic Clifton** (for Cleanflight configurator), and
 * **ctn** (for the original Configurator).
 
