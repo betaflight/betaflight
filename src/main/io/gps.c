@@ -591,6 +591,11 @@ bool gpsNewFrame(uint8_t c)
     return false;
 }
 
+// Check for healthy communications
+bool gpsIsHealthy()
+{
+    return (gpsData.state == GPS_RECEIVING_DATA);
+}
 
 /* This is a light implementation of a GPS frame decoding
    This should work with most of modern GPS devices configured to output 5 frames.
