@@ -415,7 +415,7 @@ bool max7456Init(const max7456Config_t *max7456Config, const vcdProfile_t *pVcdP
 {
     max7456HardwareReset();
 
-    if (!max7456Config->csTag) {
+    if (!max7456Config->csTag || !max7456Config->spiDevice) {
         return false;
     }
 
