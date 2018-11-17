@@ -31,6 +31,10 @@
 
 #include "rx/rx_spi.h"
 
+#ifndef RX_SPI_LED_PIN
+#define RX_SPI_LED_PIN NONE
+#endif
+
 PG_REGISTER_WITH_RESET_FN(rxSpiConfig_t, rxSpiConfig, PG_RX_SPI_CONFIG, 0);
 
 void pgResetFn_rxSpiConfig(rxSpiConfig_t *rxSpiConfig)
@@ -40,5 +44,13 @@ void pgResetFn_rxSpiConfig(rxSpiConfig_t *rxSpiConfig)
     // Basic SPI
     rxSpiConfig->csnTag = IO_TAG(RX_NSS_PIN);
     rxSpiConfig->spibus = SPI_DEV_TO_CFG(spiDeviceByInstance(RX_SPI_INSTANCE));
+
+    rxSpiConfig->bindIoTag = IO_TAG(BINDPLUG_PIN);
+    rxSpiConfig->ledIoTag = IO_TAG(RX_SPI_LED_PIN);
+#ifdef RX_SPI_LED_INVERTED
+    rxSpiConfig->ledInversion = true;
+#else
+    rxSpiConfig->ledInversion = false;
+#endif
 }
 #endif

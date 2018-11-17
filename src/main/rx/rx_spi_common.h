@@ -20,18 +20,20 @@
 
 #pragma once
 
-#include "pg/pg.h"
-
 #include "rx/rx_spi.h"
 
-uint16_t cc2500getRssiDbm(void);
-void cc2500setRssiDbm(uint8_t value);
-bool cc2500getGdo(void);
-#if defined(USE_RX_CC2500_SPI_PA_LNA) && defined(USE_RX_CC2500_SPI_DIVERSITY)
-void cc2500switchAntennae(void);
-#endif
-#if defined(USE_RX_CC2500_SPI_PA_LNA)
-void cc2500TxEnable(void);
-void cc2500TxDisable(void);
-#endif
-bool cc2500SpiInit(void);
+#define INTERVAL_RX_LOSS_MS 1000
+#define INTERVAL_RX_BIND_MS 250
+#define RX_LOSS_COUNT 1000
+
+void rxSpiCommonIOInit(const rxSpiConfig_t *rxSpiConfig);
+
+void rxSpiLedOn(void);
+void rxSpiLedOff(void);
+void rxSpiLedToggle(void);
+void rxSpiLedBlink(timeMs_t blinkMs);
+void rxSpiLedBlinkRxLoss(rx_spi_received_e result);
+void rxSpiLedBlinkBind(void);
+
+void rxSpiBind(void);
+bool rxSpiCheckBindRequested(bool reset);

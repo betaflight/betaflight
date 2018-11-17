@@ -46,6 +46,7 @@
 
 #include "fc/config.h"
 
+#include "rx/rx_spi_common.h"
 #include "rx/cc2500_common.h"
 #include "rx/cc2500_frsky_common.h"
 #include "rx/cc2500_frsky_shared.h"
@@ -177,8 +178,6 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
     static timeUs_t lastPacketReceivedTime = 0;
     static timeUs_t telemetryTimeUs;
 
-    static bool ledIsOn;
-
     rx_spi_received_e ret = RX_SPI_RECEIVED_NONE;
 
     const timeUs_t currentPacketReceivedTime = micros();
@@ -196,7 +195,7 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
         lastPacketReceivedTime = currentPacketReceivedTime;
         *protocolState = STATE_DATA;
 
-        if (cc2500checkBindRequested(false)) {
+        if (rxSpiCheckBindRequested(false)) {
             lastPacketReceivedTime = 0;
             timeoutUs = 50;
             missingPackets = 0;
@@ -218,7 +217,7 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
                     if (packet[0] == 0x11) {
                         if ((packet[1] == rxFrSkySpiConfig()->bindTxId[0]) &&
                             (packet[2] == rxFrSkySpiConfig()->bindTxId[1])) {
-                            cc2500LedOn();
+                            rxSpiLedOn();
                             nextChannel(1);
                             cc2500setRssiDbm(packet[18]);
 #if defined(USE_RX_FRSKY_SPI_TELEMETRY)
@@ -260,12 +259,7 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
                 missingPackets++;
                 nextChannel(1);
             } else {
-                if (ledIsOn) {
-                    cc2500LedOff();
-                } else {
-                    cc2500LedOn();
-                }
-                ledIsOn = !ledIsOn;
+                rxSpiLedToggle();
 
                 setRssi(0, RSSI_SOURCE_RX_PROTOCOL);
                 nextChannel(13);

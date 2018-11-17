@@ -140,9 +140,7 @@ extern uint8_t __config_end;
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
-#include "rx/cc2500_frsky_common.h"
-#include "rx/cc2500_frsky_x.h"
-#include "rx/cc2500_common.h"
+#include "rx/rx_spi_common.h"
 
 #include "scheduler/scheduler.h"
 
@@ -2597,21 +2595,32 @@ static void cliBeeper(char *cmdline)
 #endif
 
 #ifdef USE_RX_SPI
-void cliRxBind(char *cmdline){
+void cliRxSpiBind(char *cmdline){
     UNUSED(cmdline);
     switch (rxSpiConfig()->rx_spi_protocol) {
-#ifdef USE_RX_CC2500_BIND
+    default:
+        cliPrint("Not supported.");
+        break;
+#if defined(USE_RX_FRSKY_SPI)
+#if defined(USE_RX_FRSKY_SPI_D)
     case RX_SPI_FRSKY_D:
+#endif
+#if defined(USE_RX_FRSKY_SPI_X)
     case RX_SPI_FRSKY_X:
+#endif
+#endif // USE_RX_FRSKY_SPI
+#ifdef USE_RX_SFHSS_SPI
     case RX_SPI_SFHSS:
-        cc2500SpiBind();
+#endif
+#ifdef USE_RX_FLYSKY
+    case RX_SPI_A7105_FLYSKY:
+    case RX_SPI_A7105_FLYSKY_2A:
+#endif
+#if defined(USE_RX_FRSKY_SPI) || defined(USE_RX_SFHSS_SPI) || defined(USE_RX_FLYSKY)
+        rxSpiBind();
         cliPrint("Binding...");
         break;
 #endif
-    default:
-        cliPrint("Not supported.");
-
-        break;
     }
 }
 #endif
@@ -3907,6 +3916,8 @@ const cliResourceValue_t resourceTable[] = {
 #endif
 #ifdef USE_RX_SPI
     DEFS( OWNER_RX_SPI_CS,     PG_RX_SPI_CONFIG, rxSpiConfig_t, csnTag ),
+    DEFS( OWNER_RX_SPI_BIND,   PG_RX_SPI_CONFIG, rxSpiConfig_t, bindIoTag ),
+    DEFS( OWNER_RX_SPI_LED,    PG_RX_SPI_CONFIG, rxSpiConfig_t, ledIoTag ),
 #endif
 #ifdef USE_GYRO_EXTI
     DEFW( OWNER_GYRO_EXTI,     PG_GYRO_DEVICE_CONFIG, gyroDeviceConfig_t, extiTag, 2 ),
@@ -4504,6 +4515,9 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("beeper", "enable/disable beeper for a condition", "list\r\n"
         "\t<->[name]", cliBeeper),
 #endif // USE_BEEPER
+#ifdef USE_RX_SPI
+        CLI_COMMAND_DEF("bind_rx_spi", "initiate binding for RX SPI", NULL, cliRxSpiBind),
+#endif
     CLI_COMMAND_DEF("bl", "reboot into bootloader", NULL, cliBootloader),
 #if defined(USE_BOARD_INFO)
     CLI_COMMAND_DEF("board_name", "get / set the name of the board model", "[board name]", cliBoardName),
@@ -4535,9 +4549,6 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("flash_read", NULL, "<length> <address>", cliFlashRead),
     CLI_COMMAND_DEF("flash_write", NULL, "<address> <message>", cliFlashWrite),
 #endif
-#endif
-#ifdef USE_RX_CC2500_BIND
-    CLI_COMMAND_DEF("bind", "initiate binding for RX", NULL, cliRxBind),
 #endif
     CLI_COMMAND_DEF("get", "get variable value", "[name]", cliGet),
 #ifdef USE_GPS

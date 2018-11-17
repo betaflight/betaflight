@@ -77,6 +77,8 @@ typedef enum {
     OWNER_SPI_PREINIT_IPU,
     OWNER_SPI_PREINIT_OPU,
     OWNER_MCO,
+    OWNER_RX_SPI_BIND,
+    OWNER_RX_SPI_LED,
     OWNER_TOTAL_COUNT
 } resourceOwner_e;
 

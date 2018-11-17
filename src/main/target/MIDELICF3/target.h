@@ -113,8 +113,7 @@
 
 #define RX_CC2500_SPI_GDO_0_PIN   PB0
 
-#define RX_CC2500_SPI_LED_PIN     PB6
-
+#define RX_SPI_LED_PIN            PB6
 
 #define USE_RX_CC2500_SPI_PA_LNA
 
