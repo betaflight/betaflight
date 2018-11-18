@@ -101,6 +101,7 @@ typedef enum {
     OSD_FLIP_ARROW,
     OSD_LINK_QUALITY,
     OSD_TOTAL_DIST,
+    OSD_TOTAL_ASCENT,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
@@ -133,6 +134,7 @@ typedef enum {
     OSD_STAT_MAX_ESC_RPM,
     OSD_STAT_MIN_LINK_QUALITY,
     OSD_STAT_TOTAL_DISTANCE,
+    OSD_STAT_TOTAL_ASCENT,
     OSD_STAT_COUNT // MUST BE LAST
 } osd_stats_e;
 

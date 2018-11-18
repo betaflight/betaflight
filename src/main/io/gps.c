@@ -53,6 +53,7 @@
 #include "flight/imu.h"
 #include "flight/pid.h"
 #include "flight/gps_rescue.h"
+#include "flight/position.h"
 
 #include "sensors/sensors.h"
 
@@ -78,8 +79,8 @@ int32_t GPS_home[2];
 uint16_t GPS_distanceToHome;        // distance to home point in meters
 int16_t GPS_directionToHome;        // direction to home or hol point in degrees
 uint32_t GPS_distanceFlownInCm;     // distance flown since armed in centimeters
+uint32_t GPS_heightAscendedInCm;    // height ascended since armed in centimeters
 float dTnav;             // Delta Time in milliseconds for navigation computations, updated with every good GPS read
-int16_t actual_speed[2] = { 0, 0 };
 int16_t nav_takeoff_bearing;
 navigationMode_e nav_mode = NAV_MODE_NONE;    // Navigation mode
 
@@ -112,7 +113,8 @@ uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS];     // Carrier to Noise Ratio (Signal St
 // How many entries in gpsInitData array below
 #define GPS_INIT_ENTRIES (GPS_BAUDRATE_MAX + 1)
 #define GPS_BAUDRATE_CHANGE_DELAY (200)
-
+// Interval in milliseconds for TotalDistance/TotalAscent calculations (default 5.0 seconds)
+#define GPS_CALC_TOTALDIST_TOTALASCENT_INTERVAL (5000)
 static serialPort_t *gpsPort;
 
 typedef struct gpsInitData_s {
@@ -1268,7 +1270,6 @@ void GPS_reset_home_position(void)
         GPS_home[LAT] = gpsSol.llh.lat;
         GPS_home[LON] = gpsSol.llh.lon;
         GPS_calc_longitude_scaling(gpsSol.llh.lat); // need an initial value for distance and bearing calc
-        GPS_distanceFlownInCm = 0;
         // Set ground altitude
         ENABLE_STATE(GPS_FIX_HOME);
     }
@@ -1305,34 +1306,45 @@ void GPS_calculateDistanceAndDirectionToHome(void)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
-// Calculate our current speed vector and the distance flown from gps position data
+// Calculate the distance flown and total ascended height from gps position data
 //
-static void GPS_calculateVelocityAndDistanceFlown(void)
+static void GPS_calculateDistanceFlownAndHeightAscended(void)
 {
-    static int16_t speed_old[2] = { 0, 0 };
-    static int32_t last_coord[2] = { 0, 0 };
-    static uint8_t init = 0;
+    static bool lastArmed = false;
+    static int32_t lastCoord[2] = { 0, 0 }; //last coord used for total distance
+    static int32_t lastAlt = 0; //last altitude used for total ascent
+    static uint32_t lastUpdate = 0;
 
-    if (init) {
-        float tmp = 1.0f / dTnav;
-        actual_speed[GPS_X] = (float)(gpsSol.llh.lon - last_coord[LON]) * GPS_scaleLonDown * tmp;
-        actual_speed[GPS_Y] = (float)(gpsSol.llh.lat - last_coord[LAT]) * tmp;
-
-        actual_speed[GPS_X] = (actual_speed[GPS_X] + speed_old[GPS_X]) / 2;
-        actual_speed[GPS_Y] = (actual_speed[GPS_Y] + speed_old[GPS_Y]) / 2;
-
-        speed_old[GPS_X] = actual_speed[GPS_X];
-        speed_old[GPS_Y] = actual_speed[GPS_Y];
-
-        uint32_t dist;
-        int32_t dir;
-        GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &last_coord[LAT], &last_coord[LON], &dist, &dir);
-        GPS_distanceFlownInCm += dist;
+    //reset variables on the transition from disarmed to armed
+    if (!lastArmed && ARMING_FLAG(ARMED)) {
+        GPS_distanceFlownInCm = 0;
+        GPS_heightAscendedInCm = 0;
+        lastCoord[LAT] = gpsSol.llh.lat;
+        lastCoord[LON] = gpsSol.llh.lon;
+        lastAlt = getEstimatedAltitudeCm();
+        lastUpdate = millis();
     }
-    init = 1;
+    lastArmed = ARMING_FLAG(ARMED);
 
-    last_coord[LON] = gpsSol.llh.lon;
-    last_coord[LAT] = gpsSol.llh.lat;
+    //only update Total Distance and Total Ascent if we're still armed, to avoid changing the value shown in stats
+    if (ARMING_FLAG(ARMED)) {
+        uint32_t currentTime = millis();
+        if ((currentTime - lastUpdate) > GPS_CALC_TOTALDIST_TOTALASCENT_INTERVAL) {
+            uint32_t dist;
+            int32_t dir;
+            GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &lastCoord[LAT], &lastCoord[LON], &dist, &dir);
+            GPS_distanceFlownInCm += dist;
+            lastCoord[LAT] = gpsSol.llh.lat;
+            lastCoord[LON] = gpsSol.llh.lon;
+
+            if (getEstimatedAltitudeCm() > lastAlt) {
+                GPS_heightAscendedInCm += getEstimatedAltitudeCm() - lastAlt;
+            }
+            lastAlt = getEstimatedAltitudeCm();
+
+            lastUpdate = currentTime;
+        }
+    }
 }
 
 void onGpsNewData(void)
@@ -1385,8 +1397,7 @@ void onGpsNewData(void)
     dTnav = MIN(dTnav, 1.0f);
 
     GPS_calculateDistanceAndDirectionToHome();
-    // calculate the current velocity based on gps coordinates continously to get a valid speed at the moment when we start navigating
-    GPS_calculateVelocityAndDistanceFlown();
+    GPS_calculateDistanceFlownAndHeightAscended();
 
 #ifdef USE_GPS_RESCUE
     rescueNewGpsData();

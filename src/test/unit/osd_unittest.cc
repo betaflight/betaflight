@@ -72,6 +72,7 @@ extern "C" {
     uint16_t GPS_distanceToHome;
     int16_t GPS_directionToHome;
     uint32_t GPS_distanceFlownInCm;
+    uint32_t GPS_heightAscendedInCm;
     int32_t GPS_coord[2];
     gpsSolutionData_t gpsSol;
     float motor[8];
@@ -314,6 +315,7 @@ TEST(OsdTest, TestStatsImperial)
     osdStatSetState(OSD_STAT_RTC_DATE_TIME, true);
     osdStatSetState(OSD_STAT_MAX_DISTANCE, true);
     osdStatSetState(OSD_STAT_TOTAL_DISTANCE, true);
+    osdStatSetState(OSD_STAT_TOTAL_ASCENT, true);
     osdStatSetState(OSD_STAT_BLACKBOX_NUMBER, false);
     osdStatSetState(OSD_STAT_MAX_G_FORCE, false);
     osdStatSetState(OSD_STAT_MAX_ESC_TEMP, false);
@@ -357,6 +359,7 @@ TEST(OsdTest, TestStatsImperial)
     gpsSol.groundSpeed = 500;
     GPS_distanceToHome = 20;
     GPS_distanceFlownInCm = 2000;
+    GPS_heightAscendedInCm = 100;
     simulationBatteryVoltage = 158;
     simulationAltitude = 100;
     simulationTime += 1e6;
@@ -366,6 +369,7 @@ TEST(OsdTest, TestStatsImperial)
     gpsSol.groundSpeed = 800;
     GPS_distanceToHome = 50;
     GPS_distanceFlownInCm = 10000;
+    GPS_heightAscendedInCm = 150;
     simulationBatteryVoltage = 147;
     simulationAltitude = 150;
     simulationTime += 1e6;
@@ -375,6 +379,7 @@ TEST(OsdTest, TestStatsImperial)
     gpsSol.groundSpeed = 200;
     GPS_distanceToHome = 100;
     GPS_distanceFlownInCm = 20000;
+    GPS_heightAscendedInCm = 200;
     simulationBatteryVoltage = 152;
     simulationAltitude = 200;
     simulationTime += 1e6;
@@ -397,6 +402,7 @@ TEST(OsdTest, TestStatsImperial)
     displayPortTestBufferSubstring(2, row++, "MIN RSSI          : 25%%");
     displayPortTestBufferSubstring(2, row++, "MAX ALTITUDE      :    6.5%c", SYM_FT);
     displayPortTestBufferSubstring(2, row++, "TOTAL DISTANCE    : 656%c", SYM_FT);
+    displayPortTestBufferSubstring(2, row++, "TOTAL ASCENT      :    6.5%c", SYM_FT);
 }
 
 /*
@@ -423,6 +429,7 @@ TEST(OsdTest, TestStatsMetric)
     gpsSol.groundSpeed = 800;
     GPS_distanceToHome = 100;
     GPS_distanceFlownInCm = 10000;
+    GPS_heightAscendedInCm = 200;
     simulationBatteryVoltage = 147;
     simulationAltitude = 200;
     simulationTime += 1e6;
@@ -450,6 +457,7 @@ TEST(OsdTest, TestStatsMetric)
     displayPortTestBufferSubstring(2, row++, "MIN RSSI          : 25%%");
     displayPortTestBufferSubstring(2, row++, "MAX ALTITUDE      :    2.0%c", SYM_M);
     displayPortTestBufferSubstring(2, row++, "TOTAL DISTANCE    : 100%c", SYM_M);
+    displayPortTestBufferSubstring(2, row++, "TOTAL ASCENT      :    2.0%c", SYM_M);
 }
 
 /*

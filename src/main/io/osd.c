@@ -618,6 +618,18 @@ static bool osdDrawSingleElement(uint8_t item)
         }
         break;
 
+    case OSD_TOTAL_ASCENT:
+        if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
+            osdFormatAltitudeString(buff, GPS_heightAscendedInCm);
+        } else {
+            // We use this symbol when we don't have a FIX
+            buff[0] = SYM_COLON;
+            // overwrite any previous distance with blanks
+            memset(buff + 1, SYM_BLANK, 6);
+            buff[7] = '\0';
+        }
+        break;
+
 #endif // GPS
 
     case OSD_COMPASS_BAR:
@@ -1182,6 +1194,7 @@ static void osdDrawElements(void)
         osdDrawSingleElement(OSD_HOME_DIST);
         osdDrawSingleElement(OSD_HOME_DIR);
         osdDrawSingleElement(OSD_TOTAL_DIST);
+        osdDrawSingleElement(OSD_TOTAL_ASCENT);
     }
 #endif // GPS
 
@@ -1663,8 +1676,12 @@ static void osdShowStats(uint16_t endBatteryVoltage)
         tfp_sprintf(buff, "%d%c", osdGetMetersToSelectedUnit(distanceFlown), osdGetMetersToSelectedUnitSymbol());
         osdDisplayStatisticLabel(top++, "TOTAL DISTANCE", buff);
     }
-#endif
 
+    if (osdStatGetState(OSD_STAT_TOTAL_ASCENT) && featureIsEnabled(FEATURE_GPS)) {
+        osdFormatAltitudeString(buff, GPS_heightAscendedInCm);
+        osdDisplayStatisticLabel(top++, "TOTAL ASCENT", buff);
+    }
+#endif
 }
 
 static void osdShowArmed(void)
