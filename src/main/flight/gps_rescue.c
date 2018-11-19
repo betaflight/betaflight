@@ -158,8 +158,6 @@ rescueState_s rescueState;
 */
 void rescueNewGpsData(void)
 {
-    if (!ARMING_FLAG(ARMED))
-	GPS_reset_home_position();
     newGPSData = true;
 }
 
