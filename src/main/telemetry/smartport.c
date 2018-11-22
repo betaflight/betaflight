@@ -320,10 +320,12 @@ static void initSmartPortSensors(void)
 {
     frSkyDataIdTableInfo.index = 0;
 
-    ADD_SENSOR(FSSP_DATAID_T1);
-    ADD_SENSOR(FSSP_DATAID_T2);
+    if (telemetryIsSensorEnabled(SENSOR_MODE)) {
+        ADD_SENSOR(FSSP_DATAID_T1);
+        ADD_SENSOR(FSSP_DATAID_T2);
+    }
 
-    if (isBatteryVoltageConfigured()) {
+    if (isBatteryVoltageConfigured() && telemetryIsSensorEnabled(SENSOR_VOLTAGE)) {
 #ifdef USE_ESC_SENSOR_TELEMETRY
         if (!telemetryIsSensorEnabled(ESC_SENSOR_VOLTAGE))
 #endif
@@ -334,7 +336,7 @@ static void initSmartPortSensors(void)
         ADD_SENSOR(FSSP_DATAID_A4);
     }
 
-    if (isAmperageConfigured()) {
+    if (isAmperageConfigured() && telemetryIsSensorEnabled(SENSOR_CURRENT)) {
 #ifdef USE_ESC_SENSOR_TELEMETRY
         if (!telemetryIsSensorEnabled(ESC_SENSOR_CURRENT))
 #endif
@@ -342,28 +344,50 @@ static void initSmartPortSensors(void)
             ADD_SENSOR(FSSP_DATAID_CURRENT);
         }
 
-        ADD_SENSOR(FSSP_DATAID_FUEL);
+        if (telemetryIsSensorEnabled(SENSOR_FUEL)) {
+            ADD_SENSOR(FSSP_DATAID_FUEL);
+        }
     }
 
     if (sensors(SENSOR_ACC)) {
-        ADD_SENSOR(FSSP_DATAID_HEADING);
-        ADD_SENSOR(FSSP_DATAID_ACCX);
-        ADD_SENSOR(FSSP_DATAID_ACCY);
-        ADD_SENSOR(FSSP_DATAID_ACCZ);
+        if (telemetryIsSensorEnabled(SENSOR_HEADING)) {
+            ADD_SENSOR(FSSP_DATAID_HEADING);
+        }
+        if (telemetryIsSensorEnabled(SENSOR_ACC_X)) {
+            ADD_SENSOR(FSSP_DATAID_ACCX);
+        }
+        if (telemetryIsSensorEnabled(SENSOR_ACC_Y)) {
+            ADD_SENSOR(FSSP_DATAID_ACCY);
+        }
+        if (telemetryIsSensorEnabled(SENSOR_ACC_Z)) {
+            ADD_SENSOR(FSSP_DATAID_ACCZ);
+        }
     }
 
     if (sensors(SENSOR_BARO)) {
-        ADD_SENSOR(FSSP_DATAID_ALTITUDE);
-        ADD_SENSOR(FSSP_DATAID_VARIO);
+        if (telemetryIsSensorEnabled(SENSOR_ALTITUDE)) {
+            ADD_SENSOR(FSSP_DATAID_ALTITUDE);
+        }
+        if (telemetryIsSensorEnabled(SENSOR_VARIO)) {
+            ADD_SENSOR(FSSP_DATAID_VARIO);
+        }
     }
 
 #ifdef USE_GPS
     if (featureIsEnabled(FEATURE_GPS)) {
-        ADD_SENSOR(FSSP_DATAID_SPEED);
-        ADD_SENSOR(FSSP_DATAID_LATLONG);
-        ADD_SENSOR(FSSP_DATAID_LATLONG); // twice (one for lat, one for long)
-        ADD_SENSOR(FSSP_DATAID_HOME_DIST);
-        ADD_SENSOR(FSSP_DATAID_GPS_ALT);
+        if (telemetryIsSensorEnabled(SENSOR_GROUND_SPEED)) {
+            ADD_SENSOR(FSSP_DATAID_SPEED);
+        }
+        if (telemetryIsSensorEnabled(SENSOR_LAT_LONG)) {
+            ADD_SENSOR(FSSP_DATAID_LATLONG);
+            ADD_SENSOR(FSSP_DATAID_LATLONG); // twice (one for lat, one for long)
+        }
+        if (telemetryIsSensorEnabled(SENSOR_DISTANCE)) {
+            ADD_SENSOR(FSSP_DATAID_HOME_DIST);
+        }
+        if (telemetryIsSensorEnabled(SENSOR_ALTITUDE)) {
+            ADD_SENSOR(FSSP_DATAID_GPS_ALT);
+        }
     }
 #endif
 
