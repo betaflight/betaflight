@@ -71,6 +71,7 @@ typedef enum {
 typedef enum {
     RESCUE_HEALTHY,
     RESCUE_FLYAWAY,
+    RESCUE_GPSLOST,
     RESCUE_LOWSATS,
     RESCUE_CRASH_FLIP_DETECTED,
     RESCUE_STALLED,
@@ -97,6 +98,7 @@ typedef struct {
     float zVelocityAvg; // Up/down average in cm/s
     float accMagnitude;
     float accMagnitudeAvg;
+    bool healthy;
 } rescueSensorData_s;
 
 typedef struct {
@@ -337,6 +339,11 @@ static void performSanityChecks()
         rescueState.failure = RESCUE_CRASH_FLIP_DETECTED;
     }
 
+    // Check if GPS comms are healthy
+    if (!rescueState.sensor.healthy) {
+        rescueState.failure = RESCUE_GPSLOST;
+    }
+
     //  Things that should run at a low refresh rate (such as flyaway detection, etc)
     //  This runs at ~1hz
 
@@ -372,6 +379,7 @@ static void performSanityChecks()
 static void sensorUpdate()
 {
     rescueState.sensor.currentAltitudeCm = getEstimatedAltitudeCm();
+    rescueState.sensor.healthy = gpsIsHealthy();
 
     // Calculate altitude velocity
     static uint32_t previousTimeUs;
