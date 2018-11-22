@@ -229,6 +229,19 @@
           while (1);
       }
 
+      // Configure PLLI2S for 27MHz operation
+      // Actual output will be done by mcoInit in drivers/mco.c
+
+      PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_PLLI2S;
+      PeriphClkInitStruct.PLLI2S.PLLI2SN = 216;
+      PeriphClkInitStruct.PLLI2S.PLLI2SR = 2;
+      PeriphClkInitStruct.PLLI2S.PLLI2SQ = 2;
+      PeriphClkInitStruct.PLLI2SDivQ = 1;
+      if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
+      {
+          while (1);
+      }
+
     // Activating the timerprescalers while the APBx prescalers are 1/2/4 will connect the TIMxCLK to HCLK which has been configured to 216MHz
     __HAL_RCC_TIMCLKPRESCALER(RCC_TIMPRES_ACTIVATED);
 
