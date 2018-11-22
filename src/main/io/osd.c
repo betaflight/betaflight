@@ -689,18 +689,19 @@ static bool osdDrawSingleElement(uint8_t item)
         }
 		
     case OSD_MOTOR_DIAG:
-        if(areMotorsRunning()) {
-            int maxIdx = 0;
+        {
             int i = 0;
-            for(; i < getMotorCount(); i++) {
-                if(motor[i] > motor[maxIdx]) {
-                    maxIdx = i;
+            const bool motorsRunning = areMotorsRunning();
+            for (; i < getMotorCount(); i++) {
+                if (motorsRunning) {
+                    buff[i] =  0x88 - scaleRange(motor[i], motorOutputLow, motorOutputHigh, 0, 8);
+                } else {
+                    buff[i] =  0x88;
                 }
-                buff[i] =  0x88 - scaleRange(motor[i], motorOutputLow, motorOutputHigh, 0, 8);
             }
             buff[i] = '\0';
+            break;
         }
-        break;
 
     case OSD_CRAFT_NAME:
         // This does not strictly support iterative updating if the craft name changes at run time. But since the craft name is not supposed to be changing this should not matter, and blanking the entire length of the craft name string on update will make it impossible to configure elements to be displayed on the right hand side of the craft name.
