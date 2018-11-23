@@ -274,8 +274,7 @@ void init(void)
 
     buttonsInit();
 
-    // Check status of bind plug and exit if not active
-    delayMicroseconds(10);  // allow configuration to settle
+    delayMicroseconds(10);  // allow configuration to settle // XXX Could be removed, too?
 
     if (!isMPUSoftReset()) {
 #if defined(BUTTON_A_PIN) && defined(BUTTON_B_PIN)
@@ -303,6 +302,12 @@ void init(void)
     mcoInit(mcoConfig());
 #endif
 
+    // Note that spektrumBind checks if a call is immediately after
+    // hard reset (including power cycle), so it should be called before
+    // systemClockSetHSEValue and OverclockRebootIfNecessary, as these
+    // may cause soft reset which will prevent spektrumBind not to execute
+    // the bind procedure.
+
 #if defined(USE_SPEKTRUM_BIND)
     if (featureIsEnabled(FEATURE_RX_SERIAL)) {
         switch (rxConfig()->serialrx_provider) {
@@ -318,11 +323,14 @@ void init(void)
     }
 #endif
 
+#ifdef STM32F4
+    // Only F4 has non-8MHz boards
+    systemClockSetHSEValue(systemConfig()->hseMhz * 1000000U);
+#endif
+
 #ifdef USE_OVERCLOCK
     OverclockRebootIfNecessary(systemConfig()->cpu_overclock);
 #endif
-
-    delay(100);
 
     timerInit();  // timer must be initialized before any channel is allocated
 

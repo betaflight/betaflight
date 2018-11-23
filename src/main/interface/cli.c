@@ -3594,6 +3594,22 @@ static void cliStatus(char *cmdline)
 
     cliPrintf("CPU Clock=%dMHz", (SystemCoreClock / 1000000));
 
+#ifdef STM32F4
+    // Only F4 is capable of switching between HSE/HSI (for now)
+    int sysclkSource = SystemSYSCLKSource();
+
+    const char *SYSCLKSource[] = { "HSI", "HSE", "PLLP", "PLLR" };
+    const char *PLLSource[] = { "-HSI", "-HSE" };
+
+    int pllSource;
+
+    if (sysclkSource >= 2) {
+        pllSource = SystemPLLSource();
+    }
+
+    cliPrintf(" (%s%s)", SYSCLKSource[sysclkSource], (sysclkSource < 2) ? "" : PLLSource[pllSource]);
+#endif
+
 #ifdef USE_ADC_INTERNAL
     uint16_t vrefintMv = getVrefMv();
     int16_t coretemp = getCoreTemperatureCelsius();

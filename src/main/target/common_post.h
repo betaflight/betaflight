@@ -204,3 +204,15 @@
 #if defined(USE_RX_CX10)
 #define USE_RX_XN297
 #endif
+
+// Setup crystal frequency for backward compatibility
+// Should be set to zero for generic targets and set with CLI variable set system_hse_value.
+#ifdef GENERIC_TARGET
+#define SYSTEM_HSE_VALUE 0
+#else
+#ifdef TARGET_XTAL_MHZ
+#define SYSTEM_HSE_VALUE TARGET_XTAL_MHZ
+#else
+#define SYSTEM_HSE_VALUE (HSE_VALUE/1000000U)
+#endif
+#endif
