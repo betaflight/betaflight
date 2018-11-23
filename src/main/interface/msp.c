@@ -1050,7 +1050,6 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, gpsRescueConfig()->throttleMin);
         sbufWriteU16(dst, gpsRescueConfig()->throttleMax);
         sbufWriteU16(dst, gpsRescueConfig()->throttleHover);
-        sbufWriteU16(dst, gpsRescueConfig()->throttleMax);
         sbufWriteU8(dst,  gpsRescueConfig()->sanityChecks);
         sbufWriteU8(dst,  gpsRescueConfig()->minSats);
         break;
