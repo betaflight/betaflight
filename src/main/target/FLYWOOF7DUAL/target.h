@@ -23,6 +23,8 @@
 #define TARGET_BOARD_IDENTIFIER "FWF7"
 #define USBD_PRODUCT_STRING  "FLYWOOF7DUAL"
 
+#define CAMERA_CONTROL_PIN      PB8
+
 #define ENABLE_DSHOT_DMAR       true
 
 #define LED0_PIN                PC15
