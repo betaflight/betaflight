@@ -47,7 +47,7 @@ DUAL gyro MPU6000 and ICM20689,could choose mpu6000,more stable and smooth.Or ch
 | 3     | ADC1         |    RSSI   |  PC2  |  DMA2_Stream0
 
 
-### 8 Outputs, 1 PPM input 
+### 6 Outputs, 1 PPM input 
 | Value | Identifier   | function  |  pin  | Notes                                                                                 |
 | ----- | ------------ | ----------| ------| ------------------------------------------------------------------------------------- |                                                                                       
 | 1     | TIM11_CH1    |    PPM    |  PB9  |  PPM
