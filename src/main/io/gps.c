@@ -79,7 +79,6 @@ uint16_t GPS_distanceToHome;        // distance to home point in meters
 int16_t GPS_directionToHome;        // direction to home or hol point in degrees
 uint32_t GPS_distanceFlownInCm;     // distance flown since armed in centimeters
 float dTnav;             // Delta Time in milliseconds for navigation computations, updated with every good GPS read
-int16_t actual_speed[2] = { 0, 0 };
 int16_t nav_takeoff_bearing;
 navigationMode_e nav_mode = NAV_MODE_NONE;    // Navigation mode
 
@@ -1310,34 +1309,29 @@ void GPS_calculateDistanceAndDirectionToHome(void)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
-// Calculate our current speed vector and the distance flown from gps position data
+// Calculate the distance flown from gps position data
 //
-static void GPS_calculateVelocityAndDistanceFlown(void)
+static void GPS_calculateDistanceFlown(bool initialize)
 {
-    static int16_t speed_old[2] = { 0, 0 };
-    static int32_t last_coord[2] = { 0, 0 };
-    static uint8_t init = 0;
+    static int32_t lastCoord[2] = { 0, 0 };
+    static int32_t lastMillis = 0;
 
-    if (init) {
-        float tmp = 1.0f / dTnav;
-        actual_speed[GPS_X] = (float)(gpsSol.llh.lon - last_coord[LON]) * GPS_scaleLonDown * tmp;
-        actual_speed[GPS_Y] = (float)(gpsSol.llh.lat - last_coord[LAT]) * tmp;
-
-        actual_speed[GPS_X] = (actual_speed[GPS_X] + speed_old[GPS_X]) / 2;
-        actual_speed[GPS_Y] = (actual_speed[GPS_Y] + speed_old[GPS_Y]) / 2;
-
-        speed_old[GPS_X] = actual_speed[GPS_X];
-        speed_old[GPS_Y] = actual_speed[GPS_Y];
-
-        uint32_t dist;
-        int32_t dir;
-        GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &last_coord[LAT], &last_coord[LON], &dist, &dir);
-        GPS_distanceFlownInCm += dist;
+    if (initialize) {
+        lastMillis = millis();
+    } else {
+        int32_t currentMillis = millis();
+        // update the calculation less frequently when accuracy is low, to mitigate adding up error
+        if ((currentMillis - lastMillis) > (10 * constrain(gpsSol.hdop, 100, 1000))) {
+            uint32_t dist;
+            int32_t dir;
+            GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &lastCoord[LAT], &lastCoord[LON], &dist, &dir);
+            GPS_distanceFlownInCm += dist;
+            lastMillis = currentMillis;
+        }
     }
-    init = 1;
 
-    last_coord[LON] = gpsSol.llh.lon;
-    last_coord[LAT] = gpsSol.llh.lat;
+    lastCoord[LON] = gpsSol.llh.lon;
+    lastCoord[LAT] = gpsSol.llh.lat;
 }
 
 void onGpsNewData(void)
@@ -1349,8 +1343,10 @@ void onGpsNewData(void)
     if (!ARMING_FLAG(ARMED))
         DISABLE_STATE(GPS_FIX_HOME);
 
-    if (!STATE(GPS_FIX_HOME) && ARMING_FLAG(ARMED))
+    if (!STATE(GPS_FIX_HOME) && ARMING_FLAG(ARMED)) {
         GPS_reset_home_position();
+        GPS_calculateDistanceFlown(true);
+    }
 
     // Apply moving average filter to GPS data
 #if defined(GPS_FILTERING)
@@ -1390,8 +1386,9 @@ void onGpsNewData(void)
     dTnav = MIN(dTnav, 1.0f);
 
     GPS_calculateDistanceAndDirectionToHome();
-    // calculate the current velocity based on gps coordinates continously to get a valid speed at the moment when we start navigating
-    GPS_calculateVelocityAndDistanceFlown();
+    if (ARMING_FLAG(ARMED)) {
+        GPS_calculateDistanceFlown(false);
+    }
 
 #ifdef USE_GPS_RESCUE
     rescueNewGpsData();
