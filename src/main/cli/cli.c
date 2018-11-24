@@ -31,10 +31,6 @@
 // FIXME remove this for targets that don't need a CLI.  Perhaps use a no-op macro when USE_CLI is not enabled
 // signal that we're in cli mode
 uint8_t cliMode = 0;
-#ifndef EEPROM_IN_RAM
-extern uint8_t __config_start;   // configured via linker script when building binaries.
-extern uint8_t __config_end;
-#endif
 
 #ifdef USE_CLI
 
@@ -4280,12 +4276,7 @@ static void cliStatus(char *cmdline)
 #endif
     cliPrintLinefeed();
 
-#ifdef EEPROM_IN_RAM
-#define CONFIG_SIZE EEPROM_SIZE
-#else
-#define CONFIG_SIZE (&__config_end - &__config_start)
-#endif
-    cliPrintLinef("Config size: %d, Max available config: %d", getEEPROMConfigSize(), CONFIG_SIZE);
+    cliPrintLinef("Config size: %d, Max available config: %d", getEEPROMConfigSize(), getEEPROMStorageSize());
 
     // Sensors
 

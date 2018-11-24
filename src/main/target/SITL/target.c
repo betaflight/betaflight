@@ -204,6 +204,11 @@ static void* tcpThread(void* data) {
     return NULL;
 }
 
+void targetEEPROMInit(void)
+{
+    FLASH_Unlock(); // load existing config file into eepromData
+}
+
 // system
 void systemInit(void) {
     int ret;
@@ -212,7 +217,6 @@ void systemInit(void) {
     printf("[system]Init...\n");
 
     SystemCoreClock = 500 * 1e6; // fake 500MHz
-    FLASH_Unlock();
 
     if (pthread_mutex_init(&updateLock, NULL) != 0) {
         printf("Create updateLock error!\n");

@@ -337,3 +337,8 @@
 #ifdef STM32F7
 #undef USE_ESCSERIAL
 #endif
+
+#if !defined(EEPROM_IN_RAM) && !defined(EEPROM_IN_FILE)
+extern uint8_t __config_start;   // configured via linker script when building binaries.
+extern uint8_t __config_end;
+#endif

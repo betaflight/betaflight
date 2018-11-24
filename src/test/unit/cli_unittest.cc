@@ -225,6 +225,10 @@ uint8_t getMotorCount() {
     return 4;
 }
 
+size_t getEEPROMStorageSize() {
+    return 0;
+}
+
 
 void setPrintfSerialPort(struct serialPort_s) {}
 
