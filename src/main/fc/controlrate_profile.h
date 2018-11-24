@@ -35,6 +35,7 @@ typedef enum {
     THROTTLE_LIMIT_TYPE_OFF = 0,
     THROTTLE_LIMIT_TYPE_SCALE,
     THROTTLE_LIMIT_TYPE_CLIP,
+    THROTTLE_LIMIT_TYPE_COUNT   // must be the last entry
 } throttleLimitType_e;
 
 
