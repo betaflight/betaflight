@@ -138,13 +138,11 @@
 
 #if defined(USE_RX_FRSKY_SPI_D) || defined(USE_RX_FRSKY_SPI_X)
 #define USE_RX_CC2500
-#define USE_RX_CC2500_BIND
 #define USE_RX_FRSKY_SPI
 #endif
 
 #if defined(USE_RX_SFHSS_SPI)
 #define USE_RX_CC2500
-#define USE_RX_CC2500_BIND
 #endif
 
 // Burst dshot to default off if not configured explicitly by target

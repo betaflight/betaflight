@@ -39,6 +39,7 @@
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
+#include "rx/rx_spi_common.h"
 
 #include "rx/cc2500_common.h"
 #include "rx/cc2500_frsky_common.h"
@@ -80,11 +81,6 @@ PG_RESET_TEMPLATE(rxFrSkySpiConfig_t, rxFrSkySpiConfig,
     .rxNum = 0,
     .useExternalAdc = false,
 );
-
-void frSkySpiBind(void)
-{
-    cc2500SpiBind();
-}
 
 static void initialise() {
     cc2500Reset();
@@ -324,8 +320,8 @@ rx_spi_received_e frSkySpiDataReceived(uint8_t *packet)
 
         break;
     case STATE_BIND:
-        if (cc2500checkBindRequested(true) || rxFrSkySpiConfig()->autoBind) {
-            cc2500LedOn();
+        if (rxSpiCheckBindRequested(true) || rxFrSkySpiConfig()->autoBind) {
+            rxSpiLedOn();
             initTuneRx();
 
             protocolState = STATE_BIND_TUNING;
@@ -361,11 +357,9 @@ rx_spi_received_e frSkySpiDataReceived(uint8_t *packet)
         if (!rxFrSkySpiConfig()->autoBind) {
             writeEEPROM();
         } else {
-            uint8_t ctr = 40;
+            uint8_t ctr = 80;
             while (ctr--) {
-                cc2500LedOn();
-                delay(50);
-                cc2500LedOff();
+                rxSpiLedToggle();
                 delay(50);
             }
         }
@@ -411,6 +405,7 @@ void nextChannel(uint8_t skip)
 
 bool frSkySpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
+    rxSpiCommonIOInit(rxSpiConfig);
     cc2500SpiInit();
 
     spiProtocol = rxSpiConfig->rx_spi_protocol;

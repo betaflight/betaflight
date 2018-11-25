@@ -96,6 +96,7 @@ COMMON_SRC = \
             rx/pwm.c \
             rx/rx.c \
             rx/rx_spi.c \
+            rx/rx_spi_common.c \
             rx/crsf.c \
             rx/sbus.c \
             rx/sbus_channels.c \

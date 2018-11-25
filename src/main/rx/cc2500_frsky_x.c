@@ -47,6 +47,7 @@
 
 #include "fc/config.h"
 
+#include "rx/rx_spi_common.h"
 #include "rx/cc2500_common.h"
 #include "rx/cc2500_frsky_common.h"
 #include "rx/cc2500_frsky_shared.h"
@@ -294,7 +295,6 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
     static unsigned receiveTelemetryRetryCount = 0;
     static timeMs_t pollingTimeMs = 0;
     static bool skipChannels = true;
-    static bool ledIsOn;
 
     static uint8_t remoteProcessedId = 0;
     static uint8_t remoteAckId = 0;
@@ -329,7 +329,7 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
         *protocolState = STATE_DATA;
         frameReceived = false; // again set for receive
         receiveDelayUs = 5300;
-        if (cc2500checkBindRequested(false)) {
+        if (rxSpiCheckBindRequested(false)) {
             packetTimerUs = 0;
             timeoutUs = 50;
             missingPackets = 0;
@@ -358,7 +358,7 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
                             missingPackets = 0;
                             timeoutUs = 1;
                             receiveDelayUs = 0;
-                            cc2500LedOn();
+                            rxSpiLedOn();
                             if (skipChannels) {
                                 channelsToSkip = packet[5] << 2;
                                 if (packet[4] >= listLength) {
@@ -439,12 +439,7 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
             }
         }
         if (cmpTimeUs(micros(), packetTimerUs) > timeoutUs * SYNC_DELAY_MAX) {
-            if (ledIsOn) {
-                cc2500LedOff();
-            } else {
-                cc2500LedOn();
-            }
-            ledIsOn = !ledIsOn;
+            rxSpiLedToggle();
 
             setRssiDirect(0, RSSI_SOURCE_RX_PROTOCOL);
             nextChannel(1);
