@@ -39,6 +39,7 @@
 #include "drivers/sound_beeper.h"
 #include "drivers/time.h"
 
+#include "fc/controlrate_profile.h"
 #include "fc/core.h"
 #include "fc/rc.h"
 
@@ -111,14 +112,16 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 
 #define CRASH_RECOVERY_DETECTION_DELAY_US 1000000  // 1 second delay before crash recovery detection is active after entering a self-level mode
 
+#define LAUNCH_CONTROL_YAW_ITERM_LIMIT 50 // yaw iterm windup limit when launch mode is "FULL" (all axes)
+
 PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 5);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
     RESET_CONFIG(pidProfile_t, pidProfile,
         .pid = {
-            [PID_ROLL] =  { 46, 65, 25, 60 },
-            [PID_PITCH] = { 50, 75, 27, 60 },
+            [PID_ROLL] =  { 46, 65, 30, 60 },
+            [PID_PITCH] = { 50, 75, 32, 60 },
             [PID_YAW] =   { 45, 100, 0, 100 },
             [PID_LEVEL] = { 50, 50, 75, 0 },
             [PID_MAG] =   { 40, 0, 0, 0 },
@@ -919,6 +922,7 @@ void FAST_CODE applySmartFeedforward(int axis)
 }
 #endif // USE_SMART_FEEDFORWARD
 
+#if defined(USE_ITERM_RELAX)
 #if defined(USE_ABSOLUTE_CONTROL)
 STATIC_UNIT_TESTED void applyAbsoluteControl(const int axis, const float gyroRate, const bool itermRelaxIsEnabled,
     const float setpointLpf, const float setpointHpf,
@@ -961,7 +965,6 @@ STATIC_UNIT_TESTED void applyAbsoluteControl(const int axis, const float gyroRat
 }
 #endif
 
-#if defined(USE_ITERM_RELAX)
 STATIC_UNIT_TESTED void applyItermRelax(const int axis, const float iterm,
     const float gyroRate, float *itermErrorRate, float *currentPidSetpoint)
 {
@@ -1047,6 +1050,12 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
     static bool gpsRescuePreviousState = false;
 
     const float tpaFactor = getThrottlePIDAttenuation();
+
+#ifdef USE_TPA_MODE
+    const float tpaFactorKp = (currentControlRateProfile->tpaMode == TPA_MODE_PD) ? tpaFactor : 1.0f;
+#else
+    const float tpaFactorKp = tpaFactor;
+#endif
 
 #ifdef USE_YAW_SPIN_RECOVERY
     const bool yawSpinActive = gyroYawSpinDetected();
@@ -1145,7 +1154,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
         // b = 1 and only c (feedforward weight) can be tuned (amount derivative on measurement or error).
 
         // -----calculate P component
-        pidData[axis].P = pidCoefficient[axis].Kp * errorRate * tpaFactor;
+        pidData[axis].P = pidCoefficient[axis].Kp * errorRate * tpaFactorKp;
         if (axis == FD_YAW) {
             pidData[axis].P = ptermYawLowpassApplyFn((filter_t *) &ptermYawLowpass, pidData[axis].P);
         }
@@ -1223,10 +1232,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
         // Disable P/I appropriately based on the launch control mode
         if (launchControlActive) {
             // if not using FULL mode then disable I accumulation on yaw as
-            // yaw has a tendency to windup
-            if (launchControlMode != LAUNCH_CONTROL_MODE_FULL) {
-                pidData[FD_YAW].I = 0;
-            }
+            // yaw has a tendency to windup. Otherwise limit yaw iterm accumulation.
+            const int launchControlYawItermLimit = (launchControlMode == LAUNCH_CONTROL_MODE_FULL) ? LAUNCH_CONTROL_YAW_ITERM_LIMIT : 0;
+            pidData[FD_YAW].I = constrainf(pidData[FD_YAW].I, -launchControlYawItermLimit, launchControlYawItermLimit);
 
             // for pitch-only mode we disable everything except pitch P/I
             if (launchControlMode == LAUNCH_CONTROL_MODE_PITCHONLY) {

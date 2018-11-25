@@ -89,7 +89,9 @@ void adcInternalProcess(timeUs_t currentTimeUs)
     int32_t adcTempsensorAdjusted = (int32_t)adcTempsensorValue * 3300 / getVrefMv();
     coreTemperature = ((adcTempsensorAdjusted - adcTSCAL1) * adcTSSlopeK + 30 * 1000 + 500) / 1000;
 
-    DEBUG_SET(DEBUG_CORE_TEMP, 0, coreTemperature);
+    DEBUG_SET(DEBUG_ADC_INTERNAL, 0, coreTemperature);
+    DEBUG_SET(DEBUG_ADC_INTERNAL, 1, vrefintSample);
+    DEBUG_SET(DEBUG_ADC_INTERNAL, 2, tempsensorSample);
 
     adcInternalStartConversion(); // Start next conversion
 }

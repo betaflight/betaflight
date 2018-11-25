@@ -87,6 +87,7 @@ OSD_Entry menuOsdActiveElemsEntries[] =
     {"GPS LON",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_LON], 0},
     {"HOME DIR",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HOME_DIR], 0},
     {"HOME DIST",          OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HOME_DIST], 0},
+    {"TOTAL DIST",         OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_TOTAL_DIST], 0},
 #endif // GPS
     {"COMPASS BAR",        OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_COMPASS_BAR], 0},
     {"ALTITUDE",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ALTITUDE], 0},

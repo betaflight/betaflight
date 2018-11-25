@@ -55,15 +55,15 @@ baro_bmp280_unittest_SRC := \
 		$(USER_DIR)/drivers/barometer/barometer_bmp280.c
 
 baro_bmp280_unittest_DEFINES := \
-                USE_BARO_BMP280 \
-                USE_BARO_SPI_BMP280
+                USE_BARO_BMP280= \
+                USE_BARO_SPI_BMP280=
 
 baro_ms5611_unittest_SRC := \
 		$(USER_DIR)/drivers/barometer/barometer_ms5611.c
 
 baro_ms5611_unittest_DEFINES := \
-                USE_BARO_MS5611 \
-                USE_BARO_SPI_MS5611
+                USE_BARO_MS5611= \
+                USE_BARO_SPI_MS5611=
 
 # This test is disabled due to build errors.
 # Its source code is archived in unit/battery_unittest.cc.txt
@@ -96,8 +96,8 @@ cli_unittest_SRC := \
                 $(USER_DIR)/common/typeconversion.c
 
 cli_unittest_DEFINES := \
-		USE_OSD \
-		USE_CLI \
+		USE_OSD= \
+		USE_CLI= \
 		SystemCoreClock=1000000
 
 cms_unittest_SRC := \
@@ -166,9 +166,10 @@ osd_unittest_SRC := \
 		$(USER_DIR)/fc/runtime_config.c
 
 osd_unittest_DEFINES := \
-		USE_OSD \
-		USE_RTC_TIME \
-		USE_ADC_INTERNAL
+		USE_OSD= \
+		USE_GPS= \
+		USE_RTC_TIME= \
+		USE_ADC_INTERNAL=
 
 
 pg_unittest_SRC := \
@@ -244,7 +245,7 @@ telemetry_crsf_unittest_SRC := \
 
 telemetry_crsf_unittest_DEFINES := \
 		FLASH_SIZE=128 \
-		STM32F10X_MD \
+		STM32F10X_MD= \
 		__TARGET__="TEST" \
 		__REVISION__="revision"
 
@@ -264,7 +265,7 @@ telemetry_crsf_msp_unittest_SRC := \
 		$(USER_DIR)/fc/runtime_config.c
 
 telemetry_crsf_msp_unittest_DEFINES := \
-		USE_MSP_OVER_TELEMETRY
+		USE_MSP_OVER_TELEMETRY=
 
 
 telemetry_hott_unittest_SRC := \
@@ -305,7 +306,7 @@ huffman_unittest_SRC := \
 		$(USER_DIR)/common/huffman_table.c
 
 huffman_unittest_DEFINES := \
-		USE_HUFFMAN
+		USE_HUFFMAN=
 
 rcdevice_unittest_SRC := \
 		$(USER_DIR)/common/crc.c \
@@ -323,13 +324,13 @@ pid_unittest_SRC :=  \
 		$(USER_DIR)/fc/runtime_config.c
 
 pid_unittest_DEFINES := \
-		USE_ITERM_RELAX \
-		USE_RC_SMOOTHING_FILTER \
-		USE_ABSOLUTE_CONTROL\
-		USE_LAUNCH_CONTROL
+		USE_ITERM_RELAX= \
+		USE_RC_SMOOTHING_FILTER= \
+		USE_ABSOLUTE_CONTROL= \
+		USE_LAUNCH_CONTROL=
 
 rcdevice_unittest_DEFINES := \
-		USE_RCDEVICE
+		USE_RCDEVICE=
 
 vtx_unittest_SRC := \
 		$(USER_DIR)/fc/core.c \
@@ -344,9 +345,9 @@ vtx_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c
 
 vtx_unittest_DEFINES := \
-		USE_VTX_COMMON \
-		USE_VTX_CONTROL \
-		USE_VTX_SMARTAUDIO
+		USE_VTX_COMMON= \
+		USE_VTX_CONTROL= \
+		USE_VTX_SMARTAUDIO=
 
 # Please tweak the following variable definitions as needed by your
 # project, except GTEST_HEADERS, which you can use in your own targets

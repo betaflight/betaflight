@@ -43,6 +43,7 @@ typedef enum {
     PAGE_SENSORS,
     PAGE_RX,
     PAGE_PROFILE,
+    PAGE_RPROF,
 #if defined(USE_TASK_STATISTICS)
     PAGE_TASKS,
 #endif

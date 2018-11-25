@@ -128,6 +128,7 @@ extern uint8_t __config_end;
 #include "pg/bus_spi.h"
 #include "pg/gyrodev.h"
 #include "pg/max7456.h"
+#include "pg/mco.h"
 #include "pg/pinio.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
@@ -445,12 +446,23 @@ static void printValuePointer(const clivalue_t *var, const void *valuePointer, b
 
         switch (var->type & VALUE_MODE_MASK) {
         case MODE_DIRECT:
-            if ((value < var->config.minmax.min) || (value > var->config.minmax.max)) {
-                cliPrintCorruptMessage(value);
+            if ((var->type & VALUE_TYPE_MASK) == VAR_UINT32) {
+                if ((uint32_t) value > var->config.u32_max) {
+                    cliPrintCorruptMessage(value);
+                } else {
+                    cliPrintf("%d", value);
+                    if (full) {
+                        cliPrintf(" 0 %d", var->config.u32_max);
+                    }
+                }
             } else {
-                cliPrintf("%d", value);
-                if (full) {
-                    cliPrintf(" %d %d", var->config.minmax.min, var->config.minmax.max);
+                if ((value < var->config.minmax.min) || (value > var->config.minmax.max)) {
+                    cliPrintCorruptMessage(value);
+                } else {
+                    cliPrintf("%d", value);
+                    if (full) {
+                        cliPrintf(" %d %d", var->config.minmax.min, var->config.minmax.max);
+                    }
                 }
             }
             break;
@@ -628,7 +640,7 @@ static void cliPrintVarRange(const clivalue_t *var)
     }
 }
 
-static void cliSetVar(const clivalue_t *var, const int16_t value)
+static void cliSetVar(const clivalue_t *var, const uint32_t value)
 {
     void *ptr = cliGetValuePointer(var);
     uint32_t workValue;
@@ -680,6 +692,10 @@ static void cliSetVar(const clivalue_t *var, const int16_t value)
         case VAR_UINT16:
         case VAR_INT16:
             *(int16_t *)ptr = value;
+            break;
+
+        case VAR_UINT32:
+            *(uint32_t *)ptr = value;
             break;
         }
     }
@@ -1257,7 +1273,7 @@ static void printAdjustmentRange(uint8_t dumpMask, const adjustmentRange_t *adju
                 arDefault->auxChannelIndex,
                 MODE_STEP_TO_CHANNEL_VALUE(arDefault->range.startStep),
                 MODE_STEP_TO_CHANNEL_VALUE(arDefault->range.endStep),
-                arDefault->adjustmentFunction,
+                arDefault->adjustmentConfig,
                 arDefault->auxSwitchChannelIndex,
                 arDefault->adjustmentCenter,
                 arDefault->adjustmentScale
@@ -1269,7 +1285,7 @@ static void printAdjustmentRange(uint8_t dumpMask, const adjustmentRange_t *adju
             ar->auxChannelIndex,
             MODE_STEP_TO_CHANNEL_VALUE(ar->range.startStep),
             MODE_STEP_TO_CHANNEL_VALUE(ar->range.endStep),
-            ar->adjustmentFunction,
+            ar->adjustmentConfig,
             ar->auxSwitchChannelIndex,
             ar->adjustmentCenter,
             ar->adjustmentScale
@@ -1315,7 +1331,7 @@ static void cliAdjustmentRange(char *cmdline)
             if (ptr) {
                 val = atoi(ptr);
                 if (val >= 0 && val < ADJUSTMENT_FUNCTION_COUNT) {
-                    ar->adjustmentFunction = val;
+                    ar->adjustmentConfig = val;
                     validArgumentCount++;
                 }
             }
@@ -1359,7 +1375,7 @@ static void cliAdjustmentRange(char *cmdline)
                 ar->auxChannelIndex,
                 MODE_STEP_TO_CHANNEL_VALUE(ar->range.startStep),
                 MODE_STEP_TO_CHANNEL_VALUE(ar->range.endStep),
-                ar->adjustmentFunction,
+                ar->adjustmentConfig,
                 ar->auxSwitchChannelIndex,
                 ar->adjustmentCenter,
                 ar->adjustmentScale
@@ -3433,11 +3449,20 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
                 int16_t value  = 0;
                 switch (val->type & VALUE_MODE_MASK) {
                 case MODE_DIRECT: {
-                        int16_t value = atoi(eqptr);
+                        if ((val->type & VALUE_TYPE_MASK) == VAR_UINT32) {
+                            uint32_t value = strtol(eqptr, NULL, 10);
 
-                        if (value >= val->config.minmax.min && value <= val->config.minmax.max) {
-                            cliSetVar(val, value);
-                            valueChanged = true;
+                            if (value <= val->config.u32_max) {
+                                cliSetVar(val, value);
+                                valueChanged = true;
+                            }
+                        } else {
+                            int16_t value = atoi(eqptr);
+
+                            if (value >= val->config.minmax.min && value <= val->config.minmax.max) {
+                                cliSetVar(val, value);
+                                valueChanged = true;
+                            }
                         }
                     }
 
@@ -3568,6 +3593,22 @@ static void cliStatus(char *cmdline)
     cliPrintLinef("Voltage: %d * 0.1V (%dS battery - %s)", getBatteryVoltage(), getBatteryCellCount(), getBatteryStateString());
 
     cliPrintf("CPU Clock=%dMHz", (SystemCoreClock / 1000000));
+
+#ifdef STM32F4
+    // Only F4 is capable of switching between HSE/HSI (for now)
+    int sysclkSource = SystemSYSCLKSource();
+
+    const char *SYSCLKSource[] = { "HSI", "HSE", "PLLP", "PLLR" };
+    const char *PLLSource[] = { "-HSI", "-HSE" };
+
+    int pllSource;
+
+    if (sysclkSource >= 2) {
+        pllSource = SystemPLLSource();
+    }
+
+    cliPrintf(" (%s%s)", SYSCLKSource[sysclkSource], (sysclkSource < 2) ? "" : PLLSource[pllSource]);
+#endif
 
 #ifdef USE_ADC_INTERNAL
     uint16_t vrefintMv = getVrefMv();

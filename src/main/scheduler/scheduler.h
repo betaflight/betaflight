@@ -142,8 +142,10 @@ typedef enum {
 
 typedef struct {
     // Configuration
+#if defined(USE_TASK_STATISTICS)
     const char * taskName;
     const char * subTaskName;
+#endif
     bool (*checkFunc)(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
     void (*taskFunc)(timeUs_t currentTimeUs);
     timeDelta_t desiredPeriod;      // target period of execution

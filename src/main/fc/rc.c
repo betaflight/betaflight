@@ -288,8 +288,9 @@ FAST_CODE uint8_t processRcInterpolation(void)
 FAST_CODE_NOINLINE int calcRcSmoothingCutoff(int avgRxFrameTimeUs, bool pt1)
 {
     if (avgRxFrameTimeUs > 0) {
+        const float cutoffFactor = (100 - rxConfig()->rc_smoothing_auto_factor) / 100.0f;
         float cutoff = (1 / (avgRxFrameTimeUs * 1e-6f)) / 2;  // calculate the nyquist frequency
-        cutoff = cutoff * 0.90f;  // Use 90% of the calculated nyquist frequency
+        cutoff = cutoff * cutoffFactor;
 
         if (pt1) {
             cutoff = sq(cutoff) / RC_SMOOTHING_IDENTITY_FREQUENCY; // convert to a cutoff for pt1 that has similar characteristics

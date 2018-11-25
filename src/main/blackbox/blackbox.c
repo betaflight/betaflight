@@ -1333,6 +1333,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_debug_axis", "%d",         rxConfig()->rc_smoothing_debug_axis);
         BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_cutoffs", "%d, %d",        rxConfig()->rc_smoothing_input_cutoff,
                                                                             rxConfig()->rc_smoothing_derivative_cutoff);
+        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_auto_factor", "%d",        rxConfig()->rc_smoothing_auto_factor);
         BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_filter_type", "%d, %d",    rxConfig()->rc_smoothing_input_type,
                                                                             rxConfig()->rc_smoothing_derivative_type);
         BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_active_cutoffs", "%d, %d", rcSmoothingGetValue(RC_SMOOTHING_VALUE_INPUT_ACTIVE),

@@ -35,7 +35,14 @@ typedef enum {
     THROTTLE_LIMIT_TYPE_OFF = 0,
     THROTTLE_LIMIT_TYPE_SCALE,
     THROTTLE_LIMIT_TYPE_CLIP,
+    THROTTLE_LIMIT_TYPE_COUNT   // must be the last entry
 } throttleLimitType_e;
+
+
+typedef enum {
+    TPA_MODE_PD,
+    TPA_MODE_D
+} tpaMode_e;
 
 typedef struct controlRateConfig_s {
     uint8_t thrMid8;
@@ -49,6 +56,7 @@ typedef struct controlRateConfig_s {
     uint8_t throttle_limit_type;            // Sets the throttle limiting type - off, scale or clip
     uint8_t throttle_limit_percent;         // Sets the maximum pilot commanded throttle limit
     uint16_t rate_limit[3];                 // Sets the maximum rate for the axes
+    uint8_t tpaMode;                        // Controls which PID terms TPA effects
 } controlRateConfig_t;
 
 PG_DECLARE_ARRAY(controlRateConfig_t, CONTROL_RATE_PROFILE_COUNT, controlRateProfiles);

@@ -67,6 +67,7 @@
 #include "io/beeper.h"
 #include "io/gps.h"
 #include "io/motors.h"
+#include "io/osd.h"
 #include "io/pidaudio.h"
 #include "io/servos.h"
 #include "io/serial.h"
@@ -332,6 +333,12 @@ void disarm(void)
         DISABLE_ARMING_FLAG(ARMED);
         lastDisarmTimeUs = micros();
 
+#ifdef USE_OSD
+        if (flipOverAfterCrashActive || isLaunchControlActive()) {
+            osdSuppressStats(true);
+        }
+#endif
+
 #ifdef USE_BLACKBOX
         if (blackboxConfig()->device && blackboxConfig()->mode != BLACKBOX_MODE_ALWAYS_ON) { // Close the log upon disarm except when logging mode is ALWAYS ON
             blackboxFinish();
@@ -408,6 +415,9 @@ void tryArm(void)
         }
 #endif
 
+#ifdef USE_OSD
+        osdSuppressStats(false);
+#endif
         ENABLE_ARMING_FLAG(ARMED);
         ENABLE_ARMING_FLAG(WAS_EVER_ARMED);
 

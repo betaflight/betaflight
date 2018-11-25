@@ -184,6 +184,12 @@ bool telemetryDetermineEnabledState(portSharing_e portSharing)
 }
 
 
+bool telemetryIsSensorEnabled(sensor_e sensor) {
+    UNUSED(sensor);
+    return true;
+}
+
+
 bool isSerialPortShared(const serialPortConfig_t *portConfig,
                         uint16_t functionMask,
                         serialPortFunction_e sharedWithFunction)

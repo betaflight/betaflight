@@ -23,7 +23,7 @@
 
 #include "platform.h"
 
-#ifdef USE_FLASHFS
+#ifdef USE_FLASH
 
 #include "drivers/bus_spi.h"
 #include "drivers/io.h"

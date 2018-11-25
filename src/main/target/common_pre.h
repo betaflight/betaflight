@@ -78,6 +78,7 @@
 #define USE_ADC_INTERNAL
 #define USE_USB_CDC_HID
 #define USE_USB_MSC
+#define USE_MCO
 #endif
 
 #if defined(STM32F4) || defined(STM32F7)
@@ -177,6 +178,7 @@
 #define USE_RTC_TIME
 #define USE_RX_MSP
 #define USE_SERIALRX_FPORT      // FrSky FPort
+#define USE_TPA_MODE
 #define USE_TELEMETRY_CRSF
 #define USE_TELEMETRY_SRXL
 #define USE_VIRTUAL_CURRENT_METER
@@ -231,4 +233,5 @@
 #define USE_LED_STRIP
 #define USE_VARIO
 #define USE_RX_LINK_QUALITY_INFO
+#define USE_ESC_SENSOR_TELEMETRY
 #endif

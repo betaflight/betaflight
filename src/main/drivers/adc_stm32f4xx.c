@@ -133,7 +133,7 @@ void adcInitDevice(ADC_TypeDef *adcdev, int channelCount)
 }
 
 #ifdef USE_ADC_INTERNAL
-void adcInitInternalInjected(void)
+void adcInitInternalInjected(const adcConfig_t *config)
 {
     ADC_TempSensorVrefintCmd(ENABLE);
     ADC_InjectedDiscModeCmd(ADC1, DISABLE);
@@ -141,9 +141,10 @@ void adcInitInternalInjected(void)
     ADC_InjectedChannelConfig(ADC1, ADC_Channel_Vrefint, 1, ADC_SampleTime_480Cycles);
     ADC_InjectedChannelConfig(ADC1, ADC_Channel_TempSensor, 2, ADC_SampleTime_480Cycles);
 
-    adcVREFINTCAL = *(uint16_t *)VREFINT_CAL_ADDR;
-    adcTSCAL1 = *(uint16_t *)TS_CAL1_ADDR;
-    adcTSCAL2 = *(uint16_t *)TS_CAL2_ADDR;
+    adcVREFINTCAL = config->vrefIntCalibration ? config->vrefIntCalibration : *(uint16_t *)VREFINT_CAL_ADDR;
+    adcTSCAL1 = config->tempSensorCalibration1 ? config->tempSensorCalibration1 : *(uint16_t *)TS_CAL1_ADDR;
+    adcTSCAL2 = config->tempSensorCalibration2 ? config->tempSensorCalibration2 : *(uint16_t *)TS_CAL2_ADDR;
+
     adcTSSlopeK = (110 - 30) * 1000 / (adcTSCAL2 - adcTSCAL1);
 }
 
@@ -258,7 +259,7 @@ void adcInit(const adcConfig_t *config)
     }
 
     // Initialize for injected conversion
-    adcInitInternalInjected();
+    adcInitInternalInjected(config);
 
     if (!adcActive) {
         return;

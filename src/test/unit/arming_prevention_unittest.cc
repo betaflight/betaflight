@@ -851,4 +851,5 @@ extern "C" {
     bool usbCableIsInserted(void) { return false; }
     bool usbVcpIsConnected(void) { return false; }
     void pidSetAntiGravityState(bool) {}
+    void osdSuppressStats(bool) {}
 }

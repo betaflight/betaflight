@@ -974,7 +974,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
             sbufWriteU8(dst, adjRange->auxChannelIndex);
             sbufWriteU8(dst, adjRange->range.startStep);
             sbufWriteU8(dst, adjRange->range.endStep);
-            sbufWriteU8(dst, adjRange->adjustmentFunction);
+            sbufWriteU8(dst, adjRange->adjustmentConfig);
             sbufWriteU8(dst, adjRange->auxSwitchChannelIndex);
         }
         break;
@@ -1050,7 +1050,6 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, gpsRescueConfig()->throttleMin);
         sbufWriteU16(dst, gpsRescueConfig()->throttleMax);
         sbufWriteU16(dst, gpsRescueConfig()->throttleHover);
-        sbufWriteU16(dst, gpsRescueConfig()->throttleMax);
         sbufWriteU8(dst,  gpsRescueConfig()->sanityChecks);
         sbufWriteU8(dst,  gpsRescueConfig()->minSats);
         break;
@@ -1623,7 +1622,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 adjRange->auxChannelIndex = sbufReadU8(src);
                 adjRange->range.startStep = sbufReadU8(src);
                 adjRange->range.endStep = sbufReadU8(src);
-                adjRange->adjustmentFunction = sbufReadU8(src);
+                adjRange->adjustmentConfig = sbufReadU8(src);
                 adjRange->auxSwitchChannelIndex = sbufReadU8(src);
             } else {
                 return MSP_RESULT_ERROR;

@@ -56,6 +56,7 @@
 #include "drivers/inverter.h"
 #include "drivers/io.h"
 #include "drivers/light_led.h"
+#include "drivers/mco.h"
 #include "drivers/nvic.h"
 #include "drivers/pwm_esc_detect.h"
 #include "drivers/pwm_output.h"
@@ -96,6 +97,7 @@
 #include "pg/bus_i2c.h"
 #include "pg/bus_spi.h"
 #include "pg/flash.h"
+#include "pg/mco.h"
 #include "pg/pinio.h"
 #include "pg/piniobox.h"
 #include "pg/pg.h"
@@ -272,8 +274,7 @@ void init(void)
 
     buttonsInit();
 
-    // Check status of bind plug and exit if not active
-    delayMicroseconds(10);  // allow configuration to settle
+    delayMicroseconds(10);  // allow configuration to settle // XXX Could be removed, too?
 
     if (!isMPUSoftReset()) {
 #if defined(BUTTON_A_PIN) && defined(BUTTON_B_PIN)
@@ -295,6 +296,18 @@ void init(void)
     }
 #endif
 
+    // Configure MCO output after config is stable
+
+#ifdef USE_MCO
+    mcoInit(mcoConfig());
+#endif
+
+    // Note that spektrumBind checks if a call is immediately after
+    // hard reset (including power cycle), so it should be called before
+    // systemClockSetHSEValue and OverclockRebootIfNecessary, as these
+    // may cause soft reset which will prevent spektrumBind not to execute
+    // the bind procedure.
+
 #if defined(USE_SPEKTRUM_BIND)
     if (featureIsEnabled(FEATURE_RX_SERIAL)) {
         switch (rxConfig()->serialrx_provider) {
@@ -310,11 +323,14 @@ void init(void)
     }
 #endif
 
+#ifdef STM32F4
+    // Only F4 has non-8MHz boards
+    systemClockSetHSEValue(systemConfig()->hseMhz * 1000000U);
+#endif
+
 #ifdef USE_OVERCLOCK
     OverclockRebootIfNecessary(systemConfig()->cpu_overclock);
 #endif
-
-    delay(100);
 
     timerInit();  // timer must be initialized before any channel is allocated
 

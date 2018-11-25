@@ -304,4 +304,9 @@ extern "C" {
     int32_t getMAhDrawn(void) {
       return testmAhDrawn;
     }
+
+    bool telemetryIsSensorEnabled(sensor_e) {
+        return true;
+    }
+
 }
