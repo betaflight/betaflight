@@ -3895,7 +3895,7 @@ const cliResourceValue_t resourceTable[] = {
 #if defined(USE_USB_MSC)
     DEFS( OWNER_USB_MSC_PIN,   PG_USB_CONFIG, usbDev_t, mscButtonPin ),
 #endif
-#ifdef USE_FLASH
+#ifdef USE_FLASH_CHIP
     DEFS( OWNER_FLASH_CS,      PG_FLASH_CONFIG, flashConfig_t, csTag ),
 #endif
 #ifdef USE_MAX7456

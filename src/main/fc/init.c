@@ -643,7 +643,7 @@ void init(void)
 #endif
 
 #ifdef USE_FLASHFS
-#if defined(USE_FLASH)
+#if defined(USE_FLASH_CHIP)
     flashInit(flashConfig());
 #endif
     flashfsInit();

@@ -180,7 +180,7 @@
 #endif
 
 #if defined(USE_FLASH_M25P16)
-#define USE_FLASH
+#define USE_FLASH_CHIP
 #endif
 
 #if defined(USE_MAX7456)
