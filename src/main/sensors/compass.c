@@ -133,16 +133,23 @@ bool compassDetect(magDev_t *dev)
         busdev->bustype = BUSTYPE_I2C;
         busdev->busdev_u.i2c.device = I2C_CFG_TO_DEV(compassConfig()->mag_i2c_device);
         busdev->busdev_u.i2c.address = compassConfig()->mag_i2c_address;
-#endif
         break;
+#endif
 
 #ifdef USE_SPI
     case BUSTYPE_SPI:
-        busdev->bustype = BUSTYPE_SPI;
-        spiBusSetInstance(busdev, spiInstanceByDevice(SPI_CFG_TO_DEV(compassConfig()->mag_spi_device)));
-        busdev->busdev_u.spi.csnPin = IOGetByTag(compassConfig()->mag_spi_csn);
-#endif
+        {
+            SPI_TypeDef *instance = spiInstanceByDevice(SPI_CFG_TO_DEV(compassConfig()->mag_spi_device));
+            if (!instance) {
+                return false;
+            }
+      
+            busdev->bustype = BUSTYPE_SPI;
+            spiBusSetInstance(busdev, instance);
+            busdev->busdev_u.spi.csnPin = IOGetByTag(compassConfig()->mag_spi_csn);
+        }
         break;
+#endif
 
 #if defined(USE_MAG_AK8963) && (defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250))
     case BUSTYPE_MPU_SLAVE:
@@ -155,8 +162,8 @@ bool compassDetect(magDev_t *dev)
                 return false;
             }
         }
-#endif
         break;
+#endif
 
     default:
         return false;
