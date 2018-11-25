@@ -52,7 +52,7 @@
 #define USE_ACC_MPU6050
 #define ACC_1_ALIGN             CW90_DEG
 
-#define TARGET_DEFAULT_MIXER    MIXER_QUADX_1234
+#define DEFAULT_MIXER           MIXER_QUADX_1234
 
 #undef USE_LED_STRIP
 #else

@@ -332,3 +332,7 @@
 #define USE_INVERTER
 #endif
 #endif
+
+#ifndef DEFAULT_MIXER
+#define DEFAULT_MIXER    MIXER_QUADX
+#endif
