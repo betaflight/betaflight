@@ -28,7 +28,6 @@
 #define USBD_PRODUCT_STRING     "KroozX"
 
 #define USE_TARGET_CONFIG
-#define TARGET_PREINIT
 
 #define LED0_PIN                PA14 // Red LED
 #define LED1_PIN                PA13 // Green LED
@@ -82,8 +81,6 @@
 #define MAX7456_SPI_CS_PIN      PC4
 #define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
-
-#define OSD_CH_SWITCH           PC5
 
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
