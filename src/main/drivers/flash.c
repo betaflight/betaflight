@@ -25,7 +25,7 @@
 
 #include "build/debug.h"
 
-#ifdef USE_FLASH
+#ifdef USE_FLASH_CHIP
 
 #include "flash.h"
 #include "flash_impl.h"
@@ -166,4 +166,4 @@ const flashGeometry_t *flashGetGeometry(void)
 
     return &noFlashGeometry;
 }
-#endif // USE_FLASH
+#endif // USE_FLASH_CHIP
