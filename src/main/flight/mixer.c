@@ -66,15 +66,11 @@
 
 PG_REGISTER_WITH_RESET_TEMPLATE(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 0);
 
-#ifndef TARGET_DEFAULT_MIXER
-#define TARGET_DEFAULT_MIXER    MIXER_QUADX
-#endif
-
 #define DYN_LPF_THROTTLE_STEPS           100
 #define DYN_LPF_THROTTLE_UPDATE_DELAY_US 5000 // minimum of 5ms between updates
 
 PG_RESET_TEMPLATE(mixerConfig_t, mixerConfig,
-    .mixerMode = TARGET_DEFAULT_MIXER,
+    .mixerMode = DEFAULT_MIXER,
     .yaw_motors_reversed = false,
     .crashflip_motor_percent = 0,
 );

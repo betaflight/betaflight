@@ -30,7 +30,7 @@
 #endif
 
 
-#define TARGET_DEFAULT_MIXER    MIXER_QUADX_1234
+#define DEFAULT_MIXER           MIXER_QUADX_1234
 
 
 
