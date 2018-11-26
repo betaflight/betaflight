@@ -936,6 +936,11 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, currentControlRateProfile->rcRates[FD_YAW]);
         sbufWriteU8(dst, currentControlRateProfile->rcRates[FD_PITCH]);
         sbufWriteU8(dst, currentControlRateProfile->rcExpo[FD_PITCH]);
+
+        // added in 1.41
+        sbufWriteU8(dst, currentControlRateProfile->throttle_limit_type);
+        sbufWriteU8(dst, currentControlRateProfile->throttle_limit_percent);
+        
         break;
 
     case MSP_PID:
@@ -1671,6 +1676,12 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
             if (sbufBytesRemaining(src) >= 1) {
                 currentControlRateProfile->rcExpo[FD_PITCH] = sbufReadU8(src);
+            }
+            
+            // version 1.41
+            if (sbufBytesRemaining(src) >= 2) {
+                currentControlRateProfile->throttle_limit_type = sbufReadU8(src);
+                currentControlRateProfile->throttle_limit_percent = sbufReadU8(src);
             }
 
             initRcProcessing();
