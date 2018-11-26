@@ -32,7 +32,6 @@
 
 #define USE_BEEPER
 #define BEEPER_PIN              PC9
-#define BEEPER_OPT              PB14
 #define BEEPER_PWM_HZ           3150 // Beeper PWM frequency in Hz
 
 // Gyro interrupt

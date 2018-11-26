@@ -37,7 +37,6 @@
 
 #define USE_BEEPER
 #define BEEPER_PIN              PC1
-#define BEEPER_OPT              PB7
 #define BEEPER_INVERTED
 
 #define INVERTER_PIN_UART6      PB15

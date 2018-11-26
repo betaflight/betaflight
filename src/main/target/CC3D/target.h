@@ -28,7 +28,6 @@
 
 #define USE_BEEPER
 #define BEEPER_PIN              PA15
-#define BEEPER_OPT              PA2
 
 #define USE_EXTI
 #define USE_GYRO_EXTI
