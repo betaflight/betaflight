@@ -544,6 +544,9 @@ void gpsUpdate(timeUs_t currentTimeUs)
     if (sensors(SENSOR_GPS)) {
         updateGpsIndicator(currentTimeUs);
     }
+    if (!ARMING_FLAG(ARMED)) {
+        DISABLE_STATE(GPS_FIX_HOME);
+    }
 #if defined(USE_GPS_RESCUE)
     if (gpsRescueIsConfigured()) {
         updateGPSRescueState();
@@ -1272,7 +1275,6 @@ void GPS_reset_home_position(void)
         GPS_home[LAT] = gpsSol.llh.lat;
         GPS_home[LON] = gpsSol.llh.lon;
         GPS_calc_longitude_scaling(gpsSol.llh.lat); // need an initial value for distance and bearing calc
-        GPS_distanceFlownInCm = 0;
         // Set ground altitude
         ENABLE_STATE(GPS_FIX_HOME);
     }
@@ -1317,7 +1319,10 @@ static void GPS_calculateDistanceFlown(bool initialize)
     static int32_t lastMillis = 0;
 
     if (initialize) {
+        GPS_distanceFlownInCm = 0;
         lastMillis = millis();
+        lastCoord[LON] = gpsSol.llh.lon;
+        lastCoord[LAT] = gpsSol.llh.lat;
     } else {
         int32_t currentMillis = millis();
         // update the calculation less frequently when accuracy is low, to mitigate adding up error
@@ -1327,11 +1332,11 @@ static void GPS_calculateDistanceFlown(bool initialize)
             GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &lastCoord[LAT], &lastCoord[LON], &dist, &dir);
             GPS_distanceFlownInCm += dist;
             lastMillis = currentMillis;
+            lastCoord[LON] = gpsSol.llh.lon;
+            lastCoord[LAT] = gpsSol.llh.lat;
         }
     }
 
-    lastCoord[LON] = gpsSol.llh.lon;
-    lastCoord[LAT] = gpsSol.llh.lat;
 }
 
 void onGpsNewData(void)
@@ -1339,9 +1344,6 @@ void onGpsNewData(void)
     if (!(STATE(GPS_FIX) && gpsSol.numSat >= 5)) {
         return;
     }
-
-    if (!ARMING_FLAG(ARMED))
-        DISABLE_STATE(GPS_FIX_HOME);
 
     if (!STATE(GPS_FIX_HOME) && ARMING_FLAG(ARMED)) {
         GPS_reset_home_position();
