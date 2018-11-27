@@ -73,8 +73,6 @@
 
 #define USE_EXTI
 
-#define USE_MULTI_GYRO
-
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
 
