@@ -44,9 +44,9 @@
 
 #define USE_DUAL_GYRO
 #define USE_EXTI
+#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PC4
 #define GYRO_2_EXTI_PIN         PC3
-#define MPU_INT_EXTI
 
 #define GYRO_1_CS_PIN           PB2
 #define GYRO_1_SPI_INSTANCE     SPI1

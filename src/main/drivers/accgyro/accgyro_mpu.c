@@ -139,7 +139,7 @@ static void mpuIntExtiInit(gyroDev_t *gyro)
     EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, IOCFG_IN_FLOATING, EXTI_TRIGGER_RISING);
     EXTIEnable(mpuIntIO, true);
 }
-#endif // MPU_INT_EXTI
+#endif // USE_GYRO_EXTI
 
 bool mpuAccRead(accDev_t *acc)
 {
