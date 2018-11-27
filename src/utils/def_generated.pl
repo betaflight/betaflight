@@ -6,7 +6,7 @@ use strict;
 
 # io_def_generated.h
 
-my @ports = ('A', 'B', 'C', 'D', 'E', 'F', 'G');
+my @ports = ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H');
 my @pins  = 0 .. 15;
 my @timers = (1,2,3,4,6,7,8,15,16,17);
 my $drivers_dir = "../main/drivers";
