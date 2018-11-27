@@ -36,6 +36,10 @@
 #ifndef MAX7456_SPI_CS_PIN
 #define MAX7456_SPI_CS_PIN              NONE
 #endif
+
+#ifndef MAX7456_SPI_INSTANCE
+#define MAX7456_SPI_INSTANCE            NULL
+#endif
 #endif
 
 // pg/flash
