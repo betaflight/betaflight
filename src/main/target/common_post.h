@@ -126,6 +126,7 @@
 
 #if !defined(USE_OSD)
 #undef USE_RX_LINK_QUALITY_INFO
+#undef USE_OSD_PROFILES
 #endif
 
 /* If either VTX_CONTROL or VTX_COMMON is undefined then remove common code and device drivers */

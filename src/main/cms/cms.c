@@ -861,9 +861,9 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, cms_key_e key)
                 uint16_t *val = (uint16_t *)p->data;
 
                 if (key == CMS_KEY_RIGHT)
-                    *val |= VISIBLE_FLAG;
+                    *val |= OSD_PROFILE_1_FLAG;
                 else
-                    *val %= ~VISIBLE_FLAG;
+                    *val %= ~OSD_PROFILE_1_FLAG;
                 SET_PRINTVALUE(p);
             }
             break;

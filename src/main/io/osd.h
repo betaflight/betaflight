@@ -28,10 +28,16 @@ extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 
 #define OSD_ELEMENT_BUFFER_LENGTH 32
 
-#define VISIBLE_FLAG  0x0800
-#define VISIBLE(x)    (x & VISIBLE_FLAG)
+#define OSD_PROFILE_COUNT 3
+
+#define OSD_PROFILE_BITS_POS 11
+#define OSD_PROFILE_1_FLAG  (1 << OSD_PROFILE_BITS_POS)
+#define OSD_PROFILE_MASK    (((1 << OSD_PROFILE_COUNT) - 1) << OSD_PROFILE_BITS_POS)
+#define VISIBLE(x)    ((x) & OSD_PROFILE_MASK)
 #define OSD_POS_MAX   0x3FF
-#define OSD_POSCFG_MAX   (VISIBLE_FLAG|0x3FF) // For CLI values
+#define OSD_POSCFG_MAX   (OSD_PROFILE_MASK | 0x3FF) // For CLI values
+#define OSD_ELEMENT_PROFILE(x) (((x) & OSD_PROFILE_MASK) >> OSD_PROFILE_BITS_POS)
+
 
 // Character coordinate
 #define OSD_POSITION_BITS 5 // 5 bits gives a range 0-31
@@ -206,6 +212,7 @@ typedef struct osdConfig_s {
     int16_t esc_current_alarm;
     uint8_t core_temp_alarm;
     uint8_t ahInvert;         // invert the artificial horizon
+    uint8_t osdProfileIndex;
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);
@@ -223,4 +230,6 @@ void osdWarnSetState(uint8_t warningIndex, bool enabled);
 bool osdWarnGetState(uint8_t warningIndex);
 void osdSuppressStats(bool flag);
 
-
+void setOsdProfile(uint8_t value);
+uint8_t getCurrentOsdProfileIndex(void);
+void changeOsdProfileIndex(uint8_t profileIndex);
