@@ -82,6 +82,8 @@ float dTnav;             // Delta Time in milliseconds for navigation computatio
 int16_t nav_takeoff_bearing;
 navigationMode_e nav_mode = NAV_MODE_NONE;    // Navigation mode
 
+#define GPS_DISTANCE_FLOWN_MIN_GROUND_SPEED_THRESHOLD_CM_S 15 // 5.4Km/h 3.35mph
+
 // moving average filter variables
 #define GPS_FILTERING              1    // add a 5 element moving average filter to GPS coordinates, helps eliminate gps noise but adds latency
 #ifdef GPS_FILTERING
@@ -1316,27 +1318,20 @@ void GPS_calculateDistanceAndDirectionToHome(void)
 static void GPS_calculateDistanceFlown(bool initialize)
 {
     static int32_t lastCoord[2] = { 0, 0 };
-    static int32_t lastMillis = 0;
 
     if (initialize) {
         GPS_distanceFlownInCm = 0;
-        lastMillis = millis();
-        lastCoord[LON] = gpsSol.llh.lon;
-        lastCoord[LAT] = gpsSol.llh.lat;
     } else {
-        int32_t currentMillis = millis();
-        // update the calculation less frequently when accuracy is low, to mitigate adding up error
-        if ((currentMillis - lastMillis) > (10 * constrain(gpsSol.hdop, 100, 1000))) {
+        // Only add up movement when speed is faster than minimum threshold
+        if (gpsSol.groundSpeed > GPS_DISTANCE_FLOWN_MIN_GROUND_SPEED_THRESHOLD_CM_S) {
             uint32_t dist;
             int32_t dir;
             GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &lastCoord[LAT], &lastCoord[LON], &dist, &dir);
             GPS_distanceFlownInCm += dist;
-            lastMillis = currentMillis;
-            lastCoord[LON] = gpsSol.llh.lon;
-            lastCoord[LAT] = gpsSol.llh.lat;
         }
     }
-
+    lastCoord[LON] = gpsSol.llh.lon;
+    lastCoord[LAT] = gpsSol.llh.lat;
 }
 
 void onGpsNewData(void)
