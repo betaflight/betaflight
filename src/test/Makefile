@@ -39,6 +39,9 @@ arming_prevention_unittest_SRC := \
 		$(USER_DIR)/fc/runtime_config.c \
 		$(USER_DIR)/common/bitarray.c
 
+arming_prevention_unittest_DEFINES := \
+            USE_GPS_RESCUE=
+
 atomic_unittest_SRC := \
 		$(USER_DIR)/build/atomic.c \
 		$(TEST_DIR)/atomic_unittest_c.c
