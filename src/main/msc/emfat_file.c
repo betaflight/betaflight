@@ -30,6 +30,8 @@
 
 #include "io/flashfs.h"
 
+#define FILESYSTEM_SIZE_MB 256
+
 #define USE_EMFAT_AUTORUN
 #define USE_EMFAT_ICON
 //#define USE_EMFAT_README
@@ -254,12 +256,14 @@ static const emfat_entry_t entriesPredefined[] =
     { "readme.txt",   false, 0,           1,  0,      README_SIZE,     1024*1024,      (long)readme_file,  CMA,  memory_read_proc,  NULL, { 0 } },
 #endif
     { "BTFL_ALL.BBL", 0,     0,           1,  0,      0,               0,              0,                  CMA,  bblog_read_proc,   NULL, { 0 } },
+    { "PADDING.TXT",  0,     ATTR_HIDDEN, 1,  0,      0,               0,              0,                  CMA,  NULL,              NULL, { 0 } },
 };
 
-#define ENTRY_INDEX_BBL (1 + EMFAT_INCR_AUTORUN + EMFAT_INCR_ICON + EMFAT_INCR_README)
+#define PREDEFINED_ENTRY_COUNT (1 + EMFAT_INCR_AUTORUN + EMFAT_INCR_ICON + EMFAT_INCR_README)
+#define APPENDED_ENTRY_COUNT 2
 
 #define EMFAT_MAX_LOG_ENTRY 100
-#define EMFAT_MAX_ENTRY (ENTRY_INDEX_BBL + EMFAT_MAX_LOG_ENTRY)
+#define EMFAT_MAX_ENTRY (PREDEFINED_ENTRY_COUNT + EMFAT_MAX_LOG_ENTRY + APPENDED_ENTRY_COUNT)
 
 static emfat_entry_t entries[EMFAT_MAX_ENTRY];
 static char logNames[EMFAT_MAX_LOG_ENTRY][8+3];
@@ -268,7 +272,7 @@ emfat_t emfat;
 
 static void emfat_add_log(emfat_entry_t *entry, int number, uint32_t offset, uint32_t size)
 {
-    tfp_sprintf(logNames[number], "BTFL_%03d.BBL", number);
+    tfp_sprintf(logNames[number], "BTFL_%03d.BBL", number + 1);
     entry->name = logNames[number];
     entry->level = 1;
     entry->offset = offset;
@@ -280,13 +284,14 @@ static void emfat_add_log(emfat_entry_t *entry, int number, uint32_t offset, uin
     entry->readcb = bblog_read_proc;
 }
 
-static void emfat_find_log(emfat_entry_t *entry, int maxCount)
+static int emfat_find_log(emfat_entry_t *entry, int maxCount)
 {
     uint32_t limit  = flashfsIdentifyStartOfFreeSpace();
     uint32_t lastOffset = 0;
     uint32_t currOffset = 0;
     int fileNumber = 0;
     uint8_t buffer[18];
+    int logCount = 0;
 
     for ( ; currOffset < limit ; currOffset += 2048) { // XXX 2048 = FREE_BLOCK_SIZE in io/flashfs.c
 
@@ -300,6 +305,7 @@ static void emfat_find_log(emfat_entry_t *entry, int maxCount)
             emfat_add_log(entry, fileNumber, lastOffset, currOffset - lastOffset);
 
             ++fileNumber;
+            ++logCount;
             if (fileNumber == maxCount) {
                 break;
             }
@@ -311,24 +317,41 @@ static void emfat_find_log(emfat_entry_t *entry, int maxCount)
 
     if (fileNumber != maxCount && lastOffset != currOffset) {
         emfat_add_log(entry, fileNumber, lastOffset, currOffset - lastOffset);
+        ++logCount;
     }
+    return logCount;
 }
 
 void emfat_init_files(void)
 {
+    emfat_entry_t *entry;
     memset(entries, 0, sizeof(entries));
 
-    for (size_t i = 0 ; i < ARRAYLEN(entriesPredefined) ; i++) {
+    for (size_t i = 0 ; i < PREDEFINED_ENTRY_COUNT ; i++) {
         entries[i] = entriesPredefined[i];
     }
 
-    // Singleton
-    emfat_entry_t *entry = &entries[ENTRY_INDEX_BBL];
-    entry->curr_size = flashfsIdentifyStartOfFreeSpace();
-    entry->max_size = flashfsGetSize();
+    // Detect and create entries for each individual log
+    const int logCount = emfat_find_log(&entries[PREDEFINED_ENTRY_COUNT], EMFAT_MAX_LOG_ENTRY);
 
-    // Detect and list individual power cycle sessions
-    emfat_find_log(&entries[ENTRY_INDEX_BBL + 1], EMFAT_MAX_ENTRY - (ENTRY_INDEX_BBL + 1));
+    int entryIndex = PREDEFINED_ENTRY_COUNT + logCount;
 
-    emfat_init(&emfat, "emfat", entries);
+    if (logCount > 0) {
+        // Create the all logs entry that represents all used flash space to
+        // allow downloading the entire log in one file
+        entries[entryIndex] = entriesPredefined[PREDEFINED_ENTRY_COUNT];
+        entry = &entries[entryIndex];
+        entry->curr_size = flashfsIdentifyStartOfFreeSpace();
+        entry->max_size = entry->curr_size;
+        ++entryIndex;
+    }
+
+    // Padding file to fill out the filesystem size to FILESYSTEM_SIZE_MB
+    entries[entryIndex] = entriesPredefined[PREDEFINED_ENTRY_COUNT + 1];
+    entry = &entries[entryIndex];
+    // used space is doubled because of the individual files plus the single complete file
+    entry->curr_size = (FILESYSTEM_SIZE_MB * 1024 * 1024) - (flashfsIdentifyStartOfFreeSpace() * 2);
+    entry->max_size = entry->curr_size;
+
+    emfat_init(&emfat, "BETAFLT", entries);
 }
