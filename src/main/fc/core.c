@@ -276,7 +276,7 @@ void updateArmingStatus(void)
         }
 
 #ifdef USE_GPS_RESCUE
-        if (isModeActivationConditionPresent(BOXGPSRESCUE)) {
+        if (gpsRescueIsConfigured()) {
             if (!gpsRescueConfig()->minSats || STATE(GPS_FIX) || ARMING_FLAG(WAS_EVER_ARMED)) {
                 unsetArmingDisabled(ARMING_DISABLED_GPS);
             } else {
