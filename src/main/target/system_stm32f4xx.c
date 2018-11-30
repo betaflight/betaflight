@@ -461,7 +461,7 @@ static const pllConfig_t overclockLevels[] = {
 #endif
 
 static PERSISTENT uint32_t currentOverclockLevel = 0;
-static PERSISTENT uint32_t hse_value = 8000000;
+static PERSISTENT uint32_t hse_value = 0;
 
 void SystemInitPLLParameters(void)
 {
@@ -505,7 +505,14 @@ void systemClockSetHSEValue(uint32_t frequency)
 void SystemInit(void)
 {
     if (!(RCC->CSR & RCC_CSR_SFTRSTF)) {
+        // Hard reset case
         currentOverclockLevel = 0;
+        hse_value = 0;
+    } else if ((hse_value != 8 * 1000000 && hse_value != 12 * 1000000 && hse_value != 16 * 1000000 && hse_value != 25 * 1000000)) {
+        // Soft reset case
+        // It is also reported that this part of memory has random contents after DFU.
+        // Probably used for DFU work space.
+        // If hse_value is not one of the known values, then reset it.
         hse_value = 0;
     }
 
