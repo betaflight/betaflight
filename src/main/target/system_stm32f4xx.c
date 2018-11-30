@@ -461,7 +461,7 @@ static const pllConfig_t overclockLevels[] = {
 #endif
 
 static PERSISTENT uint32_t currentOverclockLevel = 0;
-static PERSISTENT uint32_t hse_value = 8000000;
+static PERSISTENT uint32_t hse_value = 0;
 
 void SystemInitPLLParameters(void)
 {
@@ -502,13 +502,43 @@ void systemClockSetHSEValue(uint32_t frequency)
     }
 }
 
+// PERSISTENT region handling
+
+extern uint32_t __persistent_data_start__; // Defined via linker script
+extern uint32_t __persistent_data_end__;   // Ditto
+extern uint32_t __persistent_data_magic__; // Ditto
+
+#define PERSISTENT_MAGIC (('B' << 24)|('E' << 16)|('F' << 8)|('1' << 0))
+
+void systemPersistentMemoryClear(void)
+{
+    uint32_t *p = &__persistent_data_start__;
+    while (p < &__persistent_data_end__) {
+        *p++ = 0;
+    }
+}
+
+void systemPersistentMemoryInit(void)
+{
+    // Configure and enable access to backup SRAM region where PERSISTENT resides
+
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
+    PWR->CR |= PWR_CR_DBP;
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_BKPSRAM, ENABLE);
+
+    // Clear PERSISTENT region on hard reset, or magic is broken.
+    // Checking for magic is necessary, because soft reset without this code being
+    // called at least once may occur when boot loader is called with BOOT0 pulled high
+    // upon hardware reset and then transfering control to application after boot loading.
+
+    if (!(RCC->CSR & RCC_CSR_SFTRSTF) || __persistent_data_magic__ != PERSISTENT_MAGIC) {
+        systemPersistentMemoryClear();
+        __persistent_data_magic__ = PERSISTENT_MAGIC;
+    }
+}
+
 void SystemInit(void)
 {
-    if (!(RCC->CSR & RCC_CSR_SFTRSTF)) {
-        currentOverclockLevel = 0;
-        hse_value = 0;
-    }
-
   /* FPU settings ------------------------------------------------------------*/
   #if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
     SCB->CPACR |= ((3UL << 10*2)|(3UL << 11*2));  /* set CP10 and CP11 Full Access */

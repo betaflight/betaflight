@@ -84,6 +84,7 @@ Reset_Handler:
   dsb
 
   // Defined in C code
+  bl systemPersistentMemoryInit
   bl checkForBootLoaderRequest
 
 /* Copy the data segment initializers from flash to SRAM */  

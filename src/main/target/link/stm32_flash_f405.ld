@@ -37,4 +37,4 @@ MEMORY
 REGION_ALIAS("STACKRAM", CCM)
 REGION_ALIAS("FASTRAM", CCM)
 
-INCLUDE "stm32_flash_split.ld"
+INCLUDE "stm32_flash_f4_split.ld"
