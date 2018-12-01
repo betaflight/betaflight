@@ -84,8 +84,6 @@
 ///* Global Variables */
 static volatile bool BMI160InitDone = false;
 static volatile bool BMI160Detected = false;
-static volatile bool bmi160DataReady = false;
-static volatile bool bmi160ExtiInitDone = false;
 
 //! Private functions
 static int32_t BMI160_Config(const busDevice_t *bus);
@@ -237,6 +235,7 @@ static int32_t BMI160_do_foc(const busDevice_t *bus)
 
 extiCallbackRec_t bmi160IntCallbackRec;
 
+#if defined(USE_MPU_DATA_READY_SIGNAL)
 void bmi160ExtiHandler(extiCallbackRec_t *cb)
 {
     gyroDev_t *gyro = container_of(cb, gyroDev_t, exti);
@@ -256,7 +255,7 @@ static void bmi160IntExtiInit(gyroDev_t *gyro)
     EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, IOCFG_IN_FLOATING, EXTI_TRIGGER_RISING); // TODO - maybe pullup / pulldown ?
     EXTIEnable(mpuIntIO, true);
 }
-
+#endif
 
 bool bmi160AccRead(accDev_t *acc)
 {
@@ -317,7 +316,9 @@ bool bmi160GyroRead(gyroDev_t *gyro)
 void bmi160SpiGyroInit(gyroDev_t *gyro)
 {
     BMI160_Init(&gyro->bus);
+#if defined(USE_MPU_DATA_READY_SIGNAL)
     bmi160IntExtiInit(gyro);
+#endif
 }
 
 void bmi160SpiAccInit(accDev_t *acc)
