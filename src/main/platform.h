@@ -106,6 +106,44 @@
 #error "Invalid chipset specified. Update platform.h"
 #endif
 
+// MCU type names and IDs.
+// IDs are permanent as it has dependency to configurator through MSP reporting
+
+#if defined(SIMULATOR_BUILD)
+#define MCU_TYPE_ID   0
+#define MCU_TYPE_NAME "SIMULATOR"
+#elif defined(STM32F1)
+#define MCU_TYPE_ID   1
+#define MCU_TYPE_NAME "F103"
+#elif defined(STM32F3)
+#define MCU_TYPE_ID   2
+#define MCU_TYPE_NAME "F303"
+#elif defined(STM32F40_41xxx)
+#define MCU_TYPE_ID   3
+#define MCU_TYPE_NAME "F40X"
+#elif defined(STM32F411xE)
+#define MCU_TYPE_ID   4
+#define MCU_TYPE_NAME "F411"
+#elif defined(STM32F446)
+#define MCU_TYPE_ID   5
+#define MCU_TYPE_NAME "F446"
+#elif defined(STM32F722xx)
+#define MCU_TYPE_ID   6
+#define MCU_TYPE_NAME "F722"
+#elif defined(STM32F745xx)
+#define MCU_TYPE_ID   7
+#define MCU_TYPE_NAME "F745"
+#elif defined(STM32F746xx)
+#define MCU_TYPE_ID   8
+#define MCU_TYPE_NAME "F746"
+#elif defined(STM32F765xx)
+#define MCU_TYPE_ID   9
+#define MCU_TYPE_NAME "F765"
+#else
+#define MCU_TYPE_ID   255
+#define MCU_TYPE_NAME "Unknown MCU"
+#endif
+
 #include "target/common_pre.h"
 #include "target.h"
 #include "target/common_post.h"
