@@ -164,11 +164,18 @@ void mscWaitForButton(void)
     }
 }
 
-void systemResetToMsc(void)
+void systemResetToMsc(int timezoneOffsetMinutes)
 {
     *((__IO uint32_t*) BKPSRAM_BASE + 16) = MSC_MAGIC;
 
     __disable_irq();
+
+    // Persist the RTC across the reboot to use as the file timestamp
+#ifdef USE_PERSISTENT_MSC_RTC
+    rtcPersistWrite(timezoneOffsetMinutes);
+#else
+    UNUSED(timezoneOffsetMinutes);
+#endif
     NVIC_SystemReset();
 }
 #endif

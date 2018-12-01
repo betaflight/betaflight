@@ -58,6 +58,7 @@
 #include "drivers/light_led.h"
 #include "drivers/mco.h"
 #include "drivers/nvic.h"
+#include "drivers/persistent.h"
 #include "drivers/pwm_esc_detect.h"
 #include "drivers/pwm_output.h"
 #include "drivers/rx/rx_pwm.h"
@@ -88,6 +89,10 @@
 
 #include "interface/cli.h"
 #include "interface/msp.h"
+
+#ifdef USE_PERSISTENT_MSC_RTC
+#include "msc/usbd_storage.h"
+#endif
 
 #include "msp/msp_serial.h"
 
@@ -426,6 +431,12 @@ void init(void)
              NVIC_SystemReset();
         }
     }
+#endif
+
+#ifdef USE_PERSISTENT_MSC_RTC
+    // if we didn't enter MSC mode then clear the persistent RTC value
+    persistentObjectWrite(PERSISTENT_OBJECT_RTC_HIGH, 0);
+    persistentObjectWrite(PERSISTENT_OBJECT_RTC_LOW, 0);
 #endif
 
 #ifdef USE_I2C

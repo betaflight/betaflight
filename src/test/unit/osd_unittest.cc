@@ -37,6 +37,7 @@ extern "C" {
     #include "common/time.h"
 
     #include "drivers/max7456_symbols.h"
+    #include "drivers/persistent.h"
     #include "drivers/serial.h"
 
     #include "fc/config.h"
@@ -1080,4 +1081,6 @@ extern "C" {
     bool failsafeIsActive(void) { return false; }
     bool gpsRescueIsConfigured(void) { return false; }
     int8_t calculateThrottlePercent(void) { return 0; }
+    uint32_t persistentObjectRead(persistentObjectId_e) { return 0; }
+    void persistentObjectWrite(persistentObjectId_e, uint32_t) {}
 }
