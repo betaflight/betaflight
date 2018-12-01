@@ -51,12 +51,12 @@
 #include "drivers/accgyro/accgyro_spi_mpu6500.h"
 #include "drivers/accgyro/accgyro_spi_mpu9250.h"
 
-#ifdef USE_GYRO_L3G4200D
-#include "drivers/accgyro_legacy/accgyro_l3g4200d.h"
+#ifdef USE_GYRO_L3GD20
+#include "drivers/accgyro/accgyro_spi_l3gd20.h"
 #endif
 
-#ifdef USE_GYRO_L3GD20
-#include "drivers/accgyro_legacy/accgyro_l3gd20.h"
+#ifdef USE_GYRO_L3G4200D
+#include "drivers/accgyro_legacy/accgyro_l3g4200d.h"
 #endif
 
 #include "drivers/accgyro/gyro_sync.h"
@@ -296,7 +296,7 @@ STATIC_UNIT_TESTED gyroHardware_e gyroDetect(gyroDev_t *dev)
 
 #ifdef USE_GYRO_L3GD20
     case GYRO_L3GD20:
-        if (l3gd20Detect(dev)) {
+        if (l3gd20GyroDetect(dev)) {
             gyroHardware = GYRO_L3GD20;
             break;
         }
@@ -418,7 +418,7 @@ static bool gyroInitSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t *c
     gyroSensor->gyroDev.mpuIntExtiTag = config->extiTag;
 
 #if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) \
- || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20601) || defined(USE_GYRO_SPI_ICM20649) || defined(USE_GYRO_SPI_ICM20689)
+ || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20601) || defined(USE_GYRO_SPI_ICM20649) || defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_L3GD20)
 
     mpuDetect(&gyroSensor->gyroDev, config);
 #endif
