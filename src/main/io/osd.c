@@ -1787,15 +1787,28 @@ static void osdShowStats(uint16_t endBatteryVoltage)
         osdDisplayStatisticLabel(top++, osdTimerSourceNames[OSD_TIMER_SRC(osdConfig()->timers[OSD_TIMER_2])], buff);
     }
 
-#ifdef USE_GPS
-    if (osdStatGetState(OSD_STAT_MAX_SPEED) && featureIsEnabled(FEATURE_GPS)) {
-        itoa(stats.max_speed, buff, 10);    
-        osdDisplayStatisticLabel(top++, "MAX SPEED", buff);
+    if (osdStatGetState(OSD_STAT_MAX_ALTITUDE)) {
+        osdFormatAltitudeString(buff, stats.max_altitude);
+        osdDisplayStatisticLabel(top++, "MAX ALTITUDE", buff);
     }
 
-    if (osdStatGetState(OSD_STAT_MAX_DISTANCE) && featureIsEnabled(FEATURE_GPS)) {
-        tfp_sprintf(buff, "%d%c", osdGetMetersToSelectedUnit(stats.max_distance), osdGetMetersToSelectedUnitSymbol());
-        osdDisplayStatisticLabel(top++, "MAX DISTANCE", buff);
+#ifdef USE_GPS
+    if (featureIsEnabled(FEATURE_GPS)) {
+        if (osdStatGetState(OSD_STAT_MAX_SPEED)) {
+            itoa(stats.max_speed, buff, 10);    
+            osdDisplayStatisticLabel(top++, "MAX SPEED", buff);
+        }
+
+        if (osdStatGetState(OSD_STAT_MAX_DISTANCE)) {
+            tfp_sprintf(buff, "%d%c", osdGetMetersToSelectedUnit(stats.max_distance), osdGetMetersToSelectedUnitSymbol());
+            osdDisplayStatisticLabel(top++, "MAX DISTANCE", buff);
+        }
+
+        if (osdStatGetState(OSD_STAT_FLIGHT_DISTANCE)) {
+            const uint32_t distanceFlown = GPS_distanceFlownInCm / 100;
+            tfp_sprintf(buff, "%d%c", osdGetMetersToSelectedUnit(distanceFlown), osdGetMetersToSelectedUnitSymbol());
+            osdDisplayStatisticLabel(top++, "FLIGHT DISTANCE", buff);
+        }
     }
 #endif
 
@@ -1831,11 +1844,6 @@ static void osdShowStats(uint16_t endBatteryVoltage)
             tfp_sprintf(buff, "%d%c", getMAhDrawn(), SYM_MAH);
             osdDisplayStatisticLabel(top++, "USED MAH", buff);
         }
-    }
-
-    if (osdStatGetState(OSD_STAT_MAX_ALTITUDE)) {
-        osdFormatAltitudeString(buff, stats.max_altitude);
-        osdDisplayStatisticLabel(top++, "MAX ALTITUDE", buff);
     }
 
 #ifdef USE_BLACKBOX
@@ -1876,14 +1884,6 @@ static void osdShowStats(uint16_t endBatteryVoltage)
     }
 #endif
 
-#ifdef USE_GPS
-    if (osdStatGetState(OSD_STAT_FLIGHT_DISTANCE) && featureIsEnabled(FEATURE_GPS)) {
-        const uint32_t distanceFlown = GPS_distanceFlownInCm / 100;
-        tfp_sprintf(buff, "%d%c", osdGetMetersToSelectedUnit(distanceFlown), osdGetMetersToSelectedUnitSymbol());
-        osdDisplayStatisticLabel(top++, "FLIGHT DISTANCE", buff);
-    }
-#endif
-
 #if defined(USE_GYRO_DATA_ANALYSE)
     if (osdStatGetState(OSD_STAT_MAX_FFT) && featureIsEnabled(FEATURE_DYNAMIC_FILTER)) {
         int value = getMaxFFT();
@@ -1895,7 +1895,6 @@ static void osdShowStats(uint16_t endBatteryVoltage)
         }
     }
 #endif
-
 }
 
 static void osdShowArmed(void)
