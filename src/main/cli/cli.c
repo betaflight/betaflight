@@ -2260,6 +2260,18 @@ static void cliFlashErase(char *cmdline)
 
 #ifdef USE_FLASH_TOOLS
 
+static void cliFlashVerify(char *cmdline)
+{
+    UNUSED(cmdline);
+
+    cliPrintLine("Verifying");
+    if (flashfsVerifyEntireFlash()) {
+        cliPrintLine("Success");
+    } else {
+        cliPrintLine("Failed");
+    }
+}
+
 static void cliFlashWrite(char *cmdline)
 {
     const uint32_t address = atoi(cmdline);
@@ -5779,6 +5791,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("flash_info", "show flash chip info", NULL, cliFlashInfo),
 #ifdef USE_FLASH_TOOLS
     CLI_COMMAND_DEF("flash_read", NULL, "<length> <address>", cliFlashRead),
+    CLI_COMMAND_DEF("flash_scan", "scan flash device for errors", NULL, cliFlashVerify),
     CLI_COMMAND_DEF("flash_write", NULL, "<address> <message>", cliFlashWrite),
 #endif
 #endif

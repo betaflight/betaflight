@@ -38,6 +38,7 @@
 
 #include "platform.h"
 
+#include "common/printf.h"
 #include "drivers/flash.h"
 
 #include "io/flashfs.h"
@@ -601,3 +602,46 @@ void flashfsInit(void)
         flashfsSeekAbs(flashfsIdentifyStartOfFreeSpace());
     }
 }
+
+#ifdef USE_FLASH_TOOLS
+bool flashfsVerifyEntireFlash(void)
+{
+    flashEraseCompletely();
+    flashfsInit();
+
+    const flashGeometry_t *flashGeometry = flashfsGetGeometry();
+
+    uint32_t address = 0;
+    flashfsSeekAbs(address);
+
+    const int bufferSize = 32;
+    char buffer[bufferSize + 1];
+
+    const uint32_t testLimit = flashGeometry->totalSize;
+
+    for (address = 0; address < testLimit; address += bufferSize) {
+        tfp_sprintf(buffer, "%08x >> **0123456789ABCDEF**", address);
+        flashfsWrite((uint8_t*)buffer, strlen(buffer), true);
+    }
+    flashfsFlushSync();
+    flashfsClose();
+
+    char expectedBuffer[bufferSize + 1];
+
+    flashfsSeekAbs(0);
+
+    int verificationFailures = 0;
+    for (address = 0; address < testLimit; address += bufferSize) {
+        tfp_sprintf(expectedBuffer, "%08x >> **0123456789ABCDEF**", address);
+
+        memset(buffer, 0, sizeof(buffer));
+        int bytesRead = flashfsReadAbs(address, (uint8_t *)buffer, bufferSize);
+
+        int result = strncmp(buffer, expectedBuffer, bufferSize);
+        if (result != 0 || bytesRead != bufferSize) {
+            verificationFailures++;
+        }
+    }
+    return verificationFailures == 0;
+}
+#endif // USE_FLASH_TOOLS
