@@ -317,6 +317,8 @@
 #include "stm32f4xx.h"
 #include "system_stm32f4xx.h"
 #include "platform.h"
+#include "drivers/persistent.h"
+
 
 /**
   * @}
@@ -460,12 +462,12 @@ static const pllConfig_t overclockLevels[] = {
 #define PLL_R      7 // PLL_R output is not used, can be any descent number
 #endif
 
-static PERSISTENT uint32_t currentOverclockLevel = 0;
-static PERSISTENT uint32_t hse_value = 8000000;
-
 void SystemInitPLLParameters(void)
 {
     /* PLL setting for overclocking */
+
+    uint32_t currentOverclockLevel = persistentObjectRead(PERSISTENT_OBJECT_OVERCLOCK_LEVEL);
+
     if (currentOverclockLevel >= ARRAYLEN(overclockLevels)) {
       return;
     }
@@ -487,7 +489,7 @@ void OverclockRebootIfNecessary(uint32_t overclockLevel)
 
   // Reboot to adjust overclock frequency
   if (SystemCoreClock != pll->mhz * 1000000U) {
-    currentOverclockLevel = overclockLevel;
+    persistentObjectWrite(PERSISTENT_OBJECT_OVERCLOCK_LEVEL, overclockLevel);
     __disable_irq();
     NVIC_SystemReset();
   }
@@ -495,8 +497,10 @@ void OverclockRebootIfNecessary(uint32_t overclockLevel)
 
 void systemClockSetHSEValue(uint32_t frequency)
 {
+    uint32_t hse_value = persistentObjectRead(PERSISTENT_OBJECT_HSE_VALUE);
+
     if (hse_value != frequency) {
-        hse_value = frequency;
+        persistentObjectWrite(PERSISTENT_OBJECT_HSE_VALUE, frequency);
         __disable_irq();
         NVIC_SystemReset();
     }
@@ -504,11 +508,6 @@ void systemClockSetHSEValue(uint32_t frequency)
 
 void SystemInit(void)
 {
-    if (!(RCC->CSR & RCC_CSR_SFTRSTF)) {
-        currentOverclockLevel = 0;
-        hse_value = 0;
-    }
-
   /* FPU settings ------------------------------------------------------------*/
   #if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
     SCB->CPACR |= ((3UL << 10*2)|(3UL << 11*2));  /* set CP10 and CP11 Full Access */
@@ -588,6 +587,8 @@ void SystemInit(void)
   */
 void SystemCoreClockUpdate(void)
 {
+  uint32_t hse_value = persistentObjectRead(PERSISTENT_OBJECT_HSE_VALUE);
+
   uint32_t tmp = 0, pllvco = 0, pllp = 2, pllsource = 0, pllm = 2;
 #if defined(STM32F446xx)
   uint32_t pllr = 2;
@@ -673,6 +674,7 @@ static int StartHSx(uint32_t onBit, uint32_t readyBit, int maxWaitCount)
   */
 void SetSysClock(void)
 {
+    uint32_t hse_value = persistentObjectRead(PERSISTENT_OBJECT_HSE_VALUE);
     uint32_t hse_mhz = hse_value / 1000000;
 
     // Switch to HSI during clock manipulation

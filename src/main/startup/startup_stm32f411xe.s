@@ -72,6 +72,7 @@ defined in linker script */
   .type  Reset_Handler, %function
 Reset_Handler: 
   // Defined in C code
+  bl persistentObjectInit
   bl checkForBootLoaderRequest
 
 /* Copy the data segment initializers from flash to SRAM */  
