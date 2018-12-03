@@ -282,6 +282,11 @@ void updateArmingStatus(void)
             } else {
                 setArmingDisabled(ARMING_DISABLED_GPS);
             }
+            if (IS_RC_MODE_ACTIVE(BOXGPSRESCUE)) {
+                setArmingDisabled(ARMING_DISABLED_RESC);
+            } else {
+                unsetArmingDisabled(ARMING_DISABLED_RESC);
+            }
         }
 #endif
 
@@ -828,7 +833,7 @@ bool processRx(timeUs_t currentTimeUs)
     }
 
 #ifdef USE_GPS_RESCUE
-    if (IS_RC_MODE_ACTIVE(BOXGPSRESCUE) || (failsafeIsActive() && failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE)) {
+    if (ARMING_FLAG(ARMED) && (IS_RC_MODE_ACTIVE(BOXGPSRESCUE) || (failsafeIsActive() && failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE))) {
         if (!FLIGHT_MODE(GPS_RESCUE_MODE)) {
             ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
         }
