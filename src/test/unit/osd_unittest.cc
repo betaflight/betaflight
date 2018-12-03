@@ -45,6 +45,7 @@ extern "C" {
     #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
 
+    #include "flight/gps_rescue.h"
     #include "flight/pid.h"
     #include "flight/imu.h"
 
@@ -86,6 +87,7 @@ extern "C" {
     PG_REGISTER(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
     PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
     PG_REGISTER(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 0);
+    PG_REGISTER(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 0);
 
     timeUs_t simulationTime = 0;
     batteryState_e simulationBatteryState;
@@ -1076,4 +1078,5 @@ extern "C" {
     bool areMotorsRunning(void){ return true; }
     bool pidOsdAntiGravityActive(void) { return false; }
     bool failsafeIsActive(void) { return false; }
+    bool gpsRescueIsConfigured(void) { return false; }
 }

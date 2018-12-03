@@ -68,6 +68,7 @@
 #include "fc/rc.h"
 #include "fc/runtime_config.h"
 
+#include "flight/gps_rescue.h"
 #include "flight/failsafe.h"
 #include "flight/position.h"
 #include "flight/imu.h"
@@ -1328,11 +1329,13 @@ void osdUpdateAlarms(void)
         SET_BLINK(OSD_AVG_CELL_VOLTAGE);
     }
 
-    if (STATE(GPS_FIX) == 0) {
+#ifdef USE_GPS
+    if ((STATE(GPS_FIX) == 0) || ((gpsSol.numSat < gpsRescueConfig()->minSats) && gpsRescueIsConfigured())) {
         SET_BLINK(OSD_GPS_SATS);
     } else {
         CLR_BLINK(OSD_GPS_SATS);
     }
+#endif //USE_GPS
 
     for (int i = 0; i < OSD_TIMER_COUNT; i++) {
         const uint16_t timer = osdConfig()->timers[i];
