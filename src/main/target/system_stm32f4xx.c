@@ -440,7 +440,6 @@ static const pllConfig_t overclockLevels[] = {
   { 216, 432, 2,  9 },  // 216 MHz
   { 240, 480, 2,  10 }  // 240 MHz
 #elif defined(STM32F411xE)
-  {  84, 336, 4,  7 },  // 84 MHz
   {  96, 384, 4,  8 },  // 96 MHz
   { 108, 432, 4,  9 },  // 108 MHz
   { 120, 480, 4, 10 },  // 120 MHz
