@@ -26,6 +26,7 @@
 
 #include "common/axis.h"
 #include "common/maths.h"
+#include "common/utils.h"
 
 #include "drivers/time.h"
 
@@ -352,20 +353,20 @@ static void performSanityChecks()
 
     previousTimeUs = currentTimeUs;
 
-    secondsStalled = constrain(secondsStalled + (rescueState.sensor.groundSpeed < 150) ? 1 : -1, 0, 20);
+    secondsStalled = constrain(secondsStalled + ((rescueState.sensor.groundSpeed < 150) ? 1 : -1), 0, 20);
 
     if (secondsStalled == 20) {
         rescueState.failure = RESCUE_STALLED;
     }
 
-    secondsFlyingAway = constrain(secondsFlyingAway + (lastDistanceToHomeM < rescueState.sensor.distanceToHomeM) ? 1 : -1, 0, 10);
+    secondsFlyingAway = constrain(secondsFlyingAway + ((lastDistanceToHomeM < rescueState.sensor.distanceToHomeM) ? 1 : -1), 0, 10);
     lastDistanceToHomeM = rescueState.sensor.distanceToHomeM;
 
     if (secondsFlyingAway == 10) {
         rescueState.failure = RESCUE_FLYAWAY;
     }
 
-    secondsLowSats = constrain(secondsLowSats + (rescueState.sensor.numSat < gpsRescueConfig()->minSats) ? 1 : -1, 0, 10);
+    secondsLowSats = constrain(secondsLowSats + ((rescueState.sensor.numSat < gpsRescueConfig()->minSats) ? 1 : -1), 0, 10);
 
     if (secondsLowSats == 10) {
         rescueState.failure = RESCUE_LOWSATS;
