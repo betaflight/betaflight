@@ -465,12 +465,12 @@ TEST(OsdTest, TestAlarms)
 
     // and
     // the following OSD elements are visible
-    osdConfigMutable()->item_pos[OSD_RSSI_VALUE]              = OSD_POS(8, 1)  | VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_MAIN_BATT_VOLTAGE]       = OSD_POS(12, 1) | VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_ITEM_TIMER_1]            = OSD_POS(20, 1) | VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_ITEM_TIMER_2]            = OSD_POS(1, 1)  | VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_REMAINING_TIME_ESTIMATE] = OSD_POS(1, 2) | VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_ALTITUDE]                = OSD_POS(23, 7) | VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_RSSI_VALUE]              = OSD_POS(8, 1)  | OSD_PROFILE_1_FLAG;
+    osdConfigMutable()->item_pos[OSD_MAIN_BATT_VOLTAGE]       = OSD_POS(12, 1) | OSD_PROFILE_1_FLAG;
+    osdConfigMutable()->item_pos[OSD_ITEM_TIMER_1]            = OSD_POS(20, 1) | OSD_PROFILE_1_FLAG;
+    osdConfigMutable()->item_pos[OSD_ITEM_TIMER_2]            = OSD_POS(1, 1)  | OSD_PROFILE_1_FLAG;
+    osdConfigMutable()->item_pos[OSD_REMAINING_TIME_ESTIMATE] = OSD_POS(1, 2) | OSD_PROFILE_1_FLAG;
+    osdConfigMutable()->item_pos[OSD_ALTITUDE]                = OSD_POS(23, 7) | OSD_PROFILE_1_FLAG;
 
     // and
     // this set of alarm values
@@ -556,7 +556,7 @@ TEST(OsdTest, TestAlarms)
 TEST(OsdTest, TestElementRssi)
 {
     // given
-    osdConfigMutable()->item_pos[OSD_RSSI_VALUE] = OSD_POS(8, 1) | VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_RSSI_VALUE] = OSD_POS(8, 1) | OSD_PROFILE_1_FLAG;
     osdConfigMutable()->rssi_alarm = 0;
 
     // when
@@ -590,7 +590,7 @@ TEST(OsdTest, TestElementRssi)
 TEST(OsdTest, TestElementAmperage)
 {
     // given
-    osdConfigMutable()->item_pos[OSD_CURRENT_DRAW] = OSD_POS(1, 12) | VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_CURRENT_DRAW] = OSD_POS(1, 12) | OSD_PROFILE_1_FLAG;
 
     // when
     simulationBatteryAmperage = 0;
@@ -623,7 +623,7 @@ TEST(OsdTest, TestElementAmperage)
 TEST(OsdTest, TestElementMahDrawn)
 {
     // given
-    osdConfigMutable()->item_pos[OSD_MAH_DRAWN] = OSD_POS(1, 11) | VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_MAH_DRAWN] = OSD_POS(1, 11) | OSD_PROFILE_1_FLAG;
 
     // when
     simulationMahDrawn = 0;
@@ -672,7 +672,7 @@ TEST(OsdTest, TestElementMahDrawn)
 TEST(OsdTest, TestElementPower)
 {
     // given
-    osdConfigMutable()->item_pos[OSD_POWER] = OSD_POS(1, 10)  | VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_POWER] = OSD_POS(1, 10)  | OSD_PROFILE_1_FLAG;
 
     // and
     simulationBatteryVoltage = 100; // 10V
@@ -734,7 +734,7 @@ TEST(OsdTest, TestElementPower)
 TEST(OsdTest, TestElementAltitude)
 {
     // given
-    osdConfigMutable()->item_pos[OSD_ALTITUDE] = OSD_POS(23, 7) | VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_ALTITUDE] = OSD_POS(23, 7) | OSD_PROFILE_1_FLAG;
 
     // and
     osdConfigMutable()->units = OSD_UNIT_METRIC;
@@ -786,7 +786,7 @@ TEST(OsdTest, TestElementAltitude)
 TEST(OsdTest, TestElementCoreTemperature)
 {
     // given
-    osdConfigMutable()->item_pos[OSD_CORE_TEMPERATURE] = OSD_POS(1, 8) | VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_CORE_TEMPERATURE] = OSD_POS(1, 8) | OSD_PROFILE_1_FLAG;
 
     // and
     osdConfigMutable()->units = OSD_UNIT_METRIC;
@@ -828,7 +828,7 @@ TEST(OsdTest, TestElementCoreTemperature)
 TEST(OsdTest, TestElementWarningsBattery)
 {
     // given
-    osdConfigMutable()->item_pos[OSD_WARNINGS] = OSD_POS(9, 10) | VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_WARNINGS] = OSD_POS(9, 10) | OSD_PROFILE_1_FLAG;
     osdConfigMutable()->enabledWarnings = 0;  // disable all warnings
     osdWarnSetState(OSD_WARNING_BATTERY_WARNING, true);
     osdWarnSetState(OSD_WARNING_BATTERY_CRITICAL, true);

@@ -150,7 +150,9 @@ timeUs_t resumeRefreshAt = 0;
 
 static uint8_t armState;
 static bool lastArmState;
-
+#ifdef USE_OSD_PROFILES
+static uint8_t osdProfile = 1;
+#endif
 static displayPort_t *osdDisplayPort;
 
 static bool suppressStatsDisplay = false;
@@ -471,12 +473,47 @@ bool osdWarnGetState(uint8_t warningIndex)
     return osdConfig()->enabledWarnings & (1 << warningIndex);
 }
 
+#ifdef USE_OSD_PROFILES
+void setOsdProfile(uint8_t value)
+{
+    // 1 ->> 001
+    // 2 ->> 010
+    // 3 ->> 100
+    if (value <= OSD_PROFILE_COUNT) {
+        if (value == 0) {
+            osdProfile = 1;
+        } else {
+            osdProfile = 1 << (value - 1);
+        }
+    }
+ }
+
+uint8_t getCurrentOsdProfileIndex(void)
+{
+    return osdConfig()->osdProfileIndex;
+}
+
+void changeOsdProfileIndex(uint8_t profileIndex)
+{
+    if (profileIndex <= OSD_PROFILE_COUNT) {
+        osdConfigMutable()->osdProfileIndex = profileIndex;
+        setOsdProfile(profileIndex);
+    }
+}
+#endif
+
+
 static bool osdDrawSingleElement(uint8_t item)
 {
+#ifdef USE_OSD_PROFILES
+    if ((OSD_ELEMENT_PROFILE(osdConfig()->item_pos[item]) & osdProfile) == 0) {
+        return false;
+    }
+#else
     if (!VISIBLE(osdConfig()->item_pos[item]) || BLINK(item)) {
         return false;
     }
-
+#endif
     uint8_t elemPosX = OSD_X(osdConfig()->item_pos[item]);
     uint8_t elemPosY = OSD_Y(osdConfig()->item_pos[item]);
     char buff[OSD_ELEMENT_BUFFER_LENGTH] = "";
@@ -1209,7 +1246,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     }
 
     // Always enable warnings elements by default
-    osdConfig->item_pos[OSD_WARNINGS] = OSD_POS(9, 10) | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_WARNINGS] = OSD_POS(9, 10) | OSD_PROFILE_1_FLAG;
 
     // Default to old fixed positions for these elements
     osdConfig->item_pos[OSD_CROSSHAIRS]         = OSD_POS(13, 6);
@@ -1247,6 +1284,8 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 
     osdConfig->ahMaxPitch = 20; // 20 degrees
     osdConfig->ahMaxRoll = 40; // 40 degrees
+
+    osdConfig->osdProfileIndex = 1;
     osdConfig->ahInvert = false;
 }
 
@@ -1302,6 +1341,9 @@ void osdInit(displayPort_t *osdDisplayPortToUse)
     displayResync(osdDisplayPort);
 
     resumeRefreshAt = micros() + (4 * REFRESH_1S);
+#ifdef USE_OSD_PROFILES
+    changeOsdProfileIndex(osdConfig()->osdProfileIndex);
+#endif
 }
 
 bool osdInitialized(void)
