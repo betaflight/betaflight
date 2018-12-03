@@ -32,10 +32,10 @@
 
 #ifdef USE_HAL_DRIVER
 
-static RTC_HandleTypeDef rtcHandle = { .Instance = RTC } ;
-
 uint32_t persistentObjectRead(persistentObjectId_e id)
 {
+    RTC_HandleTypeDef rtcHandle = { .Instance = RTC };
+
     uint32_t value = HAL_RTCEx_BKUPRead(&rtcHandle, id);
 
     return value;
@@ -43,11 +43,15 @@ uint32_t persistentObjectRead(persistentObjectId_e id)
 
 void persistentObjectWrite(persistentObjectId_e id, uint32_t value)
 {
+    RTC_HandleTypeDef rtcHandle = { .Instance = RTC };
+
     HAL_RTCEx_BKUPWrite(&rtcHandle, id, value);
 }
 
 void persistentObjectRTCEnable(void)
 {
+    RTC_HandleTypeDef rtcHandle = { .Instance = RTC };
+
     __HAL_RCC_PWR_CLK_ENABLE();
     HAL_PWR_EnableBkUpAccess();
 
