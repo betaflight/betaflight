@@ -55,7 +55,6 @@ extern "C" {
     PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
     PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
     PG_REGISTER(failsafeConfig_t, failsafeConfig, PG_FAILSAFE_CONFIG, 0);
-    PG_REGISTER(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 0);
 
     float rcCommand[4];
     int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
@@ -71,6 +70,9 @@ extern "C" {
     bool cmsInMenu = false;
     float axisPID_P[3], axisPID_I[3], axisPID_D[3], axisPIDSum[3];
     rxRuntimeConfig_t rxRuntimeConfig = {};
+    uint16_t GPS_distanceToHome = 0;
+    int16_t GPS_directionToHome = 0;
+    acc_t acc = {};
 }
 
 uint32_t simulationFeatureFlags = 0;
@@ -966,4 +968,10 @@ extern "C" {
     bool usbVcpIsConnected(void) { return false; }
     void pidSetAntiGravityState(bool) {}
     void osdSuppressStats(bool) {}
+    float scaleRangef(float, float, float, float, float) { return 0.0f; }
+    bool crashRecoveryModeActive(void) { return false; }
+    int32_t getEstimatedAltitudeCm(void) { return 0; }
+    bool gpsIsHealthy() { return false; }
+    bool isAltitudeOffset(void) { return false; }
+    float getCosTiltAngle(void) { return 0.0f; }
 }
