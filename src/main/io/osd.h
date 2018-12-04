@@ -129,14 +129,14 @@ typedef enum {
 } osd_items_e;
 
 // *** IMPORTANT ***
-// The order of the OSD stats enumeration *must* match the order they're displayed on-screen
-// This is because the fields are presented in the configurator in the order of the enumeration
-// and we want the configuration order to match the on-screen display order.
-// Changes to the stats display order *must* be implemented in the configurator otherwise the
-// stats selections will not be populated correctly and the settings will become corrupted.
-//
-// Also - if the stats are reordered then the PR version must be incremented. Otherwise there
+// If the stats enumeration is reordered then the PR version must be incremented. Otherwise there
 // is no indication that the stored config must be reset and the bitmapped values will be incorrect.
+//
+// The stats display order was previously required to match the enumeration definition so it matched
+// the order shown in the configurator. However, to allow reordering this screen without breaking the
+// compatibility, this requirement has been relaxed to a best effort approach. Reordering the elements
+// on the stats screen will have to be more beneficial than the hassle of not matching exactly to the
+// configurator list.
 typedef enum {
     OSD_STAT_RTC_DATE_TIME,
     OSD_STAT_TIMER_1,
