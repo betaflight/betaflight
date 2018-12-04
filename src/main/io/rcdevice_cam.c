@@ -38,6 +38,8 @@
 
 #include "rx/rx.h"
 
+#include "pg/rcdevice.h"
+
 #ifdef USE_RCDEVICE
 
 #define IS_HI(X) (rcData[X] > FIVE_KEY_CABLE_JOYSTICK_MAX)
@@ -55,7 +57,7 @@ bool waitingDeviceResponse = false;
 
 static bool isFeatureSupported(uint8_t feature)
 {
-    if (camDevice->info.features & feature) {
+    if (camDevice->info.features & feature || rcdeviceConfig()->feature & feature) {
         return true;
     }
 
@@ -65,15 +67,6 @@ static bool isFeatureSupported(uint8_t feature)
 bool rcdeviceIsEnabled(void)
 {
     return camDevice->serialPort != NULL;
-}
-
-static bool rcdeviceIs5KeyEnabled(void)
-{
-    if (camDevice->serialPort != NULL && isFeatureSupported(RCDEVICE_PROTOCOL_FEATURE_SIMULATE_5_KEY_OSD_CABLE)) {
-        return true;
-    }
-
-    return false;
 }
 
 static void rcdeviceCameraControlProcess(void)
@@ -297,9 +290,7 @@ void rcdeviceUpdate(timeUs_t currentTimeUs)
 
     rcdeviceCameraControlProcess();
 
-    if (rcdeviceIs5KeyEnabled()) {
-        rcdevice5KeySimulationProcess(currentTimeUs);
-    }
+    rcdevice5KeySimulationProcess(currentTimeUs);
 }
 
 void rcdeviceInit(void)
