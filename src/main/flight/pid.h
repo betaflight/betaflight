@@ -149,8 +149,8 @@ typedef struct pidProfile_s {
     uint8_t abs_control_limit;              // Limit to the correction
     uint8_t abs_control_error_limit;        // Limit to the accumulated error
     uint8_t dterm_filter2_type;             // Filter selection for 2nd dterm
+    uint16_t dyn_lpf_dterm_min_hz;
     uint16_t dyn_lpf_dterm_max_hz;
-    uint8_t  dyn_lpf_dterm_idle;
     uint8_t launchControlMode;              // Whether launch control is limited to pitch only (launch stand or top-mount) or all axes (on battery)
     uint8_t launchControlThrottlePercent;   // Throttle percentage to trigger launch for launch control
     uint8_t launchControlAngleLimit;        // Optional launch control angle limit (requires ACC)

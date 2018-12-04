@@ -382,11 +382,8 @@ static const char * const lookupTableRcSmoothingDerivativeType[] = {
 #endif // USE_RC_SMOOTHING_FILTER
 
 #ifdef USE_GYRO_DATA_ANALYSE
-static const char * const lookupTableDynamicFftLocation[] = {
-    "BEFORE_STATIC_FILTERS", "AFTER_STATIC_FILTERS"
-};
 static const char * const lookupTableDynamicFilterRange[] = {
-    "HIGH", "MEDIUM", "LOW"
+    "HIGH", "MEDIUM", "LOW", "AUTO"
 };
 #endif // USE_GYRO_DATA_ANALYSE
 
@@ -504,7 +501,6 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableRcSmoothingDerivativeType),
 #endif // USE_RC_SMOOTHING_FILTER
 #ifdef USE_GYRO_DATA_ANALYSE
-    LOOKUP_TABLE_ENTRY(lookupTableDynamicFftLocation),
     LOOKUP_TABLE_ENTRY(lookupTableDynamicFilterRange),
 #endif // USE_GYRO_DATA_ANALYSE
 #ifdef USE_VTX_COMMON
@@ -565,15 +561,16 @@ const clivalue_t valueTable[] = {
     { "gyro_to_use",                VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GYRO }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_to_use) },
 #endif
 #if defined(USE_GYRO_DATA_ANALYSE)
-    { "dyn_fft_location",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_DYNAMIC_FFT_LOCATION }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_fft_location) },
-    { "dyn_filter_width_percent",   VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 99 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_filter_width_percent) },
-    { "dyn_filter_range",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_DYNAMIC_FILTER_RANGE }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_filter_range) },
+    { "dyn_notch_range",           VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_DYNAMIC_FILTER_RANGE }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_notch_range) },
+    { "dyn_notch_width_percent",   VAR_UINT8   | MASTER_VALUE, .config.minmax = { 0, 20 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_notch_width_percent) },
+    { "dyn_notch_q",               VAR_UINT16  | MASTER_VALUE, .config.minmax = { 1, 1000 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_notch_q) },
+    { "dyn_notch_min_hz",          VAR_UINT16  | MASTER_VALUE, .config.minmax = { 1, 1000 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_notch_min_hz) },
 #endif
 #ifdef USE_DYN_LPF
+    { "dyn_lpf_gyro_min_hz",        VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 1000 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_lpf_gyro_min_hz) },
     { "dyn_lpf_gyro_max_hz",        VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 1000 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_lpf_gyro_max_hz) },
-    { "dyn_lpf_gyro_idle",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 100 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_lpf_gyro_idle) },
+    { "dyn_lpf_dterm_min_hz",       VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 0, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, dyn_lpf_dterm_min_hz) },
     { "dyn_lpf_dterm_max_hz",       VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 0, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, dyn_lpf_dterm_max_hz) },
-    { "dyn_lpf_dterm_idle",         VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, dyn_lpf_dterm_idle) },
 #endif
 
 // PG_ACCELEROMETER_CONFIG
