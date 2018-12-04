@@ -45,7 +45,7 @@ void systemReset(void)
 
 void systemResetToBootloader(void)
 {
-    persistentObjectWrite(PERSISTENT_OBJECT_BOOTLOADER_REQUEST, 0xDEADBEEF);
+    persistentObjectWrite(PERSISTENT_OBJECT_BOOTLOADER_REQUEST, BOOTLOADER_REQUEST_COOKIE);
     __disable_irq();
     NVIC_SystemReset();
 }
@@ -195,7 +195,7 @@ void checkForBootLoaderRequest(void)
 
     persistentObjectWrite(PERSISTENT_OBJECT_BOOTLOADER_REQUEST, 0xCAFEFEED);
 
-    if (bootloaderRequest != 0xDEADBEEF) {
+    if (bootloaderRequest != BOOTLOADER_REQUEST_COOKIE) {
         return;
     }
 

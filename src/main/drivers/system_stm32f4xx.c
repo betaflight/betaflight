@@ -39,8 +39,6 @@ void systemReset(void)
     NVIC_SystemReset();
 }
 
-#define BOOTLOADER_REQUEST_COOKIE 0xDEADBEEF
-
 void systemResetToBootloader(void)
 {
     persistentObjectWrite(PERSISTENT_OBJECT_BOOTLOADER_REQUEST, BOOTLOADER_REQUEST_COOKIE);

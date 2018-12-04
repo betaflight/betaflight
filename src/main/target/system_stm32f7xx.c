@@ -260,20 +260,7 @@ static const pllConfig_t overclockLevels[] = {
   { 480, RCC_PLLP_DIV2, 10 }, // 240 MHz
 };
 
-#if 0
-// 8 bytes of memory located at the very end of RAM, expected to be unoccupied
-#define REQUEST_OVERCLOCK               (*(__IO uint32_t *) (BKPSRAM_BASE + 8))
-#define CURRENT_OVERCLOCK_LEVEL         (*(__IO uint32_t *) (BKPSRAM_BASE + 12))
-#define REQUEST_OVERCLOCK_MAGIC_COOKIE  0xBABEFACE
-#endif
-
 void SystemInitOC(void) {
-#if 0
-    __PWR_CLK_ENABLE();
-    __BKPSRAM_CLK_ENABLE();
-    HAL_PWR_EnableBkUpAccess();
-#endif
-
     uint32_t currentOverclockLevel = persistentObjectRead(PERSISTENT_OBJECT_OVERCLOCK_LEVEL);
 
     if (currentOverclockLevel >= ARRAYLEN(overclockLevels)) {
