@@ -53,32 +53,18 @@ void persistentObjectRTCEnable(void)
 {
     RTC_HandleTypeDef rtcHandle = { .Instance = RTC };
 
-    __HAL_RCC_PWR_CLK_ENABLE();
-    HAL_PWR_EnableBkUpAccess();
+    __HAL_RCC_PWR_CLK_ENABLE(); // Enable Access to PWR
+    HAL_PWR_EnableBkUpAccess(); // Disable backup domain protection
 
-    __HAL_RCC_LSI_ENABLE();
-    while(__HAL_RCC_GET_FLAG(RCC_FLAG_LSIRDY) == RESET);
-
-    __HAL_RCC_RTC_CONFIG(RCC_RTCCLKSOURCE_LSI);
-    __HAL_RCC_RTC_ENABLE();
-
-#if defined(STM32F722xx)
-    // F722 boot loader leaves RTC device in some unknown state that
-    // it is not visible at all; reads all zero and does not
-    // respond to any operations.
-    //
-    // Additional reset seems to clear this state, so we
-    // rely on ISR's reset value (0x7), which we don't manipulate
-    // throughout the code, to determine if the device is in the
-    // invisible state.
-
-    if (RTC->ISR == 0) {
-        systemReset();
-    }
+#if defined(__HAL_RCC_RTC_CLK_ENABLE)
+    // For those MCUs with RTCAPBEN bit in RCC clock enable register, turn it on.
+    __HAL_RCC_RTC_CLK_ENABLE(); // Enable RTC module
 #endif
 
-    __HAL_RTC_WRITEPROTECTION_ENABLE(&rtcHandle);
-    __HAL_RTC_WRITEPROTECTION_DISABLE(&rtcHandle);
+    // We don't need a clock source for RTC itself. Skip it.
+
+    __HAL_RTC_WRITEPROTECTION_ENABLE(&rtcHandle);  // Reset sequence
+    __HAL_RTC_WRITEPROTECTION_DISABLE(&rtcHandle); // Apply sequence
 }
 
 #else
@@ -96,17 +82,13 @@ void persistentObjectWrite(persistentObjectId_e id, uint32_t value)
 
 void persistentObjectRTCEnable(void)
 {
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
-    PWR_BackupAccessCmd(ENABLE);
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE); // Enable Access to PWR
+    PWR_BackupAccessCmd(ENABLE); // Disable backup domain protection
 
-    RCC_LSICmd(ENABLE);
-    while (RCC_GetFlagStatus(RCC_FLAG_LSIRDY) == RESET);
+    // We don't need a clock source for RTC itself. Skip it.
 
-    RCC_RTCCLKConfig(RCC_RTCCLKSource_LSI);
-    RCC_RTCCLKCmd(ENABLE);
-
-    RTC_WriteProtectionCmd(ENABLE);
-    RTC_WriteProtectionCmd(DISABLE);
+    RTC_WriteProtectionCmd(ENABLE);  // Reset sequence
+    RTC_WriteProtectionCmd(DISABLE); // Apply sequence
 }
 #endif
 
