@@ -27,6 +27,7 @@
 #include "platform.h"
 
 #include "drivers/persistent.h"
+#include "drivers/system.h"
 
 #define PERSISTENT_OBJECT_MAGIC_VALUE (('B' << 24)|('e' << 16)|('f' << 8)|('1' << 0))
 
@@ -60,6 +61,21 @@ void persistentObjectRTCEnable(void)
 
     __HAL_RCC_RTC_CONFIG(RCC_RTCCLKSOURCE_LSI);
     __HAL_RCC_RTC_ENABLE();
+
+#if defined(STM32F722xx)
+    // F722 boot loader leaves RTC device in some unknown state that
+    // it is not visible at all; reads all zero and does not
+    // respond to any operations.
+    //
+    // Additional reset seems to clear this state, so we
+    // rely on ISR's reset value (0x7), which we don't manipulate
+    // throughout the code, to determine if the device is in the
+    // invisible state.
+
+    if (RTC->ISR == 0) {
+        systemReset();
+    }
+#endif
 
     __HAL_RTC_WRITEPROTECTION_ENABLE(&rtcHandle);
     __HAL_RTC_WRITEPROTECTION_DISABLE(&rtcHandle);
