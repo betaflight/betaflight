@@ -154,6 +154,8 @@ bool isMPUSoftReset(void)
 
 void systemInit(void)
 {
+    checkForBootLoaderRequest();
+
     //  Mark ITCM-RAM as read-only
     LL_MPU_ConfigRegion(LL_MPU_REGION_NUMBER0, 0, RAMITCM_BASE, LL_MPU_REGION_SIZE_16KB | LL_MPU_REGION_PRIV_RO_URO);
     LL_MPU_Enable(LL_MPU_CTRL_PRIVILEGED_DEFAULT);
@@ -198,11 +200,16 @@ void checkForBootLoaderRequest(void)
     }
 
     void (*SysMemBootJump)(void);
+
     __SYSCFG_CLK_ENABLE();
     SYSCFG->MEMRMP |= SYSCFG_MEM_BOOT_ADD0 ;
+
     uint32_t p =  (*((uint32_t *) 0x1ff00000));
-    __set_MSP(p); //Set the main stack pointer to its defualt values
+
+    __set_MSP(p); //Set the main stack pointer to its default values
+
     SysMemBootJump = (void (*)(void)) (*((uint32_t *) 0x1ff00004)); // Point the PC to the System Memory reset vector (+4)
     SysMemBootJump();
+
     while (1);
 }
