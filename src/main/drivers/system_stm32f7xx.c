@@ -193,7 +193,7 @@ void checkForBootLoaderRequest(void)
 {
     uint32_t bootloaderRequest = persistentObjectRead(PERSISTENT_OBJECT_BOOTLOADER_REQUEST);
 
-    persistentObjectWrite(PERSISTENT_OBJECT_BOOTLOADER_REQUEST, 0xCAFEFEED);
+    persistentObjectWrite(PERSISTENT_OBJECT_BOOTLOADER_REQUEST, 0);
 
     if (bootloaderRequest != BOOTLOADER_REQUEST_COOKIE) {
         return;
