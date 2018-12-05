@@ -82,8 +82,11 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
     previousTimeUs = currentTimeUs;
 
     int32_t baroAlt = 0;
-
     int32_t gpsAlt = 0;
+
+#if defined(USE_GPS) && defined(USE_VARIO)
+    int16_t gpsVertSpeed = 0;
+#endif
     float gpsTrust = 0.3; //conservative default
     bool haveBaroAlt = false;
     bool haveGpsAlt = false;
@@ -101,6 +104,9 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 #ifdef USE_GPS
 if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
     gpsAlt = gpsSol.llh.altCm;
+#ifdef USE_VARIO
+    gpsVertSpeed = GPS_verticalSpeedInCmS;
+#endif
     haveGpsAlt = true;
 
     if (gpsSol.hdop != 0) {
@@ -124,10 +130,14 @@ if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
     if (haveGpsAlt && haveBaroAlt) {
         estimatedAltitudeCm = gpsAlt * gpsTrust + baroAlt * (1 - gpsTrust);
 #ifdef USE_VARIO
+        // baro is a better source for vario, so ignore gpsVertSpeed
         estimatedVario = calculateEstimatedVario(baroAlt, dTime);
 #endif
     } else if (haveGpsAlt) {
         estimatedAltitudeCm = gpsAlt;
+#if defined(USE_VARIO) && defined(USE_GPS)
+        estimatedVario = gpsVertSpeed;
+#endif
     } else if (haveBaroAlt) {
         estimatedAltitudeCm = baroAlt;
 #ifdef USE_VARIO
@@ -138,6 +148,9 @@ if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
     DEBUG_SET(DEBUG_ALTITUDE, 0, (int32_t)(100 * gpsTrust));
     DEBUG_SET(DEBUG_ALTITUDE, 1, baroAlt);
     DEBUG_SET(DEBUG_ALTITUDE, 2, gpsAlt);
+#ifdef USE_VARIO
+    DEBUG_SET(DEBUG_ALTITUDE, 3, estimatedVario);
+#endif
 }
 
 bool isAltitudeOffset(void)

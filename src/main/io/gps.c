@@ -78,6 +78,7 @@ int32_t GPS_home[2];
 uint16_t GPS_distanceToHome;        // distance to home point in meters
 int16_t GPS_directionToHome;        // direction to home or hol point in degrees
 uint32_t GPS_distanceFlownInCm;     // distance flown since armed in centimeters
+int16_t GPS_verticalSpeedInCmS;     // vertical speed in cm/s
 float dTnav;             // Delta Time in milliseconds for navigation computations, updated with every good GPS read
 int16_t nav_takeoff_bearing;
 navigationMode_e nav_mode = NAV_MODE_NONE;    // Navigation mode
@@ -1318,9 +1319,14 @@ void GPS_calculateDistanceAndDirectionToHome(void)
 static void GPS_calculateDistanceFlown(bool initialize)
 {
     static int32_t lastCoord[2] = { 0, 0 };
+    static int16_t lastAlt;
+    static int32_t lastMillis;
+
+    int currentMillis = millis();
 
     if (initialize) {
         GPS_distanceFlownInCm = 0;
+        GPS_verticalSpeedInCmS = 0;
     } else {
         // Only add up movement when speed is faster than minimum threshold
         if (gpsSol.groundSpeed > GPS_DISTANCE_FLOWN_MIN_GROUND_SPEED_THRESHOLD_CM_S) {
@@ -1329,9 +1335,14 @@ static void GPS_calculateDistanceFlown(bool initialize)
             GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &lastCoord[LAT], &lastCoord[LON], &dist, &dir);
             GPS_distanceFlownInCm += dist;
         }
+
+        GPS_verticalSpeedInCmS = (gpsSol.llh.altCm - lastAlt) * 1000 / (currentMillis - lastMillis);
+        GPS_verticalSpeedInCmS = constrain(GPS_verticalSpeedInCmS, -1500.0f, 1500.0f);
     }
     lastCoord[LON] = gpsSol.llh.lon;
     lastCoord[LAT] = gpsSol.llh.lat;
+    lastAlt = gpsSol.llh.altCm;
+    lastMillis = currentMillis;
 }
 
 void onGpsNewData(void)
