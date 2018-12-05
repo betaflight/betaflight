@@ -76,3 +76,4 @@ struct serialPort_s;
 void smartPortWriteFrameSerial(const smartPortPayload_t *payload, struct serialPort_s *port, uint16_t checksum);
 void smartPortSendByte(uint8_t c, uint16_t *checksum, struct serialPort_s *port);
 bool smartPortPayloadContainsMSP(const smartPortPayload_t *payload);
+bool cmdIsEepromWrite(const smartPortPayload_t *payload);
