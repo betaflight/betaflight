@@ -797,7 +797,7 @@ static uint8_t numOfSat = 0;
 #ifdef USE_GPS
 bool writeGpsPositionPrameToBST(void)
 {
-    if ((lat != gpsSol.llh.lat) || (lon != gpsSol.llh.lon) || (alt != (gpsSol.llh.altCm / 100)) || (numOfSat != gpsSol.numSat)) {
+    if ((lat != gpsSol.llh.lat) || (lon != gpsSol.llh.lon) || (altM != (gpsSol.llh.altCm / 100)) || (numOfSat != gpsSol.numSat)) {
         lat = gpsSol.llh.lat;
         lon = gpsSol.llh.lon;
         altM = gpsSol.llh.altCm / 100;
