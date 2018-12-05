@@ -585,6 +585,9 @@ static void saDoDevSetFreq(uint16_t freq)
         switchBuf[6] = CRC8(switchBuf, 6);
 
         saQueueCmd(switchBuf, 7);
+
+        // need to do a 'get' between the 'set' commands to keep tracking vars in sync
+        saGetSettings();
     }
 
     saQueueCmd(buf, 7);
