@@ -4,12 +4,35 @@ Betaflight is flight controller software (firmware) used to fly multi-rotor craf
 
 This fork differs from Baseflight and Cleanflight in that it focuses on flight performance, leading-edge feature additions, and wide target support.
 
+## News
+
+### Betaflight 4.0
+
+As you might have learned from the [Betaflight GitHub page](https://github.com/betaflight/betaflight), our next release will be 4.0. Betaflight 4.0 will be the culmination of years of work that started in 2016 with the introduction of remappable resources, and it will drastically change the way how Betaflight is built and distributed. To you as the user, not much in how you download and install the Betaflight firmware will change, but you will get some noticeable improvements:
+
+- we’ll have to spend less time on maintaining and releasing the firmware, meaning that we’ll have more time to work on new and exciting features;
+- manufacturers will have an easy way to release custom configurations for all of their boards and ready-to-fly (including RX setup and tuning) craft based on original Betaflight firmware - you will no longer be stuck on using old firmware, or recreating your configuration from scratch;
+- the tinkerers amongst you will be able to share Betaflight firmware with your home built improvements amongst your friends without having to build and distribute separate targets for everybody’s board.
+
+*(These changes are planned for F4 and F7, F3’s flash space limitations mean we won’t be able to fit all of this in.)*
+
+We are almost there with the implementation of these changes, but since they are quite complex, and getting ‘almost there’ doesn’t buy us much, we have decided that we need to take more time to complete them, make sure the way users can use the firmware still works as expected, and properly test the new firmware. For this reason we have decided to **postpone the planned release date for Betaflight to 01 April 2019**. We will keep doing monthly releases of Betaflight 3.5 with bugfixes and new / updated targets in the meantime.
+
+
+To get the latest update from us, you can now also visit our webpage at [https://betaflight.com/].
+
+In addition to the drastic changes mentioned above, Betaflight 4.0 will have a number of other exciting new features and improvements:
+
+- yet again improved flight performance;
+- 'Launch control' mode;
+- switchable profiles for the OSD layout.
+
 ## Events
 
 | Date  | Event |
 | - | - |
-| 01 December 2018 | Start of feature freeze / Release Candidate window for Betaflight 4.0 |
-| 01 January 2019 | Planned [release](https://github.com/betaflight/betaflight/milestone/20) date for Betaflight 4.0 |
+| 01 March 2019 | Start of feature freeze / Release Candidate window for Betaflight 4.0 |
+| 01 April 2019 | Planned [release](https://github.com/betaflight/betaflight/milestone/20) date for Betaflight 4.0 |
 
 ## Features
 
