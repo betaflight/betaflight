@@ -315,7 +315,7 @@ TEST(OsdTest, TestStatsImperial)
     osdStatSetState(OSD_STAT_TIMER_2, true);
     osdStatSetState(OSD_STAT_RTC_DATE_TIME, true);
     osdStatSetState(OSD_STAT_MAX_DISTANCE, true);
-    osdStatSetState(OSD_STAT_TOTAL_DISTANCE, true);
+    osdStatSetState(OSD_STAT_FLIGHT_DISTANCE, true);
     osdStatSetState(OSD_STAT_BLACKBOX_NUMBER, false);
     osdStatSetState(OSD_STAT_MAX_G_FORCE, false);
     osdStatSetState(OSD_STAT_MAX_ESC_TEMP, false);
@@ -398,7 +398,7 @@ TEST(OsdTest, TestStatsImperial)
     displayPortTestBufferSubstring(2, row++, "END BATTERY       : 15.2%c", SYM_VOLT);
     displayPortTestBufferSubstring(2, row++, "MIN RSSI          : 25%%");
     displayPortTestBufferSubstring(2, row++, "MAX ALTITUDE      :    6.5%c", SYM_FT);
-    displayPortTestBufferSubstring(2, row++, "TOTAL DISTANCE    : 656%c", SYM_FT);
+    displayPortTestBufferSubstring(2, row++, "FLIGHT DISTANCE   : 656%c", SYM_FT);
 }
 
 /*
@@ -451,7 +451,7 @@ TEST(OsdTest, TestStatsMetric)
     displayPortTestBufferSubstring(2, row++, "END BATTERY       : 15.2%c", SYM_VOLT);
     displayPortTestBufferSubstring(2, row++, "MIN RSSI          : 25%%");
     displayPortTestBufferSubstring(2, row++, "MAX ALTITUDE      :    2.0%c", SYM_M);
-    displayPortTestBufferSubstring(2, row++, "TOTAL DISTANCE    : 100%c", SYM_M);
+    displayPortTestBufferSubstring(2, row++, "FLIGHT DISTANCE   : 100%c", SYM_M);
 }
 
 /*
