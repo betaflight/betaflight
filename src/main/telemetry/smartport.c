@@ -507,22 +507,21 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
 #if defined(USE_MSP_OVER_TELEMETRY)
     if (skipRequests) {
         skipRequests--;
-    }
-    else if (payload && smartPortPayloadContainsMSP(payload)) {
+    } else if (payload && smartPortPayloadContainsMSP(payload)) {
         // Do not check the physical ID here again
         // unless we start receiving other sensors' packets
         // Pass only the payload: skip frameId
-         uint8_t *frameStart = (uint8_t *)&payload->valueId;
-         smartPortMspReplyPending = handleMspFrame(frameStart, SMARTPORT_MSP_PAYLOAD_SIZE);
+        uint8_t *frameStart = (uint8_t *)&payload->valueId;
+        smartPortMspReplyPending = handleMspFrame(frameStart, SMARTPORT_MSP_PAYLOAD_SIZE);
          
-         //Don't send MSP response if MSP command is MSP_EEPROM_WRITE
-         //CPU just got out of suspended state after writeEEPROM()
-         //We don't know if the receiver is listening again
-         //Skip a few telemetry requests before sending response
-         if (cmdIsEepromWrite(payload) && smartPortMspReplyPending) {
+        // Don't send MSP response if MSP command is MSP_EEPROM_WRITE
+        // CPU just got out of suspended state after writeEEPROM()
+        // We don't know if the receiver is listening again
+        // Skip a few telemetry requests before sending response
+        if (cmdIsEepromWrite(payload) && smartPortMspReplyPending) {
             skipRequests = SMARTPORT_REQUEST_SKIPS_AFTER_EEPROMWRITE;
             *clearToSend = false;
-         }
+        }
     }
 #else
     UNUSED(payload);
