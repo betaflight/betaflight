@@ -375,6 +375,8 @@ static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, const uin
 #endif
 
     if (compressionMethod == NO_COMPRESSION) {
+
+        uint16_t *readLenPtr = (uint16_t *)sbufPtr(dst);
         if (!useLegacyFormat) {
             // new format supports variable read lengths
             sbufWriteU16(dst, readLen);
@@ -382,6 +384,11 @@ static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, const uin
         }
 
         const int bytesRead = flashfsReadAbs(address, sbufPtr(dst), readLen);
+
+        if (!useLegacyFormat) {
+            // update the 'read length' with the actual amount read from flash.
+            *readLenPtr = (uint16_t)bytesRead;
+        }
 
         sbufAdvance(dst, bytesRead);
 
