@@ -172,7 +172,7 @@ bool handleMspFrame(uint8_t *frameStart, int frameLength, uint8_t *skipsBeforeRe
             return true;
         }
     }
-    
+
     // Skip a few telemetry requests if command is MSP_EEPROM_WRITE
     if (packet->cmd == MSP_EEPROM_WRITE) {
         *skipsBeforeResponse = TELEMETRY_REQUEST_SKIPS_AFTER_EEPROMWRITE;
