@@ -19,7 +19,7 @@ As you might have learned from the [Betaflight GitHub page](https://github.com/b
 We are almost there with the implementation of these changes, but since they are quite complex, and getting ‘almost there’ doesn’t buy us much, we have decided that we need to take more time to complete them, make sure the way users can use the firmware still works as expected, and properly test the new firmware. For this reason we have decided to **postpone the planned release date for Betaflight to 01 April 2019**. We will keep doing monthly releases of Betaflight 3.5 with bugfixes and new / updated targets in the meantime.
 
 
-To get the latest update from us, you can now also visit our webpage at [https://betaflight.com/].
+To get the latest update from us, you can now also visit our webpage at <https://betaflight.com/>.
 
 In addition to the drastic changes mentioned above, Betaflight 4.0 will have a number of other exciting new features and improvements:
 
