@@ -51,26 +51,16 @@
 #define GYRO_1_ALIGN            CW0_DEG
 #define ACC_1_ALIGN             CW0_DEG
 
+#define USE_MAG
+#define USE_MAG_HMC5883
+#define USE_MAG_QMC5883
+#define MAG_I2C_INSTANCE         (I2CDEV_2)
 
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI3
 #define MAX7456_SPI_CS_PIN      PA15
 #define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
-//define use flash
-#define FLASH_CS_PIN          PB12
-#define FLASH_SPI_INSTANCE        SPI2
-#define USE_FLASHFS
-#define USE_FLASH_M25P16
-//define use SD card
-
-#define USE_SDCARD
-#define USE_SDCARD_SPI
-#define SDCARD_DETECT_PIN                     PA8
-#define SDCARD_SPI_INSTANCE                 SPI2
-#define SDCARD_SPI_CS_PIN                       SPI2_NSS_PIN
-#define SDCARD_DMA_STREAM_TX_FULL           DMA1_Stream4
-#define SDCARD_DMA_CHANNEL                  0
 
 #define USE_VCP
 
@@ -104,6 +94,10 @@
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN  PB8 // (Hardware=0, PPM)
 
+#define USE_I2C
+#define USE_I2C_DEVICE_2       // External I2C
+#define I2C_DEVICE               (I2CDEV_2)
+
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
@@ -133,9 +127,8 @@
 #define CURRENT_METER_SCALE_DEFAULT 250                     // 3.3/120A  = 25mv/A
 
 #define BINDPLUG_PIN            PB2
-#define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
-#define SERIALRX_UART                 SERIAL_PORT_UART5
+#define SERIALRX_UART           SERIAL_PORT_UART5
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 #define TARGET_IO_PORTA         0xffff
