@@ -103,6 +103,11 @@
 #define VIDEO_BUFFER_CHARS_PAL    480
 #define FULL_CIRCLE 360
 
+#define STICK_OVERLAY_HORIZONTAL_CHAR   '-'
+#define STICK_OVERLAY_VERTICAL_CHAR     '|'
+#define STICK_OVERLAY_CROSS_CHAR        '+'
+#define STICK_OVERLAY_CURSOR_CHAR       '0'
+
 const char * const osdTimerSourceNames[] = {
     "ON TIME  ",
     "TOTAL ARM",
@@ -143,8 +148,29 @@ typedef struct statistic_s {
     uint8_t min_link_quality;
 } statistic_t;
 
-static statistic_t stats;
+typedef struct radioControls_s {
+    uint8_t left_vertical;
+    uint8_t left_horizontal;
+    uint8_t right_vertical;
+    uint8_t right_horizontal;
+} radioControls_t;
 
+typedef enum radioModes_e {
+    MODE1,
+    MODE2,
+    MODE3,
+    MODE4
+} radioModes_t;
+
+static statistic_t stats;
+#ifdef USE_OSD_STICK_OVERLAY
+static const radioControls_t radioModes[4] = {
+    { PITCH,    YAW,    THROTTLE,   ROLL }, // Mode 1
+    { THROTTLE, YAW,    PITCH,      ROLL }, // Mode 2
+    { PITCH,    ROLL,   THROTTLE,   YAW  }, // Mode 3
+    { THROTTLE, ROLL,   PITCH,      YAW  }, // Mode 4
+};
+#endif
 timeUs_t resumeRefreshAt = 0;
 #define REFRESH_1S    1000 * 1000
 
@@ -227,7 +253,7 @@ static const uint8_t osdElementDisplayOrder[] = {
 #endif
 };
 
-PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 3);
+PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 4);
 
 /**
  * Gets the correct altitude symbol for the current unit system
@@ -505,15 +531,10 @@ void changeOsdProfileIndex(uint8_t profileIndex)
 
 static bool osdDrawSingleElement(uint8_t item)
 {
-#ifdef USE_OSD_PROFILES
-    if ((OSD_ELEMENT_PROFILE(osdConfig()->item_pos[item]) & osdProfile) == 0) {
-        return false;
-    }
-#else
     if (!VISIBLE(osdConfig()->item_pos[item]) || BLINK(item)) {
         return false;
     }
-#endif
+
     uint8_t elemPosX = OSD_X(osdConfig()->item_pos[item]);
     uint8_t elemPosY = OSD_Y(osdConfig()->item_pos[item]);
     char buff[OSD_ELEMENT_BUFFER_LENGTH] = "";
@@ -1184,6 +1205,58 @@ static bool osdDrawSingleElement(uint8_t item)
     return true;
 }
 
+#ifdef USE_OSD_STICK_OVERLAY
+static void osdDrawStickOverlayAxis(uint8_t xpos, uint8_t ypos)
+{
+
+    for (unsigned x = 0; x < OSD_STICK_OVERLAY_WIDTH; x++) {
+        for (unsigned  y = 0; y < OSD_STICK_OVERLAY_HEIGHT; y++) {
+            // draw the axes, vertical and horizonal
+            if ((x == ((OSD_STICK_OVERLAY_WIDTH - 1) / 2)) && (y == (OSD_STICK_OVERLAY_HEIGHT - 1) / 2)) {
+                displayWriteChar(osdDisplayPort, xpos + x, ypos + y, STICK_OVERLAY_CROSS_CHAR);
+            } else if (x == ((OSD_STICK_OVERLAY_WIDTH - 1) / 2)) {
+                displayWriteChar(osdDisplayPort, xpos + x, ypos + y, STICK_OVERLAY_VERTICAL_CHAR);
+            } else if (y == ((OSD_STICK_OVERLAY_HEIGHT - 1) / 2)) {
+                displayWriteChar(osdDisplayPort, xpos + x, ypos + y, STICK_OVERLAY_HORIZONTAL_CHAR);
+            }
+        }
+    }
+}
+
+static void osdDrawStickOverlayAxisItem(osd_items_e osd_item)
+{
+    osdDrawStickOverlayAxis(OSD_X(osdConfig()->item_pos[osd_item]),
+                            OSD_Y(osdConfig()->item_pos[osd_item]));
+}
+
+static void osdDrawStickOverlayPos(osd_items_e osd_item, uint8_t xpos, uint8_t ypos)
+{
+
+    uint8_t elemPosX = OSD_X(osdConfig()->item_pos[osd_item]);
+    uint8_t elemPosY = OSD_Y(osdConfig()->item_pos[osd_item]);
+
+    displayWriteChar(osdDisplayPort, elemPosX + xpos, elemPosY + ypos, STICK_OVERLAY_CURSOR_CHAR);
+}
+
+static void osdDrawStickOverlayCursor(osd_items_e osd_item)
+{
+    rc_alias_e vertical_channel, horizontal_channel;
+
+    if (osd_item == OSD_STICK_OVERLAY_LEFT) {
+        vertical_channel = radioModes[osdConfig()->overlay_radio_mode-1].left_vertical;
+        horizontal_channel = radioModes[osdConfig()->overlay_radio_mode-1].left_horizontal;
+    } else {
+        vertical_channel = radioModes[osdConfig()->overlay_radio_mode-1].right_vertical;
+        horizontal_channel = radioModes[osdConfig()->overlay_radio_mode-1].right_horizontal;
+    }
+
+    uint8_t x_pos =  (uint8_t)scaleRange(constrain(rcData[horizontal_channel], PWM_RANGE_MIN, PWM_RANGE_MAX), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, OSD_STICK_OVERLAY_WIDTH);
+    uint8_t y_pos =  (uint8_t)scaleRange(PWM_RANGE_MAX - constrain(rcData[vertical_channel], PWM_RANGE_MIN, PWM_RANGE_MAX), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, OSD_STICK_OVERLAY_HEIGHT) + OSD_STICK_OVERLAY_HEIGHT - 1;
+
+    osdDrawStickOverlayPos(osd_item, x_pos, y_pos);
+}
+#endif
+
 static void osdDrawElements(void)
 {
     displayClearScreen(osdDisplayPort);
@@ -1236,6 +1309,18 @@ static void osdDrawElements(void)
         osdDrawSingleElement(OSD_LOG_STATUS);
     }
 #endif
+
+#ifdef USE_OSD_STICK_OVERLAY
+    if (VISIBLE(osdConfig()->item_pos[OSD_STICK_OVERLAY_LEFT])) {
+        osdDrawStickOverlayAxisItem(OSD_STICK_OVERLAY_LEFT);
+        osdDrawStickOverlayCursor(OSD_STICK_OVERLAY_LEFT);
+    }
+
+    if (VISIBLE(osdConfig()->item_pos[OSD_STICK_OVERLAY_RIGHT])) {
+        osdDrawStickOverlayAxisItem(OSD_STICK_OVERLAY_RIGHT);
+        osdDrawStickOverlayCursor(OSD_STICK_OVERLAY_RIGHT);
+    }
+#endif
 }
 
 void pgResetFn_osdConfig(osdConfig_t *osdConfig)
@@ -1273,6 +1358,8 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 
     osdConfig->timers[OSD_TIMER_1] = OSD_TIMER(OSD_TIMER_SRC_ON, OSD_TIMER_PREC_SECOND, 10);
     osdConfig->timers[OSD_TIMER_2] = OSD_TIMER(OSD_TIMER_SRC_TOTAL_ARMED, OSD_TIMER_PREC_SECOND, 10);
+
+    osdConfig->overlay_radio_mode = 2;
 
     osdConfig->rssi_alarm = 20;
     osdConfig->cap_alarm  = 2200;
@@ -1872,4 +1959,11 @@ void osdSuppressStats(bool flag)
 {
     suppressStatsDisplay = flag;
 }
+
+#ifdef USE_OSD_PROFILES
+bool osdElementVisible(uint16_t value)
+{
+    return (bool)((((value & OSD_PROFILE_MASK) >> OSD_PROFILE_BITS_POS) & osdProfile) != 0);
+}
+#endif
 #endif // USE_OSD

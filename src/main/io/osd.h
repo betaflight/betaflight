@@ -33,10 +33,13 @@ extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 #define OSD_PROFILE_BITS_POS 11
 #define OSD_PROFILE_1_FLAG  (1 << OSD_PROFILE_BITS_POS)
 #define OSD_PROFILE_MASK    (((1 << OSD_PROFILE_COUNT) - 1) << OSD_PROFILE_BITS_POS)
-#define VISIBLE(x)    ((x) & OSD_PROFILE_MASK)
 #define OSD_POS_MAX   0x3FF
 #define OSD_POSCFG_MAX   (OSD_PROFILE_MASK | 0x3FF) // For CLI values
-#define OSD_ELEMENT_PROFILE(x) (((x) & OSD_PROFILE_MASK) >> OSD_PROFILE_BITS_POS)
+#ifdef USE_OSD_PROFILES
+#define VISIBLE(x) osdElementVisible(x)
+#else
+#define VISIBLE(x) ((x) & OSD_PROFILE_MASK)
+#endif
 
 
 // Character coordinate
@@ -45,6 +48,10 @@ extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 #define OSD_POS(x,y)  ((x & OSD_POSITION_XY_MASK) | ((y & OSD_POSITION_XY_MASK) << OSD_POSITION_BITS))
 #define OSD_X(x)      (x & OSD_POSITION_XY_MASK)
 #define OSD_Y(x)      ((x >> OSD_POSITION_BITS) & OSD_POSITION_XY_MASK)
+
+// Stick overlay size
+#define OSD_STICK_OVERLAY_WIDTH 7
+#define OSD_STICK_OVERLAY_HEIGHT 7
 
 // Timer configuration
 // Stored as 15[alarm:8][precision:4][source:4]0
@@ -107,6 +114,8 @@ typedef enum {
     OSD_FLIP_ARROW,
     OSD_LINK_QUALITY,
     OSD_FLIGHT_DIST,
+    OSD_STICK_OVERLAY_LEFT,
+    OSD_STICK_OVERLAY_RIGHT,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
@@ -213,6 +222,7 @@ typedef struct osdConfig_s {
     uint8_t core_temp_alarm;
     uint8_t ahInvert;         // invert the artificial horizon
     uint8_t osdProfileIndex;
+    uint8_t overlay_radio_mode;
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);
@@ -233,3 +243,4 @@ void osdSuppressStats(bool flag);
 void setOsdProfile(uint8_t value);
 uint8_t getCurrentOsdProfileIndex(void);
 void changeOsdProfileIndex(uint8_t profileIndex);
+bool osdElementVisible(uint16_t value);
