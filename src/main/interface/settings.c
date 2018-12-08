@@ -939,7 +939,7 @@ const clivalue_t valueTable[] = {
 #ifdef USE_LAUNCH_CONTROL
     { "launch_control_mode",        VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LAUNCH_CONTROL_MODE }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlMode) },
     { "launch_trigger_allow_reset", VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlAllowTriggerReset) },
-    { "launch_trigger_throttle_percent", VAR_UINT8 | PROFILE_VALUE,  .config.minmax = { 0, 50 }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlThrottlePercent) },
+    { "launch_trigger_throttle_percent", VAR_UINT8 | PROFILE_VALUE,  .config.minmax = { 0, LAUNCH_CONTROL_THROTTLE_TRIGGER_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlThrottlePercent) },
     { "launch_angle_limit",         VAR_UINT8 | PROFILE_VALUE,  .config.minmax = { 0, 80 }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlAngleLimit) },
     { "launch_control_gain",        VAR_UINT8 | PROFILE_VALUE,  .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlGain) },
 #endif
