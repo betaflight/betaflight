@@ -643,7 +643,7 @@ static bool osdDrawSingleElement(uint8_t item)
         }
         break;
 
-    case OSD_TOTAL_DIST:
+    case OSD_FLIGHT_DIST:
         if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
             const int32_t distance = osdGetMetersToSelectedUnit(GPS_distanceFlownInCm / 100);
             tfp_sprintf(buff, "%d%c", distance, osdGetMetersToSelectedUnitSymbol());
@@ -1220,7 +1220,7 @@ static void osdDrawElements(void)
         osdDrawSingleElement(OSD_GPS_LON);
         osdDrawSingleElement(OSD_HOME_DIST);
         osdDrawSingleElement(OSD_HOME_DIR);
-        osdDrawSingleElement(OSD_TOTAL_DIST);
+        osdDrawSingleElement(OSD_FLIGHT_DIST);
     }
 #endif // GPS
 
@@ -1704,10 +1704,10 @@ static void osdShowStats(uint16_t endBatteryVoltage)
 #endif
 
 #ifdef USE_GPS
-    if (osdStatGetState(OSD_STAT_TOTAL_DISTANCE) && featureIsEnabled(FEATURE_GPS)) {
+    if (osdStatGetState(OSD_STAT_FLIGHT_DISTANCE) && featureIsEnabled(FEATURE_GPS)) {
         const uint32_t distanceFlown = GPS_distanceFlownInCm / 100;
         tfp_sprintf(buff, "%d%c", osdGetMetersToSelectedUnit(distanceFlown), osdGetMetersToSelectedUnitSymbol());
-        osdDisplayStatisticLabel(top++, "TOTAL DISTANCE", buff);
+        osdDisplayStatisticLabel(top++, "FLIGHT DISTANCE", buff);
     }
 #endif
 
