@@ -27,6 +27,7 @@
 #include "drivers/exti.h"
 #include "drivers/nvic.h"
 #include "drivers/system.h"
+#include "drivers/persistent.h"
 
 
 #define AIRCR_VECTKEY_MASK    ((uint32_t)0x05FA0000)
@@ -38,12 +39,9 @@ void systemReset(void)
     NVIC_SystemReset();
 }
 
-PERSISTENT uint32_t bootloaderRequest = 0;
-#define BOOTLOADER_REQUEST_COOKIE 0xDEADBEEF
-
 void systemResetToBootloader(void)
 {
-    bootloaderRequest = BOOTLOADER_REQUEST_COOKIE;
+    persistentObjectWrite(PERSISTENT_OBJECT_BOOTLOADER_REQUEST, BOOTLOADER_REQUEST_COOKIE);
 
     __disable_irq();
     NVIC_SystemReset();
@@ -58,11 +56,13 @@ typedef struct isrVector_s {
 
 void checkForBootLoaderRequest(void)
 {
+    uint32_t bootloaderRequest = persistentObjectRead(PERSISTENT_OBJECT_BOOTLOADER_REQUEST);
+
+    persistentObjectWrite(PERSISTENT_OBJECT_BOOTLOADER_REQUEST, 0);
+
     if (bootloaderRequest != BOOTLOADER_REQUEST_COOKIE) {
         return;
     }
-
-    bootloaderRequest = 0;
 
     extern isrVector_t system_isr_vector_table_base;
 

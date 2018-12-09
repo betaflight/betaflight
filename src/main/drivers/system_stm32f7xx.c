@@ -29,6 +29,7 @@
 #include "drivers/exti.h"
 #include "drivers/nvic.h"
 #include "drivers/system.h"
+#include "drivers/persistent.h"
 
 #include "stm32f7xx_ll_cortex.h"
 
@@ -44,8 +45,7 @@ void systemReset(void)
 
 void systemResetToBootloader(void)
 {
-    (*(__IO uint32_t *) (BKPSRAM_BASE + 4)) = 0xDEADBEEF;   // flag that will be readable after reboot
-
+    persistentObjectWrite(PERSISTENT_OBJECT_BOOTLOADER_REQUEST, BOOTLOADER_REQUEST_COOKIE);
     __disable_irq();
     NVIC_SystemReset();
 }
@@ -188,27 +188,28 @@ void systemInit(void)
 }
 
 void(*bootJump)(void);
+
 void checkForBootLoaderRequest(void)
 {
-    uint32_t bt;
-    __PWR_CLK_ENABLE();
-    __BKPSRAM_CLK_ENABLE();
-    HAL_PWR_EnableBkUpAccess();
+    uint32_t bootloaderRequest = persistentObjectRead(PERSISTENT_OBJECT_BOOTLOADER_REQUEST);
 
-    bt = (*(__IO uint32_t *) (BKPSRAM_BASE + 4)) ;
-    if ( bt == 0xDEADBEEF ) {
-        (*(__IO uint32_t *) (BKPSRAM_BASE + 4)) =  0xCAFEFEED; // Reset our trigger
-        // Backup SRAM is write-back by default, ensure value actually reaches memory
-        // Another solution would be marking BKPSRAM as write-through in Memory Protection Unit settings
-        SCB_CleanDCache_by_Addr((uint32_t *) (BKPSRAM_BASE + 4), sizeof(uint32_t));
+    persistentObjectWrite(PERSISTENT_OBJECT_BOOTLOADER_REQUEST, 0);
 
-        void (*SysMemBootJump)(void);
-        __SYSCFG_CLK_ENABLE();
-        SYSCFG->MEMRMP |= SYSCFG_MEM_BOOT_ADD0 ;
-        uint32_t p =  (*((uint32_t *) 0x1ff00000));
-        __set_MSP(p); //Set the main stack pointer to its defualt values
-        SysMemBootJump = (void (*)(void)) (*((uint32_t *) 0x1ff00004)); // Point the PC to the System Memory reset vector (+4)
-        SysMemBootJump();
-        while (1);
+    if (bootloaderRequest != BOOTLOADER_REQUEST_COOKIE) {
+        return;
     }
+
+    void (*SysMemBootJump)(void);
+
+    __SYSCFG_CLK_ENABLE();
+    SYSCFG->MEMRMP |= SYSCFG_MEM_BOOT_ADD0 ;
+
+    uint32_t p =  (*((uint32_t *) 0x1ff00000));
+
+    __set_MSP(p); //Set the main stack pointer to its default values
+
+    SysMemBootJump = (void (*)(void)) (*((uint32_t *) 0x1ff00004)); // Point the PC to the System Memory reset vector (+4)
+    SysMemBootJump();
+
+    while (1);
 }

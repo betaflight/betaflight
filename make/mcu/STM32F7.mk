@@ -41,8 +41,6 @@ EXCLUDES        = stm32f7xx_hal_can.c \
                   stm32f7xx_hal_nor.c \
                   stm32f7xx_hal_qspi.c \
                   stm32f7xx_hal_rng.c \
-                  stm32f7xx_hal_rtc.c \
-                  stm32f7xx_hal_rtc_ex.c \
                   stm32f7xx_hal_sai.c \
                   stm32f7xx_hal_sai_ex.c \
                   stm32f7xx_hal_sd.c \
@@ -179,6 +177,7 @@ MCU_COMMON_SRC = \
             drivers/light_ws2811strip_hal.c \
             drivers/transponder_ir_io_hal.c \
             drivers/bus_spi_ll.c \
+            drivers/persistent.c \
             drivers/pwm_output_dshot_hal.c \
             drivers/timer_hal.c \
             drivers/timer_stm32f7xx.c \
