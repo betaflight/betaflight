@@ -26,6 +26,7 @@
 
 struct rxSpiConfig_s;
 
+void rxSpiDevicePreInit(const struct rxSpiConfig_s *rxSpiConfig);
 bool rxSpiDeviceInit(const struct rxSpiConfig_s *rxSpiConfig);
 uint8_t rxSpiTransferByte(uint8_t data);
 void rxSpiWriteByte(uint8_t data);

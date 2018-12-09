@@ -64,3 +64,4 @@ PG_DECLARE(compassConfig_t, compassConfig);
 bool compassIsHealthy(void);
 void compassUpdate(timeUs_t currentTime);
 bool compassInit(void);
+void compassPreInit(void);

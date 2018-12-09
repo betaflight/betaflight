@@ -215,3 +215,10 @@
 #define SYSTEM_HSE_VALUE (HSE_VALUE/1000000U)
 #endif
 #endif
+
+// Number of pins that needs pre-init
+#ifdef USE_SPI
+#ifndef SPI_PREINIT_COUNT
+#define SPI_PREINIT_COUNT 16 // 2 x 8 (GYROx2, BARO, MAG, MAX, FLASHx2, RX)
+#endif
+#endif

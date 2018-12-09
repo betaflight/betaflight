@@ -92,13 +92,10 @@ typedef enum SPIDevice {
 #define SPI_CFG_TO_DEV(x)   ((x) - 1)
 #define SPI_DEV_TO_CFG(x)   ((x) + 1)
 
-// Size of SPI CS pre-initialization tag arrays
-#define SPI_PREINIT_IPU_COUNT 11
-#define SPI_PREINIT_OPU_COUNT 2
-
-void spiPreinitCsByTag(ioTag_t iotag);
-void spiPreinitCsByIO(IO_t io);
-void spiPreInit(void);
+void spiPreinit(void);
+void spiPreinitRegister(ioTag_t iotag, uint8_t iocfg, uint8_t init);
+void spiPreinitByIO(IO_t io);
+void spiPreinitByTag(ioTag_t tag);
 
 bool spiInit(SPIDevice device);
 void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor);

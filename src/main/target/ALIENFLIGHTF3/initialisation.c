@@ -30,13 +30,11 @@
 #include "pg/bus_i2c.h"
 #include "pg/bus_spi.h"
 
-extern void spiPreInit(void);
-
 void targetBusInit(void)
 {
     if (hardwareRevision == AFF3_REV_2) {
         spiPinConfigure(spiPinConfig(0));
-        spiPreInit();
+        spiPreinit();
         spiInit(SPIDEV_3);
     }
     i2cHardwareConfigure(i2cConfig(0));

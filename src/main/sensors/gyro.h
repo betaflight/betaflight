@@ -108,6 +108,7 @@ typedef struct gyroConfig_s {
 
 PG_DECLARE(gyroConfig_t, gyroConfig);
 
+void gyroPreInit(void);
 bool gyroInit(void);
 
 void gyroInitFilters(void);

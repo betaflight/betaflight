@@ -47,6 +47,11 @@
 static busDevice_t rxSpiDevice;
 static busDevice_t *busdev = &rxSpiDevice;
 
+void rxSpiDevicePreInit(const rxSpiConfig_t *rxSpiConfig)
+{
+    spiPreinitRegister(rxSpiConfig->csnTag, IOCFG_IPU, 1);
+}
+
 bool rxSpiDeviceInit(const rxSpiConfig_t *rxSpiConfig)
 {
     if (!rxSpiConfig->spibus) {

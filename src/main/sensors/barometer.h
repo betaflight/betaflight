@@ -59,6 +59,7 @@ typedef struct baro_s {
 
 extern baro_t baro;
 
+void baroPreInit(void);
 bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse);
 bool isBaroCalibrationComplete(void);
 void baroSetCalibrationCycles(uint16_t calibrationCyclesRequired);
