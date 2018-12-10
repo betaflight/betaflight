@@ -166,6 +166,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .abs_control_gain = 0,
         .abs_control_limit = 90,
         .abs_control_error_limit = 20,
+        .abs_control_cutoff = 11,
         .antiGravityMode = ANTI_GRAVITY_SMOOTH,
         .dterm_lowpass_hz = 100,    // dual PT1 filtering ON by default
         .dterm_lowpass2_hz = 200,   // second Dterm LPF ON by default
@@ -239,6 +240,15 @@ static FAST_RAM_ZERO_INIT uint8_t itermRelax;
 static FAST_RAM_ZERO_INIT uint8_t itermRelaxType;
 static FAST_RAM_ZERO_INIT uint8_t itermRelaxCutoff;
 #endif
+#if defined(USE_ABSOLUTE_CONTROL)
+STATIC_UNIT_TESTED FAST_RAM_ZERO_INIT float axisError[XYZ_AXIS_COUNT];
+static FAST_RAM_ZERO_INIT float acGain;
+static FAST_RAM_ZERO_INIT float acLimit;
+static FAST_RAM_ZERO_INIT float acErrorLimit;
+static FAST_RAM_ZERO_INIT float acCutoff;
+static FAST_RAM_ZERO_INIT pt1Filter_t acLpf[XYZ_AXIS_COUNT];
+#endif
+
 
 #ifdef USE_RC_SMOOTHING_FILTER
 static FAST_RAM_ZERO_INIT pt1Filter_t setpointDerivativePt1[XYZ_AXIS_COUNT];
@@ -352,6 +362,13 @@ void pidInitFilters(const pidProfile_t *pidProfile)
         }
     }
 #endif
+#if defined(USE_ABSOLUTE_CONTROL)
+    if (itermRelax) {
+        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+            pt1FilterInit(&acLpf[i], pt1FilterGain(acCutoff, dT));
+        }
+    }
+#endif
 
     pt1FilterInit(&antiGravityThrottleLpf, pt1FilterGain(ANTI_GRAVITY_THROTTLE_FILTER_CUTOFF, dT));
 }
@@ -423,12 +440,6 @@ static FAST_RAM_ZERO_INIT bool itermRotation;
 
 #if defined(USE_SMART_FEEDFORWARD)
 static FAST_RAM_ZERO_INIT bool smartFeedforward;
-#endif
-#if defined(USE_ABSOLUTE_CONTROL)
-STATIC_UNIT_TESTED FAST_RAM_ZERO_INIT float axisError[XYZ_AXIS_COUNT];
-static FAST_RAM_ZERO_INIT float acGain;
-static FAST_RAM_ZERO_INIT float acLimit;
-static FAST_RAM_ZERO_INIT float acErrorLimit;
 #endif
 
 #ifdef USE_LAUNCH_CONTROL
@@ -542,6 +553,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     acGain = (float)pidProfile->abs_control_gain;
     acLimit = (float)pidProfile->abs_control_limit;
     acErrorLimit = (float)pidProfile->abs_control_error_limit;
+    acCutoff = (float)pidProfile->abs_control_cutoff;
 #endif
 
 #ifdef USE_DYN_LPF
@@ -918,31 +930,27 @@ void FAST_CODE applySmartFeedforward(int axis)
 
 #if defined(USE_ITERM_RELAX)
 #if defined(USE_ABSOLUTE_CONTROL)
-STATIC_UNIT_TESTED void applyAbsoluteControl(const int axis, const float gyroRate, const bool itermRelaxIsEnabled,
-    const float setpointLpf, const float setpointHpf,
-    float *currentPidSetpoint, float *itermErrorRate)
+STATIC_UNIT_TESTED void applyAbsoluteControl(const int axis, const float gyroRate, float *currentPidSetpoint, float *itermErrorRate)
 {
     if (acGain > 0) {
+        const float setpointLpf = pt1FilterApply(&acLpf[axis], *currentPidSetpoint);
+        const float setpointHpf = fabsf(*currentPidSetpoint - setpointLpf);
         float acErrorRate = 0;
-        if (itermRelaxIsEnabled) {
-            const float gmaxac = setpointLpf + 2 * setpointHpf;
-            const float gminac = setpointLpf - 2 * setpointHpf;
-            if (gyroRate >= gminac && gyroRate <= gmaxac) {
-                const float acErrorRate1 = gmaxac - gyroRate;
-                const float acErrorRate2 = gminac - gyroRate;
-                if (acErrorRate1 * axisError[axis] < 0) {
-                    acErrorRate = acErrorRate1;
-                } else {
-                    acErrorRate = acErrorRate2;
-                }
-                if (fabsf(acErrorRate * dT) > fabsf(axisError[axis]) ) {
-                    acErrorRate = -axisError[axis] * pidFrequency;
-                }
+        const float gmaxac = setpointLpf + 2 * setpointHpf;
+        const float gminac = setpointLpf - 2 * setpointHpf;
+        if (gyroRate >= gminac && gyroRate <= gmaxac) {
+            const float acErrorRate1 = gmaxac - gyroRate;
+            const float acErrorRate2 = gminac - gyroRate;
+            if (acErrorRate1 * axisError[axis] < 0) {
+                acErrorRate = acErrorRate1;
             } else {
-                acErrorRate = (gyroRate > gmaxac ? gmaxac : gminac ) - gyroRate;
+                acErrorRate = acErrorRate2;
+            }
+            if (fabsf(acErrorRate * dT) > fabsf(axisError[axis]) ) {
+                acErrorRate = -axisError[axis] * pidFrequency;
             }
         } else {
-            acErrorRate = *itermErrorRate;
+            acErrorRate = (gyroRate > gmaxac ? gmaxac : gminac ) - gyroRate;
         }
 
         if (isAirmodeActivated()) {
@@ -964,12 +972,10 @@ STATIC_UNIT_TESTED void applyItermRelax(const int axis, const float iterm,
 {
     const float setpointLpf = pt1FilterApply(&windupLpf[axis], *currentPidSetpoint);
     const float setpointHpf = fabsf(*currentPidSetpoint - setpointLpf);
-    bool itermRelaxIsEnabled = false;
 
     if (itermRelax &&
        (axis < FD_YAW || itermRelax == ITERM_RELAX_RPY ||
        itermRelax == ITERM_RELAX_RPY_INC)) {
-        itermRelaxIsEnabled = true;
         const float itermRelaxFactor = 1 - setpointHpf / ITERM_RELAX_SETPOINT_THRESHOLD;
 
         const bool isDecreasingI =
@@ -989,11 +995,8 @@ STATIC_UNIT_TESTED void applyItermRelax(const int axis, const float iterm,
             DEBUG_SET(DEBUG_ITERM_RELAX, 1, lrintf(itermRelaxFactor * 100.0f));
             DEBUG_SET(DEBUG_ITERM_RELAX, 2, lrintf(*itermErrorRate));
         }
-    } else {
 #if defined(USE_ABSOLUTE_CONTROL)
-        applyAbsoluteControl(axis, gyroRate, setpointLpf, setpointHpf, itermRelaxIsEnabled, currentPidSetpoint, itermErrorRate);
-#else
-    UNUSED(itermRelaxIsEnabled);
+        applyAbsoluteControl(axis, gyroRate, currentPidSetpoint, itermErrorRate);
 #endif
     }
 }
