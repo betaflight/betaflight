@@ -589,8 +589,6 @@ TEST(pidControllerTest, testAbsoluteControl) {
     pidStabilisationState(PID_STABILISATION_ON);
 
     float gyroRate = 0;
-    float setpointLpf = 6;
-    float setpointHpf = 30;
 
     float itermErrorRate = 10;
     float currentPidSetpoint = 10;
@@ -600,16 +598,13 @@ TEST(pidControllerTest, testAbsoluteControl) {
     ASSERT_NEAR(10.8, itermErrorRate, calculateTolerance(10.8));
     ASSERT_NEAR(10.8, currentPidSetpoint, calculateTolerance(10.8));
 
-    itermRelaxIsEnabled = true;
-    applyAbsoluteControl(FD_PITCH, gyroRate, itermRelaxIsEnabled, setpointLpf, setpointHpf,
-        &currentPidSetpoint, &itermErrorRate);
+    applyAbsoluteControl(FD_PITCH, gyroRate, &currentPidSetpoint, &itermErrorRate);
     ASSERT_NEAR(10.8, itermErrorRate, calculateTolerance(10.8));
     ASSERT_NEAR(10.8, currentPidSetpoint, calculateTolerance(10.8));
 
     gyroRate = -53;
     axisError[FD_PITCH] = -60;
-    applyAbsoluteControl(FD_PITCH, gyroRate, itermRelaxIsEnabled, setpointLpf, setpointHpf,
-        &currentPidSetpoint, &itermErrorRate);
+    applyAbsoluteControl(FD_PITCH, gyroRate, &currentPidSetpoint, &itermErrorRate);
     ASSERT_NEAR(-79.2, itermErrorRate, calculateTolerance(-79.2));
     ASSERT_NEAR(-79.2, currentPidSetpoint, calculateTolerance(-79.2));
 }
