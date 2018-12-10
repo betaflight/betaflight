@@ -287,7 +287,6 @@ bool smartPortPayloadContainsMSP(const smartPortPayload_t *payload)
     return payload->frameId == FSSP_MSPC_FRAME_SMARTPORT || payload->frameId == FSSP_MSPC_FRAME_FPORT;
 }
 
-
 void smartPortWriteFrameSerial(const smartPortPayload_t *payload, serialPort_t *port, uint16_t checksum)
 {
     uint8_t *data = (uint8_t *)payload;
@@ -493,24 +492,35 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
     static uint8_t smartPortIdCycleCnt = 0;
     static uint8_t t1Cnt = 0;
     static uint8_t t2Cnt = 0;
+    static uint8_t skipRequests = 0;
 #ifdef USE_ESC_SENSOR_TELEMETRY
     static uint8_t smartPortIdOffset = 0;
 #endif
 
 #if defined(USE_MSP_OVER_TELEMETRY)
-    if (payload && smartPortPayloadContainsMSP(payload)) {
+    if (skipRequests) {
+        skipRequests--;
+    } else if (payload && smartPortPayloadContainsMSP(payload)) {
         // Do not check the physical ID here again
         // unless we start receiving other sensors' packets
         // Pass only the payload: skip frameId
-         uint8_t *frameStart = (uint8_t *)&payload->valueId;
-         smartPortMspReplyPending = handleMspFrame(frameStart, SMARTPORT_MSP_PAYLOAD_SIZE);
+        uint8_t *frameStart = (uint8_t *)&payload->valueId;
+        smartPortMspReplyPending = handleMspFrame(frameStart, SMARTPORT_MSP_PAYLOAD_SIZE, &skipRequests);
+         
+        // Don't send MSP response after write to eeprom
+        // CPU just got out of suspended state after writeEEPROM()
+        // We don't know if the receiver is listening again
+        // Skip a few telemetry requests before sending response
+        if (skipRequests) {
+            *clearToSend = false;
+        }
     }
 #else
     UNUSED(payload);
 #endif
 
     bool doRun = true;
-    while (doRun && *clearToSend) {
+    while (doRun && *clearToSend && !skipRequests) {
         // Ensure we won't get stuck in the loop if there happens to be nothing available to send in a timely manner - dump the slot if we loop in there for too long.
         if (requestTimeout) {
             if (cmpTimeUs(micros(), *requestTimeout) >= 0) {
