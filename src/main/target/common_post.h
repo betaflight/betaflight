@@ -205,9 +205,11 @@
 #define USE_RX_XN297
 #endif
 
+#ifdef GENERIC_TARGET
+#define USE_CONFIGURATION_STATE
+
 // Setup crystal frequency for backward compatibility
 // Should be set to zero for generic targets and set with CLI variable set system_hse_value.
-#ifdef GENERIC_TARGET
 #define SYSTEM_HSE_VALUE 0
 #else
 #ifdef TARGET_XTAL_MHZ
@@ -215,7 +217,7 @@
 #else
 #define SYSTEM_HSE_VALUE (HSE_VALUE/1000000U)
 #endif
-#endif
+#endif // GENERIC_TARGET
 
 // Number of pins that needs pre-init
 #ifdef USE_SPI
