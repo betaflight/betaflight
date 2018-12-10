@@ -40,8 +40,12 @@
 
 #include "common/utils.h"
 
+#ifdef SERIAL_PORT_COUNT
 #include "drivers/serial.h"
 #include "io/serial.h"
+
+static serialPort_t *printfSerialPort;
+#endif
 
 #include "printf.h"
 
@@ -49,7 +53,6 @@
 #include "typeconversion.h"
 #endif
 
-static serialPort_t *printfSerialPort;
 
 #ifdef REQUIRE_CC_ARM_PRINTF_SUPPORT
 
@@ -166,6 +169,7 @@ void init_printf(void *putp, void (*putf) (void *, char))
     stdout_putp = putp;
 }
 
+#ifdef SERIAL_PORT_COUNT
 int tfp_printf(const char *fmt, ...)
 {
     va_list va;
@@ -175,6 +179,7 @@ int tfp_printf(const char *fmt, ...)
     while (!isSerialTransmitBufferEmpty(printfSerialPort));
     return written;
 }
+#endif
 
 static void putcp(void *p, char c)
 {
@@ -193,19 +198,24 @@ int tfp_sprintf(char *s, const char *fmt, ...)
 }
 
 
+#ifdef SERIAL_PORT_COUNT
 static void _putc(void *p, char c)
 {
     UNUSED(p);
     serialWrite(printfSerialPort, c);
 }
+#endif
 
 void printfSupportInit(void)
 {
+#ifdef SERIAL_PORT_COUNT
     init_printf(NULL, _putc);
+#endif
 }
 
 #else
 
+#ifdef SERIAL_PORT_COUNT
 // keil/armcc version
 int fputc(int c, FILE *f)
 {
@@ -214,14 +224,20 @@ int fputc(int c, FILE *f)
     serialWrite(printfSerialPort, c);
     return c;
 }
+#endif
 
 void printfSupportInit(void)
 {
+#ifdef SERIAL_PORT_COUNT
     // Nothing to do
+#endif
 }
 #endif
 
+#ifdef SERIAL_PORT_COUNT
 void setPrintfSerialPort(serialPort_t *serialPort)
 {
     printfSerialPort = serialPort;
 }
+#endif
+
