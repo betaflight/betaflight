@@ -114,7 +114,7 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 
 #define LAUNCH_CONTROL_YAW_ITERM_LIMIT 50 // yaw iterm windup limit when launch mode is "FULL" (all axes)
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 5);
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 6);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -179,7 +179,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .launchControlGain = 40,
         .launchControlAllowTriggerReset = true,
         .use_integrated_yaw = false,
-        .integrated_yaw_relax = 200
+        .integrated_yaw_relax = 200,
     );
 #ifdef USE_DYN_LPF
     pidProfile->dterm_lowpass_hz = 150;
@@ -438,8 +438,11 @@ static FAST_RAM_ZERO_INIT uint8_t launchControlMode;
 static FAST_RAM_ZERO_INIT uint8_t launchControlAngleLimit;
 static FAST_RAM_ZERO_INIT float launchControlKi;
 #endif
+
+#ifdef USE_INTEGRATED_YAW_CONTROL
 static FAST_RAM_ZERO_INIT bool useIntegratedYaw;
 static FAST_RAM_ZERO_INIT uint8_t integratedYawRelax;
+#endif
 
 void pidResetIterm(void)
 {
@@ -577,8 +580,11 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     }
     launchControlKi = ITERM_SCALE * pidProfile->launchControlGain;
 #endif
+
+#ifdef USE_INTEGRATED_YAW_CONTROL
     useIntegratedYaw = pidProfile->use_integrated_yaw;
     integratedYawRelax = pidProfile->integrated_yaw_relax;
+#endif
 }
 
 void pidInit(const pidProfile_t *pidProfile)
@@ -1248,10 +1254,13 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
 #endif
         // calculating the PID sum
         const float pidSum = pidData[axis].P + pidData[axis].I + pidData[axis].D + pidData[axis].F;
+#ifdef USE_INTEGRATED_YAW_CONTROL
         if (axis == FD_YAW && useIntegratedYaw) {
             pidData[axis].Sum += pidSum * dT * 100.0f;
             pidData[axis].Sum -= pidData[axis].Sum * integratedYawRelax / 100000.0f * dT / 0.000125f;
-        } else {
+        } else
+#endif
+        {
             pidData[axis].Sum = pidSum;
         }
     }
