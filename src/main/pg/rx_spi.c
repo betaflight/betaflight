@@ -31,10 +31,6 @@
 
 #include "rx/rx_spi.h"
 
-#ifndef RX_SPI_LED_PIN
-#define RX_SPI_LED_PIN NONE
-#endif
-
 PG_REGISTER_WITH_RESET_FN(rxSpiConfig_t, rxSpiConfig, PG_RX_SPI_CONFIG, 0);
 
 void pgResetFn_rxSpiConfig(rxSpiConfig_t *rxSpiConfig)
