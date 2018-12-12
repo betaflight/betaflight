@@ -20,5 +20,11 @@ TARGET_SRC += \
             rx/cc2500_frsky_d.c \
             rx/cc2500_frsky_x.c \
             rx/cc2500_sfhss.c
+else
+ifeq ($(TARGET), CRAZYBEEF3DXSPI)
+TARGET_SRC += \
+            drivers/rx/rx_cyrf6936.c \
+            rx/cyrf6936_spektrum.c
+endif
 endif
 endif
