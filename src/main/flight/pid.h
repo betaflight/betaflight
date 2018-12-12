@@ -148,6 +148,7 @@ typedef struct pidProfile_s {
     uint8_t abs_control_gain;               // How strongly should the absolute accumulated error be corrected for
     uint8_t abs_control_limit;              // Limit to the correction
     uint8_t abs_control_error_limit;        // Limit to the accumulated error
+    uint8_t abs_control_cutoff;             // Cutoff frequency for path estimation in abs control
     uint8_t dterm_filter2_type;             // Filter selection for 2nd dterm
     uint16_t dyn_lpf_dterm_min_hz;
     uint16_t dyn_lpf_dterm_max_hz;
@@ -213,9 +214,7 @@ bool pidAntiGravityEnabled(void);
 extern float axisError[XYZ_AXIS_COUNT];
 void applyItermRelax(const int axis, const float iterm,
     const float gyroRate, float *itermErrorRate, float *currentPidSetpoint);
-void applyAbsoluteControl(const int axis, const float gyroRate, const bool itermRelaxIsEnabled,
-    const float setpointLpf, const float setpointHpf,
-    float *currentPidSetpoint, float *itermErrorRate);
+void applyAbsoluteControl(const int axis, const float gyroRate, float *currentPidSetpoint, float *itermErrorRate);
 void rotateItermAndAxisError();
 float pidLevel(int axis, const pidProfile_t *pidProfile,
     const rollAndPitchTrims_t *angleTrim, float currentPidSetpoint);
