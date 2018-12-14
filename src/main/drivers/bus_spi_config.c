@@ -25,83 +25,101 @@
 
 #ifdef USE_SPI
 
-#include "drivers/bus_spi.h"
 #include "drivers/io.h"
+#include "drivers/resource.h"
+#include "drivers/system.h"
 
-#include "pg/bus_spi.h"
+#include "drivers/flash.h"
+#include "drivers/max7456.h"
+#include "drivers/rx/rx_spi.h"
+#include "drivers/sdcard.h"
 
-// Bring a pin for possible CS line to pull-up state in preparation for
-// sequential initialization by relevant drivers.
+#include "pg/flash.h"
+#include "pg/max7456.h"
+#include "pg/rx_spi.h"
+#include "pg/sdcard.h"
 
-// There are two versions locally:
-// spiPreInitCsIPU set the pin to input with pullup (IOCFG_IPU) for safety.
-// spiPreInitCsOPU actually drive the pin for digital hi.
-//
-// The later is required for SPI slave devices on some targets, interfaced through level shifters, such as Kakute F4.
-//
-// Two ioTag_t array PGs, spiPreinitIPUConfig and spiPreinitOPUConfig are used to
-// determine pin to be IPU or OPU.
-// The IPU array is initialized with a hard coded initialization array,
-// while the OPU array is initialized from target dependent config.c.
-// With generic targets, both arrays are setup with resource commands.
+#include "sensors/initialisation.h"
 
-static void spiPreInitCsIPU(ioTag_t iotag, int index)
+typedef struct spiPreinit_s {
+    ioTag_t iotag;
+    uint8_t iocfg;
+    bool init;
+} spiPreinit_t;
+
+static spiPreinit_t spiPreinitArray[SPI_PREINIT_COUNT];
+static int spiPreinitCount = 0;
+
+void spiPreinitRegister(ioTag_t iotag, uint8_t iocfg, bool init)
 {
-    IO_t io = IOGetByTag(iotag);
-    if (io) {
-        IOInit(io, OWNER_SPI_PREINIT_IPU, index);
-        IOConfigGPIO(io, IOCFG_IPU);
+    if (!iotag) {
+        return;
+    }
+
+    if (spiPreinitCount == SPI_PREINIT_COUNT) {
+        indicateFailure(FAILURE_DEVELOPER, 5);
+        return;
+    }
+
+    spiPreinitArray[spiPreinitCount].iotag = iotag;
+    spiPreinitArray[spiPreinitCount].iocfg = iocfg;
+    spiPreinitArray[spiPreinitCount].init = init;
+    ++spiPreinitCount;
+}
+
+static void spiPreinitPin(spiPreinit_t *preinit, int index)
+{
+    IO_t io = IOGetByTag(preinit->iotag);
+    IOInit(io, OWNER_PREINIT, RESOURCE_INDEX(index));
+    IOConfigGPIO(io, preinit->iocfg);
+    if (preinit->init) {
         IOHi(io);
+    } else {
+        IOLo(io);
     }
 }
 
-static void spiPreInitCsOPU(ioTag_t iotag, int index)
+void spiPreinit(void)
 {
-    IO_t io = IOGetByTag(iotag);
-    if (io) {
-        IOInit(io, OWNER_SPI_PREINIT_OPU, index);
-        IOConfigGPIO(io, IOCFG_OUT_PP);
-        IOHi(io);
+    sensorsPreInit();
+
+#ifdef USE_SDCARD_SPI
+    sdcard_preInit(sdcardConfig());
+#endif
+
+#if defined(RTC6705_CS_PIN) && !defined(USE_VTX_RTC6705_SOFTSPI) // RTC6705 soft SPI initialisation handled elsewhere.
+    // XXX Waiting for "RTC6705 cleanup #7114" to be done
+#endif
+
+#ifdef USE_FLASH_CHIP
+    flashPreInit(flashConfig());
+#endif
+
+#if defined(USE_RX_SPI) && !defined(USE_RX_SOFTSPI)
+    rxSpiDevicePreInit(rxSpiConfig());
+#endif
+
+#ifdef USE_MAX7456
+    max7456PreInit(max7456Config());
+#endif
+
+    for (int i = 0; i < spiPreinitCount; i++) {
+        spiPreinitPin(&spiPreinitArray[i], i);
     }
 }
 
-void spiPreInit(void)
+void spiPreinitByIO(IO_t io)
 {
-    for (int i = 0 ; i < SPI_PREINIT_IPU_COUNT ; i++) {
-        if (spiPreinitIPUConfig(i)->csnTag) {
-            spiPreInitCsIPU(spiPreinitIPUConfig(i)->csnTag, i);
-        }
-    }
-
-    for (int i = 0 ; i < SPI_PREINIT_OPU_COUNT ; i++) {
-        if (spiPreinitOPUConfig(i)->csnTag) {
-            spiPreInitCsOPU(spiPreinitOPUConfig(i)->csnTag, i);
-        }
-    }
-}
-
-// Back to pre-init state
-
-void spiPreinitCsByIO(IO_t io)
-{
-    for (int i = 0 ; i < SPI_PREINIT_IPU_COUNT ; i++) {
-        if (IOGetByTag(spiPreinitIPUConfig(i)->csnTag) == io) {
-            spiPreInitCsIPU(spiPreinitIPUConfig(i)->csnTag, i);
+    for (int i = 0; i < spiPreinitCount; i++) {
+        if (io == IOGetByTag(spiPreinitArray[i].iotag)) {
+            spiPreinitPin(&spiPreinitArray[i], i);
             return;
         }
     }
-
-    for (int i = 0 ; i < SPI_PREINIT_OPU_COUNT ; i++) {
-        if (IOGetByTag(spiPreinitOPUConfig(i)->csnTag) == io) {
-            spiPreInitCsOPU(spiPreinitOPUConfig(i)->csnTag, i);
-            return;
-        }
-    }
 }
 
-void spiPreinitCsByTag(ioTag_t iotag)
+void spiPreinitByTag(ioTag_t tag)
 {
-    spiPreinitCsByIO(IOGetByTag(iotag));
+    spiPreinitByIO(IOGetByTag(tag));
 }
-
 #endif

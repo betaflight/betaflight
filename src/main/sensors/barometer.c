@@ -146,6 +146,15 @@ static int32_t baroGroundAltitude = 0;
 static int32_t baroGroundPressure = 8*101325;
 static uint32_t baroPressureSum = 0;
 
+void baroPreInit(void)
+{
+#ifdef USE_SPI
+    if (barometerConfig()->baro_bustype == BUSTYPE_SPI) {
+        spiPreinitRegister(barometerConfig()->baro_spi_csn, IOCFG_IPU, 1);
+    }
+#endif
+}
+
 bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
 {
     // Detect what pressure sensors are available. baro->update() is set to sensor-specific update function

@@ -27,6 +27,7 @@ typedef struct max7456Config_s {
     uint8_t clockConfig; // SPI clock based on device type and overclock state (MAX7456_CLOCK_CONFIG_xxxx)
     ioTag_t csTag;
     uint8_t spiDevice;
+    bool preInitOPU;
 } max7456Config_t;
 
 // clockConfig values

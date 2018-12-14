@@ -116,6 +116,15 @@ void pgResetFn_compassConfig(compassConfig_t *compassConfig)
 static int16_t magADCRaw[XYZ_AXIS_COUNT];
 static uint8_t magInit = 0;
 
+void compassPreInit(void)
+{
+#ifdef USE_SPI
+    if (compassConfig()->mag_bustype == BUSTYPE_SPI) {
+        spiPreinitRegister(compassConfig()->mag_spi_csn, IOCFG_IPU, 1);
+    }
+#endif
+}
+
 #if !defined(SIMULATOR_BUILD)
 bool compassDetect(magDev_t *dev)
 {

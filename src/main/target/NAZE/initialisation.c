@@ -30,14 +30,11 @@
 #include "pg/bus_i2c.h"
 #include "pg/bus_spi.h"
 
-
-extern void spiPreInit(void); // XXX In fc/init.c
-
 void targetBusInit(void)
 {
 #ifdef USE_SPI
     spiPinConfigure(spiPinConfig(0));
-    spiPreInit();
+    spiPreinit();
 #ifdef USE_SPI_DEVICE_2
     spiInit(SPIDEV_2);
 #endif

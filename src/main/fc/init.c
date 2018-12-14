@@ -393,13 +393,13 @@ void init(void)
 
 #ifdef TARGET_BUS_INIT
     targetBusInit();
+
 #else
 
 #ifdef USE_SPI
     spiPinConfigure(spiPinConfig(0));
 
-    // Initialize CS lines and keep them high
-    spiPreInit();
+    spiPreinit();
 
 #ifdef USE_SPI_DEVICE_1
     spiInit(SPIDEV_1);

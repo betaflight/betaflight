@@ -242,11 +242,20 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro, const gyro
         }
     }
 
-    spiPreinitCsByTag(config->csnTag);
+    spiPreinitByTag(config->csnTag);
 
     return false;
 }
 #endif
+
+void mpuPreInit(const struct gyroDeviceConfig_s *config)
+{
+#ifdef USE_SPI_GYRO
+    spiPreinitRegister(config->csnTag, IOCFG_IPU, 1);
+#else
+    UNUSED(config);
+#endif
+}
 
 void mpuDetect(gyroDev_t *gyro, const gyroDeviceConfig_t *config)
 {

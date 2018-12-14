@@ -101,6 +101,15 @@ bool sdcard_isInserted(void)
  */
 sdcardVTable_t *sdcardVTable;
 
+void sdcard_preInit(const sdcardConfig_t *config)
+{
+#ifdef USE_SDCARD_SPI
+    sdcardSpiVTable.sdcard_preInit(config);
+#else
+    UNUSED(config);
+#endif
+}
+
 void sdcard_init(const sdcardConfig_t *config)
 {
     switch (config->mode) {

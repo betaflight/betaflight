@@ -401,6 +401,16 @@ STATIC_UNIT_TESTED gyroHardware_e gyroDetect(gyroDev_t *dev)
     return gyroHardware;
 }
 
+static void gyroPreInitSensor(const gyroDeviceConfig_t *config)
+{
+#if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) \
+ || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20601) || defined(USE_GYRO_SPI_ICM20649) || defined(USE_GYRO_SPI_ICM20689)
+    mpuPreInit(config);
+#else
+    UNUSED(config);
+#endif
+}
+
 static bool gyroInitSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t *config)
 {
     gyroSensor->gyroDev.gyro_high_fsr = gyroConfig()->gyro_high_fsr;
@@ -481,6 +491,18 @@ static bool gyroInitSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t *c
 #endif
 
     return true;
+}
+
+void gyroPreInit(void)
+{
+    if (gyroToUse == GYRO_CONFIG_USE_GYRO_1 || gyroToUse == GYRO_CONFIG_USE_GYRO_BOTH) {
+        gyroPreInitSensor(gyroDeviceConfig(0));
+    }
+#ifdef USE_MULTI_GYRO
+    if (gyroToUse == GYRO_CONFIG_USE_GYRO_2 || gyroToUse == GYRO_CONFIG_USE_GYRO_BOTH) {
+        gyroPreInitSensor(gyroDeviceConfig(1));
+    }
+#endif
 }
 
 bool gyroInit(void)
@@ -710,7 +732,6 @@ static void gyroInitFilterDynamicNotch(gyroSensor_t *gyroSensor)
     }
 }
 #endif
-
 
 static void gyroInitSensorFilters(gyroSensor_t *gyroSensor)
 {

@@ -631,6 +631,7 @@ static void sdcardSdio_setProfilerCallback(sdcard_profilerCallback_c callback)
 #endif
 
 sdcardVTable_t sdcardSdioVTable = {
+    NULL,
     sdcardSdio_init,
     sdcardSdio_readBlock,
     sdcardSdio_beginWriteBlocks,
