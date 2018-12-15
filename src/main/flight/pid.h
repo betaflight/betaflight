@@ -157,6 +157,8 @@ typedef struct pidProfile_s {
     uint8_t launchControlAngleLimit;        // Optional launch control angle limit (requires ACC)
     uint8_t launchControlGain;              // Iterm gain used while launch control is active
     uint8_t launchControlAllowTriggerReset; // Controls trigger behavior and whether the trigger can be reset
+    uint8_t use_integrated_yaw;             // Selects whether the yaw pidsum should integrated
+    uint8_t integrated_yaw_relax;           // Specifies how much integrated yaw should be reduced to offset the drag based yaw component
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles);

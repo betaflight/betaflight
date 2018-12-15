@@ -179,6 +179,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .launchControlAngleLimit = 0,
         .launchControlGain = 40,
         .launchControlAllowTriggerReset = true,
+        .use_integrated_yaw = false,
+        .integrated_yaw_relax = 200,
     );
 #ifdef USE_DYN_LPF
     pidProfile->dterm_lowpass_hz = 150;
@@ -448,6 +450,11 @@ static FAST_RAM_ZERO_INIT uint8_t launchControlAngleLimit;
 static FAST_RAM_ZERO_INIT float launchControlKi;
 #endif
 
+#ifdef USE_INTEGRATED_YAW_CONTROL
+static FAST_RAM_ZERO_INIT bool useIntegratedYaw;
+static FAST_RAM_ZERO_INIT uint8_t integratedYawRelax;
+#endif
+
 void pidResetIterm(void)
 {
     for (int axis = 0; axis < 3; axis++) {
@@ -584,6 +591,11 @@ void pidInitConfig(const pidProfile_t *pidProfile)
         launchControlAngleLimit = 0;
     }
     launchControlKi = ITERM_SCALE * pidProfile->launchControlGain;
+#endif
+
+#ifdef USE_INTEGRATED_YAW_CONTROL
+    useIntegratedYaw = pidProfile->use_integrated_yaw;
+    integratedYawRelax = pidProfile->integrated_yaw_relax;
 #endif
 }
 
@@ -1244,7 +1256,16 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
         }
 #endif
         // calculating the PID sum
-        pidData[axis].Sum = pidData[axis].P + pidData[axis].I + pidData[axis].D + pidData[axis].F;
+        const float pidSum = pidData[axis].P + pidData[axis].I + pidData[axis].D + pidData[axis].F;
+#ifdef USE_INTEGRATED_YAW_CONTROL
+        if (axis == FD_YAW && useIntegratedYaw) {
+            pidData[axis].Sum += pidSum * dT * 100.0f;
+            pidData[axis].Sum -= pidData[axis].Sum * integratedYawRelax / 100000.0f * dT / 0.000125f;
+        } else
+#endif
+        {
+            pidData[axis].Sum = pidSum;
+        }
     }
 
     // Disable PID control if at zero throttle or if gyro overflow detected
