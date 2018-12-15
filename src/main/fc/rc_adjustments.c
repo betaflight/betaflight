@@ -35,12 +35,9 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
-#include "drivers/time.h"
-
 #include "config/feature.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
-#include "pg/rx.h"
+
+#include "drivers/time.h"
 
 #include "flight/pid.h"
 
@@ -51,11 +48,16 @@
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
-#include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 #include "fc/rc.h"
 
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+#include "pg/rx.h"
+
 #include "rx/rx.h"
+
+#include "rc_adjustments.h"
 
 #define ADJUSTMENT_RANGE_COUNT_INVALID -1
 
