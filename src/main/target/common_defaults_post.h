@@ -249,6 +249,12 @@
 #define BINDPLUG_PIN NONE
 #endif
 
+#ifdef USE_RX_SPI
+#ifndef RX_SPI_LED_PIN
+#define RX_SPI_LED_PIN NONE
+#endif
+#endif
+
 // F4 and F7 single gyro boards
 #if defined(USE_MULTI_GYRO) && !defined(GYRO_2_SPI_INSTANCE)
 #define GYRO_2_SPI_INSTANCE     GYRO_1_SPI_INSTANCE
