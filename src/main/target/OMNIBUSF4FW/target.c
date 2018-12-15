@@ -32,16 +32,21 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM3,  CH3, PB0,  TIM_USE_MOTOR, 0, 0), // D(1,7) U(1,2)
     DEF_TIM(TIM3,  CH4, PB1,  TIM_USE_MOTOR, 0, 0), // D(1,2) U(1,2)
     DEF_TIM(TIM2,  CH4, PA3,  TIM_USE_MOTOR, 0, 1), // D(1,6) U(1,7)
-#if defined(OMNIBUSF4FW)
-    DEF_TIM(TIM3,  CH2, PB5,  TIM_USE_MOTOR, 0, 0), // D(1,5) U(1,2)
-#elif defined(OMNIBUSF4FW1)
+#if defined(OMNIBUSF4FW1)
     DEF_TIM(TIM1,  CH1, PA8,  TIM_USE_MOTOR, 0, 0),
+#else
+    DEF_TIM(TIM3,  CH2, PB5,  TIM_USE_MOTOR, 0, 0), // D(1,5) U(1,2)
 #endif
 
     // Other functions
     DEF_TIM(TIM4,  CH1, PB6,  TIM_USE_LED,   0, 0), // D(1,0)
     DEF_TIM(TIM10, CH1, PB8,  TIM_USE_PPM,   0, 0), // PPM
-    DEF_TIM(TIM11, CH1, PB9,  TIM_USE_NONE,  0, 0), // CAM_CTL
+
+#if defined(OMNIBUSF4V6)
+    DEF_TIM(TIM11, CH1, PB7,  TIM_USE_ANY,   0, 0), // CAM_CTL,timer collision with I2C1_SDA
+#else
+    DEF_TIM(TIM11, CH1, PB9,  TIM_USE_ANY,   0, 0), // CAM_CTL
+#endif
 
     // Spare pins and backdoor timer
     DEF_TIM(TIM8,  CH1, PC6,  TIM_USE_NONE,  0, 0), // UART6_TX
