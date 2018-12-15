@@ -66,8 +66,6 @@
 #include "flight/pid.h"
 #include "flight/failsafe.h"
 
-static pidProfile_t *pidProfile;
-
 // true if arming is done via the sticks (as opposed to a switch)
 static bool isUsingSticksToArm = true;
 
@@ -392,9 +390,7 @@ int32_t getRcStickDeflection(int32_t axis, uint16_t midrc) {
     return MIN(ABS(rcData[axis] - midrc), 500);
 }
 
-void useRcControlsConfig(pidProfile_t *pidProfileToUse)
+void rcControlsInit(void)
 {
-    pidProfile = pidProfileToUse;
-
     isUsingSticksToArm = !isModeActivationConditionPresent(BOXARM);
 }

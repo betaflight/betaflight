@@ -128,8 +128,8 @@ static void activateConfig(void)
     resetAdjustmentStates();
 
     pidInit(currentPidProfile);
-    useRcControlsConfig(currentPidProfile);
-    useAdjustmentConfig(currentPidProfile);
+
+    rcControlsInit();
 
     failsafeReset();
     setAccelerationTrims(&accelerometerConfigMutable()->accZero);
@@ -575,6 +575,8 @@ void changePidProfile(uint8_t pidProfileIndex)
     if (pidProfileIndex < MAX_PROFILE_COUNT) {
         systemConfigMutable()->pidProfileIndex = pidProfileIndex;
         loadPidProfile();
+
+        pidInit(currentPidProfile);
     }
 
     beeperConfirmationBeeps(pidProfileIndex + 1);
