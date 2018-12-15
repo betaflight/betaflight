@@ -99,8 +99,8 @@
 #if !defined(PIRXF4)
 #define USE_BARO
 #define USE_BARO_SPI_LPS
-#define LPS_SPI_INSTANCE SPI3
-#define LPS_CS_PIN PB8
+#define BARO_SPI_INSTANCE       SPI3
+#define BARO_CS_PIN             PB8
 #endif
 
 //UARTs

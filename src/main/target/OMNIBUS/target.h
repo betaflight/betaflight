@@ -74,8 +74,8 @@
 #define USE_ACC_SPI_MPU6000
 #define ACC_1_ALIGN             CW90_DEG
 
-#define BMP280_SPI_INSTANCE     SPI1
-#define BMP280_CS_PIN           PA13
+#define BARO_SPI_INSTANCE       SPI1
+#define BARO_CS_PIN             PA13
 
 #define USE_BARO
 #define USE_BARO_BMP280
