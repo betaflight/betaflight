@@ -57,12 +57,6 @@
 magDev_t magDev;
 mag_t mag;                   // mag access functions
 
-#ifdef MAG_INT_EXTI
-#define COMPASS_INTERRUPT_TAG   IO_TAG(MAG_INT_EXTI)
-#else
-#define COMPASS_INTERRUPT_TAG   IO_TAG_NONE
-#endif
-
 PG_REGISTER_WITH_RESET_FN(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 1);
 
 void pgResetFn_compassConfig(compassConfig_t *compassConfig)
@@ -79,13 +73,8 @@ void pgResetFn_compassConfig(compassConfig_t *compassConfig)
 
 #if defined(USE_SPI) && (defined(USE_MAG_SPI_HMC5883) || defined(USE_MAG_SPI_AK8963))
     compassConfig->mag_bustype = BUSTYPE_SPI;
-#ifdef USE_MAG_SPI_HMC5883
-    compassConfig->mag_spi_device = SPI_DEV_TO_CFG(spiDeviceByInstance(HMC5883_SPI_INSTANCE));
-    compassConfig->mag_spi_csn = IO_TAG(HMC5883_CS_PIN);
-#else
-    compassConfig->mag_spi_device = SPI_DEV_TO_CFG(spiDeviceByInstance(AK8963_SPI_INSTANCE));
-    compassConfig->mag_spi_csn = IO_TAG(AK8963_CS_PIN);
-#endif
+    compassConfig->mag_spi_device = SPI_DEV_TO_CFG(spiDeviceByInstance(MAG_SPI_INSTANCE));
+    compassConfig->mag_spi_csn = IO_TAG(MAG_CS_PIN);
     compassConfig->mag_i2c_device = I2C_DEV_TO_CFG(I2CINVALID);
     compassConfig->mag_i2c_address = 0;
 #elif defined(USE_MAG_HMC5883) || defined(USE_MAG_QMC5883) || defined(USE_MAG_AK8975) || (defined(USE_MAG_AK8963) && !(defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250)))
@@ -108,7 +97,7 @@ void pgResetFn_compassConfig(compassConfig_t *compassConfig)
     compassConfig->mag_spi_device = SPI_DEV_TO_CFG(SPIINVALID);
     compassConfig->mag_spi_csn = IO_TAG_NONE;
 #endif
-    compassConfig->interruptTag = COMPASS_INTERRUPT_TAG;
+    compassConfig->interruptTag = IO_TAG(MAG_INT_EXTI);
 }
 
 #if defined(USE_MAG)

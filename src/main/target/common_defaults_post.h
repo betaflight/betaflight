@@ -356,6 +356,23 @@
 #endif
 #endif
 
+// Mag
+#if defined(USE_MAG)
+#ifndef MAG_SPI_INSTANCE
+#define MAG_SPI_INSTANCE        NULL
+#endif
+#ifndef MAG_CS_PIN
+#define MAG_CS_PIN              NONE
+#endif
+#ifndef MAG_I2C_INSTANCE
+#define MAG_I2C_INSTANCE        I2C_DEVICE
+#endif
+#endif
+
+#ifndef MAG_INT_EXTI
+#define MAG_INT_EXTI            NONE
+#endif
+
 // Baro
 #if defined(USE_BARO)
 #ifndef BARO_SPI_INSTANCE
