@@ -421,7 +421,7 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row, 
 #ifdef USE_OSD
     case OME_VISIBLE:
         if (IS_PRINTVALUE(p) && p->data) {
-            uint16_t *val = (uint16_t *)p->data;
+            uint16_t *val = (uint16_t *)p->data; 
             bool cursorBlink = millis() % (2 * CMS_CURSOR_BLINK_DELAY_MS) < CMS_CURSOR_BLINK_DELAY_MS;
             for (unsigned x = 1; x < OSD_PROFILE_COUNT + 1; x++) {
                 if (VISIBLE_IN_OSD_PROFILE(*val, x)) {
