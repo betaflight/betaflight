@@ -31,7 +31,7 @@ typedef enum {
     CMS_KEY_LEFT,
     CMS_KEY_RIGHT,
     CMS_KEY_ESC,
-    CMS_KEY_MENU
+    CMS_KEY_MENU,
 } cms_key_e;
 
 extern bool cmsInMenu;
