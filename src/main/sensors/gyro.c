@@ -495,13 +495,9 @@ static bool gyroInitSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t *c
 
 void gyroPreInit(void)
 {
-    if (gyroToUse == GYRO_CONFIG_USE_GYRO_1 || gyroToUse == GYRO_CONFIG_USE_GYRO_BOTH) {
-        gyroPreInitSensor(gyroDeviceConfig(0));
-    }
+    gyroPreInitSensor(gyroDeviceConfig(0));
 #ifdef USE_MULTI_GYRO
-    if (gyroToUse == GYRO_CONFIG_USE_GYRO_2 || gyroToUse == GYRO_CONFIG_USE_GYRO_BOTH) {
-        gyroPreInitSensor(gyroDeviceConfig(1));
-    }
+    gyroPreInitSensor(gyroDeviceConfig(1));
 #endif
 }
 
