@@ -500,7 +500,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
                     mac->range.startStep = bstRead8();
                     mac->range.endStep = bstRead8();
 
-                    useRcControlsConfig(currentPidProfile);
+                    rcControlsInit();
                 } else {
                     ret = BST_FAILED;
                 }

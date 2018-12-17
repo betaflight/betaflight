@@ -112,7 +112,5 @@ void resetAdjustmentStates(void);
 void updateAdjustmentStates(void);
 struct controlRateConfig_s;
 void processRcAdjustments(struct controlRateConfig_s *controlRateConfig);
-struct pidProfile_s;
-void useAdjustmentConfig(struct pidProfile_s *pidProfileToUse);
 const char *getAdjustmentsRangeName(void);
 int getAdjustmentsRangeValue(void);

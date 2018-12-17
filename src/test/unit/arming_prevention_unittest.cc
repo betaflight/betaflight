@@ -89,7 +89,7 @@ TEST(ArmingPreventionTest, CalibrationPowerOnGraceAngleThrottleArmSwitch)
     modeActivationConditionsMutable(0)->modeId = BOXARM;
     modeActivationConditionsMutable(0)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
     modeActivationConditionsMutable(0)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
-    useRcControlsConfig(NULL);
+    rcControlsInit();
 
     // and
     rxConfigMutable()->mincheck = 1050;
@@ -179,7 +179,7 @@ TEST(ArmingPreventionTest, ArmingGuardRadioLeftOnAndArmed)
     modeActivationConditionsMutable(0)->modeId = BOXARM;
     modeActivationConditionsMutable(0)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
     modeActivationConditionsMutable(0)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
-    useRcControlsConfig(NULL);
+    rcControlsInit();
 
     // and
     rxConfigMutable()->mincheck = 1050;
@@ -257,7 +257,7 @@ TEST(ArmingPreventionTest, Prearm)
     modeActivationConditionsMutable(1)->modeId = BOXPREARM;
     modeActivationConditionsMutable(1)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
     modeActivationConditionsMutable(1)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
-    useRcControlsConfig(NULL);
+    rcControlsInit();
 
     // and
     rxConfigMutable()->mincheck = 1050;
@@ -300,7 +300,7 @@ TEST(ArmingPreventionTest, RadioTurnedOnAtAnyTimeArmed)
     modeActivationConditionsMutable(0)->modeId = BOXARM;
     modeActivationConditionsMutable(0)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
     modeActivationConditionsMutable(0)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
-    useRcControlsConfig(NULL);
+    rcControlsInit();
 
     // and
     rxConfigMutable()->mincheck = 1050;
@@ -366,7 +366,7 @@ TEST(ArmingPreventionTest, In3DModeAllowArmingWhenEnteringThrottleDeadband)
     modeActivationConditionsMutable(0)->modeId = BOXARM;
     modeActivationConditionsMutable(0)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
     modeActivationConditionsMutable(0)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
-    useRcControlsConfig(NULL);
+    rcControlsInit();
 
     // and
     rxConfigMutable()->midrc = 1500;
@@ -433,7 +433,7 @@ TEST(ArmingPreventionTest, When3DModeDisabledThenNormalThrottleArmingConditionAp
     modeActivationConditionsMutable(1)->modeId = BOX3D;
     modeActivationConditionsMutable(1)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
     modeActivationConditionsMutable(1)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
-    useRcControlsConfig(NULL);
+    rcControlsInit();
 
     // and
     rxConfigMutable()->mincheck = 1050;
@@ -534,7 +534,7 @@ TEST(ArmingPreventionTest, WhenUsingSwitched3DModeThenNormalThrottleArmingCondit
     modeActivationConditionsMutable(1)->modeId = BOX3D;
     modeActivationConditionsMutable(1)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
     modeActivationConditionsMutable(1)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
-    useRcControlsConfig(NULL);
+    rcControlsInit();
 
     // and
     rxConfigMutable()->mincheck = 1050;
@@ -628,7 +628,7 @@ TEST(ArmingPreventionTest, ParalyzeOnAtBoot)
     modeActivationConditionsMutable(1)->modeId = BOXPARALYZE;
     modeActivationConditionsMutable(1)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
     modeActivationConditionsMutable(1)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
-    useRcControlsConfig(NULL);
+    rcControlsInit();
 
     // and
     rxConfigMutable()->mincheck = 1050;
@@ -678,7 +678,7 @@ TEST(ArmingPreventionTest, Paralyze)
     modeActivationConditionsMutable(2)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
     modeActivationConditionsMutable(3)->modeId = BOXVTXPITMODE;
     modeActivationConditionsMutable(3)->linkedTo = BOXPARALYZE;
-    useRcControlsConfig(NULL);
+    rcControlsInit();
 
     // and
     rxConfigMutable()->mincheck = 1050;
