@@ -3977,10 +3977,10 @@ static void printResource(uint8_t dumpMask)
         }
 
         for (int index = 0; index < MAX_RESOURCE_INDEX(resourceTable[i].maxIndex); index++) {
-            const ioTag_t ioTag = *((const uint8_t *)currentConfig + resourceTable[i].stride * index + resourceTable[i].offset);
+            const ioTag_t ioTag = *(ioTag_t *)((const uint8_t *)currentConfig + resourceTable[i].stride * index + resourceTable[i].offset);
             ioTag_t ioTagDefault = NULL;
             if (defaultConfig) {
-                ioTagDefault = *((const uint8_t *)defaultConfig + resourceTable[i].stride * index + resourceTable[i].offset);
+                ioTagDefault = *(ioTag_t *)((const uint8_t *)defaultConfig + resourceTable[i].stride * index + resourceTable[i].offset);
             }
 
             const bool equalsDefault = ioTag == ioTagDefault;
