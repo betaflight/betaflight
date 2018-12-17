@@ -54,6 +54,18 @@
 #endif
 #endif
 
+// pg/flash
+
+#ifdef USE_FLASH_M25P16
+#ifndef FLASH_CS_PIN
+#define FLASH_CS_PIN                    NONE
+#endif
+
+#ifndef FLASH_SPI_INSTANCE
+#define FLASH_SPI_INSTANCE              NULL
+#endif
+#endif
+
 // pg/bus_i2c
 
 #ifdef I2C_FULL_RECONFIGURABILITY
@@ -281,7 +293,7 @@
 #endif
 
 #if !defined(ACC_1_ALIGN)
-#define ACC_1_ALIGN            ALIGN_DEFAULT
+#define ACC_1_ALIGN             ALIGN_DEFAULT
 #endif
 
 #if defined(MPU_ADDRESS)
