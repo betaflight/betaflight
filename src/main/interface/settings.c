@@ -90,6 +90,7 @@
 #include "rx/cc2500_frsky_common.h"
 #include "rx/cc2500_sfhss.h"
 #include "rx/spektrum.h"
+#include "rx/cyrf6936_spektrum.h"
 
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
@@ -227,7 +228,8 @@ static const char * const lookupTableRxSpi[] = {
     "FLYSKY",
     "FLYSKY_2A",
     "KN",
-    "SFHSS"
+    "SFHSS",
+    "SPEKTRUM"
 };
 #endif
 
@@ -1258,6 +1260,11 @@ const clivalue_t valueTable[] = {
 #endif
 #ifdef USE_MCO
     { "mco2_on_pc9",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_MCO_CONFIG, offsetof(mcoConfig_t, enabled[1]) },
+#endif
+#ifdef USE_RX_SPEKTRUM
+    { "spektrum_spi_protocol",     VAR_UINT8 | MASTER_VALUE, .config.minmax = { 0, 255 }, PG_RX_SPEKTRUM_SPI_CONFIG, offsetof(spektrumConfig_t, protocol) },
+    { "spektrum_spi_mfg_id",       VAR_UINT8 | MASTER_VALUE | MODE_ARRAY, .config.array.length = 4, PG_RX_SPEKTRUM_SPI_CONFIG, offsetof(spektrumConfig_t, mfgId) },
+    { "spektrum_spi_num_channels", VAR_UINT8 | MASTER_VALUE, .config.minmax = { 0, DSM_MAX_CHANNEL_COUNT }, PG_RX_SPEKTRUM_SPI_CONFIG, offsetof(spektrumConfig_t, numChannels) },
 #endif
 };
 

@@ -77,4 +77,5 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "RC_SMOOTHING_RATE",
     "ANTI_GRAVITY",
     "DYN_LPF",
+    "RX_SPEKTRUM_SPI",
 };

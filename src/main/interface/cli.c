@@ -2616,7 +2616,10 @@ void cliRxSpiBind(char *cmdline){
     case RX_SPI_A7105_FLYSKY:
     case RX_SPI_A7105_FLYSKY_2A:
 #endif
-#if defined(USE_RX_FRSKY_SPI) || defined(USE_RX_SFHSS_SPI) || defined(USE_RX_FLYSKY)
+#ifdef USE_RX_SPEKTRUM
+    case RX_SPI_CYRF6936_DSM:
+#endif
+#if defined(USE_RX_FRSKY_SPI) || defined(USE_RX_SFHSS_SPI) || defined(USE_RX_FLYSKY) || defined(USE_RX_SPEKTRUM)
         rxSpiBind();
         cliPrint("Binding...");
         break;
