@@ -177,6 +177,8 @@ static void idleTasks()
 {
     // Do not calculate any of the idle task values when we are not flying
     if (!ARMING_FLAG(ARMED)) {
+        rescueState.sensor.maxAltitudeCm = 0;
+        rescueState.sensor.maxDistanceToHomeM = 0;
         return;
     }
 
