@@ -4483,16 +4483,27 @@ static void cliDiff(char *cmdline)
 #if defined(USE_USB_MSC)
 static void cliMsc(char *cmdline)
 {
-    UNUSED(cmdline);
-
     if (mscCheckFilesystemReady()) {
+#ifdef USE_RTC_TIME
+        int timezoneOffsetMinutes = timeConfig()->tz_offsetMinutes;
+        if (!isEmpty(cmdline)) {
+            timezoneOffsetMinutes = atoi(cmdline);
+            if ((timezoneOffsetMinutes < TIMEZONE_OFFSET_MINUTES_MIN) || (timezoneOffsetMinutes > TIMEZONE_OFFSET_MINUTES_MAX)) {
+                cliPrintErrorLinef("INVALID TIMEZONE OFFSET");
+                return;
+            }
+        }
+#else
+        int timezoneOffsetMinutes = 0;
+        UNUSED(cmdline);
+#endif
         cliPrintHashLine("Restarting in mass storage mode");
         cliPrint("\r\nRebooting");
         bufWriterFlush(cliWriter);
         waitForSerialPortToFinishTransmitting(cliPort);
         stopPwmAllMotors();
 
-        systemResetToMsc();
+        systemResetToMsc(timezoneOffsetMinutes);
     } else {
         cliPrintHashLine("Storage not present or failed to initialize!");
     }
@@ -4598,7 +4609,11 @@ const clicmd_t cmdTable[] = {
 #endif
     CLI_COMMAND_DEF("motor",  "get/set motor", "<index> [<value>]", cliMotor),
 #ifdef USE_USB_MSC
+#ifdef USE_RTC_TIME
+    CLI_COMMAND_DEF("msc", "switch into msc mode", "[<timezone offset minutes>]", cliMsc),
+#else
     CLI_COMMAND_DEF("msc", "switch into msc mode", NULL, cliMsc),
+#endif
 #endif
     CLI_COMMAND_DEF("name", "name of craft", NULL, cliName),
 #ifndef MINIMAL_CLI

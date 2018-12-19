@@ -30,6 +30,8 @@ typedef enum {
     PERSISTENT_OBJECT_HSE_VALUE,
     PERSISTENT_OBJECT_OVERCLOCK_LEVEL,
     PERSISTENT_OBJECT_BOOTLOADER_REQUEST,
+    PERSISTENT_OBJECT_RTC_HIGH,           // high 32 bits of rtcTime_t
+    PERSISTENT_OBJECT_RTC_LOW,            // low 32 bits of rtcTime_t
     PERSISTENT_OBJECT_COUNT,
 } persistentObjectId_e;
 

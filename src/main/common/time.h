@@ -40,6 +40,9 @@ typedef uint32_t timeUs_t;
 #define TIMEUS_MAX UINT32_MAX
 #endif
 
+#define TIMEZONE_OFFSET_MINUTES_MIN -780  // -13 hours
+#define TIMEZONE_OFFSET_MINUTES_MAX 780   // +13 hours
+
 static inline timeDelta_t cmpTimeUs(timeUs_t a, timeUs_t b) { return (timeDelta_t)(a - b); }
 
 #define FORMATTED_DATE_TIME_BUFSIZE 30
@@ -95,4 +98,6 @@ bool rtcSet(rtcTime_t *t);
 bool rtcGetDateTime(dateTime_t *dt);
 bool rtcSetDateTime(dateTime_t *dt);
 
+void rtcPersistWrite(int16_t offsetMinutes);
+bool rtcPersistRead(rtcTime_t *t);
 #endif

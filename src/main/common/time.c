@@ -30,6 +30,8 @@
 #include "common/printf.h"
 #include "common/time.h"
 
+#include "drivers/persistent.h"
+
 #include "pg/pg_ids.h"
 
 #include "drivers/time.h"
@@ -260,6 +262,33 @@ bool rtcSetDateTime(dateTime_t *dt)
 {
     rtcTime_t t = dateTimeToRtcTime(dt);
     return rtcSet(&t);
+}
+
+void rtcPersistWrite(int16_t offsetMinutes)
+{
+    rtcTime_t workTime;
+    uint32_t highLongWord = 0;
+    uint32_t lowLongWord = 0;
+    if (rtcGet(&workTime)) {
+        workTime += (offsetMinutes * 60 * MILLIS_PER_SECOND);
+        highLongWord = (uint32_t)(workTime >> 32);
+        lowLongWord = (uint32_t)(workTime & 0xffffffff);
+    }
+    persistentObjectWrite(PERSISTENT_OBJECT_RTC_HIGH, highLongWord);
+    persistentObjectWrite(PERSISTENT_OBJECT_RTC_LOW, lowLongWord);
+}
+
+bool rtcPersistRead(rtcTime_t *t)
+{
+    const uint32_t highLongWord = persistentObjectRead(PERSISTENT_OBJECT_RTC_HIGH);
+    const uint32_t lowLongWord = persistentObjectRead(PERSISTENT_OBJECT_RTC_LOW);
+
+    if ((highLongWord != 0) || (lowLongWord != 0)) {
+        *t = ((uint64_t)highLongWord << 32) + lowLongWord;
+        return true;
+    } else {
+        return false;
+    }
 }
 
 #endif

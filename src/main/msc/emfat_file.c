@@ -22,13 +22,17 @@
  * Author: jflyper@github.com
  */
 
-#include "common/utils.h"
-#include "common/printf.h"
-
+#include "platform.h"
 #include "emfat.h"
 #include "emfat_file.h"
 
+#include "common/printf.h"
+#include "common/time.h"
+#include "common/utils.h"
+
 #include "io/flashfs.h"
+
+#include "msc/usbd_storage.h"
 
 #define FILESYSTEM_SIZE_MB 256
 
@@ -269,6 +273,14 @@ static emfat_entry_t entries[EMFAT_MAX_ENTRY];
 static char logNames[EMFAT_MAX_LOG_ENTRY][8+3];
 
 emfat_t emfat;
+static uint32_t cmaTime = CMA_TIME;
+
+static void emfat_set_entry_cma(emfat_entry_t *entry)
+{
+    entry->cma_time[0] = cmaTime;
+    entry->cma_time[1] = cmaTime;
+    entry->cma_time[2] = cmaTime;
+}
 
 static void emfat_add_log(emfat_entry_t *entry, int number, uint32_t offset, uint32_t size)
 {
@@ -278,10 +290,8 @@ static void emfat_add_log(emfat_entry_t *entry, int number, uint32_t offset, uin
     entry->offset = offset;
     entry->curr_size = size;
     entry->max_size = entry->curr_size;
-    entry->cma_time[0] = CMA_TIME;
-    entry->cma_time[1] = CMA_TIME;
-    entry->cma_time[2] = CMA_TIME;
     entry->readcb = bblog_read_proc;
+    emfat_set_entry_cma(entry);
 }
 
 static int emfat_find_log(emfat_entry_t *entry, int maxCount)
@@ -327,8 +337,17 @@ void emfat_init_files(void)
     emfat_entry_t *entry;
     memset(entries, 0, sizeof(entries));
 
+#ifdef USE_PERSISTENT_MSC_RTC
+    rtcTime_t mscRebootRtc;
+    if (rtcPersistRead(&mscRebootRtc)) {
+        const int32_t rtcSeconds = rtcTimeGetSeconds(&mscRebootRtc);
+        cmaTime = emfat_cma_time_from_unix((uint32_t)rtcSeconds);
+    }
+#endif
+
     for (size_t i = 0 ; i < PREDEFINED_ENTRY_COUNT ; i++) {
         entries[i] = entriesPredefined[i];
+        emfat_set_entry_cma(&entries[i]);
     }
 
     // Detect and create entries for each individual log
@@ -343,6 +362,7 @@ void emfat_init_files(void)
         entry = &entries[entryIndex];
         entry->curr_size = flashfsIdentifyStartOfFreeSpace();
         entry->max_size = entry->curr_size;
+        emfat_set_entry_cma(entry);
         ++entryIndex;
     }
 
@@ -352,6 +372,7 @@ void emfat_init_files(void)
     // used space is doubled because of the individual files plus the single complete file
     entry->curr_size = (FILESYSTEM_SIZE_MB * 1024 * 1024) - (flashfsIdentifyStartOfFreeSpace() * 2);
     entry->max_size = entry->curr_size;
+    emfat_set_entry_cma(entry);
 
     emfat_init(&emfat, "BETAFLT", entries);
 }

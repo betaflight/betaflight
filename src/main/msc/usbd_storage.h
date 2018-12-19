@@ -27,6 +27,8 @@
 #include "usbd_msc_core.h"
 #endif
 
+#include "common/time.h"
+
 #ifdef USE_HAL_DRIVER
 extern USBD_StorageTypeDef *USBD_STORAGE_fops;
 #ifdef USE_SDCARD_SDIO
