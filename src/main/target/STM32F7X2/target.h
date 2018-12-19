@@ -74,6 +74,7 @@
 #define USE_MAX7456
 
 #define USE_I2C
+#define USE_I2C_PULLUP
 #define USE_I2C_DEVICE_1
 #define USE_I2C_DEVICE_2
 #define USE_I2C_DEVICE_3
