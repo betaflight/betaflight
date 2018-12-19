@@ -20,4 +20,5 @@
 
 #pragma once
 
-bool l3gd20Detect(gyroDev_t *gyro);
+uint8_t l3gd20Detect(const busDevice_t *bus);
+bool l3gd20GyroDetect(gyroDev_t *gyro);
