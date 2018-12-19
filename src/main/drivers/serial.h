@@ -21,6 +21,9 @@
 #pragma once
 
 #include "drivers/io.h"
+#include "drivers/io_types.h"
+#include "drivers/resource.h"
+
 #include "pg/pg.h"
 
 typedef enum {
