@@ -26,6 +26,7 @@
 
 #define ENABLE_DSHOT_DMAR       true
 #define LED0_PIN                PC14
+#define CAMERA_CONTROL_PIN      PB1
 
 #define USE_BEEPER
 #define BEEPER_PIN              PC13
