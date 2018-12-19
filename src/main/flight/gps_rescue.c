@@ -353,17 +353,19 @@ static void performSanityChecks()
 
     previousTimeUs = currentTimeUs;
 
-    secondsStalled = constrain(secondsStalled + ((rescueState.sensor.groundSpeed < 150) ? 1 : -1), 0, 20);
+    if (rescueState.phase == RESCUE_CROSSTRACK) {
+        secondsStalled = constrain(secondsStalled + ((rescueState.sensor.groundSpeed < 150) ? 1 : -1), 0, 20);
 
-    if (secondsStalled == 20) {
-        rescueState.failure = RESCUE_STALLED;
-    }
+        if (secondsStalled == 20) {
+            rescueState.failure = RESCUE_STALLED;
+        }
 
-    secondsFlyingAway = constrain(secondsFlyingAway + ((lastDistanceToHomeM < rescueState.sensor.distanceToHomeM) ? 1 : -1), 0, 10);
-    lastDistanceToHomeM = rescueState.sensor.distanceToHomeM;
+        secondsFlyingAway = constrain(secondsFlyingAway + ((lastDistanceToHomeM < rescueState.sensor.distanceToHomeM) ? 1 : -1), 0, 10);
+        lastDistanceToHomeM = rescueState.sensor.distanceToHomeM;
 
-    if (secondsFlyingAway == 10) {
-        rescueState.failure = RESCUE_FLYAWAY;
+        if (secondsFlyingAway == 10) {
+            rescueState.failure = RESCUE_FLYAWAY;
+        }
     }
 
     secondsLowSats = constrain(secondsLowSats + ((rescueState.sensor.numSat < gpsRescueConfig()->minSats) ? 1 : -1), 0, 10);
