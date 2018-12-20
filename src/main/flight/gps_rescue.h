@@ -45,3 +45,4 @@ void rescueNewGpsData(void);
 float gpsRescueGetYawRate(void);
 float gpsRescueGetThrottle(void);
 bool gpsRescueIsConfigured(void);
+bool isGPSRescueAvailable(void);

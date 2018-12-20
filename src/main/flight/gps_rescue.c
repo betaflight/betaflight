@@ -113,6 +113,7 @@ typedef struct {
     rescueSensorData_s sensor;
     rescueIntent_s intent;
     bool isFailsafe;
+    bool isAvailable;
 } rescueState_s;
 
 #define GPS_RESCUE_MAX_YAW_RATE       180  // deg/sec max yaw rate
@@ -402,6 +403,54 @@ static void sensorUpdate()
     }
 }
 
+// This function checks the following conditions to determine if GPS rescue is available:
+// 1. sensor healthy - GPS data is being received.
+// 2. GPS has a valid fix.
+// 3. GPS number of satellites is less than the minimum configured for GPS rescue.
+// Note: this function does not take into account the distance from homepoint etc. (gps_rescue_min_dth) and
+// is also independent of the gps_rescue_sanity_checks configuration
+static bool gpsRescueIsAvailable(void)
+{
+    static uint32_t previousTimeUs = 0; // Last time LowSat was checked
+    const uint32_t currentTimeUs = micros();
+    static int8_t secondsLowSats = 0; // Minimum sat detection
+    static bool lowsats = false;
+    static bool noGPSfix = false;
+    bool result = true;
+
+    if (!gpsIsHealthy() ) {
+        return false;
+    }
+
+    //  Things that should run at a low refresh rate >> ~1hz
+    const uint32_t dTime = currentTimeUs - previousTimeUs;
+    if (dTime < 1000000) { //1hz
+        if (noGPSfix || lowsats) {
+            result = false;
+        }
+        return result;
+    }
+
+    previousTimeUs = currentTimeUs;
+
+    if (!STATE(GPS_FIX)) {
+        result = false;
+        noGPSfix = true;
+    } else {
+        noGPSfix = false;
+    }
+
+    secondsLowSats = constrain(secondsLowSats + ((gpsSol.numSat < gpsRescueConfig()->minSats) ? 1 : -1), 0, 2);
+    if (secondsLowSats == 2) {
+        lowsats = true;
+        result = false;
+    } else {
+        lowsats = false;
+    }
+
+    return result;
+}
+
 /*
     Determine what phase we are in, determine if all criteria are met to move to the next phase
 */
@@ -418,6 +467,8 @@ void updateGPSRescueState(void)
     rescueState.isFailsafe = failsafeIsActive();
 
     sensorUpdate();
+
+    rescueState.isAvailable = gpsRescueIsAvailable();
 
     switch (rescueState.phase) {
     case RESCUE_IDLE:
@@ -541,6 +592,11 @@ float gpsRescueGetThrottle(void)
 bool gpsRescueIsConfigured(void)
 {
     return failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE || isModeActivationConditionPresent(BOXGPSRESCUE);
+}
+
+bool isGPSRescueAvailable(void)
+{
+    return rescueState.isAvailable;
 }
 #endif
 
