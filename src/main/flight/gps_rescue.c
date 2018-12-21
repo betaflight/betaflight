@@ -280,22 +280,24 @@ void performSanityChecks()
 
     previousTimeUs = currentTimeUs;
 
-     // Stalled movement detection
-    static int8_t gsI = 0;
+    if (rescueState.phase == RESCUE_CROSSTRACK) {
+     	// Stalled movement detection
+    	static int8_t gsI = 0;
 
-    gsI = constrain(gsI + (rescueState.sensor.groundSpeed < 150) ? 1 : -1, -10, 10);
+    	gsI = constrain(gsI + (rescueState.sensor.groundSpeed < 150) ? 1 : -1, -10, 10);
 
-    if (gsI == 10) {
-        rescueState.failure = RESCUE_CRASH_DETECTED;
-    }
+    	if (gsI == 10) {
+        	rescueState.failure = RESCUE_CRASH_DETECTED;
+    	}
 
-    // Minimum sat detection
-    static int8_t msI = 0;
+    	// Minimum sat detection
+    	static int8_t msI = 0;
 
-    msI = constrain(msI + (rescueState.sensor.numSat < gpsRescueConfig()->minSats) ? 1 : -1, -5, 5);
+    	msI = constrain(msI + (rescueState.sensor.numSat < gpsRescueConfig()->minSats) ? 1 : -1, -5, 5);
 
-    if (msI == 5) {
-        rescueState.failure = RESCUE_FLYAWAY;
+    	if (msI == 5) {
+        	rescueState.failure = RESCUE_FLYAWAY;
+    	}
     }
 }
 
