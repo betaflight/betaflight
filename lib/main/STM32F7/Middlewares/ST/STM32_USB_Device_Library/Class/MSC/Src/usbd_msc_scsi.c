@@ -347,6 +347,11 @@ static int8_t SCSI_ModeSense6 (USBD_HandleTypeDef  *pdev, uint8_t lun, uint8_t *
     len--;
     hmsc->bot_data[len] = MSC_Mode_Sense6_data[len];
   }
+
+  // set bit 7 of the device configuration byte to indicate write protection
+  if (((USBD_StorageTypeDef *)pdev->pMSC_UserData)->IsWriteProtected(lun) != 0) {
+    hmsc->bot_data[2] = hmsc->bot_data[2] | (1 << 7);
+  }
   return 0;
 }
 
@@ -369,6 +374,11 @@ static int8_t SCSI_ModeSense10 (USBD_HandleTypeDef  *pdev, uint8_t lun, uint8_t 
   {
     len--;
     hmsc->bot_data[len] = MSC_Mode_Sense10_data[len];
+  }
+
+  // set bit 7 of the device configuration byte to indicate write protection
+  if (((USBD_StorageTypeDef *)pdev->pMSC_UserData)->IsWriteProtected(lun) != 0) {
+    hmsc->bot_data[3] = hmsc->bot_data[3] | (1 << 7);
   }
   return 0;
 }
