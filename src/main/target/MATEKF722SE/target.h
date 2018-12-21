@@ -122,6 +122,11 @@
 #define SDCARD_DMA_STREAM_TX_FULL           DMA1_Stream5
 #define SDCARD_DMA_CHANNEL                  0
 
+#define USE_FLASHFS
+#define USE_FLASH_M25P16
+#define FLASH_SPI_INSTANCE      SPI3
+#define FLASH_CS_PIN            PD2
+
 // *************** UART *****************************
 
 #define USE_VCP
