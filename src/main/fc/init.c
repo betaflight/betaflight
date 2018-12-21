@@ -301,12 +301,6 @@ void init(void)
     }
 #endif
 
-    // Configure MCO output after config is stable
-
-#ifdef USE_MCO
-    mcoInit(mcoConfig());
-#endif
-
     // Note that spektrumBind checks if a call is immediately after
     // hard reset (including power cycle), so it should be called before
     // systemClockSetHSEValue and OverclockRebootIfNecessary, as these
@@ -335,6 +329,11 @@ void init(void)
 
 #ifdef USE_OVERCLOCK
     OverclockRebootIfNecessary(systemConfig()->cpu_overclock);
+#endif
+
+    // Configure MCO output after config is stable
+#ifdef USE_MCO
+    mcoInit(mcoConfig());
 #endif
 
     timerInit();  // timer must be initialized before any channel is allocated
