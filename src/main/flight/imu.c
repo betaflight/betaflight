@@ -157,7 +157,8 @@ void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correctio
 {
     imuRuntimeConfig.dcm_kp = imuConfig()->dcm_kp / 10000.0f;
     imuRuntimeConfig.dcm_ki = imuConfig()->dcm_ki / 10000.0f;
-    imuRuntimeConfig.small_angle = imuConfig()->small_angle;
+
+    smallAngleCosZ = cos_approx(degreesToRadians(imuConfig()->small_angle));
 
     fc_acc = calculateAccZLowPassFilterRCTimeConstant(5.0f); // Set to fix value
     throttleAngleScale = calculateThrottleAngleScale(throttle_correction_angle);
@@ -167,7 +168,6 @@ void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correctio
 
 void imuInit(void)
 {
-    smallAngleCosZ = cos_approx(degreesToRadians(imuRuntimeConfig.small_angle));
     accVelScale = 9.80665f * acc.dev.acc_1G_rec / 10000.0f;
 
 #ifdef USE_GPS

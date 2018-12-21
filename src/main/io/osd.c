@@ -528,7 +528,6 @@ void changeOsdProfileIndex(uint8_t profileIndex)
 }
 #endif
 
-
 static bool osdDrawSingleElement(uint8_t item)
 {
     if (!VISIBLE(osdConfig()->item_pos[item]) || BLINK(item)) {
@@ -542,25 +541,46 @@ static bool osdDrawSingleElement(uint8_t item)
     switch (item) {
     case OSD_FLIP_ARROW: 
         {
-            const int angleR = attitude.values.roll / 10;
-            const int angleP = attitude.values.pitch / 10; // still gotta update all angleR and angleP pointers.
-            if (isFlipOverAfterCrashActive()) {
-                if (angleP > 0 && ((angleR > 175 && angleR < 180) || (angleR > -180 && angleR < -175))) {
-                    buff[0] = SYM_ARROW_SOUTH;
-                } else if (angleP > 0 && angleR > 0 && angleR < 175) {
-                    buff[0] = (SYM_ARROW_EAST + 2);
-                } else if (angleP > 0 && angleR < 0 && angleR > -175) {
-                    buff[0] = (SYM_ARROW_WEST + 2);
-                } else if (angleP <= 0 && ((angleR > 175 && angleR < 180) || (angleR > -180 && angleR < -175))) {
-                    buff[0] = SYM_ARROW_NORTH;
-                } else if (angleP <= 0 && angleR > 0 && angleR < 175) {
-                    buff[0] = (SYM_ARROW_NORTH + 2);
-                } else if (angleP <= 0 && angleR < 0 && angleR > -175) {
-                    buff[0] = (SYM_ARROW_SOUTH + 2);
+            int rollAngle = attitude.values.roll / 10;
+            const int pitchAngle = attitude.values.pitch / 10;
+            if (abs(rollAngle) > 90) {
+                rollAngle = (rollAngle < 0 ? -180 : 180) - rollAngle;
+            }
+
+            if ((isFlipOverAfterCrashActive() || (!ARMING_FLAG(ARMED) && !STATE(SMALL_ANGLE))) && !((imuConfig()->small_angle < 180) && STATE(SMALL_ANGLE)) && (rollAngle || pitchAngle)) {
+                if (abs(pitchAngle) < 2 * abs(rollAngle) && abs(rollAngle) < 2 * abs(pitchAngle)) {
+                    if (pitchAngle > 0) {
+                        if (rollAngle > 0) {
+                            buff[0] = SYM_ARROW_WEST + 2;
+                        } else {
+                            buff[0] = SYM_ARROW_EAST - 2;
+                        }
+                    } else {
+                        if (rollAngle > 0) {
+                            buff[0] = SYM_ARROW_WEST - 2;
+                        } else {
+                            buff[0] = SYM_ARROW_EAST + 2;
+                        }
+                    }
+                } else {
+                    if (abs(pitchAngle) > abs(rollAngle)) {
+                        if (pitchAngle > 0) {
+                            buff[0] = SYM_ARROW_SOUTH;
+                        } else {
+                            buff[0] = SYM_ARROW_NORTH;
+                        }
+                    } else {
+                        if (rollAngle > 0) {
+                            buff[0] = SYM_ARROW_WEST;
+                        } else {
+                            buff[0] = SYM_ARROW_EAST;
+                        }
+                    }
                 }
             } else {
                 buff[0] = ' ';
             }
+            
             buff[1] = '\0';
             break;
         }
