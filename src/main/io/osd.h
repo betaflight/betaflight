@@ -157,6 +157,7 @@ typedef enum {
     OSD_STAT_MAX_ESC_RPM,
     OSD_STAT_MIN_LINK_QUALITY,
     OSD_STAT_FLIGHT_DISTANCE,
+    OSD_STAT_MAX_FFT,
     OSD_STAT_COUNT // MUST BE LAST
 } osd_stats_e;
 
