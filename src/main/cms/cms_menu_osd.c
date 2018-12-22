@@ -72,6 +72,16 @@ OSD_Entry menuOsdActiveElemsEntries[] =
     {"TIMER 1",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ITEM_TIMER_1], DYNAMIC},
     {"TIMER 2",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ITEM_TIMER_2], DYNAMIC},
     {"REMAINING TIME ESTIMATE",       OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_REMAINING_TIME_ESTIMATE], DYNAMIC},
+#ifdef USE_RTC_TIME
+    {"RTC DATETIME",       OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_RTC_DATETIME], DYNAMIC},
+#endif
+#ifdef USE_OSD_ADJUSTMENTS
+    {"ADJUSTMENT RANGE",   OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ADJUSTMENT_RANGE], DYNAMIC},
+#endif
+#ifdef USE_ADC_INTERNAL
+    {"CORE TEMPERATURE",   OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CORE_TEMPERATURE], DYNAMIC},
+#endif
+    {"ANTI GRAVITY",       OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ANTI_GRAVITY], DYNAMIC},
     {"FLY MODE",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_FLYMODE], DYNAMIC},
     {"NAME",               OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CRAFT_NAME], DYNAMIC},
     {"THROTTLE",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_THROTTLE_POS], DYNAMIC},
@@ -90,6 +100,10 @@ OSD_Entry menuOsdActiveElemsEntries[] =
     {"FLIGHT DIST",        OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_FLIGHT_DIST], DYNAMIC},
 #endif // GPS
     {"COMPASS BAR",        OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_COMPASS_BAR], DYNAMIC},
+#ifdef USE_ESC_SENSOR
+    {"ESC TEMPERATURE",    OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ESC_TMP], DYNAMIC},
+    {"ESC RPM",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ESC_RPM], DYNAMIC},
+#endif
     {"ALTITUDE",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ALTITUDE], DYNAMIC},
     {"POWER",              OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_POWER], DYNAMIC},
     {"ROLL PID",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ROLL_PIDS], DYNAMIC},
@@ -106,7 +120,18 @@ OSD_Entry menuOsdActiveElemsEntries[] =
     {"VARIO",              OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_NUMERICAL_VARIO], DYNAMIC},
 #endif
     {"G-FORCE",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_G_FORCE], DYNAMIC},
+    {"MOTOR DIAGNOSTIC",   OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MOTOR_DIAG], DYNAMIC},
+#ifdef USE_BLACKBOX
+    {"LOG STATUS",         OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_LOG_STATUS], DYNAMIC},
+#endif
     {"FLIP ARROW",         OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_FLIP_ARROW], DYNAMIC},
+#ifdef USE_RX_LINK_QUALITY_INFO
+    {"LINK QUALITY",       OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_LINK_QUALITY], DYNAMIC},
+#endif
+#ifdef USE_OSD_STICK_OVERLAY
+    {"STICK OVERLAY LEFT", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_STICK_OVERLAY_LEFT], DYNAMIC},
+    {"STICK OVERLAY RIGHT",OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_STICK_OVERLAY_RIGHT], DYNAMIC},
+#endif
     {"BACK",               OME_Back,    NULL, NULL, 0},
     {NULL,                 OME_END,     NULL, NULL, 0}
 };
