@@ -229,3 +229,7 @@
 #if (!defined(USE_FLASHFS) || !defined(USE_RTC_TIME) || !defined(USE_USB_MSC))
 #undef USE_PERSISTENT_MSC_RTC
 #endif
+
+#if defined(USE_SERIAL_4WAY_SK_BOOTLOADER) && !defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER)
+#define USE_SERIAL_4WAY_BLHELI_BOOTLOADER
+#endif
