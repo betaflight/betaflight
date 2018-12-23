@@ -976,6 +976,17 @@ static bool osdDrawSingleElement(uint8_t item)
                 break;
             }
 
+#ifdef USE_GPS_RESCUE
+            if (osdWarnGetState(OSD_WARNING_GPS_RESCUE_UNAVAILABLE) &&
+               ARMING_FLAG(ARMED) &&
+               gpsRescueIsConfigured() &&
+               !isGPSRescueAvailable()) {
+                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "NO GPS RESC");
+                SET_BLINK(OSD_WARNINGS);
+                break;
+            }
+#endif
+
             // Show warning if in HEADFREE flight mode
             if (FLIGHT_MODE(HEADFREE_MODE)) {
                 osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "HEADFREE");
