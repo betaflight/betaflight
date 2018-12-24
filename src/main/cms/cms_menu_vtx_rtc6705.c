@@ -44,9 +44,9 @@ static uint8_t cmsx_vtxBand;
 static uint8_t cmsx_vtxChannel;
 static uint8_t cmsx_vtxPower;
 
-static OSD_TAB_t entryVtxBand =         {&cmsx_vtxBand, VTX_RTC6705_BAND_COUNT - 1, &vtx58BandNames[1]};
-static OSD_UINT8_t entryVtxChannel =    {&cmsx_vtxChannel, 1, VTX_SETTINGS_CHANNEL_COUNT, 1};
-static OSD_TAB_t entryVtxPower =        {&cmsx_vtxPower, VTX_RTC6705_POWER_COUNT - 1 - VTX_RTC6705_MIN_POWER, &rtc6705PowerNames[VTX_RTC6705_MIN_POWER]};
+static OSD_TAB_t entryVtxBand;
+static OSD_UINT8_t entryVtxChannel;
+static OSD_TAB_t entryVtxPower;
 
 static void cmsx_Vtx_ConfigRead(void)
 {
@@ -61,7 +61,7 @@ static void cmsx_Vtx_ConfigWriteback(void)
     vtxSettingsConfigMutable()->band = cmsx_vtxBand + 1;
     vtxSettingsConfigMutable()->channel = cmsx_vtxChannel;
     vtxSettingsConfigMutable()->power = cmsx_vtxPower + VTX_RTC6705_MIN_POWER;
-    vtxSettingsConfigMutable()->freq = vtx58_Bandchan2Freq(cmsx_vtxBand + 1, cmsx_vtxChannel);
+    vtxSettingsConfigMutable()->freq = vtxCommonLookupFrequency(vtxCommonDevice(), cmsx_vtxBand + 1, cmsx_vtxChannel);
 
     saveConfigAndNotify();
 }
@@ -69,6 +69,21 @@ static void cmsx_Vtx_ConfigWriteback(void)
 static long cmsx_Vtx_onEnter(void)
 {
     cmsx_Vtx_ConfigRead();
+
+    vtxDevice_t *device = vtxCommonDevice();
+
+    entryVtxBand.val = &cmsx_vtxBand;
+    entryVtxBand.max = device->capability.bandCount - 1;
+    entryVtxBand.names = &device->bandNames[1];
+
+    entryVtxChannel.val = &cmsx_vtxChannel;
+    entryVtxChannel.min = 1;
+    entryVtxChannel.max = device->capability.channelCount;
+    entryVtxChannel.step = 1;
+
+    entryVtxPower.val = &cmsx_vtxPower;
+    entryVtxPower.max = device->capability.powerCount - 1;
+    entryVtxPower.names = device->powerNames;
 
     return 0;
 }
