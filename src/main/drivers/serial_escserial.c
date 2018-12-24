@@ -50,6 +50,7 @@
 
 typedef enum {
     BAUDRATE_NORMAL = 19200,
+    BAUDRATE_SIMONK = 28800, // = 9600 * 3
     BAUDRATE_KISS   = 38400,
     BAUDRATE_CASTLE = 18880
 } escBaudRate_e;
@@ -432,6 +433,7 @@ static void serialTimerRxConfigBL(const timerHardware_t *timerHardwarePtr, uint8
     timerChConfigCallbacks(timerHardwarePtr, &escSerialPorts[reference].edgeCb, NULL);
 }
 
+#ifdef USE_ESCSERIAL_SIMONK
 static void processTxStateEsc(escSerial_t *escSerial)
 {
     uint8_t mask;
@@ -643,6 +645,7 @@ static void escSerialTimerRxConfig(const timerHardware_t *timerHardwarePtr, uint
     timerChCCHandlerInit(&escSerialPorts[reference].edgeCb, onSerialRxPinChangeEsc);
     timerChConfigCallbacks(timerHardwarePtr, &escSerialPorts[reference].edgeCb, NULL);
 }
+#endif
 
 static void resetBuffers(escSerial_t *escSerial)
 {
@@ -706,11 +709,14 @@ static serialPort_t *openEscSerial(escSerialPortIndex_e portIndex, serialReceive
     }
     delay(50);
 
+#ifdef USE_ESCSERIAL_SIMONK
     if (mode==PROTOCOL_SIMONK) {
         escSerialTimerTxConfig(escSerial->txTimerHardware, portIndex);
         escSerialTimerRxConfig(escSerial->rxTimerHardware, portIndex);
     }
-    else if (mode==PROTOCOL_BLHELI) {
+    else
+#endif
+    if (mode==PROTOCOL_BLHELI) {
         serialTimerTxConfigBL(escSerial->txTimerHardware, portIndex, baud);
         serialTimerRxConfigBL(escSerial->rxTimerHardware, portIndex, options);
     }
