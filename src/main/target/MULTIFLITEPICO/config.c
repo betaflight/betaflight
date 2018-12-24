@@ -55,9 +55,9 @@ void targetConfiguration(void)
     voltageSensorADCConfigMutable(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale = VBAT_SCALE;
     voltageSensorADCConfigMutable(VOLTAGE_SENSOR_ADC_VBAT)->vbatresdivval = 15;
     voltageSensorADCConfigMutable(VOLTAGE_SENSOR_ADC_VBAT)->vbatresdivmultiplier = 4;
-    batteryConfigMutable()->vbatmaxcellvoltage = 44;
-    batteryConfigMutable()->vbatmincellvoltage = 32;
-    batteryConfigMutable()->vbatwarningcellvoltage = 33;
+    batteryConfigMutable()->vbatmaxcellvoltage = 440;
+    batteryConfigMutable()->vbatmincellvoltage = 320;
+    batteryConfigMutable()->vbatwarningcellvoltage = 330;
 
     rxConfigMutable()->spektrum_sat_bind = 5;
     rxConfigMutable()->spektrum_sat_bind_autoreset = 1;

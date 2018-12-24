@@ -410,7 +410,7 @@ bool spektrumSpiInit(const struct rxSpiConfig_s *rxConfig, struct rxRuntimeConfi
 static void dsmSendTelemetryPacket(void)
 {
     uint8_t packet[9];
-    const uint16_t voltage = getBatteryVoltage() * 10;
+    const uint16_t voltage = getBatteryVoltage();
 
     packet[0] = DSM_TELEMETRY_FRAME_RPM;
     packet[1] = 0xFF; //sid

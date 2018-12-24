@@ -201,9 +201,9 @@ void crsfFrameBatterySensor(sbuf_t *dst)
     sbufWriteU8(dst, CRSF_FRAME_BATTERY_SENSOR_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
     sbufWriteU8(dst, CRSF_FRAMETYPE_BATTERY_SENSOR);
     if (telemetryConfig()->report_cell_voltage) {
-        sbufWriteU16BigEndian(dst, getBatteryAverageCellVoltage()); // vbat is in units of 0.1V
+        sbufWriteU16BigEndian(dst, (getBatteryAverageCellVoltage() + 5) / 10); // vbat is in units of 0.01V
     } else {
-        sbufWriteU16BigEndian(dst, getBatteryVoltage());
+        sbufWriteU16BigEndian(dst, (getBatteryVoltage() + 5) / 10);
     }
     sbufWriteU16BigEndian(dst, getAmperage() / 10);
     const uint32_t mAhDrawn = getMAhDrawn();

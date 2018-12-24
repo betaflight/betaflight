@@ -523,10 +523,11 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         break;
 
     case MSP_ANALOG:
-        sbufWriteU8(dst, (uint8_t)constrain(getBatteryVoltage(), 0, 255));
+        sbufWriteU8(dst, (uint8_t)constrain((getBatteryVoltage() + 5) / 10, 0, 255));
         sbufWriteU16(dst, (uint16_t)constrain(getMAhDrawn(), 0, 0xFFFF)); // milliamp hours drawn from battery
         sbufWriteU16(dst, getRssi());
         sbufWriteU16(dst, (int16_t)constrain(getAmperage(), -0x8000, 0x7FFF)); // send current in 0.01 A steps, range is -320A to 320A
+        sbufWriteU16(dst, getBatteryVoltage());
         break;
 
     case MSP_DEBUG:
@@ -559,12 +560,14 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU16(dst, batteryConfig()->batteryCapacity); // in mAh
 
         // battery state
-        sbufWriteU8(dst, (uint8_t)constrain(getBatteryVoltage(), 0, 255)); // in 0.1V steps
+        sbufWriteU8(dst, (uint8_t)constrain((getBatteryVoltage() + 5) / 10, 0, 255)); // in 0.1V steps
         sbufWriteU16(dst, (uint16_t)constrain(getMAhDrawn(), 0, 0xFFFF)); // milliamp hours drawn from battery
         sbufWriteU16(dst, (int16_t)constrain(getAmperage(), -0x8000, 0x7FFF)); // send current in 0.01 A steps, range is -320A to 320A
 
         // battery alerts
         sbufWriteU8(dst, (uint8_t)getBatteryState());
+		
+        sbufWriteU16(dst, getBatteryVoltage()); // in 0.01V steps
         break;
     }
 
@@ -582,7 +585,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
             voltageMeterRead(id, &meter);
 
             sbufWriteU8(dst, id);
-            sbufWriteU8(dst, (uint8_t)constrain(meter.filtered, 0, 255));
+            sbufWriteU8(dst, (uint8_t)constrain((meter.filtered + 5) / 10, 0, 255));
         }
         break;
     }
@@ -661,12 +664,15 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
     }
 
     case MSP_BATTERY_CONFIG:
-        sbufWriteU8(dst, batteryConfig()->vbatmincellvoltage);
-        sbufWriteU8(dst, batteryConfig()->vbatmaxcellvoltage);
-        sbufWriteU8(dst, batteryConfig()->vbatwarningcellvoltage);
+        sbufWriteU8(dst, (batteryConfig()->vbatmincellvoltage + 5) / 10);
+        sbufWriteU8(dst, (batteryConfig()->vbatmaxcellvoltage + 5) / 10);
+        sbufWriteU8(dst, (batteryConfig()->vbatwarningcellvoltage + 5) / 10);
         sbufWriteU16(dst, batteryConfig()->batteryCapacity);
         sbufWriteU8(dst, batteryConfig()->voltageMeterSource);
         sbufWriteU8(dst, batteryConfig()->currentMeterSource);
+        sbufWriteU16(dst, batteryConfig()->vbatmincellvoltage);
+        sbufWriteU16(dst, batteryConfig()->vbatmaxcellvoltage);
+        sbufWriteU16(dst, batteryConfig()->vbatwarningcellvoltage);
         break;
 
     case MSP_TRANSPONDER_CONFIG: {
@@ -2444,12 +2450,17 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src, mspPos
     }
 
     case MSP_SET_BATTERY_CONFIG:
-        batteryConfigMutable()->vbatmincellvoltage = sbufReadU8(src);      // vbatlevel_warn1 in MWC2.3 GUI
-        batteryConfigMutable()->vbatmaxcellvoltage = sbufReadU8(src);      // vbatlevel_warn2 in MWC2.3 GUI
-        batteryConfigMutable()->vbatwarningcellvoltage = sbufReadU8(src);  // vbatlevel when buzzer starts to alert
+        batteryConfigMutable()->vbatmincellvoltage = sbufReadU8(src) * 10;      // vbatlevel_warn1 in MWC2.3 GUI
+        batteryConfigMutable()->vbatmaxcellvoltage = sbufReadU8(src) * 10;      // vbatlevel_warn2 in MWC2.3 GUI
+        batteryConfigMutable()->vbatwarningcellvoltage = sbufReadU8(src) * 10;  // vbatlevel when buzzer starts to alert
         batteryConfigMutable()->batteryCapacity = sbufReadU16(src);
         batteryConfigMutable()->voltageMeterSource = sbufReadU8(src);
         batteryConfigMutable()->currentMeterSource = sbufReadU8(src);
+        if (sbufBytesRemaining(src) >= 6) {
+            batteryConfigMutable()->vbatmincellvoltage = sbufReadU16(src);
+            batteryConfigMutable()->vbatmaxcellvoltage = sbufReadU16(src);
+            batteryConfigMutable()->vbatwarningcellvoltage = sbufReadU16(src);
+        }
         break;
 
 #if defined(USE_OSD)

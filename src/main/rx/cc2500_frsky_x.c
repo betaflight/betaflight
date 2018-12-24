@@ -198,7 +198,7 @@ static void buildTelemetryFrame(uint8_t *packet)
         if (rxFrSkySpiConfig()->useExternalAdc) {
             a1Value = (uint8_t)((adcGetChannel(ADC_EXTERNAL1) & 0xfe0) >> 5);
         } else {
-            a1Value = getBatteryVoltage() & 0x7f;
+            a1Value = ((getBatteryVoltage() + 5) / 10) & 0x7f;
         }
         frame[4] = a1Value;
     }

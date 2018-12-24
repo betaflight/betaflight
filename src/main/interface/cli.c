@@ -3682,7 +3682,7 @@ static void cliStatus(char *cmdline)
 
     // Battery meter
 
-    cliPrintLinef("Voltage: %d * 0.1V (%dS battery - %s)", getBatteryVoltage(), getBatteryCellCount(), getBatteryStateString());
+    cliPrintLinef("Voltage: %d * 0.01V (%dS battery - %s)", getBatteryVoltage(), getBatteryCellCount(), getBatteryStateString());
 
     // Other devices and status
 

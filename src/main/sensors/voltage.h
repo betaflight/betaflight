@@ -38,8 +38,8 @@ extern const char * const voltageMeterSourceNames[VOLTAGE_METER_COUNT];
 // WARNING - do not mix usage of VOLTAGE_METER_* and VOLTAGE_SENSOR_*, they are separate concerns.
 
 typedef struct voltageMeter_s {
-    uint16_t filtered;                      // voltage in 0.1V steps
-    uint16_t unfiltered;                    // voltage in 0.1V steps
+    uint16_t filtered;                      // voltage in 0.01V steps
+    uint16_t unfiltered;                    // voltage in 0.01V steps
     bool lowVoltageCutoff;
 } voltageMeter_t;
 

@@ -116,7 +116,7 @@ static void buildTelemetryFrame(uint8_t *packet)
     if (rxFrSkySpiConfig()->useExternalAdc) {
         a1Value = (adcGetChannel(ADC_EXTERNAL1) & 0xff0) >> 4;
     } else {
-        a1Value = (2 * getBatteryVoltage()) & 0xff;
+        a1Value = (getBatteryVoltage() / 5) & 0xff;
     }
     const uint8_t a2Value = (adcGetChannel(ADC_RSSI)) >> 4;
     telemetryId = packet[4];
