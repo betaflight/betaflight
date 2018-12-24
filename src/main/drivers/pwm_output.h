@@ -69,6 +69,8 @@ typedef enum {
     DSHOT_CMD_MAX = 47
 } dshotCommands_e;
 
+#define DSHOT_MIN_THROTTLE       48
+#define DSHOT_MAX_THROTTLE     2047
 
 typedef enum {
     PWM_TYPE_STANDARD = 0,
