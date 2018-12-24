@@ -60,6 +60,7 @@
 #undef USE_EXTENDED_CMS_MENUS
 #undef USE_ESC_SENSOR_INFO
 
+#define USE_SENSOR_NAMES
 
 #define CURRENT_TARGET_CPU_VOLTAGE 3.0
 
@@ -82,7 +83,7 @@
 #define SPI2_MOSI_PIN           PB15
 
 //#define USE_SD_CARD
-//
+
 //#define SD_DETECT_PIN           PC14
 //#define SD_CS_PIN               PB12
 //#define SD_SPI_INSTANCE         SPI2
@@ -105,11 +106,20 @@
 // PB12 SPI2_NSS
 
 #define USE_GYRO
+
+// The on-board gyro
+#define USE_GYRO_L3GD20
+#define GYRO_1_SPI_INSTANCE     SPI1
+#define GYRO_1_CS_PIN           PE3
+#define GYRO_1_ALIGN            CW270_DEG
+
+#define USE_EXTI
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PE1
+#define USE_MPU_DATA_READY_SIGNAL
+
+// Other gyros:
 #define USE_FAKE_GYRO
-//#define USE_GYRO_L3GD20
-//#define L3GD20_SPI              SPI1
-//#define L3GD20_CS_PIN           PE3
-//#define GYRO_L3GD20_ALIGN       CW270_DEG
 //#define USE_GYRO_L3G4200D
 #define USE_GYRO_MPU3050
 #define USE_GYRO_MPU6050
@@ -117,33 +127,33 @@
 #define USE_GYRO_SPI_MPU6000
 #define USE_GYRO_SPI_MPU6500
 #define USE_GYRO_SPI_MPU9250
-#define GYRO_1_CS_PIN           SPI2_NSS_PIN
-#define GYRO_1_SPI_INSTANCE     SPI2
-#define GYRO_1_ALIGN            CW0_DEG
 #define USE_ACCGYRO_BMI160
 #ifdef USE_ACCGYRO_BMI160
 #define BMI160_SPI_DIVISOR      16
-#define USE_EXTI
-#define USE_GYRO_EXTI
-#define GYRO_1_EXTI_PIN         PC13
-#define USE_MPU_DATA_READY_SIGNAL
-#define USE_EXTI
 #endif
 
 #define USE_ACC
+
+// The on-board acc:
+#define USE_I2C
+#define USE_I2C_DEVICE_1
+#define I2C_DEVICE              (I2CDEV_1)
+
+#define MPU_I2C_INSTANCE        (I2CDEV_1)
+#define USE_ACC_LSM303DLHC
+#define ACC_1_ALIGN             CW0_DEG
+
 #define USE_FAKE_ACC
 //#define USE_ACC_ADXL345
 //#define USE_ACC_BMA280
 //#define USE_ACC_MMA8452
 #define USE_ACC_MPU6050
-//#define USE_ACC_LSM303DLHC
 #define USE_ACC_MPU6000
 #define USE_ACC_SPI_MPU6000
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
 #define USE_ACC_MPU9250
 #define USE_ACC_SPI_MPU9250
-#define ACC_1_ALIGN             CW270_DEG_FLIP
 
 #define USE_BARO
 #define USE_FAKE_BARO
@@ -186,17 +196,6 @@
 
 #define UART3_TX_PIN            PB10 // PB10 (AF7)
 #define UART3_RX_PIN            PB11 // PB11 (AF7)
-
-#define USE_I2C
-#define USE_I2C_DEVICE_1
-#define I2C_DEVICE              (I2CDEV_1)
-
-#define LSM303DLHC_I2C                       I2C1
-#define LSM303DLHC_I2C_SCK_PIN               PB6
-#define LSM303DLHC_I2C_SDA_PIN               PB7
-#define LSM303DLHC_DRDY_PIN                  PE2
-#define LSM303DLHC_I2C_INT1_PIN              PE4
-#define LSM303DLHC_I2C_INT2_PIN              PE5
 
 #define USE_ADC
 #define ADC_INSTANCE            ADC1
