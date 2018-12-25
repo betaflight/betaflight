@@ -763,6 +763,12 @@ static bool osdDrawSingleElement(uint8_t item)
             }
 #endif
 
+            // Warn when in flip over after crash mode
+            if (osdWarnGetState(OSD_WARNING_CRASH_FLIP) && isFlipOverAfterCrashMode()) {
+                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "CRASH FLIP");
+                break;
+            }
+
             if (osdWarnGetState(OSD_WARNING_BATTERY_CRITICAL) && batteryState == BATTERY_CRITICAL) {
                 osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, " LAND NOW");
                 break;
@@ -836,12 +842,6 @@ static bool osdDrawSingleElement(uint8_t item)
                 }
             }
 #endif
-
-            // Warn when in flip over after crash mode
-            if (osdWarnGetState(OSD_WARNING_CRASH_FLIP) && isFlipOverAfterCrashMode()) {
-                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "CRASH FLIP");
-                break;
-            }
 
             // Show most severe reason for arming being disabled
             if (osdWarnGetState(OSD_WARNING_ARMING_DISABLE) && IS_RC_MODE_ACTIVE(BOXARM) && isArmingDisabled()) {
