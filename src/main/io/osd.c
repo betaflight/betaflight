@@ -970,6 +970,27 @@ static bool osdDrawSingleElement(uint8_t item)
                 break;
             }
 
+            // Warn when in flip over after crash mode
+            if (osdWarnGetState(OSD_WARNING_CRASH_FLIP) && isFlipOverAfterCrashActive()) {
+                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "CRASH FLIP");
+                break;
+            }
+
+#ifdef USE_LAUNCH_CONTROL
+            // Warn when in launch control mode
+            if (osdWarnGetState(OSD_WARNING_LAUNCH_CONTROL) && isLaunchControlActive()) {
+                if (sensors(SENSOR_ACC)) {
+                    char launchControlMsg[OSD_FORMAT_MESSAGE_BUFFER_SIZE];
+                    const int pitchAngle = constrain((attitude.raw[FD_PITCH] - accelerometerConfig()->accelerometerTrims.raw[FD_PITCH]) / 10, -90, 90);
+                    tfp_sprintf(launchControlMsg, "LAUNCH %d", pitchAngle);
+                    osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, launchControlMsg);
+                } else {
+                    osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "LAUNCH");
+                }
+                break;
+            }
+#endif
+
             if (osdWarnGetState(OSD_WARNING_BATTERY_CRITICAL) && batteryState == BATTERY_CRITICAL) {
                 osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, " LAND NOW");
                 SET_BLINK(OSD_WARNINGS);
@@ -1055,27 +1076,6 @@ static bool osdDrawSingleElement(uint8_t item)
                     SET_BLINK(OSD_WARNINGS);
                     break;
                 }
-            }
-#endif
-
-            // Warn when in flip over after crash mode
-            if (osdWarnGetState(OSD_WARNING_CRASH_FLIP) && isFlipOverAfterCrashActive()) {
-                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "CRASH FLIP");
-                break;
-            }
-
-#ifdef USE_LAUNCH_CONTROL
-            // Warn when in launch control mode
-            if (osdWarnGetState(OSD_WARNING_LAUNCH_CONTROL) && isLaunchControlActive()) {
-                if (sensors(SENSOR_ACC)) {
-                    char launchControlMsg[OSD_FORMAT_MESSAGE_BUFFER_SIZE];
-                    const int pitchAngle = constrain((attitude.raw[FD_PITCH] - accelerometerConfig()->accelerometerTrims.raw[FD_PITCH]) / 10, -90, 90);
-                    tfp_sprintf(launchControlMsg, "LAUNCH %d", pitchAngle);
-                    osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, launchControlMsg);
-                } else {
-                    osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "LAUNCH");
-                }
-                break;
             }
 #endif
 
