@@ -35,6 +35,7 @@
 // Removed to make the firmware fit into flash (in descending order of priority):
 //#undef USE_GYRO_OVERFLOW_CHECK
 //#undef USE_GYRO_LPF2
+#undef USE_EXTENDED_CMS_MENUS
 
 #if !(defined(ZCOREF3) || defined(FLIP32F3OSD) || defined(IRCSYNERGYF3))
 //#undef USE_ITERM_RELAX
@@ -55,7 +56,6 @@
 #undef USE_SERIALRX_SUMH
 #undef USE_PWM
 
-#undef USE_EXTENDED_CMS_MENUS
 #endif
 
 #undef USE_BOARD_INFO

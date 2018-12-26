@@ -70,6 +70,12 @@ static const char * const osdTableThrottleLimitType[] = {
     "OFF", "SCALE", "CLIP"
 };
 
+#if defined(USE_GYRO_DATA_ANALYSE) && defined(USE_EXTENDED_CMS_MENUS)
+static const char * const osdTableDynNotchRangeType[] = {
+    "HIGH", "MED", "LOW", "AUTO"
+};
+#endif
+
 static long cmsx_menuImu_onEnter(void)
 {
     pidProfileIndex = getCurrentPidProfileIndex();
@@ -449,6 +455,95 @@ static CMS_Menu cmsx_menuFilterGlobal = {
     .entries = cmsx_menuFilterGlobalEntries,
 };
 
+#if (defined(USE_GYRO_DATA_ANALYSE) || defined(USE_DYN_LPF)) && defined(USE_EXTENDED_CMS_MENUS)
+
+#ifdef USE_GYRO_DATA_ANALYSE
+static uint8_t  dynFiltNotchRange;
+static uint8_t  dynFiltWidthPercent;
+static uint16_t dynFiltNotchQ;
+static uint16_t dynFiltNotchMinHz;
+#endif
+#ifdef USE_DYN_LPF
+static uint16_t dynFiltGyroMin;
+static uint16_t dynFiltGyroMax;
+static uint16_t dynFiltDtermMin;
+static uint16_t dynFiltDtermMax;
+#endif
+
+static long cmsx_menuDynFilt_onEnter(void)
+{
+#ifdef USE_GYRO_DATA_ANALYSE
+    dynFiltNotchRange   = gyroConfig()->dyn_notch_range;
+    dynFiltWidthPercent = gyroConfig()->dyn_notch_width_percent;
+    dynFiltNotchQ       = gyroConfig()->dyn_notch_q;
+    dynFiltNotchMinHz   = gyroConfig()->dyn_notch_min_hz;
+#endif
+#ifdef USE_DYN_LPF
+    const pidProfile_t *pidProfile = pidProfiles(pidProfileIndex);
+    dynFiltGyroMin  = gyroConfig()->dyn_lpf_gyro_min_hz;
+    dynFiltGyroMax  = gyroConfig()->dyn_lpf_gyro_max_hz;
+    dynFiltDtermMin = pidProfile->dyn_lpf_dterm_min_hz;
+    dynFiltDtermMax = pidProfile->dyn_lpf_dterm_max_hz;
+#endif
+
+    return 0;
+}
+
+static long cmsx_menuDynFilt_onExit(const OSD_Entry *self)
+{
+    UNUSED(self);
+
+#ifdef USE_GYRO_DATA_ANALYSE
+    gyroConfigMutable()->dyn_notch_range         = dynFiltNotchRange;
+    gyroConfigMutable()->dyn_notch_width_percent = dynFiltWidthPercent;
+    gyroConfigMutable()->dyn_notch_q             = dynFiltNotchQ;
+    gyroConfigMutable()->dyn_notch_min_hz        = dynFiltNotchMinHz;
+#endif
+#ifdef USE_DYN_LPF
+    pidProfile_t *pidProfile = currentPidProfile;
+    gyroConfigMutable()->dyn_lpf_gyro_min_hz = dynFiltGyroMin;
+    gyroConfigMutable()->dyn_lpf_gyro_max_hz = dynFiltGyroMax;
+    pidProfile->dyn_lpf_dterm_min_hz         = dynFiltDtermMin;
+    pidProfile->dyn_lpf_dterm_max_hz         = dynFiltDtermMax;
+#endif
+
+    return 0;
+}
+
+static OSD_Entry cmsx_menuDynFiltEntries[] =
+{
+    { "-- DYN FILT --", OME_Label, NULL, NULL, 0 },
+
+#ifdef USE_GYRO_DATA_ANALYSE
+    { "NOTCH RANGE",    OME_TAB,    NULL, &(OSD_TAB_t)    { &dynFiltNotchRange,   3, osdTableDynNotchRangeType}, 0 },
+    { "NOTCH WIDTH %",  OME_UINT8,  NULL, &(OSD_UINT8_t)  { &dynFiltWidthPercent, 0, 20, 1 }, 0 },
+    { "NOTCH Q",        OME_UINT16, NULL, &(OSD_UINT16_t) { &dynFiltNotchQ,       0, 1000, 1 }, 0 },
+    { "NOTCH MIN HZ",   OME_UINT16, NULL, &(OSD_UINT16_t) { &dynFiltNotchMinHz,   0, 1000, 1 }, 0 },
+#endif
+
+#ifdef USE_DYN_LPF
+    { "LPF GYRO MIN",   OME_UINT16, NULL, &(OSD_UINT16_t) { &dynFiltGyroMin,  0, 1000, 1 }, 0 },
+    { "LPF GYRO MAX",   OME_UINT16, NULL, &(OSD_UINT16_t) { &dynFiltGyroMax,  0, 1000, 1 }, 0 },
+    { "DTERM DLPF MIN", OME_UINT16, NULL, &(OSD_UINT16_t) { &dynFiltDtermMin, 0, 1000, 1 }, 0 },
+    { "DTERM DLPF MAX", OME_UINT16, NULL, &(OSD_UINT16_t) { &dynFiltDtermMax, 0, 1000, 1 }, 0 },
+#endif
+
+    { "BACK", OME_Back, NULL, NULL, 0 },
+    { NULL, OME_END, NULL, NULL, 0 }
+};
+
+static CMS_Menu cmsx_menuDynFilt = {
+#ifdef CMS_MENU_DEBUG
+    .GUARD_text = "XDYNFLT",
+    .GUARD_type = OME_MENU,
+#endif
+    .onEnter = cmsx_menuDynFilt_onEnter,
+    .onExit = cmsx_menuDynFilt_onExit,
+    .entries = cmsx_menuDynFiltEntries,
+};
+
+#endif
+
 static uint16_t cmsx_dterm_lowpass_hz;
 static uint16_t cmsx_dterm_lowpass2_hz;
 static uint16_t cmsx_dterm_notch_hz;
@@ -592,6 +687,10 @@ static OSD_Entry cmsx_menuImuEntries[] =
     {"RATE",      OME_Submenu, cmsMenuChange,                 &cmsx_menuRateProfile,                                         0},
 
     {"FILT GLB",  OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterGlobal,                                        0},
+#if  (defined(USE_GYRO_DATA_ANALYSE) || defined(USE_DYN_LPF)) && defined(USE_EXTENDED_CMS_MENUS)
+    {"DYN FILT",  OME_Submenu, cmsMenuChange,                 &cmsx_menuDynFilt,                                             0},
+#endif
+
 #ifdef USE_EXTENDED_CMS_MENUS
     {"COPY PROF", OME_Submenu, cmsMenuChange,                 &cmsx_menuCopyProfile,                                         0},
 #endif /* USE_EXTENDED_CMS_MENUS */
