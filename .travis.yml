@@ -63,8 +63,10 @@ cache:
   - downloads
   - tools
 
+# Slack is encrypted to betaflight/betaflight to avoid spam from forks
 notifications:
-  slack: betaflightgroup:LQSj02nsBEdefcO5UQcLgB0U
+  slack:
+    secure: kZCsPi4j9rjvZw/ipySdqmZduOtwMmsC7mCXiy2A3qQ66zDdetqGNRTaO2WeU0ET4aaQwqIMDHHxxkBtP48xKJuhdwoEvPNMZqVdw6BqxWj6OonoSbtUX9A+/ydYgxMQ7NaEH+y+YNRp7RTrCgtm3dlUmQID3duCytPgVuEvGp7gsRtPivk7ulmRdhUv/NzEFN4Qm4VKQ43E6o/Fx4BitX6ss1vn/1AxI98xp9TmDttViFHBvayt++dxt9uyA37QqS74KUWLip7MTAqn3vNv8O2ts26FRPag3/xrFXChtoXSzMZ/M6paJxd42P7iHV1x8eFyByRqS84ay4bHI0oUdBvcx5CuWfYO3VgRznql4D4LeqqFbwKlB4eKK4KbTVv/bB1Fi2R4kb+WT4BVhc0W0cIrxcPrpDVV0j8nHh5wXEXDexeVX/0lAJtDPsGceViUxeQV9SrUOhpri4eS/dJt4yR2O6bsT2zPq7sJngrbaAlskVnKEJ/CR2ebmkW6rEu4qcLezGXlgy/nCrWji8xg2AKMvM1l7WEBFfBSmqv2rR3wucRxPxaGOL8mI33AG+CyGqE5uBH0ui605ogsXsa4TfZ0xX0OphE4UukMCen0vTzzVSrSLBTSUjBvOtjOnNQnfQQVmKidNYOApxNZuRS6r3/+svqc5DU9cJmtzlxMsqg=
   webhooks:
     urls:
       - https://webhooks.gitter.im/e/0c20f7a1a7e311499a88
