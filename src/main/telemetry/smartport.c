@@ -38,9 +38,6 @@
 #include "common/utils.h"
 
 #include "config/feature.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
-#include "pg/rx.h"
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/compass/compass.h"
@@ -52,33 +49,38 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "flight/position.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
+#include "flight/position.h"
 
 #include "interface/msp.h"
 
 #include "io/beeper.h"
-#include "io/motors.h"
 #include "io/gps.h"
+#include "io/motors.h"
 #include "io/serial.h"
-
-#include "sensors/boardalignment.h"
-#include "sensors/sensors.h"
-#include "sensors/battery.h"
-#include "sensors/acceleration.h"
-#include "sensors/barometer.h"
-#include "sensors/compass.h"
-#include "sensors/esc_sensor.h"
-#include "sensors/gyro.h"
 
 #include "rx/rx.h"
 
-#include "telemetry/telemetry.h"
-#include "telemetry/smartport.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+#include "pg/rx.h"
+
+#include "sensors/acceleration.h"
+#include "sensors/adcinternal.h"
+#include "sensors/barometer.h"
+#include "sensors/battery.h"
+#include "sensors/boardalignment.h"
+#include "sensors/compass.h"
+#include "sensors/esc_sensor.h"
+#include "sensors/gyro.h"
+#include "sensors/sensors.h"
+
 #include "telemetry/msp_shared.h"
+#include "telemetry/smartport.h"
+#include "telemetry/telemetry.h"
 
 #define SMARTPORT_MIN_TELEMETRY_RESPONSE_DELAY_US 500
 
@@ -127,6 +129,7 @@ enum
     FSSP_DATAID_ACCY       = 0x0710 ,
     FSSP_DATAID_ACCZ       = 0x0720 ,
     FSSP_DATAID_T1         = 0x0400 ,
+    FSSP_DATAID_T11        = 0x0401 ,
     FSSP_DATAID_T2         = 0x0410 ,
     FSSP_DATAID_HOME_DIST  = 0x0420 ,
     FSSP_DATAID_GPS_ALT    = 0x0820 ,
@@ -323,6 +326,12 @@ static void initSmartPortSensors(void)
         ADD_SENSOR(FSSP_DATAID_T1);
         ADD_SENSOR(FSSP_DATAID_T2);
     }
+
+#if defined(USE_ADC_INTERNAL)
+    if (telemetryIsSensorEnabled(SENSOR_TEMPERATURE)) {
+        ADD_SENSOR(FSSP_DATAID_T11);
+    }
+#endif
 
     if (isBatteryVoltageConfigured() && telemetryIsSensorEnabled(SENSOR_VOLTAGE)) {
 #ifdef USE_ESC_SENSOR_TELEMETRY
@@ -785,7 +794,14 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                     smartPortSendPackage(id, tmp2);
                     *clearToSend = false;
                 }
+
                 break;
+#if defined(USE_ADC_INTERNAL)
+            case FSSP_DATAID_T11        :
+                smartPortSendPackage(id, getCoreTemperatureCelsius());
+
+                break;
+#endif
 #ifdef USE_GPS
             case FSSP_DATAID_SPEED      :
                 if (STATE(GPS_FIX)) {
