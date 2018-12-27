@@ -279,7 +279,7 @@ static inline void updateAlarmBatteryStatus(HOTT_EAM_MSG_t *hottEAMMessage)
 
 static inline void hottEAMUpdateBattery(HOTT_EAM_MSG_t *hottEAMMessage)
 {
-    const uint16_t volt = (getBatteryVoltage() + 5) / 10;
+    const uint16_t volt = getLegacyBatteryVoltage();
     hottEAMMessage->main_voltage_L = volt & 0xFF;
     hottEAMMessage->main_voltage_H = volt >> 8;
     hottEAMMessage->batt1_voltage_L = volt & 0xFF;

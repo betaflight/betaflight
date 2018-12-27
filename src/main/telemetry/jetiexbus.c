@@ -306,7 +306,7 @@ int32_t getSensorValue(uint8_t sensor)
 {
     switch (sensor) {
     case EX_VOLTAGE:
-        return ((getBatteryVoltage() + 5) / 10);
+        return getLegacyBatteryVoltage();
         break;
 
     case EX_CURRENT:
