@@ -608,7 +608,11 @@ static void cliPrintVarRange(const clivalue_t *var)
 {
     switch (var->type & VALUE_MODE_MASK) {
     case (MODE_DIRECT): {
-        cliPrintLinef("Allowed range: %d - %d", var->config.minmax.min, var->config.minmax.max);
+        if ((var->type & VALUE_TYPE_MASK) == VAR_UINT32) {
+            cliPrintLinef("Allowed range: %d - %d", 0, var->config.u32_max);
+        } else {
+            cliPrintLinef("Allowed range: %d - %d", var->config.minmax.min, var->config.minmax.max);
+        }
     }
     break;
     case (MODE_LOOKUP): {
