@@ -34,6 +34,7 @@ typedef struct gpsRescue_s {
     uint16_t minRescueDth; //meters
     uint8_t sanityChecks;
     uint8_t allowArmingWithoutFix;
+    uint8_t useMag;
 } gpsRescueConfig_t;
 
 PG_DECLARE(gpsRescueConfig_t, gpsRescueConfig);
@@ -46,4 +47,5 @@ void rescueNewGpsData(void);
 float gpsRescueGetYawRate(void);
 float gpsRescueGetThrottle(void);
 bool gpsRescueIsConfigured(void);
-bool isGPSRescueAvailable(void);
+bool gpsRescueIsAvailable(void);
+bool gpsRescueDisableMag(void);

@@ -140,6 +140,7 @@ PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
     .minSats = 8,
     .minRescueDth = 100,
     .allowArmingWithoutFix = false,
+    .useMag = true
 );
 
 static uint16_t rescueThrottle;
@@ -150,6 +151,7 @@ uint16_t      hoverThrottle = 0;
 float         averageThrottle = 0.0;
 float         altitudeError = 0.0;
 uint32_t      throttleSamples = 0;
+bool          magForceDisable = false;
 
 static bool newGPSData = false;
 
@@ -368,7 +370,14 @@ static void performSanityChecks()
         lastDistanceToHomeM = rescueState.sensor.distanceToHomeM;
 
         if (secondsFlyingAway == 10) {
-            rescueState.failure = RESCUE_FLYAWAY;
+            //If there is a mag and has not been disabled, we have to assume is healthy and has been used in imu.c
+            if (sensors(SENSOR_MAG) && gpsRescueConfig()->useMag && !magForceDisable) {
+                //Try again with mag disabled
+                magForceDisable = true;
+                secondsFlyingAway = 0;
+            } else {
+                rescueState.failure = RESCUE_FLYAWAY;
+            }
         }
     }
 
@@ -414,7 +423,7 @@ static void sensorUpdate()
 // 3. GPS number of satellites is less than the minimum configured for GPS rescue.
 // Note: this function does not take into account the distance from homepoint etc. (gps_rescue_min_dth) and
 // is also independent of the gps_rescue_sanity_checks configuration
-static bool gpsRescueIsAvailable(void)
+static bool checkGPSRescueIsAvailable(void)
 {
     static uint32_t previousTimeUs = 0; // Last time LowSat was checked
     const uint32_t currentTimeUs = micros();
@@ -473,7 +482,7 @@ void updateGPSRescueState(void)
 
     sensorUpdate();
 
-    rescueState.isAvailable = gpsRescueIsAvailable();
+    rescueState.isAvailable = checkGPSRescueIsAvailable();
 
     switch (rescueState.phase) {
     case RESCUE_IDLE:
@@ -604,9 +613,14 @@ bool gpsRescueIsConfigured(void)
     return failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE || isModeActivationConditionPresent(BOXGPSRESCUE);
 }
 
-bool isGPSRescueAvailable(void)
+bool gpsRescueIsAvailable(void)
 {
     return rescueState.isAvailable;
+}
+
+bool gpsRescueDisableMag(void)
+{
+    return ((!gpsRescueConfig()->useMag || magForceDisable) && (rescueState.phase >= RESCUE_INITIALIZE) && (rescueState.phase <= RESCUE_LANDING));
 }
 #endif
 
