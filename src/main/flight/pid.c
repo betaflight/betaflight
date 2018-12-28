@@ -114,7 +114,7 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 
 #define LAUNCH_CONTROL_YAW_ITERM_LIMIT 50 // yaw iterm windup limit when launch mode is "FULL" (all axes)
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 6);
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 7);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -181,6 +181,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .launchControlAllowTriggerReset = true,
         .use_integrated_yaw = false,
         .integrated_yaw_relax = 200,
+        .thrustLinearization = 0,
     );
 #ifdef USE_DYN_LPF
     pidProfile->dterm_lowpass_hz = 150;
@@ -474,6 +475,12 @@ static FAST_RAM_ZERO_INIT int acroTrainerAxisState[2];  // only need roll and pi
 static FAST_RAM_ZERO_INIT float acroTrainerGain;
 #endif // USE_ACRO_TRAINER
 
+#ifdef USE_THRUST_LINEARIZATION
+FAST_RAM_ZERO_INIT float thrustLinearization;
+FAST_RAM_ZERO_INIT float thrustLinearizationReciprocal;
+FAST_RAM_ZERO_INIT float thrustLinearizationB;
+#endif
+
 void pidUpdateAntiGravityThrottleFilter(float throttle)
 {
     if (antiGravityMode == ANTI_GRAVITY_SMOOTH) {
@@ -597,6 +604,12 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     useIntegratedYaw = pidProfile->use_integrated_yaw;
     integratedYawRelax = pidProfile->integrated_yaw_relax;
 #endif
+
+#ifdef USE_THRUST_LINEARIZATION
+    thrustLinearization = pidProfile->thrustLinearization / 100.0f;
+    thrustLinearizationReciprocal = 1.0f / thrustLinearization;
+    thrustLinearizationB = (1.0f - thrustLinearization) / (2.0f * thrustLinearization);
+#endif    
 }
 
 void pidInit(const pidProfile_t *pidProfile)
@@ -613,6 +626,27 @@ void pidAcroTrainerInit(void)
     acroTrainerAxisState[FD_PITCH] = 0;
 }
 #endif // USE_ACRO_TRAINER
+
+#ifdef USE_THRUST_LINEARIZATION
+float pidCompensateThrustLinearization(float throttle)
+{
+    if (thrustLinearization != 0.0f) {
+        throttle = throttle * (throttle * thrustLinearization + 1.0f - thrustLinearization);
+    }
+    return throttle;
+}
+
+float pidApplyThrustLinearization(float motorOutput)
+{
+    if (thrustLinearization != 0.0f) {
+        if (motorOutput > 0.0f) {
+            motorOutput = sqrtf(motorOutput * thrustLinearizationReciprocal +
+                                thrustLinearizationB * thrustLinearizationB) - thrustLinearizationB;
+        }
+    }
+    return motorOutput;
+}
+#endif
 
 void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex)
 {

@@ -23,6 +23,7 @@
 #ifdef FURYF3OSD
     #define TARGET_BOARD_IDENTIFIER "FY3O"
 //    #define USBD_PRODUCT_STRING     "FuryF3OSD"
+    #undef USE_THRUST_LINEARIZATION
 #else
     #define TARGET_BOARD_IDENTIFIER "FYF3"
 //    #define USBD_PRODUCT_STRING     "FuryF3"

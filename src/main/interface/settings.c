@@ -954,6 +954,10 @@ const clivalue_t valueTable[] = {
     { "launch_control_gain",        VAR_UINT8 | PROFILE_VALUE,  .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlGain) },
 #endif
 
+#ifdef USE_THRUST_LINEARIZATION
+    { "thrust_linear",              VAR_UINT8 | MASTER_VALUE, .config.minmax = { 0, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, thrustLinearization) },
+#endif
+
 // PG_TELEMETRY_CONFIG
 #ifdef USE_TELEMETRY
     { "tlm_inverted",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, telemetry_inverted) },

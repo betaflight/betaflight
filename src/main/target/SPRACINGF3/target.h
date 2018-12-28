@@ -58,6 +58,7 @@
 #undef USE_EXTENDED_CMS_MENUS
 #endif
 
+#undef USE_THRUST_LINEARIZATION
 #undef USE_BOARD_INFO
 #undef USE_RTC_TIME
 
