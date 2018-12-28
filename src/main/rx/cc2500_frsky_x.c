@@ -195,10 +195,16 @@ static void buildTelemetryFrame(uint8_t *packet)
         frame[4] = (uint8_t)cc2500getRssiDbm() | 0x80;
     } else {
         uint8_t a1Value;
-        if (rxFrSkySpiConfig()->useExternalAdc) {
-            a1Value = (uint8_t)((adcGetChannel(ADC_EXTERNAL1) & 0xfe0) >> 5);
-        } else {
+        switch (rxFrSkySpiConfig()->a1Source) {
+          case FRSKY_SPI_A1_SOURCE_VBAT:
             a1Value = getBatteryVoltage() & 0x7f;
+            break;
+          case FRSKY_SPI_A1_SOURCE_EXTADC:
+            a1Value = (uint8_t)((adcGetChannel(ADC_EXTERNAL1) & 0xfe0) >> 5);
+            break;
+          case FRSKY_SPI_A1_SOURCE_CONST:
+            a1Value = (rxFrSkySpiConfig()->a1Const / 2) & 0x7f;
+            break;
         }
         frame[4] = a1Value;
     }
@@ -425,7 +431,7 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
                             frameReceived = true; // no need to process frame again.
                         }
                     }
-                } 
+                }
                 if (!frameReceived) {
                     packetErrors++;
                     DEBUG_SET(DEBUG_RX_FRSKY_SPI, DEBUG_DATA_BAD_FRAME, packetErrors);
@@ -520,7 +526,7 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
             }
             missingPackets++;
             DEBUG_SET(DEBUG_RX_FRSKY_SPI, DEBUG_DATA_MISSING_PACKETS, missingPackets);
-            
+
             *protocolState = STATE_DATA;
         }
         break;

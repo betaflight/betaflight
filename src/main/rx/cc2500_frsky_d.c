@@ -113,10 +113,16 @@ static void frSkyDTelemetryWriteByte(const char data)
 static void buildTelemetryFrame(uint8_t *packet)
 {
     uint8_t a1Value;
-    if (rxFrSkySpiConfig()->useExternalAdc) {
-        a1Value = (adcGetChannel(ADC_EXTERNAL1) & 0xff0) >> 4;
-    } else {
+    switch (rxFrSkySpiConfig()->a1Source) {
+      case FRSKY_SPI_A1_SOURCE_VBAT:
         a1Value = (2 * getBatteryVoltage()) & 0xff;
+        break;
+      case FRSKY_SPI_A1_SOURCE_EXTADC:
+        a1Value = (adcGetChannel(ADC_EXTERNAL1) & 0xff0) >> 4;
+        break;
+      case FRSKY_SPI_A1_SOURCE_CONST:
+        a1Value = rxFrSkySpiConfig()->a1Const & 0xff;
+        break;
     }
     const uint8_t a2Value = (adcGetChannel(ADC_RSSI)) >> 4;
     telemetryId = packet[4];
