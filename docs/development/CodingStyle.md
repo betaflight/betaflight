@@ -270,9 +270,7 @@ Same for multiple `return` from a function and multiple `break` inside a `case`.
 In general, they reduce readability and maintainability.
 In rare cases such constructs can be justified but only when you have considered and understood the alternatives and still have a strong reason.
 
-Use parentheses around each group in logical and mathematical statements,
-rather than relying on the implicit logic and operator priority.
-The compiler knows what it’s doing but it should be easy for people too.
+In expressions, parentheses should only be used where they are required, i.e. where operator precedence will not evaluate in the right order, or where a compiler warning is triggered without parentheses. This brings all expressions into a canonical form, and avoids the problem of different developers having different ideas of what 'easy to read' expressions are.
 
 # Includes
 All files must include their own dependencies and not rely on includes from the included files or that some other file was included first.
