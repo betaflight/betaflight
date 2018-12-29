@@ -69,25 +69,7 @@ if (x is true) {
 }
 ```
 
-A single statement after an `if` or an `else` may omit the "unnecessary" braces only when ALL conditional branches have single statements AND you have strong reason to know it will always be that way.
-```
-if (x is true)
-    we do y
-else
-    we do z
-```
-
-```
-if (x is true) {
-    we do y
-    ...
-} else {
-    we do z
-}
-```
-
-If in doubt, do not omit such "unnecessary" braces.
-(Adding a statement to a branch will break the logic if the braces are forgotten and otherwise make the PR longer).
+Omission of "unnecessary" braces in cases where an `if` or `else` block consists only of a single statement is not permissible in any case. These "single statement blocks" are future bugs waiting to happen when more statements are added without enclosing the block in braces.
 
 ## Spaces
 Use a space after (most) keywords.  The notable exceptions are sizeof, typeof, alignof, and __attribute__, which look somewhat like functions (and are usually used with parentheses).
