@@ -233,3 +233,8 @@
 #if defined(USE_SERIAL_4WAY_SK_BOOTLOADER) && !defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER)
 #define USE_SERIAL_4WAY_BLHELI_BOOTLOADER
 #endif
+
+#if defined(SIMULATOR_BUILD) || defined(UNIT_TEST)
+// This feature uses 'arm_math.h', which does not exist for x86.
+#undef USE_GYRO_DATA_ANALYSE
+#endif
