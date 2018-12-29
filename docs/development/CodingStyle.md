@@ -272,6 +272,14 @@ In rare cases such constructs can be justified but only when you have considered
 
 In expressions, parentheses should only be used where they are required, i.e. where operator precedence will not evaluate in the right order, or where a compiler warning is triggered without parentheses. This brings all expressions into a canonical form, and avoids the problem of different developers having different ideas of what 'easy to read' expressions are.
 
+One exception to this rule is the ternary conditional operator
+
+```
+pidStabilisationEnabled = (pidControllerState == PID_STABILISATION_ON) ? true : false
+```
+
+Here, the condition shall be enclosed in braces, to make the ternary operator easier to spot when reading left to right.
+
 # Includes
 All files must include their own dependencies and not rely on includes from the included files or that some other file was included first.
 
