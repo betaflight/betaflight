@@ -225,9 +225,9 @@ void telemetryProcess(uint32_t currentTime)
     handleIbusTelemetry();
 #endif
 }
-#endif
 
 bool telemetryIsSensorEnabled(sensor_e sensor)
 {
     return ~(telemetryConfigMutable()->disabledSensors) & sensor;
 }
+#endif
