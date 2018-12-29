@@ -389,7 +389,7 @@ static void sendVoltageCells(void)
  */
 static void sendVoltageAmp(void)
 {
-    uint16_t voltage = getBatteryVoltage();
+    uint16_t voltage = getLegacyBatteryVoltage();
     const uint8_t cellCount = getBatteryCellCount();
 
     if (telemetryConfig()->frsky_vfas_precision == FRSKY_VFAS_PRECISION_HIGH) {

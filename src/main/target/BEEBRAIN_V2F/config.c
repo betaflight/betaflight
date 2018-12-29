@@ -98,8 +98,8 @@ void targetConfiguration(void)
     }
 
     batteryConfigMutable()->batteryCapacity = 250;
-    batteryConfigMutable()->vbatmincellvoltage = 28;
-    batteryConfigMutable()->vbatwarningcellvoltage = 33;
+    batteryConfigMutable()->vbatmincellvoltage = 280;
+    batteryConfigMutable()->vbatwarningcellvoltage = 330;
 
     *customMotorMixerMutable(0) = (motorMixer_t){ 1.0f, -0.414178f,  1.0f, -1.0f };    // REAR_R
     *customMotorMixerMutable(1) = (motorMixer_t){ 1.0f, -0.414178f, -1.0f,  1.0f };    // FRONT_R
