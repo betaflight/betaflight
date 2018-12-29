@@ -95,6 +95,9 @@
 #include "sensors/battery.h"
 #include "sensors/esc_sensor.h"
 #include "sensors/sensors.h"
+#if (!defined(SIMULATOR_BUILD) && !defined(UNIT_TEST)  && defined(USE_GYRO_DATA_ANALYSE))
+#include "sensors/gyroanalyse.h"
+#endif
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
@@ -1818,6 +1821,18 @@ static void osdShowStats(uint16_t endBatteryVoltage)
         const uint32_t distanceFlown = GPS_distanceFlownInCm / 100;
         tfp_sprintf(buff, "%d%c", osdGetMetersToSelectedUnit(distanceFlown), osdGetMetersToSelectedUnitSymbol());
         osdDisplayStatisticLabel(top++, "FLIGHT DISTANCE", buff);
+    }
+#endif
+
+#if (!defined(SIMULATOR_BUILD) && !defined(UNIT_TEST)  && defined(USE_GYRO_DATA_ANALYSE))
+    if (osdStatGetState(OSD_STAT_MAX_FFT) && featureIsEnabled(FEATURE_DYNAMIC_FILTER)) {
+        int value = getMaxFFT();
+        if (value > 0) {
+            tfp_sprintf(buff, "%dHZ", value);
+            osdDisplayStatisticLabel(top++, "PEAK FFT", buff);
+        } else {
+            osdDisplayStatisticLabel(top++, "PEAK FFT", "THRT<20%");
+        }
     }
 #endif
 

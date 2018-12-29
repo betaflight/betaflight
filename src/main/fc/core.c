@@ -51,7 +51,9 @@
 #include "sensors/boardalignment.h"
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
-
+#if (!defined(SIMULATOR_BUILD) && !defined(UNIT_TEST))
+#include "sensors/gyroanalyse.h"
+#endif
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/core.h"
@@ -436,6 +438,10 @@ void tryArm(void)
             ENABLE_ARMING_FLAG(WAS_ARMED_WITH_PREARM);
         }
         imuQuaternionHeadfreeOffsetSet();
+
+#if (!defined(SIMULATOR_BUILD) && !defined(UNIT_TEST)  && defined(USE_GYRO_DATA_ANALYSE))
+        resetMaxFFT();
+#endif
 
         disarmAt = currentTimeUs + armingConfig()->auto_disarm_delay * 1e6;   // start disarm timeout, will be extended when throttle is nonzero
 
