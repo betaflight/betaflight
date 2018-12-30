@@ -80,7 +80,6 @@ PG_RESET_TEMPLATE(rxFrSkySpiConfig_t, rxFrSkySpiConfig,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     .rxNum = 0,
     .a1Source = FRSKY_SPI_A1_SOURCE_VBAT,
-    .a1Const = 100,
 );
 
 static void initialise() {

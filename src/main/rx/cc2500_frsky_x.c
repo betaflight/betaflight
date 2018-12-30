@@ -97,6 +97,8 @@ const uint16_t crcTable[] = {
 
 #define TELEMETRY_SEQUENCE_LENGTH 4
 
+#define A1_CONST_X 50
+
 typedef struct telemetrySequenceMarkerData_s {
     unsigned int packetSequenceId: 2;
     unsigned int unused: 1;
@@ -196,14 +198,14 @@ static void buildTelemetryFrame(uint8_t *packet)
     } else {
         uint8_t a1Value;
         switch (rxFrSkySpiConfig()->a1Source) {
-          case FRSKY_SPI_A1_SOURCE_VBAT:
-            a1Value = getBatteryVoltage() & 0x7f;
+        case FRSKY_SPI_A1_SOURCE_VBAT:
+            a1Value = getLegacyBatteryVoltage() & 0x7f;
             break;
-          case FRSKY_SPI_A1_SOURCE_EXTADC:
+        case FRSKY_SPI_A1_SOURCE_EXTADC:
             a1Value = (uint8_t)((adcGetChannel(ADC_EXTERNAL1) & 0xfe0) >> 5);
             break;
-          case FRSKY_SPI_A1_SOURCE_CONST:
-            a1Value = (rxFrSkySpiConfig()->a1Const / 2) & 0x7f;
+        case FRSKY_SPI_A1_SOURCE_CONST:
+            a1Value = A1_CONST_X & 0x7f;
             break;
         }
         frame[4] = a1Value;

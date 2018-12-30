@@ -32,13 +32,12 @@ typedef enum {
 
 
 typedef struct rxFrSkySpiConfig_s {
-    uint8_t               autoBind;
-    uint8_t               bindTxId[2];
-    int8_t                bindOffset;
-    uint8_t               bindHopData[50];
-    uint8_t               rxNum;
-    frSkySpiA1Source_e    a1Source;
-    uint8_t               a1Const;
+    uint8_t autoBind;
+    uint8_t bindTxId[2];
+    int8_t  bindOffset;
+    uint8_t bindHopData[50];
+    uint8_t rxNum;
+    frSkySpiA1Source_e a1Source;
 } rxFrSkySpiConfig_t;
 
 PG_DECLARE(rxFrSkySpiConfig_t, rxFrSkySpiConfig);
