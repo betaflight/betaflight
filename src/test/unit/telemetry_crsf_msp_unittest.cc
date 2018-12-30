@@ -260,6 +260,9 @@ extern "C" {
     uint16_t getBatteryVoltage(void) {
         return testBatteryVoltage;
     }
+    uint16_t getLegacyBatteryVoltage(void) {
+        return (testBatteryVoltage + 5) / 10;
+    }
     uint16_t getBatteryAverageCellVoltage(void) {
         return 0;
     }

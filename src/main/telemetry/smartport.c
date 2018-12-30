@@ -601,7 +601,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                     cellCount = getBatteryCellCount();
                     vfasVoltage = cellCount ? getBatteryVoltage() / cellCount : 0;
                 }
-                smartPortSendPackage(id, vfasVoltage * 10); // given in 0.1V, convert to volts
+                smartPortSendPackage(id, vfasVoltage); // given in 0.01V, convert to volts
                 *clearToSend = false;
                 break;
 #ifdef USE_ESC_SENSOR_TELEMETRY
@@ -847,7 +847,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
 #endif
             case FSSP_DATAID_A4         :
                 cellCount = getBatteryCellCount();
-                vfasVoltage = cellCount ? (getBatteryVoltage() * 10 / cellCount) : 0; // given in 0.1V, convert to volts
+                vfasVoltage = cellCount ? (getBatteryVoltage() / cellCount) : 0; // given in 0.01V, convert to volts
                 smartPortSendPackage(id, vfasVoltage);
                 *clearToSend = false;
                 break;

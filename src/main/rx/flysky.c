@@ -218,7 +218,7 @@ static void buildAndWriteTelemetry (uint8_t *packet)
     if (packet) {
         static uint8_t bytesToWrite = FLYSKY_2A_PAYLOAD_SIZE; // first time write full packet to buffer a7105
         flySky2ATelemetryPkt_t *telemertyPacket = (flySky2ATelemetryPkt_t*) packet;
-        uint16_t voltage = 10 * getBatteryVoltage();
+        uint16_t voltage = getBatteryVoltage();
 
         telemertyPacket->type = FLYSKY_2A_PACKET_TELEMETRY;
 

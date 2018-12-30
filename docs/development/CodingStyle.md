@@ -69,25 +69,7 @@ if (x is true) {
 }
 ```
 
-A single statement after an `if` or an `else` may omit the "unnecessary" braces only when ALL conditional branches have single statements AND you have strong reason to know it will always be that way.
-```
-if (x is true)
-    we do y
-else
-    we do z
-```
-
-```
-if (x is true) {
-    we do y
-    ...
-} else {
-    we do z
-}
-```
-
-If in doubt, do not omit such "unnecessary" braces.
-(Adding a statement to a branch will break the logic if the braces are forgotten and otherwise make the PR longer).
+Omission of "unnecessary" braces in cases where an `if` or `else` block consists only of a single statement is not permissible in any case. These "single statement blocks" are future bugs waiting to happen when more statements are added without enclosing the block in braces.
 
 ## Spaces
 Use a space after (most) keywords.  The notable exceptions are sizeof, typeof, alignof, and __attribute__, which look somewhat like functions (and are usually used with parentheses).
@@ -126,6 +108,19 @@ and no space around the '.' and "->" structure member operators.
 '*' and '&', when used for pointer and reference, shall have no space between it and the following variable name.
 
 # typedef
+enums that do not have a count or some other form of terminator element shall have a comma after their last element:
+
+```
+typedef enum {
+    MSP_RESULT_ACK = 1,
+    MSP_RESULT_ERROR = -1,
+    MSP_RESULT_NO_REPLY = 0,
+    MSP_RESULT_CMD_UNKNOWN = -2,
+} mspResult_e;
+```
+
+This ensures that, if more elements are added at a later stage, only the additional lines show up in the review, making it easier to review.
+
 enums with a count should have that count declared as the last item in the enumeration list,
 so that it is automatically maintained, e.g.:
 ```

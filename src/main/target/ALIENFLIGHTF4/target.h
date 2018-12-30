@@ -73,8 +73,7 @@
 #define SDCARD_DETECT_PIN               PB11
 #define SDCARD_SPI_INSTANCE             SPI2
 #define SDCARD_SPI_CS_PIN               PB10
-#define SDCARD_DMA_CHANNEL_TX               DMA1_Stream4
-#define SDCARD_DMA_CHANNEL                  0
+#define SPI2_TX_DMA_OPT                     0     // DMA 1 Stream 4 Channel 0
 
 // Performance logging for SD card operations:
 // #define AFATFS_USE_INTROSPECTIVE_LOGGING
@@ -139,7 +138,9 @@
 #define I2C1_SDA                PB7
 
 #define USE_ADC
-#define ADC1_DMA_STREAM         DMA2_Stream0
+#define ADC_INSTANCE         ADC1  // Default added
+#define ADC1_DMA_OPT            0  // DMA 2 Stream 0 Channel 0 
+
 //#define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 //#define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 #define VBAT_ADC_PIN            PC0

@@ -122,6 +122,8 @@
 #define SPI1_SCK_PIN            PA5
 #define SPI1_MISO_PIN           PA6
 #define SPI1_MOSI_PIN           PA7
+//#define SPI1_TX_DMA_OPT         0 // DMA1_Channel3
+//#define SPI1_RX_DMA_OPT         0 // DMA1_Channel2
 
 // OSD define info:
 //   feature name (includes source) -> MAX_OSD, used in target.mk
@@ -132,8 +134,6 @@
 #define MAX7456_SPI_CS_PIN      PB1
 #define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
-//#define MAX7456_DMA_CHANNEL_TX            DMA1_Channel3
-//#define MAX7456_DMA_CHANNEL_RX            DMA1_Channel2
 //#define MAX7456_DMA_IRQ_HANDLER_ID        DMA1_CH3_HANDLER
 
 #define USE_SPI
@@ -153,7 +153,7 @@
 // DSHOT output 4 uses DMA1_Channel5, so don't use it for the SDCARD until we find an alternative
 
 #ifndef USE_DSHOT
-#define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
+#define SDCARD_SPI_DMA_OPT                  0    // DMA 1 Channel 5
 #endif
 
 // Performance logging for SD card operations:

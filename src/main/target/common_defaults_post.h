@@ -330,9 +330,6 @@
 #ifndef SDCARD_DETECT_PIN
 #define SDCARD_DETECT_PIN NONE
 #endif
-#ifndef SDCARD_SPI_CS_PIN
-#define SDCARD_SPI_CS_PIN NONE
-#endif
 #ifdef SDCARD_DETECT_INVERTED
 #define SDCARD_DETECT_IS_INVERTED 1
 #else
@@ -342,8 +339,16 @@
 #ifndef SDCARD_SPI_INSTANCE
 #define SDCARD_SPI_INSTANCE NULL
 #endif
+#ifndef SDCARD_SPI_CS_PIN
+#define SDCARD_SPI_CS_PIN NONE
 #endif
+#endif // USE_SDCARD_SPI
+#ifdef USE_SDCARD_SDIO
+#ifndef SDCARD_SDIO_DMA_OPT
+#define SDCARD_SDIO_DMA_OPT (-1)
 #endif
+#endif // USE_SDCARD_SDIO
+#endif // USE_SDCARD
 
 #if defined(USE_UART1) || defined(USE_UART2) || defined(USE_UART3) || defined(USE_UART4) || defined(USE_UART5) || defined(USE_UART6) || defined(USE_UART7) || defined(USE_UART8)
 #define USE_UART
@@ -395,5 +400,132 @@
 #endif
 #ifndef BARO_I2C_INSTANCE
 #define BARO_I2C_INSTANCE       I2C_DEVICE
+#endif
+#endif
+
+#ifdef USE_ADC
+#if !defined(GENERIC_TARGET) && !defined(ADC_INSTANCE)
+#define ADC_INSTANCE ADC1
+#ifndef ADC1_DMA_OPT
+#define ADC1_DMA_OPT 1
+#endif
+#endif
+
+#if !defined(ADC1_DMA_OPT)
+#define ADC1_DMA_OPT (-1)
+#endif
+#if !defined(ADC2_DMA_OPT)
+#define ADC2_DMA_OPT (-1)
+#endif
+#if !defined(ADC3_DMA_OPT)
+#define ADC3_DMA_OPT (-1)
+#endif
+
+#endif // USE_ADC
+
+#ifdef USE_SPI
+#ifdef USE_SPI_DEVICE_1
+#ifndef SPI1_TX_DMA_OPT
+#define SPI1_TX_DMA_OPT (-1)
+#endif
+#ifndef SPI1_RX_DMA_OPT
+#define SPI1_RX_DMA_OPT (-1)
+#endif
+#endif
+#ifdef USE_SPI_DEVICE_2
+#ifndef SPI2_TX_DMA_OPT
+#define SPI2_TX_DMA_OPT (-1)
+#endif
+#ifndef SPI2_RX_DMA_OPT
+#define SPI2_RX_DMA_OPT (-1)
+#endif
+#endif
+#ifdef USE_SPI_DEVICE_3
+#ifndef SPI3_TX_DMA_OPT
+#define SPI3_TX_DMA_OPT (-1)
+#endif
+#ifndef SPI3_RX_DMA_OPT
+#define SPI3_RX_DMA_OPT (-1)
+#endif
+#endif
+#ifdef USE_SPI_DEVICE_4
+#ifndef SPI4_TX_DMA_OPT
+#define SPI4_TX_DMA_OPT (-1)
+#endif
+#ifndef SPI4_RX_DMA_OPT
+#define SPI4_RX_DMA_OPT (-1)
+#endif
+#endif
+#endif
+
+#ifdef USE_UART1
+#ifndef UART1_TX_DMA_OPT
+#define UART1_TX_DMA_OPT (-1)
+#endif
+#ifndef UART1_RX_DMA_OPT
+#define UART1_RX_DMA_OPT (-1)
+#endif
+#endif
+
+#ifdef USE_UART2
+#ifndef UART2_TX_DMA_OPT
+#define UART2_TX_DMA_OPT (-1)
+#endif
+#ifndef UART2_RX_DMA_OPT
+#define UART2_RX_DMA_OPT (-1)
+#endif
+#endif
+
+#ifdef USE_UART3
+#ifndef UART3_TX_DMA_OPT
+#define UART3_TX_DMA_OPT (-1)
+#endif
+#ifndef UART3_RX_DMA_OPT
+#define UART3_RX_DMA_OPT (-1)
+#endif
+#endif
+
+#ifdef USE_UART4
+#ifndef UART4_TX_DMA_OPT
+#define UART4_TX_DMA_OPT (-1)
+#endif
+#ifndef UART4_RX_DMA_OPT
+#define UART4_RX_DMA_OPT (-1)
+#endif
+#endif
+
+#ifdef USE_UART5
+#ifndef UART5_TX_DMA_OPT
+#define UART5_TX_DMA_OPT (-1)
+#endif
+#ifndef UART5_RX_DMA_OPT
+#define UART5_RX_DMA_OPT (-1)
+#endif
+#endif
+
+#ifdef USE_UART6
+#ifndef UART6_TX_DMA_OPT
+#define UART6_TX_DMA_OPT (-1)
+#endif
+#ifndef UART6_RX_DMA_OPT
+#define UART6_RX_DMA_OPT (-1)
+#endif
+#endif
+
+#ifdef USE_UART7
+#ifndef UART7_TX_DMA_OPT
+#define UART7_TX_DMA_OPT (-1)
+#endif
+#ifndef UART7_RX_DMA_OPT
+#define UART7_RX_DMA_OPT (-1)
+#endif
+#endif
+
+#ifdef USE_UART8
+#ifndef UART8_TX_DMA_OPT
+#define UART8_TX_DMA_OPT (-1)
+#endif
+#ifndef UART8_RX_DMA_OPT
+#define UART8_RX_DMA_OPT (-1)
 #endif
 #endif

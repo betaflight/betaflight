@@ -29,10 +29,10 @@
 
 typedef struct batteryConfig_s {
     // voltage
-    uint8_t vbatmaxcellvoltage;             // maximum voltage per cell, used for auto-detecting battery voltage in 0.1V units, default is 43 (4.3V)
-    uint8_t vbatmincellvoltage;             // minimum voltage per cell, this triggers battery critical alarm, in 0.1V units, default is 33 (3.3V)
-    uint8_t vbatwarningcellvoltage;         // warning voltage per cell, this triggers battery warning alarm, in 0.1V units, default is 35 (3.5V)
-    uint8_t vbatnotpresentcellvoltage;      // Between vbatmaxcellvoltage and 2*this is considered to be USB powered. Below this it is notpresent
+    uint16_t vbatmaxcellvoltage;            // maximum voltage per cell, used for auto-detecting battery voltage in 0.01V units, default is 430 (4.30V)
+    uint16_t vbatmincellvoltage;            // minimum voltage per cell, this triggers battery critical alarm, in 0.01V units, default is 330 (3.30V)
+    uint16_t vbatwarningcellvoltage;        // warning voltage per cell, this triggers battery warning alarm, in 0.01V units, default is 350 (3.50V)
+    uint16_t vbatnotpresentcellvoltage;     // Between vbatmaxcellvoltage and 2*this is considered to be USB powered. Below this it is notpresent
     uint8_t lvcPercentage;                  // Percentage of throttle when lvc is triggered
     voltageMeterSource_e voltageMeterSource; // source of battery voltage meter used, either ADC or ESC
 
@@ -46,7 +46,7 @@ typedef struct batteryConfig_s {
     uint8_t consumptionWarningPercentage;   // Percentage of remaining capacity that should trigger a battery warning
     uint8_t vbathysteresis;                 // hysteresis for alarm, default 1 = 0.1V
 
-    uint8_t vbatfullcellvoltage;            // Cell voltage at which the battery is deemed to be "full" 0.1V units, default is 41 (4.1V)
+    uint16_t vbatfullcellvoltage;           // Cell voltage at which the battery is deemed to be "full" 0.01V units, default is 410 (4.1V)
     
     uint8_t forceBatteryCellCount;            // number of cells in battery, used for overwriting auto-detected cell count if someone has issues with it.
 
@@ -86,6 +86,7 @@ float calculateVbatPidCompensation(void);
 uint8_t calculateBatteryPercentageRemaining(void);
 bool isBatteryVoltageConfigured(void);
 uint16_t getBatteryVoltage(void);
+uint16_t getLegacyBatteryVoltage(void);
 uint16_t getBatteryVoltageLatest(void);
 uint8_t getBatteryCellCount(void);
 uint16_t getBatteryAverageCellVoltage(void);

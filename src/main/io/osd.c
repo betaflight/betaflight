@@ -95,6 +95,9 @@
 #include "sensors/battery.h"
 #include "sensors/esc_sensor.h"
 #include "sensors/sensors.h"
+#if (!defined(SIMULATOR_BUILD) && !defined(UNIT_TEST)  && defined(USE_GYRO_DATA_ANALYSE))
+#include "sensors/gyroanalyse.h"
+#endif
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
@@ -137,7 +140,7 @@ static float osdGForce = 0;
 typedef struct statistic_s {
     timeUs_t armed_time;
     int16_t max_speed;
-    int16_t min_voltage; // /10
+    int16_t min_voltage; // /100
     int16_t max_current; // /10
     uint8_t min_rssi;
     int32_t max_altitude;
@@ -268,21 +271,13 @@ static char osdGetMetersToSelectedUnitSymbol(void)
     }
 }
 
-/**
- * Gets average battery cell voltage in 0.01V units.
- */
-static int osdGetBatteryAverageCellVoltage(void)
-{
-    return (getBatteryVoltage() * 10) / getBatteryCellCount();
-}
-
 static char osdGetBatterySymbol(int cellVoltage)
 {
     if (getBatteryState() == BATTERY_CRITICAL) {
         return SYM_MAIN_BATT; // FIXME: currently the BAT- symbol, ideally replace with a battery with exclamation mark
     } else {
         // Calculate a symbol offset using cell voltage over full cell voltage range
-        const int symOffset = scaleRange(cellVoltage, batteryConfig()->vbatmincellvoltage * 10, batteryConfig()->vbatmaxcellvoltage * 10, 0, 7);
+        const int symOffset = scaleRange(cellVoltage, batteryConfig()->vbatmincellvoltage, batteryConfig()->vbatmaxcellvoltage, 0, 8);
         return SYM_BATT_EMPTY - constrain(symOffset, 0, 6);
     }
 }
@@ -610,8 +605,8 @@ static bool osdDrawSingleElement(uint8_t item)
 #endif
 
     case OSD_MAIN_BATT_VOLTAGE:
-        buff[0] = osdGetBatterySymbol(osdGetBatteryAverageCellVoltage());
-        tfp_sprintf(buff + 1, "%2d.%1d%c", getBatteryVoltage() / 10, getBatteryVoltage() % 10, SYM_VOLT);
+        buff[0] = osdGetBatterySymbol(getBatteryAverageCellVoltage());
+        tfp_sprintf(buff + 1, "%2d.%02d%c", getBatteryVoltage() / 100, getBatteryVoltage() % 100, SYM_VOLT);
         break;
 
     case OSD_CURRENT_DRAW:
@@ -892,7 +887,7 @@ static bool osdDrawSingleElement(uint8_t item)
         break;
 
     case OSD_POWER:
-        tfp_sprintf(buff, "%4dW", getAmperage() * getBatteryVoltage() / 1000);
+        tfp_sprintf(buff, "%4dW", getAmperage() * getBatteryVoltage() / 10000);
         break;
 
     case OSD_PIDRATE_PROFILE:
@@ -1113,7 +1108,7 @@ static bool osdDrawSingleElement(uint8_t item)
 
     case OSD_AVG_CELL_VOLTAGE:
         {
-            const int cellV = osdGetBatteryAverageCellVoltage();
+            const int cellV = getBatteryAverageCellVoltage();
             buff[0] = osdGetBatterySymbol(cellV);
             tfp_sprintf(buff + 1, "%d.%02d%c", cellV / 100, cellV % 100, SYM_VOLT);
             break;
@@ -1556,7 +1551,7 @@ static void osdResetStats(void)
 {
     stats.max_current  = 0;
     stats.max_speed    = 0;
-    stats.min_voltage  = 500;
+    stats.min_voltage  = 5000;
     stats.min_rssi     = 99; // percent
     stats.max_altitude = 0;
     stats.max_distance = 0;
@@ -1745,17 +1740,17 @@ static void osdShowStats(uint16_t endBatteryVoltage)
 #endif
 
     if (osdStatGetState(OSD_STAT_MIN_BATTERY)) {
-        tfp_sprintf(buff, "%d.%1d%c", stats.min_voltage / 10, stats.min_voltage % 10, SYM_VOLT);
+        tfp_sprintf(buff, "%d.%02d%c", stats.min_voltage / 100, stats.min_voltage % 100, SYM_VOLT);
         osdDisplayStatisticLabel(top++, "MIN BATTERY", buff);
     }
 
     if (osdStatGetState(OSD_STAT_END_BATTERY)) {
-        tfp_sprintf(buff, "%d.%1d%c", endBatteryVoltage / 10, endBatteryVoltage % 10, SYM_VOLT);
+        tfp_sprintf(buff, "%d.%02d%c", endBatteryVoltage / 100, endBatteryVoltage % 100, SYM_VOLT);
         osdDisplayStatisticLabel(top++, "END BATTERY", buff);
     }
 
     if (osdStatGetState(OSD_STAT_BATTERY)) {
-        tfp_sprintf(buff, "%d.%1d%c", getBatteryVoltage() / 10, getBatteryVoltage() % 10, SYM_VOLT);
+        tfp_sprintf(buff, "%d.%02d%c", getBatteryVoltage() / 100, getBatteryVoltage() % 100, SYM_VOLT);
         osdDisplayStatisticLabel(top++, "BATTERY", buff);
     }
 
@@ -1826,6 +1821,18 @@ static void osdShowStats(uint16_t endBatteryVoltage)
         const uint32_t distanceFlown = GPS_distanceFlownInCm / 100;
         tfp_sprintf(buff, "%d%c", osdGetMetersToSelectedUnit(distanceFlown), osdGetMetersToSelectedUnitSymbol());
         osdDisplayStatisticLabel(top++, "FLIGHT DISTANCE", buff);
+    }
+#endif
+
+#if (!defined(SIMULATOR_BUILD) && !defined(UNIT_TEST)  && defined(USE_GYRO_DATA_ANALYSE))
+    if (osdStatGetState(OSD_STAT_MAX_FFT) && featureIsEnabled(FEATURE_DYNAMIC_FILTER)) {
+        int value = getMaxFFT();
+        if (value > 0) {
+            tfp_sprintf(buff, "%dHZ", value);
+            osdDisplayStatisticLabel(top++, "PEAK FFT", buff);
+        } else {
+            osdDisplayStatisticLabel(top++, "PEAK FFT", "THRT<20%");
+        }
     }
 #endif
 
