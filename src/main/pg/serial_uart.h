@@ -18,20 +18,19 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "platform.h"
+#pragma once
 
-#if defined(USE_SDCARD_SDIO)
+#include <stdint.h>
+#include <stdbool.h>
 
-#include "pg/pg_ids.h"
-#include "pg/sdio.h"
+#include "pg/pg.h"
+#include "drivers/io_types.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(sdioConfig_t, sdioConfig, PG_SDIO_CONFIG, 0);
+#define UARTDEV_CONFIG_MAX 8 // Alternative to UARTDEV_COUNT_MAX, which requires serial_uart_imp.h
 
-PG_RESET_TEMPLATE(sdioConfig_t, sdioConfig,
-    .clockBypass = 0,
-    .useCache = 0,
-    .use4BitWidth = true,
-    .dmaopt = SDCARD_SDIO_DMA_OPT,
-);
+typedef struct serialUartConfig_s {
+    int8_t txDmaopt;
+    int8_t rxDmaopt;
+} serialUartConfig_t;
 
-#endif
+PG_DECLARE_ARRAY(serialUartConfig_t, UARTDEV_CONFIG_MAX, serialUartConfig);

@@ -81,10 +81,8 @@
     #define SDCARD_DETECT_PIN                   PD2
     #define SDCARD_SPI_INSTANCE                 SPI2
     #define SDCARD_SPI_CS_PIN                   PB12
-    //#define SDCARD_DMA_CHANNEL_TX               DMA1_Stream5
-    //#define SDCARD_DMA_CHANNEL                  0
-    #define SDCARD_DMA_CHANNEL_TX               DMA1_Stream4
-    #define SDCARD_DMA_CHANNEL                  0
+    #define SPI2_TX_DMA_OPT                     0     // DMA 1 Stream 4 Channel 0
+    #define SPI2_TX_DMA_OPT                     0     // DMA 1 Stream 4 Channel 0
     #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
 #endif

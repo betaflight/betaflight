@@ -187,6 +187,7 @@
 
 #define USE_ADC
 #define ADC_INSTANCE            ADC2
+#define ADC2_DMA_OPT            1  // DMA 2 Stream 3 Channel 1 (compat default)
 #define CURRENT_METER_ADC_PIN   PC1  // Direct from CRNT pad (part of onboard sensor for Pro)
 #define VBAT_ADC_PIN            PC2  // 11:1 (10K + 1K) divider
 #define RSSI_ADC_PIN            PA0  // Direct from RSSI pad

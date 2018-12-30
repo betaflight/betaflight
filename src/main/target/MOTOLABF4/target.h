@@ -122,8 +122,7 @@
 #define SDCARD_SPI_INSTANCE                 SPI2
 #define SDCARD_SPI_CS_PIN                   PB12
 #define SDCARD_SPI_CS_CFG                   IOCFG_OUT_OD
-#define SDCARD_DMA_CHANNEL_TX               DMA1_Stream4
-#define SDCARD_DMA_CHANNEL                  0
+#define SPI2_TX_DMA_OPT                     0     // DMA 1 Stream 4 Channel 0
 
 // Pins are available unless USART3 is connected, not connected
 //#define USE_I2C

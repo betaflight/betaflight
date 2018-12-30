@@ -94,8 +94,7 @@
 #define SDCARD_SPI_INSTANCE     SPI3
 #define SDCARD_SPI_CS_PIN       PC1
 
-#define SDCARD_DMA_STREAM_TX_FULL           DMA1_Stream7
-#define SDCARD_DMA_CHANNEL                  0
+#define SPI3_TX_DMA_OPT                     1     // DMA 1 Stream 7 Channel 0
 
 // *************** OSD *****************************
 #define USE_SPI_DEVICE_2
@@ -141,7 +140,9 @@
 
 // *************** ADC *****************************
 #define USE_ADC
-#define ADC1_DMA_STREAM         DMA2_Stream0
+#define ADC_INSTANCE         ADC1  // Default added
+#define ADC1_DMA_OPT            0  // DMA 2 Stream 0 Channel 0 
+
 #define VBAT_ADC_PIN            PC0
 #define CURRENT_METER_ADC_PIN   PC4
 #define RSSI_ADC_PIN            PB0

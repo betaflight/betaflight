@@ -128,8 +128,7 @@
 #define SDCARD_DETECT_PIN                   PD8
 #define SDCARD_SPI_INSTANCE                 SPI1
 #define SDCARD_SPI_CS_PIN                   SPI1_NSS_PIN
-#define SDCARD_DMA_STREAM_TX_FULL             DMA2_Stream5
-#define SDCARD_DMA_CHANNEL                    3
+#define SPI1_TX_DMA_OPT                       1     // DMA 2 Stream 5 Channel 3
 
 #define USE_I2C
 #define USE_I2C_DEVICE_1
