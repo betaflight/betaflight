@@ -38,7 +38,12 @@ typedef struct dmaRequestMapping_s {
 } dmaRequestMapping_t;
 
 #if defined(STM32F4) || defined(STM32F7)
-#define D(d, s, c) { DMA_CODE(d, s, c), DMA ## d ## _Stream ## s, c }
+
+#if defined(STM32F4)
+#define D(d, s, c) { DMA_CODE(d, s, c), DMA ## d ## _Stream ## s, DMA_Channel_ ## c }
+#elif defined(STM32F7)
+#define D(d, s, c) { DMA_CODE(d, s, c), DMA ## d ## _Stream ## s, DMA_CHANNEL_ ## c }
+#endif
 
 static const dmaRequestMapping_t dmaRequestMapping[] = {
 #ifdef USE_SPI
