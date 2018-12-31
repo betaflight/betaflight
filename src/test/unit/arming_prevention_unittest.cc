@@ -616,12 +616,126 @@ TEST(ArmingPreventionTest, WhenUsingSwitched3DModeThenNormalThrottleArmingCondit
     EXPECT_EQ(0, getArmingDisableFlags());
 }
 
-TEST(ArmingPreventionTest, Rescue)
+TEST(ArmingPreventionTest, GPSRescueWithoutFixPreventsArm)
 {
     // given
     simulationFeatureFlags = 0;
     simulationTime = 0;
     gyroCalibDone = true;
+
+    // and
+    modeActivationConditionsMutable(0)->auxChannelIndex = 0;
+    modeActivationConditionsMutable(0)->modeId = BOXARM;
+    modeActivationConditionsMutable(0)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
+    modeActivationConditionsMutable(0)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
+    modeActivationConditionsMutable(1)->auxChannelIndex = 1;
+    modeActivationConditionsMutable(1)->modeId = BOXGPSRESCUE;
+    modeActivationConditionsMutable(1)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
+    modeActivationConditionsMutable(1)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
+    rcControlsInit();
+
+    // and
+    rxConfigMutable()->mincheck = 1050;
+
+    // given
+    rcData[THROTTLE] = 1000;
+    rcData[AUX1] = 1000;
+    rcData[AUX2] = 1000;
+    ENABLE_STATE(SMALL_ANGLE);
+
+    // when
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(ARMING_DISABLED_GPS, getArmingDisableFlags());
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXGPSRESCUE));
+
+    // given
+    // arm
+    rcData[AUX1] = 1800;
+
+    // when
+    tryArm();
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(ARMING_DISABLED_ARM_SWITCH|ARMING_DISABLED_GPS, getArmingDisableFlags());
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXGPSRESCUE));
+
+    // given
+    // disarm
+    rcData[AUX1] = 1000;
+
+    // when
+    disarm();
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(ARMING_DISABLED_GPS, getArmingDisableFlags());
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXGPSRESCUE));
+
+    // given
+    // receive GPS fix
+    ENABLE_STATE(GPS_FIX);
+
+    // when
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+    EXPECT_FALSE(isArmingDisabled());
+    EXPECT_EQ(0, getArmingDisableFlags());
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXGPSRESCUE));
+
+    // given
+    // arm
+    rcData[AUX1] = 1800;
+
+    // when
+    tryArm();
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+    EXPECT_FALSE(isArmingDisabled());
+    EXPECT_EQ(0, getArmingDisableFlags());
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXGPSRESCUE));
+
+    // given
+    // disarm
+    rcData[AUX1] = 1000;
+
+    // when
+    disarm();
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+    EXPECT_FALSE(isArmingDisabled());
+    EXPECT_EQ(0, getArmingDisableFlags());
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXGPSRESCUE));
+}
+
+TEST(ArmingPreventionTest, GPSRescueSwitchPreventsArm)
+{
+    // given
+    simulationFeatureFlags = 0;
+    simulationTime = 0;
+    gyroCalibDone = true;
+    gpsSol.numSat = 5;
+    ENABLE_STATE(GPS_FIX);
 
     // and
     modeActivationConditionsMutable(0)->auxChannelIndex = 0;

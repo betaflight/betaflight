@@ -138,7 +138,8 @@ PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
     .throttleHover = 1280,
     .sanityChecks = RESCUE_SANITY_ON,
     .minSats = 8,
-    .minRescueDth = 100
+    .minRescueDth = 100,
+    .allowArmingWithoutFix = false,
 );
 
 static uint16_t rescueThrottle;
@@ -422,7 +423,7 @@ static bool gpsRescueIsAvailable(void)
     static bool noGPSfix = false;
     bool result = true;
 
-    if (!gpsIsHealthy() ) {
+    if (!gpsIsHealthy() || !STATE(GPS_FIX_HOME)) {
         return false;
     }
 
@@ -481,6 +482,11 @@ void updateGPSRescueState(void)
     case RESCUE_INITIALIZE:
         if (hoverThrottle == 0) { //no actual throttle data yet, let's use the default.
             hoverThrottle = gpsRescueConfig()->throttleHover;
+        }
+
+        if (!STATE(GPS_FIX_HOME)) {
+            setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+            disarm();
         }
 
         // Minimum distance detection.
