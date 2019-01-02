@@ -272,8 +272,6 @@ static long saCmsConfigPitFModeByGvar(displayPort_t *pDisp, const void *self)
         return 0;
     }
 
-    dprintf(("saCmsConfigPitFmodeByGbar: saCmsPitFMode %d\r\n", saCmsPitFMode));
-
     if (saCmsPitFMode == 0) {
         // Bounce back
         saCmsPitFMode = 1;
@@ -303,8 +301,6 @@ static long saCmsConfigOpmodelByGvar(displayPort_t *pDisp, const void *self)
     }
 
     uint8_t opmodel = saCmsOpmodel;
-
-    dprintf(("saCmsConfigOpmodelByGvar: opmodel %d\r\n", opmodel));
 
     if (opmodel == SACMS_OPMODEL_FREE) {
         // VTX should power up transmitting.

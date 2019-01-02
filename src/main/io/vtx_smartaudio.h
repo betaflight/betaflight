@@ -102,10 +102,3 @@ void saSetPowerByIndex(uint8_t index);
 void saSetFreq(uint16_t freq);
 void saSetPitFreq(uint16_t freq);
 bool vtxSmartAudioInit(void);
-
-#ifdef USE_SMARTAUDIO_DPRINTF
-extern serialPort_t *debugSerialPort;
-#define dprintf(x) if (debugSerialPort) printf x
-#else
-#define dprintf(x)
-#endif // USE_SMARTAUDIO_DPRINTF
