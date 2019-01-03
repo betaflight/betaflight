@@ -78,4 +78,5 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "ANTI_GRAVITY",
     "DYN_LPF",
     "RX_SPEKTRUM_SPI",
+    "DSHOT_TELEMETRY",
 };

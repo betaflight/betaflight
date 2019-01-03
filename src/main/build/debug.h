@@ -96,6 +96,7 @@ typedef enum {
     DEBUG_ANTI_GRAVITY,
     DEBUG_DYN_LPF,
     DEBUG_RX_SPEKTRUM_SPI,
+    DEBUG_RPM_TELEMETRY,
     DEBUG_COUNT
 } debugType_e;
 
