@@ -150,6 +150,7 @@
 #include "sensors/esc_sensor.h"
 #include "sensors/gyro.h"
 #include "sensors/initialisation.h"
+#include "sensors/rpm_filter.h"
 #include "sensors/sensors.h"
 
 #include "telemetry/telemetry.h"

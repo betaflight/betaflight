@@ -113,6 +113,7 @@ COMMON_SRC = \
             sensors/compass.c \
             sensors/gyro.c \
             sensors/gyroanalyse.c \
+            sensors/rpm_filter.c \
             sensors/initialisation.c \
             blackbox/blackbox.c \
             blackbox/blackbox_encoding.c \
@@ -239,6 +240,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             sensors/boardalignment.c \
             sensors/gyro.c \
             sensors/gyroanalyse.c \
+            sensors/rpm_filter.c \
             $(CMSIS_SRC) \
             $(DEVICE_STDPERIPH_SRC) \
 

@@ -238,3 +238,8 @@
 // This feature uses 'arm_math.h', which does not exist for x86.
 #undef USE_GYRO_DATA_ANALYSE
 #endif
+
+#ifndef USE_DSHOT
+#undef USE_DSHOT_TELEMETRY
+#undef USE_RPM_FILTER
+#endif

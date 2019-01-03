@@ -51,7 +51,6 @@ static motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];
 static motorDmaOutput_t dmaMotors[MAX_SUPPORTED_MOTORS];
 
 #ifdef USE_DSHOT_TELEMETRY
-//FAST_RAM_ZERO_INIT bool dshotTelemetryEnabled;
 uint32_t readDoneCount;
 
 // TODO remove once debugging no longer needed
@@ -150,14 +149,14 @@ static uint16_t decodeProshotPacket(uint32_t buffer[])
     for (int i = 1; i < PROSHOT_TELEMETRY_INPUT_LEN; i += 2) {
         const int proshotModulo = MOTOR_NIBBLE_LENGTH_PROSHOT;
         int diff = ((buffer[i] + proshotModulo - buffer[i-1]) % proshotModulo) - PROSHOT_BASE_SYMBOL;
-        int nible;
+        int nibble;
         if (diff < 0) {
-            nible = 0;
+            nibble = 0;
         } else {
-            nible = (diff + PROSHOT_BIT_WIDTH / 2) / PROSHOT_BIT_WIDTH;
+            nibble = (diff + PROSHOT_BIT_WIDTH / 2) / PROSHOT_BIT_WIDTH;
         }
         value <<= 4;
-        value |= nible;
+        value |= (nibble & 0xf);
     }
 
     uint32_t csum = value;
@@ -263,10 +262,8 @@ void pwmStartDshotMotorUpdate(uint8_t motorCount)
         for (int i = 0; i < motorCount; i++) {
             if (dmaMotors[i].hasTelemetry) {
                 uint16_t value = dmaMotors[i].useProshot ?
-                    decodeProshotPacket(
-                        dmaMotors[i].dmaBuffer ) :
-                    decodeDshotPacket(
-                        dmaMotors[i].dmaBuffer );
+                    decodeProshotPacket(dmaMotors[i].dmaBuffer) :
+                    decodeDshotPacket(dmaMotors[i].dmaBuffer);
                 if (value != 0xffff) {
                     dmaMotors[i].dshotTelemetryValue = value;
                     if (i < 4) {
