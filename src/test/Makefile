@@ -65,6 +65,15 @@ baro_bmp280_unittest_DEFINES := \
                 USE_BARO_BMP280= \
                 USE_BARO_SPI_BMP280=
 
+baro_bmp388_unittest_SRC := \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/drivers/barometer/barometer_bmp388.c
+
+baro_bmp388_unittest_DEFINES := \
+                USE_EXTI= \
+                USE_BARO_BMP388= \
+                USE_BARO_SPI_BMP388=
+
 baro_ms5611_unittest_SRC := \
 		$(USER_DIR)/drivers/barometer/barometer_ms5611.c
 
