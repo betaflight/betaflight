@@ -394,10 +394,22 @@ COMMON_FLAGS = \
 
 ifeq ($(shell $(CC) -v 2>&1 | grep -q "clang version" && echo "clang"),clang)
 COMMON_FLAGS += -fblocks
+ifndef CYGWIN
 LDFLAGS	     += -lBlocksRuntime
 endif
+endif
 
-ifndef MACOSX
+USE_PTHREAD = YES
+USE_COVERAGE = YES
+ifdef MACOSX
+	USE_PTHREAD =
+endif
+ifdef CYGWIN
+	USE_PTHREAD =
+	USE_COVERAGE =
+endif
+
+ifdef USE_PTHREAD
 COMMON_FLAGS += -pthread
 endif
 
@@ -410,7 +422,9 @@ CXX_FLAGS = $(COMMON_FLAGS) \
 	-std=gnu++11
 
 # Compiler flags for coverage instrumentation
+ifdef USE_COVERAGE
 COVERAGE_FLAGS := --coverage
+endif
 
 C_FLAGS   += $(COVERAGE_FLAGS)
 CXX_FLAGS += $(COVERAGE_FLAGS)
