@@ -27,6 +27,7 @@ void bmp280_calculate(int32_t *pressure, int32_t *temperature);
 
 extern uint32_t bmp280_up;
 extern uint32_t bmp280_ut;
+extern int32_t t_fine; /* calibration t_fine data */
 
 typedef struct bmp280_calib_param_s {
     uint16_t dig_T1; /* calibration T1 data */
@@ -41,8 +42,7 @@ typedef struct bmp280_calib_param_s {
     int16_t dig_P7; /* calibration P7 data */
     int16_t dig_P8; /* calibration P8 data */
     int16_t dig_P9; /* calibration P9 data */
-    int32_t t_fine; /* calibration t_fine data */
-} bmp280_calib_param_t;
+} __attribute__((packed)) bmp280_calib_param_t; // packed as we read directly from the device into this structure.
 
 bmp280_calib_param_t bmp280_cal;
 }
@@ -58,6 +58,7 @@ TEST(baroBmp280Test, TestBmp280Calculate)
     int32_t pressure, temperature;
     bmp280_up = 415148; // Digital pressure value
     bmp280_ut = 519888; // Digital temperature value
+    t_fine = 0;
 
     // and
     bmp280_cal.dig_T1 = 27504;
@@ -87,6 +88,7 @@ TEST(baroBmp280Test, TestBmp280CalculateHighP)
     int32_t pressure, temperature;
     bmp280_up = 215148; // Digital pressure value
     bmp280_ut = 519888; // Digital temperature value
+    t_fine = 0;
 
     // and
     bmp280_cal.dig_T1 = 27504;
@@ -116,6 +118,7 @@ TEST(baroBmp280Test, TestBmp280CalculateZeroP)
     int32_t pressure, temperature;
     bmp280_up = 415148; // Digital pressure value
     bmp280_ut = 519888; // Digital temperature value
+    t_fine = 0;
 
     // and
     bmp280_cal.dig_T1 = 27504;
