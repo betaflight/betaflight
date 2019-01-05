@@ -41,11 +41,6 @@
 
 static void mpu6500SpiInit(const busDevice_t *bus)
 {
-#ifndef USE_DUAL_GYRO
-    IOInit(bus->busdev_u.spi.csnPin, OWNER_MPU_CS, 0);
-    IOConfigGPIO(bus->busdev_u.spi.csnPin, SPI_IO_CS_CFG);
-    IOHi(bus->busdev_u.spi.csnPin);
-#endif
 
     spiSetDivisor(bus->busdev_u.spi.instance, SPI_CLOCK_FAST);
 }

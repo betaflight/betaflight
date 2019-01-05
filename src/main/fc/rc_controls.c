@@ -43,9 +43,9 @@
 #include "drivers/camera_control.h"
 
 #include "fc/config.h"
-#include "fc/fc_core.h"
+#include "fc/core.h"
 #include "fc/rc_controls.h"
-#include "fc/fc_rc.h"
+#include "fc/rc.h"
 #include "fc/runtime_config.h"
 
 #include "io/gps.h"
@@ -65,8 +65,6 @@
 
 #include "flight/pid.h"
 #include "flight/failsafe.h"
-
-static pidProfile_t *pidProfile;
 
 // true if arming is done via the sticks (as opposed to a switch)
 static bool isUsingSticksToArm = true;
@@ -216,7 +214,8 @@ void processRcStickPositions()
             if (!ARMING_FLAG(ARMED)) {
                 // Arm via YAW
                 tryArm();
-                if (isTryingToArm()) {
+                if (isTryingToArm() ||
+                    ((getArmingDisableFlags() == ARMING_DISABLED_CALIBRATING) && armingConfig()->gyro_cal_on_first_arm)) {
                     doNotRepeat = false;
                 }
             } else {
@@ -391,9 +390,7 @@ int32_t getRcStickDeflection(int32_t axis, uint16_t midrc) {
     return MIN(ABS(rcData[axis] - midrc), 500);
 }
 
-void useRcControlsConfig(pidProfile_t *pidProfileToUse)
+void rcControlsInit(void)
 {
-    pidProfile = pidProfileToUse;
-
     isUsingSticksToArm = !isModeActivationConditionPresent(BOXARM);
 }

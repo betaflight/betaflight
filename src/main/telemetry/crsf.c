@@ -24,7 +24,7 @@
 
 #include "platform.h"
 
-#ifdef USE_TELEMETRY
+#ifdef USE_TELEMETRY_CRSF
 
 #include "build/atomic.h"
 #include "build/build_config.h"
@@ -112,7 +112,7 @@ bool handleCrsfMspFrameBuffer(uint8_t payloadSize, mspResponseFnPtr responseFn)
     int pos = 0;
     while (true) {
         const int mspFrameLength = mspRxBuffer.bytes[pos];
-        if (handleMspFrame(&mspRxBuffer.bytes[CRSF_MSP_LENGTH_OFFSET + pos], mspFrameLength)) {
+        if (handleMspFrame(&mspRxBuffer.bytes[CRSF_MSP_LENGTH_OFFSET + pos], mspFrameLength, NULL)) {
             requestHandled |= sendMspReply(payloadSize, responseFn);
         }
         pos += CRSF_MSP_LENGTH_OFFSET + mspFrameLength;
@@ -180,7 +180,7 @@ void crsfFrameGps(sbuf_t *dst)
     sbufWriteU8(dst, CRSF_FRAMETYPE_GPS);
     sbufWriteU32BigEndian(dst, gpsSol.llh.lat); // CRSF and betaflight use same units for degrees
     sbufWriteU32BigEndian(dst, gpsSol.llh.lon);
-    sbufWriteU16BigEndian(dst, (gpsSol.groundSpeed * 36 + 5) / 10); // gpsSol.groundSpeed is in 0.1m/s
+    sbufWriteU16BigEndian(dst, (gpsSol.groundSpeed * 36 + 50) / 100); // gpsSol.groundSpeed is in cm/s
     sbufWriteU16BigEndian(dst, gpsSol.groundCourse * 10); // gpsSol.groundCourse is degrees * 10
     const uint16_t altitude = (constrain(getEstimatedAltitudeCm(), 0 * 100, 5000 * 100) / 100) + 1000; // constrain altitude from 0 to 5,000m
     sbufWriteU16BigEndian(dst, altitude);
@@ -200,7 +200,11 @@ void crsfFrameBatterySensor(sbuf_t *dst)
     // use sbufWrite since CRC does not include frame length
     sbufWriteU8(dst, CRSF_FRAME_BATTERY_SENSOR_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
     sbufWriteU8(dst, CRSF_FRAMETYPE_BATTERY_SENSOR);
-    sbufWriteU16BigEndian(dst, getBatteryVoltage()); // vbat is in units of 0.1V
+    if (telemetryConfig()->report_cell_voltage) {
+        sbufWriteU16BigEndian(dst, (getBatteryAverageCellVoltage() + 5) / 10); // vbat is in units of 0.01V
+    } else {
+        sbufWriteU16BigEndian(dst, getLegacyBatteryVoltage());
+    }
     sbufWriteU16BigEndian(dst, getAmperage() / 10);
     const uint32_t mAhDrawn = getMAhDrawn();
     const uint8_t batteryRemainingPercentage = calculateBatteryPercentageRemaining();
@@ -264,7 +268,7 @@ void crsfFrameFlightMode(sbuf_t *dst)
 
     // use same logic as OSD, so telemetry displays same flight text as OSD
     const char *flightMode = "ACRO";
-    if (isAirmodeActive()) {
+    if (airmodeIsEnabled()) {
         flightMode = "AIR";
     }
     if (FLIGHT_MODE(FAILSAFE_MODE)) {
@@ -428,6 +432,10 @@ void initCrsfTelemetry(void)
     // and feature is enabled, if so, set CRSF telemetry enabled
     crsfTelemetryEnabled = crsfRxIsActive();
 
+    if (!crsfTelemetryEnabled) {
+        return;
+    }
+
     deviceInfoReplyPending = false;
 #if defined(USE_MSP_OVER_TELEMETRY)
     mspReplyPending = false;
@@ -438,18 +446,21 @@ void initCrsfTelemetry(void)
 #endif
 
     int index = 0;
-    if (sensors(SENSOR_ACC)) {
+    if (sensors(SENSOR_ACC) && telemetryIsSensorEnabled(SENSOR_PITCH | SENSOR_ROLL | SENSOR_HEADING)) {
         crsfSchedule[index++] = BV(CRSF_FRAME_ATTITUDE_INDEX);
     }
-    if (isBatteryVoltageConfigured() || isAmperageConfigured()) {
+    if ((isBatteryVoltageConfigured() && telemetryIsSensorEnabled(SENSOR_VOLTAGE))
+        || (isAmperageConfigured() && telemetryIsSensorEnabled(SENSOR_CURRENT | SENSOR_FUEL))) {
         crsfSchedule[index++] = BV(CRSF_FRAME_BATTERY_SENSOR_INDEX);
     }
     crsfSchedule[index++] = BV(CRSF_FRAME_FLIGHT_MODE_INDEX);
-    if (featureIsEnabled(FEATURE_GPS)) {
+#ifdef USE_GPS
+    if (featureIsEnabled(FEATURE_GPS)
+       && telemetryIsSensorEnabled(SENSOR_ALTITUDE | SENSOR_LAT_LONG | SENSOR_GROUND_SPEED | SENSOR_HEADING)) {
         crsfSchedule[index++] = BV(CRSF_FRAME_GPS_INDEX);
     }
+#endif
     crsfScheduleCount = (uint8_t)index;
-
  }
 
 bool checkCrsfTelemetryState(void)

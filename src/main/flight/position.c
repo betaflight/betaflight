@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <math.h>
+#include <limits.h>
 
 #include "build/debug.h"
 
@@ -42,6 +43,28 @@ static int32_t estimatedAltitudeCm = 0;                // in cm
 
 #define BARO_UPDATE_FREQUENCY_40HZ (1000 * 25)
 
+#ifdef USE_VARIO
+static int16_t estimatedVario = 0;                   // in cm/s
+
+int16_t calculateEstimatedVario(int32_t baroAlt, const uint32_t dTime) {
+    static float vel = 0;
+    static int32_t lastBaroAlt = 0;
+
+    int32_t baroVel = 0;
+
+    baroVel = (baroAlt - lastBaroAlt) * 1000000.0f / dTime;
+    lastBaroAlt = baroAlt;
+
+    baroVel = constrain(baroVel, -1500.0f, 1500.0f);
+    baroVel = applyDeadband(baroVel, 10.0f);
+
+    vel = vel * CONVERT_PARAMETER_TO_FLOAT(barometerConfig()->baro_cf_vel) + baroVel * (1.0f - CONVERT_PARAMETER_TO_FLOAT(barometerConfig()->baro_cf_vel));
+    int32_t vel_tmp = lrintf(vel);
+    vel_tmp = applyDeadband(vel_tmp, 5.0f);
+
+    return constrain(vel_tmp, SHRT_MIN, SHRT_MAX);
+}
+#endif
 
 #if defined(USE_BARO) || defined(USE_GPS)
 static bool altitudeOffsetSet = false;
@@ -59,8 +82,11 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
     previousTimeUs = currentTimeUs;
 
     int32_t baroAlt = 0;
-
     int32_t gpsAlt = 0;
+
+#if defined(USE_GPS) && defined(USE_VARIO)
+    int16_t gpsVertSpeed = 0;
+#endif
     float gpsTrust = 0.3; //conservative default
     bool haveBaroAlt = false;
     bool haveGpsAlt = false;
@@ -78,6 +104,9 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 #ifdef USE_GPS
 if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
     gpsAlt = gpsSol.llh.altCm;
+#ifdef USE_VARIO
+    gpsVertSpeed = GPS_verticalSpeedInCmS;
+#endif
     haveGpsAlt = true;
 
     if (gpsSol.hdop != 0) {
@@ -100,15 +129,28 @@ if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
     
     if (haveGpsAlt && haveBaroAlt) {
         estimatedAltitudeCm = gpsAlt * gpsTrust + baroAlt * (1 - gpsTrust);
+#ifdef USE_VARIO
+        // baro is a better source for vario, so ignore gpsVertSpeed
+        estimatedVario = calculateEstimatedVario(baroAlt, dTime);
+#endif
     } else if (haveGpsAlt) {
         estimatedAltitudeCm = gpsAlt;
+#if defined(USE_VARIO) && defined(USE_GPS)
+        estimatedVario = gpsVertSpeed;
+#endif
     } else if (haveBaroAlt) {
         estimatedAltitudeCm = baroAlt;
+#ifdef USE_VARIO
+        estimatedVario = calculateEstimatedVario(baroAlt, dTime);
+#endif
     }
     
     DEBUG_SET(DEBUG_ALTITUDE, 0, (int32_t)(100 * gpsTrust));
     DEBUG_SET(DEBUG_ALTITUDE, 1, baroAlt);
     DEBUG_SET(DEBUG_ALTITUDE, 2, gpsAlt);
+#ifdef USE_VARIO
+    DEBUG_SET(DEBUG_ALTITUDE, 3, estimatedVario);
+#endif
 }
 
 bool isAltitudeOffset(void)
@@ -125,5 +167,9 @@ int32_t getEstimatedAltitudeCm(void)
 // This should be removed or fixed, but it would require changing a lot of other things to get rid of.
 int16_t getEstimatedVario(void)
 {
+#ifdef USE_VARIO
+    return estimatedVario;
+#else
     return 0;
+#endif
 }

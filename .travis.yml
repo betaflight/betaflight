@@ -63,11 +63,15 @@ cache:
   - downloads
   - tools
 
+# Notifications are encrypted to betaflight/betaflight to avoid spam from forks
+# Command: `travis encrypt "<secret>" -r betaflight/betaflight --com`
 notifications:
-  slack: betaflightgroup:LQSj02nsBEdefcO5UQcLgB0U
+  slack:
+    rooms:
+      - secure: URtjwXnjpAKXxt2GTLef/IS7ytm4wZd6Qv3Nb0mi2sS6a/8XSEjyPZLbo2yPA1nQf1ZDJUB3+ajk75LmUAcTGkzdehNVUshiLPB7qFMnFaKzIymgdoctb42IJowG+U5Lz6GJTPQt877ZRKjfm2JfuIfd8nX3qN6/UxmRI1uDLyvIauH8fstrQFq1VtfVXntds/Uh13sLHBqbbVohAz/ALfHmiQp/KN6Aao3aVR2gL0zU7Oq6KuZXdMqObluHwpUsxbFumhRpe1TsZ/KjpaGnBYfZrcVF5LzmqhAyPg+axi2ahQmEEluhgSRAwXl1EBtCoQMt9yOxKhKTDInyfwDnThGHuRxKyQ99B3wmBwUSdHqZGAwH9uKWndqHyUjH/nRssJG5TPvCWuuqfx25/DWYyWWJrjFJn9NT0qZkAbl4hIOSTj6riLZPqzFlUUurkxjFBcE3r7nbwEL9Mfw5MNjMmlFcwsSWx9GG4rDcg6/g3Xo9b4Qigi55YbmPCHa99aPagWHZ5crW6hbGRbs+19upUYwT2F2YjxMwXwqCm1pWSIOBAI/XGOCJby/nXjnyIJKx8/gUtXKEMtl7+wsXo0XZ6RF+c9dOY98m5XHNaUtkbu/20OYuNLKetD3cFtjMbvrnb64pmQcXXBqKqOdwEwwgZd26YY6NMNPP1nOJ4lWMZ9E=
   webhooks:
     urls:
-      - https://webhooks.gitter.im/e/0c20f7a1a7e311499a88
+      - secure: OsjxvF0m4qHl15zqLYh0SK/y6wPWvjB/BsLmmn8B93vN/Meq3QYhrDP5lL2JrZfb/nSgMsZ6+c7ML47qvasOkwm4bA5Ft1kn7JRP13LCctbyNw4n0zbv2F+2VmXz5i66FY1fx1Gzp3E0a5gCirL5vq8+DtwSVKqAoBUMpRn/NlAINFGhkm4V1wpLoAOvr5JxH9xx18m2/zbuKPHGygsqoc4HSc9l5e2wj0y7ttSSf5qX5NtILQpJAcUA5sK9Q9UwBcVkjqcQtGgl1Kh3rrJF4tWi1uzOanJBGCykRcPfGiFSeRJRP0QoJkZTXWIYjWGp3jPePs1mgB3dkI+3eMiUG8X6f92l9kK2GPq4+7jeGcgIkupBwM+IDu4jj6OX3L+tSmNCPpe2mZMaC3ZgLl7OafKYWELc7qHW6aGrWx7r8EqnE+0i3fCs0PwvnC5cVQCkrd3fO82yEwxv3WO3pRgPON2+T+YIlW7tpoFqcAsAZcaVOiCEd3zlht1fccHB4VX7D/+2r6Socl+jJ0CWtLWCXMJqsrLgb4x9MIgB/PLe37/FGalE0dtYvtQtc9FydWfrBzjT2lbSiwbxCVcq12z4ysYr9qzKZCtBq1BMKXMIu2IgA39I2voZFygTYdJIeN5uWJWV3NwFsfBOoNoo7uEVLMy7GKFbMIjB2zz9tlq6I3g=
     on_success: always  # options: [always|never|change] default: always
     on_failure: always  # options: [always|never|change] default: always
     on_start: always     # options: [always|never|change] default: always

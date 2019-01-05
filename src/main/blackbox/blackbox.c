@@ -53,7 +53,7 @@
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
-#include "fc/fc_rc.h"
+#include "fc/rc.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
@@ -448,7 +448,7 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
 #endif
 
     case FLIGHT_LOG_FIELD_CONDITION_RSSI:
-        return rxConfig()->rssi_channel > 0 || featureIsEnabled(FEATURE_RSSI_ADC);
+        return isRssiConfigured();
 
     case FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME:
         return blackboxConfig()->p_ratio != 1;
@@ -1254,6 +1254,9 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("rates", "%d,%d,%d",                     currentControlRateProfile->rates[ROLL],
                                                                             currentControlRateProfile->rates[PITCH],
                                                                             currentControlRateProfile->rates[YAW]);
+        BLACKBOX_PRINT_HEADER_LINE("rate_limits", "%d,%d,%d",               currentControlRateProfile->rate_limit[ROLL],
+                                                                            currentControlRateProfile->rate_limit[PITCH],
+                                                                            currentControlRateProfile->rate_limit[YAW]);
         BLACKBOX_PRINT_HEADER_LINE("rollPID", "%d,%d,%d",                   currentPidProfile->pid[PID_ROLL].P,
                                                                             currentPidProfile->pid[PID_ROLL].I,
                                                                             currentPidProfile->pid[PID_ROLL].D);
@@ -1330,6 +1333,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_debug_axis", "%d",         rxConfig()->rc_smoothing_debug_axis);
         BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_cutoffs", "%d, %d",        rxConfig()->rc_smoothing_input_cutoff,
                                                                             rxConfig()->rc_smoothing_derivative_cutoff);
+        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_auto_factor", "%d",        rxConfig()->rc_smoothing_auto_factor);
         BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_filter_type", "%d, %d",    rxConfig()->rc_smoothing_input_type,
                                                                             rxConfig()->rc_smoothing_derivative_type);
         BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_active_cutoffs", "%d, %d", rcSmoothingGetValue(RC_SMOOTHING_VALUE_INPUT_ACTIVE),

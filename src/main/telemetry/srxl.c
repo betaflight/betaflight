@@ -24,7 +24,7 @@
 
 #include "platform.h"
 
-#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_SRXL)
+#if defined(USE_TELEMETRY_SRXL)
 
 #include "build/version.h"
 
@@ -76,13 +76,6 @@
 
 static bool srxlTelemetryEnabled;
 static uint8_t srxlFrame[SRXL_FRAME_SIZE_MAX];
-static bool srxlTelemetryNow   = false;
-
-void srxlCollectTelemetryNow(void)
-{
-    srxlTelemetryNow   = true;
-}
-
 
 static void srxlInitializeFrame(sbuf_t *dst)
 {
@@ -160,7 +153,7 @@ bool srxlFrameRpm(sbuf_t *dst, timeUs_t currentTimeUs)
     sbufWriteU8(dst, SRXL_FRAMETYPE_TELE_RPM);
     sbufWriteU8(dst, SRXL_FRAMETYPE_SID);
     sbufWriteU16BigEndian(dst, 0xFFFF);                     // pulse leading edges
-    sbufWriteU16BigEndian(dst, getBatteryVoltage() * 10);   // vbat is in units of 0.1V
+    sbufWriteU16BigEndian(dst, getBatteryVoltage());   // vbat is in units of 0.01V
     sbufWriteU16BigEndian(dst, 0x7FFF);                     // temperature
 
     sbufFill(dst, 0xFF, STRU_TELE_RPM_EMPTY_FIELDS_COUNT);
@@ -517,11 +510,8 @@ bool checkSrxlTelemetryState(void)
  */
 void handleSrxlTelemetry(timeUs_t currentTimeUs)
 {
-    if (!srxlTelemetryNow) {
-        return;
-    }
-
-    srxlTelemetryNow   = false;
-    processSrxl(currentTimeUs);
+  if (srxlTelemetryBufferEmpty()) {
+      processSrxl(currentTimeUs);
+  }
 }
 #endif

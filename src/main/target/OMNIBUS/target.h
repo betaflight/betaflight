@@ -26,6 +26,9 @@
 #undef USE_GYRO_OVERFLOW_CHECK
 #undef USE_GYRO_LPF2
 
+#undef USE_RC_SMOOTHING_FILTER
+#undef USE_DYN_LPF
+
 #undef USE_ITERM_RELAX
 #undef USE_RC_SMOOTHING_FILTER
 
@@ -56,22 +59,23 @@
 #define BEEPER_INVERTED
 
 #define USE_EXTI
-#define MPU_INT_EXTI PC13
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC13
 #define USE_MPU_DATA_READY_SIGNAL
 
-#define MPU6000_SPI_INSTANCE    SPI1
-#define MPU6000_CS_PIN          PA4
+#define GYRO_1_SPI_INSTANCE     SPI1
+#define GYRO_1_CS_PIN           PA4
 
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN      CW90_DEG
+#define GYRO_1_ALIGN            CW90_DEG
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
-#define ACC_MPU6000_ALIGN       CW90_DEG
+#define ACC_1_ALIGN             CW90_DEG
 
-#define BMP280_SPI_INSTANCE     SPI1
-#define BMP280_CS_PIN           PA13
+#define BARO_SPI_INSTANCE       SPI1
+#define BARO_CS_PIN             PA13
 
 #define USE_BARO
 #define USE_BARO_BMP280
@@ -118,6 +122,8 @@
 #define SPI1_SCK_PIN            PA5
 #define SPI1_MISO_PIN           PA6
 #define SPI1_MOSI_PIN           PA7
+//#define SPI1_TX_DMA_OPT         0 // DMA1_Channel3
+//#define SPI1_RX_DMA_OPT         0 // DMA1_Channel2
 
 // OSD define info:
 //   feature name (includes source) -> MAX_OSD, used in target.mk
@@ -128,8 +134,6 @@
 #define MAX7456_SPI_CS_PIN      PB1
 #define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
-//#define MAX7456_DMA_CHANNEL_TX            DMA1_Channel3
-//#define MAX7456_DMA_CHANNEL_RX            DMA1_Channel2
 //#define MAX7456_DMA_IRQ_HANDLER_ID        DMA1_CH3_HANDLER
 
 #define USE_SPI
@@ -141,21 +145,15 @@
 #define SPI2_MOSI_PIN           PB15
 
 #define USE_SDCARD
-
+#define USE_SDCARD_SPI
 #define SDCARD_DETECT_INVERTED
 #define SDCARD_DETECT_PIN                   PC14
-
 #define SDCARD_SPI_INSTANCE                 SPI2
 #define SDCARD_SPI_CS_PIN                   SPI2_NSS_PIN
-
-// SPI2 is on the APB1 bus whose clock runs at 36MHz. Divide to under 400kHz for init:
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 128
-// Divide to under 25MHz for normal operation:
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     2
-
 // DSHOT output 4 uses DMA1_Channel5, so don't use it for the SDCARD until we find an alternative
+
 #ifndef USE_DSHOT
-#define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
+#define SDCARD_SPI_DMA_OPT                  0    // DMA 1 Channel 5
 #endif
 
 // Performance logging for SD card operations:

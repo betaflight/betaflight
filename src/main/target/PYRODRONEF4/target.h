@@ -30,7 +30,8 @@
 #define INVERTER_PIN_UART1        PC3       // PC3 used as sBUS inverter select GPIO
 
 #define USE_EXTI
-#define MPU_INT_EXTI            PC4
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC4
 #define USE_MPU_DATA_READY_SIGNAL
 
 // DEFINE SPI USAGE
@@ -38,14 +39,14 @@
 #define USE_SPI_DEVICE_1
 
 //  MPU 6000
-#define MPU6000_CS_PIN            PA4
-#define MPU6000_SPI_INSTANCE      SPI1
+#define GYRO_1_CS_PIN             PA4
+#define GYRO_1_SPI_INSTANCE       SPI1
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN       CW0_DEG
-#define ACC_MPU6000_ALIGN        CW0_DEG
+#define GYRO_1_ALIGN             CW0_DEG
+#define ACC_1_ALIGN              CW0_DEG
 
 // DEFINE OSD
 #define USE_SPI_DEVICE_2
@@ -68,7 +69,6 @@
 #define USE_UART1
 #define UART1_RX_PIN            PA10
 #define UART1_TX_PIN            PA9
-#define UART1_AHB1_PERIPHERALS  RCC_AHB1Periph_DMA2
 
 #define USE_UART2
 #define UART2_RX_PIN            PA3

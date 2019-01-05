@@ -255,6 +255,11 @@ bool telemetryDetermineEnabledState(portSharing_e)
     return true;
 }
 
+bool telemetryIsSensorEnabled(sensor_e sensor) {
+    UNUSED(sensor);
+    return true;
+}
+
 portSharing_e determinePortSharing(const serialPortConfig_t *, serialPortFunction_e)
 {
     return PORTSHARING_NOT_SHARED;
@@ -278,6 +283,11 @@ batteryState_e getConsumptionState(void)
 uint16_t getBatteryVoltage(void)
 {
     return testBatteryVoltage;
+}
+
+uint16_t getLegacyBatteryVoltage(void)
+{
+    return (testBatteryVoltage + 5) / 10;
 }
 
 int32_t getAmperage(void) {

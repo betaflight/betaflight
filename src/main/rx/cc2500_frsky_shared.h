@@ -50,22 +50,7 @@ enum {
 extern uint8_t listLength;
 extern uint32_t missingPackets;
 extern timeDelta_t timeoutUs;
-extern int16_t rssiDbm;
-
-extern IO_t gdoPin;
-
-void setRssiDbm(uint8_t value);
-
-void TxEnable(void);
-void TxDisable(void);
-
-void LedOn(void);
-void LedOff(void);
-
-void switchAntennae(void);
 
 void initialiseData(uint8_t adr);
-
-bool checkBindRequested(bool reset);
 
 void nextChannel(uint8_t skip);

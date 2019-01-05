@@ -29,7 +29,7 @@
 #include "config/config_reset.h"
 
 #include "drivers/io.h"
-#include "fc/fc_rc.h"
+#include "fc/rc.h"
 #include "fc/rc_controls.h"
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
@@ -67,6 +67,7 @@ void pgResetFn_rxConfig(rxConfig_t *rxConfig)
         .rc_smoothing_debug_axis = ROLL,     // default to debug logging for the roll axis
         .rc_smoothing_input_type = RC_SMOOTHING_INPUT_BIQUAD,
         .rc_smoothing_derivative_type = RC_SMOOTHING_DERIVATIVE_BIQUAD,
+        .rc_smoothing_auto_factor = 10,
     );
 
 #ifdef RX_CHANNELS_TAER

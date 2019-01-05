@@ -28,10 +28,28 @@ extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 
 #define OSD_ELEMENT_BUFFER_LENGTH 32
 
-#define VISIBLE_FLAG  0x0800
-#define VISIBLE(x)    (x & VISIBLE_FLAG)
+#ifdef USE_OSD_PROFILES
+#define OSD_PROFILE_COUNT 3
+#else
+#define OSD_PROFILE_COUNT 1
+#endif
+
+#define OSD_PROFILE_BITS_POS 11
+#define OSD_PROFILE_MASK    (((1 << OSD_PROFILE_COUNT) - 1) << OSD_PROFILE_BITS_POS)
 #define OSD_POS_MAX   0x3FF
-#define OSD_POSCFG_MAX   (VISIBLE_FLAG|0x3FF) // For CLI values
+#define OSD_POSCFG_MAX   (OSD_PROFILE_MASK | 0x3FF) // For CLI values
+#define OSD_PROFILE_FLAG(x)  (1 << ((x) - 1 + OSD_PROFILE_BITS_POS))
+#define OSD_PROFILE_1_FLAG  OSD_PROFILE_FLAG(1)
+
+
+#ifdef USE_OSD_PROFILES
+#define VISIBLE(x) osdElementVisible(x)
+#define VISIBLE_IN_OSD_PROFILE(item, profile)    ((item) & ((OSD_PROFILE_1_FLAG) << ((profile)-1)))
+#else
+#define VISIBLE(x) ((x) & OSD_PROFILE_MASK)
+#define VISIBLE_IN_OSD_PROFILE(item, profile) VISIBLE(item)
+#endif
+
 
 // Character coordinate
 #define OSD_POSITION_BITS 5 // 5 bits gives a range 0-31
@@ -39,6 +57,10 @@ extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 #define OSD_POS(x,y)  ((x & OSD_POSITION_XY_MASK) | ((y & OSD_POSITION_XY_MASK) << OSD_POSITION_BITS))
 #define OSD_X(x)      (x & OSD_POSITION_XY_MASK)
 #define OSD_Y(x)      ((x >> OSD_POSITION_BITS) & OSD_POSITION_XY_MASK)
+
+// Stick overlay size
+#define OSD_STICK_OVERLAY_WIDTH 7
+#define OSD_STICK_OVERLAY_HEIGHT 7
 
 // Timer configuration
 // Stored as 15[alarm:8][precision:4][source:4]0
@@ -96,7 +118,13 @@ typedef enum {
     OSD_CORE_TEMPERATURE,
     OSD_ANTI_GRAVITY,
     OSD_G_FORCE,
+    OSD_MOTOR_DIAG,
     OSD_LOG_STATUS,
+    OSD_FLIP_ARROW,
+    OSD_LINK_QUALITY,
+    OSD_FLIGHT_DIST,
+    OSD_STICK_OVERLAY_LEFT,
+    OSD_STICK_OVERLAY_RIGHT,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
@@ -125,6 +153,11 @@ typedef enum {
     OSD_STAT_BLACKBOX,
     OSD_STAT_BLACKBOX_NUMBER,
     OSD_STAT_MAX_G_FORCE,
+    OSD_STAT_MAX_ESC_TEMP,
+    OSD_STAT_MAX_ESC_RPM,
+    OSD_STAT_MIN_LINK_QUALITY,
+    OSD_STAT_FLIGHT_DISTANCE,
+    OSD_STAT_MAX_FFT,
     OSD_STAT_COUNT // MUST BE LAST
 } osd_stats_e;
 
@@ -166,6 +199,8 @@ typedef enum {
     OSD_WARNING_CORE_TEMPERATURE,
     OSD_WARNING_RC_SMOOTHING,
     OSD_WARNING_FAIL_SAFE,
+    OSD_WARNING_LAUNCH_CONTROL,
+    OSD_WARNING_GPS_RESCUE_UNAVAILABLE,
     OSD_WARNING_COUNT // MUST BE LAST
 } osdWarningsFlags_e;
 
@@ -196,6 +231,9 @@ typedef struct osdConfig_s {
     int16_t esc_rpm_alarm;
     int16_t esc_current_alarm;
     uint8_t core_temp_alarm;
+    uint8_t ahInvert;         // invert the artificial horizon
+    uint8_t osdProfileIndex;
+    uint8_t overlay_radio_mode;
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);
@@ -211,5 +249,9 @@ void osdStatSetState(uint8_t statIndex, bool enabled);
 bool osdStatGetState(uint8_t statIndex);
 void osdWarnSetState(uint8_t warningIndex, bool enabled);
 bool osdWarnGetState(uint8_t warningIndex);
+void osdSuppressStats(bool flag);
 
-
+void setOsdProfile(uint8_t value);
+uint8_t getCurrentOsdProfileIndex(void);
+void changeOsdProfileIndex(uint8_t profileIndex);
+bool osdElementVisible(uint16_t value);

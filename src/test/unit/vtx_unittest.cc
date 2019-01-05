@@ -27,7 +27,7 @@ extern "C" {
     #include "pg/rx.h"
     #include "fc/config.h"
     #include "fc/controlrate_profile.h"
-    #include "fc/fc_core.h"
+    #include "fc/core.h"
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
@@ -145,7 +145,7 @@ extern "C" {
     void failsafeStartMonitoring(void) {}
     void failsafeUpdateState(void) {}
     bool failsafeIsActive(void) { return false; }
-    void pidResetITerm(void) {}
+    void pidResetIterm(void) {}
     void updateAdjustmentStates(void) {}
     void processRcAdjustments(controlRateConfig_t *) {}
     void updateGpsWaypointsAndMode(void) {}
@@ -173,4 +173,5 @@ extern "C" {
     bool usbCableIsInserted(void) { return false; }
     bool usbVcpIsConnected(void) { return false; }
     void pidSetAntiGravityState(bool newState) { UNUSED(newState); }
+    void osdSuppressStats(bool) {}
 }

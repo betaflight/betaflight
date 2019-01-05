@@ -37,7 +37,6 @@ EXCLUDES        = stm32f4xx_crc.c \
                   stm32f4xx_cryp_aes.c \
                   stm32f4xx_hash_md5.c \
                   stm32f4xx_cryp_des.c \
-                  stm32f4xx_rtc.c \
                   stm32f4xx_hash.c \
                   stm32f4xx_dbgmcu.c \
                   stm32f4xx_cryp_tdes.c \
@@ -137,7 +136,13 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(ROOT)/src/main/vcpf4
 endif
 
-ifneq ($(filter SDCARD,$(FEATURES)),)
+ifneq ($(filter SDCARD_SPI,$(FEATURES)),)
+INCLUDE_DIRS    := $(INCLUDE_DIRS) \
+                   $(FATFS_DIR)
+VPATH           := $(VPATH):$(FATFS_DIR)
+endif
+
+ifneq ($(filter SDCARD_SDIO,$(FEATURES)),)
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(FATFS_DIR)
 VPATH           := $(VPATH):$(FATFS_DIR)
@@ -177,7 +182,8 @@ MCU_COMMON_SRC = \
             drivers/serial_uart_init.c \
             drivers/serial_uart_stm32f4xx.c \
             drivers/system_stm32f4xx.c \
-            drivers/timer_stm32f4xx.c
+            drivers/timer_stm32f4xx.c \
+            drivers/persistent.c
 
 ifeq ($(PERIPH_DRIVER), HAL)
 VCP_SRC = \
@@ -202,12 +208,12 @@ MSC_SRC = \
             msc/usbd_msc_desc.c \
             msc/usbd_storage.c
 
-ifneq ($(filter SDCARD,$(FEATURES)),)
+ifneq ($(filter SDCARD_SPI,$(FEATURES)),)
 MSC_SRC += \
             msc/usbd_storage_sd_spi.c
 endif
 
-ifneq ($(filter SDIO,$(FEATURES)),)
+ifneq ($(filter SDCARD_SDIO,$(FEATURES)),)
 MSC_SRC += \
             msc/usbd_storage_sdio.c
 MCU_COMMON_SRC += \

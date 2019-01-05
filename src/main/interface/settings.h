@@ -92,7 +92,7 @@ typedef enum {
 #ifdef USE_LED_STRIP
     TABLE_RGB_GRB,
 #endif
-#ifdef USE_DUAL_GYRO
+#ifdef USE_MULTI_GYRO
     TABLE_GYRO,
 #endif
     TABLE_THROTTLE_LIMIT_TYPE,
@@ -113,11 +113,20 @@ typedef enum {
     TABLE_RC_SMOOTHING_DERIVATIVE_TYPE,
 #endif // USE_RC_SMOOTHING_FILTER
 #ifdef USE_GYRO_DATA_ANALYSE
-    TABLE_DYNAMIC_FFT_LOCATION,
     TABLE_DYNAMIC_FILTER_RANGE,
 #endif // USE_GYRO_DATA_ANALYSE
 #ifdef USE_VTX_COMMON
     TABLE_VTX_LOW_POWER_DISARM, 
+#endif
+    TABLE_GYRO_HARDWARE,
+#ifdef USE_SDCARD
+    TABLE_SDCARD_MODE,
+#endif
+#ifdef USE_LAUNCH_CONTROL
+    TABLE_LAUNCH_CONTROL_MODE,
+#endif
+#ifdef USE_TPA_MODE
+    TABLE_TPA_MODE,
 #endif
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
@@ -171,10 +180,11 @@ typedef struct cliArrayLengthConfig_s {
 } cliArrayLengthConfig_t;
 
 typedef union {
-    cliLookupTableConfig_t lookup;
-    cliMinMaxConfig_t minmax;
-    cliArrayLengthConfig_t array;
-    uint8_t bitpos;
+    cliLookupTableConfig_t lookup;  // used for MODE_LOOKUP excl. VAR_UINT32
+    cliMinMaxConfig_t minmax;       // used for MODE_DIRECT
+    cliArrayLengthConfig_t array;   // used for MODE_ARRAY
+    uint8_t bitpos;                 // used for MODE_BITSET
+    uint32_t u32_max;               // used for MODE_DIRECT with VAR_UINT32
 } cliValueConfig_t;
 
 typedef struct clivalue_s {

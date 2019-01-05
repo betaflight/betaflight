@@ -29,7 +29,7 @@
 
 #include "platform.h"
 
-#ifdef  USE_SERIAL_4WAY_BLHELI_INTERFACE
+#if defined(USE_SERIAL_4WAY_BLHELI_INTERFACE) && defined(USE_SERIAL_4WAY_SK_BOOTLOADER)
 
 #include "drivers/io.h"
 #include "drivers/serial.h"
@@ -40,7 +40,6 @@
 #include "io/serial_4way_impl.h"
 #include "io/serial_4way_stk500v2.h"
 
-#ifdef USE_SERIAL_4WAY_SK_BOOTLOADER
 
 #define BIT_LO_US (32) //32uS
 #define BIT_HI_US (2*BIT_LO_US)
@@ -425,5 +424,4 @@ uint8_t Stk_WriteEEprom(ioMem_t *pMem)
     }
     return 0;
 }
-#endif
 #endif

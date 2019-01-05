@@ -34,8 +34,8 @@
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
-#include "fc/fc_core.h"
-#include "fc/fc_rc.h"
+#include "fc/core.h"
+#include "fc/rc.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 
@@ -48,6 +48,7 @@
 #include "io/beeper.h"
 #include "io/ledstrip.h"
 #include "io/serial.h"
+#include "io/gps.h"
 
 #include "pg/beeper.h"
 #include "pg/beeper_dev.h"
@@ -61,9 +62,7 @@
 #include "sensors/battery.h"
 #include "sensors/gyro.h"
 
-#ifndef USE_OSD_SLAVE
 pidProfile_t *currentPidProfile;
-#endif
 
 #ifndef RX_SPI_DEFAULT_PROTOCOL
 #define RX_SPI_DEFAULT_PROTOCOL 0
@@ -86,10 +85,11 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .task_statistics = true,
     .cpu_overclock = 0,
     .powerOnArmingGraceTime = 5,
-    .boardIdentifier = TARGET_BOARD_IDENTIFIER
+    .boardIdentifier = TARGET_BOARD_IDENTIFIER,
+    .hseMhz = SYSTEM_HSE_VALUE,  // Not used for non-F4 targets
+    .configured = false,
 );
 
-#ifndef USE_OSD_SLAVE
 uint8_t getCurrentPidProfileIndex(void)
 {
     return systemConfig()->pidProfileIndex;
@@ -109,7 +109,6 @@ uint16_t getCurrentMinthrottle(void)
 {
     return motorConfig()->minthrottle;
 }
-#endif // USE_OSD_SLAVE
 
 void resetConfigs(void)
 {
@@ -122,7 +121,6 @@ void resetConfigs(void)
 
 static void activateConfig(void)
 {
-#ifndef USE_OSD_SLAVE
     loadPidProfile();
     loadControlRateProfile();
 
@@ -131,15 +129,14 @@ static void activateConfig(void)
     resetAdjustmentStates();
 
     pidInit(currentPidProfile);
-    useRcControlsConfig(currentPidProfile);
-    useAdjustmentConfig(currentPidProfile);
+
+    rcControlsInit();
 
     failsafeReset();
     setAccelerationTrims(&accelerometerConfigMutable()->accZero);
     accInitFilters();
 
     imuConfigure(throttleCorrectionConfig()->throttle_correction_angle, throttleCorrectionConfig()->throttle_correction_value);
-#endif // USE_OSD_SLAVE
 
 #ifdef USE_LED_STRIP
     reevaluateLedConfig();
@@ -148,7 +145,7 @@ static void activateConfig(void)
 
 static void validateAndFixConfig(void)
 {
-#if !defined(USE_QUAD_MIXER_ONLY) && !defined(USE_OSD_SLAVE)
+#if !defined(USE_QUAD_MIXER_ONLY)
     // Reset unsupported mixer mode to default.
     // This check will be gone when motor/servo mixers are loaded dynamically
     // by configurator as a part of configuration procedure.
@@ -169,15 +166,20 @@ static void validateAndFixConfig(void)
         pgResetFn_serialConfig(serialConfigMutable());
     }
 
+#if defined(USE_GPS)
+    serialPortConfig_t *gpsSerial = findSerialPortConfig(FUNCTION_GPS);
+    if (gpsConfig()->provider == GPS_MSP && gpsSerial) {
+        serialRemovePort(gpsSerial->identifier);
+    }
+#endif
     if (
 #if defined(USE_GPS)
-        !findSerialPortConfig(FUNCTION_GPS) &&
+        gpsConfig()->provider != GPS_MSP && !gpsSerial &&
 #endif
         true) {
         featureDisable(FEATURE_GPS);
     }
 
-#ifndef USE_OSD_SLAVE
     if (systemConfig()->activeRateProfile >= CONTROL_RATE_PROFILE_COUNT) {
         systemConfigMutable()->activeRateProfile = 0;
     }
@@ -278,7 +280,7 @@ static void validateAndFixConfig(void)
             pidProfilesMutable(i)->pid[PID_YAW].F = 0;
         }
     }
-    
+
 #if defined(USE_THROTTLE_BOOST)
     if (!rcSmoothingIsEnabled() ||
         !(rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_RPYT
@@ -304,7 +306,6 @@ static void validateAndFixConfig(void)
             removeModeActivationCondition(BOXGPSRESCUE);
         }
     }
-#endif // USE_OSD_SLAVE
 
 #if defined(USE_ESC_SENSOR)
     if (!findSerialPortConfig(FUNCTION_ESC_SENSOR)) {
@@ -409,7 +410,6 @@ static void validateAndFixConfig(void)
 #endif
 }
 
-#ifndef USE_OSD_SLAVE
 void validateAndFixGyroConfig(void)
 {
 #ifdef USE_GYRO_DATA_ANALYSE
@@ -418,7 +418,7 @@ void validateAndFixGyroConfig(void)
         featureDisable(FEATURE_DYNAMIC_FILTER);
     }
 #endif
-    
+
     // Prevent invalid notch cutoff
     if (gyroConfig()->gyro_soft_notch_cutoff_1 >= gyroConfig()->gyro_soft_notch_hz_1) {
         gyroConfigMutable()->gyro_soft_notch_hz_1 = 0;
@@ -511,13 +511,10 @@ void validateAndFixGyroConfig(void)
         }
     }
 }
-#endif // USE_OSD_SLAVE
 
 bool readEEPROM(void)
 {
-#ifndef USE_OSD_SLAVE
-    suspendRxSignal();
-#endif
+    suspendRxPwmPpmSignal();
 
     // Sanity check, read flash
     bool success = loadEEPROM();
@@ -526,26 +523,33 @@ bool readEEPROM(void)
 
     activateConfig();
 
-#ifndef USE_OSD_SLAVE
-    resumeRxSignal();
-#endif
+    resumeRxPwmPpmSignal();
 
     return success;
 }
 
-void writeEEPROM(void)
+static void ValidateAndWriteConfigToEEPROM(bool setConfigured)
 {
     validateAndFixConfig();
 
-#ifndef USE_OSD_SLAVE
-    suspendRxSignal();
+    suspendRxPwmPpmSignal();
+
+#ifdef USE_CONFIGURATION_STATE
+    if (setConfigured) {
+        systemConfigMutable()->configured = true;
+    }
+#else
+    UNUSED(setConfigured);
 #endif
 
     writeConfigToEEPROM();
 
-#ifndef USE_OSD_SLAVE
-    resumeRxSignal();
-#endif
+    resumeRxPwmPpmSignal();
+}
+
+void writeEEPROM(void)
+{
+    ValidateAndWriteConfigToEEPROM(true);
 }
 
 void writeEEPROMWithFeatures(uint32_t features)
@@ -553,14 +557,14 @@ void writeEEPROMWithFeatures(uint32_t features)
     featureDisableAll();
     featureEnable(features);
 
-    writeEEPROM();
+    ValidateAndWriteConfigToEEPROM(true);
 }
 
 void resetEEPROM(void)
 {
     resetConfigs();
 
-    writeEEPROM();
+    ValidateAndWriteConfigToEEPROM(false);
 
     activateConfig();
 }
@@ -575,19 +579,28 @@ void ensureEEPROMStructureIsValid(void)
 
 void saveConfigAndNotify(void)
 {
-    writeEEPROM();
+    ValidateAndWriteConfigToEEPROM(true);
     readEEPROM();
     beeperConfirmationBeeps(1);
 }
 
-#ifndef USE_OSD_SLAVE
 void changePidProfile(uint8_t pidProfileIndex)
 {
     if (pidProfileIndex < MAX_PROFILE_COUNT) {
         systemConfigMutable()->pidProfileIndex = pidProfileIndex;
         loadPidProfile();
+
+        pidInit(currentPidProfile);
     }
 
     beeperConfirmationBeeps(pidProfileIndex + 1);
 }
+
+bool isSystemConfigured(void)
+{
+#ifdef USE_CONFIGURATION_STATE
+    return systemConfig()->configured;
+#else
+    return true;
 #endif
+}

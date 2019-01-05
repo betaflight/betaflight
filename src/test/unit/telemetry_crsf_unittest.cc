@@ -125,7 +125,7 @@ TEST(TelemetryCrsfTest, TestGPS)
     gpsSol.llh.lon = 163 * GPS_DEGREES_DIVIDER;
     ENABLE_STATE(GPS_FIX);
     gpsSol.llh.altCm = 2345 * 100;            // altitude in cm / 100 + 1000m offset, so CRSF value should be 3345
-    gpsSol.groundSpeed = 163;                 // speed in 0.1m/s, 16.3 m/s = 58.68 km/h, so CRSF (km/h *10) value is 587
+    gpsSol.groundSpeed = 1630;                // speed in cm/s, 16.3 m/s = 58.68 km/h, so CRSF (km/h *10) value is 587
     gpsSol.numSat = 9;
     gpsSol.groundCourse = 1479;     // degrees * 10
     frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_GPS);
@@ -164,7 +164,7 @@ TEST(TelemetryCrsfTest, TestBattery)
     EXPECT_EQ(67, remaining);
     EXPECT_EQ(crfsCrc(frame, frameLen), frame[11]);
 
-    testBatteryVoltage = 33; // 3.3V = 3300 mv
+    testBatteryVoltage = 330; // 3.3V = 3300 mv
     testAmperage = 2960; // = 29.60A = 29600mA - amperage is in 0.01A steps
     testmAhDrawn = 1234;
     frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_BATTERY_SENSOR);
@@ -309,10 +309,11 @@ serialPortConfig_t *findSerialPortConfig(serialPortFunction_e) {return NULL;}
 
 bool telemetryDetermineEnabledState(portSharing_e) {return true;}
 bool telemetryCheckRxPortShared(const serialPortConfig_t *) {return true;}
+bool telemetryIsSensorEnabled(sensor_e) {return true;}
 
 portSharing_e determinePortSharing(const serialPortConfig_t *, serialPortFunction_e) {return PORTSHARING_NOT_SHARED;}
 
-bool isAirmodeActive(void) {return airMode;}
+bool airmodeIsEnabled(void) {return airMode;}
 
 int32_t getAmperage(void) {
     return testAmperage;
@@ -320,6 +321,14 @@ int32_t getAmperage(void) {
 
 uint16_t getBatteryVoltage(void) {
     return testBatteryVoltage;
+}
+
+uint16_t getLegacyBatteryVoltage(void) {
+    return (testBatteryVoltage + 5) / 10;
+}
+
+uint16_t getBatteryAverageCellVoltage(void) {
+    return 0;
 }
 
 batteryState_e getBatteryState(void) {
@@ -339,7 +348,7 @@ int32_t getMAhDrawn(void){
 }
 
 bool sendMspReply(uint8_t, mspResponseFnPtr) { return false; }
-bool handleMspFrame(uint8_t *, int)  { return false; }
+bool handleMspFrame(uint8_t *, int, uint8_t *)  { return false; }
 void crsfScheduleMspResponse(void) {};
 bool isBatteryVoltageConfigured(void) { return true; }
 bool isAmperageConfigured(void) { return true; }

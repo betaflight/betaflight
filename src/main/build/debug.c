@@ -50,6 +50,7 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "FFT_TIME",
     "FFT_FREQ",
     "RX_FRSKY_SPI",
+    "RX_SFHSS_SPI",
     "GYRO_RAW",
     "DUAL_GYRO",
     "DUAL_GYRO_RAW",
@@ -62,7 +63,7 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "RANGEFINDER",
     "RANGEFINDER_QUALITY",
     "LIDAR_TF",
-    "CORE_TEMP",
+    "ADC_INTERNAL",
     "RUNAWAY_TAKEOFF",
     "SDIO",
     "CURRENT_SENSOR",
@@ -75,4 +76,6 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "RX_SIGNAL_LOSS",
     "RC_SMOOTHING_RATE",
     "ANTI_GRAVITY",
+    "DYN_LPF",
+    "RX_SPEKTRUM_SPI",
 };

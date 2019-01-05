@@ -58,7 +58,7 @@
 #include "telemetry/ibus.h"
 #include "telemetry/msp_shared.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 2);
+PG_REGISTER_WITH_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 3);
 
 PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
     .telemetry_inverted = false,
@@ -76,7 +76,7 @@ PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
             IBUS_SENSOR_TYPE_RPM_FLYSKY,
             IBUS_SENSOR_TYPE_EXTERNAL_VOLTAGE
     },
-    .smartport_use_extra_sensors = false,
+    .disabledSensors = ESC_SENSOR_ALL,
     .mavlink_mah_as_heading_divisor = 0,
 );
 
@@ -102,6 +102,9 @@ void telemetryInit(void)
 #endif
 #ifdef USE_TELEMETRY_CRSF
     initCrsfTelemetry();
+#if defined(USE_MSP_OVER_TELEMETRY)
+    initCrsfMspBuffer();
+#endif
 #endif
 #ifdef USE_TELEMETRY_SRXL
     initSrxlTelemetry();
@@ -111,7 +114,6 @@ void telemetryInit(void)
 #endif
 #if defined(USE_MSP_OVER_TELEMETRY)
     initSharedMsp();
-    initCrsfMspBuffer();
 #endif
 
     telemetryCheckState();
@@ -224,3 +226,8 @@ void telemetryProcess(uint32_t currentTime)
 #endif
 }
 #endif
+
+bool telemetryIsSensorEnabled(sensor_e sensor)
+{
+    return ~(telemetryConfigMutable()->disabledSensors) & sensor;
+}

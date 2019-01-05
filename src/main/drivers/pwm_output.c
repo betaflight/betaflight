@@ -557,16 +557,18 @@ void servoDevInit(const servoDevConfig_t *servoConfig)
         IOInit(servos[servoIndex].io, OWNER_SERVO, RESOURCE_INDEX(servoIndex));
 
         const timerHardware_t *timer = timerGetByTag(tag);
-#if defined(USE_HAL_DRIVER)
-        IOConfigGPIOAF(servos[servoIndex].io, IOCFG_AF_PP, timer->alternateFunction);
-#else
-        IOConfigGPIO(servos[servoIndex].io, IOCFG_AF_PP);
-#endif
 
         if (timer == NULL) {
             /* flag failure and disable ability to arm */
             break;
         }
+
+#if defined(STM32F1)
+        IOConfigGPIO(servos[servoIndex].io, IOCFG_AF_PP);
+#else
+        IOConfigGPIOAF(servos[servoIndex].io, IOCFG_AF_PP, timer->alternateFunction);
+#endif
+
         pwmOutConfig(&servos[servoIndex].channel, timer, PWM_TIMER_1MHZ, PWM_TIMER_1MHZ / servoConfig->servoPwmRate, servoConfig->servoCenterPulse, 0);
         servos[servoIndex].enabled = true;
     }

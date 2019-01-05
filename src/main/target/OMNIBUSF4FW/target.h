@@ -25,19 +25,28 @@
 // OMNIBUSF4FW for Version 2
 // OMNIBUSF4FW1/OFW1 for Public Test Version
 // (Not a valid target, .mk file must be supplied by a user)
+// OMNIBUSF4V6
 
-#if defined(OMNIBUSF4FW)
-#define TARGET_BOARD_IDENTIFIER "OBFW"
-#define USBD_PRODUCT_STRING "OmnibusF4 Fireworks"
+#if defined(OMNIBUSF4V6)
+#define TARGET_BOARD_IDENTIFIER "OBV6"
 #elif defined(OMNIBUSF4FW1)
 #define TARGET_BOARD_IDENTIFIER "OFW1"
-#define USBD_PRODUCT_STRING "OmnibusF4 FWProto1"
+#else 
+#define TARGET_BOARD_IDENTIFIER "OBFW"
 #endif
 
-#if defined(OMNIBUSF4FW)
-#define LED0_PIN                PA8
-#elif defined(OMNIBUSF4FW1)
+#if defined(OMNIBUSF4FW1)
+#define USBD_PRODUCT_STRING "OmnibusF4 FWProto1"
+#elif defined(OMNIBUSF4V6)
+#define USBD_PRODUCT_STRING "OmnibusF4 V6"
+#else
+#define USBD_PRODUCT_STRING "OmnibusF4 Fireworks"
+#endif
+
+#if defined(OMNIBUSF4FW1)
 #define LED0_PIN                PB5
+#else
+#define LED0_PIN                PA8
 #endif
 
 #define USE_BEEPER
@@ -54,31 +63,49 @@
 
 #define USE_DUAL_GYRO
 
+#if defined(OMNIBUSF4V6)
+#define GYRO_1_CS_PIN           PA4   // Onboard IMU  
+#define GYRO_1_SPI_INSTANCE     SPI1
+#define GYRO_2_CS_PIN           PC14  // External IMU
+#define GYRO_2_SPI_INSTANCE     SPI1
+#else
 #define GYRO_1_CS_PIN           PD2
 #define GYRO_1_SPI_INSTANCE     SPI3
 #define GYRO_2_CS_PIN           PA4
 #define GYRO_2_SPI_INSTANCE     SPI1
+#endif
 
 #define GYRO_1_ALIGN            CW180_DEG
 #define ACC_1_ALIGN             CW180_DEG
+
+#if defined(OMNIBUSF4V6)
+#define GYRO_2_ALIGN            CW0_DEG
+#define ACC_2_ALIGN             CW0_DEG
+#else
 #define GYRO_2_ALIGN            CW0_DEG_FLIP
 #define ACC_2_ALIGN             CW0_DEG_FLIP
+#endif
 
 #define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_1
 
 // MPU6000 interrupts
 #define USE_EXTI
-#define MPU_INT_EXTI            PC4
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC4
+#define GYRO_2_EXTI_PIN         NONE
 #define USE_MPU_DATA_READY_SIGNAL
 
 #define USE_MAG
+#define MAG_I2C_INSTANCE        (I2CDEV_1)
 #define USE_MAG_HMC5883
+#define USE_MAG_LIS3MDL
 #define MAG_HMC5883_ALIGN       CW90_DEG
 
 #define USE_BARO
+#define BARO_I2C_INSTANCE       (I2CDEV_1)
 #define USE_BARO_SPI_BMP280
-#define BMP280_SPI_INSTANCE     SPI3
-#define BMP280_CS_PIN           PB3
+#define BARO_SPI_INSTANCE       SPI3
+#define BARO_CS_PIN             PB3
 #define DEFAULT_BARO_SPI_BMP280
 
 #define USE_MAX7456
@@ -144,14 +171,23 @@
 #define SPI3_MISO_PIN           PC11
 #define SPI3_MOSI_PIN           PC12
 
+#if defined(OMNIBUSF4V6)
+#define USE_I2C
+#define USE_I2C_DEVICE_1
+#define I2C1_SCL                PB8 // SCL PIN,alt MST8
+#define I2C1_SDA                PB9 // SDA PIN,alt MST7
+#define I2C_DEVICE              (I2CDEV_1)
+#else
 #define USE_I2C
 #define USE_I2C_DEVICE_2
 #define I2C2_SCL                NONE // PB10, shared with UART3TX
 #define I2C2_SDA                NONE // PB11, shared with UART3RX
 #define I2C_DEVICE              (I2CDEV_2)
+#endif
 
 #define USE_ADC
 #define ADC_INSTANCE            ADC2
+#define ADC2_DMA_OPT            1  // DMA 2 Stream 3 Channel 1 (compat default)
 #define CURRENT_METER_ADC_PIN   PC1  // Direct from CRNT pad (part of onboard sensor for Pro)
 #define VBAT_ADC_PIN            PC2  // 11:1 (10K + 1K) divider
 #define RSSI_ADC_PIN            PA0  // Direct from RSSI pad
@@ -175,8 +211,9 @@
 
 #define TARGET_IO_PORTA (0xffff & ~(BIT(14)|BIT(13)))
 #define TARGET_IO_PORTB (0xffff & ~(BIT(2)))
-#define TARGET_IO_PORTC (0xffff & ~(BIT(15)|BIT(14)|BIT(13)))
+#define TARGET_IO_PORTC (0xffff & ~(BIT(15)))
 #define TARGET_IO_PORTD BIT(2)
 
 #define USABLE_TIMER_CHANNEL_COUNT 15
+
 #define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(8) | TIM_N(9) | TIM_N(10) | TIM_N(11))

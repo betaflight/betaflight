@@ -31,14 +31,15 @@ typedef enum {
     CMS_KEY_LEFT,
     CMS_KEY_RIGHT,
     CMS_KEY_ESC,
-    CMS_KEY_MENU
+    CMS_KEY_MENU,
 } cms_key_e;
 
 extern bool cmsInMenu;
 
 // Device management
 bool cmsDisplayPortRegister(displayPort_t *pDisplay);
-displayPort_t *pCurrentDisplay;
+
+extern displayPort_t *pCurrentDisplay;
 
 // For main.c and scheduler
 void cmsInit(void);

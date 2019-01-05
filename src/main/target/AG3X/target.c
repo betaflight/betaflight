@@ -28,14 +28,14 @@
 #include "drivers/timer_def.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-                                                     // ADC1   D(2,4) D(2,0)
+                                                     // ADC1   *D(2,4) D(2,0)
                                                      // ADC2   D(2,2) D(2,3)
                                                      // ADC3   D(2,0) D(2,1)
 
     DEF_TIM(TIM1,  CH1, PA8,  TIM_USE_PPM,            0, 0), // PPM    D(1,0)
 
     // Motors
-    DEF_TIM(TIM8,  CH3, PC8,  TIM_USE_MOTOR,          0, 0), // MOTOR1 U(2,1) D(2,2) D(2,4)
+    DEF_TIM(TIM8,  CH3, PC8,  TIM_USE_MOTOR,          0, 0), // MOTOR1 U(2,1) *D(2,2) D(2,4)
     DEF_TIM(TIM3,  CH3, PB0,  TIM_USE_MOTOR,          0, 0), // MOTOR2 U(1,2) D(1,7)
     DEF_TIM(TIM3,  CH4, PB1,  TIM_USE_MOTOR,          0, 0), // MOTOR3 U(1,2) D(1,2)
     DEF_TIM(TIM4,  CH2, PB7,  TIM_USE_MOTOR,          0, 0), // MOTOR4 U(1,6) D(1,3)

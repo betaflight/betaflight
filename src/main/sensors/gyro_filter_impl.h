@@ -1,4 +1,4 @@
-static FAST_CODE void GYRO_FILTER_FUNCTION_NAME(gyroSensor_t *gyroSensor, timeDelta_t sampleDeltaUs)
+static FAST_CODE void GYRO_FILTER_FUNCTION_NAME(gyroSensor_t *gyroSensor)
 {
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         GYRO_FILTER_DEBUG_SET(DEBUG_GYRO_RAW, axis, gyroSensor->gyroDev.gyroADCRaw[axis]);
@@ -12,10 +12,9 @@ static FAST_CODE void GYRO_FILTER_FUNCTION_NAME(gyroSensor_t *gyroSensor, timeDe
             if (axis == X) {
                 GYRO_FILTER_DEBUG_SET(DEBUG_FFT, 0, lrintf(gyroADCf));
                 GYRO_FILTER_DEBUG_SET(DEBUG_FFT_FREQ, 3, lrintf(gyroADCf));
+                GYRO_FILTER_DEBUG_SET(DEBUG_DYN_LPF, 0, lrintf(gyroADCf));
             }
         }
-
-        float gyroDataForAnalysis = gyroADCf;
 #endif
 
         // apply static notch filters and software lowpass filters
@@ -26,17 +25,14 @@ static FAST_CODE void GYRO_FILTER_FUNCTION_NAME(gyroSensor_t *gyroSensor, timeDe
 
 #ifdef USE_GYRO_DATA_ANALYSE
         if (isDynamicFilterActive()) {
-            if (gyroConfig()->dyn_fft_location == DYN_FFT_AFTER_STATIC_FILTERS) {
-                gyroDataForAnalysis = gyroADCf;
-            }
-
             if (axis == X) {
-                GYRO_FILTER_DEBUG_SET(DEBUG_FFT, 1, lrintf(gyroDataForAnalysis));
-                GYRO_FILTER_DEBUG_SET(DEBUG_FFT_FREQ, 2, lrintf(gyroDataForAnalysis));
+                GYRO_FILTER_DEBUG_SET(DEBUG_FFT, 1, lrintf(gyroADCf));
+                GYRO_FILTER_DEBUG_SET(DEBUG_FFT_FREQ, 2, lrintf(gyroADCf));
+                GYRO_FILTER_DEBUG_SET(DEBUG_DYN_LPF, 3, lrintf(gyroADCf));
             }
-
-            gyroDataAnalysePush(&gyroSensor->gyroAnalyseState, axis, gyroDataForAnalysis);
+            gyroDataAnalysePush(&gyroSensor->gyroAnalyseState, axis, gyroADCf);
             gyroADCf = gyroSensor->notchFilterDynApplyFn((filter_t *)&gyroSensor->notchFilterDyn[axis], gyroADCf);
+            gyroADCf = gyroSensor->notchFilterDynApplyFn2((filter_t *)&gyroSensor->notchFilterDyn2[axis], gyroADCf);
         }
 #endif
 
@@ -44,10 +40,5 @@ static FAST_CODE void GYRO_FILTER_FUNCTION_NAME(gyroSensor_t *gyroSensor, timeDe
         GYRO_FILTER_DEBUG_SET(DEBUG_GYRO_FILTERED, axis, lrintf(gyroADCf));
 
         gyroSensor->gyroDev.gyroADCf[axis] = gyroADCf;
-        if (!gyroSensor->overflowDetected) {
-            // integrate using trapezium rule to avoid bias
-            accumulatedMeasurements[axis] += 0.5f * (gyroPrevious[axis] + gyroADCf) * sampleDeltaUs;
-            gyroPrevious[axis] = gyroADCf;
-        }
     }
 }

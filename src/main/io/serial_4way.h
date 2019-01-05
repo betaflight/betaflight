@@ -26,9 +26,6 @@
 #include "drivers/io_types.h"
 #include "io/serial_4way_impl.h"
 
-#define USE_SERIAL_4WAY_BLHELI_BOOTLOADER
-#define USE_SERIAL_4WAY_SK_BOOTLOADER
-
 #define imC2 0
 #define imSIL_BLB 1
 #define imATM_BLB 2

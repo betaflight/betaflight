@@ -25,7 +25,7 @@
 
 #include "build/debug.h"
 
-#ifdef USE_FLASH
+#ifdef USE_FLASH_CHIP
 
 #include "flash.h"
 #include "flash_impl.h"
@@ -39,6 +39,11 @@ static busDevice_t busInstance;
 static busDevice_t *busdev;
 
 static flashDevice_t flashDevice;
+
+void flashPreInit(const flashConfig_t *flashConfig)
+{
+    spiPreinitRegister(flashConfig->csTag, IOCFG_IPU, 1);
+}
 
 // Read chip identification and send it to device detect
 
@@ -99,7 +104,7 @@ bool flashInit(const flashConfig_t *flashConfig)
     }
 #endif
 
-    spiPreinitCsByTag(flashConfig->csTag);
+    spiPreinitByTag(flashConfig->csTag);
 
     return false;
 }
@@ -166,4 +171,4 @@ const flashGeometry_t *flashGetGeometry(void)
 
     return &noFlashGeometry;
 }
-#endif // USE_FLASH
+#endif // USE_FLASH_CHIP

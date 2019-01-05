@@ -50,7 +50,7 @@
   Flash M25p16 tolerates 20mhz, SPI_CLOCK_FAST should sit around 20 or less.
 */
 typedef enum {
-    SPI_CLOCK_INITIALIZATON = 256,
+    SPI_CLOCK_INITIALIZATION = 256,
 #if defined(STM32F4)
     SPI_CLOCK_SLOW          = 128, //00.65625 MHz
     SPI_CLOCK_STANDARD      = 8,   //10.50000 MHz
@@ -92,13 +92,10 @@ typedef enum SPIDevice {
 #define SPI_CFG_TO_DEV(x)   ((x) - 1)
 #define SPI_DEV_TO_CFG(x)   ((x) + 1)
 
-// Size of SPI CS pre-initialization tag arrays
-#define SPI_PREINIT_IPU_COUNT 11
-#define SPI_PREINIT_OPU_COUNT 2
-
-void spiPreinitCsByTag(ioTag_t iotag);
-void spiPreinitCsByIO(IO_t io);
-void spiPreInit(void);
+void spiPreinit(void);
+void spiPreinitRegister(ioTag_t iotag, uint8_t iocfg, uint8_t init);
+void spiPreinitByIO(IO_t io);
+void spiPreinitByTag(ioTag_t tag);
 
 bool spiInit(SPIDevice device);
 void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor);
@@ -112,10 +109,19 @@ void spiResetErrorCounter(SPI_TypeDef *instance);
 SPIDevice spiDeviceByInstance(SPI_TypeDef *instance);
 SPI_TypeDef *spiInstanceByDevice(SPIDevice device);
 
+bool spiBusIsBusBusy(const busDevice_t *bus);
+
 bool spiBusTransfer(const busDevice_t *bus, const uint8_t *txData, uint8_t *rxData, int length);
 
+uint8_t spiBusTransferByte(const busDevice_t *bus, uint8_t data);
+void spiBusWriteByte(const busDevice_t *bus, uint8_t data);
+bool spiBusRawTransfer(const busDevice_t *bus, const uint8_t *txData, uint8_t *rxData, int len);
+
 bool spiBusWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data);
+bool spiBusRawReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t *data, uint8_t length);
 bool spiBusReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t *data, uint8_t length);
+void spiBusWriteRegisterBuffer(const busDevice_t *bus, uint8_t reg, const uint8_t *data, uint8_t length);
+uint8_t spiBusRawReadRegister(const busDevice_t *bus, uint8_t reg);
 uint8_t spiBusReadRegister(const busDevice_t *bus, uint8_t reg);
 void spiBusSetInstance(busDevice_t *bus, SPI_TypeDef *instance);
 

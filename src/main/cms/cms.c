@@ -85,6 +85,9 @@ displayPort_t *pCurrentDisplay;
 static displayPort_t *cmsDisplayPorts[CMS_MAX_DEVICE];
 static int cmsDeviceCount;
 static int cmsCurrentDevice = -1;
+#ifdef USE_OSD
+static unsigned int osdProfileCursor = 1;
+#endif
 
 bool cmsDisplayPortRegister(displayPort_t *pDisplay)
 {
@@ -161,6 +164,7 @@ static uint8_t rightMenuColumn;
 static uint8_t maxMenuItems;
 static uint8_t linesPerMenuItem;
 static cms_key_e externKey = CMS_KEY_NONE;
+static bool osdElementEditing = false;
 
 bool cmsInMenu = false;
 
@@ -344,13 +348,18 @@ static int cmsDrawMenuItemValue(displayPort_t *pDisplay, char *buff, uint8_t row
     return cnt;
 }
 
-static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
+static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row, bool selectedRow)
 {
     #define CMS_DRAW_BUFFER_LEN 12
     #define CMS_NUM_FIELD_LEN 5
+    #define CMS_CURSOR_BLINK_DELAY_MS 500
 
     char buff[CMS_DRAW_BUFFER_LEN +1]; // Make room for null terminator.
     int cnt = 0;
+
+#ifndef USE_OSD
+    UNUSED(selectedRow);
+#endif
 
     if (smallScreen) {
         row++;
@@ -413,11 +422,21 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
     case OME_VISIBLE:
         if (IS_PRINTVALUE(p) && p->data) {
             uint16_t *val = (uint16_t *)p->data;
-
-            if (VISIBLE(*val)) {
-                strcpy(buff, "YES");
-            } else {
-              strcpy(buff, "NO ");
+            bool cursorBlink = millis() % (2 * CMS_CURSOR_BLINK_DELAY_MS) < CMS_CURSOR_BLINK_DELAY_MS;
+            for (unsigned x = 1; x < OSD_PROFILE_COUNT + 1; x++) {
+                if (VISIBLE_IN_OSD_PROFILE(*val, x)) {
+                    if (osdElementEditing && cursorBlink && selectedRow && (x == osdProfileCursor)) {
+                        strcpy(buff + x - 1, " ");
+                    } else {
+                        strcpy(buff + x - 1, "X");
+                    }
+                } else {
+                    if (osdElementEditing && cursorBlink && selectedRow && (x == osdProfileCursor)) {
+                        strcpy(buff + x - 1, " ");
+                    } else {
+                        strcpy(buff + x - 1, "-");
+                    }
+                }
             }
             cnt = cmsDrawMenuItemValue(pDisplay, buff, row, 3);
             CLR_PRINTVALUE(p);
@@ -573,7 +592,8 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
     // XXX printed if not enough room in the middle of the list.
 
         if (IS_PRINTVALUE(p)) {
-            room -= cmsDrawMenuEntry(pDisplay, p, top + i * linesPerMenuItem);
+            bool selectedRow = i == currentCtx.cursorRow;
+            room -= cmsDrawMenuEntry(pDisplay, p, top + i * linesPerMenuItem, selectedRow);
             if (room < 30)
                 return;
         }
@@ -782,11 +802,15 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, cms_key_e key)
     }
 
     if (key == CMS_KEY_ESC) {
-        cmsMenuBack(pDisplay);
+        if (osdElementEditing) {
+            osdElementEditing = false;
+        } else {
+            cmsMenuBack(pDisplay);
+        }
         return BUTTON_PAUSE;
     }
 
-    if (key == CMS_KEY_DOWN) {
+    if ((key == CMS_KEY_DOWN) && (!osdElementEditing)) {
         if (currentCtx.cursorRow < pageMaxRow) {
             currentCtx.cursorRow++;
         } else {
@@ -795,7 +819,7 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, cms_key_e key)
         }
     }
 
-    if (key == CMS_KEY_UP) {
+    if ((key == CMS_KEY_UP) && (!osdElementEditing)) {
         currentCtx.cursorRow--;
 
         // Skip non-title labels
@@ -809,7 +833,7 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, cms_key_e key)
         }
     }
 
-    if (key == CMS_KEY_DOWN || key == CMS_KEY_UP)
+    if ((key == CMS_KEY_DOWN || key == CMS_KEY_UP) && (!osdElementEditing))
         return res;
 
     p = pageTop + currentCtx.cursorRow;
@@ -842,6 +866,7 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, cms_key_e key)
         case OME_Back:
             cmsMenuBack(pDisplay);
             res = BUTTON_PAUSE;
+            osdElementEditing = false;
             break;
 
         case OME_Bool:
@@ -859,11 +884,29 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, cms_key_e key)
         case OME_VISIBLE:
             if (p->data) {
                 uint16_t *val = (uint16_t *)p->data;
-
-                if (key == CMS_KEY_RIGHT)
-                    *val |= VISIBLE_FLAG;
-                else
-                    *val %= ~VISIBLE_FLAG;
+                if ((key == CMS_KEY_RIGHT) && (!osdElementEditing)) {
+                    osdElementEditing = true;
+                    osdProfileCursor = 1;
+                } else if (osdElementEditing) {
+#ifdef USE_OSD_PROFILES
+                    if (key == CMS_KEY_RIGHT) {
+                        if (osdProfileCursor < OSD_PROFILE_COUNT) {
+                            osdProfileCursor++;
+                        }
+                    }
+                    if (key == CMS_KEY_LEFT) {
+                        if (osdProfileCursor > 1) {
+                            osdProfileCursor--;
+                        }
+                    }
+#endif
+                    if (key == CMS_KEY_UP) {
+                        *val |= OSD_PROFILE_FLAG(osdProfileCursor);
+                    }
+                    if (key == CMS_KEY_DOWN) {
+                        *val &= ~OSD_PROFILE_FLAG(osdProfileCursor);
+                    }
+                }
                 SET_PRINTVALUE(p);
             }
             break;

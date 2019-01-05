@@ -77,10 +77,13 @@ static char *gpsPacketLogChar = gpsPacketLog;
 int32_t GPS_home[2];
 uint16_t GPS_distanceToHome;        // distance to home point in meters
 int16_t GPS_directionToHome;        // direction to home or hol point in degrees
+uint32_t GPS_distanceFlownInCm;     // distance flown since armed in centimeters
+int16_t GPS_verticalSpeedInCmS;     // vertical speed in cm/s
 float dTnav;             // Delta Time in milliseconds for navigation computations, updated with every good GPS read
-int16_t actual_speed[2] = { 0, 0 };
 int16_t nav_takeoff_bearing;
 navigationMode_e nav_mode = NAV_MODE_NONE;    // Navigation mode
+
+#define GPS_DISTANCE_FLOWN_MIN_GROUND_SPEED_THRESHOLD_CM_S 15 // 5.4Km/h 3.35mph
 
 // moving average filter variables
 #define GPS_FILTERING              1    // add a 5 element moving average filter to GPS coordinates, helps eliminate gps noise but adds latency
@@ -224,6 +227,7 @@ static const uint8_t ubloxGalileoInit[] = {
 typedef enum {
     GPS_UNKNOWN,
     GPS_INITIALIZING,
+    GPS_INITIALIZED,
     GPS_CHANGE_BAUD,
     GPS_CONFIGURE,
     GPS_RECEIVING_DATA,
@@ -280,6 +284,11 @@ void gpsInit(void)
     gpsSetState(GPS_UNKNOWN);
 
     gpsData.lastMessage = millis();
+    
+    if (gpsConfig()->provider == GPS_MSP) { // no serial ports used when GPS_MSP is configured
+        gpsSetState(GPS_INITIALIZED);
+        return;
+    }
 
     serialPortConfig_t *gpsPortConfig = findSerialPortConfig(FUNCTION_GPS);
     if (!gpsPortConfig) {
@@ -474,6 +483,8 @@ void gpsInitHardware(void)
         gpsInitUblox();
 #endif
         break;
+    default:
+        break;
     }
 }
 
@@ -502,6 +513,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
 
     switch (gpsData.state) {
         case GPS_UNKNOWN:
+        case GPS_INITIALIZED:
             break;
 
         case GPS_INITIALIZING:
@@ -534,6 +546,9 @@ void gpsUpdate(timeUs_t currentTimeUs)
     }
     if (sensors(SENSOR_GPS)) {
         updateGpsIndicator(currentTimeUs);
+    }
+    if (!ARMING_FLAG(ARMED)) {
+        DISABLE_STATE(GPS_FIX_HOME);
     }
 #if defined(USE_GPS_RESCUE)
     if (gpsRescueIsConfigured()) {
@@ -575,10 +590,17 @@ bool gpsNewFrame(uint8_t c)
         return gpsNewFrameUBLOX(c);
 #endif
         break;
+    default:
+        break;
     }
     return false;
 }
 
+// Check for healthy communications
+bool gpsIsHealthy()
+{
+    return (gpsData.state == GPS_RECEIVING_DATA);
+}
 
 /* This is a light implementation of a GPS frame decoding
    This should work with most of modern GPS devices configured to output 5 frames.
@@ -1292,29 +1314,35 @@ void GPS_calculateDistanceAndDirectionToHome(void)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
-// Calculate our current speed vector from gps position data
+// Calculate the distance flown from gps position data
 //
-static void GPS_calc_velocity(void)
+static void GPS_calculateDistanceFlown(bool initialize)
 {
-    static int16_t speed_old[2] = { 0, 0 };
-    static int32_t last_coord[2] = { 0, 0 };
-    static uint8_t init = 0;
+    static int32_t lastCoord[2] = { 0, 0 };
+    static int16_t lastAlt;
+    static int32_t lastMillis;
 
-    if (init) {
-        float tmp = 1.0f / dTnav;
-        actual_speed[GPS_X] = (float)(gpsSol.llh.lon - last_coord[LON]) * GPS_scaleLonDown * tmp;
-        actual_speed[GPS_Y] = (float)(gpsSol.llh.lat - last_coord[LAT]) * tmp;
+    int currentMillis = millis();
 
-        actual_speed[GPS_X] = (actual_speed[GPS_X] + speed_old[GPS_X]) / 2;
-        actual_speed[GPS_Y] = (actual_speed[GPS_Y] + speed_old[GPS_Y]) / 2;
+    if (initialize) {
+        GPS_distanceFlownInCm = 0;
+        GPS_verticalSpeedInCmS = 0;
+    } else {
+        // Only add up movement when speed is faster than minimum threshold
+        if (gpsSol.groundSpeed > GPS_DISTANCE_FLOWN_MIN_GROUND_SPEED_THRESHOLD_CM_S) {
+            uint32_t dist;
+            int32_t dir;
+            GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &lastCoord[LAT], &lastCoord[LON], &dist, &dir);
+            GPS_distanceFlownInCm += dist;
+        }
 
-        speed_old[GPS_X] = actual_speed[GPS_X];
-        speed_old[GPS_Y] = actual_speed[GPS_Y];
+        GPS_verticalSpeedInCmS = (gpsSol.llh.altCm - lastAlt) * 1000 / (currentMillis - lastMillis);
+        GPS_verticalSpeedInCmS = constrain(GPS_verticalSpeedInCmS, -1500.0f, 1500.0f);
     }
-    init = 1;
-
-    last_coord[LON] = gpsSol.llh.lon;
-    last_coord[LAT] = gpsSol.llh.lat;
+    lastCoord[LON] = gpsSol.llh.lon;
+    lastCoord[LAT] = gpsSol.llh.lat;
+    lastAlt = gpsSol.llh.altCm;
+    lastMillis = currentMillis;
 }
 
 void onGpsNewData(void)
@@ -1323,11 +1351,10 @@ void onGpsNewData(void)
         return;
     }
 
-    if (!ARMING_FLAG(ARMED))
-        DISABLE_STATE(GPS_FIX_HOME);
-
-    if (!STATE(GPS_FIX_HOME) && ARMING_FLAG(ARMED))
+    if (!STATE(GPS_FIX_HOME) && ARMING_FLAG(ARMED)) {
         GPS_reset_home_position();
+        GPS_calculateDistanceFlown(true);
+    }
 
     // Apply moving average filter to GPS data
 #if defined(GPS_FILTERING)
@@ -1367,8 +1394,9 @@ void onGpsNewData(void)
     dTnav = MIN(dTnav, 1.0f);
 
     GPS_calculateDistanceAndDirectionToHome();
-    // calculate the current velocity based on gps coordinates continously to get a valid speed at the moment when we start navigating
-    GPS_calc_velocity();
+    if (ARMING_FLAG(ARMED)) {
+        GPS_calculateDistanceFlown(false);
+    }
 
 #ifdef USE_GPS_RESCUE
     rescueNewGpsData();

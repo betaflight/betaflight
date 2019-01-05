@@ -41,8 +41,6 @@ EXCLUDES        = stm32f7xx_hal_can.c \
                   stm32f7xx_hal_nor.c \
                   stm32f7xx_hal_qspi.c \
                   stm32f7xx_hal_rng.c \
-                  stm32f7xx_hal_rtc.c \
-                  stm32f7xx_hal_rtc_ex.c \
                   stm32f7xx_hal_sai.c \
                   stm32f7xx_hal_sai_ex.c \
                   stm32f7xx_hal_sd.c \
@@ -117,7 +115,13 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(ROOT)/lib/main/STM32F7/Drivers/CMSIS/Device/ST/STM32F7xx/Include \
                    $(ROOT)/src/main/vcp_hal
 
-ifneq ($(filter SDCARD,$(FEATURES)),)
+ifneq ($(filter SDCARD_SPI,$(FEATURES)),)
+INCLUDE_DIRS    := $(INCLUDE_DIRS) \
+                   $(FATFS_DIR)
+VPATH           := $(VPATH):$(FATFS_DIR)
+endif
+
+ifneq ($(filter SDCARD_SDIO,$(FEATURES)),)
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(FATFS_DIR)
 VPATH           := $(VPATH):$(FATFS_DIR)
@@ -127,7 +131,12 @@ endif
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16 -fsingle-precision-constant -Wdouble-promotion
 
 DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER
-ifeq ($(TARGET),$(filter $(TARGET),$(F7X5XG_TARGETS)))
+ifeq ($(TARGET),$(filter $(TARGET),$(F7X5XI_TARGETS)))
+DEVICE_FLAGS   += -DSTM32F765xx
+LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f765.ld
+STARTUP_SRC     = startup_stm32f765xx.s
+TARGET_FLASH	= 2048
+else ifeq ($(TARGET),$(filter $(TARGET),$(F7X5XG_TARGETS)))
 DEVICE_FLAGS   += -DSTM32F745xx
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f74x.ld
 STARTUP_SRC     = startup_stm32f745xx.s
@@ -168,6 +177,7 @@ MCU_COMMON_SRC = \
             drivers/light_ws2811strip_hal.c \
             drivers/transponder_ir_io_hal.c \
             drivers/bus_spi_ll.c \
+            drivers/persistent.c \
             drivers/pwm_output_dshot_hal.c \
             drivers/timer_hal.c \
             drivers/timer_stm32f7xx.c \
@@ -184,14 +194,14 @@ MSC_SRC = \
             drivers/usb_msc_f7xx.c \
             msc/usbd_storage.c
 
-ifneq ($(filter SDIO,$(FEATURES)),)
+ifneq ($(filter SDCARD_SDIO,$(FEATURES)),)
 MCU_COMMON_SRC += \
             drivers/sdio_f7xx.c            
 MSC_SRC += \
             msc/usbd_storage_sdio.c
 endif
 
-ifneq ($(filter SDCARD,$(FEATURES)),)
+ifneq ($(filter SDCARD_SPI,$(FEATURES)),)
 MSC_SRC += \
             msc/usbd_storage_sd_spi.c
 endif

@@ -42,8 +42,8 @@
 //#undef USE_PINIO
 //#undef USE_PINIOBOX
 
-#undef USE_TELEMETRY_HOTT
-#undef USE_TELEMETRY_MAVLINK
+//#undef USE_TELEMETRY_HOTT
+//#undef USE_TELEMETRY_MAVLINK
 #undef USE_TELEMETRY_LTM
 #undef USE_SERIALRX_XBUS
 #undef USE_SERIALRX_SUMH
@@ -64,40 +64,28 @@
 #define BEEPER_INVERTED
 
 #define USE_EXTI
-#define MPU_INT_EXTI            PA3
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PA3
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
-#define ICM20689_CS_PIN          PA4
-#define ICM20689_SPI_INSTANCE    SPI1
-
-#define MPU6000_CS_PIN          PA4
-#define MPU6000_SPI_INSTANCE    SPI1
-
-#define MPU6500_CS_PIN          PA4
-#define MPU6500_SPI_INSTANCE    SPI1
+#define GYRO_1_CS_PIN           PA4
+#define GYRO_1_SPI_INSTANCE     SPI1
 
 #define USE_GYRO
-#define USE_GYRO_SPI_ICM20689
-#define GYRO_ICM20689_ALIGN      CW180_DEG
-
 #define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN      CW180_DEG
-
-#define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN      CW90_DEG
+#define USE_GYRO_SPI_ICM20689
+// MPU6000 and ICM20689 are CW180 aligned.
+// MPU6500 is CW90 aligned, but can't handle this.
+// Must be configured after flashing.
+#define GYRO_1_ALIGN            CW180_DEG
 
 #define USE_ACC
-#define USE_ACC_SPI_ICM20689
-#define ACC_ICM20689_ALIGN       CW180_DEG
-
 #define USE_ACC_SPI_MPU6000
-#define ACC_MPU6000_ALIGN       CW180_DEG
-
-#define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN       CW90_DEG
+#define USE_ACC_SPI_ICM20689
+#define ACC_1_ALIGN             CW180_DEG
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
@@ -128,17 +116,11 @@
 #else
 
     #define USE_SDCARD
-
+    #define USE_SDCARD_SPI
     #define SDCARD_DETECT_INVERTED
-
     #define SDCARD_DETECT_PIN                   PB2
     #define SDCARD_SPI_INSTANCE                 SPI2
     #define SDCARD_SPI_CS_PIN                   SPI2_NSS_PIN
-
-    // SPI2 is on the APB1 bus whose clock runs at 36MHz. Divide to under 400kHz for init:
-    #define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 128
-    // Divide to under 25MHz for normal operation:
-    #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     2
 
     // Note, this is the same DMA channel as UART1_RX. Luckily we don't use DMA for USART Rx.
     #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5

@@ -31,4 +31,4 @@ bool mscCheckBoot(void);
 uint8_t mscStart(void);
 bool mscCheckButton(void);
 void mscWaitForButton(void);
-void systemResetToMsc(void);
+void systemResetToMsc(int timezoneOffsetMinutes);

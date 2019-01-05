@@ -33,6 +33,7 @@ typedef struct usbDev_s {
     uint8_t type;
     ioTag_t mscButtonPin;
     uint8_t mscButtonUsePullup;
+    ioTag_t detectPin;
 } usbDev_t;
 
 PG_DECLARE(usbDev_t, usbDevConfig);

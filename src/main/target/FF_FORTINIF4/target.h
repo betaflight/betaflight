@@ -52,44 +52,32 @@
 /*------------SENSORS--------------*/
 // MPU interrupt
 #define USE_EXTI
-#define MPU_INT_EXTI            PC4
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC4
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define USE_GYRO
-#define USE_ACC
-
-#if !defined(FF_FORTINIF4_REV03)
-#define MPU6000_CS_PIN          SPI1_NSS_PIN
-#define MPU6000_SPI_INSTANCE    SPI1
-
 #define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN      CW180_DEG
-
-#define USE_ACC_SPI_MPU6000
-#define ACC_MPU6000_ALIGN       CW180_DEG
-
-#define ICM20689_CS_PIN         SPI1_NSS_PIN
-#define ICM20689_SPI_INSTANCE   SPI1
-
+#define USE_GYRO_SPI_MPU6500
 #define USE_GYRO_SPI_ICM20689
-#define GYRO_ICM20689_ALIGN     CW180_DEG
+#define GYRO_1_ALIGN            CW180_DEG
 
-#define USE_ACC_SPI_ICM20689
-#define ACC_ICM20689_ALIGN      CW180_DEG
+#define GYRO_1_SPI_INSTANCE     SPI1
+
+#if defined(FF_FORTINIF4_REV03)
+#define GYRO_1_CS_PIN           PA4
+#else
+#define GYRO_1_CS_PIN           PA8
 #endif
 
-#define MPU6500_CS_PIN          SPI1_NSS_PIN
-#define MPU6500_SPI_INSTANCE    SPI1
-
-#define USE_GYRO_MPU6500
-#define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN      CW180_DEG
-
-#define USE_ACC_MPU6500
+#define USE_ACC
+#define USE_ACC_SPI_MPU6000
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN       CW180_DEG
+#define USE_ACC_SPI_ICM20689
+#define ACC_1_ALIGN             CW180_DEG
+
 /*---------------------------------*/
 
 #if !defined(FF_FORTINIF4_REV03)
@@ -121,7 +109,11 @@
 //#define USE_USB_DETECT
 
 #define USE_UART1
+#if defined(FF_FORTINIF4_REV03)
+#define UART1_RX_PIN            PB7
+#else 
 #define UART1_RX_PIN            PA10
+#endif	
 #define UART1_TX_PIN            PA9
 
 #define USE_UART4
@@ -224,8 +216,9 @@
 /*--------------TIMERS-------------*/
 #if defined(FF_FORTINIF4_REV03)
 #define USABLE_TIMER_CHANNEL_COUNT  7
+#define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) )
 #else
 #define USABLE_TIMER_CHANNEL_COUNT  6
-#endif
 #define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(4) )
+#endif
 /*---------------------------------*/

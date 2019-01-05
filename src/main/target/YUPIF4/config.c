@@ -35,7 +35,8 @@
 
 #include "hardware_revision.h"
 
-
+// BEEPER_OPT will be handled by post-flash configuration
+#define BEEPER_OPT              PB14
 
 // alternative defaults settings for YuPiF4 targets
 void targetConfiguration(void)

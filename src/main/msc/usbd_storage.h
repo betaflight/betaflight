@@ -27,20 +27,28 @@
 #include "usbd_msc_core.h"
 #endif
 
+#include "common/time.h"
+
 #ifdef USE_HAL_DRIVER
 extern USBD_StorageTypeDef *USBD_STORAGE_fops;
-#ifdef USE_SDCARD
+#ifdef USE_SDCARD_SDIO
 extern USBD_StorageTypeDef USBD_MSC_MICRO_SDIO_fops;
+#endif
+#ifdef USE_SDCARD_SPI
+extern USBD_StorageTypeDef USBD_MSC_MICRO_SD_SPI_fops;
 #endif
 #ifdef USE_FLASHFS
 extern USBD_StorageTypeDef USBD_MSC_EMFAT_fops;
 #endif
-#else
+#else // USE_HAL_DRIVER
 extern USBD_STORAGE_cb_TypeDef *USBD_STORAGE_fops;
-#ifdef USE_SDCARD
+#ifdef USE_SDCARD_SDIO
 extern USBD_STORAGE_cb_TypeDef USBD_MSC_MICRO_SDIO_fops;
+#endif
+#ifdef USE_SDCARD_SPI
+extern USBD_STORAGE_cb_TypeDef USBD_MSC_MICRO_SD_SPI_fops;
 #endif
 #ifdef USE_FLASHFS
 extern USBD_STORAGE_cb_TypeDef USBD_MSC_EMFAT_fops;
 #endif
-#endif
+#endif // USE_HAL_DRIVER

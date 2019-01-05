@@ -27,7 +27,7 @@
 #include "drivers/bus.h"
 #include "drivers/sensor.h"
 #include "drivers/accgyro/accgyro_mpu.h"
-#include "sensors/gyro.h"
+
 #pragma GCC diagnostic push
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
 #include <pthread.h>
@@ -35,9 +35,24 @@
 #pragma GCC diagnostic warning "-Wpadded"
 #endif
 
-#ifndef MPU_I2C_INSTANCE
-#define MPU_I2C_INSTANCE I2C_DEVICE
-#endif
+typedef enum {
+    GYRO_NONE = 0,
+    GYRO_DEFAULT,
+    GYRO_MPU6050,
+    GYRO_L3G4200D,
+    GYRO_MPU3050,
+    GYRO_L3GD20,
+    GYRO_MPU6000,
+    GYRO_MPU6500,
+    GYRO_MPU9250,
+    GYRO_ICM20601,
+    GYRO_ICM20602,
+    GYRO_ICM20608G,
+    GYRO_ICM20649,
+    GYRO_ICM20689,
+    GYRO_BMI160,
+    GYRO_FAKE
+} gyroHardware_e;
 
 typedef enum {
     GYRO_HARDWARE_LPF_NORMAL,
@@ -77,7 +92,6 @@ typedef struct gyroDev_s {
     int32_t gyroADCRawPrevious[XYZ_AXIS_COUNT];
     int16_t gyroADCRaw[XYZ_AXIS_COUNT];
     int16_t temperature;
-    mpuConfiguration_t mpuConfiguration;
     mpuDetectionResult_t mpuDetectionResult;
     sensor_align_e gyroAlign;
     gyroRateKHz_e gyroRateKHz;
@@ -88,7 +102,7 @@ typedef struct gyroDev_s {
     uint8_t mpuDividerDrops;
     ioTag_t mpuIntExtiTag;
     uint8_t gyroHasOverflowProtection;
-    gyroSensor_e gyroHardware;
+    gyroHardware_e gyroHardware;
 } gyroDev_t;
 
 typedef struct accDev_s {

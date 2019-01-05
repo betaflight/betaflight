@@ -58,7 +58,8 @@
 
 #define USE_EXTI
 #define MAG_INT_EXTI            PC14
-#define MPU_INT_EXTI            PC13
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC13
 #define MMA8451_INT_PIN         PA5
 
 #define USE_MPU_DATA_READY_SIGNAL
@@ -74,8 +75,8 @@
 #define FLASH_CS_PIN            NAZE_SPI_CS_PIN
 #define FLASH_SPI_INSTANCE      NAZE_SPI_INSTANCE
 
-#define MPU6500_CS_PIN          NAZE_SPI_CS_PIN
-#define MPU6500_SPI_INSTANCE    NAZE_SPI_INSTANCE
+#define GYRO_1_CS_PIN           NAZE_SPI_CS_PIN
+#define GYRO_1_SPI_INSTANCE     NAZE_SPI_INSTANCE
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
@@ -86,9 +87,7 @@
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
 
-#define GYRO_MPU3050_ALIGN      CW0_DEG
-#define GYRO_MPU6050_ALIGN      CW0_DEG
-#define GYRO_MPU6500_ALIGN      CW0_DEG
+#define GYRO_1_ALIGN            CW0_DEG
 
 #define USE_ACC
 //#define USE_ACC_ADXL345
@@ -99,10 +98,9 @@
 #define USE_ACC_SPI_MPU6500
 
 //#define ACC_ADXL345_ALIGN       CW270_DEG
-#define ACC_MPU6050_ALIGN       CW0_DEG
 //#define ACC_MMA8452_ALIGN       CW90_DEG
 //#define ACC_BMA280_ALIGN        CW0_DEG
-#define ACC_MPU6500_ALIGN       CW0_DEG
+#define ACC_1_ALIGN             CW0_DEG
 
 #define USE_BARO
 #define USE_BARO_MS5611 // needed for Flip32 board

@@ -47,6 +47,7 @@
 #include "drivers/vtx_common.h"
 
 #include "fc/config.h"
+#include "fc/core.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
@@ -77,12 +78,14 @@
 
 PG_REGISTER_WITH_RESET_FN(ledStripConfig_t, ledStripConfig, PG_LED_STRIP_CONFIG, 0);
 
+hsvColor_t *colors;
+const modeColorIndexes_t *modeColors;
+specialColorIndexes_t specialColors;
+
 static bool ledStripInitialised = false;
 static bool ledStripEnabled = true;
 
 static void ledStripDisable(void);
-
-//#define USE_LED_ANIMATION
 
 #define HZ_TO_US(hz) ((int32_t)((1000 * 1000) / (hz)))
 
@@ -145,7 +148,6 @@ static const modeColorIndexes_t defaultModeColors[] = {
     [LED_MODE_HORIZON]     = {{ COLOR_BLUE,       COLOR_DARK_VIOLET, COLOR_YELLOW,    COLOR_DEEP_PINK, COLOR_BLUE, COLOR_ORANGE }},
     [LED_MODE_ANGLE]       = {{ COLOR_CYAN,       COLOR_DARK_VIOLET, COLOR_YELLOW,    COLOR_DEEP_PINK, COLOR_BLUE, COLOR_ORANGE }},
     [LED_MODE_MAG]         = {{ COLOR_MINT_GREEN, COLOR_DARK_VIOLET, COLOR_ORANGE,    COLOR_DEEP_PINK, COLOR_BLUE, COLOR_ORANGE }},
-    [LED_MODE_BARO]        = {{ COLOR_LIGHT_BLUE, COLOR_DARK_VIOLET, COLOR_RED,       COLOR_DEEP_PINK, COLOR_BLUE, COLOR_ORANGE }},
 };
 
 static const specialColorIndexes_t defaultSpecialColors[] = {
@@ -433,9 +435,6 @@ static const struct {
 #ifdef USE_MAG
     {MAG_MODE,      LED_MODE_MAG},
 #endif
-#ifdef USE_BARO
-    {BARO_MODE,     LED_MODE_BARO},
-#endif
     {HORIZON_MODE,  LED_MODE_HORIZON},
     {ANGLE_MODE,    LED_MODE_ANGLE},
     {0,             LED_MODE_ORIENTATION},
@@ -524,6 +523,7 @@ typedef enum {
     WARNING_ARMING_DISABLED,
     WARNING_LOW_BATTERY,
     WARNING_FAILSAFE,
+    WARNING_CRASH_FLIP_ACTIVE,
 } warningFlags_e;
 
 static void applyLedWarningLayer(bool updateNow, timeUs_t *timer)
@@ -538,12 +538,18 @@ static void applyLedWarningLayer(bool updateNow, timeUs_t *timer)
 
         if (warningFlashCounter == 0) {      // update when old flags was processed
             warningFlags = 0;
-            if (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE && getBatteryState() != BATTERY_OK)
+            if (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE && getBatteryState() != BATTERY_OK) {
                 warningFlags |= 1 << WARNING_LOW_BATTERY;
-            if (failsafeIsActive())
+            }
+            if (failsafeIsActive()) {
                 warningFlags |= 1 << WARNING_FAILSAFE;
-            if (!ARMING_FLAG(ARMED) && isArmingDisabled())
+            }
+            if (!ARMING_FLAG(ARMED) && isArmingDisabled()) {
                 warningFlags |= 1 << WARNING_ARMING_DISABLED;
+            }
+            if (isFlipOverAfterCrashActive()) {
+                warningFlags |= 1 << WARNING_CRASH_FLIP_ACTIVE;
+            }
         }
         *timer += HZ_TO_US(10);
     }
@@ -556,10 +562,13 @@ static void applyLedWarningLayer(bool updateNow, timeUs_t *timer)
         if (warningFlags & (1 << warningId)) {
             switch (warningId) {
                 case WARNING_ARMING_DISABLED:
-                    warningColor = colorOn ? &HSV(GREEN)  : &HSV(BLACK);
+                    warningColor = colorOn ? &HSV(GREEN) : &HSV(BLACK);
+                    break;
+                case WARNING_CRASH_FLIP_ACTIVE:
+                    warningColor = colorOn ? &HSV(MAGENTA) : &HSV(BLACK);
                     break;
                 case WARNING_LOW_BATTERY:
-                    warningColor = colorOn ? &HSV(RED)    : &HSV(BLACK);
+                    warningColor = colorOn ? &HSV(RED) : &HSV(BLACK);
                     break;
                 case WARNING_FAILSAFE:
                     warningColor = colorOn ? &HSV(YELLOW) : &HSV(BLUE);
@@ -960,55 +969,21 @@ static void applyLedBlinkLayer(bool updateNow, timeUs_t *timer)
     }
 }
 
-#ifdef USE_LED_ANIMATION
-static void applyLedAnimationLayer(bool updateNow, timeUs_t *timer)
-{
-    static uint8_t frameCounter = 0;
-    const int animationFrames = ledGridRows;
-    if (updateNow) {
-        frameCounter = (frameCounter + 1 < animationFrames) ? frameCounter + 1 : 0;
-        *timer += HZ_TO_US(20);
-    }
-
-    if (ARMING_FLAG(ARMED))
-        return;
-
-    int previousRow = frameCounter > 0 ? frameCounter - 1 : animationFrames - 1;
-    int currentRow = frameCounter;
-    int nextRow = (frameCounter + 1 < animationFrames) ? frameCounter + 1 : 0;
-
-    for (int ledIndex = 0; ledIndex < ledCounts.count; ledIndex++) {
-        const ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[ledIndex];
-
-        if (ledGetY(ledConfig) == previousRow) {
-            setLedHsv(ledIndex, getSC(LED_SCOLOR_ANIMATION));
-            scaleLedValue(ledIndex, 50);
-        } else if (ledGetY(ledConfig) == currentRow) {
-            setLedHsv(ledIndex, getSC(LED_SCOLOR_ANIMATION));
-        } else if (ledGetY(ledConfig) == nextRow) {
-            scaleLedValue(ledIndex, 50);
-        }
-    }
-}
-#endif
-
+// In reverse order of priority
 typedef enum {
     timBlink,
     timLarson,
-    timBattery,
-    timRssi,
-#ifdef USE_GPS
-    timGps,
-#endif
-    timWarning,
+    timRing,
+    timIndicator,
 #ifdef USE_VTX_COMMON
     timVtx,
 #endif
-    timIndicator,
-#ifdef USE_LED_ANIMATION
-    timAnimation,
+#ifdef USE_GPS
+    timGps,
 #endif
-    timRing,
+    timBattery,
+    timRssi,
+    timWarning,
     timTimerCount
 } timId_e;
 
@@ -1037,9 +1012,6 @@ static applyLayerFn_timed* layerTable[] = {
     [timVtx] = &applyLedVtxLayer,
 #endif
     [timIndicator] = &applyLedIndicatorLayer,
-#ifdef USE_LED_ANIMATION
-    [timAnimation] = &applyLedAnimationLayer,
-#endif
     [timRing] = &applyLedThrustRingLayer
 };
 

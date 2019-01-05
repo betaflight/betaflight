@@ -58,6 +58,7 @@ typedef enum {
     ADJUSTMENT_PITCH_F,
     ADJUSTMENT_ROLL_F,
     ADJUSTMENT_YAW_F,
+    ADJUSTMENT_OSD_PROFILE,
     ADJUSTMENT_FUNCTION_COUNT
 } adjustmentFunction_e;
 
@@ -77,7 +78,7 @@ typedef struct adjustmentConfig_s {
     adjustmentData_t data;
 } adjustmentConfig_t;
 
-#define MAX_ADJUSTMENT_RANGE_COUNT 15
+#define MAX_ADJUSTMENT_RANGE_COUNT 30
 
 typedef struct adjustmentRange_s {
     // when aux channel is in range...
@@ -85,7 +86,7 @@ typedef struct adjustmentRange_s {
     channelRange_t range;
 
     // ..then apply the adjustment function to the auxSwitchChannel ...
-    uint8_t adjustmentFunction;
+    uint8_t adjustmentConfig;
     uint8_t auxSwitchChannelIndex;
 
     // ... via slot
@@ -109,10 +110,8 @@ typedef struct adjustmentState_s {
 #endif
 
 void resetAdjustmentStates(void);
-void updateAdjustmentStates(void);
 struct controlRateConfig_s;
 void processRcAdjustments(struct controlRateConfig_s *controlRateConfig);
-struct pidProfile_s;
-void useAdjustmentConfig(struct pidProfile_s *pidProfileToUse);
 const char *getAdjustmentsRangeName(void);
 int getAdjustmentsRangeValue(void);
+void activeAdjustmentRangeReset(void);

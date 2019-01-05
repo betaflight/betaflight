@@ -410,7 +410,7 @@ void ak8963BusDeInit(const busDevice_t *busdev)
 
 #ifdef USE_MAG_SPI_AK8963
     case BUSTYPE_SPI:
-        spiPreinitCsByIO(busdev->busdev_u.spi.csnPin);
+        spiPreinitByIO(busdev->busdev_u.spi.csnPin);
         break;
 #endif
 

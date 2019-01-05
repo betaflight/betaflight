@@ -66,6 +66,7 @@
 #include "stm32f7xx.h"
 #include "system_stm32f7xx.h"
 #include "platform.h"
+#include "drivers/persistent.h"
 
 #if !defined  (HSE_VALUE)
   #define HSE_VALUE    ((uint32_t)8000000) /*!< Default value of the External oscillator in Hz */
@@ -229,6 +230,19 @@
           while (1);
       }
 
+      // Configure PLLI2S for 27MHz operation
+      // Actual output will be done by mcoInit in drivers/mco.c
+
+      PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_PLLI2S;
+      PeriphClkInitStruct.PLLI2S.PLLI2SN = 216;
+      PeriphClkInitStruct.PLLI2S.PLLI2SR = 2;
+      PeriphClkInitStruct.PLLI2S.PLLI2SQ = 2;
+      PeriphClkInitStruct.PLLI2SDivQ = 1;
+      if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
+      {
+          while (1);
+      }
+
     // Activating the timerprescalers while the APBx prescalers are 1/2/4 will connect the TIMxCLK to HCLK which has been configured to 216MHz
     __HAL_RCC_TIMCLKPRESCALER(RCC_TIMPRES_ACTIVATED);
 
@@ -246,30 +260,19 @@ static const pllConfig_t overclockLevels[] = {
   { 480, RCC_PLLP_DIV2, 10 }, // 240 MHz
 };
 
-// 8 bytes of memory located at the very end of RAM, expected to be unoccupied
-#define REQUEST_OVERCLOCK               (*(__IO uint32_t *) (BKPSRAM_BASE + 8))
-#define CURRENT_OVERCLOCK_LEVEL         (*(__IO uint32_t *) (BKPSRAM_BASE + 12))
-#define REQUEST_OVERCLOCK_MAGIC_COOKIE  0xBABEFACE
-
 void SystemInitOC(void) {
-    __PWR_CLK_ENABLE();
-    __BKPSRAM_CLK_ENABLE();
-    HAL_PWR_EnableBkUpAccess();
+    uint32_t currentOverclockLevel = persistentObjectRead(PERSISTENT_OBJECT_OVERCLOCK_LEVEL);
 
-    if (REQUEST_OVERCLOCK_MAGIC_COOKIE == REQUEST_OVERCLOCK) {
-      const uint32_t overclockLevel = CURRENT_OVERCLOCK_LEVEL;
-
-      /* PLL setting for overclocking */
-      if (overclockLevel < ARRAYLEN(overclockLevels)) {
-        const pllConfig_t * const pll = overclockLevels + overclockLevel;
-
-        pll_n = pll->n;
-        pll_p = pll->p;
-        pll_q = pll->q;
-      }
-
-      REQUEST_OVERCLOCK = 0;
+    if (currentOverclockLevel >= ARRAYLEN(overclockLevels)) {
+      return;
     }
+
+    /* PLL setting for overclocking */
+    const pllConfig_t * const pll = overclockLevels + currentOverclockLevel;
+
+    pll_n = pll->n;
+    pll_p = pll->p;
+    pll_q = pll->q;
 }
 
 void OverclockRebootIfNecessary(uint32_t overclockLevel)
@@ -281,9 +284,8 @@ void OverclockRebootIfNecessary(uint32_t overclockLevel)
     const pllConfig_t * const pll = overclockLevels + overclockLevel;
 
     // Reboot to adjust overclock frequency
-    if (SystemCoreClock != (pll->n / pll->p) * 1000000) {
-        REQUEST_OVERCLOCK = REQUEST_OVERCLOCK_MAGIC_COOKIE;
-        CURRENT_OVERCLOCK_LEVEL = overclockLevel;
+    if (SystemCoreClock != (pll->n / pll->p) * 1000000U) {
+        persistentObjectWrite(PERSISTENT_OBJECT_OVERCLOCK_LEVEL, overclockLevel);
         __disable_irq();
         NVIC_SystemReset();
     }

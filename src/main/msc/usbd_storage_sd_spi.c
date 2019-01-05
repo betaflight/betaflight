@@ -110,7 +110,7 @@ static uint8_t  STORAGE_Inquirydata[] = {//36
 };
 
 #ifdef USE_HAL_DRIVER
-USBD_StorageTypeDef USBD_MSC_MICRO_SDIO_fops =
+USBD_StorageTypeDef USBD_MSC_MICRO_SD_SPI_fops =
 {
   STORAGE_Init,
   STORAGE_GetCapacity,
@@ -122,7 +122,7 @@ USBD_StorageTypeDef USBD_MSC_MICRO_SDIO_fops =
   (int8_t*)STORAGE_Inquirydata,
 };
 #else
-USBD_STORAGE_cb_TypeDef USBD_MSC_MICRO_SDIO_fops =
+USBD_STORAGE_cb_TypeDef USBD_MSC_MICRO_SD_SPI_fops =
 {
   STORAGE_Init,
   STORAGE_GetCapacity,

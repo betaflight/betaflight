@@ -33,23 +33,19 @@
  * Number of channels: 16
  *
  * Connect as follows:
- * Jeti EX Bus -> Serial RX (connect directly)
- * Serial TX -> Resistor(2k4) ->Serial RX
- * In jeti pdf it is different, but if the resistor breaks, the receiver continues to operate.
- *
+ * Jeti EX Bus -> Serial TX (connect directly)
  */
+
 
 #include <stdbool.h>
 #include <stdint.h>
 
 #include "platform.h"
 
-#ifdef USE_SERIAL_RX
+#ifdef USE_SERIALRX_JETIEXBUS
 
 #include "build/build_config.h"
 #include "build/debug.h"
-
-#include "pg/rx.h"
 
 #include "common/utils.h"
 
@@ -278,9 +274,8 @@ bool jetiExBusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfi
         NULL,
         JETIEXBUS_BAUDRATE,
         MODE_RXTX,
-        JETIEXBUS_OPTIONS | (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0)
+        JETIEXBUS_OPTIONS | (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | SERIAL_BIDIR
         );
-    serialSetMode(jetiExBusPort, MODE_RX);
     return jetiExBusPort != NULL;
 }
 #endif // SERIAL_RX

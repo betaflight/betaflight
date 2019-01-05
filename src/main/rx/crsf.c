@@ -25,7 +25,7 @@
 
 #include "platform.h"
 
-#ifdef USE_SERIAL_RX
+#ifdef USE_SERIALRX_CRSF
 
 #include "build/build_config.h"
 #include "build/debug.h"
@@ -159,7 +159,7 @@ STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c, void *data)
                 if (crc == crsfFrame.bytes[fullFrameLength - 1]) {
                     switch (crsfFrame.frame.type)
                     {
-#if defined(USE_MSP_OVER_TELEMETRY)
+#if defined(USE_TELEMETRY_CRSF) && defined(USE_MSP_OVER_TELEMETRY)
                         case CRSF_FRAMETYPE_MSP_REQ:
                         case CRSF_FRAMETYPE_MSP_WRITE: {
                             uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + CRSF_FRAME_ORIGIN_DEST_SIZE;

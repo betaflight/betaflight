@@ -24,21 +24,25 @@
 #include "platform.h"
 
 #include "common/axis.h"
-
+#include "drivers/io.h"
+#include "io/osd.h"
+#include "pg/pinio.h"
 #include "sensors/battery.h"
 #include "sensors/barometer.h"
 #include "sensors/compass.h"
 
-#include "io/osd.h"
-
 #define VBAT_SCALE       113
+#define OSD_CH_SWITCH           PC5
 
 #ifdef USE_TARGET_CONFIG
 void targetConfiguration(void)
 {
+    pinioConfigMutable()->ioTag[0] = IO_TAG(OSD_CH_SWITCH);
+    pinioConfigMutable()->config[0] = PINIO_CONFIG_MODE_OUT_PP; // Default state is LOW
+
     voltageSensorADCConfigMutable(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale = VBAT_SCALE;
     barometerConfigMutable()->baro_hardware = 0;
     compassConfigMutable()->mag_hardware = 0;
-    osdConfigMutable()->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(12, 1) | VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(12, 1) | OSD_PROFILE_1_FLAG;
 }
 #endif

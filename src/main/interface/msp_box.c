@@ -44,21 +44,20 @@
 #include "pg/piniobox.h"
 
 
-#ifndef USE_OSD_SLAVE
 // permanent IDs must uniquely identify BOX meaning, DO NOT REUSE THEM!
 static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOXARM, "ARM", 0 },
     { BOXANGLE, "ANGLE", 1 },
     { BOXHORIZON, "HORIZON", 2 },
-    { BOXBARO, "BARO", 3 },
+//    { BOXBARO, "BARO", 3 },
     { BOXANTIGRAVITY, "ANTI GRAVITY", 4 },
     { BOXMAG, "MAG", 5 },
     { BOXHEADFREE, "HEADFREE", 6 },
     { BOXHEADADJ, "HEADADJ", 7 },
     { BOXCAMSTAB, "CAMSTAB", 8 },
 //    { BOXCAMTRIG, "CAMTRIG", 9 },
-    { BOXGPSHOME, "GPS HOME", 10 },
-    { BOXGPSHOLD, "GPS HOLD", 11 },
+//    { BOXGPSHOME, "GPS HOME", 10 },
+//    { BOXGPSHOLD, "GPS HOLD", 11 },
     { BOXPASSTHRU, "PASSTHRU", 12 },
     { BOXBEEPERON, "BEEPER", 13 },
 //    { BOXLEDMAX, "LEDMAX", 14 }, (removed)
@@ -95,6 +94,8 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOXPARALYZE, "PARALYZE", 45 },
     { BOXGPSRESCUE, "GPS RESCUE", 46 },
     { BOXACROTRAINER, "ACRO TRAINER", 47 },
+    { BOXVTXCONTROLDISABLE, "DISABLE VTX CONTROL", 48},
+    { BOXLAUNCHCONTROL, "LAUNCH CONTROL", 49 },
 };
 
 // mask of enabled IDs, calculated on startup based on enabled features. boxId_e is used as bit index
@@ -261,6 +262,7 @@ void initActiveBoxIds(void)
 
 #if defined(USE_VTX_SMARTAUDIO) || defined(USE_VTX_TRAMP)
     BME(BOXVTXPITMODE);
+    BME(BOXVTXCONTROLDISABLE);
 #endif
 
     BME(BOXPARALYZE);
@@ -296,6 +298,10 @@ void initActiveBoxIds(void)
         BME(BOXACROTRAINER);
     }
 #endif // USE_ACRO_TRAINER
+
+#ifdef USE_LAUNCH_CONTROL
+    BME(BOXLAUNCHCONTROL);
+#endif
 
 #undef BME
     // check that all enabled IDs are in boxes array (check may be skipped when using findBoxById() functions)
@@ -343,4 +349,3 @@ int packFlightModeFlags(boxBitmask_t *mspFlightModeFlags)
     // return count of used bits
     return mspBoxIdx;
 }
-#endif // USE_OSD_SLAVE

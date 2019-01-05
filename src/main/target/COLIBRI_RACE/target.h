@@ -22,13 +22,11 @@
 
 // Removed to make the firmware fit into flash (in descending order of priority):
 #undef USE_GYRO_OVERFLOW_CHECK // target does not use affected gyros
-#undef USE_RTC_TIME
+//#undef USE_RTC_TIME
 
 #define TARGET_BOARD_IDENTIFIER "CLBR"
-#define BST_DEVICE_NAME         "COLIBRI RACE"
-#define BST_DEVICE_NAME_LENGTH  12
-#define TARGET_BUS_INIT
 
+#define TARGET_BUS_INIT
 
 #define LED0_PIN                PC15
 #define LED1_PIN                PC14
@@ -40,7 +38,8 @@
 
 // MPU6500 interrupt
 #define USE_EXTI
-#define MPU_INT_EXTI            PA5
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PA5
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
@@ -52,25 +51,18 @@
 #define SPI1_MOSI_PIN           PB5
 #define SPI1_NSS_PIN            PA4
 
-#define MPU6500_CS_PIN          SPI1_NSS_PIN
-#define MPU6500_SPI_INSTANCE    SPI1
-
-#define MPU6000_CS_PIN          SPI1_NSS_PIN
-#define MPU6000_SPI_INSTANCE    SPI1
+#define GYRO_1_CS_PIN           SPI1_NSS_PIN
+#define GYRO_1_SPI_INSTANCE     SPI1
 
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN      CW270_DEG
-#define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN      CW270_DEG
+#define GYRO_1_ALIGN            CW270_DEG
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
-#define ACC_MPU6000_ALIGN       CW270_DEG
-#define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN       CW270_DEG
+#define ACC_1_ALIGN             CW270_DEG
 
 #define USE_BARO
 #define USE_BARO_MS5611
@@ -112,9 +104,6 @@
 #define I2C2_SDA_PIN            PA10
 
 #define USE_BST
-#define BST_DEVICE              (BSTDEV_1)
-/* Configure the CRC peripheral to use the polynomial x8 + x7 + x6 + x4 + x2 + 1 */
-#define BST_CRC_POLYNOM         0xD5
 
 #define USE_ADC
 #define ADC_INSTANCE            ADC1
@@ -138,4 +127,4 @@
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
 
 #define USABLE_TIMER_CHANNEL_COUNT 12
-#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(15))
+#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(8) | TIM_N(15) | TIM_N(16))

@@ -42,6 +42,7 @@
 #include "pg/pg.h"
 
 #include "fc/config.h"
+#include "fc/core.h"
 #include "fc/controlrate_profile.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
@@ -64,6 +65,10 @@ static uint8_t tmpRateProfileIndex;
 static uint8_t rateProfileIndex;
 static char rateProfileIndexString[] = " p-r";
 static controlRateConfig_t rateProfile;
+
+static const char * const osdTableThrottleLimitType[] = {
+    "OFF", "SCALE", "CLIP"
+};
 
 static long cmsx_menuImu_onEnter(void)
 {
@@ -212,9 +217,9 @@ static OSD_Entry cmsx_menuRateProfileEntries[] =
 {
     { "-- RATE --", OME_Label, NULL, rateProfileIndexString, 0 },
 
-    { "RC R RATE",   OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcRates[FD_ROLL],    0, 255, 1, 10 }, 0 },
-    { "RC P RATE",   OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcRates[FD_PITCH],    0, 255, 1, 10 }, 0 },
-    { "RC Y RATE",   OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcRates[FD_YAW], 0, 255, 1, 10 }, 0 },
+    { "RC R RATE",   OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcRates[FD_ROLL],    1, CONTROL_RATE_CONFIG_RC_RATES_MAX, 1, 10 }, 0 },
+    { "RC P RATE",   OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcRates[FD_PITCH],    1, CONTROL_RATE_CONFIG_RC_RATES_MAX, 1, 10 }, 0 },
+    { "RC Y RATE",   OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcRates[FD_YAW], 1, CONTROL_RATE_CONFIG_RC_RATES_MAX, 1, 10 }, 0 },
 
     { "ROLL SUPER",  OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rates[FD_ROLL],   0, 100, 1, 10 }, 0 },
     { "PITCH SUPER", OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rates[FD_PITCH],   0, 100, 1, 10 }, 0 },
@@ -229,6 +234,9 @@ static OSD_Entry cmsx_menuRateProfileEntries[] =
     { "THRPID ATT",  OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.dynThrPID,         0,  100,  1, 10}, 0 },
     { "TPA BRKPT",   OME_UINT16, NULL, &(OSD_UINT16_t){ &rateProfile.tpa_breakpoint, 1000, 2000, 10}, 0 },
 
+    { "THR LIM TYPE",OME_TAB,    NULL, &(OSD_TAB_t)   { &rateProfile.throttle_limit_type, THROTTLE_LIMIT_TYPE_COUNT - 1, osdTableThrottleLimitType}, 0 },
+    { "THR LIM %",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.throttle_limit_percent, 25,  100,  1}, 0 },
+
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
 };
@@ -242,6 +250,64 @@ static CMS_Menu cmsx_menuRateProfile = {
     .onExit = cmsx_RateProfileWriteback,
     .entries = cmsx_menuRateProfileEntries
 };
+
+#ifdef USE_LAUNCH_CONTROL
+static uint8_t cmsx_launchControlMode;
+static uint8_t cmsx_launchControlAllowTriggerReset;
+static uint8_t cmsx_launchControlThrottlePercent;
+static uint8_t cmsx_launchControlAngleLimit;
+static uint8_t cmsx_launchControlGain;
+
+static long cmsx_launchControlOnEnter(void)
+{
+    const pidProfile_t *pidProfile = pidProfiles(pidProfileIndex);
+    
+    cmsx_launchControlMode  = pidProfile->launchControlMode;
+    cmsx_launchControlAllowTriggerReset  = pidProfile->launchControlAllowTriggerReset;
+    cmsx_launchControlThrottlePercent  = pidProfile->launchControlThrottlePercent;
+    cmsx_launchControlAngleLimit  = pidProfile->launchControlAngleLimit;
+    cmsx_launchControlGain  = pidProfile->launchControlGain;
+
+    return 0;
+}
+
+static long cmsx_launchControlOnExit(const OSD_Entry *self)
+{
+    UNUSED(self);
+
+    pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
+
+    pidProfile->launchControlMode = cmsx_launchControlMode;
+    pidProfile->launchControlAllowTriggerReset = cmsx_launchControlAllowTriggerReset;
+    pidProfile->launchControlThrottlePercent = cmsx_launchControlThrottlePercent;
+    pidProfile->launchControlAngleLimit = cmsx_launchControlAngleLimit;
+    pidProfile->launchControlGain = cmsx_launchControlGain;
+
+    return 0;
+}
+
+static OSD_Entry cmsx_menuLaunchControlEntries[] = {
+    { "-- LAUNCH CONTROL --", OME_Label, NULL, pidProfileIndexString, 0 },
+
+    { "MODE",             OME_TAB,   NULL, &(OSD_TAB_t)   { &cmsx_launchControlMode, LAUNCH_CONTROL_MODE_COUNT - 1, osdLaunchControlModeNames}, 0 },
+    { "ALLOW RESET",      OME_Bool,  NULL, &cmsx_launchControlAllowTriggerReset, 0 },
+    { "TRIGGER THROTTLE", OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_launchControlThrottlePercent, 0,  LAUNCH_CONTROL_THROTTLE_TRIGGER_MAX, 1 } , 0 },
+    { "ANGLE LIMIT",      OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_launchControlAngleLimit,      0,  80, 1 } , 0 },
+    { "ITERM GAIN",       OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_launchControlGain,            0, 200, 1 } , 0 },
+    { "BACK", OME_Back, NULL, NULL, 0 },
+    { NULL, OME_END, NULL, NULL, 0 }
+};
+
+static CMS_Menu cmsx_menuLaunchControl = {
+#ifdef CMS_MENU_DEBUG
+    .GUARD_text = "LAUNCH",
+    .GUARD_type = OME_MENU,
+#endif
+    .onEnter = cmsx_launchControlOnEnter,
+    .onExit = cmsx_launchControlOnExit,
+    .entries = cmsx_menuLaunchControlEntries,
+};
+#endif
 
 static uint8_t  cmsx_feedForwardTransition;
 static uint8_t  cmsx_angleStrength;
@@ -303,6 +369,10 @@ static OSD_Entry cmsx_menuProfileOtherEntries[] = {
 #ifdef USE_THROTTLE_BOOST
     { "THR BOOST",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_throttleBoost,          0,    100,   1  }   , 0 },
 #endif
+#ifdef USE_LAUNCH_CONTROL
+    {"LAUNCH CONTROL", OME_Submenu, cmsMenuChange, &cmsx_menuLaunchControl, 0 },
+#endif
+
 
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }

@@ -186,10 +186,6 @@
     #define __spiBusTransactionEnd(busdev)       IOHi((busdev)->busdev_u.spi.csnPin)
 #endif
 
-#ifndef MAX7456_SPI_CLK
-#define MAX7456_SPI_CLK           (SPI_CLOCK_STANDARD)
-#endif
-
 busDevice_t max7456BusDevice;
 busDevice_t *busdev = &max7456BusDevice;
 
@@ -411,6 +407,10 @@ void max7456ReInit(void)
     }
 }
 
+void max7456PreInit(const max7456Config_t *max7456Config)
+{
+    spiPreinitRegister(max7456Config->csTag, max7456Config->preInitOPU ? IOCFG_OUT_PP : IOCFG_IPU, 1);
+}
 
 // Here we init only CS and try to init MAX for first time.
 // Also detect device type (MAX v.s. AT)
@@ -419,7 +419,7 @@ bool max7456Init(const max7456Config_t *max7456Config, const vcdProfile_t *pVcdP
 {
     max7456HardwareReset();
 
-    if (!max7456Config->csTag) {
+    if (!max7456Config->csTag || !max7456Config->spiDevice) {
         return false;
     }
 
@@ -439,6 +439,8 @@ bool max7456Init(const max7456Config_t *max7456Config, const vcdProfile_t *pVcdP
     // Do this at half the speed for safety.
     spiSetDivisor(busdev->busdev_u.spi.instance, MAX7456_SPI_CLK * 2);
 
+    __spiBusTransactionBegin(busdev);
+
     max7456Send(MAX7456ADD_CMAL, (1 << 6)); // CA[8] bit
 
     if (max7456Send(MAX7456ADD_CMAL|MAX7456ADD_READ, 0xff) & (1 << 6)) {
@@ -446,6 +448,8 @@ bool max7456Init(const max7456Config_t *max7456Config, const vcdProfile_t *pVcdP
     } else {
         max7456DeviceType = MAX7456_DEVICE_TYPE_MAX;
     }
+
+    __spiBusTransactionEnd(busdev);
 
 #if defined(USE_OVERCLOCK)
     // Determine SPI clock divisor based on config and the device type.

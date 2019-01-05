@@ -19,7 +19,8 @@
 #include "drivers/display.h"
 
 displayPort_t *displayPortHottInit();
-displayPort_t hottDisplayPort;
+
+extern displayPort_t hottDisplayPort;
 
 void hottDisplayportRegister();
 void hottCmsOpen();

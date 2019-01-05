@@ -45,6 +45,7 @@ typedef struct flashGeometry_s {
     flashType_e flashType;
 } flashGeometry_t;
 
+void flashPreInit(const flashConfig_t *flashConfig);
 bool flashInit(const flashConfig_t *flashConfig);
 
 bool flashIsReady(void);

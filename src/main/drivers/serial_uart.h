@@ -27,10 +27,6 @@
 // Various serial routines return the buffer occupied size as uint8_t which would need to be extended in order to
 // increase size further.
 
-#if defined(USE_UART1) || defined(USE_UART2) || defined(USE_UART3) || defined(USE_UART4) || defined(USE_UART5) || defined(USE_UART6) || defined(USE_UART7) || defined(USE_UART8)
-#define USE_UART
-#endif
-
 typedef enum {
     UARTDEV_1 = 0,
     UARTDEV_2 = 1,
