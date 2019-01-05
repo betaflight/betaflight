@@ -53,7 +53,6 @@ void bmp085_extiHandler(extiCallbackRec_t* cb)
     isConversionComplete = true;
 }
 
-bool bmp085TestEOCConnected(const bmp085Config_t *config);
 # endif
 
 typedef struct {
@@ -215,7 +214,7 @@ bool bmp085Detect(const bmp085Config_t *config, baroDev_t *baro)
             baro->get_up = bmp085_get_up;
             baro->calculate = bmp085_calculate;
 #if defined(BARO_EOC_PIN)
-            isEOCConnected = bmp085TestEOCConnected(config);
+            isEOCConnected = bmp085TestEOCConnected(baro, config);
 #endif
             bmp085InitDone = true;
             return true;
@@ -381,12 +380,12 @@ static void bmp085_get_cal_param(busDevice_t *busdev)
 }
 
 #if defined(BARO_EOC_PIN)
-bool bmp085TestEOCConnected(const bmp085Config_t *config)
+bool bmp085TestEOCConnected(baroDev_t *baro, const bmp085Config_t *config)
 {
     UNUSED(config);
 
     if (!bmp085InitDone && eocIO) {
-        bmp085_start_ut();
+        bmp085_start_ut(baro);
         delayMicroseconds(UT_DELAY * 2); // wait twice as long as normal, just to be sure
 
         // conversion should have finished now so check if EOC is high
