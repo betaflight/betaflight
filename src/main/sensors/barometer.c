@@ -100,7 +100,7 @@ void pgResetFn_barometerConfig(barometerConfig_t *barometerConfig)
     barometerConfig->baro_spi_csn = IO_TAG(BARO_CS_PIN);
     barometerConfig->baro_i2c_device = I2C_DEV_TO_CFG(I2CINVALID);
     barometerConfig->baro_i2c_address = 0;
-#elif defined(DEFAULT_BARO_MS5611) || defined(DEFAULT_BARO_BMP280) || defined(DEFAULT_BARO_BMP085)||defined(DEFAULT_BARO_QMP6988)
+#elif defined(DEFAULT_BARO_MS5611) || defined(DEFAULT_BARO_BMP280) || defined(DEFAULT_BARO_BMP085) || defined(DEFAULT_BARO_QMP6988)
     // All I2C devices shares a default config with address = 0 (per device default)
     barometerConfig->baro_bustype = BUSTYPE_I2C;
     barometerConfig->baro_i2c_device = I2C_DEV_TO_CFG(BARO_I2C_INSTANCE);
@@ -183,7 +183,7 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
         {
             const bmp085Config_t *bmp085Config = NULL;
 
-#if defined(BARO_XCLR_GPIO) && defined(BARO_EOC_GPIO)
+#if defined(BARO_XCLR_PIN) && defined(BARO_EOC_PIN)
             static const bmp085Config_t defaultBMP085Config = {
                 .xclrIO = IO_TAG(BARO_XCLR_PIN),
                 .eocIO = IO_TAG(BARO_EOC_PIN),
