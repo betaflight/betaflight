@@ -24,6 +24,8 @@
 
 #include "platform.h"
 
+#include "build/debug.h"
+
 #include "common/maths.h"
 
 #include "pg/pg.h"
@@ -324,6 +326,10 @@ uint32_t baroUpdate(void)
 {
     static barometerState_e state = BAROMETER_NEEDS_SAMPLES;
 
+    if (debugMode == DEBUG_BARO) {
+        debug[0] = state;
+    }
+
     switch (state) {
         default:
         case BAROMETER_NEEDS_SAMPLES:
@@ -340,6 +346,13 @@ uint32_t baroUpdate(void)
             baro.baroPressure = baroPressure;
             baro.baroTemperature = baroTemperature;
             baroPressureSum = recalculateBarometerTotal(barometerConfig()->baro_sample_count, baroPressureSum, baroPressure);
+
+            if (debugMode == DEBUG_BARO) {
+                debug[1] = baroTemperature;
+                debug[2] = baroPressure;
+                debug[3] = baroPressureSum;
+            }
+
             state = BAROMETER_NEEDS_SAMPLES;
             return baro.dev.ut_delay;
         break;

@@ -103,6 +103,7 @@ typedef enum {
     DEBUG_AC_ERROR,
     DEBUG_DUAL_GYRO_SCALED,
     DEBUG_DSHOT_RPM_ERRORS,
+    DEBUG_BARO,
     DEBUG_COUNT
 } debugType_e;
 
