@@ -205,22 +205,6 @@ bool compassDetect(magDev_t *dev)
 #endif
         FALLTHROUGH;
 
-    case MAG_QMC5883:
-#ifdef USE_MAG_QMC5883
-        if (busdev->bustype == BUSTYPE_I2C) {
-                busdev->busdev_u.i2c.address = compassConfig()->mag_i2c_address;
-        }
-
-        if (qmc5883lDetect(dev)) {
-#ifdef MAG_QMC5883L_ALIGN
-            dev->magAlign = MAG_QMC5883L_ALIGN;
-#endif
-            magHardware = MAG_QMC5883;
-            break;
-        }
-#endif
-        FALLTHROUGH;
-
     case MAG_AK8975:
 #ifdef USE_MAG_AK8975
         if (busdev->bustype == BUSTYPE_I2C) {
@@ -253,6 +237,22 @@ bool compassDetect(magDev_t *dev)
             dev->magAlign = MAG_AK8963_ALIGN;
 #endif
             magHardware = MAG_AK8963;
+            break;
+        }
+#endif
+        FALLTHROUGH;
+
+    case MAG_QMC5883:
+#ifdef USE_MAG_QMC5883
+        if (busdev->bustype == BUSTYPE_I2C) {
+                busdev->busdev_u.i2c.address = compassConfig()->mag_i2c_address;
+        }
+
+        if (qmc5883lDetect(dev)) {
+#ifdef MAG_QMC5883L_ALIGN
+            dev->magAlign = MAG_QMC5883L_ALIGN;
+#endif
+            magHardware = MAG_QMC5883;
             break;
         }
 #endif
