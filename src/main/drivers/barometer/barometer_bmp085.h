@@ -32,8 +32,8 @@ typedef struct bmp085Config_s {
 bool bmp085Detect(const bmp085Config_t *config, baroDev_t *baro);
 void bmp085Disable(const bmp085Config_t *config);
 
-#if defined(BARO_EOC_GPIO)
-bool bmp085TestEOCConnected(const bmp085Config_t *config);
+#if defined(BARO_EOC_PIN)
+bool bmp085TestEOCConnected(baroDev_t *baro, const bmp085Config_t *config);
 #endif
 
 #ifdef UNIT_TEST
