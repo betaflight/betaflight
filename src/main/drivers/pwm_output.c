@@ -34,6 +34,9 @@
 static FAST_RAM_ZERO_INIT pwmWriteFn *pwmWrite;
 static FAST_RAM_ZERO_INIT pwmOutputPort_t motors[MAX_SUPPORTED_MOTORS];
 static FAST_RAM_ZERO_INIT pwmCompleteWriteFn *pwmCompleteWrite = NULL;
+#ifdef USE_DSHOT_TELEMETRY
+static FAST_RAM_ZERO_INIT pwmStartWriteFn *pwmStartWrite = NULL;
+#endif
 
 #ifdef USE_DSHOT
 FAST_RAM_ZERO_INIT loadDmaBufferFn *loadDmaBuffer;
@@ -66,6 +69,9 @@ static bool pwmMotorsEnabled = false;
 static bool isDshot = false;
 #ifdef USE_DSHOT_DMAR
 FAST_RAM_ZERO_INIT bool useBurstDshot = false;
+#endif
+#ifdef USE_DSHOT_TELEMETRY
+FAST_RAM_ZERO_INIT bool useDshotTelemetry = false;
 #endif
 
 static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8_t output)
@@ -163,6 +169,8 @@ static FAST_CODE uint8_t loadDmaBufferDshot(uint32_t *dmaBuffer, int stride, uin
         dmaBuffer[i * stride] = (packet & 0x8000) ? MOTOR_BIT_1 : MOTOR_BIT_0;  // MSB first
         packet <<= 1;
     }
+    dmaBuffer[16 * stride] = 0;
+    dmaBuffer[17 * stride] = 0;
 
     return DSHOT_DMA_BUFFER_SIZE;
 }
@@ -173,6 +181,8 @@ static uint8_t loadDmaBufferProshot(uint32_t *dmaBuffer, int stride, uint16_t pa
         dmaBuffer[i * stride] = PROSHOT_BASE_SYMBOL + ((packet & 0xF000) >> 12) * PROSHOT_BIT_WIDTH;  // Most significant nibble first
         packet <<= 4;   // Shift 4 bits
     }
+    dmaBuffer[4 * stride] = 0;
+    dmaBuffer[5 * stride] = 0;
 
     return PROSHOT_DMA_BUFFER_SIZE;
 }
@@ -210,6 +220,13 @@ bool pwmAreMotorsEnabled(void)
     return pwmMotorsEnabled;
 }
 
+#ifdef USE_DSHOT_TELEMETRY
+static void pwmStartWriteUnused(uint8_t motorCount)
+{
+    UNUSED(motorCount);
+}
+#endif
+
 static void pwmCompleteWriteUnused(uint8_t motorCount)
 {
     UNUSED(motorCount);
@@ -231,6 +248,13 @@ void pwmCompleteMotorUpdate(uint8_t motorCount)
 {
     pwmCompleteWrite(motorCount);
 }
+
+#ifdef USE_DSHOT_TELEMETRY
+void pwmStartMotorUpdate(uint8_t motorCount)
+{
+    pwmStartWrite(motorCount);
+}
+#endif
 
 void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount)
 {
@@ -270,6 +294,10 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
         pwmWrite = &pwmWriteDshot;
         loadDmaBuffer = &loadDmaBufferProshot;
         pwmCompleteWrite = &pwmCompleteDshotMotorUpdate;
+#ifdef USE_DSHOT_TELEMETRY
+        pwmStartWrite = &pwmStartDshotMotorUpdate;
+        useDshotTelemetry = motorConfig->useDshotTelemetry;
+#endif
         isDshot = true;
         break;
     case PWM_TYPE_DSHOT1200:
@@ -279,6 +307,10 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
         pwmWrite = &pwmWriteDshot;
         loadDmaBuffer = &loadDmaBufferDshot;
         pwmCompleteWrite = &pwmCompleteDshotMotorUpdate;
+#ifdef USE_DSHOT_TELEMETRY
+        pwmStartWrite = &pwmStartDshotMotorUpdate;
+        useDshotTelemetry = motorConfig->useDshotTelemetry;
+#endif
         isDshot = true;
 #ifdef USE_DSHOT_DMAR
         if (motorConfig->useBurstDshot) {
@@ -292,6 +324,9 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
     if (!isDshot) {
         pwmWrite = &pwmWriteStandard;
         pwmCompleteWrite = useUnsyncedPwm ? &pwmCompleteWriteUnused : &pwmCompleteOneshotMotorUpdate;
+#ifdef USE_DSHOT_TELEMETRY
+        pwmStartWrite = pwmStartWriteUnused;
+#endif
     }
 
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
@@ -430,6 +465,8 @@ void pwmWriteDshotCommand(uint8_t index, uint8_t motorCount, uint8_t command, bo
     case DSHOT_CMD_SAVE_SETTINGS:
     case DSHOT_CMD_SPIN_DIRECTION_NORMAL:
     case DSHOT_CMD_SPIN_DIRECTION_REVERSED:
+    case DSHOT_CMD_SIGNAL_LINE_TELEMETRY_DISABLE:
+    case DSHOT_CMD_SIGNAL_LINE_CONTINUOUS_ERPM_TELEMETRY:
         repeats = 10;
         break;
     case DSHOT_CMD_BEACON1:
@@ -448,6 +485,9 @@ void pwmWriteDshotCommand(uint8_t index, uint8_t motorCount, uint8_t command, bo
         for (; repeats; repeats--) {
             delayMicroseconds(DSHOT_COMMAND_DELAY_US);
 
+#ifdef USE_DSHOT_TELEMETRY
+            pwmStartDshotMotorUpdate(motorCount);
+#endif
             for (uint8_t i = 0; i < motorCount; i++) {
                 if ((i == index) || (index == ALL_MOTORS)) {
                     motorDmaOutput_t *const motor = getMotorDmaOutput(i);

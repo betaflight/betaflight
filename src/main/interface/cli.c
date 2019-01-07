@@ -239,6 +239,14 @@ static const char * const *sensorHardwareNames[] = {
 };
 #endif // USE_SENSOR_NAMES
 
+#if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
+extern uint32_t readDoneCount;
+extern uint32_t inputBuffer[DSHOT_TELEMETRY_INPUT_LEN];
+extern uint32_t setDirectionMicros;
+#endif
+
+
+
 static void backupPgConfig(const pgRegistry_t *pg)
 {
     memcpy(pg->copy, pg->address, pg->size);
@@ -3712,6 +3720,28 @@ static void cliStatus(char *cmdline)
         cliPrintf(" %s", armingDisableFlagNames[bitpos]);
     }
     cliPrintLinefeed();
+#if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
+    if (useDshotTelemetry) {
+        cliPrintLinef("Dshot reads: %u", readDoneCount);
+        cliPrintLinef("Dshot invalid pkts: %u", dshotInvalidPacketCount);
+        extern uint32_t setDirectionMicros;
+        cliPrintLinef("Dshot irq micros: %u", setDirectionMicros);
+        for (int i = 0; i<getMotorCount(); i++) {
+            cliPrintLinef( "Dshot RPM Motor %u: %u", i, (int)getDshotTelemetry(i));
+        }
+        bool proshot = (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_PROSHOT1000);
+        int modulo = proshot ? MOTOR_NIBBLE_LENGTH_PROSHOT : MOTOR_BITLENGTH;
+        int len = proshot ? 8 : DSHOT_TELEMETRY_INPUT_LEN;
+        for (int i=0; i<len; i++) {
+            cliPrintf("%u ", (int)inputBuffer[i]);
+        }
+        cliPrintLinefeed();
+        for (int i=1; i<len; i+=2) {
+            cliPrintf("%u ", (int)(inputBuffer[i] + modulo - inputBuffer[i-1]) % modulo);
+        }
+        cliPrintLinefeed();
+    }
+#endif
 }
 
 #if defined(USE_TASK_STATISTICS)

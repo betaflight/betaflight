@@ -28,8 +28,9 @@
 
 
 #define ALL_MOTORS 255
-
 #define DSHOT_MAX_COMMAND 47
+#define DSHOT_TELEMETRY_INPUT_LEN 32
+#define PROSHOT_TELEMETRY_INPUT_LEN 8
 
 /*
   DshotSettingRequest (KISS24). Spin direction, 3d and save Settings reqire 10 requests.. and the TLM Byte must always be high if 1-47 are used to send settings
@@ -66,6 +67,8 @@ typedef enum {
     DSHOT_CMD_LED3_OFF, // BLHeli32 only
     DSHOT_CMD_AUDIO_STREAM_MODE_ON_OFF = 30, // KISS audio Stream mode on/Off
     DSHOT_CMD_SILENT_MODE_ON_OFF = 31, // KISS silent Mode on/Off
+    DSHOT_CMD_SIGNAL_LINE_TELEMETRY_DISABLE = 32,
+    DSHOT_CMD_SIGNAL_LINE_CONTINUOUS_ERPM_TELEMETRY = 33,
     DSHOT_CMD_MAX = 47
 } dshotCommands_e;
 
@@ -100,7 +103,7 @@ typedef enum {
 
 #define MOTOR_BIT_0           7
 #define MOTOR_BIT_1           14
-#define MOTOR_BITLENGTH       19
+#define MOTOR_BITLENGTH       20
 
 #define MOTOR_PROSHOT1000_HZ         MHZ_TO_HZ(24)
 #define PROSHOT_BASE_SYMBOL          24 // 1uS
@@ -133,13 +136,34 @@ typedef struct {
 #ifdef USE_DSHOT
     uint16_t timerDmaSource;
     bool configured;
+    uint8_t output;
+    uint8_t index;
+#ifdef USE_DSHOT_TELEMETRY
+    bool useProshot;
+    volatile bool isInput;
+    volatile bool hasTelemetry;
+    uint16_t dshotTelemetryValue;
+    TIM_OCInitTypeDef ocInitStruct;
+    TIM_ICInitTypeDef icInitStruct;
+    DMA_InitTypeDef   dmaInitStruct;
+    uint8_t dmaInputLen;
+#ifdef STM32F3
+    DMA_Channel_TypeDef *dmaRef;
+#else
+    DMA_Stream_TypeDef *dmaRef;
+#endif
+#endif
 #endif
     motorDmaTimer_t *timer;
     volatile bool requestTelemetry;
+#ifdef USE_DSHOT_TELEMETRY
+    uint32_t dmaBuffer[DSHOT_TELEMETRY_INPUT_LEN];
+#else
 #if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
     uint32_t dmaBuffer[DSHOT_DMA_BUFFER_SIZE];
 #else
     uint8_t dmaBuffer[DSHOT_DMA_BUFFER_SIZE];
+#endif
 #endif
 } motorDmaOutput_t;
 
@@ -148,6 +172,7 @@ motorDmaOutput_t *getMotorDmaOutput(uint8_t index);
 struct timerHardware_s;
 typedef void pwmWriteFn(uint8_t index, float value);  // function pointer used to write motors
 typedef void pwmCompleteWriteFn(uint8_t motorCount);   // function pointer used after motors are written
+typedef void pwmStartWriteFn(uint8_t motorCount);   // function pointer used before motors are written
 
 typedef struct {
     volatile timCCR_t *ccr;
@@ -170,10 +195,15 @@ typedef struct motorDevConfig_s {
     uint8_t  motorPwmInversion;             // Active-High vs Active-Low. Useful for brushed FCs converted for brushless operation
     uint8_t  useUnsyncedPwm;
     uint8_t  useBurstDshot;
+    uint8_t  useDshotTelemetry;
     ioTag_t  ioTags[MAX_SUPPORTED_MOTORS];
 } motorDevConfig_t;
 
 extern bool useBurstDshot;
+#ifdef USE_DSHOT_TELEMETRY
+extern bool useDshotTelemetry;
+extern uint32_t dshotInvalidPacketCount;
+#endif
 
 void motorDevInit(const motorDevConfig_t *motorDevConfig, uint16_t idlePulse, uint8_t motorCount);
 
@@ -202,12 +232,16 @@ void pwmWriteDshotCommandControl(uint8_t index);
 void pwmWriteDshotCommand(uint8_t index, uint8_t motorCount, uint8_t command, bool blocking);
 void pwmWriteDshotInt(uint8_t index, uint16_t value);
 void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output);
+#ifdef USE_DSHOT_TELEMETRY
+void pwmStartDshotMotorUpdate(uint8_t motorCount);
+#endif
 void pwmCompleteDshotMotorUpdate(uint8_t motorCount);
 
 bool pwmDshotCommandIsQueued(void);
 bool pwmDshotCommandIsProcessing(void);
 uint8_t pwmGetDshotCommand(uint8_t index);
 bool pwmDshotCommandOutputIsEnabled(uint8_t motorCount);
+uint16_t getDshotTelemetry(uint8_t index);
 
 #endif
 
@@ -221,6 +255,7 @@ void pwmOutConfig(timerChannel_t *channel, const timerHardware_t *timerHardware,
 void pwmWriteMotor(uint8_t index, float value);
 void pwmShutdownPulsesForAllMotors(uint8_t motorCount);
 void pwmCompleteMotorUpdate(uint8_t motorCount);
+void pwmStartMotorUpdate(uint8_t motorCount);
 
 void pwmWriteServo(uint8_t index, float value);
 

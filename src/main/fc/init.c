@@ -86,6 +86,7 @@
 #include "fc/tasks.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
+#include "fc/dispatch.h"
 
 #include "interface/cli.h"
 #include "interface/msp.h"
@@ -203,6 +204,26 @@ static IO_t busSwitchResetPin        = IO_NONE;
     // ENABLE
     IOLo(busSwitchResetPin);
 }
+#endif
+
+#if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
+void activateDshotTelemetry(struct dispatchEntry_s* self)
+{
+    UNUSED(self);
+    if (!ARMING_FLAG(ARMED))
+    {
+        pwmWriteDshotCommand(
+            255, getMotorCount(),
+            motorConfig()->dev.useDshotTelemetry ?
+            DSHOT_CMD_SIGNAL_LINE_CONTINUOUS_ERPM_TELEMETRY :
+            DSHOT_CMD_SIGNAL_LINE_TELEMETRY_DISABLE, true);
+    }
+}
+
+dispatchEntry_t activateDshotTelemetryEntry =
+{
+    activateDshotTelemetry, 0, NULL, false
+};
 #endif
 
 void init(void)
@@ -748,7 +769,14 @@ void init(void)
 
     setArmingDisabled(ARMING_DISABLED_BOOT_GRACE_TIME);
 
+// TODO: potentially delete when feature is stable. Activation when arming is enough for flight.
+#if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
+    dispatchEnable();
+    dispatchAdd(&activateDshotTelemetryEntry, 5000000);
+#endif
+
     fcTasksInit();
 
     systemState |= SYSTEM_STATE_READY;
+
 }

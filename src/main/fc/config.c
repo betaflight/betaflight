@@ -405,6 +405,12 @@ static void validateAndFixConfig(void)
 #endif
 #endif
 
+#if defined(USE_DSHOT_TELEMETRY)
+    if (motorConfig()->dev.useBurstDshot && motorConfig()->dev.useDshotTelemetry) {
+        motorConfigMutable()->dev.useDshotTelemetry = false;
+    }
+#endif
+
 #if defined(TARGET_VALIDATECONFIG)
     targetValidateConfiguration();
 #endif

@@ -507,6 +507,9 @@ void mixerResetDisarmedMotors(void)
 void writeMotors(void)
 {
     if (pwmAreMotorsEnabled()) {
+#if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
+        pwmStartMotorUpdate(motorCount);
+#endif
         for (int i = 0; i < motorCount; i++) {
             pwmWriteMotor(i, motor[i]);
         }
