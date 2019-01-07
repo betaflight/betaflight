@@ -607,8 +607,10 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 
 #ifdef USE_THRUST_LINEARIZATION
     thrustLinearization = pidProfile->thrustLinearization / 100.0f;
-    thrustLinearizationReciprocal = 1.0f / thrustLinearization;
-    thrustLinearizationB = (1.0f - thrustLinearization) / (2.0f * thrustLinearization);
+    if (thrustLinearization != 0.0f) {
+        thrustLinearizationReciprocal = 1.0f / thrustLinearization;
+        thrustLinearizationB = (1.0f - thrustLinearization) / (2.0f * thrustLinearization);
+    }
 #endif    
 }
 
