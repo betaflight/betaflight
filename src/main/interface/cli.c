@@ -11,7 +11,7 @@
  * will be useful, but WITHOUT ANY WARRANTY; without even the implied
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
-*
+ *
  * You should have received a copy of the GNU General Public License
  * along with this software.
  *
@@ -4379,7 +4379,7 @@ static void cliDmaopt(char *cmdline)
         // Show possible opts
         const dmaChannelSpec_t *dmaChannelSpec;
         for (int opt = 0; (dmaChannelSpec = dmaGetChannelSpec(entry->peripheral, index, opt)); opt++) {
-            cliPrintLinef("# %d: DMA%d Stream %d channel %d", opt, DMA_CODE_CONTROLLER(dmaChannelSpec->code), DMA_CODE_STREAM(dmaChannelSpec->code), dmaChannelSpec->channel);
+            cliPrintLinef("# %d: DMA%d Stream %d channel %d", opt, DMA_CODE_CONTROLLER(dmaChannelSpec->code), DMA_CODE_STREAM(dmaChannelSpec->code), DMA_CODE_CHANNEL(dmaChannelSpec->code));
         }
         return;
     } else if (pch) {
