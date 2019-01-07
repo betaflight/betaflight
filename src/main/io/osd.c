@@ -95,7 +95,7 @@
 #include "sensors/battery.h"
 #include "sensors/esc_sensor.h"
 #include "sensors/sensors.h"
-#if (!defined(SIMULATOR_BUILD) && !defined(UNIT_TEST)  && defined(USE_GYRO_DATA_ANALYSE))
+#if defined(USE_GYRO_DATA_ANALYSE)
 #include "sensors/gyroanalyse.h"
 #endif
 
@@ -1824,7 +1824,7 @@ static void osdShowStats(uint16_t endBatteryVoltage)
     }
 #endif
 
-#if (!defined(SIMULATOR_BUILD) && !defined(UNIT_TEST)  && defined(USE_GYRO_DATA_ANALYSE))
+#if defined(USE_GYRO_DATA_ANALYSE)
     if (osdStatGetState(OSD_STAT_MAX_FFT) && featureIsEnabled(FEATURE_DYNAMIC_FILTER)) {
         int value = getMaxFFT();
         if (value > 0) {

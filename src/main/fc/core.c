@@ -51,7 +51,7 @@
 #include "sensors/boardalignment.h"
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
-#if (!defined(SIMULATOR_BUILD) && !defined(UNIT_TEST))
+#if defined(USE_GYRO_DATA_ANALYSE)
 #include "sensors/gyroanalyse.h"
 #endif
 #include "fc/config.h"
@@ -439,7 +439,7 @@ void tryArm(void)
         }
         imuQuaternionHeadfreeOffsetSet();
 
-#if (!defined(SIMULATOR_BUILD) && !defined(UNIT_TEST)  && defined(USE_GYRO_DATA_ANALYSE))
+#if defined(USE_GYRO_DATA_ANALYSE)
         resetMaxFFT();
 #endif
 
