@@ -22,7 +22,6 @@
 
 #include "common/axis.h"
 #include "pg/pg.h"
-#include "pg/pg_ids.h"
 
 typedef struct rpmFilterConfig_s
 {

@@ -22,13 +22,14 @@
 #include <math.h>
 #include <stdint.h>
 #include "platform.h"
-#include "drivers/pwm_output_counts.h"
-#include "sensors/rpm_filter.h"
-#include "common/filter.h"
-#include "sensors/gyro.h"
 #include "build/debug.h"
+#include "common/filter.h"
+#include "drivers/pwm_output_counts.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
+#include "pg/pg_ids.h"
+#include "sensors/rpm_filter.h"
+#include "sensors/gyro.h"
 
 #define RPM_FILTER_MAXHARMONICS 3
 #define RPM_MOTOR_FILTER_CUTOFF 150
