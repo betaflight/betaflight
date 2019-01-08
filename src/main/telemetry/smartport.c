@@ -799,7 +799,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
 #if defined(USE_ADC_INTERNAL)
             case FSSP_DATAID_T11        :
                 smartPortSendPackage(id, getCoreTemperatureCelsius());
-
+                *clearToSend = false;
                 break;
 #endif
 #ifdef USE_GPS
