@@ -38,36 +38,23 @@ set telemetry_inversion = ON
 
 The following sensors are transmitted :
 
-Vspd : vertical speed, unit is cm/s.
-
-Hdg : heading, North is 0°, South is 180°.
-
-AccX,Y,Z : accelerometers values.
-
-Tmp1 : baro temp if available, gyro otherwise.
-
-RPM : if armed : throttle value, battery capacity otherwise. (Blade number needs to be set to 12 in Taranis).
-
-VFAS : actual vbat value (see VFAS precision section bellow).
-
-Curr : actual current comsuption, in amp.
-
-Fuel : if capacity set :remaining battery percentage, mah drawn otherwise.
-
-GPS : GPS coordinates.
-
-Alt : barometer based altitude, init level is zero.
-
-Date : time since powered.
-
-GSpd : current speed, calculated by GPS.
-
-GAlt : GPS altitude, sea level is zero.
-
-Tmp2 : number of sats. Every second, a number > 100 is sent to represent GPS signal quality.
-
-Cels : average cell value, vbat divided by cell number.
-
+| Name     | Description                                                                                            |
+|----------|--------------------------------------------------------------------------------------------------------|
+| Vspd     | vertical speed, unit is cm/s.                                                                          |
+| Hdg      | heading, North is 0°, South is 180°.                                                                   |
+| AccX,Y,Z | accelerometers values.                                                                                 |
+| Tmp1     | baro temp if available, gyro otherwise.                                                                |
+| RPM      | if armed, throttle value. battery capacity otherwise. (Blade number needs to be set to 12 in Taranis). |
+| VFAS     | actual vbat value (see VFAS precision section bellow).                                                 |
+| Curr     | actual current comsuption, in amp.                                                                     |
+| Fuel     | if capacity set, remaining battery percentage mah drawn otherwise.                                     |
+| GPS      | GPS coordinates.                                                                                       |
+| Alt      | barometer based altitude, init level is zero.                                                          |
+| Date     | time since powered.                                                                                    |
+| GSpd     | current speed, calculated by GPS.                                                                      |
+| GAlt     | GPS altitude, sea level is zero.                                                                       |
+| Tmp2     | number of sats. Every second, a number > 100 is sent to represent GPS signal quality.                  |
+| Cels     | average cell value, vbat divided by cell number.                                                       |
 > Cleanflight will send Cels (FLVSS Individual Cell Voltages Telemetry), disable the setting to use actual FLVSS sensor with: 
 > ```
 > set telemetry_send_cells = OFF
