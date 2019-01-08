@@ -58,6 +58,7 @@
 
 #endif
 
+#undef USE_THRUST_LINEARIZATION
 #undef USE_BOARD_INFO
 #undef USE_RTC_TIME
 
