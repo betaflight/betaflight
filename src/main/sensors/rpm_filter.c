@@ -19,8 +19,9 @@
  */
 
 
-#include <stdint.h>
 #include <math.h>
+#include <stdint.h>
+#include "platform.h"
 #include "drivers/pwm_output_counts.h"
 #include "sensors/rpm_filter.h"
 #include "common/filter.h"
@@ -31,6 +32,9 @@
 
 #define RPM_FILTER_MAXHARMONICS 3
 #define RPM_MOTOR_FILTER_CUTOFF 150
+#define SECONDS_PER_MINUTE      60.0f
+#define ERPM_PER_LSB            100.0f
+#define MIN_UPDATE_T            0.001f
 
 #if defined(USE_RPM_FILTER)
 
@@ -106,12 +110,9 @@ void rpmFilterInit(const rpmFilterConfig_t *config)
         pt1FilterInit(&rpmFilters[i], pt1FilterGain(RPM_MOTOR_FILTER_CUTOFF, gyro.targetLooptime));
     }
 
-    const float secondsPerMinute = 60.0f;
-    const float erpmPerLsb = 100.0f;
-    erpmToHz = erpmPerLsb / secondsPerMinute  / (motorConfig()->motorPoleCount / 2.0f);
+    erpmToHz = ERPM_PER_LSB / SECONDS_PER_MINUTE  / (motorConfig()->motorPoleCount / 2.0f);
 
-    const float minUpdateT = 0.001f;
-    const float loopIterationsPerUpdate = minUpdateT / (pidLooptime * 1e-6f);
+    const float loopIterationsPerUpdate = MIN_UPDATE_T / (pidLooptime * 1e-6f);
     numberFilters = getMotorCount() * (filters[0].harmonics + filters[1].harmonics);
     const float filtersPerLoopIteration = numberFilters / loopIterationsPerUpdate;
     filterUpdatesPerIteration = rintf(filtersPerLoopIteration + 0.49f);
@@ -150,7 +151,9 @@ void rpmFilterUpdate()
 
     for (int motor = 0; motor < getMotorCount(); motor++) {
         filteredMotorErpm[motor] = pt1FilterApply(&rpmFilters[motor], getDshotTelemetry(motor));
-        DEBUG_SET(DEBUG_RPM_FILTER, motor, motorFrequency[motor]);
+        if (motor < 4) {
+            DEBUG_SET(DEBUG_RPM_FILTER, motor, motorFrequency[motor]);
+        }
     }
 
     static uint8_t motor;
@@ -171,6 +174,7 @@ void rpmFilterUpdate()
         }
 
         biquadFilter_t* template = &currentFilter->notch[0][motor][harmonic];
+        // uncomment below to debug filter stepping. Need to also comment out motor rpm DEBUG_SET above
         /* DEBUG_SET(DEBUG_RPM_FILTER, 0, harmonic); */
         /* DEBUG_SET(DEBUG_RPM_FILTER, 1, motor); */
         /* DEBUG_SET(DEBUG_RPM_FILTER, 2, currentFilter == &gyroFilter); */

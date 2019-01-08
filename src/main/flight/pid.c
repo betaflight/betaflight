@@ -56,9 +56,7 @@
 #include "sensors/gyro.h"
 #include "sensors/acceleration.h"
 
-#ifdef USE_RPM_FILTER
 #include "sensors/rpm_filter.h"
-#endif
 
 const char pidNames[] =
     "ROLL;"
