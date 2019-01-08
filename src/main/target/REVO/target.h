@@ -237,7 +237,6 @@
 #define UART6_TX_PIN            PC6
 
 #if defined(ELINF405)
-#define CAMERA_CONTROL_PIN      PB7
 #define PINIO1_PIN              PC13
 #define PINIO2_PIN              PC14
 
