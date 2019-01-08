@@ -45,6 +45,7 @@
 #undef USE_RTC_TIME
 #undef USE_RX_MSP
 #undef USE_ESC_SENSOR_INFO
+#undef USE_THRUST_LINEARIZATION
 
 #define LED0_PIN                PB2
 #define USE_BEEPER
