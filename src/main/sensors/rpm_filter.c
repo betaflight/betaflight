@@ -67,11 +67,11 @@ void pgResetFn_rpmFilterConfig(rpmFilterConfig_t *config)
 {
     config->gyro_rpm_notch_harmonics = 3;
     config->gyro_rpm_notch_min = 100;
-    config->gyro_rpm_notch_q = 50;
+    config->gyro_rpm_notch_q = 500;
 
     config->dterm_rpm_notch_harmonics = 1;
     config->dterm_rpm_notch_min = 100;
-    config->dterm_rpm_notch_q = 50;
+    config->dterm_rpm_notch_q = 500;
 }
 
 static void rpmNotchFilterInit(rpmNotchFilter_t* filter, int harmonics, int minHz, int q, float looptime)
