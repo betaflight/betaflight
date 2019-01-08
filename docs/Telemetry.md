@@ -179,6 +179,7 @@ The following sensors are transmitted :
 | GAlt | GPS altitude, sea level is zero. |
 | GSpd | current speed, calculated by GPS. |
 | GPS | GPS coordinates. |
+| 420 | GPS distance to home |
 | Cels | average cell value, vbat divided by cell number. |
 
 > Cleanflight will send Cels (FLVSS Individual Cell Voltages Telemetry), disable the setting to use actual FLVSS sensor with: 
