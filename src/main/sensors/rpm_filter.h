@@ -27,11 +27,11 @@ typedef struct rpmFilterConfig_s
 {
     uint8_t  gyro_rpm_notch_harmonics;   // how many harmonics should be covered with notches? 0 means filter off
     uint8_t  gyro_rpm_notch_min;         // minimum frequency of the notches
-    uint8_t  gyro_rpm_notch_q;           // q of the notches
+    uint16_t gyro_rpm_notch_q;           // q of the notches
 
-    uint8_t  dterm_rpm_notch_harmonics;   // how many harmonics should be covered with notches? 0 means filter off
-    uint8_t  dterm_rpm_notch_min;         // minimum frequency of the notches
-    uint8_t  dterm_rpm_notch_q;           // q of the notches
+    uint8_t  dterm_rpm_notch_harmonics;  // how many harmonics should be covered with notches? 0 means filter off
+    uint8_t  dterm_rpm_notch_min;        // minimum frequency of the notches
+    uint16_t dterm_rpm_notch_q;          // q of the notches
 
 } rpmFilterConfig_t;
 
