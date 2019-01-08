@@ -79,4 +79,5 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "DYN_LPF",
     "RX_SPEKTRUM_SPI",
     "DSHOT_TELEMETRY",
+    "RPM_FILTER",
 };

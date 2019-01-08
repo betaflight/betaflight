@@ -97,6 +97,7 @@ typedef enum {
     DEBUG_DYN_LPF,
     DEBUG_RX_SPEKTRUM_SPI,
     DEBUG_RPM_TELEMETRY,
+    DEBUG_RPM_FILTER,
     DEBUG_COUNT
 } debugType_e;
 

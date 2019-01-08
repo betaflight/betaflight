@@ -76,6 +76,7 @@
 #ifdef USE_GYRO_DATA_ANALYSE
 #include "sensors/gyroanalyse.h"
 #endif
+#include "sensors/rpm_filter.h"
 #include "sensors/sensors.h"
 
 #if ((FLASH_SIZE > 128) && (defined(USE_GYRO_SPI_ICM20601) || defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_SPI_MPU6500)))

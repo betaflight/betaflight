@@ -17,6 +17,11 @@ static FAST_CODE void GYRO_FILTER_FUNCTION_NAME(gyroSensor_t *gyroSensor)
         }
 #endif
 
+#ifdef USE_RPM_FILTER
+        gyroADCf = rpmFilterGyro(axis, gyroADCf);
+#endif
+
+
         // apply static notch filters and software lowpass filters
         gyroADCf = gyroSensor->notchFilter1ApplyFn((filter_t *)&gyroSensor->notchFilter1[axis], gyroADCf);
         gyroADCf = gyroSensor->notchFilter2ApplyFn((filter_t *)&gyroSensor->notchFilter2[axis], gyroADCf);
