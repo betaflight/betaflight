@@ -272,6 +272,10 @@ static void frSkyXTelemetryWriteFrame(const smartPortPayload_t *payload)
 void frSkyXSetRcData(uint16_t *rcData, const uint8_t *packet)
 {
     uint16_t c[8];
+    // ignore failsafe packet
+    if (packet[7] != 0) {
+        return;
+    }
     c[0] = (uint16_t)((packet[10] << 8) & 0xF00) | packet[9];
     c[1] = (uint16_t)((packet[11] << 4) & 0xFF0) | (packet[10] >> 4);
     c[2] = (uint16_t)((packet[13] << 8) & 0xF00) | packet[12];

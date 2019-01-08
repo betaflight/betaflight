@@ -259,9 +259,9 @@ static bool tuneRx(uint8_t *packet)
             if (packet[ccLen - 1] & 0x80) {
                 if (packet[2] == 0x01) {
                     uint8_t Lqi = packet[ccLen - 1] & 0x7F;
-                    if (Lqi < 50) {
+                    // higher lqi represent better link quality
+                    if (Lqi > 50) {
                         rxFrSkySpiConfigMutable()->bindOffset = bindOffset;
-
                         return true;
                     }
                 }
