@@ -132,6 +132,7 @@ STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
 #endif
 #if defined(USE_RX_FRSKY_SPI_X)
     case RX_SPI_FRSKY_X:
+    case RX_SPI_FRSKY_X_LBT:
 #endif
         protocolInit = frSkySpiInit;
         protocolDataReceived = frSkySpiDataReceived;

@@ -2622,6 +2622,7 @@ void cliRxSpiBind(char *cmdline){
 #endif
 #if defined(USE_RX_FRSKY_SPI_X)
     case RX_SPI_FRSKY_X:
+    case RX_SPI_FRSKY_X_LBT:
 #endif
 #endif // USE_RX_FRSKY_SPI
 #ifdef USE_RX_SFHSS_SPI
