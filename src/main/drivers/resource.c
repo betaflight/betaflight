@@ -78,4 +78,5 @@ const char * const ownerNames[OWNER_TOTAL_COUNT] = {
     "RX_SPI_BIND",
     "RX_SPI_LED",
     "PREINIT",
+    "DSHOT",
 };

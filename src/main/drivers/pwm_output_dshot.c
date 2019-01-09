@@ -48,7 +48,7 @@
 
 static uint8_t dmaMotorTimerCount = 0;
 static motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];
-static motorDmaOutput_t dmaMotors[MAX_SUPPORTED_MOTORS];
+motorDmaOutput_t dmaMotors[MAX_SUPPORTED_MOTORS];
 
 #ifdef USE_DSHOT_TELEMETRY
 //FAST_RAM_ZERO_INIT bool dshotTelemetryEnabled;
@@ -76,8 +76,15 @@ uint8_t getTimerIndex(TIM_TypeDef *timer)
     return dmaMotorTimerCount - 1;
 }
 
+extern void directDshotWrite(int motorIndex, uint16_t value);
+extern void directDshotUpdateComplete(uint8_t motorCount);
+extern void directDshotUpdateStart(uint8_t motorCount);
+
 void pwmWriteDshotInt(uint8_t index, uint16_t value)
 {
+#ifdef USE_BB_DSHOT
+    directDshotWrite(index, value);
+#else
     motorDmaOutput_t *const motor = &dmaMotors[index];
 
     if (!motor->configured) {
@@ -109,6 +116,7 @@ void pwmWriteDshotInt(uint8_t index, uint16_t value)
         DMA_SetCurrDataCounter(motor->timerHardware->dmaRef, bufferSize);
         DMA_Cmd(motor->timerHardware->dmaRef, ENABLE);
     }
+#endif
 }
 
 #ifdef USE_DSHOT_TELEMETRY
@@ -255,10 +263,13 @@ inline FAST_CODE static void pwmDshotSetDirectionOutput(
     DMA_ITConfig(dmaRef, DMA_IT_TC, ENABLE);
 }
 
-#ifdef USE_DSHOT_TELEMETRY
-
 void pwmStartDshotMotorUpdate(uint8_t motorCount)
 {
+#ifdef USE_BB_DSHOT
+    directDshotUpdateStart(motorCount);
+#else
+
+#ifdef USE_DSHOT_TELEMETRY
     if (useDshotTelemetry) {
         for (int i = 0; i < motorCount; i++) {
             if (dmaMotors[i].hasTelemetry) {
@@ -292,17 +303,26 @@ void pwmStartDshotMotorUpdate(uint8_t motorCount)
             }
         }
     }
+#else
+    UNUSED(motorCount);
+#endif
+
+#endif // USE_BB_DSHOT
 }
 
+#ifdef USE_DSHOT_TELEMETRY
 uint16_t getDshotTelemetry(uint8_t index)
 {
     return dmaMotors[index].dshotTelemetryValue;
 }
-
 #endif
 
 void pwmCompleteDshotMotorUpdate(uint8_t motorCount)
 {
+#ifdef USE_BB_DSHOT
+    directDshotUpdateComplete(motorCount);
+#else
+
     UNUSED(motorCount);
 
     /* If there is a dshot command loaded up, time it correctly with motor update*/
@@ -327,6 +347,7 @@ void pwmCompleteDshotMotorUpdate(uint8_t motorCount)
             dmaMotorTimers[i].timerDmaSources = 0;
         }
     }
+#endif // USE_BB_DSHOT
 }
 
 static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
@@ -365,8 +386,14 @@ static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
     }
 }
 
+extern void directDshotMotorConfig(const timerHardware_t *timhw, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output);
+
 void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output)
 {
+#ifdef USE_BB_DSHOT
+    directDshotMotorConfig(timerHardware, motorIndex, pwmProtocolType, output);
+#else
+
 #if defined(STM32F4) || defined(STM32F7)
     typedef DMA_Stream_TypeDef dmaStream_t;
 #else
@@ -566,6 +593,7 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
         TIM_Cmd(timer, ENABLE);
     }
     motor->configured = true;
+#endif // USE_BB_DSHOT
 }
 
 #endif

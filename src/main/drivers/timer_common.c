@@ -58,16 +58,27 @@ const timerHardware_t *timerGetByTag(ioTag_t ioTag)
     return NULL;
 }
 
-ioTag_t timerioTagGetByUsage(timerUsageFlag_e usageFlag, uint8_t index)
+const timerHardware_t *timerGetByUsage(timerUsageFlag_e usageFlag, uint8_t index)
 {
     uint8_t currentIndex = 0;
     for (int i = 0; i < (int)USABLE_TIMER_CHANNEL_COUNT; i++) {
         if ((timerHardware[i].usageFlags & usageFlag) == usageFlag) {
             if (currentIndex == index) {
-                return timerHardware[i].tag;
+                return &timerHardware[i];
             }
             currentIndex++;
         }
     }
-    return IO_TAG_NONE;
+    return NULL;
+}
+
+ioTag_t timerioTagGetByUsage(timerUsageFlag_e usageFlag, uint8_t index)
+{
+    const timerHardware_t *timhw = timerGetByUsage(usageFlag, index);
+
+    if (!timhw) {
+        return IO_TAG_NONE;
+    }
+
+    return timhw->tag;
 }

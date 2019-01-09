@@ -74,6 +74,9 @@ FAST_RAM_ZERO_INIT bool useBurstDshot = false;
 FAST_RAM_ZERO_INIT bool useDshotTelemetry = false;
 #endif
 
+extern void directDshotInit(motorPwmProtocolTypes_e pwmProtocolType);
+extern void directDshotMotorConfig(const timerHardware_t *timhw, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output);
+
 static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8_t output)
 {
 #if defined(USE_HAL_DRIVER)
@@ -220,12 +223,10 @@ bool pwmAreMotorsEnabled(void)
     return pwmMotorsEnabled;
 }
 
-#ifdef USE_DSHOT_TELEMETRY
 static void pwmStartWriteUnused(uint8_t motorCount)
 {
     UNUSED(motorCount);
 }
-#endif
 
 static void pwmCompleteWriteUnused(uint8_t motorCount)
 {
@@ -249,12 +250,10 @@ void pwmCompleteMotorUpdate(uint8_t motorCount)
     pwmCompleteWrite(motorCount);
 }
 
-#ifdef USE_DSHOT_TELEMETRY
 void pwmStartMotorUpdate(uint8_t motorCount)
 {
     pwmStartWrite(motorCount);
 }
-#endif
 
 void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount)
 {
@@ -294,8 +293,8 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
         pwmWrite = &pwmWriteDshot;
         loadDmaBuffer = &loadDmaBufferProshot;
         pwmCompleteWrite = &pwmCompleteDshotMotorUpdate;
-#ifdef USE_DSHOT_TELEMETRY
         pwmStartWrite = &pwmStartDshotMotorUpdate;
+#ifdef USE_DSHOT_TELEMETRY
         useDshotTelemetry = motorConfig->useDshotTelemetry;
 #endif
         isDshot = true;
@@ -307,8 +306,8 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
         pwmWrite = &pwmWriteDshot;
         loadDmaBuffer = &loadDmaBufferDshot;
         pwmCompleteWrite = &pwmCompleteDshotMotorUpdate;
-#ifdef USE_DSHOT_TELEMETRY
         pwmStartWrite = &pwmStartDshotMotorUpdate;
+#ifdef USE_DSHOT_TELEMETRY
         useDshotTelemetry = motorConfig->useDshotTelemetry;
 #endif
         isDshot = true;
@@ -324,10 +323,10 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
     if (!isDshot) {
         pwmWrite = &pwmWriteStandard;
         pwmCompleteWrite = useUnsyncedPwm ? &pwmCompleteWriteUnused : &pwmCompleteOneshotMotorUpdate;
-#ifdef USE_DSHOT_TELEMETRY
         pwmStartWrite = pwmStartWriteUnused;
-#endif
     }
+
+    directDshotInit(motorConfig->motorPwmProtocol);
 
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
         const ioTag_t tag = motorConfig->ioTags[motorIndex];

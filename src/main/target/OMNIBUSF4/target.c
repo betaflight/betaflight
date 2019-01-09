@@ -37,10 +37,14 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM12, CH2, PB15, TIM_USE_PWM,                 0, 0), // S2_IN
 #endif
 
-    DEF_TIM(TIM8,  CH1, PC6,  TIM_USE_PWM,                 0, 0), // S3_IN, UART6_TX
-    DEF_TIM(TIM8,  CH2, PC7,  TIM_USE_PWM,                 0, 0), // S4_IN, UART6_RX
-    DEF_TIM(TIM8,  CH3, PC8,  TIM_USE_PWM,                 0, 0), // S5_IN
-    DEF_TIM(TIM8,  CH4, PC9,  TIM_USE_PWM,                 0, 0), // S6_IN
+    // TIM8 can be used as GPIO bit-banging DShot pacing timers.
+    //   - One timer channel is required per GPIO port group.
+    //   - Only timer function is used; associated pin is (should be - untestd)
+    //     free to be used for other functions.
+    DEF_TIM(TIM8,  CH1, PC6,  TIM_USE_BB_DSHOT,            0, 1), // S3_IN, UART6_TX D(2,2,7)
+    DEF_TIM(TIM8,  CH2, PC7,  TIM_USE_BB_DSHOT,            0, 1), // S4_IN, UART6_RX D(2,3,7)
+    DEF_TIM(TIM8,  CH3, PC8,  TIM_USE_BB_DSHOT,            0, 1), // S5_IN D(2,4,7)
+    DEF_TIM(TIM8,  CH4, PC9,  TIM_USE_BB_DSHOT,            0, 0), // S6_IN D(2,7,7)
 
     DEF_TIM(TIM3,  CH3, PB0,  TIM_USE_MOTOR,               0, 0), // S1_OUT D1_ST7
     DEF_TIM(TIM3,  CH4, PB1,  TIM_USE_MOTOR,               0, 0), // S2_OUT D1_ST2
@@ -56,4 +60,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM1,  CH1, PA8,  TIM_USE_MOTOR,               0, 0), // S6_OUT
     DEF_TIM(TIM1,  CH2, PA9,  TIM_USE_NONE,                0, 0), // UART1_TX
     DEF_TIM(TIM1,  CH3, PA10, TIM_USE_NONE,                0, 0), // UART1_RX
+
+    // A test entry without a pin
+    DEF_TIM(TIM1,  CH4, NONE, TIM_USE_BB_DSHOT,            0, 0),
 };

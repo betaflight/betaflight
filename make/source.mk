@@ -18,6 +18,7 @@ COMMON_SRC = \
             drivers/bus_spi_pinconfig.c \
             drivers/buttons.c \
             drivers/display.c \
+            drivers/bb_dshot.c \
             drivers/dma_reqmap.c \
             drivers/exti.c \
             drivers/io.c \
@@ -318,6 +319,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             drivers/bus_i2c_hal.c \
             drivers/bus_spi_ll.c \
             drivers/max7456.c \
+            drivers/direct_dshot.c \
             drivers/pwm_output_dshot.c \
             drivers/pwm_output_dshot_hal.c
 endif #!F3

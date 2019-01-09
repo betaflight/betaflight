@@ -20,6 +20,8 @@
 
 #pragma once
 
+#define USE_BB_DSHOT
+
 #define USE_TARGET_CONFIG
 
 #if defined(OMNIBUSF4SD)
@@ -142,6 +144,8 @@
 #define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
+#if 0
+
 // Globally configure flashfs and drivers for various flash chips
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
@@ -175,6 +179,8 @@
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 #endif // OMNIBUSF4
+
+#endif
 
 #define USE_VCP
 #define USE_USB_DETECT
@@ -217,12 +223,14 @@
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 
+#if 0
 #if defined(OMNIBUSF4SD) || defined(LUXF4OSD)
 #define USE_SPI_DEVICE_2
 #define SPI2_NSS_PIN            PB12
 #define SPI2_SCK_PIN            PB13
 #define SPI2_MISO_PIN           PB14
 #define SPI2_MOSI_PIN           PB15
+#endif
 #endif
 
 #define USE_SPI_DEVICE_3
@@ -247,10 +255,10 @@
 #define I2C_DEVICE              (I2CDEV_2)
 
 #define USE_ADC
-#define ADC_INSTANCE            ADC2
-#define ADC2_DMA_OPT            1  // DMA 2 Stream 3 Channel 1 (compat default)
-//#define ADC_INSTANCE            ADC1
-//#define ADC1_DMA_OPT            1  // DMA 2 Stream 4 Channel 0 (compat default)
+//#define ADC_INSTANCE            ADC2
+//#define ADC2_DMA_OPT            1  // DMA 2 Stream 3 Channel 1 (compat default)
+#define ADC_INSTANCE            ADC1
+#define ADC1_DMA_OPT            0  // DMA 2 Stream 0 Channel 0
 
 #define CURRENT_METER_ADC_PIN   PC1  // Direct from CRNT pad (part of onboard sensor for Pro)
 #define VBAT_ADC_PIN            PC2  // 11:1 (10K + 1K) divider
@@ -281,9 +289,9 @@
 #define TARGET_IO_PORTD BIT(2)
 
 #if defined(OMNIBUSF4SD) || defined(EXUAVF4PRO)
-#define USABLE_TIMER_CHANNEL_COUNT 15
+#define USABLE_TIMER_CHANNEL_COUNT 16
 #define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(10) | TIM_N(12) | TIM_N(8) | TIM_N(9))
 #else
-#define USABLE_TIMER_CHANNEL_COUNT 14
+#define USABLE_TIMER_CHANNEL_COUNT 15
 #define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8) | TIM_N(12) )
 #endif

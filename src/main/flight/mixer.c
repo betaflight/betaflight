@@ -506,14 +506,32 @@ void mixerResetDisarmedMotors(void)
 
 void writeMotors(void)
 {
+    timeUs_t startUs;
+    timeUs_t finishUs;
+
+    static uint32_t count = 0;
+    static uint32_t sum = 0;
+
     if (pwmAreMotorsEnabled()) {
-#if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
+
+        startUs = micros();
+
+#if defined(USE_DSHOT)
         pwmStartMotorUpdate(motorCount);
 #endif
         for (int i = 0; i < motorCount; i++) {
             pwmWriteMotor(i, motor[i]);
         }
         pwmCompleteMotorUpdate(motorCount);
+
+        finishUs = micros();
+
+        debug[0] = finishUs - startUs;
+
+        sum += (finishUs - startUs);
+        count++;
+
+        debug[1] = (sum * 100)/count;
     }
 }
 
