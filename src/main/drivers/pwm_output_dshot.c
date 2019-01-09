@@ -503,7 +503,7 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
         DMAINIT.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
         DMAINIT.DMA_MemoryInc = DMA_MemoryInc_Enable;
         DMAINIT.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Word;
-        DMAINIT.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+        DMAINIT.DMA_MemoryDataSize = DMA_MemoryDataSize_Word;
         DMAINIT.DMA_Mode = DMA_Mode_Normal;
         DMAINIT.DMA_Priority = DMA_Priority_High;
     } else
