@@ -470,10 +470,11 @@ static uint16_t getRxfailValue(uint8_t channel)
         case YAW:
             return rxConfig()->midrc;
         case THROTTLE:
-            if (featureIsEnabled(FEATURE_3D))
+            if (featureIsEnabled(FEATURE_3D) && !IS_RC_MODE_ACTIVE(BOX3D) && !flight3DConfig()->switched_mode3d) {
                 return rxConfig()->midrc;
-            else
+            } else {
                 return rxConfig()->rx_min_usec;
+            }
         }
         /* no break */
 
