@@ -61,25 +61,24 @@ static rpmNotchFilter_t filters[2];
 static rpmNotchFilter_t* gyroFilter;
 static rpmNotchFilter_t* dtermFilter;
 
-
-PG_REGISTER_WITH_RESET_FN(rpmFilterConfig_t, rpmFilterConfig, PG_RPM_FILTER_CONFIG, 1);
+PG_REGISTER_WITH_RESET_FN(rpmFilterConfig_t, rpmFilterConfig, PG_RPM_FILTER_CONFIG, 2);
 
 void pgResetFn_rpmFilterConfig(rpmFilterConfig_t *config)
 {
     config->gyro_rpm_notch_harmonics = 3;
     config->gyro_rpm_notch_min = 100;
-    config->gyro_rpm_notch_q = 50;
+    config->gyro_rpm_notch_q = 500;
 
     config->dterm_rpm_notch_harmonics = 1;
     config->dterm_rpm_notch_min = 100;
-    config->dterm_rpm_notch_q = 50;
+    config->dterm_rpm_notch_q = 500;
 }
 
 static void rpmNotchFilterInit(rpmNotchFilter_t* filter, int harmonics, int minHz, int q, float looptime)
 {
     filter->harmonics = harmonics;
     filter->minHz = minHz;
-    filter->q = q / 10.0f;
+    filter->q = q / 100.0f;
     filter->loopTime = looptime;
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
@@ -94,8 +93,13 @@ static void rpmNotchFilterInit(rpmNotchFilter_t* filter, int harmonics, int minH
 
 void rpmFilterInit(const rpmFilterConfig_t *config)
 {
-    pidLooptime = gyro.targetLooptime * pidConfig()->pid_process_denom;
     numberRpmNotchFilters = 0;
+    if (!motorConfig()->dev.useDshotTelemetry) {
+        gyroFilter = dtermFilter = NULL;
+        return;
+    }
+
+    pidLooptime = gyro.targetLooptime * pidConfig()->pid_process_denom;
     if (config->gyro_rpm_notch_harmonics) {
         gyroFilter = &filters[numberRpmNotchFilters++];
         rpmNotchFilterInit(gyroFilter, config->gyro_rpm_notch_harmonics,
@@ -108,7 +112,7 @@ void rpmFilterInit(const rpmFilterConfig_t *config)
     }
 
     for (int i = 0; i < getMotorCount(); i++) {
-        pt1FilterInit(&rpmFilters[i], pt1FilterGain(RPM_MOTOR_FILTER_CUTOFF, gyro.targetLooptime));
+        pt1FilterInit(&rpmFilters[i], pt1FilterGain(RPM_MOTOR_FILTER_CUTOFF, pidLooptime));
     }
 
     erpmToHz = ERPM_PER_LSB / SECONDS_PER_MINUTE  / (motorConfig()->motorPoleCount / 2.0f);
