@@ -1271,6 +1271,39 @@ void GPS_calc_longitude_scaling(int32_t lat)
     GPS_scaleLonDown = cos_approx(rads);
 }
 
+////////////////////////////////////////////////////////////////////////////////////
+// Calculate the distance flown and vertical speed from gps position data
+//
+static void GPS_calculateDistanceFlownVerticalSpeed(bool initialize)
+{
+    static int32_t lastCoord[2] = { 0, 0 };
+    static int16_t lastAlt;
+    static int32_t lastMillis;
+
+    int currentMillis = millis();
+
+    if (initialize) {
+        GPS_distanceFlownInCm = 0;
+        GPS_verticalSpeedInCmS = 0;
+    } else {
+        if (STATE(GPS_FIX_HOME)) {
+            // Only add up movement when speed is faster than minimum threshold
+            if (gpsSol.groundSpeed > GPS_DISTANCE_FLOWN_MIN_GROUND_SPEED_THRESHOLD_CM_S) {
+                uint32_t dist;
+                int32_t dir;
+                GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &lastCoord[LAT], &lastCoord[LON], &dist, &dir);
+                GPS_distanceFlownInCm += dist;
+            }
+        }
+
+        GPS_verticalSpeedInCmS = (gpsSol.llh.altCm - lastAlt) * 1000 / (currentMillis - lastMillis);
+        GPS_verticalSpeedInCmS = constrain(GPS_verticalSpeedInCmS, -1500.0f, 1500.0f);
+    }
+    lastCoord[LON] = gpsSol.llh.lon;
+    lastCoord[LAT] = gpsSol.llh.lat;
+    lastAlt = gpsSol.llh.altCm;
+    lastMillis = currentMillis;
+}
 
 void GPS_reset_home_position(void)
 {
@@ -1281,6 +1314,7 @@ void GPS_reset_home_position(void)
         // Set ground altitude
         ENABLE_STATE(GPS_FIX_HOME);
     }
+    GPS_calculateDistanceFlownVerticalSpeed(true); //Initialize
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -1313,47 +1347,10 @@ void GPS_calculateDistanceAndDirectionToHome(void)
     }
 }
 
-////////////////////////////////////////////////////////////////////////////////////
-// Calculate the distance flown from gps position data
-//
-static void GPS_calculateDistanceFlown(bool initialize)
-{
-    static int32_t lastCoord[2] = { 0, 0 };
-    static int16_t lastAlt;
-    static int32_t lastMillis;
-
-    int currentMillis = millis();
-
-    if (initialize) {
-        GPS_distanceFlownInCm = 0;
-        GPS_verticalSpeedInCmS = 0;
-    } else {
-        // Only add up movement when speed is faster than minimum threshold
-        if (gpsSol.groundSpeed > GPS_DISTANCE_FLOWN_MIN_GROUND_SPEED_THRESHOLD_CM_S) {
-            uint32_t dist;
-            int32_t dir;
-            GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &lastCoord[LAT], &lastCoord[LON], &dist, &dir);
-            GPS_distanceFlownInCm += dist;
-        }
-
-        GPS_verticalSpeedInCmS = (gpsSol.llh.altCm - lastAlt) * 1000 / (currentMillis - lastMillis);
-        GPS_verticalSpeedInCmS = constrain(GPS_verticalSpeedInCmS, -1500.0f, 1500.0f);
-    }
-    lastCoord[LON] = gpsSol.llh.lon;
-    lastCoord[LAT] = gpsSol.llh.lat;
-    lastAlt = gpsSol.llh.altCm;
-    lastMillis = currentMillis;
-}
-
 void onGpsNewData(void)
 {
     if (!(STATE(GPS_FIX) && gpsSol.numSat >= 5)) {
         return;
-    }
-
-    if (!STATE(GPS_FIX_HOME) && ARMING_FLAG(ARMED)) {
-        GPS_reset_home_position();
-        GPS_calculateDistanceFlown(true);
     }
 
     // Apply moving average filter to GPS data
@@ -1395,7 +1392,7 @@ void onGpsNewData(void)
 
     GPS_calculateDistanceAndDirectionToHome();
     if (ARMING_FLAG(ARMED)) {
-        GPS_calculateDistanceFlown(false);
+        GPS_calculateDistanceFlownVerticalSpeed(false);
     }
 
 #ifdef USE_GPS_RESCUE

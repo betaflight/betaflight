@@ -279,7 +279,7 @@ void updateArmingStatus(void)
 
 #ifdef USE_GPS_RESCUE
         if (gpsRescueIsConfigured()) {
-            if (!gpsRescueConfig()->minSats || STATE(GPS_FIX) || ARMING_FLAG(WAS_EVER_ARMED)) {
+            if (gpsRescueConfig()->allowArmingWithoutFix || STATE(GPS_FIX) || ARMING_FLAG(WAS_EVER_ARMED)) {
                 unsetArmingDisabled(ARMING_DISABLED_GPS);
             } else {
                 setArmingDisabled(ARMING_DISABLED_GPS);
@@ -455,8 +455,10 @@ void tryArm(void)
 
         lastArmingDisabledReason = 0;
 
-        //beep to indicate arming
 #ifdef USE_GPS
+        GPS_reset_home_position();
+
+        //beep to indicate arming
         if (featureIsEnabled(FEATURE_GPS) && STATE(GPS_FIX) && gpsSol.numSat >= 5) {
             beeper(BEEPER_ARMING_GPS_FIX);
         } else {
@@ -1126,7 +1128,6 @@ FAST_CODE void taskMainPidLoop(timeUs_t currentTimeUs)
         debug[1] = averageSystemLoadPercent;
     }
 }
-
 
 bool isFlipOverAfterCrashActive(void)
 {
