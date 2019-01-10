@@ -1,8 +1,9 @@
 # Development
 
-This document is primarily for developers only.
+This document is primarily for developers.
+If you plan to contribute to Betaflight by opening a pull request for a bugfix or feature, please read the following text carefully before you start. This will help you in submitting your contribution in a form that has a good chance of being accepted. Please also read up on the [coding style](/docs/development/CodingStyle.md).
 
-## General principals
+## General principles
 
 1. Name everything well.
 2. Strike a balance between simplicity and not-repeating code.
@@ -15,8 +16,6 @@ This document is primarily for developers only.
 9. Seek advice from other developers - know you can always learn more.
 10. Be professional - attempts at humor or slating existing code in the codebase itself is not helpful when you have to change/fix it.
 11. Know that there's always more than one way to do something and that code is never final - but it does have to work.
-
-Before making any code contributions, try to comply with the [coding style](CodingStyle.md). It has a lot of sound advice.
 
 It is also advised to read about clean code, here are some useful links:
 
@@ -59,37 +58,13 @@ make junittest
 This will build a set of executable files in the `obj/test` folder, one for each `*_unittest.cc` file.
 It will stop after first compile/build error. If you want it to continue with the next test module you can use `make -k test`.
 
-After they have been executed by the make invocation, you can still run them on the command line to execute the tests and to see the test report. Test reports will also be produced in form of junit XML files, if tests are built and run with the "junittest" goal. Junit report files are saved in obj/test directory and has the following  naming pattern test_name_results.xml, for example: obj/test/battery_unittest_results.xml 
+After they have been executed by the make invocation, you can still run them on the command line to execute the tests and to see the test report. Test reports will also be produced in form of junit XML files, if tests are built and run with the "junittest" goal. Junit report files are saved in obj/test directory and has the following  naming pattern test\_name\_results.xml, for example: obj/test/battery\_unittest\_results.xml 
 
 You can also step-debug the tests in eclipse and you can use the GoogleTest test runner to make building and re-running the tests simple.
 
 The tests are currently always compiled with debugging information enabled, there may be additional warnings, if you see any warnings please attempt to fix them and submit pull requests with the fixes.
 
 Tests are verified and working with GCC 4.9.3
-
-## Test coverage analysis
-
-There are a number of possibilities to analyse test coverage and produce various reports. There are guides available from many sources, a good overview and link collection to more info can be found on Wikipedia: 
-
-https://en.wikipedia.org/wiki/Gcov
-
-A simple report for a single test can for example be made using this command:
-
-```
-gcov -s src/main/sensors -o obj/test/ battery_unittest.cc
-```
-
-To produce an coverage report in xml format usable by the Cobertura plugin in Jenkins requires installation of a  Python script called "gcovr" from github:
-
-https://github.com/gcovr/gcovr/tree/dev
-
-Example usage in Jenkins:
-
-```
-/gcovr-install-path/gcovr/scripts/gcovr obj/test --root=src/main -x > coverage.xml
-```
-
-There are many other ways to prodice test coverage reports in other formats, like html etc etc. 
 
 ## Using git and github
 
@@ -103,16 +78,16 @@ https://help.github.com/articles/creating-a-pull-request/
 
 The main flow for a contributing is as follows:
 
-1. Login to github, go to the betaflight repository and press `fork`.
-2. Then using the command line/terminal on your computer: `git clone <url to YOUR fork>`
-3. `cd betaflight`
-4. `git checkout master`
-5. `git checkout -b my-new-code`
-6. Make changes
-7. `git add <files that have changed>`
-8. `git commit`
-9. `git push origin my-new-code`
-10. Create pull request using github UI to merge your changes from your new branch into `betaflight/master`
+1. Login to github, go to the betaflight repository and press `fork`;
+2. Then using the command line/terminal on your computer: `git clone <url to YOUR fork>`;
+3. `cd betaflight`;
+4. `git checkout master`;
+5. `git checkout -b my-new-code`;
+6. Make changes;
+7. `git add <files that have changed>`;
+8. `git commit`;
+9. `git push origin my-new-code`;
+10. Create pull request using github UI to merge your changes from your new branch into `betaflight/master`;
 11. Repeat from step 4 for new other changes.
 
 The primary thing to remember is that separate pull requests should be created for separate branches.  Never create a pull request from your `master` branch.
@@ -131,7 +106,4 @@ Later, you can get the changes from the betaflight repo into your `master` branc
 4. `git merge betaflight/master`
 5. `git push origin master` is an optional step that will update your fork on github
  
-
 You can also perform the git commands using the git client inside Eclipse.  Refer to the Eclipse git manual.
-
-
