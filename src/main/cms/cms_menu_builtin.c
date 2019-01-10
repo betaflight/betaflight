@@ -47,6 +47,7 @@
 #include "cms/cms_menu_ledstrip.h"
 #include "cms/cms_menu_misc.h"
 #include "cms/cms_menu_power.h"
+#include "cms/cms_menu_failsafe.h"
 
 // VTX supplied menus
 
@@ -120,6 +121,9 @@ static OSD_Entry menuFeaturesEntries[] =
     {"LED STRIP", OME_Submenu, cmsMenuChange, &cmsx_menuLedstrip, 0},
 #endif // LED_STRIP
     {"POWER", OME_Submenu, cmsMenuChange, &cmsx_menuPower, 0},
+#ifdef USE_CMS_FAILSAFE_MENU
+    {"FAILSAFE", OME_Submenu, cmsMenuChange, &cmsx_menuFailsafe, 0},
+#endif
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}
 };

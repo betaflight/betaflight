@@ -243,3 +243,7 @@
 #undef USE_DSHOT_TELEMETRY
 #undef USE_RPM_FILTER
 #endif
+
+#ifndef USE_CMS
+#undef USE_CMS_FAILSAFE_MENU
+#endif
