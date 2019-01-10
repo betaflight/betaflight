@@ -126,6 +126,7 @@ COMMON_SRC = \
             cms/cms_menu_misc.c \
             cms/cms_menu_osd.c \
             cms/cms_menu_power.c \
+            cms/cms_menu_saveexit.c \
             cms/cms_menu_vtx_rtc6705.c \
             cms/cms_menu_vtx_smartaudio.c \
             cms/cms_menu_vtx_tramp.c \
@@ -302,6 +303,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             cms/cms_menu_misc.c \
             cms/cms_menu_osd.c \
             cms/cms_menu_power.c \
+            cms/cms_menu_saveexit.c \
             cms/cms_menu_vtx_rtc6705.c \
             cms/cms_menu_vtx_smartaudio.c \
             cms/cms_menu_vtx_tramp.c \
