@@ -423,6 +423,11 @@ static const char * const lookupTableTpaMode[] = {
 };
 #endif
 
+static const char* const lookupTableSchedulerPolicy[] = {
+    "PERIOD", "RATE"
+};
+
+
 #define LOOKUP_TABLE_ENTRY(name) { name, ARRAYLEN(name) }
 
 const lookupTableEntry_t lookupTables[] = {
@@ -531,6 +536,7 @@ const lookupTableEntry_t lookupTables[] = {
 #ifdef USE_TPA_MODE
     LOOKUP_TABLE_ENTRY(lookupTableTpaMode),
 #endif
+    LOOKUP_TABLE_ENTRY(lookupTableSchedulerPolicy)
 };
 
 #undef LOOKUP_TABLE_ENTRY
@@ -1175,6 +1181,7 @@ const clivalue_t valueTable[] = {
     { "cpu_overclock",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OVERCLOCK }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, cpu_overclock) },
 #endif
     { "pwr_on_arm_grace",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 30 }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, powerOnArmingGraceTime) },
+    { "scheduler_policy",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_SCHEDULER_POLICY }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, schedulerPolicy) },
 
 // PG_VTX_CONFIG
 #ifdef USE_VTX_COMMON

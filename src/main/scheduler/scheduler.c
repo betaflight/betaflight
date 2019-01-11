@@ -53,9 +53,11 @@ static FAST_RAM_ZERO_INIT uint32_t totalWaitingTasksSamples;
 static FAST_RAM_ZERO_INIT bool calculateTaskStatistics;
 FAST_RAM_ZERO_INIT uint16_t averageSystemLoadPercent = 0;
 
-
 static FAST_RAM_ZERO_INIT int taskQueuePos = 0;
 STATIC_UNIT_TESTED FAST_RAM_ZERO_INIT int taskQueueSize = 0;
+
+static FAST_RAM_ZERO_INIT schedulerPolicy_e policy;
+static FAST_RAM_ZERO_INIT int periodCalculationBasisOffset = offsetof(cfTask_t, lastExecutedAt);
 
 // No need for a linked list for the queue, since items are only inserted at startup
 
@@ -164,6 +166,7 @@ void getTaskInfo(cfTaskId_e taskId, cfTaskInfo_t * taskInfo)
     taskInfo->totalExecutionTime = cfTasks[taskId].totalExecutionTime;
     taskInfo->averageExecutionTime = cfTasks[taskId].movingSumExecutionTime / MOVING_SUM_COUNT;
     taskInfo->latestDeltaTime = cfTasks[taskId].taskLatestDeltaTime;
+    taskInfo->movingAverageCycleTime = cfTasks[taskId].movingAverageCycleTime;
 #endif
 }
 
@@ -243,6 +246,22 @@ void schedulerInit(void)
     queueAdd(&cfTasks[TASK_SYSTEM]);
 }
 
+void schedulerSetPolicy(schedulerPolicy_e newPolicy)
+{
+    policy = newPolicy;
+    if (policy == SCHEDULER_POLICY_PRIORITIZE_AVERAGE_RATE) {
+        periodCalculationBasisOffset = offsetof(cfTask_t, lastDesiredAt);
+    } else
+    {
+        periodCalculationBasisOffset = offsetof(cfTask_t, lastExecutedAt);
+    }
+}
+
+inline static timeUs_t getPeriodCalculationBasis(const cfTask_t* task)
+{
+    return *(timeUs_t*)((uint8_t*)task + periodCalculationBasisOffset);
+}
+
 FAST_CODE void scheduler(void)
 {
     // Cache currentTime
@@ -251,7 +270,7 @@ FAST_CODE void scheduler(void)
     // Check for realtime tasks
     bool outsideRealtimeGuardInterval = true;
     for (const cfTask_t *task = queueFirst(); task != NULL && task->staticPriority >= TASK_PRIORITY_REALTIME; task = queueNext()) {
-        const timeUs_t nextExecuteAt = task->lastExecutedAt + task->desiredPeriod;
+        const timeUs_t nextExecuteAt = getPeriodCalculationBasis(task) + task->desiredPeriod;
         if ((timeDelta_t)(currentTimeUs - nextExecuteAt) >= 0) {
             outsideRealtimeGuardInterval = false;
             break;
@@ -299,7 +318,7 @@ FAST_CODE void scheduler(void)
         } else {
             // Task is time-driven, dynamicPriority is last execution age (measured in desiredPeriods)
             // Task age is calculated from last execution
-            task->taskAgeCycles = ((currentTimeUs - task->lastExecutedAt) / task->desiredPeriod);
+            task->taskAgeCycles = ((currentTimeUs - getPeriodCalculationBasis(task)) / task->desiredPeriod);
             if (task->taskAgeCycles > 0) {
                 task->dynamicPriority = 1 + task->staticPriority * task->taskAgeCycles;
                 waitingTasks++;
@@ -326,7 +345,9 @@ FAST_CODE void scheduler(void)
     if (selectedTask) {
         // Found a task that should be run
         selectedTask->taskLatestDeltaTime = currentTimeUs - selectedTask->lastExecutedAt;
+        float period = currentTimeUs - selectedTask->lastExecutedAt;
         selectedTask->lastExecutedAt = currentTimeUs;
+        selectedTask->lastDesiredAt += (cmpTimeUs(currentTimeUs,selectedTask->lastDesiredAt) / selectedTask->desiredPeriod) * selectedTask->desiredPeriod;
         selectedTask->dynamicPriority = 0;
 
         // Execute task
@@ -338,6 +359,7 @@ FAST_CODE void scheduler(void)
             selectedTask->movingSumExecutionTime += taskExecutionTime - selectedTask->movingSumExecutionTime / MOVING_SUM_COUNT;
             selectedTask->totalExecutionTime += taskExecutionTime;   // time consumed by scheduler + task
             selectedTask->maxExecutionTime = MAX(selectedTask->maxExecutionTime, taskExecutionTime);
+            selectedTask->movingAverageCycleTime += 0.05f * (period - selectedTask->movingAverageCycleTime);
         } else
 #endif
         {
