@@ -389,9 +389,6 @@ TEST(SchedulerUnittest, TestTwoTasks)
     // of the two TASK_GYROPID should run first
     scheduler();
     EXPECT_EQ(&cfTasks[TASK_GYROPID], unittest_scheduler_selectedTask);
-    // of the two TASK_GYROPID should run again
-    scheduler();
-    EXPECT_EQ(&cfTasks[TASK_GYROPID], unittest_scheduler_selectedTask);
     // and finally TASK_ACCEL should now run
     scheduler();
     EXPECT_EQ(&cfTasks[TASK_ACCEL], unittest_scheduler_selectedTask);
