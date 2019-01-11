@@ -31,7 +31,13 @@ The supported protocols are:
 - 8 channels / 9 ms frame spacing **or** 16 channels / 18 ms frame spacing;
 - called 'D16' in OpenTX;
 - integrated FrSky SmartPort telemetry (including support for MSP over Smartport / lua scripts in OpenTX);
-- an EU compliant LBT version is not yet available.
+
+### FrSky X LBT
+
+- LBT protocol version compatible with EU;
+- 8 channels / 9 ms frame spacing **or** 16 channels / 18 ms frame spacing;
+- called 'D16' in OpenTX;
+- integrated FrSky SmartPort telemetry (including support for MSP over Smartport / lua scripts in OpenTX);
 
 
 ## Configuration
@@ -40,7 +46,7 @@ The supported protocols are:
 
 ![FrSky SPI RX mode selection](assets/images/frsky_spi_rx_mode.png)
 
-2. in the 'SPI Bus Receiver Provider' drop down that appears, select 'FRSKY_D' or 'FRSKY_X' (depending on the desired protocol):
+2. in the 'SPI Bus Receiver Provider' drop down that appears, select 'FRSKY_D', 'FRSKY_X' or 'FRSKY_X_LBT' (depending on the desired protocol):
 
 ![FrSky SPI RX protocol selection](assets/images/frsky_spi_rx_protocol.png)
 
@@ -54,7 +60,7 @@ FrSky D protocol:
 
 ![FrSky SPI RX FrSky D binding with OpenTX](assets/images/frsky_spi_rx_d_binding.png)
 
-FrSky X protocol:
+FrSky X and X_LBT protocol:
 
 ![FrSky SPI RX FrSky X binding with OpenTX](assets/images/frsky_spi_rx_x_binding.png)
 
@@ -79,4 +85,5 @@ FrSky X protocol:
 - [Midelic F3](https://github.com/betaflight/betaflight/wiki/Board-Midelic-F3) (prototype only, not commercially available);
 - [Matek F411-ONE](http://www.mateksys.com/?portfolio=f411-one);
 - [CrazyBee F3 FR](boards/Board%20-%20CrazyBeeF3FR.md);
+- [BetaFPV F4]
 - more to come...
