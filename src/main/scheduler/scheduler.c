@@ -57,7 +57,7 @@ static FAST_RAM_ZERO_INIT int taskQueuePos = 0;
 STATIC_UNIT_TESTED FAST_RAM_ZERO_INIT int taskQueueSize = 0;
 
 static FAST_RAM_ZERO_INIT schedulerPolicy_e policy;
-static FAST_RAM_ZERO_INIT int periodCalculationBasisOffset = offsetof(cfTask_t, lastExecutedAt);
+static FAST_RAM int periodCalculationBasisOffset = offsetof(cfTask_t, lastExecutedAt);
 
 // No need for a linked list for the queue, since items are only inserted at startup
 
