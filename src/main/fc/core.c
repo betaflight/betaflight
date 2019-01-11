@@ -382,14 +382,6 @@ void tryArm(void)
         const timeUs_t currentTimeUs = micros();
 
 #ifdef USE_DSHOT
-#ifdef USE_DSHOT_TELEMETRY
-        pwmWriteDshotCommand(
-            255, getMotorCount(),
-            motorConfig()->dev.useDshotTelemetry ?
-            DSHOT_CMD_SIGNAL_LINE_CONTINUOUS_ERPM_TELEMETRY :
-            DSHOT_CMD_SIGNAL_LINE_TELEMETRY_DISABLE, true);
-#endif
-
         if (currentTimeUs - getLastDshotBeaconCommandTimeUs() < DSHOT_BEACON_GUARD_DELAY_US) {
             if (tryingToArm == ARMING_DELAYED_DISARMED) {
                 if (IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
@@ -404,6 +396,14 @@ void tryArm(void)
             }
             return;
         }
+
+#ifdef USE_DSHOT_TELEMETRY
+        // send the command to enable DSHOT telemetry
+        if (isMotorProtocolDshot() && motorConfig()->dev.useDshotTelemetry) {
+            pwmWriteDshotCommand(255, getMotorCount(), DSHOT_CMD_SIGNAL_LINE_CONTINUOUS_ERPM_TELEMETRY, true);
+        }
+#endif
+
         if (isMotorProtocolDshot() && isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH)) {
             if (!(IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH) || (tryingToArm == ARMING_DELAYED_CRASHFLIP))) {
                 flipOverAfterCrashActive = false;
