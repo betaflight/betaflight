@@ -214,10 +214,8 @@ void activateDshotTelemetry(struct dispatchEntry_s* self)
     if (!ARMING_FLAG(ARMED))
     {
         pwmWriteDshotCommand(
-            255, getMotorCount(),
-            motorConfig()->dev.useDshotTelemetry ?
-            DSHOT_CMD_SIGNAL_LINE_CONTINUOUS_ERPM_TELEMETRY :
-            DSHOT_CMD_SIGNAL_LINE_TELEMETRY_DISABLE, true);
+            255, getMotorCount(), motorConfig()->dev.useDshotTelemetry ?
+            DSHOT_CMD_SIGNAL_LINE_CONTINUOUS_ERPM_TELEMETRY : DSHOT_CMD_SIGNAL_LINE_TELEMETRY_DISABLE, false);
     }
 }
 
@@ -772,8 +770,10 @@ void init(void)
 
 // TODO: potentially delete when feature is stable. Activation when arming is enough for flight.
 #if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
-    dispatchEnable();
-    dispatchAdd(&activateDshotTelemetryEntry, 5000000);
+    if (motorConfig()->dev.useDshotTelemetry) {
+        dispatchEnable();
+        dispatchAdd(&activateDshotTelemetryEntry, 5000000);
+    }
 #endif
 
     fcTasksInit();

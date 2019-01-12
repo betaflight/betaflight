@@ -237,6 +237,7 @@ void pwmStartDshotMotorUpdate(uint8_t motorCount);
 #endif
 void pwmCompleteDshotMotorUpdate(uint8_t motorCount);
 
+void pwmDshotCommandQueueUpdate(void);
 bool pwmDshotCommandIsQueued(void);
 bool pwmDshotCommandIsProcessing(void);
 uint8_t pwmGetDshotCommand(uint8_t index);

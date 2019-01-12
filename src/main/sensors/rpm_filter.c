@@ -177,6 +177,9 @@ void rpmFilterUpdate()
                 frequency = currentFilter->minHz;
             }
         }
+        if (frequency > deactivateFreq) {
+            frequency = deactivateFreq;
+        }
 
         biquadFilter_t* template = &currentFilter->notch[0][motor][harmonic];
         // uncomment below to debug filter stepping. Need to also comment out motor rpm DEBUG_SET above
