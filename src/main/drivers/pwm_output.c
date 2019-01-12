@@ -44,6 +44,7 @@ FAST_RAM_ZERO_INIT loadDmaBufferFn *loadDmaBuffer;
 #define DSHOT_COMMAND_DELAY_US 1000
 #define DSHOT_ESCINFO_DELAY_US 12000
 #define DSHOT_BEEP_DELAY_US 100000
+#define DSHOT_MAX_COMMANDS 3
 
 typedef struct dshotCommandControl_s {
     timeUs_t nextCommandAtUs;
@@ -53,7 +54,9 @@ typedef struct dshotCommandControl_s {
     uint8_t command[MAX_SUPPORTED_MOTORS];
 } dshotCommandControl_t;
 
-static dshotCommandControl_t dshotCommandControl;
+static dshotCommandControl_t commandQueue[DSHOT_MAX_COMMANDS + 1];
+static uint8_t commandQueueHead;
+static uint8_t commandQueueTail;
 #endif
 
 #ifdef USE_SERVOS
@@ -436,21 +439,53 @@ bool allMotorsAreIdle(uint8_t motorCount)
     return allMotorsIdle;
 }
 
+FAST_CODE bool pwmDshotCommandQueueFull()
+{
+    return (commandQueueHead + 1) % (DSHOT_MAX_COMMANDS + 1) == commandQueueTail;
+}
+
 FAST_CODE bool pwmDshotCommandIsQueued(void)
 {
-    return dshotCommandControl.nextCommandAtUs;
+    return commandQueueHead != commandQueueTail;
 }
 
 FAST_CODE bool pwmDshotCommandIsProcessing(void)
 {
-    return dshotCommandControl.nextCommandAtUs && !dshotCommandControl.waitingForIdle && dshotCommandControl.repeats > 0;
+    if (!pwmDshotCommandIsQueued()) {
+        return false;
+    }
+    dshotCommandControl_t* command = &commandQueue[commandQueueTail];
+    return command->nextCommandAtUs && !command->waitingForIdle && command->repeats > 0;
 }
+
+FAST_CODE void pwmDshotCommandQueueUpdate(void)
+{
+    if (!pwmDshotCommandIsQueued()) {
+        return;
+    }
+    dshotCommandControl_t* command = &commandQueue[commandQueueTail];
+    if (!command->nextCommandAtUs && !command->waitingForIdle && !command->repeats) {
+        commandQueueTail = (commandQueueTail + 1) % (DSHOT_MAX_COMMANDS + 1);
+    }
+}
+
+static dshotCommandControl_t* addCommand()
+{
+    int newHead = (commandQueueHead + 1) % (DSHOT_MAX_COMMANDS + 1);
+    if (newHead == commandQueueTail) {
+        return NULL;
+    }
+    dshotCommandControl_t* control = &commandQueue[commandQueueHead];
+    commandQueueHead = newHead;
+    return control;
+}
+
 
 void pwmWriteDshotCommand(uint8_t index, uint8_t motorCount, uint8_t command, bool blocking)
 {
     timeUs_t timeNowUs = micros();
 
-    if (!isMotorProtocolDshot() || (command > DSHOT_MAX_COMMAND) || pwmDshotCommandIsQueued()) {
+    if (!isMotorProtocolDshot() || (command > DSHOT_MAX_COMMAND) || pwmDshotCommandQueueFull()) {
         return;
     }
 
@@ -500,56 +535,60 @@ void pwmWriteDshotCommand(uint8_t index, uint8_t motorCount, uint8_t command, bo
         }
         delayMicroseconds(delayAfterCommandUs);
     } else {
-        dshotCommandControl.repeats = repeats;
-        dshotCommandControl.nextCommandAtUs = timeNowUs + DSHOT_INITIAL_DELAY_US;
-        dshotCommandControl.delayAfterCommandUs = delayAfterCommandUs;
-        for (unsigned i = 0; i < motorCount; i++) {
-            if (index == i || index == ALL_MOTORS) {
-                dshotCommandControl.command[i] = command;
-            } else {
-                dshotCommandControl.command[i] = command;
+        dshotCommandControl_t *commandControl = addCommand();
+        if (commandControl) {
+            commandControl->repeats = repeats;
+            commandControl->nextCommandAtUs = timeNowUs + DSHOT_INITIAL_DELAY_US;
+            commandControl->delayAfterCommandUs = delayAfterCommandUs;
+            for (unsigned i = 0; i < motorCount; i++) {
+                if (index == i || index == ALL_MOTORS) {
+                    commandControl->command[i] = command;
+                } else {
+                    commandControl->command[i] = command;
+                }
             }
+            commandControl->waitingForIdle = !allMotorsAreIdle(motorCount);
         }
-
-        dshotCommandControl.waitingForIdle = !allMotorsAreIdle(motorCount);
     }
 }
 
 uint8_t pwmGetDshotCommand(uint8_t index)
 {
-    return dshotCommandControl.command[index];
+    return commandQueue[commandQueueTail].command[index];
 }
 
 FAST_CODE_NOINLINE bool pwmDshotCommandOutputIsEnabled(uint8_t motorCount)
 {
     timeUs_t timeNowUs = micros();
 
-    if (dshotCommandControl.waitingForIdle) {
-        if (allMotorsAreIdle(motorCount)) {
-            dshotCommandControl.nextCommandAtUs = timeNowUs + DSHOT_INITIAL_DELAY_US;
-            dshotCommandControl.waitingForIdle = false;
+    dshotCommandControl_t* command = &commandQueue[commandQueueTail];
+    if (pwmDshotCommandIsQueued()) {
+        if (command->waitingForIdle) {
+            if (allMotorsAreIdle(motorCount)) {
+                command->nextCommandAtUs = timeNowUs + DSHOT_INITIAL_DELAY_US;
+                command->waitingForIdle = false;
+            }
+            // Send normal motor output while waiting for motors to go idle
+            return true;
         }
-
-        // Send normal motor output while waiting for motors to go idle
-        return true;
     }
 
-    if (cmpTimeUs(timeNowUs, dshotCommandControl.nextCommandAtUs) < 0) {
+    if (cmpTimeUs(timeNowUs, command->nextCommandAtUs) < 0) {
         //Skip motor update because it isn't time yet for a new command
         return false;
     }   
   
     //Timed motor update happening with dshot command
-    if (dshotCommandControl.repeats > 0) {
-        dshotCommandControl.repeats--;
+    if (command->repeats > 0) {
+        command->repeats--;
 
-        if (dshotCommandControl.repeats > 0) {
-            dshotCommandControl.nextCommandAtUs = timeNowUs + DSHOT_COMMAND_DELAY_US;
+        if (command->repeats > 0) {
+            command->nextCommandAtUs = timeNowUs + DSHOT_COMMAND_DELAY_US;
         } else {
-            dshotCommandControl.nextCommandAtUs = timeNowUs + dshotCommandControl.delayAfterCommandUs;
+            command->nextCommandAtUs = timeNowUs + command->delayAfterCommandUs;
         }
     } else {
-        dshotCommandControl.nextCommandAtUs = 0;
+        command->nextCommandAtUs = 0;
     }
 
     return true;
