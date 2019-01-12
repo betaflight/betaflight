@@ -29,6 +29,8 @@
 #include "stdbool.h"
 #include "drivers/time.h"
 
+__ALIGN_BEGIN USB_OTG_CORE_HANDLE USB_OTG_dev __ALIGN_END;
+
 LINE_CODING g_lc;
 
 extern __IO uint8_t USB_Tx_State;

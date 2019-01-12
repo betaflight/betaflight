@@ -120,9 +120,9 @@ static uint8_t trampChecksum(uint8_t *trampBuf)
     return cksum;
 }
 
-void trampCmdU16(uint8_t cmd, uint16_t param)
+static void trampCmdU16(uint8_t cmd, uint16_t param)
 {
-    if (!trampSerialPort) {
+    if (!trampSerialPort || IS_RC_MODE_ACTIVE(BOXVTXCONTROLDISABLE)) {
         return;
     }
 
@@ -217,7 +217,7 @@ void trampSetPitMode(uint8_t onoff)
 }
 
 // returns completed response code
-char trampHandleResponse(void)
+static char trampHandleResponse(void)
 {
     const uint8_t respCode = trampRespBuffer[1];
 
@@ -333,7 +333,7 @@ static char trampReceive(uint32_t currentTimeUs)
 
                 trampResetReceiver();
 
-                if ((trampRespBuffer[14] == cksum) && (trampRespBuffer[15] == 0)) {
+                if ((trampRespBuffer[14] == cksum) && (trampRespBuffer[15] == 0) && !IS_RC_MODE_ACTIVE(BOXVTXCONTROLDISABLE)) {
                     return trampHandleResponse();
                 }
             }

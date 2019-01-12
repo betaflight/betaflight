@@ -45,11 +45,6 @@ static void icm20649SpiInit(const busDevice_t *bus)
         return;
     }
 
-#ifndef USE_DUAL_GYRO
-    IOInit(bus->busdev_u.spi.csnPin, OWNER_MPU_CS, 0);
-    IOConfigGPIO(bus->busdev_u.spi.csnPin, SPI_IO_CS_CFG);
-    IOHi(bus->busdev_u.spi.csnPin);
-#endif
 
     // all registers can be read/written at full speed (7MHz +-10%)
     // TODO verify that this works at 9MHz and 10MHz on non F7

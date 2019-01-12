@@ -98,6 +98,14 @@
 # warning "Unknown TARGET"
 #endif
 
+#if defined(STM32F7)
+// Expose these for EXTIConfig
+#define IO_CONFIG_GET_MODE(cfg) (((cfg) >> 0) & 0x03)
+#define IO_CONFIG_GET_SPEED(cfg) (((cfg) >> 2) & 0x03)
+#define IO_CONFIG_GET_OTYPE(cfg) (((cfg) >> 4) & 0x01)
+#define IO_CONFIG_GET_PULL(cfg) (((cfg) >> 5) & 0x03)
+#endif
+
 // declare available IO pins. Available pins are specified per target
 #include "io_def.h"
 

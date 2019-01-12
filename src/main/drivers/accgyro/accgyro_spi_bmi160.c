@@ -84,8 +84,6 @@
 ///* Global Variables */
 static volatile bool BMI160InitDone = false;
 static volatile bool BMI160Detected = false;
-static volatile bool bmi160DataReady = false;
-static volatile bool bmi160ExtiInitDone = false;
 
 //! Private functions
 static int32_t BMI160_Config(const busDevice_t *bus);
@@ -97,11 +95,6 @@ uint8_t bmi160Detect(const busDevice_t *bus)
         return BMI_160_SPI;
     }
 
-#ifndef USE_DUAL_GYRO
-    IOInit(bus->busdev_u.spi.csnPin, OWNER_MPU_CS, 0);
-    IOConfigGPIO(bus->busdev_u.spi.csnPin, SPI_IO_CS_CFG);
-    IOHi(bus->busdev_u.spi.csnPin);
-#endif
 
     spiSetDivisor(bus->busdev_u.spi.instance, BMI160_SPI_DIVISOR);
 
@@ -242,6 +235,7 @@ static int32_t BMI160_do_foc(const busDevice_t *bus)
 
 extiCallbackRec_t bmi160IntCallbackRec;
 
+#if defined(USE_MPU_DATA_READY_SIGNAL)
 void bmi160ExtiHandler(extiCallbackRec_t *cb)
 {
     gyroDev_t *gyro = container_of(cb, gyroDev_t, exti);
@@ -250,24 +244,18 @@ void bmi160ExtiHandler(extiCallbackRec_t *cb)
 
 static void bmi160IntExtiInit(gyroDev_t *gyro)
 {
-    static bool bmi160ExtiInitDone = false;
-
-    if (bmi160ExtiInitDone) {
+    if (gyro->mpuIntExtiTag == IO_TAG_NONE) {
         return;
     }
 
-    IO_t mpuIntIO = IOGetByTag(IO_TAG(BMI160_INT_EXTI));
+    IO_t mpuIntIO = IOGetByTag(gyro->mpuIntExtiTag);
 
-    IOInit(mpuIntIO, OWNER_MPU_EXTI, 0);
-    IOConfigGPIO(mpuIntIO, IOCFG_IN_FLOATING);   // TODO - maybe pullup / pulldown ?
-
+    IOInit(mpuIntIO, OWNER_GYRO_EXTI, 0);
     EXTIHandlerInit(&gyro->exti, bmi160ExtiHandler);
-    EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, EXTI_Trigger_Rising);
+    EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, IOCFG_IN_FLOATING, EXTI_TRIGGER_RISING); // TODO - maybe pullup / pulldown ?
     EXTIEnable(mpuIntIO, true);
-
-    bmi160ExtiInitDone = true;
 }
-
+#endif
 
 bool bmi160AccRead(accDev_t *acc)
 {
@@ -328,7 +316,9 @@ bool bmi160GyroRead(gyroDev_t *gyro)
 void bmi160SpiGyroInit(gyroDev_t *gyro)
 {
     BMI160_Init(&gyro->bus);
+#if defined(USE_MPU_DATA_READY_SIGNAL)
     bmi160IntExtiInit(gyro);
+#endif
 }
 
 void bmi160SpiAccInit(accDev_t *acc)

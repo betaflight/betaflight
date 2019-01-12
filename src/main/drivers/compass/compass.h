@@ -33,7 +33,3 @@ typedef struct magDev_s {
     ioTag_t magIntExtiTag;
     int16_t magGain[3];
 } magDev_t;
-
-#ifndef MAG_I2C_INSTANCE
-#define MAG_I2C_INSTANCE I2C_DEVICE
-#endif

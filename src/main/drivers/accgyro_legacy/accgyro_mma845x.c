@@ -86,7 +86,7 @@ static uint8_t device_id;
 static inline void mma8451ConfigureInterrupt(void)
 {
 #ifdef MMA8451_INT_PIN
-    IOInit(IOGetByTag(IO_TAG(MMA8451_INT_PIN)), OWNER_MPU_EXTI, 0);
+    IOInit(IOGetByTag(IO_TAG(MMA8451_INT_PIN)), OWNER_GYRO_EXTI, 0);
     // TODO - maybe pullup / pulldown ?
     IOConfigGPIO(IOGetByTag(IO_TAG(MMA8451_INT_PIN)), IOCFG_IN_FLOATING);
 #endif

@@ -83,9 +83,6 @@ void USB_OTG_BSP_Init(USB_OTG_CORE_HANDLE *pdev)
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
     RCC_AHB2PeriphClockCmd(RCC_AHB2Periph_OTG_FS, ENABLE) ;
 
-    /* enable the PWR clock */
-    RCC_APB1PeriphResetCmd(RCC_APB1Periph_PWR, ENABLE);
-
     EXTI_ClearITPendingBit(EXTI_Line0);
 }
 /**

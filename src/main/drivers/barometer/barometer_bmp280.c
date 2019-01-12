@@ -86,7 +86,7 @@ void bmp280BusDeinit(busDevice_t *busdev)
 {
 #ifdef USE_BARO_SPI_BMP280
     if (busdev->bustype == BUSTYPE_SPI) {
-        spiPreinitCsByIO(busdev->busdev_u.spi.csnPin);
+        spiPreinitByIO(busdev->busdev_u.spi.csnPin);
     }
 #else
     UNUSED(busdev);

@@ -42,9 +42,6 @@
 
 #define TX_DELAY        500
 #define BIND_TIMEOUT    200000
-#define INTERVAL_RX_LOSS_MS 1000
-#define INTERVAL_RX_BIND_MS 250
-#define RX_LOSS_COUNT   1000
 
 typedef struct __attribute__((packed)) {
     uint8_t type;

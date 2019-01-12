@@ -22,8 +22,11 @@
 
 #include "common/color.h"
 #include "common/time.h"
-#include "pg/pg.h"
+
 #include "drivers/io_types.h"
+#include "drivers/light_ws2811strip.h"
+
+#include "pg/pg.h"
 
 #define LED_MAX_STRIP_LENGTH           32
 #define LED_CONFIGURABLE_COLOR_COUNT   16
@@ -124,12 +127,6 @@ typedef enum {
     LED_OVERLAY_WARNING
 } ledOverlayId_e;
 
-// Enumeration to match the string options defined in lookupLedStripFormatRGB in settings.c
-typedef enum {
-    LED_GRB,
-    LED_RGB
-} ledStripFormatRGB_e;
-
 typedef struct modeColorIndexes_s {
     uint8_t color[LED_DIRECTION_COUNT];
 } modeColorIndexes_t;
@@ -160,9 +157,9 @@ typedef struct ledStripConfig_s {
 
 PG_DECLARE(ledStripConfig_t, ledStripConfig);
 
-hsvColor_t *colors;
-const modeColorIndexes_t *modeColors;
-specialColorIndexes_t specialColors;
+extern hsvColor_t *colors;
+extern const modeColorIndexes_t *modeColors;
+extern specialColorIndexes_t specialColors;
 
 #define LF(name) LED_FUNCTION_ ## name
 #define LO(name) LED_FLAG_OVERLAY(LED_OVERLAY_ ## name)

@@ -104,9 +104,6 @@ typedef enum {
 #ifdef USE_OSD
     TASK_OSD,
 #endif
-#ifdef USE_OSD_SLAVE
-    TASK_OSD_SLAVE,
-#endif
 #ifdef USE_BST
     TASK_BST_MASTER_PROCESS,
 #endif
@@ -145,8 +142,10 @@ typedef enum {
 
 typedef struct {
     // Configuration
+#if defined(USE_TASK_STATISTICS)
     const char * taskName;
     const char * subTaskName;
+#endif
     bool (*checkFunc)(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
     void (*taskFunc)(timeUs_t currentTimeUs);
     timeDelta_t desiredPeriod;      // target period of execution
@@ -159,7 +158,7 @@ typedef struct {
     timeUs_t lastExecutedAt;        // last time of invocation
     timeUs_t lastSignaledAt;        // time of invocation event for event-driven tasks
 
-#ifndef SKIP_TASK_STATISTICS
+#if defined(USE_TASK_STATISTICS)
     // Statistics
     timeUs_t movingSumExecutionTime;  // moving sum over 32 samples
     timeUs_t maxExecutionTime;
@@ -177,6 +176,7 @@ void setTaskEnabled(cfTaskId_e taskId, bool newEnabledState);
 timeDelta_t getTaskDeltaTime(cfTaskId_e taskId);
 void schedulerSetCalulateTaskStatistics(bool calculateTaskStatistics);
 void schedulerResetTaskStatistics(cfTaskId_e taskId);
+void schedulerResetTaskMaxExecutionTime(cfTaskId_e taskId);
 
 void schedulerInit(void);
 void scheduler(void);

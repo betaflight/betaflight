@@ -54,7 +54,7 @@ PG_RESET_TEMPLATE(vtxSettingsConfig_t, vtxSettingsConfig,
     .power = VTX_SETTINGS_DEFAULT_POWER,
     .freq = VTX_SETTINGS_DEFAULT_FREQ,
     .pitModeFreq = VTX_SETTINGS_DEFAULT_PITMODE_FREQ,
-    .lowPowerDisarm = VTX_SETTINGS_DEFAULT_LOW_POWER_DISARM,
+    .lowPowerDisarm = VTX_LOW_POWER_DISARM_OFF,
 );
 
 typedef enum {
@@ -92,7 +92,7 @@ void vtxInit(void)
     }
 }
 
-static vtxSettingsConfig_t vtxGetSettings(void)
+STATIC_UNIT_TESTED vtxSettingsConfig_t vtxGetSettings(void)
 {
     vtxSettingsConfig_t settings = {
         .band = vtxSettingsConfig()->band,
@@ -104,14 +104,16 @@ static vtxSettingsConfig_t vtxGetSettings(void)
     };
 
 #if defined(VTX_SETTINGS_FREQCMD)
-    if (IS_RC_MODE_ACTIVE(BOXVTXPITMODE) && isModeActivationConditionPresent(BOXVTXPITMODE) && settings.pitModeFreq) {
+    if (IS_RC_MODE_ACTIVE(BOXVTXPITMODE) && settings.pitModeFreq) {
         settings.band = 0;
         settings.freq = settings.pitModeFreq;
         settings.power = VTX_SETTINGS_DEFAULT_POWER;
     }
 #endif
 
-    if (!ARMING_FLAG(ARMED) && settings.lowPowerDisarm && !failsafeIsActive()) {
+    if (!ARMING_FLAG(ARMED) && !failsafeIsActive() &&
+        (settings.lowPowerDisarm == VTX_LOW_POWER_DISARM_ALWAYS ||
+        (settings.lowPowerDisarm == VTX_LOW_POWER_DISARM_UNTIL_FIRST_ARM && !ARMING_FLAG(WAS_EVER_ARMED)))) {
         settings.power = VTX_SETTINGS_DEFAULT_POWER;
     }
 
@@ -166,13 +168,11 @@ static bool vtxProcessPower(vtxDevice_t *vtxDevice)
 
 static bool vtxProcessPitMode(vtxDevice_t *vtxDevice)
 {
-    uint8_t pitOnOff;
-
-    bool        currPmSwitchState;
     static bool prevPmSwitchState = false;
 
+    uint8_t pitOnOff;
     if (!ARMING_FLAG(ARMED) && vtxCommonGetPitMode(vtxDevice, &pitOnOff)) {
-        currPmSwitchState = IS_RC_MODE_ACTIVE(BOXVTXPITMODE);
+        bool currPmSwitchState = IS_RC_MODE_ACTIVE(BOXVTXPITMODE);
 
         if (currPmSwitchState != prevPmSwitchState) {
             prevPmSwitchState = currPmSwitchState;
@@ -183,20 +183,21 @@ static bool vtxProcessPitMode(vtxDevice_t *vtxDevice)
                     return false;
                 }
 #endif
-                if (isModeActivationConditionPresent(BOXVTXPITMODE)) {
-                    if (!pitOnOff) {
-                        vtxCommonSetPitMode(vtxDevice, true);
-                        return true;
-                    }
+                if (!pitOnOff) {
+                    vtxCommonSetPitMode(vtxDevice, true);
+
+                    return true;
                 }
             } else {
                 if (pitOnOff) {
                     vtxCommonSetPitMode(vtxDevice, false);
+
                     return true;
                 }
             }
         }
     }
+
     return false;
 }
 

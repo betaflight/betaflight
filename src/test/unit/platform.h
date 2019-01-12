@@ -108,6 +108,9 @@ typedef struct
 #define WS2811_DMA_HANDLER_IDENTIFER 0
 #define NVIC_PriorityGroup_2 0x500
 
+#define MCU_TYPE_ID   99
+#define MCU_TYPE_NAME "UNIT_TEST"
+
 #include "target.h"
 
 #include "target/common_defaults_post.h"

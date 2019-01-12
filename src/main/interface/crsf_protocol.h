@@ -92,6 +92,9 @@ enum {
     CRSF_FRAME_ORIGIN_DEST_SIZE = 2,
 };
 
+// Clashes with CRSF_ADDRESS_FLIGHT_CONTROLLER
+#define CRSF_SYNC_BYTE 0XC8
+
 typedef enum {
     CRSF_ADDRESS_BROADCAST = 0x00,
     CRSF_ADDRESS_USB = 0x10,

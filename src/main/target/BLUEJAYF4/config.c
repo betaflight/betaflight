@@ -40,6 +40,9 @@
 
 #include "hardware_revision.h"
 
+// BEEPER_OPT will be handled by post-flash configuration
+#define BEEPER_OPT              PB7
+
 // alternative defaults settings for BlueJayF4 targets
 void targetConfiguration(void)
 {

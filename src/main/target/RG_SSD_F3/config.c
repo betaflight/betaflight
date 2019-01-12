@@ -30,6 +30,6 @@
 
 void targetConfiguration(void)
 {
-    batteryConfigMutable()->vbatmaxcellvoltage = 45;
+    batteryConfigMutable()->vbatmaxcellvoltage = 450;
 }
 #endif

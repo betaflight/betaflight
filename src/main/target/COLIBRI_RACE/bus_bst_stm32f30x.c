@@ -10,6 +10,8 @@
 
 #include "platform.h"
 
+#ifdef USE_BST
+
 #include "build/build_config.h"
 
 #include "drivers/nvic.h"
@@ -17,10 +19,9 @@
 #include "drivers/io_impl.h"
 #include "drivers/rcc.h"
 
+#include "bst.h"
 #include "bus_bst.h"
 
-
-#ifdef USE_BST
 #define NVIC_PRIO_BST_READ_DATA  NVIC_BUILD_PRIORITY(1, 1)
 
 #define BST_SHORT_TIMEOUT        ((uint32_t)0x1000)

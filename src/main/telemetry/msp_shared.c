@@ -31,6 +31,7 @@
 #include "common/utils.h"
 
 #include "interface/msp.h"
+#include "interface/msp_protocol.h"
 
 #include "telemetry/crsf.h"
 #include "telemetry/msp_shared.h"
@@ -43,6 +44,8 @@
 #define TELEMETRY_MSP_START_FLAG (1 << 4)
 #define TELEMETRY_MSP_SEQ_MASK   0x0F
 #define TELEMETRY_MSP_RES_ERROR (-10)
+
+#define TELEMETRY_REQUEST_SKIPS_AFTER_EEPROMWRITE 5
 
 enum {
     TELEMETRY_MSP_VER_MISMATCH=0,
@@ -98,7 +101,7 @@ void sendMspErrorResponse(uint8_t error, int16_t cmd)
     sbufSwitchToReader(&mspPackage.responsePacket->buf, mspPackage.responseBuffer);
 }
 
-bool handleMspFrame(uint8_t *frameStart, int frameLength)
+bool handleMspFrame(uint8_t *frameStart, int frameLength, uint8_t *skipsBeforeResponse)
 {
     static uint8_t mspStarted = 0;
     static uint8_t lastSeq = 0;
@@ -170,6 +173,11 @@ bool handleMspFrame(uint8_t *frameStart, int frameLength)
         }
     }
 
+    // Skip a few telemetry requests if command is MSP_EEPROM_WRITE
+    if (packet->cmd == MSP_EEPROM_WRITE && skipsBeforeResponse) {
+        *skipsBeforeResponse = TELEMETRY_REQUEST_SKIPS_AFTER_EEPROMWRITE;
+    }
+    
     mspStarted = 0;
     sbufSwitchToReader(rxBuf, mspPackage.requestBuffer);
     processMspPacket();

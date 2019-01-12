@@ -41,21 +41,19 @@
 #define USE_GYRO_SPI_MPU6500
 #define USE_GYRO_SPI_MPU6000
 
-#define MPU6500_CS_PIN          PB12
-#define MPU6500_SPI_INSTANCE    SPI2
-
-#define MPU6000_CS_PIN          PB12
-#define MPU6000_SPI_INSTANCE    SPI2
+#define GYRO_1_CS_PIN           PB12
+#define GYRO_1_SPI_INSTANCE     SPI2
 
 #define USE_EXTI
-#define MPU_INT_EXTI            PA8
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PA8
 #define USE_MPU_DATA_READY_SIGNAL
 
 #define USE_BARO
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
-#define BMP280_SPI_INSTANCE     SPI2
-#define BMP280_CS_PIN           PA9
+#define BARO_SPI_INSTANCE       SPI2
+#define BARO_CS_PIN             PA9
 
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI2
@@ -86,7 +84,7 @@
 #define SERIAL_PORT_COUNT       5 //VCP, USART1, USART2, SOFTSERIAL1, SOFTSERIAL2
 
 #define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PPM
+#define ESCSERIAL_TIMER_TX_PIN  PB10
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1

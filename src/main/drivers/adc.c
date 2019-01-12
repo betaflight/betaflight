@@ -44,7 +44,7 @@ volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
 #ifdef USE_ADC_INTERNAL
 uint16_t adcTSCAL1;
 uint16_t adcTSCAL2;
-uint16_t adcTSSlopeK;
+int16_t  adcTSSlopeK;
 uint16_t adcVREFINTCAL;
 #endif
 

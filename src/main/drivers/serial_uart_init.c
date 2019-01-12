@@ -34,6 +34,8 @@
 
 #include "platform.h"
 
+#ifdef USE_UART
+
 #include "build/build_config.h"
 
 #include "common/utils.h"
@@ -245,3 +247,4 @@ serialPort_t *uartOpen(UARTDevice_e device, serialReceiveCallbackPtr rxCallback,
 
     return (serialPort_t *)s;
 }
+#endif

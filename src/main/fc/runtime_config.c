@@ -53,7 +53,8 @@ const char *armingDisableFlagNames[]= {
     "MSP",
     "PARALYZE",
     "GPS",
-    "ARMSWITCH"
+    "RESCUE SW",
+    "ARMSWITCH",
 };
 
 static armingDisableFlags_e armingDisableFlags = 0;

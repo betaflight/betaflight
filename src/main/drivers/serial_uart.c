@@ -30,6 +30,8 @@
 
 #include "platform.h"
 
+#ifdef USE_UART
+
 #include "build/build_config.h"
 #include "build/atomic.h"
 
@@ -355,4 +357,5 @@ void UART8_IRQHandler(void)
     uartPort_t *s = &(uartDevmap[UARTDEV_8]->port);
     uartIrqHandler(s);
 }
+#endif
 #endif

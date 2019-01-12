@@ -200,6 +200,7 @@ int crsfDisplayPortNextRow(void)
 
 displayPort_t *displayPortCrsfInit()
 {
+    crsfDisplayPortSetDimensions(CRSF_DISPLAY_PORT_ROWS_MAX, CRSF_DISPLAY_PORT_COLS_MAX);
     displayInit(&crsfDisplayPort, &crsfDisplayPortVTable);
     return &crsfDisplayPort;
 }

@@ -122,7 +122,7 @@ static void cmsx_Blackbox_GetDeviceStatus(void)
     case BLACKBOX_DEVICE_FLASH:
         unit = "KB";
 
-        storageDeviceIsWorking = flashfsIsReady();
+        storageDeviceIsWorking = flashfsIsSupported();
         if (storageDeviceIsWorking) {
             tfp_sprintf(cmsx_BlackboxStatus, "READY");
 
@@ -149,6 +149,10 @@ static void cmsx_Blackbox_GetDeviceStatus(void)
 static long cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
 {
     UNUSED(ptr);
+
+    if (!flashfsIsSupported()) {
+        return 0;
+    }
 
     displayClearScreen(pDisplay);
     displayWrite(pDisplay, 5, 3, "ERASING FLASH...");

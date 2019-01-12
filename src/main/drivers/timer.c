@@ -783,17 +783,6 @@ void timerInit(void)
         RCC_ClockCmd(timerRCC(timerHardware[i].tim), ENABLE);
     }
 
-#if defined(STM32F3) || defined(STM32F4)
-    for (unsigned timerIndex = 0; timerIndex < USABLE_TIMER_CHANNEL_COUNT; timerIndex++) {
-        const timerHardware_t *timerHardwarePtr = &timerHardware[timerIndex];
-        if (timerHardwarePtr->usageFlags == TIM_USE_NONE) {
-            continue;
-        }
-        // XXX IOConfigGPIOAF in timerInit should eventually go away.
-        IOConfigGPIOAF(IOGetByTag(timerHardwarePtr->tag), IOCFG_AF_PP, timerHardwarePtr->alternateFunction);
-    }
-#endif
-
     // initialize timer channel structures
     for (unsigned i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
         timerChannelInfo[i].type = TYPE_FREE;

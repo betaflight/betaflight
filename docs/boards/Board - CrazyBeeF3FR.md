@@ -1,6 +1,6 @@
 # CrazyBee F3 FR
-![CrazyBee F3 FR front](CrazyBeeF3FRtop.jpg)
-![CrazyBee F3 FR back](CrazyBeeF3FRbottom.jpg)
+![CrazyBee F3 FR front](images/CrazyBeeF3FRtop.jpg)
+![CrazyBee F3 FR back](images/CrazyBeeF3FRbottom.jpg)
 
 ## Description
 CrazyBee F3 flight controller is a Highly integrated board for 1S Whoop brushless racing drone.

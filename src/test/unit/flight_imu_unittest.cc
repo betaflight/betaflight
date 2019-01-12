@@ -208,6 +208,7 @@ acc_t acc;
 mag_t mag;
 
 gpsSolutionData_t gpsSol;
+int16_t GPS_verticalSpeedInCmS;
 
 uint8_t debugMode;
 int16_t debug[DEBUG16_VALUE_COUNT];
@@ -243,4 +244,5 @@ void performBaroCalibrationCycle(void) {}
 int32_t baroCalculateAltitude(void) { return 0; }
 bool gyroGetAccumulationAverage(float *) { return false; }
 bool accGetAccumulationAverage(float *) { return false; }
+void mixerSetThrottleAngleCorrection(int) {};
 }

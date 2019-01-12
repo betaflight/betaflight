@@ -38,6 +38,7 @@
 #include "drivers/compass/compass_fake.h"
 #include "drivers/compass/compass_hmc5883l.h"
 #include "drivers/compass/compass_qmc5883l.h"
+#include "drivers/compass/compass_lis3mdl.h"
 #include "drivers/io.h"
 #include "drivers/light_led.h"
 
@@ -56,12 +57,6 @@
 magDev_t magDev;
 mag_t mag;                   // mag access functions
 
-#ifdef MAG_INT_EXTI
-#define COMPASS_INTERRUPT_TAG   IO_TAG(MAG_INT_EXTI)
-#else
-#define COMPASS_INTERRUPT_TAG   IO_TAG_NONE
-#endif
-
 PG_REGISTER_WITH_RESET_FN(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 1);
 
 void pgResetFn_compassConfig(compassConfig_t *compassConfig)
@@ -78,13 +73,8 @@ void pgResetFn_compassConfig(compassConfig_t *compassConfig)
 
 #if defined(USE_SPI) && (defined(USE_MAG_SPI_HMC5883) || defined(USE_MAG_SPI_AK8963))
     compassConfig->mag_bustype = BUSTYPE_SPI;
-#ifdef USE_MAG_SPI_HMC5883
-    compassConfig->mag_spi_device = SPI_DEV_TO_CFG(spiDeviceByInstance(HMC5883_SPI_INSTANCE));
-    compassConfig->mag_spi_csn = IO_TAG(HMC5883_CS_PIN);
-#else
-    compassConfig->mag_spi_device = SPI_DEV_TO_CFG(spiDeviceByInstance(AK8963_SPI_INSTANCE));
-    compassConfig->mag_spi_csn = IO_TAG(AK8963_CS_PIN);
-#endif
+    compassConfig->mag_spi_device = SPI_DEV_TO_CFG(spiDeviceByInstance(MAG_SPI_INSTANCE));
+    compassConfig->mag_spi_csn = IO_TAG(MAG_CS_PIN);
     compassConfig->mag_i2c_device = I2C_DEV_TO_CFG(I2CINVALID);
     compassConfig->mag_i2c_address = 0;
 #elif defined(USE_MAG_HMC5883) || defined(USE_MAG_QMC5883) || defined(USE_MAG_AK8975) || (defined(USE_MAG_AK8963) && !(defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250)))
@@ -107,13 +97,22 @@ void pgResetFn_compassConfig(compassConfig_t *compassConfig)
     compassConfig->mag_spi_device = SPI_DEV_TO_CFG(SPIINVALID);
     compassConfig->mag_spi_csn = IO_TAG_NONE;
 #endif
-    compassConfig->interruptTag = COMPASS_INTERRUPT_TAG;
+    compassConfig->interruptTag = IO_TAG(MAG_INT_EXTI);
 }
 
 #if defined(USE_MAG)
 
 static int16_t magADCRaw[XYZ_AXIS_COUNT];
 static uint8_t magInit = 0;
+
+void compassPreInit(void)
+{
+#ifdef USE_SPI
+    if (compassConfig()->mag_bustype == BUSTYPE_SPI) {
+        spiPreinitRegister(compassConfig()->mag_spi_csn, IOCFG_IPU, 1);
+    }
+#endif
+}
 
 #if !defined(SIMULATOR_BUILD)
 bool compassDetect(magDev_t *dev)
@@ -132,16 +131,23 @@ bool compassDetect(magDev_t *dev)
         busdev->bustype = BUSTYPE_I2C;
         busdev->busdev_u.i2c.device = I2C_CFG_TO_DEV(compassConfig()->mag_i2c_device);
         busdev->busdev_u.i2c.address = compassConfig()->mag_i2c_address;
-#endif
         break;
+#endif
 
 #ifdef USE_SPI
     case BUSTYPE_SPI:
-        busdev->bustype = BUSTYPE_SPI;
-        spiBusSetInstance(busdev, spiInstanceByDevice(SPI_CFG_TO_DEV(compassConfig()->mag_spi_device)));
-        busdev->busdev_u.spi.csnPin = IOGetByTag(compassConfig()->mag_spi_csn);
-#endif
+        {
+            SPI_TypeDef *instance = spiInstanceByDevice(SPI_CFG_TO_DEV(compassConfig()->mag_spi_device));
+            if (!instance) {
+                return false;
+            }
+      
+            busdev->bustype = BUSTYPE_SPI;
+            spiBusSetInstance(busdev, instance);
+            busdev->busdev_u.spi.csnPin = IOGetByTag(compassConfig()->mag_spi_csn);
+        }
         break;
+#endif
 
 #if defined(USE_MAG_AK8963) && (defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250))
     case BUSTYPE_MPU_SLAVE:
@@ -154,8 +160,8 @@ bool compassDetect(magDev_t *dev)
                 return false;
             }
         }
-#endif
         break;
+#endif
 
     default:
         return false;
@@ -170,7 +176,7 @@ bool compassDetect(magDev_t *dev)
     case MAG_HMC5883:
 #if defined(USE_MAG_HMC5883) || defined(USE_MAG_SPI_HMC5883)
         if (busdev->bustype == BUSTYPE_I2C) {
-                busdev->busdev_u.i2c.address = compassConfig()->mag_i2c_address;
+            busdev->busdev_u.i2c.address = compassConfig()->mag_i2c_address;
         }
 
         if (hmc5883lDetect(dev)) {
@@ -183,17 +189,17 @@ bool compassDetect(magDev_t *dev)
 #endif
         FALLTHROUGH;
 
-    case MAG_QMC5883:
-#ifdef USE_MAG_QMC5883
+    case MAG_LIS3MDL:
+#if defined(USE_MAG_LIS3MDL)
         if (busdev->bustype == BUSTYPE_I2C) {
-                busdev->busdev_u.i2c.address = compassConfig()->mag_i2c_address;
+            busdev->busdev_u.i2c.address = compassConfig()->mag_i2c_address;
         }
 
-        if (qmc5883lDetect(dev)) {
-#ifdef MAG_QMC5883L_ALIGN
-            dev->magAlign = MAG_QMC5883L_ALIGN;
+        if (lis3mdlDetect(dev)) {
+#ifdef MAG_LIS3MDL_ALIGN
+            dev->magAlign = MAG_LIS3MDL_ALIGN;
 #endif
-            magHardware = MAG_QMC5883;
+            magHardware = MAG_LIS3MDL;
             break;
         }
 #endif
@@ -202,7 +208,7 @@ bool compassDetect(magDev_t *dev)
     case MAG_AK8975:
 #ifdef USE_MAG_AK8975
         if (busdev->bustype == BUSTYPE_I2C) {
-                busdev->busdev_u.i2c.address = compassConfig()->mag_i2c_address;
+            busdev->busdev_u.i2c.address = compassConfig()->mag_i2c_address;
         }
 
         if (ak8975Detect(dev)) {
@@ -231,6 +237,22 @@ bool compassDetect(magDev_t *dev)
             dev->magAlign = MAG_AK8963_ALIGN;
 #endif
             magHardware = MAG_AK8963;
+            break;
+        }
+#endif
+        FALLTHROUGH;
+
+    case MAG_QMC5883:
+#ifdef USE_MAG_QMC5883
+        if (busdev->bustype == BUSTYPE_I2C) {
+            busdev->busdev_u.i2c.address = compassConfig()->mag_i2c_address;
+        }
+
+        if (qmc5883lDetect(dev)) {
+#ifdef MAG_QMC5883L_ALIGN
+            dev->magAlign = MAG_QMC5883L_ALIGN;
+#endif
+            magHardware = MAG_QMC5883;
             break;
         }
 #endif

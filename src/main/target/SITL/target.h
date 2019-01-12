@@ -33,7 +33,7 @@
 
 // use simulatior's attitude directly
 // disable this if wants to test AHRS algorithm
-#define SKIP_IMU_CALC
+#undef USE_IMU_CALC
 
 //#define SIMULATOR_ACC_SYNC
 //#define SIMULATOR_GYRO_SYNC
@@ -138,13 +138,9 @@
 
 #define DEFIO_NO_PORTS   // suppress 'no pins defined' warning
 
-#define WS2811_DMA_TC_FLAG (void *)1
-#define WS2811_DMA_HANDLER_IDENTIFER 0
-
-
 // belows are internal stuff
 
-uint32_t SystemCoreClock;
+extern uint32_t SystemCoreClock;
 
 #ifdef EEPROM_IN_RAM
 extern uint8_t eepromData[EEPROM_SIZE];

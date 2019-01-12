@@ -174,6 +174,8 @@ extern const uint8_t __pg_resetdata_end[];
     /**/
 #endif
 
+#define PG_ARRAY_ELEMENT_OFFSET(type, index, member) (index * sizeof(type) + offsetof(type, member))
+
 // Emit reset defaults for config.
 // Config must be registered with PG_REGISTER_<xxx>_WITH_RESET_TEMPLATE macro
 #define PG_RESET_TEMPLATE(_type, _name, ...)                            \

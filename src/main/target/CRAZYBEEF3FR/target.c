@@ -34,4 +34,6 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     // TIM2_UP, DMA1_CH2
     DEF_TIM(TIM2, CH4, PA3, TIM_USE_MOTOR, 0),
     DEF_TIM(TIM2, CH3, PA2, TIM_USE_MOTOR, 0),
+	DEF_TIM(TIM4, CH1, PB6, TIM_USE_MOTOR, 0), //PB6 for servo
+	DEF_TIM(TIM3, CH1, PB4, TIM_USE_LED,   0), //LED_STRIP
 };

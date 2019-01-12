@@ -25,6 +25,8 @@
 typedef struct sdioConfig_s {
     uint8_t clockBypass;
     uint8_t useCache;
+    uint8_t use4BitWidth;
+    int8_t dmaopt;
 } sdioConfig_t;
 
 PG_DECLARE(sdioConfig_t, sdioConfig);

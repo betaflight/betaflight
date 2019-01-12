@@ -24,7 +24,7 @@ The 'text + data' gives you the flash size, and the 'data + bss' is the (static)
 
 ## Commons features for all Flight Controllers
 
-The first file where the developers specify the features that are activated or not for a flight controller, is the `target/common_fc_pre.h`.
+The first file where the developers specify the features that are activated or not for a flight controller, is the `target/common_pre.h`.
 
 This file specifies the features enabled/disabled depending on the memory flash size of the flight controller, or other conditions.
 
@@ -98,9 +98,9 @@ After looking carefully to this file, you must know what features you want to di
 
 Each flight controller has it's own file to specify what features are enabled or disable only for it. Sometimes they have been disabled by space limitations, but other times it's for limited computing capacity or a bug, so enable it at your own risk. 
 
-This file is located in `target/[FLIGHT_CONTROLLER_NAME]/target.h` and it's loaded **after** the `target/common_fc_pre.h`. So any changes in this file will overwrite the default settings, so this file is the place where you must touch to create your custom firmware.
+This file is located in `target/[FLIGHT_CONTROLLER_NAME]/target.h` and it's loaded **after** the `target/common_pre.h`. So any changes in this file will overwrite the default settings, so this file is the place where you must touch to create your custom firmware.
 
-The first thing to do is to *#undef* all the features that we want to disable from the *common_fc_pre.h*. 
+The first thing to do is to *#undef* all the features that we want to disable from the *common_pre.h*. 
 
 For example, in a NAZE32, if we're using Serial RX, with a FlySky receiver (that uses de iBus protocol) and we don't have a led strip we will add all this *#undef* to the file.
 

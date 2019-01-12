@@ -33,7 +33,7 @@
 
 #include "platform.h"
 
-#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_IBUS)
+#if defined(USE_TELEMETRY_IBUS)
 
 #include "common/axis.h"
 

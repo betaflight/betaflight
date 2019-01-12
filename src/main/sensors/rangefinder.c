@@ -46,7 +46,7 @@
 
 #include "fc/config.h"
 #include "fc/runtime_config.h"
-#include "fc/fc_tasks.h"
+#include "fc/tasks.h"
 
 #include "sensors/sensors.h"
 #include "sensors/rangefinder.h"
@@ -77,13 +77,6 @@ PG_RESET_TEMPLATE(rangefinderConfig_t, rangefinderConfig,
 
 #ifdef USE_RANGEFINDER_HCSR04
 PG_REGISTER_WITH_RESET_TEMPLATE(sonarConfig_t, sonarConfig, PG_SONAR_CONFIG, 1);
-
-#ifndef RANGEFINDER_HCSR04_TRIGGER_PIN
-#define RANGEFINDER_HCSR04_TRIGGER_PIN NONE
-#endif
-#ifndef RANGEFINDER_HCSR04_ECHO_PIN
-#define RANGEFINDER_HCSR04_ECHO_PIN NONE
-#endif
 
 PG_RESET_TEMPLATE(sonarConfig_t, sonarConfig,
     .triggerTag = IO_TAG(RANGEFINDER_HCSR04_TRIGGER_PIN),

@@ -54,21 +54,19 @@
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
 #define USE_GYRO_SPI_MPU9250
-#define GYRO_MPU9250_ALIGN CW270_DEG
+#define GYRO_1_ALIGN       CW270_DEG
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6500
 #define USE_ACC_SPI_MPU9250
-#define ACC_MPU9250_ALIGN CW270_DEG
+#define ACC_1_ALIGN       CW270_DEG
 
-#define MPU9250_CS_PIN          PB12
-#define MPU9250_SPI_INSTANCE    SPI2
-
-#define MPU6500_CS_PIN          PB12
-#define MPU6500_SPI_INSTANCE    SPI2
+#define GYRO_1_CS_PIN           PB12
+#define GYRO_1_SPI_INSTANCE     SPI2
 
 #define USE_EXTI
-#define MPU_INT_EXTI PC13
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC13
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
@@ -118,6 +116,7 @@
 
 #define USE_ADC
 #define ADC_INSTANCE            ADC1
+#define ADC1_DMA_OPT            1  // DMA 2 Stream 4 Channel 0 (compat default)
 #define VBAT_ADC_PIN            PC0
 #define CURRENT_METER_ADC_PIN   PC3
 

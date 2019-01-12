@@ -53,11 +53,13 @@ typedef struct adcTagMap_s {
 typedef struct adcDevice_s {
     ADC_TypeDef* ADCx;
     rccPeriphTag_t rccADC;
+#if !defined(USE_DMA_SPEC)
 #if defined(STM32F4) || defined(STM32F7)
     DMA_Stream_TypeDef* DMAy_Streamx;
     uint32_t channel;
 #else
     DMA_Channel_TypeDef* DMAy_Channelx;
+#endif
 #endif
 #if defined(STM32F7)
     ADC_HandleTypeDef ADCHandle;

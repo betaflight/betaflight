@@ -37,6 +37,7 @@
 #include "flight/pid.h"
 
 #include "pg/beeper_dev.h"
+#include "pg/gyrodev.h"
 #include "pg/rx.h"
 
 #include "rx/rx.h"
@@ -60,6 +61,8 @@
 // alternative defaults settings for AlienFlight targets
 void targetConfiguration(void)
 {
+    gyroDeviceConfigMutable(0)->extiTag = selectMPUIntExtiConfigByHardwareRevision();
+
     /* depending on revision ... depends on the LEDs to be utilised. */
     if (hardwareRevision == AFF3_REV_2) {
         statusLedConfigMutable()->inversion = 0
@@ -101,7 +104,7 @@ void targetConfiguration(void)
         rxConfigMutable()->serialrx_inverted = true;
         serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(SERIALRX_UART)].functionMask = FUNCTION_TELEMETRY_FRSKY_HUB | FUNCTION_RX_SERIAL;
         telemetryConfigMutable()->telemetry_inverted = false;
-        featureSet(FEATURE_TELEMETRY);
+        featureEnable(FEATURE_TELEMETRY);
         beeperDevConfigMutable()->isOpenDrain = false;
         beeperDevConfigMutable()->isInverted = true;
         parseRcChannels("AETR1234", rxConfigMutable());

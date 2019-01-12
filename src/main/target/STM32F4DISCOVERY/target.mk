@@ -1,5 +1,5 @@
 F405_TARGETS    += $(TARGET)
-FEATURES        += VCP SDCARD MSC
+FEATURES        += VCP SDCARD_SPI MSC
 
 TARGET_SRC = \
             drivers/accgyro/accgyro_fake.c \

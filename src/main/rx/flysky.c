@@ -43,6 +43,7 @@
 #include "rx/flysky_defs.h"
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
+#include "rx/rx_spi_common.h"
 
 #include "sensors/battery.h"
 
@@ -121,9 +122,6 @@ static bool waitTx = false;
 static uint16_t errorRate = 0;
 static uint16_t rssi_dBm = 0;
 static uint8_t rfChannelMap[FLYSKY_FREQUENCY_COUNT] = {0};
-#ifdef USE_RX_FLYSKY_SPI_LED
-static IO_t flySkyLedPin;
-#endif /* USE_RX_FLYSKY_SPI_LED */
 
 
 static uint8_t getNextChannel (uint8_t step)
@@ -220,7 +218,7 @@ static void buildAndWriteTelemetry (uint8_t *packet)
     if (packet) {
         static uint8_t bytesToWrite = FLYSKY_2A_PAYLOAD_SIZE; // first time write full packet to buffer a7105
         flySky2ATelemetryPkt_t *telemertyPacket = (flySky2ATelemetryPkt_t*) packet;
-        uint16_t voltage = 10 * getBatteryVoltage();
+        uint16_t voltage = getBatteryVoltage();
 
         telemertyPacket->type = FLYSKY_2A_PACKET_TELEMETRY;
 
@@ -364,15 +362,7 @@ bool flySkyInit (const rxSpiConfig_t *rxSpiConfig, struct rxRuntimeConfig_s *rxR
         PG_RESET(flySkyConfig);
     }
 
-    IO_t bindPin = IOGetByTag(IO_TAG(BINDPLUG_PIN));
-    IOInit(bindPin, OWNER_RX_BIND, 0);
-    IOConfigGPIO(bindPin, IOCFG_IPU);
-#ifdef USE_RX_FLYSKY_SPI_LED	
-    flySkyLedPin = IOGetByTag(IO_TAG(RX_FLYSKY_SPI_LED_PIN));
-    IOInit(flySkyLedPin, OWNER_LED, 0); 
-    IOConfigGPIO(flySkyLedPin, IOCFG_OUT_PP);
-    IOLo(flySkyLedPin);
-#endif /* USE_RX_FLYSKY_SPI_LED */
+    rxSpiCommonIOInit(rxSpiConfig);
 
     uint8_t startRxChannel;
 
@@ -391,7 +381,7 @@ bool flySkyInit (const rxSpiConfig_t *rxSpiConfig, struct rxRuntimeConfig_s *rxR
         A7105Config(flySkyRegs, sizeof(flySkyRegs));
     }
 
-    if ( !IORead(bindPin) || flySkyConfig()->txId == 0) {
+    if (flySkyConfig()->txId == 0) {
         bound = false;
     } else {
         bound = true;
@@ -426,11 +416,6 @@ void flySkySetRcDataFromPayload (uint16_t *rcData, const uint8_t *payload)
 
 rx_spi_received_e flySkyDataReceived (uint8_t *payload)
 {
-#ifdef USE_RX_FLYSKY_SPI_LED
-    static uint16_t rxLossCount = 0;
-    static timeMs_t ledLastUpdate = 0;
-    static bool ledOn = false;
-#endif /* USE_RX_FLYSKY_SPI_LED */
     rx_spi_received_e result = RX_SPI_RECEIVED_NONE;
     uint32_t timeStamp;
 
@@ -458,29 +443,17 @@ rx_spi_received_e flySkyDataReceived (uint8_t *payload)
         waitTx = false;
     }
 
+    if (rxSpiCheckBindRequested(true)) {
+        bound = false;
+        txId = 0;
+        memset(rfChannelMap, 0, FLYSKY_FREQUENCY_COUNT);
+        uint8_t bindChannel = (protocol == RX_SPI_A7105_FLYSKY_2A) ? flySky2ABindChannels[0] : 0;
+        A7105WriteReg(A7105_0F_CHANNEL, bindChannel);
+    }
+
     if (bound) {
         checkTimeout();
-#ifdef USE_RX_FLYSKY_SPI_LED
-        if (result == RX_SPI_RECEIVED_DATA) {
-            rxLossCount = 0;
-            IOHi(flySkyLedPin);
-        } else {
-            if (rxLossCount  < RX_LOSS_COUNT) {
-                rxLossCount++;      
-            } else {
-                timeMs_t now = millis();
-                if (now - ledLastUpdate > INTERVAL_RX_LOSS_MS) {
-                    ledLastUpdate = now;
-                    if (ledOn) {
-                        IOLo(flySkyLedPin);
-                    } else {
-                        IOHi(flySkyLedPin);
-                    }
-                    ledOn = !ledOn;
-                }
-            }
-        }
-#endif /* USE_RX_FLYSKY_SPI_LED */
+        rxSpiLedBlinkRxLoss(result);
     } else {
         if ((micros() - timeLastBind) > BIND_TIMEOUT && rfChannelMap[0] != 0 && txId != 0) {
             result = RX_SPI_RECEIVED_BIND;
@@ -490,18 +463,7 @@ rx_spi_received_e flySkyDataReceived (uint8_t *payload)
             flySkyConfigMutable()->protocol = protocol;
             writeEEPROM();
         }
-#ifdef USE_RX_FLYSKY_SPI_LED
-        timeMs_t now = millis();
-        if (now - ledLastUpdate > INTERVAL_RX_BIND_MS) {
-            ledLastUpdate = now;
-            if (ledOn) {
-                IOLo(flySkyLedPin);
-            } else {
-                IOHi(flySkyLedPin);
-            }
-                ledOn = !ledOn;
-        }
-#endif /* USE_RX_FLYSKY_SPI_LED */
+        rxSpiLedBlinkBind();
     }
 
     return result;

@@ -57,6 +57,8 @@
 
 #define Q12 (1 << 12)
 
+#define HZ_TO_INTERVAL_US(x) (1000000 / (x))
+
 typedef int32_t fix12_t;
 
 typedef struct stdev_s
@@ -102,6 +104,7 @@ float devStandardDeviation(stdev_t *dev);
 float degreesToRadians(int16_t degrees);
 
 int scaleRange(int x, int srcFrom, int srcTo, int destFrom, int destTo);
+float scaleRangef(float x, float srcFrom, float srcTo, float destFrom, float destTo);
 
 void normalizeV(struct fp_vector *src, struct fp_vector *dest);
 

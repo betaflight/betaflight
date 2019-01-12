@@ -37,6 +37,9 @@ extern "C" {
 #include "gtest/gtest.h"
 
 extern "C" {
+
+PG_REGISTER(flight3DConfig_t, flight3DConfig, PG_MOTOR_3D_CONFIG, 0);
+
 boxBitmask_t rcModeActivationMask;
 int16_t debug[DEBUG16_VALUE_COUNT];
 uint8_t debugMode = 0;
@@ -186,11 +189,11 @@ bool rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadR
     return true;
 }
 
-bool feature(uint32_t) {
+bool featureIsEnabled(uint32_t) {
     return false;
 }
 
-void featureClear(uint32_t) {
+void featureDisable(uint32_t) {
 }
 
 bool rxMspFrameComplete(void)

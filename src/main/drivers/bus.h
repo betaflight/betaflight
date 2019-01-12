@@ -29,7 +29,8 @@ typedef enum {
     BUSTYPE_NONE = 0,
     BUSTYPE_I2C,
     BUSTYPE_SPI,
-    BUSTYPE_MPU_SLAVE // Slave I2C on SPI master
+    BUSTYPE_MPU_SLAVE, // Slave I2C on SPI master
+    BUSTYPE_GYRO_AUTO  // Only used by acc/gyro bus auto detection code
 } busType_e;
 
 typedef struct busDevice_s {

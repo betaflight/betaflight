@@ -21,7 +21,6 @@
 #pragma once
 
 #include "drivers/io_types.h"
-#include "io/ledstrip.h"
 
 #define WS2811_LED_STRIP_LENGTH    32
 #define WS2811_BITS_PER_LED        24
@@ -34,6 +33,12 @@
 
 #define WS2811_TIMER_MHZ           48
 #define WS2811_CARRIER_HZ          800000
+
+// Enumeration to match the string options defined in lookupLedStripFormatRGB in settings.c
+typedef enum {
+    LED_GRB,
+    LED_RGB
+} ledStripFormatRGB_e;
 
 void ws2811LedStripInit(ioTag_t ioTag);
 

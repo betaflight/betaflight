@@ -335,7 +335,6 @@ static int8_t SCSI_ReadFormatCapacity(uint8_t lun, uint8_t *params)
 static int8_t SCSI_ModeSense6 (uint8_t lun, uint8_t *params)
 {
   UNUSED(params);
-  UNUSED(lun);
   uint16_t len = 8 ;
   MSC_BOT_DataLen = len;
 
@@ -343,6 +342,11 @@ static int8_t SCSI_ModeSense6 (uint8_t lun, uint8_t *params)
   {
     len--;
     MSC_BOT_Data[len] = MSC_Mode_Sense6_data[len];
+  }
+
+  // set bit 7 of the device configuration byte to indicate write protection
+  if (USBD_STORAGE_fops->IsWriteProtected(lun) != 0) {
+    MSC_BOT_Data[2] = MSC_BOT_Data[2] | (1 << 7);
   }
   return 0;
 }
@@ -357,7 +361,6 @@ static int8_t SCSI_ModeSense6 (uint8_t lun, uint8_t *params)
 static int8_t SCSI_ModeSense10 (uint8_t lun, uint8_t *params)
 {
  UNUSED(params);
- UNUSED(lun);
  uint16_t len = 8;
 
  MSC_BOT_DataLen = len;
@@ -366,6 +369,11 @@ static int8_t SCSI_ModeSense10 (uint8_t lun, uint8_t *params)
   {
     len--;
     MSC_BOT_Data[len] = MSC_Mode_Sense10_data[len];
+  }
+
+  // set bit 7 of the device configuration byte to indicate write protection
+  if (USBD_STORAGE_fops->IsWriteProtected(lun) != 0) {
+    MSC_BOT_Data[3] = MSC_BOT_Data[3] | (1 << 7);
   }
   return 0;
 }

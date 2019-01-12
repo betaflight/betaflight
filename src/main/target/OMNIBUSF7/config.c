@@ -29,9 +29,14 @@
 
 #include "io/serial.h"
 
+#ifdef FPVM_BETAFLIGHTF7
+#define ESC_SENSOR_UART         SERIAL_PORT_USART1
+#elif defined(OMNIBUSF7V2)
+#define ESC_SENSOR_UART         SERIAL_PORT_USART7
+#endif
+
 static targetSerialPortFunction_t targetSerialPortFunction[] = {
-#if defined(OMNIBUSF7V2) && defined(ESC_SENSOR_UART)
-    // OMNIBUS F7 V2 has an option to connect UART7_RX to ESC telemetry
+#ifdef ESC_SENSOR_UART
     { ESC_SENSOR_UART, FUNCTION_ESC_SENSOR },
 #else
     { SERIAL_PORT_NONE, FUNCTION_NONE },

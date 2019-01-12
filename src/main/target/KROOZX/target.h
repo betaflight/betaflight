@@ -22,13 +22,11 @@
 
 #define TARGET_BOARD_IDENTIFIER "KROOZX"
 
-#define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 #define TARGET_XTAL_MHZ         16
 
 #define USBD_PRODUCT_STRING     "KroozX"
 
 #define USE_TARGET_CONFIG
-#define TARGET_PREINIT
 
 #define LED0_PIN                PA14 // Red LED
 #define LED1_PIN                PA13 // Green LED
@@ -39,21 +37,22 @@
 #define INVERTER_PIN_UART1      PB13
 #define INVERTER_PIN_UART6      PB12
 
-#define MPU6000_CS_PIN          PB2
-#define MPU6000_SPI_INSTANCE    SPI1
+#define GYRO_1_CS_PIN           PB2
+#define GYRO_1_SPI_INSTANCE     SPI1
 
 // MPU6000 interrupts
 #define USE_EXTI
 #define USE_MPU_DATA_READY_SIGNAL
-#define MPU_INT_EXTI            PA4
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PA4
 
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN      CW90_DEG
+#define GYRO_1_ALIGN            CW90_DEG
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
-#define ACC_MPU6000_ALIGN       CW270_DEG
+#define ACC_1_ALIGN             CW270_DEG
 
 #define USE_MAG
 #define USE_MAG_HMC5883
@@ -65,15 +64,12 @@
 #define USE_BARO_MS5611
 
 #define USE_SDCARD
+#define USE_SDCARD_SPI
 #define SDCARD_DETECT_INVERTED
 #define SDCARD_DETECT_PIN                   PC13
 #define SDCARD_SPI_INSTANCE                 SPI3
 #define SDCARD_SPI_CS_PIN                   PA15
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 328kHz
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     4 // 21MHz
-
-#define SDCARD_DMA_CHANNEL_TX               DMA1_Stream5
-#define SDCARD_DMA_CHANNEL                  0
+#define SPI3_TX_DMA_OPT                     0     // DMA 1 Stream 5 Channel 0
 
 #ifdef USE_MSP_DISPLAYPORT
 #undef USE_MSP_DISPLAYPORT
@@ -84,12 +80,11 @@
 #define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
-#define OSD_CH_SWITCH           PC5
-
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 #define USE_ADC
 #define ADC_INSTANCE            ADC1
+#define ADC1_DMA_OPT            1  // DMA 2 Stream 4 Channel 0 (compat default)
 #define VBAT_ADC_PIN            PC3
 #define CURRENT_METER_ADC_PIN   PC2
 #define RSSI_ADC_PIN            PC0

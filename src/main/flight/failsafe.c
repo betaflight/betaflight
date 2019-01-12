@@ -34,7 +34,7 @@
 #include "drivers/time.h"
 
 #include "fc/config.h"
-#include "fc/fc_core.h"
+#include "fc/core.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
@@ -71,6 +71,12 @@ PG_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig,
     .failsafe_switch_mode = 0,                       // default failsafe switch action is identical to rc link loss
     .failsafe_procedure = FAILSAFE_PROCEDURE_DROP_IT // default full failsafe procedure is 0: auto-landing
 );
+
+const char * const failsafeProcedureNames[FAILSAFE_PROCEDURE_COUNT] = {
+    "AUTO-LAND",
+    "DROP",
+    "GPS-RESCUE"
+};
 
 /*
  * Should called when the failsafe config needs to be changed - e.g. a different profile has been selected.

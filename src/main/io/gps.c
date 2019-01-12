@@ -77,10 +77,13 @@ static char *gpsPacketLogChar = gpsPacketLog;
 int32_t GPS_home[2];
 uint16_t GPS_distanceToHome;        // distance to home point in meters
 int16_t GPS_directionToHome;        // direction to home or hol point in degrees
+uint32_t GPS_distanceFlownInCm;     // distance flown since armed in centimeters
+int16_t GPS_verticalSpeedInCmS;     // vertical speed in cm/s
 float dTnav;             // Delta Time in milliseconds for navigation computations, updated with every good GPS read
-int16_t actual_speed[2] = { 0, 0 };
 int16_t nav_takeoff_bearing;
 navigationMode_e nav_mode = NAV_MODE_NONE;    // Navigation mode
+
+#define GPS_DISTANCE_FLOWN_MIN_GROUND_SPEED_THRESHOLD_CM_S 15 // 5.4Km/h 3.35mph
 
 // moving average filter variables
 #define GPS_FILTERING              1    // add a 5 element moving average filter to GPS coordinates, helps eliminate gps noise but adds latency
@@ -98,7 +101,7 @@ static uint16_t fraction3[2];
 gpsSolutionData_t gpsSol;
 uint32_t GPS_packetCount = 0;
 uint32_t GPS_svInfoReceivedCount = 0; // SV = Space Vehicle, counter increments each time SV info is received.
-uint8_t GPS_update = 0;             // it's a binary toggle to distinct a GPS position update
+uint8_t GPS_update = 0;             // toogle to distinct a GPS position update (directly or via MSP)
 
 uint8_t GPS_numCh;                          // Number of channels
 uint8_t GPS_svinfo_chn[GPS_SV_MAXSATS];     // Channel number
@@ -224,6 +227,7 @@ static const uint8_t ubloxGalileoInit[] = {
 typedef enum {
     GPS_UNKNOWN,
     GPS_INITIALIZING,
+    GPS_INITIALIZED,
     GPS_CHANGE_BAUD,
     GPS_CONFIGURE,
     GPS_RECEIVING_DATA,
@@ -240,7 +244,8 @@ PG_RESET_TEMPLATE(gpsConfig_t, gpsConfig,
     .sbasMode = SBAS_AUTO,
     .autoConfig = GPS_AUTOCONFIG_ON,
     .autoBaud = GPS_AUTOBAUD_OFF,
-    .gps_ublox_use_galileo = false
+    .gps_ublox_use_galileo = false,
+    .gps_set_home_point_once = false
 );
 
 static void shiftPacketLog(void)
@@ -280,10 +285,14 @@ void gpsInit(void)
     gpsSetState(GPS_UNKNOWN);
 
     gpsData.lastMessage = millis();
+    
+    if (gpsConfig()->provider == GPS_MSP) { // no serial ports used when GPS_MSP is configured
+        gpsSetState(GPS_INITIALIZED);
+        return;
+    }
 
     serialPortConfig_t *gpsPortConfig = findSerialPortConfig(FUNCTION_GPS);
     if (!gpsPortConfig) {
-        featureClear(FEATURE_GPS);
         return;
     }
 
@@ -305,7 +314,6 @@ void gpsInit(void)
     // no callback - buffer will be consumed in gpsUpdate()
     gpsPort = openSerialPort(gpsPortConfig->identifier, FUNCTION_GPS, NULL, NULL, baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex], mode, SERIAL_NOT_INVERTED);
     if (!gpsPort) {
-        featureClear(FEATURE_GPS);
         return;
     }
 
@@ -476,6 +484,8 @@ void gpsInitHardware(void)
         gpsInitUblox();
 #endif
         break;
+    default:
+        break;
     }
 }
 
@@ -494,10 +504,17 @@ void gpsUpdate(timeUs_t currentTimeUs)
     if (gpsPort) {
         while (serialRxBytesWaiting(gpsPort))
             gpsNewData(serialRead(gpsPort));
+    } else if (GPS_update & GPS_MSP_UPDATE) { // GPS data received via MSP
+        gpsSetState(GPS_RECEIVING_DATA);
+        gpsData.lastMessage = millis();
+        sensorsSet(SENSOR_GPS);
+        onGpsNewData();
+        GPS_update &= ~GPS_MSP_UPDATE;
     }
 
     switch (gpsData.state) {
         case GPS_UNKNOWN:
+        case GPS_INITIALIZED:
             break;
 
         case GPS_INITIALIZING:
@@ -531,8 +548,13 @@ void gpsUpdate(timeUs_t currentTimeUs)
     if (sensors(SENSOR_GPS)) {
         updateGpsIndicator(currentTimeUs);
     }
+    if (!ARMING_FLAG(ARMED) && !gpsConfig()->gps_set_home_point_once) {
+        DISABLE_STATE(GPS_FIX_HOME);
+    }
 #if defined(USE_GPS_RESCUE)
-    updateGPSRescueState();
+    if (gpsRescueIsConfigured()) {
+        updateGPSRescueState();
+    }
 #endif
 }
 
@@ -547,10 +569,7 @@ static void gpsNewData(uint16_t c)
     gpsData.lastMessage = millis();
     sensorsSet(SENSOR_GPS);
 
-    if (GPS_update == 1)
-        GPS_update = 0;
-    else
-        GPS_update = 1;
+    GPS_update ^= GPS_DIRECT_TICK;
 
 #if 0
     debug[3] = GPS_update;
@@ -572,10 +591,17 @@ bool gpsNewFrame(uint8_t c)
         return gpsNewFrameUBLOX(c);
 #endif
         break;
+    default:
+        break;
     }
     return false;
 }
 
+// Check for healthy communications
+bool gpsIsHealthy()
+{
+    return (gpsData.state == GPS_RECEIVING_DATA);
+}
 
 /* This is a light implementation of a GPS frame decoding
    This should work with most of modern GPS devices configured to output 5 frames.
@@ -673,7 +699,7 @@ typedef struct gpsDataNmea_s {
     int32_t latitude;
     int32_t longitude;
     uint8_t numSat;
-    int32_t altitude;
+    int32_t altitudeCm;
     uint16_t speed;
     uint16_t hdop;
     uint16_t ground_course;
@@ -703,12 +729,13 @@ static bool gpsNewFrameNMEA(char c)
             string[offset] = 0;
             if (param == 0) {       //frame identification
                 gps_frame = NO_FRAME;
-                if (string[0] == 'G' && string[1] == 'P' && string[2] == 'G' && string[3] == 'G' && string[4] == 'A')
+                if (0 == strcmp(string, "GPGGA") || 0 == strcmp(string, "GNGGA")) {
                     gps_frame = FRAME_GGA;
-                if (string[0] == 'G' && string[1] == 'P' && string[2] == 'R' && string[3] == 'M' && string[4] == 'C')
+                } else if (0 == strcmp(string, "GPRMC") || 0 == strcmp(string, "GNRMC")) {
                     gps_frame = FRAME_RMC;
-                if (string[0] == 'G' && string[1] == 'P' && string[2] == 'G' && string[3] == 'S' && string[4] == 'V')
+                } else if (0 == strcmp(string, "GPGSV")) {
                     gps_frame = FRAME_GSV;
+                }
             }
 
             switch (gps_frame) {
@@ -744,7 +771,7 @@ static bool gpsNewFrameNMEA(char c)
                             gps_Msg.hdop = grab_fields(string, 1) * 100;          // hdop
                             break;
                         case 9:
-                            gps_Msg.altitude = grab_fields(string, 1) * 10;     // altitude in centimeters. Note: NMEA delivers altitude with 1 or 3 decimals. It's safer to cut at 0.1m and multiply by 10
+                            gps_Msg.altitudeCm = grab_fields(string, 1) * 10;     // altitude in centimeters. Note: NMEA delivers altitude with 1 or 3 decimals. It's safer to cut at 0.1m and multiply by 10
                             break;
                     }
                     break;
@@ -835,7 +862,7 @@ static bool gpsNewFrameNMEA(char c)
                             gpsSol.llh.lat = gps_Msg.latitude;
                             gpsSol.llh.lon = gps_Msg.longitude;
                             gpsSol.numSat = gps_Msg.numSat;
-                            gpsSol.llh.alt = gps_Msg.altitude;
+                            gpsSol.llh.altCm = gps_Msg.altitudeCm;
                             gpsSol.hdop = gps_Msg.hdop;
                         }
                         break;
@@ -890,7 +917,7 @@ typedef struct {
     int32_t longitude;
     int32_t latitude;
     int32_t altitude_ellipsoid;
-    int32_t altitude_msl;
+    int32_t altitudeMslMm;
     uint32_t horizontal_accuracy;
     uint32_t vertical_accuracy;
 } ubx_nav_posllh;
@@ -1059,7 +1086,7 @@ static bool UBLOX_parse_gps(void)
         //i2c_dataset.time                = _buffer.posllh.time;
         gpsSol.llh.lon = _buffer.posllh.longitude;
         gpsSol.llh.lat = _buffer.posllh.latitude;
-        gpsSol.llh.alt = _buffer.posllh.altitude_msl / 10;  //alt in cm
+        gpsSol.llh.altCm = _buffer.posllh.altitudeMslMm / 10;  //alt in cm
         if (next_fix) {
             ENABLE_STATE(GPS_FIX);
         } else {
@@ -1213,7 +1240,7 @@ static void gpsHandlePassthrough(uint8_t data)
 {
      gpsNewData(data);
  #ifdef USE_DASHBOARD
-     if (feature(FEATURE_DASHBOARD)) {
+     if (featureIsEnabled(FEATURE_DASHBOARD)) {
          dashboardUpdate(micros());
      }
  #endif
@@ -1229,7 +1256,7 @@ void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
         serialSetMode(gpsPort, gpsPort->mode | MODE_TX);
 
 #ifdef USE_DASHBOARD
-    if (feature(FEATURE_DASHBOARD)) {
+    if (featureIsEnabled(FEATURE_DASHBOARD)) {
         dashboardShowFixedPage(PAGE_GPS);
     }
 #endif
@@ -1245,16 +1272,52 @@ void GPS_calc_longitude_scaling(int32_t lat)
     GPS_scaleLonDown = cos_approx(rads);
 }
 
+////////////////////////////////////////////////////////////////////////////////////
+// Calculate the distance flown and vertical speed from gps position data
+//
+static void GPS_calculateDistanceFlownVerticalSpeed(bool initialize)
+{
+    static int32_t lastCoord[2] = { 0, 0 };
+    static int16_t lastAlt;
+    static int32_t lastMillis;
+
+    int currentMillis = millis();
+
+    if (initialize) {
+        GPS_distanceFlownInCm = 0;
+        GPS_verticalSpeedInCmS = 0;
+    } else {
+        if (STATE(GPS_FIX_HOME) && ARMING_FLAG(ARMED)) {
+            // Only add up movement when speed is faster than minimum threshold
+            if (gpsSol.groundSpeed > GPS_DISTANCE_FLOWN_MIN_GROUND_SPEED_THRESHOLD_CM_S) {
+                uint32_t dist;
+                int32_t dir;
+                GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &lastCoord[LAT], &lastCoord[LON], &dist, &dir);
+                GPS_distanceFlownInCm += dist;
+            }
+        }
+
+        GPS_verticalSpeedInCmS = (gpsSol.llh.altCm - lastAlt) * 1000 / (currentMillis - lastMillis);
+        GPS_verticalSpeedInCmS = constrain(GPS_verticalSpeedInCmS, -1500.0f, 1500.0f);
+    }
+    lastCoord[LON] = gpsSol.llh.lon;
+    lastCoord[LAT] = gpsSol.llh.lat;
+    lastAlt = gpsSol.llh.altCm;
+    lastMillis = currentMillis;
+}
 
 void GPS_reset_home_position(void)
 {
-    if (STATE(GPS_FIX) && gpsSol.numSat >= 5) {
-        GPS_home[LAT] = gpsSol.llh.lat;
-        GPS_home[LON] = gpsSol.llh.lon;
-        GPS_calc_longitude_scaling(gpsSol.llh.lat); // need an initial value for distance and bearing calc
-        // Set ground altitude
-        ENABLE_STATE(GPS_FIX_HOME);
+    if (!STATE(GPS_FIX_HOME) || !gpsConfig()->gps_set_home_point_once) {
+        if (STATE(GPS_FIX) && gpsSol.numSat >= 5) {
+            GPS_home[LAT] = gpsSol.llh.lat;
+            GPS_home[LON] = gpsSol.llh.lon;
+            GPS_calc_longitude_scaling(gpsSol.llh.lat); // need an initial value for distance and bearing calc
+            // Set ground altitude
+            ENABLE_STATE(GPS_FIX_HOME);
+        }
     }
+    GPS_calculateDistanceFlownVerticalSpeed(true); //Initialize
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -1287,43 +1350,11 @@ void GPS_calculateDistanceAndDirectionToHome(void)
     }
 }
 
-////////////////////////////////////////////////////////////////////////////////////
-// Calculate our current speed vector from gps position data
-//
-static void GPS_calc_velocity(void)
-{
-    static int16_t speed_old[2] = { 0, 0 };
-    static int32_t last_coord[2] = { 0, 0 };
-    static uint8_t init = 0;
-
-    if (init) {
-        float tmp = 1.0f / dTnav;
-        actual_speed[GPS_X] = (float)(gpsSol.llh.lon - last_coord[LON]) * GPS_scaleLonDown * tmp;
-        actual_speed[GPS_Y] = (float)(gpsSol.llh.lat - last_coord[LAT]) * tmp;
-
-        actual_speed[GPS_X] = (actual_speed[GPS_X] + speed_old[GPS_X]) / 2;
-        actual_speed[GPS_Y] = (actual_speed[GPS_Y] + speed_old[GPS_Y]) / 2;
-
-        speed_old[GPS_X] = actual_speed[GPS_X];
-        speed_old[GPS_Y] = actual_speed[GPS_Y];
-    }
-    init = 1;
-
-    last_coord[LON] = gpsSol.llh.lon;
-    last_coord[LAT] = gpsSol.llh.lat;
-}
-
 void onGpsNewData(void)
 {
     if (!(STATE(GPS_FIX) && gpsSol.numSat >= 5)) {
         return;
     }
-
-    if (!ARMING_FLAG(ARMED))
-        DISABLE_STATE(GPS_FIX_HOME);
-
-    if (!STATE(GPS_FIX_HOME) && ARMING_FLAG(ARMED))
-        GPS_reset_home_position();
 
     // Apply moving average filter to GPS data
 #if defined(GPS_FILTERING)
@@ -1363,8 +1394,9 @@ void onGpsNewData(void)
     dTnav = MIN(dTnav, 1.0f);
 
     GPS_calculateDistanceAndDirectionToHome();
-    // calculate the current velocity based on gps coordinates continously to get a valid speed at the moment when we start navigating
-    GPS_calc_velocity();
+    if (ARMING_FLAG(ARMED)) {
+        GPS_calculateDistanceFlownVerticalSpeed(false);
+    }
 
 #ifdef USE_GPS_RESCUE
     rescueNewGpsData();

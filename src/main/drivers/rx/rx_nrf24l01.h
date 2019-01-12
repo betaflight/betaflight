@@ -179,20 +179,20 @@ enum {
 };
 
 void NRF24L01_Initialize(uint8_t baseConfig);
-uint8_t NRF24L01_WriteReg(uint8_t reg, uint8_t data);
-uint8_t NRF24L01_WriteRegisterMulti(uint8_t reg, const uint8_t *data, uint8_t length);
-uint8_t NRF24L01_WritePayload(const uint8_t *data, uint8_t length);
-uint8_t NRF24L01_WriteAckPayload(const uint8_t *data, uint8_t length, uint8_t pipe);
+void NRF24L01_WriteReg(uint8_t reg, uint8_t data);
+void NRF24L01_WriteRegisterMulti(uint8_t reg, const uint8_t *data, uint8_t length);
+void NRF24L01_WritePayload(const uint8_t *data, uint8_t length);
+void NRF24L01_WriteAckPayload(const uint8_t *data, uint8_t length, uint8_t pipe);
 uint8_t NRF24L01_ReadReg(uint8_t reg);
-uint8_t NRF24L01_ReadRegisterMulti(uint8_t reg, uint8_t *data, uint8_t length);
-uint8_t NRF24L01_ReadPayload(uint8_t *data, uint8_t length);
+void NRF24L01_ReadRegisterMulti(uint8_t reg, uint8_t *data, uint8_t length);
+void NRF24L01_ReadPayload(uint8_t *data, uint8_t length);
 
 
 // Utility functions
 
 void NRF24L01_FlushTx(void);
 void NRF24L01_FlushRx(void);
-uint8_t NRF24L01_Activate(uint8_t code);
+void NRF24L01_Activate(uint8_t code);
 
 void NRF24L01_SetupBasic(void);
 void NRF24L01_SetStandbyMode(void);

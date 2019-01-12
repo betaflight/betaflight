@@ -41,7 +41,7 @@ enum {
     INPUT_GIMBAL_PITCH,
     INPUT_GIMBAL_ROLL,
     INPUT_SOURCE_COUNT
-} inputSource_e;
+};
 
 // target servo channels
 typedef enum {

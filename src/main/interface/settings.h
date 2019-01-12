@@ -52,7 +52,7 @@ typedef enum {
     TABLE_RX_SPI,
 #endif
     TABLE_GYRO_HARDWARE_LPF,
-#ifdef USE_32K_CAPABLE_GYRO
+#if defined(USE_32K_CAPABLE_GYRO) && defined(USE_GYRO_DLPF_EXPERIMENTAL)
     TABLE_GYRO_32KHZ_HARDWARE_LPF,
 #endif
     TABLE_ACC_HARDWARE,
@@ -68,6 +68,7 @@ typedef enum {
     TABLE_RC_INTERPOLATION_CHANNELS,
     TABLE_LOWPASS_TYPE,
     TABLE_DTERM_LOWPASS_TYPE,
+    TABLE_ANTI_GRAVITY_MODE,
     TABLE_FAILSAFE,
     TABLE_FAILSAFE_SWITCH_MODE,
     TABLE_CRASH_RECOVERY,
@@ -77,6 +78,9 @@ typedef enum {
     TABLE_BUS_TYPE,
 #ifdef USE_MAX7456
     TABLE_MAX7456_CLOCK,
+#endif
+#ifdef USE_RX_FRSKY_SPI
+    TABLE_RX_FRSKY_SPI_A1_SOURCE,
 #endif
 #ifdef USE_RANGEFINDER
     TABLE_RANGEFINDER_HARDWARE,
@@ -91,7 +95,7 @@ typedef enum {
 #ifdef USE_LED_STRIP
     TABLE_RGB_GRB,
 #endif
-#ifdef USE_DUAL_GYRO
+#ifdef USE_MULTI_GYRO
     TABLE_GYRO,
 #endif
     TABLE_THROTTLE_LIMIT_TYPE,
@@ -111,6 +115,22 @@ typedef enum {
     TABLE_RC_SMOOTHING_INPUT_TYPE,
     TABLE_RC_SMOOTHING_DERIVATIVE_TYPE,
 #endif // USE_RC_SMOOTHING_FILTER
+#ifdef USE_GYRO_DATA_ANALYSE
+    TABLE_DYNAMIC_FILTER_RANGE,
+#endif // USE_GYRO_DATA_ANALYSE
+#ifdef USE_VTX_COMMON
+    TABLE_VTX_LOW_POWER_DISARM,
+#endif
+    TABLE_GYRO_HARDWARE,
+#ifdef USE_SDCARD
+    TABLE_SDCARD_MODE,
+#endif
+#ifdef USE_LAUNCH_CONTROL
+    TABLE_LAUNCH_CONTROL_MODE,
+#endif
+#ifdef USE_TPA_MODE
+    TABLE_TPA_MODE,
+#endif
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 
@@ -163,10 +183,11 @@ typedef struct cliArrayLengthConfig_s {
 } cliArrayLengthConfig_t;
 
 typedef union {
-    cliLookupTableConfig_t lookup;
-    cliMinMaxConfig_t minmax;
-    cliArrayLengthConfig_t array;
-    uint8_t bitpos;
+    cliLookupTableConfig_t lookup;  // used for MODE_LOOKUP excl. VAR_UINT32
+    cliMinMaxConfig_t minmax;       // used for MODE_DIRECT
+    cliArrayLengthConfig_t array;   // used for MODE_ARRAY
+    uint8_t bitpos;                 // used for MODE_BITSET
+    uint32_t u32_max;               // used for MODE_DIRECT with VAR_UINT32
 } cliValueConfig_t;
 
 typedef struct clivalue_s {

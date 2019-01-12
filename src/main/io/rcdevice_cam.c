@@ -25,7 +25,7 @@
 
 #include "pg/rx.h"
 
-#include "drivers/time.h"
+#include "common/time.h"
 
 #include "cms/cms.h"
 
@@ -129,25 +129,23 @@ static void rcdeviceCameraControlProcess(void)
 
 static void rcdeviceSimulationOSDCableFailed(rcdeviceResponseParseContext_t *ctx)
 {
+    waitingDeviceResponse = false;
     if (ctx->command == RCDEVICE_PROTOCOL_COMMAND_5KEY_CONNECTION) {
         uint8_t operationID = ctx->paramData[0];
         if (operationID == RCDEVICE_PROTOCOL_5KEY_CONNECTION_CLOSE) {
-            waitingDeviceResponse = false;
             return;
         }
-    } else {
-        rcdeviceInMenu = false;
-        waitingDeviceResponse = false;
-    }
+    } 
 }
 
 static void rcdeviceSimulationRespHandle(rcdeviceResponseParseContext_t *ctx)
 {
     if (ctx->result != RCDEVICE_RESP_SUCCESS) {
         rcdeviceSimulationOSDCableFailed(ctx);
+        waitingDeviceResponse = false;
         return;
     }
-    
+
     switch (ctx->command) {
     case RCDEVICE_PROTOCOL_COMMAND_5KEY_SIMULATION_RELEASE:
         isButtonPressed = false;
@@ -156,6 +154,7 @@ static void rcdeviceSimulationRespHandle(rcdeviceResponseParseContext_t *ctx)
     {
         // the high 4 bits is the operationID that we sent
         // the low 4 bits is the result code
+        isButtonPressed = true;
         uint8_t operationID = ctx->paramData[0];
         bool errorCode = (ctx->recvBuf[1] & 0x0F);
         if (operationID == RCDEVICE_PROTOCOL_5KEY_CONNECTION_OPEN) {
@@ -163,7 +162,6 @@ static void rcdeviceSimulationRespHandle(rcdeviceResponseParseContext_t *ctx)
                 rcdeviceInMenu = true;
                 beeper(BEEPER_CAM_CONNECTION_OPEN);
             } else {
-                rcdeviceInMenu = false;
                 beeper(BEEPER_CAM_CONNECTION_CLOSE);
             }
         } else if (operationID == RCDEVICE_PROTOCOL_5KEY_CONNECTION_CLOSE) {
@@ -249,21 +247,19 @@ static void rcdevice5KeySimulationProcess(timeUs_t currentTimeUs)
         return;
     }
 
-    if (waitingDeviceResponse) {
-        return;
-    }
-
     if (isButtonPressed) {
         if (IS_MID(YAW) && IS_MID(PITCH) && IS_MID(ROLL)) {
-            if (rcdeviceIs5KeyEnabled()) {
-                rcdeviceSend5KeyOSDCableSimualtionEvent(RCDEVICE_CAM_KEY_RELEASE);
-                waitingDeviceResponse = true;
-            }
+            rcdeviceSend5KeyOSDCableSimualtionEvent(RCDEVICE_CAM_KEY_RELEASE);
+            waitingDeviceResponse = true;
         }
     } else {
+        if (waitingDeviceResponse) {
+            return;
+        }
+
         rcdeviceCamSimulationKeyEvent_e key = RCDEVICE_CAM_KEY_NONE;
 
-        if (IS_MID(THROTTLE) && IS_MID(ROLL) && IS_MID(PITCH) && IS_LO(YAW)) { // Disconnect HI YAW
+        if (IS_MID(THROTTLE) && IS_MID(ROLL) && IS_MID(PITCH) && IS_LO(YAW)) { // Disconnect Lo YAW
             if (rcdeviceInMenu) {
                 key = RCDEVICE_CAM_KEY_CONNECTION_CLOSE;
             }
@@ -288,10 +284,9 @@ static void rcdevice5KeySimulationProcess(timeUs_t currentTimeUs)
         }
 
         if (key != RCDEVICE_CAM_KEY_NONE) {
-            if (rcdeviceIs5KeyEnabled()) {
-                rcdeviceSend5KeyOSDCableSimualtionEvent(key);
-                waitingDeviceResponse = true;
-            }
+            rcdeviceSend5KeyOSDCableSimualtionEvent(key);
+            isButtonPressed = true;
+            waitingDeviceResponse = true;
         }
     }
 }
@@ -299,9 +294,12 @@ static void rcdevice5KeySimulationProcess(timeUs_t currentTimeUs)
 void rcdeviceUpdate(timeUs_t currentTimeUs)
 {
     rcdeviceReceive(currentTimeUs);
-    
+
     rcdeviceCameraControlProcess();
-    rcdevice5KeySimulationProcess(currentTimeUs);
+
+    if (rcdeviceIs5KeyEnabled()) {
+        rcdevice5KeySimulationProcess(currentTimeUs);
+    }
 }
 
 void rcdeviceInit(void)

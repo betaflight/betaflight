@@ -23,7 +23,8 @@
  * Dominic Clifton/Hydra
  * Carsten Giesen
  * Adam Majerczyk (majerczyk.adam@gmail.com)
- * Texmode add-on by Michi (mamaretti32@gmail.com)
+ * Textmode add-on by Michi (mamaretti32@gmail.com)
+ * Scavanger & Ziege-One: CMS Textmode addon
  */
 
 #pragma once
@@ -35,12 +36,12 @@
 #define HOTTV4_TEXT_MODE_REQUEST_ID       0x7f
 #define HOTTV4_BINARY_MODE_REQUEST_ID     0x80
 
-#define HOTTV4_BUTTON_DEC    0xEB
-#define HOTTV4_BUTTON_INC    0xED
-#define HOTTV4_BUTTON_SET    0xE9
-#define HOTTV4_BUTTON_NIL    0x0F
-#define HOTTV4_BUTTON_NEXT   0xEE
-#define HOTTV4_BUTTON_PREV   0xE7
+#define HOTTV4_BUTTON_DEC    0xB
+#define HOTTV4_BUTTON_INC    0xD
+#define HOTTV4_BUTTON_SET    0x9
+#define HOTTV4_BUTTON_NIL    0xF
+#define HOTTV4_BUTTON_NEXT   0xE
+#define HOTTV4_BUTTON_PREV   0x7
 
 #define HOTT_EAM_OFFSET_HEIGHT       500
 #define HOTT_EAM_OFFSET_M2S           72
@@ -105,18 +106,21 @@ typedef enum {
 #define HOTT_EAM_SENSOR_TEXT_ID  0xE0 // Electric Air Module ID
 #define HOTT_GPS_SENSOR_TEXT_ID  0xA0 // GPS Module ID
 
-
-#define HOTT_TEXTMODE_MSG_TEXT_LEN 168
+#define HOTT_TEXTMODE_DISPLAY_ROWS          8
+#define HOTT_TEXTMODE_DISPLAY_COLUMNS       21
+#define HOTT_TEXTMODE_START                 0x7B
+#define HOTT_TEXTMODE_STOP                  0x7D
+#define HOTT_TEXTMODE_ESC                   0x01
 //Text mode msgs type
-struct HOTT_TEXTMODE_MSG {
-    uint8_t start_byte;  //#01 constant value 0x7b
-    uint8_t fill1;       //#02 constant value 0x00
-    uint8_t warning_beeps;//#03 1=A 2=B ...
-    uint8_t msg_txt[HOTT_TEXTMODE_MSG_TEXT_LEN]; //#04 ASCII text to display to
+typedef struct hottTextModeMsg_s {
+    uint8_t start;      //#01 constant value 0x7b
+    uint8_t esc;        //#02 Low byte: Sensor ID or 0x01 for escape
+    uint8_t warning;    //#03 1=A 2=B ...
+    uint8_t txt[HOTT_TEXTMODE_DISPLAY_ROWS][HOTT_TEXTMODE_DISPLAY_COLUMNS]; //#04 ASCII text to display to
                         // Bit 7 = 1 -> Inverse character display
                         // Display 21x8
-    uint8_t stop_byte;   //#171 constant value 0x7d
-};
+    uint8_t stop;       //#171 constant value 0x7d
+} hottTextModeMsg_t;
 
 typedef struct HOTT_GAM_MSG_s {
     uint8_t start_byte;          //#01 start uint8_t constant value 0x7c
@@ -496,6 +500,13 @@ void checkHoTTTelemetryState(void);
 void initHoTTTelemetry(void);
 void configureHoTTTelemetryPort(void);
 void freeHoTTTelemetryPort(void);
+
+#if defined (USE_HOTT_TEXTMODE) && defined (USE_CMS)
+bool hottTextmodeIsAlive();
+void hottTextmodeGrab();
+void hottTextmodeExit();
+void hottTextmodeWriteChar(uint8_t column, uint8_t row, char c);
+#endif
 
 uint32_t getHoTTTelemetryProviderBaudRate(void);
 

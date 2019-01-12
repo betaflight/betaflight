@@ -42,6 +42,7 @@
 
 #include "cms/cms.h"
 #include "cms/cms_menu_builtin.h"
+#include "cms/cms_menu_saveexit.h"
 #include "cms/cms_types.h"
 
 #include "common/maths.h"
@@ -85,6 +86,9 @@ displayPort_t *pCurrentDisplay;
 static displayPort_t *cmsDisplayPorts[CMS_MAX_DEVICE];
 static int cmsDeviceCount;
 static int cmsCurrentDevice = -1;
+#ifdef USE_OSD
+static unsigned int osdProfileCursor = 1;
+#endif
 
 bool cmsDisplayPortRegister(displayPort_t *pDisplay)
 {
@@ -160,6 +164,8 @@ static uint8_t leftMenuColumn;
 static uint8_t rightMenuColumn;
 static uint8_t maxMenuItems;
 static uint8_t linesPerMenuItem;
+static cms_key_e externKey = CMS_KEY_NONE;
+static bool osdElementEditing = false;
 
 bool cmsInMenu = false;
 
@@ -343,13 +349,18 @@ static int cmsDrawMenuItemValue(displayPort_t *pDisplay, char *buff, uint8_t row
     return cnt;
 }
 
-static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
+static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row, bool selectedRow)
 {
     #define CMS_DRAW_BUFFER_LEN 12
     #define CMS_NUM_FIELD_LEN 5
+    #define CMS_CURSOR_BLINK_DELAY_MS 500
 
     char buff[CMS_DRAW_BUFFER_LEN +1]; // Make room for null terminator.
     int cnt = 0;
+
+#ifndef USE_OSD
+    UNUSED(selectedRow);
+#endif
 
     if (smallScreen) {
         row++;
@@ -412,11 +423,21 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
     case OME_VISIBLE:
         if (IS_PRINTVALUE(p) && p->data) {
             uint16_t *val = (uint16_t *)p->data;
-
-            if (VISIBLE(*val)) {
-                strcpy(buff, "YES");
-            } else {
-              strcpy(buff, "NO ");
+            bool cursorBlink = millis() % (2 * CMS_CURSOR_BLINK_DELAY_MS) < CMS_CURSOR_BLINK_DELAY_MS;
+            for (unsigned x = 1; x < OSD_PROFILE_COUNT + 1; x++) {
+                if (VISIBLE_IN_OSD_PROFILE(*val, x)) {
+                    if (osdElementEditing && cursorBlink && selectedRow && (x == osdProfileCursor)) {
+                        strcpy(buff + x - 1, " ");
+                    } else {
+                        strcpy(buff + x - 1, "X");
+                    }
+                } else {
+                    if (osdElementEditing && cursorBlink && selectedRow && (x == osdProfileCursor)) {
+                        strcpy(buff + x - 1, " ");
+                    } else {
+                        strcpy(buff + x - 1, "-");
+                    }
+                }
             }
             cnt = cmsDrawMenuItemValue(pDisplay, buff, row, 3);
             CLR_PRINTVALUE(p);
@@ -572,7 +593,8 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
     // XXX printed if not enough room in the middle of the list.
 
         if (IS_PRINTVALUE(p)) {
-            room -= cmsDrawMenuEntry(pDisplay, p, top + i * linesPerMenuItem);
+            bool selectedRow = i == currentCtx.cursorRow;
+            room -= cmsDrawMenuEntry(pDisplay, p, top + i * linesPerMenuItem, selectedRow);
             if (room < 30)
                 return;
         }
@@ -722,11 +744,22 @@ long cmsMenuExit(displayPort_t *pDisplay, const void *ptr)
     switch (exitType) {
     case CMS_EXIT_SAVE:
     case CMS_EXIT_SAVEREBOOT:
+    case CMS_POPUP_SAVE:
+    case CMS_POPUP_SAVEREBOOT:
 
         cmsTraverseGlobalExit(&menuMain);
 
         if (currentCtx.menu->onExit)
             currentCtx.menu->onExit((OSD_Entry *)NULL); // Forced exit
+        
+        if ((exitType == CMS_POPUP_SAVE) || (exitType == CMS_POPUP_SAVEREBOOT)) {
+            // traverse through the menu stack and call their onExit functions
+            for (int i = menuStackIdx - 1; i >= 0; i--) {
+                if (menuStack[i].menu->onExit) {
+                    menuStack[i].menu->onExit((OSD_Entry *)NULL);
+                }
+            }
+        }
 
         saveConfigAndNotify();
         break;
@@ -740,7 +773,7 @@ long cmsMenuExit(displayPort_t *pDisplay, const void *ptr)
     displayRelease(pDisplay);
     currentCtx.menu = NULL;
 
-    if (exitType == CMS_EXIT_SAVEREBOOT) {
+    if ((exitType == CMS_EXIT_SAVEREBOOT) || (exitType == CMS_POPUP_SAVEREBOOT)) {
         displayClearScreen(pDisplay);
         displayWrite(pDisplay, 5, 3, "REBOOTING...");
 
@@ -764,18 +797,10 @@ long cmsMenuExit(displayPort_t *pDisplay, const void *ptr)
 #define IS_LO(X)  (rcData[X] < 1250)
 #define IS_MID(X) (rcData[X] > 1250 && rcData[X] < 1750)
 
-#define KEY_NONE    0
-#define KEY_UP      1
-#define KEY_DOWN    2
-#define KEY_LEFT    3
-#define KEY_RIGHT   4
-#define KEY_ESC     5
-#define KEY_MENU    6
-
 #define BUTTON_TIME   250 // msec
 #define BUTTON_PAUSE  500 // msec
 
-STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
+STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, cms_key_e key)
 {
     uint16_t res = BUTTON_TIME;
     OSD_Entry *p;
@@ -783,17 +808,27 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
     if (!currentCtx.menu)
         return res;
 
-    if (key == KEY_MENU) {
+    if (key == CMS_KEY_MENU) {
         cmsMenuOpen();
         return BUTTON_PAUSE;
     }
 
-    if (key == KEY_ESC) {
-        cmsMenuBack(pDisplay);
+    if (key == CMS_KEY_ESC) {
+        if (osdElementEditing) {
+            osdElementEditing = false;
+        } else {
+            cmsMenuBack(pDisplay);
+        }
         return BUTTON_PAUSE;
     }
 
-    if (key == KEY_DOWN) {
+    if (key == CMS_KEY_SAVEMENU) {
+        osdElementEditing = false;
+        cmsMenuChange(pDisplay, &cmsx_menuSaveExit);
+        return BUTTON_PAUSE;
+    }
+
+    if ((key == CMS_KEY_DOWN) && (!osdElementEditing)) {
         if (currentCtx.cursorRow < pageMaxRow) {
             currentCtx.cursorRow++;
         } else {
@@ -802,7 +837,7 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
         }
     }
 
-    if (key == KEY_UP) {
+    if ((key == CMS_KEY_UP) && (!osdElementEditing)) {
         currentCtx.cursorRow--;
 
         // Skip non-title labels
@@ -816,14 +851,14 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
         }
     }
 
-    if (key == KEY_DOWN || key == KEY_UP)
+    if ((key == CMS_KEY_DOWN || key == CMS_KEY_UP) && (!osdElementEditing))
         return res;
 
     p = pageTop + currentCtx.cursorRow;
 
     switch (p->type) {
         case OME_Submenu:
-            if (key == KEY_RIGHT) {
+            if (key == CMS_KEY_RIGHT) {
                 cmsMenuChange(pDisplay, p->data);
                 res = BUTTON_PAUSE;
             }
@@ -831,7 +866,7 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
 
         case OME_Funcall:;
             long retval;
-            if (p->func && key == KEY_RIGHT) {
+            if (p->func && key == CMS_KEY_RIGHT) {
                 retval = p->func(pDisplay, p->data);
                 if (retval == MENU_CHAIN_BACK)
                     cmsMenuBack(pDisplay);
@@ -840,7 +875,7 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
             break;
 
         case OME_OSD_Exit:
-            if (p->func && key == KEY_RIGHT) {
+            if (p->func && key == CMS_KEY_RIGHT) {
                 p->func(pDisplay, p->data);
                 res = BUTTON_PAUSE;
             }
@@ -849,12 +884,13 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
         case OME_Back:
             cmsMenuBack(pDisplay);
             res = BUTTON_PAUSE;
+            osdElementEditing = false;
             break;
 
         case OME_Bool:
             if (p->data) {
                 uint8_t *val = p->data;
-                if (key == KEY_RIGHT)
+                if (key == CMS_KEY_RIGHT)
                     *val = 1;
                 else
                     *val = 0;
@@ -866,11 +902,29 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
         case OME_VISIBLE:
             if (p->data) {
                 uint16_t *val = (uint16_t *)p->data;
-
-                if (key == KEY_RIGHT)
-                    *val |= VISIBLE_FLAG;
-                else
-                    *val %= ~VISIBLE_FLAG;
+                if ((key == CMS_KEY_RIGHT) && (!osdElementEditing)) {
+                    osdElementEditing = true;
+                    osdProfileCursor = 1;
+                } else if (osdElementEditing) {
+#ifdef USE_OSD_PROFILES
+                    if (key == CMS_KEY_RIGHT) {
+                        if (osdProfileCursor < OSD_PROFILE_COUNT) {
+                            osdProfileCursor++;
+                        }
+                    }
+                    if (key == CMS_KEY_LEFT) {
+                        if (osdProfileCursor > 1) {
+                            osdProfileCursor--;
+                        }
+                    }
+#endif
+                    if (key == CMS_KEY_UP) {
+                        *val |= OSD_PROFILE_FLAG(osdProfileCursor);
+                    }
+                    if (key == CMS_KEY_DOWN) {
+                        *val &= ~OSD_PROFILE_FLAG(osdProfileCursor);
+                    }
+                }
                 SET_PRINTVALUE(p);
             }
             break;
@@ -880,7 +934,7 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
         case OME_FLOAT:
             if (p->data) {
                 OSD_UINT8_t *ptr = p->data;
-                if (key == KEY_RIGHT) {
+                if (key == CMS_KEY_RIGHT) {
                     if (*ptr->val < ptr->max)
                         *ptr->val += ptr->step;
                 }
@@ -899,7 +953,7 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
             if (p->type == OME_TAB) {
                 OSD_TAB_t *ptr = p->data;
 
-                if (key == KEY_RIGHT) {
+                if (key == CMS_KEY_RIGHT) {
                     if (*ptr->val < ptr->max)
                         *ptr->val += 1;
                 }
@@ -916,7 +970,7 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
         case OME_INT8:
             if (p->data) {
                 OSD_INT8_t *ptr = p->data;
-                if (key == KEY_RIGHT) {
+                if (key == CMS_KEY_RIGHT) {
                     if (*ptr->val < ptr->max)
                         *ptr->val += ptr->step;
                 }
@@ -934,7 +988,7 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
         case OME_UINT16:
             if (p->data) {
                 OSD_UINT16_t *ptr = p->data;
-                if (key == KEY_RIGHT) {
+                if (key == CMS_KEY_RIGHT) {
                     if (*ptr->val < ptr->max)
                         *ptr->val += ptr->step;
                 }
@@ -952,7 +1006,7 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
         case OME_INT16:
             if (p->data) {
                 OSD_INT16_t *ptr = p->data;
-                if (key == KEY_RIGHT) {
+                if (key == CMS_KEY_RIGHT) {
                     if (*ptr->val < ptr->max)
                         *ptr->val += ptr->step;
                 }
@@ -981,7 +1035,13 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
     return res;
 }
 
-uint16_t cmsHandleKeyWithRepeat(displayPort_t *pDisplay, uint8_t key, int repeatCount)
+void cmsSetExternKey(cms_key_e extKey)
+{
+    if (externKey == CMS_KEY_NONE)
+        externKey = extKey;
+}
+
+uint16_t cmsHandleKeyWithRepeat(displayPort_t *pDisplay, cms_key_e key, int repeatCount)
 {
     uint16_t ret = 0;
 
@@ -1026,72 +1086,81 @@ void cmsUpdate(uint32_t currentTimeUs)
         // Scan 'key' first
         //
 
-        uint8_t key = KEY_NONE;
+        cms_key_e key = CMS_KEY_NONE;
 
-        if (IS_MID(THROTTLE) && IS_LO(YAW) && IS_HI(PITCH) && !ARMING_FLAG(ARMED)) {
-            key = KEY_MENU;
-        }
-        else if (IS_HI(PITCH)) {
-            key = KEY_UP;
-        }
-        else if (IS_LO(PITCH)) {
-            key = KEY_DOWN;
-        }
-        else if (IS_LO(ROLL)) {
-            key = KEY_LEFT;
-        }
-        else if (IS_HI(ROLL)) {
-            key = KEY_RIGHT;
-        }
-        else if (IS_HI(YAW) || IS_LO(YAW))
-        {
-            key = KEY_ESC;
-        }
-
-        if (key == KEY_NONE) {
-            // No 'key' pressed, reset repeat control
-            holdCount = 1;
-            repeatCount = 1;
-            repeatBase = 0;
+        if (externKey != CMS_KEY_NONE) {
+            rcDelayMs = cmsHandleKey(pCurrentDisplay, externKey);
+            externKey = CMS_KEY_NONE;
         } else {
-            // The 'key' is being pressed; keep counting
-            ++holdCount;
-        }
+            if (IS_MID(THROTTLE) && IS_LO(YAW) && IS_HI(PITCH) && !ARMING_FLAG(ARMED)) {
+                key = CMS_KEY_MENU;
+            }
+            else if (IS_HI(PITCH)) {
+                key = CMS_KEY_UP;
+            }
+            else if (IS_LO(PITCH)) {
+                key = CMS_KEY_DOWN;
+            }
+            else if (IS_LO(ROLL)) {
+                key = CMS_KEY_LEFT;
+            }
+            else if (IS_HI(ROLL)) {
+                key = CMS_KEY_RIGHT;
+            }
+            else if (IS_LO(YAW))
+            {
+                key = CMS_KEY_ESC;
+            }
+            else if (IS_HI(YAW))
+            {
+                key = CMS_KEY_SAVEMENU;
+            }
 
-        if (rcDelayMs > 0) {
-            rcDelayMs -= (currentTimeMs - lastCalledMs);
-        } else if (key) {
-            rcDelayMs = cmsHandleKeyWithRepeat(pCurrentDisplay, key, repeatCount);
+            if (key == CMS_KEY_NONE) {
+                // No 'key' pressed, reset repeat control
+                holdCount = 1;
+                repeatCount = 1;
+                repeatBase = 0;
+            } else {
+                // The 'key' is being pressed; keep counting
+                ++holdCount;
+            }
 
-            // Key repeat effect is implemented in two phases.
-            // First phldase is to decrease rcDelayMs reciprocal to hold time.
-            // When rcDelayMs reached a certain limit (scheduling interval),
-            // repeat rate will not raise anymore, so we call key handler
-            // multiple times (repeatCount).
-            //
-            // XXX Caveat: Most constants are adjusted pragmatically.
-            // XXX Rewrite this someday, so it uses actual hold time instead
-            // of holdCount, which depends on the scheduling interval.
+            if (rcDelayMs > 0) {
+                rcDelayMs -= (currentTimeMs - lastCalledMs);
+            } else if (key) {
+                rcDelayMs = cmsHandleKeyWithRepeat(pCurrentDisplay, key, repeatCount);
 
-            if (((key == KEY_LEFT) || (key == KEY_RIGHT)) && (holdCount > 20)) {
+                // Key repeat effect is implemented in two phases.
+                // First phldase is to decrease rcDelayMs reciprocal to hold time.
+                // When rcDelayMs reached a certain limit (scheduling interval),
+                // repeat rate will not raise anymore, so we call key handler
+                // multiple times (repeatCount).
+                //
+                // XXX Caveat: Most constants are adjusted pragmatically.
+                // XXX Rewrite this someday, so it uses actual hold time instead
+                // of holdCount, which depends on the scheduling interval.
 
-                // Decrease rcDelayMs reciprocally
+                if (((key == CMS_KEY_LEFT) || (key == CMS_KEY_RIGHT)) && (holdCount > 20)) {
 
-                rcDelayMs /= (holdCount - 20);
+                    // Decrease rcDelayMs reciprocally
 
-                // When we reach the scheduling limit,
+                    rcDelayMs /= (holdCount - 20);
 
-                if (rcDelayMs <= 50) {
+                    // When we reach the scheduling limit,
 
-                    // start calling handler multiple times.
+                    if (rcDelayMs <= 50) {
 
-                    if (repeatBase == 0)
-                        repeatBase = holdCount;
+                        // start calling handler multiple times.
 
-                    repeatCount = repeatCount + (holdCount - repeatBase) / 5;
+                        if (repeatBase == 0)
+                            repeatBase = holdCount;
 
-                    if (repeatCount > 5) {
-                        repeatCount= 5;
+                        repeatCount = repeatCount + (holdCount - repeatBase) / 5;
+
+                        if (repeatCount > 5) {
+                            repeatCount= 5;
+                        }
                     }
                 }
             }

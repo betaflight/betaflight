@@ -34,7 +34,6 @@
 
 #include "io/displayport_max7456.h"
 #include "io/osd.h"
-#include "io/osd_slave.h"
 
 #include "pg/max7456.h"
 #include "pg/pg.h"
@@ -166,12 +165,14 @@ static const displayPortVTable_t max7456VTable = {
 
 displayPort_t *max7456DisplayPortInit(const vcdProfile_t *vcdProfile)
 {
+    if (
+        !max7456Init(max7456Config(), vcdProfile, systemConfig()->cpu_overclock)
+    ) {
+        return NULL;
+    }
+
     displayInit(&max7456DisplayPort, &max7456VTable);
-#ifdef USE_OSD_SLAVE
-    max7456Init(max7456Config(), vcdProfile, false);
-#else
-    max7456Init(max7456Config(), vcdProfile, systemConfig()->cpu_overclock);
-#endif
+
     resync(&max7456DisplayPort);
     return &max7456DisplayPort;
 }

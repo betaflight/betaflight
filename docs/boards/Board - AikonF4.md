@@ -44,5 +44,5 @@ Andrey Mironov (@DieHertz)
 ## FAQ & Known Issues
 * First revision has no diode protecting the 5V input on the 11-pin ESC connector, make sure to pull the 5V wire coming from our ESC in order to avoid two regulators fighting against each other
 * First revision has RX4 (ESC Telemetry) and GND pad silkscreen swapped near motor outputs
-![Aikon F4 top](aikon-f4-rev1-top.jpg)
-![Aikon F4 bottom](aikon-f4-rev1-bottom.jpg)
+![Aikon F4 top](images/aikon-f4-rev1-top.jpg)
+![Aikon F4 bottom](images/aikon-f4-rev1-bottom.jpg)

@@ -55,6 +55,8 @@ const timerHardware_t timerHardware[1]; // unused
 #include "dyad.h"
 #include "target/SITL/udplink.h"
 
+uint32_t SystemCoreClock;
+
 static fdm_packet fdmPkt;
 static servo_packet pwmPkt;
 
@@ -112,7 +114,7 @@ void updateState(const fdm_packet* pkt) {
     fakeGyroSet(fakeGyroDev, x, y, z);
 //    printf("[gyr]%lf,%lf,%lf\n", pkt->imu_angular_velocity_rpy[0], pkt->imu_angular_velocity_rpy[1], pkt->imu_angular_velocity_rpy[2]);
 
-#if defined(SKIP_IMU_CALC)
+#if !defined(USE_IMU_CALC)
 #if defined(SET_IMU_FROM_EULER)
     // set from Euler
     double qw = pkt->imu_orientation_quat[0];
@@ -436,7 +438,7 @@ void pwmCompleteMotorUpdate(uint8_t motorCount) {
     // for gazebo8 ArduCopterPlugin remap, normal range = [0.0, 1.0], 3D rang = [-1.0, 1.0]
 
     double outScale = 1000.0;
-    if (feature(FEATURE_3D)) {
+    if (featureIsEnabled(FEATURE_3D)) {
         outScale = 500.0;
     }
 

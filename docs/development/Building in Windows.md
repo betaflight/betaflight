@@ -5,7 +5,7 @@
 
 A new feature in Windows 10 allows any developer to quickly and easily run an entire linux subsystem in windows and access it via a bash terminal. This gives developers full use of the entire linux OS and all of the great existing linux tools and programs. When Bash for Windows is up and running it feels like you sshed into a full linux box, except the linux distro is actually running alongside windows locally.
 
-If you use Bash on Windows you can easily build cleanflight exactly as you would for Ubuntu. (the linux distro running on Windows is Ubuntu Trusty)
+If you use Bash on Windows you can easily build betaflight exactly as you would for Ubuntu. (the linux distro running on Windows is Ubuntu Trusty)
 
 Setup for Bash on Windows is very easy and takes less than 5 minutes. [For instructions follow the official guide here.](https://msdn.microsoft.com/commandline/wsl/install_guide)
 
@@ -61,24 +61,24 @@ add the "bin" subdirectory to the PATH Windows environment variable: ```%PATH%;C
 
 ![GNU ARM Toolchain Setup](assets/010.toolchain_path.png)
 
-## Checkout and compile Cleanflight
+## Checkout and compile Betaflight
 
-Head over to the Cleanflight Github page and grab the URL of the GIT Repository: "https://github.com/cleanflight/cleanflight.git"
+Head over to the Betaflight Github page and grab the URL of the GIT Repository: "https://github.com/betaflight/betaflight.git"
 
 Open the Cygwin-Terminal, navigate to your development folder and use the git commandline to checkout the repository:
 
 ```bash
 cd /cygdrive/c/dev
-git clone https://github.com/cleanflight/cleanflight.git
+git clone https://github.com/betaflight/betaflight.git
 ```
 ![GIT Checkout](assets/011.git_checkout.png)
 
 ![GIT Checkout](assets/012.git_checkout.png)
 
-To compile your Cleanflight binaries, enter the cleanflight directory and build the project using the make command. You can append TARGET=[HARDWARE] if you want to build anything other than the default NAZE target:
+To compile your Betaflight binaries, enter the Betaflight directory and build the project using the make command. You can append TARGET=[HARDWARE] if you want to build anything other than the default NAZE target:
 
 ```bash
-cd cleanflight
+cd betaflight
 make TARGET=NAZE
 ```
 
@@ -88,20 +88,20 @@ within few moments you should have your binary ready:
 
 ```bash
 (...)
-arm-none-eabi-size ./obj/main/cleanflight_NAZE.elf
+arm-none-eabi-size ./obj/main/betaflight_NAZE.elf
    text    data     bss     dec     hex filename
-  95388     308   10980  106676   1a0b4 ./obj/main/cleanflight_NAZE.elf
-arm-none-eabi-objcopy -O ihex --set-start 0x8000000 obj/main/cleanflight_NAZE.elf obj/cleanflight_NAZE.hex
+  95388     308   10980  106676   1a0b4 ./obj/main/betaflight_NAZE.elf
+arm-none-eabi-objcopy -O ihex --set-start 0x8000000 obj/main/betaflight_NAZE.elf obj/betaflight_NAZE.hex
 ```
 
-You can use the Cleanflight-Configurator to flash the ```obj/cleanflight_NAZE.hex``` file.
+You can use the Betaflight-Configurator to flash the ```obj/betaflight_NAZE.hex``` file.
 
 ## Updating and rebuilding
 
-Navigate to the local cleanflight repository and use the following steps to pull the latest changes and rebuild your version of cleanflight:
+Navigate to the local betaflight repository and use the following steps to pull the latest changes and rebuild your version of betaflight:
 
 ```bash
-cd /cygdrive/c/dev/cleanflight
+cd /cygdrive/c/dev/betaflight
 git reset --hard
 git pull
 make clean TARGET=NAZE -j16 -l

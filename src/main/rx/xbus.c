@@ -24,7 +24,7 @@
 
 #include "platform.h"
 
-#if defined(USE_SERIAL_RX) && defined(USE_SERIALRX_XBUS)
+#ifdef USE_SERIALRX_XBUS
 
 #include "common/crc.h"
 

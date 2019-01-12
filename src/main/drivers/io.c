@@ -279,7 +279,7 @@ bool IOIsFreeOrPreinit(IO_t io)
 {
     resourceOwner_e owner = IOGetOwner(io);
 
-    if (owner == OWNER_FREE || owner == OWNER_SPI_PREINIT_IPU || owner == OWNER_SPI_PREINIT_OPU) {
+    if (owner == OWNER_FREE || owner == OWNER_PREINIT) {
         return true;
     }
 

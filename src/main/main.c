@@ -23,7 +23,7 @@
 
 #include "platform.h"
 
-#include "fc/fc_init.h"
+#include "fc/init.h"
 
 #include "scheduler/scheduler.h"
 

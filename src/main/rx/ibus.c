@@ -31,7 +31,7 @@
 
 #include "platform.h"
 
-#ifdef USE_SERIAL_RX
+#ifdef USE_SERIALRX_IBUS
 
 #include "pg/rx.h"
 
@@ -175,7 +175,7 @@ static uint8_t ibusFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
     ibusFrameDone = false;
 
     if (checksumIsOk()) {
-        if (ibusModel == IBUS_MODEL_IA6 || ibusSyncByte == 0x20) {
+        if (ibusModel == IBUS_MODEL_IA6 || ibusSyncByte == IBUS_SERIAL_RX_PACKET_LENGTH) {
             updateChannelData();
             frameStatus = RX_FRAME_COMPLETE;
         }

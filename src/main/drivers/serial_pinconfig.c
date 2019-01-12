@@ -24,6 +24,8 @@
 
 #include "platform.h"
 
+#ifdef USE_UART
+
 #include "build/build_config.h"
 
 #include "io/serial.h"
@@ -272,4 +274,5 @@ void pgResetFn_serialPinConfig(serialPinConfig_t *serialPinConfig)
         serialPinConfig->ioTagInverter[SERIAL_PORT_IDENTIFIER_TO_INDEX(defpin->ident)] = defpin->inverterIO;
     }
 }
+#endif
 #endif

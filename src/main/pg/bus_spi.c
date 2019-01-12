@@ -22,6 +22,7 @@
 
 #ifdef USE_SPI
 
+#include "drivers/dma_reqmap.h"
 #include "drivers/io.h"
 
 #include "pg/pg.h"
@@ -34,20 +35,22 @@ typedef struct spiDefaultConfig_s {
     ioTag_t sck;
     ioTag_t miso;
     ioTag_t mosi;
+    dmaoptValue_t txDmaopt;
+    dmaoptValue_t rxDmaopt;
 } spiDefaultConfig_t;
 
 const spiDefaultConfig_t spiDefaultConfig[] = {
 #ifdef USE_SPI_DEVICE_1
-    { SPIDEV_1, IO_TAG(SPI1_SCK_PIN), IO_TAG(SPI1_MISO_PIN), IO_TAG(SPI1_MOSI_PIN) },
+    { SPIDEV_1, IO_TAG(SPI1_SCK_PIN), IO_TAG(SPI1_MISO_PIN), IO_TAG(SPI1_MOSI_PIN), SPI1_TX_DMA_OPT, SPI1_RX_DMA_OPT },
 #endif
 #ifdef USE_SPI_DEVICE_2
-    { SPIDEV_2, IO_TAG(SPI2_SCK_PIN), IO_TAG(SPI2_MISO_PIN), IO_TAG(SPI2_MOSI_PIN) },
+    { SPIDEV_2, IO_TAG(SPI2_SCK_PIN), IO_TAG(SPI2_MISO_PIN), IO_TAG(SPI2_MOSI_PIN), SPI2_TX_DMA_OPT, SPI2_RX_DMA_OPT },
 #endif
 #ifdef USE_SPI_DEVICE_3
-    { SPIDEV_3, IO_TAG(SPI3_SCK_PIN), IO_TAG(SPI3_MISO_PIN), IO_TAG(SPI3_MOSI_PIN) },
+    { SPIDEV_3, IO_TAG(SPI3_SCK_PIN), IO_TAG(SPI3_MISO_PIN), IO_TAG(SPI3_MOSI_PIN), SPI3_TX_DMA_OPT, SPI3_RX_DMA_OPT },
 #endif
 #ifdef USE_SPI_DEVICE_4
-    { SPIDEV_4, IO_TAG(SPI4_SCK_PIN), IO_TAG(SPI4_MISO_PIN), IO_TAG(SPI4_MOSI_PIN) },
+    { SPIDEV_4, IO_TAG(SPI4_SCK_PIN), IO_TAG(SPI4_MISO_PIN), IO_TAG(SPI4_MOSI_PIN), SPI4_TX_DMA_OPT, SPI4_RX_DMA_OPT },
 #endif
 };
 
@@ -60,89 +63,8 @@ void pgResetFn_spiPinConfig(spiPinConfig_t *spiPinConfig)
         spiPinConfig[defconf->device].ioTagSck = defconf->sck;
         spiPinConfig[defconf->device].ioTagMiso = defconf->miso;
         spiPinConfig[defconf->device].ioTagMosi = defconf->mosi;
-    }
-}
-
-PG_REGISTER_ARRAY_WITH_RESET_FN(spiCs_t, SPI_PREINIT_IPU_COUNT, spiPreinitIPUConfig, PG_SPI_PREINIT_IPU_CONFIG, 0);
-PG_REGISTER_ARRAY(spiCs_t, SPI_PREINIT_OPU_COUNT, spiPreinitOPUConfig, PG_SPI_PREINIT_OPU_CONFIG, 0);
-
-// Initialization values for input pull-up are listed here.
-// Explicit output with pull-up should handled in target dependent config.c.
-// Generic target will be specifying both values by resource commands.
-
-ioTag_t preinitIPUList[SPI_PREINIT_IPU_COUNT] = {
-#ifdef GYRO_1_CS_PIN
-    IO_TAG(GYRO_1_CS_PIN),
-#endif
-#ifdef GYRO_2_CS_PIN
-    IO_TAG(GYRO_2_CS_PIN),
-#endif
-#ifdef MPU6000_CS_PIN
-    IO_TAG(MPU6000_CS_PIN),
-#endif
-#ifdef MPU6500_CS_PIN
-    IO_TAG(MPU6500_CS_PIN),
-#endif
-#ifdef MPU9250_CS_PIN
-    IO_TAG(MPU9250_CS_PIN),
-#endif
-#ifdef ICM20649_CS_PIN
-    IO_TAG(ICM20649_CS_PIN),
-#endif
-#ifdef ICM20689_CS_PIN
-    IO_TAG(ICM20689_CS_PIN),
-#endif
-#ifdef BMI160_CS_PIN
-    IO_TAG(BMI160_CS_PIN),
-#endif
-#ifdef L3GD20_CS_PIN
-    IO_TAG(L3GD20_CS_PIN),
-#endif
-#ifdef SDCARD_SPI_CS_PIN
-    IO_TAG(SDCARD_SPI_CS_PIN),
-#endif
-#ifdef BMP280_CS_PIN
-    IO_TAG(BMP280_CS_PIN),
-#endif
-#ifdef MS5611_CS_PIN
-    IO_TAG(MS5611_CS_PIN),
-#endif
-#ifdef LPS_CS_PIN
-    IO_TAG(LPS_CS_PIN),
-#endif
-#ifdef HMC5883_CS_PIN
-    IO_TAG(HMC5883_CS_PIN),
-#endif
-#ifdef AK8963_CS_PIN
-    IO_TAG(AK8963_CS_PIN),
-#endif
-#if defined(RTC6705_CS_PIN) && !defined(USE_VTX_RTC6705_SOFTSPI) // RTC6705 soft SPI initialisation handled elsewhere.
-    IO_TAG(RTC6705_CS_PIN),
-#endif
-#ifdef FLASH_CS_PIN
-    IO_TAG(FLASH_CS_PIN),
-#endif
-#if defined(USE_RX_SPI) && !defined(USE_RX_SOFTSPI)
-    IO_TAG(RX_NSS_PIN),
-#endif
-#if defined(MAX7456_SPI_CS_PIN)
-    IO_TAG(MAX7456_SPI_CS_PIN),
-#endif
-    IO_TAG(NONE)
-};
-
-void pgResetFn_spiPreinitIPUConfig(spiCs_t *config)
-{
-    int puPins = 0;
-
-    for (int i = 0 ; i < SPI_PREINIT_IPU_COUNT ; i++) {
-        for (int j = 0 ; j < i ; j++) {
-            if (config[j].csnTag == preinitIPUList[i]) {
-                goto next;
-            }
-        }
-        config[puPins++].csnTag = preinitIPUList[i];
-    next:;
+        spiPinConfig[defconf->device].txDmaopt = defconf->txDmaopt;
+        spiPinConfig[defconf->device].rxDmaopt = defconf->rxDmaopt;
     }
 }
 #endif

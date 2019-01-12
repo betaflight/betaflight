@@ -167,6 +167,8 @@ Use a diode with cathode to receiver serial rx output (for example 1N4148),
 the anode is connected to the FC serial _TX_ pin, and also via a 
 resistor (10KOhm) to the receiver ibus sensor port.
 
+Note (2018-07-27): In some cases, the value of the series resistor may be too large, and going down to 1K[ohm] may provide a good result.
+
 Enable with cli:
 ```  
     serial 1 1088 115200 57600 115200 115200
@@ -174,6 +176,14 @@ Enable with cli:
     set serialrx_provider = IBUS
     save
 ```
+
+
+### Jeti EX Bus
+
+It supports 16 channels with a transfer rate of 100Hz. The HS option (High Speed) is currently not supported.
+The receiver must be configured in the device manager to EX Bus and connected to a free FC serial _TX_ pin.
+
+
 ## MultiWii serial protocol (MSP)
 
 Allows you to use MSP commands as the RC input.  Only 8 channel support to maintain compatibility with MSP.
@@ -278,6 +288,7 @@ For Serial RX enable `RX_SERIAL` and set the `serialrx_provider` CLI setting as 
 | XBUS_MODE_B        | 5     |
 | XBUS_MODE_B_RJ01   | 6     |
 | IBUS               | 7     |
+| JETIEXBUS          | 8     |
 
 ### PPM/PWM input filtering.
 

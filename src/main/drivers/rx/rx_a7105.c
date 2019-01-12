@@ -54,18 +54,13 @@ void a7105extiHandler(extiCallbackRec_t* cb)
     }
 }
 
-void A7105Init (uint32_t id) {
+void A7105Init (uint32_t id)
+{
     spiDeviceByInstance(RX_SPI_INSTANCE);
     rxIntIO = IOGetByTag(IO_TAG(RX_IRQ_PIN)); /* config receiver IRQ pin */
     IOInit(rxIntIO, OWNER_RX_SPI_CS, 0);
-#ifdef STM32F7
     EXTIHandlerInit(&a7105extiCallbackRec, a7105extiHandler);
-    EXTIConfig(rxIntIO, &a7105extiCallbackRec, NVIC_PRIO_MPU_INT_EXTI, IO_CONFIG(GPIO_MODE_INPUT,0,GPIO_PULLDOWN));
-#else
-    IOConfigGPIO(rxIntIO, IOCFG_IPD);
-    EXTIHandlerInit(&a7105extiCallbackRec, a7105extiHandler);
-    EXTIConfig(rxIntIO, &a7105extiCallbackRec, NVIC_PRIO_MPU_INT_EXTI, EXTI_Trigger_Rising);
-#endif
+    EXTIConfig(rxIntIO, &a7105extiCallbackRec, NVIC_PRIO_MPU_INT_EXTI, IOCFG_IPD, EXTI_TRIGGER_RISING);
     EXTIEnable(rxIntIO, false);
 
 #ifdef RX_PA_TXEN_PIN

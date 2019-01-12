@@ -95,28 +95,10 @@ void pgResetFn_barometerConfig(barometerConfig_t *barometerConfig)
 #endif
 #endif
 
-#if defined(DEFAULT_BARO_SPI_BMP280)
+#if defined(DEFAULT_BARO_SPI_BMP280) || defined(DEFAULT_BARO_SPI_MS5611) || defined(DEFAULT_BARO_SPI_QMP6988) || defined(DEFAULT_BARO_SPI_LPS)
     barometerConfig->baro_bustype = BUSTYPE_SPI;
-    barometerConfig->baro_spi_device = SPI_DEV_TO_CFG(spiDeviceByInstance(BMP280_SPI_INSTANCE));
-    barometerConfig->baro_spi_csn = IO_TAG(BMP280_CS_PIN);
-    barometerConfig->baro_i2c_device = I2C_DEV_TO_CFG(I2CINVALID);
-    barometerConfig->baro_i2c_address = 0;
-#elif defined(DEFAULT_BARO_SPI_MS5611)
-    barometerConfig->baro_bustype = BUSTYPE_SPI;
-    barometerConfig->baro_spi_device = SPI_DEV_TO_CFG(spiDeviceByInstance(MS5611_SPI_INSTANCE));
-    barometerConfig->baro_spi_csn = IO_TAG(MS5611_CS_PIN);
-    barometerConfig->baro_i2c_device = I2C_DEV_TO_CFG(I2CINVALID);
-    barometerConfig->baro_i2c_address = 0;
-#elif defined(DEFAULT_BARO_SPI_QMP6988)
-    barometerConfig->baro_bustype = BUSTYPE_SPI;
-    barometerConfig->baro_spi_device = SPI_DEV_TO_CFG(spiDeviceByInstance(QMP6988_SPI_INSTANCE));
-    barometerConfig->baro_spi_csn = IO_TAG(QMP6988_CS_PIN);
-    barometerConfig->baro_i2c_device = I2C_DEV_TO_CFG(I2CINVALID);
-    barometerConfig->baro_i2c_address = 0;
-#elif defined(DEFAULT_BARO_SPI_LPS)
-    barometerConfig->baro_bustype = BUSTYPE_SPI;
-    barometerConfig->baro_spi_device = SPI_DEV_TO_CFG(spiDeviceByInstance(LPS_SPI_INSTANCE));
-    barometerConfig->baro_spi_csn = IO_TAG(LPS_CS_PIN);
+    barometerConfig->baro_spi_device = SPI_DEV_TO_CFG(spiDeviceByInstance(BARO_SPI_INSTANCE));
+    barometerConfig->baro_spi_csn = IO_TAG(BARO_CS_PIN);
     barometerConfig->baro_i2c_device = I2C_DEV_TO_CFG(I2CINVALID);
     barometerConfig->baro_i2c_address = 0;
 #elif defined(DEFAULT_BARO_MS5611) || defined(DEFAULT_BARO_BMP280) || defined(DEFAULT_BARO_BMP085)||defined(DEFAULT_BARO_QMP6988)
@@ -146,6 +128,15 @@ static int32_t baroGroundAltitude = 0;
 static int32_t baroGroundPressure = 8*101325;
 static uint32_t baroPressureSum = 0;
 
+void baroPreInit(void)
+{
+#ifdef USE_SPI
+    if (barometerConfig()->baro_bustype == BUSTYPE_SPI) {
+        spiPreinitRegister(barometerConfig()->baro_spi_csn, IOCFG_IPU, 1);
+    }
+#endif
+}
+
 bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
 {
     // Detect what pressure sensors are available. baro->update() is set to sensor-specific update function
@@ -157,21 +148,28 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
 #endif
 
     switch (barometerConfig()->baro_bustype) {
-    case BUSTYPE_I2C:
 #ifdef USE_I2C
+    case BUSTYPE_I2C:
         dev->busdev.bustype = BUSTYPE_I2C;
         dev->busdev.busdev_u.i2c.device = I2C_CFG_TO_DEV(barometerConfig()->baro_i2c_device);
         dev->busdev.busdev_u.i2c.address = barometerConfig()->baro_i2c_address;
-#endif
         break;
+#endif
 
-    case BUSTYPE_SPI:
 #ifdef USE_SPI
-        dev->busdev.bustype = BUSTYPE_SPI;
-        spiBusSetInstance(&dev->busdev, spiInstanceByDevice(SPI_CFG_TO_DEV(barometerConfig()->baro_spi_device)));
-        dev->busdev.busdev_u.spi.csnPin = IOGetByTag(barometerConfig()->baro_spi_csn);
-#endif
+    case BUSTYPE_SPI:
+        {
+            SPI_TypeDef *instance = spiInstanceByDevice(SPI_CFG_TO_DEV(barometerConfig()->baro_spi_device));
+            if (!instance) {
+                return false;
+            }
+
+            dev->busdev.bustype = BUSTYPE_SPI;
+            spiBusSetInstance(&dev->busdev, instance);
+            dev->busdev.busdev_u.spi.csnPin = IOGetByTag(barometerConfig()->baro_spi_csn);
+        }
         break;
+#endif
 
     default:
         return false;

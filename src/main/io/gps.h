@@ -34,7 +34,8 @@
 
 typedef enum {
     GPS_NMEA = 0,
-    GPS_UBLOX
+    GPS_UBLOX,
+    GPS_MSP
 } gpsProvider_e;
 
 typedef enum {
@@ -73,6 +74,7 @@ typedef struct gpsConfig_s {
     gpsAutoConfig_e autoConfig;
     gpsAutoBaud_e autoBaud;
     uint8_t gps_ublox_use_galileo;
+    uint8_t gps_set_home_point_once;
 } gpsConfig_t;
 
 PG_DECLARE(gpsConfig_t, gpsConfig);
@@ -86,7 +88,7 @@ typedef struct gpsCoordinateDDDMMmmmm_s {
 typedef struct gpsLocation_s {
     int32_t lat;                    // latitude * 1e+7
     int32_t lon;                    // longitude * 1e+7
-    int32_t alt;                    // altitude in 0.01m
+    int32_t altCm;                  // altitude in 0.01m
 } gpsLocation_t;
 
 typedef struct gpsSolutionData_s {
@@ -124,10 +126,11 @@ extern char gpsPacketLog[GPS_PACKET_LOG_ENTRY_COUNT];
 extern int32_t GPS_home[2];
 extern uint16_t GPS_distanceToHome;        // distance to home point in meters
 extern int16_t GPS_directionToHome;        // direction to home or hol point in degrees
+extern uint32_t GPS_distanceFlownInCm;     // distance flown since armed in centimeters
+extern int16_t GPS_verticalSpeedInCmS;     // vertical speed in cm/s
 extern int16_t GPS_angle[ANGLE_INDEX_COUNT];                // it's the angles that must be applied for GPS correction
 extern float dTnav;             // Delta Time in milliseconds for navigation computations, updated with every good GPS read
 extern float GPS_scaleLonDown;  // this is used to offset the shrinking longitude as we go towards the poles
-extern int16_t actual_speed[2];
 extern int16_t nav_takeoff_bearing;
 // navigation mode
 typedef enum {
@@ -137,10 +140,15 @@ typedef enum {
 } navigationMode_e;
 extern navigationMode_e nav_mode;          // Navigation mode
 
+typedef enum {
+    GPS_DIRECT_TICK = 1 << 0,
+    GPS_MSP_UPDATE = 1 << 1
+} gpsUpdateToggle_e;
+
 extern gpsData_t gpsData;
 extern gpsSolutionData_t gpsSol;
 
-extern uint8_t GPS_update;                 // it's a binary toogle to distinct a GPS position update
+extern uint8_t GPS_update;       // toogle to distinct a GPS position update (directly or via MSP)
 extern uint32_t GPS_packetCount;
 extern uint32_t GPS_svInfoReceivedCount;
 extern uint8_t GPS_numCh;                  // Number of channels
@@ -155,6 +163,7 @@ extern uint8_t GPS_svinfo_cno[16];         // Carrier to Noise Ratio (Signal Str
 void gpsInit(void);
 void gpsUpdate(timeUs_t currentTimeUs);
 bool gpsNewFrame(uint8_t c);
+bool gpsIsHealthy(void); // Check for healthy communications
 struct serialPort_s;
 void gpsEnablePassthrough(struct serialPort_s *gpsPassthroughPort);
 void onGpsNewData(void);

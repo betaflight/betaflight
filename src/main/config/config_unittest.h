@@ -50,9 +50,9 @@ bool unittest_outsideRealtimeGuardInterval;
 float unittest_pidLuxFloat_lastErrorForDelta[3];
 float unittest_pidLuxFloat_delta1[3];
 float unittest_pidLuxFloat_delta2[3];
-float unittest_pidLuxFloat_PTerm[3];
-float unittest_pidLuxFloat_ITerm[3];
-float unittest_pidLuxFloat_DTerm[3];
+float unittest_pidLuxFloat_pterm[3];
+float unittest_pidLuxFloat_iterm[3];
+float unittest_pidLuxFloat_dterm[3];
 
 #define SET_PID_LUX_FLOAT_LOCALS(axis) \
     { \
@@ -66,15 +66,15 @@ float unittest_pidLuxFloat_DTerm[3];
         unittest_pidLuxFloat_lastErrorForDelta[axis] = lastErrorForDelta[axis]; \
         unittest_pidLuxFloat_delta1[axis] = delta1[axis]; \
         unittest_pidLuxFloat_delta2[axis] = delta2[axis]; \
-        unittest_pidLuxFloat_PTerm[axis] = PTerm; \
-        unittest_pidLuxFloat_ITerm[axis] = ITerm; \
-        unittest_pidLuxFloat_DTerm[axis] = DTerm; \
+        unittest_pidLuxFloat_pterm[axis] = pterm; \
+        unittest_pidLuxFloat_iterm[axis] = iterm; \
+        unittest_pidLuxFloat_dterm[axis] = dterm; \
     }
 
 int32_t unittest_pidMultiWiiRewrite_lastErrorForDelta[3];
-int32_t unittest_pidMultiWiiRewrite_PTerm[3];
-int32_t unittest_pidMultiWiiRewrite_ITerm[3];
-int32_t unittest_pidMultiWiiRewrite_DTerm[3];
+int32_t unittest_pidMultiWiiRewrite_pterm[3];
+int32_t unittest_pidMultiWiiRewrite_iterm[3];
+int32_t unittest_pidMultiWiiRewrite_dterm[3];
 
 #define SET_PID_MULTI_WII_REWRITE_LOCALS(axis) \
     { \
@@ -84,9 +84,9 @@ int32_t unittest_pidMultiWiiRewrite_DTerm[3];
 #define GET_PID_MULTI_WII_REWRITE_LOCALS(axis) \
     { \
         unittest_pidMultiWiiRewrite_lastErrorForDelta[axis] = lastErrorForDelta[axis]; \
-        unittest_pidMultiWiiRewrite_PTerm[axis] = PTerm; \
-        unittest_pidMultiWiiRewrite_ITerm[axis] = ITerm; \
-        unittest_pidMultiWiiRewrite_DTerm[axis] = DTerm; \
+        unittest_pidMultiWiiRewrite_pterm[axis] = pterm; \
+        unittest_pidMultiWiiRewrite_iterm[axis] = iterm; \
+        unittest_pidMultiWiiRewrite_dterm[axis] = dterm; \
     }
 
 #else

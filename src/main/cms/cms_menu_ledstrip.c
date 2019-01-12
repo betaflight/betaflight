@@ -48,7 +48,7 @@ static uint8_t cmsx_FeatureLedstrip;
 static long cmsx_Ledstrip_FeatureRead(void)
 {
     if (!featureRead) {
-        cmsx_FeatureLedstrip = feature(FEATURE_LED_STRIP) ? 1 : 0;
+        cmsx_FeatureLedstrip = featureIsEnabled(FEATURE_LED_STRIP) ? 1 : 0;
         featureRead = true;
     }
 
@@ -60,9 +60,9 @@ static long cmsx_Ledstrip_FeatureWriteback(const OSD_Entry *self)
     UNUSED(self);
     if (featureRead) {
         if (cmsx_FeatureLedstrip)
-            featureSet(FEATURE_LED_STRIP);
+            featureEnable(FEATURE_LED_STRIP);
         else
-            featureClear(FEATURE_LED_STRIP);
+            featureDisable(FEATURE_LED_STRIP);
     }
 
     return 0;

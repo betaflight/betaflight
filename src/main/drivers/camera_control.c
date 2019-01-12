@@ -55,24 +55,21 @@
 #define CAMERA_CONTROL_HARDWARE_PWM_AVAILABLE
 #include "timer.h"
 
-#ifndef CAMERA_CONTROL_PIN
-#define CAMERA_CONTROL_PIN NONE
-#endif
-
 #ifdef USE_OSD
 #include "io/osd.h"
 #endif
 
-PG_REGISTER_WITH_RESET_TEMPLATE(cameraControlConfig_t, cameraControlConfig, PG_CAMERA_CONTROL_CONFIG, 0);
+PG_REGISTER_WITH_RESET_FN(cameraControlConfig_t, cameraControlConfig, PG_CAMERA_CONTROL_CONFIG, 0);
 
-PG_RESET_TEMPLATE(cameraControlConfig_t, cameraControlConfig,
-    .mode = CAMERA_CONTROL_MODE_HARDWARE_PWM,
-    .refVoltage = 330,
-    .keyDelayMs = 180,
-    .internalResistance = 470,
-    .ioTag = IO_TAG(CAMERA_CONTROL_PIN),
-    .inverted = 0,   // Output is inverted externally
-);
+void pgResetFn_cameraControlConfig(cameraControlConfig_t *cameraControlConfig)
+{
+    cameraControlConfig->mode = CAMERA_CONTROL_MODE_HARDWARE_PWM;
+    cameraControlConfig->refVoltage = 330;
+    cameraControlConfig->keyDelayMs = 180;
+    cameraControlConfig->internalResistance = 470;
+    cameraControlConfig->ioTag = timerioTagGetByUsage(TIM_USE_CAMERA_CONTROL, 0);
+    cameraControlConfig->inverted = 0;   // Output is inverted externally
+}
 
 static struct {
     bool enabled;

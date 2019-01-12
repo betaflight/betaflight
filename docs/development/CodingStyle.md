@@ -1,15 +1,18 @@
-#General
+# General
+
 This document overrides the original Baseflight style that was referenced before.
-This document has taken inspiration from that style, from Eclipse defaults and from Linux, as well as from some Cleanflight developers and existing code.
+This document has taken inspiration from that style, from Eclipse defaults and from Linux, as well as from some Cleanflight and Betaflight developers and existing code.
 
 There are not so many changes from the old style, if you managed to find it.
 
-#Formatting style
+# Formatting style
 
-##Indentation
-K&R indent style with 4 space indent, NO hard tabs (all tabs replaced by spaces).
+## Indentation
 
-##Tool support
+[1TBS](https://en.wikipedia.org/wiki/Indentation_style#Variant:_1TBS_(OTBS)) (based K&R) indent style with 4 space indent, NO hard tabs (all tabs replaced by spaces).
+
+## Tool support
+
 Any of these tools can get you pretty close:
 
 Eclipse built in "K&R" style, after changing the indent to 4 spaces and change Braces after function declarations to Next line.
@@ -26,21 +29,54 @@ Sometimes, for example, you may want other columns and line breaks so it looks l
 
 Note2: The Astyle settings have been tested and will produce a nice result. Many files will be changed, mostly to the better but maybe not always, so use with care. 
 
-##Curly Braces
+## Curly Braces
+
 Functions shall have the opening brace at the beginning of the next line.
+```
+int function(int x)
+{
+    body of function
+}
+```
 
 All non-function statement blocks (if, switch, for) shall have the opening brace last on the same line, with the following statement on the next line.
 
 Closing braces shall be but on the line after the last statement in the block.
+```
+if (x is true) {
+    we do y
+    ...
+}
+```
+
+```
+switch (action) {
+case ADD:
+    return "add";
+case REMOVE:
+    return "remove";
+case CHANGE:
+    return "change";
+default:
+    return NULL;
+}
+```
 
 If it is followed by an `else` or `else if` that shall be on the same line, again with the opening brace on the same line.
+```
+if (x is true) {
+    we do y
+    ...
+} else {
+    we do z
+    ...
+}
+```
 
-A single statement after an `if` or an `else` may omit the "unnecessary" braces only when ALL conditional branches have single statements AND you have strong reason to know it will always be that way.
+Omission of "unnecessary" braces in cases where an `if` or `else` block consists only of a single statement is not permissible in any case. These "single statement blocks" are future bugs waiting to happen when more statements are added without enclosing the block in braces.
 
-If in doubt, do not omit such "unnecessary" braces.
-(Adding a statement to a branch will break the logic if the braces are forgotten and otherwise make the PR longer).
+## Spaces
 
-##Spaces
 Use a space after (most) keywords.  The notable exceptions are sizeof, typeof, alignof, and __attribute__, which look somewhat like functions (and are usually used with parentheses).
 So use a space after these keywords:
 ```
@@ -76,7 +112,21 @@ and no space around the '.' and "->" structure member operators.
 
 '*' and '&', when used for pointer and reference, shall have no space between it and the following variable name.
 
-#typedef
+# typedef
+
+enums that do not have a count or some other form of terminator element shall have a comma after their last element:
+
+```
+typedef enum {
+    MSP_RESULT_ACK = 1,
+    MSP_RESULT_ERROR = -1,
+    MSP_RESULT_NO_REPLY = 0,
+    MSP_RESULT_CMD_UNKNOWN = -2,
+} mspResult_e;
+```
+
+This ensures that, if more elements are added at a later stage, only the additional lines show up in the review, making it easier to review.
+
 enums with a count should have that count declared as the last item in the enumeration list,
 so that it is automatically maintained, e.g.:
 ```
@@ -87,7 +137,7 @@ typedef enum {
     PID_COUNT
 } pidControllerType_e;
 ```
-It shall not be calculated afterwards, e.g. using PID_CONTROLLER_LUX_FLOAT + 1;
+It shall not be calculated afterwards, e.g. using PID\_CONTROLLER\_LUX\_FLOAT + 1;
 
 typedef struct definitions should include the struct name, so that the type can be forward referenced, that is in:
 ```
@@ -97,13 +147,15 @@ typedef struct motorMixer_s {
     float yaw;
 } motorMixer_t;
 ```
-the motorMixer_s name is required.
+the motorMixer\_s name is required.
 
-#Variables
+# Variables
 
-##Naming
+## Naming
+
+
 Generally, descriptive lowerCamelCase names are preferred for function names, variables, arguments, etc.
-For configuration variables that are user accessible via CLI or similar, all_lowercase with underscore is preferred.
+For configuration variables that are user accessible via CLI or similar, all\_lowercase with underscore is preferred.
 
 Variable names should be nouns.
 
@@ -111,7 +163,8 @@ Simple temporary variables with a very small scope may be short where it aligns 
 Such as "i" as a temporary counter in a `for` loop, like `for (int i = 0; i < 4; i++)`.
 Using "temporaryCounter" in that case would not improve readability.
 
-##Declarations
+## Declarations
+
 Avoid global variables.
 
 Variables should be declared at the top of the smallest scope where the variable is used.
@@ -123,7 +176,8 @@ For example to limit variable scope to a single `case` branch.
 
 Variables with limited use may be declared at the point of first use. It makes PR-review easier (but that point is lost if the variable is used everywhere anyway).
 
-##Initialisation
+## Initialisation
+
 The pattern with "lazy initialisation" may be advantageous in the Configurator to speed up the start when the initialisation is "expensive" in some way.
 In the FC, however, it’s always better to use some milliseconds extra before take-off than to use them while flying.
 
@@ -131,23 +185,25 @@ So don't use "lazy initialisation".
 
 An explicit "init" function, is preferred.
 
-##Data types
+## Data types
+
 Be aware of the data types you use and do not trust implicit type casting to be correct.
 
-Angles are sometimes represented as degrees in a float. Sometimes as decidegrees in a uint8_t.
+Angles are sometimes represented as degrees in a float. Sometimes as decidegrees in a uint8\_t.
 You have been warned.
 
 Avoid implicit double conversions and only use float-argument functions.
 
 Check .map file to make sure no conversions sneak in, and use -Wdouble-promotion warning for the compiler
 
-Instead of sin() and cos(), use sin_approx() and cos_approx() from common/math.h.
+Instead of sin() and cos(), use sin\_approx() and cos\_approx() from common/math.h.
 
 Float constants should be defined with "f" suffix, like 1.0f and 3.1415926f, otherwise double conversion might occur.
 
-#Functions
+# Functions
 
-##Naming
+## Naming
+
 Methods that return a boolean should be named as a question, and should not change any state. e.g. 'isOkToArm()'.
 
 Methods should have verb or verb-phrase names, like deletePage or save. Tell the system to 'do' something 'with' something. e.g. deleteAllPages(pageList).
@@ -167,8 +223,9 @@ void newBiQuadLpf(...);
 boolean isBiQuadReady();
 ```
 
-##Parameter order
-Data should move from right to left, as in memcpy(void *dst, const void *src, size_t size).
+## Parameter order
+
+Data should move from right to left, as in memcpy(void *dst, const void *src, size\_t size).
 This also mimics the assignment operator (e.g. dst = src;)
 
 When a group of functions act on an 'object' then that object should be the first parameter for all the functions, e.g.:
@@ -182,8 +239,9 @@ float biQuadFilterApply(float sample, biquad_t *state);
 void biQuadNewLpf(float filterCutFreq, biquad_t *state, uint32_t refreshRate);
 ```
 
-##Declarations
-Functions not used outside their containing .c file should be declared static (or STATIC_UNIT_TESTED so they can be used in unit tests).
+## Declarations
+
+Functions not used outside their containing .c file should be declared static (or STATIC\_UNIT\_TESTED so they can be used in unit tests).
 
 Non-static functions should have their declaration in a single .h file.
 
@@ -199,7 +257,8 @@ In the module .c file, and in the test file but nowhere else, put `#define MODUL
 
 Note: You can get the same effect by putting the internals in a separate .h file.
 
-##Implementation
+## Implementation
+
 Keep functions short and distinctive.
 Think about unit test when you define your functions. Ideally you should implement the test cases before implementing the function.
 
@@ -221,11 +280,18 @@ Same for multiple `return` from a function and multiple `break` inside a `case`.
 In general, they reduce readability and maintainability.
 In rare cases such constructs can be justified but only when you have considered and understood the alternatives and still have a strong reason.
 
-Use parentheses around each group in logical and mathematical statements,
-rather than relying on the implicit logic and operator priority.
-The compiler knows what it’s doing but it should be easy for people too.
+In expressions, parentheses should only be used where they are required, i.e. where operator precedence will not evaluate in the right order, or where a compiler warning is triggered without parentheses. This brings all expressions into a canonical form, and avoids the problem of different developers having different ideas of what 'easy to read' expressions are.
 
-#Includes
+One exception to this rule is the ternary conditional operator
+
+```
+pidStabilisationEnabled = (pidControllerState == PID_STABILISATION_ON) ? true : false
+```
+
+Here, the condition shall be enclosed in braces, to make the ternary operator easier to spot when reading left to right.
+
+# Includes
+
 All files must include their own dependencies and not rely on includes from the included files or that some other file was included first.
 
 Do not include things you are not using.
@@ -233,7 +299,8 @@ Do not include things you are not using.
 "[#pragma once](https://en.wikipedia.org/wiki/Pragma_once)" is preferred over "#include guards" to avoid multiple includes.
 
 
-#Other details
+# Other details
+
 No trailing whitespace at the end of lines or at blank lines.
 
 Stay within 120 columns, unless exceeding 120 columns significantly increases readability and does not hide information.
@@ -241,9 +308,9 @@ Stay within 120 columns, unless exceeding 120 columns significantly increases re
 
 Take maximum possible advantage of compile time checking, so generally warnings should be as strict as possible.
 
-Don't call or reference "upwards". That is don't call or use anything in a software layer that is above the current layer. The software layers are not that obvious in Cleanflight, but we can certainly say that device drivers are the bottom layer and so should not call or use anything outside the device drivers.
+Don't call or reference "upwards". That is don't call or use anything in a software layer that is above the current layer. The software layers are not that obvious in Betaflight, but we can certainly say that device drivers are the bottom layer and so should not call or use anything outside the device drivers.
 
-Target specific code (e.g. #ifdef CC3D) should be absolutely minimised.
+Target specific code (e.g. #ifdef CC3D) is not permissible outside of the `src/main/target` directory.
 
 `typedef void handlerFunc(void);` is easier to read than `typedef void (*handlerFuncPtr)(void);`.
 

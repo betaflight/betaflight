@@ -40,7 +40,7 @@ extern "C" {
     #include "sensors/acceleration.h"
     #include "sensors/sensors.h"
 
-    STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev);
+    STATIC_UNIT_TESTED gyroHardware_e gyroDetect(gyroDev_t *dev);
     struct gyroSensor_s;
     STATIC_UNIT_TESTED void performGyroCalibration(struct gyroSensor_s *gyroSensor, uint8_t gyroMovementCalibrationThreshold);
     STATIC_UNIT_TESTED bool fakeGyroRead(gyroDev_t *gyro);
@@ -57,7 +57,7 @@ extern gyroDev_t * const gyroDevPtr;
 
 TEST(SensorGyro, Detect)
 {
-    const gyroSensor_e detected = gyroDetect(gyroDevPtr);
+    const gyroHardware_e detected = gyroDetect(gyroDevPtr);
     EXPECT_EQ(GYRO_FAKE, detected);
     EXPECT_EQ(GYRO_FAKE, detectedSensors[SENSOR_INDEX_GYRO]);
 }

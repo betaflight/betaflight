@@ -180,8 +180,8 @@ uint32_t fixedMillis = 0;
 
 baro_t baro;
 
-uint32_t getEstimatedAltitude() { return 0; }
-uint32_t getEstimatedVario() { return 0; }
+int32_t getEstimatedAltitudeCm() { return 0; }
+int16_t getEstimatedVario() { return 0; }
 
 uint32_t millis(void) {
     return fixedMillis;
@@ -255,6 +255,11 @@ bool telemetryDetermineEnabledState(portSharing_e)
     return true;
 }
 
+bool telemetryIsSensorEnabled(sensor_e sensor) {
+    UNUSED(sensor);
+    return true;
+}
+
 portSharing_e determinePortSharing(const serialPortConfig_t *, serialPortFunction_e)
 {
     return PORTSHARING_NOT_SHARED;
@@ -265,9 +270,24 @@ batteryState_e getBatteryState(void)
 	return BATTERY_OK;
 }
 
+batteryState_e getVoltageState(void)
+{
+	return BATTERY_OK;
+}
+	
+batteryState_e getConsumptionState(void)	
+{
+	return BATTERY_OK;
+}
+	
 uint16_t getBatteryVoltage(void)
 {
     return testBatteryVoltage;
+}
+
+uint16_t getLegacyBatteryVoltage(void)
+{
+    return (testBatteryVoltage + 5) / 10;
 }
 
 int32_t getAmperage(void) {

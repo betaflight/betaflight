@@ -26,6 +26,8 @@
 #define TARGET_BOARD_IDENTIFIER "ZCF3"
 #elif defined(FLIP32F3OSD)
 #define TARGET_BOARD_IDENTIFIER "FLF3"
+#elif defined(IRCSYNERGYF3)
+#define TARGET_BOARD_IDENTIFIER "ISF3"
 #else
 #define TARGET_BOARD_IDENTIFIER "SRF3"
 #endif
@@ -33,37 +35,53 @@
 // Removed to make the firmware fit into flash (in descending order of priority):
 //#undef USE_GYRO_OVERFLOW_CHECK
 //#undef USE_GYRO_LPF2
+#undef USE_EXTENDED_CMS_MENUS
 
+#if !(defined(ZCOREF3) || defined(FLIP32F3OSD) || defined(IRCSYNERGYF3))
 //#undef USE_ITERM_RELAX
 //#undef USE_RC_SMOOTHING_FILTER
+
+//#undef USE_MSP_DISPLAYPORT
+//#undef USE_MSP_OVER_TELEMETRY
+
+#undef USE_LED_STRIP
+//#undef USE_HUFFMAN
+//#undef USE_PINIO
+//#undef USE_PINIOBOX
 
 //#undef USE_TELEMETRY_HOTT
 //#undef USE_TELEMETRY_MAVLINK
 //#undef USE_TELEMETRY_LTM
-//#undef USE_SERIALRX_XBUS
+#undef USE_SERIALRX_XBUS
+#undef USE_SERIALRX_SUMH
+#undef USE_PWM
 
-//#undef USE_BOARD_INFO
-#undef USE_EXTENDED_CMS_MENUS
+#endif
+
+#undef USE_THRUST_LINEARIZATION
+#undef USE_BOARD_INFO
 #undef USE_RTC_TIME
+
 #undef USE_RX_MSP
 #undef USE_ESC_SENSOR_INFO
 
 #if defined(ZCOREF3)
-#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
 #define LED0_PIN                PB8
 #else
-#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
 #define LED0_PIN                PB3
 #endif
 
+#if !defined(IRCSYNERGYF3)
 #define USE_BEEPER
 #define BEEPER_PIN              PC15
 #define BEEPER_INVERTED
+#endif
 
 #define USE_EXTI
-#define MPU_INT_EXTI            PC13
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN          PC13
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
@@ -76,21 +94,19 @@
 
 #if defined(FLIP32F3OSD)
 #define USE_GYRO_MPU6500
-#define GYRO_MPU6500_ALIGN CW270_DEG
+#define GYRO_1_ALIGN            CW270_DEG
 
 #define USE_ACC_MPU6500
-#define ACC_MPU6500_ALIGN CW270_DEG
+#define ACC_1_ALIGN             CW270_DEG
 
 #elif defined(ZCOREF3)
-#define USE_GYRO
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN      CW180_DEG
+#define GYRO_1_ALIGN            CW180_DEG
 
-#define USE_ACC
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN       CW180_DEG
+#define ACC_1_ALIGN             CW180_DEG
 
 #define USE_SPI_DEVICE_1 // PB9,3,4,5 on AF5 SPI1 (MPU)
 
@@ -99,15 +115,24 @@
 #define SPI1_MISO_PIN           PB4
 #define SPI1_MOSI_PIN           PB5
 
-#define MPU6500_CS_PIN          PB9
-#define MPU6500_SPI_INSTANCE    SPI1
+#define GYRO_1_CS_PIN           PB9
+#define GYRO_1_SPI_INSTANCE     SPI1
 
+#elif defined(IRCSYNERGYF3)
+#define USE_GYRO_SPI_MPU6000
+#define GYRO_1_ALIGN            CW270_DEG
+
+#define USE_ACC_SPI_MPU6000
+#define ACC_1_ALIGN             CW270_DEG
+
+#define GYRO_1_CS_PIN           PB12
+#define GYRO_1_SPI_INSTANCE     SPI2
 #else
 #define USE_GYRO_MPU6050
-#define GYRO_MPU6050_ALIGN      CW270_DEG
+#define GYRO_1_ALIGN            CW270_DEG
 
 #define USE_ACC_MPU6050
-#define ACC_MPU6050_ALIGN       CW270_DEG
+#define ACC_1_ALIGN             CW270_DEG
 #endif
 
 #if defined(FLIP32F3OSD)
@@ -141,8 +166,10 @@
 #define MAG_INT_EXTI            PC14
 #endif
 
+#if !defined(IRCSYNERGYF3)
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
+#endif
 
 #define USE_UART1
 #define USE_UART2
@@ -181,6 +208,7 @@
 #define USE_SPI
 #define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5
 
+#if !defined(IRCSYNERGYF3)
 #define FLASH_CS_PIN            PB12
 #define FLASH_SPI_INSTANCE      SPI2
 
@@ -195,6 +223,7 @@
 #define USE_OSD
 #define USE_OSD_OVER_MSP_DISPLAYPORT
 #define USE_SLOW_MSP_DISPLAYPORT_RATE_WHEN_UNARMED
+#endif
 
 #define USE_MSP_CURRENT_METER
 
@@ -205,10 +234,12 @@
 #undef USE_UART1_TX_DMA
 #endif
 
+#if !defined(IRCSYNERGYF3)
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 #define DEFAULT_FEATURES        (FEATURE_RSSI_ADC | FEATURE_TELEMETRY)
+#endif
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

@@ -32,10 +32,16 @@
 
 #include "platform.h"
 
+#include "common/utils.h"
+#include "drivers/dma.h"
+#include "drivers/dma_reqmap.h"
 #include "drivers/sdmmc_sdio.h"
 #include "drivers/light_led.h"
 #include "drivers/io.h"
-#include "common/utils.h"
+
+#include "pg/pg.h"
+#include "pg/sdcard.h"
+#include "pg/sdio.h"
 
 #ifdef USE_HAL_DRIVER
 #include "usbd_msc.h"
@@ -148,17 +154,31 @@ USBD_STORAGE_cb_TypeDef USBD_MSC_MICRO_SDIO_fops =
 static int8_t STORAGE_Init (uint8_t lun)
 {
 	//Initialize SD_DET
-#ifdef SDCARD_DETECT_PIN
-	const IO_t sd_det = IOGetByTag(IO_TAG(SDCARD_DETECT_PIN));
+	const IO_t sd_det = IOGetByTag(sdcardConfig()->cardDetectTag);
 	IOInit(sd_det, OWNER_SDCARD_DETECT, 0);
 	IOConfigGPIO(sd_det, IOCFG_IPU);
-#endif
 
 	UNUSED(lun);
 	LED0_OFF;
+
+#ifdef USE_DMA_SPEC
+        const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpec(DMA_PERIPH_SDIO, 0, sdioConfig()->dmaopt);
+
+	if (!dmaChannelSpec) {
+        	return 1;
+        }
+
+	SD_Initialize_LL(dmaChannelSpec->ref);
+#else
 	SD_Initialize_LL(SDIO_DMA);
-	if (SD_Init() != 0) return 1;
+#endif
+
+	if (SD_Init() != 0) {
+            return 1;
+        }
+
 	LED0_ON;
+
 	return 0;
 }
 

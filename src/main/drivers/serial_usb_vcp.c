@@ -30,14 +30,14 @@
 #include "common/utils.h"
 
 #include "drivers/io.h"
+#include "pg/pg.h"
+#include "pg/usb.h"
 
 #if defined(STM32F4)
 #include "usb_core.h"
 #include "usbd_cdc_vcp.h"
 #ifdef USE_USB_CDC_HID
 #include "usbd_hid_cdc_wrapper.h"
-#include "pg/pg.h"
-#include "pg/usb.h"
 #endif
 #include "usb_io.h"
 #elif defined(STM32F7)
@@ -45,8 +45,6 @@
 #include "usb_io.h"
 #ifdef USE_USB_CDC_HID
 #include "usbd_cdc_hid.h"
-#include "pg/pg.h"
-#include "pg/usb.h"
 #endif
 USBD_HandleTypeDef USBD_Device;
 #else
@@ -220,36 +218,38 @@ serialPort_t *usbVcpOpen(void)
 {
     vcpPort_t *s;
 
+    IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, 0);
+    IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, 0);
+
 #if defined(STM32F4)
     usbGenerateDisconnectPulse();
 
-    IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, 0);
-    IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, 0);
+    switch (usbDevConfig()->type) {
 #ifdef USE_USB_CDC_HID
-    if (usbDevConfig()->type == COMPOSITE) {
+    case COMPOSITE:
         USBD_Init(&USB_OTG_dev, USB_OTG_FS_CORE_ID, &USR_desc, &USBD_HID_CDC_cb, &USR_cb);
-    } else {
+        break;
 #endif
+    default:
         USBD_Init(&USB_OTG_dev, USB_OTG_FS_CORE_ID, &USR_desc, &USBD_CDC_cb, &USR_cb);
-#ifdef USE_USB_CDC_HID
+        break;
     }
-#endif
 #elif defined(STM32F7)
     usbGenerateDisconnectPulse();
 
-    IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, 0);
-    IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, 0);
     /* Init Device Library */
     USBD_Init(&USBD_Device, &VCP_Desc, 0);
 
     /* Add Supported Class */
+    switch (usbDevConfig()->type) {
 #ifdef USE_USB_CDC_HID
-    if (usbDevConfig()->type == COMPOSITE) {
+    case COMPOSITE:
     	USBD_RegisterClass(&USBD_Device, USBD_HID_CDC_CLASS);
-    } else
+        break;
 #endif
-    {
+    default:
         USBD_RegisterClass(&USBD_Device, USBD_CDC_CLASS);
+        break;
     }
 
     /* HID Interface doesn't have any callbacks... */
