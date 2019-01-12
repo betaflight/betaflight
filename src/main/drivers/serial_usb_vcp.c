@@ -265,9 +265,13 @@ serialPort_t *usbVcpOpen(void)
 
     /* Start Device Process */
     USBD_Start(&USBD_Device);
+
 #ifdef STM32H7
     HAL_PWREx_EnableUSBVoltageDetector();
+    delay(100); // Cold boot failures observed without this, even when USB cable is not connected
 #endif
+
+
 #else
     Set_System();
     Set_USBClock();
