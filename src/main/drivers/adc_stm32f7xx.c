@@ -257,17 +257,15 @@ void adcInit(const adcConfig_t *config)
 
     bool adcActive = false;
     for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
-        if (!adcVerifyPin(adcOperatingConfig[i].tag, device)) {
-            continue;
+        if (adcVerifyPin(adcOperatingConfig[i].tag, device)) {
+            adcActive = true;
+            IOInit(IOGetByTag(adcOperatingConfig[i].tag), OWNER_ADC_BATT + i, 0);
+            IOConfigGPIO(IOGetByTag(adcOperatingConfig[i].tag), IO_CONFIG(GPIO_MODE_ANALOG, 0, GPIO_NOPULL));
+            adcOperatingConfig[i].adcChannel = adcChannelByTag(adcOperatingConfig[i].tag);
+            adcOperatingConfig[i].dmaIndex = configuredAdcChannels++;
+            adcOperatingConfig[i].sampleTime = ADC_SAMPLETIME_480CYCLES;
+            adcOperatingConfig[i].enabled = true;
         }
-
-        adcActive = true;
-        IOInit(IOGetByTag(adcOperatingConfig[i].tag), OWNER_ADC_BATT + i, 0);
-        IOConfigGPIO(IOGetByTag(adcOperatingConfig[i].tag), IO_CONFIG(GPIO_MODE_ANALOG, 0, GPIO_NOPULL));
-        adcOperatingConfig[i].adcChannel = adcChannelByTag(adcOperatingConfig[i].tag);
-        adcOperatingConfig[i].dmaIndex = configuredAdcChannels++;
-        adcOperatingConfig[i].sampleTime = ADC_SAMPLETIME_480CYCLES;
-        adcOperatingConfig[i].enabled = true;
     }
 
 #ifndef USE_ADC_INTERNAL
@@ -294,20 +292,18 @@ void adcInit(const adcConfig_t *config)
 
     uint8_t rank = 1;
     for (i = 0; i < ADC_CHANNEL_COUNT; i++) {
-        if (!adcOperatingConfig[i].enabled) {
-            continue;
-        }
+        if (adcOperatingConfig[i].enabled) {
+            ADC_ChannelConfTypeDef sConfig;
 
-        ADC_ChannelConfTypeDef sConfig;
+            sConfig.Channel      = adcOperatingConfig[i].adcChannel;
+            sConfig.Rank         = rank++;
+            sConfig.SamplingTime = adcOperatingConfig[i].sampleTime;
+            sConfig.Offset       = 0;
 
-        sConfig.Channel      = adcOperatingConfig[i].adcChannel;
-        sConfig.Rank         = rank++;
-        sConfig.SamplingTime = adcOperatingConfig[i].sampleTime;
-        sConfig.Offset       = 0;
-
-        if (HAL_ADC_ConfigChannel(&adc.ADCHandle, &sConfig) != HAL_OK)
-        {
-          /* Channel Configuration Error */
+            if (HAL_ADC_ConfigChannel(&adc.ADCHandle, &sConfig) != HAL_OK)
+            {
+                /* Channel Configuration Error */
+            }
         }
     }
 
@@ -351,7 +347,7 @@ void adcInit(const adcConfig_t *config)
 
     if (HAL_ADC_Start_DMA(&adc.ADCHandle, (uint32_t*)&adcValues, configuredAdcChannels) != HAL_OK)
     {
-        /* Start Conversation Error */
+        /* Start Conversion Error */
     }
 }
 #endif
