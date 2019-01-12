@@ -447,7 +447,7 @@ void init(void)
         if (mscStart() == 0) {
              mscWaitForButton();
         } else {
-             NVIC_SystemReset();
+            systemResetFromMsc();
         }
     }
 #endif
