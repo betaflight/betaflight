@@ -32,6 +32,7 @@ typedef enum {
     CMS_KEY_RIGHT,
     CMS_KEY_ESC,
     CMS_KEY_MENU,
+    CMS_KEY_SAVEMENU,
 } cms_key_e;
 
 extern bool cmsInMenu;
@@ -60,3 +61,6 @@ void cmsSetExternKey(cms_key_e extKey);
 #define CMS_EXIT             (0)
 #define CMS_EXIT_SAVE        (1)
 #define CMS_EXIT_SAVEREBOOT  (2)
+#define CMS_POPUP_SAVE       (3)
+#define CMS_POPUP_SAVEREBOOT (4)
+
