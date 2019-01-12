@@ -244,7 +244,8 @@ PG_RESET_TEMPLATE(gpsConfig_t, gpsConfig,
     .sbasMode = SBAS_AUTO,
     .autoConfig = GPS_AUTOCONFIG_ON,
     .autoBaud = GPS_AUTOBAUD_OFF,
-    .gps_ublox_use_galileo = false
+    .gps_ublox_use_galileo = false,
+    .gps_set_home_point_once = false
 );
 
 static void shiftPacketLog(void)
@@ -547,7 +548,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
     if (sensors(SENSOR_GPS)) {
         updateGpsIndicator(currentTimeUs);
     }
-    if (!ARMING_FLAG(ARMED)) {
+    if (!ARMING_FLAG(ARMED) && !gpsConfig()->gps_set_home_point_once) {
         DISABLE_STATE(GPS_FIX_HOME);
     }
 #if defined(USE_GPS_RESCUE)
@@ -1286,7 +1287,7 @@ static void GPS_calculateDistanceFlownVerticalSpeed(bool initialize)
         GPS_distanceFlownInCm = 0;
         GPS_verticalSpeedInCmS = 0;
     } else {
-        if (STATE(GPS_FIX_HOME)) {
+        if (STATE(GPS_FIX_HOME) && ARMING_FLAG(ARMED)) {
             // Only add up movement when speed is faster than minimum threshold
             if (gpsSol.groundSpeed > GPS_DISTANCE_FLOWN_MIN_GROUND_SPEED_THRESHOLD_CM_S) {
                 uint32_t dist;
@@ -1307,12 +1308,14 @@ static void GPS_calculateDistanceFlownVerticalSpeed(bool initialize)
 
 void GPS_reset_home_position(void)
 {
-    if (STATE(GPS_FIX) && gpsSol.numSat >= 5) {
-        GPS_home[LAT] = gpsSol.llh.lat;
-        GPS_home[LON] = gpsSol.llh.lon;
-        GPS_calc_longitude_scaling(gpsSol.llh.lat); // need an initial value for distance and bearing calc
-        // Set ground altitude
-        ENABLE_STATE(GPS_FIX_HOME);
+    if (!STATE(GPS_FIX_HOME) || !gpsConfig()->gps_set_home_point_once) {
+        if (STATE(GPS_FIX) && gpsSol.numSat >= 5) {
+            GPS_home[LAT] = gpsSol.llh.lat;
+            GPS_home[LON] = gpsSol.llh.lon;
+            GPS_calc_longitude_scaling(gpsSol.llh.lat); // need an initial value for distance and bearing calc
+            // Set ground altitude
+            ENABLE_STATE(GPS_FIX_HOME);
+        }
     }
     GPS_calculateDistanceFlownVerticalSpeed(true); //Initialize
 }
