@@ -722,10 +722,10 @@ const clivalue_t valueTable[] = {
 
 // PG_BATTERY_CONFIG
     { "bat_capacity",               VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 20000 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, batteryCapacity) },
-    { "vbat_max_cell_voltage",      VAR_UINT16  | MASTER_VALUE, .config.minmax = { 100, 500 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, vbatmaxcellvoltage) },
-    { "vbat_full_cell_voltage",     VAR_UINT16  | MASTER_VALUE, .config.minmax = { 100, 500 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, vbatfullcellvoltage) },
-    { "vbat_min_cell_voltage",      VAR_UINT16  | MASTER_VALUE, .config.minmax = { 100, 500 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, vbatmincellvoltage) },
-    { "vbat_warning_cell_voltage",  VAR_UINT16  | MASTER_VALUE, .config.minmax = { 100, 500 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, vbatwarningcellvoltage) },
+    { "vbat_max_cell_voltage",      VAR_UINT16  | MASTER_VALUE, .config.minmax = { VBAT_CELL_VOTAGE_RANGE_MIN, VBAT_CELL_VOTAGE_RANGE_MAX }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, vbatmaxcellvoltage) },
+    { "vbat_full_cell_voltage",     VAR_UINT16  | MASTER_VALUE, .config.minmax = { VBAT_CELL_VOTAGE_RANGE_MIN, VBAT_CELL_VOTAGE_RANGE_MAX }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, vbatfullcellvoltage) },
+    { "vbat_min_cell_voltage",      VAR_UINT16  | MASTER_VALUE, .config.minmax = { VBAT_CELL_VOTAGE_RANGE_MIN, VBAT_CELL_VOTAGE_RANGE_MAX }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, vbatmincellvoltage) },
+    { "vbat_warning_cell_voltage",  VAR_UINT16  | MASTER_VALUE, .config.minmax = { VBAT_CELL_VOTAGE_RANGE_MIN, VBAT_CELL_VOTAGE_RANGE_MAX }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, vbatwarningcellvoltage) },
     { "vbat_hysteresis",            VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 250 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, vbathysteresis) },
     { "current_meter",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_CURRENT_METER }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, currentMeterSource) },
     { "battery_meter",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_VOLTAGE_METER }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, voltageMeterSource) },
