@@ -347,7 +347,7 @@ FAST_CODE void scheduler(void)
         selectedTask->taskLatestDeltaTime = currentTimeUs - selectedTask->lastExecutedAt;
         float period = currentTimeUs - selectedTask->lastExecutedAt;
         selectedTask->lastExecutedAt = currentTimeUs;
-        selectedTask->lastDesiredAt += (cmpTimeUs(currentTimeUs,selectedTask->lastDesiredAt) / selectedTask->desiredPeriod) * selectedTask->desiredPeriod;
+        selectedTask->lastDesiredAt += (cmpTimeUs(currentTimeUs, selectedTask->lastDesiredAt) / selectedTask->desiredPeriod) * selectedTask->desiredPeriod;
         selectedTask->dynamicPriority = 0;
 
         // Execute task

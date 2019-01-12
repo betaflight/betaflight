@@ -131,7 +131,6 @@ typedef enum {
 #ifdef USE_TPA_MODE
     TABLE_TPA_MODE,
 #endif
-    TABLE_SCHEDULER_POLICY,
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 
