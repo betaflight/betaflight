@@ -280,9 +280,15 @@ Same for multiple `return` from a function and multiple `break` inside a `case`.
 In general, they reduce readability and maintainability.
 In rare cases such constructs can be justified but only when you have considered and understood the alternatives and still have a strong reason.
 
-Use parentheses around each group in logical and mathematical statements,
-rather than relying on the implicit logic and operator priority.
-The compiler knows what it’s doing but it should be easy for people too.
+In expressions, parentheses should only be used where they are required, i.e. where operator precedence will not evaluate in the right order, or where a compiler warning is triggered without parentheses. This brings all expressions into a canonical form, and avoids the problem of different developers having different ideas of what 'easy to read' expressions are.
+
+One exception to this rule is the ternary conditional operator
+
+```
+pidStabilisationEnabled = (pidControllerState == PID_STABILISATION_ON) ? true : false
+```
+
+Here, the condition shall be enclosed in braces, to make the ternary operator easier to spot when reading left to right.
 
 # Includes
 
