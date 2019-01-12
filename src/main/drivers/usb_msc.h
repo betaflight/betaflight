@@ -24,8 +24,6 @@
 
 #pragma once
 
-#define MSC_MAGIC 0xDDDD1010
-
 void mscInit(void);
 bool mscCheckBoot(void);
 uint8_t mscStart(void);

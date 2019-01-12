@@ -41,7 +41,7 @@ void systemReset(void)
 
 void systemResetToBootloader(void)
 {
-    persistentObjectWrite(PERSISTENT_OBJECT_BOOTLOADER_REQUEST, BOOTLOADER_REQUEST_COOKIE);
+    persistentObjectWrite(PERSISTENT_OBJECT_BOOTMODE_REQUEST, BOOTLOADER_REQUEST_COOKIE);
 
     __disable_irq();
     NVIC_SystemReset();
@@ -56,13 +56,12 @@ typedef struct isrVector_s {
 
 void checkForBootLoaderRequest(void)
 {
-    uint32_t bootloaderRequest = persistentObjectRead(PERSISTENT_OBJECT_BOOTLOADER_REQUEST);
-
-    persistentObjectWrite(PERSISTENT_OBJECT_BOOTLOADER_REQUEST, 0);
+    uint32_t bootloaderRequest = persistentObjectRead(PERSISTENT_OBJECT_BOOTMODE_REQUEST);
 
     if (bootloaderRequest != BOOTLOADER_REQUEST_COOKIE) {
         return;
     }
+    persistentObjectWrite(PERSISTENT_OBJECT_BOOTMODE_REQUEST, 0);
 
     extern isrVector_t system_isr_vector_table_base;
 
