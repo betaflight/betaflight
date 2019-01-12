@@ -439,6 +439,7 @@ TEST(OsdTest, TestAlarms)
     // given
     // default state is set
     setDefualtSimulationState();
+    sensorsSet(SENSOR_GPS);
 
     // and
     // the following OSD elements are visible
@@ -715,9 +716,18 @@ TEST(OsdTest, TestElementAltitude)
 
     // and
     osdConfigMutable()->units = OSD_UNIT_METRIC;
+    sensorsClear(SENSOR_GPS);
 
     // when
     simulationAltitude = 0;
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(23, 7, "-       ");
+
+    // when
+    sensorsSet(SENSOR_GPS);
     displayClearScreen(&testDisplayPort);
     osdRefresh(simulationTime);
 
