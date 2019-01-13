@@ -90,6 +90,9 @@ PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 2);
 #else
 #define PID_PROCESS_DENOM_DEFAULT       2
 #endif
+#if defined(USE_D_CUT)
+#define D_CUT_GAIN_FACTOR 0.00005f
+#endif
 
 #ifdef USE_RUNAWAY_TAKEOFF
 PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
@@ -115,14 +118,14 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 
 #define LAUNCH_CONTROL_YAW_ITERM_LIMIT 50 // yaw iterm windup limit when launch mode is "FULL" (all axes)
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 7);
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 8);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
     RESET_CONFIG(pidProfile_t, pidProfile,
         .pid = {
-            [PID_ROLL] =  { 46, 65, 30, 60 },
-            [PID_PITCH] = { 50, 75, 32, 60 },
+            [PID_ROLL] =  { 46, 65, 40, 60 },
+            [PID_PITCH] = { 50, 75, 44, 60 },
             [PID_YAW] =   { 45, 100, 0, 100 },
             [PID_LEVEL] = { 50, 50, 75, 0 },
             [PID_MAG] =   { 40, 0, 0, 0 },
@@ -183,6 +186,10 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .use_integrated_yaw = false,
         .integrated_yaw_relax = 200,
         .thrustLinearization = 0,
+        .dterm_cut_percent = 65,
+        .dterm_cut_gain = 15,
+        .dterm_cut_range_hz = 40,
+        .dterm_cut_lowpass_hz = 7,
     );
 #ifdef USE_DYN_LPF
     pidProfile->dterm_lowpass_hz = 150;
@@ -238,12 +245,14 @@ static FAST_RAM_ZERO_INIT filterApplyFnPtr dtermLowpass2ApplyFn;
 static FAST_RAM_ZERO_INIT dtermLowpass_t dtermLowpass2[XYZ_AXIS_COUNT];
 static FAST_RAM_ZERO_INIT filterApplyFnPtr ptermYawLowpassApplyFn;
 static FAST_RAM_ZERO_INIT pt1Filter_t ptermYawLowpass;
+
 #if defined(USE_ITERM_RELAX)
 static FAST_RAM_ZERO_INIT pt1Filter_t windupLpf[XYZ_AXIS_COUNT];
 static FAST_RAM_ZERO_INIT uint8_t itermRelax;
 static FAST_RAM_ZERO_INIT uint8_t itermRelaxType;
 static FAST_RAM_ZERO_INIT uint8_t itermRelaxCutoff;
 #endif
+
 #if defined(USE_ABSOLUTE_CONTROL)
 STATIC_UNIT_TESTED FAST_RAM_ZERO_INIT float axisError[XYZ_AXIS_COUNT];
 static FAST_RAM_ZERO_INIT float acGain;
@@ -253,6 +262,12 @@ static FAST_RAM_ZERO_INIT float acCutoff;
 static FAST_RAM_ZERO_INIT pt1Filter_t acLpf[XYZ_AXIS_COUNT];
 #endif
 
+#if defined(USE_D_CUT)
+static FAST_RAM_ZERO_INIT filterApplyFnPtr dtermCutRangeApplyFn; 
+static FAST_RAM_ZERO_INIT biquadFilter_t dtermCutRange[XYZ_AXIS_COUNT];
+static FAST_RAM_ZERO_INIT filterApplyFnPtr dtermCutLowpassApplyFn; 
+static FAST_RAM_ZERO_INIT pt1Filter_t dtermCutLowpass[XYZ_AXIS_COUNT];
+#endif
 
 #ifdef USE_RC_SMOOTHING_FILTER
 static FAST_RAM_ZERO_INIT pt1Filter_t setpointDerivativePt1[XYZ_AXIS_COUNT];
@@ -370,6 +385,19 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     if (itermRelax) {
         for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
             pt1FilterInit(&acLpf[i], pt1FilterGain(acCutoff, dT));
+        }
+    }
+#endif
+#if defined(USE_D_CUT)
+    if (pidProfile->dterm_cut_percent == 0) {
+        dtermCutRangeApplyFn = nullFilterApply;
+        dtermCutLowpassApplyFn = nullFilterApply;
+    } else {
+        dtermCutRangeApplyFn = (filterApplyFnPtr)biquadFilterApply;
+        dtermCutLowpassApplyFn = (filterApplyFnPtr)pt1FilterApply;
+        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+            biquadFilterInitLPF(&dtermCutRange[axis], pidProfile->dterm_cut_range_hz, targetPidLooptime);
+            pt1FilterInit(&dtermCutLowpass[axis], pt1FilterGain(pidProfile->dterm_cut_lowpass_hz, dT));
         }
     }
 #endif
@@ -495,6 +523,15 @@ static FAST_RAM_ZERO_INIT uint16_t dynLpfMin;
 static FAST_RAM_ZERO_INIT uint16_t dynLpfMax;
 #endif
 
+#ifdef USE_D_CUT
+static FAST_RAM_ZERO_INIT float dtermCutPercent;
+static FAST_RAM_ZERO_INIT float dtermCutPercentInv;
+static FAST_RAM_ZERO_INIT float dtermCutGain;
+static FAST_RAM_ZERO_INIT float dtermCutRangeHz;
+static FAST_RAM_ZERO_INIT float dtermCutLowpassHz;
+#endif
+static FAST_RAM_ZERO_INIT float dtermCutFactor;
+
 void pidInitConfig(const pidProfile_t *pidProfile)
 {
     if (pidProfile->feedForwardTransition == 0) {
@@ -613,6 +650,15 @@ void pidInitConfig(const pidProfile_t *pidProfile)
         thrustLinearizationB = (1.0f - thrustLinearization) / (2.0f * thrustLinearization);
     }
 #endif    
+#if defined(USE_D_CUT)
+    dtermCutPercent = pidProfile->dterm_cut_percent / 100.0f;
+    dtermCutPercentInv = 1.0f - dtermCutPercent;
+    dtermCutRangeHz = pidProfile->dterm_cut_range_hz;
+    dtermCutLowpassHz = pidProfile->dterm_cut_lowpass_hz;
+    dtermCutGain = pidProfile->dterm_cut_gain * dtermCutPercent * D_CUT_GAIN_FACTOR / dtermCutLowpassHz;
+    // lowpass included inversely in gain since stronger lowpass decreases peak effect
+#endif
+    dtermCutFactor = 1.0f;
 }
 
 void pidInit(const pidProfile_t *pidProfile)
@@ -1240,8 +1286,23 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
             if (cmpTimeUs(currentTimeUs, levelModeStartTimeUs) > CRASH_RECOVERY_DETECTION_DELAY_US) {
                 detectAndSetCrashRecovery(pidProfile->crash_recovery, axis, currentTimeUs, delta, errorRate);
             }
+#if defined(USE_D_CUT)
+            if (dtermCutPercent){
+                dtermCutFactor = dtermCutRangeApplyFn((filter_t *) &dtermCutRange[axis], delta);
+                dtermCutFactor = fabsf(dtermCutFactor) * dtermCutGain;
+                dtermCutFactor = dtermCutLowpassApplyFn((filter_t *) &dtermCutLowpass[axis], dtermCutFactor);
+                dtermCutFactor = MIN(dtermCutFactor, 1.0f);
+                dtermCutFactor = dtermCutPercentInv + (dtermCutFactor * dtermCutPercent);
+            }
+            if (axis == FD_ROLL) {
+                DEBUG_SET(DEBUG_D_CUT, 2, lrintf(pidCoefficient[axis].Kd * dtermCutFactor * 10.0f / DTERM_SCALE));
+            } else if (axis == FD_PITCH) {
+                DEBUG_SET(DEBUG_D_CUT, 3, lrintf(pidCoefficient[axis].Kd * dtermCutFactor * 10.0f / DTERM_SCALE));
+            }
+#endif
 
-            pidData[axis].D = pidCoefficient[axis].Kd * delta * tpaFactor;
+            pidData[axis].D = pidCoefficient[axis].Kd * delta * tpaFactor * dtermCutFactor;
+
         } else {
             pidData[axis].D = 0;
         }
