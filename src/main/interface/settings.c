@@ -962,6 +962,13 @@ const clivalue_t valueTable[] = {
     { "integrated_yaw_relax",    VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 255 }, PG_PID_PROFILE, offsetof(pidProfile_t, integrated_yaw_relax) },
 #endif
 
+#ifdef USE_D_CUT
+    { "dterm_cut_percent",          VAR_UINT8 | PROFILE_VALUE,  .config.minmax = { 0, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_cut_percent) },
+    { "dterm_cut_gain",             VAR_UINT8 | PROFILE_VALUE,  .config.minmax = { 1, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_cut_gain) },
+    { "dterm_cut_range_hz",         VAR_UINT8 | PROFILE_VALUE,  .config.minmax = { 10, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_cut_range_hz) },
+    { "dterm_cut_lowpass_hz",       VAR_UINT8 | PROFILE_VALUE,  .config.minmax = { 1, 20 }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_cut_lowpass_hz) },
+#endif
+
 #ifdef USE_LAUNCH_CONTROL
     { "launch_control_mode",        VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LAUNCH_CONTROL_MODE }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlMode) },
     { "launch_trigger_allow_reset", VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlAllowTriggerReset) },

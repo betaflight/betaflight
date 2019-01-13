@@ -160,6 +160,10 @@ typedef struct pidProfile_s {
     uint8_t use_integrated_yaw;             // Selects whether the yaw pidsum should integrated
     uint8_t integrated_yaw_relax;           // Specifies how much integrated yaw should be reduced to offset the drag based yaw component
     uint8_t thrustLinearization;            // Compensation factor for pid linearization
+    uint8_t dterm_cut_percent;              // Amount to cut D by with no gyro activity, zero disables, 20 means cut 20%, 50 means cut 50%
+    uint8_t dterm_cut_gain;                 // Gain factor for amount of gyro activity required to remove the dterm cut
+    uint8_t dterm_cut_range_hz;             // Biquad to prevent high frequency gyro noise from removing the dterm cut
+    uint8_t dterm_cut_lowpass_hz;           // First order lowpass to delay and smooth dterm cut factor
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles);
