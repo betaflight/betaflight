@@ -38,6 +38,7 @@
 
 #include "fc/runtime_config.h"
 
+#include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
@@ -441,7 +442,11 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     previousIMUUpdateTime = currentTimeUs;
 
 #ifdef USE_MAG
-    if (sensors(SENSOR_MAG) && compassIsHealthy()) {
+    if (sensors(SENSOR_MAG) && compassIsHealthy()
+#ifdef USE_GPS_RESCUE
+        && !gpsRescueDisableMag()
+#endif
+        ) {
         useMag = true;
     }
 #endif
@@ -452,14 +457,9 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
             courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
             useCOG = true;
         } else {
-            // If GPS rescue mode is active and we can use it, go for it.  When we're close to home we will
-            // probably stop re calculating GPS heading data.  Other future modes can also use this extern
+            courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
 
-            if (canUseGPSHeading) {
-                courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
-
-                useCOG = true;
-            }
+            useCOG = true;
         }
 
         if (useCOG && shouldInitializeGPSHeading()) {

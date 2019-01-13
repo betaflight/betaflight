@@ -1015,7 +1015,7 @@ static bool osdDrawSingleElement(uint8_t item)
             if (osdWarnGetState(OSD_WARNING_GPS_RESCUE_UNAVAILABLE) &&
                ARMING_FLAG(ARMED) &&
                gpsRescueIsConfigured() &&
-               !isGPSRescueAvailable()) {
+               !gpsRescueIsAvailable()) {
                 osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "NO GPS RESC");
                 SET_BLINK(OSD_WARNINGS);
                 break;
