@@ -66,6 +66,7 @@
 
 #if defined(STM32F40_41xxx) || defined(STM32F411xE)
 #define USE_OVERCLOCK
+#define USE_SPI_TRANSACTION
 #endif
 
 #endif // STM32F4
@@ -85,6 +86,7 @@
 #define USE_PERSISTENT_MSC_RTC
 #define USE_MCO
 #define USE_DMA_SPEC
+#define USE_SPI_TRANSACTION
 #endif // STM32F7
 
 #if defined(STM32F4) || defined(STM32F7)

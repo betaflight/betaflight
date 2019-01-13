@@ -68,10 +68,14 @@ bool flashInit(const flashConfig_t *flashConfig)
     IOConfigGPIO(busdev->busdev_u.spi.csnPin, SPI_IO_CS_CFG);
     IOHi(busdev->busdev_u.spi.csnPin);
 
+#ifdef USE_SPI_TRANSACTION
+    spiBusTransactionInit(busdev, SPI_MODE3_POL_HIGH_EDGE_2ND, SPI_CLOCK_FAST);
+#else
 #ifndef FLASH_SPI_SHARED
     //Maximum speed for standard READ command is 20mHz, other commands tolerate 25mHz
     //spiSetDivisor(busdev->busdev_u.spi.instance, SPI_CLOCK_FAST);
     spiSetDivisor(busdev->busdev_u.spi.instance, SPI_CLOCK_STANDARD*2);
+#endif
 #endif
 
     flashDevice.busdev = busdev;
@@ -87,7 +91,11 @@ bool flashInit(const flashConfig_t *flashConfig)
     in[1] = 0;
 
     // Clearing the CS bit terminates the command early so we don't have to read the chip UID:
+#ifdef USE_SPI_TRANSACTION
+    spiBusTransactionTransfer(busdev, out, in, sizeof(out));
+#else
     spiBusTransfer(busdev, out, in, sizeof(out));
+#endif
 
     // Manufacturer, memory type, and capacity
     uint32_t chipID = (in[1] << 16) | (in[2] << 8) | (in[3]);

@@ -80,6 +80,7 @@ STATIC_ASSERT(M25P16_PAGESIZE < FLASH_MAX_PAGE_SIZE, M25P16_PAGESIZE_too_small);
 
 const flashVTable_t m25p16_vTable;
 
+#ifndef USE_SPI_TRANSACTION
 static void m25p16_disable(busDevice_t *bus)
 {
     IOHi(bus->busdev_u.spi.csnPin);
@@ -91,12 +92,17 @@ static void m25p16_enable(busDevice_t *bus)
     __NOP();
     IOLo(bus->busdev_u.spi.csnPin);
 }
+#endif
 
 static void m25p16_transfer(busDevice_t *bus, const uint8_t *txData, uint8_t *rxData, int len)
 {
+#ifdef USE_SPI_TRANSACTION
+    spiBusTransactionTransfer(bus, txData, rxData, len);
+#else
     m25p16_enable(bus);
     spiTransfer(bus->busdev_u.spi.instance, txData, rxData, len);
     m25p16_disable(bus);
+#endif
 }
 
 /**
@@ -104,11 +110,13 @@ static void m25p16_transfer(busDevice_t *bus, const uint8_t *txData, uint8_t *rx
  */
 static void m25p16_performOneByteCommand(busDevice_t *bus, uint8_t command)
 {
+#ifdef USE_SPI_TRANSACTION
+    m25p16_transfer(bus, &command, NULL, 1);
+#else
     m25p16_enable(bus);
-
     spiTransferByte(bus->busdev_u.spi.instance, command);
-
     m25p16_disable(bus);
+#endif
 }
 
 /**
@@ -269,13 +277,20 @@ static void m25p16_pageProgramContinue(flashDevice_t *fdevice, const uint8_t *da
 
     m25p16_writeEnable(fdevice);
 
+#ifdef USE_SPI_TRANSACTION
+    spiBusTransactionBegin(fdevice->busdev);
+#else
     m25p16_enable(fdevice->busdev);
+#endif
 
     spiTransfer(fdevice->busdev->busdev_u.spi.instance, command, NULL, fdevice->isLargeFlash ? 5 : 4);
-
     spiTransfer(fdevice->busdev->busdev_u.spi.instance, data, NULL, length);
 
+#ifdef USE_SPI_TRANSACTION
+    spiBusTransactionEnd(fdevice->busdev);
+#else
     m25p16_disable(fdevice->busdev);
+#endif
 
     fdevice->currentWriteAddress += length;
 }
@@ -327,12 +342,20 @@ static int m25p16_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *b
         return 0;
     }
 
+#ifdef USE_SPI_TRANSACTION
+    spiBusTransactionBegin(fdevice->busdev);
+#else
     m25p16_enable(fdevice->busdev);
+#endif
 
     spiTransfer(fdevice->busdev->busdev_u.spi.instance, command, NULL, fdevice->isLargeFlash ? 5 : 4);
     spiTransfer(fdevice->busdev->busdev_u.spi.instance, NULL, buffer, length);
 
+#ifdef USE_SPI_TRANSACTION
+    spiBusTransactionEnd(fdevice->busdev);
+#else
     m25p16_disable(fdevice->busdev);
+#endif
 
     return length;
 }
