@@ -185,7 +185,7 @@ void schedulerResetTaskMaxExecutionTime(cfTaskId_e taskId);
 void schedulerInit(void);
 void scheduler(void);
 void taskSystemLoad(timeUs_t currentTime);
-void schedulerSetPolicy(schedulerPolicy_e policy);
+void schedulerOptimizeRate(bool optimizeRate);
 
 #define LOAD_PERCENTAGE_ONE 100
 

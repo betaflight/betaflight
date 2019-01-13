@@ -56,7 +56,6 @@ FAST_RAM_ZERO_INIT uint16_t averageSystemLoadPercent = 0;
 static FAST_RAM_ZERO_INIT int taskQueuePos = 0;
 STATIC_UNIT_TESTED FAST_RAM_ZERO_INIT int taskQueueSize = 0;
 
-static FAST_RAM_ZERO_INIT schedulerPolicy_e policy;
 static FAST_RAM int periodCalculationBasisOffset = offsetof(cfTask_t, lastExecutedAt);
 
 // No need for a linked list for the queue, since items are only inserted at startup
@@ -246,15 +245,9 @@ void schedulerInit(void)
     queueAdd(&cfTasks[TASK_SYSTEM]);
 }
 
-void schedulerSetPolicy(schedulerPolicy_e newPolicy)
+void schedulerOptimizeRate(bool optimizeRate)
 {
-    policy = newPolicy;
-    if (policy == SCHEDULER_POLICY_PRIORITIZE_AVERAGE_RATE) {
-        periodCalculationBasisOffset = offsetof(cfTask_t, lastDesiredAt);
-    } else
-    {
-        periodCalculationBasisOffset = offsetof(cfTask_t, lastExecutedAt);
-    }
+    periodCalculationBasisOffset = optimizeRate ? offsetof(cfTask_t, lastDesiredAt) : offsetof(cfTask_t, lastExecutedAt);
 }
 
 inline static timeUs_t getPeriodCalculationBasis(const cfTask_t* task)
