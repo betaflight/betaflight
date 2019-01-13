@@ -88,10 +88,21 @@ serialPort_t *debugSerialPort = NULL;
 #define W25N01G_INSTRUCTION_FAST_READ        0x1B
 #define W25N01G_INSTRUCTION_FAST_READ_QUAD_OUTPUT 0x6B
 
-// Configu/status register addresses
+// Config/status register addresses
 #define W25N01G_PROT_REG 0xA0
 #define W25N01G_CONF_REG 0xB0
 #define W25N01G_STAT_REG 0xC0
+
+// Bits in config/status register 1 (W25N01G_PROT_REG)
+#define W25N01G_PROT_CLEAR                (0)
+#define W25N01G_PROT_SRP1_ENABLE          (1 << 0)
+#define W25N01G_PROT_WP_E_ENABLE          (1 << 1)
+#define W25N01G_PROT_TB_ENABLE            (1 << 2)
+#define W25N01G_PROT_PB0_ENABLE           (1 << 3)
+#define W25N01G_PROT_PB1_ENABLE           (1 << 4)
+#define W25N01G_PROT_PB2_ENABLE           (1 << 5)
+#define W25N01G_PROT_PB3_ENABLE           (1 << 6)
+#define W25N01G_PROT_SRP2_ENABLE          (1 << 7)
 
 // Bits in config/status register 2 (W25N01G_CONF_REG)
 #define W25N01G_CONFIG_ECC_ENABLE         (1 << 4)
@@ -253,20 +264,10 @@ static void w25n01g_deviceReset(flashDevice_t *fdevice)
 
     // Protection for upper 1/32 (BP[3:0] = 0101, TB=0), WP-E on; to protect bad block replacement area
     // DON'T DO THIS. This will prevent writes through the bblut as well.
-    // w25n01g_writeRegister(busdev, W25N01G_PROT_REG, (5 << 3)|(0 << 2)|(1 << 1));
+    // w25n01g_writeRegister(busdev, W25N01G_PROT_REG, W25N01G_PROT_PB0_ENABLE|W25N01G_PROT_PB2_ENABLE|W25N01G_PROT_WP_E_ENABLE);
 
-    uint8_t value = (0 << 3)|(0 << 2); // No protection
-
-    if (io->mode == FLASHIO_SPI) {
-        value |= (1 << 1); // WP-E on
-    }
-#ifdef USE_QUADSPI
-    else if (io->mode == FLASHIO_QUADSPI) {
-        value |= (0 << 1); // WP-E off, WP-E prevents use of IO2
-    }
-#endif
-
-    w25n01g_writeRegister(io, W25N01G_PROT_REG, value);
+    // No protection, WP-E off, WP-E prevents use of IO2
+    w25n01g_writeRegister(io, W25N01G_PROT_REG, W25N01G_PROT_CLEAR);
 
     // Buffered read mode (BUF = 1), ECC enabled (ECC = 1)
     w25n01g_writeRegister(io, W25N01G_CONF_REG, W25N01G_CONFIG_ECC_ENABLE|W25N01G_CONFIG_BUFFER_READ_MODE);
@@ -393,10 +394,10 @@ bool w25n01g_detect(flashDevice_t *fdevice, uint32_t chipID)
 
 #if 0
     // Protection to upper 1/32 (BP[3:0] = 0101, TB=0), WP-E on
-    //w25n01g_writeRegister(fdevice->handle.busdev, W25N01G_PROT_REG, (5 << 3)|(0 << 2)|(1 << 1));
+    //w25n01g_writeRegister(fdevice->handle.busdev, W25N01G_PROT_REG, W25N01G_PROT_PB0_ENABLE|W25N01G_PROT_PB2_ENABLE|W25N01G_PROT_WP_E_ENABLE);
 
-    // No protection, WP-E on
-    w25n01g_writeRegister(fdevice->handle, W25N01G_PROT_REG, (0 << 3)|(0 << 2)|(1 << 1));
+    // No protection, WP-E off
+    w25n01g_writeRegister(fdevice->handle, W25N01G_PROT_REG, W25N01G_PROT_CLEAR);
 
     // Continuous mode (BUF = 0), ECC enabled (ECC = 1)
     w25n01g_writeRegister(fdevice->handle, W25N01G_CONF_REG, W25N01G_CONFIG_ECC_ENABLE);
