@@ -138,9 +138,7 @@ void mscWaitForButton(void)
     while (true) {
         asm("NOP");
         if (mscCheckButton()) {
-            *((uint32_t *)0x2001FFF0) = 0xFFFFFFFF;
-            delay(1);
-            NVIC_SystemReset();
+            systemResetFromMsc();
         }
     }
 }
@@ -156,4 +154,13 @@ void systemResetToMsc(void)
     __disable_irq();
     NVIC_SystemReset();
 }
+
+void systemResetFromMsc(void)
+{
+    *((uint32_t *)0x2001FFF0) = 0xFFFFFFFF;
+    delay(1);
+    __disable_irq();
+    NVIC_SystemReset();
+}
+
 #endif

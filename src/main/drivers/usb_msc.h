@@ -32,3 +32,4 @@ uint8_t mscStart(void);
 bool mscCheckButton(void);
 void mscWaitForButton(void);
 void systemResetToMsc(void);
+void systemResetFromMsc(void);
