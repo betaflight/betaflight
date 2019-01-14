@@ -26,7 +26,6 @@
 #undef USE_GYRO_OVERFLOW_CHECK
 //#undef USE_GYRO_LPF2
 
-//#undef USE_RC_SMOOTHING_FILTER
 //#undef USE_DYN_LPF
 
 //#undef USE_ITERM_RELAX
