@@ -3766,7 +3766,7 @@ static void cliTasks(char *cmdline)
             int taskFrequency;
             int subTaskFrequency = 0;
             if (taskId == TASK_GYROPID) {
-                subTaskFrequency = taskInfo.latestDeltaTime == 0 ? 0 : (int)(1000000.0f / ((float)taskInfo.latestDeltaTime));
+                subTaskFrequency = taskInfo.movingAverageCycleTime == 0.0f ? 0.0f : (int)(1000000.0f / (taskInfo.movingAverageCycleTime));
                 taskFrequency = subTaskFrequency / pidConfig()->pid_process_denom;
                 if (pidConfig()->pid_process_denom > 1) {
                     cliPrintf("%02d - (%15s) ", taskId, taskInfo.taskName);
