@@ -40,7 +40,9 @@
 #include "drivers/io.h"
 #include "drivers/light_led.h"
 #include "drivers/nvic.h"
+#include "drivers/persistent.h"
 #include "drivers/sdmmc_sdio.h"
+#include "drivers/system.h"
 #include "drivers/time.h"
 #include "drivers/usb_msc.h"
 
@@ -123,10 +125,11 @@ uint8_t mscStart(void)
 
 bool mscCheckBoot(void)
 {
-    if (*((uint32_t *)0x2001FFF0) == MSC_MAGIC) {
-        return true;
-    }
-    return false;
+    const uint32_t bootModeRequest = persistentObjectRead(PERSISTENT_OBJECT_BOOTMODE_REQUEST);
+    return bootModeRequest == MSC_REQUEST_COOKIE;
+    // Note that we can't clear the persisent object after checking here. This is because
+    // this function is called multiple times during initialization. So we clear on a reset
+    // out of MSC mode.
 }
 
 bool mscCheckButton(void)
@@ -159,7 +162,7 @@ void mscWaitForButton(void)
 
 void systemResetToMsc(int timezoneOffsetMinutes)
 {
-    *((uint32_t *)0x2001FFF0) = MSC_MAGIC;
+    persistentObjectWrite(PERSISTENT_OBJECT_BOOTMODE_REQUEST, MSC_REQUEST_COOKIE);
 
     __disable_irq();
 
@@ -174,8 +177,7 @@ void systemResetToMsc(int timezoneOffsetMinutes)
 
 void systemResetFromMsc(void)
 {
-    *((uint32_t *)0x2001FFF0) = 0xFFFFFFFF;
-    delay(1);
+    persistentObjectWrite(PERSISTENT_OBJECT_BOOTMODE_REQUEST, 0);
     __disable_irq();
     NVIC_SystemReset();
 }
