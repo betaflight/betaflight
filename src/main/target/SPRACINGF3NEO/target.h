@@ -32,11 +32,12 @@
 #undef USE_MSP_OVER_TELEMETRY
 
 #undef USE_DYN_LPF
+#undef USE_D_CUT
+#undef USE_LAUNCH_CONTROL
 
 #undef USE_ITERM_RELAX
 #undef USE_RC_SMOOTHING_FILTER
 #undef USE_THRUST_LINEARIZATION
-#undef USE_D_CUT
 
 #undef USE_HUFFMAN
 #undef USE_PINIO
@@ -54,6 +55,7 @@
 #undef USE_RTC_TIME
 #undef USE_RX_MSP
 #undef USE_ESC_SENSOR_INFO
+
 
 #define LED0_PIN                PB9
 #define LED1_PIN                PB2
