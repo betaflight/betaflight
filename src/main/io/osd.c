@@ -825,10 +825,10 @@ static bool osdDrawSingleElement(uint8_t item)
 #if defined(USE_VTX_COMMON)
     case OSD_VTX_CHANNEL:
         {
-            const char vtxBandLetter = vtx58BandLetter[vtxSettingsConfig()->band];
-            const char *vtxChannelName = vtx58ChannelNames[vtxSettingsConfig()->channel];
-            uint8_t vtxPower = vtxSettingsConfig()->power;
             const vtxDevice_t *vtxDevice = vtxCommonDevice();
+            const char vtxBandLetter = vtxCommonLookupBandLetter(vtxDevice, vtxSettingsConfig()->band);
+            const char *vtxChannelName = vtxCommonLookupChannelName(vtxDevice, vtxSettingsConfig()->channel);
+            uint8_t vtxPower = vtxSettingsConfig()->power;
             if (vtxDevice && vtxSettingsConfig()->lowPowerDisarm) {
                 vtxCommonGetPowerIndex(vtxDevice, &vtxPower);
             }
