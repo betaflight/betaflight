@@ -86,7 +86,7 @@ void currentMeterReset(currentMeter_t *meter)
 // ADC/Virtual shared
 //
 
-#define IBAT_LPF_FREQ  0.4f
+#define IBAT_LPF_FREQ  2.0f
 static biquadFilter_t adciBatFilter;
 
 #ifndef CURRENT_METER_SCALE_DEFAULT
