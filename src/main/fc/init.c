@@ -710,7 +710,6 @@ void init(void)
 
 #if defined(USE_VTX_COMMON)
     vtxCommonInit();
-    vtxInit();
 #endif
 
 #ifdef USE_VTX_SMARTAUDIO

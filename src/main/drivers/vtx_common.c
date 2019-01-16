@@ -168,7 +168,7 @@ bool vtxCommonLookupBandChan(const vtxDevice_t *vtxDevice, uint16_t freq, uint8_
 // Returns frequency value (in MHz), or 0 if band/channel out of range.
 uint16_t vtxCommonLookupFrequency(const vtxDevice_t *vtxDevice, int band, int channel)
 {
-    if (band > 0 && band <= vtxDevice->capability.bandCount &&
+    if (vtxDevice && band > 0 && band <= vtxDevice->capability.bandCount &&
                           channel > 0 && channel <= vtxDevice->capability.channelCount) {
         return vtxDevice->frequencyTable[(band - 1) * vtxDevice->capability.channelCount + (channel - 1)];
 

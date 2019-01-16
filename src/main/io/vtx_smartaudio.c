@@ -706,6 +706,8 @@ bool vtxSmartAudioInit(void)
 
     vtxCommonSetDevice(&vtxSmartAudio);
 
+    vtxInit();
+
     return true;
 }
 

@@ -36,6 +36,7 @@
 #include "drivers/time.h"
 #include "drivers/vtx_rtc6705.h"
 
+#include "io/vtx.h"
 #include "io/vtx_rtc6705.h"
 #include "io/vtx_string.h"
 
@@ -68,6 +69,8 @@ bool vtxRTC6705Init(void)
     vtxRTC6705.powerNames = rtc6705PowerNames,
 
     vtxCommonSetDevice(&vtxRTC6705);
+
+    vtxInit();
 
     return true;
 }
