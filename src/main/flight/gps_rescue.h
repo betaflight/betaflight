@@ -48,4 +48,5 @@ float gpsRescueGetYawRate(void);
 float gpsRescueGetThrottle(void);
 bool gpsRescueIsConfigured(void);
 bool gpsRescueIsAvailable(void);
+bool gpsRescueIsDisabled(void);
 bool gpsRescueDisableMag(void);

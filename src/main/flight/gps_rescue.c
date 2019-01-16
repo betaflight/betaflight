@@ -618,6 +618,11 @@ bool gpsRescueIsAvailable(void)
     return rescueState.isAvailable;
 }
 
+bool gpsRescueIsDisabled(void)
+{
+    return (!STATE(GPS_FIX_HOME));
+}
+
 bool gpsRescueDisableMag(void)
 {
     return ((!gpsRescueConfig()->useMag || magForceDisable) && (rescueState.phase >= RESCUE_INITIALIZE) && (rescueState.phase <= RESCUE_LANDING));

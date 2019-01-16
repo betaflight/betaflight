@@ -460,8 +460,12 @@ void tryArm(void)
         GPS_reset_home_position();
 
         //beep to indicate arming
-        if (featureIsEnabled(FEATURE_GPS) && STATE(GPS_FIX) && gpsSol.numSat >= 5) {
-            beeper(BEEPER_ARMING_GPS_FIX);
+        if (featureIsEnabled(FEATURE_GPS)) {
+            if (STATE(GPS_FIX) && gpsSol.numSat >= 5) {
+                beeper(BEEPER_ARMING_GPS_FIX);
+            } else {
+                beeper(BEEPER_ARMING_GPS_NO_FIX);
+            }
         } else {
             beeper(BEEPER_ARMING);
         }
