@@ -90,8 +90,9 @@ HSE_VALUE       ?= 8000000
 # used for turning on features like VCP and SDCARD
 FEATURES        =
 
-# used to disable features based on flash space shortage (larger => more features disabled)
-FLASH_RESTRICTEDNESS_LEVEL =
+# used to disable features based on flash space shortage (larger number => more features disabled)
+FEATURE_CUT_LEVEL_SUPPLIED := $(FEATURE_CUT_LEVEL)
+FEATURE_CUT_LEVEL =
 
 include $(ROOT)/make/targets.mk
 
@@ -158,8 +159,10 @@ ifneq ($(HSE_VALUE),)
 DEVICE_FLAGS  := $(DEVICE_FLAGS) -DHSE_VALUE=$(HSE_VALUE)
 endif
 
-ifneq ($(FLASH_RESTRICTEDNESS_LEVEL),)
-DEVICE_FLAGS  := $(DEVICE_FLAGS) -DFLASH_RESTRICTEDNESS_LEVEL=$(FLASH_RESTRICTEDNESS_LEVEL)
+ifneq ($(FEATURE_CUT_LEVEL_SUPPLIED),)
+DEVICE_FLAGS  := $(DEVICE_FLAGS) -DFEATURE_CUT_LEVEL=$(FEATURE_CUT_LEVEL_SUPPLIED)
+else ifneq ($(FEATURE_CUT_LEVEL),)
+DEVICE_FLAGS  := $(DEVICE_FLAGS) -DFEATURE_CUT_LEVEL=$(FEATURE_CUT_LEVEL)
 endif
 
 TARGET_DIR     = $(ROOT)/src/main/target/$(BASE_TARGET)
