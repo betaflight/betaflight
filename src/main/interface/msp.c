@@ -387,7 +387,7 @@ static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, const uin
 
         if (!useLegacyFormat) {
             // update the 'read length' with the actual amount read from flash.
-            *readLenPtr = (uint16_t)bytesRead;
+            *readLenPtr = bytesRead;
         }
 
         sbufAdvance(dst, bytesRead);
