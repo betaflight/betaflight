@@ -169,10 +169,9 @@
 #define USE_SERIALRX_FPORT      // FrSky FPort
 #define USE_TELEMETRY_CRSF
 #define USE_TELEMETRY_SRXL
-#define USE_SERIAL_4WAY_BLHELI_BOOTLOADER  //TODO: Fix this conditional.
-#define USE_CMS //TODO: Fix this conditional.
 
 #if ((FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 10))
+#define USE_CMS
 #define USE_CAMERA_CONTROL
 #define USE_MSP_DISPLAYPORT
 #define USE_MSP_OVER_TELEMETRY
@@ -183,6 +182,7 @@
 #define USE_VTX_SMARTAUDIO
 #define USE_VTX_TRAMP
 #define USE_ESC_SENSOR
+#define USE_SERIAL_4WAY_BLHELI_BOOTLOADER
 #endif
 
 #if ((FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 9))

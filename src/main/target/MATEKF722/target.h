@@ -153,7 +153,6 @@
 #define CURRENT_METER_SCALE_DEFAULT 179
 
 #define USE_ESCSERIAL
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff

@@ -118,7 +118,6 @@
 #endif
 
 #if defined(CRAZYFLIE2BQ)
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define USE_BEEPER
 #define BEEPER_PIN              PC12

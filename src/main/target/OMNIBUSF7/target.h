@@ -243,7 +243,6 @@
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #endif
 
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 //PORT'S & TIMERS---------------------------
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff
