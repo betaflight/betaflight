@@ -197,6 +197,10 @@ void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->dterm_filter_type = FILTER_BIQUAD;
     pidProfile->dterm_filter2_type = FILTER_BIQUAD;
 #endif
+#ifndef USE_D_CUT
+    pidProfile->pid[PID_ROLL].D = 30;
+    pidProfile->pid[PID_PITCH].D = 32;
+#endif
 }
 
 void pgResetFn_pidProfiles(pidProfile_t *pidProfiles)
