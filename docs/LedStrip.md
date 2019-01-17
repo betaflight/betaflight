@@ -1,13 +1,20 @@
 # LED Strip
 
-Cleanflight supports the use of addressable LED strips.  Addressable LED strips allow each LED in the strip to
-be programmed with a unique and independant color.  This is far more advanced than the normal RGB strips which
-require that all the LEDs in the strip show the same color.
+Betaflight supports the use of addressable LED strips.  Addressable LED strips allow each LED in the strip to be programmed with a unique and independent color.  This is far more advanced than the normal RGB strips which require that all the LEDs in the strip show the same color.
 
-Addressable LED strips can be used to show information from the flight controller system, the current implementation
-supports the following:
 
-* Up to 32 LEDs.
+## LED Strip Profiles
+
+The LED strip feature supports 3 LED strip profiles, STATUS, RACE and BEACON.  The selected profile can be changed from the CLI, OSD LED strip menu or from an adjustment channel, i.e. switch on your radio.  Take note that the adjustment channel from your radio overrides all other LED strip profile selection options.
+
+
+### STATUS Profile
+
+The STATUS profile is used to display all the information mentioned below, i.e. warning indications, larsen scanner etc.
+
+Addressable LED strips can be used to show information from the flight controller system, the current implementation supports the following:
+
+* Up to 32 LEDs. (Support for more than 32 LEDs is possible, it just requires additional development.)
 * Indicators showing pitch/roll stick positions.
 * Heading/Orientation lights.
 * Flight mode specific color schemes.
@@ -17,12 +24,58 @@ supports the following:
 * RSSI level.
 * Battery level.
 
-Support for more than 32 LEDs is possible, it just requires additional development.
+
+### RACE Profile
+
+The RACE profile is used to set ALL strip LEDs to the selected color for racing, i.e. to identify quads based on LED color.  The LED color is fixed and no other information is displayed.
+
+
+### BEACON Profile
+
+The BEACON profile is used to find a lost quad, it flashes all LEDs white once per second.  Again in this profile no other information is displayed on the LEDs.
+
+
+### LED Profile Configuration
+
+###### OPTION 1: Configure an adjustment range to change the LED strip profile from your radio
+1. Turn on Expert mode - see top right of configurator screen "Enable Expert Mode".
+2. The LED strip profile selection is performed using an adjustment configured via the Adjustments tab.
+    - Enable an adjustment. ("If enabled")
+    - Select the AUX channel to be used to change the LED strip profile. ("when channel")
+    - Set the range to cover the entire range of the selected AUX channel. ("is in ranges")
+    - For the action select "RC Rate Adjustment". ("then apply")  This will be configured in the CLI since LED strip profiles is not supported by Configurator 10.4.0 and earlier. "RC Rate Adjustment" is only selected to make the configuration in the CLI a little easier below.
+    - Select slot 1. ("using slot")  (the slot number does not matter, pick any free number)
+    - Select the "via channel" to match the selected AUX channel of above. ("when channel").
+    - Save
+3. Open the CLI and type ```adjrange``` followed by enter.
+4. Copy the adjrange configured in step 2. above and paste it in the command window.  Change the '1' following the range of the channel to '30' and press enter.  Type ```save``` and press enter.  The configured adjrange will now be saved and the FC will reboot.
+5. Configure the AUX channel on your radio.  When this channel is changed the selected LED strip profile will change between STATUS, RACE and BEACON, you should see the LED function change as you do this.
+
+
+###### OPTION 2: Use the CLI to select the LED strip profile (i.e. not selecting the LED strip profile with your radio)
+1. Open the CLI.
+2. Type ```get ledstrip_profile``` followed by enter to display the currently selected LED strip profile.
+3. Type ```set ledstrip_profile=x``` where x is the profile STATUS, RACE or BEACON and press enter.
+4. Type ```save``` followed by enter to save the selected LED strip profile.
+
+
+###### OPTION 3: By using the OSD
+1. Open the OSD menu by yawing left and pitching forward on your radio.
+2. Using the pitch stick, move down to the LED Strip menu and roll right to enter the menu.
+3. The profile and race color can be configured using the left stick to go back and the right stick to navigate up/down and to change the selected value.
+4. Use the left stick to go to the top level menu and select save & reboot to complete.
+
+
+###### RACE COLOR: The Race color can be configured using the CLI:
+1. Open the CLI.
+2. Type ```get ledstrip_race_color``` followed by enter to display the currently selected race color number.
+3. Type ```set ledstrip_race_color=x``` where x is the required color.
+4. Type ```save``` followed by enter to save the race color to be used.
+
 
 ## Supported hardware
 
-Only strips of 32 WS2811/WS2812 LEDs are supported currently.  If the strip is longer than 32 LEDs it does not matter,
-but only the first 32 are used.
+Only strips of 32 WS2811/WS2812 LEDs are supported currently.  If the strip is longer than 32 LEDs it does not matter, but only the first 32 are used.
 
 WS2812 LEDs require an 800khz signal and precise timings and thus requires the use of a dedicated hardware timer.
 
@@ -62,11 +115,7 @@ Then confirm the required setting by simply setting an LED to be green. If it li
 
 WS2812 LED strips generally require a single data line, 5V and GND.
 
-WS2812 LEDs on full brightness can consume quite a bit of current.  It is recommended to verify the current draw and ensure your
-supply can cope with the load.  On a multirotor that uses multiple BEC ESC's you can try use a different BEC to the one the FC
-uses.  e.g. ESC1/BEC1 -> FC, ESC2/BEC2 -> LED strip.   It's also possible to power one half of the strip from one BEC and the other half
-from another BEC.  Just ensure that the GROUND is the same for all BEC outputs and LEDs.
-
+WS2812 LEDs on full brightness can consume quite a bit of current.  It is recommended to verify the current draw and ensure your supply can cope with the load.  On a multirotor that uses multiple BEC ESC's you can try use a different BEC to the one the FC uses.  e.g. ESC1/BEC1 -> FC, ESC2/BEC2 -> LED strip.   It's also possible to power one half of the strip from one BEC and the other half from another BEC.  Just ensure that the GROUND is the same for all BEC outputs and LEDs.
 
 | Target                | Pin  | LED Strip | Signal |
 | --------------------- | ---- | --------- | -------|
@@ -75,15 +124,9 @@ from another BEC.  Just ensure that the GROUND is the same for all BEC outputs a
 | ChebuzzF3/F3Discovery | PB8  | Data In   | PB8    |
 | Sparky                | PWM5 | Data In   | PA6    |
 
-Since RC5 is also used for SoftSerial on the Naze it means that you cannot use SoftSerial and led strips at the same time.
-Additionally, since RC5 is also used for Parallel PWM RC input on both the Naze, Chebuzz and STM32F3Discovery targets, led strips
-can not be used at the same time at Parallel PWM.
+Since RC5 is also used for SoftSerial on the Naze it means that you cannot use SoftSerial and led strips at the same time. Additionally, since RC5 is also used for Parallel PWM RC input on both the Naze, Chebuzz and STM32F3Discovery targets, led strips can not be used at the same time at Parallel PWM.
 
-If you have LEDs that are intermittent, flicker or show the wrong colors then drop the VIN to less than 4.7v, e.g. by using an inline
-diode on the VIN to the LED strip. The problem occurs because of the difference in voltage between the data signal and the power
-signal.  The WS2811 LED's require the data signal (Din) to be between 0.3 * Vin (Max) and 0.7 * VIN (Min) to register valid logic
-low/high signals.  The LED pin on the CPU will always be between 0v to ~3.3v, so the Vin should be 4.7v (3.3v / 0.7 = 4.71v).
-Some LEDs are more tolerant of this than others.
+If you have LEDs that are intermittent, flicker or show the wrong colors then drop the VIN to less than 4.7v, e.g. by using an inline diode on the VIN to the LED strip. The problem occurs because of the difference in voltage between the data signal and the power signal.  The WS2811 LED's require the data signal (Din) to be between 0.3 * Vin (Max) and 0.7 * VIN (Min) to register valid logic low/high signals.  The LED pin on the CPU will always be between 0v to ~3.3v, so the Vin should be 4.7v (3.3v / 0.7 = 4.71v). Some LEDs are more tolerant of this than others.
 
 The datasheet can be found here: http://www.adafruit.com/datasheets/WS2812.pdf
 
@@ -313,9 +356,7 @@ Note: Armed State cannot be used with Flight Mode.
 
 #### Thrust state
 
-This mode fades the LED current LED color to the previous/next color in the HSB color space depending on throttle stick position.  When the
-throttle is in the middle position the color is unaffected, thus it can be mixed with orientation colors to indicate orientation and throttle at
-the same time.  Thrust should normally be combined with Color or Mode/Orientation.
+This mode fades the LED current LED color to the previous/next color in the HSB color space depending on throttle stick position.  When the throttle is in the middle position the color is unaffected, thus it can be mixed with orientation colors to indicate orientation and throttle at the same time.  Thrust should normally be combined with Color or Mode/Orientation.
 
 #### Thrust ring state
 
@@ -452,8 +493,7 @@ Examples (using the default colors):
 
 ## Positioning
 
-Cut the strip into sections as per diagrams below.  When the strips are cut ensure you reconnect each output to each input with cable where the break is made.
-e.g. connect 5V out to 5V in, GND to GND and Data Out to Data In.
+Cut the strip into sections as per diagrams below.  When the strips are cut ensure you reconnect each output to each input with cable where the break is made. e.g. connect 5V out to 5V in, GND to GND and Data Out to Data In.
 
 Orientation is when viewed with the front of the aircraft facing away from you and viewed from above.
 
@@ -615,10 +655,7 @@ This configuration is specifically designed for the [Alien Spider AQ50D PRO 250m
 
 ## Troubleshooting
 
-On initial power up the LEDs on the strip will be set to WHITE.  This means you can attach a current meter to verify
-the current draw if your measurement equipment is fast enough.  Most 5050 LEDs will draw 0.3 Watts a piece.
-This also means that you can make sure that each R,G and B LED in each LED module on the strip is also functioning.
-
-After a short delay the LEDs will show the unarmed color sequence and or low-battery warning sequence.
+On initial power up the LEDs on the strip will be set to WHITE.  This means you can attach a current meter to verify the current draw if your measurement equipment is fast enough.  Most 5050 LEDs will draw 0.3 Watts a piece.
+This also means that you can make sure that each R,G and B LED in each LED module on the strip is also functioning. After a short delay the LEDs will show the unarmed color sequence and or low-battery warning sequence.
 
 Also check that the feature `LED_STRIP` was correctly enabled and that it does not conflict with other features, as above.

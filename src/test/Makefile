@@ -1,4 +1,5 @@
 # A sample Makefile for building Google Test and using it in user
+# A sample Makefile for building Google Test and using it in user
 # tests.  Please tweak it to suit your environment and project.  You
 # may want to move it to your project's root directory.
 #
@@ -156,7 +157,10 @@ ledstrip_unittest_SRC := \
 		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/io/ledstrip.c
 
-
+ledstrip_unittest_DEFINES := \
+        USE_LED_STRIP=
+       
+       
 maths_unittest_SRC := \
 		$(USER_DIR)/common/maths.c
 
@@ -187,7 +191,7 @@ rc_controls_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/fc/rc_adjustments.c \
-		$(USER_DIR)/fc/rc_modes.c \
+		$(USER_DIR)/fc/rc_modes.c
 
 
 rx_crsf_unittest_SRC := \
