@@ -205,8 +205,8 @@ typedef enum {
     OSD_WARNING_COUNT // MUST BE LAST
 } osdWarningsFlags_e;
 
-// Make sure the number of warnings do not exceed the available 16bit storage
-STATIC_ASSERT(OSD_WARNING_COUNT <= 16, osdwarnings_overflow);
+// Make sure the number of warnings do not exceed the available 32bit storage
+STATIC_ASSERT(OSD_WARNING_COUNT <= 32, osdwarnings_overflow);
 
 #define ESC_RPM_ALARM_OFF -1
 #define ESC_TEMP_ALARM_OFF INT8_MIN
@@ -225,7 +225,7 @@ typedef struct osdConfig_s {
     osd_unit_e units;
 
     uint16_t timers[OSD_TIMER_COUNT];
-    uint16_t enabledWarnings;
+    uint32_t enabledWarnings;
 
     uint8_t ahMaxPitch;
     uint8_t ahMaxRoll;
