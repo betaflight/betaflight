@@ -177,3 +177,7 @@
 #if defined(USE_RX_CX10)
 #define USE_RX_XN297
 #endif
+
+#ifndef USE_BLACKBOX
+#undef USE_USB_MSC
+#endif
