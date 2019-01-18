@@ -159,6 +159,7 @@ typedef struct gyroSensor_s {
     gyroAnalyseState_t gyroAnalyseState;
 #endif
 
+    flight_dynamics_index_t gyroDebugAxis;
 } gyroSensor_t;
 
 STATIC_UNIT_TESTED FAST_RAM_ZERO_INIT gyroSensor_t gyroSensor1;
@@ -228,6 +229,7 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
     gyroConfig->gyro_lowpass_type = FILTER_BIQUAD;
     gyroConfig->gyro_lowpass2_hz = 0;
 #endif
+    gyroConfig->gyro_filter_debug_axis = FD_ROLL;
 }
 
 #ifdef USE_MULTI_GYRO
@@ -414,6 +416,7 @@ static void gyroPreInitSensor(const gyroDeviceConfig_t *config)
 
 static bool gyroInitSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t *config)
 {
+    gyroSensor->gyroDebugAxis = gyroConfig()->gyro_filter_debug_axis;
     gyroSensor->gyroDev.gyro_high_fsr = gyroConfig()->gyro_high_fsr;
     gyroSensor->gyroDev.gyroAlign = config->align;
     gyroSensor->gyroDev.mpuIntExtiTag = config->extiTag;
