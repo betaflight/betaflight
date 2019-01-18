@@ -301,7 +301,7 @@ $(TARGET_BIN): $(TARGET_ELF)
 	@echo "Creating BIN $(TARGET_BIN)" "$(STDOUT)"
 	$(V1) $(OBJCOPY) -O binary $< $@
 
-$(TARGET_ELF):  $(TARGET_OBJS)
+$(TARGET_ELF): $(TARGET_OBJS)
 	@echo "Linking $(TARGET)" "$(STDOUT)"
 	$(V1) $(CROSS_CC) -o $@ $^ $(LD_FLAGS)
 	$(V1) $(SIZE) $(TARGET_ELF)
@@ -551,7 +551,8 @@ check-fastram-usage-correctness:
 	fi;
 
 # rebuild everything when makefile changes
-$(TARGET_OBJS) : Makefile
+$(TARGET_OBJS): Makefile $(TARGET_DIR)/target.mk
+
 
 # include auto-generated dependencies
 -include $(TARGET_DEPS)
