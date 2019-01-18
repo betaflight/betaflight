@@ -1,6 +1,8 @@
 F3_TARGETS  += $(TARGET)
 FEATURES    = VCP SDCARD_SPI
 
+FEATURE_CUT_LEVEL = 8
+
 TARGET_SRC = \
             drivers/accgyro/accgyro_mpu.c \
             drivers/accgyro/accgyro_mpu6500.c \
