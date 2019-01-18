@@ -155,6 +155,7 @@ static escSensorData_t *escDataCombined;
 #define AH_SIDEBAR_WIDTH_POS 7
 #define AH_SIDEBAR_HEIGHT_POS 3
 
+#ifdef USE_CMS
 static const char compassBar[] = {
   SYM_HEADING_W,
   SYM_HEADING_LINE, SYM_HEADING_DIVIDED_LINE, SYM_HEADING_LINE,
@@ -202,6 +203,7 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_COMPASS_BAR,
     OSD_ANTI_GRAVITY
 };
+#endif // USE_CMS
 
 PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 3);
 
@@ -218,6 +220,7 @@ static char osdGetMetersToSelectedUnitSymbol(void)
     }
 }
 
+#ifdef USE_CMS
 /**
  * Gets average battery cell voltage in 0.01V units.
  */
@@ -236,6 +239,7 @@ static char osdGetBatterySymbol(int cellVoltage)
         return SYM_BATT_EMPTY - constrain(symOffset, 0, 6);
     }
 }
+#endif
 
 /**
  * Converts altitude based on the current unit system.
@@ -282,6 +286,7 @@ static void osdFormatAltitudeString(char * buff, int altitude)
     buff[4] = '.';
 }
 
+#ifdef USE_CMS
 static void osdFormatPID(char * buff, const char * label, const pidf_t * pid)
 {
     tfp_sprintf(buff, "%s %3d %3d %3d", label, pid->P, pid->I, pid->D);
@@ -313,6 +318,7 @@ static uint8_t osdGetDirectionSymbolFromHeading(int heading)
 
     return SYM_ARROW_SOUTH + heading;
 }
+#endif
 
 static char osdGetTimerSymbol(osd_timer_source_e src)
 {
@@ -373,6 +379,7 @@ STATIC_UNIT_TESTED void osdFormatTimer(char *buff, bool showSymbol, bool usePrec
     osdFormatTime(buff, (usePrecision ? OSD_TIMER_PRECISION(timer) : OSD_TIMER_PREC_SECOND), osdGetTimerValue(src));
 }
 
+#ifdef USE_CMS
 #ifdef USE_GPS
 static void osdFormatCoordinate(char *buff, char sym, int32_t val)
 {
@@ -395,6 +402,17 @@ static void osdFormatCoordinate(char *buff, char sym, int32_t val)
 }
 #endif // USE_GPS
 
+static void osdFormatMessage(char *buff, size_t size, const char *message)
+{
+    memset(buff, SYM_BLANK, size);
+    if (message) {
+        memcpy(buff, message, strlen(message));
+    }
+    // Ensure buff is zero terminated
+    buff[size - 1] = '\0';
+}
+#endif // USE_CMS
+
 #ifdef USE_RTC_TIME
 static bool osdFormatRtcDateTime(char *buffer)
 {
@@ -410,16 +428,6 @@ static bool osdFormatRtcDateTime(char *buffer)
     return true;
 }
 #endif
-
-static void osdFormatMessage(char *buff, size_t size, const char *message)
-{
-    memset(buff, SYM_BLANK, size);
-    if (message) {
-        memcpy(buff, message, strlen(message));
-    }
-    // Ensure buff is zero terminated
-    buff[size - 1] = '\0';
-}
 
 void osdStatSetState(uint8_t statIndex, bool enabled)
 {
@@ -449,6 +457,7 @@ bool osdWarnGetState(uint8_t warningIndex)
     return osdConfig()->enabledWarnings & (1 << warningIndex);
 }
 
+#ifdef USE_CMS
 static bool osdDrawSingleElement(uint8_t item)
 {
     if (!VISIBLE(osdConfig()->item_pos[item]) || BLINK(item)) {
@@ -1081,6 +1090,7 @@ static void osdDrawElements(void)
     osdDrawSingleElement(OSD_CORE_TEMPERATURE);
 #endif
 }
+#endif // USE_CMS
 
 void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 {
