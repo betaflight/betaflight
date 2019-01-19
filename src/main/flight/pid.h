@@ -232,4 +232,4 @@ float pidLevel(int axis, const pidProfile_t *pidProfile,
 float calcHorizonLevelStrength(void);
 #endif
 void dynLpfDTermUpdate(float throttle);
-
+void pidSetItermReset(bool enabled);
