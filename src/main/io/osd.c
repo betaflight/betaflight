@@ -261,7 +261,7 @@ static const uint8_t osdElementDisplayOrder[] = {
 };
 #endif // USE_CMS
 
-PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 4);
+PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 5);
 
 /**
  * Gets the correct altitude symbol for the current unit system
