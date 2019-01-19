@@ -92,7 +92,7 @@ typedef enum {
 #ifdef USE_OVERCLOCK
     TABLE_OVERCLOCK,
 #endif
-#ifdef USE_LED_STRIP_STATUS_MODE
+#ifdef USE_LED_STRIP
     TABLE_RGB_GRB,
 #endif
 #ifdef USE_MULTI_GYRO

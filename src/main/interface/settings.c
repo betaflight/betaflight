@@ -341,7 +341,7 @@ static const char * const lookupOverclock[] = {
 };
 #endif
 
-#ifdef USE_LED_STRIP_STATUS_MODE
+#ifdef USE_LED_STRIP
     static const char * const lookupLedStripFormatRGB[] = {
         "GRB", "RGB"
     };
@@ -522,7 +522,7 @@ const lookupTableEntry_t lookupTables[] = {
 #ifdef USE_OVERCLOCK
     LOOKUP_TABLE_ENTRY(lookupOverclock),
 #endif
-#ifdef USE_LED_STRIP_STATUS_MODE
+#ifdef USE_LED_STRIP
     LOOKUP_TABLE_ENTRY(lookupLedStripFormatRGB),
 #endif
 #ifdef USE_MULTI_GYRO
