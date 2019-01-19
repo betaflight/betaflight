@@ -533,7 +533,7 @@ static void updateInflightCalibrationState(void)
 #if defined(USE_GPS) || defined(USE_MAG)
 void updateMagHold(void)
 {
-    if (ABS(rcCommand[YAW]) < 15 && FLIGHT_MODE(MAG_MODE)) {
+    if (fabsf(rcCommand[YAW]) < 15 && FLIGHT_MODE(MAG_MODE)) {
         int16_t dif = DECIDEGREES_TO_DEGREES(attitude.values.yaw) - magHold;
         if (dif <= -180)
             dif += 360;
@@ -988,9 +988,9 @@ static FAST_CODE void subTaskPidController(timeUs_t currentTimeUs)
         if (((fabsf(pidData[FD_PITCH].Sum) >= RUNAWAY_TAKEOFF_PIDSUM_THRESHOLD)
             || (fabsf(pidData[FD_ROLL].Sum) >= RUNAWAY_TAKEOFF_PIDSUM_THRESHOLD)
             || (fabsf(pidData[FD_YAW].Sum) >= RUNAWAY_TAKEOFF_PIDSUM_THRESHOLD))
-            && ((ABS(gyroAbsRateDps(FD_PITCH)) > RUNAWAY_TAKEOFF_GYRO_LIMIT_RP)
-                || (ABS(gyroAbsRateDps(FD_ROLL)) > RUNAWAY_TAKEOFF_GYRO_LIMIT_RP)
-                || (ABS(gyroAbsRateDps(FD_YAW)) > RUNAWAY_TAKEOFF_GYRO_LIMIT_YAW))) {
+            && ((gyroAbsRateDps(FD_PITCH) > RUNAWAY_TAKEOFF_GYRO_LIMIT_RP)
+                || (gyroAbsRateDps(FD_ROLL) > RUNAWAY_TAKEOFF_GYRO_LIMIT_RP)
+                || (gyroAbsRateDps(FD_YAW) > RUNAWAY_TAKEOFF_GYRO_LIMIT_YAW))) {
 
             if (runawayTakeoffTriggerUs == 0) {
                 runawayTakeoffTriggerUs = currentTimeUs + RUNAWAY_TAKEOFF_ACTIVATE_DELAY;

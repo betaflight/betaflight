@@ -71,7 +71,7 @@ extern "C" {
     float getMotorMixRange(void) { return simulatedMotorMixRange; }
     float getSetpointRate(int axis) { return simulatedSetpointRate[axis]; }
     bool isAirmodeActivated() { return simulatedAirmodeEnabled; }
-    float getRcDeflectionAbs(int axis) { return ABS(simulatedRcDeflection[axis]); }
+    float getRcDeflectionAbs(int axis) { return fabsf(simulatedRcDeflection[axis]); }
     void systemBeep(bool) { }
     bool gyroOverflowDetected(void) { return false; }
     float getRcDeflection(int axis) { return simulatedRcDeflection[axis]; }
