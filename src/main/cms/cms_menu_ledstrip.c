@@ -39,31 +39,54 @@
 
 #include "fc/config.h"
 
+#include "io/ledstrip.h"
+
+#include "interface/settings.h"
 
 #ifdef USE_LED_STRIP
 
 static bool featureRead = false;
 static uint8_t cmsx_FeatureLedstrip;
+static uint8_t cmsx_LedProfile;
+static uint8_t cmsx_RaceColor;
+const char * const ledProfileNames[LED_PROFILE_COUNT] = {
+    "RACE",
+    "BEACON",
+#ifdef USE_LED_STRIP_STATUS_MODE
+    "STATUS"
+#endif
+};
 
-static long cmsx_Ledstrip_FeatureRead(void)
+static long cmsx_Ledstrip_OnEnter(void)
 {
     if (!featureRead) {
         cmsx_FeatureLedstrip = featureIsEnabled(FEATURE_LED_STRIP) ? 1 : 0;
         featureRead = true;
     }
 
+#ifdef USE_LED_STRIP
+    cmsx_LedProfile = getLedProfile();
+    cmsx_RaceColor = getLedRaceColor();
+#endif
     return 0;
 }
 
-static long cmsx_Ledstrip_FeatureWriteback(const OSD_Entry *self)
+static long cmsx_Ledstrip_OnExit(const OSD_Entry *self)
 {
     UNUSED(self);
     if (featureRead) {
         if (cmsx_FeatureLedstrip)
             featureEnable(FEATURE_LED_STRIP);
-        else
+        else {
+            ledStripDisable();
             featureDisable(FEATURE_LED_STRIP);
+        }
     }
+
+#ifdef USE_LED_STRIP
+    setLedProfile(cmsx_LedProfile);
+    setLedRaceColor(cmsx_RaceColor);
+#endif
 
     return 0;
 }
@@ -72,7 +95,8 @@ static OSD_Entry cmsx_menuLedstripEntries[] =
 {
     { "-- LED STRIP --", OME_Label, NULL, NULL, 0 },
     { "ENABLED",         OME_Bool,  NULL, &cmsx_FeatureLedstrip, 0 },
-
+    { "PROFILE",         OME_TAB,   NULL, &(OSD_TAB_t){ &cmsx_LedProfile, LED_PROFILE_COUNT-1, ledProfileNames }, 0 },
+    { "RACE COLOR",      OME_TAB,   NULL, &(OSD_TAB_t){ &cmsx_RaceColor, COLOR_COUNT-1, lookupTableLEDRaceColors }, 0 },
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
 };
@@ -82,8 +106,8 @@ CMS_Menu cmsx_menuLedstrip = {
     .GUARD_text = "MENULED",
     .GUARD_type = OME_MENU,
 #endif
-    .onEnter = cmsx_Ledstrip_FeatureRead,
-    .onExit = cmsx_Ledstrip_FeatureWriteback,
+    .onEnter = cmsx_Ledstrip_OnEnter,
+    .onExit = cmsx_Ledstrip_OnExit,
     .entries = cmsx_menuLedstripEntries
 };
 #endif // LED_STRIP

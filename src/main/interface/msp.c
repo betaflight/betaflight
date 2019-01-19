@@ -1185,7 +1185,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         }
         break;
 
-#ifdef USE_LED_STRIP
+#ifdef USE_LED_STRIP_STATUS_MODE
     case MSP_LED_COLORS:
         for (int i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
             const hsvColor_t *color = &ledStripConfig()->colors[i];
@@ -2259,7 +2259,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         }
         break;
 
-#ifdef USE_LED_STRIP
+#ifdef USE_LED_STRIP_STATUS_MODE
     case MSP_SET_LED_COLORS:
         for (int i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
             hsvColor_t *color = &ledStripConfigMutable()->colors[i];

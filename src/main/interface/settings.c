@@ -341,7 +341,7 @@ static const char * const lookupOverclock[] = {
 };
 #endif
 
-#ifdef USE_LED_STRIP
+#ifdef USE_LED_STRIP_STATUS_MODE
     static const char * const lookupLedStripFormatRGB[] = {
         "GRB", "RGB"
     };
@@ -424,6 +424,35 @@ static const char * const lookupTableTpaMode[] = {
 };
 #endif
 
+#ifdef USE_LED_STRIP
+#ifdef USE_LED_STRIP_STATUS_MODE
+static const char * const lookupTableLEDProfile[] = {
+    "RACE", "BEACON", "STATUS"
+};
+#else
+static const char * const lookupTableLEDProfile[] = {
+    "RACE", "BEACON"
+};
+#endif
+#endif
+
+const char * const lookupTableLEDRaceColors[COLOR_COUNT] = {
+    "BLACK",
+    "WHITE",
+    "RED",
+    "ORANGE",
+    "YELLOW",
+    "LIME_GREEN",
+    "GREEN",
+    "MINT_GREEN",
+    "CYAN",
+    "LIGHT_BLUE",
+    "BLUE",
+    "DARK_VIOLET",
+    "MAGENTA",
+    "DEEP_PINK"
+};
+
 #define LOOKUP_TABLE_ENTRY(name) { name, ARRAYLEN(name) }
 
 const lookupTableEntry_t lookupTables[] = {
@@ -493,7 +522,7 @@ const lookupTableEntry_t lookupTables[] = {
 #ifdef USE_OVERCLOCK
     LOOKUP_TABLE_ENTRY(lookupOverclock),
 #endif
-#ifdef USE_LED_STRIP
+#ifdef USE_LED_STRIP_STATUS_MODE
     LOOKUP_TABLE_ENTRY(lookupLedStripFormatRGB),
 #endif
 #ifdef USE_MULTI_GYRO
@@ -531,6 +560,10 @@ const lookupTableEntry_t lookupTables[] = {
 #endif
 #ifdef USE_TPA_MODE
     LOOKUP_TABLE_ENTRY(lookupTableTpaMode),
+#endif
+#ifdef USE_LED_STRIP
+    LOOKUP_TABLE_ENTRY(lookupTableLEDProfile),
+    LOOKUP_TABLE_ENTRY(lookupTableLEDRaceColors),
 #endif
 };
 
@@ -1037,6 +1070,8 @@ const clivalue_t valueTable[] = {
 #ifdef USE_LED_STRIP
     { "ledstrip_visual_beeper",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_visual_beeper) },
     { "ledstrip_grb_rgb",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_RGB_GRB }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_grb_rgb) },
+    { "ledstrip_profile",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LED_PROFILE }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_profile) },
+    { "ledstrip_race_color",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LED_RACE_COLOR }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledRaceColor) },
 #endif
 
 // PG_SDCARD_CONFIG

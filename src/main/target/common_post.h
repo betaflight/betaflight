@@ -238,6 +238,10 @@
 #define USE_SERIAL_4WAY_BLHELI_BOOTLOADER
 #endif
 
+#if !defined(USE_LED_STRIP)
+#undef USE_LED_STRIP_STATUS_MODE
+#endif
+
 #if defined(SIMULATOR_BUILD) || defined(UNIT_TEST)
 // This feature uses 'arm_math.h', which does not exist for x86.
 #undef USE_GYRO_DATA_ANALYSE
