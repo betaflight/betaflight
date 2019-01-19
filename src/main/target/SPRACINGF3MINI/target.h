@@ -135,8 +135,6 @@
 #endif
 #endif
 
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
-
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
 

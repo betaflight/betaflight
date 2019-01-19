@@ -104,7 +104,6 @@
 #define SERIALRX_UART           SERIAL_PORT_USART3
 
 #define USE_TRANSPONDER
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 // IO - stm32f303cc in 48pin package
 #define TARGET_IO_PORTA         0xffff

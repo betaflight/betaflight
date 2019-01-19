@@ -49,9 +49,6 @@
 
 #define USE_TARGET_CONFIG
 
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
-
-
 #define INVERTER_PIN_UART1      PC0
 
 /*----------Spi Config--------*/

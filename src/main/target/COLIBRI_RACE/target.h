@@ -128,8 +128,6 @@
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART2
 
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
-
 // IO - assuming 303 in 64pin package, TODO
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff

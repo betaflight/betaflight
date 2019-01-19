@@ -72,8 +72,6 @@
 #define SERIALRX_UART           SERIAL_PORT_USART2
 #define RX_CHANNELS_TAER
 
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
-
 // IO - assuming all IOs on 48pin package
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff

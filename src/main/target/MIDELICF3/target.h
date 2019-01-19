@@ -141,7 +141,6 @@
 
 #define BINDPLUG_PIN             PC13
 
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN   PB9 // Motor 6, can't use escserial for hexa
 
