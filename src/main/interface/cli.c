@@ -3811,7 +3811,7 @@ static void cliVersion(char *cmdline)
 {
     UNUSED(cmdline);
 
-    cliPrintLinef("# %s / %s (%s) %s %s / %s (%s) MSP API: %s",
+    cliPrintf("# %s / %s (%s) %s %s / %s (%s) MSP API: %s",
         FC_FIRMWARE_NAME,
         targetName,
         systemConfig()->boardIdentifier,
@@ -3821,6 +3821,11 @@ static void cliVersion(char *cmdline)
         shortGitRevision,
         MSP_API_VERSION_STRING
     );
+#ifdef FEATURE_CUT_LEVEL
+    cliPrintLinef(" / FEATURE CUT LEVEL %d", FEATURE_CUT_LEVEL);
+#else
+    cliPrintLinefeed();
+#endif
 }
 
 #ifdef USE_RC_SMOOTHING_FILTER
