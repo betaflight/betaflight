@@ -97,8 +97,6 @@
 #define VBAT_ADC_PIN            PA0
 #define RSSI_ADC_PIN            PB0
 
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
-
 //#define USE_RANGEFINDER
 //#define USE_RANGEFINDER_HCSR04
 //#define RANGEFINDER_HCSR04_ECHO_PIN          PB0

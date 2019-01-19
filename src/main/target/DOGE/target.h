@@ -122,8 +122,6 @@
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
-
 // !!TODO - check the TARGET_IO_PORTs are correct
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
