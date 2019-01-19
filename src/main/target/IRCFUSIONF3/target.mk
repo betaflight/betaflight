@@ -1,6 +1,8 @@
 F3_TARGETS   += $(TARGET)
+
 FEATURES     = VCP ONBOARDFLASH
-TARGET_FLAGS = -DSPRACINGF3
+
+FEATURE_CUT_LEVEL = 1
 
 TARGET_SRC = \
             drivers/accgyro/accgyro_mpu.c \

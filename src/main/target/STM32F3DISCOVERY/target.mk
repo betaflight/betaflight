@@ -1,5 +1,8 @@
 F3_TARGETS  += $(TARGET)
+
 FEATURES    = VCP SDCARD_SPI ONBOARDFLASH
+
+FEATURE_CUT_LEVEL = 4
 
 TARGET_SRC = \
             drivers/accgyro/accgyro_fake.c \
