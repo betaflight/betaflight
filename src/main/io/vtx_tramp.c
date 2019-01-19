@@ -614,6 +614,7 @@ bool vtxTrampInit(void)
         return false;
     }
 
+    // XXX Effect of USE_VTX_COMMON should be reviewed, as following call to vtxInit will do nothing if vtxCommonSetDevice is not called.
 #if defined(USE_VTX_COMMON)
     vtxTramp.capability.bandCount = VTX_TRAMP_BAND_COUNT;
     vtxTramp.capability.channelCount = VTX_TRAMP_CHANNEL_COUNT;
@@ -626,7 +627,10 @@ bool vtxTrampInit(void)
     vtxTramp.powerValues = trampPowerTable;
 
     vtxCommonSetDevice(&vtxTramp);
+
 #endif
+
+    vtxInit();
 
     return true;
 }
