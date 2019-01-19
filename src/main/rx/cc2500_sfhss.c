@@ -64,7 +64,7 @@
 #define GET_CH4(x)      (uint16_t)(((x[10] & 0x7f)<<5 | (x[11] & 0xf8)>>3))
 #define GET_TXID1(x)    (uint8_t)(x[1])
 #define GET_TXID2(x)    (uint8_t)(x[2])
-#define SET_STATE(x)    {protocolState = x; DEBUG_SET(DEBUG_RX_SFHSS_SPI, DEBUG_DATA_STATE, x);}
+#define SET_STATE(x)    {protocolState = x; DEBUG_SET(DEBUG_RX_SPI, DEBUG_DATA_STATE, x);}
 
 #define NEXT_CH_TIME_HUNT       500000      /* hunt */
 #define NEXT_CH_TIME_SYNC0      6800        /* sync no recv */
@@ -194,7 +194,7 @@ static void initTuneRx(void)
 {
     timeTunedMs = millis();
     bindOffset_min = -64;
-    DEBUG_SET(DEBUG_RX_SFHSS_SPI, DEBUG_DATA_OFFSET_MIN, bindOffset_min);
+    DEBUG_SET(DEBUG_RX_SPI, DEBUG_DATA_OFFSET_MIN, bindOffset_min);
     cc2500WriteReg(CC2500_0C_FSCTRL0, (uint8_t)bindOffset_min);
     sfhss_channel = BIND_CH;
     sfhssRx();
@@ -204,12 +204,12 @@ static bool tune1Rx(uint8_t *packet)
 {
     if (bindOffset_min >= 126) {
         bindOffset_min = -126;
-        DEBUG_SET(DEBUG_RX_SFHSS_SPI, DEBUG_DATA_OFFSET_MIN, bindOffset_min);
+        DEBUG_SET(DEBUG_RX_SPI, DEBUG_DATA_OFFSET_MIN, bindOffset_min);
     }
     if ((millis() - timeTunedMs) > 220) {   // 220ms
         timeTunedMs = millis();
         bindOffset_min += BIND_TUNE_STEP << 2;
-        DEBUG_SET(DEBUG_RX_SFHSS_SPI, DEBUG_DATA_OFFSET_MIN, bindOffset_min);
+        DEBUG_SET(DEBUG_RX_SPI, DEBUG_DATA_OFFSET_MIN, bindOffset_min);
         cc2500WriteReg(CC2500_0C_FSCTRL0, (uint8_t)bindOffset_min);
         cc2500Strobe(CC2500_SRX);
     }
@@ -219,7 +219,7 @@ static bool tune1Rx(uint8_t *packet)
                 rxFrSkySpiConfigMutable()->bindTxId[0] = GET_TXID1(packet);
                 rxFrSkySpiConfigMutable()->bindTxId[1] = GET_TXID2(packet);
                 bindOffset_max = bindOffset_min;
-                DEBUG_SET(DEBUG_RX_SFHSS_SPI, DEBUG_DATA_OFFSET_MAX, bindOffset_max);
+                DEBUG_SET(DEBUG_RX_SPI, DEBUG_DATA_OFFSET_MAX, bindOffset_max);
                 cc2500Strobe(CC2500_SRX);
                 timeTunedMs = millis();
                 return true;
@@ -243,7 +243,7 @@ static bool tune2Rx(uint8_t *packet)
         if (sfhssPacketParse(packet, true)) {
             timeTunedMs = millis();
             bindOffset_max += BIND_TUNE_STEP;
-            DEBUG_SET(DEBUG_RX_SFHSS_SPI, DEBUG_DATA_OFFSET_MAX, bindOffset_max);
+            DEBUG_SET(DEBUG_RX_SPI, DEBUG_DATA_OFFSET_MAX, bindOffset_max);
             cc2500WriteReg(CC2500_0C_FSCTRL0, (uint8_t)bindOffset_max);
         }
         cc2500Strobe(CC2500_SRX);
@@ -261,7 +261,7 @@ static bool tune3Rx(uint8_t *packet)
         if (sfhssPacketParse(packet, true)) {
             timeTunedMs = millis();
             bindOffset_min -= BIND_TUNE_STEP;
-            DEBUG_SET(DEBUG_RX_SFHSS_SPI, DEBUG_DATA_OFFSET_MIN, bindOffset_min);
+            DEBUG_SET(DEBUG_RX_SPI, DEBUG_DATA_OFFSET_MIN, bindOffset_min);
             cc2500WriteReg(CC2500_0C_FSCTRL0, (uint8_t)bindOffset_min);
         }
         cc2500Strobe(CC2500_SRX);
@@ -312,7 +312,7 @@ rx_spi_received_e sfhssSpiDataReceived(uint8_t *packet)
                 dataMissingFrame = 0;
                 initialise();
                 SET_STATE(STATE_BIND);
-                DEBUG_SET(DEBUG_RX_SFHSS_SPI, DEBUG_DATA_MISSING_FRAME, dataMissingFrame);
+                DEBUG_SET(DEBUG_RX_SPI, DEBUG_DATA_MISSING_FRAME, dataMissingFrame);
             }
             break;
         case STATE_BIND:
@@ -399,7 +399,7 @@ rx_spi_received_e sfhssSpiDataReceived(uint8_t *packet)
             } else if (cmpTimeUs(currentPacketReceivedTime, nextFrameReceiveStartTime) > 0) {
                 nextFrameReceiveStartTime += NEXT_CH_TIME_SYNC0;
                 if (frame_recvd != 0x3) {
-                    DEBUG_SET(DEBUG_RX_SFHSS_SPI, DEBUG_DATA_MISSING_FRAME, ++dataMissingFrame);
+                    DEBUG_SET(DEBUG_RX_SPI, DEBUG_DATA_MISSING_FRAME, ++dataMissingFrame);
                 }
                 if (frame_recvd == 0) {
                     if (++missingPackets > MAX_MISSING_PKT) {

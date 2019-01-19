@@ -150,6 +150,7 @@ static void resetTimeout(const uint32_t timeStamp)
     timeout = timings->firstPacket;
     countTimeout = 0;
     countPacket++;
+    DEBUG_SET(DEBUG_RX_SPI, DEBUG_DATA_MISSING_PACKETS, countTimeout);
 }
 
 static void checkTimeout(void)
@@ -184,6 +185,7 @@ static void checkTimeout(void)
         } else {
             timeout = timings->packet;
             countTimeout++;
+            DEBUG_SET(DEBUG_RX_SPI, DEBUG_DATA_MISSING_PACKETS, countTimeout);
         }
     }
 }
@@ -209,7 +211,9 @@ static void checkRSSI(void)
 
 static bool isValidPacket(const uint8_t *packet) {
     const flySky2ARcDataPkt_t *rcPacket = (const flySky2ARcDataPkt_t*) packet;
-    return (rcPacket->rxId == rxId && rcPacket->txId == txId);
+    bool isValid = rcPacket->rxId == rxId && rcPacket->txId == txId;
+    DEBUG_SET(DEBUG_RX_SPI, DEBUG_DATA_PACKET_ERRORS, !isValid);
+    return isValid;
 }
 
 static void buildAndWriteTelemetry(uint8_t *packet)

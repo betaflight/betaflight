@@ -26,6 +26,9 @@
 #define INTERVAL_RX_BIND_MS 250
 #define RX_LOSS_COUNT 1000
 
+#define DEBUG_DATA_PACKET_ERRORS 0
+#define DEBUG_DATA_MISSING_PACKETS 1
+
 void rxSpiCommonIOInit(const rxSpiConfig_t *rxSpiConfig);
 
 void rxSpiLedOn(void);

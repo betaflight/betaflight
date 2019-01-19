@@ -177,7 +177,7 @@ void frSkyDSetRcData(uint16_t *rcData, const uint8_t *packet)
             rcData[i] = channels[i];
         }
     } else {
-        DEBUG_SET(DEBUG_RX_FRSKY_SPI, DEBUG_DATA_ERROR_COUNT, ++dataErrorCount);
+        DEBUG_SET(DEBUG_RX_SPI, DEBUG_DATA_PACKET_ERRORS, ++dataErrorCount);
     }
 }
 

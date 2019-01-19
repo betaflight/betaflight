@@ -40,6 +40,8 @@
 #define DSM_TELEMETRY_TIMEOUT_US 1500
 #define DSM_TELEMETRY_TIME_US 176000
 
+#define DEBUG_DATA_MISSING_TLM 2
+
 typedef struct spektrumConfig_s {
     uint8_t protocol;
     uint8_t mfgId[4];
