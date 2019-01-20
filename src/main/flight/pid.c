@@ -802,7 +802,7 @@ static float accelerationLimit(int axis, float currentPidSetpoint)
     static float previousSetpoint[XYZ_AXIS_COUNT];
     const float currentVelocity = currentPidSetpoint - previousSetpoint[axis];
 
-    if (ABS(currentVelocity) > maxVelocity[axis]) {
+    if (fabsf(currentVelocity) > maxVelocity[axis]) {
         currentPidSetpoint = (currentVelocity > 0) ? previousSetpoint[axis] + maxVelocity[axis] : previousSetpoint[axis] - maxVelocity[axis];
     }
 
@@ -836,9 +836,9 @@ static void handleCrashRecovery(
         pidData[axis].I = 0.0f;
         if (cmpTimeUs(currentTimeUs, crashDetectedAtUs) > crashTimeLimitUs
             || (getMotorMixRange() < 1.0f
-                   && ABS(gyro.gyroADCf[FD_ROLL]) < crashRecoveryRate
-                   && ABS(gyro.gyroADCf[FD_PITCH]) < crashRecoveryRate
-                   && ABS(gyro.gyroADCf[FD_YAW]) < crashRecoveryRate)) {
+                   && fabsf(gyro.gyroADCf[FD_ROLL]) < crashRecoveryRate
+                   && fabsf(gyro.gyroADCf[FD_PITCH]) < crashRecoveryRate
+                   && fabsf(gyro.gyroADCf[FD_YAW]) < crashRecoveryRate)) {
             if (sensors(SENSOR_ACC)) {
                 // check aircraft nearly level
                 if (ABS(attitude.raw[FD_ROLL] - angleTrim->raw[FD_ROLL]) < crashRecoveryAngleDeciDegrees
@@ -863,14 +863,14 @@ static void detectAndSetCrashRecovery(
     if ((crash_recovery || FLIGHT_MODE(GPS_RESCUE_MODE)) && !gyroOverflowDetected()) {
         if (ARMING_FLAG(ARMED)) {
             if (getMotorMixRange() >= 1.0f && !inCrashRecoveryMode
-                && ABS(delta) > crashDtermThreshold
-                && ABS(errorRate) > crashGyroThreshold
-                && ABS(getSetpointRate(axis)) < crashSetpointThreshold) {
+                && fabsf(delta) > crashDtermThreshold
+                && fabsf(errorRate) > crashGyroThreshold
+                && fabsf(getSetpointRate(axis)) < crashSetpointThreshold) {
                 inCrashRecoveryMode = true;
                 crashDetectedAtUs = currentTimeUs;
             }
-            if (inCrashRecoveryMode && cmpTimeUs(currentTimeUs, crashDetectedAtUs) < crashTimeDelayUs && (ABS(errorRate) < crashGyroThreshold
-                || ABS(getSetpointRate(axis)) > crashSetpointThreshold)) {
+            if (inCrashRecoveryMode && cmpTimeUs(currentTimeUs, crashDetectedAtUs) < crashTimeDelayUs && (fabsf(errorRate) < crashGyroThreshold
+                || fabsf(getSetpointRate(axis)) > crashSetpointThreshold)) {
                 inCrashRecoveryMode = false;
                 BEEP_OFF;
             }
@@ -1027,7 +1027,7 @@ void FAST_CODE applySmartFeedforward(int axis)
 {
     if (smartFeedforward) {
         if (pidData[axis].P * pidData[axis].F > 0) {
-            if (ABS(pidData[axis].F) > ABS(pidData[axis].P)) {
+            if (fabsf(pidData[axis].F) > fabsf(pidData[axis].P)) {
                 pidData[axis].P = 0;
             } else {
                 pidData[axis].F = 0;

@@ -1268,7 +1268,7 @@ float GPS_scaleLonDown = 1.0f;  // this is used to offset the shrinking longitud
 
 void GPS_calc_longitude_scaling(int32_t lat)
 {
-    float rads = (ABS((float)lat) / 10000000.0f) * 0.0174532925f;
+    float rads = (fabsf((float)lat) / 10000000.0f) * 0.0174532925f;
     GPS_scaleLonDown = cos_approx(rads);
 }
 

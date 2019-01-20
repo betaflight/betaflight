@@ -23,6 +23,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdarg.h>
+#include <math.h>
 
 #include "platform.h"
 
@@ -791,7 +792,7 @@ static void applyLedIndicatorLayer(bool updateNow, timeUs_t *timer)
     if (updateNow) {
         if (rxIsReceivingSignal()) {
             // calculate update frequency
-            int scale = MAX(ABS(rcCommand[ROLL]), ABS(rcCommand[PITCH]));  // 0 - 500
+            int scale = MAX(fabsf(rcCommand[ROLL]), fabsf(rcCommand[PITCH]));  // 0 - 500
             scale = scale - INDICATOR_DEADBAND;  // start increasing frequency right after deadband
             *timer += HZ_TO_US(5 + (45 * scale) / (500 - INDICATOR_DEADBAND));   // 5 - 50Hz update, 2.5 - 25Hz blink
 
