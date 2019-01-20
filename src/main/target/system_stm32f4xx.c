@@ -314,6 +314,7 @@
   * @{
   */
 
+#include <string.h>
 #include "stm32f4xx.h"
 #include "system_stm32f4xx.h"
 #include "platform.h"
@@ -349,9 +350,7 @@
 
 /*!< Uncomment the following line if you need to relocate your vector Table in
      Internal SRAM. */
-/* #define VECT_TAB_SRAM */
-#define VECT_TAB_OFFSET  0x00 /*!< Vector Table base offset field.
-                                   This value must be a multiple of 0x200. */
+#define VECT_TAB_SRAM
 /******************************************************************************/
 
 /**
@@ -539,10 +538,20 @@ void SystemInit(void)
   //SetSysClock();
 
   /* Configure the Vector Table location add offset address ------------------*/
+
 #ifdef VECT_TAB_SRAM
-  SCB->VTOR = SRAM_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal SRAM */
+  // Copy vector table from isr_vector_table_flash_base to isr_vector_table_base.
+  // If these two regions are the same, the copy will have no effect
+  // (Happens when linker script aliases VECTAB to FLASH).
+
+  extern uint8_t isr_vector_table_flash_base;
+  extern uint8_t isr_vector_table_base;
+  extern uint8_t isr_vector_table_end;
+
+  memcpy(&isr_vector_table_base, &isr_vector_table_flash_base, &isr_vector_table_end - &isr_vector_table_base);
+  SCB->VTOR = (uint32_t)&isr_vector_table_base;
 #else
-  SCB->VTOR = FLASH_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal FLASH */
+  SCB->VTOR = (uint32_t)&isr_vector_table_flash_base;
 #endif
 
     SystemCoreClockUpdate();

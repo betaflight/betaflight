@@ -78,6 +78,24 @@
 #define CALCULATE_LED_XY(x, y) ((((x) & LED_XY_MASK) << LED_X_BIT_OFFSET) | (((y) & LED_XY_MASK) << LED_Y_BIT_OFFSET))
 
 typedef enum {
+    COLOR_BLACK = 0,
+    COLOR_WHITE,
+    COLOR_RED,
+    COLOR_ORANGE,
+    COLOR_YELLOW,
+    COLOR_LIME_GREEN,
+    COLOR_GREEN,
+    COLOR_MINT_GREEN,
+    COLOR_CYAN,
+    COLOR_LIGHT_BLUE,
+    COLOR_BLUE,
+    COLOR_DARK_VIOLET,
+    COLOR_MAGENTA,
+    COLOR_DEEP_PINK,
+    COLOR_COUNT
+} colorId_e;
+
+typedef enum {
     LED_MODE_ORIENTATION = 0,
     LED_MODE_HEADFREE,
     LED_MODE_HORIZON,
@@ -127,6 +145,15 @@ typedef enum {
     LED_OVERLAY_WARNING
 } ledOverlayId_e;
 
+typedef enum {
+    LED_PROFILE_RACE = 0,
+    LED_PROFILE_BEACON,
+#ifdef USE_LED_STRIP_STATUS_MODE
+    LED_PROFILE_STATUS,
+#endif
+    LED_PROFILE_COUNT
+} ledProfile_e;
+
 typedef struct modeColorIndexes_s {
     uint8_t color[LED_DIRECTION_COUNT];
 } modeColorIndexes_t;
@@ -153,6 +180,9 @@ typedef struct ledStripConfig_s {
     uint8_t ledstrip_aux_channel;
     ioTag_t ioTag;
     ledStripFormatRGB_e ledstrip_grb_rgb;
+    ledProfile_e ledstrip_profile;
+    colorId_e ledRaceColor;
+
 } ledStripConfig_t;
 
 PG_DECLARE(ledStripConfig_t, ledStripConfig);
@@ -186,6 +216,7 @@ void reevaluateLedConfig(void);
 
 void ledStripInit(void);
 void ledStripEnable(void);
+void ledStripDisable(void);
 void ledStripUpdate(timeUs_t currentTimeUs);
 
 bool setModeColor(ledModeIndex_e modeIndex, int modeColorIndex, int colorIndex);
@@ -196,3 +227,8 @@ void applyDefaultModeColors(modeColorIndexes_t *modeColors);
 void applyDefaultSpecialColors(specialColorIndexes_t *specialColors);
 
 void updateRequiredOverlay(void);
+
+uint8_t getLedProfile(void);
+void setLedProfile(uint8_t profile);
+uint8_t getLedRaceColor(void);
+void setLedRaceColor(uint8_t color);

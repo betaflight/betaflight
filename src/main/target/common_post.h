@@ -226,12 +226,22 @@
 #endif
 #endif
 
+#ifndef USE_BLACKBOX
+#undef USE_USB_MSC
+#endif
+
 #if (!defined(USE_FLASHFS) || !defined(USE_RTC_TIME) || !defined(USE_USB_MSC))
 #undef USE_PERSISTENT_MSC_RTC
 #endif
 
-#if defined(USE_SERIAL_4WAY_SK_BOOTLOADER) && !defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER)
-#define USE_SERIAL_4WAY_BLHELI_BOOTLOADER
+#if !defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER) && !defined(USE_SERIAL_4WAY_SK_BOOTLOADER)
+#undef  USE_SERIAL_4WAY_BLHELI_INTERFACE
+#elif !defined(USE_SERIAL_4WAY_BLHELI_INTERFACE) && (defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER) || defined(USE_SERIAL_4WAY_SK_BOOTLOADER))
+#define USE_SERIAL_4WAY_BLHELI_INTERFACE
+#endif
+
+#if !defined(USE_LED_STRIP)
+#undef USE_LED_STRIP_STATUS_MODE
 #endif
 
 #if defined(SIMULATOR_BUILD) || defined(UNIT_TEST)
@@ -246,4 +256,8 @@
 
 #ifndef USE_CMS
 #undef USE_CMS_FAILSAFE_MENU
+#endif
+
+#ifndef USE_DSHOT_TELEMETRY
+#undef USE_RPM_FILTER
 #endif

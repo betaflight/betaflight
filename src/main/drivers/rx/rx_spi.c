@@ -54,11 +54,13 @@ void rxSpiDevicePreInit(const rxSpiConfig_t *rxSpiConfig)
 
 bool rxSpiDeviceInit(const rxSpiConfig_t *rxSpiConfig)
 {
-    if (!rxSpiConfig->spibus) {
+    SPI_TypeDef *instance = spiInstanceByDevice(SPI_CFG_TO_DEV(rxSpiConfig->spibus));
+
+    if (!instance) {
         return false;
     }
 
-    spiBusSetInstance(busdev, spiInstanceByDevice(SPI_CFG_TO_DEV(rxSpiConfig->spibus)));
+    spiBusSetInstance(busdev, instance);
 
     const IO_t rxCsPin = IOGetByTag(rxSpiConfig->csnTag);
     IOInit(rxCsPin, OWNER_RX_SPI_CS, 0);
@@ -66,8 +68,11 @@ bool rxSpiDeviceInit(const rxSpiConfig_t *rxSpiConfig)
     busdev->busdev_u.spi.csnPin = rxCsPin;
 
     IOHi(rxCsPin);
-
-    spiSetDivisor(busdev->busdev_u.spi.instance, SPI_CLOCK_STANDARD);
+#ifdef USE_SPI_TRANSACTION
+    spiBusTransactionInit(busdev, SPI_MODE0_POL_LOW_EDGE_1ST, SPI_CLOCK_STANDARD);
+#else
+    spiBusSetDivisor(busdev, SPI_CLOCK_STANDARD);
+#endif
 
     return true;
 }

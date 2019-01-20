@@ -90,6 +90,10 @@ HSE_VALUE       ?= 8000000
 # used for turning on features like VCP and SDCARD
 FEATURES        =
 
+# used to disable features based on flash space shortage (larger number => more features disabled)
+FEATURE_CUT_LEVEL_SUPPLIED := $(FEATURE_CUT_LEVEL)
+FEATURE_CUT_LEVEL =
+
 include $(ROOT)/make/targets.mk
 
 REVISION := $(shell git log -1 --format="%h")
@@ -153,6 +157,12 @@ DEVICE_FLAGS  := $(DEVICE_FLAGS) -DFLASH_SIZE=$(FLASH_SIZE)
 
 ifneq ($(HSE_VALUE),)
 DEVICE_FLAGS  := $(DEVICE_FLAGS) -DHSE_VALUE=$(HSE_VALUE)
+endif
+
+ifneq ($(FEATURE_CUT_LEVEL_SUPPLIED),)
+DEVICE_FLAGS  := $(DEVICE_FLAGS) -DFEATURE_CUT_LEVEL=$(FEATURE_CUT_LEVEL_SUPPLIED)
+else ifneq ($(FEATURE_CUT_LEVEL),)
+DEVICE_FLAGS  := $(DEVICE_FLAGS) -DFEATURE_CUT_LEVEL=$(FEATURE_CUT_LEVEL)
 endif
 
 TARGET_DIR     = $(ROOT)/src/main/target/$(BASE_TARGET)
@@ -291,7 +301,7 @@ $(TARGET_BIN): $(TARGET_ELF)
 	@echo "Creating BIN $(TARGET_BIN)" "$(STDOUT)"
 	$(V1) $(OBJCOPY) -O binary $< $@
 
-$(TARGET_ELF):  $(TARGET_OBJS)
+$(TARGET_ELF): $(TARGET_OBJS)
 	@echo "Linking $(TARGET)" "$(STDOUT)"
 	$(V1) $(CROSS_CC) -o $@ $^ $(LD_FLAGS)
 	$(V1) $(SIZE) $(TARGET_ELF)
@@ -484,29 +494,42 @@ target-mcu:
 
 ## targets-by-mcu    : make all targets that have a MCU_TYPE mcu
 targets-by-mcu:
-	@echo "Building all $(MCU_TYPE) targets..."
 	$(V1) for target in $(VALID_TARGETS); do \
 		TARGET_MCU_TYPE=$$($(MAKE) -s TARGET=$${target} target-mcu); \
 		if [ "$${TARGET_MCU_TYPE}" = "$${MCU_TYPE}" ]; then \
-			echo "Building target $${target}..."; \
-			$(MAKE) TARGET=$${target}; \
-			if [ $$? -ne 0 ]; then \
-				echo "Building target $${target} failed, aborting."; \
-				exit 1; \
+			if [ "$${DO_BUILD}" = 1 ]; then \
+				echo "Building target $${target}..."; \
+				$(MAKE) TARGET=$${target}; \
+				if [ $$? -ne 0 ]; then \
+					echo "Building target $${target} failed, aborting."; \
+					exit 1; \
+				fi; \
+			else \
+				echo -n "$${target} "; \
 			fi; \
 		fi; \
 	done
+	@echo
 
 ## targets-f3        : make all F3 targets
 targets-f3:
+	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F3 DO_BUILD=1
+
+targets-f3-print:
 	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F3
 
 ## targets-f4        : make all F4 targets
 targets-f4:
+	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F4 DO_BUILD=1
+
+targets-f4-print:
 	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F4
 
 ## targets-f7        : make all F7 targets
 targets-f7:
+	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F7 DO_BUILD=1
+
+targets-f7-print:
 	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F7
 
 ## test              : run the cleanflight test suite
@@ -541,7 +564,8 @@ check-fastram-usage-correctness:
 	fi;
 
 # rebuild everything when makefile changes
-$(TARGET_OBJS) : Makefile
+$(TARGET_OBJS): Makefile $(TARGET_DIR)/target.mk
+
 
 # include auto-generated dependencies
 -include $(TARGET_DEPS)

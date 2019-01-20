@@ -214,10 +214,8 @@ void activateDshotTelemetry(struct dispatchEntry_s* self)
     if (!ARMING_FLAG(ARMED))
     {
         pwmWriteDshotCommand(
-            255, getMotorCount(),
-            motorConfig()->dev.useDshotTelemetry ?
-            DSHOT_CMD_SIGNAL_LINE_CONTINUOUS_ERPM_TELEMETRY :
-            DSHOT_CMD_SIGNAL_LINE_TELEMETRY_DISABLE, true);
+            255, getMotorCount(), motorConfig()->dev.useDshotTelemetry ?
+            DSHOT_CMD_SIGNAL_LINE_CONTINUOUS_ERPM_TELEMETRY : DSHOT_CMD_SIGNAL_LINE_TELEMETRY_DISABLE, false);
     }
 }
 
@@ -449,7 +447,7 @@ void init(void)
         if (mscStart() == 0) {
              mscWaitForButton();
         } else {
-             NVIC_SystemReset();
+            systemResetFromMsc();
         }
     }
 #endif
@@ -683,6 +681,7 @@ void init(void)
     flashfsInit();
 #endif
 
+#ifdef USE_BLACKBOX
 #ifdef USE_SDCARD
     if (blackboxConfig()->device == BLACKBOX_DEVICE_SDCARD) {
         if (sdcardConfig()->mode) {
@@ -694,8 +693,6 @@ void init(void)
         }
     }
 #endif
-
-#ifdef USE_BLACKBOX
     blackboxInit();
 #endif
 
@@ -712,7 +709,6 @@ void init(void)
 
 #if defined(USE_VTX_COMMON)
     vtxCommonInit();
-    vtxInit();
 #endif
 
 #ifdef USE_VTX_SMARTAUDIO
@@ -772,8 +768,10 @@ void init(void)
 
 // TODO: potentially delete when feature is stable. Activation when arming is enough for flight.
 #if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
-    dispatchEnable();
-    dispatchAdd(&activateDshotTelemetryEntry, 5000000);
+    if (motorConfig()->dev.useDshotTelemetry) {
+        dispatchEnable();
+        dispatchAdd(&activateDshotTelemetryEntry, 5000000);
+    }
 #endif
 
     fcTasksInit();

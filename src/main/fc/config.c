@@ -25,6 +25,8 @@
 
 #include "platform.h"
 
+#include "blackbox/blackbox.h"
+
 #include "build/debug.h"
 
 #include "config/config_eeprom.h"
@@ -62,6 +64,8 @@
 #include "sensors/battery.h"
 #include "sensors/gyro.h"
 
+#include "scheduler/scheduler.h"
+
 pidProfile_t *currentPidProfile;
 
 #ifndef RX_SPI_DEFAULT_PROTOCOL
@@ -88,6 +92,7 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .boardIdentifier = TARGET_BOARD_IDENTIFIER,
     .hseMhz = SYSTEM_HSE_VALUE,  // Not used for non-F4 targets
     .configured = false,
+    .schedulerOptimizeRate = false,
 );
 
 uint8_t getCurrentPidProfileIndex(void)
@@ -121,6 +126,7 @@ void resetConfigs(void)
 
 static void activateConfig(void)
 {
+    schedulerOptimizeRate(systemConfig()->schedulerOptimizeRate);
     loadPidProfile();
     loadControlRateProfile();
 
@@ -516,6 +522,20 @@ void validateAndFixGyroConfig(void)
             pidConfigMutable()->pid_process_denom = MAX(pidConfigMutable()->pid_process_denom, minPidProcessDenom);
         }
     }
+
+#ifdef USE_BLACKBOX
+#ifndef USE_FLASHFS
+    if (blackboxConfig()->device == 1) {  // BLACKBOX_DEVICE_FLASH (but not defined)
+        blackboxConfigMutable()->device = BLACKBOX_DEVICE_NONE;
+    }
+#endif // USE_FLASHFS
+
+#ifndef USE_SDCARD
+    if (blackboxConfig()->device == 2) {  // BLACKBOX_DEVICE_SDCARD (but not defined)
+        blackboxConfigMutable()->device = BLACKBOX_DEVICE_NONE;
+    }
+#endif // USE_SDCARD
+#endif // USE_BLACKBOX
 }
 
 bool readEEPROM(void)

@@ -36,12 +36,13 @@
 #include "drivers/time.h"
 #include "drivers/vtx_rtc6705.h"
 
+#include "io/vtx.h"
 #include "io/vtx_rtc6705.h"
 #include "io/vtx_string.h"
 
 
 #if defined(USE_CMS) || defined(USE_VTX_COMMON)
-const char * const rtc6705PowerNames[] = {
+const char * rtc6705PowerNames[] = {
     "OFF", "MIN", "MAX"
 };
 #endif
@@ -50,12 +51,6 @@ const char * const rtc6705PowerNames[] = {
 static vtxVTable_t rtc6705VTable;    // Forward
 static vtxDevice_t vtxRTC6705 = {
     .vTable = &rtc6705VTable,
-    .capability.bandCount = VTX_SETTINGS_BAND_COUNT,
-    .capability.channelCount = VTX_SETTINGS_CHANNEL_COUNT,
-    .capability.powerCount = VTX_RTC6705_POWER_COUNT,
-    .bandNames = (char **)vtx58BandNames,
-    .channelNames = (char **)vtx58ChannelNames,
-    .powerNames = (char **)rtc6705PowerNames,
 };
 #endif
 
@@ -64,7 +59,18 @@ static void vtxRTC6705SetFrequency(vtxDevice_t *vtxDevice, uint16_t frequency);
 
 bool vtxRTC6705Init(void)
 {
+    vtxRTC6705.capability.bandCount = VTX_SETTINGS_BAND_COUNT,
+    vtxRTC6705.capability.channelCount = VTX_SETTINGS_CHANNEL_COUNT,
+    vtxRTC6705.capability.powerCount = VTX_RTC6705_POWER_COUNT,
+    vtxRTC6705.frequencyTable = vtxStringFrequencyTable();
+    vtxRTC6705.bandNames = vtxStringBandNames();
+    vtxRTC6705.bandLetters = vtxStringBandLetters();
+    vtxRTC6705.channelNames = vtxStringChannelNames();
+    vtxRTC6705.powerNames = rtc6705PowerNames,
+
     vtxCommonSetDevice(&vtxRTC6705);
+
+    vtxInit();
 
     return true;
 }
@@ -126,7 +132,7 @@ static void vtxRTC6705SetBandAndChannel(vtxDevice_t *vtxDevice, uint8_t band, ui
         if (vtxDevice->powerIndex > 0) {
             vtxDevice->band = band;
             vtxDevice->channel = channel;
-            vtxRTC6705SetFrequency(vtxDevice, vtx58frequencyTable[band-1][channel-1]);
+            vtxRTC6705SetFrequency(vtxDevice, vtxCommonLookupFrequency(vtxDevice, band, channel));
         }
     }
 }

@@ -131,7 +131,6 @@
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define DEFAULT_FEATURES        ( FEATURE_OSD | FEATURE_SOFTSERIAL )
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA         ( BIT(15) | BIT(12) | BIT(11) | BIT(10) | BIT(9) | BIT(7) | BIT(6) | BIT(5) | BIT(4) | BIT(3) | BIT(2) | BIT(1) | BIT(0) )
 #define TARGET_IO_PORTB         ( BIT(15) | BIT(14) | BIT(13) | BIT(12) | BIT(11) | BIT(10) | BIT(9) | BIT(8) | BIT(6) | BIT(5) | BIT(4) | BIT(3) | BIT(1) | BIT(0) )

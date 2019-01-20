@@ -174,8 +174,12 @@
 
 // On shared SPI buss we want to change clock for OSD chip and restore for other devices.
 
+#ifdef USE_SPI_TRANSACTION
+    #define __spiBusTransactionBegin(busdev)        spiBusTransactionBegin(busdev)
+    #define __spiBusTransactionEnd(busdev)          spiBusTransactionEnd(busdev)
+#else
 #ifdef MAX7456_SPI_CLK
-    #define __spiBusTransactionBegin(busdev)        {spiSetDivisor((busdev)->busdev_u.spi.instance, max7456SpiClock);IOLo((busdev)->busdev_u.spi.csnPin);}
+    #define __spiBusTransactionBegin(busdev)        {spiBusSetDivisor(busdev, max7456SpiClock);IOLo((busdev)->busdev_u.spi.csnPin);}
 #else
     #define __spiBusTransactionBegin(busdev)        IOLo((busdev)->busdev_u.spi.csnPin)
 #endif
@@ -184,6 +188,7 @@
     #define __spiBusTransactionEnd(busdev)       {IOHi((busdev)->busdev_u.spi.csnPin);spiSetDivisor((busdev)->busdev_u.spi.instance, MAX7456_RESTORE_CLK);}
 #else
     #define __spiBusTransactionEnd(busdev)       IOHi((busdev)->busdev_u.spi.csnPin)
+#endif
 #endif
 
 busDevice_t max7456BusDevice;
@@ -476,7 +481,11 @@ bool max7456Init(const max7456Config_t *max7456Config, const vcdProfile_t *pVcdP
     UNUSED(cpuOverclock);
 #endif
 
-    spiSetDivisor(busdev->busdev_u.spi.instance, max7456SpiClock);
+#ifdef USE_SPI_TRANSACTION
+    spiBusTransactionInit(busdev, SPI_MODE3_POL_HIGH_EDGE_2ND, max7456SpiClock);
+#else
+    spiBusSetDivisor(busdev, max7456SpiClock);
+#endif
 
     // force soft reset on Max7456
     __spiBusTransactionBegin(busdev);

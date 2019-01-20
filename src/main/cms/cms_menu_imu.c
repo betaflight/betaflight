@@ -548,6 +548,9 @@ static uint16_t cmsx_dterm_lowpass_hz;
 static uint16_t cmsx_dterm_lowpass2_hz;
 static uint16_t cmsx_dterm_notch_hz;
 static uint16_t cmsx_dterm_notch_cutoff;
+#ifdef USE_D_CUT
+static uint8_t  cmsx_dterm_cut_percent;
+#endif
 static uint16_t cmsx_yaw_lowpass_hz;
 
 static long cmsx_FilterPerProfileRead(void)
@@ -558,6 +561,9 @@ static long cmsx_FilterPerProfileRead(void)
     cmsx_dterm_lowpass2_hz  = pidProfile->dterm_lowpass2_hz;
     cmsx_dterm_notch_hz     = pidProfile->dterm_notch_hz;
     cmsx_dterm_notch_cutoff = pidProfile->dterm_notch_cutoff;
+#ifdef USE_D_CUT
+    cmsx_dterm_cut_percent  = pidProfile->dterm_cut_percent;
+#endif
     cmsx_yaw_lowpass_hz     = pidProfile->yaw_lowpass_hz;
 
     return 0;
@@ -573,6 +579,9 @@ static long cmsx_FilterPerProfileWriteback(const OSD_Entry *self)
     pidProfile->dterm_lowpass2_hz  = cmsx_dterm_lowpass2_hz;
     pidProfile->dterm_notch_hz     = cmsx_dterm_notch_hz;
     pidProfile->dterm_notch_cutoff = cmsx_dterm_notch_cutoff;
+#ifdef USE_D_CUT
+    pidProfile->dterm_cut_percent  = cmsx_dterm_cut_percent;
+#endif
     pidProfile->yaw_lowpass_hz     = cmsx_yaw_lowpass_hz;
 
     return 0;
@@ -586,8 +595,10 @@ static OSD_Entry cmsx_menuFilterPerProfileEntries[] =
     { "DTERM LPF2", OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_dterm_lowpass2_hz,    0, 500, 1 }, 0 },
     { "DTERM NF",   OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_dterm_notch_hz,       0, 500, 1 }, 0 },
     { "DTERM NFCO", OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_dterm_notch_cutoff,   0, 500, 1 }, 0 },
+#ifdef USE_D_CUT
+    { "DTERM CUT",  OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_dterm_cut_percent,    0, 100, 1 }, 0 },
+#endif
     { "YAW LPF",    OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_yaw_lowpass_hz,       0, 500, 1 }, 0 },
-
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
 };

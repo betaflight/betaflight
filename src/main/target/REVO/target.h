@@ -331,8 +331,6 @@
 #define SERIALRX_UART           SERIAL_PORT_USART1
 #endif
 
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
-
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         0xffff

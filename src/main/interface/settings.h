@@ -92,7 +92,7 @@ typedef enum {
 #ifdef USE_OVERCLOCK
     TABLE_OVERCLOCK,
 #endif
-#ifdef USE_LED_STRIP
+#ifdef USE_LED_STRIP_STATUS_MODE
     TABLE_RGB_GRB,
 #endif
 #ifdef USE_MULTI_GYRO
@@ -130,6 +130,10 @@ typedef enum {
 #endif
 #ifdef USE_TPA_MODE
     TABLE_TPA_MODE,
+#endif
+#ifdef USE_LED_STRIP
+    TABLE_LED_PROFILE,
+    TABLE_LED_RACE_COLOR,
 #endif
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
@@ -218,3 +222,5 @@ extern const char * const lookupTableMagHardware[];
 //extern const uint8_t lookupTableMagHardwareEntryCount;
 
 extern const char * const lookupTableRangefinderHardware[];
+
+extern const char * const lookupTableLEDRaceColors[];

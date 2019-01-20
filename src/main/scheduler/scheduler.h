@@ -21,6 +21,7 @@
 #pragma once
 
 #include "common/time.h"
+#include "fc/config.h"
 
 #define TASK_PERIOD_HZ(hz) (1000000 / (hz))
 #define TASK_PERIOD_MS(ms) ((ms) * 1000)
@@ -53,6 +54,7 @@ typedef struct {
     timeUs_t     maxExecutionTime;
     timeUs_t     totalExecutionTime;
     timeUs_t     averageExecutionTime;
+    float        movingAverageCycleTime;
 } cfTaskInfo_t;
 
 typedef enum {
@@ -157,9 +159,11 @@ typedef struct {
     timeDelta_t taskLatestDeltaTime;
     timeUs_t lastExecutedAt;        // last time of invocation
     timeUs_t lastSignaledAt;        // time of invocation event for event-driven tasks
+    timeUs_t lastDesiredAt;         // time of last desired execution
 
 #if defined(USE_TASK_STATISTICS)
     // Statistics
+    float    movingAverageCycleTime;
     timeUs_t movingSumExecutionTime;  // moving sum over 32 samples
     timeUs_t maxExecutionTime;
     timeUs_t totalExecutionTime;    // total time consumed by task since boot
@@ -181,6 +185,7 @@ void schedulerResetTaskMaxExecutionTime(cfTaskId_e taskId);
 void schedulerInit(void);
 void scheduler(void);
 void taskSystemLoad(timeUs_t currentTime);
+void schedulerOptimizeRate(bool optimizeRate);
 
 #define LOAD_PERCENTAGE_ONE 100
 

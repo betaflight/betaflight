@@ -44,6 +44,7 @@ typedef struct systemConfig_s {
     char boardIdentifier[sizeof(TARGET_BOARD_IDENTIFIER) + 1];
     uint8_t hseMhz; // Not used for non-F4 targets
     uint8_t configured;
+    uint8_t schedulerOptimizeRate;
 } systemConfig_t;
 
 PG_DECLARE(systemConfig_t, systemConfig);

@@ -88,8 +88,6 @@ typedef struct smartAudioStat_s {
 } smartAudioStat_t;
 
 extern smartAudioDevice_t saDevice;
-extern saPowerTable_t saPowerTable[];
-extern const char * const saPowerNames[];
 extern smartAudioStat_t saStat;
 
 extern uint16_t sa_smartbaud;

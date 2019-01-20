@@ -485,13 +485,13 @@ static void convertVtxPower(spektrumVtx_t * vtx)
 #if defined(USE_VTX_TRAMP)
         case VTXDEV_TRAMP:
             powerIndexTable = vtxTrampPi;
-            vtx->powerValue = trampPowerTable[vtx->power -1];      // Lookup the device power value, 0-based table vs 1-based index. Doh.
+            vtx->powerValue = vtxCommonLookupPowerValue(vtxCommonDevice(), vtx->power - 1);  // Lookup the device power value, 0-based table vs 1-based index. Doh.
             break;
 #endif
 #if defined(USE_VTX_SMARTAUDIO)
         case VTXDEV_SMARTAUDIO:
             powerIndexTable = vtxSaPi;
-            vtx->powerValue = saPowerTable[vtx->power -1].rfpower;
+            vtx->powerValue = vtxCommonLookupPowerValue(vtxCommonDevice(), vtx->power - 1);  // Lookup the device power value, 0-based table vs 1-based index. Doh.
             break;
 #endif
 #if defined(USE_VTX_RTC6705)

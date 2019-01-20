@@ -382,6 +382,8 @@ static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, const uin
 #endif
 
     if (compressionMethod == NO_COMPRESSION) {
+
+        uint16_t *readLenPtr = (uint16_t *)sbufPtr(dst);
         if (!useLegacyFormat) {
             // new format supports variable read lengths
             sbufWriteU16(dst, readLen);
@@ -389,6 +391,11 @@ static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, const uin
         }
 
         const int bytesRead = flashfsReadAbs(address, sbufPtr(dst), readLen);
+
+        if (!useLegacyFormat) {
+            // update the 'read length' with the actual amount read from flash.
+            *readLenPtr = bytesRead;
+        }
 
         sbufAdvance(dst, bytesRead);
 
@@ -759,7 +766,11 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         }
 
         // Enabled warnings
-        sbufWriteU16(dst, osdConfig()->enabledWarnings);
+        // Send low word first for backwards compatibility (API < 1.41)
+        sbufWriteU16(dst, (uint16_t)(osdConfig()->enabledWarnings & 0xFFFF));
+        // API >= 1.41; send the count and 32bit warnings
+        sbufWriteU8(dst, OSD_WARNING_COUNT);
+        sbufWriteU32(dst, osdConfig()->enabledWarnings);
 #endif
         break;
     }
@@ -1174,7 +1185,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         }
         break;
 
-#ifdef USE_LED_STRIP
+#ifdef USE_LED_STRIP_STATUS_MODE
     case MSP_LED_COLORS:
         for (int i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
             const hsvColor_t *color = &ledStripConfig()->colors[i];
@@ -2009,7 +2020,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 const uint8_t newChannel = (newFrequency % 8) + 1;
                 vtxSettingsConfigMutable()->band = newBand;
                 vtxSettingsConfigMutable()->channel = newChannel;
-                vtxSettingsConfigMutable()->freq = vtx58_Bandchan2Freq(newBand, newChannel);
+                vtxSettingsConfigMutable()->freq = vtxCommonLookupFrequency(vtxDevice, newBand, newChannel);
             } else if (newFrequency <= VTX_SETTINGS_MAX_FREQUENCY_MHZ) { // Value is frequency in MHz
                 vtxSettingsConfigMutable()->band = 0;
                 vtxSettingsConfigMutable()->channel = 0;
@@ -2248,7 +2259,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         }
         break;
 
-#ifdef USE_LED_STRIP
+#ifdef USE_LED_STRIP_STATUS_MODE
     case MSP_SET_LED_COLORS:
         for (int i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
             hsvColor_t *color = &ledStripConfigMutable()->colors[i];
@@ -2486,7 +2497,13 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src, mspPos
 
                 if (sbufBytesRemaining(src) >= 2) {
                     /* Enabled warnings */
+                    // API < 1.41 supports only the low 16 bits
                     osdConfigMutable()->enabledWarnings = sbufReadU16(src);
+                }
+                
+                if (sbufBytesRemaining(src) >= 4) {
+                    // 32bit version of enabled warnings (API >= 1.41)
+                    osdConfigMutable()->enabledWarnings = sbufReadU32(src);
                 }
 #endif
             } else if ((int8_t)addr == -2) {

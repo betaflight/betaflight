@@ -69,8 +69,16 @@ void vtxInit(void)
 {
     bool settingsUpdated = false;
 
+    vtxDevice_t *vtxDevice = vtxCommonDevice();
+
+    if (!vtxDevice) {
+        // If a device is not registered, we don't have any table to refer.
+        // Don't manipulate settings and just return in this case.
+        return;
+    }
+
     // sync frequency in parameter group when band/channel are specified
-    const uint16_t freq = vtx58_Bandchan2Freq(vtxSettingsConfig()->band, vtxSettingsConfig()->channel);
+    const uint16_t freq = vtxCommonLookupFrequency(vtxDevice, vtxSettingsConfig()->band, vtxSettingsConfig()->channel);
     if (vtxSettingsConfig()->band && freq != vtxSettingsConfig()->freq) {
         vtxSettingsConfigMutable()->freq = freq;
         settingsUpdated = true;

@@ -146,11 +146,13 @@ if (saDevice.version == 2) {
         saCmsPitFMode = 0;
 }
 
+    const vtxDevice_t *device = vtxCommonDevice();
+
     saCmsStatusString[0] = "-FR"[saCmsOpmodel];
 
     if (saCmsFselMode == 0) {
-        saCmsStatusString[2] = "ABEFR"[saDevice.channel / 8];
-        saCmsStatusString[3] = '1' + (saDevice.channel % 8);
+        saCmsStatusString[2] = vtxCommonLookupBandLetter(device, saDevice.channel / 8 + 1);
+        saCmsStatusString[3] = vtxCommonLookupChannelName(device, (saDevice.channel % 8) + 1)[0];
     } else {
         saCmsStatusString[2] = 'U';
         saCmsStatusString[3] = 'F';
@@ -162,8 +164,7 @@ if (saDevice.version == 2) {
     else if (saDevice.mode & SA_MODE_GET_FREQ_BY_FREQ)
         tfp_sprintf(&saCmsStatusString[5], "%4d", saDevice.freq);
     else
-        tfp_sprintf(&saCmsStatusString[5], "%4d",
-            vtx58frequencyTable[saDevice.channel / 8][saDevice.channel % 8]);
+        tfp_sprintf(&saCmsStatusString[5], "%4d", vtxCommonLookupFrequency(vtxCommonDevice(), saDevice.channel / 8 + 1, saDevice.channel % 8 + 1));
 
     saCmsStatusString[9] = ' ';
 
@@ -177,7 +178,8 @@ if (saDevice.version == 2) {
         saCmsStatusString[12] = 'R';
         saCmsStatusString[13] = 0;
     } else {
-        tfp_sprintf(&saCmsStatusString[10], "%3d", (saDevice.version == 2) ?  saPowerTable[saDevice.power].rfpower : saPowerTable[saDacToPowerIndex(saDevice.power)].rfpower);
+        int index = (saDevice.version == 2) ? saDevice.power : saDacToPowerIndex(saDevice.power);
+        tfp_sprintf(&saCmsStatusString[10], "%3d", vtxCommonLookupPowerName(vtxCommonDevice(), index + 1));
     }
 }
 
@@ -207,7 +209,7 @@ static long saCmsConfigBandByGvar(displayPort_t *pDisp, const void *self)
     if ((saCmsOpmodel == SACMS_OPMODEL_FREE) && !saDeferred)
         saSetBandAndChannel(saCmsBand - 1, saCmsChan - 1);
 
-    saCmsFreqRef = vtx58frequencyTable[saCmsBand - 1][saCmsChan - 1];
+    saCmsFreqRef = vtxCommonLookupFrequency(vtxCommonDevice(), saCmsBand, saCmsChan);
 
     return 0;
 }
@@ -232,7 +234,7 @@ static long saCmsConfigChanByGvar(displayPort_t *pDisp, const void *self)
     if ((saCmsOpmodel == SACMS_OPMODEL_FREE) && !saDeferred)
         saSetBandAndChannel(saCmsBand - 1, saCmsChan - 1);
 
-    saCmsFreqRef = vtx58frequencyTable[saCmsBand - 1][saCmsChan - 1];
+    saCmsFreqRef = vtxCommonLookupFrequency(vtxCommonDevice(), saCmsBand , saCmsChan);
 
     return 0;
 }
@@ -362,11 +364,26 @@ static CMS_Menu saCmsMenuStats = {
 };
 #endif /* USE_EXTENDED_CMS_MENUS */
 
-static OSD_TAB_t saCmsEntBand = { &saCmsBand, VTX_SMARTAUDIO_BAND_COUNT, vtx58BandNames };
+static OSD_TAB_t saCmsEntBand;
+static OSD_TAB_t saCmsEntChan;
+static OSD_TAB_t saCmsEntPower;
 
-static OSD_TAB_t saCmsEntChan = { &saCmsChan, VTX_SMARTAUDIO_CHANNEL_COUNT, vtx58ChannelNames };
+static void saCmsInitNames(void)
+{ 
+    vtxDevice_t *device = vtxCommonDevice();
 
-static OSD_TAB_t saCmsEntPower = { &saCmsPower, VTX_SMARTAUDIO_POWER_COUNT, saPowerNames};
+    saCmsEntBand.val = &saCmsBand;
+    saCmsEntBand.max = device->capability.bandCount;
+    saCmsEntBand.names = device->bandNames;
+
+    saCmsEntChan.val = &saCmsChan;
+    saCmsEntChan.max = device->capability.channelCount;
+    saCmsEntChan.names = device->channelNames;
+
+    saCmsEntPower.val = &saCmsPower;
+    saCmsEntPower.max = device->capability.powerCount;
+    saCmsEntPower.names = device->powerNames;
+}
 
 static OSD_UINT16_t saCmsEntFreqRef = { &saCmsFreqRef, 5600, 5900, 0 };
 
@@ -430,7 +447,7 @@ static long saCmsCommence(displayPort_t *pDisp, const void *self)
 
         newSettings.band = saCmsBand;
         newSettings.channel = saCmsChan;
-        newSettings.freq = vtx58_Bandchan2Freq(saCmsBand, saCmsChan);
+        newSettings.freq = vtxCommonLookupFrequency(vtxCommonDevice(), saCmsBand, saCmsChan);
         // If in pit mode, cancel it.
 
         if (saCmsPitFMode == 0)
@@ -443,7 +460,7 @@ static long saCmsCommence(displayPort_t *pDisp, const void *self)
         if (saCmsFselModeNew == 0) {
             newSettings.band = saCmsBand;
             newSettings.channel = saCmsChan;
-            newSettings.freq = vtx58_Bandchan2Freq(saCmsBand, saCmsChan);
+            newSettings.freq = vtxCommonLookupFrequency(vtxCommonDevice(), saCmsBand, saCmsChan);
         } else {
             saSetMode(0);    //make sure FREE mode is setup
             newSettings.band = 0;
@@ -663,6 +680,8 @@ static long sacms_SetupTopMenu(void)
     } else {
         cmsx_menuVtxSmartAudio.entries = saCmsMenuOfflineEntries;
     }
+
+    saCmsInitNames();
 
     return 0;
 }

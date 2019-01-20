@@ -93,6 +93,7 @@
 #include "rx/cc2500_sfhss.h"
 #include "rx/spektrum.h"
 #include "rx/cyrf6936_spektrum.h"
+#include "rx/a7105_flysky.h"
 
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
@@ -340,7 +341,7 @@ static const char * const lookupOverclock[] = {
 };
 #endif
 
-#ifdef USE_LED_STRIP
+#ifdef USE_LED_STRIP_STATUS_MODE
     static const char * const lookupLedStripFormatRGB[] = {
         "GRB", "RGB"
     };
@@ -423,6 +424,35 @@ static const char * const lookupTableTpaMode[] = {
 };
 #endif
 
+#ifdef USE_LED_STRIP
+#ifdef USE_LED_STRIP_STATUS_MODE
+static const char * const lookupTableLEDProfile[] = {
+    "RACE", "BEACON", "STATUS"
+};
+#else
+static const char * const lookupTableLEDProfile[] = {
+    "RACE", "BEACON"
+};
+#endif
+#endif
+
+const char * const lookupTableLEDRaceColors[COLOR_COUNT] = {
+    "BLACK",
+    "WHITE",
+    "RED",
+    "ORANGE",
+    "YELLOW",
+    "LIME_GREEN",
+    "GREEN",
+    "MINT_GREEN",
+    "CYAN",
+    "LIGHT_BLUE",
+    "BLUE",
+    "DARK_VIOLET",
+    "MAGENTA",
+    "DEEP_PINK"
+};
+
 #define LOOKUP_TABLE_ENTRY(name) { name, ARRAYLEN(name) }
 
 const lookupTableEntry_t lookupTables[] = {
@@ -492,7 +522,7 @@ const lookupTableEntry_t lookupTables[] = {
 #ifdef USE_OVERCLOCK
     LOOKUP_TABLE_ENTRY(lookupOverclock),
 #endif
-#ifdef USE_LED_STRIP
+#ifdef USE_LED_STRIP_STATUS_MODE
     LOOKUP_TABLE_ENTRY(lookupLedStripFormatRGB),
 #endif
 #ifdef USE_MULTI_GYRO
@@ -530,6 +560,10 @@ const lookupTableEntry_t lookupTables[] = {
 #endif
 #ifdef USE_TPA_MODE
     LOOKUP_TABLE_ENTRY(lookupTableTpaMode),
+#endif
+#ifdef USE_LED_STRIP
+    LOOKUP_TABLE_ENTRY(lookupTableLEDProfile),
+    LOOKUP_TABLE_ENTRY(lookupTableLEDRaceColors),
 #endif
 };
 
@@ -621,7 +655,6 @@ const clivalue_t valueTable[] = {
     { "baro_tab_size",              VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, BARO_SAMPLE_COUNT_MAX }, PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_sample_count) },
     { "baro_noise_lpf",             VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, 1000 }, PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_noise_lpf) },
     { "baro_cf_vel",                VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, 1000 }, PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_cf_vel) },
-    { "baro_cf_alt",                VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, 1000 }, PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_cf_alt) },
 #endif
 
 // PG_RX_CONFIG
@@ -861,6 +894,7 @@ const clivalue_t valueTable[] = {
     { "gps_rescue_min_sats",        VAR_UINT8  | MASTER_VALUE, .config.minmax = { 5, 50 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, minSats) },
     { "gps_rescue_min_dth",         VAR_UINT16  | MASTER_VALUE, .config.minmax = { 50, 1000 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, minRescueDth) },
     { "gps_rescue_allow_arming_without_fix", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, allowArmingWithoutFix) },
+    { "gps_rescue_use_mag",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, useMag) },
 #endif
 #endif
 
@@ -962,6 +996,13 @@ const clivalue_t valueTable[] = {
     { "integrated_yaw_relax",    VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 255 }, PG_PID_PROFILE, offsetof(pidProfile_t, integrated_yaw_relax) },
 #endif
 
+#ifdef USE_D_CUT
+    { "dterm_cut_percent",          VAR_UINT8 | PROFILE_VALUE,  .config.minmax = { 0, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_cut_percent) },
+    { "dterm_cut_gain",             VAR_UINT8 | PROFILE_VALUE,  .config.minmax = { 1, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_cut_gain) },
+    { "dterm_cut_range_hz",         VAR_UINT8 | PROFILE_VALUE,  .config.minmax = { 10, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_cut_range_hz) },
+    { "dterm_cut_lowpass_hz",       VAR_UINT8 | PROFILE_VALUE,  .config.minmax = { 1, 20 }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_cut_lowpass_hz) },
+#endif
+
 #ifdef USE_LAUNCH_CONTROL
     { "launch_control_mode",        VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LAUNCH_CONTROL_MODE }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlMode) },
     { "launch_trigger_allow_reset", VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlAllowTriggerReset) },
@@ -999,13 +1040,38 @@ const clivalue_t valueTable[] = {
     // Set to $size_of_battery to get a percentage of battery used.
     { "mavlink_mah_as_heading_divisor", VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 30000 }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, mavlink_mah_as_heading_divisor) },
 #endif
+#ifdef USE_TELEMETRY_SENSORS_DISABLED_DETAILS
+    { "telemetry_disabled_voltage",         VAR_UINT32  | MASTER_VALUE | MODE_BITSET, .config.bitpos = LOG2(SENSOR_VOLTAGE),         PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, disabledSensors)},
+    { "telemetry_disabled_current",         VAR_UINT32  | MASTER_VALUE | MODE_BITSET, .config.bitpos = LOG2(SENSOR_CURRENT),         PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, disabledSensors)},
+    { "telemetry_disabled_fuel",            VAR_UINT32  | MASTER_VALUE | MODE_BITSET, .config.bitpos = LOG2(SENSOR_FUEL),            PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, disabledSensors)},
+    { "telemetry_disabled_mode",            VAR_UINT32  | MASTER_VALUE | MODE_BITSET, .config.bitpos = LOG2(SENSOR_MODE),            PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, disabledSensors)},
+    { "telemetry_disabled_acc_x",           VAR_UINT32  | MASTER_VALUE | MODE_BITSET, .config.bitpos = LOG2(SENSOR_ACC_X),           PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, disabledSensors)},
+    { "telemetry_disabled_acc_y",           VAR_UINT32  | MASTER_VALUE | MODE_BITSET, .config.bitpos = LOG2(SENSOR_ACC_Y),           PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, disabledSensors)},
+    { "telemetry_disabled_acc_z",           VAR_UINT32  | MASTER_VALUE | MODE_BITSET, .config.bitpos = LOG2(SENSOR_ACC_Z),           PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, disabledSensors)},
+    { "telemetry_disabled_pitch",           VAR_UINT32  | MASTER_VALUE | MODE_BITSET, .config.bitpos = LOG2(SENSOR_PITCH),           PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, disabledSensors)},
+    { "telemetry_disabled_roll",            VAR_UINT32  | MASTER_VALUE | MODE_BITSET, .config.bitpos = LOG2(SENSOR_ROLL),            PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, disabledSensors)},
+    { "telemetry_disabled_heading",         VAR_UINT32  | MASTER_VALUE | MODE_BITSET, .config.bitpos = LOG2(SENSOR_HEADING),         PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, disabledSensors)},
+    { "telemetry_disabled_altitude",        VAR_UINT32  | MASTER_VALUE | MODE_BITSET, .config.bitpos = LOG2(SENSOR_ALTITUDE),        PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, disabledSensors)},
+    { "telemetry_disabled_vario",           VAR_UINT32  | MASTER_VALUE | MODE_BITSET, .config.bitpos = LOG2(SENSOR_VARIO),           PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, disabledSensors)},
+    { "telemetry_disabled_lat_long",        VAR_UINT32  | MASTER_VALUE | MODE_BITSET, .config.bitpos = LOG2(SENSOR_LAT_LONG),        PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, disabledSensors)},
+    { "telemetry_disabled_ground_speed",    VAR_UINT32  | MASTER_VALUE | MODE_BITSET, .config.bitpos = LOG2(SENSOR_GROUND_SPEED),    PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, disabledSensors)},
+    { "telemetry_disabled_distance",        VAR_UINT32  | MASTER_VALUE | MODE_BITSET, .config.bitpos = LOG2(SENSOR_DISTANCE),        PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, disabledSensors)},
+    { "telemetry_disabled_esc_current",     VAR_UINT32  | MASTER_VALUE | MODE_BITSET, .config.bitpos = LOG2(ESC_SENSOR_CURRENT),     PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, disabledSensors)},
+    { "telemetry_disabled_esc_voltage",     VAR_UINT32  | MASTER_VALUE | MODE_BITSET, .config.bitpos = LOG2(ESC_SENSOR_VOLTAGE),     PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, disabledSensors)},
+    { "telemetry_disabled_esc_rpm",         VAR_UINT32  | MASTER_VALUE | MODE_BITSET, .config.bitpos = LOG2(ESC_SENSOR_RPM),         PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, disabledSensors)},
+    { "telemetry_disabled_esc_temperature", VAR_UINT32  | MASTER_VALUE | MODE_BITSET, .config.bitpos = LOG2(ESC_SENSOR_TEMPERATURE), PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, disabledSensors)},
+    { "telemetry_disabled_temperature",     VAR_UINT32  | MASTER_VALUE | MODE_BITSET, .config.bitpos = LOG2(SENSOR_TEMPERATURE),     PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, disabledSensors)},
+#else
     { "telemetry_disabled_sensors", VAR_UINT32 | MASTER_VALUE, .config.u32_max = SENSOR_ALL, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, disabledSensors)},
+#endif
 #endif // USE_TELEMETRY
 
 // PG_LED_STRIP_CONFIG
 #ifdef USE_LED_STRIP
     { "ledstrip_visual_beeper",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_visual_beeper) },
     { "ledstrip_grb_rgb",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_RGB_GRB }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_grb_rgb) },
+    { "ledstrip_profile",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LED_PROFILE }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_profile) },
+    { "ledstrip_race_color",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LED_RACE_COLOR }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledRaceColor) },
 #endif
 
 // PG_SDCARD_CONFIG
@@ -1035,6 +1101,7 @@ const clivalue_t valueTable[] = {
     { "osd_warn_crash_flip",        VAR_UINT16  | MASTER_VALUE | MODE_BITSET, .config.bitpos = OSD_WARNING_CRASH_FLIP,       PG_OSD_CONFIG, offsetof(osdConfig_t, enabledWarnings)},
     { "osd_warn_esc_fail",          VAR_UINT16  | MASTER_VALUE | MODE_BITSET, .config.bitpos = OSD_WARNING_ESC_FAIL,         PG_OSD_CONFIG, offsetof(osdConfig_t, enabledWarnings)},
     { "osd_warn_no_gps_rescue",     VAR_UINT16  | MASTER_VALUE | MODE_BITSET, .config.bitpos = OSD_WARNING_GPS_RESCUE_UNAVAILABLE, PG_OSD_CONFIG, offsetof(osdConfig_t, enabledWarnings)},
+    { "osd_warn_gps_rescue_disabled", VAR_UINT16  | MASTER_VALUE | MODE_BITSET, .config.bitpos = OSD_WARNING_GPS_RESCUE_DISABLED, PG_OSD_CONFIG, offsetof(osdConfig_t, enabledWarnings)},
 #ifdef USE_ADC_INTERNAL
     { "osd_warn_core_temp",         VAR_UINT16  | MASTER_VALUE | MODE_BITSET, .config.bitpos = OSD_WARNING_CORE_TEMPERATURE, PG_OSD_CONFIG, offsetof(osdConfig_t, enabledWarnings)},
 #endif
@@ -1167,6 +1234,7 @@ const clivalue_t valueTable[] = {
     { "cpu_overclock",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OVERCLOCK }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, cpu_overclock) },
 #endif
     { "pwr_on_arm_grace",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 30 }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, powerOnArmingGraceTime) },
+    { "scheduler_optimize_rate",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, schedulerOptimizeRate) },
 
 // PG_VTX_CONFIG
 #ifdef USE_VTX_COMMON
@@ -1224,7 +1292,7 @@ const clivalue_t valueTable[] = {
     { "frsky_spi_tx_id",                VAR_UINT8   | MASTER_VALUE | MODE_ARRAY, .config.array.length = 2, PG_RX_FRSKY_SPI_CONFIG, offsetof(rxFrSkySpiConfig_t, bindTxId) },
     { "frsky_spi_offset",               VAR_INT8    | MASTER_VALUE, .config.minmax = { -127, 127 }, PG_RX_FRSKY_SPI_CONFIG, offsetof(rxFrSkySpiConfig_t, bindOffset) },
     { "frsky_spi_bind_hop_data",        VAR_UINT8   | MASTER_VALUE | MODE_ARRAY, .config.array.length = 50, PG_RX_FRSKY_SPI_CONFIG, offsetof(rxFrSkySpiConfig_t, bindHopData) },
-    { "frsky_x_rx_num",                 VAR_UINT8   | MASTER_VALUE, .config.minmax = { 0, 255 }, PG_RX_FRSKY_SPI_CONFIG, offsetof(rxFrSkySpiConfig_t, rxNum) },
+    { "frsky_x_rx_num",                 VAR_UINT8   | MASTER_VALUE, .config.minmax = { 0, UINT8_MAX }, PG_RX_FRSKY_SPI_CONFIG, offsetof(rxFrSkySpiConfig_t, rxNum) },
     { "frsky_spi_a1_source",            VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_RX_FRSKY_SPI_A1_SOURCE }, PG_RX_FRSKY_SPI_CONFIG, offsetof(rxFrSkySpiConfig_t, a1Source) },
 #endif
     { "led_inversion",                  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, ((1 << STATUS_LED_NUMBER) - 1) }, PG_STATUS_LED_CONFIG, offsetof(statusLedConfig_t, inversion) },
@@ -1307,7 +1375,7 @@ const clivalue_t valueTable[] = {
     { "mco2_on_pc9",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_MCO_CONFIG, offsetof(mcoConfig_t, enabled[1]) },
 #endif
 #ifdef USE_RX_SPEKTRUM
-    { "spektrum_spi_protocol",     VAR_UINT8 | MASTER_VALUE, .config.minmax = { 0, 255 }, PG_RX_SPEKTRUM_SPI_CONFIG, offsetof(spektrumConfig_t, protocol) },
+    { "spektrum_spi_protocol",     VAR_UINT8 | MASTER_VALUE, .config.minmax = { 0, UINT8_MAX }, PG_RX_SPEKTRUM_SPI_CONFIG, offsetof(spektrumConfig_t, protocol) },
     { "spektrum_spi_mfg_id",       VAR_UINT8 | MASTER_VALUE | MODE_ARRAY, .config.array.length = 4, PG_RX_SPEKTRUM_SPI_CONFIG, offsetof(spektrumConfig_t, mfgId) },
     { "spektrum_spi_num_channels", VAR_UINT8 | MASTER_VALUE, .config.minmax = { 0, DSM_MAX_CHANNEL_COUNT }, PG_RX_SPEKTRUM_SPI_CONFIG, offsetof(spektrumConfig_t, numChannels) },
 #endif
@@ -1324,6 +1392,12 @@ const clivalue_t valueTable[] = {
     { "dterm_rpm_notch_harmonics",  VAR_UINT8 | MASTER_VALUE, .config.minmax = { 0, 3 }, PG_RPM_FILTER_CONFIG, offsetof(rpmFilterConfig_t, dterm_rpm_notch_harmonics) },
     { "dterm_rpm_notch_q",  VAR_UINT16 | MASTER_VALUE, .config.minmax = { 1, 1000 }, PG_RPM_FILTER_CONFIG, offsetof(rpmFilterConfig_t, dterm_rpm_notch_q) },
     { "dterm_rpm_notch_min",  VAR_UINT8 | MASTER_VALUE, .config.minmax = { 50, 200 }, PG_RPM_FILTER_CONFIG, offsetof(rpmFilterConfig_t, dterm_rpm_notch_min) },
+#endif
+
+#ifdef USE_RX_FLYSKY
+    { "flysky_spi_tx_id",       VAR_UINT32 | MASTER_VALUE, .config.u32_max = UINT32_MAX, PG_FLYSKY_CONFIG, offsetof(flySkyConfig_t, txId) },
+    { "flysky_spi_rf_channels", VAR_UINT8 | MASTER_VALUE | MODE_ARRAY, .config.array.length = 16, PG_FLYSKY_CONFIG, offsetof(flySkyConfig_t, rfChannelMap) },
+    { "flysky_spi_protocol",    VAR_UINT8 | MASTER_VALUE, .config.minmax = { 0, UINT8_MAX }, PG_FLYSKY_CONFIG, offsetof(flySkyConfig_t, protocol) },
 #endif
 };
 

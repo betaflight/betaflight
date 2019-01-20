@@ -159,7 +159,6 @@
 #define USE_LED_STRIP
 
 #define USE_ESCSERIAL
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff

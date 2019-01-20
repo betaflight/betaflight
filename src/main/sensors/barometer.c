@@ -52,14 +52,13 @@
 
 baro_t baro;                        // barometer access functions
 
-PG_REGISTER_WITH_RESET_FN(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 0);
+PG_REGISTER_WITH_RESET_FN(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 1);
 
 void pgResetFn_barometerConfig(barometerConfig_t *barometerConfig)
 {
     barometerConfig->baro_sample_count = 21;
     barometerConfig->baro_noise_lpf = 600;
     barometerConfig->baro_cf_vel = 985;
-    barometerConfig->baro_cf_alt = 965;
     barometerConfig->baro_hardware = BARO_DEFAULT;
 
     // For backward compatibility; ceate a valid default value for bus parameters

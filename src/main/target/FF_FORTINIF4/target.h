@@ -197,7 +197,6 @@
 /*---------------------------------*/
 
 /*-------------ESCs----------------*/
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN  PB0  // (HARDARE=0)
 /*---------------------------------*/
