@@ -119,6 +119,7 @@ void displayInit(displayPort_t *instance, const displayPortVTable_t *vTable)
 {
     instance->vTable = vTable;
     instance->vTable->clearScreen(instance);
+    instance->useFullscreen = false;
     instance->cleared = true;
     instance->grabCount = 0;
     instance->cursorRow = -1;

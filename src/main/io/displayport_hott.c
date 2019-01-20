@@ -22,12 +22,6 @@
 #include "platform.h"
 #if defined (USE_HOTT_TEXTMODE) && defined (USE_CMS)
 
-// Fixme:
-// Let the CMS believe we have a bigger display to avoid empty rows and columns
-// Better make this configurable in CMS
-#define ROW_CORRECTION 1
-#define COL_CORRECTION 2
-
 #include "common/utils.h"
 #include "cms/cms.h"
 #include "telemetry/hott.h"
@@ -48,13 +42,6 @@ static int hottScreenSize(const displayPort_t *displayPort)
 static int hottWriteChar(displayPort_t *displayPort, uint8_t col, uint8_t row, uint8_t c)
 {
     UNUSED(displayPort);
-
-    if (row < ROW_CORRECTION || row >= HOTT_TEXTMODE_DISPLAY_ROWS + ROW_CORRECTION
-        || col < COL_CORRECTION || col >= HOTT_TEXTMODE_DISPLAY_COLUMNS + COL_CORRECTION) {
-       return 0;
-    }
-    row -= ROW_CORRECTION;
-    col -= COL_CORRECTION;
 
     hottTextmodeWriteChar(col, row, c);
     return 0;
@@ -136,8 +123,9 @@ displayPort_t *displayPortHottInit()
 {
     hottDisplayPort.device = NULL;
     displayInit(&hottDisplayPort, &hottVTable);
-    hottDisplayPort.rows = HOTT_TEXTMODE_DISPLAY_ROWS + ROW_CORRECTION * 2;
-    hottDisplayPort.cols = HOTT_TEXTMODE_DISPLAY_COLUMNS + COL_CORRECTION * 2;
+    hottDisplayPort.useFullscreen = true;
+    hottDisplayPort.rows = HOTT_TEXTMODE_DISPLAY_ROWS;
+    hottDisplayPort.cols = HOTT_TEXTMODE_DISPLAY_COLUMNS;
     return &hottDisplayPort;
 }
 

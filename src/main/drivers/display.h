@@ -31,6 +31,7 @@ typedef struct displayPort_s {
     uint8_t posY;
 
     // CMS state
+    bool useFullscreen;
     bool cleared;
     int8_t cursorRow;
     int8_t grabCount;
