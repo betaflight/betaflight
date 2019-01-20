@@ -113,6 +113,8 @@ uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t txByte)
 {
     uint16_t spiTimeout = 1000;
 
+    instance->DR;
+
     while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_TXE) == RESET)
         if ((spiTimeout--) == 0)
             return spiTimeoutUserCallback(instance);
