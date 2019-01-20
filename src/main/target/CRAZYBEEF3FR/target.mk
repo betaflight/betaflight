@@ -2,6 +2,8 @@ F3_TARGETS  += $(TARGET)
 
 FEATURES  = VCP 
 
+FEATURE_CUT_LEVEL = 2
+
 TARGET_SRC = \
             drivers/accgyro/accgyro_mpu.c \
             drivers/accgyro/accgyro_spi_mpu6000.c \

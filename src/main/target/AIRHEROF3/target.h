@@ -22,8 +22,6 @@
 
 #define TARGET_BOARD_IDENTIFIER "AIR3"
 
-#define CONFIG_PREFER_ACC_ON
-
 #define LED0_PIN                PB3
 #define LED1_PIN                PB4
 
