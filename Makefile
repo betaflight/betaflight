@@ -494,29 +494,42 @@ target-mcu:
 
 ## targets-by-mcu    : make all targets that have a MCU_TYPE mcu
 targets-by-mcu:
-	@echo "Building all $(MCU_TYPE) targets..."
 	$(V1) for target in $(VALID_TARGETS); do \
 		TARGET_MCU_TYPE=$$($(MAKE) -s TARGET=$${target} target-mcu); \
 		if [ "$${TARGET_MCU_TYPE}" = "$${MCU_TYPE}" ]; then \
-			echo "Building target $${target}..."; \
-			$(MAKE) TARGET=$${target}; \
-			if [ $$? -ne 0 ]; then \
-				echo "Building target $${target} failed, aborting."; \
-				exit 1; \
+			if [ "$${DO_BUILD}" = 1 ]; then \
+				echo "Building target $${target}..."; \
+				$(MAKE) TARGET=$${target}; \
+				if [ $$? -ne 0 ]; then \
+					echo "Building target $${target} failed, aborting."; \
+					exit 1; \
+				fi; \
+			else \
+				echo -n "$${target} "; \
 			fi; \
 		fi; \
 	done
+	@echo
 
 ## targets-f3        : make all F3 targets
 targets-f3:
+	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F3 DO_BUILD=1
+
+targets-f3-print:
 	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F3
 
 ## targets-f4        : make all F4 targets
 targets-f4:
+	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F4 DO_BUILD=1
+
+targets-f4-print:
 	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F4
 
 ## targets-f7        : make all F7 targets
 targets-f7:
+	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F7 DO_BUILD=1
+
+targets-f7-print:
 	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F7
 
 ## test              : run the cleanflight test suite
