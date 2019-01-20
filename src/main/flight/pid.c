@@ -80,6 +80,7 @@ static FAST_RAM_ZERO_INIT float antiGravityThrottleHpf;
 static FAST_RAM_ZERO_INIT uint16_t itermAcceleratorGain;
 static FAST_RAM float antiGravityOsdCutoff = 1.0f;
 static FAST_RAM_ZERO_INIT bool antiGravityEnabled;
+static FAST_RAM_ZERO_INIT bool zeroThrottleItermReset;
 
 PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 2);
 
@@ -1398,6 +1399,8 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
 
             pidData[axis].Sum = 0;
         }
+    } else if (zeroThrottleItermReset) {
+        pidResetIterm();
     }
 }
 
@@ -1450,3 +1453,8 @@ void dynLpfDTermUpdate(float throttle)
     }
 }
 #endif
+
+void pidSetItermReset(bool enabled)
+{
+    zeroThrottleItermReset = enabled;
+}

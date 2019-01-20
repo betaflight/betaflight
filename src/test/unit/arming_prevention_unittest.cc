@@ -1088,4 +1088,5 @@ extern "C" {
     bool gpsIsHealthy() { return false; }
     bool isAltitudeOffset(void) { return false; }
     float getCosTiltAngle(void) { return 0.0f; }
+    void pidSetItermReset(bool) {}
 }
