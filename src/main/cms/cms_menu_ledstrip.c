@@ -45,7 +45,6 @@
 
 #ifdef USE_LED_STRIP
 
-static bool featureRead = false;
 static uint8_t cmsx_FeatureLedstrip;
 static uint8_t cmsx_LedProfile;
 static uint8_t cmsx_RaceColor;
@@ -59,34 +58,26 @@ const char * const ledProfileNames[LED_PROFILE_COUNT] = {
 
 static long cmsx_Ledstrip_OnEnter(void)
 {
-    if (!featureRead) {
-        cmsx_FeatureLedstrip = featureIsEnabled(FEATURE_LED_STRIP) ? 1 : 0;
-        featureRead = true;
-    }
-
-#ifdef USE_LED_STRIP
+    cmsx_FeatureLedstrip = featureIsEnabled(FEATURE_LED_STRIP) ? 1 : 0;
     cmsx_LedProfile = getLedProfile();
     cmsx_RaceColor = getLedRaceColor();
-#endif
+
     return 0;
 }
 
 static long cmsx_Ledstrip_OnExit(const OSD_Entry *self)
 {
     UNUSED(self);
-    if (featureRead) {
-        if (cmsx_FeatureLedstrip)
-            featureEnable(FEATURE_LED_STRIP);
-        else {
-            ledStripDisable();
-            featureDisable(FEATURE_LED_STRIP);
-        }
+
+    if (cmsx_FeatureLedstrip) {
+        featureEnable(FEATURE_LED_STRIP);
+    } else {
+        ledStripDisable();
+        featureDisable(FEATURE_LED_STRIP);
     }
 
-#ifdef USE_LED_STRIP
     setLedProfile(cmsx_LedProfile);
     setLedRaceColor(cmsx_RaceColor);
-#endif
 
     return 0;
 }
