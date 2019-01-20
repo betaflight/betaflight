@@ -63,10 +63,10 @@
 #define USE_USB_MSC
 #define USE_PERSISTENT_MSC_RTC
 #define USE_DMA_SPEC
+#define USE_SPI_TRANSACTION
 
 #if defined(STM32F40_41xxx) || defined(STM32F411xE)
 #define USE_OVERCLOCK
-#define USE_SPI_TRANSACTION
 #endif
 
 #endif // STM32F4
