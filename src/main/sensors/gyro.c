@@ -578,7 +578,7 @@ static FAST_RAM_ZERO_INIT uint16_t dynLpfMax;
 
 static void dynLpfFilterInit()
 {
-    if (gyroConfig()->dyn_lpf_gyro_min_hz > 0 && gyroConfig()->dyn_lpf_gyro_max_hz > gyroConfig()->dyn_lpf_gyro_min_hz) {
+    if (gyroConfig()->dyn_lpf_gyro_min_hz > 0) {
         switch (gyroConfig()->gyro_lowpass_type) {
         case FILTER_PT1:
             dynLpfFilter = DYN_LPF_PT1;
@@ -736,11 +736,17 @@ static void gyroInitSensorFilters(gyroSensor_t *gyroSensor)
     gyroInitSlewLimiter(gyroSensor);
 #endif
 
+    uint16_t gyro_lowpass_hz = gyroConfig()->gyro_lowpass_hz;
+
+#ifdef USE_DYN_LPF
+    gyro_lowpass_hz = MAX(gyroConfig()->gyro_lowpass_hz, gyroConfig()->dyn_lpf_gyro_min_hz);
+#endif
+
     gyroInitLowpassFilterLpf(
       gyroSensor,
       FILTER_LOWPASS,
       gyroConfig()->gyro_lowpass_type,
-      gyroConfig()->gyro_lowpass_hz
+      gyro_lowpass_hz
     );
 
     gyroInitLowpassFilterLpf(
@@ -1244,8 +1250,8 @@ void dynLpfGyroUpdate(float throttle)
     if (dynLpfFilter != DYN_LPF_NONE) {
         const unsigned int cutoffFreq = fmax(dynThrottle(throttle) * dynLpfMax, dynLpfMin);
 
-        DEBUG_SET(DEBUG_DYN_LPF, 2, cutoffFreq);
         if (dynLpfFilter == DYN_LPF_PT1) {
+            DEBUG_SET(DEBUG_DYN_LPF, 2, cutoffFreq);
             const float gyroDt = gyro.targetLooptime * 1e-6f;
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
 #ifdef USE_MULTI_GYRO
@@ -1260,6 +1266,7 @@ void dynLpfGyroUpdate(float throttle)
 #endif
             }
         } else if (dynLpfFilter == DYN_LPF_BIQUAD) {
+            DEBUG_SET(DEBUG_DYN_LPF, 2, cutoffFreq);
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
 #ifdef USE_MULTI_GYRO
                 if (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_1 || gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_BOTH) {

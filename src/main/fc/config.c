@@ -201,6 +201,13 @@ static void validateAndFixConfig(void)
         currentPidProfile->dterm_notch_hz = 0;
     }
 
+#ifdef USE_DYN_LPF
+    //PRevent invalid dynamic lowpass
+    if (currentPidProfile->dyn_lpf_dterm_min_hz > currentPidProfile->dyn_lpf_dterm_max_hz) {
+        currentPidProfile->dyn_lpf_dterm_min_hz = 0;
+    }
+#endif
+
     if (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_BRUSHED) {
         featureDisable(FEATURE_3D);
 
@@ -438,6 +445,12 @@ void validateAndFixGyroConfig(void)
     if (gyroConfig()->gyro_soft_notch_cutoff_2 >= gyroConfig()->gyro_soft_notch_hz_2) {
         gyroConfigMutable()->gyro_soft_notch_hz_2 = 0;
     }
+#ifdef USE_DYN_LPF
+    //Prevent invalid dynamic lowpass filter
+    if (gyroConfig()->dyn_lpf_gyro_min_hz > gyroConfig()->dyn_lpf_gyro_max_hz) {
+        gyroConfigMutable()->dyn_lpf_gyro_min_hz = 0;
+    }
+#endif
 
     if (gyroConfig()->gyro_hardware_lpf == GYRO_HARDWARE_LPF_1KHZ_SAMPLE) {
         pidConfigMutable()->pid_process_denom = 1; // When gyro set to 1khz always set pid speed 1:1 to sampling speed

@@ -319,14 +319,18 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     }
 
     //1st Dterm Lowpass Filter
-    if (pidProfile->dterm_lowpass_hz == 0 || pidProfile->dterm_lowpass_hz > pidFrequencyNyquist) {
-        dtermLowpassApplyFn = nullFilterApply;
-    } else {
+    uint16_t dterm_lowpass_hz = pidProfile->dterm_lowpass_hz;
+
+#ifdef USE_DYN_LPF
+    dterm_lowpass_hz = MAX(pidProfile->dterm_lowpass_hz, pidProfile->dyn_lpf_dterm_min_hz);
+#endif
+
+    if (dterm_lowpass_hz > 0 && dterm_lowpass_hz < pidFrequencyNyquist) {
         switch (pidProfile->dterm_filter_type) {
         case FILTER_PT1:
             dtermLowpassApplyFn = (filterApplyFnPtr)pt1FilterApply;
             for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-                pt1FilterInit(&dtermLowpass[axis].pt1Filter, pt1FilterGain(pidProfile->dterm_lowpass_hz, dT));
+                pt1FilterInit(&dtermLowpass[axis].pt1Filter, pt1FilterGain(dterm_lowpass_hz, dT));
             }
             break;
         case FILTER_BIQUAD:
@@ -336,13 +340,15 @@ void pidInitFilters(const pidProfile_t *pidProfile)
             dtermLowpassApplyFn = (filterApplyFnPtr)biquadFilterApply;
 #endif
             for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-                biquadFilterInitLPF(&dtermLowpass[axis].biquadFilter, pidProfile->dterm_lowpass_hz, targetPidLooptime);
+                biquadFilterInitLPF(&dtermLowpass[axis].biquadFilter, dterm_lowpass_hz, targetPidLooptime);
             }
             break;
         default:
             dtermLowpassApplyFn = nullFilterApply;
             break;
         }
+    } else {
+        dtermLowpassApplyFn = nullFilterApply;
     }
 
     //2nd Dterm Lowpass Filter
@@ -613,7 +619,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 #endif
 
 #ifdef USE_DYN_LPF
-    if (pidProfile->dyn_lpf_dterm_min_hz > 0 && pidProfile->dyn_lpf_dterm_max_hz > pidProfile->dyn_lpf_dterm_min_hz) {
+    if (pidProfile->dyn_lpf_dterm_min_hz > 0) {
         switch (pidProfile->dterm_filter_type) {
         case FILTER_PT1:
             dynLpfFilter = DYN_LPF_PT1;
