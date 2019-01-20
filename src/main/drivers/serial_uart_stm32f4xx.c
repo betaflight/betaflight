@@ -289,7 +289,7 @@ void uartIrqHandler(uartPort_t *s)
         }
     }
 
-    if (USART_GetITStatus(s->USARTx, USART_FLAG_ORE) == SET)
+    if (USART_GetITStatus(s->USARTx, USART_IT_ORE) == SET)
     {
         USART_ClearITPendingBit (s->USARTx, USART_IT_ORE);
     }
