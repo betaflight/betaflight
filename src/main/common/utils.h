@@ -55,8 +55,10 @@
 #define PP_CALL(macro, ...) macro(__VA_ARGS__)
 
 #if !defined(UNUSED)
-#define UNUSED(x) (void)(x)
+#define UNUSED(x) (void)(x) // Variables and parameters that are not used
 #endif
+
+#define DISCARD(x) (void)(x) // To explicitly ignore result of x (usually an I/O register access).
 
 #define STATIC_ASSERT(condition, name) _Static_assert((condition), #name)
 
