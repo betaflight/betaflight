@@ -81,6 +81,8 @@
 #define CMS_MAX_DEVICE 4
 #endif
 
+#define CMS_MENU_STACK_LIMIT 10
+
 displayPort_t *pCurrentDisplay;
 
 static displayPort_t *cmsDisplayPorts[CMS_MAX_DEVICE];
@@ -175,7 +177,7 @@ typedef struct cmsCtx_s {
     int8_t cursorRow;             // cursorRow in the page
 } cmsCtx_t;
 
-static cmsCtx_t menuStack[10];
+static cmsCtx_t menuStack[CMS_MENU_STACK_LIMIT];
 static uint8_t menuStackIdx = 0;
 
 static int8_t pageCount;         // Number of pages in the current menu
@@ -633,6 +635,10 @@ long cmsMenuChange(displayPort_t *pDisplay, const void *ptr)
 
     if (pMenu != currentCtx.menu) {
         // Stack the current menu and move to a new menu.
+        if (menuStackIdx >= CMS_MENU_STACK_LIMIT - 1) {
+            // menu stack limit reached - prevent array overflow
+            return 0;
+        }
 
         menuStack[menuStackIdx++] = currentCtx;
 
@@ -691,6 +697,7 @@ void cmsMenuOpen(void)
             return;
         cmsInMenu = true;
         currentCtx = (cmsCtx_t){ &menuMain, 0, 0 };
+        menuStackIdx = 0;
         setArmingDisabled(ARMING_DISABLED_CMS_MENU);
     } else {
         // Switch display
