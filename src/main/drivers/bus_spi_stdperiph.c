@@ -113,6 +113,8 @@ uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t txByte)
 {
     uint16_t spiTimeout = 1000;
 
+    DISCARD(instance->DR);
+
     while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_TXE) == RESET)
         if ((spiTimeout--) == 0)
             return spiTimeoutUserCallback(instance);
@@ -152,7 +154,7 @@ bool spiTransfer(SPI_TypeDef *instance, const uint8_t *txData, uint8_t *rxData, 
     uint16_t spiTimeout = 1000;
 
     uint8_t b;
-    instance->DR;
+    DISCARD(instance->DR);
     while (len--) {
         b = txData ? *(txData++) : 0xFF;
         while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_TXE) == RESET) {
