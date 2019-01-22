@@ -725,6 +725,13 @@ void cmsMenuOpen(void)
       maxMenuItems      = pCurrentDisplay->rows - 2;
     }
 
+    if (pCurrentDisplay->useFullscreen)
+    {
+    	leftMenuColumn = 0;
+    	rightMenuColumn   = pCurrentDisplay->cols;
+    	maxMenuItems      = pCurrentDisplay->rows;
+    }
+
     cmsMenuChange(pCurrentDisplay, currentCtx.menu);
 }
 
