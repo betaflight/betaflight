@@ -104,6 +104,7 @@ typedef struct gyroConfig_s {
     uint8_t  dyn_notch_width_percent;
     uint16_t dyn_notch_q;
     uint16_t dyn_notch_min_hz;
+    uint8_t  gyro_filter_debug_axis;
 } gyroConfig_t;
 
 PG_DECLARE(gyroConfig_t, gyroConfig);

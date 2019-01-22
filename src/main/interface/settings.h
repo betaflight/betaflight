@@ -135,6 +135,7 @@ typedef enum {
     TABLE_LED_PROFILE,
     TABLE_LED_RACE_COLOR,
 #endif
+    TABLE_GYRO_FILTER_DEBUG,
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 
