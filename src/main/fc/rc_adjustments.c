@@ -679,11 +679,9 @@ static uint8_t applySelectAdjustment(adjustmentFunction_e adjustmentFunction, ui
         break;
     case ADJUSTMENT_LED_PROFILE:
 #ifdef USE_LED_STRIP
-#ifndef UNIT_TEST
         if (getLedProfile() != position) {
             setLedProfile(position);
         }
-#endif
 #endif
         break;
 
