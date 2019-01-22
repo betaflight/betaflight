@@ -2042,15 +2042,6 @@ void osdUpdate(timeUs_t currentTimeUs)
         displayDrawScreen(osdDisplayPort);
     }
     ++counter;
-
-#ifdef USE_CMS
-    // do not allow ARM if we are in menu
-    if (displayIsGrabbed(osdDisplayPort)) {
-        setArmingDisabled(ARMING_DISABLED_OSD_MENU);
-    } else {
-        unsetArmingDisabled(ARMING_DISABLED_OSD_MENU);
-    }
-#endif
 }
 
 void osdSuppressStats(bool flag)
