@@ -58,10 +58,6 @@ extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 #define OSD_X(x)      (x & OSD_POSITION_XY_MASK)
 #define OSD_Y(x)      ((x >> OSD_POSITION_BITS) & OSD_POSITION_XY_MASK)
 
-// Stick overlay size
-#define OSD_STICK_OVERLAY_WIDTH 7
-#define OSD_STICK_OVERLAY_HEIGHT 7
-
 // Timer configuration
 // Stored as 15[alarm:8][precision:4][source:4]0
 #define OSD_TIMER(src, prec, alarm) ((src & 0x0F) | ((prec & 0x0F) << 4) | ((alarm & 0xFF ) << 8))

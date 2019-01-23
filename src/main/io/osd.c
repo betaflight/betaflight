@@ -106,6 +106,10 @@
 #define VIDEO_BUFFER_CHARS_PAL    480
 #define FULL_CIRCLE 360
 
+// Stick overlay size
+#define OSD_STICK_OVERLAY_WIDTH 7
+#define OSD_STICK_OVERLAY_HEIGHT 7
+
 #define STICK_OVERLAY_HORIZONTAL_CHAR   '-'
 #define STICK_OVERLAY_VERTICAL_CHAR     '|'
 #define STICK_OVERLAY_CROSS_CHAR        '+'
@@ -1335,8 +1339,8 @@ static void osdDrawStickOverlayCursor(osd_items_e osd_item)
         horizontal_channel = radioModes[osdConfig()->overlay_radio_mode-1].right_horizontal;
     }
 
-    uint8_t x_pos =  (uint8_t)scaleRange(constrain(rcData[horizontal_channel], PWM_RANGE_MIN, PWM_RANGE_MAX), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, OSD_STICK_OVERLAY_WIDTH);
-    uint8_t y_pos =  (uint8_t)scaleRange(PWM_RANGE_MAX - constrain(rcData[vertical_channel], PWM_RANGE_MIN, PWM_RANGE_MAX), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, OSD_STICK_OVERLAY_HEIGHT) + OSD_STICK_OVERLAY_HEIGHT - 1;
+    uint8_t x_pos =  (uint8_t)constrain(scaleRange(rcData[horizontal_channel], PWM_RANGE_MIN, PWM_RANGE_MAX, 0, OSD_STICK_OVERLAY_WIDTH), 0, OSD_STICK_OVERLAY_WIDTH - 1);
+    uint8_t y_pos =  OSD_STICK_OVERLAY_HEIGHT - 1 - (uint8_t)constrain(scaleRange(rcData[vertical_channel], PWM_RANGE_MIN, PWM_RANGE_MAX, 0, OSD_STICK_OVERLAY_HEIGHT), 0, OSD_STICK_OVERLAY_HEIGHT - 1);
 
     osdDrawStickOverlayPos(osd_item, x_pos, y_pos);
 }
