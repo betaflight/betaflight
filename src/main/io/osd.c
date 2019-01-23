@@ -109,16 +109,15 @@
 // Stick overlay size
 #define OSD_STICK_OVERLAY_WIDTH 7
 #define OSD_STICK_OVERLAY_HEIGHT 5
+#define OSD_STICK_OVERLAY_CHARACTER_HEIGHT 3
+#define OSD_STICK_OVERLAY_VERTICAL_POSITIONS (OSD_STICK_OVERLAY_HEIGHT * OSD_STICK_OVERLAY_CHARACTER_HEIGHT)
 
 #define STICK_OVERLAY_HORIZONTAL_CHAR   '-'
 #define STICK_OVERLAY_VERTICAL_CHAR     '|'
 #define STICK_OVERLAY_CROSS_CHAR        '+'
-#define STICK_OVERLAY_CURSOR_CHAR       0x84
 #define STICK_OVERLAY_CURSOR_LOW_CHAR   0x86
+#define STICK_OVERLAY_CURSOR_MID_CHAR   0x84
 #define STICK_OVERLAY_CURSOR_HIGH_CHAR  0x82
-
-#define OSD_STICK_OVERLAY_VERT_MID_ROW ((OSD_STICK_OVERLAY_HEIGHT - 1) / 2)
-#define OSD_STICK_OVERLAY_VERT_ROW_HEIGHT ((PWM_RANGE_MAX - PWM_RANGE_MIN) / OSD_STICK_OVERLAY_HEIGHT)
 
 const char * const osdTimerSourceNames[] = {
     "ON TIME  ",
@@ -1345,21 +1344,29 @@ static void osdDrawStickOverlayCursor(osd_items_e osd_item)
     }
 
     const uint8_t x_pos = constrain(scaleRange(rcData[horizontal_channel], PWM_RANGE_MIN, PWM_RANGE_MAX, 0, OSD_STICK_OVERLAY_WIDTH), 0, OSD_STICK_OVERLAY_WIDTH - 1);
-    const uint8_t y_pos = OSD_STICK_OVERLAY_HEIGHT - 1 - constrain(scaleRange(rcData[vertical_channel], PWM_RANGE_MIN, PWM_RANGE_MAX, 0, OSD_STICK_OVERLAY_HEIGHT), 0, OSD_STICK_OVERLAY_HEIGHT - 1);
+    const uint8_t y_pos = OSD_STICK_OVERLAY_VERTICAL_POSITIONS - 1 - constrain(scaleRange(rcData[vertical_channel], PWM_RANGE_MIN, PWM_RANGE_MAX, 0, OSD_STICK_OVERLAY_VERTICAL_POSITIONS), 0, OSD_STICK_OVERLAY_VERTICAL_POSITIONS - 1);
 
     char cursor;
-    if (y_pos != OSD_STICK_OVERLAY_VERT_MID_ROW) {
-        const uint16_t yPosInRow = (constrain(rcData[vertical_channel], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) % OSD_STICK_OVERLAY_VERT_ROW_HEIGHT;
-        if (yPosInRow < OSD_STICK_OVERLAY_VERT_ROW_HEIGHT / 2 && rcData[vertical_channel] < PWM_RANGE_MAX) {
+    switch (y_pos % OSD_STICK_OVERLAY_CHARACTER_HEIGHT) {
+    case 2:
+        if (rcData[vertical_channel] < PWM_RANGE_MAX) {
             cursor = STICK_OVERLAY_CURSOR_LOW_CHAR;
-        } else {
-            cursor = STICK_OVERLAY_CURSOR_HIGH_CHAR;
+
+            break;
         }
-    } else {
-        cursor = STICK_OVERLAY_CURSOR_CHAR;
+
+        FALLTHROUGH;
+    case 0:
+        cursor = STICK_OVERLAY_CURSOR_HIGH_CHAR;
+
+        break;
+    case 1:
+        cursor = STICK_OVERLAY_CURSOR_MID_CHAR;
+
+        break;
     }
 
-    osdDrawStickOverlayPos(osd_item, x_pos, y_pos, cursor);
+    osdDrawStickOverlayPos(osd_item, x_pos, y_pos / OSD_STICK_OVERLAY_CHARACTER_HEIGHT, cursor);
 }
 #endif
 
