@@ -114,7 +114,10 @@ PG_RESET_TEMPLATE(batteryConfig_t, batteryConfig,
     .consumptionWarningPercentage = 10,
     .vbathysteresis = 1,
 
-    .vbatfullcellvoltage = 410
+    .vbatfullcellvoltage = 410,
+
+    .vbatLpfPeriod = 30,
+    .ibatLpfPeriod = 10,
 );
 
 void batteryUpdateVoltage(timeUs_t currentTimeUs)

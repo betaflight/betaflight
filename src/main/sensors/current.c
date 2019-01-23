@@ -23,6 +23,7 @@
 #include "string.h"
 
 #include "platform.h"
+
 #include "build/build_config.h"
 #include "build/debug.h"
 
@@ -34,11 +35,12 @@
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
-#include "config/config_reset.h"
 
 #include "sensors/adcinternal.h"
-#include "sensors/current.h"
+#include "sensors/battery.h"
 #include "sensors/esc_sensor.h"
+
+#include "current.h"
 
 const char * const currentMeterSourceNames[CURRENT_METER_COUNT] = {
     "NONE", "ADC", "VIRTUAL", "ESC", "MSP"
@@ -86,7 +88,6 @@ void currentMeterReset(currentMeter_t *meter)
 // ADC/Virtual shared
 //
 
-#define IBAT_LPF_FREQ  2.0f
 static biquadFilter_t adciBatFilter;
 
 #ifndef CURRENT_METER_SCALE_DEFAULT
@@ -140,7 +141,7 @@ currentMeterADCState_t currentMeterADCState;
 void currentMeterADCInit(void)
 {
     memset(&currentMeterADCState, 0, sizeof(currentMeterADCState_t));
-    biquadFilterInitLPF(&adciBatFilter, IBAT_LPF_FREQ, HZ_TO_INTERVAL_US(50));
+    biquadFilterInitLPF(&adciBatFilter, GET_BATTERY_LPF_FREQUENCY(batteryConfig()->ibatLpfPeriod), HZ_TO_INTERVAL_US(50));
 }
 
 void currentMeterADCRefresh(int32_t lastUpdateAt)
