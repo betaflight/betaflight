@@ -394,13 +394,13 @@ TEST(OsdTest, TestStatsImperial)
     displayPortTestBufferSubstring(2, row++, "2017-11-19 10:12:");
     displayPortTestBufferSubstring(2, row++, "TOTAL ARM         : 00:05.00");
     displayPortTestBufferSubstring(2, row++, "LAST ARM          : 00:03");
+    displayPortTestBufferSubstring(2, row++, "MAX ALTITUDE      :    6.5%c", SYM_FT);
     displayPortTestBufferSubstring(2, row++, "MAX SPEED         : 17");
     displayPortTestBufferSubstring(2, row++, "MAX DISTANCE      : 328%c", SYM_FT);
+    displayPortTestBufferSubstring(2, row++, "FLIGHT DISTANCE   : 656%c", SYM_FT);
     displayPortTestBufferSubstring(2, row++, "MIN BATTERY       : 14.70%c", SYM_VOLT);
     displayPortTestBufferSubstring(2, row++, "END BATTERY       : 15.20%c", SYM_VOLT);
     displayPortTestBufferSubstring(2, row++, "MIN RSSI          : 25%%");
-    displayPortTestBufferSubstring(2, row++, "MAX ALTITUDE      :    6.5%c", SYM_FT);
-    displayPortTestBufferSubstring(2, row++, "FLIGHT DISTANCE   : 656%c", SYM_FT);
 }
 
 /*
@@ -447,13 +447,13 @@ TEST(OsdTest, TestStatsMetric)
     displayPortTestBufferSubstring(2, row++, "2017-11-19 10:12:");
     displayPortTestBufferSubstring(2, row++, "TOTAL ARM         : 00:07.50");
     displayPortTestBufferSubstring(2, row++, "LAST ARM          : 00:02");
+    displayPortTestBufferSubstring(2, row++, "MAX ALTITUDE      :    2.0%c", SYM_M);
     displayPortTestBufferSubstring(2, row++, "MAX SPEED         : 28");
     displayPortTestBufferSubstring(2, row++, "MAX DISTANCE      : 100%c", SYM_M);
+    displayPortTestBufferSubstring(2, row++, "FLIGHT DISTANCE   : 100%c", SYM_M);
     displayPortTestBufferSubstring(2, row++, "MIN BATTERY       : 14.70%c", SYM_VOLT);
     displayPortTestBufferSubstring(2, row++, "END BATTERY       : 15.20%c", SYM_VOLT);
     displayPortTestBufferSubstring(2, row++, "MIN RSSI          : 25%%");
-    displayPortTestBufferSubstring(2, row++, "MAX ALTITUDE      :    2.0%c", SYM_M);
-    displayPortTestBufferSubstring(2, row++, "FLIGHT DISTANCE   : 100%c", SYM_M);
 }
 
 /*
