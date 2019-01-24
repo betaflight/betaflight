@@ -67,6 +67,13 @@ uint16_t batteryWarningVoltage;
 uint16_t batteryCriticalVoltage;
 static lowVoltageCutoff_t lowVoltageCutoff;
 //
+
+// Battery delay state stuff
+uint16_t start_t = 0;
+uint16_t end_t = 0;
+uint16_t total_t;
+//
+
 static currentMeter_t currentMeter;
 static voltageMeter_t voltageMeter;
 
@@ -118,6 +125,8 @@ PG_RESET_TEMPLATE(batteryConfig_t, batteryConfig,
 
     .vbatLpfPeriod = 30,
     .ibatLpfPeriod = 10,
+    .batteryDurationForWarning = 0,
+    .batteryDurationForCrit = 0,
 );
 
 void batteryUpdateVoltage(timeUs_t currentTimeUs)
@@ -227,15 +236,36 @@ static void batteryUpdateVoltageState(void)
     switch (voltageState) {
         case BATTERY_OK:
             if (voltageMeter.filtered <= (batteryWarningVoltage - batteryConfig()->vbathysteresis)) {
-                voltageState = BATTERY_WARNING;
+                if (start_t == 0) {
+                    start_t = millis();
+                }
+                end_t = millis();
+                total_t = (end_t - start_t)/1000;
+                if (total_t >= batteryConfig()->batteryDurationForWarning) {
+                    voltageState = BATTERY_WARNING;
+                    start_t = 0;
+                }
+            } else {
+                start_t = 0;
             }
             break;
 
         case BATTERY_WARNING:
             if (voltageMeter.filtered <= (batteryCriticalVoltage - batteryConfig()->vbathysteresis)) {
-                voltageState = BATTERY_CRITICAL;
+                if (start_t == 0) {
+                    start_t = millis();
+                }
+                end_t = millis();
+                total_t = (end_t - start_t)/1000;
+                if (total_t >= batteryConfig()->batteryDurationForCrit) {
+                    voltageState = BATTERY_CRITICAL;
+                    start_t = 0;
+                }
             } else if (voltageMeter.filtered > batteryWarningVoltage) {
                 voltageState = BATTERY_OK;
+                start_t = 0;
+            } else {
+                start_t = 0;
             }
             break;
 

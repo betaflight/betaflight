@@ -52,10 +52,13 @@ typedef struct batteryConfig_s {
     uint8_t vbathysteresis;                 // hysteresis for alarm, default 1 = 0.1V
 
     uint16_t vbatfullcellvoltage;           // Cell voltage at which the battery is deemed to be "full" 0.01V units, default is 410 (4.1V)
-    
+
     uint8_t forceBatteryCellCount;          // Number of cells in battery, used for overwriting auto-detected cell count if someone has issues with it.
     uint8_t vbatLpfPeriod;                  // Period of the cutoff frequency for the Vbat filter (in 0.1 s)
     uint8_t ibatLpfPeriod;                  // Period of the cutoff frequency for the Ibat filter (in 0.1 s)
+
+    uint8_t batteryDurationForWarning;      // Duration in seconds voltage has to sustain before the battery state is set to BATTERY_WARNING
+    uint8_t batteryDurationForCrit;         // Duration in seconds voltage has to sustain before the battery state is set to BATTERY_CRIT
 } batteryConfig_t;
 
 PG_DECLARE(batteryConfig_t, batteryConfig);
