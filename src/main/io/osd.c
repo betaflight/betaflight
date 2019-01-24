@@ -1343,25 +1343,21 @@ static void osdDrawStickOverlayCursor(osd_items_e osd_item)
         horizontal_channel = radioModes[osdConfig()->overlay_radio_mode-1].right_horizontal;
     }
 
-    const uint8_t x_pos = constrain(scaleRange(rcData[horizontal_channel], PWM_RANGE_MIN, PWM_RANGE_MAX, 0, OSD_STICK_OVERLAY_WIDTH), 0, OSD_STICK_OVERLAY_WIDTH - 1);
-    const uint8_t y_pos = OSD_STICK_OVERLAY_VERTICAL_POSITIONS - 1 - constrain(scaleRange(rcData[vertical_channel], PWM_RANGE_MIN, PWM_RANGE_MAX, 0, OSD_STICK_OVERLAY_VERTICAL_POSITIONS), 0, OSD_STICK_OVERLAY_VERTICAL_POSITIONS - 1);
+    const uint8_t x_pos = scaleRange(constrain(rcData[horizontal_channel], PWM_RANGE_MIN, PWM_RANGE_MAX - 1), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, OSD_STICK_OVERLAY_WIDTH);
+    const uint8_t y_pos = OSD_STICK_OVERLAY_VERTICAL_POSITIONS - 1 - scaleRange(constrain(rcData[vertical_channel], PWM_RANGE_MIN, PWM_RANGE_MAX - 1), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, OSD_STICK_OVERLAY_VERTICAL_POSITIONS);
 
     char cursor;
     switch (y_pos % OSD_STICK_OVERLAY_CHARACTER_HEIGHT) {
-    case 2:
-        if (rcData[vertical_channel] < PWM_RANGE_MAX) {
-            cursor = STICK_OVERLAY_CURSOR_LOW_CHAR;
-
-            break;
-        }
-
-        FALLTHROUGH;
     case 0:
         cursor = STICK_OVERLAY_CURSOR_HIGH_CHAR;
 
         break;
     case 1:
         cursor = STICK_OVERLAY_CURSOR_MID_CHAR;
+
+        break;
+    case 2:
+        cursor = STICK_OVERLAY_CURSOR_LOW_CHAR;
 
         break;
     }
