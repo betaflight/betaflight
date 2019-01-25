@@ -26,6 +26,7 @@
 struct baroDev_s;
 
 typedef void (*baroOpFuncPtr)(struct baroDev_s *baro);                       // baro start operation
+typedef bool (*baroGetFuncPtr)(struct baroDev_s *baro);                       // baro read/get operation
 typedef void (*baroCalculateFuncPtr)(int32_t *pressure, int32_t *temperature); // baro calculation (filled params are pressure and temperature)
 
 // the 'u' in these variable names means 'uncompensated', 't' is temperature, 'p' pressure.
@@ -34,11 +35,14 @@ typedef struct baroDev_s {
 #ifdef USE_EXTI
     extiCallbackRec_t exti;
 #endif
+    bool combined_read;
     uint16_t ut_delay;
     uint16_t up_delay;
     baroOpFuncPtr start_ut;
-    baroOpFuncPtr get_ut;
+    baroGetFuncPtr read_ut;
+    baroGetFuncPtr get_ut;
     baroOpFuncPtr start_up;
-    baroOpFuncPtr get_up;
+    baroGetFuncPtr read_up;
+    baroGetFuncPtr get_up;
     baroCalculateFuncPtr calculate;
 } baroDev_t;
