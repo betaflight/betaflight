@@ -188,6 +188,6 @@ void taskSystemLoad(timeUs_t currentTime);
 void schedulerOptimizeRate(bool optimizeRate);
 
 #define LOAD_PERCENTAGE_ONE 100
-#define PINIO_SCHEDULE_DEBUG
+//#define PINIO_SCHEDULE_DEBUG
 
 #define isSystemOverloaded() (averageSystemLoadPercent >= LOAD_PERCENTAGE_ONE)
