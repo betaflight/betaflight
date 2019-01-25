@@ -23,6 +23,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <limits.h>
 
 #include "platform.h"
 
@@ -38,6 +39,10 @@
 #include "common/utils.h"
 
 #include "drivers/time.h"
+
+#ifdef PINIO_SCHEDULE_DEBUG
+#include "pg/pinio.h"
+#endif
 
 // DEBUG_SCHEDULER, timings for:
 // 0 - gyroUpdate()
@@ -255,19 +260,32 @@ inline static timeUs_t getPeriodCalculationBasis(const cfTask_t* task)
     return *(timeUs_t*)((uint8_t*)task + periodCalculationBasisOffset);
 }
 
+extern FAST_CODE void taskMainPidLoop(timeUs_t currentTimeUs); //SCEDEBUG
+
 FAST_CODE void scheduler(void)
 {
     // Cache currentTime
     const timeUs_t currentTimeUs = micros();
+    volatile timeUs_t remainingTime = UINT_MAX;
+    static timeUs_t maxRemainingTime = UINT_MAX;
 
     // Check for realtime tasks
-    bool outsideRealtimeGuardInterval = true;
     for (const cfTask_t *task = queueFirst(); task != NULL && task->staticPriority >= TASK_PRIORITY_REALTIME; task = queueNext()) {
-        const timeUs_t nextExecuteAt = getPeriodCalculationBasis(task) + task->desiredPeriod;
-        if ((timeDelta_t)(currentTimeUs - nextExecuteAt) >= 0) {
-            outsideRealtimeGuardInterval = false;
-            break;
+        if (task->lastExecutedAt) {
+            timeUs_t taskDueTime = getPeriodCalculationBasis(task) + task->desiredPeriod;
+            timeUs_t taskRemainingTime = (taskDueTime > currentTimeUs) ? (taskDueTime - currentTimeUs) : 0;
+            if (taskRemainingTime < remainingTime) {
+                remainingTime = taskRemainingTime;
+
+                if (maxRemainingTime == UINT_MAX) {
+                    maxRemainingTime = remainingTime;
+                }
+            }
         }
+    }
+
+    if (remainingTime > maxRemainingTime) {
+        maxRemainingTime = remainingTime;
     }
 
     // The task to be invoked
@@ -319,15 +337,73 @@ FAST_CODE void scheduler(void)
         }
 
         if (task->dynamicPriority > selectedTaskDynamicPriority) {
-            const bool taskCanBeChosenForScheduling =
-                (outsideRealtimeGuardInterval) ||
-                (task->taskAgeCycles > 1) ||
-                (task->staticPriority == TASK_PRIORITY_REALTIME);
+
+#ifdef PINIO_SCHEDULE_DEBUG
+            if ((task->staticPriority != TASK_PRIORITY_REALTIME) &&
+                (task->maxExecutionTime > remainingTime)) {
+                // Signal that a task could not be executed in the current loop
+                pinioSet(1,1);
+
+#if 0
+                if (task->taskAgeCycles > 1) {
+                    // Signal that a task will be executing late
+                    pinioSet(2,1);
+                } else {
+                    pinioSet(2,0);
+                }
+#endif
+            }
+#if 1
+            if ((task == &cfTasks[TASK_BARO]) ||
+                (task == &cfTasks[TASK_RX]) ||
+	            (task == &cfTasks[TASK_SERIAL])) {
+                // Signal that this task's effects on scheduler timing should be ignored
+                pinioSet(2,1);
+            } else {
+                pinioSet(2,0);
+            }
+#endif
+
+#if 0
+            if ((task == &cfTasks[TASK_SERIAL]) && (remainingTime < 10)) {
+                // Signal that the serial task will be deferred
+                pinioSet(2,1);
+            } else {
+                pinioSet(2,0);
+            }
+#endif
+#endif //PINIO_SCHEDULE_DEBUG
+
+            // Determine if the current task is the best candidate so far for scheduling
+            bool taskCanBeChosenForScheduling;
+
+            /* If the task is realtime, let it run as soon as it's ready */
+            taskCanBeChosenForScheduling = (task->staticPriority == TASK_PRIORITY_REALTIME);
+
+            /* If the task will complete before the next realtime task must run, let it
+             * run.
+             */
+            taskCanBeChosenForScheduling |= task->maxExecutionTime <= remainingTime;
+
+            /* When USB is plugged in the SERIAL task runs for too long and breaks the determinism
+             * of the scheduler. Ideally the serial task should only override here if USB is plugged
+             * in, but not all targets support detecting if that is the case.
+             *
+             * When USB isn't plugged in the serial task completes in under 10us, so by only allowing
+             * the priority override to occur if there are at least 10us remaining will ensure that
+             * determinism isn't broken in flight.
+             */
+            taskCanBeChosenForScheduling |= ((task == &cfTasks[TASK_SERIAL]) && (remainingTime >= 10));
+
             if (taskCanBeChosenForScheduling) {
                 selectedTaskDynamicPriority = task->dynamicPriority;
                 selectedTask = task;
             }
         }
+
+#ifdef PINIO_SCHEDULE_DEBUG
+        pinioSet(1,0);
+#endif //PINIO_SCHEDULE_DEBUG
     }
 
     totalWaitingTasksSamples++;
@@ -347,12 +423,27 @@ FAST_CODE void scheduler(void)
 #if defined(USE_TASK_STATISTICS)
         if (calculateTaskStatistics) {
             const timeUs_t currentTimeBeforeTaskCall = micros();
+#ifdef PINIO_SCHEDULE_DEBUG
+            pinioSet(0,1);
+#endif //PINIO_SCHEDULE_DEBUG
             selectedTask->taskFunc(currentTimeBeforeTaskCall);
+#ifdef PINIO_SCHEDULE_DEBUG
+            pinioSet(0,0);
+            pinioSet(2,0);
+#endif //PINIO_SCHEDULE_DEBUG
             const timeUs_t taskExecutionTime = micros() - currentTimeBeforeTaskCall;
             selectedTask->movingSumExecutionTime += taskExecutionTime - selectedTask->movingSumExecutionTime / MOVING_SUM_COUNT;
             selectedTask->totalExecutionTime += taskExecutionTime;   // time consumed by scheduler + task
             selectedTask->maxExecutionTime = MAX(selectedTask->maxExecutionTime, taskExecutionTime);
             selectedTask->movingAverageCycleTime += 0.05f * (period - selectedTask->movingAverageCycleTime);
+
+            // Exceptions for task which are known to take too long to execute
+            if (selectedTask == &cfTasks[TASK_BARO]) {
+                selectedTask->maxExecutionTime = 40;
+            }
+            if (selectedTask == &cfTasks[TASK_RX]) {
+                selectedTask->maxExecutionTime = 70;
+            }
         } else
 #endif
         {
