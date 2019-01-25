@@ -193,6 +193,8 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t data)
     return i2cWriteBuffer(device, addr_, reg_, 1, &data);
 }
 
+
+// Blocking read
 bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
 {
     if (device == I2CINVALID || device > I2CDEV_COUNT) {
@@ -216,6 +218,21 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t
         return i2cHandleHardwareFailure(device);
 
     return true;
+}
+
+// TODO This should be a non-blocking read.
+// This is only important if an F7 card uses an I2C device in it's main loop
+bool i2cReadBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
+{
+    return i2cRead(device, addr_, reg_, len, buf);
+}
+
+bool i2cBusy(I2CDevice device, bool *error)
+{
+	UNUSED(device);
+	UNUSED(error);
+
+    return false;
 }
 
 void i2cInit(I2CDevice device)
