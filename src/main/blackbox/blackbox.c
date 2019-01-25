@@ -189,8 +189,7 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
     {"rcCommand",   0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_4S16), CONDITION(ALWAYS)},
     {"rcCommand",   1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_4S16), CONDITION(ALWAYS)},
     {"rcCommand",   2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_4S16), CONDITION(ALWAYS)},
-    /* Throttle is always in the range [minthrottle..maxthrottle]: */
-    {"rcCommand",   3, UNSIGNED, .Ipredict = PREDICT(MINTHROTTLE), .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),  .Pencode = ENCODING(TAG8_4S16), CONDITION(ALWAYS)},
+    {"rcCommand",   3, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_4S16), CONDITION(ALWAYS)},
 
     // setpoint - define 4 fields like rcCommand to use the same encoding. setpoint[4] contains the mixer throttle
     {"setpoint",    0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_4S16), CONDITION(ALWAYS)},
@@ -548,10 +547,10 @@ static void writeIntraframe(void)
     blackboxWriteSigned16VBArray(blackboxCurrent->rcCommand, 3);
 
     /*
-     * Write the throttle separately from the rest of the RC data so we can apply a predictor to it.
-     * Throttle lies in range [minthrottle..maxthrottle]:
+     * Write the throttle separately from the rest of the RC data as it's unsigned.
+     * Throttle lies in range [PWM_RANGE_MIN..PWM_RANGE_MAX]:
      */
-    blackboxWriteUnsignedVB(blackboxCurrent->rcCommand[THROTTLE] - motorConfig()->minthrottle);
+    blackboxWriteUnsignedVB(blackboxCurrent->rcCommand[THROTTLE]);
 
     // Write setpoint roll, pitch, yaw, and throttle
     blackboxWriteSigned16VBArray(blackboxCurrent->setpoint, 4);
@@ -1024,7 +1023,7 @@ static void loadMainState(timeUs_t currentTimeUs)
     }
 
     for (int i = 0; i < 4; i++) {
-        blackboxCurrent->rcCommand[i] = rcCommand[i];
+        blackboxCurrent->rcCommand[i] = lrintf(rcCommand[i]);
     }
 
     // log the currentPidSetpoint values applied to the PID controller
