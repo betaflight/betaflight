@@ -68,12 +68,6 @@ uint16_t batteryCriticalVoltage;
 static lowVoltageCutoff_t lowVoltageCutoff;
 //
 
-// Battery delay state stuff
-uint16_t start_t = 0;
-uint16_t end_t = 0;
-uint16_t total_t;
-//
-
 static currentMeter_t currentMeter;
 static voltageMeter_t voltageMeter;
 
@@ -233,45 +227,35 @@ void batteryUpdatePresence(void)
 static void batteryUpdateVoltageState(void)
 {
     // alerts are currently used by beeper, osd and other subsystems
+    static uint32_t lastVoltageOkMillis;
     switch (voltageState) {
         case BATTERY_OK:
             if (voltageMeter.filtered <= (batteryWarningVoltage - batteryConfig()->vbathysteresis)) {
-                if (start_t == 0) {
-                    start_t = millis();
-                }
-                end_t = millis();
-                total_t = (end_t - start_t)/1000;
-                if (total_t >= batteryConfig()->batteryDurationForWarning) {
+                if (cmp32(millis(), lastVoltageOkMillis) >= batteryConfig()->batteryDurationForWarning * 100) {
                     voltageState = BATTERY_WARNING;
-                    start_t = 0;
                 }
             } else {
-                start_t = 0;
+                lastVoltageOkMillis = millis();
             }
             break;
 
         case BATTERY_WARNING:
             if (voltageMeter.filtered <= (batteryCriticalVoltage - batteryConfig()->vbathysteresis)) {
-                if (start_t == 0) {
-                    start_t = millis();
-                }
-                end_t = millis();
-                total_t = (end_t - start_t)/1000;
-                if (total_t >= batteryConfig()->batteryDurationForCrit) {
+                if (cmp32(millis(), lastVoltageOkMillis) >= batteryConfig()->batteryDurationForCrit * 100) {
                     voltageState = BATTERY_CRITICAL;
-                    start_t = 0;
                 }
-            } else if (voltageMeter.filtered > batteryWarningVoltage) {
-                voltageState = BATTERY_OK;
-                start_t = 0;
             } else {
-                start_t = 0;
+                if (voltageMeter.filtered > batteryWarningVoltage) {
+                    voltageState = BATTERY_OK;
+                }
+                lastVoltageOkMillis = millis();
             }
             break;
 
         case BATTERY_CRITICAL:
             if (voltageMeter.filtered > batteryCriticalVoltage) {
                 voltageState = BATTERY_WARNING;
+                lastVoltageOkMillis = millis();
             }
             break;
 
