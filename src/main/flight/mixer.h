@@ -131,4 +131,5 @@ uint16_t convertMotorToExternal(float motorValue);
 bool mixerIsTricopter(void);
 
 void mixerSetThrottleAngleCorrection(int correctionValue);
+float mixerGetLoggingThrottle(void);
 
