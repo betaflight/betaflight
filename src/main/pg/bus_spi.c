@@ -58,6 +58,11 @@ PG_REGISTER_ARRAY_WITH_RESET_FN(spiPinConfig_t, SPIDEV_COUNT, spiPinConfig, PG_S
 
 void pgResetFn_spiPinConfig(spiPinConfig_t *spiPinConfig)
 {
+    for (size_t i = 0; i < SPIDEV_COUNT; i++) {
+        spiPinConfig[i].txDmaopt = -1;
+        spiPinConfig[i].rxDmaopt = -1;
+    }
+
     for (size_t i = 0 ; i < ARRAYLEN(spiDefaultConfig) ; i++) {
         const spiDefaultConfig_t *defconf = &spiDefaultConfig[i];
         spiPinConfig[defconf->device].ioTagSck = defconf->sck;
