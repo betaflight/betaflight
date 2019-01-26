@@ -183,7 +183,8 @@ MCU_COMMON_SRC = \
             drivers/timer_stm32f7xx.c \
             drivers/system_stm32f7xx.c \
             drivers/serial_uart_stm32f7xx.c \
-            drivers/serial_uart_hal.c
+            drivers/serial_uart_hal.c \
+            drivers/serial_uart_pinselect_generic.c
 
 MCU_EXCLUDES = \
             drivers/bus_i2c.c \

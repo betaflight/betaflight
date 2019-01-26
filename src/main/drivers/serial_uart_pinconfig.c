@@ -44,24 +44,20 @@
 FAST_RAM_ZERO_INIT uartDevice_t uartDevice[UARTDEV_COUNT];      // Only those configured in target.h
 FAST_RAM_ZERO_INIT uartDevice_t *uartDevmap[UARTDEV_COUNT_MAX]; // Full array
 
+
+void uartPinSelect(uartDevice_t *device, const uartHardware_t *hardware, ioTag_t requestedRxTag, ioTag_t requestedTxTag);
+
 void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig)
 {
     uartDevice_t *uartdev = uartDevice;
 
     for (size_t hindex = 0; hindex < UARTDEV_COUNT; hindex++) {
-
         const uartHardware_t *hardware = &uartHardware[hindex];
         const UARTDevice_e device = hardware->device;
+        const ioTag_t requestedRxTag = pSerialPinConfig->ioTagRx[device];
+        const ioTag_t requestedTxTag = pSerialPinConfig->ioTagTx[device];
 
-        for (int pindex = 0 ; pindex < UARTHARDWARE_MAX_PINS ; pindex++) {
-            if (hardware->rxPins[pindex].pin == pSerialPinConfig->ioTagRx[device]) {
-                uartdev->rx = hardware->rxPins[pindex];
-            }
-
-            if (hardware->txPins[pindex].pin == pSerialPinConfig->ioTagTx[device]) {
-                uartdev->tx = hardware->txPins[pindex];
-            }
-        }
+        uartPinSelect(uartdev, hardware, requestedRxTag, requestedTxTag);
 
         if (uartdev->rx.pin || uartdev->tx.pin) {
             uartdev->hardware = hardware;

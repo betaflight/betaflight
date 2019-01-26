@@ -85,6 +85,7 @@ MCU_COMMON_SRC = \
             drivers/pwm_output_dshot.c \
             drivers/serial_uart_init.c \
             drivers/serial_uart_stm32f30x.c \
+            drivers/serial_uart_pinselect_generic.c \
             drivers/system_stm32f30x.c \
             drivers/timer_stm32f30x.c
 

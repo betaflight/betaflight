@@ -181,6 +181,7 @@ MCU_COMMON_SRC = \
             drivers/pwm_output_dshot.c \
             drivers/serial_uart_init.c \
             drivers/serial_uart_stm32f4xx.c \
+            drivers/serial_uart_pinselect_f4.c \
             drivers/system_stm32f4xx.c \
             drivers/timer_stm32f4xx.c \
             drivers/persistent.c
