@@ -402,7 +402,7 @@ void initEscEndpoints(void)
         break;
     }
 
-    rcCommandThrottleRange = PWM_RANGE_MAX - rxConfig()->mincheck;
+    rcCommandThrottleRange = PWM_RANGE_MAX - PWM_RANGE_MIN;
 }
 
 void mixerInit(mixerMode_e mixerMode)
@@ -643,7 +643,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             pidResetIterm();
         }
     } else {
-        throttle = rcCommand[THROTTLE] - rxConfig()->mincheck + throttleAngleCorrection;
+        throttle = rcCommand[THROTTLE] - PWM_RANGE_MIN + throttleAngleCorrection;
         currentThrottleInputRange = rcCommandThrottleRange;
         motorRangeMin = motorOutputLow;
         motorRangeMax = motorOutputHigh;
