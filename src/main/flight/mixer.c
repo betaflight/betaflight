@@ -926,7 +926,13 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
     }
 #endif
 
+#ifdef USE_AIRMODE_LPF
+    const float unadjustedThrottle = throttle;
+    throttle += pidGetAirmodeThrottleOffset();
+    float airmodeThrottleChange = 0;
+#endif
     loggingThrottle = throttle;
+
     motorMixRange = motorMixMax - motorMixMin;
     if (motorMixRange > 1.0f) {
         for (int i = 0; i < motorCount; i++) {
@@ -939,8 +945,15 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
     } else {
         if (airmodeEnabled || throttle > 0.5f) {  // Only automatically adjust throttle when airmode enabled. Airmode logic is always active on high throttle
             throttle = constrainf(throttle, -motorMixMin, 1.0f - motorMixMax);
+#ifdef USE_AIRMODE_LPF
+            airmodeThrottleChange = constrainf(unadjustedThrottle, -motorMixMin, 1.0f - motorMixMax) - unadjustedThrottle;
+#endif
         }
     }
+
+#ifdef USE_AIRMODE_LPF
+    pidUpdateAirmodeLpf(airmodeThrottleChange);
+#endif
 
     if (featureIsEnabled(FEATURE_MOTOR_STOP)
         && ARMING_FLAG(ARMED)
