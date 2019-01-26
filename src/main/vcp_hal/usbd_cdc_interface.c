@@ -74,13 +74,13 @@ USBD_CDC_LineCodingTypeDef LineCoding =
 uint8_t UserRxBuffer[APP_RX_DATA_SIZE];/* Received Data over USB are stored in this buffer */
 uint8_t UserTxBuffer[APP_TX_DATA_SIZE];/* Received Data over UART (CDC interface) are stored in this buffer */
 uint32_t BuffLength;
-uint32_t UserTxBufPtrIn = 0;/* Increment this pointer or roll it back to
+volatile uint32_t UserTxBufPtrIn = 0;/* Increment this pointer or roll it back to
                                start address when data are received over USART */
-uint32_t UserTxBufPtrOut = 0; /* Increment this pointer or roll it back to
+volatile uint32_t UserTxBufPtrOut = 0; /* Increment this pointer or roll it back to
                                  start address when data are sent over USB */
 
-uint32_t rxAvailable = 0;
-uint8_t* rxBuffPtr = NULL;
+volatile uint32_t rxAvailable = 0;
+volatile uint8_t* rxBuffPtr = NULL;
 
 /* TIM handler declaration */
 TIM_HandleTypeDef  TimHandle;
@@ -384,11 +384,11 @@ uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength)
 
     for (uint32_t i = 0; i < sendLength; i++)
     {
-        UserTxBuffer[UserTxBufPtrIn] = ptrBuffer[i];
-        UserTxBufPtrIn = (UserTxBufPtrIn + 1) % APP_TX_DATA_SIZE;
         while (CDC_Send_FreeBytes() == 0) {
             delay(1);
         }
+        UserTxBuffer[UserTxBufPtrIn] = ptrBuffer[i];
+        UserTxBufPtrIn = (UserTxBufPtrIn + 1) % APP_TX_DATA_SIZE;
     }
     return sendLength;
 }
