@@ -26,18 +26,19 @@
 
 #include "build/debug.h"
 
+#include "cli/cli.h"
+
 #include "common/streambuf.h"
 #include "common/utils.h"
 #include "common/crc.h"
 
 #include "drivers/system.h"
 
-#include "interface/msp.h"
-#include "interface/cli.h"
-
 #include "io/serial.h"
 
-#include "msp/msp_serial.h"
+#include "msp/msp.h"
+
+#include "msp_serial.h"
 
 static mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
 

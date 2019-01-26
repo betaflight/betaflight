@@ -26,6 +26,8 @@
 
 #include "build/debug.h"
 
+#include "cli/cli.h"
+
 #include "cms/cms.h"
 
 #include "common/color.h"
@@ -56,9 +58,6 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 
-#include "interface/cli.h"
-#include "interface/msp.h"
-
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/dashboard.h"
@@ -73,6 +72,7 @@
 #include "io/usb_cdc_hid.h"
 #include "io/vtx.h"
 
+#include "msp/msp.h"
 #include "msp/msp_serial.h"
 
 #include "pg/rx.h"

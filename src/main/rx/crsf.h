@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include "interface/crsf_protocol.h"
+#include "rx/crsf_protocol.h"
 
 
 #define CRSF_PORT_OPTIONS       (SERIAL_STOPBITS_1 | SERIAL_PARITY_NO)
