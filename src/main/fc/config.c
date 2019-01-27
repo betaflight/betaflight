@@ -63,6 +63,7 @@
 #include "sensors/acceleration.h"
 #include "sensors/battery.h"
 #include "sensors/gyro.h"
+#include "sensors/rpm_filter.h"
 
 #include "scheduler/scheduler.h"
 
@@ -335,6 +336,11 @@ static void validateAndFixConfig(void)
     if (!findSerialPortConfig(FUNCTION_ESC_SENSOR)) {
         featureDisable(FEATURE_ESC_SENSOR);
     }
+#endif
+
+#if defined(USE_DSHOT_TELEMETRY)
+    systemConfigMutable()->schedulerOptimizeRate = systemConfigMutable()->schedulerOptimizeRate ||
+        (rpmFilterConfig()->gyro_rpm_notch_harmonics + rpmFilterConfig()->dterm_rpm_notch_harmonics);
 #endif
 
 // clear features that are not supported.
