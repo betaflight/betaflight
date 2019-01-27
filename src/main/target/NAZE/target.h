@@ -121,6 +121,8 @@
 //#define RANGEFINDER_HCSR04_TRIGGER_PIN_PWM   PB8
 //#define RANGEFINDER_HCSR04_ECHO_PIN_PWM      PB9
 
+#undef USE_LED_STRIP
+
 #define USE_UART1
 #define USE_UART2
 /* only 2 uarts available on the NAZE, add ifdef here if present on other boards */
