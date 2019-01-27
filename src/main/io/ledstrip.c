@@ -80,15 +80,15 @@
 
 PG_REGISTER_WITH_RESET_FN(ledStripConfig_t, ledStripConfig, PG_LED_STRIP_CONFIG, 0);
 
+#define COLOR_UNDEFINED 255
+
 hsvColor_t *colors;
 const modeColorIndexes_t *modeColors;
 specialColorIndexes_t specialColors;
 
 static bool ledStripInitialised = false;
 static bool ledStripEnabled = false;
-static uint8_t previousBeaconColorIndex = COLOR_BLACK;
-static uint8_t previousRaceColorIndex = COLOR_BLACK;
-static timeUs_t raceColorUpdateTimeUs = 0;
+static uint8_t previousProfileColorIndex = COLOR_UNDEFINED;
 
 void ledStripDisable(void);
 
@@ -96,11 +96,12 @@ void ledStripDisable(void);
 
 #define MAX_TIMER_DELAY (5 * 1000 * 1000)
 
-#define BEACON_FLASH_PERIOD_MS 1000   // 1000ms
-#define BEACON_FLASH_ON_TIME   100    // 100ms
-#define RACE_COLOR_UPDATE_INTERVAL_US 1e6  // normally updates when color changes but this is a 1 second forced update
+#define PROFILE_COLOR_UPDATE_INTERVAL_US 1e6  // normally updates when color changes but this is a 1 second forced update
 
-#define VISUAL_BEEPER_COLOR COLOR_ORANGE
+#define VISUAL_BEEPER_COLOR COLOR_WHITE
+
+#define BEACON_FAILSAFE_PERIOD_US 250      // 2Hz
+#define BEACON_FAILSAFE_ON_PERCENT 50      // 50% duty cycle
 
 #if LED_MAX_STRIP_LENGTH > WS2811_LED_STRIP_LENGTH
 # error "Led strip length must match driver"
@@ -174,7 +175,12 @@ void pgResetFn_ledStripConfig(ledStripConfig_t *ledStripConfig)
 #else
     ledStripConfig->ledstrip_profile = LED_PROFILE_RACE;
 #endif
-    ledStripConfig->ledRaceColor = COLOR_ORANGE;
+    ledStripConfig->ledstrip_race_color = COLOR_ORANGE;
+    ledStripConfig->ledstrip_beacon_color = COLOR_WHITE;
+    ledStripConfig->ledstrip_beacon_period_ms = 500;    // 0.5 second (2hz)
+    ledStripConfig->ledstrip_beacon_percent = 50;       // 50% duty cycle
+    ledStripConfig->ledstrip_beacon_armed_only = false; // blink always
+    ledStripConfig->ledstrip_visual_beeper_color = VISUAL_BEEPER_COLOR;
 #ifndef UNIT_TEST
     ledStripConfig->ioTag = timerioTagGetByUsage(TIM_USE_LED, 0);
 #endif
@@ -582,7 +588,7 @@ static void applyLedWarningLayer(bool updateNow, timeUs_t *timer)
         }
     } else {
         if (isBeeperOn()) {
-            warningColor = &hsv[VISUAL_BEEPER_COLOR];
+            warningColor = &hsv[ledStripConfig()->ledstrip_visual_beeper_color];
         }
     }
 
@@ -1081,34 +1087,64 @@ static void applyStatusProfile(timeUs_t now) {
 static uint8_t selectVisualBeeperColor(uint8_t colorIndex)
 {
     if (ledStripConfig()->ledstrip_visual_beeper && isBeeperOn()) {
-        return VISUAL_BEEPER_COLOR;
+        return ledStripConfig()->ledstrip_visual_beeper_color;
     } else {
         return colorIndex;
     }
 }
 
-static void applyBeaconProfile(void)
-{    
-    const bool beaconState = millis() % (BEACON_FLASH_PERIOD_MS) < BEACON_FLASH_ON_TIME;
-    uint8_t colorIndex = (beaconState) ? COLOR_WHITE : COLOR_BLACK;
-    colorIndex = selectVisualBeeperColor(colorIndex);
+static void applySimpleProfile(timeUs_t currentTimeUs)
+{
+    static timeUs_t colorUpdateTimeUs = 0;
+    uint8_t colorIndex = COLOR_BLACK;
+    bool blinkLed = false;
+    bool visualBeeperOverride = true;
+    unsigned flashPeriod;
+    unsigned onPercent;
 
-    if (colorIndex != previousBeaconColorIndex) {
-        previousBeaconColorIndex = colorIndex;
+    if (IS_RC_MODE_ACTIVE(BOXBEEPERON) || failsafeIsActive()) {
+        // RX_SET or failsafe - force the beacon on and override the profile settings
+        blinkLed = true;
+        visualBeeperOverride = false; // prevent the visual beeper from interfering
+        flashPeriod = BEACON_FAILSAFE_PERIOD_US;
+        onPercent = BEACON_FAILSAFE_ON_PERCENT;
+        colorIndex = ledStripConfig()->ledstrip_visual_beeper_color;
+    } else {
+        switch (ledStripConfig()->ledstrip_profile) {
+            case LED_PROFILE_RACE:
+                colorIndex = ledStripConfig()->ledstrip_race_color;
+                break;
+
+            case LED_PROFILE_BEACON: {
+                if (!ledStripConfig()->ledstrip_beacon_armed_only || ARMING_FLAG(ARMED)) {
+                    flashPeriod = ledStripConfig()->ledstrip_beacon_period_ms;
+                    onPercent = ledStripConfig()->ledstrip_beacon_percent;
+                    colorIndex = ledStripConfig()->ledstrip_beacon_color;
+                    blinkLed = true;
+                }
+                break;
+            }
+
+            default:
+                break;
+        }
+    }
+
+    if (blinkLed) {
+        const unsigned onPeriod = flashPeriod * onPercent / 100;
+        const bool beaconState = (millis() % flashPeriod) < onPeriod;
+        colorIndex = (beaconState) ? colorIndex : COLOR_BLACK;
+    }
+
+    if (visualBeeperOverride) {
+        colorIndex = selectVisualBeeperColor(colorIndex);
+    }
+
+    if ((colorIndex != previousProfileColorIndex) || (currentTimeUs >= colorUpdateTimeUs)) {
         setStripColor(&hsv[colorIndex]);
         ws2811UpdateStrip((ledStripFormatRGB_e)ledStripConfig()->ledstrip_grb_rgb);
-    }
-}
-
-static void applyRaceProfile(timeUs_t currentTimeUs)
-{
-    uint8_t colorIndex = selectVisualBeeperColor(ledStripConfig()->ledRaceColor);
-    // refresh the color if it changes or at least every 1 second
-    if ((colorIndex != previousRaceColorIndex) || (currentTimeUs >= raceColorUpdateTimeUs)) {
-        setStripColor(&hsv[colorIndex]);
-        ws2811UpdateStrip((ledStripFormatRGB_e) ledStripConfig()->ledstrip_grb_rgb);
-        previousRaceColorIndex = colorIndex;
-        raceColorUpdateTimeUs = currentTimeUs + RACE_COLOR_UPDATE_INTERVAL_US;
+        previousProfileColorIndex = colorIndex;
+        colorUpdateTimeUs = currentTimeUs + PROFILE_COLOR_UPDATE_INTERVAL_US;
     }
 }
 
@@ -1127,7 +1163,7 @@ void ledStripUpdate(timeUs_t currentTimeUs)
     } else if (!IS_RC_MODE_ACTIVE(BOXLEDLOW)) {
         ledStripEnabled = true;
     }
-    
+
     if (ledStripEnabled) {
         switch (ledStripConfig()->ledstrip_profile) {
 #ifdef USE_LED_STRIP_STATUS_MODE
@@ -1136,14 +1172,12 @@ void ledStripUpdate(timeUs_t currentTimeUs)
                 break;
             }
 #endif
-            case LED_PROFILE_RACE: {
-                applyRaceProfile(currentTimeUs);
-                break;
-            }
+            case LED_PROFILE_RACE:
             case LED_PROFILE_BEACON: {
-                applyBeaconProfile();
+                applySimpleProfile(currentTimeUs);
                 break;
             }
+
             default:
                 break;
         }
@@ -1244,8 +1278,7 @@ void ledStripEnable(void)
 void ledStripDisable(void)
 {
     ledStripEnabled = false;
-    previousRaceColorIndex = COLOR_BLACK;
-    previousBeaconColorIndex = COLOR_BLACK;
+    previousProfileColorIndex = COLOR_UNDEFINED;
     setStripColor(&HSV(BLACK));
     if (ledStripInitialised) {
         ws2811UpdateStrip((ledStripFormatRGB_e)ledStripConfig()->ledstrip_grb_rgb);
@@ -1262,18 +1295,6 @@ void setLedProfile(uint8_t profile)
 {
     if (profile < LED_PROFILE_COUNT) {
         ledStripConfigMutable()->ledstrip_profile = profile;
-    }
-}
-
-uint8_t getLedRaceColor(void)
-{
-    return ledStripConfig()->ledRaceColor;
-}
-
-void setLedRaceColor(uint8_t color)
-{
-    if (color <= COLOR_DEEP_PINK) {
-        ledStripConfigMutable()->ledRaceColor = color;
     }
 }
 #endif

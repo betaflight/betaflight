@@ -48,8 +48,15 @@
 #ifdef USE_LED_STRIP
 
 static uint8_t cmsx_FeatureLedstrip;
-static uint8_t cmsx_LedProfile;
-static uint8_t cmsx_RaceColor;
+static uint8_t cmsx_ledProfile;
+static uint8_t cmsx_ledRaceColor;
+static uint8_t cmsx_ledBeaconColor;
+static uint16_t cmsx_ledBeaconPeriod;
+static uint8_t cmsx_ledBeaconOnPercent;
+static uint8_t cmsx_ledBeaconArmedOnly;
+static uint8_t cmsx_ledVisualBeeper;
+static uint8_t cmsx_ledVisualBeeperColor;
+
 const char * const ledProfileNames[LED_PROFILE_COUNT] = {
     "RACE",
     "BEACON",
@@ -61,8 +68,14 @@ const char * const ledProfileNames[LED_PROFILE_COUNT] = {
 static long cmsx_Ledstrip_OnEnter(void)
 {
     cmsx_FeatureLedstrip = featureIsEnabled(FEATURE_LED_STRIP) ? 1 : 0;
-    cmsx_LedProfile = getLedProfile();
-    cmsx_RaceColor = getLedRaceColor();
+    cmsx_ledProfile = getLedProfile();
+    cmsx_ledRaceColor = ledStripConfig()->ledstrip_race_color;
+    cmsx_ledBeaconColor = ledStripConfig()->ledstrip_beacon_color;
+    cmsx_ledBeaconPeriod = ledStripConfig()->ledstrip_beacon_period_ms;
+    cmsx_ledBeaconOnPercent = ledStripConfig()->ledstrip_beacon_percent;
+    cmsx_ledBeaconArmedOnly = ledStripConfig()->ledstrip_beacon_armed_only;
+    cmsx_ledVisualBeeper = ledStripConfig()->ledstrip_visual_beeper;
+    cmsx_ledVisualBeeperColor = ledStripConfig()->ledstrip_visual_beeper_color;
 
     return 0;
 }
@@ -78,18 +91,30 @@ static long cmsx_Ledstrip_OnExit(const OSD_Entry *self)
         featureDisable(FEATURE_LED_STRIP);
     }
 
-    setLedProfile(cmsx_LedProfile);
-    setLedRaceColor(cmsx_RaceColor);
+    setLedProfile(cmsx_ledProfile);
+    ledStripConfigMutable()->ledstrip_race_color = cmsx_ledRaceColor;
+    ledStripConfigMutable()->ledstrip_beacon_color = cmsx_ledBeaconColor;
+    ledStripConfigMutable()->ledstrip_beacon_period_ms = cmsx_ledBeaconPeriod;
+    ledStripConfigMutable()->ledstrip_beacon_percent = cmsx_ledBeaconOnPercent;
+    ledStripConfigMutable()->ledstrip_beacon_armed_only = cmsx_ledBeaconArmedOnly;
+    ledStripConfigMutable()->ledstrip_visual_beeper = cmsx_ledVisualBeeper;
+    ledStripConfigMutable()->ledstrip_visual_beeper_color = cmsx_ledVisualBeeperColor;
 
     return 0;
 }
 
 static OSD_Entry cmsx_menuLedstripEntries[] =
 {
-    { "-- LED STRIP --", OME_Label, NULL, NULL, 0 },
-    { "ENABLED",         OME_Bool,  NULL, &cmsx_FeatureLedstrip, 0 },
-    { "PROFILE",         OME_TAB,   NULL, &(OSD_TAB_t){ &cmsx_LedProfile, LED_PROFILE_COUNT-1, ledProfileNames }, 0 },
-    { "RACE COLOR",      OME_TAB,   NULL, &(OSD_TAB_t){ &cmsx_RaceColor, COLOR_COUNT-1, lookupTableLEDRaceColors }, 0 },
+    { "-- LED STRIP --",  OME_Label, NULL, NULL, 0 },
+    { "ENABLED",          OME_Bool,  NULL, &cmsx_FeatureLedstrip, 0 },
+    { "PROFILE",          OME_TAB,   NULL, &(OSD_TAB_t){ &cmsx_ledProfile, LED_PROFILE_COUNT - 1, ledProfileNames }, 0 },
+    { "RACE COLOR",       OME_TAB,   NULL, &(OSD_TAB_t){ &cmsx_ledRaceColor, COLOR_COUNT - 1, lookupTableLedstripColors }, 0 },
+    { "BEACON COLOR",     OME_TAB,   NULL, &(OSD_TAB_t){ &cmsx_ledBeaconColor, COLOR_COUNT -1, lookupTableLedstripColors }, 0 },
+    { "BEACON PERIOD",    OME_UINT16,NULL, &(OSD_UINT16_t){ &cmsx_ledBeaconPeriod, 50, 10000, 10 }, 0 },
+    { "BEACON ON %",      OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_ledBeaconOnPercent, 0, 100, 1 }, 0 },
+    { "BEACON ARMED ONLY",OME_Bool,  NULL, &cmsx_ledBeaconArmedOnly, 0 },
+    { "VISUAL BEEPER",    OME_Bool,  NULL, &cmsx_ledVisualBeeper, 0 },
+    { "VISUAL COLOR",     OME_TAB,   NULL, &(OSD_TAB_t){ &cmsx_ledVisualBeeperColor, COLOR_COUNT - 1, lookupTableLedstripColors }, 0 },
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
 };

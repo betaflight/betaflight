@@ -133,7 +133,7 @@ typedef enum {
 #endif
 #ifdef USE_LED_STRIP
     TABLE_LED_PROFILE,
-    TABLE_LED_RACE_COLOR,
+    TABLE_LEDSTRIP_COLOR,
 #endif
     TABLE_GYRO_FILTER_DEBUG,
     LOOKUP_TABLE_COUNT
@@ -224,4 +224,4 @@ extern const char * const lookupTableMagHardware[];
 
 extern const char * const lookupTableRangefinderHardware[];
 
-extern const char * const lookupTableLEDRaceColors[];
+extern const char * const lookupTableLedstripColors[];

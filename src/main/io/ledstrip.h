@@ -176,13 +176,17 @@ typedef struct ledStripConfig_s {
     hsvColor_t colors[LED_CONFIGURABLE_COLOR_COUNT];
     modeColorIndexes_t modeColors[LED_MODE_COUNT];
     specialColorIndexes_t specialColors;
-    uint8_t ledstrip_visual_beeper; // suppress LEDLOW mode if beeper is on
+    uint8_t ledstrip_visual_beeper;
     uint8_t ledstrip_aux_channel;
     ioTag_t ioTag;
     ledStripFormatRGB_e ledstrip_grb_rgb;
     ledProfile_e ledstrip_profile;
-    colorId_e ledRaceColor;
-
+    colorId_e ledstrip_race_color;
+    colorId_e ledstrip_beacon_color;
+    uint16_t ledstrip_beacon_period_ms;
+    uint8_t ledstrip_beacon_percent;
+    uint8_t ledstrip_beacon_armed_only;
+    colorId_e ledstrip_visual_beeper_color;
 } ledStripConfig_t;
 
 PG_DECLARE(ledStripConfig_t, ledStripConfig);
@@ -230,5 +234,3 @@ void updateRequiredOverlay(void);
 
 uint8_t getLedProfile(void);
 void setLedProfile(uint8_t profile);
-uint8_t getLedRaceColor(void);
-void setLedRaceColor(uint8_t color);
