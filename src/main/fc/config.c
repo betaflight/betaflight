@@ -208,6 +208,10 @@ static void validateAndFixConfig(void)
     }
 #endif
 
+    if (currentPidProfile->motor_output_limit > 100 || currentPidProfile->motor_output_limit == 0) {
+        currentPidProfile->motor_output_limit = 100;
+    }
+
     if (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_BRUSHED) {
         featureDisable(FEATURE_3D);
 

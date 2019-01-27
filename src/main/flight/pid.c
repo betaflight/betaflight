@@ -202,6 +202,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->pid[PID_ROLL].D = 30;
     pidProfile->pid[PID_PITCH].D = 32;
 #endif
+    pidProfile->motor_output_limit = 100;
 }
 
 void pgResetFn_pidProfiles(pidProfile_t *pidProfiles)
