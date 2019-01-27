@@ -25,6 +25,8 @@
 
 #if defined(USE_VTX_COMMON)
 
+#include "cli/cli.h"
+
 #include "common/maths.h"
 #include "common/time.h"
 
@@ -36,14 +38,13 @@
 
 #include "flight/failsafe.h"
 
-#include "io/vtx.h"
 #include "io/vtx_string.h"
 #include "io/vtx_control.h"
 
-#include "interface/cli.h"
-
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+
+#include "vtx.h"
 
 
 PG_REGISTER_WITH_RESET_TEMPLATE(vtxSettingsConfig_t, vtxSettingsConfig, PG_VTX_SETTINGS_CONFIG, 0);

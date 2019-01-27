@@ -78,10 +78,6 @@
 #include "flight/pid.h"
 #include "flight/servos.h"
 
-#include "interface/msp.h"
-#include "interface/msp_box.h"
-#include "interface/msp_protocol.h"
-
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/flashfs.h"
@@ -99,6 +95,8 @@
 #include "io/vtx.h"
 #include "io/vtx_string.h"
 
+#include "msp/msp_box.h"
+#include "msp/msp_protocol.h"
 #include "msp/msp_serial.h"
 
 #include "pg/beeper.h"
@@ -131,6 +129,9 @@
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
 #endif
+
+#include "msp.h"
+
 
 static const char * const flightControllerIdentifier = BETAFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
 

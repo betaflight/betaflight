@@ -19,8 +19,10 @@
  */
 
 #include "platform.h"
+
 #include "common/crc.h"
-#include "interface/smartaudio_protocol.h"
+
+#include "smartaudio_protocol.h"
 
 #define SMARTAUDIO_SYNC_BYTE            0xAA
 #define SMARTAUDIO_HEADER_BYTE          0x55

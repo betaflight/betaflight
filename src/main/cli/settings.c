@@ -54,8 +54,6 @@
 #include "flight/position.h"
 #include "flight/servos.h"
 
-#include "interface/settings.h"
-
 #include "io/beeper.h"
 #include "io/dashboard.h"
 #include "io/gimbal.h"
@@ -108,6 +106,9 @@
 #include "telemetry/frsky_hub.h"
 #include "telemetry/ibus_shared.h"
 #include "telemetry/telemetry.h"
+
+#include "settings.h"
+
 
 // Sensor names (used in lookup tables for *_hardware settings and in status command output)
 // sync with accelerationSensor_e

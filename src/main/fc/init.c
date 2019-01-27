@@ -27,6 +27,8 @@
 
 #include "blackbox/blackbox.h"
 
+#include "cli/cli.h"
+
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/maths.h"
@@ -88,13 +90,11 @@
 #include "fc/runtime_config.h"
 #include "fc/dispatch.h"
 
-#include "interface/cli.h"
-#include "interface/msp.h"
-
 #ifdef USE_PERSISTENT_MSC_RTC
 #include "msc/usbd_storage.h"
 #endif
 
+#include "msp/msp.h"
 #include "msp/msp_serial.h"
 
 #include "pg/adc.h"

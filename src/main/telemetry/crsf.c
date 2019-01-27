@@ -51,20 +51,21 @@
 #include "flight/imu.h"
 #include "flight/position.h"
 
-#include "interface/crsf_protocol.h"
-
 #include "io/displayport_crsf.h"
 #include "io/gps.h"
 #include "io/serial.h"
 
 #include "rx/crsf.h"
+#include "rx/crsf_protocol.h"
 
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 
 #include "telemetry/telemetry.h"
-#include "telemetry/crsf.h"
 #include "telemetry/msp_shared.h"
+
+#include "telemetry/crsf.h"
+
 
 #define CRSF_CYCLETIME_US                   100000 // 100ms, 10 Hz
 #define CRSF_DEVICEINFO_VERSION             0x01

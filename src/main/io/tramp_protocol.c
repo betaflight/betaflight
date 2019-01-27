@@ -19,9 +19,12 @@
  */
 
 #include <string.h>
+
 #include "platform.h"
+
 #include "common/utils.h"
-#include "interface/tramp_protocol.h"
+
+#include "tramp_protocol.h"
 
 #define TRAMP_SYNC_START            0x0F
 #define TRAMP_SYNC_STOP             0x00

@@ -29,6 +29,8 @@
 
 #include "blackbox/blackbox.h"
 
+#include "cli/cli.h"
+
 #include "common/axis.h"
 #include "common/filter.h"
 #include "common/maths.h"
@@ -63,8 +65,6 @@
 #include "fc/runtime_config.h"
 
 #include "msp/msp_serial.h"
-
-#include "interface/cli.h"
 
 #include "io/beeper.h"
 #include "io/gps.h"

@@ -55,12 +55,12 @@
 #include "flight/pid.h"
 #include "flight/position.h"
 
-#include "interface/msp.h"
-
 #include "io/beeper.h"
 #include "io/gps.h"
 #include "io/motors.h"
 #include "io/serial.h"
+
+#include "msp/msp.h"
 
 #include "rx/rx.h"
 

@@ -22,10 +22,14 @@
 
 #ifdef USE_PINIOBOX
 
-#include "pg/pg_ids.h"
-#include "piniobox.h"
 #include "drivers/io.h"
-#include "interface/msp_box.h"
+
+#include "msp/msp_box.h"
+
+#include "pg/pg_ids.h"
+
+#include "piniobox.h"
+
 
 PG_REGISTER_WITH_RESET_TEMPLATE(pinioBoxConfig_t, pinioBoxConfig, PG_PINIOBOX_CONFIG, 1);
 

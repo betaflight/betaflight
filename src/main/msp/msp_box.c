@@ -35,13 +35,13 @@
 
 #include "flight/mixer.h"
 
-#include "interface/msp_box.h"
-
 #include "sensors/sensors.h"
 
 #include "telemetry/telemetry.h"
 
 #include "pg/piniobox.h"
+
+#include "msp_box.h"
 
 
 // permanent IDs must uniquely identify BOX meaning, DO NOT REUSE THEM!
