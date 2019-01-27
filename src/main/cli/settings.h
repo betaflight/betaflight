@@ -133,6 +133,9 @@ typedef enum {
     TABLE_LEDSTRIP_COLOR,
 #endif
     TABLE_GYRO_FILTER_DEBUG,
+#ifdef USE_STATIC_NOTCH_AXIS
+    TABLE_NOTCH_AXIS,
+#endif
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 

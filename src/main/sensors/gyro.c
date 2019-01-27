@@ -134,10 +134,18 @@ typedef struct gyroSensor_s {
     gyroLowpassFilter_t lowpass2Filter[XYZ_AXIS_COUNT];
 
     // notch filters
+#ifdef USE_STATIC_NOTCH_AXIS
+    filterApplyFnPtr notchFilter1ApplyFn[XYZ_AXIS_COUNT];
+#else
     filterApplyFnPtr notchFilter1ApplyFn;
+#endif
     biquadFilter_t notchFilter1[XYZ_AXIS_COUNT];
 
+#ifdef USE_STATIC_NOTCH_AXIS
+    filterApplyFnPtr notchFilter2ApplyFn[XYZ_AXIS_COUNT];
+#else
     filterApplyFnPtr notchFilter2ApplyFn;
+#endif
     biquadFilter_t notchFilter2[XYZ_AXIS_COUNT];
 
     filterApplyFnPtr notchFilterDynApplyFn;
@@ -227,6 +235,10 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
     gyroConfig->gyro_lowpass2_hz = 0;
 #endif
     gyroConfig->gyro_filter_debug_axis = FD_ROLL;
+#ifdef USE_STATIC_NOTCH_AXIS
+    gyroConfig->gyro_soft_notch_axis_1 = 7;
+    gyroConfig->gyro_soft_notch_axis_2 = 7;
+#endif
 }
 
 #ifdef USE_MULTI_GYRO
@@ -658,14 +670,27 @@ void gyroInitSlewLimiter(gyroSensor_t *gyroSensor) {
 
 static void gyroInitFilterNotch1(gyroSensor_t *gyroSensor, uint16_t notchHz, uint16_t notchCutoffHz)
 {
+#ifdef USE_STATIC_NOTCH_AXIS
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        gyroSensor->notchFilter1ApplyFn[axis] = nullFilterApply;
+    }
+#else
     gyroSensor->notchFilter1ApplyFn = nullFilterApply;
+#endif
 
     notchHz = calculateNyquistAdjustedNotchHz(notchHz, notchCutoffHz);
 
     if (notchHz != 0 && notchCutoffHz != 0) {
+#ifndef USE_STATIC_NOTCH_AXIS
         gyroSensor->notchFilter1ApplyFn = (filterApplyFnPtr)biquadFilterApply;
+#endif
         const float notchQ = filterGetNotchQ(notchHz, notchCutoffHz);
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+#ifdef USE_STATIC_NOTCH_AXIS
+            if (gyroConfig()->gyro_soft_notch_axis_1 & 1 << axis) {
+                gyroSensor->notchFilter1ApplyFn[axis] = (filterApplyFnPtr)biquadFilterApply;
+            }
+#endif
             biquadFilterInit(&gyroSensor->notchFilter1[axis], notchHz, gyro.targetLooptime, notchQ, FILTER_NOTCH);
         }
     }
@@ -673,14 +698,27 @@ static void gyroInitFilterNotch1(gyroSensor_t *gyroSensor, uint16_t notchHz, uin
 
 static void gyroInitFilterNotch2(gyroSensor_t *gyroSensor, uint16_t notchHz, uint16_t notchCutoffHz)
 {
+#ifdef USE_STATIC_NOTCH_AXIS
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        gyroSensor->notchFilter2ApplyFn[axis] = nullFilterApply;
+    }
+#else
     gyroSensor->notchFilter2ApplyFn = nullFilterApply;
+#endif
 
     notchHz = calculateNyquistAdjustedNotchHz(notchHz, notchCutoffHz);
 
     if (notchHz != 0 && notchCutoffHz != 0) {
+#ifndef USE_STATIC_NOTCH_AXIS
         gyroSensor->notchFilter2ApplyFn = (filterApplyFnPtr)biquadFilterApply;
+#endif
         const float notchQ = filterGetNotchQ(notchHz, notchCutoffHz);
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+#ifdef USE_STATIC_NOTCH_AXIS
+            if (gyroConfig()->gyro_soft_notch_axis_2 & 1 << axis) {
+                gyroSensor->notchFilter2ApplyFn[axis] = (filterApplyFnPtr)biquadFilterApply;
+            }
+#endif
             biquadFilterInit(&gyroSensor->notchFilter2[axis], notchHz, gyro.targetLooptime, notchQ, FILTER_NOTCH);
         }
     }

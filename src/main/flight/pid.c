@@ -212,6 +212,9 @@ void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->pid[PID_ROLL].D = 30;
     pidProfile->pid[PID_PITCH].D = 32;
 #endif
+#ifdef USE_STATIC_NOTCH_AXIS
+    pidProfile->dterm_notch_axis = 7;
+#endif
 }
 
 void pgResetFn_pidProfiles(pidProfile_t *pidProfiles)
@@ -254,7 +257,11 @@ typedef union dtermLowpass_u {
 
 static FAST_RAM_ZERO_INIT float previousPidSetpoint[XYZ_AXIS_COUNT];
 
+#ifdef USE_STATIC_NOTCH_AXIS
+static FAST_RAM_ZERO_INIT filterApplyFnPtr dtermNotchApplyFn[XYZ_AXIS_COUNT];
+#else
 static FAST_RAM_ZERO_INIT filterApplyFnPtr dtermNotchApplyFn;
+#endif
 static FAST_RAM_ZERO_INIT biquadFilter_t dtermNotch[XYZ_AXIS_COUNT];
 static FAST_RAM_ZERO_INIT filterApplyFnPtr dtermLowpassApplyFn;
 static FAST_RAM_ZERO_INIT dtermLowpass_t dtermLowpass[XYZ_AXIS_COUNT];
@@ -305,7 +312,13 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 
     if (targetPidLooptime == 0) {
         // no looptime set, so set all the filters to null
+#ifdef USE_STATIC_NOTCH_AXIS
+        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+            dtermNotchApplyFn[axis] = nullFilterApply;
+        }
+#else
         dtermNotchApplyFn = nullFilterApply;
+#endif
         dtermLowpassApplyFn = nullFilterApply;
         ptermYawLowpassApplyFn = nullFilterApply;
         return;
@@ -324,14 +337,29 @@ void pidInitFilters(const pidProfile_t *pidProfile)
         }
     }
 
+#ifdef USE_STATIC_NOTCH_AXIS
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        dtermNotchApplyFn[axis] = nullFilterApply;
+    }
+#endif
+
     if (dTermNotchHz != 0 && pidProfile->dterm_notch_cutoff != 0) {
+#ifndef USE_STATIC_NOTCH_AXIS
         dtermNotchApplyFn = (filterApplyFnPtr)biquadFilterApply;
+#endif
         const float notchQ = filterGetNotchQ(dTermNotchHz, pidProfile->dterm_notch_cutoff);
         for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+#ifdef USE_STATIC_NOTCH_AXIS
+            if (pidProfile->dterm_notch_axis & 1 << axis) {
+                dtermNotchApplyFn[axis] = (filterApplyFnPtr)biquadFilterApply;
+            }
+#endif
             biquadFilterInit(&dtermNotch[axis], dTermNotchHz, targetPidLooptime, notchQ, FILTER_NOTCH);
         }
+#ifndef USE_STATIC_NOTCH_AXIS
     } else {
         dtermNotchApplyFn = nullFilterApply;
+#endif
     }
 
     //1st Dterm Lowpass Filter
@@ -1270,7 +1298,11 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #ifdef USE_RPM_FILTER
         gyroRateDterm[axis] = rpmFilterDterm(axis,gyroRateDterm[axis]);
 #endif
+#ifdef USE_STATIC_NOTCH_AXIS
+        gyroRateDterm[axis] = dtermNotchApplyFn[axis]((filter_t *) &dtermNotch[axis], gyroRateDterm[axis]);
+#else
         gyroRateDterm[axis] = dtermNotchApplyFn((filter_t *) &dtermNotch[axis], gyroRateDterm[axis]);
+#endif
         gyroRateDterm[axis] = dtermLowpassApplyFn((filter_t *) &dtermLowpass[axis], gyroRateDterm[axis]);
         gyroRateDterm[axis] = dtermLowpass2ApplyFn((filter_t *) &dtermLowpass2[axis], gyroRateDterm[axis]);
     }
