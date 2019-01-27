@@ -57,8 +57,8 @@ typedef struct batteryConfig_s {
     uint8_t vbatLpfPeriod;                  // Period of the cutoff frequency for the Vbat filter (in 0.1 s)
     uint8_t ibatLpfPeriod;                  // Period of the cutoff frequency for the Ibat filter (in 0.1 s)
 
-    uint8_t batteryDurationForWarning;      // Duration in seconds voltage has to sustain before the battery state is set to BATTERY_WARNING
-    uint8_t batteryDurationForCrit;         // Duration in seconds voltage has to sustain before the battery state is set to BATTERY_CRIT
+    uint8_t batteryDurationForWarning;      // Period voltage has to sustain before the battery state is set to BATTERY_WARNING (in 0.1 s)
+    uint8_t batteryDurationForCrit;         // Period voltage has to sustain before the battery state is set to BATTERY_CRIT (in 0.1 s)
 } batteryConfig_t;
 
 PG_DECLARE(batteryConfig_t, batteryConfig);
