@@ -109,15 +109,8 @@
 // Stick overlay size
 #define OSD_STICK_OVERLAY_WIDTH 7
 #define OSD_STICK_OVERLAY_HEIGHT 5
-#define OSD_STICK_OVERLAY_CHARACTER_HEIGHT 3
-#define OSD_STICK_OVERLAY_VERTICAL_POSITIONS (OSD_STICK_OVERLAY_HEIGHT * OSD_STICK_OVERLAY_CHARACTER_HEIGHT)
-
-#define STICK_OVERLAY_HORIZONTAL_CHAR   '-'
-#define STICK_OVERLAY_VERTICAL_CHAR     '|'
-#define STICK_OVERLAY_CROSS_CHAR        '+'
-#define STICK_OVERLAY_CURSOR_LOW_CHAR   0x86
-#define STICK_OVERLAY_CURSOR_MID_CHAR   0x84
-#define STICK_OVERLAY_CURSOR_HIGH_CHAR  0x82
+#define OSD_STICK_OVERLAY_SPRITE_HEIGHT 3
+#define OSD_STICK_OVERLAY_VERTICAL_POSITIONS (OSD_STICK_OVERLAY_HEIGHT * OSD_STICK_OVERLAY_SPRITE_HEIGHT)
 
 const char * const osdTimerSourceNames[] = {
     "ON TIME  ",
@@ -326,9 +319,9 @@ static char osdGetTemperatureSymbolForSelectedUnit(void)
 {
     switch (osdConfig()->units) {
     case OSD_UNIT_IMPERIAL:
-        return 'F';
+        return SYM_F;
     default:
-        return 'C';
+        return SYM_C;
     }
 }
 #endif
@@ -1306,11 +1299,11 @@ static void osdDrawStickOverlayAxis(uint8_t xpos, uint8_t ypos)
         for (unsigned  y = 0; y < OSD_STICK_OVERLAY_HEIGHT; y++) {
             // draw the axes, vertical and horizonal
             if ((x == ((OSD_STICK_OVERLAY_WIDTH - 1) / 2)) && (y == (OSD_STICK_OVERLAY_HEIGHT - 1) / 2)) {
-                displayWriteChar(osdDisplayPort, xpos + x, ypos + y, STICK_OVERLAY_CROSS_CHAR);
+                displayWriteChar(osdDisplayPort, xpos + x, ypos + y, SYM_STICK_OVERLAY_CENTER);
             } else if (x == ((OSD_STICK_OVERLAY_WIDTH - 1) / 2)) {
-                displayWriteChar(osdDisplayPort, xpos + x, ypos + y, STICK_OVERLAY_VERTICAL_CHAR);
+                displayWriteChar(osdDisplayPort, xpos + x, ypos + y, SYM_STICK_OVERLAY_VERTICAL);
             } else if (y == ((OSD_STICK_OVERLAY_HEIGHT - 1) / 2)) {
-                displayWriteChar(osdDisplayPort, xpos + x, ypos + y, STICK_OVERLAY_HORIZONTAL_CHAR);
+                displayWriteChar(osdDisplayPort, xpos + x, ypos + y, SYM_STICK_OVERLAY_HORIZONTAL);
             }
         }
     }
@@ -1346,23 +1339,9 @@ static void osdDrawStickOverlayCursor(osd_items_e osd_item)
     const uint8_t x_pos = scaleRange(constrain(rcData[horizontal_channel], PWM_RANGE_MIN, PWM_RANGE_MAX - 1), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, OSD_STICK_OVERLAY_WIDTH);
     const uint8_t y_pos = OSD_STICK_OVERLAY_VERTICAL_POSITIONS - 1 - scaleRange(constrain(rcData[vertical_channel], PWM_RANGE_MIN, PWM_RANGE_MAX - 1), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, OSD_STICK_OVERLAY_VERTICAL_POSITIONS);
 
-    char cursor;
-    switch (y_pos % OSD_STICK_OVERLAY_CHARACTER_HEIGHT) {
-    case 0:
-        cursor = STICK_OVERLAY_CURSOR_HIGH_CHAR;
+    const char cursor = SYM_STICK_OVERLAY_SPRITE_HIGH + (y_pos % OSD_STICK_OVERLAY_SPRITE_HEIGHT);
 
-        break;
-    case 1:
-        cursor = STICK_OVERLAY_CURSOR_MID_CHAR;
-
-        break;
-    case 2:
-        cursor = STICK_OVERLAY_CURSOR_LOW_CHAR;
-
-        break;
-    }
-
-    osdDrawStickOverlayPos(osd_item, x_pos, y_pos / OSD_STICK_OVERLAY_CHARACTER_HEIGHT, cursor);
+    osdDrawStickOverlayPos(osd_item, x_pos, y_pos / OSD_STICK_OVERLAY_SPRITE_HEIGHT, cursor);
 }
 #endif
 
