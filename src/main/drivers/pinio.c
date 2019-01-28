@@ -49,28 +49,19 @@ void pinioInit(const pinioConfig_t *pinioConfig)
 
         IOInit(io, OWNER_PINIO, RESOURCE_INDEX(i));
 
+        pinioRuntime[i].io = io;
+        pinioRuntime[i].inverted = (pinioConfig->config[i] & PINIO_CONFIG_OUT_INVERTED) ? true : false;
+
+        bool initState = (pinioConfig->config[i] & PINIO_CONFIG_INIT_STATE) ? true : false;
+        pinioRuntime[i].state = initState ^ pinioRuntime[i].inverted;
+
         switch (pinioConfig->config[i] & PINIO_CONFIG_MODE_MASK) {
         case PINIO_CONFIG_MODE_OUT_PP:
-            // Initial state after reset is input, pull-up.
-            // Avoid momentary off by presetting the output to hi.
-            if (pinioConfig->config[i] & PINIO_CONFIG_OUT_INVERTED) {
-                IOHi(io);
-            }
+            // Preset output state before switching to output to prevent a glitch in some use cases
             IOConfigGPIO(io, IOCFG_OUT_PP);
+            IOWrite(io, pinioRuntime[i].state);
             break;
         }
-
-        if (pinioConfig->config[i] & PINIO_CONFIG_OUT_INVERTED)
-        {
-            pinioRuntime[i].inverted = true;
-            IOHi(io);
-            pinioRuntime[i].state = true;
-        } else {
-            pinioRuntime[i].inverted = false;
-            IOLo(io);
-            pinioRuntime[i].state = false;
-        }
-        pinioRuntime[i].io = io;
     }
 }
 

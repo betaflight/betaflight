@@ -27,7 +27,8 @@
 #endif
 
 #define PINIO_CONFIG_OUT_INVERTED 0x80
-#define PINIO_CONFIG_MODE_MASK    0x7F
+#define PINIO_CONFIG_INIT_STATE   0x40  // 0 = logic low, 1 = logic high
+#define PINIO_CONFIG_MODE_MASK    0x3F
 #define PINIO_CONFIG_MODE_OUT_PP  0x01
 
 struct pinioConfig_s;
