@@ -44,6 +44,8 @@ extern uint8_t __config_end;
 #include "build/debug.h"
 #include "build/version.h"
 
+#include "cli/settings.h"
+
 #include "cms/cms.h"
 
 #include "common/axis.h"
@@ -102,12 +104,6 @@ extern uint8_t __config_end;
 #include "flight/position.h"
 #include "flight/servos.h"
 
-#include "interface/cli.h"
-#include "interface/msp.h"
-#include "interface/msp_box.h"
-#include "interface/msp_protocol.h"
-#include "interface/settings.h"
-
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/flashfs.h"
@@ -120,6 +116,10 @@ extern uint8_t __config_end;
 #include "io/usb_msc.h"
 #include "io/vtx_control.h"
 #include "io/vtx.h"
+
+#include "msp/msp.h"
+#include "msp/msp_box.h"
+#include "msp/msp_protocol.h"
 
 #include "pg/adc.h"
 #include "pg/beeper.h"
@@ -159,6 +159,8 @@ extern uint8_t __config_end;
 
 #include "telemetry/frsky_hub.h"
 #include "telemetry/telemetry.h"
+
+#include "cli.h"
 
 
 static serialPort_t *cliPort;
@@ -3775,7 +3777,7 @@ static void cliTasks(char *cmdline)
                     cliPrintf("%02d - (%11s/%3s) ", taskId, taskInfo.subTaskName, taskInfo.taskName);
                 }
             } else {
-                taskFrequency = taskInfo.latestDeltaTime == 0 ? 0 : (int)(1000000.0f / ((float)taskInfo.latestDeltaTime));
+                taskFrequency = taskInfo.averageDeltaTime == 0 ? 0 : (int)(1000000.0f / ((float)taskInfo.averageDeltaTime));
                 cliPrintf("%02d - (%15s) ", taskId, taskInfo.taskName);
             }
             const int maxLoad = taskInfo.maxExecutionTime == 0 ? 0 :(taskInfo.maxExecutionTime * taskFrequency + 5000) / 1000;

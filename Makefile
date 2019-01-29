@@ -532,9 +532,18 @@ targets-f7:
 targets-f7-print:
 	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F7
 
-## test              : run the cleanflight test suite
-## junittest         : run the cleanflight test suite, producing Junit XML result files.
-test junittest:
+## test              : run the Betaflight test suite
+## junittest         : run the Betaflight test suite, producing Junit XML result files.
+## test-representative: run a representative subset of the Betaflight test suite (i.e. run all tests, but run each expanded test only for one target)
+test junittest test-representative:
+	$(V0) cd src/test && $(MAKE) $@
+
+## test_help         : print the help message for the test suite (including a list of the available tests)
+test_help:
+	$(V0) cd src/test && $(MAKE) help
+
+## test_%            : run test 'test_%' from the test suite
+test_%:
 	$(V0) cd src/test && $(MAKE) $@
 
 

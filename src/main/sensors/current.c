@@ -118,8 +118,8 @@ static int32_t currentMeterADCToCentiamps(const uint16_t src)
     // y=x/m+b m is scale in (mV/10A) and b is offset in (mA)
     int32_t centiAmps = (millivolts * 10000 / (int32_t)config->scale + (int32_t)config->offset) / 10;
 
-    DEBUG_SET(DEBUG_CURRENT, 0, millivolts);
-    DEBUG_SET(DEBUG_CURRENT, 1, centiAmps);
+    DEBUG_SET(DEBUG_CURRENT_SENSOR, 0, millivolts);
+    DEBUG_SET(DEBUG_CURRENT_SENSOR, 1, centiAmps);
 
     return centiAmps; // Returns Centiamps to maintain compatability with the rest of the code
 }
@@ -167,8 +167,8 @@ void currentMeterADCRead(currentMeter_t *meter)
     meter->amperage = currentMeterADCState.amperage;
     meter->mAhDrawn = currentMeterADCState.mahDrawnState.mAhDrawn;
 
-    DEBUG_SET(DEBUG_CURRENT, 2, meter->amperageLatest);
-    DEBUG_SET(DEBUG_CURRENT, 3, meter->mAhDrawn);
+    DEBUG_SET(DEBUG_CURRENT_SENSOR, 2, meter->amperageLatest);
+    DEBUG_SET(DEBUG_CURRENT_SENSOR, 3, meter->mAhDrawn);
 }
 
 //
@@ -254,7 +254,8 @@ void currentMeterESCReadMotor(uint8_t motorNumber, currentMeter_t *meter)
 
 #ifdef USE_MSP_CURRENT_METER
 #include "common/streambuf.h"
-#include "interface/msp_protocol.h"
+
+#include "msp/msp_protocol.h"
 #include "msp/msp_serial.h"
 
 currentMeterMSPState_t currentMeterMSPState;

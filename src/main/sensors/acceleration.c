@@ -35,6 +35,7 @@
 #include "config/feature.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/gyrodev.h"
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/accgyro/accgyro_fake.h"
@@ -314,10 +315,13 @@ bool accInit(uint32_t gyroSamplingInverval)
     acc.dev.mpuDetectionResult = *gyroMpuDetectionResult();
     acc.dev.acc_high_fsr = accelerometerConfig()->acc_high_fsr;
 
-    acc.dev.accAlign = ACC_1_ALIGN;
-#ifdef ACC_2_ALIGN
+    // Copy alignment from active gyro, as all production boards use acc-gyro-combi chip.
+    // Exceptions are STM32F3DISCOVERY and STM32F411DISCOVERY, and (may be) handled in future enhancement.
+
+    acc.dev.accAlign = gyroDeviceConfig(0)->align;
+#ifdef USE_MULTI_GYRO
     if (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_2) {
-        acc.dev.accAlign = ACC_2_ALIGN;
+        acc.dev.accAlign = gyroDeviceConfig(1)->align;
     }
 #endif
 
@@ -347,9 +351,6 @@ bool accInit(uint32_t gyroSamplingInverval)
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
             biquadFilterInitLPF(&accFilter[axis], accLpfCutHz, acc.accSamplingInterval);
         }
-    }
-    if (accelerometerConfig()->acc_align != ALIGN_DEFAULT) {
-        acc.dev.accAlign = accelerometerConfig()->acc_align;
     }
     return true;
 }

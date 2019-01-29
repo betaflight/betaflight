@@ -267,7 +267,7 @@ void pwmStartDshotMotorUpdate(uint8_t motorCount)
                 if (value != 0xffff) {
                     dmaMotors[i].dshotTelemetryValue = value;
                     if (i < 4) {
-                        DEBUG_SET(DEBUG_RPM_TELEMETRY, i, value);
+                        DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, i, value);
                     }
                 } else {
                     dshotInvalidPacketCount++;

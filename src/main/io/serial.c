@@ -26,12 +26,9 @@
 
 #include "build/build_config.h"
 
+#include "cli/cli.h"
+
 #include "common/utils.h"
-
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
-
-#include "fc/config.h"
 
 #include "drivers/time.h"
 #include "drivers/system.h"
@@ -51,11 +48,14 @@
 #include "drivers/serial_usb_vcp.h"
 #endif
 
+#include "fc/config.h"
+
 #include "io/serial.h"
 
-#include "interface/cli.h"
-
 #include "msp/msp_serial.h"
+
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #ifdef USE_TELEMETRY
 #include "telemetry/telemetry.h"

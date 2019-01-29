@@ -2,7 +2,7 @@ F3_TARGETS  += $(TARGET)
 
 FEATURES    = VCP 
 
-FEATURE_CUT_LEVEL = 0
+FEATURE_CUT_LEVEL = 1
 
 TARGET_SRC = \
             i2c_bst.c \

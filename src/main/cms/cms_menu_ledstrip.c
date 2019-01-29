@@ -29,19 +29,21 @@
 
 #include "build/version.h"
 
+#include "cli/settings.h"
+
 #include "cms/cms.h"
 #include "cms/cms_types.h"
-#include "cms/cms_menu_ledstrip.h"
 
 #include "config/feature.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
 
 #include "fc/config.h"
 
 #include "io/ledstrip.h"
 
-#include "interface/settings.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+
+#include "cms_menu_ledstrip.h"
 
 #ifdef USE_LED_STRIP
 

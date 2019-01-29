@@ -42,6 +42,7 @@ typedef struct {
     timeUs_t     maxExecutionTime;
     timeUs_t     totalExecutionTime;
     timeUs_t     averageExecutionTime;
+    timeUs_t     averageDeltaTime;
 } cfCheckFuncInfo_t;
 
 typedef struct {
@@ -54,6 +55,7 @@ typedef struct {
     timeUs_t     maxExecutionTime;
     timeUs_t     totalExecutionTime;
     timeUs_t     averageExecutionTime;
+    timeUs_t     averageDeltaTime;
     float        movingAverageCycleTime;
 } cfTaskInfo_t;
 
@@ -165,6 +167,7 @@ typedef struct {
     // Statistics
     float    movingAverageCycleTime;
     timeUs_t movingSumExecutionTime;  // moving sum over 32 samples
+    timeUs_t movingSumDeltaTime;  // moving sum over 32 samples
     timeUs_t maxExecutionTime;
     timeUs_t totalExecutionTime;    // total time consumed by task since boot
 #endif

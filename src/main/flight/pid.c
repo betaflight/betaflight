@@ -242,6 +242,8 @@ typedef union dtermLowpass_u {
     biquadFilter_t biquadFilter;
 } dtermLowpass_t;
 
+static FAST_RAM_ZERO_INIT float previousPidSetpoint[XYZ_AXIS_COUNT];
+
 static FAST_RAM_ZERO_INIT filterApplyFnPtr dtermNotchApplyFn;
 static FAST_RAM_ZERO_INIT biquadFilter_t dtermNotch[XYZ_AXIS_COUNT];
 static FAST_RAM_ZERO_INIT filterApplyFnPtr dtermLowpassApplyFn;
@@ -1151,7 +1153,6 @@ static float applyLaunchControl(int axis, const rollAndPitchTrims_t *angleTrim)
 void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, timeUs_t currentTimeUs)
 {
     static float previousGyroRateDterm[XYZ_AXIS_COUNT];
-    static float previousPidSetpoint[XYZ_AXIS_COUNT];
     static timeUs_t levelModeStartTimeUs = 0;
     static bool gpsRescuePreviousState = false;
 
@@ -1457,4 +1458,9 @@ void dynLpfDTermUpdate(float throttle)
 void pidSetItermReset(bool enabled)
 {
     zeroThrottleItermReset = enabled;
+}
+
+float pidGetPreviousSetpoint(int axis)
+{
+    return previousPidSetpoint[axis];
 }

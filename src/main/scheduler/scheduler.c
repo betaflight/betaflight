@@ -149,12 +149,14 @@ void taskSystemLoad(timeUs_t currentTimeUs)
 timeUs_t checkFuncMaxExecutionTime;
 timeUs_t checkFuncTotalExecutionTime;
 timeUs_t checkFuncMovingSumExecutionTime;
+timeUs_t checkFuncMovingSumDeltaTime;
 
 void getCheckFuncInfo(cfCheckFuncInfo_t *checkFuncInfo)
 {
     checkFuncInfo->maxExecutionTime = checkFuncMaxExecutionTime;
     checkFuncInfo->totalExecutionTime = checkFuncTotalExecutionTime;
     checkFuncInfo->averageExecutionTime = checkFuncMovingSumExecutionTime / MOVING_SUM_COUNT;
+    checkFuncInfo->averageDeltaTime = checkFuncMovingSumDeltaTime / MOVING_SUM_COUNT;
 }
 #endif
 
@@ -169,6 +171,7 @@ void getTaskInfo(cfTaskId_e taskId, cfTaskInfo_t * taskInfo)
     taskInfo->maxExecutionTime = cfTasks[taskId].maxExecutionTime;
     taskInfo->totalExecutionTime = cfTasks[taskId].totalExecutionTime;
     taskInfo->averageExecutionTime = cfTasks[taskId].movingSumExecutionTime / MOVING_SUM_COUNT;
+    taskInfo->averageDeltaTime = cfTasks[taskId].movingSumDeltaTime / MOVING_SUM_COUNT;
     taskInfo->latestDeltaTime = cfTasks[taskId].taskLatestDeltaTime;
     taskInfo->movingAverageCycleTime = cfTasks[taskId].movingAverageCycleTime;
 #endif
@@ -218,10 +221,12 @@ void schedulerResetTaskStatistics(cfTaskId_e taskId)
 #if defined(USE_TASK_STATISTICS)
     if (taskId == TASK_SELF) {
         currentTask->movingSumExecutionTime = 0;
+        currentTask->movingSumDeltaTime = 0;
         currentTask->totalExecutionTime = 0;
         currentTask->maxExecutionTime = 0;
     } else if (taskId < TASK_COUNT) {
         cfTasks[taskId].movingSumExecutionTime = 0;
+        cfTasks[taskId].movingSumDeltaTime = 0;
         cfTasks[taskId].totalExecutionTime = 0;
         cfTasks[taskId].maxExecutionTime = 0;
     }
@@ -315,6 +320,7 @@ FAST_CODE void scheduler(void)
                 if (calculateTaskStatistics) {
                     const uint32_t checkFuncExecutionTime = micros() - currentTimeBeforeCheckFuncCall;
                     checkFuncMovingSumExecutionTime += checkFuncExecutionTime - checkFuncMovingSumExecutionTime / MOVING_SUM_COUNT;
+                    checkFuncMovingSumDeltaTime += task->taskLatestDeltaTime - checkFuncMovingSumDeltaTime / MOVING_SUM_COUNT;
                     checkFuncTotalExecutionTime += checkFuncExecutionTime;   // time consumed by scheduler + task
                     checkFuncMaxExecutionTime = MAX(checkFuncMaxExecutionTime, checkFuncExecutionTime);
                 }
@@ -422,6 +428,7 @@ FAST_CODE void scheduler(void)
 #endif //PINIO_SCHEDULE_DEBUG
             const timeUs_t taskExecutionTime = micros() - currentTimeBeforeTaskCall;
             selectedTask->movingSumExecutionTime += taskExecutionTime - selectedTask->movingSumExecutionTime / MOVING_SUM_COUNT;
+            selectedTask->movingSumDeltaTime += selectedTask->taskLatestDeltaTime - selectedTask->movingSumDeltaTime / MOVING_SUM_COUNT;
             selectedTask->totalExecutionTime += taskExecutionTime;   // time consumed by scheduler + task
             selectedTask->maxExecutionTime = MAX(selectedTask->maxExecutionTime, taskExecutionTime);
             selectedTask->movingAverageCycleTime += 0.05f * (period - selectedTask->movingAverageCycleTime);

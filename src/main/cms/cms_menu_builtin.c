@@ -33,11 +33,8 @@
 
 #include "build/version.h"
 
-#include "drivers/system.h"
-
 #include "cms/cms.h"
 #include "cms/cms_types.h"
-#include "cms/cms_menu_builtin.h"
 
 // Sub menus
 
@@ -55,13 +52,17 @@
 #include "cms/cms_menu_vtx_smartaudio.h"
 #include "cms/cms_menu_vtx_tramp.h"
 
+#include "drivers/system.h"
+
+#include "msp/msp_protocol.h" // XXX for FC identification... not available elsewhere
+
+#include "cms_menu_builtin.h"
+
 
 // Info
 
 static char infoGitRev[GIT_SHORT_REVISION_LENGTH + 1];
 static char infoTargetName[] = __TARGET__;
-
-#include "interface/msp_protocol.h" // XXX for FC identification... not available elsewhere
 
 static long cmsx_InfoInit(void)
 {

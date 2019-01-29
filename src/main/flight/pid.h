@@ -233,3 +233,5 @@ float calcHorizonLevelStrength(void);
 #endif
 void dynLpfDTermUpdate(float throttle);
 void pidSetItermReset(bool enabled);
+float pidGetPreviousSetpoint(int axis);
+
