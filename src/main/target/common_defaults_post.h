@@ -273,7 +273,6 @@
 #define GYRO_2_CS_PIN           NONE
 #define GYRO_2_ALIGN            ALIGN_DEFAULT
 #define GYRO_2_EXTI_PIN         NONE
-#define ACC_2_ALIGN             ALIGN_DEFAULT
 #endif
 
 #if !defined(GYRO_1_SPI_INSTANCE)
@@ -292,10 +291,6 @@
 #define GYRO_1_ALIGN            ALIGN_DEFAULT
 #endif
 
-#if !defined(ACC_1_ALIGN)
-#define ACC_1_ALIGN             ALIGN_DEFAULT
-#endif
-
 #if defined(MPU_ADDRESS)
 #define GYRO_I2C_ADDRESS MPU_ADDRESS
 #else
@@ -304,8 +299,10 @@
 
 #ifdef USE_MULTI_GYRO
 #define MAX_GYRODEV_COUNT 2
+#define MAX_ACCDEV_COUNT 2
 #else
 #define MAX_GYRODEV_COUNT 1
+#define MAX_ACCDEV_COUNT 1
 #endif
 
 #ifdef USE_VCP
