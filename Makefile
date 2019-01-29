@@ -538,6 +538,14 @@ targets-f7-print:
 test junittest test-representative:
 	$(V0) cd src/test && $(MAKE) $@
 
+## test_help         : print the help message for the test suite (including a list of the available tests)
+test_help:
+	$(V0) cd src/test && $(MAKE) help
+
+## test_%            : run test 'test_%' from the test suite
+test_%:
+	$(V0) cd src/test && $(MAKE) $@
+
 
 check-target-independence:
 	$(V1) for test_target in $(VALID_TARGETS); do \
