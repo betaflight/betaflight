@@ -147,6 +147,14 @@ void pgResetFn_serialConfig(serialConfig_t *serialConfig)
     }
 #endif
 
+#if defined(BLUETOOTH_MSP_UART) && defined(BLUETOOTH_MSP_BAUDRATE)
+    serialPortConfig_t *bluetoothUartConfig = serialFindPortConfiguration(BLUETOOTH_MSP_UART);
+    if (bluetoothUartConfig) {
+        bluetoothUartConfig->functionMask = FUNCTION_MSP;
+        bluetoothUartConfig->msp_baudrateIndex = BLUETOOTH_MSP_BAUDRATE;
+    }
+#endif
+
     serialConfig->reboot_character = 'R';
     serialConfig->serial_update_rate_hz = 100;
 }
