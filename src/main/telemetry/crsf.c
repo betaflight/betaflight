@@ -268,11 +268,13 @@ void crsfFrameFlightMode(sbuf_t *dst)
     sbufWriteU8(dst, CRSF_FRAMETYPE_FLIGHT_MODE);
     const char *flightMode = "";
     
-    if (ARMING_FLAG(ARMED)) {
+    if (FLIGHT_MODE(FAILSAFE_MODE)) {
+        flightMode = "!FS!";
+    } else if (isArmingDisabled()) {
+        flightMode = "!ERR";
+    } else if (ARMING_FLAG(ARMED)) {
         // Armed flight modes in decreasing order of importance
-        if (FLIGHT_MODE(FAILSAFE_MODE)) {
-            flightMode = "!FS!";
-        } else if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
+        } if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
             flightMode = "RTH";
         } else if (FLIGHT_MODE(PASSTHRU_MODE)) {
             flightMode = "MANU";
@@ -289,8 +291,6 @@ void crsfFrameFlightMode(sbuf_t *dst)
     } else if (featureIsEnabled(FEATURE_GPS) && (!STATE(GPS_FIX) || !STATE(GPS_FIX_HOME))) {
         flightMode = "WAIT"; // Waiting for GPS lock
 #endif
-    } else if (isArmingDisabled()) {
-        flightMode = "!ERR";
     } else {
         flightMode = "OK"; // Ready to arm
     }
