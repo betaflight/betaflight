@@ -266,8 +266,9 @@ FAST_CODE void scheduler(void)
 {
     // Cache currentTime
     const timeUs_t currentTimeUs = micros();
-    volatile timeUs_t remainingTime = UINT_MAX;
-    static timeUs_t maxRemainingTime = UINT_MAX;
+    timeUs_t remainingTime = UINT_MAX;
+    static timeUs_t maxRemainingTime = 0;
+    static timeUs_t movingSumRemainingTime = 0;
 
     // Check for realtime tasks
     for (const cfTask_t *task = queueFirst(); task != NULL && task->staticPriority >= TASK_PRIORITY_REALTIME; task = queueNext()) {
@@ -277,16 +278,15 @@ FAST_CODE void scheduler(void)
             if (taskRemainingTime < remainingTime) {
                 remainingTime = taskRemainingTime;
 
-                if (maxRemainingTime == UINT_MAX) {
+                if (remainingTime > maxRemainingTime) {
                     maxRemainingTime = remainingTime;
                 }
             }
+            movingSumRemainingTime += remainingTime - movingSumRemainingTime / MOVING_SUM_COUNT;
         }
     }
 
-    if (remainingTime > maxRemainingTime) {
-        maxRemainingTime = remainingTime;
-    }
+    timeUs_t averageRemainingTime = movingSumRemainingTime / MOVING_SUM_COUNT;
 
     // The task to be invoked
     cfTask_t *selectedTask = NULL;
@@ -354,19 +354,9 @@ FAST_CODE void scheduler(void)
 #endif
             }
 #if 1
-            if ((task == &cfTasks[TASK_BARO]) ||
-                (task == &cfTasks[TASK_RX]) ||
-	            (task == &cfTasks[TASK_SERIAL])) {
-                // Signal that this task's effects on scheduler timing should be ignored
-                pinioSet(2,1);
-            } else {
-                pinioSet(2,0);
-            }
-#endif
-
-#if 0
-            if ((task == &cfTasks[TASK_SERIAL]) && (remainingTime < 10)) {
-                // Signal that the serial task will be deferred
+            if (((task->maxExecutionTime > maxRemainingTime) || (task->taskAgeCycles > 1)) &&
+            	(remainingTime > averageRemainingTime)) {
+                // Signal that this task breaks determinism, but is being scheduled anyway
                 pinioSet(2,1);
             } else {
                 pinioSet(2,0);
@@ -385,15 +375,14 @@ FAST_CODE void scheduler(void)
              */
             taskCanBeChosenForScheduling |= task->maxExecutionTime <= remainingTime;
 
-            /* When USB is plugged in the SERIAL task runs for too long and breaks the determinism
-             * of the scheduler. Ideally the serial task should only override here if USB is plugged
-             * in, but not all targets support detecting if that is the case.
+            /* If a task is known to break determinism only schedule it if at least half the average
+             * remaining time remains in order to minimise the impact.
              *
-             * When USB isn't plugged in the serial task completes in under 10us, so by only allowing
-             * the priority override to occur if there are at least 10us remaining will ensure that
-             * determinism isn't broken in flight.
+             * Also consider the task age, as on startup a task may execute in less than the maxRemainingTime
+             * but subsequently the remaining time may never reach that maximum again.
              */
-            taskCanBeChosenForScheduling |= ((task == &cfTasks[TASK_SERIAL]) && (remainingTime >= 10));
+            taskCanBeChosenForScheduling |= (((task->maxExecutionTime > maxRemainingTime) || (task->taskAgeCycles > 1)) &&
+            		    					 (remainingTime > averageRemainingTime));
 
             if (taskCanBeChosenForScheduling) {
                 selectedTaskDynamicPriority = task->dynamicPriority;
@@ -436,14 +425,6 @@ FAST_CODE void scheduler(void)
             selectedTask->totalExecutionTime += taskExecutionTime;   // time consumed by scheduler + task
             selectedTask->maxExecutionTime = MAX(selectedTask->maxExecutionTime, taskExecutionTime);
             selectedTask->movingAverageCycleTime += 0.05f * (period - selectedTask->movingAverageCycleTime);
-
-            // Exceptions for task which are known to take too long to execute
-            if (selectedTask == &cfTasks[TASK_BARO]) {
-                selectedTask->maxExecutionTime = 40;
-            }
-            if (selectedTask == &cfTasks[TASK_RX]) {
-                selectedTask->maxExecutionTime = 70;
-            }
         } else
 #endif
         {
