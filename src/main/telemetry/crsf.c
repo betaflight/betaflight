@@ -267,31 +267,32 @@ void crsfFrameFlightMode(sbuf_t *dst)
     sbufWriteU8(dst, 0);
     sbufWriteU8(dst, CRSF_FRAMETYPE_FLIGHT_MODE);
 
-    // just do "OK" for the moment as a placeholder
-    const char *flightMode = "OK";
-    if (ARMING_FLAG(ARMED)) {
-        if (FLIGHT_MODE(FAILSAFE_MODE)) {
-            flightMode = "!FS!";
-        } else if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
-            flightMode = "RTH";
-        } else if (FLIGHT_MODE(PASSTHRU_MODE)) {
-            flightMode = "MANU";
-        } else if (FLIGHT_MODE(ANGLE_MODE)) {
-            flightMode = "STAB";
-        } else if (FLIGHT_MODE(HORIZON_MODE)) {
-            flightMode = "HOR";
-        } else if (airmodeIsEnabled()) {
-            flightMode = "AIR";
-        } else {
-            flightMode = "ACRO";
-        }
+    // Acro is the default mode
+    const char *flightMode = "ACRO";
+
 #ifdef USE_GPS
-    } else if (featureIsEnabled(FEATURE_GPS) && (!STATE(GPS_FIX) || !STATE(GPS_FIX_HOME))) {
+    if (!ARMING_FLAG(ARMED) && featureIsEnabled(FEATURE_GPS) && (!STATE(GPS_FIX) || !STATE(GPS_FIX_HOME))) {
         flightMode = "WAIT"; // Waiting for GPS lock
+    } else
 #endif
+
+    // Flight modes in decreasing order of importance
+    if (FLIGHT_MODE(FAILSAFE_MODE)) {
+        flightMode = "!FS!";
     } else if (isArmingDisabled()) {
         flightMode = "!ERR";
+    } else if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
+        flightMode = "RTH";
+    } else if (FLIGHT_MODE(PASSTHRU_MODE)) {
+        flightMode = "MANU";
+    } else if (FLIGHT_MODE(ANGLE_MODE)) {
+        flightMode = "STAB";
+    } else if (FLIGHT_MODE(HORIZON_MODE)) {
+        flightMode = "HOR";
+    } else if (airmodeIsEnabled()) {
+        flightMode = "AIR";
     }
+
     sbufWriteString(dst, flightMode);
     sbufWriteU8(dst, '\0');     // zero-terminate string
     // write in the frame length

@@ -215,6 +215,8 @@ TEST(TelemetryCrsfTest, TestAttitude)
 TEST(TelemetryCrsfTest, TestFlightMode)
 {
     uint8_t frame[CRSF_FRAME_SIZE_MAX];
+    ENABLE_STATE(GPS_FIX);
+    ENABLE_STATE(GPS_FIX_HOME);
 
     // nothing set, so ACRO mode
     airMode = false;
