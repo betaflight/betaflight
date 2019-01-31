@@ -40,10 +40,6 @@
 
 #include "drivers/time.h"
 
-#ifdef PINIO_SCHEDULE_DEBUG
-#include "pg/pinio.h"
-#endif
-
 // DEBUG_SCHEDULER, timings for:
 // 0 - gyroUpdate()
 // 1 - pidController()
@@ -343,33 +339,6 @@ FAST_CODE void scheduler(void)
         }
 
         if (task->dynamicPriority > selectedTaskDynamicPriority) {
-
-#ifdef PINIO_SCHEDULE_DEBUG
-            if ((task->staticPriority != TASK_PRIORITY_REALTIME) &&
-                (task->maxExecutionTime > remainingTime)) {
-                // Signal that a task could not be executed in the current loop
-                pinioSet(1,1);
-
-#if 0
-                if (task->taskAgeCycles > 1) {
-                    // Signal that a task will be executing late
-                    pinioSet(2,1);
-                } else {
-                    pinioSet(2,0);
-                }
-#endif
-            }
-#if 1
-            if (((task->maxExecutionTime > maxRemainingTime) || (task->taskAgeCycles > 1)) &&
-            	(remainingTime > averageRemainingTime)) {
-                // Signal that this task breaks determinism, but is being scheduled anyway
-                pinioSet(2,1);
-            } else {
-                pinioSet(2,0);
-            }
-#endif
-#endif //PINIO_SCHEDULE_DEBUG
-
             // Determine if the current task is the best candidate so far for scheduling
             bool taskCanBeChosenForScheduling;
 
@@ -395,10 +364,6 @@ FAST_CODE void scheduler(void)
                 selectedTask = task;
             }
         }
-
-#ifdef PINIO_SCHEDULE_DEBUG
-        pinioSet(1,0);
-#endif //PINIO_SCHEDULE_DEBUG
     }
 
     totalWaitingTasksSamples++;
@@ -418,14 +383,7 @@ FAST_CODE void scheduler(void)
 #if defined(USE_TASK_STATISTICS)
         if (calculateTaskStatistics) {
             const timeUs_t currentTimeBeforeTaskCall = micros();
-#ifdef PINIO_SCHEDULE_DEBUG
-            pinioSet(0,1);
-#endif //PINIO_SCHEDULE_DEBUG
             selectedTask->taskFunc(currentTimeBeforeTaskCall);
-#ifdef PINIO_SCHEDULE_DEBUG
-            pinioSet(0,0);
-            pinioSet(2,0);
-#endif //PINIO_SCHEDULE_DEBUG
             const timeUs_t taskExecutionTime = micros() - currentTimeBeforeTaskCall;
             selectedTask->movingSumExecutionTime += taskExecutionTime - selectedTask->movingSumExecutionTime / MOVING_SUM_COUNT;
             selectedTask->movingSumDeltaTime += selectedTask->taskLatestDeltaTime - selectedTask->movingSumDeltaTime / MOVING_SUM_COUNT;

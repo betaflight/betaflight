@@ -92,10 +92,6 @@
 #include "flight/servos.h"
 #include "flight/gps_rescue.h"
 
-#ifdef PINIO_SCHEDULE_DEBUG
-#include "pg/pinio.h"
-#endif
-
 // June 2013     V2.2-dev
 
 enum {
@@ -1122,13 +1118,7 @@ FAST_CODE void taskMainPidLoop(timeUs_t currentTimeUs)
     // 1 - subTaskPidController()
     // 2 - subTaskMotorUpdate()
     // 3 - subTaskPidSubprocesses()
-#ifdef PINIO_SCHEDULE_DEBUG
-    pinioSet(3,1);
-#endif //PINIO_SCHEDULE_DEBUG
     gyroUpdate(currentTimeUs);
-#ifdef PINIO_SCHEDULE_DEBUG
-    pinioSet(3,0); //SCEDEBUG
-#endif //PINIO_SCHEDULE_DEBUG
     DEBUG_SET(DEBUG_PIDLOOP, 0, micros() - currentTimeUs);
 
     if (pidUpdateCounter++ % pidConfig()->pid_process_denom == 0) {
