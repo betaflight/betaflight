@@ -4634,8 +4634,10 @@ static void printConfig(char *cmdline, bool doDiff)
         cliPrintHashLine("name");
         printName(dumpMask, &pilotConfig_Copy);
 
+#ifdef USE_OSD
         cliPrintHashLine("display_name");
         printDisplayName(dumpMask, &pilotConfig_Copy);
+#endif
 
 #ifdef USE_RESOURCE_MGMT
         cliPrintHashLine("resources");

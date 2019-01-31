@@ -74,10 +74,11 @@ pidProfile_t *currentPidProfile;
 
 #define DYNAMIC_FILTER_MAX_SUPPORTED_LOOP_TIME HZ_TO_INTERVAL_US(2000)
 
-PG_REGISTER_WITH_RESET_TEMPLATE(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 1);
 
 PG_RESET_TEMPLATE(pilotConfig_t, pilotConfig,
-    .name = { 0 }
+    .name = { 0 },
+    .displayName = { 0 },
 );
 
 PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 2);
