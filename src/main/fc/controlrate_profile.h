@@ -24,8 +24,6 @@
 
 #include "pg/pg.h"
 
-#define CONTROL_RATE_PROFILE_COUNT  6
-
 typedef enum {
     RATES_TYPE_BETAFLIGHT = 0,
     RATES_TYPE_RACEFLIGHT,
