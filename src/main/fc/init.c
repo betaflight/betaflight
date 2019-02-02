@@ -422,7 +422,11 @@ void init(void)
 
 #ifdef USE_SPI
     spiPinConfigure(spiPinConfig(0));
+#endif
 
+    sensorsPreInit();
+
+#ifdef USE_SPI
     spiPreinit();
 
 #ifdef USE_SPI_DEVICE_1
