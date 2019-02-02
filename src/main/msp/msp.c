@@ -1280,8 +1280,8 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         break;
 
     case MSP_SENSOR_ALIGNMENT:
-        sbufWriteU8(dst, gyroConfig()->gyro_align);
-        sbufWriteU8(dst, accelerometerConfig()->acc_align);
+        sbufWriteU8(dst, 0); // gyro_align
+        sbufWriteU8(dst, 0); // acc_align
         sbufWriteU8(dst, compassConfig()->mag_align);
         break;
 
@@ -1838,8 +1838,8 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         resetPidProfile(currentPidProfile);
         break;
     case MSP_SET_SENSOR_ALIGNMENT:
-        gyroConfigMutable()->gyro_align = sbufReadU8(src);
-        accelerometerConfigMutable()->acc_align = sbufReadU8(src);
+        sbufReadU8(src); // gyro_align
+        sbufReadU8(src); // acc_align
         compassConfigMutable()->mag_align = sbufReadU8(src);
         break;
 
