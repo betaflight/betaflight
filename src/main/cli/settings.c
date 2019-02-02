@@ -1011,7 +1011,7 @@ const clivalue_t valueTable[] = {
     { "dterm_cut_lowpass_hz",       VAR_UINT8 | PROFILE_VALUE,  .config.minmaxUnsigned = { 1, 20 }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_cut_lowpass_hz) },
 #endif
 
-    { "motor_output_limit",       VAR_UINT8 | PROFILE_VALUE,  .config.minmaxUnsigned = { 1, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, motor_output_limit) },
+    { "motor_output_limit",       VAR_UINT8 | PROFILE_VALUE,  .config.minmaxUnsigned = { MOTOR_OUTPUT_LIMIT_PERCENT_MIN, MOTOR_OUTPUT_LIMIT_PERCENT_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, motor_output_limit) },
 
 #ifdef USE_LAUNCH_CONTROL
     { "launch_control_mode",        VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LAUNCH_CONTROL_MODE }, PG_PID_PROFILE, offsetof(pidProfile_t, launchControlMode) },
