@@ -367,6 +367,11 @@ bool mixerIsTricopter(void)
 // DSHOT scaling is done to the actual dshot range
 void initEscEndpoints(void)
 {
+    float motorOutputLimit = 1.0f;
+    if (currentPidProfile->motor_output_limit < 100) {
+        motorOutputLimit = currentPidProfile->motor_output_limit / 100.0f;
+    }
+
     // Can't use 'isMotorProtocolDshot()' here since motors haven't been initialised yet
     switch (motorConfig()->dev.motorPwmProtocol) {
 #ifdef USE_DSHOT
@@ -375,29 +380,34 @@ void initEscEndpoints(void)
     case PWM_TYPE_DSHOT600:
     case PWM_TYPE_DSHOT300:
     case PWM_TYPE_DSHOT150:
-        disarmMotorOutput = DSHOT_CMD_MOTOR_STOP;
-        if (featureIsEnabled(FEATURE_3D)) {
-            motorOutputLow = DSHOT_MIN_THROTTLE + ((DSHOT_3D_FORWARD_MIN_THROTTLE - 1 - DSHOT_MIN_THROTTLE) / 100.0f) * CONVERT_PARAMETER_TO_PERCENT(motorConfig()->digitalIdleOffsetValue);
-        } else {
-            motorOutputLow = DSHOT_MIN_THROTTLE + ((DSHOT_MAX_THROTTLE - DSHOT_MIN_THROTTLE) / 100.0f) * CONVERT_PARAMETER_TO_PERCENT(motorConfig()->digitalIdleOffsetValue);
+        {
+            float outputLimitOffset = (DSHOT_MAX_THROTTLE - DSHOT_MIN_THROTTLE) * (1 - motorOutputLimit);
+            disarmMotorOutput = DSHOT_CMD_MOTOR_STOP;
+            if (featureIsEnabled(FEATURE_3D)) {
+                motorOutputLow = DSHOT_MIN_THROTTLE + ((DSHOT_3D_FORWARD_MIN_THROTTLE - 1 - DSHOT_MIN_THROTTLE) / 100.0f) * CONVERT_PARAMETER_TO_PERCENT(motorConfig()->digitalIdleOffsetValue);
+                motorOutputHigh = DSHOT_MAX_THROTTLE - outputLimitOffset / 2;
+                deadbandMotor3dHigh = DSHOT_3D_FORWARD_MIN_THROTTLE + ((DSHOT_MAX_THROTTLE - DSHOT_3D_FORWARD_MIN_THROTTLE) / 100.0f) * CONVERT_PARAMETER_TO_PERCENT(motorConfig()->digitalIdleOffsetValue);
+                deadbandMotor3dLow = DSHOT_3D_FORWARD_MIN_THROTTLE - 1 - outputLimitOffset / 2;
+            } else {
+                motorOutputLow = DSHOT_MIN_THROTTLE + ((DSHOT_MAX_THROTTLE - DSHOT_MIN_THROTTLE) / 100.0f) * CONVERT_PARAMETER_TO_PERCENT(motorConfig()->digitalIdleOffsetValue);
+                motorOutputHigh = DSHOT_MAX_THROTTLE - outputLimitOffset;
+            }
         }
-        motorOutputHigh = DSHOT_MAX_THROTTLE;
-        deadbandMotor3dHigh = DSHOT_3D_FORWARD_MIN_THROTTLE + ((DSHOT_MAX_THROTTLE - DSHOT_3D_FORWARD_MIN_THROTTLE) / 100.0f) * CONVERT_PARAMETER_TO_PERCENT(motorConfig()->digitalIdleOffsetValue);
-        deadbandMotor3dLow = DSHOT_3D_FORWARD_MIN_THROTTLE - 1;
 
         break;
 #endif
     default:
         if (featureIsEnabled(FEATURE_3D)) {
+            float outputLimitOffset = (flight3DConfig()->limit3d_high - flight3DConfig()->limit3d_low) * (1 - motorOutputLimit) / 2;
             disarmMotorOutput = flight3DConfig()->neutral3d;
-            motorOutputLow = flight3DConfig()->limit3d_low;
-            motorOutputHigh = flight3DConfig()->limit3d_high;
+            motorOutputLow = flight3DConfig()->limit3d_low + outputLimitOffset;
+            motorOutputHigh = flight3DConfig()->limit3d_high - outputLimitOffset;
             deadbandMotor3dHigh = flight3DConfig()->deadband3d_high;
             deadbandMotor3dLow = flight3DConfig()->deadband3d_low;
         } else {
             disarmMotorOutput = motorConfig()->mincommand;
             motorOutputLow = motorConfig()->minthrottle;
-            motorOutputHigh = motorConfig()->maxthrottle;
+            motorOutputHigh = motorConfig()->maxthrottle - ((motorConfig()->maxthrottle - motorConfig()->minthrottle) * (1 - motorOutputLimit));
         }
         break;
     }

@@ -191,6 +191,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .dterm_cut_gain = 15,
         .dterm_cut_range_hz = 40,
         .dterm_cut_lowpass_hz = 7,
+        .motor_output_limit = 100,
     );
 #ifdef USE_DYN_LPF
     pidProfile->dterm_lowpass_hz = 150;

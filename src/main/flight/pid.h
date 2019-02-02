@@ -164,6 +164,7 @@ typedef struct pidProfile_s {
     uint8_t dterm_cut_gain;                 // Gain factor for amount of gyro activity required to remove the dterm cut
     uint8_t dterm_cut_range_hz;             // Biquad to prevent high frequency gyro noise from removing the dterm cut
     uint8_t dterm_cut_lowpass_hz;           // First order lowpass to delay and smooth dterm cut factor
+    uint8_t motor_output_limit;             // Upper limit of the motor output (percent)
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles);
