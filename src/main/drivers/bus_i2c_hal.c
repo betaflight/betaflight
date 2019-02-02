@@ -104,6 +104,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 
 i2cDevice_t i2cDevice[I2CDEV_COUNT];
 
+#ifdef USE_I2C_DEVICE_1
 void I2C1_ER_IRQHandler(void)
 {
     HAL_I2C_ER_IRQHandler(&i2cDevice[I2CDEV_1].handle);
@@ -113,7 +114,9 @@ void I2C1_EV_IRQHandler(void)
 {
     HAL_I2C_EV_IRQHandler(&i2cDevice[I2CDEV_1].handle);
 }
+#endif
 
+#ifdef USE_I2C_DEVICE_2
 void I2C2_ER_IRQHandler(void)
 {
     HAL_I2C_ER_IRQHandler(&i2cDevice[I2CDEV_2].handle);
@@ -123,7 +126,9 @@ void I2C2_EV_IRQHandler(void)
 {
     HAL_I2C_EV_IRQHandler(&i2cDevice[I2CDEV_2].handle);
 }
+#endif
 
+#ifdef USE_I2C_DEVICE_3
 void I2C3_ER_IRQHandler(void)
 {
     HAL_I2C_ER_IRQHandler(&i2cDevice[I2CDEV_3].handle);
@@ -133,6 +138,7 @@ void I2C3_EV_IRQHandler(void)
 {
     HAL_I2C_EV_IRQHandler(&i2cDevice[I2CDEV_3].handle);
 }
+#endif
 
 #ifdef USE_I2C_DEVICE_4
 void I2C4_ER_IRQHandler(void)
