@@ -403,6 +403,23 @@ static void cliPrintCorruptMessage(int value)
     cliPrintf("%d ###CORRUPTED CONFIG###", value);
 }
 
+static void getMinMax(const clivalue_t *var, int *min, int *max)
+{
+    switch (var->type & VALUE_TYPE_MASK) {
+    case VAR_UINT8:
+    case VAR_UINT16:
+        *min = var->config.minmaxUnsigned.min;
+        *max = var->config.minmaxUnsigned.max;
+
+        break;
+    default:
+        *min = var->config.minmax.min;
+        *max = var->config.minmax.max;
+
+        break;
+    }
+}
+
 static void printValuePointer(const clivalue_t *var, const void *valuePointer, bool full)
 {
     if ((var->type & VALUE_MODE_MASK) == MODE_ARRAY) {
@@ -440,39 +457,48 @@ static void printValuePointer(const clivalue_t *var, const void *valuePointer, b
         switch (var->type & VALUE_TYPE_MASK) {
         case VAR_UINT8:
             value = *(uint8_t *)valuePointer;
-            break;
 
+            break;
         case VAR_INT8:
             value = *(int8_t *)valuePointer;
-            break;
 
+            break;
         case VAR_UINT16:
+            value = *(uint16_t *)valuePointer;
+
+            break;
         case VAR_INT16:
             value = *(int16_t *)valuePointer;
+
             break;
         case VAR_UINT32:
             value = *(uint32_t *)valuePointer;
+
             break;
         }
 
         switch (var->type & VALUE_MODE_MASK) {
         case MODE_DIRECT:
             if ((var->type & VALUE_TYPE_MASK) == VAR_UINT32) {
-                if ((uint32_t) value > var->config.u32_max) {
+                if ((uint32_t) value > var->config.u32Max) {
                     cliPrintCorruptMessage(value);
                 } else {
                     cliPrintf("%d", value);
                     if (full) {
-                        cliPrintf(" 0 %d", var->config.u32_max);
+                        cliPrintf(" 0 %d", var->config.u32Max);
                     }
                 }
             } else {
-                if ((value < var->config.minmax.min) || (value > var->config.minmax.max)) {
+                int min;
+                int max;
+                getMinMax(var, &min, &max);
+
+                if ((value < min) || (value > max)) {
                     cliPrintCorruptMessage(value);
                 } else {
                     cliPrintf("%d", value);
                     if (full) {
-                        cliPrintf(" %d %d", var->config.minmax.min, var->config.minmax.max);
+                        cliPrintf(" %d %d", min, max);
                     }
                 }
             }
@@ -518,7 +544,7 @@ static bool valuePtrEqualsDefault(const clivalue_t *var, const void *ptr, const 
             break;
 
         case VAR_UINT16:
-            result = result && (((int16_t *)ptr)[i] & mask) == (((int16_t *)ptrDefault)[i] & mask);
+            result = result && (((uint16_t *)ptr)[i] & mask) == (((uint16_t *)ptrDefault)[i] & mask);
             break;
         case VAR_INT16:
             result = result && ((int16_t *)ptr)[i] == ((int16_t *)ptrDefault)[i];
@@ -621,10 +647,20 @@ static void cliPrintVarRange(const clivalue_t *var)
 {
     switch (var->type & VALUE_MODE_MASK) {
     case (MODE_DIRECT): {
-        if ((var->type & VALUE_TYPE_MASK) == VAR_UINT32) {
-            cliPrintLinef("Allowed range: %d - %d", 0, var->config.u32_max);
-        } else {
+        switch (var->type & VALUE_TYPE_MASK) {
+        case VAR_UINT32:
+            cliPrintLinef("Allowed range: %d - %d", 0, var->config.u32Max);
+
+            break;
+        case VAR_UINT8:
+        case VAR_UINT16:
+            cliPrintLinef("Allowed range: %d - %d", var->config.minmaxUnsigned.min, var->config.minmaxUnsigned.max);
+
+            break;
+        default:
             cliPrintLinef("Allowed range: %d - %d", var->config.minmax.min, var->config.minmax.max);
+
+            break;
         }
     }
     break;
@@ -705,6 +741,9 @@ static void cliSetVar(const clivalue_t *var, const uint32_t value)
             break;
 
         case VAR_UINT16:
+            *(uint16_t *)ptr = value;
+            break;
+
         case VAR_INT16:
             *(int16_t *)ptr = value;
             break;
@@ -3502,14 +3541,18 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
                         if ((val->type & VALUE_TYPE_MASK) == VAR_UINT32) {
                             uint32_t value = strtol(eqptr, NULL, 10);
 
-                            if (value <= val->config.u32_max) {
+                            if (value <= val->config.u32Max) {
                                 cliSetVar(val, value);
                                 valueChanged = true;
                             }
                         } else {
-                            int16_t value = atoi(eqptr);
+                            int value = atoi(eqptr);
 
-                            if (value >= val->config.minmax.min && value <= val->config.minmax.max) {
+                            int min;
+                            int max;
+                            getMinMax(val, &min, &max);
+
+                            if (value >= min && value <= max) {
                                 cliSetVar(val, value);
                                 valueChanged = true;
                             }
