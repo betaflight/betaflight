@@ -2296,6 +2296,26 @@ static void cliVtx(char *cmdline)
 
 #endif // VTX_CONTROL
 
+#ifdef USE_OSD
+static void printDisplayName(uint8_t dumpMask, const pilotConfig_t *pilotConfig)
+{
+    const bool equalsDefault = strlen(pilotConfig->displayName) == 0;
+    cliDumpPrintLinef(dumpMask, equalsDefault, "display_name %s", equalsDefault ? emptyName : pilotConfig->displayName);
+}
+
+static void cliDisplayName(char *cmdline)
+{
+    const unsigned int len = strlen(cmdline);
+    if (len > 0) {
+        memset(pilotConfigMutable()->displayName, 0, ARRAYLEN(pilotConfig()->displayName));
+        if (strncmp(cmdline, emptyName, len)) {
+            strncpy(pilotConfigMutable()->displayName, cmdline, MIN(len, MAX_NAME_LENGTH));
+        }
+    }
+    printDisplayName(DUMP_MASTER, pilotConfig());
+}
+#endif
+
 static void printName(uint8_t dumpMask, const pilotConfig_t *pilotConfig)
 {
     const bool equalsDefault = strlen(pilotConfig->name) == 0;
@@ -4614,6 +4634,11 @@ static void printConfig(char *cmdline, bool doDiff)
         cliPrintHashLine("name");
         printName(dumpMask, &pilotConfig_Copy);
 
+#ifdef USE_OSD
+        cliPrintHashLine("display_name");
+        printDisplayName(dumpMask, &pilotConfig_Copy);
+#endif
+
 #ifdef USE_RESOURCE_MGMT
         cliPrintHashLine("resources");
         printResource(dumpMask);
@@ -4830,6 +4855,9 @@ const clicmd_t cmdTable[] = {
 #endif
     CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", "[nosave]", cliDefaults),
     CLI_COMMAND_DEF("diff", "list configuration changes from default", "[master|profile|rates|all] {defaults}", cliDiff),
+#ifdef USE_OSD
+    CLI_COMMAND_DEF("display_name", "display name of craft", NULL, cliDisplayName),
+#endif
 #ifdef USE_RESOURCE_MGMT
     CLI_COMMAND_DEF("dma", "list dma utilisation", NULL, cliDma),
 #ifdef USE_DMA_SPEC
