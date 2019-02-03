@@ -26,7 +26,7 @@ env:
 #  - PUBLISHMETA=True
 #  - PUBLISHDOCS=True
 # Specify the main Mafile supported goals.
-  - GOAL=test
+  - GOAL=test-all
   - GOAL=targets-group-1
   - GOAL=targets-group-2
   - GOAL=targets-group-3
