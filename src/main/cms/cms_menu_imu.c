@@ -39,15 +39,18 @@
 #include "common/utils.h"
 
 #include "config/feature.h"
-#include "pg/pg.h"
+
+#include "drivers/pwm_output.h"
 
 #include "fc/config.h"
-#include "fc/core.h"
 #include "fc/controlrate_profile.h"
+#include "fc/core.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
 #include "flight/pid.h"
+
+#include "pg/pg.h"
 
 #include "sensors/gyro.h"
 
@@ -322,6 +325,7 @@ static uint8_t  cmsx_horizonTransition;
 static uint8_t  cmsx_throttleBoost;
 static uint16_t cmsx_itermAcceleratorGain;
 static uint16_t cmsx_itermThrottleThreshold;
+static uint8_t  cmsx_motorOutputLimit;
 
 static long cmsx_profileOtherOnEnter(void)
 {
@@ -339,6 +343,7 @@ static long cmsx_profileOtherOnEnter(void)
     cmsx_itermThrottleThreshold = pidProfile->itermThrottleThreshold;
 
     cmsx_throttleBoost = pidProfile->throttle_boost;
+    cmsx_motorOutputLimit = pidProfile->motor_output_limit;
 
     return 0;
 }
@@ -359,6 +364,7 @@ static long cmsx_profileOtherOnExit(const OSD_Entry *self)
     pidProfile->itermThrottleThreshold = cmsx_itermThrottleThreshold;
 
     pidProfile->throttle_boost = cmsx_throttleBoost;
+    pidProfile->motor_output_limit = cmsx_motorOutputLimit;
 
     return 0;
 }
@@ -378,7 +384,7 @@ static OSD_Entry cmsx_menuProfileOtherEntries[] = {
 #ifdef USE_LAUNCH_CONTROL
     {"LAUNCH CONTROL", OME_Submenu, cmsMenuChange, &cmsx_menuLaunchControl, 0 },
 #endif
-
+    { "MTR OUT LIM %",OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_motorOutputLimit, MOTOR_OUTPUT_LIMIT_PERCENT_MIN,  MOTOR_OUTPUT_LIMIT_PERCENT_MAX,  1}, 0 },
 
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
