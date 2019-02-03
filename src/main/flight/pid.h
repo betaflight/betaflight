@@ -165,9 +165,10 @@ typedef struct pidProfile_s {
     uint8_t dterm_cut_range_hz;             // Biquad to prevent high frequency gyro noise from removing the dterm cut
     uint8_t dterm_cut_lowpass_hz;           // First order lowpass to delay and smooth dterm cut factor
     uint8_t motor_output_limit;             // Upper limit of the motor output (percent)
+    int8_t auto_profile_cell_count;         // Cell count for this profile to be used with if auto PID profile switching is used
 } pidProfile_t;
 
-PG_DECLARE_ARRAY(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles);
+PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
 
 typedef struct pidConfig_s {
     uint8_t pid_process_denom;              // Processing denominator for PID controller vs gyro sampling rate

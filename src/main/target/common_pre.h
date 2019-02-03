@@ -146,9 +146,9 @@
 #define USE_SERIALRX_SUMD       // Graupner Hott protocol
 
 #if (FLASH_SIZE > 64)
-#define MAX_PROFILE_COUNT 3
+#define PID_PROFILE_COUNT 3
 #else
-#define MAX_PROFILE_COUNT 2
+#define PID_PROFILE_COUNT 2
 #endif
 
 #if (FLASH_SIZE > 64)

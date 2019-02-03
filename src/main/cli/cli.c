@@ -3329,7 +3329,7 @@ static void cliProfile(char *cmdline)
         return;
     } else {
         const int i = atoi(cmdline);
-        if (i >= 0 && i < MAX_PROFILE_COUNT) {
+        if (i >= 0 && i < PID_PROFILE_COUNT) {
             changePidProfile(i);
             cliProfile("");
         }
@@ -3352,7 +3352,7 @@ static void cliRateProfile(char *cmdline)
 
 static void cliDumpPidProfile(uint8_t pidProfileIndex, uint8_t dumpMask)
 {
-    if (pidProfileIndex >= MAX_PROFILE_COUNT) {
+    if (pidProfileIndex >= PID_PROFILE_COUNT) {
         // Faulty values
         return;
     }
@@ -4764,7 +4764,7 @@ static void printConfig(char *cmdline, bool doDiff)
         dumpAllValues(MASTER_VALUE, dumpMask);
 
         if (dumpMask & DUMP_ALL) {
-            for (uint32_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
+            for (uint32_t pidProfileIndex = 0; pidProfileIndex < PID_PROFILE_COUNT; pidProfileIndex++) {
                 cliDumpPidProfile(pidProfileIndex, dumpMask);
             }
             cliPrintHashLine("restore original profile selection");

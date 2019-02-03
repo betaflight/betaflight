@@ -56,8 +56,6 @@
  *
  */
 
-static void batteryUpdateConsumptionState(void); // temporary forward reference
-
 #define VBAT_STABLE_MAX_DELTA 20
 #define LVC_AFFECT_TIME 10000000 //10 secs for the LVC to slowly kick in
 
@@ -168,44 +166,50 @@ static void updateBatteryBeeperAlert(void)
     }
 }
 
+static bool isVoltageStable(void)
+{
+    return ABS(voltageMeter.filtered - voltageMeter.unfiltered) <= VBAT_STABLE_MAX_DELTA;
+}
+
+static bool isVoltageFromBat(void)
+{
+    // We want to disable battery getting detected around USB voltage or 0V
+
+    return (voltageMeter.filtered >= batteryConfig()->vbatnotpresentcellvoltage  // Above ~0V
+        && voltageMeter.filtered <= batteryConfig()->vbatmaxcellvoltage)  // 1s max cell voltage check
+        || voltageMeter.filtered > batteryConfig()->vbatnotpresentcellvoltage * 2; // USB voltage - 2s or more check
+}
+
 void batteryUpdatePresence(void)
 {
-    bool isVoltageStable = ABS(voltageMeter.filtered - voltageMeter.unfiltered) <= VBAT_STABLE_MAX_DELTA;
-
-    bool isVoltageFromBat = (voltageMeter.filtered >= batteryConfig()->vbatnotpresentcellvoltage  //above ~0V
-                            && voltageMeter.filtered <= batteryConfig()->vbatmaxcellvoltage)  //1s max cell voltage check
-                            || voltageMeter.filtered > batteryConfig()->vbatnotpresentcellvoltage*2; //USB voltage - 2s or more check
 
 
     if (
-        (voltageState == BATTERY_NOT_PRESENT || voltageState == BATTERY_INIT)
-        && isVoltageFromBat
-        && isVoltageStable
+        (voltageState == BATTERY_NOT_PRESENT || voltageState == BATTERY_INIT) && isVoltageFromBat() && isVoltageStable()
     ) {
-        /* Want to disable battery getting detected around USB voltage or 0V*/
-        /* battery has just been connected - calculate cells, warning voltages and reset state */
-
-
+        // Battery has just been connected - calculate cells, warning voltages and reset state
 
         consumptionState = voltageState = BATTERY_OK;
         if (batteryConfig()->forceBatteryCellCount != 0) {
             batteryCellCount = batteryConfig()->forceBatteryCellCount;
         } else {
             unsigned cells = (voltageMeter.filtered / batteryConfig()->vbatmaxcellvoltage) + 1;
-            if (cells > 8) {
-                // something is wrong, we expect 8 cells maximum (and autodetection will be problematic at 6+ cells)
-                cells = 8;
+            if (cells > MAX_AUTO_DETECT_CELL_COUNT) {
+                // something is wrong, we expect MAX_CELL_COUNT cells maximum (and autodetection will be problematic at 6+ cells)
+                cells = MAX_AUTO_DETECT_CELL_COUNT;
             }
             batteryCellCount = cells;
+
+            if (!ARMING_FLAG(ARMED)) {
+                changePidProfileFromCellCount(batteryCellCount);
+            }
         }
         batteryWarningVoltage = batteryCellCount * batteryConfig()->vbatwarningcellvoltage;
         batteryCriticalVoltage = batteryCellCount * batteryConfig()->vbatmincellvoltage;
         lowVoltageCutoff.percentage = 100;
         lowVoltageCutoff.startTime = 0;
     } else if (
-        voltageState != BATTERY_NOT_PRESENT
-        && isVoltageStable
-        && !isVoltageFromBat
+        voltageState != BATTERY_NOT_PRESENT && isVoltageStable() && !isVoltageFromBat()
     ) {
         /* battery has been disconnected - can take a while for filter cap to disharge so we use a threshold of batteryConfig()->vbatnotpresentcellvoltage */
 
@@ -217,7 +221,7 @@ void batteryUpdatePresence(void)
     }
     if (debugMode == DEBUG_BATTERY) {
         debug[2] = batteryCellCount;
-        debug[3] = isVoltageStable;
+        debug[3] = isVoltageStable();
     }
 }
 
@@ -269,6 +273,21 @@ static void batteryUpdateLVC(timeUs_t currentTimeUs)
         }
     }
 
+}
+
+static void batteryUpdateConsumptionState(void)
+{
+    if (batteryConfig()->useConsumptionAlerts && batteryConfig()->batteryCapacity > 0 && batteryCellCount > 0) {
+        uint8_t batteryPercentageRemaining = calculateBatteryPercentageRemaining();
+
+        if (batteryPercentageRemaining == 0) {
+            consumptionState = BATTERY_CRITICAL;
+        } else if (batteryPercentageRemaining <= batteryConfig()->consumptionWarningPercentage) {
+            consumptionState = BATTERY_WARNING;
+        } else {
+            consumptionState = BATTERY_OK;
+        }
+    }
 }
 
 void batteryUpdateStates(timeUs_t currentTimeUs)
@@ -371,21 +390,6 @@ void batteryInit(void)
             break;
     }
 
-}
-
-static void batteryUpdateConsumptionState(void)
-{
-    if (batteryConfig()->useConsumptionAlerts && batteryConfig()->batteryCapacity > 0 && batteryCellCount > 0) {
-        uint8_t batteryPercentageRemaining = calculateBatteryPercentageRemaining();
-
-        if (batteryPercentageRemaining == 0) {
-            consumptionState = BATTERY_CRITICAL;
-        } else if (batteryPercentageRemaining <= batteryConfig()->consumptionWarningPercentage) {
-            consumptionState = BATTERY_WARNING;
-        } else {
-            consumptionState = BATTERY_OK;
-        }
-    }
 }
 
 void batteryUpdateCurrentMeter(timeUs_t currentTimeUs)
