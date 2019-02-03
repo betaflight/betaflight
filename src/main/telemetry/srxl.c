@@ -286,7 +286,6 @@ bool srxlFrameGpsStat(sbuf_t *dst, timeUs_t currentTimeUs)
     uint32_t timeBcd;
     uint16_t speedKnotsBcd, speedTmp;
     uint8_t numSatBcd, altitudeHighBcd;
-    dateTime_t dt;
     bool timeProvided = false;
 
     if (!featureIsEnabled(FEATURE_GPS) || !STATE(GPS_FIX) || gpsSol.numSat < 6) {
@@ -302,6 +301,7 @@ bool srxlFrameGpsStat(sbuf_t *dst, timeUs_t currentTimeUs)
     speedKnotsBcd = (speedTmp > 9999) ? dec2bcd(9999) : dec2bcd(speedTmp);
 
 #ifdef USE_RTC_TIME
+    dateTime_t dt;
     // RTC
     if (rtcHasTime()) {
         rtcGetDateTime(&dt);
