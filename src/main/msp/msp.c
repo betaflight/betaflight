@@ -770,10 +770,29 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         // Enabled warnings
         // Send low word first for backwards compatibility (API < 1.41)
         sbufWriteU16(dst, (uint16_t)(osdConfig()->enabledWarnings & 0xFFFF));
-        // API >= 1.41; send the count and 32bit warnings
+        // API >= 1.41
+        // Send the warnings count and 32bit enabled warnings flags.
+        // Add currently active OSD profile (0 indicates OSD profiles not available).
+        // Add OSD stick overlay mode (0 indicates OSD stick overlay not available).
         sbufWriteU8(dst, OSD_WARNING_COUNT);
         sbufWriteU32(dst, osdConfig()->enabledWarnings);
-#endif
+
+#ifdef USE_OSD_PROFILES
+        sbufWriteU8(dst, OSD_PROFILE_COUNT);            // available profiles
+        sbufWriteU8(dst, osdConfig()->osdProfileIndex); // selected profile
+#else
+        // If the feature is not available there is only 1 profile and it's always selected
+        sbufWriteU8(dst, 1);
+        sbufWriteU8(dst, 1);
+#endif // USE_OSD_PROFILES
+
+#ifdef USE_OSD_STICK_OVERLAY
+        sbufWriteU8(dst, osdConfig()->overlay_radio_mode);
+#else
+        sbufWriteU8(dst, 0);
+#endif // USE_OSD_STICK_OVERLAY
+
+#endif // USE_OSD
         break;
     }
 
@@ -2599,6 +2618,28 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src, mspPos
                 if (sbufBytesRemaining(src) >= 4) {
                     // 32bit version of enabled warnings (API >= 1.41)
                     osdConfigMutable()->enabledWarnings = sbufReadU32(src);
+                }
+
+                if (sbufBytesRemaining(src) >= 1) {
+                    // API >= 1.41
+                    // selected OSD profile
+#ifdef USE_OSD_PROFILES
+                    osdConfigMutable()->osdProfileIndex = sbufReadU8(src);
+#else
+                    sbufReadU8(src);
+#endif // USE_OSD_PROFILES
+                }
+
+                if (sbufBytesRemaining(src) >= 1) {
+                    // API >= 1.41
+                    // OSD stick overlay mode
+
+#ifdef USE_OSD_STICK_OVERLAY
+                    osdConfigMutable()->overlay_radio_mode = sbufReadU8(src);
+#else
+                    sbufReadU8(src);
+#endif // USE_OSD_STICK_OVERLAY
+
                 }
 #endif
             } else if ((int8_t)addr == -2) {
