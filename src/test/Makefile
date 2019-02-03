@@ -430,7 +430,7 @@ TESTS_TARGET_SPECIFIC_EXPANDED = $(foreach test,$(TESTS_TARGET_SPECIFIC),$(forea
 
 TESTS = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),,$(test)))
 TESTS_ALL = $(TESTS) $(TESTS_TARGET_SPECIFIC_EXPANDED)
-TESTS_REPRESENTATIVE = $(TESTS) $(foreach test,$(TEST_TARGET_SPECIFIC), \
+TESTS_REPRESENTATIVE = $(TESTS) $(foreach test,$(TESTS_TARGET_SPECIFIC), \
 		$(test).$(word 1,$(filter-out $($(test)_BLACKLIST),$(VALID_TARGETS))))
 
 # All Google Test headers.  Usually you shouldn't change this
@@ -615,7 +615,11 @@ endef
 ifeq ($(MAKECMDGOALS),test-all)
     $(eval $(foreach test,$(TESTS_ALL),$(call test-specific-stuff,$(test))))
 else
-    $(eval $(foreach test,$(TESTS),$(call test-specific-stuff,$(test))))
+    ifeq ($(MAKECMDGOALS),test-representative)
+        $(eval $(foreach test,$(TESTS_REPRESENTATIVE),$(call test-specific-stuff,$(test))))
+    else
+        $(eval $(foreach test,$(TESTS),$(call test-specific-stuff,$(test))))
+    endif
 endif
 
 $(foreach test,$(TESTS_ALL),$(if $($(basename $(test))_SRC),,$(error \
