@@ -40,9 +40,9 @@
 #undef USE_MSP_OVER_TELEMETRY
 
 #undef USE_HUFFMAN
+#endif
 #undef USE_PINIO
 #undef USE_PINIOBOX
-#endif
 
 #undef USE_VIRTUAL_CURRENT_METER
 
