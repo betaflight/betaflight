@@ -27,19 +27,35 @@
 
 #include "scheduler/scheduler.h"
 
-void run(void);
+#include "FreeRTOS.h"
+#include "task.h"
+
+int ucHeap[configTOTAL_HEAP_SIZE];
+
+void run( void *pvParameters );
 
 int main(void)
 {
-    init();
+	/* Ensure all priority bits are assigned as preemption priority bits. */
+	NVIC_SetPriorityGrouping( 0 );
 
-    run();
+	xTaskCreate( run, "run", 0x1000/4, NULL, tskIDLE_PRIORITY + 5, NULL );
 
-    return 0;
+	/* Start the RTOS scheduler, this function should not return as it causes the
+     * execution context to change from main() to one of the created tasks.
+     */
+   vTaskStartScheduler();
+
+   /* Should never get here! */
+   return 0;
 }
 
-void FAST_CODE FAST_CODE_NOINLINE run(void)
+void FAST_CODE FAST_CODE_NOINLINE run( void *pvParameters )
 {
+	UNUSED(pvParameters);
+
+	init();
+
     while (true) {
         scheduler();
         processLoopback();
