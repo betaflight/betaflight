@@ -649,6 +649,8 @@ void init(void)
 #ifdef USE_LED_STRIP
     ledStripInit();
 
+    delayMicroseconds(50);
+    
     if (featureIsEnabled(FEATURE_LED_STRIP)) {
         ledStripEnable();
     }
