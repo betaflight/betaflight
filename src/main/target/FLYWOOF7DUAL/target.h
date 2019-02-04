@@ -33,9 +33,9 @@
 
 #define USE_DUAL_GYRO
 #define USE_EXTI
+#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PC3
 #define GYRO_2_EXTI_PIN         PC4
-#define MPU_INT_EXTI
 
 #define GYRO_1_CS_PIN                       PA4 
 #define GYRO_1_SPI_INSTANCE                 SPI1
@@ -140,7 +140,8 @@
 
 #define USE_ADC
 #define ADC_INSTANCE                        ADC3
-#define ADC3_DMA_STREAM                     DMA2_Stream0
+#define ADC3_DMA_OPT                        0  // DMA 2 Stream 0 Channel 2 
+
 
 #define CURRENT_METER_ADC_PIN               PC0
 #define VBAT_ADC_PIN                        PC1
@@ -158,7 +159,6 @@
 #define USE_LED_STRIP
 
 #define USE_ESCSERIAL
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff

@@ -74,8 +74,7 @@
 #define SDCARD_DETECT_PIN             PB7
 #define SDCARD_SPI_INSTANCE           SPI2
 #define SDCARD_SPI_CS_PIN             SPI2_NSS_PIN
-#define SDCARD_DMA_CHANNEL_TX                DMA1_Stream4
-#define SDCARD_DMA_CHANNEL                   0
+#define SPI2_TX_DMA_OPT                      0     // DMA 1 Stream 4 Channel 0
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
@@ -137,7 +136,6 @@
 #define DEFAULT_RX_FEATURE          FEATURE_RX_SERIAL
 #define DEFAULT_FEATURES            ( FEATURE_OSD  )
 #define CURRENT_METER_SCALE_DEFAULT 250
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA (0xffff & ~(BIT(14)|BIT(13)))
 #define TARGET_IO_PORTB (0xffff & ~(BIT(2)))

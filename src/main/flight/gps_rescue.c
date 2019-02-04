@@ -26,6 +26,7 @@
 
 #include "common/axis.h"
 #include "common/maths.h"
+#include "common/utils.h"
 
 #include "drivers/time.h"
 
@@ -112,6 +113,7 @@ typedef struct {
     rescueSensorData_s sensor;
     rescueIntent_s intent;
     bool isFailsafe;
+    bool isAvailable;
 } rescueState_s;
 
 #define GPS_RESCUE_MAX_YAW_RATE       180  // deg/sec max yaw rate
@@ -136,7 +138,9 @@ PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
     .throttleHover = 1280,
     .sanityChecks = RESCUE_SANITY_ON,
     .minSats = 8,
-    .minRescueDth = 100
+    .minRescueDth = 100,
+    .allowArmingWithoutFix = false,
+    .useMag = true
 );
 
 static uint16_t rescueThrottle;
@@ -147,6 +151,7 @@ uint16_t      hoverThrottle = 0;
 float         averageThrottle = 0.0;
 float         altitudeError = 0.0;
 uint32_t      throttleSamples = 0;
+bool          magForceDisable = false;
 
 static bool newGPSData = false;
 
@@ -158,8 +163,6 @@ rescueState_s rescueState;
 */
 void rescueNewGpsData(void)
 {
-    if (!ARMING_FLAG(ARMED))
-	GPS_reset_home_position();
     newGPSData = true;
 }
 
@@ -178,6 +181,8 @@ static void idleTasks()
 {
     // Do not calculate any of the idle task values when we are not flying
     if (!ARMING_FLAG(ARMED)) {
+        rescueState.sensor.maxAltitudeCm = 0;
+        rescueState.sensor.maxDistanceToHomeM = 0;
         return;
     }
 
@@ -354,20 +359,29 @@ static void performSanityChecks()
 
     previousTimeUs = currentTimeUs;
 
-    secondsStalled = constrain(secondsStalled + (rescueState.sensor.groundSpeed < 150) ? 1 : -1, 0, 20);
+    if (rescueState.phase == RESCUE_CROSSTRACK) {
+        secondsStalled = constrain(secondsStalled + ((rescueState.sensor.groundSpeed < 150) ? 1 : -1), 0, 20);
 
-    if (secondsStalled == 20) {
-        rescueState.failure = RESCUE_STALLED;
+        if (secondsStalled == 20) {
+            rescueState.failure = RESCUE_STALLED;
+        }
+
+        secondsFlyingAway = constrain(secondsFlyingAway + ((lastDistanceToHomeM < rescueState.sensor.distanceToHomeM) ? 1 : -1), 0, 10);
+        lastDistanceToHomeM = rescueState.sensor.distanceToHomeM;
+
+        if (secondsFlyingAway == 10) {
+            //If there is a mag and has not been disabled, we have to assume is healthy and has been used in imu.c
+            if (sensors(SENSOR_MAG) && gpsRescueConfig()->useMag && !magForceDisable) {
+                //Try again with mag disabled
+                magForceDisable = true;
+                secondsFlyingAway = 0;
+            } else {
+                rescueState.failure = RESCUE_FLYAWAY;
+            }
+        }
     }
 
-    secondsFlyingAway = constrain(secondsFlyingAway + (lastDistanceToHomeM < rescueState.sensor.distanceToHomeM) ? 1 : -1, 0, 10);
-    lastDistanceToHomeM = rescueState.sensor.distanceToHomeM;
-
-    if (secondsFlyingAway == 10) {
-        rescueState.failure = RESCUE_FLYAWAY;
-    }
-
-    secondsLowSats = constrain(secondsLowSats + (rescueState.sensor.numSat < gpsRescueConfig()->minSats) ? 1 : -1, 0, 10);
+    secondsLowSats = constrain(secondsLowSats + ((rescueState.sensor.numSat < gpsRescueConfig()->minSats) ? 1 : -1), 0, 10);
 
     if (secondsLowSats == 10) {
         rescueState.failure = RESCUE_LOWSATS;
@@ -403,6 +417,54 @@ static void sensorUpdate()
     }
 }
 
+// This function checks the following conditions to determine if GPS rescue is available:
+// 1. sensor healthy - GPS data is being received.
+// 2. GPS has a valid fix.
+// 3. GPS number of satellites is less than the minimum configured for GPS rescue.
+// Note: this function does not take into account the distance from homepoint etc. (gps_rescue_min_dth) and
+// is also independent of the gps_rescue_sanity_checks configuration
+static bool checkGPSRescueIsAvailable(void)
+{
+    static uint32_t previousTimeUs = 0; // Last time LowSat was checked
+    const uint32_t currentTimeUs = micros();
+    static int8_t secondsLowSats = 0; // Minimum sat detection
+    static bool lowsats = false;
+    static bool noGPSfix = false;
+    bool result = true;
+
+    if (!gpsIsHealthy() || !STATE(GPS_FIX_HOME)) {
+        return false;
+    }
+
+    //  Things that should run at a low refresh rate >> ~1hz
+    const uint32_t dTime = currentTimeUs - previousTimeUs;
+    if (dTime < 1000000) { //1hz
+        if (noGPSfix || lowsats) {
+            result = false;
+        }
+        return result;
+    }
+
+    previousTimeUs = currentTimeUs;
+
+    if (!STATE(GPS_FIX)) {
+        result = false;
+        noGPSfix = true;
+    } else {
+        noGPSfix = false;
+    }
+
+    secondsLowSats = constrain(secondsLowSats + ((gpsSol.numSat < gpsRescueConfig()->minSats) ? 1 : -1), 0, 2);
+    if (secondsLowSats == 2) {
+        lowsats = true;
+        result = false;
+    } else {
+        lowsats = false;
+    }
+
+    return result;
+}
+
 /*
     Determine what phase we are in, determine if all criteria are met to move to the next phase
 */
@@ -420,6 +482,8 @@ void updateGPSRescueState(void)
 
     sensorUpdate();
 
+    rescueState.isAvailable = checkGPSRescueIsAvailable();
+
     switch (rescueState.phase) {
     case RESCUE_IDLE:
         idleTasks();
@@ -429,17 +493,22 @@ void updateGPSRescueState(void)
             hoverThrottle = gpsRescueConfig()->throttleHover;
         }
 
-        // Minimum distance detection.  Disarm regardless of sanity check configuration.  Rescue too close is never a good idea.
+        if (!STATE(GPS_FIX_HOME)) {
+            setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+            disarm();
+        }
+
+        // Minimum distance detection.
         if (rescueState.sensor.distanceToHomeM < gpsRescueConfig()->minRescueDth) {
-            // Never allow rescue mode to engage as a failsafe when too close or when disarmed.
-            if (rescueState.isFailsafe || !ARMING_FLAG(ARMED)) {
-                rescueState.failure = RESCUE_TOO_CLOSE;
+            rescueState.failure = RESCUE_TOO_CLOSE;
+            
+            // Never allow rescue mode to engage as a failsafe when too close.
+            if (rescueState.isFailsafe) {
                 setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
                 disarm();
-            } else {
-                // Leave it up to the sanity check setting
-                rescueState.failure = RESCUE_TOO_CLOSE;
             }
+            
+            // When not in failsafe mode: leave it up to the sanity check setting.
         }
 
         rescueState.phase = RESCUE_ATTAIN_ALT;
@@ -542,6 +611,21 @@ float gpsRescueGetThrottle(void)
 bool gpsRescueIsConfigured(void)
 {
     return failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE || isModeActivationConditionPresent(BOXGPSRESCUE);
+}
+
+bool gpsRescueIsAvailable(void)
+{
+    return rescueState.isAvailable;
+}
+
+bool gpsRescueIsDisabled(void)
+{
+    return (!STATE(GPS_FIX_HOME));
+}
+
+bool gpsRescueDisableMag(void)
+{
+    return ((!gpsRescueConfig()->useMag || magForceDisable) && (rescueState.phase >= RESCUE_INITIALIZE) && (rescueState.phase <= RESCUE_LANDING));
 }
 #endif
 

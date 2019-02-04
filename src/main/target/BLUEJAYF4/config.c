@@ -32,20 +32,22 @@
 #include "drivers/adc.h"
 #include "drivers/io.h"
 
-#include "sensors/acceleration.h"
 #include "sensors/gyro.h"
 
 #include "pg/adc.h"
 #include "pg/beeper_dev.h"
+#include "pg/gyrodev.h"
 
 #include "hardware_revision.h"
+
+// BEEPER_OPT will be handled by post-flash configuration
+#define BEEPER_OPT              PB7
 
 // alternative defaults settings for BlueJayF4 targets
 void targetConfiguration(void)
 {
     if (hardwareRevision == BJF4_REV1 || hardwareRevision == BJF4_REV2) {
-        gyroConfigMutable()->gyro_align = CW180_DEG;
-        accelerometerConfigMutable()->acc_align  = CW180_DEG;
+        gyroDeviceConfigMutable(0)->align = CW180_DEG;
         beeperDevConfigMutable()->ioTag = IO_TAG(BEEPER_OPT);
     }
 

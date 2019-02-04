@@ -24,25 +24,6 @@
 
 #define TARGET_BOARD_IDENTIFIER "BFF3"
 
-// Removed to make the firmware fit into flash (in descending order of priority):
-//#undef USE_GYRO_OVERFLOW_CHECK
-#undef USE_GYRO_LPF2
-
-#undef USE_ITERM_RELAX
-#undef USE_RC_SMOOTHING_FILTER
-
-#undef USE_TELEMETRY_HOTT
-#undef USE_TELEMETRY_MAVLINK
-#undef USE_TELEMETRY_LTM
-#undef USE_SERIALRX_XBUS
-
-#undef USE_BOARD_INFO
-#undef USE_EXTENDED_CMS_MENUS
-#undef USE_RTC_TIME
-#undef USE_RX_MSP
-#undef USE_ESC_SENSOR_INFO
-
-
 #define USE_BEEPER
 #define BEEPER_PIN              PC15
 #define BEEPER_INVERTED
@@ -145,8 +126,6 @@
 #define SERIALRX_UART           SERIAL_PORT_USART2
 #define SBUS_TELEMETRY_UART     SERIAL_PORT_USART1
 #define DEFAULT_FEATURES        (FEATURE_TELEMETRY | FEATURE_OSD)
-
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 // IO - stm32f303cc in 48pin package
 #define TARGET_IO_PORTA         0xffff

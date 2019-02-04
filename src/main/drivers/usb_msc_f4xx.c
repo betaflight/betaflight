@@ -40,12 +40,15 @@
 #include "drivers/io.h"
 #include "drivers/light_led.h"
 #include "drivers/nvic.h"
+#include "drivers/persistent.h"
 #include "drivers/sdmmc_sdio.h"
+#include "drivers/system.h"
 #include "drivers/time.h"
 #include "drivers/usb_msc.h"
 
 #include "drivers/accgyro/accgyro_mpu.h"
 
+#include "pg/sdcard.h"
 #include "pg/usb.h"
 
 #include "usb_core.h"
@@ -84,7 +87,20 @@ uint8_t mscStart(void)
     switch (blackboxConfig()->device) {
 #ifdef USE_SDCARD
     case BLACKBOX_DEVICE_SDCARD:
-        USBD_STORAGE_fops = &USBD_MSC_MICRO_SDIO_fops;
+        switch (sdcardConfig()->mode) {
+#ifdef USE_SDCARD_SDIO
+        case SDCARD_MODE_SDIO:
+            USBD_STORAGE_fops = &USBD_MSC_MICRO_SDIO_fops;
+            break;
+#endif
+#ifdef USE_SDCARD_SPI
+        case SDCARD_MODE_SPI:
+            USBD_STORAGE_fops = &USBD_MSC_MICRO_SD_SPI_fops;
+            break;
+#endif
+        default:
+            return 1;
+        }
         break;
 #endif
 
@@ -109,10 +125,11 @@ uint8_t mscStart(void)
 
 bool mscCheckBoot(void)
 {
-    if (*((uint32_t *)0x2001FFF0) == MSC_MAGIC) {
-        return true;
-    }
-    return false;
+    const uint32_t bootModeRequest = persistentObjectRead(PERSISTENT_OBJECT_BOOTMODE_REQUEST);
+    return bootModeRequest == MSC_REQUEST_COOKIE;
+    // Note that we can't clear the persisent object after checking here. This is because
+    // this function is called multiple times during initialization. So we clear on a reset
+    // out of MSC mode.
 }
 
 bool mscCheckButton(void)
@@ -138,18 +155,31 @@ void mscWaitForButton(void)
     while (true) {
         asm("NOP");
         if (mscCheckButton()) {
-            *((uint32_t *)0x2001FFF0) = 0xFFFFFFFF;
-            delay(1);
-            NVIC_SystemReset();
+            systemResetFromMsc();
         }
     }
 }
 
-void systemResetToMsc(void)
+void systemResetToMsc(int timezoneOffsetMinutes)
 {
-    *((uint32_t *)0x2001FFF0) = MSC_MAGIC;
+    persistentObjectWrite(PERSISTENT_OBJECT_BOOTMODE_REQUEST, MSC_REQUEST_COOKIE);
 
+    __disable_irq();
+
+    // Persist the RTC across the reboot to use as the file timestamp
+#ifdef USE_PERSISTENT_MSC_RTC
+    rtcPersistWrite(timezoneOffsetMinutes);
+#else
+    UNUSED(timezoneOffsetMinutes);
+#endif
+    NVIC_SystemReset();
+}
+
+void systemResetFromMsc(void)
+{
+    persistentObjectWrite(PERSISTENT_OBJECT_BOOTMODE_REQUEST, 0);
     __disable_irq();
     NVIC_SystemReset();
 }
+
 #endif

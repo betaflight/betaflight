@@ -31,6 +31,7 @@ extern uint16_t maxScreenSize;
 struct vcdProfile_s;
 void    max7456HardwareReset(void);
 struct max7456Config_s;
+void    max7456PreInit(const struct max7456Config_s *max7456Config);
 bool    max7456Init(const struct max7456Config_s *max7456Config, const struct vcdProfile_s *vcdProfile, bool cpuOverclock);
 void    max7456Invert(bool invert);
 void    max7456Brightness(uint8_t black, uint8_t white);

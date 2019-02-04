@@ -61,11 +61,8 @@
 #define USE_MAG_SPI_AK8963
 #define USE_MAG_LIS3MDL
 
-#define HMC5883_CS_PIN          PC15
-#define HMC5883_SPI_INSTANCE    SPI3
-
-#define AK8963_CS_PIN           PC15
-#define AK8963_SPI_INSTANCE     SPI3
+#define MAG_CS_PIN              PC15
+#define MAG_SPI_INSTANCE        SPI3
 
 #define MAG_AK8963_ALIGN        CW180_DEG_FLIP
 
@@ -75,11 +72,8 @@
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
 
-#define MS5611_CS_PIN           SPI3_NSS_PIN
-#define MS5611_SPI_INSTANCE     SPI3
-
-#define BMP280_CS_PIN           SPI3_NSS_PIN
-#define BMP280_SPI_INSTANCE     SPI3
+#define BARO_CS_PIN             SPI3_NSS_PIN
+#define BARO_SPI_INSTANCE       SPI3
 
 #define USE_SDCARD
 #define USE_SDCARD_SPI
@@ -87,8 +81,7 @@
 #define SDCARD_DETECT_PIN               PB11
 #define SDCARD_SPI_INSTANCE             SPI2
 #define SDCARD_SPI_CS_PIN               PB10
-#define SDCARD_DMA_STREAM_TX_FULL           DMA1_Stream4
-#define SDCARD_DMA_CHANNEL                  0
+#define SPI2_TX_DMA_OPT                     0     // DMA 1 Stream 4 Channel 0
 
 // Performance logging for SD card operations:
 // #define AFATFS_USE_INTROSPECTIVE_LOGGING
@@ -159,7 +152,9 @@
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
 #define USE_ADC
-#define ADC1_DMA_STREAM         DMA2_Stream0
+#define ADC_INSTANCE         ADC1  // Default added
+#define ADC1_DMA_OPT            0  // DMA 2 Stream 0 Channel 0 
+
 //#define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 //#define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 #define VBAT_ADC_PIN            PC0
@@ -177,8 +172,6 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_UART           SERIAL_PORT_USART2
 #define RX_CHANNELS_TAER
-
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff

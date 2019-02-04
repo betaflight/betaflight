@@ -26,11 +26,6 @@
 #define TARGET_BOARD_IDENTIFIER "LUX"
 #endif
 
-// Removed to make the firmware fit into flash (in descending order of priority):
-//#undef USE_RTC_TIME
-#undef USE_RX_MSP
-//#undef USE_ESC_SENSOR_INFO
-
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 
 
@@ -84,7 +79,7 @@
 #define SDCARD_SPI_CS_PIN                   SPI2_NSS_PIN
 
 // Note, this is the same DMA channel as UART1_RX. Luckily we don't use DMA for USART Rx.
-#define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
+#define SDCARD_SPI_DMA_OPT                  0    // DMA 1 Channel 5
 #endif
 
 #define GYRO_1_CS_PIN           SPI1_NSS_PIN
@@ -151,8 +146,6 @@
 #else
 #define DEFAULT_FEATURES        (FEATURE_TELEMETRY)
 #endif
-
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN  PA8  // (HARDARE=0,PPM)

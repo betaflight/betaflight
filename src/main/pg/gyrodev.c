@@ -53,7 +53,7 @@ static void gyroResetSpiDeviceConfig(gyroDeviceConfig_t *devconf, SPI_TypeDef *i
 }
 #endif
 
-#ifdef USE_I2C_GYRO
+#if defined(USE_I2C_GYRO) && !defined(USE_MULTI_GYRO)
 static void gyroResetI2cDeviceConfig(gyroDeviceConfig_t *devconf, I2CDevice i2cbus, ioTag_t extiTag, uint8_t align)
 {
     devconf->bustype = BUSTYPE_I2C;
@@ -73,8 +73,8 @@ void pgResetFn_gyroDeviceConfig(gyroDeviceConfig_t *devconf)
 #ifdef USE_SPI_GYRO
     gyroResetSpiDeviceConfig(&devconf[0], GYRO_1_SPI_INSTANCE, IO_TAG(GYRO_1_CS_PIN), IO_TAG(GYRO_1_EXTI_PIN), GYRO_1_ALIGN);
 #ifdef USE_MULTI_GYRO
-    gyroResetSpiDeviceConfig(&devconf[1], GYRO_2_SPI_INSTANCE, IO_TAG(GYRO_2_CS_PIN), IO_TAG(GYRO_2_EXTI_PIN), GYRO_2_ALIGN);
     devconf[1].index = 1;
+    gyroResetSpiDeviceConfig(&devconf[1], GYRO_2_SPI_INSTANCE, IO_TAG(GYRO_2_CS_PIN), IO_TAG(GYRO_2_EXTI_PIN), GYRO_2_ALIGN);
 #endif
 #endif
 

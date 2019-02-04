@@ -51,20 +51,21 @@
 #include "flight/imu.h"
 #include "flight/position.h"
 
-#include "interface/crsf_protocol.h"
-
 #include "io/displayport_crsf.h"
 #include "io/gps.h"
 #include "io/serial.h"
 
 #include "rx/crsf.h"
+#include "rx/crsf_protocol.h"
 
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 
 #include "telemetry/telemetry.h"
-#include "telemetry/crsf.h"
 #include "telemetry/msp_shared.h"
+
+#include "telemetry/crsf.h"
+
 
 #define CRSF_CYCLETIME_US                   100000 // 100ms, 10 Hz
 #define CRSF_DEVICEINFO_VERSION             0x01
@@ -112,7 +113,7 @@ bool handleCrsfMspFrameBuffer(uint8_t payloadSize, mspResponseFnPtr responseFn)
     int pos = 0;
     while (true) {
         const int mspFrameLength = mspRxBuffer.bytes[pos];
-        if (handleMspFrame(&mspRxBuffer.bytes[CRSF_MSP_LENGTH_OFFSET + pos], mspFrameLength)) {
+        if (handleMspFrame(&mspRxBuffer.bytes[CRSF_MSP_LENGTH_OFFSET + pos], mspFrameLength, NULL)) {
             requestHandled |= sendMspReply(payloadSize, responseFn);
         }
         pos += CRSF_MSP_LENGTH_OFFSET + mspFrameLength;
@@ -201,9 +202,9 @@ void crsfFrameBatterySensor(sbuf_t *dst)
     sbufWriteU8(dst, CRSF_FRAME_BATTERY_SENSOR_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
     sbufWriteU8(dst, CRSF_FRAMETYPE_BATTERY_SENSOR);
     if (telemetryConfig()->report_cell_voltage) {
-        sbufWriteU16BigEndian(dst, getBatteryAverageCellVoltage()); // vbat is in units of 0.1V
+        sbufWriteU16BigEndian(dst, (getBatteryAverageCellVoltage() + 5) / 10); // vbat is in units of 0.01V
     } else {
-        sbufWriteU16BigEndian(dst, getBatteryVoltage());
+        sbufWriteU16BigEndian(dst, getLegacyBatteryVoltage());
     }
     sbufWriteU16BigEndian(dst, getAmperage() / 10);
     const uint32_t mAhDrawn = getMAhDrawn();
@@ -266,19 +267,39 @@ void crsfFrameFlightMode(sbuf_t *dst)
     sbufWriteU8(dst, 0);
     sbufWriteU8(dst, CRSF_FRAMETYPE_FLIGHT_MODE);
 
-    // use same logic as OSD, so telemetry displays same flight text as OSD
+    // Acro is the default mode
     const char *flightMode = "ACRO";
-    if (airmodeIsEnabled()) {
-        flightMode = "AIR";
-    }
+
+    // Modes that are only relevant when disarmed
+    if (!ARMING_FLAG(ARMED) && isArmingDisabled()) {
+        flightMode = "!ERR";
+    } else
+
+#if defined(USE_GPS)
+    if (!ARMING_FLAG(ARMED) && featureIsEnabled(FEATURE_GPS) && (!STATE(GPS_FIX) || !STATE(GPS_FIX_HOME))) {
+        flightMode = "WAIT"; // Waiting for GPS lock
+    } else
+#endif
+
+    // Flight modes in decreasing order of importance
     if (FLIGHT_MODE(FAILSAFE_MODE)) {
-        flightMode = "!FS";
+        flightMode = "!FS!";
+    } else if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
+        flightMode = "RTH";
+    } else if (FLIGHT_MODE(PASSTHRU_MODE)) {
+        flightMode = "MANU";
     } else if (FLIGHT_MODE(ANGLE_MODE)) {
         flightMode = "STAB";
     } else if (FLIGHT_MODE(HORIZON_MODE)) {
         flightMode = "HOR";
+    } else if (airmodeIsEnabled()) {
+        flightMode = "AIR";
     }
+
     sbufWriteString(dst, flightMode);
+    if (!ARMING_FLAG(ARMED)) {
+        sbufWriteU8(dst, '*');
+    }
     sbufWriteU8(dst, '\0');     // zero-terminate string
     // write in the frame length
     *lengthPtr = sbufPtr(dst) - lengthPtr;

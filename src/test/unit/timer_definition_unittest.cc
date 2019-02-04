@@ -39,6 +39,7 @@ TEST(TimerDefinitionTest, Test_counterMismatch) {
             << " array element appears to be " << &t - timerHardware - 1 << '.';
 }
 
+#if !defined(USE_TIMER_MGMT)
 TEST(TimerDefinitionTest, Test_duplicatePin) {
     std::set<TestPinEnum> usedPins;
     for (const timerHardware_t &t : timerHardware)
@@ -87,6 +88,7 @@ TEST(TimerDefinitionTest, Test_usedTimers)
         << "USED_TIMERS definition based on timerHardware:" << std::endl
         << writeUsedTimers(expected) << std::endl;
 }
+#endif
 
 // STUBS
 

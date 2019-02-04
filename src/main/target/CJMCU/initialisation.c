@@ -22,21 +22,24 @@
 #include <stdint.h>
 
 #include "platform.h"
+
 #include "drivers/bus.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
+
 #include "io/serial.h"
+
 #include "pg/bus_i2c.h"
 #include "pg/bus_spi.h"
 
-
-extern void spiPreInit(void); // XXX In fc/init.c
+#include "sensors/initialisation.h"
 
 void targetBusInit(void)
 {
 #if defined(USE_SPI) && defined(USE_SPI_DEVICE_1)
     spiPinConfigure(spiPinConfig(0));
-    spiPreInit();
+    sensorsPreInit();
+    spiPreinit();
     spiInit(SPIDEV_1);
 #endif
 

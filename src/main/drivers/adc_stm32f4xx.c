@@ -29,6 +29,7 @@
 #include "build/debug.h"
 
 #include "drivers/accgyro/accgyro.h"
+#include "drivers/dma_reqmap.h"
 #include "drivers/system.h"
 
 #include "drivers/io.h"
@@ -49,10 +50,31 @@
 #endif
 
 const adcDevice_t adcHardware[] = {
-    { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .DMAy_Streamx = ADC1_DMA_STREAM, .channel = DMA_Channel_0 },
+    {
+        .ADCx = ADC1,
+        .rccADC = RCC_APB2(ADC1),
+#if !defined(USE_DMA_SPEC)
+        .DMAy_Streamx = ADC1_DMA_STREAM,
+        .channel = DMA_Channel_0
+#endif
+    },
 #if !defined(STM32F411xE)
-    { .ADCx = ADC2, .rccADC = RCC_APB2(ADC2), .DMAy_Streamx = ADC2_DMA_STREAM, .channel = DMA_Channel_1 },
-    { .ADCx = ADC3, .rccADC = RCC_APB2(ADC3), .DMAy_Streamx = ADC3_DMA_STREAM, .channel = DMA_Channel_2 }
+    {
+        .ADCx = ADC2,
+        .rccADC = RCC_APB2(ADC2),
+#if !defined(USE_DMA_SPEC)
+        .DMAy_Streamx = ADC2_DMA_STREAM,
+        .channel = DMA_Channel_1
+#endif
+    },
+    {
+        .ADCx = ADC3,
+        .rccADC = RCC_APB2(ADC3),
+#if !defined(USE_DMA_SPEC)
+        .DMAy_Streamx = ADC3_DMA_STREAM,
+        .channel = DMA_Channel_2
+#endif
+    }
 #endif
 };
 
@@ -212,6 +234,7 @@ void adcInit(const adcConfig_t *config)
     }
 
     ADCDevice device = ADC_CFG_TO_DEV(config->device);
+
     if (device == ADCINVALID) {
         return;
     }
@@ -280,16 +303,33 @@ void adcInit(const adcConfig_t *config)
     ADC_DMACmd(adc.ADCx, ENABLE);
     ADC_Cmd(adc.ADCx, ENABLE);
 
+#ifdef USE_DMA_SPEC
+    const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpec(DMA_PERIPH_ADC, device, config->dmaopt[device]);
 
+    if (!dmaSpec) {
+        return;
+    }
+
+    dmaInit(dmaGetIdentifier(dmaSpec->ref), OWNER_ADC, RESOURCE_INDEX(device));
+
+    DMA_DeInit(dmaSpec->ref);
+#else
     dmaInit(dmaGetIdentifier(adc.DMAy_Streamx), OWNER_ADC, 0);
 
     DMA_DeInit(adc.DMAy_Streamx);
+#endif
 
     DMA_InitTypeDef DMA_InitStructure;
 
     DMA_StructInit(&DMA_InitStructure);
     DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)&adc.ADCx->DR;
+
+#ifdef USE_DMA_SPEC
+    DMA_InitStructure.DMA_Channel = dmaSpec->channel;
+#else
     DMA_InitStructure.DMA_Channel = adc.channel;
+#endif
+
     DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)adcValues;
     DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory;
     DMA_InitStructure.DMA_BufferSize = configuredAdcChannels;
@@ -299,9 +339,14 @@ void adcInit(const adcConfig_t *config)
     DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_HalfWord;
     DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
     DMA_InitStructure.DMA_Priority = DMA_Priority_High;
-    DMA_Init(adc.DMAy_Streamx, &DMA_InitStructure);
 
+#ifdef USE_DMA_SPEC
+    DMA_Init(dmaSpec->ref, &DMA_InitStructure);
+    DMA_Cmd(dmaSpec->ref, ENABLE);
+#else
+    DMA_Init(adc.DMAy_Streamx, &DMA_InitStructure);
     DMA_Cmd(adc.DMAy_Streamx, ENABLE);
+#endif
 
     ADC_SoftwareStartConv(adc.ADCx);
 }

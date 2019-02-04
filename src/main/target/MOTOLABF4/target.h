@@ -122,8 +122,7 @@
 #define SDCARD_SPI_INSTANCE                 SPI2
 #define SDCARD_SPI_CS_PIN                   PB12
 #define SDCARD_SPI_CS_CFG                   IOCFG_OUT_OD
-#define SDCARD_DMA_CHANNEL_TX               DMA1_Stream4
-#define SDCARD_DMA_CHANNEL                  0
+#define SPI2_TX_DMA_OPT                     0     // DMA 1 Stream 4 Channel 0
 
 // Pins are available unless USART3 is connected, not connected
 //#define USE_I2C
@@ -135,8 +134,6 @@
 #define CURRENT_METER_ADC_PIN   PC1
 // Reserved pins, not connected
 //#define RSSI_ADC_PIN            PC2
-
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL

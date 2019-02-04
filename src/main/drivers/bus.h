@@ -33,11 +33,18 @@ typedef enum {
     BUSTYPE_GYRO_AUTO  // Only used by acc/gyro bus auto detection code
 } busType_e;
 
+struct spiDevice_s;
+
 typedef struct busDevice_s {
     busType_e bustype;
     union {
         struct deviceSpi_s {
             SPI_TypeDef *instance;
+#ifdef USE_SPI_TRANSACTION
+            struct SPIDevice_s *device;    // Back ptr to controller for this device.
+            // Cached SPI_CR1 for spiBusTransactionXXX
+            uint16_t modeCache;        // XXX cr1Value may be a better name?
+#endif
 #if defined(USE_HAL_DRIVER)
             SPI_HandleTypeDef* handle; // cached here for efficiency
 #endif

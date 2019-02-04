@@ -69,7 +69,11 @@ static void w25m_dieSelect(busDevice_t *busdev, int die)
 
     uint8_t command[2] = { W25M_INSTRUCTION_SOFTWARE_DIE_SELECT, die };
 
+#ifdef SPI_BUS_TRANSACTION
+    spiBusTransactionTransfer(busdev, command, NULL, 2);
+#else
     spiBusTransfer(busdev, command, NULL, 2);
+#endif
 
     activeDie = die;
 }

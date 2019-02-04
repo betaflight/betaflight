@@ -43,11 +43,6 @@
 #include "rx/cc2500_common.h"
 
 static IO_t gdoPin;
-static IO_t bindPin = DEFIO_IO(NONE);
-static IO_t cc2500LedPin;
-static bool bindRequested;
-
-static bool lastBindPinStatus;
 #if defined(USE_RX_CC2500_SPI_PA_LNA)
 static IO_t txEnPin;
 static IO_t rxLnaEnPin;
@@ -69,32 +64,6 @@ void cc2500setRssiDbm(uint8_t value)
     }
 
     setRssi(rssiDbm << 3, RSSI_SOURCE_RX_PROTOCOL);
-}
-
-void cc2500SpiBind(void)
-{
-    bindRequested = true;
-}
-
-bool cc2500checkBindRequested(bool reset)
-{
-    if (bindPin) {
-        bool bindPinStatus = IORead(bindPin);
-        if (lastBindPinStatus && !bindPinStatus) {
-            bindRequested = true;
-        }
-        lastBindPinStatus = bindPinStatus;
-    }
-
-    if (!bindRequested) {
-        return false;
-    } else {
-        if (reset) {
-            bindRequested = false;
-        }
-
-        return true;
-    }
 }
 
 bool cc2500getGdo(void)
@@ -127,42 +96,6 @@ void cc2500TxDisable(void)
 }
 #endif
 
-void cc2500LedOn(void)
-{
-#if defined(RX_CC2500_SPI_LED_PIN_INVERTED)
-    IOLo(cc2500LedPin);
-#else
-    IOHi(cc2500LedPin);
-#endif
-}
-
-void cc2500LedOff(void)
-{
-#if defined(RX_CC2500_SPI_LED_PIN_INVERTED)
-    IOHi(cc2500LedPin);
-#else
-    IOLo(cc2500LedPin);
-#endif
-}
-
-void cc2500LedBlink(timeMs_t blinkms)
-{
-    static bool ledIsOn = true;
-    static timeMs_t ledBlinkMs = 0;
-
-    if ( (ledBlinkMs + blinkms) > millis() ) {
-        return;
-    }
-    ledBlinkMs = millis();
-
-    if (ledIsOn) {
-        cc2500LedOff();
-    } else {
-        cc2500LedOn();
-    }
-    ledIsOn = !ledIsOn;
-}
-
 static bool cc2500SpiDetect(void)
 {
     const uint8_t chipPartNum = cc2500ReadReg(CC2500_30_PARTNUM | CC2500_READ_BURST); //CC2500 read registers chip part num
@@ -192,9 +125,6 @@ bool cc2500SpiInit(void)
     gdoPin = IOGetByTag(IO_TAG(RX_CC2500_SPI_GDO_0_PIN));
     IOInit(gdoPin, OWNER_RX_SPI, 0);
     IOConfigGPIO(gdoPin, IOCFG_IN_FLOATING);
-    cc2500LedPin = IOGetByTag(IO_TAG(RX_CC2500_SPI_LED_PIN));
-    IOInit(cc2500LedPin, OWNER_LED, 0);
-    IOConfigGPIO(cc2500LedPin, IOCFG_OUT_PP);
 #if defined(USE_RX_CC2500_SPI_PA_LNA)
     rxLnaEnPin = IOGetByTag(IO_TAG(RX_CC2500_SPI_LNA_EN_PIN));
     IOInit(rxLnaEnPin, OWNER_RX_SPI, 0);
@@ -209,13 +139,6 @@ bool cc2500SpiInit(void)
     IOConfigGPIO(antSelPin, IOCFG_OUT_PP);
 #endif
 #endif // USE_RX_CC2500_SPI_PA_LNA
-#if defined(BINDPLUG_PIN)
-    bindPin = IOGetByTag(IO_TAG(BINDPLUG_PIN));
-    IOInit(bindPin, OWNER_RX_BIND, 0);
-    IOConfigGPIO(bindPin, IOCFG_IPU);
-
-    lastBindPinStatus = IORead(bindPin);
-#endif
 
 #if defined(USE_RX_CC2500_SPI_PA_LNA)
 #if defined(USE_RX_CC2500_SPI_DIVERSITY)

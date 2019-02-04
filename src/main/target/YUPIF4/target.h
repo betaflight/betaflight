@@ -32,7 +32,6 @@
 
 #define USE_BEEPER
 #define BEEPER_PIN              PC9
-#define BEEPER_OPT              PB14
 #define BEEPER_PWM_HZ           3150 // Beeper PWM frequency in Hz
 
 // Gyro interrupt
@@ -89,8 +88,7 @@
 #define SDCARD_DETECT_PIN               PD2
 #define SDCARD_SPI_INSTANCE             SPI3
 #define SDCARD_SPI_CS_PIN               PA15
-#define SDCARD_DMA_CHANNEL_TX               DMA1_Stream5
-#define SDCARD_DMA_CHANNEL                  0
+#define SPI3_TX_DMA_OPT                     0     // DMA 1 Stream 5 Channel 0
 
 // SPI Ports
 #define USE_SPI
@@ -131,8 +129,6 @@
 #define USE_GYRO_FAST_KALMAN
 
 // Target IO and timers
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
-
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         0xffff

@@ -1,5 +1,8 @@
 F3_TARGETS  += $(TARGET)
+
 FEATURES    = VCP
+
+FEATURE_CUT_LEVEL = 0
 
 TARGET_SRC = \
 			drivers/accgyro/accgyro_mpu.c \
@@ -8,4 +11,4 @@ TARGET_SRC = \
 			drivers/barometer/barometer_bmp280.c \
 			drivers/barometer/barometer_ms5611.c \
 			drivers/rx/rx_a7105.c \
-			rx/flysky.c
+			rx/a7105_flysky.c

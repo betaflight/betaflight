@@ -65,7 +65,8 @@ typedef enum {
                             | ESC_SENSOR_VOLTAGE \
                             | ESC_SENSOR_RPM \
                             | ESC_SENSOR_TEMPERATURE,
-    SENSOR_ALL             = (1 << 19) - 1,
+    SENSOR_TEMPERATURE     = 1 << 19,
+    SENSOR_ALL             = (1 << 20) - 1,
 } sensor_e;
 
 typedef struct telemetryConfig_s {

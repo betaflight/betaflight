@@ -1,4 +1,5 @@
 # A sample Makefile for building Google Test and using it in user
+# A sample Makefile for building Google Test and using it in user
 # tests.  Please tweak it to suit your environment and project.  You
 # may want to move it to your project's root directory.
 #
@@ -37,7 +38,11 @@ arming_prevention_unittest_SRC := \
 		$(USER_DIR)/fc/rc_controls.c \
 		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/fc/runtime_config.c \
+		$(USER_DIR)/flight/gps_rescue.c \
 		$(USER_DIR)/common/bitarray.c
+
+arming_prevention_unittest_DEFINES := \
+            USE_GPS_RESCUE=
 
 atomic_unittest_SRC := \
 		$(USER_DIR)/build/atomic.c \
@@ -90,7 +95,7 @@ blackbox_encoding_unittest_SRC :=  \
 		$(USER_DIR)/common/typeconversion.c
 
 cli_unittest_SRC := \
-		$(USER_DIR)/interface/cli.c \
+		$(USER_DIR)/cli/cli.c \
 		$(USER_DIR)/config/feature.c \
 		$(USER_DIR)/pg/pg.c \
                 $(USER_DIR)/common/typeconversion.c
@@ -102,6 +107,7 @@ cli_unittest_DEFINES := \
 
 cms_unittest_SRC := \
 		$(USER_DIR)/cms/cms.c \
+		$(USER_DIR)/cms/cms_menu_saveexit.c \
 		$(USER_DIR)/common/typeconversion.c \
 		$(USER_DIR)/drivers/display.c
 
@@ -151,7 +157,10 @@ ledstrip_unittest_SRC := \
 		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/io/ledstrip.c
 
-
+ledstrip_unittest_DEFINES := \
+        USE_LED_STRIP=
+       
+       
 maths_unittest_SRC := \
 		$(USER_DIR)/common/maths.c
 
@@ -182,7 +191,7 @@ rc_controls_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/fc/rc_adjustments.c \
-		$(USER_DIR)/fc/rc_modes.c \
+		$(USER_DIR)/fc/rc_modes.c
 
 
 rx_crsf_unittest_SRC := \
@@ -279,9 +288,8 @@ telemetry_ibus_unittest_SRC := \
 
 timer_definition_unittest_EXPAND := yes
 
-# NERO and STM32F7X2 are universal targets with dynamic timer management.
 # SITL is a simulator with empty timerHardware and many hearders in target.c.
-timer_definition_unittest_BLACKLIST := NERO SITL STM32F7X2
+timer_definition_unittest_BLACKLIST := SITL
 
 timer_definition_unittest_SRC = \
 		$(TARGET_DIR)/$(call get_base_target,$1)/target.c
@@ -349,6 +357,13 @@ vtx_unittest_DEFINES := \
 		USE_VTX_CONTROL= \
 		USE_VTX_SMARTAUDIO=
 
+rx_spi_spektrum_unittest_SRC := \
+		$(USER_DIR)/rx/cyrf6936_spektrum.c
+
+rx_spi_spektrum_unittest_DEFINES := \
+		USE_RX_SPI \
+		USE_RX_SPEKTRUM
+
 # Please tweak the following variable definitions as needed by your
 # project, except GTEST_HEADERS, which you can use in your own targets
 # but shouldn't modify.
@@ -411,6 +426,8 @@ TEST_SRCS = $(sort $(wildcard $(TEST_DIR)/*.cc))
 TEST_BASENAMES = $(TEST_SRCS:$(TEST_DIR)/%.cc=%)
 TESTS = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),$(foreach \
 		target,$(filter-out $($(test)_BLACKLIST),$(VALID_TARGETS)),$(test).$(target)),$(test)))
+TESTS_REPRESENTATIVE = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),$(test).$(word \
+		1,$(filter-out $($(test)_BLACKLIST),$(VALID_TARGETS))),$(test)))
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -425,6 +442,9 @@ include ../../make/build_verbosity.mk
 
 ## test        : Build and run the Unit Tests (default goal)
 test: $(TESTS:%=test_%)
+
+## test-representative : Build and run a representative subset of the Unit Tests (i.e. run every expanded test only for the first target)
+test-representative: $(TESTS_REPRESENTATIVE:%=test_%)
 
 ## junittest   : Build and run the Unit Tests, producing Junit XML result files."
 junittest: EXEC_OPTS = "--gtest_output=xml:$<_results.xml"

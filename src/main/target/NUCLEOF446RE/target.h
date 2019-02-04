@@ -131,7 +131,6 @@
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN  PB8  // (HARDARE=0,PPM)
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define USE_I2C
 
@@ -146,7 +145,9 @@
 
 #define USE_ADC
 #define ADC_INSTANCE            ADC1
+#define ADC1_DMA_OPT            1  // DMA 2 Stream 4 Channel 0 (compat default)
 //#define ADC_INSTANCE            ADC2
+//#define ADC2_DMA_OPT            1  // DMA 2 Stream 3 Channel 1 (compat default)
 #define VBAT_ADC_PIN            PC0
 #define CURRENT_METER_ADC_PIN   PC1
 #define RSSI_ADC_PIN            PC2

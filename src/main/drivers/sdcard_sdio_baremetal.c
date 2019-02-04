@@ -31,17 +31,18 @@
 #include "drivers/nvic.h"
 #include "drivers/io.h"
 #include "drivers/dma.h"
+#include "drivers/dma_reqmap.h"
 
 #include "drivers/time.h"
+
+#include "pg/pg.h"
+#include "pg/bus_spi.h" // For spiPinConfig_t, which is unused but should be defined
+#include "pg/sdio.h"
 
 #include "drivers/sdcard.h"
 #include "drivers/sdcard_impl.h"
 #include "drivers/sdcard_standard.h"
-
 #include "drivers/sdmmc_sdio.h"
-
-#include "pg/pg.h"
-#include "pg/sdio.h"
 
 // Use this to speed up writing to SDCARD... asyncfatfs has limited support for multiblock write
 #define FATFS_BLOCK_CACHE_SIZE 16
@@ -187,14 +188,25 @@ static bool sdcard_checkInitDone(void)
 /**
  * Begin the initialization process for the SD card. This must be called first before any other sdcard_ routine.
  */
-static void sdcardSdio_init(const sdcardConfig_t *config)
+static void sdcardSdio_init(const sdcardConfig_t *config, const spiPinConfig_t *spiConfig)
 {
+    UNUSED(spiConfig);
+
     sdcard.enabled = config->mode;
     if (!sdcard.enabled) {
         sdcard.state = SDCARD_STATE_NOT_PRESENT;
         return;
     }
-    sdcard.dmaIdentifier = config->dmaIdentifier;
+
+    const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpec(DMA_PERIPH_SDIO, 0, sdioConfig()->dmaopt);
+
+    if (!dmaChannelSpec) {
+        sdcard.state = SDCARD_STATE_NOT_PRESENT;
+        return;
+    }
+
+    sdcard.dmaIdentifier = dmaGetIdentifier(dmaChannelSpec->ref);
+
     if (sdcard.dmaIdentifier == 0) {
         sdcard.state = SDCARD_STATE_NOT_PRESENT;
         return;
@@ -212,7 +224,7 @@ static void sdcardSdio_init(const sdcardConfig_t *config)
     } else {
         sdcard.useCache = 0;
     }
-    SD_Initialize_LL(dmaGetRefByIdentifier(sdcard.dmaIdentifier));
+    SD_Initialize_LL(dmaChannelSpec->ref);
     if (SD_IsDetected()) {
         if (SD_Init() != 0) {
             sdcard.state = SDCARD_STATE_NOT_PRESENT;
@@ -631,6 +643,7 @@ static void sdcardSdio_setProfilerCallback(sdcard_profilerCallback_c callback)
 #endif
 
 sdcardVTable_t sdcardSdioVTable = {
+    NULL,
     sdcardSdio_init,
     sdcardSdio_readBlock,
     sdcardSdio_beginWriteBlocks,

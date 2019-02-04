@@ -343,7 +343,7 @@ static uint8_t CurrentInterfaceMode;
 static uint8_t Connect(uint8_32_u *pDeviceInfo)
 {
     for (uint8_t I = 0; I < 3; ++I) {
-        #if (defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER) && defined(USE_SERIAL_4WAY_SK_BOOTLOADER))
+#if (defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER) && defined(USE_SERIAL_4WAY_SK_BOOTLOADER))
         if ((CurrentInterfaceMode != imARM_BLB) && Stk_ConnectEx(pDeviceInfo) && ATMEL_DEVICE_MATCH) {
             CurrentInterfaceMode = imSK;
             return 1;
@@ -361,7 +361,7 @@ static uint8_t Connect(uint8_32_u *pDeviceInfo)
                 }
             }
         }
-        #elif defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER)
+#elif defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER)
         if (BL_ConnectEx(pDeviceInfo)) {
             if SILABS_DEVICE_MATCH {
                 CurrentInterfaceMode = imSIL_BLB;
@@ -374,12 +374,12 @@ static uint8_t Connect(uint8_32_u *pDeviceInfo)
                 return 1;
             }
         }
-        #elif defined(USE_SERIAL_4WAY_SK_BOOTLOADER)
+#elif defined(USE_SERIAL_4WAY_SK_BOOTLOADER)
         if (Stk_ConnectEx(pDeviceInfo)) {
             CurrentInterfaceMode = imSK;
             if ATMEL_DEVICE_MATCH return 1;
         }
-        #endif
+#endif
     }
     return 0;
 }

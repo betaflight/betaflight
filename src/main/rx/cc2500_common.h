@@ -26,8 +26,6 @@
 
 uint16_t cc2500getRssiDbm(void);
 void cc2500setRssiDbm(uint8_t value);
-void cc2500SpiBind(void);
-bool cc2500checkBindRequested(bool reset);
 bool cc2500getGdo(void);
 #if defined(USE_RX_CC2500_SPI_PA_LNA) && defined(USE_RX_CC2500_SPI_DIVERSITY)
 void cc2500switchAntennae(void);
@@ -36,7 +34,4 @@ void cc2500switchAntennae(void);
 void cc2500TxEnable(void);
 void cc2500TxDisable(void);
 #endif
-void cc2500LedOn(void);
-void cc2500LedOff(void);
-void cc2500LedBlink(timeMs_t blinkms);
 bool cc2500SpiInit(void);

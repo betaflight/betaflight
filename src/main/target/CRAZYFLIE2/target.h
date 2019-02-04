@@ -118,7 +118,6 @@
 #endif
 
 #if defined(CRAZYFLIE2BQ)
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define USE_BEEPER
 #define BEEPER_PIN              PC12
@@ -127,6 +126,7 @@
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 #define USE_ADC
 #define ADC_INSTANCE            ADC1
+#define ADC1_DMA_OPT            1  // DMA 2 Stream 4 Channel 0 (compat default)
 #define CURRENT_METER_ADC_PIN   PA5
 #define VBAT_ADC_PIN            PA6
 #else

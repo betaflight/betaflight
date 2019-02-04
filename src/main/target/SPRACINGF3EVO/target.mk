@@ -1,5 +1,12 @@
 F3_TARGETS  += $(TARGET)
+
 FEATURES    = VCP SDCARD_SPI
+
+ifeq ($(TARGET), AIORACERF3)
+FEATURE_CUT_LEVEL = 4
+else
+FEATURE_CUT_LEVEL = 8
+endif
 
 TARGET_SRC = \
             drivers/accgyro/accgyro_mpu.c \

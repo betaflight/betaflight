@@ -22,8 +22,6 @@
 
 #define TARGET_BOARD_IDENTIFIER "AIR3"
 
-#define CONFIG_PREFER_ACC_ON
-
 #define LED0_PIN                PB3
 #define LED1_PIN                PB4
 
@@ -54,8 +52,8 @@
 #define USE_BARO
 #define USE_BARO_SPI_BMP280
 
-#define BMP280_SPI_INSTANCE     SPI2
-#define BMP280_CS_PIN           PB5
+#define BARO_SPI_INSTANCE       SPI2
+#define BARO_CS_PIN             PB5
 
 #define USE_UART1
 #define USE_UART2
@@ -91,8 +89,6 @@
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART2
 #define RX_CHANNELS_TAER
-
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff

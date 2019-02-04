@@ -27,28 +27,18 @@
 #ifdef USE_ADC
 
 #include "drivers/accgyro/accgyro.h"
+#include "drivers/dma.h"
+#include "drivers/dma_reqmap.h"
+#include "drivers/io.h"
+#include "drivers/io_impl.h"
+#include "drivers/rcc.h"
+#include "drivers/sensor.h"
 #include "drivers/system.h"
 
-#include "drivers/io.h"
-#include "io_impl.h"
-#include "rcc.h"
-#include "dma.h"
-
-#include "drivers/sensor.h"
-
-#include "adc.h"
-#include "adc_impl.h"
+#include "drivers/adc.h"
+#include "drivers/adc_impl.h"
 
 #include "pg/adc.h"
-
-
-#ifndef ADC_INSTANCE
-#define ADC_INSTANCE                ADC1
-#endif
-
-#ifndef ADC1_DMA_STREAM
-#define ADC1_DMA_STREAM DMA2_Stream4
-#endif
 
 // Copied from stm32f7xx_ll_adc.h
 
@@ -71,9 +61,30 @@
 #endif
 
 const adcDevice_t adcHardware[] = {
-    { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .DMAy_Streamx = ADC1_DMA_STREAM, .channel = DMA_CHANNEL_0 },
-    { .ADCx = ADC2, .rccADC = RCC_APB2(ADC2), .DMAy_Streamx = ADC2_DMA_STREAM, .channel = DMA_CHANNEL_1 },
-    { .ADCx = ADC3, .rccADC = RCC_APB2(ADC3), .DMAy_Streamx = ADC3_DMA_STREAM, .channel = DMA_CHANNEL_2 }
+    {
+        .ADCx = ADC1,
+        .rccADC = RCC_APB2(ADC1),
+#if !defined(USE_DMA_SPEC)
+        .DMAy_Streamx = ADC1_DMA_STREAM,
+        .channel = DMA_CHANNEL_0
+#endif
+    },
+    {
+        .ADCx = ADC2,
+        .rccADC = RCC_APB2(ADC2),
+#if !defined(USE_DMA_SPEC)
+        .DMAy_Streamx = ADC2_DMA_STREAM,
+        .channel = DMA_CHANNEL_1
+#endif
+    },
+    {
+        .ADCx = ADC3,
+        .rccADC = RCC_APB2(ADC3),
+#if !defined(USE_DMA_SPEC)
+        .DMAy_Streamx = ADC3_DMA_STREAM,
+        .channel = DMA_CHANNEL_2
+#endif
+    }
 };
 
 /* note these could be packed up for saving space */
@@ -236,7 +247,8 @@ void adcInit(const adcConfig_t *config)
         adcOperatingConfig[ADC_CURRENT].tag = config->current.ioTag;  //CURRENT_METER_ADC_CHANNEL;
     }
 
-    ADCDevice device = adcDeviceByInstance(ADC_INSTANCE);
+    ADCDevice device = ADC_CFG_TO_DEV(config->device);
+
     if (device == ADCINVALID) {
         return;
     }
@@ -245,17 +257,15 @@ void adcInit(const adcConfig_t *config)
 
     bool adcActive = false;
     for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
-        if (!adcVerifyPin(adcOperatingConfig[i].tag, device)) {
-            continue;
+        if (adcVerifyPin(adcOperatingConfig[i].tag, device)) {
+            adcActive = true;
+            IOInit(IOGetByTag(adcOperatingConfig[i].tag), OWNER_ADC_BATT + i, 0);
+            IOConfigGPIO(IOGetByTag(adcOperatingConfig[i].tag), IO_CONFIG(GPIO_MODE_ANALOG, 0, GPIO_NOPULL));
+            adcOperatingConfig[i].adcChannel = adcChannelByTag(adcOperatingConfig[i].tag);
+            adcOperatingConfig[i].dmaIndex = configuredAdcChannels++;
+            adcOperatingConfig[i].sampleTime = ADC_SAMPLETIME_480CYCLES;
+            adcOperatingConfig[i].enabled = true;
         }
-
-        adcActive = true;
-        IOInit(IOGetByTag(adcOperatingConfig[i].tag), OWNER_ADC_BATT + i, 0);
-        IOConfigGPIO(IOGetByTag(adcOperatingConfig[i].tag), IO_CONFIG(GPIO_MODE_ANALOG, 0, GPIO_NOPULL));
-        adcOperatingConfig[i].adcChannel = adcChannelByTag(adcOperatingConfig[i].tag);
-        adcOperatingConfig[i].dmaIndex = configuredAdcChannels++;
-        adcOperatingConfig[i].sampleTime = ADC_SAMPLETIME_480CYCLES;
-        adcOperatingConfig[i].enabled = true;
     }
 
 #ifndef USE_ADC_INTERNAL
@@ -282,26 +292,37 @@ void adcInit(const adcConfig_t *config)
 
     uint8_t rank = 1;
     for (i = 0; i < ADC_CHANNEL_COUNT; i++) {
-        if (!adcOperatingConfig[i].enabled) {
-            continue;
-        }
+        if (adcOperatingConfig[i].enabled) {
+            ADC_ChannelConfTypeDef sConfig;
 
-        ADC_ChannelConfTypeDef sConfig;
+            sConfig.Channel      = adcOperatingConfig[i].adcChannel;
+            sConfig.Rank         = rank++;
+            sConfig.SamplingTime = adcOperatingConfig[i].sampleTime;
+            sConfig.Offset       = 0;
 
-        sConfig.Channel      = adcOperatingConfig[i].adcChannel;
-        sConfig.Rank         = rank++;
-        sConfig.SamplingTime = adcOperatingConfig[i].sampleTime;
-        sConfig.Offset       = 0;
-
-        if (HAL_ADC_ConfigChannel(&adc.ADCHandle, &sConfig) != HAL_OK)
-        {
-          /* Channel Configuration Error */
+            if (HAL_ADC_ConfigChannel(&adc.ADCHandle, &sConfig) != HAL_OK)
+            {
+                /* Channel Configuration Error */
+            }
         }
     }
 
-    dmaInit(dmaGetIdentifier(adc.DMAy_Streamx), OWNER_ADC, 0);
+#ifdef USE_DMA_SPEC
+    const dmaChannelSpec_t *dmaspec = dmaGetChannelSpec(DMA_PERIPH_ADC, device, config->dmaopt[device]);
 
+    if (!dmaspec) {
+        return;
+    }
+
+    dmaInit(dmaGetIdentifier(dmaspec->ref), OWNER_ADC, 0);
+    adc.DmaHandle.Init.Channel = dmaspec->channel;
+    adc.DmaHandle.Instance = dmaspec->ref;
+#else
+    dmaInit(dmaGetIdentifier(adc.DMAy_Streamx), OWNER_ADC, 0);
     adc.DmaHandle.Init.Channel = adc.channel;
+    adc.DmaHandle.Instance = adc.DMAy_Streamx;
+#endif
+
     adc.DmaHandle.Init.Direction = DMA_PERIPH_TO_MEMORY;
     adc.DmaHandle.Init.PeriphInc = DMA_PINC_DISABLE;
     adc.DmaHandle.Init.MemInc = configuredAdcChannels > 1 ? DMA_MINC_ENABLE : DMA_MINC_DISABLE;
@@ -313,7 +334,7 @@ void adcInit(const adcConfig_t *config)
     adc.DmaHandle.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
     adc.DmaHandle.Init.MemBurst = DMA_MBURST_SINGLE;
     adc.DmaHandle.Init.PeriphBurst = DMA_PBURST_SINGLE;
-    adc.DmaHandle.Instance = adc.DMAy_Streamx;
+
 
     if (HAL_DMA_Init(&adc.DmaHandle) != HAL_OK)
     {
@@ -326,7 +347,7 @@ void adcInit(const adcConfig_t *config)
 
     if (HAL_ADC_Start_DMA(&adc.ADCHandle, (uint32_t*)&adcValues, configuredAdcChannels) != HAL_OK)
     {
-        /* Start Conversation Error */
+        /* Start Conversion Error */
     }
 }
 #endif

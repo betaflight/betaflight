@@ -52,6 +52,7 @@
 #include "drivers/accgyro/accgyro_spi_mpu6000.h"
 #include "drivers/accgyro/accgyro_spi_mpu6500.h"
 #include "drivers/accgyro/accgyro_spi_mpu9250.h"
+#include "drivers/accgyro/accgyro_spi_l3gd20.h"
 #include "drivers/accgyro/accgyro_mpu.h"
 
 #include "pg/pg.h"
@@ -139,7 +140,7 @@ static void mpuIntExtiInit(gyroDev_t *gyro)
     EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, IOCFG_IN_FLOATING, EXTI_TRIGGER_RISING);
     EXTIEnable(mpuIntIO, true);
 }
-#endif // MPU_INT_EXTI
+#endif // USE_GYRO_EXTI
 
 bool mpuAccRead(accDev_t *acc)
 {
@@ -212,6 +213,9 @@ static gyroSpiDetectFn_t gyroSpiDetectFnTable[] = {
 #ifdef USE_ACCGYRO_BMI160
     bmi160Detect,
 #endif
+#ifdef USE_GYRO_L3GD20
+    l3gd20Detect,
+#endif
     NULL // Avoid an empty array
 };
 
@@ -242,11 +246,20 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro, const gyro
         }
     }
 
-    spiPreinitCsByTag(config->csnTag);
+    spiPreinitByTag(config->csnTag);
 
     return false;
 }
 #endif
+
+void mpuPreInit(const struct gyroDeviceConfig_s *config)
+{
+#ifdef USE_SPI_GYRO
+    spiPreinitRegister(config->csnTag, IOCFG_IPU, 1);
+#else
+    UNUSED(config);
+#endif
+}
 
 void mpuDetect(gyroDev_t *gyro, const gyroDeviceConfig_t *config)
 {

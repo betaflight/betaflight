@@ -25,6 +25,8 @@
 
 #include "platform.h"
 
+#include "blackbox/blackbox.h"
+
 #include "build/debug.h"
 
 #include "config/config_eeprom.h"
@@ -62,6 +64,8 @@
 #include "sensors/battery.h"
 #include "sensors/gyro.h"
 
+#include "scheduler/scheduler.h"
+
 pidProfile_t *currentPidProfile;
 
 #ifndef RX_SPI_DEFAULT_PROTOCOL
@@ -70,10 +74,11 @@ pidProfile_t *currentPidProfile;
 
 #define DYNAMIC_FILTER_MAX_SUPPORTED_LOOP_TIME HZ_TO_INTERVAL_US(2000)
 
-PG_REGISTER_WITH_RESET_TEMPLATE(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 1);
 
 PG_RESET_TEMPLATE(pilotConfig_t, pilotConfig,
-    .name = { 0 }
+    .name = { 0 },
+    .displayName = { 0 },
 );
 
 PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 2);
@@ -87,6 +92,8 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .powerOnArmingGraceTime = 5,
     .boardIdentifier = TARGET_BOARD_IDENTIFIER,
     .hseMhz = SYSTEM_HSE_VALUE,  // Not used for non-F4 targets
+    .configured = false,
+    .schedulerOptimizeRate = false,
 );
 
 uint8_t getCurrentPidProfileIndex(void)
@@ -120,6 +127,7 @@ void resetConfigs(void)
 
 static void activateConfig(void)
 {
+    schedulerOptimizeRate(systemConfig()->schedulerOptimizeRate);
     loadPidProfile();
     loadControlRateProfile();
 
@@ -128,8 +136,8 @@ static void activateConfig(void)
     resetAdjustmentStates();
 
     pidInit(currentPidProfile);
-    useRcControlsConfig(currentPidProfile);
-    useAdjustmentConfig(currentPidProfile);
+
+    rcControlsInit();
 
     failsafeReset();
     setAccelerationTrims(&accelerometerConfigMutable()->accZero);
@@ -192,6 +200,17 @@ static void validateAndFixConfig(void)
     // Prevent invalid notch cutoff
     if (currentPidProfile->dterm_notch_cutoff >= currentPidProfile->dterm_notch_hz) {
         currentPidProfile->dterm_notch_hz = 0;
+    }
+
+#ifdef USE_DYN_LPF
+    //PRevent invalid dynamic lowpass
+    if (currentPidProfile->dyn_lpf_dterm_min_hz > currentPidProfile->dyn_lpf_dterm_max_hz) {
+        currentPidProfile->dyn_lpf_dterm_min_hz = 0;
+    }
+#endif
+
+    if (currentPidProfile->motor_output_limit > 100 || currentPidProfile->motor_output_limit == 0) {
+        currentPidProfile->motor_output_limit = 100;
     }
 
     if (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_BRUSHED) {
@@ -404,6 +423,12 @@ static void validateAndFixConfig(void)
 #endif
 #endif
 
+#if defined(USE_DSHOT_TELEMETRY)
+    if (motorConfig()->dev.useBurstDshot && motorConfig()->dev.useDshotTelemetry) {
+        motorConfigMutable()->dev.useDshotTelemetry = false;
+    }
+#endif
+
 #if defined(TARGET_VALIDATECONFIG)
     targetValidateConfiguration();
 #endif
@@ -425,6 +450,12 @@ void validateAndFixGyroConfig(void)
     if (gyroConfig()->gyro_soft_notch_cutoff_2 >= gyroConfig()->gyro_soft_notch_hz_2) {
         gyroConfigMutable()->gyro_soft_notch_hz_2 = 0;
     }
+#ifdef USE_DYN_LPF
+    //Prevent invalid dynamic lowpass filter
+    if (gyroConfig()->dyn_lpf_gyro_min_hz > gyroConfig()->dyn_lpf_gyro_max_hz) {
+        gyroConfigMutable()->dyn_lpf_gyro_min_hz = 0;
+    }
+#endif
 
     if (gyroConfig()->gyro_hardware_lpf == GYRO_HARDWARE_LPF_1KHZ_SAMPLE) {
         pidConfigMutable()->pid_process_denom = 1; // When gyro set to 1khz always set pid speed 1:1 to sampling speed
@@ -509,6 +540,20 @@ void validateAndFixGyroConfig(void)
             pidConfigMutable()->pid_process_denom = MAX(pidConfigMutable()->pid_process_denom, minPidProcessDenom);
         }
     }
+
+#ifdef USE_BLACKBOX
+#ifndef USE_FLASHFS
+    if (blackboxConfig()->device == 1) {  // BLACKBOX_DEVICE_FLASH (but not defined)
+        blackboxConfigMutable()->device = BLACKBOX_DEVICE_NONE;
+    }
+#endif // USE_FLASHFS
+
+#ifndef USE_SDCARD
+    if (blackboxConfig()->device == 2) {  // BLACKBOX_DEVICE_SDCARD (but not defined)
+        blackboxConfigMutable()->device = BLACKBOX_DEVICE_NONE;
+    }
+#endif // USE_SDCARD
+#endif // USE_BLACKBOX
 }
 
 bool readEEPROM(void)
@@ -527,15 +572,28 @@ bool readEEPROM(void)
     return success;
 }
 
-void writeEEPROM(void)
+static void ValidateAndWriteConfigToEEPROM(bool setConfigured)
 {
     validateAndFixConfig();
 
     suspendRxPwmPpmSignal();
 
+#ifdef USE_CONFIGURATION_STATE
+    if (setConfigured) {
+        systemConfigMutable()->configured = true;
+    }
+#else
+    UNUSED(setConfigured);
+#endif
+
     writeConfigToEEPROM();
 
     resumeRxPwmPpmSignal();
+}
+
+void writeEEPROM(void)
+{
+    ValidateAndWriteConfigToEEPROM(true);
 }
 
 void writeEEPROMWithFeatures(uint32_t features)
@@ -543,14 +601,14 @@ void writeEEPROMWithFeatures(uint32_t features)
     featureDisableAll();
     featureEnable(features);
 
-    writeEEPROM();
+    ValidateAndWriteConfigToEEPROM(true);
 }
 
 void resetEEPROM(void)
 {
     resetConfigs();
 
-    writeEEPROM();
+    ValidateAndWriteConfigToEEPROM(false);
 
     activateConfig();
 }
@@ -565,7 +623,7 @@ void ensureEEPROMStructureIsValid(void)
 
 void saveConfigAndNotify(void)
 {
-    writeEEPROM();
+    ValidateAndWriteConfigToEEPROM(true);
     readEEPROM();
     beeperConfirmationBeeps(1);
 }
@@ -575,7 +633,18 @@ void changePidProfile(uint8_t pidProfileIndex)
     if (pidProfileIndex < MAX_PROFILE_COUNT) {
         systemConfigMutable()->pidProfileIndex = pidProfileIndex;
         loadPidProfile();
+
+        pidInit(currentPidProfile);
     }
 
     beeperConfirmationBeeps(pidProfileIndex + 1);
+}
+
+bool isSystemConfigured(void)
+{
+#ifdef USE_CONFIGURATION_STATE
+    return systemConfig()->configured;
+#else
+    return true;
+#endif
 }

@@ -26,19 +26,22 @@
 
 #include "build/build_config.h"
 
-#include "common/maths.h"
 #include "common/filter.h"
+#include "common/maths.h"
 #include "common/utils.h"
+
+#include "config/config_reset.h"
 
 #include "drivers/adc.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
-#include "config/config_reset.h"
 
 #include "sensors/adcinternal.h"
-#include "sensors/voltage.h"
+#include "sensors/battery.h"
 #include "sensors/esc_sensor.h"
+
+#include "voltage.h"
 
 const char * const voltageMeterSourceNames[VOLTAGE_METER_COUNT] = {
     "NONE", "ADC", "ESC"
@@ -101,8 +104,8 @@ void voltageMeterReset(voltageMeter_t *meter)
 #endif
 
 typedef struct voltageMeterADCState_s {
-    uint16_t voltageFiltered;         // battery voltage in 0.1V steps (filtered)
-    uint16_t voltageUnfiltered;       // battery voltage in 0.1V steps (unfiltered)
+    uint16_t voltageFiltered;         // battery voltage in 0.01V steps (filtered)
+    uint16_t voltageUnfiltered;       // battery voltage in 0.01V steps (unfiltered)
     biquadFilter_t filter;
 } voltageMeterADCState_t;
 
@@ -145,8 +148,8 @@ static const uint8_t voltageMeterAdcChannelMap[] = {
 STATIC_UNIT_TESTED uint16_t voltageAdcToVoltage(const uint16_t src, const voltageSensorADCConfig_t *config)
 {
     // calculate battery voltage based on ADC reading
-    // result is Vbatt in 0.1V steps. 3.3V = ADC Vref, 0xFFF = 12bit adc, 110 = 10:1 voltage divider (10k:1k) * 10 for 0.1V
-    return ((((uint32_t)src * config->vbatscale * getVrefMv() / 100 + (0xFFF * 5)) / (0xFFF * config->vbatresdivval)) / config->vbatresdivmultiplier);
+    // result is Vbatt in 0.01V steps. 3.3V = ADC Vref, 0xFFF = 12bit adc, 110 = 10:1 voltage divider (10k:1k) * 100 for 0.01V
+    return ((((uint32_t)src * config->vbatscale * getVrefMv() / 10 + (0xFFF * 5)) / (0xFFF * config->vbatresdivval)) / config->vbatresdivmultiplier);
 }
 
 void voltageMeterADCRefresh(void)
@@ -191,7 +194,7 @@ void voltageMeterADCInit(void)
         voltageMeterADCState_t *state = &voltageMeterADCStates[i];
         memset(state, 0, sizeof(voltageMeterADCState_t));
 
-        biquadFilterInitLPF(&state->filter, VBAT_LPF_FREQ, HZ_TO_INTERVAL_US(50));
+        biquadFilterInitLPF(&state->filter, GET_BATTERY_LPF_FREQUENCY(batteryConfig()->vbatLpfPeriod), HZ_TO_INTERVAL_US(50));
     }
 }
 
@@ -201,8 +204,8 @@ void voltageMeterADCInit(void)
 
 #ifdef USE_ESC_SENSOR
 typedef struct voltageMeterESCState_s {
-    uint16_t voltageFiltered;         // battery voltage in 0.1V steps (filtered)
-    uint16_t voltageUnfiltered;       // battery voltage in 0.1V steps (unfiltered)
+    uint16_t voltageFiltered;         // battery voltage in 0.01V steps (filtered)
+    uint16_t voltageUnfiltered;       // battery voltage in 0.01V steps (unfiltered)
     biquadFilter_t filter;
 } voltageMeterESCState_t;
 
@@ -215,7 +218,7 @@ void voltageMeterESCInit(void)
 {
 #ifdef USE_ESC_SENSOR
     memset(&voltageMeterESCState, 0, sizeof(voltageMeterESCState_t));
-    biquadFilterInitLPF(&voltageMeterESCState.filter, VBAT_LPF_FREQ, HZ_TO_INTERVAL_US(50));
+    biquadFilterInitLPF(&voltageMeterESCState.filter, GET_BATTERY_LPF_FREQUENCY(batteryConfig()->vbatLpfPeriod), HZ_TO_INTERVAL_US(50));
 #endif
 }
 
@@ -224,7 +227,7 @@ void voltageMeterESCRefresh(void)
 #ifdef USE_ESC_SENSOR
     escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
     if (escData) {
-        voltageMeterESCState.voltageUnfiltered = escData->dataAge <= ESC_BATTERY_AGE_MAX ? escData->voltage / 10 : 0;
+        voltageMeterESCState.voltageUnfiltered = escData->dataAge <= ESC_BATTERY_AGE_MAX ? escData->voltage : 0;
         voltageMeterESCState.voltageFiltered = biquadFilterApply(&voltageMeterESCState.filter, voltageMeterESCState.voltageUnfiltered);
     }
 #endif
@@ -238,7 +241,7 @@ void voltageMeterESCReadMotor(uint8_t motorNumber, voltageMeter_t *voltageMeter)
 #else
     escSensorData_t *escData = getEscSensorData(motorNumber);
     if (escData) {
-        voltageMeter->unfiltered = escData->dataAge <= ESC_BATTERY_AGE_MAX ? escData->voltage / 10 : 0;
+        voltageMeter->unfiltered = escData->dataAge <= ESC_BATTERY_AGE_MAX ? escData->voltage : 0;
         voltageMeter->filtered = voltageMeter->unfiltered; // no filtering for ESC motors currently.
     } else {
         voltageMeterReset(voltageMeter);

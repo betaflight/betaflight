@@ -112,7 +112,8 @@ void sdcardInsertionDetectDeinit(void);
 bool sdcard_isInserted(void);
 
 typedef struct sdcardVTable_s {
-    void (*sdcard_init)(const sdcardConfig_t *config);
+    void (*sdcard_preInit)(const sdcardConfig_t *config);
+    void (*sdcard_init)(const sdcardConfig_t *config, const spiPinConfig_t *spiConfig);
     bool (*sdcard_readBlock)(uint32_t blockIndex, uint8_t *buffer, sdcard_operationCompleteCallback_c callback, uint32_t callbackData);
     sdcardOperationStatus_e (*sdcard_beginWriteBlocks)(uint32_t blockIndex, uint32_t blockCount);
     sdcardOperationStatus_e (*sdcard_writeBlock)(uint32_t blockIndex, uint8_t *buffer, sdcard_operationCompleteCallback_c callback, uint32_t callbackData);

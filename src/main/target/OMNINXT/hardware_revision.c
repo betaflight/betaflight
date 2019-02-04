@@ -155,7 +155,14 @@ static uint16_t adcIDDetectReadVrefint(void)
 #include "drivers/adc_impl.h"
 
 static adcDevice_t adcIDDetHardware = 
-    { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .DMAy_Streamx = ADC1_DMA_STREAM, .channel = DMA_CHANNEL_0 };
+    {
+        .ADCx = ADC1,
+        .rccADC = RCC_APB2(ADC1),
+#if !defined(USE_DMA_SPEC)
+        .DMAy_Streamx = ADC1_DMA_STREAM,
+        .channel = DMA_CHANNEL_0
+#endif
+    };
 
 // XXX adcIDDetectInitDevice is an exact copy of adcInitDevice() from adc_stm32f7xx.c. Export and use?
 

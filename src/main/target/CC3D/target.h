@@ -28,7 +28,6 @@
 
 #define USE_BEEPER
 #define BEEPER_PIN              PA15
-#define BEEPER_OPT              PA2
 
 #define USE_EXTI
 #define USE_GYRO_EXTI
@@ -97,8 +96,6 @@
 #define CURRENT_METER_ADC_PIN   PB1
 #define VBAT_ADC_PIN            PA0
 #define RSSI_ADC_PIN            PB0
-
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 //#define USE_RANGEFINDER
 //#define USE_RANGEFINDER_HCSR04

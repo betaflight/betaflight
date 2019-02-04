@@ -34,6 +34,9 @@
 static FAST_RAM_ZERO_INIT pwmWriteFn *pwmWrite;
 static FAST_RAM_ZERO_INIT pwmOutputPort_t motors[MAX_SUPPORTED_MOTORS];
 static FAST_RAM_ZERO_INIT pwmCompleteWriteFn *pwmCompleteWrite = NULL;
+#ifdef USE_DSHOT_TELEMETRY
+static FAST_RAM_ZERO_INIT pwmStartWriteFn *pwmStartWrite = NULL;
+#endif
 
 #ifdef USE_DSHOT
 FAST_RAM_ZERO_INIT loadDmaBufferFn *loadDmaBuffer;
@@ -41,6 +44,7 @@ FAST_RAM_ZERO_INIT loadDmaBufferFn *loadDmaBuffer;
 #define DSHOT_COMMAND_DELAY_US 1000
 #define DSHOT_ESCINFO_DELAY_US 12000
 #define DSHOT_BEEP_DELAY_US 100000
+#define DSHOT_MAX_COMMANDS 3
 
 typedef struct dshotCommandControl_s {
     timeUs_t nextCommandAtUs;
@@ -50,7 +54,9 @@ typedef struct dshotCommandControl_s {
     uint8_t command[MAX_SUPPORTED_MOTORS];
 } dshotCommandControl_t;
 
-static dshotCommandControl_t dshotCommandControl;
+static dshotCommandControl_t commandQueue[DSHOT_MAX_COMMANDS + 1];
+static uint8_t commandQueueHead;
+static uint8_t commandQueueTail;
 #endif
 
 #ifdef USE_SERVOS
@@ -66,6 +72,9 @@ static bool pwmMotorsEnabled = false;
 static bool isDshot = false;
 #ifdef USE_DSHOT_DMAR
 FAST_RAM_ZERO_INIT bool useBurstDshot = false;
+#endif
+#ifdef USE_DSHOT_TELEMETRY
+FAST_RAM_ZERO_INIT bool useDshotTelemetry = false;
 #endif
 
 static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8_t output)
@@ -163,6 +172,8 @@ static FAST_CODE uint8_t loadDmaBufferDshot(uint32_t *dmaBuffer, int stride, uin
         dmaBuffer[i * stride] = (packet & 0x8000) ? MOTOR_BIT_1 : MOTOR_BIT_0;  // MSB first
         packet <<= 1;
     }
+    dmaBuffer[16 * stride] = 0;
+    dmaBuffer[17 * stride] = 0;
 
     return DSHOT_DMA_BUFFER_SIZE;
 }
@@ -173,6 +184,8 @@ static uint8_t loadDmaBufferProshot(uint32_t *dmaBuffer, int stride, uint16_t pa
         dmaBuffer[i * stride] = PROSHOT_BASE_SYMBOL + ((packet & 0xF000) >> 12) * PROSHOT_BIT_WIDTH;  // Most significant nibble first
         packet <<= 4;   // Shift 4 bits
     }
+    dmaBuffer[4 * stride] = 0;
+    dmaBuffer[5 * stride] = 0;
 
     return PROSHOT_DMA_BUFFER_SIZE;
 }
@@ -210,6 +223,13 @@ bool pwmAreMotorsEnabled(void)
     return pwmMotorsEnabled;
 }
 
+#ifdef USE_DSHOT_TELEMETRY
+static void pwmStartWriteUnused(uint8_t motorCount)
+{
+    UNUSED(motorCount);
+}
+#endif
+
 static void pwmCompleteWriteUnused(uint8_t motorCount)
 {
     UNUSED(motorCount);
@@ -231,6 +251,13 @@ void pwmCompleteMotorUpdate(uint8_t motorCount)
 {
     pwmCompleteWrite(motorCount);
 }
+
+#ifdef USE_DSHOT_TELEMETRY
+void pwmStartMotorUpdate(uint8_t motorCount)
+{
+    pwmStartWrite(motorCount);
+}
+#endif
 
 void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount)
 {
@@ -270,6 +297,10 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
         pwmWrite = &pwmWriteDshot;
         loadDmaBuffer = &loadDmaBufferProshot;
         pwmCompleteWrite = &pwmCompleteDshotMotorUpdate;
+#ifdef USE_DSHOT_TELEMETRY
+        pwmStartWrite = &pwmStartDshotMotorUpdate;
+        useDshotTelemetry = motorConfig->useDshotTelemetry;
+#endif
         isDshot = true;
         break;
     case PWM_TYPE_DSHOT1200:
@@ -279,6 +310,10 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
         pwmWrite = &pwmWriteDshot;
         loadDmaBuffer = &loadDmaBufferDshot;
         pwmCompleteWrite = &pwmCompleteDshotMotorUpdate;
+#ifdef USE_DSHOT_TELEMETRY
+        pwmStartWrite = &pwmStartDshotMotorUpdate;
+        useDshotTelemetry = motorConfig->useDshotTelemetry;
+#endif
         isDshot = true;
 #ifdef USE_DSHOT_DMAR
         if (motorConfig->useBurstDshot) {
@@ -292,6 +327,9 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
     if (!isDshot) {
         pwmWrite = &pwmWriteStandard;
         pwmCompleteWrite = useUnsyncedPwm ? &pwmCompleteWriteUnused : &pwmCompleteOneshotMotorUpdate;
+#ifdef USE_DSHOT_TELEMETRY
+        pwmStartWrite = pwmStartWriteUnused;
+#endif
     }
 
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
@@ -401,21 +439,53 @@ bool allMotorsAreIdle(uint8_t motorCount)
     return allMotorsIdle;
 }
 
+FAST_CODE bool pwmDshotCommandQueueFull()
+{
+    return (commandQueueHead + 1) % (DSHOT_MAX_COMMANDS + 1) == commandQueueTail;
+}
+
 FAST_CODE bool pwmDshotCommandIsQueued(void)
 {
-    return dshotCommandControl.nextCommandAtUs;
+    return commandQueueHead != commandQueueTail;
 }
 
 FAST_CODE bool pwmDshotCommandIsProcessing(void)
 {
-    return dshotCommandControl.nextCommandAtUs && !dshotCommandControl.waitingForIdle && dshotCommandControl.repeats > 0;
+    if (!pwmDshotCommandIsQueued()) {
+        return false;
+    }
+    dshotCommandControl_t* command = &commandQueue[commandQueueTail];
+    return command->nextCommandAtUs && !command->waitingForIdle && command->repeats > 0;
 }
+
+FAST_CODE void pwmDshotCommandQueueUpdate(void)
+{
+    if (!pwmDshotCommandIsQueued()) {
+        return;
+    }
+    dshotCommandControl_t* command = &commandQueue[commandQueueTail];
+    if (!command->nextCommandAtUs && !command->waitingForIdle && !command->repeats) {
+        commandQueueTail = (commandQueueTail + 1) % (DSHOT_MAX_COMMANDS + 1);
+    }
+}
+
+static dshotCommandControl_t* addCommand()
+{
+    int newHead = (commandQueueHead + 1) % (DSHOT_MAX_COMMANDS + 1);
+    if (newHead == commandQueueTail) {
+        return NULL;
+    }
+    dshotCommandControl_t* control = &commandQueue[commandQueueHead];
+    commandQueueHead = newHead;
+    return control;
+}
+
 
 void pwmWriteDshotCommand(uint8_t index, uint8_t motorCount, uint8_t command, bool blocking)
 {
     timeUs_t timeNowUs = micros();
 
-    if (!isMotorProtocolDshot() || (command > DSHOT_MAX_COMMAND) || pwmDshotCommandIsQueued()) {
+    if (!isMotorProtocolDshot() || (command > DSHOT_MAX_COMMAND) || pwmDshotCommandQueueFull()) {
         return;
     }
 
@@ -430,6 +500,8 @@ void pwmWriteDshotCommand(uint8_t index, uint8_t motorCount, uint8_t command, bo
     case DSHOT_CMD_SAVE_SETTINGS:
     case DSHOT_CMD_SPIN_DIRECTION_NORMAL:
     case DSHOT_CMD_SPIN_DIRECTION_REVERSED:
+    case DSHOT_CMD_SIGNAL_LINE_TELEMETRY_DISABLE:
+    case DSHOT_CMD_SIGNAL_LINE_CONTINUOUS_ERPM_TELEMETRY:
         repeats = 10;
         break;
     case DSHOT_CMD_BEACON1:
@@ -448,6 +520,9 @@ void pwmWriteDshotCommand(uint8_t index, uint8_t motorCount, uint8_t command, bo
         for (; repeats; repeats--) {
             delayMicroseconds(DSHOT_COMMAND_DELAY_US);
 
+#ifdef USE_DSHOT_TELEMETRY
+            pwmStartDshotMotorUpdate(motorCount);
+#endif
             for (uint8_t i = 0; i < motorCount; i++) {
                 if ((i == index) || (index == ALL_MOTORS)) {
                     motorDmaOutput_t *const motor = getMotorDmaOutput(i);
@@ -460,56 +535,60 @@ void pwmWriteDshotCommand(uint8_t index, uint8_t motorCount, uint8_t command, bo
         }
         delayMicroseconds(delayAfterCommandUs);
     } else {
-        dshotCommandControl.repeats = repeats;
-        dshotCommandControl.nextCommandAtUs = timeNowUs + DSHOT_INITIAL_DELAY_US;
-        dshotCommandControl.delayAfterCommandUs = delayAfterCommandUs;
-        for (unsigned i = 0; i < motorCount; i++) {
-            if (index == i || index == ALL_MOTORS) {
-                dshotCommandControl.command[i] = command;
-            } else {
-                dshotCommandControl.command[i] = command;
+        dshotCommandControl_t *commandControl = addCommand();
+        if (commandControl) {
+            commandControl->repeats = repeats;
+            commandControl->nextCommandAtUs = timeNowUs + DSHOT_INITIAL_DELAY_US;
+            commandControl->delayAfterCommandUs = delayAfterCommandUs;
+            for (unsigned i = 0; i < motorCount; i++) {
+                if (index == i || index == ALL_MOTORS) {
+                    commandControl->command[i] = command;
+                } else {
+                    commandControl->command[i] = command;
+                }
             }
+            commandControl->waitingForIdle = !allMotorsAreIdle(motorCount);
         }
-
-        dshotCommandControl.waitingForIdle = !allMotorsAreIdle(motorCount);
     }
 }
 
 uint8_t pwmGetDshotCommand(uint8_t index)
 {
-    return dshotCommandControl.command[index];
+    return commandQueue[commandQueueTail].command[index];
 }
 
 FAST_CODE_NOINLINE bool pwmDshotCommandOutputIsEnabled(uint8_t motorCount)
 {
     timeUs_t timeNowUs = micros();
 
-    if (dshotCommandControl.waitingForIdle) {
-        if (allMotorsAreIdle(motorCount)) {
-            dshotCommandControl.nextCommandAtUs = timeNowUs + DSHOT_INITIAL_DELAY_US;
-            dshotCommandControl.waitingForIdle = false;
+    dshotCommandControl_t* command = &commandQueue[commandQueueTail];
+    if (pwmDshotCommandIsQueued()) {
+        if (command->waitingForIdle) {
+            if (allMotorsAreIdle(motorCount)) {
+                command->nextCommandAtUs = timeNowUs + DSHOT_INITIAL_DELAY_US;
+                command->waitingForIdle = false;
+            }
+            // Send normal motor output while waiting for motors to go idle
+            return true;
         }
-
-        // Send normal motor output while waiting for motors to go idle
-        return true;
     }
 
-    if (cmpTimeUs(timeNowUs, dshotCommandControl.nextCommandAtUs) < 0) {
+    if (cmpTimeUs(timeNowUs, command->nextCommandAtUs) < 0) {
         //Skip motor update because it isn't time yet for a new command
         return false;
     }   
   
     //Timed motor update happening with dshot command
-    if (dshotCommandControl.repeats > 0) {
-        dshotCommandControl.repeats--;
+    if (command->repeats > 0) {
+        command->repeats--;
 
-        if (dshotCommandControl.repeats > 0) {
-            dshotCommandControl.nextCommandAtUs = timeNowUs + DSHOT_COMMAND_DELAY_US;
+        if (command->repeats > 0) {
+            command->nextCommandAtUs = timeNowUs + DSHOT_COMMAND_DELAY_US;
         } else {
-            dshotCommandControl.nextCommandAtUs = timeNowUs + dshotCommandControl.delayAfterCommandUs;
+            command->nextCommandAtUs = timeNowUs + command->delayAfterCommandUs;
         }
     } else {
-        dshotCommandControl.nextCommandAtUs = 0;
+        command->nextCommandAtUs = 0;
     }
 
     return true;

@@ -69,7 +69,7 @@ static int8_t STORAGE_Init(uint8_t lun)
     LED0_ON;
 
 #ifdef USE_FLASHFS 
-#ifdef USE_FLASH
+#ifdef USE_FLASH_CHIP
     flashInit(flashConfig());
 #endif
     flashfsInit();

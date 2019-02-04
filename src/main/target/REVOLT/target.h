@@ -30,7 +30,7 @@
 #endif
 
 
-#define TARGET_DEFAULT_MIXER    MIXER_QUADX_1234
+#define DEFAULT_MIXER           MIXER_QUADX_1234
 
 
 
@@ -48,9 +48,6 @@
 #define SERIALRX_UART           SERIAL_PORT_USART1
 
 #define USE_TARGET_CONFIG
-
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
-
 
 #define INVERTER_PIN_UART1      PC0
 

@@ -148,14 +148,23 @@ typedef struct pidProfile_s {
     uint8_t abs_control_gain;               // How strongly should the absolute accumulated error be corrected for
     uint8_t abs_control_limit;              // Limit to the correction
     uint8_t abs_control_error_limit;        // Limit to the accumulated error
+    uint8_t abs_control_cutoff;             // Cutoff frequency for path estimation in abs control
     uint8_t dterm_filter2_type;             // Filter selection for 2nd dterm
+    uint16_t dyn_lpf_dterm_min_hz;
     uint16_t dyn_lpf_dterm_max_hz;
-    uint8_t  dyn_lpf_dterm_idle;
     uint8_t launchControlMode;              // Whether launch control is limited to pitch only (launch stand or top-mount) or all axes (on battery)
     uint8_t launchControlThrottlePercent;   // Throttle percentage to trigger launch for launch control
     uint8_t launchControlAngleLimit;        // Optional launch control angle limit (requires ACC)
     uint8_t launchControlGain;              // Iterm gain used while launch control is active
     uint8_t launchControlAllowTriggerReset; // Controls trigger behavior and whether the trigger can be reset
+    uint8_t use_integrated_yaw;             // Selects whether the yaw pidsum should integrated
+    uint8_t integrated_yaw_relax;           // Specifies how much integrated yaw should be reduced to offset the drag based yaw component
+    uint8_t thrustLinearization;            // Compensation factor for pid linearization
+    uint8_t dterm_cut_percent;              // Amount to cut D by with no gyro activity, zero disables, 20 means cut 20%, 50 means cut 50%
+    uint8_t dterm_cut_gain;                 // Gain factor for amount of gyro activity required to remove the dterm cut
+    uint8_t dterm_cut_range_hz;             // Biquad to prevent high frequency gyro noise from removing the dterm cut
+    uint8_t dterm_cut_lowpass_hz;           // First order lowpass to delay and smooth dterm cut factor
+    uint8_t motor_output_limit;             // Upper limit of the motor output (percent)
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles);
@@ -207,19 +216,23 @@ bool pidOsdAntiGravityActive(void);
 bool pidOsdAntiGravityMode(void);
 void pidSetAntiGravityState(bool newState);
 bool pidAntiGravityEnabled(void);
+#ifdef USE_THRUST_LINEARIZATION
+float pidApplyThrustLinearization(float motorValue);
+float pidCompensateThrustLinearization(float throttle);
+#endif
 
 #ifdef UNIT_TEST
 #include "sensors/acceleration.h"
 extern float axisError[XYZ_AXIS_COUNT];
 void applyItermRelax(const int axis, const float iterm,
     const float gyroRate, float *itermErrorRate, float *currentPidSetpoint);
-void applyAbsoluteControl(const int axis, const float gyroRate, const bool itermRelaxIsEnabled,
-    const float setpointLpf, const float setpointHpf,
-    float *currentPidSetpoint, float *itermErrorRate);
+void applyAbsoluteControl(const int axis, const float gyroRate, float *currentPidSetpoint, float *itermErrorRate);
 void rotateItermAndAxisError();
 float pidLevel(int axis, const pidProfile_t *pidProfile,
     const rollAndPitchTrims_t *angleTrim, float currentPidSetpoint);
 float calcHorizonLevelStrength(void);
 #endif
 void dynLpfDTermUpdate(float throttle);
+void pidSetItermReset(bool enabled);
+float pidGetPreviousSetpoint(int axis);
 

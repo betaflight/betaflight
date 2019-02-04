@@ -52,7 +52,7 @@
 #define USE_ACC_MPU6050
 #define ACC_1_ALIGN             CW90_DEG
 
-#define TARGET_DEFAULT_MIXER    MIXER_QUADX_1234
+#define DEFAULT_MIXER           MIXER_QUADX_1234
 
 #undef USE_LED_STRIP
 #else
@@ -83,10 +83,8 @@
 #define UART3_TX_PIN            PB10 // PB10 (AF7)
 #define UART3_RX_PIN            PB11 // PB11 (AF7)
 
-#ifdef KISSCC
-#define SOFTSERIAL1_TX_PIN      PA13
-#else
-#define SOFTSERIAL1_TX_PIN      PA13 // AUX1
+#define SOFTSERIAL1_TX_PIN      PA13 // KISSFC: AUX1, KISSCC: TLM
+#if !defined(KISSCC)
 #define SOFTSERIAL2_TX_PIN      PA15 // ROLL
 #endif
 

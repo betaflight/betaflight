@@ -1,5 +1,5 @@
 F7X2RE_TARGETS += $(TARGET)
-FEATURES       += VCP SDCARD_SPI
+FEATURES       += VCP ONBOARDFLASH SDCARD_SPI
 
 TARGET_SRC = \
             drivers/accgyro/accgyro_mpu.c \

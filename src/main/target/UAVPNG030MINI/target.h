@@ -58,8 +58,8 @@
 #define USE_BARO
 #define USE_BARO_MS5611
 #define USE_BARO_SPI_MS5611
-#define MS5611_CS_PIN           PE1
-#define MS5611_SPI_INSTANCE     SPI1
+#define BARO_CS_PIN             PE1
+#define BARO_SPI_INSTANCE       SPI1
 
 #if 0 // TODO: Enable SDCard and blackbox logging
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
@@ -69,7 +69,8 @@
 #define SDCARD_DETECT_PIN               PE2
 #define SDCARD_SPI_INSTANCE             SPI2
 #define SDCARD_SPI_CS_PIN               SPI2_NSS_PIN
-#define SDCARD_DMA_CHANNEL_TX                   DMA1_Stream4
+#warning Missing channel for F4/F7 spec dma 1 stream 4; DMA_OPT assumed as 0
+#define SPI2_TX_DMA_OPT                         0     // DMA 1 Stream 4 Channel unknown
 #define SDCARD_DMA_CHANNEL                      DMA_Channel_0
 #endif
 
@@ -123,7 +124,6 @@
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA (0xffff & ~(BIT(0)|BIT(1)|BIT(10)|BIT(13)|BIT(14)|BIT(15)))
 #define TARGET_IO_PORTB (0xffff & ~(BIT(2)|BIT(3)|BIT(4)))

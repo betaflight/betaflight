@@ -38,8 +38,8 @@ extern const char * const voltageMeterSourceNames[VOLTAGE_METER_COUNT];
 // WARNING - do not mix usage of VOLTAGE_METER_* and VOLTAGE_SENSOR_*, they are separate concerns.
 
 typedef struct voltageMeter_s {
-    uint16_t filtered;                      // voltage in 0.1V steps
-    uint16_t unfiltered;                    // voltage in 0.1V steps
+    uint16_t filtered;                      // voltage in 0.01V steps
+    uint16_t unfiltered;                    // voltage in 0.01V steps
     bool lowVoltageCutoff;
 } voltageMeter_t;
 
@@ -66,8 +66,6 @@ typedef enum {
 
 #define VBAT_MULTIPLIER_MIN 1
 #define VBAT_MULTIPLIER_MAX 255
-
-#define VBAT_LPF_FREQ  0.1f
 
 #ifndef MAX_VOLTAGE_SENSOR_ADC
 #define MAX_VOLTAGE_SENSOR_ADC 1 // VBAT - some boards have external, 12V, 9V and 5V meters.

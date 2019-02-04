@@ -189,8 +189,7 @@
 #define SDCARD_DETECT_PIN                   PE3
 #define SDCARD_SPI_INSTANCE                 SPI4
 #define SDCARD_SPI_CS_PIN                   SPI4_NSS_PIN
-#define SDCARD_DMA_STREAM_TX_FULL           DMA2_Stream1
-#define SDCARD_DMA_CHANNEL                  4
+#define SPI4_TX_DMA_OPT                     0     // DMA 2 Stream 1 Channel 4
 
 #endif
 
@@ -205,8 +204,8 @@
 #define USE_BARO
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
-#define BMP280_SPI_INSTANCE     SPI1
-#define BMP280_CS_PIN           PA1
+#define BARO_SPI_INSTANCE       SPI1
+#define BARO_CS_PIN             PA1
 
 #define USE_MAG
 #define USE_MAG_HMC5883
@@ -219,6 +218,7 @@
 
 #define USE_ADC
 #define ADC_INSTANCE            ADC1
+#define ADC1_DMA_OPT            1  // DMA 2 Stream 4 Channel 0 (compat default)
 #define CURRENT_METER_ADC_PIN   PC2
 #define VBAT_ADC_PIN            PC3
 #define RSSI_ADC_PIN            PC5
@@ -243,7 +243,6 @@
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #endif
 
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 //PORT'S & TIMERS---------------------------
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff

@@ -27,6 +27,8 @@
 
 #include "blackbox/blackbox.h"
 
+#include "cli/cli.h"
+
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/maths.h"
@@ -58,6 +60,7 @@
 #include "drivers/light_led.h"
 #include "drivers/mco.h"
 #include "drivers/nvic.h"
+#include "drivers/persistent.h"
 #include "drivers/pwm_esc_detect.h"
 #include "drivers/pwm_output.h"
 #include "drivers/rx/rx_pwm.h"
@@ -85,10 +88,13 @@
 #include "fc/tasks.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
+#include "fc/dispatch.h"
 
-#include "interface/cli.h"
-#include "interface/msp.h"
+#ifdef USE_PERSISTENT_MSC_RTC
+#include "msc/usbd_storage.h"
+#endif
 
+#include "msp/msp.h"
 #include "msp/msp_serial.h"
 
 #include "pg/adc.h"
@@ -144,6 +150,7 @@
 #include "sensors/esc_sensor.h"
 #include "sensors/gyro.h"
 #include "sensors/initialisation.h"
+#include "sensors/rpm_filter.h"
 #include "sensors/sensors.h"
 
 #include "telemetry/telemetry.h"
@@ -198,6 +205,24 @@ static IO_t busSwitchResetPin        = IO_NONE;
     // ENABLE
     IOLo(busSwitchResetPin);
 }
+#endif
+
+#if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
+void activateDshotTelemetry(struct dispatchEntry_s* self)
+{
+    UNUSED(self);
+    if (!ARMING_FLAG(ARMED))
+    {
+        pwmWriteDshotCommand(
+            255, getMotorCount(), motorConfig()->dev.useDshotTelemetry ?
+            DSHOT_CMD_SIGNAL_LINE_CONTINUOUS_ERPM_TELEMETRY : DSHOT_CMD_SIGNAL_LINE_TELEMETRY_DISABLE, false);
+    }
+}
+
+dispatchEntry_t activateDshotTelemetryEntry =
+{
+    activateDshotTelemetry, 0, NULL, false
+};
 #endif
 
 void init(void)
@@ -261,7 +286,7 @@ void init(void)
     targetPreInit();
 #endif
 
-#if !defined(UNIT_TEST) && !defined(USE_FAKE_LED)
+#if !defined(USE_FAKE_LED)
     ledInit(statusLedConfig());
 #endif
     LED2_ON;
@@ -296,12 +321,6 @@ void init(void)
     }
 #endif
 
-    // Configure MCO output after config is stable
-
-#ifdef USE_MCO
-    mcoInit(mcoConfig());
-#endif
-
     // Note that spektrumBind checks if a call is immediately after
     // hard reset (including power cycle), so it should be called before
     // systemClockSetHSEValue and OverclockRebootIfNecessary, as these
@@ -330,6 +349,11 @@ void init(void)
 
 #ifdef USE_OVERCLOCK
     OverclockRebootIfNecessary(systemConfig()->cpu_overclock);
+#endif
+
+    // Configure MCO output after config is stable
+#ifdef USE_MCO
+    mcoInit(mcoConfig());
 #endif
 
     timerInit();  // timer must be initialized before any channel is allocated
@@ -393,13 +417,17 @@ void init(void)
 
 #ifdef TARGET_BUS_INIT
     targetBusInit();
+
 #else
 
 #ifdef USE_SPI
     spiPinConfigure(spiPinConfig(0));
+#endif
 
-    // Initialize CS lines and keep them high
-    spiPreInit();
+    sensorsPreInit();
+
+#ifdef USE_SPI
+    spiPreinit();
 
 #ifdef USE_SPI_DEVICE_1
     spiInit(SPIDEV_1);
@@ -423,9 +451,15 @@ void init(void)
         if (mscStart() == 0) {
              mscWaitForButton();
         } else {
-             NVIC_SystemReset();
+            systemResetFromMsc();
         }
     }
+#endif
+
+#ifdef USE_PERSISTENT_MSC_RTC
+    // if we didn't enter MSC mode then clear the persistent RTC value
+    persistentObjectWrite(PERSISTENT_OBJECT_RTC_HIGH, 0);
+    persistentObjectWrite(PERSISTENT_OBJECT_RTC_LOW, 0);
 #endif
 
 #ifdef USE_I2C
@@ -492,7 +526,9 @@ void init(void)
 
     if (!sensorsAutodetect()) {
         // if gyro was not detected due to whatever reason, notify and don't arm.
-        indicateFailure(FAILURE_MISSING_ACC, 2);
+        if (isSystemConfigured()) {
+            indicateFailure(FAILURE_MISSING_ACC, 2);
+        }
         setArmingDisabled(ARMING_DISABLED_NO_GYRO);
     }
 
@@ -643,12 +679,13 @@ void init(void)
 #endif
 
 #ifdef USE_FLASHFS
-#if defined(USE_FLASH)
+#if defined(USE_FLASH_CHIP)
     flashInit(flashConfig());
 #endif
     flashfsInit();
 #endif
 
+#ifdef USE_BLACKBOX
 #ifdef USE_SDCARD
     if (blackboxConfig()->device == BLACKBOX_DEVICE_SDCARD) {
         if (sdcardConfig()->mode) {
@@ -660,8 +697,6 @@ void init(void)
         }
     }
 #endif
-
-#ifdef USE_BLACKBOX
     blackboxInit();
 #endif
 
@@ -678,7 +713,6 @@ void init(void)
 
 #if defined(USE_VTX_COMMON)
     vtxCommonInit();
-    vtxInit();
 #endif
 
 #ifdef USE_VTX_SMARTAUDIO
@@ -736,7 +770,16 @@ void init(void)
 
     setArmingDisabled(ARMING_DISABLED_BOOT_GRACE_TIME);
 
+// TODO: potentially delete when feature is stable. Activation when arming is enough for flight.
+#if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
+    if (motorConfig()->dev.useDshotTelemetry) {
+        dispatchEnable();
+        dispatchAdd(&activateDshotTelemetryEntry, 5000000);
+    }
+#endif
+
     fcTasksInit();
 
     systemState |= SYSTEM_STATE_READY;
+
 }

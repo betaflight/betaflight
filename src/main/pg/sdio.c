@@ -30,7 +30,8 @@ PG_REGISTER_WITH_RESET_TEMPLATE(sdioConfig_t, sdioConfig, PG_SDIO_CONFIG, 0);
 PG_RESET_TEMPLATE(sdioConfig_t, sdioConfig,
     .clockBypass = 0,
     .useCache = 0,
-    .use4BitWidth = true
+    .use4BitWidth = true,
+    .dmaopt = SDCARD_SDIO_DMA_OPT,
 );
 
 #endif

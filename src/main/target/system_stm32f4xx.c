@@ -314,9 +314,12 @@
   * @{
   */
 
+#include <string.h>
 #include "stm32f4xx.h"
 #include "system_stm32f4xx.h"
 #include "platform.h"
+#include "drivers/persistent.h"
+
 
 /**
   * @}
@@ -347,9 +350,7 @@
 
 /*!< Uncomment the following line if you need to relocate your vector Table in
      Internal SRAM. */
-/* #define VECT_TAB_SRAM */
-#define VECT_TAB_OFFSET  0x00 /*!< Vector Table base offset field.
-                                   This value must be a multiple of 0x200. */
+#define VECT_TAB_SRAM
 /******************************************************************************/
 
 /**
@@ -440,7 +441,6 @@ static const pllConfig_t overclockLevels[] = {
   { 216, 432, 2,  9 },  // 216 MHz
   { 240, 480, 2,  10 }  // 240 MHz
 #elif defined(STM32F411xE)
-  {  84, 336, 4,  7 },  // 84 MHz
   {  96, 384, 4,  8 },  // 96 MHz
   { 108, 432, 4,  9 },  // 108 MHz
   { 120, 480, 4, 10 },  // 120 MHz
@@ -460,12 +460,12 @@ static const pllConfig_t overclockLevels[] = {
 #define PLL_R      7 // PLL_R output is not used, can be any descent number
 #endif
 
-static PERSISTENT uint32_t currentOverclockLevel = 0;
-static PERSISTENT uint32_t hse_value = 8000000;
-
 void SystemInitPLLParameters(void)
 {
     /* PLL setting for overclocking */
+
+    uint32_t currentOverclockLevel = persistentObjectRead(PERSISTENT_OBJECT_OVERCLOCK_LEVEL);
+
     if (currentOverclockLevel >= ARRAYLEN(overclockLevels)) {
       return;
     }
@@ -487,7 +487,7 @@ void OverclockRebootIfNecessary(uint32_t overclockLevel)
 
   // Reboot to adjust overclock frequency
   if (SystemCoreClock != pll->mhz * 1000000U) {
-    currentOverclockLevel = overclockLevel;
+    persistentObjectWrite(PERSISTENT_OBJECT_OVERCLOCK_LEVEL, overclockLevel);
     __disable_irq();
     NVIC_SystemReset();
   }
@@ -495,8 +495,10 @@ void OverclockRebootIfNecessary(uint32_t overclockLevel)
 
 void systemClockSetHSEValue(uint32_t frequency)
 {
+    uint32_t hse_value = persistentObjectRead(PERSISTENT_OBJECT_HSE_VALUE);
+
     if (hse_value != frequency) {
-        hse_value = frequency;
+        persistentObjectWrite(PERSISTENT_OBJECT_HSE_VALUE, frequency);
         __disable_irq();
         NVIC_SystemReset();
     }
@@ -504,11 +506,6 @@ void systemClockSetHSEValue(uint32_t frequency)
 
 void SystemInit(void)
 {
-    if (!(RCC->CSR & RCC_CSR_SFTRSTF)) {
-        currentOverclockLevel = 0;
-        hse_value = 0;
-    }
-
   /* FPU settings ------------------------------------------------------------*/
   #if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
     SCB->CPACR |= ((3UL << 10*2)|(3UL << 11*2));  /* set CP10 and CP11 Full Access */
@@ -541,10 +538,20 @@ void SystemInit(void)
   //SetSysClock();
 
   /* Configure the Vector Table location add offset address ------------------*/
+
 #ifdef VECT_TAB_SRAM
-  SCB->VTOR = SRAM_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal SRAM */
+  // Copy vector table from isr_vector_table_flash_base to isr_vector_table_base.
+  // If these two regions are the same, the copy will have no effect
+  // (Happens when linker script aliases VECTAB to FLASH).
+
+  extern uint8_t isr_vector_table_flash_base;
+  extern uint8_t isr_vector_table_base;
+  extern uint8_t isr_vector_table_end;
+
+  memcpy(&isr_vector_table_base, &isr_vector_table_flash_base, &isr_vector_table_end - &isr_vector_table_base);
+  SCB->VTOR = (uint32_t)&isr_vector_table_base;
 #else
-  SCB->VTOR = FLASH_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal FLASH */
+  SCB->VTOR = (uint32_t)&isr_vector_table_flash_base;
 #endif
 
     SystemCoreClockUpdate();
@@ -588,6 +595,8 @@ void SystemInit(void)
   */
 void SystemCoreClockUpdate(void)
 {
+  uint32_t hse_value = persistentObjectRead(PERSISTENT_OBJECT_HSE_VALUE);
+
   uint32_t tmp = 0, pllvco = 0, pllp = 2, pllsource = 0, pllm = 2;
 #if defined(STM32F446xx)
   uint32_t pllr = 2;
@@ -673,6 +682,7 @@ static int StartHSx(uint32_t onBit, uint32_t readyBit, int maxWaitCount)
   */
 void SetSysClock(void)
 {
+    uint32_t hse_value = persistentObjectRead(PERSISTENT_OBJECT_HSE_VALUE);
     uint32_t hse_mhz = hse_value / 1000000;
 
     // Switch to HSI during clock manipulation

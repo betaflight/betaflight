@@ -73,6 +73,18 @@
 
 #define SPI_DEFAULT_TIMEOUT 10
 
+static LL_SPI_InitTypeDef defaultInit =
+{
+    .TransferDirection = SPI_DIRECTION_2LINES,
+    .Mode = SPI_MODE_MASTER,
+    .DataWidth = SPI_DATASIZE_8BIT,
+    .NSS = SPI_NSS_SOFT,
+    .BaudRate = SPI_BAUDRATEPRESCALER_8,
+    .BitOrder = SPI_FIRSTBIT_MSB,
+    .CRCPoly = 7,
+    .CRCCalculation = SPI_CRCCALCULATION_DISABLE,
+};
+
 void spiInitDevice(SPIDevice device)
 {
     spiDevice_t *spi = &(spiDevice[device]);
@@ -81,6 +93,7 @@ void spiInitDevice(SPIDevice device)
         return;
     }
 
+#ifndef USE_SPI_TRANSACTION
 #ifdef SDCARD_SPI_INSTANCE
     if (spi->dev == SDCARD_SPI_INSTANCE) {
         spi->leadingEdge = true;
@@ -90,6 +103,7 @@ void spiInitDevice(SPIDevice device)
     if (spi->dev == RX_SPI_INSTANCE) {
         spi->leadingEdge = true;
     }
+#endif
 #endif
 
     // Enable SPI clock
@@ -110,22 +124,20 @@ void spiInitDevice(SPIDevice device)
     LL_SPI_Disable(spi->dev);
     LL_SPI_DeInit(spi->dev);
 
-    LL_SPI_InitTypeDef init =
+#ifndef USE_SPI_TRANSACTION
+    if (spi->leadingEdge) {
+        defaultInit.ClockPolarity = SPI_POLARITY_LOW;
+        defaultInit.ClockPhase = SPI_PHASE_1EDGE;
+    } else
+#endif
     {
-        .TransferDirection = SPI_DIRECTION_2LINES,
-        .Mode = SPI_MODE_MASTER,
-        .DataWidth = SPI_DATASIZE_8BIT,
-        .ClockPolarity = spi->leadingEdge ? SPI_POLARITY_LOW : SPI_POLARITY_HIGH,
-        .ClockPhase = spi->leadingEdge ? SPI_PHASE_1EDGE : SPI_PHASE_2EDGE,
-        .NSS = SPI_NSS_SOFT,
-        .BaudRate = SPI_BAUDRATEPRESCALER_8,
-        .BitOrder = SPI_FIRSTBIT_MSB,
-        .CRCPoly = 7,
-        .CRCCalculation = SPI_CRCCALCULATION_DISABLE,
-    };
+        defaultInit.ClockPolarity = SPI_POLARITY_HIGH;
+        defaultInit.ClockPhase = SPI_PHASE_2EDGE;
+    }
+
     LL_SPI_SetRxFIFOThreshold(spi->dev, SPI_RXFIFO_THRESHOLD_QF);
 
-    LL_SPI_Init(spi->dev, &init);
+    LL_SPI_Init(spi->dev, &defaultInit);
     LL_SPI_Enable(spi->dev);
 }
 
@@ -217,7 +229,7 @@ bool spiTransfer(SPI_TypeDef *instance, const uint8_t *txData, uint8_t *rxData, 
     return true;
 }
 
-void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
+static uint16_t spiDivisorToBRbits(SPI_TypeDef *instance, uint16_t divisor)
 {
 #if !(defined(STM32F1) || defined(STM32F3))
     // SPI2 and SPI3 are on APB1/AHB1 which PCLK is half that of APB2/AHB2.
@@ -225,12 +237,71 @@ void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
     if (instance == SPI2 || instance == SPI3) {
         divisor /= 2; // Safe for divisor == 0 or 1
     }
+#else
+    UNUSED(instance);
 #endif
 
     divisor = constrain(divisor, 2, 256);
 
+    return (ffs(divisor) - 2) << SPI_CR1_BR_Pos;
+}
+
+void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
+{
     LL_SPI_Disable(instance);
-    LL_SPI_SetBaudRatePrescaler(instance, (ffs(divisor) - 2) << SPI_CR1_BR_Pos);
+    LL_SPI_SetBaudRatePrescaler(instance, spiDivisorToBRbits(instance, divisor));
     LL_SPI_Enable(instance);
 }
+
+#ifdef USE_SPI_TRANSACTION
+void spiBusTransactionInit(busDevice_t *bus, SPIMode_e mode, SPIClockDivider_e divisor)
+{
+    switch (mode) {
+    case SPI_MODE0_POL_LOW_EDGE_1ST:
+        defaultInit.ClockPolarity = SPI_POLARITY_LOW;
+        defaultInit.ClockPhase = SPI_PHASE_1EDGE;
+        break;
+    case SPI_MODE1_POL_LOW_EDGE_2ND:
+        defaultInit.ClockPolarity = SPI_POLARITY_LOW;
+        defaultInit.ClockPhase = SPI_PHASE_2EDGE;
+        break;
+    case SPI_MODE2_POL_HIGH_EDGE_1ST:
+        defaultInit.ClockPolarity = SPI_POLARITY_HIGH;
+        defaultInit.ClockPhase = SPI_PHASE_1EDGE;
+        break;
+    case SPI_MODE3_POL_HIGH_EDGE_2ND:
+        defaultInit.ClockPolarity = SPI_POLARITY_HIGH;
+        defaultInit.ClockPhase = SPI_PHASE_2EDGE;
+        break;
+    }
+
+    LL_SPI_Disable(bus->busdev_u.spi.instance);
+    LL_SPI_DeInit(bus->busdev_u.spi.instance);
+
+    LL_SPI_Init(bus->busdev_u.spi.instance, &defaultInit);
+    LL_SPI_SetBaudRatePrescaler(bus->busdev_u.spi.instance, spiDivisorToBRbits(bus->busdev_u.spi.instance, divisor));
+
+    // Configure for 8-bit reads. XXX Is this STM32F303xC specific?
+    LL_SPI_SetRxFIFOThreshold(bus->busdev_u.spi.instance, SPI_RXFIFO_THRESHOLD_QF);
+
+    LL_SPI_Enable(bus->busdev_u.spi.instance);
+
+    bus->busdev_u.spi.device = &spiDevice[spiDeviceByInstance(bus->busdev_u.spi.instance)];
+    bus->busdev_u.spi.modeCache = bus->busdev_u.spi.instance->CR1;
+}
+
+void spiBusTransactionSetup(const busDevice_t *bus)
+{
+    // We rely on MSTR bit to detect valid modeCache
+
+    if (bus->busdev_u.spi.modeCache && bus->busdev_u.spi.modeCache != bus->busdev_u.spi.device->cr1SoftCopy) {
+        bus->busdev_u.spi.instance->CR1 = bus->busdev_u.spi.modeCache;
+        bus->busdev_u.spi.device->cr1SoftCopy = bus->busdev_u.spi.modeCache;
+
+        // SCK seems to require some time to switch to a new initial level after CR1 is written.
+        // Here we buy some time in addition to the software copy save above.
+        __asm__("nop");
+    }
+}
+#endif // USE_SPI_TRANSACTION
 #endif

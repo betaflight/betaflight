@@ -58,6 +58,8 @@ typedef enum {
     ADJUSTMENT_PITCH_F,
     ADJUSTMENT_ROLL_F,
     ADJUSTMENT_YAW_F,
+    ADJUSTMENT_OSD_PROFILE,
+    ADJUSTMENT_LED_PROFILE,
     ADJUSTMENT_FUNCTION_COUNT
 } adjustmentFunction_e;
 
@@ -111,8 +113,6 @@ typedef struct adjustmentState_s {
 void resetAdjustmentStates(void);
 struct controlRateConfig_s;
 void processRcAdjustments(struct controlRateConfig_s *controlRateConfig);
-struct pidProfile_s;
-void useAdjustmentConfig(struct pidProfile_s *pidProfileToUse);
 const char *getAdjustmentsRangeName(void);
 int getAdjustmentsRangeValue(void);
 void activeAdjustmentRangeReset(void);

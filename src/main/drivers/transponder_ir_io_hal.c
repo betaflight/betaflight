@@ -193,14 +193,16 @@ bool isTransponderIrReady(void)
     return !transponderIrDataTransferInProgress;
 }
 
-static uint16_t dmaBufferOffset;
-
 void transponderIrWaitForTransmitComplete(void)
 {
+#ifdef DEBUG
     static uint32_t waitCounter = 0;
+#endif
 
     while (transponderIrDataTransferInProgress) {
+#ifdef DEBUG
         waitCounter++;
+#endif
     }
 }
 
@@ -256,8 +258,6 @@ void transponderIrDisable(void)
 void transponderIrTransmit(void)
 {
     transponderIrWaitForTransmitComplete();
-
-    dmaBufferOffset = 0;
 
     transponderIrDataTransferInProgress = 1;
     transponderIrDMAEnable(&transponder);

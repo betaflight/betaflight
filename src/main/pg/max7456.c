@@ -37,5 +37,6 @@ void pgResetFn_max7456Config(max7456Config_t *config)
     config->clockConfig = MAX7456_CLOCK_CONFIG_DEFAULT;
     config->csTag = IO_TAG(MAX7456_SPI_CS_PIN);
     config->spiDevice = SPI_DEV_TO_CFG(spiDeviceByInstance(MAX7456_SPI_INSTANCE));
+    config->preInitOPU = false;
 }
 #endif // USE_MAX7456

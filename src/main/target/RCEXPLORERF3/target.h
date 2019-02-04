@@ -22,20 +22,7 @@
 
 #define TARGET_BOARD_IDENTIFIER "REF3"
 
-// Removed to make the firmware fit into flash (in descending order of priority):
 #undef USE_GYRO_OVERFLOW_CHECK
-#undef USE_GYRO_LPF2
-
-//#undef USE_TELEMETRY_MAVLINK
-//#undef USE_TELEMETRY_LTM
-#undef USE_SERIALRX_XBUS
-
-#undef USE_EXTENDED_CMS_MENUS
-#undef USE_RTC_TIME
-#undef USE_RX_MSP
-#undef USE_ESC_SENSOR_INFO
-
-
 
 #define LED0_PIN    PB4
 #define LED1_PIN    PB5
@@ -125,8 +112,6 @@
 
 #define USE_GPS_UBLOX
 #define USE_GPS_NMEA
-
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff

@@ -155,10 +155,8 @@
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE                SPI3
 #define MAX7456_SPI_CS_PIN                  PA15
-
-//#define MAX7456_DMA_CHANNEL_TX              DMA1_Stream5
-//#define MAX7456_DMA_CHANNEL_RX              DMA1_Stream0
-//#define MAX7456_DMA_IRQ_HANDLER_ID          DMA1_ST0_HANDLER
+//#define SPI3_TX_DMA_OPT                   0  // DMA 1 Stream 5 Channel 0
+//#define SPI3_RX_DMA_OPT                   0  // DMA 1 Stream 0 Channel 0
 
 #define USE_SDCARD
 #define USE_SDCARD_SPI
@@ -166,15 +164,15 @@
 #define SDCARD_DETECT_PIN                   PC14
 #define SDCARD_SPI_INSTANCE                 SPI2
 #define SDCARD_SPI_CS_PIN                   SPI2_NSS_PIN
-#define SDCARD_DMA_CHANNEL_TX               DMA1_Stream4
-#define SDCARD_DMA_CHANNEL                  0
+#define SPI2_TX_DMA_OPT                     0  // DMA 1 Stream 4 Channel 0
 
 #define GYRO_1_CS_PIN                       SPI1_NSS_PIN
 #define GYRO_1_SPI_INSTANCE                 SPI1
 
 #define USE_ADC
 #define ADC_INSTANCE                        ADC1
-#define ADC1_DMA_STREAM                     DMA2_Stream0
+#define ADC1_DMA_OPT                        0  // DMA 2 Stream 0 Channel 0 
+
 
 #define VBAT_ADC_PIN                        PC1
 #define CURRENT_METER_ADC_PIN               PC2
@@ -204,8 +202,6 @@
 
 // FIXME While it's possible to use the button on the OSD/VTX board for binding enabling it here will break binding unless you have the OSD/VTX connected.
 //#define BINDPLUG_PIN                        BUTTON_A_PIN
-
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA                     0xffff
 #define TARGET_IO_PORTB                     0xffff

@@ -83,8 +83,7 @@
 #define SDCARD_DETECT_PIN                   PD2
 #define SDCARD_SPI_INSTANCE                 SPI4
 #define SDCARD_SPI_CS_PIN                   SPI4_NSS_PIN
-#define SDCARD_DMA_STREAM_TX_FULL           DMA2_Stream1
-#define SDCARD_DMA_CHANNEL                  4
+#define SPI4_TX_DMA_OPT                     0     // DMA 2 Stream 1 Channel 4
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
@@ -140,8 +139,6 @@
 // RX (or TX if half-duplex) pin of the UART the receiver is connected.
 // If PB11 is critical for this target, please resurrect this line.
 //#define SPEKTRUM_BIND_PIN       PB11
-
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff

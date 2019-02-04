@@ -53,9 +53,10 @@ static FAST_RAM_ZERO_INIT uint32_t totalWaitingTasksSamples;
 static FAST_RAM_ZERO_INIT bool calculateTaskStatistics;
 FAST_RAM_ZERO_INIT uint16_t averageSystemLoadPercent = 0;
 
-
 static FAST_RAM_ZERO_INIT int taskQueuePos = 0;
 STATIC_UNIT_TESTED FAST_RAM_ZERO_INIT int taskQueueSize = 0;
+
+static FAST_RAM int periodCalculationBasisOffset = offsetof(cfTask_t, lastExecutedAt);
 
 // No need for a linked list for the queue, since items are only inserted at startup
 
@@ -143,12 +144,14 @@ void taskSystemLoad(timeUs_t currentTimeUs)
 timeUs_t checkFuncMaxExecutionTime;
 timeUs_t checkFuncTotalExecutionTime;
 timeUs_t checkFuncMovingSumExecutionTime;
+timeUs_t checkFuncMovingSumDeltaTime;
 
 void getCheckFuncInfo(cfCheckFuncInfo_t *checkFuncInfo)
 {
     checkFuncInfo->maxExecutionTime = checkFuncMaxExecutionTime;
     checkFuncInfo->totalExecutionTime = checkFuncTotalExecutionTime;
     checkFuncInfo->averageExecutionTime = checkFuncMovingSumExecutionTime / MOVING_SUM_COUNT;
+    checkFuncInfo->averageDeltaTime = checkFuncMovingSumDeltaTime / MOVING_SUM_COUNT;
 }
 #endif
 
@@ -163,7 +166,9 @@ void getTaskInfo(cfTaskId_e taskId, cfTaskInfo_t * taskInfo)
     taskInfo->maxExecutionTime = cfTasks[taskId].maxExecutionTime;
     taskInfo->totalExecutionTime = cfTasks[taskId].totalExecutionTime;
     taskInfo->averageExecutionTime = cfTasks[taskId].movingSumExecutionTime / MOVING_SUM_COUNT;
+    taskInfo->averageDeltaTime = cfTasks[taskId].movingSumDeltaTime / MOVING_SUM_COUNT;
     taskInfo->latestDeltaTime = cfTasks[taskId].taskLatestDeltaTime;
+    taskInfo->movingAverageCycleTime = cfTasks[taskId].movingAverageCycleTime;
 #endif
 }
 
@@ -211,10 +216,12 @@ void schedulerResetTaskStatistics(cfTaskId_e taskId)
 #if defined(USE_TASK_STATISTICS)
     if (taskId == TASK_SELF) {
         currentTask->movingSumExecutionTime = 0;
+        currentTask->movingSumDeltaTime = 0;
         currentTask->totalExecutionTime = 0;
         currentTask->maxExecutionTime = 0;
     } else if (taskId < TASK_COUNT) {
         cfTasks[taskId].movingSumExecutionTime = 0;
+        cfTasks[taskId].movingSumDeltaTime = 0;
         cfTasks[taskId].totalExecutionTime = 0;
         cfTasks[taskId].maxExecutionTime = 0;
     }
@@ -243,6 +250,16 @@ void schedulerInit(void)
     queueAdd(&cfTasks[TASK_SYSTEM]);
 }
 
+void schedulerOptimizeRate(bool optimizeRate)
+{
+    periodCalculationBasisOffset = optimizeRate ? offsetof(cfTask_t, lastDesiredAt) : offsetof(cfTask_t, lastExecutedAt);
+}
+
+inline static timeUs_t getPeriodCalculationBasis(const cfTask_t* task)
+{
+    return *(timeUs_t*)((uint8_t*)task + periodCalculationBasisOffset);
+}
+
 FAST_CODE void scheduler(void)
 {
     // Cache currentTime
@@ -251,7 +268,7 @@ FAST_CODE void scheduler(void)
     // Check for realtime tasks
     bool outsideRealtimeGuardInterval = true;
     for (const cfTask_t *task = queueFirst(); task != NULL && task->staticPriority >= TASK_PRIORITY_REALTIME; task = queueNext()) {
-        const timeUs_t nextExecuteAt = task->lastExecutedAt + task->desiredPeriod;
+        const timeUs_t nextExecuteAt = getPeriodCalculationBasis(task) + task->desiredPeriod;
         if ((timeDelta_t)(currentTimeUs - nextExecuteAt) >= 0) {
             outsideRealtimeGuardInterval = false;
             break;
@@ -285,6 +302,7 @@ FAST_CODE void scheduler(void)
                 if (calculateTaskStatistics) {
                     const uint32_t checkFuncExecutionTime = micros() - currentTimeBeforeCheckFuncCall;
                     checkFuncMovingSumExecutionTime += checkFuncExecutionTime - checkFuncMovingSumExecutionTime / MOVING_SUM_COUNT;
+                    checkFuncMovingSumDeltaTime += task->taskLatestDeltaTime - checkFuncMovingSumDeltaTime / MOVING_SUM_COUNT;
                     checkFuncTotalExecutionTime += checkFuncExecutionTime;   // time consumed by scheduler + task
                     checkFuncMaxExecutionTime = MAX(checkFuncMaxExecutionTime, checkFuncExecutionTime);
                 }
@@ -299,7 +317,7 @@ FAST_CODE void scheduler(void)
         } else {
             // Task is time-driven, dynamicPriority is last execution age (measured in desiredPeriods)
             // Task age is calculated from last execution
-            task->taskAgeCycles = ((currentTimeUs - task->lastExecutedAt) / task->desiredPeriod);
+            task->taskAgeCycles = ((currentTimeUs - getPeriodCalculationBasis(task)) / task->desiredPeriod);
             if (task->taskAgeCycles > 0) {
                 task->dynamicPriority = 1 + task->staticPriority * task->taskAgeCycles;
                 waitingTasks++;
@@ -326,7 +344,9 @@ FAST_CODE void scheduler(void)
     if (selectedTask) {
         // Found a task that should be run
         selectedTask->taskLatestDeltaTime = currentTimeUs - selectedTask->lastExecutedAt;
+        float period = currentTimeUs - selectedTask->lastExecutedAt;
         selectedTask->lastExecutedAt = currentTimeUs;
+        selectedTask->lastDesiredAt += (cmpTimeUs(currentTimeUs, selectedTask->lastDesiredAt) / selectedTask->desiredPeriod) * selectedTask->desiredPeriod;
         selectedTask->dynamicPriority = 0;
 
         // Execute task
@@ -336,8 +356,10 @@ FAST_CODE void scheduler(void)
             selectedTask->taskFunc(currentTimeBeforeTaskCall);
             const timeUs_t taskExecutionTime = micros() - currentTimeBeforeTaskCall;
             selectedTask->movingSumExecutionTime += taskExecutionTime - selectedTask->movingSumExecutionTime / MOVING_SUM_COUNT;
+            selectedTask->movingSumDeltaTime += selectedTask->taskLatestDeltaTime - selectedTask->movingSumDeltaTime / MOVING_SUM_COUNT;
             selectedTask->totalExecutionTime += taskExecutionTime;   // time consumed by scheduler + task
             selectedTask->maxExecutionTime = MAX(selectedTask->maxExecutionTime, taskExecutionTime);
+            selectedTask->movingAverageCycleTime += 0.05f * (period - selectedTask->movingAverageCycleTime);
         } else
 #endif
         {

@@ -191,7 +191,7 @@ static void setIbusSensorType(ibusAddress_t address)
 
 static uint16_t getVoltage()
 {
-    uint16_t voltage = getBatteryVoltage() *10;
+    uint16_t voltage = getBatteryVoltage();
     if (telemetryConfig()->report_cell_voltage) {
         voltage /= getBatteryCellCount();
     }
@@ -383,7 +383,7 @@ static void setValue(uint8_t* bufferPtr, uint8_t sensorType, uint8_t length)
             value.uint16 = getMode();
             break;
         case IBUS_SENSOR_TYPE_CELL:
-            value.uint16 = (uint16_t)(getBatteryAverageCellVoltage() *10);
+            value.uint16 = (uint16_t)(getBatteryAverageCellVoltage());
             break;
         case IBUS_SENSOR_TYPE_BAT_CURR:
             value.uint16 = (uint16_t)getAmperage();

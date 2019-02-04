@@ -200,7 +200,7 @@ void spektrumVtxControl(void)
         if ((prevSettings.band != band) || (prevSettings.channel != channel)) {
             newSettings.band    = band;
             newSettings.channel = channel;
-            newSettings.freq    = vtx58_Bandchan2Freq(band, channel);
+            newSettings.freq    = vtxCommonLookupFrequency(vtxDevice, band, channel);
         }
 #endif
         // Seems to be no unified internal VTX API standard for power levels/indexes, VTX device brand specific.

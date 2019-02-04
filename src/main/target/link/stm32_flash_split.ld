@@ -26,14 +26,25 @@ _Min_Stack_Size = 0x800; /* required amount of stack */
 /* Define output sections */
 SECTIONS
 {
-  /* The startup code goes first into FLASH */
+  /*
+   * The ISR vector table is loaded at the beginning of the FLASH,
+   * But it is linked (space reserved) at the beginning of the VECTAB region,
+   * which is aliased either to FLASH or RAM.
+   * When linked to RAM, the table can optionally be copied from FLASH to RAM
+   * for table relocation.
+   */
+
+  _isr_vector_table_flash_base = LOADADDR(.isr_vector);
+  PROVIDE (isr_vector_table_flash_base = _isr_vector_table_flash_base);
+
   .isr_vector :
   {
     . = ALIGN(4);
     PROVIDE (isr_vector_table_base = .);
     KEEP(*(.isr_vector)) /* Startup code */
     . = ALIGN(4);
-  } >FLASH
+    PROVIDE (isr_vector_table_end = .);
+  } >VECTAB AT> FLASH
 
   /* System memory (read-only bootloader) interrupt vector */
   .system_isr_vector (NOLOAD) :

@@ -21,6 +21,9 @@
 /*
  * Author: jflyper (https://github.com/jflyper)
  */
+ 
+#include "platform.h"
+#include "common/time.h"
 
 #ifdef USE_HAL_DRIVER
 #include "usbd_msc.h"
