@@ -115,8 +115,8 @@ void gyroDataAnalyseInit(uint32_t targetLooptimeUs)
     // If we get at least 3 samples then use the default FFT sample frequency
     // otherwise we need to calculate a FFT sample frequency to ensure we get 3 samples (gyro loops < 4K)
     const int gyroLoopRateHz = lrintf((1.0f / targetLooptimeUs) * 1e6f);
-    
-    fftSamplingRateHz = MIN((gyroLoopRateHz / 3), fftSamplingRateHz);
+
+    fftSamplingRateHz = gyroLoopRateHz / MAX(1, gyroLoopRateHz / fftSamplingRateHz);
 
     fftResolution = (float)fftSamplingRateHz / FFT_WINDOW_SIZE;
 
@@ -275,7 +275,7 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
             float dataMax = 0;
             uint8_t binStart = 0;
             uint8_t binMax = 0;
-            //for bins after initial decline, identify start bin and max bin 
+            //for bins after initial decline, identify start bin and max bin
             for (int i = 1 + fftBinOffset; i < FFT_BIN_COUNT; i++) {
                 if (fftIncreased || (state->fftData[i] > state->fftData[i - 1])) {
                     if (!fftIncreased) {
