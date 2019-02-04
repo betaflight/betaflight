@@ -31,6 +31,9 @@
 
 #include "system.h"
 
+#include "FreeRTOS.h"
+#include "task.h"
+
 // cycles per microsecond
 static uint32_t usTicks = 0;
 // current uptime for 1kHz systick timer. will rollover after 49 days. hopefully we won't care.
@@ -54,6 +57,7 @@ void cycleCounterInit(void)
 
 static volatile int sysTickPending = 0;
 
+#if 0
 void SysTick_Handler(void)
 {
     ATOMIC_BLOCK(NVIC_PRIO_MAX) {
@@ -67,6 +71,7 @@ void SysTick_Handler(void)
     HAL_IncTick();
 #endif
 }
+#endif
 
 // Return system uptime in microseconds (rollover in 70minutes)
 
@@ -99,20 +104,7 @@ uint32_t microsISR(void)
 
 uint32_t micros(void)
 {
-    register uint32_t ms, cycle_cnt;
-
-    // Call microsISR() in interrupt and elevated (non-zero) BASEPRI context
-
-    if ((SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk) || (__get_BASEPRI())) {
-        return microsISR();
-    }
-
-    do {
-        ms = sysTickUptime;
-        cycle_cnt = SysTick->VAL;
-    } while (ms != sysTickUptime || cycle_cnt > sysTickValStamp);
-
-    return (ms * 1000) + (usTicks * 1000 - cycle_cnt) / usTicks;
+        return (xTaskGetTickCount() * portTICK_PERIOD_MS * 1000);
 }
 
 // Return system uptime in milliseconds (rollover in 49 days)
@@ -124,8 +116,7 @@ uint32_t millis(void)
 #if 1
 void delayMicroseconds(uint32_t us)
 {
-    uint32_t now = micros();
-    while (micros() - now < us);
+	vTaskDelay(us / (1000 * portTICK_PERIOD_MS));
 }
 #else
 void delayMicroseconds(uint32_t us)
