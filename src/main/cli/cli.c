@@ -3332,6 +3332,8 @@ static void cliProfile(char *cmdline)
         if (i >= 0 && i < MAX_PROFILE_COUNT) {
             changePidProfile(i);
             cliProfile("");
+        } else {
+            cliPrintErrorLinef("PROFILE OUTSIDE OF [0..%d]", MAX_PROFILE_COUNT - 1);
         }
     }
 }
@@ -3346,6 +3348,8 @@ static void cliRateProfile(char *cmdline)
         if (i >= 0 && i < CONTROL_RATE_PROFILE_COUNT) {
             changeControlRateProfile(i);
             cliRateProfile("");
+        } else {
+            cliPrintErrorLinef("RATE PROFILE OUTSIDE OF [0..%d]", CONTROL_RATE_PROFILE_COUNT - 1);
         }
     }
 }
