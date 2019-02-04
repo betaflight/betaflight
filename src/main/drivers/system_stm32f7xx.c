@@ -45,7 +45,7 @@ void systemReset(void)
 
 void systemResetToBootloader(void)
 {
-    persistentObjectWrite(PERSISTENT_OBJECT_BOOTMODE_REQUEST, BOOTLOADER_REQUEST_COOKIE);
+    persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_BOOTLOADER_REQUEST);
     __disable_irq();
     NVIC_SystemReset();
 }
@@ -191,12 +191,12 @@ void(*bootJump)(void);
 
 void checkForBootLoaderRequest(void)
 {
-    uint32_t bootloaderRequest = persistentObjectRead(PERSISTENT_OBJECT_BOOTMODE_REQUEST);
+    uint32_t bootloaderRequest = persistentObjectRead(PERSISTENT_OBJECT_RESET_REASON);
 
-    if (bootloaderRequest != BOOTLOADER_REQUEST_COOKIE) {
+    if (bootloaderRequest != RESET_BOOTLOADER_REQUEST) {
         return;
     }
-    persistentObjectWrite(PERSISTENT_OBJECT_BOOTMODE_REQUEST, 0);
+    persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_NONE);
 
     void (*SysMemBootJump)(void);
 
