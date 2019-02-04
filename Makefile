@@ -535,7 +535,8 @@ targets-f7-print:
 ## test              : run the Betaflight test suite
 ## junittest         : run the Betaflight test suite, producing Junit XML result files.
 ## test-representative: run a representative subset of the Betaflight test suite (i.e. run all tests, but run each expanded test only for one target)
-test junittest test-representative:
+## test-all: run the Betaflight test suite including all per-target expanded tests
+test junittest test-all test-representative:
 	$(V0) cd src/test && $(MAKE) $@
 
 ## test_help         : print the help message for the test suite (including a list of the available tests)
