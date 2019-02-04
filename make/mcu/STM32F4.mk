@@ -12,6 +12,18 @@ $(error No OPBL linker script specified for $(TARGET`))
 endif
 endif
 
+#FreeRTOS
+FREERTOS_PORTABLE_DIR = $(FREERTOS_DIR)/portable/GCC/ARM_CM4F
+		   
+FREERTOS_SRC = $(notdir $(wildcard $(FREERTOS_DIR)/*.c)) \
+	       $(notdir $(wildcard $(FREERTOS_PORTABLE_DIR)/*.c)) \
+	       $(FREERTOS_DIR)/portable/MemMang/heap_4.c
+	       
+FREERTOS_INC = $(FREERTOS_DIR)/include \
+	       $(FREERTOS_PORTABLE_DIR)
+
+VPATH           := $(VPATH):$(FREERTOS_PORTABLE_DIR):$(FREERTOS_DIR)
+	       
 #CMSIS
 ifeq ($(PERIPH_DRIVER), HAL)
 CMSIS_DIR      := $(ROOT)/lib/main/STM32F4/Drivers/CMSIS
@@ -113,6 +125,7 @@ VPATH           := $(VPATH):$(CMSIS_DIR)/Core/Include:$(ROOT)/lib/main/STM32F4/D
 ifeq ($(PERIPH_DRIVER), HAL)
 CMSIS_SRC       :=
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
+		   $(FREERTOS_INC) \
                    $(STDPERIPH_DIR)/Inc \
                    $(USBCORE_DIR)/Inc \
                    $(USBCDC_DIR)/Inc \
@@ -123,6 +136,7 @@ else
 CMSIS_SRC       := $(notdir $(wildcard $(CMSIS_DIR)/CoreSupport/*.c \
                    $(ROOT)/lib/main/STM32F4/Drivers/CMSIS/Device/ST/STM32F4xx/*.c))
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
+		   $(FREERTOS_INC) \
                    $(STDPERIPH_DIR)/inc \
                    $(USBOTG_DIR)/inc \
                    $(USBCORE_DIR)/inc \

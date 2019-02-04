@@ -27,7 +27,19 @@ DEVICE_STDPERIPH_SRC = $(STDPERIPH_SRC)
 VPATH           := $(VPATH):$(CMSIS_DIR)/Core/Include
 CMSIS_SRC       = $(notdir $(wildcard $(ROOT)/lib/main/STM32F3/Drivers/CMSIS/Device/ST/STM32F30x/*.c))
 
+#FreeRTOS
+FREERTOS_PORTABLE_DIR = $(FREERTOS_DIR)/portable/GCC/ARM_CM3
+		   
+FREERTOS_SRC = $(notdir $(wildcard $(FREERTOS_DIR)/*.c)) \
+	       $(notdir $(wildcard $(FREERTOS_PORTABLE_DIR)/*.c))
+	       
+FREERTOS_INC = $(FREERTOS_DIR)/include \
+	       $(FREERTOS_PORTABLE_DIR)
+
+VPATH           := $(VPATH):$(FREERTOS_PORTABLE_DIR):$(FREERTOS_DIR)
+
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
+		   $(FREERTOS_INC) \
                    $(STDPERIPH_DIR)/inc \
                    $(CMSIS_DIR)/Core/Include \
                    $(ROOT)/lib/main/STM32F3/Drivers/CMSIS/Device/ST/STM32F30x

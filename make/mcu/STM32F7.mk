@@ -6,6 +6,17 @@ ifeq ($(DEBUG_HARDFAULTS),F7)
 CFLAGS               += -DDEBUG_HARDFAULTS
 endif
 
+#FreeRTOS
+FREERTOS_PORTABLE_DIR = $(FREERTOS_DIR)/portable/GCC/ARM_CM7
+		   
+FREERTOS_SRC = $(notdir $(wildcard $(FREERTOS_DIR)/*.c)) \
+	       $(notdir $(wildcard $(FREERTOS_PORTABLE_DIR)/*.c))
+	       
+FREERTOS_INC = $(FREERTOS_DIR)/include \
+	       $(FREERTOS_PORTABLE_DIR)
+
+VPATH           := $(VPATH):$(FREERTOS_PORTABLE_DIR):$(FREERTOS_DIR)
+
 #CMSIS
 CMSIS_DIR      := $(ROOT)/lib/main/CMSIS
 
@@ -105,6 +116,7 @@ VPATH           := $(VPATH):$(CMSIS_DIR)/Include:$(CMSIS_DIR)/Device/ST/STM32F7x
 VPATH           := $(VPATH):$(STDPERIPH_DIR)/Src
 CMSIS_SRC       :=
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
+		   $(FREERTOS_INC) \
                    $(STDPERIPH_DIR)/Inc \
                    $(USBCORE_DIR)/Inc \
                    $(USBCDC_DIR)/Inc \

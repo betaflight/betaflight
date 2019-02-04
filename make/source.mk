@@ -3,6 +3,7 @@ COMMON_SRC = \
             build/debug.c \
             build/version.c \
             $(TARGET_DIR_SRC) \
+ 	    $(FREERTOS_SRC) \
             main.c \
             $(addprefix pg/,$(notdir $(wildcard $(SRC_DIR)/pg/*.c))) \
             $(addprefix common/,$(notdir $(wildcard $(SRC_DIR)/common/*.c))) \
