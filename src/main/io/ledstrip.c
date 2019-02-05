@@ -1172,14 +1172,6 @@ void ledStripInit(void)
 #endif
 
     ws2811LedStripInit(ledStripConfig()->ioTag);
-
-    delay(1);
-
-    ledStripDisable();
-
-    delay(1);
-
-    ledStripDisable();
 }
 
 static uint8_t selectVisualBeeperColor(uint8_t colorIndex)

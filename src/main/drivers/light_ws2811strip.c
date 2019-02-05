@@ -99,6 +99,11 @@ void ws2811LedStripInit(ioTag_t ioTag)
 {
     memset(ledStripDMABuffer, 0, sizeof(ledStripDMABuffer));
     ws2811LedStripHardwareInit(ioTag);
+
+    const hsvColor_t hsv_black = { 0, 0, 0 };
+    setStripColor(&hsv_black);
+    // RGB or GRB ordering doesn't matter for black
+    ws2811UpdateStrip(LED_RGB);
 }
 
 bool isWS2811LedStripReady(void)
