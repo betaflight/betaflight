@@ -942,7 +942,7 @@ static void printAux(uint8_t dumpMask, const modeActivationCondition_t *modeActi
         bool equalsDefault = false;
         if (defaultModeActivationConditions) {
             const modeActivationCondition_t *macDefault = &defaultModeActivationConditions[i];
-            equalsDefault = !memcmp(mac, macDefault, sizeof(*mac));
+            equalsDefault = !isModeActivationConditionConfigured(mac, macDefault);
             const box_t *box = findBoxByBoxId(macDefault->modeId);
             const box_t *linkedTo = findBoxByBoxId(macDefault->linkedTo);
             if (box) {
@@ -1028,6 +1028,7 @@ static void cliAux(char *cmdline)
             } else if (validArgumentCount != 6) {
                 memset(mac, 0, sizeof(modeActivationCondition_t));
             }
+            analyzeModeActivationConditions();
             cliPrintLinef( "aux %u %u %u %u %u %u %u",
                 i,
                 mac->modeId,

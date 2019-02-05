@@ -301,6 +301,8 @@ TEST(RCDeviceTest, TestWifiModeChangeWithDeviceUnready)
     modeActivationConditionsMutable(2)->range.startStep = CHANNEL_VALUE_TO_STEP(1300);
     modeActivationConditionsMutable(2)->range.endStep = CHANNEL_VALUE_TO_STEP(1600);
 
+    analyzeModeActivationConditions();
+    
     // make the binded mode inactive
     rcData[modeActivationConditions(0)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 1800;
     rcData[modeActivationConditions(1)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 900;
@@ -362,6 +364,8 @@ TEST(RCDeviceTest, TestWifiModeChangeWithDeviceReady)
     modeActivationConditionsMutable(2)->range.startStep = CHANNEL_VALUE_TO_STEP(1900);
     modeActivationConditionsMutable(2)->range.endStep = CHANNEL_VALUE_TO_STEP(2100);
 
+    analyzeModeActivationConditions();
+
     rcData[modeActivationConditions(0)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 1700;
     rcData[modeActivationConditions(1)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 2000;
     rcData[modeActivationConditions(2)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 1700;
@@ -421,6 +425,8 @@ TEST(RCDeviceTest, TestWifiModeChangeCombine)
     modeActivationConditionsMutable(2)->modeId = BOXCAMERA3;
     modeActivationConditionsMutable(2)->range.startStep = CHANNEL_VALUE_TO_STEP(1900);
     modeActivationConditionsMutable(2)->range.endStep = CHANNEL_VALUE_TO_STEP(2100);
+
+    analyzeModeActivationConditions();
 
     // // make the binded mode inactive
     rcData[modeActivationConditions(0)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 1700;
