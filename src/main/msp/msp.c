@@ -2066,10 +2066,12 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         }
         break;
 
+#ifdef USE_ACC
     case MSP_ACC_CALIBRATION:
         if (!ARMING_FLAG(ARMED))
             accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
         break;
+#endif
 
     case MSP_MAG_CALIBRATION:
         if (!ARMING_FLAG(ARMED))

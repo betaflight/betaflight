@@ -278,12 +278,13 @@ void processRcStickPositions()
         saveConfigAndNotify();
     }
 
+#ifdef USE_ACC
     if (rcSticks == THR_HI + YAW_LO + PIT_LO + ROL_CE) {
         // Calibrating Acc
         accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
         return;
     }
-
+#endif
 
     if (rcSticks == THR_HI + YAW_HI + PIT_LO + ROL_CE) {
         // Calibrating Mag

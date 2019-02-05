@@ -66,9 +66,11 @@ bool sensorsAutodetect(void)
 
     bool gyroDetected = gyroInit();
 
+#ifdef USE_ACC
     if (gyroDetected) {
         accInit(gyro.targetLooptime);
     }
+#endif
 
 #ifdef USE_MAG
     compassInit();

@@ -351,6 +351,7 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
     }
 }
 
+#ifdef USE_ACC
 static bool imuIsAccelerometerHealthy(float *accAverage)
 {
     float accMagnitudeSq = 0;
@@ -364,6 +365,7 @@ static bool imuIsAccelerometerHealthy(float *accAverage)
     // Accept accel readings only in range 0.9g - 1.1g
     return (0.81f < accMagnitudeSq) && (accMagnitudeSq < 1.21f);
 }
+#endif
 
 // Calculate the dcmKpGain to use. When armed, the gain is imuRuntimeConfig.dcm_kp * 1.0 scaling.
 // When disarmed after initial boot, the scaling is set to 10.0 for the first 20 seconds to speed up initial convergence.
@@ -489,9 +491,12 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 #endif
     float gyroAverage[XYZ_AXIS_COUNT];
     gyroGetAccumulationAverage(gyroAverage);
+
+#ifdef USE_ACC
     if (accGetAccumulationAverage(accAverage)) {
         useAcc = imuIsAccelerometerHealthy(accAverage);
     }
+#endif
 
     imuMahonyAHRSupdate(deltaT * 1e-6f,
                         DEGREES_TO_RADIANS(gyroAverage[X]), DEGREES_TO_RADIANS(gyroAverage[Y]), DEGREES_TO_RADIANS(gyroAverage[Z]),
