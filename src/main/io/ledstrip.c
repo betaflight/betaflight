@@ -94,10 +94,6 @@ static uint8_t previousProfileColorIndex = COLOR_UNDEFINED;
 #define BEACON_FAILSAFE_PERIOD_US 250      // 2Hz
 #define BEACON_FAILSAFE_ON_PERCENT 50      // 50% duty cycle
 
-#if LED_MAX_STRIP_LENGTH > WS2811_LED_STRIP_LENGTH
-# error "Led strip length must match driver"
-#endif
-
 const hsvColor_t hsv[] = {
     //                        H    S    V
     [COLOR_BLACK] =        {  0,   0,   0},
@@ -140,6 +136,11 @@ void pgResetFn_ledStripConfig(ledStripConfig_t *ledStripConfig)
 }
 
 #ifdef USE_LED_STRIP_STATUS_MODE
+
+#if LED_MAX_STRIP_LENGTH > WS2811_LED_STRIP_LENGTH
+# error "Led strip length must match driver"
+#endif
+
 const hsvColor_t *colors;
 const modeColorIndexes_t *modeColors;
 specialColorIndexes_t specialColors;
