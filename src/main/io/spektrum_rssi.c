@@ -35,6 +35,8 @@
 #include "rx/spektrum.h"
 #include "io/spektrum_rssi.h"
 
+// Number of fade outs counted as a link loss when using USE_SPEKTRUM_REAL_RSSI
+#define SPEKTRUM_RSSI_LINK_LOSS_FADES 5
 
 #ifdef USE_SPEKTRUM_FAKE_RSSI
 // Spektrum Rx type. Determined by bind method.

@@ -28,9 +28,6 @@
 #define SPEKTRUM_MAX_FADE_PER_SEC       40
 #define SPEKTRUM_FADE_REPORTS_PER_SEC   2
 
-// Number of fade outs counted as a link loss
-#define SPEKTRUM_RSSI_LINK_LOSS_FADES 5
-
 typedef struct dbm_table_s
 {
     int8_t  dBm;
