@@ -11,5 +11,4 @@ TARGET_SRC = \
             drivers/compass/compass_hmc5883l.c \
             drivers/display_ug2864hsweg01.h \
             drivers/flash_m25p16.c \
-            drivers/max7456.c \
-            io/osd.c
+            drivers/max7456.c

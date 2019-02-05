@@ -131,7 +131,6 @@
 #include "io/dashboard.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/transponder_ir.h"
-#include "io/osd.h"
 #include "io/pidaudio.h"
 #include "io/piniobox.h"
 #include "io/displayport_msp.h"
@@ -140,6 +139,8 @@
 #include "io/vtx_control.h"
 #include "io/vtx_smartaudio.h"
 #include "io/vtx_tramp.h"
+
+#include "osd/osd.h"
 
 #include "scheduler/scheduler.h"
 

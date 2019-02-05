@@ -65,8 +65,9 @@
 #include "flight/mixer.h"
 
 // For VISIBLE*
-#include "io/osd.h"
 #include "io/rcdevice_cam.h"
+
+#include "osd/osd.h"
 
 #include "rx/rx.h"
 

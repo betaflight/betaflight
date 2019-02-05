@@ -39,18 +39,19 @@
 
 #include "drivers/time.h"
 
+#include "fc/config.h"
+#include "fc/controlrate_profile.h"
+#include "fc/rc_controls.h"
+#include "fc/rc.h"
+
 #include "flight/pid.h"
 
 #include "io/beeper.h"
 #include "io/ledstrip.h"
 #include "io/motors.h"
 #include "io/pidaudio.h"
-#include "io/osd.h"
 
-#include "fc/config.h"
-#include "fc/controlrate_profile.h"
-#include "fc/rc_controls.h"
-#include "fc/rc.h"
+#include "osd/osd.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"

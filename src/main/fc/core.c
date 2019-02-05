@@ -69,7 +69,6 @@
 #include "io/beeper.h"
 #include "io/gps.h"
 #include "io/motors.h"
-#include "io/osd.h"
 #include "io/pidaudio.h"
 #include "io/servos.h"
 #include "io/serial.h"
@@ -77,6 +76,8 @@
 #include "io/transponder_ir.h"
 #include "io/vtx_control.h"
 #include "io/vtx_rtc6705.h"
+
+#include "osd/osd.h"
 
 #include "rx/rx.h"
 

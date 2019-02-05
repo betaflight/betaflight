@@ -25,7 +25,7 @@
 
 #include "common/axis.h"
 #include "drivers/io.h"
-#include "io/osd.h"
+#include "osd/osd.h"
 #include "pg/pinio.h"
 #include "sensors/battery.h"
 #include "sensors/barometer.h"
