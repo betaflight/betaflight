@@ -87,6 +87,7 @@ TEST_F(RcControlsModesTest, updateActivatedModesWithAllInputsAtMidde)
     }
 
     // when
+    analyzeModeActivationConditions();
     updateActivatedModes();
 
     // then
@@ -178,6 +179,7 @@ TEST_F(RcControlsModesTest, updateActivatedModesUsingValidAuxConfigurationAndRXV
     bitArraySet(&activeBoxIds, 5);
 
     // when
+    analyzeModeActivationConditions();
     updateActivatedModes();
 
     // then

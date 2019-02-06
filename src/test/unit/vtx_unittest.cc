@@ -89,6 +89,8 @@ TEST(VtxTest, PitMode)
     modeActivationConditionsMutable(0)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
     modeActivationConditionsMutable(0)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
 
+    analyzeModeActivationConditions();
+
     // and
     vtxSettingsConfigMutable()->band = 0;
     vtxSettingsConfigMutable()->freq = 5800;

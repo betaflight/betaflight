@@ -158,6 +158,8 @@ void targetConfiguration(void)
     modeActivationConditionsMutable(0)->range.startStep  = CHANNEL_VALUE_TO_STEP(900);
     modeActivationConditionsMutable(0)->range.endStep    = CHANNEL_VALUE_TO_STEP(2100);
 
+    analyzeModeActivationConditions();
+
 #if defined(BEEBRAIN_V2D)
     // DSM version
     for (uint8_t rxRangeIndex = 0; rxRangeIndex < NON_AUX_CHANNEL_COUNT; rxRangeIndex++) {
