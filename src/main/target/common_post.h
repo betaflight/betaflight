@@ -261,3 +261,7 @@
 #ifndef USE_DSHOT_TELEMETRY
 #undef USE_RPM_FILTER
 #endif
+
+#if !defined(USE_BOARD_INFO)
+#undef USE_SIGNATURE
+#endif
