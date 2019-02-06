@@ -78,6 +78,7 @@
 #include "drivers/usb_io.h"
 #include "drivers/vtx_rtc6705.h"
 #include "drivers/vtx_common.h"
+#include "drivers/vtx_table.h"
 #ifdef USE_USB_MSC
 #include "drivers/usb_msc.h"
 #endif
@@ -712,6 +713,10 @@ void init(void)
     gyroStartCalibration(false);
 #ifdef USE_BARO
     baroSetCalibrationCycles(CALIBRATING_BARO_CYCLES);
+#endif
+
+#ifdef USE_VTX_TABLE
+    vtxTableInit();
 #endif
 
 #ifdef USE_VTX_CONTROL
