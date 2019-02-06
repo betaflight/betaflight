@@ -64,6 +64,8 @@ extern "C" {
     gyro_t gyro;
     attitudeEulerAngles_t attitude;
 
+    PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
+
     bool unitLaunchControlActive = false;
     launchControlMode_e unitLaunchControlMode = LAUNCH_CONTROL_MODE_NORMAL;
 
@@ -80,7 +82,6 @@ extern "C" {
 }
 
 pidProfile_t *pidProfile;
-rollAndPitchTrims_t rollAndPitchTrims = { { 0, 0 } };
 
 int loopIter = 0;
 
@@ -171,7 +172,7 @@ void resetTest(void) {
 
     // Run pidloop for a while after reset
     for (int loop = 0; loop < 20; loop++) {
-        pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+        pidController(pidProfile, currentTestTime());
     }
 }
 
@@ -202,7 +203,7 @@ TEST(pidControllerTest, testStabilisationDisabled) {
     // Run few loops to make sure there is no error building up when stabilisation disabled
 
     for (int loop = 0; loop < 10; loop++) {
-        pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+        pidController(pidProfile, currentTestTime());
 
         // PID controller should not do anything, while stabilisation disabled
         EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].P);
@@ -223,7 +224,7 @@ TEST(pidControllerTest, testPidLoop) {
     ENABLE_ARMING_FLAG(ARMED);
     pidStabilisationState(PID_STABILISATION_ON);
 
-    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+    pidController(pidProfile, currentTestTime());
 
     // Loop 1 - Expecting zero since there is no error
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].P);
@@ -238,7 +239,7 @@ TEST(pidControllerTest, testPidLoop) {
 
     // Add some rotation on ROLL to generate error
     gyro.gyroADCf[FD_ROLL] = 100;
-    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+    pidController(pidProfile, currentTestTime());
 
     // Loop 2 - Expect PID loop reaction to ROLL error
     ASSERT_NEAR(-128.1, pidData[FD_ROLL].P, calculateTolerance(-128.1));
@@ -253,7 +254,7 @@ TEST(pidControllerTest, testPidLoop) {
 
     // Add some rotation on PITCH to generate error
     gyro.gyroADCf[FD_PITCH] = -100;
-    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+    pidController(pidProfile, currentTestTime());
 
     // Loop 3 - Expect PID loop reaction to PITCH error, ROLL is still in error
     ASSERT_NEAR(-128.1, pidData[FD_ROLL].P, calculateTolerance(-128.1));
@@ -268,7 +269,7 @@ TEST(pidControllerTest, testPidLoop) {
 
     // Add some rotation on YAW to generate error
     gyro.gyroADCf[FD_YAW] = 100;
-    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+    pidController(pidProfile, currentTestTime());
 
     // Loop 4 - Expect PID loop reaction to PITCH error, ROLL and PITCH are still in error
     ASSERT_NEAR(-128.1, pidData[FD_ROLL].P, calculateTolerance(-128.1));
@@ -283,7 +284,7 @@ TEST(pidControllerTest, testPidLoop) {
 
     // Simulate Iterm behaviour during mixer saturation
     simulatedMotorMixRange = 1.2f;
-    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+    pidController(pidProfile, currentTestTime());
     ASSERT_NEAR(-23.5, pidData[FD_ROLL].I, calculateTolerance(-23.5));
     ASSERT_NEAR(19.6, pidData[FD_PITCH].I, calculateTolerance(19.6));
     ASSERT_NEAR(-8.8, pidData[FD_YAW].I, calculateTolerance(-8.8));
@@ -295,7 +296,7 @@ TEST(pidControllerTest, testPidLoop) {
     simulatedSetpointRate[FD_YAW] = 100;
 
     for(int loop = 0; loop < 5; loop++) {
-        pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+        pidController(pidProfile, currentTestTime());
     }
     // Iterm is stalled as it is not accumulating anymore
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].P);
@@ -310,7 +311,7 @@ TEST(pidControllerTest, testPidLoop) {
 
     // Now disable Stabilisation
     pidStabilisationState(PID_STABILISATION_OFF);
-    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+    pidController(pidProfile, currentTestTime());
 
     // Should all be zero again
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].P);
@@ -404,7 +405,7 @@ TEST(pidControllerTest, testMixerSaturation) {
     setStickPosition(FD_PITCH, -1.0f);
     setStickPosition(FD_YAW, 1.0f);
     simulatedMotorMixRange = 2.0f;
-    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+    pidController(pidProfile, currentTestTime());
 
     // Expect no iterm accumulation
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].I);
@@ -420,7 +421,7 @@ TEST(pidControllerTest, testMixerSaturation) {
     setStickPosition(FD_PITCH, -0.1f);
     setStickPosition(FD_YAW, 0.1f);
     simulatedMotorMixRange = 0.0f;
-    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+    pidController(pidProfile, currentTestTime());
     float rollTestIterm = pidData[FD_ROLL].I;
     float pitchTestIterm = pidData[FD_PITCH].I;
     float yawTestIterm = pidData[FD_YAW].I;
@@ -433,7 +434,7 @@ TEST(pidControllerTest, testMixerSaturation) {
     setStickPosition(FD_PITCH, -0.1f);
     setStickPosition(FD_YAW, 0.1f);
     simulatedMotorMixRange = (pidProfile->itermWindupPointPercent + 1) / 100.0f;
-    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+    pidController(pidProfile, currentTestTime());
     ASSERT_LT(pidData[FD_ROLL].I, rollTestIterm);
     ASSERT_GE(pidData[FD_PITCH].I, pitchTestIterm);
     ASSERT_LT(pidData[FD_YAW].I, yawTestIterm);
@@ -458,7 +459,7 @@ TEST(pidControllerTest, testCrashRecoveryMode) {
     for (int loop =0; loop <= loopsToCrashTime; loop++) {
         gyro.gyroADCf[FD_ROLL] += gyro.gyroADCf[FD_ROLL];
         // advance the time to avoid initialized state prevention of crash recovery
-        pidController(pidProfile, &rollAndPitchTrims, currentTestTime() + 2000000);
+        pidController(pidProfile, currentTestTime() + 2000000);
     }
 
     EXPECT_TRUE(crashRecoveryModeActive());
@@ -479,7 +480,7 @@ TEST(pidControllerTest, testFeedForward) {
     setStickPosition(FD_PITCH, -1.0f);
     setStickPosition(FD_YAW, -1.0f);
 
-    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+    pidController(pidProfile, currentTestTime());
 
     ASSERT_NEAR(2232.78, pidData[FD_ROLL].F, calculateTolerance(2232.78));
     ASSERT_NEAR(-2061.03, pidData[FD_PITCH].F, calculateTolerance(-2061.03));
@@ -490,7 +491,7 @@ TEST(pidControllerTest, testFeedForward) {
     setStickPosition(FD_PITCH, -0.5f);
     setStickPosition(FD_YAW, -0.5f);
 
-    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+    pidController(pidProfile, currentTestTime());
 
     ASSERT_NEAR(-558.20, pidData[FD_ROLL].F, calculateTolerance(-558.20));
     ASSERT_NEAR(515.26, pidData[FD_PITCH].F, calculateTolerance(515.26));
@@ -498,7 +499,7 @@ TEST(pidControllerTest, testFeedForward) {
 
     for (int loop =0; loop <= 15; loop++) {
         gyro.gyroADCf[FD_ROLL] += gyro.gyroADCf[FD_ROLL];
-        pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+        pidController(pidProfile, currentTestTime());
     }
 
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].F);
@@ -667,7 +668,7 @@ TEST(pidControllerTest, testLaunchControl) {
 
     // test that feedforward and D are disabled (always zero) when launch control is active
     // set initial state
-    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+    pidController(pidProfile, currentTestTime());
 
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].F);
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].F);
@@ -686,7 +687,7 @@ TEST(pidControllerTest, testLaunchControl) {
     gyro.gyroADCf[FD_PITCH] = 1000;
     gyro.gyroADCf[FD_YAW] = -1000;
 
-    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+    pidController(pidProfile, currentTestTime());
 
     // validate that feedforwad is still 0
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].F);
@@ -705,12 +706,12 @@ TEST(pidControllerTest, testLaunchControl) {
     ENABLE_ARMING_FLAG(ARMED);
     pidStabilisationState(PID_STABILISATION_ON);
 
-    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+    pidController(pidProfile, currentTestTime());
 
     gyro.gyroADCf[FD_ROLL] = -20;
     gyro.gyroADCf[FD_PITCH] = 20;
     gyro.gyroADCf[FD_YAW] = -20;
-    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+    pidController(pidProfile, currentTestTime());
 
     ASSERT_NEAR(25.62,  pidData[FD_ROLL].P,  calculateTolerance(25.62));
     ASSERT_NEAR(1.56,   pidData[FD_ROLL].I,  calculateTolerance(1.56));
@@ -726,20 +727,20 @@ TEST(pidControllerTest, testLaunchControl) {
     ENABLE_ARMING_FLAG(ARMED);
     pidStabilisationState(PID_STABILISATION_ON);
 
-    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+    pidController(pidProfile, currentTestTime());
 
     // first test that pitch I is prevented from going negative
     gyro.gyroADCf[FD_ROLL] = 0;
     gyro.gyroADCf[FD_PITCH] = 20;
     gyro.gyroADCf[FD_YAW] = 0;
-    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+    pidController(pidProfile, currentTestTime());
 
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].I);
 
     gyro.gyroADCf[FD_ROLL] = 20;
     gyro.gyroADCf[FD_PITCH] = -20;
     gyro.gyroADCf[FD_YAW] = 20;
-    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+    pidController(pidProfile, currentTestTime());
 
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].P);
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].I);
@@ -755,12 +756,12 @@ TEST(pidControllerTest, testLaunchControl) {
     ENABLE_ARMING_FLAG(ARMED);
     pidStabilisationState(PID_STABILISATION_ON);
 
-    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+    pidController(pidProfile, currentTestTime());
 
     gyro.gyroADCf[FD_ROLL] = -20;
     gyro.gyroADCf[FD_PITCH] = 20;
     gyro.gyroADCf[FD_YAW] = -20;
-    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+    pidController(pidProfile, currentTestTime());
 
     ASSERT_NEAR(25.62,  pidData[FD_ROLL].P,  calculateTolerance(25.62));
     ASSERT_NEAR(1.56,   pidData[FD_ROLL].I,  calculateTolerance(1.56));

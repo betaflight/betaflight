@@ -857,22 +857,27 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 
     case MSP_RAW_IMU:
         {
+#if defined(USE_ACC)
             // Hack scale due to choice of units for sensor data in multiwii
 
             uint8_t scale;
-
-            if (acc.dev.acc_1G > 512*4) {
+            if (acc.dev.acc_1G > 512 * 4) {
                 scale = 8;
-            } else if (acc.dev.acc_1G > 512*2) {
+            } else if (acc.dev.acc_1G > 512 * 2) {
                 scale = 4;
             } else if (acc.dev.acc_1G >= 512) {
                 scale = 2;
             } else {
                 scale = 1;
             }
+#endif
 
             for (int i = 0; i < 3; i++) {
+#if defined(USE_ACC)
                 sbufWriteU16(dst, lrintf(acc.accADC[i] / scale));
+#else
+                sbufWriteU16(dst, 0);
+#endif
             }
             for (int i = 0; i < 3; i++) {
                 sbufWriteU16(dst, gyroRateDps(i));
@@ -1125,11 +1130,13 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 #endif
 #endif
 
+#if defined(USE_ACC)
     case MSP_ACC_TRIM:
         sbufWriteU16(dst, accelerometerConfig()->accelerometerTrims.values.pitch);
         sbufWriteU16(dst, accelerometerConfig()->accelerometerTrims.values.roll);
-        break;
 
+        break;
+#endif
     case MSP_MIXER_CONFIG:
         sbufWriteU8(dst, mixerConfig()->mixerMode);
         sbufWriteU8(dst, mixerConfig()->yaw_motors_reversed);
@@ -1435,7 +1442,11 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 
         break;
     case MSP_SENSOR_CONFIG:
+#if defined(USE_ACC)
         sbufWriteU8(dst, accelerometerConfig()->acc_hardware);
+#else
+        sbufWriteU8(dst, 0);
+#endif
         sbufWriteU8(dst, barometerConfig()->baro_hardware);
         sbufWriteU8(dst, compassConfig()->mag_hardware);
         break;
@@ -1674,10 +1685,13 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         }
 #endif
         break;
+#if defined(USE_ACC)
     case MSP_SET_ACC_TRIM:
         accelerometerConfigMutable()->accelerometerTrims.values.pitch = sbufReadU16(src);
         accelerometerConfigMutable()->accelerometerTrims.values.roll  = sbufReadU16(src);
+
         break;
+#endif
     case MSP_SET_ARMING_CONFIG:
         armingConfigMutable()->auto_disarm_delay = sbufReadU8(src);
         sbufReadU8(src); // reserved
@@ -2063,9 +2077,14 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
         break;
     case MSP_SET_SENSOR_CONFIG:
+#if defined(USE_ACC)
         accelerometerConfigMutable()->acc_hardware = sbufReadU8(src);
+#else
+        sbufReadU8(src);
+#endif
         barometerConfigMutable()->baro_hardware = sbufReadU8(src);
         compassConfigMutable()->mag_hardware = sbufReadU8(src);
+
         break;
 
     case MSP_RESET_CONF:

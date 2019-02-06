@@ -174,12 +174,14 @@ static void frSkyHubWriteByteInternal(const char data)
    serialWrite(frSkyHubPort, data);
  }
 
+#if defined(USE_ACC)
 static void sendAccel(void)
 {
     for (unsigned i = 0; i < 3; i++) {
         frSkyHubWriteFrame(ID_ACC_X + i, ((int16_t)(acc.accADC[i] * acc.dev.acc_1G_rec) * 1000));
     }
 }
+#endif
 
 static void sendThrottleOrBatterySizeAsRpm(void)
 {
@@ -519,10 +521,12 @@ void processFrSkyHubTelemetry(timeUs_t currentTimeUs)
 
     cycleNum++;
 
+#if defined(USE_ACC)
     if (sensors(SENSOR_ACC) && telemetryIsSensorEnabled(SENSOR_ACC_X | SENSOR_ACC_Y | SENSOR_ACC_Z)) {
         // Sent every 125ms
         sendAccel();
     }
+#endif
 
 #if defined(USE_BARO) || defined(USE_RANGEFINDER) || defined(USE_GPS)
     if (sensors(SENSOR_BARO | SENSOR_RANGEFINDER) | sensors(SENSOR_GPS)) {

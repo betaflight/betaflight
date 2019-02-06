@@ -269,3 +269,8 @@
 #if !defined(USE_BOARD_INFO)
 #undef USE_SIGNATURE
 #endif
+
+#if !defined(USE_ACC)
+#undef USE_GPS_RESCUE
+#undef USE_ACRO_TRAINER
+#endif

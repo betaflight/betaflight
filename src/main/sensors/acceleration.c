@@ -25,6 +25,8 @@
 
 #include "platform.h"
 
+#ifdef USE_ACC
+
 #include "build/debug.h"
 
 #include "common/axis.h"
@@ -33,9 +35,6 @@
 
 #include "config/config_reset.h"
 #include "config/feature.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
-#include "pg/gyrodev.h"
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/accgyro/accgyro_fake.h"
@@ -73,7 +72,10 @@
 
 #include "io/beeper.h"
 
-#include "sensors/acceleration.h"
+#include "pg/gyrodev.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+
 #include "sensors/boardalignment.h"
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
@@ -81,6 +83,8 @@
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
 #endif
+
+#include "acceleration.h"
 
 FAST_RAM_ZERO_INIT acc_t acc;                       // acc access functions
 
@@ -122,7 +126,6 @@ void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)
 
 PG_REGISTER_WITH_RESET_FN(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 1);
 
-#ifdef USE_ACC
 extern uint16_t InflightcalibratingA;
 extern bool AccInflightCalibrationMeasurementDone;
 extern bool AccInflightCalibrationSavetoEEProm;
@@ -340,11 +343,7 @@ bool accInit(uint32_t gyroSamplingInverval)
         break;
     case 1000:
     default:
-#ifdef STM32F10X
         acc.accSamplingInterval = 1000;
-#else
-        acc.accSamplingInterval = 1000;
-#endif
     }
     if (accLpfCutHz) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
@@ -535,5 +534,11 @@ void accInitFilters(void)
             biquadFilterInitLPF(&accFilter[axis], accLpfCutHz, acc.accSamplingInterval);
         }
     }
+}
+
+void applyAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsDelta)
+{
+    accelerometerConfigMutable()->accelerometerTrims.values.roll += rollAndPitchTrimsDelta->values.roll;
+    accelerometerConfigMutable()->accelerometerTrims.values.pitch += rollAndPitchTrimsDelta->values.pitch;
 }
 #endif
