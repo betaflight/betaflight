@@ -40,3 +40,13 @@ void vtxTableConfigClearBand(struct vtxTableConfig_s *config, int band);
 void vtxTableConfigClearPowerValues(struct vtxTableConfig_s *config, int start);
 void vtxTableConfigClearPowerLabels(struct vtxTableConfig_s *config, int start);
 void vtxTableConfigClearChannels(struct vtxTableConfig_s *config, int band, int channels);
+
+extern int            vtxTableBandCount;
+extern int            vtxTableChannelCount;
+extern uint16_t       vtxTableFrequency[VTX_TABLE_MAX_BANDS][VTX_TABLE_MAX_CHANNELS];
+extern const char *   vtxTableBandNames[VTX_TABLE_MAX_BANDS + 1];
+extern char           vtxTableBandLetters[VTX_TABLE_MAX_BANDS + 1];
+extern const char *   vtxTableChannelNames[VTX_TABLE_MAX_CHANNELS + 1];
+extern int            vtxTablePowerLevels;
+extern uint16_t       vtxTablePowerValues[VTX_TABLE_MAX_POWER_LEVELS];
+extern const char *   vtxTablePowerLabels[VTX_TABLE_MAX_POWER_LEVELS + 1];

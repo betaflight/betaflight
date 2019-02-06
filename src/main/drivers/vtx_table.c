@@ -50,6 +50,9 @@ void vtxTableInit(void)
 {
     const vtxTableConfig_t *config = vtxTableConfig();
 
+    vtxTableBandCount = config->bands;
+    vtxTableChannelCount = config->channels;
+
     for (int band = 0; band < VTX_TABLE_MAX_BANDS; band++) {
         for (int channel = 0; channel < VTX_TABLE_MAX_CHANNELS; channel++) {
             vtxTableFrequency[band][channel] = config->frequency[band][channel];
