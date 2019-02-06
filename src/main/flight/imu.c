@@ -479,11 +479,11 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     UNUSED(canUseGPSHeading);
     UNUSED(courseOverGround);
     UNUSED(deltaT);
+    UNUSED(imuCalcKpGain);
 #else
 
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_IMU_SYNC)
 //  printf("[imu]deltaT = %u, imuDeltaT = %u, currentTimeUs = %u, micros64_real = %lu\n", deltaT, imuDeltaT, currentTimeUs, micros64_real());
-    UNUSED(imuCalcKpGain);
     deltaT = imuDeltaT;
 #endif
     float gyroAverage[XYZ_AXIS_COUNT];
