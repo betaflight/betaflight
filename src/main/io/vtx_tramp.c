@@ -38,6 +38,10 @@
 
 #include "drivers/vtx_common.h"
 
+#ifdef USE_VTX_TABLE
+#include "drivers/vtx_table.h"
+#endif
+
 #include "io/serial.h"
 #include "io/vtx_tramp.h"
 #include "io/vtx_control.h"
@@ -616,6 +620,17 @@ bool vtxTrampInit(void)
 
     // XXX Effect of USE_VTX_COMMON should be reviewed, as following call to vtxInit will do nothing if vtxCommonSetDevice is not called.
 #if defined(USE_VTX_COMMON)
+#if defined(USE_VTX_TABLE)
+    vtxTramp.capability.bandCount = vtxTableBandCount;
+    vtxTramp.capability.channelCount = vtxTableChannelCount;
+    vtxTramp.capability.powerCount = vtxTablePowerLevels;
+    vtxTramp.frequencyTable = (uint16_t *)vtxTableFrequency;
+    vtxTramp.bandNames = vtxTableBandNames;
+    vtxTramp.bandLetters = vtxTableBandLetters;
+    vtxTramp.channelNames = vtxTableChannelNames;
+    vtxTramp.powerNames = vtxTablePowerLabels;
+    vtxTramp.powerValues = vtxTablePowerValues;
+#else
     vtxTramp.capability.bandCount = VTX_TRAMP_BAND_COUNT;
     vtxTramp.capability.channelCount = VTX_TRAMP_CHANNEL_COUNT;
     vtxTramp.capability.powerCount = sizeof(trampPowerTable),
@@ -625,6 +640,7 @@ bool vtxTrampInit(void)
     vtxTramp.channelNames = vtxStringChannelNames();
     vtxTramp.powerNames = trampPowerNames;
     vtxTramp.powerValues = trampPowerTable;
+#endif
 
     vtxCommonSetDevice(&vtxTramp);
 
