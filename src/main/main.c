@@ -56,8 +56,9 @@ void FAST_CODE FAST_CODE_NOINLINE run( void *pvParameters )
 
 	init();
 
+	tasksLaunch();
+
     while (true) {
-        scheduler();
         processLoopback();
 #ifdef SIMULATOR_BUILD
         delayMicroseconds_real(50); // max rate 20kHz
