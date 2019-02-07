@@ -66,7 +66,7 @@ void tryArm(void);
 bool processRx(timeUs_t currentTimeUs);
 void updateArmingStatus(void);
 
-void taskMainPidLoop(timeUs_t currentTimeUs);
+void FAST_CODE FAST_CODE_NOINLINE taskMainPidLoop( void *pvParameters );
 
 bool isFlipOverAfterCrashActive(void);
 int8_t calculateThrottlePercent(void);
