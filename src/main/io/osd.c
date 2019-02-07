@@ -2028,6 +2028,10 @@ void osdUpdate(timeUs_t currentTimeUs)
 {
     static uint32_t counter = 0;
 
+    if (!osdDisplayPort) {
+    	return;
+    }
+
     if (isBeeperOn()) {
         showVisualBeeper = true;
     }
