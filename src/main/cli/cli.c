@@ -5012,7 +5012,7 @@ static void printConfig(char *cmdline, bool doDiff)
 
         if (dumpMask & DUMP_ALL) {
             cliMcuId(NULL);
-#if defined(USE_BOARD_INFO) && defined(USE_SIGNATURE)
+#if defined(USE_SIGNATURE)
         cliSignature("");
 #endif
         }
@@ -5342,7 +5342,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("servo", "configure servos", NULL, cliServo),
 #endif
     CLI_COMMAND_DEF("set", "change setting", "[<name>=<value>]", cliSet),
-#if defined(USE_BOARD_INFO) && defined(USE_SIGNATURE)
+#if defined(USE_SIGNATURE)
     CLI_COMMAND_DEF("signature", "get / set the board type signature", "[signature]", cliSignature),
 #endif
 #ifdef USE_SERVOS

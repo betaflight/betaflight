@@ -515,12 +515,21 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         value = getManufacturerId();
         sbufWriteU8(dst, strlen(value));
         sbufWriteString(dst, value);
+#else
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
+#endif
 
 #if defined(USE_SIGNATURE)
         // Signature
         sbufWriteData(dst, getSignature(), SIGNATURE_LENGTH);
+#else
+        uint8_t emptySignature[SIGNATURE_LENGTH];
+        memset(emptySignature, 0, sizeof(emptySignature));
+        sbufWriteData(dst, &emptySignature, sizeof(emptySignature));
 #endif
-#endif // USE_BOARD_INFO
+
+        sbufWriteU8(dst, MCU_TYPE_ID);
 
         break;
     }
