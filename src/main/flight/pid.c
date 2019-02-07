@@ -1163,8 +1163,11 @@ static float applyLaunchControl(int axis, const rollAndPitchTrims_t *angleTrim)
 void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTimeUs)
 {
     static float previousGyroRateDterm[XYZ_AXIS_COUNT];
+
+#if defined(USE_ACC)
     static timeUs_t levelModeStartTimeUs = 0;
     static bool gpsRescuePreviousState = false;
+#endif
 
     const float tpaFactor = getThrottlePIDAttenuation();
 
@@ -1172,6 +1175,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     const rollAndPitchTrims_t *angleTrim = &accelerometerConfig()->accelerometerTrims;
 #else
     UNUSED(pidProfile);
+    UNUSED(currentTimeUs);
 #endif
 
 #ifdef USE_TPA_MODE
@@ -1186,6 +1190,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
     const bool launchControlActive = isLaunchControlActive();
 
+#if defined(USE_ACC)
     const bool gpsRescueIsActive = FLIGHT_MODE(GPS_RESCUE_MODE);
     const bool levelModeActive = FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE) || gpsRescueIsActive;
 
@@ -1200,6 +1205,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         levelModeStartTimeUs = 0;
     }
     gpsRescuePreviousState = gpsRescueIsActive;
+#endif
 
     // Dynamic i component,
     if ((antiGravityMode == ANTI_GRAVITY_SMOOTH) && antiGravityEnabled) {
