@@ -20,6 +20,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -50,9 +51,26 @@ static TIM_TypeDef *timer = NULL;
 
 static void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
 {
+#if defined(USE_WS2811_SINGLE_COLOUR)
+    static uint32_t counter = 0;
+#endif
+
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
+#if defined(USE_WS2811_SINGLE_COLOUR)
+        counter++;
+        if (counter == WS2811_LED_STRIP_LENGTH) {
+            // Output low for 50us delay
+            memset(ledStripDMABuffer, 0, sizeof(ledStripDMABuffer));
+        } else if (counter == (WS2811_LED_STRIP_LENGTH + WS2811_DELAY_ITERATIONS)) {
+            counter = 0;
+            ws2811LedDataTransferInProgress = 0;
+            DMA_Cmd(descriptor->ref, DISABLE);
+        }
+#else
         ws2811LedDataTransferInProgress = 0;
         DMA_Cmd(descriptor->ref, DISABLE);
+#endif
+
         DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
     }
 }
@@ -162,7 +180,7 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
     DMA_InitStructure.DMA_Priority = DMA_Priority_High;
     DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
 #endif
-    DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
+    DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
 
     DMA_Init(dmaRef, &DMA_InitStructure);
     TIM_DMACmd(timer, timerDmaSource(timerHardware->channel), ENABLE);

@@ -33,8 +33,7 @@ extern "C" {
 extern "C" {
 STATIC_UNIT_TESTED extern uint16_t dmaBufferOffset;
 
-STATIC_UNIT_TESTED void fastUpdateLEDDMABuffer(rgbColor24bpp_t *color);
-STATIC_UNIT_TESTED void updateLEDDMABuffer(uint8_t componentValue);
+STATIC_UNIT_TESTED void updateLEDDMABuffer(rgbColor24bpp_t *color);
 }
 
 TEST(WS2812, updateDMABuffer) {
@@ -45,13 +44,7 @@ TEST(WS2812, updateDMABuffer) {
     dmaBufferOffset = 0;
 
     // when
-#if 0
-    updateLEDDMABuffer(color1.rgb.g);
-    updateLEDDMABuffer(color1.rgb.r);
-    updateLEDDMABuffer(color1.rgb.b);
-#else
-    fastUpdateLEDDMABuffer(&color1);
-#endif
+    updateLEDDMABuffer(&color1);
 
     // then
     EXPECT_EQ(24, dmaBufferOffset);

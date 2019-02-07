@@ -244,6 +244,10 @@
 #undef USE_LED_STRIP_STATUS_MODE
 #endif
 
+#if defined(USE_LED_STRIP) && !defined(USE_LED_STRIP_STATUS_MODE)
+#define USE_WS2811_SINGLE_COLOUR
+#endif
+
 #if defined(SIMULATOR_BUILD) || defined(UNIT_TEST)
 // This feature uses 'arm_math.h', which does not exist for x86.
 #undef USE_GYRO_DATA_ANALYSE
