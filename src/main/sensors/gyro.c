@@ -1065,6 +1065,8 @@ FAST_CODE void gyroUpdate(timeUs_t currentTimeUs)
     accumulationLastTimeSampledUs = currentTimeUs;
     accumulatedMeasurementTimeUs += sampleDeltaUs;
 
+    ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
+
     switch (gyroToUse) {
     case GYRO_CONFIG_USE_GYRO_1:
         gyroUpdateSensor(&gyroSensor1, currentTimeUs);
@@ -1152,7 +1154,6 @@ FAST_CODE void gyroUpdate(timeUs_t currentTimeUs)
             gyroPrevious[axis] = gyro.gyroADCf[axis];
         }
     }
-
 }
 
 bool gyroGetAccumulationAverage(float *accumulationAverage)
