@@ -183,18 +183,6 @@ void rescheduleTask(cfTaskId_e taskId, uint32_t newPeriodMicros)
     }
 }
 
-void setTaskEnabled(cfTaskId_e taskId, bool enabled)
-{
-    if (taskId == TASK_SELF || taskId < TASK_COUNT) {
-        cfTask_t *task = taskId == TASK_SELF ? currentTask : &cfTasks[taskId];
-        if (enabled && task->taskFunc) {
-            queueAdd(task);
-        } else {
-            queueRemove(task);
-        }
-    }
-}
-
 timeDelta_t getTaskDeltaTime(cfTaskId_e taskId)
 {
     if (taskId == TASK_SELF) {
