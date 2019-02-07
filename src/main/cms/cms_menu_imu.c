@@ -52,6 +52,7 @@
 
 #include "pg/pg.h"
 
+#include "sensors/battery.h"
 #include "sensors/gyro.h"
 
 
@@ -326,6 +327,7 @@ static uint8_t  cmsx_throttleBoost;
 static uint16_t cmsx_itermAcceleratorGain;
 static uint16_t cmsx_itermThrottleThreshold;
 static uint8_t  cmsx_motorOutputLimit;
+static int8_t   cmsx_autoProfileCellCount;
 
 static long cmsx_profileOtherOnEnter(void)
 {
@@ -344,6 +346,7 @@ static long cmsx_profileOtherOnEnter(void)
 
     cmsx_throttleBoost = pidProfile->throttle_boost;
     cmsx_motorOutputLimit = pidProfile->motor_output_limit;
+    cmsx_autoProfileCellCount = pidProfile->auto_profile_cell_count;
 
     return 0;
 }
@@ -365,6 +368,7 @@ static long cmsx_profileOtherOnExit(const OSD_Entry *self)
 
     pidProfile->throttle_boost = cmsx_throttleBoost;
     pidProfile->motor_output_limit = cmsx_motorOutputLimit;
+    pidProfile->auto_profile_cell_count = cmsx_autoProfileCellCount;
 
     return 0;
 }
@@ -385,6 +389,8 @@ static OSD_Entry cmsx_menuProfileOtherEntries[] = {
     {"LAUNCH CONTROL", OME_Submenu, cmsMenuChange, &cmsx_menuLaunchControl, 0 },
 #endif
     { "MTR OUT LIM %",OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_motorOutputLimit, MOTOR_OUTPUT_LIMIT_PERCENT_MIN,  MOTOR_OUTPUT_LIMIT_PERCENT_MAX,  1}, 0 },
+
+    { "AUTO CELL CNT", OME_INT8, NULL, &(OSD_INT8_t) { &cmsx_autoProfileCellCount, AUTO_PROFILE_CELL_COUNT_CHANGE, MAX_AUTO_DETECT_CELL_COUNT, 1}, 0 },
 
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
@@ -695,7 +701,7 @@ static OSD_Entry cmsx_menuImuEntries[] =
 {
     { "-- PROFILE --", OME_Label, NULL, NULL, 0},
 
-    {"PID PROF",  OME_UINT8,   cmsx_profileIndexOnChange,     &(OSD_UINT8_t){ &tmpPidProfileIndex, 1, MAX_PROFILE_COUNT, 1},    0},
+    {"PID PROF",  OME_UINT8,   cmsx_profileIndexOnChange,     &(OSD_UINT8_t){ &tmpPidProfileIndex, 1, PID_PROFILE_COUNT, 1},    0},
     {"PID",       OME_Submenu, cmsMenuChange,                 &cmsx_menuPid,                                                 0},
     {"MISC PP",   OME_Submenu, cmsMenuChange,                 &cmsx_menuProfileOther,                                        0},
     {"FILT PP",   OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterPerProfile,                                    0},

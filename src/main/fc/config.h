@@ -65,6 +65,7 @@ void validateAndFixGyroConfig(void);
 
 uint8_t getCurrentPidProfileIndex(void);
 void changePidProfile(uint8_t pidProfileIndex);
+void changePidProfileFromCellCount(uint8_t cellCount);
 struct pidProfile_s;
 void resetPidProfile(struct pidProfile_s *profile);
 

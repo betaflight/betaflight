@@ -29,12 +29,10 @@
 #include "build/debug.h"
 
 #include "common/axis.h"
-#include "common/maths.h"
 #include "common/filter.h"
+#include "common/maths.h"
 
 #include "config/config_reset.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
 
 #include "drivers/sound_beeper.h"
 #include "drivers/time.h"
@@ -42,21 +40,24 @@
 #include "fc/controlrate_profile.h"
 #include "fc/core.h"
 #include "fc/rc.h"
-
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "flight/pid.h"
-#include "flight/imu.h"
 #include "flight/gps_rescue.h"
+#include "flight/imu.h"
 #include "flight/mixer.h"
 
 #include "io/gps.h"
 
-#include "sensors/gyro.h"
-#include "sensors/acceleration.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
+#include "sensors/acceleration.h"
+#include "sensors/battery.h"
+#include "sensors/gyro.h"
 #include "sensors/rpm_filter.h"
+
+#include "pid.h"
 
 const char pidNames[] =
     "ROLL;"
@@ -119,7 +120,7 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 
 #define LAUNCH_CONTROL_YAW_ITERM_LIMIT 50 // yaw iterm windup limit when launch mode is "FULL" (all axes)
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 8);
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 9);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -192,6 +193,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .dterm_cut_range_hz = 40,
         .dterm_cut_lowpass_hz = 7,
         .motor_output_limit = 100,
+        .auto_profile_cell_count = AUTO_PROFILE_CELL_COUNT_STAY,
     );
 #ifdef USE_DYN_LPF
     pidProfile->dterm_lowpass_hz = 150;
@@ -207,7 +209,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
 
 void pgResetFn_pidProfiles(pidProfile_t *pidProfiles)
 {
-    for (int i = 0; i < MAX_PROFILE_COUNT; i++) {
+    for (int i = 0; i < PID_PROFILE_COUNT; i++) {
         resetPidProfile(&pidProfiles[i]);
     }
 }
@@ -716,7 +718,7 @@ float pidApplyThrustLinearization(float motorOutput)
 
 void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex)
 {
-    if ((dstPidProfileIndex < MAX_PROFILE_COUNT-1 && srcPidProfileIndex < MAX_PROFILE_COUNT-1)
+    if ((dstPidProfileIndex < PID_PROFILE_COUNT-1 && srcPidProfileIndex < PID_PROFILE_COUNT-1)
         && dstPidProfileIndex != srcPidProfileIndex
     ) {
         memcpy(pidProfilesMutable(dstPidProfileIndex), pidProfilesMutable(srcPidProfileIndex), sizeof(pidProfile_t));
