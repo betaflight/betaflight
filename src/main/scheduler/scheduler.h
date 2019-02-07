@@ -23,9 +23,11 @@
 #include "common/time.h"
 #include "fc/config.h"
 
-#define TASK_PERIOD_HZ(hz) (1000000 / (hz))
-#define TASK_PERIOD_MS(ms) ((ms) * 1000)
-#define TASK_PERIOD_US(us) (us)
+#include "FreeRTOS.h"
+#include "task.h"
+
+#define TASK_PERIOD_HZ(hz) (1000 / (hz))
+#define TASK_PERIOD_MS(ms) (ms)
 
 
 typedef enum {
@@ -146,6 +148,7 @@ typedef enum {
 
 typedef struct {
     // Configuration
+	TaskHandle_t taskId;
 #if defined(USE_TASK_STATISTICS)
     const char * taskName;
     const char * subTaskName;
@@ -153,6 +156,12 @@ typedef struct {
     bool (*checkFunc)(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
     void (*taskFunc)(timeUs_t currentTimeUs);
     timeDelta_t desiredPeriod;      // target period of execution
+    uint16_t stackSize; // stack size in words
+
+#ifdef INCLUDE_uxTaskGetStackHighWaterMark
+    uint16_t stackMargin; // amount of unused stack in words
+#endif // INCLUDE_uxTaskGetStackHighWaterMark
+
     const uint8_t staticPriority;   // dynamicPriority grows in steps of this size, shouldn't be zero
 
     // Scheduling
@@ -174,6 +183,7 @@ typedef struct {
 } cfTask_t;
 
 extern cfTask_t cfTasks[TASK_COUNT];
+extern void tasksLaunch();
 extern uint16_t averageSystemLoadPercent;
 
 void getCheckFuncInfo(cfCheckFuncInfo_t *checkFuncInfo);
