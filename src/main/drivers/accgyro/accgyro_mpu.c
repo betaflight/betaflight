@@ -58,6 +58,10 @@
 #include "pg/pg.h"
 #include "pg/gyrodev.h"
 
+#include "scheduler/scheduler.h"
+
+#include "FreeRTOS.h"
+
 #ifndef MPU_ADDRESS
 #define MPU_ADDRESS             0x68
 #endif
@@ -106,7 +110,9 @@ static void mpu6050FindRevision(gyroDev_t *gyro)
 #ifdef USE_GYRO_EXTI
 static void mpuIntExtiHandler(extiCallbackRec_t *cb)
 {
-#ifdef DEBUG_MPU_DATA_READY_INTERRUPT
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+	#ifdef DEBUG_MPU_DATA_READY_INTERRUPT
     static uint32_t lastCalledAtUs = 0;
     const uint32_t nowUs = micros();
     debug[0] = (uint16_t)(nowUs - lastCalledAtUs);
@@ -114,10 +120,16 @@ static void mpuIntExtiHandler(extiCallbackRec_t *cb)
 #endif
     gyroDev_t *gyro = container_of(cb, gyroDev_t, exti);
     gyro->dataReady = true;
+
+	// Trigger the gyro PID processing task
+    if (cfTasks[TASK_GYROPID].taskId) {
+    	vTaskNotifyGiveFromISR(cfTasks[TASK_GYROPID].taskId, &xHigherPriorityTaskWoken);
+    }
 #ifdef DEBUG_MPU_DATA_READY_INTERRUPT
     const uint32_t now2Us = micros();
     debug[1] = (uint16_t)(now2Us - nowUs);
 #endif
+    portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }
 
 static void mpuIntExtiInit(gyroDev_t *gyro)

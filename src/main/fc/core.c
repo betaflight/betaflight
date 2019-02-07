@@ -1106,32 +1106,47 @@ static FAST_CODE_NOINLINE void subTaskRcCommand(timeUs_t currentTimeUs)
 }
 
 // Function for loop trigger
-FAST_CODE void taskMainPidLoop(timeUs_t currentTimeUs)
+void FAST_CODE FAST_CODE_NOINLINE taskMainPidLoop( void *pvParameters )
 {
+	UNUSED(pvParameters);
     static uint32_t pidUpdateCounter = 0;
 
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_GYROPID_SYNC)
     if (lockMainPID() != 0) return;
 #endif
 
-    // DEBUG_PIDLOOP, timings for:
-    // 0 - gyroUpdate()
-    // 1 - subTaskPidController()
-    // 2 - subTaskMotorUpdate()
-    // 3 - subTaskPidSubprocesses()
-    gyroUpdate(currentTimeUs);
-    DEBUG_SET(DEBUG_PIDLOOP, 0, micros() - currentTimeUs);
+    while (true) {
+    	timeUs_t currentTimeUs = micros();
+		// DEBUG_PIDLOOP, timings for:
+		// 0 - gyroUpdate()
+		// 1 - subTaskPidController()
+		// 2 - subTaskMotorUpdate()
+		// 3 - subTaskPidSubprocesses()
+        // Wait for the gyro interrupt
+		gyroUpdate(currentTimeUs);
+		DEBUG_SET(DEBUG_PIDLOOP, 0, micros() - currentTimeUs);
 
-    if (pidUpdateCounter++ % pidConfig()->pid_process_denom == 0) {
-        subTaskRcCommand(currentTimeUs);
-        subTaskPidController(currentTimeUs);
-        subTaskMotorUpdate(currentTimeUs);
-        subTaskPidSubprocesses(currentTimeUs);
-    }
+		if (pidUpdateCounter++ % pidConfig()->pid_process_denom == 0) {
+			subTaskRcCommand(currentTimeUs);
+			subTaskPidController(currentTimeUs);
+			subTaskMotorUpdate(currentTimeUs);
+			subTaskPidSubprocesses(currentTimeUs);
+		}
 
-    if (debugMode == DEBUG_CYCLETIME) {
-        debug[0] = getTaskDeltaTime(TASK_SELF);
-        debug[1] = averageSystemLoadPercent;
+		if (debugMode == DEBUG_CYCLETIME) {
+			debug[0] = getTaskDeltaTime(TASK_SELF);
+			debug[1] = averageSystemLoadPercent;
+		}
+
+#ifdef INCLUDE_uxTaskGetStackHighWaterMark
+        uint16_t stackMargin = uxTaskGetStackHighWaterMark( NULL );
+        if (stackMargin < cfTasks[TASK_GYROPID].stackMargin) {
+        	cfTasks[TASK_GYROPID].stackMargin = stackMargin;
+        }
+        if (cfTasks[TASK_GYROPID].stackMargin < 4) {
+        	while (true); // debug hang here
+        }
+#endif // INCLUDE_uxTaskGetStackHighWaterMark
     }
 }
 
