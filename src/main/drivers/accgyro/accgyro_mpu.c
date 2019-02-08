@@ -278,6 +278,7 @@ void mpuDetect(gyroDev_t *gyro, const gyroDeviceConfig_t *config)
 
 #ifdef USE_I2C_GYRO
     if (gyro->bus.bustype == BUSTYPE_I2C) {
+        gyro->bus.busdev_u.i2c.device = I2C_CFG_TO_DEV(config->i2cBus);
         gyro->bus.busdev_u.i2c.address = config->i2cAddress ? config->i2cAddress : MPU_ADDRESS;
 
         uint8_t sig = 0;
