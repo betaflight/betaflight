@@ -3678,7 +3678,7 @@ static void cliProfile(char *cmdline)
             changePidProfile(i);
             cliProfile("");
         } else {
-            cliPrintErrorLinef("PROFILE OUTSIDE OF [0..%d]", MAX_PROFILE_COUNT - 1);
+            cliPrintErrorLinef("PROFILE OUTSIDE OF [0..%d]", PID_PROFILE_COUNT - 1);
         }
     }
 }
