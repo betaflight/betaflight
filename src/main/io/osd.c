@@ -136,7 +136,9 @@ static uint32_t blinkBits[(OSD_ITEM_COUNT + 31)/32];
 #define IS_MID(X) (rcData[X] > 1250 && rcData[X] < 1750)
 
 static timeUs_t flyTime = 0;
+#if defined(USE_ACC)
 static float osdGForce = 0;
+#endif
 
 typedef struct statistic_s {
     timeUs_t armed_time;
@@ -548,6 +550,8 @@ static bool osdDrawSingleElement(uint8_t item)
     char buff[OSD_ELEMENT_BUFFER_LENGTH] = "";
 
     switch (item) {
+    
+#if defined(USE_ACC)
     case OSD_FLIP_ARROW: 
         {
             int rollAngle = attitude.values.roll / 10;
@@ -593,6 +597,8 @@ static bool osdDrawSingleElement(uint8_t item)
             buff[1] = '\0';
             break;
         }
+#endif
+
     case OSD_RSSI_VALUE:
         {
             uint16_t osdRssi = getRssi() * 100 / 1024; // change range
@@ -878,6 +884,7 @@ static bool osdDrawSingleElement(uint8_t item)
         buff[3] = 0;
         break;
 
+#if defined(USE_ACC)
     case OSD_ARTIFICIAL_HORIZON:
         {
             // Get pitch and roll limits in tenths of degrees
@@ -903,6 +910,14 @@ static bool osdDrawSingleElement(uint8_t item)
             return true;
         }
 
+    case OSD_G_FORCE:
+        {
+            const int gForce = lrintf(osdGForce * 10);
+            tfp_sprintf(buff, "%01d.%01dG", gForce / 10, gForce % 10);
+            break;
+        }
+#endif
+
     case OSD_HORIZON_SIDEBARS:
         {
             // Draw AH sides
@@ -918,13 +933,6 @@ static bool osdDrawSingleElement(uint8_t item)
             displayWriteChar(osdDisplayPort, elemPosX + hudwidth - 1, elemPosY, SYM_AH_RIGHT);
 
             return true;
-        }
-
-    case OSD_G_FORCE:
-        {
-            const int gForce = lrintf(osdGForce * 10);
-            tfp_sprintf(buff, "%01d.%01dG", gForce / 10, gForce % 10);
-            break;
         }
 
     case OSD_ROLL_PIDS:
@@ -1186,6 +1194,7 @@ static bool osdDrawSingleElement(uint8_t item)
         tfp_sprintf(buff, "DBG %5d %5d %5d %5d", debug[0], debug[1], debug[2], debug[3]);
         break;
 
+#if defined(USE_ACC)
     case OSD_PITCH_ANGLE:
     case OSD_ROLL_ANGLE:
         {
@@ -1193,6 +1202,7 @@ static bool osdDrawSingleElement(uint8_t item)
             tfp_sprintf(buff, "%c%02d.%01d", angle < 0 ? '-' : ' ', abs(angle / 10), abs(angle % 10));
             break;
         }
+#endif
 
     case OSD_MAIN_BATT_USAGE:
         {
@@ -1691,9 +1701,11 @@ static void osdUpdateStats(void)
         stats.max_altitude = altitudeCm;
     }
 
+#if defined(USE_ACC)
     if (stats.max_g_force < osdGForce) {
         stats.max_g_force = osdGForce;
     }
+#endif
 
 #ifdef USE_RX_LINK_QUALITY_INFO
     value = rxGetLinkQualityPercent();
@@ -1889,11 +1901,13 @@ static void osdShowStats(uint16_t endBatteryVoltage)
     }
 #endif
 
+#if defined(USE_ACC)
     if (osdStatGetState(OSD_STAT_MAX_G_FORCE) && sensors(SENSOR_ACC)) {
         const int gForce = lrintf(stats.max_g_force * 10);
         tfp_sprintf(buff, "%01d.%01dG", gForce / 10, gForce % 10);
         osdDisplayStatisticLabel(top++, "MAX G-FORCE", buff);
     }
+#endif
 
 #ifdef USE_ESC_SENSOR
     if (osdStatGetState(OSD_STAT_MAX_ESC_TEMP)) {
