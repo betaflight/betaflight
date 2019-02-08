@@ -51,8 +51,9 @@ typedef enum {
 } ledStripFormatRGB_e;
 
 void ws2811LedStripInit(ioTag_t ioTag);
+void ws2811LedStripEnable(void);
 
-void ws2811LedStripHardwareInit(ioTag_t ioTag);
+bool ws2811LedStripHardwareInit(ioTag_t ioTag);
 void ws2811LedStripDMAEnable(void);
 
 void ws2811UpdateStrip(ledStripFormatRGB_e ledFormat);
@@ -73,7 +74,7 @@ extern uint8_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
 #else
 extern uint32_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
 #endif
-extern volatile uint8_t ws2811LedDataTransferInProgress;
+extern volatile bool ws2811LedDataTransferInProgress;
 
 extern uint16_t BIT_COMPARE_1;
 extern uint16_t BIT_COMPARE_0;

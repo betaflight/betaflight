@@ -1150,6 +1150,8 @@ bool setModeColor(ledModeIndex_e modeIndex, int modeColorIndex, int colorIndex)
 
 void ledStripEnable(void)
 {
+    ws2811LedStripEnable();
+
     ledStripEnabled = true;
 }
 
@@ -1157,8 +1159,8 @@ void ledStripDisable(void)
 {
     ledStripEnabled = false;
     previousProfileColorIndex = COLOR_UNDEFINED;
-    setStripColor(&HSV(BLACK));
 
+    setStripColor(&HSV(BLACK));
     ws2811UpdateStrip((ledStripFormatRGB_e)ledStripConfig()->ledstrip_grb_rgb);
 }
 
