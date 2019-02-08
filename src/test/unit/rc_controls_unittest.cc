@@ -709,7 +709,7 @@ void gyroStartCalibration(bool isFirstArmingCalibration)
 {
     UNUSED(isFirstArmingCalibration);
 }
-void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t*) {}
+void applyAccelerometerTrimsDelta(rollAndPitchTrims_t*) {}
 void handleInflightCalibrationStickPosition(void) {}
 bool featureIsEnabled(uint32_t) { return false;}
 bool sensors(uint32_t) { return false;}

@@ -1027,12 +1027,15 @@ static bool osdDrawSingleElement(uint8_t item)
 #ifdef USE_LAUNCH_CONTROL
             // Warn when in launch control mode
             if (osdWarnGetState(OSD_WARNING_LAUNCH_CONTROL) && isLaunchControlActive()) {
+#if defined(USE_ACC)
                 if (sensors(SENSOR_ACC)) {
                     char launchControlMsg[OSD_FORMAT_MESSAGE_BUFFER_SIZE];
                     const int pitchAngle = constrain((attitude.raw[FD_PITCH] - accelerometerConfig()->accelerometerTrims.raw[FD_PITCH]) / 10, -90, 90);
                     tfp_sprintf(launchControlMsg, "LAUNCH %d", pitchAngle);
                     osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, launchControlMsg);
-                } else {
+                } else
+#endif
+                {
                     osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "LAUNCH");
                 }
                 break;
@@ -1375,6 +1378,7 @@ static void osdDrawElements(void)
         return;
     }
 
+#if defined(USE_ACC)
     osdGForce = 0.0f;
     if (sensors(SENSOR_ACC)) {
         // only calculate the G force if the element is visible or the stat is enabled
@@ -1388,7 +1392,7 @@ static void osdDrawElements(void)
         osdDrawSingleElement(OSD_ARTIFICIAL_HORIZON);
         osdDrawSingleElement(OSD_G_FORCE);
     }
-
+#endif
 
     for (unsigned i = 0; i < sizeof(osdElementDisplayOrder); i++) {
         osdDrawSingleElement(osdElementDisplayOrder[i]);
@@ -1569,7 +1573,11 @@ void osdUpdateAlarms(void)
     }
 
 #ifdef USE_GPS
-    if ((STATE(GPS_FIX) == 0) || (gpsSol.numSat < 5) || ((gpsSol.numSat < gpsRescueConfig()->minSats) && gpsRescueIsConfigured())) {
+    if ((STATE(GPS_FIX) == 0) || (gpsSol.numSat < 5)
+#if defined(USE_GPS_RESCUE)
+            || ((gpsSol.numSat < gpsRescueConfig()->minSats) && gpsRescueIsConfigured())
+#endif
+            ) {
         SET_BLINK(OSD_GPS_SATS);
     } else {
         CLR_BLINK(OSD_GPS_SATS);

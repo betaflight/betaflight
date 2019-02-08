@@ -725,6 +725,7 @@ void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex)
     }
 }
 
+#if defined(USE_ACC)
 // calculates strength of horizon leveling; 0 = none, 1.0 = most leveling
 STATIC_UNIT_TESTED float calcHorizonLevelStrength(void)
 {
@@ -802,19 +803,6 @@ STATIC_UNIT_TESTED float pidLevel(int axis, const pidProfile_t *pidProfile, cons
     return currentPidSetpoint;
 }
 
-static float accelerationLimit(int axis, float currentPidSetpoint)
-{
-    static float previousSetpoint[XYZ_AXIS_COUNT];
-    const float currentVelocity = currentPidSetpoint - previousSetpoint[axis];
-
-    if (fabsf(currentVelocity) > maxVelocity[axis]) {
-        currentPidSetpoint = (currentVelocity > 0) ? previousSetpoint[axis] + maxVelocity[axis] : previousSetpoint[axis] - maxVelocity[axis];
-    }
-
-    previousSetpoint[axis] = currentPidSetpoint;
-    return currentPidSetpoint;
-}
-
 static timeUs_t crashDetectedAtUs;
 
 static void handleCrashRecovery(
@@ -885,49 +873,7 @@ static void detectAndSetCrashRecovery(
         }
     }
 }
-
-static void rotateVector(float v[XYZ_AXIS_COUNT], float rotation[XYZ_AXIS_COUNT])
-{
-    // rotate v around rotation vector rotation
-    // rotation in radians, all elements must be small
-    for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
-        int i_1 = (i + 1) % 3;
-        int i_2 = (i + 2) % 3;
-        float newV = v[i_1] + v[i_2] * rotation[i];
-        v[i_2] -= v[i_1] * rotation[i];
-        v[i_1] = newV;
-    }
-}
-
-STATIC_UNIT_TESTED void rotateItermAndAxisError()
-{
-    if (itermRotation
-#if defined(USE_ABSOLUTE_CONTROL)
-        || acGain > 0
-#endif
-        ) {
-        const float gyroToAngle = dT * RAD;
-        float rotationRads[XYZ_AXIS_COUNT];
-        for (int i = FD_ROLL; i <= FD_YAW; i++) {
-            rotationRads[i] = gyro.gyroADCf[i] * gyroToAngle;
-        }
-#if defined(USE_ABSOLUTE_CONTROL)
-        if (acGain > 0) {
-            rotateVector(axisError, rotationRads);
-        }
-#endif
-        if (itermRotation) {
-            float v[XYZ_AXIS_COUNT];
-            for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
-                v[i] = pidData[i].I;
-            }
-            rotateVector(v, rotationRads );
-            for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
-                pidData[i].I = v[i];
-            }
-        }
-    }
-}
+#endif // USE_ACC
 
 #ifdef USE_ACRO_TRAINER
 
@@ -1002,6 +948,62 @@ static FAST_CODE_NOINLINE float applyAcroTrainer(int axis, const rollAndPitchTri
     return ret;
 }
 #endif // USE_ACRO_TRAINER
+
+static float accelerationLimit(int axis, float currentPidSetpoint)
+{
+    static float previousSetpoint[XYZ_AXIS_COUNT];
+    const float currentVelocity = currentPidSetpoint - previousSetpoint[axis];
+
+    if (fabsf(currentVelocity) > maxVelocity[axis]) {
+        currentPidSetpoint = (currentVelocity > 0) ? previousSetpoint[axis] + maxVelocity[axis] : previousSetpoint[axis] - maxVelocity[axis];
+    }
+
+    previousSetpoint[axis] = currentPidSetpoint;
+    return currentPidSetpoint;
+}
+
+static void rotateVector(float v[XYZ_AXIS_COUNT], float rotation[XYZ_AXIS_COUNT])
+{
+    // rotate v around rotation vector rotation
+    // rotation in radians, all elements must be small
+    for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+        int i_1 = (i + 1) % 3;
+        int i_2 = (i + 2) % 3;
+        float newV = v[i_1] + v[i_2] * rotation[i];
+        v[i_2] -= v[i_1] * rotation[i];
+        v[i_1] = newV;
+    }
+}
+
+STATIC_UNIT_TESTED void rotateItermAndAxisError()
+{
+    if (itermRotation
+#if defined(USE_ABSOLUTE_CONTROL)
+        || acGain > 0
+#endif
+        ) {
+        const float gyroToAngle = dT * RAD;
+        float rotationRads[XYZ_AXIS_COUNT];
+        for (int i = FD_ROLL; i <= FD_YAW; i++) {
+            rotationRads[i] = gyro.gyroADCf[i] * gyroToAngle;
+        }
+#if defined(USE_ABSOLUTE_CONTROL)
+        if (acGain > 0) {
+            rotateVector(axisError, rotationRads);
+        }
+#endif
+        if (itermRotation) {
+            float v[XYZ_AXIS_COUNT];
+            for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+                v[i] = pidData[i].I;
+            }
+            rotateVector(v, rotationRads );
+            for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+                pidData[i].I = v[i];
+            }
+        }
+    }
+}
 
 #ifdef USE_RC_SMOOTHING_FILTER
 float FAST_CODE applyRcSmoothingDerivativeFilter(int axis, float pidSetpointDelta)
@@ -1133,6 +1135,7 @@ static float applyLaunchControl(int axis, const rollAndPitchTrims_t *angleTrim)
         ret = LAUNCH_CONTROL_MAX_RATE * stickDeflection * 2;
     }
 
+#if defined(USE_ACC)
     // If ACC is enabled and a limit angle is set, then try to limit forward tilt
     // to that angle and slow down the rate as the limit is approached to reduce overshoot
     if ((axis == FD_PITCH) && (launchControlAngleLimit > 0) && (ret > 0)) {
@@ -1147,19 +1150,33 @@ static float applyLaunchControl(int axis, const rollAndPitchTrims_t *angleTrim)
             }
         }
     }
+#else
+    UNUSED(angleTrim);
+#endif
+
     return ret;
 }
 #endif
 
 // Betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage.
 // Based on 2DOF reference design (matlab)
-void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, timeUs_t currentTimeUs)
+void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTimeUs)
 {
     static float previousGyroRateDterm[XYZ_AXIS_COUNT];
+
+#if defined(USE_ACC)
     static timeUs_t levelModeStartTimeUs = 0;
     static bool gpsRescuePreviousState = false;
+#endif
 
     const float tpaFactor = getThrottlePIDAttenuation();
+
+#if defined(USE_ACC)
+    const rollAndPitchTrims_t *angleTrim = &accelerometerConfig()->accelerometerTrims;
+#else
+    UNUSED(pidProfile);
+    UNUSED(currentTimeUs);
+#endif
 
 #ifdef USE_TPA_MODE
     const float tpaFactorKp = (currentControlRateProfile->tpaMode == TPA_MODE_PD) ? tpaFactor : 1.0f;
@@ -1173,6 +1190,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
 
     const bool launchControlActive = isLaunchControlActive();
 
+#if defined(USE_ACC)
     const bool gpsRescueIsActive = FLIGHT_MODE(GPS_RESCUE_MODE);
     const bool levelModeActive = FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE) || gpsRescueIsActive;
 
@@ -1187,6 +1205,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
         levelModeStartTimeUs = 0;
     }
     gpsRescuePreviousState = gpsRescueIsActive;
+#endif
 
     // Dynamic i component,
     if ((antiGravityMode == ANTI_GRAVITY_SMOOTH) && antiGravityEnabled) {
@@ -1227,9 +1246,11 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
             currentPidSetpoint = accelerationLimit(axis, currentPidSetpoint);
         }
         // Yaw control is GYRO based, direct sticks control is applied to rate PID
+#if defined(USE_ACC)
         if (levelModeActive && (axis != FD_YAW)) {
             currentPidSetpoint = pidLevel(axis, pidProfile, angleTrim, currentPidSetpoint);
         }
+#endif
 
 #ifdef USE_ACRO_TRAINER
         if ((axis != FD_YAW) && acroTrainerActive && !inCrashRecoveryMode && !launchControlActive) {
@@ -1239,7 +1260,11 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
 
 #ifdef USE_LAUNCH_CONTROL
         if (launchControlActive) {
+#if defined(USE_ACC)
             currentPidSetpoint = applyLaunchControl(axis, angleTrim);
+#else
+            currentPidSetpoint = applyLaunchControl(axis, NULL);
+#endif
         }
 #endif
 
@@ -1254,9 +1279,11 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
         // -----calculate error rate
         const float gyroRate = gyro.gyroADCf[axis]; // Process variable from gyro output in deg/sec
         float errorRate = currentPidSetpoint - gyroRate; // r - y
+#if defined(USE_ACC)
         handleCrashRecovery(
             pidProfile->crash_recovery, angleTrim, axis, currentTimeUs, gyroRate,
             &currentPidSetpoint, &errorRate);
+#endif
 
         const float iterm = pidData[axis].I;
         float itermErrorRate = errorRate;
@@ -1298,9 +1325,12 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchT
             const float delta =
                 - (gyroRateDterm[axis] - previousGyroRateDterm[axis]) * pidFrequency;
 
+#if defined(USE_ACC)
             if (cmpTimeUs(currentTimeUs, levelModeStartTimeUs) > CRASH_RECOVERY_DETECTION_DELAY_US) {
                 detectAndSetCrashRecovery(pidProfile->crash_recovery, axis, currentTimeUs, delta, errorRate);
             }
+#endif
+
 #if defined(USE_D_CUT)
             if (dtermCutPercent){
                 dtermCutFactor = dtermCutRangeApplyFn((filter_t *) &dtermCutRange[axis], delta);

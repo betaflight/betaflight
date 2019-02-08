@@ -4080,9 +4080,11 @@ static void cliStatus(char *cmdline)
                 cliPrint(", ");
             }
             cliPrintf("%s=%s", sensorTypeNames[i], sensorHardware);
+#if defined(USE_ACC)
             if (mask == SENSOR_ACC && acc.dev.revisionCode) {
                 cliPrintf(".%c", acc.dev.revisionCode);
             }
+#endif
         }
     }
     cliPrintLinefeed();
