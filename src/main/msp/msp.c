@@ -2655,6 +2655,7 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src, mspPos
                     // selected OSD profile
 #ifdef USE_OSD_PROFILES
                     osdConfigMutable()->osdProfileIndex = sbufReadU8(src);
+                    setOsdProfile(osdConfig()->osdProfileIndex);
 #else
                     sbufReadU8(src);
 #endif // USE_OSD_PROFILES
