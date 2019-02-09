@@ -250,8 +250,16 @@ static uint8_t displayPortProfileMax7456_blackBrightness;
 static uint8_t displayPortProfileMax7456_whiteBrightness;
 #endif
 
+#ifdef USE_OSD_PROFILES
+static uint8_t osdConfig_osdProfileIndex;
+#endif
+
 static long cmsx_menuOsdOnEnter(void)
 {
+#ifdef USE_OSD_PROFILES
+    osdConfig_osdProfileIndex = osdConfig()->osdProfileIndex;
+#endif
+
 #ifdef USE_MAX7456
     displayPortProfileMax7456_invert = displayPortProfileMax7456()->invert;
     displayPortProfileMax7456_blackBrightness = displayPortProfileMax7456()->blackBrightness;
@@ -265,6 +273,11 @@ static long cmsx_menuOsdOnExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
+#ifdef USE_OSD_PROFILES
+    osdConfigMutable()->osdProfileIndex = osdConfig_osdProfileIndex;
+    setOsdProfile(osdConfig()->osdProfileIndex);
+#endif
+
 #ifdef USE_MAX7456
     displayPortProfileMax7456Mutable()->invert = displayPortProfileMax7456_invert;
     displayPortProfileMax7456Mutable()->blackBrightness = displayPortProfileMax7456_blackBrightness;
@@ -277,6 +290,9 @@ static long cmsx_menuOsdOnExit(const OSD_Entry *self)
 OSD_Entry cmsx_menuOsdEntries[] =
 {
     {"---OSD---",   OME_Label,   NULL,          NULL,                0},
+#ifdef USE_OSD_PROFILES
+    {"OSD PROFILE", OME_UINT8, NULL, &(OSD_UINT8_t){&osdConfig_osdProfileIndex, 1, 3, 1}, 0},
+#endif
 #ifdef USE_EXTENDED_CMS_MENUS
     {"ACTIVE ELEM", OME_Submenu, cmsMenuChange, &menuOsdActiveElems, 0},
     {"TIMERS",      OME_Submenu, cmsMenuChange, &menuTimers,         0},
