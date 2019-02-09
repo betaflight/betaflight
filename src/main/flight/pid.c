@@ -92,8 +92,11 @@ PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 2);
 #else
 #define PID_PROCESS_DENOM_DEFAULT       2
 #endif
-#if defined(USE_D_CUT)
-#define D_CUT_GAIN_FACTOR 0.00005f
+#if defined(USE_D_MIN)
+#define D_MIN_GAIN_FACTOR 0.00005f
+#define D_MIN_SETPOINT_GAIN_FACTOR 0.00005f
+#define D_MIN_RANGE_HZ 80    // Biquad lowpass input cutoff to peak D around propwash frequencies
+#define D_MIN_LOWPASS_HZ 10  // PT1 lowpass cutoff to smooth the boost effect
 #endif
 
 #ifdef USE_RUNAWAY_TAKEOFF
@@ -126,8 +129,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
 {
     RESET_CONFIG(pidProfile_t, pidProfile,
         .pid = {
-            [PID_ROLL] =  { 46, 65, 40, 60 },
-            [PID_PITCH] = { 50, 75, 44, 60 },
+            [PID_ROLL] =  { 46, 65, 35, 60 },
+            [PID_PITCH] = { 50, 75, 38, 60 },
             [PID_YAW] =   { 45, 100, 0, 100 },
             [PID_LEVEL] = { 50, 50, 75, 0 },
             [PID_MAG] =   { 40, 0, 0, 0 },
@@ -188,10 +191,11 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .use_integrated_yaw = false,
         .integrated_yaw_relax = 200,
         .thrustLinearization = 0,
-        .dterm_cut_percent = 65,
-        .dterm_cut_gain = 15,
-        .dterm_cut_range_hz = 40,
-        .dterm_cut_lowpass_hz = 7,
+        .d_min_roll = 20,
+        .d_min_pitch = 22,
+        .d_min_yaw = 0,
+        .d_min_gain = 20,
+        .d_min_advance = 20,
         .motor_output_limit = 100,
         .auto_profile_cell_count = AUTO_PROFILE_CELL_COUNT_STAY,
     );
@@ -201,7 +205,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->dterm_filter_type = FILTER_BIQUAD;
     pidProfile->dterm_filter2_type = FILTER_BIQUAD;
 #endif
-#ifndef USE_D_CUT
+#ifndef USE_D_MIN
     pidProfile->pid[PID_ROLL].D = 30;
     pidProfile->pid[PID_PITCH].D = 32;
 #endif
@@ -272,11 +276,10 @@ static FAST_RAM_ZERO_INIT float acCutoff;
 static FAST_RAM_ZERO_INIT pt1Filter_t acLpf[XYZ_AXIS_COUNT];
 #endif
 
-#if defined(USE_D_CUT)
-static FAST_RAM_ZERO_INIT filterApplyFnPtr dtermCutRangeApplyFn; 
-static FAST_RAM_ZERO_INIT biquadFilter_t dtermCutRange[XYZ_AXIS_COUNT];
-static FAST_RAM_ZERO_INIT filterApplyFnPtr dtermCutLowpassApplyFn; 
-static FAST_RAM_ZERO_INIT pt1Filter_t dtermCutLowpass[XYZ_AXIS_COUNT];
+#if defined(USE_D_MIN)
+static FAST_RAM_ZERO_INIT uint8_t dMin[XYZ_AXIS_COUNT];
+static FAST_RAM_ZERO_INIT biquadFilter_t dMinRange[XYZ_AXIS_COUNT];
+static FAST_RAM_ZERO_INIT pt1Filter_t dMinLowpass[XYZ_AXIS_COUNT];
 #endif
 
 #ifdef USE_RC_SMOOTHING_FILTER
@@ -404,18 +407,19 @@ void pidInitFilters(const pidProfile_t *pidProfile)
         }
     }
 #endif
-#if defined(USE_D_CUT)
-    if (pidProfile->dterm_cut_percent == 0) {
-        dtermCutRangeApplyFn = nullFilterApply;
-        dtermCutLowpassApplyFn = nullFilterApply;
-    } else {
-        dtermCutRangeApplyFn = (filterApplyFnPtr)biquadFilterApply;
-        dtermCutLowpassApplyFn = (filterApplyFnPtr)pt1FilterApply;
-        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-            biquadFilterInitLPF(&dtermCutRange[axis], pidProfile->dterm_cut_range_hz, targetPidLooptime);
-            pt1FilterInit(&dtermCutLowpass[axis], pt1FilterGain(pidProfile->dterm_cut_lowpass_hz, dT));
-        }
-    }
+#if defined(USE_D_MIN)
+    dMin[FD_ROLL] = pidProfile->d_min_roll;
+    dMin[FD_PITCH] = pidProfile->d_min_pitch;
+    dMin[FD_YAW] = pidProfile->d_min_yaw;
+
+    // Initialize the filters for all axis even if the dMin[axis] value is 0
+    // Otherwise if the pidProfile->d_min_xxx parameters are ever added to
+    // in-flight adjustments and transition from 0 to > 0 in flight the feature
+    // won't work because the filter wasn't initialized.
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        biquadFilterInitLPF(&dMinRange[axis], D_MIN_RANGE_HZ, targetPidLooptime);
+        pt1FilterInit(&dMinLowpass[axis], pt1FilterGain(D_MIN_LOWPASS_HZ, dT));
+     }
 #endif
 
     pt1FilterInit(&antiGravityThrottleLpf, pt1FilterGain(ANTI_GRAVITY_THROTTLE_FILTER_CUTOFF, dT));
@@ -539,14 +543,11 @@ static FAST_RAM_ZERO_INIT uint16_t dynLpfMin;
 static FAST_RAM_ZERO_INIT uint16_t dynLpfMax;
 #endif
 
-#ifdef USE_D_CUT
-static FAST_RAM_ZERO_INIT float dtermCutPercent;
-static FAST_RAM_ZERO_INIT float dtermCutPercentInv;
-static FAST_RAM_ZERO_INIT float dtermCutGain;
-static FAST_RAM_ZERO_INIT float dtermCutRangeHz;
-static FAST_RAM_ZERO_INIT float dtermCutLowpassHz;
+#ifdef USE_D_MIN
+static FAST_RAM_ZERO_INIT float dMinPercent[XYZ_AXIS_COUNT];
+static FAST_RAM_ZERO_INIT float dMinGyroGain;
+static FAST_RAM_ZERO_INIT float dMinSetpointGain;
 #endif
-static FAST_RAM_ZERO_INIT float dtermCutFactor;
 
 void pidInitConfig(const pidProfile_t *pidProfile)
 {
@@ -666,15 +667,18 @@ void pidInitConfig(const pidProfile_t *pidProfile)
         thrustLinearizationB = (1.0f - thrustLinearization) / (2.0f * thrustLinearization);
     }
 #endif    
-#if defined(USE_D_CUT)
-    dtermCutPercent = pidProfile->dterm_cut_percent / 100.0f;
-    dtermCutPercentInv = 1.0f - dtermCutPercent;
-    dtermCutRangeHz = pidProfile->dterm_cut_range_hz;
-    dtermCutLowpassHz = pidProfile->dterm_cut_lowpass_hz;
-    dtermCutGain = pidProfile->dterm_cut_gain * dtermCutPercent * D_CUT_GAIN_FACTOR / dtermCutLowpassHz;
+#if defined(USE_D_MIN)
+    for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+        if ((dMin[axis] > 0) && (dMin[axis] < pidProfile->pid[axis].D)) {
+            dMinPercent[axis] = dMin[axis] / (float)(pidProfile->pid[axis].D);
+        } else {
+            dMinPercent[axis] = 0;
+        }
+    }
+    dMinGyroGain = pidProfile->d_min_gain * D_MIN_GAIN_FACTOR / D_MIN_LOWPASS_HZ;
+    dMinSetpointGain = pidProfile->d_min_gain * D_MIN_SETPOINT_GAIN_FACTOR * pidProfile->d_min_advance * pidFrequency / (100 * D_MIN_LOWPASS_HZ);
     // lowpass included inversely in gain since stronger lowpass decreases peak effect
 #endif
-    dtermCutFactor = 1.0f;
 }
 
 void pidInit(const pidProfile_t *pidProfile)
@@ -1313,6 +1317,15 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #endif
         pidData[axis].I = constrainf(iterm + Ki * itermErrorRate * dynCi, -itermLimit, itermLimit);
 
+        // -----calculate pidSetpointDelta
+        float pidSetpointDelta = 0;
+        pidSetpointDelta = currentPidSetpoint - previousPidSetpoint[axis];
+        previousPidSetpoint[axis] = currentPidSetpoint;
+
+#ifdef USE_RC_SMOOTHING_FILTER
+        pidSetpointDelta = applyRcSmoothingDerivativeFilter(axis, pidSetpointDelta);
+#endif // USE_RC_SMOOTHING_FILTER
+
         // -----calculate D component
         // disable D if launch control is active
         if ((pidCoefficient[axis].Kd > 0) && !launchControlActive){
@@ -1331,44 +1344,37 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             }
 #endif
 
-#if defined(USE_D_CUT)
-            if (dtermCutPercent){
-                dtermCutFactor = dtermCutRangeApplyFn((filter_t *) &dtermCutRange[axis], delta);
-                dtermCutFactor = fabsf(dtermCutFactor) * dtermCutGain;
-                dtermCutFactor = dtermCutLowpassApplyFn((filter_t *) &dtermCutLowpass[axis], dtermCutFactor);
-                dtermCutFactor = MIN(dtermCutFactor, 1.0f);
-                dtermCutFactor = dtermCutPercentInv + (dtermCutFactor * dtermCutPercent);
-            }
-            if (axis == FD_ROLL) {
-                DEBUG_SET(DEBUG_D_CUT, 2, lrintf(pidCoefficient[axis].Kd * dtermCutFactor * 10.0f / DTERM_SCALE));
-            } else if (axis == FD_PITCH) {
-                DEBUG_SET(DEBUG_D_CUT, 3, lrintf(pidCoefficient[axis].Kd * dtermCutFactor * 10.0f / DTERM_SCALE));
+            float dMinFactor = 1.0f;
+#if defined(USE_D_MIN)
+            if (dMinPercent[axis] > 0) {
+                float dMinGyroFactor = biquadFilterApply(&dMinRange[axis], delta);
+                dMinGyroFactor = fabsf(dMinGyroFactor) * dMinGyroGain;
+                const float dMinSetpointFactor = (fabsf(pidSetpointDelta)) * dMinSetpointGain;
+                dMinFactor = MAX(dMinGyroFactor, dMinSetpointFactor);
+                dMinFactor = dMinPercent[axis] + (1.0f - dMinPercent[axis]) * dMinFactor;
+                dMinFactor = pt1FilterApply(&dMinLowpass[axis], dMinFactor);
+                dMinFactor = MIN(dMinFactor, 1.0f);
+                if (axis == FD_ROLL) {
+                    DEBUG_SET(DEBUG_D_MIN, 0, lrintf(dMinGyroFactor * 100));
+                    DEBUG_SET(DEBUG_D_MIN, 1, lrintf(dMinSetpointFactor * 100));
+                    DEBUG_SET(DEBUG_D_MIN, 2, lrintf(pidCoefficient[axis].Kd * dMinFactor * 10 / DTERM_SCALE));
+                } else if (axis == FD_PITCH) {
+                    DEBUG_SET(DEBUG_D_MIN, 3, lrintf(pidCoefficient[axis].Kd * dMinFactor * 10 / DTERM_SCALE));
+                }
             }
 #endif
-
-            pidData[axis].D = pidCoefficient[axis].Kd * delta * tpaFactor * dtermCutFactor;
-
+            pidData[axis].D = pidCoefficient[axis].Kd * delta * tpaFactor * dMinFactor;
         } else {
             pidData[axis].D = 0;
         }
         previousGyroRateDterm[axis] = gyroRateDterm[axis];
 
         // -----calculate feedforward component
-        
         // Only enable feedforward for rate mode and if launch control is inactive
         const float feedforwardGain = (flightModeFlags || launchControlActive) ? 0.0f : pidCoefficient[axis].Kf;
-        
         if (feedforwardGain > 0) {
-
             // no transition if feedForwardTransition == 0
             float transition = feedForwardTransition > 0 ? MIN(1.f, getRcDeflectionAbs(axis) * feedForwardTransition) : 1;
-
-            float pidSetpointDelta = currentPidSetpoint - previousPidSetpoint[axis];
-
-#ifdef USE_RC_SMOOTHING_FILTER
-            pidSetpointDelta = applyRcSmoothingDerivativeFilter(axis, pidSetpointDelta);
-#endif // USE_RC_SMOOTHING_FILTER
-
             pidData[axis].F = feedforwardGain * transition * pidSetpointDelta * pidFrequency;
 
 #if defined(USE_SMART_FEEDFORWARD)
@@ -1377,7 +1383,6 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         } else {
             pidData[axis].F = 0;
         }
-        previousPidSetpoint[axis] = currentPidSetpoint;
 
 #ifdef USE_YAW_SPIN_RECOVERY
         if (yawSpinActive) {

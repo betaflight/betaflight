@@ -81,5 +81,5 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "RX_SPEKTRUM_SPI",
     "DSHOT_RPM_TELEMETRY",
     "RPM_FILTER",
-    "D_CUT",
+    "D_MIN",
 };

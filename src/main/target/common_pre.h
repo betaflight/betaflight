@@ -199,7 +199,7 @@
 #if ((FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 8))
 #define USE_LAUNCH_CONTROL
 #define USE_DYN_LPF
-#define USE_D_CUT
+#define USE_D_MIN
 #endif
 
 #if ((FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 7))
