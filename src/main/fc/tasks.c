@@ -115,6 +115,8 @@
 // Target stack margin per task. See cfTasks array, below, for details.
 #define TASK_STACK_MARGIN 16
 
+#define TASK_STACK_DEFAULT 128
+
 static void taskMain(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
@@ -404,16 +406,6 @@ void FAST_CODE FAST_CODE_NOINLINE task( void *pvParameters )
         task->taskFunc(micros());
         pinioSet(3,0);
 
-#ifdef NOTDEF //INCLUDE_uxTaskGetStackHighWaterMark
-        uint16_t stackMargin = uxTaskGetStackHighWaterMark( NULL );
-        if (stackMargin < task->stackMargin) {
-        	task->stackMargin = stackMargin;
-        }
-        if (task->stackMargin < 32) {
-        	while (true); // debug hang here
-        }
-#endif // INCLUDE_uxTaskGetStackHighWaterMark
-
         vTaskDelayUntil(&task->lastExecutedAt, (TickType_t)(configTICK_RATE_HZ * (uint32_t)task->desiredPeriod/1000));
     }
 }
@@ -422,14 +414,10 @@ void tasksLaunch()
 {
 	// Launch each task in turn
 	for (int i = 0; i < TASK_COUNT; i++) {
-#ifdef INCLUDE_uxTaskGetStackHighWaterMark
-		cfTasks[i].stackMargin = 0xffff;
-#endif // INCLUDE_uxTaskGetStackHighWaterMark
-
 		if (cfTasks[i].taskFunc && (i != TASK_GYROPID)) {
 			// Apply default stack size if none specified
 			if (cfTasks[i].stackSize == 0) {
-				cfTasks[i].stackSize = 128; // Define a constant for this
+				cfTasks[i].stackSize = TASK_STACK_DEFAULT;
 			}
 			xTaskCreate(task,
 					    cfTasks[i].taskName,

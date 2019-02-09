@@ -1137,16 +1137,6 @@ void FAST_CODE FAST_CODE_NOINLINE taskMainPidLoop( void *pvParameters )
 			debug[0] = getTaskDeltaTime(TASK_SELF);
 			debug[1] = averageSystemLoadPercent;
 		}
-
-#ifdef INCLUDE_uxTaskGetStackHighWaterMark
-        uint16_t stackMargin = uxTaskGetStackHighWaterMark( NULL );
-        if (stackMargin < cfTasks[TASK_GYROPID].stackMargin) {
-        	cfTasks[TASK_GYROPID].stackMargin = stackMargin;
-        }
-        if (cfTasks[TASK_GYROPID].stackMargin < 4) {
-        	while (true); // debug hang here
-        }
-#endif // INCLUDE_uxTaskGetStackHighWaterMark
     }
 }
 

@@ -158,10 +158,6 @@ typedef struct {
     timeDelta_t desiredPeriod;      // target period of execution
     uint16_t stackSize; // stack size in words
 
-#ifdef INCLUDE_uxTaskGetStackHighWaterMark
-    uint16_t stackMargin; // amount of unused stack in words
-#endif // INCLUDE_uxTaskGetStackHighWaterMark
-
     const uint8_t staticPriority;   // dynamicPriority grows in steps of this size, shouldn't be zero
 
     // Scheduling
