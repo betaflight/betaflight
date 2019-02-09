@@ -1065,7 +1065,12 @@ FAST_CODE void gyroUpdate(timeUs_t currentTimeUs)
     accumulationLastTimeSampledUs = currentTimeUs;
     accumulatedMeasurementTimeUs += sampleDeltaUs;
 
+	pinioSet(0,0);
+	// Wait for a direct notification from mpuIntExtiHandler()
     ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
+	pinioSet(1,0);
+	pinioSet(0,1);
+	pinioSet(2,1);
 
     switch (gyroToUse) {
     case GYRO_CONFIG_USE_GYRO_1:

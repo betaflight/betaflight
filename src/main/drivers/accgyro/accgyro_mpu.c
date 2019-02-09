@@ -121,8 +121,9 @@ static void mpuIntExtiHandler(extiCallbackRec_t *cb)
     gyroDev_t *gyro = container_of(cb, gyroDev_t, exti);
     gyro->dataReady = true;
 
-	// Trigger the gyro PID processing task
+	// Trigger the gyro PID processing task to wake up in gyroUpdate()
     if (cfTasks[TASK_GYROPID].taskId) {
+    	pinioSet(1,1);
     	vTaskNotifyGiveFromISR(cfTasks[TASK_GYROPID].taskId, &xHigherPriorityTaskWoken);
     }
 #ifdef DEBUG_MPU_DATA_READY_INTERRUPT

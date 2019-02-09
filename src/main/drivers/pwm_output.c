@@ -249,6 +249,8 @@ static void pwmCompleteOneshotMotorUpdate(uint8_t motorCount)
 
 void pwmCompleteMotorUpdate(uint8_t motorCount)
 {
+	pinioSet(2,0);
+
     pwmCompleteWrite(motorCount);
 }
 
