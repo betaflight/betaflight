@@ -127,7 +127,6 @@ typedef struct {
     const char * taskName;
     const char * subTaskName;
 #endif
-    bool (*checkFunc)();
     void (*taskFunc)();
     uint16_t desiredPeriod; // target period of execution
     uint16_t stackSize;     // stack size in words
