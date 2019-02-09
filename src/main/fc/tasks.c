@@ -150,11 +150,6 @@ static void taskBatteryAlerts()
     batteryUpdateAlarms();
 }
 
-static void taskUpdateAccelerometer()
-{
-    accUpdate(&accelerometerConfigMutable()->accelerometerTrims);
-}
-
 static void taskUpdateRxMain()
 {
 	rxUpdateCheck();
@@ -265,13 +260,6 @@ void fcTasksInit(void)
         fcTaskReschedule(TASK_GYROPID, gyro.targetLooptime);
         setTaskEnabled(TASK_GYROPID, true);
     }
-
-    if (sensors(SENSOR_ACC)) {
-        setTaskEnabled(TASK_ACCEL, true);
-        fcTaskReschedule(TASK_ACCEL, acc.accSamplingInterval);
-        setTaskEnabled(TASK_ATTITUDE, true);
-    }
-
 
 #ifdef USE_RANGEFINDER
     if (sensors(SENSOR_RANGEFINDER)) {
@@ -448,7 +436,6 @@ cfTask_t cfTasks[TASK_COUNT] = {
 
 	[TASK_GYROPID] = DEFINE_TASK("PID", "GYRO", NULL, TASK_GYROPID_DESIRED_PERIOD, TASK_PRIORITY_REALTIME, 101),
 
-	[TASK_ACCEL] = DEFINE_TASK("ACC", NULL, taskUpdateAccelerometer, TASK_PERIOD_HZ(1000), TASK_PRIORITY_MEDIUM, 91),
     [TASK_ATTITUDE] = DEFINE_TASK("ATTITUDE", NULL, imuUpdateAttitude, TASK_PERIOD_HZ(100), TASK_PRIORITY_MEDIUM, 113),
     [TASK_RX] = DEFINE_TASK("RX", NULL, taskUpdateRxMain, TASK_PERIOD_HZ(150), TASK_PRIORITY_HIGH, 83), // If event-based scheduling doesn't work, fallback to periodic scheduling
     [TASK_DISPATCH] = DEFINE_TASK("DISPATCH", NULL, dispatchProcess, TASK_PERIOD_HZ(1000), TASK_PRIORITY_HIGH, 33),

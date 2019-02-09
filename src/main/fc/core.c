@@ -1116,6 +1116,7 @@ void FAST_CODE FAST_CODE_NOINLINE taskMainPidLoop( void *pvParameters )
 
     while (true) {
     	timeUs_t currentTimeUs = micros();
+    	uint8_t pid_process_denom = pidConfig()->pid_process_denom;
 		// DEBUG_PIDLOOP, timings for:
 		// 0 - gyroUpdate()
 		// 1 - subTaskPidController()
@@ -1125,12 +1126,21 @@ void FAST_CODE FAST_CODE_NOINLINE taskMainPidLoop( void *pvParameters )
 		gyroUpdate(currentTimeUs);
 		DEBUG_SET(DEBUG_PIDLOOP, 0, micros() - currentTimeUs);
 
-		if (pidUpdateCounter++ % pidConfig()->pid_process_denom == 0) {
+		if (pidUpdateCounter % pid_process_denom == 0) {
 			subTaskRcCommand(currentTimeUs);
 			subTaskPidController(currentTimeUs);
 			subTaskMotorUpdate(currentTimeUs);
 			subTaskPidSubprocesses(currentTimeUs);
 		}
+
+		if ((pid_process_denom == 1) || (pidUpdateCounter % pid_process_denom == 1)) {
+			/* Perform accelerometer access in the same thread as the gyro to avoid SPI
+			 * bus contention. Whilst the SPI bus could be protected with a mutex this
+			 * could still result in the gyro access stalling, resuling in jitter
+			 */
+			accUpdate(&accelerometerConfigMutable()->accelerometerTrims);
+		}
+		pidUpdateCounter++;
     }
 }
 
