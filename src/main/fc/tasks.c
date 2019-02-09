@@ -112,6 +112,9 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+// Target stack margin per task. See cfTasks array, below, for details.
+#define TASK_STACK_MARGIN 16
+
 static void taskMain(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
@@ -158,7 +161,9 @@ static void taskUpdateAccelerometer(timeUs_t currentTimeUs)
 
 static void taskUpdateRxMain(timeUs_t currentTimeUs)
 {
-    if (!processRx(currentTimeUs)) {
+	rxUpdateCheck(currentTimeUs, 0);
+
+	if (!processRx(currentTimeUs)) {
         return;
     }
 
@@ -395,14 +400,16 @@ void FAST_CODE FAST_CODE_NOINLINE task( void *pvParameters )
 	task->lastExecutedAt = xTaskGetTickCount();
 
     while (true) {
+        pinioSet(3,1);
         task->taskFunc(micros());
+        pinioSet(3,0);
 
-#ifdef INCLUDE_uxTaskGetStackHighWaterMark
+#ifdef NOTDEF //INCLUDE_uxTaskGetStackHighWaterMark
         uint16_t stackMargin = uxTaskGetStackHighWaterMark( NULL );
         if (stackMargin < task->stackMargin) {
         	task->stackMargin = stackMargin;
         }
-        if (task->stackMargin < 4) {
+        if (task->stackMargin < 32) {
         	while (true); // debug hang here
         }
 #endif // INCLUDE_uxTaskGetStackHighWaterMark
@@ -426,7 +433,7 @@ void tasksLaunch()
 			}
 			xTaskCreate(task,
 					    cfTasks[i].taskName,
-						cfTasks[i].stackSize,
+						cfTasks[i].stackSize + TASK_STACK_MARGIN,
 						(void *)&cfTasks[i],
 						tskIDLE_PRIORITY + cfTasks[i].staticPriority,
 						&cfTasks[i].taskId);
@@ -435,20 +442,20 @@ void tasksLaunch()
 
 	xTaskCreate(taskMainPidLoop,
 			    cfTasks[TASK_GYROPID].taskName,
-				cfTasks[TASK_GYROPID].stackSize,
+				cfTasks[TASK_GYROPID].stackSize + TASK_STACK_MARGIN,
 			    (void *)&cfTasks[TASK_GYROPID],
 			    tskIDLE_PRIORITY + cfTasks[TASK_GYROPID].staticPriority,
 			    &cfTasks[TASK_GYROPID].taskId);
 }
 
-/* Note that stack sizes, where defined, are set to leave 4 words on each stack free. This may need review/revision. */
+/* Note that stack sizes, where defined, are set to leave TASK_STACK_MARGIN words on each stack free. This may need review/revision. */
 cfTask_t cfTasks[TASK_COUNT] = {
-    [TASK_SYSTEM] = DEFINE_TASK("SYSTEM", "LOAD", NULL, taskSystemLoad, TASK_PERIOD_HZ(10), TASK_PRIORITY_MEDIUM_HIGH, 31),
-    [TASK_MAIN] = DEFINE_TASK("SYSTEM", "UPDATE", NULL, taskMain, TASK_PERIOD_HZ(1000), TASK_PRIORITY_MEDIUM_HIGH, 31),
+    [TASK_SYSTEM] = DEFINE_TASK("SYSTEM", "LOAD", NULL, taskSystemLoad, TASK_PERIOD_HZ(10), TASK_PRIORITY_MEDIUM_HIGH, 33),
+    [TASK_MAIN] = DEFINE_TASK("SYSTEM", "UPDATE", NULL, taskMain, TASK_PERIOD_HZ(1000), TASK_PRIORITY_MEDIUM_HIGH, 33),
     [TASK_SERIAL] = DEFINE_TASK("SERIAL", NULL, NULL, taskHandleSerial, TASK_PERIOD_HZ(100), TASK_PRIORITY_LOW, 0), // 100 Hz should be enough to flush up to 115 bytes @ 115200 baud
-    [TASK_BATTERY_ALERTS] = DEFINE_TASK("BATTERY_ALERTS", NULL, NULL, taskBatteryAlerts, TASK_PERIOD_HZ(5), TASK_PRIORITY_MEDIUM, 31),
-    [TASK_BATTERY_VOLTAGE] = DEFINE_TASK("BATTERY_VOLTAGE", NULL, NULL, batteryUpdateVoltage, TASK_PERIOD_HZ(50), TASK_PRIORITY_MEDIUM, 31),
-    [TASK_BATTERY_CURRENT] = DEFINE_TASK("BATTERY_CURRENT", NULL, NULL, batteryUpdateCurrentMeter, TASK_PERIOD_HZ(50), TASK_PRIORITY_MEDIUM, 31),
+    [TASK_BATTERY_ALERTS] = DEFINE_TASK("BATTERY_ALERTS", NULL, NULL, taskBatteryAlerts, TASK_PERIOD_HZ(5), TASK_PRIORITY_MEDIUM, 33),
+    [TASK_BATTERY_VOLTAGE] = DEFINE_TASK("BATTERY_VOLTAGE", NULL, NULL, batteryUpdateVoltage, TASK_PERIOD_HZ(50), TASK_PRIORITY_MEDIUM, 71),
+    [TASK_BATTERY_CURRENT] = DEFINE_TASK("BATTERY_CURRENT", NULL, NULL, batteryUpdateCurrentMeter, TASK_PERIOD_HZ(50), TASK_PRIORITY_MEDIUM, 67),
 
 #ifdef USE_TRANSPONDER
     [TASK_TRANSPONDER] = DEFINE_TASK("TRANSPONDER", NULL, NULL, transponderUpdate, TASK_PERIOD_HZ(250), TASK_PRIORITY_LOW, 0),
@@ -458,19 +465,19 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_STACK_CHECK] = DEFINE_TASK("STACKCHECK", NULL, NULL, taskStackCheck, TASK_PERIOD_HZ(10), TASK_PRIORITY_IDLE, 0),
 #endif
 
-	[TASK_GYROPID] = DEFINE_TASK("PID", "GYRO", NULL, NULL, TASK_GYROPID_DESIRED_PERIOD, TASK_PRIORITY_REALTIME, 128),
+	[TASK_GYROPID] = DEFINE_TASK("PID", "GYRO", NULL, NULL, TASK_GYROPID_DESIRED_PERIOD, TASK_PRIORITY_REALTIME, 101),
 
-	[TASK_ACCEL] = DEFINE_TASK("ACC", NULL, NULL, taskUpdateAccelerometer, TASK_PERIOD_HZ(1000), TASK_PRIORITY_MEDIUM, 71),
-    [TASK_ATTITUDE] = DEFINE_TASK("ATTITUDE", NULL, NULL, imuUpdateAttitude, TASK_PERIOD_HZ(100), TASK_PRIORITY_MEDIUM, 93),
-    [TASK_RX] = DEFINE_TASK("RX", NULL, rxUpdateCheck, taskUpdateRxMain, TASK_PERIOD_HZ(33), TASK_PRIORITY_HIGH, 31), // If event-based scheduling doesn't work, fallback to periodic scheduling
-    [TASK_DISPATCH] = DEFINE_TASK("DISPATCH", NULL, NULL, dispatchProcess, TASK_PERIOD_HZ(1000), TASK_PRIORITY_HIGH, 31),
+	[TASK_ACCEL] = DEFINE_TASK("ACC", NULL, NULL, taskUpdateAccelerometer, TASK_PERIOD_HZ(1000), TASK_PRIORITY_MEDIUM, 91),
+    [TASK_ATTITUDE] = DEFINE_TASK("ATTITUDE", NULL, NULL, imuUpdateAttitude, TASK_PERIOD_HZ(100), TASK_PRIORITY_MEDIUM, 113),
+    [TASK_RX] = DEFINE_TASK("RX", NULL, rxUpdateCheck, taskUpdateRxMain, TASK_PERIOD_HZ(150), TASK_PRIORITY_HIGH, 83), // If event-based scheduling doesn't work, fallback to periodic scheduling
+    [TASK_DISPATCH] = DEFINE_TASK("DISPATCH", NULL, NULL, dispatchProcess, TASK_PERIOD_HZ(1000), TASK_PRIORITY_HIGH, 33),
 
 #ifdef USE_BEEPER
-    [TASK_BEEPER] = DEFINE_TASK("BEEPER", NULL, NULL, beeperUpdate, TASK_PERIOD_HZ(100), TASK_PRIORITY_LOW, 31),
+    [TASK_BEEPER] = DEFINE_TASK("BEEPER", NULL, NULL, beeperUpdate, TASK_PERIOD_HZ(100), TASK_PRIORITY_LOW, 73),
 #endif
 
 #ifdef USE_GPS
-    [TASK_GPS] = DEFINE_TASK("GPS", NULL, NULL, gpsUpdate, TASK_PERIOD_HZ(100), TASK_PRIORITY_MEDIUM, 31), // Required to prevent buffer overruns if running at 115200 baud (115 bytes / period < 256 bytes buffer)
+    [TASK_GPS] = DEFINE_TASK("GPS", NULL, NULL, gpsUpdate, TASK_PERIOD_HZ(100), TASK_PRIORITY_MEDIUM, 33), // Required to prevent buffer overruns if running at 115200 baud (115 bytes / period < 256 bytes buffer)
 #endif
 
 #ifdef USE_MAG
@@ -478,23 +485,23 @@ cfTask_t cfTasks[TASK_COUNT] = {
 #endif
 
 #ifdef USE_BARO
-    [TASK_BARO] = DEFINE_TASK("BARO", NULL, NULL, taskUpdateBaro, TASK_PERIOD_HZ(20), TASK_PRIORITY_LOW, 31),
+    [TASK_BARO] = DEFINE_TASK("BARO", NULL, NULL, taskUpdateBaro, TASK_PERIOD_HZ(20), TASK_PRIORITY_LOW, 33),
 #endif
 
 #if defined(USE_BARO) || defined(USE_GPS)
-    [TASK_ALTITUDE] = DEFINE_TASK("ALTITUDE", NULL, NULL, taskCalculateAltitude, TASK_PERIOD_HZ(40), TASK_PRIORITY_LOW, 66),
+    [TASK_ALTITUDE] = DEFINE_TASK("ALTITUDE", NULL, NULL, taskCalculateAltitude, TASK_PERIOD_HZ(40), TASK_PRIORITY_LOW, 67),
 #endif
 
 #ifdef USE_DASHBOARD
-    [TASK_DASHBOARD] = DEFINE_TASK("DASHBOARD", NULL, NULL, dashboardUpdate, TASK_PERIOD_HZ(10), TASK_PRIORITY_LOW, 31),
+    [TASK_DASHBOARD] = DEFINE_TASK("DASHBOARD", NULL, NULL, dashboardUpdate, TASK_PERIOD_HZ(10), TASK_PRIORITY_LOW, 33),
 #endif
 
 #ifdef USE_OSD
-    [TASK_OSD] = DEFINE_TASK("OSD", NULL, NULL, osdUpdate, TASK_PERIOD_HZ(60), TASK_PRIORITY_LOW, 31),
+    [TASK_OSD] = DEFINE_TASK("OSD", NULL, NULL, osdUpdate, TASK_PERIOD_HZ(60), TASK_PRIORITY_LOW, 33),
 #endif
 
 #ifdef USE_TELEMETRY
-    [TASK_TELEMETRY] = DEFINE_TASK("TELEMETRY", NULL, NULL, taskTelemetry, TASK_PERIOD_HZ(250), TASK_PRIORITY_LOW, 31),
+    [TASK_TELEMETRY] = DEFINE_TASK("TELEMETRY", NULL, NULL, taskTelemetry, TASK_PERIOD_HZ(250), TASK_PRIORITY_LOW, 33),
 #endif
 
 #ifdef USE_LED_STRIP
@@ -506,31 +513,31 @@ cfTask_t cfTasks[TASK_COUNT] = {
 #endif
 
 #ifdef USE_ESC_SENSOR
-    [TASK_ESC_SENSOR] = DEFINE_TASK("ESC_SENSOR", NULL, NULL, escSensorProcess, TASK_PERIOD_HZ(100), TASK_PRIORITY_LOW, 31),
+    [TASK_ESC_SENSOR] = DEFINE_TASK("ESC_SENSOR", NULL, NULL, escSensorProcess, TASK_PERIOD_HZ(100), TASK_PRIORITY_LOW, 33),
 #endif
 
 #ifdef USE_CMS
-    [TASK_CMS] = DEFINE_TASK("CMS", NULL, NULL, cmsHandler, TASK_PERIOD_HZ(60), TASK_PRIORITY_LOW, 31),
+    [TASK_CMS] = DEFINE_TASK("CMS", NULL, NULL, cmsHandler, TASK_PERIOD_HZ(60), TASK_PRIORITY_LOW, 33),
 #endif
 
 #ifdef USE_VTX_CONTROL
-    [TASK_VTXCTRL] = DEFINE_TASK("VTXCTRL", NULL, NULL, vtxUpdate, TASK_PERIOD_HZ(5), TASK_PRIORITY_IDLE, 31),
+    [TASK_VTXCTRL] = DEFINE_TASK("VTXCTRL", NULL, NULL, vtxUpdate, TASK_PERIOD_HZ(5), TASK_PRIORITY_IDLE, 33),
 #endif
 
 #ifdef USE_RCDEVICE
-    [TASK_RCDEVICE] = DEFINE_TASK("RCDEVICE", NULL, NULL, rcdeviceUpdate, TASK_PERIOD_HZ(20), TASK_PRIORITY_MEDIUM, 31),
+    [TASK_RCDEVICE] = DEFINE_TASK("RCDEVICE", NULL, NULL, rcdeviceUpdate, TASK_PERIOD_HZ(20), TASK_PRIORITY_MEDIUM, 33),
 #endif
 
 #ifdef USE_CAMERA_CONTROL
-    [TASK_CAMCTRL] = DEFINE_TASK("CAMCTRL", NULL, NULL, taskCameraControl, TASK_PERIOD_HZ(5), TASK_PRIORITY_IDLE, 31),
+    [TASK_CAMCTRL] = DEFINE_TASK("CAMCTRL", NULL, NULL, taskCameraControl, TASK_PERIOD_HZ(5), TASK_PRIORITY_IDLE, 33),
 #endif
 
 #ifdef USE_ADC_INTERNAL
-    [TASK_ADC_INTERNAL] = DEFINE_TASK("ADCINTERNAL", NULL, NULL, adcInternalProcess, TASK_PERIOD_HZ(1), TASK_PRIORITY_IDLE, 31),
+    [TASK_ADC_INTERNAL] = DEFINE_TASK("ADCINTERNAL", NULL, NULL, adcInternalProcess, TASK_PERIOD_HZ(1), TASK_PRIORITY_IDLE, 33),
 #endif
 
 #ifdef USE_PINIOBOX
-    [TASK_PINIOBOX] = DEFINE_TASK("PINIOBOX", NULL, NULL, pinioBoxUpdate, TASK_PERIOD_HZ(20), TASK_PRIORITY_IDLE, 31),
+    [TASK_PINIOBOX] = DEFINE_TASK("PINIOBOX", NULL, NULL, pinioBoxUpdate, TASK_PERIOD_HZ(20), TASK_PRIORITY_IDLE, 33),
 #endif
 
 #ifdef USE_RANGEFINDER
