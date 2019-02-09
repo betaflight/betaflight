@@ -39,7 +39,7 @@ int main(void)
 	/* Ensure all priority bits are assigned as preemption priority bits. */
 	NVIC_SetPriorityGrouping( 0 );
 
-	xTaskCreate( run, "run", 0x1000/4, NULL, tskIDLE_PRIORITY + 5, NULL );
+	xTaskCreate( run, "run", 128, NULL, tskIDLE_PRIORITY, NULL );
 
 	/* Start the RTOS scheduler, this function should not return as it causes the
      * execution context to change from main() to one of the created tasks.
@@ -60,6 +60,7 @@ void FAST_CODE FAST_CODE_NOINLINE run( void *pvParameters )
 
     while (true) {
         processLoopback();
+
 #ifdef SIMULATOR_BUILD
         delayMicroseconds_real(50); // max rate 20kHz
 #endif
