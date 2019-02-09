@@ -96,6 +96,7 @@ extern uint8_t __config_end;
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
+#include "fc/tasks.h"
 
 #include "flight/failsafe.h"
 #include "flight/imu.h"
@@ -144,8 +145,6 @@ extern uint8_t __config_end;
 #include "rx/rx.h"
 #include "rx/spektrum.h"
 #include "rx/rx_spi_common.h"
-
-#include "scheduler/scheduler.h"
 
 #include "sensors/acceleration.h"
 #include "sensors/adcinternal.h"
@@ -3755,11 +3754,10 @@ static void cliStatus(char *cmdline)
 
     // Run status
 
-    const int gyroRate = getTaskDeltaTime(TASK_GYROPID) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_GYROPID)));
+    const int gyroRate = fcTaskGetPeriod(TASK_GYROPID) == 0 ? 0 : (int)(1000000.0f / ((float)fcTaskGetPeriod(TASK_GYROPID)));
     const int rxRate = currentRxRefreshRate == 0 ? 0 : (int)(1000000.0f / ((float)currentRxRefreshRate));
-    const int systemRate = getTaskDeltaTime(TASK_SYSTEM) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_SYSTEM)));
-    cliPrintLinef("CPU:%d%%, cycle time: %d, GYRO rate: %d, RX rate: %d, System rate: %d",
-            constrain(averageSystemLoadPercent, 0, 100), getTaskDeltaTime(TASK_GYROPID), gyroRate, rxRate, systemRate);
+    cliPrintLinef("CPU:%d%%, cycle time: %d, GYRO rate: %d, RX rate: %d",
+            0, fcTaskGetPeriod(TASK_GYROPID), gyroRate, rxRate);
 
     // Battery meter
 
@@ -5126,8 +5124,6 @@ void cliEnter(serialPort_t *serialPort)
     cliPort = serialPort;
     setPrintfSerialPort(cliPort);
     cliWriter = bufWriterInit(cliWriteBuffer, sizeof(cliWriteBuffer), (bufWrite_t)serialWriteBufShim, serialPort);
-
-    schedulerSetCalulateTaskStatistics(systemConfig()->task_statistics);
 
 #ifndef MINIMAL_CLI
     cliPrintLine("\r\nEntering CLI Mode, type 'exit' to return, or 'help'");

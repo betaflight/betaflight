@@ -63,6 +63,7 @@
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
+#include "fc/tasks.h"
 
 #include "msp/msp_serial.h"
 
@@ -79,8 +80,6 @@
 #include "io/vtx_rtc6705.h"
 
 #include "rx/rx.h"
-
-#include "scheduler/scheduler.h"
 
 #include "telemetry/telemetry.h"
 
@@ -257,7 +256,7 @@ void updateArmingStatus(void)
             unsetArmingDisabled(ARMING_DISABLED_ANGLE);
         }
 
-        if (averageSystemLoadPercent > 100) {
+        if (0 > 100) { // TODO Add FreeRTOS system load check here
             setArmingDisabled(ARMING_DISABLED_LOAD);
         } else {
             unsetArmingDisabled(ARMING_DISABLED_LOAD);
@@ -878,10 +877,10 @@ bool processRx(timeUs_t currentTimeUs)
     if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
         LED1_ON;
         // increase frequency of attitude task to reduce drift when in angle or horizon mode
-        rescheduleTask(TASK_ATTITUDE, TASK_PERIOD_HZ(500));
+        fcTaskReschedule(TASK_ATTITUDE, TASK_PERIOD_HZ(500));
     } else {
         LED1_OFF;
-        rescheduleTask(TASK_ATTITUDE, TASK_PERIOD_HZ(100));
+        fcTaskReschedule(TASK_ATTITUDE, TASK_PERIOD_HZ(100));
     }
 
     if (!IS_RC_MODE_ACTIVE(BOXPREARM) && ARMING_FLAG(WAS_ARMED_WITH_PREARM)) {
@@ -1131,11 +1130,6 @@ void FAST_CODE FAST_CODE_NOINLINE taskMainPidLoop( void *pvParameters )
 			subTaskPidController(currentTimeUs);
 			subTaskMotorUpdate(currentTimeUs);
 			subTaskPidSubprocesses(currentTimeUs);
-		}
-
-		if (debugMode == DEBUG_CYCLETIME) {
-			debug[0] = getTaskDeltaTime(TASK_SELF);
-			debug[1] = averageSystemLoadPercent;
 		}
     }
 }

@@ -24,8 +24,7 @@
 #include "platform.h"
 
 #include "fc/init.h"
-
-#include "scheduler/scheduler.h"
+#include "fc/tasks.h"
 
 #include "FreeRTOS.h"
 #include "task.h"

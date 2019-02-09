@@ -76,6 +76,7 @@
 #include "drivers/time.h"
 
 #include "fc/runtime_config.h"
+#include "fc/tasks.h"
 
 #include "flight/position.h"
 #include "flight/pid.h"
@@ -90,12 +91,11 @@
 #include "telemetry/telemetry.h"
 
 #if defined (USE_HOTT_TEXTMODE) && defined (USE_CMS)
-#include "scheduler/scheduler.h"
 #include "io/displayport_hott.h"
 
-#define HOTT_TEXTMODE_TASK_PERIOD 1000
-#define HOTT_TEXTMODE_RX_SCHEDULE 5000
-#define HOTT_TEXTMODE_TX_DELAY_US 1000
+#define HOTT_TEXTMODE_TASK_PERIOD 1
+#define HOTT_TEXTMODE_RX_SCHEDULE 5
+#define HOTT_TEXTMODE_TX_DELAY_MS 1
 #endif
 
 //#define HOTT_DEBUG
@@ -470,20 +470,18 @@ static void hottPrepareMessages(void) {
 static void hottTextmodeStart()
 {
     // Increase menu speed
-    cfTaskInfo_t taskInfo;
-    getTaskInfo(TASK_TELEMETRY, &taskInfo);
-    telemetryTaskPeriod = taskInfo.desiredPeriod;
-    rescheduleTask(TASK_TELEMETRY, TASK_PERIOD_HZ(HOTT_TEXTMODE_TASK_PERIOD));
+    telemetryTaskPeriod = fcTaskGetPeriod(TASK_TELEMETRY);
+    fcTaskReschedule(TASK_TELEMETRY, TASK_PERIOD_HZ(HOTT_TEXTMODE_TASK_PERIOD));
 
     rxSchedule = HOTT_TEXTMODE_RX_SCHEDULE;
-    txDelayUs = HOTT_TEXTMODE_TX_DELAY_US;
+    txDelayUs = HOTT_TEXTMODE_TX_DELAY_MS;
 }
 
 static void hottTextmodeStop()
 {
     // Set back to avoid slow down of the FC
     if (telemetryTaskPeriod > 0) {
-        rescheduleTask(TASK_TELEMETRY, telemetryTaskPeriod);
+    	fcTaskReschedule(TASK_TELEMETRY, telemetryTaskPeriod);
         telemetryTaskPeriod = 0;
     }
 

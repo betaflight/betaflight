@@ -58,9 +58,7 @@
 #include "pg/pg.h"
 #include "pg/gyrodev.h"
 
-#include "scheduler/scheduler.h"
-
-#include "FreeRTOS.h"
+#include "fc/tasks.h"
 
 #ifndef MPU_ADDRESS
 #define MPU_ADDRESS             0x68

@@ -69,6 +69,7 @@
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
+#include "fc/tasks.h"
 
 #include "flight/position.h"
 #include "flight/failsafe.h"
@@ -111,8 +112,6 @@
 
 #include "rx/rx.h"
 #include "rx/msp.h"
-
-#include "scheduler/scheduler.h"
 
 #include "sensors/battery.h"
 
@@ -813,7 +812,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
             boxBitmask_t flightModeFlags;
             const int flagBits = packFlightModeFlags(&flightModeFlags);
 
-            sbufWriteU16(dst, getTaskDeltaTime(TASK_GYROPID));
+            sbufWriteU16(dst, fcTaskGetPeriod(TASK_GYROPID));
 #ifdef USE_I2C
             sbufWriteU16(dst, i2cGetErrorCounter());
 #else
@@ -822,7 +821,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
             sbufWriteU16(dst, sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_RANGEFINDER) << 4 | sensors(SENSOR_GYRO) << 5);
             sbufWriteData(dst, &flightModeFlags, 4);        // unconditional part of flags, first 32 bits
             sbufWriteU8(dst, getCurrentPidProfileIndex());
-            sbufWriteU16(dst, constrain(averageSystemLoadPercent, 0, 100));
+            sbufWriteU16(dst, 0); // TODO Provide FreeRTOS load %
             if (cmdMSP == MSP_STATUS_EX) {
                 sbufWriteU8(dst, MAX_PROFILE_COUNT);
                 sbufWriteU8(dst, getCurrentControlRateProfileIndex());

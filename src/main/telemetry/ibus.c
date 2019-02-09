@@ -47,6 +47,7 @@
 #include "drivers/serial.h"
 
 #include "fc/rc_controls.h"
+#include "fc/tasks.h"
 
 #include "io/serial.h"
 
@@ -55,8 +56,6 @@
 #include "sensors/barometer.h"
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
-
-#include "scheduler/scheduler.h"
 
 #include "telemetry/ibus.h"
 #include "telemetry/ibus_shared.h"
@@ -136,7 +135,7 @@ bool checkIbusTelemetryState(void)
     }
 
     if (newTelemetryEnabledValue) {
-        rescheduleTask(TASK_TELEMETRY, IBUS_TASK_PERIOD_US);
+    	fcTaskReschedule(TASK_TELEMETRY, IBUS_TASK_PERIOD_US);
         configureIbusTelemetryPort();
     } else {
         freeIbusTelemetryPort();

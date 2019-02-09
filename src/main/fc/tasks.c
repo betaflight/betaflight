@@ -89,8 +89,6 @@
 #include "sensors/sensors.h"
 #include "sensors/rangefinder.h"
 
-#include "scheduler/scheduler.h"
-
 #include "telemetry/telemetry.h"
 
 #ifdef USE_BST
@@ -241,12 +239,22 @@ void setTaskEnabled(cfTaskId_e taskId, bool enabled)
     }
 }
 
+void fcTaskReschedule(cfTaskId_e taskId, uint32_t newPeriod)
+{
+    cfTasks[taskId].desiredPeriod = newPeriod;
+}
+
+uint16_t fcTaskGetPeriod(cfTaskId_e taskId)
+{
+    return cfTasks[taskId].desiredPeriod;
+}
+
 void fcTasksInit(void)
 {
     setTaskEnabled(TASK_MAIN, true);
 
     setTaskEnabled(TASK_SERIAL, true);
-    rescheduleTask(TASK_SERIAL, TASK_PERIOD_HZ(serialConfig()->serial_update_rate_hz));
+    fcTaskReschedule(TASK_SERIAL, TASK_PERIOD_HZ(serialConfig()->serial_update_rate_hz));
 
     const bool useBatteryVoltage = batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE;
     setTaskEnabled(TASK_BATTERY_VOLTAGE, useBatteryVoltage);
@@ -264,13 +272,13 @@ void fcTasksInit(void)
 #endif
 
     if (sensors(SENSOR_GYRO)) {
-        rescheduleTask(TASK_GYROPID, gyro.targetLooptime);
+        fcTaskReschedule(TASK_GYROPID, gyro.targetLooptime);
         setTaskEnabled(TASK_GYROPID, true);
     }
 
     if (sensors(SENSOR_ACC)) {
         setTaskEnabled(TASK_ACCEL, true);
-        rescheduleTask(TASK_ACCEL, acc.accSamplingInterval);
+        fcTaskReschedule(TASK_ACCEL, acc.accSamplingInterval);
         setTaskEnabled(TASK_ATTITUDE, true);
     }
 
@@ -314,10 +322,10 @@ void fcTasksInit(void)
         setTaskEnabled(TASK_TELEMETRY, true);
         if (rxConfig()->serialrx_provider == SERIALRX_JETIEXBUS) {
             // Reschedule telemetry to 500hz for Jeti Exbus
-            rescheduleTask(TASK_TELEMETRY, TASK_PERIOD_HZ(500));
+            fcTaskReschedule(TASK_TELEMETRY, TASK_PERIOD_HZ(500));
         } else if (rxConfig()->serialrx_provider == SERIALRX_CRSF) {
             // Reschedule telemetry to 500hz, 2ms for CRSF
-            rescheduleTask(TASK_TELEMETRY, TASK_PERIOD_HZ(500));
+            fcTaskReschedule(TASK_TELEMETRY, TASK_PERIOD_HZ(500));
         }
     }
 #endif
@@ -374,21 +382,21 @@ void fcTasksInit(void)
 }
 
 #if defined(USE_TASK_STATISTICS)
-#define DEFINE_TASK(taskNameParam, subTaskNameParam, checkFuncParam, taskFuncParam, desiredPeriodParam, staticPriorityParam, stackSizeParam) {  \
+#define DEFINE_TASK(taskNameParam, subTaskNameParam, checkFuncParam, taskFuncParam, desiredPeriodParam, priorityParam, stackSizeParam) {  \
     .taskName = taskNameParam, \
     .subTaskName = subTaskNameParam, \
     .checkFunc = checkFuncParam, \
     .taskFunc = taskFuncParam, \
     .desiredPeriod = desiredPeriodParam, \
-    .staticPriority = staticPriorityParam, \
+    .priority = priorityParam, \
 	.stackSize = stackSizeParam \
 }
 #else
-#define DEFINE_TASK(taskNameParam, subTaskNameParam, checkFuncParam, taskFuncParam, desiredPeriodParam, staticPriorityParam, stackSizeParam) {  \
+#define DEFINE_TASK(taskNameParam, subTaskNameParam, checkFuncParam, taskFuncParam, desiredPeriodParam, priorityParam, stackSizeParam) {  \
     .checkFunc = checkFuncParam, \
     .taskFunc = taskFuncParam, \
     .desiredPeriod = desiredPeriodParam, \
-    .staticPriority = staticPriorityParam \
+    .priority = priorityParam \
  	.stackSize = stackSizeParam \
 }
 #endif
@@ -421,7 +429,7 @@ void tasksLaunch()
 					    cfTasks[i].taskName,
 						cfTasks[i].stackSize + TASK_STACK_MARGIN,
 						(void *)&cfTasks[i],
-						tskIDLE_PRIORITY + cfTasks[i].staticPriority,
+						tskIDLE_PRIORITY + cfTasks[i].priority,
 						&cfTasks[i].taskId);
 		}
 	}
@@ -430,13 +438,12 @@ void tasksLaunch()
 			    cfTasks[TASK_GYROPID].taskName,
 				cfTasks[TASK_GYROPID].stackSize + TASK_STACK_MARGIN,
 			    (void *)&cfTasks[TASK_GYROPID],
-			    tskIDLE_PRIORITY + cfTasks[TASK_GYROPID].staticPriority,
+			    tskIDLE_PRIORITY + cfTasks[TASK_GYROPID].priority,
 			    &cfTasks[TASK_GYROPID].taskId);
 }
 
 /* Note that stack sizes, where defined, are set to leave TASK_STACK_MARGIN words on each stack free. This may need review/revision. */
 cfTask_t cfTasks[TASK_COUNT] = {
-    [TASK_SYSTEM] = DEFINE_TASK("SYSTEM", "LOAD", NULL, taskSystemLoad, TASK_PERIOD_HZ(10), TASK_PRIORITY_MEDIUM_HIGH, 33),
     [TASK_MAIN] = DEFINE_TASK("SYSTEM", "UPDATE", NULL, taskMain, TASK_PERIOD_HZ(1000), TASK_PRIORITY_MEDIUM_HIGH, 33),
     [TASK_SERIAL] = DEFINE_TASK("SERIAL", NULL, NULL, taskHandleSerial, TASK_PERIOD_HZ(100), TASK_PRIORITY_LOW, 0), // 100 Hz should be enough to flush up to 115 bytes @ 115200 baud
     [TASK_BATTERY_ALERTS] = DEFINE_TASK("BATTERY_ALERTS", NULL, NULL, taskBatteryAlerts, TASK_PERIOD_HZ(5), TASK_PRIORITY_MEDIUM, 33),

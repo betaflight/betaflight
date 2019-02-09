@@ -40,6 +40,7 @@
 #include "fc/rc.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
+#include "fc/tasks.h"
 
 #include "flight/failsafe.h"
 #include "flight/imu.h"
@@ -63,8 +64,6 @@
 #include "sensors/acceleration.h"
 #include "sensors/battery.h"
 #include "sensors/gyro.h"
-
-#include "scheduler/scheduler.h"
 
 pidProfile_t *currentPidProfile;
 
@@ -127,7 +126,6 @@ void resetConfigs(void)
 
 static void activateConfig(void)
 {
-    schedulerOptimizeRate(systemConfig()->schedulerOptimizeRate);
     loadPidProfile();
     loadControlRateProfile();
 

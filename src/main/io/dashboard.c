@@ -56,6 +56,7 @@
 #include "fc/controlrate_profile.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
+#include "fc/tasks.h"
 
 #include "flight/pid.h"
 #include "flight/imu.h"
@@ -66,8 +67,6 @@
 #include "io/displayport_oled.h"
 
 #include "rx/rx.h"
-
-#include "scheduler/scheduler.h"
 
 #include "sensors/acceleration.h"
 #include "sensors/battery.h"
@@ -540,33 +539,6 @@ static void showSensorsPage(void)
 
 }
 
-#if defined(USE_TASK_STATISTICS)
-static void showTasksPage(void)
-{
-    uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
-    static const char *format = "%2d%6d%5d%4d%4d";
-
-    i2c_OLED_set_line(bus, rowIndex++);
-    i2c_OLED_send_string(bus, "Task max  avg mx% av%");
-    cfTaskInfo_t taskInfo;
-    for (cfTaskId_e taskId = 0; taskId < TASK_COUNT; ++taskId) {
-        getTaskInfo(taskId, &taskInfo);
-        if (taskInfo.isEnabled && taskId != TASK_SERIAL) {// don't waste a line of the display showing serial taskInfo
-            const int taskFrequency = (int)(1000000.0f / ((float)taskInfo.latestDeltaTime));
-            const int maxLoad = (taskInfo.maxExecutionTime * taskFrequency + 5000) / 10000;
-            const int averageLoad = (taskInfo.averageExecutionTime * taskFrequency + 5000) / 10000;
-            tfp_sprintf(lineBuffer, format, taskId, taskInfo.maxExecutionTime, taskInfo.averageExecutionTime, maxLoad, averageLoad);
-            padLineBuffer();
-            i2c_OLED_set_line(bus, rowIndex++);
-            i2c_OLED_send_string(bus, lineBuffer);
-            if (rowIndex > SCREEN_CHARACTER_ROW_COUNT) {
-                break;
-            }
-        }
-    }
-}
-#endif
-
 #ifdef ENABLE_DEBUG_DASHBOARD_PAGE
 
 static void showDebugPage(void)
@@ -591,9 +563,7 @@ static const pageEntry_t pages[PAGE_COUNT] = {
     { PAGE_RX,      "RX",              showRxPage,         PAGE_FLAGS_NONE },
     { PAGE_BATTERY, "BATTERY",         showBatteryPage,    PAGE_FLAGS_NONE },
     { PAGE_SENSORS, "SENSORS",         showSensorsPage,    PAGE_FLAGS_NONE },
-#if defined(USE_TASK_STATISTICS)
-    { PAGE_TASKS,   "TASKS",           showTasksPage,      PAGE_FLAGS_NONE },
-#endif
+
 #ifdef ENABLE_DEBUG_DASHBOARD_PAGE
     { PAGE_DEBUG,   "DEBUG",           showDebugPage,      PAGE_FLAGS_NONE },
 #endif

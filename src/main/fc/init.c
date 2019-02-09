@@ -89,6 +89,7 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 #include "fc/dispatch.h"
+#include "fc/tasks.h"
 
 #ifdef USE_PERSISTENT_MSC_RTC
 #include "msc/usbd_storage.h"
@@ -139,8 +140,6 @@
 #include "io/vtx_control.h"
 #include "io/vtx_smartaudio.h"
 #include "io/vtx_tramp.h"
-
-#include "scheduler/scheduler.h"
 
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
