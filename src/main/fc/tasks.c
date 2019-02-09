@@ -191,10 +191,7 @@ static void taskUpdateBaro(timeUs_t currentTimeUs)
     UNUSED(currentTimeUs);
 
     if (sensors(SENSOR_BARO)) {
-        const uint32_t newDeadline = baroUpdate();
-        if (newDeadline != 0) {
-            rescheduleTask(TASK_SELF, newDeadline);
-        }
+        cfTasks[TASK_BARO].desiredPeriod = baroUpdate();
     }
 }
 #endif
@@ -238,13 +235,14 @@ void setTaskEnabled(cfTaskId_e taskId, bool enabled)
 		} else {
 			vTaskSuspend(task);
 		}
+    } else if (!enabled) {
+    	// The task is not yet running, so prevent this happening
+    	cfTasks[taskId].taskFunc = NULL;
     }
 }
 
 void fcTasksInit(void)
 {
-    schedulerInit();
-
     setTaskEnabled(TASK_MAIN, true);
 
     setTaskEnabled(TASK_SERIAL, true);
