@@ -115,19 +115,15 @@
 
 #define TASK_STACK_DEFAULT 128
 
-static void taskMain(timeUs_t currentTimeUs)
+static void taskMain()
 {
-    UNUSED(currentTimeUs);
-
 #ifdef USE_SDCARD
     afatfs_poll();
 #endif
 }
 
-static void taskHandleSerial(timeUs_t currentTimeUs)
+static void taskHandleSerial()
 {
-    UNUSED(currentTimeUs);
-
 #if defined(USE_VCP)
     DEBUG_SET(DEBUG_USB, 0, usbCableIsInserted());
     DEBUG_SET(DEBUG_USB, 1, usbVcpIsConnected());
@@ -144,32 +140,29 @@ static void taskHandleSerial(timeUs_t currentTimeUs)
     mspSerialProcess(evaluateMspData, mspFcProcessCommand, mspFcProcessReply);
 }
 
-static void taskBatteryAlerts(timeUs_t currentTimeUs)
+static void taskBatteryAlerts()
 {
     if (!ARMING_FLAG(ARMED)) {
         // the battery *might* fall out in flight, but if that happens the FC will likely be off too unless the user has battery backup.
         batteryUpdatePresence();
     }
-    batteryUpdateStates(currentTimeUs);
+    batteryUpdateStates();
     batteryUpdateAlarms();
 }
 
-static void taskUpdateAccelerometer(timeUs_t currentTimeUs)
+static void taskUpdateAccelerometer()
 {
-    accUpdate(currentTimeUs, &accelerometerConfigMutable()->accelerometerTrims);
+    accUpdate(&accelerometerConfigMutable()->accelerometerTrims);
 }
 
-static void taskUpdateRxMain(timeUs_t currentTimeUs)
+static void taskUpdateRxMain()
 {
-	rxUpdateCheck(currentTimeUs, 0);
+	rxUpdateCheck();
 
-	if (!processRx(currentTimeUs)) {
+	if (!processRx()) {
         return;
     }
 
-    static timeUs_t lastRxTimeUs;
-    currentRxRefreshRate = constrain(currentTimeUs - lastRxTimeUs, 1000, 30000);
-    lastRxTimeUs = currentTimeUs;
     isRXDataNew = true;
 
 #ifdef USE_USB_CDC_HID
@@ -184,10 +177,8 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
 }
 
 #ifdef USE_BARO
-static void taskUpdateBaro(timeUs_t currentTimeUs)
+static void taskUpdateBaro()
 {
-    UNUSED(currentTimeUs);
-
     if (sensors(SENSOR_BARO)) {
         cfTasks[TASK_BARO].desiredPeriod = baroUpdate();
     }
@@ -195,31 +186,30 @@ static void taskUpdateBaro(timeUs_t currentTimeUs)
 #endif
 
 #if defined(USE_BARO) || defined(USE_GPS)
-static void taskCalculateAltitude(timeUs_t currentTimeUs)
+static void taskCalculateAltitude()
 {
-    calculateEstimatedAltitude(currentTimeUs);
+    calculateEstimatedAltitude();
 }
 #endif // USE_BARO || USE_GPS
 
 #ifdef USE_TELEMETRY
-static void taskTelemetry(timeUs_t currentTimeUs)
+static void taskTelemetry()
 {
     if (!cliMode && featureIsEnabled(FEATURE_TELEMETRY)) {
-        subTaskTelemetryPollSensors(currentTimeUs);
-
-        telemetryProcess(currentTimeUs);
+        subTaskTelemetryPollSensors();
+        telemetryProcess();
     }
 }
 #endif
 
 #ifdef USE_CAMERA_CONTROL
-static void taskCameraControl(uint32_t currentTime)
+static void taskCameraControl()
 {
     if (ARMING_FLAG(ARMED)) {
         return;
     }
 
-    cameraControlProcess(currentTime);
+    cameraControlProcess();
 }
 #endif
 

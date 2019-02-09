@@ -466,10 +466,8 @@ static void applyAccelerationTrims(const flightDynamicsTrims_t *accelerationTrim
     acc.accADC[Z] -= accelerationTrims->raw[Z];
 }
 
-void accUpdate(timeUs_t currentTimeUs, rollAndPitchTrims_t *rollAndPitchTrims)
+void accUpdate(rollAndPitchTrims_t *rollAndPitchTrims)
 {
-    UNUSED(currentTimeUs);
-
     if (!acc.dev.readFn(&acc.dev)) {
         return;
     }

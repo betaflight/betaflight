@@ -63,7 +63,7 @@ void resetArmingDisabled(void);
 void disarm(void);
 void tryArm(void);
 
-bool processRx(timeUs_t currentTimeUs);
+bool processRx();
 void updateArmingStatus(void);
 
 void FAST_CODE FAST_CODE_NOINLINE taskMainPidLoop( void *pvParameters );
@@ -77,6 +77,6 @@ timeUs_t getLastDisarmTimeUs(void);
 bool isTryingToArm();
 void resetTryingToArm();
 
-void subTaskTelemetryPollSensors(timeUs_t currentTimeUs);
+void subTaskTelemetryPollSensors();
 
 bool isLaunchControlActive(void);
