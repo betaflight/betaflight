@@ -28,7 +28,32 @@ Unassigned slots have rangeStartStep == rangeEndStep. Each element contains the 
 | rangeStartStep | uint8 | The start value for this element in 'blocks' of 25  where 0 == 900 and 48 == 2100 |
 | rangeEndStep | uint8 | The end value for this element in 'blocks' of 25 where 0 == 900 and 48 == 2100 |
 
-Thus, for a cleanflight firmware with 40 slots 160 bytes would be returned in response to MSP\_MODE\_RANGES,
+Thus, for a cleanflight firmware with 40 slots 160 bytes would be returned in response to MSP\_MODE\_RANGES.
+
+### MSP\_MODE\_RANGES\_EXTRA
+
+The MSP\_MODE\_RANGES\_EXTRA returns the extra mode setting parameters from the flight controller. It should be invoked
+in conjunction with MSP\_MODE\_RANGES before any modification is made to the configuration.
+
+The message returns the number of extra elements followed by a group of bytes for each 'slot' available in the flight
+controller. The number of slots should be the same as for MSP\_MODE\_RANGES, calculated from the size of the returned
+message and the number of bytes per group.
+
+| Command | Msg Id | Direction | Notes |
+|---------|--------|-----------|-------|
+| MSP\_MODE\_RANGES\_EXTRA | 238 | to FC | Following this command, the FC returns a block of bytes for each auxiliary mode 'slot'|
+
+The return message is prepended with the number of bytes per element (3 bytes). Each element contains the
+following fields:
+
+| Data | Type | Notes |
+|------|------|-------|
+| permanentId | uint8 | See Modes.md for a definition of the permanent ids |
+| modeLogic | uint8 | 0 = Logic AND; 1 = Logic OR |
+| linkedTo | uint8 | Permanent id to which this mode is linked. Range is ignored if linked. |
+
+Thus, for a cleanflight firmware with 20 slots, 61 bytes (including prepended size) would be returned in response to
+MSP\_MODE\_RANGES\_EXTRA.
 
 ### MSP\_SET\_MODE\_RANGE
 

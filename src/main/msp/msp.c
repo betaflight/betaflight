@@ -1031,6 +1031,18 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         }
         break;
 
+    case MSP_MODE_RANGES_EXTRA:
+        sbufWriteU8(dst, MAX_MODE_ACTIVATION_CONDITION_COUNT);          // prepend number of EXTRAs array elements
+
+        for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
+            const modeActivationCondition_t *mac = modeActivationConditions(i);
+            const box_t *box = findBoxByBoxId(mac->modeId);
+            sbufWriteU8(dst, box->permanentId);     // each element is aligned with MODE_RANGES by the permanentId
+            sbufWriteU8(dst, mac->modeLogic);
+            sbufWriteU8(dst, mac->linkedTo);
+        }
+        break;
+
     case MSP_ADJUSTMENT_RANGES:
         for (int i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
             const adjustmentRange_t *adjRange = adjustmentRanges(i);
@@ -1723,7 +1735,12 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 mac->auxChannelIndex = sbufReadU8(src);
                 mac->range.startStep = sbufReadU8(src);
                 mac->range.endStep = sbufReadU8(src);
+                if (sbufBytesRemaining(src) != 0) {
+                    mac->modeLogic = sbufReadU8(src);
 
+                    i = sbufReadU8(src);
+                    mac->linkedTo = findBoxByPermanentId(i)->boxId;
+                }
                 rcControlsInit();
             } else {
                 return MSP_RESULT_ERROR;
