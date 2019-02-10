@@ -56,6 +56,9 @@
 #include "usbd_cdc_interface.h"
 #include "stdbool.h"
 
+#include "drivers/nvic.h"
+#include "build/atomic.h"
+
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 #define APP_RX_DATA_SIZE  2048
@@ -73,12 +76,12 @@ USBD_CDC_LineCodingTypeDef LineCoding =
   0x08    /* nb. of bits 8*/
 };
 
-uint8_t UserRxBuffer[APP_RX_DATA_SIZE];/* Received Data over USB are stored in this buffer */
-uint8_t UserTxBuffer[APP_TX_DATA_SIZE];/* Received Data over UART (CDC interface) are stored in this buffer */
+volatile uint8_t UserRxBuffer[APP_RX_DATA_SIZE];/* Received Data over USB are stored in this buffer */
+volatile uint8_t UserTxBuffer[APP_TX_DATA_SIZE];/* Received Data over UART (CDC interface) are stored in this buffer */
 uint32_t BuffLength;
-uint32_t UserTxBufPtrIn = 0;/* Increment this pointer or roll it back to
+volatile uint32_t UserTxBufPtrIn = 0;/* Increment this pointer or roll it back to
                                start address when data are received over USART */
-uint32_t UserTxBufPtrOut = 0; /* Increment this pointer or roll it back to
+volatile uint32_t UserTxBufPtrOut = 0; /* Increment this pointer or roll it back to
                                  start address when data are sent over USB */
 
 uint32_t rxAvailable = 0;
@@ -137,8 +140,8 @@ static int8_t CDC_Itf_Init(void)
   }
 
   /*##-5- Set Application Buffers ############################################*/
-  USBD_CDC_SetTxBuffer(&USBD_Device, UserTxBuffer, 0);
-  USBD_CDC_SetRxBuffer(&USBD_Device, UserRxBuffer);
+  USBD_CDC_SetTxBuffer(&USBD_Device, (uint8_t *)UserTxBuffer, 0);
+  USBD_CDC_SetRxBuffer(&USBD_Device, (uint8_t *)UserRxBuffer);
 
   ctrlLineStateCb = NULL;
   baudRateCb = NULL;
@@ -375,7 +378,13 @@ uint32_t CDC_Send_FreeBytes(void)
         (APP_Rx_ptr_out > APP_Rx_ptr_in ? APP_Rx_ptr_out - APP_Rx_ptr_in : APP_RX_DATA_SIZE - APP_Rx_ptr_in + APP_Rx_ptr_in)
         but without the impact of the condition check.
     */
-    return ((UserTxBufPtrOut - UserTxBufPtrIn) + (-((int)(UserTxBufPtrOut <= UserTxBufPtrIn)) & APP_TX_DATA_SIZE)) - 1;
+    uint32_t freeBytes;
+
+    ATOMIC_BLOCK(NVIC_BUILD_PRIORITY(6, 0)) {
+        freeBytes = ((UserTxBufPtrOut - UserTxBufPtrIn) + (-((int)(UserTxBufPtrOut <= UserTxBufPtrIn)) & APP_TX_DATA_SIZE)) - 1;
+    }
+
+    return freeBytes;
 }
 
 /**
@@ -393,8 +402,10 @@ uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength)
             // block until there is free space in the ring buffer
             delay(1);
         }
-        UserTxBuffer[UserTxBufPtrIn] = ptrBuffer[i];
-        UserTxBufPtrIn = (UserTxBufPtrIn + 1) % APP_TX_DATA_SIZE;
+        ATOMIC_BLOCK(NVIC_BUILD_PRIORITY(6, 0)) { // Paranoia
+            UserTxBuffer[UserTxBufPtrIn] = ptrBuffer[i];
+            UserTxBufPtrIn = (UserTxBufPtrIn + 1) % APP_TX_DATA_SIZE;
+        }
     }
     return sendLength;
 }
