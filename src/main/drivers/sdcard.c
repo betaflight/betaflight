@@ -66,7 +66,7 @@
 #define SDCARD_NON_DMA_CHUNK_SIZE                   256
 
 static sdcard_t sdcard;
-static SemaphoreHandle_t SD_mutex;
+static SemaphoreHandle_t sdcardMutex;
 
 STATIC_ASSERT(sizeof(sdcardCSD_t) == 16, sdcard_csd_bitfields_didnt_pack_properly);
 
