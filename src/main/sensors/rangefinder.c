@@ -52,8 +52,6 @@
 #include "sensors/rangefinder.h"
 #include "sensors/battery.h"
 
-#include "scheduler/scheduler.h"
-
 //#include "uav_interconnect/uav_interconnect.h"
 
 // XXX Interface to CF/BF legacy(?) altitude estimation code.
@@ -98,7 +96,7 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
             {
                 if (hcsr04Detect(dev, sonarConfig())) {   // FIXME: Do actual detection if HC-SR04 is plugged in
                     rangefinderHardware = RANGEFINDER_HCSR04;
-                    rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_HCSR04_TASK_PERIOD_MS));
+                    fcTaskReschedule(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_HCSR04_TASK_PERIOD_MS));
                 }
             }
 #endif
@@ -108,7 +106,7 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
 #ifdef USE_RANGEFINDER_SRF10
             if (srf10Detect(dev)) {
                 rangefinderHardware = RANGEFINDER_SRF10;
-                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_SRF10_TASK_PERIOD_MS));
+                fcTaskReschedule(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_SRF10_TASK_PERIOD_MS));
             }
 #endif
             break;
@@ -117,7 +115,7 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
 #ifdef USE_RANGEFINDER_HCSR04_I2C
             if (hcsr04i2c0Detect(dev)) {
                 rangefinderHardware = RANGEFINDER_HCSR04I2C;
-                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_HCSR04_i2C_TASK_PERIOD_MS));
+                fcTaskReschedule(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_HCSR04_i2C_TASK_PERIOD_MS));
             }
 #endif
             break;
@@ -126,7 +124,7 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
 #if defined(USE_RANGEFINDER_VL53L0X)
             if (vl53l0xDetect(dev)) {
                 rangefinderHardware = RANGEFINDER_VL53L0X;
-                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_VL53L0X_TASK_PERIOD_MS));
+                fcTaskReschedule(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_VL53L0X_TASK_PERIOD_MS));
             }
 #endif
             break;
@@ -135,7 +133,7 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
 #if defined(USE_RANGEFINDER_UIB)
             if (uibRangefinderDetect(dev)) {
                 rangefinderHardware = RANGEFINDER_UIB;
-                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_UIB_TASK_PERIOD_MS));
+                fcTaskReschedule(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_UIB_TASK_PERIOD_MS));
             }
 #endif
             break;
@@ -144,7 +142,7 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
 #if defined(USE_RANGEFINDER_TF)
             if (lidarTFminiDetect(dev)) {
                 rangefinderHardware = RANGEFINDER_TFMINI;
-                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_TF_TASK_PERIOD_MS));
+                fcTaskReschedule(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_TF_TASK_PERIOD_MS));
             }
 #endif
             break;
@@ -153,7 +151,7 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
 #if defined(USE_RANGEFINDER_TF)
             if (lidarTF02Detect(dev)) {
                 rangefinderHardware = RANGEFINDER_TF02;
-                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_TF_TASK_PERIOD_MS));
+                fcTaskReschedule(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_TF_TASK_PERIOD_MS));
             }
 #endif
             break;

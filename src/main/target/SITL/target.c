@@ -243,7 +243,7 @@ void systemInit(void) {
     }
 
     // serial can't been slow down
-    rescheduleTask(TASK_SERIAL, 1);
+    fcTaskReschedule(TASK_SERIAL, 1);
 }
 
 void systemReset(void){
