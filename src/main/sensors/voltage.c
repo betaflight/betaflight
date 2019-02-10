@@ -106,7 +106,7 @@ void voltageMeterReset(voltageMeter_t *meter)
 typedef struct voltageMeterADCState_s {
     uint16_t voltageFiltered;         // battery voltage in 0.01V steps (filtered)
     uint16_t voltageUnfiltered;       // battery voltage in 0.01V steps (unfiltered)
-    biquadFilter_t filter;
+    pt1Filter_t filter;
 } voltageMeterADCState_t;
 
 extern voltageMeterADCState_t voltageMeterADCStates[MAX_VOLTAGE_SENSOR_ADC];
@@ -164,7 +164,7 @@ void voltageMeterADCRefresh(void)
         uint8_t channel = voltageMeterAdcChannelMap[i];
         uint16_t rawSample = adcGetChannel(channel);
 
-        uint16_t filteredSample = biquadFilterApply(&state->filter, rawSample);
+        uint16_t filteredSample = pt1FilterApply(&state->filter, rawSample);
 
         // always calculate the latest voltage, see getLatestVoltage() which does the calculation on demand.
         state->voltageFiltered = voltageAdcToVoltage(filteredSample, config);
@@ -194,7 +194,7 @@ void voltageMeterADCInit(void)
         voltageMeterADCState_t *state = &voltageMeterADCStates[i];
         memset(state, 0, sizeof(voltageMeterADCState_t));
 
-        biquadFilterInitLPF(&state->filter, GET_BATTERY_LPF_FREQUENCY(batteryConfig()->vbatLpfPeriod), HZ_TO_INTERVAL_US(50));
+        pt1FilterInit(&state->filter, pt1FilterGain(GET_BATTERY_LPF_FREQUENCY(batteryConfig()->vbatLpfPeriod), HZ_TO_INTERVAL(50)));
     }
 }
 
@@ -206,7 +206,7 @@ void voltageMeterADCInit(void)
 typedef struct voltageMeterESCState_s {
     uint16_t voltageFiltered;         // battery voltage in 0.01V steps (filtered)
     uint16_t voltageUnfiltered;       // battery voltage in 0.01V steps (unfiltered)
-    biquadFilter_t filter;
+    pt1Filter_t filter;
 } voltageMeterESCState_t;
 
 static voltageMeterESCState_t voltageMeterESCState;
@@ -218,7 +218,7 @@ void voltageMeterESCInit(void)
 {
 #ifdef USE_ESC_SENSOR
     memset(&voltageMeterESCState, 0, sizeof(voltageMeterESCState_t));
-    biquadFilterInitLPF(&voltageMeterESCState.filter, GET_BATTERY_LPF_FREQUENCY(batteryConfig()->vbatLpfPeriod), HZ_TO_INTERVAL_US(50));
+    pt1FilterInit(&voltageMeterESCState.filter, pt1FilterGain(GET_BATTERY_LPF_FREQUENCY(batteryConfig()->vbatLpfPeriod), HZ_TO_INTERVAL(50)));
 #endif
 }
 
@@ -228,7 +228,7 @@ void voltageMeterESCRefresh(void)
     escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
     if (escData) {
         voltageMeterESCState.voltageUnfiltered = escData->dataAge <= ESC_BATTERY_AGE_MAX ? escData->voltage : 0;
-        voltageMeterESCState.voltageFiltered = biquadFilterApply(&voltageMeterESCState.filter, voltageMeterESCState.voltageUnfiltered);
+        voltageMeterESCState.voltageFiltered = pt1FilterApply(&voltageMeterESCState.filter, voltageMeterESCState.voltageUnfiltered);
     }
 #endif
 }
