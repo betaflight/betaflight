@@ -33,6 +33,7 @@
 #define FAST_RAM
 
 #define PID_PROFILE_COUNT 3
+#define CONTROL_RATE_PROFILE_COUNT  6
 #define USE_MAG
 #define USE_BARO
 #define USE_GPS
