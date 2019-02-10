@@ -22,14 +22,7 @@
 
 #define TARGET_BOARD_IDENTIFIER "MIF3"
 
-// prevent flash overflow
-#undef USE_CRSF_CMS_TELEMETRY
-#undef USE_GYRO_OVERFLOW_CHECK  // target does not use an affected gyro
-#undef USE_SERIALRX_SUMD
-#undef USE_SERIALRX_SUMH
-#undef USE_SERIALRX_XBUS
-#undef USE_TELEMETRY_HOTT
-#undef USE_TELEMETRY_LTM
+#undef USE_GYRO_OVERFLOW_CHECK
 
 #define LED0_PIN                PB5
 
@@ -128,7 +121,6 @@
 
 #define BINDPLUG_PIN             PC13
 
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN   PB9 // Motor 6, can't use escserial for hexa
 

@@ -26,6 +26,8 @@
 
 #include "build/debug.h"
 
+#include "cli/cli.h"
+
 #include "cms/cms.h"
 
 #include "common/color.h"
@@ -56,9 +58,6 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 
-#include "interface/cli.h"
-#include "interface/msp.h"
-
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/dashboard.h"
@@ -73,6 +72,7 @@
 #include "io/usb_cdc_hid.h"
 #include "io/vtx.h"
 
+#include "msp/msp.h"
 #include "msp/msp_serial.h"
 
 #include "pg/rx.h"
@@ -149,10 +149,12 @@ static void taskBatteryAlerts(timeUs_t currentTimeUs)
     batteryUpdateAlarms();
 }
 
+#ifdef USE_ACC
 static void taskUpdateAccelerometer(timeUs_t currentTimeUs)
 {
     accUpdate(currentTimeUs, &accelerometerConfigMutable()->accelerometerTrims);
 }
+#endif
 
 static void taskUpdateRxMain(timeUs_t currentTimeUs)
 {
@@ -248,12 +250,13 @@ void fcTasksInit(void)
         setTaskEnabled(TASK_GYROPID, true);
     }
 
+#if defined(USE_ACC)
     if (sensors(SENSOR_ACC)) {
         setTaskEnabled(TASK_ACCEL, true);
         rescheduleTask(TASK_ACCEL, acc.accSamplingInterval);
         setTaskEnabled(TASK_ATTITUDE, true);
     }
-
+#endif
 
 #ifdef USE_RANGEFINDER
     if (sensors(SENSOR_RANGEFINDER)) {
@@ -389,8 +392,10 @@ cfTask_t cfTasks[TASK_COUNT] = {
 #endif
 
     [TASK_GYROPID] = DEFINE_TASK("PID", "GYRO", NULL, taskMainPidLoop, TASK_GYROPID_DESIRED_PERIOD, TASK_PRIORITY_REALTIME),
+#ifdef USE_ACC
     [TASK_ACCEL] = DEFINE_TASK("ACC", NULL, NULL, taskUpdateAccelerometer, TASK_PERIOD_HZ(1000), TASK_PRIORITY_MEDIUM),
     [TASK_ATTITUDE] = DEFINE_TASK("ATTITUDE", NULL, NULL, imuUpdateAttitude, TASK_PERIOD_HZ(100), TASK_PRIORITY_MEDIUM),
+#endif
     [TASK_RX] = DEFINE_TASK("RX", NULL, rxUpdateCheck, taskUpdateRxMain, TASK_PERIOD_HZ(33), TASK_PRIORITY_HIGH), // If event-based scheduling doesn't work, fallback to periodic scheduling
     [TASK_DISPATCH] = DEFINE_TASK("DISPATCH", NULL, NULL, dispatchProcess, TASK_PERIOD_HZ(1000), TASK_PRIORITY_HIGH),
 

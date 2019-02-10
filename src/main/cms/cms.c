@@ -42,6 +42,7 @@
 
 #include "cms/cms.h"
 #include "cms/cms_menu_builtin.h"
+#include "cms/cms_menu_saveexit.h"
 #include "cms/cms_types.h"
 
 #include "common/maths.h"
@@ -79,6 +80,8 @@
 #ifndef CMS_MAX_DEVICE
 #define CMS_MAX_DEVICE 4
 #endif
+
+#define CMS_MENU_STACK_LIMIT 10
 
 displayPort_t *pCurrentDisplay;
 
@@ -174,7 +177,7 @@ typedef struct cmsCtx_s {
     int8_t cursorRow;             // cursorRow in the page
 } cmsCtx_t;
 
-static cmsCtx_t menuStack[10];
+static cmsCtx_t menuStack[CMS_MENU_STACK_LIMIT];
 static uint8_t menuStackIdx = 0;
 
 static int8_t pageCount;         // Number of pages in the current menu
@@ -632,6 +635,10 @@ long cmsMenuChange(displayPort_t *pDisplay, const void *ptr)
 
     if (pMenu != currentCtx.menu) {
         // Stack the current menu and move to a new menu.
+        if (menuStackIdx >= CMS_MENU_STACK_LIMIT - 1) {
+            // menu stack limit reached - prevent array overflow
+            return 0;
+        }
 
         menuStack[menuStackIdx++] = currentCtx;
 
@@ -690,6 +697,7 @@ void cmsMenuOpen(void)
             return;
         cmsInMenu = true;
         currentCtx = (cmsCtx_t){ &menuMain, 0, 0 };
+        menuStackIdx = 0;
         setArmingDisabled(ARMING_DISABLED_CMS_MENU);
     } else {
         // Switch display
@@ -724,6 +732,13 @@ void cmsMenuOpen(void)
       maxMenuItems      = pCurrentDisplay->rows - 2;
     }
 
+    if (pCurrentDisplay->useFullscreen)
+    {
+    	leftMenuColumn = 0;
+    	rightMenuColumn   = pCurrentDisplay->cols;
+    	maxMenuItems      = pCurrentDisplay->rows;
+    }
+
     cmsMenuChange(pCurrentDisplay, currentCtx.menu);
 }
 
@@ -743,11 +758,22 @@ long cmsMenuExit(displayPort_t *pDisplay, const void *ptr)
     switch (exitType) {
     case CMS_EXIT_SAVE:
     case CMS_EXIT_SAVEREBOOT:
+    case CMS_POPUP_SAVE:
+    case CMS_POPUP_SAVEREBOOT:
 
         cmsTraverseGlobalExit(&menuMain);
 
         if (currentCtx.menu->onExit)
             currentCtx.menu->onExit((OSD_Entry *)NULL); // Forced exit
+        
+        if ((exitType == CMS_POPUP_SAVE) || (exitType == CMS_POPUP_SAVEREBOOT)) {
+            // traverse through the menu stack and call their onExit functions
+            for (int i = menuStackIdx - 1; i >= 0; i--) {
+                if (menuStack[i].menu->onExit) {
+                    menuStack[i].menu->onExit((OSD_Entry *)NULL);
+                }
+            }
+        }
 
         saveConfigAndNotify();
         break;
@@ -761,7 +787,7 @@ long cmsMenuExit(displayPort_t *pDisplay, const void *ptr)
     displayRelease(pDisplay);
     currentCtx.menu = NULL;
 
-    if (exitType == CMS_EXIT_SAVEREBOOT) {
+    if ((exitType == CMS_EXIT_SAVEREBOOT) || (exitType == CMS_POPUP_SAVEREBOOT)) {
         displayClearScreen(pDisplay);
         displayWrite(pDisplay, 5, 3, "REBOOTING...");
 
@@ -807,6 +833,12 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, cms_key_e key)
         } else {
             cmsMenuBack(pDisplay);
         }
+        return BUTTON_PAUSE;
+    }
+
+    if (key == CMS_KEY_SAVEMENU) {
+        osdElementEditing = false;
+        cmsMenuChange(pDisplay, &cmsx_menuSaveExit);
         return BUTTON_PAUSE;
     }
 
@@ -1089,9 +1121,13 @@ void cmsUpdate(uint32_t currentTimeUs)
             else if (IS_HI(ROLL)) {
                 key = CMS_KEY_RIGHT;
             }
-            else if (IS_HI(YAW) || IS_LO(YAW))
+            else if (IS_LO(YAW))
             {
                 key = CMS_KEY_ESC;
+            }
+            else if (IS_HI(YAW))
+            {
+                key = CMS_KEY_SAVEMENU;
             }
 
             if (key == CMS_KEY_NONE) {

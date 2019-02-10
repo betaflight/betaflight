@@ -27,6 +27,8 @@
 
 #include "blackbox/blackbox.h"
 
+#include "cli/cli.h"
+
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/maths.h"
@@ -76,6 +78,7 @@
 #include "drivers/usb_io.h"
 #include "drivers/vtx_rtc6705.h"
 #include "drivers/vtx_common.h"
+#include "drivers/vtx_table.h"
 #ifdef USE_USB_MSC
 #include "drivers/usb_msc.h"
 #endif
@@ -86,14 +89,13 @@
 #include "fc/tasks.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
-
-#include "interface/cli.h"
-#include "interface/msp.h"
+#include "fc/dispatch.h"
 
 #ifdef USE_PERSISTENT_MSC_RTC
 #include "msc/usbd_storage.h"
 #endif
 
+#include "msp/msp.h"
 #include "msp/msp_serial.h"
 
 #include "pg/adc.h"
@@ -149,6 +151,7 @@
 #include "sensors/esc_sensor.h"
 #include "sensors/gyro.h"
 #include "sensors/initialisation.h"
+#include "sensors/rpm_filter.h"
 #include "sensors/sensors.h"
 
 #include "telemetry/telemetry.h"
@@ -203,6 +206,24 @@ static IO_t busSwitchResetPin        = IO_NONE;
     // ENABLE
     IOLo(busSwitchResetPin);
 }
+#endif
+
+#if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
+void activateDshotTelemetry(struct dispatchEntry_s* self)
+{
+    UNUSED(self);
+    if (!ARMING_FLAG(ARMED))
+    {
+        pwmWriteDshotCommand(
+            255, getMotorCount(), motorConfig()->dev.useDshotTelemetry ?
+            DSHOT_CMD_SIGNAL_LINE_CONTINUOUS_ERPM_TELEMETRY : DSHOT_CMD_SIGNAL_LINE_TELEMETRY_DISABLE, false);
+    }
+}
+
+dispatchEntry_t activateDshotTelemetryEntry =
+{
+    activateDshotTelemetry, 0, NULL, false
+};
 #endif
 
 void init(void)
@@ -266,7 +287,7 @@ void init(void)
     targetPreInit();
 #endif
 
-#if !defined(UNIT_TEST) && !defined(USE_FAKE_LED)
+#if !defined(USE_FAKE_LED)
     ledInit(statusLedConfig());
 #endif
     LED2_ON;
@@ -402,7 +423,11 @@ void init(void)
 
 #ifdef USE_SPI
     spiPinConfigure(spiPinConfig(0));
+#endif
 
+    sensorsPreInit();
+
+#ifdef USE_SPI
     spiPreinit();
 
 #ifdef USE_SPI_DEVICE_1
@@ -427,7 +452,7 @@ void init(void)
         if (mscStart() == 0) {
              mscWaitForButton();
         } else {
-             NVIC_SystemReset();
+            systemResetFromMsc();
         }
     }
 #endif
@@ -514,7 +539,9 @@ void init(void)
     // so we are ready to call validateAndFixGyroConfig(), pidInit(), and setAccelerationFilter()
     validateAndFixGyroConfig();
     pidInit(currentPidProfile);
+#ifdef USE_ACC
     accInitFilters();
+#endif
 
 #ifdef USE_PID_AUDIO
     pidAudioInit();
@@ -661,6 +688,7 @@ void init(void)
     flashfsInit();
 #endif
 
+#ifdef USE_BLACKBOX
 #ifdef USE_SDCARD
     if (blackboxConfig()->device == BLACKBOX_DEVICE_SDCARD) {
         if (sdcardConfig()->mode) {
@@ -672,17 +700,21 @@ void init(void)
         }
     }
 #endif
-
-#ifdef USE_BLACKBOX
     blackboxInit();
 #endif
 
+#ifdef USE_ACC
     if (mixerConfig()->mixerMode == MIXER_GIMBAL) {
         accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
     }
+#endif
     gyroStartCalibration(false);
 #ifdef USE_BARO
     baroSetCalibrationCycles(CALIBRATING_BARO_CYCLES);
+#endif
+
+#ifdef USE_VTX_TABLE
+    vtxTableInit();
 #endif
 
 #ifdef USE_VTX_CONTROL
@@ -690,7 +722,6 @@ void init(void)
 
 #if defined(USE_VTX_COMMON)
     vtxCommonInit();
-    vtxInit();
 #endif
 
 #ifdef USE_VTX_SMARTAUDIO
@@ -748,7 +779,16 @@ void init(void)
 
     setArmingDisabled(ARMING_DISABLED_BOOT_GRACE_TIME);
 
+// TODO: potentially delete when feature is stable. Activation when arming is enough for flight.
+#if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
+    if (motorConfig()->dev.useDshotTelemetry) {
+        dispatchEnable();
+        dispatchAdd(&activateDshotTelemetryEntry, 5000000);
+    }
+#endif
+
     fcTasksInit();
 
     systemState |= SYSTEM_STATE_READY;
+
 }

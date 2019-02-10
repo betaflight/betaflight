@@ -69,6 +69,21 @@ typedef enum {
 #endif
 } SPIClockDivider_e;
 
+// De facto standard mode
+// See https://en.wikipedia.org/wiki/Serial_Peripheral_Interface
+// 
+// Mode CPOL CPHA
+//  0    0    0
+//  1    0    1
+//  2    1    0
+//  3    1    1
+typedef enum {
+    SPI_MODE0_POL_LOW_EDGE_1ST = 0,
+    SPI_MODE1_POL_LOW_EDGE_2ND,
+    SPI_MODE2_POL_HIGH_EDGE_1ST,
+    SPI_MODE3_POL_HIGH_EDGE_2ND
+} SPIMode_e;
+
 typedef enum SPIDevice {
     SPIINVALID = -1,
     SPIDEV_1   = 0,
@@ -124,6 +139,16 @@ void spiBusWriteRegisterBuffer(const busDevice_t *bus, uint8_t reg, const uint8_
 uint8_t spiBusRawReadRegister(const busDevice_t *bus, uint8_t reg);
 uint8_t spiBusReadRegister(const busDevice_t *bus, uint8_t reg);
 void spiBusSetInstance(busDevice_t *bus, SPI_TypeDef *instance);
+void spiBusSetDivisor(busDevice_t *bus, SPIClockDivider_e divider);
+
+void spiBusTransactionInit(busDevice_t *bus, SPIMode_e mode, SPIClockDivider_e divider);
+void spiBusTransactionSetup(const busDevice_t *bus);
+void spiBusTransactionBegin(const busDevice_t *bus);
+void spiBusTransactionEnd(const busDevice_t *bus);
+bool spiBusTransactionWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data);
+uint8_t spiBusTransactionReadRegister(const busDevice_t *bus, uint8_t reg);
+bool spiBusTransactionReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t *data, uint8_t length);
+bool spiBusTransactionTransfer(const busDevice_t *bus, const uint8_t *txData, uint8_t *rxData, int length);
 
 struct spiPinConfig_s;
 void spiPinConfigure(const struct spiPinConfig_s *pConfig);

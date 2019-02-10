@@ -14,5 +14,5 @@ TARGET_SRC = \
 ifeq ($(TARGET), CRAZYBEEF4FS)
 TARGET_SRC += \
             drivers/rx/rx_a7105.c \
-            rx/flysky.c
+            rx/a7105_flysky.c
 endif

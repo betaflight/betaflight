@@ -124,12 +124,6 @@
 #undef USE_MSP_OVER_TELEMETRY
 #endif
 
-#if !defined(USE_OSD)
-#undef USE_RX_LINK_QUALITY_INFO
-#undef USE_OSD_PROFILES
-#undef USE_OSD_STICK_OVERLAY
-#endif
-
 /* If either VTX_CONTROL or VTX_COMMON is undefined then remove common code and device drivers */
 #if !defined(USE_VTX_COMMON) || !defined(USE_VTX_CONTROL)
 #undef USE_VTX_COMMON
@@ -187,6 +181,12 @@
 #define USE_OSD
 #endif
 
+#if !defined(USE_OSD)
+#undef USE_RX_LINK_QUALITY_INFO
+#undef USE_OSD_PROFILES
+#undef USE_OSD_STICK_OVERLAY
+#endif
+
 #if defined(USE_GPS_RESCUE)
 #define USE_GPS
 #endif
@@ -226,10 +226,51 @@
 #endif
 #endif
 
+#ifndef USE_BLACKBOX
+#undef USE_USB_MSC
+#endif
+
 #if (!defined(USE_FLASHFS) || !defined(USE_RTC_TIME) || !defined(USE_USB_MSC))
 #undef USE_PERSISTENT_MSC_RTC
 #endif
 
-#if defined(USE_SERIAL_4WAY_SK_BOOTLOADER) && !defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER)
-#define USE_SERIAL_4WAY_BLHELI_BOOTLOADER
+#if !defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER) && !defined(USE_SERIAL_4WAY_SK_BOOTLOADER)
+#undef  USE_SERIAL_4WAY_BLHELI_INTERFACE
+#elif !defined(USE_SERIAL_4WAY_BLHELI_INTERFACE) && (defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER) || defined(USE_SERIAL_4WAY_SK_BOOTLOADER))
+#define USE_SERIAL_4WAY_BLHELI_INTERFACE
+#endif
+
+#if !defined(USE_LED_STRIP)
+#undef USE_LED_STRIP_STATUS_MODE
+#endif
+
+#if defined(USE_LED_STRIP) && !defined(USE_LED_STRIP_STATUS_MODE)
+#define USE_WS2811_SINGLE_COLOUR
+#endif
+
+#if defined(SIMULATOR_BUILD) || defined(UNIT_TEST)
+// This feature uses 'arm_math.h', which does not exist for x86.
+#undef USE_GYRO_DATA_ANALYSE
+#endif
+
+#ifndef USE_DSHOT
+#undef USE_DSHOT_TELEMETRY
+#undef USE_RPM_FILTER
+#endif
+
+#ifndef USE_CMS
+#undef USE_CMS_FAILSAFE_MENU
+#endif
+
+#ifndef USE_DSHOT_TELEMETRY
+#undef USE_RPM_FILTER
+#endif
+
+#if !defined(USE_BOARD_INFO)
+#undef USE_SIGNATURE
+#endif
+
+#if !defined(USE_ACC)
+#undef USE_GPS_RESCUE
+#undef USE_ACRO_TRAINER
 #endif

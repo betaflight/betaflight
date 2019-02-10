@@ -46,7 +46,7 @@
 #include "rx/nrf24_h8_3d.h"
 #include "rx/nrf24_inav.h"
 #include "rx/nrf24_kn.h"
-#include "rx/flysky.h"
+#include "rx/a7105_flysky.h"
 #include "rx/cc2500_sfhss.h"
 #include "rx/cyrf6936_spektrum.h"
 
@@ -132,6 +132,7 @@ STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
 #endif
 #if defined(USE_RX_FRSKY_SPI_X)
     case RX_SPI_FRSKY_X:
+    case RX_SPI_FRSKY_X_LBT:
 #endif
         protocolInit = frSkySpiInit;
         protocolDataReceived = frSkySpiDataReceived;

@@ -126,4 +126,91 @@ bool vtxCommonGetDeviceCapability(const vtxDevice_t *vtxDevice, vtxDeviceCapabil
     return true;
 }
 
+const char *vtxCommonLookupBandName(const vtxDevice_t *vtxDevice, int band)
+{
+    if (vtxDevice) {
+        return vtxDevice->bandNames[band];
+    } else {
+        return "?";
+    }
+}
+
+char vtxCommonLookupBandLetter(const vtxDevice_t *vtxDevice, int band)
+{
+    if (vtxDevice) {
+        return vtxDevice->bandLetters[band];
+    } else {
+        return '?';
+    }
+}
+
+const char *vtxCommonLookupChannelName(const vtxDevice_t *vtxDevice, int channel)
+{
+    if (vtxDevice) {
+        return vtxDevice->channelNames[channel];
+    } else {
+        return "?";
+    }
+}
+
+// XXX FIXME Size of a band in the frequency table is now fixed at
+// VTX_SETTINGS_MAX_CHANNEL (or VTX_TABLE_MAX_CHANNELS).
+// Size constant should be consolidated soon or later.
+
+//Converts frequency (in MHz) to band and channel values.
+bool vtxCommonLookupBandChan(const vtxDevice_t *vtxDevice, uint16_t freq, uint8_t *pBand, uint8_t *pChannel)
+{
+    if (vtxDevice) {
+        // Use reverse lookup order so that 5880Mhz
+        // get Raceband 7 instead of Fatshark 8.
+        for (int band = vtxDevice->capability.bandCount - 1 ; band >= 0 ; band--) {
+            for (int channel = 0 ; channel < vtxDevice->capability.channelCount ; channel++) {
+                if (vtxDevice->frequencyTable[band * VTX_SETTINGS_MAX_CHANNEL + channel] == freq) {
+                    *pBand = band + 1;
+                    *pChannel = channel + 1;
+                    return true;
+                }
+            }
+        }
+    }
+
+    *pBand = 0;
+    *pChannel = 0;
+
+    return false;
+}
+
+//Converts band and channel values to a frequency (in MHz) value.
+// band:  Band value (1 to 5).
+// channel:  Channel value (1 to 8).
+// Returns frequency value (in MHz), or 0 if band/channel out of range.
+uint16_t vtxCommonLookupFrequency(const vtxDevice_t *vtxDevice, int band, int channel)
+{
+    if (vtxDevice) {
+        if (band > 0 && band <= vtxDevice->capability.bandCount &&
+                              channel > 0 && channel <= vtxDevice->capability.channelCount) {
+            return vtxDevice->frequencyTable[(band - 1) * VTX_SETTINGS_MAX_CHANNEL + (channel - 1)];
+        }
+    }
+
+    return 0;
+}
+
+const char *vtxCommonLookupPowerName(const vtxDevice_t *vtxDevice, int index)
+{
+    if (vtxDevice) {
+        return vtxDevice->powerNames[index];
+    } else {
+        return "?";
+    }
+}
+
+uint16_t vtxCommonLookupPowerValue(const vtxDevice_t *vtxDevice, int index)
+{
+    if (vtxDevice) {
+        return vtxDevice->powerValues[index];
+    } else {
+        return 0;
+    }
+}
 #endif

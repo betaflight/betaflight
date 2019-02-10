@@ -58,10 +58,6 @@ extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 #define OSD_X(x)      (x & OSD_POSITION_XY_MASK)
 #define OSD_Y(x)      ((x >> OSD_POSITION_BITS) & OSD_POSITION_XY_MASK)
 
-// Stick overlay size
-#define OSD_STICK_OVERLAY_WIDTH 7
-#define OSD_STICK_OVERLAY_HEIGHT 7
-
 // Timer configuration
 // Stored as 15[alarm:8][precision:4][source:4]0
 #define OSD_TIMER(src, prec, alarm) ((src & 0x0F) | ((prec & 0x0F) << 4) | ((alarm & 0xFF ) << 8))
@@ -125,18 +121,19 @@ typedef enum {
     OSD_FLIGHT_DIST,
     OSD_STICK_OVERLAY_LEFT,
     OSD_STICK_OVERLAY_RIGHT,
+    OSD_DISPLAY_NAME,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
 // *** IMPORTANT ***
-// The order of the OSD stats enumeration *must* match the order they're displayed on-screen
-// This is because the fields are presented in the configurator in the order of the enumeration
-// and we want the configuration order to match the on-screen display order.
-// Changes to the stats display order *must* be implemented in the configurator otherwise the
-// stats selections will not be populated correctly and the settings will become corrupted.
-//
-// Also - if the stats are reordered then the PR version must be incremented. Otherwise there
+// If the stats enumeration is reordered then the PR version must be incremented. Otherwise there
 // is no indication that the stored config must be reset and the bitmapped values will be incorrect.
+//
+// The stats display order was previously required to match the enumeration definition so it matched
+// the order shown in the configurator. However, to allow reordering this screen without breaking the
+// compatibility, this requirement has been relaxed to a best effort approach. Reordering the elements
+// on the stats screen will have to be more beneficial than the hassle of not matching exactly to the
+// configurator list.
 typedef enum {
     OSD_STAT_RTC_DATE_TIME,
     OSD_STAT_TIMER_1,
@@ -201,15 +198,18 @@ typedef enum {
     OSD_WARNING_FAIL_SAFE,
     OSD_WARNING_LAUNCH_CONTROL,
     OSD_WARNING_GPS_RESCUE_UNAVAILABLE,
+    OSD_WARNING_GPS_RESCUE_DISABLED,
     OSD_WARNING_COUNT // MUST BE LAST
 } osdWarningsFlags_e;
 
-// Make sure the number of warnings do not exceed the available 16bit storage
-STATIC_ASSERT(OSD_WARNING_COUNT <= 16, osdwarnings_overflow);
+// Make sure the number of warnings do not exceed the available 32bit storage
+STATIC_ASSERT(OSD_WARNING_COUNT <= 32, osdwarnings_overflow);
 
 #define ESC_RPM_ALARM_OFF -1
 #define ESC_TEMP_ALARM_OFF INT8_MIN
 #define ESC_CURRENT_ALARM_OFF -1
+
+#define OSD_GPS_RESCUE_DISABLED_WARNING_DURATION_US 3000000 // 3 seconds
 
 typedef struct osdConfig_s {
     uint16_t item_pos[OSD_ITEM_COUNT];
@@ -222,7 +222,7 @@ typedef struct osdConfig_s {
     osd_unit_e units;
 
     uint16_t timers[OSD_TIMER_COUNT];
-    uint16_t enabledWarnings;
+    uint32_t enabledWarnings;
 
     uint8_t ahMaxPitch;
     uint8_t ahMaxRoll;

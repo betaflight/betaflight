@@ -52,8 +52,6 @@ void checkForBootLoaderRequest(void);
 bool isMPUSoftReset(void);
 void cycleCounterInit(void);
 
-#define BOOTLOADER_REQUEST_COOKIE 0xDEADBEEF
-
 void enableGPIOPowerUsageAndNoiseReductions(void);
 // current crystal frequency - 8 or 12MHz
 

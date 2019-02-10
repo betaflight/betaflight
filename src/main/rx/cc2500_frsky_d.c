@@ -66,6 +66,8 @@ static bool telemetryEnabled = false;
 
 #define MAX_SERIAL_BYTES 64
 
+#define A1_CONST_D 100
+
 static uint8_t telemetryBytesGenerated;
 static uint8_t serialBuffer[MAX_SERIAL_BYTES]; // buffer for telemetry serial data
 
@@ -113,10 +115,16 @@ static void frSkyDTelemetryWriteByte(const char data)
 static void buildTelemetryFrame(uint8_t *packet)
 {
     uint8_t a1Value;
-    if (rxFrSkySpiConfig()->useExternalAdc) {
-        a1Value = (adcGetChannel(ADC_EXTERNAL1) & 0xff0) >> 4;
-    } else {
+    switch (rxFrSkySpiConfig()->a1Source) {
+    case FRSKY_SPI_A1_SOURCE_VBAT:
         a1Value = (getBatteryVoltage() / 5) & 0xff;
+        break;
+    case FRSKY_SPI_A1_SOURCE_EXTADC:
+        a1Value = (adcGetChannel(ADC_EXTERNAL1) & 0xff0) >> 4;
+        break;
+    case FRSKY_SPI_A1_SOURCE_CONST:
+        a1Value = A1_CONST_D & 0xff;
+        break;
     }
     const uint8_t a2Value = (adcGetChannel(ADC_RSSI)) >> 4;
     telemetryId = packet[4];

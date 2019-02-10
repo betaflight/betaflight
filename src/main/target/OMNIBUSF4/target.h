@@ -165,16 +165,24 @@
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 #define FLASH_CS_PIN            PB12
 #define FLASH_SPI_INSTANCE      SPI2
-#define USE_FLASHFS
-#define USE_FLASH_M25P16
 
 #else
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 #define FLASH_CS_PIN            SPI3_NSS_PIN
 #define FLASH_SPI_INSTANCE      SPI3
-#define USE_FLASHFS
-#define USE_FLASH_M25P16
 #endif // OMNIBUSF4
+
+#ifdef OMNIBUSF4BASE
+#define USE_RX_SPI
+#define USE_RX_SPEKTRUM
+#define USE_RX_SPEKTRUM_TELEMETRY
+#define RX_CHANNELS_TAER
+#define DEFAULT_RX_FEATURE      FEATURE_RX_SPI
+#define RX_SPI_DEFAULT_PROTOCOL RX_SPI_CYRF6936_DSM
+#define RX_SPI_INSTANCE         SPI3
+#define RX_NSS_PIN              PD2
+#define RX_IRQ_PIN              PA0 // instead of rssi input
+#endif
 
 #define USE_VCP
 #define USE_USB_DETECT
@@ -256,6 +264,8 @@
 #define VBAT_ADC_PIN            PC2  // 11:1 (10K + 1K) divider
 #ifdef DYSF4PRO
 #define RSSI_ADC_PIN            PC3  // Direct from RSSI pad
+#elif defined(OMNIBUSF4BASE)
+#define RSSI_ADC_PIN            NONE
 #else
 #define RSSI_ADC_PIN            PA0  // Direct from RSSI pad
 #endif
@@ -272,8 +282,6 @@
 
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
-
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA (0xffff & ~(BIT(14)|BIT(13)))
 #define TARGET_IO_PORTB (0xffff & ~(BIT(2)))

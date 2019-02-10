@@ -255,10 +255,12 @@ static uint16_t getMode()
     return flightMode;
 }
 
+#if defined(USE_ACC)
 static int16_t getACC(uint8_t index)
 {
     return (int16_t)((acc.accADC[index] * acc.dev.acc_1G_rec) * 1000);
 }
+#endif
 
 #if defined(USE_TELEMETRY_IBUS_EXTENDED)
 static void setCombinedFrame(uint8_t* bufferPtr, const uint8_t* structure, uint8_t itemCount)
@@ -388,11 +390,13 @@ static void setValue(uint8_t* bufferPtr, uint8_t sensorType, uint8_t length)
         case IBUS_SENSOR_TYPE_BAT_CURR:
             value.uint16 = (uint16_t)getAmperage();
             break;
+#if defined(USE_ACC)
         case IBUS_SENSOR_TYPE_ACC_X:
         case IBUS_SENSOR_TYPE_ACC_Y:
         case IBUS_SENSOR_TYPE_ACC_Z:
             value.int16 = getACC(sensorType - IBUS_SENSOR_TYPE_ACC_X);
             break;
+#endif
         case IBUS_SENSOR_TYPE_ROLL:
         case IBUS_SENSOR_TYPE_PITCH:
         case IBUS_SENSOR_TYPE_YAW:
@@ -405,9 +409,9 @@ static void setValue(uint8_t* bufferPtr, uint8_t sensorType, uint8_t length)
         case IBUS_SENSOR_TYPE_CMP_HEAD:
             value.uint16 = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
             break;
+#ifdef USE_VARIO
         case IBUS_SENSOR_TYPE_VERTICAL_SPEED:
         case IBUS_SENSOR_TYPE_CLIMB_RATE:
-#ifdef USE_VARIO
             value.int16 = (int16_t) constrain(getEstimatedVario(), SHRT_MIN, SHRT_MAX);
             break;
 #endif

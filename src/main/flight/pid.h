@@ -159,9 +159,17 @@ typedef struct pidProfile_s {
     uint8_t launchControlAllowTriggerReset; // Controls trigger behavior and whether the trigger can be reset
     uint8_t use_integrated_yaw;             // Selects whether the yaw pidsum should integrated
     uint8_t integrated_yaw_relax;           // Specifies how much integrated yaw should be reduced to offset the drag based yaw component
+    uint8_t thrustLinearization;            // Compensation factor for pid linearization
+    uint8_t d_min_roll;                     // Minimum D value on roll axis
+    uint8_t d_min_pitch;                    // Minimum D value on pitch axis
+    uint8_t d_min_yaw;                      // Minimum D value on yaw axis
+    uint8_t d_min_gain;                     // Gain factor for amount of gyro / setpoint activity required to boost D
+    uint8_t d_min_advance;                  // Percentage multiplier for setpoint input to boost algorithm
+    uint8_t motor_output_limit;             // Upper limit of the motor output (percent)
+    int8_t auto_profile_cell_count;         // Cell count for this profile to be used with if auto PID profile switching is used
 } pidProfile_t;
 
-PG_DECLARE_ARRAY(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles);
+PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
 
 typedef struct pidConfig_s {
     uint8_t pid_process_denom;              // Processing denominator for PID controller vs gyro sampling rate
@@ -173,7 +181,7 @@ typedef struct pidConfig_s {
 PG_DECLARE(pidConfig_t, pidConfig);
 
 union rollAndPitchTrims_u;
-void pidController(const pidProfile_t *pidProfile, const union rollAndPitchTrims_u *angleTrim, timeUs_t currentTimeUs);
+void pidController(const pidProfile_t *pidProfile, timeUs_t currentTimeUs);
 
 typedef struct pidAxisData_s {
     float P;
@@ -210,6 +218,10 @@ bool pidOsdAntiGravityActive(void);
 bool pidOsdAntiGravityMode(void);
 void pidSetAntiGravityState(bool newState);
 bool pidAntiGravityEnabled(void);
+#ifdef USE_THRUST_LINEARIZATION
+float pidApplyThrustLinearization(float motorValue);
+float pidCompensateThrustLinearization(float throttle);
+#endif
 
 #ifdef UNIT_TEST
 #include "sensors/acceleration.h"
@@ -223,4 +235,6 @@ float pidLevel(int axis, const pidProfile_t *pidProfile,
 float calcHorizonLevelStrength(void);
 #endif
 void dynLpfDTermUpdate(float throttle);
+void pidSetItermReset(bool enabled);
+float pidGetPreviousSetpoint(int axis);
 

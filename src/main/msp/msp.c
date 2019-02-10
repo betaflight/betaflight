@@ -78,10 +78,6 @@
 #include "flight/pid.h"
 #include "flight/servos.h"
 
-#include "interface/msp.h"
-#include "interface/msp_box.h"
-#include "interface/msp_protocol.h"
-
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/flashfs.h"
@@ -99,10 +95,13 @@
 #include "io/vtx.h"
 #include "io/vtx_string.h"
 
+#include "msp/msp_box.h"
+#include "msp/msp_protocol.h"
 #include "msp/msp_serial.h"
 
 #include "pg/beeper.h"
 #include "pg/board.h"
+#include "pg/gyrodev.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/rx.h"
@@ -131,6 +130,9 @@
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
 #endif
+
+#include "msp.h"
+
 
 static const char * const flightControllerIdentifier = BETAFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
 
@@ -382,6 +384,8 @@ static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, const uin
 #endif
 
     if (compressionMethod == NO_COMPRESSION) {
+
+        uint16_t *readLenPtr = (uint16_t *)sbufPtr(dst);
         if (!useLegacyFormat) {
             // new format supports variable read lengths
             sbufWriteU16(dst, readLen);
@@ -389,6 +393,11 @@ static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, const uin
         }
 
         const int bytesRead = flashfsReadAbs(address, sbufPtr(dst), readLen);
+
+        if (!useLegacyFormat) {
+            // update the 'read length' with the actual amount read from flash.
+            *readLenPtr = bytesRead;
+        }
 
         sbufAdvance(dst, bytesRead);
 
@@ -506,12 +515,21 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         value = getManufacturerId();
         sbufWriteU8(dst, strlen(value));
         sbufWriteString(dst, value);
+#else
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
+#endif
 
 #if defined(USE_SIGNATURE)
         // Signature
         sbufWriteData(dst, getSignature(), SIGNATURE_LENGTH);
+#else
+        uint8_t emptySignature[SIGNATURE_LENGTH];
+        memset(emptySignature, 0, sizeof(emptySignature));
+        sbufWriteData(dst, &emptySignature, sizeof(emptySignature));
 #endif
-#endif // USE_BOARD_INFO
+
+        sbufWriteU8(dst, MCU_TYPE_ID);
 
         break;
     }
@@ -759,8 +777,31 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         }
 
         // Enabled warnings
-        sbufWriteU16(dst, osdConfig()->enabledWarnings);
-#endif
+        // Send low word first for backwards compatibility (API < 1.41)
+        sbufWriteU16(dst, (uint16_t)(osdConfig()->enabledWarnings & 0xFFFF));
+        // API >= 1.41
+        // Send the warnings count and 32bit enabled warnings flags.
+        // Add currently active OSD profile (0 indicates OSD profiles not available).
+        // Add OSD stick overlay mode (0 indicates OSD stick overlay not available).
+        sbufWriteU8(dst, OSD_WARNING_COUNT);
+        sbufWriteU32(dst, osdConfig()->enabledWarnings);
+
+#ifdef USE_OSD_PROFILES
+        sbufWriteU8(dst, OSD_PROFILE_COUNT);            // available profiles
+        sbufWriteU8(dst, osdConfig()->osdProfileIndex); // selected profile
+#else
+        // If the feature is not available there is only 1 profile and it's always selected
+        sbufWriteU8(dst, 1);
+        sbufWriteU8(dst, 1);
+#endif // USE_OSD_PROFILES
+
+#ifdef USE_OSD_STICK_OVERLAY
+        sbufWriteU8(dst, osdConfig()->overlay_radio_mode);
+#else
+        sbufWriteU8(dst, 0);
+#endif // USE_OSD_STICK_OVERLAY
+
+#endif // USE_OSD
         break;
     }
 
@@ -792,7 +833,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
             sbufWriteU8(dst, getCurrentPidProfileIndex());
             sbufWriteU16(dst, constrain(averageSystemLoadPercent, 0, 100));
             if (cmdMSP == MSP_STATUS_EX) {
-                sbufWriteU8(dst, MAX_PROFILE_COUNT);
+                sbufWriteU8(dst, PID_PROFILE_COUNT);
                 sbufWriteU8(dst, getCurrentControlRateProfileIndex());
             } else {  // MSP_STATUS
                 sbufWriteU16(dst, 0); // gyro cycle time
@@ -816,22 +857,27 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 
     case MSP_RAW_IMU:
         {
+#if defined(USE_ACC)
             // Hack scale due to choice of units for sensor data in multiwii
 
             uint8_t scale;
-
-            if (acc.dev.acc_1G > 512*4) {
+            if (acc.dev.acc_1G > 512 * 4) {
                 scale = 8;
-            } else if (acc.dev.acc_1G > 512*2) {
+            } else if (acc.dev.acc_1G > 512 * 2) {
                 scale = 4;
             } else if (acc.dev.acc_1G >= 512) {
                 scale = 2;
             } else {
                 scale = 1;
             }
+#endif
 
             for (int i = 0; i < 3; i++) {
+#if defined(USE_ACC)
                 sbufWriteU16(dst, lrintf(acc.accADC[i] / scale));
+#else
+                sbufWriteU16(dst, 0);
+#endif
             }
             for (int i = 0; i < 3; i++) {
                 sbufWriteU16(dst, gyroRateDps(i));
@@ -985,6 +1031,18 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         }
         break;
 
+    case MSP_MODE_RANGES_EXTRA:
+        sbufWriteU8(dst, MAX_MODE_ACTIVATION_CONDITION_COUNT);          // prepend number of EXTRAs array elements
+
+        for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
+            const modeActivationCondition_t *mac = modeActivationConditions(i);
+            const box_t *box = findBoxByBoxId(mac->modeId);
+            sbufWriteU8(dst, box->permanentId);     // each element is aligned with MODE_RANGES by the permanentId
+            sbufWriteU8(dst, mac->modeLogic);
+            sbufWriteU8(dst, mac->linkedTo);
+        }
+        break;
+
     case MSP_ADJUSTMENT_RANGES:
         for (int i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
             const adjustmentRange_t *adjRange = adjustmentRanges(i);
@@ -1084,11 +1142,13 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 #endif
 #endif
 
+#if defined(USE_ACC)
     case MSP_ACC_TRIM:
         sbufWriteU16(dst, accelerometerConfig()->accelerometerTrims.values.pitch);
         sbufWriteU16(dst, accelerometerConfig()->accelerometerTrims.values.roll);
-        break;
 
+        break;
+#endif
     case MSP_MIXER_CONFIG:
         sbufWriteU8(dst, mixerConfig()->mixerMode);
         sbufWriteU8(dst, mixerConfig()->yaw_motors_reversed);
@@ -1174,41 +1234,59 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         }
         break;
 
-#ifdef USE_LED_STRIP
+#ifdef USE_LED_STRIP_STATUS_MODE
     case MSP_LED_COLORS:
         for (int i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
-            const hsvColor_t *color = &ledStripConfig()->colors[i];
+            const hsvColor_t *color = &ledStripStatusModeConfig()->colors[i];
             sbufWriteU16(dst, color->h);
             sbufWriteU8(dst, color->s);
             sbufWriteU8(dst, color->v);
         }
         break;
+#endif
 
+#ifdef USE_LED_STRIP
     case MSP_LED_STRIP_CONFIG:
         for (int i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
-            const ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[i];
+#ifdef USE_LED_STRIP_STATUS_MODE
+            const ledConfig_t *ledConfig = &ledStripStatusModeConfig()->ledConfigs[i];
             sbufWriteU32(dst, *ledConfig);
+#else
+            sbufWriteU32(dst, 0);
+#endif
         }
-        break;
 
+        // API 1.41 - add indicator for advanced profile support and the current profile selection
+        // 0 = basic ledstrip available
+        // 1 = advanced ledstrip available
+#ifdef USE_LED_STRIP_STATUS_MODE
+        sbufWriteU8(dst, 1);   // advanced ledstrip available
+#else
+        sbufWriteU8(dst, 0);   // only simple ledstrip available
+#endif
+        sbufWriteU8(dst, ledStripConfig()->ledstrip_profile);
+        break;
+#endif
+
+#ifdef USE_LED_STRIP_STATUS_MODE
     case MSP_LED_STRIP_MODECOLOR:
         for (int i = 0; i < LED_MODE_COUNT; i++) {
             for (int j = 0; j < LED_DIRECTION_COUNT; j++) {
                 sbufWriteU8(dst, i);
                 sbufWriteU8(dst, j);
-                sbufWriteU8(dst, ledStripConfig()->modeColors[i].color[j]);
+                sbufWriteU8(dst, ledStripStatusModeConfig()->modeColors[i].color[j]);
             }
         }
 
         for (int j = 0; j < LED_SPECIAL_COLOR_COUNT; j++) {
             sbufWriteU8(dst, LED_MODE_COUNT);
             sbufWriteU8(dst, j);
-            sbufWriteU8(dst, ledStripConfig()->specialColors.color[j]);
+            sbufWriteU8(dst, ledStripStatusModeConfig()->specialColors.color[j]);
         }
 
         sbufWriteU8(dst, LED_AUX_CHANNEL);
         sbufWriteU8(dst, 0);
-        sbufWriteU8(dst, ledStripConfig()->ledstrip_aux_channel);
+        sbufWriteU8(dst, ledStripStatusModeConfig()->ledstrip_aux_channel);
         break;
 #endif
 
@@ -1249,11 +1327,41 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, flight3DConfig()->deadband3d_throttle);
         break;
 
-    case MSP_SENSOR_ALIGNMENT:
-        sbufWriteU8(dst, gyroConfig()->gyro_align);
-        sbufWriteU8(dst, accelerometerConfig()->acc_align);
+    case MSP_SENSOR_ALIGNMENT: {
+        uint8_t gyroAlignment;
+#ifdef USE_MULTI_GYRO
+        switch (gyroConfig()->gyro_to_use) {
+        case GYRO_CONFIG_USE_GYRO_2:
+            gyroAlignment = gyroDeviceConfig(1)->align;
+            break;
+        case GYRO_CONFIG_USE_GYRO_BOTH:
+            // for dual-gyro in "BOTH" mode we only read/write gyro 0
+        default:
+            gyroAlignment = gyroDeviceConfig(0)->align;
+            break;
+        }
+#else
+        gyroAlignment = gyroDeviceConfig(0)->align;
+#endif
+        sbufWriteU8(dst, gyroAlignment);
+        sbufWriteU8(dst, gyroAlignment);  // Starting with 4.0 gyro and acc alignment are the same 
         sbufWriteU8(dst, compassConfig()->mag_align);
+
+        // API 1.41 - Add multi-gyro indicator, selected gyro, and support for separate gyro 1 & 2 alignment
+#ifdef USE_MULTI_GYRO
+        sbufWriteU8(dst, 1);    // USE_MULTI_GYRO
+        sbufWriteU8(dst, gyroConfig()->gyro_to_use);
+        sbufWriteU8(dst, gyroDeviceConfig(0)->align);
+        sbufWriteU8(dst, gyroDeviceConfig(1)->align);
+#else
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, GYRO_CONFIG_USE_GYRO_1);
+        sbufWriteU8(dst, gyroDeviceConfig(0)->align);
+        sbufWriteU8(dst, ALIGN_DEFAULT);
+#endif
+
         break;
+    }
 
     case MSP_ADVANCED_CONFIG:
         sbufWriteU8(dst, gyroConfig()->gyro_sync_denom);
@@ -1346,7 +1454,11 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 
         break;
     case MSP_SENSOR_CONFIG:
+#if defined(USE_ACC)
         sbufWriteU8(dst, accelerometerConfig()->acc_hardware);
+#else
+        sbufWriteU8(dst, 0);
+#endif
         sbufWriteU8(dst, barometerConfig()->baro_hardware);
         sbufWriteU8(dst, compassConfig()->mag_hardware);
         break;
@@ -1536,7 +1648,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         value = sbufReadU8(src);
         if ((value & RATEPROFILE_MASK) == 0) {
             if (!ARMING_FLAG(ARMED)) {
-                if (value >= MAX_PROFILE_COUNT) {
+                if (value >= PID_PROFILE_COUNT) {
                     value = 0;
                 }
                 changePidProfile(value);
@@ -1585,10 +1697,13 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         }
 #endif
         break;
+#if defined(USE_ACC)
     case MSP_SET_ACC_TRIM:
         accelerometerConfigMutable()->accelerometerTrims.values.pitch = sbufReadU16(src);
         accelerometerConfigMutable()->accelerometerTrims.values.roll  = sbufReadU16(src);
+
         break;
+#endif
     case MSP_SET_ARMING_CONFIG:
         armingConfigMutable()->auto_disarm_delay = sbufReadU8(src);
         sbufReadU8(src); // reserved
@@ -1620,7 +1735,12 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 mac->auxChannelIndex = sbufReadU8(src);
                 mac->range.startStep = sbufReadU8(src);
                 mac->range.endStep = sbufReadU8(src);
+                if (sbufBytesRemaining(src) != 0) {
+                    mac->modeLogic = sbufReadU8(src);
 
+                    i = sbufReadU8(src);
+                    mac->linkedTo = findBoxByPermanentId(i)->boxId;
+                }
                 rcControlsInit();
             } else {
                 return MSP_RESULT_ERROR;
@@ -1807,11 +1927,43 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_RESET_CURR_PID:
         resetPidProfile(currentPidProfile);
         break;
-    case MSP_SET_SENSOR_ALIGNMENT:
-        gyroConfigMutable()->gyro_align = sbufReadU8(src);
-        accelerometerConfigMutable()->acc_align = sbufReadU8(src);
+    case MSP_SET_SENSOR_ALIGNMENT: {
+        // maintain backwards compatibility for API < 1.41
+        const uint8_t gyroAlignment = sbufReadU8(src);
+        sbufReadU8(src);  // discard deprecated acc_align
         compassConfigMutable()->mag_align = sbufReadU8(src);
+
+        if (sbufBytesRemaining(src) >= 3) {
+            // API >= 1.41 - support the gyro_to_use and alignment for gyros 1 & 2
+#ifdef USE_MULTI_GYRO
+            gyroConfigMutable()->gyro_to_use = sbufReadU8(src);
+            gyroDeviceConfigMutable(0)->align = sbufReadU8(src);
+            gyroDeviceConfigMutable(1)->align = sbufReadU8(src);
+#else
+            sbufReadU8(src);  // unused gyro_to_use
+            gyroDeviceConfigMutable(0)->align = sbufReadU8(src);
+            sbufReadU8(src);  // unused gyro_2_sensor_align
+#endif
+        } else {
+            // maintain backwards compatibility for API < 1.41
+#ifdef USE_MULTI_GYRO
+            switch (gyroConfig()->gyro_to_use) {
+            case GYRO_CONFIG_USE_GYRO_2:
+                gyroDeviceConfigMutable(1)->align = gyroAlignment;
+                break;
+            case GYRO_CONFIG_USE_GYRO_BOTH:
+                // For dual-gyro in "BOTH" mode we'll only update gyro 0
+            default:
+                gyroDeviceConfigMutable(0)->align = gyroAlignment;
+                break;
+            }
+#else
+            gyroDeviceConfigMutable(0)->align = gyroAlignment;
+#endif
+
+        }
         break;
+    }
 
     case MSP_SET_ADVANCED_CONFIG:
         gyroConfigMutable()->gyro_sync_denom = sbufReadU8(src);
@@ -1942,9 +2094,14 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
         break;
     case MSP_SET_SENSOR_CONFIG:
+#if defined(USE_ACC)
         accelerometerConfigMutable()->acc_hardware = sbufReadU8(src);
+#else
+        sbufReadU8(src);
+#endif
         barometerConfigMutable()->baro_hardware = sbufReadU8(src);
         compassConfigMutable()->mag_hardware = sbufReadU8(src);
+
         break;
 
     case MSP_RESET_CONF:
@@ -1954,10 +2111,12 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         }
         break;
 
+#ifdef USE_ACC
     case MSP_ACC_CALIBRATION:
         if (!ARMING_FLAG(ARMED))
             accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
         break;
+#endif
 
     case MSP_MAG_CALIBRATION:
         if (!ARMING_FLAG(ARMED))
@@ -2009,7 +2168,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 const uint8_t newChannel = (newFrequency % 8) + 1;
                 vtxSettingsConfigMutable()->band = newBand;
                 vtxSettingsConfigMutable()->channel = newChannel;
-                vtxSettingsConfigMutable()->freq = vtx58_Bandchan2Freq(newBand, newChannel);
+                vtxSettingsConfigMutable()->freq = vtxCommonLookupFrequency(vtxDevice, newBand, newChannel);
             } else if (newFrequency <= VTX_SETTINGS_MAX_FREQUENCY_MHZ) { // Value is frequency in MHz
                 vtxSettingsConfigMutable()->band = 0;
                 vtxSettingsConfigMutable()->channel = 0;
@@ -2248,36 +2407,49 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         }
         break;
 
-#ifdef USE_LED_STRIP
+#ifdef USE_LED_STRIP_STATUS_MODE
     case MSP_SET_LED_COLORS:
         for (int i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
-            hsvColor_t *color = &ledStripConfigMutable()->colors[i];
+            hsvColor_t *color = &ledStripStatusModeConfigMutable()->colors[i];
             color->h = sbufReadU16(src);
             color->s = sbufReadU8(src);
             color->v = sbufReadU8(src);
         }
         break;
+#endif
 
+#ifdef USE_LED_STRIP
     case MSP_SET_LED_STRIP_CONFIG:
         {
             i = sbufReadU8(src);
             if (i >= LED_MAX_STRIP_LENGTH || dataSize != (1 + 4)) {
                 return MSP_RESULT_ERROR;
             }
-            ledConfig_t *ledConfig = &ledStripConfigMutable()->ledConfigs[i];
+#ifdef USE_LED_STRIP_STATUS_MODE
+            ledConfig_t *ledConfig = &ledStripStatusModeConfigMutable()->ledConfigs[i];
             *ledConfig = sbufReadU32(src);
             reevaluateLedConfig();
+#else
+            sbufReadU32(src);
+#endif
+            // API 1.41 - selected ledstrip_profile
+            if (sbufBytesRemaining(src) >= 1) {
+                ledStripConfigMutable()->ledstrip_profile = sbufReadU8(src);
+            }
         }
         break;
+#endif
 
+#ifdef USE_LED_STRIP_STATUS_MODE
     case MSP_SET_LED_STRIP_MODECOLOR:
         {
             ledModeIndex_e modeIdx = sbufReadU8(src);
             int funIdx = sbufReadU8(src);
             int color = sbufReadU8(src);
 
-            if (!setModeColor(modeIdx, funIdx, color))
+            if (!setModeColor(modeIdx, funIdx, color)) {
                 return MSP_RESULT_ERROR;
+            }
         }
         break;
 #endif
@@ -2486,7 +2658,36 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src, mspPos
 
                 if (sbufBytesRemaining(src) >= 2) {
                     /* Enabled warnings */
+                    // API < 1.41 supports only the low 16 bits
                     osdConfigMutable()->enabledWarnings = sbufReadU16(src);
+                }
+                
+                if (sbufBytesRemaining(src) >= 4) {
+                    // 32bit version of enabled warnings (API >= 1.41)
+                    osdConfigMutable()->enabledWarnings = sbufReadU32(src);
+                }
+
+                if (sbufBytesRemaining(src) >= 1) {
+                    // API >= 1.41
+                    // selected OSD profile
+#ifdef USE_OSD_PROFILES
+                    osdConfigMutable()->osdProfileIndex = sbufReadU8(src);
+                    setOsdProfile(osdConfig()->osdProfileIndex);
+#else
+                    sbufReadU8(src);
+#endif // USE_OSD_PROFILES
+                }
+
+                if (sbufBytesRemaining(src) >= 1) {
+                    // API >= 1.41
+                    // OSD stick overlay mode
+
+#ifdef USE_OSD_STICK_OVERLAY
+                    osdConfigMutable()->overlay_radio_mode = sbufReadU8(src);
+#else
+                    sbufReadU8(src);
+#endif // USE_OSD_STICK_OVERLAY
+
                 }
 #endif
             } else if ((int8_t)addr == -2) {

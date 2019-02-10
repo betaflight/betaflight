@@ -167,7 +167,7 @@ static void calculateSetpointRate(int axis)
         // scale rcCommandf to range [-1.0, 1.0]
         float rcCommandf = rcCommand[axis] / 500.0f;
         rcDeflection[axis] = rcCommandf;
-        const float rcCommandfAbs = ABS(rcCommandf);
+        const float rcCommandfAbs = fabsf(rcCommandf);
         rcDeflectionAbs[axis] = rcCommandfAbs;
 
         angleRate = applyRates(axis, rcCommandf, rcCommandfAbs);

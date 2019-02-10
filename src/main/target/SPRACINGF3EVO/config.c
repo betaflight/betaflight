@@ -47,7 +47,7 @@ void targetConfiguration(void)
 
     motorConfigMutable()->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
 
-    for (uint8_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
+    for (uint8_t pidProfileIndex = 0; pidProfileIndex < PID_PROFILE_COUNT; pidProfileIndex++) {
         pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
 
         pidProfile->pid[FD_ROLL].P = 90;

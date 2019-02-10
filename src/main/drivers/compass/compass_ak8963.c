@@ -366,7 +366,7 @@ static bool ak8963Init(magDev_t *mag)
     return true;
 }
 
-void ak8963BusInit(const busDevice_t *busdev)
+void ak8963BusInit(busDevice_t *busdev)
 {
     switch (busdev->bustype) {
 #ifdef USE_MAG_AK8963
@@ -380,7 +380,11 @@ void ak8963BusInit(const busDevice_t *busdev)
         IOHi(busdev->busdev_u.spi.csnPin);                                                  // Disable
         IOInit(busdev->busdev_u.spi.csnPin, OWNER_COMPASS_CS, 0);
         IOConfigGPIO(busdev->busdev_u.spi.csnPin, IOCFG_OUT_PP);
-        spiSetDivisor(busdev->busdev_u.spi.instance, SPI_CLOCK_STANDARD);
+#ifdef USE_SPI_TRANSACTION
+        spiBusTransactionInit(busdev, SPI_MODE3_POL_HIGH_EDGE_2ND, SPI_CLOCK_STANDARD);
+#else
+        spiBusSetDivisor(busdev, SPI_CLOCK_STANDARD);
+#endif
         break;
 #endif
 

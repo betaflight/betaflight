@@ -31,23 +31,14 @@
 #define USBD_PRODUCT_STRING     "CrazyBee F3 FR"
 #endif
 
-// Removed to make the firmware fit into flash (in descending order of priority):
-//#undef USE_GYRO_OVERFLOW_CHECK
-//#undef USE_GYRO_LPF2
-
-//#undef USE_ITERM_RELAX
-//#undef USE_RC_SMOOTHING_FILTER
-
-//#undef USE_MSP_DISPLAYPORT
-//#undef USE_MSP_OVER_TELEMETRY
-
-//#undef USE_HUFFMAN
-//#undef USE_PINIO
-//#undef USE_PINIOBOX
-
 #undef USE_SERIALRX_CRSF
 #undef USE_SERIALRX_SUMD
+#undef USE_SERIALRX_SUMH
+#undef USE_SERIALRX_XBUS
 #undef USE_TELEMETRY_CRSF
+#undef USE_TELEMETRY_MAVLINK
+#undef USE_PWM
+
 
 #if defined(CRAZYBEEF3FS)
 #undef USE_SERIALRX_SBUS
@@ -67,19 +58,6 @@
 #undef USE_SERIALRX_IBUS
 #undef USE_TELEMETRY_SRXL
 #endif
-
-#undef USE_TELEMETRY_HOTT
-#undef USE_TELEMETRY_MAVLINK
-#undef USE_TELEMETRY_LTM
-#undef USE_SERIALRX_XBUS
-#undef USE_SERIALRX_SUMH
-#undef USE_PWM
-
-//#undef USE_BOARD_INFO
-//#undef USE_EXTENDED_CMS_MENUS
-//#undef USE_RTC_TIME
-#undef USE_RX_MSP
-//#undef USE_ESC_SENSOR_INFO
 
 #define ENABLE_DSHOT_DMAR       true
 
@@ -179,7 +157,6 @@
 #define ADC_INSTANCE            ADC1
 #define CURRENT_METER_SCALE_DEFAULT 2350
 
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         (BIT(13)|BIT(14)|BIT(15))

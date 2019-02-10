@@ -97,6 +97,8 @@ const uint16_t crcTable[] = {
 
 #define TELEMETRY_SEQUENCE_LENGTH 4
 
+#define A1_CONST_X 50
+
 typedef struct telemetrySequenceMarkerData_s {
     unsigned int packetSequenceId: 2;
     unsigned int unused: 1;
@@ -152,8 +154,10 @@ static bool telemetryEnabled = false;
 #endif
 #endif // USE_RX_FRSKY_SPI_TELEMETRY
 
+static uint8_t packetLength;
+static uint16_t telemetryDelayUs;
 
-static uint16_t calculateCrc(uint8_t *data, uint8_t len) {
+static uint16_t calculateCrc(const uint8_t *data, uint8_t len) {
     uint16_t crc = 0;
     for (unsigned i = 0; i < len; i++) {
         crc = (crc << 8) ^ (crcTable[((uint8_t)(crc >> 8) ^ *data++) & 0xFF]);
@@ -195,10 +199,16 @@ static void buildTelemetryFrame(uint8_t *packet)
         frame[4] = (uint8_t)cc2500getRssiDbm() | 0x80;
     } else {
         uint8_t a1Value;
-        if (rxFrSkySpiConfig()->useExternalAdc) {
-            a1Value = (uint8_t)((adcGetChannel(ADC_EXTERNAL1) & 0xfe0) >> 5);
-        } else {
+        switch (rxFrSkySpiConfig()->a1Source) {
+        case FRSKY_SPI_A1_SOURCE_VBAT:
             a1Value = getLegacyBatteryVoltage() & 0x7f;
+            break;
+        case FRSKY_SPI_A1_SOURCE_EXTADC:
+            a1Value = (uint8_t)((adcGetChannel(ADC_EXTERNAL1) & 0xfe0) >> 5);
+            break;
+        case FRSKY_SPI_A1_SOURCE_CONST:
+            a1Value = A1_CONST_X & 0x7f;
+            break;
         }
         frame[4] = a1Value;
     }
@@ -274,6 +284,10 @@ static void frSkyXTelemetryWriteFrame(const smartPortPayload_t *payload)
 void frSkyXSetRcData(uint16_t *rcData, const uint8_t *packet)
 {
     uint16_t c[8];
+    // ignore failsafe packet
+    if (packet[7] != 0) {
+        return;
+    }
     c[0] = (uint16_t)((packet[10] << 8) & 0xF00) | packet[9];
     c[1] = (uint16_t)((packet[11] << 4) & 0xFF0) | (packet[10] >> 4);
     c[2] = (uint16_t)((packet[13] << 8) & 0xF00) | packet[12];
@@ -288,6 +302,19 @@ void frSkyXSetRcData(uint16_t *rcData, const uint8_t *packet)
         const uint16_t channelValue = c[i] & 0x7FF;
         rcData[channelIsShifted ? i + 8 : i] = ((channelValue - 64) * 2 + 860 * 3) / 3;
     }
+}
+
+bool isValidPacket(const uint8_t *packet)
+{
+    uint16_t lcrc = calculateCrc(&packet[3], (packetLength - 7));
+    if ((lcrc >> 8) == packet[packetLength - 4] && (lcrc & 0x00FF) == packet[packetLength - 3] &&
+        (packet[0] == packetLength - 3) &&
+        (packet[1] == rxFrSkySpiConfig()->bindTxId[0]) &&
+        (packet[2] == rxFrSkySpiConfig()->bindTxId[1]) &&
+        (rxFrSkySpiConfig()->rxNum == 0 || packet[6] == 0 || packet[6] == rxFrSkySpiConfig()->rxNum)) {
+        return true;
+    }
+    return false;
 }
 
 rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const protocolState)
@@ -343,89 +370,78 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
     case STATE_DATA:
         if (cc2500getGdo() && (frameReceived == false)){
             uint8_t ccLen = cc2500ReadReg(CC2500_3B_RXBYTES | CC2500_READ_BURST) & 0x7F;
-            ccLen = cc2500ReadReg(CC2500_3B_RXBYTES | CC2500_READ_BURST) & 0x7F; // read 2 times to avoid reading errors
-            if (ccLen > 32) {
-                ccLen = 32;
-            }
-            if (ccLen) {
-                cc2500ReadFifo(packet, ccLen);
-                uint16_t lcrc= calculateCrc(&packet[3], (ccLen - 7));
-                if((lcrc >> 8) == packet[ccLen-4] && (lcrc&0x00FF) == packet[ccLen - 3]){ // check calculateCrc
-                    if (packet[0] == 0x1D) {
-                        if ((packet[1] == rxFrSkySpiConfig()->bindTxId[0]) &&
-                                (packet[2] == rxFrSkySpiConfig()->bindTxId[1]) &&
-                                (rxFrSkySpiConfig()->rxNum == 0 || packet[6] == 0 || packet[6] == rxFrSkySpiConfig()->rxNum)) {
-                            missingPackets = 0;
-                            timeoutUs = 1;
-                            receiveDelayUs = 0;
-                            rxSpiLedOn();
-                            if (skipChannels) {
-                                channelsToSkip = packet[5] << 2;
-                                if (packet[4] >= listLength) {
-                                    if (packet[4] < (64 + listLength)) {
-                                        channelsToSkip += 1;
-                                    } else if (packet[4] < (128 + listLength)) {
-                                        channelsToSkip += 2;
-                                    } else if (packet[4] < (192 + listLength)) {
-                                        channelsToSkip += 3;
-                                    }
-                                }
-                                telemetryReceived = true; // now telemetry can be sent
-                                skipChannels = false;
+            if (ccLen >= packetLength) {
+                cc2500ReadFifo(packet, packetLength);
+                if (isValidPacket(packet)) {
+                    missingPackets = 0;
+                    timeoutUs = 1;
+                    receiveDelayUs = 0;
+                    rxSpiLedOn();
+                    if (skipChannels) {
+                        channelsToSkip = packet[5] << 2;
+                        if (packet[4] >= listLength) {
+                            if (packet[4] < (64 + listLength)) {
+                                channelsToSkip += 1;
+                            } else if (packet[4] < (128 + listLength)) {
+                                channelsToSkip += 2;
+                            } else if (packet[4] < (192 + listLength)) {
+                                channelsToSkip += 3;
                             }
-                            cc2500setRssiDbm(packet[ccLen - 2]);
+                        }
+                        telemetryReceived = true; // now telemetry can be sent
+                        skipChannels = false;
+                    }
+                    cc2500setRssiDbm(packet[packetLength - 2]);
 
-                            telemetrySequenceMarker_t *inFrameMarker = (telemetrySequenceMarker_t *)&packet[21];
+                    telemetrySequenceMarker_t *inFrameMarker = (telemetrySequenceMarker_t *)&packet[21];
 
-                            uint8_t remoteNewPacketId = inFrameMarker->data.packetSequenceId;
-                            memcpy(&telemetryRxBuffer[remoteNewPacketId].data, &packet[22], TELEMETRY_FRAME_SIZE);
-                            telemetryRxBuffer[remoteNewPacketId].needsProcessing = true;
+                    uint8_t remoteNewPacketId = inFrameMarker->data.packetSequenceId;
+                    memcpy(&telemetryRxBuffer[remoteNewPacketId].data, &packet[22], TELEMETRY_FRAME_SIZE);
+                    telemetryRxBuffer[remoteNewPacketId].needsProcessing = true;
 
-                            responseToSend.raw = 0;
-                            uint8_t remoteToAckId = (remoteAckId + 1) % TELEMETRY_SEQUENCE_LENGTH;
-                            if (remoteNewPacketId != remoteToAckId) {
-                                while (remoteToAckId != remoteNewPacketId) {
-                                    if (!telemetryRxBuffer[remoteToAckId].needsProcessing) {
-                                        responseToSend.data.ackSequenceId = remoteToAckId;
-                                        responseToSend.data.retransmissionRequested = 1;
+                    responseToSend.raw = 0;
+                    uint8_t remoteToAckId = (remoteAckId + 1) % TELEMETRY_SEQUENCE_LENGTH;
+                    if (remoteNewPacketId != remoteToAckId) {
+                        while (remoteToAckId != remoteNewPacketId) {
+                            if (!telemetryRxBuffer[remoteToAckId].needsProcessing) {
+                                responseToSend.data.ackSequenceId = remoteToAckId;
+                                responseToSend.data.retransmissionRequested = 1;
 
-                                        receiveTelemetryRetryCount++;
+                                receiveTelemetryRetryCount++;
 
-                                        break;
-                                    }
-
-                                    remoteToAckId = (remoteToAckId + 1) % TELEMETRY_SEQUENCE_LENGTH;
-                                }
+                                break;
                             }
 
-                            if (!responseToSend.data.retransmissionRequested) {
-                                receiveTelemetryRetryCount = 0;
-
-                                remoteToAckId = (remoteAckId + 1) % TELEMETRY_SEQUENCE_LENGTH;
-                                uint8_t remoteNextAckId;
-                                while (telemetryRxBuffer[remoteToAckId].needsProcessing && remoteToAckId != remoteAckId) {
-                                    remoteNextAckId = remoteToAckId;
-                                    remoteToAckId = (remoteToAckId + 1) % TELEMETRY_SEQUENCE_LENGTH;
-                                }
-                                remoteAckId = remoteNextAckId;
-                                responseToSend.data.ackSequenceId = remoteAckId;
-                            }
-
-                            if (receiveTelemetryRetryCount >= 5) {
-                                 remoteProcessedId =  TELEMETRY_SEQUENCE_LENGTH - 1;
-                                 remoteAckId =  TELEMETRY_SEQUENCE_LENGTH - 1;
-                                 for (unsigned i = 0; i < TELEMETRY_SEQUENCE_LENGTH; i++) {
-                                     telemetryRxBuffer[i].needsProcessing = false;
-                                 }
-
-                                 receiveTelemetryRetryCount = 0;
-                             }
-
-                            packetTimerUs = micros();
-                            frameReceived = true; // no need to process frame again.
+                            remoteToAckId = (remoteToAckId + 1) % TELEMETRY_SEQUENCE_LENGTH;
                         }
                     }
-                } 
+
+                    if (!responseToSend.data.retransmissionRequested) {
+                        receiveTelemetryRetryCount = 0;
+
+                        remoteToAckId = (remoteAckId + 1) % TELEMETRY_SEQUENCE_LENGTH;
+                        uint8_t remoteNextAckId = remoteToAckId;
+                        while (telemetryRxBuffer[remoteToAckId].needsProcessing && remoteToAckId != remoteAckId) {
+                            remoteNextAckId = remoteToAckId;
+                            remoteToAckId = (remoteToAckId + 1) % TELEMETRY_SEQUENCE_LENGTH;
+                        }
+                        remoteAckId = remoteNextAckId;
+                        responseToSend.data.ackSequenceId = remoteAckId;
+                    }
+
+                    if (receiveTelemetryRetryCount >= 5) {
+                         remoteProcessedId = TELEMETRY_SEQUENCE_LENGTH - 1;
+                         remoteAckId = TELEMETRY_SEQUENCE_LENGTH - 1;
+                         for (unsigned i = 0; i < TELEMETRY_SEQUENCE_LENGTH; i++) {
+                             telemetryRxBuffer[i].needsProcessing = false;
+                         }
+
+                         receiveTelemetryRetryCount = 0;
+                     }
+
+                    packetTimerUs = micros();
+                    frameReceived = true; // no need to process frame again.
+                }
                 if (!frameReceived) {
                     packetErrors++;
                     DEBUG_SET(DEBUG_RX_FRSKY_SPI, DEBUG_DATA_BAD_FRAME, packetErrors);
@@ -433,7 +449,7 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
             }
         }
         if (telemetryReceived) {
-            if(cmpTimeUs(micros(), packetTimerUs) > receiveDelayUs) { // if received or not received in this time sent telemetry data
+            if (cmpTimeUs(micros(), packetTimerUs) > receiveDelayUs) { // if received or not received in this time sent telemetry data
                 *protocolState = STATE_TELEMETRY;
                 buildTelemetryFrame(packet);
             }
@@ -449,7 +465,7 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
         break;
 #ifdef USE_RX_FRSKY_SPI_TELEMETRY
     case STATE_TELEMETRY:
-        if(cmpTimeUs(micros(), packetTimerUs) >= receiveDelayUs + 400) { // if received or not received in this time sent telemetry data
+        if (cmpTimeUs(micros(), packetTimerUs) >= receiveDelayUs + telemetryDelayUs) { // if received or not received in this time sent telemetry data
             cc2500Strobe(CC2500_SIDLE);
             cc2500SetPower(6);
             cc2500Strobe(CC2500_SFRX);
@@ -520,7 +536,6 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
             }
             missingPackets++;
             DEBUG_SET(DEBUG_RX_FRSKY_SPI, DEBUG_DATA_MISSING_PACKETS, missingPackets);
-            
             *protocolState = STATE_DATA;
         }
         break;
@@ -529,8 +544,20 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
     return ret;
 }
 
-void frSkyXInit(void)
+void frSkyXInit(const rx_spi_protocol_e spiProtocol)
 {
+    switch(spiProtocol) {
+    case RX_SPI_FRSKY_X:
+        packetLength = 32;
+        telemetryDelayUs = 400;
+        break;
+    case RX_SPI_FRSKY_X_LBT:
+        packetLength = 35;
+        telemetryDelayUs = 1400;
+        break;
+    default:
+        break;
+    }
 #if defined(USE_TELEMETRY_SMARTPORT)
      if (featureIsEnabled(FEATURE_TELEMETRY)) {
          telemetryEnabled = initSmartPortTelemetryExternal(frSkyXTelemetryWriteFrame);

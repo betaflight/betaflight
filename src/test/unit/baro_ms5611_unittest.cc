@@ -149,7 +149,7 @@ void delayMicroseconds(uint32_t) {}
 bool busReadRegisterBuffer(const busDevice_t*, uint8_t, uint8_t*, uint8_t) {return true;}
 bool busWriteRegister(const busDevice_t*, uint8_t, uint8_t) {return true;}
 
-void spiSetDivisor() {
+void spiBusSetDivisor() {
 }
 
 void spiPreinitByIO() {

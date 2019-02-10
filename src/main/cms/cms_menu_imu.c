@@ -39,16 +39,20 @@
 #include "common/utils.h"
 
 #include "config/feature.h"
-#include "pg/pg.h"
+
+#include "drivers/pwm_output.h"
 
 #include "fc/config.h"
-#include "fc/core.h"
 #include "fc/controlrate_profile.h"
+#include "fc/core.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
 #include "flight/pid.h"
 
+#include "pg/pg.h"
+
+#include "sensors/battery.h"
 #include "sensors/gyro.h"
 
 
@@ -69,6 +73,12 @@ static controlRateConfig_t rateProfile;
 static const char * const osdTableThrottleLimitType[] = {
     "OFF", "SCALE", "CLIP"
 };
+
+#if defined(USE_GYRO_DATA_ANALYSE) && defined(USE_EXTENDED_CMS_MENUS)
+static const char * const osdTableDynNotchRangeType[] = {
+    "HIGH", "MED", "LOW", "AUTO"
+};
+#endif
 
 static long cmsx_menuImu_onEnter(void)
 {
@@ -316,6 +326,8 @@ static uint8_t  cmsx_horizonTransition;
 static uint8_t  cmsx_throttleBoost;
 static uint16_t cmsx_itermAcceleratorGain;
 static uint16_t cmsx_itermThrottleThreshold;
+static uint8_t  cmsx_motorOutputLimit;
+static int8_t   cmsx_autoProfileCellCount;
 
 static long cmsx_profileOtherOnEnter(void)
 {
@@ -333,6 +345,8 @@ static long cmsx_profileOtherOnEnter(void)
     cmsx_itermThrottleThreshold = pidProfile->itermThrottleThreshold;
 
     cmsx_throttleBoost = pidProfile->throttle_boost;
+    cmsx_motorOutputLimit = pidProfile->motor_output_limit;
+    cmsx_autoProfileCellCount = pidProfile->auto_profile_cell_count;
 
     return 0;
 }
@@ -353,6 +367,8 @@ static long cmsx_profileOtherOnExit(const OSD_Entry *self)
     pidProfile->itermThrottleThreshold = cmsx_itermThrottleThreshold;
 
     pidProfile->throttle_boost = cmsx_throttleBoost;
+    pidProfile->motor_output_limit = cmsx_motorOutputLimit;
+    pidProfile->auto_profile_cell_count = cmsx_autoProfileCellCount;
 
     return 0;
 }
@@ -372,7 +388,9 @@ static OSD_Entry cmsx_menuProfileOtherEntries[] = {
 #ifdef USE_LAUNCH_CONTROL
     {"LAUNCH CONTROL", OME_Submenu, cmsMenuChange, &cmsx_menuLaunchControl, 0 },
 #endif
+    { "MTR OUT LIM %",OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_motorOutputLimit, MOTOR_OUTPUT_LIMIT_PERCENT_MIN,  MOTOR_OUTPUT_LIMIT_PERCENT_MAX,  1}, 0 },
 
+    { "AUTO CELL CNT", OME_INT8, NULL, &(OSD_INT8_t) { &cmsx_autoProfileCellCount, AUTO_PROFILE_CELL_COUNT_CHANGE, MAX_AUTO_DETECT_CELL_COUNT, 1}, 0 },
 
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
@@ -449,10 +467,104 @@ static CMS_Menu cmsx_menuFilterGlobal = {
     .entries = cmsx_menuFilterGlobalEntries,
 };
 
+#if (defined(USE_GYRO_DATA_ANALYSE) || defined(USE_DYN_LPF)) && defined(USE_EXTENDED_CMS_MENUS)
+
+#ifdef USE_GYRO_DATA_ANALYSE
+static uint8_t  dynFiltNotchRange;
+static uint8_t  dynFiltWidthPercent;
+static uint16_t dynFiltNotchQ;
+static uint16_t dynFiltNotchMinHz;
+#endif
+#ifdef USE_DYN_LPF
+static uint16_t dynFiltGyroMin;
+static uint16_t dynFiltGyroMax;
+static uint16_t dynFiltDtermMin;
+static uint16_t dynFiltDtermMax;
+#endif
+
+static long cmsx_menuDynFilt_onEnter(void)
+{
+#ifdef USE_GYRO_DATA_ANALYSE
+    dynFiltNotchRange   = gyroConfig()->dyn_notch_range;
+    dynFiltWidthPercent = gyroConfig()->dyn_notch_width_percent;
+    dynFiltNotchQ       = gyroConfig()->dyn_notch_q;
+    dynFiltNotchMinHz   = gyroConfig()->dyn_notch_min_hz;
+#endif
+#ifdef USE_DYN_LPF
+    const pidProfile_t *pidProfile = pidProfiles(pidProfileIndex);
+    dynFiltGyroMin  = gyroConfig()->dyn_lpf_gyro_min_hz;
+    dynFiltGyroMax  = gyroConfig()->dyn_lpf_gyro_max_hz;
+    dynFiltDtermMin = pidProfile->dyn_lpf_dterm_min_hz;
+    dynFiltDtermMax = pidProfile->dyn_lpf_dterm_max_hz;
+#endif
+
+    return 0;
+}
+
+static long cmsx_menuDynFilt_onExit(const OSD_Entry *self)
+{
+    UNUSED(self);
+
+#ifdef USE_GYRO_DATA_ANALYSE
+    gyroConfigMutable()->dyn_notch_range         = dynFiltNotchRange;
+    gyroConfigMutable()->dyn_notch_width_percent = dynFiltWidthPercent;
+    gyroConfigMutable()->dyn_notch_q             = dynFiltNotchQ;
+    gyroConfigMutable()->dyn_notch_min_hz        = dynFiltNotchMinHz;
+#endif
+#ifdef USE_DYN_LPF
+    pidProfile_t *pidProfile = currentPidProfile;
+    gyroConfigMutable()->dyn_lpf_gyro_min_hz = dynFiltGyroMin;
+    gyroConfigMutable()->dyn_lpf_gyro_max_hz = dynFiltGyroMax;
+    pidProfile->dyn_lpf_dterm_min_hz         = dynFiltDtermMin;
+    pidProfile->dyn_lpf_dterm_max_hz         = dynFiltDtermMax;
+#endif
+
+    return 0;
+}
+
+static OSD_Entry cmsx_menuDynFiltEntries[] =
+{
+    { "-- DYN FILT --", OME_Label, NULL, NULL, 0 },
+
+#ifdef USE_GYRO_DATA_ANALYSE
+    { "NOTCH RANGE",    OME_TAB,    NULL, &(OSD_TAB_t)    { &dynFiltNotchRange,   3, osdTableDynNotchRangeType}, 0 },
+    { "NOTCH WIDTH %",  OME_UINT8,  NULL, &(OSD_UINT8_t)  { &dynFiltWidthPercent, 0, 20, 1 }, 0 },
+    { "NOTCH Q",        OME_UINT16, NULL, &(OSD_UINT16_t) { &dynFiltNotchQ,       0, 1000, 1 }, 0 },
+    { "NOTCH MIN HZ",   OME_UINT16, NULL, &(OSD_UINT16_t) { &dynFiltNotchMinHz,   0, 1000, 1 }, 0 },
+#endif
+
+#ifdef USE_DYN_LPF
+    { "LPF GYRO MIN",   OME_UINT16, NULL, &(OSD_UINT16_t) { &dynFiltGyroMin,  0, 1000, 1 }, 0 },
+    { "LPF GYRO MAX",   OME_UINT16, NULL, &(OSD_UINT16_t) { &dynFiltGyroMax,  0, 1000, 1 }, 0 },
+    { "DTERM DLPF MIN", OME_UINT16, NULL, &(OSD_UINT16_t) { &dynFiltDtermMin, 0, 1000, 1 }, 0 },
+    { "DTERM DLPF MAX", OME_UINT16, NULL, &(OSD_UINT16_t) { &dynFiltDtermMax, 0, 1000, 1 }, 0 },
+#endif
+
+    { "BACK", OME_Back, NULL, NULL, 0 },
+    { NULL, OME_END, NULL, NULL, 0 }
+};
+
+static CMS_Menu cmsx_menuDynFilt = {
+#ifdef CMS_MENU_DEBUG
+    .GUARD_text = "XDYNFLT",
+    .GUARD_type = OME_MENU,
+#endif
+    .onEnter = cmsx_menuDynFilt_onEnter,
+    .onExit = cmsx_menuDynFilt_onExit,
+    .entries = cmsx_menuDynFiltEntries,
+};
+
+#endif
+
 static uint16_t cmsx_dterm_lowpass_hz;
 static uint16_t cmsx_dterm_lowpass2_hz;
 static uint16_t cmsx_dterm_notch_hz;
 static uint16_t cmsx_dterm_notch_cutoff;
+#ifdef USE_D_MIN
+static uint8_t  cmsx_d_min_roll;
+static uint8_t  cmsx_d_min_pitch;
+static uint8_t  cmsx_d_min_yaw;
+#endif
 static uint16_t cmsx_yaw_lowpass_hz;
 
 static long cmsx_FilterPerProfileRead(void)
@@ -463,6 +575,11 @@ static long cmsx_FilterPerProfileRead(void)
     cmsx_dterm_lowpass2_hz  = pidProfile->dterm_lowpass2_hz;
     cmsx_dterm_notch_hz     = pidProfile->dterm_notch_hz;
     cmsx_dterm_notch_cutoff = pidProfile->dterm_notch_cutoff;
+#ifdef USE_D_MIN
+    cmsx_d_min_roll     = pidProfile->d_min_roll;
+    cmsx_d_min_pitch    = pidProfile->d_min_pitch;
+    cmsx_d_min_yaw    = pidProfile->d_min_yaw;
+#endif
     cmsx_yaw_lowpass_hz     = pidProfile->yaw_lowpass_hz;
 
     return 0;
@@ -478,6 +595,11 @@ static long cmsx_FilterPerProfileWriteback(const OSD_Entry *self)
     pidProfile->dterm_lowpass2_hz  = cmsx_dterm_lowpass2_hz;
     pidProfile->dterm_notch_hz     = cmsx_dterm_notch_hz;
     pidProfile->dterm_notch_cutoff = cmsx_dterm_notch_cutoff;
+#ifdef USE_D_MIN
+    pidProfile->d_min_roll  = cmsx_d_min_roll;
+    pidProfile->d_min_pitch = cmsx_d_min_pitch;
+    pidProfile->d_min_yaw   = cmsx_d_min_yaw;
+#endif
     pidProfile->yaw_lowpass_hz     = cmsx_yaw_lowpass_hz;
 
     return 0;
@@ -491,8 +613,12 @@ static OSD_Entry cmsx_menuFilterPerProfileEntries[] =
     { "DTERM LPF2", OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_dterm_lowpass2_hz,    0, 500, 1 }, 0 },
     { "DTERM NF",   OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_dterm_notch_hz,       0, 500, 1 }, 0 },
     { "DTERM NFCO", OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_dterm_notch_cutoff,   0, 500, 1 }, 0 },
+#ifdef USE_D_MIN
+    { "D_MIN_ROLL",  OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_d_min_roll,      0, 100, 1 }, 0 },
+    { "D_MIN_PITCH", OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_d_min_pitch,     0, 100, 1 }, 0 },
+    { "D_MIN_YAW",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_d_min_yaw,       0, 100, 1 }, 0 },
+#endif
     { "YAW LPF",    OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_yaw_lowpass_hz,       0, 500, 1 }, 0 },
-
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
 };
@@ -583,7 +709,7 @@ static OSD_Entry cmsx_menuImuEntries[] =
 {
     { "-- PROFILE --", OME_Label, NULL, NULL, 0},
 
-    {"PID PROF",  OME_UINT8,   cmsx_profileIndexOnChange,     &(OSD_UINT8_t){ &tmpPidProfileIndex, 1, MAX_PROFILE_COUNT, 1},    0},
+    {"PID PROF",  OME_UINT8,   cmsx_profileIndexOnChange,     &(OSD_UINT8_t){ &tmpPidProfileIndex, 1, PID_PROFILE_COUNT, 1},    0},
     {"PID",       OME_Submenu, cmsMenuChange,                 &cmsx_menuPid,                                                 0},
     {"MISC PP",   OME_Submenu, cmsMenuChange,                 &cmsx_menuProfileOther,                                        0},
     {"FILT PP",   OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterPerProfile,                                    0},
@@ -592,6 +718,10 @@ static OSD_Entry cmsx_menuImuEntries[] =
     {"RATE",      OME_Submenu, cmsMenuChange,                 &cmsx_menuRateProfile,                                         0},
 
     {"FILT GLB",  OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterGlobal,                                        0},
+#if  (defined(USE_GYRO_DATA_ANALYSE) || defined(USE_DYN_LPF)) && defined(USE_EXTENDED_CMS_MENUS)
+    {"DYN FILT",  OME_Submenu, cmsMenuChange,                 &cmsx_menuDynFilt,                                             0},
+#endif
+
 #ifdef USE_EXTENDED_CMS_MENUS
     {"COPY PROF", OME_Submenu, cmsMenuChange,                 &cmsx_menuCopyProfile,                                         0},
 #endif /* USE_EXTENDED_CMS_MENUS */

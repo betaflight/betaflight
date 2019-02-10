@@ -25,6 +25,8 @@
 
 #if defined(USE_VTX_COMMON)
 
+#include "cli/cli.h"
+
 #include "common/maths.h"
 #include "common/time.h"
 
@@ -36,14 +38,13 @@
 
 #include "flight/failsafe.h"
 
-#include "io/vtx.h"
 #include "io/vtx_string.h"
 #include "io/vtx_control.h"
 
-#include "interface/cli.h"
-
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+
+#include "vtx.h"
 
 
 PG_REGISTER_WITH_RESET_TEMPLATE(vtxSettingsConfig_t, vtxSettingsConfig, PG_VTX_SETTINGS_CONFIG, 0);
@@ -69,8 +70,16 @@ void vtxInit(void)
 {
     bool settingsUpdated = false;
 
+    vtxDevice_t *vtxDevice = vtxCommonDevice();
+
+    if (!vtxDevice) {
+        // If a device is not registered, we don't have any table to refer.
+        // Don't manipulate settings and just return in this case.
+        return;
+    }
+
     // sync frequency in parameter group when band/channel are specified
-    const uint16_t freq = vtx58_Bandchan2Freq(vtxSettingsConfig()->band, vtxSettingsConfig()->channel);
+    const uint16_t freq = vtxCommonLookupFrequency(vtxDevice, vtxSettingsConfig()->band, vtxSettingsConfig()->channel);
     if (vtxSettingsConfig()->band && freq != vtxSettingsConfig()->freq) {
         vtxSettingsConfigMutable()->freq = freq;
         settingsUpdated = true;

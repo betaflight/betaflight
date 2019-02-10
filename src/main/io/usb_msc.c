@@ -22,6 +22,8 @@
 
 #include "platform.h"
 
+#include "blackbox/blackbox.h"
+
 #include "drivers/sdcard.h"
 
 #include "io/flashfs.h"
@@ -32,10 +34,10 @@ bool mscCheckFilesystemReady(void)
 {
     return false
 #if defined(USE_SDCARD)
-        || sdcard_isFunctional()
+        || (blackboxConfig()->device == BLACKBOX_DEVICE_SDCARD && sdcard_isFunctional())
 #endif
 #if defined(USE_FLASHFS)
-        || flashfsGetSize() > 0
+        || (blackboxConfig()->device == BLACKBOX_DEVICE_FLASH && flashfsGetSize() > 0)
 #endif
         ;
 }

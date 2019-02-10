@@ -7,6 +7,8 @@ COMMON_SRC = \
             $(addprefix pg/,$(notdir $(wildcard $(SRC_DIR)/pg/*.c))) \
             $(addprefix common/,$(notdir $(wildcard $(SRC_DIR)/common/*.c))) \
             $(addprefix config/,$(notdir $(wildcard $(SRC_DIR)/config/*.c))) \
+            cli/cli.c \
+            cli/settings.c \
             drivers/adc.c \
             drivers/buf_writer.c \
             drivers/bus.c \
@@ -44,17 +46,17 @@ COMMON_SRC = \
             fc/hardfaults.c \
             fc/tasks.c \
             fc/runtime_config.c \
-            interface/msp.c \
-            interface/msp_box.c \
-            interface/tramp_protocol.c \
-            interface/smartaudio_protocol.c \
             io/beeper.c \
             io/piniobox.c \
             io/serial.c \
+            io/smartaudio_protocol.c \
             io/statusindicator.c \
+            io/tramp_protocol.c \
             io/transponder_ir.c \
             io/usb_cdc_hid.c \
             io/usb_msc.c \
+            msp/msp.c \
+            msp/msp_box.c \
             msp/msp_serial.c \
             scheduler/scheduler.c \
             sensors/adcinternal.c \
@@ -86,8 +88,6 @@ COMMON_SRC = \
             flight/pid.c \
             flight/servos.c \
             flight/servos_tricopter.c \
-            interface/cli.c \
-            interface/settings.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
@@ -113,6 +113,7 @@ COMMON_SRC = \
             sensors/compass.c \
             sensors/gyro.c \
             sensors/gyroanalyse.c \
+            sensors/rpm_filter.c \
             sensors/initialisation.c \
             blackbox/blackbox.c \
             blackbox/blackbox_encoding.c \
@@ -120,11 +121,13 @@ COMMON_SRC = \
             cms/cms.c \
             cms/cms_menu_blackbox.c \
             cms/cms_menu_builtin.c \
+            cms/cms_menu_failsafe.c \
             cms/cms_menu_imu.c \
             cms/cms_menu_ledstrip.c \
             cms/cms_menu_misc.c \
             cms/cms_menu_osd.c \
             cms/cms_menu_power.c \
+            cms/cms_menu_saveexit.c \
             cms/cms_menu_vtx_rtc6705.c \
             cms/cms_menu_vtx_smartaudio.c \
             cms/cms_menu_vtx_tramp.c \
@@ -134,6 +137,7 @@ COMMON_SRC = \
             drivers/rangefinder/rangefinder_lidartf.c \
             drivers/serial_escserial.c \
             drivers/vtx_common.c \
+            drivers/vtx_table.c \
             io/dashboard.c \
             io/displayport_max7456.c \
             io/displayport_msp.c \
@@ -239,11 +243,14 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             sensors/boardalignment.c \
             sensors/gyro.c \
             sensors/gyroanalyse.c \
+            sensors/rpm_filter.c \
             $(CMSIS_SRC) \
             $(DEVICE_STDPERIPH_SRC) \
 
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             bus_bst_stm32f30x.c \
+            cli/cli.c \
+            cli/settings.c \
             drivers/barometer/barometer_bmp085.c \
             drivers/barometer/barometer_bmp280.c \
             drivers/barometer/barometer_fake.c \
@@ -281,8 +288,6 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             config/feature.c \
             config/config_streamer.c \
             i2c_bst.c \
-            interface/cli.c \
-            interface/settings.c \
             io/dashboard.c \
             io/osd.c \
             io/serial.c \
@@ -295,11 +300,13 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             cms/cms.c \
             cms/cms_menu_blackbox.c \
             cms/cms_menu_builtin.c \
+            cms/cms_menu_failsafe.c \
             cms/cms_menu_imu.c \
             cms/cms_menu_ledstrip.c \
             cms/cms_menu_misc.c \
             cms/cms_menu_osd.c \
             cms/cms_menu_power.c \
+            cms/cms_menu_saveexit.c \
             cms/cms_menu_vtx_rtc6705.c \
             cms/cms_menu_vtx_smartaudio.c \
             cms/cms_menu_vtx_tramp.c \

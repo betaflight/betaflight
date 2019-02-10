@@ -26,11 +26,6 @@
 #define TARGET_BOARD_IDENTIFIER "LUX"
 #endif
 
-// Removed to make the firmware fit into flash (in descending order of priority):
-//#undef USE_RTC_TIME
-#undef USE_RX_MSP
-//#undef USE_ESC_SENSOR_INFO
-
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 
 
@@ -151,8 +146,6 @@
 #else
 #define DEFAULT_FEATURES        (FEATURE_TELEMETRY)
 #endif
-
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN  PA8  // (HARDARE=0,PPM)

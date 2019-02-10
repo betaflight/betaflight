@@ -27,10 +27,9 @@ extern "C" {
     #include "platform.h"
     #include "target.h"
     #include "build/version.h"
+    #include "cli/cli.h"
+    #include "cli/settings.h"
     #include "config/feature.h"
-    #include "pg/pg.h"
-    #include "pg/pg_ids.h"
-    #include "pg/rx.h"
     #include "drivers/buf_writer.h"
     #include "drivers/vtx_common.h"
     #include "fc/config.h"
@@ -39,16 +38,17 @@ extern "C" {
     #include "flight/mixer.h"
     #include "flight/pid.h"
     #include "flight/servos.h"
-    #include "interface/cli.h"
-    #include "interface/msp.h"
-    #include "interface/msp_box.h"
-    #include "interface/settings.h"
     #include "io/beeper.h"
     #include "io/ledstrip.h"
     #include "io/osd.h"
     #include "io/serial.h"
     #include "io/vtx.h"
+    #include "msp/msp.h"
+    #include "msp/msp_box.h"
+    #include "pg/pg.h"
+    #include "pg/pg_ids.h"
     #include "pg/beeper.h"
+    #include "pg/rx.h"
     #include "rx/rx.h"
     #include "scheduler/scheduler.h"
     #include "sensors/battery.h"
@@ -66,6 +66,7 @@ extern "C" {
     PG_REGISTER(osdConfig_t, osdConfig, PG_OSD_CONFIG, 0);
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
     PG_REGISTER(ledStripConfig_t, ledStripConfig, PG_LED_STRIP_CONFIG, 0);
+    PG_REGISTER(ledStripStatusModeConfig_t, ledStripStatusModeConfig, PG_LED_STRIP_STATUS_MODE_CONFIG, 0);
     PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
     PG_REGISTER(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 0);
     PG_REGISTER_ARRAY(adjustmentRange_t, MAX_ADJUSTMENT_RANGE_COUNT, adjustmentRanges, PG_ADJUSTMENT_RANGE_CONFIG, 0);
@@ -284,4 +285,6 @@ bool setManufacturerId(char *newManufacturerId) { UNUSED(newManufacturerId); ret
 bool persistBoardInformation(void) { return true; };
 
 void activeAdjustmentRangeReset(void) {}
+void analyzeModeActivationConditions(void) {}
+bool isModeActivationConditionConfigured(const modeActivationCondition_t *, const modeActivationCondition_t *) { return false; }
 }

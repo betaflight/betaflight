@@ -42,6 +42,7 @@
 #include "flight/pid.h"
 
 #include "io/beeper.h"
+#include "io/ledstrip.h"
 #include "io/motors.h"
 #include "io/pidaudio.h"
 #include "io/osd.h"
@@ -240,6 +241,10 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
         .data = { .step = 1 }
     }, {
         .adjustmentFunction = ADJUSTMENT_OSD_PROFILE,
+        .mode = ADJUSTMENT_MODE_SELECT,
+        .data = { .switchPositions = 3 }
+    }, {
+        .adjustmentFunction = ADJUSTMENT_LED_PROFILE,
         .mode = ADJUSTMENT_MODE_SELECT,
         .data = { .switchPositions = 3 }
     }
@@ -665,10 +670,17 @@ static uint8_t applySelectAdjustment(adjustmentFunction_e adjustmentFunction, ui
         }
 #endif
         break;
-#ifdef USE_OSD_PROFILES
     case ADJUSTMENT_OSD_PROFILE:
+#ifdef USE_OSD_PROFILES
         if (getCurrentOsdProfileIndex() != (position + 1)) {
             changeOsdProfileIndex(position+1);
+        }
+#endif
+        break;
+    case ADJUSTMENT_LED_PROFILE:
+#ifdef USE_LED_STRIP
+        if (getLedProfile() != position) {
+            setLedProfile(position);
         }
 #endif
         break;
@@ -793,6 +805,9 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig)
             && adjustmentState->config->adjustmentFunction != ADJUSTMENT_RATE_PROFILE  // Rate profile already has an OSD element
 #ifdef USE_OSD_PROFILES
             && adjustmentState->config->adjustmentFunction != ADJUSTMENT_OSD_PROFILE
+#endif
+#ifdef USE_LED_STRIP
+            && adjustmentState->config->adjustmentFunction != ADJUSTMENT_LED_PROFILE
 #endif
            ) {
             adjustmentRangeNameIndex = adjustmentFunction;

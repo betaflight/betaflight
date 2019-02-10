@@ -63,8 +63,10 @@ serialPort_t *debugSerialPort = NULL;
 
 static serialPort_t *smartAudioSerialPort = NULL;
 
+smartAudioDevice_t saDevice;
+
 #if defined(USE_CMS) || defined(USE_VTX_COMMON)
-const char * const saPowerNames[VTX_SMARTAUDIO_POWER_COUNT+1] = {
+const char * saPowerNames[VTX_SMARTAUDIO_POWER_COUNT+1] = {
     "---", "25 ", "200", "500", "800",
 };
 #endif
@@ -73,12 +75,6 @@ const char * const saPowerNames[VTX_SMARTAUDIO_POWER_COUNT+1] = {
 static const vtxVTable_t saVTable;    // Forward
 static vtxDevice_t vtxSmartAudio = {
     .vTable = &saVTable,
-    .capability.bandCount = VTX_SMARTAUDIO_BAND_COUNT,
-    .capability.channelCount = VTX_SMARTAUDIO_CHANNEL_COUNT,
-    .capability.powerCount = VTX_SMARTAUDIO_POWER_COUNT,
-    .bandNames = (char **)vtx58BandNames,
-    .channelNames = (char **)vtx58ChannelNames,
-    .powerNames = (char **)saPowerNames,
 };
 #endif
 
@@ -125,6 +121,10 @@ saPowerTable_t saPowerTable[VTX_SMARTAUDIO_POWER_COUNT] = {
     { 200,  16,   1 },
     { 500,  25,   2 },
     { 800,  40,   3 },
+};
+
+uint16_t saPowerValues[VTX_SMARTAUDIO_POWER_COUNT] = {
+    25, 200, 500, 800
 };
 
 // Last received device ('hard') states
@@ -694,7 +694,19 @@ bool vtxSmartAudioInit(void)
         return false;
     }
 
+    vtxSmartAudio.capability.bandCount = VTX_SMARTAUDIO_BAND_COUNT;
+    vtxSmartAudio.capability.channelCount = VTX_SMARTAUDIO_CHANNEL_COUNT;
+    vtxSmartAudio.capability.powerCount = VTX_SMARTAUDIO_POWER_COUNT;
+    vtxSmartAudio.frequencyTable = vtxStringFrequencyTable();
+    vtxSmartAudio.bandNames = vtxStringBandNames();
+    vtxSmartAudio.bandLetters = vtxStringBandLetters();
+    vtxSmartAudio.channelNames = vtxStringChannelNames();
+    vtxSmartAudio.powerNames = saPowerNames;
+    vtxSmartAudio.powerValues = saPowerValues;
+
     vtxCommonSetDevice(&vtxSmartAudio);
+
+    vtxInit();
 
     return true;
 }
@@ -885,8 +897,9 @@ static bool vtxSAGetFreq(const vtxDevice_t *vtxDevice, uint16_t *pFreq)
 
     // if not in user-freq mode then convert band/chan to frequency
     *pFreq = (saDevice.mode & SA_MODE_GET_FREQ_BY_FREQ) ? saDevice.freq :
-        vtx58_Bandchan2Freq(SA_DEVICE_CHVAL_TO_BAND(saDevice.channel) + 1,
-        SA_DEVICE_CHVAL_TO_CHANNEL(saDevice.channel) + 1);
+        vtxCommonLookupFrequency(&vtxSmartAudio,
+                SA_DEVICE_CHVAL_TO_BAND(saDevice.channel) + 1,
+                SA_DEVICE_CHVAL_TO_CHANNEL(saDevice.channel) + 1);
     return true;
 }
 

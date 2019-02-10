@@ -79,6 +79,9 @@ typedef enum {
 #ifdef USE_MAX7456
     TABLE_MAX7456_CLOCK,
 #endif
+#ifdef USE_RX_FRSKY_SPI
+    TABLE_RX_FRSKY_SPI_A1_SOURCE,
+#endif
 #ifdef USE_RANGEFINDER
     TABLE_RANGEFINDER_HARDWARE,
 #endif
@@ -116,7 +119,7 @@ typedef enum {
     TABLE_DYNAMIC_FILTER_RANGE,
 #endif // USE_GYRO_DATA_ANALYSE
 #ifdef USE_VTX_COMMON
-    TABLE_VTX_LOW_POWER_DISARM, 
+    TABLE_VTX_LOW_POWER_DISARM,
 #endif
     TABLE_GYRO_HARDWARE,
 #ifdef USE_SDCARD
@@ -128,6 +131,11 @@ typedef enum {
 #ifdef USE_TPA_MODE
     TABLE_TPA_MODE,
 #endif
+#ifdef USE_LED_STRIP
+    TABLE_LED_PROFILE,
+    TABLE_LEDSTRIP_COLOR,
+#endif
+    TABLE_GYRO_FILTER_DEBUG,
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 
@@ -171,6 +179,11 @@ typedef struct cliMinMaxConfig_s {
     const int16_t max;
 } cliMinMaxConfig_t;
 
+typedef struct cliMinMaxUnsignedConfig_s {
+    const uint16_t min;
+    const uint16_t max;
+} cliMinMaxUnsignedConfig_t;
+
 typedef struct cliLookupTableConfig_s {
     const lookupTableIndex_e tableIndex;
 } cliLookupTableConfig_t;
@@ -180,11 +193,12 @@ typedef struct cliArrayLengthConfig_s {
 } cliArrayLengthConfig_t;
 
 typedef union {
-    cliLookupTableConfig_t lookup;  // used for MODE_LOOKUP excl. VAR_UINT32
-    cliMinMaxConfig_t minmax;       // used for MODE_DIRECT
-    cliArrayLengthConfig_t array;   // used for MODE_ARRAY
-    uint8_t bitpos;                 // used for MODE_BITSET
-    uint32_t u32_max;               // used for MODE_DIRECT with VAR_UINT32
+    cliLookupTableConfig_t lookup;            // used for MODE_LOOKUP excl. VAR_UINT32
+    cliMinMaxConfig_t minmax;                 // used for MODE_DIRECT with signed parameters
+    cliMinMaxUnsignedConfig_t minmaxUnsigned; // used for MODE_DIRECT with unsigned parameters
+    cliArrayLengthConfig_t array;             // used for MODE_ARRAY
+    uint8_t bitpos;                           // used for MODE_BITSET
+    uint32_t u32Max;               // used for MODE_DIRECT with VAR_UINT32
 } cliValueConfig_t;
 
 typedef struct clivalue_s {
@@ -215,3 +229,5 @@ extern const char * const lookupTableMagHardware[];
 //extern const uint8_t lookupTableMagHardwareEntryCount;
 
 extern const char * const lookupTableRangefinderHardware[];
+
+extern const char * const lookupTableLedstripColors[];

@@ -26,19 +26,22 @@
 
 #include "build/build_config.h"
 
-#include "common/maths.h"
 #include "common/filter.h"
+#include "common/maths.h"
 #include "common/utils.h"
+
+#include "config/config_reset.h"
 
 #include "drivers/adc.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
-#include "config/config_reset.h"
 
 #include "sensors/adcinternal.h"
-#include "sensors/voltage.h"
+#include "sensors/battery.h"
 #include "sensors/esc_sensor.h"
+
+#include "voltage.h"
 
 const char * const voltageMeterSourceNames[VOLTAGE_METER_COUNT] = {
     "NONE", "ADC", "ESC"
@@ -191,7 +194,7 @@ void voltageMeterADCInit(void)
         voltageMeterADCState_t *state = &voltageMeterADCStates[i];
         memset(state, 0, sizeof(voltageMeterADCState_t));
 
-        biquadFilterInitLPF(&state->filter, VBAT_LPF_FREQ, HZ_TO_INTERVAL_US(50));
+        biquadFilterInitLPF(&state->filter, GET_BATTERY_LPF_FREQUENCY(batteryConfig()->vbatLpfPeriod), HZ_TO_INTERVAL_US(50));
     }
 }
 
@@ -215,7 +218,7 @@ void voltageMeterESCInit(void)
 {
 #ifdef USE_ESC_SENSOR
     memset(&voltageMeterESCState, 0, sizeof(voltageMeterESCState_t));
-    biquadFilterInitLPF(&voltageMeterESCState.filter, VBAT_LPF_FREQ, HZ_TO_INTERVAL_US(50));
+    biquadFilterInitLPF(&voltageMeterESCState.filter, GET_BATTERY_LPF_FREQUENCY(batteryConfig()->vbatLpfPeriod), HZ_TO_INTERVAL_US(50));
 #endif
 }
 

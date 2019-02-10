@@ -97,7 +97,7 @@ Contributions are welcome and encouraged.  You can contribute in many ways:
 * Bug reporting & fixes.
 * New feature ideas & suggestions.
 
-The best place to start is the IRC channel on gitter (see above), drop in, say hi. Next place is the github issue tracker:
+The best place to start is the Betaflight Slack (registration [here](https://slack.betaflight.com/). Next place is the github issue tracker:
 
 https://github.com/betaflight/betaflight/issues
 https://github.com/betaflight/betaflight-configurator/issues
@@ -106,7 +106,8 @@ Before creating new issues please check to see if there is an existing one, sear
 
 ## Developers
 
-Please refer to the development section in the `docs/development` folder.
+Contribution of bugfixes and new features is encouraged. Please be aware that we have a thorough review process for pull requests, and be prepared to explain what you want to achieve with your pull request.
+Before starting to write code, please read our [development guidelines](docs/development/Development.md ) and [coding style definition](docs/development/CodingStyle.md).
 
 TravisCI is used to run automatic builds
 
@@ -127,9 +128,9 @@ Betaflight is forked from Cleanflight, so thanks goes to all those whom have con
 Origins for this fork (Thanks!):
 * **Alexinparis** (for MultiWii),
 * **timecop** (for Baseflight),
-* **Dominic Clifton** (for Cleanflight), and
+* **Dominic Clifton** (for Cleanflight),
+* **borisbstyle** (for Betaflight), and
 * **Sambas** (for the original STM32F4 port).
-* **borisbstyle** (Fork from Cleanflight).
 
 The Betaflight Configurator is forked from Cleanflight Configurator and its origins.
 
