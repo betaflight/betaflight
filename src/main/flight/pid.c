@@ -191,9 +191,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .use_integrated_yaw = false,
         .integrated_yaw_relax = 200,
         .thrustLinearization = 0,
-        .d_min_roll = 20,
-        .d_min_pitch = 22,
-        .d_min_yaw = 0,
+        .d_min = { 20, 22, 0 },      // roll, pitch, yaw
         .d_min_gain = 20,
         .d_min_advance = 20,
         .motor_output_limit = 100,
@@ -277,7 +275,6 @@ static FAST_RAM_ZERO_INIT pt1Filter_t acLpf[XYZ_AXIS_COUNT];
 #endif
 
 #if defined(USE_D_MIN)
-static FAST_RAM_ZERO_INIT uint8_t dMin[XYZ_AXIS_COUNT];
 static FAST_RAM_ZERO_INIT biquadFilter_t dMinRange[XYZ_AXIS_COUNT];
 static FAST_RAM_ZERO_INIT pt1Filter_t dMinLowpass[XYZ_AXIS_COUNT];
 #endif
@@ -408,11 +405,8 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     }
 #endif
 #if defined(USE_D_MIN)
-    dMin[FD_ROLL] = pidProfile->d_min_roll;
-    dMin[FD_PITCH] = pidProfile->d_min_pitch;
-    dMin[FD_YAW] = pidProfile->d_min_yaw;
 
-    // Initialize the filters for all axis even if the dMin[axis] value is 0
+    // Initialize the filters for all axis even if the d_min[axis] value is 0
     // Otherwise if the pidProfile->d_min_xxx parameters are ever added to
     // in-flight adjustments and transition from 0 to > 0 in flight the feature
     // won't work because the filter wasn't initialized.
@@ -669,8 +663,9 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 #endif    
 #if defined(USE_D_MIN)
     for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
-        if ((dMin[axis] > 0) && (dMin[axis] < pidProfile->pid[axis].D)) {
-            dMinPercent[axis] = dMin[axis] / (float)(pidProfile->pid[axis].D);
+        const uint8_t dMin = pidProfile->d_min[axis];
+        if ((dMin > 0) && (dMin < pidProfile->pid[axis].D)) {
+            dMinPercent[axis] = dMin / (float)(pidProfile->pid[axis].D);
         } else {
             dMinPercent[axis] = 0;
         }
