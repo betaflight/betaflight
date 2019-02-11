@@ -28,6 +28,9 @@
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
+#include "FreeRTOS.h"
+#include "semphr.h"
+
 #if defined(STM32F4) || defined(STM32F3)
 #define SPI_IO_AF_CFG           IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
 #define SPI_IO_AF_SCK_CFG       IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_DOWN)
@@ -116,13 +119,15 @@ bool spiInit(SPIDevice device);
 void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor);
 uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t data);
 bool spiIsBusBusy(SPI_TypeDef *instance);
+void spiBusReserve(const busDevice_t *bus);
+void spiBusRelease(const busDevice_t *bus);
 
 bool spiTransfer(SPI_TypeDef *instance, const uint8_t *txData, uint8_t *rxData, int len);
 
 uint16_t spiGetErrorCounter(SPI_TypeDef *instance);
 void spiResetErrorCounter(SPI_TypeDef *instance);
 SPIDevice spiDeviceByInstance(SPI_TypeDef *instance);
-SPI_TypeDef *spiInstanceByDevice(SPIDevice device);
+SPI_TypeDef *spiInstanceByDevice(SPIDevice device, SemaphoreHandle_t *mutexBus);
 
 bool spiBusIsBusBusy(const busDevice_t *bus);
 
@@ -138,7 +143,7 @@ bool spiBusReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t *data
 void spiBusWriteRegisterBuffer(const busDevice_t *bus, uint8_t reg, const uint8_t *data, uint8_t length);
 uint8_t spiBusRawReadRegister(const busDevice_t *bus, uint8_t reg);
 uint8_t spiBusReadRegister(const busDevice_t *bus, uint8_t reg);
-void spiBusSetInstance(busDevice_t *bus, SPI_TypeDef *instance);
+void spiBusSetInstance(busDevice_t *bus, SPI_TypeDef *instance, SemaphoreHandle_t mutexBus);
 void spiBusSetDivisor(busDevice_t *bus, SPIClockDivider_e divider);
 
 void spiBusTransactionInit(busDevice_t *bus, SPIMode_e mode, SPIClockDivider_e divider);

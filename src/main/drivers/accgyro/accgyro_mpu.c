@@ -232,11 +232,12 @@ static gyroSpiDetectFn_t gyroSpiDetectFnTable[] = {
 
 static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro, const gyroDeviceConfig_t *config)
 {
-    SPI_TypeDef *instance = spiInstanceByDevice(SPI_CFG_TO_DEV(config->spiBus));
+	SemaphoreHandle_t mutexBus;
+    SPI_TypeDef *instance = spiInstanceByDevice(SPI_CFG_TO_DEV(config->spiBus), &mutexBus);
     if (!instance) {
         return false;
     }
-    spiBusSetInstance(&gyro->bus, instance);
+    spiBusSetInstance(&gyro->bus, instance, mutexBus);
 
     gyro->bus.busdev_u.spi.csnPin = IOGetByTag(config->csnTag);
     IOInit(gyro->bus.busdev_u.spi.csnPin, OWNER_GYRO_CS, RESOURCE_INDEX(config->index));

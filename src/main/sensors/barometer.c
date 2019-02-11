@@ -158,13 +158,14 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
 #ifdef USE_SPI
     case BUSTYPE_SPI:
         {
-            SPI_TypeDef *instance = spiInstanceByDevice(SPI_CFG_TO_DEV(barometerConfig()->baro_spi_device));
+        	SemaphoreHandle_t mutexBus;
+            SPI_TypeDef *instance = spiInstanceByDevice(SPI_CFG_TO_DEV(barometerConfig()->baro_spi_device), &mutexBus);
             if (!instance) {
                 return false;
             }
 
             dev->busdev.bustype = BUSTYPE_SPI;
-            spiBusSetInstance(&dev->busdev, instance);
+            spiBusSetInstance(&dev->busdev, instance, mutexBus);
             dev->busdev.busdev_u.spi.csnPin = IOGetByTag(barometerConfig()->baro_spi_csn);
         }
         break;

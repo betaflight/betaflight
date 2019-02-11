@@ -384,9 +384,7 @@ void FAST_CODE FAST_CODE_NOINLINE task( void *pvParameters )
 	task->lastExecutedAt = xTaskGetTickCount();
 
     while (true) {
-        pinioSet(3,1);
         task->taskFunc(micros());
-        pinioSet(3,0);
 
         vTaskDelayUntil(&task->lastExecutedAt, (TickType_t)(configTICK_RATE_HZ * (uint32_t)task->desiredPeriod/1000));
     }

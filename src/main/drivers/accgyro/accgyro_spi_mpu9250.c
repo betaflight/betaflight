@@ -53,24 +53,28 @@ static bool mpuSpi9250InitDone = false;
 
 bool mpu9250SpiWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data)
 {
+	xSemaphoreTake(bus->mutexBus, portMAX_DELAY);
     IOLo(bus->busdev_u.spi.csnPin);
     delayMicroseconds(1);
     spiTransferByte(bus->busdev_u.spi.instance, reg);
     spiTransferByte(bus->busdev_u.spi.instance, data);
     IOHi(bus->busdev_u.spi.csnPin);
     delayMicroseconds(1);
+    xSemaphoreGive(bus->mutexBus);
 
     return true;
 }
 
 static bool mpu9250SpiSlowReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t *data, uint8_t length)
 {
+	spiBusReserve(bus);
     IOLo(bus->busdev_u.spi.csnPin);
     delayMicroseconds(1);
     spiTransferByte(bus->busdev_u.spi.instance, reg | 0x80); // read transaction
     spiTransfer(bus->busdev_u.spi.instance, NULL, data, length);
     IOHi(bus->busdev_u.spi.csnPin);
     delayMicroseconds(1);
+    spiBusRelease(bus);
 
     return true;
 }

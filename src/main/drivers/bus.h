@@ -25,6 +25,9 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/io_types.h"
 
+#include "FreeRTOS.h"
+#include "semphr.h"
+
 typedef enum {
     BUSTYPE_NONE = 0,
     BUSTYPE_I2C,
@@ -59,6 +62,7 @@ typedef struct busDevice_s {
             uint8_t address;
         } mpuSlave;
     } busdev_u;
+    SemaphoreHandle_t mutexBus;
 } busDevice_t;
 
 #ifdef TARGET_BUS_INIT

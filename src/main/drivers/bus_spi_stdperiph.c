@@ -52,6 +52,8 @@ void spiInitDevice(SPIDevice device)
         return;
     }
 
+    spi->mutexBus = xSemaphoreCreateRecursiveMutex();
+
 #ifndef USE_SPI_TRANSACTION
 #ifdef SDCARD_SPI_INSTANCE
     if (spi->dev == SDCARD_SPI_INSTANCE) {

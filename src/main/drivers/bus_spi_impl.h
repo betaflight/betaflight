@@ -20,6 +20,9 @@
 
 #pragma once
 
+#include "FreeRTOS.h"
+#include "semphr.h"
+
 #if defined(STM32F1) || defined(STM32F3) || defined(STM32F4)
 #define MAX_SPI_PIN_SEL 2
 #else
@@ -73,6 +76,7 @@ typedef struct SPIDevice_s {
 #ifdef USE_SPI_TRANSACTION
     uint16_t cr1SoftCopy;   // Copy of active CR1 value for this SPI instance
 #endif
+    SemaphoreHandle_t mutexBus;
 } spiDevice_t;
 
 extern spiDevice_t spiDevice[SPIDEV_COUNT];

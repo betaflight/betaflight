@@ -60,10 +60,14 @@ SPIDevice spiDeviceByInstance(SPI_TypeDef *instance)
     return SPIINVALID;
 }
 
-SPI_TypeDef *spiInstanceByDevice(SPIDevice device)
+SPI_TypeDef *spiInstanceByDevice(SPIDevice device, SemaphoreHandle_t *mutexBus)
 {
     if (device == SPIINVALID || device >= SPIDEV_COUNT) {
         return NULL;
+    }
+
+    if (mutexBus) {
+    	*mutexBus = spiDevice[device].mutexBus;
     }
 
     return spiDevice[device].dev;
@@ -103,7 +107,22 @@ bool spiInit(SPIDevice device)
         break;
 #endif
     }
+
     return false;
+}
+
+void spiBusReserve(const busDevice_t *bus)
+{
+	pinioSet(3, 1);
+	xSemaphoreTakeRecursive(bus->mutexBus, portMAX_DELAY);
+    IOLo(bus->busdev_u.spi.csnPin);
+}
+
+void spiBusRelease(const busDevice_t *bus)
+{
+    IOHi(bus->busdev_u.spi.csnPin);
+	xSemaphoreGiveRecursive(bus->mutexBus);
+	pinioSet(3, 0);
 }
 
 uint32_t spiTimeoutUserCallback(SPI_TypeDef *instance)
@@ -118,9 +137,9 @@ uint32_t spiTimeoutUserCallback(SPI_TypeDef *instance)
 
 bool spiBusTransfer(const busDevice_t *bus, const uint8_t *txData, uint8_t *rxData, int length)
 {
-    IOLo(bus->busdev_u.spi.csnPin);
+	spiBusReserve(bus);
     spiTransfer(bus->busdev_u.spi.instance, txData, rxData, length);
-    IOHi(bus->busdev_u.spi.csnPin);
+	spiBusRelease(bus);
     return true;
 }
 
@@ -143,6 +162,7 @@ void spiResetErrorCounter(SPI_TypeDef *instance)
 
 bool spiBusIsBusBusy(const busDevice_t *bus)
 {
+	// Just a read access, so no need to take mutex
     return spiIsBusBusy(bus->busdev_u.spi.instance);
 }
 
@@ -153,9 +173,9 @@ uint8_t spiBusTransferByte(const busDevice_t *bus, uint8_t data)
 
 void spiBusWriteByte(const busDevice_t *bus, uint8_t data)
 {
-    IOLo(bus->busdev_u.spi.csnPin);
+	spiBusReserve(bus);
     spiBusTransferByte(bus, data);
-    IOHi(bus->busdev_u.spi.csnPin);
+	spiBusRelease(bus);
 }
 
 bool spiBusRawTransfer(const busDevice_t *bus, const uint8_t *txData, uint8_t *rxData, int len)
@@ -165,20 +185,20 @@ bool spiBusRawTransfer(const busDevice_t *bus, const uint8_t *txData, uint8_t *r
 
 bool spiBusWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data)
 {
-    IOLo(bus->busdev_u.spi.csnPin);
+	spiBusReserve(bus);
     spiTransferByte(bus->busdev_u.spi.instance, reg);
     spiTransferByte(bus->busdev_u.spi.instance, data);
-    IOHi(bus->busdev_u.spi.csnPin);
+	spiBusRelease(bus);
 
     return true;
 }
 
 bool spiBusRawReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t *data, uint8_t length)
 {
-    IOLo(bus->busdev_u.spi.csnPin);
+	spiBusReserve(bus);
     spiTransferByte(bus->busdev_u.spi.instance, reg);
     spiTransfer(bus->busdev_u.spi.instance, NULL, data, length);
-    IOHi(bus->busdev_u.spi.csnPin);
+	spiBusRelease(bus);
 
     return true;
 }
@@ -190,19 +210,19 @@ bool spiBusReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t *data
 
 void spiBusWriteRegisterBuffer(const busDevice_t *bus, uint8_t reg, const uint8_t *data, uint8_t length)
 {
-    IOLo(bus->busdev_u.spi.csnPin);
+	spiBusReserve(bus);
     spiTransferByte(bus->busdev_u.spi.instance, reg);
     spiTransfer(bus->busdev_u.spi.instance, data, NULL, length);
-    IOHi(bus->busdev_u.spi.csnPin);
+	spiBusRelease(bus);
 }
 
 uint8_t spiBusRawReadRegister(const busDevice_t *bus, uint8_t reg)
 {
     uint8_t data;
-    IOLo(bus->busdev_u.spi.csnPin);
+	spiBusReserve(bus);
     spiTransferByte(bus->busdev_u.spi.instance, reg);
     spiTransfer(bus->busdev_u.spi.instance, NULL, &data, 1);
-    IOHi(bus->busdev_u.spi.csnPin);
+	spiBusRelease(bus);
 
     return data;
 }
@@ -212,10 +232,11 @@ uint8_t spiBusReadRegister(const busDevice_t *bus, uint8_t reg)
     return spiBusRawReadRegister(bus, reg | 0x80);
 }
 
-void spiBusSetInstance(busDevice_t *bus, SPI_TypeDef *instance)
+void spiBusSetInstance(busDevice_t *bus, SPI_TypeDef *instance, SemaphoreHandle_t mutexBus)
 {
     bus->bustype = BUSTYPE_SPI;
     bus->busdev_u.spi.instance = instance;
+    bus->mutexBus = mutexBus;
 }
 
 void spiBusSetDivisor(busDevice_t *bus, uint16_t divisor)
@@ -230,12 +251,12 @@ void spiBusSetDivisor(busDevice_t *bus, uint16_t divisor)
 void spiBusTransactionBegin(const busDevice_t *bus)
 {
     spiBusTransactionSetup(bus);
-    IOLo(bus->busdev_u.spi.csnPin);
+	spiBusReserve(bus);
 }
 
 void spiBusTransactionEnd(const busDevice_t *bus)
 {
-    IOHi(bus->busdev_u.spi.csnPin);
+	spiBusRelease(bus);
 }
 
 bool spiBusTransactionTransfer(const busDevice_t *bus, const uint8_t *txData, uint8_t *rxData, int length)

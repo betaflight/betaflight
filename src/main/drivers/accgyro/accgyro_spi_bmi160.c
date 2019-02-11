@@ -273,9 +273,11 @@ bool bmi160AccRead(accDev_t *acc)
     uint8_t bmi160_rx_buf[BUFFER_SIZE];
     static const uint8_t bmi160_tx_buf[BUFFER_SIZE] = {BMI160_REG_ACC_DATA_X_LSB | 0x80, 0, 0, 0, 0, 0, 0};
 
+	xSemaphoreTake(acc->bus.mutexBus, portMAX_DELAY);
     IOLo(acc->bus.busdev_u.spi.csnPin);
     spiTransfer(acc->bus.busdev_u.spi.instance, bmi160_tx_buf, bmi160_rx_buf, BUFFER_SIZE);   // receive response
     IOHi(acc->bus.busdev_u.spi.csnPin);
+    xSemaphoreGive(acc->bus.mutexBus);
 
     acc->ADCRaw[X] = (int16_t)((bmi160_rx_buf[IDX_ACCEL_XOUT_H] << 8) | bmi160_rx_buf[IDX_ACCEL_XOUT_L]);
     acc->ADCRaw[Y] = (int16_t)((bmi160_rx_buf[IDX_ACCEL_YOUT_H] << 8) | bmi160_rx_buf[IDX_ACCEL_YOUT_L]);
@@ -301,9 +303,12 @@ bool bmi160GyroRead(gyroDev_t *gyro)
     uint8_t bmi160_rx_buf[BUFFER_SIZE];
     static const uint8_t bmi160_tx_buf[BUFFER_SIZE] = {BMI160_REG_GYR_DATA_X_LSB | 0x80, 0, 0, 0, 0, 0, 0};
 
+    spiBusReserve(bus);
     IOLo(gyro->bus.busdev_u.spi.csnPin);
     spiTransfer(gyro->bus.busdev_u.spi.instance, bmi160_tx_buf, bmi160_rx_buf, BUFFER_SIZE);   // receive response
     IOHi(gyro->bus.busdev_u.spi.csnPin);
+    IOHi(acc->bus.busdev_u.spi.csnPin);
+    spiBusRelease(bus);
 
     gyro->gyroADCRaw[X] = (int16_t)((bmi160_rx_buf[IDX_GYRO_XOUT_H] << 8) | bmi160_rx_buf[IDX_GYRO_XOUT_L]);
     gyro->gyroADCRaw[Y] = (int16_t)((bmi160_rx_buf[IDX_GYRO_YOUT_H] << 8) | bmi160_rx_buf[IDX_GYRO_YOUT_L]);
