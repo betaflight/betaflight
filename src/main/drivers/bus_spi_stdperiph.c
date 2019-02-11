@@ -34,6 +34,9 @@
 #include "drivers/io.h"
 #include "drivers/rcc.h"
 
+#include "FreeRTOS.h"
+#include "semphr.h"
+
 static SPI_InitTypeDef defaultInit = {
     .SPI_Mode = SPI_Mode_Master,
     .SPI_Direction = SPI_Direction_2Lines_FullDuplex,

@@ -50,7 +50,7 @@
 #include "drivers/accgyro/accgyro_spi_mpu9250.h"
 #include "drivers/compass/compass_ak8963.h"
 
-#include "scheduler/scheduler.h"
+#include "fc/tasks.h"
 
 // This sensor is also available also part of the MPU-9250 connected to the secondary I2C bus.
 
@@ -390,7 +390,7 @@ void ak8963BusInit(busDevice_t *busdev)
 
 #if defined(USE_MAG_AK8963) && (defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250))
     case BUSTYPE_MPU_SLAVE:
-        rescheduleTask(TASK_COMPASS, TASK_PERIOD_HZ(40));
+        fcTaskReschedule(TASK_COMPASS, TASK_PERIOD_HZ(40));
 
         // initialze I2C master via SPI bus
         ak8963SpiWriteRegisterDelay(busdev->busdev_u.mpuSlave.master, MPU_RA_INT_PIN_CFG, MPU6500_BIT_INT_ANYRD_2CLEAR | MPU6500_BIT_BYPASS_EN);

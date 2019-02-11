@@ -63,12 +63,13 @@ bool flashInit(const flashConfig_t *flashConfig)
 
     busdev->bustype = BUSTYPE_SPI;
 
-    SPI_TypeDef *instance = spiInstanceByDevice(SPI_CFG_TO_DEV(flashConfig->spiDevice));
+	SemaphoreHandle_t mutexBus;
+    SPI_TypeDef *instance = spiInstanceByDevice(SPI_CFG_TO_DEV(flashConfig->spiDevice), &mutexBus);
     if (!instance) {
         return false;
     }
 
-    spiBusSetInstance(busdev, instance);
+    spiBusSetInstance(busdev, instance, mutexBus);
 
     IOInit(busdev->busdev_u.spi.csnPin, OWNER_FLASH_CS, 0);
     IOConfigGPIO(busdev->busdev_u.spi.csnPin, SPI_IO_CS_CFG);

@@ -54,13 +54,14 @@ void rxSpiDevicePreInit(const rxSpiConfig_t *rxSpiConfig)
 
 bool rxSpiDeviceInit(const rxSpiConfig_t *rxSpiConfig)
 {
-    SPI_TypeDef *instance = spiInstanceByDevice(SPI_CFG_TO_DEV(rxSpiConfig->spibus));
+	SemaphoreHandle_t mutexBus;
+	SPI_TypeDef *instance = spiInstanceByDevice(SPI_CFG_TO_DEV(rxSpiConfig->spibus), &mutexBus);
 
     if (!instance) {
         return false;
     }
 
-    spiBusSetInstance(busdev, instance);
+    spiBusSetInstance(busdev, instance, mutexBus);
 
     const IO_t rxCsPin = IOGetByTag(rxSpiConfig->csnTag);
     IOInit(rxCsPin, OWNER_RX_SPI_CS, 0);

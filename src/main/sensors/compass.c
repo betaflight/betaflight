@@ -137,13 +137,14 @@ bool compassDetect(magDev_t *dev)
 #ifdef USE_SPI
     case BUSTYPE_SPI:
         {
-            SPI_TypeDef *instance = spiInstanceByDevice(SPI_CFG_TO_DEV(compassConfig()->mag_spi_device));
+        	SemaphoreHandle_t mutexBus;
+            SPI_TypeDef *instance = spiInstanceByDevice(SPI_CFG_TO_DEV(compassConfig()->mag_spi_device), &mutexBus);
             if (!instance) {
                 return false;
             }
       
             busdev->bustype = BUSTYPE_SPI;
-            spiBusSetInstance(busdev, instance);
+            spiBusSetInstance(busdev, instance, mutexBus);
             busdev->busdev_u.spi.csnPin = IOGetByTag(compassConfig()->mag_spi_csn);
         }
         break;
