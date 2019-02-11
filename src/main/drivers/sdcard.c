@@ -40,8 +40,6 @@
 #include "sdcard_impl.h"
 #include "sdcard_standard.h"
 
-#include "FreeRTOS.h"
-
 #ifdef AFATFS_USE_INTROSPECTIVE_LOGGING
     #define SDCARD_PROFILING
 #endif

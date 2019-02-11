@@ -63,10 +63,10 @@ void resetArmingDisabled(void);
 void disarm(void);
 void tryArm(void);
 
-bool processRx();
+bool processRx(timeUs_t currentTimeUs);
 void updateArmingStatus(void);
 
-void FAST_CODE FAST_CODE_NOINLINE taskMainPidLoop( void *pvParameters );
+void taskMainPidLoop( void *pvParameters );
 
 bool isFlipOverAfterCrashActive(void);
 int8_t calculateThrottlePercent(void);
@@ -77,6 +77,6 @@ timeUs_t getLastDisarmTimeUs(void);
 bool isTryingToArm();
 void resetTryingToArm();
 
-void subTaskTelemetryPollSensors();
+void subTaskTelemetryPollSensors(timeUs_t currentTimeUs);
 
 bool isLaunchControlActive(void);

@@ -63,7 +63,7 @@ bool flashInit(const flashConfig_t *flashConfig)
 
     busdev->bustype = BUSTYPE_SPI;
 
-	SemaphoreHandle_t mutexBus;
+    SemaphoreHandle_t mutexBus;
     SPI_TypeDef *instance = spiInstanceByDevice(SPI_CFG_TO_DEV(flashConfig->spiDevice), &mutexBus);
     if (!instance) {
         return false;

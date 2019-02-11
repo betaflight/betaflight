@@ -23,6 +23,6 @@
 #include "common/time.h"
 
 bool isAltitudeOffset(void);
-void calculateEstimatedAltitude();
+void calculateEstimatedAltitude(timeUs_t currentTimeUs);
 int32_t getEstimatedAltitudeCm(void);
 int16_t getEstimatedVario(void);

@@ -96,7 +96,6 @@ extern uint8_t __config_end;
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
-#include "fc/tasks.h"
 
 #include "flight/failsafe.h"
 #include "flight/imu.h"
@@ -145,6 +144,8 @@ extern uint8_t __config_end;
 #include "rx/rx.h"
 #include "rx/spektrum.h"
 #include "rx/rx_spi_common.h"
+
+#include "scheduler/scheduler.h"
 
 #include "sensors/acceleration.h"
 #include "sensors/adcinternal.h"
@@ -3754,10 +3755,11 @@ static void cliStatus(char *cmdline)
 
     // Run status
 
-    const int gyroRate = fcTaskGetPeriod(TASK_GYROPID) == 0 ? 0 : (int)(1000000.0f / ((float)fcTaskGetPeriod(TASK_GYROPID)));
+    const int gyroRate = 0 /* getTaskDeltaTime(TASK_GYROPID) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_GYROPID))) */;
     const int rxRate = currentRxRefreshRate == 0 ? 0 : (int)(1000000.0f / ((float)currentRxRefreshRate));
-    cliPrintLinef("CPU:%d%%, cycle time: %d, GYRO rate: %d, RX rate: %d",
-            0, fcTaskGetPeriod(TASK_GYROPID), gyroRate, rxRate);
+    const int systemRate = getTaskDeltaTime(TASK_SYSTEM) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_SYSTEM)));
+    cliPrintLinef("CPU:%d%%, cycle time: %d, GYRO rate: %d, RX rate: %d, System rate: %d",
+            constrain(averageSystemLoadPercent, 0, 100), 0 /* getTaskDeltaTime(TASK_GYROPID) */, gyroRate, rxRate, systemRate);
 
     // Battery meter
 
@@ -3845,10 +3847,69 @@ static void cliTasks(char *cmdline)
 					  taskStatus[task].uxBasePriority,
 					  taskStatus[task].usStackHighWaterMark);
     }
-    cliPrintLinef("Total run-time %d", ulTotalRunTime);
 
-#if configGENERATE_RUN_TIME_STATS
-#endif // configGENERATE_RUN_TIME_STATS
+    cliPrintLine("");
+
+    int maxLoadSum = 0;
+    int averageLoadSum = 0;
+
+#ifndef MINIMAL_CLI
+    if (systemConfig()->task_statistics) {
+        cliPrintLine("Task list             rate/hz  max/us  avg/us maxload avgload     total/ms");
+    } else {
+        cliPrintLine("Task list");
+    }
+#endif
+    for (cfTaskId_e taskId = 0; taskId < TASK_COUNT; taskId++) {
+        cfTaskInfo_t taskInfo;
+        getTaskInfo(taskId, &taskInfo);
+        if (taskInfo.isEnabled) {
+            int taskFrequency;
+            int subTaskFrequency = 0;
+#if 0
+            if (taskId == TASK_GYROPID) {
+                subTaskFrequency = taskInfo.movingAverageCycleTime == 0.0f ? 0.0f : (int)(1000000.0f / (taskInfo.movingAverageCycleTime));
+                taskFrequency = subTaskFrequency / pidConfig()->pid_process_denom;
+                if (pidConfig()->pid_process_denom > 1) {
+                    cliPrintf("%02d - (%15s) ", taskId, taskInfo.taskName);
+                } else {
+                    taskFrequency = subTaskFrequency;
+                    cliPrintf("%02d - (%11s/%3s) ", taskId, taskInfo.subTaskName, taskInfo.taskName);
+                }
+            }
+            else
+#endif
+            {
+                taskFrequency = taskInfo.averageDeltaTime == 0 ? 0 : (int)(1000000.0f / ((float)taskInfo.averageDeltaTime));
+                cliPrintf("%02d - (%15s) ", taskId, taskInfo.taskName);
+            }
+            const int maxLoad = taskInfo.maxExecutionTime == 0 ? 0 :(taskInfo.maxExecutionTime * taskFrequency + 5000) / 1000;
+            const int averageLoad = taskInfo.averageExecutionTime == 0 ? 0 : (taskInfo.averageExecutionTime * taskFrequency + 5000) / 1000;
+            if (taskId != TASK_SERIAL) {
+                maxLoadSum += maxLoad;
+                averageLoadSum += averageLoad;
+            }
+            if (systemConfig()->task_statistics) {
+                cliPrintLinef("%6d %7d %7d %4d.%1d%% %4d.%1d%% %9d",
+                        taskFrequency, taskInfo.maxExecutionTime, taskInfo.averageExecutionTime,
+                        maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10, taskInfo.totalExecutionTime / 1000);
+            } else {
+                cliPrintLinef("%6d", taskFrequency);
+            }
+#if 0
+            if (taskId == TASK_GYROPID && pidConfig()->pid_process_denom > 1) {
+                cliPrintLinef("   - (%15s) %6d", taskInfo.subTaskName, subTaskFrequency);
+            }
+#endif
+            schedulerResetTaskMaxExecutionTime(taskId);
+        }
+    }
+    if (systemConfig()->task_statistics) {
+        cfCheckFuncInfo_t checkFuncInfo;
+        getCheckFuncInfo(&checkFuncInfo);
+        cliPrintLinef("RX Check Function %19d %7d %25d", checkFuncInfo.maxExecutionTime, checkFuncInfo.averageExecutionTime, checkFuncInfo.totalExecutionTime / 1000);
+        cliPrintLinef("Total (excluding SERIAL) %25d.%1d%% %4d.%1d%%", maxLoadSum/10, maxLoadSum%10, averageLoadSum/10, averageLoadSum%10);
+    }
 }
 #endif
 

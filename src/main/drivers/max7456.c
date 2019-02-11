@@ -438,7 +438,7 @@ bool max7456Init(const max7456Config_t *max7456Config, const vcdProfile_t *pVcdP
     IOConfigGPIO(busdev->busdev_u.spi.csnPin, SPI_IO_CS_CFG);
     IOHi(busdev->busdev_u.spi.csnPin);
 
-	SemaphoreHandle_t mutexBus;
+    SemaphoreHandle_t mutexBus;
     SPI_TypeDef *instance = spiInstanceByDevice(SPI_CFG_TO_DEV(max7456Config->spiDevice), &mutexBus);
     if (!instance) {
         return false;

@@ -93,7 +93,7 @@ void telemetryInit(void);
 bool telemetryCheckRxPortShared(const serialPortConfig_t *portConfig);
 
 void telemetryCheckState(void);
-void telemetryProcess();
+void telemetryProcess(uint32_t currentTime);
 
 bool telemetryDetermineEnabledState(portSharing_e portSharing);
 

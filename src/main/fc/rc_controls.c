@@ -47,7 +47,6 @@
 #include "fc/rc_controls.h"
 #include "fc/rc.h"
 #include "fc/runtime_config.h"
-#include "fc/tasks.h"
 
 #include "io/gps.h"
 #include "io/beeper.h"
@@ -62,6 +61,7 @@
 #include "sensors/acceleration.h"
 
 #include "rx/rx.h"
+#include "scheduler/scheduler.h"
 
 #include "flight/pid.h"
 #include "flight/failsafe.h"
@@ -161,8 +161,8 @@ void processRcStickPositions()
         }
     }
     if (stTmp == rcSticks) {
-        if (rcDelayMs <= INT16_MAX - fcTaskGetPeriod(TASK_RX)) {
-            rcDelayMs += fcTaskGetPeriod(TASK_RX);
+        if (rcDelayMs <= INT16_MAX - (getTaskDeltaTime(TASK_SELF) / 1000)) {
+            rcDelayMs += getTaskDeltaTime(TASK_SELF) / 1000;
         }
     } else {
         rcDelayMs = 0;

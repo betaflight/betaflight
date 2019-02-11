@@ -63,7 +63,6 @@
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
-#include "fc/tasks.h"
 
 #include "msp/msp_serial.h"
 
@@ -80,6 +79,8 @@
 #include "io/vtx_rtc6705.h"
 
 #include "rx/rx.h"
+
+#include "scheduler/scheduler.h"
 
 #include "telemetry/telemetry.h"
 
@@ -256,7 +257,7 @@ void updateArmingStatus(void)
             unsetArmingDisabled(ARMING_DISABLED_ANGLE);
         }
 
-        if (0 > 100) { // TODO Add FreeRTOS system load check here
+        if (averageSystemLoadPercent > 100) {
             setArmingDisabled(ARMING_DISABLED_LOAD);
         } else {
             unsetArmingDisabled(ARMING_DISABLED_LOAD);
@@ -877,10 +878,10 @@ bool processRx(timeUs_t currentTimeUs)
     if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
         LED1_ON;
         // increase frequency of attitude task to reduce drift when in angle or horizon mode
-        fcTaskReschedule(TASK_ATTITUDE, TASK_PERIOD_HZ(500));
+        rescheduleTask(TASK_ATTITUDE, TASK_PERIOD_HZ(500));
     } else {
         LED1_OFF;
-        fcTaskReschedule(TASK_ATTITUDE, TASK_PERIOD_HZ(100));
+        rescheduleTask(TASK_ATTITUDE, TASK_PERIOD_HZ(100));
     }
 
     if (!IS_RC_MODE_ACTIVE(BOXPREARM) && ARMING_FLAG(WAS_ARMED_WITH_PREARM)) {
@@ -1107,7 +1108,7 @@ static FAST_CODE_NOINLINE void subTaskRcCommand(timeUs_t currentTimeUs)
 // Function for loop trigger
 void FAST_CODE FAST_CODE_NOINLINE taskMainPidLoop( void *pvParameters )
 {
-	UNUSED(pvParameters);
+    UNUSED(pvParameters);
     static uint32_t pidUpdateCounter = 0;
 
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_GYROPID_SYNC)
@@ -1117,30 +1118,29 @@ void FAST_CODE FAST_CODE_NOINLINE taskMainPidLoop( void *pvParameters )
     while (true) {
     	timeUs_t currentTimeUs = micros();
     	uint8_t pid_process_denom = pidConfig()->pid_process_denom;
-		// DEBUG_PIDLOOP, timings for:
-		// 0 - gyroUpdate()
-		// 1 - subTaskPidController()
-		// 2 - subTaskMotorUpdate()
-		// 3 - subTaskPidSubprocesses()
-        // Wait for the gyro interrupt
-		gyroUpdate(currentTimeUs);
-		DEBUG_SET(DEBUG_PIDLOOP, 0, micros() - currentTimeUs);
+	// DEBUG_PIDLOOP, timings for:
+	// 0 - gyroUpdate()
+	// 1 - subTaskPidController()
+        // 2 - subTaskMotorUpdate()
+	// 3 - subTaskPidSubprocesses()
+	gyroUpdate(currentTimeUs);
+	DEBUG_SET(DEBUG_PIDLOOP, 0, micros() - currentTimeUs);
 
-		if (pidUpdateCounter % pid_process_denom == 0) {
-			subTaskRcCommand(currentTimeUs);
-			subTaskPidController(currentTimeUs);
-			subTaskMotorUpdate(currentTimeUs);
-			subTaskPidSubprocesses(currentTimeUs);
-		}
+	if (pidUpdateCounter % pid_process_denom == 0) {
+		subTaskRcCommand(currentTimeUs);
+		subTaskPidController(currentTimeUs);
+		subTaskMotorUpdate(currentTimeUs);
+		subTaskPidSubprocesses(currentTimeUs);
+	}
 
-		if ((pid_process_denom == 1) || (pidUpdateCounter % pid_process_denom == 1)) {
-			/* Perform accelerometer access in the same thread as the gyro to avoid SPI
-			 * bus contention. Whilst the SPI bus could be protected with a mutex this
-			 * could still result in the gyro access stalling, resuling in jitter
-			 */
-			accUpdate(&accelerometerConfigMutable()->accelerometerTrims);
-		}
-		pidUpdateCounter++;
+	if ((pid_process_denom == 1) || (pidUpdateCounter % pid_process_denom == 1)) {
+		/* Perform accelerometer access in the same thread as the gyro to avoid SPI
+		 * bus contention. Whilst the SPI bus could be protected with a mutex this
+		 * could still result in the gyro access stalling, resuling in jitter
+		 */
+		accUpdate(&accelerometerConfigMutable()->accelerometerTrims);
+	}
+	pidUpdateCounter++;
     }
 }
 

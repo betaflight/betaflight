@@ -59,6 +59,7 @@ COMMON_SRC = \
             msp/msp.c \
             msp/msp_box.c \
             msp/msp_serial.c \
+            scheduler/scheduler.c \
             sensors/adcinternal.c \
             sensors/battery.c \
             sensors/current.c \
@@ -237,6 +238,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             rx/sumd.c \
             rx/xbus.c \
             rx/fport.c \
+            scheduler/scheduler.c \
             sensors/acceleration.c \
             sensors/boardalignment.c \
             sensors/gyro.c \

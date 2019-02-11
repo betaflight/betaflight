@@ -65,7 +65,6 @@
 
 #include "fc/config.h"
 #include "fc/runtime_config.h"
-#include "fc/tasks.h"
 
 #include "io/beeper.h"
 #include "io/statusindicator.h"
@@ -77,6 +76,8 @@
 #endif
 #include "sensors/rpm_filter.h"
 #include "sensors/sensors.h"
+
+#include "scheduler/scheduler.h"
 
 #if ((FLASH_SIZE > 128) && (defined(USE_GYRO_SPI_ICM20601) || defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_SPI_MPU6500)))
 #define USE_GYRO_SLEW_LIMITER

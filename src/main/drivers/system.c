@@ -57,22 +57,6 @@ void cycleCounterInit(void)
 
 static volatile int sysTickPending = 0;
 
-#if 0
-void SysTick_Handler(void)
-{
-    ATOMIC_BLOCK(NVIC_PRIO_MAX) {
-        sysTickUptime++;
-        sysTickValStamp = SysTick->VAL;
-        sysTickPending = 0;
-        (void)(SysTick->CTRL);
-    }
-#ifdef USE_HAL_DRIVER
-    // used by the HAL for some timekeeping and timeouts, should always be 1ms
-    HAL_IncTick();
-#endif
-}
-#endif
-
 // Return system uptime in microseconds (rollover in 70minutes)
 
 uint32_t microsISR(void)
@@ -104,7 +88,7 @@ uint32_t microsISR(void)
 
 uint32_t micros(void)
 {
-        return (xTaskGetTickCount() * portTICK_PERIOD_MS * 1000);
+	return (xTaskGetTickCount() * portTICK_PERIOD_MS * 1000);
 }
 
 // Return system uptime in milliseconds (rollover in 49 days)
@@ -116,7 +100,8 @@ uint32_t millis(void)
 #if 1
 void delayMicroseconds(uint32_t us)
 {
-	vTaskDelay(us / (1000 * portTICK_PERIOD_MS));
+    uint32_t now = micros();
+    while (micros() - now < us);
 }
 #else
 void delayMicroseconds(uint32_t us)

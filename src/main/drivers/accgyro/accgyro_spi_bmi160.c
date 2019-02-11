@@ -49,6 +49,8 @@
 #include "accgyro.h"
 #include "accgyro_spi_bmi160.h"
 
+#include "FreeRTOS.h"
+#include "semphr.h"
 
 /* BMI160 Registers */
 #define BMI160_REG_CHIPID 0x00
@@ -273,7 +275,7 @@ bool bmi160AccRead(accDev_t *acc)
     uint8_t bmi160_rx_buf[BUFFER_SIZE];
     static const uint8_t bmi160_tx_buf[BUFFER_SIZE] = {BMI160_REG_ACC_DATA_X_LSB | 0x80, 0, 0, 0, 0, 0, 0};
 
-	xSemaphoreTake(acc->bus.mutexBus, portMAX_DELAY);
+    xSemaphoreTake(acc->bus.mutexBus, portMAX_DELAY);
     IOLo(acc->bus.busdev_u.spi.csnPin);
     spiTransfer(acc->bus.busdev_u.spi.instance, bmi160_tx_buf, bmi160_rx_buf, BUFFER_SIZE);   // receive response
     IOHi(acc->bus.busdev_u.spi.csnPin);

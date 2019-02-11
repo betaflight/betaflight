@@ -46,11 +46,12 @@
 
 #include "fc/config.h"
 #include "fc/runtime_config.h"
-#include "fc/tasks.h"
 
 #include "sensors/sensors.h"
 #include "sensors/rangefinder.h"
 #include "sensors/battery.h"
+
+#include "scheduler/scheduler.h"
 
 //#include "uav_interconnect/uav_interconnect.h"
 

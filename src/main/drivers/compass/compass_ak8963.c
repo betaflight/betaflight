@@ -50,7 +50,7 @@
 #include "drivers/accgyro/accgyro_spi_mpu9250.h"
 #include "drivers/compass/compass_ak8963.h"
 
-#include "fc/tasks.h"
+#include "scheduler/scheduler.h"
 
 // This sensor is also available also part of the MPU-9250 connected to the secondary I2C bus.
 

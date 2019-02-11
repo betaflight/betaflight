@@ -127,8 +127,8 @@ bool ms5611Detect(baroDev_t *baro)
     }
 
     // TODO prom + CRC
-    baro->ut_delay = 10;
-    baro->up_delay = 10;
+    baro->ut_delay = 10000;
+    baro->up_delay = 10000;
     baro->start_ut = ms5611_start_ut;
     baro->get_ut = ms5611_get_ut;
     baro->start_up = ms5611_start_up;
@@ -151,7 +151,7 @@ static void ms5611_reset(busDevice_t *busdev)
 {
     busWriteRegister(busdev, CMD_RESET, 1);
 
-    delayMicroseconds(10000);
+    delayMicroseconds(2800);
 }
 
 static uint16_t ms5611_prom(busDevice_t *busdev, int8_t coef_num)

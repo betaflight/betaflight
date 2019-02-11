@@ -42,17 +42,6 @@ void NMI_Handler(void)
 {
 }
 
-#if 0
-/**
-  * @brief  This function handles SVCall exception.
-  * @param  None
-  * @retval None
-  */
-void SVC_Handler(void)
-{
-}
-#endif
-
 /**
   * @brief  This function handles Debug Monitor exception.
   * @param  None
@@ -61,17 +50,6 @@ void SVC_Handler(void)
 void DebugMon_Handler(void)
 {
 }
-
-#if 0
-/**
-  * @brief  This function handles PendSVC exception.
-  * @param  None
-  * @retval None
-  */
-void PendSV_Handler(void)
-{
-}
-#endif
 
 /******************************************************************************/
 /*                 STM32F4xx Peripherals Interrupt Handlers                   */

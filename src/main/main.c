@@ -24,7 +24,8 @@
 #include "platform.h"
 
 #include "fc/init.h"
-#include "fc/tasks.h"
+
+#include "scheduler/scheduler.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -38,7 +39,7 @@ int main(void)
 	/* Ensure all priority bits are assigned as preemption priority bits. */
 	NVIC_SetPriorityGrouping( 0 );
 
-	xTaskCreate( run, "run", 128, NULL, tskIDLE_PRIORITY, NULL );
+	xTaskCreate( run, "run", 256, NULL, tskIDLE_PRIORITY + TASK_PRIORITY_MEDIUM, NULL );
 
 	/* Start the RTOS scheduler, this function should not return as it causes the
      * execution context to change from main() to one of the created tasks.
@@ -55,9 +56,8 @@ void FAST_CODE FAST_CODE_NOINLINE run( void *pvParameters )
 
 	init();
 
-	tasksLaunch();
-
     while (true) {
+        scheduler();
         processLoopback();
 
 #ifdef SIMULATOR_BUILD

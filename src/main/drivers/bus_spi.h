@@ -28,9 +28,6 @@
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
-#include "FreeRTOS.h"
-#include "semphr.h"
-
 #if defined(STM32F4) || defined(STM32F3)
 #define SPI_IO_AF_CFG           IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
 #define SPI_IO_AF_SCK_CFG       IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_DOWN)

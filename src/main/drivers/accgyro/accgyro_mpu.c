@@ -58,7 +58,7 @@
 #include "pg/pg.h"
 #include "pg/gyrodev.h"
 
-#include "fc/tasks.h"
+#include "scheduler/scheduler.h"
 
 #ifndef MPU_ADDRESS
 #define MPU_ADDRESS             0x68
@@ -120,9 +120,9 @@ static void mpuIntExtiHandler(extiCallbackRec_t *cb)
     gyro->dataReady = true;
 
 	// Trigger the gyro PID processing task to wake up in gyroUpdate()
-    if (cfTasks[TASK_GYROPID].taskId) {
+    if (gyroTaskId) {
     	pinioSet(1,1);
-    	vTaskNotifyGiveFromISR(cfTasks[TASK_GYROPID].taskId, &xHigherPriorityTaskWoken);
+    	vTaskNotifyGiveFromISR(gyroTaskId, &xHigherPriorityTaskWoken);
     }
 #ifdef DEBUG_MPU_DATA_READY_INTERRUPT
     const uint32_t now2Us = micros();
@@ -232,7 +232,7 @@ static gyroSpiDetectFn_t gyroSpiDetectFnTable[] = {
 
 static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro, const gyroDeviceConfig_t *config)
 {
-	SemaphoreHandle_t mutexBus;
+    SemaphoreHandle_t mutexBus;
     SPI_TypeDef *instance = spiInstanceByDevice(SPI_CFG_TO_DEV(config->spiBus), &mutexBus);
     if (!instance) {
         return false;

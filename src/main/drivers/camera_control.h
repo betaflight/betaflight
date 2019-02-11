@@ -55,5 +55,5 @@ PG_DECLARE(cameraControlConfig_t, cameraControlConfig);
 
 void cameraControlInit(void);
 
-void cameraControlProcess();
+void cameraControlProcess(uint32_t currentTimeUs);
 void cameraControlKeyPress(cameraControlKey_e key, uint32_t holdDurationMs);
