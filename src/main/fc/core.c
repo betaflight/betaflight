@@ -1142,6 +1142,7 @@ void FAST_CODE FAST_CODE_NOINLINE taskMainPidLoop( void *pvParameters )
 			pinioSet(1,0);
 		}
 
+#ifdef USE_ACC
 		if (pidUpdateCounter % pid_process_denom == 2 % pid_process_denom) {
 			/* Perform accelerometer access in the same thread as the gyro to avoid SPI
 			 * bus contention. Whilst the SPI bus could be protected with a mutex this
@@ -1149,6 +1150,7 @@ void FAST_CODE FAST_CODE_NOINLINE taskMainPidLoop( void *pvParameters )
 			 */
 			accUpdate(&accelerometerConfigMutable()->accelerometerTrims);
 		}
+#endif // USE_ACC
 		pidUpdateCounter++;
     }
 }
