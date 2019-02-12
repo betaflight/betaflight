@@ -145,10 +145,12 @@
 #define USE_SERIALRX_SPEKTRUM   // SRXL, DSM2 and DSMX protocol
 #define USE_SERIALRX_SUMD       // Graupner Hott protocol
 
-#if (FLASH_SIZE > 64)
-#define MAX_PROFILE_COUNT 3
+#if (FLASH_SIZE > 128)
+#define PID_PROFILE_COUNT 3
+#define CONTROL_RATE_PROFILE_COUNT  6
 #else
-#define MAX_PROFILE_COUNT 2
+#define PID_PROFILE_COUNT 2
+#define CONTROL_RATE_PROFILE_COUNT  3
 #endif
 
 #if (FLASH_SIZE > 64)
@@ -199,7 +201,7 @@
 #if ((FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 8))
 #define USE_LAUNCH_CONTROL
 #define USE_DYN_LPF
-#define USE_D_CUT
+#define USE_D_MIN
 #endif
 
 #if ((FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 7))
@@ -287,5 +289,6 @@
 #define USE_CMS_FAILSAFE_MENU
 #define USE_SMART_FEEDFORWARD
 #define USE_TELEMETRY_SENSORS_DISABLED_DETAILS
+#define USE_VTX_TABLE
 #endif
 

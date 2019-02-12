@@ -47,6 +47,11 @@ static boxBitmask_t stickyModesEverDisabled;
 
 static bool airmodeEnabled;
 
+static int activeMacCount = 0;
+static uint8_t activeMacArray[MAX_MODE_ACTIVATION_CONDITION_COUNT];
+static int activeLinkedMacCount = 0;
+static uint8_t activeLinkedMacArray[MAX_MODE_ACTIVATION_CONDITION_COUNT];
+
 PG_REGISTER_ARRAY(modeActivationCondition_t, MAX_MODE_ACTIVATION_CONDITION_COUNT, modeActivationConditions, PG_MODE_ACTIVATION_PROFILE, 2);
 
 bool IS_RC_MODE_ACTIVE(boxId_e boxId)
@@ -108,13 +113,8 @@ void updateActivatedModes(void)
     bitArraySet(&stickyModes, BOXPARALYZE);
 
     // determine which conditions set/clear the mode
-    for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
-        const modeActivationCondition_t *mac = modeActivationConditions(i);
-
-        // Skip linked macs for now to fully determine target states
-        if (mac->linkedTo) {
-            continue;
-        }
+    for (int i = 0; i < activeMacCount; i++) {
+        const modeActivationCondition_t *mac = modeActivationConditions(activeMacArray[i]);
 
         if (bitArrayGet(&stickyModes, mac->modeId)) {
             updateMasksForStickyModes(mac, &andMask, &newMask);
@@ -126,12 +126,8 @@ void updateActivatedModes(void)
     bitArrayXor(&newMask, sizeof(&newMask), &newMask, &andMask);
 
     // Update linked modes
-    for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
-        const modeActivationCondition_t *mac = modeActivationConditions(i);
-
-        if (!mac->linkedTo) {
-            continue;
-        }
+    for (int i = 0; i < activeLinkedMacCount; i++) {
+        const modeActivationCondition_t *mac = modeActivationConditions(activeLinkedMacArray[i]);
 
         bitArrayCopy(&newMask, mac->linkedTo, mac->modeId);
     }
@@ -174,6 +170,35 @@ void removeModeActivationCondition(const boxId_e modeId)
             } else {
                 memset(mac, 0, sizeof(modeActivationCondition_t));
             }
+        }
+    }
+}
+
+bool isModeActivationConditionConfigured(const modeActivationCondition_t *mac, const modeActivationCondition_t *emptyMac)
+{
+    if (memcmp(mac, emptyMac, sizeof(*emptyMac))) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+// Build the list of used modeActivationConditions indices
+// We can then use this to speed up processing by only evaluating used conditions
+void analyzeModeActivationConditions(void)
+{
+    modeActivationCondition_t emptyMac;
+    memset(&emptyMac, 0, sizeof(emptyMac));
+
+    activeMacCount = 0;
+    activeLinkedMacCount = 0;
+
+    for (uint8_t i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
+        const modeActivationCondition_t *mac = modeActivationConditions(i);
+        if (mac->linkedTo) {
+            activeLinkedMacArray[activeLinkedMacCount++] = i;
+        } else if (isModeActivationConditionConfigured(mac, &emptyMac)) {
+            activeMacArray[activeMacCount++] = i;
         }
     }
 }

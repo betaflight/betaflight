@@ -87,6 +87,7 @@ TEST_F(RcControlsModesTest, updateActivatedModesWithAllInputsAtMidde)
     }
 
     // when
+    analyzeModeActivationConditions();
     updateActivatedModes();
 
     // then
@@ -178,6 +179,7 @@ TEST_F(RcControlsModesTest, updateActivatedModesUsingValidAuxConfigurationAndRXV
     bitArraySet(&activeBoxIds, 5);
 
     // when
+    analyzeModeActivationConditions();
     updateActivatedModes();
 
     // then
@@ -707,7 +709,7 @@ void gyroStartCalibration(bool isFirstArmingCalibration)
 {
     UNUSED(isFirstArmingCalibration);
 }
-void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t*) {}
+void applyAccelerometerTrimsDelta(rollAndPitchTrims_t*) {}
 void handleInflightCalibrationStickPosition(void) {}
 bool featureIsEnabled(uint32_t) { return false;}
 bool sensors(uint32_t) { return false;}

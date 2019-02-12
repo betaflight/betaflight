@@ -20,6 +20,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -38,7 +39,6 @@
 #include "light_ws2811strip.h"
 
 static IO_t ws2811IO = IO_NONE;
-bool ws2811Initialised = false;
 #if defined(STM32F4)
 static DMA_Stream_TypeDef *dmaRef = NULL;
 #elif defined(STM32F3) || defined(STM32F1)
@@ -50,17 +50,34 @@ static TIM_TypeDef *timer = NULL;
 
 static void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
 {
+#if defined(USE_WS2811_SINGLE_COLOUR)
+    static uint32_t counter = 0;
+#endif
+
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
-        ws2811LedDataTransferInProgress = 0;
+#if defined(USE_WS2811_SINGLE_COLOUR)
+        counter++;
+        if (counter == WS2811_LED_STRIP_LENGTH) {
+            // Output low for 50us delay
+            memset(ledStripDMABuffer, 0, sizeof(ledStripDMABuffer));
+        } else if (counter == (WS2811_LED_STRIP_LENGTH + WS2811_DELAY_ITERATIONS)) {
+            counter = 0;
+            ws2811LedDataTransferInProgress = false;
+            DMA_Cmd(descriptor->ref, DISABLE);
+        }
+#else
+        ws2811LedDataTransferInProgress = false;
         DMA_Cmd(descriptor->ref, DISABLE);
+#endif
+
         DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
     }
 }
 
-void ws2811LedStripHardwareInit(ioTag_t ioTag)
+bool ws2811LedStripHardwareInit(ioTag_t ioTag)
 {
     if (!ioTag) {
-        return;
+        return false;
     }
 
     TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
@@ -71,7 +88,7 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
     timer = timerHardware->tim;
 
     if (timerHardware->dmaRef == NULL) {
-        return;
+        return false;
     }
 
     ws2811IO = IOGetByTag(ioTag);
@@ -162,23 +179,20 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
     DMA_InitStructure.DMA_Priority = DMA_Priority_High;
     DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
 #endif
-    DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
+    DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
 
     DMA_Init(dmaRef, &DMA_InitStructure);
     TIM_DMACmd(timer, timerDmaSource(timerHardware->channel), ENABLE);
     DMA_ITConfig(dmaRef, DMA_IT_TC, ENABLE);
-    ws2811Initialised = true;
+
+    return true;
 }
 
 void ws2811LedStripDMAEnable(void)
 {
-    if (!ws2811Initialised)
-        return;
-
     DMA_SetCurrDataCounter(dmaRef, WS2811_DMA_BUFFER_SIZE);  // load number of bytes to be transferred
     TIM_SetCounter(timer, 0);
     TIM_Cmd(timer, ENABLE);
     DMA_Cmd(dmaRef, ENABLE);
 }
-
 #endif

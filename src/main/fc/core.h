@@ -55,7 +55,6 @@ extern const char * const osdLaunchControlModeNames[LAUNCH_CONTROL_MODE_COUNT];
 PG_DECLARE(throttleCorrectionConfig_t, throttleCorrectionConfig);
 
 union rollAndPitchTrims_u;
-void applyAndSaveAccelerometerTrimsDelta(union rollAndPitchTrims_u *rollAndPitchTrimsDelta);
 void handleInflightCalibrationStickPosition(void);
 
 void resetArmingDisabled(void);

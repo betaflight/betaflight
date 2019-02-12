@@ -125,9 +125,11 @@ enum
     FSSP_DATAID_CELLS      = 0x0300 ,
     FSSP_DATAID_CELLS_LAST = 0x030F ,
     FSSP_DATAID_HEADING    = 0x0840 ,
+#if defined(USE_ACC)
     FSSP_DATAID_ACCX       = 0x0700 ,
     FSSP_DATAID_ACCY       = 0x0710 ,
     FSSP_DATAID_ACCZ       = 0x0720 ,
+#endif
     FSSP_DATAID_T1         = 0x0400 ,
     FSSP_DATAID_T11        = 0x0401 ,
     FSSP_DATAID_T2         = 0x0410 ,
@@ -357,10 +359,12 @@ static void initSmartPortSensors(void)
         }
     }
 
+    if (telemetryIsSensorEnabled(SENSOR_HEADING)) {
+        ADD_SENSOR(FSSP_DATAID_HEADING);
+    }
+
+#if defined(USE_ACC)
     if (sensors(SENSOR_ACC)) {
-        if (telemetryIsSensorEnabled(SENSOR_HEADING)) {
-            ADD_SENSOR(FSSP_DATAID_HEADING);
-        }
         if (telemetryIsSensorEnabled(SENSOR_ACC_X)) {
             ADD_SENSOR(FSSP_DATAID_ACCX);
         }
@@ -371,6 +375,7 @@ static void initSmartPortSensors(void)
             ADD_SENSOR(FSSP_DATAID_ACCZ);
         }
     }
+#endif
 
     if (sensors(SENSOR_BARO)) {
         if (telemetryIsSensorEnabled(SENSOR_ALTITUDE)) {
@@ -698,6 +703,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                 smartPortSendPackage(id, attitude.values.yaw * 10); // given in 10*deg, requested in 10000 = 100 deg
                 *clearToSend = false;
                 break;
+#if defined(USE_ACC)
             case FSSP_DATAID_ACCX       :
                 smartPortSendPackage(id, lrintf(100 * acc.accADC[X] * acc.dev.acc_1G_rec)); // Multiply by 100 to show as x.xx g on Taranis
                 *clearToSend = false;
@@ -710,6 +716,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                 smartPortSendPackage(id, lrintf(100 * acc.accADC[Z] * acc.dev.acc_1G_rec));
                 *clearToSend = false;
                 break;
+#endif
             case FSSP_DATAID_T1         :
                 // we send all the flags as decimal digits for easy reading
 

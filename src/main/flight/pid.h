@@ -160,14 +160,14 @@ typedef struct pidProfile_s {
     uint8_t use_integrated_yaw;             // Selects whether the yaw pidsum should integrated
     uint8_t integrated_yaw_relax;           // Specifies how much integrated yaw should be reduced to offset the drag based yaw component
     uint8_t thrustLinearization;            // Compensation factor for pid linearization
-    uint8_t dterm_cut_percent;              // Amount to cut D by with no gyro activity, zero disables, 20 means cut 20%, 50 means cut 50%
-    uint8_t dterm_cut_gain;                 // Gain factor for amount of gyro activity required to remove the dterm cut
-    uint8_t dterm_cut_range_hz;             // Biquad to prevent high frequency gyro noise from removing the dterm cut
-    uint8_t dterm_cut_lowpass_hz;           // First order lowpass to delay and smooth dterm cut factor
+    uint8_t d_min[XYZ_AXIS_COUNT];          // Minimum D value on each axis
+    uint8_t d_min_gain;                     // Gain factor for amount of gyro / setpoint activity required to boost D
+    uint8_t d_min_advance;                  // Percentage multiplier for setpoint input to boost algorithm
     uint8_t motor_output_limit;             // Upper limit of the motor output (percent)
+    int8_t auto_profile_cell_count;         // Cell count for this profile to be used with if auto PID profile switching is used
 } pidProfile_t;
 
-PG_DECLARE_ARRAY(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles);
+PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
 
 typedef struct pidConfig_s {
     uint8_t pid_process_denom;              // Processing denominator for PID controller vs gyro sampling rate
@@ -179,7 +179,7 @@ typedef struct pidConfig_s {
 PG_DECLARE(pidConfig_t, pidConfig);
 
 union rollAndPitchTrims_u;
-void pidController(const pidProfile_t *pidProfile, const union rollAndPitchTrims_u *angleTrim, timeUs_t currentTimeUs);
+void pidController(const pidProfile_t *pidProfile, timeUs_t currentTimeUs);
 
 typedef struct pidAxisData_s {
     float P;

@@ -98,7 +98,7 @@ typedef enum {
     DEBUG_RX_SPEKTRUM_SPI,
     DEBUG_DSHOT_RPM_TELEMETRY,
     DEBUG_RPM_FILTER,
-    DEBUG_D_CUT,
+    DEBUG_D_MIN,
     DEBUG_COUNT
 } debugType_e;
 

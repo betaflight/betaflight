@@ -73,7 +73,7 @@ extern "C" {
 TEST(LedStripTest, parseLedStripConfig)
 {
     // given
-    memset(&ledStripConfigMutable()->ledConfigs, 0, LED_MAX_STRIP_LENGTH);
+    memset(&ledStripStatusModeConfigMutable()->ledConfigs, 0, LED_MAX_STRIP_LENGTH);
 
     // and
     static const ledConfig_t expectedLedStripConfig[WS2811_LED_STRIP_LENGTH] = {
@@ -178,7 +178,7 @@ TEST(LedStripTest, parseLedStripConfig)
 #ifdef DEBUG_LEDSTRIP
         printf("iteration: %d\n", index);
 #endif
-        EXPECT_EQ(expectedLedStripConfig[index], ledStripConfig()->ledConfigs[index]);
+        EXPECT_EQ(expectedLedStripConfig[index], ledStripStatusModeConfig()->ledConfigs[index]);
     }
 
     // then
@@ -194,7 +194,7 @@ TEST(LedStripTest, parseLedStripConfig)
 TEST(LedStripTest, smallestGridWithCenter)
 {
     // given
-    memset(&ledStripConfigMutable()->ledConfigs, 0, LED_MAX_STRIP_LENGTH);
+    memset(&ledStripStatusModeConfigMutable()->ledConfigs, 0, LED_MAX_STRIP_LENGTH);
 
     // and
     static const ledConfig_t testLedConfigs[] = {
@@ -206,7 +206,7 @@ TEST(LedStripTest, smallestGridWithCenter)
         DEFINE_LED(0, 1, 0, LD(SOUTH) | LD(WEST), LF(FLIGHT_MODE), LO(WARNING), 0),
         DEFINE_LED(0, 2, 0, LD(SOUTH), LF(ARM_STATE), LO(INDICATOR), 0)
     };
-    memcpy(&ledStripConfigMutable()->ledConfigs, &testLedConfigs, sizeof(testLedConfigs));
+    memcpy(&ledStripStatusModeConfigMutable()->ledConfigs, &testLedConfigs, sizeof(testLedConfigs));
 
     // when
     reevaluateLedConfig();
@@ -222,7 +222,7 @@ TEST(LedStripTest, smallestGridWithCenter)
 TEST(LedStripTest, smallestGrid)
 {
     // given
-    memset(&ledStripConfigMutable()->ledConfigs, 0, LED_MAX_STRIP_LENGTH);
+    memset(&ledStripStatusModeConfigMutable()->ledConfigs, 0, LED_MAX_STRIP_LENGTH);
 
     // and
     static const ledConfig_t testLedConfigs[] = {
@@ -231,7 +231,7 @@ TEST(LedStripTest, smallestGrid)
         DEFINE_LED(0, 0, 0, LD(NORTH) | LD(WEST), LF(FLIGHT_MODE), LO(INDICATOR), 0),
         DEFINE_LED(0, 1, 0, LD(SOUTH) | LD(WEST), LF(FLIGHT_MODE), LO(INDICATOR), 0)
     };
-    memcpy(&ledStripConfigMutable()->ledConfigs, &testLedConfigs, sizeof(testLedConfigs));
+    memcpy(&ledStripStatusModeConfigMutable()->ledConfigs, &testLedConfigs, sizeof(testLedConfigs));
 
     // when
     reevaluateLedConfig();
@@ -253,7 +253,7 @@ extern hsvColor_t *colors;
 TEST(ColorTest, parseColor)
 {
     // given
-    memset(ledStripConfigMutable()->colors, 0, sizeof(hsvColor_t) * LED_CONFIGURABLE_COLOR_COUNT);
+    memset(ledStripStatusModeConfigMutable()->colors, 0, sizeof(hsvColor_t) * LED_CONFIGURABLE_COLOR_COUNT);
 
     // and
     const hsvColor_t expectedColors[TEST_COLOR_COUNT] = {
@@ -287,9 +287,9 @@ TEST(ColorTest, parseColor)
         printf("iteration: %d\n", index);
 #endif
 
-        EXPECT_EQ(expectedColors[index].h, ledStripConfig()->colors[index].h);
-        EXPECT_EQ(expectedColors[index].s, ledStripConfig()->colors[index].s);
-        EXPECT_EQ(expectedColors[index].v, ledStripConfig()->colors[index].v);
+        EXPECT_EQ(expectedColors[index].h, ledStripStatusModeConfig()->colors[index].h);
+        EXPECT_EQ(expectedColors[index].s, ledStripStatusModeConfig()->colors[index].s);
+        EXPECT_EQ(expectedColors[index].v, ledStripStatusModeConfig()->colors[index].v);
     }
 }
 
@@ -393,4 +393,5 @@ uint8_t getRssiPercent(void) { return 0; }
 
 bool isFlipOverAfterCrashActive(void) { return false; }
 
+void ws2811LedStripEnable(void) { }
 }

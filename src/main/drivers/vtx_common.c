@@ -153,6 +153,10 @@ const char *vtxCommonLookupChannelName(const vtxDevice_t *vtxDevice, int channel
     }
 }
 
+// XXX FIXME Size of a band in the frequency table is now fixed at
+// VTX_SETTINGS_MAX_CHANNEL (or VTX_TABLE_MAX_CHANNELS).
+// Size constant should be consolidated soon or later.
+
 //Converts frequency (in MHz) to band and channel values.
 bool vtxCommonLookupBandChan(const vtxDevice_t *vtxDevice, uint16_t freq, uint8_t *pBand, uint8_t *pChannel)
 {
@@ -161,7 +165,7 @@ bool vtxCommonLookupBandChan(const vtxDevice_t *vtxDevice, uint16_t freq, uint8_
         // get Raceband 7 instead of Fatshark 8.
         for (int band = vtxDevice->capability.bandCount - 1 ; band >= 0 ; band--) {
             for (int channel = 0 ; channel < vtxDevice->capability.channelCount ; channel++) {
-                if (vtxDevice->frequencyTable[band * vtxDevice->capability.channelCount + channel] == freq) {
+                if (vtxDevice->frequencyTable[band * VTX_SETTINGS_MAX_CHANNEL + channel] == freq) {
                     *pBand = band + 1;
                     *pChannel = channel + 1;
                     return true;
@@ -185,7 +189,7 @@ uint16_t vtxCommonLookupFrequency(const vtxDevice_t *vtxDevice, int band, int ch
     if (vtxDevice) {
         if (band > 0 && band <= vtxDevice->capability.bandCount &&
                               channel > 0 && channel <= vtxDevice->capability.channelCount) {
-            return vtxDevice->frequencyTable[(band - 1) * vtxDevice->capability.channelCount + (channel - 1)];
+            return vtxDevice->frequencyTable[(band - 1) * VTX_SETTINGS_MAX_CHANNEL + (channel - 1)];
         }
     }
 

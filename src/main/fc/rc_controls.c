@@ -30,41 +30,44 @@
 
 #include "build/build_config.h"
 
+#include "cms/cms.h"
+
 #include "common/axis.h"
 #include "common/maths.h"
 
 #include "config/feature.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
-#include "pg/rx.h"
-
-#include "cms/cms.h"
 
 #include "drivers/camera_control.h"
 
 #include "fc/config.h"
 #include "fc/core.h"
-#include "fc/rc_controls.h"
 #include "fc/rc.h"
 #include "fc/runtime_config.h"
 
-#include "io/gps.h"
-#include "io/beeper.h"
-#include "io/motors.h"
-#include "io/vtx_control.h"
-#include "io/dashboard.h"
-
-#include "sensors/barometer.h"
-#include "sensors/battery.h"
-#include "sensors/sensors.h"
-#include "sensors/gyro.h"
-#include "sensors/acceleration.h"
-
-#include "rx/rx.h"
-#include "scheduler/scheduler.h"
-
 #include "flight/pid.h"
 #include "flight/failsafe.h"
+
+#include "io/beeper.h"
+#include "io/dashboard.h"
+#include "io/gps.h"
+#include "io/motors.h"
+#include "io/vtx_control.h"
+
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+#include "pg/rx.h"
+
+#include "rx/rx.h"
+
+#include "scheduler/scheduler.h"
+
+#include "sensors/acceleration.h"
+#include "sensors/barometer.h"
+#include "sensors/battery.h"
+#include "sensors/gyro.h"
+#include "sensors/sensors.h"
+
+#include "rc_controls.h"
 
 // true if arming is done via the sticks (as opposed to a switch)
 static bool isUsingSticksToArm = true;
@@ -278,12 +281,13 @@ void processRcStickPositions()
         saveConfigAndNotify();
     }
 
+#ifdef USE_ACC
     if (rcSticks == THR_HI + YAW_LO + PIT_LO + ROL_CE) {
         // Calibrating Acc
         accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
         return;
     }
-
+#endif
 
     if (rcSticks == THR_HI + YAW_HI + PIT_LO + ROL_CE) {
         // Calibrating Mag
@@ -317,8 +321,13 @@ void processRcStickPositions()
             break;
         }
         if (shouldApplyRollAndPitchTrimDelta) {
-            applyAndSaveAccelerometerTrimsDelta(&accelerometerTrimsDelta);
+#if defined(USE_ACC)
+            applyAccelerometerTrimsDelta(&accelerometerTrimsDelta);
+#endif
+            saveConfigAndNotify();
+
             repeatAfter(STICK_AUTOREPEAT_MS);
+
             return;
         }
     } else {
@@ -392,5 +401,6 @@ int32_t getRcStickDeflection(int32_t axis, uint16_t midrc) {
 
 void rcControlsInit(void)
 {
+    analyzeModeActivationConditions();
     isUsingSticksToArm = !isModeActivationConditionPresent(BOXARM);
 }

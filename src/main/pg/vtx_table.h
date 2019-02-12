@@ -18,34 +18,26 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdbool.h>
+#pragma once
+
 #include <stdint.h>
+#include <stdbool.h>
 
-#include "platform.h"
+#include "pg/pg.h"
+#include "drivers/vtx_table.h"
 
-#include "drivers/bus.h"
-#include "drivers/bus_i2c.h"
-#include "drivers/bus_spi.h"
+typedef struct vtxTableConfig_s {
+    uint8_t  bands;
+    uint8_t  channels;
+    uint16_t frequency[VTX_TABLE_MAX_BANDS][VTX_TABLE_MAX_CHANNELS];
+    char     bandNames[VTX_TABLE_MAX_BANDS][VTX_TABLE_BAND_NAME_LENGTH + 1];
+    char     bandLetters[VTX_TABLE_MAX_BANDS];
+    char     channelNames[VTX_TABLE_MAX_CHANNELS][VTX_TABLE_CHANNEL_NAME_LENGTH + 1];
 
-#include "io/serial.h"
+    uint8_t  powerLevels;
+    uint16_t powerValues[VTX_TABLE_MAX_POWER_LEVELS];
+    char     powerLabels[VTX_TABLE_MAX_POWER_LEVELS][VTX_TABLE_POWER_LABEL_LENGTH + 1];
+} vtxTableConfig_t;
 
-#include "pg/bus_i2c.h"
-#include "pg/bus_spi.h"
-
-#include "sensors/initialisation.h"
-
-void targetBusInit(void)
-{
-#if defined(USE_SPI) && defined(USE_SPI_DEVICE_1)
-    spiPinConfigure(spiPinConfig(0));
-    sensorsPreInit();
-    spiPreinit();
-    spiInit(SPIDEV_1);
-#endif
-
-    if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
-        serialRemovePort(SERIAL_PORT_USART3);
-        i2cHardwareConfigure(i2cConfig(0));
-        i2cInit(I2C_DEVICE);
-    }
-}
+struct vtxTableConfig_s;
+PG_DECLARE(struct vtxTableConfig_s, vtxTableConfig);

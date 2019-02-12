@@ -125,8 +125,8 @@ uint8_t mscStart(void)
 
 bool mscCheckBoot(void)
 {
-    const uint32_t bootModeRequest = persistentObjectRead(PERSISTENT_OBJECT_BOOTMODE_REQUEST);
-    return bootModeRequest == MSC_REQUEST_COOKIE;
+    const uint32_t bootModeRequest = persistentObjectRead(PERSISTENT_OBJECT_RESET_REASON);
+    return bootModeRequest == RESET_MSC_REQUEST;
     // Note that we can't clear the persisent object after checking here. This is because
     // this function is called multiple times during initialization. So we clear on a reset
     // out of MSC mode.
@@ -162,7 +162,7 @@ void mscWaitForButton(void)
 
 void systemResetToMsc(int timezoneOffsetMinutes)
 {
-    persistentObjectWrite(PERSISTENT_OBJECT_BOOTMODE_REQUEST, MSC_REQUEST_COOKIE);
+    persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_MSC_REQUEST);
 
     __disable_irq();
 
@@ -177,7 +177,7 @@ void systemResetToMsc(int timezoneOffsetMinutes)
 
 void systemResetFromMsc(void)
 {
-    persistentObjectWrite(PERSISTENT_OBJECT_BOOTMODE_REQUEST, 0);
+    persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_NONE);
     __disable_irq();
     NVIC_SystemReset();
 }

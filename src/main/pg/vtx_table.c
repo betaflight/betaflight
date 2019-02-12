@@ -18,34 +18,36 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdbool.h>
-#include <stdint.h>
+#include <string.h>
+#include "common/printf.h"
 
 #include "platform.h"
 
-#include "drivers/bus.h"
-#include "drivers/bus_i2c.h"
-#include "drivers/bus_spi.h"
+#ifdef USE_VTX_TABLE
 
-#include "io/serial.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+#include "pg/vtx_table.h"
+#include "drivers/vtx_common.h"
+#include "drivers/vtx_table.h"
 
-#include "pg/bus_i2c.h"
-#include "pg/bus_spi.h"
+PG_REGISTER_WITH_RESET_FN(vtxTableConfig_t, vtxTableConfig, PG_VTX_TABLE_CONFIG, 0);
 
-#include "sensors/initialisation.h"
-
-void targetBusInit(void)
+void pgResetFn_vtxTableConfig(vtxTableConfig_t *config)
 {
-#if defined(USE_SPI) && defined(USE_SPI_DEVICE_1)
-    spiPinConfigure(spiPinConfig(0));
-    sensorsPreInit();
-    spiPreinit();
-    spiInit(SPIDEV_1);
-#endif
+    // Clear band names, letters and frequency values
 
-    if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
-        serialRemovePort(SERIAL_PORT_USART3);
-        i2cHardwareConfigure(i2cConfig(0));
-        i2cInit(I2C_DEVICE);
+    config->bands = 0;
+    config->channels = 0;
+
+    for (int band = 0; band < VTX_TABLE_MAX_BANDS; band++) {
+        vtxTableConfigClearBand(config, band);
     }
+
+    // Clear power values and labels
+
+    config->powerLevels = 0;
+    vtxTableConfigClearPowerValues(config, 0);
+    vtxTableConfigClearPowerLabels(config, 0);
 }
+#endif

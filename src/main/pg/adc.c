@@ -41,8 +41,10 @@ void pgResetFn_adcConfig(adcConfig_t *adcConfig)
 {
     adcConfig->device = ADC_DEV_TO_CFG(adcDeviceByInstance(ADC_INSTANCE));
     adcConfig->dmaopt[ADCDEV_1] = ADC1_DMA_OPT;
+#ifndef STM32F1
     adcConfig->dmaopt[ADCDEV_2] = ADC2_DMA_OPT;
     adcConfig->dmaopt[ADCDEV_3] = ADC3_DMA_OPT;
+#endif
 
 #ifdef VBAT_ADC_PIN
     adcConfig->vbat.enabled = true;

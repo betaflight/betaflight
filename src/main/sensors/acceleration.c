@@ -25,6 +25,8 @@
 
 #include "platform.h"
 
+#ifdef USE_ACC
+
 #include "build/debug.h"
 
 #include "common/axis.h"
@@ -33,9 +35,6 @@
 
 #include "config/config_reset.h"
 #include "config/feature.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
-#include "pg/gyrodev.h"
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/accgyro/accgyro_fake.h"
@@ -73,7 +72,10 @@
 
 #include "io/beeper.h"
 
-#include "sensors/acceleration.h"
+#include "pg/gyrodev.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+
 #include "sensors/boardalignment.h"
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
@@ -82,25 +84,9 @@
 #include "hardware_revision.h"
 #endif
 
+#include "acceleration.h"
 
 FAST_RAM_ZERO_INIT acc_t acc;                       // acc access functions
-
-static float accumulatedMeasurements[XYZ_AXIS_COUNT];
-static int accumulatedMeasurementCount;
-
-static uint16_t calibratingA = 0;      // the calibration is done is the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
-
-extern uint16_t InflightcalibratingA;
-extern bool AccInflightCalibrationMeasurementDone;
-extern bool AccInflightCalibrationSavetoEEProm;
-extern bool AccInflightCalibrationActive;
-
-static flightDynamicsTrims_t *accelerationTrims;
-
-static uint16_t accLpfCutHz = 0;
-static biquadFilter_t accFilter[XYZ_AXIS_COUNT];
-
-PG_REGISTER_WITH_RESET_FN(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 1);
 
 void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
 {
@@ -137,6 +123,23 @@ void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)
     resetRollAndPitchTrims(&instance->accelerometerTrims);
     resetFlightDynamicsTrims(&instance->accZero);
 }
+
+PG_REGISTER_WITH_RESET_FN(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 1);
+
+extern uint16_t InflightcalibratingA;
+extern bool AccInflightCalibrationMeasurementDone;
+extern bool AccInflightCalibrationSavetoEEProm;
+extern bool AccInflightCalibrationActive;
+
+static float accumulatedMeasurements[XYZ_AXIS_COUNT];
+static int accumulatedMeasurementCount;
+
+static uint16_t calibratingA = 0;      // the calibration is done is the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
+
+static flightDynamicsTrims_t *accelerationTrims;
+
+static uint16_t accLpfCutHz = 0;
+static biquadFilter_t accFilter[XYZ_AXIS_COUNT];
 
 bool accDetect(accDev_t *dev, accelerationSensor_e accHardwareToUse)
 {
@@ -340,11 +343,7 @@ bool accInit(uint32_t gyroSamplingInverval)
         break;
     case 1000:
     default:
-#ifdef STM32F10X
         acc.accSamplingInterval = 1000;
-#else
-        acc.accSamplingInterval = 1000;
-#endif
     }
     if (accLpfCutHz) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
@@ -534,3 +533,10 @@ void accInitFilters(void)
         }
     }
 }
+
+void applyAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsDelta)
+{
+    accelerometerConfigMutable()->accelerometerTrims.values.roll += rollAndPitchTrimsDelta->values.roll;
+    accelerometerConfigMutable()->accelerometerTrims.values.pitch += rollAndPitchTrimsDelta->values.pitch;
+}
+#endif

@@ -90,7 +90,6 @@ float accAverage[XYZ_AXIS_COUNT];
 
 uint32_t accTimeSum = 0;        // keep track for integration of acc
 int accSumCount = 0;
-float accVelScale;
 bool canUseGPSHeading = true;
 
 static float throttleAngleScale;
@@ -169,8 +168,6 @@ void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correctio
 
 void imuInit(void)
 {
-    accVelScale = 9.80665f * acc.dev.acc_1G_rec / 10000.0f;
-
 #ifdef USE_GPS
     canUseGPSHeading = true;
 #else
@@ -195,6 +192,7 @@ void imuResetAccelerationSum(void)
     accTimeSum = 0;
 }
 
+#if defined(USE_ACC)
 static float invSqrt(float x)
 {
     return 1.0f / sqrtf(x);
@@ -371,7 +369,7 @@ static bool imuIsAccelerometerHealthy(float *accAverage)
 //   - wait for a 250ms period of low gyro activity to ensure the craft is not moving
 //   - use a large dcmKpGain value for 500ms to allow the attitude estimate to quickly converge
 //   - reset the gain back to the standard setting
-float imuCalcKpGain(timeUs_t currentTimeUs, bool useAcc, float *gyroAverage)
+static float imuCalcKpGain(timeUs_t currentTimeUs, bool useAcc, float *gyroAverage)
 {
     static bool lastArmState = false;
     static timeUs_t gyroQuietPeriodTimeEnd = 0;
@@ -481,6 +479,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     UNUSED(canUseGPSHeading);
     UNUSED(courseOverGround);
     UNUSED(deltaT);
+    UNUSED(imuCalcKpGain);
 #else
 
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_IMU_SYNC)
@@ -489,6 +488,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 #endif
     float gyroAverage[XYZ_AXIS_COUNT];
     gyroGetAccumulationAverage(gyroAverage);
+
     if (accGetAccumulationAverage(accAverage)) {
         useAcc = imuIsAccelerometerHealthy(accAverage);
     }
@@ -503,7 +503,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 #endif
 }
 
-int calculateThrottleAngleCorrection(void)
+static int calculateThrottleAngleCorrection(void)
 {
     /*
     * Use 0 as the throttle angle correction if we are inverted, vertical or with a
@@ -546,6 +546,7 @@ void imuUpdateAttitude(timeUs_t currentTimeUs)
         acc.accADC[Z] = 0;
     }
 }
+#endif // USE_ACC
 
 bool shouldInitializeGPSHeading()
 {

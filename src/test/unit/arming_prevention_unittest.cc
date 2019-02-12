@@ -1039,7 +1039,7 @@ extern "C" {
     bool isGyroCalibrationComplete(void) { return gyroCalibDone; }
     void gyroStartCalibration(bool) {}
     bool isFirstArmingGyroCalibrationRunning(void) { return false; }
-    void pidController(const pidProfile_t *, const rollAndPitchTrims_t *, timeUs_t) {}
+    void pidController(const pidProfile_t *, timeUs_t) {}
     void pidStabilisationState(pidStabilisationState_e) {}
     void mixTable(timeUs_t , uint8_t) {};
     void writeMotors(void) {};
@@ -1089,4 +1089,5 @@ extern "C" {
     bool isAltitudeOffset(void) { return false; }
     float getCosTiltAngle(void) { return 0.0f; }
     void pidSetItermReset(bool) {}
+    void applyAccelerometerTrimsDelta(rollAndPitchTrims_t*) {}
 }

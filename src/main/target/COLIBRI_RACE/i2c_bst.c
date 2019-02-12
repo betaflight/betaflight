@@ -400,17 +400,15 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 #ifdef USE_LED_STRIP
         case BST_LED_COLORS:
             for (i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
-                hsvColor_t *color = &ledStripConfigMutable()->colors[i];
-                bstWrite16(color->h);
-                bstWrite8(color->s);
-                bstWrite8(color->v);
+                bstWrite16(0);
+                bstWrite8(0);
+                bstWrite8(0);
             }
             break;
 
         case BST_LED_STRIP_CONFIG:
             for (i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
-                const ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[i];
-                bstWrite32(*ledConfig);
+                bstWrite32(0);
             }
             break;
 #endif
@@ -534,10 +532,12 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             batteryConfigMutable()->vbatwarningcellvoltage = bstRead8() * 10;  // vbatlevel when buzzer starts to alert
             break;
 
+#if defined(USE_ACC)
         case BST_ACC_CALIBRATION:
            if (!ARMING_FLAG(ARMED))
                accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
            break;
+#endif
         case BST_MAG_CALIBRATION:
            if (!ARMING_FLAG(ARMED))
                ENABLE_STATE(CALIBRATE_MAG);
@@ -583,11 +583,10 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
         case BST_SET_LED_COLORS:
            //for (i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
            {
-               i = bstRead8();
-               hsvColor_t *color = &ledStripConfigMutable()->colors[i];
-               color->h = bstRead16();
-               color->s = bstRead8();
-               color->v = bstRead8();
+               bstRead8();
+               bstRead16();
+               bstRead8();
+               bstRead8();
            }
            break;
         case BST_SET_LED_STRIP_CONFIG:
@@ -597,9 +596,11 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
                    ret = BST_FAILED;
                    break;
                }
-               ledConfig_t *ledConfig = &ledStripConfigMutable()->ledConfigs[i];
+#if defined(USE_LED_STRIP_STATUS_MODE)
+               ledConfig_t *ledConfig = &ledStripStatusModeConfigMutable()->ledConfigs[i];
                *ledConfig = bstRead32();
                reevaluateLedConfig();
+#endif
            }
            break;
 #endif

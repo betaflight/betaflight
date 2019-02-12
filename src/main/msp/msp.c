@@ -268,7 +268,7 @@ static void mspRebootFn(serialPort_t *serialPort)
 #endif
     default:
 
-        break;
+        return;
     }
 
     // control should never return here.
@@ -515,12 +515,21 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         value = getManufacturerId();
         sbufWriteU8(dst, strlen(value));
         sbufWriteString(dst, value);
+#else
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
+#endif
 
 #if defined(USE_SIGNATURE)
         // Signature
         sbufWriteData(dst, getSignature(), SIGNATURE_LENGTH);
+#else
+        uint8_t emptySignature[SIGNATURE_LENGTH];
+        memset(emptySignature, 0, sizeof(emptySignature));
+        sbufWriteData(dst, &emptySignature, sizeof(emptySignature));
 #endif
-#endif // USE_BOARD_INFO
+
+        sbufWriteU8(dst, MCU_TYPE_ID);
 
         break;
     }
@@ -824,7 +833,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
             sbufWriteU8(dst, getCurrentPidProfileIndex());
             sbufWriteU16(dst, constrain(averageSystemLoadPercent, 0, 100));
             if (cmdMSP == MSP_STATUS_EX) {
-                sbufWriteU8(dst, MAX_PROFILE_COUNT);
+                sbufWriteU8(dst, PID_PROFILE_COUNT);
                 sbufWriteU8(dst, getCurrentControlRateProfileIndex());
             } else {  // MSP_STATUS
                 sbufWriteU16(dst, 0); // gyro cycle time
@@ -848,22 +857,27 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 
     case MSP_RAW_IMU:
         {
+#if defined(USE_ACC)
             // Hack scale due to choice of units for sensor data in multiwii
 
             uint8_t scale;
-
-            if (acc.dev.acc_1G > 512*4) {
+            if (acc.dev.acc_1G > 512 * 4) {
                 scale = 8;
-            } else if (acc.dev.acc_1G > 512*2) {
+            } else if (acc.dev.acc_1G > 512 * 2) {
                 scale = 4;
             } else if (acc.dev.acc_1G >= 512) {
                 scale = 2;
             } else {
                 scale = 1;
             }
+#endif
 
             for (int i = 0; i < 3; i++) {
+#if defined(USE_ACC)
                 sbufWriteU16(dst, lrintf(acc.accADC[i] / scale));
+#else
+                sbufWriteU16(dst, 0);
+#endif
             }
             for (int i = 0; i < 3; i++) {
                 sbufWriteU16(dst, gyroRateDps(i));
@@ -1017,6 +1031,18 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         }
         break;
 
+    case MSP_MODE_RANGES_EXTRA:
+        sbufWriteU8(dst, MAX_MODE_ACTIVATION_CONDITION_COUNT);          // prepend number of EXTRAs array elements
+
+        for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
+            const modeActivationCondition_t *mac = modeActivationConditions(i);
+            const box_t *box = findBoxByBoxId(mac->modeId);
+            sbufWriteU8(dst, box->permanentId);     // each element is aligned with MODE_RANGES by the permanentId
+            sbufWriteU8(dst, mac->modeLogic);
+            sbufWriteU8(dst, mac->linkedTo);
+        }
+        break;
+
     case MSP_ADJUSTMENT_RANGES:
         for (int i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
             const adjustmentRange_t *adjRange = adjustmentRanges(i);
@@ -1116,11 +1142,13 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 #endif
 #endif
 
+#if defined(USE_ACC)
     case MSP_ACC_TRIM:
         sbufWriteU16(dst, accelerometerConfig()->accelerometerTrims.values.pitch);
         sbufWriteU16(dst, accelerometerConfig()->accelerometerTrims.values.roll);
-        break;
 
+        break;
+#endif
     case MSP_MIXER_CONFIG:
         sbufWriteU8(dst, mixerConfig()->mixerMode);
         sbufWriteU8(dst, mixerConfig()->yaw_motors_reversed);
@@ -1209,7 +1237,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 #ifdef USE_LED_STRIP_STATUS_MODE
     case MSP_LED_COLORS:
         for (int i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
-            const hsvColor_t *color = &ledStripConfig()->colors[i];
+            const hsvColor_t *color = &ledStripStatusModeConfig()->colors[i];
             sbufWriteU16(dst, color->h);
             sbufWriteU8(dst, color->s);
             sbufWriteU8(dst, color->v);
@@ -1221,7 +1249,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
     case MSP_LED_STRIP_CONFIG:
         for (int i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
 #ifdef USE_LED_STRIP_STATUS_MODE
-            const ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[i];
+            const ledConfig_t *ledConfig = &ledStripStatusModeConfig()->ledConfigs[i];
             sbufWriteU32(dst, *ledConfig);
 #else
             sbufWriteU32(dst, 0);
@@ -1246,19 +1274,19 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
             for (int j = 0; j < LED_DIRECTION_COUNT; j++) {
                 sbufWriteU8(dst, i);
                 sbufWriteU8(dst, j);
-                sbufWriteU8(dst, ledStripConfig()->modeColors[i].color[j]);
+                sbufWriteU8(dst, ledStripStatusModeConfig()->modeColors[i].color[j]);
             }
         }
 
         for (int j = 0; j < LED_SPECIAL_COLOR_COUNT; j++) {
             sbufWriteU8(dst, LED_MODE_COUNT);
             sbufWriteU8(dst, j);
-            sbufWriteU8(dst, ledStripConfig()->specialColors.color[j]);
+            sbufWriteU8(dst, ledStripStatusModeConfig()->specialColors.color[j]);
         }
 
         sbufWriteU8(dst, LED_AUX_CHANNEL);
         sbufWriteU8(dst, 0);
-        sbufWriteU8(dst, ledStripConfig()->ledstrip_aux_channel);
+        sbufWriteU8(dst, ledStripStatusModeConfig()->ledstrip_aux_channel);
         break;
 #endif
 
@@ -1426,7 +1454,11 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 
         break;
     case MSP_SENSOR_CONFIG:
+#if defined(USE_ACC)
         sbufWriteU8(dst, accelerometerConfig()->acc_hardware);
+#else
+        sbufWriteU8(dst, 0);
+#endif
         sbufWriteU8(dst, barometerConfig()->baro_hardware);
         sbufWriteU8(dst, compassConfig()->mag_hardware);
         break;
@@ -1515,7 +1547,7 @@ static mspResult_e mspFcProcessOutCommandWithArg(uint8_t cmdMSP, sbuf_t *src, sb
 
             if (rebootMode >= MSP_REBOOT_COUNT
 #if !defined(USE_USB_MSC)
-                || rebootMode == MSP_REBOOT_MSC
+                || rebootMode == MSP_REBOOT_MSC || rebootMode == MSP_REBOOT_MSC_UTC
 #endif
                 ) {
                 return MSP_RESULT_ERROR;
@@ -1616,7 +1648,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         value = sbufReadU8(src);
         if ((value & RATEPROFILE_MASK) == 0) {
             if (!ARMING_FLAG(ARMED)) {
-                if (value >= MAX_PROFILE_COUNT) {
+                if (value >= PID_PROFILE_COUNT) {
                     value = 0;
                 }
                 changePidProfile(value);
@@ -1665,10 +1697,13 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         }
 #endif
         break;
+#if defined(USE_ACC)
     case MSP_SET_ACC_TRIM:
         accelerometerConfigMutable()->accelerometerTrims.values.pitch = sbufReadU16(src);
         accelerometerConfigMutable()->accelerometerTrims.values.roll  = sbufReadU16(src);
+
         break;
+#endif
     case MSP_SET_ARMING_CONFIG:
         armingConfigMutable()->auto_disarm_delay = sbufReadU8(src);
         sbufReadU8(src); // reserved
@@ -1700,7 +1735,12 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 mac->auxChannelIndex = sbufReadU8(src);
                 mac->range.startStep = sbufReadU8(src);
                 mac->range.endStep = sbufReadU8(src);
+                if (sbufBytesRemaining(src) != 0) {
+                    mac->modeLogic = sbufReadU8(src);
 
+                    i = sbufReadU8(src);
+                    mac->linkedTo = findBoxByPermanentId(i)->boxId;
+                }
                 rcControlsInit();
             } else {
                 return MSP_RESULT_ERROR;
@@ -2054,9 +2094,14 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
         break;
     case MSP_SET_SENSOR_CONFIG:
+#if defined(USE_ACC)
         accelerometerConfigMutable()->acc_hardware = sbufReadU8(src);
+#else
+        sbufReadU8(src);
+#endif
         barometerConfigMutable()->baro_hardware = sbufReadU8(src);
         compassConfigMutable()->mag_hardware = sbufReadU8(src);
+
         break;
 
     case MSP_RESET_CONF:
@@ -2066,10 +2111,12 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         }
         break;
 
+#ifdef USE_ACC
     case MSP_ACC_CALIBRATION:
         if (!ARMING_FLAG(ARMED))
             accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
         break;
+#endif
 
     case MSP_MAG_CALIBRATION:
         if (!ARMING_FLAG(ARMED))
@@ -2363,7 +2410,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #ifdef USE_LED_STRIP_STATUS_MODE
     case MSP_SET_LED_COLORS:
         for (int i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
-            hsvColor_t *color = &ledStripConfigMutable()->colors[i];
+            hsvColor_t *color = &ledStripStatusModeConfigMutable()->colors[i];
             color->h = sbufReadU16(src);
             color->s = sbufReadU8(src);
             color->v = sbufReadU8(src);
@@ -2379,7 +2426,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 return MSP_RESULT_ERROR;
             }
 #ifdef USE_LED_STRIP_STATUS_MODE
-            ledConfig_t *ledConfig = &ledStripConfigMutable()->ledConfigs[i];
+            ledConfig_t *ledConfig = &ledStripStatusModeConfigMutable()->ledConfigs[i];
             *ledConfig = sbufReadU32(src);
             reevaluateLedConfig();
 #else
@@ -2625,6 +2672,7 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src, mspPos
                     // selected OSD profile
 #ifdef USE_OSD_PROFILES
                     osdConfigMutable()->osdProfileIndex = sbufReadU8(src);
+                    setOsdProfile(osdConfig()->osdProfileIndex);
 #else
                     sbufReadU8(src);
 #endif // USE_OSD_PROFILES
