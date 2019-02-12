@@ -121,7 +121,6 @@ static void mpuIntExtiHandler(extiCallbackRec_t *cb)
 
 	// Trigger the gyro PID processing task to wake up in gyroUpdate()
     if (gyroTaskId) {
-    	pinioSet(1,1);
     	vTaskNotifyGiveFromISR(gyroTaskId, &xHigherPriorityTaskWoken);
     }
 #ifdef DEBUG_MPU_DATA_READY_INTERRUPT
