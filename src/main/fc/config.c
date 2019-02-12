@@ -338,11 +338,6 @@ static void validateAndFixConfig(void)
     }
 #endif
 
-#if defined(USE_DSHOT_TELEMETRY)
-    systemConfigMutable()->schedulerOptimizeRate = systemConfigMutable()->schedulerOptimizeRate ||
-        (rpmFilterConfig()->gyro_rpm_notch_harmonics + rpmFilterConfig()->dterm_rpm_notch_harmonics);
-#endif
-
 // clear features that are not supported.
 // I have kept them all here in one place, some could be moved to sections of code above.
 
@@ -436,7 +431,8 @@ static void validateAndFixConfig(void)
 #endif
 
 #if defined(USE_DSHOT_TELEMETRY)
-    if (motorConfig()->dev.useBurstDshot && motorConfig()->dev.useDshotTelemetry) {
+    if ((motorConfig()->dev.useBurstDshot || !systemConfig()->schedulerOptimizeRate)
+        && motorConfig()->dev.useDshotTelemetry) {
         motorConfigMutable()->dev.useDshotTelemetry = false;
     }
 #endif
