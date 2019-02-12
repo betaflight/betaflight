@@ -124,9 +124,6 @@ void rpmFilterInit(const rpmFilterConfig_t *config)
     numberFilters = getMotorCount() * (filters[0].harmonics + filters[1].harmonics);
     const float filtersPerLoopIteration = numberFilters / loopIterationsPerUpdate;
     filterUpdatesPerIteration = rintf(filtersPerLoopIteration + 0.49f);
-    if (gyroFilter || dtermFilter) {
-        schedulerOptimizeRate(true);
-    }
 }
 
 static float applyFilter(rpmNotchFilter_t* filter, int axis, float value)
