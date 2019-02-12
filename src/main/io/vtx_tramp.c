@@ -201,8 +201,8 @@ bool trampCommitChanges(void)
 // return false if index out of range
 static bool trampDevSetPowerByIndex(uint8_t index)
 {
-    if (index > 0 && index <= sizeof(trampPowerTable)) {
-        trampSetRFPower(trampPowerTable[index - 1]);
+    if (index > 0 && index <= vtxTramp.capability.powerCount) {
+        trampSetRFPower(vtxTramp.powerValues[index - 1]);
         trampCommitChanges();
         return true;
     }
@@ -552,8 +552,8 @@ static bool vtxTrampGetPowerIndex(const vtxDevice_t *vtxDevice, uint8_t *pIndex)
     }
 
     if (trampConfiguredPower > 0) {
-        for (uint8_t i = 0; i < sizeof(trampPowerTable); i++) {
-            if (trampConfiguredPower <= trampPowerTable[i]) {
+        for (uint8_t i = 0; i < vtxTramp.capability.powerCount; i++) {
+            if (trampConfiguredPower <= vtxTramp.powerValues[i]) {
                 *pIndex = i + 1;
                 break;
             }

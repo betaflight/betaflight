@@ -181,7 +181,9 @@ static void trampCmsInitSettings(void)
     trampCmsPitMode = trampPitMode + 1;
 
     if (trampConfiguredPower > 0) {
-        trampCmsPower = vtxCommonGetPowerIndex(vtxCommonDevice(), &trampCmsPower);
+        if (!vtxCommonGetPowerIndex(vtxCommonDevice(), &trampCmsPower)) {
+            trampCmsPower = 1;
+        }
     }
 
     vtxDevice_t *device = vtxCommonDevice();
