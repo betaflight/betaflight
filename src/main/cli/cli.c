@@ -4163,7 +4163,6 @@ static void cliStatus(char *cmdline)
 
 #if defined(USE_TASK_STATISTICS)
 
-TaskStatus_t taskStatus[50];
 
 char *taskState[] = {
 		"eReady",
@@ -4177,10 +4176,9 @@ static void cliTasks(char *cmdline)
 {
     UNUSED(cmdline);
     unsigned long ulTotalRunTime;
-
-    UBaseType_t taskCount = uxTaskGetSystemState(taskStatus, 50, &ulTotalRunTime);
-
-
+#if configUSE_TRACE_FACILITY
+    static TaskStatus_t taskStatus[5];
+    UBaseType_t taskCount = uxTaskGetSystemState(taskStatus, 5, &ulTotalRunTime);
 
 #ifndef MINIMAL_CLI
     if (systemConfig()->task_statistics) {
@@ -4200,6 +4198,7 @@ static void cliTasks(char *cmdline)
     }
 
     cliPrintLine("");
+#endif // configUSE_TRACE_FACILITY
 
     int maxLoadSum = 0;
     int averageLoadSum = 0;
