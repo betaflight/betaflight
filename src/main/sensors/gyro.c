@@ -62,6 +62,7 @@
 #include "drivers/accgyro/gyro_sync.h"
 #include "drivers/bus_spi.h"
 #include "drivers/io.h"
+#include "drivers/time.h"
 
 #include "fc/config.h"
 #include "fc/runtime_config.h"
@@ -107,6 +108,8 @@ static FAST_RAM_ZERO_INIT int16_t gyroSensorTemperature;
 static bool gyroHasOverflowProtection = true;
 
 static FAST_RAM_ZERO_INIT bool useDualGyroDebugging;
+
+static timeUs_t gyroDeltaTime;
 
 typedef struct gyroCalibration_s {
     float sum[XYZ_AXIS_COUNT];
@@ -1058,18 +1061,31 @@ static FAST_CODE FAST_CODE_NOINLINE void gyroUpdateSensor(gyroSensor_t *gyroSens
 #endif
 }
 
-FAST_CODE void gyroUpdate(timeUs_t currentTimeUs)
+timeUs_t getGyroDeltaTime(void)
 {
-    const timeDelta_t sampleDeltaUs = currentTimeUs - accumulationLastTimeSampledUs;
-    accumulationLastTimeSampledUs = currentTimeUs;
-    accumulatedMeasurementTimeUs += sampleDeltaUs;
+	return gyroDeltaTime;
+}
+
+FAST_CODE timeUs_t gyroUpdate(void)
+{
+	timeUs_t currentTimeUs;
+	static timeUs_t lastTime;
 
 	pinioSet(0,0);
 	// Wait for a direct notification from mpuIntExtiHandler()
     ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
-	pinioSet(1,0);
+
+    currentTimeUs = micros();
+
 	pinioSet(0,1);
 	pinioSet(2,1);
+
+    gyroDeltaTime = currentTimeUs - lastTime;
+    lastTime = currentTimeUs;
+
+    const timeDelta_t sampleDeltaUs = currentTimeUs - accumulationLastTimeSampledUs;
+    accumulationLastTimeSampledUs = currentTimeUs;
+    accumulatedMeasurementTimeUs += sampleDeltaUs;
 
     switch (gyroToUse) {
     case GYRO_CONFIG_USE_GYRO_1:
@@ -1158,6 +1174,8 @@ FAST_CODE void gyroUpdate(timeUs_t currentTimeUs)
             gyroPrevious[axis] = gyro.gyroADCf[axis];
         }
     }
+
+    return currentTimeUs;
 }
 
 bool gyroGetAccumulationAverage(float *accumulationAverage)

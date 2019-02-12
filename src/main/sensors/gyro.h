@@ -112,7 +112,8 @@ void gyroPreInit(void);
 bool gyroInit(void);
 
 void gyroInitFilters(void);
-void gyroUpdate(timeUs_t currentTimeUs);
+timeUs_t gyroUpdate(void);
+timeUs_t getGyroDeltaTime(void);
 bool gyroGetAccumulationAverage(float *accumulation);
 const busDevice_t *gyroSensorBus(void);
 struct mpuDetectionResult_s;
