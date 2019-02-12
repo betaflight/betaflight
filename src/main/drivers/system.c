@@ -57,38 +57,9 @@ void cycleCounterInit(void)
 
 static volatile int sysTickPending = 0;
 
-// Return system uptime in microseconds (rollover in 70minutes)
-
-uint32_t microsISR(void)
-{
-    register uint32_t ms, pending, cycle_cnt;
-
-    ATOMIC_BLOCK(NVIC_PRIO_MAX) {
-        cycle_cnt = SysTick->VAL;
-
-        if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) {
-            // Update pending.
-            // Record it for multiple calls within the same rollover period
-            // (Will be cleared when serviced).
-            // Note that multiple rollovers are not considered.
-
-            sysTickPending = 1;
-
-            // Read VAL again to ensure the value is read after the rollover.
-
-            cycle_cnt = SysTick->VAL;
-        }
-
-        ms = sysTickUptime;
-        pending = sysTickPending;
-    }
-
-    return ((ms + pending) * 1000) + (usTicks * 1000 - cycle_cnt) / usTicks;
-}
-
 uint32_t micros(void)
 {
-	return (xTaskGetTickCount() * portTICK_PERIOD_MS * 1000);
+	return portGET_RUN_TIME_COUNTER_VALUE()/usTicks;
 }
 
 // Return system uptime in milliseconds (rollover in 49 days)
