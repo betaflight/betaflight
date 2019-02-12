@@ -45,6 +45,12 @@ to exclude the API function. */
 #define INCLUDE_vTaskDelayUntil         1
 #define INCLUDE_vTaskDelay              1
 
+// Use the DWT cycle counter for us accurate timing
+#include "stm32f4xx.h"
+#include "core_cm4.h"
+#define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS() DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk; DWT->CYCCNT = 0
+#define portGET_RUN_TIME_COUNTER_VALUE() DWT->CYCCNT
+
 /* Define as 1 to enable stack checking in src/main/fc/tasks.c */
 #define INCLUDE_uxTaskGetStackHighWaterMark 1
 
