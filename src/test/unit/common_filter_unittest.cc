@@ -41,15 +41,15 @@ TEST(FilterUnittest, TestPt1FilterInit)
 
 TEST(FilterUnittest, TestPt1FilterGain)
 {
-    EXPECT_FLOAT_EQ(0.999949, pt1FilterGain(100, 31.25f));
+    EXPECT_FLOAT_EQ(0.999949, pt1FilterGain(100.0f, 31.25f));
     // handle cases over uint8_t boundary
-    EXPECT_FLOAT_EQ(0.99998301, pt1FilterGain(300, 31.25f));
+    EXPECT_FLOAT_EQ(0.99998301, pt1FilterGain(300.0f, 31.25f));
 }
 
 TEST(FilterUnittest, TestPt1FilterApply)
 {
     pt1Filter_t filter;
-    pt1FilterInit(&filter, pt1FilterGain(100, 31.25f));
+    pt1FilterInit(&filter, pt1FilterGain(100.0f, 31.25f));
     EXPECT_EQ(0, filter.state);
 
     pt1FilterApply(&filter, 1800.0f);
