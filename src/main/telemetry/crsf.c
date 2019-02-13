@@ -66,6 +66,7 @@
 
 #include "telemetry/crsf.h"
 
+#include "FreeRTOS.h"
 
 #define CRSF_CYCLETIME_US                   100000 // 100ms, 10 Hz
 #define CRSF_DEVICEINFO_VERSION             0x01
@@ -117,7 +118,7 @@ bool handleCrsfMspFrameBuffer(uint8_t payloadSize, mspResponseFnPtr responseFn)
             requestHandled |= sendMspReply(payloadSize, responseFn);
         }
         pos += CRSF_MSP_LENGTH_OFFSET + mspFrameLength;
-        ATOMIC_BLOCK(NVIC_PRIO_SERIALUART1) {
+        ATOMIC_BLOCK(configMAX_SYSCALL_INTERRUPT_PRIORITY) {
             if (pos >= mspRxBuffer.len) {
                 mspRxBuffer.len = 0;
                 return requestHandled;

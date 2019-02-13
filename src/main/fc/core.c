@@ -25,6 +25,7 @@
 
 #include "platform.h"
 
+#include "build/atomic.h"
 #include "build/debug.h"
 
 #include "blackbox/blackbox.h"
@@ -336,37 +337,38 @@ void updateArmingStatus(void)
 void disarm(void)
 {
 	// Protect this atomic access to ensure the disarming never happens twice
-	taskENTER_CRITICAL();
-    if (ARMING_FLAG(ARMED)) {
+	ATOMIC_BLOCK(configMAX_SYSCALL_INTERRUPT_PRIORITY) {
+	    if (!ARMING_FLAG(ARMED)) {
+	    	return;
+	    }
         DISABLE_ARMING_FLAG(ARMED);
-        taskEXIT_CRITICAL();
-        lastDisarmTimeUs = micros();
+	}
+
+	lastDisarmTimeUs = micros();
 
 #ifdef USE_OSD
-        if (flipOverAfterCrashActive || isLaunchControlActive()) {
-            osdSuppressStats(true);
-        }
+	if (flipOverAfterCrashActive || isLaunchControlActive()) {
+		osdSuppressStats(true);
+	}
 #endif
 
 #ifdef USE_BLACKBOX
-        if (blackboxConfig()->device && blackboxConfig()->mode != BLACKBOX_MODE_ALWAYS_ON) { // Close the log upon disarm except when logging mode is ALWAYS ON
-            blackboxFinish();
-        }
+	if (blackboxConfig()->device && blackboxConfig()->mode != BLACKBOX_MODE_ALWAYS_ON) { // Close the log upon disarm except when logging mode is ALWAYS ON
+		blackboxFinish();
+	}
 #endif
-        BEEP_OFF;
+	BEEP_OFF;
 #ifdef USE_DSHOT
-        if (isMotorProtocolDshot() && flipOverAfterCrashActive && !featureIsEnabled(FEATURE_3D)) {
-            pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL, false);
-        }
+	if (isMotorProtocolDshot() && flipOverAfterCrashActive && !featureIsEnabled(FEATURE_3D)) {
+		pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL, false);
+	}
 #endif
-        flipOverAfterCrashActive = false;
+	flipOverAfterCrashActive = false;
 
-        // if ARMING_DISABLED_RUNAWAY_TAKEOFF is set then we want to play it's beep pattern instead
-        if (!(getArmingDisableFlags() & ARMING_DISABLED_RUNAWAY_TAKEOFF)) {
-            beeper(BEEPER_DISARMING);      // emit disarm tone
-        }
-    }
-    taskEXIT_CRITICAL();
+	// if ARMING_DISABLED_RUNAWAY_TAKEOFF is set then we want to play it's beep pattern instead
+	if (!(getArmingDisableFlags() & ARMING_DISABLED_RUNAWAY_TAKEOFF)) {
+		beeper(BEEPER_DISARMING);      // emit disarm tone
+	}
 }
 
 void tryArm(void)

@@ -380,7 +380,7 @@ uint32_t CDC_Send_FreeBytes(void)
     */
     uint32_t freeBytes;
 
-    ATOMIC_BLOCK(NVIC_BUILD_PRIORITY(6, 0)) {
+    ATOMIC_BLOCK(configMAX_SYSCALL_INTERRUPT_PRIORITY) {
         freeBytes = ((UserTxBufPtrOut - UserTxBufPtrIn) + (-((int)(UserTxBufPtrOut <= UserTxBufPtrIn)) & APP_TX_DATA_SIZE)) - 1;
     }
 
@@ -402,7 +402,7 @@ uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength)
             // block until there is free space in the ring buffer
             delay(1);
         }
-        ATOMIC_BLOCK(NVIC_BUILD_PRIORITY(6, 0)) { // Paranoia
+        ATOMIC_BLOCK(configMAX_SYSCALL_INTERRUPT_PRIORITY) { // Paranoia
             UserTxBuffer[UserTxBufPtrIn] = ptrBuffer[i];
             UserTxBufPtrIn = (UserTxBufPtrIn + 1) % APP_TX_DATA_SIZE;
         }
