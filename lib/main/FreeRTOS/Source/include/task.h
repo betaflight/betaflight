@@ -2222,7 +2222,7 @@ void vTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem, const Tick
  * Sets the pointer to the current TCB to the TCB of the highest priority task
  * that is ready to run.
  */
-void vTaskSwitchContext( void ) PRIVILEGED_FUNCTION;
+void vTaskSwitchContext( void ) PRIVILEGED_FUNCTION __attribute__(( used ));
 
 /*
  * THESE FUNCTIONS MUST NOT BE USED FROM APPLICATION CODE.  THEY ARE USED BY
