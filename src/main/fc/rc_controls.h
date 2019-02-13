@@ -108,7 +108,8 @@ typedef enum {
 
 #define CONTROL_RATE_CONFIG_TPA_MAX              100
 
-extern float rcCommand[4];
+// This data is accessed by both the run and task threads
+extern volatile float rcCommand[4];
 
 typedef struct rcSmoothingFilterTraining_s {
     float sum;

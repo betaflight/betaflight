@@ -125,7 +125,8 @@ typedef struct
 
 typedef struct
 {
-    int16_t *val;
+	// The valuable may be volatile, for example rcData
+    volatile int16_t *val;
     int16_t min;
     int16_t max;
     int16_t step;

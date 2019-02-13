@@ -27,7 +27,8 @@
 extern int16_t magHold;
 #endif
 
-extern bool isRXDataNew;
+// This is set in the run/rx task and read in the gyro task
+extern volatile bool isRXDataNew;
 
 typedef struct throttleCorrectionConfig_s {
     uint16_t throttle_correction_angle;     // the angle when the throttle correction is maximal. in 0.1 degres, ex 225 = 22.5 ,30.0, 450 = 45.0 deg
