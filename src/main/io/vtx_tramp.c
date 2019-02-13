@@ -165,7 +165,7 @@ static bool trampValidateBandAndChannel(uint8_t band, uint8_t channel)
 
 static void trampDevSetBandAndChannel(uint8_t band, uint8_t channel)
 {
-    trampDevSetFreq(vtxCommonLookupFrequency(vtxCommonDevice(), band, channel));
+    trampDevSetFreq(vtxCommonLookupFrequency(&vtxTramp, band, channel));
 }
 
 void trampSetBandAndChannel(uint8_t band, uint8_t channel)
@@ -244,7 +244,7 @@ static char trampHandleResponse(void)
                 trampPower = trampRespBuffer[8]|(trampRespBuffer[9] << 8);
 
                 // if no band/chan match then make sure set-by-freq mode is flagged
-                if (!vtxCommonLookupBandChan(vtxCommonDevice(), trampCurFreq, &trampBand, &trampChannel)) {
+                if (!vtxCommonLookupBandChan(&vtxTramp, trampCurFreq, &trampBand, &trampChannel)) {
                     trampSetByFreqFlag = true;
                 }
 
