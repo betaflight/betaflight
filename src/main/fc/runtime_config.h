@@ -27,7 +27,8 @@ typedef enum {
     WAS_ARMED_WITH_PREARM       = (1 << 2)
 } armingFlag_e;
 
-extern uint8_t armingFlags;
+// Written by both the rx task and the gyro/pid task. Critical section required in disarm().
+extern volatile uint8_t armingFlags;
 
 #define DISABLE_ARMING_FLAG(mask) (armingFlags &= ~(mask))
 #define ENABLE_ARMING_FLAG(mask) (armingFlags |= (mask))
@@ -115,7 +116,8 @@ typedef enum {
 #define ENABLE_STATE(mask) (stateFlags |= (mask))
 #define STATE(mask) (stateFlags & (mask))
 
-extern uint8_t stateFlags;
+// Set by the run task and read by the gyro/pid task
+extern volatile uint8_t stateFlags;
 
 uint16_t enableFlightMode(flightModeFlags_e mask);
 uint16_t disableFlightMode(flightModeFlags_e mask);

@@ -26,8 +26,12 @@
 #include "fc/runtime_config.h"
 #include "io/beeper.h"
 
-uint8_t armingFlags = 0;
-uint8_t stateFlags = 0;
+// Set by the rx task and read by the gyro/pid task
+volatile uint8_t armingFlags = 0;
+
+// Set by the run task and read by the gyro/pid task
+volatile uint8_t stateFlags = 0;
+
 uint16_t flightModeFlags = 0;
 
 static uint32_t enabledSensors = 0;

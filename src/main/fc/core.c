@@ -335,8 +335,11 @@ void updateArmingStatus(void)
 
 void disarm(void)
 {
+	// Protect this atomic access to ensure the disarming never happens twice
+	taskENTER_CRITICAL();
     if (ARMING_FLAG(ARMED)) {
         DISABLE_ARMING_FLAG(ARMED);
+        taskEXIT_CRITICAL();
         lastDisarmTimeUs = micros();
 
 #ifdef USE_OSD
@@ -363,6 +366,7 @@ void disarm(void)
             beeper(BEEPER_DISARMING);      // emit disarm tone
         }
     }
+    taskEXIT_CRITICAL();
 }
 
 void tryArm(void)
