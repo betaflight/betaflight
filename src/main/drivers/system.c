@@ -59,6 +59,7 @@ static volatile int sysTickPending = 0;
 
 uint32_t micros(void)
 {
+	// TODO This isn't wrapping properly so the rx task stops being call after a few seconds
 	return portGET_RUN_TIME_COUNTER_VALUE()/usTicks;
 }
 
