@@ -63,6 +63,7 @@
 #include "sensors/acceleration.h"
 #include "sensors/battery.h"
 #include "sensors/gyro.h"
+#include "sensors/rpm_filter.h"
 
 #include "scheduler/scheduler.h"
 
@@ -430,7 +431,8 @@ static void validateAndFixConfig(void)
 #endif
 
 #if defined(USE_DSHOT_TELEMETRY)
-    if (motorConfig()->dev.useBurstDshot && motorConfig()->dev.useDshotTelemetry) {
+    if ((motorConfig()->dev.useBurstDshot || !systemConfig()->schedulerOptimizeRate)
+        && motorConfig()->dev.useDshotTelemetry) {
         motorConfigMutable()->dev.useDshotTelemetry = false;
     }
 #endif
