@@ -109,7 +109,7 @@ static bool gyroHasOverflowProtection = true;
 
 static FAST_RAM_ZERO_INIT bool useDualGyroDebugging;
 
-static timeUs_t gyroDeltaTime;
+static timeDelta_t sampleDeltaUs;
 
 typedef struct gyroCalibration_s {
     float sum[XYZ_AXIS_COUNT];
@@ -1061,15 +1061,14 @@ static FAST_CODE FAST_CODE_NOINLINE void gyroUpdateSensor(gyroSensor_t *gyroSens
 #endif
 }
 
-timeUs_t getGyroDeltaTime(void)
+timeDelta_t getGyroDeltaTime(void)
 {
-	return gyroDeltaTime;
+	return sampleDeltaUs;
 }
 
 FAST_CODE timeUs_t gyroUpdate(void)
 {
 	timeUs_t currentTimeUs;
-	static timeUs_t lastTime;
 
 	pinioSet(0,0);
 	// Wait for a direct notification from mpuIntExtiHandler()
@@ -1080,10 +1079,7 @@ FAST_CODE timeUs_t gyroUpdate(void)
 	pinioSet(0,1);
 	pinioSet(2,1);
 
-    gyroDeltaTime = currentTimeUs - lastTime;
-    lastTime = currentTimeUs;
-
-    const timeDelta_t sampleDeltaUs = currentTimeUs - accumulationLastTimeSampledUs;
+    sampleDeltaUs = currentTimeUs - accumulationLastTimeSampledUs;
     accumulationLastTimeSampledUs = currentTimeUs;
     accumulatedMeasurementTimeUs += sampleDeltaUs;
 
