@@ -60,22 +60,23 @@ static volatile int sysTickPending = 0;
 
 timeUs_t micros(void)
 {
-	static union {
-		struct {
-			uint32_t lo;
-			uint32_t hi;
-		} u32;
-		uint64_t u64;
-	} longTime;
-	uint32_t newTime = (uint32_t)portGET_RUN_TIME_COUNTER_VALUE();
+	static int32_t oldDWT = 0;
+	static timeUs_t oldMicros = 0;
+	timeUs_t curMicros;
 
-	// Detect rollover
-	if ((~newTime & 0x80000000) && (longTime.u32.lo & 0x80000000)) {
-		longTime.u32.hi++;
+	int32_t curDWT = portGET_RUN_TIME_COUNTER_VALUE();
+
+	ATOMIC_BLOCK(configMAX_SYSCALL_INTERRUPT_PRIORITY) {
+		timeDelta_t deltaDWT = curDWT - oldDWT;
+		curMicros = oldMicros + (deltaDWT / usTicks);
+
+		if (deltaDWT > 0x40000000) {
+			oldMicros = curMicros;
+			oldDWT = curDWT;
+		}
 	}
-	longTime.u32.lo = newTime;
 
-	return (timeUs_t)(longTime.u64/(timeUs_t)usTicks);
+	return curMicros;
 }
 
 // Return system uptime in milliseconds (rollover in 49 days)
