@@ -114,14 +114,14 @@ bool spiInit(SPIDevice device)
 void spiBusReserve(const busDevice_t *bus)
 {
 	pinioSet(3, 1);
-	xSemaphoreTakeRecursive(bus->mutexBus, portMAX_DELAY);
+	xSemaphoreTake(bus->mutexBus, portMAX_DELAY);
     IOLo(bus->busdev_u.spi.csnPin);
 }
 
 void spiBusRelease(const busDevice_t *bus)
 {
     IOHi(bus->busdev_u.spi.csnPin);
-	xSemaphoreGiveRecursive(bus->mutexBus);
+	xSemaphoreGive(bus->mutexBus);
 	pinioSet(3, 0);
 }
 

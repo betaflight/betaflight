@@ -110,7 +110,7 @@ static void mpuIntExtiHandler(extiCallbackRec_t *cb)
 {
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
-	#ifdef DEBUG_MPU_DATA_READY_INTERRUPT
+#ifdef DEBUG_MPU_DATA_READY_INTERRUPT
     static uint32_t lastCalledAtUs = 0;
     const uint32_t nowUs = micros();
     debug[0] = (uint16_t)(nowUs - lastCalledAtUs);
