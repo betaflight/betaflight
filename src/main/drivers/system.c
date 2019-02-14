@@ -60,23 +60,19 @@ static volatile int sysTickPending = 0;
 
 timeUs_t micros(void)
 {
-	static int32_t oldDWT = 0;
-	static timeUs_t oldMicros = 0;
-	timeUs_t curMicros;
+    static int32_t oldDWT = 0;
+    static timeUs_t curMicros = 0;
 
-	int32_t curDWT = portGET_RUN_TIME_COUNTER_VALUE();
+    int32_t curDWT = portGET_RUN_TIME_COUNTER_VALUE();
 
-	ATOMIC_BLOCK(configMAX_SYSCALL_INTERRUPT_PRIORITY) {
-		timeDelta_t deltaDWT = curDWT - oldDWT;
-		curMicros = oldMicros + (deltaDWT / usTicks);
+    ATOMIC_BLOCK(configMAX_SYSCALL_INTERRUPT_PRIORITY) {
+        timeDelta_t deltaDWT = curDWT - oldDWT;
+        timeDelta_t deltaMicros = deltaDWT / (int32_t)usTicks;
+        curMicros += deltaMicros;
+        oldDWT += deltaMicros * (int32_t)usTicks;
+    }
 
-		if (deltaDWT > 0x40000000) {
-			oldMicros = curMicros;
-			oldDWT = curDWT;
-		}
-	}
-
-	return curMicros;
+    return curMicros;
 }
 
 // Return system uptime in milliseconds (rollover in 49 days)
@@ -88,7 +84,7 @@ uint32_t millis(void)
 #if 1
 void delayMicroseconds(timeUs_t us)
 {
-	timeUs_t now = micros();
+    timeUs_t now = micros();
     while (micros() - now < us);
 }
 #else
