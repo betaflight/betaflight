@@ -76,6 +76,7 @@ typedef struct SPIDevice_s {
     uint16_t cr1SoftCopy;   // Copy of active CR1 value for this SPI instance
 #endif
     SemaphoreHandle_t mutexBus;
+    StaticSemaphore_t mutexBusBuffer;
 } spiDevice_t;
 
 extern spiDevice_t spiDevice[SPIDEV_COUNT];

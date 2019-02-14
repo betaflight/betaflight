@@ -64,7 +64,8 @@
 #define SDCARD_NON_DMA_CHUNK_SIZE                   256
 
 static sdcard_t sdcard;
-static SemaphoreHandle_t sdcardMutex;
+static SemaphoreHandle_t mutexSDCard;
+static StaticSemaphore_t mutexSDCardBuffer;
 
 STATIC_ASSERT(sizeof(sdcardCSD_t) == 16, sdcard_csd_bitfields_didnt_pack_properly);
 
@@ -115,7 +116,7 @@ void sdcard_preInit(const sdcardConfig_t *config)
 
 void sdcard_init(const sdcardConfig_t *config)
 {
-    sdcardMutex = xSemaphoreCreateMutex();
+    mutexSDCard = xSemaphoreCreateMutexStatic(&mutexSDCardBuffer);
 
     switch (config->mode) {
 #ifdef USE_SDCARD_SPI
@@ -133,33 +134,33 @@ void sdcard_init(const sdcardConfig_t *config)
     }
 
     if (sdcardVTable) {
-        xSemaphoreTake(sdcardMutex, portMAX_DELAY);
+        xSemaphoreTake(mutexSDCard, portMAX_DELAY);
         sdcardVTable->sdcard_init(config, spiPinConfig(0));
-        xSemaphoreGive(sdcardMutex);
+        xSemaphoreGive(mutexSDCard);
     }
 }
 
 bool sdcard_readBlock(uint32_t blockIndex, uint8_t *buffer, sdcard_operationCompleteCallback_c callback, uint32_t callbackData)
 {
-    xSemaphoreTake(sdcardMutex, portMAX_DELAY);
+    xSemaphoreTake(mutexSDCard, portMAX_DELAY);
     bool ret = sdcardVTable->sdcard_readBlock(blockIndex, buffer, callback, callbackData);
-    xSemaphoreGive(sdcardMutex);
+    xSemaphoreGive(mutexSDCard);
     return ret;
 }
 
 sdcardOperationStatus_e sdcard_beginWriteBlocks(uint32_t blockIndex, uint32_t blockCount)
 {
-    xSemaphoreTake(sdcardMutex, portMAX_DELAY);
+    xSemaphoreTake(mutexSDCard, portMAX_DELAY);
     sdcardOperationStatus_e ret = sdcardVTable->sdcard_beginWriteBlocks(blockIndex, blockCount);
-    xSemaphoreGive(sdcardMutex);
+    xSemaphoreGive(mutexSDCard);
     return ret;
 }
 
 sdcardOperationStatus_e sdcard_writeBlock(uint32_t blockIndex, uint8_t *buffer, sdcard_operationCompleteCallback_c callback, uint32_t callbackData)
 {
-    xSemaphoreTake(sdcardMutex, portMAX_DELAY);
+    xSemaphoreTake(mutexSDCard, portMAX_DELAY);
     sdcardOperationStatus_e ret = sdcardVTable->sdcard_writeBlock(blockIndex, buffer, callback, callbackData);
-    xSemaphoreGive(sdcardMutex);
+    xSemaphoreGive(mutexSDCard);
     return ret;
 }
 
@@ -167,9 +168,9 @@ bool sdcard_poll(void)
 {
     // sdcard_poll is called from taskMain() via afatfs_poll() and  for USE_SDCARD.
     if (sdcardVTable) {
-        xSemaphoreTake(sdcardMutex, portMAX_DELAY);
+        xSemaphoreTake(mutexSDCard, portMAX_DELAY);
         bool ret = sdcardVTable->sdcard_poll();
-        xSemaphoreGive(sdcardMutex);
+        xSemaphoreGive(mutexSDCard);
         return ret;
     } else {
         return false;
@@ -181,9 +182,9 @@ bool sdcard_isFunctional(void)
     // sdcard_isFunctional is called from multiple places, including the case of hardware implementation
     // without a detect pin in which case sdcard_isInserted() always returns true.
     if (sdcardVTable) {
-        xSemaphoreTake(sdcardMutex, portMAX_DELAY);
+        xSemaphoreTake(mutexSDCard, portMAX_DELAY);
         bool ret = sdcardVTable->sdcard_isFunctional();
-        xSemaphoreGive(sdcardMutex);
+        xSemaphoreGive(mutexSDCard);
         return ret;
     } else {
         return false;
@@ -192,17 +193,17 @@ bool sdcard_isFunctional(void)
 
 bool sdcard_isInitialized(void)
 {
-    xSemaphoreTake(sdcardMutex, portMAX_DELAY);
+    xSemaphoreTake(mutexSDCard, portMAX_DELAY);
     bool ret = sdcardVTable->sdcard_isInitialized();
-    xSemaphoreGive(sdcardMutex);
+    xSemaphoreGive(mutexSDCard);
     return ret;
 }
 
 const sdcardMetadata_t* sdcard_getMetadata(void)
 {
-    xSemaphoreTake(sdcardMutex, portMAX_DELAY);
+    xSemaphoreTake(mutexSDCard, portMAX_DELAY);
     bool ret = sdcardVTable->sdcard_getMetadata();
-    xSemaphoreGive(sdcardMutex);
+    xSemaphoreGive(mutexSDCard);
     return ret;
 }
 #endif

@@ -93,7 +93,7 @@ void spiInitDevice(SPIDevice device)
         return;
     }
 
-    spi->mutexBus = xSemaphoreCreateMutex();
+    spi->mutexBus = xSemaphoreCreateMutexStatic(&spi->mutexBusBuffer);
 
 #ifndef USE_SPI_TRANSACTION
 #ifdef SDCARD_SPI_INSTANCE

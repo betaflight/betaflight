@@ -110,6 +110,9 @@
 
 #include "tasks.h"
 
+#define GYRO_STACK_SIZE 256
+StackType_t gyroStack[GYRO_STACK_SIZE];
+StaticTask_t gyroTCB;
 TaskHandle_t gyroTaskId;
 
 static void taskMain(timeUs_t currentTimeUs)
@@ -340,7 +343,13 @@ void fcTasksInit(void)
 #endif
 
     // Start the gyro task
-    xTaskCreate(taskMainPidLoop, "gyro", 256, NULL, tskIDLE_PRIORITY + TASK_PRIORITY_REALTIME, &gyroTaskId);
+    gyroTaskId = xTaskCreateStatic(taskMainPidLoop,
+                                   "gyro",
+                                   GYRO_STACK_SIZE,
+                                   NULL,
+                                   tskIDLE_PRIORITY + TASK_PRIORITY_REALTIME,
+                                   gyroStack,
+                                   &gyroTCB);
 }
 
 #if defined(USE_TASK_STATISTICS)

@@ -16,8 +16,7 @@ endif
 FREERTOS_PORTABLE_DIR = $(FREERTOS_DIR)/portable/GCC/ARM_CM4F
 		   
 FREERTOS_SRC = $(notdir $(wildcard $(FREERTOS_DIR)/*.c)) \
-	       $(notdir $(wildcard $(FREERTOS_PORTABLE_DIR)/*.c)) \
-	       $(FREERTOS_DIR)/portable/MemMang/heap_4.c
+	       $(notdir $(wildcard $(FREERTOS_PORTABLE_DIR)/*.c))
 	       
 FREERTOS_INC = $(FREERTOS_DIR)/include \
 	       $(FREERTOS_PORTABLE_DIR)
