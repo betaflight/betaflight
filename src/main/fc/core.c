@@ -1111,7 +1111,7 @@ static FAST_CODE_NOINLINE void subTaskRcCommand(timeUs_t currentTimeUs)
 }
 
 // Function for loop trigger
-void FAST_CODE FAST_CODE_NOINLINE taskMainPidLoop( void *pvParameters )
+void FAST_CODE taskMainPidLoop( void *pvParameters )
 {
     UNUSED(pvParameters);
     static uint32_t pidUpdateCounter = 0;
