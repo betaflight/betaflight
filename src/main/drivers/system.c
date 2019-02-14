@@ -68,8 +68,10 @@ timeUs_t micros(void)
     ATOMIC_BLOCK(configMAX_SYSCALL_INTERRUPT_PRIORITY) {
         timeDelta_t deltaDWT = curDWT - oldDWT;
         timeDelta_t deltaMicros = deltaDWT / (int32_t)usTicks;
-        curMicros += deltaMicros;
-        oldDWT += deltaMicros * (int32_t)usTicks;
+        if (deltaMicros > 0) {
+			curMicros += deltaMicros;
+			oldDWT += deltaMicros * (int32_t)usTicks;
+        }
     }
 
     return curMicros;
