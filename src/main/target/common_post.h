@@ -164,10 +164,6 @@
 #define USE_USB_ADVANCED_PROFILES
 #endif
 
-// Determine if the target could have a 32KHz capable gyro
-#if defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20689)
-#define USE_32K_CAPABLE_GYRO
-#endif
 
 #if defined(USE_FLASH_W25M512)
 #define USE_FLASH_W25M

@@ -468,21 +468,11 @@ void validateAndFixGyroConfig(void)
     if (gyroConfig()->gyro_hardware_lpf == GYRO_HARDWARE_LPF_1KHZ_SAMPLE) {
         pidConfigMutable()->pid_process_denom = 1; // When gyro set to 1khz always set pid speed 1:1 to sampling speed
         gyroConfigMutable()->gyro_sync_denom = 1;
-        gyroConfigMutable()->gyro_use_32khz = false;
     }
 
-    if (gyroConfig()->gyro_use_32khz) {
-        // F1 and F3 can't handle high sample speed.
 #if defined(STM32F1)
-        gyroConfigMutable()->gyro_sync_denom = MAX(gyroConfig()->gyro_sync_denom, 16);
-#elif defined(STM32F3)
-        gyroConfigMutable()->gyro_sync_denom = MAX(gyroConfig()->gyro_sync_denom, 4);
+    gyroConfigMutable()->gyro_sync_denom = MAX(gyroConfig()->gyro_sync_denom, 3);
 #endif
-    } else {
-#if defined(STM32F1)
-        gyroConfigMutable()->gyro_sync_denom = MAX(gyroConfig()->gyro_sync_denom, 3);
-#endif
-    }
 
     float samplingTime;
     switch (gyroMpuDetectionResult()->sensor) {
@@ -506,9 +496,7 @@ void validateAndFixGyroConfig(void)
             break;
         }
     }
-    if (gyroConfig()->gyro_use_32khz) {
-        samplingTime = 0.00003125;
-    }
+
 
     // check for looptime restrictions based on motor protocol. Motor times have safety margin
     float motorUpdateRestriction;
