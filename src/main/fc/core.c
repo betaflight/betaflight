@@ -337,7 +337,8 @@ void updateArmingStatus(void)
 void disarm(void)
 {
 	// Protect this atomic access to ensure the disarming never happens twice
-	ATOMIC_BLOCK(configMAX_SYSCALL_INTERRUPT_PRIORITY) {
+	// Allow interrupts as this code won't ever be called from ISR context
+	ATOMIC_BLOCK(configKERNEL_INTERRUPT_PRIORITY) {
 	    if (!ARMING_FLAG(ARMED)) {
 	    	return;
 	    }

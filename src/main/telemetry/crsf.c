@@ -118,7 +118,8 @@ bool handleCrsfMspFrameBuffer(uint8_t payloadSize, mspResponseFnPtr responseFn)
             requestHandled |= sendMspReply(payloadSize, responseFn);
         }
         pos += CRSF_MSP_LENGTH_OFFSET + mspFrameLength;
-        ATOMIC_BLOCK(configMAX_SYSCALL_INTERRUPT_PRIORITY) {
+    	// Allow interrupts as this code won't ever be called from ISR context
+    	ATOMIC_BLOCK(NVIC_PRIO_SERIALUART1) {
             if (pos >= mspRxBuffer.len) {
                 mspRxBuffer.len = 0;
                 return requestHandled;
