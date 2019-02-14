@@ -92,9 +92,9 @@ static bool rxIsInFailsafeMode = true;
 static uint8_t rxChannelCount;
 
 static timeUs_t rxNextUpdateAtUs = 0;
-static uint32_t needRxSignalBefore = 0;
-static uint32_t needRxSignalMaxDelayUs;
-static uint32_t suspendRxSignalUntil = 0;
+static timeUs_t needRxSignalBefore = 0;
+static timeDelta_t needRxSignalMaxDelayUs;
+static timeUs_t suspendRxSignalUntil = 0;
 static uint8_t  skipRxSamples = 0;
 
 static int16_t rcRaw[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]

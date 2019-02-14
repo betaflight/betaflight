@@ -520,7 +520,7 @@ void crsfProcessDisplayPortCmd(uint8_t *frameStart)
  */
 void handleCrsfTelemetry(timeUs_t currentTimeUs)
 {
-    static uint32_t crsfLastCycleTime;
+    static timeUs_t crsfLastCycleTime;
 
     if (!crsfTelemetryEnabled) {
         return;

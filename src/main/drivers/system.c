@@ -30,6 +30,7 @@
 #include "drivers/sound_beeper.h"
 
 #include "system.h"
+#include "time.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -57,10 +58,24 @@ void cycleCounterInit(void)
 
 static volatile int sysTickPending = 0;
 
-uint32_t micros(void)
+timeUs_t micros(void)
 {
-	// TODO This isn't wrapping properly so the rx task stops being call after a few seconds
-	return portGET_RUN_TIME_COUNTER_VALUE()/usTicks;
+	static union {
+		struct {
+			uint32_t lo;
+			uint32_t hi;
+		} u32;
+		uint64_t u64;
+	} longTime;
+	uint32_t newTime = (uint32_t)portGET_RUN_TIME_COUNTER_VALUE();
+
+	// Detect rollover
+	if ((~newTime & 0x80000000) && (longTime.u32.lo & 0x80000000)) {
+		longTime.u32.hi++;
+	}
+	longTime.u32.lo = newTime;
+
+	return (timeUs_t)(longTime.u64/(timeUs_t)usTicks);
 }
 
 // Return system uptime in milliseconds (rollover in 49 days)
@@ -70,9 +85,9 @@ uint32_t millis(void)
 }
 
 #if 1
-void delayMicroseconds(uint32_t us)
+void delayMicroseconds(timeUs_t us)
 {
-    uint32_t now = micros();
+	timeUs_t now = micros();
     while (micros() - now < us);
 }
 #else

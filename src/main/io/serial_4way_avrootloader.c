@@ -76,8 +76,8 @@
 
 static uint8_t suart_getc_(uint8_t *bt)
 {
-    uint32_t btime;
-    uint32_t start_time;
+	timeUs_t btime;
+	timeUs_t start_time;
 
     uint32_t wait_time = millis() + START_BIT_TIMEOUT_MS;
     while (ESC_IS_HI) {
@@ -114,7 +114,7 @@ static void suart_putc_(uint8_t *tx_b)
 {
     // shift out stopbit first
     uint16_t bitmask = (*tx_b << 2) | 1 | (1 << 10);
-    uint32_t btime = micros();
+    timeUs_t btime = micros();
     while (1) {
         if (bitmask & 1) {
             ESC_SET_HI; // 1

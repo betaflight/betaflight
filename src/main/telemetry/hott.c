@@ -107,7 +107,7 @@
 #define MILLISECONDS_IN_A_SECOND 1000
 
 static uint32_t rxSchedule = HOTT_RX_SCHEDULE;
-static uint32_t txDelayUs = HOTT_TX_DELAY_US;
+static timeUs_t txDelayUs = HOTT_TX_DELAY_US;
 
 static uint32_t lastHoTTRequestCheckAt = 0;
 static uint32_t lastMessagesPreparedAt = 0;

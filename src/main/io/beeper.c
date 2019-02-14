@@ -186,9 +186,9 @@ static bool beeperIsOn = false;
 // Place in current sequence
 static uint16_t beeperPos = 0;
 // Time when beeper routine must act next time
-static uint32_t beeperNextToggleTime = 0;
+static timeUs_t beeperNextToggleTime = 0;
 // Time of last arming beep in microseconds (for blackbox)
-static uint32_t armingBeepTimeMicros = 0;
+static timeUs_t armingBeepTimeMicros = 0;
 
 static void beeperProcessCommand(timeUs_t currentTimeUs);
 

@@ -138,8 +138,8 @@ static void StkSendPacketFooter(void)
 
 static int8_t ReadBit(void)
 {
-    uint32_t btimer = micros();
-    uint32_t timeout_timer = btimer + STK_BIT_TIMEOUT;
+	timeUs_t btimer = micros();
+    timeUs_t timeout_timer = btimer + STK_BIT_TIMEOUT;
     WaitPinLo;
     WaitPinHi;
     LastBitTime = micros() - btimer;

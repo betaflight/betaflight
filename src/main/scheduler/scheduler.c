@@ -300,7 +300,7 @@ FAST_CODE void scheduler(void)
 #endif
 #if defined(USE_TASK_STATISTICS)
                 if (calculateTaskStatistics) {
-                    const uint32_t checkFuncExecutionTime = micros() - currentTimeBeforeCheckFuncCall;
+                    const timeUs_t checkFuncExecutionTime = micros() - currentTimeBeforeCheckFuncCall;
                     checkFuncMovingSumExecutionTime += checkFuncExecutionTime - checkFuncMovingSumExecutionTime / MOVING_SUM_COUNT;
                     checkFuncMovingSumDeltaTime += task->taskLatestDeltaTime - checkFuncMovingSumDeltaTime / MOVING_SUM_COUNT;
                     checkFuncTotalExecutionTime += checkFuncExecutionTime;   // time consumed by scheduler + task
