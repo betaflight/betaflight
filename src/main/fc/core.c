@@ -336,40 +336,40 @@ void updateArmingStatus(void)
 
 void disarm(void)
 {
-	// Protect this atomic access to ensure the disarming never happens twice
-	// Allow interrupts as this code won't ever be called from ISR context
-	ATOMIC_BLOCK(configKERNEL_INTERRUPT_PRIORITY) {
-	    if (!ARMING_FLAG(ARMED)) {
-	    	return;
-	    }
+    // Protect this atomic access to ensure the disarming never happens twice
+    // Allow interrupts as this code won't ever be called from ISR context
+    ATOMIC_BLOCK((uint8_t)configKERNEL_INTERRUPT_PRIORITY) {
+        if (!ARMING_FLAG(ARMED)) {
+            return;
+        }
         DISABLE_ARMING_FLAG(ARMED);
-	}
+    }
 
-	lastDisarmTimeUs = micros();
+    lastDisarmTimeUs = micros();
 
 #ifdef USE_OSD
-	if (flipOverAfterCrashActive || isLaunchControlActive()) {
-		osdSuppressStats(true);
-	}
+    if (flipOverAfterCrashActive || isLaunchControlActive()) {
+        osdSuppressStats(true);
+    }
 #endif
 
 #ifdef USE_BLACKBOX
-	if (blackboxConfig()->device && blackboxConfig()->mode != BLACKBOX_MODE_ALWAYS_ON) { // Close the log upon disarm except when logging mode is ALWAYS ON
-		blackboxFinish();
-	}
+    if (blackboxConfig()->device && blackboxConfig()->mode != BLACKBOX_MODE_ALWAYS_ON) { // Close the log upon disarm except when logging mode is ALWAYS ON
+        blackboxFinish();
+    }
 #endif
-	BEEP_OFF;
+    BEEP_OFF;
 #ifdef USE_DSHOT
-	if (isMotorProtocolDshot() && flipOverAfterCrashActive && !featureIsEnabled(FEATURE_3D)) {
-		pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL, false);
-	}
+    if (isMotorProtocolDshot() && flipOverAfterCrashActive && !featureIsEnabled(FEATURE_3D)) {
+        pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL, false);
+    }
 #endif
-	flipOverAfterCrashActive = false;
+    flipOverAfterCrashActive = false;
 
-	// if ARMING_DISABLED_RUNAWAY_TAKEOFF is set then we want to play it's beep pattern instead
-	if (!(getArmingDisableFlags() & ARMING_DISABLED_RUNAWAY_TAKEOFF)) {
-		beeper(BEEPER_DISARMING);      // emit disarm tone
-	}
+    // if ARMING_DISABLED_RUNAWAY_TAKEOFF is set then we want to play it's beep pattern instead
+    if (!(getArmingDisableFlags() & ARMING_DISABLED_RUNAWAY_TAKEOFF)) {
+        beeper(BEEPER_DISARMING);      // emit disarm tone
+    }
 }
 
 void tryArm(void)
@@ -1122,44 +1122,44 @@ void FAST_CODE taskMainPidLoop( void *pvParameters )
 #endif
 
     while (true) {
-    	timeUs_t currentTimeUs;
-    	uint8_t pid_process_denom = pidConfig()->pid_process_denom;
-		// DEBUG_PIDLOOP, timings for:
-		// 0 - gyroUpdate()
-		// 1 - subTaskPidController()
-			// 2 - subTaskMotorUpdate()
-		// 3 - subTaskPidSubprocesses()
-		currentTimeUs = gyroUpdate();
-		DEBUG_SET(DEBUG_PIDLOOP, 0, micros() - currentTimeUs);
+        timeUs_t currentTimeUs;
+        uint8_t pid_process_denom = pidConfig()->pid_process_denom;
+        // DEBUG_PIDLOOP, timings for:
+        // 0 - gyroUpdate()
+        // 1 - subTaskPidController()
+            // 2 - subTaskMotorUpdate()
+        // 3 - subTaskPidSubprocesses()
+        currentTimeUs = gyroUpdate();
+        DEBUG_SET(DEBUG_PIDLOOP, 0, micros() - currentTimeUs);
 
-		if (pidUpdateCounter % pid_process_denom == 0) {
-			pinioSet(1,1);
-			subTaskRcCommand(currentTimeUs);
-			pinioSet(1,0);
-			pinioSet(1,1);
-			subTaskPidController(currentTimeUs);
-			pinioSet(1,0);
-		}
+        if (pidUpdateCounter % pid_process_denom == 0) {
+            pinioSet(1,1);
+            subTaskRcCommand(currentTimeUs);
+            pinioSet(1,0);
+            pinioSet(1,1);
+            subTaskPidController(currentTimeUs);
+            pinioSet(1,0);
+        }
 
-		if (pidUpdateCounter % pid_process_denom == 1 % pid_process_denom) {
-			pinioSet(1,1);
-			subTaskMotorUpdate(currentTimeUs);
-			pinioSet(1,0);
-			pinioSet(1,1);
-			subTaskPidSubprocesses(currentTimeUs);
-			pinioSet(1,0);
-		}
+        if (pidUpdateCounter % pid_process_denom == 1 % pid_process_denom) {
+            pinioSet(1,1);
+            subTaskMotorUpdate(currentTimeUs);
+            pinioSet(1,0);
+            pinioSet(1,1);
+            subTaskPidSubprocesses(currentTimeUs);
+            pinioSet(1,0);
+        }
 
 #ifdef USE_ACC
-		if (pidUpdateCounter % pid_process_denom == 2 % pid_process_denom) {
-			/* Perform accelerometer access in the same thread as the gyro to avoid SPI
-			 * bus contention. Whilst the SPI bus could be protected with a mutex this
-			 * could still result in the gyro access stalling, resuling in jitter
-			 */
-			accUpdate(&accelerometerConfigMutable()->accelerometerTrims);
-		}
+        if (pidUpdateCounter % pid_process_denom == 2 % pid_process_denom) {
+            /* Perform accelerometer access in the same thread as the gyro to avoid SPI
+             * bus contention. Whilst the SPI bus could be protected with a mutex this
+             * could still result in the gyro access stalling, resuling in jitter
+             */
+            accUpdate(&accelerometerConfigMutable()->accelerometerTrims);
+        }
 #endif // USE_ACC
-		pidUpdateCounter++;
+        pidUpdateCounter++;
     }
 }
 
