@@ -25,6 +25,9 @@
 
 #include "pg/pg.h"
 
+#include "FreeRTOS.h"
+#include "semphr.h"
+
 #define LAT 0
 #define LON 1
 
@@ -146,7 +149,9 @@ typedef enum {
 } gpsUpdateToggle_e;
 
 extern gpsData_t gpsData;
+
 extern gpsSolutionData_t gpsSol;
+extern SemaphoreHandle_t gpsSolMutex;
 
 extern uint8_t GPS_update;       // toogle to distinct a GPS position update (directly or via MSP)
 extern uint32_t GPS_packetCount;

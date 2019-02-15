@@ -99,6 +99,11 @@ static uint16_t fraction3[2];
 #endif
 
 gpsSolutionData_t gpsSol;
+// gpsSol is accessed from both the run and gyro tasks. It is only written in the run task. All reads in the run
+// task are thus safe, but writes from run, or reads of multiple values from gyro must be protected by the mutex.
+SemaphoreHandle_t gpsSolMutex;
+StaticSemaphore_t gpsSolMutexBuffer;
+
 uint32_t GPS_packetCount = 0;
 uint32_t GPS_svInfoReceivedCount = 0; // SV = Space Vehicle, counter increments each time SV info is received.
 uint8_t GPS_update = 0;             // toogle to distinct a GPS position update (directly or via MSP)
@@ -236,7 +241,6 @@ typedef enum {
 
 gpsData_t gpsData;
 
-
 PG_REGISTER_WITH_RESET_TEMPLATE(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
 
 PG_RESET_TEMPLATE(gpsConfig_t, gpsConfig,
@@ -275,6 +279,9 @@ static void gpsSetState(gpsState_e state)
 
 void gpsInit(void)
 {
+    // Mutex protecting gpsSol
+    gpsSolMutex = xSemaphoreCreateMutexStatic(&gpsSolMutexBuffer);
+
     gpsData.baudrateIndex = 0;
     gpsData.errors = 0;
     gpsData.timeouts = 0;
@@ -531,6 +538,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
                 gpsData.baudrateIndex %= GPS_INIT_ENTRIES;
             }
             gpsData.lastMessage = millis();
+            // No need to take mutex here
             gpsSol.numSat = 0;
             DISABLE_STATE(GPS_FIX);
             gpsSetState(GPS_INITIALIZING);
@@ -859,17 +867,23 @@ static bool gpsNewFrameNMEA(char c)
                       *gpsPacketLogChar = LOG_NMEA_GGA;
                       frameOK = 1;
                       if (STATE(GPS_FIX)) {
+                            // Take the mutex as atomic data is being updated
+                            xSemaphoreTake(gpsSolMutex, portMAX_DELAY);
                             gpsSol.llh.lat = gps_Msg.latitude;
                             gpsSol.llh.lon = gps_Msg.longitude;
                             gpsSol.numSat = gps_Msg.numSat;
                             gpsSol.llh.altCm = gps_Msg.altitudeCm;
                             gpsSol.hdop = gps_Msg.hdop;
+                            xSemaphoreGive(gpsSolMutex);
                         }
                         break;
                     case FRAME_RMC:
                         *gpsPacketLogChar = LOG_NMEA_RMC;
+                        // Take the mutex as atomic data is being updated
+                        xSemaphoreTake(gpsSolMutex, portMAX_DELAY);
                         gpsSol.groundSpeed = gps_Msg.speed;
                         gpsSol.groundCourse = gps_Msg.ground_course;
+                        xSemaphoreGive(gpsSolMutex);
 #ifdef USE_RTC_TIME
                         // This check will miss 00:00:00.00, but we shouldn't care - next report will be valid
                         if(!rtcHasTime() && gps_Msg.date != 0 && gps_Msg.time != 0) {
