@@ -150,7 +150,7 @@ typedef enum {
 
 extern gpsData_t gpsData;
 
-extern gpsSolutionData_t gpsSol;
+extern volatile gpsSolutionData_t gpsSol;
 extern SemaphoreHandle_t gpsSolMutex;
 
 extern uint8_t GPS_update;       // toogle to distinct a GPS position update (directly or via MSP)
@@ -174,5 +174,5 @@ void gpsEnablePassthrough(struct serialPort_s *gpsPassthroughPort);
 void onGpsNewData(void);
 void GPS_reset_home_position(void);
 void GPS_calc_longitude_scaling(int32_t lat);
-void GPS_distance_cm_bearing(int32_t *currentLat1, int32_t *currentLon1, int32_t *destinationLat2, int32_t *destinationLon2, uint32_t *dist, int32_t *bearing);
+void GPS_distance_cm_bearing(volatile int32_t *currentLat1, volatile int32_t *currentLon1, int32_t *destinationLat2, int32_t *destinationLon2, uint32_t *dist, int32_t *bearing);
 

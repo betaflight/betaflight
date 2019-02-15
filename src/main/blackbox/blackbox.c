@@ -972,7 +972,7 @@ static void writeGPSHomeFrame(void)
     gpsHistory.GPS_home[1] = GPS_home[1];
 }
 
-static void writeGPSFrame(timeUs_t currentTimeUs)
+static void writeGPSFrame(timeUs_t currentTimeUs, gpsSolutionData_t *gpsSolCopy)
 {
     blackboxWrite('G');
 
@@ -987,16 +987,20 @@ static void writeGPSFrame(timeUs_t currentTimeUs)
         blackboxWriteUnsignedVB(currentTimeUs - blackboxHistory[1]->time);
     }
 
-    blackboxWriteUnsignedVB(gpsSol.numSat);
-    blackboxWriteSignedVB(gpsSol.llh.lat - gpsHistory.GPS_home[LAT]);
-    blackboxWriteSignedVB(gpsSol.llh.lon - gpsHistory.GPS_home[LON]);
-    blackboxWriteUnsignedVB(gpsSol.llh.altCm / 10); // was originally designed to transport meters in int16, but +-3276.7m is a good compromise
-    blackboxWriteUnsignedVB(gpsSol.groundSpeed);
-    blackboxWriteUnsignedVB(gpsSol.groundCourse);
+    /* Take the gpsSol mutex to take a copy and write that to the blackbox as otherwise the mutex would be held
+     * too long.
+     */
 
-    gpsHistory.GPS_numSat = gpsSol.numSat;
-    gpsHistory.GPS_coord[LAT] = gpsSol.llh.lat;
-    gpsHistory.GPS_coord[LON] = gpsSol.llh.lon;
+    blackboxWriteUnsignedVB(gpsSolCopy->numSat);
+    blackboxWriteSignedVB(gpsSolCopy->llh.lat - gpsHistory.GPS_home[LAT]);
+    blackboxWriteSignedVB(gpsSolCopy->llh.lon - gpsHistory.GPS_home[LON]);
+    blackboxWriteUnsignedVB(gpsSolCopy->llh.altCm / 10); // was originally designed to transport meters in int16, but +-3276.7m is a good compromise
+    blackboxWriteUnsignedVB(gpsSolCopy->groundSpeed);
+    blackboxWriteUnsignedVB(gpsSolCopy->groundCourse);
+
+    gpsHistory.GPS_numSat = gpsSolCopy->numSat;
+    gpsHistory.GPS_coord[LAT] = gpsSolCopy->llh.lat;
+    gpsHistory.GPS_coord[LON] = gpsSolCopy->llh.lon;
 }
 #endif
 
@@ -1519,14 +1523,19 @@ STATIC_UNIT_TESTED void blackboxLogIteration(timeUs_t currentTimeUs)
         }
 #ifdef USE_GPS
         if (featureIsEnabled(FEATURE_GPS)) {
+            xSemaphoreTake(gpsSolMutex, portMAX_DELAY);
+            gpsSolutionData_t gpsSolCopy = gpsSol;
+            xSemaphoreGive(gpsSolMutex);
+
+
             if (blackboxShouldLogGpsHomeFrame()) {
                 writeGPSHomeFrame();
-                writeGPSFrame(currentTimeUs);
+                writeGPSFrame(currentTimeUs, &gpsSolCopy);
             } else if (gpsSol.numSat != gpsHistory.GPS_numSat
                     || gpsSol.llh.lat != gpsHistory.GPS_coord[LAT]
                     || gpsSol.llh.lon != gpsHistory.GPS_coord[LON]) {
                 //We could check for velocity changes as well but I doubt it changes independent of position
-                writeGPSFrame(currentTimeUs);
+                writeGPSFrame(currentTimeUs, &gpsSolCopy);
             }
         }
 #endif

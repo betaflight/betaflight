@@ -98,7 +98,7 @@ static int32_t GPS_degree[2];   //the lat lon degree without any decimals (lat/1
 static uint16_t fraction3[2];
 #endif
 
-gpsSolutionData_t gpsSol;
+volatile gpsSolutionData_t gpsSol;
 // gpsSol is accessed from both the run and gyro tasks. It is only written in the run task. All reads in the run
 // task are thus safe, but writes from run, or reads of multiple values from gyro must be protected by the mutex.
 SemaphoreHandle_t gpsSolMutex;
@@ -1339,7 +1339,7 @@ void GPS_reset_home_position(void)
 #define TAN_89_99_DEGREES 5729.57795f
 // Get distance between two points in cm
 // Get bearing from pos1 to pos2, returns an 1deg = 100 precision
-void GPS_distance_cm_bearing(int32_t *currentLat1, int32_t *currentLon1, int32_t *destinationLat2, int32_t *destinationLon2, uint32_t *dist, int32_t *bearing)
+void GPS_distance_cm_bearing(volatile int32_t *currentLat1, volatile int32_t *currentLon1, int32_t *destinationLat2, int32_t *destinationLon2, uint32_t *dist, int32_t *bearing)
 {
     float dLat = *destinationLat2 - *currentLat1; // difference of latitude in 1/10 000 000 degrees
     float dLon = (float)(*destinationLon2 - *currentLon1) * GPS_scaleLonDown;
