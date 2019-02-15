@@ -1455,7 +1455,11 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     }
 
     // Always enable warnings elements by default
-    osdConfig->item_pos[OSD_WARNINGS] = OSD_POS(9, 10) | OSD_PROFILE_1_FLAG;
+    uint16_t profileFlags = 0;
+    for (unsigned i = 1; i <= OSD_PROFILE_COUNT; i++) {
+        profileFlags |= OSD_PROFILE_FLAG(i);
+    }
+    osdConfig->item_pos[OSD_WARNINGS] = OSD_POS(9, 10) | profileFlags;
 
     // Default to old fixed positions for these elements
     osdConfig->item_pos[OSD_CROSSHAIRS]         = OSD_POS(13, 6);
