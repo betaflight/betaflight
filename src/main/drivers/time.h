@@ -24,10 +24,10 @@
 
 #include "common/time.h"
 
-void delayMicroseconds(timeUs_t us);
-void delay(timeMs_t ms);
+void delayMicroseconds(timeUs_t us) NOINLINE;
+void delay(timeMs_t ms) NOINLINE;
 
-timeUs_t micros(void);
+timeUs_t micros(void) NOINLINE;
 #define microsISR() micros()
 
 timeMs_t millis(void);

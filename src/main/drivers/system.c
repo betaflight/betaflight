@@ -60,22 +60,21 @@ static volatile int sysTickPending = 0;
 
 timeUs_t micros(void)
 {
-    static int32_t oldDWT = 0;
-    static timeUs_t curMicros = 0;
-
-    ATOMIC_BLOCK(configMAX_SYSCALL_INTERRUPT_PRIORITY) {
-        int32_t curDWT = portGET_RUN_TIME_COUNTER_VALUE();
-        timeDelta_t deltaDWT = curDWT - oldDWT;
+    static struct {
+        int32_t dwt;
+        timeUs_t micros;
+    } state = {0,0};
+    timeUs_t ret;
+    ATOMIC_BLOCK_NB(configMAX_SYSCALL_INTERRUPT_PRIORITY) {
+        ATOMIC_BARRIER(state);
+    int32_t curDWT = portGET_RUN_TIME_COUNTER_VALUE();
+        timeDelta_t deltaDWT = curDWT - state.dwt;
         timeDelta_t deltaMicros = deltaDWT / (int32_t)usTicks;
-        curMicros += deltaMicros;
-        oldDWT += deltaMicros * (int32_t)usTicks;
-        return curMicros;
+        state.micros += deltaMicros;
+        state.dwt += deltaMicros * (int32_t)usTicks;
+        ret = state.micros;
     }
-
-    /* Never reached but the structure of the ATOMIC_BLOCK macro is based on a for loop, and
-     * thus the compiler considers the possibility that the block of code may not be executed
-     */
-    return curMicros;
+    return ret;
 }
 
 // Return system uptime in milliseconds (rollover in 49 days)

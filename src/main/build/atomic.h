@@ -137,7 +137,7 @@ static inline uint8_t __basepriSetRetVal(uint8_t prio)
 // On gcc 5 and higher, this protects only memory passed as parameter (any type can be used)
 // this macro can be used only ONCE PER LINE, but multiple uses per block are fine
 
-#if (__GNUC__ > 7)
+#if (__GNUC__ > 8)
 # warning "Please verify that ATOMIC_BARRIER works as intended"
 // increment version number if BARRIER works
 // TODO - use flag to disable ATOMIC_BARRIER and use full barrier instead
@@ -154,7 +154,7 @@ static inline uint8_t __basepriSetRetVal(uint8_t prio)
     __asm__ volatile ("\t# barrier (" refStr ") enter\n" : "+m" (*(dataPtr)))
 
 #define ATOMIC_BARRIER_LEAVE(dataPtr, refStr)                              \
-    __asm__ volatile ("\t# barrier (" refStr ") leave\n" : "m" (*(dataPtr)))
+    __asm__ volatile ("\t# barrier (" refStr ") leave\n" : : "m" (*(dataPtr)))
 
 #if defined(__clang__)
 // CLang version, using Objective C-style block

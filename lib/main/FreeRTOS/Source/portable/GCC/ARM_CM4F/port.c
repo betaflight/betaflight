@@ -277,6 +277,7 @@ static void prvPortStartFirstTask( void )
 					" isb					\n"
 					" svc 0					\n" /* System call to start first task. */
 					" nop					\n"
+					" .ltorg                                \n"
 				);
 }
 /*-----------------------------------------------------------*/
@@ -707,7 +708,8 @@ static void vPortEnableVFP( void )
 		"								\n"
 		"	orr r1, r1, #( 0xf << 20 )	\n" /* Enable CP10 and CP11 coprocessors, then save back. */
 		"	str r1, [r0]				\n"
-		"	bx r14						"
+		"	bx r14						\n"
+		" .ltorg \n"
 	);
 }
 /*-----------------------------------------------------------*/
