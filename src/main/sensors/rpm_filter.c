@@ -171,7 +171,10 @@ void rpmFilterUpdate()
 
     for (int i = 0; i < filterUpdatesPerIteration; i++) {
 
-        float frequency = constrainf((harmonic + 1) * motorFrequency[motor], 0.0f, currentFilter->minHz);
+        float frequency = (harmonic + 1) * motorFrequency[motor];
+        if (frequency < currentFilter->minHz) {
+            frequency = currentFilter->minHz;
+        }
         biquadFilter_t* template = &currentFilter->notch[0][motor][harmonic];
         // uncomment below to debug filter stepping. Need to also comment out motor rpm DEBUG_SET above
         /* DEBUG_SET(DEBUG_RPM_FILTER, 0, harmonic); */
