@@ -63,15 +63,18 @@ timeUs_t micros(void)
     static int32_t oldDWT = 0;
     static timeUs_t curMicros = 0;
 
-    int32_t curDWT = portGET_RUN_TIME_COUNTER_VALUE();
-
     ATOMIC_BLOCK(configMAX_SYSCALL_INTERRUPT_PRIORITY) {
+        int32_t curDWT = portGET_RUN_TIME_COUNTER_VALUE();
         timeDelta_t deltaDWT = curDWT - oldDWT;
         timeDelta_t deltaMicros = deltaDWT / (int32_t)usTicks;
         curMicros += deltaMicros;
         oldDWT += deltaMicros * (int32_t)usTicks;
+        return curMicros;
     }
 
+    /* Never reached but the structure of the ATOMIC_BLOCK macro is based on a for loop, and
+     * thus the compiler considers the possibility that the block of code may not be executed
+     */
     return curMicros;
 }
 
