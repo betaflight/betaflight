@@ -63,7 +63,7 @@ typedef struct
     const CMSEntryFuncPtr func;
     void *data;
     const uint8_t flags;
-} OSD_Entry;
+} __attribute__((packed)) OSD_Entry;
 
 // Bits in flags
 #define PRINT_VALUE    0x01  // Value has been changed, need to redraw
