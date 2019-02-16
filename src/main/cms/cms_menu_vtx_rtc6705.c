@@ -98,7 +98,7 @@ static long cmsx_Vtx_onExit(const OSD_Entry *self)
 }
 
 
-static OSD_Entry cmsx_menuVtxEntries[] =
+static const OSD_Entry cmsx_menuVtxEntries[] =
 {
     {"--- VTX ---", OME_Label, NULL, NULL, 0},
     {"BAND", OME_TAB, NULL, &entryVtxBand, 0},

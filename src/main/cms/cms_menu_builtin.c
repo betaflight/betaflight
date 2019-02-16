@@ -78,7 +78,7 @@ static long cmsx_InfoInit(void)
     return 0;
 }
 
-static OSD_Entry menuInfoEntries[] = {
+static const OSD_Entry menuInfoEntries[] = {
     { "--- INFO ---", OME_Label, NULL, NULL, 0 },
     { "FWID", OME_String, NULL, BETAFLIGHT_IDENTIFIER, 0 },
     { "FWVER", OME_String, NULL, FC_VERSION_STRING, 0 },
@@ -100,7 +100,7 @@ static CMS_Menu menuInfo = {
 
 // Features
 
-static OSD_Entry menuFeaturesEntries[] =
+static const OSD_Entry menuFeaturesEntries[] =
 {
     {"--- FEATURES ---", OME_Label, NULL, NULL, 0},
 
@@ -141,7 +141,7 @@ static CMS_Menu menuFeatures = {
 
 // Main
 
-static OSD_Entry menuMainEntries[] =
+static const OSD_Entry menuMainEntries[] =
 {
     {"-- MAIN --",  OME_Label, NULL, NULL, 0},
 
