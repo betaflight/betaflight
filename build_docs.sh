@@ -28,13 +28,13 @@ doc_files=(
 	'Blackbox.md'
 	'Migrating from baseflight.md'
 	'Boards.md'
-	'Board - AlienFlight.md'
-	'Board - CC3D.md'
-	'Board - CJMCU.md'
-	'Board - Naze32.md'
-	'Board - Sparky.md'
-	'Board - Olimexino.md'
-	'Board - ChebuzzF3.md'
+	'./boards/Board - AlienFlight.md'
+	'./boards/Board - CC3D.md'
+	'./boards/Board - CJMCU.md'
+	'./boards/Board - Naze32.md'
+	'./boards/Board - Sparky.md'
+	'./boards/Board - Olimexino.md'
+	'./boards/Board - ChebuzzF3.md'
 )
 
 if which gimli >/dev/null; then
@@ -46,11 +46,10 @@ if which gimli >/dev/null; then
 	for i in "${doc_files[@]}"
 	do
 		cat "$i" >> ${filename}.md
+		gimli -f {$i}.md - stylesheet override.css \
+		 -w '--toc --title "Cleanflight Manual" --footer-right '[page]' --toc-depth 1'
+
 	done
-	rm -f ${filename}.pdf
-	gimli -f ${filename}.md -stylesheet override.css \
-	  -w '--toc --title "Cleanflight Manual" --footer-right "[page]" --toc-depth 1'
-	rm ${filename}.md
 	popd >/dev/null
 else
 	echo -e "\nFAILED"
