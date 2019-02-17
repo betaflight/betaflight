@@ -46,6 +46,7 @@ if which gimli >/dev/null; then
 	for i in "${doc_files[@]}"
 	do
 		cat "$i" >> ${filename}.md
+
 	done
 	gimli -f {$filename}.md - stylesheet override.css \
 	 -w '--toc --title "Cleanflight Manual" --footer-right '[page]' --toc-depth 1'
