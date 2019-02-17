@@ -31,7 +31,9 @@
 #include "usbd_msc_mem.h"
 #include "usbd_msc_data.h"
 
+#if !defined(UNUSED)
 #define UNUSED(x) (void)(x)
+#endif
 
 
 
