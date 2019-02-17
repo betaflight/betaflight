@@ -304,7 +304,7 @@ void adcInit(const adcConfig_t *config)
     ADC_Cmd(adc.ADCx, ENABLE);
 
 #ifdef USE_DMA_SPEC
-    const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpec(DMA_PERIPH_ADC, device, config->dmaopt[device]);
+    const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_ADC, device, config->dmaopt[device]);
 
     if (!dmaSpec) {
         return;

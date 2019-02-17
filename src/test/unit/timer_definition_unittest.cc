@@ -18,7 +18,6 @@
 extern "C" {
     #include <target.h>
     #include <drivers/timer.h>
-    extern const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT];
 }
 
 #include <bitset>
@@ -27,6 +26,11 @@ extern "C" {
 #include <sstream>
 #include <string>
 #include "gtest/gtest.h"
+
+#if !defined(USE_UNIFIED_TARGET)
+extern "C" {
+    extern const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT];
+}
 
 TEST(TimerDefinitionTest, Test_counterMismatch) {
     for (const timerHardware_t &t : timerHardware)
@@ -39,7 +43,6 @@ TEST(TimerDefinitionTest, Test_counterMismatch) {
             << " array element appears to be " << &t - timerHardware - 1 << '.';
 }
 
-#if !defined(USE_TIMER_MGMT)
 TEST(TimerDefinitionTest, Test_duplicatePin) {
     std::set<TestPinEnum> usedPins;
     for (const timerHardware_t &t : timerHardware)
@@ -51,6 +54,7 @@ TEST(TimerDefinitionTest, Test_duplicatePin) {
     EXPECT_EQ(USABLE_TIMER_CHANNEL_COUNT, usedPins.size());
 }
 
+#if !defined(USE_TIMER_MGMT)
 namespace {
 std::string writeUsedTimers(const std::bitset<TEST_TIMER_SIZE> &tset) {
     std::stringstream used_timers;
@@ -103,3 +107,4 @@ extern "C" {
 
     void bstInit(int) {}
 }
+#endif // USE_UNIFIED_TARGET

@@ -276,3 +276,13 @@
 #undef BEEPER_PIN
 #undef BEEPER_PWM_HZ
 #endif
+
+#if !defined(USE_DMA_SPEC)
+#undef USE_TIMER_MGMT
+#endif
+
+#if defined(USE_TIMER_MGMT)
+#undef USED_TIMERS
+#else
+#undef USE_UNIFIED_TARGET
+#endif

@@ -70,6 +70,10 @@
 #define USE_OVERCLOCK
 #endif
 
+#if defined(STM32F40_41xxx)
+#define USE_TIMER_MGMT
+#endif
+
 #endif // STM32F4
 
 #ifdef STM32F7
@@ -89,6 +93,11 @@
 #define USE_DMA_SPEC
 // Re-enable this after 4.0 has been released, and remove the define from STM32F4DISCOVERY
 //#define USE_SPI_TRANSACTION
+
+#if defined(STM32F722xx)
+#define USE_TIMER_MGMT
+#endif
+
 #endif // STM32F7
 
 #if defined(STM32F4) || defined(STM32F7)

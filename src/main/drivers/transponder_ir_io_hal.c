@@ -26,19 +26,21 @@
 
 #ifdef USE_TRANSPONDER
 
-#include "dma.h"
-#include "drivers/nvic.h"
+#include "drivers/dma.h"
+#include "drivers/dma_reqmap.h"
 #include "drivers/io.h"
-#include "rcc.h"
-#include "timer.h"
+#include "drivers/nvic.h"
+#include "drivers/rcc.h"
+#include "drivers/timer.h"
+#include "drivers/transponder_ir_arcitimer.h"
+#include "drivers/transponder_ir_erlt.h"
+#include "drivers/transponder_ir_ilap.h"
 
 #include "transponder_ir.h"
-#include "drivers/transponder_ir_arcitimer.h"
-#include "drivers/transponder_ir_ilap.h"
-#include "drivers/transponder_ir_erlt.h"
+
+typedef DMA_Stream_TypeDef dmaStream_t;
 
 volatile uint8_t transponderIrDataTransferInProgress = 0;
-
 
 static IO_t transponderIO = IO_NONE;
 static TIM_HandleTypeDef TimHandle;
@@ -68,7 +70,21 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     TIM_TypeDef *timer = timerHardware->tim;
     timerChannel = timerHardware->channel;
 
-    if (timerHardware->dmaRef == NULL) {
+#if defined(USE_DMA_SPEC)
+    const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByTimer(timerHardware);
+
+    if (dmaSpec == NULL) {
+        return;
+    }
+
+    dmaStream_t *dmaRef = dmaSpec->ref;
+    uint32_t dmaChannel = dmaSpec->channel;
+#else
+    dmaStream_t *dmaRef = timerHardware->dmaRef;
+    uint32_t dmaChannel = timerHardware->dmaChannel;
+#endif
+
+    if (dmaRef == NULL) {
         return;
     }
 
@@ -101,7 +117,7 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     __DMA1_CLK_ENABLE();
 
     /* Set the parameters to be configured */
-    hdma_tim.Init.Channel = timerHardware->dmaChannel;
+    hdma_tim.Init.Channel = dmaChannel;
     hdma_tim.Init.Direction = DMA_MEMORY_TO_PERIPH;
     hdma_tim.Init.PeriphInc = DMA_PINC_DISABLE;
     hdma_tim.Init.MemInc = DMA_MINC_ENABLE;
@@ -115,15 +131,15 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     hdma_tim.Init.PeriphBurst = DMA_PBURST_SINGLE;
 
     /* Set hdma_tim instance */
-    hdma_tim.Instance = timerHardware->dmaRef;
+    hdma_tim.Instance = dmaRef;
 
     uint16_t dmaIndex = timerDmaIndex(timerChannel);
 
     /* Link hdma_tim to hdma[x] (channelx) */
     __HAL_LINKDMA(&TimHandle, hdma[dmaIndex], hdma_tim);
 
-    dmaInit(timerHardware->dmaIrqHandler, OWNER_TRANSPONDER, 0);
-    dmaSetHandler(timerHardware->dmaIrqHandler, TRANSPONDER_DMA_IRQHandler, NVIC_PRIO_TRANSPONDER_DMA, dmaIndex);
+    dmaInit(dmaGetIdentifier(dmaRef), OWNER_TRANSPONDER, 0);
+    dmaSetHandler(dmaGetIdentifier(dmaRef), TRANSPONDER_DMA_IRQHandler, NVIC_PRIO_TRANSPONDER_DMA, dmaIndex);
 
     /* Initialize TIMx DMA handle */
     if (HAL_DMA_Init(TimHandle.hdma[dmaIndex]) != HAL_OK) {
