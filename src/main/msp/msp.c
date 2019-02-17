@@ -1037,9 +1037,10 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
             const modeActivationCondition_t *mac = modeActivationConditions(i);
             const box_t *box = findBoxByBoxId(mac->modeId);
+            const box_t *linkedBox = findBoxByBoxId(mac->linkedTo);
             sbufWriteU8(dst, box->permanentId);     // each element is aligned with MODE_RANGES by the permanentId
             sbufWriteU8(dst, mac->modeLogic);
-            sbufWriteU8(dst, mac->linkedTo);
+            sbufWriteU8(dst, linkedBox->permanentId);
         }
         break;
 
