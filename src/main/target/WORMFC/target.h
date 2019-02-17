@@ -194,7 +194,7 @@
 #define USE_SDCARD
 #define USE_SDCARD_SDIO
 
-#define SDIO_DMA_OPT            0  // DMA 2 Stream 3 Channel 4
+#define SDCARD_SDIO_DMA_OPT     0  // DMA 2 Stream 3 Channel 4
 #define SDCARD_SPI_CS_PIN NONE //This is not used on SDIO, has to be kept for now to keep compiler happy
 #if defined(PIRXF4)
 #define SDCARD_DETECT_PIN PC15

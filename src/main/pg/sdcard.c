@@ -71,13 +71,6 @@ void pgResetFn_sdcardConfig(sdcardConfig_t *config)
     config->dmaIdentifier = (uint8_t)dmaGetIdentifier(SDCARD_DMA_CHANNEL_TX);
 #endif
 #endif
-
-#ifdef USE_SDCARD_SDIO
-#if defined(SDIO_DMA)
-    config->dmaIdentifier = (uint8_t)dmaGetIdentifier(SDIO_DMA);
-    config->useDma = true;
-#endif
-#endif
 #endif // !USE_DMA_SPEC
 }
 #endif

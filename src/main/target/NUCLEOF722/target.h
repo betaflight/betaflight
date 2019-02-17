@@ -133,7 +133,7 @@
 //#define SPI4_TX_DMA_OPT                     0     // DMA 2 Stream 1 Channel 4
 #define USE_SDCARD_SDIO
 
-#define SDIO_DMA_OPT            0  // DMA 2 Stream 3 Chanel 4
+#define SDCARD_SDIO_DMA_OPT     0   // DMA 2 Stream 3 Chanel 4
 #define SDCARD_SPI_CS_PIN NONE //This is not used on SDIO, has to be kept for now to keep compiler happy
 
 #define USE_I2C
