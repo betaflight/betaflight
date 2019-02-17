@@ -155,9 +155,12 @@ bool srxlFrameRpm(sbuf_t *dst, timeUs_t currentTimeUs)
     sbufWriteU8(dst, SRXL_FRAMETYPE_TELE_RPM);
     sbufWriteU8(dst, SRXL_FRAMETYPE_SID);
     sbufWriteU16BigEndian(dst, 0xFFFF);                     // pulse leading edges
-    sbufWriteU16BigEndian(dst, getBatteryVoltage());   // vbat is in units of 0.01V
+    if (telemetryConfig()->report_cell_voltage) {
+        sbufWriteU16BigEndian(dst, getBatteryAverageCellVoltage()); // Cell voltage is in units of 0.01V
+    } else {
+        sbufWriteU16BigEndian(dst, getBatteryVoltage());   // vbat is in units of 0.01V
+    }
     sbufWriteU16BigEndian(dst, 0x7FFF);                     // temperature
-
     sbufFill(dst, 0xFF, STRU_TELE_RPM_EMPTY_FIELDS_COUNT);
     return true;
 }
