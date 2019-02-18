@@ -46,7 +46,9 @@
 #include "usbd_msc_bot.h"
 #include "usbd_req.h"
 
+#if !defined(UNUSED)
 #define UNUSED(x) (void)(x)
+#endif
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
   * @{
