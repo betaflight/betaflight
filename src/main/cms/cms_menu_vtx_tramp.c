@@ -172,8 +172,14 @@ static long trampCmsCommence(displayPort_t *pDisp, const void *self)
     return MENU_CHAIN_BACK;
 }
 
-static void trampCmsInitSettings(void)
+static bool trampCmsInitSettings(void)
 {
+    vtxDevice_t *device = vtxCommonDevice();
+
+    if (!device) {
+        return false;
+    }
+
     if (trampBand > 0) trampCmsBand = trampBand;
     if (trampChannel > 0) trampCmsChan = trampChannel;
 
@@ -186,8 +192,6 @@ static void trampCmsInitSettings(void)
         }
     }
 
-    vtxDevice_t *device = vtxCommonDevice();
-
     trampCmsEntBand.val = &trampCmsBand;
     trampCmsEntBand.max = device->capability.bandCount;
     trampCmsEntBand.names = device->bandNames;
@@ -199,11 +203,16 @@ static void trampCmsInitSettings(void)
     trampCmsEntPower.val = &trampCmsPower;
     trampCmsEntPower.max = device->capability.powerCount;
     trampCmsEntPower.names = device->powerNames;
+
+    return true;
 }
 
 static long trampCmsOnEnter(void)
 {
-    trampCmsInitSettings();
+    if (!trampCmsInitSettings()) {
+        return MENU_CHAIN_BACK;
+    }
+
     return 0;
 }
 
