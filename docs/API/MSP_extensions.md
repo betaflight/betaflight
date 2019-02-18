@@ -50,7 +50,7 @@ following fields:
 |------|------|-------|
 | permanentId | uint8 | See Modes.md for a definition of the permanent ids |
 | modeLogic | uint8 | 0 = Logic AND; 1 = Logic OR |
-| linkedTo | uint8 | Permanent id to which this mode is linked. Range is ignored if linked. |
+| linkedTo | uint8 | Permanent id to which this mode is linked. |
 
 Thus, for a cleanflight firmware with 20 slots, 61 bytes (including prepended size) would be returned in response to
 MSP\_MODE\_RANGES\_EXTRA.
