@@ -443,19 +443,13 @@ static void saReceiveFramer(uint8_t c)
 
 static void saSendFrame(uint8_t *buf, int len)
 {
-    switch (smartAudioSerialPort->identifier) {
-        case SERIAL_PORT_SOFTSERIAL1:
-        case SERIAL_PORT_SOFTSERIAL2:
-            break;
-        default:
-            serialWrite(smartAudioSerialPort, 0x00); // Generate 1st start bit
-            break;
-    }
+    serialWrite(smartAudioSerialPort, 0x00); // Ensure line is low regardless of hardware pull-down capabilities.
 
     for (int i = 0 ; i < len ; i++) {
         serialWrite(smartAudioSerialPort, buf[i]);
     }
 
+    serialWrite(smartAudioSerialPort, 0x00); // Pull the line low again after sending frame.
     sa_lastTransmissionMs = millis();
     saStat.pktsent++;
 }
