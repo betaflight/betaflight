@@ -1025,6 +1025,7 @@ static void cliAux(char *cmdline)
             }
             if (validArgumentCount == 4) { // for backwards compatibility
                 mac->modeLogic = MODELOGIC_OR;
+                mac->linkedTo = 0;
             } else if (validArgumentCount == 5) { // for backwards compatibility
                 mac->linkedTo = 0;
             } else if (validArgumentCount != 6) {
@@ -1033,12 +1034,12 @@ static void cliAux(char *cmdline)
             analyzeModeActivationConditions();
             cliPrintLinef( "aux %u %u %u %u %u %u %u",
                 i,
-                mac->modeId,
+                findBoxByBoxId(mac->modeId)->permanentId,
                 mac->auxChannelIndex,
                 MODE_STEP_TO_CHANNEL_VALUE(mac->range.startStep),
                 MODE_STEP_TO_CHANNEL_VALUE(mac->range.endStep),
                 mac->modeLogic,
-                mac->linkedTo
+                findBoxByBoxId(mac->linkedTo)->permanentId
             );
         } else {
             cliShowArgumentRangeError("INDEX", 0, MAX_MODE_ACTIVATION_CONDITION_COUNT - 1);
