@@ -208,13 +208,16 @@
 
     //#if ((FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 5))
     //#define USE_PWM
+
+    #define USE_SERIAL_4WAY_BLHELI_BOOTLOADER
+
   #endif
 
   #if ((FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 10))
   #define USE_VIRTUAL_CURRENT_METER
   //#define USE_CAMERA_CONTROL
   #define USE_ESC_SENSOR
-  #define USE_SERIAL_4WAY_BLHELI_BOOTLOADER
+  //#define USE_SERIAL_4WAY_BLHELI_BOOTLOADER
   #define USE_RCDEVICE
   #endif
 
