@@ -75,7 +75,7 @@ VCP_SRC = \
 
 
 MCU_COMMON_SRC = \
-            target/system_stm32f30x.c \
+            startup/system_stm32f30x.c \
             drivers/adc_stm32f30x.c \
             drivers/bus_i2c_stm32f30x.c \
             drivers/bus_spi_stdperiph.c \
