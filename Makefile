@@ -54,7 +54,8 @@ OBJECT_DIR      := $(ROOT)/obj/main
 BIN_DIR         := $(ROOT)/obj
 CMSIS_DIR       := $(ROOT)/lib/main/CMSIS
 INCLUDE_DIRS    := $(SRC_DIR) \
-                   $(ROOT)/src/main/target
+                   $(ROOT)/src/main/target \
+                   $(ROOT)/src/main/startup
 LINKER_DIR      := $(ROOT)/src/main/target/link
 
 ## V                 : Set verbosity level based on the V= parameter

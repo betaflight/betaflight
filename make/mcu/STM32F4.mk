@@ -169,7 +169,7 @@ endif
 DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE)
 
 MCU_COMMON_SRC = \
-            target/system_stm32f4xx.c \
+            startup/system_stm32f4xx.c \
             drivers/accgyro/accgyro_mpu.c \
             drivers/adc_stm32f4xx.c \
             drivers/bus_i2c_stm32f10x.c \
