@@ -557,6 +557,10 @@ void SystemInit(void)
   SCB->VTOR = (uint32_t)&isr_vector_table_flash_base;
 #endif
 
+#ifdef USE_HAL_DRIVER
+    HAL_Init();
+#endif
+
     SystemCoreClockUpdate();
 }
 
