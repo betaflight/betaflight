@@ -53,15 +53,15 @@ typedef struct rpmNotchFilter_s
     biquadFilter_t notch[XYZ_AXIS_COUNT][MAX_SUPPORTED_MOTORS][RPM_FILTER_MAXHARMONICS];
 } rpmNotchFilter_t;
 
-static float   erpmToHz;
-static float   filteredMotorErpm[MAX_SUPPORTED_MOTORS];
-static uint8_t numberFilters;
-static uint8_t numberRpmNotchFilters;
-static uint8_t filterUpdatesPerIteration;
-static float   pidLooptime;
-static rpmNotchFilter_t filters[2];
-static rpmNotchFilter_t* gyroFilter;
-static rpmNotchFilter_t* dtermFilter;
+FAST_RAM_ZERO_INIT static float   erpmToHz;
+FAST_RAM_ZERO_INIT static float   filteredMotorErpm[MAX_SUPPORTED_MOTORS];
+FAST_RAM_ZERO_INIT static uint8_t numberFilters;
+FAST_RAM_ZERO_INIT static uint8_t numberRpmNotchFilters;
+FAST_RAM_ZERO_INIT static uint8_t filterUpdatesPerIteration;
+FAST_RAM_ZERO_INIT static float   pidLooptime;
+FAST_RAM_ZERO_INIT static rpmNotchFilter_t filters[2];
+FAST_RAM_ZERO_INIT static rpmNotchFilter_t* gyroFilter;
+FAST_RAM_ZERO_INIT static rpmNotchFilter_t* dtermFilter;
 
 PG_REGISTER_WITH_RESET_FN(rpmFilterConfig_t, rpmFilterConfig, PG_RPM_FILTER_CONFIG, 3);
 
@@ -154,13 +154,18 @@ float rpmFilterDterm(int axis, float value)
     return applyFilter(dtermFilter, axis, value);
 }
 
-static float motorFrequency[MAX_SUPPORTED_MOTORS];
+FAST_RAM_ZERO_INIT static float motorFrequency[MAX_SUPPORTED_MOTORS];
 
-void rpmFilterUpdate()
+FAST_CODE_NOINLINE void rpmFilterUpdate()
 {
     if (gyroFilter == NULL && dtermFilter == NULL) {
         return;
     }
+
+    FAST_RAM_ZERO_INIT static uint8_t motor;
+    FAST_RAM_ZERO_INIT static uint8_t harmonic;
+    FAST_RAM_ZERO_INIT static uint8_t filter;
+    FAST_RAM static rpmNotchFilter_t* currentFilter = &filters[0];
 
     for (int motor = 0; motor < getMotorCount(); motor++) {
         filteredMotorErpm[motor] = pt1FilterApply(&rpmFilters[motor], getDshotTelemetry(motor));
@@ -169,13 +174,7 @@ void rpmFilterUpdate()
         }
     }
 
-    static uint8_t motor;
-    static uint8_t harmonic;
-    static uint8_t filter;
-    static rpmNotchFilter_t* currentFilter = &filters[0];
-
     for (int i = 0; i < filterUpdatesPerIteration; i++) {
-
         float frequency = constrainf(
             (harmonic + 1) * motorFrequency[motor], currentFilter->minHz, currentFilter->maxHz);
         biquadFilter_t* template = &currentFilter->notch[0][motor][harmonic];

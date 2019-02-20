@@ -87,6 +87,13 @@ __STATIC_INLINE void LL_EX_DMA_SetDataLength(DMA_Stream_TypeDef* DMAx_Streamy, u
  	MODIFY_REG(DMAx_Streamy->NDTR, DMA_SxNDT, NbData);
 }
 
+__STATIC_INLINE uint32_t LL_EX_DMA_GetDataLength(DMA_Stream_TypeDef* DMAx_Streamy)
+{
+    DMA_TypeDef *DMA = LL_EX_DMA_Stream_to_DMA(DMAx_Streamy);
+	const uint32_t Stream = LL_EX_DMA_Stream_to_Stream(DMAx_Streamy);
+    return LL_DMA_GetDataLength(DMA, Stream);
+}
+
 __STATIC_INLINE void LL_EX_TIM_EnableIT(TIM_TypeDef *TIMx, uint32_t Sources)
 {
 	SET_BIT(TIMx->DIER, Sources);
