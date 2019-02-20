@@ -72,12 +72,12 @@ typedef struct
 #define OPTSTRING      0x08  // (Temporary) Flag for OME_Submenu, indicating func should be called to get a string to display.
 
 #define IS_PRINTVALUE(x) ((x) & PRINT_VALUE)
-#define SET_PRINTVALUE(x) { (x) |= PRINT_VALUE; }
-#define CLR_PRINTVALUE(x) { (x) &= ~PRINT_VALUE; }
+#define SET_PRINTVALUE(x) do { (x) |= PRINT_VALUE; } while (0)
+#define CLR_PRINTVALUE(x) do { (x) &= ~PRINT_VALUE; } while (0)
 
 #define IS_PRINTLABEL(x) ((x) & PRINT_LABEL)
-#define SET_PRINTLABEL(x) { (x) |= PRINT_LABEL; }
-#define CLR_PRINTLABEL(x) { (x) &= ~PRINT_LABEL; }
+#define SET_PRINTLABEL(x) do { (x) |= PRINT_LABEL; } while (0)
+#define CLR_PRINTLABEL(x) do { (x) &= ~PRINT_LABEL; } while (0)
 
 #define IS_DYNAMIC(p) ((p)->flags & DYNAMIC)
 
