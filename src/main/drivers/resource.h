@@ -79,6 +79,7 @@ typedef enum {
     OWNER_RX_SPI_LED,
     OWNER_PREINIT,
     OWNER_DSHOT,
+    OWNER_DTELEMETRY,
     OWNER_TOTAL_COUNT
 } resourceOwner_e;
 

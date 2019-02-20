@@ -57,7 +57,10 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 #else
     DEF_TIM(TIM5,  CH2, PA1,  TIM_USE_MOTOR | TIM_USE_LED, 0, 0), // S5_OUT
 #endif
-    DEF_TIM(TIM1,  CH1, PA8,  TIM_USE_MOTOR,               0, 0), // S6_OUT
+
+    // TIM1 used for telemetry DMA pacer experiment
+    DEF_TIM(TIM1,  CH1, PA8,  TIM_USE_BB_TELEMETRY,        0, 0), // S6_OUT D(2,6,0)
+
     DEF_TIM(TIM1,  CH2, PA9,  TIM_USE_NONE,                0, 0), // UART1_TX
     DEF_TIM(TIM1,  CH3, PA10, TIM_USE_NONE,                0, 0), // UART1_RX
 

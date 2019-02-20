@@ -19,6 +19,7 @@ COMMON_SRC = \
             drivers/buttons.c \
             drivers/display.c \
             drivers/bb_dshot.c \
+            drivers/bb_dtelemetry.c \
             drivers/dma_reqmap.c \
             drivers/exti.c \
             drivers/io.c \

@@ -208,6 +208,15 @@ void EXTIEnable(IO_t io, bool enable)
 #endif
 }
 
+void EXTIEnableByLineMask(uint32_t lines, bool enable)
+{
+    if (enable) {
+        EXTI->IMR |= lines;
+    } else {
+        EXTI->IMR &= ~lines;
+    }
+}
+
 void EXTI_IRQHandler(void)
 {
     uint32_t exti_active = EXTI->IMR & EXTI->PR;

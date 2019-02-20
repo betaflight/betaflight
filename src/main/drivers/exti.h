@@ -43,3 +43,4 @@ void EXTIHandlerInit(extiCallbackRec_t *cb, extiHandlerCallback *fn);
 void EXTIConfig(IO_t io, extiCallbackRec_t *cb, int irqPriority, ioConfig_t config, extiTrigger_t trigger);
 void EXTIRelease(IO_t io);
 void EXTIEnable(IO_t io, bool enable);
+void EXTIEnableByLineMask(uint32_t lines, bool enable);

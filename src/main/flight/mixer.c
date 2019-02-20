@@ -526,12 +526,12 @@ void writeMotors(void)
 
         finishUs = micros();
 
-        debug[0] = finishUs - startUs;
+        //debug[0] = finishUs - startUs;
 
         sum += (finishUs - startUs);
         count++;
 
-        debug[1] = (sum * 100)/count;
+        //debug[1] = (sum * 100)/count;
     }
 }
 

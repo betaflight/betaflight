@@ -277,6 +277,8 @@ void directDshotTimerChannelInit(motorPort_t *motorPort, uint16_t bufferSize)
 // Find TIM1 and/or TIM8 in timerHardware array for direct DShot
 // Initialize timebase for the found timer and fill in motorPort
 
+extern void directTelemetryInit(motorPwmProtocolTypes_e pwmProtocolType);
+
 void directDshotInit(motorPwmProtocolTypes_e pwmProtocolType)
 {
     const timerHardware_t *timhw;
@@ -293,6 +295,8 @@ void directDshotInit(motorPwmProtocolTypes_e pwmProtocolType)
 
         directDshotTimebaseInit(timhw, pwmProtocolType);
     }
+
+    directTelemetryInit(pwmProtocolType);
 }
 
 //
