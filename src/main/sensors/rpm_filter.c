@@ -116,7 +116,7 @@ void rpmFilterInit(const rpmFilterConfig_t *config)
     }
 
     for (int i = 0; i < getMotorCount(); i++) {
-        pt1FilterInit(&rpmFilters[i], pt1FilterGain(config->rpm_lpf, pidLooptime));
+        pt1FilterInit(&rpmFilters[i], pt1FilterGain(config->rpm_lpf, pidLooptime * 1e-6f));
     }
 
     erpmToHz = ERPM_PER_LSB / SECONDS_PER_MINUTE  / (motorConfig()->motorPoleCount / 2.0f);
@@ -125,7 +125,8 @@ void rpmFilterInit(const rpmFilterConfig_t *config)
     numberFilters = getMotorCount() * (filters[0].harmonics + filters[1].harmonics);
     const float filtersPerLoopIteration = numberFilters / loopIterationsPerUpdate;
     filterUpdatesPerIteration = rintf(filtersPerLoopIteration + 0.49f);
-    maxFrequency = 0.5f / (gyro.targetLooptime * 1e-6f);
+    // don't go quite to nyquist to avoid oscillations
+    maxFrequency = 0.48f / (gyro.targetLooptime * 1e-6f);
 }
 
 static float applyFilter(rpmNotchFilter_t* filter, int axis, float value)
