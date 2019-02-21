@@ -56,6 +56,7 @@
 
 #include "sensors/battery.h"
 #include "sensors/adcinternal.h"
+#include "sensors/esc_sensor.h"
 
 #include "telemetry/telemetry.h"
 #include "telemetry/srxl.h"
@@ -157,6 +158,13 @@ typedef struct
 
 bool srxlFrameRpm(sbuf_t *dst, timeUs_t currentTimeUs)
 {
+    uint16_t period_us = SPEKTRUM_RPM_UNUSED;
+#ifdef USE_ESC_SENSOR_TELEMETRY
+    escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
+    if (escData != NULL) {
+        period_us = 60000000 / escData->rpm; // revs/minute -> microSeconds
+    }
+#endif
 
     int16_t coreTemp = SPEKTRUM_TEMP_UNUSED;
 #if defined(USE_ADC_INTERNAL)
@@ -168,7 +176,7 @@ bool srxlFrameRpm(sbuf_t *dst, timeUs_t currentTimeUs)
 
     sbufWriteU8(dst, SRXL_FRAMETYPE_TELE_RPM);
     sbufWriteU8(dst, SRXL_FRAMETYPE_SID);
-    sbufWriteU16BigEndian(dst, SPEKTRUM_RPM_UNUSED);        // pulse leading edges
+    sbufWriteU16BigEndian(dst, period_us);                  // pulse leading edges
     if (telemetryConfig()->report_cell_voltage) {
         sbufWriteU16BigEndian(dst, getBatteryAverageCellVoltage()); // Cell voltage is in units of 0.01V
     } else {
@@ -382,7 +390,6 @@ bool srxlFrameFlightPackCurrent(sbuf_t *dst, timeUs_t currentTimeUs)
     static timeUs_t lastTimeSentFPmAh = 0;
 
     timeUs_t keepAlive = currentTimeUs - lastTimeSentFPmAh;
-
 
     if ( amps != sentAmps ||
          mah != sentMah ||
