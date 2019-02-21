@@ -161,7 +161,7 @@ static long cmsx_PidWriteback(const OSD_Entry *self)
     return 0;
 }
 
-static OSD_Entry cmsx_menuPidEntries[] =
+static const OSD_Entry cmsx_menuPidEntries[] =
 {
     { "-- PID --", OME_Label, NULL, pidProfileIndexString, 0},
 
@@ -223,7 +223,7 @@ static long cmsx_RateProfileOnEnter(void)
     return 0;
 }
 
-static OSD_Entry cmsx_menuRateProfileEntries[] =
+static const OSD_Entry cmsx_menuRateProfileEntries[] =
 {
     { "-- RATE --", OME_Label, NULL, rateProfileIndexString, 0 },
 
@@ -296,7 +296,7 @@ static long cmsx_launchControlOnExit(const OSD_Entry *self)
     return 0;
 }
 
-static OSD_Entry cmsx_menuLaunchControlEntries[] = {
+static const OSD_Entry cmsx_menuLaunchControlEntries[] = {
     { "-- LAUNCH CONTROL --", OME_Label, NULL, pidProfileIndexString, 0 },
 
     { "MODE",             OME_TAB,   NULL, &(OSD_TAB_t)   { &cmsx_launchControlMode, LAUNCH_CONTROL_MODE_COUNT - 1, osdLaunchControlModeNames}, 0 },
@@ -388,7 +388,7 @@ static long cmsx_profileOtherOnExit(const OSD_Entry *self)
     return 0;
 }
 
-static OSD_Entry cmsx_menuProfileOtherEntries[] = {
+static const OSD_Entry cmsx_menuProfileOtherEntries[] = {
     { "-- OTHER PP --", OME_Label, NULL, pidProfileIndexString, 0 },
 
     { "FF TRANS",    OME_FLOAT,  NULL, &(OSD_FLOAT_t)  { &cmsx_feedForwardTransition,  0,    100,   1, 10 }, 0 },
@@ -461,7 +461,7 @@ static long cmsx_menuGyro_onExit(const OSD_Entry *self)
     return 0;
 }
 
-static OSD_Entry cmsx_menuFilterGlobalEntries[] =
+static const OSD_Entry cmsx_menuFilterGlobalEntries[] =
 {
     { "-- FILTER GLB  --", OME_Label, NULL, NULL, 0 },
 
@@ -543,7 +543,7 @@ static long cmsx_menuDynFilt_onExit(const OSD_Entry *self)
     return 0;
 }
 
-static OSD_Entry cmsx_menuDynFiltEntries[] =
+static const OSD_Entry cmsx_menuDynFiltEntries[] =
 {
     { "-- DYN FILT --", OME_Label, NULL, NULL, 0 },
 
@@ -611,7 +611,7 @@ static long cmsx_FilterPerProfileWriteback(const OSD_Entry *self)
     return 0;
 }
 
-static OSD_Entry cmsx_menuFilterPerProfileEntries[] =
+static const OSD_Entry cmsx_menuFilterPerProfileEntries[] =
 {
     { "-- FILTER PP  --", OME_Label, NULL, NULL, 0 },
 
@@ -681,7 +681,7 @@ static long cmsx_CopyControlRateProfile(displayPort_t *pDisplay, const void *ptr
     return 0;
 }
 
-static OSD_Entry cmsx_menuCopyProfileEntries[] =
+static const OSD_Entry cmsx_menuCopyProfileEntries[] =
 {
     { "-- COPY PROFILE --", OME_Label, NULL, NULL, 0},
 
@@ -706,7 +706,7 @@ CMS_Menu cmsx_menuCopyProfile = {
 
 #endif
 
-static OSD_Entry cmsx_menuImuEntries[] =
+static const OSD_Entry cmsx_menuImuEntries[] =
 {
     { "-- PROFILE --", OME_Label, NULL, NULL, 0},
 

@@ -62,8 +62,8 @@ typedef struct
     const OSD_MenuElement type;
     const CMSEntryFuncPtr func;
     void *data;
-    uint8_t flags;
-} OSD_Entry;
+    const uint8_t flags;
+} __attribute__((packed)) OSD_Entry;
 
 // Bits in flags
 #define PRINT_VALUE    0x01  // Value has been changed, need to redraw
@@ -71,13 +71,13 @@ typedef struct
 #define DYNAMIC        0x04  // Value should be updated dynamically
 #define OPTSTRING      0x08  // (Temporary) Flag for OME_Submenu, indicating func should be called to get a string to display.
 
-#define IS_PRINTVALUE(p) ((p)->flags & PRINT_VALUE)
-#define SET_PRINTVALUE(p) { (p)->flags |= PRINT_VALUE; }
-#define CLR_PRINTVALUE(p) { (p)->flags &= ~PRINT_VALUE; }
+#define IS_PRINTVALUE(x) ((x) & PRINT_VALUE)
+#define SET_PRINTVALUE(x) do { (x) |= PRINT_VALUE; } while (0)
+#define CLR_PRINTVALUE(x) do { (x) &= ~PRINT_VALUE; } while (0)
 
-#define IS_PRINTLABEL(p) ((p)->flags & PRINT_LABEL)
-#define SET_PRINTLABEL(p) { (p)->flags |= PRINT_LABEL; }
-#define CLR_PRINTLABEL(p) { (p)->flags &= ~PRINT_LABEL; }
+#define IS_PRINTLABEL(x) ((x) & PRINT_LABEL)
+#define SET_PRINTLABEL(x) do { (x) |= PRINT_LABEL; } while (0)
+#define CLR_PRINTLABEL(x) do { (x) &= ~PRINT_LABEL; } while (0)
 
 #define IS_DYNAMIC(p) ((p)->flags & DYNAMIC)
 
@@ -104,7 +104,7 @@ typedef struct
 #endif
     const CMSMenuFuncPtr onEnter;
     const CMSMenuOnExitPtr onExit;
-    OSD_Entry *entries;
+    const OSD_Entry *entries;
 } CMS_Menu;
 
 typedef struct

@@ -216,7 +216,7 @@ static long trampCmsOnEnter(void)
     return 0;
 }
 
-static OSD_Entry trampCmsMenuCommenceEntries[] = {
+static const OSD_Entry trampCmsMenuCommenceEntries[] = {
     { "CONFIRM", OME_Label,   NULL,          NULL, 0 },
     { "YES",     OME_Funcall, trampCmsCommence, NULL, 0 },
     { "BACK",    OME_Back, NULL, NULL, 0 },
@@ -233,7 +233,7 @@ static CMS_Menu trampCmsMenuCommence = {
     .entries = trampCmsMenuCommenceEntries,
 };
 
-static OSD_Entry trampMenuEntries[] =
+static const OSD_Entry trampMenuEntries[] =
 {
     { "- TRAMP -", OME_Label, NULL, NULL, 0 },
 

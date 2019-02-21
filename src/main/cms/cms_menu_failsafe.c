@@ -65,7 +65,7 @@ static long cmsx_Failsafe_onExit(const OSD_Entry *self)
     return 0;
 }
 
-static OSD_Entry cmsx_menuFailsafeEntries[] =
+static const OSD_Entry cmsx_menuFailsafeEntries[] =
 {
     { "-- FAILSAFE --", OME_Label, NULL, NULL, 0},
 

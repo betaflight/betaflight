@@ -96,7 +96,7 @@ static long cmsx_Power_onExit(const OSD_Entry *self)
     return 0;
 }
 
-static OSD_Entry cmsx_menuPowerEntries[] =
+static const OSD_Entry cmsx_menuPowerEntries[] =
 {
     { "-- POWER --", OME_Label, NULL, NULL, 0},
 
