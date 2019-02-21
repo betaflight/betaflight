@@ -575,7 +575,7 @@ check-fastram-usage-correctness:
 	fi;
 
 # rebuild everything when makefile changes
-$(TARGET_OBJS): Makefile $(TARGET_DIR)/target.mk
+$(TARGET_OBJS): Makefile $(TARGET_DIR)/target.mk $(wildcard make/*)
 
 
 # include auto-generated dependencies
