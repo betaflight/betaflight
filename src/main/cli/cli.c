@@ -5476,10 +5476,11 @@ void cliProcess(void)
                         break;
                     }
                 }
-                if (cmd < cmdTable + ARRAYLEN(cmdTable))
+                if (cmd < cmdTable + ARRAYLEN(cmdTable)) {
                     cmd->func(options);
-                else
-                    cliPrint("Unknown command, try 'help'");
+                } else {
+                    cliPrintError("UNKNOWN COMMAND, TRY 'HELP'");
+                }
                 bufferIndex = 0;
             }
 
