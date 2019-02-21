@@ -392,7 +392,7 @@ static void cliPrintLinef(const char *format, ...)
 
 static void cliPrintErrorLinef(const char *format, ...)
 {
-    cliPrint("###");
+    cliPrint("###ERROR: ");
     va_list va;
     va_start(va, format);
     cliPrintfva(format, va);
@@ -402,7 +402,7 @@ static void cliPrintErrorLinef(const char *format, ...)
 
 static void cliPrintCorruptMessage(int value)
 {
-    cliPrintf("%d ###CORRUPTED CONFIG###", value);
+    cliPrintf("%d ###ERROR: CORRUPTED CONFIG###", value);
 }
 
 static void getMinMax(const clivalue_t *var, int *min, int *max)
