@@ -50,6 +50,8 @@ Enable Expert Mode in the Configurator > Click Adjustments
 Click the slider for If enable.  Select the AUX # channel to use.
 For the Range, Select the whole Range from 900 to 2100.  Select Rate Profile Selection from the drop-down menu.  Use Slot 1, or any Slot not used.  Via Channel is the same as the AUX channel used.  
 
+![BetaFlight Adjustments](https://github.com/linuxdude21/betaflight/blob/master/docs/Screenshots/Betaflight%20Configurator-%20RPS%20in%20Adjustments.png?raw=true)
+
 CLI: the `rateprofile` command can be used to change the profile:
 ```
 rateprofile <index>
