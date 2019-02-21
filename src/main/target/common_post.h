@@ -202,7 +202,7 @@
 #define USE_RX_XN297
 #endif
 
-#ifdef GENERIC_TARGET
+#ifdef USE_UNIFIED_TARGET
 #define USE_CONFIGURATION_STATE
 
 // Setup crystal frequency for backward compatibility
@@ -214,7 +214,7 @@
 #else
 #define SYSTEM_HSE_VALUE (HSE_VALUE/1000000U)
 #endif
-#endif // GENERIC_TARGET
+#endif // USE_UNIFIED_TARGET
 
 // Number of pins that needs pre-init
 #ifdef USE_SPI

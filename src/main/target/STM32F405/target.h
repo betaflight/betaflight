@@ -22,7 +22,7 @@
 
 // Treat the target as generic, and expect manufacturer id / board name
 // to be supplied when the board is configured for the first time
-#define GENERIC_TARGET
+#define USE_UNIFIED_TARGET
 
 #define TARGET_BOARD_IDENTIFIER "S405"
 
