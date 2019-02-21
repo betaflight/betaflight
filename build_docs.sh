@@ -1,6 +1,6 @@
 #!/bin/bash
 
-filename=Manual
+filename="Manual"
 doc_files=(
 	'Introduction.md'
 	'Getting Started.md'
@@ -38,18 +38,17 @@ doc_files=(
 )
 
 if which gimli >/dev/null; then
-	echo "Building ${filename}.pdf"
+	echo "Building ${filename}"
 	pushd . >/dev/null
 	cd docs
-
-	rm -f ${filename}.md
+	rm -f $filename
 	for i in "${doc_files[@]}"
 	do
-		cat "$i" >> ${filename}.md
+		cat "$i" >> $filename
 
 	done
-        gimli -f {filename}.md -stylesheet override.css \
-          -w '--toc --title "Cleanflight Manual" --footer-right "[page]" --toc-depth 1'
+        gimli -f {"$filename"}.md -stylesheet override.css \
+          -w '--toc --title "Cleanflight Manual" --footer-right [page] --toc-depth 1'
 	popd >/dev/null
 else
 	echo -e "\nFAILED"
