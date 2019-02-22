@@ -160,13 +160,12 @@ typedef struct pidProfile_s {
     uint8_t use_integrated_yaw;             // Selects whether the yaw pidsum should integrated
     uint8_t integrated_yaw_relax;           // Specifies how much integrated yaw should be reduced to offset the drag based yaw component
     uint8_t thrustLinearization;            // Compensation factor for pid linearization
-    uint8_t d_min_roll;                     // Minimum D value on roll axis
-    uint8_t d_min_pitch;                    // Minimum D value on pitch axis
-    uint8_t d_min_yaw;                      // Minimum D value on yaw axis
+    uint8_t d_min[XYZ_AXIS_COUNT];          // Minimum D value on each axis
     uint8_t d_min_gain;                     // Gain factor for amount of gyro / setpoint activity required to boost D
     uint8_t d_min_advance;                  // Percentage multiplier for setpoint input to boost algorithm
     uint8_t motor_output_limit;             // Upper limit of the motor output (percent)
     int8_t auto_profile_cell_count;         // Cell count for this profile to be used with if auto PID profile switching is used
+    uint8_t transient_throttle_limit;       // Maximum DC component of throttle change to mix into throttle to prevent airmode mirroring noise
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
@@ -221,6 +220,10 @@ bool pidAntiGravityEnabled(void);
 #ifdef USE_THRUST_LINEARIZATION
 float pidApplyThrustLinearization(float motorValue);
 float pidCompensateThrustLinearization(float throttle);
+#endif
+#ifdef USE_AIRMODE_LPF
+void pidUpdateAirmodeLpf(float currentOffset);
+float pidGetAirmodeThrottleOffset();
 #endif
 
 #ifdef UNIT_TEST

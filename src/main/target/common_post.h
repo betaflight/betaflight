@@ -151,22 +151,19 @@
 #undef USE_ADC_INTERNAL
 #endif
 
-#if (!defined(USE_SDCARD) && !defined(USE_FLASHFS)) || !(defined(STM32F4) || defined(STM32F7))
+#if (!defined(USE_SDCARD) && !defined(USE_FLASHFS)) || !defined(USE_BLACKBOX)
 #undef USE_USB_MSC
 #endif
 
 #if !defined(USE_VCP)
 #undef USE_USB_CDC_HID
+#undef USE_USB_MSC
 #endif
 
 #if defined(USE_USB_CDC_HID) || defined(USE_USB_MSC)
 #define USE_USB_ADVANCED_PROFILES
 #endif
 
-// Determine if the target could have a 32KHz capable gyro
-#if defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20689)
-#define USE_32K_CAPABLE_GYRO
-#endif
 
 #if defined(USE_FLASH_W25M512)
 #define USE_FLASH_W25M
@@ -224,10 +221,6 @@
 #ifndef SPI_PREINIT_COUNT
 #define SPI_PREINIT_COUNT 16 // 2 x 8 (GYROx2, BARO, MAG, MAX, FLASHx2, RX)
 #endif
-#endif
-
-#ifndef USE_BLACKBOX
-#undef USE_USB_MSC
 #endif
 
 #if (!defined(USE_FLASHFS) || !defined(USE_RTC_TIME) || !defined(USE_USB_MSC))

@@ -117,6 +117,10 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 #define ACRO_TRAINER_SETPOINT_LIMIT       1000.0f // Limit the correcting setpoint
 #endif // USE_ACRO_TRAINER
 
+#ifdef USE_AIRMODE_LPF
+static FAST_RAM_ZERO_INIT float airmodeThrottleOffsetLimit;
+#endif
+
 #define ANTI_GRAVITY_THROTTLE_FILTER_CUTOFF 15  // The anti gravity throttle highpass filter cutoff
 
 #define CRASH_RECOVERY_DETECTION_DELAY_US 1000000  // 1 second delay before crash recovery detection is active after entering a self-level mode
@@ -191,13 +195,12 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .use_integrated_yaw = false,
         .integrated_yaw_relax = 200,
         .thrustLinearization = 0,
-        .d_min_roll = 20,
-        .d_min_pitch = 22,
-        .d_min_yaw = 0,
+        .d_min = { 20, 22, 0 },      // roll, pitch, yaw
         .d_min_gain = 20,
         .d_min_advance = 20,
         .motor_output_limit = 100,
         .auto_profile_cell_count = AUTO_PROFILE_CELL_COUNT_STAY,
+        .transient_throttle_limit = 0,
     );
 #ifdef USE_DYN_LPF
     pidProfile->dterm_lowpass_hz = 150;
@@ -277,7 +280,6 @@ static FAST_RAM_ZERO_INIT pt1Filter_t acLpf[XYZ_AXIS_COUNT];
 #endif
 
 #if defined(USE_D_MIN)
-static FAST_RAM_ZERO_INIT uint8_t dMin[XYZ_AXIS_COUNT];
 static FAST_RAM_ZERO_INIT biquadFilter_t dMinRange[XYZ_AXIS_COUNT];
 static FAST_RAM_ZERO_INIT pt1Filter_t dMinLowpass[XYZ_AXIS_COUNT];
 #endif
@@ -289,6 +291,11 @@ static FAST_RAM_ZERO_INIT bool setpointDerivativeLpfInitialized;
 static FAST_RAM_ZERO_INIT uint8_t rcSmoothingDebugAxis;
 static FAST_RAM_ZERO_INIT uint8_t rcSmoothingFilterType;
 #endif // USE_RC_SMOOTHING_FILTER
+
+#ifdef USE_AIRMODE_LPF
+static FAST_RAM_ZERO_INIT pt1Filter_t airmodeThrottleLpf1;
+static FAST_RAM_ZERO_INIT pt1Filter_t airmodeThrottleLpf2;
+#endif
 
 static FAST_RAM_ZERO_INIT pt1Filter_t antiGravityThrottleLpf;
 
@@ -408,11 +415,8 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     }
 #endif
 #if defined(USE_D_MIN)
-    dMin[FD_ROLL] = pidProfile->d_min_roll;
-    dMin[FD_PITCH] = pidProfile->d_min_pitch;
-    dMin[FD_YAW] = pidProfile->d_min_yaw;
 
-    // Initialize the filters for all axis even if the dMin[axis] value is 0
+    // Initialize the filters for all axis even if the d_min[axis] value is 0
     // Otherwise if the pidProfile->d_min_xxx parameters are ever added to
     // in-flight adjustments and transition from 0 to > 0 in flight the feature
     // won't work because the filter wasn't initialized.
@@ -420,6 +424,12 @@ void pidInitFilters(const pidProfile_t *pidProfile)
         biquadFilterInitLPF(&dMinRange[axis], D_MIN_RANGE_HZ, targetPidLooptime);
         pt1FilterInit(&dMinLowpass[axis], pt1FilterGain(D_MIN_LOWPASS_HZ, dT));
      }
+#endif
+#if defined(USE_AIRMODE_LPF)
+    if (pidProfile->transient_throttle_limit) {
+        pt1FilterInit(&airmodeThrottleLpf1, pt1FilterGain(7.0f, dT));
+        pt1FilterInit(&airmodeThrottleLpf2, pt1FilterGain(20.0f, dT));
+    }
 #endif
 
     pt1FilterInit(&antiGravityThrottleLpf, pt1FilterGain(ANTI_GRAVITY_THROTTLE_FILTER_CUTOFF, dT));
@@ -669,8 +679,9 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 #endif    
 #if defined(USE_D_MIN)
     for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
-        if ((dMin[axis] > 0) && (dMin[axis] < pidProfile->pid[axis].D)) {
-            dMinPercent[axis] = dMin[axis] / (float)(pidProfile->pid[axis].D);
+        const uint8_t dMin = pidProfile->d_min[axis];
+        if ((dMin > 0) && (dMin < pidProfile->pid[axis].D)) {
+            dMinPercent[axis] = dMin / (float)(pidProfile->pid[axis].D);
         } else {
             dMinPercent[axis] = 0;
         }
@@ -678,6 +689,9 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     dMinGyroGain = pidProfile->d_min_gain * D_MIN_GAIN_FACTOR / D_MIN_LOWPASS_HZ;
     dMinSetpointGain = pidProfile->d_min_gain * D_MIN_SETPOINT_GAIN_FACTOR * pidProfile->d_min_advance * pidFrequency / (100 * D_MIN_LOWPASS_HZ);
     // lowpass included inversely in gain since stronger lowpass decreases peak effect
+#endif
+#if defined(USE_AIRMODE_LPF)
+    airmodeThrottleOffsetLimit = pidProfile->transient_throttle_limit / 100.0f;
 #endif
 }
 
@@ -1119,6 +1133,31 @@ STATIC_UNIT_TESTED void applyItermRelax(const int axis, const float iterm,
         applyAbsoluteControl(axis, gyroRate, currentPidSetpoint, itermErrorRate);
 #endif
     }
+}
+#endif
+
+#ifdef USE_AIRMODE_LPF
+void pidUpdateAirmodeLpf(float currentOffset)
+{
+    if (airmodeThrottleOffsetLimit == 0.0f) {
+        return;
+    }
+
+    float offsetHpf = currentOffset * 2.5f;
+    offsetHpf = offsetHpf - pt1FilterApply(&airmodeThrottleLpf2, offsetHpf);
+
+    // During high frequency oscillation 2 * currentOffset averages to the offset required to avoid mirroring of the waveform
+    pt1FilterApply(&airmodeThrottleLpf1, offsetHpf);
+    // Bring offset up immediately so the filter only applies to the decline
+    if (currentOffset * airmodeThrottleLpf1.state >= 0 && fabsf(currentOffset) > airmodeThrottleLpf1.state) {
+        airmodeThrottleLpf1.state = currentOffset;
+    }
+    airmodeThrottleLpf1.state = constrainf(airmodeThrottleLpf1.state, -airmodeThrottleOffsetLimit, airmodeThrottleOffsetLimit);
+}
+
+float pidGetAirmodeThrottleOffset()
+{
+    return airmodeThrottleLpf1.state;
 }
 #endif
 

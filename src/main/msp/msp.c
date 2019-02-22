@@ -268,7 +268,7 @@ static void mspRebootFn(serialPort_t *serialPort)
 #endif
     default:
 
-        break;
+        return;
     }
 
     // control should never return here.
@@ -1037,9 +1037,10 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
             const modeActivationCondition_t *mac = modeActivationConditions(i);
             const box_t *box = findBoxByBoxId(mac->modeId);
+            const box_t *linkedBox = findBoxByBoxId(mac->linkedTo);
             sbufWriteU8(dst, box->permanentId);     // each element is aligned with MODE_RANGES by the permanentId
             sbufWriteU8(dst, mac->modeLogic);
-            sbufWriteU8(dst, mac->linkedTo);
+            sbufWriteU8(dst, linkedBox->permanentId);
         }
         break;
 
@@ -1370,7 +1371,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, motorConfig()->dev.motorPwmProtocol);
         sbufWriteU16(dst, motorConfig()->dev.motorPwmRate);
         sbufWriteU16(dst, motorConfig()->digitalIdleOffsetValue);
-        sbufWriteU8(dst, gyroConfig()->gyro_use_32khz);
+        sbufWriteU8(dst, 0); // DEPRECATED: gyro_use_32kHz
         sbufWriteU8(dst, motorConfig()->dev.motorPwmInversion);
         sbufWriteU8(dst, gyroConfig()->gyro_to_use);
         sbufWriteU8(dst, gyroConfig()->gyro_high_fsr);
@@ -1392,7 +1393,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_cutoff_2);
         sbufWriteU8(dst, currentPidProfile->dterm_filter_type);
         sbufWriteU8(dst, gyroConfig()->gyro_hardware_lpf);
-        sbufWriteU8(dst, gyroConfig()->gyro_32khz_hardware_lpf);
+        sbufWriteU8(dst, 0); // DEPRECATED: gyro_32khz_hardware_lpf
         sbufWriteU16(dst, gyroConfig()->gyro_lowpass_hz);
         sbufWriteU16(dst, gyroConfig()->gyro_lowpass2_hz);
         sbufWriteU8(dst, gyroConfig()->gyro_lowpass_type);
@@ -1547,7 +1548,7 @@ static mspResult_e mspFcProcessOutCommandWithArg(uint8_t cmdMSP, sbuf_t *src, sb
 
             if (rebootMode >= MSP_REBOOT_COUNT
 #if !defined(USE_USB_MSC)
-                || rebootMode == MSP_REBOOT_MSC
+                || rebootMode == MSP_REBOOT_MSC || rebootMode == MSP_REBOOT_MSC_UTC
 #endif
                 ) {
                 return MSP_RESULT_ERROR;
@@ -1979,7 +1980,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             motorConfigMutable()->digitalIdleOffsetValue = sbufReadU16(src);
         }
         if (sbufBytesRemaining(src)) {
-            gyroConfigMutable()->gyro_use_32khz = sbufReadU8(src);
+            sbufReadU8(src); // DEPRECATED: gyro_use_32khz
         }
         if (sbufBytesRemaining(src)) {
             motorConfigMutable()->dev.motorPwmInversion = sbufReadU8(src);
@@ -2015,7 +2016,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         }
         if (sbufBytesRemaining(src) >= 10) {
             gyroConfigMutable()->gyro_hardware_lpf = sbufReadU8(src);
-            gyroConfigMutable()->gyro_32khz_hardware_lpf = sbufReadU8(src);
+            sbufReadU8(src); // DEPRECATED: gyro_32khz_hardware_lpf
             gyroConfigMutable()->gyro_lowpass_hz = sbufReadU16(src);
             gyroConfigMutable()->gyro_lowpass2_hz = sbufReadU16(src);
             gyroConfigMutable()->gyro_lowpass_type = sbufReadU8(src);

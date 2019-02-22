@@ -85,5 +85,6 @@ FrSky X and X_LBT protocol:
 - [Midelic F3](https://github.com/betaflight/betaflight/wiki/Board-Midelic-F3) (prototype only, not commercially available);
 - [Matek F411-ONE](http://www.mateksys.com/?portfolio=f411-one);
 - [CrazyBee F3 FR](boards/Board%20-%20CrazyBeeF3FR.md);
+- [CrazyBee F4 FR Pro](boards/Board%20-%20CrazyBeeF4FRPro.md);
 - [BetaFPV F4]
 - more to come...

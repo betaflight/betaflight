@@ -201,13 +201,11 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
     gyroConfig->gyroMovementCalibrationThreshold = 48;
     gyroConfig->gyro_sync_denom = GYRO_SYNC_DENOM_DEFAULT;
     gyroConfig->gyro_hardware_lpf = GYRO_HARDWARE_LPF_NORMAL;
-    gyroConfig->gyro_32khz_hardware_lpf = GYRO_32KHZ_HARDWARE_LPF_NORMAL;
     gyroConfig->gyro_lowpass_type = FILTER_PT1;
     gyroConfig->gyro_lowpass_hz = 100;
     gyroConfig->gyro_lowpass2_type = FILTER_PT1;
     gyroConfig->gyro_lowpass2_hz = 300;
     gyroConfig->gyro_high_fsr = false;
-    gyroConfig->gyro_use_32khz = false;
     gyroConfig->gyro_to_use = GYRO_CONFIG_USE_GYRO_DEFAULT;
     gyroConfig->gyro_soft_notch_hz_1 = 0;
     gyroConfig->gyro_soft_notch_cutoff_1 = 0;
@@ -432,25 +430,9 @@ static bool gyroInitSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t *c
         return false;
     }
 
-    switch (gyroHardware) {
-    case GYRO_MPU6500:
-    case GYRO_MPU9250:
-    case GYRO_ICM20601:
-    case GYRO_ICM20602:
-    case GYRO_ICM20608G:
-    case GYRO_ICM20689:
-        // do nothing, as gyro supports 32kHz
-        break;
-    default:
-        // gyro does not support 32kHz
-        gyroConfigMutable()->gyro_use_32khz = false;
-        break;
-    }
-
     // Must set gyro targetLooptime before gyroDev.init and initialisation of filters
-    gyro.targetLooptime = gyroSetSampleRate(&gyroSensor->gyroDev, gyroConfig()->gyro_hardware_lpf, gyroConfig()->gyro_sync_denom, gyroConfig()->gyro_use_32khz);
+    gyro.targetLooptime = gyroSetSampleRate(&gyroSensor->gyroDev, gyroConfig()->gyro_hardware_lpf, gyroConfig()->gyro_sync_denom);
     gyroSensor->gyroDev.hardware_lpf = gyroConfig()->gyro_hardware_lpf;
-    gyroSensor->gyroDev.hardware_32khz_lpf = gyroConfig()->gyro_32khz_hardware_lpf;
     gyroSensor->gyroDev.initFn(&gyroSensor->gyroDev);
 
     // As new gyros are supported, be sure to add them below based on whether they are subject to the overflow/inversion bug

@@ -161,7 +161,7 @@ static long cmsx_PidWriteback(const OSD_Entry *self)
     return 0;
 }
 
-static OSD_Entry cmsx_menuPidEntries[] =
+static const OSD_Entry cmsx_menuPidEntries[] =
 {
     { "-- PID --", OME_Label, NULL, pidProfileIndexString, 0},
 
@@ -223,7 +223,7 @@ static long cmsx_RateProfileOnEnter(void)
     return 0;
 }
 
-static OSD_Entry cmsx_menuRateProfileEntries[] =
+static const OSD_Entry cmsx_menuRateProfileEntries[] =
 {
     { "-- RATE --", OME_Label, NULL, rateProfileIndexString, 0 },
 
@@ -296,7 +296,7 @@ static long cmsx_launchControlOnExit(const OSD_Entry *self)
     return 0;
 }
 
-static OSD_Entry cmsx_menuLaunchControlEntries[] = {
+static const OSD_Entry cmsx_menuLaunchControlEntries[] = {
     { "-- LAUNCH CONTROL --", OME_Label, NULL, pidProfileIndexString, 0 },
 
     { "MODE",             OME_TAB,   NULL, &(OSD_TAB_t)   { &cmsx_launchControlMode, LAUNCH_CONTROL_MODE_COUNT - 1, osdLaunchControlModeNames}, 0 },
@@ -328,6 +328,9 @@ static uint16_t cmsx_itermAcceleratorGain;
 static uint16_t cmsx_itermThrottleThreshold;
 static uint8_t  cmsx_motorOutputLimit;
 static int8_t   cmsx_autoProfileCellCount;
+#ifdef USE_D_MIN
+static uint8_t  cmsx_d_min[XYZ_AXIS_COUNT];
+#endif
 
 static long cmsx_profileOtherOnEnter(void)
 {
@@ -347,6 +350,12 @@ static long cmsx_profileOtherOnEnter(void)
     cmsx_throttleBoost = pidProfile->throttle_boost;
     cmsx_motorOutputLimit = pidProfile->motor_output_limit;
     cmsx_autoProfileCellCount = pidProfile->auto_profile_cell_count;
+
+#ifdef USE_D_MIN
+    for (unsigned i = 0; i < XYZ_AXIS_COUNT; i++) {
+        cmsx_d_min[i]  = pidProfile->d_min[i];
+    }
+#endif
 
     return 0;
 }
@@ -370,10 +379,16 @@ static long cmsx_profileOtherOnExit(const OSD_Entry *self)
     pidProfile->motor_output_limit = cmsx_motorOutputLimit;
     pidProfile->auto_profile_cell_count = cmsx_autoProfileCellCount;
 
+#ifdef USE_D_MIN
+    for (unsigned i = 0; i < XYZ_AXIS_COUNT; i++) {
+        pidProfile->d_min[i] = cmsx_d_min[i];
+    }
+#endif
+
     return 0;
 }
 
-static OSD_Entry cmsx_menuProfileOtherEntries[] = {
+static const OSD_Entry cmsx_menuProfileOtherEntries[] = {
     { "-- OTHER PP --", OME_Label, NULL, pidProfileIndexString, 0 },
 
     { "FF TRANS",    OME_FLOAT,  NULL, &(OSD_FLOAT_t)  { &cmsx_feedForwardTransition,  0,    100,   1, 10 }, 0 },
@@ -391,6 +406,12 @@ static OSD_Entry cmsx_menuProfileOtherEntries[] = {
     { "MTR OUT LIM %",OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_motorOutputLimit, MOTOR_OUTPUT_LIMIT_PERCENT_MIN,  MOTOR_OUTPUT_LIMIT_PERCENT_MAX,  1}, 0 },
 
     { "AUTO CELL CNT", OME_INT8, NULL, &(OSD_INT8_t) { &cmsx_autoProfileCellCount, AUTO_PROFILE_CELL_COUNT_CHANGE, MAX_AUTO_DETECT_CELL_COUNT, 1}, 0 },
+
+#ifdef USE_D_MIN
+    { "D_MIN_ROLL",  OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_d_min[FD_ROLL],      0, 100, 1 }, 0 },
+    { "D_MIN_PITCH", OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_d_min[FD_PITCH],     0, 100, 1 }, 0 },
+    { "D_MIN_YAW",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_d_min[FD_YAW],       0, 100, 1 }, 0 },
+#endif
 
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
@@ -440,7 +461,7 @@ static long cmsx_menuGyro_onExit(const OSD_Entry *self)
     return 0;
 }
 
-static OSD_Entry cmsx_menuFilterGlobalEntries[] =
+static const OSD_Entry cmsx_menuFilterGlobalEntries[] =
 {
     { "-- FILTER GLB  --", OME_Label, NULL, NULL, 0 },
 
@@ -522,7 +543,7 @@ static long cmsx_menuDynFilt_onExit(const OSD_Entry *self)
     return 0;
 }
 
-static OSD_Entry cmsx_menuDynFiltEntries[] =
+static const OSD_Entry cmsx_menuDynFiltEntries[] =
 {
     { "-- DYN FILT --", OME_Label, NULL, NULL, 0 },
 
@@ -560,11 +581,6 @@ static uint16_t cmsx_dterm_lowpass_hz;
 static uint16_t cmsx_dterm_lowpass2_hz;
 static uint16_t cmsx_dterm_notch_hz;
 static uint16_t cmsx_dterm_notch_cutoff;
-#ifdef USE_D_MIN
-static uint8_t  cmsx_d_min_roll;
-static uint8_t  cmsx_d_min_pitch;
-static uint8_t  cmsx_d_min_yaw;
-#endif
 static uint16_t cmsx_yaw_lowpass_hz;
 
 static long cmsx_FilterPerProfileRead(void)
@@ -575,11 +591,6 @@ static long cmsx_FilterPerProfileRead(void)
     cmsx_dterm_lowpass2_hz  = pidProfile->dterm_lowpass2_hz;
     cmsx_dterm_notch_hz     = pidProfile->dterm_notch_hz;
     cmsx_dterm_notch_cutoff = pidProfile->dterm_notch_cutoff;
-#ifdef USE_D_MIN
-    cmsx_d_min_roll     = pidProfile->d_min_roll;
-    cmsx_d_min_pitch    = pidProfile->d_min_pitch;
-    cmsx_d_min_yaw    = pidProfile->d_min_yaw;
-#endif
     cmsx_yaw_lowpass_hz     = pidProfile->yaw_lowpass_hz;
 
     return 0;
@@ -595,17 +606,12 @@ static long cmsx_FilterPerProfileWriteback(const OSD_Entry *self)
     pidProfile->dterm_lowpass2_hz  = cmsx_dterm_lowpass2_hz;
     pidProfile->dterm_notch_hz     = cmsx_dterm_notch_hz;
     pidProfile->dterm_notch_cutoff = cmsx_dterm_notch_cutoff;
-#ifdef USE_D_MIN
-    pidProfile->d_min_roll  = cmsx_d_min_roll;
-    pidProfile->d_min_pitch = cmsx_d_min_pitch;
-    pidProfile->d_min_yaw   = cmsx_d_min_yaw;
-#endif
     pidProfile->yaw_lowpass_hz     = cmsx_yaw_lowpass_hz;
 
     return 0;
 }
 
-static OSD_Entry cmsx_menuFilterPerProfileEntries[] =
+static const OSD_Entry cmsx_menuFilterPerProfileEntries[] =
 {
     { "-- FILTER PP  --", OME_Label, NULL, NULL, 0 },
 
@@ -613,11 +619,6 @@ static OSD_Entry cmsx_menuFilterPerProfileEntries[] =
     { "DTERM LPF2", OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_dterm_lowpass2_hz,    0, 500, 1 }, 0 },
     { "DTERM NF",   OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_dterm_notch_hz,       0, 500, 1 }, 0 },
     { "DTERM NFCO", OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_dterm_notch_cutoff,   0, 500, 1 }, 0 },
-#ifdef USE_D_MIN
-    { "D_MIN_ROLL",  OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_d_min_roll,      0, 100, 1 }, 0 },
-    { "D_MIN_PITCH", OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_d_min_pitch,     0, 100, 1 }, 0 },
-    { "D_MIN_YAW",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_d_min_yaw,       0, 100, 1 }, 0 },
-#endif
     { "YAW LPF",    OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_yaw_lowpass_hz,       0, 500, 1 }, 0 },
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
@@ -680,7 +681,7 @@ static long cmsx_CopyControlRateProfile(displayPort_t *pDisplay, const void *ptr
     return 0;
 }
 
-static OSD_Entry cmsx_menuCopyProfileEntries[] =
+static const OSD_Entry cmsx_menuCopyProfileEntries[] =
 {
     { "-- COPY PROFILE --", OME_Label, NULL, NULL, 0},
 
@@ -705,7 +706,7 @@ CMS_Menu cmsx_menuCopyProfile = {
 
 #endif
 
-static OSD_Entry cmsx_menuImuEntries[] =
+static const OSD_Entry cmsx_menuImuEntries[] =
 {
     { "-- PROFILE --", OME_Label, NULL, NULL, 0},
 

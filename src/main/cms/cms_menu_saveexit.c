@@ -34,7 +34,7 @@
 
 #include "fc/config.h"
 
-static OSD_Entry cmsx_menuSaveExitEntries[] =
+static const OSD_Entry cmsx_menuSaveExitEntries[] =
 {
     { "-- SAVE/EXIT --", OME_Label, NULL, NULL, 0},
     {"EXIT",        OME_OSD_Exit, cmsMenuExit,   (void *)CMS_EXIT, 0},

@@ -467,11 +467,9 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
         motor->timer->dmaBurstRef = dmaRef;
-
-        if (!configureTimer) {
-            motor->configured = true;
-            return;
-        }
+#ifdef USE_DSHOT_TELEMETRY
+        motor->dmaRef = dmaRef;
+#endif
     } else
 #endif
     {

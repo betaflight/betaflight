@@ -54,7 +54,8 @@ OBJECT_DIR      := $(ROOT)/obj/main
 BIN_DIR         := $(ROOT)/obj
 CMSIS_DIR       := $(ROOT)/lib/main/CMSIS
 INCLUDE_DIRS    := $(SRC_DIR) \
-                   $(ROOT)/src/main/target
+                   $(ROOT)/src/main/target \
+                   $(ROOT)/src/main/startup
 LINKER_DIR      := $(ROOT)/src/main/target/link
 
 ## V                 : Set verbosity level based on the V= parameter
@@ -574,7 +575,7 @@ check-fastram-usage-correctness:
 	fi;
 
 # rebuild everything when makefile changes
-$(TARGET_OBJS): Makefile $(TARGET_DIR)/target.mk
+$(TARGET_OBJS): Makefile $(TARGET_DIR)/target.mk $(wildcard make/*)
 
 
 # include auto-generated dependencies

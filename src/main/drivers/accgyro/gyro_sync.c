@@ -47,16 +47,12 @@ bool gyroSyncCheckUpdate(gyroDev_t *gyro)
     return ret;
 }
 
-uint32_t gyroSetSampleRate(gyroDev_t *gyro, uint8_t lpf, uint8_t gyroSyncDenominator, bool gyro_use_32khz)
+uint32_t gyroSetSampleRate(gyroDev_t *gyro, uint8_t lpf, uint8_t gyroSyncDenominator)
 {
     float gyroSamplePeriod;
 
     if (lpf != GYRO_HARDWARE_LPF_1KHZ_SAMPLE) {
-        if (gyro_use_32khz) {
-            gyro->gyroRateKHz = GYRO_RATE_32_kHz;
-            gyroSamplePeriod = 31.25f;
-        } else {
-            switch (gyro->mpuDetectionResult.sensor) {
+        switch (gyro->mpuDetectionResult.sensor) {
             case BMI_160_SPI:
                 gyro->gyroRateKHz = GYRO_RATE_3200_Hz;
                 gyroSamplePeriod = 312.0f;
@@ -69,7 +65,6 @@ uint32_t gyroSetSampleRate(gyroDev_t *gyro, uint8_t lpf, uint8_t gyroSyncDenomin
                 gyro->gyroRateKHz = GYRO_RATE_8_kHz;
                 gyroSamplePeriod = 125.0f;
                 break;
-            }
         }
     } else {
         switch (gyro->mpuDetectionResult.sensor) {

@@ -154,6 +154,7 @@ typedef struct statistic_s {
     uint8_t min_link_quality;
 } statistic_t;
 
+#ifdef USE_OSD_STICK_OVERLAY
 typedef struct radioControls_s {
     uint8_t left_vertical;
     uint8_t left_horizontal;
@@ -161,22 +162,12 @@ typedef struct radioControls_s {
     uint8_t right_horizontal;
 } radioControls_t;
 
-#ifdef USE_CMS
-typedef enum radioModes_e {
-    MODE1,
-    MODE2,
-    MODE3,
-    MODE4
-} radioModes_t;
-
-#ifdef USE_OSD_STICK_OVERLAY
 static const radioControls_t radioModes[4] = {
     { PITCH,    YAW,    THROTTLE,   ROLL }, // Mode 1
     { THROTTLE, YAW,    PITCH,      ROLL }, // Mode 2
     { PITCH,    ROLL,   THROTTLE,   YAW  }, // Mode 3
     { THROTTLE, ROLL,   PITCH,      YAW  }, // Mode 4
 };
-#endif
 #endif
 
 static statistic_t stats;
@@ -200,7 +191,6 @@ static escSensorData_t *escDataCombined;
 #define AH_SIDEBAR_WIDTH_POS 7
 #define AH_SIDEBAR_HEIGHT_POS 3
 
-#ifdef USE_CMS
 static const char compassBar[] = {
   SYM_HEADING_W,
   SYM_HEADING_LINE, SYM_HEADING_DIVIDED_LINE, SYM_HEADING_LINE,
@@ -263,7 +253,6 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_LINK_QUALITY,
 #endif
 };
-#endif // USE_CMS
 
 PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 5);
 
@@ -280,7 +269,6 @@ static char osdGetMetersToSelectedUnitSymbol(void)
     }
 }
 
-#ifdef USE_CMS
 static char osdGetBatterySymbol(int cellVoltage)
 {
     if (getBatteryState() == BATTERY_CRITICAL) {
@@ -291,7 +279,6 @@ static char osdGetBatterySymbol(int cellVoltage)
         return SYM_BATT_EMPTY - constrain(symOffset, 0, 6);
     }
 }
-#endif
 
 /**
  * Converts altitude based on the current unit system.
@@ -338,7 +325,6 @@ static void osdFormatAltitudeString(char * buff, int32_t altitudeCm)
     buff[4] = '.';
 }
 
-#ifdef USE_CMS
 static void osdFormatPID(char * buff, const char * label, const pidf_t * pid)
 {
     tfp_sprintf(buff, "%s %3d %3d %3d", label, pid->P, pid->I, pid->D);
@@ -370,7 +356,6 @@ static uint8_t osdGetDirectionSymbolFromHeading(int heading)
 
     return SYM_ARROW_SOUTH + heading;
 }
-#endif
 
 static char osdGetTimerSymbol(osd_timer_source_e src)
 {
@@ -431,7 +416,6 @@ STATIC_UNIT_TESTED void osdFormatTimer(char *buff, bool showSymbol, bool usePrec
     osdFormatTime(buff, (usePrecision ? OSD_TIMER_PRECISION(timer) : OSD_TIMER_PREC_SECOND), osdGetTimerValue(src));
 }
 
-#ifdef USE_CMS
 #ifdef USE_GPS
 static void osdFormatCoordinate(char *buff, char sym, int32_t val)
 {
@@ -463,7 +447,6 @@ static void osdFormatMessage(char *buff, size_t size, const char *message)
     // Ensure buff is zero terminated
     buff[size - 1] = '\0';
 }
-#endif // USE_CMS
 
 #ifdef USE_RTC_TIME
 static bool osdFormatRtcDateTime(char *buffer)
@@ -538,7 +521,6 @@ void changeOsdProfileIndex(uint8_t profileIndex)
 }
 #endif
 
-#ifdef USE_CMS
 static bool osdDrawSingleElement(uint8_t item)
 {
     if (!VISIBLE(osdConfig()->item_pos[item]) || BLINK(item)) {
@@ -1445,7 +1427,6 @@ static void osdDrawElements(void)
     }
 #endif
 }
-#endif // USE_CMS
 
 void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 {
@@ -1455,7 +1436,11 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     }
 
     // Always enable warnings elements by default
-    osdConfig->item_pos[OSD_WARNINGS] = OSD_POS(9, 10) | OSD_PROFILE_1_FLAG;
+    uint16_t profileFlags = 0;
+    for (unsigned i = 1; i <= OSD_PROFILE_COUNT; i++) {
+        profileFlags |= OSD_PROFILE_FLAG(i);
+    }
+    osdConfig->item_pos[OSD_WARNINGS] = OSD_POS(9, 10) | profileFlags;
 
     // Default to old fixed positions for these elements
     osdConfig->item_pos[OSD_CROSSHAIRS]         = OSD_POS(13, 6);
@@ -2030,16 +2015,13 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
 #endif
 
 #ifdef USE_CMS
-    if (!displayIsGrabbed(osdDisplayPort)) {
+    if (!displayIsGrabbed(osdDisplayPort))
+#endif
+    {
         osdUpdateAlarms();
         osdDrawElements();
         displayHeartbeat(osdDisplayPort);
-#ifdef OSD_CALLS_CMS
-    } else {
-        cmsUpdate(currentTimeUs);
-#endif
     }
-#endif
     lastArmState = ARMING_FLAG(ARMED);
 }
 

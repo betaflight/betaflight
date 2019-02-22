@@ -86,7 +86,8 @@ enum {
     SA_CMD_SET_CHAN,
     SA_CMD_SET_FREQ,
     SA_CMD_SET_MODE,
-    SA_CMD_GET_SETTINGS_V2 = 0x09        // Response only
+    SA_CMD_GET_SETTINGS_V2 = 0x09,        // Response only
+    SA_CMD_GET_SETTINGS_V21 = 0x11,
 } smartAudioCommand_e;
 
 // This is not a good design; can't distinguish command from response this way.
@@ -149,7 +150,7 @@ static uint8_t saLockMode = SA_MODE_SET_UNLOCK; // saCms variable?
 bool saDeferred = true; // saCms variable?
 
 // Receive frame reassembly buffer
-#define SA_MAX_RCVLEN 11
+#define SA_MAX_RCVLEN 15
 static uint8_t sa_rbuf[SA_MAX_RCVLEN+4]; // XXX delete 4 byte guard
 
 //
@@ -276,7 +277,9 @@ static void saProcessResponse(uint8_t *buf, int len)
 
     if (resp == sa_outstanding) {
         sa_outstanding = SA_CMD_NONE;
-    } else if ((resp == SA_CMD_GET_SETTINGS_V2) && (sa_outstanding == SA_CMD_GET_SETTINGS)) {
+    } else if ((resp == SA_CMD_GET_SETTINGS_V2 ||
+                resp == SA_CMD_GET_SETTINGS_V21) &&
+               (sa_outstanding == SA_CMD_GET_SETTINGS)) {
         sa_outstanding = SA_CMD_NONE;
     } else {
         saStat.ooopresp++;
@@ -284,17 +287,22 @@ static void saProcessResponse(uint8_t *buf, int len)
     }
 
     switch (resp) {
+    case SA_CMD_GET_SETTINGS_V21: // Version 2.1 Get Settings
     case SA_CMD_GET_SETTINGS_V2: // Version 2 Get Settings
     case SA_CMD_GET_SETTINGS:    // Version 1 Get Settings
         if (len < 7) {
             break;
         }
 
+        // XXX(fujin): For now handle V21 saDevice.version as '2'.
+        // From spec: "Bit 7-3 is holding the Smart audio version where 0 is V1, 1 is V2, 2 is V2.1"
+        // saDevice.version = buf[0];
         saDevice.version = (buf[0] == SA_CMD_GET_SETTINGS) ? 1 : 2;
         saDevice.channel = buf[2];
         saDevice.power = buf[3];
         saDevice.mode = buf[4];
         saDevice.freq = (buf[5] << 8)|buf[6];
+        // XXX(fujin): Receive additional SA2.1 fields here for dBm based power level.
 
         DEBUG_SET(DEBUG_SMARTAUDIO, 0, saDevice.version * 100 + saDevice.mode);
         DEBUG_SET(DEBUG_SMARTAUDIO, 1, saDevice.channel);
@@ -442,14 +450,7 @@ static void saReceiveFrame(uint8_t c)
 static void saSendFrame(uint8_t *buf, int len)
 {
     if (!IS_RC_MODE_ACTIVE(BOXVTXCONTROLDISABLE)) {
-        switch (smartAudioSerialPort->identifier) {
-            case SERIAL_PORT_SOFTSERIAL1:
-            case SERIAL_PORT_SOFTSERIAL2:
-                break;
-            default:
-                serialWrite(smartAudioSerialPort, 0x00); // Generate 1st start bit
-                break;
-        }
+        serialWrite(smartAudioSerialPort, 0x00); // Ensure line is low regardless of hardware pull-down capabilities.
 
         for (int i = 0 ; i < len ; i++) {
             serialWrite(smartAudioSerialPort, buf[i]);
@@ -460,6 +461,7 @@ static void saSendFrame(uint8_t *buf, int len)
         sa_outstanding = SA_CMD_NONE;
     }
 
+    serialWrite(smartAudioSerialPort, 0x00); // Pull the line low again after sending frame.
     sa_lastTransmissionMs = millis();
 }
 

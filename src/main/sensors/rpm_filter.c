@@ -24,15 +24,16 @@
 #include "platform.h"
 #include "build/debug.h"
 #include "common/filter.h"
+#include "common/maths.h"
 #include "drivers/pwm_output_counts.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "pg/pg_ids.h"
+#include "scheduler/scheduler.h"
 #include "sensors/rpm_filter.h"
 #include "sensors/gyro.h"
 
 #define RPM_FILTER_MAXHARMONICS 3
-#define RPM_MOTOR_FILTER_CUTOFF 150
 #define SECONDS_PER_MINUTE      60.0f
 #define ERPM_PER_LSB            100.0f
 #define MIN_UPDATE_T            0.001f
@@ -60,8 +61,9 @@ static float   pidLooptime;
 static rpmNotchFilter_t filters[2];
 static rpmNotchFilter_t* gyroFilter;
 static rpmNotchFilter_t* dtermFilter;
+static float   maxFrequency;
 
-PG_REGISTER_WITH_RESET_FN(rpmFilterConfig_t, rpmFilterConfig, PG_RPM_FILTER_CONFIG, 2);
+PG_REGISTER_WITH_RESET_FN(rpmFilterConfig_t, rpmFilterConfig, PG_RPM_FILTER_CONFIG, 3);
 
 void pgResetFn_rpmFilterConfig(rpmFilterConfig_t *config)
 {
@@ -69,9 +71,11 @@ void pgResetFn_rpmFilterConfig(rpmFilterConfig_t *config)
     config->gyro_rpm_notch_min = 100;
     config->gyro_rpm_notch_q = 500;
 
-    config->dterm_rpm_notch_harmonics = 1;
+    config->dterm_rpm_notch_harmonics = 0;
     config->dterm_rpm_notch_min = 100;
     config->dterm_rpm_notch_q = 500;
+
+    config->rpm_lpf = 150;
 }
 
 static void rpmNotchFilterInit(rpmNotchFilter_t* filter, int harmonics, int minHz, int q, float looptime)
@@ -112,7 +116,7 @@ void rpmFilterInit(const rpmFilterConfig_t *config)
     }
 
     for (int i = 0; i < getMotorCount(); i++) {
-        pt1FilterInit(&rpmFilters[i], pt1FilterGain(RPM_MOTOR_FILTER_CUTOFF, pidLooptime));
+        pt1FilterInit(&rpmFilters[i], pt1FilterGain(config->rpm_lpf, pidLooptime));
     }
 
     erpmToHz = ERPM_PER_LSB / SECONDS_PER_MINUTE  / (motorConfig()->motorPoleCount / 2.0f);
@@ -121,6 +125,7 @@ void rpmFilterInit(const rpmFilterConfig_t *config)
     numberFilters = getMotorCount() * (filters[0].harmonics + filters[1].harmonics);
     const float filtersPerLoopIteration = numberFilters / loopIterationsPerUpdate;
     filterUpdatesPerIteration = rintf(filtersPerLoopIteration + 0.49f);
+    maxFrequency = 0.5f / (gyro.targetLooptime * 1e-6f);
 }
 
 static float applyFilter(rpmNotchFilter_t* filter, int axis, float value)
@@ -168,19 +173,7 @@ void rpmFilterUpdate()
 
     for (int i = 0; i < filterUpdatesPerIteration; i++) {
 
-        float frequency = (harmonic + 1) * motorFrequency[motor];
-        const float deactivateFreq = 1000.0f;
-        if (frequency < currentFilter->minHz) {
-            if (frequency < 0.5f * currentFilter->minHz) {
-                frequency = deactivateFreq;
-            } else {
-                frequency = currentFilter->minHz;
-            }
-        }
-        if (frequency > deactivateFreq) {
-            frequency = deactivateFreq;
-        }
-
+        float frequency = constrainf((harmonic + 1) * motorFrequency[motor], currentFilter->minHz, maxFrequency);
         biquadFilter_t* template = &currentFilter->notch[0][motor][harmonic];
         // uncomment below to debug filter stepping. Need to also comment out motor rpm DEBUG_SET above
         /* DEBUG_SET(DEBUG_RPM_FILTER, 0, harmonic); */

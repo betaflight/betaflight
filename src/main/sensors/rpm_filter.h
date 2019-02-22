@@ -33,6 +33,7 @@ typedef struct rpmFilterConfig_s
     uint8_t  dterm_rpm_notch_min;        // minimum frequency of the notches
     uint16_t dterm_rpm_notch_q;          // q of the notches
 
+    uint16_t rpm_lpf;                    // the cutoff of the lpf on reported motor rpm
 } rpmFilterConfig_t;
 
 PG_DECLARE(rpmFilterConfig_t, rpmFilterConfig);

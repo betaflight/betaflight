@@ -165,7 +165,7 @@ static bool trampValidateBandAndChannel(uint8_t band, uint8_t channel)
 
 static void trampDevSetBandAndChannel(uint8_t band, uint8_t channel)
 {
-    trampDevSetFreq(vtxCommonLookupFrequency(vtxCommonDevice(), band, channel));
+    trampDevSetFreq(vtxCommonLookupFrequency(&vtxTramp, band, channel));
 }
 
 void trampSetBandAndChannel(uint8_t band, uint8_t channel)
@@ -201,8 +201,8 @@ bool trampCommitChanges(void)
 // return false if index out of range
 static bool trampDevSetPowerByIndex(uint8_t index)
 {
-    if (index > 0 && index <= sizeof(trampPowerTable)) {
-        trampSetRFPower(trampPowerTable[index - 1]);
+    if (index > 0 && index <= vtxTramp.capability.powerCount) {
+        trampSetRFPower(vtxTramp.powerValues[index - 1]);
         trampCommitChanges();
         return true;
     }
@@ -244,7 +244,7 @@ static char trampHandleResponse(void)
                 trampPower = trampRespBuffer[8]|(trampRespBuffer[9] << 8);
 
                 // if no band/chan match then make sure set-by-freq mode is flagged
-                if (!vtxCommonLookupBandChan(vtxCommonDevice(), trampCurFreq, &trampBand, &trampChannel)) {
+                if (!vtxCommonLookupBandChan(&vtxTramp, trampCurFreq, &trampBand, &trampChannel)) {
                     trampSetByFreqFlag = true;
                 }
 
@@ -552,8 +552,8 @@ static bool vtxTrampGetPowerIndex(const vtxDevice_t *vtxDevice, uint8_t *pIndex)
     }
 
     if (trampConfiguredPower > 0) {
-        for (uint8_t i = 0; i < sizeof(trampPowerTable); i++) {
-            if (trampConfiguredPower <= trampPowerTable[i]) {
+        for (uint8_t i = 0; i < vtxTramp.capability.powerCount; i++) {
+            if (trampConfiguredPower <= vtxTramp.powerValues[i]) {
                 *pIndex = i + 1;
                 break;
             }
