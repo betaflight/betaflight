@@ -382,7 +382,7 @@ void tryArm(void)
         const timeUs_t currentTimeUs = micros();
 
 #ifdef USE_DSHOT
-#ifdef USE_DSHOT_TELEMETRY
+#if defined(USE_DSHOT_TELEMETRY) || defined(USE_BB_DSHOT) // XXX Not really correct; just for migration
         pwmWriteDshotCommand(
             255, getMotorCount(),
             motorConfig()->dev.useDshotTelemetry ?

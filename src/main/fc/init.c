@@ -206,7 +206,7 @@ static IO_t busSwitchResetPin        = IO_NONE;
 }
 #endif
 
-#if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
+#if defined(USE_DSHOT) && (defined(USE_DSHOT_TELEMETRY) || defined(USE_BB_DSHOT)) // XXX Not really correct; just for migration
 void activateDshotTelemetry(struct dispatchEntry_s* self)
 {
     UNUSED(self);

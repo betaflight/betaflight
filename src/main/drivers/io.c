@@ -294,8 +294,10 @@ void IOConfigGPIO(IO_t io, ioConfig_t cfg)
         return;
     }
 
+#if 0
     const rccPeriphTag_t rcc = ioPortDefs[IO_GPIOPortIdx(io)].rcc;
     RCC_ClockCmd(rcc, ENABLE);
+#endif
 
     GPIO_InitTypeDef init = {
         .GPIO_Pin = IO_Pin(io),
@@ -318,8 +320,10 @@ void IOConfigGPIOAF(IO_t io, ioConfig_t cfg, uint8_t af)
         return;
     }
 
+#if 0
     const rccPeriphTag_t rcc = ioPortDefs[IO_GPIOPortIdx(io)].rcc;
     RCC_ClockCmd(rcc, ENABLE);
+#endif
 
     LL_GPIO_InitTypeDef init = {
         .Pin = IO_Pin(io),
@@ -341,8 +345,10 @@ void IOConfigGPIO(IO_t io, ioConfig_t cfg)
         return;
     }
 
+#if 0
     const rccPeriphTag_t rcc = ioPortDefs[IO_GPIOPortIdx(io)].rcc;
     RCC_ClockCmd(rcc, ENABLE);
+#endif
 
     GPIO_InitTypeDef init = {
         .GPIO_Pin = IO_Pin(io),
@@ -360,8 +366,10 @@ void IOConfigGPIOAF(IO_t io, ioConfig_t cfg, uint8_t af)
         return;
     }
 
+#if 0
     const rccPeriphTag_t rcc = ioPortDefs[IO_GPIOPortIdx(io)].rcc;
     RCC_ClockCmd(rcc, ENABLE);
+#endif
     GPIO_PinAFConfig(IO_GPIO(io), IO_GPIO_PinSource(io), af);
 
     GPIO_InitTypeDef init = {
