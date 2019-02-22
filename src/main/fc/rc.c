@@ -53,6 +53,12 @@
 
 typedef float (applyRatesFn)(const int axis, float rcCommandf, const float rcCommandfAbs);
 
+#ifdef USE_INTERPOLATED_SP
+// Setpoint in degrees/sec before RC-Smoothing is applied
+static float rawSetpoint[XYZ_AXIS_COUNT];
+// Stick deflection [-1.0, 1.0] before RC-Smoothing is applied
+static float rawDeflection[XYZ_AXIS_COUNT];
+#endif
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
 static float throttlePIDAttenuation;
 static bool reverseMotors = false;
@@ -60,6 +66,7 @@ static applyRatesFn *applyRates;
 uint16_t currentRxRefreshRate;
 
 FAST_RAM_ZERO_INIT uint8_t interpolationChannels;
+static FAST_RAM_ZERO_INIT uint32_t rcFrameNumber;
 
 enum {
     ROLL_FLAG = 1 << ROLL,
@@ -82,6 +89,11 @@ enum {
 static FAST_RAM_ZERO_INIT rcSmoothingFilter_t rcSmoothingData;
 #endif // USE_RC_SMOOTHING_FILTER
 
+uint32_t getRcFrameNumber() 
+{
+    return rcFrameNumber;
+}
+
 float getSetpointRate(int axis)
 {
     return setpointRate[axis];
@@ -101,6 +113,18 @@ float getThrottlePIDAttenuation(void)
 {
     return throttlePIDAttenuation;
 }
+
+#ifdef USE_INTERPOLATED_SP
+float getRawSetpoint(int axis)
+{
+    return rawSetpoint[axis];
+}
+
+float getRawDeflection(int axis)
+{
+    return rawDeflection[axis];
+}
+#endif
 
 #define THROTTLE_LOOKUP_LENGTH 12
 static int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];    // lookup table for expo & mid THROTTLE
@@ -152,11 +176,16 @@ float applyKissRates(const int axis, float rcCommandf, const float rcCommandfAbs
 {
     const float rcCurvef = currentControlRateProfile->rcExpo[axis] / 100.0f;
 
-    float kissRpyUseRates = 1.0f / (constrainf(1.0f - (rcCommandfAbs * (currentControlRateProfile->rates[axis] / 100.0f)), 0.01f, 1.00f));    
+    float kissRpyUseRates = 1.0f / (constrainf(1.0f - (rcCommandfAbs * (currentControlRateProfile->rates[axis] / 100.0f)), 0.01f, 1.00f));
     float kissRcCommandf = (power3(rcCommandf) * rcCurvef + rcCommandf * (1 - rcCurvef)) * (currentControlRateProfile->rcRates[axis] / 1000.0f);
     float kissAngle = constrainf(((2000.0f * kissRpyUseRates) * kissRcCommandf), -SETPOINT_RATE_LIMIT, SETPOINT_RATE_LIMIT);
 
     return kissAngle;
+}
+
+float applyCurve(int axis, float deflection)
+{
+    return applyRates(axis, deflection, fabsf(deflection));
 }
 
 static void calculateSetpointRate(int axis)
@@ -561,9 +590,24 @@ FAST_CODE void processRcCommand(void)
 {
     uint8_t updatedChannel;
 
+    if (isRXDataNew) {
+        rcFrameNumber++;
+    }
+
     if (isRXDataNew && pidAntiGravityEnabled()) {
         checkForThrottleErrorResetState(currentRxRefreshRate);
     }
+
+#ifdef USE_INTERPOLATED_SP
+    if (isRXDataNew) {
+        for (int i = FD_ROLL; i <= FD_YAW; i++) {
+            const float rcCommandf = rcCommand[i] / 500.0f;
+            const float rcCommandfAbs = fabsf(rcCommandf);
+            rawSetpoint[i] = applyRates(i, rcCommandf, rcCommandfAbs);
+            rawDeflection[i] = rcCommandf;
+        }
+    }
+#endif
 
     switch (rxConfig()->rc_smoothing_type) {
 #ifdef USE_RC_SMOOTHING_FILTER
