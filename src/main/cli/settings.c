@@ -680,7 +680,7 @@ const clivalue_t valueTable[] = {
 #ifdef USE_RC_SMOOTHING_FILTER
     { "rc_smoothing_type",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_RC_SMOOTHING_TYPE }, PG_RX_CONFIG, offsetof(rxConfig_t, rc_smoothing_type) },
     { "rc_smoothing_input_hz",      VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_RX_CONFIG, offsetof(rxConfig_t, rc_smoothing_input_cutoff) },
-    { "rc_smoothing_derivative_hz", VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_RX_CONFIG, offsetof(rxConfig_t, rc_smoothing_derivative_cutoff) },
+    { "rc_smoothing_derivative_hz", VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 500 }, PG_RX_CONFIG, offsetof(rxConfig_t, rc_smoothing_derivative_cutoff) },
     { "rc_smoothing_debug_axis",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_RC_SMOOTHING_DEBUG }, PG_RX_CONFIG, offsetof(rxConfig_t, rc_smoothing_debug_axis) },
     { "rc_smoothing_input_type",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_RC_SMOOTHING_INPUT_TYPE }, PG_RX_CONFIG, offsetof(rxConfig_t, rc_smoothing_input_type) },
     { "rc_smoothing_derivative_type",VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_RC_SMOOTHING_DERIVATIVE_TYPE }, PG_RX_CONFIG, offsetof(rxConfig_t, rc_smoothing_derivative_type) },
@@ -1046,6 +1046,8 @@ const clivalue_t valueTable[] = {
 #ifdef USE_AIRMODE_LPF
     { "transient_throttle_limit",   VAR_UINT8 | MASTER_VALUE, .config.minmax = { 0, 30 }, PG_PID_PROFILE, offsetof(pidProfile_t, transient_throttle_limit) },
 #endif
+    { "ff_from_interpolated_sp",    VAR_UINT8 | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = {TABLE_OFF_ON}, PG_PID_PROFILE, offsetof(pidProfile_t, ff_from_interpolated_sp) },
+    { "ff_max_rate",                VAR_UINT16| PROFILE_VALUE, .config.minmaxUnsigned = {0, 5000}, PG_PID_PROFILE, offsetof(pidProfile_t, ff_max_rate) },
 
 // PG_TELEMETRY_CONFIG
 #ifdef USE_TELEMETRY

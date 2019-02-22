@@ -54,6 +54,7 @@
 typedef float (applyRatesFn)(const int axis, float rcCommandf, const float rcCommandfAbs);
 
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
+static float rawSetpoint[XYZ_AXIS_COUNT];
 static float throttlePIDAttenuation;
 static bool reverseMotors = false;
 static applyRatesFn *applyRates;
@@ -100,6 +101,11 @@ float getRcDeflectionAbs(int axis)
 float getThrottlePIDAttenuation(void)
 {
     return throttlePIDAttenuation;
+}
+
+float getRawSetpoint(int axis)
+{
+    return rawSetpoint[axis];
 }
 
 #define THROTTLE_LOOKUP_LENGTH 12
@@ -563,6 +569,18 @@ FAST_CODE void processRcCommand(void)
 
     if (isRXDataNew && pidAntiGravityEnabled()) {
         checkForThrottleErrorResetState(currentRxRefreshRate);
+    }
+
+    if (isRXDataNew) {
+        if (pidAntiGravityEnabled()) {
+            checkForThrottleErrorResetState(currentRxRefreshRate);
+        }
+
+        for (int i = FD_ROLL; i <= FD_YAW; i++) {
+            const float rcCommandf = rcCommand[i] / 500.0f;
+            const float rcCommandfAbs = ABS(rcCommandf);
+            rawSetpoint[i] = applyRates(i, rcCommandf, rcCommandfAbs);
+        }
     }
 
     switch (rxConfig()->rc_smoothing_type) {

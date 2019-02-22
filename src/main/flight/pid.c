@@ -128,7 +128,7 @@ static FAST_RAM_ZERO_INIT float airmodeThrottleOffsetLimit;
 
 #define LAUNCH_CONTROL_YAW_ITERM_LIMIT 50 // yaw iterm windup limit when launch mode is "FULL" (all axes)
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 11);
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 12);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -205,6 +205,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .auto_profile_cell_count = AUTO_PROFILE_CELL_COUNT_STAY,
         .transient_throttle_limit = 15,
         .profileName = { 0 },
+        .ff_from_interpolated_sp = 0,
+        .ff_max_rate = 0,
     );
 #ifndef USE_D_MIN
     pidProfile->pid[PID_ROLL].D = 30;
@@ -559,6 +561,9 @@ static FAST_RAM_ZERO_INIT float dMinGyroGain;
 static FAST_RAM_ZERO_INIT float dMinSetpointGain;
 #endif
 
+static FAST_RAM_ZERO_INIT bool  ffFromInterpolatedSetpoint;
+static FAST_RAM_ZERO_INIT float ffMaxImpliedRate;
+
 void pidInitConfig(const pidProfile_t *pidProfile)
 {
     if (pidProfile->feedForwardTransition == 0) {
@@ -702,6 +707,8 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 #if defined(USE_AIRMODE_LPF)
     airmodeThrottleOffsetLimit = pidProfile->transient_throttle_limit / 100.0f;
 #endif
+    ffMaxImpliedRate = pidProfile->ff_max_rate;
+    ffFromInterpolatedSetpoint = pidProfile->ff_from_interpolated_sp;
 }
 
 void pidInit(const pidProfile_t *pidProfile)
@@ -1330,6 +1337,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
         const float previousIterm = pidData[axis].I;
         float itermErrorRate = errorRate;
+        float uncorrectedSetpoint = currentPidSetpoint;
 
 #if defined(USE_ITERM_RELAX)
         if (!launchControlActive && !inCrashRecoveryMode) {
@@ -1337,6 +1345,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             errorRate = currentPidSetpoint - gyroRate;
         }
 #endif
+
+        float setpointCorrection = currentPidSetpoint - uncorrectedSetpoint;
+        static float oldSetpointCorrection[XYZ_AXIS_COUNT];
 
         // --------low-level gyro-based PID based on 2DOF PID controller. ----------
         // 2-DOF PID controller with optional filter on derivative term.
@@ -1359,8 +1370,26 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
         // -----calculate pidSetpointDelta
         float pidSetpointDelta = 0;
-        pidSetpointDelta = currentPidSetpoint - previousPidSetpoint[axis];
+        if (ffFromInterpolatedSetpoint) {
+            static float oldRawSetpoint[XYZ_AXIS_COUNT];
+            static uint16_t interpolationSteps[XYZ_AXIS_COUNT];
+            static float setpointChangePerIteration[XYZ_AXIS_COUNT];
+            float rawSetpoint = getRawSetpoint(axis);
+            if (rawSetpoint != oldRawSetpoint[axis]) {
+                interpolationSteps[axis] = (uint16_t) ((currentRxRefreshRate + 1000) * pidFrequency * 1e-6f + 0.5f);
+                setpointChangePerIteration[axis] = (rawSetpoint - oldRawSetpoint[axis]) / interpolationSteps[axis];
+                oldRawSetpoint[axis] = rawSetpoint;
+            }
+            if (interpolationSteps[axis]) {
+                pidSetpointDelta = setpointChangePerIteration[axis];
+                interpolationSteps[axis]--;
+            }
+        }
+        else {
+            pidSetpointDelta = currentPidSetpoint - previousPidSetpoint[axis];
+        }
         previousPidSetpoint[axis] = currentPidSetpoint;
+
 
 #ifdef USE_RC_SMOOTHING_FILTER
         pidSetpointDelta = applyRcSmoothingDerivativeFilter(axis, pidSetpointDelta);
@@ -1410,12 +1439,27 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         previousGyroRateDterm[axis] = gyroRateDterm[axis];
 
         // -----calculate feedforward component
+
+        // include abs control correction in FF
+        pidSetpointDelta += setpointCorrection - oldSetpointCorrection[axis];
+        oldSetpointCorrection[axis] = setpointCorrection;
+
         // Only enable feedforward for rate mode and if launch control is inactive
         const float feedforwardGain = (flightModeFlags || launchControlActive) ? 0.0f : pidCoefficient[axis].Kf;
         if (feedforwardGain > 0) {
             // no transition if feedForwardTransition == 0
             float transition = feedForwardTransition > 0 ? MIN(1.f, getRcDeflectionAbs(axis) * feedForwardTransition) : 1;
             pidData[axis].F = feedforwardGain * transition * pidSetpointDelta * pidFrequency;
+
+            if (ffMaxImpliedRate > 0.0f) {
+                if (fabsf(currentPidSetpoint) > ffMaxImpliedRate) {
+                    pidData[axis].F = 0;
+                }
+                else {
+                    float limit = (ffMaxImpliedRate - fabsf(currentPidSetpoint)) * pidCoefficient[axis].Kp;
+                    pidData[axis].F = constrainf(pidData[axis].F, -limit, limit);
+                }
+            }
         } else {
             pidData[axis].F = 0;
         }

@@ -45,3 +45,4 @@ bool rcSmoothingIsEnabled(void);
 rcSmoothingFilter_t *getRcSmoothingData(void);
 bool rcSmoothingAutoCalculate(void);
 bool rcSmoothingInitializationComplete(void);
+float getRawSetpoint(int axis);
