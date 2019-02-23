@@ -401,7 +401,7 @@
 #endif
 
 #ifdef USE_ADC
-#if !defined(GENERIC_TARGET) && !defined(ADC_INSTANCE)
+#if !defined(USE_UNIFIED_TARGET) && !defined(ADC_INSTANCE)
 #define ADC_INSTANCE ADC1
 #ifndef ADC1_DMA_OPT
 #define ADC1_DMA_OPT 1

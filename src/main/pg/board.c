@@ -42,7 +42,7 @@ void pgResetFn_boardConfig(boardConfig_t *boardConfig)
         strncpy(boardConfig->boardName, getBoardName(), MAX_BOARD_NAME_LENGTH);
         boardConfig->boardInformationSet = true;
     } else {
-#if !defined(GENERIC_TARGET)
+#if !defined(USE_UNIFIED_TARGET)
         strncpy(boardConfig->boardName, targetName, MAX_BOARD_NAME_LENGTH);
 
 #if defined(TARGET_MANUFACTURER_IDENTIFIER)
@@ -51,7 +51,7 @@ void pgResetFn_boardConfig(boardConfig_t *boardConfig)
         boardConfig->boardInformationSet = true;
 #else
         boardConfig->boardInformationSet = false;
-#endif // GENERIC_TARGET
+#endif // USE_UNIFIED_TARGET
     }
 
 #if defined(USE_SIGNATURE)
