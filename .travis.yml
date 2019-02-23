@@ -43,10 +43,14 @@ env:
 
 before_install:
   - |
+    echo "Target branch: $TRAVIS_BRANCH"
+    echo "Commit range: $TRAVIS_COMMIT_RANGE"
     if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
-      TRAVIS_COMMIT_RANGE="FETCH_HEAD...$TRAVIS_BRANCH"
+      COMMIT_RANGE="$TRAVIS_BRANCH"
+    else
+      COMMIT_RANGE="$TRAVIS_COMMIT_RANGE"
     fi
-    git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '(\.md$)|(^(docs|support|unified_targets))/' || {
+    git diff --name-only $COMMIT_RANGE | grep -qvE '(\.md$)|(^(docs|support|unified_targets))/' || {
       echo "Only files not used in the build process were updated, aborting."
       exit
     }
