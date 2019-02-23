@@ -18,8 +18,11 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "platform.h"
+
 #include "drivers/io.h"
 #include "timer.h"
+
 #ifdef USE_TIMER_MGMT
 #include "pg/timerio.h"
 #endif

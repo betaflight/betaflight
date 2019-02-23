@@ -99,6 +99,8 @@
   * @{
   */
 
+#include "platform.h"
+
 #include "stm32f30x.h"
 
 uint32_t hse_value = HSE_VALUE;

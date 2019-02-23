@@ -20,6 +20,8 @@
 
 #include <stdint.h>
 
+#include "platform.h"
+
 #include "atomic.h"
 
 #if defined(UNIT_TEST)

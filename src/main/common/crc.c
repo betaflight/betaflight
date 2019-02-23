@@ -20,6 +20,8 @@
 
 #include <stdint.h>
 
+#include "platform.h"
+
 #include "streambuf.h"
 
 

@@ -20,6 +20,8 @@
 
 #include <stdint.h>
 
+#include "platform.h"
+
 #include "sdcard_standard.h"
 #include "common/maths.h"
 

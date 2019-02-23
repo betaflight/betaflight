@@ -21,6 +21,9 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
+
+#include "platform.h"
+
 #include "usb_bsp.h"
 #include "usbd_conf.h"
 #include "stm32f4xx_conf.h"

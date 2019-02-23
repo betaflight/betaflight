@@ -22,6 +22,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "platform.h"
+
 #include "common/crc.h"
 #include "common/maths.h"
 #include "common/streambuf.h"

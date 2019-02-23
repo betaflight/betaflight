@@ -26,6 +26,8 @@
 
 #include <stdint.h>
 
+#include "platform.h"
+
 #include "common/maths.h"
 #include "common/printf.h"
 #include "common/time.h"

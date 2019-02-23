@@ -21,6 +21,8 @@
 #include <string.h>
 #include <stdint.h>
 
+#include "platform.h"
+
 #include "streambuf.h"
 
 sbuf_t *sbufInit(sbuf_t *sbuf, uint8_t *ptr, uint8_t *end)

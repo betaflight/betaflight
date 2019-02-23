@@ -18,7 +18,9 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "stdint.h"
+#include <stdint.h>
+
+#include "platform.h"
 
 #include "color.h"
 #include "colorconversion.h"
