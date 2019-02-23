@@ -336,7 +336,8 @@ uint16_t _crc_xmodem_update (uint16_t crc, uint8_t data) {
         (pDeviceInfo->words[0] == 0xE8B2))
 
 #define ARM_DEVICE_MATCH ((pDeviceInfo->words[0] == 0x1F06) || \
-        (pDeviceInfo->words[0] == 0x3306) || (pDeviceInfo->words[0] == 0x3406) || (pDeviceInfo->words[0] == 0x3506))
+        (pDeviceInfo->words[0] == 0x3306) || (pDeviceInfo->words[0] == 0x3406) || (pDeviceInfo->words[0] == 0x3506) || \
+        (pDeviceInfo->words[0] == 0x2B06) || (pDeviceInfo->words[0] == 0x4706))
 
 static uint8_t CurrentInterfaceMode;
 
