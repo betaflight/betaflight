@@ -161,7 +161,7 @@ bool srxlFrameRpm(sbuf_t *dst, timeUs_t currentTimeUs)
     uint16_t period_us = SPEKTRUM_RPM_UNUSED;
 #ifdef USE_ESC_SENSOR_TELEMETRY
     escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
-    if (escData != NULL) {
+    if (escData != NULL && escData->rpm > 0) {
         period_us = 60000000 / escData->rpm; // revs/minute -> microSeconds
     }
 #endif
