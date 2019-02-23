@@ -338,6 +338,16 @@ static void validateAndFixConfig(void)
     }
 #endif
 
+    for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
+        const modeActivationCondition_t *mac = modeActivationConditions(i);
+
+        if (mac->linkedTo) {
+            if (mac->modeId == BOXARM || isModeActivationConditionLinked(mac->linkedTo)) {
+                removeModeActivationCondition(mac->modeId);
+            }
+        }
+    }
+
 // clear features that are not supported.
 // I have kept them all here in one place, some could be moved to sections of code above.
 
