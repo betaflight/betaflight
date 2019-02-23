@@ -21,6 +21,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <ctype.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -47,6 +48,12 @@ char trampCmsStatusString[31] = "- -- ---- ----";
 void trampCmsUpdateStatusString(void)
 {
     vtxDevice_t *vtxDevice = vtxCommonDevice();
+
+    if (vtxDevice->capability.bandCount == 0 || vtxDevice->capability.powerCount) {
+        strncpy(trampCmsStatusString, "PLEASE CONFIGURE VTXTABLE", sizeof(trampCmsStatusString));
+        return;
+    }
+
     trampCmsStatusString[0] = '*';
     trampCmsStatusString[1] = ' ';
     trampCmsStatusString[2] = vtxCommonLookupBandLetter(vtxDevice, trampBand);
