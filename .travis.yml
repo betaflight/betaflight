@@ -42,6 +42,14 @@ env:
 #  - TARGET=...
 
 before_install:
+  - |
+    if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
+      TRAVIS_COMMIT_RANGE="FETCH_HEAD...$TRAVIS_BRANCH"
+    fi
+    git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '(\.md$)|(^(docs|support|unified_targets))/' || {
+      echo "Only files not used in the build process were updated, aborting."
+      exit
+    }
   - pip install --user cpp-coveralls
   - gem install coveralls-lcov
 
