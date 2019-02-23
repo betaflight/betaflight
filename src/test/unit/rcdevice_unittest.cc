@@ -40,8 +40,9 @@ extern "C" {
 
     #include "scheduler/scheduler.h"
     #include "io/rcdevice_cam.h"
-    #include "io/osd.h"
     #include "io/rcdevice.h"
+
+    #include "osd/osd.h"
 
     #include "pg/pg.h"
     #include "pg/pg_ids.h"

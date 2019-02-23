@@ -21,7 +21,10 @@
 #pragma once
 
 #include "common/time.h"
+
 #include "pg/pg.h"
+
+#include "sensors/esc_sensor.h"
 
 #define OSD_NUM_TIMER_TYPES 3
 extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
@@ -68,8 +71,8 @@ extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 // NB: to ensure backwards compatibility, new enum values must be appended at the end but before the OSD_XXXX_COUNT entry.
 
 // *** IMPORTANT ***
-// If you are adding additional elements that do not require any conditional display logic,
-// you must add the elements to the osdElementDisplayOrder[] array in src/main/io/osd.c
+// See the information at the top of osd/osd_elements.c for instructions
+// on how to add OSD elements.
 typedef enum {
     OSD_RSSI_VALUE,
     OSD_MAIN_BATT_VOLTAGE,
@@ -238,12 +241,33 @@ typedef struct osdConfig_s {
 
 PG_DECLARE(osdConfig_t, osdConfig);
 
+typedef struct statistic_s {
+    timeUs_t armed_time;
+    int16_t max_speed;
+    int16_t min_voltage; // /100
+    int16_t max_current; // /10
+    uint8_t min_rssi;
+    int32_t max_altitude;
+    int16_t max_distance;
+    float max_g_force;
+    int16_t max_esc_temp;
+    int32_t max_esc_rpm;
+    uint8_t min_link_quality;
+} statistic_t;
+
 extern timeUs_t resumeRefreshAt;
+extern timeUs_t osdFlyTime;
+#if defined(USE_ACC)
+extern float osdGForce;
+#endif
+#ifdef USE_ESC_SENSOR
+extern escSensorData_t *osdEscDataCombined;
+#endif
+
 
 struct displayPort_s;
 void osdInit(struct displayPort_s *osdDisplayPort);
 bool osdInitialized(void);
-void osdResetAlarms(void);
 void osdUpdate(timeUs_t currentTimeUs);
 void osdStatSetState(uint8_t statIndex, bool enabled);
 bool osdStatGetState(uint8_t statIndex);
@@ -251,7 +275,8 @@ void osdWarnSetState(uint8_t warningIndex, bool enabled);
 bool osdWarnGetState(uint8_t warningIndex);
 void osdSuppressStats(bool flag);
 
-void setOsdProfile(uint8_t value);
 uint8_t getCurrentOsdProfileIndex(void);
 void changeOsdProfileIndex(uint8_t profileIndex);
 bool osdElementVisible(uint16_t value);
+bool osdGetVisualBeeperState(void);
+statistic_t *osdGetStats(void);

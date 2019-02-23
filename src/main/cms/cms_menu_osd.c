@@ -40,7 +40,9 @@
 #include "pg/pg_ids.h"
 
 #include "io/displayport_max7456.h"
-#include "io/osd.h"
+
+#include "osd/osd.h"
+#include "osd/osd_elements.h"
 
 #ifdef USE_EXTENDED_CMS_MENUS
 static uint16_t osdConfig_item_pos[OSD_ITEM_COUNT];
@@ -56,6 +58,7 @@ static long menuOsdActiveElemsOnExit(const OSD_Entry *self)
     UNUSED(self);
 
     memcpy(&osdConfigMutable()->item_pos[0], &osdConfig_item_pos[0], sizeof(uint16_t) * OSD_ITEM_COUNT);
+    osdAnalyzeActiveElements();
     return 0;
 }
 
@@ -274,8 +277,7 @@ static long cmsx_menuOsdOnExit(const OSD_Entry *self)
     UNUSED(self);
 
 #ifdef USE_OSD_PROFILES
-    osdConfigMutable()->osdProfileIndex = osdConfig_osdProfileIndex;
-    setOsdProfile(osdConfig()->osdProfileIndex);
+    changeOsdProfileIndex(osdConfig_osdProfileIndex);
 #endif
 
 #ifdef USE_MAX7456
@@ -284,7 +286,7 @@ static long cmsx_menuOsdOnExit(const OSD_Entry *self)
     displayPortProfileMax7456Mutable()->whiteBrightness = displayPortProfileMax7456_whiteBrightness;
 #endif
 
-  return 0;
+    return 0;
 }
 
 const OSD_Entry cmsx_menuOsdEntries[] =

@@ -63,7 +63,6 @@
 #include "io/dashboard.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
-#include "io/osd.h"
 #include "io/piniobox.h"
 #include "io/serial.h"
 #include "io/transponder_ir.h"
@@ -74,6 +73,8 @@
 
 #include "msp/msp.h"
 #include "msp/msp_serial.h"
+
+#include "osd/osd.h"
 
 #include "pg/rx.h"
 

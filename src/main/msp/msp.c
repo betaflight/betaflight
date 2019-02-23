@@ -85,7 +85,6 @@
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/motors.h"
-#include "io/osd.h"
 #include "io/serial.h"
 #include "io/serial_4way.h"
 #include "io/servos.h"
@@ -98,6 +97,9 @@
 #include "msp/msp_box.h"
 #include "msp/msp_protocol.h"
 #include "msp/msp_serial.h"
+
+#include "osd/osd.h"
+#include "osd/osd_elements.h"
 
 #include "pg/beeper.h"
 #include "pg/board.h"
@@ -2672,8 +2674,7 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src, mspPos
                     // API >= 1.41
                     // selected OSD profile
 #ifdef USE_OSD_PROFILES
-                    osdConfigMutable()->osdProfileIndex = sbufReadU8(src);
-                    setOsdProfile(osdConfig()->osdProfileIndex);
+                    changeOsdProfileIndex(sbufReadU8(src));
 #else
                     sbufReadU8(src);
 #endif // USE_OSD_PROFILES
@@ -2714,6 +2715,7 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src, mspPos
                 } else if (addr < OSD_ITEM_COUNT) {
                     /* Set element positions */
                     osdConfigMutable()->item_pos[addr] = value;
+                    osdAnalyzeActiveElements();
                 } else {
                   return MSP_RESULT_ERROR;
                 }

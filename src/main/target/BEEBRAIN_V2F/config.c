@@ -48,7 +48,8 @@
 #include "rx/rx.h"
 
 #include "io/serial.h"
-#include "io/osd.h"
+
+#include "osd/osd.h"
 
 #include "sensors/battery.h"
 #include "sensors/gyro.h"
