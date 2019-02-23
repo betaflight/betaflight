@@ -391,19 +391,23 @@ static void cliPrintLinef(const char *format, ...)
     cliPrintLinefeed();
 }
 
-static void cliPrintErrorLinef(const char *format, ...)
+static void cliPrintError(const char *format, ...)
 {
-    cliPrint("###");
+    cliPrint("###ERROR: ");
     va_list va;
     va_start(va, format);
     cliPrintfva(format, va);
     va_end(va);
-    cliPrintLine("###");
+    cliPrint("###");
 }
 
-static void cliPrintCorruptMessage(int value)
+static void cliPrintErrorLinef(const char *format, ...)
 {
-    cliPrintf("%d ###CORRUPTED CONFIG###", value);
+    va_list va;
+    va_start(va, format);
+    cliPrintError(format, va);
+    va_end(va);
+    cliPrintLinefeed();
 }
 
 static void getMinMax(const clivalue_t *var, int *min, int *max)
@@ -480,29 +484,26 @@ static void printValuePointer(const clivalue_t *var, const void *valuePointer, b
             break;
         }
 
+        bool valueIsCorrupted = false;
         switch (var->type & VALUE_MODE_MASK) {
         case MODE_DIRECT:
             if ((var->type & VALUE_TYPE_MASK) == VAR_UINT32) {
+                cliPrintf("%d", value);
                 if ((uint32_t) value > var->config.u32Max) {
-                    cliPrintCorruptMessage(value);
-                } else {
-                    cliPrintf("%d", value);
-                    if (full) {
-                        cliPrintf(" 0 %d", var->config.u32Max);
-                    }
+                    valueIsCorrupted = true;
+                } else if (full) {
+                    cliPrintf(" 0 %d", var->config.u32Max);
                 }
             } else {
                 int min;
                 int max;
                 getMinMax(var, &min, &max);
 
+                cliPrintf("%d", value);
                 if ((value < min) || (value > max)) {
-                    cliPrintCorruptMessage(value);
-                } else {
-                    cliPrintf("%d", value);
-                    if (full) {
-                        cliPrintf(" %d %d", min, max);
-                    }
+                    valueIsCorrupted = true;
+                } else if (full) {
+                    cliPrintf(" %d %d", min, max);
                 }
             }
             break;
@@ -510,7 +511,7 @@ static void printValuePointer(const clivalue_t *var, const void *valuePointer, b
             if (value < lookupTables[var->config.lookup.tableIndex].valueCount) {
                 cliPrint(lookupTables[var->config.lookup.tableIndex].values[value]);
             } else {
-                cliPrintCorruptMessage(value);
+                valueIsCorrupted = true;
             }
             break;
         case MODE_BITSET:
@@ -519,6 +520,11 @@ static void printValuePointer(const clivalue_t *var, const void *valuePointer, b
             } else {
                 cliPrintf("OFF");
             }
+        }
+
+        if (valueIsCorrupted) {
+            cliPrintLinefeed();
+            cliPrintError("CORRUPTED CONFIG: %s = %d", var->name, value);
         }
     }
 }
@@ -3831,6 +3837,7 @@ STATIC_UNIT_TESTED void cliGet(char *cmdline)
             }
             cliPrintVarRange(val);
             cliPrintVarDefault(val);
+
             matchedCommands++;
         }
     }
@@ -5470,10 +5477,11 @@ void cliProcess(void)
                         break;
                     }
                 }
-                if (cmd < cmdTable + ARRAYLEN(cmdTable))
+                if (cmd < cmdTable + ARRAYLEN(cmdTable)) {
                     cmd->func(options);
-                else
-                    cliPrint("Unknown command, try 'help'");
+                } else {
+                    cliPrintError("UNKNOWN COMMAND, TRY 'HELP'");
+                }
                 bufferIndex = 0;
             }
 
