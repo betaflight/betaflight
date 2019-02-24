@@ -17,7 +17,9 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <platform.h>
+
+#include "platform.h"
+
 #include "build/build_config.h"
 #include "build/debug.h"
 #include "barometer.h"

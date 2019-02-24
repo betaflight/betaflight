@@ -20,6 +20,8 @@
 
 #include <ctype.h>
 
+#include "platform.h"
+
 #include "fat_standard.h"
 
 bool fat16_isEndOfChainMarker(uint16_t clusterNumber)

@@ -20,6 +20,8 @@
 
 #include <stdint.h>
 
+#include "platform.h"
+
 #include "buf_writer.h"
 
 bufWriter_t *bufWriterInit(uint8_t *b, int total_size, bufWrite_t writer, void *arg)

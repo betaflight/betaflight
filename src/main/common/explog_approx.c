@@ -30,6 +30,8 @@ Stripped down for BF use
 #include <math.h>
 #include <stdint.h>
 
+#include "platform.h"
+
 /* Workaround a lack of optimization in gcc */
 float exp_cst1 = 2139095040.f;
 float exp_cst2 = 0.f;

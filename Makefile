@@ -572,7 +572,15 @@ check-fastram-usage-correctness:
 		echo "Trivially initialized FAST_RAM variables found, use FAST_RAM_ZERO_INIT instead to save FLASH:"; \
 		echo "$${TRIVIALLY_INITIALIZED}\n$${EXPLICITLY_TRIVIALLY_INITIALIZED}"; \
 		exit 1; \
-	fi;
+	fi
+
+check-platform-included:
+	$(V1) PLATFORM_NOT_INCLUDED=$$(find src/main -type d -name target -prune -o -type f -name \*.c -exec grep -L "^#include \"platform.h\"" {} \;); \
+	if [ "$$(echo $${PLATFORM_NOT_INCLUDED} | grep -v -e '^$$' | wc -l)" -ne 0 ]; then \
+		echo "The following compilation units do not include the required target specific configuration provided by 'platform.h':"; \
+		echo "$${PLATFORM_NOT_INCLUDED}"; \
+		exit 1; \
+	fi
 
 # rebuild everything when makefile changes
 $(TARGET_OBJS): Makefile $(TARGET_DIR)/target.mk $(wildcard make/*)
