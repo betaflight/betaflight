@@ -347,6 +347,10 @@ all_with_unsupported: $(VALID_TARGETS)
 ## unsupported : Build unsupported targets
 unsupported: $(UNSUPPORTED_TARGETS)
 
+## pre-push : The minimum verification that should be run before pushing, to check if CI has a chance of succeeding
+pre-push:
+	$(MAKE) BETAFLIGHTF3_clean BETAFLIGHTF3 OMNIBUSF4_clean OMNIBUSF4 SPRACINGF7DUAL_clean SPRACINGF7DUAL SITL_clean SITL clean_test test-representative EXTRA_FLAGS=-Werror
+
 ## official          : Build all official (travis) targets
 official: $(OFFICIAL_TARGETS)
 
