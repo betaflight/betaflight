@@ -734,12 +734,14 @@ static void osdElementLinkQuality(osdElementParms_t *element)
 #ifdef USE_BLACKBOX
 static void osdElementLogStatus(osdElementParms_t *element)
 {
-    if (!isBlackboxDeviceWorking()) {
-        tfp_sprintf(element->buff, "L-");
-    } else if (isBlackboxDeviceFull()) {
-        tfp_sprintf(element->buff, "L>");
-    } else {
-        tfp_sprintf(element->buff, "L%d", blackboxGetLogNumber());
+    if (IS_RC_MODE_ACTIVE(BOXBLACKBOX)) {
+        if (!isBlackboxDeviceWorking()) {
+            tfp_sprintf(element->buff, "L-");
+        } else if (isBlackboxDeviceFull()) {
+            tfp_sprintf(element->buff, "L>");
+        } else {
+            tfp_sprintf(element->buff, "L%d", blackboxGetLogNumber());
+        }
     }
 }
 #endif // USE_BLACKBOX
@@ -1211,6 +1213,9 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_NUMERICAL_VARIO,
     OSD_COMPASS_BAR,
     OSD_ANTI_GRAVITY,
+#ifdef USE_BLACKBOX
+    OSD_LOG_STATUS,
+#endif
     OSD_MOTOR_DIAG,
 #ifdef USE_ACC
     OSD_FLIP_ARROW,
@@ -1376,12 +1381,6 @@ void osdAnalyzeActiveElements(void)
         osdAddActiveElement(OSD_ESC_RPM);
     }
 #endif
-
-#ifdef USE_BLACKBOX
-    if (IS_RC_MODE_ACTIVE(BOXBLACKBOX)) {
-        osdAddActiveElement(OSD_LOG_STATUS);
-    }
-#endif
 }
 
 static bool osdDrawSingleElement(displayPort_t *osdDisplayPort, uint8_t item)
@@ -1413,6 +1412,17 @@ static bool osdDrawSingleElement(displayPort_t *osdDisplayPort, uint8_t item)
 
 void osdDrawActiveElements(displayPort_t *osdDisplayPort, timeUs_t currentTimeUs)
 {
+#ifdef USE_GPS
+    static bool lastGpsSensorState;
+    // Handle the case that the GPS_SENSOR may be delayed in activation
+    // or deactivate if communication is lost with the module.
+    const bool currentGpsSensorState = sensors(SENSOR_GPS);
+    if (lastGpsSensorState != currentGpsSensorState) {
+        lastGpsSensorState = currentGpsSensorState;
+        osdAnalyzeActiveElements();
+    }
+#endif // USE_GPS
+
     blinkState = (currentTimeUs / 200000) % 2;
 
     for (unsigned i = 0; i < activeOsdElementCount; i++) {
