@@ -302,9 +302,9 @@ $(TARGET_BIN): $(TARGET_ELF)
 	@echo "Creating BIN $(TARGET_BIN)" "$(STDOUT)"
 	$(V1) $(OBJCOPY) -O binary $< $@
 
-$(TARGET_ELF): $(TARGET_OBJS)
+$(TARGET_ELF): $(TARGET_OBJS) $(LD_SCRIPT)
 	@echo "Linking $(TARGET)" "$(STDOUT)"
-	$(V1) $(CROSS_CC) -o $@ $^ $(LD_FLAGS)
+	$(V1) $(CROSS_CC) -o $@ $(filter-out %.ld,$^) $(LD_FLAGS)
 	$(V1) $(SIZE) $(TARGET_ELF)
 
 # Compile
