@@ -63,7 +63,8 @@
 #define USE_USB_MSC
 #define USE_PERSISTENT_MSC_RTC
 #define USE_DMA_SPEC
-#define USE_SPI_TRANSACTION
+// Re-enable this after 4.0 has been released, and remove the define from STM32F4DISCOVERY
+//#define USE_SPI_TRANSACTION
 
 #if defined(STM32F40_41xxx) || defined(STM32F411xE)
 #define USE_OVERCLOCK
@@ -86,7 +87,8 @@
 #define USE_PERSISTENT_MSC_RTC
 #define USE_MCO
 #define USE_DMA_SPEC
-#define USE_SPI_TRANSACTION
+// Re-enable this after 4.0 has been released, and remove the define from STM32F4DISCOVERY
+//#define USE_SPI_TRANSACTION
 #endif // STM32F7
 
 #if defined(STM32F4) || defined(STM32F7)
