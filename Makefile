@@ -95,6 +95,9 @@ FEATURES        =
 FEATURE_CUT_LEVEL_SUPPLIED := $(FEATURE_CUT_LEVEL)
 FEATURE_CUT_LEVEL =
 
+# The list of targets to build for 'pre-push'
+PRE_PUSH_TARGET_LIST ?= BETAFLIGHTF3 OMNIBUSF4 SPRACINGF7DUAL SITL test-representative
+
 include $(ROOT)/make/targets.mk
 
 REVISION := $(shell git log -1 --format="%h")
@@ -347,6 +350,10 @@ all_with_unsupported: $(VALID_TARGETS)
 ## unsupported : Build unsupported targets
 unsupported: $(UNSUPPORTED_TARGETS)
 
+## pre-push : The minimum verification that should be run before pushing, to check if CI has a chance of succeeding
+pre-push:
+	$(MAKE) $(addprefix clean_,$(PRE_PUSH_TARGET_LIST)) $(PRE_PUSH_TARGET_LIST) EXTRA_FLAGS=-Werror
+
 ## official          : Build all official (travis) targets
 official: $(OFFICIAL_TARGETS)
 
@@ -384,6 +391,9 @@ clean:
 	@echo "Cleaning $(TARGET) succeeded."
 
 ## clean_test        : clean up temporary / machine-generated files (tests)
+clean_test-%:
+	$(MAKE) clean_test
+
 clean_test:
 	$(V0) cd src/test && $(MAKE) clean || true
 
