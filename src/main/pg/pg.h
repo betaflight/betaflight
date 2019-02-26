@@ -41,7 +41,7 @@ typedef enum {
 } pgRegistryInternal_e;
 
 // function that resets a single parameter group instance
-typedef void (pgResetFunc)(void * /* base */, int /* size */);
+typedef void (pgResetFunc)(void * /* base */);
 
 typedef struct pgRegistry_s {
     pgn_t pgn;             // The parameter group number, the top 4 bits are reserved for version
@@ -134,7 +134,7 @@ extern const uint8_t __pg_resetdata_end[];
 
 #define PG_REGISTER_WITH_RESET_FN(_type, _name, _pgn, _version)         \
     extern void pgResetFn_ ## _name(_type *);                           \
-    PG_REGISTER_I(_type, _name, _pgn, _version, .reset = {.fn = (pgResetFunc*)(void (*)())&pgResetFn_ ## _name }) \
+    PG_REGISTER_I(_type, _name, _pgn, _version, .reset = {.fn = (pgResetFunc*)&pgResetFn_ ## _name }) \
     /**/
 
 #define PG_REGISTER_WITH_RESET_TEMPLATE(_type, _name, _pgn, _version)   \
@@ -163,7 +163,7 @@ extern const uint8_t __pg_resetdata_end[];
 
 #define PG_REGISTER_ARRAY_WITH_RESET_FN(_type, _size, _name, _pgn, _version) \
     extern void pgResetFn_ ## _name(_type *);    \
-    PG_REGISTER_ARRAY_I(_type, _size, _name, _pgn, _version, .reset = {.fn = (pgResetFunc*)(void (*)())&pgResetFn_ ## _name}) \
+    PG_REGISTER_ARRAY_I(_type, _size, _name, _pgn, _version, .reset = {.fn = (pgResetFunc*)&pgResetFn_ ## _name}) \
     /**/
 
 #if 0
