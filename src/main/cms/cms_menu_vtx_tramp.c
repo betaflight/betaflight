@@ -49,7 +49,7 @@ void trampCmsUpdateStatusString(void)
 {
     vtxDevice_t *vtxDevice = vtxCommonDevice();
 
-    if (vtxDevice->capability.bandCount == 0 || vtxDevice->capability.powerCount) {
+    if (vtxDevice->capability.bandCount == 0 || vtxDevice->capability.powerCount == 0) {
         strncpy(trampCmsStatusString, "PLEASE CONFIGURE VTXTABLE", sizeof(trampCmsStatusString));
         return;
     }
