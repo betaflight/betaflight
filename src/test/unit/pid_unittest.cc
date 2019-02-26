@@ -129,7 +129,7 @@ void setDefaultTestSettings(void) {
     pidProfile->iterm_rotation = false;
     pidProfile->smart_feedforward = false,
     pidProfile->iterm_relax = ITERM_RELAX_OFF,
-    pidProfile->iterm_relax_cutoff = 11,
+    pidProfile->iterm_relax_cutoff = 20,
     pidProfile->iterm_relax_type = ITERM_RELAX_SETPOINT,
     pidProfile->abs_control_gain = 0,
     pidProfile->launchControlMode = LAUNCH_CONTROL_MODE_NORMAL,
