@@ -61,14 +61,19 @@ Configure min/max cell voltages using the following CLI setting:
 
 `vbat_hysteresis` - Sets the hysteresis value for low-battery alarms, in 0.1V units, i.e. 1 = 0.1V
 
-e.g.
+`vbat_duration_for_warning` - Period voltage has to sustain before the battery state is set to battery-warning, in 0.1 s, i.e. 60 = 6.0 seconds
 
+`vbat_duration_for_critical` - Period voltage has to sustain before the battery state is set to battery-critical, in 0.1 s, i.e. 21 = 2.1 seconds
+
+e.g.
 ```
 set vbat_scale = 110
 set vbat_max_cell_voltage = 43
 set vbat_min_cell_voltage = 33
 set vbat_warning_cell_voltage = 34
 set vbat_hysteresis = 1
+set vbat_duration_for_warning = 60
+set vbat_duration_for_critical = 20
 ```
 
 # Current Monitoring

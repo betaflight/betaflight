@@ -116,6 +116,8 @@ PG_RESET_TEMPLATE(batteryConfig_t, batteryConfig,
 
     .vbatLpfPeriod = 30,
     .ibatLpfPeriod = 10,
+    .vbatDurationForWarning = 0,
+    .vbatDurationForCritical = 0,
 );
 
 void batteryUpdateVoltage(timeUs_t currentTimeUs)
@@ -228,24 +230,35 @@ void batteryUpdatePresence(void)
 static void batteryUpdateVoltageState(void)
 {
     // alerts are currently used by beeper, osd and other subsystems
+    static uint32_t lastVoltageChangeMs;
     switch (voltageState) {
         case BATTERY_OK:
             if (voltageMeter.filtered <= (batteryWarningVoltage - batteryConfig()->vbathysteresis)) {
-                voltageState = BATTERY_WARNING;
+                if (cmp32(millis(), lastVoltageChangeMs) >= batteryConfig()->vbatDurationForWarning * 100) {
+                    voltageState = BATTERY_WARNING;
+                }
+            } else {
+                lastVoltageChangeMs = millis();
             }
             break;
 
         case BATTERY_WARNING:
             if (voltageMeter.filtered <= (batteryCriticalVoltage - batteryConfig()->vbathysteresis)) {
-                voltageState = BATTERY_CRITICAL;
-            } else if (voltageMeter.filtered > batteryWarningVoltage) {
-                voltageState = BATTERY_OK;
+                if (cmp32(millis(), lastVoltageChangeMs) >= batteryConfig()->vbatDurationForCritical * 100) {
+                    voltageState = BATTERY_CRITICAL;
+                }
+            } else {
+                if (voltageMeter.filtered > batteryWarningVoltage) {
+                    voltageState = BATTERY_OK;
+                }
+                lastVoltageChangeMs = millis();
             }
             break;
 
         case BATTERY_CRITICAL:
             if (voltageMeter.filtered > batteryCriticalVoltage) {
                 voltageState = BATTERY_WARNING;
+                lastVoltageChangeMs = millis();
             }
             break;
 

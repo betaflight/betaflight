@@ -43,6 +43,7 @@
 
 #include "osd/osd.h"
 #include "osd/osd_elements.h"
+#include "sensors/battery.h"
 
 #ifdef USE_EXTENDED_CMS_MENUS
 static uint16_t osdConfig_item_pos[OSD_ITEM_COUNT];
@@ -153,12 +154,16 @@ CMS_Menu menuOsdActiveElems = {
 static uint8_t osdConfig_rssi_alarm;
 static uint16_t osdConfig_cap_alarm;
 static uint16_t osdConfig_alt_alarm;
+static uint8_t batteryConfig_vbatDurationForWarning;
+static uint8_t batteryConfig_vbatDurationForCritical;
 
 static long menuAlarmsOnEnter(void)
 {
     osdConfig_rssi_alarm = osdConfig()->rssi_alarm;
     osdConfig_cap_alarm = osdConfig()->cap_alarm;
     osdConfig_alt_alarm = osdConfig()->alt_alarm;
+    batteryConfig_vbatDurationForWarning = batteryConfig()->vbatDurationForWarning;
+    batteryConfig_vbatDurationForCritical = batteryConfig()->vbatDurationForCritical;
 
     return 0;
 }
@@ -170,6 +175,8 @@ static long menuAlarmsOnExit(const OSD_Entry *self)
     osdConfigMutable()->rssi_alarm = osdConfig_rssi_alarm;
     osdConfigMutable()->cap_alarm = osdConfig_cap_alarm;
     osdConfigMutable()->alt_alarm = osdConfig_alt_alarm;
+    batteryConfigMutable()->vbatDurationForWarning = batteryConfig_vbatDurationForWarning;
+    batteryConfigMutable()->vbatDurationForCritical = batteryConfig_vbatDurationForCritical;
 
     return 0;
 }
@@ -180,6 +187,8 @@ const OSD_Entry menuAlarmsEntries[] =
     {"RSSI",     OME_UINT8,  NULL, &(OSD_UINT8_t){&osdConfig_rssi_alarm, 5, 90, 5}, 0},
     {"MAIN BAT", OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_cap_alarm, 50, 30000, 50}, 0},
     {"MAX ALT",  OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_alt_alarm, 1, 200, 1}, 0},
+    {"VBAT WARN DUR", OME_UINT8, NULL, &(OSD_UINT8_t){ &batteryConfig_vbatDurationForWarning, 0, 200, 1 }, 0 },
+    {"VBAT CRIT DUR", OME_UINT8, NULL, &(OSD_UINT8_t){ &batteryConfig_vbatDurationForCritical, 0, 200, 1 }, 0 },
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}
 };
