@@ -125,6 +125,7 @@ typedef enum {
     OSD_STICK_OVERLAY_LEFT,
     OSD_STICK_OVERLAY_RIGHT,
     OSD_DISPLAY_NAME,
+    OSD_ESC_RPM_FREQ,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
