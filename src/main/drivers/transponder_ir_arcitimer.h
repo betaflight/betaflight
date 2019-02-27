@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include "drivers/transponder_ir.h"
+
 // aRCiTimer transponder codes:
 //
 // ID1 0x1F, 0xFC, 0x8F, 0x3, 0xF0, 0x1, 0xF8, 0x1F, 0x0           // E00370FC0FFE07E0FF

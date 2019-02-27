@@ -22,6 +22,8 @@
 
 #include "platform.h"
 
+#include "drivers/timer.h"
+
 typedef uint16_t dmaCode_t;
 
 typedef struct dmaChannelSpec_s {
@@ -52,4 +54,6 @@ typedef enum {
 typedef int8_t dmaoptValue_t;
 #define DMA_OPT_UNUSED (-1)
 
-const dmaChannelSpec_t *dmaGetChannelSpec(dmaPeripheral_e device, uint8_t index, int8_t opt);
+const dmaChannelSpec_t *dmaGetChannelSpecByPeripheral(dmaPeripheral_e device, uint8_t index, int8_t opt);
+const dmaChannelSpec_t *dmaGetChannelSpecByTimer(const timerHardware_t *timer);
+int8_t dmaGetOptionByTimer(const timerHardware_t *timer);

@@ -513,7 +513,7 @@ static void sdcardSpi_init(const sdcardConfig_t *config, const spiPinConfig_t *s
         dmaIdentifier_e dmaIdentifier = DMA_NONE;
 
 #ifdef USE_DMA_SPEC
-        const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpec(DMA_PERIPH_SPI_TX, config->device, spiConfig[spiDevice].txDmaopt);
+        const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_SPI_TX, config->device, spiConfig[spiDevice].txDmaopt);
 
         if (dmaChannelSpec) {
             dmaIdentifier = dmaGetIdentifier(dmaChannelSpec->ref);

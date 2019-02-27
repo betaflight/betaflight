@@ -150,11 +150,11 @@ typedef struct {
     TIM_ICInitTypeDef icInitStruct;
     DMA_InitTypeDef   dmaInitStruct;
     uint8_t dmaInputLen;
+#endif
 #ifdef STM32F3
     DMA_Channel_TypeDef *dmaRef;
 #else
     DMA_Stream_TypeDef *dmaRef;
-#endif
 #endif
 #endif
     motorDmaTimer_t *timer;

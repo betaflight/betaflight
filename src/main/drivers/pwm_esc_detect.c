@@ -37,11 +37,10 @@ uint8_t hardwareMotorType = MOTOR_UNKNOWN;
 void detectBrushedESC(void)
 {
     int i = 0;
-    while (!(timerHardware[i].usageFlags & TIM_USE_MOTOR) && (i < USABLE_TIMER_CHANNEL_COUNT)) {
+    while (!(TIMER_HARDWARE[i].usageFlags & TIM_USE_MOTOR) && (i < TIMER_CHANNEL_COUNT)) {
         i++;
     }
-
-    IO_t MotorDetectPin = IOGetByTag(timerHardware[i].tag);
+    IO_t MotorDetectPin = IOGetByTag(TIMER_HARDWARE[i].tag);
     IOInit(MotorDetectPin, OWNER_SYSTEM, 0);
     IOConfigGPIO(MotorDetectPin, IOCFG_IPU);
 
