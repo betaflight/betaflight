@@ -267,8 +267,7 @@ static FAST_RAM_ZERO_INIT pt1Filter_t ptermYawLowpass;
 static FAST_RAM_ZERO_INIT pt1Filter_t windupLpf[XYZ_AXIS_COUNT];
 static FAST_RAM_ZERO_INIT uint8_t itermRelax;
 static FAST_RAM_ZERO_INIT uint8_t itermRelaxType;
-static uint8_t itermRelaxCutoff;
-static FAST_RAM_ZERO_INIT float itermRelaxSetpointThreshold;
+static FAST_RAM_ZERO_INIT uint8_t itermRelaxCutoff;
 #endif
 
 #if defined(USE_ABSOLUTE_CONTROL)
@@ -616,12 +615,10 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 #if defined(USE_SMART_FEEDFORWARD)
     smartFeedforward = pidProfile->smart_feedforward;
 #endif
-
 #if defined(USE_ITERM_RELAX)
     itermRelax = pidProfile->iterm_relax;
     itermRelaxType = pidProfile->iterm_relax_type;
     itermRelaxCutoff = pidProfile->iterm_relax_cutoff;
-    itermRelaxSetpointThreshold = ITERM_RELAX_SETPOINT_THRESHOLD * 20.0f / itermRelaxCutoff;
 #endif
 
 #ifdef USE_ACRO_TRAINER
@@ -1110,13 +1107,16 @@ STATIC_UNIT_TESTED void applyItermRelax(const int axis, const float iterm,
     const float setpointLpf = pt1FilterApply(&windupLpf[axis], *currentPidSetpoint);
     const float setpointHpf = fabsf(*currentPidSetpoint - setpointLpf);
 
-    if (itermRelax && (axis < FD_YAW || itermRelax == ITERM_RELAX_RPY || itermRelax == ITERM_RELAX_RPY_INC)) {
-        const float itermRelaxFactor = MAX(0, 1 - setpointHpf / itermRelaxSetpointThreshold);
+    if (itermRelax &&
+       (axis < FD_YAW || itermRelax == ITERM_RELAX_RPY ||
+       itermRelax == ITERM_RELAX_RPY_INC)) {
+        const float itermRelaxFactor = 1 - setpointHpf / ITERM_RELAX_SETPOINT_THRESHOLD;
+
         const bool isDecreasingI =
             ((iterm > 0) && (*itermErrorRate < 0)) || ((iterm < 0) && (*itermErrorRate > 0));
         if ((itermRelax >= ITERM_RELAX_RP_INC) && isDecreasingI) {
             // Do Nothing, use the precalculed itermErrorRate
-        } else if (itermRelaxType == ITERM_RELAX_SETPOINT) {
+        } else if (itermRelaxType == ITERM_RELAX_SETPOINT && setpointHpf < ITERM_RELAX_SETPOINT_THRESHOLD) {
             *itermErrorRate *= itermRelaxFactor;
         } else if (itermRelaxType == ITERM_RELAX_GYRO ) {
             *itermErrorRate = fapplyDeadband(setpointLpf - gyroRate, setpointHpf);
