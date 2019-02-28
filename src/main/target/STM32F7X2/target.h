@@ -26,7 +26,7 @@
 
 #define TARGET_BOARD_IDENTIFIER "S7X2"
 
-#define USBD_PRODUCT_STRING     "S7X2"
+#define USBD_PRODUCT_STRING     "Betaflight STM32F7x2"
 
 #define USE_BEEPER
 

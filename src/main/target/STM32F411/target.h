@@ -24,9 +24,9 @@
 // to be supplied when the board is configured for the first time
 #define USE_UNIFIED_TARGET
 
-#define TARGET_BOARD_IDENTIFIER "S405"
+#define TARGET_BOARD_IDENTIFIER "S411"
 
-#define USBD_PRODUCT_STRING     "Betaflight STM32F405"
+#define USBD_PRODUCT_STRING     "Betaflight STM32F411"
 
 #define USE_BEEPER
 
@@ -85,14 +85,11 @@
 
 #define USE_UART1
 #define USE_UART2
-#define USE_UART3
-#define USE_UART4
-#define USE_UART5
 #define USE_UART6
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
 #define USE_INVERTER
-#define SERIAL_PORT_COUNT       9
+#define SERIAL_PORT_COUNT       6
 
 #define USE_ESCSERIAL
 
@@ -103,6 +100,18 @@
 #define SPI_FULL_RECONFIGURABILITY
 
 #define USE_ADC
+
+//TODO: Make this work with runtime configurability
+//#define USE_RX_FRSKY_SPI_D
+//#define USE_RX_FRSKY_SPI_X
+//#define USE_RX_SFHSS_SPI
+//#define USE_RX_FRSKY_SPI_TELEMETRY
+//#define USE_RX_CC2500_SPI_PA_LNA
+//#define USE_RX_CC2500_SPI_DIVERSITY
+
+//TODO: Make this work with runtime configurability
+//#define USE_RX_FLYSKY
+//#define USE_RX_FLYSKY_SPI_LED
 
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff
