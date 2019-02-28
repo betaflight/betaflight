@@ -38,12 +38,6 @@
 
 #include "transponder_ir.h"
 
-#if defined(STM32F4) || defined(STM32F7)
-typedef DMA_Stream_TypeDef dmaStream_t;
-#else
-typedef DMA_Channel_TypeDef dmaStream_t;
-#endif
-
 volatile uint8_t transponderIrDataTransferInProgress = 0;
 
 static IO_t transponderIO = IO_NONE;
@@ -88,12 +82,12 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
         return;
     }
 
-    dmaStream_t *dmaRef = dmaSpec->ref;
+    dmaRef = dmaSpec->ref;
 #if defined(STM32F4)
     uint32_t dmaChannel = dmaSpec->channel;
 #endif
 #else
-    dmaStream_t *dmaRef = timerHardware->dmaRef;
+    dmaRef = timerHardware->dmaRef;
 #if defined(STM32F4)
     uint32_t dmaChannel = timerHardware->dmaChannel;
 #endif
