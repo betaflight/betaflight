@@ -529,12 +529,12 @@ TEST(pidControllerTest, testItermRelax) {
 
     applyItermRelax(FD_PITCH, pidData[FD_PITCH].I, gyroRate, &itermErrorRate, &currentPidSetpoint);
 
-    ASSERT_NEAR(-6.66, itermErrorRate, calculateTolerance(-6.66));
+    ASSERT_NEAR(-8.16, itermErrorRate, calculateTolerance(-6.66));
     currentPidSetpoint += ITERM_RELAX_SETPOINT_THRESHOLD;
     applyItermRelax(FD_PITCH, pidData[FD_PITCH].I, gyroRate, &itermErrorRate, &currentPidSetpoint);
-    EXPECT_FLOAT_EQ(itermErrorRate, 0);
+    ASSERT_NEAR(-2.17, itermErrorRate, calculateTolerance(-2.17));
     applyItermRelax(FD_PITCH, pidData[FD_PITCH].I, gyroRate, &itermErrorRate, &currentPidSetpoint);
-    EXPECT_FLOAT_EQ(itermErrorRate, 0);
+    ASSERT_NEAR(-0.58, itermErrorRate, calculateTolerance(-0.58));
 
     pidProfile->iterm_relax_type = ITERM_RELAX_GYRO;
     pidInit(pidProfile);
@@ -578,7 +578,7 @@ TEST(pidControllerTest, testItermRelax) {
     pidProfile->iterm_relax = ITERM_RELAX_RPY;
     pidInit(pidProfile);
     applyItermRelax(FD_YAW, pidData[FD_YAW].I, gyroRate, &itermErrorRate, &currentPidSetpoint);
-    ASSERT_NEAR(-3.6, itermErrorRate, calculateTolerance(-3.6));
+    ASSERT_NEAR(-6.46, itermErrorRate, calculateTolerance(-3.6));
 }
 
 // TODO - Add more tests

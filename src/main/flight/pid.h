@@ -44,6 +44,7 @@
 // This value gives the same "feel" as the previous Kd default of 26 (26 * DTERM_SCALE)
 #define FEEDFORWARD_SCALE 0.013754f
 
+// Full iterm suppression at 40deg/sec * default cutoff of 20
 #define ITERM_RELAX_SETPOINT_THRESHOLD 30.0f
 
 typedef enum {
