@@ -4,6 +4,7 @@ Last updated: 17/02/2019
 |-|-|-|
 |CUST|'Custom', to be used for homebrew targets||
 |AFNG|AlienFlight NG|https://www.alienflightng.com/|
+|AIRB|Airbot|https://store.myairbot.com/|
 |BKMN|Jason Blackman|https://github.com/blckmn|
 |DRCL|dronercland|https://www.instagram.com/dronercland/|
 |DYST|DongYang Smart Technology Co.,Ltd (dys)|http://www.dys.hk/|
