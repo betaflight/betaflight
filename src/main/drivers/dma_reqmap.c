@@ -34,15 +34,11 @@
 
 #include "dma_reqmap.h"
 
-#define MAX_PERIPHERAL_DMA_OPTIONS 2
-
 typedef struct dmaPeripheralMapping_s {
     dmaPeripheral_e device;
     uint8_t index;
     dmaChannelSpec_t channelSpec[MAX_PERIPHERAL_DMA_OPTIONS];
 } dmaPeripheralMapping_t;
-
-#define MAX_TIMER_DMA_OPTIONS 3
 
 typedef struct dmaTimerMapping_s {
     TIM_TypeDef *tim;

@@ -52,7 +52,11 @@ typedef enum {
 } dmaPeripheral_e;
 
 typedef int8_t dmaoptValue_t;
+
 #define DMA_OPT_UNUSED (-1)
+
+#define MAX_PERIPHERAL_DMA_OPTIONS 2
+#define MAX_TIMER_DMA_OPTIONS 3
 
 dmaoptValue_t dmaoptByTag(ioTag_t ioTag);
 const dmaChannelSpec_t *dmaGetChannelSpecByPeripheral(dmaPeripheral_e device, uint8_t index, int8_t opt);

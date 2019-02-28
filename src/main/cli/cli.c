@@ -4701,7 +4701,7 @@ dmaoptEntry_t dmaoptEntryTable[] = {
 
 static void dmaoptToString(int optval, char *buf)
 {
-    if (optval == -1) {
+    if (optval == DMA_OPT_UNUSED) {
         memcpy(buf, "NONE", DMA_OPT_STRING_BUFSIZE);
     } else {
         tfp_sprintf(buf, "%d", optval);
@@ -4891,7 +4891,7 @@ static void cliDmaopt(char *cmdline)
     } else {
         // It's a pin
         if (!pch || !(strToPin(pch, &ioTag) && IOGetByTag(ioTag))) {
-            cliPrintErrorLinef("INVALID PIN: %s", pch);
+            cliPrintErrorLinef("INVALID PIN: '%s'", pch);
 
             return;
         }
@@ -4907,13 +4907,13 @@ static void cliDmaopt(char *cmdline)
     pch = strtok_r(NULL, " ", &saveptr);
     if (!pch) {
         if (entry) {
-            if (orgval == -1) {
+            if (orgval == DMA_OPT_UNUSED) {
                 cliPrintLinef("%s %d NONE", entry->device, index + 1);
             } else {
                 cliPrintLinef("%s %d %d", entry->device, index + 1, *optaddr);
             }
         } else {
-            if (orgval == -1) {
+            if (orgval == DMA_OPT_UNUSED) {
                 cliPrintLinef("pin %c%02d NONE", IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag));
             } else {
                 cliPrintLinef("pin %c%02d %d", IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag), orgval);
@@ -4942,8 +4942,9 @@ static void cliDmaopt(char *cmdline)
             optval = DMA_OPT_UNUSED;
         } else {
             optval = atoi(pch);
-            if (optval < 0) { // XXX Check against opt max? How?
-                cliPrintLinef("bad optnum %s", pch);
+            if (optval < 0 || (entry && optval >= MAX_PERIPHERAL_DMA_OPTIONS) || (!entry && optval >= MAX_TIMER_DMA_OPTIONS)) {
+                cliPrintErrorLinef("BAD DMA OPTION NUMBER '%s'", pch);
+
                 return;
             }
         }
