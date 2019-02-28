@@ -391,22 +391,26 @@ static void cliPrintLinef(const char *format, ...)
     cliPrintLinefeed();
 }
 
-static void cliPrintError(const char *format, ...)
+static void cliPrintErrorVa(const char *format, va_list va)
 {
     cliPrint("###ERROR: ");
-    va_list va;
-    va_start(va, format);
     cliPrintfva(format, va);
     va_end(va);
     cliPrint("###");
+}
+
+static void cliPrintError(const char *format, ...)
+{
+    va_list va;
+    va_start(va, format);
+    cliPrintErrorVa(format, va);
 }
 
 static void cliPrintErrorLinef(const char *format, ...)
 {
     va_list va;
     va_start(va, format);
-    cliPrintError(format, va);
-    va_end(va);
+    cliPrintErrorVa(format, va);
     cliPrintLinefeed();
 }
 
