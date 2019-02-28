@@ -34,15 +34,11 @@
 
 #include "dma_reqmap.h"
 
-#define MAX_PERIPHERAL_DMA_OPTIONS 2
-
 typedef struct dmaPeripheralMapping_s {
     dmaPeripheral_e device;
     uint8_t index;
     dmaChannelSpec_t channelSpec[MAX_PERIPHERAL_DMA_OPTIONS];
 } dmaPeripheralMapping_t;
-
-#define MAX_TIMER_DMA_OPTIONS 3
 
 typedef struct dmaTimerMapping_s {
     TIM_TypeDef *tim;
@@ -245,7 +241,7 @@ const dmaChannelSpec_t *dmaGetChannelSpecByPeripheral(dmaPeripheral_e device, ui
     return NULL;
 }
 
-static int8_t dmaoptByTag(ioTag_t ioTag)
+dmaoptValue_t dmaoptByTag(ioTag_t ioTag)
 {
 #ifdef USE_TIMER_MGMT
     for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
@@ -259,20 +255,15 @@ static int8_t dmaoptByTag(ioTag_t ioTag)
     return -1;
 }
 
-const dmaChannelSpec_t *dmaGetChannelSpecByTimer(const timerHardware_t *timer)
+const dmaChannelSpec_t *dmaGetChannelSpecByTimerValue(TIM_TypeDef *tim, uint8_t channel, dmaoptValue_t dmaopt)
 {
-    if (!timer) {
-        return NULL;
-    }
-
-    int8_t dmaopt = dmaoptByTag(timer->tag);
     if (dmaopt < 0 || dmaopt >= MAX_TIMER_DMA_OPTIONS) {
         return NULL;
     }
 
     for (unsigned i = 0 ; i < ARRAYLEN(dmaTimerMapping) ; i++) {
         const dmaTimerMapping_t *timerMapping = &dmaTimerMapping[i];
-        if (timerMapping->tim == timer->tim && timerMapping->channel == timer->channel && timerMapping->channelSpec[dmaopt].ref) {
+        if (timerMapping->tim == tim && timerMapping->channel == channel && timerMapping->channelSpec[dmaopt].ref) {
             return &timerMapping->channelSpec[dmaopt];
         }
     }
@@ -280,7 +271,17 @@ const dmaChannelSpec_t *dmaGetChannelSpecByTimer(const timerHardware_t *timer)
     return NULL;
 }
 
-int8_t dmaGetOptionByTimer(const timerHardware_t *timer)
+const dmaChannelSpec_t *dmaGetChannelSpecByTimer(const timerHardware_t *timer)
+{
+    if (!timer) {
+        return NULL;
+    }
+
+    dmaoptValue_t dmaopt = dmaoptByTag(timer->tag);
+    return dmaGetChannelSpecByTimerValue(timer->tim, timer->channel, dmaopt);
+}
+
+dmaoptValue_t dmaGetOptionByTimer(const timerHardware_t *timer)
 {
     for (unsigned i = 0 ; i < ARRAYLEN(dmaTimerMapping); i++) {
         const dmaTimerMapping_t *timerMapping = &dmaTimerMapping[i];

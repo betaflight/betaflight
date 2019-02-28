@@ -24,8 +24,10 @@
 #include <stdint.h>
 
 #include "drivers/io_types.h"
-#include "rcc_types.h"
+#include "drivers/rcc_types.h"
 #include "drivers/timer_def.h"
+
+#include "pg/timerio.h"
 
 #define CC_CHANNELS_PER_TIMER         4 // TIM_Channel_1..4
 #define CC_INDEX_FROM_CHANNEL(x)      ((uint8_t)((x) >> 2))
@@ -255,6 +257,9 @@ void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint32_t hz);  // TODO - 
 rccPeriphTag_t timerRCC(TIM_TypeDef *tim);
 uint8_t timerInputIrq(TIM_TypeDef *tim);
 
+#if defined(USE_TIMER_MGMT)
+timerIOConfig_t *timerIoConfigByTag(ioTag_t ioTag);
+#endif
 const timerHardware_t *timerGetByTag(ioTag_t ioTag);
 ioTag_t timerioTagGetByUsage(timerUsageFlag_e usageFlag, uint8_t index);
 

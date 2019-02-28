@@ -27,6 +27,19 @@
 #include "pg/timerio.h"
 #endif
 
+#ifdef USE_TIMER_MGMT
+timerIOConfig_t *timerIoConfigByTag(ioTag_t ioTag)
+{
+    for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
+        if (timerIOConfig(i)->ioTag == ioTag) {
+            return timerIOConfigMutable(i);
+        }
+    }
+    UNUSED(ioTag);
+    return NULL;
+}
+#endif
+
 static uint8_t timerIndexByTag(ioTag_t ioTag)
 {
 #ifdef USE_TIMER_MGMT
