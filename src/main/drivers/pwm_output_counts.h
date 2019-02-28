@@ -30,6 +30,6 @@
 #ifndef MAX_SUPPORTED_MOTORS
 #define MAX_SUPPORTED_MOTORS 8
 #endif
-#define MAX_SUPPORTED_MOTOR_PORTS 4
+#define MAX_SUPPORTED_MOTOR_PORTS 8 // Max direct dshot port groups, limited by number of usable timer (TIM1 and TIM8) x number of channels per timer (4)
 #define MAX_SUPPORTED_SERVOS 8
 #endif

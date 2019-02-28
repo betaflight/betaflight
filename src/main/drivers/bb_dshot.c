@@ -124,7 +124,13 @@ static void proshotPortDataClear(uint32_t *buffer)
 #define MOTOR_DSHOT_BUFFER_SIZE            ((16 / MOTOR_DSHOT_BIT_PER_SYMBOL) * MOTOR_DSHOT_STATE_PER_SYMBOL)
 #define MOTOR_PROSHOT1000_BUFFER_SIZE      ((16 / MOTOR_PROSHOT1000_BIT_PER_SYMBOL) * MOTOR_PROSHOT1000_STATE_PER_SYMBOL)
 
-// Per GPIO port
+// Per timer
+typedef struct motorPacer_s {
+    TIM_TypeDef *tim;
+    uint16_t dmaSources;
+} motorPacer_t;
+
+// Per GPIO port and timer channel
 typedef struct motorPort_s {
     //int portIndex; // XXX Not used if managed by gpioToMotorPort[] array
     GPIO_TypeDef *gpio;
@@ -133,6 +139,7 @@ typedef struct motorPort_s {
 
     // Output
     TIM_TimeBaseInitTypeDef outputTimebase;
+    uint32_t outputARR;
     DMA_InitTypeDef outputDmaInit;
     uint32_t *portOutputBuffer;
     uint32_t portOutputCount;
@@ -145,16 +152,21 @@ typedef struct directDshotMotor_s {
     motorPort_t *motorPort;
 } directDshotMotor_t;
 
+#define MAX_MOTOR_PACERS  2
+motorPacer_t motorPacers[MAX_MOTOR_PACERS];  // TIM1 or TIM8
+int usedMotorPacers = 0;
+
 motorPort_t motorPorts[MAX_SUPPORTED_MOTOR_PORTS];
+int usedMotorPorts = 0;
+
 directDshotMotor_t directDshotMotors[MAX_SUPPORTED_MOTORS];
+
+motorPort_t *gpioToMotorPort[10]; // GPIO group to motorPort mapping
 
 // DShot requires 3 [word/bit] * 16 [bit] = 48 [word]
 // ProShot requires 32 [word/nibble] * 4 [nibble] = 128 [word]
 
 uint32_t portDmaBuffer[MOTOR_PROSHOT1000_BUFFER_SIZE * MAX_SUPPORTED_MOTOR_PORTS];
-
-int usedMotorPorts = 0;
-motorPort_t *gpioToMotorPort[10]; // GPIO group to motorPort mapping
 
 static void directDshotIOInit(IO_t io, int index)
 {
@@ -175,15 +187,20 @@ static void directDshotSwitchToOutput(uint8_t motorCount)
     }
 
     for (int i = 0; i < usedMotorPorts; i++) {
-        const timerHardware_t *timhw = motorPorts[i].timhw;
+        motorPort_t *motorPort = &motorPorts[i];
+        const timerHardware_t *timhw = motorPort->timhw;
         DMA_Stream_TypeDef *stream = timhw->dmaRef;
 
         TIM_Cmd(timhw->tim, DISABLE);
-        TIM_TimeBaseInit(timhw->tim, &motorPorts[i].outputTimebase);
+
+        timhw->tim->ARR = motorPort->outputARR;
+	timhw->tim->EGR = TIM_PSCReloadMode_Immediate;
+
         DMA_DeInit(stream);
-        DMA_Init(stream, &motorPorts[i].outputDmaInit);
+        DMA_Init(stream, &motorPort->outputDmaInit);
+
+        // Needs this, as it is DeInit'ed above...
         DMA_ITConfig(stream, DMA_IT_TC, ENABLE);
-        TIM_Cmd(timhw->tim, ENABLE);
     }
 }
 
@@ -196,10 +213,10 @@ static void directDshotSwitchToInput(IO_t io)
 static void directDshotDMAIrqHandler(dmaChannelDescriptor_t *descriptor)
 {
     motorPort_t *motorPort = (motorPort_t *)descriptor->userParam;
-    const timerHardware_t *timhw = motorPort->timhw;
 
-    DMA_Cmd(timhw->dmaRef, DISABLE);
-    TIM_DMACmd(timhw->tim, motorPort->dmaSource, DISABLE);
+    DMA_Cmd(motorPort->timhw->dmaRef, DISABLE);
+
+    TIM_DMACmd(motorPort->timhw->tim, motorPort->dmaSource, DISABLE);
 
     DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
 
@@ -211,6 +228,28 @@ static void directDshotDMAIrqHandler(dmaChannelDescriptor_t *descriptor)
         // Switch to input
     }
 #endif
+}
+
+// motorPacer management
+
+motorPacer_t *directDshotFindMotorPacer(TIM_TypeDef *tim)
+{
+    for (int i = 0; i < MAX_MOTOR_PACERS; i++) {
+
+        motorPacer_t *motorPacer = &motorPacers[i];
+
+        if (motorPacer->tim == NULL) {
+            motorPacer->tim = tim;
+            ++usedMotorPacers;
+            return motorPacer;
+        }
+
+        if (motorPacer->tim == tim) {
+            return motorPacer;
+        }
+    }
+
+    return NULL;
 }
 
 // motorPort management
@@ -253,7 +292,7 @@ uint32_t getDshotBaseFrequency(motorPwmProtocolTypes_e pwmProtocolType)
     }
 }
 
-void directDshotTimebaseInit(const timerHardware_t *timhw, TIM_TimeBaseInitTypeDef *init, motorPwmProtocolTypes_e pwmProtocolType, int multiplier)
+void directDshotTimebaseSetup(const timerHardware_t *timhw, TIM_TimeBaseInitTypeDef *init, motorPwmProtocolTypes_e pwmProtocolType, int multiplier)
 {
 
     // TIM_TimeBaseInitStruct.TIM_Prescaler = (uint16_t)(lrintf((float) timerClock(timhw->tim) / (3 * getDshotHz(pwmProtocolType)) + 0.01f) - 1);
@@ -281,18 +320,32 @@ void directDshotTimerChannelInit(motorPort_t *motorPort)
     TIM_OCStruct.TIM_OCPolarity = TIM_OCPolarity_Low;
 
     TIM_OCStruct.TIM_Pulse = 499;
-    TIM_OC1Init(timhw->tim, &TIM_OCStruct);
-    TIM_OC1PreloadConfig(timhw->tim, TIM_OCPreload_Enable);
+
+    timerOCInit(timhw->tim, timhw->channel, &TIM_OCStruct);
+    timerOCPreloadConfig(timhw->tim, timhw->channel, TIM_OCPreload_Enable);
+
+#if 0
+        // XXX Preload config may have to be switched on and off before and after OCInit.
+        timerOCPreloadConfig(timer, timerHardware->channel, TIM_OCPreload_Disable);
+        timerOCInit(timer, timerHardware->channel, pOcInit);
+        timerOCPreloadConfig(timer, timerHardware->channel, TIM_OCPreload_Enable);
+#endif
 }
 
 void directDshotAllocDMA(motorPort_t *motorPort)
 {
     const timerHardware_t *timhw = motorPort->timhw;
+
     DMA_Stream_TypeDef *stream = timhw->dmaRef;
     dmaIdentifier_e dmaIdentifier = dmaGetIdentifier(stream);
     dmaInit(dmaIdentifier, OWNER_DSHOT, RESOURCE_INDEX(motorPort - motorPorts));
-    dmaSetHandler(dmaIdentifier, directDshotDMAIrqHandler, NVIC_BUILD_PRIORITY(2, 1), (uint32_t)motorPort);
     motorPort->dmaSource = timerDmaSource(timhw->channel);
+
+    motorPacer_t *motorPacer = directDshotFindMotorPacer(timhw->tim);
+    motorPacer->dmaSources |= motorPort->dmaSource;
+
+    dmaSetHandler(dmaIdentifier, directDshotDMAIrqHandler, NVIC_BUILD_PRIORITY(2, 1), (uint32_t)motorPort);
+    DMA_ITConfig(stream, DMA_IT_TC, ENABLE);
 }
 
 #define DIRECT_DSHOT_DIRECTION_OUTPUT 0
@@ -334,9 +387,11 @@ void directDshotInit(motorPwmProtocolTypes_e pwmProtocolType)
 
     for (int motorPortIndex = 0; motorPortIndex < MAX_SUPPORTED_MOTOR_PORTS; motorPortIndex++) {
         timhw = timerGetByUsage(TIM_USE_BB_DSHOT, motorPortIndex);
+
         if (!timhw) {
             break;
         }
+
         motorPorts[motorPortIndex].timhw = timhw;
     }
 
@@ -375,7 +430,10 @@ void directDshotMotorConfig(const timerHardware_t *timhw, uint8_t motorIndex, mo
         motorPort->portOutputCount = bufferSize;
         motorPort->portOutputBuffer = &portDmaBuffer[(motorPort - motorPorts) * bufferSize];
 
-        directDshotTimebaseInit(motorPort->timhw, &motorPort->outputTimebase, pwmProtocolType, 1);
+        directDshotTimebaseSetup(motorPort->timhw, &motorPort->outputTimebase, pwmProtocolType, 1);
+        TIM_TimeBaseInit(timhw->tim, &motorPort->outputTimebase);
+        motorPort->outputARR = timhw->tim->ARR;
+
         directDshotTimerChannelInit(motorPort);
         directDshotAllocDMA(motorPort);
         directDshotDMASetup(motorPort, DIRECT_DSHOT_DIRECTION_OUTPUT);
@@ -401,6 +459,11 @@ void directDshotUpdateStart(uint8_t motorCount)
 
     for (int i = 0; i < motorCount; i++) {
         dshotPortOutputDataClear(motorPorts[i].portOutputBuffer);
+    }
+
+    for (int i = 0; i < usedMotorPacers; i++) {
+        motorPacer_t *motorPacer = &motorPacers[i];
+        TIM_Cmd(motorPacer->tim, DISABLE);
     }
 }
 
@@ -445,10 +508,15 @@ void directDshotUpdateComplete(uint8_t motorCount)
 
     for (int i = 0; i < usedMotorPorts; i++) {
         motorPort_t *motorPort = &motorPorts[i];
-        const timerHardware_t *timhw = motorPort->timhw;
+        DMA_Cmd(motorPort->timhw->dmaRef, ENABLE);
+    }
 
-        DMA_Cmd(timhw->dmaRef, ENABLE);
-        TIM_DMACmd(timhw->tim, motorPort->dmaSource, ENABLE);
+    for (int i = 0; i < usedMotorPacers; i++) {
+        motorPacer_t *motorPacer = &motorPacers[i];
+        TIM_Cmd(motorPacer->tim, DISABLE);
+        TIM_SetCounter(motorPacer->tim, 0);
+        TIM_DMACmd(motorPacer->tim, motorPacer->dmaSources, ENABLE);
+        TIM_Cmd(motorPacer->tim, ENABLE);
     }
 }
 #endif // USE_BB_DSHOT
