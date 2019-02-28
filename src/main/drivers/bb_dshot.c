@@ -460,11 +460,6 @@ void directDshotUpdateStart(uint8_t motorCount)
     for (int i = 0; i < motorCount; i++) {
         dshotPortOutputDataClear(motorPorts[i].portOutputBuffer);
     }
-
-    for (int i = 0; i < usedMotorPacers; i++) {
-        motorPacer_t *motorPacer = &motorPacers[i];
-        TIM_Cmd(motorPacer->tim, DISABLE);
-    }
 }
 
 void directDshotWrite(int motorIndex, uint16_t value)
@@ -513,8 +508,6 @@ void directDshotUpdateComplete(uint8_t motorCount)
 
     for (int i = 0; i < usedMotorPacers; i++) {
         motorPacer_t *motorPacer = &motorPacers[i];
-        TIM_Cmd(motorPacer->tim, DISABLE);
-        TIM_SetCounter(motorPacer->tim, 0);
         TIM_DMACmd(motorPacer->tim, motorPacer->dmaSources, ENABLE);
         TIM_Cmd(motorPacer->tim, ENABLE);
     }
