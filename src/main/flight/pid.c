@@ -621,6 +621,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     itermRelax = pidProfile->iterm_relax;
     itermRelaxType = pidProfile->iterm_relax_type;
     itermRelaxCutoff = pidProfile->iterm_relax_cutoff;
+    // 20.0f below is current default itermRelaxCutoff value, to adapt setpoint to change from cutoff
     itermRelaxSetpointThreshold = ITERM_RELAX_SETPOINT_THRESHOLD * 20.0f / itermRelaxCutoff;
 #endif
 
