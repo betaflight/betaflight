@@ -39,12 +39,6 @@
 
 #include "light_ws2811strip.h"
 
-#if defined(STM32F4) || defined(STM32F7)
-typedef DMA_Stream_TypeDef dmaStream_t;
-#else
-typedef DMA_Channel_TypeDef dmaStream_t;
-#endif
-
 static IO_t ws2811IO = IO_NONE;
 #if defined(STM32F4)
 static DMA_Stream_TypeDef *dmaRef = NULL;
@@ -101,12 +95,12 @@ bool ws2811LedStripHardwareInit(ioTag_t ioTag)
         return false;
     }
 
-    dmaStream_t *dmaRef = dmaSpec->ref;
+    dmaRef = dmaSpec->ref;
 #if defined(STM32F4)
     uint32_t dmaChannel = dmaSpec->channel;
 #endif
 #else
-    dmaStream_t *dmaRef = timerHardware->dmaRef;
+    dmaRef = timerHardware->dmaRef;
 #if defined(STM32F4)
     uint32_t dmaChannel = timerHardware->dmaChannel;
 #endif
