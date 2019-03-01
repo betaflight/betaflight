@@ -46,6 +46,7 @@
 
 // Full iterm suppression in setpoint mode at high-passed setpoint rate > 40deg/sec
 #define ITERM_RELAX_SETPOINT_THRESHOLD 40.0f
+#define ITERM_RELAX_CUTOFF_DEFAULT 20
 
 typedef enum {
     PID_ROLL,
