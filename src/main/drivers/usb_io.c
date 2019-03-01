@@ -53,7 +53,7 @@ void usbCableDetectInit(void)
     usbDetectPin = IOGetByTag(IO_TAG(USB_DETECT_PIN));
 
     IOInit(usbDetectPin, OWNER_USB_DETECT, 0);
-    IOConfigGPIO(usbDetectPin, IOCFG_OUT_PP);
+    IOConfigGPIO(usbDetectPin, IOCFG_IPD);
 #endif
 }
 
