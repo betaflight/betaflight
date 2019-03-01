@@ -208,6 +208,22 @@
 #define DEFAULT_FEATURES        (FEATURE_RSSI_ADC | FEATURE_TELEMETRY)
 #endif
 
+#undef USE_OSD
+#undef USE_ACRO_TRAINER
+#undef USE_PPM
+#undef SERIAL_RX_IBUS
+#undef USE_GYRO_REGISTER_DUMP
+#undef USE_SERIALRX_SUMD
+#undef USE_LED_STRIP
+#undef USE_DSHOT_DMAR
+#undef USE_SERVOS
+#define USE_ABSOLUTE_CONTROL
+#define USE_DSHOT_TELEMETRY
+#define USE_RPM_FILTER
+#define USE_AIRMODE_LPF
+
+
+
 // IO - stm32f303cc in 48pin package
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
