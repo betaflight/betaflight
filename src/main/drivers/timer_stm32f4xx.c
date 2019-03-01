@@ -53,7 +53,6 @@ const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
 };
 
 #if defined(USE_TIMER_MGMT)
-#if defined(STM32F40_41xxx)
 const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     // Auto-generated from 'timer_def.h'
 //PORTA
@@ -147,7 +146,6 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM11, CH1, PF7, TIM_USE_ANY, 0, 0),
 };
 #endif
-#endif // USE_TIMER_MGMT
 
 
 /*

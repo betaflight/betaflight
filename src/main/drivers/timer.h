@@ -167,11 +167,11 @@ extern const timerHardware_t timerHardware[];
 #endif
 
 #if defined(USE_TIMER_MGMT)
-#if defined(STM32F40_41xxx)
+#if defined(STM32F4)
 
 #define FULL_TIMER_CHANNEL_COUNT 70
 
-#elif defined(STM32F722xx)
+#elif defined(STM32F7)
 
 #define FULL_TIMER_CHANNEL_COUNT 70
 

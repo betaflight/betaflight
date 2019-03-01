@@ -24,9 +24,9 @@
 // to be supplied when the board is configured for the first time
 #define USE_UNIFIED_TARGET
 
-#define TARGET_BOARD_IDENTIFIER "S405"
+#define TARGET_BOARD_IDENTIFIER "S745"
 
-#define USBD_PRODUCT_STRING     "Betaflight STM32F405"
+#define USBD_PRODUCT_STRING     "Betaflight STM32F745"
 
 #define USE_BEEPER
 
@@ -79,6 +79,7 @@
 #define USE_I2C_DEVICE_1
 #define USE_I2C_DEVICE_2
 #define USE_I2C_DEVICE_3
+#define USE_I2C_DEVICE_4
 #define I2C_FULL_RECONFIGURABILITY
 
 #define USE_VCP
@@ -89,10 +90,12 @@
 #define USE_UART4
 #define USE_UART5
 #define USE_UART6
+#define USE_UART7
+#define USE_UART8
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
-#define USE_INVERTER
-#define SERIAL_PORT_COUNT       9
+
+#define SERIAL_PORT_COUNT       11
 
 #define USE_ESCSERIAL
 
@@ -100,6 +103,9 @@
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
 #define USE_SPI_DEVICE_3
+#define USE_SPI_DEVICE_4
+#define USE_SPI_DEVICE_5
+#define USE_SPI_DEVICE_6
 #define SPI_FULL_RECONFIGURABILITY
 
 #define USE_ADC
