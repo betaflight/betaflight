@@ -72,7 +72,7 @@
 
 void targetConfiguration(void)
 {
-    if (hardwareMotorType == MOTOR_BRUSHED) {
+    if (getDetectedMotorType() == MOTOR_BRUSHED) {
         motorConfigMutable()->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
         motorConfigMutable()->minthrottle = 1050; // for 6mm and 7mm brushed
     }
