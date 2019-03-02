@@ -231,6 +231,10 @@ static void cmsUpdateMaxRow(displayPort_t *instance)
         pageMaxRow = maxMenuItems;
     }
 
+    if (pageMaxRow > CMS_MAX_ROWS) {
+        pageMaxRow = CMS_MAX_ROWS;
+    }
+
     pageMaxRow--;
 }
 
@@ -249,7 +253,7 @@ static void cmsPageSelect(displayPort_t *instance, int8_t newpage)
 
     const OSD_Entry *p;
     int i;
-    for (p = pageTop, i = 0; p->type != OME_END; p++, i++) {
+    for (p = pageTop, i = 0; (p <= pageTop + pageMaxRow); p++, i++) {
         runtimeEntryFlags[i] = p->flags;
     }
     cmsUpdateMaxRow(instance);
@@ -553,13 +557,13 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
     uint32_t room = displayTxBytesFree(pDisplay);
 
     if (pDisplay->cleared) {
-        for (p = pageTop, i= 0; p->type != OME_END; p++, i++) {
+        for (p = pageTop, i= 0; (p <= pageTop + pageMaxRow); p++, i++) {
             SET_PRINTLABEL(runtimeEntryFlags[i]);
             SET_PRINTVALUE(runtimeEntryFlags[i]);
         }
         pDisplay->cleared = false;
     } else if (drawPolled) {
-        for (p = pageTop, i = 0; p <= pageTop + pageMaxRow ; p++, i++) {
+        for (p = pageTop, i = 0; (p <= pageTop + pageMaxRow); p++, i++) {
             if (IS_DYNAMIC(p))
                 SET_PRINTVALUE(runtimeEntryFlags[i]);
         }
@@ -588,7 +592,7 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
         return;
 
     // Print text labels
-    for (i = 0, p = pageTop; i < maxMenuItems && p->type != OME_END; i++, p++) {
+    for (i = 0, p = pageTop; (p <= pageTop + pageMaxRow); i++, p++) {
         if (IS_PRINTLABEL(runtimeEntryFlags[i])) {
             uint8_t coloff = leftMenuColumn;
             coloff += (p->type == OME_Label) ? 0 : 1;
@@ -774,7 +778,7 @@ long cmsMenuExit(displayPort_t *pDisplay, const void *ptr)
 
         if (currentCtx.menu->onExit)
             currentCtx.menu->onExit((OSD_Entry *)NULL); // Forced exit
-        
+
         if ((exitType == CMS_POPUP_SAVE) || (exitType == CMS_POPUP_SAVEREBOOT)) {
             // traverse through the menu stack and call their onExit functions
             for (int i = menuStackIdx - 1; i >= 0; i--) {
