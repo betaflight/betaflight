@@ -56,14 +56,15 @@ void A7105Init(uint32_t id, IO_t extiPin, IO_t txEnPin)
 {
     spiDeviceByInstance(RX_SPI_INSTANCE);
     rxIntIO = extiPin; /* config receiver IRQ pin */
-    IOInit(rxIntIO, OWNER_RX_SPI, 0);
+    IOInit(rxIntIO, OWNER_RX_SPI_EXTI, 0);
     EXTIHandlerInit(&a7105extiCallbackRec, a7105extiHandler);
     EXTIConfig(rxIntIO, &a7105extiCallbackRec, NVIC_PRIO_MPU_INT_EXTI, IOCFG_IPD, EXTI_TRIGGER_RISING);
     EXTIEnable(rxIntIO, false);
 
     if (txEnPin) {
         txEnIO = txEnPin;
-        IOInit(txEnIO, OWNER_RX_SPI_CS, 0);
+        //TODO: Create resource for this if it ever gets used
+        IOInit(txEnIO, OWNER_RX_SPI_CC2500_TX_EN, 0);
         IOConfigGPIO(txEnIO, IOCFG_OUT_PP);
     } else {
         txEnIO = IO_NONE;

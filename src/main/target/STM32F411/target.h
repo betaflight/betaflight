@@ -112,9 +112,8 @@
 
 #define USE_RX_FLYSKY
 
-//TODO: Make this work with runtime configurability
-//#define USE_RX_SPEKTRUM
-//#define USE_RX_SPEKTRUM_TELEMETRY
+#define USE_RX_SPEKTRUM
+#define USE_RX_SPEKTRUM_TELEMETRY
 
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff

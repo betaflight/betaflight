@@ -203,7 +203,7 @@ enum {
 
 extern volatile bool isError;
 
-bool cyrf6936Init(void);
+bool cyrf6936Init(IO_t extiPin);
 
 bool cyrf6936RxFinished(uint32_t *timeStamp);
 

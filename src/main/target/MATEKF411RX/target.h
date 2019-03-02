@@ -106,7 +106,7 @@
 #define RX_CHANNELS_AETR
 #define RX_SPI_DEFAULT_PROTOCOL RX_SPI_A7105_FLYSKY_2A
 #define FLYSKY_2A_CHANNEL_COUNT 14
-#define RX_EXTI_PIN             PA14
+#define RX_SPI_EXTI_PIN         PA14
 #define USE_RX_FLYSKY_SPI_LED
 #define RX_SPI_LED_PIN          PB9
 

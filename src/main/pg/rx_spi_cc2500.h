@@ -30,7 +30,7 @@ typedef enum {
   FRSKY_SPI_A1_SOURCE_CONST
 } frSkySpiA1Source_e;
 
-typedef struct rxFrSkySpiConfig_s {
+typedef struct rxCc2500SpiConfig_s {
     uint8_t autoBind;
     uint8_t bindTxId[2];
     int8_t  bindOffset;

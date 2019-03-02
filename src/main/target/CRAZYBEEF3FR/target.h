@@ -117,7 +117,7 @@
 #define FLYSKY_2A_CHANNEL_COUNT 14
 #define RX_SPI_INSTANCE         SPI2
 #define RX_NSS_PIN              SPI2_NSS_PIN
-#define RX_EXTI_PIN             PA8
+#define RX_SPI_EXTI_PIN         PA8
 #define BINDPLUG_PIN            PA9
 #define RX_SPI_LED_PIN          PA10
 #define DEFAULT_FEATURES        (FEATURE_TELEMETRY | FEATURE_OSD | FEATURE_MOTOR_STOP)
