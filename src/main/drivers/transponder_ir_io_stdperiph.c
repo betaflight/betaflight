@@ -42,6 +42,7 @@ volatile uint8_t transponderIrDataTransferInProgress = 0;
 
 static IO_t transponderIO = IO_NONE;
 static TIM_TypeDef *timer = NULL;
+uint8_t alternateFunction;
 #if defined(STM32F3)
 static DMA_Channel_TypeDef *dmaRef = NULL;
 #elif defined(STM32F4)
@@ -74,6 +75,7 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
 
     const timerHardware_t *timerHardware = timerGetByTag(ioTag);
     timer = timerHardware->tim;
+    alternateFunction = timerHardware->alternateFunction;
 
 #if defined(USE_DMA_SPEC)
     const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByTimer(timerHardware);
@@ -235,7 +237,7 @@ void transponderIrDisable(void)
     TIM_Cmd(timer, DISABLE);
 
     IOInit(transponderIO, OWNER_TRANSPONDER, 0);
-    IOConfigGPIOAF(transponderIO, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_DOWN), timerHardware->alternateFunction);
+    IOConfigGPIOAF(transponderIO, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_DOWN), alternateFunction);
 
 #ifdef TRANSPONDER_INVERTED
     IOHi(transponderIO);
