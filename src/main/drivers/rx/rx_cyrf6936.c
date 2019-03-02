@@ -72,7 +72,7 @@ bool cyrf6936RxFinished(uint32_t *timeStamp)
 bool cyrf6936Init(void)
 {
     spiDeviceByInstance(RX_SPI_INSTANCE);
-    rxIntIO = IOGetByTag(IO_TAG(RX_IRQ_PIN));
+    rxIntIO = IOGetByTag(IO_TAG(RX_EXTI_PIN));
     IOInit(rxIntIO, OWNER_RX_SPI_CS, 0);
     EXTIHandlerInit(&cyrf6936extiCallbackRec, cyrf6936ExtiHandler);
     EXTIConfig(rxIntIO, &cyrf6936extiCallbackRec, NVIC_PRIO_MPU_INT_EXTI, IOCFG_IPD, EXTI_TRIGGER_FALLING);

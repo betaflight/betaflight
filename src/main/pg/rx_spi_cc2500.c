@@ -20,35 +20,30 @@
 
 #include "platform.h"
 
-#ifdef USE_RX_SPI
+#if defined(USE_RX_CC2500)
 
 #include "drivers/io.h"
-#include "drivers/bus_spi.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
-#include "pg/rx_spi.h"
 
-#include "rx/rx_spi.h"
+#include "rx_spi_cc2500.h"
 
-PG_REGISTER_WITH_RESET_FN(rxSpiConfig_t, rxSpiConfig, PG_RX_SPI_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(rxCc2500SpiConfig_t, rxCc2500SpiConfig, PG_RX_CC2500_SPI_CONFIG, 1);
 
-void pgResetFn_rxSpiConfig(rxSpiConfig_t *rxSpiConfig)
-{
-    rxSpiConfig->rx_spi_protocol = RX_SPI_DEFAULT_PROTOCOL;
-
-    // Basic SPI
-    rxSpiConfig->csnTag = IO_TAG(RX_NSS_PIN);
-    rxSpiConfig->spibus = SPI_DEV_TO_CFG(spiDeviceByInstance(RX_SPI_INSTANCE));
-
-    rxSpiConfig->extiIoTag = IO_TAG(RX_SPI_EXTI_PIN);
-
-    rxSpiConfig->bindIoTag = IO_TAG(BINDPLUG_PIN);
-    rxSpiConfig->ledIoTag = IO_TAG(RX_SPI_LED_PIN);
-#ifdef RX_SPI_LED_INVERTED
-    rxSpiConfig->ledInversion = true;
-#else
-    rxSpiConfig->ledInversion = false;
-#endif
-}
+PG_RESET_TEMPLATE(rxCc2500SpiConfig_t, rxCc2500SpiConfig,
+    .autoBind = false,
+    .bindTxId = {0, 0},
+    .bindOffset = 0,
+    .bindHopData = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    .rxNum = 0,
+    .a1Source = FRSKY_SPI_A1_SOURCE_VBAT,
+    .chipDetectEnabled = true,
+    .txEnIoTag = IO_TAG(RX_CC2500_SPI_TX_EN_PIN),
+    .lnaEnIoTag = IO_TAG(RX_CC2500_SPI_LNA_EN_PIN),
+    .antSelIoTag = IO_TAG(RX_CC2500_SPI_ANT_SEL_PIN),
+);
 #endif

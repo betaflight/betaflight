@@ -26,27 +26,30 @@
 
 #include "common/maths.h"
 
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
-#include "pg/rx.h"
-#include "pg/rx_spi.h"
-
-#include "drivers/rx/rx_cc2500.h"
 #include "drivers/io.h"
+#include "drivers/rx/rx_cc2500.h"
 #include "drivers/time.h"
 
 #include "fc/config.h"
 
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+#include "pg/rx.h"
+#include "pg/rx_spi.h"
+#include "pg/rx_spi_cc2500.h"
+
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
 
-#include "rx/cc2500_common.h"
+#include "cc2500_common.h"
 
 static IO_t gdoPin;
 #if defined(USE_RX_CC2500_SPI_PA_LNA)
 static IO_t txEnPin;
 static IO_t rxLnaEnPin;
+#if defined(USE_RX_CC2500_SPI_DIVERSITY)
 static IO_t antSelPin;
+#endif
 #endif
 static int16_t rssiDbm;
 
@@ -76,23 +79,29 @@ void cc2500switchAntennae(void)
 {
     static bool alternativeAntennaSelected = true;
 
-    if (alternativeAntennaSelected) {
-        IOLo(antSelPin);
-    } else {
-        IOHi(antSelPin);
+    if (antSelPin) {
+        if (alternativeAntennaSelected) {
+            IOLo(antSelPin);
+        } else {
+            IOHi(antSelPin);
+        }
+        alternativeAntennaSelected = !alternativeAntennaSelected;
     }
-    alternativeAntennaSelected = !alternativeAntennaSelected;
 }
 #endif
 #if defined(USE_RX_CC2500_SPI_PA_LNA)
 void cc2500TxEnable(void)
 {
-    IOHi(txEnPin);
+    if (txEnPin) {
+        IOHi(txEnPin);
+    }
 }
 
 void cc2500TxDisable(void)
 {
-    IOLo(txEnPin);
+    if (txEnPin) {
+        IOLo(txEnPin);
+    }
 }
 #endif
 
@@ -110,7 +119,7 @@ static bool cc2500SpiDetect(void)
 bool cc2500SpiInit(void)
 {
 #if !defined(RX_CC2500_SPI_DISABLE_CHIP_DETECTION)
-    if (!cc2500SpiDetect()) {
+    if (rxCc2500SpiConfig()->chipDetectEnabled && !cc2500SpiDetect()) {
         return false;
     }
 #else
@@ -122,28 +131,39 @@ bool cc2500SpiInit(void)
     }
 
     // gpio init here
-    gdoPin = IOGetByTag(IO_TAG(RX_CC2500_SPI_GDO_0_PIN));
+    gdoPin = IOGetByTag(rxSpiConfig()->extiIoTag);
+
+    if (!gdoPin) {
+        return false;
+    }
+
     IOInit(gdoPin, OWNER_RX_SPI, 0);
     IOConfigGPIO(gdoPin, IOCFG_IN_FLOATING);
 #if defined(USE_RX_CC2500_SPI_PA_LNA)
-    rxLnaEnPin = IOGetByTag(IO_TAG(RX_CC2500_SPI_LNA_EN_PIN));
-    IOInit(rxLnaEnPin, OWNER_RX_SPI, 0);
-    IOConfigGPIO(rxLnaEnPin, IOCFG_OUT_PP);
-    IOHi(rxLnaEnPin); // always on at the moment
-    txEnPin = IOGetByTag(IO_TAG(RX_CC2500_SPI_TX_EN_PIN));
-    IOInit(txEnPin, OWNER_RX_SPI, 0);
-    IOConfigGPIO(txEnPin, IOCFG_OUT_PP);
+    if (rxCc2500SpiConfig()->lnaEnIoTag) {
+        rxLnaEnPin = IOGetByTag(rxCc2500SpiConfig()->lnaEnIoTag);
+        IOInit(rxLnaEnPin, OWNER_RX_SPI, 0);
+        IOConfigGPIO(rxLnaEnPin, IOCFG_OUT_PP);
+
+        IOHi(rxLnaEnPin); // always on at the moment
+    }
+    if (rxCc2500SpiConfig()->txEnIoTag) {
+        txEnPin = IOGetByTag(rxCc2500SpiConfig()->txEnIoTag);
+        IOInit(txEnPin, OWNER_RX_SPI, 0);
+        IOConfigGPIO(txEnPin, IOCFG_OUT_PP);
+    }
 #if defined(USE_RX_CC2500_SPI_DIVERSITY)
-    antSelPin = IOGetByTag(IO_TAG(RX_CC2500_SPI_ANT_SEL_PIN));
-    IOInit(antSelPin, OWNER_RX_SPI, 0);
-    IOConfigGPIO(antSelPin, IOCFG_OUT_PP);
+    if (rxCc2500SpiConfig()->antSelIoTag) {
+        antSelPin = IOGetByTag(rxCc2500SpiConfig()->antSelIoTag);
+        IOInit(antSelPin, OWNER_RX_SPI, 0);
+        IOConfigGPIO(antSelPin, IOCFG_OUT_PP);
+
+        IOHi(antSelPin);
+    }
 #endif
 #endif // USE_RX_CC2500_SPI_PA_LNA
 
 #if defined(USE_RX_CC2500_SPI_PA_LNA)
-#if defined(USE_RX_CC2500_SPI_DIVERSITY)
-    IOHi(antSelPin);
-#endif
     cc2500TxDisable();
 #endif // USE_RX_CC2500_SPI_PA_LNA
 

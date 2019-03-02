@@ -20,8 +20,6 @@
 
 #pragma once
 
-#include "pg/pg.h"
-
 #include "rx/rx_spi.h"
 
 uint16_t cc2500getRssiDbm(void);
