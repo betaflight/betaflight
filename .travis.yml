@@ -65,7 +65,6 @@ before_script:
   - clang --version
   - clang++ --version
   - gcc --version
-  - export V=0
 
 script: ./.travis.sh
 
