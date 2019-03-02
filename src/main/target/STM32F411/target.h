@@ -110,8 +110,7 @@
 #define USE_RX_CC2500_SPI_PA_LNA
 #define USE_RX_CC2500_SPI_DIVERSITY
 
-//TODO: Make this work with runtime configurability
-//#define USE_RX_FLYSKY
+#define USE_RX_FLYSKY
 
 //TODO: Make this work with runtime configurability
 //#define USE_RX_SPEKTRUM

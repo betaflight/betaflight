@@ -126,10 +126,6 @@ bool cc2500SpiInit(void)
     UNUSED(cc2500SpiDetect);
 #endif
 
-    if (rssiSource == RSSI_SOURCE_NONE) {
-        rssiSource = RSSI_SOURCE_RX_PROTOCOL;
-    }
-
     // gpio init here
     gdoPin = IOGetByTag(rxSpiConfig()->extiIoTag);
 
@@ -151,6 +147,8 @@ bool cc2500SpiInit(void)
         txEnPin = IOGetByTag(rxCc2500SpiConfig()->txEnIoTag);
         IOInit(txEnPin, OWNER_RX_SPI, 0);
         IOConfigGPIO(txEnPin, IOCFG_OUT_PP);
+    } else {
+        txEnPin = IO_NONE;
     }
 #if defined(USE_RX_CC2500_SPI_DIVERSITY)
     if (rxCc2500SpiConfig()->antSelIoTag) {
@@ -159,6 +157,8 @@ bool cc2500SpiInit(void)
         IOConfigGPIO(antSelPin, IOCFG_OUT_PP);
 
         IOHi(antSelPin);
+    } else {
+        antSelPin = IO_NONE;
     }
 #endif
 #endif // USE_RX_CC2500_SPI_PA_LNA
@@ -166,6 +166,10 @@ bool cc2500SpiInit(void)
 #if defined(USE_RX_CC2500_SPI_PA_LNA)
     cc2500TxDisable();
 #endif // USE_RX_CC2500_SPI_PA_LNA
+
+    if (rssiSource == RSSI_SOURCE_NONE) {
+        rssiSource = RSSI_SOURCE_RX_PROTOCOL;
+    }
 
     return true;
 }
