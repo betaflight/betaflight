@@ -44,8 +44,6 @@
 
 #include "pwm_output.h"
 
-#ifdef USE_DSHOT
-
 #include "pwm_output_dshot_shared.h"
 
 FAST_RAM_ZERO_INIT uint8_t dmaMotorTimerCount = 0;
@@ -184,15 +182,13 @@ static uint16_t decodeProshotPacket(uint32_t buffer[])
     return value >> 4;
 }
 
-#endif
-
-
-#ifdef USE_DSHOT_TELEMETRY
 
 uint16_t getDshotTelemetry(uint8_t index)
 {
     return dmaMotors[index].dshotTelemetryValue;
 }
+
+#endif
 
 FAST_CODE void pwmDshotSetDirectionOutput(
     motorDmaOutput_t * const motor, bool output
@@ -204,6 +200,8 @@ FAST_CODE void pwmDshotSetDirectionOutput(
 #endif
 #endif
 );
+
+#ifdef USE_DSHOT_TELEMETRY
 
 void pwmStartDshotMotorUpdate(uint8_t motorCount)
 {
@@ -248,6 +246,5 @@ void pwmStartDshotMotorUpdate(uint8_t motorCount)
     }
 }
 
-#endif
 #endif
 #endif
