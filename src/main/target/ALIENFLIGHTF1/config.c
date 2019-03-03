@@ -50,7 +50,7 @@ void targetConfiguration(void)
     rxConfigMutable()->spektrum_sat_bind = 5;
     rxConfigMutable()->spektrum_sat_bind_autoreset = 1;
 
-    if (hardwareMotorType == MOTOR_BRUSHED) {
+    if (getDetectedMotorType() == MOTOR_BRUSHED) {
         motorConfigMutable()->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
     }
 

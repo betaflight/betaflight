@@ -110,7 +110,7 @@ void targetConfiguration(void)
         parseRcChannels("AETR1234", rxConfigMutable());
     }
 
-    if (hardwareMotorType == MOTOR_BRUSHED) {
+    if (getDetectedMotorType() == MOTOR_BRUSHED) {
         motorConfigMutable()->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
         pidConfigMutable()->pid_process_denom = 1;
     }

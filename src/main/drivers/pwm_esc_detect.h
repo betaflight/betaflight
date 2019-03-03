@@ -20,14 +20,13 @@
 
 #pragma once
 
-#ifdef USE_BRUSHED_ESC_AUTODETECT
+#include "drivers/io_types.h"
+
 typedef enum {
     MOTOR_UNKNOWN = 0,
     MOTOR_BRUSHED,
     MOTOR_BRUSHLESS
 } HardwareMotorTypes_e;
 
-extern uint8_t hardwareMotorType;
-
-void detectBrushedESC(void);
-#endif
+void detectBrushedESC(ioTag_t motorIoTag);
+uint8_t getDetectedMotorType(void);

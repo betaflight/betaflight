@@ -57,7 +57,7 @@
 // alternative defaults settings for AlienFlight targets
 void targetConfiguration(void)
 {
-    if (hardwareMotorType == MOTOR_BRUSHED) {
+    if (getDetectedMotorType() == MOTOR_BRUSHED) {
         motorConfigMutable()->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
         pidConfigMutable()->pid_process_denom = 1;
     }

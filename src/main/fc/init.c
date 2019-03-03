@@ -261,7 +261,13 @@ void init(void)
 #endif
 
 #ifdef USE_BRUSHED_ESC_AUTODETECT
-    detectBrushedESC();
+    // Opportunistically use the first motor pin of the default configuration for detection.
+    // We are doing this as with some boards, timing seems to be important, and the later detection will fail.
+    ioTag_t motorIoTag = timerioTagGetByUsage(TIM_USE_MOTOR, 0);
+
+    if (motorIoTag) {
+        detectBrushedESC(motorIoTag);
+    }
 #endif
 
     initEEPROM();
@@ -279,6 +285,15 @@ void init(void)
     }
 
     systemState |= SYSTEM_STATE_CONFIG_LOADED;
+
+#ifdef USE_BRUSHED_ESC_AUTODETECT
+    // Now detect again with the actually configured pin for motor 1, if it is not the default pin.
+    ioTag_t configuredMotorIoTag = motorConfig()->dev.ioTags[0];
+
+    if (configuredMotorIoTag && configuredMotorIoTag != motorIoTag) {
+        detectBrushedESC(configuredMotorIoTag);
+    }
+#endif
 
     //i2cSetOverclock(masterConfig.i2c_overclock);
 

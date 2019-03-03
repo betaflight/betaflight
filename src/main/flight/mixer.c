@@ -86,7 +86,7 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
     motorConfig->dev.useUnsyncedPwm = true;
 #else
 #ifdef USE_BRUSHED_ESC_AUTODETECT
-    if (hardwareMotorType == MOTOR_BRUSHED) {
+    if (getDetectedMotorType() == MOTOR_BRUSHED) {
         motorConfig->minthrottle = 1000;
         motorConfig->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
         motorConfig->dev.motorPwmProtocol = PWM_TYPE_BRUSHED;
