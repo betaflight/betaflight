@@ -83,6 +83,7 @@ MCU_COMMON_SRC = \
             drivers/light_ws2811strip_stdperiph.c \
             drivers/transponder_ir_io_stdperiph.c \
             drivers/pwm_output_dshot.c \
+            drivers/pwm_output_dshot_shared.c \
             drivers/serial_uart_init.c \
             drivers/serial_uart_stm32f30x.c \
             drivers/system_stm32f30x.c \

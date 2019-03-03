@@ -328,6 +328,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             drivers/bus_spi_ll.c \
             drivers/max7456.c \
             drivers/pwm_output_dshot.c \
+            drivers/pwm_output_dshot_shared.c \
             drivers/pwm_output_dshot_hal.c
 endif #!F3
 endif #!F1

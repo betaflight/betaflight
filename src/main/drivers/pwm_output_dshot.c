@@ -43,11 +43,6 @@
 
 #include "pwm_output.h"
 
-// TODO remove once debugging no longer needed
-#ifdef USE_DSHOT_TELEMETRY
-#include <string.h>
-#endif
-
 #include "pwm_output_dshot_shared.h"
 
 #ifdef USE_DSHOT_TELEMETRY
@@ -60,7 +55,7 @@ static void processInputIrq(motorDmaOutput_t * const motor)
     readDoneCount++;
 }
 
-static void enableChannels(uint8_t motorCount)
+void dshotEnableChannels(uint8_t motorCount)
 {
     for (int i = 0; i < motorCount; i++) {
         if (dmaMotors[i].output & TIMER_OUTPUT_N_CHANNEL) {
@@ -75,7 +70,7 @@ static void enableChannels(uint8_t motorCount)
 
 static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor);
 
-inline FAST_CODE static void pwmDshotSetDirectionOutput(
+FAST_CODE void pwmDshotSetDirectionOutput(
     motorDmaOutput_t * const motor, bool output
 #ifndef USE_DSHOT_TELEMETRY
     ,TIM_OCInitTypeDef *pOcInit, DMA_InitTypeDef* pDmaInit

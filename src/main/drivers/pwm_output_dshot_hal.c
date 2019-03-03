@@ -64,7 +64,7 @@ static void processInputIrq(motorDmaOutput_t * const motor)
     readDoneCount++;
 }
 
-static void enableChannels(uint8_t motorCount)
+void dshotEnableChannels(uint8_t motorCount)
 {
     for (int i = 0; i < motorCount; i++) {
         if (dmaMotors[i].output & TIMER_OUTPUT_N_CHANNEL) {
@@ -80,7 +80,7 @@ static void enableChannels(uint8_t motorCount)
 
 static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor);
 
-inline static void pwmDshotSetDirectionOutput(
+void pwmDshotSetDirectionOutput(
     motorDmaOutput_t * const motor, bool output
 #ifndef USE_DSHOT_TELEMETRY
     , LL_TIM_OC_InitTypeDef* pOcInit, LL_DMA_InitTypeDef* pDmaInit)
