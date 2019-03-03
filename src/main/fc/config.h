@@ -64,12 +64,15 @@ void saveConfigAndNotify(void);
 void validateAndFixGyroConfig(void);
 
 uint8_t getCurrentPidProfileIndex(void);
+char* getCurrentPidProfileName(void);
 void changePidProfile(uint8_t pidProfileIndex);
 void changePidProfileFromCellCount(uint8_t cellCount);
 struct pidProfile_s;
 void resetPidProfile(struct pidProfile_s *profile);
 
 uint8_t getCurrentControlRateProfileIndex(void);
+char* getCurrentControlRateProfileName(void);
+
 void changeControlRateProfile(uint8_t profileIndex);
 
 bool canSoftwareSerialBeUsed(void);

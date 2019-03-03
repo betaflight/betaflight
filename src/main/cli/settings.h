@@ -147,12 +147,13 @@ typedef struct lookupTableEntry_s {
 #define VALUE_MODE_OFFSET 5
 
 typedef enum {
-    // value type, bits 0-2
-    VAR_UINT8 = (0 << VALUE_TYPE_OFFSET),
-    VAR_INT8 = (1 << VALUE_TYPE_OFFSET),
-    VAR_UINT16 = (2 << VALUE_TYPE_OFFSET),
-    VAR_INT16 = (3 << VALUE_TYPE_OFFSET),
-    VAR_UINT32 = (4 << VALUE_TYPE_OFFSET),
+	// value type, bits 0-2
+	VAR_UINT8 = (0 << VALUE_TYPE_OFFSET),
+	VAR_INT8 = (1 << VALUE_TYPE_OFFSET),
+	VAR_UINT16 = (2 << VALUE_TYPE_OFFSET),
+	VAR_INT16 = (3 << VALUE_TYPE_OFFSET),
+	VAR_UINT32 = (4 << VALUE_TYPE_OFFSET),
+	VAR_CHAR = (5 << VALUE_TYPE_OFFSET),
 
     // value section, bits 3-4
     MASTER_VALUE = (0 << VALUE_SECTION_OFFSET),

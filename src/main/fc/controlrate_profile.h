@@ -24,6 +24,8 @@
 
 #include "pg/pg.h"
 
+#define MAX_RATE_PROFILE_NAME_LENGTH 8u
+
 typedef enum {
     RATES_TYPE_BETAFLIGHT = 0,
     RATES_TYPE_RACEFLIGHT,
@@ -55,6 +57,7 @@ typedef struct controlRateConfig_s {
     uint8_t throttle_limit_percent;         // Sets the maximum pilot commanded throttle limit
     uint16_t rate_limit[3];                 // Sets the maximum rate for the axes
     uint8_t tpaMode;                        // Controls which PID terms TPA effects
+	char name[MAX_RATE_PROFILE_NAME_LENGTH];
 } controlRateConfig_t;
 
 PG_DECLARE_ARRAY(controlRateConfig_t, CONTROL_RATE_PROFILE_COUNT, controlRateProfiles);

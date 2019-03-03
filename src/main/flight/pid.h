@@ -47,6 +47,8 @@
 // Full iterm suppression at 40deg/sec * default cutoff of 20
 #define ITERM_RELAX_SETPOINT_THRESHOLD 30.0f
 
+#define MAX_PROFILE_NAME_LENGTH 8u
+
 typedef enum {
     PID_ROLL,
     PID_PITCH,
@@ -167,6 +169,7 @@ typedef struct pidProfile_s {
     uint8_t motor_output_limit;             // Upper limit of the motor output (percent)
     int8_t auto_profile_cell_count;         // Cell count for this profile to be used with if auto PID profile switching is used
     uint8_t transient_throttle_limit;       // Maximum DC component of throttle change to mix into throttle to prevent airmode mirroring noise
+	char name[MAX_PROFILE_NAME_LENGTH];
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);

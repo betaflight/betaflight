@@ -827,7 +827,23 @@ static void osdElementNumericalVario(osdElementParms_t *element)
 
 static void osdElementPidRateProfile(osdElementParms_t *element)
 {
-    tfp_sprintf(element->buff, "%d-%d", getCurrentPidProfileIndex() + 1, getCurrentControlRateProfileIndex() + 1);
+	char *profileName = getCurrentControlRateProfileName();
+	char *pidName = getCurrentPidProfileName();
+	unsigned int i = 0;
+	while (pidName[i])
+	{
+		element->buff[i] = toupper((unsigned char)pidName[i]);
+		++i;
+	}
+	element->buff[i] = '-';
+	++i;
+	unsigned int j = 0;
+	while (profileName[j])
+	{
+		element->buff[i + j] = toupper((unsigned char)profileName[j]);
+		j++;
+	}
+	element->buff[i + j] = '\0';
 }
 
 static void osdElementPidsPitch(osdElementParms_t *element)

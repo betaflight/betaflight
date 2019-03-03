@@ -66,6 +66,7 @@
 #include "sensors/rpm_filter.h"
 
 #include "scheduler/scheduler.h"
+#include "common/typeconversion.h"
 
 pidProfile_t *currentPidProfile;
 
@@ -102,6 +103,17 @@ uint8_t getCurrentPidProfileIndex(void)
     return systemConfig()->pidProfileIndex;
 }
 
+char* getCurrentPidProfileName(void)
+{
+	if (strlen(currentPidProfile->name) > 0)
+	{
+		return currentPidProfile->name;
+	}
+	char buffer[2];
+	return itoa(getCurrentPidProfileIndex() + 1, buffer, 10);
+}
+
+
 static void loadPidProfile(void)
 {
     currentPidProfile = pidProfilesMutable(systemConfig()->pidProfileIndex);
@@ -110,6 +122,16 @@ static void loadPidProfile(void)
 uint8_t getCurrentControlRateProfileIndex(void)
 {
     return systemConfig()->activeRateProfile;
+}
+
+char* getCurrentControlRateProfileName(void)
+{
+	if (strlen(currentControlRateProfile->name) > 0)
+	{
+		return currentControlRateProfile->name;
+	}
+	char buffer[2];
+	return itoa(getCurrentControlRateProfileIndex() + 1, buffer, 10);
 }
 
 uint16_t getCurrentMinthrottle(void)

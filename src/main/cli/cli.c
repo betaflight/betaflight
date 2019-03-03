@@ -434,34 +434,41 @@ static void getMinMax(const clivalue_t *var, int *min, int *max)
 static void printValuePointer(const clivalue_t *var, const void *valuePointer, bool full)
 {
     if ((var->type & VALUE_MODE_MASK) == MODE_ARRAY) {
-        for (int i = 0; i < var->config.array.length; i++) {
-            switch (var->type & VALUE_TYPE_MASK) {
-            default:
-            case VAR_UINT8:
-                // uint8_t array
-                cliPrintf("%d", ((uint8_t *)valuePointer)[i]);
-                break;
+	    if ((var->type & VALUE_TYPE_MASK) == VAR_CHAR)
+	    {
+		    cliPrintf("\"%s\"", (char*)valuePointer);
+	    }
+	    else
+	    {
+		    for (int i = 0; i < var->config.array.length; i++) {
+			    switch (var->type & VALUE_TYPE_MASK) {
+			    default:
+			    case VAR_UINT8:
+				    // uint8_t array
+				    cliPrintf("%d", ((uint8_t *)valuePointer)[i]);
+				    break;
 
-            case VAR_INT8:
-                // int8_t array
-                cliPrintf("%d", ((int8_t *)valuePointer)[i]);
-                break;
+			    case VAR_INT8:
+				    // int8_t array
+				    cliPrintf("%d", ((int8_t *)valuePointer)[i]);
+				    break;
 
-            case VAR_UINT16:
-                // uin16_t array
-                cliPrintf("%d", ((uint16_t *)valuePointer)[i]);
-                break;
+			    case VAR_UINT16:
+				    // uin16_t array
+				    cliPrintf("%d", ((uint16_t *)valuePointer)[i]);
+				    break;
 
-            case VAR_INT16:
-                // int16_t array
-                cliPrintf("%d", ((int16_t *)valuePointer)[i]);
-                break;
-            }
+			    case VAR_INT16:
+				    // int16_t array
+				    cliPrintf("%d", ((int16_t *)valuePointer)[i]);
+				    break;
+			    }
 
-            if (i < var->config.array.length - 1) {
-                cliPrint(",");
-            }
-        }
+			    if (i < var->config.array.length - 1) {
+				    cliPrint(",");
+			    }
+		    }
+	    }
     } else {
         int value = 0;
 
@@ -484,6 +491,10 @@ static void printValuePointer(const clivalue_t *var, const void *valuePointer, b
             break;
         case VAR_UINT32:
             value = *(uint32_t *)valuePointer;
+	        break;
+
+        case VAR_CHAR:
+	        value = *(char *)valuePointer;
 
             break;
         }
@@ -565,6 +576,7 @@ static bool valuePtrEqualsDefault(const clivalue_t *var, const void *ptr, const 
         case VAR_UINT32:
             result = result && (((uint32_t *)ptr)[i] & mask) == (((uint32_t *)ptrDefault)[i] & mask);
             break;
+			//TODO VAR_CHAR
         }
     }
 
@@ -694,6 +706,7 @@ static void cliPrintVarRange(const clivalue_t *var)
     }
     break;
     case (MODE_ARRAY): {
+			//TODO VAR_CHAR
         cliPrintLinef("Array length: %d", var->config.array.length);
     }
     break;
@@ -764,6 +777,10 @@ static void cliSetVar(const clivalue_t *var, const uint32_t value)
         case VAR_UINT32:
             *(uint32_t *)ptr = value;
             break;
+
+        case VAR_CHAR:
+	        *(char *)ptr = value;
+	        break;
         }
     }
 }
@@ -3741,7 +3758,7 @@ static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask)
     cliRateProfile("");
     cliPrintLinefeed();
     dumpAllValues(PROFILE_RATE_VALUE, dumpMask);
-
+	
     rateProfileIndexToUse = CURRENT_PROFILE_INDEX;
 }
 
@@ -3947,62 +3964,86 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
                     break;
 
                 case MODE_ARRAY: {
-                        const uint8_t arrayLength = val->config.array.length;
-                        char *valPtr = eqptr;
+		                const uint8_t arrayLength = val->config.array.length;
+		                char *valPtr = eqptr;
+	                if ((val->type & VALUE_TYPE_MASK) == VAR_CHAR)
+	                {
+						char *start = strchr(valPtr, '"');
+		                char *end = NULL;
+		                if (start && *(start + 1) != '\0')
+		                {
+			                start += 1;
+			                end = strchr(start, '"');
+		                }
+		                if (start && end)
+		                {
+			                char *data = (char *)cliGetValuePointer(val);
+			                strncpy(data, "\0", arrayLength);
+							strncpy(data, start, MIN(arrayLength, end - start));
+		                }
+		                else
+		                {
+			                cliShowParseError();
+		                }
+	                }
+	                else
+	                {
+		                int i = 0;
+		                while (i < arrayLength && valPtr != NULL) {
+			                // skip spaces
+			                valPtr = skipSpace(valPtr);
 
-                        int i = 0;
-                        while (i < arrayLength && valPtr != NULL) {
-                            // skip spaces
-                            valPtr = skipSpace(valPtr);
+			                // process substring starting at valPtr
+			                // note: no need to copy substrings for atoi()
+			                //       it stops at the first character that cannot be converted...
+			                switch(val->type & VALUE_TYPE_MASK) {
+			                default:
+			                case VAR_UINT8:
+				                {
+					                // fetch data pointer
+					                uint8_t *data = (uint8_t *)cliGetValuePointer(val) + i;
+					                // store value
+					                *data = (uint8_t)atoi((const char*) valPtr);
+				                }
 
-                            // process substring starting at valPtr
-                            // note: no need to copy substrings for atoi()
-                            //       it stops at the first character that cannot be converted...
-                            switch (val->type & VALUE_TYPE_MASK) {
-                            default:
-                            case VAR_UINT8:
-                                {
-                                    // fetch data pointer
-                                    uint8_t *data = (uint8_t *)cliGetValuePointer(val) + i;
-                                    // store value
-                                    *data = (uint8_t)atoi((const char*) valPtr);
-                                }
+				                break;
+			                case VAR_INT8:
+				                {
+					                // fetch data pointer
+					                int8_t *data = (int8_t *)cliGetValuePointer(val) + i;
+					                // store value
+					                *data = (int8_t)atoi((const char*) valPtr);
+				                }
 
-                                break;
-                            case VAR_INT8:
-                                {
-                                    // fetch data pointer
-                                    int8_t *data = (int8_t *)cliGetValuePointer(val) + i;
-                                    // store value
-                                    *data = (int8_t)atoi((const char*) valPtr);
-                                }
+				                break;
+			                case VAR_UINT16:
+				                {
+					                // fetch data pointer
+					                uint16_t *data = (uint16_t *)cliGetValuePointer(val) + i;
+					                // store value
+					                *data = (uint16_t)atoi((const char*) valPtr);
+				                }
 
-                                break;
-                            case VAR_UINT16:
-                                {
-                                    // fetch data pointer
-                                    uint16_t *data = (uint16_t *)cliGetValuePointer(val) + i;
-                                    // store value
-                                    *data = (uint16_t)atoi((const char*) valPtr);
-                                }
+				                break;
+			                case VAR_INT16:
+				                {
+					                // fetch data pointer
+					                int16_t *data = (int16_t *)cliGetValuePointer(val) + i;
+					                // store value
+					                *data = (int16_t)atoi((const char*) valPtr);
+				                }
 
-                                break;
-                            case VAR_INT16:
-                                {
-                                    // fetch data pointer
-                                    int16_t *data = (int16_t *)cliGetValuePointer(val) + i;
-                                    // store value
-                                    *data = (int16_t)atoi((const char*) valPtr);
-                                }
+				                break;
 
-                                break;
-                            }
+                           
+			                }
 
-                            // find next comma (or end of string)
-                            valPtr = strchr(valPtr, ',') + 1;
+			                // find next comma (or end of string)
+			                valPtr = strchr(valPtr, ',') + 1;
 
-                            i++;
-                        }
+			                i++;
+		                }
+	                }
                     }
 
                     // mark as changed
