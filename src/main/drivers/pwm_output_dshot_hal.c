@@ -178,6 +178,7 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 
     motorDmaOutput_t * const motor = &dmaMotors[motorIndex];
     motor->timerHardware = timerHardware;
+    motor->dmaRef = dmaRef;
 
     TIM_TypeDef *timer = timerHardware->tim;
     const IO_t motorIO = IOGetByTag(timerHardware->tag);
