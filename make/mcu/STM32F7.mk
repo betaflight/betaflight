@@ -179,6 +179,7 @@ MCU_COMMON_SRC = \
             drivers/bus_spi_ll.c \
             drivers/persistent.c \
             drivers/pwm_output_dshot_hal.c \
+            drivers/pwm_output_dshot_shared.c \
             drivers/timer_hal.c \
             drivers/timer_stm32f7xx.c \
             drivers/system_stm32f7xx.c \

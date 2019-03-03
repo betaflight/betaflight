@@ -146,9 +146,16 @@ typedef struct {
     volatile bool isInput;
     volatile bool hasTelemetry;
     uint16_t dshotTelemetryValue;
+#ifdef USE_HAL_DRIVER
+    LL_TIM_OC_InitTypeDef ocInitStruct;
+    LL_TIM_IC_InitTypeDef icInitStruct;
+    LL_DMA_InitTypeDef    dmaInitStruct;
+    uint32_t llChannel;
+#else
     TIM_OCInitTypeDef ocInitStruct;
     TIM_ICInitTypeDef icInitStruct;
     DMA_InitTypeDef   dmaInitStruct;
+#endif
     uint8_t dmaInputLen;
 #endif
 #ifdef STM32F3
