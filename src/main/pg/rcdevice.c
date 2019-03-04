@@ -29,4 +29,6 @@ void pgResetFn_rcdeviceConfig(rcdeviceConfig_t *rcdeviceConfig)
 {
     rcdeviceConfig->initDeviceAttempts = 6;
     rcdeviceConfig->initDeviceAttemptInterval = 1000;
+    rcdeviceConfig->feature = 0;
+    rcdeviceConfig->protocolVersion = 0;
 }

@@ -104,7 +104,7 @@ typedef enum {
 // end of Runcam Device definition
 
 typedef struct runcamDeviceInfo_s {
-    rcdevice_protocol_version_e protocolVer;
+    rcdevice_protocol_version_e protocolVersion;
     uint16_t features;
 } runcamDeviceInfo_t;
 
@@ -115,7 +115,7 @@ typedef struct runcamDevice_s {
     bool isReady;
 } runcamDevice_t;
 
-#define MAX_WAITING_RESPONSES 20
+#define MAX_WAITING_RESPONSES 1
 
 typedef enum {
     RCDEVICE_RESP_SUCCESS = 0,
@@ -136,7 +136,7 @@ struct rcdeviceResponseParseContext_s {
     runcamDevice_t *device;
     uint8_t paramData[RCDEVICE_PROTOCOL_MAX_DATA_SIZE];
     uint8_t paramDataLen;
-    uint8_t protocolVer;
+    uint8_t protocolVersion;
     int maxRetryTimes;
     void *userInfo;
     rcdeviceResponseStatus_e result;

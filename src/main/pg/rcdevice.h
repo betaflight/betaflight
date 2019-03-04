@@ -26,6 +26,10 @@
 typedef struct rcdeviceConfig_s {
     uint8_t initDeviceAttempts;
     timeMs_t initDeviceAttemptInterval;
+
+    // sometimes FC can't get featureInfo from devie(still no idea), so user can set it manaually.
+    uint32_t feature; 
+    uint8_t protocolVersion;
 } rcdeviceConfig_t;
 
 PG_DECLARE(rcdeviceConfig_t, rcdeviceConfig);
