@@ -58,7 +58,7 @@
 #define FLYSKY_2A_CHANNEL_COUNT 10
 
 #define RX_SPI_INSTANCE         SPI2
-#define RX_IRQ_PIN              PB12
+#define RX_SPI_EXTI_PIN         PB12
 #define SPI2_NSS_PIN            PA4
 #define SPI2_SCK_PIN            PB13
 #define SPI2_MISO_PIN           PB14

@@ -4411,8 +4411,16 @@ const cliResourceValue_t resourceTable[] = {
 #endif
 #ifdef USE_RX_SPI
     DEFS( OWNER_RX_SPI_CS,     PG_RX_SPI_CONFIG, rxSpiConfig_t, csnTag ),
+    DEFS( OWNER_RX_SPI_EXTI,   PG_RX_SPI_CONFIG, rxSpiConfig_t, extiIoTag ),
     DEFS( OWNER_RX_SPI_BIND,   PG_RX_SPI_CONFIG, rxSpiConfig_t, bindIoTag ),
     DEFS( OWNER_RX_SPI_LED,    PG_RX_SPI_CONFIG, rxSpiConfig_t, ledIoTag ),
+#if defined(USE_RX_SPI_CC2500) && defined(USE_RX_CC2500_SPI_PA_LNA)
+    DEFS( OWNER_RX_SPI_CC2500_TX_EN,   PG_RX_SPI_CC2500_CONFIG, rxCc2500SpiConfig_t, txEnIoTag ),
+    DEFS( OWNER_RX_SPI_CC2500_LNA_EN,  PG_RX_SPI_CC2500_CONFIG, rxCc2500SpiConfig_t, lnaEnIoTag ),
+#if defined(USE_RX_CC2500_SPI_DIVERSITY)
+    DEFS( OWNER_RX_SPI_CC2500_ANT_SEL, PG_RX_SPI_CC2500_CONFIG, rxCc2500SpiConfig_t, antSelIoTag ),
+#endif
+#endif
 #endif
 #ifdef USE_GYRO_EXTI
     DEFW( OWNER_GYRO_EXTI,     PG_GYRO_DEVICE_CONFIG, gyroDeviceConfig_t, extiTag, MAX_GYRODEV_COUNT ),

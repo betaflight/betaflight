@@ -97,7 +97,7 @@ typedef enum {
 #define A7105_MODE_TRSR        0x02    // [0]: RX state. [1]: TX state. Serviceable if TRER=1 (TRX is enable).
 #define A7105_MODE_TRER        0x01    // [0]: TRX is disabled. [1]: TRX is enabled.
 
-void A7105Init(uint32_t id);
+void A7105Init(uint32_t id, IO_t extiPin, IO_t txEnPin);
 void A7105SoftReset(void);
 void A7105Config(const uint8_t *regsTable, uint8_t size);
 

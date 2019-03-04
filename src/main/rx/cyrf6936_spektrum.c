@@ -374,11 +374,16 @@ static void dsmReceiverStartTransfer(void)
 
 bool spektrumSpiInit(const struct rxSpiConfig_s *rxConfig, struct rxRuntimeConfig_s *rxRuntimeConfig)
 {
+    IO_t extiPin = IOGetByTag(rxConfig->extiIoTag);
+    if (!extiPin) {
+        return false;
+    }
+
     rxSpiCommonIOInit(rxConfig);
 
     rxRuntimeConfig->channelCount = DSM_MAX_CHANNEL_COUNT;
 
-    if (!cyrf6936Init()) {
+    if (!cyrf6936Init(extiPin)) {
         return false;
     }
 

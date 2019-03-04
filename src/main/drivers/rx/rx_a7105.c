@@ -35,9 +35,7 @@
 #include "drivers/rx/rx_spi.h"
 #include "drivers/time.h"
 
-#ifdef RX_PA_TXEN_PIN
 static IO_t txEnIO = IO_NONE;
-#endif
 
 static IO_t rxIntIO = IO_NONE;
 static extiCallbackRec_t a7105extiCallbackRec;
@@ -48,26 +46,29 @@ void a7105extiHandler(extiCallbackRec_t* cb)
 {
     UNUSED(cb);
 
-    if (IORead (rxIntIO) != 0) {
+    if (IORead(rxIntIO) != 0) {
         timeEvent = micros();
         occurEvent = true;
     }
 }
 
-void A7105Init(uint32_t id)
+void A7105Init(uint32_t id, IO_t extiPin, IO_t txEnPin)
 {
     spiDeviceByInstance(RX_SPI_INSTANCE);
-    rxIntIO = IOGetByTag(IO_TAG(RX_IRQ_PIN)); /* config receiver IRQ pin */
-    IOInit(rxIntIO, OWNER_RX_SPI_CS, 0);
+    rxIntIO = extiPin; /* config receiver IRQ pin */
+    IOInit(rxIntIO, OWNER_RX_SPI_EXTI, 0);
     EXTIHandlerInit(&a7105extiCallbackRec, a7105extiHandler);
     EXTIConfig(rxIntIO, &a7105extiCallbackRec, NVIC_PRIO_MPU_INT_EXTI, IOCFG_IPD, EXTI_TRIGGER_RISING);
     EXTIEnable(rxIntIO, false);
 
-#ifdef RX_PA_TXEN_PIN
-    txEnIO = IOGetByTag(IO_TAG(RX_PA_TXEN_PIN));
-    IOInit(txEnIO, OWNER_RX_SPI_CS, 0);
-    IOConfigGPIO(txEnIO, IOCFG_OUT_PP);
-#endif
+    if (txEnPin) {
+        txEnIO = txEnPin;
+        //TODO: Create resource for this if it ever gets used
+        IOInit(txEnIO, OWNER_RX_SPI_CC2500_TX_EN, 0);
+        IOConfigGPIO(txEnIO, IOCFG_OUT_PP);
+    } else {
+        txEnIO = IO_NONE;
+    }
 
     A7105SoftReset();
     A7105WriteID(id);
@@ -135,13 +136,13 @@ void A7105Strobe(A7105State_t state)
         EXTIEnable(rxIntIO, false);
     }
 
-#ifdef RX_PA_TXEN_PIN
-    if (A7105_TX == state) {
-        IOHi(txEnIO); /* enable PA */
-    } else {
-        IOLo(txEnIO); /* disable PA */
+    if (txEnIO) {
+        if (A7105_TX == state) {
+            IOHi(txEnIO); /* enable PA */
+        } else {
+            IOLo(txEnIO); /* disable PA */
+        }
     }
-#endif
 
     rxSpiWriteByte((uint8_t)state);
 }

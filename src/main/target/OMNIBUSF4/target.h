@@ -181,7 +181,7 @@
 #define RX_SPI_DEFAULT_PROTOCOL RX_SPI_CYRF6936_DSM
 #define RX_SPI_INSTANCE         SPI3
 #define RX_NSS_PIN              PD2
-#define RX_IRQ_PIN              PA0 // instead of rssi input
+#define RX_SPI_EXTI_PIN         PA0 // instead of rssi input
 #endif
 
 #define USE_VCP

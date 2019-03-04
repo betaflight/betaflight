@@ -262,8 +262,34 @@
 #endif
 
 #ifdef USE_RX_SPI
+#if !defined(RX_SPI_INSTANCE)
+#define RX_SPI_INSTANCE NULL
+#endif
+
+#if !defined(RX_NSS_PIN)
+#define RX_NSS_PIN NONE
+#endif
+
 #ifndef RX_SPI_LED_PIN
 #define RX_SPI_LED_PIN NONE
+#endif
+
+#if !defined(RX_SPI_EXTI_PIN)
+#define RX_SPI_EXTI_PIN NONE
+#endif
+
+#if defined(USE_RX_CC2500)
+#if !defined(RX_CC2500_SPI_TX_EN_PIN)
+#define RX_CC2500_SPI_TX_EN_PIN NONE
+#endif
+
+#if !defined(RX_CC2500_SPI_LNA_EN_PIN)
+#define RX_CC2500_SPI_LNA_EN_PIN NONE
+#endif
+
+#if !defined(RX_CC2500_SPI_ANT_SEL_PIN)
+#define RX_CC2500_SPI_ANT_SEL_PIN NONE
+#endif
 #endif
 #endif
 

@@ -19,6 +19,7 @@
  */
 
 #include <string.h>
+
 #include "platform.h"
 
 #ifdef USE_RX_FLYSKY
@@ -57,8 +58,8 @@
 #error "FlySky AFHDS 2A protocol support 14 channel max"
 #endif
 
-PG_REGISTER_WITH_RESET_TEMPLATE(flySkyConfig_t, flySkyConfig, PG_FLYSKY_CONFIG, 0);
-PG_RESET_TEMPLATE(flySkyConfig_t, flySkyConfig, .txId = 0, .rfChannelMap = {0}, .protocol = 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(flySkyConfig_t, flySkyConfig, PG_FLYSKY_CONFIG, 1);
+PG_RESET_TEMPLATE(flySkyConfig_t, flySkyConfig, .txId = 0, .rfChannelMap = {0});
 
 static const uint8_t flySkyRegs[] = {
     0xff, 0x42, 0x00, 0x14, 0x00, 0xff, 0xff, 0x00,
@@ -355,11 +356,12 @@ static rx_spi_received_e flySkyReadAndProcess(uint8_t *payload, const uint32_t t
 
 bool flySkyInit(const rxSpiConfig_t *rxSpiConfig, struct rxRuntimeConfig_s *rxRuntimeConfig)
 {
-    protocol = rxSpiConfig->rx_spi_protocol;
-
-    if (protocol != flySkyConfig()->protocol) {
-        PG_RESET(flySkyConfig);
+    IO_t extiPin = IOGetByTag(rxSpiConfig->extiIoTag);
+    if (!extiPin) {
+        return false;
     }
+
+    protocol = rxSpiConfig->rx_spi_protocol;
 
     rxSpiCommonIOInit(rxSpiConfig);
 
@@ -370,13 +372,13 @@ bool flySkyInit(const rxSpiConfig_t *rxSpiConfig, struct rxRuntimeConfig_s *rxRu
         timings = &flySky2ATimings;
         rxId = U_ID_0 ^ U_ID_1 ^ U_ID_2;
         startRxChannel = flySky2ABindChannels[0];
-        A7105Init(0x5475c52A);
+        A7105Init(0x5475c52A, extiPin, IO_NONE);
         A7105Config(flySky2ARegs, sizeof(flySky2ARegs));
     } else {
         rxRuntimeConfig->channelCount = FLYSKY_CHANNEL_COUNT;
         timings = &flySkyTimings;
         startRxChannel = 0;
-        A7105Init(0x5475c52A);
+        A7105Init(0x5475c52A, extiPin, IO_NONE);
         A7105Config(flySkyRegs, sizeof(flySkyRegs));
     }
 
@@ -459,7 +461,6 @@ rx_spi_received_e flySkyDataReceived(uint8_t *payload)
             bound = true;
             flySkyConfigMutable()->txId = txId; // store TXID
             memcpy (flySkyConfigMutable()->rfChannelMap, rfChannelMap, FLYSKY_FREQUENCY_COUNT);// store channel map
-            flySkyConfigMutable()->protocol = protocol;
             writeEEPROM();
         }
         rxSpiLedBlinkBind();

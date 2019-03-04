@@ -101,17 +101,19 @@
 
 #define USE_ADC
 
-//TODO: Make this work with runtime configurability
-//#define USE_RX_FRSKY_SPI_D
-//#define USE_RX_FRSKY_SPI_X
-//#define USE_RX_SFHSS_SPI
-//#define USE_RX_FRSKY_SPI_TELEMETRY
-//#define USE_RX_CC2500_SPI_PA_LNA
-//#define USE_RX_CC2500_SPI_DIVERSITY
+#define USE_RX_SPI
 
-//TODO: Make this work with runtime configurability
-//#define USE_RX_FLYSKY
-//#define USE_RX_FLYSKY_SPI_LED
+#define USE_RX_FRSKY_SPI_D
+#define USE_RX_FRSKY_SPI_X
+#define USE_RX_SFHSS_SPI
+#define USE_RX_FRSKY_SPI_TELEMETRY
+#define USE_RX_CC2500_SPI_PA_LNA
+#define USE_RX_CC2500_SPI_DIVERSITY
+
+#define USE_RX_FLYSKY
+
+#define USE_RX_SPEKTRUM
+#define USE_RX_SPEKTRUM_TELEMETRY
 
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff

@@ -67,7 +67,7 @@
 // Nordic Semiconductor uses 'CSN', STM uses 'NSS'
 #define RX_CE_PIN               PA4
 #define RX_NSS_PIN              PA11
-#define RX_IRQ_PIN              PA8
+#define RX_SPI_EXTI_PIN         PA8
 // CJMCU has NSS on PA11, rather than the standard PA4
 #define SPI1_NSS_PIN            RX_NSS_PIN
 
