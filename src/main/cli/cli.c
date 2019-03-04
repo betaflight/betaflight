@@ -3149,11 +3149,11 @@ static char *skipSpace(char *buffer)
     return buffer;
 }
 
-static char *checkCommand(char *cmdLine, const char *command)
+static char *checkCommand(char *cmdline, const char *command)
 {
-    if (!strncasecmp(cmdLine, command, strlen(command))   // command names match
-        && (isspace((unsigned)cmdLine[strlen(command)]) || cmdLine[strlen(command)] == 0)) {
-        return skipSpace(cmdLine + strlen(command) + 1);
+    if (!strncasecmp(cmdline, command, strlen(command))   // command names match
+        && (isspace((unsigned)cmdline[strlen(command)]) || cmdline[strlen(command)] == 0)) {
+        return skipSpace(cmdline + strlen(command) + 1);
     } else {
         return 0;
     }
@@ -3177,9 +3177,9 @@ static void cliReboot(void)
     cliRebootEx(false);
 }
 
-static void cliBootloader(char *cmdLine)
+static void cliBootloader(char *cmdline)
 {
-    UNUSED(cmdLine);
+    UNUSED(cmdline);
 
     cliPrintHashLine("restarting in bootloader mode");
     cliRebootEx(true);
@@ -4564,100 +4564,6 @@ static bool strToPin(char *pch, ioTag_t *tag)
     return false;
 }
 
-static void cliResource(char *cmdline)
-{
-    int len = strlen(cmdline);
-
-    if (len == 0) {
-        printResource(DUMP_MASTER | HIDE_UNUSED);
-
-        return;
-    } else if (strncasecmp(cmdline, "list", len) == 0) {
-#ifdef MINIMAL_CLI
-        cliPrintLine("IO");
-#else
-        cliPrintLine("Currently active IO resource assignments:\r\n(reboot to update)");
-        cliRepeat('-', 20);
-#endif
-        for (int i = 0; i < DEFIO_IO_USED_COUNT; i++) {
-            const char* owner;
-            owner = ownerNames[ioRecs[i].owner];
-
-            cliPrintf("%c%02d: %s", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner);
-            if (ioRecs[i].index > 0) {
-                cliPrintf(" %d", ioRecs[i].index);
-            }
-            cliPrintLinefeed();
-        }
-
-#ifndef MINIMAL_CLI
-        cliPrintLine("\r\nUse: 'resource' to see how to change resources.");
-#endif
-
-        return;
-    }
-
-    uint8_t resourceIndex = 0;
-    int index = 0;
-    char *pch = NULL;
-    char *saveptr;
-
-    pch = strtok_r(cmdline, " ", &saveptr);
-    for (resourceIndex = 0; ; resourceIndex++) {
-        if (resourceIndex >= ARRAYLEN(resourceTable)) {
-            cliPrintErrorLinef("INVALID");
-            return;
-        }
-
-        if (strncasecmp(pch, ownerNames[resourceTable[resourceIndex].owner], len) == 0) {
-            break;
-        }
-    }
-
-    pch = strtok_r(NULL, " ", &saveptr);
-    index = atoi(pch);
-
-    if (resourceTable[resourceIndex].maxIndex > 0 || index > 0) {
-        if (index <= 0 || index > MAX_RESOURCE_INDEX(resourceTable[resourceIndex].maxIndex)) {
-            cliShowArgumentRangeError("INDEX", 1, MAX_RESOURCE_INDEX(resourceTable[resourceIndex].maxIndex));
-            return;
-        }
-        index -= 1;
-
-        pch = strtok_r(NULL, " ", &saveptr);
-    }
-
-    ioTag_t *tag = getIoTag(resourceTable[resourceIndex], index);
-
-    if (strlen(pch) > 0) {
-        if (strToPin(pch, tag)) {
-            if (*tag == IO_TAG_NONE) {
-#ifdef MINIMAL_CLI
-                cliPrintLine("Freed");
-#else
-                cliPrintLine("Resource is freed");
-#endif
-                return;
-            } else {
-                ioRec_t *rec = IO_Rec(IOGetByTag(*tag));
-                if (rec) {
-                    resourceCheck(resourceIndex, index, *tag);
-#ifdef MINIMAL_CLI
-                    cliPrintLinef(" %c%02d set", IO_GPIOPortIdx(rec) + 'A', IO_GPIOPinIdx(rec));
-#else
-                    cliPrintLinef("\r\nResource is set to %c%02d", IO_GPIOPortIdx(rec) + 'A', IO_GPIOPinIdx(rec));
-#endif
-                } else {
-                    cliShowParseError();
-                }
-                return;
-            }
-        }
-    }
-
-    cliShowParseError();
-}
-
 static void printDma(void)
 {
     cliPrintLinefeed();
@@ -4680,12 +4586,6 @@ static void printDma(void)
             cliPrintLinef(" %s", owner);
         }
     }
-}
-
-static void cliDma(char* cmdLine)
-{
-    UNUSED(cmdLine);
-    printDma();
 }
 
 #ifdef USE_DMA_SPEC
@@ -4771,21 +4671,21 @@ static void printPeripheralDmaopt(dmaoptEntry_t *entry, int index, uint8_t dumpM
                 dmaCode = dmaChannelSpec->code;
             }
             cliDefaultPrintLinef(dumpMask, equalsDefault,
-                "dmaopt %s %d %d",
+                "dma %s %d %d",
                 entry->device, DMA_OPT_UI_INDEX(index), defaultOpt);
             cliDefaultPrintLinef(dumpMask, equalsDefault,
                 "# %s %d: DMA%d Stream %d Channel %d",
                 entry->device, DMA_OPT_UI_INDEX(index), DMA_CODE_CONTROLLER(dmaCode), DMA_CODE_STREAM(dmaCode), DMA_CODE_CHANNEL(dmaCode));
         } else {
             cliDefaultPrintLinef(dumpMask, equalsDefault,
-                "dmaopt %s %d NONE",
+                "dma %s %d NONE",
                 entry->device, DMA_OPT_UI_INDEX(index));
         }
     }
 
     if (currentOpt != DMA_OPT_UNUSED) {
         cliDumpPrintLinef(dumpMask, equalsDefault,
-            "dmaopt %s %d %d",
+            "dma %s %d %d",
             entry->device, DMA_OPT_UI_INDEX(index), currentOpt);
 
         const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByPeripheral(entry->peripheral, index, currentOpt);
@@ -4796,19 +4696,17 @@ static void printPeripheralDmaopt(dmaoptEntry_t *entry, int index, uint8_t dumpM
         cliDumpPrintLinef(dumpMask, equalsDefault,
             "# %s %d: DMA%d Stream %d Channel %d",
             entry->device, DMA_OPT_UI_INDEX(index), DMA_CODE_CONTROLLER(dmaCode), DMA_CODE_STREAM(dmaCode), DMA_CODE_CHANNEL(dmaCode));
-    } else {
-        if (!(dumpMask & HIDE_UNUSED)) {
-            cliDumpPrintLinef(dumpMask, equalsDefault,
-                "dmaopt %s %d NONE",
-                entry->device, DMA_OPT_UI_INDEX(index));
-        }
+    } else if (!(dumpMask & HIDE_UNUSED)) {
+        cliDumpPrintLinef(dumpMask, equalsDefault,
+            "dma %s %d NONE",
+            entry->device, DMA_OPT_UI_INDEX(index));
     }
 }
 
 #if defined(USE_TIMER_MGMT)
 static void printTimerDmaopt(const timerIOConfig_t *timerIoConfig, uint8_t dumpMask)
 {
-    const char *format = "dmaopt pin %c%02d %d";
+    const char *format = "dma pin %c%02d %d";
 
     const ioTag_t ioTag = timerIoConfig->ioTag;
 
@@ -4819,7 +4717,7 @@ static void printTimerDmaopt(const timerIOConfig_t *timerIoConfig, uint8_t dumpM
     const dmaoptValue_t dmaopt = timerIoConfig->dmaopt;
     const timerHardware_t *timer = timerGetByTag(ioTag);
 
-    if (dmaopt != DMA_OPT_UNUSED && !(dumpMask & HIDE_UNUSED)) {
+    if (dmaopt != DMA_OPT_UNUSED) {
         cliDumpPrintLinef(dumpMask, false, format,
             IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag),
             dmaopt
@@ -4834,13 +4732,11 @@ static void printTimerDmaopt(const timerIOConfig_t *timerIoConfig, uint8_t dumpM
             IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag),
             DMA_CODE_CONTROLLER(dmaCode), DMA_CODE_STREAM(dmaCode), DMA_CODE_CHANNEL(dmaCode)
         );
-    } else {
-        if (!(dumpMask & HIDE_UNUSED)) {
-            cliDumpPrintLinef(dumpMask, false,
-                "dmaopt pin %c%02d NONE",
-                IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag)
-            );
-        }
+    } else if (!(dumpMask & HIDE_UNUSED)) {
+        cliDumpPrintLinef(dumpMask, false,
+            "dma pin %c%02d NONE",
+            IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag)
+        );
     }
 }
 #endif
@@ -4868,14 +4764,8 @@ static void cliDmaopt(char *cmdline)
 
     // Peripheral name or command option
     pch = strtok_r(cmdline, " ", &saveptr);
-
     if (!pch) {
         printDmaopt(DUMP_MASTER | HIDE_UNUSED);
-        return;
-    }
-
-    if (strcasecmp(pch, "all") == 0) {
-        printDmaopt(DUMP_MASTER);
         return;
     }
 
@@ -4885,8 +4775,9 @@ static void cliDmaopt(char *cmdline)
             entry = &dmaoptEntryTable[i];
         }
     }
+
     if (!entry && strcasecmp(pch, "pin") != 0) {
-        cliPrintLinef("bad device %s", pch);
+        cliPrintErrorLinef("BAD DEVICE: %s", pch);
         return;
     }
 
@@ -4905,7 +4796,7 @@ static void cliDmaopt(char *cmdline)
     if (entry) {
         index = atoi(pch) - 1;
         if (index < 0 || index >= entry->maxIndex) {
-            cliPrintLinef("bad index %s", pch);
+            cliPrintErrorLinef("BAD INDEX: '%s'", pch ? pch : "");
             return;
         }
 
@@ -4921,7 +4812,7 @@ static void cliDmaopt(char *cmdline)
     } else {
         // It's a pin
         if (!pch || !(strToPin(pch, &ioTag) && IOGetByTag(ioTag))) {
-            cliPrintErrorLinef("INVALID PIN: '%s'", pch);
+            cliPrintErrorLinef("INVALID PIN: '%s'", pch ? pch : "");
 
             return;
         }
@@ -4988,19 +4879,19 @@ static void cliDmaopt(char *cmdline)
             if (entry) {
                 *optaddr = optval;
 
-                cliPrintLinef("dmaopt %s %d: changed from %s to %s", entry->device, DMA_OPT_UI_INDEX(index), orgvalString, optvalString);
+                cliPrintLinef("dma %s %d: changed from %s to %s", entry->device, DMA_OPT_UI_INDEX(index), orgvalString, optvalString);
             } else {
 #if defined(USE_TIMER_MGMT)
                 timerIoConfig->dmaopt = optval;
 #endif
 
-                cliPrintLinef("dmaopt pin %c%02d: changed from %s to %s", IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag), orgvalString, optvalString);
+                cliPrintLinef("dma pin %c%02d: changed from %s to %s", IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag), orgvalString, optvalString);
             }
         } else {
             if (entry) {
-                cliPrintLinef("dmaopt %s %d: no change: %s", entry->device, DMA_OPT_UI_INDEX(index), orgvalString);
+                cliPrintLinef("dma %s %d: no change: %s", entry->device, DMA_OPT_UI_INDEX(index), orgvalString);
             } else {
-                cliPrintLinef("dmaopt %c%02d: no change: %s", IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag),orgvalString);
+                cliPrintLinef("dma %c%02d: no change: %s", IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag),orgvalString);
             }
         }
     } else {
@@ -5008,6 +4899,117 @@ static void cliDmaopt(char *cmdline)
     }
 }
 #endif // USE_DMA_SPEC
+
+static void cliDma(char* cmdline)
+{
+    int len = strlen(cmdline);
+    if (len && strncasecmp(cmdline, "show", len) == 0) {
+        printDma();
+
+        return;
+    }
+
+#if defined(USE_DMA_SPEC)
+    cliDmaopt(cmdline);
+#else
+    cliShowParseError();
+#endif
+}
+
+static void cliResource(char *cmdline)
+{
+    char *pch = NULL;
+    char *saveptr;
+
+    pch = strtok_r(cmdline, " ", &saveptr);
+    if (!pch) {
+        printResource(DUMP_MASTER | HIDE_UNUSED);
+
+        return;
+    } else if (strcasecmp(pch, "show") == 0) {
+#ifdef MINIMAL_CLI
+        cliPrintLine("IO");
+#else
+        cliPrintLine("Currently active IO resource assignments:\r\n(reboot to update)");
+        cliRepeat('-', 20);
+#endif
+        for (int i = 0; i < DEFIO_IO_USED_COUNT; i++) {
+            const char* owner;
+            owner = ownerNames[ioRecs[i].owner];
+
+            cliPrintf("%c%02d: %s", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner);
+            if (ioRecs[i].index > 0) {
+                cliPrintf(" %d", ioRecs[i].index);
+            }
+            cliPrintLinefeed();
+        }
+
+        pch = strtok_r(NULL, " ", &saveptr);
+        if (strcasecmp(pch, "all") == 0) {
+            cliDma("show");
+        }
+
+        return;
+    }
+
+    uint8_t resourceIndex = 0;
+    int index = 0;
+    for (resourceIndex = 0; ; resourceIndex++) {
+        if (resourceIndex >= ARRAYLEN(resourceTable)) {
+            cliPrintErrorLinef("INVALID RESOURCE NAME: '%s'", pch);
+            return;
+        }
+
+	const char * resourceName = ownerNames[resourceTable[resourceIndex].owner];
+        if (strncasecmp(pch, resourceName, strlen(resourceName)) == 0) {
+            break;
+        }
+    }
+
+    pch = strtok_r(NULL, " ", &saveptr);
+    index = atoi(pch);
+
+    if (resourceTable[resourceIndex].maxIndex > 0 || index > 0) {
+        if (index <= 0 || index > MAX_RESOURCE_INDEX(resourceTable[resourceIndex].maxIndex)) {
+            cliShowArgumentRangeError("INDEX", 1, MAX_RESOURCE_INDEX(resourceTable[resourceIndex].maxIndex));
+            return;
+        }
+        index -= 1;
+
+        pch = strtok_r(NULL, " ", &saveptr);
+    }
+
+    ioTag_t *tag = getIoTag(resourceTable[resourceIndex], index);
+
+    if (strlen(pch) > 0) {
+        if (strToPin(pch, tag)) {
+            if (*tag == IO_TAG_NONE) {
+#ifdef MINIMAL_CLI
+                cliPrintLine("Freed");
+#else
+                cliPrintLine("Resource is freed");
+#endif
+                return;
+            } else {
+                ioRec_t *rec = IO_Rec(IOGetByTag(*tag));
+                if (rec) {
+                    resourceCheck(resourceIndex, index, *tag);
+#ifdef MINIMAL_CLI
+                    cliPrintLinef(" %c%02d set", IO_GPIOPortIdx(rec) + 'A', IO_GPIOPinIdx(rec));
+#else
+                    cliPrintLinef("\r\nResource is set to %c%02d", IO_GPIOPortIdx(rec) + 'A', IO_GPIOPinIdx(rec));
+#endif
+                } else {
+                    cliShowParseError();
+                }
+                return;
+            }
+        }
+    }
+
+    cliShowParseError();
+}
+
 #endif // USE_RESOURCE_MGMT
 
 #ifdef USE_TIMER_MGMT
@@ -5025,13 +5027,11 @@ static void printTimer(uint8_t dumpMask)
             continue;
         }
 
-        if (timerIndex != 0 && !(dumpMask & HIDE_UNUSED)) {
-            cliDumpPrintLinef(dumpMask, false, format,
-                IO_GPIOPortIdxByTag(ioTag) + 'A', 
-                IO_GPIOPinIdxByTag(ioTag),
-                timerIndex - 1
-                );
-        }
+        cliDumpPrintLinef(dumpMask, false, format,
+            IO_GPIOPortIdxByTag(ioTag) + 'A', 
+            IO_GPIOPinIdxByTag(ioTag),
+            timerIndex - 1
+        );
     }
 }
 
@@ -5040,10 +5040,12 @@ static void cliTimer(char *cmdline)
     int len = strlen(cmdline);
 
     if (len == 0) {
-        printTimer(DUMP_MASTER | HIDE_UNUSED);
-        return;
-    } else if (strncasecmp(cmdline, "list", len) == 0) {
         printTimer(DUMP_MASTER);
+
+        return;
+    } else if (strncasecmp(cmdline, "show", len) == 0) {
+        cliPrintErrorLinef("NOT IMPLEMENTED YET");
+
         return;
     }
     
@@ -5178,7 +5180,7 @@ static void printConfig(char *cmdline, bool doDiff)
         printTimer(dumpMask);
 #endif
 #ifdef USE_DMA_SPEC
-        cliPrintHashLine("dmaopt");
+        cliPrintHashLine("dma");
         printDmaopt(dumpMask);
 #endif
 #endif
@@ -5413,9 +5415,10 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("display_name", "display name of craft", NULL, cliDisplayName),
 #endif
 #ifdef USE_RESOURCE_MGMT
-    CLI_COMMAND_DEF("dma", "list dma utilisation", NULL, cliDma),
 #ifdef USE_DMA_SPEC
-    CLI_COMMAND_DEF("dmaopt", "assign dma spec to a device", "<device> <index> <optnum>", cliDmaopt),
+    CLI_COMMAND_DEF("dma", "show/set DMA assignments", "<> | <device> <index> list | <device> <index> [<option>|none] | list | show", cliDma),
+#else
+    CLI_COMMAND_DEF("dma", "show DMA assignments", "show", cliDma),
 #endif
 #endif
 #ifdef USE_DSHOT
@@ -5479,7 +5482,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("rc_smoothing_info", "show rc_smoothing operational settings", NULL, cliRcSmoothing),
 #endif // USE_RC_SMOOTHING_FILTER
 #ifdef USE_RESOURCE_MGMT
-    CLI_COMMAND_DEF("resource", "show/set resources", NULL, cliResource),
+    CLI_COMMAND_DEF("resource", "show/set resources", "<> | <resource name> <index> [<pin>|none] | show [all]", cliResource),
 #endif
     CLI_COMMAND_DEF("rxfail", "show/set rx failsafe settings", NULL, cliRxFailsafe),
     CLI_COMMAND_DEF("rxrange", "configure rx channel ranges", NULL, cliRxRange),
@@ -5513,7 +5516,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("tasks", "show task stats", NULL, cliTasks),
 #endif
 #ifdef USE_TIMER_MGMT
-    CLI_COMMAND_DEF("timer", "show timer configuration", NULL, cliTimer),
+    CLI_COMMAND_DEF("timer", "show/set timers", "<> | <pin> list | <pin> [<option>|none] | list | show", cliTimer),
 #endif
     CLI_COMMAND_DEF("version", "show version", NULL, cliVersion),
 #ifdef USE_VTX_CONTROL
