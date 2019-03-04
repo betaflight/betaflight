@@ -229,6 +229,7 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     motor->useProshot = (pwmProtocolType == PWM_TYPE_PROSHOT1000);
 #endif
     motor->timerHardware = timerHardware;
+    motor->dmaRef = dmaRef;
 
     TIM_TypeDef *timer = timerHardware->tim;
     const IO_t motorIO = IOGetByTag(timerHardware->tag);
