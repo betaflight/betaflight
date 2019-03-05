@@ -329,7 +329,8 @@ typedef enum {
     DUMP_ALL = (1 << 3),
     DO_DIFF = (1 << 4),
     SHOW_DEFAULTS = (1 << 5),
-    HIDE_UNUSED = (1 << 6)
+    HIDE_UNUSED = (1 << 6),
+    HARDWARE_ONLY = (1 << 7),
 } dumpFlags_e;
 
 static void cliPrintfva(const char *format, va_list va)
@@ -586,6 +587,7 @@ static uint16_t getValueOffset(const clivalue_t *value)
 {
     switch (value->type & VALUE_SECTION_MASK) {
     case MASTER_VALUE:
+    case HARDWARE_VALUE:
         return value->offset;
     case PROFILE_VALUE:
         return value->offset + sizeof(pidProfile_t) * getPidProfileIndexToUse();
@@ -643,7 +645,7 @@ static void dumpAllValues(uint16_t valueSection, uint8_t dumpMask)
     for (uint32_t i = 0; i < valueTableEntryCount; i++) {
         const clivalue_t *value = &valueTable[i];
         bufWriterFlush(cliWriter);
-        if ((value->type & VALUE_SECTION_MASK) == valueSection) {
+        if ((value->type & VALUE_SECTION_MASK) == valueSection || ((valueSection == MASTER_VALUE) && (value->type & VALUE_SECTION_MASK) == HARDWARE_VALUE)) {
             dumpPgValue(value, dumpMask);
         }
     }
@@ -5106,6 +5108,8 @@ static void printConfig(char *cmdline, bool doDiff)
         dumpMask = DUMP_PROFILE; // only
     } else if ((options = checkCommand(cmdline, "rates"))) {
         dumpMask = DUMP_RATES; // only
+    } else if ((options = checkCommand(cmdline, "hardware"))) {
+        dumpMask = DUMP_MASTER | HARDWARE_ONLY;   // Show only hardware related settings (useful to generate unified target configs).
     } else if ((options = checkCommand(cmdline, "all"))) {
         dumpMask = DUMP_ALL;   // all profiles and rates
     } else {
@@ -5117,6 +5121,7 @@ static void printConfig(char *cmdline, bool doDiff)
     }
     
     backupAndResetConfigs();
+
     if (checkCommand(options, "defaults")) {
         dumpMask = dumpMask | SHOW_DEFAULTS;   // add default values as comments for changed values
     }
@@ -5138,14 +5143,16 @@ static void printConfig(char *cmdline, bool doDiff)
 #endif
         }
 
-        if ((dumpMask & (DUMP_ALL | DO_DIFF)) == (DUMP_ALL | DO_DIFF)) {
-            cliPrintHashLine("reset configuration to default settings");
-            cliPrint("defaults nosave");
-            cliPrintLinefeed();
-        }
+        if (!(dumpMask & HARDWARE_ONLY)) {
+            if ((dumpMask & (DUMP_ALL | DO_DIFF)) == (DUMP_ALL | DO_DIFF)) {
+                cliPrintHashLine("reset configuration to default settings");
+                cliPrint("defaults nosave");
+                cliPrintLinefeed();
+            }
 
-        cliPrintHashLine("name");
-        printName(dumpMask, &pilotConfig_Copy);
+            cliPrintHashLine("name");
+            printName(dumpMask, &pilotConfig_Copy);
+        }
 
 #ifdef USE_RESOURCE_MGMT
         cliPrintHashLine("resources");
@@ -5161,126 +5168,135 @@ static void printConfig(char *cmdline, bool doDiff)
 #endif
 
 #ifndef USE_QUAD_MIXER_ONLY
-        cliPrintHashLine("mixer");
-        const bool equalsDefault = mixerConfig_Copy.mixerMode == mixerConfig()->mixerMode;
-        const char *formatMixer = "mixer %s";
-        cliDefaultPrintLinef(dumpMask, equalsDefault, formatMixer, mixerNames[mixerConfig()->mixerMode - 1]);
-        cliDumpPrintLinef(dumpMask, equalsDefault, formatMixer, mixerNames[mixerConfig_Copy.mixerMode - 1]);
+        if (!(dumpMask & HARDWARE_ONLY)) {
+            cliPrintHashLine("mixer");
+            const bool equalsDefault = mixerConfig_Copy.mixerMode == mixerConfig()->mixerMode;
+            const char *formatMixer = "mixer %s";
+            cliDefaultPrintLinef(dumpMask, equalsDefault, formatMixer, mixerNames[mixerConfig()->mixerMode - 1]);
+            cliDumpPrintLinef(dumpMask, equalsDefault, formatMixer, mixerNames[mixerConfig_Copy.mixerMode - 1]);
 
-        cliDumpPrintLinef(dumpMask, customMotorMixer(0)->throttle == 0.0f, "\r\nmmix reset\r\n");
+            cliDumpPrintLinef(dumpMask, customMotorMixer(0)->throttle == 0.0f, "\r\nmmix reset\r\n");
 
-        printMotorMix(dumpMask, customMotorMixer_CopyArray, customMotorMixer(0));
+            printMotorMix(dumpMask, customMotorMixer_CopyArray, customMotorMixer(0));
 
 #ifdef USE_SERVOS
-        cliPrintHashLine("servo");
-        printServo(dumpMask, servoParams_CopyArray, servoParams(0));
+            cliPrintHashLine("servo");
+            printServo(dumpMask, servoParams_CopyArray, servoParams(0));
 
-        cliPrintHashLine("servo mix");
-        // print custom servo mixer if exists
-        cliDumpPrintLinef(dumpMask, customServoMixers(0)->rate == 0, "smix reset\r\n");
-        printServoMix(dumpMask, customServoMixers_CopyArray, customServoMixers(0));
+            cliPrintHashLine("servo mix");
+            // print custom servo mixer if exists
+            cliDumpPrintLinef(dumpMask, customServoMixers(0)->rate == 0, "smix reset\r\n");
+            printServoMix(dumpMask, customServoMixers_CopyArray, customServoMixers(0));
 #endif
+        }
 #endif
 
-        cliPrintHashLine("feature");
-        printFeature(dumpMask, &featureConfig_Copy, featureConfig());
+        if (!(dumpMask & HARDWARE_ONLY)) {
+            cliPrintHashLine("feature");
+            printFeature(dumpMask, &featureConfig_Copy, featureConfig());
 
 #if defined(USE_BEEPER)
-        cliPrintHashLine("beeper");
-        printBeeper(dumpMask, beeperConfig_Copy.beeper_off_flags, beeperConfig()->beeper_off_flags, "beeper");
+            cliPrintHashLine("beeper");
+            printBeeper(dumpMask, beeperConfig_Copy.beeper_off_flags, beeperConfig()->beeper_off_flags, "beeper");
 
 #if defined(USE_DSHOT)
-        cliPrintHashLine("beacon");
-        printBeeper(dumpMask, beeperConfig_Copy.dshotBeaconOffFlags, beeperConfig()->dshotBeaconOffFlags, "beacon");
+            cliPrintHashLine("beacon");
+            printBeeper(dumpMask, beeperConfig_Copy.dshotBeaconOffFlags, beeperConfig()->dshotBeaconOffFlags, "beacon");
 #endif
 #endif // USE_BEEPER
 
-        cliPrintHashLine("map");
-        printMap(dumpMask, &rxConfig_Copy, rxConfig());
+            cliPrintHashLine("map");
+            printMap(dumpMask, &rxConfig_Copy, rxConfig());
 
-        cliPrintHashLine("serial");
-        printSerial(dumpMask, &serialConfig_Copy, serialConfig());
+            cliPrintHashLine("serial");
+            printSerial(dumpMask, &serialConfig_Copy, serialConfig());
 
 #ifdef USE_LED_STRIP_STATUS_MODE
-        cliPrintHashLine("led");
-        printLed(dumpMask, ledStripStatusModeConfig_Copy.ledConfigs, ledStripStatusModeConfig()->ledConfigs);
+            cliPrintHashLine("led");
+            printLed(dumpMask, ledStripStatusModeConfig_Copy.ledConfigs, ledStripStatusModeConfig()->ledConfigs);
 
-        cliPrintHashLine("color");
-        printColor(dumpMask, ledStripStatusModeConfig_Copy.colors, ledStripStatusModeConfig()->colors);
+            cliPrintHashLine("color");
+            printColor(dumpMask, ledStripStatusModeConfig_Copy.colors, ledStripStatusModeConfig()->colors);
 
-        cliPrintHashLine("mode_color");
-        printModeColor(dumpMask, &ledStripStatusModeConfig_Copy, ledStripStatusModeConfig());
+            cliPrintHashLine("mode_color");
+            printModeColor(dumpMask, &ledStripStatusModeConfig_Copy, ledStripStatusModeConfig());
 #endif
 
-        cliPrintHashLine("aux");
-        printAux(dumpMask, modeActivationConditions_CopyArray, modeActivationConditions(0));
+            cliPrintHashLine("aux");
+            printAux(dumpMask, modeActivationConditions_CopyArray, modeActivationConditions(0));
 
-        cliPrintHashLine("adjrange");
-        printAdjustmentRange(dumpMask, adjustmentRanges_CopyArray, adjustmentRanges(0));
+            cliPrintHashLine("adjrange");
+            printAdjustmentRange(dumpMask, adjustmentRanges_CopyArray, adjustmentRanges(0));
 
-        cliPrintHashLine("rxrange");
-        printRxRange(dumpMask, rxChannelRangeConfigs_CopyArray, rxChannelRangeConfigs(0));
+            cliPrintHashLine("rxrange");
+            printRxRange(dumpMask, rxChannelRangeConfigs_CopyArray, rxChannelRangeConfigs(0));
 
 #ifdef USE_VTX_CONTROL
-        cliPrintHashLine("vtx");
-        printVtx(dumpMask, &vtxConfig_Copy, vtxConfig());
+            cliPrintHashLine("vtx");
+            printVtx(dumpMask, &vtxConfig_Copy, vtxConfig());
 #endif
 
 #ifdef USE_VTX_TABLE
-        cliPrintHashLine("vtxtable");
-        printVtxTable(dumpMask, &vtxTableConfig_Copy, vtxTableConfig());
+            cliPrintHashLine("vtxtable");
+            printVtxTable(dumpMask, &vtxTableConfig_Copy, vtxTableConfig());
 #endif
 
-        cliPrintHashLine("rxfail");
-        printRxFailsafe(dumpMask, rxFailsafeChannelConfigs_CopyArray, rxFailsafeChannelConfigs(0));
+            cliPrintHashLine("rxfail");
+            printRxFailsafe(dumpMask, rxFailsafeChannelConfigs_CopyArray, rxFailsafeChannelConfigs(0));
 
 #ifdef USE_OSD
-        cliPrintHashLine("display_name");
-        printDisplayName(dumpMask, &pilotConfig_Copy);
+            cliPrintHashLine("display_name");
+            printDisplayName(dumpMask, &pilotConfig_Copy);
 #endif
+        }
 
         cliPrintHashLine("master");
-        dumpAllValues(MASTER_VALUE, dumpMask);
-
-        if (dumpMask & DUMP_ALL) {
-            for (uint32_t pidProfileIndex = 0; pidProfileIndex < PID_PROFILE_COUNT; pidProfileIndex++) {
-                cliDumpPidProfile(pidProfileIndex, dumpMask);
-            }
-            cliPrintHashLine("restore original profile selection");
-
-            pidProfileIndexToUse = systemConfig_Copy.pidProfileIndex;
-
-            cliProfile("");
-
-            pidProfileIndexToUse = CURRENT_PROFILE_INDEX;
-
-            for (uint32_t rateIndex = 0; rateIndex < CONTROL_RATE_PROFILE_COUNT; rateIndex++) {
-                cliDumpRateProfile(rateIndex, dumpMask);
-            }
-            cliPrintHashLine("restore original rateprofile selection");
-
-            rateProfileIndexToUse = systemConfig_Copy.activeRateProfile;
-
-            cliRateProfile("");
-
-            rateProfileIndexToUse = CURRENT_PROFILE_INDEX;
-
-            cliPrintHashLine("save configuration");
-            cliPrint("save");
+        if (dumpMask & HARDWARE_ONLY) {
+            dumpAllValues(HARDWARE_VALUE, dumpMask);
         } else {
-            cliDumpPidProfile(systemConfig_Copy.pidProfileIndex, dumpMask);
+            dumpAllValues(MASTER_VALUE, dumpMask);
 
+            if (dumpMask & DUMP_ALL) {
+                for (uint32_t pidProfileIndex = 0; pidProfileIndex < PID_PROFILE_COUNT; pidProfileIndex++) {
+                    cliDumpPidProfile(pidProfileIndex, dumpMask);
+                }
+
+                pidProfileIndexToUse = systemConfig_Copy.pidProfileIndex;
+                cliPrintHashLine("restore original profile selection");
+
+                cliProfile("");
+
+                pidProfileIndexToUse = CURRENT_PROFILE_INDEX;
+
+                for (uint32_t rateIndex = 0; rateIndex < CONTROL_RATE_PROFILE_COUNT; rateIndex++) {
+                    cliDumpRateProfile(rateIndex, dumpMask);
+                }
+
+                rateProfileIndexToUse = systemConfig_Copy.activeRateProfile;
+                cliPrintHashLine("restore original rateprofile selection");
+
+                cliRateProfile("");
+
+                rateProfileIndexToUse = CURRENT_PROFILE_INDEX;
+
+                cliPrintHashLine("save configuration");
+                cliPrint("save");
+            } else {
+                cliDumpPidProfile(systemConfig_Copy.pidProfileIndex, dumpMask);
+
+                cliDumpRateProfile(systemConfig_Copy.activeRateProfile, dumpMask);
+            }
+        }
+
+        if (dumpMask & DUMP_PROFILE) {
+            cliDumpPidProfile(systemConfig_Copy.pidProfileIndex, dumpMask);
+        }
+
+        if (dumpMask & DUMP_RATES) {
             cliDumpRateProfile(systemConfig_Copy.activeRateProfile, dumpMask);
         }
     }
 
-    if (dumpMask & DUMP_PROFILE) {
-        cliDumpPidProfile(systemConfig_Copy.pidProfileIndex, dumpMask);
-    }
-
-    if (dumpMask & DUMP_RATES) {
-        cliDumpRateProfile(systemConfig_Copy.activeRateProfile, dumpMask);
-    }
     // restore configs from copies
     restoreConfigs();
 }
@@ -5376,7 +5392,7 @@ const clicmd_t cmdTable[] = {
         CLI_COMMAND_DEF("color", "configure colors", NULL, cliColor),
 #endif
     CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", "[nosave]", cliDefaults),
-    CLI_COMMAND_DEF("diff", "list configuration changes from default", "[master|profile|rates|all] {defaults}", cliDiff),
+    CLI_COMMAND_DEF("diff", "list configuration changes from default", "[master|profile|rates|hardware|all] {defaults}", cliDiff),
 #ifdef USE_OSD
     CLI_COMMAND_DEF("display_name", "display name of craft", NULL, cliDisplayName),
 #endif
@@ -5390,7 +5406,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("dshotprog", "program DShot ESC(s)", "<index> <command>+", cliDshotProg),
 #endif
     CLI_COMMAND_DEF("dump", "dump configuration",
-        "[master|profile|rates|all] {defaults}", cliDump),
+        "[master|profile|rates|hardware|all] {defaults}", cliDump),
 #ifdef USE_ESCSERIAL
     CLI_COMMAND_DEF("escprog", "passthrough esc to serial", "<mode [sk/bl/ki/cc]> <index>", cliEscPassthrough),
 #endif
