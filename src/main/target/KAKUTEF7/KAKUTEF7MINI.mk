@@ -1,0 +1,1 @@
+#KAKUTEF7MINI.mk file
