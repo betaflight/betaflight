@@ -197,7 +197,12 @@ bool ws2811LedStripHardwareInit(ioTag_t ioTag)
     DMA_InitStructure.DMA_Priority = DMA_Priority_High;
     DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
 #endif
+
+#if defined(USE_WS2811_SINGLE_COLOUR)
     DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
+#else
+    DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
+#endif
 
     DMA_Init(dmaRef, &DMA_InitStructure);
     TIM_DMACmd(timer, timerDmaSource(timerHardware->channel), ENABLE);
