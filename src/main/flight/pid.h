@@ -44,8 +44,9 @@
 // This value gives the same "feel" as the previous Kd default of 26 (26 * DTERM_SCALE)
 #define FEEDFORWARD_SCALE 0.013754f
 
-// Full iterm suppression at 40deg/sec * default cutoff of 20
-#define ITERM_RELAX_SETPOINT_THRESHOLD 30.0f
+// Full iterm suppression in setpoint mode at high-passed setpoint rate > 40deg/sec
+#define ITERM_RELAX_SETPOINT_THRESHOLD 40.0f
+#define ITERM_RELAX_CUTOFF_DEFAULT 20
 
 typedef enum {
     PID_ROLL,

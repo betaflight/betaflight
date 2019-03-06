@@ -170,7 +170,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .iterm_rotation = true,
         .smart_feedforward = false,
         .iterm_relax = ITERM_RELAX_RP,
-        .iterm_relax_cutoff = 20,
+        .iterm_relax_cutoff = ITERM_RELAX_CUTOFF_DEFAULT,
         .iterm_relax_type = ITERM_RELAX_SETPOINT,
         .acro_trainer_angle_limit = 20,
         .acro_trainer_lookahead_ms = 50,
@@ -621,7 +621,8 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     itermRelax = pidProfile->iterm_relax;
     itermRelaxType = pidProfile->iterm_relax_type;
     itermRelaxCutoff = pidProfile->iterm_relax_cutoff;
-    itermRelaxSetpointThreshold = ITERM_RELAX_SETPOINT_THRESHOLD * 20.0f / itermRelaxCutoff;
+    // adapt setpoint threshold to user changes from default cutoff value
+    itermRelaxSetpointThreshold = ITERM_RELAX_SETPOINT_THRESHOLD * ITERM_RELAX_CUTOFF_DEFAULT / itermRelaxCutoff;
 #endif
 
 #ifdef USE_ACRO_TRAINER
