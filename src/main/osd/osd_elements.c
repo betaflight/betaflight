@@ -1054,7 +1054,7 @@ static void osdElementWarnings(osdElementParms_t *element)
        gpsRescueIsConfigured() &&
        !gpsRescueIsDisabled() &&
        !gpsRescueIsAvailable()) {
-        osdFormatMessage(element->buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "NO GPS RESC");
+        osdFormatMessage(element->buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "RESCUE N/A");
         SET_BLINK(OSD_WARNINGS);
         return;
     }
@@ -1065,8 +1065,8 @@ static void osdElementWarnings(osdElementParms_t *element)
        gpsRescueIsDisabled()) {
 
         statistic_t *stats = osdGetStats();
-        if (!cmpTimeUs(stats->armed_time, OSD_GPS_RESCUE_DISABLED_WARNING_DURATION_US)) {
-            osdFormatMessage(element->buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "RESC OFF!!!");
+        if (cmpTimeUs(stats->armed_time, OSD_GPS_RESCUE_DISABLED_WARNING_DURATION_US) < 0) {
+            osdFormatMessage(element->buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "RESCUE OFF");
             SET_BLINK(OSD_WARNINGS);
             return;
         }
