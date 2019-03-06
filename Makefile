@@ -215,6 +215,7 @@ CC_DEBUG_OPTIMISATION   := $(OPTIMISE_DEFAULT)
 CC_DEFAULT_OPTIMISATION := $(OPTIMISATION_BASE) $(OPTIMISE_DEFAULT)
 CC_SPEED_OPTIMISATION   := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
 CC_SIZE_OPTIMISATION    := $(OPTIMISATION_BASE) $(OPTIMISE_SIZE)
+CC_NO_OPTIMISATION      := 
 
 CFLAGS     += $(ARCH_FLAGS) \
               $(addprefix -D,$(OPTIONS)) \
@@ -314,19 +315,33 @@ $(TARGET_ELF): $(TARGET_OBJS) $(LD_SCRIPT)
 ifeq ($(DEBUG),GDB)
 $(OBJECT_DIR)/$(TARGET)/%.o: %.c
 	$(V1) mkdir -p $(dir $@)
-	$(V1) echo "%% (debug) $(notdir $<)" "$(STDOUT)" && \
-	$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_DEBUG_OPTIMISATION) $<
+	$(V1) $(if $(findstring $<,$(NOT_OPTIMISED_SRC)), \
+		echo "%% (not optimised) $<" "$(STDOUT)" && \
+		$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_NO_OPTIMISATION) $< \
+	, \
+		echo "%% (debug) $<" "$(STDOUT)" && \
+		$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_DEBUG_OPTIMISATION) $< \
+	)
 else
 $(OBJECT_DIR)/$(TARGET)/%.o: %.c
 	$(V1) mkdir -p $(dir $@)
-	$(V1) $(if $(findstring $(subst ./src/main/,,$<),$(SPEED_OPTIMISED_SRC)), \
-	echo "%% (speed optimised) $(notdir $<)" "$(STDOUT)" && \
-	$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_SPEED_OPTIMISATION) $<, \
-	$(if $(findstring $(subst ./src/main/,,$<),$(SIZE_OPTIMISED_SRC)), \
-	echo "%% (size optimised) $(notdir $<)" "$(STDOUT)" && \
-	$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_SIZE_OPTIMISATION) $<, \
-	echo "%% $(notdir $<)" "$(STDOUT)" && \
-	$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_DEFAULT_OPTIMISATION) $<))
+	$(V1) $(if $(findstring $<,$(NOT_OPTIMISED_SRC)), \
+		echo "%% (not optimised) $<" "$(STDOUT)" && \
+		$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_NO_OPTIMISATION) $< \
+	, \
+		$(if $(findstring $(subst ./src/main/,,$<),$(SPEED_OPTIMISED_SRC)), \
+			echo "%% (speed optimised) $<" "$(STDOUT)" && \
+			$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_SPEED_OPTIMISATION) $< \
+		, \
+			$(if $(findstring $(subst ./src/main/,,$<),$(SIZE_OPTIMISED_SRC)), \
+				echo "%% (size optimised) $<" "$(STDOUT)" && \
+				$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_SIZE_OPTIMISATION) $< \
+			, \
+				echo "%% (optimised) $<" "$(STDOUT)" && \
+				$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_DEFAULT_OPTIMISATION) $< \
+			) \
+		) \
+	)
 endif
 
 # Assemble
