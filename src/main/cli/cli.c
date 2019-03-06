@@ -250,6 +250,7 @@ extern uint32_t inputBuffer[DSHOT_TELEMETRY_INPUT_LEN];
 extern uint32_t setDirectionMicros;
 #endif
 
+typedef bool printFn(uint8_t dumpMask, bool equalsDefault, const char *format, ...);
 
 
 static void backupPgConfig(const pgRegistry_t *pg)
@@ -4638,6 +4639,28 @@ static void dmaoptToString(int optval, char *buf)
     }
 }
 
+static void printPeripheralDmaoptDetails(dmaoptEntry_t *entry, int index, const dmaoptValue_t dmaopt, const bool equalsDefault, const uint8_t dumpMask, printFn *printValue)
+{
+    if (dmaopt != DMA_OPT_UNUSED) {
+        printValue(dumpMask, equalsDefault,
+            "dma %s %d %d",
+            entry->device, DMA_OPT_UI_INDEX(index), dmaopt);
+
+        const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByPeripheral(entry->peripheral, index, dmaopt);
+        dmaCode_t dmaCode = 0;
+        if (dmaChannelSpec) {
+            dmaCode = dmaChannelSpec->code;
+        }
+        printValue(dumpMask, equalsDefault,
+            "# %s %d: DMA%d Stream %d Channel %d",
+            entry->device, DMA_OPT_UI_INDEX(index), DMA_CODE_CONTROLLER(dmaCode), DMA_CODE_STREAM(dmaCode), DMA_CODE_CHANNEL(dmaCode));
+    } else if (!(dumpMask & HIDE_UNUSED)) {
+        printValue(dumpMask, equalsDefault,
+            "dma %s %d NONE",
+            entry->device, DMA_OPT_UI_INDEX(index));
+    }
+}
+
 static void printPeripheralDmaopt(dmaoptEntry_t *entry, int index, uint8_t dumpMask)
 {
     const pgRegistry_t* pg = pgFind(entry->pgn);
@@ -4664,80 +4687,72 @@ static void printPeripheralDmaopt(dmaoptEntry_t *entry, int index, uint8_t dumpM
     bool equalsDefault = currentOpt == defaultOpt;
 
     if (defaultConfig) {
-        if (defaultOpt != DMA_OPT_UNUSED) {
-            const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByPeripheral(entry->peripheral, index, defaultOpt);
-            dmaCode_t dmaCode = 0;
-            if (dmaChannelSpec) {
-                dmaCode = dmaChannelSpec->code;
-            }
-            cliDefaultPrintLinef(dumpMask, equalsDefault,
-                "dma %s %d %d",
-                entry->device, DMA_OPT_UI_INDEX(index), defaultOpt);
-            cliDefaultPrintLinef(dumpMask, equalsDefault,
-                "# %s %d: DMA%d Stream %d Channel %d",
-                entry->device, DMA_OPT_UI_INDEX(index), DMA_CODE_CONTROLLER(dmaCode), DMA_CODE_STREAM(dmaCode), DMA_CODE_CHANNEL(dmaCode));
-        } else {
-            cliDefaultPrintLinef(dumpMask, equalsDefault,
-                "dma %s %d NONE",
-                entry->device, DMA_OPT_UI_INDEX(index));
-        }
+        printPeripheralDmaoptDetails(entry, index, defaultOpt, equalsDefault, dumpMask, cliDefaultPrintLinef);
     }
 
-    if (currentOpt != DMA_OPT_UNUSED) {
-        cliDumpPrintLinef(dumpMask, equalsDefault,
-            "dma %s %d %d",
-            entry->device, DMA_OPT_UI_INDEX(index), currentOpt);
-
-        const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByPeripheral(entry->peripheral, index, currentOpt);
-        dmaCode_t dmaCode = 0;
-        if (dmaChannelSpec) {
-            dmaCode = dmaChannelSpec->code;
-        }
-        cliDumpPrintLinef(dumpMask, equalsDefault,
-            "# %s %d: DMA%d Stream %d Channel %d",
-            entry->device, DMA_OPT_UI_INDEX(index), DMA_CODE_CONTROLLER(dmaCode), DMA_CODE_STREAM(dmaCode), DMA_CODE_CHANNEL(dmaCode));
-    } else if (!(dumpMask & HIDE_UNUSED)) {
-        cliDumpPrintLinef(dumpMask, equalsDefault,
-            "dma %s %d NONE",
-            entry->device, DMA_OPT_UI_INDEX(index));
-    }
+    printPeripheralDmaoptDetails(entry, index, currentOpt, equalsDefault, dumpMask, cliDumpPrintLinef);
 }
 
 #if defined(USE_TIMER_MGMT)
-static void printTimerDmaopt(const timerIOConfig_t *timerIoConfig, uint8_t dumpMask)
+static void printTimerDmaoptDetails(const ioTag_t ioTag, const timerHardware_t *timer, const dmaoptValue_t dmaopt, const bool equalsDefault, const uint8_t dumpMask, printFn *printValue)
 {
     const char *format = "dma pin %c%02d %d";
 
-    const ioTag_t ioTag = timerIoConfig->ioTag;
+    if (dmaopt != DMA_OPT_UNUSED) {
+        const bool printDetails = printValue(dumpMask, equalsDefault, format,
+            IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag),
+            dmaopt
+        );
+
+        if (printDetails) {
+            const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByTimerValue(timer->tim, timer->channel, dmaopt);
+            dmaCode_t dmaCode = 0;
+            if (dmaChannelSpec) {
+                dmaCode = dmaChannelSpec->code;
+                printValue(dumpMask, false,
+                    "# pin %c%02d: DMA%d Stream %d Channel %d",
+                    IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag),
+                    DMA_CODE_CONTROLLER(dmaCode), DMA_CODE_STREAM(dmaCode), DMA_CODE_CHANNEL(dmaCode)
+                );
+            }
+        }
+    } else if (!(dumpMask & HIDE_UNUSED)) {
+        printValue(dumpMask, equalsDefault,
+            "dma pin %c%02d NONE",
+            IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag)
+        );
+    }
+}
+
+static void printTimerDmaopt(const timerIOConfig_t *currentConfig, const timerIOConfig_t *defaultConfig, unsigned index, uint8_t dumpMask)
+{
+    const ioTag_t ioTag = currentConfig[index].ioTag;
 
     if (!ioTag) {
         return;
     }
 
-    const dmaoptValue_t dmaopt = timerIoConfig->dmaopt;
-    const timerHardware_t *timer = timerGetByTag(ioTag);
+    const timerHardware_t *timer = timerGetByTagAndIndex(ioTag, currentConfig[index].index);
+    const dmaoptValue_t dmaopt = currentConfig[index].dmaopt;
 
-    if (dmaopt != DMA_OPT_UNUSED) {
-        cliDumpPrintLinef(dumpMask, false, format,
-            IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag),
-            dmaopt
-        );
-        const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByTimer(timer);
-        dmaCode_t dmaCode = 0;
-        if (dmaChannelSpec) {
-            dmaCode = dmaChannelSpec->code;
+    dmaoptValue_t defaultDmaopt = DMA_OPT_UNUSED;
+    if (defaultConfig) {
+        for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
+            if (defaultConfig[i].ioTag == ioTag) {
+                defaultDmaopt = defaultConfig[index].dmaopt;
+
+                break;
+            }
         }
-        cliDumpPrintLinef(dumpMask, false,
-            "# pin %c%02d: DMA%d Stream %d Channel %d",
-            IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag),
-            DMA_CODE_CONTROLLER(dmaCode), DMA_CODE_STREAM(dmaCode), DMA_CODE_CHANNEL(dmaCode)
-        );
-    } else if (!(dumpMask & HIDE_UNUSED)) {
-        cliDumpPrintLinef(dumpMask, false,
-            "dma pin %c%02d NONE",
-            IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag)
-        );
     }
+
+    const bool equalsDefault = defaultDmaopt == dmaopt;
+
+    if (defaultConfig) {
+        printTimerDmaoptDetails(ioTag, timer, defaultDmaopt, equalsDefault, dumpMask, cliDefaultPrintLinef);
+    }
+
+    printTimerDmaoptDetails(ioTag, timer, dmaopt, equalsDefault, dumpMask, cliDumpPrintLinef);
 }
 #endif
 
@@ -4751,8 +4766,20 @@ static void printDmaopt(uint8_t dumpMask)
     }
 
 #if defined(USE_TIMER_MGMT)
+    const pgRegistry_t* pg = pgFind(PG_TIMER_IO_CONFIG);
+    const timerIOConfig_t *currentConfig;
+    const timerIOConfig_t *defaultConfig;
+
+    if (configIsInCopy) {
+        currentConfig = (timerIOConfig_t *)pg->copy;
+        defaultConfig = (timerIOConfig_t *)pg->address;
+    } else {
+        currentConfig = (timerIOConfig_t *)pg->address;
+        defaultConfig = NULL;
+    }
+
     for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
-        printTimerDmaopt(timerIOConfig(i), dumpMask);
+        printTimerDmaopt(currentConfig, defaultConfig, i, dumpMask);
     }
 #endif
 }
@@ -4766,6 +4793,11 @@ static void cliDmaopt(char *cmdline)
     pch = strtok_r(cmdline, " ", &saveptr);
     if (!pch) {
         printDmaopt(DUMP_MASTER | HIDE_UNUSED);
+
+        return;
+    } else if (strcasecmp(pch, "list") == 0) {
+        cliPrintErrorLinef("NOT IMPLEMENTED YET");
+
         return;
     }
 
@@ -5018,17 +5050,50 @@ static void printTimer(uint8_t dumpMask)
 {
     const char *format = "timer %c%02d %d";
     
-    for (unsigned int i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
+    const pgRegistry_t* pg = pgFind(PG_TIMER_IO_CONFIG);
+    const timerIOConfig_t *currentConfig;
+    const timerIOConfig_t *defaultConfig;
 
-        const ioTag_t ioTag = timerIOConfig(i)->ioTag;
-        const uint8_t timerIndex = timerIOConfig(i)->index;
+    if (configIsInCopy) {
+        currentConfig = (timerIOConfig_t *)pg->copy;
+        defaultConfig = (timerIOConfig_t *)pg->address;
+    } else {
+        currentConfig = (timerIOConfig_t *)pg->address;
+        defaultConfig = NULL;
+    }
+
+    for (unsigned int i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
+        const ioTag_t ioTag = currentConfig[i].ioTag;
 
         if (!ioTag) {
             continue;
         }
 
-        cliDumpPrintLinef(dumpMask, false, format,
-            IO_GPIOPortIdxByTag(ioTag) + 'A', 
+        const uint8_t timerIndex = currentConfig[i].index;
+
+        uint8_t defaultTimerIndex = 0;
+        if (defaultConfig) {
+            for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
+                if (defaultConfig[i].ioTag == ioTag) {
+                    defaultTimerIndex = defaultConfig[i].index;
+
+                    break;
+                }
+            }
+        }
+
+        const bool equalsDefault = defaultTimerIndex == timerIndex;
+
+        if (defaultConfig && defaultTimerIndex) {
+            cliDefaultPrintLinef(dumpMask, equalsDefault, format,
+                IO_GPIOPortIdxByTag(ioTag) + 'A',
+                IO_GPIOPinIdxByTag(ioTag),
+                defaultTimerIndex - 1
+            );
+        }
+
+        cliDumpPrintLinef(dumpMask, equalsDefault, format,
+            IO_GPIOPortIdxByTag(ioTag) + 'A',
             IO_GPIOPinIdxByTag(ioTag),
             timerIndex - 1
         );
@@ -5041,6 +5106,10 @@ static void cliTimer(char *cmdline)
 
     if (len == 0) {
         printTimer(DUMP_MASTER);
+
+        return;
+    } else if (strncasecmp(cmdline, "list", len) == 0) {
+        cliPrintErrorLinef("NOT IMPLEMENTED YET");
 
         return;
     } else if (strncasecmp(cmdline, "show", len) == 0) {
@@ -5073,7 +5142,8 @@ static void cliTimer(char *cmdline)
     }
 
     if (timerIOIndex < 0) {
-        cliPrintErrorLinef("INDEX OUT OF RANGE.");
+        cliPrintErrorLinef("PIN TIMER MAP FULL.");
+
         return;
     }
 
