@@ -491,17 +491,23 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 #else
         sbufWriteU8(dst, 0);  // 0 == FC
 #endif
-        // Board communication capabilities (uint8)
-        // Bit 0: 1 iff the board has VCP
-        // Bit 1: 1 iff the board supports software serial
-        uint8_t commCapabilities = 0;
+        // Target capabilities (uint8)
+#define TARGET_HAS_VCP_BIT 0
+#define TARGET_HAS_SOFTSERIAL_BIT 1
+#define TARGET_IS_UNIFIED_BIT 2
+
+        uint8_t targetCapabilities = 0;
 #ifdef USE_VCP
-        commCapabilities |= 1 << 0;
+        targetCapabilities |= 1 << TARGET_HAS_VCP_BIT;
 #endif
 #if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
-        commCapabilities |= 1 << 1;
+        targetCapabilities |= 1 << TARGET_HAS_SOFTSERIAL_BIT;
 #endif
-        sbufWriteU8(dst, commCapabilities);
+#if defined(USE_UNIFIED_TARGET)
+        targetCapabilities |= 1 << TARGET_IS_UNIFIED_BIT;
+#endif
+
+        sbufWriteU8(dst, targetCapabilities);
 
         // Target name with explicit length
         sbufWriteU8(dst, strlen(targetName));
