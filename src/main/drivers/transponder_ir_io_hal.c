@@ -45,6 +45,8 @@ volatile uint8_t transponderIrDataTransferInProgress = 0;
 static IO_t transponderIO = IO_NONE;
 static TIM_HandleTypeDef TimHandle;
 static uint16_t timerChannel = 0;
+static uint8_t output;
+static uint8_t alternateFunction;
 
 #if !defined(STM32F7)
 #error "Transponder (via HAL) not supported on this MCU."
@@ -69,6 +71,8 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     const timerHardware_t *timerHardware = timerGetByTag(ioTag);
     TIM_TypeDef *timer = timerHardware->tim;
     timerChannel = timerHardware->channel;
+    output = timerHardware->output;
+    alternateFunction = timerHardware->alternateFunction;
 
 #if defined(USE_DMA_SPEC)
     const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByTimer(timerHardware);
@@ -253,7 +257,7 @@ void transponderIrDisable(void)
     }
 
     TIM_DMACmd(&TimHandle, timerChannel, DISABLE);
-    if (timerHardware->output & TIMER_OUTPUT_N_CHANNEL) {
+    if (output & TIMER_OUTPUT_N_CHANNEL) {
         HAL_TIMEx_PWMN_Stop(&TimHandle, timerChannel);
     } else {
         HAL_TIM_PWM_Stop(&TimHandle, timerChannel);
@@ -268,7 +272,7 @@ void transponderIrDisable(void)
     IOLo(transponderIO);
 #endif
 
-    IOConfigGPIOAF(transponderIO, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLDOWN), timerHardware->alternateFunction);
+    IOConfigGPIOAF(transponderIO, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLDOWN), alternateFunction);
 }
 
 void transponderIrTransmit(void)
