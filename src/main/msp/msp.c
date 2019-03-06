@@ -1401,6 +1401,17 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, gyroConfig()->gyro_lowpass_type);
         sbufWriteU8(dst, gyroConfig()->gyro_lowpass2_type);
         sbufWriteU16(dst, currentPidProfile->dterm_lowpass2_hz);
+#if defined(USE_DYN_LPF)
+        sbufWriteU16(dst, gyroConfig()->dyn_lpf_gyro_min_hz);
+        sbufWriteU16(dst, gyroConfig()->dyn_lpf_gyro_max_hz);
+        sbufWriteU16(dst, currentPidProfile->dyn_lpf_dterm_min_hz);
+        sbufWriteU16(dst, currentPidProfile->dyn_lpf_dterm_max_hz);
+#else
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
+#endif
 
         break;
     case MSP_PID_ADVANCED:
@@ -2037,6 +2048,20 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             gyroConfigMutable()->gyro_lowpass2_type = sbufReadU8(src);
             currentPidProfile->dterm_lowpass2_hz = sbufReadU16(src);
         }
+        if (sbufBytesRemaining(src) >= 8) {
+#if defined(USE_DYN_LPF)
+            gyroConfigMutable()->dyn_lpf_gyro_min_hz = sbufReadU16(src);
+            gyroConfigMutable()->dyn_lpf_gyro_max_hz = sbufReadU16(src);
+            currentPidProfile->dyn_lpf_dterm_min_hz = sbufReadU16(src);
+            currentPidProfile->dyn_lpf_dterm_max_hz = sbufReadU16(src);
+#else
+            sbufReadU16(src);
+            sbufReadU16(src);
+            sbufReadU16(src);
+            sbufReadU16(src);
+#endif
+        }
+
         // reinitialize the gyro filters with the new values
         validateAndFixGyroConfig();
         gyroInitFilters();
