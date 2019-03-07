@@ -425,7 +425,7 @@ rx_spi_received_e sfhssSpiDataReceived(uint8_t *packet)
 
 bool sfhssSpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
-    UNUSED(rxSpiConfig);
+    rxSpiCommonIOInit(rxSpiConfig);
 
     cc2500SpiInit();
 
