@@ -1407,6 +1407,8 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, gyroConfig()->gyro_lowpass_type);
         sbufWriteU8(dst, gyroConfig()->gyro_lowpass2_type);
         sbufWriteU16(dst, currentPidProfile->dterm_lowpass2_hz);
+        // Added in MSP API 1.41
+        sbufWriteU8(dst, currentPidProfile->dterm_filter2_type);
 #if defined(USE_DYN_LPF)
         sbufWriteU16(dst, gyroConfig()->dyn_lpf_gyro_min_hz);
         sbufWriteU16(dst, gyroConfig()->dyn_lpf_gyro_max_hz);
@@ -2054,7 +2056,9 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             gyroConfigMutable()->gyro_lowpass2_type = sbufReadU8(src);
             currentPidProfile->dterm_lowpass2_hz = sbufReadU16(src);
         }
-        if (sbufBytesRemaining(src) >= 8) {
+        if (sbufBytesRemaining(src) >= 9) {
+            // Added in MSP API 1.41
+            currentPidProfile->dterm_filter2_type = sbufReadU8(src);
 #if defined(USE_DYN_LPF)
             gyroConfigMutable()->dyn_lpf_gyro_min_hz = sbufReadU16(src);
             gyroConfigMutable()->dyn_lpf_gyro_max_hz = sbufReadU16(src);
