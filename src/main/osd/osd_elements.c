@@ -640,12 +640,11 @@ static void osdElementGpsFlightDistance(osdElementParms_t *element)
 static void osdElementGpsHomeDirection(osdElementParms_t *element)
 {
     if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
-        if (GPS_distanceToHome > 0) {
+        if (GPS_distanceToHome > 5) {
             const int h = GPS_directionToHome - DECIDEGREES_TO_DEGREES(attitude.values.yaw);
             element->buff[0] = osdGetDirectionSymbolFromHeading(h);
         } else {
-            // We don't have a HOME symbol in the font, by now we use this
-            element->buff[0] = SYM_THR1;
+            element->buff[0] = SYM_HOME;
         }
 
     } else {
@@ -653,7 +652,7 @@ static void osdElementGpsHomeDirection(osdElementParms_t *element)
         element->buff[0] = SYM_COLON;
     }
 
-    element->buff[1] = 0;
+    element->buff[1] = '\0';
 }
 
 static void osdElementGpsHomeDistance(osdElementParms_t *element)
