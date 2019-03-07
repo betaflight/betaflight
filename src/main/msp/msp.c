@@ -2144,7 +2144,8 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
             currentPidProfile->antiGravityMode = sbufReadU8(src);
         }
-        if (sbufBytesRemaining(src) >= 5) {
+        if (sbufBytesRemaining(src) >= 7) {
+            // Added in MSP API 1.41
 #if defined(USE_D_MIN)
             currentPidProfile->d_min[PID_ROLL] = sbufReadU8(src);
             currentPidProfile->d_min[PID_PITCH] = sbufReadU8(src);
@@ -2158,8 +2159,6 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             sbufReadU8(src);
             sbufReadU8(src);
 #endif
-        }
-        if (sbufBytesRemaining(src) >= 2) {
 #if defined(USE_INTEGRATED_YAW_CONTROL)
             currentPidProfile->use_integrated_yaw = sbufReadU8(src);
             currentPidProfile->integrated_yaw_relax = sbufReadU8(src);
