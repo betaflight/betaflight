@@ -686,13 +686,14 @@ static void osdElementGpsSats(osdElementParms_t *element)
 
 static void osdElementGpsSpeed(osdElementParms_t *element)
 {
-    // FIXME ideally we want to use SYM_KMH symbol but it's not in the font any more, so we use K (M for MPH)
     switch (osdConfig()->units) {
     case OSD_UNIT_IMPERIAL:
-        tfp_sprintf(element->buff, "%3dM", CM_S_TO_MPH(gpsSol.groundSpeed));
+        tfp_sprintf(element->buff, "%3d", CM_S_TO_MPH(gpsSol.groundSpeed));
+		element->buff[3] = SYM_MPH;
         break;
     default:
-        tfp_sprintf(element->buff, "%3dK", CM_S_TO_KM_H(gpsSol.groundSpeed));
+        tfp_sprintf(element->buff, "%3d", CM_S_TO_KM_H(gpsSol.groundSpeed));
+		element->buff[3] = SYM_KMH;
         break;
     }
 }
