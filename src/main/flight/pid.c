@@ -170,7 +170,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .iterm_rotation = false,
         .smart_feedforward = false,
         .iterm_relax = ITERM_RELAX_RP,
-        .iterm_relax_cutoff = 20,
+        .iterm_relax_cutoff = ITERM_RELAX_CUTOFF_DEFAULT,
         .iterm_relax_type = ITERM_RELAX_SETPOINT,
         .acro_trainer_angle_limit = 20,
         .acro_trainer_lookahead_ms = 50,
@@ -574,8 +574,9 @@ void pidInitConfig(const pidProfile_t *pidProfile)
         pidCoefficient[axis].Kf = FEEDFORWARD_SCALE * (pidProfile->pid[axis].F / 100.0f);
     }
 #ifdef USE_INTEGRATED_YAW_CONTROL
-    if (!pidProfile->use_integrated_yaw) {
-#endif        
+    if (!pidProfile->use_integrated_yaw)
+#endif
+    {
         pidCoefficient[FD_YAW].Ki *= 2.5f;
     }
 

@@ -94,6 +94,9 @@ void setDefaultTestSettings(void) {
     pidProfile->pid[PID_YAW]   =  { 70, 45, 20, 60 };
     pidProfile->pid[PID_LEVEL] =  { 50, 50, 75, 0 };
 
+    // Compensate for the upscaling done without 'use_integrated_yaw'
+    pidProfile->pid[PID_YAW].I = pidProfile->pid[PID_YAW].I / 2.5f;
+
     pidProfile->pidSumLimit = PIDSUM_LIMIT;
     pidProfile->pidSumLimitYaw = PIDSUM_LIMIT_YAW;
     pidProfile->yaw_lowpass_hz = 0;
