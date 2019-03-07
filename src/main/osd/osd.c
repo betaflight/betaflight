@@ -257,10 +257,10 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 static void osdDrawLogo(int x, int y)
 {
     // display logo and help
-    int fontOffset = 160;
+    int fontOffset = SYM_LOGO_START;
     for (int row = 0; row < 4; row++) {
         for (int column = 0; column < 24; column++) {
-            if (fontOffset <= SYM_END_OF_FONT)
+            if (fontOffset <= SYM_LOGO_END)
                 displayWriteChar(osdDisplayPort, x + column, y + row, fontOffset++);
         }
     }
