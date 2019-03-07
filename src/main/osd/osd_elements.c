@@ -676,7 +676,7 @@ static void osdElementGpsLatitude(osdElementParms_t *element)
 
 static void osdElementGpsLongitude(osdElementParms_t *element)
 {
-    osdFormatCoordinate(element->buff, SYM_DIRECTION+2, gpsSol.llh.lon);
+    osdFormatCoordinate(element->buff, SYM_DIRECTION + 2, gpsSol.llh.lon);
 }
 
 static void osdElementGpsSats(osdElementParms_t *element)
@@ -688,12 +688,10 @@ static void osdElementGpsSpeed(osdElementParms_t *element)
 {
     switch (osdConfig()->units) {
     case OSD_UNIT_IMPERIAL:
-        tfp_sprintf(element->buff, "%3d", CM_S_TO_MPH(gpsSol.groundSpeed));
-		element->buff[3] = SYM_MPH;
+        tfp_sprintf(element->buff, "%3d%c", CM_S_TO_MPH(gpsSol.groundSpeed), SYM_MPH);
         break;
     default:
-        tfp_sprintf(element->buff, "%3d", CM_S_TO_KM_H(gpsSol.groundSpeed));
-		element->buff[3] = SYM_KMH;
+        tfp_sprintf(element->buff, "%3d%c", CM_S_TO_KM_H(gpsSol.groundSpeed), SYM_KMH);
         break;
     }
 }
@@ -811,7 +809,7 @@ static void osdElementNumericalVario(osdElementParms_t *element)
 #endif // USE_GPS
     if (haveBaro || haveGps) {
         const int verticalSpeed = osdGetMetersToSelectedUnit(getEstimatedVario());
-        const char directionSymbol = verticalSpeed < 0 ? SYM_DIRECTION+4 : SYM_DIRECTION;
+        const char directionSymbol = verticalSpeed < 0 ? SYM_DIRECTION + 4 : SYM_DIRECTION;
         tfp_sprintf(element->buff, "%c%01d.%01d", directionSymbol, abs(verticalSpeed / 100), abs((verticalSpeed % 100) / 10));
     } else {
         // We use this symbol when we don't have a valid measure
