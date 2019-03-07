@@ -54,14 +54,13 @@ static uint8_t timerIndexByTag(ioTag_t ioTag)
     return 0;
 }
 
-const timerHardware_t *timerGetByTag(ioTag_t ioTag)
+const timerHardware_t *timerGetByTagAndIndex(ioTag_t ioTag, unsigned timerIndex)
 {
     if (!ioTag) {
         return NULL;
     }
 
 #if TIMER_CHANNEL_COUNT > 0
-    uint8_t timerIndex = timerIndexByTag(ioTag);
     uint8_t index = 1;
     for (unsigned i = 0; i < TIMER_CHANNEL_COUNT; i++) {
         if (TIMER_HARDWARE[i].tag == ioTag) {
@@ -72,9 +71,17 @@ const timerHardware_t *timerGetByTag(ioTag_t ioTag)
         }
     }
 #else
-    UNUSED(timerIndexByTag);
+    UNUSED(timerIndex);
 #endif
+
     return NULL;
+}
+
+const timerHardware_t *timerGetByTag(ioTag_t ioTag)
+{
+    uint8_t timerIndex = timerIndexByTag(ioTag);
+
+    return timerGetByTagAndIndex(ioTag, timerIndex);
 }
 
 ioTag_t timerioTagGetByUsage(timerUsageFlag_e usageFlag, uint8_t index)

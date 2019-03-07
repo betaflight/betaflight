@@ -252,7 +252,8 @@ dmaoptValue_t dmaoptByTag(ioTag_t ioTag)
 #else
     UNUSED(ioTag);
 #endif
-    return -1;
+
+    return DMA_OPT_UNUSED;
 }
 
 const dmaChannelSpec_t *dmaGetChannelSpecByTimerValue(TIM_TypeDef *tim, uint8_t channel, dmaoptValue_t dmaopt)
@@ -300,6 +301,6 @@ dmaoptValue_t dmaGetOptionByTimer(const timerHardware_t *timer)
         }
     }
 
-    return -1;
+    return DMA_OPT_UNUSED;
 }
 #endif // USE_DMA_SPEC
