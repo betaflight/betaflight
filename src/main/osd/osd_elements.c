@@ -100,6 +100,7 @@
 #include "sensors/battery.h"
 #include "sensors/esc_sensor.h"
 #include "sensors/sensors.h"
+#include "sensors/rpm_filter.h"
 
 
 #define AH_SYMBOL_COUNT 9
@@ -156,6 +157,42 @@ static uint32_t blinkBits[(OSD_ITEM_COUNT + 31) / 32];
 #define IS_BLINK(item) (blinkBits[(item) / 32] & (1 << ((item) % 32)))
 #define BLINK(item) (IS_BLINK(item) && blinkState)
 
+#if defined(USE_ESC_SENSOR) || defined(USE_RPM_FILTER)
+typedef int (*getEscRpmOrFreqFnPtr)(int i);
+
+static int getEscRpm(int i)
+{
+#ifdef USE_RPM_FILTER
+    if (motorConfig()->dev.useDshotTelemetry) {
+        return 100.0f / (motorConfig()->motorPoleCount / 2.0f) * getDshotTelemetry(i);
+    }
+#endif 
+    if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
+        return calcEscRpm(getEscSensorData(i)->rpm);
+    } else { 
+        return 0;
+    }
+}
+
+static int getEscRpmFreq(int i) 
+{
+    return getEscRpm(i) / 60;
+}
+
+static void renderOsdEscRpmOrFreq(getEscRpmOrFreqFnPtr escFnPtr, osdElementParms_t *element)
+{
+    int x = element->elemPosX;
+    int y = element->elemPosY;
+    for (int i=0; i < getMotorCount(); i++) {
+        char rpmStr[6];
+        const int rpm = MIN((*escFnPtr)(i),99999);
+        const int len = tfp_sprintf(rpmStr, "%d", rpm);
+        rpmStr[len] = '\0'; 
+        displayWrite(element->osdDisplayPort, x, y + i, rpmStr);
+    }
+    element->drawElement = false;
+}
+#endif
 
 #if defined(USE_ADC_INTERNAL) || defined(USE_ESC_SENSOR)
 int osdConvertTemperatureToSelectedUnit(int tempInDegreesCelcius)
@@ -577,14 +614,19 @@ static void osdElementEscTemperature(osdElementParms_t *element)
         tfp_sprintf(element->buff, "%3d%c", osdConvertTemperatureToSelectedUnit(osdEscDataCombined->temperature), osdGetTemperatureSymbolForSelectedUnit());
     }
 }
+#endif // USE_ESC_SENSOR
 
+#if defined(USE_ESC_SENSOR) || defined(USE_RPM_FILTER)
 static void osdElementEscRpm(osdElementParms_t *element)
 {
-        if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
-            tfp_sprintf(element->buff, "%5d", osdEscDataCombined == NULL ? 0 : calcEscRpm(osdEscDataCombined->rpm));
-        }
+    renderOsdEscRpmOrFreq(&getEscRpm,element);
 }
-#endif // USE_ESC_SENSOR
+
+static void osdElementEscRpmFreq(osdElementParms_t *element)
+{
+    renderOsdEscRpmOrFreq(&getEscRpmFreq,element);
+}
+#endif
 
 static void osdElementFlymode(osdElementParms_t *element)
 {
@@ -1293,6 +1335,8 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_COMPASS_BAR]             = osdElementCompassBar,
 #ifdef USE_ESC_SENSOR
     [OSD_ESC_TMP]                 = osdElementEscTemperature,
+#endif
+#if defined(USE_RPM_FILTER) || defined(USE_ESC_SENSOR)
     [OSD_ESC_RPM]                 = osdElementEscRpm,
 #endif
     [OSD_REMAINING_TIME_ESTIMATE] = osdElementRemainingTimeEstimate,
@@ -1327,6 +1371,9 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_STICK_OVERLAY_RIGHT]     = osdElementStickOverlay,
 #endif
     [OSD_DISPLAY_NAME]            = osdElementDisplayName,
+#if defined(USE_RPM_FILTER) || defined(USE_ESC_SENSOR)
+    [OSD_ESC_RPM_FREQ]            = osdElementEscRpmFreq,
+#endif
 };
 
 void osdFormatAltitudeString(char * buff, int32_t altitudeCm)
@@ -1374,11 +1421,16 @@ void osdAnalyzeActiveElements(void)
         osdAddActiveElement(OSD_FLIGHT_DIST);
     }
 #endif // GPS
-
-#ifdef USE_ESC_SENSOR
+#ifdef USE_ESC_SENSOR  	
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
         osdAddActiveElement(OSD_ESC_TMP);
+    }
+#endif
+
+#if defined(USE_RPM_FILTER) || defined(USE_ESC_SENSOR)
+    if ((featureIsEnabled(FEATURE_ESC_SENSOR)) || (motorConfig()->dev.useDshotTelemetry)) {
         osdAddActiveElement(OSD_ESC_RPM);
+        osdAddActiveElement(OSD_ESC_RPM_FREQ);
     }
 #endif
 }
