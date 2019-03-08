@@ -295,7 +295,6 @@
 #define USE_ESCSERIAL_SIMONK
 #define USE_SERIAL_4WAY_SK_BOOTLOADER
 #define USE_CMS_FAILSAFE_MENU
-#define USE_SMART_FEEDFORWARD
 #define USE_TELEMETRY_SENSORS_DISABLED_DETAILS
 // Re-enable this after 4.0 has been released, and remove the define from STM32F4DISCOVERY
 //#define USE_VTX_TABLE
