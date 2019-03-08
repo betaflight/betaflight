@@ -161,7 +161,7 @@
 #if defined(ELINF405)
 
 #define USE_OSD
-#define DEFAULT_FEATURES        FEATURE_OSD
+#define DEFAULT_FEATURES        (FEATURE_OSD | FEATURE_SOFTSERIAL)
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI2
 #define MAX7456_SPI_CS_PIN      PC8
@@ -251,6 +251,9 @@
 #define DEFAULT_MIXER           MIXER_QUADX
 #define ENABLE_DSHOT_DMAR       true
 #define USE_TARGET_CONFIG
+#define SOFTSERIAL1_TX_PIN      PC9
+#define SOFTSERIAL2_RX_PIN      PA8
+
 #else
 
 #define PINIO1_PIN              PC8 // DTR pin
@@ -268,7 +271,7 @@
 
 #define USE_ESCSERIAL
 #if defined(ELINF405)
-#define ESCSERIAL_TIMER_TX_PIN  PC6
+#define ESCSERIAL_TIMER_TX_PIN  PB6
 #else
 #define ESCSERIAL_TIMER_TX_PIN  PB14  // (HARDARE=0,PPM)
 #endif
@@ -325,6 +328,11 @@
 #define VBAT_ADC_CHANNEL        ADC_Channel_13
 #endif
 
+#if defined(ELINF405)
+#define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
+#define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC 
+#endif
+
 #if defined(AIRBOTF4SD)
 #define RSSI_ADC_PIN            PA0
 #endif
@@ -350,7 +358,7 @@
 #define USABLE_TIMER_CHANNEL_COUNT 13
 #define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8) | TIM_N(12) )
 #elif defined(ELINF405)
-#define USABLE_TIMER_CHANNEL_COUNT 8
+#define USABLE_TIMER_CHANNEL_COUNT 9
 #define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(11) )
 #else
 #define USABLE_TIMER_CHANNEL_COUNT 12
