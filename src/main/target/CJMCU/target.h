@@ -55,11 +55,12 @@
 // #define SOFT_I2C_PB1011 // If SOFT_I2C is enabled above, need to define pinout as well (I2C1 = PB67, I2C2 = PB1011)
 // #define SOFT_I2C_PB67
 
-#define USE_SPI
-#define USE_SPI_DEVICE_1
 
 #define USE_RX_NRF24
 #ifdef USE_RX_NRF24
+
+#define USE_SPI
+#define USE_SPI_DEVICE_1
 
 #define USE_RX_SPI
 #define RX_SPI_INSTANCE         SPI1
