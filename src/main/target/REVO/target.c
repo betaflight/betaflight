@@ -37,7 +37,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM1,  CH1,  PA8, TIM_USE_ANY,   0, 0),
     DEF_TIM(TIM3,  CH4,  PC9, TIM_USE_ANY,   0, 0),
     DEF_TIM(TIM4,  CH1,  PB6, TIM_USE_PPM | TIM_USE_LED,   0, 0),
-    DEF_TIM(TIM4,  CH2,  PB7, TIM_USE_CAMERA_CONTROL, 0, 0),
+    DEF_TIM(TIM4,  CH2,  PB7, TIM_USE_ANY, 0, 0), // Camera control
 #else
     DEF_TIM(TIM12, CH1, PB14, TIM_USE_PWM | TIM_USE_PPM,   0, 0), // PPM (5th pin on FlexiIO port)
     DEF_TIM(TIM12, CH2, PB15, TIM_USE_PWM,                 0, 0), // S2_IN
