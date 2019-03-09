@@ -160,6 +160,8 @@
 
 #if defined(ELINF405)
 
+#define CAMERA_CONTROL_PIN      PB7
+
 #define USE_OSD
 #define DEFAULT_FEATURES        (FEATURE_OSD | FEATURE_SOFTSERIAL)
 #define USE_MAX7456
