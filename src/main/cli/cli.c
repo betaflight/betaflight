@@ -5323,8 +5323,8 @@ static void printConfig(char *cmdline, bool doDiff)
 #endif
 #endif
 
-#ifndef USE_QUAD_MIXER_ONLY
         if (!(dumpMask & HARDWARE_ONLY)) {
+#ifndef USE_QUAD_MIXER_ONLY
             cliPrintHashLine("mixer");
             const bool equalsDefault = mixerConfig_Copy.mixerMode == mixerConfig()->mixerMode;
             const char *formatMixer = "mixer %s";
@@ -5344,10 +5344,8 @@ static void printConfig(char *cmdline, bool doDiff)
             cliDumpPrintLinef(dumpMask, customServoMixers(0)->rate == 0, "smix reset\r\n");
             printServoMix(dumpMask, customServoMixers_CopyArray, customServoMixers(0));
 #endif
-        }
 #endif
 
-        if (!(dumpMask & HARDWARE_ONLY)) {
             cliPrintHashLine("feature");
             printFeature(dumpMask, &featureConfig_Copy, featureConfig());
 
@@ -5441,21 +5439,17 @@ static void printConfig(char *cmdline, bool doDiff)
                 cliDumpPidProfile(systemConfig_Copy.pidProfileIndex, dumpMask);
 
                 cliDumpRateProfile(systemConfig_Copy.activeRateProfile, dumpMask);
-            }
-        }
-
-        if (dumpMask & DUMP_PROFILE) {
-            cliDumpPidProfile(systemConfig_Copy.pidProfileIndex, dumpMask);
-        }
-
-        if (dumpMask & DUMP_RATES) {
-            cliDumpRateProfile(systemConfig_Copy.activeRateProfile, dumpMask);
 
 #ifdef USE_CLI_BATCH
-            cliPrintHashLine("end the command batch");
-            cliPrintLine("batch end");
+                cliPrintHashLine("end the command batch");
+                cliPrintLine("batch end");
 #endif
+            }
         }
+    } else if (dumpMask & DUMP_PROFILE) {
+        cliDumpPidProfile(systemConfig_Copy.pidProfileIndex, dumpMask);
+    } else if (dumpMask & DUMP_RATES) {
+        cliDumpRateProfile(systemConfig_Copy.activeRateProfile, dumpMask);
     }
 
     // restore configs from copies
