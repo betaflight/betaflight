@@ -1,4 +1,7 @@
-Last updated: 17/02/2019
+# Manufacturer Ids
+
+This is the official list of manufacturer ids (`manufacturer_id` in the target config) that will be supported for loading onto unified targets by Betaflight configurator.
+
 
 |Manufacturer Id|Name|Contact|
 |-|-|-|
@@ -13,6 +16,3 @@ Last updated: 17/02/2019
 |HBRO|Holybro|http://www.holybro.com/index.html|
 |MTKS|Matek Systems|http://www.mateksys.com/|
 |RCTI|RCTimer|http://rctimer.com/|
-
-
-This is the official list of manufacturer ids (`manufacturer_id` in the target config) that will be supported for loading onto unified targets by Betaflight configurator.
