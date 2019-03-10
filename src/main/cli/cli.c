@@ -5281,12 +5281,28 @@ static void printConfig(char *cmdline, bool doDiff)
 
     backupAndResetConfigs();
 
+#ifdef USE_CLI_BATCH
+    bool batchModeEnabled = false;
+#endif
     if ((dumpMask & DUMP_MASTER) || (dumpMask & DUMP_ALL)) {
         cliPrintHashLine("version");
         cliVersion(NULL);
-        cliPrintLinefeed();
+
+        if (!(dumpMask & BARE)) {
+#ifdef USE_CLI_BATCH
+            cliPrintHashLine("start the command batch");
+            cliPrintLine("batch start");
+            batchModeEnabled = true;
+#endif
+
+            if ((dumpMask & (DUMP_ALL | DO_DIFF)) == (DUMP_ALL | DO_DIFF)) {
+                cliPrintHashLine("reset configuration to default settings");
+                cliPrintLine("defaults nosave");
+            }
+        }
 
 #if defined(USE_BOARD_INFO)
+        cliPrintLinefeed();
         cliBoardName("");
         cliManufacturerId("");
 #endif
@@ -5295,19 +5311,6 @@ static void printConfig(char *cmdline, bool doDiff)
             cliMcuId(NULL);
 #if defined(USE_SIGNATURE)
             cliSignature("");
-#endif
-        }
-
-        if (!(dumpMask & BARE)) {
-            if ((dumpMask & (DUMP_ALL | DO_DIFF)) == (DUMP_ALL | DO_DIFF)) {
-                cliPrintHashLine("reset configuration to default settings");
-                cliPrint("defaults nosave");
-                cliPrintLinefeed();
-            }
-
-#ifdef USE_CLI_BATCH
-            cliPrintHashLine("start the command batch");
-            cliPrintLine("batch start");
 #endif
         }
 
@@ -5413,11 +5416,6 @@ static void printConfig(char *cmdline, bool doDiff)
         cliPrintHashLine("master");
         if (dumpMask & HARDWARE_ONLY) {
             dumpAllValues(HARDWARE_VALUE, dumpMask);
-
-#ifdef USE_CLI_BATCH
-            cliPrintHashLine("end the command batch");
-            cliPrintLine("batch end");
-#endif
         } else {
             dumpAllValues(MASTER_VALUE, dumpMask);
 
@@ -5449,6 +5447,9 @@ static void printConfig(char *cmdline, bool doDiff)
 
                     cliPrintHashLine("save configuration");
                     cliPrint("save");
+#ifdef USE_CLI_BATCH
+                    batchModeEnabled = false;
+#endif
                 }
 
                 rateProfileIndexToUse = CURRENT_PROFILE_INDEX;
@@ -5456,11 +5457,6 @@ static void printConfig(char *cmdline, bool doDiff)
                 cliDumpPidProfile(systemConfig_Copy.pidProfileIndex, dumpMask);
 
                 cliDumpRateProfile(systemConfig_Copy.activeRateProfile, dumpMask);
-
-#ifdef USE_CLI_BATCH
-                cliPrintHashLine("end the command batch");
-                cliPrintLine("batch end");
-#endif
             }
         }
     } else if (dumpMask & DUMP_PROFILE) {
@@ -5468,6 +5464,13 @@ static void printConfig(char *cmdline, bool doDiff)
     } else if (dumpMask & DUMP_RATES) {
         cliDumpRateProfile(systemConfig_Copy.activeRateProfile, dumpMask);
     }
+
+#ifdef USE_CLI_BATCH
+    if (batchModeEnabled) {
+        cliPrintHashLine("end the command batch");
+        cliPrintLine("batch end");
+    }
+#endif
 
     // restore configs from copies
     restoreConfigs();
