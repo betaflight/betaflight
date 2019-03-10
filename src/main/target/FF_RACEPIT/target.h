@@ -24,8 +24,8 @@
 #define USE_TARGET_CONFIG
 
 /*--------------LED----------------*/
-#define LED0_PIN                PB5
-#define LED1_PIN                PB4 
+#define LED0_PIN                PB9
+#define LED1_PIN                PB8
 /*---------------------------------*/
 
 /*------------BEEPER---------------*/
@@ -36,7 +36,7 @@
 
 /*---------- VTX POWER SWITCH---------*/
 #define USE_PINIO
-#define PINIO1_PIN              PB8 // VTX power switcher
+#define PINIO1_PIN              PC0 // VTX power switcher
 #define USE_PINIOBOX
 
 /*----------CAMERA CONTROL---------*/
@@ -71,6 +71,14 @@
 #define MAX7456_SPI_CS_PIN      SPI2_NSS_PIN 
 #define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
+/*---------------------------------*/
+
+/*------------FLASH----------------*/
+#define FLASH_CS_PIN            PA15
+#define FLASH_SPI_INSTANCE      SPI3
+
+#define USE_FLASHFS
+#define USE_FLASH_M25P16
 /*---------------------------------*/
 
 /*-----------USB-UARTs-------------*/
@@ -118,6 +126,12 @@
 #define SPI2_SCK_PIN            PB13
 #define SPI2_MISO_PIN           PB14
 #define SPI2_MOSI_PIN           PB15
+
+#define USE_SPI_DEVICE_3
+#define SPI3_NSS_PIN            PA15
+#define SPI3_SCK_PIN            PB3
+#define SPI3_MISO_PIN           PB4
+#define SPI3_MOSI_PIN           PB5
 /*---------------------------------*/
 
 /*-------------I2C-----------------*/
@@ -147,6 +161,7 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART3
+#define DEFAULT_FEATURES        ( FEATURE_LED_STRIP | FEATURE_OSD | FEATURE_MOTOR_STOP )
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
