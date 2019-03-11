@@ -16,3 +16,4 @@ This is the official list of manufacturer ids (`manufacturer_id` in the target c
 |HBRO|Holybro|http://www.holybro.com/index.html|
 |MTKS|Matek Systems|http://www.mateksys.com/|
 |RCTI|RCTimer|http://rctimer.com/|
+|SPRO|Seriously Pro Racing (SP Racing)|http://seriouslypro.com/|
