@@ -165,7 +165,6 @@ extern uint8_t __config_end;
 
 #include "cli.h"
 
-
 static serialPort_t *cliPort;
 
 #ifdef STM32F1
@@ -2969,15 +2968,17 @@ static void cliFeature(char *cmdline)
 }
 
 #if defined(USE_BEEPER)
-static void printBeeper(uint8_t dumpMask, const uint32_t offFlags, const uint32_t offFlagsDefault, const char *name)
+static void printBeeper(uint8_t dumpMask, const uint32_t offFlags, const uint32_t offFlagsDefault, const char *name, const uint32_t allowedFlags)
 {
     const uint8_t beeperCount = beeperTableEntryCount();
     for (int32_t i = 0; i < beeperCount - 1; i++) {
-        const char *formatOff = "%s -%s";
-        const char *formatOn = "%s %s";
-        const uint32_t beeperModeMask = beeperModeMaskForTableIndex(i);
-        cliDefaultPrintLinef(dumpMask, ~(offFlags ^ offFlagsDefault) & beeperModeMask, offFlags & beeperModeMask ? formatOn : formatOff, name, beeperNameForTableIndex(i));
-        cliDumpPrintLinef(dumpMask, ~(offFlags ^ offFlagsDefault) & beeperModeMask, offFlags & beeperModeMask ? formatOff : formatOn, name, beeperNameForTableIndex(i));
+        if (beeperModeMaskForTableIndex(i) & allowedFlags) {
+            const char *formatOff = "%s -%s";
+            const char *formatOn = "%s %s";
+            const uint32_t beeperModeMask = beeperModeMaskForTableIndex(i);
+            cliDefaultPrintLinef(dumpMask, ~(offFlags ^ offFlagsDefault) & beeperModeMask, offFlags & beeperModeMask ? formatOn : formatOff, name, beeperNameForTableIndex(i));
+            cliDumpPrintLinef(dumpMask, ~(offFlags ^ offFlagsDefault) & beeperModeMask, offFlags & beeperModeMask ? formatOff : formatOn, name, beeperNameForTableIndex(i));
+        }
     }
 }
 
@@ -5351,11 +5352,11 @@ static void printConfig(char *cmdline, bool doDiff)
 
 #if defined(USE_BEEPER)
             cliPrintHashLine("beeper");
-            printBeeper(dumpMask, beeperConfig_Copy.beeper_off_flags, beeperConfig()->beeper_off_flags, "beeper");
+            printBeeper(dumpMask, beeperConfig_Copy.beeper_off_flags, beeperConfig()->beeper_off_flags, "beeper", BEEPER_ALLOWED_MODES);
 
 #if defined(USE_DSHOT)
             cliPrintHashLine("beacon");
-            printBeeper(dumpMask, beeperConfig_Copy.dshotBeaconOffFlags, beeperConfig()->dshotBeaconOffFlags, "beacon");
+            printBeeper(dumpMask, beeperConfig_Copy.dshotBeaconOffFlags, beeperConfig()->dshotBeaconOffFlags, "beacon", DSHOT_BEACON_ALLOWED_MODES);
 #endif
 #endif // USE_BEEPER
 
