@@ -216,27 +216,32 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 #define DMAINIT dmaInitStruct
 #endif
 
+    dmaStream_t *dmaRef;
+#if defined(STM32F4)
+    uint32_t dmaChannel;
+#endif
 #if defined(USE_DMA_SPEC)
     const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByTimer(timerHardware);
 
-    if (dmaSpec == NULL) {
-        return;
-    }
-
-    dmaStream_t *dmaRef = dmaSpec->ref;
+    if (dmaSpec != NULL) {
+        dmaRef = dmaSpec->ref;
 #if defined(STM32F4)
-    uint32_t dmaChannel = dmaSpec->channel;
+        dmaChannel = dmaSpec->channel;
 #endif
+    }
 #else
-    dmaStream_t *dmaRef = timerHardware->dmaRef;
+    dmaRef = timerHardware->dmaRef;
 #if defined(STM32F4)
-    uint32_t dmaChannel = timerHardware->dmaChannel;
+    dmaChannel = timerHardware->dmaChannel;
 #endif
 #endif
 
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
         dmaRef = timerHardware->dmaTimUPRef;
+#if defined(STM32F4)
+        dmaChannel = timerHardware->dmaTimUPChannel;
+#endif
     }
 #endif
 
