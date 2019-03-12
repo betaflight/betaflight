@@ -45,6 +45,7 @@
 #include "fc/runtime_config.h"
 
 #include "flight/imu.h"
+#include "flight/mixer.h"
 
 #include "io/gps.h"
 
@@ -62,6 +63,8 @@
 #include "telemetry/srxl.h"
 
 #include "drivers/vtx_common.h"
+#include "drivers/pwm_output.h"
+
 #include "io/vtx_tramp.h"
 #include "io/vtx_smartaudio.h"
 
@@ -136,6 +139,7 @@ bool srxlFrameQos(sbuf_t *dst, timeUs_t currentTimeUs)
     return true;
 }
 
+
 /*
 typedef struct
 {
@@ -155,17 +159,54 @@ typedef struct
 
 #define SPEKTRUM_RPM_UNUSED 0xffff
 #define SPEKTRUM_TEMP_UNUSED 0x7fff
+#define MICROSEC_PER_MINUTE 60000000
 
-bool srxlFrameRpm(sbuf_t *dst, timeUs_t currentTimeUs)
+//Original range of 1 - 65534 uSec gives an RPM range of 915 - 60000000rpm, 60MegaRPM
+#define SPEKTRUM_MIN_RPM 999      // Min RPM to show the user, indicating RPM is really below 999
+#define SPEKTRUM_MAX_RPM 60000000
+
+uint16_t getMotorAveragePeriod(void)
 {
+
+#if defined( USE_ESC_SENSOR_TELEMETRY) || defined( USE_DSHOT_TELEMETRY)
+    uint32_t rpm = 0;
     uint16_t period_us = SPEKTRUM_RPM_UNUSED;
-#ifdef USE_ESC_SENSOR_TELEMETRY
+
+#if defined( USE_ESC_SENSOR_TELEMETRY)
     escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
-    if (escData != NULL && escData->rpm > 0) {
-        period_us = 60000000 / escData->rpm; // revs/minute -> microSeconds
+    if (escData != NULL) {
+        rpm = escData->rpm;
     }
 #endif
 
+#if defined( USE_DSHOT_TELEMETRY)
+    if (useDshotTelemetry) {
+        uint16_t motors = getMotorCount();
+
+        if (motors > 0) {
+            for (int motor = 0; motor < motors; motor++) {
+                rpm += getDshotTelemetry(motor);
+            }
+            rpm = 100.0f / (motorConfig()->motorPoleCount / 2.0f) * rpm;  // convert erpm freq to RPM.
+            rpm /= motors;           // Average combined rpm
+        }
+    }
+#endif
+
+    if (rpm > SPEKTRUM_MIN_RPM && rpm < SPEKTRUM_MAX_RPM) {
+        period_us = MICROSEC_PER_MINUTE / rpm; // revs/minute -> microSeconds
+    } else {
+        period_us = MICROSEC_PER_MINUTE / SPEKTRUM_MIN_RPM;
+    }
+
+    return period_us;
+#else
+    return SPEKTRUM_RPM_UNUSED;
+#endif
+}
+
+bool srxlFrameRpm(sbuf_t *dst, timeUs_t currentTimeUs)
+{
     int16_t coreTemp = SPEKTRUM_TEMP_UNUSED;
 #if defined(USE_ADC_INTERNAL)
     coreTemp = getCoreTemperatureCelsius();
@@ -176,7 +217,7 @@ bool srxlFrameRpm(sbuf_t *dst, timeUs_t currentTimeUs)
 
     sbufWriteU8(dst, SRXL_FRAMETYPE_TELE_RPM);
     sbufWriteU8(dst, SRXL_FRAMETYPE_SID);
-    sbufWriteU16BigEndian(dst, period_us);                  // pulse leading edges
+    sbufWriteU16BigEndian(dst, getMotorAveragePeriod());    // pulse leading edges
     if (telemetryConfig()->report_cell_voltage) {
         sbufWriteU16BigEndian(dst, getBatteryAverageCellVoltage()); // Cell voltage is in units of 0.01V
     } else {
