@@ -249,6 +249,22 @@ void init(void)
     HAL_Init();
 #endif
 
+#if defined(STM32F7)   
+    /* Enable I-Cache */
+    if (INSTRUCTION_CACHE_ENABLE) {
+        SCB_EnableICache();
+    }
+
+    /* Enable D-Cache */
+    if (DATA_CACHE_ENABLE) {
+        SCB_EnableDCache();
+    }
+
+    if (PREFETCH_ENABLE) {
+        LL_FLASH_EnablePrefetch();
+    }
+#endif
+
     printfSupportInit();
 
     systemInit();
