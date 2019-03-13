@@ -470,6 +470,7 @@ static int applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t a
         break;
     };
 
+    setConfigDirty();
     return newValue;
 }
 
@@ -635,6 +636,7 @@ static int applyAbsoluteAdjustment(controlRateConfig_t *controlRateConfig, adjus
         break;
     };
 
+    setConfigDirty();
     return newValue;
 }
 
@@ -694,6 +696,7 @@ static uint8_t applySelectAdjustment(adjustmentFunction_e adjustmentFunction, ui
         beeperConfirmationBeeps(beeps);
     }
 
+    setConfigDirty();
     return position;
 }
 

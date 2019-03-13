@@ -178,6 +178,7 @@
 #define USE_SERIALRX_FPORT      // FrSky FPort
 #define USE_TELEMETRY_CRSF
 #define USE_TELEMETRY_SRXL
+#define USE_STATS
 
 #if ((FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 12))
 #define USE_CMS

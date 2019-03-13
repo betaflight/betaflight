@@ -87,6 +87,7 @@
 #include "pg/usb.h"
 #include "pg/sdio.h"
 #include "pg/rcdevice.h"
+#include "pg/stats.h"
 
 #include "rx/rx.h"
 #include "rx/cc2500_frsky_common.h"
@@ -1414,6 +1415,13 @@ const clivalue_t valueTable[] = {
 #ifdef USE_RX_FLYSKY
     { "flysky_spi_tx_id",       VAR_UINT32 | MASTER_VALUE, .config.u32Max = UINT32_MAX, PG_FLYSKY_CONFIG, offsetof(flySkyConfig_t, txId) },
     { "flysky_spi_rf_channels", VAR_UINT8 | MASTER_VALUE | MODE_ARRAY, .config.array.length = 16, PG_FLYSKY_CONFIG, offsetof(flySkyConfig_t, rfChannelMap) },
+#endif
+
+#ifdef USE_STATS
+    { "stats",                  VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_STATS_CONFIG, offsetof(statsConfig_t, stats_enabled) },
+    { "stats_total_flights",    VAR_UINT32 | MASTER_VALUE, .config.u32Max = UINT32_MAX, PG_STATS_CONFIG, offsetof(statsConfig_t, stats_total_flights) },
+    { "stats_total_time",       VAR_UINT32 | MASTER_VALUE, .config.u32Max = UINT32_MAX, PG_STATS_CONFIG, offsetof(statsConfig_t, stats_total_time) },
+    { "stats_total_dist",       VAR_UINT32 | MASTER_VALUE, .config.u32Max = UINT32_MAX, PG_STATS_CONFIG, offsetof(statsConfig_t, stats_total_dist) },
 #endif
 };
 
