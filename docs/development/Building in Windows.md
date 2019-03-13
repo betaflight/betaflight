@@ -46,10 +46,13 @@ Continue with the Installation and accept all autodetected dependencies.
 
 ##Setup GNU ARM Toolchain
 
-----------
+Current (4.0.0 RC) Betaflight requires at least ```arm-none-eabi-gcc``` version ```7.3.1```, which can be obtained here:
 
-versions do matter, 5.4 is known to work well. Download this version from https://launchpad.net/gcc-arm-embedded/5.0/5-2016-q2-update/+download/gcc-arm-none-eabi-5_4-2016q2-20160622-win32.zip 
+ - https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads (7-2018-q2-update)
 
+Or via direct link:
+
+ - https://armkeil.blob.core.windows.net/developer/Files/downloads/gnu-rm/7-2018q2/gcc-arm-none-eabi-7-2018-q2-update-win32.zip
 
 Extract the contents of this archive to any folder of your choice, for instance ```C:\dev\gcc-arm```. 
 
@@ -93,6 +96,8 @@ arm-none-eabi-size ./obj/main/betaflight_NAZE.elf
   95388     308   10980  106676   1a0b4 ./obj/main/betaflight_NAZE.elf
 arm-none-eabi-objcopy -O ihex --set-start 0x8000000 obj/main/betaflight_NAZE.elf obj/betaflight_NAZE.hex
 ```
+
+Note that the final message will also inform you about flash space use
 
 You can use the Betaflight-Configurator to flash the ```obj/betaflight_NAZE.hex``` file.
 
