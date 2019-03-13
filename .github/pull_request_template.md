@@ -1,4 +1,4 @@
-## Important: New requirements for the submission of new targets
+## Important: New requirements for the submission of new and updated targets
 
 As announced earlier in https://github.com/betaflight/betaflight#betaflight-40, Betaflight 4.0 is introducing a radically new way to define targets, the so-called 'Unified Targets'.
 
