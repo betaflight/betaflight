@@ -52,6 +52,7 @@ typedef enum {
     SERIAL_BIDIR_OD        = 0 << 4,
     SERIAL_BIDIR_PP        = 1 << 4,
     SERIAL_BIDIR_NOPULL    = 1 << 5, // disable pulls in BIDIR RX mode
+    SERIAL_BIDIR_RXPULL    = 1 << 6, // configured inverse pull in BIDIR RX mode (SALite Workaround)
 } portOptions_e;
 
 // Define known line control states which may be passed up by underlying serial driver callback

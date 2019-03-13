@@ -135,14 +135,16 @@ static void serialInputPortActivate(softSerial_t *softSerial)
 #ifdef STM32F1
         IOConfigGPIO(softSerial->rxIO, IOCFG_IPD);
 #else
-        const uint8_t pinConfig = (softSerial->port.options & SERIAL_BIDIR_NOPULL) ? IOCFG_AF_PP : IOCFG_AF_PP_PD;
+        const uint8_t pinPullConfig = (softSerial->port.options & SERIAL_BIDIR_RXPULL) ? IOCFG_AF_PP_UP : IOCFG_AF_PP_PD;
+        const uint8_t pinConfig = (softSerial->port.options & SERIAL_BIDIR_NOPULL) ? IOCFG_AF_PP : pinPullConfig;
         IOConfigGPIOAF(softSerial->rxIO, pinConfig, softSerial->timerHardware->alternateFunction);
 #endif
     } else {
 #ifdef STM32F1
         IOConfigGPIO(softSerial->rxIO, IOCFG_IPU);
 #else
-        const uint8_t pinConfig = (softSerial->port.options & SERIAL_BIDIR_NOPULL) ? IOCFG_AF_PP : IOCFG_AF_PP_UP;
+        const uint8_t pinPullConfig = (softSerial->port.options & SERIAL_BIDIR_RXPULL) ? IOCFG_AF_PP_PD : IOCFG_AF_PP_UP;
+        const uint8_t pinConfig = (softSerial->port.options & SERIAL_BIDIR_NOPULL) ? IOCFG_AF_PP : pinPullConfig;
         IOConfigGPIOAF(softSerial->rxIO, pinConfig, softSerial->timerHardware->alternateFunction);
 #endif
     }

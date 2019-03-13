@@ -450,7 +450,13 @@ static void saReceiveFrame(uint8_t c)
 static void saSendFrame(uint8_t *buf, int len)
 {
     if (!IS_RC_MODE_ACTIVE(BOXVTXCONTROLDISABLE)) {
-        serialWrite(smartAudioSerialPort, 0x00); // Ensure line is low regardless of hardware pull-down capabilities.
+        switch (smartAudioSerialPort->identifier) {
+            case SERIAL_PORT_SOFTSERIAL1:
+            case SERIAL_PORT_SOFTSERIAL2:
+                break;
+            default:
+                serialWrite(smartAudioSerialPort, 0x00);
+        }
 
         for (int i = 0 ; i < len ; i++) {
             serialWrite(smartAudioSerialPort, buf[i]);
@@ -682,14 +688,15 @@ bool vtxSmartAudioInit(void)
 
     serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_SMARTAUDIO);
     if (portConfig) {
-        portOptions_e portOptions = SERIAL_STOPBITS_2 | SERIAL_BIDIR_NOPULL;
+        portOptions_e portOptions = SERIAL_STOPBITS_2;
 #if defined(USE_VTX_COMMON)
         portOptions = portOptions | (vtxConfig()->halfDuplex ? SERIAL_BIDIR | SERIAL_BIDIR_PP : SERIAL_UNIDIR);
+        portOptions = portOptions | (vtxConfig()->haflDuplexRxPull ? SERIAL_BIDIR_RXPULL : SERIAL_BIDIR_NOPULL);
 #else
-        portOptions = SERIAL_BIDIR;
+        portOptions = portOptions | SERIAL_BIDIR | SERIAL_BIDIR_NOPULL;
 #endif
 
-        smartAudioSerialPort = openSerialPort(portConfig->identifier, FUNCTION_VTX_SMARTAUDIO, NULL, NULL, 4800, MODE_RXTX, portOptions);
+        smartAudioSerialPort = openSerialPort(portConfig->identifier, FUNCTION_VTX_SMARTAUDIO, NULL, NULL, 4950, MODE_RXTX, portOptions);
     }
 
     if (!smartAudioSerialPort) {
