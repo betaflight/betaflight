@@ -441,7 +441,21 @@ static void validateAndFixConfig(void)
 #endif
 
 #if defined(USE_DSHOT_TELEMETRY)
-    if ((motorConfig()->dev.useBurstDshot || !systemConfig()->schedulerOptimizeRate)
+    bool usingDshotProtocol;
+    switch (motorConfig()->dev.motorPwmProtocol) {
+    case PWM_TYPE_PROSHOT1000:
+    case PWM_TYPE_DSHOT1200:
+    case PWM_TYPE_DSHOT600:
+    case PWM_TYPE_DSHOT300:
+    case PWM_TYPE_DSHOT150:
+        usingDshotProtocol = true;
+        break;
+    default:
+        usingDshotProtocol = false;
+        break;
+    }
+
+    if ((!usingDshotProtocol || motorConfig()->dev.useBurstDshot || !systemConfig()->schedulerOptimizeRate)
         && motorConfig()->dev.useDshotTelemetry) {
         motorConfigMutable()->dev.useDshotTelemetry = false;
     }
