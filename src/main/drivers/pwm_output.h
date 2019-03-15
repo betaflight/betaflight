@@ -146,6 +146,7 @@ typedef struct {
     volatile bool isInput;
     volatile bool hasTelemetry;
     uint16_t dshotTelemetryValue;
+    bool dshotTelemetryActive;
 #ifdef USE_HAL_DRIVER
     LL_TIM_OC_InitTypeDef ocInitStruct;
     LL_TIM_IC_InitTypeDef icInitStruct;
@@ -253,6 +254,7 @@ bool pwmDshotCommandIsProcessing(void);
 uint8_t pwmGetDshotCommand(uint8_t index);
 bool pwmDshotCommandOutputIsEnabled(uint8_t motorCount);
 uint16_t getDshotTelemetry(uint8_t index);
+bool isDshotTelemetryActive(uint8_t index);
 
 #endif
 

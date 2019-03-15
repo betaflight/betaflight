@@ -53,6 +53,7 @@ const char *armingDisableFlagNames[]= {
     "PARALYZE",
     "GPS",
     "RESCUE SW",
+    "RPMFILTER",
     "ARMSWITCH",
 };
 

@@ -223,6 +223,7 @@ void pwmStartDshotMotorUpdate(uint8_t motorCount)
                 }
                 if (value != 0xffff) {
                     dmaMotors[i].dshotTelemetryValue = value;
+                    dmaMotors[i].dshotTelemetryActive = true;
                     if (i < 4) {
                         DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, i, value);
                     }
@@ -244,6 +245,11 @@ void pwmStartDshotMotorUpdate(uint8_t motorCount)
         }
         dshotEnableChannels(motorCount);
     }
+}
+
+bool isDshotTelemetryActive(uint8_t index)
+{
+    return dmaMotors[index].dshotTelemetryActive;
 }
 
 #endif
