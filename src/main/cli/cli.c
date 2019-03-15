@@ -4925,17 +4925,9 @@ static void cliDmaopt(char *cmdline)
     pch = strtok_r(NULL, " ", &saveptr);
     if (!pch) {
         if (entry) {
-            if (orgval == DMA_OPT_UNUSED) {
-                cliPrintLinef("%s %d NONE", entry->device, index + 1);
-            } else {
-                cliPrintLinef("%s %d %d", entry->device, index + 1, *optaddr);
-            }
+            printPeripheralDmaoptDetails(entry, index, *optaddr, true, DUMP_MASTER, cliDumpPrintLinef);
         } else {
-            if (orgval == DMA_OPT_UNUSED) {
-                cliPrintLinef("pin %c%02d NONE", IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag));
-            } else {
-                cliPrintLinef("pin %c%02d %d", IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag), orgval);
-            }
+            printTimerDmaoptDetails(ioTag, timer, orgval, true, DUMP_MASTER, cliDumpPrintLinef);
         }
 
         return;
@@ -5110,11 +5102,20 @@ static void cliResource(char *cmdline)
 #endif // USE_RESOURCE_MGMT
 
 #ifdef USE_TIMER_MGMT
+static void printTimerDetails(const ioTag_t ioTag, const unsigned timerIndex, const bool equalsDefault, const dumpFlags_t dumpMask, printFn *printValue)
+{
+    const char *format = "timer %c%02d %d";
+
+    printValue(dumpMask, equalsDefault, format,
+        IO_GPIOPortIdxByTag(ioTag) + 'A',
+        IO_GPIOPinIdxByTag(ioTag),
+        timerIndex - 1
+    );
+}
+
 
 static void printTimer(dumpFlags_t dumpMask)
 {
-    const char *format = "timer %c%02d %d";
-    
     const pgRegistry_t* pg = pgFind(PG_TIMER_IO_CONFIG);
     const timerIOConfig_t *currentConfig;
     const timerIOConfig_t *defaultConfig;
@@ -5150,18 +5151,10 @@ static void printTimer(dumpFlags_t dumpMask)
         const bool equalsDefault = defaultTimerIndex == timerIndex;
 
         if (defaultConfig && defaultTimerIndex) {
-            cliDefaultPrintLinef(dumpMask, equalsDefault, format,
-                IO_GPIOPortIdxByTag(ioTag) + 'A',
-                IO_GPIOPinIdxByTag(ioTag),
-                defaultTimerIndex - 1
-            );
+            printTimerDetails(ioTag, defaultTimerIndex, equalsDefault, dumpMask, cliDefaultPrintLinef);
         }
 
-        cliDumpPrintLinef(dumpMask, equalsDefault, format,
-            IO_GPIOPortIdxByTag(ioTag) + 'A',
-            IO_GPIOPinIdxByTag(ioTag),
-            timerIndex - 1
-        );
+        printTimerDetails(ioTag, timerIndex, equalsDefault, dumpMask, cliDumpPrintLinef);
     }
 }
 
@@ -5187,10 +5180,12 @@ static void cliTimer(char *cmdline)
     char *saveptr;
     int timerIOIndex = -1;
     
-    ioTag_t ioTag = 0;
+    ioTag_t ioTag = IO_TAG_NONE;
     pch = strtok_r(cmdline, " ", &saveptr);    
     if (!pch || !(strToPin(pch, &ioTag) && IOGetByTag(ioTag))) {
-        goto error;
+        cliShowParseError();
+
+        return;
     }
 
     /* find existing entry, or go for next available */
@@ -5228,26 +5223,23 @@ static void cliTimer(char *cmdline)
                     index++;
                 }
             }
+
             return;
         } else if (strcasecmp(pch, "none") == 0) {
-            goto success;
         } else {
             timerIndex = atoi(pch) + 1;
         }
+
+        timerIOConfigMutable(timerIOIndex)->ioTag = timerIndex == 0 ? IO_TAG_NONE : ioTag;
+        timerIOConfigMutable(timerIOIndex)->index = timerIndex;
+        timerIOConfigMutable(timerIOIndex)->dmaopt = DMA_OPT_UNUSED;
+
+        return;
     } else {
-        goto error;
-    }  
+        printTimerDetails(ioTag, timerIOConfig(timerIOIndex)->index, false, DUMP_MASTER, cliDumpPrintLinef);
 
-success:
-    timerIOConfigMutable(timerIOIndex)->ioTag = timerIndex == 0 ? IO_TAG_NONE : ioTag;
-    timerIOConfigMutable(timerIOIndex)->index = timerIndex;
-    timerIOConfigMutable(timerIOIndex)->dmaopt = DMA_OPT_UNUSED;
-
-    cliPrintLine("Success");
-    return;
-    
-error:
-    cliShowParseError();
+        return;
+    }
 }
 #endif
 
