@@ -92,7 +92,7 @@ Betaflight has the following features:
 
 See: https://github.com/betaflight/betaflight/wiki
 
-## IRC Support and Developers Channel
+## Support and Developers Channel
 
 There's a dedicated Slack chat channel here:
 
@@ -102,17 +102,13 @@ Etiquette: Don't ask to ask and please wait around long enough for a reply - som
 
 ## Configuration Tool
 
-To configure Betaflight you should use the Betaflight-configurator GUI tool (Windows/OSX/Linux) that can be found here:
+To configure Betaflight you should use the Betaflight-configurator GUI tool (Windows/OSX/Linux) which can be found here:
 
-https://chrome.google.com/webstore/detail/betaflight-configurator/kdaghagfopacdngbohiknlhcocjccjao
-
-The source for it is here:
-
-https://github.com/betaflight/betaflight-configurator
+https://github.com/betaflight/betaflight-configurator/releases/latest
 
 ## Contributing
 
-Contributions are welcome and encouraged.  You can contribute in many ways:
+Contributions are welcome and encouraged. You can contribute in many ways:
 
 * Documentation updates and corrections.
 * How-To guides - received help? Help others!
@@ -125,6 +121,10 @@ https://github.com/betaflight/betaflight/issues
 https://github.com/betaflight/betaflight-configurator/issues
 
 Before creating new issues please check to see if there is an existing one, search first otherwise you waste peoples time when they could be coding instead!
+
+If you want to contribute to our efforts financially, please consider making a donation to us through [PayPal](https://paypal.me/betaflight).
+
+If you want to contribute financially on an ongoing basis, you should consider becoming a patron for us on [Patreon](https://www.patreon.com/betaflight).
 
 ## Developers
 
