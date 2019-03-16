@@ -152,7 +152,6 @@ float         averageThrottle = 0.0;
 float         altitudeError = 0.0;
 uint32_t      throttleSamples = 0;
 bool          magForceDisable = false;
-uint16_t      descentDistance;
 
 static bool newGPSData = false;
 
@@ -485,6 +484,8 @@ void updateGPSRescueState(void)
 
     rescueState.isAvailable = checkGPSRescueIsAvailable();
 
+    static uint16_t descentDistance;
+    
     switch (rescueState.phase) {
     case RESCUE_IDLE:
         idleTasks();
