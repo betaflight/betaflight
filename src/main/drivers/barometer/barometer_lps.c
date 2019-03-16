@@ -252,6 +252,11 @@ bool lpsDetect(baroDev_t *baro)
 {
     //Detect
     busDevice_t *busdev = &baro->busdev;
+
+    if (busdev->bustype != BUSTYPE_SPI) {
+        return false;
+    }
+
     IOInit(busdev->busdev_u.spi.csnPin, OWNER_BARO_CS, 0);
     IOConfigGPIO(busdev->busdev_u.spi.csnPin, IOCFG_OUT_PP);
     IOHi(busdev->busdev_u.spi.csnPin); // Disable
