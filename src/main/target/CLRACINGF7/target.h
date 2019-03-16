@@ -103,6 +103,8 @@
 #define USE_I2C
 #define USE_I2C_DEVICE_2       // External I2C
 #define I2C_DEVICE               (I2CDEV_2)
+#define I2C2_SCL                NONE        // PB10 (UART3_TX)
+#define I2C2_SDA                NONE        // PB11 (UART3_RX)
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
