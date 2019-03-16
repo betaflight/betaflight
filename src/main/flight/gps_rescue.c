@@ -152,6 +152,7 @@ float         averageThrottle = 0.0;
 float         altitudeError = 0.0;
 uint32_t      throttleSamples = 0;
 bool          magForceDisable = false;
+uint16_t      descentDistance;
 
 static bool newGPSData = false;
 
@@ -511,6 +512,13 @@ void updateGPSRescueState(void)
             // When not in failsafe mode: leave it up to the sanity check setting.
         }
 
+        //set new descent distance if actual distance to home is lower 
+        if (rescueState.sensor.distanceToHomeM < gpsRescueConfig()->descentDistanceM) {
+            descentDistance = rescueState.sensor.distanceToHomeM - 1000;
+        } else {
+            descentDistance = gpsRescueConfig()->descentDistanceM;
+        }
+
         rescueState.phase = RESCUE_ATTAIN_ALT;
         FALLTHROUGH;
     case RESCUE_ATTAIN_ALT:
@@ -526,7 +534,7 @@ void updateGPSRescueState(void)
         rescueState.intent.maxAngleDeg = 15;
         break;
     case RESCUE_CROSSTRACK:
-        if (rescueState.sensor.distanceToHomeM < gpsRescueConfig()->descentDistanceM) {
+        if (rescueState.sensor.distanceToHomeM < descentDistance) {
             rescueState.phase = RESCUE_LANDING_APPROACH;
         }
 
@@ -545,8 +553,8 @@ void updateGPSRescueState(void)
         }
 
         // Only allow new altitude and new speed to be equal or lower than the current values (to prevent parabolic movement on overshoot)
-        const int32_t newAlt = gpsRescueConfig()->initialAltitudeM * 100  * rescueState.sensor.distanceToHomeM / gpsRescueConfig()->descentDistanceM;
-        const int32_t newSpeed = gpsRescueConfig()->rescueGroundspeed * rescueState.sensor.distanceToHomeM / gpsRescueConfig()->descentDistanceM;
+        const int32_t newAlt = gpsRescueConfig()->initialAltitudeM * 100  * rescueState.sensor.distanceToHomeM / descentDistance;
+        const int32_t newSpeed = gpsRescueConfig()->rescueGroundspeed * rescueState.sensor.distanceToHomeM / descentDistance;
 
         rescueState.intent.targetAltitudeCm = constrain(newAlt, 100, rescueState.intent.targetAltitudeCm);
         rescueState.intent.targetGroundspeed = constrain(newSpeed, 100, rescueState.intent.targetGroundspeed);
