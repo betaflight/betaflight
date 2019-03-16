@@ -247,9 +247,9 @@ void pwmStartDshotMotorUpdate(uint8_t motorCount)
     }
 }
 
-bool isDshotTelemetryActive(uint8_t index)
+bool isDshotMotorTelemetryActive(uint8_t motorIndex)
 {
-    return dmaMotors[index].dshotTelemetryActive;
+    return dmaMotors[motorIndex].dshotTelemetryActive;
 }
 
 #endif

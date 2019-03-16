@@ -254,7 +254,7 @@ bool pwmDshotCommandIsProcessing(void);
 uint8_t pwmGetDshotCommand(uint8_t index);
 bool pwmDshotCommandOutputIsEnabled(uint8_t motorCount);
 uint16_t getDshotTelemetry(uint8_t index);
-bool isDshotTelemetryActive(uint8_t index);
+bool isDshotMotorTelemetryActive(uint8_t motorIndex);
 
 #endif
 

@@ -1037,3 +1037,15 @@ float mixerGetLoggingThrottle(void)
 {
     return loggingThrottle;
 }
+
+#ifdef USE_DSHOT_TELEMETRY
+bool isDshotTelemetryActive(void)
+{
+    for (uint8_t i = 0; i < motorCount; i++) {
+        if (!isDshotMotorTelemetryActive(i)) {
+            return false;
+        }
+    }
+    return true;
+}
+#endif
