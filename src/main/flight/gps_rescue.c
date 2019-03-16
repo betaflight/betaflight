@@ -470,6 +470,8 @@ static bool checkGPSRescueIsAvailable(void)
 */
 void updateGPSRescueState(void)
 {
+    static uint16_t descentDistance;
+    
     if (!FLIGHT_MODE(GPS_RESCUE_MODE)) {
         rescueStop();
     } else if (FLIGHT_MODE(GPS_RESCUE_MODE) && rescueState.phase == RESCUE_IDLE) {
@@ -484,8 +486,6 @@ void updateGPSRescueState(void)
 
     rescueState.isAvailable = checkGPSRescueIsAvailable();
 
-    static uint16_t descentDistance;
-    
     switch (rescueState.phase) {
     case RESCUE_IDLE:
         idleTasks();
