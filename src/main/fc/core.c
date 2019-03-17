@@ -56,6 +56,8 @@
 #if defined(USE_GYRO_DATA_ANALYSE)
 #include "sensors/gyroanalyse.h"
 #endif
+#include "sensors/rpm_filter.h"
+
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/core.h"
@@ -287,6 +289,26 @@ void updateArmingStatus(void)
                 setArmingDisabled(ARMING_DISABLED_RESC);
             } else {
                 unsetArmingDisabled(ARMING_DISABLED_RESC);
+            }
+        }
+#endif
+
+#ifdef USE_RPM_FILTER
+        // USE_RPM_FILTER will only be set if USE_DSHOT and USE_DSHOT_TELEMETRY are defined
+        // If dshot_bidir is anabled and any motor isn't providing telemetry, then disable arming
+        if (motorConfig()->dev.useDshotTelemetry
+           && (rpmFilterConfig()->gyro_rpm_notch_harmonics || rpmFilterConfig()->dterm_rpm_notch_harmonics)) {
+            bool dshotTelemetryActive = true;
+            for (uint8_t i = 0; i < getMotorCount(); i++) {
+                if (!isDshotTelemetryActive(i)) {
+                    dshotTelemetryActive = false;
+                    break;
+                }
+            }
+            if (!dshotTelemetryActive) {
+                setArmingDisabled(ARMING_DISABLED_RPMFILTER);
+            } else {
+                unsetArmingDisabled(ARMING_DISABLED_RPMFILTER);
             }
         }
 #endif
