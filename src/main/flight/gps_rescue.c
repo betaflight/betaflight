@@ -512,10 +512,10 @@ void updateGPSRescueState(void)
             
             // When not in failsafe mode: leave it up to the sanity check setting.
         }
-
+        
         //set new descent distance if actual distance to home is lower 
         if (rescueState.sensor.distanceToHomeM < gpsRescueConfig()->descentDistanceM) {
-            descentDistance = rescueState.sensor.distanceToHomeM - 1000;
+            descentDistance = rescueState.sensor.distanceToHomeM - 5;
         } else {
             descentDistance = gpsRescueConfig()->descentDistanceM;
         }
