@@ -123,7 +123,7 @@ void qmp6988BusDeinit(busDevice_t *busdev)
     if (busdev->bustype == BUSTYPE_SPI) {
         IOConfigGPIO(busdev->busdev_u.spi.csnPin, IOCFG_IPU);
         IORelease(busdev->busdev_u.spi.csnPin);
-        IOInit(busdev->busdev_u.spi.csnPin, OWNER_SPI_PREINIT, 0);
+        IOInit(busdev->busdev_u.spi.csnPin, OWNER_PREINIT, 0);
     }
 #else
     UNUSED(busdev);

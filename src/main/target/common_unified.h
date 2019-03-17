@@ -62,6 +62,8 @@
 #define USE_BARO_SPI_BMP280
 #define USE_BARO_LPS
 #define USE_BARO_SPI_LPS
+#define USE_BARO_QMP6988
+#define USE_BARO_SPI_QMP6988
 
 #define USE_SDCARD
 #define USE_SDCARD_SPI
