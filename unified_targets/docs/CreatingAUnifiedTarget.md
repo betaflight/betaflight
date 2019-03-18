@@ -60,4 +60,4 @@ These instructions explain how to create a Unified Target configuration for an e
 
 - edit the resulting file and verify that there are no extra lines before the one starting with `# Betaflight`, and no extra lines after the last line starting with `set`;
 
-- open a [pull request](https://github.com/betaflight/betaflight/pulls) to put your target configuration into `unified_targets/configs`. If you were assigned a new manufacturer id, als edit `unified_targets/docs/Manufacturers.md` and add this id (the list is in alphabetical order).
+- open a [pull request](https://github.com/betaflight/betaflight/pulls) to put your target configuration into `unified_targets/configs`. If you were assigned a new manufacturer id that is not yet listed, also edit `unified_targets/docs/Manufacturers.md` and add this id (the list is in alphabetical order).
