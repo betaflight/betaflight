@@ -9,6 +9,7 @@ This is the official list of manufacturer ids (`manufacturer_id` in the target c
 |AFNG|AlienFlight NG|https://www.alienflightng.com/|
 |AIRB|Airbot|https://store.myairbot.com/|
 |BKMN|Jason Blackman|https://github.com/blckmn|
+|CLRC|CLRACING LLC |https://www.clrpowered.com|
 |DRCL|dronercland|https://www.instagram.com/dronercland/|
 |DYST|DongYang Smart Technology Co.,Ltd (dys)|http://www.dys.hk/|
 |FFPV|Furious FPV|https://furiousfpv.com/|
