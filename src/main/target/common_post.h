@@ -258,17 +258,17 @@
 #undef USE_GYRO_DATA_ANALYSE
 #endif
 
-#ifndef USE_DSHOT
-#undef USE_DSHOT_TELEMETRY
-#undef USE_RPM_FILTER
-#endif
-
 #ifndef USE_CMS
 #undef USE_CMS_FAILSAFE_MENU
 #endif
 
+#ifndef USE_DSHOT
+#undef USE_DSHOT_TELEMETRY
+#endif
+
 #ifndef USE_DSHOT_TELEMETRY
 #undef USE_RPM_FILTER
+#undef USE_DSHOT_TELEMETRY_STATS
 #endif
 
 #if !defined(USE_BOARD_INFO)
