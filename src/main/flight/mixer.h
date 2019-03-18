@@ -132,4 +132,4 @@ bool mixerIsTricopter(void);
 
 void mixerSetThrottleAngleCorrection(int correctionValue);
 float mixerGetLoggingThrottle(void);
-
+bool isDshotTelemetryActive(void);

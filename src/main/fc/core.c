@@ -294,18 +294,11 @@ void updateArmingStatus(void)
 #endif
 
 #ifdef USE_RPM_FILTER
-        // USE_RPM_FILTER will only be set if USE_DSHOT and USE_DSHOT_TELEMETRY are defined
-        // If dshot_bidir is anabled and any motor isn't providing telemetry, then disable arming
+        // USE_RPM_FILTER will only be defined if USE_DSHOT and USE_DSHOT_TELEMETRY are defined
+        // If the RPM filter is anabled and any motor isn't providing telemetry, then disable arming
         if (motorConfig()->dev.useDshotTelemetry
            && (rpmFilterConfig()->gyro_rpm_notch_harmonics || rpmFilterConfig()->dterm_rpm_notch_harmonics)) {
-            bool dshotTelemetryActive = true;
-            for (uint8_t i = 0; i < getMotorCount(); i++) {
-                if (!isDshotTelemetryActive(i)) {
-                    dshotTelemetryActive = false;
-                    break;
-                }
-            }
-            if (!dshotTelemetryActive) {
+            if (!isDshotTelemetryActive()) {
                 setArmingDisabled(ARMING_DISABLED_RPMFILTER);
             } else {
                 unsetArmingDisabled(ARMING_DISABLED_RPMFILTER);

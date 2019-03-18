@@ -209,15 +209,12 @@ static IO_t busSwitchResetPin        = IO_NONE;
 }
 #endif
 
-#if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
+#ifdef USE_DSHOT_TELEMETRY
 void activateDshotTelemetry(struct dispatchEntry_s* self)
 {
-    UNUSED(self);
-    if (!ARMING_FLAG(ARMED))
-    {
-        pwmWriteDshotCommand(
-            255, getMotorCount(), motorConfig()->dev.useDshotTelemetry ?
-            DSHOT_CMD_SIGNAL_LINE_CONTINUOUS_ERPM_TELEMETRY : DSHOT_CMD_SIGNAL_LINE_TELEMETRY_DISABLE, false);
+    if (!ARMING_FLAG(ARMED) && !isDshotTelemetryActive()) {
+        pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SIGNAL_LINE_CONTINUOUS_ERPM_TELEMETRY, false);
+        dispatchAdd(self, 1e6); // check again in 1 second
     }
 }
 
@@ -811,8 +808,7 @@ void init(void)
 
     setArmingDisabled(ARMING_DISABLED_BOOT_GRACE_TIME);
 
-// TODO: potentially delete when feature is stable. Activation when arming is enough for flight.
-#if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
+#ifdef USE_DSHOT_TELEMETRY
     if (motorConfig()->dev.useDshotTelemetry) {
         dispatchEnable();
         dispatchAdd(&activateDshotTelemetryEntry, 5000000);
