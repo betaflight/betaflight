@@ -312,33 +312,34 @@ $(TARGET_ELF): $(TARGET_OBJS) $(LD_SCRIPT)
 	$(V1) $(SIZE) $(TARGET_ELF)
 
 # Compile
+
+## compile_file takes two arguments: (1) optimisation description string and (2) optimisation compiler flag
+define compile_file
+	echo "%% ($(1)) $<" "$(STDOUT)" && \
+	$(CROSS_CC) -c -o $@ $(CFLAGS) $(2) $<
+endef
+
 ifeq ($(DEBUG),GDB)
 $(OBJECT_DIR)/$(TARGET)/%.o: %.c
 	$(V1) mkdir -p $(dir $@)
 	$(V1) $(if $(findstring $<,$(NOT_OPTIMISED_SRC)), \
-		echo "%% (not optimised) $<" "$(STDOUT)" && \
-		$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_NO_OPTIMISATION) $< \
+		$(call compile_file,not optimised, $(CC_NO_OPTIMISATION)) \
 	, \
-		echo "%% (debug) $<" "$(STDOUT)" && \
-		$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_DEBUG_OPTIMISATION) $< \
+		$(call compile_file,debug,$(CC_DEBUG_OPTIMISATION)) \
 	)
 else
 $(OBJECT_DIR)/$(TARGET)/%.o: %.c
 	$(V1) mkdir -p $(dir $@)
 	$(V1) $(if $(findstring $<,$(NOT_OPTIMISED_SRC)), \
-		echo "%% (not optimised) $<" "$(STDOUT)" && \
-		$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_NO_OPTIMISATION) $< \
+		$(call compile_file,not optimised,$(CC_NO_OPTIMISATION)) \
 	, \
 		$(if $(findstring $(subst ./src/main/,,$<),$(SPEED_OPTIMISED_SRC)), \
-			echo "%% (speed optimised) $<" "$(STDOUT)" && \
-			$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_SPEED_OPTIMISATION) $< \
+			$(call compile_file,speed optimised,$(CC_SPEED_OPTIMISATION)) \
 		, \
 			$(if $(findstring $(subst ./src/main/,,$<),$(SIZE_OPTIMISED_SRC)), \
-				echo "%% (size optimised) $<" "$(STDOUT)" && \
-				$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_SIZE_OPTIMISATION) $< \
+				$(call compile_file,size optimised,$(CC_SIZE_OPTIMISATION)) \
 			, \
-				echo "%% (optimised) $<" "$(STDOUT)" && \
-				$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_DEFAULT_OPTIMISATION) $< \
+				$(call compile_file,optimised,$(CC_DEFAULT_OPTIMISATION)) \
 			) \
 		) \
 	)
