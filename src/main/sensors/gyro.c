@@ -516,24 +516,49 @@ bool gyroInit(void)
     }
     firstArmingCalibrationWasStarted = false;
 
-    bool ret = false;
+    enum {
+        NO_GYROS_DETECTED = 0,
+        DETECTED_GYRO_1 = (1 << 0),
+        DETECTED_GYRO_2 = (1 << 1),
+    };
+
+    uint8_t detectionFlags = NO_GYROS_DETECTED;
+
     gyroToUse = gyroConfig()->gyro_to_use;
 
     if (gyroToUse == GYRO_CONFIG_USE_GYRO_1 || gyroToUse == GYRO_CONFIG_USE_GYRO_BOTH) {
-        ret = gyroInitSensor(&gyroSensor1, gyroDeviceConfig(0));
-        if (!ret) {
-            return false; // TODO handle failure of first gyro detection better. - Perhaps update the config to use second gyro then indicate a new failure mode and reboot.
+        if (gyroInitSensor(&gyroSensor1, gyroDeviceConfig(0))) {
+            gyroHasOverflowProtection =  gyroHasOverflowProtection && gyroSensor1.gyroDev.gyroHasOverflowProtection;
+            detectionFlags |= DETECTED_GYRO_1;
         }
-        gyroHasOverflowProtection =  gyroHasOverflowProtection && gyroSensor1.gyroDev.gyroHasOverflowProtection;
     }
 
 #ifdef USE_MULTI_GYRO
     if (gyroToUse == GYRO_CONFIG_USE_GYRO_2 || gyroToUse == GYRO_CONFIG_USE_GYRO_BOTH) {
-        ret = gyroInitSensor(&gyroSensor2, gyroDeviceConfig(1));
-        if (!ret) {
-            return false; // TODO handle failure of second gyro detection better. - Perhaps update the config to use first gyro then indicate a new failure mode and reboot.
+        if (gyroInitSensor(&gyroSensor2, gyroDeviceConfig(1))) {
+            gyroHasOverflowProtection =  gyroHasOverflowProtection && gyroSensor2.gyroDev.gyroHasOverflowProtection;
+            detectionFlags |= DETECTED_GYRO_2;
         }
-        gyroHasOverflowProtection =  gyroHasOverflowProtection && gyroSensor2.gyroDev.gyroHasOverflowProtection;
+    }
+
+    if (gyroToUse == GYRO_CONFIG_USE_GYRO_BOTH && detectionFlags != (DETECTED_GYRO_1 | DETECTED_GYRO_2)) {
+        // at least one gyro is missing.
+
+        if (detectionFlags & DETECTED_GYRO_1) {
+            gyroToUse = GYRO_CONFIG_USE_GYRO_1;
+            gyroConfigMutable()->gyro_to_use = GYRO_CONFIG_USE_GYRO_1;
+            detectedSensors[SENSOR_INDEX_GYRO] = gyroSensor1.gyroDev.gyroHardware;
+            sensorsSet(SENSOR_GYRO);
+            return true;
+        }
+
+        if (detectionFlags & DETECTED_GYRO_2) {
+            gyroToUse = GYRO_CONFIG_USE_GYRO_2;
+            gyroConfigMutable()->gyro_to_use = GYRO_CONFIG_USE_GYRO_2;
+            detectedSensors[SENSOR_INDEX_GYRO] = gyroSensor2.gyroDev.gyroHardware;
+            sensorsSet(SENSOR_GYRO);
+            return true;
+        }
     }
 
     // Only allow using both gyros simultaneously if they are the same hardware type.
@@ -544,12 +569,11 @@ bool gyroInit(void)
             gyroConfigMutable()->gyro_to_use = GYRO_CONFIG_USE_GYRO_1;
             detectedSensors[SENSOR_INDEX_GYRO] = gyroSensor1.gyroDev.gyroHardware;
             sensorsSet(SENSOR_GYRO);
-
         }
     }
 #endif
 
-    return ret;
+    return detectionFlags != NO_GYROS_DETECTED;
 }
 
 #ifdef USE_DYN_LPF
