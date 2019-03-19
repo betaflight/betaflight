@@ -224,9 +224,10 @@ bool pwmAreMotorsEnabled(void)
 }
 
 #ifdef USE_DSHOT_TELEMETRY
-static void pwmStartWriteUnused(uint8_t motorCount)
+static bool pwmStartWriteUnused(uint8_t motorCount)
 {
     UNUSED(motorCount);
+    return true;
 }
 #endif
 
@@ -253,9 +254,9 @@ void pwmCompleteMotorUpdate(uint8_t motorCount)
 }
 
 #ifdef USE_DSHOT_TELEMETRY
-void pwmStartMotorUpdate(uint8_t motorCount)
+bool pwmStartMotorUpdate(uint8_t motorCount)
 {
-    pwmStartWrite(motorCount);
+    return pwmStartWrite(motorCount);
 }
 #endif
 
@@ -521,7 +522,9 @@ void pwmWriteDshotCommand(uint8_t index, uint8_t motorCount, uint8_t command, bo
             delayMicroseconds(DSHOT_COMMAND_DELAY_US);
 
 #ifdef USE_DSHOT_TELEMETRY
-            pwmStartDshotMotorUpdate(motorCount);
+            timeUs_t currentTimeUs = micros();
+            while (!pwmStartDshotMotorUpdate(motorCount) &&
+                   cmpTimeUs(micros(), currentTimeUs) < 1000);
 #endif
             for (uint8_t i = 0; i < motorCount; i++) {
                 if ((i == index) || (index == ALL_MOTORS)) {

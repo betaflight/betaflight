@@ -96,8 +96,9 @@ FAST_CODE void pwmDshotSetDirectionOutput(
     DMA_DeInit(dmaRef);
 
 #ifdef USE_DSHOT_TELEMETRY
-    motor->isInput = !output;
     if (!output) {
+        motor->isInput = true;
+        motor->timer->inputDirectionStampUs = micros();
         TIM_ICInit(timer, &motor->icInitStruct);
 
 #if defined(STM32F3)
@@ -111,6 +112,9 @@ FAST_CODE void pwmDshotSetDirectionOutput(
     UNUSED(output);
 #endif
     {
+#ifdef USE_DSHOT_TELEMETRY
+        motor->isInput = false;
+#endif
         timerOCPreloadConfig(timer, timerHardware->channel, TIM_OCPreload_Disable);
         timerOCInit(timer, timerHardware->channel, pOcInit);
         timerOCPreloadConfig(timer, timerHardware->channel, TIM_OCPreload_Enable);
@@ -388,6 +392,9 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 
 #ifdef USE_DSHOT_TELEMETRY
     motor->dmaInputLen = motor->useProshot ? PROSHOT_TELEMETRY_INPUT_LEN : DSHOT_TELEMETRY_INPUT_LEN;
+    motor->dshotTelemetryDeadtimeUs = DSHOT_TELEMETRY_DEADTIME_US + 1000000 *
+        ( 2 + (motor->useProshot ? 4 * MOTOR_NIBBLE_LENGTH_PROSHOT : 16 * MOTOR_BITLENGTH))
+        / getDshotHz(pwmProtocolType);
     pwmDshotSetDirectionOutput(motor, true);
 #else
     pwmDshotSetDirectionOutput(motor, true, &OCINIT, &DMAINIT);
