@@ -61,7 +61,7 @@ PG_REGISTER_WITH_RESET_FN(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 1);
 
 void pgResetFn_compassConfig(compassConfig_t *compassConfig)
 {
-    compassConfig->mag_align = ALIGN_DEFAULT;
+    compassConfig->mag_alignment = CW0_DEG;
     compassConfig->mag_declination = 0;
     compassConfig->mag_hardware = MAG_DEFAULT;
 
@@ -115,8 +115,10 @@ void compassPreInit(void)
 }
 
 #if !defined(SIMULATOR_BUILD)
-bool compassDetect(magDev_t *dev)
+bool compassDetect(magDev_t *dev, sensorAlignment_t *alignment)
 {
+    *alignment = CW0_DEG;  // may be overridden if target specifies MAG_*_ALIGN
+
     magSensor_e magHardware = MAG_NONE;
 
     busDevice_t *busdev = &dev->busdev;
@@ -167,8 +169,6 @@ bool compassDetect(magDev_t *dev)
         return false;
     }
 
-    dev->magAlign = ALIGN_DEFAULT;
-
     switch (compassConfig()->mag_hardware) {
     case MAG_DEFAULT:
         FALLTHROUGH;
@@ -181,7 +181,7 @@ bool compassDetect(magDev_t *dev)
 
         if (hmc5883lDetect(dev)) {
 #ifdef MAG_HMC5883_ALIGN
-            dev->magAlign = MAG_HMC5883_ALIGN;
+            *alignment = MAG_HMC5883_ALIGN;
 #endif
             magHardware = MAG_HMC5883;
             break;
@@ -197,7 +197,7 @@ bool compassDetect(magDev_t *dev)
 
         if (lis3mdlDetect(dev)) {
 #ifdef MAG_LIS3MDL_ALIGN
-            dev->magAlign = MAG_LIS3MDL_ALIGN;
+            *alignment = MAG_LIS3MDL_ALIGN;
 #endif
             magHardware = MAG_LIS3MDL;
             break;
@@ -213,7 +213,7 @@ bool compassDetect(magDev_t *dev)
 
         if (ak8975Detect(dev)) {
 #ifdef MAG_AK8975_ALIGN
-            dev->magAlign = MAG_AK8975_ALIGN;
+            *alignment = MAG_AK8975_ALIGN;
 #endif
             magHardware = MAG_AK8975;
             break;
@@ -234,7 +234,7 @@ bool compassDetect(magDev_t *dev)
 
         if (ak8963Detect(dev)) {
 #ifdef MAG_AK8963_ALIGN
-            dev->magAlign = MAG_AK8963_ALIGN;
+            *alignment = MAG_AK8963_ALIGN;
 #endif
             magHardware = MAG_AK8963;
             break;
@@ -250,7 +250,7 @@ bool compassDetect(magDev_t *dev)
 
         if (qmc5883lDetect(dev)) {
 #ifdef MAG_QMC5883L_ALIGN
-            dev->magAlign = MAG_QMC5883L_ALIGN;
+            *alignment = MAG_QMC5883L_ALIGN;
 #endif
             magHardware = MAG_QMC5883;
             break;
@@ -272,9 +272,10 @@ bool compassDetect(magDev_t *dev)
     return true;
 }
 #else
-bool compassDetect(magDev_t *dev)
+bool compassDetect(magDev_t *dev, sensorAlignment_t *alignment)
 {
     UNUSED(dev);
+    UNUSED(alignment);
 
     return false;
 }
@@ -286,7 +287,9 @@ bool compassInit(void)
     // calculate magnetic declination
     mag.magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.
 
-    if (!compassDetect(&magDev)) {
+    sensorAlignment_t alignment;
+
+    if (!compassDetect(&magDev, &alignment)) {
         return false;
     }
 
@@ -297,9 +300,14 @@ bool compassInit(void)
     magDev.init(&magDev);
     LED1_OFF;
     magInit = 1;
-    if (compassConfig()->mag_align != ALIGN_DEFAULT) {
-        magDev.magAlign = compassConfig()->mag_align;
+
+    // apply user alignment offsets to default alignment.
+    for (int index = 0; index < FLIGHT_DYNAMICS_INDEX_COUNT; index++) {
+        alignment.raw[index] += compassConfig()->mag_alignment.raw[index];
     }
+
+    buildRotationMatrixFromAlignment(&alignment, &magDev.rotationMatrix);
+
     return true;
 }
 
@@ -318,7 +326,7 @@ void compassUpdate(timeUs_t currentTimeUs)
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         mag.magADC[axis] = magADCRaw[axis];
     }
-    alignSensors(mag.magADC, magDev.magAlign);
+    alignSensor(mag.magADC, &magDev.rotationMatrix);
 
     flightDynamicsTrims_t *magZero = &compassConfigMutable()->magZero;
     if (STATE(CALIBRATE_MAG)) {

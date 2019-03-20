@@ -197,7 +197,7 @@ void normalizeV(struct fp_vector *src, struct fp_vector *dest)
     }
 }
 
-void buildRotationMatrix(fp_angles_t *delta, float matrix[3][3])
+void buildRotationMatrix(fp_angles_t *delta, fp_rotationMatrix_t *rotation)
 {
     float cosx, sinx, cosy, siny, cosz, sinz;
     float coszcosx, sinzcosx, coszsinx, sinzsinx;
@@ -214,15 +214,15 @@ void buildRotationMatrix(fp_angles_t *delta, float matrix[3][3])
     coszsinx = sinx * cosz;
     sinzsinx = sinx * sinz;
 
-    matrix[0][X] = cosz * cosy;
-    matrix[0][Y] = -cosy * sinz;
-    matrix[0][Z] = siny;
-    matrix[1][X] = sinzcosx + (coszsinx * siny);
-    matrix[1][Y] = coszcosx - (sinzsinx * siny);
-    matrix[1][Z] = -sinx * cosy;
-    matrix[2][X] = (sinzsinx) - (coszcosx * siny);
-    matrix[2][Y] = (coszsinx) + (sinzcosx * siny);
-    matrix[2][Z] = cosy * cosx;
+    rotation->m[0][X] = cosz * cosy;
+    rotation->m[0][Y] = -cosy * sinz;
+    rotation->m[0][Z] = siny;
+    rotation->m[1][X] = sinzcosx + (coszsinx * siny);
+    rotation->m[1][Y] = coszcosx - (sinzsinx * siny);
+    rotation->m[1][Z] = -sinx * cosy;
+    rotation->m[2][X] = (sinzsinx) - (coszcosx * siny);
+    rotation->m[2][Y] = (coszsinx) + (sinzcosx * siny);
+    rotation->m[2][Z] = cosy * cosx;
 }
 
 // Rotate a vector *v by the euler angles defined by the 3-vector *delta.
@@ -230,13 +230,13 @@ void rotateV(struct fp_vector *v, fp_angles_t *delta)
 {
     struct fp_vector v_tmp = *v;
 
-    float matrix[3][3];
+    fp_rotationMatrix_t rotation;
 
-    buildRotationMatrix(delta, matrix);
+    buildRotationMatrix(delta, &rotation);
 
-    v->X = v_tmp.X * matrix[0][X] + v_tmp.Y * matrix[1][X] + v_tmp.Z * matrix[2][X];
-    v->Y = v_tmp.X * matrix[0][Y] + v_tmp.Y * matrix[1][Y] + v_tmp.Z * matrix[2][Y];
-    v->Z = v_tmp.X * matrix[0][Z] + v_tmp.Y * matrix[1][Z] + v_tmp.Z * matrix[2][Z];
+    v->X = v_tmp.X * rotation.m[0][X] + v_tmp.Y * rotation.m[1][X] + v_tmp.Z * rotation.m[2][X];
+    v->Y = v_tmp.X * rotation.m[0][Y] + v_tmp.Y * rotation.m[1][Y] + v_tmp.Z * rotation.m[2][Y];
+    v->Z = v_tmp.X * rotation.m[0][Z] + v_tmp.Y * rotation.m[1][Z] + v_tmp.Z * rotation.m[2][Z];
 }
 
 // Quick median filter implementation

@@ -21,6 +21,7 @@
 
 extern "C" {
 #include "common/axis.h"
+#include "common/sensor_alignment.h"
 #include "drivers/sensor.h"
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
@@ -33,7 +34,7 @@ extern "C" {
  * The output of alignSensor() is compared to the output of the test
  * rotation method.
  *
- * For each alignment condition (CW0, CW90, etc) the source vector under
+ * For each alignment condition (LEGACY_ALIGN_CW0, CW90, etc) the source vector under
  * test is set to a unit vector along each axis (x-axis, y-axis, z-axis)
  * plus one additional random vector is tested.
  */
@@ -96,7 +97,9 @@ static void initZAxisRotation(int32_t mat[][3], int32_t angle)
     mat[2][2] =  1;
 }
 
-static void testCW(sensor_align_e rotation, int32_t angle)
+#define TOL 1e-5 // TOLERANCE
+
+static void testCW(legacy_sensor_align_e rotation, int32_t angle)
 {
     float src[XYZ_AXIS_COUNT];
     float test[XYZ_AXIS_COUNT];
@@ -111,9 +114,9 @@ static void testCW(sensor_align_e rotation, int32_t angle)
     rotateVector(matrix, src, test);
 
     alignSensors(src, rotation);
-    EXPECT_EQ(test[X], src[X]) << "X-Unit alignment does not match in X-Axis. " << test[X] << " " << src[X];
-    EXPECT_EQ(test[Y], src[Y]) << "X-Unit alignment does not match in Y-Axis. " << test[Y] << " " << src[Y];
-    EXPECT_EQ(test[Z], src[Z]) << "X-Unit alignment does not match in Z-Axis. " << test[Z] << " " << src[Z];
+    EXPECT_NEAR(test[X], src[X], TOL) << "X-Unit alignment does not match in X-Axis. " << test[X] << " " << src[X];
+    EXPECT_NEAR(test[Y], src[Y], TOL) << "X-Unit alignment does not match in Y-Axis. " << test[Y] << " " << src[Y];
+    EXPECT_NEAR(test[Z], src[Z], TOL) << "X-Unit alignment does not match in Z-Axis. " << test[Z] << " " << src[Z];
 
     // unit vector along y-axis
     src[X] = 0;
@@ -122,9 +125,9 @@ static void testCW(sensor_align_e rotation, int32_t angle)
 
     rotateVector(matrix, src, test);
     alignSensors(src, rotation);
-    EXPECT_EQ(test[X], src[X]) << "Y-Unit alignment does not match in X-Axis. " << test[X] << " " << src[X];
-    EXPECT_EQ(test[Y], src[Y]) << "Y-Unit alignment does not match in Y-Axis. " << test[Y] << " " << src[Y];
-    EXPECT_EQ(test[Z], src[Z]) << "Y-Unit alignment does not match in Z-Axis. " << test[Z] << " " << src[Z];
+    EXPECT_NEAR(test[X], src[X], TOL) << "Y-Unit alignment does not match in X-Axis. " << test[X] << " " << src[X];
+    EXPECT_NEAR(test[Y], src[Y], TOL) << "Y-Unit alignment does not match in Y-Axis. " << test[Y] << " " << src[Y];
+    EXPECT_NEAR(test[Z], src[Z], TOL) << "Y-Unit alignment does not match in Z-Axis. " << test[Z] << " " << src[Z];
 
     // unit vector along z-axis
     src[X] = 0;
@@ -133,9 +136,9 @@ static void testCW(sensor_align_e rotation, int32_t angle)
 
     rotateVector(matrix, src, test);
     alignSensors(src, rotation);
-    EXPECT_EQ(test[X], src[X]) << "Z-Unit alignment does not match in X-Axis. " << test[X] << " " << src[X];
-    EXPECT_EQ(test[Y], src[Y]) << "Z-Unit alignment does not match in Y-Axis. " << test[Y] << " " << src[Y];
-    EXPECT_EQ(test[Z], src[Z]) << "Z-Unit alignment does not match in Z-Axis. " << test[Z] << " " << src[Z];
+    EXPECT_NEAR(test[X], src[X], TOL) << "Z-Unit alignment does not match in X-Axis. " << test[X] << " " << src[X];
+    EXPECT_NEAR(test[Y], src[Y], TOL) << "Z-Unit alignment does not match in Y-Axis. " << test[Y] << " " << src[Y];
+    EXPECT_NEAR(test[Z], src[Z], TOL) << "Z-Unit alignment does not match in Z-Axis. " << test[Z] << " " << src[Z];
 
     // random vector to test
     src[X] = rand() % 5;
@@ -144,16 +147,16 @@ static void testCW(sensor_align_e rotation, int32_t angle)
 
     rotateVector(matrix, src, test);
     alignSensors(src,  rotation);
-    EXPECT_EQ(test[X], src[X]) << "Random alignment does not match in X-Axis. " << test[X] << " " << src[X];
-    EXPECT_EQ(test[Y], src[Y]) << "Random alignment does not match in Y-Axis. " << test[Y] << " " << src[Y];
-    EXPECT_EQ(test[Z], src[Z]) << "Random alignment does not match in Z-Axis. " << test[Z] << " " << src[Z];
+    EXPECT_NEAR(test[X], src[X], TOL) << "Random alignment does not match in X-Axis. " << test[X] << " " << src[X];
+    EXPECT_NEAR(test[Y], src[Y], TOL) << "Random alignment does not match in Y-Axis. " << test[Y] << " " << src[Y];
+    EXPECT_NEAR(test[Z], src[Z], TOL) << "Random alignment does not match in Z-Axis. " << test[Z] << " " << src[Z];
 }
 
 /*
  * Since the order of flip and rotation matters, these tests make the
  * assumption that the 'flip' occurs first, followed by clockwise rotation
  */
-static void testCWFlip(sensor_align_e rotation, int32_t angle)
+static void testCWFlip(legacy_sensor_align_e rotation, int32_t angle)
 {
     float src[XYZ_AXIS_COUNT];
     float test[XYZ_AXIS_COUNT];
@@ -171,9 +174,9 @@ static void testCWFlip(sensor_align_e rotation, int32_t angle)
 
     alignSensors(src, rotation);
 
-    EXPECT_EQ(test[X], src[X]) << "X-Unit alignment does not match in X-Axis. " << test[X] << " " << src[X];
-    EXPECT_EQ(test[Y], src[Y]) << "X-Unit alignment does not match in Y-Axis. " << test[Y] << " " << src[Y];
-    EXPECT_EQ(test[Z], src[Z]) << "X-Unit alignment does not match in Z-Axis. " << test[Z] << " " << src[Z];
+    EXPECT_NEAR(test[X], src[X], TOL) << "X-Unit alignment does not match in X-Axis. " << test[X] << " " << src[X];
+    EXPECT_NEAR(test[Y], src[Y], TOL) << "X-Unit alignment does not match in Y-Axis. " << test[Y] << " " << src[Y];
+    EXPECT_NEAR(test[Z], src[Z], TOL) << "X-Unit alignment does not match in Z-Axis. " << test[Z] << " " << src[Z];
 
     // unit vector along y-axis
     src[X] = 0;
@@ -187,9 +190,9 @@ static void testCWFlip(sensor_align_e rotation, int32_t angle)
 
     alignSensors(src, rotation);
 
-    EXPECT_EQ(test[X], src[X]) << "Y-Unit alignment does not match in X-Axis. " << test[X] << " " << src[X];
-    EXPECT_EQ(test[Y], src[Y]) << "Y-Unit alignment does not match in Y-Axis. " << test[Y] << " " << src[Y];
-    EXPECT_EQ(test[Z], src[Z]) << "Y-Unit alignment does not match in Z-Axis. " << test[Z] << " " << src[Z];
+    EXPECT_NEAR(test[X], src[X], TOL) << "Y-Unit alignment does not match in X-Axis. " << test[X] << " " << src[X];
+    EXPECT_NEAR(test[Y], src[Y], TOL) << "Y-Unit alignment does not match in Y-Axis. " << test[Y] << " " << src[Y];
+    EXPECT_NEAR(test[Z], src[Z], TOL) << "Y-Unit alignment does not match in Z-Axis. " << test[Z] << " " << src[Z];
 
     // unit vector along z-axis
     src[X] = 0;
@@ -203,9 +206,9 @@ static void testCWFlip(sensor_align_e rotation, int32_t angle)
 
     alignSensors(src, rotation);
 
-    EXPECT_EQ(test[X], src[X]) << "Z-Unit alignment does not match in X-Axis. " << test[X] << " " << src[X];
-    EXPECT_EQ(test[Y], src[Y]) << "Z-Unit alignment does not match in Y-Axis. " << test[Y] << " " << src[Y];
-    EXPECT_EQ(test[Z], src[Z]) << "Z-Unit alignment does not match in Z-Axis. " << test[Z] << " " << src[Z];
+    EXPECT_NEAR(test[X], src[X], TOL) << "Z-Unit alignment does not match in X-Axis. " << test[X] << " " << src[X];
+    EXPECT_NEAR(test[Y], src[Y], TOL) << "Z-Unit alignment does not match in Y-Axis. " << test[Y] << " " << src[Y];
+    EXPECT_NEAR(test[Z], src[Z], TOL) << "Z-Unit alignment does not match in Z-Axis. " << test[Z] << " " << src[Z];
 
      // random vector to test
     src[X] = rand() % 5;
@@ -219,49 +222,49 @@ static void testCWFlip(sensor_align_e rotation, int32_t angle)
 
     alignSensors(src, rotation);
 
-    EXPECT_EQ(test[X], src[X]) << "Random alignment does not match in X-Axis. " << test[X] << " " << src[X];
-    EXPECT_EQ(test[Y], src[Y]) << "Random alignment does not match in Y-Axis. " << test[Y] << " " << src[Y];
-    EXPECT_EQ(test[Z], src[Z]) << "Random alignment does not match in Z-Axis. " << test[Z] << " " << src[Z];
+    EXPECT_NEAR(test[X], src[X], TOL) << "Random alignment does not match in X-Axis. " << test[X] << " " << src[X];
+    EXPECT_NEAR(test[Y], src[Y], TOL) << "Random alignment does not match in Y-Axis. " << test[Y] << " " << src[Y];
+    EXPECT_NEAR(test[Z], src[Z], TOL) << "Random alignment does not match in Z-Axis. " << test[Z] << " " << src[Z];
 }
 
 
 TEST(AlignSensorTest, ClockwiseZeroDegrees)
 {
     srand(time(NULL));
-    testCW(CW0_DEG, 0);
+    testCW(LEGACY_ALIGN_CW0_DEG, 0);
 }
 
 TEST(AlignSensorTest, ClockwiseNinetyDegrees)
 {
-    testCW(CW90_DEG, 90);
+    testCW(LEGACY_ALIGN_CW90_DEG, 90);
 }
 
 TEST(AlignSensorTest, ClockwiseOneEightyDegrees)
 {
-    testCW(CW180_DEG, 180);
+    testCW(LEGACY_ALIGN_CW180_DEG, 180);
 }
 
 TEST(AlignSensorTest, ClockwiseTwoSeventyDegrees)
 {
-    testCW(CW270_DEG, 270);
+    testCW(LEGACY_ALIGN_CW270_DEG, 270);
 }
 
 TEST(AlignSensorTest, ClockwiseZeroDegreesFlip)
 {
-    testCWFlip(CW0_DEG_FLIP, 0);
+    testCWFlip(LEGACY_ALIGN_CW0_DEG_FLIP, 0);
 }
 
 TEST(AlignSensorTest, ClockwiseNinetyDegreesFlip)
 {
-    testCWFlip(CW90_DEG_FLIP, 90);
+    testCWFlip(LEGACY_ALIGN_CW90_DEG_FLIP, 90);
 }
 
 TEST(AlignSensorTest, ClockwiseOneEightyDegreesFlip)
 {
-    testCWFlip(CW180_DEG_FLIP, 180);
+    testCWFlip(LEGACY_ALIGN_CW180_DEG_FLIP, 180);
 }
 
 TEST(AlignSensorTest, ClockwiseTwoSeventyDegreesFlip)
 {
-    testCWFlip(CW270_DEG_FLIP, 270);
+    testCWFlip(LEGACY_ALIGN_CW270_DEG_FLIP, 270);
 }

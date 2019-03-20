@@ -23,6 +23,8 @@
 
 #include "platform.h"
 
+#include "common/sensor_alignment.h"
+
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/gyrodev.h"
@@ -36,30 +38,30 @@
 ioTag_t selectMPUIntExtiConfigByHardwareRevision(void); // XXX Should be gone
 
 #if defined(USE_SPI_GYRO) || defined(USE_I2C_GYRO)
-static void gyroResetCommonDeviceConfig(gyroDeviceConfig_t *devconf, ioTag_t extiTag, uint8_t align)
+static void gyroResetCommonDeviceConfig(gyroDeviceConfig_t *devconf, ioTag_t extiTag, sensorAlignment_t alignment)
 {
     devconf->extiTag = extiTag;
-    devconf->align = align;
+    devconf->alignment = alignment;
 }
 #endif
 
 #ifdef USE_SPI_GYRO
-static void gyroResetSpiDeviceConfig(gyroDeviceConfig_t *devconf, SPI_TypeDef *instance, ioTag_t csnTag, ioTag_t extiTag, uint8_t align)
+static void gyroResetSpiDeviceConfig(gyroDeviceConfig_t *devconf, SPI_TypeDef *instance, ioTag_t csnTag, ioTag_t extiTag, sensorAlignment_t alignment)
 {
     devconf->bustype = BUSTYPE_SPI;
     devconf->spiBus = SPI_DEV_TO_CFG(spiDeviceByInstance(instance));
     devconf->csnTag = csnTag;
-    gyroResetCommonDeviceConfig(devconf, extiTag, align);
+    gyroResetCommonDeviceConfig(devconf, extiTag, alignment);
 }
 #endif
 
 #if defined(USE_I2C_GYRO) && !defined(USE_MULTI_GYRO)
-static void gyroResetI2cDeviceConfig(gyroDeviceConfig_t *devconf, I2CDevice i2cbus, ioTag_t extiTag, uint8_t align)
+static void gyroResetI2cDeviceConfig(gyroDeviceConfig_t *devconf, I2CDevice i2cbus, ioTag_t extiTag, sensorAlignment_t alignment)
 {
     devconf->bustype = BUSTYPE_I2C;
     devconf->i2cBus = I2C_DEV_TO_CFG(i2cbus);
     devconf->i2cAddress = GYRO_I2C_ADDRESS;
-    gyroResetCommonDeviceConfig(devconf, extiTag, align);
+    gyroResetCommonDeviceConfig(devconf, extiTag, alignment);
 }
 #endif
 

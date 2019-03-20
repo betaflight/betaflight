@@ -23,6 +23,7 @@
 #include "platform.h"
 
 #include "common/axis.h"
+#include "common/maths.h"
 #include "drivers/exti.h"
 #include "drivers/bus.h"
 #include "drivers/sensor.h"
@@ -92,8 +93,8 @@ typedef struct gyroDev_s {
     int32_t gyroADCRawPrevious[XYZ_AXIS_COUNT];
     int16_t gyroADCRaw[XYZ_AXIS_COUNT];
     int16_t temperature;
+    fp_rotationMatrix_t rotationMatrix;
     mpuDetectionResult_t mpuDetectionResult;
-    sensor_align_e gyroAlign;
     gyroRateKHz_e gyroRateKHz;
     bool dataReady;
     bool gyro_high_fsr;
@@ -103,6 +104,7 @@ typedef struct gyroDev_s {
     ioTag_t mpuIntExtiTag;
     uint8_t gyroHasOverflowProtection;
     gyroHardware_e gyroHardware;
+    uint8_t filler[1];
 } gyroDev_t;
 
 typedef struct accDev_s {
@@ -115,12 +117,12 @@ typedef struct accDev_s {
     busDevice_t bus;
     uint16_t acc_1G;
     int16_t ADCRaw[XYZ_AXIS_COUNT];
+    fp_rotationMatrix_t rotationMatrix;
     mpuDetectionResult_t mpuDetectionResult;
-    sensor_align_e accAlign;
     bool dataReady;
     bool acc_high_fsr;
     char revisionCode;                                      // a revision code for the sensor, if known
-    uint8_t filler[2];
+    uint8_t filler[3];
 } accDev_t;
 
 static inline void accDevLock(accDev_t *acc)

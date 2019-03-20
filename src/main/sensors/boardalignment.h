@@ -20,6 +20,9 @@
 
 #pragma once
 
+#include "common/axis.h"
+#include "common/maths.h"
+
 #include "pg/pg.h"
 
 typedef struct boardAlignment_s {
@@ -30,5 +33,6 @@ typedef struct boardAlignment_s {
 
 PG_DECLARE(boardAlignment_t, boardAlignment);
 
-void alignSensors(float *dest, uint8_t rotation);
+void alignSensor(float *dest, fp_rotationMatrix_t* rotationMatrix);
+void alignSensors(float *dest, uint8_t rotation); // deprecated
 void initBoardAlignment(const boardAlignment_t *boardAlignment);

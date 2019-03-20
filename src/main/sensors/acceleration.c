@@ -320,12 +320,14 @@ bool accInit(uint32_t gyroSamplingInverval)
     // Copy alignment from active gyro, as all production boards use acc-gyro-combi chip.
     // Exceptions are STM32F3DISCOVERY and STM32F411DISCOVERY, and (may be) handled in future enhancement.
 
-    acc.dev.accAlign = gyroDeviceConfig(0)->align;
+    const sensorAlignment_t* alignment = &gyroDeviceConfig(0)->alignment;
+
 #ifdef USE_MULTI_GYRO
     if (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_2) {
-        acc.dev.accAlign = gyroDeviceConfig(1)->align;
+        alignment = &gyroDeviceConfig(1)->alignment;
     }
 #endif
+    buildRotationMatrixFromAlignment(alignment, &acc.dev.rotationMatrix);
 
     if (!accDetect(&acc.dev, accelerometerConfig()->acc_hardware)) {
         return false;
@@ -485,7 +487,7 @@ void accUpdate(timeUs_t currentTimeUs, rollAndPitchTrims_t *rollAndPitchTrims)
         }
     }
 
-    alignSensors(acc.accADC, acc.dev.accAlign);
+    alignSensor(acc.accADC, &acc.dev.rotationMatrix);
 
     if (!accIsCalibrationComplete()) {
         performAcclerationCalibration(rollAndPitchTrims);
