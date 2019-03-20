@@ -19,3 +19,4 @@ This is the official list of manufacturer ids (`manufacturer_id` in the target c
 |MTKS|Matek Systems|http://www.mateksys.com/|
 |RCTI|RCTimer|http://rctimer.com/|
 |SPRO|Seriously Pro Racing (SP Racing)|http://seriouslypro.com/|
+|TTRH|TransTEC|http://www.transtechobby.com/|
