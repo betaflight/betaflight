@@ -4695,7 +4695,7 @@ dmaoptEntry_t dmaoptEntryTable[] = {
 #define DMA_OPT_UI_INDEX(i) ((i) + 1)
 #define DMA_OPT_STRING_BUFSIZE 5
 
-static void dmaoptToString(int optval, char *buf)
+static void optToString(int optval, char *buf)
 {
     if (optval == DMA_OPT_UNUSED) {
         memcpy(buf, "NONE", DMA_OPT_STRING_BUFSIZE);
@@ -4959,10 +4959,10 @@ static void cliDmaopt(char *cmdline)
             }
         }
 
-        char optvalString[5];
-        char orgvalString[5];
-        dmaoptToString(optval, optvalString);
-        dmaoptToString(orgval, orgvalString);
+        char optvalString[DMA_OPT_STRING_BUFSIZE];
+        char orgvalString[DMA_OPT_STRING_BUFSIZE];
+        optToString(optval, optvalString);
+        optToString(orgval, orgvalString);
 
         if (optval != orgval) {
             if (entry) {
@@ -5178,7 +5178,6 @@ static void cliTimer(char *cmdline)
     
     char *pch = NULL;
     char *saveptr;
-    int timerIOIndex = -1;
     
     ioTag_t ioTag = IO_TAG_NONE;
     pch = strtok_r(cmdline, " ", &saveptr);    
@@ -5188,16 +5187,22 @@ static void cliTimer(char *cmdline)
         return;
     }
 
+    int timerIOIndex = -1;
+    bool isNewTimerOpt = false;
     /* find existing entry, or go for next available */
     for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
         if (timerIOConfig(i)->ioTag == ioTag) {
             timerIOIndex = i;
+
             break;
         }
 
         /* first available empty slot */
-        if (timerIOIndex < 0 && timerIOConfig(i)->ioTag == IO_TAG_NONE) {
+        if (timerIOConfig(i)->ioTag == IO_TAG_NONE) {
             timerIOIndex = i;
+            isNewTimerOpt = true;
+
+            break;
         }
     }
 
@@ -5230,9 +5235,22 @@ static void cliTimer(char *cmdline)
             timerIndex = atoi(pch) + 1;
         }
 
+        uint8_t oldTimerIndex = isNewTimerOpt ? 0 : timerIOConfig(timerIOIndex)->index;
         timerIOConfigMutable(timerIOIndex)->ioTag = timerIndex == 0 ? IO_TAG_NONE : ioTag;
         timerIOConfigMutable(timerIOIndex)->index = timerIndex;
         timerIOConfigMutable(timerIOIndex)->dmaopt = DMA_OPT_UNUSED;
+
+        char optvalString[DMA_OPT_STRING_BUFSIZE];
+        optToString(timerIndex - 1, optvalString);
+
+        char orgvalString[DMA_OPT_STRING_BUFSIZE];
+        optToString(oldTimerIndex - 1, orgvalString);
+
+        if (timerIndex == oldTimerIndex) {
+            cliPrintLinef("timer %c%02d: no change: %s", IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag), orgvalString);
+        } else {
+            cliPrintLinef("timer %c%02d: changed from %s to %s", IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag), orgvalString, optvalString);
+        }
 
         return;
     } else {
