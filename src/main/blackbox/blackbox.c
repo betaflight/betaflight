@@ -1303,6 +1303,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("dterm_lowpass_hz", "%d",                currentPidProfile->dterm_lowpass_hz);
         BLACKBOX_PRINT_HEADER_LINE("dterm_lowpass_dyn_hz", "%d,%d",         currentPidProfile->dyn_lpf_dterm_min_hz,
                                                                             currentPidProfile->dyn_lpf_dterm_max_hz);
+        BLACKBOX_PRINT_HEADER_LINE("dterm_filter2_type", "%d",              currentPidProfile->dterm_filter2_type);
         BLACKBOX_PRINT_HEADER_LINE("dterm_lowpass2_hz", "%d",               currentPidProfile->dterm_lowpass2_hz);
         BLACKBOX_PRINT_HEADER_LINE("yaw_lowpass_hz", "%d",                  currentPidProfile->yaw_lowpass_hz);
         BLACKBOX_PRINT_HEADER_LINE("dterm_notch_hz", "%d",                  currentPidProfile->dterm_notch_hz);
