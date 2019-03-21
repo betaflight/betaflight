@@ -467,7 +467,7 @@ void pwmWriteDshotCommand(uint8_t index, uint8_t motorCount, uint8_t command, bo
             if (index == i || index == ALL_MOTORS) {
                 dshotCommandControl.command[i] = command;
             } else {
-                dshotCommandControl.command[i] = command;
+                dshotCommandControl.command[i] = DSHOT_CMD_MOTOR_STOP;
             }
         }
 
