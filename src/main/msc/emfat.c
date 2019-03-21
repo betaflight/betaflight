@@ -28,6 +28,8 @@
  * SOFTWARE.
  */
 
+#include "platform.h"
+
 #include "common/utils.h"
 
 #include "emfat.h"

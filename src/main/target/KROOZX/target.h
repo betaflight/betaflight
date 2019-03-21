@@ -71,9 +71,8 @@
 #define SDCARD_SPI_CS_PIN                   PA15
 #define SPI3_TX_DMA_OPT                     0     // DMA 1 Stream 5 Channel 0
 
-#ifdef USE_MSP_DISPLAYPORT
 #undef USE_MSP_DISPLAYPORT
-#endif
+
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI1
 #define MAX7456_SPI_CS_PIN      PC4

@@ -76,7 +76,7 @@ float filterGetNotchQ(float centerFreq, float cutoffFreq);
 void laggedMovingAverageInit(laggedMovingAverage_t *filter, uint16_t windowSize, float *buf);
 float laggedMovingAverageUpdate(laggedMovingAverage_t *filter, float input);
 
-float pt1FilterGain(uint16_t f_cut, float dT);
+float pt1FilterGain(float f_cut, float dT);
 void pt1FilterInit(pt1Filter_t *filter, float k);
 void pt1FilterUpdateCutoff(pt1Filter_t *filter, float k);
 float pt1FilterApply(pt1Filter_t *filter, float input);

@@ -45,6 +45,7 @@
 #include "fc/runtime_config.h"
 
 #include "flight/imu.h"
+#include "flight/mixer.h"
 
 #include "io/gps.h"
 
@@ -55,11 +56,15 @@
 #include "io/spektrum_vtx_control.h"
 
 #include "sensors/battery.h"
+#include "sensors/adcinternal.h"
+#include "sensors/esc_sensor.h"
 
 #include "telemetry/telemetry.h"
 #include "telemetry/srxl.h"
 
 #include "drivers/vtx_common.h"
+#include "drivers/pwm_output.h"
+
 #include "io/vtx_tramp.h"
 #include "io/vtx_smartaudio.h"
 
@@ -118,7 +123,8 @@ typedef struct
 } STRU_TELE_QOS;
 */
 
-#define STRU_TELE_QOS_EMPTY_REPORT_COUNT 14
+#define STRU_TELE_QOS_EMPTY_FIELDS_COUNT 14
+#define STRU_TELE_QOS_EMPTY_FIELDS_VALUE 0xff
 
 bool srxlFrameQos(sbuf_t *dst, timeUs_t currentTimeUs)
 {
@@ -127,10 +133,12 @@ bool srxlFrameQos(sbuf_t *dst, timeUs_t currentTimeUs)
     sbufWriteU8(dst, SRXL_FRAMETYPE_TELE_QOS);
     sbufWriteU8(dst, SRXL_FRAMETYPE_SID);
 
-    sbufFill(dst, 0xFF, STRU_TELE_QOS_EMPTY_REPORT_COUNT); // Clear remainder
+    sbufFill(dst, STRU_TELE_QOS_EMPTY_FIELDS_VALUE, STRU_TELE_QOS_EMPTY_FIELDS_COUNT); // Clear remainder
 
+    // Mandatory frame, send it unconditionally.
     return true;
 }
+
 
 /*
 typedef struct
@@ -147,18 +155,78 @@ typedef struct
 */
 
 #define STRU_TELE_RPM_EMPTY_FIELDS_COUNT 8
+#define STRU_TELE_RPM_EMPTY_FIELDS_VALUE 0xff
+
+#define SPEKTRUM_RPM_UNUSED 0xffff
+#define SPEKTRUM_TEMP_UNUSED 0x7fff
+#define MICROSEC_PER_MINUTE 60000000
+
+//Original range of 1 - 65534 uSec gives an RPM range of 915 - 60000000rpm, 60MegaRPM
+#define SPEKTRUM_MIN_RPM 999      // Min RPM to show the user, indicating RPM is really below 999
+#define SPEKTRUM_MAX_RPM 60000000
+
+uint16_t getMotorAveragePeriod(void)
+{
+
+#if defined( USE_ESC_SENSOR_TELEMETRY) || defined( USE_DSHOT_TELEMETRY)
+    uint32_t rpm = 0;
+    uint16_t period_us = SPEKTRUM_RPM_UNUSED;
+
+#if defined( USE_ESC_SENSOR_TELEMETRY)
+    escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
+    if (escData != NULL) {
+        rpm = escData->rpm;
+    }
+#endif
+
+#if defined( USE_DSHOT_TELEMETRY)
+    if (useDshotTelemetry) {
+        uint16_t motors = getMotorCount();
+
+        if (motors > 0) {
+            for (int motor = 0; motor < motors; motor++) {
+                rpm += getDshotTelemetry(motor);
+            }
+            rpm = 100.0f / (motorConfig()->motorPoleCount / 2.0f) * rpm;  // convert erpm freq to RPM.
+            rpm /= motors;           // Average combined rpm
+        }
+    }
+#endif
+
+    if (rpm > SPEKTRUM_MIN_RPM && rpm < SPEKTRUM_MAX_RPM) {
+        period_us = MICROSEC_PER_MINUTE / rpm; // revs/minute -> microSeconds
+    } else {
+        period_us = MICROSEC_PER_MINUTE / SPEKTRUM_MIN_RPM;
+    }
+
+    return period_us;
+#else
+    return SPEKTRUM_RPM_UNUSED;
+#endif
+}
 
 bool srxlFrameRpm(sbuf_t *dst, timeUs_t currentTimeUs)
 {
+    int16_t coreTemp = SPEKTRUM_TEMP_UNUSED;
+#if defined(USE_ADC_INTERNAL)
+    coreTemp = getCoreTemperatureCelsius();
+    coreTemp = coreTemp * 9 / 5 + 32; // C -> F
+#endif
+
     UNUSED(currentTimeUs);
 
     sbufWriteU8(dst, SRXL_FRAMETYPE_TELE_RPM);
     sbufWriteU8(dst, SRXL_FRAMETYPE_SID);
-    sbufWriteU16BigEndian(dst, 0xFFFF);                     // pulse leading edges
-    sbufWriteU16BigEndian(dst, getBatteryVoltage());   // vbat is in units of 0.01V
-    sbufWriteU16BigEndian(dst, 0x7FFF);                     // temperature
+    sbufWriteU16BigEndian(dst, getMotorAveragePeriod());    // pulse leading edges
+    if (telemetryConfig()->report_cell_voltage) {
+        sbufWriteU16BigEndian(dst, getBatteryAverageCellVoltage()); // Cell voltage is in units of 0.01V
+    } else {
+        sbufWriteU16BigEndian(dst, getBatteryVoltage());   // vbat is in units of 0.01V
+    }
+    sbufWriteU16BigEndian(dst, coreTemp);                   // temperature
+    sbufFill(dst, STRU_TELE_RPM_EMPTY_FIELDS_VALUE, STRU_TELE_RPM_EMPTY_FIELDS_COUNT);
 
-    sbufFill(dst, 0xFF, STRU_TELE_RPM_EMPTY_FIELDS_COUNT);
+    // Mandatory frame, send it unconditionally.
     return true;
 }
 
@@ -277,6 +345,7 @@ typedef struct
 } STRU_TELE_GPS_STAT;
 */
 
+#define STRU_TELE_GPS_STAT_EMPTY_FIELDS_VALUE 0xff
 #define STRU_TELE_GPS_STAT_EMPTY_FIELDS_COUNT 6
 #define SPEKTRUM_TIME_UNKNOWN 0xFFFFFFFF
 
@@ -286,7 +355,6 @@ bool srxlFrameGpsStat(sbuf_t *dst, timeUs_t currentTimeUs)
     uint32_t timeBcd;
     uint16_t speedKnotsBcd, speedTmp;
     uint8_t numSatBcd, altitudeHighBcd;
-    dateTime_t dt;
     bool timeProvided = false;
 
     if (!featureIsEnabled(FEATURE_GPS) || !STATE(GPS_FIX) || gpsSol.numSat < 6) {
@@ -302,6 +370,7 @@ bool srxlFrameGpsStat(sbuf_t *dst, timeUs_t currentTimeUs)
     speedKnotsBcd = (speedTmp > 9999) ? dec2bcd(9999) : dec2bcd(speedTmp);
 
 #ifdef USE_RTC_TIME
+    dateTime_t dt;
     // RTC
     if (rtcHasTime()) {
         rtcGetDateTime(&dt);
@@ -324,7 +393,7 @@ bool srxlFrameGpsStat(sbuf_t *dst, timeUs_t currentTimeUs)
     sbufWriteU32(dst, timeBcd);
     sbufWriteU8(dst, numSatBcd);
     sbufWriteU8(dst, altitudeHighBcd);
-    sbufFill(dst, 0xFF, STRU_TELE_GPS_STAT_EMPTY_FIELDS_COUNT);
+    sbufFill(dst, STRU_TELE_GPS_STAT_EMPTY_FIELDS_VALUE, STRU_TELE_GPS_STAT_EMPTY_FIELDS_COUNT);
 
     return true;
 }
@@ -345,6 +414,11 @@ typedef struct
     UINT16  spare;          // Not used
 } STRU_TELE_FP_MAH;
 */
+#define STRU_TELE_FP_EMPTY_FIELDS_COUNT 2
+#define STRU_TELE_FP_EMPTY_FIELDS_VALUE 0xff
+
+#define SPEKTRUM_AMPS_UNUSED 0x7fff
+#define SPEKTRUM_AMPH_UNUSED 0x7fff
 
 #define FP_MAH_KEEPALIVE_TIME_OUT 2000000 // 2s
 
@@ -358,17 +432,20 @@ bool srxlFrameFlightPackCurrent(sbuf_t *dst, timeUs_t currentTimeUs)
 
     timeUs_t keepAlive = currentTimeUs - lastTimeSentFPmAh;
 
-    if ( (amps != sentAmps) || (mah != sentMah) ||
+    if ( amps != sentAmps ||
+         mah != sentMah ||
          keepAlive > FP_MAH_KEEPALIVE_TIME_OUT ) {
+
         sbufWriteU8(dst, SRXL_FRAMETYPE_TELE_FP_MAH);
         sbufWriteU8(dst, SRXL_FRAMETYPE_SID);
         sbufWriteU16(dst, amps);
         sbufWriteU16(dst, mah);
-        sbufWriteU16(dst, 0x7fff);            // temp A
-        sbufWriteU16(dst, 0x7fff);            // Amps B
-        sbufWriteU16(dst, 0x7fff);            // mAH B
-        sbufWriteU16(dst, 0x7fff);            // temp B
-        sbufWriteU16(dst, 0xffff);
+        sbufWriteU16(dst, SPEKTRUM_TEMP_UNUSED);            // temp A
+        sbufWriteU16(dst, SPEKTRUM_AMPS_UNUSED);            // Amps B
+        sbufWriteU16(dst, SPEKTRUM_AMPH_UNUSED);            // mAH B
+        sbufWriteU16(dst, SPEKTRUM_TEMP_UNUSED);            // temp B
+
+        sbufFill(dst, STRU_TELE_FP_EMPTY_FIELDS_VALUE, STRU_TELE_FP_EMPTY_FIELDS_COUNT);
 
         sentAmps = amps;
         sentMah = mah;
@@ -550,7 +627,9 @@ typedef struct
 } STRU_TELE_VTX;
 */
 
-#define STRU_TELE_VTX_RESERVE_COUNT 7
+#define STRU_TELE_VTX_EMPTY_COUNT 7
+#define STRU_TELE_VTX_EMPTY_VALUE 0xff
+
 #define VTX_KEEPALIVE_TIME_OUT 2000000 // uS
 
 static bool srxlFrameVTX(sbuf_t *dst, timeUs_t currentTimeUs)
@@ -576,7 +655,7 @@ static bool srxlFrameVTX(sbuf_t *dst, timeUs_t currentTimeUs)
             sbufWriteU16(dst, vtx.powerValue);
             sbufWriteU8(dst,  vtx.region);
 
-            sbufFill(dst, 0xFF, STRU_TELE_VTX_RESERVE_COUNT);
+            sbufFill(dst, STRU_TELE_VTX_EMPTY_VALUE, STRU_TELE_VTX_EMPTY_COUNT);
 
             memcpy(&vtxSent, &vtx, sizeof(spektrumVtx_t));
             lastTimeSentVtx = currentTimeUs;

@@ -169,7 +169,7 @@ endif
 DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE)
 
 MCU_COMMON_SRC = \
-            target/system_stm32f4xx.c \
+            startup/system_stm32f4xx.c \
             drivers/accgyro/accgyro_mpu.c \
             drivers/adc_stm32f4xx.c \
             drivers/bus_i2c_stm32f10x.c \
@@ -179,6 +179,7 @@ MCU_COMMON_SRC = \
             drivers/light_ws2811strip_stdperiph.c \
             drivers/transponder_ir_io_stdperiph.c \
             drivers/pwm_output_dshot.c \
+            drivers/pwm_output_dshot_shared.c \
             drivers/serial_uart_init.c \
             drivers/serial_uart_stm32f4xx.c \
             drivers/system_stm32f4xx.c \

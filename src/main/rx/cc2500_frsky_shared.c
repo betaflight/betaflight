@@ -26,16 +26,15 @@
 
 #include "common/maths.h"
 
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
-#include "pg/rx.h"
-#include "pg/rx_spi.h"
-
 #include "drivers/rx/rx_cc2500.h"
 #include "drivers/io.h"
 #include "drivers/time.h"
 
 #include "fc/config.h"
+
+#include "pg/rx.h"
+#include "pg/rx_spi.h"
+#include "pg/rx_spi_cc2500.h"
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
@@ -67,20 +66,6 @@ typedef void setRcDataFn(uint16_t *rcData, const uint8_t *payload);
 
 static handlePacketFn *handlePacket;
 static setRcDataFn *setRcData;
-
-PG_REGISTER_WITH_RESET_TEMPLATE(rxFrSkySpiConfig_t, rxFrSkySpiConfig, PG_RX_FRSKY_SPI_CONFIG, 1);
-
-PG_RESET_TEMPLATE(rxFrSkySpiConfig_t, rxFrSkySpiConfig,
-    .autoBind = false,
-    .bindTxId = {0, 0},
-    .bindOffset = 0,
-    .bindHopData = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    .rxNum = 0,
-    .a1Source = FRSKY_SPI_A1_SOURCE_VBAT,
-);
 
 static void initialise() {
     cc2500Reset();
@@ -169,9 +154,9 @@ static void initialise() {
 
 void initialiseData(uint8_t adr)
 {
-    cc2500WriteReg(CC2500_0C_FSCTRL0, (uint8_t)rxFrSkySpiConfig()->bindOffset);
+    cc2500WriteReg(CC2500_0C_FSCTRL0, (uint8_t)rxCc2500SpiConfig()->bindOffset);
     cc2500WriteReg(CC2500_18_MCSM0, 0x8);
-    cc2500WriteReg(CC2500_09_ADDR, adr ? 0x03 : rxFrSkySpiConfig()->bindTxId[0]);
+    cc2500WriteReg(CC2500_09_ADDR, adr ? 0x03 : rxCc2500SpiConfig()->bindTxId[0]);
     cc2500WriteReg(CC2500_07_PKTCTRL1, 0x0D);
     cc2500WriteReg(CC2500_19_FOCCFG, 0x16);
     delay(10);
@@ -214,7 +199,7 @@ static bool tuneRx(uint8_t *packet)
                     uint8_t Lqi = packet[ccLen - 1] & 0x7F;
                     // higher lqi represent better link quality
                     if (Lqi > 50) {
-                        rxFrSkySpiConfigMutable()->bindOffset = bindOffset;
+                        rxCc2500SpiConfigMutable()->bindOffset = bindOffset;
                         return true;
                     }
                 }
@@ -252,14 +237,14 @@ static bool getBind1(uint8_t *packet)
             if (packet[ccLen - 1] & 0x80) {
                 if (packet[2] == 0x01) {
                     if (packet[5] == 0x00) {
-                        rxFrSkySpiConfigMutable()->bindTxId[0] = packet[3];
-                        rxFrSkySpiConfigMutable()->bindTxId[1] = packet[4];
+                        rxCc2500SpiConfigMutable()->bindTxId[0] = packet[3];
+                        rxCc2500SpiConfigMutable()->bindTxId[1] = packet[4];
                         for (uint8_t n = 0; n < 5; n++) {
-                            rxFrSkySpiConfigMutable()->bindHopData[packet[5] + n] =
+                            rxCc2500SpiConfigMutable()->bindHopData[packet[5] + n] =
                                 packet[6 + n];
                         }
 
-                        rxFrSkySpiConfigMutable()->rxNum = packet[12];
+                        rxCc2500SpiConfigMutable()->rxNum = packet[12];
 
                         return true;
                     }
@@ -280,13 +265,13 @@ static bool getBind2(uint8_t *packet)
                 cc2500ReadFifo(packet, ccLen);
                 if (packet[ccLen - 1] & 0x80) {
                     if (packet[2] == 0x01) {
-                        if ((packet[3] == rxFrSkySpiConfig()->bindTxId[0]) &&
-                            (packet[4] == rxFrSkySpiConfig()->bindTxId[1])) {
+                        if ((packet[3] == rxCc2500SpiConfig()->bindTxId[0]) &&
+                            (packet[4] == rxCc2500SpiConfig()->bindTxId[1])) {
                             if (packet[5] == bindIdx) {
 #if defined(DJTS)
                                 if (packet[5] == 0x2D) {
                                     for (uint8_t i = 0; i < 2; i++) {
-                                        rxFrSkySpiConfigMutable()->bindHopData[packet[5] + i] = packet[6 + i];
+                                        rxCc2500SpiConfigMutable()->bindHopData[packet[5] + i] = packet[6 + i];
                                     }
                                     listLength = 47;
 
@@ -303,7 +288,7 @@ static bool getBind2(uint8_t *packet)
                                         }
                                     }
 
-                                    rxFrSkySpiConfigMutable()->bindHopData[packet[5] + n] = packet[6 + n];
+                                    rxCc2500SpiConfigMutable()->bindHopData[packet[5] + n] = packet[6 + n];
                                 }
 
                                 bindIdx = bindIdx + 5;
@@ -336,7 +321,7 @@ rx_spi_received_e frSkySpiDataReceived(uint8_t *packet)
 
         break;
     case STATE_BIND:
-        if (rxSpiCheckBindRequested(true) || rxFrSkySpiConfig()->autoBind) {
+        if (rxSpiCheckBindRequested(true) || rxCc2500SpiConfig()->autoBind) {
             rxSpiLedOn();
             initTuneRx();
 
@@ -370,7 +355,7 @@ rx_spi_received_e frSkySpiDataReceived(uint8_t *packet)
 
         break;
     case STATE_BIND_COMPLETE:
-        if (!rxFrSkySpiConfig()->autoBind) {
+        if (!rxCc2500SpiConfig()->autoBind) {
             writeEEPROM();
         } else {
             uint8_t ctr = 80;
@@ -408,12 +393,12 @@ void nextChannel(uint8_t skip)
     }
     cc2500Strobe(CC2500_SIDLE);
     cc2500WriteReg(CC2500_23_FSCAL3,
-                    calData[rxFrSkySpiConfig()->bindHopData[channr]][0]);
+                    calData[rxCc2500SpiConfig()->bindHopData[channr]][0]);
     cc2500WriteReg(CC2500_24_FSCAL2,
-                    calData[rxFrSkySpiConfig()->bindHopData[channr]][1]);
+                    calData[rxCc2500SpiConfig()->bindHopData[channr]][1]);
     cc2500WriteReg(CC2500_25_FSCAL1,
-                    calData[rxFrSkySpiConfig()->bindHopData[channr]][2]);
-    cc2500WriteReg(CC2500_0A_CHANNR, rxFrSkySpiConfig()->bindHopData[channr]);
+                    calData[rxCc2500SpiConfig()->bindHopData[channr]][2]);
+    cc2500WriteReg(CC2500_0A_CHANNR, rxCc2500SpiConfig()->bindHopData[channr]);
     if (spiProtocol == RX_SPI_FRSKY_D) {
         cc2500Strobe(CC2500_SFRX);
     }

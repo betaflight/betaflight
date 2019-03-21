@@ -26,22 +26,23 @@
 
 #ifdef USE_TRANSPONDER
 
-#include "dma.h"
-#include "drivers/nvic.h"
+#include "drivers/dma.h"
+#include "drivers/dma_reqmap.h"
 #include "drivers/io.h"
-#include "rcc.h"
-#include "timer.h"
+#include "drivers/nvic.h"
+#include "drivers/rcc.h"
+#include "drivers/timer.h"
+#include "drivers/transponder_ir_arcitimer.h"
+#include "drivers/transponder_ir_erlt.h"
+#include "drivers/transponder_ir_ilap.h"
 
 #include "transponder_ir.h"
-#include "drivers/transponder_ir_arcitimer.h"
-#include "drivers/transponder_ir_ilap.h"
-#include "drivers/transponder_ir_erlt.h"
 
 volatile uint8_t transponderIrDataTransferInProgress = 0;
 
-
 static IO_t transponderIO = IO_NONE;
 static TIM_TypeDef *timer = NULL;
+uint8_t alternateFunction;
 #if defined(STM32F3)
 static DMA_Channel_TypeDef *dmaRef = NULL;
 #elif defined(STM32F4)
@@ -74,8 +75,27 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
 
     const timerHardware_t *timerHardware = timerGetByTag(ioTag);
     timer = timerHardware->tim;
+    alternateFunction = timerHardware->alternateFunction;
 
-    if (timerHardware->dmaRef == NULL) {
+#if defined(USE_DMA_SPEC)
+    const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByTimer(timerHardware);
+
+    if (dmaSpec == NULL) {
+        return;
+    }
+
+    dmaRef = dmaSpec->ref;
+#if defined(STM32F4)
+    uint32_t dmaChannel = dmaSpec->channel;
+#endif
+#else
+    dmaRef = timerHardware->dmaRef;
+#if defined(STM32F4)
+    uint32_t dmaChannel = timerHardware->dmaChannel;
+#endif
+#endif
+
+    if (dmaRef == NULL) {
         return;
     }
 
@@ -83,8 +103,8 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     IOInit(transponderIO, OWNER_TRANSPONDER, 0);
     IOConfigGPIOAF(transponderIO, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_DOWN), timerHardware->alternateFunction);
 
-    dmaInit(timerHardware->dmaIrqHandler, OWNER_TRANSPONDER, 0);
-    dmaSetHandler(timerHardware->dmaIrqHandler, TRANSPONDER_DMA_IRQHandler, NVIC_PRIO_TRANSPONDER_DMA, 0);
+    dmaInit(dmaGetIdentifier(dmaRef), OWNER_TRANSPONDER, 0);
+    dmaSetHandler(dmaGetIdentifier(dmaRef), TRANSPONDER_DMA_IRQHandler, NVIC_PRIO_TRANSPONDER_DMA, 0);
 
     RCC_ClockCmd(timerRCC(timer), ENABLE);
 
@@ -119,7 +139,6 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     TIM_CtrlPWMOutputs(timer, ENABLE);
 
     /* configure DMA */
-    dmaRef = timerHardware->dmaRef;
     DMA_Cmd(dmaRef, DISABLE);
     DMA_DeInit(dmaRef);
 
@@ -130,7 +149,7 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
     DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
 #elif defined(STM32F4)
-    DMA_InitStructure.DMA_Channel = timerHardware->dmaChannel;
+    DMA_InitStructure.DMA_Channel = dmaChannel;
     DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)&(transponder->transponderIrDMABuffer);
     DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
 #endif
@@ -218,7 +237,7 @@ void transponderIrDisable(void)
     TIM_Cmd(timer, DISABLE);
 
     IOInit(transponderIO, OWNER_TRANSPONDER, 0);
-    IOConfigGPIOAF(transponderIO, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_DOWN), timerHardware->alternateFunction);
+    IOConfigGPIOAF(transponderIO, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_DOWN), alternateFunction);
 
 #ifdef TRANSPONDER_INVERTED
     IOHi(transponderIO);

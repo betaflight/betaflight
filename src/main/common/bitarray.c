@@ -22,6 +22,8 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "platform.h"
+
 #include "bitarray.h"
 
 #define BITARRAY_BIT_OP(array, bit, op) ((array)[(bit) / (sizeof((array)[0]) * 8)] op (1 << ((bit) % (sizeof((array)[0]) * 8))))

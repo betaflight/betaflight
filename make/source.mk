@@ -7,6 +7,8 @@ COMMON_SRC = \
             $(addprefix pg/,$(notdir $(wildcard $(SRC_DIR)/pg/*.c))) \
             $(addprefix common/,$(notdir $(wildcard $(SRC_DIR)/common/*.c))) \
             $(addprefix config/,$(notdir $(wildcard $(SRC_DIR)/config/*.c))) \
+            cli/cli.c \
+            cli/settings.c \
             drivers/adc.c \
             drivers/buf_writer.c \
             drivers/bus.c \
@@ -44,17 +46,17 @@ COMMON_SRC = \
             fc/hardfaults.c \
             fc/tasks.c \
             fc/runtime_config.c \
-            interface/msp.c \
-            interface/msp_box.c \
-            interface/tramp_protocol.c \
-            interface/smartaudio_protocol.c \
             io/beeper.c \
             io/piniobox.c \
             io/serial.c \
+            io/smartaudio_protocol.c \
             io/statusindicator.c \
+            io/tramp_protocol.c \
             io/transponder_ir.c \
             io/usb_cdc_hid.c \
             io/usb_msc.c \
+            msp/msp.c \
+            msp/msp_box.c \
             msp/msp_serial.c \
             scheduler/scheduler.c \
             sensors/adcinternal.c \
@@ -86,8 +88,6 @@ COMMON_SRC = \
             flight/pid.c \
             flight/servos.c \
             flight/servos_tricopter.c \
-            interface/cli.c \
-            interface/settings.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
@@ -137,6 +137,7 @@ COMMON_SRC = \
             drivers/rangefinder/rangefinder_lidartf.c \
             drivers/serial_escserial.c \
             drivers/vtx_common.c \
+            drivers/vtx_table.c \
             io/dashboard.c \
             io/displayport_max7456.c \
             io/displayport_msp.c \
@@ -148,8 +149,9 @@ COMMON_SRC = \
             io/rcdevice.c \
             io/gps.c \
             io/ledstrip.c \
-            io/osd.c \
             io/pidaudio.c \
+            osd/osd.c \
+            osd/osd_elements.c \
             sensors/barometer.c \
             sensors/rangefinder.c \
             telemetry/telemetry.c \
@@ -248,6 +250,8 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
 
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             bus_bst_stm32f30x.c \
+            cli/cli.c \
+            cli/settings.c \
             drivers/barometer/barometer_bmp085.c \
             drivers/barometer/barometer_bmp280.c \
             drivers/barometer/barometer_fake.c \
@@ -285,10 +289,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             config/feature.c \
             config/config_streamer.c \
             i2c_bst.c \
-            interface/cli.c \
-            interface/settings.c \
             io/dashboard.c \
-            io/osd.c \
             io/serial.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
@@ -316,6 +317,8 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             io/vtx_tramp.c \
             io/vtx_control.c \
             io/spektrum_vtx_control.c \
+            osd/osd.c \
+            osd/osd_elements.c \
             pg/pg.h
 
 # F4 and F7 optimizations
@@ -325,12 +328,17 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             drivers/bus_spi_ll.c \
             drivers/max7456.c \
             drivers/pwm_output_dshot.c \
+            drivers/pwm_output_dshot_shared.c \
             drivers/pwm_output_dshot_hal.c
 endif #!F3
 endif #!F1
 
 # check if target.mk supplied
 SRC := $(STARTUP_SRC) $(MCU_COMMON_SRC) $(TARGET_SRC) $(VARIANT_SRC)
+
+# Files that should not be optimized, useful for debugging IMPRECISE cpu faults.
+# Specify FULL PATH, e.g. "./lib/main/STM32F7/Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_sdmmc.c"
+NOT_OPTIMISED_SRC := $(NOT_OPTIMISED_SRC) \
 
 ifneq ($(DSP_LIB),)
 

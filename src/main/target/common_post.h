@@ -34,6 +34,10 @@
 #undef USE_ESC_SENSOR
 #endif
 
+#ifndef USE_ESC_SENSOR
+#undef USE_ESC_SENSOR_TELEMETRY
+#endif
+
 // XXX Followup implicit dependencies among DASHBOARD, display_xxx and USE_I2C.
 // XXX This should eventually be cleaned up.
 #ifndef USE_I2C
@@ -124,12 +128,6 @@
 #undef USE_MSP_OVER_TELEMETRY
 #endif
 
-#if !defined(USE_OSD)
-#undef USE_RX_LINK_QUALITY_INFO
-#undef USE_OSD_PROFILES
-#undef USE_OSD_STICK_OVERLAY
-#endif
-
 /* If either VTX_CONTROL or VTX_COMMON is undefined then remove common code and device drivers */
 #if !defined(USE_VTX_COMMON) || !defined(USE_VTX_CONTROL)
 #undef USE_VTX_COMMON
@@ -147,6 +145,14 @@
 #define USE_RX_CC2500
 #endif
 
+#if !defined(USE_RX_CC2500)
+#undef USE_RX_CC2500_SPI_PA_LNA
+#endif
+
+#if !defined(USE_RX_CC2500_SPI_PA_LNA)
+#undef USE_RX_CC2500_SPI_DIVERSITY
+#endif
+
 // Burst dshot to default off if not configured explicitly by target
 #ifndef ENABLE_DSHOT_DMAR
 #define ENABLE_DSHOT_DMAR false
@@ -157,22 +163,19 @@
 #undef USE_ADC_INTERNAL
 #endif
 
-#if (!defined(USE_SDCARD) && !defined(USE_FLASHFS)) || !(defined(STM32F4) || defined(STM32F7))
+#if (!defined(USE_SDCARD) && !defined(USE_FLASHFS)) || !defined(USE_BLACKBOX)
 #undef USE_USB_MSC
 #endif
 
 #if !defined(USE_VCP)
 #undef USE_USB_CDC_HID
+#undef USE_USB_MSC
 #endif
 
 #if defined(USE_USB_CDC_HID) || defined(USE_USB_MSC)
 #define USE_USB_ADVANCED_PROFILES
 #endif
 
-// Determine if the target could have a 32KHz capable gyro
-#if defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20689)
-#define USE_32K_CAPABLE_GYRO
-#endif
 
 #if defined(USE_FLASH_W25M512)
 #define USE_FLASH_W25M
@@ -185,6 +188,12 @@
 
 #if defined(USE_MAX7456)
 #define USE_OSD
+#endif
+
+#if !defined(USE_OSD)
+#undef USE_RX_LINK_QUALITY_INFO
+#undef USE_OSD_PROFILES
+#undef USE_OSD_STICK_OVERLAY
 #endif
 
 #if defined(USE_GPS_RESCUE)
@@ -205,7 +214,7 @@
 #define USE_RX_XN297
 #endif
 
-#ifdef GENERIC_TARGET
+#ifdef USE_UNIFIED_TARGET
 #define USE_CONFIGURATION_STATE
 
 // Setup crystal frequency for backward compatibility
@@ -217,17 +226,13 @@
 #else
 #define SYSTEM_HSE_VALUE (HSE_VALUE/1000000U)
 #endif
-#endif // GENERIC_TARGET
+#endif // USE_UNIFIED_TARGET
 
 // Number of pins that needs pre-init
 #ifdef USE_SPI
 #ifndef SPI_PREINIT_COUNT
 #define SPI_PREINIT_COUNT 16 // 2 x 8 (GYROx2, BARO, MAG, MAX, FLASHx2, RX)
 #endif
-#endif
-
-#ifndef USE_BLACKBOX
-#undef USE_USB_MSC
 #endif
 
 #if (!defined(USE_FLASHFS) || !defined(USE_RTC_TIME) || !defined(USE_USB_MSC))
@@ -242,6 +247,10 @@
 
 #if !defined(USE_LED_STRIP)
 #undef USE_LED_STRIP_STATUS_MODE
+#endif
+
+#if defined(USE_LED_STRIP) && !defined(USE_LED_STRIP_STATUS_MODE)
+#define USE_WS2811_SINGLE_COLOUR
 #endif
 
 #if defined(SIMULATOR_BUILD) || defined(UNIT_TEST)
@@ -260,4 +269,37 @@
 
 #ifndef USE_DSHOT_TELEMETRY
 #undef USE_RPM_FILTER
+#endif
+
+#if !defined(USE_BOARD_INFO)
+#undef USE_SIGNATURE
+#endif
+
+#if !defined(USE_ACC)
+#undef USE_GPS_RESCUE
+#undef USE_ACRO_TRAINER
+#endif
+
+#ifndef USE_BEEPER
+#undef BEEPER_PIN
+#undef BEEPER_PWM_HZ
+#endif
+
+#if !defined(USE_DMA_SPEC)
+#undef USE_TIMER_MGMT
+#endif
+
+#if defined(USE_TIMER_MGMT)
+#undef USED_TIMERS
+#else
+#undef USE_UNIFIED_TARGET
+#endif
+
+#if !defined(USE_RANGEFINDER)
+#undef USE_RANGEFINDER_HCSR04
+#undef USE_RANGEFINDER_SRF10
+#undef USE_RANGEFINDER_HCSR04_I2C
+#undef USE_RANGEFINDER_VL53L0X
+#undef USE_RANGEFINDER_UIB
+#undef USE_RANGEFINDER_TF
 #endif

@@ -2,7 +2,7 @@ F3_TARGETS  += $(TARGET)
 
 FEATURES    = VCP SDCARD_SPI
 
-FEATURE_CUT_LEVEL = 1
+FEATURE_CUT_LEVEL = 6
 
 TARGET_SRC = \
             drivers/compass/compass_hmc5883l.c \

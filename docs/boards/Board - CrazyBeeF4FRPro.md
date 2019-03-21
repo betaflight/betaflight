@@ -79,5 +79,5 @@ Basic telemetry information like RSSI and battery voltage will be sent even when
 
 ## Other Resources
 
-- User Manual: Will add soon...
+- User Manual: http://www.happymodel.cn/wp-content/uploads/2019/01/CrazyBee-F4FR-Pro-Frsky-version-Manual-.pdf
 

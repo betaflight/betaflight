@@ -226,6 +226,11 @@ static bool fontIsLoading       = false;
 
 static uint8_t max7456DeviceType;
 
+// previous states initialized outside the valid range to force update on first call
+#define INVALID_PREVIOUS_REGISTER_STATE 255
+static uint8_t previousBlackWhiteRegister = INVALID_PREVIOUS_REGISTER_STATE;
+static uint8_t previousInvertRegister = INVALID_PREVIOUS_REGISTER_STATE;
+
 static void max7456DrawScreenSlow(void);
 
 static uint8_t max7456Send(uint8_t add, uint8_t data)
@@ -355,6 +360,11 @@ uint8_t max7456GetRowsCount(void)
     return (videoSignalReg & VIDEO_MODE_PAL) ? VIDEO_LINES_PAL : VIDEO_LINES_NTSC;
 }
 
+static void max7456ClearShadowBuffer(void)
+{
+    memset(shadowBuffer, 0, maxScreenSize);
+}
+
 void max7456ReInit(void)
 {
     uint8_t srdata = 0;
@@ -392,6 +402,7 @@ void max7456ReInit(void)
     }
 
     // Set all rows to same charactor black/white level
+    previousBlackWhiteRegister = INVALID_PREVIOUS_REGISTER_STATE;
     max7456Brightness(0, 2);
     // Re-enable MAX7456 (last function call disables it)
     __spiBusTransactionBegin(busdev);
@@ -405,7 +416,7 @@ void max7456ReInit(void)
     __spiBusTransactionEnd(busdev);
 
     // Clear shadow to force redraw all screen in non-dma mode.
-    memset(shadowBuffer, 0, maxScreenSize);
+    max7456ClearShadowBuffer();
     if (firstInit) {
         max7456DrawScreenSlow();
         firstInit = false;
@@ -516,9 +527,15 @@ void max7456Invert(bool invert)
         displayMemoryModeReg &= ~INVERT_PIXEL_COLOR;
     }
 
-    __spiBusTransactionBegin(busdev);
-    max7456Send(MAX7456ADD_DMM, displayMemoryModeReg);
-    __spiBusTransactionEnd(busdev);
+    if (displayMemoryModeReg != previousInvertRegister) {
+        // clear the shadow buffer so all characters will be
+        // redrawn with the proper invert state
+        max7456ClearShadowBuffer();
+        previousInvertRegister = displayMemoryModeReg;
+        __spiBusTransactionBegin(busdev);
+        max7456Send(MAX7456ADD_DMM, displayMemoryModeReg);
+        __spiBusTransactionEnd(busdev);
+    }
 }
 
 /**
@@ -531,11 +548,14 @@ void max7456Brightness(uint8_t black, uint8_t white)
 {
     const uint8_t reg = (black << 2) | (3 - white);
 
-    __spiBusTransactionBegin(busdev);
-    for (int i = MAX7456ADD_RB0; i <= MAX7456ADD_RB15; i++) {
-        max7456Send(i, reg);
+    if (reg != previousBlackWhiteRegister) {
+        previousBlackWhiteRegister = reg;
+        __spiBusTransactionBegin(busdev);
+        for (int i = MAX7456ADD_RB0; i <= MAX7456ADD_RB15; i++) {
+            max7456Send(i, reg);
+        }
+        __spiBusTransactionEnd(busdev);
     }
-    __spiBusTransactionEnd(busdev);
 }
 
 //just fill with spaces with some tricks

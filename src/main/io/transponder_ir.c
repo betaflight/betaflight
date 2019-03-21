@@ -52,10 +52,9 @@ void pgResetFn_transponderConfig(transponderConfig_t *transponderConfig)
         .data = { 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0x0, 0x0, 0x0 }, // Note, this is NOT a valid transponder code, it's just for testing production hardware
         .ioTag = IO_TAG_NONE
     );
-
-    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
-        if (timerHardware[i].usageFlags & TIM_USE_TRANSPONDER) {
-            transponderConfig->ioTag = timerHardware[i].tag;
+    for (unsigned i = 0; i < TIMER_CHANNEL_COUNT; i++) {
+        if (TIMER_HARDWARE[i].usageFlags & TIM_USE_TRANSPONDER) {
+            transponderConfig->ioTag = TIMER_HARDWARE[i].tag;
             break;
         }
     }

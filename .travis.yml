@@ -26,7 +26,7 @@ env:
 #  - PUBLISHMETA=True
 #  - PUBLISHDOCS=True
 # Specify the main Mafile supported goals.
-  - GOAL=test
+  - GOAL=test-all
   - GOAL=targets-group-1
   - GOAL=targets-group-2
   - GOAL=targets-group-3
@@ -42,6 +42,18 @@ env:
 #  - TARGET=...
 
 before_install:
+  - |
+    echo "Target branch: $TRAVIS_BRANCH"
+    echo "Commit range: $TRAVIS_COMMIT_RANGE"
+    if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
+      COMMIT_RANGE="$TRAVIS_BRANCH"
+    else
+      COMMIT_RANGE="$TRAVIS_COMMIT_RANGE"
+    fi
+    git diff --name-only $COMMIT_RANGE | grep -qvE '(\.md$)|(^(docs|support|unified_targets))/' || {
+      echo "Only files not used in the build process were updated, aborting."
+      exit
+    }
   - pip install --user cpp-coveralls
   - gem install coveralls-lcov
 
@@ -53,7 +65,6 @@ before_script:
   - clang --version
   - clang++ --version
   - gcc --version
-  - export V=0
 
 script: ./.travis.sh
 

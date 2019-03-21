@@ -19,6 +19,8 @@
   ******************************************************************************
   */
 
+#include "platform.h"
+
 #include "usbd_usr.h"
 #include "usbd_ioreq.h"
 

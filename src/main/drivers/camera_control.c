@@ -56,7 +56,7 @@
 #include "timer.h"
 
 #ifdef USE_OSD
-#include "io/osd.h"
+#include "osd/osd.h"
 #endif
 
 PG_REGISTER_WITH_RESET_FN(cameraControlConfig_t, cameraControlConfig, PG_CAMERA_CONTROL_CONFIG, 0);

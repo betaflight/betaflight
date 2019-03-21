@@ -24,34 +24,36 @@
 
 #include "platform.h"
 
+#ifdef USE_BRUSHED_ESC_AUTODETECT
+
 #include "build/build_config.h"
 
-#include "drivers/time.h"
 #include "drivers/io.h"
+#include "drivers/time.h"
+#include "drivers/timer.h"
+
 #include "pwm_esc_detect.h"
-#include "timer.h"
 
-#ifdef USE_BRUSHED_ESC_AUTODETECT
-uint8_t hardwareMotorType = MOTOR_UNKNOWN;
+static uint8_t hardwareMotorType = MOTOR_UNKNOWN;
 
-void detectBrushedESC(void)
+void detectBrushedESC(ioTag_t motorIoTag)
 {
-    int i = 0;
-    while (!(timerHardware[i].usageFlags & TIM_USE_MOTOR) && (i < USABLE_TIMER_CHANNEL_COUNT)) {
-        i++;
-    }
-
-    IO_t MotorDetectPin = IOGetByTag(timerHardware[i].tag);
-    IOInit(MotorDetectPin, OWNER_SYSTEM, 0);
-    IOConfigGPIO(MotorDetectPin, IOCFG_IPU);
+    IO_t motorDetectPin = IOGetByTag(motorIoTag);
+    IOInit(motorDetectPin, OWNER_SYSTEM, 0);
+    IOConfigGPIO(motorDetectPin, IOCFG_IPU);
 
     delayMicroseconds(10);  // allow configuration to settle
 
     // Check presence of brushed ESC's
-    if (IORead(MotorDetectPin)) {
+    if (IORead(motorDetectPin)) {
         hardwareMotorType = MOTOR_BRUSHLESS;
     } else {
         hardwareMotorType = MOTOR_BRUSHED;
     }
+}
+
+uint8_t getDetectedMotorType(void)
+{
+    return hardwareMotorType;
 }
 #endif

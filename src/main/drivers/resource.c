@@ -18,6 +18,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "platform.h"
+
 #include "resource.h"
 
 const char * const ownerNames[OWNER_TOTAL_COUNT] = {
@@ -78,4 +80,8 @@ const char * const ownerNames[OWNER_TOTAL_COUNT] = {
     "RX_SPI_BIND",
     "RX_SPI_LED",
     "PREINIT",
+    "RX_SPI_EXTI",
+    "RX_SPI_CC2500_TX_EN",
+    "RX_SPI_CC2500_LNA_EN",
+    "RX_SPI_CC2500_ANT_SEL",
 };

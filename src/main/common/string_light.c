@@ -22,6 +22,8 @@
 #include <ctype.h>
 #include <string.h>
 
+#include "platform.h"
+
 #include "typeconversion.h"
 
 int isalnum(int c)

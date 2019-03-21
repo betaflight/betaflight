@@ -29,7 +29,7 @@
 #include "common/utils.h"
 #include "common/time.h"
 
-#include "interface/msp_box.h"
+#include "msp/msp_box.h"
 
 #include "pg/pinio.h"
 #include "pg/piniobox.h"

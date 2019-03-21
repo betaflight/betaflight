@@ -30,8 +30,8 @@
 
 #include "common/utils.h"
 
-#include "interface/msp.h"
-#include "interface/msp_protocol.h"
+#include "msp/msp.h"
+#include "msp/msp_protocol.h"
 
 #include "telemetry/crsf.h"
 #include "telemetry/msp_shared.h"

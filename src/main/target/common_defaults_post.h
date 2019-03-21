@@ -262,8 +262,34 @@
 #endif
 
 #ifdef USE_RX_SPI
+#if !defined(RX_SPI_INSTANCE)
+#define RX_SPI_INSTANCE NULL
+#endif
+
+#if !defined(RX_NSS_PIN)
+#define RX_NSS_PIN NONE
+#endif
+
 #ifndef RX_SPI_LED_PIN
 #define RX_SPI_LED_PIN NONE
+#endif
+
+#if !defined(RX_SPI_EXTI_PIN)
+#define RX_SPI_EXTI_PIN NONE
+#endif
+
+#if defined(USE_RX_CC2500)
+#if !defined(RX_CC2500_SPI_TX_EN_PIN)
+#define RX_CC2500_SPI_TX_EN_PIN NONE
+#endif
+
+#if !defined(RX_CC2500_SPI_LNA_EN_PIN)
+#define RX_CC2500_SPI_LNA_EN_PIN NONE
+#endif
+
+#if !defined(RX_CC2500_SPI_ANT_SEL_PIN)
+#define RX_CC2500_SPI_ANT_SEL_PIN NONE
+#endif
 #endif
 #endif
 
@@ -273,7 +299,6 @@
 #define GYRO_2_CS_PIN           NONE
 #define GYRO_2_ALIGN            ALIGN_DEFAULT
 #define GYRO_2_EXTI_PIN         NONE
-#define ACC_2_ALIGN             ALIGN_DEFAULT
 #endif
 
 #if !defined(GYRO_1_SPI_INSTANCE)
@@ -292,10 +317,6 @@
 #define GYRO_1_ALIGN            ALIGN_DEFAULT
 #endif
 
-#if !defined(ACC_1_ALIGN)
-#define ACC_1_ALIGN             ALIGN_DEFAULT
-#endif
-
 #if defined(MPU_ADDRESS)
 #define GYRO_I2C_ADDRESS MPU_ADDRESS
 #else
@@ -304,8 +325,10 @@
 
 #ifdef USE_MULTI_GYRO
 #define MAX_GYRODEV_COUNT 2
+#define MAX_ACCDEV_COUNT 2
 #else
 #define MAX_GYRODEV_COUNT 1
+#define MAX_ACCDEV_COUNT 1
 #endif
 
 #ifdef USE_VCP
@@ -404,7 +427,7 @@
 #endif
 
 #ifdef USE_ADC
-#if !defined(GENERIC_TARGET) && !defined(ADC_INSTANCE)
+#if !defined(USE_UNIFIED_TARGET) && !defined(ADC_INSTANCE)
 #define ADC_INSTANCE ADC1
 #ifndef ADC1_DMA_OPT
 #define ADC1_DMA_OPT 1

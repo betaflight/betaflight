@@ -39,18 +39,19 @@
 
 #include "drivers/time.h"
 
+#include "fc/config.h"
+#include "fc/controlrate_profile.h"
+#include "fc/rc_controls.h"
+#include "fc/rc.h"
+
 #include "flight/pid.h"
 
 #include "io/beeper.h"
 #include "io/ledstrip.h"
 #include "io/motors.h"
 #include "io/pidaudio.h"
-#include "io/osd.h"
 
-#include "fc/config.h"
-#include "fc/controlrate_profile.h"
-#include "fc/rc_controls.h"
-#include "fc/rc.h"
+#include "osd/osd.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
@@ -679,11 +680,9 @@ static uint8_t applySelectAdjustment(adjustmentFunction_e adjustmentFunction, ui
         break;
     case ADJUSTMENT_LED_PROFILE:
 #ifdef USE_LED_STRIP
-#ifndef UNIT_TEST
         if (getLedProfile() != position) {
             setLedProfile(position);
         }
-#endif
 #endif
         break;
 

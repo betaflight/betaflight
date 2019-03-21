@@ -41,7 +41,7 @@ typedef enum {
 } pgRegistryInternal_e;
 
 // function that resets a single parameter group instance
-typedef void (pgResetFunc)(void * /* base */, int /* size */);
+typedef void (pgResetFunc)(void * /* base */);
 
 typedef struct pgRegistry_s {
     pgn_t pgn;             // The parameter group number, the top 4 bits are reserved for version

@@ -18,8 +18,9 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "stdint.h"
+#include <stdint.h>
 
+#include "platform.h"
 
 #include "debug.h"
 
@@ -30,6 +31,7 @@ uint8_t debugMode;
 uint32_t sectionTimes[2][4];
 #endif
 
+// Please ensure that these names are aligned with the enum values defined in 'debug.h'
 const char * const debugModeNames[DEBUG_COUNT] = {
     "NONE",
     "CYCLETIME",
@@ -78,7 +80,7 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "ANTI_GRAVITY",
     "DYN_LPF",
     "RX_SPEKTRUM_SPI",
-    "DSHOT_TELEMETRY",
+    "DSHOT_RPM_TELEMETRY",
     "RPM_FILTER",
-    "D_CUT",
+    "D_MIN",
 };

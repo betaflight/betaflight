@@ -55,11 +55,12 @@
 // #define SOFT_I2C_PB1011 // If SOFT_I2C is enabled above, need to define pinout as well (I2C1 = PB67, I2C2 = PB1011)
 // #define SOFT_I2C_PB67
 
-#define USE_SPI
-#define USE_SPI_DEVICE_1
 
 #define USE_RX_NRF24
 #ifdef USE_RX_NRF24
+
+#define USE_SPI
+#define USE_SPI_DEVICE_1
 
 #define USE_RX_SPI
 #define RX_SPI_INSTANCE         SPI1
@@ -67,7 +68,7 @@
 // Nordic Semiconductor uses 'CSN', STM uses 'NSS'
 #define RX_CE_PIN               PA4
 #define RX_NSS_PIN              PA11
-#define RX_IRQ_PIN              PA8
+#define RX_SPI_EXTI_PIN         PA8
 // CJMCU has NSS on PA11, rather than the standard PA4
 #define SPI1_NSS_PIN            RX_NSS_PIN
 

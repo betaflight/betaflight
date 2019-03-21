@@ -48,7 +48,8 @@
 #include "rx/rx.h"
 
 #include "io/serial.h"
-#include "io/osd.h"
+
+#include "osd/osd.h"
 
 #include "sensors/battery.h"
 #include "sensors/gyro.h"
@@ -67,13 +68,13 @@
 
 void targetConfiguration(void)
 {
-    if (hardwareMotorType == MOTOR_BRUSHED) {
+    if (getDetectedMotorType() == MOTOR_BRUSHED) {
         motorConfigMutable()->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
         motorConfigMutable()->minthrottle = 1030;
         pidConfigMutable()->pid_process_denom = 1;
     }
 
-    for (uint8_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
+    for (uint8_t pidProfileIndex = 0; pidProfileIndex < PID_PROFILE_COUNT; pidProfileIndex++) {
         pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
 
         pidProfile->pid[PID_ROLL].P  = 86;
@@ -157,6 +158,8 @@ void targetConfiguration(void)
     modeActivationConditionsMutable(0)->auxChannelIndex  = AUX2 - NON_AUX_CHANNEL_COUNT;
     modeActivationConditionsMutable(0)->range.startStep  = CHANNEL_VALUE_TO_STEP(900);
     modeActivationConditionsMutable(0)->range.endStep    = CHANNEL_VALUE_TO_STEP(2100);
+
+    analyzeModeActivationConditions();
 
 #if defined(BEEBRAIN_V2D)
     // DSM version

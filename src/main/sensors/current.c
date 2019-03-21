@@ -23,6 +23,7 @@
 #include "string.h"
 
 #include "platform.h"
+
 #include "build/build_config.h"
 #include "build/debug.h"
 
@@ -34,11 +35,12 @@
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
-#include "config/config_reset.h"
 
 #include "sensors/adcinternal.h"
-#include "sensors/current.h"
+#include "sensors/battery.h"
 #include "sensors/esc_sensor.h"
+
+#include "current.h"
 
 const char * const currentMeterSourceNames[CURRENT_METER_COUNT] = {
     "NONE", "ADC", "VIRTUAL", "ESC", "MSP"
@@ -86,8 +88,7 @@ void currentMeterReset(currentMeter_t *meter)
 // ADC/Virtual shared
 //
 
-#define IBAT_LPF_FREQ  2.0f
-static biquadFilter_t adciBatFilter;
+static pt1Filter_t adciBatFilter;
 
 #ifndef CURRENT_METER_SCALE_DEFAULT
 #define CURRENT_METER_SCALE_DEFAULT 400 // for Allegro ACS758LCB-100U (40mV/A)
@@ -117,8 +118,8 @@ static int32_t currentMeterADCToCentiamps(const uint16_t src)
     // y=x/m+b m is scale in (mV/10A) and b is offset in (mA)
     int32_t centiAmps = (millivolts * 10000 / (int32_t)config->scale + (int32_t)config->offset) / 10;
 
-    DEBUG_SET(DEBUG_CURRENT, 0, millivolts);
-    DEBUG_SET(DEBUG_CURRENT, 1, centiAmps);
+    DEBUG_SET(DEBUG_CURRENT_SENSOR, 0, millivolts);
+    DEBUG_SET(DEBUG_CURRENT_SENSOR, 1, centiAmps);
 
     return centiAmps; // Returns Centiamps to maintain compatability with the rest of the code
 }
@@ -140,7 +141,7 @@ currentMeterADCState_t currentMeterADCState;
 void currentMeterADCInit(void)
 {
     memset(&currentMeterADCState, 0, sizeof(currentMeterADCState_t));
-    biquadFilterInitLPF(&adciBatFilter, IBAT_LPF_FREQ, HZ_TO_INTERVAL_US(50));
+    pt1FilterInit(&adciBatFilter, pt1FilterGain(GET_BATTERY_LPF_FREQUENCY(batteryConfig()->ibatLpfPeriod), HZ_TO_INTERVAL(50)));
 }
 
 void currentMeterADCRefresh(int32_t lastUpdateAt)
@@ -148,7 +149,7 @@ void currentMeterADCRefresh(int32_t lastUpdateAt)
 #ifdef USE_ADC
     const uint16_t iBatSample = adcGetChannel(ADC_CURRENT);
     currentMeterADCState.amperageLatest = currentMeterADCToCentiamps(iBatSample);
-    currentMeterADCState.amperage = currentMeterADCToCentiamps(biquadFilterApply(&adciBatFilter, iBatSample));
+    currentMeterADCState.amperage = currentMeterADCToCentiamps(pt1FilterApply(&adciBatFilter, iBatSample));
 
     updateCurrentmAhDrawnState(&currentMeterADCState.mahDrawnState, currentMeterADCState.amperageLatest, lastUpdateAt);
 #else
@@ -166,8 +167,8 @@ void currentMeterADCRead(currentMeter_t *meter)
     meter->amperage = currentMeterADCState.amperage;
     meter->mAhDrawn = currentMeterADCState.mahDrawnState.mAhDrawn;
 
-    DEBUG_SET(DEBUG_CURRENT, 2, meter->amperageLatest);
-    DEBUG_SET(DEBUG_CURRENT, 3, meter->mAhDrawn);
+    DEBUG_SET(DEBUG_CURRENT_SENSOR, 2, meter->amperageLatest);
+    DEBUG_SET(DEBUG_CURRENT_SENSOR, 3, meter->mAhDrawn);
 }
 
 //
@@ -253,7 +254,8 @@ void currentMeterESCReadMotor(uint8_t motorNumber, currentMeter_t *meter)
 
 #ifdef USE_MSP_CURRENT_METER
 #include "common/streambuf.h"
-#include "interface/msp_protocol.h"
+
+#include "msp/msp_protocol.h"
 #include "msp/msp_serial.h"
 
 currentMeterMSPState_t currentMeterMSPState;

@@ -24,6 +24,8 @@
 #include <math.h>
 #include <limits.h>
 
+#include "platform.h"
+
 #include "build/debug.h"
 
 #include "common/maths.h"

@@ -21,7 +21,10 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "SDF4"
-#define USBD_PRODUCT_STRING     "DISCF4"
+#define USBD_PRODUCT_STRING     "STM32F4DISCOVERY"
+
+#define USE_VTX_TABLE
+#define USE_SPI_TRANSACTION
 
 //LEDs
 #define LED0_PIN                PD12

@@ -56,7 +56,7 @@
 // alternative defaults settings for AlienFlight targets
 void targetConfiguration(void)
 {
-    if (hardwareMotorType == MOTOR_BRUSHED) {
+    if (getDetectedMotorType() == MOTOR_BRUSHED) {
         motorConfigMutable()->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
         pidConfigMutable()->pid_process_denom = 1;
     }
@@ -75,7 +75,7 @@ void targetConfiguration(void)
         featureEnable(FEATURE_TELEMETRY);
     }
 
-    for (uint8_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
+    for (uint8_t pidProfileIndex = 0; pidProfileIndex < PID_PROFILE_COUNT; pidProfileIndex++) {
         pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
 
         pidProfile->pid[FD_ROLL].P = 53;

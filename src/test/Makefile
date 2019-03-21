@@ -95,7 +95,7 @@ blackbox_encoding_unittest_SRC :=  \
 		$(USER_DIR)/common/typeconversion.c
 
 cli_unittest_SRC := \
-		$(USER_DIR)/interface/cli.c \
+		$(USER_DIR)/cli/cli.c \
 		$(USER_DIR)/config/feature.c \
 		$(USER_DIR)/pg/pg.c \
                 $(USER_DIR)/common/typeconversion.c
@@ -166,7 +166,8 @@ maths_unittest_SRC := \
 
 
 osd_unittest_SRC := \
-		$(USER_DIR)/io/osd.c \
+		$(USER_DIR)/osd/osd.c \
+		$(USER_DIR)/osd/osd_elements.c \
 		$(USER_DIR)/common/typeconversion.c \
 		$(USER_DIR)/drivers/display.c \
 		$(USER_DIR)/common/maths.c \
@@ -322,14 +323,15 @@ rcdevice_unittest_SRC := \
 		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/io/rcdevice.c \
 		$(USER_DIR)/io/rcdevice_cam.c \
+		$(USER_DIR)/pg/pg.c \
 
 pid_unittest_SRC :=  \
 		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/drivers/accgyro/gyro_sync.c \
+		$(USER_DIR)/fc/runtime_config.c \
 		$(USER_DIR)/flight/pid.c \
-		$(USER_DIR)/pg/pg.c \
-		$(USER_DIR)/fc/runtime_config.c
+		$(USER_DIR)/pg/pg.c
 
 pid_unittest_DEFINES := \
 		USE_ITERM_RELAX= \
@@ -383,6 +385,7 @@ COMMON_FLAGS = \
 	-Wall \
 	-Wextra \
 	-Werror \
+	-Wno-error=unused-command-line-argument \
 	-ggdb3 \
 	-O0 \
 	-DUNIT_TEST \
@@ -424,8 +427,14 @@ endif
 # Gather up all of the tests.
 TEST_SRCS = $(sort $(wildcard $(TEST_DIR)/*.cc))
 TEST_BASENAMES = $(TEST_SRCS:$(TEST_DIR)/%.cc=%)
-TESTS = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),$(foreach \
-		target,$(filter-out $($(test)_BLACKLIST),$(VALID_TARGETS)),$(test).$(target)),$(test)))
+TESTS_TARGET_SPECIFIC = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),$(test)))
+TESTS_TARGET_SPECIFIC_EXPANDED = $(foreach test,$(TESTS_TARGET_SPECIFIC),$(foreach \
+		target,$(filter-out $($(test)_BLACKLIST),$(VALID_TARGETS)),$(test).$(target)))
+
+TESTS = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),,$(test)))
+TESTS_ALL = $(TESTS) $(TESTS_TARGET_SPECIFIC_EXPANDED)
+TESTS_REPRESENTATIVE = $(TESTS) $(foreach test,$(TESTS_TARGET_SPECIFIC), \
+		$(test).$(word 1,$(filter-out $($(test)_BLACKLIST),$(VALID_TARGETS))))
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -438,8 +447,14 @@ include ../../make/build_verbosity.mk
 
 # House-keeping build targets.
 
-## test        : Build and run the Unit Tests (default goal)
+## test        : Build and run the non target specific Unit Tests (default goal)
 test: $(TESTS:%=test_%)
+
+## test-all : Build and run all Unit Tests
+test-all: $(TESTS_ALL:%=test_%)
+
+## test-representative : Build and run a representative subset of the Unit Tests (i.e. run every expanded test only for the first target)
+test-representative: $(TESTS_REPRESENTATIVE:%=test_%)
 
 ## junittest   : Build and run the Unit Tests, producing Junit XML result files."
 junittest: EXEC_OPTS = "--gtest_output=xml:$<_results.xml"
@@ -464,7 +479,7 @@ help what usage: Makefile
 	@echo "Any of the Unit Test programs can be used as goals to build:"
 	@$(foreach test, $(TESTS), echo "    $(OBJECT_DIR)/$(test)/$(test)";)
 	@echo ""
-	@echo "Any of the Unit Test programs can be used as goals to build and run:"
+	@echo "Any of the Unit Test programs (except for target specific unit tests) can be used as goals to build and run:"
 	@$(foreach test, $(TESTS), echo "    test_$(test)";)
 
 ## clean       : Cleanup the UnitTest binaries.
@@ -600,11 +615,19 @@ test_$1: $(OBJECT_DIR)/$1/$(basename $1)
 endef
 
 
-$(eval $(foreach test,$(TESTS),$(call test-specific-stuff,$(test))))
+ifeq ($(MAKECMDGOALS),test-all)
+    $(eval $(foreach test,$(TESTS_ALL),$(call test-specific-stuff,$(test))))
+else
+    ifeq ($(MAKECMDGOALS),test-representative)
+        $(eval $(foreach test,$(TESTS_REPRESENTATIVE),$(call test-specific-stuff,$(test))))
+    else
+        $(eval $(foreach test,$(TESTS),$(call test-specific-stuff,$(test))))
+    endif
+endif
 
-$(foreach test,$(TESTS),$(if $($(basename $(test))_SRC),,$(error \
+$(foreach test,$(TESTS_ALL),$(if $($(basename $(test))_SRC),,$(error \
 	Test 'unit/$(basename $(test)).cc' has no '$(basename $(test))_SRC' variable defined)))
-$(foreach var,$(filter-out TARGET_SRC,$(filter %_SRC,$(.VARIABLES))),$(if $(filter $(var:_SRC=)%,$(TESTS)),,$(error \
+$(foreach var,$(filter-out TARGET_SRC,$(filter %_SRC,$(.VARIABLES))),$(if $(filter $(var:_SRC=)%,$(TESTS_ALL)),,$(error \
 	Variable '$(var)' has no 'unit/$(var:_SRC=).cc' test)))
 
 

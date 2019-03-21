@@ -125,6 +125,8 @@ void hard_fault_handler_c(unsigned long *hardfault_args)
 #else
 void HardFault_Handler(void)
 {
+    LED0_ON;
+    LED1_ON;
     LED2_ON;
 
     // fall out of the sky
@@ -141,11 +143,14 @@ void HardFault_Handler(void)
     }
 #endif
 
-    LED1_OFF;
     LED0_OFF;
+    LED1_OFF;
+    LED2_OFF;
 
     while (1) {
         delay(50);
+        LED0_TOGGLE;
+        LED1_TOGGLE;
         LED2_TOGGLE;
     }
 }

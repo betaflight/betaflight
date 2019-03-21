@@ -20,9 +20,7 @@
 
 #pragma once
 
-// Removed to make the firmware fit into flash (in descending order of priority):
 #undef USE_GYRO_OVERFLOW_CHECK // target does not use affected gyros
-//#undef USE_RTC_TIME
 
 #define TARGET_BOARD_IDENTIFIER "CLBR"
 

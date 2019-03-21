@@ -72,7 +72,7 @@ void mpu6500GyroInit(gyroDev_t *gyro)
     delay(100);
     busWriteRegister(&gyro->bus, MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
     delay(15);
-    busWriteRegister(&gyro->bus, MPU_RA_GYRO_CONFIG, gyro_range << 3 | mpuGyroFCHOICE(gyro));
+    busWriteRegister(&gyro->bus, MPU_RA_GYRO_CONFIG, gyro_range << 3);
     delay(15);
     busWriteRegister(&gyro->bus, MPU_RA_ACCEL_CONFIG, accel_range << 3);
     delay(15);

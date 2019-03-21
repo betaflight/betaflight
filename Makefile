@@ -54,7 +54,8 @@ OBJECT_DIR      := $(ROOT)/obj/main
 BIN_DIR         := $(ROOT)/obj
 CMSIS_DIR       := $(ROOT)/lib/main/CMSIS
 INCLUDE_DIRS    := $(SRC_DIR) \
-                   $(ROOT)/src/main/target
+                   $(ROOT)/src/main/target \
+                   $(ROOT)/src/main/startup
 LINKER_DIR      := $(ROOT)/src/main/target/link
 
 ## V                 : Set verbosity level based on the V= parameter
@@ -93,6 +94,9 @@ FEATURES        =
 # used to disable features based on flash space shortage (larger number => more features disabled)
 FEATURE_CUT_LEVEL_SUPPLIED := $(FEATURE_CUT_LEVEL)
 FEATURE_CUT_LEVEL =
+
+# The list of targets to build for 'pre-push'
+PRE_PUSH_TARGET_LIST ?= BETAFLIGHTF3 OMNIBUSF4 SPRACINGF7DUAL SITL test-representative
 
 include $(ROOT)/make/targets.mk
 
@@ -211,6 +215,7 @@ CC_DEBUG_OPTIMISATION   := $(OPTIMISE_DEFAULT)
 CC_DEFAULT_OPTIMISATION := $(OPTIMISATION_BASE) $(OPTIMISE_DEFAULT)
 CC_SPEED_OPTIMISATION   := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
 CC_SIZE_OPTIMISATION    := $(OPTIMISATION_BASE) $(OPTIMISE_SIZE)
+CC_NO_OPTIMISATION      := 
 
 CFLAGS     += $(ARCH_FLAGS) \
               $(addprefix -D,$(OPTIONS)) \
@@ -301,28 +306,43 @@ $(TARGET_BIN): $(TARGET_ELF)
 	@echo "Creating BIN $(TARGET_BIN)" "$(STDOUT)"
 	$(V1) $(OBJCOPY) -O binary $< $@
 
-$(TARGET_ELF): $(TARGET_OBJS)
+$(TARGET_ELF): $(TARGET_OBJS) $(LD_SCRIPT)
 	@echo "Linking $(TARGET)" "$(STDOUT)"
-	$(V1) $(CROSS_CC) -o $@ $^ $(LD_FLAGS)
+	$(V1) $(CROSS_CC) -o $@ $(filter-out %.ld,$^) $(LD_FLAGS)
 	$(V1) $(SIZE) $(TARGET_ELF)
 
 # Compile
+
+## compile_file takes two arguments: (1) optimisation description string and (2) optimisation compiler flag
+define compile_file
+	echo "%% ($(1)) $<" "$(STDOUT)" && \
+	$(CROSS_CC) -c -o $@ $(CFLAGS) $(2) $<
+endef
+
 ifeq ($(DEBUG),GDB)
 $(OBJECT_DIR)/$(TARGET)/%.o: %.c
 	$(V1) mkdir -p $(dir $@)
-	$(V1) echo "%% (debug) $(notdir $<)" "$(STDOUT)" && \
-	$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_DEBUG_OPTIMISATION) $<
+	$(V1) $(if $(findstring $<,$(NOT_OPTIMISED_SRC)), \
+		$(call compile_file,not optimised, $(CC_NO_OPTIMISATION)) \
+	, \
+		$(call compile_file,debug,$(CC_DEBUG_OPTIMISATION)) \
+	)
 else
 $(OBJECT_DIR)/$(TARGET)/%.o: %.c
 	$(V1) mkdir -p $(dir $@)
-	$(V1) $(if $(findstring $(subst ./src/main/,,$<),$(SPEED_OPTIMISED_SRC)), \
-	echo "%% (speed optimised) $(notdir $<)" "$(STDOUT)" && \
-	$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_SPEED_OPTIMISATION) $<, \
-	$(if $(findstring $(subst ./src/main/,,$<),$(SIZE_OPTIMISED_SRC)), \
-	echo "%% (size optimised) $(notdir $<)" "$(STDOUT)" && \
-	$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_SIZE_OPTIMISATION) $<, \
-	echo "%% $(notdir $<)" "$(STDOUT)" && \
-	$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_DEFAULT_OPTIMISATION) $<))
+	$(V1) $(if $(findstring $<,$(NOT_OPTIMISED_SRC)), \
+		$(call compile_file,not optimised,$(CC_NO_OPTIMISATION)) \
+	, \
+		$(if $(findstring $(subst ./src/main/,,$<),$(SPEED_OPTIMISED_SRC)), \
+			$(call compile_file,speed optimised,$(CC_SPEED_OPTIMISATION)) \
+		, \
+			$(if $(findstring $(subst ./src/main/,,$<),$(SIZE_OPTIMISED_SRC)), \
+				$(call compile_file,size optimised,$(CC_SIZE_OPTIMISATION)) \
+			, \
+				$(call compile_file,optimised,$(CC_DEFAULT_OPTIMISATION)) \
+			) \
+		) \
+	)
 endif
 
 # Assemble
@@ -345,6 +365,10 @@ all_with_unsupported: $(VALID_TARGETS)
 
 ## unsupported : Build unsupported targets
 unsupported: $(UNSUPPORTED_TARGETS)
+
+## pre-push : The minimum verification that should be run before pushing, to check if CI has a chance of succeeding
+pre-push:
+	$(MAKE) $(addprefix clean_,$(PRE_PUSH_TARGET_LIST)) $(PRE_PUSH_TARGET_LIST) EXTRA_FLAGS=-Werror
 
 ## official          : Build all official (travis) targets
 official: $(OFFICIAL_TARGETS)
@@ -383,6 +407,9 @@ clean:
 	@echo "Cleaning $(TARGET) succeeded."
 
 ## clean_test        : clean up temporary / machine-generated files (tests)
+clean_test-%:
+	$(MAKE) clean_test
+
 clean_test:
 	$(V0) cd src/test && $(MAKE) clean || true
 
@@ -532,17 +559,27 @@ targets-f7:
 targets-f7-print:
 	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F7
 
-## test              : run the cleanflight test suite
-## junittest         : run the cleanflight test suite, producing Junit XML result files.
-test junittest:
+## test              : run the Betaflight test suite
+## junittest         : run the Betaflight test suite, producing Junit XML result files.
+## test-representative: run a representative subset of the Betaflight test suite (i.e. run all tests, but run each expanded test only for one target)
+## test-all: run the Betaflight test suite including all per-target expanded tests
+test junittest test-all test-representative:
+	$(V0) cd src/test && $(MAKE) $@
+
+## test_help         : print the help message for the test suite (including a list of the available tests)
+test_help:
+	$(V0) cd src/test && $(MAKE) help
+
+## test_%            : run test 'test_%' from the test suite
+test_%:
 	$(V0) cd src/test && $(MAKE) $@
 
 
 check-target-independence:
 	$(V1) for test_target in $(VALID_TARGETS); do \
-		FOUND=$$(grep -rE "\W$${test_target}\W?" src/main | grep -vE "(//)|(/\*).*\W$${test_target}\W?" | grep -vE "^src/main/target"); \
+		FOUND=$$(grep -rE "\W$${test_target}(\W.*)?$$" src/main | grep -vE "(//)|(/\*).*\W$${test_target}(\W.*)?$$" | grep -vE "^src/main/target"); \
 		if [ "$${FOUND}" != "" ]; then \
-			echo "Target dependencies found:"; \
+			echo "Target dependencies for target '$${test_target}' found:"; \
 			echo "$${FOUND}"; \
 			exit 1; \
 		fi; \
@@ -561,10 +598,18 @@ check-fastram-usage-correctness:
 		echo "Trivially initialized FAST_RAM variables found, use FAST_RAM_ZERO_INIT instead to save FLASH:"; \
 		echo "$${TRIVIALLY_INITIALIZED}\n$${EXPLICITLY_TRIVIALLY_INITIALIZED}"; \
 		exit 1; \
-	fi;
+	fi
+
+check-platform-included:
+	$(V1) PLATFORM_NOT_INCLUDED=$$(find src/main -type d -name target -prune -o -type f -name \*.c -exec grep -L "^#include \"platform.h\"" {} \;); \
+	if [ "$$(echo $${PLATFORM_NOT_INCLUDED} | grep -v -e '^$$' | wc -l)" -ne 0 ]; then \
+		echo "The following compilation units do not include the required target specific configuration provided by 'platform.h':"; \
+		echo "$${PLATFORM_NOT_INCLUDED}"; \
+		exit 1; \
+	fi
 
 # rebuild everything when makefile changes
-$(TARGET_OBJS): Makefile $(TARGET_DIR)/target.mk
+$(TARGET_OBJS): Makefile $(TARGET_DIR)/target.mk $(wildcard make/*)
 
 
 # include auto-generated dependencies

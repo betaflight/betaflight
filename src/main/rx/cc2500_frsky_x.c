@@ -19,7 +19,6 @@
  */
 
 #include <string.h>
-#include <sys/_stdint.h>
 
 #include "platform.h"
 
@@ -27,9 +26,6 @@
 
 #include "build/build_config.h"
 #include "build/debug.h"
-
-#include "pg/rx.h"
-#include "pg/rx_spi.h"
 
 #include "common/maths.h"
 #include "common/utils.h"
@@ -46,6 +42,10 @@
 #include "drivers/time.h"
 
 #include "fc/config.h"
+
+#include "pg/rx.h"
+#include "pg/rx_spi.h"
+#include "pg/rx_spi_cc2500.h"
 
 #include "rx/rx_spi_common.h"
 #include "rx/cc2500_common.h"
@@ -191,15 +191,15 @@ static void buildTelemetryFrame(uint8_t *packet)
     static bool evenRun = false;
 
     frame[0] = 0x0E;//length
-    frame[1] = rxFrSkySpiConfig()->bindTxId[0];
-    frame[2] = rxFrSkySpiConfig()->bindTxId[1];
+    frame[1] = rxCc2500SpiConfig()->bindTxId[0];
+    frame[2] = rxCc2500SpiConfig()->bindTxId[1];
     frame[3] = packet[3];
 
     if (evenRun) {
         frame[4] = (uint8_t)cc2500getRssiDbm() | 0x80;
     } else {
         uint8_t a1Value;
-        switch (rxFrSkySpiConfig()->a1Source) {
+        switch (rxCc2500SpiConfig()->a1Source) {
         case FRSKY_SPI_A1_SOURCE_VBAT:
             a1Value = getLegacyBatteryVoltage() & 0x7f;
             break;
@@ -309,9 +309,9 @@ bool isValidPacket(const uint8_t *packet)
     uint16_t lcrc = calculateCrc(&packet[3], (packetLength - 7));
     if ((lcrc >> 8) == packet[packetLength - 4] && (lcrc & 0x00FF) == packet[packetLength - 3] &&
         (packet[0] == packetLength - 3) &&
-        (packet[1] == rxFrSkySpiConfig()->bindTxId[0]) &&
-        (packet[2] == rxFrSkySpiConfig()->bindTxId[1]) &&
-        (rxFrSkySpiConfig()->rxNum == 0 || packet[6] == 0 || packet[6] == rxFrSkySpiConfig()->rxNum)) {
+        (packet[1] == rxCc2500SpiConfig()->bindTxId[0]) &&
+        (packet[2] == rxCc2500SpiConfig()->bindTxId[1]) &&
+        (rxCc2500SpiConfig()->rxNum == 0 || packet[6] == 0 || packet[6] == rxCc2500SpiConfig()->rxNum)) {
         return true;
     }
     return false;

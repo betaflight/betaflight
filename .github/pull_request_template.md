@@ -1,14 +1,31 @@
-## Important: Embargo on new targets for Betaflight 4.0
+## Important: New requirements for the submission of new and updated targets
 
-As announced earlier in https://github.com/betaflight/betaflight#betaflight-40, Betaflight 4.0 will introduce a radically new way to define targets. At the moment, we are making the changes necessary for this, and this requires some changes to how targets are defined in the 'legacy' way. Because of this, any pull request opened against `master` that introduces a new target is likely to be outdated by the time it has been reviewed. This means extra work for the target maintainer and the reviewers, for little or no benefit.
+As announced earlier in https://github.com/betaflight/betaflight#betaflight-40, Betaflight 4.0 is introducing a radically new way to define targets, the so-called 'Unified Targets'.
 
-Because of this, the following embargo is put in place:
+This new approach makes it possible to use the same firmware binary (the so called 'Unified Target firmware') for all boards that share the same MCU type (only supported on F4 and F7). Manufacturers will be able to add support for new boards by simply publishing a new configuration (the so called 'Unified Target configuration') for their new board. Users can then simply load the already published Unified Target firmware and the new Unified Target configuration onto their new board to get it to work.
 
-1. From 30/12/2018 on until the release of Betaflight 4.0 (scheduled for 01/04/2019), no pull requests that introduce new targets against `master` are accepted. Because any such pull requests will be outdated by the time 4.0 is released, they will be closed;
+Work to give users a simple way to flash unified targets in Betaflight configurator still needs to be done, so Betaflight 4.0 will be released with targets done in the 'legacy' way. But the plan is to add support for seamless use of Unified Targets into Betaflight configurator after Betaflight 4.0 has been released, and convert all of the existing F4 and F7 targets to the new format before the release of Betaflight 4.1.
 
-2. During the time that 1. is in place, pull requests adding new targets (in 3.5 format) against the `3.5.x-maintenance` branch will be considered. This is an exception to the rule that all pull requests must be opened against `master`. This exception only applies to pull requests containing no other changes than a new target and a documentation page for the new target. These new targets will be included in upcoming 3.5 maintenance releases;
+In order to be prepared for this move, the following new requirements for pull requests adding new targets or modifying existing targets are put in place from now on:
 
-3. Targets added under the exception in 2. will have to be ported into 4.0 before 4.0 is released. The format that these targets will have in 4.0 is yet to be determined, and instructions for porting the targets will have to be written, but we expect the maintainers of these targets to make themselves available to assist with this task when the time comes. Please follow the news and updates that are posted to https://betaflight.com/ or the Betaflight GitHub page (https://github.com/betaflight/betaflight) to keep track of when action is required.
+1. After the release of Betaflight 4.0.0, new F3 based targets can only be added into the `4.0.x-maintenance` branch. This ties in with the release of firmware for F3 based targets ending after 4.0: https://github.com/betaflight/betaflight#end-of-active-development-for-stm32f3-based-flight-controllers;
+
+All subsequent rules exclude F3 based targets:
+
+2. For any new target that is to be added, both a 'legacy' format target definition into `src/main/target/` and a new Unified Target config into `unified_targets/configs/` need to be submitted. See the for how to create a Unified Target configuration: https://github.com/betaflight/betaflight/blob/master/unified_targets/docs/CreatingAUnifiedTarget.md;
+
+3. For changes to existing targets, the change needs to be applied to both the 'legacy' format target definition in `src/main/target/` and a new Unified Target config in `unified_targets/configs/`. If no Unified Target configuration for the target exists, a new Unified Target configuration will have to be created and submitted alongside the proposed change.
+
+
+## Important: Feature freeze / release candidate phase for Betaflight 4.0
+
+From 01 Mar 2019 until the release of Betaflight 4.0.0 (scheduled for 01 Apr 2019), the project is in a 'feature freeze / release candidate' phase. This means:
+
+1. Pull requests can still be submitted as normal. Comments / discussions will probably be slower than normal due to shifted priorities;
+
+2. If your pull request is a fix for an existing bug, or an update for a single target that has a low risk of side effect for other targets, it will be reviewed, and if accepted merged into `master` for the 4.0 release;
+
+3. All other pull requests will be scheduled for 4.1, and discussed / reviewed / merged into `master` after 4.0.0 has been released. Please keep in mind that this potentially means that you will have to rebase your changes if they are broken by bugfixes made for 4.0.
 
 
 ## Important considerations when opening a pull request:
@@ -23,6 +40,8 @@ Because of this, the following embargo is put in place:
 
 5. All pull requests are reviewed. Be ready to receive constructive criticism, and to learn and improve your coding style. Also, be ready to clarify anything that isn't already sufficiently explained in the code and text of the pull request, and to defend your ideas.
 
-6. If your pull request is a fix for one or more issues that are open in GitHub, add a comment to your pull request, and add the issue numbers of the issues that are fixed in the form `Fixes #<issue number>`. This will cause the issues to be closed when the pull request is merged;
+6. We use continuos integration (CI) with [Travis](https://travis-ci.com/betaflight) to build build all targets and run the test suite for every pull request. Pull requests that fail any of the builds or fail tests will most likely not be reviewed before they are fixed to build successfully and pass the tests. In order to get a quick idea if there are things that need fixing **before** opening a pull request or pushing an update into an existing pull request, run `make pre-push` to run a representative subset of the CI build. _Note: This is not an exhaustive test(which will take hours to run on any desktop type system), so even if this passes the CI build might still fail._
 
-7. Remove this Text :).
+7. If your pull request is a fix for one or more issues that are open in GitHub, add a comment to your pull request, and add the issue numbers of the issues that are fixed in the form `Fixes #<issue number>`. This will cause the issues to be closed when the pull request is merged;
+
+8. Remove this Text :).

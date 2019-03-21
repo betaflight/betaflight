@@ -30,6 +30,15 @@
 #define VBAT_CELL_VOTAGE_RANGE_MIN 100
 #define VBAT_CELL_VOTAGE_RANGE_MAX 500
 
+#define MAX_AUTO_DETECT_CELL_COUNT 8
+
+#define GET_BATTERY_LPF_FREQUENCY(period) (1 / (period / 10.0f))
+
+enum {
+    AUTO_PROFILE_CELL_COUNT_STAY = 0, // Stay on this profile irrespective of the detected cell count. Use this profile if no other profile matches (default, i.e. auto profile switching is off)
+    AUTO_PROFILE_CELL_COUNT_CHANGE = -1, // Always switch to a profile with matching cell count if there is one
+};
+
 typedef struct batteryConfig_s {
     // voltage
     uint16_t vbatmaxcellvoltage;            // maximum voltage per cell, used for auto-detecting battery voltage in 0.01V units, default is 430 (4.30V)
@@ -51,8 +60,9 @@ typedef struct batteryConfig_s {
 
     uint16_t vbatfullcellvoltage;           // Cell voltage at which the battery is deemed to be "full" 0.01V units, default is 410 (4.1V)
     
-    uint8_t forceBatteryCellCount;            // number of cells in battery, used for overwriting auto-detected cell count if someone has issues with it.
-
+    uint8_t forceBatteryCellCount;          // Number of cells in battery, used for overwriting auto-detected cell count if someone has issues with it.
+    uint8_t vbatLpfPeriod;                  // Period of the cutoff frequency for the Vbat filter (in 0.1 s)
+    uint8_t ibatLpfPeriod;                  // Period of the cutoff frequency for the Ibat filter (in 0.1 s)
 } batteryConfig_t;
 
 PG_DECLARE(batteryConfig_t, batteryConfig);

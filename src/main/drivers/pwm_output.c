@@ -544,7 +544,7 @@ void pwmWriteDshotCommand(uint8_t index, uint8_t motorCount, uint8_t command, bo
                 if (index == i || index == ALL_MOTORS) {
                     commandControl->command[i] = command;
                 } else {
-                    commandControl->command[i] = command;
+                    commandControl->command[i] = DSHOT_CMD_MOTOR_STOP;
                 }
             }
             commandControl->waitingForIdle = !allMotorsAreIdle(motorCount);

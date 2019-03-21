@@ -117,7 +117,7 @@
 #define PG_SPI_PIN_CONFIG 520
 #define PG_ESCSERIAL_CONFIG 521
 #define PG_CAMERA_CONTROL_CONFIG 522
-#define PG_RX_FRSKY_SPI_CONFIG 523
+#define PG_RX_CC2500_SPI_CONFIG 523
 #define PG_MAX7456_CONFIG 524
 #define PG_FLYSKY_CONFIG 525
 #define PG_TIME_CONFIG 526
@@ -139,7 +139,9 @@
 #define PG_RX_SPEKTRUM_SPI_CONFIG 542
 #define PG_SERIAL_UART_CONFIG 543
 #define PG_RPM_FILTER_CONFIG 544
-#define PG_BETAFLIGHT_END 544
+#define PG_LED_STRIP_STATUS_MODE_CONFIG 545 // Used to hold the configuration for the LED_STRIP status mode (not built on targets with limited flash)
+#define PG_VTX_TABLE_CONFIG 546
+#define PG_BETAFLIGHT_END 546
 
 
 // OSD configuration (subject to change)

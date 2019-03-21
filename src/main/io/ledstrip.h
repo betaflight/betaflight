@@ -172,24 +172,31 @@ typedef struct ledCounts_s {
 } ledCounts_t;
 
 typedef struct ledStripConfig_s {
-    ledConfig_t ledConfigs[LED_MAX_STRIP_LENGTH];
-    hsvColor_t colors[LED_CONFIGURABLE_COLOR_COUNT];
-    modeColorIndexes_t modeColors[LED_MODE_COUNT];
-    specialColorIndexes_t specialColors;
-    uint8_t ledstrip_visual_beeper; // suppress LEDLOW mode if beeper is on
-    uint8_t ledstrip_aux_channel;
+    uint8_t ledstrip_visual_beeper;
     ioTag_t ioTag;
     ledStripFormatRGB_e ledstrip_grb_rgb;
     ledProfile_e ledstrip_profile;
-    colorId_e ledRaceColor;
-
+    colorId_e ledstrip_race_color;
+    colorId_e ledstrip_beacon_color;
+    uint16_t ledstrip_beacon_period_ms;
+    uint8_t ledstrip_beacon_percent;
+    uint8_t ledstrip_beacon_armed_only;
+    colorId_e ledstrip_visual_beeper_color;
 } ledStripConfig_t;
 
 PG_DECLARE(ledStripConfig_t, ledStripConfig);
 
-extern hsvColor_t *colors;
-extern const modeColorIndexes_t *modeColors;
-extern specialColorIndexes_t specialColors;
+#if defined(USE_LED_STRIP_STATUS_MODE)
+typedef struct ledStripStatusModeConfig_s {
+    ledConfig_t ledConfigs[LED_MAX_STRIP_LENGTH];
+    hsvColor_t colors[LED_CONFIGURABLE_COLOR_COUNT];
+    modeColorIndexes_t modeColors[LED_MODE_COUNT];
+    specialColorIndexes_t specialColors;
+    uint8_t ledstrip_aux_channel;
+} ledStripStatusModeConfig_t;
+
+PG_DECLARE(ledStripStatusModeConfig_t, ledStripStatusModeConfig);
+#endif
 
 #define LF(name) LED_FUNCTION_ ## name
 #define LO(name) LED_FLAG_OVERLAY(LED_OVERLAY_ ## name)
@@ -230,5 +237,3 @@ void updateRequiredOverlay(void);
 
 uint8_t getLedProfile(void);
 void setLedProfile(uint8_t profile);
-uint8_t getLedRaceColor(void);
-void setLedRaceColor(uint8_t color);

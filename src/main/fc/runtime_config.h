@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include "common/utils.h"
+
 // FIXME some of these are flight modes, some of these are general status indicators
 typedef enum {
     ARMED                       = (1 << 0),
@@ -52,16 +54,16 @@ typedef enum {
     ARMING_DISABLED_CALIBRATING     = (1 << 11),
     ARMING_DISABLED_CLI             = (1 << 12),
     ARMING_DISABLED_CMS_MENU        = (1 << 13),
-    ARMING_DISABLED_OSD_MENU        = (1 << 14),
-    ARMING_DISABLED_BST             = (1 << 15),
-    ARMING_DISABLED_MSP             = (1 << 16),
-    ARMING_DISABLED_PARALYZE        = (1 << 17),
-    ARMING_DISABLED_GPS             = (1 << 18),
-    ARMING_DISABLED_RESC            = (1 << 19),
+    ARMING_DISABLED_BST             = (1 << 14),
+    ARMING_DISABLED_MSP             = (1 << 15),
+    ARMING_DISABLED_PARALYZE        = (1 << 16),
+    ARMING_DISABLED_GPS             = (1 << 17),
+    ARMING_DISABLED_RESC            = (1 << 18),
+    ARMING_DISABLED_RPMFILTER       = (1 << 19),
     ARMING_DISABLED_ARM_SWITCH      = (1 << 20), // Needs to be the last element, since it's always activated if one of the others is active when arming
 } armingDisableFlags_e;
 
-#define ARMING_DISABLE_FLAGS_COUNT 21
+#define ARMING_DISABLE_FLAGS_COUNT (LOG2(ARMING_DISABLED_ARM_SWITCH) + 1)
 
 extern const char *armingDisableFlagNames[ARMING_DISABLE_FLAGS_COUNT];
 

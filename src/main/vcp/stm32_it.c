@@ -28,6 +28,9 @@
  */
 
 /* Includes ------------------------------------------------------------------*/
+
+#include "platform.h"
+
 #include "hw_config.h"
 #include "stm32_it.h"
 #include "usb_lib.h"

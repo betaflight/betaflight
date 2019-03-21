@@ -39,7 +39,12 @@
 //#define DEBUG_ADC_CHANNELS
 
 adcOperatingConfig_t adcOperatingConfig[ADC_CHANNEL_COUNT];
+
+#if defined(STM32F7)
+volatile FAST_RAM_ZERO_INIT uint16_t adcValues[ADC_CHANNEL_COUNT];
+#else
 volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
+#endif
 
 #ifdef USE_ADC_INTERNAL
 uint16_t adcTSCAL1;

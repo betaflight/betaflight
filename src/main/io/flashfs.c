@@ -36,6 +36,8 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "platform.h"
+
 #include "drivers/flash.h"
 
 #include "io/flashfs.h"

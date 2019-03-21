@@ -62,6 +62,12 @@
 #define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
+#define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
+#define USE_FLASHFS
+#define USE_FLASH_M25P16
+#define FLASH_CS_PIN            PB12
+#define FLASH_SPI_INSTANCE      SPI2
+
 #define USE_VCP
 
 #define USE_UART1
@@ -97,6 +103,8 @@
 #define USE_I2C
 #define USE_I2C_DEVICE_2       // External I2C
 #define I2C_DEVICE               (I2CDEV_2)
+#define I2C2_SCL                NONE        // PB10 (UART3_TX)
+#define I2C2_SDA                NONE        // PB11 (UART3_RX)
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1

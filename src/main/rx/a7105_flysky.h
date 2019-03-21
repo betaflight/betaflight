@@ -26,7 +26,6 @@
 typedef struct flySkyConfig_s {
     uint32_t txId;
     uint8_t rfChannelMap[16];
-    rx_spi_protocol_e protocol;
 } flySkyConfig_t;
 
 PG_DECLARE(flySkyConfig_t, flySkyConfig);

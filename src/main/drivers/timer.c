@@ -64,7 +64,8 @@ timerConfig_t timerConfig[USED_TIMER_COUNT];
 typedef struct {
     channelType_t type;
 } timerChannelInfo_t;
-timerChannelInfo_t timerChannelInfo[USABLE_TIMER_CHANNEL_COUNT];
+
+timerChannelInfo_t timerChannelInfo[TIMER_CHANNEL_COUNT];
 
 typedef struct {
     uint8_t priority;
@@ -363,9 +364,10 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
 // allocate and configure timer channel. Timer priority is set to highest priority of its channels
 void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriority, uint8_t irq)
 {
-    unsigned channel = timHw - timerHardware;
-    if (channel >= USABLE_TIMER_CHANNEL_COUNT)
+    unsigned channel = timHw - TIMER_HARDWARE;
+    if (channel >= TIMER_CHANNEL_COUNT) {
         return;
+    }
 
     timerChannelInfo[channel].type = type;
     unsigned timer = lookupTimerIndex(timHw->tim);
@@ -779,12 +781,12 @@ void timerInit(void)
 #endif
 
     /* enable the timer peripherals */
-    for (unsigned i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
-        RCC_ClockCmd(timerRCC(timerHardware[i].tim), ENABLE);
+    for (unsigned i = 0; i < TIMER_CHANNEL_COUNT; i++) {
+        RCC_ClockCmd(timerRCC(TIMER_HARDWARE[i].tim), ENABLE);
     }
 
     // initialize timer channel structures
-    for (unsigned i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+    for (unsigned i = 0; i < TIMER_CHANNEL_COUNT; i++) {
         timerChannelInfo[i].type = TYPE_FREE;
     }
 
@@ -802,10 +804,10 @@ void timerStart(void)
     for (unsigned timer = 0; timer < USED_TIMER_COUNT; timer++) {
         int priority = -1;
         int irq = -1;
-        for (unsigned hwc = 0; hwc < USABLE_TIMER_CHANNEL_COUNT; hwc++)
-            if ((timerChannelInfo[hwc].type != TYPE_FREE) && (timerHardware[hwc].tim == usedTimers[timer])) {
+        for (unsigned hwc = 0; hwc < TIMER_CHANNEL_COUNT; hwc++)
+            if ((timerChannelInfo[hwc].type != TYPE_FREE) && (TIMER_HARDWARE[hwc].tim == usedTimers[timer])) {
                 // TODO - move IRQ to timer info
-                irq = timerHardware[hwc].irq;
+                irq = TIMER_HARDWARE[hwc].irq;
             }
         // TODO - aggregate required timer paramaters
         configTimeBase(usedTimers[timer], 0, 1);

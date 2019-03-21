@@ -72,7 +72,7 @@
 
 void targetConfiguration(void)
 {
-    if (hardwareMotorType == MOTOR_BRUSHED) {
+    if (getDetectedMotorType() == MOTOR_BRUSHED) {
         motorConfigMutable()->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
         motorConfigMutable()->minthrottle = 1050; // for 6mm and 7mm brushed
     }
@@ -104,19 +104,12 @@ void targetConfiguration(void)
 
     systemConfigMutable()->cpu_overclock = 2; //216MHZ
 
-    /* Default to 32kHz enabled at 16/16 */
-    gyroConfigMutable()->gyro_use_32khz = 1; // enable 32kHz sampling
-    gyroConfigMutable()->gyroMovementCalibrationThreshold = 200; // aka moron_threshold
-    gyroConfigMutable()->gyro_sync_denom = 2;  // 16kHz gyro
-    pidConfigMutable()->pid_process_denom = 1; // 16kHz PID
-    gyroConfigMutable()->gyro_lowpass2_hz = 751;
-
     pidConfigMutable()->runaway_takeoff_prevention = false;
 
     featureEnable((FEATURE_DYNAMIC_FILTER | FEATURE_AIRMODE | FEATURE_ANTI_GRAVITY) ^ FEATURE_RX_PARALLEL_PWM);
 
     /* AlienWhoop PIDs tested with 6mm and 7mm motors on most frames */
-    for (uint8_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
+    for (uint8_t pidProfileIndex = 0; pidProfileIndex < PID_PROFILE_COUNT; pidProfileIndex++) {
         pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
 
 	pidProfile->pidSumLimit = 1000;

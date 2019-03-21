@@ -54,7 +54,7 @@
 
 void targetConfiguration(void)
 {
-    if (hardwareMotorType == MOTOR_BRUSHED) {
+    if (getDetectedMotorType() == MOTOR_BRUSHED) {
         motorConfigMutable()->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
         motorConfigMutable()->minthrottle = 1049;
 
@@ -69,7 +69,7 @@ void targetConfiguration(void)
 #endif
         parseRcChannels("TAER1234", rxConfigMutable());
 
-        for (uint8_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
+        for (uint8_t pidProfileIndex = 0; pidProfileIndex < PID_PROFILE_COUNT; pidProfileIndex++) {
             pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
 
             pidProfile->pid[PID_ROLL].P = 80;

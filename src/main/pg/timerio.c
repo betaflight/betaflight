@@ -18,10 +18,46 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "timerio.h"
+#include <string.h>
+
+#include "platform.h"
 
 #ifdef USE_TIMER_MGMT
 
-PG_REGISTER_ARRAY(timerIOConfig_t, MAX_TIMER_PINMAP_COUNT, timerIOConfig, PG_TIMER_IO_CONFIG, 0);
+#include "drivers/dma_reqmap.h"
+#include "drivers/timer.h"
 
+#include "timerio.h"
+
+PG_REGISTER_ARRAY_WITH_RESET_FN(timerIOConfig_t, MAX_TIMER_PINMAP_COUNT, timerIOConfig, PG_TIMER_IO_CONFIG, 0);
+
+void pgResetFn_timerIOConfig(timerIOConfig_t *config)
+{
+#if defined(USE_TIMER_MGMT) && !defined(USE_UNIFIED_TARGET)
+    unsigned configIndex = 0;
+    for (unsigned timerIndex = 0; timerIndex < USABLE_TIMER_CHANNEL_COUNT; timerIndex++) {
+        const timerHardware_t *configuredTimer = &timerHardware[timerIndex];
+        unsigned positionIndex = 1;
+        for (unsigned fullTimerIndex = 0; fullTimerIndex < FULL_TIMER_CHANNEL_COUNT; fullTimerIndex++) {
+            const timerHardware_t *timer = &fullTimerHardware[fullTimerIndex];
+            if (timer->tag == configuredTimer->tag) {
+                if (timer->tim == configuredTimer->tim && timer->channel == configuredTimer->channel) {
+                    config[configIndex].ioTag = timer->tag;
+                    config[configIndex].index = positionIndex;
+
+                    config[configIndex].dmaopt = dmaGetOptionByTimer(configuredTimer);
+
+                    configIndex++;
+
+                    break;
+                } else {
+                    positionIndex++;
+                }
+            }
+        }
+    }
+#else
+    UNUSED(config);
+#endif
+}
 #endif

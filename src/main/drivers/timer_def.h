@@ -30,6 +30,11 @@
 # define DEF_TIM_DMA_COND(...)
 #endif
 
+#if defined(USE_TIMER_MGMT)
+#define TIMER_GET_IO_TAG(pin) DEFIO_TAG_E(pin)
+#else
+#define TIMER_GET_IO_TAG(pin) DEFIO_TAG(pin)
+#endif
 
 // map to base channel (strip N from channel); works only when channel N exists
 #define DEF_TIM_TCH2BTCH(timch) CONCAT(B, timch)
@@ -117,13 +122,12 @@
 
 #define DEF_TIM(tim, chan, pin, flags, out) {                           \
     tim,                                                                \
-    IO_TAG(pin),                                                        \
+    TIMER_GET_IO_TAG(pin),                                              \
     DEF_TIM_CHANNEL(CH_ ## chan),                                       \
     flags,                                                              \
     (DEF_TIM_OUTPUT(CH_ ## chan) | out)                                 \
     DEF_TIM_DMA_COND(/* add comma */ ,                                  \
-        DEF_TIM_DMA_CHANNEL(TCH_## tim ## _ ## chan),                   \
-        DEF_TIM_DMA_HANDLER(TCH_## tim ## _ ## chan)                    \
+        DEF_TIM_DMA_CHANNEL(TCH_## tim ## _ ## chan)                    \
     )                                                                   \
     }                                                                   \
 /**/
@@ -134,10 +138,6 @@
 #define DEF_TIM_DMA_CHANNEL(timch) CONCAT(DEF_TIM_DMA_CHANNEL__, DEF_TIM_DMA_GET(0, timch))
 #define DEF_TIM_DMA_CHANNEL__D(dma_n, chan_n) DMA ## dma_n ## _Channel ## chan_n
 #define DEF_TIM_DMA_CHANNEL__NONE NULL
-
-#define DEF_TIM_DMA_HANDLER(timch) CONCAT(DEF_TIM_DMA_HANDLER__, DEF_TIM_DMA_GET(0, timch))
-#define DEF_TIM_DMA_HANDLER__D(dma_n, chan_n) DMA ## dma_n ## _CH ## chan_n ## _HANDLER
-#define DEF_TIM_DMA_HANDLER__NONE 0
 
 /* add F1 DMA mappings here */
 // D(dma_n, channel_n)
@@ -165,14 +165,13 @@
 
 #define DEF_TIM(tim, chan, pin, flags, out) {                           \
     tim,                                                                \
-    IO_TAG(pin),                                                        \
+    TIMER_GET_IO_TAG(pin),                                              \
     DEF_TIM_CHANNEL(CH_ ## chan),                                       \
     flags,                                                              \
     (DEF_TIM_OUTPUT(CH_ ## chan) | out),                                \
     DEF_TIM_AF(TCH_## tim ## _ ## chan, pin)                            \
     DEF_TIM_DMA_COND(/* add comma */ ,                                  \
-        DEF_TIM_DMA_CHANNEL(TCH_## tim ## _ ## chan),                   \
-        DEF_TIM_DMA_HANDLER(TCH_## tim ## _ ## chan)                    \
+        DEF_TIM_DMA_CHANNEL(TCH_## tim ## _ ## chan)                    \
     )                                                                   \
     DEF_TIM_DMA_COND(/* add comma */ ,                                  \
         DEF_TIM_DMA_CHANNEL(TCH_## tim ## _UP),                         \
@@ -382,15 +381,14 @@
 
 #define DEF_TIM(tim, chan, pin, flags, out, dmaopt) {           \
     tim,                                                        \
-    IO_TAG(pin),                                                \
+    TIMER_GET_IO_TAG(pin),                                      \
     DEF_TIM_CHANNEL(CH_ ## chan),                               \
     flags,                                                      \
     (DEF_TIM_OUTPUT(CH_ ## chan) | out),                        \
     DEF_TIM_AF(TIM_ ## tim)                                     \
     DEF_TIM_DMA_COND(/* add comma */ ,                          \
         DEF_TIM_DMA_STREAM(dmaopt, TCH_## tim ## _ ## chan),    \
-        DEF_TIM_DMA_CHANNEL(dmaopt, TCH_## tim ## _ ## chan),   \
-        DEF_TIM_DMA_HANDLER(dmaopt, TCH_## tim ## _ ## chan)    \
+        DEF_TIM_DMA_CHANNEL(dmaopt, TCH_## tim ## _ ## chan)    \
     )                                                           \
     DEF_TIM_DMA_COND(/* add comma */ ,                          \
         DEF_TIM_DMA_STREAM(0, TCH_## tim ## _UP),               \
@@ -488,15 +486,14 @@
 #elif defined(STM32F7)
 #define DEF_TIM(tim, chan, pin, flags, out, dmaopt) {                   \
     tim,                                                                \
-    IO_TAG(pin),                                                        \
+    TIMER_GET_IO_TAG(pin),                                              \
     DEF_TIM_CHANNEL(CH_ ## chan),                                       \
     flags,                                                              \
     (DEF_TIM_OUTPUT(CH_ ## chan) | out),                                \
     DEF_TIM_AF(TCH_## tim ## _ ## chan, pin)                            \
     DEF_TIM_DMA_COND(/* add comma */ ,                                  \
         DEF_TIM_DMA_STREAM(dmaopt, TCH_## tim ## _ ## chan),            \
-        DEF_TIM_DMA_CHANNEL(dmaopt, TCH_## tim ## _ ## chan),           \
-        DEF_TIM_DMA_HANDLER(dmaopt, TCH_## tim ## _ ## chan)            \
+        DEF_TIM_DMA_CHANNEL(dmaopt, TCH_## tim ## _ ## chan)            \
     )                                                                   \
     DEF_TIM_DMA_COND(/* add comma */ ,                                  \
         DEF_TIM_DMA_STREAM(0, TCH_## tim ## _UP),                       \
@@ -701,27 +698,5 @@
 #define DEF_TIM_AF__PI5__TCH_TIM8_CH1     D(3, 8)
 #define DEF_TIM_AF__PI6__TCH_TIM8_CH2     D(3, 8)
 #define DEF_TIM_AF__PI7__TCH_TIM8_CH3     D(3, 8)
-
-#endif
-
-#ifdef USE_TIMER_MGMT
-
-#if defined(STM32F7) || defined(STM32F4)
-
-#define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(6) | TIM_N(7) | TIM_N(8) | TIM_N(9) | TIM_N(10) | TIM_N(11) | TIM_N(12) | TIM_N(13) | TIM_N(14) )
-
-#elif defined(STM32F3)
-
-#define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(6) | TIM_N(7) | TIM_N(8) | TIM_N(15) | TIM_N(16) | TIM_N(17) )
-
-#elif defined(STM32F1)
-
-#define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) )
-
-#else
-    #error "No timer / channel tag definition found for CPU"
-#endif
-
-#define TIMER_COUNT BITCOUNT(USED_TIMERS)
 
 #endif

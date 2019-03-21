@@ -18,6 +18,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "platform.h"
+
 #include "encoding.h"
 
 /**

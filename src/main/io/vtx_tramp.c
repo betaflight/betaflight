@@ -38,6 +38,10 @@
 
 #include "drivers/vtx_common.h"
 
+#ifdef USE_VTX_TABLE
+#include "drivers/vtx_table.h"
+#endif
+
 #include "io/serial.h"
 #include "io/vtx_tramp.h"
 #include "io/vtx_control.h"
@@ -161,7 +165,7 @@ static bool trampValidateBandAndChannel(uint8_t band, uint8_t channel)
 
 static void trampDevSetBandAndChannel(uint8_t band, uint8_t channel)
 {
-    trampDevSetFreq(vtxCommonLookupFrequency(vtxCommonDevice(), band, channel));
+    trampDevSetFreq(vtxCommonLookupFrequency(&vtxTramp, band, channel));
 }
 
 void trampSetBandAndChannel(uint8_t band, uint8_t channel)
@@ -197,8 +201,8 @@ bool trampCommitChanges(void)
 // return false if index out of range
 static bool trampDevSetPowerByIndex(uint8_t index)
 {
-    if (index > 0 && index <= sizeof(trampPowerTable)) {
-        trampSetRFPower(trampPowerTable[index - 1]);
+    if (index > 0 && index <= vtxTramp.capability.powerCount) {
+        trampSetRFPower(vtxTramp.powerValues[index - 1]);
         trampCommitChanges();
         return true;
     }
@@ -240,7 +244,7 @@ static char trampHandleResponse(void)
                 trampPower = trampRespBuffer[8]|(trampRespBuffer[9] << 8);
 
                 // if no band/chan match then make sure set-by-freq mode is flagged
-                if (!vtxCommonLookupBandChan(vtxCommonDevice(), trampCurFreq, &trampBand, &trampChannel)) {
+                if (!vtxCommonLookupBandChan(&vtxTramp, trampCurFreq, &trampBand, &trampChannel)) {
                     trampSetByFreqFlag = true;
                 }
 
@@ -548,8 +552,8 @@ static bool vtxTrampGetPowerIndex(const vtxDevice_t *vtxDevice, uint8_t *pIndex)
     }
 
     if (trampConfiguredPower > 0) {
-        for (uint8_t i = 0; i < sizeof(trampPowerTable); i++) {
-            if (trampConfiguredPower <= trampPowerTable[i]) {
+        for (uint8_t i = 0; i < vtxTramp.capability.powerCount; i++) {
+            if (trampConfiguredPower <= vtxTramp.powerValues[i]) {
                 *pIndex = i + 1;
                 break;
             }
@@ -616,6 +620,17 @@ bool vtxTrampInit(void)
 
     // XXX Effect of USE_VTX_COMMON should be reviewed, as following call to vtxInit will do nothing if vtxCommonSetDevice is not called.
 #if defined(USE_VTX_COMMON)
+#if defined(USE_VTX_TABLE)
+    vtxTramp.capability.bandCount = vtxTableBandCount;
+    vtxTramp.capability.channelCount = vtxTableChannelCount;
+    vtxTramp.capability.powerCount = vtxTablePowerLevels;
+    vtxTramp.frequencyTable = (uint16_t *)vtxTableFrequency;
+    vtxTramp.bandNames = vtxTableBandNames;
+    vtxTramp.bandLetters = vtxTableBandLetters;
+    vtxTramp.channelNames = vtxTableChannelNames;
+    vtxTramp.powerNames = vtxTablePowerLabels;
+    vtxTramp.powerValues = vtxTablePowerValues;
+#else
     vtxTramp.capability.bandCount = VTX_TRAMP_BAND_COUNT;
     vtxTramp.capability.channelCount = VTX_TRAMP_CHANNEL_COUNT;
     vtxTramp.capability.powerCount = sizeof(trampPowerTable),
@@ -625,6 +640,7 @@ bool vtxTrampInit(void)
     vtxTramp.channelNames = vtxStringChannelNames();
     vtxTramp.powerNames = trampPowerNames;
     vtxTramp.powerValues = trampPowerTable;
+#endif
 
     vtxCommonSetDevice(&vtxTramp);
 

@@ -19,15 +19,18 @@
  ******************************************************************************
  */
 
-#ifdef USB_OTG_HS_INTERNAL_DMA_ENABLED
-#pragma     data_alignment = 4
-#endif /* USB_OTG_HS_INTERNAL_DMA_ENABLED */
-
 /* Includes ------------------------------------------------------------------*/
+
+#include "platform.h"
+
 #include "usbd_cdc_vcp.h"
 #include "stm32f4xx_conf.h"
 #include "stdbool.h"
 #include "drivers/time.h"
+
+#ifdef USB_OTG_HS_INTERNAL_DMA_ENABLED
+#pragma     data_alignment = 4
+#endif /* USB_OTG_HS_INTERNAL_DMA_ENABLED */
 
 __ALIGN_BEGIN USB_OTG_CORE_HANDLE USB_OTG_dev __ALIGN_END;
 

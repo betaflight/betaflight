@@ -1,7 +1,8 @@
-
 F3_TARGETS   += $(TARGET)
+
 FEATURES     = VCP SDCARD_SPI
-TARGET_FLAGS = -DSPRACINGF3
+
+FEATURE_CUT_LEVEL = 10
 
 TARGET_SRC = \
             drivers/accgyro/accgyro_mpu.c \
@@ -10,5 +11,4 @@ TARGET_SRC = \
             drivers/compass/compass_hmc5883l.c \
             drivers/display_ug2864hsweg01.h \
             drivers/flash_m25p16.c \
-            drivers/max7456.c \
-            io/osd.c
+            drivers/max7456.c

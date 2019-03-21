@@ -278,6 +278,7 @@ void mpuDetect(gyroDev_t *gyro, const gyroDeviceConfig_t *config)
 
 #ifdef USE_I2C_GYRO
     if (gyro->bus.bustype == BUSTYPE_I2C) {
+        gyro->bus.busdev_u.i2c.device = I2C_CFG_TO_DEV(config->i2cBus);
         gyro->bus.busdev_u.i2c.address = config->i2cAddress ? config->i2cAddress : MPU_ADDRESS;
 
         uint8_t sig = 0;
@@ -323,7 +324,7 @@ void mpuGyroInit(gyroDev_t *gyro)
 uint8_t mpuGyroDLPF(gyroDev_t *gyro)
 {
     uint8_t ret = 0;
-    
+
     // If gyro is in 32KHz mode then the DLPF bits aren't used
     if (gyro->gyroRateKHz <= GYRO_RATE_8_kHz) {
         switch (gyro->hardware_lpf) {
@@ -341,7 +342,7 @@ uint8_t mpuGyroDLPF(gyroDev_t *gyro)
             case GYRO_HARDWARE_LPF_1KHZ_SAMPLE:
                 ret = 1;
                 break;
-                
+
             case GYRO_HARDWARE_LPF_NORMAL:
             default:
                 ret = 0;
@@ -349,23 +350,6 @@ uint8_t mpuGyroDLPF(gyroDev_t *gyro)
         }
     }
     return ret;
-}
-
-uint8_t mpuGyroFCHOICE(gyroDev_t *gyro)
-{
-    if (gyro->gyroRateKHz > GYRO_RATE_8_kHz) {
-#ifdef USE_GYRO_DLPF_EXPERIMENTAL
-        if (gyro->hardware_32khz_lpf == GYRO_32KHZ_HARDWARE_LPF_EXPERIMENTAL) {
-            return FCB_8800_32;
-        } else {
-            return FCB_3600_32;
-        }
-#else
-        return FCB_3600_32;
-#endif
-    } else {
-        return FCB_DISABLED;  // Not in 32KHz mode, set FCHOICE to select 8KHz sampling
-    }
 }
 
 #ifdef USE_GYRO_REGISTER_DUMP

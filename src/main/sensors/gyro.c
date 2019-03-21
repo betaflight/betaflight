@@ -159,6 +159,7 @@ typedef struct gyroSensor_s {
     gyroAnalyseState_t gyroAnalyseState;
 #endif
 
+    flight_dynamics_index_t gyroDebugAxis;
 } gyroSensor_t;
 
 STATIC_UNIT_TESTED FAST_RAM_ZERO_INIT gyroSensor_t gyroSensor1;
@@ -188,7 +189,7 @@ static void gyroInitLowpassFilterLpf(gyroSensor_t *gyroSensor, int slot, int typ
 #define GYRO_OVERFLOW_TRIGGER_THRESHOLD 31980  // 97.5% full scale (1950dps for 2000dps gyro)
 #define GYRO_OVERFLOW_RESET_THRESHOLD 30340    // 92.5% full scale (1850dps for 2000dps gyro)
 
-PG_REGISTER_WITH_RESET_FN(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 6);
+PG_REGISTER_WITH_RESET_FN(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 7);
 
 #ifndef GYRO_CONFIG_USE_GYRO_DEFAULT
 #define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_1
@@ -196,18 +197,15 @@ PG_REGISTER_WITH_RESET_FN(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 6);
 
 void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
 { 
-    gyroConfig->gyro_align = ALIGN_DEFAULT;
     gyroConfig->gyroCalibrationDuration = 125;        // 1.25 seconds
     gyroConfig->gyroMovementCalibrationThreshold = 48;
     gyroConfig->gyro_sync_denom = GYRO_SYNC_DENOM_DEFAULT;
     gyroConfig->gyro_hardware_lpf = GYRO_HARDWARE_LPF_NORMAL;
-    gyroConfig->gyro_32khz_hardware_lpf = GYRO_32KHZ_HARDWARE_LPF_NORMAL;
     gyroConfig->gyro_lowpass_type = FILTER_PT1;
     gyroConfig->gyro_lowpass_hz = 100;
     gyroConfig->gyro_lowpass2_type = FILTER_PT1;
     gyroConfig->gyro_lowpass2_hz = 300;
     gyroConfig->gyro_high_fsr = false;
-    gyroConfig->gyro_use_32khz = false;
     gyroConfig->gyro_to_use = GYRO_CONFIG_USE_GYRO_DEFAULT;
     gyroConfig->gyro_soft_notch_hz_1 = 0;
     gyroConfig->gyro_soft_notch_cutoff_1 = 0;
@@ -228,6 +226,7 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
     gyroConfig->gyro_lowpass_type = FILTER_BIQUAD;
     gyroConfig->gyro_lowpass2_hz = 0;
 #endif
+    gyroConfig->gyro_filter_debug_axis = FD_ROLL;
 }
 
 #ifdef USE_MULTI_GYRO
@@ -414,6 +413,7 @@ static void gyroPreInitSensor(const gyroDeviceConfig_t *config)
 
 static bool gyroInitSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t *config)
 {
+    gyroSensor->gyroDebugAxis = gyroConfig()->gyro_filter_debug_axis;
     gyroSensor->gyroDev.gyro_high_fsr = gyroConfig()->gyro_high_fsr;
     gyroSensor->gyroDev.gyroAlign = config->align;
     gyroSensor->gyroDev.mpuIntExtiTag = config->extiTag;
@@ -430,29 +430,10 @@ static bool gyroInitSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t *c
         return false;
     }
 
-    switch (gyroHardware) {
-    case GYRO_MPU6500:
-    case GYRO_MPU9250:
-    case GYRO_ICM20601:
-    case GYRO_ICM20602:
-    case GYRO_ICM20608G:
-    case GYRO_ICM20689:
-        // do nothing, as gyro supports 32kHz
-        break;
-    default:
-        // gyro does not support 32kHz
-        gyroConfigMutable()->gyro_use_32khz = false;
-        break;
-    }
-
     // Must set gyro targetLooptime before gyroDev.init and initialisation of filters
-    gyro.targetLooptime = gyroSetSampleRate(&gyroSensor->gyroDev, gyroConfig()->gyro_hardware_lpf, gyroConfig()->gyro_sync_denom, gyroConfig()->gyro_use_32khz);
+    gyro.targetLooptime = gyroSetSampleRate(&gyroSensor->gyroDev, gyroConfig()->gyro_hardware_lpf, gyroConfig()->gyro_sync_denom);
     gyroSensor->gyroDev.hardware_lpf = gyroConfig()->gyro_hardware_lpf;
-    gyroSensor->gyroDev.hardware_32khz_lpf = gyroConfig()->gyro_32khz_hardware_lpf;
     gyroSensor->gyroDev.initFn(&gyroSensor->gyroDev);
-    if (gyroConfig()->gyro_align != ALIGN_DEFAULT) {
-        gyroSensor->gyroDev.gyroAlign = gyroConfig()->gyro_align;
-    }
 
     // As new gyros are supported, be sure to add them below based on whether they are subject to the overflow/inversion bug
     // Any gyro not explicitly defined will default to not having built-in overflow protection as a safe alternative.
@@ -535,24 +516,49 @@ bool gyroInit(void)
     }
     firstArmingCalibrationWasStarted = false;
 
-    bool ret = false;
+    enum {
+        NO_GYROS_DETECTED = 0,
+        DETECTED_GYRO_1 = (1 << 0),
+        DETECTED_GYRO_2 = (1 << 1),
+    };
+
+    uint8_t detectionFlags = NO_GYROS_DETECTED;
+
     gyroToUse = gyroConfig()->gyro_to_use;
 
     if (gyroToUse == GYRO_CONFIG_USE_GYRO_1 || gyroToUse == GYRO_CONFIG_USE_GYRO_BOTH) {
-        ret = gyroInitSensor(&gyroSensor1, gyroDeviceConfig(0));
-        if (!ret) {
-            return false; // TODO handle failure of first gyro detection better. - Perhaps update the config to use second gyro then indicate a new failure mode and reboot.
+        if (gyroInitSensor(&gyroSensor1, gyroDeviceConfig(0))) {
+            gyroHasOverflowProtection =  gyroHasOverflowProtection && gyroSensor1.gyroDev.gyroHasOverflowProtection;
+            detectionFlags |= DETECTED_GYRO_1;
         }
-        gyroHasOverflowProtection =  gyroHasOverflowProtection && gyroSensor1.gyroDev.gyroHasOverflowProtection;
     }
 
 #ifdef USE_MULTI_GYRO
     if (gyroToUse == GYRO_CONFIG_USE_GYRO_2 || gyroToUse == GYRO_CONFIG_USE_GYRO_BOTH) {
-        ret = gyroInitSensor(&gyroSensor2, gyroDeviceConfig(1));
-        if (!ret) {
-            return false; // TODO handle failure of second gyro detection better. - Perhaps update the config to use first gyro then indicate a new failure mode and reboot.
+        if (gyroInitSensor(&gyroSensor2, gyroDeviceConfig(1))) {
+            gyroHasOverflowProtection =  gyroHasOverflowProtection && gyroSensor2.gyroDev.gyroHasOverflowProtection;
+            detectionFlags |= DETECTED_GYRO_2;
         }
-        gyroHasOverflowProtection =  gyroHasOverflowProtection && gyroSensor2.gyroDev.gyroHasOverflowProtection;
+    }
+
+    if (gyroToUse == GYRO_CONFIG_USE_GYRO_BOTH && detectionFlags != (DETECTED_GYRO_1 | DETECTED_GYRO_2)) {
+        // at least one gyro is missing.
+
+        if (detectionFlags & DETECTED_GYRO_1) {
+            gyroToUse = GYRO_CONFIG_USE_GYRO_1;
+            gyroConfigMutable()->gyro_to_use = GYRO_CONFIG_USE_GYRO_1;
+            detectedSensors[SENSOR_INDEX_GYRO] = gyroSensor1.gyroDev.gyroHardware;
+            sensorsSet(SENSOR_GYRO);
+            return true;
+        }
+
+        if (detectionFlags & DETECTED_GYRO_2) {
+            gyroToUse = GYRO_CONFIG_USE_GYRO_2;
+            gyroConfigMutable()->gyro_to_use = GYRO_CONFIG_USE_GYRO_2;
+            detectedSensors[SENSOR_INDEX_GYRO] = gyroSensor2.gyroDev.gyroHardware;
+            sensorsSet(SENSOR_GYRO);
+            return true;
+        }
     }
 
     // Only allow using both gyros simultaneously if they are the same hardware type.
@@ -563,12 +569,11 @@ bool gyroInit(void)
             gyroConfigMutable()->gyro_to_use = GYRO_CONFIG_USE_GYRO_1;
             detectedSensors[SENSOR_INDEX_GYRO] = gyroSensor1.gyroDev.gyroHardware;
             sensorsSet(SENSOR_GYRO);
-
         }
     }
 #endif
 
-    return ret;
+    return detectionFlags != NO_GYROS_DETECTED;
 }
 
 #ifdef USE_DYN_LPF
@@ -578,7 +583,7 @@ static FAST_RAM_ZERO_INIT uint16_t dynLpfMax;
 
 static void dynLpfFilterInit()
 {
-    if (gyroConfig()->dyn_lpf_gyro_min_hz > 0 && gyroConfig()->dyn_lpf_gyro_max_hz > gyroConfig()->dyn_lpf_gyro_min_hz) {
+    if (gyroConfig()->dyn_lpf_gyro_min_hz > 0) {
         switch (gyroConfig()->gyro_lowpass_type) {
         case FILTER_PT1:
             dynLpfFilter = DYN_LPF_PT1;
@@ -736,11 +741,17 @@ static void gyroInitSensorFilters(gyroSensor_t *gyroSensor)
     gyroInitSlewLimiter(gyroSensor);
 #endif
 
+    uint16_t gyro_lowpass_hz = gyroConfig()->gyro_lowpass_hz;
+
+#ifdef USE_DYN_LPF
+    gyro_lowpass_hz = MAX(gyroConfig()->gyro_lowpass_hz, gyroConfig()->dyn_lpf_gyro_min_hz);
+#endif
+
     gyroInitLowpassFilterLpf(
       gyroSensor,
       FILTER_LOWPASS,
       gyroConfig()->gyro_lowpass_type,
-      gyroConfig()->gyro_lowpass_hz
+      gyro_lowpass_hz
     );
 
     gyroInitLowpassFilterLpf(
@@ -1244,8 +1255,8 @@ void dynLpfGyroUpdate(float throttle)
     if (dynLpfFilter != DYN_LPF_NONE) {
         const unsigned int cutoffFreq = fmax(dynThrottle(throttle) * dynLpfMax, dynLpfMin);
 
-        DEBUG_SET(DEBUG_DYN_LPF, 2, cutoffFreq);
         if (dynLpfFilter == DYN_LPF_PT1) {
+            DEBUG_SET(DEBUG_DYN_LPF, 2, cutoffFreq);
             const float gyroDt = gyro.targetLooptime * 1e-6f;
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
 #ifdef USE_MULTI_GYRO
@@ -1260,6 +1271,7 @@ void dynLpfGyroUpdate(float throttle)
 #endif
             }
         } else if (dynLpfFilter == DYN_LPF_BIQUAD) {
+            DEBUG_SET(DEBUG_DYN_LPF, 2, cutoffFreq);
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
 #ifdef USE_MULTI_GYRO
                 if (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_1 || gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_BOTH) {

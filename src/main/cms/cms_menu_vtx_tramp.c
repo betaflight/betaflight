@@ -21,6 +21,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <ctype.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -47,6 +48,14 @@ char trampCmsStatusString[31] = "- -- ---- ----";
 void trampCmsUpdateStatusString(void)
 {
     vtxDevice_t *vtxDevice = vtxCommonDevice();
+
+#if defined(USE_VTX_TABLE)
+    if (vtxDevice->capability.bandCount == 0 || vtxDevice->capability.powerCount == 0) {
+        strncpy(trampCmsStatusString, "PLEASE CONFIGURE VTXTABLE", sizeof(trampCmsStatusString));
+        return;
+    }
+#endif
+
     trampCmsStatusString[0] = '*';
     trampCmsStatusString[1] = ' ';
     trampCmsStatusString[2] = vtxCommonLookupBandLetter(vtxDevice, trampBand);
@@ -172,8 +181,14 @@ static long trampCmsCommence(displayPort_t *pDisp, const void *self)
     return MENU_CHAIN_BACK;
 }
 
-static void trampCmsInitSettings(void)
+static bool trampCmsInitSettings(void)
 {
+    vtxDevice_t *device = vtxCommonDevice();
+
+    if (!device) {
+        return false;
+    }
+
     if (trampBand > 0) trampCmsBand = trampBand;
     if (trampChannel > 0) trampCmsChan = trampChannel;
 
@@ -181,10 +196,10 @@ static void trampCmsInitSettings(void)
     trampCmsPitMode = trampPitMode + 1;
 
     if (trampConfiguredPower > 0) {
-        trampCmsPower = vtxCommonGetPowerIndex(vtxCommonDevice(), &trampCmsPower);
+        if (!vtxCommonGetPowerIndex(vtxCommonDevice(), &trampCmsPower)) {
+            trampCmsPower = 1;
+        }
     }
-
-    vtxDevice_t *device = vtxCommonDevice();
 
     trampCmsEntBand.val = &trampCmsBand;
     trampCmsEntBand.max = device->capability.bandCount;
@@ -197,15 +212,20 @@ static void trampCmsInitSettings(void)
     trampCmsEntPower.val = &trampCmsPower;
     trampCmsEntPower.max = device->capability.powerCount;
     trampCmsEntPower.names = device->powerNames;
+
+    return true;
 }
 
 static long trampCmsOnEnter(void)
 {
-    trampCmsInitSettings();
+    if (!trampCmsInitSettings()) {
+        return MENU_CHAIN_BACK;
+    }
+
     return 0;
 }
 
-static OSD_Entry trampCmsMenuCommenceEntries[] = {
+static const OSD_Entry trampCmsMenuCommenceEntries[] = {
     { "CONFIRM", OME_Label,   NULL,          NULL, 0 },
     { "YES",     OME_Funcall, trampCmsCommence, NULL, 0 },
     { "BACK",    OME_Back, NULL, NULL, 0 },
@@ -222,7 +242,7 @@ static CMS_Menu trampCmsMenuCommence = {
     .entries = trampCmsMenuCommenceEntries,
 };
 
-static OSD_Entry trampMenuEntries[] =
+static const OSD_Entry trampMenuEntries[] =
 {
     { "- TRAMP -", OME_Label, NULL, NULL, 0 },
 

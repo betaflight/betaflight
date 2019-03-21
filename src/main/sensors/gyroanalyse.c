@@ -49,8 +49,6 @@
 // for gyro loop >= 4KHz, sample rate 2000 defines FFT range to 1000Hz, 16 bins each 62.5 Hz wide
 // NB  FFT_WINDOW_SIZE is set to 32 in gyroanalyse.h
 #define FFT_BIN_COUNT             (FFT_WINDOW_SIZE / 2)
-// start to compare 3rd bin to 2nd bin, ie start comparing from 77Hz, 100Hz, or 150Hz centres
-#define FFT_BIN_OFFSET            2
 // smoothing frequency for FFT centre frequency
 #define DYN_NOTCH_SMOOTH_FREQ_HZ  50
 // we need 4 steps for each axis
@@ -60,7 +58,7 @@
 
 static uint16_t FAST_RAM_ZERO_INIT   fftSamplingRateHz;
 static float FAST_RAM_ZERO_INIT      fftResolution;
-static uint8_t FAST_RAM_ZERO_INIT    fftBinOffset;
+static uint8_t FAST_RAM_ZERO_INIT    fftStartBin;
 static uint16_t FAST_RAM_ZERO_INIT   dynNotchMaxCtrHz;
 static uint8_t dynamicFilterRange;
 static float FAST_RAM_ZERO_INIT      dynNotchQ;
@@ -85,7 +83,6 @@ void gyroDataAnalyseInit(uint32_t targetLooptimeUs)
 
     dynamicFilterRange = gyroConfig()->dyn_notch_range;
     fftSamplingRateHz = DYN_NOTCH_RANGE_HZ_LOW;
-    fftBinOffset = FFT_BIN_OFFSET;
     dynNotch1Ctr = 1 - gyroConfig()->dyn_notch_width_percent / 100.0f;
     dynNotch2Ctr = 1 + gyroConfig()->dyn_notch_width_percent / 100.0f;
     dynNotchQ = gyroConfig()->dyn_notch_q / 100.0f;
@@ -101,12 +98,10 @@ void gyroDataAnalyseInit(uint32_t targetLooptimeUs)
         }
         if (gyroConfig()->dyn_lpf_gyro_max_hz > 610) {
             fftSamplingRateHz = DYN_NOTCH_RANGE_HZ_HIGH;
-            fftBinOffset = 1;
         }
     } else {
         if (dynamicFilterRange == DYN_NOTCH_RANGE_HIGH) {
             fftSamplingRateHz = DYN_NOTCH_RANGE_HZ_HIGH;
-            fftBinOffset = 1;
         }
         else if (dynamicFilterRange == DYN_NOTCH_RANGE_MEDIUM) {
             fftSamplingRateHz = DYN_NOTCH_RANGE_HZ_MEDIUM;
@@ -119,6 +114,8 @@ void gyroDataAnalyseInit(uint32_t targetLooptimeUs)
     fftSamplingRateHz = MIN((gyroLoopRateHz / 3), fftSamplingRateHz);
 
     fftResolution = (float)fftSamplingRateHz / FFT_WINDOW_SIZE;
+
+    fftStartBin = dynNotchMinHz / lrintf(fftResolution);
 
     dynNotchMaxCtrHz = fftSamplingRateHz / 2; //Nyquist
 
@@ -276,7 +273,7 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
             uint8_t binStart = 0;
             uint8_t binMax = 0;
             //for bins after initial decline, identify start bin and max bin 
-            for (int i = 1 + fftBinOffset; i < FFT_BIN_COUNT; i++) {
+            for (int i = fftStartBin; i < FFT_BIN_COUNT; i++) {
                 if (fftIncreased || (state->fftData[i] > state->fftData[i - 1])) {
                     if (!fftIncreased) {
                         binStart = i; // first up-step bin

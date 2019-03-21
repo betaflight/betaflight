@@ -39,31 +39,45 @@ static bool lastBindPinStatus;
 
 void rxSpiCommonIOInit(const rxSpiConfig_t *rxSpiConfig)
 {
-    ledPin = IOGetByTag(rxSpiConfig->ledIoTag);
-    IOInit(ledPin, OWNER_LED, 0);
-    IOConfigGPIO(ledPin, IOCFG_OUT_PP);
-    ledInversion = rxSpiConfig->ledInversion;
-    rxSpiLedOff();
+    if (rxSpiConfig->ledIoTag) {
+        ledPin = IOGetByTag(rxSpiConfig->ledIoTag);
+        IOInit(ledPin, OWNER_LED, 0);
+        IOConfigGPIO(ledPin, IOCFG_OUT_PP);
+        ledInversion = rxSpiConfig->ledInversion;
+        rxSpiLedOff();
+    } else {
+        ledPin = IO_NONE;
+    }
 
-    bindPin = IOGetByTag(rxSpiConfig->bindIoTag);
-    IOInit(bindPin, OWNER_RX_BIND, 0);
-    IOConfigGPIO(bindPin, IOCFG_IPU);
-    lastBindPinStatus = IORead(bindPin);
+    if (rxSpiConfig->bindIoTag) {
+        bindPin = IOGetByTag(rxSpiConfig->bindIoTag);
+        IOInit(bindPin, OWNER_RX_BIND, 0);
+        IOConfigGPIO(bindPin, IOCFG_IPU);
+        lastBindPinStatus = IORead(bindPin);
+    } else {
+        bindPin = IO_NONE;
+    }
 }
 
 void rxSpiLedOn(void)
 {
-    ledInversion ? IOLo(ledPin) : IOHi(ledPin);
+    if (ledPin) {
+        ledInversion ? IOLo(ledPin) : IOHi(ledPin);
+    }
 }
 
 void rxSpiLedOff(void)
 {
-    ledInversion ? IOHi(ledPin) : IOLo(ledPin);
+    if (ledPin) {
+        ledInversion ? IOHi(ledPin) : IOLo(ledPin);
+    }
 }
 
 void rxSpiLedToggle(void)
 {
-    IOToggle(ledPin);
+    if (ledPin) {
+        IOToggle(ledPin);
+    }
 }
 
 void rxSpiLedBlink(timeMs_t blinkMs)
@@ -81,14 +95,17 @@ void rxSpiLedBlink(timeMs_t blinkMs)
 void rxSpiLedBlinkRxLoss(rx_spi_received_e result)
 {
     static uint16_t rxLossCount = 0;
-    if (result == RX_SPI_RECEIVED_DATA) {
-        rxLossCount = 0;
-        rxSpiLedOn();
-    } else {
-        if (rxLossCount  < RX_LOSS_COUNT) {
-            rxLossCount++;
+
+    if (ledPin) {
+        if (result == RX_SPI_RECEIVED_DATA) {
+            rxLossCount = 0;
+            rxSpiLedOn();
         } else {
-            rxSpiLedBlink(INTERVAL_RX_LOSS_MS);
+            if (rxLossCount  < RX_LOSS_COUNT) {
+                rxLossCount++;
+            } else {
+                rxSpiLedBlink(INTERVAL_RX_LOSS_MS);
+            }
         }
     }
 }

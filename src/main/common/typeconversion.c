@@ -21,6 +21,9 @@
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
+
+#include "platform.h"
+
 #include "build/build_config.h"
 #include "maths.h"
 

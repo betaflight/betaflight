@@ -57,6 +57,7 @@
 #define GYRO_1_SPI_INSTANCE     SPI1
 
 #define USE_GYRO
+#define USE_ACC
 
 #define USE_GYRO_SPI_MPU6000
 #define GYRO_1_ALIGN            CW180_DEG

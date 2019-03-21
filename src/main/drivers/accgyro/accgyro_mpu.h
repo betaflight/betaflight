@@ -156,12 +156,6 @@ enum icm_high_range_gyro_fsr_e {
     NUM_ICM_HIGH_RANGE_GYRO_FSR
 };
 
-enum fchoice_b {
-    FCB_DISABLED = 0x00,
-    FCB_8800_32 = 0x01,
-    FCB_3600_32 = 0x02
-};
-
 enum clock_sel_e {
     INV_CLK_INTERNAL = 0,
     INV_CLK_PLL,
@@ -226,7 +220,6 @@ bool mpuGyroReadSPI(struct gyroDev_s *gyro);
 void mpuPreInit(const struct gyroDeviceConfig_s *config);
 void mpuDetect(struct gyroDev_s *gyro, const struct gyroDeviceConfig_s *config);
 uint8_t mpuGyroDLPF(struct gyroDev_s *gyro);
-uint8_t mpuGyroFCHOICE(struct gyroDev_s *gyro);
 uint8_t mpuGyroReadRegister(const busDevice_t *bus, uint8_t reg);
 
 struct accDev_s;

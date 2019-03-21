@@ -195,7 +195,7 @@ static long cmsx_Blackbox_onExit(const OSD_Entry *self)
     return 0;
 }
 
-static OSD_Entry cmsx_menuBlackboxEntries[] =
+static const OSD_Entry cmsx_menuBlackboxEntries[] =
 {
     { "-- BLACKBOX --", OME_Label, NULL, NULL, 0},
     { "DEVICE",      OME_TAB,     NULL,            &cmsx_BlackboxDeviceTable,                                 0 },

@@ -41,6 +41,8 @@ void pgResetFn_rxSpiConfig(rxSpiConfig_t *rxSpiConfig)
     rxSpiConfig->csnTag = IO_TAG(RX_NSS_PIN);
     rxSpiConfig->spibus = SPI_DEV_TO_CFG(spiDeviceByInstance(RX_SPI_INSTANCE));
 
+    rxSpiConfig->extiIoTag = IO_TAG(RX_SPI_EXTI_PIN);
+
     rxSpiConfig->bindIoTag = IO_TAG(BINDPLUG_PIN);
     rxSpiConfig->ledIoTag = IO_TAG(RX_SPI_LED_PIN);
 #ifdef RX_SPI_LED_INVERTED

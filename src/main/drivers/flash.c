@@ -62,7 +62,13 @@ bool flashInit(const flashConfig_t *flashConfig)
     }
 
     busdev->bustype = BUSTYPE_SPI;
-    spiBusSetInstance(busdev, spiInstanceByDevice(SPI_CFG_TO_DEV(flashConfig->spiDevice)));
+
+    SPI_TypeDef *instance = spiInstanceByDevice(SPI_CFG_TO_DEV(flashConfig->spiDevice));
+    if (!instance) {
+        return false;
+    }
+
+    spiBusSetInstance(busdev, instance);
 
     IOInit(busdev->busdev_u.spi.csnPin, OWNER_FLASH_CS, 0);
     IOConfigGPIO(busdev->busdev_u.spi.csnPin, SPI_IO_CS_CFG);

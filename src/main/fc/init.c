@@ -27,6 +27,8 @@
 
 #include "blackbox/blackbox.h"
 
+#include "cli/cli.h"
+
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/maths.h"
@@ -76,6 +78,7 @@
 #include "drivers/usb_io.h"
 #include "drivers/vtx_rtc6705.h"
 #include "drivers/vtx_common.h"
+#include "drivers/vtx_table.h"
 #ifdef USE_USB_MSC
 #include "drivers/usb_msc.h"
 #endif
@@ -88,13 +91,11 @@
 #include "fc/runtime_config.h"
 #include "fc/dispatch.h"
 
-#include "interface/cli.h"
-#include "interface/msp.h"
-
 #ifdef USE_PERSISTENT_MSC_RTC
 #include "msc/usbd_storage.h"
 #endif
 
+#include "msp/msp.h"
 #include "msp/msp_serial.h"
 
 #include "pg/adc.h"
@@ -130,7 +131,6 @@
 #include "io/dashboard.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/transponder_ir.h"
-#include "io/osd.h"
 #include "io/pidaudio.h"
 #include "io/piniobox.h"
 #include "io/displayport_msp.h"
@@ -139,6 +139,8 @@
 #include "io/vtx_control.h"
 #include "io/vtx_smartaudio.h"
 #include "io/vtx_tramp.h"
+
+#include "osd/osd.h"
 
 #include "scheduler/scheduler.h"
 
@@ -207,15 +209,12 @@ static IO_t busSwitchResetPin        = IO_NONE;
 }
 #endif
 
-#if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
+#ifdef USE_DSHOT_TELEMETRY
 void activateDshotTelemetry(struct dispatchEntry_s* self)
 {
-    UNUSED(self);
-    if (!ARMING_FLAG(ARMED))
-    {
-        pwmWriteDshotCommand(
-            255, getMotorCount(), motorConfig()->dev.useDshotTelemetry ?
-            DSHOT_CMD_SIGNAL_LINE_CONTINUOUS_ERPM_TELEMETRY : DSHOT_CMD_SIGNAL_LINE_TELEMETRY_DISABLE, false);
+    if (!ARMING_FLAG(ARMED) && !isDshotTelemetryActive()) {
+        pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SIGNAL_LINE_CONTINUOUS_ERPM_TELEMETRY, false);
+        dispatchAdd(self, 1e6); // check again in 1 second
     }
 }
 
@@ -247,6 +246,22 @@ void init(void)
     HAL_Init();
 #endif
 
+#if defined(STM32F7)   
+    /* Enable I-Cache */
+    if (INSTRUCTION_CACHE_ENABLE) {
+        SCB_EnableICache();
+    }
+
+    /* Enable D-Cache */
+    if (DATA_CACHE_ENABLE) {
+        SCB_EnableDCache();
+    }
+
+    if (PREFETCH_ENABLE) {
+        LL_FLASH_EnablePrefetch();
+    }
+#endif
+
     printfSupportInit();
 
     systemInit();
@@ -259,7 +274,13 @@ void init(void)
 #endif
 
 #ifdef USE_BRUSHED_ESC_AUTODETECT
-    detectBrushedESC();
+    // Opportunistically use the first motor pin of the default configuration for detection.
+    // We are doing this as with some boards, timing seems to be important, and the later detection will fail.
+    ioTag_t motorIoTag = timerioTagGetByUsage(TIM_USE_MOTOR, 0);
+
+    if (motorIoTag) {
+        detectBrushedESC(motorIoTag);
+    }
 #endif
 
     initEEPROM();
@@ -278,6 +299,15 @@ void init(void)
 
     systemState |= SYSTEM_STATE_CONFIG_LOADED;
 
+#ifdef USE_BRUSHED_ESC_AUTODETECT
+    // Now detect again with the actually configured pin for motor 1, if it is not the default pin.
+    ioTag_t configuredMotorIoTag = motorConfig()->dev.ioTags[0];
+
+    if (configuredMotorIoTag && configuredMotorIoTag != motorIoTag) {
+        detectBrushedESC(configuredMotorIoTag);
+    }
+#endif
+
     //i2cSetOverclock(masterConfig.i2c_overclock);
 
     debugMode = systemConfig()->debug_mode;
@@ -286,7 +316,7 @@ void init(void)
     targetPreInit();
 #endif
 
-#if !defined(UNIT_TEST) && !defined(USE_FAKE_LED)
+#if !defined(USE_FAKE_LED)
     ledInit(statusLedConfig());
 #endif
     LED2_ON;
@@ -422,7 +452,11 @@ void init(void)
 
 #ifdef USE_SPI
     spiPinConfigure(spiPinConfig(0));
+#endif
 
+    sensorsPreInit();
+
+#ifdef USE_SPI
     spiPreinit();
 
 #ifdef USE_SPI_DEVICE_1
@@ -534,7 +568,9 @@ void init(void)
     // so we are ready to call validateAndFixGyroConfig(), pidInit(), and setAccelerationFilter()
     validateAndFixGyroConfig();
     pidInit(currentPidProfile);
+#ifdef USE_ACC
     accInitFilters();
+#endif
 
 #ifdef USE_PID_AUDIO
     pidAudioInit();
@@ -696,12 +732,18 @@ void init(void)
     blackboxInit();
 #endif
 
+#ifdef USE_ACC
     if (mixerConfig()->mixerMode == MIXER_GIMBAL) {
         accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
     }
+#endif
     gyroStartCalibration(false);
 #ifdef USE_BARO
     baroSetCalibrationCycles(CALIBRATING_BARO_CYCLES);
+#endif
+
+#ifdef USE_VTX_TABLE
+    vtxTableInit();
 #endif
 
 #ifdef USE_VTX_CONTROL
@@ -766,8 +808,7 @@ void init(void)
 
     setArmingDisabled(ARMING_DISABLED_BOOT_GRACE_TIME);
 
-// TODO: potentially delete when feature is stable. Activation when arming is enough for flight.
-#if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
+#ifdef USE_DSHOT_TELEMETRY
     if (motorConfig()->dev.useDshotTelemetry) {
         dispatchEnable();
         dispatchAdd(&activateDshotTelemetryEntry, 5000000);

@@ -22,18 +22,25 @@
 #include <stdint.h>
 
 #include "platform.h"
+
 #include "drivers/bus.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
-#include "io/serial.h"
+
 #include "hardware_revision.h"
+
+#include "io/serial.h"
+
 #include "pg/bus_i2c.h"
 #include "pg/bus_spi.h"
+
+#include "sensors/initialisation.h"
 
 void targetBusInit(void)
 {
     if (hardwareRevision == AFF3_REV_2) {
         spiPinConfigure(spiPinConfig(0));
+        sensorsPreInit();
         spiPreinit();
         spiInit(SPIDEV_3);
     }

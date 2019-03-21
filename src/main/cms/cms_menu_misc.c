@@ -67,7 +67,7 @@ static long cmsx_menuRcConfirmBack(const OSD_Entry *self)
 //
 // RC preview
 //
-static OSD_Entry cmsx_menuRcEntries[] =
+static const OSD_Entry cmsx_menuRcEntries[] =
 {
     { "-- RC PREV --", OME_Label, NULL, NULL, 0},
 
@@ -119,7 +119,7 @@ static long cmsx_menuMiscOnExit(const OSD_Entry *self)
     return 0;
 }
 
-static OSD_Entry menuMiscEntries[]=
+static const OSD_Entry menuMiscEntries[]=
 {
     { "-- MISC --", OME_Label, NULL, NULL, 0 },
 

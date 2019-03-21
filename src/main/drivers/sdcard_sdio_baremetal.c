@@ -198,7 +198,7 @@ static void sdcardSdio_init(const sdcardConfig_t *config, const spiPinConfig_t *
         return;
     }
 
-    const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpec(DMA_PERIPH_SDIO, 0, sdioConfig()->dmaopt);
+    const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_SDIO, 0, sdioConfig()->dmaopt);
 
     if (!dmaChannelSpec) {
         sdcard.state = SDCARD_STATE_NOT_PRESENT;
