@@ -514,6 +514,7 @@ bool gyroInit(void)
     case DEBUG_DUAL_GYRO_COMBINE:
     case DEBUG_DUAL_GYRO_DIFF:
     case DEBUG_DUAL_GYRO_RAW:
+    case DEBUG_DUAL_GYRO_SCALED:
         useDualGyroDebugging = true;
         break;
     }
@@ -1098,6 +1099,8 @@ FAST_CODE void gyroUpdate(timeUs_t currentTimeUs)
             DEBUG_SET(DEBUG_DUAL_GYRO, 1, lrintf(gyroSensor1.gyroDev.gyroADCf[Y]));
             DEBUG_SET(DEBUG_DUAL_GYRO_COMBINE, 0, lrintf(gyro.gyroADCf[X]));
             DEBUG_SET(DEBUG_DUAL_GYRO_COMBINE, 1, lrintf(gyro.gyroADCf[Y]));
+            DEBUG_SET(DEBUG_DUAL_GYRO_SCALED, 0, lrintf(gyroSensor1.gyroDev.gyroADC[X] * gyroSensor1.gyroDev.scale));
+            DEBUG_SET(DEBUG_DUAL_GYRO_SCALED, 1, lrintf(gyroSensor1.gyroDev.gyroADC[Y] * gyroSensor1.gyroDev.scale));
         }
         break;
 #ifdef USE_MULTI_GYRO
@@ -1121,6 +1124,8 @@ FAST_CODE void gyroUpdate(timeUs_t currentTimeUs)
             DEBUG_SET(DEBUG_DUAL_GYRO, 3, lrintf(gyroSensor2.gyroDev.gyroADCf[Y]));
             DEBUG_SET(DEBUG_DUAL_GYRO_COMBINE, 2, lrintf(gyro.gyroADCf[X]));
             DEBUG_SET(DEBUG_DUAL_GYRO_COMBINE, 3, lrintf(gyro.gyroADCf[Y]));
+            DEBUG_SET(DEBUG_DUAL_GYRO_SCALED, 2, lrintf(gyroSensor2.gyroDev.gyroADC[X] * gyroSensor2.gyroDev.scale));
+            DEBUG_SET(DEBUG_DUAL_GYRO_SCALED, 3, lrintf(gyroSensor2.gyroDev.gyroADC[Y] * gyroSensor2.gyroDev.scale));
         }
         break;
     case GYRO_CONFIG_USE_GYRO_BOTH:
@@ -1152,6 +1157,10 @@ FAST_CODE void gyroUpdate(timeUs_t currentTimeUs)
             DEBUG_SET(DEBUG_DUAL_GYRO_DIFF, 0, lrintf(gyroSensor1.gyroDev.gyroADCf[X] - gyroSensor2.gyroDev.gyroADCf[X]));
             DEBUG_SET(DEBUG_DUAL_GYRO_DIFF, 1, lrintf(gyroSensor1.gyroDev.gyroADCf[Y] - gyroSensor2.gyroDev.gyroADCf[Y]));
             DEBUG_SET(DEBUG_DUAL_GYRO_DIFF, 2, lrintf(gyroSensor1.gyroDev.gyroADCf[Z] - gyroSensor2.gyroDev.gyroADCf[Z]));
+            DEBUG_SET(DEBUG_DUAL_GYRO_SCALED, 0, lrintf(gyroSensor1.gyroDev.gyroADC[X] * gyroSensor1.gyroDev.scale));
+            DEBUG_SET(DEBUG_DUAL_GYRO_SCALED, 1, lrintf(gyroSensor1.gyroDev.gyroADC[Y] * gyroSensor1.gyroDev.scale));
+            DEBUG_SET(DEBUG_DUAL_GYRO_SCALED, 2, lrintf(gyroSensor2.gyroDev.gyroADC[X] * gyroSensor2.gyroDev.scale));
+            DEBUG_SET(DEBUG_DUAL_GYRO_SCALED, 3, lrintf(gyroSensor2.gyroDev.gyroADC[Y] * gyroSensor2.gyroDev.scale));
         }
         break;
 #endif
