@@ -31,6 +31,10 @@
 #include "cms/cms_types.h"
 #include "cms/cms_menu_failsafe.h"
 
+#ifdef USE_CMS_GPS_RESCUE_MENU
+#include "cms/cms_menu_gps_rescue.h"
+#endif
+
 #include "config/feature.h"
 
 #include "fc/config.h"
@@ -73,6 +77,9 @@ static const OSD_Entry cmsx_menuFailsafeEntries[] =
     { "GUARD TIME",       OME_FLOAT,  NULL, &(OSD_FLOAT_t)  { &failsafeConfig_failsafe_delay, 0, 200, 1, 100 }, 0 },
     { "STAGE 2 DELAY",    OME_FLOAT,  NULL, &(OSD_FLOAT_t)  { &failsafeConfig_failsafe_off_delay, 0, 200, 1, 100 }, 0 },
     { "STAGE 2 THROTTLE", OME_UINT16, NULL, &(OSD_UINT16_t) { &failsafeConfig_failsafe_throttle, PWM_PULSE_MIN, PWM_PULSE_MAX, 1 }, 0 },
+#ifdef USE_CMS_GPS_RESCUE_MENU
+    { "GPS RESCUE",       OME_Submenu, cmsMenuChange, &cmsx_menuGpsRescue, 0},
+#endif
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
 };
