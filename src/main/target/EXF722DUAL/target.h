@@ -24,7 +24,7 @@
 
 #define USBD_PRODUCT_STRING     "EXF722DUAL"
 
-#define USE_DUAL_GYRO
+#define USE_MULTI_GYRO
 
 #define ENABLE_DSHOT_DMAR       true
 

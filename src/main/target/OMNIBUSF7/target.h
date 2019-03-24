@@ -44,7 +44,7 @@
 //GYRO & ACC--------------------------------
 #define USE_ACC
 #define USE_GYRO
-#define USE_DUAL_GYRO
+#define USE_MULTI_GYRO
 // ICM-20608-G
 #define USE_ACC_SPI_MPU6500
 #define USE_GYRO_SPI_MPU6500
