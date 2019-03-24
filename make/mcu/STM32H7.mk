@@ -206,7 +206,7 @@ VCP_SRC = \
             drivers/usb_io.c
 
 MCU_COMMON_SRC = \
-            target/system_stm32h7xx.c \
+            startup/system_stm32h7xx.c \
             drivers/system_stm32h7xx.c \
             drivers/timer_hal.c \
             drivers/timer_stm32h7xx.c \
