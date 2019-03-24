@@ -18,6 +18,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "stdbool.h"
+
 #include "platform.h"
 
 #include "common/sensor_alignment.h"
@@ -33,7 +35,31 @@ void buildRotationMatrixFromAlignment(const sensorAlignment_t* sensorAlignment, 
     buildRotationMatrix(&rotationAngles, rm);
 }
 
-void buildAlignmentFromRotation(sensorAlignment_t* sensorAlignment, legacy_sensor_align_e rotation)
+bool isSensorAlignmentStandard(sensorAlignment_t* sensorAlignment)
+{
+    bool nonStandardAlignmentDetected = false;
+
+    for (int i = 0; i < XYZ_AXIS_COUNT && !nonStandardAlignmentDetected; i++) {
+        nonStandardAlignmentDetected = (int)sensorAlignment->raw[i] % 90 != 0;
+    }
+
+    return !nonStandardAlignmentDetected;
+}
+
+void updateStandardAlignmentFromNonDefaultLegacyRotation(sensorAlignment_t* sensorAlignment, legacy_sensor_align_e rotation)
+{
+    if (rotation == LEGACY_ALIGN_DEFAULT) {
+        return;
+    }
+
+    if (!isSensorAlignmentStandard(sensorAlignment)) {
+        return;
+    }
+
+    buildAlignmentFromLegacyRotation(sensorAlignment, rotation);
+}
+
+void buildAlignmentFromLegacyRotation(sensorAlignment_t* sensorAlignment, legacy_sensor_align_e rotation)
 {
     *sensorAlignment = CW0_DEG;
 

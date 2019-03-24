@@ -2014,13 +2014,12 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_SENSOR_ALIGNMENT: {
         // maintain backwards compatibility for API < 1.41
         legacy_sensor_align_e gyroRotation = sbufReadU8(src);
-        buildAlignmentFromRotation(&gyroDeviceConfigMutable(0)->alignment, gyroRotation);
 
         legacy_sensor_align_e accRotation = sbufReadU8(src);
         UNUSED(accRotation);
 
         legacy_sensor_align_e compassRotation = sbufReadU8(src);
-        buildAlignmentFromRotation(&compassConfigMutable()->mag_alignment, compassRotation);
+        updateStandardAlignmentFromNonDefaultLegacyRotation(&compassConfigMutable()->mag_alignment, compassRotation);
 
         // API >= 1.41 - support the gyro_to_use and alignment for gyros 1 & 2
         if (sbufBytesRemaining(src) >= 3) {
@@ -2036,16 +2035,16 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
             uint8_t bytesRemaining = sbufBytesRemaining(src);
             if (bytesRemaining == 2) {
-                // API >= 1.41 - alignment for gyros 1 & 2
+                // API == 1.41 - standard legacy alignments for gyros 1 & 2
 
                 for (int gyroIndex = 0; gyroIndex < 2; gyroIndex++) {
                     legacy_sensor_align_e rotation = sbufReadU8(src);
                     if (gyroIndex < accGyroCount) {
-                        buildAlignmentFromRotation(&gyroDeviceConfigMutable(gyroIndex)->alignment, rotation);
+                        updateStandardAlignmentFromNonDefaultLegacyRotation(&gyroDeviceConfigMutable(gyroIndex)->alignment, rotation);
                     }
                 }
             } else {
-                // API >= 1.42 - arbitrary alignment
+                // API >= 1.42 - arbitrary alignments
                 int expectedBytesRemaining =
                     (accGyroCount * sizeof(uint16_t) * FLIGHT_DYNAMICS_INDEX_COUNT) +
                     (sizeof(uint16_t) * FLIGHT_DYNAMICS_INDEX_COUNT);
@@ -2061,6 +2060,16 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                     }
                 }
             }
+        } else {
+            // maintain backwards compatibility for API < 1.41
+
+            gyroDeviceConfig_t* gyroDeviceConfig = gyroDeviceConfigMutable(0); // update GYRO 0 by default
+#ifdef USE_MULTI_GYRO
+            if (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_2) {
+                gyroDeviceConfig = gyroDeviceConfigMutable(1);
+            }
+#endif
+            updateStandardAlignmentFromNonDefaultLegacyRotation(&gyroDeviceConfig->alignment, gyroRotation);
         }
         break;
     }

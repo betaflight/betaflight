@@ -39,7 +39,7 @@ typedef enum {
 typedef union sensorAlignment_u {
     // value order is the same as axis_e
 
-    uint16_t raw[XYZ_AXIS_COUNT];
+    int16_t raw[XYZ_AXIS_COUNT];
     struct {
         int16_t roll;
         int16_t pitch;
@@ -58,4 +58,7 @@ typedef union sensorAlignment_u {
 #define CW270_DEG_FLIP  ((sensorAlignment_t){ .values = { .roll = 0, .pitch = 180, .yaw = 270  }})
 
 void buildRotationMatrixFromAlignment(const sensorAlignment_t* alignment, fp_rotationMatrix_t* rm);
-void buildAlignmentFromRotation(sensorAlignment_t* sensorAlignment, legacy_sensor_align_e rotation);
+void buildAlignmentFromLegacyRotation(sensorAlignment_t* sensorAlignment, legacy_sensor_align_e rotation);
+
+bool isSensorAlignmentStandard(sensorAlignment_t* sensorAlignment);
+void updateStandardAlignmentFromNonDefaultLegacyRotation(sensorAlignment_t* sensorAlignment, legacy_sensor_align_e rotation);

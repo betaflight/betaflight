@@ -96,7 +96,7 @@ FAST_CODE void alignSensors(float *dest, uint8_t rotation)
 
     sensorAlignment_t sensorAlignment;
 
-    buildAlignmentFromRotation(&sensorAlignment, rotation);
+    buildAlignmentFromLegacyRotation(&sensorAlignment, rotation);
 
     buildRotationMatrixFromAlignment(&sensorAlignment, &sensorRotationMatrix);
 

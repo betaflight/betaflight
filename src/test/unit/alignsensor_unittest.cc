@@ -268,3 +268,130 @@ TEST(AlignSensorTest, ClockwiseTwoSeventyDegreesFlip)
 {
     testCWFlip(LEGACY_ALIGN_CW270_DEG_FLIP, 270);
 }
+
+static void testLegacyAlignmentIsStandard(legacy_sensor_align_e rotation)
+{
+    sensorAlignment_t sensorAlignment = { .raw = {0} };
+
+    buildAlignmentFromLegacyRotation(&sensorAlignment, rotation);
+
+    bool standardAlignment = isSensorAlignmentStandard(&sensorAlignment);
+
+    EXPECT_TRUE(standardAlignment);
+
+}
+
+TEST(AlignSensorTest, AllLegacyAlignmentsAreStandard)
+{
+    testLegacyAlignmentIsStandard(LEGACY_ALIGN_CW0_DEG);
+    testLegacyAlignmentIsStandard(LEGACY_ALIGN_CW90_DEG);
+    testLegacyAlignmentIsStandard(LEGACY_ALIGN_CW180_DEG);
+    testLegacyAlignmentIsStandard(LEGACY_ALIGN_CW270_DEG);
+    testLegacyAlignmentIsStandard(LEGACY_ALIGN_CW0_DEG_FLIP);
+    testLegacyAlignmentIsStandard(LEGACY_ALIGN_CW90_DEG_FLIP);
+    testLegacyAlignmentIsStandard(LEGACY_ALIGN_CW180_DEG_FLIP);
+    testLegacyAlignmentIsStandard(LEGACY_ALIGN_CW270_DEG_FLIP);
+}
+
+// alignment is "non-standard" if any axis is not divisible by 90.
+
+static void testNonStandardAlignment(sensorAlignment_t sensorAlignment)
+{
+    bool standardAlignment = isSensorAlignmentStandard(&sensorAlignment);
+
+    EXPECT_FALSE(standardAlignment) << "Sensor alignment should be non-standard. r:" << sensorAlignment.values.roll << ", p:" << sensorAlignment.values.pitch << ", y:" << sensorAlignment.values.yaw;
+}
+
+TEST(AlignSensorTest, NonStandardAlignments)
+{
+    testNonStandardAlignment({.raw = { 1, 0, 0}});
+    testNonStandardAlignment({.raw = { 0, 1, 0}});
+    testNonStandardAlignment({.raw = { 0, 0, 1}});
+
+    testNonStandardAlignment({.raw = { -91,   0,   0}});
+    testNonStandardAlignment({.raw = {   0, -91,   0}});
+    testNonStandardAlignment({.raw = {   0,   0, -91}});
+
+    testNonStandardAlignment({.raw = {-225,  45, 315}});
+}
+
+static void testStandardAlignment(sensorAlignment_t sensorAlignment)
+{
+    bool standardAlignment = isSensorAlignmentStandard(&sensorAlignment);
+
+    EXPECT_TRUE(standardAlignment) << "Sensor alignment should be standard. r:" << sensorAlignment.values.roll << ", p:" << sensorAlignment.values.pitch << ", y:" << sensorAlignment.values.yaw;
+}
+
+TEST(AlignSensorTest, StandardSensorAlignAlignments)
+{
+    testStandardAlignment(CW0_DEG);
+    testStandardAlignment(CW90_DEG);
+    testStandardAlignment(CW180_DEG);
+    testStandardAlignment(CW270_DEG);
+    testStandardAlignment(CW0_DEG_FLIP);
+    testStandardAlignment(CW90_DEG_FLIP);
+    testStandardAlignment(CW180_DEG_FLIP);
+    testStandardAlignment(CW270_DEG_FLIP);
+}
+
+static void testUpdateStandardAlignmentFromNonDefaultLegacyRotation(legacy_sensor_align_e rotation, sensorAlignment_t expectedSensorAlignment)
+{
+    sensorAlignment_t sensorAlignment = { .raw = {90, 180, 270} };
+
+    updateStandardAlignmentFromNonDefaultLegacyRotation(&sensorAlignment, rotation);
+
+    for (int i = 0; i < (int)(sizeof(sensorAlignment.raw) / sizeof(sensorAlignment.raw[0])); i++) {
+        EXPECT_EQ(expectedSensorAlignment.raw[i], sensorAlignment.raw[i]) << "Standard sensor alignment was not updated. rotation: " << rotation;
+    }
+}
+
+
+TEST(AlignSensorTest, UpdateStandardAlignmentWithStandardLegacyAlignment)
+{
+    testUpdateStandardAlignmentFromNonDefaultLegacyRotation(LEGACY_ALIGN_CW0_DEG,           CW0_DEG);
+    testUpdateStandardAlignmentFromNonDefaultLegacyRotation(LEGACY_ALIGN_CW90_DEG,          CW90_DEG);
+    testUpdateStandardAlignmentFromNonDefaultLegacyRotation(LEGACY_ALIGN_CW180_DEG,         CW180_DEG);
+    testUpdateStandardAlignmentFromNonDefaultLegacyRotation(LEGACY_ALIGN_CW270_DEG,         CW270_DEG);
+    testUpdateStandardAlignmentFromNonDefaultLegacyRotation(LEGACY_ALIGN_CW0_DEG_FLIP,      CW0_DEG_FLIP);
+    testUpdateStandardAlignmentFromNonDefaultLegacyRotation(LEGACY_ALIGN_CW90_DEG_FLIP,     CW90_DEG_FLIP);
+    testUpdateStandardAlignmentFromNonDefaultLegacyRotation(LEGACY_ALIGN_CW180_DEG_FLIP,    CW180_DEG_FLIP);
+    testUpdateStandardAlignmentFromNonDefaultLegacyRotation(LEGACY_ALIGN_CW270_DEG_FLIP,    CW270_DEG_FLIP);
+}
+
+static void testAttemptUpdateNonStandardAlignmentWithStandardLegacyAlignment(legacy_sensor_align_e rotation)
+{
+    sensorAlignment_t sensorAlignment = { .raw = {315, 45, 225} };
+
+    updateStandardAlignmentFromNonDefaultLegacyRotation(&sensorAlignment, rotation);
+
+    sensorAlignment_t expectedSensorAlignment = { .raw = {315, 45, 225} };
+
+    for (int i = 0; i < (int)(sizeof(sensorAlignment.raw) / sizeof(sensorAlignment.raw[0])); i++) {
+        EXPECT_EQ(expectedSensorAlignment.raw[i], sensorAlignment.raw[i]) << "Non-standard sensor alignment should not be updated, rotation: " << rotation;
+    }
+}
+
+TEST(AlignSensorTest, AttemptUpdateNonStandardAlignmentWithStandardLegacyAlignment)
+{
+    testAttemptUpdateNonStandardAlignmentWithStandardLegacyAlignment(LEGACY_ALIGN_CW0_DEG);
+    testAttemptUpdateNonStandardAlignmentWithStandardLegacyAlignment(LEGACY_ALIGN_CW90_DEG);
+    testAttemptUpdateNonStandardAlignmentWithStandardLegacyAlignment(LEGACY_ALIGN_CW180_DEG);
+    testAttemptUpdateNonStandardAlignmentWithStandardLegacyAlignment(LEGACY_ALIGN_CW270_DEG);
+    testAttemptUpdateNonStandardAlignmentWithStandardLegacyAlignment(LEGACY_ALIGN_CW0_DEG_FLIP);
+    testAttemptUpdateNonStandardAlignmentWithStandardLegacyAlignment(LEGACY_ALIGN_CW90_DEG_FLIP);
+    testAttemptUpdateNonStandardAlignmentWithStandardLegacyAlignment(LEGACY_ALIGN_CW180_DEG_FLIP);
+    testAttemptUpdateNonStandardAlignmentWithStandardLegacyAlignment(LEGACY_ALIGN_CW270_DEG_FLIP);
+}
+
+TEST(AlignSensorTest, AttemptUpdateAlignmentWithDefaultLegacyAlignment)
+{
+    sensorAlignment_t sensorAlignment = { .raw = {90, 180, 270} };
+
+    updateStandardAlignmentFromNonDefaultLegacyRotation(&sensorAlignment, LEGACY_ALIGN_DEFAULT);
+
+    sensorAlignment_t expectedSensorAlignment = { .raw = {90, 180, 270} };
+
+    for (int i = 0; i < (int)(sizeof(sensorAlignment.raw) / sizeof(sensorAlignment.raw[0])); i++) {
+        EXPECT_EQ(expectedSensorAlignment.raw[i], sensorAlignment.raw[i]) << "Sensor alignment should not be updated.";
+    }
+}
