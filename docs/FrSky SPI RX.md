@@ -64,7 +64,7 @@ FrSky X and X_LBT protocol:
 
 ![FrSky SPI RX FrSky X binding with OpenTX](assets/images/frsky_spi_rx_x_binding.png)
 
-6. Once binding has completed, the flight controller will indicate this by blinking the RX LED slowly. There's no indication on the CLI, but you can also observe successful binding by taking a diff and seeing new parameter values. A reboot of the flight controller is not required.
+6. Once binding has completed, the flight controller will indicate this by blinking the RX LED slowly. There's no indication on the CLI, but you can observe successful binding by quitting the bind mode on TX, and seeing if `status` doesn't list RXLOSS anymore in "Arming disable flags". A reboot of the flight controller is not required.
 
 
 ## Tips & Tricks
