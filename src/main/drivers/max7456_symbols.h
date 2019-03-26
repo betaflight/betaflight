@@ -124,6 +124,10 @@
 #define SYM_ON_M                    0x9B
 #define SYM_FLY_M                   0x9C
 
+// Speed
+#define SYM_KPH                     0x4B  // we don't have a KPH symbol so use 'K'
+#define SYM_MPH                     0x4D  // we don't have a MPH symbol so use 'M'
+
 // Menu cursor
 #define SYM_CURSOR                  SYM_AH_LEFT
 
