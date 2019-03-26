@@ -98,8 +98,9 @@ void pwmDshotSetDirectionOutput(
     LL_EX_DMA_DeInit(motor->dmaRef);
 
 #ifdef USE_DSHOT_TELEMETRY
-    motor->isInput = !output;
     if (!output) {
+        motor->isInput = true;
+        motor->timer->inputDirectionStampUs = micros();
         LL_TIM_IC_Init(timer, motor->llChannel, &motor->icInitStruct);
         motor->dmaInitStruct.Direction = LL_DMA_DIRECTION_PERIPH_TO_MEMORY;
     } else
@@ -107,6 +108,9 @@ void pwmDshotSetDirectionOutput(
     UNUSED(output);
 #endif
     {
+#ifdef USE_DSHOT_TELEMETRY
+        motor->isInput = false;
+#endif
         LL_TIM_OC_DisablePreload(timer, motor->llChannel);
         LL_TIM_OC_Init(timer, motor->llChannel, pOcInit);
         LL_TIM_OC_EnablePreload(timer, motor->llChannel);
@@ -351,6 +355,9 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 
 #ifdef USE_DSHOT_TELEMETRY
     motor->dmaInputLen = motor->useProshot ? PROSHOT_TELEMETRY_INPUT_LEN : DSHOT_TELEMETRY_INPUT_LEN;
+    motor->dshotTelemetryDeadtimeUs = DSHOT_TELEMETRY_DEADTIME_US + 1000000 *
+        ( 2 + (motor->useProshot ? 4 * MOTOR_NIBBLE_LENGTH_PROSHOT : 16 * MOTOR_BITLENGTH))
+        / getDshotHz(pwmProtocolType);
     pwmDshotSetDirectionOutput(motor, true);
 #else
     pwmDshotSetDirectionOutput(motor, true, &OCINIT, &DMAINIT);
