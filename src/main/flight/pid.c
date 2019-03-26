@@ -1335,12 +1335,13 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             &currentPidSetpoint, &errorRate);
 #endif
 
-        const float iterm = pidData[axis].I;
+        const float previousIterm = pidData[axis].I;
         float itermErrorRate = errorRate;
 
 #if defined(USE_ITERM_RELAX)
-        if (!launchControlActive) {
-            applyItermRelax(axis, iterm, gyroRate, &itermErrorRate, &currentPidSetpoint);
+        if (!launchControlActive && !inCrashRecoveryMode) {
+            applyItermRelax(axis, previousIterm, gyroRate, &itermErrorRate, &currentPidSetpoint);
+            errorRate = currentPidSetpoint - gyroRate;
         }
 #endif
 
@@ -1361,7 +1362,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #else
         const float Ki = pidCoefficient[axis].Ki;
 #endif
-        pidData[axis].I = constrainf(iterm + Ki * itermErrorRate * dynCi, -itermLimit, itermLimit);
+        pidData[axis].I = constrainf(previousIterm + Ki * itermErrorRate * dynCi, -itermLimit, itermLimit);
 
         // -----calculate pidSetpointDelta
         float pidSetpointDelta = 0;
