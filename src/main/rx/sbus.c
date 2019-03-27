@@ -84,7 +84,7 @@ enum {
     DEBUG_SBUS_FRAME_TIME,
 };
 
-static uint32_t sbus_need_pre_time = SBUS_TIME_NEEDED_PER_FRAME;
+static uint32_t sbusNeedTimePreFrame = SBUS_TIME_NEEDED_PER_FRAME;
 
 struct sbusFrame_s {
     uint8_t syncByte;
@@ -121,7 +121,7 @@ static void sbusDataReceive(uint16_t c, void *data)
 
     const int32_t sbusFrameTime = nowUs - sbusFrameData->startAtUs;
 
-    if (sbusFrameTime > (long)(sbus_need_pre_time + 500)) {
+    if (sbusFrameTime > (long)(sbusNeedTimePreFrame + 500)) {
         sbusFrameData->position = 0;
     }
 
@@ -160,7 +160,7 @@ bool sbusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     static uint16_t sbusChannelData[SBUS_MAX_CHANNEL];
     static sbusFrameData_t sbusFrameData;
-    static uint32_t sbus_baud_rate;
+    static uint32_t sbusBaudRate;
 
     rxRuntimeConfig->channelData = sbusChannelData;
     rxRuntimeConfig->frameData = &sbusFrameData;
@@ -168,17 +168,14 @@ bool sbusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 
     rxRuntimeConfig->channelCount = SBUS_MAX_CHANNEL;
 
-    if (rxConfig->serialrx_provider == SERIALRX_DJI_HDL_7MS)
-    {
+    if (rxConfig->serialrx_provider == SERIALRX_DJI_HDL_7MS) {
         rxRuntimeConfig->rxRefreshRate = DJI_HDL_RX_REFRESH_RATE;
-        sbus_baud_rate  = DJI_HDL_BAUDRATE;
-        sbus_need_pre_time = DJI_HDL_TIME_NEEDED_PER_FRAME;
-    }
-    else
-    {
+        sbusBaudRate  = DJI_HDL_BAUDRATE;
+        sbusNeedTimePreFrame = DJI_HDL_TIME_NEEDED_PER_FRAME;
+    } else {
         rxRuntimeConfig->rxRefreshRate = SBUS_RX_REFRESH_RATE;   
-        sbus_baud_rate  = SBUS_BAUDRATE;
-        sbus_need_pre_time = SBUS_TIME_NEEDED_PER_FRAME;
+        sbusBaudRate  = SBUS_BAUDRATE;
+        sbusNeedTimePreFrame = SBUS_TIME_NEEDED_PER_FRAME;
     }
 
     rxRuntimeConfig->rcFrameStatusFn = sbusFrameStatus;
@@ -198,7 +195,7 @@ bool sbusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
         FUNCTION_RX_SERIAL,
         sbusDataReceive,
         &sbusFrameData,
-        sbus_baud_rate,
+        sbusBaudRate,
         portShared ? MODE_RXTX : MODE_RX,
         SBUS_PORT_OPTIONS | (rxConfig->serialrx_inverted ? 0 : SERIAL_INVERTED) | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0)
         );
