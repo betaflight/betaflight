@@ -99,6 +99,8 @@ typedef enum {
     DEBUG_DSHOT_RPM_TELEMETRY,
     DEBUG_RPM_FILTER,
     DEBUG_D_MIN,
+    DEBUG_AC_CORRECTION,
+    DEBUG_AC_ERROR,
     DEBUG_COUNT
 } debugType_e;
 
