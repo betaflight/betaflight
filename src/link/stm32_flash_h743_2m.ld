@@ -224,12 +224,39 @@ SECTIONS
 
   .DMA_RAM (NOLOAD) :
   {
+    . = ALIGN(32);
+    PROVIDE(dmaram_start = .);
     _sdmaram = .;
     _dmaram_start__ = _sdmaram;
     KEEP(*(.DMA_RAM))
+    PROVIDE(dmaram_end = .);
     _edmaram = .;
     _dmaram_end__ = _edmaram;
   } >D2_RAM
+
+  .DMA_RW_D2 (NOLOAD) :
+  {
+    . = ALIGN(32);
+    PROVIDE(dmarw_start = .);
+    _sdmarw = .;
+    _dmarw_start__ = _sdmarw;
+    KEEP(*(.DMA_RW))
+    PROVIDE(dmarw_end = .);
+    _edmarw = .;
+    _dmarw_end__ = _edmarw;
+  } >D2_RAM
+
+  .DMA_RW_AXI (NOLOAD) :
+  {
+    . = ALIGN(32);
+    PROVIDE(dmarwaxi_start = .);
+    _sdmarwaxi = .;
+    _dmarwaxi_start__ = _sdmarwaxi;
+    KEEP(*(.DMA_RW_AXI))
+    PROVIDE(dmarwaxi_end = .);
+    _edmarwaxi = .;
+    _dmarwaxi_end__ = _edmarwaxi;
+  } >RAM
 
   .persistent_data (NOLOAD) :
   {
