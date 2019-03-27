@@ -4789,7 +4789,7 @@ static void printTimerDmaoptDetails(const ioTag_t ioTag, const timerHardware_t *
     }
 }
 
-static void printTimerDmaopt(const timerIOConfig_t *currentConfig, const timerIOConfig_t *defaultConfig, unsigned index, dumpFlags_t dumpMask)
+static void printTimerDmaopt(const timerIOConfig_t *currentConfig, const timerIOConfig_t *defaultConfig, unsigned index, dumpFlags_t dumpMask, bool defaultIsUsed[])
 {
     const ioTag_t ioTag = currentConfig[index].ioTag;
 
@@ -4805,6 +4805,7 @@ static void printTimerDmaopt(const timerIOConfig_t *currentConfig, const timerIO
         for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
             if (defaultConfig[i].ioTag == ioTag) {
                 defaultDmaopt = defaultConfig[index].dmaopt;
+                defaultIsUsed[index] = true;
 
                 break;
             }
@@ -4843,8 +4844,20 @@ static void printDmaopt(dumpFlags_t dumpMask)
         defaultConfig = NULL;
     }
 
+    bool defaultIsUsed[MAX_TIMER_PINMAP_COUNT] = { false };
     for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
-        printTimerDmaopt(currentConfig, defaultConfig, i, dumpMask);
+        printTimerDmaopt(currentConfig, defaultConfig, i, dumpMask, defaultIsUsed);
+    }
+
+    if (defaultConfig) {
+        for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
+            if (!defaultIsUsed[i] && defaultConfig[i].ioTag && defaultConfig[i].dmaopt != DMA_OPT_UNUSED) {
+                const timerHardware_t *timer = timerGetByTagAndIndex(defaultConfig[i].ioTag, defaultConfig[i].index);
+                printTimerDmaoptDetails(defaultConfig[i].ioTag, timer, defaultConfig[i].dmaopt, false, dumpMask, cliDefaultPrintLinef);
+
+                printTimerDmaoptDetails(defaultConfig[i].ioTag, timer, DMA_OPT_UNUSED, false, dumpMask, cliDumpPrintLinef);
+            }
+        }
     }
 #endif
 }
@@ -5111,14 +5124,21 @@ static void cliResource(char *cmdline)
 static void printTimerDetails(const ioTag_t ioTag, const unsigned timerIndex, const bool equalsDefault, const dumpFlags_t dumpMask, printFn *printValue)
 {
     const char *format = "timer %c%02d %d";
+    const char *emptyFormat = "timer %c%02d NONE";
 
-    printValue(dumpMask, equalsDefault, format,
-        IO_GPIOPortIdxByTag(ioTag) + 'A',
-        IO_GPIOPinIdxByTag(ioTag),
-        timerIndex - 1
-    );
+    if (timerIndex > 0) {
+        printValue(dumpMask, equalsDefault, format,
+            IO_GPIOPortIdxByTag(ioTag) + 'A',
+            IO_GPIOPinIdxByTag(ioTag),
+            timerIndex - 1
+        );
+    } else {
+        printValue(dumpMask, equalsDefault, emptyFormat,
+            IO_GPIOPortIdxByTag(ioTag) + 'A',
+            IO_GPIOPinIdxByTag(ioTag)
+        );
+    }
 }
-
 
 static void printTimer(dumpFlags_t dumpMask)
 {
@@ -5134,6 +5154,7 @@ static void printTimer(dumpFlags_t dumpMask)
         defaultConfig = NULL;
     }
 
+    bool defaultIsUsed[MAX_TIMER_PINMAP_COUNT] = { false };
     for (unsigned int i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
         const ioTag_t ioTag = currentConfig[i].ioTag;
 
@@ -5148,6 +5169,7 @@ static void printTimer(dumpFlags_t dumpMask)
             for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
                 if (defaultConfig[i].ioTag == ioTag) {
                     defaultTimerIndex = defaultConfig[i].index;
+                    defaultIsUsed[i] = true;
 
                     break;
                 }
@@ -5161,6 +5183,16 @@ static void printTimer(dumpFlags_t dumpMask)
         }
 
         printTimerDetails(ioTag, timerIndex, equalsDefault, dumpMask, cliDumpPrintLinef);
+    }
+
+    if (defaultConfig) {
+        for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
+            if (!defaultIsUsed[i] && defaultConfig[i].ioTag) {
+                printTimerDetails(defaultConfig[i].ioTag, defaultConfig[i].index, false, dumpMask, cliDefaultPrintLinef);
+
+                printTimerDetails(defaultConfig[i].ioTag, 0, false, dumpMask, cliDumpPrintLinef);
+            }
+        }
     }
 }
 
@@ -5189,28 +5221,30 @@ static void cliTimer(char *cmdline)
     
     ioTag_t ioTag = IO_TAG_NONE;
     pch = strtok_r(cmdline, " ", &saveptr);    
-    if (!pch || !(strToPin(pch, &ioTag) && IOGetByTag(ioTag))) {
+    if (!pch || !strToPin(pch, &ioTag)) {
         cliShowParseError();
+
+        return;
+    } else if (!IOGetByTag(ioTag)) {
+        cliPrintErrorLinef("PIN NOT USED ON BOARD.");
 
         return;
     }
 
     int timerIOIndex = TIMER_INDEX_UNDEFINED;
-    bool isNewTimerOpt = false;
+    bool isExistingTimerOpt = false;
     /* find existing entry, or go for next available */
     for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
         if (timerIOConfig(i)->ioTag == ioTag) {
             timerIOIndex = i;
+            isExistingTimerOpt = true;
 
             break;
         }
 
         /* first available empty slot */
-        if (timerIOConfig(i)->ioTag == IO_TAG_NONE) {
+        if (timerIOIndex < 0 && timerIOConfig(i)->ioTag == IO_TAG_NONE) {
             timerIOIndex = i;
-            isNewTimerOpt = true;
-
-            break;
         }
     }
 
@@ -5249,7 +5283,7 @@ static void cliTimer(char *cmdline)
             }
         }
 
-        uint8_t oldTimerIndex = isNewTimerOpt ? 0 : timerIOConfig(timerIOIndex)->index - 1;
+        uint8_t oldTimerIndex = isExistingTimerOpt ? timerIOConfig(timerIOIndex)->index - 1 : 0;
         timerIOConfigMutable(timerIOIndex)->ioTag = timerIndex == TIMER_INDEX_UNDEFINED ? IO_TAG_NONE : ioTag;
         timerIOConfigMutable(timerIOIndex)->index = timerIndex + 1;
         timerIOConfigMutable(timerIOIndex)->dmaopt = DMA_OPT_UNUSED;
