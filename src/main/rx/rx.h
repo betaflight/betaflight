@@ -66,6 +66,7 @@ typedef enum {
     SERIALRX_SRXL = 10,
     SERIALRX_TARGET_CUSTOM = 11,
     SERIALRX_FPORT = 12,
+    SERIALRX_DJI_HDL_7MS = 13,
 } SerialRXType;
 
 #define MAX_SUPPORTED_RC_PPM_CHANNEL_COUNT          12

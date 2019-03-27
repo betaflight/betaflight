@@ -186,6 +186,7 @@ bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
 #endif
 #ifdef USE_SERIALRX_SBUS
     case SERIALRX_SBUS:
+    case SERIALRX_DJI_HDL_7MS:
         enabled = sbusInit(rxConfig, rxRuntimeConfig);
         break;
 #endif
