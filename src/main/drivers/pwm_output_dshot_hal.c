@@ -200,8 +200,8 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 #define DMAINIT dmaInitStruct
 #endif
 
-    DMA_Stream_TypeDef *dmaRef;
-    uint32_t dmaChannel;
+    DMA_Stream_TypeDef *dmaRef = NULL;
+    uint32_t dmaChannel = 0;
 #if defined(USE_DMA_SPEC)
     const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByTimer(timerHardware);
 
@@ -286,7 +286,7 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     motor->icInitStruct.ICFilter = 0; //2;
 #endif
 
-    uint32_t channel;
+    uint32_t channel = 0;
     switch (timerHardware->channel) {
     case TIM_CHANNEL_1: channel = LL_TIM_CHANNEL_CH1; break;
     case TIM_CHANNEL_2: channel = LL_TIM_CHANNEL_CH2; break;
