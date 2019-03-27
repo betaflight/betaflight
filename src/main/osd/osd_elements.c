@@ -206,6 +206,15 @@ int osdConvertTemperatureToSelectedUnit(int tempInDegreesCelcius)
 }
 #endif
 
+static void osdFormatAltitudeString(char * buff, int32_t altitudeCm)
+{
+    const int alt = osdGetMetersToSelectedUnit(altitudeCm) / 10;
+
+    tfp_sprintf(buff, "%5d %c", alt, osdGetMetersToSelectedUnitSymbol());
+    buff[5] = buff[4];
+    buff[4] = '.';
+}
+
 #ifdef USE_GPS
 static void osdFormatCoordinate(char *buff, char sym, int32_t val)
 {
@@ -383,6 +392,33 @@ char osdGetMetersToSelectedUnitSymbol(void)
         return SYM_FT;
     default:
         return SYM_M;
+    }
+}
+
+/**
+ * Converts speed based on the current unit system.
+ * @param value in cm/s to convert
+ */
+int32_t osdGetSpeedToSelectedUnit(int32_t value)
+{
+    switch (osdConfig()->units) {
+    case OSD_UNIT_IMPERIAL:
+        return CM_S_TO_MPH(value);
+    default:
+        return CM_S_TO_KM_H(value);
+    }
+}
+
+/**
+ * Gets the correct speed symbol for the current unit system
+ */
+char osdGetSpeedToSelectedUnitSymbol(void)
+{
+    switch (osdConfig()->units) {
+    case OSD_UNIT_IMPERIAL:
+        return SYM_MPH;
+    default:
+        return SYM_KPH;
     }
 }
 
@@ -731,15 +767,7 @@ static void osdElementGpsSats(osdElementParms_t *element)
 
 static void osdElementGpsSpeed(osdElementParms_t *element)
 {
-    // FIXME ideally we want to use SYM_KMH symbol but it's not in the font any more, so we use K (M for MPH)
-    switch (osdConfig()->units) {
-    case OSD_UNIT_IMPERIAL:
-        tfp_sprintf(element->buff, "%3dM", CM_S_TO_MPH(gpsSol.groundSpeed));
-        break;
-    default:
-        tfp_sprintf(element->buff, "%3dK", CM_S_TO_KM_H(gpsSol.groundSpeed));
-        break;
-    }
+    tfp_sprintf(element->buff, "%3d%c", osdGetSpeedToSelectedUnit(gpsSol.groundSpeed), osdGetSpeedToSelectedUnitSymbol());
 }
 #endif // USE_GPS
 
@@ -1375,15 +1403,6 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_ESC_RPM_FREQ]            = osdElementEscRpmFreq,
 #endif
 };
-
-void osdFormatAltitudeString(char * buff, int32_t altitudeCm)
-{
-    const int alt = osdGetMetersToSelectedUnit(altitudeCm) / 10;
-
-    tfp_sprintf(buff, "%5d %c", alt, osdGetMetersToSelectedUnitSymbol());
-    buff[5] = buff[4];
-    buff[4] = '.';
-}
 
 static void osdAddActiveElement(osd_items_e element)
 {

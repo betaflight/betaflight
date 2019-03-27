@@ -335,19 +335,13 @@ static void osdResetStats(void)
 static void osdUpdateStats(void)
 {
     int16_t value = 0;
+
 #ifdef USE_GPS
-    switch (osdConfig()->units) {
-    case OSD_UNIT_IMPERIAL:
-        value = CM_S_TO_MPH(gpsSol.groundSpeed);
-        break;
-    default:
-        value = CM_S_TO_KM_H(gpsSol.groundSpeed);
-        break;
-    }
-#endif
+    value = gpsSol.groundSpeed;
     if (stats.max_speed < value) {
         stats.max_speed = value;
     }
+#endif
 
     value = getBatteryVoltage();
     if (stats.min_voltage > value) {
@@ -499,14 +493,15 @@ static void osdShowStats(uint16_t endBatteryVoltage)
     }
 
     if (osdStatGetState(OSD_STAT_MAX_ALTITUDE)) {
-        osdFormatAltitudeString(buff, stats.max_altitude);
+        const int alt = osdGetMetersToSelectedUnit(stats.max_altitude) / 10;
+        tfp_sprintf(buff, "%d.%d%c", alt / 10, alt % 10, osdGetMetersToSelectedUnitSymbol());
         osdDisplayStatisticLabel(top++, "MAX ALTITUDE", buff);
     }
 
 #ifdef USE_GPS
     if (featureIsEnabled(FEATURE_GPS)) {
         if (osdStatGetState(OSD_STAT_MAX_SPEED)) {
-            itoa(stats.max_speed, buff, 10);    
+            tfp_sprintf(buff, "%d%c", osdGetSpeedToSelectedUnit(stats.max_speed), osdGetSpeedToSelectedUnitSymbol());
             osdDisplayStatisticLabel(top++, "MAX SPEED", buff);
         }
 
@@ -579,7 +574,7 @@ static void osdShowStats(uint16_t endBatteryVoltage)
 
 #ifdef USE_ESC_SENSOR
     if (osdStatGetState(OSD_STAT_MAX_ESC_TEMP)) {
-        tfp_sprintf(buff, "%3d%c", osdConvertTemperatureToSelectedUnit(stats.max_esc_temp), osdGetTemperatureSymbolForSelectedUnit());
+        tfp_sprintf(buff, "%d%c", osdConvertTemperatureToSelectedUnit(stats.max_esc_temp), osdGetTemperatureSymbolForSelectedUnit());
         osdDisplayStatisticLabel(top++, "MAX ESC TEMP", buff);
     }
 
