@@ -687,11 +687,7 @@ void beeperPwmInit(const ioTag_t tag, uint16_t frequency)
     if (beeperIO && timer) {
         beeperPwm.io = beeperIO;
         IOInit(beeperPwm.io, OWNER_BEEPER, RESOURCE_INDEX(0));
-#if defined(USE_HAL_DRIVER)
         IOConfigGPIOAF(beeperPwm.io, IOCFG_AF_PP, timer->alternateFunction);
-#else
-        IOConfigGPIO(beeperPwm.io, IOCFG_AF_PP);
-#endif
         freqBeep = frequency;
         pwmOutConfig(&beeperPwm.channel, timer, PWM_TIMER_1MHZ, PWM_TIMER_1MHZ / freqBeep, (PWM_TIMER_1MHZ / freqBeep) / 2, 0);
 
