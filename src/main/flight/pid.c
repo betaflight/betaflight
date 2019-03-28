@@ -203,7 +203,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .transient_throttle_limit = 15,
     );
 #ifdef USE_DYN_LPF
-    pidProfile->dterm_lowpass_hz = 150;
+    pidProfile->dterm_lowpass_hz = 0;
     pidProfile->dterm_lowpass2_hz = 150;
     pidProfile->dterm_filter_type = FILTER_BIQUAD;
     pidProfile->dterm_filter2_type = FILTER_BIQUAD;
@@ -339,7 +339,9 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     uint16_t dterm_lowpass_hz = pidProfile->dterm_lowpass_hz;
 
 #ifdef USE_DYN_LPF
-    dterm_lowpass_hz = MAX(pidProfile->dterm_lowpass_hz, pidProfile->dyn_lpf_dterm_min_hz);
+    if (pidProfile->dyn_lpf_dterm_min_hz) {
+        dterm_lowpass_hz = pidProfile->dyn_lpf_dterm_min_hz;
+    }
 #endif
 
     if (dterm_lowpass_hz > 0 && dterm_lowpass_hz < pidFrequencyNyquist) {
