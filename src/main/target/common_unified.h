@@ -95,8 +95,7 @@
 
 #define USE_USB_DETECT
 
-//TODO: Re-enable this after it's been fixed to work with unified targets
-//#define USE_ESCSERIAL
+#define USE_ESCSERIAL
 
 #define USE_ADC
 

@@ -660,16 +660,27 @@ static void resetBuffers(escSerial_t *escSerial)
     escSerial->port.txBufferHead = 0;
 }
 
-static serialPort_t *openEscSerial(escSerialPortIndex_e portIndex, serialReceiveCallbackPtr callback, uint16_t output, uint32_t baud, portOptions_e options, uint8_t mode)
+static serialPort_t *openEscSerial(const motorDevConfig_t *motorConfig, escSerialPortIndex_e portIndex, serialReceiveCallbackPtr callback, uint16_t output, uint32_t baud, portOptions_e options, uint8_t mode)
 {
     escSerial_t *escSerial = &(escSerialPorts[portIndex]);
 
+    if (escSerialConfig()->ioTag == IO_TAG_NONE) {
+        return NULL;
+    }
     if (mode != PROTOCOL_KISSALL) {
-        escSerial->rxTimerHardware = &(TIMER_HARDWARE[output]);
+        const ioTag_t tag = motorConfig->ioTags[output];
+        const timerHardware_t *timerHardware = timerGetByTag(tag);
+
+        if (timerHardware == NULL) {
+            return NULL;
+        }
+
+        escSerial->rxTimerHardware = timerHardware;
         // N-Channels can't be used as RX.
         if (escSerial->rxTimerHardware->output & TIMER_OUTPUT_N_CHANNEL) {
             return NULL;
         }
+
 #ifdef USE_HAL_DRIVER
         escSerial->rxTimerHandle = timerFindTimerHandle(escSerial->rxTimerHardware->tim);
 #endif
@@ -677,6 +688,9 @@ static serialPort_t *openEscSerial(escSerialPortIndex_e portIndex, serialReceive
 
     escSerial->mode = mode;
     escSerial->txTimerHardware = timerGetByTag(escSerialConfig()->ioTag);
+    if (escSerial->txTimerHardware == NULL) {
+        return NULL;
+    }
 
 #ifdef USE_HAL_DRIVER
     escSerial->txTimerHandle = timerFindTimerHandle(escSerial->txTimerHardware->tim);
@@ -729,20 +743,18 @@ static serialPort_t *openEscSerial(escSerialPortIndex_e portIndex, serialReceive
         memset(&escOutputs, 0, sizeof(escOutputs));
         pwmOutputPort_t *pwmMotors = pwmGetMotors();
         for (volatile uint8_t i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
-            if (pwmMotors[i].enabled) {
-                if (pwmMotors[i].io != IO_NONE) {
-                    for (volatile uint8_t j = 0; j < TIMER_CHANNEL_COUNT; j++) {
-                        if (pwmMotors[i].io == IOGetByTag(TIMER_HARDWARE[j].tag))
-                        {
-                            escSerialOutputPortConfig(&TIMER_HARDWARE[j]);
-                            if (TIMER_HARDWARE[j].output & TIMER_OUTPUT_INVERTED) {
-                                escOutputs[escSerial->outputCount].inverted = 1;
-                            }
-                            break;
+            if (pwmMotors[i].enabled && pwmMotors[i].io != IO_NONE) {
+                const ioTag_t tag = motorConfig->ioTags[i];
+                if (tag != IO_TAG_NONE) {
+                    const timerHardware_t *timerHardware = timerGetByTag(tag);
+                    if (timerHardware) {
+                        escSerialOutputPortConfig(timerHardware);
+                        escOutputs[escSerial->outputCount].io = pwmMotors[i].io;
+                        if (timerHardware->output & TIMER_OUTPUT_INVERTED) {
+                            escOutputs[escSerial->outputCount].inverted = 1;
                         }
+                        escSerial->outputCount++;
                     }
-                    escOutputs[escSerial->outputCount].io = pwmMotors[i].io;
-                    escSerial->outputCount++;
                 }
             }
         }
@@ -929,10 +941,10 @@ static bool processExitCommand(uint8_t c)
 }
 
 
-void escEnablePassthrough(serialPort_t *escPassthroughPort, uint16_t output, uint8_t mode)
+bool escEnablePassthrough(serialPort_t *escPassthroughPort, const motorDevConfig_t *motorConfig, uint16_t escIndex, uint8_t mode)
 {
     bool exitEsc = false;
-    uint8_t motor_output = 0;
+    uint8_t motor_output = escIndex;
     LED0_OFF;
     LED1_OFF;
     //StopPwmAllMotors();
@@ -952,30 +964,16 @@ void escEnablePassthrough(serialPort_t *escPassthroughPort, uint16_t output, uin
             break;
     }
 
-    if ((mode == PROTOCOL_KISS) && (output == 255)) {
-        motor_output = 255;
+    if ((mode == PROTOCOL_KISS) && (motor_output == 255)) {
         mode = PROTOCOL_KISSALL;
-    }
-    else {
-        uint8_t first_output = 0;
-        for (unsigned i = 0; i < TIMER_CHANNEL_COUNT; i++) {
-            if (TIMER_HARDWARE[i].usageFlags & TIM_USE_MOTOR) {
-                first_output = i;
-                break;
-            }
-        }
-
-        //doesn't work with messy timertable
-        motor_output = first_output + output;
-        if (motor_output >= TIMER_CHANNEL_COUNT) {
-            return;
-        }
+    } else if (motor_output >= MAX_SUPPORTED_MOTORS) {
+        return false;
     }
 
-    escPort = openEscSerial(ESCSERIAL1, NULL, motor_output, escBaudrate, 0, mode);
+    escPort = openEscSerial(motorConfig, ESCSERIAL1, NULL, motor_output, escBaudrate, 0, mode);
 
     if (!escPort) {
-        return;
+        return false;
     }
 
     uint8_t ch;
@@ -1007,7 +1005,7 @@ void escEnablePassthrough(serialPort_t *escPassthroughPort, uint16_t output, uin
                     serialWrite(escPassthroughPort, 0xF4);
                     serialWrite(escPassthroughPort, 0xF4);
                     closeEscSerial(ESCSERIAL1, mode);
-                    return;
+                    return true;
                 }
                 if (mode==PROTOCOL_BLHELI) {
                     serialWrite(escPassthroughPort, ch); // blheli loopback
