@@ -1007,7 +1007,7 @@ STATIC_UNIT_TESTED void rotateItermAndAxisError()
 {
     if (itermRotation
 #if defined(USE_ABSOLUTE_CONTROL)
-        || acGain > 0
+        || acGain > 0 || debugMode == DEBUG_AC_ERROR
 #endif
         ) {
         const float gyroToAngle = dT * RAD;
@@ -1016,7 +1016,7 @@ STATIC_UNIT_TESTED void rotateItermAndAxisError()
             rotationRads[i] = gyro.gyroADCf[i] * gyroToAngle;
         }
 #if defined(USE_ABSOLUTE_CONTROL)
-        if (acGain > 0) {
+        if (acGain > 0 || debugMode == DEBUG_AC_ERROR) {
             rotateVector(axisError, rotationRads);
         }
 #endif
@@ -1076,7 +1076,7 @@ void FAST_CODE applySmartFeedforward(int axis)
 #if defined(USE_ABSOLUTE_CONTROL)
 STATIC_UNIT_TESTED void applyAbsoluteControl(const int axis, const float gyroRate, float *currentPidSetpoint, float *itermErrorRate)
 {
-    if (acGain > 0) {
+    if (acGain > 0 || debugMode == DEBUG_AC_ERROR) {
         const float setpointLpf = pt1FilterApply(&acLpf[axis], *currentPidSetpoint);
         const float setpointHpf = fabsf(*currentPidSetpoint - setpointLpf);
         float acErrorRate = 0;
@@ -1103,10 +1103,12 @@ STATIC_UNIT_TESTED void applyAbsoluteControl(const int axis, const float gyroRat
             const float acCorrection = constrainf(axisError[axis] * acGain, -acLimit, acLimit);
             *currentPidSetpoint += acCorrection;
             *itermErrorRate += acCorrection;
+            DEBUG_SET(DEBUG_AC_CORRECTION, axis, lrintf(acCorrection * 10));
             if (axis == FD_ROLL) {
                 DEBUG_SET(DEBUG_ITERM_RELAX, 3, lrintf(acCorrection * 10));
             }
         }
+        DEBUG_SET(DEBUG_AC_ERROR, axis, lrintf(axisError[axis] * 10));
     }
 }
 #endif
