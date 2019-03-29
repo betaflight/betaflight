@@ -207,6 +207,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .profileName = { 0 },
         .ff_from_interpolated_sp = 0,
         .ff_max_rate = 0,
+        .ff_thumb_limit = 0,
         .ff_min_spread = 0,
     );
 #ifndef USE_D_MIN
@@ -564,6 +565,7 @@ static FAST_RAM_ZERO_INIT float dMinSetpointGain;
 
 static FAST_RAM_ZERO_INIT bool  ffFromInterpolatedSetpoint;
 static FAST_RAM_ZERO_INIT float ffMaxImpliedRate;
+static FAST_RAM_ZERO_INIT float ffThumbLimit;
 static FAST_RAM_ZERO_INIT float ffMinSpread;
 
 void pidInitConfig(const pidProfile_t *pidProfile)
@@ -710,6 +712,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     airmodeThrottleOffsetLimit = pidProfile->transient_throttle_limit / 100.0f;
 #endif
     ffMaxImpliedRate = pidProfile->ff_max_rate;
+    ffThumbLimit = pidProfile->ff_thumb_limit * 0.0001;
     ffFromInterpolatedSetpoint = pidProfile->ff_from_interpolated_sp;
     ffMinSpread = pidProfile->ff_min_spread;
 }
@@ -1372,27 +1375,46 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         pidData[axis].I = constrainf(previousIterm + Ki * itermErrorRate * dynCi, -itermLimit, itermLimit);
 
         // -----calculate pidSetpointDelta
+        static float ffProjectedSetpoint[XYZ_AXIS_COUNT];
+        static float oldRawSetpoint[XYZ_AXIS_COUNT];
         float pidSetpointDelta = 0;
         if (ffFromInterpolatedSetpoint) {
-            static float oldRawSetpoint[XYZ_AXIS_COUNT];
+            static float oldRawDeflection[XYZ_AXIS_COUNT];
             static uint16_t interpolationSteps[XYZ_AXIS_COUNT];
             static float setpointChangePerIteration[XYZ_AXIS_COUNT];
+            static float deflectionChangePerIteration[XYZ_AXIS_COUNT];
             static float ffReservoir[XYZ_AXIS_COUNT];
+            static float ffDeflectionReservoir[XYZ_AXIS_COUNT];
             float rawSetpoint = getRawSetpoint(axis);
-            if (rawSetpoint != oldRawSetpoint[axis]) {
+            float rawDeflection = getRawDeflection(axis);
+            if (rawDeflection != oldRawDeflection[axis]) {
+                // calculate the inertia based limit
+                ffDeflectionReservoir[axis] += rawDeflection - oldRawDeflection[axis];
                 ffReservoir[axis] += rawSetpoint - oldRawSetpoint[axis];
                 if (ffMinSpread) {
                     interpolationSteps[axis] = (ffMinSpread + 1.0f) * 0.001f * pidFrequency;
                 } else {
                     interpolationSteps[axis] = (uint16_t) ((currentRxRefreshRate + 1000) * pidFrequency * 1e-6f + 0.5f);
                 }
+                deflectionChangePerIteration[axis] = ffDeflectionReservoir[axis] / interpolationSteps[axis];
+                const float projectedStickPos = rawDeflection + deflectionChangePerIteration[axis] * pidFrequency * ffThumbLimit;
+                ffProjectedSetpoint[axis] = applyCurve(axis, projectedStickPos);
+                /* if (axis == FD_ROLL) { */
+                /*     DEBUG_SET(DEBUG_FF_THUMB, 0, rawDeflection * 100); */
+                /*     DEBUG_SET(DEBUG_FF_THUMB, 1, projectedStickPos * 100); */
+                /*     DEBUG_SET(DEBUG_FF_THUMB, 2, ffProjectedSetpoint[axis]); */
+                /* } */
+
                 setpointChangePerIteration[axis] = ffReservoir[axis] / interpolationSteps[axis];
                 oldRawSetpoint[axis] = rawSetpoint;
+                oldRawDeflection[axis] = rawDeflection;
             }
+
             if (interpolationSteps[axis]) {
                 pidSetpointDelta = setpointChangePerIteration[axis];
                 interpolationSteps[axis]--;
                 ffReservoir[axis] -= setpointChangePerIteration[axis];
+                ffDeflectionReservoir[axis] -= deflectionChangePerIteration[axis];
             }
         }
         else {
@@ -1400,7 +1422,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         }
         previousPidSetpoint[axis] = currentPidSetpoint;
 
-        
+
 #ifdef USE_RC_SMOOTHING_FILTER
         pidSetpointDelta = applyRcSmoothingDerivativeFilter(axis, pidSetpointDelta);
 #endif // USE_RC_SMOOTHING_FILTER
@@ -1460,6 +1482,20 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             // no transition if feedForwardTransition == 0
             float transition = feedForwardTransition > 0 ? MIN(1.f, getRcDeflectionAbs(axis) * feedForwardTransition) : 1;
             pidData[axis].F = feedforwardGain * transition * pidSetpointDelta * pidFrequency;
+            if (axis == FD_ROLL) {
+                DEBUG_SET(DEBUG_FF_THUMB, 0, pidData[axis].F);
+            }
+
+            if (ffThumbLimit) {
+                float limit = fabsf((ffProjectedSetpoint[axis] - oldRawSetpoint[axis]) * pidCoefficient[axis].Kp);
+                pidData[axis].F = constrainf(pidData[axis].F, -limit, limit);
+                if (axis == FD_ROLL) {
+                    DEBUG_SET(DEBUG_FF_THUMB, 3, ffProjectedSetpoint[axis]);
+                }
+            }
+            if (axis == FD_ROLL) {
+                DEBUG_SET(DEBUG_FF_THUMB, 1, pidData[axis].F);
+            }
 
             if (ffMaxImpliedRate > 0.0f) {
                 if (fabsf(currentPidSetpoint) > ffMaxImpliedRate) {
@@ -1469,6 +1505,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
                     float limit = (ffMaxImpliedRate - fabsf(currentPidSetpoint)) * pidCoefficient[axis].Kp;
                     pidData[axis].F = constrainf(pidData[axis].F, -limit, limit);
                 }
+            }
+            if (axis == FD_ROLL) {
+                DEBUG_SET(DEBUG_FF_THUMB, 2, pidData[axis].F);
             }
         } else {
             pidData[axis].F = 0;

@@ -174,6 +174,7 @@ typedef struct pidProfile_s {
     uint8_t ff_from_interpolated_sp;        // Calculate FF from interpolated setpoint
     uint16_t ff_max_rate;                    // Max implied setpoint rate to allow for FF
     uint8_t ff_min_spread;                  // Spread ff out over at least min spread ms
+    uint8_t ff_thumb_limit;                 // FF limit based on stick speed
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);

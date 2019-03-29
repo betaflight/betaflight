@@ -55,6 +55,7 @@ typedef float (applyRatesFn)(const int axis, float rcCommandf, const float rcCom
 
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
 static float rawSetpoint[XYZ_AXIS_COUNT];
+static float rawDeflection[XYZ_AXIS_COUNT];
 static float throttlePIDAttenuation;
 static bool reverseMotors = false;
 static applyRatesFn *applyRates;
@@ -108,6 +109,11 @@ float getRawSetpoint(int axis)
     return rawSetpoint[axis];
 }
 
+float getRawDeflection(int axis)
+{
+    return rawDeflection[axis];
+}
+
 #define THROTTLE_LOOKUP_LENGTH 12
 static int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];    // lookup table for expo & mid THROTTLE
 
@@ -158,11 +164,16 @@ float applyKissRates(const int axis, float rcCommandf, const float rcCommandfAbs
 {
     const float rcCurvef = currentControlRateProfile->rcExpo[axis] / 100.0f;
 
-    float kissRpyUseRates = 1.0f / (constrainf(1.0f - (rcCommandfAbs * (currentControlRateProfile->rates[axis] / 100.0f)), 0.01f, 1.00f));    
+    float kissRpyUseRates = 1.0f / (constrainf(1.0f - (rcCommandfAbs * (currentControlRateProfile->rates[axis] / 100.0f)), 0.01f, 1.00f));
     float kissRcCommandf = (power3(rcCommandf) * rcCurvef + rcCommandf * (1 - rcCurvef)) * (currentControlRateProfile->rcRates[axis] / 1000.0f);
     float kissAngle = constrainf(((2000.0f * kissRpyUseRates) * kissRcCommandf), -SETPOINT_RATE_LIMIT, SETPOINT_RATE_LIMIT);
 
     return kissAngle;
+}
+
+float applyCurve(int axis, float deflection)
+{
+    return applyRates(axis, deflection, fabsf(deflection));
 }
 
 static void calculateSetpointRate(int axis)
@@ -580,6 +591,7 @@ FAST_CODE void processRcCommand(void)
             const float rcCommandf = rcCommand[i] / 500.0f;
             const float rcCommandfAbs = ABS(rcCommandf);
             rawSetpoint[i] = applyRates(i, rcCommandf, rcCommandfAbs);
+            rawDeflection[i] = rcCommandf;
         }
     }
 
