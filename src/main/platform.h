@@ -124,7 +124,7 @@
 #elif defined(STM32F411xE)
 #define MCU_TYPE_ID   4
 #define MCU_TYPE_NAME "F411"
-#elif defined(STM32F446)
+#elif defined(STM32F446xx)
 #define MCU_TYPE_ID   5
 #define MCU_TYPE_NAME "F446"
 #elif defined(STM32F722xx)
