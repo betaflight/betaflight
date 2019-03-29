@@ -222,7 +222,7 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
     gyroConfig->dyn_notch_q = 120;
     gyroConfig->dyn_notch_min_hz = 150;
 #ifdef USE_DYN_LPF
-    gyroConfig->gyro_lowpass_hz = 150;
+    gyroConfig->gyro_lowpass_hz = 0;
     gyroConfig->gyro_lowpass_type = FILTER_BIQUAD;
     gyroConfig->gyro_lowpass2_hz = 0;
 #endif
@@ -744,7 +744,9 @@ static void gyroInitSensorFilters(gyroSensor_t *gyroSensor)
     uint16_t gyro_lowpass_hz = gyroConfig()->gyro_lowpass_hz;
 
 #ifdef USE_DYN_LPF
-    gyro_lowpass_hz = MAX(gyroConfig()->gyro_lowpass_hz, gyroConfig()->dyn_lpf_gyro_min_hz);
+    if (gyroConfig()->dyn_lpf_gyro_min_hz > 0) {
+        gyro_lowpass_hz = gyroConfig()->dyn_lpf_gyro_min_hz;
+    }
 #endif
 
     gyroInitLowpassFilterLpf(
