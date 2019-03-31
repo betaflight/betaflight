@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include "drivers/pwm_output.h"
+
 #define ESCSERIAL_BUFFER_SIZE 1024
 
 typedef enum {
@@ -37,7 +39,7 @@ typedef enum {
 } escProtocol_e;
 
 // serialPort API
-void escEnablePassthrough(serialPort_t *escPassthroughPort, uint16_t output, uint8_t mode);
+bool escEnablePassthrough(serialPort_t *escPassthroughPort, const motorDevConfig_t *motorConfig, uint16_t escIndex, uint8_t mode);
 
 typedef struct escSerialConfig_s {
     ioTag_t ioTag;
