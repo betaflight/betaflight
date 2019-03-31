@@ -115,3 +115,5 @@
 #define USE_RX_FLYSKY
 #define USE_RX_FLYSKY_SPI_LED
 #endif
+
+#define USE_CAMERA_CONTROL
