@@ -457,6 +457,14 @@ static void validateAndFixConfig(void)
     }
 #endif
 
+    // Temporary workaround until RPM Filter supports dual-gyro using both sensors
+    // Once support is added remove this block
+#if defined(USE_MULTI_GYRO) && defined(USE_RPM_FILTER)
+    if (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_BOTH && isRpmFilterEnabled()) {
+        gyroConfigMutable()->gyro_to_use = GYRO_CONFIG_USE_GYRO_1;
+    }
+#endif
+
 #if defined(TARGET_VALIDATECONFIG)
     targetValidateConfiguration();
 #endif
