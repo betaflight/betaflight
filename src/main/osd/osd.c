@@ -91,6 +91,16 @@
 #include "hardware_revision.h"
 #endif
 
+#ifndef CORE_TEMPERATURE_WARNING_THRESHOLD
+// a temperature above 70C should produce a warning, lockups have been reported above 80C.
+
+#ifdef STM32H7
+#define CORE_TEMPERATURE_WARNING_THRESHOLD 85 // A 400Mhz+ CPU on small 27x27mm PCB generates and retains more heat than other processors.
+#else
+#define CORE_TEMPERATURE_WARNING_THRESHOLD 70
+#endif
+#endif // CORE_TEMPERATURE_WARNING_THRESHOLD
+
 const char * const osdTimerSourceNames[] = {
     "ON TIME  ",
     "TOTAL ARM",
@@ -291,7 +301,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->esc_temp_alarm = ESC_TEMP_ALARM_OFF; // off by default
     osdConfig->esc_rpm_alarm = ESC_RPM_ALARM_OFF; // off by default
     osdConfig->esc_current_alarm = ESC_CURRENT_ALARM_OFF; // off by default
-    osdConfig->core_temp_alarm = 70; // a temperature above 70C should produce a warning, lockups have been reported above 80C
+    osdConfig->core_temp_alarm = CORE_TEMPERATURE_WARNING_THRESHOLD;
 
     osdConfig->ahMaxPitch = 20; // 20 degrees
     osdConfig->ahMaxRoll = 40; // 40 degrees
