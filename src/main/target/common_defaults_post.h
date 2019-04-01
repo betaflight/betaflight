@@ -598,3 +598,11 @@
 #ifndef RTC6705_SPI_INSTANCE
 #define RTC6705_SPI_INSTANCE NULL
 #endif
+
+#ifndef CORE_TEMPERATURE_THRESHOLD
+#ifdef STM32H7
+#define CORE_TEMPERATURE_THRESHOLD 85
+#else
+#define CORE_TEMPERATURE_THRESHOLD 70 // a temperature above 70C should produce a warning, lockups have been reported above 80C.
+#endif
+#endif // CORE_TEMPERATURE_THRESHOLD
