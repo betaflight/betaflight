@@ -167,7 +167,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .itermLimit = 400,
         .throttle_boost = 5,
         .throttle_boost_cutoff = 15,
-        .iterm_rotation = true,
+        .iterm_rotation = false,
         .smart_feedforward = false,
         .iterm_relax = ITERM_RELAX_RP,
         .iterm_relax_cutoff = ITERM_RELAX_CUTOFF_DEFAULT,
