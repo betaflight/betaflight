@@ -1357,13 +1357,12 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, compassConfig()->mag_align);
 
         // API 1.41 - Add multi-gyro indicator, selected gyro, and support for separate gyro 1 & 2 alignment
+        sbufWriteU8(dst, getGyroDetectionFlags());
 #ifdef USE_MULTI_GYRO
-        sbufWriteU8(dst, 1);    // USE_MULTI_GYRO
         sbufWriteU8(dst, gyroConfig()->gyro_to_use);
         sbufWriteU8(dst, gyroDeviceConfig(0)->align);
         sbufWriteU8(dst, gyroDeviceConfig(1)->align);
 #else
-        sbufWriteU8(dst, 0);
         sbufWriteU8(dst, GYRO_CONFIG_USE_GYRO_1);
         sbufWriteU8(dst, gyroDeviceConfig(0)->align);
         sbufWriteU8(dst, ALIGN_DEFAULT);
