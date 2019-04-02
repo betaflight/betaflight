@@ -18,31 +18,19 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <stdint.h>
 
-#include "drivers/pwm_output.h"
+#include "platform.h"
+#include "io/serial.h"
+#include "pg/piniobox.h"
+#include "target.h"
 
-#define ESCSERIAL_BUFFER_SIZE 1024
+#ifdef USE_TARGET_CONFIG
 
-typedef enum {
-    ESCSERIAL1 = 0,
-    ESCSERIAL2
-} escSerialPortIndex_e;
+void targetConfiguration(void)
+{
+    pinioBoxConfigMutable()->permanentId[0] = 40;
+    pinioBoxConfigMutable()->permanentId[1] = 41;
+}
 
-typedef enum {
-    PROTOCOL_SIMONK = 0,
-    PROTOCOL_BLHELI = 1,
-    PROTOCOL_KISS = 2,
-    PROTOCOL_KISSALL = 3,
-    PROTOCOL_CASTLE = 4,
-    PROTOCOL_COUNT
-} escProtocol_e;
-
-// serialPort API
-bool escEnablePassthrough(serialPort_t *escPassthroughPort, const motorDevConfig_t *motorConfig, uint16_t escIndex, uint8_t mode);
-
-typedef struct escSerialConfig_s {
-    ioTag_t ioTag;
-} escSerialConfig_t;
-
-PG_DECLARE(escSerialConfig_t, escSerialConfig);
+#endif

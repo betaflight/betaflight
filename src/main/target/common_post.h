@@ -303,3 +303,8 @@
 #undef USE_RANGEFINDER_UIB
 #undef USE_RANGEFINDER_TF
 #endif
+
+// TODO: Remove this once HAL support is fixed for ESCSERIAL
+#ifdef STM32F7
+#undef USE_ESCSERIAL
+#endif

@@ -190,7 +190,7 @@ uint8_t escPortIndex;
 #ifdef USE_ESCSERIAL
 static void mspEscPassthroughFn(serialPort_t *serialPort)
 {
-    escEnablePassthrough(serialPort, escPortIndex, escMode);
+    escEnablePassthrough(serialPort, &motorConfig()->dev, escPortIndex, escMode);
 }
 #endif
 
