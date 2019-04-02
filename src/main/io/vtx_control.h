@@ -34,6 +34,7 @@ typedef struct vtxChannelActivationCondition_s {
     uint8_t auxChannelIndex;
     uint8_t band;
     uint8_t channel;
+    uint8_t power;
     channelRange_t range;
 } vtxChannelActivationCondition_t;
 

@@ -2274,7 +2274,7 @@ static void cliFlashRead(char *cmdline)
 static void printVtx(dumpFlags_t dumpMask, const vtxConfig_t *vtxConfig, const vtxConfig_t *vtxConfigDefault)
 {
     // print out vtx channel settings
-    const char *format = "vtx %u %u %u %u %u %u";
+    const char *format = "vtx %u %u %u %u %u %u %u";
     bool equalsDefault = false;
     for (uint32_t i = 0; i < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT; i++) {
         const vtxChannelActivationCondition_t *cac = &vtxConfig->vtxChannelActivationConditions[i];
@@ -2286,6 +2286,7 @@ static void printVtx(dumpFlags_t dumpMask, const vtxConfig_t *vtxConfig, const v
                 cacDefault->auxChannelIndex,
                 cacDefault->band,
                 cacDefault->channel,
+                cacDefault->power,
                 MODE_STEP_TO_CHANNEL_VALUE(cacDefault->range.startStep),
                 MODE_STEP_TO_CHANNEL_VALUE(cacDefault->range.endStep)
             );
@@ -2295,6 +2296,7 @@ static void printVtx(dumpFlags_t dumpMask, const vtxConfig_t *vtxConfig, const v
             cac->auxChannelIndex,
             cac->band,
             cac->channel,
+            cac->power,
             MODE_STEP_TO_CHANNEL_VALUE(cac->range.startStep),
             MODE_STEP_TO_CHANNEL_VALUE(cac->range.endStep)
         );
@@ -2303,7 +2305,7 @@ static void printVtx(dumpFlags_t dumpMask, const vtxConfig_t *vtxConfig, const v
 
 static void cliVtx(char *cmdline)
 {
-    const char *format = "vtx %u %u %u %u %u %u";
+    const char *format = "vtx %u %u %u %u %u %u %u";
     int i, val = 0;
     const char *ptr;
 
@@ -2327,7 +2329,6 @@ static void cliVtx(char *cmdline)
             if (ptr) {
                 val = atoi(ptr);
                 // FIXME Use VTX API to get max
-                // We check for the min value in final validation below
                 if (val >= 0 && val <= VTX_SETTINGS_MAX_BAND) {
                     cac->band = val;
                     validArgumentCount++;
@@ -2337,29 +2338,23 @@ static void cliVtx(char *cmdline)
             if (ptr) {
                 val = atoi(ptr);
                 // FIXME Use VTX API to get max
-                // We check for the min value in final validation below
                 if (val >= 0 && val <= VTX_SETTINGS_MAX_CHANNEL) {
                     cac->channel = val;
                     validArgumentCount++;
                 }
             }
-            ptr = processChannelRangeArgs(ptr, &cac->range, &validArgumentCount);
-
-            bool parseError = false;
-            if (validArgumentCount != 5) {
-                parseError = true;
-            } else {
-                // check for an empty activation condition for reset
-                vtxChannelActivationCondition_t emptyCac;
-                memset(&emptyCac, 0, sizeof(emptyCac));
-                if (memcmp(cac, &emptyCac, sizeof(emptyCac)) != 0
-                    // FIXME Use VTX API to get min
-                    && ((cac->band < VTX_SETTINGS_MIN_BAND) || (cac->channel < VTX_SETTINGS_MIN_CHANNEL))) {
-                    parseError = true;
+            ptr = nextArg(ptr);
+            if (ptr) {
+                val = atoi(ptr);
+                // FIXME Use VTX API to get max
+                if (val >= 0 && val < VTX_SETTINGS_POWER_COUNT) {
+                    cac->power= val;
+                    validArgumentCount++;
                 }
             }
+            ptr = processChannelRangeArgs(ptr, &cac->range, &validArgumentCount);
 
-            if (parseError) {
+            if (validArgumentCount != 6) {
                 memset(cac, 0, sizeof(vtxChannelActivationCondition_t));
                 cliShowParseError();
             } else {
@@ -2368,6 +2363,7 @@ static void cliVtx(char *cmdline)
                     cac->auxChannelIndex,
                     cac->band,
                     cac->channel,
+                    cac->power,
                     MODE_STEP_TO_CHANNEL_VALUE(cac->range.startStep),
                     MODE_STEP_TO_CHANNEL_VALUE(cac->range.endStep)
                 );
@@ -5738,7 +5734,7 @@ const clicmd_t cmdTable[] = {
 #endif
     CLI_COMMAND_DEF("version", "show version", NULL, cliVersion),
 #ifdef USE_VTX_CONTROL
-    CLI_COMMAND_DEF("vtx", "vtx channels on switch", NULL, cliVtx),
+    CLI_COMMAND_DEF("vtx", "vtx channels on switch", "<index> <aux> <band> <channel> <power> <start> <end>", cliVtx),
 #endif
 #ifdef USE_VTX_TABLE
     CLI_COMMAND_DEF("vtxtable", "vtx frequency able", "<band> <bandname> <bandletter> <freq> ... <freq>\r\n", cliVtxTable),
