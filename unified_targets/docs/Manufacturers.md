@@ -17,6 +17,7 @@ This is the official list of manufacturer ids (`manufacturer_id` in the target c
 |HAMO|Happymodel|http://www.happymodel.cn/|
 |HBRO|Holybro|http://www.holybro.com/index.html|
 |IFRC|iFlight Innovation Technology Ltd.|https://www.iflight-rc.com/|
+|JHEF|JHE\_FPV|https://github.com/atgfpeyv|
 |MTKS|Matek Systems|http://www.mateksys.com/|
 |RCTI|RCTimer|http://rctimer.com/|
 |SPRO|Seriously Pro Racing (SP Racing)|http://seriouslypro.com/|
