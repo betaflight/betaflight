@@ -222,7 +222,11 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
     gyroConfig->dyn_notch_q = 120;
     gyroConfig->dyn_notch_min_hz = 150;
 #ifdef USE_DYN_LPF
-    gyroConfig->gyro_lowpass_hz = 0;
+    // Gyro lowpass 1 cutoff is not used when dynamic lowpass is enabled, but setting to 0 is the indicator
+    // to older configurators that lowpass 1 is disabled which results in resetting the type to PT1.
+    // This causes problems then because the dynamic lowpass still uses the type which has been incorrectly changed.
+    // So use the dyn_lpf_gyro_min_hz instead as a slightly less confusing (but unused) default.
+    gyroConfig->gyro_lowpass_hz = gyroConfig->dyn_lpf_gyro_min_hz;
     gyroConfig->gyro_lowpass_type = FILTER_BIQUAD;
     gyroConfig->gyro_lowpass2_hz = 0;
 #endif

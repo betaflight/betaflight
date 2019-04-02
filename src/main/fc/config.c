@@ -202,8 +202,12 @@ static void validateAndFixConfig(void)
             pidProfilesMutable(i)->dyn_lpf_dterm_min_hz = 0;
         }
 
+        // Dterm lowpass 1 cutoff is not used when dynamic lowpass is enabled, but setting to 0 is the indicator
+        // to older configurators that lowpass 1 is disabled which results in resetting the type to PT1.
+        // This causes problems then because the dynamic lowpass still uses the type which has been incorrectly changed.
+        // So use the dyn_lpf_dterm_min_hz instead if it's enabled as a slightly less confusing (but unused) default.
         if (pidProfilesMutable(i)->dyn_lpf_dterm_min_hz > 0) {
-            pidProfilesMutable(i)->dterm_lowpass_hz = 0;
+            pidProfilesMutable(i)->dterm_lowpass_hz = pidProfilesMutable(i)->dyn_lpf_dterm_min_hz;
         }
 #endif
 
@@ -492,8 +496,12 @@ void validateAndFixGyroConfig(void)
         gyroConfigMutable()->dyn_lpf_gyro_min_hz = 0;
     }
 
+    // Gyro lowpass 1 cutoff is not used when dynamic lowpass is enabled, but setting to 0 is the indicator
+    // to older configurators that lowpass 1 is disabled which results in resetting the type to PT1.
+    // This causes problems then because the dynamic lowpass still uses the type which has been incorrectly changed.
+    // So use the dyn_lpf_gyro_min_hz instead if it's enabled as a slightly less confusing (but unused) default.
     if (gyroConfig()->dyn_lpf_gyro_min_hz > 0) {
-        gyroConfigMutable()->gyro_lowpass_hz = 0;
+        gyroConfigMutable()->gyro_lowpass_hz = gyroConfigMutable()->dyn_lpf_gyro_min_hz;
     }
 #endif
 

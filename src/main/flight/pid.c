@@ -203,9 +203,13 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .transient_throttle_limit = 15,
     );
 #ifdef USE_DYN_LPF
-    pidProfile->dterm_lowpass_hz = 0;
-    pidProfile->dterm_lowpass2_hz = 150;
+    // Dterm lowpass 1 cutoff is not used when dynamic lowpass is enabled, but setting to 0 is the indicator
+    // to older configurators that lowpass 1 is disabled which results in resetting the type to PT1.
+    // This causes problems then because the dynamic lowpass still uses the type which has been incorrectly changed.
+    // So use the dyn_lpf_dterm_min_hz instead as a slightly less confusing (but unused) default.
+    pidProfile->dterm_lowpass_hz = pidProfile->dyn_lpf_dterm_min_hz;
     pidProfile->dterm_filter_type = FILTER_BIQUAD;
+    pidProfile->dterm_lowpass2_hz = 150;
     pidProfile->dterm_filter2_type = FILTER_BIQUAD;
 #endif
 #ifndef USE_D_MIN
