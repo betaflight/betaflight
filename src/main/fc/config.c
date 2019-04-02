@@ -201,10 +201,6 @@ static void validateAndFixConfig(void)
         if (pidProfilesMutable(i)->dyn_lpf_dterm_min_hz > pidProfilesMutable(i)->dyn_lpf_dterm_max_hz) {
             pidProfilesMutable(i)->dyn_lpf_dterm_min_hz = 0;
         }
-
-        if (pidProfilesMutable(i)->dyn_lpf_dterm_min_hz > 0) {
-            pidProfilesMutable(i)->dterm_lowpass_hz = 0;
-        }
 #endif
 
         if (pidProfilesMutable(i)->motor_output_limit > 100 || pidProfilesMutable(i)->motor_output_limit == 0) {
@@ -490,10 +486,6 @@ void validateAndFixGyroConfig(void)
     //Prevent invalid dynamic lowpass filter
     if (gyroConfig()->dyn_lpf_gyro_min_hz > gyroConfig()->dyn_lpf_gyro_max_hz) {
         gyroConfigMutable()->dyn_lpf_gyro_min_hz = 0;
-    }
-
-    if (gyroConfig()->dyn_lpf_gyro_min_hz > 0) {
-        gyroConfigMutable()->gyro_lowpass_hz = 0;
     }
 #endif
 
