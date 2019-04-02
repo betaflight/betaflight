@@ -203,7 +203,9 @@ static void validateAndFixConfig(void)
         }
 
         if (pidProfilesMutable(i)->dyn_lpf_dterm_min_hz > 0) {
-            pidProfilesMutable(i)->dterm_lowpass_hz = 0;
+            // dterm_lowpass_hz should really be 0 (off), but cannot do this because this will cause configurator 10.4 to reset the filter type to PT1.
+            // dyn_lpf_dterm_max_hz is chosen to give it the appearance of the filter only cutting in above the maximum cutoff for the dynamic filter, which mimicks how the system acts.
+            pidProfilesMutable(i)->dterm_lowpass_hz = pidProfilesMutable(i)->dyn_lpf_dterm_max_hz;
         }
 #endif
 
@@ -493,7 +495,9 @@ void validateAndFixGyroConfig(void)
     }
 
     if (gyroConfig()->dyn_lpf_gyro_min_hz > 0) {
-        gyroConfigMutable()->gyro_lowpass_hz = 0;
+        // dterm_lowpass_hz should really be 0 (off), but cannot do this because this will cause configurator 10.4 to reset the filter type to PT1.
+        // dyn_lpf_dterm_max_hz is chosen to give it the appearance of the filter only cutting in above the maximum cutoff for the dynamic filter, which mimicks how the system acts.
+        gyroConfigMutable()->gyro_lowpass_hz = gyroConfig()->dyn_lpf_gyro_max_hz;
     }
 #endif
 

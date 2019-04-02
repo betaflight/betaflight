@@ -127,6 +127,8 @@ static FAST_RAM_ZERO_INIT float airmodeThrottleOffsetLimit;
 
 #define LAUNCH_CONTROL_YAW_ITERM_LIMIT 50 // yaw iterm windup limit when launch mode is "FULL" (all axes)
 
+#define DYNAMIC_LOWPASS_MAX_FREQUENCY 250
+
 PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 9);
 
 void resetPidProfile(pidProfile_t *pidProfile)
@@ -186,7 +188,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .dterm_filter_type = FILTER_PT1,
         .dterm_filter2_type = FILTER_PT1,
         .dyn_lpf_dterm_min_hz = 150,
-        .dyn_lpf_dterm_max_hz = 250,
+        .dyn_lpf_dterm_max_hz = DYNAMIC_LOWPASS_MAX_FREQUENCY,
         .launchControlMode = LAUNCH_CONTROL_MODE_NORMAL,
         .launchControlThrottlePercent = 20,
         .launchControlAngleLimit = 0,
@@ -203,7 +205,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .transient_throttle_limit = 15,
     );
 #ifdef USE_DYN_LPF
-    pidProfile->dterm_lowpass_hz = 0;
+    pidProfile->dterm_lowpass_hz = DYNAMIC_LOWPASS_MAX_FREQUENCY;
     pidProfile->dterm_lowpass2_hz = 150;
     pidProfile->dterm_filter_type = FILTER_BIQUAD;
     pidProfile->dterm_filter2_type = FILTER_BIQUAD;
