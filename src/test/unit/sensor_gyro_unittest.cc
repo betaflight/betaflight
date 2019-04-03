@@ -59,7 +59,6 @@ TEST(SensorGyro, Detect)
 {
     const gyroHardware_e detected = gyroDetect(gyroDevPtr);
     EXPECT_EQ(GYRO_FAKE, detected);
-    EXPECT_EQ(GYRO_FAKE, detectedSensors[SENSOR_INDEX_GYRO]);
 }
 
 TEST(SensorGyro, Init)
