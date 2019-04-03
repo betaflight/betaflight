@@ -181,10 +181,13 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .abs_control_error_limit = 20,
         .abs_control_cutoff = 11,
         .antiGravityMode = ANTI_GRAVITY_SMOOTH,
-        .dterm_lowpass_hz = 100,    // dual PT1 filtering ON by default
-        .dterm_lowpass2_hz = 200,   // second Dterm LPF ON by default
-        .dterm_filter_type = FILTER_PT1,
-        .dterm_filter2_type = FILTER_PT1,
+        .dterm_lowpass_hz = 150,    // NOTE: dynamic lpf is enabled by default so this setting is actually
+                                    // overridden and the static lowpass 1 is disabled. We can't set this
+                                    // value to 0 otherwise Configurator versions 10.4 and earlier will also
+                                    // reset the lowpass filter type to PT1 overriding the desired BIQUAD setting.
+        .dterm_lowpass2_hz = 150,   // second Dterm LPF ON by default
+        .dterm_filter_type = FILTER_BIQUAD,
+        .dterm_filter2_type = FILTER_BIQUAD,
         .dyn_lpf_dterm_min_hz = 150,
         .dyn_lpf_dterm_max_hz = 250,
         .launchControlMode = LAUNCH_CONTROL_MODE_NORMAL,
@@ -202,12 +205,6 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .auto_profile_cell_count = AUTO_PROFILE_CELL_COUNT_STAY,
         .transient_throttle_limit = 15,
     );
-#ifdef USE_DYN_LPF
-    pidProfile->dterm_lowpass_hz = 0;
-    pidProfile->dterm_lowpass2_hz = 150;
-    pidProfile->dterm_filter_type = FILTER_BIQUAD;
-    pidProfile->dterm_filter2_type = FILTER_BIQUAD;
-#endif
 #ifndef USE_D_MIN
     pidProfile->pid[PID_ROLL].D = 30;
     pidProfile->pid[PID_PITCH].D = 32;
