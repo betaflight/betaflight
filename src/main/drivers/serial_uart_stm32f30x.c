@@ -178,6 +178,12 @@ static void handleUsartTxDma(dmaChannelDescriptor_t* descriptor)
 
 void serialUARTInitIO(IO_t txIO, IO_t rxIO, portMode_e mode, portOptions_e options, uint8_t af, uint8_t index)
 {
+    if (options & SERIAL_SWAP_RX_TX) {
+        IO_t tmp = txIO;
+        txIO = rxIO;
+        rxIO = tmp;
+    }
+
     if ((options & SERIAL_BIDIR) && txIO) {
         ioConfig_t ioCfg = IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz,
             ((options & SERIAL_INVERTED) || (options & SERIAL_BIDIR_PP)) ? GPIO_OType_PP : GPIO_OType_OD,
@@ -227,6 +233,7 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
     s->USARTx = hardware->reg;
 
     RCC_ClockCmd(hardware->rcc, ENABLE);
+    USART_Cmd(s->USARTx, DISABLE);
 
     if (hardware->rxDMAChannel) {
         dmaInit(dmaGetIdentifier(hardware->rxDMAChannel), OWNER_SERIAL_RX, RESOURCE_INDEX(device));
@@ -240,6 +247,12 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
         dmaSetHandler(identifier, handleUsartTxDma, hardware->txPriority, (uint32_t)s);
         s->txDMAChannel = hardware->txDMAChannel;
         s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->TDR;
+    }
+
+    if (options & SERIAL_SWAP_RX_TX) {
+        SET_BIT(s->USARTx->CR2, USART_CR2_SWAP);
+    } else {
+        CLEAR_BIT(s->USARTx->CR2, USART_CR2_SWAP);
     }
 
     serialUARTInitIO(IOGetByTag(uartDev->tx.pin), IOGetByTag(uartDev->rx.pin), mode, options, hardware->af, device);
@@ -285,7 +298,15 @@ void uartIrqHandler(uartPort_t *s)
 
     if (ISR & USART_FLAG_ORE)
     {
-        USART_ClearITPendingBit (s->USARTx, USART_IT_ORE);
+        USART_ClearITPendingBit(s->USARTx, USART_IT_ORE);
+    }
+
+    if (ISR & USART_FLAG_IDLE) {
+        if (s->port.idleCallback) {
+            s->port.idleCallback();
+        }
+
+        USART_ClearITPendingBit(s->USARTx, USART_IT_IDLE);
     }
 }
 #endif // USE_UART

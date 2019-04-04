@@ -147,7 +147,6 @@ void uartReconfigure(uartPort_t *uartPort)
             HAL_UART_Receive_DMA(&uartPort->Handle, (uint8_t*)uartPort->port.rxBuffer, uartPort->port.rxBufferSize);
 
             uartPort->rxDMAPos = __HAL_DMA_GET_COUNTER(&uartPort->rxDMAHandle);
-
         } else
 #endif
         {
@@ -159,6 +158,9 @@ void uartReconfigure(uartPort_t *uartPort)
 
             /* Enable the UART Data Register not empty Interrupt */
             SET_BIT(uartPort->USARTx->CR1, USART_CR1_RXNEIE);
+
+            /* Enable Idle Line detection */
+            SET_BIT(uartPort->USARTx->CR1, USART_CR1_IDLEIE);
         }
     }
 

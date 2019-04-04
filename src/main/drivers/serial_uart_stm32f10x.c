@@ -214,5 +214,13 @@ void uartIrqHandler(uartPort_t *s)
             USART_ITConfig(s->USARTx, USART_IT_TXE, DISABLE);
         }
     }
+    if (SR & USART_FLAG_IDLE) {
+        if (s->port.idleCallback) {
+            s->port.idleCallback();
+        }
+
+        const uint32_t read_to_clear = s->USARTx->DR;
+        (void) read_to_clear;
+    }
 }
 #endif // USE_UART

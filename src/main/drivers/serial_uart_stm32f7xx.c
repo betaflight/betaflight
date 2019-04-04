@@ -39,6 +39,8 @@
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
 
+#include "stm32f7xx_ll_usart.h"
+
 static void handleUsartTxDma(uartPort_t *s);
 
 const uartHardware_t uartHardware[UARTDEV_COUNT] = {
@@ -150,15 +152,15 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #endif
         .rxPins = {
             { DEFIO_TAG_E(PA1), GPIO_AF8_UART4 },
-            { DEFIO_TAG_E(PC11), GPIO_AF8_UART4 },         
+            { DEFIO_TAG_E(PC11), GPIO_AF8_UART4 },
 #ifdef STM32F765xx
             { DEFIO_TAG_E(PA11), GPIO_AF6_UART4 },
-            { DEFIO_TAG_E(PD0), GPIO_AF8_UART4 }         
+            { DEFIO_TAG_E(PD0), GPIO_AF8_UART4 }
 #endif
         },
         .txPins = {
             { DEFIO_TAG_E(PA0), GPIO_AF8_UART4 },
-            { DEFIO_TAG_E(PC10), GPIO_AF8_UART4 },         
+            { DEFIO_TAG_E(PC10), GPIO_AF8_UART4 },
 #ifdef STM32F765xx
             { DEFIO_TAG_E(PA12), GPIO_AF6_UART4 },
             { DEFIO_TAG_E(PD1), GPIO_AF8_UART4 }
@@ -372,6 +374,14 @@ void uartIrqHandler(uartPort_t *s)
             handleUsartTxDma(s);
         }
     }
+
+    if (__HAL_UART_GET_IT(huart, UART_IT_IDLE)) {
+        if (s->port.idleCallback) {
+            s->port.idleCallback();
+        }
+
+        __HAL_UART_CLEAR_IDLEFLAG(huart);
+    }
 }
 
 static void handleUsartTxDma(uartPort_t *s)
@@ -431,6 +441,19 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
 
     IO_t txIO = IOGetByTag(uartdev->tx.pin);
     IO_t rxIO = IOGetByTag(uartdev->rx.pin);
+
+    // ensure USART is disabled during CR2 manipulation
+    LL_USART_Disable(s->USARTx);
+    const bool swapPins = options & SERIAL_SWAP_RX_TX;
+    if (swapPins) {
+        IO_t tmp = txIO;
+        txIO = rxIO;
+        rxIO = tmp;
+
+        SET_BIT(s->USARTx->CR2, USART_CR2_SWAP);
+    } else {
+        CLEAR_BIT(s->USARTx->CR2, USART_CR2_SWAP);
+    }
 
     if ((options & SERIAL_BIDIR) && txIO) {
         ioConfig_t ioCfg = IO_CONFIG(

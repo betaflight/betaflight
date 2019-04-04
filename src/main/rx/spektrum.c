@@ -33,6 +33,8 @@
 #include "drivers/light_led.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
+#include "drivers/serial.h"
+#include "drivers/serial_uart.h"
 
 #include "io/serial.h"
 
@@ -393,8 +395,11 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
         NULL,
         SPEKTRUM_BAUDRATE,
         portShared || srxlEnabled ? MODE_RXTX : MODE_RX,
-        (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | ((srxlEnabled || rxConfig->halfDuplex) ? SERIAL_BIDIR : 0)
+        (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) |
+        ((srxlEnabled || rxConfig->halfDuplex) ? SERIAL_BIDIR : 0) |
+        (rxConfig->halfDuplex == 2 ? SERIAL_SWAP_RX_TX : 0)
         );
+
 #if defined(USE_TELEMETRY_SRXL)
     if (portShared) {
         telemetrySharedPort = serialPort;

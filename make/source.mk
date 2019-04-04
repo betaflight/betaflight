@@ -110,6 +110,7 @@ COMMON_SRC = \
             rx/sbus.c \
             rx/sbus_channels.c \
             rx/spektrum.c \
+            rx/srxlv2.c \
             io/spektrum_vtx_control.c \
             io/spektrum_rssi.c \
             rx/sumd.c \
@@ -249,6 +250,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             rx/sbus.c \
             rx/sbus_channels.c \
             rx/spektrum.c \
+            rx/srxlv2.c \
             rx/sumd.c \
             rx/xbus.c \
             rx/fport.c \

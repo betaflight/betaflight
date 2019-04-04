@@ -151,6 +151,7 @@ uint8_t cliMode = 0;
 #include "rx/rx.h"
 #include "rx/spektrum.h"
 #include "rx/rx_spi_common.h"
+#include "rx/srxlv2.h"
 
 #include "scheduler/scheduler.h"
 
@@ -357,6 +358,8 @@ static void cliPutp(void *p, char ch)
 
 static void cliPrintfva(const char *format, va_list va)
 {
+    if (!cliWriter) return;
+
     tfp_format(cliWriter, cliPutp, format, va);
     bufWriterFlush(cliWriter);
 }
@@ -396,7 +399,7 @@ static bool cliDefaultPrintLinef(dumpFlags_t dumpMask, bool equalsDefault, const
     }
 }
 
-static void cliPrintf(const char *format, ...)
+void cliPrintf(const char *format, ...)
 {
     va_list va;
     va_start(va, format);
@@ -5927,6 +5930,24 @@ static void cliMsc(char *cmdline)
 }
 #endif
 
+#if defined(USE_SERIALRX_SRXLv2)
+void cliSrxlv2Bind(char *cmdline)
+{
+  if (!srxlv2RxIsActive()) {
+    cliPrintLine("SRXLv2 not configured");
+    return;
+  }
+
+  char *options;
+  if ((options = checkCommand(cmdline, "info"))) {
+    cliPrintLine("RequestBindStatus not implemented");
+  } else {
+    cliPrintLine("Sending EnterBindMode request");
+    srxlv2Bind();
+  }
+}
+#endif
+
 
 typedef struct {
     const char *name;
@@ -5971,7 +5992,7 @@ const clicmd_t cmdTable[] = {
         "\t<->[name]", cliBeeper),
 #endif // USE_BEEPER
 #ifdef USE_RX_SPI
-        CLI_COMMAND_DEF("bind_rx_spi", "initiate binding for RX SPI", NULL, cliRxSpiBind),
+    CLI_COMMAND_DEF("bind_rx_spi", "initiate binding for RX SPI", NULL, cliRxSpiBind),
 #endif
 #if defined(USE_FLASH_BOOT_LOADER)
     CLI_COMMAND_DEF("bl", "reboot into bootloader", "[flash|rom]", cliBootloader),
@@ -6090,6 +6111,9 @@ const clicmd_t cmdTable[] = {
         "\treset\r\n"
         "\tload <mixer>\r\n"
         "\treverse <servo> <source> r|n", cliServoMix),
+#endif
+#if defined (USE_SERIALRX_SRXLv2)
+    CLI_COMMAND_DEF("srxlv2_bind", "SRXLv2 bind", "[enter|info]", cliSrxlv2Bind),
 #endif
     CLI_COMMAND_DEF("status", "show status", NULL, cliStatus),
 #if defined(USE_TASK_STATISTICS)

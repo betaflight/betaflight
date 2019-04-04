@@ -136,6 +136,10 @@ typedef enum {
     TABLE_GYRO_FILTER_DEBUG,
     TABLE_POSITION_ALT_SOURCE,
 
+#ifdef USE_SERIALRX_SRXLv2
+    TABLE_SRXLv2_BAUD_RATES,
+#endif
+    TABLE_HALF_DUPLEX,
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 

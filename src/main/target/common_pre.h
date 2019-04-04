@@ -175,6 +175,10 @@
 #define USE_SERIALRX_SPEKTRUM   // SRXL, DSM2 and DSMX protocol
 #define USE_SERIALRX_SUMD       // Graupner Hott protocol
 
+#ifndef STM32F3 //Not enough space for F3 support
+#define USE_SERIALRX_SRXLv2     // Spektrum SRXL2 protocol
+#endif // STM32F3
+
 #if (FLASH_SIZE > 128)
 #define PID_PROFILE_COUNT 3
 #define CONTROL_RATE_PROFILE_COUNT  6
