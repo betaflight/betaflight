@@ -1462,11 +1462,11 @@ HAL_StatusTypeDef HAL_SPI_Transmit_DMA(SPI_HandleTypeDef *hspi, uint8_t *pData, 
   }
 
   /* Packing mode management is enabled by the DMA settings */
-  if (((hspi->Init.DataSize > SPI_DATASIZE_16BIT) && (hspi->hdmarx->Init.MemDataAlignment != DMA_MDATAALIGN_WORD))    || \
-      ((hspi->Init.DataSize > SPI_DATASIZE_8BIT) && ((hspi->hdmarx->Init.MemDataAlignment != DMA_MDATAALIGN_HALFWORD) && \
-                                                         (hspi->hdmarx->Init.MemDataAlignment != DMA_MDATAALIGN_WORD))))
+  if (((hspi->Init.DataSize > SPI_DATASIZE_16BIT) && (hspi->hdmatx->Init.MemDataAlignment != DMA_MDATAALIGN_WORD))    || \
+      ((hspi->Init.DataSize > SPI_DATASIZE_8BIT) && ((hspi->hdmatx->Init.MemDataAlignment != DMA_MDATAALIGN_HALFWORD) && \
+                                                         (hspi->hdmatx->Init.MemDataAlignment != DMA_MDATAALIGN_WORD))))
   {
-    /* Restriction the DMA data received is not allowed in this mode */
+    /* Restriction the DMA data transmission is not allowed in this mode */
     errorcode = HAL_ERROR;
     __HAL_UNLOCK(hspi);
     return errorcode;
