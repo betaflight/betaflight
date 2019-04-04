@@ -887,6 +887,7 @@ static void detectAndSetCrashRecovery(
                 && fabsf(errorRate) > crashGyroThreshold
                 && fabsf(getSetpointRate(axis)) < crashSetpointThreshold) {
                 if (crash_recovery == PID_CRASH_RECOVERY_DISARM) {
+                    setArmingDisabled(ARMING_DISABLED_CRASH_DETECTED);
                     disarm();
                 } else {
                     inCrashRecoveryMode = true;
