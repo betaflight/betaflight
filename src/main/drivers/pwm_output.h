@@ -254,14 +254,13 @@ bool pwmStartDshotMotorUpdate(uint8_t motorCount);
 #endif
 void pwmCompleteDshotMotorUpdate(uint8_t motorCount);
 
-void pwmDshotCommandQueueUpdate(void);
 bool pwmDshotCommandIsQueued(void);
 bool pwmDshotCommandIsProcessing(void);
 uint8_t pwmGetDshotCommand(uint8_t index);
 bool pwmDshotCommandOutputIsEnabled(uint8_t motorCount);
 uint16_t getDshotTelemetry(uint8_t index);
 bool isDshotMotorTelemetryActive(uint8_t motorIndex);
-
+void setDshotPidLoopTime(uint32_t pidLoopTime);
 #endif
 
 #ifdef USE_BEEPER
