@@ -1,25 +1,26 @@
 
 #include "platform.h"
 
-#ifdef USE_STATS
+#ifdef USE_PERSISTENT_STATS
 
 #include "drivers/time.h"
 
 #include "fc/config.h"
 #include "fc/runtime_config.h"
 #include "fc/stats.h"
-#include "pg/stats.h"
 
 #include "io/beeper.h"
 #include "io/gps.h"
+
+#include "pg/stats.h"
 
 
 #define MIN_FLIGHT_TIME_TO_RECORD_STATS_S 10    //prevent recording stats for that short "flights" [s]
 #define STATS_SAVE_DELAY_MS              500    //let disarming complete and save stats after this time
 
-static uint32_t arm_millis;
+static timeMs_t arm_millis;
 static uint32_t arm_distance_cm;
-static uint32_t save_pending_millis;  // 0 = none
+static timeMs_t save_pending_millis;  // 0 = none
 
 #ifdef USE_GPS
     #define DISTANCE_FLOWN_CM (GPS_distanceFlownInCm)
@@ -39,8 +40,8 @@ void statsOnDisarm(void)
         uint32_t dt = (millis() - arm_millis) / 1000;
         if (dt >= MIN_FLIGHT_TIME_TO_RECORD_STATS_S) {
             statsConfigMutable()->stats_total_flights += 1;    //arm/flight counter
-            statsConfigMutable()->stats_total_time += dt;   //[s]
-            statsConfigMutable()->stats_total_dist += (DISTANCE_FLOWN_CM - arm_distance_cm) / 100;   //[m]
+            statsConfigMutable()->stats_total_time_s += dt;   //[s]
+            statsConfigMutable()->stats_total_dist_m += (DISTANCE_FLOWN_CM - arm_distance_cm) / 100;   //[m]
             /* signal that stats need to be saved but don't execute time consuming flash operation
                now - let the disarming process complete and then execute the actual save */
             save_pending_millis = millis();

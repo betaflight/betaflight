@@ -25,8 +25,8 @@
 
 typedef struct statsConfig_s {
     uint32_t stats_total_flights;
-    uint32_t stats_total_time; // [s]
-    uint32_t stats_total_dist; // [m]
+    uint32_t stats_total_time_s; // [s]
+    uint32_t stats_total_dist_m; // [m]
     uint8_t  stats_enabled;
 } statsConfig_t;
 

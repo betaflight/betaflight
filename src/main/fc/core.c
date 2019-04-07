@@ -371,7 +371,9 @@ void disarm(void)
 #endif
         flipOverAfterCrashActive = false;
 
+#ifdef USE_PERSISTENT_STATS
         statsOnDisarm();
+#endif
 
         // if ARMING_DISABLED_RUNAWAY_TAKEOFF is set then we want to play it's beep pattern instead
         if (!(getArmingDisableFlags() & ARMING_DISABLED_RUNAWAY_TAKEOFF)) {
@@ -486,7 +488,10 @@ void tryArm(void)
 #else
         beeper(BEEPER_ARMING);
 #endif
+
+#ifdef USE_PERSISTENT_STATS
         statsOnArm();
+#endif
 
 #ifdef USE_RUNAWAY_TAKEOFF
         runawayTakeoffDeactivateUs = 0;
@@ -978,8 +983,10 @@ bool processRx(timeUs_t currentTimeUs)
 
     pidSetAntiGravityState(IS_RC_MODE_ACTIVE(BOXANTIGRAVITY) || featureIsEnabled(FEATURE_ANTI_GRAVITY));
 
+#ifdef USE_PERSISTENT_STATS
     /* allow the stats collector to do periodic tasks */
     statsOnLoop();
+#endif
 
     return true;
 }
