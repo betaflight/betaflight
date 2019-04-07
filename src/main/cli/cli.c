@@ -5740,7 +5740,11 @@ const clicmd_t cmdTable[] = {
 #endif
     CLI_COMMAND_DEF("version", "show version", NULL, cliVersion),
 #ifdef USE_VTX_CONTROL
+#ifdef MINIMAL_CLI
     CLI_COMMAND_DEF("vtx", "vtx channels on switch", NULL, cliVtx),
+#else
+    CLI_COMMAND_DEF("vtx", "vtx channels on switch", "<index> <aux_channel> <vtx_band> <vtx_channel> <start_range> <end_range>", cliVtx),
+#endif
 #endif
 #ifdef USE_VTX_TABLE
     CLI_COMMAND_DEF("vtxtable", "vtx frequency able", "<band> <bandname> <bandletter> <freq> ... <freq>\r\n", cliVtxTable),
