@@ -456,7 +456,11 @@ FAST_CODE bool pwmDshotCommandIsProcessing(void)
         return false;
     }
     dshotCommandControl_t* command = &commandQueue[commandQueueTail];
-    return command->nextCommandAtUs && !command->waitingForIdle && command->repeats > 0;
+    // Check if this is the last command in the queue. If not then we want to
+    // keep sending the command instead of falling back to the motor value to
+    // prevent a motor command frame to slip through between the this and the next command.
+    const bool isLastCommand = (commandQueueTail + 1) % (DSHOT_MAX_COMMANDS + 1) == commandQueueHead;
+    return (command->nextCommandAtUs && !command->waitingForIdle && command->repeats > 0) || !isLastCommand;
 }
 
 FAST_CODE void pwmDshotCommandQueueUpdate(void)
@@ -467,6 +471,12 @@ FAST_CODE void pwmDshotCommandQueueUpdate(void)
     dshotCommandControl_t* command = &commandQueue[commandQueueTail];
     if (!command->nextCommandAtUs && !command->waitingForIdle && !command->repeats) {
         commandQueueTail = (commandQueueTail + 1) % (DSHOT_MAX_COMMANDS + 1);
+        if (pwmDshotCommandIsQueued()) {
+            // there's another command in the queue
+            dshotCommandControl_t* nextCommand = &commandQueue[commandQueueTail];
+            nextCommand->waitingForIdle = false;
+            nextCommand->nextCommandAtUs = micros() + command->delayAfterCommandUs;
+        }
     }
 }
 
