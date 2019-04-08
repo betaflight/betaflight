@@ -4,7 +4,7 @@ This is the new Nano FC from Airbot! With added features in comparison to the pr
 
 ## Features
 * ICM20602 Gyro connected via SPI
-* Onboard Barometer
+* FPC port for Frsky RX
 * STM32F405
 * 16MByte of Flash connected via SPI
 * 3-6s Lipo capable
@@ -29,3 +29,8 @@ This is the new Nano FC from Airbot! With added features in comparison to the pr
 |  WS2812B LED  |          LED         |          |   PA15  |                             |
 |     Buzzer    |        BZ-/BZ+       |          |   PC5   |                             |
 |     UART4     |        RX3/TX3       |          | PC11/10 |                             |
+
+
+## Pinmap
+![O4N7 Top](images/OMNIBUSF4NANOV7-TopSide.png)
+![O4N7 Bottom](images/OMNIBUSF4NANOV7-BottomSide.png)
