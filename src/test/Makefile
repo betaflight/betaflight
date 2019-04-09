@@ -127,6 +127,9 @@ flight_failsafe_unittest_SRC := \
 		$(USER_DIR)/fc/runtime_config.c \
 		$(USER_DIR)/flight/failsafe.c
 
+flight_failsafe_unittest_DEFINES := \
+		USE_GPS_RESCUE=
+
 
 flight_imu_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \

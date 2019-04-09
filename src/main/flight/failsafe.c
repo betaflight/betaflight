@@ -69,7 +69,9 @@ PG_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig,
     .failsafe_delay = 4,                             // 0,4sec
     .failsafe_off_delay = 10,                        // 1sec
     .failsafe_switch_mode = 0,                       // default failsafe switch action is identical to rc link loss
-    .failsafe_procedure = FAILSAFE_PROCEDURE_DROP_IT // default full failsafe procedure is 0: auto-landing
+    .failsafe_procedure = FAILSAFE_PROCEDURE_DROP_IT,// default full failsafe procedure is 0: auto-landing
+    .failsafe_recovery_delay = 20,                   // 2 sec of valid rx data (plus 200ms) needed to allow recovering from failsafe procedure
+    .failsafe_stick_threshold = 30                   // 30 percent of stick deflection to exit GPS Rescue procedure
 );
 
 const char * const failsafeProcedureNames[FAILSAFE_PROCEDURE_COUNT] = {
@@ -263,12 +265,10 @@ void failsafeUpdateState(void)
                             // Drop the craft
                             failsafeActivate();
                             failsafeState.phase = FAILSAFE_LANDED;      // skip auto-landing procedure
-                            failsafeState.receivingRxDataPeriodPreset = PERIOD_OF_3_SECONDS; // require 3 seconds of valid rxData
                             break;
                         case FAILSAFE_PROCEDURE_GPS_RESCUE:
                             failsafeActivate();
                             failsafeState.phase = FAILSAFE_GPS_RESCUE;
-                            failsafeState.receivingRxDataPeriodPreset = PERIOD_OF_3_SECONDS;
                             break;
                     }
                 }
@@ -277,8 +277,10 @@ void failsafeUpdateState(void)
 
             case FAILSAFE_LANDING:
                 if (receivingRxData) {
-                    failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
-                    reprocessState = true;
+                    if ((failsafeState.validRxDataReceivedAt - failsafeState.validRxDataFailedAt) > (failsafeConfig()->failsafe_recovery_delay * MILLIS_PER_TENTH_SECOND + PERIOD_RXDATA_RECOVERY)) {
+                        failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
+                        reprocessState = true;
+                    }
                 }
                 if (armed) {
                     failsafeApplyControlInput();
@@ -292,8 +294,12 @@ void failsafeUpdateState(void)
                 break;
             case FAILSAFE_GPS_RESCUE:
                 if (receivingRxData) {
-                    failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
-                    reprocessState = true;
+                    if ((failsafeState.validRxDataReceivedAt - failsafeState.validRxDataFailedAt) > (failsafeConfig()->failsafe_recovery_delay * MILLIS_PER_TENTH_SECOND + PERIOD_RXDATA_RECOVERY)) {
+                        if (areSticksActive(failsafeConfig()->failsafe_stick_threshold)) {
+                            failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
+                            reprocessState = true;
+                        }
+                    }
                 }
                 if (armed) {
                     failsafeApplyControlInput();
