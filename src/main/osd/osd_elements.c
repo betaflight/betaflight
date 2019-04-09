@@ -1559,7 +1559,7 @@ void osdUpdateAlarms(void)
         CLR_BLINK(OSD_REMAINING_TIME_ESTIMATE);
     }
 
-    if (alt >= osdConfig()->alt_alarm) {
+    if ((alt >= osdConfig()->alt_alarm) && ARMING_FLAG(ARMED)) {
         SET_BLINK(OSD_ALTITUDE);
     } else {
         CLR_BLINK(OSD_ALTITUDE);
