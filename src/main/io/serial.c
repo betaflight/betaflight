@@ -275,6 +275,9 @@ bool isSerialConfigValid(const serialConfig_t *serialConfigToCheck)
 
         if (portConfig->functionMask & FUNCTION_MSP) {
             mspPortCount++;
+        } else if (portConfig->identifier == SERIAL_PORT_USB_VCP) {
+            // Require MSP to be enabled for the VCP port
+            return false;
         }
 
         uint8_t bitCount = BITCOUNT(portConfig->functionMask);
