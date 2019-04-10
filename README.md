@@ -68,6 +68,7 @@ In addition to the drastic changes mentioned above, Betaflight 4.0 will have a n
 | - | - |
 | 01 March 2019 | Start of feature freeze / Release Candidate window for Betaflight 4.0 |
 | 01 April 2019 | Planned [release](https://github.com/betaflight/betaflight/milestone/20) date for Betaflight 4.0 |
+| 01 September 2019 | Planned [release](https://github.com/betaflight/betaflight/milestone/30) date for Betaflight 4.1 |
 
 ## Features
 
