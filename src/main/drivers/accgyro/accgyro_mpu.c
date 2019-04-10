@@ -243,13 +243,16 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro, const gyro
         sensor = (gyroSpiDetectFnTable[index])(&gyro->bus);
         if (sensor != MPU_NONE) {
             gyro->mpuDetectionResult.sensor = sensor;
+
             return true;
         }
     }
 
+    // Detection failed, disable CS pin again
+
     spiPreinitByTag(config->csnTag);
 
-    return true;
+    return false;
 }
 #endif
 
