@@ -75,6 +75,7 @@
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/stats.h"
 
 #include "rx/rx.h"
 
@@ -89,6 +90,9 @@
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
 #endif
+
+#define VIDEO_BUFFER_CHARS_PAL    480
+#define IS_DISPLAY_PAL (displayScreenSize(osdDisplayPort) == VIDEO_BUFFER_CHARS_PAL)
 
 const char * const osdTimerSourceNames[] = {
     "ON TIME  ",
@@ -464,11 +468,13 @@ static bool isSomeStatEnabled(void)
 
 static void osdShowStats(uint16_t endBatteryVoltage)
 {
-    uint8_t top = 2;
+    uint8_t top = 1;    /* first fully visible line */
     char buff[OSD_ELEMENT_BUFFER_LENGTH];
 
     displayClearScreen(osdDisplayPort);
-    displayWrite(osdDisplayPort, 2, top++, "  --- STATS ---");
+
+    if (IS_DISPLAY_PAL)
+        displayWrite(osdDisplayPort, 2, top++, "  --- STATS ---");
 
     if (osdStatGetState(OSD_STAT_RTC_DATE_TIME)) {
         bool success = false;
@@ -601,6 +607,27 @@ static void osdShowStats(uint16_t endBatteryVoltage)
         } else {
             osdDisplayStatisticLabel(top++, "PEAK FFT", "THRT<20%");
         }
+    }
+#endif
+
+#ifdef USE_PERSISTENT_STATS
+    if (osdStatGetState(OSD_STAT_TOTAL_FLIGHTS)) {
+        itoa(statsConfig()->stats_total_flights, buff, 10);
+        osdDisplayStatisticLabel(top++, "TOTAL FLIGHTS", buff);
+    }
+    if (osdStatGetState(OSD_STAT_TOTAL_TIME)) {
+        int minutes = statsConfig()->stats_total_time_s / 60;
+        tfp_sprintf(buff, "%d:%02dH", minutes / 60, minutes % 60);
+        osdDisplayStatisticLabel(top++, "TOTAL FLIGHT TIME", buff);
+    }
+    if (osdStatGetState(OSD_STAT_TOTAL_DIST)) {
+        #define METERS_PER_KILOMETER 1000
+        #define METERS_PER_MILE      1609
+        if (osdConfig()->units == OSD_UNIT_IMPERIAL)
+            tfp_sprintf(buff, "%dMI", statsConfig()->stats_total_dist_m / METERS_PER_MILE);
+        else
+            tfp_sprintf(buff, "%dKM", statsConfig()->stats_total_dist_m / METERS_PER_KILOMETER);
+        osdDisplayStatisticLabel(top++, "TOTAL DISTANCE", buff);
     }
 #endif
 }
