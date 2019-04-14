@@ -47,7 +47,6 @@
 
 static void mpu6000AccAndGyroInit(gyroDev_t *gyro);
 
-static bool mpuSpi6000InitDone = false;
 
 
 // Bits
@@ -171,10 +170,6 @@ uint8_t mpu6000SpiDetect(const busDevice_t *bus)
 
 static void mpu6000AccAndGyroInit(gyroDev_t *gyro)
 {
-    if (mpuSpi6000InitDone) {
-        return;
-    }
-
     spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_INITIALIZATION);
 
     // Device Reset
@@ -218,8 +213,6 @@ static void mpu6000AccAndGyroInit(gyroDev_t *gyro)
 
     spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_FAST);
     delayMicroseconds(1);
-
-    mpuSpi6000InitDone = true;
 }
 
 bool mpu6000SpiAccDetect(accDev_t *acc)
