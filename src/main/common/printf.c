@@ -38,24 +38,17 @@
 
 #include "build/build_config.h"
 
-#include "common/utils.h"
-
-#include "drivers/serial.h"
-#include "io/serial.h"
-
 #include "printf.h"
 
 #ifdef REQUIRE_PRINTF_LONG_SUPPORT
 #include "typeconversion.h"
 #endif
 
-static serialPort_t *printfSerialPort;
 
 #ifdef REQUIRE_CC_ARM_PRINTF_SUPPORT
 
-typedef void (*putcf) (void *, char);
-static putcf stdout_putf;
-static void *stdout_putp;
+putcf stdout_putf;
+void *stdout_putp;
 
 // print bf, padded from left to at least n characters.
 // padding is zero ('0') if z!=0, space (' ') otherwise
@@ -166,16 +159,6 @@ void init_printf(void *putp, void (*putf) (void *, char))
     stdout_putp = putp;
 }
 
-int tfp_printf(const char *fmt, ...)
-{
-    va_list va;
-    va_start(va, fmt);
-    int written = tfp_format(stdout_putp, stdout_putf, fmt, va);
-    va_end(va);
-    while (!isSerialTransmitBufferEmpty(printfSerialPort));
-    return written;
-}
-
 static void putcp(void *p, char c)
 {
     *(*((char **) p))++ = c;
@@ -192,36 +175,5 @@ int tfp_sprintf(char *s, const char *fmt, ...)
     return written;
 }
 
+#endif // REQUIRE_CC_ARM_PRINTF_SUPPORT
 
-static void _putc(void *p, char c)
-{
-    UNUSED(p);
-    serialWrite(printfSerialPort, c);
-}
-
-void printfSupportInit(void)
-{
-    init_printf(NULL, _putc);
-}
-
-#else
-
-// keil/armcc version
-int fputc(int c, FILE *f)
-{
-    // let DMA catch up a bit when using set or dump, we're too fast.
-    while (!isSerialTransmitBufferEmpty(printfSerialPort));
-    serialWrite(printfSerialPort, c);
-    return c;
-}
-
-void printfSupportInit(void)
-{
-    // Nothing to do
-}
-#endif
-
-void setPrintfSerialPort(serialPort_t *serialPort)
-{
-    printfSerialPort = serialPort;
-}

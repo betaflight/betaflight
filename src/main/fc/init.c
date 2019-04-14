@@ -32,7 +32,7 @@
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/maths.h"
-#include "common/printf.h"
+#include "common/printf_serial.h"
 
 #include "config/config_eeprom.h"
 #include "config/feature.h"
@@ -246,7 +246,9 @@ void init(void)
     }
 #endif
 
-    printfSupportInit();
+#ifdef SERIAL_PORT_COUNT
+    printfSerialInit();
+#endif
 
     systemInit();
 

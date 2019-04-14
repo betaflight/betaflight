@@ -52,6 +52,7 @@ extern uint8_t __config_end;
 #include "common/color.h"
 #include "common/maths.h"
 #include "common/printf.h"
+#include "common/printf_serial.h"
 #include "common/strtol.h"
 #include "common/time.h"
 #include "common/typeconversion.h"
