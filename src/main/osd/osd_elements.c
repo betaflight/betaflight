@@ -1280,7 +1280,9 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_MAIN_BATT_USAGE,
     OSD_DISARMED,
     OSD_NUMERICAL_HEADING,
+#ifdef USE_VARIO
     OSD_NUMERICAL_VARIO,
+#endif
     OSD_COMPASS_BAR,
     OSD_ANTI_GRAVITY,
 #ifdef USE_BLACKBOX
