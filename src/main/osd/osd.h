@@ -203,6 +203,8 @@ typedef enum {
     OSD_WARNING_LAUNCH_CONTROL,
     OSD_WARNING_GPS_RESCUE_UNAVAILABLE,
     OSD_WARNING_GPS_RESCUE_DISABLED,
+	OSD_WARNING_RSSI,
+	OSD_WARNING_LINK_QUALITY,
     OSD_WARNING_COUNT // MUST BE LAST
 } osdWarningsFlags_e;
 
@@ -222,6 +224,7 @@ typedef struct osdConfig_s {
     uint16_t cap_alarm;
     uint16_t alt_alarm;
     uint8_t rssi_alarm;
+    uint8_t link_quality_alarm;
 
     osd_unit_e units;
 

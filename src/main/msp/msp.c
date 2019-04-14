@@ -809,6 +809,13 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU8(dst, 0);
 #endif // USE_OSD_STICK_OVERLAY
 
+        // API >= 1.42
+#ifdef USE_RX_LINK_QUALITY_INFO
+        sbufWriteU8(dst, osdConfig()->link_quality_alarm);
+#else
+        sbufWriteU8(dst, 0);
+#endif // USE_RX_LINK_QUALITY_INFO
+
 #endif // USE_OSD
         break;
     }
@@ -2764,14 +2771,23 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src, mspPos
                 if (sbufBytesRemaining(src) >= 1) {
                     // API >= 1.41
                     // OSD stick overlay mode
-
 #ifdef USE_OSD_STICK_OVERLAY
                     osdConfigMutable()->overlay_radio_mode = sbufReadU8(src);
 #else
                     sbufReadU8(src);
 #endif // USE_OSD_STICK_OVERLAY
-
                 }
+
+                if (sbufBytesRemaining(src) >= 1) {
+                     // API >= 1.42
+                     // Link Quality alarm
+#ifdef USE_RX_LINK_QUALITY_INFO
+                     osdConfigMutable()->link_quality_alarm = sbufReadU8(src);
+#else
+                     sbufReadU8(src);
+#endif // USE_RX_LINK_QUALITY_INFO
+                }
+
 #endif
             } else if ((int8_t)addr == -2) {
 #if defined(USE_OSD)
