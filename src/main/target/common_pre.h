@@ -62,6 +62,7 @@
 #define USE_USB_CDC_HID
 #define USE_USB_MSC
 #define USE_PERSISTENT_MSC_RTC
+#define USE_MCO
 #define USE_DMA_SPEC
 #define USE_TIMER_MGMT
 // Re-enable this after 4.0 has been released, and remove the define from STM32F4DISCOVERY
