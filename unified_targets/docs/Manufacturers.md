@@ -17,6 +17,7 @@ This is the official list of manufacturer ids (`manufacturer_id` in the target c
 |FOXE|Foxeer|http://www.foxeer.com/|
 |HAMO|Happymodel|http://www.happymodel.cn/|
 |HBRO|Holybro|http://www.holybro.com/index.html|
+|HGLR|HGLRC|https://www.hglrc.com/|
 |IFRC|iFlight Innovation Technology Ltd.|https://www.iflight-rc.com/|
 |JHEF|JHE\_FPV|https://github.com/atgfpeyv|
 |KLEE|Kevin Lee (WhitenoiseFPV)|https://whitenoisefpv.com/|
