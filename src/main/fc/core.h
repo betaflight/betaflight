@@ -67,14 +67,10 @@ void updateArmingStatus(void);
 
 void taskMainPidLoop(timeUs_t currentTimeUs);
 
-#if defined(USE_RUNAWAY_TAKEOFF) || defined(USE_GPS_RESCUE)
-// determine if the R/P/Y stick deflection exceeds the specified limit - integer math is good enough here.
-bool areSticksActive(uint8_t stickPercentLimit);
-#endif
-
 bool isFlipOverAfterCrashActive(void);
 int8_t calculateThrottlePercent(void);
 uint8_t calculateThrottlePercentAbs(void);
+bool areSticksActive(uint8_t stickPercentLimit);
 void runawayTakeoffTemporaryDisable(uint8_t disableFlag);
 bool isAirmodeActivated();
 timeUs_t getLastDisarmTimeUs(void);

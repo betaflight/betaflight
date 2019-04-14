@@ -76,8 +76,10 @@ PG_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig,
 
 const char * const failsafeProcedureNames[FAILSAFE_PROCEDURE_COUNT] = {
     "AUTO-LAND",
-    "DROP",
-    "GPS-RESCUE"
+    "DROP"
+#ifdef USE_GPS_RESCUE
+    , "GPS-RESCUE"
+#endif
 };
 
 /*
@@ -143,11 +145,12 @@ static void failsafeActivate(void)
 
 static void failsafeApplyControlInput(void)
 {
+#ifdef USE_GPS_RESCUE
     if (failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE) {
         ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
-
         return;
     }
+#endif
 
     for (int i = 0; i < 3; i++) {
         rcData[i] = rxConfig()->midrc;
@@ -229,7 +232,11 @@ void failsafeUpdateState(void)
                         failsafeState.receivingRxDataPeriodPreset = PERIOD_OF_1_SECONDS;    // require 1 seconds of valid rxData
                         reprocessState = true;
                     } else if (!receivingRxData) {
-                        if (millis() > failsafeState.throttleLowPeriod && failsafeConfig()->failsafe_procedure != FAILSAFE_PROCEDURE_GPS_RESCUE) {
+                        if (millis() > failsafeState.throttleLowPeriod 
+#ifdef USE_GPS_RESCUE
+                            && failsafeConfig()->failsafe_procedure != FAILSAFE_PROCEDURE_GPS_RESCUE
+#endif
+                            ) {
                             // JustDisarm: throttle was LOW for at least 'failsafe_throttle_low_delay' seconds
                             failsafeActivate();
                             failsafeState.phase = FAILSAFE_LANDED;      // skip auto-landing procedure
@@ -266,10 +273,12 @@ void failsafeUpdateState(void)
                             failsafeActivate();
                             failsafeState.phase = FAILSAFE_LANDED;      // skip auto-landing procedure
                             break;
+#ifdef USE_GPS_RESCUE
                         case FAILSAFE_PROCEDURE_GPS_RESCUE:
                             failsafeActivate();
                             failsafeState.phase = FAILSAFE_GPS_RESCUE;
                             break;
+#endif
                     }
                 }
                 reprocessState = true;
@@ -292,6 +301,7 @@ void failsafeUpdateState(void)
                     reprocessState = true;
                 }
                 break;
+#ifdef USE_GPS_RESCUE
             case FAILSAFE_GPS_RESCUE:
                 if (receivingRxData) {
                     if ((failsafeState.validRxDataReceivedAt - failsafeState.validRxDataFailedAt) > (failsafeConfig()->failsafe_recovery_delay * MILLIS_PER_TENTH_SECOND + PERIOD_RXDATA_RECOVERY)) {
@@ -310,6 +320,7 @@ void failsafeUpdateState(void)
                     reprocessState = true;
                 }
                 break;
+#endif
             case FAILSAFE_LANDED:
                 setArmingDisabled(ARMING_DISABLED_FAILSAFE); // To prevent accidently rearming by an intermittent rx link
                 disarm();
