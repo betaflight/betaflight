@@ -296,9 +296,9 @@ static void emfat_add_log(emfat_entry_t *entry, int number, uint32_t offset, uin
 
 static int emfat_find_log(emfat_entry_t *entry, int maxCount)
 {
-    uint32_t limit  = flashfsIdentifyStartOfFreeSpace();
-    uint32_t lastOffset = 0;
-    uint32_t currOffset = 0;
+    int limit = flashfsIdentifyStartOfFreeSpace();
+    int lastOffset = 0;
+    int currOffset = 0;
     int fileNumber = 0;
     uint8_t buffer[18];
     int logCount = 0;
