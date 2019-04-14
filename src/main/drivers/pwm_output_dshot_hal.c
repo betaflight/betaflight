@@ -153,7 +153,6 @@ FAST_CODE void pwmCompleteDshotMotorUpdate(uint8_t motorCount)
             dmaMotorTimers[i].timerDmaSources = 0;
         }
     }
-    pwmDshotCommandQueueUpdate();
 }
 
 static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)

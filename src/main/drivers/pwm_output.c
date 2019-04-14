@@ -46,13 +46,23 @@ FAST_RAM_ZERO_INIT loadDmaBufferFn *loadDmaBuffer;
 #define DSHOT_BEEP_DELAY_US 100000
 #define DSHOT_MAX_COMMANDS 3
 
+typedef enum {
+    DSHOT_COMMAND_STATE_IDLEWAIT,   // waiting for motors to go idle
+    DSHOT_COMMAND_STATE_STARTDELAY, // initial delay period before a sequence of commands
+    DSHOT_COMMAND_STATE_ACTIVE,     // actively sending the command (with optional repeated output)
+    DSHOT_COMMAND_STATE_POSTDELAY   // delay period after the command has been sent
+} dshotCommandState_e;
+
 typedef struct dshotCommandControl_s {
-    timeUs_t nextCommandAtUs;
+    dshotCommandState_e state;
+    uint32_t nextCommandCycleDelay;
     timeUs_t delayAfterCommandUs;
-    bool waitingForIdle;
     uint8_t repeats;
     uint8_t command[MAX_SUPPORTED_MOTORS];
 } dshotCommandControl_t;
+
+static timeUs_t dshotCommandPidLoopTimeUs = 125; // default to 8KHz (125us) loop to prevent possible div/0
+                                                 // gets set to the actual value when the PID loop is initialized
 
 static dshotCommandControl_t commandQueue[DSHOT_MAX_COMMANDS + 1];
 static uint8_t commandQueueHead;
@@ -188,6 +198,11 @@ static uint8_t loadDmaBufferProshot(uint32_t *dmaBuffer, int stride, uint16_t pa
     dmaBuffer[5 * stride] = 0;
 
     return PROSHOT_DMA_BUFFER_SIZE;
+}
+
+void setDshotPidLoopTime(uint32_t pidLoopTime)
+{
+    dshotCommandPidLoopTimeUs = pidLoopTime;
 }
 #endif
 
@@ -450,34 +465,49 @@ FAST_CODE bool pwmDshotCommandIsQueued(void)
     return commandQueueHead != commandQueueTail;
 }
 
+static FAST_CODE bool isLastDshotCommand(void)
+{
+    return ((commandQueueTail + 1) % (DSHOT_MAX_COMMANDS + 1) == commandQueueHead);
+}
+
 FAST_CODE bool pwmDshotCommandIsProcessing(void)
 {
     if (!pwmDshotCommandIsQueued()) {
         return false;
     }
     dshotCommandControl_t* command = &commandQueue[commandQueueTail];
-    // Check if this is the last command in the queue. If not then we want to
-    // keep sending the command instead of falling back to the motor value to
-    // prevent a motor command frame to slip through between the this and the next command.
-    const bool isLastCommand = (commandQueueTail + 1) % (DSHOT_MAX_COMMANDS + 1) == commandQueueHead;
-    return (command->nextCommandAtUs && !command->waitingForIdle && command->repeats > 0) || !isLastCommand;
+    const bool commandIsProcessing = command->state == DSHOT_COMMAND_STATE_STARTDELAY
+                                     || command->state == DSHOT_COMMAND_STATE_ACTIVE
+                                     || (command->state == DSHOT_COMMAND_STATE_POSTDELAY && !isLastDshotCommand());
+    return commandIsProcessing;
 }
 
-FAST_CODE void pwmDshotCommandQueueUpdate(void)
+static FAST_CODE bool pwmDshotCommandQueueUpdate(void)
 {
-    if (!pwmDshotCommandIsQueued()) {
-        return;
-    }
-    dshotCommandControl_t* command = &commandQueue[commandQueueTail];
-    if (!command->nextCommandAtUs && !command->waitingForIdle && !command->repeats) {
+    if (pwmDshotCommandIsQueued()) {
         commandQueueTail = (commandQueueTail + 1) % (DSHOT_MAX_COMMANDS + 1);
         if (pwmDshotCommandIsQueued()) {
-            // there's another command in the queue
+            // There is another command in the queue so update it so it's ready to output in
+            // sequence. It can go directly to the DSHOT_COMMAND_STATE_ACTIVE state and bypass
+            // the DSHOT_COMMAND_STATE_IDLEWAIT and DSHOT_COMMAND_STATE_STARTDELAY states.
             dshotCommandControl_t* nextCommand = &commandQueue[commandQueueTail];
-            nextCommand->waitingForIdle = false;
-            nextCommand->nextCommandAtUs = micros() + command->delayAfterCommandUs;
+            nextCommand->state = DSHOT_COMMAND_STATE_ACTIVE;
+            nextCommand->nextCommandCycleDelay = 0;
+            return true;
         }
     }
+    return false;
+}
+
+static FAST_CODE uint32_t dshotCommandCyclesFromTime(timeUs_t delayUs)
+{
+    // Find the minimum number of motor output cycles needed to
+    // provide at least delayUs time delay
+    uint32_t ret = delayUs / dshotCommandPidLoopTimeUs;
+    if (delayUs % dshotCommandPidLoopTimeUs) {
+        ret++;
+    }
+    return ret;
 }
 
 static dshotCommandControl_t* addCommand()
@@ -494,8 +524,6 @@ static dshotCommandControl_t* addCommand()
 
 void pwmWriteDshotCommand(uint8_t index, uint8_t motorCount, uint8_t command, bool blocking)
 {
-    timeUs_t timeNowUs = micros();
-
     if (!isMotorProtocolDshot() || (command > DSHOT_MAX_COMMAND) || pwmDshotCommandQueueFull()) {
         return;
     }
@@ -551,7 +579,6 @@ void pwmWriteDshotCommand(uint8_t index, uint8_t motorCount, uint8_t command, bo
         dshotCommandControl_t *commandControl = addCommand();
         if (commandControl) {
             commandControl->repeats = repeats;
-            commandControl->nextCommandAtUs = timeNowUs + DSHOT_INITIAL_DELAY_US;
             commandControl->delayAfterCommandUs = delayAfterCommandUs;
             for (unsigned i = 0; i < motorCount; i++) {
                 if (index == i || index == ALL_MOTORS) {
@@ -560,7 +587,14 @@ void pwmWriteDshotCommand(uint8_t index, uint8_t motorCount, uint8_t command, bo
                     commandControl->command[i] = DSHOT_CMD_MOTOR_STOP;
                 }
             }
-            commandControl->waitingForIdle = !allMotorsAreIdle(motorCount);
+            if (allMotorsAreIdle(motorCount)) {
+                // we can skip the motors idle wait state
+                commandControl->state = DSHOT_COMMAND_STATE_STARTDELAY;
+                commandControl->nextCommandCycleDelay = dshotCommandCyclesFromTime(DSHOT_INITIAL_DELAY_US);
+            } else {
+                commandControl->state = DSHOT_COMMAND_STATE_STARTDELAY;
+                commandControl->nextCommandCycleDelay = 0;  // will be set after idle wait completes
+            }
         }
     }
 }
@@ -570,38 +604,58 @@ uint8_t pwmGetDshotCommand(uint8_t index)
     return commandQueue[commandQueueTail].command[index];
 }
 
+// This function is used to synchronize the dshot command output timing with
+// the normal motor output timing tied to the PID loop frequency. A "true" result
+// allows the motor output to be sent, "false" means delay until next loop. So take
+// the example of a dshot command that needs to repeat 10 times at 1ms intervals.
+// If we have a 8KHz PID loop we'll end up sending the dshot command every 8th motor output.
 FAST_CODE_NOINLINE bool pwmDshotCommandOutputIsEnabled(uint8_t motorCount)
 {
-    timeUs_t timeNowUs = micros();
-
     dshotCommandControl_t* command = &commandQueue[commandQueueTail];
-    if (pwmDshotCommandIsQueued()) {
-        if (command->waitingForIdle) {
-            if (allMotorsAreIdle(motorCount)) {
-                command->nextCommandAtUs = timeNowUs + DSHOT_INITIAL_DELAY_US;
-                command->waitingForIdle = false;
-            }
-            // Send normal motor output while waiting for motors to go idle
-            return true;
+    switch (command->state) {
+    case DSHOT_COMMAND_STATE_IDLEWAIT:
+        if (allMotorsAreIdle(motorCount)) {
+            command->state = DSHOT_COMMAND_STATE_STARTDELAY;
+            command->nextCommandCycleDelay = dshotCommandCyclesFromTime(DSHOT_INITIAL_DELAY_US);
         }
-    }
+        break;
 
-    if (cmpTimeUs(timeNowUs, command->nextCommandAtUs) < 0) {
-        //Skip motor update because it isn't time yet for a new command
-        return false;
-    }   
-  
-    //Timed motor update happening with dshot command
-    if (command->repeats > 0) {
+    case DSHOT_COMMAND_STATE_STARTDELAY:
+        if (command->nextCommandCycleDelay-- > 1) {
+            return false;  // Delay motor output until the start of the command seequence
+        }
+        command->state = DSHOT_COMMAND_STATE_ACTIVE;
+        command->nextCommandCycleDelay = 0;  // first iteration of the repeat happens now
+        FALLTHROUGH;
+
+    case DSHOT_COMMAND_STATE_ACTIVE:
+        if (command->nextCommandCycleDelay-- > 1) {
+            return false;  // Delay motor output until the next command repeat
+        }
+
         command->repeats--;
-
-        if (command->repeats > 0) {
-            command->nextCommandAtUs = timeNowUs + DSHOT_COMMAND_DELAY_US;
+        if (command->repeats) {
+            command->nextCommandCycleDelay = dshotCommandCyclesFromTime(DSHOT_COMMAND_DELAY_US);
         } else {
-            command->nextCommandAtUs = timeNowUs + command->delayAfterCommandUs;
+            command->state = DSHOT_COMMAND_STATE_POSTDELAY;
+            command->nextCommandCycleDelay = dshotCommandCyclesFromTime(command->delayAfterCommandUs);
+            if (!isLastDshotCommand() && command->nextCommandCycleDelay > 0) {
+                // Account for the 1 extra motor output loop between commands.
+                // Otherwise the inter-command delay will be DSHOT_COMMAND_DELAY_US + 1 loop.
+                command->nextCommandCycleDelay--;
+            }
         }
-    } else {
-        command->nextCommandAtUs = 0;
+        break;
+
+    case DSHOT_COMMAND_STATE_POSTDELAY:
+        if (command->nextCommandCycleDelay-- > 1) {
+            return false;  // Delay motor output until the end of the post-command delay
+        }
+        if (pwmDshotCommandQueueUpdate()) {
+            // Will be true if the command queue is not empty and we
+            // want to wait for the next command to start in sequence.
+            return false;
+        }
     }
 
     return true;
