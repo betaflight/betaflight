@@ -298,5 +298,6 @@
 #define USE_TELEMETRY_SENSORS_DISABLED_DETAILS
 // Re-enable this after 4.0 has been released, and remove the define from STM32F4DISCOVERY
 //#define USE_VTX_TABLE
+#define USE_PERSISTENT_STATS
 #endif
 

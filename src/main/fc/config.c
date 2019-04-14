@@ -67,6 +67,8 @@
 
 #include "scheduler/scheduler.h"
 
+static bool configIsDirty; /* someone indicated that the config is modified and it is not yet saved */
+
 pidProfile_t *currentPidProfile;
 
 #ifndef RX_SPI_DEFAULT_PROTOCOL
@@ -619,6 +621,7 @@ static void ValidateAndWriteConfigToEEPROM(bool setConfigured)
     writeConfigToEEPROM();
 
     resumeRxPwmPpmSignal();
+    configIsDirty = false;
 }
 
 void writeEEPROM(void)
@@ -656,6 +659,16 @@ void saveConfigAndNotify(void)
     ValidateAndWriteConfigToEEPROM(true);
     readEEPROM();
     beeperConfirmationBeeps(1);
+}
+
+void setConfigDirty(void)
+{
+    configIsDirty = true;
+}
+
+bool isConfigDirty(void)
+{
+    return configIsDirty;
 }
 
 void changePidProfileFromCellCount(uint8_t cellCount)

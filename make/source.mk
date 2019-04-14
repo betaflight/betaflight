@@ -46,6 +46,7 @@ COMMON_SRC = \
             fc/hardfaults.c \
             fc/tasks.c \
             fc/runtime_config.c \
+            fc/stats.c \
             io/beeper.c \
             io/piniobox.c \
             io/serial.c \
