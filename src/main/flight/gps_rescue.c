@@ -116,8 +116,9 @@ typedef struct {
     bool isAvailable;
 } rescueState_s;
 
-#define GPS_RESCUE_MAX_YAW_RATE       180  // deg/sec max yaw rate
-#define GPS_RESCUE_RATE_SCALE_DEGREES 45   // Scale the commanded yaw rate when the error is less then this angle
+#define GPS_RESCUE_MAX_YAW_RATE         180 // deg/sec max yaw rate
+#define GPS_RESCUE_RATE_SCALE_DEGREES    45 // Scale the commanded yaw rate when the error is less then this angle
+#define GPS_RESCUE_SLOWDOWN_DISTANCE_M  200 // distance from home to start decreasing speed
 
 PG_REGISTER_WITH_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 1);
 
@@ -471,6 +472,7 @@ static bool checkGPSRescueIsAvailable(void)
 void updateGPSRescueState(void)
 {
     static uint16_t descentDistance;
+    static int32_t newSpeed;
     
     if (!FLIGHT_MODE(GPS_RESCUE_MODE)) {
         rescueStop();
@@ -513,6 +515,7 @@ void updateGPSRescueState(void)
             // When not in failsafe mode: leave it up to the sanity check setting.
         }
         
+        newSpeed = gpsRescueConfig()->rescueGroundspeed;
         //set new descent distance if actual distance to home is lower 
         if (rescueState.sensor.distanceToHomeM < gpsRescueConfig()->descentDistanceM) {
             descentDistance = rescueState.sensor.distanceToHomeM - 5;
@@ -555,7 +558,11 @@ void updateGPSRescueState(void)
 
         // Only allow new altitude and new speed to be equal or lower than the current values (to prevent parabolic movement on overshoot)
         const int32_t newAlt = gpsRescueConfig()->initialAltitudeM * 100  * rescueState.sensor.distanceToHomeM / descentDistance;
-        const int32_t newSpeed = gpsRescueConfig()->rescueGroundspeed * rescueState.sensor.distanceToHomeM / descentDistance;
+
+        // Start to decrease proportionally the quad's speed when the distance to home is less or equal than GPS_RESCUE_SLOWDOWN_DISTANCE_M
+        if (rescueState.sensor.distanceToHomeM <= GPS_RESCUE_SLOWDOWN_DISTANCE_M) {
+            newSpeed = gpsRescueConfig()->rescueGroundspeed * rescueState.sensor.distanceToHomeM / GPS_RESCUE_SLOWDOWN_DISTANCE_M;
+        }
 
         rescueState.intent.targetAltitudeCm = constrain(newAlt, 100, rescueState.intent.targetAltitudeCm);
         rescueState.intent.targetGroundspeed = constrain(newSpeed, 100, rescueState.intent.targetGroundspeed);
