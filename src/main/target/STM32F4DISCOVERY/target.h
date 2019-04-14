@@ -24,7 +24,6 @@
 #define USBD_PRODUCT_STRING     "STM32F4DISCOVERY"
 
 #define USE_VTX_TABLE
-#define USE_SPI_TRANSACTION
 
 //LEDs
 #define LED0_PIN                PD12
