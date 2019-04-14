@@ -85,4 +85,5 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "D_MIN",
     "AC_CORRECTION",
     "AC_ERROR",
+    "DUAL_GYRO_SCALED",
 };
