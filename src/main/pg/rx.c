@@ -55,6 +55,7 @@ void pgResetFn_rxConfig(rxConfig_t *rxConfig)
         .rssi_scale = RSSI_SCALE_DEFAULT,
         .rssi_offset = 0,
         .rssi_invert = 0,
+        .rssi_src_frame_lpf_period = 30,
         .rcInterpolation = RC_SMOOTHING_AUTO,
         .rcInterpolationChannels = INTERPOLATION_CHANNELS_RPYT,
         .rcInterpolationInterval = 19,
