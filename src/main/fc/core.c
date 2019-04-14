@@ -318,11 +318,12 @@ void updateArmingStatus(void)
                              && !flight3DConfig()->switched_mode3d
                              && !(getArmingDisableFlags() & ~(ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_THROTTLE));
 
-#ifdef USE_RUNAWAY_TAKEOFF
            if (!IS_RC_MODE_ACTIVE(BOXARM)) {
+#ifdef USE_RUNAWAY_TAKEOFF
                unsetArmingDisabled(ARMING_DISABLED_RUNAWAY_TAKEOFF);
-           }
 #endif
+               unsetArmingDisabled(ARMING_DISABLED_CRASH_DETECTED);
+           }
 
           // If arming is disabled and the ARM switch is on
           if (isArmingDisabled()
@@ -371,7 +372,7 @@ void disarm(void)
         flipOverAfterCrashActive = false;
 
         // if ARMING_DISABLED_RUNAWAY_TAKEOFF is set then we want to play it's beep pattern instead
-        if (!(getArmingDisableFlags() & ARMING_DISABLED_RUNAWAY_TAKEOFF)) {
+        if (!(getArmingDisableFlags() & (ARMING_DISABLED_RUNAWAY_TAKEOFF | ARMING_DISABLED_CRASH_DETECTED))) {
             beeper(BEEPER_DISARMING);      // emit disarm tone
         }
     }

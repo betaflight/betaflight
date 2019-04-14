@@ -79,6 +79,7 @@ extern "C" {
     float getRcDeflection(int axis) { return simulatedRcDeflection[axis]; }
     void beeperConfirmationBeeps(uint8_t) { }
     bool isLaunchControlActive(void) {return unitLaunchControlActive; }
+    void disarm(void) { }
 }
 
 pidProfile_t *pidProfile;

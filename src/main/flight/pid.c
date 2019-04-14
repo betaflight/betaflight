@@ -877,8 +877,13 @@ static void detectAndSetCrashRecovery(
                 && fabsf(delta) > crashDtermThreshold
                 && fabsf(errorRate) > crashGyroThreshold
                 && fabsf(getSetpointRate(axis)) < crashSetpointThreshold) {
-                inCrashRecoveryMode = true;
-                crashDetectedAtUs = currentTimeUs;
+                if (crash_recovery == PID_CRASH_RECOVERY_DISARM) {
+                    setArmingDisabled(ARMING_DISABLED_CRASH_DETECTED);
+                    disarm();
+                } else {
+                    inCrashRecoveryMode = true;
+                    crashDetectedAtUs = currentTimeUs;
+                }
             }
             if (inCrashRecoveryMode && cmpTimeUs(currentTimeUs, crashDetectedAtUs) < crashTimeDelayUs && (fabsf(errorRate) < crashGyroThreshold
                 || fabsf(getSetpointRate(axis)) > crashSetpointThreshold)) {

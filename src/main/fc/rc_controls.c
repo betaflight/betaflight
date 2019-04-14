@@ -208,6 +208,7 @@ void processRcStickPositions()
                 // before they're able to rearm
                 unsetArmingDisabled(ARMING_DISABLED_RUNAWAY_TAKEOFF);
 #endif
+                unsetArmingDisabled(ARMING_DISABLED_CRASH_DETECTED);
             }
         }
         return;
@@ -230,7 +231,7 @@ void processRcStickPositions()
         resetTryingToArm();
     }
 
-    if (ARMING_FLAG(ARMED) || doNotRepeat || rcDelayMs <= STICK_DELAY_MS || (getArmingDisableFlags() & ARMING_DISABLED_RUNAWAY_TAKEOFF)) {
+    if (ARMING_FLAG(ARMED) || doNotRepeat || rcDelayMs <= STICK_DELAY_MS || (getArmingDisableFlags() & (ARMING_DISABLED_RUNAWAY_TAKEOFF | ARMING_DISABLED_CRASH_DETECTED))) {
         return;
     }
     doNotRepeat = true;
