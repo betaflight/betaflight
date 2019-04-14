@@ -384,6 +384,7 @@ static void beeperGpsStatus(void)
  */
 void beeperUpdate(timeUs_t currentTimeUs)
 {
+
     // If beeper option from AUX switch has been selected
     if (IS_RC_MODE_ACTIVE(BOXBEEPERON)) {
         beeper(BEEPER_RX_SET);
@@ -409,8 +410,19 @@ void beeperUpdate(timeUs_t currentTimeUs)
             || (currentBeeperEntry->mode == BEEPER_RX_LOST && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_LOST))))) {
 
             if ((currentTimeUs - getLastDisarmTimeUs() > DSHOT_BEACON_GUARD_DELAY_US) && !isTryingToArm()) {
+                static uint8_t dshotBeaconCycle = 1;
                 lastDshotBeaconCommandTimeUs = currentTimeUs;
-                pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), beeperConfig()->dshotBeaconTone, false);
+                if (beeperConfig()->dshotBeaconTone == 6)
+                {
+                    dshotBeaconCycle++;
+                    pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), ((dshotBeaconCycle/15) % 5) + 1, false);
+                } else if (beeperConfig()->dshotBeaconTone == 7) {
+                    dshotBeaconCycle++;
+                    pwmWriteDshotCommand((dshotBeaconCycle % getMotorCount()), getMotorCount(), (dshotBeaconCycle % 5) + 1, false);
+                }
+                else {
+                    pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), beeperConfig()->dshotBeaconTone, false);
+                }
             }
         }
 #endif

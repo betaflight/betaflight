@@ -446,7 +446,7 @@ static void validateAndFixConfig(void)
     }
 
     if (beeperConfig()->dshotBeaconTone < DSHOT_CMD_BEACON1
-        || beeperConfig()->dshotBeaconTone > DSHOT_CMD_BEACON5) {
+        || beeperConfig()->dshotBeaconTone > 7) {
         beeperConfigMutable()->dshotBeaconTone = DSHOT_CMD_BEACON1;
     }
 #endif
