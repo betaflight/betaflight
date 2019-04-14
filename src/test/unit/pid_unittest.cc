@@ -130,7 +130,6 @@ void setDefaultTestSettings(void) {
     pidProfile->throttle_boost = 0;
     pidProfile->throttle_boost_cutoff = 15;
     pidProfile->iterm_rotation = false;
-    pidProfile->smart_feedforward = false,
     pidProfile->iterm_relax = ITERM_RELAX_OFF,
     pidProfile->iterm_relax_cutoff = 11,
     pidProfile->iterm_relax_type = ITERM_RELAX_SETPOINT,
