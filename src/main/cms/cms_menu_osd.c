@@ -205,6 +205,10 @@ static long menuTimersOnEnter(void)
         timerSource[i] = OSD_TIMER_SRC(timer);
         timerPrecision[i] = OSD_TIMER_PRECISION(timer);
         timerAlarm[i] = OSD_TIMER_ALARM(timer);
+        if ((int)timerSource[i] >= (int)OSD_TIMER_SRC_COUNT)
+            timerSource[i] = OSD_TIMER_SRC_ON;
+        if ((int)timerPrecision[i] >= (int)OSD_TIMER_PREC_COUNT)
+            timerPrecision[i] = OSD_TIMER_PREC_SECOND;
     }
 
     return 0;
