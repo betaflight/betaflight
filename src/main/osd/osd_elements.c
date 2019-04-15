@@ -846,8 +846,14 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
 
 static void osdElementMainBatteryVoltage(osdElementParms_t *element)
 {
+    const int batteryVoltage = (getBatteryVoltage() + 5) / 10;
+
     element->buff[0] = osdGetBatterySymbol(getBatteryAverageCellVoltage());
-    tfp_sprintf(element->buff + 1, "%2d.%02d%c", getBatteryVoltage() / 100, getBatteryVoltage() % 100, SYM_VOLT);
+    if (batteryVoltage >= 100) {
+        tfp_sprintf(element->buff + 1, "%d.%d%c", batteryVoltage / 10, batteryVoltage % 10, SYM_VOLT);
+    } else {
+        tfp_sprintf(element->buff + 1, "%d.%d0%c", batteryVoltage / 10, batteryVoltage % 10, SYM_VOLT);
+    }
 }
 
 static void osdElementMotorDiagnostics(osdElementParms_t *element)
@@ -1442,7 +1448,7 @@ void osdAnalyzeActiveElements(void)
         osdAddActiveElement(OSD_FLIGHT_DIST);
     }
 #endif // GPS
-#ifdef USE_ESC_SENSOR  	
+#ifdef USE_ESC_SENSOR
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
         osdAddActiveElement(OSD_ESC_TMP);
     }
