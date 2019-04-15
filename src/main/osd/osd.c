@@ -90,6 +90,9 @@
 #include "hardware_revision.h"
 #endif
 
+#define VIDEO_BUFFER_CHARS_PAL    480
+#define IS_DISPLAY_PAL (displayScreenSize(osdDisplayPort) == VIDEO_BUFFER_CHARS_PAL)
+
 const char * const osdTimerSourceNames[] = {
     "ON TIME  ",
     "TOTAL ARM",
@@ -464,11 +467,13 @@ static bool isSomeStatEnabled(void)
 
 static void osdShowStats(uint16_t endBatteryVoltage)
 {
-    uint8_t top = 2;
+    uint8_t top = 1;    /* first fully visible line */
     char buff[OSD_ELEMENT_BUFFER_LENGTH];
 
     displayClearScreen(osdDisplayPort);
-    displayWrite(osdDisplayPort, 2, top++, "  --- STATS ---");
+
+    if (IS_DISPLAY_PAL)
+        displayWrite(osdDisplayPort, 2, top++, "  --- STATS ---");
 
     if (osdStatGetState(OSD_STAT_RTC_DATE_TIME)) {
         bool success = false;
