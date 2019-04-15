@@ -483,19 +483,13 @@ static void osdShowStats(uint16_t endBatteryVoltage)
     }
 
     if (osdStatGetState(OSD_STAT_TIMER_1)) {
-        int src = OSD_TIMER_SRC(osdConfig()->timers[OSD_TIMER_1]);
-        if (src >= OSD_TIMER_SRC_COUNT)
-            src = 0;
-        osdFormatTimer(buff, false, (src == OSD_TIMER_SRC_ON ? false : true), OSD_TIMER_1);
-        osdDisplayStatisticLabel(top++, osdTimerSourceNames[src], buff);
+        osdFormatTimer(buff, false, (OSD_TIMER_SRC(osdConfig()->timers[OSD_TIMER_1]) == OSD_TIMER_SRC_ON ? false : true), OSD_TIMER_1);
+        osdDisplayStatisticLabel(top++, osdTimerSourceNames[OSD_TIMER_SRC(osdConfig()->timers[OSD_TIMER_1])], buff);
     }
 
     if (osdStatGetState(OSD_STAT_TIMER_2)) {
-        int src = OSD_TIMER_SRC(osdConfig()->timers[OSD_TIMER_2]);
-        if (src >= OSD_TIMER_SRC_COUNT)
-            src = 0;
-        osdFormatTimer(buff, false, (src == OSD_TIMER_SRC_ON ? false : true), OSD_TIMER_2);
-        osdDisplayStatisticLabel(top++, osdTimerSourceNames[src], buff);
+        osdFormatTimer(buff, false, (OSD_TIMER_SRC(osdConfig()->timers[OSD_TIMER_2]) == OSD_TIMER_SRC_ON ? false : true), OSD_TIMER_2);
+        osdDisplayStatisticLabel(top++, osdTimerSourceNames[OSD_TIMER_SRC(osdConfig()->timers[OSD_TIMER_2])], buff);
     }
 
     if (osdStatGetState(OSD_STAT_MAX_ALTITUDE)) {
