@@ -224,7 +224,6 @@ typedef struct osdConfig_s {
     uint16_t cap_alarm;
     uint16_t alt_alarm;
     uint8_t rssi_alarm;
-    uint8_t link_quality_alarm;
 
     osd_unit_e units;
 
@@ -241,6 +240,7 @@ typedef struct osdConfig_s {
     uint8_t ahInvert;         // invert the artificial horizon
     uint8_t osdProfileIndex;
     uint8_t overlay_radio_mode;
+    uint8_t link_quality_alarm;
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);
