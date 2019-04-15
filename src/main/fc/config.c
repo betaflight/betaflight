@@ -52,6 +52,8 @@
 #include "io/serial.h"
 #include "io/gps.h"
 
+#include "osd/osd.h"
+
 #include "pg/beeper.h"
 #include "pg/beeper_dev.h"
 #include "pg/rx.h"
@@ -465,6 +467,21 @@ static void validateAndFixConfig(void)
 
 #if defined(TARGET_VALIDATECONFIG)
     targetValidateConfiguration();
+#endif
+
+#if defined(USE_OSD)
+    for (int i = 0; i < OSD_TIMER_COUNT; i++) {
+         const uint16_t timer = osdConfig()->timers[i];
+         int src = OSD_TIMER_SRC(timer);
+         int prc = OSD_TIMER_PRECISION(timer);
+         if (src >= OSD_TIMER_SRC_COUNT) {
+             src = 0;
+         }
+         if (prc >= OSD_TIMER_PREC_COUNT) {
+             prc = OSD_TIMER_PREC_COUNT;
+         }
+         osdConfigMutable()->timers[i] = OSD_TIMER(src, prc, OSD_TIMER_ALARM(timer));
+     }
 #endif
 }
 
