@@ -465,10 +465,6 @@ static void validateAndFixConfig(void)
     }
 #endif
 
-#if defined(TARGET_VALIDATECONFIG)
-    targetValidateConfiguration();
-#endif
-
 #if defined(USE_OSD)
     for (int i = 0; i < OSD_TIMER_COUNT; i++) {
          const uint16_t t = osdConfig()->timers[i];
@@ -477,6 +473,10 @@ static void validateAndFixConfig(void)
              osdConfigMutable()->timers[i] = osdTimerDefault[i];
          }
      }
+#endif
+
+#if defined(TARGET_VALIDATECONFIG)
+    targetValidateConfiguration();
 #endif
 }
 
