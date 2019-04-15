@@ -471,16 +471,11 @@ static void validateAndFixConfig(void)
 
 #if defined(USE_OSD)
     for (int i = 0; i < OSD_TIMER_COUNT; i++) {
-         const uint16_t timer = osdConfig()->timers[i];
-         int src = OSD_TIMER_SRC(timer);
-         int prc = OSD_TIMER_PRECISION(timer);
-         if (src >= OSD_TIMER_SRC_COUNT) {
-             src = 0;
+         const uint16_t t = osdConfig()->timers[i];
+         if (OSD_TIMER_SRC(t) >= OSD_TIMER_SRC_COUNT ||
+                 OSD_TIMER_PRECISION(t) >= OSD_TIMER_PREC_COUNT) {
+             osdConfigMutable()->timers[i] = osdTimerDefault[i];
          }
-         if (prc >= OSD_TIMER_PREC_COUNT) {
-             prc = 0;
-         }
-         osdConfigMutable()->timers[i] = OSD_TIMER(src, prc, OSD_TIMER_ALARM(timer));
      }
 #endif
 }

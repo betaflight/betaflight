@@ -215,6 +215,8 @@ STATIC_ASSERT(OSD_WARNING_COUNT <= 32, osdwarnings_overflow);
 
 #define OSD_GPS_RESCUE_DISABLED_WARNING_DURATION_US 3000000 // 3 seconds
 
+extern const uint16_t osdTimerDefault[OSD_TIMER_COUNT];
+
 typedef struct osdConfig_s {
     uint16_t item_pos[OSD_ITEM_COUNT];
 
