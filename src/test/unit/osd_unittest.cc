@@ -185,7 +185,7 @@ void doTestDisarm()
     // then
     // post flight statistics displayed
     if (isSomeStatEnabled()) {
-        displayPortTestBufferSubstring(2, 1, "  --- STATS ---");
+        displayPortTestBufferSubstring(2, 2, "  --- STATS ---");
     }
 }
 
@@ -391,7 +391,7 @@ TEST(OsdTest, TestStatsImperial)
 
     // then
     // statistics screen should display the following
-    int row = IS_DISPLAY_PAL ? 2 : 1;
+    int row = 3;
     displayPortTestBufferSubstring(2, row++, "2017-11-19 10:12:");
     displayPortTestBufferSubstring(2, row++, "TOTAL ARM         : 00:05.00");
     displayPortTestBufferSubstring(2, row++, "LAST ARM          : 00:03");
@@ -444,7 +444,7 @@ TEST(OsdTest, TestStatsMetric)
 
     // then
     // statistics screen should display the following
-    int row = IS_DISPLAY_PAL ? 2 : 1;
+    int row = 3;
     displayPortTestBufferSubstring(2, row++, "2017-11-19 10:12:");
     displayPortTestBufferSubstring(2, row++, "TOTAL ARM         : 00:07.50");
     displayPortTestBufferSubstring(2, row++, "LAST ARM          : 00:02");

@@ -91,9 +91,6 @@
 #include "hardware_revision.h"
 #endif
 
-#define VIDEO_BUFFER_CHARS_PAL    480
-#define IS_DISPLAY_PAL (displayScreenSize(osdDisplayPort) == VIDEO_BUFFER_CHARS_PAL)
-
 const char * const osdTimerSourceNames[] = {
     "ON TIME  ",
     "TOTAL ARM",
@@ -468,13 +465,12 @@ static bool isSomeStatEnabled(void)
 
 static void osdShowStats(uint16_t endBatteryVoltage)
 {
-    uint8_t top = 1;    /* first fully visible line */
+    uint8_t top = 2;
     char buff[OSD_ELEMENT_BUFFER_LENGTH];
 
     displayClearScreen(osdDisplayPort);
 
-    if (IS_DISPLAY_PAL)
-        displayWrite(osdDisplayPort, 2, top++, "  --- STATS ---");
+    displayWrite(osdDisplayPort, 2, top++, "  --- STATS ---");
 
     if (osdStatGetState(OSD_STAT_RTC_DATE_TIME)) {
         bool success = false;
@@ -623,10 +619,11 @@ static void osdShowStats(uint16_t endBatteryVoltage)
     if (osdStatGetState(OSD_STAT_TOTAL_DIST)) {
         #define METERS_PER_KILOMETER 1000
         #define METERS_PER_MILE      1609
-        if (osdConfig()->units == OSD_UNIT_IMPERIAL)
+        if (osdConfig()->units == OSD_UNIT_IMPERIAL) {
             tfp_sprintf(buff, "%dMI", statsConfig()->stats_total_dist_m / METERS_PER_MILE);
-        else
+        } else {
             tfp_sprintf(buff, "%dKM", statsConfig()->stats_total_dist_m / METERS_PER_KILOMETER);
+        }
         osdDisplayStatisticLabel(top++, "TOTAL DISTANCE", buff);
     }
 #endif

@@ -32,8 +32,6 @@ void displayPortTestBufferSubstring(int x, int y, const char * expectedFormat, .
 #define UNITTEST_DISPLAYPORT_COLS 30
 #define UNITTEST_DISPLAYPORT_BUFFER_LEN (UNITTEST_DISPLAYPORT_ROWS * UNITTEST_DISPLAYPORT_COLS)
 
-#define IS_DISPLAY_PAL true
-
 char testDisplayPortBuffer[UNITTEST_DISPLAYPORT_BUFFER_LEN];
 
 static displayPort_t testDisplayPort;
@@ -66,7 +64,7 @@ static int displayPortTestDrawScreen(displayPort_t *displayPort)
 static int displayPortTestScreenSize(const displayPort_t *displayPort)
 {
     UNUSED(displayPort);
-    return 480 /* VIDEO_BUFFER_CHARS_PAL */;
+    return 0;
 }
 
 static int displayPortTestWriteString(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *s)
