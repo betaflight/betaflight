@@ -469,7 +469,6 @@ static void osdShowStats(uint16_t endBatteryVoltage)
     char buff[OSD_ELEMENT_BUFFER_LENGTH];
 
     displayClearScreen(osdDisplayPort);
-
     displayWrite(osdDisplayPort, 2, top++, "  --- STATS ---");
 
     if (osdStatGetState(OSD_STAT_RTC_DATE_TIME)) {
