@@ -478,7 +478,7 @@ static void validateAndFixConfig(void)
              src = 0;
          }
          if (prc >= OSD_TIMER_PREC_COUNT) {
-             prc = OSD_TIMER_PREC_COUNT;
+             prc = 0;
          }
          osdConfigMutable()->timers[i] = OSD_TIMER(src, prc, OSD_TIMER_ALARM(timer));
      }
