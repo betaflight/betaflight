@@ -81,9 +81,10 @@ typedef struct failsafeState_s {
     int16_t events;
     bool monitoring;
     bool active;
-    int32_t rxDataFailurePeriod;
-    int32_t validRxDataReceivedAt;
-    int32_t validRxDataFailedAt;
+    uint32_t rxDataFailurePeriod;
+    uint32_t rxDataRecoveryPeriod; 
+    uint32_t validRxDataReceivedAt;
+    uint32_t validRxDataFailedAt;
     uint32_t throttleLowPeriod;             // throttle stick must have been below 'min_check' for this period
     uint32_t landingShouldBeFinishedAt;
     uint32_t receivingRxDataPeriod;         // period for the required period of valid rxData

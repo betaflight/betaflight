@@ -76,9 +76,9 @@ PG_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig,
 
 const char * const failsafeProcedureNames[FAILSAFE_PROCEDURE_COUNT] = {
     "AUTO-LAND",
-    "DROP"
+    "DROP",
 #ifdef USE_GPS_RESCUE
-    , "GPS-RESCUE"
+    "GPS-RESCUE",
 #endif
 };
 
@@ -88,6 +88,7 @@ const char * const failsafeProcedureNames[FAILSAFE_PROCEDURE_COUNT] = {
 void failsafeReset(void)
 {
     failsafeState.rxDataFailurePeriod = PERIOD_RXDATA_FAILURE + failsafeConfig()->failsafe_delay * MILLIS_PER_TENTH_SECOND;
+    failsafeState.rxDataRecoveryPeriod = PERIOD_RXDATA_RECOVERY + failsafeConfig()->failsafe_recovery_delay * MILLIS_PER_TENTH_SECOND;
     failsafeState.validRxDataReceivedAt = 0;
     failsafeState.validRxDataFailedAt = 0;
     failsafeState.throttleLowPeriod = 0;
@@ -177,7 +178,7 @@ void failsafeOnRxResume(void)
 void failsafeOnValidDataReceived(void)
 {
     failsafeState.validRxDataReceivedAt = millis();
-    if ((failsafeState.validRxDataReceivedAt - failsafeState.validRxDataFailedAt) > PERIOD_RXDATA_RECOVERY) {
+    if ((failsafeState.validRxDataReceivedAt - failsafeState.validRxDataFailedAt) > failsafeState.rxDataRecoveryPeriod) {
         failsafeState.rxLinkState = FAILSAFE_RXLINK_UP;
         unsetArmingDisabled(ARMING_DISABLED_RX_FAILSAFE);
     }
@@ -286,10 +287,8 @@ void failsafeUpdateState(void)
 
             case FAILSAFE_LANDING:
                 if (receivingRxData) {
-                    if ((failsafeState.validRxDataReceivedAt - failsafeState.validRxDataFailedAt) > (failsafeConfig()->failsafe_recovery_delay * MILLIS_PER_TENTH_SECOND + PERIOD_RXDATA_RECOVERY)) {
-                        failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
-                        reprocessState = true;
-                    }
+                    failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
+                    reprocessState = true;
                 }
                 if (armed) {
                     failsafeApplyControlInput();
@@ -304,11 +303,9 @@ void failsafeUpdateState(void)
 #ifdef USE_GPS_RESCUE
             case FAILSAFE_GPS_RESCUE:
                 if (receivingRxData) {
-                    if ((failsafeState.validRxDataReceivedAt - failsafeState.validRxDataFailedAt) > (failsafeConfig()->failsafe_recovery_delay * MILLIS_PER_TENTH_SECOND + PERIOD_RXDATA_RECOVERY)) {
-                        if (areSticksActive(failsafeConfig()->failsafe_stick_threshold)) {
-                            failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
-                            reprocessState = true;
-                        }
+                    if (areSticksActive(failsafeConfig()->failsafe_stick_threshold)) {
+                        failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
+                        reprocessState = true;
                     }
                 }
                 if (armed) {
