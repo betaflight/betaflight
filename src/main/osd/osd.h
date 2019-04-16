@@ -203,6 +203,8 @@ typedef enum {
     OSD_WARNING_LAUNCH_CONTROL,
     OSD_WARNING_GPS_RESCUE_UNAVAILABLE,
     OSD_WARNING_GPS_RESCUE_DISABLED,
+    OSD_WARNING_RSSI,
+    OSD_WARNING_LINK_QUALITY,
     OSD_WARNING_COUNT // MUST BE LAST
 } osdWarningsFlags_e;
 
@@ -238,6 +240,7 @@ typedef struct osdConfig_s {
     uint8_t ahInvert;         // invert the artificial horizon
     uint8_t osdProfileIndex;
     uint8_t overlay_radio_mode;
+    uint8_t link_quality_alarm;
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);

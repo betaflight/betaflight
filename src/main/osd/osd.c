@@ -233,6 +233,9 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     for (int i=0; i < OSD_WARNING_COUNT; i++) {
         osdWarnSetState(i, true);
     }
+    // turn off RSSI & Link Quality warnings by default
+    osdWarnSetState(OSD_WARNING_RSSI, false);
+    osdWarnSetState(OSD_WARNING_LINK_QUALITY, false);
 
     osdConfig->timers[OSD_TIMER_1] = OSD_TIMER(OSD_TIMER_SRC_ON, OSD_TIMER_PREC_SECOND, 10);
     osdConfig->timers[OSD_TIMER_2] = OSD_TIMER(OSD_TIMER_SRC_TOTAL_ARMED, OSD_TIMER_PREC_SECOND, 10);
@@ -240,6 +243,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->overlay_radio_mode = 2;
 
     osdConfig->rssi_alarm = 20;
+    osdConfig->link_quality_alarm = 80;
     osdConfig->cap_alarm  = 2200;
     osdConfig->alt_alarm  = 100; // meters or feet depend on configuration
     osdConfig->esc_temp_alarm = ESC_TEMP_ALARM_OFF; // off by default

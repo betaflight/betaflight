@@ -1026,7 +1026,7 @@ static void osdElementVtxChannel(osdElementParms_t *element)
 
 static void osdElementWarnings(osdElementParms_t *element)
 {
-#define OSD_WARNINGS_MAX_SIZE 11
+#define OSD_WARNINGS_MAX_SIZE 12
 #define OSD_FORMAT_MESSAGE_BUFFER_SIZE (OSD_WARNINGS_MAX_SIZE + 1)
 
     STATIC_ASSERT(OSD_FORMAT_MESSAGE_BUFFER_SIZE <= OSD_ELEMENT_BUFFER_LENGTH, osd_warnings_size_exceeds_buffer_size);
@@ -1117,6 +1117,22 @@ static void osdElementWarnings(osdElementParms_t *element)
         return;
     }
 #endif // USE_LAUNCH_CONTROL
+
+    // RSSI
+    if (osdWarnGetState(OSD_WARNING_RSSI) && (getRssiPercent() < osdConfig()->rssi_alarm)) {
+        osdFormatMessage(element->buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "RSSI LOW");
+        SET_BLINK(OSD_WARNINGS);
+        return;
+    }
+
+#ifdef USE_RX_LINK_QUALITY_INFO
+    // Link Quality
+    if (osdWarnGetState(OSD_WARNING_LINK_QUALITY) && (rxGetLinkQualityPercent() < osdConfig()->link_quality_alarm)) {
+        osdFormatMessage(element->buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "LINK QUALITY");
+        SET_BLINK(OSD_WARNINGS);
+        return;
+    }
+#endif // USE_RX_LINK_QUALITY_INFO
 
     if (osdWarnGetState(OSD_WARNING_BATTERY_CRITICAL) && batteryState == BATTERY_CRITICAL) {
         osdFormatMessage(element->buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, " LAND NOW");
@@ -1525,6 +1541,14 @@ void osdUpdateAlarms(void)
     } else {
         CLR_BLINK(OSD_RSSI_VALUE);
     }
+
+#ifdef USE_RX_LINK_QUALITY_INFO
+    if (rxGetLinkQualityPercent() < osdConfig()->link_quality_alarm) {
+        SET_BLINK(OSD_LINK_QUALITY);
+    } else {
+        CLR_BLINK(OSD_LINK_QUALITY);
+    }
+#endif // USE_RX_LINK_QUALITY_INFO
 
     if (getBatteryState() == BATTERY_OK) {
         CLR_BLINK(OSD_MAIN_BATT_VOLTAGE);
