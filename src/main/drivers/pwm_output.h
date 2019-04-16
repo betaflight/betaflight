@@ -122,6 +122,22 @@ typedef enum {
 #define DSHOT_DMA_BUFFER_SIZE   18 /* resolution + frame reset (2us) */
 #define PROSHOT_DMA_BUFFER_SIZE 6  /* resolution + frame reset (2us) */
 
+#ifdef USE_DSHOT_TELEMETRY
+#ifdef USE_DSHOT_TELEMETRY_STATS
+#define DSHOT_TELEMETRY_QUALITY_WINDOW 1       // capture a rolling 1 second of packet stats
+#define DSHOT_TELEMETRY_QUALITY_BUCKET_MS 100  // determines the granularity of the stats and the overall number of rolling buckets
+#define DSHOT_TELEMETRY_QUALITY_BUCKET_COUNT (DSHOT_TELEMETRY_QUALITY_WINDOW * 1000 / DSHOT_TELEMETRY_QUALITY_BUCKET_MS)
+
+typedef struct dshotTelemetryQuality_s {
+    uint32_t packetCountSum;
+    uint32_t invalidCountSum;
+    uint32_t packetCountArray[DSHOT_TELEMETRY_QUALITY_BUCKET_COUNT];
+    uint32_t invalidCountArray[DSHOT_TELEMETRY_QUALITY_BUCKET_COUNT];
+    uint8_t lastBucketIndex;
+}  dshotTelemetryQuality_t;
+#endif // USE_DSHOT_TELEMETRY_STATS
+#endif // USE_DSHOT_TELEMETRY
+
 typedef struct {
     TIM_TypeDef *timer;
 #if defined(USE_DSHOT) && defined(USE_DSHOT_DMAR)
@@ -153,6 +169,9 @@ typedef struct {
     uint16_t dshotTelemetryValue;
     timeDelta_t dshotTelemetryDeadtimeUs;
     bool dshotTelemetryActive;
+#ifdef USE_DSHOT_TELEMETRY_STATS
+    dshotTelemetryQuality_t dshotTelemetryQuality;
+#endif
 #ifdef USE_HAL_DRIVER
     LL_TIM_OC_InitTypeDef ocInitStruct;
     LL_TIM_IC_InitTypeDef icInitStruct;
@@ -261,6 +280,10 @@ bool pwmDshotCommandOutputIsEnabled(uint8_t motorCount);
 uint16_t getDshotTelemetry(uint8_t index);
 bool isDshotMotorTelemetryActive(uint8_t motorIndex);
 void setDshotPidLoopTime(uint32_t pidLoopTime);
+#ifdef USE_DSHOT_TELEMETRY_STATS
+int16_t getDshotTelemetryMotorInvalidPercent(uint8_t motorIndex);
+#endif
+
 #endif
 
 #ifdef USE_BEEPER
