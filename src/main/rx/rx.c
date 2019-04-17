@@ -238,6 +238,18 @@ bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
 }
 #endif
 
+void rxUpdateRssiSource(void)
+{
+#if defined(USE_ADC)
+    if (featureIsEnabled(FEATURE_RSSI_ADC)) {
+        rssiSource = RSSI_SOURCE_ADC;
+    } else
+#endif
+    if (rxConfig()->rssi_channel > 0) {
+        rssiSource = RSSI_SOURCE_RX_CHANNEL;
+    }
+}
+
 void rxInit(void)
 {
     rxRuntimeConfig.rcReadRawFn = nullReadRawRC;
@@ -303,14 +315,7 @@ void rxInit(void)
     }
 #endif
 
-#if defined(USE_ADC)
-    if (featureIsEnabled(FEATURE_RSSI_ADC)) {
-        rssiSource = RSSI_SOURCE_ADC;
-    } else
-#endif
-    if (rxConfig()->rssi_channel > 0) {
-        rssiSource = RSSI_SOURCE_RX_CHANNEL;
-    }
+    rxUpdateRssiSource();
 
     rxChannelCount = MIN(rxConfig()->max_aux_channel + NON_AUX_CHANNEL_COUNT, rxRuntimeConfig.channelCount);
 }

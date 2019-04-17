@@ -2345,7 +2345,6 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         if (!featureMaskIsCopied) {
             featureMaskIsCopied = true;
         }
-
         break;
 
 #ifdef USE_BEEPER

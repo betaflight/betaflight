@@ -271,8 +271,9 @@ static void validateAndFixConfig(void)
 #endif // USE_SOFTSPI
 
 #if defined(USE_ADC)
-    if (featureIsEnabled(FEATURE_RSSI_ADC)) {
-        rxConfigMutable()->rssi_channel = 0;
+    if (featureIsEnabled(FEATURE_RSSI_ADC) && rxConfig()->rssi_channel) {
+        featureDisable(FEATURE_RSSI_ADC);
+        rxUpdateRssiSource();
         rxConfigMutable()->rssi_src_frame_errors = false;
     } else
 #endif

@@ -167,6 +167,7 @@ void updateRSSI(timeUs_t currentTimeUs);
 uint16_t getRssi(void);
 uint8_t getRssiPercent(void);
 bool isRssiConfigured(void);
+void rxUpdateRssiSource(void);
 
 #define LINK_QUALITY_MAX_VALUE 255
 
