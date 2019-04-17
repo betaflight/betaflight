@@ -545,8 +545,7 @@ static void osdShowStats(uint16_t endBatteryVoltage)
 
     if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
         if (osdStatGetState(OSD_STAT_MAX_CURRENT)) {
-            itoa(stats.max_current, buff, 10);
-            strcat(buff, "A");
+            tfp_sprintf(buff, "%d%c", stats.max_current, SYM_AMP);
             osdDisplayStatisticLabel(top++, "MAX CURRENT", buff);
         }
 
