@@ -26,7 +26,7 @@
 
 #include "sensors/esc_sensor.h"
 
-#define OSD_NUM_TIMER_TYPES 3
+#define OSD_NUM_TIMER_TYPES 4
 extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 
 #define OSD_ELEMENT_BUFFER_LENGTH 32
@@ -180,6 +180,7 @@ typedef enum {
     OSD_TIMER_SRC_ON,
     OSD_TIMER_SRC_TOTAL_ARMED,
     OSD_TIMER_SRC_LAST_ARMED,
+    OSD_TIMER_SRC_ON_OR_ARMED,
     OSD_TIMER_SRC_COUNT
 } osd_timer_source_e;
 

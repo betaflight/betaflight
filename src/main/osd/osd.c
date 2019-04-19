@@ -93,7 +93,8 @@
 const char * const osdTimerSourceNames[] = {
     "ON TIME  ",
     "TOTAL ARM",
-    "LAST ARM "
+    "LAST ARM ",
+    "ON/ARM   "
 };
 
 // Things in both OSD and CMS

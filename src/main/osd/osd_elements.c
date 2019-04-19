@@ -296,6 +296,8 @@ static char osdGetTimerSymbol(osd_timer_source_e src)
     case OSD_TIMER_SRC_TOTAL_ARMED:
     case OSD_TIMER_SRC_LAST_ARMED:
         return SYM_FLY_M;
+    case OSD_TIMER_SRC_ON_OR_ARMED:
+        return ARMING_FLAG(ARMED) ? SYM_FLY_M : SYM_ON_M;
     default:
         return ' ';
     }
@@ -312,6 +314,8 @@ static timeUs_t osdGetTimerValue(osd_timer_source_e src)
         statistic_t *stats = osdGetStats();
         return stats->armed_time;
     }
+    case OSD_TIMER_SRC_ON_OR_ARMED:
+        return ARMING_FLAG(ARMED) ? osdFlyTime : micros();
     default:
         return 0;
     }
