@@ -198,6 +198,11 @@ static void osdDrawElements(timeUs_t currentTimeUs)
     osdDrawActiveElements(osdDisplayPort, currentTimeUs);
 }
 
+const uint16_t osdTimerDefault[OSD_TIMER_COUNT] = {
+        OSD_TIMER(OSD_TIMER_SRC_ON, OSD_TIMER_PREC_SECOND, 10),
+        OSD_TIMER(OSD_TIMER_SRC_TOTAL_ARMED, OSD_TIMER_PREC_SECOND, 10)
+};
+
 void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 {
     // Position elements near centre of screen and disabled by default
@@ -238,8 +243,8 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdWarnSetState(OSD_WARNING_RSSI, false);
     osdWarnSetState(OSD_WARNING_LINK_QUALITY, false);
 
-    osdConfig->timers[OSD_TIMER_1] = OSD_TIMER(OSD_TIMER_SRC_ON, OSD_TIMER_PREC_SECOND, 10);
-    osdConfig->timers[OSD_TIMER_2] = OSD_TIMER(OSD_TIMER_SRC_TOTAL_ARMED, OSD_TIMER_PREC_SECOND, 10);
+    osdConfig->timers[OSD_TIMER_1] = osdTimerDefault[OSD_TIMER_1];
+    osdConfig->timers[OSD_TIMER_2] = osdTimerDefault[OSD_TIMER_2];
 
     osdConfig->overlay_radio_mode = 2;
 
