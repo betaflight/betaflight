@@ -7,7 +7,7 @@
   *          This file contains:
   *           - Data structures and the address mapping for all peripherals
   *           - Peripheral's registers declarations and bits definition
-  *           - Macros to access peripheral’s registers hardware
+  *           - Macros to access peripheral's registers hardware
   *
   ******************************************************************************
   * @attention
@@ -25787,10 +25787,15 @@ typedef struct
   */
 /****************************** Product define *********************************/
 
-#define FLASH_SECTOR_SIZE  0x00020000          /* 128 KB */
+// For Betaflight, FLASH_SIZE is defined by make/<CPUTYPE>.mk in units of KB.
+// FLASH_SIZE definition is not used elsewhere in the library.
+// FLASH_BANK_SIZE is used, so define it as 1M directly.
 
-#define FLASH_SIZE         FLASH_SECTOR_SIZE   /* 128 KB */
-#define FLASH_BANK_SIZE    FLASH_SIZE          /* 128 KB */
+#define FLASH_SECTOR_SIZE  0x00020000          /* 128 KB */
+//#define FLASH_SIZE         FLASH_SECTOR_SIZE   /* 128 KB */
+//#define FLASH_BANK_SIZE    FLASH_SIZE          /* 128 KB */
+
+#define FLASH_BANK_SIZE                    FLASH_SECTOR_SIZE /* 128KB */
 
 
 /**
