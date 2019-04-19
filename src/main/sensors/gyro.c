@@ -539,7 +539,7 @@ bool gyroInit(void)
     }
 
 #if defined(USE_MULTI_GYRO)
-    if ((gyroToUse == GYRO_CONFIG_USE_GYRO_BOTH && !(gyroDetectionFlags & DETECTED_BOTH_GYROS))
+    if ((gyroToUse == GYRO_CONFIG_USE_GYRO_BOTH && !((gyroDetectionFlags & DETECTED_BOTH_GYROS) == DETECTED_BOTH_GYROS))
         || (gyroToUse == GYRO_CONFIG_USE_GYRO_1 && !(gyroDetectionFlags & DETECTED_GYRO_1))
         || (gyroToUse == GYRO_CONFIG_USE_GYRO_2 && !(gyroDetectionFlags & DETECTED_GYRO_2))) {
         if (gyroDetectionFlags & DETECTED_GYRO_1) {
@@ -552,7 +552,7 @@ bool gyroInit(void)
     }
 
     // Only allow using both gyros simultaneously if they are the same hardware type.
-    if ((gyroDetectionFlags & DETECTED_BOTH_GYROS) && gyroSensor1.gyroDev.gyroHardware == gyroSensor2.gyroDev.gyroHardware) {
+    if (((gyroDetectionFlags & DETECTED_BOTH_GYROS) == DETECTED_BOTH_GYROS) && gyroSensor1.gyroDev.gyroHardware == gyroSensor2.gyroDev.gyroHardware) {
         gyroDetectionFlags |= DETECTED_DUAL_GYROS;
     } else if (gyroToUse == GYRO_CONFIG_USE_GYRO_BOTH) {
         // If the user selected "BOTH" and they are not the same type, then reset to using only the first gyro.
