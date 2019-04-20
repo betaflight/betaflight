@@ -84,7 +84,7 @@ enum {
     DEBUG_SBUS_FRAME_TIME,
 };
 
-static uint32_t sbusNeedTimePreFrame = SBUS_TIME_NEEDED_PER_FRAME;
+static uint32_t sbusTimeNeededPreFrame = SBUS_TIME_NEEDED_PER_FRAME;
 
 struct sbusFrame_s {
     uint8_t syncByte;
@@ -121,7 +121,7 @@ static void sbusDataReceive(uint16_t c, void *data)
 
     const int32_t sbusFrameTime = nowUs - sbusFrameData->startAtUs;
 
-    if (sbusFrameTime > (long)(sbusNeedTimePreFrame + 500)) {
+    if (sbusFrameTime > (long)(sbusTimeNeededPreFrame + 500)) {
         sbusFrameData->position = 0;
     }
 
@@ -171,11 +171,11 @@ bool sbusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     if (rxConfig->serialrx_provider == SERIALRX_DJI_HDL_7MS) {
         rxRuntimeConfig->rxRefreshRate = DJI_HDL_RX_REFRESH_RATE;
         sbusBaudRate  = DJI_HDL_BAUDRATE;
-        sbusNeedTimePreFrame = DJI_HDL_TIME_NEEDED_PER_FRAME;
+        sbusTimeNeededPreFrame = DJI_HDL_TIME_NEEDED_PER_FRAME;
     } else {
         rxRuntimeConfig->rxRefreshRate = SBUS_RX_REFRESH_RATE;   
         sbusBaudRate  = SBUS_BAUDRATE;
-        sbusNeedTimePreFrame = SBUS_TIME_NEEDED_PER_FRAME;
+        sbusTimeNeededPreFrame = SBUS_TIME_NEEDED_PER_FRAME;
     }
 
     rxRuntimeConfig->rcFrameStatusFn = sbusFrameStatus;
