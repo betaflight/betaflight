@@ -178,6 +178,30 @@ static void SPI_AbortTransfer(SPI_HandleTypeDef *hspi);
 static void SPI_CloseTransfer(SPI_HandleTypeDef *hspi);
 static uint32_t SPI_GetPacketSize(SPI_HandleTypeDef *hspi);
 
+/*
+ * Notes on variable size access to data registers (by jflyper@github.com)
+ *
+ * As described in RM0433 section 49.4.13 "Data packing", STM32H7's SPI data register
+ * supports data packing and it is sensitive to actual access width.
+ * The original code used pointer casting to obtain a code to access the register in
+ * a desired size.
+ * However, these operation results in strict aliasing warnings (deferencing punned pointer)
+ * and are not desirable.
+ *
+ * Here, we declare a union that allow access to a 32-bit register in 8, 16 or 32-bit width
+ * and cast pointer to the original RXDR and TXDR data registers and then access the
+ * portion of the register through an appropriate union member.
+ *
+ * XXX FIXME Only handled 16-bit access case, as 32-bit (original declaration) and 8-bit
+ * (allowed) cases do not generate warnings, but these should be handled similarly for
+ * correct-ness and consistency of the code.
+ */
+ 
+typedef union {
+  __IO uint32_t u_reg32;
+  __IO uint16_t u_reg16;
+  __IO uint8_t  u_reg8;
+} reg_u;
 
 /**
   * @}
@@ -882,7 +906,7 @@ HAL_StatusTypeDef HAL_SPI_Transmit(SPI_HandleTypeDef *hspi, const uint8_t *pData
         }
         else
         {
-          *((__IO uint16_t *)&hspi->Instance->TXDR) = *((uint16_t *)hspi->pTxBuffPtr);
+          ((reg_u *)&hspi->Instance->TXDR)->u_reg16 = *((uint16_t *)hspi->pTxBuffPtr);
           hspi->pTxBuffPtr += sizeof(uint16_t);
           hspi->TxXferCount--;
         }
@@ -921,7 +945,7 @@ HAL_StatusTypeDef HAL_SPI_Transmit(SPI_HandleTypeDef *hspi, const uint8_t *pData
         }
         else if ((hspi->TxXferCount > 1UL) && (hspi->Init.FifoThreshold > SPI_FIFO_THRESHOLD_01DATA))
         {
-          *((__IO uint16_t *)&hspi->Instance->TXDR) = *((uint16_t *)hspi->pTxBuffPtr);
+          ((reg_u *)&hspi->Instance->TXDR)->u_reg16 = *((uint16_t *)hspi->pTxBuffPtr);
           hspi->pTxBuffPtr += sizeof(uint16_t);
           hspi->TxXferCount -= (uint16_t)2UL;
         }
@@ -1096,7 +1120,7 @@ HAL_StatusTypeDef HAL_SPI_Receive(SPI_HandleTypeDef *hspi, uint8_t *pData, uint1
         }
         else
         {
-          *((uint16_t *)hspi->pRxBuffPtr) = *((__IO uint16_t *)&hspi->Instance->RXDR);
+          *((uint16_t *)hspi->pRxBuffPtr) = ((reg_u *)&hspi->Instance->RXDR)->u_reg16;
           hspi->pRxBuffPtr += sizeof(uint16_t);
           hspi->RxXferCount--;
         }
@@ -1136,7 +1160,7 @@ HAL_StatusTypeDef HAL_SPI_Receive(SPI_HandleTypeDef *hspi, uint8_t *pData, uint1
         }
         else if ((hspi->Instance->SR & SPI_FLAG_FRLVL) > SPI_RX_FIFO_1PACKET)
         {
-          *((uint16_t *)hspi->pRxBuffPtr) = *((__IO uint16_t *)&hspi->Instance->RXDR);
+          *((uint16_t *)hspi->pRxBuffPtr) = ((reg_u *)&hspi->Instance->RXDR)->u_reg16;
           hspi->pRxBuffPtr += sizeof(uint16_t);
           hspi->RxXferCount -= (uint16_t)2UL;
         }
@@ -1327,7 +1351,7 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, const uint8_t
         }
         else
         {
-          *((__IO uint16_t *)&hspi->Instance->TXDR) = *((uint16_t *)hspi->pTxBuffPtr);
+          ((reg_u *)&hspi->Instance->TXDR)->u_reg16 = *((uint16_t *)hspi->pTxBuffPtr);
           hspi->pTxBuffPtr += sizeof(uint16_t);
           hspi->TxXferCount--;
           initial_TxXferCount = hspi->TxXferCount;
@@ -1346,7 +1370,7 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, const uint8_t
         }
         else
         {
-          *((uint16_t *)hspi->pRxBuffPtr) = *((__IO uint16_t *)&hspi->Instance->RXDR);
+          *((uint16_t *)hspi->pRxBuffPtr) = ((reg_u *)&hspi->Instance->RXDR)->u_reg16;
           hspi->pRxBuffPtr += sizeof(uint16_t);
           hspi->RxXferCount--;
           initial_RxXferCount = hspi->RxXferCount;
@@ -1385,7 +1409,7 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, const uint8_t
         }
         else if ((initial_TxXferCount > 1UL) && (hspi->Init.FifoThreshold > SPI_FIFO_THRESHOLD_01DATA))
         {
-          *((__IO uint16_t *)&hspi->Instance->TXDR) = *((uint16_t *)hspi->pTxBuffPtr);
+          ((reg_u *)&hspi->Instance->TXDR)->u_reg16 = *((uint16_t *)hspi->pTxBuffPtr);
           hspi->pTxBuffPtr += sizeof(uint16_t);
           hspi->TxXferCount -= (uint16_t)2UL;
           initial_TxXferCount = hspi->TxXferCount;
@@ -1411,7 +1435,7 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, const uint8_t
         }
         else if ((hspi->Instance->SR & SPI_FLAG_FRLVL) > SPI_RX_FIFO_1PACKET)
         {
-          *((uint16_t *)hspi->pRxBuffPtr) = *((__IO uint16_t *)&hspi->Instance->RXDR);
+          *((uint16_t *)hspi->pRxBuffPtr) = ((reg_u *)&hspi->Instance->RXDR)->u_reg16;
           hspi->pRxBuffPtr += sizeof(uint16_t);
           hspi->RxXferCount -= (uint16_t)2UL;
           initial_RxXferCount = hspi->RxXferCount;
@@ -2783,7 +2807,7 @@ void HAL_SPI_IRQHandler(SPI_HandleTypeDef *hspi)
           /* Receive data in 16 Bit mode */
           else if (hspi->Init.DataSize > SPI_DATASIZE_8BIT)
           {
-            *((uint16_t *)hspi->pRxBuffPtr) = *((__IO uint16_t *)&hspi->Instance->RXDR);
+            *((uint16_t *)hspi->pRxBuffPtr) = ((reg_u *)&hspi->Instance->RXDR)->u_reg16;
             hspi->pRxBuffPtr += sizeof(uint16_t);
           }
           /* Receive data in 8 Bit mode */
@@ -3431,7 +3455,7 @@ static void SPI_RxISR_8BIT(SPI_HandleTypeDef *hspi)
 static void SPI_RxISR_16BIT(SPI_HandleTypeDef *hspi)
 {
   /* Receive data in 16 Bit mode */
-  *((uint16_t *)hspi->pRxBuffPtr) = (*(__IO uint16_t *)&hspi->Instance->RXDR);
+  *((uint16_t *)hspi->pRxBuffPtr) = ((reg_u *)&hspi->Instance->RXDR)->u_reg16;
   hspi->pRxBuffPtr += sizeof(uint16_t);
   hspi->RxXferCount--;
 
@@ -3541,7 +3565,7 @@ static void SPI_TxISR_8BIT(SPI_HandleTypeDef *hspi)
 static void SPI_TxISR_16BIT(SPI_HandleTypeDef *hspi)
 {
   /* Transmit data in 16 Bit mode */
-  *((__IO uint16_t *)&hspi->Instance->TXDR) = *((uint16_t *)hspi->pTxBuffPtr);
+  ((reg_u *)&hspi->Instance->TXDR)->u_reg16 = *((uint16_t *)hspi->pTxBuffPtr);
   hspi->pTxBuffPtr += sizeof(uint16_t);
   hspi->TxXferCount--;
 
