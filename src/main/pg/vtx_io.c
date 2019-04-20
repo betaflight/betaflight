@@ -38,37 +38,14 @@ PG_REGISTER_WITH_RESET_FN(vtxIOConfig_t, vtxIOConfig, PG_VTX_IO_CONFIG, 0);
 void pgResetFn_vtxIOConfig(vtxIOConfig_t *vtxIOConfig)
 {
     // common
-
-#ifdef RTC6705_CS_PIN
     vtxIOConfig->csTag = IO_TAG(RTC6705_CS_PIN);
-#else
-    vtxIOConfig->csTag = IO_TAG_NONE;
-#endif
-
-#ifdef RTC6705_POWER_PIN
     vtxIOConfig->powerTag = IO_TAG(RTC6705_POWER_PIN);
-#else
-    vtxIOConfig->powerTag = IO_TAG_NONE;
-#endif
 
     // software SPI
-
-#ifdef RTC6705_SPICLK_PIN
     vtxIOConfig->clockTag = IO_TAG(RTC6705_SPICLK_PIN);
-#else
-    vtxIOConfig->clockTag = IO_TAG_NONE;
-#endif
-
-#ifdef RTC6705_SPI_MOSI_PIN
     vtxIOConfig->dataTag = IO_TAG(RTC6705_SPI_MOSI_PIN);
-#else
-    vtxIOConfig->dataTag = IO_TAG_NONE;
-#endif
 
     // hardware spi
-
-#ifdef RTC6705_SPI_INSTANCE
     vtxIOConfig->spiDevice = SPI_DEV_TO_CFG(spiDeviceByInstance(RTC6705_SPI_INSTANCE));
-#endif
 }
 #endif
