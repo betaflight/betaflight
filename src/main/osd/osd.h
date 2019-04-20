@@ -26,7 +26,7 @@
 
 #include "sensors/esc_sensor.h"
 
-#define OSD_NUM_TIMER_TYPES 3
+#define OSD_NUM_TIMER_TYPES 4
 extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 
 #define OSD_ELEMENT_BUFFER_LENGTH 32
@@ -180,6 +180,7 @@ typedef enum {
     OSD_TIMER_SRC_ON,
     OSD_TIMER_SRC_TOTAL_ARMED,
     OSD_TIMER_SRC_LAST_ARMED,
+    OSD_TIMER_SRC_ON_OR_ARMED,
     OSD_TIMER_SRC_COUNT
 } osd_timer_source_e;
 
@@ -203,6 +204,8 @@ typedef enum {
     OSD_WARNING_LAUNCH_CONTROL,
     OSD_WARNING_GPS_RESCUE_UNAVAILABLE,
     OSD_WARNING_GPS_RESCUE_DISABLED,
+    OSD_WARNING_RSSI,
+    OSD_WARNING_LINK_QUALITY,
     OSD_WARNING_COUNT // MUST BE LAST
 } osdWarningsFlags_e;
 
@@ -214,6 +217,8 @@ STATIC_ASSERT(OSD_WARNING_COUNT <= 32, osdwarnings_overflow);
 #define ESC_CURRENT_ALARM_OFF -1
 
 #define OSD_GPS_RESCUE_DISABLED_WARNING_DURATION_US 3000000 // 3 seconds
+
+extern const uint16_t osdTimerDefault[OSD_TIMER_COUNT];
 
 typedef struct osdConfig_s {
     uint16_t item_pos[OSD_ITEM_COUNT];
@@ -238,6 +243,7 @@ typedef struct osdConfig_s {
     uint8_t ahInvert;         // invert the artificial horizon
     uint8_t osdProfileIndex;
     uint8_t overlay_radio_mode;
+    uint8_t link_quality_alarm;
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);

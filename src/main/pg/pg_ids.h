@@ -141,7 +141,8 @@
 #define PG_RPM_FILTER_CONFIG 544
 #define PG_LED_STRIP_STATUS_MODE_CONFIG 545 // Used to hold the configuration for the LED_STRIP status mode (not built on targets with limited flash)
 #define PG_VTX_TABLE_CONFIG 546
-#define PG_BETAFLIGHT_END 546
+#define PG_STATS_CONFIG 547
+#define PG_BETAFLIGHT_END 547
 
 
 // OSD configuration (subject to change)

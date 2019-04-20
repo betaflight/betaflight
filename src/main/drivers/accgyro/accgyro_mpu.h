@@ -218,7 +218,7 @@ void mpuGyroInit(struct gyroDev_s *gyro);
 bool mpuGyroRead(struct gyroDev_s *gyro);
 bool mpuGyroReadSPI(struct gyroDev_s *gyro);
 void mpuPreInit(const struct gyroDeviceConfig_s *config);
-void mpuDetect(struct gyroDev_s *gyro, const struct gyroDeviceConfig_s *config);
+bool mpuDetect(struct gyroDev_s *gyro, const struct gyroDeviceConfig_s *config);
 uint8_t mpuGyroDLPF(struct gyroDev_s *gyro);
 uint8_t mpuGyroReadRegister(const busDevice_t *bus, uint8_t reg);
 

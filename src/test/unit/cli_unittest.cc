@@ -17,7 +17,6 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <stdio.h>
 
 #include <limits.h>
 
@@ -55,9 +54,12 @@ extern "C" {
 
     void cliSet(char *cmdline);
     void cliGet(char *cmdline);
-
+    int cliGetSettingIndex(char *name, uint8_t length);
+    
     const clivalue_t valueTable[] = {
-        { "array_unit_test",             VAR_INT8  | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_RESERVED_FOR_TESTING_1, 0 }
+        { "array_unit_test",   VAR_INT8  | MODE_ARRAY  | MASTER_VALUE, .config.array.length = 3,      PG_RESERVED_FOR_TESTING_1, 0 },
+        { "str_unit_test",     VAR_UINT8 | MODE_STRING | MASTER_VALUE, .config.string = { 0, 16, 0 }, PG_RESERVED_FOR_TESTING_1, 0 },
+        { "wos_unit_test",     VAR_UINT8 | MODE_STRING | MASTER_VALUE, .config.string = { 0, 16, STRING_FLAGS_WRITEONCE }, PG_RESERVED_FOR_TESTING_1, 0 },
     };
     const uint16_t valueTableEntryCount = ARRAYLEN(valueTable);
     const lookupTableEntry_t lookupTables[] = {};
@@ -87,21 +89,20 @@ extern "C" {
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
-TEST(CLIUnittest, TestCliSet)
+
+TEST(CLIUnittest, TestCliSetArray)
 {
+    char *str = (char *)"array_unit_test    =   123,  -3  , 1";
+    cliSet(str);
 
-    cliSet((char *)"array_unit_test    =   123,  -3  , 1");
+    const uint16_t index = cliGetSettingIndex(str, 15);
+    EXPECT_LT(index, valueTableEntryCount);
 
-    const clivalue_t cval = {
-        .name = "array_unit_test",
-        .type = MODE_ARRAY | MASTER_VALUE | VAR_INT8,
-        .pgn = PG_RESERVED_FOR_TESTING_1,
-        .offset = 0
-    };
+    const clivalue_t val = valueTable[index];
 
     printf("\n===============================\n");
-    int8_t *data = (int8_t *)cliGetValuePointer(&cval);
-    for(int i=0; i<3; i++){
+    int8_t *data = (int8_t *)cliGetValuePointer(&val);
+    for(int i=0; i < val.config.array.length; i++){
         printf("data[%d] = %d\n", i, data[i]);
     }
     printf("\n===============================\n");
@@ -114,6 +115,82 @@ TEST(CLIUnittest, TestCliSet)
 
     //cliGet((char *)"osd_item_vbat");
     //EXPECT_EQ(false, false);
+}
+
+TEST(CLIUnittest, TestCliSetStringNoFlags)
+{
+    char *str = (char *)"str_unit_test    =   SAMPLE"; 
+    cliSet(str);
+
+    const uint16_t index = cliGetSettingIndex(str, 13);
+    EXPECT_LT(index, valueTableEntryCount);
+
+    const clivalue_t val = valueTable[index];
+
+    printf("\n===============================\n");
+    uint8_t *data = (uint8_t *)cliGetValuePointer(&val);
+    for(int i = 0; i < val.config.string.maxlength && data[i] != 0; i++){
+        printf("data[%d] = %d (%c)\n", i, data[i], data[i]);
+    }
+    printf("\n===============================\n");
+
+
+    EXPECT_EQ('S', data[0]);
+    EXPECT_EQ('A', data[1]);
+    EXPECT_EQ('M', data[2]);
+    EXPECT_EQ('P', data[3]);
+    EXPECT_EQ('L', data[4]);
+    EXPECT_EQ('E', data[5]);
+    EXPECT_EQ(0,   data[6]);
+}
+
+TEST(CLIUnittest, TestCliSetStringWriteOnce)
+{
+    char *str1 = (char *)"wos_unit_test    =   SAMPLE"; 
+    char *str2 = (char *)"wos_unit_test    =   ELPMAS"; 
+    cliSet(str1);
+
+    const uint16_t index = cliGetSettingIndex(str1, 13);
+    EXPECT_LT(index, valueTableEntryCount);
+
+    const clivalue_t val = valueTable[index];
+
+    printf("\n===============================\n");
+    uint8_t *data = (uint8_t *)cliGetValuePointer(&val);
+    for(int i = 0; i < val.config.string.maxlength && data[i] != 0; i++){
+        printf("data[%d] = %d (%c)\n", i, data[i], data[i]);
+    }
+    printf("\n===============================\n");
+
+    EXPECT_EQ('S', data[0]);
+    EXPECT_EQ('A', data[1]);
+    EXPECT_EQ('M', data[2]);
+    EXPECT_EQ('P', data[3]);
+    EXPECT_EQ('L', data[4]);
+    EXPECT_EQ('E', data[5]);
+    EXPECT_EQ(0,   data[6]);
+
+    cliSet(str2);
+
+    EXPECT_EQ('S', data[0]);
+    EXPECT_EQ('A', data[1]);
+    EXPECT_EQ('M', data[2]);
+    EXPECT_EQ('P', data[3]);
+    EXPECT_EQ('L', data[4]);
+    EXPECT_EQ('E', data[5]);
+    EXPECT_EQ(0,   data[6]);
+
+    cliSet(str1);
+
+    EXPECT_EQ('S', data[0]);
+    EXPECT_EQ('A', data[1]);
+    EXPECT_EQ('M', data[2]);
+    EXPECT_EQ('P', data[3]);
+    EXPECT_EQ('L', data[4]);
+    EXPECT_EQ('E', data[5]);
+    EXPECT_EQ(0,   data[6]);
+
+    printf("\n");
 }
 
 // STUBS

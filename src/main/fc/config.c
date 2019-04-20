@@ -52,6 +52,8 @@
 #include "io/serial.h"
 #include "io/gps.h"
 
+#include "osd/osd.h"
+
 #include "pg/beeper.h"
 #include "pg/beeper_dev.h"
 #include "pg/rx.h"
@@ -66,6 +68,8 @@
 #include "sensors/rpm_filter.h"
 
 #include "scheduler/scheduler.h"
+
+static bool configIsDirty; /* someone indicated that the config is modified and it is not yet saved */
 
 pidProfile_t *currentPidProfile;
 
@@ -200,10 +204,6 @@ static void validateAndFixConfig(void)
         //Prevent invalid dynamic lowpass
         if (pidProfilesMutable(i)->dyn_lpf_dterm_min_hz > pidProfilesMutable(i)->dyn_lpf_dterm_max_hz) {
             pidProfilesMutable(i)->dyn_lpf_dterm_min_hz = 0;
-        }
-
-        if (pidProfilesMutable(i)->dyn_lpf_dterm_min_hz > 0) {
-            pidProfilesMutable(i)->dterm_lowpass_hz = 0;
         }
 #endif
 
@@ -465,6 +465,16 @@ static void validateAndFixConfig(void)
     }
 #endif
 
+#if defined(USE_OSD)
+    for (int i = 0; i < OSD_TIMER_COUNT; i++) {
+         const uint16_t t = osdConfig()->timers[i];
+         if (OSD_TIMER_SRC(t) >= OSD_TIMER_SRC_COUNT ||
+                 OSD_TIMER_PRECISION(t) >= OSD_TIMER_PREC_COUNT) {
+             osdConfigMutable()->timers[i] = osdTimerDefault[i];
+         }
+     }
+#endif
+
 #if defined(TARGET_VALIDATECONFIG)
     targetValidateConfiguration();
 #endif
@@ -490,10 +500,6 @@ void validateAndFixGyroConfig(void)
     //Prevent invalid dynamic lowpass filter
     if (gyroConfig()->dyn_lpf_gyro_min_hz > gyroConfig()->dyn_lpf_gyro_max_hz) {
         gyroConfigMutable()->dyn_lpf_gyro_min_hz = 0;
-    }
-
-    if (gyroConfig()->dyn_lpf_gyro_min_hz > 0) {
-        gyroConfigMutable()->gyro_lowpass_hz = 0;
     }
 #endif
 
@@ -627,6 +633,7 @@ static void ValidateAndWriteConfigToEEPROM(bool setConfigured)
     writeConfigToEEPROM();
 
     resumeRxPwmPpmSignal();
+    configIsDirty = false;
 }
 
 void writeEEPROM(void)
@@ -664,6 +671,16 @@ void saveConfigAndNotify(void)
     ValidateAndWriteConfigToEEPROM(true);
     readEEPROM();
     beeperConfirmationBeeps(1);
+}
+
+void setConfigDirty(void)
+{
+    configIsDirty = true;
+}
+
+bool isConfigDirty(void)
+{
+    return configIsDirty;
 }
 
 void changePidProfileFromCellCount(uint8_t cellCount)

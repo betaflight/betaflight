@@ -54,6 +54,7 @@
 #endif
 #define USE_DSHOT
 #define USE_DSHOT_TELEMETRY
+#define USE_DSHOT_TELEMETRY_STATS
 #define USE_RPM_FILTER
 #define I2C3_OVERCLOCK true
 #define USE_GYRO_DATA_ANALYSE
@@ -62,6 +63,7 @@
 #define USE_USB_CDC_HID
 #define USE_USB_MSC
 #define USE_PERSISTENT_MSC_RTC
+#define USE_MCO
 #define USE_DMA_SPEC
 #define USE_TIMER_MGMT
 // Re-enable this after 4.0 has been released, and remove the define from STM32F4DISCOVERY
@@ -79,6 +81,7 @@
 #define USE_FAST_RAM
 #define USE_DSHOT
 #define USE_DSHOT_TELEMETRY
+#define USE_DSHOT_TELEMETRY_STATS
 #define USE_RPM_FILTER
 #define I2C3_OVERCLOCK true
 #define I2C4_OVERCLOCK true
@@ -295,9 +298,11 @@
 #define USE_ESCSERIAL_SIMONK
 #define USE_SERIAL_4WAY_SK_BOOTLOADER
 #define USE_CMS_FAILSAFE_MENU
+#define USE_CMS_GPS_RESCUE_MENU
 #define USE_SMART_FEEDFORWARD
 #define USE_TELEMETRY_SENSORS_DISABLED_DETAILS
 // Re-enable this after 4.0 has been released, and remove the define from STM32F4DISCOVERY
 //#define USE_VTX_TABLE
+#define USE_PERSISTENT_STATS
 #endif
 

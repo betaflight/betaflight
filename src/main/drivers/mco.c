@@ -38,8 +38,15 @@ void mcoInit(const mcoConfig_t *mcoConfig)
     if (mcoConfig->enabled[1]) {
         IO_t io = IOGetByTag(DEFIO_TAG_E(PC9));
         IOInit(io, OWNER_MCO, 2);
+#if defined(STM32F7)
         HAL_RCC_MCOConfig(RCC_MCO2, RCC_MCO2SOURCE_PLLI2SCLK, RCC_MCODIV_4);
         IOConfigGPIOAF(io, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH,  GPIO_NOPULL), GPIO_AF0_MCO);
+#elif defined(STM32F40_41xxx) || defined(STM32F411xE) || defined(STM32F446xx)
+        RCC_MCO2Config(RCC_MCO2Source_PLLI2SCLK, RCC_MCO2Div_4);
+        IOConfigGPIOAF(io, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL), GPIO_AF_MCO);
+#else
+#error Unsupported MCU
+#endif
     }
 }
 #endif

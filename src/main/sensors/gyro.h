@@ -36,18 +36,18 @@ typedef struct gyro_s {
 
 extern gyro_t gyro;
 
-typedef enum {
+enum {
     GYRO_OVERFLOW_CHECK_NONE = 0,
     GYRO_OVERFLOW_CHECK_YAW,
     GYRO_OVERFLOW_CHECK_ALL_AXES
-} gyroOverflowCheck_e;
+};
 
 enum {
     DYN_NOTCH_RANGE_HIGH = 0,
     DYN_NOTCH_RANGE_MEDIUM,
     DYN_NOTCH_RANGE_LOW,
     DYN_NOTCH_RANGE_AUTO
-} ;
+};
 
 #define DYN_NOTCH_RANGE_HZ_HIGH 2000
 #define DYN_NOTCH_RANGE_HZ_MEDIUM 1333
@@ -63,10 +63,20 @@ enum {
 #define GYRO_CONFIG_USE_GYRO_2      1
 #define GYRO_CONFIG_USE_GYRO_BOTH   2
 
-typedef enum {
+enum {
     FILTER_LOWPASS = 0,
     FILTER_LOWPASS2
-} filterSlots;
+};
+
+typedef enum gyroDetectionFlags_e {
+    NO_GYROS_DETECTED = 0,
+    DETECTED_GYRO_1 = (1 << 0),
+#if defined(USE_MULTI_GYRO)
+    DETECTED_GYRO_2 = (1 << 1),
+    DETECTED_BOTH_GYROS = (DETECTED_GYRO_1 | DETECTED_GYRO_2),
+    DETECTED_DUAL_GYROS = (1 << 7), // All gyros are of the same hardware type
+#endif
+} gyroDetectionFlags_t;
 
 typedef struct gyroConfig_s {
     uint8_t  gyroMovementCalibrationThreshold; // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
@@ -125,6 +135,7 @@ bool gyroOverflowDetected(void);
 bool gyroYawSpinDetected(void);
 uint16_t gyroAbsRateDps(int axis);
 uint8_t gyroReadRegister(uint8_t whichSensor, uint8_t reg);
+gyroDetectionFlags_t getGyroDetectionFlags(void);
 #ifdef USE_DYN_LPF
 float dynThrottle(float throttle);
 void dynLpfGyroUpdate(float throttle);

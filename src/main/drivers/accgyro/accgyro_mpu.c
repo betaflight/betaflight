@@ -222,7 +222,8 @@ static gyroSpiDetectFn_t gyroSpiDetectFnTable[] = {
 static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro, const gyroDeviceConfig_t *config)
 {
     SPI_TypeDef *instance = spiInstanceByDevice(SPI_CFG_TO_DEV(config->spiBus));
-    if (!instance) {
+
+    if (!instance || !config->csnTag) {
         return false;
     }
     spiBusSetInstance(&gyro->bus, instance);
@@ -242,9 +243,12 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro, const gyro
         sensor = (gyroSpiDetectFnTable[index])(&gyro->bus);
         if (sensor != MPU_NONE) {
             gyro->mpuDetectionResult.sensor = sensor;
+
             return true;
         }
     }
+
+    // Detection failed, disable CS pin again
 
     spiPreinitByTag(config->csnTag);
 
@@ -261,13 +265,13 @@ void mpuPreInit(const struct gyroDeviceConfig_s *config)
 #endif
 }
 
-void mpuDetect(gyroDev_t *gyro, const gyroDeviceConfig_t *config)
+bool mpuDetect(gyroDev_t *gyro, const gyroDeviceConfig_t *config)
 {
     // MPU datasheet specifies 30ms.
     delay(35);
 
     if (config->bustype == BUSTYPE_NONE) {
-        return;
+        return false;
     }
 
     if (config->bustype == BUSTYPE_GYRO_AUTO) {
@@ -291,7 +295,7 @@ void mpuDetect(gyroDev_t *gyro, const gyroDeviceConfig_t *config)
             inquiryResult &= MPU_INQUIRY_MASK;
             if (ack && inquiryResult == MPUx0x0_WHO_AM_I_CONST) {
                 gyro->mpuDetectionResult.sensor = MPU_3050;
-                return;
+                return true;
             }
 
             sig &= MPU_INQUIRY_MASK;
@@ -301,14 +305,17 @@ void mpuDetect(gyroDev_t *gyro, const gyroDeviceConfig_t *config)
             } else if (sig == MPU6500_WHO_AM_I_CONST) {
                 gyro->mpuDetectionResult.sensor = MPU_65xx_I2C;
             }
-            return;
+            return true;
         }
     }
 #endif
 
 #ifdef USE_SPI_GYRO
     gyro->bus.bustype = BUSTYPE_SPI;
-    detectSPISensorsAndUpdateDetectionResult(gyro, config);
+
+    return detectSPISensorsAndUpdateDetectionResult(gyro, config);
+#else
+    return false;
 #endif
 }
 

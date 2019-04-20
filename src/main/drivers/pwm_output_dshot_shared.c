@@ -202,12 +202,34 @@ FAST_CODE void pwmDshotSetDirectionOutput(
 );
 
 #ifdef USE_DSHOT_TELEMETRY
+#ifdef USE_DSHOT_TELEMETRY_STATS
+void updateDshotTelemetryQuality(dshotTelemetryQuality_t *qualityStats, bool packetValid, timeMs_t currentTimeMs)
+{
+    uint8_t statsBucketIndex = (currentTimeMs / DSHOT_TELEMETRY_QUALITY_BUCKET_MS) % DSHOT_TELEMETRY_QUALITY_BUCKET_COUNT;
+    if (statsBucketIndex != qualityStats->lastBucketIndex) {
+        qualityStats->packetCountSum -= qualityStats->packetCountArray[statsBucketIndex];
+        qualityStats->invalidCountSum -= qualityStats->invalidCountArray[statsBucketIndex];
+        qualityStats->packetCountArray[statsBucketIndex] = 0;
+        qualityStats->invalidCountArray[statsBucketIndex] = 0;
+        qualityStats->lastBucketIndex = statsBucketIndex;
+    }
+    qualityStats->packetCountSum++;
+    qualityStats->packetCountArray[statsBucketIndex]++;
+    if (!packetValid) {
+        qualityStats->invalidCountSum++;
+        qualityStats->invalidCountArray[statsBucketIndex]++;
+    }
+}
+#endif // USE_DSHOT_TELEMETRY_STATS
 
 bool pwmStartDshotMotorUpdate(uint8_t motorCount)
 {
     if (!useDshotTelemetry) {
         return true;
     }
+#ifdef USE_DSHOT_TELEMETRY_STATS
+    const timeMs_t currentTimeMs = millis();
+#endif
     for (int i = 0; i < motorCount; i++) {
         if (dmaMotors[i].hasTelemetry) {
 #ifdef STM32F7
@@ -223,12 +245,18 @@ bool pwmStartDshotMotorUpdate(uint8_t motorCount)
                     value = decodeDshotPacket(dmaMotors[i].dmaBuffer);
                 }
             }
+#ifdef USE_DSHOT_TELEMETRY_STATS
+            bool validTelemetryPacket = false;
+#endif
             if (value != 0xffff) {
                 dmaMotors[i].dshotTelemetryValue = value;
                 dmaMotors[i].dshotTelemetryActive = true;
                 if (i < 4) {
                     DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, i, value);
                 }
+#ifdef USE_DSHOT_TELEMETRY_STATS
+                validTelemetryPacket = true;
+#endif
             } else {
                 dshotInvalidPacketCount++;
                 if (i == 0) {
@@ -236,6 +264,9 @@ bool pwmStartDshotMotorUpdate(uint8_t motorCount)
                 }
             }
             dmaMotors[i].hasTelemetry = false;
+#ifdef USE_DSHOT_TELEMETRY_STATS
+            updateDshotTelemetryQuality(&dmaMotors[i].dshotTelemetryQuality, validTelemetryPacket, currentTimeMs);
+#endif
         } else {
             timeDelta_t usSinceInput = cmpTimeUs(micros(), dmaMotors[i].timer->inputDirectionStampUs);
             if (usSinceInput >= 0 && usSinceInput < dmaMotors[i].dshotTelemetryDeadtimeUs) {
@@ -258,5 +289,22 @@ bool isDshotMotorTelemetryActive(uint8_t motorIndex)
     return dmaMotors[motorIndex].dshotTelemetryActive;
 }
 
-#endif
-#endif
+#ifdef USE_DSHOT_TELEMETRY_STATS
+int16_t getDshotTelemetryMotorInvalidPercent(uint8_t motorIndex)
+{
+    int16_t invalidPercent = 0;
+
+    if (dmaMotors[motorIndex].dshotTelemetryActive) {
+        const uint32_t totalCount = dmaMotors[motorIndex].dshotTelemetryQuality.packetCountSum;
+        const uint32_t invalidCount = dmaMotors[motorIndex].dshotTelemetryQuality.invalidCountSum;
+        if (totalCount > 0) {
+            invalidPercent = lrintf(invalidCount * 10000.0f / totalCount);
+        }
+    } else {
+        invalidPercent = 10000;  // 100.00%
+    }
+    return invalidPercent;
+}
+#endif // USE_DSHOT_TELEMETRY_STATS
+#endif // USE_DSHOT_TELEMETRY
+#endif // USE_DSHOT

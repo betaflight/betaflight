@@ -71,7 +71,8 @@ typedef enum {
 typedef enum {
     PID_CRASH_RECOVERY_OFF = 0,
     PID_CRASH_RECOVERY_ON,
-    PID_CRASH_RECOVERY_BEEP
+    PID_CRASH_RECOVERY_BEEP,
+    PID_CRASH_RECOVERY_DISARM,
 } pidCrashRecovery_e;
 
 typedef struct pidf_s {
@@ -139,7 +140,6 @@ typedef struct pidProfile_s {
     uint8_t throttle_boost;                 // how much should throttle be boosted during transient changes 0-100, 100 adds 10x hpf filtered throttle
     uint8_t throttle_boost_cutoff;          // Which cutoff frequency to use for throttle boost. higher cutoffs keep the boost on for shorter. Specified in hz.
     uint8_t iterm_rotation;                 // rotates iterm to translate world errors to local coordinate system
-    uint8_t smart_feedforward;              // takes only the larger of P and the D weight feed forward term if they have the same sign.
     uint8_t iterm_relax_type;               // Specifies type of relax algorithm
     uint8_t iterm_relax_cutoff;             // This cutoff frequency specifies a low pass filter which predicts average response of the quad to setpoint
     uint8_t iterm_relax;                    // Enable iterm suppression during stick input

@@ -116,8 +116,9 @@ typedef struct {
     bool isAvailable;
 } rescueState_s;
 
-#define GPS_RESCUE_MAX_YAW_RATE       180  // deg/sec max yaw rate
-#define GPS_RESCUE_RATE_SCALE_DEGREES 45   // Scale the commanded yaw rate when the error is less then this angle
+#define GPS_RESCUE_MAX_YAW_RATE         180 // deg/sec max yaw rate
+#define GPS_RESCUE_RATE_SCALE_DEGREES    45 // Scale the commanded yaw rate when the error is less then this angle
+#define GPS_RESCUE_SLOWDOWN_DISTANCE_M  200 // distance from home to start decreasing speed
 
 PG_REGISTER_WITH_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 1);
 
@@ -140,7 +141,9 @@ PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
     .minSats = 8,
     .minRescueDth = 100,
     .allowArmingWithoutFix = false,
-    .useMag = true
+    .useMag = true,
+    .targetLandingAltitudeM = 5,
+    .targetLandingDistanceM = 10,
 );
 
 static uint16_t rescueThrottle;
@@ -470,8 +473,11 @@ static bool checkGPSRescueIsAvailable(void)
 */
 void updateGPSRescueState(void)
 {
-    static uint16_t descentDistance;
-    
+    static uint16_t newDescentDistanceM;
+    static float_t lineSlope;
+    static float_t lineOffsetM;
+    static int32_t newSpeed;
+
     if (!FLIGHT_MODE(GPS_RESCUE_MODE)) {
         rescueStop();
     } else if (FLIGHT_MODE(GPS_RESCUE_MODE) && rescueState.phase == RESCUE_IDLE) {
@@ -513,12 +519,17 @@ void updateGPSRescueState(void)
             // When not in failsafe mode: leave it up to the sanity check setting.
         }
         
+        newSpeed = gpsRescueConfig()->rescueGroundspeed;
         //set new descent distance if actual distance to home is lower 
         if (rescueState.sensor.distanceToHomeM < gpsRescueConfig()->descentDistanceM) {
-            descentDistance = rescueState.sensor.distanceToHomeM - 5;
+            newDescentDistanceM = rescueState.sensor.distanceToHomeM - 5;
         } else {
-            descentDistance = gpsRescueConfig()->descentDistanceM;
+            newDescentDistanceM = gpsRescueConfig()->descentDistanceM;
         }
+        
+        //Calculate angular coefficient and offset for equation of line from 2 points needed for RESCUE_LANDING_APPROACH
+        lineSlope = ((float)gpsRescueConfig()->initialAltitudeM  - gpsRescueConfig()->targetLandingAltitudeM) / (newDescentDistanceM - gpsRescueConfig()->targetLandingDistanceM);
+        lineOffsetM = gpsRescueConfig()->initialAltitudeM - lineSlope * newDescentDistanceM;
 
         rescueState.phase = RESCUE_ATTAIN_ALT;
         FALLTHROUGH;
@@ -535,7 +546,7 @@ void updateGPSRescueState(void)
         rescueState.intent.maxAngleDeg = 15;
         break;
     case RESCUE_CROSSTRACK:
-        if (rescueState.sensor.distanceToHomeM < descentDistance) {
+        if (rescueState.sensor.distanceToHomeM <= newDescentDistanceM) {
             rescueState.phase = RESCUE_LANDING_APPROACH;
         }
 
@@ -549,19 +560,23 @@ void updateGPSRescueState(void)
         break;
     case RESCUE_LANDING_APPROACH:
         // We are getting close to home in the XY plane, get Z where it needs to be to move to landing phase
-        if (rescueState.sensor.distanceToHomeM < 10 && rescueState.sensor.currentAltitudeCm <= 1000) {
+        if (rescueState.sensor.distanceToHomeM <= gpsRescueConfig()->targetLandingDistanceM && rescueState.sensor.currentAltitudeCm <= gpsRescueConfig()->targetLandingAltitudeM * 100) {
             rescueState.phase = RESCUE_LANDING;
         }
 
         // Only allow new altitude and new speed to be equal or lower than the current values (to prevent parabolic movement on overshoot)
-        const int32_t newAlt = gpsRescueConfig()->initialAltitudeM * 100  * rescueState.sensor.distanceToHomeM / descentDistance;
-        const int32_t newSpeed = gpsRescueConfig()->rescueGroundspeed * rescueState.sensor.distanceToHomeM / descentDistance;
+        const int32_t newAlt = (lineSlope * rescueState.sensor.distanceToHomeM + lineOffsetM) * 100;
+        
+        // Start to decrease proportionally the quad's speed when the distance to home is less or equal than GPS_RESCUE_SLOWDOWN_DISTANCE_M
+        if (rescueState.sensor.distanceToHomeM <= GPS_RESCUE_SLOWDOWN_DISTANCE_M) {
+            newSpeed = gpsRescueConfig()->rescueGroundspeed * rescueState.sensor.distanceToHomeM / GPS_RESCUE_SLOWDOWN_DISTANCE_M;
+        }
 
         rescueState.intent.targetAltitudeCm = constrain(newAlt, 100, rescueState.intent.targetAltitudeCm);
         rescueState.intent.targetGroundspeed = constrain(newSpeed, 100, rescueState.intent.targetGroundspeed);
         rescueState.intent.crosstrack = true;
         rescueState.intent.minAngleDeg = 10;
-        rescueState.intent.maxAngleDeg = 20;
+        rescueState.intent.maxAngleDeg = gpsRescueConfig()->angle;
         break;
     case RESCUE_LANDING:
         // We have reached the XYZ envelope to be considered at "home".  We need to land gently and check our accelerometer for abnormal data.

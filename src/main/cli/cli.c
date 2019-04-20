@@ -52,6 +52,7 @@ extern uint8_t __config_end;
 #include "common/color.h"
 #include "common/maths.h"
 #include "common/printf.h"
+#include "common/printf_serial.h"
 #include "common/strtol.h"
 #include "common/time.h"
 #include "common/typeconversion.h"
@@ -74,6 +75,7 @@ extern uint8_t __config_end;
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 #include "drivers/light_led.h"
+#include "drivers/pwm_output.h"
 #include "drivers/rangefinder/rangefinder_hcsr04.h"
 #include "drivers/sdcard.h"
 #include "drivers/sensor.h"
@@ -537,6 +539,10 @@ static void printValuePointer(const clivalue_t *var, const void *valuePointer, b
             } else {
                 cliPrintf("OFF");
             }
+            break;
+        case MODE_STRING: 
+            cliPrintf("%s", (char *)valuePointer);
+            break;
         }
 
         if (valueIsCorrupted) {
@@ -755,7 +761,6 @@ static void cliSetVar(const clivalue_t *var, const uint32_t value)
             }
             *(uint32_t *)ptr = workValue;
             break;
-
         }
     } else {
         switch (var->type & VALUE_TYPE_MASK) {
@@ -3949,6 +3954,19 @@ static uint8_t getWordLength(char *bufBegin, char *bufEnd)
     return bufEnd - bufBegin;
 }
 
+uint16_t cliGetSettingIndex(char *name, uint8_t length) 
+{
+    for (uint32_t i = 0; i < valueTableEntryCount; i++) {
+        const char *settingName = valueTable[i].name;
+
+        // ensure exact match when setting to prevent setting variables with shorter names
+        if (strncasecmp(name, settingName, strlen(settingName)) == 0 && length == strlen(settingName)) {
+            return i;
+        }
+    }
+    return valueTableEntryCount;
+}
+
 STATIC_UNIT_TESTED void cliSet(char *cmdline)
 {
     const uint32_t len = strlen(cmdline);
@@ -3972,140 +3990,157 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
         eqptr++;
         eqptr = skipSpace(eqptr);
 
-        for (uint32_t i = 0; i < valueTableEntryCount; i++) {
-            const clivalue_t *val = &valueTable[i];
-
-            // ensure exact match when setting to prevent setting variables with shorter names
-            if (strncasecmp(cmdline, val->name, strlen(val->name)) == 0 && variableNameLength == strlen(val->name)) {
-
-                bool valueChanged = false;
-                int16_t value  = 0;
-                switch (val->type & VALUE_MODE_MASK) {
-                case MODE_DIRECT: {
-                        if ((val->type & VALUE_TYPE_MASK) == VAR_UINT32) {
-                            uint32_t value = strtol(eqptr, NULL, 10);
-
-                            if (value <= val->config.u32Max) {
-                                cliSetVar(val, value);
-                                valueChanged = true;
-                            }
-                        } else {
-                            int value = atoi(eqptr);
-
-                            int min;
-                            int max;
-                            getMinMax(val, &min, &max);
-
-                            if (value >= min && value <= max) {
-                                cliSetVar(val, value);
-                                valueChanged = true;
-                            }
-                        }
-                    }
-
-                    break;
-                case MODE_LOOKUP: 
-                case MODE_BITSET: {
-                        int tableIndex;
-                        if ((val->type & VALUE_MODE_MASK) == MODE_BITSET) {
-                            tableIndex = TABLE_OFF_ON;
-                        } else {
-                            tableIndex = val->config.lookup.tableIndex;
-                        }
-                        const lookupTableEntry_t *tableEntry = &lookupTables[tableIndex];
-                        bool matched = false;
-                        for (uint32_t tableValueIndex = 0; tableValueIndex < tableEntry->valueCount && !matched; tableValueIndex++) {
-                            matched = tableEntry->values[tableValueIndex] && strcasecmp(tableEntry->values[tableValueIndex], eqptr) == 0;
-
-                            if (matched) {
-                                value = tableValueIndex;
-
-                                cliSetVar(val, value);
-                                valueChanged = true;
-                            }
-                        }
-                    }
-
-                    break;
-
-                case MODE_ARRAY: {
-                        const uint8_t arrayLength = val->config.array.length;
-                        char *valPtr = eqptr;
-
-                        int i = 0;
-                        while (i < arrayLength && valPtr != NULL) {
-                            // skip spaces
-                            valPtr = skipSpace(valPtr);
-
-                            // process substring starting at valPtr
-                            // note: no need to copy substrings for atoi()
-                            //       it stops at the first character that cannot be converted...
-                            switch (val->type & VALUE_TYPE_MASK) {
-                            default:
-                            case VAR_UINT8:
-                                {
-                                    // fetch data pointer
-                                    uint8_t *data = (uint8_t *)cliGetValuePointer(val) + i;
-                                    // store value
-                                    *data = (uint8_t)atoi((const char*) valPtr);
-                                }
-
-                                break;
-                            case VAR_INT8:
-                                {
-                                    // fetch data pointer
-                                    int8_t *data = (int8_t *)cliGetValuePointer(val) + i;
-                                    // store value
-                                    *data = (int8_t)atoi((const char*) valPtr);
-                                }
-
-                                break;
-                            case VAR_UINT16:
-                                {
-                                    // fetch data pointer
-                                    uint16_t *data = (uint16_t *)cliGetValuePointer(val) + i;
-                                    // store value
-                                    *data = (uint16_t)atoi((const char*) valPtr);
-                                }
-
-                                break;
-                            case VAR_INT16:
-                                {
-                                    // fetch data pointer
-                                    int16_t *data = (int16_t *)cliGetValuePointer(val) + i;
-                                    // store value
-                                    *data = (int16_t)atoi((const char*) valPtr);
-                                }
-
-                                break;
-                            }
-
-                            // find next comma (or end of string)
-                            valPtr = strchr(valPtr, ',') + 1;
-
-                            i++;
-                        }
-                    }
-
-                    // mark as changed
-                    valueChanged = true;
-
-                    break;
-
-                }
-
-                if (valueChanged) {
-                    cliPrintf("%s set to ", val->name);
-                    cliPrintVar(val, 0);
-                } else {
-                    cliPrintErrorLinef("INVALID VALUE");
-                    cliPrintVarRange(val);
-                }
-
-                return;
-            }
+        const uint16_t index = cliGetSettingIndex(cmdline, variableNameLength);
+        if (index >= valueTableEntryCount) {
+            cliPrintErrorLinef("INVALID NAME");
+            return;
         }
-        cliPrintErrorLinef("INVALID NAME");
+        const clivalue_t *val = &valueTable[index];
+
+        bool valueChanged = false;
+        int16_t value  = 0;
+        switch (val->type & VALUE_MODE_MASK) {
+        case MODE_DIRECT: {
+                if ((val->type & VALUE_TYPE_MASK) == VAR_UINT32) {
+                    uint32_t value = strtol(eqptr, NULL, 10);
+
+                    if (value <= val->config.u32Max) {
+                        cliSetVar(val, value);
+                        valueChanged = true;
+                    }
+                } else {
+                    int value = atoi(eqptr);
+
+                    int min;
+                    int max;
+                    getMinMax(val, &min, &max);
+
+                    if (value >= min && value <= max) {
+                        cliSetVar(val, value);
+                        valueChanged = true;
+                    }
+                }
+            }
+
+            break;
+        case MODE_LOOKUP: 
+        case MODE_BITSET: {
+                int tableIndex;
+                if ((val->type & VALUE_MODE_MASK) == MODE_BITSET) {
+                    tableIndex = TABLE_OFF_ON;
+                } else {
+                    tableIndex = val->config.lookup.tableIndex;
+                }
+                const lookupTableEntry_t *tableEntry = &lookupTables[tableIndex];
+                bool matched = false;
+                for (uint32_t tableValueIndex = 0; tableValueIndex < tableEntry->valueCount && !matched; tableValueIndex++) {
+                    matched = tableEntry->values[tableValueIndex] && strcasecmp(tableEntry->values[tableValueIndex], eqptr) == 0;
+
+                    if (matched) {
+                        value = tableValueIndex;
+
+                        cliSetVar(val, value);
+                        valueChanged = true;
+                    }
+                }
+            }
+
+            break;
+
+        case MODE_ARRAY: {
+                const uint8_t arrayLength = val->config.array.length;
+                char *valPtr = eqptr;
+
+                int i = 0;
+                while (i < arrayLength && valPtr != NULL) {
+                    // skip spaces
+                    valPtr = skipSpace(valPtr);
+
+                    // process substring starting at valPtr
+                    // note: no need to copy substrings for atoi()
+                    //       it stops at the first character that cannot be converted...
+                    switch (val->type & VALUE_TYPE_MASK) {
+                    default:
+                    case VAR_UINT8:
+                        {
+                            // fetch data pointer
+                            uint8_t *data = (uint8_t *)cliGetValuePointer(val) + i;
+                            // store value
+                            *data = (uint8_t)atoi((const char*) valPtr);
+                        }
+
+                        break;
+                    case VAR_INT8:
+                        {
+                            // fetch data pointer
+                            int8_t *data = (int8_t *)cliGetValuePointer(val) + i;
+                            // store value
+                            *data = (int8_t)atoi((const char*) valPtr);
+                        }
+
+                        break;
+                    case VAR_UINT16:
+                        {
+                            // fetch data pointer
+                            uint16_t *data = (uint16_t *)cliGetValuePointer(val) + i;
+                            // store value
+                            *data = (uint16_t)atoi((const char*) valPtr);
+                        }
+
+                        break;
+                    case VAR_INT16:
+                        {
+                            // fetch data pointer
+                            int16_t *data = (int16_t *)cliGetValuePointer(val) + i;
+                            // store value
+                            *data = (int16_t)atoi((const char*) valPtr);
+                        }
+
+                        break;
+                    }
+
+                    // find next comma (or end of string)
+                    valPtr = strchr(valPtr, ',') + 1;
+
+                    i++;
+                }
+            }
+
+            // mark as changed
+            valueChanged = true;
+
+            break;
+        case MODE_STRING: {
+                char *valPtr = eqptr;
+                valPtr = skipSpace(valPtr);
+
+                const unsigned int len = strlen(valPtr);
+                const uint8_t min = val->config.string.minlength;
+                const uint8_t max = val->config.string.maxlength;
+                const bool updatable = ((val->config.string.flags & STRING_FLAGS_WRITEONCE) == 0 || 
+                                        strlen((char *)cliGetValuePointer(val)) == 0 || 
+                                        strncmp(valPtr, (char *)cliGetValuePointer(val), len) == 0);
+
+                if (updatable && len > 0 && len <= max) {
+                    memset((char *)cliGetValuePointer(val), 0, max);
+                    if (len >= min && strncmp(valPtr, emptyName, len)) {
+                        strncpy((char *)cliGetValuePointer(val), valPtr, len);
+                    }
+                    valueChanged = true;
+                }
+            }
+            break;
+        }
+
+        if (valueChanged) {
+            cliPrintf("%s set to ", val->name);
+            cliPrintVar(val, 0);
+        } else {
+            cliPrintErrorLinef("INVALID VALUE");
+            cliPrintVarRange(val);
+        }
+
+        return;
     } else {
         // no equals, check for matching variables.
         cliGet(cmdline);
@@ -4232,28 +4267,6 @@ static void cliStatus(char *cmdline)
         cliPrintf(" %s", armingDisableFlagNames[bitpos]);
     }
     cliPrintLinefeed();
-#if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
-    if (useDshotTelemetry) {
-        cliPrintLinef("Dshot reads: %u", readDoneCount);
-        cliPrintLinef("Dshot invalid pkts: %u", dshotInvalidPacketCount);
-        extern uint32_t setDirectionMicros;
-        cliPrintLinef("Dshot irq micros: %u", setDirectionMicros);
-        for (int i = 0; i<getMotorCount(); i++) {
-            cliPrintLinef( "Dshot RPM Motor %u: %u", i, (int)getDshotTelemetry(i));
-        }
-        bool proshot = (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_PROSHOT1000);
-        int modulo = proshot ? MOTOR_NIBBLE_LENGTH_PROSHOT : MOTOR_BITLENGTH;
-        int len = proshot ? 8 : DSHOT_TELEMETRY_INPUT_LEN;
-        for (int i=0; i<len; i++) {
-            cliPrintf("%u ", (int)inputBuffer[i]);
-        }
-        cliPrintLinefeed();
-        for (int i=1; i<len; i+=2) {
-            cliPrintf("%u ", (int)(inputBuffer[i] + modulo - inputBuffer[i-1]) % modulo);
-        }
-        cliPrintLinefeed();
-    }
-#endif
 }
 
 #if defined(USE_TASK_STATISTICS)
@@ -5307,6 +5320,57 @@ static void cliTimer(char *cmdline)
 }
 #endif
 
+#ifdef USE_DSHOT_TELEMETRY
+static void cliDshotTelemetryInfo(char *cmdline)
+{
+    UNUSED(cmdline);
+
+    if (useDshotTelemetry) {
+        cliPrintLinef("Dshot reads: %u", readDoneCount);
+        cliPrintLinef("Dshot invalid pkts: %u", dshotInvalidPacketCount);
+        extern uint32_t setDirectionMicros;
+        cliPrintLinef("Dshot irq micros: %u", setDirectionMicros);
+        cliPrintLinefeed();
+
+#ifdef USE_DSHOT_TELEMETRY_STATS
+        cliPrintLine("Motor     RPM   Invalid");
+        cliPrintLine("=====   =====   =======");
+#else
+        cliPrintLine("Motor     RPM");
+        cliPrintLine("=====   =====");
+#endif
+        for (uint8_t i = 0; i < getMotorCount(); i++) {
+            cliPrintf("%5d   %5d   ", i, (int)getDshotTelemetry(i));
+#ifdef USE_DSHOT_TELEMETRY_STATS
+            if (isDshotMotorTelemetryActive(i)) {
+                const int calcPercent = getDshotTelemetryMotorInvalidPercent(i);
+                cliPrintLinef("%3d.%02d%%", calcPercent / 100, calcPercent % 100);
+            } else {
+                cliPrintLine("NO DATA");
+            }
+#else
+            cliPrintLinefeed();
+#endif
+        }
+        cliPrintLinefeed();
+
+        const bool proshot = (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_PROSHOT1000);
+        const int modulo = proshot ? MOTOR_NIBBLE_LENGTH_PROSHOT : MOTOR_BITLENGTH;
+        const int len = proshot ? 8 : DSHOT_TELEMETRY_INPUT_LEN;
+        for (int i = 0; i < len; i++) {
+            cliPrintf("%u ", (int)inputBuffer[i]);
+        }
+        cliPrintLinefeed();
+        for (int i = 1; i < len; i+=2) {
+            cliPrintf("%u ", (int)(inputBuffer[i] + modulo - inputBuffer[i-1]) % modulo);
+        }
+        cliPrintLinefeed();
+    } else {
+        cliPrintLine("Dshot telemetry not enabled");
+    }
+}
+#endif
+
 static void printConfig(char *cmdline, bool doDiff)
 {
     dumpFlags_t dumpMask = DUMP_MASTER;
@@ -5637,6 +5701,9 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("dma", "show DMA assignments", "show", cliDma),
 #endif
 #endif
+#ifdef USE_DSHOT_TELEMETRY
+    CLI_COMMAND_DEF("dshot_telemetry_info", "disply dshot telemetry info and stats", NULL, cliDshotTelemetryInfo),
+#endif
 #ifdef USE_DSHOT
     CLI_COMMAND_DEF("dshotprog", "program DShot ESC(s)", "<index> <command>+", cliDshotProg),
 #endif
@@ -5648,7 +5715,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("exit", NULL, NULL, cliExit),
     CLI_COMMAND_DEF("feature", "configure features",
         "list\r\n"
-        "\t<+|->[name]", cliFeature),
+        "\t<->[name]", cliFeature),
 #ifdef USE_FLASHFS
     CLI_COMMAND_DEF("flash_erase", "erase flash chip", NULL, cliFlashErase),
     CLI_COMMAND_DEF("flash_info", "show flash chip info", NULL, cliFlashInfo),
@@ -5736,7 +5803,11 @@ const clicmd_t cmdTable[] = {
 #endif
     CLI_COMMAND_DEF("version", "show version", NULL, cliVersion),
 #ifdef USE_VTX_CONTROL
-    CLI_COMMAND_DEF("vtx", "vtx channels on switch", "<index> <aux> <band> <channel> <power> <start> <end>", cliVtx),
+#ifdef MINIMAL_CLI
+    CLI_COMMAND_DEF("vtx", "vtx channels on switch", NULL, cliVtx),
+#else
+    CLI_COMMAND_DEF("vtx", "vtx channels on switch", "<index> <aux_channel> <vtx_band> <vtx_channel> <vtx_power> <start_range> <end_range>", cliVtx),
+#endif
 #endif
 #ifdef USE_VTX_TABLE
     CLI_COMMAND_DEF("vtxtable", "vtx frequency able", "<band> <bandname> <bandletter> <freq> ... <freq>\r\n", cliVtxTable),

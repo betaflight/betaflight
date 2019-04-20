@@ -79,6 +79,7 @@ extern "C" {
     float getRcDeflection(int axis) { return simulatedRcDeflection[axis]; }
     void beeperConfirmationBeeps(uint8_t) { }
     bool isLaunchControlActive(void) {return unitLaunchControlActive; }
+    void disarm(void) { }
 }
 
 pidProfile_t *pidProfile;
@@ -130,7 +131,6 @@ void setDefaultTestSettings(void) {
     pidProfile->throttle_boost = 0;
     pidProfile->throttle_boost_cutoff = 15;
     pidProfile->iterm_rotation = false;
-    pidProfile->smart_feedforward = false,
     pidProfile->iterm_relax = ITERM_RELAX_OFF,
     pidProfile->iterm_relax_cutoff = 11,
     pidProfile->iterm_relax_type = ITERM_RELAX_SETPOINT,

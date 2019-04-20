@@ -65,6 +65,7 @@
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
+#include "fc/stats.h"
 
 #include "msp/msp_serial.h"
 
@@ -318,11 +319,12 @@ void updateArmingStatus(void)
                              && !flight3DConfig()->switched_mode3d
                              && !(getArmingDisableFlags() & ~(ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_THROTTLE));
 
-#ifdef USE_RUNAWAY_TAKEOFF
            if (!IS_RC_MODE_ACTIVE(BOXARM)) {
+#ifdef USE_RUNAWAY_TAKEOFF
                unsetArmingDisabled(ARMING_DISABLED_RUNAWAY_TAKEOFF);
-           }
 #endif
+               unsetArmingDisabled(ARMING_DISABLED_CRASH_DETECTED);
+           }
 
           // If arming is disabled and the ARM switch is on
           if (isArmingDisabled()
@@ -370,8 +372,12 @@ void disarm(void)
 #endif
         flipOverAfterCrashActive = false;
 
+#ifdef USE_PERSISTENT_STATS
+        statsOnDisarm();
+#endif
+
         // if ARMING_DISABLED_RUNAWAY_TAKEOFF is set then we want to play it's beep pattern instead
-        if (!(getArmingDisableFlags() & ARMING_DISABLED_RUNAWAY_TAKEOFF)) {
+        if (!(getArmingDisableFlags() & (ARMING_DISABLED_RUNAWAY_TAKEOFF | ARMING_DISABLED_CRASH_DETECTED))) {
             beeper(BEEPER_DISARMING);      // emit disarm tone
         }
     }
@@ -482,6 +488,10 @@ void tryArm(void)
         }
 #else
         beeper(BEEPER_ARMING);
+#endif
+
+#ifdef USE_PERSISTENT_STATS
+        statsOnArm();
 #endif
 
 #ifdef USE_RUNAWAY_TAKEOFF
@@ -973,7 +983,12 @@ bool processRx(timeUs_t currentTimeUs)
 #endif
 
     pidSetAntiGravityState(IS_RC_MODE_ACTIVE(BOXANTIGRAVITY) || featureIsEnabled(FEATURE_ANTI_GRAVITY));
-    
+
+#ifdef USE_PERSISTENT_STATS
+    /* allow the stats collector to do periodic tasks */
+    statsOnLoop();
+#endif
+
     return true;
 }
 
@@ -1088,6 +1103,15 @@ static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
 #endif
 
     writeMotors();
+
+#ifdef USE_DSHOT_TELEMETRY_STATS
+    if (debugMode == DEBUG_DSHOT_RPM_ERRORS && useDshotTelemetry) {
+        const uint8_t motorCount = MIN(getMotorCount(), 4);
+        for (uint8_t i = 0; i < motorCount; i++) {
+            debug[i] = getDshotTelemetryMotorInvalidPercent(i);
+        }
+    }
+#endif
 
     DEBUG_SET(DEBUG_PIDLOOP, 2, micros() - startTime);
 }

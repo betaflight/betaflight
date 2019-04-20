@@ -316,6 +316,7 @@
 
 #include <string.h>
 #include "stm32f4xx.h"
+#include "drivers/system.h"
 #include "system_stm32f4xx.h"
 #include "platform.h"
 #include "drivers/persistent.h"
@@ -506,6 +507,8 @@ void systemClockSetHSEValue(uint32_t frequency)
 
 void SystemInit(void)
 {
+  initialiseMemorySections();
+
   /* FPU settings ------------------------------------------------------------*/
   #if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
     SCB->CPACR |= ((3UL << 10*2)|(3UL << 11*2));  /* set CP10 and CP11 Full Access */
@@ -853,6 +856,28 @@ uint32_t pllsai_m;
 
 #undef  RCC_PLLSAI_GET_FLAG
 #endif /* STM32F446xx */
+
+    // Configure PLLI2S for 27MHz operation
+    // Use pll_input (1 or 2) to derive multiplier N for
+    // 108MHz (27 * 4) PLLI2SCLK with R divider fixed at 2.
+    // 108MHz will further be prescaled by 4 by mcoInit.
+
+#define PLLI2S_TARGET_FREQ_MHZ (27 * 4)
+#define PLLI2S_R               2
+
+    uint32_t plli2s_n = (PLLI2S_TARGET_FREQ_MHZ * PLLI2S_R) / pll_input;
+
+#ifdef STM32F40_41xxx
+    RCC_PLLI2SConfig(plli2s_n, PLLI2S_R);
+#elif defined(STM32F411xE)
+    RCC_PLLI2SConfig(plli2s_n, PLLI2S_R, pll_m);
+#elif defined(STM32F446xx)
+    RCC_PLLI2SConfig(pll_m, plli2s_n, 2, 2, PLLI2S_R); // M, N, P, Q, R
+#else
+#error Unsupported MCU
+#endif
+
+    RCC_PLLI2SCmd(ENABLE);
 
     SystemCoreClockUpdate();
 }

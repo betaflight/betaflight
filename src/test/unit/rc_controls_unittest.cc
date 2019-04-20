@@ -700,6 +700,7 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController2)
 #endif
 
 extern "C" {
+void setConfigDirty(void) {}
 void saveConfigAndNotify(void) {}
 void initRcProcessing(void) {}
 void changePidProfile(uint8_t) {}

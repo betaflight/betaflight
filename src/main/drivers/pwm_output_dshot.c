@@ -169,7 +169,6 @@ void pwmCompleteDshotMotorUpdate(uint8_t motorCount)
             dmaMotorTimers[i].timerDmaSources = 0;
         }
     }
-    pwmDshotCommandQueueUpdate();
 }
 
 static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
@@ -220,9 +219,9 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 #define DMAINIT dmaInitStruct
 #endif
 
-    dmaStream_t *dmaRef;
+    dmaStream_t *dmaRef = NULL;
 #if defined(STM32F4)
-    uint32_t dmaChannel;
+    uint32_t dmaChannel = 0;
 #endif
 #if defined(USE_DMA_SPEC)
     const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByTimer(timerHardware);

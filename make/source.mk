@@ -46,6 +46,7 @@ COMMON_SRC = \
             fc/hardfaults.c \
             fc/tasks.c \
             fc/runtime_config.c \
+            fc/stats.c \
             io/beeper.c \
             io/piniobox.c \
             io/serial.c \
@@ -122,6 +123,7 @@ COMMON_SRC = \
             cms/cms_menu_blackbox.c \
             cms/cms_menu_builtin.c \
             cms/cms_menu_failsafe.c \
+            cms/cms_menu_gps_rescue.c\
             cms/cms_menu_imu.c \
             cms/cms_menu_ledstrip.c \
             cms/cms_menu_misc.c \
@@ -301,6 +303,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             cms/cms_menu_blackbox.c \
             cms/cms_menu_builtin.c \
             cms/cms_menu_failsafe.c \
+            cms/cms_menu_gps_rescue.c\
             cms/cms_menu_imu.c \
             cms/cms_menu_ledstrip.c \
             cms/cms_menu_misc.c \

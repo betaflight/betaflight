@@ -32,7 +32,7 @@
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/maths.h"
-#include "common/printf.h"
+#include "common/printf_serial.h"
 
 #include "config/config_eeprom.h"
 #include "config/feature.h"
@@ -226,22 +226,6 @@ dispatchEntry_t activateDshotTelemetryEntry =
 
 void init(void)
 {
-#ifdef USE_ITCM_RAM
-    /* Load functions into ITCM RAM */
-    extern uint8_t tcm_code_start;
-    extern uint8_t tcm_code_end;
-    extern uint8_t tcm_code;
-    memcpy(&tcm_code_start, &tcm_code, (size_t) (&tcm_code_end - &tcm_code_start));
-#endif
-
-#ifdef USE_FAST_RAM
-    /* Load FAST_RAM variable intializers into DTCM RAM */
-    extern uint8_t _sfastram_data;
-    extern uint8_t _efastram_data;
-    extern uint8_t _sfastram_idata;
-    memcpy(&_sfastram_data, &_sfastram_idata, (size_t) (&_efastram_data - &_sfastram_data));
-#endif
-
 #ifdef USE_HAL_DRIVER
     HAL_Init();
 #endif
@@ -262,7 +246,9 @@ void init(void)
     }
 #endif
 
-    printfSupportInit();
+#ifdef SERIAL_PORT_COUNT
+    printfSerialInit();
+#endif
 
     systemInit();
 

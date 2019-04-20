@@ -50,10 +50,16 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 #if defined(OMNIBUSF4SD) || defined(EXUAVF4PRO)
     DEF_TIM(TIM5,  CH2, PA1,  TIM_USE_MOTOR,               0, 0), // S5_OUT
     DEF_TIM(TIM4,  CH1, PB6,  TIM_USE_LED,                 0, 0), // LED strip for F4 V2 / F4-Pro-0X and later (RCD_CS for F4)
+#elif defined(SYNERGYF4)
+    DEF_TIM(TIM5,  CH2, PA1,  TIM_USE_LED,                 0, 0), // LED strip
 #else
     DEF_TIM(TIM5,  CH2, PA1,  TIM_USE_MOTOR | TIM_USE_LED, 0, 0), // S5_OUT
 #endif
+#if defined(SYNERGYF4)
+    DEF_TIM(TIM1,  CH1, PA8,  TIM_USE_CAMERA_CONTROL,      0, 0), // CAM_CTL
+#else
     DEF_TIM(TIM1,  CH1, PA8,  TIM_USE_MOTOR,               0, 0), // S6_OUT
+#endif
     DEF_TIM(TIM1,  CH2, PA9,  TIM_USE_NONE,                0, 0), // UART1_TX
     DEF_TIM(TIM1,  CH3, PA10, TIM_USE_NONE,                0, 0), // UART1_RX
 };
