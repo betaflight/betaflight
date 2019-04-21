@@ -296,6 +296,8 @@ static char osdGetTimerSymbol(osd_timer_source_e src)
     case OSD_TIMER_SRC_TOTAL_ARMED:
     case OSD_TIMER_SRC_LAST_ARMED:
         return SYM_FLY_M;
+    case OSD_TIMER_SRC_ON_OR_ARMED:
+        return ARMING_FLAG(ARMED) ? SYM_FLY_M : SYM_ON_M;
     default:
         return ' ';
     }
@@ -312,6 +314,8 @@ static timeUs_t osdGetTimerValue(osd_timer_source_e src)
         statistic_t *stats = osdGetStats();
         return stats->armed_time;
     }
+    case OSD_TIMER_SRC_ON_OR_ARMED:
+        return ARMING_FLAG(ARMED) ? osdFlyTime : micros();
     default:
         return 0;
     }
@@ -674,7 +678,7 @@ static void osdElementFlymode(osdElementParms_t *element)
     //  5. ACRO
 
     if (FLIGHT_MODE(FAILSAFE_MODE)) {
-        strcpy(element->buff, "!FS!");
+        strcpy(element->buff, "*FS*");
     } else if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
         strcpy(element->buff, "RESC");
     } else if (FLIGHT_MODE(HEADFREE_MODE)) {
@@ -846,8 +850,14 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
 
 static void osdElementMainBatteryVoltage(osdElementParms_t *element)
 {
+    const int batteryVoltage = (getBatteryVoltage() + 5) / 10;
+
     element->buff[0] = osdGetBatterySymbol(getBatteryAverageCellVoltage());
-    tfp_sprintf(element->buff + 1, "%2d.%02d%c", getBatteryVoltage() / 100, getBatteryVoltage() % 100, SYM_VOLT);
+    if (batteryVoltage >= 100) {
+        tfp_sprintf(element->buff + 1, "%d.%d%c", batteryVoltage / 10, batteryVoltage % 10, SYM_VOLT);
+    } else {
+        tfp_sprintf(element->buff + 1, "%d.%d0%c", batteryVoltage / 10, batteryVoltage % 10, SYM_VOLT);
+    }
 }
 
 static void osdElementMotorDiagnostics(osdElementParms_t *element)
@@ -1020,7 +1030,7 @@ static void osdElementVtxChannel(osdElementParms_t *element)
 
 static void osdElementWarnings(osdElementParms_t *element)
 {
-#define OSD_WARNINGS_MAX_SIZE 11
+#define OSD_WARNINGS_MAX_SIZE 12
 #define OSD_FORMAT_MESSAGE_BUFFER_SIZE (OSD_WARNINGS_MAX_SIZE + 1)
 
     STATIC_ASSERT(OSD_FORMAT_MESSAGE_BUFFER_SIZE <= OSD_ELEMENT_BUFFER_LENGTH, osd_warnings_size_exceeds_buffer_size);
@@ -1111,6 +1121,22 @@ static void osdElementWarnings(osdElementParms_t *element)
         return;
     }
 #endif // USE_LAUNCH_CONTROL
+
+    // RSSI
+    if (osdWarnGetState(OSD_WARNING_RSSI) && (getRssiPercent() < osdConfig()->rssi_alarm)) {
+        osdFormatMessage(element->buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "RSSI LOW");
+        SET_BLINK(OSD_WARNINGS);
+        return;
+    }
+
+#ifdef USE_RX_LINK_QUALITY_INFO
+    // Link Quality
+    if (osdWarnGetState(OSD_WARNING_LINK_QUALITY) && (rxGetLinkQualityPercent() < osdConfig()->link_quality_alarm)) {
+        osdFormatMessage(element->buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "LINK QUALITY");
+        SET_BLINK(OSD_WARNINGS);
+        return;
+    }
+#endif // USE_RX_LINK_QUALITY_INFO
 
     if (osdWarnGetState(OSD_WARNING_BATTERY_CRITICAL) && batteryState == BATTERY_CRITICAL) {
         osdFormatMessage(element->buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, " LAND NOW");
@@ -1442,7 +1468,7 @@ void osdAnalyzeActiveElements(void)
         osdAddActiveElement(OSD_FLIGHT_DIST);
     }
 #endif // GPS
-#ifdef USE_ESC_SENSOR  	
+#ifdef USE_ESC_SENSOR
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
         osdAddActiveElement(OSD_ESC_TMP);
     }
@@ -1519,6 +1545,14 @@ void osdUpdateAlarms(void)
     } else {
         CLR_BLINK(OSD_RSSI_VALUE);
     }
+
+#ifdef USE_RX_LINK_QUALITY_INFO
+    if (rxGetLinkQualityPercent() < osdConfig()->link_quality_alarm) {
+        SET_BLINK(OSD_LINK_QUALITY);
+    } else {
+        CLR_BLINK(OSD_LINK_QUALITY);
+    }
+#endif // USE_RX_LINK_QUALITY_INFO
 
     if (getBatteryState() == BATTERY_OK) {
         CLR_BLINK(OSD_MAIN_BATT_VOLTAGE);

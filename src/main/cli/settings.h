@@ -160,17 +160,18 @@ typedef enum {
     PROFILE_RATE_VALUE = (2 << VALUE_SECTION_OFFSET),
     HARDWARE_VALUE = (3 << VALUE_SECTION_OFFSET), // Part of the master section, but used for the hardware definition
 
-    // value mode, bits 5-6
+    // value mode, bits 5-7
     MODE_DIRECT = (0 << VALUE_MODE_OFFSET),
     MODE_LOOKUP = (1 << VALUE_MODE_OFFSET),
     MODE_ARRAY = (2 << VALUE_MODE_OFFSET),
-    MODE_BITSET = (3 << VALUE_MODE_OFFSET)
+    MODE_BITSET = (3 << VALUE_MODE_OFFSET),
+    MODE_STRING = (4 << VALUE_MODE_OFFSET),
 } cliValueFlag_e;
 
 
 #define VALUE_TYPE_MASK (0x07)
 #define VALUE_SECTION_MASK (0x18)
-#define VALUE_MODE_MASK (0x60)
+#define VALUE_MODE_MASK (0xE0)
 
 typedef struct cliMinMaxConfig_s {
     const int16_t min;
@@ -190,18 +191,28 @@ typedef struct cliArrayLengthConfig_s {
     const uint8_t length;
 } cliArrayLengthConfig_t;
 
+typedef struct cliStringLengthConfig_s {
+    const uint8_t minlength;
+    const uint8_t maxlength;
+    const uint8_t flags;
+} cliStringLengthConfig_t;
+
+#define STRING_FLAGS_NONE      (0)
+#define STRING_FLAGS_WRITEONCE (1 << 0)
+
 typedef union {
     cliLookupTableConfig_t lookup;            // used for MODE_LOOKUP excl. VAR_UINT32
     cliMinMaxConfig_t minmax;                 // used for MODE_DIRECT with signed parameters
     cliMinMaxUnsignedConfig_t minmaxUnsigned; // used for MODE_DIRECT with unsigned parameters
     cliArrayLengthConfig_t array;             // used for MODE_ARRAY
+    cliStringLengthConfig_t string;           // used for MODE_STRING
     uint8_t bitpos;                           // used for MODE_BITSET
-    uint32_t u32Max;               // used for MODE_DIRECT with VAR_UINT32
+    uint32_t u32Max;                          // used for MODE_DIRECT with VAR_UINT32
 } cliValueConfig_t;
 
 typedef struct clivalue_s {
     const char *name;
-    const uint8_t type; // see cliValueFlag_e
+    const uint8_t type;                       // see cliValueFlag_e
     const cliValueConfig_t config;
 
     pgn_t pgn;
