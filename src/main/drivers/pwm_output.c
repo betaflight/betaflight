@@ -673,8 +673,11 @@ FAST_CODE uint16_t prepareDshotPacket(motorDmaOutput_t *const motor)
         csum ^=  csum_data;   // xor data by nibbles
         csum_data >>= 4;
     }
-    csum &= 0xf;
     // append checksum
+    if (useDshotTelemetry) {
+        csum = ~csum;
+    }
+    csum &= 0xf;
     packet = (packet << 4) | csum;
 
     return packet;
