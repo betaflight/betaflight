@@ -2185,7 +2185,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #else
             sbufReadU8(src);
 #endif
-	}	
+	}
         pidInitConfig(currentPidProfile);
 
         break;
