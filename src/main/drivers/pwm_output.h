@@ -125,13 +125,21 @@ typedef enum {
 typedef struct {
     TIM_TypeDef *timer;
 #if defined(USE_DSHOT) && defined(USE_DSHOT_DMAR)
+#if defined(STM32F7) || defined(STM32H7)
+    TIM_HandleTypeDef timHandle;
+    DMA_HandleTypeDef hdma_tim;
+#endif
 #ifdef STM32F3
     DMA_Channel_TypeDef *dmaBurstRef;
 #else
     DMA_Stream_TypeDef *dmaBurstRef;
 #endif
     uint16_t dmaBurstLength;
+#ifdef STM32H7
+    uint32_t *dmaBurstBuffer;
+#else
     uint32_t dmaBurstBuffer[DSHOT_DMA_BUFFER_SIZE * 4];
+#endif
     timeUs_t inputDirectionStampUs;
 #endif
     uint16_t timerDmaSources;
@@ -143,7 +151,12 @@ typedef struct {
     uint16_t value;
 #ifdef USE_DSHOT
     uint16_t timerDmaSource;
+    uint8_t timerDmaIndex;
     bool configured;
+#ifdef STM32H7
+    TIM_HandleTypeDef TimHandle;
+    DMA_HandleTypeDef hdma_tim;
+#endif
     uint8_t output;
     uint8_t index;
 #ifdef USE_DSHOT_TELEMETRY
@@ -178,6 +191,8 @@ typedef struct {
 #else
 #if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
     uint32_t dmaBuffer[DSHOT_DMA_BUFFER_SIZE];
+#elif defined(STM32H7)
+    uint32_t *dmaBuffer;
 #else
     uint8_t dmaBuffer[DSHOT_DMA_BUFFER_SIZE];
 #endif
@@ -241,6 +256,13 @@ bool isMotorProtocolDshot(void);
 typedef uint8_t loadDmaBufferFn(uint32_t *dmaBuffer, int stride, uint16_t packet);  // function pointer used to encode a digital motor value into the DMA buffer representation
 
 uint16_t prepareDshotPacket(motorDmaOutput_t *const motor);
+
+#ifdef STM32H7
+extern DMA_RAM uint32_t dshotDmaBuffer[MAX_SUPPORTED_MOTORS][DSHOT_DMA_BUFFER_SIZE];
+#ifdef USE_DSHOT_DMAR
+extern DMA_RAM uint32_t dshotBurstDmaBuffer[MAX_DMA_TIMERS][DSHOT_DMA_BUFFER_SIZE * 4];
+#endif
+#endif
 
 extern loadDmaBufferFn *loadDmaBuffer;
 

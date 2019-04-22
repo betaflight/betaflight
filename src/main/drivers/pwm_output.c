@@ -42,6 +42,13 @@ static FAST_RAM_ZERO_INIT pwmStartWriteFn *pwmStartWrite = NULL;
 #endif
 
 #ifdef USE_DSHOT
+#ifdef STM32H7
+// XXX dshotDmaBuffer can be embedded inside dshotBurstDmaBuffer
+DMA_RAM uint32_t dshotDmaBuffer[MAX_SUPPORTED_MOTORS][DSHOT_DMA_BUFFER_SIZE];
+#ifdef USE_DSHOT_DMAR
+DMA_RAM uint32_t dshotBurstDmaBuffer[MAX_DMA_TIMERS][DSHOT_DMA_BUFFER_SIZE * 4];
+#endif
+#endif
 FAST_RAM_ZERO_INIT loadDmaBufferFn *loadDmaBuffer;
 #define DSHOT_INITIAL_DELAY_US 10000
 #define DSHOT_COMMAND_DELAY_US 1000
