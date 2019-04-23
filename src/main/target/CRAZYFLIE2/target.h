@@ -95,7 +95,6 @@
 
 #define USE_ACC
 #define USE_ACC_MPU6500
-#define ACC_1_ALIGN             CW270_DEG
 
 #define USE_MAG
 #define USE_MPU9250_MAG // Enables bypass configuration on the MPU9250 I2C bus

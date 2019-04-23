@@ -50,7 +50,6 @@
 #define GYRO_1_CS_PIN           PB12
 #define GYRO_1_SPI_INSTANCE     SPI2
 
-#define ACC_1_ALIGN             CW180_DEG
 #define GYRO_1_ALIGN            CW180_DEG
 
 #define USE_VCP

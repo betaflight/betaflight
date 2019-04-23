@@ -64,8 +64,6 @@
 #define GYRO_2_CS_PIN           PA4
 #define GYRO_1_ALIGN            CW90_DEG
 #define GYRO_2_ALIGN            ALIGN_DEFAULT
-#define ACC_1_ALIGN             CW90_DEG
-#define ACC_2_ALIGN             ALIGN_DEFAULT
 #define GYRO_1_EXTI_PIN         PD0           // MPU6000
 #define GYRO_2_EXTI_PIN         PE8           // ICM20608
 
@@ -75,9 +73,7 @@
 #define GYRO_2_SPI_INSTANCE     SPI3
 #define GYRO_2_CS_PIN           PA15
 #define GYRO_1_ALIGN            CW90_DEG
-#define ACC_1_ALIGN             CW90_DEG
 #define GYRO_2_ALIGN            CW270_DEG
-#define ACC_2_ALIGN             CW270_DEG
 #define GYRO_1_EXTI_PIN         PD0           // Assume the same as OMNIBUSF7V2, need to verify
 #define GYRO_2_EXTI_PIN         PE8           // Ditto
 
@@ -87,9 +83,7 @@
 #define GYRO_2_SPI_INSTANCE     SPI1
 #define GYRO_2_CS_PIN           PA4
 #define GYRO_1_ALIGN            ALIGN_DEFAULT
-#define ACC_1_ALIGN             ALIGN_DEFAULT
 #define GYRO_2_ALIGN            ALIGN_DEFAULT
-#define ACC_2_ALIGN             ALIGN_DEFAULT
 #define GYRO_1_EXTI_PIN         PE8           // ICM20608
 #define GYRO_2_EXTI_PIN         PD0           // MPU6000
 #endif

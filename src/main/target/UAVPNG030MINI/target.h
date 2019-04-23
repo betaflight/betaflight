@@ -39,7 +39,6 @@
 
 // TODO
 #define GYRO_1_ALIGN           CW180_DEG
-#define ACC_1_ALIGN            CW180_DEG
 
 // MPU6000 interrupts
 #define USE_EXTI

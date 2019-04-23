@@ -39,7 +39,6 @@
 
 #define USE_ACC
 #define USE_ACC_MPU6050
-#define ACC_1_ALIGN             CW0_DEG_FLIP
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16

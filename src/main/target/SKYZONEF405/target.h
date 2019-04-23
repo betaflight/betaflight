@@ -56,7 +56,6 @@
 #define GYRO_1_SPI_INSTANCE     SPI1
 
 #define GYRO_1_ALIGN            CW90_DEG
-#define ACC_1_ALIGN             CW90_DEG
 
 #define USE_I2C
 #define USE_I2C_DEVICE_1

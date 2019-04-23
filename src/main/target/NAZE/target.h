@@ -100,7 +100,6 @@
 //#define ACC_ADXL345_ALIGN       CW270_DEG
 //#define ACC_MMA8452_ALIGN       CW90_DEG
 //#define ACC_BMA280_ALIGN        CW0_DEG
-#define ACC_1_ALIGN             CW0_DEG
 
 #define USE_BARO
 #define USE_BARO_MS5611 // needed for Flip32 board

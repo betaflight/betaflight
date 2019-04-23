@@ -49,7 +49,6 @@
 #define GYRO_1_CS_PIN           PB2
 #define GYRO_1_SPI_INSTANCE     SPI1
 #define GYRO_1_ALIGN            CW90_DEG
-#define ACC_1_ALIGN             CW90_DEG
 
 //------ICM20689
 #define USE_GYRO_SPI_ICM20689

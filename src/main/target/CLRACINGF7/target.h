@@ -49,7 +49,6 @@
 #define GYRO_1_SPI_INSTANCE     SPI1
 
 #define GYRO_1_ALIGN            CW0_DEG
-#define ACC_1_ALIGN             CW0_DEG
 
 #define USE_MAG
 #define USE_MAG_HMC5883

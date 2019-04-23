@@ -75,7 +75,6 @@
 //#define LSM303DLHC_I2C_INT1_PIN              PE4
 //#define LSM303DLHC_I2C_INT2_PIN              PE5
 
-#define ACC_1_ALIGN             CW0_DEG
 
 #define USE_BARO
 #define USE_BARO_MS5611

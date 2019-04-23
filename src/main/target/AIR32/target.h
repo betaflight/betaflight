@@ -50,7 +50,6 @@
 #define GYRO_1_SPI_INSTANCE     SPI2
 
 #define GYRO_1_ALIGN            CW180_DEG
-#define ACC_1_ALIGN             CW180_DEG
 
 //#define USE_BARO
 //#define USE_BARO_MS5611

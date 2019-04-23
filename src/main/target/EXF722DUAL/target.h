@@ -55,10 +55,8 @@
 #define USE_ACC_SPI_ICM20689
 
 #define GYRO_1_ALIGN        CW0_DEG
-#define ACC_1_ALIGN         CW0_DEG
 
 #define GYRO_2_ALIGN        CW90_DEG
-#define ACC_2_ALIGN         CW90_DEG
 
 #define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_BOTH
 

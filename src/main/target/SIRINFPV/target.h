@@ -42,14 +42,12 @@
 #define USE_ACC_SPI_MPU6500
 
 // MPU6000
-#define ACC_1_ALIGN             CW180_DEG
 #define GYRO_1_ALIGN            CW180_DEG
 
 #define GYRO_1_CS_PIN           PA4
 #define GYRO_1_SPI_INSTANCE     SPI1
 
 // MPU6500
-//#define ACC_1_ALIGN             CW90_DEG // XXX Must be post-flash configured
 //#define GYRO_1_ALIGN            CW90_DEG // XXX Must be post-flash configured
 
 #define GYRO_1_CS_PIN           PA4

@@ -60,7 +60,6 @@
 #define GYRO_1_CS_PIN             PA4
 #define GYRO_1_SPI_INSTANCE       SPI1
 #define GYRO_1_ALIGN              CW0_DEG
-#define ACC_1_ALIGN               CW0_DEG
 
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI3

@@ -56,12 +56,10 @@
 #define ACC_MPU6000_1_ALIGN           CW270_DEG
 #define GYRO_MPU6000_1_ALIGN          CW270_DEG
 #define GYRO_1_ALIGN                GYRO_MPU6000_1_ALIGN
-#define ACC_1_ALIGN                 ACC_MPU6000_1_ALIGN
 
 #define ACC_ICM20689_2_ALIGN         CW270_DEG
 #define GYRO_ICM20689_2_ALIGN        CW270_DEG
 #define GYRO_2_ALIGN                GYRO_ICM20689_2_ALIGN 
-#define ACC_2_ALIGN                 ACC_ICM20689_2_ALIGN
 
 #define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_2
 

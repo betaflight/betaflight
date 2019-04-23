@@ -42,7 +42,6 @@
 
 #define USE_ACC
 #define USE_ACC_MPU6050
-#define ACC_1_ALIGN             CW90_DEG
 
 #define USE_BARO
 #define USE_BARO_MS5611

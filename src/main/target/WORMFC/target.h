@@ -78,11 +78,6 @@
 // ACC section -- start
 #define USE_ACC
 #define USE_ACC_SPI_MPU6500
-#if defined(PIRXF4)
-#define ACC_1_ALIGN       CW0_DEG
-#else
-#define ACC_1_ALIGN       CW180_DEG_FLIP
-#endif
 // ACC section -- end
 
 // GYRO section -- start

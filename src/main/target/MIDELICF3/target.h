@@ -35,7 +35,6 @@
 
 #define USE_ACC
 #define USE_ACC_MPU6050
-#define ACC_1_ALIGN             CW270_DEG
 
 #define USE_EXTI
 #define USE_GYRO_EXTI
