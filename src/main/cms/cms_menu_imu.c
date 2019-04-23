@@ -48,6 +48,7 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "flight/mixer.h"
 #include "flight/pid.h"
 
 #include "pg/pg.h"
@@ -385,6 +386,7 @@ static long cmsx_profileOtherOnExit(const OSD_Entry *self)
     }
 #endif
 
+    initEscEndpoints();
     return 0;
 }
 
