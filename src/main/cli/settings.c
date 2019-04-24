@@ -455,6 +455,10 @@ static const char * const lookupTableGyroFilterDebug[] = {
     "ROLL", "PITCH", "YAW"
 };
 
+static const char * const lookupTablePositionAltSource[] = {
+    "DEFAULT", "BARO_ONLY", "GPS_ONLY"
+};
+
 #define LOOKUP_TABLE_ENTRY(name) { name, ARRAYLEN(name) }
 
 const lookupTableEntry_t lookupTables[] = {
@@ -566,6 +570,8 @@ const lookupTableEntry_t lookupTables[] = {
 #endif
 
     LOOKUP_TABLE_ENTRY(lookupTableGyroFilterDebug),
+
+    LOOKUP_TABLE_ENTRY(lookupTablePositionAltSource)
 };
 
 #undef LOOKUP_TABLE_ENTRY
@@ -1435,6 +1441,9 @@ const clivalue_t valueTable[] = {
 #ifdef USE_OSD
     { "display_name",     VAR_UINT8  | MASTER_VALUE | MODE_STRING, .config.string = { 1, MAX_NAME_LENGTH, STRING_FLAGS_NONE }, PG_PILOT_CONFIG, offsetof(pilotConfig_t, displayName) },
 #endif
+
+//
+    { "position_alt_source",           VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_POSITION_ALT_SOURCE }, PG_POSITION, offsetof(positionConfig_t, altSource) },
 };
 
 const uint16_t valueTableEntryCount = ARRAYLEN(valueTable);
