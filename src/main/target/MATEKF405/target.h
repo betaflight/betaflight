@@ -20,8 +20,18 @@
 
 #pragma once
 
+#ifdef MATEKF405
 #define TARGET_BOARD_IDENTIFIER "MKF4"
 #define USBD_PRODUCT_STRING  "MatekF4"
+#elif defined(DMAXF405BLE)
+#define TARGET_BOARD_IDENTIFIER "DMX4"
+#define USBD_PRODUCT_STRING "DMAX F405 BLE"
+#endif
+
+#if defined(DMAXF405BLE)
+#define USE_TARGET_CONFIG
+#endif
+
 
 #define LED0_PIN                PB9
 #define LED1_PIN                PA14
@@ -175,6 +185,10 @@
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         (BIT(2))
+
+#if defined(DMAXF405BLE)
+#define PINIO1_PIN PB0
+#endif
 
 #define USABLE_TIMER_CHANNEL_COUNT 12
 #define USED_TIMERS             (TIM_N(1)|TIM_N(2)|TIM_N(3)|TIM_N(4)|TIM_N(5)|TIM_N(8)|TIM_N(9))
