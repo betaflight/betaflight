@@ -447,6 +447,12 @@
 #ifndef BARO_I2C_INSTANCE
 #define BARO_I2C_INSTANCE       I2C_DEVICE
 #endif
+#ifndef BARO_EOC_PIN
+#define BARO_EOC_PIN            NONE
+#endif
+#ifndef BARO_XCLR_PIN
+#define BARO_XCLR_PIN           NONE
+#endif
 #endif
 
 #ifdef USE_ADC

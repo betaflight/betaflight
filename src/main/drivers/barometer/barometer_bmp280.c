@@ -54,6 +54,8 @@ typedef struct bmp280_calib_param_s {
     int16_t dig_P9; /* calibration P9 data */
 } __attribute__((packed)) bmp280_calib_param_t; // packed as we read directly from the device into this structure.
 
+STATIC_ASSERT(sizeof(bmp280_calib_param_t) == BMP280_PRESSURE_TEMPERATURE_CALIB_DATA_LENGTH, bmp280_calibration_structure_incorrectly_packed);
+
 STATIC_UNIT_TESTED int32_t t_fine; /* calibration t_fine data */
 
 static uint8_t bmp280_chip_id = 0;
@@ -71,8 +73,6 @@ STATIC_UNIT_TESTED void bmp280_calculate(int32_t *pressure, int32_t *temperature
 
 void bmp280BusInit(busDevice_t *busdev)
 {
-    STATIC_ASSERT(sizeof(bmp280_calib_param_t) == BMP280_PRESSURE_TEMPERATURE_CALIB_DATA_LENGTH, bmp280_calibration_structure_incorrectly_packed);
-
 #ifdef USE_BARO_SPI_BMP280
     if (busdev->bustype == BUSTYPE_SPI) {
         IOHi(busdev->busdev_u.spi.csnPin); // Disable
