@@ -81,7 +81,11 @@ const timerHardware_t *timerGetByTag(ioTag_t ioTag)
 {
     uint8_t timerIndex = timerIndexByTag(ioTag);
 
-    return timerGetByTagAndIndex(ioTag, timerIndex);
+    if (timerIndex) {
+        return timerGetByTagAndIndex(ioTag, timerIndex);
+    } else {
+        return NULL;
+    }
 }
 
 ioTag_t timerioTagGetByUsage(timerUsageFlag_e usageFlag, uint8_t index)
