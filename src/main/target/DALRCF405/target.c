@@ -37,8 +37,10 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM8, CH3, PC8,  TIM_USE_MOTOR, 0, 0),   // S5 (2,4)  (2.2)
     DEF_TIM(TIM3, CH4, PB1,  TIM_USE_MOTOR, 0, 0),   // S6 (1,2)
 
+#if !defined(VIVAF4AIO)
     DEF_TIM(TIM3, CH2, PC7,  TIM_USE_MOTOR, 0, 0),   // S7 (1,5)
     DEF_TIM(TIM8, CH4, PC9,  TIM_USE_MOTOR, 0, 0),   // S8 (2,7)
+#endif
 
     DEF_TIM(TIM4, CH1, PB6,  TIM_USE_LED, 0, 0),     // LED STRIP(1,0)
 
