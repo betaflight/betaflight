@@ -55,16 +55,18 @@
 #define GYRO_1_SPI_INSTANCE     SPI1
 
 #if defined(VIVAF4AIO)
+//------ICM20602
+# define USE_GYRO_SPI_ICM20602
+# define USE_ACC_SPI_ICM20602
 # define GYRO_1_ALIGN            CW0_DEG
 # define ACC_1_ALIGN             CW0_DEG
 #else
+//------ICM20689
+# define USE_GYRO_SPI_ICM20689
+# define USE_ACC_SPI_ICM20689
 # define GYRO_1_ALIGN            CW90_DEG
 # define ACC_1_ALIGN             CW90_DEG
 #endif
-
-//------ICM20689
-#define USE_GYRO_SPI_ICM20689
-#define USE_ACC_SPI_ICM20689
 
 //------MPU6000
 #define USE_GYRO_SPI_MPU6000
