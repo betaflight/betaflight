@@ -20,8 +20,13 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "DLF4"
-#define USBD_PRODUCT_STRING  "DALRCF405"
+#if defined(VIVAF4AIO)
+# define TARGET_BOARD_IDENTIFIER "VIVA"
+# define USBD_PRODUCT_STRING     "VIVAF405AIO"
+#else
+# define TARGET_BOARD_IDENTIFIER "DLF4"
+# define USBD_PRODUCT_STRING  "DALRCF405"
+#endif
 //----------------------------------------
 
 //LED & BEE------------------------------- 
@@ -48,12 +53,18 @@
 #define USE_ACC
 #define GYRO_1_CS_PIN           PA4
 #define GYRO_1_SPI_INSTANCE     SPI1
-#define GYRO_1_ALIGN            CW90_DEG
-#define ACC_1_ALIGN             CW90_DEG
 
+#if defined(VIVAF4AIO)
+//------ICM20602
+# define USE_GYRO_SPI_ICM20602
+# define USE_ACC_SPI_ICM20602
+# define GYRO_1_ALIGN            CW0_DEG
+#else
 //------ICM20689
-#define USE_GYRO_SPI_ICM20689
-#define USE_ACC_SPI_ICM20689
+# define USE_GYRO_SPI_ICM20689
+# define USE_ACC_SPI_ICM20689
+# define GYRO_1_ALIGN            CW90_DEG
+#endif
 
 //------MPU6000
 #define USE_GYRO_SPI_MPU6000
@@ -151,9 +162,9 @@
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         (BIT(2))
 
-
-#define USABLE_TIMER_CHANNEL_COUNT 11
+#if defined(VIVAF4AIO)
+# define USABLE_TIMER_CHANNEL_COUNT 9
+#else
+# define USABLE_TIMER_CHANNEL_COUNT 11
+#endif
 #define USED_TIMERS             (TIM_N(1)|TIM_N(2)|TIM_N(3)|TIM_N(4)|TIM_N(8)|TIM_N(12))
-
-
-
