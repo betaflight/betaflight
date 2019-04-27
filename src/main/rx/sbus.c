@@ -56,7 +56,13 @@
  * time to send frame: 3ms.
  */
 
-#define SBUS_TIME_NEEDED_PER_FRAME 3000
+#define SBUS_BAUDRATE                 100000
+#define SBUS_RX_REFRESH_RATE          11000
+#define SBUS_TIME_NEEDED_PER_FRAME    3000
+
+#define DJI_HDL_BAUDRATE              200000
+#define DJI_HDL_RX_REFRESH_RATE       6000
+#define DJI_HDL_TIME_NEEDED_PER_FRAME 3000
 
 #define SBUS_STATE_FAILSAFE (1 << 0)
 #define SBUS_STATE_SIGNALLOSS (1 << 1)
@@ -64,8 +70,6 @@
 #define SBUS_FRAME_SIZE (SBUS_CHANNEL_DATA_LENGTH + 2)
 
 #define SBUS_FRAME_BEGIN_BYTE 0x0F
-
-#define SBUS_BAUDRATE 100000
 
 #if !defined(SBUS_PORT_OPTIONS)
 #define SBUS_PORT_OPTIONS (SERIAL_STOPBITS_2 | SERIAL_PARITY_EVEN)
@@ -80,6 +84,7 @@ enum {
     DEBUG_SBUS_FRAME_TIME,
 };
 
+static uint32_t sbusTimeNeededPreFrame = SBUS_TIME_NEEDED_PER_FRAME;
 
 struct sbusFrame_s {
     uint8_t syncByte;
@@ -116,7 +121,7 @@ static void sbusDataReceive(uint16_t c, void *data)
 
     const int32_t sbusFrameTime = nowUs - sbusFrameData->startAtUs;
 
-    if (sbusFrameTime > (long)(SBUS_TIME_NEEDED_PER_FRAME + 500)) {
+    if (sbusFrameTime > (long)(sbusTimeNeededPreFrame + 500)) {
         sbusFrameData->position = 0;
     }
 
@@ -155,13 +160,23 @@ bool sbusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     static uint16_t sbusChannelData[SBUS_MAX_CHANNEL];
     static sbusFrameData_t sbusFrameData;
+    static uint32_t sbusBaudRate;
 
     rxRuntimeConfig->channelData = sbusChannelData;
     rxRuntimeConfig->frameData = &sbusFrameData;
     sbusChannelsInit(rxConfig, rxRuntimeConfig);
 
     rxRuntimeConfig->channelCount = SBUS_MAX_CHANNEL;
-    rxRuntimeConfig->rxRefreshRate = 11000;
+
+    if (rxConfig->serialrx_provider == SERIALRX_DJI_HDL_7MS) {
+        rxRuntimeConfig->rxRefreshRate = DJI_HDL_RX_REFRESH_RATE;
+        sbusBaudRate  = DJI_HDL_BAUDRATE;
+        sbusTimeNeededPreFrame = DJI_HDL_TIME_NEEDED_PER_FRAME;
+    } else {
+        rxRuntimeConfig->rxRefreshRate = SBUS_RX_REFRESH_RATE;   
+        sbusBaudRate  = SBUS_BAUDRATE;
+        sbusTimeNeededPreFrame = SBUS_TIME_NEEDED_PER_FRAME;
+    }
 
     rxRuntimeConfig->rcFrameStatusFn = sbusFrameStatus;
 
@@ -180,7 +195,7 @@ bool sbusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
         FUNCTION_RX_SERIAL,
         sbusDataReceive,
         &sbusFrameData,
-        SBUS_BAUDRATE,
+        sbusBaudRate,
         portShared ? MODE_RXTX : MODE_RX,
         SBUS_PORT_OPTIONS | (rxConfig->serialrx_inverted ? 0 : SERIAL_INVERTED) | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0)
         );
