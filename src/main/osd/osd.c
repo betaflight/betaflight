@@ -75,6 +75,7 @@
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/stats.h"
 
 #include "rx/rx.h"
 
@@ -627,6 +628,27 @@ static uint8_t osdShowStats(uint16_t endBatteryVoltage, int statsRowCount)
     }
 #endif
 
+#ifdef USE_PERSISTENT_STATS
+    if (osdStatGetState(OSD_STAT_TOTAL_FLIGHTS)) {
+        itoa(statsConfig()->stats_total_flights, buff, 10);
+        osdDisplayStatisticLabel(top++, "TOTAL FLIGHTS", buff);
+    }
+    if (osdStatGetState(OSD_STAT_TOTAL_TIME)) {
+        int minutes = statsConfig()->stats_total_time_s / 60;
+        tfp_sprintf(buff, "%d:%02dH", minutes / 60, minutes % 60);
+        osdDisplayStatisticLabel(top++, "TOTAL FLIGHT TIME", buff);
+    }
+    if (osdStatGetState(OSD_STAT_TOTAL_DIST)) {
+        #define METERS_PER_KILOMETER 1000
+        #define METERS_PER_MILE      1609
+        if (osdConfig()->units == OSD_UNIT_IMPERIAL) {
+            tfp_sprintf(buff, "%dMI", statsConfig()->stats_total_dist_m / METERS_PER_MILE);
+        } else {
+            tfp_sprintf(buff, "%dKM", statsConfig()->stats_total_dist_m / METERS_PER_KILOMETER);
+        }
+        osdDisplayStatisticLabel(top++, "TOTAL DISTANCE", buff);
+    }
+#endif
     return top;
 }
 
