@@ -179,7 +179,7 @@ if (saDevice.version == 2) {
         saCmsStatusString[13] = 0;
     } else {
         int index = (saDevice.version == 2) ? saDevice.power : saDacToPowerIndex(saDevice.power);
-        tfp_sprintf(&saCmsStatusString[10], "%3d", vtxCommonLookupPowerName(vtxCommonDevice(), index + 1));
+        tfp_sprintf(&saCmsStatusString[10], "%s", vtxCommonLookupPowerName(vtxCommonDevice(), index + 1));
     }
 }
 
