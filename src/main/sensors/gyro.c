@@ -208,8 +208,8 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
                                         // overridden and the static lowpass 1 is disabled. We can't set this
                                         // value to 0 otherwise Configurator versions 10.4 and earlier will also
                                         // reset the lowpass filter type to PT1 overriding the desired BIQUAD setting.
-    gyroConfig->gyro_lowpass2_type = FILTER_BIQUAD;
-    gyroConfig->gyro_lowpass2_hz = 0;
+    gyroConfig->gyro_lowpass2_type = FILTER_PT1;
+    gyroConfig->gyro_lowpass2_hz = 150;
     gyroConfig->gyro_high_fsr = false;
     gyroConfig->gyro_to_use = GYRO_CONFIG_USE_GYRO_DEFAULT;
     gyroConfig->gyro_soft_notch_hz_1 = 0;
