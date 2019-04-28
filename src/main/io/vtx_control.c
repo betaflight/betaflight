@@ -109,7 +109,7 @@ void vtxUpdateActivatedChannel(void)
         locked = 1;
     }
 
-    if (!locked && vtxCommonDevice()) {
+    if (vtxCommonDevice()) {
         static uint8_t lastIndex = -1;
 
         for (uint8_t index = 0; index < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT; index++) {
@@ -119,8 +119,18 @@ void vtxUpdateActivatedChannel(void)
                 && index != lastIndex) {
                 lastIndex = index;
 
-                vtxSettingsConfigMutable()->band = vtxChannelActivationCondition->band;
-                vtxSettingsConfigMutable()->channel = vtxChannelActivationCondition->channel;
+                if (!locked) {
+                    if (vtxChannelActivationCondition->band > 0) {
+                        vtxSettingsConfigMutable()->band = vtxChannelActivationCondition->band;
+                    }
+                    if (vtxChannelActivationCondition->channel > 0) {
+                        vtxSettingsConfigMutable()->channel = vtxChannelActivationCondition->channel;
+                    }
+                }
+
+                if (vtxChannelActivationCondition->power > 0) {
+                    vtxSettingsConfigMutable()->power = vtxChannelActivationCondition->power;
+                }
                 break;
             }
         }
