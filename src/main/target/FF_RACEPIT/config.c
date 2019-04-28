@@ -27,12 +27,16 @@
 
 #include "telemetry/telemetry.h"
 
+#include "pg/pinio.h"
 #include "pg/piniobox.h"
 
 void targetConfiguration(void)
 {	
     telemetryConfigMutable()->halfDuplex = false;
+
+    pinioConfigMutable()->config[1] = PINIO_CONFIG_OUT_INVERTED | PINIO_CONFIG_MODE_OUT_PP;
 	
     pinioBoxConfigMutable()->permanentId[0] = 40;
+    pinioBoxConfigMutable()->permanentId[1] = 41;
 }
 #endif
