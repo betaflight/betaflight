@@ -571,14 +571,16 @@ uint8_t* max7456GetScreenBuffer(void)
 
 void max7456WriteChar(uint8_t x, uint8_t y, uint8_t c)
 {
-    screenBuffer[y*CHARS_PER_LINE+x] = c;
+    if (x < CHARS_PER_LINE && y < VIDEO_LINES_PAL) {
+        screenBuffer[y * CHARS_PER_LINE + x] = c;
+    }
 }
 
 void max7456Write(uint8_t x, uint8_t y, const char *buff)
 {
-    for (int i = 0; *(buff+i); i++) {
-        if (x+i < CHARS_PER_LINE) {// Do not write over screen
-            screenBuffer[y*CHARS_PER_LINE+x+i] = *(buff+i);
+    if (y < VIDEO_LINES_PAL) {
+        for (int i = 0; buff[i] && x + i < CHARS_PER_LINE; i++) {
+            screenBuffer[y * CHARS_PER_LINE + x + i] = buff[i];
         }
     }
 }
