@@ -56,6 +56,7 @@
 #define USE_MAG_QMC5883
 #define MAG_I2C_INSTANCE         (I2CDEV_2)
 
+#define DEFAULT_FEATURES        (FEATURE_OSD)
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI3
 #define MAX7456_SPI_CS_PIN      PA15
@@ -132,11 +133,13 @@
 #define CURRENT_METER_ADC_PIN   PC1
 #define VBAT_ADC_PIN            PC2
 #define RSSI_ADC_PIN            PC3
+
 #define CURRENT_METER_SCALE_DEFAULT 250                     // 3.3/120A  = 25mv/A
 
 #define BINDPLUG_PIN            PB2
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_UART           SERIAL_PORT_UART5
+#define SERIALRX_PROVIDER       SERIALRX_SBUS
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
