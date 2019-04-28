@@ -1266,10 +1266,10 @@ void dynLpfGyroUpdate(float throttle)
             const float gyroDt = gyro.targetLooptime * 1e-6f;
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
 #ifdef USE_MULTI_GYRO
-                if (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_1 || gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_BOTH) {
+                if (gyroToUse == GYRO_CONFIG_USE_GYRO_1 || gyroToUse == GYRO_CONFIG_USE_GYRO_BOTH) {
                     pt1FilterUpdateCutoff(&gyroSensor1.lowpassFilter[axis].pt1FilterState, pt1FilterGain(cutoffFreq, gyroDt));
                 }
-                if (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_2 || gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_BOTH) {
+                if (gyroToUse == GYRO_CONFIG_USE_GYRO_2 || gyroToUse == GYRO_CONFIG_USE_GYRO_BOTH) {
                     pt1FilterUpdateCutoff(&gyroSensor2.lowpassFilter[axis].pt1FilterState, pt1FilterGain(cutoffFreq, gyroDt));
                 }
 #else
@@ -1280,10 +1280,10 @@ void dynLpfGyroUpdate(float throttle)
             DEBUG_SET(DEBUG_DYN_LPF, 2, cutoffFreq);
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
 #ifdef USE_MULTI_GYRO
-                if (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_1 || gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_BOTH) {
+                if (gyroToUse == GYRO_CONFIG_USE_GYRO_1 || gyroToUse == GYRO_CONFIG_USE_GYRO_BOTH) {
                     biquadFilterUpdateLPF(&gyroSensor1.lowpassFilter[axis].biquadFilterState, cutoffFreq, gyro.targetLooptime);
                 }
-                if (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_2 || gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_BOTH) {     
+                if (gyroToUse == GYRO_CONFIG_USE_GYRO_2 || gyroToUse == GYRO_CONFIG_USE_GYRO_BOTH) {     
                     biquadFilterUpdateLPF(&gyroSensor2.lowpassFilter[axis].biquadFilterState, cutoffFreq, gyro.targetLooptime);
                 }
 #else
