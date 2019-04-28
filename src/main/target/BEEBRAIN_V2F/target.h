@@ -46,11 +46,6 @@
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6500
-#if defined(BEESTORM)
-#define ACC_1_ALIGN             CW180_DEG
-#else
-#define ACC_1_ALIGN             CW270_DEG
-#endif
 
 #define SERIAL_PORT_COUNT       4
 

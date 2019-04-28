@@ -76,14 +76,11 @@
 #endif
 
 #define GYRO_1_ALIGN            CW180_DEG
-#define ACC_1_ALIGN             CW180_DEG
 
 #if defined(OMNIBUSF4V6)
 #define GYRO_2_ALIGN            CW0_DEG
-#define ACC_2_ALIGN             CW0_DEG
 #else
 #define GYRO_2_ALIGN            CW0_DEG_FLIP
-#define ACC_2_ALIGN             CW0_DEG_FLIP
 #endif
 
 #define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_1

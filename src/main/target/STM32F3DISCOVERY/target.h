@@ -117,7 +117,6 @@
 
 #define MPU_I2C_INSTANCE        (I2CDEV_1)
 #define USE_ACC_LSM303DLHC
-#define ACC_1_ALIGN             CW0_DEG
 
 #define USE_FAKE_ACC
 //#define USE_ACC_ADXL345

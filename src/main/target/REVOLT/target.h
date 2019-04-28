@@ -90,7 +90,6 @@
 #define GYRO_1_SPI_INSTANCE     SPI1
 
 #define GYRO_1_ALIGN            CW0_DEG
-#define ACC_1_ALIGN             CW0_DEG
 
 #define USE_EXTI
 #define USE_GYRO_EXTI

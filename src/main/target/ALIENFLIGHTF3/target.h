@@ -55,7 +55,6 @@
 #define USE_ACC_MPU6050
 #define USE_ACC_SPI_MPU6500
 
-#define ACC_1_ALIGN             CW270_DEG
 
 // No baro support.
 //#define USE_BARO

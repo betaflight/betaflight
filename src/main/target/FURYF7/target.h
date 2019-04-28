@@ -45,7 +45,6 @@
 
 #define USE_ACC
 #define USE_ACC_SPI_ICM20689
-#define ACC_1_ALIGN             CW180_DEG
 
 //#define USE_BARO
 //#define USE_BARO_MS5611

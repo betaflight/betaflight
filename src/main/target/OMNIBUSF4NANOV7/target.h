@@ -49,7 +49,6 @@
 #define USE_ACC_SPI_MPU6500
 
 #define GYRO_1_ALIGN            CW0_DEG
-#define ACC_1_ALIGN             CW0_DEG
 
 // *************** OSD **************************
 

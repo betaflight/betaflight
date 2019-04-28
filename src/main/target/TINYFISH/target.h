@@ -47,7 +47,6 @@
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
-#define ACC_1_ALIGN             CW180_DEG_FLIP
 
 
 #if USB_VCP_ENABLED

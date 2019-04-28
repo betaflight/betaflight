@@ -45,7 +45,6 @@
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
-#define ACC_1_ALIGN             CW90_DEG
 
 #define BARO_SPI_INSTANCE       SPI1
 #define BARO_CS_PIN             PA13

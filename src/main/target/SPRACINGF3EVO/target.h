@@ -64,7 +64,6 @@
 #define USE_ACC
 #define USE_ACC_SPI_MPU6500
 
-#define ACC_1_ALIGN             CW180_DEG
 #define GYRO_1_ALIGN            CW180_DEG
 
 #define USE_BARO

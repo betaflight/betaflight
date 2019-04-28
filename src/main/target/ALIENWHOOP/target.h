@@ -142,7 +142,6 @@
 // ACC
 #define USE_ACC
 #define USE_ACC_SPI_MPU6500
-#define ACC_1_ALIGN             CW0_DEG
 
 /* Optional Digital Pressure Sensor (barometer) - Bosch BMP280
  * TODO: not implemented on V1 or V2 pcb

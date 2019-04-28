@@ -94,7 +94,6 @@
 #endif
 
 #define USE_ACC
-#define ACC_1_ALIGN       CW270_DEG
 #ifdef LUXV2_RACE
 #define USE_ACC_MPU6000
 #define USE_ACC_SPI_MPU6000

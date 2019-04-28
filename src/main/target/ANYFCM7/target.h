@@ -36,7 +36,6 @@
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
-#define ACC_1_ALIGN       CW270_DEG
 
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6000

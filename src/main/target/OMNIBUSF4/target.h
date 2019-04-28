@@ -94,16 +94,12 @@
 
 #if defined(OMNIBUSF4SD)
 #define GYRO_1_ALIGN            CW270_DEG
-#define ACC_1_ALIGN             CW270_DEG
 #elif defined(XRACERF4) || defined(EXUAVF4PRO)
 #define GYRO_1_ALIGN            CW90_DEG
-#define ACC_1_ALIGN             CW90_DEG
 #elif defined(SYNERGYF4)
 #define GYRO_1_ALIGN            CW0_DEG_FLIP
-#define ACC_1_ALIGN             CW0_DEG_FLIP
 #else
 #define GYRO_1_ALIGN            CW180_DEG
-#define ACC_1_ALIGN             CW180_DEG
 #endif
 
 // Support for iFlight OMNIBUS F4 V3
@@ -119,7 +115,6 @@
 #define GYRO_2_CS_PIN           NONE
 #define GYRO_2_ALIGN            ALIGN_DEFAULT
 #define GYRO_2_EXTI_PIN         NONE
-#define ACC_2_ALIGN             ALIGN_DEFAULT
 
 #if !defined(SYNERGYF4) //No mag sensor on SYNERGYF4
 #define USE_MAG

@@ -53,10 +53,8 @@
 #define USE_ACC_SPI_MPU6500
 
 #define GYRO_1_ALIGN                CW180_DEG
-#define ACC_1_ALIGN                 CW180_DEG
 
 #define GYRO_2_ALIGN                CW0_DEG
-#define ACC_2_ALIGN                 CW0_DEG
 
 #define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_1 
 

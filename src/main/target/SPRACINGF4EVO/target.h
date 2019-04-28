@@ -58,13 +58,10 @@
 #define USE_ACC_SPI_MPU6500
 
 #ifndef SPRACINGF4EVODG
-#define ACC_1_ALIGN                 CW0_DEG
 #define GYRO_1_ALIGN                CW0_DEG
 #else
 #define GYRO_1_ALIGN                CW0_DEG
 #define GYRO_2_ALIGN                CW0_DEG
-#define ACC_1_ALIGN                 CW0_DEG
-#define ACC_2_ALIGN                 CW0_DEG
 #endif
 
 #define USE_BARO

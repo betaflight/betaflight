@@ -56,7 +56,6 @@
 #define USE_ACC_SPI_MPU6000
 #define USE_ACC_SPI_MPU6500
 #define USE_ACC_SPI_ICM20689
-#define ACC_1_ALIGN             CW180_DEG
 
 #ifdef FURYF4OSD
     #define USE_MAX7456

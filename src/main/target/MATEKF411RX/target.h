@@ -65,11 +65,6 @@
 #endif
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
-#if defined(CRAZYBEEF4FS) || defined(CRAZYBEEF4FR) || defined(CRAZYBEEF4DX)
-#define ACC_1_ALIGN            CW90_DEG
-#else
-#define ACC_1_ALIGN             CW180_DEG
-#endif
 // *************** SPI2 OSD *****************************
 #define USE_SPI_DEVICE_2
 #define SPI2_SCK_PIN            PB13

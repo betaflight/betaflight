@@ -52,7 +52,6 @@
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
-#define ACC_1_ALIGN             CW270_DEG
 
 #define USE_MAG
 #define USE_MAG_HMC5883

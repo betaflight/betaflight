@@ -46,7 +46,6 @@
 #define USE_ACC
 #define USE_FAKE_ACC
 #define USE_ACC_SPI_MPU6500
-#define ACC_1_ALIGN             CW180_DEG_FLIP
 // ACC section -- end
 
 // GYRO section -- start

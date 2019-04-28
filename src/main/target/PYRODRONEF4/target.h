@@ -46,7 +46,6 @@
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 #define GYRO_1_ALIGN             CW0_DEG
-#define ACC_1_ALIGN              CW0_DEG
 
 // DEFINE OSD
 #define USE_SPI_DEVICE_2
