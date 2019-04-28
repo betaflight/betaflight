@@ -27,3 +27,4 @@ This is the official list of manufacturer ids (`manufacturer_id` in the target c
 |SPRO|Seriously Pro Racing (SP Racing)|http://seriouslypro.com/|
 |TTRH|TransTEC|http://www.transtechobby.com/|
 |TCMM|TCMM|http://www.tcmm-rc.cn/|
+|VIVA|VivaFPV|https://vivafpv.com/|
