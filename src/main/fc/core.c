@@ -579,7 +579,7 @@ static bool canUpdateVTX(void)
 }
 #endif
 
-#ifdef USE_RUNAWAY_TAKEOFF
+#if defined(USE_RUNAWAY_TAKEOFF) || defined(USE_GPS_RESCUE)
 // determine if the R/P/Y stick deflection exceeds the specified limit - integer math is good enough here.
 bool areSticksActive(uint8_t stickPercentLimit)
 {
@@ -601,8 +601,9 @@ bool areSticksActive(uint8_t stickPercentLimit)
     }
     return false;
 }
+#endif
 
-
+#ifdef USE_RUNAWAY_TAKEOFF
 // allow temporarily disabling runaway takeoff prevention if we are connected
 // to the configurator and the ARMING_DISABLED_MSP flag is cleared.
 void runawayTakeoffTemporaryDisable(uint8_t disableFlag)

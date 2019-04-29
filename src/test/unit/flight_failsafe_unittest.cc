@@ -589,6 +589,11 @@ bool isUsingSticksForArming(void)
     return isUsingSticksToArm;
 }
 
+bool areSticksActive(uint8_t stickPercentLimit) {
+    UNUSED(stickPercentLimit);
+    return false;
+}
+
 void beeperConfirmationBeeps(uint8_t beepCount) { UNUSED(beepCount); }
 
 bool crashRecoveryModeActive(void) { return false; }
