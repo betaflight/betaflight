@@ -2485,7 +2485,7 @@ static HAL_StatusTypeDef RCCEx_PLL2_Config(RCC_PLL2InitTypeDef *pll2, uint32_t D
     /* Wait till PLL is ready */
     while(__HAL_RCC_GET_FLAG(RCC_FLAG_PLL2RDY) != RESET)
     {
-      if((int32_t) (HAL_GetTick() - tickstart ) > PLL2_TIMEOUT_VALUE)
+      if((HAL_GetTick() - tickstart ) > PLL2_TIMEOUT_VALUE)
       {
         return HAL_TIMEOUT;
       }
@@ -2527,7 +2527,7 @@ static HAL_StatusTypeDef RCCEx_PLL2_Config(RCC_PLL2InitTypeDef *pll2, uint32_t D
     /* Wait till PLL2 is ready */
     while(__HAL_RCC_GET_FLAG(RCC_FLAG_PLL2RDY) == RESET)
     {
-      if((int32_t) (HAL_GetTick() - tickstart ) > PLL2_TIMEOUT_VALUE)
+      if((HAL_GetTick() - tickstart ) > PLL2_TIMEOUT_VALUE)
       {
         return HAL_TIMEOUT;
       }
@@ -2575,7 +2575,7 @@ static HAL_StatusTypeDef RCCEx_PLL3_Config(RCC_PLL3InitTypeDef *pll3, uint32_t D
     /* Wait till PLL3 is ready */
     while(__HAL_RCC_GET_FLAG(RCC_FLAG_PLL3RDY) != RESET)
     {
-      if((int32_t) (HAL_GetTick() - tickstart ) > PLL3_TIMEOUT_VALUE)
+      if((HAL_GetTick() - tickstart ) > PLL3_TIMEOUT_VALUE)
       {
         return HAL_TIMEOUT;
       }
@@ -2617,7 +2617,7 @@ static HAL_StatusTypeDef RCCEx_PLL3_Config(RCC_PLL3InitTypeDef *pll3, uint32_t D
     /* Wait till PLL3 is ready */
     while(__HAL_RCC_GET_FLAG(RCC_FLAG_PLL3RDY) == RESET)
     {
-      if((int32_t) (HAL_GetTick() - tickstart ) > PLL3_TIMEOUT_VALUE)
+      if((HAL_GetTick() - tickstart ) > PLL3_TIMEOUT_VALUE)
       {
         return HAL_TIMEOUT;
       }

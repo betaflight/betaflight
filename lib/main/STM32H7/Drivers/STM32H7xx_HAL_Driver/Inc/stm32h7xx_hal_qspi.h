@@ -44,6 +44,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32h7xx_hal_def.h"
 #include "stm32h7xx_hal_mdma.h"
+#include "stm32h7xx_ll_delayblock.h"
 
 /** @addtogroup STM32H7xx_HAL_Driver
   * @{
