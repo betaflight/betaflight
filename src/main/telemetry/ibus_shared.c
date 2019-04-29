@@ -415,6 +415,7 @@ static void setValue(uint8_t* bufferPtr, uint8_t sensorType, uint8_t length)
             value.int16 = (int16_t) constrain(getEstimatedVario(), SHRT_MIN, SHRT_MAX);
             break;
 #endif
+#ifdef USE_BARO
         case IBUS_SENSOR_TYPE_ALT:
         case IBUS_SENSOR_TYPE_ALT_MAX:
             value.int32 = baro.BaroAlt;
@@ -422,6 +423,7 @@ static void setValue(uint8_t* bufferPtr, uint8_t sensorType, uint8_t length)
         case IBUS_SENSOR_TYPE_PRES:
             value.uint32 = baro.baroPressure | (((uint32_t)getTemperature()) << 19);
             break;
+#endif
 #endif //defined(TELEMETRY_IBUS_EXTENDED)
     }
     for (unsigned i = 0; i < length; i++) {

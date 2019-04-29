@@ -1357,8 +1357,12 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("acc_lpf_hz", "%d",                 (int)(accelerometerConfig()->acc_lpf_hz * 100.0f));
         BLACKBOX_PRINT_HEADER_LINE("acc_hardware", "%d",                    accelerometerConfig()->acc_hardware);
 #endif
+#ifdef USE_BARO
         BLACKBOX_PRINT_HEADER_LINE("baro_hardware", "%d",                   barometerConfig()->baro_hardware);
+#endif
+#ifdef USE_MAG
         BLACKBOX_PRINT_HEADER_LINE("mag_hardware", "%d",                    compassConfig()->mag_hardware);
+#endif
         BLACKBOX_PRINT_HEADER_LINE("gyro_cal_on_first_arm", "%d",           armingConfig()->gyro_cal_on_first_arm);
         BLACKBOX_PRINT_HEADER_LINE("rc_interpolation", "%d",                rxConfig()->rcInterpolation);
         BLACKBOX_PRINT_HEADER_LINE("rc_interpolation_interval", "%d",       rxConfig()->rcInterpolationInterval);

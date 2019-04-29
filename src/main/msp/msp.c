@@ -1500,8 +1500,16 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 #else
         sbufWriteU8(dst, 0);
 #endif
+#ifdef USE_BARO
         sbufWriteU8(dst, barometerConfig()->baro_hardware);
+#else
+        sbufWriteU8(dst, 0);
+#endif
+#ifdef USE_MAG
         sbufWriteU8(dst, compassConfig()->mag_hardware);
+#else
+        sbufWriteU8(dst, 0);
+#endif
         break;
 
 #if defined(USE_VTX_COMMON)
@@ -2179,9 +2187,16 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #else
         sbufReadU8(src);
 #endif
+#if defined(USE_BARO)
         barometerConfigMutable()->baro_hardware = sbufReadU8(src);
+#else
+        sbufReadU8(src);
+#endif
+#if defined(USE_MAG)
         compassConfigMutable()->mag_hardware = sbufReadU8(src);
-
+#else
+        sbufReadU8(src);
+#endif
         break;
 
     case MSP_RESET_CONF:
