@@ -31,6 +31,7 @@
 
 #include "common/maths.h"
 #include "common/utils.h"
+#include "common/filter.h"
 
 #include "config/config_reset.h"
 #include "config/feature.h"
@@ -72,6 +73,9 @@ const char rcChannelLetters[] = "AERT12345678abcdefgh";
 
 static uint16_t rssi = 0;                  // range: [0;1023]
 static timeUs_t lastMspRssiUpdateUs = 0;
+
+static pt1Filter_t frameErrFilter;
+
 #ifdef USE_RX_LINK_QUALITY_INFO
 static uint8_t linkQuality = 0;
 #endif
@@ -313,6 +317,9 @@ void rxInit(void)
         rssiSource = RSSI_SOURCE_RX_CHANNEL;
     }
 
+    // Setup source frame RSSI filtering to take averaged values every FRAME_ERR_RESAMPLE_US
+    pt1FilterInit(&frameErrFilter, pt1FilterGain(GET_FRAME_ERR_LPF_FREQUENCY(rxConfig()->rssi_src_frame_lpf_period), FRAME_ERR_RESAMPLE_US/1000000.0));
+
     rxChannelCount = MIN(rxConfig()->max_aux_channel + NON_AUX_CHANNEL_COUNT, rxRuntimeConfig.channelCount);
 }
 
@@ -364,7 +371,7 @@ static uint8_t updateLinkQualitySamples(uint8_t value)
 }
 #endif
 
-static void setLinkQuality(bool validFrame)
+static void setLinkQuality(bool validFrame, timeDelta_t currentDeltaTime)
 {
 #ifdef USE_RX_LINK_QUALITY_INFO
     // calculate new sample mean
@@ -372,14 +379,25 @@ static void setLinkQuality(bool validFrame)
 #endif
 
     if (rssiSource == RSSI_SOURCE_FRAME_ERRORS) {
-        setRssi(validFrame ? RSSI_MAX_VALUE : 0, RSSI_SOURCE_FRAME_ERRORS);
+        static uint16_t tot_rssi = 0;
+        static uint16_t cnt_rssi = 0;
+        static timeDelta_t resample_time = 0;
+
+        resample_time += currentDeltaTime;
+        tot_rssi += validFrame ? RSSI_MAX_VALUE : 0;
+        cnt_rssi++;
+
+        if (resample_time >= FRAME_ERR_RESAMPLE_US) {
+            setRssi(tot_rssi / cnt_rssi, rssiSource);
+            tot_rssi = 0;
+            cnt_rssi = 0;
+            resample_time -= FRAME_ERR_RESAMPLE_US;
+        }
     }
 }
 
 bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
 {
-    UNUSED(currentDeltaTime);
-
     bool signalReceived = false;
     bool useDataDrivenProcessing = true;
 
@@ -410,7 +428,7 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
                 needRxSignalBefore = currentTimeUs + needRxSignalMaxDelayUs;
             }
 
-            setLinkQuality(signalReceived);
+            setLinkQuality(signalReceived, currentDeltaTime);
         }
 
         if (frameStatus & RX_FRAME_PROCESSING_REQUIRED) {
@@ -478,7 +496,7 @@ static uint16_t getRxfailValue(uint8_t channel)
             }
         }
 
-	FALLTHROUGH;
+    FALLTHROUGH;
     default:
     case RX_FAILSAFE_MODE_INVALID:
     case RX_FAILSAFE_MODE_HOLD:
@@ -639,8 +657,13 @@ void setRssi(uint16_t rssiValue, rssiSource_e source)
         return;
     }
 
-    // calculate new sample mean
-    rssi = updateRssiSamples(rssiValue);
+    // Filter RSSI value
+    if (source == RSSI_SOURCE_FRAME_ERRORS) {
+        rssi = pt1FilterApply(&frameErrFilter, rssiValue);
+    } else {
+        // calculate new sample mean
+        rssi = updateRssiSamples(rssiValue);
+    }
 }
 
 void setRssiMsp(uint8_t newMspRssi)
