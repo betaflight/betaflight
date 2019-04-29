@@ -24,6 +24,8 @@
 
 #include "platform.h"
 
+#ifdef USE_BARO
+
 #include "common/maths.h"
 
 #include "pg/pg.h"
@@ -116,8 +118,6 @@ void pgResetFn_barometerConfig(barometerConfig_t *barometerConfig)
     barometerConfig->baro_spi_csn = IO_TAG_NONE;
 #endif
 }
-
-#ifdef USE_BARO
 
 static uint16_t calibratingB = 0;      // baro calibration = get new ground pressure value
 static int32_t baroPressure = 0;
