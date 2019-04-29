@@ -702,6 +702,7 @@ void changePidProfile(uint8_t pidProfileIndex)
         loadPidProfile();
 
         pidInit(currentPidProfile);
+        initEscEndpoints();
     }
 
     beeperConfirmationBeeps(pidProfileIndex + 1);
