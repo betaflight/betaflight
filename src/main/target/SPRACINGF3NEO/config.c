@@ -68,7 +68,6 @@ static targetSerialPortFunction_t targetSerialPortFunction[] = {
 
 void targetConfiguration(void)
 {
-    barometerConfigMutable()->baro_hardware = BARO_DEFAULT;
     compassConfigMutable()->mag_hardware = MAG_DEFAULT;
     targetSerialPortFunctionConfig(targetSerialPortFunction, ARRAYLEN(targetSerialPortFunction));
     telemetryConfigMutable()->halfDuplex = true;
