@@ -754,14 +754,12 @@ static void osdElementGpsHomeDistance(osdElementParms_t *element)
 
 static void osdElementGpsLatitude(osdElementParms_t *element)
 {
-    // The SYM_LAT symbol in the actual font contains only blank, so we use the SYM_ARROW_NORTH
-    osdFormatCoordinate(element->buff, SYM_ARROW_NORTH, gpsSol.llh.lat);
+    osdFormatCoordinate(element->buff, SYM_LAT, gpsSol.llh.lat);
 }
 
 static void osdElementGpsLongitude(osdElementParms_t *element)
 {
-    // The SYM_LON symbol in the actual font contains only blank, so we use the SYM_ARROW_EAST
-    osdFormatCoordinate(element->buff, SYM_ARROW_EAST, gpsSol.llh.lon);
+    osdFormatCoordinate(element->buff, SYM_LON, gpsSol.llh.lon);
 }
 
 static void osdElementGpsSats(osdElementParms_t *element)
