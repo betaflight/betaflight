@@ -27,12 +27,30 @@
 
 #define MAX_NAME_LENGTH 16u
 
+#define MAX_PROFILE_NAME_LENGTH    8u
+
 typedef struct pilotConfig_s {
     char name[MAX_NAME_LENGTH + 1];
     char displayName[MAX_NAME_LENGTH + 1];
 } pilotConfig_t;
 
 PG_DECLARE(pilotConfig_t, pilotConfig);
+
+typedef struct profileName_s {
+    char name[MAX_PROFILE_NAME_LENGTH + 1];
+} profileName_t;
+
+typedef struct rateProfileNameConfig_s {
+    profileName_t profile[CONTROL_RATE_PROFILE_COUNT];
+} rateProfileNameConfig_t;
+
+PG_DECLARE(rateProfileNameConfig_t, rateProfileName);
+
+typedef struct pidProfileNameConfig_s {
+    profileName_t profile[PID_PROFILE_COUNT];
+} pidProfileNameConfig_t;
+
+PG_DECLARE(pidProfileNameConfig_t, pidProfileName);
 
 typedef struct systemConfig_s {
     uint8_t pidProfileIndex;
