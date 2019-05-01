@@ -154,7 +154,7 @@ void updateActivatedModes(void)
         updateMasksForMac(mac, &andMask, &newMask, bActive);
     }
 
-    bitArrayXor(&newMask, sizeof(&newMask), &newMask, &andMask);
+    bitArrayXor(&newMask, sizeof(newMask), &newMask, &andMask);
 
     rcModeUpdate(&newMask);
 
