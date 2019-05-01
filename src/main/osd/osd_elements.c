@@ -476,7 +476,7 @@ static void osdElementAltitude(osdElementParms_t *element)
 static void osdElementAngleRollPitch(osdElementParms_t *element)
 {
     const int angle = (element->item == OSD_PITCH_ANGLE) ? attitude.values.pitch : attitude.values.roll;
-    tfp_sprintf(element->buff, "%c%02d.%01d", angle < 0 ? '-' : ' ', abs(angle / 10), abs(angle % 10));
+    tfp_sprintf(element->buff, "%c%c%02d.%01d", (element->item == OSD_PITCH_ANGLE) ? SYM_PITCH : SYM_ROLL , angle < 0 ? '-' : ' ', abs(angle / 10), abs(angle % 10));
 }
 #endif
 
@@ -530,7 +530,7 @@ static void osdElementCompassBar(osdElementParms_t *element)
 #ifdef USE_ADC_INTERNAL
 static void osdElementCoreTemperature(osdElementParms_t *element)
 {
-    tfp_sprintf(element->buff, "%3d%c", osdConvertTemperatureToSelectedUnit(getCoreTemperatureCelsius()), osdGetTemperatureSymbolForSelectedUnit());
+    tfp_sprintf(element->buff, "%c%3d%c", SYM_TEMPERATURE, osdConvertTemperatureToSelectedUnit(getCoreTemperatureCelsius()), osdGetTemperatureSymbolForSelectedUnit());
 }
 #endif // USE_ADC_INTERNAL
 
@@ -808,11 +808,11 @@ static void osdElementLogStatus(osdElementParms_t *element)
 {
     if (IS_RC_MODE_ACTIVE(BOXBLACKBOX)) {
         if (!isBlackboxDeviceWorking()) {
-            tfp_sprintf(element->buff, "L-");
+            tfp_sprintf(element->buff, "%c!", SYM_BBLOG);
         } else if (isBlackboxDeviceFull()) {
-            tfp_sprintf(element->buff, "L>");
+            tfp_sprintf(element->buff, "%c>", SYM_BBLOG);
         } else {
-            tfp_sprintf(element->buff, "L%d", blackboxGetLogNumber());
+            tfp_sprintf(element->buff, "%c%d", SYM_BBLOG, blackboxGetLogNumber());
         }
     }
 }
