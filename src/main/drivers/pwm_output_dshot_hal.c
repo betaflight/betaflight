@@ -241,16 +241,12 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     const uint8_t timerIndex = getTimerIndex(timer);
     const bool configureTimer = (timerIndex == dmaMotorTimerCount - 1);
 
-    uint8_t pupMode = 0;
+    uint8_t pupMode = (output & TIMER_OUTPUT_INVERTED) ? GPIO_PULLDOWN : GPIO_PULLUP;
 #ifdef USE_DSHOT_TELEMETRY
-    if (!useDshotTelemetry) {
-        pupMode = (output & TIMER_OUTPUT_INVERTED) ? GPIO_PULLDOWN : GPIO_PULLUP;
-    } else
-#endif
-    {
-        pupMode = (output & TIMER_OUTPUT_INVERTED) ? GPIO_PULLUP : GPIO_PULLDOWN;
+    if (useDshotTelemetry) {
+        output ^= TIMER_OUTPUT_INVERTED;
     }
-
+#endif
 
     IOConfigGPIOAF(motorIO, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, pupMode), timerHardware->alternateFunction);
 
