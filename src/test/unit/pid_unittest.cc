@@ -293,6 +293,14 @@ TEST(pidControllerTest, testPidLoop) {
     ASSERT_NEAR(-8.8, pidData[FD_YAW].I, calculateTolerance(-8.8));
     simulatedMotorMixRange = 0;
 
+    // Simulate Iterm behaviour during mixer saturation
+    simulatedMotorMixRange = 1.2f;
+    pidController(pidProfile, &rollAndPitchTrims, currentTestTime());
+    ASSERT_NEAR(-23.5, pidData[FD_ROLL].I, calculateTolerance(-23.5));
+    ASSERT_NEAR(19.6, pidData[FD_PITCH].I, calculateTolerance(19.6));
+    ASSERT_NEAR(-8.8, pidData[FD_YAW].I, calculateTolerance(-8.8));
+    simulatedMotorMixRange = 0;
+
     // Match the stick to gyro to stop error
     simulatedSetpointRate[FD_ROLL] = 100;
     simulatedSetpointRate[FD_PITCH] = -100;

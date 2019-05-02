@@ -308,3 +308,9 @@
 #ifdef STM32F7
 #undef USE_ESCSERIAL
 #endif
+
+// Disable filters for IMUF
+#ifdef USE_GYRO_IMUF9001
+#undef USE_GYRO_FAST_KALMAN
+#undef USE_GYRO_BIQUAD_RC_FIR2
+#endif

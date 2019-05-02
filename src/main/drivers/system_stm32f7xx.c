@@ -39,12 +39,20 @@ void SystemClock_Config(void);
 
 void systemReset(void)
 {
+    if (mpuResetFn) {
+        mpuResetFn();
+    }
+
     __disable_irq();
     NVIC_SystemReset();
 }
 
 void systemResetToBootloader(void)
 {
+    if (mpuResetFn) {
+        mpuResetFn();
+    }
+
     persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_BOOTLOADER_REQUEST);
     __disable_irq();
     NVIC_SystemReset();

@@ -457,7 +457,7 @@ static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, const uin
  * Returns true if the command was processd, false otherwise.
  * May set mspPostProcessFunc to a function to be called once the command has been processed
  */
-static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
+bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
 {
     UNUSED(mspPostProcessFn);
 
@@ -819,7 +819,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
     return true;
 }
 
-static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
+bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 {
     bool unsupportedCommand = false;
 
@@ -865,7 +865,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 
     case MSP_RAW_IMU:
         {
-#if defined(USE_ACC)
+#if defined(USE_ACC) || defined(USE_ACC_IMUF9001)
             // Hack scale due to choice of units for sensor data in multiwii
 
             uint8_t scale;
@@ -878,7 +878,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
             } else {
                 scale = 1;
             }
-#endif
+#endif //USE_GYRO_IMUF901
 
             for (int i = 0; i < 3; i++) {
 #if defined(USE_ACC)
@@ -1421,6 +1421,19 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 #endif
 
         break;
+#ifdef USE_GYRO_IMUF9001
+    case MSP_IMUF_CONFIG:
+        sbufWriteU16(dst, gyroConfig()->imuf_mode);
+        sbufWriteU16(dst, gyroConfig()->imuf_roll_q);
+        sbufWriteU16(dst, gyroConfig()->imuf_pitch_q);
+        sbufWriteU16(dst, gyroConfig()->imuf_yaw_q);
+        sbufWriteU16(dst, gyroConfig()->imuf_w);
+        sbufWriteU16(dst, gyroConfig()->imuf_roll_lpf_cutoff_hz);
+        sbufWriteU16(dst, gyroConfig()->imuf_pitch_lpf_cutoff_hz);
+        sbufWriteU16(dst, gyroConfig()->imuf_yaw_lpf_cutoff_hz);
+        break;
+#endif
+
     case MSP_PID_ADVANCED:
         sbufWriteU16(dst, 0);
         sbufWriteU16(dst, 0);
@@ -1687,7 +1700,7 @@ static void mspFcDataFlashReadCommand(sbuf_t *dst, sbuf_t *src)
 }
 #endif
 
-static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
+mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 {
     uint32_t i;
     uint8_t value;
@@ -2089,11 +2102,26 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
         // reinitialize the gyro filters with the new values
         validateAndFixGyroConfig();
+#ifndef USE_GYRO_IMUF9001  
         gyroInitFilters();
+#endif //!USE_GYRO_IMUF9001
         // reinitialize the PID filters with the new values
         pidInitFilters(currentPidProfile);
 
         break;
+#ifdef USE_GYRO_IMUF9001
+    case MSP_SET_IMUF_CONFIG :
+        gyroConfigMutable()->imuf_mode = sbufReadU16(src);
+        gyroConfigMutable()->imuf_roll_q = sbufReadU16(src);
+        gyroConfigMutable()->imuf_pitch_q = sbufReadU16(src);
+        gyroConfigMutable()->imuf_yaw_q = sbufReadU16(src);
+        gyroConfigMutable()->imuf_w = sbufReadU16(src);
+        gyroConfigMutable()->imuf_roll_lpf_cutoff_hz = sbufReadU16(src);
+        gyroConfigMutable()->imuf_pitch_lpf_cutoff_hz = sbufReadU16(src);
+        gyroConfigMutable()->imuf_yaw_lpf_cutoff_hz = sbufReadU16(src);
+        break;
+#endif
+
     case MSP_SET_PID_ADVANCED:
         sbufReadU16(src);
         sbufReadU16(src);
@@ -2623,7 +2651,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     return MSP_RESULT_ACK;
 }
 
-static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src, mspPostProcessFnPtr *mspPostProcessFn)
+mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src, mspPostProcessFnPtr *mspPostProcessFn)
 {
     UNUSED(mspPostProcessFn);
     const unsigned int dataSize = sbufBytesRemaining(src);

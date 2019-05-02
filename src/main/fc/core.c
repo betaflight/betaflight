@@ -41,6 +41,7 @@
 #include "pg/pg_ids.h"
 #include "pg/rx.h"
 
+#include "drivers/dma_spi.h"
 #include "drivers/light_led.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
@@ -1120,6 +1121,10 @@ static FAST_CODE_NOINLINE void subTaskRcCommand(timeUs_t currentTimeUs)
 FAST_CODE void taskMainPidLoop(timeUs_t currentTimeUs)
 {
     static uint32_t pidUpdateCounter = 0;
+
+#ifdef USE_DMA_SPI_DEVICE
+    dmaSpiDeviceDataReady = false;
+#endif
 
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_GYROPID_SYNC)
     if (lockMainPID() != 0) return;

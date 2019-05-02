@@ -67,7 +67,16 @@ enum {
     FILTER_LOWPASS = 0,
     FILTER_LOWPASS2
 };
-
+#if defined(USE_GYRO_IMUF9001)
+typedef enum {
+    IMUF_RATE_32K = 0,
+    IMUF_RATE_16K = 1,
+    IMUF_RATE_8K = 2,
+    IMUF_RATE_4K = 3,
+    IMUF_RATE_2K = 4,
+    IMUF_RATE_1K = 5
+} imufRate_e;
+#endif
 typedef enum gyroDetectionFlags_e {
     NO_GYROS_DETECTED = 0,
     DETECTED_GYRO_1 = (1 << 0),
@@ -76,14 +85,18 @@ typedef enum gyroDetectionFlags_e {
     DETECTED_BOTH_GYROS = (DETECTED_GYRO_1 | DETECTED_GYRO_2),
     DETECTED_DUAL_GYROS = (1 << 7), // All gyros are of the same hardware type
 #endif
+
 } gyroDetectionFlags_t;
 
 typedef struct gyroConfig_s {
+    uint8_t  gyro_align;                       // gyro alignment
     uint8_t  gyroMovementCalibrationThreshold; // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
     uint8_t  gyro_sync_denom;                  // Gyro sample divider
     uint8_t  gyro_hardware_lpf;                // gyro DLPF setting
+    uint8_t  gyro_32khz_hardware_lpf;          // gyro 32khz DLPF setting
 
     uint8_t  gyro_high_fsr;
+    uint8_t  gyro_use_32khz;
     uint8_t  gyro_to_use;
 
     uint16_t gyro_lowpass_hz;
@@ -112,6 +125,21 @@ typedef struct gyroConfig_s {
     uint16_t dyn_notch_q;
     uint16_t dyn_notch_min_hz;
     uint8_t  gyro_filter_debug_axis;
+
+#ifdef USE_GYRO_IMUF9001
+    uint16_t imuf_mode;
+    uint16_t imuf_rate;
+    uint16_t imuf_pitch_q;
+    uint16_t imuf_roll_q;
+    uint16_t imuf_yaw_q;
+    uint16_t imuf_w;
+    uint16_t imuf_pitch_lpf_cutoff_hz;
+    uint16_t imuf_roll_lpf_cutoff_hz;
+    uint16_t imuf_yaw_lpf_cutoff_hz;
+    uint8_t  imuf_pitch_af;
+    uint8_t  imuf_roll_af;
+    uint8_t  imuf_yaw_af;
+#endif
 } gyroConfig_t;
 
 PG_DECLARE(gyroConfig_t, gyroConfig);
@@ -120,6 +148,10 @@ void gyroPreInit(void);
 bool gyroInit(void);
 
 void gyroInitFilters(void);
+#ifdef USE_DMA_SPI_DEVICE
+void gyroDmaSpiFinishRead(void);
+void gyroDmaSpiStartRead(void);
+#endif
 void gyroUpdate(timeUs_t currentTimeUs);
 bool gyroGetAccumulationAverage(float *accumulation);
 const busDevice_t *gyroSensorBus(void);

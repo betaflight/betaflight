@@ -498,6 +498,19 @@ static uint8_t  dynFiltWidthPercent;
 static uint16_t dynFiltNotchQ;
 static uint16_t dynFiltNotchMinHz;
 #endif
+
+#ifdef USE_GYRO_IMUF9001
+static uint16_t gyroConfig_imuf_roll_q;
+static uint16_t gyroConfig_imuf_pitch_q;
+static uint16_t gyroConfig_imuf_yaw_q;
+static uint16_t gyroConfig_imuf_w;
+static uint16_t gyroConfig_imuf_pitch_lpf_cutoff_hz;
+static uint16_t gyroConfig_imuf_roll_lpf_cutoff_hz;
+static uint16_t gyroConfig_imuf_yaw_lpf_cutoff_hz;
+static uint8_t gyroConfig_imuf_roll_af;
+static uint8_t gyroConfig_imuf_pitch_af;
+static uint8_t gyroConfig_imuf_yaw_af;
+#endif
 #ifdef USE_DYN_LPF
 static uint16_t dynFiltGyroMin;
 static uint16_t dynFiltGyroMax;
@@ -505,6 +518,23 @@ static uint16_t dynFiltDtermMin;
 static uint16_t dynFiltDtermMax;
 #endif
 
+#ifdef USE_GYRO_IMUF9001
+static long cmsx_menuImuf_onEnter(void)
+{
+    gyroConfig_imuf_roll_q = gyroConfig()->imuf_roll_q;
+    gyroConfig_imuf_pitch_q = gyroConfig()->imuf_pitch_q;
+    gyroConfig_imuf_yaw_q = gyroConfig()->imuf_yaw_q;
+    gyroConfig_imuf_w = gyroConfig()->imuf_w;
+    gyroConfig_imuf_pitch_lpf_cutoff_hz = gyroConfig()->imuf_pitch_lpf_cutoff_hz;
+    gyroConfig_imuf_roll_lpf_cutoff_hz = gyroConfig()->imuf_roll_lpf_cutoff_hz;
+    gyroConfig_imuf_yaw_lpf_cutoff_hz = gyroConfig()->imuf_yaw_lpf_cutoff_hz;
+    gyroConfig_imuf_roll_af = gyroConfigMutable()->imuf_roll_af;
+    gyroConfig_imuf_pitch_af = gyroConfigMutable()->imuf_pitch_af;
+    gyroConfig_imuf_yaw_af = gyroConfigMutable()->imuf_yaw_af;
+    
+    return 0;
+}
+#else
 static long cmsx_menuDynFilt_onEnter(void)
 {
 #ifdef USE_GYRO_DATA_ANALYSE
@@ -523,7 +553,27 @@ static long cmsx_menuDynFilt_onEnter(void)
 
     return 0;
 }
+#endif
 
+#ifdef USE_GYRO_IMUF9001
+static long cmsx_menuImuf_onExit(const OSD_Entry *self)
+{
+    UNUSED(self);
+
+    gyroConfigMutable()->imuf_roll_q = gyroConfig_imuf_roll_q;
+    gyroConfigMutable()->imuf_pitch_q = gyroConfig_imuf_pitch_q;
+    gyroConfigMutable()->imuf_yaw_q = gyroConfig_imuf_yaw_q;
+    gyroConfigMutable()->imuf_w = gyroConfig_imuf_w;
+    gyroConfigMutable()->imuf_roll_lpf_cutoff_hz = gyroConfig_imuf_roll_lpf_cutoff_hz;
+    gyroConfigMutable()->imuf_pitch_lpf_cutoff_hz = gyroConfig_imuf_pitch_lpf_cutoff_hz;
+    gyroConfigMutable()->imuf_yaw_lpf_cutoff_hz = gyroConfig_imuf_yaw_lpf_cutoff_hz;
+    gyroConfigMutable()->imuf_roll_af = gyroConfig_imuf_roll_af;
+    gyroConfigMutable()->imuf_pitch_af = gyroConfig_imuf_pitch_af;
+    gyroConfigMutable()->imuf_yaw_af = gyroConfig_imuf_yaw_af;
+
+    return 0;
+}
+#else
 static long cmsx_menuDynFilt_onExit(const OSD_Entry *self)
 {
     UNUSED(self);
@@ -544,7 +594,29 @@ static long cmsx_menuDynFilt_onExit(const OSD_Entry *self)
 
     return 0;
 }
+#endif
 
+#ifdef USE_GYRO_IMUF9001
+static OSD_Entry cmsx_menuImufEntries[] =
+{
+    { "-- SPRING IMU-F --", OME_Label, NULL, NULL, 0 },
+    { "-- CHANGES REQUIRE REBOOT --", OME_Label, NULL, NULL, 0 },
+    { "IMUF W",    OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_imuf_w,                   0, 300,    1 }, 0 },
+    { "ROLL Q",    OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_imuf_roll_q,              0, 16000, 50 }, 0 },
+    { "PITCH Q",   OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_imuf_pitch_q,             0, 16000, 50 }, 0 },
+    { "YAW Q",     OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_imuf_yaw_q,               0, 16000, 50 }, 0 },
+    { "ROLL LPF",  OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_imuf_roll_lpf_cutoff_hz,  0, 450,    1 }, 0 },
+    { "PITCH LPF", OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_imuf_pitch_lpf_cutoff_hz, 0, 450,    1 }, 0 },
+    { "YAW LPF",   OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_imuf_yaw_lpf_cutoff_hz,   0, 450,    1 }, 0 },
+    { "ROLL AF",   OME_TAB,    NULL, &(OSD_TAB_t)    { &gyroConfig_imuf_roll_af,             0, osdTableThrottleLimitType}, 0 },
+    { "PITCH AF",  OME_TAB,    NULL, &(OSD_TAB_t)    { &gyroConfig_imuf_pitch_af,            0, osdTableThrottleLimitType}, 0 },
+    { "YAW AF",    OME_TAB,    NULL, &(OSD_TAB_t)    { &gyroConfig_imuf_yaw_af,              0, osdTableThrottleLimitType}, 0 },
+    
+    { "BACK",        OME_Back,            NULL,   NULL,             0},
+    { "SAVE&REBOOT", OME_OSD_Exit, cmsMenuExit,   (void *)CMS_EXIT_SAVEREBOOT, 0},
+    { NULL, OME_END, NULL, NULL, 0 }
+};
+#else
 static const OSD_Entry cmsx_menuDynFiltEntries[] =
 {
     { "-- DYN FILT --", OME_Label, NULL, NULL, 0 },
@@ -566,7 +638,19 @@ static const OSD_Entry cmsx_menuDynFiltEntries[] =
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
 };
+#endif
 
+#ifdef USE_GYRO_IMUF9001
+static CMS_Menu cmsx_menuImuf = {
+	#ifdef CMS_MENU_DEBUG
+    	.GUARD_text = "XIMUF",
+    	.GUARD_type = OME_MENU,
+	#endif
+    .onEnter = cmsx_menuImuf_onEnter,
+    .onExit = cmsx_menuImuf_onExit,
+    .entries = cmsx_menuImufEntries,
+};
+#else
 static CMS_Menu cmsx_menuDynFilt = {
 #ifdef CMS_MENU_DEBUG
     .GUARD_text = "XDYNFLT",
@@ -576,7 +660,7 @@ static CMS_Menu cmsx_menuDynFilt = {
     .onExit = cmsx_menuDynFilt_onExit,
     .entries = cmsx_menuDynFiltEntries,
 };
-
+#endif //USE_GYRO_IMUF9001
 #endif
 
 static uint16_t cmsx_dterm_lowpass_hz;
@@ -721,12 +805,15 @@ static const OSD_Entry cmsx_menuImuEntries[] =
     {"RATE",      OME_Submenu, cmsMenuChange,                 &cmsx_menuRateProfile,                                         0},
 
     {"FILT GLB",  OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterGlobal,                                        0},
-#if  (defined(USE_GYRO_DATA_ANALYSE) || defined(USE_DYN_LPF)) && defined(USE_EXTENDED_CMS_MENUS)
-    {"DYN FILT",  OME_Submenu, cmsMenuChange,                 &cmsx_menuDynFilt,                                             0},
-#endif
-
 #ifdef USE_EXTENDED_CMS_MENUS
-    {"COPY PROF", OME_Submenu, cmsMenuChange,                 &cmsx_menuCopyProfile,                                         0},
+	#if defined(USE_GYRO_IMUF9001)
+    	{"IMUF",      OME_Submenu, cmsMenuChange,                 &cmsx_menuImuf,                                                0},
+	#elif  (defined(USE_GYRO_DATA_ANALYSE) || defined(USE_DYN_LPF))
+        {"DYN FILT",  OME_Submenu, cmsMenuChange,                 &cmsx_menuDynFilt,                                             0},
+    #endif
+	#ifdef USE_COPY_PROFILE_CMS_MENU
+    	{"COPY PROF", OME_Submenu, cmsMenuChange,                 &cmsx_menuCopyProfile,                                         0},
+	#endif /* USE_COPY_PROFILE_CMS_MENU */
 #endif /* USE_EXTENDED_CMS_MENUS */
 
     {"BACK", OME_Back, NULL, NULL, 0},

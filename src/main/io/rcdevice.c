@@ -282,6 +282,7 @@ void runcamDeviceInit(runcamDevice_t *device)
     }
 }
 
+
 bool runcamDeviceSimulateCameraButton(runcamDevice_t *device, uint8_t operation)
 {
     if (device->info.protocolVersion == RCDEVICE_PROTOCOL_VERSION_1_0) {

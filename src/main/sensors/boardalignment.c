@@ -41,7 +41,7 @@ static float boardRotation[3][3];              // matrix
 // no template required since defaults are zero
 PG_REGISTER(boardAlignment_t, boardAlignment, PG_BOARD_ALIGNMENT, 0);
 
-static bool isBoardAlignmentStandard(const boardAlignment_t *boardAlignment)
+bool isBoardAlignmentStandard(const boardAlignment_t *boardAlignment)
 {
     return !boardAlignment->rollDegrees && !boardAlignment->pitchDegrees && !boardAlignment->yawDegrees;
 }

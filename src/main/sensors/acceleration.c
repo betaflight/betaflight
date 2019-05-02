@@ -65,6 +65,9 @@
 #include "drivers/accgyro_legacy/accgyro_mma845x.h"
 #endif
 
+#ifdef USE_ACC_IMUF9001
+#include "drivers/accgyro/accgyro_imuf9001.h"
+#endif //USE_ACC_IMUF9001
 #include "drivers/bus_spi.h"
 
 #include "fc/config.h"
@@ -260,6 +263,15 @@ retry:
         FALLTHROUGH;
 #endif
 
+#ifdef USE_ACC_IMUF9001
+    case ACC_IMUF9001:
+        if (imufSpiAccDetect(dev)) {
+            accHardware = ACC_IMUF9001;
+            break;
+        }
+        FALLTHROUGH;
+#endif
+
 #ifdef USE_ACC_SPI_ICM20689
     case ACC_ICM20689:
         if (icm20689SpiAccDetect(dev)) {
@@ -334,7 +346,7 @@ bool accInit(uint32_t gyroSamplingInverval)
     acc.dev.initFn(&acc.dev); // driver initialisation
     acc.dev.acc_1G_rec = 1.0f / acc.dev.acc_1G;
     // set the acc sampling interval according to the gyro sampling interval
-    switch (gyroSamplingInverval) {  // Switch statement kept in place to change acc sampling interval in the future
+        switch (gyroSamplingInverval) {  // Switch statement kept in place to change acc sampling interval in the future
     case 500:
     case 375:
     case 250:
@@ -485,7 +497,9 @@ void accUpdate(timeUs_t currentTimeUs, rollAndPitchTrims_t *rollAndPitchTrims)
         }
     }
 
+    #ifndef USE_ACC_IMUF9001
     alignSensors(acc.accADC, acc.dev.accAlign);
+    #endif
 
     if (!accIsCalibrationComplete()) {
         performAcclerationCalibration(rollAndPitchTrims);
