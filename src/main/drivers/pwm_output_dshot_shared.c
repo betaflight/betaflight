@@ -150,7 +150,7 @@ static uint16_t decodeDshotPacket(uint32_t buffer[])
     csum = csum ^ (csum >> 8); // xor bytes
     csum = csum ^ (csum >> 4); // xor nibbles
 
-    if ((csum & 0xf) != 0) {
+    if ((csum & 0xf) != 0xf) {
         return 0xffff;
     }
     return value >> 4;
@@ -176,7 +176,7 @@ static uint16_t decodeProshotPacket(uint32_t buffer[])
     csum = csum ^ (csum >> 8); // xor bytes
     csum = csum ^ (csum >> 4); // xor nibbles
 
-    if ((csum & 0xf) != 0) {
+    if ((csum & 0xf) != 0xf) {
         return 0xffff;
     }
     return value >> 4;

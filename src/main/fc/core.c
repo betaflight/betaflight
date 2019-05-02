@@ -414,14 +414,6 @@ void tryArm(void)
             return;
         }
 
-#ifdef USE_DSHOT_TELEMETRY
-        if (isMotorProtocolDshot()) {
-            pwmWriteDshotCommand(
-                255, getMotorCount(), motorConfig()->dev.useDshotTelemetry ?
-                DSHOT_CMD_SIGNAL_LINE_CONTINUOUS_ERPM_TELEMETRY : DSHOT_CMD_SIGNAL_LINE_TELEMETRY_DISABLE, false);
-        }
-#endif
-
         if (isMotorProtocolDshot() && isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH)) {
             if (!(IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH) || (tryingToArm == ARMING_DELAYED_CRASHFLIP))) {
                 flipOverAfterCrashActive = false;

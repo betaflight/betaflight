@@ -209,20 +209,6 @@ static IO_t busSwitchResetPin        = IO_NONE;
 }
 #endif
 
-#ifdef USE_DSHOT_TELEMETRY
-void activateDshotTelemetry(struct dispatchEntry_s* self)
-{
-    if (!ARMING_FLAG(ARMED) && !isDshotTelemetryActive()) {
-        pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SIGNAL_LINE_CONTINUOUS_ERPM_TELEMETRY, false);
-        dispatchAdd(self, 1e6); // check again in 1 second
-    }
-}
-
-dispatchEntry_t activateDshotTelemetryEntry =
-{
-    activateDshotTelemetry, 0, NULL, false
-};
-#endif
 
 void init(void)
 {
@@ -793,13 +779,6 @@ void init(void)
     pwmEnableMotors();
 
     setArmingDisabled(ARMING_DISABLED_BOOT_GRACE_TIME);
-
-#ifdef USE_DSHOT_TELEMETRY
-    if (motorConfig()->dev.useDshotTelemetry) {
-        dispatchEnable();
-        dispatchAdd(&activateDshotTelemetryEntry, 5000000);
-    }
-#endif
 
     fcTasksInit();
 
