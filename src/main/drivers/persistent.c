@@ -70,7 +70,7 @@ void persistentObjectRTCEnable(void)
 #else
 uint32_t persistentObjectRead(persistentObjectId_e id)
 {
-    uint32_t value = RTC_ReadBackupRegister(id); 
+    uint32_t value = RTC_ReadBackupRegister(id);
 
     return value;
 }

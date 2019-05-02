@@ -520,7 +520,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
         // Pass only the payload: skip frameId
         uint8_t *frameStart = (uint8_t *)&payload->valueId;
         smartPortMspReplyPending = handleMspFrame(frameStart, SMARTPORT_MSP_PAYLOAD_SIZE, &skipRequests);
-         
+
         // Don't send MSP response after write to eeprom
         // CPU just got out of suspended state after writeEEPROM()
         // We don't know if the receiver is listening again

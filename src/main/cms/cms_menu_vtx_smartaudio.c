@@ -369,7 +369,7 @@ static OSD_TAB_t saCmsEntChan;
 static OSD_TAB_t saCmsEntPower;
 
 static void saCmsInitNames(void)
-{ 
+{
     vtxDevice_t *device = vtxCommonDevice();
 
     saCmsEntBand.val = &saCmsBand;

@@ -177,7 +177,7 @@ bool handleMspFrame(uint8_t *frameStart, int frameLength, uint8_t *skipsBeforeRe
     if (packet->cmd == MSP_EEPROM_WRITE && skipsBeforeResponse) {
         *skipsBeforeResponse = TELEMETRY_REQUEST_SKIPS_AFTER_EEPROMWRITE;
     }
-    
+
     mspStarted = 0;
     sbufSwitchToReader(rxBuf, mspPackage.requestBuffer);
     processMspPacket();
