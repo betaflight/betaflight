@@ -1516,12 +1516,12 @@ bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 #ifdef USE_BARO
         sbufWriteU8(dst, barometerConfig()->baro_hardware);
 #else
-        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, BARO_NONE);
 #endif
 #ifdef USE_MAG
         sbufWriteU8(dst, compassConfig()->mag_hardware);
 #else
-        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, MAG_NONE);
 #endif
         break;
 

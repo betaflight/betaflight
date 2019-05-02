@@ -120,6 +120,12 @@ typedef struct {
 #define GPS_RESCUE_RATE_SCALE_DEGREES    45 // Scale the commanded yaw rate when the error is less then this angle
 #define GPS_RESCUE_SLOWDOWN_DISTANCE_M  200 // distance from home to start decreasing speed
 
+#ifdef USE_MAG
+#define GPS_RESCUE_USE_MAG              true
+#else
+#define GPS_RESCUE_USE_MAG              false
+#endif
+
 PG_REGISTER_WITH_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 1);
 
 PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
@@ -141,7 +147,7 @@ PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
     .minSats = 8,
     .minRescueDth = 100,
     .allowArmingWithoutFix = false,
-    .useMag = true
+    .useMag = GPS_RESCUE_USE_MAG,
 );
 
 static uint16_t rescueThrottle;
@@ -371,12 +377,15 @@ static void performSanityChecks()
         lastDistanceToHomeM = rescueState.sensor.distanceToHomeM;
 
         if (secondsFlyingAway == 10) {
+#ifdef USE_MAG
             //If there is a mag and has not been disabled, we have to assume is healthy and has been used in imu.c
             if (sensors(SENSOR_MAG) && gpsRescueConfig()->useMag && !magForceDisable) {
                 //Try again with mag disabled
                 magForceDisable = true;
                 secondsFlyingAway = 0;
-            } else {
+            } else
+#endif
+            {
                 rescueState.failure = RESCUE_FLYAWAY;
             }
         }
@@ -639,9 +648,11 @@ bool gpsRescueIsDisabled(void)
     return (!STATE(GPS_FIX_HOME));
 }
 
+#ifdef USE_MAG
 bool gpsRescueDisableMag(void)
 {
     return ((!gpsRescueConfig()->useMag || magForceDisable) && (rescueState.phase >= RESCUE_INITIALIZE) && (rescueState.phase <= RESCUE_LANDING));
 }
+#endif
 #endif
 
