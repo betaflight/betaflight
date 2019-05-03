@@ -793,13 +793,7 @@ static void osdElementHorizonSidebars(osdElementParms_t *element)
 #ifdef USE_RX_LINK_QUALITY_INFO
 static void osdElementLinkQuality(osdElementParms_t *element)
 {
-    // change range to 0-9 (two sig. fig. adds little extra value, also reduces screen estate)
-    uint8_t osdLinkQuality = rxGetLinkQuality() * 10 / LINK_QUALITY_MAX_VALUE;
-    if (osdLinkQuality >= 10) {
-        osdLinkQuality = 9;
-    }
-
-    tfp_sprintf(element->buff, "%1d", osdLinkQuality);
+    tfp_sprintf(element->buff, "%3d", rxGetLinkQualityOsd());
 }
 #endif // USE_RX_LINK_QUALITY_INFO
 
@@ -951,6 +945,13 @@ static void osdElementRssi(osdElementParms_t *element)
 
     tfp_sprintf(element->buff, "%c%2d", SYM_RSSI, osdRssi);
 }
+
+#ifdef USE_RX_RSSI_DBM
+static void osdElementRssiDbm(osdElementParms_t *element)
+{
+    tfp_sprintf(element->buff, "%c%3d", SYM_RSSI, getRssiDbm());
+}
+#endif // USE_RX_RSSI_DBM
 
 #ifdef USE_RTC_TIME
 static void osdElementRtcTime(osdElementParms_t *element)
@@ -1123,13 +1124,19 @@ static void osdElementWarnings(osdElementParms_t *element)
     // RSSI
     if (osdWarnGetState(OSD_WARNING_RSSI) && (getRssiPercent() < osdConfig()->rssi_alarm)) {
         osdFormatMessage(element->buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "RSSI LOW");
+    }
+#ifdef USE_RX_RSSI_DBM
+    // rssi dbm
+    if (osdWarnGetState(OSD_WARNING_RSSI_DBM) && (getRssiDbm() > osdConfig()->rssi_dbm_alarm)) {
+        osdFormatMessage(element->buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "RSSI DBM");
         SET_BLINK(OSD_WARNINGS);
         return;
     }
+#endif // USE_RX_RSSI_DBM
 
 #ifdef USE_RX_LINK_QUALITY_INFO
     // Link Quality
-    if (osdWarnGetState(OSD_WARNING_LINK_QUALITY) && (rxGetLinkQualityPercent() < osdConfig()->link_quality_alarm)) {
+    if (osdWarnGetState(OSD_WARNING_LINK_QUALITY) && (rxGetLinkQuality() < osdConfig()->link_quality_alarm)) {
         osdFormatMessage(element->buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "LINK QUALITY");
         SET_BLINK(OSD_WARNINGS);
         return;
@@ -1329,6 +1336,9 @@ static const uint8_t osdElementDisplayOrder[] = {
 #ifdef USE_RX_LINK_QUALITY_INFO
     OSD_LINK_QUALITY,
 #endif
+#ifdef USE_RX_RSSI_DBM
+    OSD_RSSI_DBM_VALUE,
+#endif
 #ifdef USE_OSD_STICK_OVERLAY
     OSD_STICK_OVERLAY_LEFT,
     OSD_STICK_OVERLAY_RIGHT,
@@ -1427,6 +1437,9 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_DISPLAY_NAME]            = osdElementDisplayName,
 #if defined(USE_RPM_FILTER) || defined(USE_ESC_SENSOR)
     [OSD_ESC_RPM_FREQ]            = osdElementEscRpmFreq,
+#endif
+#ifdef USE_RX_RSSI_DBM
+    [OSD_RSSI_DBM_VALUE]          = osdElementRssiDbm,
 #endif
 };
 
@@ -1545,12 +1558,20 @@ void osdUpdateAlarms(void)
     }
 
 #ifdef USE_RX_LINK_QUALITY_INFO
-    if (rxGetLinkQualityPercent() < osdConfig()->link_quality_alarm) {
+    if (rxGetLinkQuality() < osdConfig()->link_quality_alarm) {
         SET_BLINK(OSD_LINK_QUALITY);
     } else {
         CLR_BLINK(OSD_LINK_QUALITY);
     }
 #endif // USE_RX_LINK_QUALITY_INFO
+
+#ifdef USE_RX_RSSI_DBM
+    if (getRssiDbm() > osdConfig()->rssi_dbm_alarm) {
+        SET_BLINK(OSD_RSSI_DBM_VALUE);
+    } else {
+        CLR_BLINK(OSD_RSSI_DBM_VALUE);
+    }
+#endif
 
     if (getBatteryState() == BATTERY_OK) {
         CLR_BLINK(OSD_MAIN_BATT_VOLTAGE);

@@ -323,7 +323,7 @@ TEST(OsdTest, TestStatsImperial)
     osdStatSetState(OSD_STAT_MAX_G_FORCE, false);
     osdStatSetState(OSD_STAT_MAX_ESC_TEMP, false);
     osdStatSetState(OSD_STAT_MAX_ESC_RPM, false);
- 
+
     // and
     // using imperial unit system
     osdConfigMutable()->units = OSD_UNIT_IMPERIAL;
@@ -1096,7 +1096,8 @@ extern "C" {
 
     uint8_t getRssiPercent(void) { return scaleRange(rssi, 0, RSSI_MAX_VALUE, 0, 100); }
 
-    uint8_t rxGetLinkQuality(void) { return LINK_QUALITY_MAX_VALUE; }
+    uint16_t rxGetLinkQuality(void) { return LINK_QUALITY_MAX_VALUE; }
+    uint16_t rxGetLinkQualityOsd(void)  { return LINK_QUALITY_MAX_VALUE; }
 
     uint16_t getCoreTemperatureCelsius(void) { return simulationCoreTemperature; }
 

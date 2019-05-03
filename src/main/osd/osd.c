@@ -244,6 +244,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     // turn off RSSI & Link Quality warnings by default
     osdWarnSetState(OSD_WARNING_RSSI, false);
     osdWarnSetState(OSD_WARNING_LINK_QUALITY, false);
+    osdWarnSetState(OSD_WARNING_RSSI_DBM, false);
 
     osdConfig->timers[OSD_TIMER_1] = osdTimerDefault[OSD_TIMER_1];
     osdConfig->timers[OSD_TIMER_2] = osdTimerDefault[OSD_TIMER_2];
@@ -264,6 +265,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 
     osdConfig->osdProfileIndex = 1;
     osdConfig->ahInvert = false;
+    osdConfig->rssi_dbm_alarm = 70; //  TODOLaZ whats default value 70?
 }
 
 static void osdDrawLogo(int x, int y)
@@ -341,7 +343,8 @@ static void osdResetStats(void)
     stats.max_g_force  = 0;
     stats.max_esc_temp = 0;
     stats.max_esc_rpm  = 0;
-    stats.min_link_quality = 99; // percent
+    stats.min_link_quality = 300;
+    stats.max_rssi_dbm = 0;
 }
 
 static void osdUpdateStats(void)
@@ -382,9 +385,16 @@ static void osdUpdateStats(void)
 #endif
 
 #ifdef USE_RX_LINK_QUALITY_INFO
-    value = rxGetLinkQualityPercent();
+    value = rxGetLinkQuality();
     if (stats.min_link_quality > value) {
         stats.min_link_quality = value;
+    }
+#endif
+
+#ifdef USE_RX_RSSI_DBM
+    value = getRssiDbm();
+    if (stats.max_rssi_dbm < value) {
+        stats.max_rssi_dbm = value;
     }
 #endif
 
@@ -610,7 +620,7 @@ static uint8_t osdShowStats(uint16_t endBatteryVoltage, int statsRowCount)
 
 #ifdef USE_RX_LINK_QUALITY_INFO
     if (osdStatGetState(OSD_STAT_MIN_LINK_QUALITY)) {
-        itoa(stats.min_link_quality, buff, 10);
+        itoa(stats.min_link_quality, buff, 10); //TODOLaZ Check
         strcat(buff, "%");
         osdDisplayStatisticLabel(top++, "MIN LINK", buff);
     }
@@ -625,6 +635,13 @@ static uint8_t osdShowStats(uint16_t endBatteryVoltage, int statsRowCount)
         } else {
             osdDisplayStatisticLabel(top++, "PEAK FFT", "THRT<20%");
         }
+    }
+#endif
+
+#ifdef USE_RX_RSSI_DBM
+    if (osdStatGetState(OSD_STAT_MAX_RSSI_DBM)) {
+        itoa(stats.max_rssi_dbm, buff, 10);
+        osdDisplayStatisticLabel(top++, "MAX RSSI DBM", buff);
     }
 #endif
 
