@@ -2,9 +2,6 @@
 # H7 Make file include
 #
 
-# Override LINKER_DIR until H7 merge is complete
-LINKER_DIR = $(ROOT)/src/main/target/link
-
 ifeq ($(DEBUG_HARDFAULTS),H7)
 CFLAGS               += -DDEBUG_HARDFAULTS
 endif
