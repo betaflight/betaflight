@@ -257,7 +257,11 @@ void schedulerOptimizeRate(bool optimizeRate)
 
 inline static timeUs_t getPeriodCalculationBasis(const cfTask_t* task)
 {
-    return *(timeUs_t*)((uint8_t*)task + periodCalculationBasisOffset);
+    if (task->staticPriority == TASK_PRIORITY_REALTIME) {
+        return *(timeUs_t*)((uint8_t*)task + periodCalculationBasisOffset);
+    } else {
+        return task->lastExecutedAt;
+    }
 }
 
 FAST_CODE void scheduler(void)
