@@ -674,9 +674,11 @@ FAST_CODE uint16_t prepareDshotPacket(motorDmaOutput_t *const motor)
         csum_data >>= 4;
     }
     // append checksum
+#ifdef USE_DSHOT_TELEMETRY
     if (useDshotTelemetry) {
         csum = ~csum;
     }
+#endif
     csum &= 0xf;
     packet = (packet << 4) | csum;
 
