@@ -99,9 +99,6 @@
 
 #define USE_ADC
 
-#if defined(STM32F4)
-//We currently only have stdperiph drivers for this
-
 #define USE_RX_SPI
 
 #define USE_RX_FRSKY_SPI_D
@@ -113,4 +110,3 @@
 
 #define USE_RX_FLYSKY
 #define USE_RX_FLYSKY_SPI_LED
-#endif
