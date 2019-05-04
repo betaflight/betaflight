@@ -173,7 +173,7 @@
 /*--------------TIMERS-------------*/
 #if defined(FF_PIKOF4OSD)
 #define USABLE_TIMER_CHANNEL_COUNT  7
-#define USED_TIMERS             ( TIM_N(1) | TIM_N(3) | TIM_N(5) | TIM_N(8) )
+#define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) )
 #else
 #define USABLE_TIMER_CHANNEL_COUNT  5
 #define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(4) )
