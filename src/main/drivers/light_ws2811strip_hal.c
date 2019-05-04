@@ -58,6 +58,11 @@ bool ws2811LedStripHardwareInit(ioTag_t ioTag)
     }
 
     const timerHardware_t *timerHardware = timerGetByTag(ioTag);
+
+    if (timerHardware == NULL) {
+        return false;
+    }
+
     TIM_TypeDef *timer = timerHardware->tim;
     timerChannel = timerHardware->channel;
 
