@@ -58,6 +58,15 @@
 #ifndef UART_TX_BUFFER_SIZE
 #define UART_TX_BUFFER_SIZE     256
 #endif
+#elif defined(STM32H7)
+#define UARTDEV_COUNT_MAX 8
+#define UARTHARDWARE_MAX_PINS 5
+#ifndef UART_RX_BUFFER_SIZE
+#define UART_RX_BUFFER_SIZE     128
+#endif
+#ifndef UART_TX_BUFFER_SIZE
+#define UART_TX_BUFFER_SIZE     256
+#endif
 #else
 #error unknown MCU family
 #endif
@@ -116,7 +125,7 @@
 
 typedef struct uartPinDef_s {
     ioTag_t pin;
-#if defined(STM32F7)
+#if defined(STM32F7) || defined(STM32H7)
     uint8_t af;
 #endif
 } uartPinDef_t;
@@ -124,33 +133,54 @@ typedef struct uartPinDef_s {
 typedef struct uartHardware_s {
     UARTDevice_e device;    // XXX Not required for full allocation
     USART_TypeDef* reg;
-#if defined(STM32F1) || defined(STM32F3)
-    DMA_Channel_TypeDef *txDMAChannel;
-    DMA_Channel_TypeDef *rxDMAChannel;
-#elif defined(STM32F4) || defined(STM32F7)
+
+#ifdef USE_DMA
+#if defined(STM32F4) || defined(STM32F7)
     uint32_t DMAChannel;
     DMA_Stream_TypeDef *txDMAStream;
     DMA_Stream_TypeDef *rxDMAStream;
+#elif defined(STM32H7)
+    // DMAMUX input from peripherals (DMA_REQUEST_xxx); RM0433 Table 110.
+    uint8_t txDMARequest;
+    uint8_t rxDMARequest;
+    DMA_Stream_TypeDef *txDMAStream;
+    DMA_Stream_TypeDef *rxDMAStream;
+#elif defined(STM32F1) || defined(STM32F3)
+    DMA_Channel_TypeDef *txDMAChannel;
+    DMA_Channel_TypeDef *rxDMAChannel;
 #endif
+#endif // USE_DMA
+
     uartPinDef_t rxPins[UARTHARDWARE_MAX_PINS];
     uartPinDef_t txPins[UARTHARDWARE_MAX_PINS];
-#if defined(STM32F7)
+
+#if defined(STM32F7) || defined(STM32H7)
     uint32_t rcc_ahb1;
     rccPeriphTag_t rcc_apb2;
     rccPeriphTag_t rcc_apb1;
 #else
     rccPeriphTag_t rcc;
 #endif
+
 #if !defined(STM32F7)
     uint8_t af;
 #endif
-#if defined(STM32F7)
+
+#if defined(STM32F7) || defined(STM32H7)
+    uint8_t txIrq;
     uint8_t rxIrq;
 #else
     uint8_t irqn;
 #endif
     uint8_t txPriority;
     uint8_t rxPriority;
+
+#ifdef STM32H7
+    volatile uint8_t *txBuffer;
+    volatile uint8_t *rxBuffer;
+    uint16_t txBufferSize;
+    uint16_t rxBufferSize;
+#endif
 } uartHardware_t;
 
 extern const uartHardware_t uartHardware[];
@@ -163,8 +193,14 @@ typedef struct uartDevice_s {
     const uartHardware_t *hardware;
     uartPinDef_t rx;
     uartPinDef_t tx;
+#ifdef STM32H7
+    // For H7, buffers with possible DMA access is placed in D2 SRAM.
+    volatile uint8_t *rxBuffer;
+    volatile uint8_t *txBuffer;
+#else
     volatile uint8_t rxBuffer[UART_RX_BUFFER_SIZE];
     volatile uint8_t txBuffer[UART_TX_BUFFER_SIZE];
+#endif
 } uartDevice_t;
 
 extern uartDevice_t *uartDevmap[];
