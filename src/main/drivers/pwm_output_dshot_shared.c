@@ -46,6 +46,22 @@
 
 #include "pwm_output_dshot_shared.h"
 
+#ifdef USE_DSHOT_TELEMETRY_STATS
+#define DSHOT_TELEMETRY_QUALITY_WINDOW 1       // capture a rolling 1 second of packet stats
+#define DSHOT_TELEMETRY_QUALITY_BUCKET_MS 100  // determines the granularity of the stats and the overall number of rolling buckets
+#define DSHOT_TELEMETRY_QUALITY_BUCKET_COUNT (DSHOT_TELEMETRY_QUALITY_WINDOW * 1000 / DSHOT_TELEMETRY_QUALITY_BUCKET_MS)
+
+typedef struct dshotTelemetryQuality_s {
+    uint32_t packetCountSum;
+    uint32_t invalidCountSum;
+    uint32_t packetCountArray[DSHOT_TELEMETRY_QUALITY_BUCKET_COUNT];
+    uint32_t invalidCountArray[DSHOT_TELEMETRY_QUALITY_BUCKET_COUNT];
+    uint8_t lastBucketIndex;
+}  dshotTelemetryQuality_t;
+
+static FAST_RAM_ZERO_INIT dshotTelemetryQuality_t dshotTelemetryQuality[MAX_SUPPORTED_MOTORS];
+#endif // USE_DSHOT_TELEMETRY_STATS
+
 FAST_RAM_ZERO_INIT uint8_t dmaMotorTimerCount = 0;
 #ifdef STM32F7
 FAST_RAM_ZERO_INIT motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];
@@ -265,7 +281,7 @@ bool pwmStartDshotMotorUpdate(uint8_t motorCount)
             }
             dmaMotors[i].hasTelemetry = false;
 #ifdef USE_DSHOT_TELEMETRY_STATS
-            updateDshotTelemetryQuality(&dmaMotors[i].dshotTelemetryQuality, validTelemetryPacket, currentTimeMs);
+            updateDshotTelemetryQuality(&dshotTelemetryQuality[i], validTelemetryPacket, currentTimeMs);
 #endif
         } else {
             timeDelta_t usSinceInput = cmpTimeUs(micros(), dmaMotors[i].timer->inputDirectionStampUs);
@@ -295,8 +311,8 @@ int16_t getDshotTelemetryMotorInvalidPercent(uint8_t motorIndex)
     int16_t invalidPercent = 0;
 
     if (dmaMotors[motorIndex].dshotTelemetryActive) {
-        const uint32_t totalCount = dmaMotors[motorIndex].dshotTelemetryQuality.packetCountSum;
-        const uint32_t invalidCount = dmaMotors[motorIndex].dshotTelemetryQuality.invalidCountSum;
+        const uint32_t totalCount = dshotTelemetryQuality[motorIndex].packetCountSum;
+        const uint32_t invalidCount = dshotTelemetryQuality[motorIndex].invalidCountSum;
         if (totalCount > 0) {
             invalidPercent = lrintf(invalidCount * 10000.0f / totalCount);
         }
