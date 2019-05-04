@@ -173,7 +173,7 @@ bool sbusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
         sbusBaudRate  = DJI_HDL_BAUDRATE;
         sbusTimeNeededPreFrame = DJI_HDL_TIME_NEEDED_PER_FRAME;
     } else {
-        rxRuntimeConfig->rxRefreshRate = SBUS_RX_REFRESH_RATE;   
+        rxRuntimeConfig->rxRefreshRate = SBUS_RX_REFRESH_RATE;
         sbusBaudRate  = SBUS_BAUDRATE;
         sbusTimeNeededPreFrame = SBUS_TIME_NEEDED_PER_FRAME;
     }

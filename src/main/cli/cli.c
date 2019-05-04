@@ -541,7 +541,7 @@ static void printValuePointer(const clivalue_t *var, const void *valuePointer, b
                 cliPrintf("OFF");
             }
             break;
-        case MODE_STRING: 
+        case MODE_STRING:
             cliPrintf("%s", (char *)valuePointer);
             break;
         }
@@ -3115,7 +3115,7 @@ static void printMap(dumpFlags_t dumpMask, const rxConfig_t *rxConfig, const rxC
     if (defaultRxConfig) {
         bufDefault[i] = '\0';
         cliDefaultPrintLinef(dumpMask, equalsDefault, formatMap, bufDefault);
-    }   
+    }
     cliDumpPrintLinef(dumpMask, equalsDefault, formatMap, buf);
 }
 
@@ -3955,7 +3955,7 @@ static uint8_t getWordLength(char *bufBegin, char *bufEnd)
     return bufEnd - bufBegin;
 }
 
-uint16_t cliGetSettingIndex(char *name, uint8_t length) 
+uint16_t cliGetSettingIndex(char *name, uint8_t length)
 {
     for (uint32_t i = 0; i < valueTableEntryCount; i++) {
         const char *settingName = valueTable[i].name;
@@ -4024,7 +4024,7 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
             }
 
             break;
-        case MODE_LOOKUP: 
+        case MODE_LOOKUP:
         case MODE_BITSET: {
                 int tableIndex;
                 if ((val->type & VALUE_MODE_MASK) == MODE_BITSET) {
@@ -4118,8 +4118,8 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
                 const unsigned int len = strlen(valPtr);
                 const uint8_t min = val->config.string.minlength;
                 const uint8_t max = val->config.string.maxlength;
-                const bool updatable = ((val->config.string.flags & STRING_FLAGS_WRITEONCE) == 0 || 
-                                        strlen((char *)cliGetValuePointer(val)) == 0 || 
+                const bool updatable = ((val->config.string.flags & STRING_FLAGS_WRITEONCE) == 0 ||
+                                        strlen((char *)cliGetValuePointer(val)) == 0 ||
                                         strncmp(valPtr, (char *)cliGetValuePointer(val), len) == 0);
 
                 if (updatable && len > 0 && len <= max) {
@@ -5227,12 +5227,12 @@ static void cliTimer(char *cmdline)
 
         return;
     }
-    
+
     char *pch = NULL;
     char *saveptr;
-    
+
     ioTag_t ioTag = IO_TAG_NONE;
-    pch = strtok_r(cmdline, " ", &saveptr);    
+    pch = strtok_r(cmdline, " ", &saveptr);
     if (!pch || !strToPin(pch, &ioTag)) {
         cliShowParseError();
 
@@ -5393,7 +5393,7 @@ static void printConfig(char *cmdline, bool doDiff)
     if (doDiff) {
         dumpMask = dumpMask | DO_DIFF;
     }
-    
+
     if (checkCommand(options, "defaults")) {
         dumpMask = dumpMask | SHOW_DEFAULTS;   // add default values as comments for changed values
     } else if (checkCommand(options, "bare")) {

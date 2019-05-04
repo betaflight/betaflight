@@ -120,14 +120,14 @@ void vtxTableConfigClearBand(vtxTableConfig_t *config, int band)
     config->bandLetters[band] = '1' + band;
 }
 
-void vtxTableConfigClearPowerValues(vtxTableConfig_t *config, int start) 
+void vtxTableConfigClearPowerValues(vtxTableConfig_t *config, int start)
 {
     for (int i = start; i < VTX_TABLE_MAX_POWER_LEVELS; i++) {
         config->powerValues[i] = 0;
     }
 }
 
-void vtxTableConfigClearPowerLabels(vtxTableConfig_t *config, int start) 
+void vtxTableConfigClearPowerLabels(vtxTableConfig_t *config, int start)
 {
     for (int i = start; i < VTX_TABLE_MAX_POWER_LEVELS; i++) {
         char tempbuf[4];
