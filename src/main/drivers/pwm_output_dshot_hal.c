@@ -241,16 +241,12 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     const uint8_t timerIndex = getTimerIndex(timer);
     const bool configureTimer = (timerIndex == dmaMotorTimerCount - 1);
 
-    uint8_t pupMode = 0;
+    uint8_t pupMode = (output & TIMER_OUTPUT_INVERTED) ? GPIO_PULLDOWN : GPIO_PULLUP;
 #ifdef USE_DSHOT_TELEMETRY
-    if (!useDshotTelemetry) {
-        pupMode = (output & TIMER_OUTPUT_INVERTED) ? GPIO_PULLDOWN : GPIO_PULLUP;
-    } else
-#endif
-    {
-        pupMode = (output & TIMER_OUTPUT_INVERTED) ? GPIO_PULLUP : GPIO_PULLDOWN;
+    if (useDshotTelemetry) {
+        output ^= TIMER_OUTPUT_INVERTED;
     }
-
+#endif
 
     IOConfigGPIOAF(motorIO, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, pupMode), timerHardware->alternateFunction);
 
@@ -358,6 +354,10 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
         ( 2 + (motor->useProshot ? 4 * MOTOR_NIBBLE_LENGTH_PROSHOT : 16 * MOTOR_BITLENGTH))
         / getDshotHz(pwmProtocolType);
     pwmDshotSetDirectionOutput(motor, true);
+    if (useDshotTelemetry) {
+        // avoid high line during startup to prevent bootloader activation
+        *timerChCCR(timerHardware) = 0xffff;
+    }
 #else
     pwmDshotSetDirectionOutput(motor, true, &OCINIT, &DMAINIT);
 #endif
