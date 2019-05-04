@@ -166,15 +166,15 @@ static int getEscRpm(int i)
     if (motorConfig()->dev.useDshotTelemetry) {
         return 100.0f / (motorConfig()->motorPoleCount / 2.0f) * getDshotTelemetry(i);
     }
-#endif 
+#endif
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
         return calcEscRpm(getEscSensorData(i)->rpm);
-    } else { 
+    } else {
         return 0;
     }
 }
 
-static int getEscRpmFreq(int i) 
+static int getEscRpmFreq(int i)
 {
     return getEscRpm(i) / 60;
 }
@@ -187,7 +187,7 @@ static void renderOsdEscRpmOrFreq(getEscRpmOrFreqFnPtr escFnPtr, osdElementParms
         char rpmStr[6];
         const int rpm = MIN((*escFnPtr)(i),99999);
         const int len = tfp_sprintf(rpmStr, "%d", rpm);
-        rpmStr[len] = '\0'; 
+        rpmStr[len] = '\0';
         displayWrite(element->osdDisplayPort, x, y + i, rpmStr);
     }
     element->drawElement = false;
