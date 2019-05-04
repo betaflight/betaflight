@@ -31,6 +31,8 @@
 
 #include "cli/cli.h"
 
+#include "cms/cms.h"
+
 #include "common/axis.h"
 #include "common/filter.h"
 #include "common/maths.h"
@@ -836,7 +838,13 @@ bool processRx(timeUs_t currentTimeUs)
         disarmAt = currentTimeUs + autoDisarmDelayUs;  // extend auto-disarm timer
     }
 
-    processRcStickPositions();
+    if (!IS_RC_MODE_ACTIVE(BOXPARALYZE)
+#ifdef USE_CMS
+        && !cmsInMenu
+#endif
+        ) {
+        processRcStickPositions();
+    }
 
     if (featureIsEnabled(FEATURE_INFLIGHT_ACC_CAL)) {
         updateInflightCalibrationState();
@@ -851,7 +859,7 @@ bool processRx(timeUs_t currentTimeUs)
     }
 #endif
 
-    if (!cliMode) {
+    if (!cliMode && !IS_RC_MODE_ACTIVE(BOXPARALYZE)) {
         processRcAdjustments(currentControlRateProfile);
     }
 
