@@ -119,19 +119,19 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 #endif
 
 #ifdef USE_GPS
-if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
-    gpsAlt = gpsSol.llh.altCm;
+    if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
+        gpsAlt = gpsSol.llh.altCm;
 #ifdef USE_VARIO
-    gpsVertSpeed = GPS_verticalSpeedInCmS;
+        gpsVertSpeed = GPS_verticalSpeedInCmS;
 #endif
-    haveGpsAlt = true;
+        haveGpsAlt = true;
 
-    if (gpsSol.hdop != 0) {
-        gpsTrust = 100.0 / gpsSol.hdop;
+        if (gpsSol.hdop != 0) {
+            gpsTrust = 100.0 / gpsSol.hdop;
+        }
+        // always use at least 10% of other sources besides gps if available
+        gpsTrust = MIN(gpsTrust, 0.9f);
     }
-    // always use at least 10% of other sources besides gps if available
-    gpsTrust = MIN(gpsTrust, 0.9f);
-}
 #endif
 
     if (ARMING_FLAG(ARMED) && !altitudeOffsetSet) {
