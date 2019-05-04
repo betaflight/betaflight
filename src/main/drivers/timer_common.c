@@ -38,41 +38,33 @@ timerIOConfig_t *timerIoConfigByTag(ioTag_t ioTag)
     UNUSED(ioTag);
     return NULL;
 }
-#endif
 
 static uint8_t timerIndexByTag(ioTag_t ioTag)
 {
-#ifdef USE_TIMER_MGMT
     for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
         if (timerIOConfig(i)->ioTag == ioTag) {
             return timerIOConfig(i)->index;
         }
     }
-#else
-    UNUSED(ioTag);
-#endif
     return 0;
 }
 
 const timerHardware_t *timerGetByTagAndIndex(ioTag_t ioTag, unsigned timerIndex)
 {
-    if (!ioTag) {
+
+    if (!ioTag || !timerIndex) {
         return NULL;
     }
 
-#if TIMER_CHANNEL_COUNT > 0
     uint8_t index = 1;
     for (unsigned i = 0; i < TIMER_CHANNEL_COUNT; i++) {
         if (TIMER_HARDWARE[i].tag == ioTag) {
-            if (index == timerIndex || timerIndex == 0) {
+            if (index == timerIndex) {
                 return &TIMER_HARDWARE[i];
             }
-            index++;
+            ++index;
         }
     }
-#else
-    UNUSED(timerIndex);
-#endif
 
     return NULL;
 }
@@ -81,12 +73,25 @@ const timerHardware_t *timerGetByTag(ioTag_t ioTag)
 {
     uint8_t timerIndex = timerIndexByTag(ioTag);
 
-    if (timerIndex) {
-        return timerGetByTagAndIndex(ioTag, timerIndex);
-    } else {
-        return NULL;
-    }
+    return timerGetByTagAndIndex(ioTag, timerIndex);
 }
+
+#else
+
+const timerHardware_t *timerGetByTag(ioTag_t ioTag)
+{
+#if TIMER_CHANNEL_COUNT > 0
+    for (unsigned i = 0; i < TIMER_CHANNEL_COUNT; i++) {
+        if (TIMER_HARDWARE[i].tag == ioTag) {
+            return &TIMER_HARDWARE[i];
+        }
+    }
+#else
+    UNUSED(ioTag);
+#endif
+    return NULL;
+}
+#endif
 
 ioTag_t timerioTagGetByUsage(timerUsageFlag_e usageFlag, uint8_t index)
 {
