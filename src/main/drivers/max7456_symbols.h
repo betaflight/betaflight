@@ -25,6 +25,14 @@
 #define SYM_END_OF_FONT             0xFF
 #define SYM_BLANK                   0x20
 #define SYM_COLON                   0x2D
+#define SYM_BBLOG                   0x10
+//#define SYM_HOMEFLAG                0x11
+//#define SYM_RPM                     0x12
+#define SYM_ROLL                    0x14
+#define SYM_PITCH                   0x15
+#define SYM_TEMPERATURE             0x7A
+#define SYM_LAT                     0x89
+#define SYM_LON                     0x98
 
 // RSSI
 #define SYM_RSSI                    0x01
@@ -54,8 +62,8 @@
 #define SYM_HEADING_LINE            0x1D
 
 // AH Center screen Graphics
-#define SYM_AH_CENTER_LINE          0x26
-#define SYM_AH_CENTER_LINE_RIGHT    0x27
+#define SYM_AH_CENTER_LINE          0x7B
+#define SYM_AH_CENTER_LINE_RIGHT    0x7D
 #define SYM_AH_CENTER               0x7E
 #define SYM_AH_RIGHT                0x02
 #define SYM_AH_LEFT                 0x03
@@ -118,15 +126,15 @@
 #define SYM_VOLT                    0x06
 #define SYM_AMP                     0x9A
 #define SYM_MAH                     0x07
-#define SYM_WATT                    0x57
+#define SYM_WATT                    0x57  // 0x57 is 'W'
 
 // Time
 #define SYM_ON_M                    0x9B
 #define SYM_FLY_M                   0x9C
 
 // Speed
-#define SYM_KPH                     0x4B  // we don't have a KPH symbol so use 'K'
-#define SYM_MPH                     0x4D  // we don't have a MPH symbol so use 'M'
+#define SYM_KPH                     0x9E
+#define SYM_MPH                     0x9D
 
 // Menu cursor
 #define SYM_CURSOR                  SYM_AH_LEFT
