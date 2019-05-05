@@ -303,7 +303,14 @@ void init(void)
 
     delayMicroseconds(10);  // allow configuration to settle // XXX Could be removed, too?
 
-    if (!isMPUSoftReset()) {
+    // Allow EEPROM reset with two-button-press without power cycling in DEBUG build
+#ifdef DEBUG
+#define EEPROM_RESET_PRECONDITION true
+#else
+#define EEPROM_RESET_PRECONDITION (!isMPUSoftReset())
+#endif
+
+    if (EEPROM_RESET_PRECONDITION) {
 #if defined(BUTTON_A_PIN) && defined(BUTTON_B_PIN)
         // two buttons required
         uint8_t secondsRemaining = 5;
@@ -321,7 +328,10 @@ void init(void)
         } while (bothButtonsHeld);
 #endif
     }
-#endif
+
+#undef EEPROM_RESET_PRECONDITION
+
+#endif // USE_BUTTONS
 
     // Note that spektrumBind checks if a call is immediately after
     // hard reset (including power cycle), so it should be called before
