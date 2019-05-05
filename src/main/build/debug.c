@@ -87,4 +87,7 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "AC_ERROR",
     "DUAL_GYRO_SCALED",
     "DSHOT_RPM_ERRORS",
+    "CRSF_LINK_STATISTICS_UPLINK",
+    "CRSF_LINK_STATISTICS_PWR",
+    "CRSF_LINK_STATISTICS_DOWN",
 };
