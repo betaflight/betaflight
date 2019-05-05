@@ -86,6 +86,11 @@ bool ws2811LedStripHardwareInit(ioTag_t ioTag)
     DMA_InitTypeDef DMA_InitStructure;
 
     const timerHardware_t *timerHardware = timerGetByTag(ioTag);
+
+    if (timerHardware == NULL) {
+        return false;
+    }
+
     timer = timerHardware->tim;
 
 #if defined(USE_DMA_SPEC)
