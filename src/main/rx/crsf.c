@@ -184,7 +184,7 @@ static void handleCrsfLinkStatisticsFrame(const crsfLinkStatistics_t* statsPtr, 
 #if defined(USE_CRSF_LINK_STATISTICS)
 static void crsfCheckRssi(uint32_t currentTimeUs) {
 
-    if ( cmpTimeUs(currentTimeUs, lastLinkStatisticsFrameUs) > CRSF_LINK_STATUS_UPDATE_TIMEOUT_US) {
+    if (cmpTimeUs(currentTimeUs, lastLinkStatisticsFrameUs) > CRSF_LINK_STATUS_UPDATE_TIMEOUT_US) {
         if (rssiSource == RSSI_SOURCE_RX_PROTOCOL_CRSF) {
             setRssiDirect(0, RSSI_SOURCE_RX_PROTOCOL_CRSF);
         }
