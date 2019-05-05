@@ -21,24 +21,34 @@
 
 #include <math.h>
 #include <stdint.h>
+
 #include "platform.h"
+
+#if defined(USE_RPM_FILTER)
+
 #include "build/debug.h"
+
 #include "common/filter.h"
 #include "common/maths.h"
+
 #include "drivers/pwm_output_counts.h"
+
 #include "flight/mixer.h"
 #include "flight/pid.h"
+
 #include "pg/pg_ids.h"
+
 #include "scheduler/scheduler.h"
-#include "sensors/rpm_filter.h"
+
 #include "sensors/gyro.h"
+
+#include "rpm_filter.h"
 
 #define RPM_FILTER_MAXHARMONICS 3
 #define SECONDS_PER_MINUTE      60.0f
 #define ERPM_PER_LSB            100.0f
 #define MIN_UPDATE_T            0.001f
 
-#if defined(USE_RPM_FILTER)
 
 static pt1Filter_t rpmFilters[MAX_SUPPORTED_MOTORS];
 

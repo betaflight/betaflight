@@ -62,8 +62,11 @@
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
-#include "flight/position.h"
+#if defined(USE_GYRO_DATA_ANALYSE)
+#include "flight/gyroanalyse.h"
+#endif
 #include "flight/imu.h"
+#include "flight/position.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
@@ -83,9 +86,6 @@
 #include "sensors/battery.h"
 #include "sensors/esc_sensor.h"
 #include "sensors/sensors.h"
-#if defined(USE_GYRO_DATA_ANALYSE)
-#include "sensors/gyroanalyse.h"
-#endif
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
