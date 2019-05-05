@@ -56,7 +56,7 @@
 
 #define CRSF_PAYLOAD_OFFSET offsetof(crsfFrameDef_t, type)
 
-#define CRSF_LINK_STATUS_UPDATE_US                   250000 // 250ms, 4 Hz mode 1 telemetry
+#define CRSF_LINK_STATUS_UPDATE_TIMEOUT_US  250000 // 250ms, 4 Hz mode 1 telemetry
 
 STATIC_UNIT_TESTED bool crsfFrameDone = false;
 STATIC_UNIT_TESTED crsfFrame_t crsfFrame;
@@ -153,10 +153,11 @@ static void handleCrsfLinkStatisticsFrame(const crsfLinkStatistics_t* statsPtr, 
 {
     const crsfLinkStatistics_t stats = *statsPtr;
     lastLinkStatisticsFrameUs = currentTimeUs;
-
-    const uint8_t rssiDbm = stats.active_antenna ? stats.uplink_RSSI_2 : stats.uplink_RSSI_1;
-    const uint16_t rssiPercentScaled = scaleRange(rssiDbm, 130, 0, 0, RSSI_MAX_VALUE);
-    setRssi(rssiPercentScaled, RSSI_SOURCE_RX_PROTOCOL_CRSF);
+    if (rssiSource == RSSI_SOURCE_RX_PROTOCOL_CRSF) {
+        const uint8_t rssiDbm = stats.active_antenna ? stats.uplink_RSSI_2 : stats.uplink_RSSI_1;
+        const uint16_t rssiPercentScaled = scaleRange(rssiDbm, 130, 0, 0, RSSI_MAX_VALUE);
+        setRssi(rssiPercentScaled, RSSI_SOURCE_RX_PROTOCOL_CRSF);
+    }
 
     switch (debugMode) {
     case DEBUG_CRSF_LINK_STATISTICS_UPLINK:
@@ -180,15 +181,16 @@ static void handleCrsfLinkStatisticsFrame(const crsfLinkStatistics_t* statsPtr, 
 }
 #endif
 
-static void crsfCheckRssi(uint32_t currentTimeUs) {
-    UNUSED(currentTimeUs);
-
 #if defined(USE_CRSF_LINK_STATISTICS)
-    if (cmpTimeUs(currentTimeUs, lastLinkStatisticsFrameUs) > CRSF_LINK_STATUS_UPDATE_US) {
-        setRssiDirect(0,RSSI_SOURCE_RX_PROTOCOL_CRSF);
+static void crsfCheckRssi(uint32_t currentTimeUs) {
+
+    if ( cmpTimeUs(currentTimeUs, lastLinkStatisticsFrameUs) > CRSF_LINK_STATUS_UPDATE_TIMEOUT_US) {
+        if (rssiSource == RSSI_SOURCE_RX_PROTOCOL_CRSF) {
+            setRssiDirect(0, RSSI_SOURCE_RX_PROTOCOL_CRSF);
+        }
     }
-#endif
 }
+#endif
 
 STATIC_UNIT_TESTED uint8_t crsfFrameCRC(void)
 {
@@ -281,8 +283,9 @@ STATIC_UNIT_TESTED uint8_t crsfFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
 {
     UNUSED(rxRuntimeConfig);
 
+#if defined(USE_CRSF_LINK_STATISTICS)
     crsfCheckRssi(micros());
-
+#endif
     if (crsfFrameDone) {
         crsfFrameDone = false;
         if (crsfFrame.frame.type == CRSF_FRAMETYPE_RC_CHANNELS_PACKED) {
