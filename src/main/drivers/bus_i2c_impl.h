@@ -33,12 +33,12 @@
 
 typedef struct i2cPinDef_s {
     ioTag_t ioTag;
-#if defined(STM32F4)
+#if defined(STM32F4) || defined(STM32H7)
     uint8_t af;
 #endif
 } i2cPinDef_t;
 
-#if defined(STM32F4)
+#if defined(STM32F4) || defined(STM32H7)
 #define I2CPINDEF(pin, af) { DEFIO_TAG_E(pin), af }
 #elif defined(STM32F1)
 #define I2CPINDEF(pin, af) { DEFIO_TAG_E(pin) }
@@ -79,7 +79,7 @@ typedef struct i2cDevice_s {
     I2C_TypeDef *reg;
     IO_t scl;
     IO_t sda;
-#ifdef STM32F4
+#if defined(STM32F4) || defined(STM32H7)
     uint8_t sclAF;
     uint8_t sdaAF;
 #endif
