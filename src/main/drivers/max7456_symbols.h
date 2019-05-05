@@ -33,6 +33,7 @@
 #define SYM_TEMPERATURE             0x7A
 #define SYM_LAT                     0x89
 #define SYM_LON                     0x98
+#define SYM_ALTITUDE                0x7F
 
 // RSSI
 #define SYM_RSSI                    0x01
@@ -119,7 +120,7 @@
 #define SYM_BATT_1                  0x95
 #define SYM_BATT_EMPTY              0x96
 
-// Batt Icon´s
+// Batt Icons
 #define SYM_MAIN_BATT               0x97
 
 // Voltage and amperage
