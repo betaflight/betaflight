@@ -20,6 +20,8 @@
 
 #include "platform.h"
 
+#ifdef USE_TIMER
+
 #include "common/utils.h"
 
 #include "drivers/dma.h"
@@ -220,3 +222,4 @@ uint32_t timerClock(TIM_TypeDef *tim)
     #error "No timer clock defined correctly for MCU"
 #endif
 }
+#endif

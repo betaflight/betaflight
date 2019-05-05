@@ -142,6 +142,7 @@
 
 #define USE_PWM_OUTPUT
 #define USE_DMA
+#define USE_TIMER
 
 #define USE_CLI
 #define USE_SERIAL_PASSTHROUGH

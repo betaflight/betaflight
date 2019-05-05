@@ -106,9 +106,11 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
     motorConfig->dev.useBurstDshot = ENABLE_DSHOT_DMAR;
 #endif
 
+#ifdef USE_TIMER
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS; motorIndex++) {
         motorConfig->dev.ioTags[motorIndex] = timerioTagGetByUsage(TIM_USE_MOTOR, motorIndex);
     }
+#endif
 
     motorConfig->motorPoleCount = 14;   // Most brushes motors that we use are 14 poles
 }

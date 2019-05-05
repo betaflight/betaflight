@@ -358,7 +358,9 @@ void init(void)
     mcoInit(mcoConfig());
 #endif
 
+#ifdef USE_TIMER
     timerInit();  // timer must be initialized before any channel is allocated
+#endif
 
 #ifdef BUS_SWITCH_PIN
     busSwitchInit();
@@ -748,9 +750,11 @@ void init(void)
 
 #endif // VTX_CONTROL
 
+#ifdef USE_TIMER
     // start all timers
     // TODO - not implemented yet
     timerStart();
+#endif
 
     ENABLE_STATE(SMALL_ANGLE);
 
