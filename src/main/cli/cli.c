@@ -5286,7 +5286,7 @@ static void cliTimer(char *cmdline)
             }
         }
 
-        uint8_t oldTimerIndex = isExistingTimerOpt ? timerIOConfig(timerIOIndex)->index - 1 : 0;
+        int oldTimerIndex = isExistingTimerOpt ? timerIOConfig(timerIOIndex)->index - 1 : -1;
         timerIOConfigMutable(timerIOIndex)->ioTag = timerIndex == TIMER_INDEX_UNDEFINED ? IO_TAG_NONE : ioTag;
         timerIOConfigMutable(timerIOIndex)->index = timerIndex + 1;
         timerIOConfigMutable(timerIOIndex)->dmaopt = DMA_OPT_UNUSED;
