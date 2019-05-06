@@ -80,6 +80,7 @@
 //#define PG_VTX_CONFIG 54 // CF 1.x
 #define PG_GPS_RESCUE 55 // struct OK
 #define PG_POSITION 56
+#define PG_VTX_IO_CONFIG 57
 
 // Driver configuration
 #define PG_DRIVER_PWM_RX_CONFIG 100 // does not exist in betaflight

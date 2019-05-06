@@ -113,6 +113,7 @@
 #include "pg/rx_pwm.h"
 #include "pg/sdcard.h"
 #include "pg/vcd.h"
+#include "pg/vtx_io.h"
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
@@ -491,7 +492,7 @@ void init(void)
 #endif
 
 #ifdef USE_VTX_RTC6705
-    rtc6705IOInit();
+    bool useRTC6705 = rtc6705IOInit(vtxIOConfig());
 #endif
 
 #ifdef USE_CAMERA_CONTROL
@@ -734,10 +735,7 @@ void init(void)
 #endif
 
 #ifdef USE_VTX_RTC6705
-#ifdef VTX_RTC6705_OPTIONAL
-    if (!vtxCommonDevice()) // external VTX takes precedence when configured.
-#endif
-    {
+    if (!vtxCommonDevice() && useRTC6705) { // external VTX takes precedence when configured.
         vtxRTC6705Init();
     }
 #endif

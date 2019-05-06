@@ -18,39 +18,25 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
- * Author: Giles Burgess (giles@multiflite.co.uk)
- *
- * This source code is provided as is and can be used/modified so long
- * as this header is maintained with the file at all times.
- */
-
 #pragma once
 
 #include <stdint.h>
 
-#include "pg/vtx_io.h"
+#include "drivers/io_types.h"
 
-#define VTX_RTC6705_BAND_COUNT      5
-#define VTX_RTC6705_CHANNEL_COUNT   8
-#define VTX_RTC6705_POWER_COUNT     3
-#define VTX_RTC6705_DEFAULT_POWER   1
+#include "pg/pg.h"
 
-#if defined(RTC6705_POWER_PIN)
-#define VTX_RTC6705_MIN_POWER   0
-#else
-#define VTX_RTC6705_MIN_POWER   1
-#endif
+typedef struct vtxIOConfig_s {
+    // common settings for both hardware and software SPI
+    ioTag_t csTag;
+    ioTag_t powerTag;
 
-#define VTX_RTC6705_FREQ_MIN    5600
-#define VTX_RTC6705_FREQ_MAX    5950
+    // settings for software SPI only
+    ioTag_t dataTag;
+    ioTag_t clockTag;
 
-#define VTX_RTC6705_BOOT_DELAY  350 // milliseconds
+    // settings for hardware SPI only
+    uint8_t spiDevice;
+} vtxIOConfig_t;
 
-bool rtc6705IOInit(const vtxIOConfig_t *vtxIOConfig);
-void rtc6705SetFrequency(uint16_t freq);
-void rtc6705SetRFPower(uint8_t rf_power);
-void rtc6705Disable(void);
-void rtc6705Enable(void);
-
-
+PG_DECLARE(vtxIOConfig_t, vtxIOConfig);

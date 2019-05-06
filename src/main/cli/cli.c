@@ -4525,6 +4525,12 @@ const cliResourceValue_t resourceTable[] = {
 #ifdef USE_USB_DETECT
     DEFS( OWNER_USB_DETECT,    PG_USB_CONFIG, usbDev_t, detectPin ),
 #endif
+#ifdef USE_VTX_RTC6705
+    DEFS( OWNER_VTX_POWER,     PG_VTX_IO_CONFIG, vtxIOConfig_t, powerTag ),
+    DEFS( OWNER_VTX_CS,        PG_VTX_IO_CONFIG, vtxIOConfig_t, csTag ),
+    DEFS( OWNER_VTX_DATA,      PG_VTX_IO_CONFIG, vtxIOConfig_t, dataTag ),
+    DEFS( OWNER_VTX_CLK,       PG_VTX_IO_CONFIG, vtxIOConfig_t, clockTag ),
+#endif
 };
 
 #undef DEFS

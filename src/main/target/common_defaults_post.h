@@ -556,3 +556,23 @@
 #define UART8_RX_DMA_OPT (-1)
 #endif
 #endif
+
+#ifndef RTC6705_CS_PIN
+#define RTC6705_CS_PIN NONE
+#endif
+
+#ifndef RTC6705_POWER_PIN
+#define RTC6705_POWER_PIN NONE
+#endif
+
+#ifndef RTC6705_SPICLK_PIN
+#define RTC6705_SPICLK_PIN NONE
+#endif
+
+#ifndef RTC6705_SPI_MOSI_PIN
+#define RTC6705_SPI_MOSI_PIN NONE
+#endif
+
+#ifndef RTC6705_SPI_INSTANCE
+#define RTC6705_SPI_INSTANCE NULL
+#endif

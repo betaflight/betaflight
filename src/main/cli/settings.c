@@ -84,6 +84,7 @@
 #include "pg/rx_spi_cc2500.h"
 #include "pg/sdcard.h"
 #include "pg/vcd.h"
+#include "pg/vtx_io.h"
 #include "pg/usb.h"
 #include "pg/sdio.h"
 #include "pg/rcdevice.h"
@@ -1290,6 +1291,11 @@ const clivalue_t valueTable[] = {
 // PG_VTX_CONFIG
 #if defined(USE_VTX_CONTROL) && defined(USE_VTX_COMMON)
     { "vtx_halfduplex",             VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_VTX_CONFIG, offsetof(vtxConfig_t, halfDuplex) },
+#endif
+
+// PG_VTX_IO
+#ifdef USE_VTX_RTC6705
+    { "vtx_spi_bus",                VAR_UINT8  | HARDWARE_VALUE | MASTER_VALUE, .config.minmaxUnsigned = { 0, SPIDEV_COUNT }, PG_VTX_IO_CONFIG, offsetof(vtxIOConfig_t, spiDevice) },
 #endif
 
 // PG_VCD_CONFIG
