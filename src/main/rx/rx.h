@@ -143,6 +143,7 @@ typedef enum {
     RSSI_SOURCE_RX_PROTOCOL,
     RSSI_SOURCE_MSP,
     RSSI_SOURCE_FRAME_ERRORS,
+    RSSI_SOURCE_RX_PROTOCOL_CRSF,
 } rssiSource_e;
 
 extern rssiSource_e rssiSource;

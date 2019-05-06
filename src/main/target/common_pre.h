@@ -262,6 +262,7 @@
 #define USE_RX_MSP
 #define USE_ESC_SENSOR_INFO
 #define USE_CRSF_CMS_TELEMETRY
+#define USE_CRSF_LINK_STATISTICS
 #endif
 
 #endif // FLASH_SIZE > 128
