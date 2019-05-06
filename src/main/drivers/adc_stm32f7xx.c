@@ -350,4 +350,9 @@ void adcInit(const adcConfig_t *config)
         /* Start Conversion Error */
     }
 }
+
+void adcGetChannelValues(void)
+{
+    // Nothing to do
+}
 #endif

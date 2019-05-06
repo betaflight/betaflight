@@ -163,4 +163,9 @@ void adcInit(const adcConfig_t *config)
 
     ADC_SoftwareStartConvCmd(adc.ADCx, ENABLE);
 }
+
+void adcGetChannelValues(void)
+{
+    // Nothing to do
+}
 #endif
