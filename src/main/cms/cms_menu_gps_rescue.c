@@ -51,7 +51,8 @@ static uint8_t gpsRescueConfig_allowArmingWithoutFix;
 static uint16_t gpsRescueConfig_throttleP, gpsRescueConfig_throttleI, gpsRescueConfig_throttleD;
 static uint16_t gpsRescueConfig_velP, gpsRescueConfig_velI, gpsRescueConfig_velD;
 static uint16_t gpsRescueConfig_yawP;
-
+static uint16_t gpsRescueConfig_targetLandingAltitudeM;
+static uint16_t gpsRescueConfig_targetLandingDistanceM;
 
 static long cms_menuGpsRescuePidOnEnter(void)
 {
@@ -127,6 +128,8 @@ static long cmsx_menuGpsRescueOnEnter(void)
     gpsRescueConfig_minSats = gpsRescueConfig()->minSats;
     gpsRescueConfig_minRescueDth = gpsRescueConfig()->minRescueDth;
     gpsRescueConfig_allowArmingWithoutFix = gpsRescueConfig()->allowArmingWithoutFix;
+    gpsRescueConfig_targetLandingDistanceM = gpsRescueConfig()->targetLandingDistanceM;
+    gpsRescueConfig_targetLandingAltitudeM = gpsRescueConfig()->targetLandingAltitudeM;
 
     return 0;
 }
@@ -146,6 +149,8 @@ static long cmsx_menuGpsRescueOnExit(const OSD_Entry *self)
     gpsRescueConfigMutable()->minSats = gpsRescueConfig_minSats;
     gpsRescueConfigMutable()->minRescueDth = gpsRescueConfig_minRescueDth;
     gpsRescueConfigMutable()->allowArmingWithoutFix = gpsRescueConfig_allowArmingWithoutFix;
+    gpsRescueConfigMutable()->targetLandingDistanceM = gpsRescueConfig_targetLandingDistanceM;
+    gpsRescueConfigMutable()->targetLandingAltitudeM = gpsRescueConfig_targetLandingAltitudeM;
 
     return 0;
 }
@@ -158,6 +163,8 @@ const OSD_Entry cmsx_menuGpsRescueEntries[] =
     { "MIN DIST HOME   M", OME_UINT16, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_minRescueDth, 50, 1000 ,1 }, 0 },
     { "INITAL ALT      M", OME_UINT16, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_initialAltitudeM, 20, 100, 1 }, 0 },
     { "DESCENT DIST    M", OME_UINT16, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_descentDistanceM, 30, 500, 1 }, 0 },
+    { "LANDING ALT     M", OME_UINT16, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_targetLandingAltitudeM, 3, 10, 1 }, 0 },
+    { "LANDING DIST    M", OME_UINT16, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_targetLandingDistanceM, 5, 15, 1 }, 0 },
     { "GROUND SPEED  C/M", OME_UINT16, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_rescueGroundspeed, 30, 3000, 1 }, 0 },
     { "THROTTLE MIN",      OME_UINT16, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_throttleMin, 1000, 2000, 1 }, 0 },
     { "THROTTLE MAX",      OME_UINT16, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_throttleMax, 1000, 2000, 1 }, 0 },
