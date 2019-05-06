@@ -935,13 +935,18 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 
     case MSP_MOTOR:
         for (unsigned i = 0; i < 8; i++) {
+#ifdef USE_PWM_OUTPUT
             if (i >= MAX_SUPPORTED_MOTORS || !pwmGetMotors()[i].enabled) {
                 sbufWriteU16(dst, 0);
                 continue;
             }
 
             sbufWriteU16(dst, convertMotorToExternal(motor[i]));
+#else
+            sbufWriteU16(dst, 0);
+#endif
         }
+
         break;
 
     case MSP_RC:

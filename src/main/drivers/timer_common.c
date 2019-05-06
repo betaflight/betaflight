@@ -20,6 +20,8 @@
 
 #include "platform.h"
 
+#ifdef USE_TIMER
+
 #include "drivers/io.h"
 #include "timer.h"
 
@@ -111,3 +113,4 @@ ioTag_t timerioTagGetByUsage(timerUsageFlag_e usageFlag, uint8_t index)
 #endif
     return IO_TAG_NONE;
 }
+#endif

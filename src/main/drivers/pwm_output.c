@@ -24,6 +24,9 @@
 #include <math.h>
 
 #include "platform.h"
+
+#ifdef USE_PWM_OUTPUT
+
 #include "drivers/time.h"
 
 #include "drivers/io.h"
@@ -684,7 +687,7 @@ FAST_CODE uint16_t prepareDshotPacket(motorDmaOutput_t *const motor)
 
     return packet;
 }
-#endif
+#endif // USE_DSHOT
 
 #ifdef USE_SERVOS
 void pwmWriteServo(uint8_t index, float value)
@@ -725,7 +728,7 @@ void servoDevInit(const servoDevConfig_t *servoConfig)
     }
 }
 
-#endif
+#endif // USE_SERVOS
 
 #ifdef USE_BEEPER
 void pwmWriteBeeper(bool onoffBeep)
@@ -768,4 +771,5 @@ void beeperPwmInit(const ioTag_t tag, uint16_t frequency)
         beeperPwm.enabled = false;
     }
 }
+#endif // USE_BEEPER
 #endif

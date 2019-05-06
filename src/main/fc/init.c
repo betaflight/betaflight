@@ -369,7 +369,9 @@ void init(void)
     mcoInit(mcoConfig());
 #endif
 
+#ifdef USE_TIMER
     timerInit();  // timer must be initialized before any channel is allocated
+#endif
 
 #ifdef BUS_SWITCH_PIN
     busSwitchInit();
@@ -402,11 +404,15 @@ void init(void)
     if (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_BRUSHED) {
         idlePulse = 0; // brushed motors
     }
+#ifdef USE_PWM_OUTPUT
     /* Motors needs to be initialized soon as posible because hardware initialization
      * may send spurious pulses to esc's causing their early initialization. Also ppm
      * receiver may share timer with motors so motors MUST be initialized here. */
     motorDevInit(&motorConfig()->dev, idlePulse, getMotorCount());
     systemState |= SYSTEM_STATE_MOTORS_READY;
+#else
+    UNUSED(idlePulse);
+#endif
 
     if (0) {}
 #if defined(USE_PPM)
@@ -752,9 +758,11 @@ void init(void)
 
 #endif // VTX_CONTROL
 
+#ifdef USE_TIMER
     // start all timers
     // TODO - not implemented yet
     timerStart();
+#endif
 
     ENABLE_STATE(SMALL_ANGLE);
 
@@ -784,7 +792,9 @@ void init(void)
     rcdeviceInit();
 #endif // USE_RCDEVICE
 
+#ifdef USE_PWM_OUTPUT
     pwmEnableMotors();
+#endif
 
     setArmingDisabled(ARMING_DISABLED_BOOT_GRACE_TIME);
 

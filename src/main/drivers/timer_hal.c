@@ -25,6 +25,8 @@
 
 #include "platform.h"
 
+#ifdef USE_TIMER
+
 #include "build/atomic.h"
 
 #include "common/utils.h"
@@ -1121,3 +1123,4 @@ HAL_StatusTypeDef DMA_SetCurrDataCounter(TIM_HandleTypeDef *htim, uint32_t Chann
     /* Return function status */
     return HAL_OK;
 }
+#endif
