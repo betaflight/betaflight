@@ -36,11 +36,12 @@ typedef enum {
 } persistentObjectId_e;
 
 // Values for PERSISTENT_OBJECT_RESET_REASON
-#define RESET_NONE               0
-#define RESET_BOOTLOADER_REQUEST 1  // Boot loader invocation was requested
-#define RESET_BOOTLOADER_POST    2  // Reset after boot loader activity
-#define RESET_MSC_REQUEST        3  // MSC invocation was requested
-#define RESET_FORCED             4  // Reset due to unknown reset reason
+#define RESET_NONE                      0
+#define RESET_BOOTLOADER_REQUEST        1  // Boot loader invocation was requested
+#define RESET_BOOTLOADER_POST           2  // Reset after boot loader activity
+#define RESET_MSC_REQUEST               3  // MSC invocation was requested
+#define RESET_FORCED                    4  // Reset due to unknown reset reason
+#define RESET_FLASH_BOOTLOADER_REQUEST  5
 
 void persistentObjectInit(void);
 uint32_t persistentObjectRead(persistentObjectId_e id);
