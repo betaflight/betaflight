@@ -39,9 +39,10 @@
 #include "drivers/time.h"
 
 #include "sensors/gyro.h"
-#include "sensors/gyroanalyse.h"
 
 #include "fc/core.h"
+
+#include "gyroanalyse.h"
 
 // The FFT splits the frequency domain into an number of bins
 // A sampling frequency of 1000 and max frequency of 500 at a window size of 32 gives 16 frequency bins each 31.25Hz wide

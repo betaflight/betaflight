@@ -83,10 +83,12 @@ COMMON_SRC = \
             flight/position.c \
             flight/failsafe.c \
             flight/gps_rescue.c \
+            flight/gyroanalyse.c \
             flight/imu.c \
             flight/mixer.c \
             flight/mixer_tricopter.c \
             flight/pid.c \
+            flight/rpm_filter.c \
             flight/servos.c \
             flight/servos_tricopter.c \
             io/serial_4way.c \
@@ -113,8 +115,6 @@ COMMON_SRC = \
             sensors/boardalignment.c \
             sensors/compass.c \
             sensors/gyro.c \
-            sensors/gyroanalyse.c \
-            sensors/rpm_filter.c \
             sensors/initialisation.c \
             blackbox/blackbox.c \
             blackbox/blackbox_encoding.c \
@@ -228,9 +228,11 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             fc/rc.c \
             fc/rc_controls.c \
             fc/runtime_config.c \
+            flight/gyroanalyse.c \
             flight/imu.c \
             flight/mixer.c \
             flight/pid.c \
+            flight/rpm_filter.c \
             rx/ibus.c \
             rx/rx.c \
             rx/rx_spi.c \
@@ -245,8 +247,6 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             sensors/acceleration.c \
             sensors/boardalignment.c \
             sensors/gyro.c \
-            sensors/gyroanalyse.c \
-            sensors/rpm_filter.c \
             $(CMSIS_SRC) \
             $(DEVICE_STDPERIPH_SRC) \
 

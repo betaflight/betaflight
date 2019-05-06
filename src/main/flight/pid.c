@@ -47,6 +47,7 @@
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
+#include "flight/rpm_filter.h"
 
 #include "io/gps.h"
 
@@ -56,7 +57,6 @@
 #include "sensors/acceleration.h"
 #include "sensors/battery.h"
 #include "sensors/gyro.h"
-#include "sensors/rpm_filter.h"
 
 #include "pid.h"
 

@@ -45,29 +45,29 @@
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
+#include "flight/rpm_filter.h"
 #include "flight/servos.h"
 
 #include "io/beeper.h"
+#include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/serial.h"
-#include "io/gps.h"
 
 #include "osd/osd.h"
 
 #include "pg/beeper.h"
 #include "pg/beeper_dev.h"
-#include "pg/rx.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/rx.h"
 
 #include "rx/rx.h"
+
+#include "scheduler/scheduler.h"
 
 #include "sensors/acceleration.h"
 #include "sensors/battery.h"
 #include "sensors/gyro.h"
-#include "sensors/rpm_filter.h"
-
-#include "scheduler/scheduler.h"
 
 static bool configIsDirty; /* someone indicated that the config is modified and it is not yet saved */
 

@@ -27,7 +27,13 @@
 
 #include "blackbox/blackbox.h"
 
+#include "build/build_config.h"
+#include "build/debug.h"
+
 #include "cli/cli.h"
+
+#include "cms/cms.h"
+#include "cms/cms_types.h"
 
 #include "common/axis.h"
 #include "common/color.h"
@@ -37,14 +43,7 @@
 #include "config/config_eeprom.h"
 #include "config/feature.h"
 
-#include "cms/cms.h"
-#include "cms/cms_types.h"
-
 #include "drivers/accgyro/accgyro.h"
-#include "drivers/camera_control.h"
-#include "drivers/compass/compass.h"
-#include "drivers/pwm_esc_detect.h"
-#include "drivers/pwm_output.h"
 #include "drivers/adc.h"
 #include "drivers/bus.h"
 #include "drivers/bus_i2c.h"
@@ -74,22 +73,51 @@
 #include "drivers/time.h"
 #include "drivers/timer.h"
 #include "drivers/transponder_ir.h"
-#include "drivers/exti.h"
 #include "drivers/usb_io.h"
-#include "drivers/vtx_rtc6705.h"
-#include "drivers/vtx_common.h"
-#include "drivers/vtx_table.h"
 #ifdef USE_USB_MSC
 #include "drivers/usb_msc.h"
 #endif
+#include "drivers/vtx_common.h"
+#include "drivers/vtx_rtc6705.h"
+#include "drivers/vtx_table.h"
 
 #include "fc/board_info.h"
 #include "fc/config.h"
+#include "fc/dispatch.h"
 #include "fc/init.h"
-#include "fc/tasks.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
-#include "fc/dispatch.h"
+#include "fc/tasks.h"
+
+#include "flight/failsafe.h"
+#include "flight/imu.h"
+#include "flight/mixer.h"
+#include "flight/pid.h"
+#include "flight/rpm_filter.h"
+#include "flight/servos.h"
+
+#include "io/asyncfatfs/asyncfatfs.h"
+#include "io/beeper.h"
+#include "io/dashboard.h"
+#include "io/displayport_max7456.h"
+#include "io/displayport_msp.h"
+#include "io/displayport_srxl.h"
+#include "io/flashfs.h"
+#include "io/gimbal.h"
+#include "io/gps.h"
+#include "io/ledstrip.h"
+#include "io/motors.h"
+#include "io/pidaudio.h"
+#include "io/piniobox.h"
+#include "io/rcdevice_cam.h"
+#include "io/serial.h"
+#include "io/servos.h"
+#include "io/transponder_ir.h"
+#include "io/vtx.h"
+#include "io/vtx_control.h"
+#include "io/vtx_rtc6705.h"
+#include "io/vtx_smartaudio.h"
+#include "io/vtx_tramp.h"
 
 #ifdef USE_PERSISTENT_MSC_RTC
 #include "msc/usbd_storage.h"
@@ -97,6 +125,8 @@
 
 #include "msp/msp.h"
 #include "msp/msp_serial.h"
+
+#include "osd/osd.h"
 
 #include "pg/adc.h"
 #include "pg/beeper.h"
@@ -119,30 +149,6 @@
 #include "rx/rx_spi.h"
 #include "rx/spektrum.h"
 
-#include "io/beeper.h"
-#include "io/displayport_max7456.h"
-#include "io/displayport_srxl.h"
-#include "io/serial.h"
-#include "io/flashfs.h"
-#include "io/gps.h"
-#include "io/motors.h"
-#include "io/servos.h"
-#include "io/gimbal.h"
-#include "io/ledstrip.h"
-#include "io/dashboard.h"
-#include "io/asyncfatfs/asyncfatfs.h"
-#include "io/transponder_ir.h"
-#include "io/pidaudio.h"
-#include "io/piniobox.h"
-#include "io/displayport_msp.h"
-#include "io/vtx.h"
-#include "io/vtx_rtc6705.h"
-#include "io/vtx_control.h"
-#include "io/vtx_smartaudio.h"
-#include "io/vtx_tramp.h"
-
-#include "osd/osd.h"
-
 #include "scheduler/scheduler.h"
 
 #include "sensors/acceleration.h"
@@ -153,25 +159,13 @@
 #include "sensors/esc_sensor.h"
 #include "sensors/gyro.h"
 #include "sensors/initialisation.h"
-#include "sensors/rpm_filter.h"
 #include "sensors/sensors.h"
 
 #include "telemetry/telemetry.h"
 
-#include "flight/failsafe.h"
-#include "flight/imu.h"
-#include "flight/mixer.h"
-#include "flight/pid.h"
-#include "flight/servos.h"
-
-#include "io/rcdevice_cam.h"
-
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
 #endif
-
-#include "build/build_config.h"
-#include "build/debug.h"
 
 #ifdef TARGET_PREINIT
 void targetPreInit(void);
