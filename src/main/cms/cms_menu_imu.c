@@ -331,6 +331,8 @@ static uint8_t  cmsx_motorOutputLimit;
 static int8_t   cmsx_autoProfileCellCount;
 #ifdef USE_D_MIN
 static uint8_t  cmsx_d_min[XYZ_AXIS_COUNT];
+static uint8_t  cmsx_d_min_gain;
+static uint8_t  cmsx_d_min_advance;
 #endif
 
 static long cmsx_profileOtherOnEnter(void)
@@ -356,6 +358,8 @@ static long cmsx_profileOtherOnEnter(void)
     for (unsigned i = 0; i < XYZ_AXIS_COUNT; i++) {
         cmsx_d_min[i]  = pidProfile->d_min[i];
     }
+    cmsx_d_min_gain = pidProfile->d_min_gain;
+    cmsx_d_min_advance = pidProfile->d_min_advance;
 #endif
 
     return 0;
@@ -384,6 +388,8 @@ static long cmsx_profileOtherOnExit(const OSD_Entry *self)
     for (unsigned i = 0; i < XYZ_AXIS_COUNT; i++) {
         pidProfile->d_min[i] = cmsx_d_min[i];
     }
+    pidProfile->d_min_gain = cmsx_d_min_gain;
+    pidProfile->d_min_advance = cmsx_d_min_advance;
 #endif
 
     initEscEndpoints();
@@ -410,9 +416,11 @@ static const OSD_Entry cmsx_menuProfileOtherEntries[] = {
     { "AUTO CELL CNT", OME_INT8, NULL, &(OSD_INT8_t) { &cmsx_autoProfileCellCount, AUTO_PROFILE_CELL_COUNT_CHANGE, MAX_AUTO_DETECT_CELL_COUNT, 1}, 0 },
 
 #ifdef USE_D_MIN
-    { "D_MIN_ROLL",  OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_d_min[FD_ROLL],      0, 100, 1 }, 0 },
-    { "D_MIN_PITCH", OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_d_min[FD_PITCH],     0, 100, 1 }, 0 },
-    { "D_MIN_YAW",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_d_min[FD_YAW],       0, 100, 1 }, 0 },
+    { "D_MIN ROLL",  OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_d_min[FD_ROLL],      0, 100, 1 }, 0 },
+    { "D_MIN PITCH", OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_d_min[FD_PITCH],     0, 100, 1 }, 0 },
+    { "D_MIN YAW",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_d_min[FD_YAW],       0, 100, 1 }, 0 },
+    { "D_MIN GAIN",  OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_d_min_gain,          0, 100, 1 }, 0 },
+    { "D_MIN ADV",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_d_min_advance,       0, 200, 1 }, 0 },
 #endif
 
     { "BACK", OME_Back, NULL, NULL, 0 },
