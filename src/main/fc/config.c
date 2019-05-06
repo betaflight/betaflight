@@ -212,6 +212,13 @@ static void validateAndFixConfig(void)
         if (pidProfilesMutable(i)->auto_profile_cell_count > MAX_AUTO_DETECT_CELL_COUNT || pidProfilesMutable(i)->auto_profile_cell_count < AUTO_PROFILE_CELL_COUNT_CHANGE) {
             pidProfilesMutable(i)->auto_profile_cell_count = AUTO_PROFILE_CELL_COUNT_STAY;
         }
+
+        // If the d_min value for any axis is >= the D gain then reset d_min to 0 for consistent Configurator behavior
+        for (unsigned axis = 0; axis <= FD_YAW; axis++) {
+            if (pidProfilesMutable(i)->d_min[axis] >= pidProfilesMutable(i)->pid[axis].D) {
+                pidProfilesMutable(i)->d_min[axis] = 0;
+            }
+        }
     }
 
     if (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_BRUSHED) {
