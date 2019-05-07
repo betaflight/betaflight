@@ -2724,42 +2724,28 @@ static void cliVtxTable(char *cmdline)
 }
 #endif // USE_VTX_TABLE
 
-#ifdef USE_OSD
-static void printDisplayName(dumpFlags_t dumpMask, const pilotConfig_t *pilotConfig)
-{
-    const bool equalsDefault = strlen(pilotConfig->displayName) == 0;
-    cliDumpPrintLinef(dumpMask, equalsDefault, "display_name %s", equalsDefault ? emptyName : pilotConfig->displayName);
-}
-
-static void cliDisplayName(char *cmdline)
-{
-    const unsigned int len = strlen(cmdline);
-    if (len > 0) {
-        memset(pilotConfigMutable()->displayName, 0, ARRAYLEN(pilotConfig()->displayName));
-        if (strncmp(cmdline, emptyName, len)) {
-            strncpy(pilotConfigMutable()->displayName, cmdline, MIN(len, MAX_NAME_LENGTH));
-        }
-    }
-    printDisplayName(DUMP_MASTER, pilotConfig());
-}
-#endif
-
 static void printName(dumpFlags_t dumpMask, const pilotConfig_t *pilotConfig)
 {
     const bool equalsDefault = strlen(pilotConfig->name) == 0;
-    cliDumpPrintLinef(dumpMask, equalsDefault, "name %s", equalsDefault ? emptyName : pilotConfig->name);
+    cliDumpPrintLinef(dumpMask, equalsDefault, "\r\n# name: %s", equalsDefault ? emptyName : pilotConfig->name);
 }
 
 static void cliName(char *cmdline)
 {
     const unsigned int len = strlen(cmdline);
+    bool updated = false;
     if (len > 0) {
         memset(pilotConfigMutable()->name, 0, ARRAYLEN(pilotConfig()->name));
         if (strncmp(cmdline, emptyName, len)) {
             strncpy(pilotConfigMutable()->name, cmdline, MIN(len, MAX_NAME_LENGTH));
         }
+        updated = true;
     }
     printName(DUMP_MASTER, pilotConfig());
+    if (updated) {
+        cliPrintLine("###WARNING: This command will be removed. Use 'set name = ' instead.###");
+    }
+
 }
 
 #if defined(USE_BOARD_INFO)
@@ -5442,7 +5428,6 @@ static void printConfig(char *cmdline, bool doDiff)
         }
 
         if (!(dumpMask & HARDWARE_ONLY)) {
-            cliPrintHashLine("name");
             printName(dumpMask, &pilotConfig_Copy);
         }
 
@@ -5533,11 +5518,6 @@ static void printConfig(char *cmdline, bool doDiff)
 
             cliPrintHashLine("rxfail");
             printRxFailsafe(dumpMask, rxFailsafeChannelConfigs_CopyArray, rxFailsafeChannelConfigs(0));
-
-#ifdef USE_OSD
-            cliPrintHashLine("display_name");
-            printDisplayName(dumpMask, &pilotConfig_Copy);
-#endif
         }
 
         cliPrintHashLine("master");
@@ -5698,9 +5678,6 @@ const clicmd_t cmdTable[] = {
 #endif
     CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", "[nosave]", cliDefaults),
     CLI_COMMAND_DEF("diff", "list configuration changes from default", "[master|profile|rates|hardware|all] {defaults|bare}", cliDiff),
-#ifdef USE_OSD
-    CLI_COMMAND_DEF("display_name", "display name of craft", NULL, cliDisplayName),
-#endif
 #ifdef USE_RESOURCE_MGMT
 #ifdef USE_DMA_SPEC
     CLI_COMMAND_DEF("dma", "show/set DMA assignments", "<> | <device> <index> list | <device> <index> [<option>|none] | list | show", cliDma),
