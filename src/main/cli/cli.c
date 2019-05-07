@@ -659,8 +659,56 @@ static void dumpPgValue(const clivalue_t *value, dumpFlags_t dumpMask)
     }
 }
 
+#ifdef USE_PROFILE_NAMES
+static void printRateProfileName(uint8_t dumpMask, const profileName_t *rateProfileNameConfig)
+{
+    const bool equalsDefault = strlen(rateProfileNameConfig->name) == 0;
+    cliDumpPrintLinef(dumpMask, equalsDefault, "rateprofile_name %s", equalsDefault ? emptyName : rateProfileNameConfig->name);
+}
+
+static void cliRateProfileName(char *cmdline)
+{
+    const unsigned int len = strlen(cmdline);
+    uint8_t profileIndex =  getCurrentControlRateProfileIndex();
+    if (len > 0) {
+        memset(rateProfileNameMutable()->profile[profileIndex].name, 0, ARRAYLEN(rateProfileNameMutable()->profile[profileIndex].name));
+        if (strncmp(cmdline, emptyName, len)) {
+            strncpy(rateProfileNameMutable()->profile[profileIndex].name, cmdline, MIN(len, MAX_PROFILE_NAME_LENGTH));
+        }
+    }
+    printRateProfileName(DUMP_MASTER, &rateProfileName()->profile[profileIndex]);
+}
+
+static void printPidProfileName(uint8_t dumpMask, const profileName_t *pidProfileNameConfig)
+{
+    const bool equalsDefault = strlen(pidProfileNameConfig->name) == 0;
+    cliDumpPrintLinef(dumpMask, equalsDefault, "profile_name %s", equalsDefault ? emptyName : pidProfileNameConfig->name);
+}
+
+static void cliPidProfileName(char *cmdline)
+{
+    const unsigned int len = strlen(cmdline);
+    uint8_t profileIndex =  getCurrentPidProfileIndex();
+    if (len > 0) {
+        memset(pidProfileNameMutable()->profile[profileIndex].name, 0, ARRAYLEN(pidProfileNameMutable()->profile[profileIndex].name));
+        if (strncmp(cmdline, emptyName, len)) {
+            strncpy(pidProfileNameMutable()->profile[profileIndex].name, cmdline, MIN(len, MAX_PROFILE_NAME_LENGTH));
+        }
+    }
+    printPidProfileName(DUMP_MASTER, &pidProfileName()->profile[profileIndex]);
+}
+#endif
 static void dumpAllValues(uint16_t valueSection, dumpFlags_t dumpMask)
 {
+#ifdef USE_PROFILE_NAMES
+    if (valueSection == PROFILE_VALUE) {
+        printPidProfileName(DUMP_MASTER, &pidProfileName()->profile[getPidProfileIndexToUse()]);
+    }
+
+    if (valueSection == PROFILE_RATE_VALUE) {
+        printRateProfileName(DUMP_MASTER, &rateProfileName()->profile[getRateProfileIndexToUse()]);
+    }
+#endif
     for (uint32_t i = 0; i < valueTableEntryCount; i++) {
         const clivalue_t *value = &valueTable[i];
         bufWriterFlush(cliWriter);
@@ -5744,7 +5792,13 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("play_sound", NULL, "[<index>]", cliPlaySound),
 #endif
     CLI_COMMAND_DEF("profile", "change profile", "[<index>]", cliProfile),
+#ifdef USE_PROFILE_NAMES
+        CLI_COMMAND_DEF("profile_name", "name of pid profile", NULL, cliPidProfileName),
+#endif
     CLI_COMMAND_DEF("rateprofile", "change rate profile", "[<index>]", cliRateProfile),
+#ifdef USE_PROFILE_NAMES
+    CLI_COMMAND_DEF("rateprofile_name", "name of rate profile", NULL, cliRateProfileName),
+#endif
 #ifdef USE_RC_SMOOTHING_FILTER
     CLI_COMMAND_DEF("rc_smoothing_info", "show rc_smoothing operational settings", NULL, cliRcSmoothing),
 #endif // USE_RC_SMOOTHING_FILTER

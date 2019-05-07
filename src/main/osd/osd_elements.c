@@ -647,6 +647,46 @@ static void osdElementDisplayName(osdElementParms_t *element)
     }
 }
 
+#ifdef USE_PROFILE_NAMES
+static void osdElementRateProfileName(osdElementParms_t *element)
+{
+    uint8_t rateProfileIndex = getCurrentControlRateProfileIndex();
+
+    if (strlen(rateProfileName()->profile[rateProfileIndex].name) == 0) {
+        tfp_sprintf(element->buff, "RATE_%u", rateProfileIndex);
+    } else {
+        unsigned i;
+        for (i = 0; i < MAX_PROFILE_NAME_LENGTH; i++) {
+            if (rateProfileName()->profile[rateProfileIndex].name[i]) {
+                element->buff[i] = toupper((unsigned char)rateProfileName()->profile[rateProfileIndex].name[i]);
+            } else {
+                break;
+            }
+        }
+        element->buff[i] = '\0';
+    }
+}
+
+static void osdElementPidProfileName(osdElementParms_t *element)
+{
+    uint8_t pidProfileIndex = getCurrentPidProfileIndex();
+
+    if (strlen(pidProfileName()->profile[pidProfileIndex].name) == 0) {
+        tfp_sprintf(element->buff, "PID_%u", pidProfileIndex);
+    } else {
+        unsigned i;
+        for (i = 0; i < MAX_PROFILE_NAME_LENGTH; i++) {
+            if (pidProfileName()->profile[pidProfileIndex].name[i]) {
+                element->buff[i] = toupper((unsigned char)pidProfileName()->profile[pidProfileIndex].name[i]);
+            } else {
+                break;
+            }
+        }
+        element->buff[i] = '\0';
+    }
+}
+#endif
+
 #ifdef USE_ESC_SENSOR
 static void osdElementEscTemperature(osdElementParms_t *element)
 {
@@ -1333,6 +1373,10 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_STICK_OVERLAY_LEFT,
     OSD_STICK_OVERLAY_RIGHT,
 #endif
+#ifdef USE_PROFILE_NAMES
+    OSD_RATE_PROFILE_NAME,
+    OSD_PID_PROFILE_NAME,
+#endif
 };
 
 // Define the mapping between the OSD element id and the function to draw it
@@ -1428,6 +1472,11 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #if defined(USE_RPM_FILTER) || defined(USE_ESC_SENSOR)
     [OSD_ESC_RPM_FREQ]            = osdElementEscRpmFreq,
 #endif
+#ifdef USE_PROFILE_NAMES
+    [OSD_RATE_PROFILE_NAME]       = osdElementRateProfileName,
+    [OSD_PID_PROFILE_NAME]        = osdElementPidProfileName,
+#endif
+
 };
 
 static void osdAddActiveElement(osd_items_e element)

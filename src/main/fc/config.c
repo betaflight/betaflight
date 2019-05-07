@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
+#include <common/printf.h>
 
 #include "platform.h"
 
@@ -86,6 +87,10 @@ PG_RESET_TEMPLATE(pilotConfig_t, pilotConfig,
     .displayName = { 0 },
 );
 
+PG_REGISTER_WITH_RESET_FN(rateProfileNameConfig_t, rateProfileName, PG_RATE_PROFILE_NAMES_CONFIG, 1);
+
+PG_REGISTER_WITH_RESET_FN(pidProfileNameConfig_t, pidProfileName, PG_PID_PROFILE_NAMES_CONFIG, 1);
+
 PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 2);
 
 PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
@@ -119,6 +124,22 @@ uint8_t getCurrentControlRateProfileIndex(void)
 uint16_t getCurrentMinthrottle(void)
 {
     return motorConfig()->minthrottle;
+}
+
+void pgResetFn_rateProfileName(rateProfileNameConfig_t *rateProfileName)
+{
+
+    for (int i = 0; i < CONTROL_RATE_PROFILE_COUNT; i++) {
+        tfp_sprintf(rateProfileName->profile[i].name, "RATE %u", i+1, MAX_PROFILE_NAME_LENGTH);
+    }
+}
+
+void pgResetFn_pidProfileName(pidProfileNameConfig_t *pidProfileName)
+{
+
+    for (int i = 0; i < PID_PROFILE_COUNT; i++) {
+        tfp_sprintf(pidProfileName->profile[i].name, "PID %u", i+1, MAX_PROFILE_NAME_LENGTH);
+    }
 }
 
 void resetConfigs(void)
