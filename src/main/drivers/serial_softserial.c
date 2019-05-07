@@ -525,7 +525,7 @@ void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
         }
 
         timerChConfigIC(self->timerHardware, inverted ? ICPOLARITY_FALLING : ICPOLARITY_RISING, 0);
-#ifdef STM32F7
+#if defined(STM32F7) || defined(STM32H7)
         serialEnableCC(self);
 #endif
         self->rxEdge = LEADING;
@@ -550,7 +550,7 @@ void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
         self->rxEdge = TRAILING;
         timerChConfigIC(self->timerHardware, inverted ? ICPOLARITY_RISING : ICPOLARITY_FALLING, 0);
     }
-#ifdef STM32F7
+#if defined(STM32F7) || defined(STM32H7)
     serialEnableCC(self);
 #endif
 }
