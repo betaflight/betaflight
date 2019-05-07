@@ -48,7 +48,9 @@
 #endif
 #include "usb_io.h"
 #ifdef USE_USB_CDC_HID
-#include "usbd_cdc_hid.h"
+#include "usbd_ioreq.h"
+
+extern USBD_ClassTypeDef  USBD_HID_CDC;
 #endif
 USBD_HandleTypeDef USBD_Device;
 #else
@@ -249,7 +251,7 @@ serialPort_t *usbVcpOpen(void)
     switch (usbDevConfig()->type) {
 #ifdef USE_USB_CDC_HID
     case COMPOSITE:
-    	USBD_RegisterClass(&USBD_Device, USBD_HID_CDC_CLASS);
+        USBD_RegisterClass(&USBD_Device, &USBD_HID_CDC);
         break;
 #endif
     default:
