@@ -68,6 +68,7 @@
 #include "drivers/vtx_common.h"
 
 #include "fc/config.h"
+#include "fc/controlrate_profile.h"
 #include "fc/core.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
@@ -650,15 +651,13 @@ static void osdElementDisplayName(osdElementParms_t *element)
 #ifdef USE_PROFILE_NAMES
 static void osdElementRateProfileName(osdElementParms_t *element)
 {
-    uint8_t rateProfileIndex = getCurrentControlRateProfileIndex();
-
-    if (strlen(rateProfileName()->profile[rateProfileIndex].name) == 0) {
-        tfp_sprintf(element->buff, "RATE_%u", rateProfileIndex);
+    if (strlen(currentControlRateProfile->profileName) == 0) {
+        tfp_sprintf(element->buff, "RATE_%u", getCurrentControlRateProfileIndex() + 1);
     } else {
         unsigned i;
         for (i = 0; i < MAX_PROFILE_NAME_LENGTH; i++) {
-            if (rateProfileName()->profile[rateProfileIndex].name[i]) {
-                element->buff[i] = toupper((unsigned char)rateProfileName()->profile[rateProfileIndex].name[i]);
+            if (currentControlRateProfile->profileName[i]) {
+                element->buff[i] = toupper((unsigned char)currentControlRateProfile->profileName[i]);
             } else {
                 break;
             }
@@ -669,15 +668,13 @@ static void osdElementRateProfileName(osdElementParms_t *element)
 
 static void osdElementPidProfileName(osdElementParms_t *element)
 {
-    uint8_t pidProfileIndex = getCurrentPidProfileIndex();
-
-    if (strlen(pidProfileName()->profile[pidProfileIndex].name) == 0) {
-        tfp_sprintf(element->buff, "PID_%u", pidProfileIndex);
+    if (strlen(currentPidProfile->profileName) == 0) {
+        tfp_sprintf(element->buff, "PID_%u", getCurrentPidProfileIndex() + 1);
     } else {
         unsigned i;
         for (i = 0; i < MAX_PROFILE_NAME_LENGTH; i++) {
-            if (pidProfileName()->profile[pidProfileIndex].name[i]) {
-                element->buff[i] = toupper((unsigned char)pidProfileName()->profile[pidProfileIndex].name[i]);
+            if (currentPidProfile->profileName[i]) {
+                element->buff[i] = toupper((unsigned char)currentPidProfile->profileName[i]);
             } else {
                 break;
             }
