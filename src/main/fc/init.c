@@ -716,9 +716,11 @@ void init(void)
 #endif
 
 #ifdef USE_FLASH_CHIP
-    flashInit(flashConfig());
+    bool haveFlash = flashInit(flashConfig());
 #ifdef USE_FLASHFS
-    flashfsInit();
+    if (haveFlash) {
+        flashfsInit();
+    }
 #endif
 #endif
 
