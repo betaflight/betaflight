@@ -354,10 +354,6 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
         ( 2 + (motor->useProshot ? 4 * MOTOR_NIBBLE_LENGTH_PROSHOT : 16 * MOTOR_BITLENGTH))
         / getDshotHz(pwmProtocolType);
     pwmDshotSetDirectionOutput(motor, true);
-    if (useDshotTelemetry) {
-        // avoid high line during startup to prevent bootloader activation
-        *timerChCCR(timerHardware) = 0xffff;
-    }
 #else
     pwmDshotSetDirectionOutput(motor, true, &OCINIT, &DMAINIT);
 #endif
@@ -386,6 +382,12 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
         LL_TIM_EnableARRPreload(timer);
         LL_TIM_EnableCounter(timer);
     }
+#ifdef USE_DSHOT_TELEMETRY
+    if (useDshotTelemetry) {
+        // avoid high line during startup to prevent bootloader activation
+        *timerChCCR(timerHardware) = 0xffff;
+    }
+#endif
     motor->configured = true;
 }
 #endif
