@@ -133,7 +133,7 @@
 #define USE_SDCARD_SDIO
 
 #define SDCARD_SDIO_DMA_OPT     0   // DMA 2 Stream 3 Chanel 4
-#define SDCARD_SPI_CS_PIN NONE //This is not used on SDIO, has to be kept for now to keep compiler happy
+//#define SDCARD_SPI_CS_PIN NONE    // This is not used on SDIO
 
 #define USE_I2C
 #define USE_I2C_DEVICE_1
