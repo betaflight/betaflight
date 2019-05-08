@@ -350,4 +350,9 @@ void adcInit(const adcConfig_t *config)
 
     ADC_SoftwareStartConv(adc.ADCx);
 }
+
+void adcGetChannelValues(void)
+{
+    // Nothing to do
+}
 #endif
