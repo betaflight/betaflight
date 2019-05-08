@@ -243,9 +243,14 @@ typedef struct _USBD_HandleTypeDef
   USBD_SetupReqTypedef    request;
   USBD_DescriptorsTypeDef *pDesc;
   USBD_ClassTypeDef       *pClass;
-  void                    *pClassData;  
-  void                    *pUserData;    
-  void                    *pData;    
+  //WARNING: When updating this middleware add this to structure:
+  void                    *pCDC_ClassData;
+  void                    *pCDC_UserData;
+  void                    *pHID_ClassData;
+  void                    *pHID_UserData;
+  void                    *pMSC_ClassData;
+  void                    *pMSC_UserData;
+  void                    *pData;
 } USBD_HandleTypeDef;
 
 /**
