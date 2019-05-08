@@ -262,7 +262,11 @@ void systemResetToBootloader(void)
     }
 #endif
 #endif
+#ifdef USE_EXST
+    persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_FLASH_BOOTLOADER_REQUEST);
+#else
     persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_BOOTLOADER_REQUEST);
+#endif
     __disable_irq();
     NVIC_SystemReset();
 }

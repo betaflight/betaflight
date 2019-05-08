@@ -168,9 +168,17 @@ STARTUP_SRC     = startup_stm32h743xx.s
 TARGET_FLASH   := 2048
 else ifeq ($(TARGET),$(filter $(TARGET),$(H750xB_TARGETS)))
 DEVICE_FLAGS   += -DSTM32H750xx
-LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_h750.ld
+LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_h750_128k.ld
 STARTUP_SRC     = startup_stm32h743xx.s
 TARGET_FLASH   := 128
+
+ifeq ($(EXST),yes)
+FIRMWARE_SIZE  := 448
+# TARGET_FLASH now becomes the amount of RAM memory that is occupied by the firmware
+# and the maximum size of the data stored on the external storage device.
+TARGET_FLASH   := FIRMWARE_SIZE
+LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_h750_exst.ld
+endif
 
 ifneq ($(DEBUG),GDB)
 OPTIMISE_DEFAULT    := -Os

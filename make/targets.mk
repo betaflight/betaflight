@@ -6,15 +6,14 @@ $(error The target specified, $(TARGET), cannot be built. Use one of the ALT tar
 endif
 
 BASE_TARGET   := $(call get_base_target,$(TARGET))
-ifneq ($(TARGET),$(BASE_TARGET))
-include $(ROOT)/src/main/target/$(BASE_TARGET)/$(TARGET).mk
-endif
+# silently ignore if the file is not present. Allows for target specific.
+-include $(ROOT)/src/main/target/$(BASE_TARGET)/$(TARGET).mk
 
 ifeq ($(filter $(TARGET),$(OPBL_TARGETS)), $(TARGET))
 OPBL            = yes
 endif
 
-# silently ignore if the file is not present. Allows for target specific.
+# silently ignore if the file is not present. Allows for target defaults.
 -include $(ROOT)/src/main/target/$(BASE_TARGET)/target.mk
 
 F4_TARGETS      := $(F405_TARGETS) $(F411_TARGETS) $(F446_TARGETS)

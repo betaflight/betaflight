@@ -1,7 +1,7 @@
 /*
 *****************************************************************************
 **
-**  File        : stm32_flash_h7x3_2m.ld
+**  File        : stm32_flash_h750_128k.ld
 **
 **  Abstract    : Linker script for STM32H743xI Device with
 **                512K AXI-RAM mapped onto AXI bus on D1 domain
@@ -65,12 +65,6 @@ ENTRY(Reset_Handler)
 
 /* Highest address of the user mode stack */
 _estack = ORIGIN(STACKRAM) + LENGTH(STACKRAM);    /* end of RAM */
-
-/* Base address where the config is stored. */
-/*
-__config_start = ORIGIN(FLASH_CONFIG);
-__config_end = ORIGIN(FLASH_CONFIG) + LENGTH(FLASH_CONFIG);
-*/
 
 /* Base address where the quad spi. */
 __quad_spi_start = ORIGIN(QUADSPI);

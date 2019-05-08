@@ -546,7 +546,11 @@ void MPU_Config()
     // The Base Address 0x24000000 is the SRAM1 accessible by the SDIO internal DMA.
     MPU_InitStruct.Enable = MPU_REGION_ENABLE;
     MPU_InitStruct.BaseAddress = 0x24000000;
+#if defined(USE_EXST)
+    MPU_InitStruct.Size = MPU_REGION_SIZE_64KB;
+#else
     MPU_InitStruct.Size = MPU_REGION_SIZE_512KB;
+#endif
     MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
     MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
     MPU_InitStruct.IsCacheable = MPU_ACCESS_CACHEABLE;
@@ -577,7 +581,12 @@ void resetMPU(void)
     /* Disable the MPU */
     HAL_MPU_Disable();
 
+#if !defined(USE_EXST)
     uint8_t highestRegion = MPU_REGION_NUMBER15;
+#else
+    uint8_t highestRegion = MPU_REGION_NUMBER7;// currently 8-15 reserved by bootloader.  Bootloader may write-protect the firmware region, this firmware can examine and undo this at it's peril.
+#endif
+
 
     // disable all existing regions
     for (uint8_t region = MPU_REGION_NUMBER0; region <= highestRegion; region++) {
@@ -594,7 +603,11 @@ void SystemInit (void)
 
     initialiseMemorySections();
 
+#if !defined(USE_EXST)
+    // only stand-alone and bootloader firmware needs to do this.
+    // if it's done in the EXST firmware as well as the BOOTLOADER firmware you get a reset loop.
     systemCheckResetReason();
+#endif
 
     // FPU settings
 #if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
@@ -666,6 +679,8 @@ void SystemInit (void)
     /* Configure the Vector Table location add offset address ------------------*/
 #if defined(VECT_TAB_SRAM)
     SCB->VTOR = D1_AXISRAM_BASE  | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal ITCMSRAM */
+#elif defined(USE_EXST)
+    // Don't touch the vector table, the bootloader will have already set it.
 #else
     SCB->VTOR = FLASH_BANK1_BASE | VECT_TAB_OFFSET;       /* Vector Table Relocation in Internal FLASH */
 #endif
