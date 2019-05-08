@@ -28,7 +28,7 @@ typedef uint16_t dmaCode_t;
 
 typedef struct dmaChannelSpec_s {
     dmaCode_t             code;
-#if defined(STM32F4) || defined(STM32F7)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
     DMA_Stream_TypeDef    *ref;
     uint32_t              channel;
 #else
