@@ -152,6 +152,7 @@ CMS_Menu menuOsdActiveElems = {
 };
 
 static uint8_t osdConfig_rssi_alarm;
+static uint16_t osdConfig_link_quality_alarm;
 static uint16_t osdConfig_cap_alarm;
 static uint16_t osdConfig_alt_alarm;
 static uint8_t batteryConfig_vbatDurationForWarning;
@@ -160,6 +161,7 @@ static uint8_t batteryConfig_vbatDurationForCritical;
 static long menuAlarmsOnEnter(void)
 {
     osdConfig_rssi_alarm = osdConfig()->rssi_alarm;
+    osdConfig_link_quality_alarm = osdConfig()->link_quality_alarm;
     osdConfig_cap_alarm = osdConfig()->cap_alarm;
     osdConfig_alt_alarm = osdConfig()->alt_alarm;
     batteryConfig_vbatDurationForWarning = batteryConfig()->vbatDurationForWarning;
@@ -173,6 +175,7 @@ static long menuAlarmsOnExit(const OSD_Entry *self)
     UNUSED(self);
 
     osdConfigMutable()->rssi_alarm = osdConfig_rssi_alarm;
+    osdConfigMutable()->link_quality_alarm = osdConfig_link_quality_alarm;
     osdConfigMutable()->cap_alarm = osdConfig_cap_alarm;
     osdConfigMutable()->alt_alarm = osdConfig_alt_alarm;
     batteryConfigMutable()->vbatDurationForWarning = batteryConfig_vbatDurationForWarning;
@@ -185,6 +188,7 @@ const OSD_Entry menuAlarmsEntries[] =
 {
     {"--- ALARMS ---", OME_Label, NULL, NULL, 0},
     {"RSSI",     OME_UINT8,  NULL, &(OSD_UINT8_t){&osdConfig_rssi_alarm, 5, 90, 5}, 0},
+    {"LINK QUALITY", OME_UINT16,  NULL, &(OSD_UINT16_t){&osdConfig_link_quality_alarm, 5, 300, 5}, 0},
     {"MAIN BAT", OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_cap_alarm, 50, 30000, 50}, 0},
     {"MAX ALT",  OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_alt_alarm, 1, 200, 1}, 0},
     {"VBAT WARN DUR", OME_UINT8, NULL, &(OSD_UINT8_t){ &batteryConfig_vbatDurationForWarning, 0, 200, 1 }, 0 },

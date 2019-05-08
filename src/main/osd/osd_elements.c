@@ -793,13 +793,17 @@ static void osdElementHorizonSidebars(osdElementParms_t *element)
 #ifdef USE_RX_LINK_QUALITY_INFO
 static void osdElementLinkQuality(osdElementParms_t *element)
 {
-    // change range to 0-9 (two sig. fig. adds little extra value, also reduces screen estate)
-    uint8_t osdLinkQuality = rxGetLinkQuality() * 10 / LINK_QUALITY_MAX_VALUE;
-    if (osdLinkQuality >= 10) {
-        osdLinkQuality = 9;
+    switch (linkQualitySource) {
+        case LQ_SOURCE_RX_PROTOCOL_CRSF:
+            tfp_sprintf(element->buff, "%3d", rxGetLinkQualityPercent());
+        break;
+        case LQ_SOURCE_RX_CHANNEL:
+            tfp_sprintf(element->buff, "%2d", rxGetLinkQualityPercent());
+        break;
+        default:
+            tfp_sprintf(element->buff, "%1d", rxGetLinkQualityPercent()/10);
+        break;
     }
-
-    tfp_sprintf(element->buff, "%1d", osdLinkQuality);
 }
 #endif // USE_RX_LINK_QUALITY_INFO
 

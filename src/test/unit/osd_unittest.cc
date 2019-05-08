@@ -81,6 +81,7 @@ extern "C" {
     float motorOutputHigh = 2047;
     float motorOutputLow = 1000;
 
+    linkQualitySource_e linkQualitySource;
 
     acc_t acc;
     float accAverage[XYZ_AXIS_COUNT];
@@ -1096,7 +1097,7 @@ extern "C" {
 
     uint8_t getRssiPercent(void) { return scaleRange(rssi, 0, RSSI_MAX_VALUE, 0, 100); }
 
-    uint8_t rxGetLinkQuality(void) { return LINK_QUALITY_MAX_VALUE; }
+    uint16_t rxGetLinkQuality(void) { return LINK_QUALITY_MAX_VALUE; }
 
     uint16_t getCoreTemperatureCelsius(void) { return simulationCoreTemperature; }
 

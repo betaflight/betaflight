@@ -341,7 +341,7 @@ static void osdResetStats(void)
     stats.max_g_force  = 0;
     stats.max_esc_temp = 0;
     stats.max_esc_rpm  = 0;
-    stats.min_link_quality = 99; // percent
+    stats.min_link_quality =  (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) ? 300 : 99; // CRSF  : percent
 }
 
 static void osdUpdateStats(void)
@@ -610,7 +610,7 @@ static uint8_t osdShowStats(uint16_t endBatteryVoltage, int statsRowCount)
 
 #ifdef USE_RX_LINK_QUALITY_INFO
     if (osdStatGetState(OSD_STAT_MIN_LINK_QUALITY)) {
-        itoa(stats.min_link_quality, buff, 10);
+        tfp_sprintf(buff, "%d", stats.min_link_quality);
         strcat(buff, "%");
         osdDisplayStatisticLabel(top++, "MIN LINK", buff);
     }
