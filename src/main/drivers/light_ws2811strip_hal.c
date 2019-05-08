@@ -77,7 +77,11 @@ bool ws2811LedStripHardwareInit(ioTag_t ioTag)
     uint32_t dmaChannel = dmaSpec->channel;
 #else
     dmaStream_t *dmaRef = timerHardware->dmaRef;
+#ifdef STM32H7
+    uint32_t dmaChannel = timerHardware->dmaRequest;
+#else
     uint32_t dmaChannel = timerHardware->dmaChannel;
+#endif
 #endif
 
 
@@ -109,9 +113,14 @@ bool ws2811LedStripHardwareInit(ioTag_t ioTag)
     IOConfigGPIOAF(ws2811IO, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLDOWN), timerHardware->alternateFunction);
 
     __DMA1_CLK_ENABLE();
+    __DMA2_CLK_ENABLE();
 
     /* Set the parameters to be configured */
+#ifdef STM32H7
+    hdma_tim.Init.Request = dmaChannel;
+#else
     hdma_tim.Init.Channel = dmaChannel;
+#endif
     hdma_tim.Init.Direction = DMA_MEMORY_TO_PERIPH;
     hdma_tim.Init.PeriphInc = DMA_PINC_DISABLE;
     hdma_tim.Init.MemInc = DMA_MINC_ENABLE;
