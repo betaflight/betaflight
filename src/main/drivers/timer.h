@@ -50,6 +50,11 @@ typedef uint32_t timCCR_t;
 typedef uint32_t timCCER_t;
 typedef uint32_t timSR_t;
 typedef uint32_t timCNT_t;
+#elif defined(STM32H7)
+typedef uint32_t timCCR_t;
+typedef uint32_t timCCER_t;
+typedef uint32_t timSR_t;
+typedef uint32_t timCNT_t;
 #elif defined(STM32F1)
 typedef uint16_t timCCR_t;
 typedef uint16_t timCCER_t;
@@ -104,12 +109,12 @@ typedef struct timerHardware_s {
     uint8_t channel;
     timerUsageFlag_e usageFlags;
     uint8_t output;
-#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
+#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
     uint8_t alternateFunction;
 #endif
 #if defined(USE_DSHOT) || defined(USE_LED_STRIP) || defined(USE_TRANSPONDER)
 #if defined(USE_DMA_SPEC)
-#if defined(STM32F4) || defined(STM32F7)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
     DMA_Stream_TypeDef *dmaRefConfigured;
     uint32_t dmaChannelConfigured;
 #else
@@ -119,14 +124,22 @@ typedef struct timerHardware_s {
 #if defined(STM32F4) || defined(STM32F7)
     DMA_Stream_TypeDef *dmaRef;
     uint32_t dmaChannel;
+#elif defined(STM32H7)
+    DMA_Stream_TypeDef *dmaRef;
+    uint8_t dmaRequest;
+    uint8_t dmaIrqHandler; // XXX Should be gone (can be substituted by dmaGetIdentifier)
 #else
     DMA_Channel_TypeDef *dmaRef;
 #endif
 #endif
-#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
+
+#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
     // TIMUP
 #ifdef STM32F3
     DMA_Channel_TypeDef *dmaTimUPRef;
+#elif defined(STM32H7)
+    DMA_Stream_TypeDef *dmaTimUPRef;
+    uint8_t dmaTimUPRequest;
 #else
     DMA_Stream_TypeDef *dmaTimUPRef;
     uint32_t dmaTimUPChannel;
@@ -158,6 +171,8 @@ typedef enum {
 #define HARDWARE_TIMER_DEFINITION_COUNT 14
 #elif defined(STM32F7)
 #define HARDWARE_TIMER_DEFINITION_COUNT 14
+#elif defined(STM32H7)
+#define HARDWARE_TIMER_DEFINITION_COUNT 17
 #endif
 
 #define MHZ_TO_HZ(x) ((x) * 1000000)
