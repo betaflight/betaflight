@@ -28,6 +28,7 @@ extern "C" {
     #include "build/version.h"
     #include "cli/cli.h"
     #include "cli/settings.h"
+    #include "common/printf.h"
     #include "config/feature.h"
     #include "drivers/buf_writer.h"
     #include "drivers/vtx_common.h"
@@ -226,19 +227,6 @@ uint8_t getMotorCount() {
 
 
 void setPrintfSerialPort(struct serialPort_s) {}
-
-void tfp_printf(const char * expectedFormat, ...) {
-    va_list args;
-
-    va_start(args, expectedFormat);
-    vprintf(expectedFormat, args);
-    va_end(args);
-}
-
-
-void tfp_format(void *, void (*) (void *, char), const char * expectedFormat, va_list va) {
-    vprintf(expectedFormat, va);
-}
 
 static const box_t boxes[] = { { 0, "DUMMYBOX", 0 } };
 const box_t *findBoxByPermanentId(uint8_t) { return &boxes[0]; }
