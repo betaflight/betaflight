@@ -62,13 +62,13 @@
 //
 static uint8_t tmpPidProfileIndex;
 static uint8_t pidProfileIndex;
-static char pidProfileIndexString[] = " p";
+static char pidProfileIndexString[MAX_PROFILE_NAME_LENGTH + 5];
 static uint8_t tempPid[3][3];
 static uint16_t tempPidF[3];
 
 static uint8_t tmpRateProfileIndex;
 static uint8_t rateProfileIndex;
-static char rateProfileIndexString[] = " p-r";
+static char rateProfileIndexString[MAX_RATE_PROFILE_NAME_LENGTH + 5];
 static controlRateConfig_t rateProfile;
 
 static const char * const osdTableThrottleLimitType[] = {
@@ -80,6 +80,29 @@ static const char * const osdTableDynNotchRangeType[] = {
     "HIGH", "MED", "LOW", "AUTO"
 };
 #endif
+
+static void setProfileIndexString(char *profileString, int profileIndex, char *profileName)
+{
+    int charIndex = 0;
+    profileString[charIndex++] = '1' + profileIndex;
+
+#ifdef USE_PROFILE_NAMES
+    const int profileNameLen = strlen(profileName);
+
+    if (profileNameLen > 0) {
+        profileString[charIndex++] = ' ';
+        profileString[charIndex++] = '(';
+        for (int i = 0; i < profileNameLen; i++) {
+            profileString[charIndex++] = toupper(profileName[i]);
+        }
+        profileString[charIndex++] = ')';
+    }
+#else
+    UNUSED(profileName);
+#endif
+
+    profileString[charIndex] = '\0';
+}
 
 static long cmsx_menuImu_onEnter(void)
 {
@@ -140,7 +163,7 @@ static long cmsx_PidRead(void)
 
 static long cmsx_PidOnEnter(void)
 {
-    pidProfileIndexString[1] = '0' + tmpPidProfileIndex;
+    setProfileIndexString(pidProfileIndexString, pidProfileIndex, currentPidProfile->profileName);
     cmsx_PidRead();
 
     return 0;
@@ -217,8 +240,7 @@ static long cmsx_RateProfileWriteback(const OSD_Entry *self)
 
 static long cmsx_RateProfileOnEnter(void)
 {
-    rateProfileIndexString[1] = '0' + tmpPidProfileIndex;
-    rateProfileIndexString[3] = '0' + tmpRateProfileIndex;
+    setProfileIndexString(rateProfileIndexString, rateProfileIndex, controlRateProfilesMutable(rateProfileIndex)->profileName);
     cmsx_RateProfileRead();
 
     return 0;
@@ -337,7 +359,7 @@ static uint8_t  cmsx_d_min_advance;
 
 static long cmsx_profileOtherOnEnter(void)
 {
-    pidProfileIndexString[1] = '0' + tmpPidProfileIndex;
+    setProfileIndexString(pidProfileIndexString, pidProfileIndex, currentPidProfile->profileName);
 
     const pidProfile_t *pidProfile = pidProfiles(pidProfileIndex);
 

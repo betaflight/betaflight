@@ -100,6 +100,8 @@ typedef enum {
     ITERM_RELAX_SETPOINT
 } itermRelaxType_e;
 
+#define MAX_PROFILE_NAME_LENGTH 8u
+
 typedef struct pidProfile_s {
     uint16_t yaw_lowpass_hz;                // Additional yaw filter when yaw axis too noisy
     uint16_t dterm_lowpass_hz;              // Delta Filter in hz
@@ -168,6 +170,7 @@ typedef struct pidProfile_s {
     uint8_t motor_output_limit;             // Upper limit of the motor output (percent)
     int8_t auto_profile_cell_count;         // Cell count for this profile to be used with if auto PID profile switching is used
     uint8_t transient_throttle_limit;       // Maximum DC component of throttle change to mix into throttle to prevent airmode mirroring noise
+    char profileName[MAX_PROFILE_NAME_LENGTH + 1]; // Descriptive name for profile
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
