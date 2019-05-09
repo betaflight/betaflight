@@ -38,6 +38,7 @@
 #include "drivers/sdmmc_sdio.h"
 #include "drivers/light_led.h"
 #include "drivers/io.h"
+#include "drivers/sdcard.h"
 
 #include "pg/pg.h"
 #include "pg/sdcard.h"
@@ -170,12 +171,15 @@ static int8_t STORAGE_Init (uint8_t lun)
 
 	SD_Initialize_LL(dmaChannelSpec->ref);
 #else
-	SD_Initialize_LL(SDIO_DMA);
+	SD_Initialize_LL(SDCARD_SDIO_DMA_OPT);
 #endif
 
-	if (SD_Init() != 0) {
-            return 1;
-        }
+    if (!sdcard_isInserted()) {
+        return 1;
+    }
+    if (SD_Init() != 0) {
+        return 1;
+    }
 
 	LED0_ON;
 
@@ -196,7 +200,7 @@ static int8_t STORAGE_GetCapacity (uint8_t lun, uint32_t *block_num, uint32_t *b
 #endif
 {
 	UNUSED(lun);
-	if (SD_IsDetected() == 0) {
+	if (!sdcard_isInserted()) {
 		return -1;
 	}
 	SD_GetCardInfo();
@@ -217,7 +221,7 @@ static int8_t  STORAGE_IsReady (uint8_t lun)
 {
 	UNUSED(lun);
 	int8_t ret = -1;
-	if (SD_GetState() == true && SD_IsDetected() == SD_PRESENT) {
+	if (SD_GetState() == true && sdcard_isInserted()) {
         ret = 0;
 	}
 	return ret;
@@ -249,7 +253,7 @@ static int8_t STORAGE_Read (uint8_t lun,
                  uint16_t blk_len)
 {
 	UNUSED(lun);
-	if (SD_IsDetected() == 0) {
+	if (!sdcard_isInserted()) {
 		return -1;
 	}
 	LED1_ON;
@@ -276,7 +280,7 @@ static int8_t STORAGE_Write (uint8_t lun,
                   uint16_t blk_len)
 {
 	UNUSED(lun);
-	if (SD_IsDetected() == 0) {
+	if (!sdcard_isInserted()) {
 		return -1;
 	}
 	LED1_ON;

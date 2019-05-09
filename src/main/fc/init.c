@@ -501,6 +501,11 @@ void init(void)
     updateHardwareRevision();
 #endif
 
+#if defined(STM32H7) && defined(USE_SDCARD_SDIO) // H7 only for now, likely should be applied to F4/F7 too
+    void SDIO_GPIO_Init(void);
+    SDIO_GPIO_Init();
+#endif
+
 #ifdef USE_VTX_RTC6705
     bool useRTC6705 = rtc6705IOInit(vtxIOConfig());
 #endif
