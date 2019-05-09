@@ -208,9 +208,15 @@ int osdConvertTemperatureToSelectedUnit(int tempInDegreesCelcius)
 
 static void osdFormatAltitudeString(char * buff, int32_t altitudeCm)
 {
-    const int alt = osdGetMetersToSelectedUnit(altitudeCm) / 100;
-
-    tfp_sprintf(buff, "%c%5d %c", SYM_ALTITUDE, alt, osdGetMetersToSelectedUnitSymbol());
+    const int alt = osdGetMetersToSelectedUnit(altitudeCm);
+    
+    if (sensors(SENSOR_BARO)) {
+        tfp_sprintf(buff, "%c%5d %c", SYM_ALTITUDE, alt / 10, osdGetMetersToSelectedUnitSymbol());
+        buff[6] = buff[5];
+        buff[5] = '.';
+    } else {
+        tfp_sprintf(buff, "%c%5d %c", SYM_ALTITUDE, alt / 100, osdGetMetersToSelectedUnitSymbol());
+    }
 }
 
 #ifdef USE_GPS
