@@ -542,7 +542,7 @@ static void printValuePointer(const clivalue_t *var, const void *valuePointer, b
             }
             break;
         case MODE_STRING:
-            cliPrintf("%s", (char *)valuePointer);
+            cliPrintf("%s", (strlen((char *)valuePointer) == 0) ? "-" : (char *)valuePointer);
             break;
         }
 
@@ -4239,6 +4239,8 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
                         strncpy((char *)cliGetValuePointer(val), valPtr, len);
                     }
                     valueChanged = true;
+                } else {
+                    cliPrintErrorLinef("STRING MUST BE 1-%d CHARACTERS OR '-' FOR EMPTY", max);
                 }
             }
             break;
