@@ -708,6 +708,16 @@ static void osdElementEscRpmFreq(osdElementParms_t *element)
 }
 #endif
 
+static void osdElementRmsError(osdElementParms_t *element)
+{
+    if (currentPidProfile->rms_error_lpf_period) {
+        int rollErr = lrintf(pidGetRmsError(ROLL) * 10);
+        int pitchErr = lrintf(pidGetRmsError(PITCH) * 10);
+        int yawErr = lrintf(pidGetRmsError(YAW) * 10);
+        tfp_sprintf(element->buff, "RMSE: %3d.%01d %3d.%01d %3d.%01d", rollErr / 10, rollErr % 10, pitchErr / 10, pitchErr % 10, yawErr / 10, yawErr % 10);
+    }
+}
+
 static void osdElementFlymode(osdElementParms_t *element)
 {
     // Note that flight mode display has precedence in what to display.
@@ -1334,6 +1344,7 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_ROLL_PIDS,
     OSD_PITCH_PIDS,
     OSD_YAW_PIDS,
+    OSD_RMS_ERROR_POS,
     OSD_POWER,
     OSD_PIDRATE_PROFILE,
     OSD_WARNINGS,
@@ -1477,6 +1488,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_PID_PROFILE_NAME]        = osdElementPidProfileName,
 #endif
 
+    [OSD_RMS_ERROR_POS]           = osdElementRmsError,
 };
 
 static void osdAddActiveElement(osd_items_e element)

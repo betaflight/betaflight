@@ -67,6 +67,7 @@
 #endif
 #include "flight/imu.h"
 #include "flight/position.h"
+#include "flight/pid.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
@@ -409,6 +410,7 @@ static void osdUpdateStats(void)
         }
     }
 #endif
+    pidRmsErrorStatReset();
 }
 
 #ifdef USE_BLACKBOX
@@ -627,6 +629,14 @@ static uint8_t osdShowStats(uint16_t endBatteryVoltage, int statsRowCount)
         }
     }
 #endif
+
+    if (osdStatGetState(OSD_STAT_RMS_ERROR)) {
+        int rollErr = lrintf(pidGetRmsErrorStat(ROLL) * 10);
+        int pitchErr = lrintf(pidGetRmsErrorStat(PITCH) * 10);
+        int yawErr = lrintf(pidGetRmsErrorStat(YAW) * 10);
+        tfp_sprintf(buff, "RMSE: %3d.%01d %3d.%01d %3d.%01d", rollErr / 10, rollErr % 10, pitchErr / 10, pitchErr % 10, yawErr / 10, yawErr % 10);
+        displayWrite(osdDisplayPort, 2, top++, buff);
+    }
 
 #ifdef USE_PERSISTENT_STATS
     if (osdStatGetState(OSD_STAT_TOTAL_FLIGHTS)) {

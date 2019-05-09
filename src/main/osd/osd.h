@@ -128,6 +128,7 @@ typedef enum {
     OSD_ESC_RPM_FREQ,
     OSD_RATE_PROFILE_NAME,
     OSD_PID_PROFILE_NAME,
+    OSD_RMS_ERROR_POS,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
@@ -164,6 +165,7 @@ typedef enum {
     OSD_STAT_TOTAL_FLIGHTS,
     OSD_STAT_TOTAL_TIME,
     OSD_STAT_TOTAL_DIST,
+    OSD_STAT_RMS_ERROR,
     OSD_STAT_COUNT // MUST BE LAST
 } osd_stats_e;
 

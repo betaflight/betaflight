@@ -168,6 +168,7 @@ typedef struct pidProfile_s {
     uint8_t motor_output_limit;             // Upper limit of the motor output (percent)
     int8_t auto_profile_cell_count;         // Cell count for this profile to be used with if auto PID profile switching is used
     uint8_t transient_throttle_limit;       // Maximum DC component of throttle change to mix into throttle to prevent airmode mirroring noise
+    uint8_t rms_error_lpf_period;           // Period of the LPF for RMS Error in 1/10s
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
@@ -243,3 +244,6 @@ void dynLpfDTermUpdate(float throttle);
 void pidSetItermReset(bool enabled);
 float pidGetPreviousSetpoint(int axis);
 
+float pidGetRmsError(int axis);
+void pidRmsErrorStatReset();
+float pidGetRmsErrorStat(int axis);

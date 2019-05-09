@@ -204,6 +204,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .motor_output_limit = 100,
         .auto_profile_cell_count = AUTO_PROFILE_CELL_COUNT_STAY,
         .transient_throttle_limit = 15,
+
+        .rms_error_lpf_period = 10
     );
 #ifndef USE_D_MIN
     pidProfile->pid[PID_ROLL].D = 30;
@@ -299,6 +301,10 @@ static FAST_RAM_ZERO_INIT pt1Filter_t airmodeThrottleLpf2;
 #endif
 
 static FAST_RAM_ZERO_INIT pt1Filter_t antiGravityThrottleLpf;
+
+static FAST_RAM_ZERO_INIT pt1Filter_t rmsErrorLpf[XYZ_AXIS_COUNT];
+static FAST_RAM_ZERO_INIT float rmsErrorSum[XYZ_AXIS_COUNT];
+static FAST_RAM_ZERO_INIT uint32_t rmsErrorCount;
 
 void pidInitFilters(const pidProfile_t *pidProfile)
 {
@@ -436,6 +442,12 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 #endif
 
     pt1FilterInit(&antiGravityThrottleLpf, pt1FilterGain(ANTI_GRAVITY_THROTTLE_FILTER_CUTOFF, dT));
+
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        if (pidProfile->rms_error_lpf_period) {
+            pt1FilterInit(&rmsErrorLpf[axis], pt1FilterGain(1.0f / (pidProfile->rms_error_lpf_period / 10.0f), dT));
+        }
+    }
 }
 
 #ifdef USE_RC_SMOOTHING_FILTER
@@ -1334,6 +1346,14 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         }
 #endif
 
+        if (pidProfile->rms_error_lpf_period) {
+            pt1FilterApply(&rmsErrorLpf[axis], pow(fabsf(errorRate), 2));
+        }
+
+        if (ARMING_FLAG(ARMED)) {
+            rmsErrorSum[axis] += (float)pow(fabsf(errorRate), 2);
+        }
+
         // --------low-level gyro-based PID based on 2DOF PID controller. ----------
         // 2-DOF PID controller with optional filter on derivative term.
         // b = 1 and only c (feedforward weight) can be tuned (amount derivative on measurement or error).
@@ -1459,6 +1479,10 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         }
     }
 
+    if (ARMING_FLAG(ARMED)) {
+        rmsErrorCount += 1;
+    }
+
     // Disable PID control if at zero throttle or if gyro overflow detected
     // This may look very innefficient, but it is done on purpose to always show real CPU usage as in flight
     if (!pidStabilisationEnabled || gyroOverflowDetected()) {
@@ -1533,4 +1557,22 @@ void pidSetItermReset(bool enabled)
 float pidGetPreviousSetpoint(int axis)
 {
     return previousPidSetpoint[axis];
+}
+
+float pidGetRmsError(int axis)
+{
+    return sqrt(rmsErrorLpf[axis].state);
+}
+
+void pidRmsErrorStatReset()
+{
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        rmsErrorSum[axis] = 0;
+        rmsErrorCount = 0;
+    }
+}
+
+float pidGetRmsErrorStat(int axis)
+{
+    return sqrt(rmsErrorSum[axis] / rmsErrorCount);
 }

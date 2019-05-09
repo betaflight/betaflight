@@ -334,6 +334,7 @@ static uint8_t  cmsx_d_min[XYZ_AXIS_COUNT];
 static uint8_t  cmsx_d_min_gain;
 static uint8_t  cmsx_d_min_advance;
 #endif
+static uint8_t  cmsx_rms_error_lpf_period;
 
 static long cmsx_profileOtherOnEnter(void)
 {
@@ -361,6 +362,8 @@ static long cmsx_profileOtherOnEnter(void)
     cmsx_d_min_gain = pidProfile->d_min_gain;
     cmsx_d_min_advance = pidProfile->d_min_advance;
 #endif
+
+    cmsx_rms_error_lpf_period = pidProfile->rms_error_lpf_period;
 
     return 0;
 }
@@ -392,6 +395,8 @@ static long cmsx_profileOtherOnExit(const OSD_Entry *self)
     pidProfile->d_min_advance = cmsx_d_min_advance;
 #endif
 
+    pidProfile->rms_error_lpf_period = cmsx_rms_error_lpf_period;
+
     initEscEndpoints();
     return 0;
 }
@@ -422,6 +427,8 @@ static const OSD_Entry cmsx_menuProfileOtherEntries[] = {
     { "D_MIN GAIN",  OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_d_min_gain,          0, 100, 1 }, 0 },
     { "D_MIN ADV",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_d_min_advance,       0, 200, 1 }, 0 },
 #endif
+
+    { "RMS_ERROR_LPF", OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_rms_error_lpf_period, 0, 255, 1}, 0 },
 
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
