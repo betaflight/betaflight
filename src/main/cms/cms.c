@@ -1079,18 +1079,18 @@ uint16_t cmsHandleKeyWithRepeat(displayPort_t *pDisplay, cms_key_e key, int repe
     return ret;
 }
 
-void cmsUpdate(uint32_t currentTimeUs)
+static void cmsUpdate(uint32_t currentTimeUs)
 {
+    if (IS_RC_MODE_ACTIVE(BOXPARALYZE)
 #ifdef USE_RCDEVICE
-    if(rcdeviceInMenu) {
-        return ;
-    }
+        || rcdeviceInMenu
 #endif
 #ifdef USE_USB_CDC_HID
-    if (getBatteryCellCount() == 0 && usbDevConfig()->type == COMPOSITE) {
+        || (getBatteryCellCount() == 0 && usbDevConfig()->type == COMPOSITE)
+#endif
+       ) {
         return;
     }
-#endif
 
     static int16_t rcDelayMs = BUTTON_TIME;
     static int holdCount = 1;

@@ -30,8 +30,6 @@
 
 #include "build/build_config.h"
 
-#include "cms/cms.h"
-
 #include "common/axis.h"
 #include "common/maths.h"
 
@@ -136,6 +134,7 @@ throttleStatus_e calculateThrottleStatus(void)
     rcDelayMs -= (t); \
     doNotRepeat = false; \
 }
+
 void processRcStickPositions()
 {
     // time the sticks are maintained
@@ -145,12 +144,6 @@ void processRcStickPositions()
     // an extra guard for disarming through switch to prevent that one frame can disarm it
     static uint8_t rcDisarmTicks;
     static bool doNotRepeat;
-
-#ifdef USE_CMS
-    if (cmsInMenu) {
-        return;
-    }
-#endif
 
     // checking sticks positions
     uint8_t stTmp = 0;

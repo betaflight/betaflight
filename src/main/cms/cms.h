@@ -50,7 +50,6 @@ bool cmsDisplayPortSelect(displayPort_t *instance);
 void cmsMenuOpen(void);
 long cmsMenuChange(displayPort_t *pPort, const void *ptr);
 long cmsMenuExit(displayPort_t *pPort, const void *ptr);
-void cmsUpdate(uint32_t currentTimeUs);
 void cmsSetExternKey(cms_key_e extKey);
 
 #define CMS_STARTUP_HELP_TEXT1 "MENU:THR MID"
