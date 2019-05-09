@@ -208,11 +208,9 @@ int osdConvertTemperatureToSelectedUnit(int tempInDegreesCelcius)
 
 static void osdFormatAltitudeString(char * buff, int32_t altitudeCm)
 {
-    const int alt = osdGetMetersToSelectedUnit(altitudeCm) / 10;
+    const int alt = osdGetMetersToSelectedUnit(altitudeCm) / 100;
 
     tfp_sprintf(buff, "%c%5d %c", SYM_ALTITUDE, alt, osdGetMetersToSelectedUnitSymbol());
-    buff[6] = buff[5];
-    buff[5] = '.';
 }
 
 #ifdef USE_GPS
