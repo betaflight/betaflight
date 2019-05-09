@@ -250,13 +250,13 @@ static void cmsPageSelect(displayPort_t *instance, int8_t newpage)
 {
     currentCtx.page = (newpage + pageCount) % pageCount;
     pageTop = &currentCtx.menu->entries[currentCtx.page * maxMenuItems];
-
+    cmsUpdateMaxRow(instance);
+ 
     const OSD_Entry *p;
     int i;
     for (p = pageTop, i = 0; (p <= pageTop + pageMaxRow); p++, i++) {
         runtimeEntryFlags[i] = p->flags;
     }
-    cmsUpdateMaxRow(instance);
     displayClearScreen(instance);
 }
 
