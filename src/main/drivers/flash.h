@@ -36,8 +36,10 @@ typedef enum {
     FLASH_TYPE_NAND
 } flashType_e;
 
+typedef uint16_t flashSector_t;
+
 typedef struct flashGeometry_s {
-    uint16_t sectors; // Count of the number of erasable blocks on the device
+    flashSector_t sectors; // Count of the number of erasable blocks on the device
     uint16_t pageSize; // In bytes
     uint32_t sectorSize; // This is just pagesPerSector * pageSize
     uint32_t totalSize;  // This is just sectorSize * sectors
@@ -59,3 +61,29 @@ void flashPageProgram(uint32_t address, const uint8_t *data, int length);
 int flashReadBytes(uint32_t address, uint8_t *buffer, int length);
 void flashFlush(void);
 const flashGeometry_t *flashGetGeometry(void);
+
+//
+// flash partitioning api
+//
+
+typedef struct flashPartition_s {
+    uint8_t usage;
+    flashSector_t startSector;
+    flashSector_t endSector;
+} flashPartition_t;
+
+#define FLASH_PARTITION_SECTOR_COUNT(partition) (partition->endSector + 1 - partition->startSector) // + 1 for inclusive, start and end sector can be the same sector.
+
+#define FLASH_PARTITION_UNKNOWN               0
+#define FLASH_PARTITION_FLASHFS               1
+#define FLASH_PARTITION_BADBLOCK_MANAGEMENT   2
+#define FLASH_PARTITION_FIRMWARE              3
+
+#define FLASH_MAX_PARTITIONS 3
+
+typedef struct flashPartitionTable_s {
+    flashPartition_t partitions[FLASH_MAX_PARTITIONS];
+} flashPartitionTable_t;
+
+void flashSetPartition(uint8_t index, const flashPartition_t *partition);
+const flashPartition_t *flashFindPartitionByUsage(uint8_t usage);

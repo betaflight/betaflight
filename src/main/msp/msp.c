@@ -337,10 +337,12 @@ static void serializeDataflashSummaryReply(sbuf_t *dst)
     if (flashfsIsSupported()) {
         uint8_t flags = MSP_FLASHFS_FLAG_SUPPORTED;
         flags |= (flashfsIsReady() ? MSP_FLASHFS_FLAG_READY : 0);
-        const flashGeometry_t *geometry = flashfsGetGeometry();
+
+        const flashPartition_t *flashPartition = flashFindPartitionByUsage(FLASH_PARTITION_FLASHFS);
+
         sbufWriteU8(dst, flags);
-        sbufWriteU32(dst, geometry->sectors);
-        sbufWriteU32(dst, geometry->totalSize);
+        sbufWriteU32(dst, FLASH_PARTITION_SECTOR_COUNT(flashPartition));
+        sbufWriteU32(dst, flashfsGetSize());
         sbufWriteU32(dst, flashfsGetOffset()); // Effectively the current number of bytes stored on the volume
     } else
 #endif
