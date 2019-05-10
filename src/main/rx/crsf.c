@@ -149,6 +149,11 @@ typedef struct crsfPayloadLinkstatistics_s {
 
 static timeUs_t lastLinkStatisticsFrameUs;
 
+#ifdef USE_RX_LINK_QUALITY_INFO
+STATIC_UNIT_TESTED uint16_t scaleCrsfLq(uint16_t lqvalue) {
+  return (lqvalue % 100) ? ((lqvalue * 3.41) + 1) : (lqvalue * 3.41);
+}
+#endif
 static void handleCrsfLinkStatisticsFrame(const crsfLinkStatistics_t* statsPtr, timeUs_t currentTimeUs)
 {
     const crsfLinkStatistics_t stats = *statsPtr;
@@ -158,6 +163,12 @@ static void handleCrsfLinkStatisticsFrame(const crsfLinkStatistics_t* statsPtr, 
         const uint16_t rssiPercentScaled = scaleRange(rssiDbm, 130, 0, 0, RSSI_MAX_VALUE);
         setRssi(rssiPercentScaled, RSSI_SOURCE_RX_PROTOCOL_CRSF);
     }
+
+#ifdef USE_RX_LINK_QUALITY_INFO
+    if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) {
+        setLinkQualityDirect(scaleCrsfLq((stats.rf_Mode * 100) + stats.uplink_Link_quality));
+    }
+#endif
 
     switch (debugMode) {
     case DEBUG_CRSF_LINK_STATISTICS_UPLINK:
@@ -188,6 +199,11 @@ static void crsfCheckRssi(uint32_t currentTimeUs) {
         if (rssiSource == RSSI_SOURCE_RX_PROTOCOL_CRSF) {
             setRssiDirect(0, RSSI_SOURCE_RX_PROTOCOL_CRSF);
         }
+#ifdef USE_RX_LINK_QUALITY_INFO
+        if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) {
+            setLinkQualityDirect(0);
+        }
+#endif
     }
 }
 #endif
@@ -377,6 +393,11 @@ bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
         if (rssiSource == RSSI_SOURCE_NONE) {
             rssiSource = RSSI_SOURCE_RX_PROTOCOL_CRSF;
         }
+#ifdef USE_RX_LINK_QUALITY_INFO
+        if (linkQualitySource == LQ_SOURCE_NONE) {
+            linkQualitySource = LQ_SOURCE_RX_PROTOCOL_CRSF;
+        }
+#endif
 
     return serialPort != NULL;
 }

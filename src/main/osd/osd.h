@@ -249,7 +249,7 @@ typedef struct osdConfig_s {
     uint8_t ahInvert;         // invert the artificial horizon
     uint8_t osdProfileIndex;
     uint8_t overlay_radio_mode;
-    uint8_t link_quality_alarm;
+    uint16_t link_quality_alarm;
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);
@@ -265,7 +265,7 @@ typedef struct statistic_s {
     float max_g_force;
     int16_t max_esc_temp;
     int32_t max_esc_rpm;
-    uint8_t min_link_quality;
+    uint16_t min_link_quality;
 } statistic_t;
 
 extern timeUs_t resumeRefreshAt;
