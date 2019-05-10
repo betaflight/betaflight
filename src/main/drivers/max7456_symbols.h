@@ -26,7 +26,7 @@
 #define SYM_BLANK                   0x20
 #define SYM_COLON                   0x2D
 #define SYM_BBLOG                   0x10
-//#define SYM_HOMEFLAG                0x11
+#define SYM_HOMEFLAG                0x11
 //#define SYM_RPM                     0x12
 #define SYM_ROLL                    0x14
 #define SYM_PITCH                   0x15
