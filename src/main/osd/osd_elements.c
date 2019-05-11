@@ -784,9 +784,7 @@ static void osdElementGpsHomeDistance(osdElementParms_t *element)
         element->buff[0] = SYM_HOMEFLAG;
         // We use this symbol when we don't have a FIX
         element->buff[1] = SYM_COLON;
-        // overwrite any previous distance with blanks
-        memset(element->buff + 2, SYM_BLANK, 6);
-        element->buff[8] = '\0';
+        element->buff[2] = '\0';
     }
 }
 
