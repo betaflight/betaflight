@@ -240,6 +240,25 @@
 #define SPI3_MISO_PIN   PB4
 #define SPI3_MOSI_PIN   PB5
 #endif
+
+#ifndef SPI4_SCK_PIN
+#define SPI4_SCK_PIN    NONE
+#define SPI4_MISO_PIN   NONE
+#define SPI4_MOSI_PIN   NONE
+#endif
+
+#ifndef SPI5_SCK_PIN
+#define SPI5_SCK_PIN    NONE
+#define SPI5_MISO_PIN   NONE
+#define SPI5_MOSI_PIN   NONE
+#endif
+
+#ifndef SPI6_SCK_PIN
+#define SPI6_SCK_PIN    NONE
+#define SPI6_MISO_PIN   NONE
+#define SPI6_MOSI_PIN   NONE
+#endif
+
 #endif
 
 // Extracted from rx/rx.c and rx/rx.h
