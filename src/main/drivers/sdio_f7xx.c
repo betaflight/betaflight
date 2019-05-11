@@ -260,28 +260,6 @@ void SDMMC_DMA_ST6_IRQHandler(dmaChannelDescriptor_t *dma);
 //static void             SD_PowerOFF                 (void);
 
 /** -----------------------------------------------------------------------------------------------------------------*/
-/**		SD_IsDetected
-  *
-  * @brief  Test if card is present
-  * @param  bool   true or false
-  */
-bool SD_IsDetected(void)
-{
-      __IO uint8_t status = SD_PRESENT;
-
-      /*!< Check GPIO to detect SD */
-    #ifdef SDCARD_DETECT_PIN
-      const IO_t sd_det = IOGetByTag(IO_TAG(SDCARD_DETECT_PIN));
-      if (IORead(sd_det) != 0)
-      {
-        status = SD_NOT_PRESENT;
-      }
-    #endif
-      return status;
-}
-
-
-/** -----------------------------------------------------------------------------------------------------------------*/
 /**		DataTransferInit
   *
   * @brief  Prepare the state machine for transfer
@@ -1679,12 +1657,6 @@ bool SD_GetState(void)
 bool SD_Init(void)
 {
     SD_Error_t ErrorState;
-
-    // Check if SD card is present
-    if(SD_IsDetected() != SD_PRESENT)
-    {
-        return false;
-    }
 
     // Initialize SDMMC1 peripheral interface with default configuration for SD card initialization
     MODIFY_REG(SDMMC1->CLKCR, CLKCR_CLEAR_MASK, (uint32_t) SDMMC_INIT_CLK_DIV);
