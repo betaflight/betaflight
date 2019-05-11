@@ -121,8 +121,13 @@ bool spiTransfer(SPI_TypeDef *instance, const uint8_t *txData, uint8_t *rxData, 
 
 uint16_t spiGetErrorCounter(SPI_TypeDef *instance);
 void spiResetErrorCounter(SPI_TypeDef *instance);
+
 SPIDevice spiDeviceByInstance(SPI_TypeDef *instance);
 SPI_TypeDef *spiInstanceByDevice(SPIDevice device);
+
+//
+// BusDevice API
+//
 
 bool spiBusIsBusBusy(const busDevice_t *bus);
 
@@ -149,6 +154,10 @@ bool spiBusTransactionWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t
 uint8_t spiBusTransactionReadRegister(const busDevice_t *bus, uint8_t reg);
 bool spiBusTransactionReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t *data, uint8_t length);
 bool spiBusTransactionTransfer(const busDevice_t *bus, const uint8_t *txData, uint8_t *rxData, int length);
+
+//
+// Config
+//
 
 struct spiPinConfig_s;
 void spiPinConfigure(const struct spiPinConfig_s *pConfig);
