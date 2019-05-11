@@ -2333,6 +2333,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #ifdef USE_FLASHFS
     case MSP_DATAFLASH_ERASE:
         flashfsEraseCompletely();
+        flashfsInit();
         break;
 #endif
 
