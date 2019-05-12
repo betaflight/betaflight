@@ -16,7 +16,7 @@
 #
 
 # The target to build, see VALID_TARGETS below
-TARGET    ?= BETAFLIGHTF3
+TARGET    ?= OMNIBUSF4
 
 # Compile-time options
 OPTIONS   ?=
@@ -35,7 +35,7 @@ DEBUG     ?=
 DEBUG_HARDFAULTS ?=
 
 # Serial port/Device for flashing
-SERIAL_DEVICE   ?= $(firstword $(wildcard /dev/ttyUSB*) no-port-found)
+SERIAL_DEVICE   ?= $(firstword $(wildcard /dev/ttyACM*) $(firstword $(wildcard /dev/ttyUSB*) no-port-found))
 
 # Flash size (KB).  Some low-end chips actually have more flash than advertised, use this to override.
 FLASH_SIZE ?=
@@ -427,14 +427,32 @@ clean_all: $(CLEAN_TARGETS)
 ## all_clean         : clean all valid targets (alias for above)
 all_clean: $(TARGETS_CLEAN)
 
+FLASH_TARGETS = $(addprefix flash_,$(VALID_TARGETS) )
 
-flash_$(TARGET): $(TARGET_HEX)
+## flash_<TARGET>    : build and flash a target
+$(FLASH_TARGETS):
+ifneq (,$(findstring /dev/ttyUSB,$(SERIAL_DEVICE)))
+	$(V0) $(MAKE) -j hex TARGET=$(subst flash_,,$@)
+	$(V0) $(MAKE) tty_flash TARGET=$(subst flash_,,$@)
+else
+	$(V0) $(MAKE) -j binary TARGET=$(subst flash_,,$@)
+	$(V0) $(MAKE) dfu_flash TARGET=$(subst flash_,,$@)
+endif
+
+## tty_flash         : flash firmware (.hex) onto flight controller via a serial port
+tty_flash:
 	$(V0) stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon
-	$(V0) echo -n 'R' >$(SERIAL_DEVICE)
+	$(V0) echo -n 'R' > $(SERIAL_DEVICE)
 	$(V0) stm32flash -w $(TARGET_HEX) -v -g 0x0 -b 115200 $(SERIAL_DEVICE)
 
-## flash             : flash firmware (.hex) onto flight controller
-flash: flash_$(TARGET)
+## dfu_flash         : flash firmware (.bin) onto flight controller via a DFU mode
+dfu_flash:
+ifneq (no-port-found,$(SERIAL_DEVICE))
+	# potentially this is because the MCU already is in DFU mode, try anyway
+	$(V0) echo -n 'R' > $(SERIAL_DEVICE)
+	$(V0) sleep 1
+endif
+	$(V0) dfu-util -a 0 -D $(TARGET_BIN) -s 0x08000000:leave
 
 st-flash_$(TARGET): $(TARGET_BIN)
 	$(V0) st-flash --reset write $< 0x08000000
