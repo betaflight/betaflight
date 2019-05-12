@@ -68,8 +68,6 @@ enum {
     THROTTLE_FLAG = 1 << THROTTLE,
 };
 
-#define MAX_KISS_RATE   0.99f //kiss rate can't be greater than this
-
 #ifdef USE_RC_SMOOTHING_FILTER
 #define RC_SMOOTHING_IDENTITY_FREQUENCY         80    // Used in the formula to convert a BIQUAD cutoff frequency to PT1
 #define RC_SMOOTHING_FILTER_STARTUP_DELAY_MS    5000  // Time to wait after power to let the PID loop stabilize before starting average frame rate calculation
@@ -152,17 +150,10 @@ float applyRaceFlightRates(const int axis, float rcCommandf, const float rcComma
 
 float applyKissRates(const int axis, float rcCommandf, const float rcCommandfAbs)
 {
-    float kissRcCommandf;
-    float kissRpyUseRates;
     const float rcCurvef = currentControlRateProfile->rcExpo[axis] / 100.0f;
 
-    if (currentControlRateProfile->rates[axis] < 100) {
-        kissRpyUseRates = 1.0f / (1 - rcCommandfAbs * currentControlRateProfile->rates[axis] / 100.0f);
-    } else {
-        kissRpyUseRates = 1.0f / (1 - rcCommandfAbs * MAX_KISS_RATE);
-    }
-    
-    kissRcCommandf = (power3(rcCommandf) * rcCurvef + rcCommandf * (1 - rcCurvef)) * (currentControlRateProfile->rcRates[axis] / 1000.0f);
+    float kissRpyUseRates = 1.0f / (constrainf(1.0f - (rcCommandfAbs * (currentControlRateProfile->rates[axis] / 100.0f)), 0.01f, 1.00f));    
+    float kissRcCommandf = (power3(rcCommandf) * rcCurvef + rcCommandf * (1 - rcCurvef)) * (currentControlRateProfile->rcRates[axis] / 1000.0f);
     float kissAngle = constrainf(((2000.0f * kissRpyUseRates) * kissRcCommandf), -SETPOINT_RATE_LIMIT, SETPOINT_RATE_LIMIT);
 
     return kissAngle;
