@@ -338,7 +338,7 @@
 #undef USE_ESCSERIAL
 #endif
 
-#if defined(EEPROM_IN_RAM) || defined(EEPROM_IN_FILE)
+#if defined(EEPROM_IN_RAM) || defined(EEPROM_IN_FILE) || defined(EEPROM_IN_EXTERNAL_FLASH)
 #ifndef EEPROM_SIZE
 #define EEPROM_SIZE     4096
 #endif

@@ -34,6 +34,7 @@
 #include "pg/pg.h"
 #include "fc/config.h"
 
+#include "drivers/flash.h"
 #include "drivers/system.h"
 
 static uint16_t eepromConfigSize;
@@ -78,6 +79,35 @@ typedef struct {
     uint32_t word;
 } PG_PACKED packingTest_t;
 
+#ifdef EEPROM_IN_EXTERNAL_FLASH
+bool loadEEPROMFromExternalFlash(void)
+{
+    const flashPartition_t *flashPartition = flashPartitionFindByType(FLASH_PARTITION_TYPE_CONFIG);
+    const flashGeometry_t *flashGeometry = flashGetGeometry();
+
+    uint32_t flashStartAddress = flashPartition->startSector * flashGeometry->sectorSize;
+
+    uint32_t totalBytesRead = 0;
+    uint32_t bytesRead = 0;
+
+    bool success;
+
+    do {
+        bytesRead = flashReadBytes(flashStartAddress + totalBytesRead, &eepromData[totalBytesRead], EEPROM_SIZE - totalBytesRead);
+        totalBytesRead += bytesRead;
+        success = (totalBytesRead == EEPROM_SIZE);
+    } while (!success && bytesRead);
+
+    return success;
+}
+#endif
+
+#ifdef EEPROM_IN_FILE
+void loadEEPROMFromFile(void) {
+    FLASH_Unlock(); // load existing config file into eepromData
+}
+#endif
+
 void initEEPROM(void)
 {
     // Verify that this architecture packs as expected.
@@ -89,7 +119,15 @@ void initEEPROM(void)
     STATIC_ASSERT(sizeof(configRecord_t) == 6, record_size_failed);
 
 #ifdef EEPROM_IN_FILE
-    FLASH_Unlock(); // load existing config file into eepromData
+    loadEEPROMFromFile();
+#endif
+
+#ifdef EEPROM_IN_EXTERNAL_FLASH
+    bool eepromLoaded = loadEEPROMFromExternalFlash();
+    if (!eepromLoaded) {
+        // Flash read failed - just die now
+        failureMode(FAILURE_FLASH_READ_FAILED);
+    }
 #endif
 }
 
@@ -159,6 +197,11 @@ uint16_t getEEPROMConfigSize(void)
 
 size_t getEEPROMStorageSize(void)
 {
+#if defined(EEPROM_IN_EXTERNAL_FLASH)
+
+    const flashPartition_t *flashPartition = flashPartitionFindByType(FLASH_PARTITION_TYPE_CONFIG);
+    return FLASH_PARTITION_SECTOR_COUNT(flashPartition) * flashGetGeometry()->sectorSize;
+#endif
 #ifdef EEPROM_IN_RAM
     return EEPROM_SIZE;
 #else
@@ -268,8 +311,14 @@ void writeConfigToEEPROM(void)
     for (int attempt = 0; attempt < 3 && !success; attempt++) {
         if (writeSettingsToEEPROM()) {
             success = true;
+
+#ifdef EEPROM_IN_EXTERNAL_FLASH
+            // copy it back from flash to the in-memory buffer.
+            success = loadEEPROMFromExternalFlash();
+#endif
         }
     }
+
 
     if (success && isEEPROMVersionValid() && isEEPROMStructureValid()) {
         return;
