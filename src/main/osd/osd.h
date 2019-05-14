@@ -31,6 +31,8 @@ extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 
 #define OSD_ELEMENT_BUFFER_LENGTH 32
 
+#define OSD_PROFILE_NAME_LENGTH 16
+
 #ifdef USE_OSD_PROFILES
 #define OSD_PROFILE_COUNT 3
 #else
@@ -128,6 +130,7 @@ typedef enum {
     OSD_ESC_RPM_FREQ,
     OSD_RATE_PROFILE_NAME,
     OSD_PID_PROFILE_NAME,
+    OSD_PROFILE_NAME,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
@@ -249,6 +252,7 @@ typedef struct osdConfig_s {
     uint8_t osdProfileIndex;
     uint8_t overlay_radio_mode;
     uint8_t link_quality_alarm;
+    char profile[OSD_PROFILE_COUNT][OSD_PROFILE_NAME_LENGTH + 1];
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);
