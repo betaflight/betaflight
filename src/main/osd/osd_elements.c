@@ -779,13 +779,12 @@ static void osdElementGpsHomeDistance(osdElementParms_t *element)
 {
     if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
         const int32_t distance = osdGetMetersToSelectedUnit(GPS_distanceToHome);
-        tfp_sprintf(element->buff, "%d%c", distance, osdGetMetersToSelectedUnitSymbol());
+        tfp_sprintf(element->buff, "%c%d%c", SYM_HOMEFLAG, distance, osdGetMetersToSelectedUnitSymbol());
     } else {
+        element->buff[0] = SYM_HOMEFLAG;
         // We use this symbol when we don't have a FIX
-        element->buff[0] = SYM_COLON;
-        // overwrite any previous distance with blanks
-        memset(element->buff + 1, SYM_BLANK, 6);
-        element->buff[7] = '\0';
+        element->buff[1] = SYM_COLON;
+        element->buff[2] = '\0';
     }
 }
 
