@@ -69,7 +69,7 @@ void vtxTableInit(void)
     }
     vtxTableChannelNames[0] = "-";
 
-    for (int level = 0; level < config->powerLevels; level++) {
+    for (int level = 0; level < VTX_TABLE_MAX_POWER_LEVELS; level++) {
         vtxTablePowerValues[level] = config->powerValues[level];
         vtxTablePowerLabels[level + 1] = config->powerLabels[level];
     }
