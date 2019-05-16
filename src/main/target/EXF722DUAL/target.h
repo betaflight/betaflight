@@ -24,8 +24,6 @@
 
 #define USBD_PRODUCT_STRING     "EXF722DUAL"
 
-#define USE_MULTI_GYRO
-
 #define ENABLE_DSHOT_DMAR       true
 
 #define LED0_PIN                PC4

@@ -41,7 +41,6 @@
 #define SPI3_NSS_PIN            PD2
 
 #define USE_GYRO
-#define USE_MULTI_GYRO
 #define USE_GYRO_SPI_MPU6000
 #define USE_GYRO_SPI_MPU6500
 
