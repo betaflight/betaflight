@@ -204,13 +204,13 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
     gyroConfig->gyroMovementCalibrationThreshold = 48;
     gyroConfig->gyro_sync_denom = GYRO_SYNC_DENOM_DEFAULT;
     gyroConfig->gyro_hardware_lpf = GYRO_HARDWARE_LPF_NORMAL;
-    gyroConfig->gyro_lowpass_type = FILTER_BIQUAD;
+    gyroConfig->gyro_lowpass_type = FILTER_PT1;
     gyroConfig->gyro_lowpass_hz = 150;  // NOTE: dynamic lpf is enabled by default so this setting is actually
                                         // overridden and the static lowpass 1 is disabled. We can't set this
                                         // value to 0 otherwise Configurator versions 10.4 and earlier will also
                                         // reset the lowpass filter type to PT1 overriding the desired BIQUAD setting.
     gyroConfig->gyro_lowpass2_type = FILTER_PT1;
-    gyroConfig->gyro_lowpass2_hz = 150;
+    gyroConfig->gyro_lowpass2_hz = 250;
     gyroConfig->gyro_high_fsr = false;
     gyroConfig->gyro_to_use = GYRO_CONFIG_USE_GYRO_DEFAULT;
     gyroConfig->gyro_soft_notch_hz_1 = 0;
@@ -221,8 +221,8 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
     gyroConfig->gyro_offset_yaw = 0;
     gyroConfig->yaw_spin_recovery = true;
     gyroConfig->yaw_spin_threshold = 1950;
-    gyroConfig->dyn_lpf_gyro_min_hz = 150;
-    gyroConfig->dyn_lpf_gyro_max_hz = 450;
+    gyroConfig->dyn_lpf_gyro_min_hz = 200;
+    gyroConfig->dyn_lpf_gyro_max_hz = 500;
     gyroConfig->dyn_notch_range = DYN_NOTCH_RANGE_AUTO;
     gyroConfig->dyn_notch_width_percent = 8;
     gyroConfig->dyn_notch_q = 120;
