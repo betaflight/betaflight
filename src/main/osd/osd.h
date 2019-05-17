@@ -192,6 +192,7 @@ typedef enum {
 typedef enum {
     OSD_TIMER_PREC_SECOND,
     OSD_TIMER_PREC_HUNDREDTHS,
+    OSD_TIMER_PREC_TENTHS,
     OSD_TIMER_PREC_COUNT
 } osd_timer_precision_e;
 

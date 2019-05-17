@@ -286,6 +286,12 @@ void osdFormatTime(char * buff, osd_timer_precision_e precision, timeUs_t time)
             tfp_sprintf(buff, "%02d:%02d.%02d", minutes, seconds, hundredths);
             break;
         }
+    case OSD_TIMER_PREC_TENTHS:
+        {
+            const int tenths = (time / 100000) % 10;
+            tfp_sprintf(buff, "%02d:%02d.%01d", minutes, seconds, tenths);
+            break;
+        }
     }
 }
 
