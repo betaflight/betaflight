@@ -33,6 +33,7 @@
 #include "flash_w25n01g.h"
 #include "flash_w25m.h"
 #include "drivers/bus_spi.h"
+#include "drivers/bus_quadspi.h"
 #include "drivers/io.h"
 #include "drivers/time.h"
 
@@ -41,15 +42,49 @@ static busDevice_t *busdev;
 
 static flashDevice_t flashDevice;
 
+#define FLASH_INSTRUCTION_RDID 0x9F
+
+#ifdef USE_QUADSPI
+static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
+{
+    QUADSPI_TypeDef *quadSpiInstance = quadSpiInstanceByDevice(QUADSPI_CFG_TO_DEV(flashConfig->quadSpiDevice));
+    quadSpiSetDivisor(quadSpiInstance, QUADSPI_CLOCK_INITIALISATION);
+
+    uint8_t readIdResponse[4];
+    bool status = quadSpiReceive1LINE(quadSpiInstance, FLASH_INSTRUCTION_RDID, 8, readIdResponse, sizeof(readIdResponse));
+    if (!status) {
+        return false;
+    }
+
+    flashDevice.io.mode = FLASHIO_QUADSPI;
+    flashDevice.io.handle.quadSpi = quadSpiInstance;
+
+    // Manufacturer, memory type, and capacity
+    uint32_t chipID = (readIdResponse[0] << 16) | (readIdResponse[1] << 8) | (readIdResponse[2]);
+
+#ifdef USE_FLASH_W25N01G
+    quadSpiSetDivisor(quadSpiInstance, QUADSPI_CLOCK_ULTRAFAST);
+
+    if (w25n01g_detect(&flashDevice, chipID)) {
+        return true;
+    }
+#endif
+
+    return false;
+}
+#endif  // USE_QUADSPI
+
+#ifdef USE_SPI
+
 void flashPreInit(const flashConfig_t *flashConfig)
 {
     spiPreinitRegister(flashConfig->csTag, IOCFG_IPU, 1);
 }
 
-// Read chip identification and send it to device detect
-
-bool flashInit(const flashConfig_t *flashConfig)
+static bool flashSpiInit(const flashConfig_t *flashConfig)
 {
+    // Read chip identification and send it to device detect
+
     busdev = &busInstance;
 
     if (flashConfig->csTag) {
@@ -85,11 +120,10 @@ bool flashInit(const flashConfig_t *flashConfig)
 #endif
 #endif
 
-    flashDevice.busdev = busdev;
+    flashDevice.io.mode = FLASHIO_SPI;
+    flashDevice.io.handle.busdev = busdev;
 
-#define SPIFLASH_INSTRUCTION_RDID 0x9F
-
-    const uint8_t out[] = { SPIFLASH_INSTRUCTION_RDID, 0, 0, 0, 0 };
+    const uint8_t out[] = { FLASH_INSTRUCTION_RDID, 0, 0, 0, 0 };
 
     delay(50); // short delay required after initialisation of SPI device instance.
 
@@ -97,18 +131,18 @@ bool flashInit(const flashConfig_t *flashConfig)
      * Some newer chips require one dummy byte to be read; we can read
      * 4 bytes for these chips while retaining backward compatibility.
      */
-    uint8_t in[5];
-    in[1] = in[2] = 0;
+    uint8_t readIdResponse[5];
+    readIdResponse[1] = readIdResponse[2] = 0;
 
     // Clearing the CS bit terminates the command early so we don't have to read the chip UID:
 #ifdef USE_SPI_TRANSACTION
-    spiBusTransactionTransfer(busdev, out, in, sizeof(out));
+    spiBusTransactionTransfer(busdev, out, readIdResponse, sizeof(out));
 #else
-    spiBusTransfer(busdev, out, in, sizeof(out));
+    spiBusTransfer(busdev, out, readIdResponse, sizeof(out));
 #endif
 
     // Manufacturer, memory type, and capacity
-    uint32_t chipID = (in[1] << 16) | (in[2] << 8) | (in[3]);
+    uint32_t chipID = (readIdResponse[1] << 16) | (readIdResponse[2] << 8) | (readIdResponse[3]);
 
 #ifdef USE_FLASH_M25P16
     if (m25p16_detect(&flashDevice, chipID)) {
@@ -123,7 +157,7 @@ bool flashInit(const flashConfig_t *flashConfig)
 #endif
 
     // Newer chips
-    chipID = (in[2] << 16) | (in[3] << 8) | (in[4]);
+    chipID = (readIdResponse[2] << 16) | (readIdResponse[3] << 8) | (readIdResponse[4]);
 
 #ifdef USE_FLASH_W25N01G
     if (w25n01g_detect(&flashDevice, chipID)) {
@@ -138,6 +172,27 @@ bool flashInit(const flashConfig_t *flashConfig)
 #endif
 
     spiPreinitByTag(flashConfig->csTag);
+
+    return false;
+}
+#endif // USE_SPI
+
+bool flashInit(const flashConfig_t *flashConfig)
+{
+#ifdef USE_SPI
+    bool useSpi = (SPI_CFG_TO_DEV(flashConfig->spiDevice) != SPIINVALID);
+
+    if (useSpi) {
+        return flashSpiInit(flashConfig);
+    }
+#endif
+
+#ifdef USE_QUADSPI
+    bool useQuadSpi = (QUADSPI_CFG_TO_DEV(flashConfig->quadSpiDevice) != QUADSPIINVALID);
+    if (useQuadSpi) {
+        return flashQuadSpiInit(flashConfig);
+    }
+#endif
 
     return false;
 }

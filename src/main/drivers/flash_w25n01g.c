@@ -33,6 +33,7 @@
 #include "flash_impl.h"
 #include "flash_w25n01g.h"
 #include "drivers/bus_spi.h"
+#include "drivers/bus_quadspi.h"
 #include "drivers/io.h"
 #include "drivers/time.h"
 
@@ -62,7 +63,9 @@ serialPort_t *debugSerialPort = NULL;
 #define W25N01G_INSTRUCTION_RDID             0x9F
 #define W25N01G_INSTRUCTION_DEVICE_RESET     0xFF
 #define W25N01G_INSTRUCTION_READ_STATUS_REG  0x05
+#define W25N01G_INSTRUCTION_READ_STATUS_ALTERNATE_REG  0x0F
 #define W25N01G_INSTRUCTION_WRITE_STATUS_REG 0x01
+#define W25N01G_INSTRUCTION_WRITE_STATUS_ALTERNATE_REG 0x1F
 #define W25N01G_INSTRUCTION_WRITE_ENABLE     0x06
 #define W25N01G_INSTRUCTION_DIE_SELECT       0xC2
 #define W25N01G_INSTRUCTION_BLOCK_ERASE      0xD8
@@ -74,6 +77,7 @@ serialPort_t *debugSerialPort = NULL;
 #define W25N01G_INSTRUCTION_PAGE_DATA_READ   0x13
 #define W25N01G_INSTRUCTION_READ_DATA        0x03
 #define W25N01G_INSTRUCTION_FAST_READ        0x1B
+#define W25N01G_INSTRUCTION_FAST_READ_QUAD_OUTPUT 0x6B
 
 // Configu/status register addresses
 #define W25N01G_PROT_REG 0xA0
@@ -94,6 +98,9 @@ serialPort_t *debugSerialPort = NULL;
 #define W25N01G_STATUS_FLAG_WRITE_ENABLED (1 << 1)
 #define W25N01G_STATUS_FLAG_BUSY          (1 << 0)
 
+#define W25N01G_BBLUT_TABLE_ENTRY_COUNT     20
+#define W25N01G_BBLUT_TABLE_ENTRY_SIZE      4  // in bytes
+
 // Bits in LBA for BB LUT
 #define W25N01G_BBLUT_STATUS_ENABLED (1 << 15)
 #define W25N01G_BBLUT_STATUS_INVALID (1 << 14)
@@ -113,9 +120,15 @@ serialPort_t *debugSerialPort = NULL;
 #define W25N01G_BB_MARKER_BLOCK            (W25N01G_BB_REPLACEMENT_START_BLOCK - W25N01G_BB_MARKER_BLOCKS)
 
 // The timeout values (2ms minimum to avoid 1 tick advance in consecutive calls to millis).
-#define W25N01G_TIMEOUT_PAGE_READ_MS      2   // tREmax = 60us (ECC enabled)
-#define W25N01G_TIMEOUT_PAGE_PROGRAM_MS   2   // tPPmax = 700us
-#define W25N01G_TIMEOUT_BLOCK_ERASE_MS   15   // tBEmax = 10ms
+#define W25N01G_TIMEOUT_PAGE_READ_MS        2   // tREmax = 60us (ECC enabled)
+#define W25N01G_TIMEOUT_PAGE_PROGRAM_MS     2   // tPPmax = 700us
+#define W25N01G_TIMEOUT_BLOCK_ERASE_MS      15  // tBEmax = 10ms
+#define W25N01G_TIMEOUT_RESET_MS            500 // tRSTmax = 500ms
+
+// Sizes (in bits)
+#define W28N01G_STATUS_REGISTER_SIZE        8
+#define W28N01G_STATUS_PAGE_ADDRESS_SIZE    16
+#define W28N01G_STATUS_COLUMN_ADDRESS_SIZE  16
 
 typedef struct bblut_s {
     uint16_t pba;
@@ -127,50 +140,125 @@ typedef struct bblut_s {
 #define DISABLE(busdev)       IOHi((busdev)->busdev_u.spi.csnPin); __NOP()
 #define ENABLE(busdev)        __NOP(); IOLo((busdev)->busdev_u.spi.csnPin)
 
+// XXX remove - add a forward declaration to keep git diff small while this is work-in-progress.
+bool w25n01g_waitForReady(flashDevice_t *fdevice, uint32_t timeoutMillis);
+
 /**
  * Send the given command byte to the device.
  */
-static void w25n01g_performOneByteCommand(busDevice_t *busdev, uint8_t command)
+static void w25n01g_performOneByteCommand(flashDeviceIO_t *io, uint8_t command)
 {
-    ENABLE(busdev);
-    spiTransferByte(busdev->busdev_u.spi.instance, command);
-    DISABLE(busdev);
+    if (io->mode == FLASHIO_SPI) {
+        busDevice_t *busdev = io->handle.busdev;
+
+        ENABLE(busdev);
+        spiTransferByte(busdev->busdev_u.spi.instance, command);
+        DISABLE(busdev);
+
+    }
+#ifdef USE_QUADSPI
+    else if (io->mode == FLASHIO_QUADSPI) {
+        QUADSPI_TypeDef *quadSpi = io->handle.quadSpi;
+        quadSpiTransmit1LINE(quadSpi, command, 0, NULL, 0);
+    }
+#endif
 }
 
-static uint8_t w25n01g_readRegister(busDevice_t *busdev, uint8_t reg)
+static void w25n01g_performCommandWithPageAddress(flashDeviceIO_t *io, uint8_t command, uint32_t pageAddress)
 {
-    const uint8_t cmd[3] = { W25N01G_INSTRUCTION_READ_STATUS_REG, reg, 0 };
-    uint8_t in[3];
+    if (io->mode == FLASHIO_SPI) {
+        busDevice_t *busdev = io->handle.busdev;
 
-    ENABLE(busdev);
-    spiTransfer(busdev->busdev_u.spi.instance, cmd, in, sizeof(cmd));
-    DISABLE(busdev);
+        const uint8_t cmd[] = { command, 0, (pageAddress >> 8) & 0xff, (pageAddress >> 0) & 0xff};
 
-    return in[2];
+        ENABLE(busdev);
+        spiTransfer(busdev->busdev_u.spi.instance, cmd, NULL, sizeof(cmd));
+        DISABLE(busdev);
+    }
+#ifdef USE_QUADSPI
+    else if (io->mode == FLASHIO_QUADSPI) {
+        QUADSPI_TypeDef *quadSpi = io->handle.quadSpi;
+
+        quadSpiInstructionWithAddress1LINE(quadSpi, command, 0, pageAddress & 0xffff, W28N01G_STATUS_PAGE_ADDRESS_SIZE + 8);
+    }
+#endif
 }
 
-static void w25n01g_writeRegister(busDevice_t *busdev, uint8_t reg, uint8_t data)
+static uint8_t w25n01g_readRegister(flashDeviceIO_t *io, uint8_t reg)
 {
-    const uint8_t cmd[3] = { W25N01G_INSTRUCTION_WRITE_STATUS_REG, reg, data };
+    if (io->mode == FLASHIO_SPI) {
+        busDevice_t *busdev = io->handle.busdev;
 
-    ENABLE(busdev);
-    spiTransfer(busdev->busdev_u.spi.instance, cmd, NULL, sizeof(cmd));
-    DISABLE(busdev);
+        ENABLE(busdev);
+        const uint8_t cmd[3] = { W25N01G_INSTRUCTION_READ_STATUS_REG, reg, 0 };
+        uint8_t in[3];
+
+        spiTransfer(busdev->busdev_u.spi.instance, cmd, in, sizeof(cmd));
+        DISABLE(busdev);
+
+        return in[2];
+    }
+#ifdef USE_QUADSPI
+    else if (io->mode == FLASHIO_QUADSPI) {
+
+        QUADSPI_TypeDef *quadSpi = io->handle.quadSpi;
+
+        uint8_t in[1];
+        quadSpiReceiveWithAddress1LINE(quadSpi, W25N01G_INSTRUCTION_READ_STATUS_REG, 0, reg, W28N01G_STATUS_REGISTER_SIZE, in, sizeof(in));
+
+        return in[0];
+    }
+#endif
+    return 0;
 }
 
-static void w25n01g_deviceReset(busDevice_t *busdev)
+static void w25n01g_writeRegister(flashDeviceIO_t *io, uint8_t reg, uint8_t data)
 {
-    w25n01g_performOneByteCommand(busdev, W25N01G_INSTRUCTION_DEVICE_RESET);
+    if (io->mode == FLASHIO_SPI) {
+        busDevice_t *busdev = io->handle.busdev;
+        const uint8_t cmd[3] = { W25N01G_INSTRUCTION_WRITE_STATUS_REG, reg, data };
+
+        ENABLE(busdev);
+        spiTransfer(busdev->busdev_u.spi.instance, cmd, NULL, sizeof(cmd));
+        DISABLE(busdev);
+   }
+#ifdef USE_QUADSPI
+   else if (io->mode == FLASHIO_QUADSPI) {
+       QUADSPI_TypeDef *quadSpi = io->handle.quadSpi;
+
+       quadSpiTransmitWithAddress1LINE(quadSpi, W25N01G_INSTRUCTION_WRITE_STATUS_REG, 0, reg, W28N01G_STATUS_REGISTER_SIZE, &data, 1);
+   }
+#endif
+}
+
+
+static void w25n01g_deviceReset(flashDevice_t *fdevice)
+{
+    flashDeviceIO_t *io = &fdevice->io;
+
+    w25n01g_performOneByteCommand(io, W25N01G_INSTRUCTION_DEVICE_RESET);
+
+    w25n01g_waitForReady(fdevice, W25N01G_TIMEOUT_RESET_MS);
 
     // Protection for upper 1/32 (BP[3:0] = 0101, TB=0), WP-E on; to protect bad block replacement area
     // DON'T DO THIS. This will prevent writes through the bblut as well.
     // w25n01g_writeRegister(busdev, W25N01G_PROT_REG, (5 << 3)|(0 << 2)|(1 << 1));
 
-    // No protection, WP-E on
-    w25n01g_writeRegister(busdev, W25N01G_PROT_REG, (0 << 3)|(0 << 2)|(1 << 1));
+    uint8_t value = (0 << 3)|(0 << 2); // No protection
+
+    if (io->mode == FLASHIO_SPI) {
+        value |= (1 << 1); // WP-E on
+    }
+#ifdef USE_QUADSPI
+    else if (io->mode == FLASHIO_QUADSPI) {
+        value |= (0 << 1); // WP-E off, WP-E prevents use of IO2
+    }
+#endif
+
+    w25n01g_writeRegister(io, W25N01G_PROT_REG, value);
 
     // Buffered read mode (BUF = 1), ECC enabled (ECC = 1)
-    w25n01g_writeRegister(busdev, W25N01G_CONF_REG, W25N01G_CONFIG_ECC_ENABLE|W25N01G_CONFIG_BUFFER_READ_MODE);
+    w25n01g_writeRegister(io, W25N01G_CONF_REG, W25N01G_CONFIG_ECC_ENABLE|W25N01G_CONFIG_BUFFER_READ_MODE);
 }
 
 bool w25n01g_isReady(flashDevice_t *fdevice)
@@ -179,11 +267,11 @@ bool w25n01g_isReady(flashDevice_t *fdevice)
 
 #if 0
     // If couldBeBusy is false, don't bother to poll the flash chip for its status
-    fdevice->couldBeBusy = fdevice->couldBeBusy && ((w25n01g_readRegister(fdevice->busdev, W25N01G_STAT_REG) & W25N01G_STATUS_FLAG_BUSY) != 0);
+    fdevice->couldBeBusy = fdevice->couldBeBusy && ((w25n01g_readRegister(fdevice->handle.busdev, W25N01G_STAT_REG) & W25N01G_STATUS_FLAG_BUSY) != 0);
 
     return !couldBeBusy;
 #else
-    uint8_t status = w25n01g_readRegister(fdevice->busdev, W25N01G_STAT_REG);
+    uint8_t status = w25n01g_readRegister(&fdevice->io, W25N01G_STAT_REG);
 
     if (status & W25N01G_STATUS_PROGRAM_FAIL) {
         DPRINTF(("*** PROGRAM_FAIL\r\n"));
@@ -221,7 +309,7 @@ bool w25n01g_waitForReady(flashDevice_t *fdevice, uint32_t timeoutMillis)
  */
 static void w25n01g_writeEnable(flashDevice_t *fdevice)
 {
-    w25n01g_performOneByteCommand(fdevice->busdev, W25N01G_INSTRUCTION_WRITE_ENABLE);
+    w25n01g_performOneByteCommand(&fdevice->io, W25N01G_INSTRUCTION_WRITE_ENABLE);
 
     // Assume that we're about to do some writing, so the device is just about to become busy
     fdevice->couldBeBusy = true;
@@ -272,7 +360,7 @@ bool w25n01g_detect(flashDevice_t *fdevice, uint32_t chipID)
 
     fdevice->couldBeBusy = true; // Just for luck we'll assume the chip could be busy even though it isn't specced to be
 
-    w25n01g_deviceReset(fdevice->busdev);
+    w25n01g_deviceReset(fdevice);
 
     // Upper 4MB (32 blocks * 128KB/block) will be used for bad block replacement area.
 
@@ -290,21 +378,21 @@ bool w25n01g_detect(flashDevice_t *fdevice, uint32_t chipID)
 
 #if 0
     // Protection to upper 1/32 (BP[3:0] = 0101, TB=0), WP-E on
-    //w25n01g_writeRegister(fdevice->busdev, W25N01G_PROT_REG, (5 << 3)|(0 << 2)|(1 << 1));
+    //w25n01g_writeRegister(fdevice->handle.busdev, W25N01G_PROT_REG, (5 << 3)|(0 << 2)|(1 << 1));
 
     // No protection, WP-E on
-    w25n01g_writeRegister(fdevice->busdev, W25N01G_PROT_REG, (0 << 3)|(0 << 2)|(1 << 1));
+    w25n01g_writeRegister(fdevice->handle, W25N01G_PROT_REG, (0 << 3)|(0 << 2)|(1 << 1));
 
     // Continuous mode (BUF = 0), ECC enabled (ECC = 1)
-    w25n01g_writeRegister(fdevice->busdev, W25N01G_CONF_REG, W25N01G_CONFIG_ECC_ENABLE);
+    w25n01g_writeRegister(fdevice->handle, W25N01G_CONF_REG, W25N01G_CONFIG_ECC_ENABLE);
 #endif
 
 #if 0
     // XXX Should be gone in production
     uint8_t sr1, sr2, sr3;
-    sr1 = w25n01g_readRegister(fdevice->busdev, W25N01G_PROT_REG);
-    sr2 = w25n01g_readRegister(fdevice->busdev, W25N01G_CONF_REG);
-    sr3 = w25n01g_readRegister(fdevice->busdev, W25N01G_STAT_REG);
+    sr1 = w25n01g_readRegister(fdevice->handle.busdev, W25N01G_PROT_REG);
+    sr2 = w25n01g_readRegister(fdevice->handle.busdev, W25N01G_CONF_REG);
+    sr3 = w25n01g_readRegister(fdevice->handle.busdev, W25N01G_STAT_REG);
 
     debug[1] = sr1;
     debug[2] = sr2;
@@ -325,15 +413,12 @@ bool w25n01g_detect(flashDevice_t *fdevice, uint32_t chipID)
  */
 void w25n01g_eraseSector(flashDevice_t *fdevice, uint32_t address)
 {
-    const uint8_t cmd[] = { W25N01G_INSTRUCTION_BLOCK_ERASE, 0, W25N01G_LINEAR_TO_PAGE(address) >> 8, W25N01G_LINEAR_TO_PAGE(address) & 0xff };
 
     w25n01g_waitForReady(fdevice, W25N01G_TIMEOUT_BLOCK_ERASE_MS);
 
     w25n01g_writeEnable(fdevice);
 
-    ENABLE(fdevice->busdev);
-    spiTransfer(fdevice->busdev->busdev_u.spi.instance, cmd, NULL, sizeof(cmd));
-    DISABLE(fdevice->busdev);
+    w25n01g_performCommandWithPageAddress(&fdevice->io, W25N01G_INSTRUCTION_BLOCK_ERASE, W25N01G_LINEAR_TO_PAGE(address));
 }
 
 //
@@ -343,55 +428,74 @@ void w25n01g_eraseSector(flashDevice_t *fdevice, uint32_t address)
 void w25n01g_eraseCompletely(flashDevice_t *fdevice)
 {
     for (uint32_t block = 0; block < fdevice->geometry.sectors; block++) {
-        w25n01g_waitForReady(fdevice, W25N01G_TIMEOUT_BLOCK_ERASE_MS);
-
-        // Issue erase block command
-        w25n01g_writeEnable(fdevice);
         w25n01g_eraseSector(fdevice, W25N01G_BLOCK_TO_LINEAR(block));
     }
 }
 
 static void w25n01g_programDataLoad(flashDevice_t *fdevice, uint16_t columnAddress, const uint8_t *data, int length)
 {
-    const uint8_t cmd[] = { W25N01G_INSTRUCTION_PROGRAM_DATA_LOAD, columnAddress >> 8, columnAddress& 0xff };
 
     //DPRINTF(("    load WaitForReady\r\n"));
     w25n01g_waitForReady(fdevice, W25N01G_TIMEOUT_PAGE_PROGRAM_MS);
 
     //DPRINTF(("    load Issuing command\r\n"));
-    ENABLE(fdevice->busdev);
-    spiTransfer(fdevice->busdev->busdev_u.spi.instance, cmd, NULL, sizeof(cmd));
-    spiTransfer(fdevice->busdev->busdev_u.spi.instance, data, NULL, length);
-    DISABLE(fdevice->busdev);
+
+    if (fdevice->io.mode == FLASHIO_SPI) {
+        busDevice_t *busdev = fdevice->io.handle.busdev;
+        const uint8_t cmd[] = { W25N01G_INSTRUCTION_PROGRAM_DATA_LOAD, columnAddress >> 8, columnAddress & 0xff };
+
+        ENABLE(busdev);
+        spiTransfer(busdev->busdev_u.spi.instance, cmd, NULL, sizeof(cmd));
+        spiTransfer(busdev->busdev_u.spi.instance, data, NULL, length);
+        DISABLE(busdev);
+   }
+#ifdef USE_QUADSPI
+   else if (fdevice->io.mode == FLASHIO_QUADSPI) {
+       QUADSPI_TypeDef *quadSpi = fdevice->io.handle.quadSpi;
+
+       quadSpiTransmitWithAddress1LINE(quadSpi, W25N01G_INSTRUCTION_PROGRAM_DATA_LOAD, 0, columnAddress, W28N01G_STATUS_COLUMN_ADDRESS_SIZE, data, length);
+    }
+#endif
     //DPRINTF(("    load Done\r\n"));
 }
 
 static void w25n01g_randomProgramDataLoad(flashDevice_t *fdevice, uint16_t columnAddress, const uint8_t *data, int length)
 {
-    const uint8_t cmd[] = { W25N01G_INSTRUCTION_RANDOM_PROGRAM_DATA_LOAD, columnAddress >> 8, columnAddress& 0xff };
+    const uint8_t cmd[] = { W25N01G_INSTRUCTION_RANDOM_PROGRAM_DATA_LOAD, columnAddress >> 8, columnAddress & 0xff };
 
     //DPRINTF(("    random WaitForReady\r\n"));
     w25n01g_waitForReady(fdevice, W25N01G_TIMEOUT_PAGE_PROGRAM_MS);
 
     //DPRINTF(("    random Issuing command\r\n"));
-    ENABLE(fdevice->busdev);
-    spiTransfer(fdevice->busdev->busdev_u.spi.instance, cmd, NULL, sizeof(cmd));
-    spiTransfer(fdevice->busdev->busdev_u.spi.instance, data, NULL, length);
-    DISABLE(fdevice->busdev);
+    if (fdevice->io.mode == FLASHIO_SPI) {
+        busDevice_t *busdev = fdevice->io.handle.busdev;
+
+        ENABLE(busdev);
+        spiTransfer(busdev->busdev_u.spi.instance, cmd, NULL, sizeof(cmd));
+        spiTransfer(busdev->busdev_u.spi.instance, data, NULL, length);
+        DISABLE(busdev);
+
+    }
+#ifdef USE_QUADSPI
+    else if (fdevice->io.mode == FLASHIO_QUADSPI) {
+        QUADSPI_TypeDef *quadSpi = fdevice->io.handle.quadSpi;
+
+        quadSpiTransmitWithAddress1LINE(quadSpi, W25N01G_INSTRUCTION_RANDOM_PROGRAM_DATA_LOAD, 0, columnAddress, W28N01G_STATUS_COLUMN_ADDRESS_SIZE, data, length);
+     }
+#endif
+
     //DPRINTF(("    random Done\r\n"));
 }
 
 static void w25n01g_programExecute(flashDevice_t *fdevice, uint32_t pageAddress)
 {
-    const uint8_t cmd[] = { W25N01G_INSTRUCTION_PROGRAM_EXECUTE, 0, pageAddress >> 8, pageAddress & 0xff };
-
     //DPRINTF(("    execute WaitForReady\r\n"));
     w25n01g_waitForReady(fdevice, W25N01G_TIMEOUT_PAGE_PROGRAM_MS);
 
-    //DPRINTF(("    execute Issueing command\r\n"));
-    ENABLE(fdevice->busdev);
-    spiTransfer(fdevice->busdev->busdev_u.spi.instance, cmd, NULL, sizeof(cmd));
-    DISABLE(fdevice->busdev);
+    //DPRINTF(("    execute Issuing command\r\n"));
+
+    w25n01g_performCommandWithPageAddress(&fdevice->io, W25N01G_INSTRUCTION_PROGRAM_EXECUTE, pageAddress);
+
     //DPRINTF(("    execute Done\r\n"));
 }
 
@@ -507,9 +611,10 @@ void w25n01g_pageProgramFinish(flashDevice_t *fdevice)
     PAGEPROG_DPRINTF(("pageProgramFinish: (loaded 0x%x bytes)\r\n", programLoadAddress - programStartAddress));
 
     if (bufferDirty && W25N01G_LINEAR_TO_COLUMN(programLoadAddress) == 0) {
+        
         currentPage = W25N01G_LINEAR_TO_PAGE(programStartAddress); // reset page to the page being written
+        
         PAGEPROG_DPRINTF(("    PROGRAM_EXECUTE PA 0x%x\r\n", W25N01G_LINEAR_TO_PAGE(programStartAddress)));
-
         w25n01g_programExecute(fdevice, W25N01G_LINEAR_TO_PAGE(programStartAddress));
 
         bufferDirty = false;
@@ -596,8 +701,6 @@ void w25n01g_addError(uint32_t address, uint8_t code)
 
 int w25n01g_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer, int length)
 {
-    uint8_t cmd[4];
-
     READBYTES_DPRINTF(("readBytes: address 0x%x length %d\r\n", address, length));
 
     uint32_t targetPage = W25N01G_LINEAR_TO_PAGE(address);
@@ -605,10 +708,6 @@ int w25n01g_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer,
     if (currentPage != targetPage) {
         READBYTES_DPRINTF(("readBytes: PAGE_DATA_READ page 0x%x\r\n", targetPage));
 
-        cmd[0] = W25N01G_INSTRUCTION_PAGE_DATA_READ;
-        cmd[1] = 0;
-        cmd[2] = targetPage >> 8;
-        cmd[3] = targetPage;
 
         if (!w25n01g_waitForReady(fdevice, W25N01G_TIMEOUT_PAGE_READ_MS)) {
             return 0;
@@ -616,9 +715,7 @@ int w25n01g_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer,
 
         currentPage = UINT32_MAX;
 
-        ENABLE(fdevice->busdev);
-        spiTransfer(fdevice->busdev->busdev_u.spi.instance, cmd, NULL, 4);
-        DISABLE(fdevice->busdev);
+        w25n01g_performCommandWithPageAddress(&fdevice->io, W25N01G_INSTRUCTION_PAGE_DATA_READ, targetPage);
 
         if (!w25n01g_waitForReady(fdevice, W25N01G_TIMEOUT_PAGE_READ_MS)) {
             return 0;
@@ -636,17 +733,31 @@ int w25n01g_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer,
         transferLength = length;
     }
 
-    cmd[0] = W25N01G_INSTRUCTION_READ_DATA;
-    cmd[1] = column >> 8;
-    cmd[2] = column;
-    cmd[3] = 0;
-
     READBYTES_DPRINTF(("readBytes: READ_DATA column 0x%x transferLength 0x%x\r\n", column, transferLength));
 
-    ENABLE(fdevice->busdev);
-    spiTransfer(fdevice->busdev->busdev_u.spi.instance, cmd, NULL, 4);
-    spiTransfer(fdevice->busdev->busdev_u.spi.instance, NULL, buffer, length);
-    DISABLE(fdevice->busdev);
+    if (fdevice->io.mode == FLASHIO_SPI) {
+        busDevice_t *busdev = fdevice->io.handle.busdev;
+
+        uint8_t cmd[4];
+        cmd[0] = W25N01G_INSTRUCTION_READ_DATA;
+        cmd[1] = (column >> 8) & 0xff;
+        cmd[2] = (column >> 0) & 0xff;
+        cmd[3] = 0;
+
+        ENABLE(busdev);
+        spiTransfer(busdev->busdev_u.spi.instance, cmd, NULL, sizeof(cmd));
+        spiTransfer(busdev->busdev_u.spi.instance, NULL, buffer, length);
+        DISABLE(busdev);
+
+    }
+#ifdef USE_QUADSPI
+    else if (fdevice->io.mode == FLASHIO_QUADSPI) {
+        QUADSPI_TypeDef *quadSpi = fdevice->io.handle.quadSpi;
+
+        //quadSpiReceiveWithAddress1LINE(quadSpi, W25N01G_INSTRUCTION_READ_DATA, 8, column, W28N01G_STATUS_COLUMN_ADDRESS_SIZE, buffer, length);
+        quadSpiReceiveWithAddress4LINES(quadSpi, W25N01G_INSTRUCTION_FAST_READ_QUAD_OUTPUT, 8, column, W28N01G_STATUS_COLUMN_ADDRESS_SIZE, buffer, length);
+    }
+#endif
 
     // XXX Don't need this?
     if (!w25n01g_waitForReady(fdevice, W25N01G_TIMEOUT_PAGE_READ_MS)) {
@@ -655,7 +766,7 @@ int w25n01g_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer,
 
     // Check ECC
 
-    uint8_t statReg = w25n01g_readRegister(fdevice->busdev, W25N01G_STAT_REG);
+    uint8_t statReg = w25n01g_readRegister(&fdevice->io, W25N01G_STAT_REG);
     uint8_t eccCode = W25N01G_STATUS_FLAG_ECC(statReg);
 
     switch (eccCode) {
@@ -665,7 +776,7 @@ int w25n01g_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer,
     case 2: // Uncorrectable ECC in a single page
     case 3: // Uncorrectable ECC in multiple pages
         w25n01g_addError(address, eccCode);
-        w25n01g_deviceReset(fdevice->busdev);
+        w25n01g_deviceReset(fdevice);
         break;
     }
 
@@ -676,30 +787,37 @@ int w25n01g_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer,
 
 int w25n01g_readExtensionBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer, int length)
 {
-    uint8_t cmd[4];
 
-    cmd[0] = W25N01G_INSTRUCTION_PAGE_DATA_READ;
-    cmd[1] = 0;
-    cmd[2] = W25N01G_LINEAR_TO_PAGE(address) >> 8;
-    cmd[3] = W25N01G_LINEAR_TO_PAGE(address);
-
-    ENABLE(fdevice->busdev);
-    spiTransfer(fdevice->busdev->busdev_u.spi.instance, cmd, NULL, 4);
-    DISABLE(fdevice->busdev);
+    w25n01g_performCommandWithPageAddress(&fdevice->io, W25N01G_INSTRUCTION_PAGE_DATA_READ, W25N01G_LINEAR_TO_PAGE(address));
 
     if (!w25n01g_waitForReady(fdevice, W25N01G_TIMEOUT_PAGE_READ_MS)) {
         return 0;
     }
 
-    cmd[0] = W25N01G_INSTRUCTION_READ_DATA;
-    cmd[1] = 0;
-    cmd[2] = (2048 >> 8) & 0xff;
-    cmd[3] = 2048 & 0xff;
+    uint32_t column = 2048;
 
-    ENABLE(fdevice->busdev);
-    spiTransfer(fdevice->busdev->busdev_u.spi.instance, cmd, NULL, 4);
-    spiTransfer(fdevice->busdev->busdev_u.spi.instance, NULL, buffer, length);
-    DISABLE(fdevice->busdev);
+    if (fdevice->io.mode == FLASHIO_SPI) {
+        busDevice_t *busdev = fdevice->io.handle.busdev;
+
+        uint8_t cmd[4];
+        cmd[0] = W25N01G_INSTRUCTION_READ_DATA;
+        cmd[1] = (column >> 8) & 0xff;
+        cmd[2] = (column >> 0) & 0xff;
+        cmd[3] = 0;
+
+        ENABLE(busdev);
+        spiTransfer(busdev->busdev_u.spi.instance, cmd, NULL, sizeof(cmd));
+        spiTransfer(busdev->busdev_u.spi.instance, NULL, buffer, length);
+        DISABLE(busdev);
+
+    }
+#ifdef USE_QUADSPI
+    else if (fdevice->io.mode == FLASHIO_QUADSPI) {
+        QUADSPI_TypeDef *quadSpi = fdevice->io.handle.quadSpi;
+
+        quadSpiReceiveWithAddress1LINE(quadSpi, W25N01G_INSTRUCTION_READ_DATA, 8, column, W28N01G_STATUS_COLUMN_ADDRESS_SIZE, buffer, length);
+    }
+#endif
 
     return length;
 }
@@ -730,32 +848,68 @@ const flashVTable_t w25n01g_vTable = {
 
 void w25n01g_readBBLUT(flashDevice_t *fdevice, bblut_t *bblut, int lutsize)
 {
-    uint8_t cmd[4];
+
     uint8_t in[4];
 
-    cmd[0] = W25N01G_INSTRUCTION_READ_BBM_LUT;
-    cmd[1] = 0;
+    if (fdevice->io.mode == FLASHIO_SPI) {
+        busDevice_t *busdev = fdevice->io.handle.busdev;
 
-    ENABLE(fdevice->busdev);
+        uint8_t cmd[4];
 
-    spiTransfer(fdevice->busdev->busdev_u.spi.instance, cmd, NULL, 2);
+        cmd[0] = W25N01G_INSTRUCTION_READ_BBM_LUT;
+        cmd[1] = 0;
 
-    for (int i = 0 ; i < lutsize ; i++) {
-        spiTransfer(fdevice->busdev->busdev_u.spi.instance, NULL, in, 4);
-        bblut[i].pba = (in[0] << 16)|in[1];
-        bblut[i].lba = (in[2] << 16)|in[3];
+        ENABLE(busdev);
+
+        spiTransfer(busdev->busdev_u.spi.instance, cmd, NULL, 2);
+
+        for (int i = 0 ; i < lutsize ; i++) {
+            spiTransfer(busdev->busdev_u.spi.instance, NULL, in, 4);
+            bblut[i].pba = (in[0] << 16)|in[1];
+            bblut[i].lba = (in[2] << 16)|in[3];
+        }
+
+        DISABLE(busdev);
     }
+#ifdef USE_QUADSPI
+    else if (fdevice->io.mode == FLASHIO_QUADSPI) {
+        QUADSPI_TypeDef *quadSpi = fdevice->io.handle.quadSpi;
 
-    DISABLE(fdevice->busdev);
+        // Note: Using HAL QuadSPI there doesn't appear to be a way to send 2 bytes, then blocks of 4 bytes, while keeping the CS line LOW
+        // thus, we have to read the entire BBLUT in one go and process the result.
+
+        uint8_t bblutBuffer[W25N01G_BBLUT_TABLE_ENTRY_COUNT * W25N01G_BBLUT_TABLE_ENTRY_SIZE];
+        quadSpiReceive1LINE(quadSpi, W25N01G_INSTRUCTION_READ_BBM_LUT, 8, bblutBuffer, sizeof(bblutBuffer));
+
+        for (int i = 0, offset = 0 ; i < lutsize ; i++, offset += 4) {
+            if (i < W25N01G_BBLUT_TABLE_ENTRY_COUNT) {
+                bblut[i].pba = (in[offset + 0] << 16)|in[offset + 1];
+                bblut[i].lba = (in[offset + 2] << 16)|in[offset + 3];
+            }
+        }
+    }
+#endif
 }
 
 void w25n01g_writeBBLUT(flashDevice_t *fdevice, uint16_t lba, uint16_t pba)
 {
-    uint8_t cmd[5] = { W25N01G_INSTRUCTION_BB_MANAGEMENT, lba >> 8, lba, pba >> 8, pba };
+    if (fdevice->io.mode == FLASHIO_SPI) {
+        busDevice_t *busdev = fdevice->io.handle.busdev;
 
-    ENABLE(fdevice->busdev);
-    spiTransfer(fdevice->busdev->busdev_u.spi.instance, cmd, NULL, sizeof(cmd));
-    DISABLE(fdevice->busdev);
+        uint8_t cmd[5] = { W25N01G_INSTRUCTION_BB_MANAGEMENT, lba >> 8, lba, pba >> 8, pba };
+
+        ENABLE(busdev);
+        spiTransfer(busdev->busdev_u.spi.instance, cmd, NULL, sizeof(cmd));
+        DISABLE(busdev);
+    }
+#ifdef USE_QUADSPI
+    else if (fdevice->io.mode == FLASHIO_QUADSPI) {
+        QUADSPI_TypeDef *quadSpi = fdevice->io.handle.quadSpi;
+
+        uint8_t data[4] = { lba >> 8, lba, pba >> 8, pba };
+        quadSpiInstructionWithData1LINE(quadSpi, W25N01G_INSTRUCTION_BB_MANAGEMENT, 0, data, sizeof(data));
+    }
+#endif
 
     w25n01g_waitForReady(fdevice, W25N01G_TIMEOUT_PAGE_PROGRAM_MS);
 }
