@@ -216,9 +216,13 @@
 
 #ifdef USE_UNIFIED_TARGET
 #define USE_CONFIGURATION_STATE
+#endif
 
-// Setup crystal frequency for backward compatibility
-// Should be set to zero for generic targets and set with CLI variable set system_hse_value.
+// Setup crystal frequency on F4 for backward compatibility
+// Should be set to zero for generic targets to ensure USB is working
+// when unconfigured for targets with non-standard crystal.
+// Can be set at runtime with with CLI parameter 'system_hse_value'.
+#if !defined(STM32F4) || defined(USE_UNIFIED_TARGET)
 #define SYSTEM_HSE_VALUE 0
 #else
 #ifdef TARGET_XTAL_MHZ
@@ -226,7 +230,7 @@
 #else
 #define SYSTEM_HSE_VALUE (HSE_VALUE/1000000U)
 #endif
-#endif // USE_UNIFIED_TARGET
+#endif // !STM32F4 || USE_UNIFIED_TARGET
 
 // Number of pins that needs pre-init
 #ifdef USE_SPI

@@ -1239,7 +1239,9 @@ const clivalue_t valueTable[] = {
 #endif
 
 // PG_SYSTEM_CONFIG
+#if defined(STM32F4)
     { "system_hse_mhz",             VAR_UINT8  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 30 }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, hseMhz) },
+#endif
 #if defined(USE_TASK_STATISTICS)
     { "task_statistics",            VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, task_statistics) },
 #endif
