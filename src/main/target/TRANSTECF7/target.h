@@ -62,7 +62,6 @@
 
 #define USE_ACC_MPU6000
 #define USE_ACC_SPI_MPU6000
-#define ACC_1_ALIGN                     CW180_DEG_FLIP
 
 // *************** I2C ***************
 #define USE_I2C

@@ -51,7 +51,6 @@
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
 #define USE_ACC_SPI_MPU6500
-#define ACC_1_ALIGN             CW180_DEG
 
 // *************** Flash **************************
 #define USE_SPI_DEVICE_2
