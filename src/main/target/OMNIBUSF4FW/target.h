@@ -61,8 +61,6 @@
 #define USE_GYRO_SPI_MPU6000
 #define USE_GYRO_SPI_MPU6500
 
-#define USE_MULTI_GYRO
-
 #if defined(OMNIBUSF4V6)
 #define GYRO_1_CS_PIN           PA4   // Onboard IMU  
 #define GYRO_1_SPI_INSTANCE     SPI1
