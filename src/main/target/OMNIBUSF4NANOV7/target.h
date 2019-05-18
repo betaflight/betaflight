@@ -41,15 +41,22 @@
 
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
-
-#define GYRO_1_CS_PIN           PD2
-#define GYRO_1_SPI_INSTANCE     SPI3
+#define USE_GYRO_SPI_MPU6000
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6500
+#define USE_ACC_SPI_MPU6000
 
+#define GYRO_1_CS_PIN           PD2
+#define GYRO_1_SPI_INSTANCE     SPI3
+#define GYRO_1_EXTI_PIN         NONE
 #define GYRO_1_ALIGN            CW0_DEG
 #define ACC_1_ALIGN             CW0_DEG
+
+#define GYRO_2_CS_PIN           PC4
+#define GYRO_2_SPI_INSTANCE     SPI1
+#define GYRO_2_EXTI_PIN         NONE
+#define GYRO_2_ALIGN            CW0_DEG
 
 // *************** OSD **************************
 
