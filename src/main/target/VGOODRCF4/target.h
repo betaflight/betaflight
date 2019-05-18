@@ -34,7 +34,6 @@
 //#define ENABLE_DSHOT_DMAR       true//debug for checking
 
 #define GYRO_1_ALIGN            CW180_DEG
-#define ACC_1_ALIGN             CW180_DEG
 
 #define USE_EXTI
 #define USE_GYRO_EXTI
