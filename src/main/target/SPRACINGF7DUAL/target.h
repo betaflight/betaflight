@@ -31,7 +31,6 @@
 
 #define TEST_SOUND // for factory testing audio output
 
-#define USE_MULTI_GYRO
 //#define DEBUG_MODE DEBUG_DUAL_GYRO_DIFF
 
 #define ENABLE_DSHOT_DMAR       true

@@ -30,7 +30,6 @@
 #define BEEPER_PIN              PA4
 #define BEEPER_INVERTED
 
-#define USE_MULTI_GYRO
 #define USE_EXTI
 #define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PC4
