@@ -325,7 +325,7 @@ static const char * const lookupTableGyroOverflowCheck[] = {
 #endif
 
 static const char * const lookupTableRatesType[] = {
-    "BETAFLIGHT", "RACEFLIGHT"
+    "BETAFLIGHT", "RACEFLIGHT", "KISS"
 };
 
 #ifdef USE_OVERCLOCK

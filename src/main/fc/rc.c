@@ -148,6 +148,17 @@ float applyRaceFlightRates(const int axis, float rcCommandf, const float rcComma
     return angleRate;
 }
 
+float applyKissRates(const int axis, float rcCommandf, const float rcCommandfAbs)
+{
+    const float rcCurvef = currentControlRateProfile->rcExpo[axis] / 100.0f;
+
+    float kissRpyUseRates = 1.0f / (constrainf(1.0f - (rcCommandfAbs * (currentControlRateProfile->rates[axis] / 100.0f)), 0.01f, 1.00f));    
+    float kissRcCommandf = (power3(rcCommandf) * rcCurvef + rcCommandf * (1 - rcCurvef)) * (currentControlRateProfile->rcRates[axis] / 1000.0f);
+    float kissAngle = constrainf(((2000.0f * kissRpyUseRates) * kissRcCommandf), -SETPOINT_RATE_LIMIT, SETPOINT_RATE_LIMIT);
+
+    return kissAngle;
+}
+
 static void calculateSetpointRate(int axis)
 {
     float angleRate;
@@ -710,6 +721,10 @@ void initRcProcessing(void)
         break;
     case RATES_TYPE_RACEFLIGHT:
         applyRates = applyRaceFlightRates;
+
+        break;
+    case RATES_TYPE_KISS:
+        applyRates = applyKissRates;
 
         break;
     }

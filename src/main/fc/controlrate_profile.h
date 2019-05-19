@@ -27,6 +27,7 @@
 typedef enum {
     RATES_TYPE_BETAFLIGHT = 0,
     RATES_TYPE_RACEFLIGHT,
+    RATES_TYPE_KISS,
 } ratesType_e;
 
 typedef enum {
