@@ -5376,6 +5376,23 @@ static void cliTimer(char *cmdline)
             return;
         } else if (strcasecmp(pch, "none") == 0) {
             timerIndex = TIMER_INDEX_UNDEFINED;
+        } else if (strncasecmp(pch, "af", 2) == 0) {
+            unsigned alternateFunction = atoi(&pch[2]);
+
+            const timerHardware_t *timer;
+            for (unsigned index = 0; (timer = timerGetByTagAndIndex(ioTag, index + 1)); index++) {
+                if (timer->alternateFunction == alternateFunction) {
+                    timerIndex = index;
+
+                    break;
+                }
+            }
+
+            if (!timer) {
+                cliPrintErrorLinef("INVALID ALTERNATE FUNCTION FOR %c%02d: '%s'", IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag), pch);
+
+                return;
+            }
         } else {
             timerIndex = atoi(pch);
 
@@ -5870,7 +5887,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("tasks", "show task stats", NULL, cliTasks),
 #endif
 #ifdef USE_TIMER_MGMT
-    CLI_COMMAND_DEF("timer", "show/set timers", "<> | <pin> list | <pin> [<option>|none] | list | show", cliTimer),
+    CLI_COMMAND_DEF("timer", "show/set timers", "<> | <pin> list | <pin> [<option>|af<altenate function>|none] | list | show", cliTimer),
 #endif
     CLI_COMMAND_DEF("version", "show version", NULL, cliVersion),
 #ifdef USE_VTX_CONTROL
