@@ -116,6 +116,12 @@ typedef struct {
     bool isAvailable;
 } rescueState_s;
 
+typedef enum {
+    MAX_ALT,
+    FIXED_ALT,
+    CURRENT_ALT
+} altitudeMode_e;
+
 #define GPS_RESCUE_MAX_YAW_RATE         180 // deg/sec max yaw rate
 #define GPS_RESCUE_RATE_SCALE_DEGREES    45 // Scale the commanded yaw rate when the error is less then this angle
 #define GPS_RESCUE_SLOWDOWN_DISTANCE_M  200 // distance from home to start decreasing speed
@@ -150,7 +156,7 @@ PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
     .useMag = GPS_RESCUE_USE_MAG,
     .targetLandingAltitudeM = 5,
     .targetLandingDistanceM = 10,
-    .allowClimbToMaxReachedAlt = true,
+    .altitudeMode = MAX_ALT,
 );
 
 static uint16_t rescueThrottle;
@@ -166,6 +172,7 @@ bool          magForceDisable = false;
 static bool newGPSData = false;
 
 rescueState_s rescueState;
+altitudeMode_e altitudeMode;
 
 /*
  If we have new GPS data, update home heading
@@ -538,10 +545,16 @@ void updateGPSRescueState(void)
             newDescentDistanceM = gpsRescueConfig()->descentDistanceM;
         }
         
-        if (gpsRescueConfig()->allowClimbToMaxReachedAlt) {
-            newAltitude = MAX(gpsRescueConfig()->initialAltitudeM * 100, rescueState.sensor.maxAltitudeCm + 1500);
-        } else {
-            newAltitude = gpsRescueConfig()->initialAltitudeM * 100;
+        switch (altitudeMode) {
+            case MAX_ALT:
+                newAltitude = MAX(gpsRescueConfig()->initialAltitudeM * 100, rescueState.sensor.maxAltitudeCm + 1500);
+                break;
+            case FIXED_ALT:
+                newAltitude = gpsRescueConfig()->initialAltitudeM * 100;
+                break;
+            case CURRENT_ALT:
+                newAltitude = rescueState.sensor.currentAltitudeCm;
+                break;
         }
 
         //Calculate angular coefficient and offset for equation of line from 2 points needed for RESCUE_LANDING_APPROACH
