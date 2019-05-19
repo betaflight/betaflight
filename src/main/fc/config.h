@@ -55,6 +55,7 @@ PG_DECLARE(systemConfig_t, systemConfig);
 struct pidProfile_s;
 extern struct pidProfile_s *currentPidProfile;
 
+
 void initEEPROM(void);
 void resetEEPROM(void);
 bool readEEPROM(void);
@@ -86,3 +87,5 @@ void targetConfiguration(void);
 void targetValidateConfiguration(void);
 
 bool isSystemConfigured(void);
+void setRebootRequired(void);
+bool getRebootRequired(void);

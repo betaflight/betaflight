@@ -241,6 +241,14 @@ static void mspFc4waySerialCommand(sbuf_t *dst, sbuf_t *src, mspPostProcessFnPtr
 }
 #endif //USE_SERIAL_4WAY_BLHELI_INTERFACE
 
+static void configRebootUpdateCheckU8(uint8_t *parm, uint8_t value)
+{
+    if (*parm != value) {
+        setRebootRequired();
+    }
+    *parm = value;
+}
+
 static void mspRebootFn(serialPort_t *serialPort)
 {
     UNUSED(serialPort);
@@ -860,6 +868,10 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
             // 4 bytes, flags
             const uint32_t armingDisableFlags = getArmingDisableFlags();
             sbufWriteU32(dst, armingDisableFlags);
+
+            // config state flags - bits to indicate the state of the configuration, reboot required, etc.
+            // other flags can be added as needed
+            sbufWriteU8(dst, (getRebootRequired() << 0));
         }
         break;
 
@@ -2431,11 +2443,11 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             // Added in MSP API 1.40
             rxConfigMutable()->rcInterpolationChannels = sbufReadU8(src);
 #if defined(USE_RC_SMOOTHING_FILTER)
-            rxConfigMutable()->rc_smoothing_type = sbufReadU8(src);
-            rxConfigMutable()->rc_smoothing_input_cutoff = sbufReadU8(src);
-            rxConfigMutable()->rc_smoothing_derivative_cutoff = sbufReadU8(src);
-            rxConfigMutable()->rc_smoothing_input_type = sbufReadU8(src);
-            rxConfigMutable()->rc_smoothing_derivative_type = sbufReadU8(src);
+            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_type, sbufReadU8(src));
+            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_input_cutoff, sbufReadU8(src));
+            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_derivative_cutoff, sbufReadU8(src));
+            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_input_type, sbufReadU8(src));
+            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_derivative_type, sbufReadU8(src));
 #else
             sbufReadU8(src);
             sbufReadU8(src);

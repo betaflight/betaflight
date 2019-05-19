@@ -41,6 +41,7 @@
 #include "fc/rc.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
 
 #include "flight/failsafe.h"
 #include "flight/imu.h"
@@ -71,6 +72,8 @@
 #include "sensors/gyro.h"
 
 static bool configIsDirty; /* someone indicated that the config is modified and it is not yet saved */
+
+static bool rebootRequired = false;  // set if a config change requires a reboot to take effect
 
 pidProfile_t *currentPidProfile;
 
@@ -741,4 +744,15 @@ bool isSystemConfigured(void)
 #else
     return true;
 #endif
+}
+
+void setRebootRequired(void)
+{
+    rebootRequired = true;
+    setArmingDisabled(ARMING_DISABLED_REBOOT_REQUIRED);
+}
+
+bool getRebootRequired(void)
+{
+    return rebootRequired;
 }
