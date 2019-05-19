@@ -20,6 +20,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -41,6 +42,8 @@ static busDevice_t busInstance;
 static busDevice_t *busdev;
 
 static flashDevice_t flashDevice;
+static flashPartitionTable_t flashPartitionTable;
+static int flashPartitions = 0;
 
 #define FLASH_INSTRUCTION_RDID 0x9F
 
@@ -177,7 +180,7 @@ static bool flashSpiInit(const flashConfig_t *flashConfig)
 }
 #endif // USE_SPI
 
-bool flashInit(const flashConfig_t *flashConfig)
+bool flashDeviceInit(const flashConfig_t *flashConfig)
 {
 #ifdef USE_SPI
     bool useSpi = (SPI_CFG_TO_DEV(flashConfig->spiDevice) != SPIINVALID);
@@ -258,5 +261,138 @@ const flashGeometry_t *flashGetGeometry(void)
     }
 
     return &noFlashGeometry;
+}
+
+/*
+ * Flash partitioning
+ *
+ * Partition table is not currently stored on the flash, in-memory only.
+ *
+ * Partitions are required so that Badblock management (inc spare blocks), FlashFS (Blackbox Logging), Configuration and Firmware can be kept separate and tracked.
+ *
+ * XXX FIXME
+ * XXX Note that Flash FS must start at sector 0.
+ * XXX There is existing blackbox/flash FS code the relies on this!!!
+ * XXX This restriction can and will be fixed by creating a set of flash operation functions that take partition as an additional parameter.
+ */
+
+static void flashConfigurePartitions(void)
+{
+
+    const flashGeometry_t *flashGeometry = flashGetGeometry();
+    if (flashGeometry->totalSize == 0) {
+        return;
+    }
+
+    flashSector_t startSector = 0;
+    flashSector_t endSector = flashGeometry->sectors - 1; // 0 based index
+
+    const flashPartition_t *badBlockPartition = flashPartitionFindByType(FLASH_PARTITION_TYPE_BADBLOCK_MANAGEMENT);
+    if (badBlockPartition) {
+        endSector = badBlockPartition->startSector - 1;
+    }
+
+#if defined(FIRMWARE_SIZE)
+    const uint32_t firmwareSize = (FIRMWARE_SIZE * 1024);
+    flashSector_t firmwareSectors = (firmwareSize / flashGeometry->sectorSize);
+
+    if (firmwareSize % flashGeometry->sectorSize > 0) {
+        firmwareSectors++; // needs a portion of a sector.
+    }
+
+    startSector = (endSector + 1) - firmwareSectors; // + 1 for inclusive
+
+    flashPartitionSet(FLASH_PARTITION_TYPE_FIRMWARE, startSector, endSector);
+
+    endSector = startSector - 1;
+    startSector = 0;
+#endif
+
+#if defined(EEPROM_IN_EXTERNAL_FLASH)
+    const uint32_t configSize = EEPROM_SIZE;
+    flashSector_t configSectors = (configSize / flashGeometry->sectorSize);
+
+    if (configSize % flashGeometry->sectorSize > 0) {
+        configSectors++; // needs a portion of a sector.
+    }
+
+    startSector = (endSector + 1) - configSectors; // + 1 for inclusive
+
+    flashPartitionSet(FLASH_PARTITION_TYPE_CONFIG, startSector, endSector);
+
+    endSector = startSector - 1;
+    startSector = 0;
+#endif
+
+#ifdef USE_FLASHFS
+    flashPartitionSet(FLASH_PARTITION_TYPE_FLASHFS, startSector, endSector);
+#endif
+}
+
+flashPartition_t *flashPartitionFindByType(uint8_t type)
+{
+    for (int index = 0; index < FLASH_MAX_PARTITIONS; index++) {
+        flashPartition_t *candidate = &flashPartitionTable.partitions[index];
+        if (candidate->type == type) {
+            return candidate;
+        }
+    }
+
+    return NULL;
+}
+
+const flashPartition_t *flashPartitionFindByIndex(uint8_t index)
+{
+    if (index >= flashPartitions) {
+        return NULL;
+    }
+
+    return &flashPartitionTable.partitions[index];
+}
+
+void flashPartitionSet(uint8_t type, uint32_t startSector, uint32_t endSector)
+{
+    flashPartition_t *entry = flashPartitionFindByType(type);
+
+    if (!entry) {
+        if (flashPartitions == FLASH_MAX_PARTITIONS - 1) {
+            return;
+        }
+        entry = &flashPartitionTable.partitions[flashPartitions++];
+    }
+
+    entry->type = type;
+    entry->startSector = startSector;
+    entry->endSector = endSector;
+}
+
+// Must be in sync with FLASH_PARTITION_TYPE
+static const char *flashPartitionNames[] = {
+    "UNKNOWN  ",
+    "PARTITION",
+    "FLASHFS  ",
+    "BBMGMT   ",
+    "FIRMWARE ",
+    "CONFIG   ",
+};
+
+const char *flashPartitionGetTypeName(flashPartitionType_e type)
+{
+    if (type < ARRAYLEN(flashPartitionNames)) {
+        return flashPartitionNames[type];
+    }
+
+    return NULL;
+}
+
+bool flashInit(const flashConfig_t *flashConfig)
+{
+    memset(&flashPartitionTable, 0x00, sizeof(flashPartitionTable));
+
+    bool haveFlash = flashDeviceInit(flashConfig);
+
+    flashConfigurePartitions();
+
+    return haveFlash;
 }
 #endif // USE_FLASH_CHIP

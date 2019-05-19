@@ -432,8 +432,11 @@ static void osdGetBlackboxStatusString(char * buff)
 #ifdef USE_FLASHFS
     case BLACKBOX_DEVICE_FLASH:
         if (storageDeviceIsWorking) {
-            const flashGeometry_t *geometry = flashfsGetGeometry();
-            storageTotal = geometry->totalSize / 1024;
+
+            const flashPartition_t *flashPartition = flashPartitionFindByType(FLASH_PARTITION_TYPE_FLASHFS);
+            const flashGeometry_t *flashGeometry = flashGetGeometry();
+
+            storageTotal = ((FLASH_PARTITION_SECTOR_COUNT(flashPartition) * flashGeometry->sectorSize) / 1024);
             storageUsed = flashfsGetOffset() / 1024;
         }
         break;

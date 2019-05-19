@@ -58,6 +58,15 @@ serialPort_t *debugSerialPort = NULL;
 #define W25N01G_PAGES_PER_BLOCK   64
 #define W25N01G_BLOCKS_PER_DIE 1024
 
+// BB replacement area
+#define W25N01G_BB_MARKER_BLOCKS           1
+#define W25N01G_BB_REPLACEMENT_BLOCKS      20
+#define W25N01G_BB_MANAGEMENT_BLOCKS       (W25N01G_BB_REPLACEMENT_BLOCKS + W25N01G_BB_MARKER_BLOCKS)
+// blocks are zero-based index
+#define W25N01G_BB_REPLACEMENT_START_BLOCK (W25N01G_BLOCKS_PER_DIE - W25N01G_BB_REPLACEMENT_BLOCKS)
+#define W25N01G_BB_MANAGEMENT_START_BLOCK  (W25N01G_BLOCKS_PER_DIE - W25N01G_BB_MANAGEMENT_BLOCKS)
+#define W25N01G_BB_MARKER_BLOCK            (W25N01G_BB_REPLACEMENT_START_BLOCK - W25N01G_BB_MARKER_BLOCKS)
+
 // Instructions
 
 #define W25N01G_INSTRUCTION_RDID             0x9F
@@ -112,12 +121,6 @@ serialPort_t *debugSerialPort = NULL;
 #define W25N01G_LINEAR_TO_BLOCK(laddr) (W25N01G_LINEAR_TO_PAGE(laddr) / W25N01G_PAGES_PER_BLOCK)
 #define W25N01G_BLOCK_TO_PAGE(block) ((block) * W25N01G_PAGES_PER_BLOCK)
 #define W25N01G_BLOCK_TO_LINEAR(block) (W25N01G_BLOCK_TO_PAGE(block) * W25N01G_PAGE_SIZE)
-
-// BB replacement area
-#define W25N01G_BB_MARKER_BLOCKS           1
-#define W25N01G_BB_REPLACEMENT_BLOCKS      21
-#define W25N01G_BB_REPLACEMENT_START_BLOCK (W25N01G_BLOCKS_PER_DIE - W25N01G_BB_REPLACEMENT_BLOCKS)
-#define W25N01G_BB_MARKER_BLOCK            (W25N01G_BB_REPLACEMENT_START_BLOCK - W25N01G_BB_MARKER_BLOCKS)
 
 // The timeout values (2ms minimum to avoid 1 tick advance in consecutive calls to millis).
 #define W25N01G_TIMEOUT_PAGE_READ_MS        2   // tREmax = 60us (ECC enabled)
@@ -354,9 +357,12 @@ bool w25n01g_detect(flashDevice_t *fdevice, uint32_t chipID)
     }
 
     fdevice->geometry.flashType = FLASH_TYPE_NAND;
-    fdevice->geometry.sectors -= W25N01G_BB_REPLACEMENT_BLOCKS;
     fdevice->geometry.sectorSize = fdevice->geometry.pagesPerSector * fdevice->geometry.pageSize;
     fdevice->geometry.totalSize = fdevice->geometry.sectorSize * fdevice->geometry.sectors;
+
+    flashPartitionSet(FLASH_PARTITION_TYPE_BADBLOCK_MANAGEMENT,
+            W25N01G_BB_MANAGEMENT_START_BLOCK,
+            W25N01G_BB_MANAGEMENT_START_BLOCK + W25N01G_BB_MANAGEMENT_BLOCKS - 1);
 
     fdevice->couldBeBusy = true; // Just for luck we'll assume the chip could be busy even though it isn't specced to be
 
