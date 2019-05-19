@@ -150,6 +150,7 @@ PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
     .useMag = GPS_RESCUE_USE_MAG,
     .targetLandingAltitudeM = 5,
     .targetLandingDistanceM = 10,
+    .allowClimbToMaxReachedAlt = true,
 );
 
 static uint16_t rescueThrottle;
@@ -549,7 +550,11 @@ void updateGPSRescueState(void)
         }
 
         rescueState.intent.targetGroundspeed = 500;
-        rescueState.intent.targetAltitudeCm = MAX(gpsRescueConfig()->initialAltitudeM * 100, rescueState.sensor.maxAltitudeCm + 1500);
+        if (gpsRescueConfig()->allowClimbToMaxReachedAlt) {
+            rescueState.intent.targetAltitudeCm = MAX(gpsRescueConfig()->initialAltitudeM * 100, rescueState.sensor.maxAltitudeCm + 1500);
+        } else {
+            rescueState.intent.targetAltitudeCm = gpsRescueConfig()->initialAltitudeM * 100;
+        }
         rescueState.intent.crosstrack = true;
         rescueState.intent.minAngleDeg = 10;
         rescueState.intent.maxAngleDeg = 15;
