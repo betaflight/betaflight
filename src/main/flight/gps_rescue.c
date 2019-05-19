@@ -487,6 +487,7 @@ void updateGPSRescueState(void)
     static float_t lineSlope;
     static float_t lineOffsetM;
     static int32_t newSpeed;
+    static uint32_t newAltitude;
 
     if (!FLIGHT_MODE(GPS_RESCUE_MODE)) {
         rescueStop();
@@ -537,6 +538,12 @@ void updateGPSRescueState(void)
             newDescentDistanceM = gpsRescueConfig()->descentDistanceM;
         }
         
+        if (gpsRescueConfig()->allowClimbToMaxReachedAlt) {
+            newAltitude = MAX(gpsRescueConfig()->initialAltitudeM * 100, rescueState.sensor.maxAltitudeCm + 1500);
+        } else {
+            newAltitude = gpsRescueConfig()->initialAltitudeM * 100;
+        }
+
         //Calculate angular coefficient and offset for equation of line from 2 points needed for RESCUE_LANDING_APPROACH
         lineSlope = ((float)gpsRescueConfig()->initialAltitudeM  - gpsRescueConfig()->targetLandingAltitudeM) / (newDescentDistanceM - gpsRescueConfig()->targetLandingDistanceM);
         lineOffsetM = gpsRescueConfig()->initialAltitudeM - lineSlope * newDescentDistanceM;
@@ -550,11 +557,7 @@ void updateGPSRescueState(void)
         }
 
         rescueState.intent.targetGroundspeed = 500;
-        if (gpsRescueConfig()->allowClimbToMaxReachedAlt) {
-            rescueState.intent.targetAltitudeCm = MAX(gpsRescueConfig()->initialAltitudeM * 100, rescueState.sensor.maxAltitudeCm + 1500);
-        } else {
-            rescueState.intent.targetAltitudeCm = gpsRescueConfig()->initialAltitudeM * 100;
-        }
+        rescueState.intent.targetAltitudeCm = newAltitude;
         rescueState.intent.crosstrack = true;
         rescueState.intent.minAngleDeg = 10;
         rescueState.intent.maxAngleDeg = 15;
@@ -567,7 +570,7 @@ void updateGPSRescueState(void)
         // We can assume at this point that we are at or above our RTH height, so we need to try and point to home and tilt while maintaining alt
         // Is our altitude way off?  We should probably kick back to phase RESCUE_ATTAIN_ALT
         rescueState.intent.targetGroundspeed = gpsRescueConfig()->rescueGroundspeed;
-        rescueState.intent.targetAltitudeCm = MAX(gpsRescueConfig()->initialAltitudeM * 100, rescueState.sensor.maxAltitudeCm + 1500);
+        rescueState.intent.targetAltitudeCm = newAltitude;
         rescueState.intent.crosstrack = true;
         rescueState.intent.minAngleDeg = 15;
         rescueState.intent.maxAngleDeg = gpsRescueConfig()->angle;
