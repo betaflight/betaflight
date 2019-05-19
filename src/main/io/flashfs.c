@@ -595,11 +595,11 @@ void flashfsClose(void)
 /**
  * Call after initializing the flash chip in order to set up the filesystem.
  */
-void flashfsInit()
+void flashfsInit(void)
 {
     flashfsSize = 0;
 
-    flashPartition = flashFindPartitionByUsage(FLASH_PARTITION_FLASHFS);
+    flashPartition = flashPartitionFindByType(FLASH_PARTITION_TYPE_FLASHFS);
     flashGeometry = flashGetGeometry();
 
     if (!flashPartition) {

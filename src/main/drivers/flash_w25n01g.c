@@ -325,12 +325,6 @@ static void w25n01g_writeEnable(flashDevice_t *fdevice)
  */
 const flashVTable_t w25n01g_vTable;
 
-static const flashPartition_t badBlockPartition = {
-    .usage = FLASH_PARTITION_BADBLOCK_MANAGEMENT,
-    .startSector = W25N01G_BB_MANAGEMENT_START_BLOCK,
-    .endSector = W25N01G_BB_MANAGEMENT_START_BLOCK + W25N01G_BB_MANAGEMENT_BLOCKS - 1 // -1 for inclusive, 0 based.
-};
-
 static void w25n01g_deviceInit(flashDevice_t *flashdev);
 
 bool w25n01g_detect(flashDevice_t *fdevice, uint32_t chipID)
@@ -366,7 +360,9 @@ bool w25n01g_detect(flashDevice_t *fdevice, uint32_t chipID)
     fdevice->geometry.sectorSize = fdevice->geometry.pagesPerSector * fdevice->geometry.pageSize;
     fdevice->geometry.totalSize = fdevice->geometry.sectorSize * fdevice->geometry.sectors;
 
-    flashSetPartition(0, &badBlockPartition);
+    flashPartitionSet(FLASH_PARTITION_TYPE_BADBLOCK_MANAGEMENT,
+            W25N01G_BB_MANAGEMENT_START_BLOCK,
+            W25N01G_BB_MANAGEMENT_START_BLOCK + W25N01G_BB_MANAGEMENT_BLOCKS - 1);
 
     fdevice->couldBeBusy = true; // Just for luck we'll assume the chip could be busy even though it isn't specced to be
 

@@ -338,7 +338,7 @@ static void serializeDataflashSummaryReply(sbuf_t *dst)
         uint8_t flags = MSP_FLASHFS_FLAG_SUPPORTED;
         flags |= (flashfsIsReady() ? MSP_FLASHFS_FLAG_READY : 0);
 
-        const flashPartition_t *flashPartition = flashFindPartitionByUsage(FLASH_PARTITION_FLASHFS);
+        const flashPartition_t *flashPartition = flashPartitionFindByType(FLASH_PARTITION_TYPE_FLASHFS);
 
         sbufWriteU8(dst, flags);
         sbufWriteU32(dst, FLASH_PARTITION_SECTOR_COUNT(flashPartition));

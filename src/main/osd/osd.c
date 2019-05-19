@@ -433,7 +433,7 @@ static void osdGetBlackboxStatusString(char * buff)
     case BLACKBOX_DEVICE_FLASH:
         if (storageDeviceIsWorking) {
 
-            const flashPartition_t *flashPartition = flashFindPartitionByUsage(FLASH_PARTITION_FLASHFS);
+            const flashPartition_t *flashPartition = flashPartitionFindByType(FLASH_PARTITION_TYPE_FLASHFS);
             const flashGeometry_t *flashGeometry = flashGetGeometry();
 
             storageTotal = ((FLASH_PARTITION_SECTOR_COUNT(flashPartition) * flashGeometry->sectorSize) / 1024);

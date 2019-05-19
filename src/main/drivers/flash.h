@@ -67,23 +67,30 @@ const flashGeometry_t *flashGetGeometry(void);
 //
 
 typedef struct flashPartition_s {
-    uint8_t usage;
+    uint8_t type;
     flashSector_t startSector;
     flashSector_t endSector;
 } flashPartition_t;
 
 #define FLASH_PARTITION_SECTOR_COUNT(partition) (partition->endSector + 1 - partition->startSector) // + 1 for inclusive, start and end sector can be the same sector.
 
-#define FLASH_PARTITION_UNKNOWN               0
-#define FLASH_PARTITION_FLASHFS               1
-#define FLASH_PARTITION_BADBLOCK_MANAGEMENT   2
-#define FLASH_PARTITION_FIRMWARE              3
-
-#define FLASH_MAX_PARTITIONS 3
+// Must be in sync with flashPartitionTypeNames[]
+// Should not be deleted or reordered once the code is writing a table to a flash.
+typedef enum {
+    FLASH_PARTITION_TYPE_UNKNOWN = 0,
+    FLASH_PARTITION_TYPE_PARTITION_TABLE,
+    FLASH_PARTITION_TYPE_FLASHFS,
+    FLASH_PARTITION_TYPE_BADBLOCK_MANAGEMENT,
+    FLASH_PARTITION_TYPE_FIRMWARE,
+    FLASH_PARTITION_TYPE_CONFIG,
+    FLASH_MAX_PARTITIONS
+} flashPartitionType_e;
 
 typedef struct flashPartitionTable_s {
     flashPartition_t partitions[FLASH_MAX_PARTITIONS];
 } flashPartitionTable_t;
 
-void flashSetPartition(uint8_t index, const flashPartition_t *partition);
-const flashPartition_t *flashFindPartitionByUsage(uint8_t usage);
+void flashPartitionSet(uint8_t index, uint32_t startSector, uint32_t endSector);
+flashPartition_t *flashPartitionFindByType(flashPartitionType_e type);
+const flashPartition_t *flashPartitionFindByIndex(uint8_t index);
+const char *flashPartitionGetTypeName(flashPartitionType_e type);
