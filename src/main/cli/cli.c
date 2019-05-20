@@ -5133,11 +5133,22 @@ static void printTimerDetails(const ioTag_t ioTag, const unsigned timerIndex, co
     const char *emptyFormat = "timer %c%02d NONE";
 
     if (timerIndex > 0) {
-        printValue(dumpMask, equalsDefault, format,
+        const bool printDetails = printValue(dumpMask, equalsDefault, format,
             IO_GPIOPortIdxByTag(ioTag) + 'A',
             IO_GPIOPinIdxByTag(ioTag),
             timerIndex - 1
         );
+        if (printDetails) {
+            const timerHardware_t *timer = timerGetByTagAndIndex(ioTag, timerIndex);
+            printValue(dumpMask, false,
+                "# pin %c%02d: TIM%d CH%d%s (AF%d)",
+                IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag),
+                timerGetTIMNumber(timer->tim),
+                CC_INDEX_FROM_CHANNEL(timer->channel) + 1,
+                timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : "",
+                timer->alternateFunction
+            );
+        }
     } else {
         printValue(dumpMask, equalsDefault, emptyFormat,
             IO_GPIOPortIdxByTag(ioTag) + 'A',
@@ -5267,10 +5278,12 @@ static void cliTimer(char *cmdline)
             /* output the list of available options */
             const timerHardware_t *timer;
             for (unsigned index = 0; (timer = timerGetByTagAndIndex(ioTag, index + 1)); index++) {
-                cliPrintLinef("# %d: TIM%d CH%d",
+                cliPrintLinef("# %d: TIM%d CH%d%s (AF%d)",
                     index,
                     timerGetTIMNumber(timer->tim),
-                    CC_INDEX_FROM_CHANNEL(timer->channel) + 1
+                    CC_INDEX_FROM_CHANNEL(timer->channel) + 1,
+                    timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : "",
+                    timer->alternateFunction
                 );
             }
 
