@@ -4907,7 +4907,7 @@ static void printTimerDmaoptDetails(const ioTag_t ioTag, const timerHardware_t *
     }
 }
 
-static const char *printTimerDmaopt(const timerIOConfig_t *currentConfig, const timerIOConfig_t *defaultConfig, unsigned index, dumpFlags_t dumpMask, bool defaultIsUsed[], const char *headingStr)
+static const char *printTimerDmaopt(const timerIOConfig_t *currentConfig, const timerIOConfig_t *defaultConfig, unsigned index, dumpFlags_t dumpMask, bool tagsInUse[], const char *headingStr)
 {
     const ioTag_t ioTag = currentConfig[index].ioTag;
 
@@ -4919,18 +4919,22 @@ static const char *printTimerDmaopt(const timerIOConfig_t *currentConfig, const 
     const dmaoptValue_t dmaopt = currentConfig[index].dmaopt;
 
     dmaoptValue_t defaultDmaopt = DMA_OPT_UNUSED;
+    bool equalsDefault = defaultDmaopt == dmaopt;
     if (defaultConfig) {
         for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
             if (defaultConfig[i].ioTag == ioTag) {
-                defaultDmaopt = defaultConfig[index].dmaopt;
-                defaultIsUsed[index] = true;
+                defaultDmaopt = defaultConfig[i].dmaopt;
+
+                // We need to check timer as well here to get 'default' DMA options for non-default timers printed, because setting the timer resets the DMA option.
+                equalsDefault = (defaultDmaopt == dmaopt) && (defaultConfig[i].index == currentConfig[index].index || dmaopt == DMA_OPT_UNUSED);
+
+                tagsInUse[index] = true;
 
                 break;
             }
         }
     }
 
-    const bool equalsDefault = defaultDmaopt == dmaopt;
     headingStr = cliPrintSectionHeading(dumpMask, !equalsDefault, headingStr);
 
     if (defaultConfig) {
@@ -4965,14 +4969,14 @@ static void printDmaopt(dumpFlags_t dumpMask, const char *headingStr)
         defaultConfig = NULL;
     }
 
-    bool defaultIsUsed[MAX_TIMER_PINMAP_COUNT] = { false };
+    bool tagsInUse[MAX_TIMER_PINMAP_COUNT] = { false };
     for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
-        headingStr = printTimerDmaopt(currentConfig, defaultConfig, i, dumpMask, defaultIsUsed, headingStr);
+        headingStr = printTimerDmaopt(currentConfig, defaultConfig, i, dumpMask, tagsInUse, headingStr);
     }
 
     if (defaultConfig) {
         for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
-            if (!defaultIsUsed[i] && defaultConfig[i].ioTag && defaultConfig[i].dmaopt != DMA_OPT_UNUSED) {
+            if (!tagsInUse[i] && defaultConfig[i].ioTag && defaultConfig[i].dmaopt != DMA_OPT_UNUSED) {
                 const timerHardware_t *timer = timerGetByTagAndIndex(defaultConfig[i].ioTag, defaultConfig[i].index);
                 headingStr = cliPrintSectionHeading(dumpMask, true, headingStr);
                 printTimerDmaoptDetails(defaultConfig[i].ioTag, timer, defaultConfig[i].dmaopt, false, dumpMask, cliDefaultPrintLinef);
@@ -5277,7 +5281,7 @@ static void printTimer(dumpFlags_t dumpMask, const char *headingStr)
         defaultConfig = NULL;
     }
 
-    bool defaultIsUsed[MAX_TIMER_PINMAP_COUNT] = { false };
+    bool tagsInUse[MAX_TIMER_PINMAP_COUNT] = { false };
     for (unsigned int i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
         const ioTag_t ioTag = currentConfig[i].ioTag;
 
@@ -5292,7 +5296,7 @@ static void printTimer(dumpFlags_t dumpMask, const char *headingStr)
             for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
                 if (defaultConfig[i].ioTag == ioTag) {
                     defaultTimerIndex = defaultConfig[i].index;
-                    defaultIsUsed[i] = true;
+                    tagsInUse[i] = true;
 
                     break;
                 }
@@ -5310,7 +5314,7 @@ static void printTimer(dumpFlags_t dumpMask, const char *headingStr)
 
     if (defaultConfig) {
         for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
-            if (!defaultIsUsed[i] && defaultConfig[i].ioTag) {
+            if (!tagsInUse[i] && defaultConfig[i].ioTag) {
                 headingStr = cliPrintSectionHeading(DO_DIFF, true, headingStr);
                 printTimerDetails(defaultConfig[i].ioTag, defaultConfig[i].index, false, dumpMask, cliDefaultPrintLinef);
 
