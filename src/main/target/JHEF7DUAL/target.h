@@ -33,7 +33,6 @@
 #define BEEPER_PIN              PC15
 #define BEEPER_INVERTED
 
-#define USE_DUAL_GYRO
 #define USE_EXTI
 #define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PC4
@@ -56,13 +55,9 @@
 #define USE_ACC_SPI_MPU6000
 #define USE_ACC_SPI_ICM20689
 
-#define ACC_ICM20689_1_ALIGN    CW90_DEG
-#define GYRO_ICM20689_1_ALIGN   CW90_DEG
-#define GYRO_1_ALIGN            GYRO_ICM20689_1_ALIGN 
+#define GYRO_1_ALIGN            CW90_DEG 
 
-#define ACC_MPU6000_2_ALIGN     CW90_DEG
-#define GYRO_MPU6000_2_ALIGN    CW90_DEG
-#define GYRO_2_ALIGN            GYRO_MPU6000_2_ALIGN
+#define GYRO_2_ALIGN            CW90_DEG
 
 #define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_1
 
@@ -154,7 +149,6 @@
 #define USE_LED_STRIP
 
 #define USE_ESCSERIAL
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define USE_PINIO
 #define PINIO1_PIN              PC14 // VTX power switcher

@@ -37,7 +37,6 @@
 
 #define USE_EXTI
 #define USE_GYRO_EXTI
-//#define MPU_INT_EXTI
 #define GYRO_1_EXTI_PIN      	PC3 
 
 #define USE_MPU_DATA_READY_SIGNAL
@@ -176,7 +175,6 @@
 #define CURRENT_METER_SCALE_DEFAULT 179
 
 #define USE_ESCSERIAL
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 //--------------------------------BOARD RESOURCES-----------------------------
 #define TARGET_IO_PORTA 0xffff
