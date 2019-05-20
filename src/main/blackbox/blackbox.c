@@ -1225,6 +1225,10 @@ static bool blackboxWriteSysinfo(void)
 
     char buf[FORMATTED_DATE_TIME_BUFSIZE];
 
+#ifdef USE_RC_SMOOTHING_FILTER
+    rcSmoothingFilter_t *rcSmoothingData = getRcSmoothingData();
+#endif
+
     const controlRateConfig_t *currentControlRateProfile = controlRateProfiles(systemConfig()->activeRateProfile);
     switch (xmitState.headerIndex) {
         BLACKBOX_PRINT_HEADER_LINE("Firmware type", "%s",                   "Cleanflight");
@@ -1377,16 +1381,16 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("features", "%d",                        featureConfig()->enabledFeatures);
 
 #ifdef USE_RC_SMOOTHING_FILTER
-        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_type", "%d",               rxConfig()->rc_smoothing_type);
-        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_debug_axis", "%d",         rxConfig()->rc_smoothing_debug_axis);
-        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_cutoffs", "%d, %d",        rxConfig()->rc_smoothing_input_cutoff,
-                                                                            rxConfig()->rc_smoothing_derivative_cutoff);
-        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_auto_factor", "%d",        rxConfig()->rc_smoothing_auto_factor);
-        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_filter_type", "%d, %d",    rxConfig()->rc_smoothing_input_type,
-                                                                            rxConfig()->rc_smoothing_derivative_type);
-        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_active_cutoffs", "%d, %d", rcSmoothingGetValue(RC_SMOOTHING_VALUE_INPUT_ACTIVE),
-                                                                            rcSmoothingGetValue(RC_SMOOTHING_VALUE_DERIVATIVE_ACTIVE));
-        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_rx_average", "%d",         rcSmoothingGetValue(RC_SMOOTHING_VALUE_AVERAGE_FRAME));
+        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_type", "%d",               rcSmoothingData->inputFilterType);
+        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_debug_axis", "%d",         rcSmoothingData->debugAxis);
+        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_cutoffs", "%d, %d",        rcSmoothingData->inputCutoffSetting,
+                                                                            rcSmoothingData->derivativeCutoffSetting);
+        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_auto_factor", "%d",        rcSmoothingData->autoSmoothnessFactor);
+        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_filter_type", "%d, %d",    rcSmoothingData->inputFilterType,
+                                                                            rcSmoothingData->derivativeFilterType);
+        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_active_cutoffs", "%d, %d", rcSmoothingData->inputCutoffFrequency,
+                                                                            rcSmoothingData->derivativeCutoffFrequency);
+        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_rx_average", "%d",         rcSmoothingData->averageFrameTimeUs);
 #endif // USE_RC_SMOOTHING_FILTER
 
 
