@@ -508,11 +508,11 @@ static void printValuePointer(const clivalue_t *var, const void *valuePointer, b
         switch (var->type & VALUE_MODE_MASK) {
         case MODE_DIRECT:
             if ((var->type & VALUE_TYPE_MASK) == VAR_UINT32) {
-                cliPrintf("%d", value);
-                if ((uint32_t) value > var->config.u32Max) {
+                cliPrintf("%u", (uint32_t)value);
+                if ((uint32_t)value > var->config.u32Max) {
                     valueIsCorrupted = true;
                 } else if (full) {
-                    cliPrintf(" 0 %d", var->config.u32Max);
+                    cliPrintf(" 0 %u", var->config.u32Max);
                 }
             } else {
                 int min;
@@ -697,7 +697,7 @@ static void cliPrintVarRange(const clivalue_t *var)
     case (MODE_DIRECT): {
         switch (var->type & VALUE_TYPE_MASK) {
         case VAR_UINT32:
-            cliPrintLinef("Allowed range: %d - %d", 0, var->config.u32Max);
+            cliPrintLinef("Allowed range: 0 - %u", var->config.u32Max);
 
             break;
         case VAR_UINT8:
@@ -4097,7 +4097,7 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
         switch (val->type & VALUE_MODE_MASK) {
         case MODE_DIRECT: {
                 if ((val->type & VALUE_TYPE_MASK) == VAR_UINT32) {
-                    uint32_t value = strtol(eqptr, NULL, 10);
+                    uint32_t value = strtoul(eqptr, NULL, 10);
 
                     if (value <= val->config.u32Max) {
                         cliSetVar(val, value);
