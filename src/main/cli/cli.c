@@ -2259,7 +2259,6 @@ static void cliFlashErase(char *cmdline)
 
     bufWriterFlush(cliWriter);
     flashfsEraseCompletely();
-    flashfsInit();
 
     while (!flashfsIsReady()) {
 #ifndef MINIMAL_CLI
