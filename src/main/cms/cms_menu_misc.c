@@ -123,8 +123,8 @@ static const OSD_Entry menuMiscEntries[]=
 {
     { "-- MISC --", OME_Label, NULL, NULL, 0 },
 
-    { "MIN THR",      OME_UINT16,  NULL,          &(OSD_UINT16_t){ &motorConfig_minthrottle,              1000, 2000, 1 },      0 },
-    { "DIGITAL IDLE", OME_UINT8,   NULL,          &(OSD_UINT8_t) { &motorConfig_digitalIdleOffsetValue,      0,  200, 1 },      0 },
+    { "MIN THR",      OME_UINT16,  NULL,          &(OSD_UINT16_t){ &motorConfig_minthrottle,              1000, 2000, 1 },      REBOOT_REQUIRED },
+    { "DIGITAL IDLE", OME_UINT8,   NULL,          &(OSD_UINT8_t) { &motorConfig_digitalIdleOffsetValue,      0,  200, 1 },      REBOOT_REQUIRED },
     { "DEBUG MODE",   OME_TAB,     NULL,          &(OSD_TAB_t) { &systemConfig_debug_mode, DEBUG_COUNT - 1, debugModeNames },      0 },
     { "RC PREV",      OME_Submenu, cmsMenuChange, &cmsx_menuRcPreview, 0},
 
