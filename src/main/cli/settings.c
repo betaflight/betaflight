@@ -356,7 +356,7 @@ static const char * const lookupTableThrottleLimitType[] = {
 static const char * const lookupTableRescueSanityType[] = {
     "RESCUE_SANITY_OFF", "RESCUE_SANITY_ON", "RESCUE_SANITY_FS_ONLY"
 };
-static const char * const lookupTableRescueAltitudeMode[] = {
+const char * const lookupTableRescueAltitudeMode[] = {
     "MAX_ALT", "FIXED_ALT", "CURRENT_ALT"
 };
 #endif

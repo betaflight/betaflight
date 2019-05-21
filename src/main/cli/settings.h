@@ -242,3 +242,5 @@ extern const char * const lookupTableMagHardware[];
 extern const char * const lookupTableRangefinderHardware[];
 
 extern const char * const lookupTableLedstripColors[];
+
+extern const char * const lookupTableRescueAltitudeMode[];
