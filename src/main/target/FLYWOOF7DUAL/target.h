@@ -31,7 +31,6 @@
 #define BEEPER_PIN              PC14
 #define BEEPER_INVERTED
 
-#define USE_MULTI_GYRO
 #define USE_EXTI
 #define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PC3
@@ -53,13 +52,9 @@
 #define USE_ACC_SPI_MPU6000
 #define USE_ACC_SPI_ICM20689
 
-#define ACC_MPU6000_1_ALIGN           CW270_DEG
-#define GYRO_MPU6000_1_ALIGN          CW270_DEG
-#define GYRO_1_ALIGN                GYRO_MPU6000_1_ALIGN
+#define GYRO_1_ALIGN                CW270_DEG
 
-#define ACC_ICM20689_2_ALIGN         CW270_DEG
-#define GYRO_ICM20689_2_ALIGN        CW270_DEG
-#define GYRO_2_ALIGN                GYRO_ICM20689_2_ALIGN 
+#define GYRO_2_ALIGN                CW270_DEG 
 
 #define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_2
 

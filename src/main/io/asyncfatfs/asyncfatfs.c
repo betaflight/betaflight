@@ -58,7 +58,7 @@
     #define ONLY_EXPOSE_FOR_TESTING static
 #endif
 
-#define AFATFS_NUM_CACHE_SECTORS 8
+#define AFATFS_NUM_CACHE_SECTORS 10
 
 // FAT filesystems are allowed to differ from these parameters, but we choose not to support those weird filesystems:
 #define AFATFS_SECTOR_SIZE  512

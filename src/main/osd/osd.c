@@ -345,7 +345,7 @@ static void osdResetStats(void)
     stats.max_g_force  = 0;
     stats.max_esc_temp = 0;
     stats.max_esc_rpm  = 0;
-    stats.min_link_quality = 99; // percent
+    stats.min_link_quality =  (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) ? 300 : 99; // CRSF  : percent
 }
 
 static void osdUpdateStats(void)
@@ -436,8 +436,11 @@ static void osdGetBlackboxStatusString(char * buff)
 #ifdef USE_FLASHFS
     case BLACKBOX_DEVICE_FLASH:
         if (storageDeviceIsWorking) {
-            const flashGeometry_t *geometry = flashfsGetGeometry();
-            storageTotal = geometry->totalSize / 1024;
+
+            const flashPartition_t *flashPartition = flashPartitionFindByType(FLASH_PARTITION_TYPE_FLASHFS);
+            const flashGeometry_t *flashGeometry = flashGetGeometry();
+
+            storageTotal = ((FLASH_PARTITION_SECTOR_COUNT(flashPartition) * flashGeometry->sectorSize) / 1024);
             storageUsed = flashfsGetOffset() / 1024;
         }
         break;
@@ -614,7 +617,7 @@ static uint8_t osdShowStats(uint16_t endBatteryVoltage, int statsRowCount)
 
 #ifdef USE_RX_LINK_QUALITY_INFO
     if (osdStatGetState(OSD_STAT_MIN_LINK_QUALITY)) {
-        itoa(stats.min_link_quality, buff, 10);
+        tfp_sprintf(buff, "%d", stats.min_link_quality);
         strcat(buff, "%");
         osdDisplayStatisticLabel(top++, "MIN LINK", buff);
     }

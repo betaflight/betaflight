@@ -116,6 +116,12 @@ typedef struct {
     bool isAvailable;
 } rescueState_s;
 
+typedef enum {
+    MAX_ALT,
+    FIXED_ALT,
+    CURRENT_ALT
+} altitudeMode_e;
+
 #define GPS_RESCUE_MAX_YAW_RATE         180 // deg/sec max yaw rate
 #define GPS_RESCUE_RATE_SCALE_DEGREES    45 // Scale the commanded yaw rate when the error is less then this angle
 #define GPS_RESCUE_SLOWDOWN_DISTANCE_M  200 // distance from home to start decreasing speed
@@ -150,6 +156,7 @@ PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
     .useMag = GPS_RESCUE_USE_MAG,
     .targetLandingAltitudeM = 5,
     .targetLandingDistanceM = 10,
+    .altitudeMode = MAX_ALT,
 );
 
 static uint16_t rescueThrottle;
@@ -165,6 +172,7 @@ bool          magForceDisable = false;
 static bool newGPSData = false;
 
 rescueState_s rescueState;
+altitudeMode_e altitudeMode;
 
 /*
  If we have new GPS data, update home heading
@@ -486,6 +494,7 @@ void updateGPSRescueState(void)
     static float_t lineSlope;
     static float_t lineOffsetM;
     static int32_t newSpeed;
+    static uint32_t newAltitude;
 
     if (!FLIGHT_MODE(GPS_RESCUE_MODE)) {
         rescueStop();
@@ -536,6 +545,18 @@ void updateGPSRescueState(void)
             newDescentDistanceM = gpsRescueConfig()->descentDistanceM;
         }
         
+        switch (altitudeMode) {
+            case MAX_ALT:
+                newAltitude = MAX(gpsRescueConfig()->initialAltitudeM * 100, rescueState.sensor.maxAltitudeCm + 1500);
+                break;
+            case FIXED_ALT:
+                newAltitude = gpsRescueConfig()->initialAltitudeM * 100;
+                break;
+            case CURRENT_ALT:
+                newAltitude = rescueState.sensor.currentAltitudeCm;
+                break;
+        }
+
         //Calculate angular coefficient and offset for equation of line from 2 points needed for RESCUE_LANDING_APPROACH
         lineSlope = ((float)gpsRescueConfig()->initialAltitudeM  - gpsRescueConfig()->targetLandingAltitudeM) / (newDescentDistanceM - gpsRescueConfig()->targetLandingDistanceM);
         lineOffsetM = gpsRescueConfig()->initialAltitudeM - lineSlope * newDescentDistanceM;
@@ -549,7 +570,7 @@ void updateGPSRescueState(void)
         }
 
         rescueState.intent.targetGroundspeed = 500;
-        rescueState.intent.targetAltitudeCm = MAX(gpsRescueConfig()->initialAltitudeM * 100, rescueState.sensor.maxAltitudeCm + 1500);
+        rescueState.intent.targetAltitudeCm = newAltitude;
         rescueState.intent.crosstrack = true;
         rescueState.intent.minAngleDeg = 10;
         rescueState.intent.maxAngleDeg = 15;
@@ -562,7 +583,7 @@ void updateGPSRescueState(void)
         // We can assume at this point that we are at or above our RTH height, so we need to try and point to home and tilt while maintaining alt
         // Is our altitude way off?  We should probably kick back to phase RESCUE_ATTAIN_ALT
         rescueState.intent.targetGroundspeed = gpsRescueConfig()->rescueGroundspeed;
-        rescueState.intent.targetAltitudeCm = MAX(gpsRescueConfig()->initialAltitudeM * 100, rescueState.sensor.maxAltitudeCm + 1500);
+        rescueState.intent.targetAltitudeCm = newAltitude;
         rescueState.intent.crosstrack = true;
         rescueState.intent.minAngleDeg = 15;
         rescueState.intent.maxAngleDeg = gpsRescueConfig()->angle;

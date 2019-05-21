@@ -126,7 +126,7 @@ static void m25p16_performOneByteCommand(busDevice_t *bus, uint8_t command)
  */
 static void m25p16_writeEnable(flashDevice_t *fdevice)
 {
-    m25p16_performOneByteCommand(fdevice->busdev, M25P16_INSTRUCTION_WRITE_ENABLE);
+    m25p16_performOneByteCommand(fdevice->io.handle.busdev, M25P16_INSTRUCTION_WRITE_ENABLE);
 
     // Assume that we're about to do some writing, so the device is just about to become busy
     fdevice->couldBeBusy = true;
@@ -145,7 +145,7 @@ static uint8_t m25p16_readStatus(busDevice_t *bus)
 static bool m25p16_isReady(flashDevice_t *fdevice)
 {
     // If couldBeBusy is false, don't bother to poll the flash chip for its status
-    fdevice->couldBeBusy = fdevice->couldBeBusy && ((m25p16_readStatus(fdevice->busdev) & M25P16_STATUS_FLAG_WRITE_IN_PROGRESS) != 0);
+    fdevice->couldBeBusy = fdevice->couldBeBusy && ((m25p16_readStatus(fdevice->io.handle.busdev) & M25P16_STATUS_FLAG_WRITE_IN_PROGRESS) != 0);
 
     return !fdevice->couldBeBusy;
 }
@@ -219,7 +219,7 @@ bool m25p16_detect(flashDevice_t *fdevice, uint32_t chipID)
 
     if (fdevice->geometry.totalSize > 16 * 1024 * 1024) {
         fdevice->isLargeFlash = true;
-        m25p16_performOneByteCommand(fdevice->busdev, W25Q256_INSTRUCTION_ENTER_4BYTE_ADDRESS_MODE);
+        m25p16_performOneByteCommand(fdevice->io.handle.busdev, W25Q256_INSTRUCTION_ENTER_4BYTE_ADDRESS_MODE);
     }
 
     fdevice->couldBeBusy = true; // Just for luck we'll assume the chip could be busy even though it isn't specced to be
@@ -250,7 +250,7 @@ static void m25p16_eraseSector(flashDevice_t *fdevice, uint32_t address)
 
     m25p16_writeEnable(fdevice);
 
-    m25p16_transfer(fdevice->busdev, out, NULL, sizeof(out));
+    m25p16_transfer(fdevice->io.handle.busdev, out, NULL, sizeof(out));
 }
 
 static void m25p16_eraseCompletely(flashDevice_t *fdevice)
@@ -259,7 +259,7 @@ static void m25p16_eraseCompletely(flashDevice_t *fdevice)
 
     m25p16_writeEnable(fdevice);
 
-    m25p16_performOneByteCommand(fdevice->busdev, M25P16_INSTRUCTION_BULK_ERASE);
+    m25p16_performOneByteCommand(fdevice->io.handle.busdev, M25P16_INSTRUCTION_BULK_ERASE);
 }
 
 static void m25p16_pageProgramBegin(flashDevice_t *fdevice, uint32_t address)
@@ -280,18 +280,18 @@ static void m25p16_pageProgramContinue(flashDevice_t *fdevice, const uint8_t *da
     m25p16_writeEnable(fdevice);
 
 #ifdef USE_SPI_TRANSACTION
-    spiBusTransactionBegin(fdevice->busdev);
+    spiBusTransactionBegin(fdevice->io.handle.busdev);
 #else
-    m25p16_enable(fdevice->busdev);
+    m25p16_enable(fdevice->io.handle.busdev);
 #endif
 
-    spiTransfer(fdevice->busdev->busdev_u.spi.instance, command, NULL, fdevice->isLargeFlash ? 5 : 4);
-    spiTransfer(fdevice->busdev->busdev_u.spi.instance, data, NULL, length);
+    spiTransfer(fdevice->io.handle.busdev->busdev_u.spi.instance, command, NULL, fdevice->isLargeFlash ? 5 : 4);
+    spiTransfer(fdevice->io.handle.busdev->busdev_u.spi.instance, data, NULL, length);
 
 #ifdef USE_SPI_TRANSACTION
-    spiBusTransactionEnd(fdevice->busdev);
+    spiBusTransactionEnd(fdevice->io.handle.busdev);
 #else
-    m25p16_disable(fdevice->busdev);
+    m25p16_disable(fdevice->io.handle.busdev);
 #endif
 
     fdevice->currentWriteAddress += length;
@@ -345,18 +345,18 @@ static int m25p16_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *b
     }
 
 #ifdef USE_SPI_TRANSACTION
-    spiBusTransactionBegin(fdevice->busdev);
+    spiBusTransactionBegin(fdevice->io.handle.busdev);
 #else
-    m25p16_enable(fdevice->busdev);
+    m25p16_enable(fdevice->io.handle.busdev);
 #endif
 
-    spiTransfer(fdevice->busdev->busdev_u.spi.instance, command, NULL, fdevice->isLargeFlash ? 5 : 4);
-    spiTransfer(fdevice->busdev->busdev_u.spi.instance, NULL, buffer, length);
+    spiTransfer(fdevice->io.handle.busdev->busdev_u.spi.instance, command, NULL, fdevice->isLargeFlash ? 5 : 4);
+    spiTransfer(fdevice->io.handle.busdev->busdev_u.spi.instance, NULL, buffer, length);
 
 #ifdef USE_SPI_TRANSACTION
-    spiBusTransactionEnd(fdevice->busdev);
+    spiBusTransactionEnd(fdevice->io.handle.busdev);
 #else
-    m25p16_disable(fdevice->busdev);
+    m25p16_disable(fdevice->io.handle.busdev);
 #endif
 
     return length;

@@ -41,14 +41,21 @@
 
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
-
-#define GYRO_1_CS_PIN           PD2
-#define GYRO_1_SPI_INSTANCE     SPI3
+#define USE_GYRO_SPI_MPU6000
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6500
+#define USE_ACC_SPI_MPU6000
 
+#define GYRO_1_CS_PIN           PD2
+#define GYRO_1_SPI_INSTANCE     SPI3
+#define GYRO_1_EXTI_PIN         NONE
 #define GYRO_1_ALIGN            CW0_DEG
+
+#define GYRO_2_CS_PIN           PC4
+#define GYRO_2_SPI_INSTANCE     SPI1
+#define GYRO_2_EXTI_PIN         NONE
+#define GYRO_2_ALIGN            CW0_DEG
 
 // *************** OSD **************************
 
@@ -130,7 +137,6 @@
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN  PA3
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
