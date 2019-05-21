@@ -55,14 +55,7 @@ static busDevice_t busInstance;
 static busDevice_t *busdev;
 
 #define DISABLE_RTC6705()   IOHi(busdev->busdev_u.spi.csnPin)
-
-#ifdef USE_RTC6705_CLK_HACK
-static IO_t vtxCLKPin       = IO_NONE;
-// HACK for missing pull up on CLK line - drive the CLK high *before* enabling the CS pin.
-#define ENABLE_RTC6705()    {IOHi(vtxCLKPin); delayMicroseconds(5); IOLo(busdev->busdev_u.spi.csnPin); }
-#else
 #define ENABLE_RTC6705()    IOLo(busdev->busdev_u.spi.csnPin)
-#endif
 
 #define DP_5G_MASK          0x7000 // b111000000000000
 #define PA5G_BS_MASK        0x0E00 // b000111000000000
@@ -111,16 +104,6 @@ bool rtc6705IOInit(const vtxIOConfig_t *vtxIOConfig)
     vtxPowerPin = IOGetByTag(vtxIOConfig->powerTag);
 
     rtc6705HaveRequiredResources = rtc6705HaveRequiredResources && vtxPowerPin;
-#endif
-
-#ifdef USE_RTC6705_CLK_HACK
-    SPIDevice device = SPI_CFG_TO_DEV(vtxIOConfig->spiDevice);
-    spiDevice_t *spi = &(spiDevice[device]);
-
-    vtxCLKPin = IOGetByTag(spi->sck);
-    // we assume the CLK pin will have been initialised by the SPI code.
-
-    rtc6705HaveRequiredResources = rtc6705HaveRequiredResources && vtxCLKPin;
 #endif
 
     if (!rtc6705HaveRequiredResources) {
