@@ -183,6 +183,10 @@ uint16_t rxGetLinkQuality(void);
 void setLinkQualityDirect(uint16_t linkqualityValue);
 uint16_t rxGetLinkQualityPercent(void);
 
+uint8_t getRssiDbm(void);
+void setRssiDbm(uint8_t newRssiDbm, rssiSource_e source);
+void setRssiDbmDirect(uint8_t newRssiDbm, rssiSource_e source);
+
 void resetAllRxChannelRangeConfigurations(rxChannelRangeConfig_t *rxChannelRangeConfig);
 
 void suspendRxPwmPpmSignal(void);
