@@ -643,8 +643,8 @@ static uint8_t osdShowStats(uint16_t endBatteryVoltage, int statsRowCount)
 
 #ifdef USE_RX_RSSI_DBM
     if (osdStatGetState(OSD_STAT_MIN_RSSI_DBM)) {
-        itoa(stats.min_rssi_dbm, buff, 10);
-        osdDisplayStatisticLabel(top++, "MAX RSSI DBM", buff);
+        tfp_sprintf(buff, "%3d", stats.min_rssi_dbm * -1);
+        osdDisplayStatisticLabel(top++, "MIN RSSI DBM", buff);
     }
 #endif
 
