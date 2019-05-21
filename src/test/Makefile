@@ -254,6 +254,10 @@ rx_rx_unittest_SRC := \
 		$(USER_DIR)/config/feature.c \
 		$(USER_DIR)/pg/rx.c
 
+rx_sumd_unittest_SRC := \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/rx/sumd.c
 
 scheduler_unittest_SRC := \
 		$(USER_DIR)/scheduler/scheduler.c \
