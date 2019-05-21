@@ -35,6 +35,7 @@
 #include "common/maths.h"
 
 #include "drivers/bus_spi.h"
+#include "drivers/bus_spi_impl.h"
 #include "drivers/io.h"
 #include "drivers/time.h"
 #include "drivers/vtx_rtc6705.h"
@@ -113,7 +114,10 @@ bool rtc6705IOInit(const vtxIOConfig_t *vtxIOConfig)
 #endif
 
 #ifdef USE_RTC6705_CLK_HACK
-    vtxCLKPin = IOGetByTag(vtxIOConfig->clockTag);
+    SPIDevice device = SPI_CFG_TO_DEV(vtxIOConfig->spiDevice);
+    spiDevice_t *spi = &(spiDevice[device]);
+
+    vtxCLKPin = IOGetByTag(spi->sck);
     // we assume the CLK pin will have been initialised by the SPI code.
 
     rtc6705HaveRequiredResources = rtc6705HaveRequiredResources && vtxCLKPin;
