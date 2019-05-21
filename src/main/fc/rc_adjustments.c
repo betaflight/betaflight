@@ -38,6 +38,7 @@
 #include "config/feature.h"
 
 #include "drivers/time.h"
+#include "drivers/vtx_common.h"
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
@@ -50,6 +51,7 @@
 #include "io/ledstrip.h"
 #include "io/motors.h"
 #include "io/pidaudio.h"
+#include "io/vtx.h"
 
 #include "osd/osd.h"
 
@@ -230,6 +232,10 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
         .adjustmentFunction = ADJUSTMENT_LED_PROFILE,
         .mode = ADJUSTMENT_MODE_SELECT,
         .data = { .switchPositions = 3 }
+    }, {
+        .adjustmentFunction = ADJUSTMENT_VTX_POWER_LEVEL,
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data = { .switchPositions = 1 }
     }
 };
 
@@ -268,6 +274,7 @@ static const char * const adjustmentLabels[] = {
     "ROLL F",
     "YAW F",
     "OSD PROFILE",
+    "VTX POWER LEVEL",
 };
 
 static int adjustmentRangeNameIndex = 0;
@@ -447,6 +454,13 @@ static int applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t a
         currentPidProfile->feedForwardTransition = newValue;
         blackboxLogInflightAdjustmentEvent(ADJUSTMENT_FEEDFORWARD_TRANSITION, newValue);
         break;
+    case ADJUSTMENT_VTX_POWER_LEVEL: 
+        {
+            newValue = constrain(vtxSettingsConfigMutable()->power + delta, VTX_SETTINGS_MIN_POWER, VTX_SETTINGS_MIN_POWER + VTX_SETTINGS_POWER_COUNT);
+            vtxSettingsConfigMutable()->power = newValue;
+            blackboxLogInflightAdjustmentEvent(ADJUSTMENT_VTX_POWER_LEVEL, newValue);
+            break;
+        }
     default:
         newValue = -1;
         break;
