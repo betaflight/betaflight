@@ -232,11 +232,14 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
         .adjustmentFunction = ADJUSTMENT_LED_PROFILE,
         .mode = ADJUSTMENT_MODE_SELECT,
         .data = { .switchPositions = 3 }
-    }, {
+    }
+    #if defined(VTX_SETTINGS_MIN_POWER) && defined(VTX_SETTINGS_POWER_COUNT)
+    , {
         .adjustmentFunction = ADJUSTMENT_VTX_POWER_LEVEL,
         .mode = ADJUSTMENT_MODE_STEP,
         .data = { .switchPositions = 1 }
     }
+    #endif
 };
 
 #if defined(USE_OSD) && defined(USE_OSD_ADJUSTMENTS)
@@ -454,6 +457,7 @@ static int applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t a
         currentPidProfile->feedForwardTransition = newValue;
         blackboxLogInflightAdjustmentEvent(ADJUSTMENT_FEEDFORWARD_TRANSITION, newValue);
         break;
+    #if defined(VTX_SETTINGS_MIN_POWER) && defined(VTX_SETTINGS_POWER_COUNT)
     case ADJUSTMENT_VTX_POWER_LEVEL: 
         {
             newValue = constrain(vtxSettingsConfigMutable()->power + delta, VTX_SETTINGS_MIN_POWER, VTX_SETTINGS_MIN_POWER + VTX_SETTINGS_POWER_COUNT);
@@ -461,6 +465,7 @@ static int applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t a
             blackboxLogInflightAdjustmentEvent(ADJUSTMENT_VTX_POWER_LEVEL, newValue);
             break;
         }
+    #endif
     default:
         newValue = -1;
         break;
