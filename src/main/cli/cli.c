@@ -5251,7 +5251,7 @@ static void cliResource(char *cmdline)
 #ifdef USE_TIMER_MGMT
 static void printTimerDetails(const ioTag_t ioTag, const unsigned timerIndex, const bool equalsDefault, const dumpFlags_t dumpMask, printFn *printValue)
 {
-    const char *format = "timer %c%02d af%d";
+    const char *format = "timer %c%02d AF%d";
     const char *emptyFormat = "timer %c%02d NONE";
 
     if (timerIndex > 0) {
@@ -5346,7 +5346,7 @@ static void alternateFunctionToString(const ioTag_t ioTag, const int index, char
     if (!timer) {
         memcpy(buf, "NONE", TIMER_AF_STRING_BUFSIZE);
     } else {
-        tfp_sprintf(buf, "af%d", timer->alternateFunction);
+        tfp_sprintf(buf, "AF%d", timer->alternateFunction);
     }
 }
 
@@ -5413,7 +5413,7 @@ static void cliTimer(char *cmdline)
             /* output the list of available options */
             const timerHardware_t *timer;
             for (unsigned index = 0; (timer = timerGetByTagAndIndex(ioTag, index + 1)); index++) {
-                cliPrintLinef("# af%d: TIM%d CH%d%s",
+                cliPrintLinef("# AF%d: TIM%d CH%d%s",
                     timer->alternateFunction,
                     timerGetTIMNumber(timer->tim),
                     CC_INDEX_FROM_CHANNEL(timer->channel) + 1,
