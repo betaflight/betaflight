@@ -15,6 +15,7 @@ COMMON_SRC = \
             drivers/bus_i2c_config.c \
             drivers/bus_i2c_busdev.c \
             drivers/bus_i2c_soft.c \
+            drivers/bus_quadspi.c \
             drivers/bus_spi.c \
             drivers/bus_spi_config.c \
             drivers/bus_spi_pinconfig.c \
@@ -214,6 +215,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             drivers/adc.c \
             drivers/buf_writer.c \
             drivers/bus.c \
+            drivers/bus_quadspi.c \
             drivers/bus_spi.c \
             drivers/exti.c \
             drivers/io.c \

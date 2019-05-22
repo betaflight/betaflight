@@ -62,4 +62,5 @@ void cmsSetExternKey(cms_key_e extKey);
 #define CMS_EXIT_SAVEREBOOT  (2)
 #define CMS_POPUP_SAVE       (3)
 #define CMS_POPUP_SAVEREBOOT (4)
+#define CMS_POPUP_EXITREBOOT (5)
 

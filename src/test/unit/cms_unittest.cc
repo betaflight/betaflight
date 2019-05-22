@@ -147,4 +147,6 @@ void systemReset(void) {}
 void setArmingDisabled(armingDisableFlags_e flag) { UNUSED(flag); }
 void unsetArmingDisabled(armingDisableFlags_e flag) { UNUSED(flag); }
 bool IS_RC_MODE_ACTIVE(boxId_e) { return false; }
+void setRebootRequired(void) {}
+bool getRebootRequired(void) { return false; }
 }
