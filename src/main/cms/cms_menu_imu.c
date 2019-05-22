@@ -517,7 +517,7 @@ static const OSD_Entry cmsx_menuFilterGlobalEntries[] =
     { "GYRO NF2",   OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_gyro_soft_notch_hz_2,     0, 500, 1 }, 0 },
     { "GYRO NF2C",  OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_gyro_soft_notch_cutoff_2, 0, 500, 1 }, 0 },
 #ifdef USE_MULTI_GYRO
-    { "GYRO TO USE",  OME_TAB,  NULL, &(OSD_TAB_t)    { &gyroConfig_gyro_to_use,  2, osdTableGyroToUse}, 0 },
+    { "GYRO TO USE",  OME_TAB,  NULL, &(OSD_TAB_t)    { &gyroConfig_gyro_to_use,  2, osdTableGyroToUse}, REBOOT_REQUIRED },
 #endif
 	
     { "BACK", OME_Back, NULL, NULL, 0 },
