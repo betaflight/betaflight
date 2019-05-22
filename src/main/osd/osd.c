@@ -244,6 +244,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     // turn off RSSI & Link Quality warnings by default
     osdWarnSetState(OSD_WARNING_RSSI, false);
     osdWarnSetState(OSD_WARNING_LINK_QUALITY, false);
+    osdWarnSetState(OSD_WARNING_RSSI_DBM, false);
 
     osdConfig->timers[OSD_TIMER_1] = osdTimerDefault[OSD_TIMER_1];
     osdConfig->timers[OSD_TIMER_2] = osdTimerDefault[OSD_TIMER_2];
@@ -264,6 +265,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 
     osdConfig->osdProfileIndex = 1;
     osdConfig->ahInvert = false;
+    osdConfig->rssi_dbm_alarm = 60;
 }
 
 static void osdDrawLogo(int x, int y)
@@ -342,6 +344,7 @@ static void osdResetStats(void)
     stats.max_esc_temp = 0;
     stats.max_esc_rpm  = 0;
     stats.min_link_quality =  (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) ? 300 : 99; // CRSF  : percent
+    stats.min_rssi_dbm = 0;
 }
 
 static void osdUpdateStats(void)
@@ -385,6 +388,13 @@ static void osdUpdateStats(void)
     value = rxGetLinkQualityPercent();
     if (stats.min_link_quality > value) {
         stats.min_link_quality = value;
+    }
+#endif
+
+#ifdef USE_RX_RSSI_DBM
+    value = getRssiDbm();
+    if (stats.min_rssi_dbm < value) {
+        stats.min_rssi_dbm = value;
     }
 #endif
 
@@ -628,6 +638,13 @@ static uint8_t osdShowStats(uint16_t endBatteryVoltage, int statsRowCount)
         } else {
             osdDisplayStatisticLabel(top++, "PEAK FFT", "THRT<20%");
         }
+    }
+#endif
+
+#ifdef USE_RX_RSSI_DBM
+    if (osdStatGetState(OSD_STAT_MIN_RSSI_DBM)) {
+        tfp_sprintf(buff, "%3d", stats.min_rssi_dbm * -1);
+        osdDisplayStatisticLabel(top++, "MIN RSSI DBM", buff);
     }
 #endif
 
