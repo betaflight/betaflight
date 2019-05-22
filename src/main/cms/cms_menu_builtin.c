@@ -40,11 +40,12 @@
 
 #include "cms/cms_menu_imu.h"
 #include "cms/cms_menu_blackbox.h"
-#include "cms/cms_menu_osd.h"
+#include "cms/cms_menu_failsafe.h"
 #include "cms/cms_menu_ledstrip.h"
 #include "cms/cms_menu_misc.h"
+#include "cms/cms_menu_osd.h"
 #include "cms/cms_menu_power.h"
-#include "cms/cms_menu_failsafe.h"
+#include "cms/cms_menu_saveexit.h"
 
 // VTX supplied menus
 
@@ -53,6 +54,8 @@
 #include "cms/cms_menu_vtx_tramp.h"
 
 #include "drivers/system.h"
+
+#include "fc/config.h"
 
 #include "msp/msp_protocol.h" // XXX for FC identification... not available elsewhere
 
@@ -139,6 +142,18 @@ static CMS_Menu menuFeatures = {
     .entries = menuFeaturesEntries,
 };
 
+static long cmsx_SaveExitMenu(displayPort_t *pDisplay, const void *ptr)
+{
+    UNUSED(ptr);
+
+    if (getRebootRequired()) {
+        cmsMenuChange(pDisplay, &cmsx_menuSaveExitReboot);
+    } else {
+        cmsMenuChange(pDisplay, &cmsx_menuSaveExit);
+    }
+    return 0;
+}
+
 // Main
 
 static const OSD_Entry menuMainEntries[] =
@@ -152,9 +167,7 @@ static const OSD_Entry menuMainEntries[] =
 #endif
     {"FC&FW INFO",  OME_Submenu,  cmsMenuChange, &menuInfo, 0},
     {"MISC",        OME_Submenu,  cmsMenuChange, &cmsx_menuMisc, 0},
-    {"EXIT",        OME_OSD_Exit, cmsMenuExit,   (void *)CMS_EXIT, 0},
-    {"SAVE&EXIT",   OME_OSD_Exit, cmsMenuExit,   (void *)CMS_EXIT_SAVE, 0},
-    {"SAVE&REBOOT", OME_OSD_Exit, cmsMenuExit,   (void *)CMS_EXIT_SAVEREBOOT, 0},
+    {"SAVE/EXIT",   OME_Funcall,  cmsx_SaveExitMenu, NULL, 0},
 #ifdef CMS_MENU_DEBUG
     {"ERR SAMPLE",  OME_Submenu,  cmsMenuChange, &menuInfoEntries[0], 0},
 #endif
