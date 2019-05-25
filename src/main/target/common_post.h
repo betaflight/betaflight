@@ -324,6 +324,10 @@
 #undef USE_RANGEFINDER_TF
 #endif
 
+#ifndef USE_GPS_RESCUE
+#undef USE_CMS_GPS_RESCUE_MENU
+#endif
+
 // TODO: Remove this once HAL support is fixed for ESCSERIAL
 #ifdef STM32F7
 #undef USE_ESCSERIAL
