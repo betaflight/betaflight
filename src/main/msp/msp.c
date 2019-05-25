@@ -241,6 +241,8 @@ static void mspFc4waySerialCommand(sbuf_t *dst, sbuf_t *src, mspPostProcessFnPtr
 }
 #endif //USE_SERIAL_4WAY_BLHELI_INTERFACE
 
+// TODO: Remove the pragma once this is called from unconditional code
+#pragma GCC diagnostic ignored "-Wunused-function"
 static void configRebootUpdateCheckU8(uint8_t *parm, uint8_t value)
 {
     if (*parm != value) {
@@ -248,6 +250,7 @@ static void configRebootUpdateCheckU8(uint8_t *parm, uint8_t value)
     }
     *parm = value;
 }
+#pragma GCC diagnostic pop
 
 static void mspRebootFn(serialPort_t *serialPort)
 {
