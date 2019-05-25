@@ -48,6 +48,10 @@
 #define ACC_1_ALIGN             CW0_DEG
 #define GYRO_1_ALIGN            CW0_DEG
 
+#define USE_BARO
+#define USE_BARO_BMP280
+#define USE_BARO_MS5611
+
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2
