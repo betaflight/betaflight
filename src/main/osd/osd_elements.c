@@ -690,6 +690,27 @@ static void osdElementPidProfileName(osdElementParms_t *element)
 }
 #endif
 
+#ifdef USE_OSD_PROFILES
+static void osdElementOsdProfileName(osdElementParms_t *element)
+{
+    uint8_t profileIndex = getCurrentOsdProfileIndex();
+
+    if (strlen(osdConfig()->profile[profileIndex - 1]) == 0) {
+        tfp_sprintf(element->buff, "OSD_%u", profileIndex);
+    } else {
+        unsigned i;
+        for (i = 0; i < OSD_PROFILE_NAME_LENGTH; i++) {
+            if (osdConfig()->profile[profileIndex - 1][i]) {
+                element->buff[i] = toupper((unsigned char)osdConfig()->profile[profileIndex - 1][i]);
+            } else {
+                break;
+            }
+        }
+        element->buff[i] = '\0';
+    }
+}
+#endif
+
 #ifdef USE_ESC_SENSOR
 static void osdElementEscTemperature(osdElementParms_t *element)
 {
@@ -1401,6 +1422,10 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_RATE_PROFILE_NAME,
     OSD_PID_PROFILE_NAME,
 #endif
+#ifdef USE_OSD_PROFILES
+    OSD_PROFILE_NAME,
+#endif
+
 };
 
 // Define the mapping between the OSD element id and the function to draw it
@@ -1500,10 +1525,12 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_RATE_PROFILE_NAME]       = osdElementRateProfileName,
     [OSD_PID_PROFILE_NAME]        = osdElementPidProfileName,
 #endif
+#ifdef USE_OSD_PROFILES
+    [OSD_PROFILE_NAME]            = osdElementOsdProfileName,
+#endif
 #ifdef USE_RX_RSSI_DBM
     [OSD_RSSI_DBM_VALUE]          = osdElementRssiDbm,
 #endif
-
 };
 
 static void osdAddActiveElement(osd_items_e element)

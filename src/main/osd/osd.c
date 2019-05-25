@@ -128,7 +128,7 @@ static uint8_t osdStatsRowCount = 0;
 escSensorData_t *osdEscDataCombined;
 #endif
 
-PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 5);
+PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 6);
 
 void osdStatSetState(uint8_t statIndex, bool enabled)
 {
@@ -265,6 +265,9 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 
     osdConfig->osdProfileIndex = 1;
     osdConfig->ahInvert = false;
+    for (int i=0; i < OSD_PROFILE_COUNT; i++) {
+        osdConfig->profile[i][0] = '\0';
+    }
     osdConfig->rssi_dbm_alarm = 60;
 }
 

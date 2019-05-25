@@ -121,6 +121,9 @@ const OSD_Entry menuOsdActiveElemsEntries[] =
     {"PID PROFILE NAME",   OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_PID_PROFILE_NAME], DYNAMIC},
     {"RATE PROFILE NAME",  OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_RATE_PROFILE_NAME], DYNAMIC},
 #endif
+#ifdef USE_OSD_PROFILES
+    {"OSD PROFILE NAME",   OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_PROFILE_NAME], DYNAMIC},
+#endif
     {"DEBUG",              OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_DEBUG], DYNAMIC},
     {"WARNINGS",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_WARNINGS], DYNAMIC},
     {"DISARMED",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_DISARMED], DYNAMIC},
