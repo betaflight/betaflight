@@ -45,6 +45,10 @@
 #define USE_ACC
 #define USE_ACC_SPI_MPU6500
 
+#define USE_BARO
+#define USE_BARO_BMP280
+#define USE_BARO_MS5611
+
 #define GYRO_1_ALIGN            CW0_DEG
 
 #define USE_VCP
