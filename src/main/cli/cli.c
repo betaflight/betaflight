@@ -71,6 +71,9 @@ uint8_t cliMode = 0;
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 #include "drivers/light_led.h"
+#ifdef USE_MAX7456
+#include "drivers/max7456.h"
+#endif
 #include "drivers/pwm_output.h"
 #include "drivers/rangefinder/rangefinder_hcsr04.h"
 #include "drivers/sdcard.h"
@@ -2919,6 +2922,44 @@ static void cliName(char *cmdline)
         cliPrintLine("###WARNING: This command will be removed. Use 'set name = ' instead.###");
     }
 }
+#ifdef USE_MAX7456_EXTENDED
+static void cliOsdChip(char *cmdline)
+{
+    UNUSED(cmdline);
+    if (max7456IsExtended()) {
+        cliPrintLine("Extended characters are available");
+    } else {
+        cliPrintLine("Regular chip");
+    }
+}
+static void cliOsdRead(char *cmdline)
+{
+    if (isEmpty(cmdline)) {
+        cliPrintLine("Please specify a character number (0-511) ");
+    } else {
+        unsigned charAddr = atoi(cmdline);
+        uint8_t font_data[64];
+        max7456ReadNvm(charAddr, font_data);
+        unsigned lineIndex = 0;
+        unsigned bitBuf=0;
+        for (int i=0;i<64;i++) {
+            //Processing two bits of information at a time with essentially a truth table
+            for (int bitIndex=6;bitIndex>=0;bitIndex-=2) {
+                bitBuf = (font_data[i] >> bitIndex) & 0x03;
+                if (bitBuf==0) { cliPrint("&#x1f311;");} // 00 is black
+                else if (bitBuf==1) { cliPrint("&#x1f30c;");} //01 is transparent, galaxy emoji
+                else if (bitBuf==2) { cliPrint("&#x1f317;");} //10 is white
+                else { cliPrint("&#x26d4;");} // 11 would be transparent, in practice. But red emoji
+
+            }
+            lineIndex++;
+            if(lineIndex>2) { cliPrintLinefeed(); lineIndex=0; }
+            if(i==53) { cliPrintLinefeed(); } // Extra line between the character memory and extra fluff
+        }
+        cliPrintLinef("font_data[63] = %d",font_data[63]);
+    }
+}
+#endif
 
 #if defined(USE_BOARD_INFO)
 
@@ -6045,6 +6086,10 @@ const clicmd_t cmdTable[] = {
 #endif
 #endif
     CLI_COMMAND_DEF("name", "name of craft", NULL, cliName),
+#ifdef USE_MAX7456_EXTENDED
+    CLI_COMMAND_DEF("osdchip", "report if extended characters are available", NULL, cliOsdChip),
+    CLI_COMMAND_DEF("osdread", "read an osd character", NULL, cliOsdRead),
+#endif
 #ifndef MINIMAL_CLI
     CLI_COMMAND_DEF("play_sound", NULL, "[<index>]", cliPlaySound),
 #endif

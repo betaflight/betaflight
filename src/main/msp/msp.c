@@ -2849,8 +2849,15 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src, mspPos
 #ifdef USE_MAX7456
         {
             uint8_t font_data[64];
-            const uint8_t addr = sbufReadU8(src);
-            for (int i = 0; i < 54; i++) {
+            memset(font_data, 0, sizeof(font_data));
+            uint16_t addr = sbufReadU8(src);
+            int len = 54;
+            // For MSP >= 1.42 we're going to accept between 54 and 64 bytes.
+            if (addr == 0 && sbufBytesRemaining(src) >= 54 + 2) {
+                addr = sbufReadU16(src);
+                len = MIN(sbufBytesRemaining(src), 64);
+            }
+            for (int i=0; i < len; i++) {
                 font_data[i] = sbufReadU8(src);
             }
             // !!TODO - replace this with a device independent implementation
