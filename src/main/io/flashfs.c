@@ -78,9 +78,24 @@ static void flashfsSetTailAddress(uint32_t address)
 
 void flashfsEraseCompletely(void)
 {
-    for (flashSector_t sectorIndex = flashPartition->startSector; sectorIndex <= flashPartition->endSector; sectorIndex++) {
-        uint32_t sectorAddress = sectorIndex * flashGeometry->sectorSize;
-        flashEraseSector(sectorAddress);
+    if (flashGeometry->sectors > 0 && flashPartitionCount() > 0) {
+        // if there's a single FLASHFS partition and it uses the entire flash then do a full erase
+        const bool doFullErase = (flashPartitionCount() == 1) && (FLASH_PARTITION_SECTOR_COUNT(flashPartition) == flashGeometry->sectors);
+        if (doFullErase) {
+            flashEraseCompletely();
+        } else {
+
+            // TODO - the partial sector-based erase needs to be completely reworked.
+            // All calls to flashfsEraseCompletely() currently expect the erase to run
+            // asynchronously and return immediately. The current implementation performs
+            // the erase synchronously and doesn't return until complete. This breaks calls
+            // from MSP and runtime mode-switched erasing.
+
+            for (flashSector_t sectorIndex = flashPartition->startSector; sectorIndex <= flashPartition->endSector; sectorIndex++) {
+                uint32_t sectorAddress = sectorIndex * flashGeometry->sectorSize;
+                flashEraseSector(sectorAddress);
+            }
+        }
     }
 
     flashfsClearBuffer();

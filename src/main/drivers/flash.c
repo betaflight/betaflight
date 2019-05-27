@@ -395,4 +395,9 @@ bool flashInit(const flashConfig_t *flashConfig)
 
     return haveFlash;
 }
+
+int flashPartitionCount(void)
+{
+    return flashPartitions;
+}
 #endif // USE_FLASH_CHIP
