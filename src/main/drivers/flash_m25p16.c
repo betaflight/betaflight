@@ -250,7 +250,7 @@ static void m25p16_eraseSector(flashDevice_t *fdevice, uint32_t address)
 
     m25p16_writeEnable(fdevice);
 
-    m25p16_transfer(fdevice->busdev, out, NULL, sizeof(out));
+    m25p16_transfer(fdevice->busdev, out, NULL, fdevice->isLargeFlash ? 5 : 4);
 }
 
 static void m25p16_eraseCompletely(flashDevice_t *fdevice)
