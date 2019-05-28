@@ -128,7 +128,7 @@ static uint8_t osdStatsRowCount = 0;
 escSensorData_t *osdEscDataCombined;
 #endif
 
-PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 5);
+PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 6);
 
 void osdStatSetState(uint8_t statIndex, bool enabled)
 {
@@ -244,6 +244,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     // turn off RSSI & Link Quality warnings by default
     osdWarnSetState(OSD_WARNING_RSSI, false);
     osdWarnSetState(OSD_WARNING_LINK_QUALITY, false);
+    osdWarnSetState(OSD_WARNING_RSSI_DBM, false);
 
     osdConfig->timers[OSD_TIMER_1] = osdTimerDefault[OSD_TIMER_1];
     osdConfig->timers[OSD_TIMER_2] = osdTimerDefault[OSD_TIMER_2];
@@ -264,6 +265,10 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 
     osdConfig->osdProfileIndex = 1;
     osdConfig->ahInvert = false;
+    for (int i=0; i < OSD_PROFILE_COUNT; i++) {
+        osdConfig->profile[i][0] = '\0';
+    }
+    osdConfig->rssi_dbm_alarm = 60;
 }
 
 static void osdDrawLogo(int x, int y)
@@ -341,7 +346,8 @@ static void osdResetStats(void)
     stats.max_g_force  = 0;
     stats.max_esc_temp = 0;
     stats.max_esc_rpm  = 0;
-    stats.min_link_quality = 99; // percent
+    stats.min_link_quality =  (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) ? 300 : 99; // CRSF  : percent
+    stats.min_rssi_dbm = 0;
 }
 
 static void osdUpdateStats(void)
@@ -385,6 +391,13 @@ static void osdUpdateStats(void)
     value = rxGetLinkQualityPercent();
     if (stats.min_link_quality > value) {
         stats.min_link_quality = value;
+    }
+#endif
+
+#ifdef USE_RX_RSSI_DBM
+    value = getRssiDbm();
+    if (stats.min_rssi_dbm < value) {
+        stats.min_rssi_dbm = value;
     }
 #endif
 
@@ -432,8 +445,11 @@ static void osdGetBlackboxStatusString(char * buff)
 #ifdef USE_FLASHFS
     case BLACKBOX_DEVICE_FLASH:
         if (storageDeviceIsWorking) {
-            const flashGeometry_t *geometry = flashfsGetGeometry();
-            storageTotal = geometry->totalSize / 1024;
+
+            const flashPartition_t *flashPartition = flashPartitionFindByType(FLASH_PARTITION_TYPE_FLASHFS);
+            const flashGeometry_t *flashGeometry = flashGetGeometry();
+
+            storageTotal = ((FLASH_PARTITION_SECTOR_COUNT(flashPartition) * flashGeometry->sectorSize) / 1024);
             storageUsed = flashfsGetOffset() / 1024;
         }
         break;
@@ -610,7 +626,7 @@ static uint8_t osdShowStats(uint16_t endBatteryVoltage, int statsRowCount)
 
 #ifdef USE_RX_LINK_QUALITY_INFO
     if (osdStatGetState(OSD_STAT_MIN_LINK_QUALITY)) {
-        itoa(stats.min_link_quality, buff, 10);
+        tfp_sprintf(buff, "%d", stats.min_link_quality);
         strcat(buff, "%");
         osdDisplayStatisticLabel(top++, "MIN LINK", buff);
     }
@@ -625,6 +641,13 @@ static uint8_t osdShowStats(uint16_t endBatteryVoltage, int statsRowCount)
         } else {
             osdDisplayStatisticLabel(top++, "PEAK FFT", "THRT<20%");
         }
+    }
+#endif
+
+#ifdef USE_RX_RSSI_DBM
+    if (osdStatGetState(OSD_STAT_MIN_RSSI_DBM)) {
+        tfp_sprintf(buff, "%3d", stats.min_rssi_dbm * -1);
+        osdDisplayStatisticLabel(top++, "MIN RSSI DBM", buff);
     }
 #endif
 

@@ -187,6 +187,29 @@ osd_unittest_DEFINES := \
 		USE_RTC_TIME= \
 		USE_ADC_INTERNAL=
 
+link_quality_unittest_SRC := \
+		$(USER_DIR)/osd/osd.c \
+		$(USER_DIR)/osd/osd_elements.c \
+		$(USER_DIR)/common/typeconversion.c \
+		$(USER_DIR)/drivers/display.c \
+		$(USER_DIR)/drivers/serial.c \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/printf.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/common/time.c \
+		$(USER_DIR)/fc/runtime_config.c \
+		$(USER_DIR)/common/bitarray.c \
+		$(USER_DIR)/fc/rc_modes.c \
+		$(USER_DIR)/rx/rx.c \
+		$(USER_DIR)/pg/pg.c \
+		$(USER_DIR)/rx/crsf.c \
+		$(USER_DIR)/pg/rx.c
+
+link_quality_unittest_DEFINES := \
+		USE_OSD= \
+		USE_CRSF_LINK_STATISTICS= \
+		USE_RX_LINK_QUALITY_INFO=
 
 pg_unittest_SRC := \
 		$(USER_DIR)/pg/pg.c
@@ -231,6 +254,10 @@ rx_rx_unittest_SRC := \
 		$(USER_DIR)/config/feature.c \
 		$(USER_DIR)/pg/rx.c
 
+rx_sumd_unittest_SRC := \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/rx/sumd.c
 
 scheduler_unittest_SRC := \
 		$(USER_DIR)/scheduler/scheduler.c \

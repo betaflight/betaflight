@@ -508,11 +508,11 @@ static void printValuePointer(const clivalue_t *var, const void *valuePointer, b
         switch (var->type & VALUE_MODE_MASK) {
         case MODE_DIRECT:
             if ((var->type & VALUE_TYPE_MASK) == VAR_UINT32) {
-                cliPrintf("%d", value);
-                if ((uint32_t) value > var->config.u32Max) {
+                cliPrintf("%u", (uint32_t)value);
+                if ((uint32_t)value > var->config.u32Max) {
                     valueIsCorrupted = true;
                 } else if (full) {
-                    cliPrintf(" 0 %d", var->config.u32Max);
+                    cliPrintf(" 0 %u", var->config.u32Max);
                 }
             } else {
                 int min;
@@ -697,7 +697,7 @@ static void cliPrintVarRange(const clivalue_t *var)
     case (MODE_DIRECT): {
         switch (var->type & VALUE_TYPE_MASK) {
         case VAR_UINT32:
-            cliPrintLinef("Allowed range: %d - %d", 0, var->config.u32Max);
+            cliPrintLinef("Allowed range: 0 - %u", var->config.u32Max);
 
             break;
         case VAR_UINT8:
@@ -2209,16 +2209,36 @@ static void cliSdInfo(char *cmdline)
 
 #endif
 
-#ifdef USE_FLASHFS
+#ifdef USE_FLASH_CHIP
 
 static void cliFlashInfo(char *cmdline)
 {
-    const flashGeometry_t *layout = flashfsGetGeometry();
+    const flashGeometry_t *layout = flashGetGeometry();
 
     UNUSED(cmdline);
 
-    cliPrintLinef("Flash sectors=%u, sectorSize=%u, pagesPerSector=%u, pageSize=%u, totalSize=%u, usedSize=%u",
-            layout->sectors, layout->sectorSize, layout->pagesPerSector, layout->pageSize, layout->totalSize, flashfsGetOffset());
+    cliPrintLinef("Flash sectors=%u, sectorSize=%u, pagesPerSector=%u, pageSize=%u, totalSize=%u",
+            layout->sectors, layout->sectorSize, layout->pagesPerSector, layout->pageSize, layout->totalSize);
+
+    for (uint8_t index = 0; index < FLASH_MAX_PARTITIONS; index++) {
+        const flashPartition_t *partition;
+        if (index == 0) {
+            cliPrintLine("Paritions:");
+        }
+        partition = flashPartitionFindByIndex(index);
+        if (!partition) {
+            break;
+        }
+        cliPrintLinef("  %d: %s %u %u", index, flashPartitionGetTypeName(partition->type), partition->startSector, partition->endSector);
+    }
+#ifdef USE_FLASHFS
+    const flashPartition_t *flashPartition = flashPartitionFindByType(FLASH_PARTITION_TYPE_FLASHFS);
+
+    cliPrintLinef("FlashFS size=%u, usedSize=%u",
+            FLASH_PARTITION_SECTOR_COUNT(flashPartition) * layout->sectorSize,
+            flashfsGetOffset()
+    );
+#endif
 }
 
 
@@ -2239,7 +2259,6 @@ static void cliFlashErase(char *cmdline)
 
     bufWriterFlush(cliWriter);
     flashfsEraseCompletely();
-    flashfsInit();
 
     while (!flashfsIsReady()) {
 #ifndef MINIMAL_CLI
@@ -2259,6 +2278,18 @@ static void cliFlashErase(char *cmdline)
 }
 
 #ifdef USE_FLASH_TOOLS
+
+static void cliFlashVerify(char *cmdline)
+{
+    UNUSED(cmdline);
+
+    cliPrintLine("Verifying");
+    if (flashfsVerifyEntireFlash()) {
+        cliPrintLine("Success");
+    } else {
+        cliPrintLine("Failed");
+    }
+}
 
 static void cliFlashWrite(char *cmdline)
 {
@@ -4066,7 +4097,7 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
         switch (val->type & VALUE_MODE_MASK) {
         case MODE_DIRECT: {
                 if ((val->type & VALUE_TYPE_MASK) == VAR_UINT32) {
-                    uint32_t value = strtol(eqptr, NULL, 10);
+                    uint32_t value = strtoul(eqptr, NULL, 10);
 
                     if (value <= val->config.u32Max) {
                         cliSetVar(val, value);
@@ -4422,10 +4453,11 @@ static void cliVersion(char *cmdline)
 static void cliRcSmoothing(char *cmdline)
 {
     UNUSED(cmdline);
+    rcSmoothingFilter_t *rcSmoothingData = getRcSmoothingData();
     cliPrint("# RC Smoothing Type: ");
     if (rxConfig()->rc_smoothing_type == RC_SMOOTHING_TYPE_FILTER) {
         cliPrintLine("FILTER");
-        uint16_t avgRxFrameMs = rcSmoothingGetValue(RC_SMOOTHING_VALUE_AVERAGE_FRAME);
+        uint16_t avgRxFrameMs = rcSmoothingData->averageFrameTimeUs;
         if (rcSmoothingAutoCalculate()) {
             cliPrint("# Detected RX frame rate: ");
             if (avgRxFrameMs == 0) {
@@ -4435,20 +4467,20 @@ static void cliRcSmoothing(char *cmdline)
             }
         }
         cliPrint("# Input filter type: ");
-        cliPrintLinef(lookupTables[TABLE_RC_SMOOTHING_INPUT_TYPE].values[rxConfig()->rc_smoothing_input_type]);
-        cliPrintf("# Active input cutoff: %dhz ", rcSmoothingGetValue(RC_SMOOTHING_VALUE_INPUT_ACTIVE));
-        if (rxConfig()->rc_smoothing_input_cutoff == 0) {
+        cliPrintLinef(lookupTables[TABLE_RC_SMOOTHING_INPUT_TYPE].values[rcSmoothingData->inputFilterType]);
+        cliPrintf("# Active input cutoff: %dhz ", rcSmoothingData->inputCutoffFrequency);
+        if (rcSmoothingData->inputCutoffSetting == 0) {
             cliPrintLine("(auto)");
         } else {
             cliPrintLine("(manual)");
         }
         cliPrint("# Derivative filter type: ");
-        cliPrintLinef(lookupTables[TABLE_RC_SMOOTHING_DERIVATIVE_TYPE].values[rxConfig()->rc_smoothing_derivative_type]);
-        cliPrintf("# Active derivative cutoff: %dhz (", rcSmoothingGetValue(RC_SMOOTHING_VALUE_DERIVATIVE_ACTIVE));
-        if (rxConfig()->rc_smoothing_derivative_type == RC_SMOOTHING_DERIVATIVE_OFF) {
+        cliPrintLinef(lookupTables[TABLE_RC_SMOOTHING_DERIVATIVE_TYPE].values[rcSmoothingData->derivativeFilterType]);
+        cliPrintf("# Active derivative cutoff: %dhz (", rcSmoothingData->derivativeCutoffFrequency);
+        if (rcSmoothingData->derivativeFilterType == RC_SMOOTHING_DERIVATIVE_OFF) {
             cliPrintLine("off)");
         } else {
-            if (rxConfig()->rc_smoothing_derivative_cutoff == 0) {
+            if (rcSmoothingData->derivativeCutoffSetting == 0) {
                 cliPrintLine("auto)");
             } else {
                 cliPrintLine("manual)");
@@ -4876,7 +4908,7 @@ static void printTimerDmaoptDetails(const ioTag_t ioTag, const timerHardware_t *
     }
 }
 
-static const char *printTimerDmaopt(const timerIOConfig_t *currentConfig, const timerIOConfig_t *defaultConfig, unsigned index, dumpFlags_t dumpMask, bool defaultIsUsed[], const char *headingStr)
+static const char *printTimerDmaopt(const timerIOConfig_t *currentConfig, const timerIOConfig_t *defaultConfig, unsigned index, dumpFlags_t dumpMask, bool tagsInUse[], const char *headingStr)
 {
     const ioTag_t ioTag = currentConfig[index].ioTag;
 
@@ -4888,18 +4920,22 @@ static const char *printTimerDmaopt(const timerIOConfig_t *currentConfig, const 
     const dmaoptValue_t dmaopt = currentConfig[index].dmaopt;
 
     dmaoptValue_t defaultDmaopt = DMA_OPT_UNUSED;
+    bool equalsDefault = defaultDmaopt == dmaopt;
     if (defaultConfig) {
         for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
             if (defaultConfig[i].ioTag == ioTag) {
-                defaultDmaopt = defaultConfig[index].dmaopt;
-                defaultIsUsed[index] = true;
+                defaultDmaopt = defaultConfig[i].dmaopt;
+
+                // We need to check timer as well here to get 'default' DMA options for non-default timers printed, because setting the timer resets the DMA option.
+                equalsDefault = (defaultDmaopt == dmaopt) && (defaultConfig[i].index == currentConfig[index].index || dmaopt == DMA_OPT_UNUSED);
+
+                tagsInUse[index] = true;
 
                 break;
             }
         }
     }
 
-    const bool equalsDefault = defaultDmaopt == dmaopt;
     headingStr = cliPrintSectionHeading(dumpMask, !equalsDefault, headingStr);
 
     if (defaultConfig) {
@@ -4934,14 +4970,14 @@ static void printDmaopt(dumpFlags_t dumpMask, const char *headingStr)
         defaultConfig = NULL;
     }
 
-    bool defaultIsUsed[MAX_TIMER_PINMAP_COUNT] = { false };
+    bool tagsInUse[MAX_TIMER_PINMAP_COUNT] = { false };
     for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
-        headingStr = printTimerDmaopt(currentConfig, defaultConfig, i, dumpMask, defaultIsUsed, headingStr);
+        headingStr = printTimerDmaopt(currentConfig, defaultConfig, i, dumpMask, tagsInUse, headingStr);
     }
 
     if (defaultConfig) {
         for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
-            if (!defaultIsUsed[i] && defaultConfig[i].ioTag && defaultConfig[i].dmaopt != DMA_OPT_UNUSED) {
+            if (!tagsInUse[i] && defaultConfig[i].ioTag && defaultConfig[i].dmaopt != DMA_OPT_UNUSED) {
                 const timerHardware_t *timer = timerGetByTagAndIndex(defaultConfig[i].ioTag, defaultConfig[i].index);
                 headingStr = cliPrintSectionHeading(dumpMask, true, headingStr);
                 printTimerDmaoptDetails(defaultConfig[i].ioTag, timer, defaultConfig[i].dmaopt, false, dumpMask, cliDefaultPrintLinef);
@@ -5218,11 +5254,22 @@ static void printTimerDetails(const ioTag_t ioTag, const unsigned timerIndex, co
     const char *emptyFormat = "timer %c%02d NONE";
 
     if (timerIndex > 0) {
-        printValue(dumpMask, equalsDefault, format,
+        const bool printDetails = printValue(dumpMask, equalsDefault, format,
             IO_GPIOPortIdxByTag(ioTag) + 'A',
             IO_GPIOPinIdxByTag(ioTag),
             timerIndex - 1
         );
+        if (printDetails) {
+            const timerHardware_t *timer = timerGetByTagAndIndex(ioTag, timerIndex);
+            printValue(dumpMask, false,
+                "# pin %c%02d: TIM%d CH%d%s (AF%d)",
+                IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag),
+                timerGetTIMNumber(timer->tim),
+                CC_INDEX_FROM_CHANNEL(timer->channel) + 1,
+                timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : "",
+                timer->alternateFunction
+            );
+        }
     } else {
         printValue(dumpMask, equalsDefault, emptyFormat,
             IO_GPIOPortIdxByTag(ioTag) + 'A',
@@ -5246,7 +5293,7 @@ static void printTimer(dumpFlags_t dumpMask, const char *headingStr)
         defaultConfig = NULL;
     }
 
-    bool defaultIsUsed[MAX_TIMER_PINMAP_COUNT] = { false };
+    bool tagsInUse[MAX_TIMER_PINMAP_COUNT] = { false };
     for (unsigned int i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
         const ioTag_t ioTag = currentConfig[i].ioTag;
 
@@ -5261,7 +5308,7 @@ static void printTimer(dumpFlags_t dumpMask, const char *headingStr)
             for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
                 if (defaultConfig[i].ioTag == ioTag) {
                     defaultTimerIndex = defaultConfig[i].index;
-                    defaultIsUsed[i] = true;
+                    tagsInUse[i] = true;
 
                     break;
                 }
@@ -5279,7 +5326,7 @@ static void printTimer(dumpFlags_t dumpMask, const char *headingStr)
 
     if (defaultConfig) {
         for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
-            if (!defaultIsUsed[i] && defaultConfig[i].ioTag) {
+            if (!tagsInUse[i] && defaultConfig[i].ioTag) {
                 headingStr = cliPrintSectionHeading(DO_DIFF, true, headingStr);
                 printTimerDetails(defaultConfig[i].ioTag, defaultConfig[i].index, false, dumpMask, cliDefaultPrintLinef);
 
@@ -5354,16 +5401,35 @@ static void cliTimer(char *cmdline)
             /* output the list of available options */
             const timerHardware_t *timer;
             for (unsigned index = 0; (timer = timerGetByTagAndIndex(ioTag, index + 1)); index++) {
-                cliPrintLinef("# %d: TIM%d CH%d",
+                cliPrintLinef("# %d: TIM%d CH%d%s (AF%d)",
                     index,
                     timerGetTIMNumber(timer->tim),
-                    CC_INDEX_FROM_CHANNEL(timer->channel) + 1
+                    CC_INDEX_FROM_CHANNEL(timer->channel) + 1,
+                    timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : "",
+                    timer->alternateFunction
                 );
             }
 
             return;
         } else if (strcasecmp(pch, "none") == 0) {
             timerIndex = TIMER_INDEX_UNDEFINED;
+        } else if (strncasecmp(pch, "af", 2) == 0) {
+            unsigned alternateFunction = atoi(&pch[2]);
+
+            const timerHardware_t *timer;
+            for (unsigned index = 0; (timer = timerGetByTagAndIndex(ioTag, index + 1)); index++) {
+                if (timer->alternateFunction == alternateFunction) {
+                    timerIndex = index;
+
+                    break;
+                }
+            }
+
+            if (!timer) {
+                cliPrintErrorLinef("INVALID ALTERNATE FUNCTION FOR %c%02d: '%s'", IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag), pch);
+
+                return;
+            }
         } else {
             timerIndex = atoi(pch);
 
@@ -5779,6 +5845,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("flash_info", "show flash chip info", NULL, cliFlashInfo),
 #ifdef USE_FLASH_TOOLS
     CLI_COMMAND_DEF("flash_read", NULL, "<length> <address>", cliFlashRead),
+    CLI_COMMAND_DEF("flash_scan", "scan flash device for errors", NULL, cliFlashVerify),
     CLI_COMMAND_DEF("flash_write", NULL, "<address> <message>", cliFlashWrite),
 #endif
 #endif
@@ -5857,7 +5924,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("tasks", "show task stats", NULL, cliTasks),
 #endif
 #ifdef USE_TIMER_MGMT
-    CLI_COMMAND_DEF("timer", "show/set timers", "<> | <pin> list | <pin> [<option>|none] | list | show", cliTimer),
+    CLI_COMMAND_DEF("timer", "show/set timers", "<> | <pin> list | <pin> [<option>|af<altenate function>|none] | list | show", cliTimer),
 #endif
     CLI_COMMAND_DEF("version", "show version", NULL, cliVersion),
 #ifdef USE_VTX_CONTROL

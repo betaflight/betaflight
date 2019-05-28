@@ -61,7 +61,8 @@ typedef enum {
     ARMING_DISABLED_GPS             = (1 << 18),
     ARMING_DISABLED_RESC            = (1 << 19),
     ARMING_DISABLED_RPMFILTER       = (1 << 20),
-    ARMING_DISABLED_ARM_SWITCH      = (1 << 21), // Needs to be the last element, since it's always activated if one of the others is active when arming
+    ARMING_DISABLED_REBOOT_REQUIRED = (1 << 21),
+    ARMING_DISABLED_ARM_SWITCH      = (1 << 22), // Needs to be the last element, since it's always activated if one of the others is active when arming
 } armingDisableFlags_e;
 
 #define ARMING_DISABLE_FLAGS_COUNT (LOG2(ARMING_DISABLED_ARM_SWITCH) + 1)

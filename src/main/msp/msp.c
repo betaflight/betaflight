@@ -241,6 +241,17 @@ static void mspFc4waySerialCommand(sbuf_t *dst, sbuf_t *src, mspPostProcessFnPtr
 }
 #endif //USE_SERIAL_4WAY_BLHELI_INTERFACE
 
+// TODO: Remove the pragma once this is called from unconditional code
+#pragma GCC diagnostic ignored "-Wunused-function"
+static void configRebootUpdateCheckU8(uint8_t *parm, uint8_t value)
+{
+    if (*parm != value) {
+        setRebootRequired();
+    }
+    *parm = value;
+}
+#pragma GCC diagnostic pop
+
 static void mspRebootFn(serialPort_t *serialPort)
 {
     UNUSED(serialPort);
@@ -337,10 +348,12 @@ static void serializeDataflashSummaryReply(sbuf_t *dst)
     if (flashfsIsSupported()) {
         uint8_t flags = MSP_FLASHFS_FLAG_SUPPORTED;
         flags |= (flashfsIsReady() ? MSP_FLASHFS_FLAG_READY : 0);
-        const flashGeometry_t *geometry = flashfsGetGeometry();
+
+        const flashPartition_t *flashPartition = flashPartitionFindByType(FLASH_PARTITION_TYPE_FLASHFS);
+
         sbufWriteU8(dst, flags);
-        sbufWriteU32(dst, geometry->sectors);
-        sbufWriteU32(dst, geometry->totalSize);
+        sbufWriteU32(dst, FLASH_PARTITION_SECTOR_COUNT(flashPartition));
+        sbufWriteU32(dst, flashfsGetSize());
         sbufWriteU32(dst, flashfsGetOffset()); // Effectively the current number of bytes stored on the volume
     } else
 #endif
@@ -860,6 +873,10 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
             // 4 bytes, flags
             const uint32_t armingDisableFlags = getArmingDisableFlags();
             sbufWriteU32(dst, armingDisableFlags);
+
+            // config state flags - bits to indicate the state of the configuration, reboot required, etc.
+            // other flags can be added as needed
+            sbufWriteU8(dst, (getRebootRequired() << 0));
         }
         break;
 
@@ -2275,7 +2292,6 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 vtxSettingsConfigMutable()->freq = vtxCommonLookupFrequency(vtxDevice, newBand, newChannel);
             } else if (newFrequency <= VTX_SETTINGS_MAX_FREQUENCY_MHZ) { // Value is frequency in MHz
                 vtxSettingsConfigMutable()->band = 0;
-                vtxSettingsConfigMutable()->channel = 0;
                 vtxSettingsConfigMutable()->freq = newFrequency;
             }
 
@@ -2342,7 +2358,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #ifdef USE_FLASHFS
     case MSP_DATAFLASH_ERASE:
         flashfsEraseCompletely();
-        flashfsInit();
+
         break;
 #endif
 
@@ -2431,11 +2447,11 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             // Added in MSP API 1.40
             rxConfigMutable()->rcInterpolationChannels = sbufReadU8(src);
 #if defined(USE_RC_SMOOTHING_FILTER)
-            rxConfigMutable()->rc_smoothing_type = sbufReadU8(src);
-            rxConfigMutable()->rc_smoothing_input_cutoff = sbufReadU8(src);
-            rxConfigMutable()->rc_smoothing_derivative_cutoff = sbufReadU8(src);
-            rxConfigMutable()->rc_smoothing_input_type = sbufReadU8(src);
-            rxConfigMutable()->rc_smoothing_derivative_type = sbufReadU8(src);
+            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_type, sbufReadU8(src));
+            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_input_cutoff, sbufReadU8(src));
+            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_derivative_cutoff, sbufReadU8(src));
+            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_input_type, sbufReadU8(src));
+            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_derivative_type, sbufReadU8(src));
 #else
             sbufReadU8(src);
             sbufReadU8(src);

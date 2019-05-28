@@ -211,9 +211,12 @@ static void osdFormatAltitudeString(char * buff, int32_t altitudeCm)
 {
     const int alt = osdGetMetersToSelectedUnit(altitudeCm) / 10;
 
-    tfp_sprintf(buff, "%c%5d %c", SYM_ALTITUDE, alt, osdGetMetersToSelectedUnitSymbol());
-    buff[6] = buff[5];
-    buff[5] = '.';
+    int pos = 0;
+    buff[pos++] = SYM_ALTITUDE;
+    if (alt < 0) {
+        buff[pos++] = '-';
+    }
+    tfp_sprintf(buff + pos, "%01d.%01d%c", abs(alt) / 10 , abs(alt) % 10, osdGetMetersToSelectedUnitSymbol());
 }
 
 #ifdef USE_GPS
@@ -284,6 +287,12 @@ void osdFormatTime(char * buff, osd_timer_precision_e precision, timeUs_t time)
         {
             const int hundredths = (time / 10000) % 100;
             tfp_sprintf(buff, "%02d:%02d.%02d", minutes, seconds, hundredths);
+            break;
+        }
+    case OSD_TIMER_PREC_TENTHS:
+        {
+            const int tenths = (time / 100000) % 10;
+            tfp_sprintf(buff, "%02d:%02d.%01d", minutes, seconds, tenths);
             break;
         }
     }
@@ -684,6 +693,27 @@ static void osdElementPidProfileName(osdElementParms_t *element)
 }
 #endif
 
+#ifdef USE_OSD_PROFILES
+static void osdElementOsdProfileName(osdElementParms_t *element)
+{
+    uint8_t profileIndex = getCurrentOsdProfileIndex();
+
+    if (strlen(osdConfig()->profile[profileIndex - 1]) == 0) {
+        tfp_sprintf(element->buff, "OSD_%u", profileIndex);
+    } else {
+        unsigned i;
+        for (i = 0; i < OSD_PROFILE_NAME_LENGTH; i++) {
+            if (osdConfig()->profile[profileIndex - 1][i]) {
+                element->buff[i] = toupper((unsigned char)osdConfig()->profile[profileIndex - 1][i]);
+            } else {
+                break;
+            }
+        }
+        element->buff[i] = '\0';
+    }
+}
+#endif
+
 #ifdef USE_ESC_SENSOR
 static void osdElementEscTemperature(osdElementParms_t *element)
 {
@@ -829,13 +859,17 @@ static void osdElementHorizonSidebars(osdElementParms_t *element)
 #ifdef USE_RX_LINK_QUALITY_INFO
 static void osdElementLinkQuality(osdElementParms_t *element)
 {
-    // change range to 0-9 (two sig. fig. adds little extra value, also reduces screen estate)
-    uint8_t osdLinkQuality = rxGetLinkQuality() * 10 / LINK_QUALITY_MAX_VALUE;
-    if (osdLinkQuality >= 10) {
-        osdLinkQuality = 9;
+    uint16_t osdLinkQuality = 0;
+    if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) { // 0-300
+        osdLinkQuality = rxGetLinkQuality()  / 3.41;
+        tfp_sprintf(element->buff, "%3d", osdLinkQuality);
+    } else { // 0-9
+        osdLinkQuality = rxGetLinkQuality() * 10 / LINK_QUALITY_MAX_VALUE;
+        if (osdLinkQuality >= 10) {
+            osdLinkQuality = 9;
+        }
+        tfp_sprintf(element->buff, "%1d", osdLinkQuality);
     }
-
-    tfp_sprintf(element->buff, "%1d", osdLinkQuality);
 }
 #endif // USE_RX_LINK_QUALITY_INFO
 
@@ -994,6 +1028,13 @@ static void osdElementRtcTime(osdElementParms_t *element)
     osdFormatRtcDateTime(&element->buff[0]);
 }
 #endif // USE_RTC_TIME
+
+#ifdef USE_RX_RSSI_DBM
+static void osdElementRssiDbm(osdElementParms_t *element)
+{
+    tfp_sprintf(element->buff, "%c%3d", SYM_RSSI, getRssiDbm() * -1);
+}
+#endif // USE_RX_RSSI_DBM
 
 #ifdef USE_OSD_STICK_OVERLAY
 static void osdElementStickOverlay(osdElementParms_t *element)
@@ -1162,6 +1203,14 @@ static void osdElementWarnings(osdElementParms_t *element)
         SET_BLINK(OSD_WARNINGS);
         return;
     }
+#ifdef USE_RX_RSSI_DBM
+    // rssi dbm
+    if (osdWarnGetState(OSD_WARNING_RSSI_DBM) && (getRssiDbm() > osdConfig()->rssi_dbm_alarm)) {
+        osdFormatMessage(element->buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "RSSI DBM");
+        SET_BLINK(OSD_WARNINGS);
+        return;
+    }
+#endif // USE_RX_RSSI_DBM
 
 #ifdef USE_RX_LINK_QUALITY_INFO
     // Link Quality
@@ -1365,6 +1414,9 @@ static const uint8_t osdElementDisplayOrder[] = {
 #ifdef USE_RX_LINK_QUALITY_INFO
     OSD_LINK_QUALITY,
 #endif
+#ifdef USE_RX_RSSI_DBM
+    OSD_RSSI_DBM_VALUE,
+#endif
 #ifdef USE_OSD_STICK_OVERLAY
     OSD_STICK_OVERLAY_LEFT,
     OSD_STICK_OVERLAY_RIGHT,
@@ -1373,6 +1425,10 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_RATE_PROFILE_NAME,
     OSD_PID_PROFILE_NAME,
 #endif
+#ifdef USE_OSD_PROFILES
+    OSD_PROFILE_NAME,
+#endif
+
 };
 
 // Define the mapping between the OSD element id and the function to draw it
@@ -1472,7 +1528,12 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_RATE_PROFILE_NAME]       = osdElementRateProfileName,
     [OSD_PID_PROFILE_NAME]        = osdElementPidProfileName,
 #endif
-
+#ifdef USE_OSD_PROFILES
+    [OSD_PROFILE_NAME]            = osdElementOsdProfileName,
+#endif
+#ifdef USE_RX_RSSI_DBM
+    [OSD_RSSI_DBM_VALUE]          = osdElementRssiDbm,
+#endif
 };
 
 static void osdAddActiveElement(osd_items_e element)

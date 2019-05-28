@@ -41,7 +41,6 @@
 #define SPI3_NSS_PIN            PD2
 
 #define USE_GYRO
-#define USE_MULTI_GYRO
 #define USE_GYRO_SPI_MPU6000
 #define USE_GYRO_SPI_MPU6500
 
@@ -59,8 +58,6 @@
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
 #define USE_ACC_SPI_MPU6500
-#define ACC_1_ALIGN             CW90_DEG
-#define ACC_2_ALIGN             CW0_DEG
 
 // *************** OSD **************************
 
@@ -136,18 +133,15 @@
 
 // *************** ADC *****************************
 #define USE_ADC
-#define ADC3_DMA_STREAM         DMA2_Stream0
+#define CURRENT_METER_ADC_PIN   PC1
 #define VBAT_ADC_PIN            PC0
-#define CURRENT_METER_ADC_PIN   PC2
-#define RSSI_ADC_PIN            PC1
-
-#define DEFAULT_FEATURES        (FEATURE_OSD | FEATURE_TELEMETRY | FEATURE_SOFTSERIAL | FEATURE_AIRMODE)
 #define DEFAULT_VOLTAGE_METER_SOURCE    VOLTAGE_METER_ADC
 #define DEFAULT_CURRENT_METER_SOURCE    CURRENT_METER_ADC
 #define CURRENT_METER_SCALE_DEFAULT 179
 
+#define DEFAULT_FEATURES        (FEATURE_OSD | FEATURE_TELEMETRY | FEATURE_SOFTSERIAL | FEATURE_AIRMODE)
+
 #define USE_ESCSERIAL
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff

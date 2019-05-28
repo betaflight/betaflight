@@ -70,6 +70,7 @@ typedef struct
 #define PRINT_LABEL    0x02  // Text label should be printed
 #define DYNAMIC        0x04  // Value should be updated dynamically
 #define OPTSTRING      0x08  // (Temporary) Flag for OME_Submenu, indicating func should be called to get a string to display.
+#define REBOOT_REQUIRED 0x10 // Reboot is required if the value is changed
 
 #define IS_PRINTVALUE(x) ((x) & PRINT_VALUE)
 #define SET_PRINTVALUE(x) do { (x) |= PRINT_VALUE; } while (0)

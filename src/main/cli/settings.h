@@ -34,7 +34,8 @@ typedef enum {
     TABLE_GPS_SBAS_MODE,
 #endif
 #ifdef USE_GPS_RESCUE
-    TABLE_GPS_RESCUE,
+    TABLE_GPS_RESCUE_SANITY_CHECK,
+    TABLE_GPS_RESCUE_ALT_MODE,
 #endif
 #ifdef USE_BLACKBOX
     TABLE_BLACKBOX_DEVICE,
@@ -241,3 +242,5 @@ extern const char * const lookupTableMagHardware[];
 extern const char * const lookupTableRangefinderHardware[];
 
 extern const char * const lookupTableLedstripColors[];
+
+extern const char * const lookupTableRescueAltitudeMode[];

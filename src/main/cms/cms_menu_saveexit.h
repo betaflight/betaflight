@@ -21,3 +21,4 @@
 #pragma once
 
 extern CMS_Menu cmsx_menuSaveExit;
+extern CMS_Menu cmsx_menuSaveExitReboot;

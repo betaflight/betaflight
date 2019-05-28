@@ -24,8 +24,6 @@
 
 #define USBD_PRODUCT_STRING     "EXF722DUAL"
 
-#define USE_MULTI_GYRO
-
 #define ENABLE_DSHOT_DMAR       true
 
 #define LED0_PIN                PC4
@@ -66,7 +64,9 @@
 #define USE_UART3
 #define USE_UART4
 #define USE_UART5
-#define SERIAL_PORT_COUNT       6
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+#define SERIAL_PORT_COUNT       8
 
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
@@ -110,20 +110,23 @@
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
+#define USE_FLASH_W25N01G
 #define FLASH_CS_PIN            PB9
 #define FLASH_SPI_INSTANCE      SPI3
 
 #define USE_BARO
 #define USE_BARO_BMP280
-#define USE_BARO_SPI_BMP280
-#define BMP280_CS_PIN           PB8
-#define BMP280_SPI_INSTANCE     SPI3
 #define DEFAULT_BARO_BMP280
 
 #define USE_ADC
 #define ADC_INSTANCE            ADC3
 #define ADC3_DMA_OPT            0  // DMA 2 Stream 0 Channel 2 
 
+#define USE_I2C
+#define USE_I2C_DEVICE_2
+#define I2C_DEVICE              (I2CDEV_2)
+#define I2C2_SCL                PB10
+#define I2C2_SDA                PB11
 
 #define VBAT_ADC_PIN            PC1
 #define CURRENT_METER_ADC_PIN   PC2

@@ -31,6 +31,8 @@ extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 
 #define OSD_ELEMENT_BUFFER_LENGTH 32
 
+#define OSD_PROFILE_NAME_LENGTH 16
+
 #ifdef USE_OSD_PROFILES
 #define OSD_PROFILE_COUNT 3
 #else
@@ -128,6 +130,8 @@ typedef enum {
     OSD_ESC_RPM_FREQ,
     OSD_RATE_PROFILE_NAME,
     OSD_PID_PROFILE_NAME,
+    OSD_PROFILE_NAME,
+    OSD_RSSI_DBM_VALUE,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
@@ -164,6 +168,7 @@ typedef enum {
     OSD_STAT_TOTAL_FLIGHTS,
     OSD_STAT_TOTAL_TIME,
     OSD_STAT_TOTAL_DIST,
+    OSD_STAT_MIN_RSSI_DBM,
     OSD_STAT_COUNT // MUST BE LAST
 } osd_stats_e;
 
@@ -192,6 +197,7 @@ typedef enum {
 typedef enum {
     OSD_TIMER_PREC_SECOND,
     OSD_TIMER_PREC_HUNDREDTHS,
+    OSD_TIMER_PREC_TENTHS,
     OSD_TIMER_PREC_COUNT
 } osd_timer_precision_e;
 
@@ -211,6 +217,7 @@ typedef enum {
     OSD_WARNING_GPS_RESCUE_DISABLED,
     OSD_WARNING_RSSI,
     OSD_WARNING_LINK_QUALITY,
+    OSD_WARNING_RSSI_DBM,
     OSD_WARNING_COUNT // MUST BE LAST
 } osdWarningsFlags_e;
 
@@ -248,7 +255,9 @@ typedef struct osdConfig_s {
     uint8_t ahInvert;         // invert the artificial horizon
     uint8_t osdProfileIndex;
     uint8_t overlay_radio_mode;
-    uint8_t link_quality_alarm;
+    char profile[OSD_PROFILE_COUNT][OSD_PROFILE_NAME_LENGTH + 1];
+    uint16_t link_quality_alarm;
+    uint8_t rssi_dbm_alarm;
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);
@@ -264,7 +273,8 @@ typedef struct statistic_s {
     float max_g_force;
     int16_t max_esc_temp;
     int32_t max_esc_rpm;
-    uint8_t min_link_quality;
+    uint16_t min_link_quality;
+    uint8_t min_rssi_dbm;
 } statistic_t;
 
 extern timeUs_t resumeRefreshAt;

@@ -45,6 +45,10 @@
 #define USE_ACC
 #define USE_ACC_SPI_MPU6500
 
+#define USE_BARO
+#define USE_BARO_BMP280
+#define USE_BARO_MS5611
+
 #define GYRO_1_ALIGN            CW0_DEG
 
 #define USE_VCP
@@ -100,9 +104,6 @@
 #define RTC6705_CS_PIN          PF4
 #define RTC6705_SPI_INSTANCE    SPI3
 #define RTC6705_POWER_PIN       PC3
-
-#define USE_RTC6705_CLK_HACK
-#define RTC6705_CLK_PIN         SPI3_SCK_PIN
 
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI3

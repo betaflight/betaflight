@@ -207,8 +207,8 @@ const char *vtxCommonLookupPowerName(const vtxDevice_t *vtxDevice, int index)
 
 uint16_t vtxCommonLookupPowerValue(const vtxDevice_t *vtxDevice, int index)
 {
-    if (vtxDevice) {
-        return vtxDevice->powerValues[index];
+    if (vtxDevice && index > 0) {
+        return vtxDevice->powerValues[index - 1];
     } else {
         return 0;
     }
