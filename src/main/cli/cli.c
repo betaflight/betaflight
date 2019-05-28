@@ -5108,27 +5108,28 @@ static void cliDmaopt(char *cmdline)
         }
 
         char optvalString[DMA_OPT_STRING_BUFSIZE];
-        char orgvalString[DMA_OPT_STRING_BUFSIZE];
         optToString(optval, optvalString);
+
+        char orgvalString[DMA_OPT_STRING_BUFSIZE];
         optToString(orgval, orgvalString);
 
         if (optval != orgval) {
             if (entry) {
                 *optaddr = optval;
 
-                cliPrintLinef("dma %s %d: changed from %s to %s", entry->device, DMA_OPT_UI_INDEX(index), orgvalString, optvalString);
+                cliPrintLinef("# dma %s %d: changed from %s to %s", entry->device, DMA_OPT_UI_INDEX(index), orgvalString, optvalString);
             } else {
 #if defined(USE_TIMER_MGMT)
                 timerIoConfig->dmaopt = optval;
 #endif
 
-                cliPrintLinef("dma pin %c%02d: changed from %s to %s", IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag), orgvalString, optvalString);
+                cliPrintLinef("# dma pin %c%02d: changed from %s to %s", IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag), orgvalString, optvalString);
             }
         } else {
             if (entry) {
-                cliPrintLinef("dma %s %d: no change: %s", entry->device, DMA_OPT_UI_INDEX(index), orgvalString);
+                cliPrintLinef("# dma %s %d: no change: %s", entry->device, DMA_OPT_UI_INDEX(index), orgvalString);
             } else {
-                cliPrintLinef("dma %c%02d: no change: %s", IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag),orgvalString);
+                cliPrintLinef("# dma %c%02d: no change: %s", IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag),orgvalString);
             }
         }
     }
@@ -5250,17 +5251,17 @@ static void cliResource(char *cmdline)
 #ifdef USE_TIMER_MGMT
 static void printTimerDetails(const ioTag_t ioTag, const unsigned timerIndex, const bool equalsDefault, const dumpFlags_t dumpMask, printFn *printValue)
 {
-    const char *format = "timer %c%02d %d";
+    const char *format = "timer %c%02d AF%d";
     const char *emptyFormat = "timer %c%02d NONE";
 
     if (timerIndex > 0) {
+        const timerHardware_t *timer = timerGetByTagAndIndex(ioTag, timerIndex);
         const bool printDetails = printValue(dumpMask, equalsDefault, format,
             IO_GPIOPortIdxByTag(ioTag) + 'A',
             IO_GPIOPinIdxByTag(ioTag),
-            timerIndex - 1
+            timer->alternateFunction
         );
         if (printDetails) {
-            const timerHardware_t *timer = timerGetByTagAndIndex(ioTag, timerIndex);
             printValue(dumpMask, false,
                 "# pin %c%02d: TIM%d CH%d%s (AF%d)",
                 IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag),
@@ -5337,6 +5338,17 @@ static void printTimer(dumpFlags_t dumpMask, const char *headingStr)
 }
 
 #define TIMER_INDEX_UNDEFINED -1
+#define TIMER_AF_STRING_BUFSIZE 5
+
+static void alternateFunctionToString(const ioTag_t ioTag, const int index, char *buf)
+{
+    const timerHardware_t *timer = timerGetByTagAndIndex(ioTag, index + 1);
+    if (!timer) {
+        memcpy(buf, "NONE", TIMER_AF_STRING_BUFSIZE);
+    } else {
+        tfp_sprintf(buf, "AF%d", timer->alternateFunction);
+    }
+}
 
 static void cliTimer(char *cmdline)
 {
@@ -5401,12 +5413,11 @@ static void cliTimer(char *cmdline)
             /* output the list of available options */
             const timerHardware_t *timer;
             for (unsigned index = 0; (timer = timerGetByTagAndIndex(ioTag, index + 1)); index++) {
-                cliPrintLinef("# %d: TIM%d CH%d%s (AF%d)",
-                    index,
+                cliPrintLinef("# AF%d: TIM%d CH%d%s",
+                    timer->alternateFunction,
                     timerGetTIMNumber(timer->tim),
                     CC_INDEX_FROM_CHANNEL(timer->channel) + 1,
-                    timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : "",
-                    timer->alternateFunction
+                    timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : ""
                 );
             }
 
@@ -5448,15 +5459,15 @@ static void cliTimer(char *cmdline)
         timerIOConfigMutable(timerIOIndex)->dmaopt = DMA_OPT_UNUSED;
 
         char optvalString[DMA_OPT_STRING_BUFSIZE];
-        optToString(timerIndex, optvalString);
+        alternateFunctionToString(ioTag, timerIndex, optvalString);
 
         char orgvalString[DMA_OPT_STRING_BUFSIZE];
-        optToString(oldTimerIndex, orgvalString);
+        alternateFunctionToString(ioTag, oldTimerIndex, orgvalString);
 
         if (timerIndex == oldTimerIndex) {
-            cliPrintLinef("timer %c%02d: no change: %s", IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag), orgvalString);
+            cliPrintLinef("# timer %c%02d: no change: %s", IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag), orgvalString);
         } else {
-            cliPrintLinef("timer %c%02d: changed from %s to %s", IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag), orgvalString, optvalString);
+            cliPrintLinef("# timer %c%02d: changed from %s to %s", IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag), orgvalString, optvalString);
         }
 
         return;
@@ -5924,7 +5935,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("tasks", "show task stats", NULL, cliTasks),
 #endif
 #ifdef USE_TIMER_MGMT
-    CLI_COMMAND_DEF("timer", "show/set timers", "<> | <pin> list | <pin> [<option>|af<altenate function>|none] | list | show", cliTimer),
+    CLI_COMMAND_DEF("timer", "show/set timers", "<> | <pin> list | <pin> [af<altenate function>|none|<option(deprecated)>] | list | show", cliTimer),
 #endif
     CLI_COMMAND_DEF("version", "show version", NULL, cliVersion),
 #ifdef USE_VTX_CONTROL
