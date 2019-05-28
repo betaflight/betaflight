@@ -529,12 +529,10 @@ void updateGPSRescueState(void)
             rescueState.failure = RESCUE_TOO_CLOSE;
             
             // Never allow rescue mode to engage as a failsafe when too close.
-            if (rescueState.isFailsafe) {
+            if (rescueState.isFailsafe || isModeActivationConditionPresent(BOXGPSRESCUE)) {
                 setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
                 disarm();
             }
-            
-            // When not in failsafe mode: leave it up to the sanity check setting.
         }
         
         newSpeed = gpsRescueConfig()->rescueGroundspeed;
