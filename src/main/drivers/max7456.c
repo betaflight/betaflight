@@ -202,14 +202,20 @@ static uint8_t screenBuffer[VIDEO_BUFFER_CHARS_PAL];
 static uint8_t shadowBuffer[VIDEO_BUFFER_CHARS_PAL];
 #endif
 
+#ifdef USE_MAX7456_EXTENDED
+#define MAX_CHARS2UPDATE    60
+static uint8_t spiBuff[150];
+#else
 //Max chars to update in one idle
-
 #define MAX_CHARS2UPDATE    100
+static uint8_t spiBuff[MAX_CHARS2UPDATE*6];
+#endif
+
 #ifdef MAX7456_DMA_CHANNEL_TX
 volatile bool dmaTransactionInProgress = false;
 #endif
 
-static uint8_t spiBuff[MAX_CHARS2UPDATE*6+40];
+
 
 static uint8_t  videoSignalCfg;
 static uint8_t  videoSignalReg  = OSD_ENABLE; // OSD_ENABLE required to trigger first ReInit
