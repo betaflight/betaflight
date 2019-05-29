@@ -279,7 +279,7 @@ static void saProcessResponse(uint8_t *buf, int len)
         // saDevice.version = 0 means unknown, 1 means Smart audio V1, 2 means Smart audio V2 and 3 means Smart audio V2.1
         saDevice.version = (buf[0] == SA_CMD_GET_SETTINGS) ? 1 : ((buf[0] == SA_CMD_GET_SETTINGS_V2) ? 2 : 3);
         saDevice.channel = buf[2];
-        uint8_t rawpowervalue = buf[3];
+        uint8_t rawPowerValue = buf[3];
         saDevice.mode = buf[4];
         saDevice.freq = (buf[5] << 8)|buf[6];
 
@@ -326,18 +326,18 @@ static void saProcessResponse(uint8_t *buf, int len)
              vtxSmartAudio.capability.powerCount, vtxSmartAudio.powerValues[0], vtxSmartAudio.powerValues[1],
              vtxSmartAudio.powerValues[2], vtxSmartAudio.powerValues[3]));
             //dprintf(("processResponse: V2.1 received vtx power value %d\r\n",buf[7]));
-            rawpowervalue = buf[7];
+            rawPowerValue = buf[7];
         }
 #ifdef USE_SMARTAUDIO_DPRINTF
-        int8_t prevpower = saDevice.power;
+        int8_t prevPower = saDevice.power;
 #endif
         saDevice.power = 0;//set to unknown power level if the reported one doesnt match any of the known ones
-        dprintf(("processResponse: rawpowervalue is %d, legacy power is %d\r\n", rawpowervalue, buf[3]));
+        dprintf(("processResponse: rawPowerValue is %d, legacy power is %d\r\n", rawPowerValue, buf[3]));
         for (int8_t i = 0; i < vtxSmartAudio.capability.powerCount; i++) {
-            if(rawpowervalue == vtxSmartAudio.powerValues[i]) {
+            if(rawPowerValue == vtxSmartAudio.powerValues[i]) {
 #ifdef USE_SMARTAUDIO_DPRINTF
-                if (prevpower != i + 1) {
-                    dprintf(("processResponse: power changed from index %d to index %d\r\n", prevpower, i + 1));
+                if (prevPower != i + 1) {
+                    dprintf(("processResponse: power changed from index %d to index %d\r\n", prevPower, i + 1));
                 }
 #endif
                 saDevice.power = i + 1;
