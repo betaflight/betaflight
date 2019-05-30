@@ -751,6 +751,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 #define OSD_FLAGS_RESERVED_1            (1 << 2)
 #define OSD_FLAGS_RESERVED_2            (1 << 3)
 #define OSD_FLAGS_OSD_HARDWARE_MAX_7456 (1 << 4)
+#define OSD_FLAGS_EXTENDED              (1 << 5)
 
         uint8_t osdFlags = 0;
 #if defined(USE_OSD)
@@ -758,6 +759,11 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 #endif
 #ifdef USE_MAX7456
         osdFlags |= OSD_FLAGS_OSD_HARDWARE_MAX_7456;
+#endif
+#ifdef USE_MAX7456_EXTENDED
+        if (max7456IsExtended()) {
+            osdFlags |= OSD_FLAGS_EXTENDED;
+        }
 #endif
 
         sbufWriteU8(dst, osdFlags);

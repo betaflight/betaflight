@@ -165,6 +165,7 @@ static const displayPortVTable_t max7456VTable = {
     .writeChar = writeChar,
 #ifdef USE_MAX7456_EXTENDED
     .writeCharExtended = writeCharExtended,
+    .isExtended = max7456IsExtended,
 #endif
     .isTransferInProgress = isTransferInProgress,
     .heartbeat = heartbeat,

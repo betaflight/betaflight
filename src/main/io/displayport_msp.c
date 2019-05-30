@@ -140,6 +140,7 @@ static int writeCharExtended(displayPort_t *displayPort, uint8_t col, uint8_t ro
     buf[1] = 0;
     return writeString(displayPort, col, row, buf); //!!TODO - check if there is a direct MSP command to do this
 }
+static bool isExtended(void) { return false; }
 #endif
 
 static bool isTransferInProgress(const displayPort_t *displayPort)
@@ -177,6 +178,7 @@ static const displayPortVTable_t mspDisplayPortVTable = {
     .writeChar = writeChar,
 #ifdef USE_MAX7456_EXTENDED
     .writeCharExtended = writeCharExtended,
+    .isExtended = isExtended,
 #endif
     .isTransferInProgress = isTransferInProgress,
     .heartbeat = heartbeat,

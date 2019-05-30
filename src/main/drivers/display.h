@@ -49,6 +49,7 @@ typedef struct displayPortVTable_s {
     int (*writeChar)(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t c);
 #ifdef USE_MAX7456_EXTENDED
     int (*writeCharExtended)(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t c, uint8_t fc);
+    bool (*isExtended)(void);
 #endif
     bool (*isTransferInProgress)(const displayPort_t *displayPort);
     int (*heartbeat)(displayPort_t *displayPort);
@@ -79,6 +80,7 @@ int displayWrite(displayPort_t *instance, uint8_t x, uint8_t y, const char *s);
 int displayWriteChar(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t c);
 #ifdef USE_MAX7456_EXTENDED
 int displayWriteCharExtended(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t c, uint8_t fc);
+bool displayIsExtended(const displayPort_t *instance);
 #endif
 bool displayIsTransferInProgress(const displayPort_t *instance);
 void displayHeartbeat(displayPort_t *instance);

@@ -97,6 +97,10 @@ int displayWriteCharExtended(displayPort_t *instance, uint8_t x, uint8_t y, uint
     instance->posY = y;
     return instance->vTable->writeCharExtended(instance, x, y, c, fc);
 }
+bool displayIsExtended(const displayPort_t *instance)
+{
+    return instance->vTable->isExtended();
+}
 #endif
 
 bool displayIsTransferInProgress(const displayPort_t *instance)
