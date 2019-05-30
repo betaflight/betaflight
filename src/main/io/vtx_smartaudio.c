@@ -929,20 +929,19 @@ static void vtxSASetPitMode(vtxDevice_t *vtxDevice, uint8_t onoff)
         return;
     }
 
-    if (onoff && saDevice.version>=3 && !saDevice.willBootIntoPitMode) {
-        // enable pitmode using SET_POWER command with 0 dbm.
-        // This enables pitmode without causing the device to boot into pitmode next power-up
-        static uint8_t buf[6] = { 0xAA, 0x55, SACMD(SA_CMD_SET_POWER), 1 };
-        buf[4] = 0 | 128;
-        buf[5] = CRC8(buf,5);
-        saQueueCmd(buf,6);
-        dprintf(("vtxSASetPitMode: set power to 0 dbm\r\n"));
-        return;
-    }
-
-    if (!onoff && saDevice.version>=3 && !saDevice.willBootIntoPitMode) {
-        saSetMode(SA_MODE_CLR_PITMODE);
-        dprintf(("sasetpidmode: clear pitmode permanently"));
+    if(saDevice.version >= 3 && !saDevice.willBootIntoPitMode) {
+        if (onoff) {
+            // enable pitmode using SET_POWER command with 0 dbm.
+            // This enables pitmode without causing the device to boot into pitmode next power-up
+            static uint8_t buf[6] = { 0xAA, 0x55, SACMD(SA_CMD_SET_POWER), 1 };
+            buf[4] = 0 | 128;
+            buf[5] = CRC8(buf, 5);
+            saQueueCmd(buf, 6);
+            dprintf(("vtxSASetPitMode: set power to 0 dbm\r\n"));
+        } else {
+            saSetMode(SA_MODE_CLR_PITMODE);
+            dprintf(("vtxSASetPitMode: clear pitmode permanently"));
+        }
         return;
     }
 
@@ -952,11 +951,11 @@ static void vtxSASetPitMode(vtxDevice_t *vtxDevice, uint8_t onoff)
         newMode |= SA_MODE_SET_OUT_RANGE_PITMODE;
     }
 
-    if (saDevice.mode & SA_MODE_GET_IN_RANGE_PITMODE || (onoff && !(saDevice.mode & SA_MODE_GET_OUT_RANGE_PITMODE))) {
+    if ((saDevice.mode & SA_MODE_GET_IN_RANGE_PITMODE) || (onoff && newMode == 0)) {
         // ensure when turning on pit mode that pit mode gets actually enabled
         newMode |= SA_MODE_SET_IN_RANGE_PITMODE;
     }
-    dprintf(("vtxsasetpitmode %s with stored mode 0x%x por %s, pir %s, newmode 0x%x\r\n", onoff ? "on" : "off", saDevice.mode,
+    dprintf(("vtxSASetPitMode %s with stored mode 0x%x por %s, pir %s, newMode 0x%x\r\n", onoff ? "on" : "off", saDevice.mode,
             (saDevice.mode & SA_MODE_GET_OUT_RANGE_PITMODE) ? "on" : "off",
             (saDevice.mode & SA_MODE_GET_IN_RANGE_PITMODE) ? "on" : "off" , newMode));
 
