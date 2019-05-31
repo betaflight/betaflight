@@ -178,17 +178,8 @@
     #define __spiBusTransactionBegin(busdev)        spiBusTransactionBegin(busdev)
     #define __spiBusTransactionEnd(busdev)          spiBusTransactionEnd(busdev)
 #else
-#ifdef MAX7456_SPI_CLK
     #define __spiBusTransactionBegin(busdev)        {spiBusSetDivisor(busdev, max7456SpiClock);IOLo((busdev)->busdev_u.spi.csnPin);}
-#else
-    #define __spiBusTransactionBegin(busdev)        IOLo((busdev)->busdev_u.spi.csnPin)
-#endif
-
-#ifdef MAX7456_RESTORE_CLK
     #define __spiBusTransactionEnd(busdev)       {IOHi((busdev)->busdev_u.spi.csnPin);spiSetDivisor((busdev)->busdev_u.spi.instance, MAX7456_RESTORE_CLK);}
-#else
-    #define __spiBusTransactionEnd(busdev)       IOHi((busdev)->busdev_u.spi.csnPin)
-#endif
 #endif
 
 busDevice_t max7456BusDevice;
