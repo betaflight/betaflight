@@ -172,7 +172,7 @@
 
 #define CHARS_PER_LINE      30 // XXX Should be related to VIDEO_BUFFER_CHARS_*?
 
-// On shared SPI buss we want to change clock for OSD chip and restore for other devices.
+// On shared SPI bus we want to change clock for OSD chip and restore for other devices.
 
 #ifdef USE_SPI_TRANSACTION
     #define __spiBusTransactionBegin(busdev)        spiBusTransactionBegin(busdev)
