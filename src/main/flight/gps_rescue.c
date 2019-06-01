@@ -119,6 +119,7 @@ typedef struct {
 #define GPS_RESCUE_MAX_YAW_RATE         180 // deg/sec max yaw rate
 #define GPS_RESCUE_RATE_SCALE_DEGREES    45 // Scale the commanded yaw rate when the error is less then this angle
 #define GPS_RESCUE_SLOWDOWN_DISTANCE_M  200 // distance from home to start decreasing speed
+#define GPS_RESCUE_MIN_DESCENT_DIST_M    30 // minimum descent distance allowed
 
 #ifdef USE_MAG
 #define GPS_RESCUE_USE_MAG              true
@@ -527,7 +528,7 @@ void updateGPSRescueState(void)
         newSpeed = gpsRescueConfig()->rescueGroundspeed;
         //set new descent distance if actual distance to home is lower 
         if (rescueState.sensor.distanceToHomeM < gpsRescueConfig()->descentDistanceM) {
-            descentDistance = rescueState.sensor.distanceToHomeM - 5;
+            descentDistance = MAX(rescueState.sensor.distanceToHomeM - 5, GPS_RESCUE_MIN_DESCENT_DIST_M);
         } else {
             descentDistance = gpsRescueConfig()->descentDistanceM;
         }
