@@ -125,6 +125,7 @@ typedef enum {
 #define GPS_RESCUE_MAX_YAW_RATE         180 // deg/sec max yaw rate
 #define GPS_RESCUE_RATE_SCALE_DEGREES    45 // Scale the commanded yaw rate when the error is less then this angle
 #define GPS_RESCUE_SLOWDOWN_DISTANCE_M  200 // distance from home to start decreasing speed
+#define GPS_RESCUE_MIN_DESCENT_DIST_M    30 // minimum descent distance allowed
 
 #ifdef USE_MAG
 #define GPS_RESCUE_USE_MAG              true
@@ -540,7 +541,7 @@ void updateGPSRescueState(void)
         newSpeed = gpsRescueConfig()->rescueGroundspeed;
         //set new descent distance if actual distance to home is lower 
         if (rescueState.sensor.distanceToHomeM < gpsRescueConfig()->descentDistanceM) {
-            newDescentDistanceM = rescueState.sensor.distanceToHomeM - 5;
+            newDescentDistanceM = MAX(rescueState.sensor.distanceToHomeM - 5, GPS_RESCUE_MIN_DESCENT_DIST_M);
         } else {
             newDescentDistanceM = gpsRescueConfig()->descentDistanceM;
         }
@@ -595,7 +596,7 @@ void updateGPSRescueState(void)
         }
 
         // Only allow new altitude and new speed to be equal or lower than the current values (to prevent parabolic movement on overshoot)
-        const int32_t newAlt = (lineSlope * rescueState.sensor.distanceToHomeM + lineOffsetM) * 100;
+        const int32_t newAlt = MAX((lineSlope * rescueState.sensor.distanceToHomeM + lineOffsetM) * 100, 0);
         
         // Start to decrease proportionally the quad's speed when the distance to home is less or equal than GPS_RESCUE_SLOWDOWN_DISTANCE_M
         if (rescueState.sensor.distanceToHomeM <= GPS_RESCUE_SLOWDOWN_DISTANCE_M) {
