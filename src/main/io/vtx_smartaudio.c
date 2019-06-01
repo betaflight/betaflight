@@ -279,9 +279,7 @@ static void saProcessResponse(uint8_t *buf, int len)
         // saDevice.version = 0 means unknown, 1 means Smart audio V1, 2 means Smart audio V2 and 3 means Smart audio V2.1
         saDevice.version = (buf[0] == SA_CMD_GET_SETTINGS) ? 1 : ((buf[0] == SA_CMD_GET_SETTINGS_V2) ? 2 : 3);
         saDevice.channel = buf[2];
-        if(saDevice.version != 3) {
-            saDevice.power = buf[3];
-        }
+        uint8_t rawPowerValue = buf[3];
         saDevice.mode = buf[4];
         saDevice.freq = (buf[5] << 8)|buf[6];
 
@@ -328,17 +326,22 @@ static void saProcessResponse(uint8_t *buf, int len)
              vtxSmartAudio.capability.powerCount, vtxSmartAudio.powerValues[0], vtxSmartAudio.powerValues[1],
              vtxSmartAudio.powerValues[2], vtxSmartAudio.powerValues[3]));
             //dprintf(("processResponse: V2.1 received vtx power value %d\r\n",buf[7]));
-
-            saDevice.power = 0;//set to unknown power level if the reported one doesnt match any of the known ones
-            for (int8_t i = 0; i < vtxSmartAudio.capability.powerCount; i++) {
-                if(buf[7] == vtxSmartAudio.powerValues[i]) {
+            rawPowerValue = buf[7];
+        }
 #ifdef USE_SMARTAUDIO_DPRINTF
-                    if (saDevice.power != i + 1) {
-                        dprintf(("processResponse: V2.1 power changed from index %d to index %d\r\n", saDevice.power, i + 1));
-                    }
+        int8_t prevPower = saDevice.power;
 #endif
-                    saDevice.power = i + 1;
+        saDevice.power = 0;//set to unknown power level if the reported one doesnt match any of the known ones
+        dprintf(("processResponse: rawPowerValue is %d, legacy power is %d\r\n", rawPowerValue, buf[3]));
+        for (int8_t i = 0; i < vtxSmartAudio.capability.powerCount; i++) {
+            if(rawPowerValue == vtxSmartAudio.powerValues[i]) {
+#ifdef USE_SMARTAUDIO_DPRINTF
+                if (prevPower != i + 1) {
+                    dprintf(("processResponse: power changed from index %d to index %d\r\n", prevPower, i + 1));
                 }
+#endif
+                saDevice.power = i + 1;
+
             }
         }
 
@@ -713,8 +716,8 @@ bool vtxSmartAudioInit(void)
     debugSerialPort = openSerialPort(DPRINTF_SERIAL_PORT, FUNCTION_NONE, NULL, NULL, 115200, MODE_RXTX, 0);
     if (debugSerialPort) {
         setPrintfSerialPort(debugSerialPort);
-        dprintf(("smartAudioInit: OK\r\n"));
     }
+    dprintf(("smartAudioInit: OK\r\n"));
 #endif
 
     serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_SMARTAUDIO);
@@ -856,17 +859,17 @@ static void vtxSAProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
 
     if ((sa_outstanding != SA_CMD_NONE) && (nowMs - sa_lastTransmissionMs > SMARTAUDIO_CMD_TIMEOUT)) {
         // Last command timed out
-        // dprintf(("process: resending 0x%x\r\n", sa_outstanding));
+        dprintf(("process: resending 0x%x\r\n", sa_outstanding));
         // XXX Todo: Resend termination and possible offline transition
         saResendCmd();
     lastCommandSentMs = nowMs;
     } else if (!saQueueEmpty()) {
         // Command pending. Send it.
-        // dprintf(("process: sending queue\r\n"));
+        dprintf(("process: sending queue\r\n"));
         saSendQueue();
     lastCommandSentMs = nowMs;
     } else if ((nowMs - lastCommandSentMs < SMARTAUDIO_POLLING_WINDOW) && (nowMs - sa_lastTransmissionMs >= SMARTAUDIO_POLLING_INTERVAL)) {
-    //dprintf(("process: sending status change polling\r\n"));
+    dprintf(("process: sending status change polling\r\n"));
     saGetSettings();
     saSendQueue();
     }
@@ -926,20 +929,19 @@ static void vtxSASetPitMode(vtxDevice_t *vtxDevice, uint8_t onoff)
         return;
     }
 
-    if (onoff && saDevice.version>=3 && !saDevice.willBootIntoPitMode) {
-        // enable pitmode using SET_POWER command with 0 dbm.
-        // This enables pitmode without causing the device to boot into pitmode next power-up
-        static uint8_t buf[6] = { 0xAA, 0x55, SACMD(SA_CMD_SET_POWER), 1 };
-        buf[4] = 0 | 128;
-        buf[5] = CRC8(buf,5);
-        saQueueCmd(buf,6);
-        dprintf(("vtxSASetPitMode: set power to 0 dbm\r\n"));
-        return;
-    }
-
-    if (!onoff && saDevice.version>=3 && !saDevice.willBootIntoPitMode) {
-        saSetMode(SA_MODE_CLR_PITMODE);
-        dprintf(("sasetpidmode: clear pitmode permanently"));
+    if(saDevice.version >= 3 && !saDevice.willBootIntoPitMode) {
+        if (onoff) {
+            // enable pitmode using SET_POWER command with 0 dbm.
+            // This enables pitmode without causing the device to boot into pitmode next power-up
+            static uint8_t buf[6] = { 0xAA, 0x55, SACMD(SA_CMD_SET_POWER), 1 };
+            buf[4] = 0 | 128;
+            buf[5] = CRC8(buf, 5);
+            saQueueCmd(buf, 6);
+            dprintf(("vtxSASetPitMode: set power to 0 dbm\r\n"));
+        } else {
+            saSetMode(SA_MODE_CLR_PITMODE);
+            dprintf(("vtxSASetPitMode: clear pitmode permanently"));
+        }
         return;
     }
 
@@ -949,11 +951,11 @@ static void vtxSASetPitMode(vtxDevice_t *vtxDevice, uint8_t onoff)
         newMode |= SA_MODE_SET_OUT_RANGE_PITMODE;
     }
 
-    if (saDevice.mode & SA_MODE_GET_IN_RANGE_PITMODE || !(saDevice.mode & SA_MODE_GET_OUT_RANGE_PITMODE)) {
+    if ((saDevice.mode & SA_MODE_GET_IN_RANGE_PITMODE) || (onoff && newMode == 0)) {
         // ensure when turning on pit mode that pit mode gets actually enabled
         newMode |= SA_MODE_SET_IN_RANGE_PITMODE;
     }
-    dprintf(("vtxsasetpitmode %s with stored mode 0x%x por %s, pir %s, newmode 0x%x\r\n", onoff ? "on" : "off", saDevice.mode,
+    dprintf(("vtxSASetPitMode %s with stored mode 0x%x por %s, pir %s, newMode 0x%x\r\n", onoff ? "on" : "off", saDevice.mode,
             (saDevice.mode & SA_MODE_GET_OUT_RANGE_PITMODE) ? "on" : "off",
             (saDevice.mode & SA_MODE_GET_IN_RANGE_PITMODE) ? "on" : "off" , newMode));
 
