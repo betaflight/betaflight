@@ -34,6 +34,7 @@
 #define SYM_LAT                     0x89
 #define SYM_LON                     0x98
 #define SYM_ALTITUDE                0x7F
+#define SYM_TOTAL_DISTANCE          0x71
 
 // RSSI
 #define SYM_RSSI                    0x01
@@ -134,6 +135,7 @@
 #define SYM_FLY_M                   0x9C
 
 // Speed
+#define SYM_SPEED                   0x70
 #define SYM_KPH                     0x9E
 #define SYM_MPH                     0x9D
 

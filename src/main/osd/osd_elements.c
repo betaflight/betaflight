@@ -776,13 +776,10 @@ static void osdElementGpsFlightDistance(osdElementParms_t *element)
 {
     if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
         const int32_t distance = osdGetMetersToSelectedUnit(GPS_distanceFlownInCm / 100);
-        tfp_sprintf(element->buff, "%d%c", distance, osdGetMetersToSelectedUnitSymbol());
+        tfp_sprintf(element->buff, "%c%d%c", SYM_TOTAL_DISTANCE, distance, osdGetMetersToSelectedUnitSymbol());
     } else {
         // We use this symbol when we don't have a FIX
-        element->buff[0] = SYM_COLON;
-        // overwrite any previous distance with blanks
-        memset(element->buff + 1, SYM_BLANK, 6);
-        element->buff[7] = '\0';
+        tfp_sprintf(element->buff, "%c%c", SYM_TOTAL_DISTANCE, SYM_COLON);
     }
 }
 
@@ -835,7 +832,7 @@ static void osdElementGpsSats(osdElementParms_t *element)
 
 static void osdElementGpsSpeed(osdElementParms_t *element)
 {
-    tfp_sprintf(element->buff, "%3d%c", osdGetSpeedToSelectedUnit(gpsSol.groundSpeed), osdGetSpeedToSelectedUnitSymbol());
+    tfp_sprintf(element->buff, "%c%3d%c", SYM_SPEED, osdGetSpeedToSelectedUnit(gpsSol.groundSpeed), osdGetSpeedToSelectedUnitSymbol());
 }
 #endif // USE_GPS
 
