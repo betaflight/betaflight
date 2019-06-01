@@ -31,18 +31,11 @@
 //TODO: Make it platform independent in the future
 #if defined(STM32F4)
 #include "vcpf4/usbd_cdc_vcp.h"
-
 #include "usbd_hid_core.h"
 #elif defined(STM32F7) || defined(STM32H7)
 #include "drivers/serial_usb_vcp.h"
 #include "usbd_hid.h"
-
-#if defined(STM32F7)
 #include "vcp_hal/usbd_cdc_interface.h"
-#elif defined(STM32H7)
-#include "vcph7/usbd_cdc_interface.h"
-#endif
-
 #endif
 
 #define USB_CDC_HID_NUM_AXES 8

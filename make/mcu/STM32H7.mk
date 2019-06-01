@@ -137,7 +137,7 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(USBMSC_DIR)/Inc \
                    $(CMSIS_DIR)/Core/Include \
                    $(ROOT)/lib/main/STM32H7/Drivers/CMSIS/Device/ST/STM32H7xx/Include \
-                   $(ROOT)/src/main/vcph7
+                   $(ROOT)/src/main/vcp_hal
 
 ifneq ($(filter SDCARD_SPI,$(FEATURES)),)
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
@@ -193,10 +193,10 @@ DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE) -DHSE_STARTUP_TIMEOUT=1000
 TARGET_FLAGS    = -D$(TARGET)
 
 VCP_SRC = \
-            vcph7/usbd_desc.c \
-            vcph7/usbd_conf.c \
-            vcph7/usbd_cdc_hid.c \
-            vcph7/usbd_cdc_interface.c \
+            vcp_hal/usbd_desc.c \
+            vcp_hal/usbd_conf_stm32h7xx.c \
+            vcp_hal/usbd_cdc_hid.c \
+            vcp_hal/usbd_cdc_interface.c \
             drivers/serial_usb_vcp.c \
             drivers/usb_io.c
 

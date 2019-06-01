@@ -157,7 +157,7 @@ TARGET_FLAGS    = -D$(TARGET)
 
 VCP_SRC = \
             vcp_hal/usbd_desc.c \
-            vcp_hal/usbd_conf.c \
+            vcp_hal/usbd_conf_stm32f7xx.c \
             vcp_hal/usbd_cdc_hid.c \
             vcp_hal/usbd_cdc_interface.c \
             drivers/serial_usb_vcp.c \
