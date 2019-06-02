@@ -127,7 +127,6 @@ typedef struct timerHardware_s {
 #elif defined(STM32H7)
     DMA_Stream_TypeDef *dmaRef;
     uint8_t dmaRequest;
-    uint8_t dmaIrqHandler; // XXX Should be gone (can be substituted by dmaGetIdentifier)
 #else
     DMA_Channel_TypeDef *dmaRef;
 #endif

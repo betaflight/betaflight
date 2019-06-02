@@ -402,8 +402,9 @@ P    -    High -     High -
     } else
 #endif
     {
-        dmaInit(timerHardware->dmaIrqHandler, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
-        dmaSetHandler(timerHardware->dmaIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
+        dmaIdentifier_e identifier = dmaGetIdentifier(timerHardware->dmaRef);
+        dmaInit(identifier, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
+        dmaSetHandler(identifier, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
     }
 
     // Start the timer channel now.
