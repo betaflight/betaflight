@@ -820,6 +820,10 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig)
         MARK_ADJUSTMENT_FUNCTION_AS_BUSY(adjustmentIndex);
     }
 
+    if (!canUseRxData) {
+        return;
+    }
+
     // Process Absolute adjustments
     for (int i = 0; i < activeAbsoluteAdjustmentCount; i++) {
         static int16_t lastRcData[MAX_ADJUSTMENT_RANGE_COUNT] = { 0 };
