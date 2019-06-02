@@ -25,11 +25,10 @@
 
 #ifdef USE_USB_CDC_HID
 
-//#include "usbd_cdc_hid.h"
+#include "usbd_conf.h"
 #include "usbd_desc.h"
 #include "usbd_ctlreq.h"
 #include "usbd_def.h"
-#include "usbd_conf.h"
 
 #include "usbd_cdc.h"
 #include "usbd_hid.h"

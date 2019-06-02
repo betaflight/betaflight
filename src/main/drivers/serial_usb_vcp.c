@@ -41,11 +41,7 @@
 #endif
 #include "usb_io.h"
 #elif defined(STM32F7) || defined(STM32H7)
-#ifdef STM32F7
 #include "vcp_hal/usbd_cdc_interface.h"
-#else
-#include "vcph7/usbd_cdc_interface.h"
-#endif
 #include "usb_io.h"
 #ifdef USE_USB_CDC_HID
 #include "usbd_ioreq.h"
