@@ -579,13 +579,17 @@ void max7456WriteChar(uint8_t x, uint8_t y, uint8_t c)
     }
 }
 #ifdef USE_MAX7456_EXTENDED
-void max7456WriteCharExtended(uint8_t x, uint8_t y,uint8_t extendedChar, uint8_t fallbackChar)
+void max7456WriteCharExtended(uint8_t x, uint8_t y,uint8_t extendedChar)
 {
     if (x < CHARS_PER_LINE && y < VIDEO_LINES_PAL) {
-        if (max7456IsExtended()) {
-            screenBuffer[y * CHARS_PER_LINE + x] = 0x100 + extendedChar;
-        } else {
-            screenBuffer[y * CHARS_PER_LINE + x] = fallbackChar;
+        screenBuffer[y * CHARS_PER_LINE + x] = 0x100 + extendedChar;
+    }
+}
+void max7456WriteExtended(uint8_t x, uint8_t y, const char *buff)
+{
+    if (y < VIDEO_LINES_PAL) {
+        for (int i = 0; buff[i] && x + i < CHARS_PER_LINE; i++) {
+            screenBuffer[y * CHARS_PER_LINE + x + i] = 0x100 + buff[i];
         }
     }
 }

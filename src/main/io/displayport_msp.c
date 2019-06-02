@@ -130,16 +130,6 @@ static int writeChar(displayPort_t *displayPort, uint8_t col, uint8_t row, uint8
     return writeString(displayPort, col, row, buf); //!!TODO - check if there is a direct MSP command to do this
 }
 #ifdef USE_MAX7456_EXTENDED
-// Copy/paste of above, forcing use of fallback character for now.
-static int writeCharExtended(displayPort_t *displayPort, uint8_t col, uint8_t row, uint8_t c, uint8_t fallbackChar)
-{
-    UNUSED(c);
-    char buf[2];
-
-    buf[0] = fallbackChar;
-    buf[1] = 0;
-    return writeString(displayPort, col, row, buf); //!!TODO - check if there is a direct MSP command to do this
-}
 static bool isExtended(void) { return false; }
 #endif
 
@@ -177,7 +167,6 @@ static const displayPortVTable_t mspDisplayPortVTable = {
     .writeString = writeString,
     .writeChar = writeChar,
 #ifdef USE_MAX7456_EXTENDED
-    .writeCharExtended = writeCharExtended,
     .isExtended = isExtended,
 #endif
     .isTransferInProgress = isTransferInProgress,

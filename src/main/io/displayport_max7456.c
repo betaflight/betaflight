@@ -115,10 +115,16 @@ static int writeChar(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t c
 }
 
 #ifdef USE_MAX7456_EXTENDED
-static int writeCharExtended(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t c, uint8_t fc)
+static int writeExtended(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *s)
 {
     UNUSED(displayPort);
-    max7456WriteCharExtended(x, y, c, fc);
+    max7456WriteExtended(x, y, s);
+    return 0;
+}
+static int writeCharExtended(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t c)
+{
+    UNUSED(displayPort);
+    max7456WriteCharExtended(x, y, c);
     return 0;
 }
 #endif
@@ -164,6 +170,7 @@ static const displayPortVTable_t max7456VTable = {
     .writeString = writeString,
     .writeChar = writeChar,
 #ifdef USE_MAX7456_EXTENDED
+    .writeExtended = writeExtended,
     .writeCharExtended = writeCharExtended,
     .isExtended = max7456IsExtended,
 #endif

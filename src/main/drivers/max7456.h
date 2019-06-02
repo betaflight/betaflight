@@ -42,7 +42,8 @@ uint8_t max7456GetRowsCount(void);
 void    max7456Write(uint8_t x, uint8_t y, const char *buff);
 void    max7456WriteChar(uint8_t x, uint8_t y, uint8_t c);
 #ifdef USE_MAX7456_EXTENDED
-void    max7456WriteCharExtended(uint8_t x, uint8_t y,uint8_t extendedChar, uint8_t fallbackChar);
+void    max7456WriteExtended(uint8_t x, uint8_t y, const char *buff);
+void    max7456WriteCharExtended(uint8_t x, uint8_t y,uint8_t extendedChar);
 #endif
 void    max7456ClearScreen(void);
 void    max7456RefreshAll(void);
