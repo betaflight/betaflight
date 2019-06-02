@@ -455,8 +455,9 @@ char osdGetTemperatureSymbolForSelectedUnit(void)
 #ifdef USE_OSD_ADJUSTMENTS
 static void osdElementAdjustmentRange(osdElementParms_t *element)
 {
-    if (getAdjustmentsRangeName()) {
-        tfp_sprintf(element->buff, "%s: %3d", getAdjustmentsRangeName(), getAdjustmentsRangeValue());
+    const char *name = getAdjustmentsRangeName();
+    if (name) {
+        tfp_sprintf(element->buff, "%s: %3d", name, getAdjustmentsRangeValue());
     }
 }
 #endif // USE_OSD_ADJUSTMENTS

@@ -63,7 +63,7 @@
 
 #define ADJUSTMENT_RANGE_COUNT_INVALID -1
 
-PG_REGISTER_ARRAY(adjustmentRange_t, MAX_ADJUSTMENT_RANGE_COUNT, adjustmentRanges, PG_ADJUSTMENT_RANGE_CONFIG, 1);
+PG_REGISTER_ARRAY(adjustmentRange_t, MAX_ADJUSTMENT_RANGE_COUNT, adjustmentRanges, PG_ADJUSTMENT_RANGE_CONFIG, 2);
 
 uint8_t pidAudioPositionToModeMap[7] = {
     // on a pot with a center detent, it's easy to have center area for off/default, then three positions to the left and three to the right.
@@ -80,10 +80,11 @@ uint8_t pidAudioPositionToModeMap[7] = {
     // Note: Last 3 positions are currently pending implementations and use PID_AUDIO_OFF for now.
 };
 
-static int activeAdjustmentCount = ADJUSTMENT_RANGE_COUNT_INVALID;
-static uint8_t activeAdjustmentArray[MAX_ADJUSTMENT_RANGE_COUNT];
-static int activeAbsoluteAdjustmentCount;
-static uint8_t activeAbsoluteAdjustmentArray[MAX_ADJUSTMENT_RANGE_COUNT];
+STATIC_UNIT_TESTED int stepwiseAdjustmentCount = ADJUSTMENT_RANGE_COUNT_INVALID;
+STATIC_UNIT_TESTED timedAdjustmentState_t stepwiseAdjustments[MAX_ADJUSTMENT_RANGE_COUNT];
+
+STATIC_UNIT_TESTED int continuosAdjustmentCount;
+STATIC_UNIT_TESTED continuosAdjustmentState_t continuosAdjustments[MAX_ADJUSTMENT_RANGE_COUNT];
 
 static void blackboxLogInflightAdjustmentEvent(adjustmentFunction_e adjustmentFunction, int32_t newValue)
 {
@@ -100,13 +101,6 @@ static void blackboxLogInflightAdjustmentEvent(adjustmentFunction_e adjustmentFu
     }
 #endif
 }
-
-STATIC_UNIT_TESTED uint8_t adjustmentStateMask = 0;
-
-#define MARK_ADJUSTMENT_FUNCTION_AS_BUSY(adjustmentIndex) adjustmentStateMask |= (1 << adjustmentIndex)
-#define MARK_ADJUSTMENT_FUNCTION_AS_READY(adjustmentIndex) adjustmentStateMask &= ~(1 << adjustmentIndex)
-
-#define IS_ADJUSTMENT_FUNCTION_BUSY(adjustmentIndex) (adjustmentStateMask & (1 << adjustmentIndex))
 
 // sync with adjustmentFunction_e
 static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COUNT - 1] = {
@@ -273,25 +267,6 @@ static const char * const adjustmentLabels[] = {
 static int adjustmentRangeNameIndex = 0;
 static int adjustmentRangeValue = -1;
 #endif
-
-#define ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET 1
-
-STATIC_UNIT_TESTED adjustmentState_t adjustmentStates[MAX_SIMULTANEOUS_ADJUSTMENT_COUNT];
-
-STATIC_UNIT_TESTED void configureAdjustment(uint8_t index, uint8_t auxSwitchChannelIndex, const adjustmentConfig_t *adjustmentConfig)
-{
-    adjustmentState_t *adjustmentState = &adjustmentStates[index];
-
-    if (adjustmentState->config == adjustmentConfig) {
-        // already configured
-        return;
-    }
-    adjustmentState->auxChannelIndex = auxSwitchChannelIndex;
-    adjustmentState->config = adjustmentConfig;
-    adjustmentState->timeoutAt = 0;
-
-    MARK_ADJUSTMENT_FUNCTION_AS_READY(index);
-}
 
 static int applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustmentFunction, int delta)
 {
@@ -682,154 +657,184 @@ static uint8_t applySelectAdjustment(adjustmentFunction_e adjustmentFunction, ui
     return position;
 }
 
+#define ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET 1
+
 static void calcActiveAdjustmentRanges(void)
 {
     adjustmentRange_t defaultAdjustmentRange;
     memset(&defaultAdjustmentRange, 0, sizeof(defaultAdjustmentRange));
 
-    activeAdjustmentCount = 0;
-    activeAbsoluteAdjustmentCount = 0;
+    stepwiseAdjustmentCount = 0;
+    continuosAdjustmentCount = 0;
     for (int i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
         const adjustmentRange_t * const adjustmentRange = adjustmentRanges(i);
         if (memcmp(adjustmentRange, &defaultAdjustmentRange, sizeof(defaultAdjustmentRange)) != 0) {
-            if (adjustmentRange->adjustmentCenter == 0) {
-                activeAdjustmentArray[activeAdjustmentCount++] = i;
+            const adjustmentConfig_t *adjustmentConfig = &defaultAdjustmentConfigs[adjustmentRange->adjustmentConfig - ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET];
+            if (adjustmentRange->adjustmentCenter == 0 && adjustmentConfig->mode != ADJUSTMENT_MODE_SELECT) {
+                timedAdjustmentState_t *adjustmentState = &stepwiseAdjustments[stepwiseAdjustmentCount++];
+                adjustmentState->adjustmentRangeIndex = i;
+                adjustmentState->timeoutAt = 0;
+                adjustmentState->ready = true;
             } else {
-                activeAbsoluteAdjustmentArray[activeAbsoluteAdjustmentCount++] = i;
+                continuosAdjustmentState_t *adjustmentState = &continuosAdjustments[continuosAdjustmentCount++];
+                adjustmentState->adjustmentRangeIndex = i;
+                adjustmentState->lastRcData = 0;
             }
         }
     }
 }
 
-static void updateAdjustmentStates(void)
+#define VALUE_DISPLAY_LATENCY_MS 2000
+
+#if defined(USE_OSD) && defined(USE_OSD_ADJUSTMENTS)
+static void updateOsdAdjustmentData(int newValue, adjustmentFunction_e adjustmentFunction)
 {
-    for (int index = 0; index < activeAdjustmentCount; index++) {
-        const adjustmentRange_t * const adjustmentRange = adjustmentRanges(activeAdjustmentArray[index]);
-        // Only use slots if center value has not been specified, otherwise apply values directly (scaled) from aux channel
-        if (isRangeActive(adjustmentRange->auxChannelIndex, &adjustmentRange->range) &&
-            (adjustmentRange->adjustmentCenter == 0)) {
-            const adjustmentConfig_t *adjustmentConfig = &defaultAdjustmentConfigs[adjustmentRange->adjustmentConfig - ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET];
-            configureAdjustment(adjustmentRange->adjustmentIndex, adjustmentRange->auxSwitchChannelIndex, adjustmentConfig);
-        }
+    static timeMs_t lastValueChangeMs;
+
+    timeMs_t currentTimeMs = millis();
+    if (newValue != -1
+        && adjustmentFunction != ADJUSTMENT_RATE_PROFILE  // Rate profile already has an OSD element
+#ifdef USE_OSD_PROFILES
+        && adjustmentFunction != ADJUSTMENT_OSD_PROFILE
+#endif
+        ) {
+        adjustmentRangeNameIndex = adjustmentFunction;
+        adjustmentRangeValue = newValue;
+
+        lastValueChangeMs = currentTimeMs;
+    }
+
+    if (cmp32(currentTimeMs, lastValueChangeMs + VALUE_DISPLAY_LATENCY_MS) >= 0) {
+        adjustmentRangeNameIndex = 0;
     }
 }
+#endif
 
 #define RESET_FREQUENCY_2HZ (1000 / 2)
 
-void processRcAdjustments(controlRateConfig_t *controlRateConfig)
+static void processStepwiseAdjustments(controlRateConfig_t *controlRateConfig, const bool canUseRxData)
 {
-    const uint32_t now = millis();
+    const timeMs_t now = millis();
 
-    int newValue = -1;
+    for (int index = 0; index < stepwiseAdjustmentCount; index++) {
+        timedAdjustmentState_t *adjustmentState = &stepwiseAdjustments[index];
+        const adjustmentRange_t *const adjustmentRange = adjustmentRanges(adjustmentState->adjustmentRangeIndex);
+        const adjustmentConfig_t *adjustmentConfig = &defaultAdjustmentConfigs[adjustmentRange->adjustmentConfig - ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET];
+        const adjustmentFunction_e adjustmentFunction = adjustmentConfig->adjustmentFunction;
 
-    const bool canUseRxData = rxIsReceivingSignal();
+        if (!isRangeActive(adjustmentRange->auxChannelIndex, &adjustmentRange->range) ||
+            adjustmentFunction == ADJUSTMENT_NONE) {
+            adjustmentState->timeoutAt = 0;
 
-    // Recalculate the new active adjustments if required
-    if (activeAdjustmentCount == ADJUSTMENT_RANGE_COUNT_INVALID) {
-        calcActiveAdjustmentRanges();
-    }
-
-    updateAdjustmentStates();
-    
-    // Process Increment/Decrement adjustments
-    for (int adjustmentIndex = 0; adjustmentIndex < MAX_SIMULTANEOUS_ADJUSTMENT_COUNT; adjustmentIndex++) {
-        adjustmentState_t *adjustmentState = &adjustmentStates[adjustmentIndex];
-
-        if (!adjustmentState->config) {
-            continue;
-        }
-        const adjustmentFunction_e adjustmentFunction = adjustmentState->config->adjustmentFunction;
-        if (adjustmentFunction == ADJUSTMENT_NONE) {
             continue;
         }
 
         if (cmp32(now, adjustmentState->timeoutAt) >= 0) {
             adjustmentState->timeoutAt = now + RESET_FREQUENCY_2HZ;
-            MARK_ADJUSTMENT_FUNCTION_AS_READY(adjustmentIndex);
-
-#if defined(USE_OSD) && defined(USE_OSD_ADJUSTMENTS)
-            adjustmentRangeValue = -1;
-#endif
+            adjustmentState->ready = true;
         }
 
         if (!canUseRxData) {
             continue;
         }
 
-        const uint8_t channelIndex = NON_AUX_CHANNEL_COUNT + adjustmentState->auxChannelIndex;
+        const uint8_t channelIndex = NON_AUX_CHANNEL_COUNT + adjustmentRange->auxSwitchChannelIndex;
 
-        if (adjustmentState->config->mode == ADJUSTMENT_MODE_STEP) {
+        if (adjustmentConfig->mode == ADJUSTMENT_MODE_STEP) {
             int delta;
             if (rcData[channelIndex] > rxConfig()->midrc + 200) {
-                delta = adjustmentState->config->data.step;
+                delta = adjustmentConfig->data.step;
             } else if (rcData[channelIndex] < rxConfig()->midrc - 200) {
-                delta = -adjustmentState->config->data.step;
+                delta = -adjustmentConfig->data.step;
             } else {
                 // returning the switch to the middle immediately resets the ready state
-                MARK_ADJUSTMENT_FUNCTION_AS_READY(adjustmentIndex);
+                adjustmentState->ready = true;
                 adjustmentState->timeoutAt = now + RESET_FREQUENCY_2HZ;
                 continue;
             }
-            if (IS_ADJUSTMENT_FUNCTION_BUSY(adjustmentIndex)) {
+            if (!adjustmentState->ready) {
                 continue;
             }
 
-            newValue = applyStepAdjustment(controlRateConfig, adjustmentFunction, delta);
+            int newValue = applyStepAdjustment(controlRateConfig, adjustmentFunction, delta);
             pidInitConfig(currentPidProfile);
-        } else if (adjustmentState->config->mode == ADJUSTMENT_MODE_SELECT) {
-            int switchPositions = adjustmentState->config->data.switchPositions;
+
+            adjustmentState->ready = false;
+
+#if defined(USE_OSD) && defined(USE_OSD_ADJUSTMENTS)
+            updateOsdAdjustmentData(newValue, adjustmentConfig->adjustmentFunction);
+#else
+            UNUSED(newValue);
+#endif
+        }
+    }
+}
+
+static void processContinuosAdjustments(controlRateConfig_t *controlRateConfig)
+{
+    for (int i = 0; i < continuosAdjustmentCount; i++) {
+        continuosAdjustmentState_t *adjustmentState = &continuosAdjustments[i];
+        const adjustmentRange_t * const adjustmentRange = adjustmentRanges(adjustmentState->adjustmentRangeIndex);
+        const uint8_t channelIndex = NON_AUX_CHANNEL_COUNT + adjustmentRange->auxSwitchChannelIndex;
+        const adjustmentConfig_t *adjustmentConfig = &defaultAdjustmentConfigs[adjustmentRange->adjustmentConfig - ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET];
+        const adjustmentFunction_e adjustmentFunction = adjustmentConfig->adjustmentFunction;
+
+        if (!isRangeActive(adjustmentRange->auxChannelIndex, &adjustmentRange->range) ||
+            adjustmentFunction == ADJUSTMENT_NONE ||
+            rcData[channelIndex] == adjustmentState->lastRcData) {
+            continue;
+        }
+
+        adjustmentState->lastRcData = rcData[channelIndex];
+
+        int newValue = -1;
+
+        if (adjustmentConfig->mode == ADJUSTMENT_MODE_SELECT) {
+            int switchPositions = adjustmentConfig->data.switchPositions;
             if (adjustmentFunction == ADJUSTMENT_RATE_PROFILE && systemConfig()->rateProfile6PosSwitch) {
                 switchPositions =  6;
             }
             const uint16_t rangeWidth = (2100 - 900) / switchPositions;
             const uint8_t position = (constrain(rcData[channelIndex], 900, 2100 - 1) - 900) / rangeWidth;
             newValue = applySelectAdjustment(adjustmentFunction, position);
+        } else {
+            // If setting is defined for step adjustment and center value has been specified, apply values directly (scaled) from aux channel
+            if (adjustmentRange->adjustmentCenter &&
+                (adjustmentConfig->mode == ADJUSTMENT_MODE_STEP)) {
+                int value = (((rcData[channelIndex] - PWM_RANGE_MIDDLE) * adjustmentRange->adjustmentScale) / (PWM_RANGE_MIDDLE - PWM_RANGE_MIN)) + adjustmentRange->adjustmentCenter;
+
+                newValue = applyAbsoluteAdjustment(controlRateConfig, adjustmentFunction, value);
+                pidInitConfig(currentPidProfile);
+            }
         }
 
 #if defined(USE_OSD) && defined(USE_OSD_ADJUSTMENTS)
-        if (newValue != -1
-            && adjustmentState->config->adjustmentFunction != ADJUSTMENT_RATE_PROFILE  // Rate profile already has an OSD element
-#ifdef USE_OSD_PROFILES
-            && adjustmentState->config->adjustmentFunction != ADJUSTMENT_OSD_PROFILE
-#endif
-#ifdef USE_LED_STRIP
-            && adjustmentState->config->adjustmentFunction != ADJUSTMENT_LED_PROFILE
-#endif
-           ) {
-            adjustmentRangeNameIndex = adjustmentFunction;
-            adjustmentRangeValue = newValue;
-        }
+        updateOsdAdjustmentData(newValue, adjustmentConfig->adjustmentFunction);
 #else
         UNUSED(newValue);
 #endif
-        MARK_ADJUSTMENT_FUNCTION_AS_BUSY(adjustmentIndex);
-    }
-
-    // Process Absolute adjustments
-    for (int i = 0; i < activeAbsoluteAdjustmentCount; i++) {
-        static int16_t lastRcData[MAX_ADJUSTMENT_RANGE_COUNT] = { 0 };
-        int index = activeAbsoluteAdjustmentArray[i];
-        const adjustmentRange_t * const adjustmentRange = adjustmentRanges(index);
-        const uint8_t channelIndex = NON_AUX_CHANNEL_COUNT + adjustmentRange->auxSwitchChannelIndex;
-        const adjustmentConfig_t *adjustmentConfig = &defaultAdjustmentConfigs[adjustmentRange->adjustmentConfig - ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET];
-
-        // If setting is defined for step adjustment and center value has been specified, apply values directly (scaled) from aux channel
-        if ((rcData[channelIndex] != lastRcData[index]) &&
-            adjustmentRange->adjustmentCenter &&
-            (adjustmentConfig->mode == ADJUSTMENT_MODE_STEP) &&
-            isRangeActive(adjustmentRange->auxChannelIndex, &adjustmentRange->range)) {
-            int value = (((rcData[channelIndex] - PWM_RANGE_MIDDLE) * adjustmentRange->adjustmentScale) / (PWM_RANGE_MIDDLE - PWM_RANGE_MIN)) + adjustmentRange->adjustmentCenter;
-
-            lastRcData[index] = rcData[channelIndex];
-            applyAbsoluteAdjustment(controlRateConfig, adjustmentConfig->adjustmentFunction, value);
-            pidInitConfig(currentPidProfile);
-        }
     }
 }
 
-void resetAdjustmentStates(void)
+void processRcAdjustments(controlRateConfig_t *controlRateConfig)
 {
-    memset(adjustmentStates, 0, sizeof(adjustmentStates));
+    const bool canUseRxData = rxIsReceivingSignal();
+
+    // Recalculate the new active adjustments if required
+    if (stepwiseAdjustmentCount == ADJUSTMENT_RANGE_COUNT_INVALID) {
+        calcActiveAdjustmentRanges();
+    }
+
+    processStepwiseAdjustments(controlRateConfig, canUseRxData);
+
+    if (canUseRxData) {
+        processContinuosAdjustments(controlRateConfig);
+    }
+
+#if defined(USE_OSD) && defined(USE_OSD_ADJUSTMENTS)
+    // Hide the element if there is no change
+    updateOsdAdjustmentData(-1, 0);
+#endif
 }
 
 #if defined(USE_OSD) && defined(USE_OSD_ADJUSTMENTS)
@@ -850,5 +855,5 @@ int getAdjustmentsRangeValue(void)
 
 void activeAdjustmentRangeReset(void)
 {
-    activeAdjustmentCount = ADJUSTMENT_RANGE_COUNT_INVALID;
+    stepwiseAdjustmentCount = ADJUSTMENT_RANGE_COUNT_INVALID;
 }
