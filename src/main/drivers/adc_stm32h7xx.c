@@ -83,19 +83,19 @@ const adcDevice_t adcHardware[ADCDEV_COUNT] = {
         .ADCx = ADC1_INSTANCE,
         .rccADC = RCC_AHB1(ADC12),
         .DMAy_Streamx = ADC1_DMA_STREAM,
-        .request = DMA_REQUEST_ADC1,
+        .channel = DMA_REQUEST_ADC1,
     },
     { .ADCx = ADC2_INSTANCE,
         .rccADC = RCC_AHB1(ADC12),
         .DMAy_Streamx = ADC2_DMA_STREAM,
-        .request = DMA_REQUEST_ADC2,
+        .channel = DMA_REQUEST_ADC2,
     },
     // ADC3 can be serviced by BDMA also, but we settle for DMA1 or 2 (for now).
     {
         .ADCx = ADC3_INSTANCE,
         .rccADC = RCC_AHB4(ADC3),
         .DMAy_Streamx = ADC3_DMA_STREAM,
-        .request = DMA_REQUEST_ADC3,
+        .channel = DMA_REQUEST_ADC3,
     }
 };
 
@@ -361,7 +361,7 @@ void adcInit(const adcConfig_t *config)
         dmaInit(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev));
 
         adc->DmaHandle.Instance                 = adc->DMAy_Streamx;
-        adc->DmaHandle.Init.Request             = adc->request;
+        adc->DmaHandle.Init.Request             = adc->channel;
         adc->DmaHandle.Init.Direction           = DMA_PERIPH_TO_MEMORY;
         adc->DmaHandle.Init.PeriphInc           = DMA_PINC_DISABLE;
         adc->DmaHandle.Init.MemInc              = DMA_MINC_ENABLE;

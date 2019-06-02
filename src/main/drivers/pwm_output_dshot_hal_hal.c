@@ -380,7 +380,7 @@ P    -    High -     High -
         motor->dmaBuffer[DSHOT_DMA_BUFFER_SIZE-1] = 0; // XXX Is this necessary?
 
         motor->hdma_tim.Instance = timerHardware->dmaRef;
-        motor->hdma_tim.Init.Request = timerHardware->dmaRequest;
+        motor->hdma_tim.Init.Request = timerHardware->dmaChannel;
 
         /* Link hdma_tim to hdma[x] (channelx) */
         __HAL_LINKDMA(&motor->TimHandle, hdma[motor->timerDmaIndex], motor->hdma_tim);
