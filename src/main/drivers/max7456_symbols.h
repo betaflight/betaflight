@@ -35,7 +35,6 @@
 #define SYM_LON                     0x98
 #define SYM_ALTITUDE                0x7F
 #define SYM_TOTAL_DISTANCE          0x71
-#define SYM_TRIANGLE                0x05
 
 // RSSI
 #define SYM_RSSI                    0x01
