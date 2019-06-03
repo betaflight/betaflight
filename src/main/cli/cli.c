@@ -5781,7 +5781,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("tasks", "show task stats", NULL, cliTasks),
 #endif
 #ifdef USE_TIMER_MGMT
-    CLI_COMMAND_DEF("timer", "show/set timers", "<> | <pin> list | <pin> [af<altenate function>|none|<option(deprecated)>] | list | show", cliTimer),
+    CLI_COMMAND_DEF("timer", "show/set timers", "<> | <pin> list | <pin> [af<alternate function>|none|<option(deprecated)>] | list | show", cliTimer),
 #endif
     CLI_COMMAND_DEF("version", "show version", NULL, cliVersion),
 #ifdef USE_VTX_CONTROL
