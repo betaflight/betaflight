@@ -28,9 +28,7 @@
 
 #include "build/debug.h"
 
-#include "drivers/accgyro/accgyro.h"
 #include "drivers/dma_reqmap.h"
-#include "drivers/system.h"
 
 #include "drivers/io.h"
 #include "io_impl.h"

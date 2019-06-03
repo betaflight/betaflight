@@ -26,14 +26,12 @@
 
 #ifdef USE_ADC
 
-#include "drivers/accgyro/accgyro.h"
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 #include "drivers/rcc.h"
 #include "drivers/sensor.h"
-#include "drivers/system.h"
 
 #include "drivers/adc.h"
 #include "drivers/adc_impl.h"

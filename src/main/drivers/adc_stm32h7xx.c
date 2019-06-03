@@ -28,9 +28,6 @@
 
 #include "build/debug.h"
 
-#include "drivers/accgyro/accgyro.h"
-#include "drivers/system.h"
-
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 #include "drivers/rcc.h"
