@@ -35,13 +35,13 @@
 #define SYM_LON                     0x98
 #define SYM_ALTITUDE                0x7F
 #define SYM_TOTAL_DISTANCE          0x71
+#define SYM_TRIANGLE                0x05
 
 // RSSI
 #define SYM_RSSI                    0x01
 
 // Throttle Position (%)
 #define SYM_THR                     0x04
-#define SYM_THR1                    0x05
 
 // Map mode
 #define SYM_HOME                    0x04
