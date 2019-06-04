@@ -88,15 +88,17 @@ bool loadEEPROMFromExternalFlash(void)
     uint32_t flashStartAddress = flashPartition->startSector * flashGeometry->sectorSize;
 
     uint32_t totalBytesRead = 0;
-    uint32_t bytesRead = 0;
+    int bytesRead = 0;
 
-    bool success;
+    bool success = false;
 
     do {
         bytesRead = flashReadBytes(flashStartAddress + totalBytesRead, &eepromData[totalBytesRead], EEPROM_SIZE - totalBytesRead);
-        totalBytesRead += bytesRead;
-        success = (totalBytesRead == EEPROM_SIZE);
-    } while (!success && bytesRead);
+        if (bytesRead > 0) {
+            totalBytesRead += bytesRead;
+            success = (totalBytesRead == EEPROM_SIZE);
+        }
+    } while (!success && bytesRead > 0);
 
     return success;
 }
