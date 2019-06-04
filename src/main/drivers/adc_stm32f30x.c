@@ -28,7 +28,6 @@
 
 #include "common/utils.h"
 
-#include "drivers/accgyro/accgyro.h"
 #include "drivers/adc_impl.h"
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"

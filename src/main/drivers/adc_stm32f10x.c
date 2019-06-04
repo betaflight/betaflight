@@ -28,7 +28,6 @@
 
 #include "build/build_config.h"
 
-#include "drivers/accgyro/accgyro.h"
 #include "drivers/sensor.h"
 #include "adc.h"
 #include "adc_impl.h"
