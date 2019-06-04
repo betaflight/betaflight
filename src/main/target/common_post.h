@@ -64,6 +64,11 @@
 #undef USE_VARIO
 #endif
 
+#if defined(USE_BARO) && !defined(BARO_EOC_PIN)
+#define BARO_EOC_PIN NONE
+#endif
+
+
 #if !defined(USE_SERIAL_RX)
 #undef USE_SERIALRX_CRSF
 #undef USE_SERIALRX_IBUS

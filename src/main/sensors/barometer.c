@@ -26,6 +26,8 @@
 
 #ifdef USE_BARO
 
+#include "build/debug.h"
+
 #include "common/maths.h"
 
 #include "pg/pg.h"
@@ -102,7 +104,7 @@ void pgResetFn_barometerConfig(barometerConfig_t *barometerConfig)
     barometerConfig->baro_spi_csn = IO_TAG(BARO_CS_PIN);
     barometerConfig->baro_i2c_device = I2C_DEV_TO_CFG(I2CINVALID);
     barometerConfig->baro_i2c_address = 0;
-#elif defined(DEFAULT_BARO_MS5611) || defined(DEFAULT_BARO_BMP280) || defined(DEFAULT_BARO_BMP085)||defined(DEFAULT_BARO_QMP6988)
+#elif defined(DEFAULT_BARO_MS5611) || defined(DEFAULT_BARO_BMP280) || defined(DEFAULT_BARO_BMP085) || defined(DEFAULT_BARO_QMP6988)
     // All I2C devices shares a default config with address = 0 (per device default)
     barometerConfig->baro_bustype = BUSTYPE_I2C;
     barometerConfig->baro_i2c_device = I2C_DEV_TO_CFG(BARO_I2C_INSTANCE);
@@ -117,6 +119,9 @@ void pgResetFn_barometerConfig(barometerConfig_t *barometerConfig)
     barometerConfig->baro_spi_device = SPI_DEV_TO_CFG(SPIINVALID);
     barometerConfig->baro_spi_csn = IO_TAG_NONE;
 #endif
+
+    barometerConfig->baro_eoc_tag = IO_TAG(BARO_EOC_PIN);
+    barometerConfig->baro_xclr_tag = IO_TAG(BARO_XCLR_PIN);
 }
 
 static uint16_t calibratingB = 0;      // baro calibration = get new ground pressure value
@@ -181,15 +186,11 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
     case BARO_BMP085:
 #ifdef USE_BARO_BMP085
         {
-            const bmp085Config_t *bmp085Config = NULL;
+            static bmp085Config_t defaultBMP085Config;
+            defaultBMP085Config.xclrTag = barometerConfig()->baro_xclr_tag;
+            defaultBMP085Config.eocTag = barometerConfig()->baro_eoc_tag;
 
-#if defined(BARO_XCLR_GPIO) && defined(BARO_EOC_GPIO)
-            static const bmp085Config_t defaultBMP085Config = {
-                .xclrIO = IO_TAG(BARO_XCLR_PIN),
-                .eocIO = IO_TAG(BARO_EOC_PIN),
-            };
-            bmp085Config = &defaultBMP085Config;
-#endif
+            static const bmp085Config_t *bmp085Config = &defaultBMP085Config;
 
             if (bmp085Detect(bmp085Config, dev)) {
                 baroHardware = BARO_BMP085;
@@ -324,6 +325,10 @@ uint32_t baroUpdate(void)
 {
     static barometerState_e state = BAROMETER_NEEDS_SAMPLES;
 
+    if (debugMode == DEBUG_BARO) {
+        debug[0] = state;
+    }
+
     switch (state) {
         default:
         case BAROMETER_NEEDS_SAMPLES:
@@ -340,6 +345,13 @@ uint32_t baroUpdate(void)
             baro.baroPressure = baroPressure;
             baro.baroTemperature = baroTemperature;
             baroPressureSum = recalculateBarometerTotal(barometerConfig()->baro_sample_count, baroPressureSum, baroPressure);
+
+            if (debugMode == DEBUG_BARO) {
+                debug[1] = baroTemperature;
+                debug[2] = baroPressure;
+                debug[3] = baroPressureSum;
+            }
+
             state = BAROMETER_NEEDS_SAMPLES;
             return baro.dev.ut_delay;
         break;

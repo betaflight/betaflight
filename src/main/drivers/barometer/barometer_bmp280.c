@@ -52,8 +52,11 @@ typedef struct bmp280_calib_param_s {
     int16_t dig_P7; /* calibration P7 data */
     int16_t dig_P8; /* calibration P8 data */
     int16_t dig_P9; /* calibration P9 data */
-    int32_t t_fine; /* calibration t_fine data */
-} bmp280_calib_param_t;
+} __attribute__((packed)) bmp280_calib_param_t; // packed as we read directly from the device into this structure.
+
+STATIC_ASSERT(sizeof(bmp280_calib_param_t) == BMP280_PRESSURE_TEMPERATURE_CALIB_DATA_LENGTH, bmp280_calibration_structure_incorrectly_packed);
+
+STATIC_UNIT_TESTED int32_t t_fine; /* calibration t_fine data */
 
 static uint8_t bmp280_chip_id = 0;
 STATIC_UNIT_TESTED bmp280_calib_param_t bmp280_cal;
@@ -125,7 +128,7 @@ bool bmp280Detect(baroDev_t *baro)
     }
 
     // read calibration
-    busReadRegisterBuffer(busdev, BMP280_TEMPERATURE_CALIB_DIG_T1_LSB_REG, (uint8_t *)&bmp280_cal, 24);
+    busReadRegisterBuffer(busdev, BMP280_TEMPERATURE_CALIB_DIG_T1_LSB_REG, (uint8_t *)&bmp280_cal, sizeof(bmp280_calib_param_t));
 
     // set oversampling + power mode (forced), and start sampling
     busWriteRegister(busdev, BMP280_CTRL_MEAS_REG, BMP280_MODE);
@@ -180,8 +183,8 @@ static int32_t bmp280_compensate_T(int32_t adc_T)
 
     var1 = ((((adc_T >> 3) - ((int32_t)bmp280_cal.dig_T1 << 1))) * ((int32_t)bmp280_cal.dig_T2)) >> 11;
     var2  = (((((adc_T >> 4) - ((int32_t)bmp280_cal.dig_T1)) * ((adc_T >> 4) - ((int32_t)bmp280_cal.dig_T1))) >> 12) * ((int32_t)bmp280_cal.dig_T3)) >> 14;
-    bmp280_cal.t_fine = var1 + var2;
-    T = (bmp280_cal.t_fine * 5 + 128) >> 8;
+    t_fine = var1 + var2;
+    T = (t_fine * 5 + 128) >> 8;
 
     return T;
 }
@@ -191,7 +194,7 @@ static int32_t bmp280_compensate_T(int32_t adc_T)
 static uint32_t bmp280_compensate_P(int32_t adc_P)
 {
     int64_t var1, var2, p;
-    var1 = ((int64_t)bmp280_cal.t_fine) - 128000;
+    var1 = ((int64_t)t_fine) - 128000;
     var2 = var1 * var1 * (int64_t)bmp280_cal.dig_P6;
     var2 = var2 + ((var1*(int64_t)bmp280_cal.dig_P5) << 17);
     var2 = var2 + (((int64_t)bmp280_cal.dig_P4) << 35);

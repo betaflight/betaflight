@@ -39,22 +39,19 @@
 
 #ifdef USE_BARO
 
-#if defined(BARO_EOC_GPIO)
-
-static IO_t eocIO;
-
 static bool isConversionComplete = false;
-static bool isEOCConnected = true;
+static bool isEOCConnected = false;
 
-// EXTI14 for BMP085 End of Conversion Interrupt
-void bmp085_extiHandler(extiCallbackRec_t* cb)
+#ifdef USE_EXTI
+static IO_t eocIO;
+static extiCallbackRec_t exti;
+
+static void bmp085_extiHandler(extiCallbackRec_t* cb)
 {
     UNUSED(cb);
     isConversionComplete = true;
 }
-
-bool bmp085TestEOCConnected(const bmp085Config_t *config);
-# endif
+#endif
 
 typedef struct {
     int16_t ac1;
@@ -132,30 +129,17 @@ static int32_t bmp085_get_temperature(uint32_t ut);
 static int32_t bmp085_get_pressure(uint32_t up);
 STATIC_UNIT_TESTED void bmp085_calculate(int32_t *pressure, int32_t *temperature);
 
-static IO_t xclrIO;
+static bool bmp085TestEOCConnected(baroDev_t *baro, const bmp085Config_t *config);
 
-#ifdef BARO_XCLR_PIN
+static IO_t xclrIO = IO_NONE;
 #define BMP085_OFF  IOLo(xclrIO);
 #define BMP085_ON   IOHi(xclrIO);
-#else
-#define BMP085_OFF
-#define BMP085_ON
-#endif
 
-
-void bmp085InitXclrIO(const bmp085Config_t *config)
+static void bmp085InitXclrIO(const bmp085Config_t *config)
 {
-    if (!xclrIO && config && config->xclrIO) {
-        xclrIO = IOGetByTag(config->xclrIO);
-        IOInit(xclrIO, OWNER_BARO_CS, 0);
-        IOConfigGPIO(xclrIO, IOCFG_OUT_PP);
-    }
-}
-
-void bmp085Disable(const bmp085Config_t *config)
-{
-    bmp085InitXclrIO(config);
-    BMP085_OFF;
+    xclrIO = IOGetByTag(config->xclrTag);
+    IOInit(xclrIO, OWNER_BARO_XCLR, 0);
+    IOConfigGPIO(xclrIO, IOCFG_OUT_PP);
 }
 
 bool bmp085Detect(const bmp085Config_t *config, baroDev_t *baro)
@@ -164,26 +148,20 @@ bool bmp085Detect(const bmp085Config_t *config, baroDev_t *baro)
     bool ack;
     bool defaultAddressApplied = false;
 
-#if defined(BARO_EOC_GPIO)
-    IO_t eocIO = IO_NONE;
-#endif
-
     if (bmp085InitDone)
         return true;
 
     bmp085InitXclrIO(config);
     BMP085_ON;   // enable baro
 
-#if defined(BARO_EOC_GPIO) && defined(USE_EXTI)
-    if (config && config->eocIO) {
-        eocIO = IOGetByTag(config->eocIO);
-        // EXTI interrupt for barometer EOC
-        IOInit(eocIO, OWNER_BARO_EXTI, 0);
-        IOConfigGPIO(eocIO, Mode_IN_FLOATING);
-        EXTIHandlerInit(&bmp085_extiCallbackRec, bmp085_extiHandler);
-        EXTIConfig(eocIO, &bmp085_extiCallbackRec, NVIC_PRIO_BARO_EXTI, IOCFG_IN_FLOATING, EXTI_TRIGGER_RISING);
-        EXTIEnable(eocIO, true);
-    }
+#ifdef USE_EXTI
+    // EXTI interrupt for barometer EOC
+
+    eocIO = IOGetByTag(config->eocTag);
+    IOInit(eocIO, OWNER_BARO_EOC, 0);
+    EXTIHandlerInit(&exti, bmp085_extiHandler);
+    EXTIConfig(eocIO, &exti, NVIC_PRIO_BARO_EXTI, IOCFG_IN_FLOATING, EXTI_TRIGGER_RISING);
+    EXTIEnable(eocIO, true);
 #else
     UNUSED(config);
 #endif
@@ -215,17 +193,19 @@ bool bmp085Detect(const bmp085Config_t *config, baroDev_t *baro)
             baro->start_up = bmp085_start_up;
             baro->get_up = bmp085_get_up;
             baro->calculate = bmp085_calculate;
-#if defined(BARO_EOC_GPIO)
-            isEOCConnected = bmp085TestEOCConnected(config);
-#endif
+
+            isEOCConnected = bmp085TestEOCConnected(baro, config);
+
             bmp085InitDone = true;
             return true;
         }
     }
 
-#if defined(BARO_EOC_GPIO)
-    if (eocIO)
+#ifdef USE_EXTI
+    if (eocIO) {
+        IORelease(eocIO);
         EXTIRelease(eocIO);
+    }
 #endif
 
     BMP085_OFF;
@@ -292,9 +272,8 @@ static int32_t bmp085_get_pressure(uint32_t up)
 
 static void bmp085_start_ut(baroDev_t *baro)
 {
-#if defined(BARO_EOC_GPIO)
     isConversionComplete = false;
-#endif
+
     busWriteRegister(&baro->busdev, BMP085_CTRL_MEAS_REG, BMP085_T_MEASURE);
 }
 
@@ -302,12 +281,10 @@ static void bmp085_get_ut(baroDev_t *baro)
 {
     uint8_t data[2];
 
-#if defined(BARO_EOC_GPIO)
     // return old baro value if conversion time exceeds datasheet max when EOC is connected
     if ((isEOCConnected) && (!isConversionComplete)) {
         return;
     }
-#endif
 
     busReadRegisterBuffer(&baro->busdev, BMP085_ADC_OUT_MSB_REG, data, 2);
     bmp085_ut = (data[0] << 8) | data[1];
@@ -319,9 +296,7 @@ static void bmp085_start_up(baroDev_t *baro)
 
     ctrl_reg_data = BMP085_P_MEASURE + (bmp085.oversampling_setting << 6);
 
-#if defined(BARO_EOC_GPIO)
     isConversionComplete = false;
-#endif
 
     busWriteRegister(&baro->busdev, BMP085_CTRL_MEAS_REG, ctrl_reg_data);
 }
@@ -334,12 +309,10 @@ static void bmp085_get_up(baroDev_t *baro)
 {
     uint8_t data[3];
 
-#if defined(BARO_EOC_GPIO)
     // return old baro value if conversion time exceeds datasheet max when EOC is connected
     if ((isEOCConnected) && (!isConversionComplete)) {
         return;
     }
-#endif
 
     busReadRegisterBuffer(&baro->busdev, BMP085_ADC_OUT_MSB_REG, data, 3);
     bmp085_up = (((uint32_t) data[0] << 16) | ((uint32_t) data[1] << 8) | (uint32_t) data[2])
@@ -381,13 +354,18 @@ static void bmp085_get_cal_param(busDevice_t *busdev)
     bmp085.cal_param.md = (data[20] << 8) | data[21];
 }
 
-#if defined(BARO_EOC_GPIO)
-bool bmp085TestEOCConnected(const bmp085Config_t *config)
+static bool bmp085TestEOCConnected(baroDev_t *baro, const bmp085Config_t *config)
 {
     UNUSED(config);
 
+#ifdef USE_EXTI
     if (!bmp085InitDone && eocIO) {
-        bmp085_start_ut();
+        // EOC should be low at this point. If not, assume EOC is not working
+        if (IORead(eocIO)) {
+            return false;
+        }
+
+        bmp085_start_ut(baro);
         delayMicroseconds(UT_DELAY * 2); // wait twice as long as normal, just to be sure
 
         // conversion should have finished now so check if EOC is high
@@ -396,8 +374,11 @@ bool bmp085TestEOCConnected(const bmp085Config_t *config)
             return true;
         }
     }
+#else
+    UNUSED(baro);
+#endif
+
     return false; // assume EOC is not connected
 }
-#endif
 
 #endif /* BARO */
