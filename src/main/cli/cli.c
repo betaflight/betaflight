@@ -4810,6 +4810,14 @@ dmaoptEntry_t dmaoptEntryTable[] = {
 #define DMA_OPT_UI_INDEX(i) ((i) + 1)
 #define DMA_OPT_STRING_BUFSIZE 5
 
+#ifdef STM32H7
+#define DMA_CHANREQ_STRING "Request"
+#else
+#define DMA_CHANREQ_STRING "Channel"
+#endif
+
+#define DMASPEC_FORMAT_STRING "DMA%d Stream %d " DMA_CHANREQ_STRING " %d"
+
 static void optToString(int optval, char *buf)
 {
     if (optval == DMA_OPT_UNUSED) {
@@ -4832,7 +4840,7 @@ static void printPeripheralDmaoptDetails(dmaoptEntry_t *entry, int index, const 
             dmaCode = dmaChannelSpec->code;
         }
         printValue(dumpMask, equalsDefault,
-            "# %s %d: DMA%d Stream %d Channel %d",
+            "# %s %d: " DMASPEC_FORMAT_STRING,
             entry->device, DMA_OPT_UI_INDEX(index), DMA_CODE_CONTROLLER(dmaCode), DMA_CODE_STREAM(dmaCode), DMA_CODE_CHANNEL(dmaCode));
     } else if (!(dumpMask & HIDE_UNUSED)) {
         printValue(dumpMask, equalsDefault,
@@ -4892,7 +4900,7 @@ static void printTimerDmaoptDetails(const ioTag_t ioTag, const timerHardware_t *
             if (dmaChannelSpec) {
                 dmaCode = dmaChannelSpec->code;
                 printValue(dumpMask, false,
-                    "# pin %c%02d: DMA%d Stream %d Channel %d",
+                    "# pin %c%02d: " DMASPEC_FORMAT_STRING,
                     IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag),
                     DMA_CODE_CONTROLLER(dmaCode), DMA_CODE_STREAM(dmaCode), DMA_CODE_CHANNEL(dmaCode)
                 );
@@ -5077,11 +5085,11 @@ static void cliDmaopt(char *cmdline)
         const dmaChannelSpec_t *dmaChannelSpec;
         if (entry) {
             for (int opt = 0; (dmaChannelSpec = dmaGetChannelSpecByPeripheral(entry->peripheral, index, opt)); opt++) {
-                cliPrintLinef("# %d: DMA%d Stream %d channel %d", opt, DMA_CODE_CONTROLLER(dmaChannelSpec->code), DMA_CODE_STREAM(dmaChannelSpec->code), DMA_CODE_CHANNEL(dmaChannelSpec->code));
+                cliPrintLinef("# %d: " DMASPEC_FORMAT_STRING, opt, DMA_CODE_CONTROLLER(dmaChannelSpec->code), DMA_CODE_STREAM(dmaChannelSpec->code), DMA_CODE_CHANNEL(dmaChannelSpec->code));
             }
         } else {
             for (int opt = 0; (dmaChannelSpec = dmaGetChannelSpecByTimerValue(timer->tim, timer->channel, opt)); opt++) {
-                cliPrintLinef("# %d: DMA%d Stream %d channel %d", opt, DMA_CODE_CONTROLLER(dmaChannelSpec->code), DMA_CODE_STREAM(dmaChannelSpec->code), DMA_CODE_CHANNEL(dmaChannelSpec->code));
+                cliPrintLinef("# %d: " DMASPEC_FORMAT_STRING, opt, DMA_CODE_CONTROLLER(dmaChannelSpec->code), DMA_CODE_STREAM(dmaChannelSpec->code), DMA_CODE_CHANNEL(dmaChannelSpec->code));
             }
         }
 

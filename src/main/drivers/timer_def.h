@@ -718,7 +718,7 @@
 #elif defined(STM32H7)
 #define DEF_TIM(tim, chan, pin, flags, out, dmaopt, upopt) {            \
     tim,                                                                \
-    IO_TAG(pin),                                                        \
+    TIMER_GET_IO_TAG(pin),                                              \
     DEF_TIM_CHANNEL(CH_ ## chan),                                       \
     flags,                                                              \
     (DEF_TIM_OUTPUT(CH_ ## chan) | out),                                \

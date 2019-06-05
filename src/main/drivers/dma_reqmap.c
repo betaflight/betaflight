@@ -122,7 +122,6 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
 
 #define TC(chan) DEF_TIM_CHANNEL(CH_ ## chan)
 
-//#define REQMAP_TIM(tim, chan) { tim, TC(chan), DEF_TIM_DMA_REQ__BTCH_ ## tim ## _ ## chan }
 #define REQMAP_TIM(tim, chan) { tim, TC(chan), DMA_REQUEST_ ## tim ## _ ## chan }
 
 static const dmaTimerMapping_t dmaTimerMapping[] = {
@@ -444,14 +443,20 @@ const dmaChannelSpec_t *dmaGetChannelSpecByTimer(const timerHardware_t *timer)
     return dmaGetChannelSpecByTimerValue(timer->tim, timer->channel, dmaopt);
 }
 
+// dmaGetOptionByTimer is called by pgResetFn_timerIOConfig to find out dmaopt for pre-configured timer.
+
 dmaoptValue_t dmaGetOptionByTimer(const timerHardware_t *timer)
 {
+#if defined(STM32H7)
+    for (unsigned opt = 0; opt < ARRAYLEN(dmaChannelSpec); opt++) {
+        if (timer->dmaRefConfigured == dmaChannelSpec[opt].ref) {
+                return (dmaoptValue_t)opt;
+        }
+    }
+#else
     for (unsigned i = 0 ; i < ARRAYLEN(dmaTimerMapping); i++) {
         const dmaTimerMapping_t *timerMapping = &dmaTimerMapping[i];
         if (timerMapping->tim == timer->tim && timerMapping->channel == timer->channel) {
-#if defined(STM32H7)
-            return timerMapping->dmaRequest;
-#else
             for (unsigned j = 0; j < MAX_TIMER_DMA_OPTIONS; j++) {
                 const dmaChannelSpec_t *dma = &timerMapping->channelSpec[j];
                 if (dma->ref == timer->dmaRefConfigured
@@ -462,9 +467,9 @@ dmaoptValue_t dmaGetOptionByTimer(const timerHardware_t *timer)
                     return j;
                 }
             }
-#endif
         }
     }
+#endif
 
     return DMA_OPT_UNUSED;
 }
