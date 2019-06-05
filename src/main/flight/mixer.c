@@ -447,10 +447,9 @@ void loadLaunchControlMixer(void)
 }
 #endif
 
-#ifndef USE_QUAD_MIXER_ONLY
-
 static FAST_RAM_ZERO_INIT uint8_t revFlags[16];
-static FAST_RAM_ZERO_INIT uint16_t checkFlags;
+
+#ifndef USE_QUAD_MIXER_ONLY
 
 void mixerConfigureOutput(void)
 {
@@ -482,7 +481,7 @@ void mixerConfigureOutput(void)
 #endif
     mixerResetDisarmedMotors();
     
-    checkFlags = 1;
+    uint16_t checkFlags = 1;
     for (uint16_t i = 0; i < motorCount; i++) {
         revFlags[i] = checkFlags & (mixerConfig()->pwm_outputs_reversed);
         checkFlags <<= 1;
@@ -514,6 +513,11 @@ void mixerConfigureOutput(void)
 #ifdef USE_LAUNCH_CONTROL
     loadLaunchControlMixer();
 #endif
+    uint16_t checkFlags = 1;
+    for (uint16_t i = 0; i < motorCount; i++) {
+        revFlags[i] = checkFlags & (mixerConfig()->pwm_outputs_reversed);
+        checkFlags <<= 1;
+    } 
     mixerResetDisarmedMotors();
 }
 #endif // USE_QUAD_MIXER_ONLY

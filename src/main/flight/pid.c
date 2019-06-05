@@ -89,7 +89,7 @@ static FAST_RAM_ZERO_INIT bool zeroThrottleItermReset;
 PG_REGISTER_WITH_RESET_TEMPLATE(pidAdjust_t, pidAdjust, PG_PID_ADJUST, 0);
 
 PG_RESET_TEMPLATE(pidAdjust_t, pidAdjust,
-    .pid_adjust_aux_channel = 7
+    .pid_adjust_aux_channel = 0
 );
 
 PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 2);
@@ -712,6 +712,9 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 #endif
 }
 
+uint8_t pidAdjustmentChannel;
+float auxPgain;
+
 void pidInit(const pidProfile_t *pidProfile)
 {
     pidSetTargetLooptime(gyro.targetLooptime * pidConfig()->pid_process_denom); // Initialize pid looptime
@@ -720,6 +723,10 @@ void pidInit(const pidProfile_t *pidProfile)
 #ifdef USE_RPM_FILTER
     rpmFilterInit(rpmFilterConfig());
 #endif
+    auxPgain = 1;
+    if (pidAdjustmentChannel < 4) {
+        pidAdjustmentChannel = 0;
+    }    
 }
 
 #ifdef USE_ACRO_TRAINER
@@ -1352,10 +1359,8 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
         // -----calculate P component
         // If enabled vary P and D using the content of AUXn (Heli-like vehicles, gyro-sensitivity channel).
-        float auxPgain = 1;
-        int8_t auxCH = pidAdjust()->pid_adjust_aux_channel;
-        if (auxCH > 3) {
-            auxPgain = ((-0.1f * constrainf(((float)rcData[auxCH]), 1000.0f, 2000.0f)) + 200.0f) / 50.0f;
+        if (pidAdjustmentChannel) {
+            auxPgain = ((-0.1f * constrainf(((float)rcData[pidAdjustmentChannel]), 1000.0f, 2000.0f)) + 200.0f) / 50.0f;
         }
         pidData[axis].P = pidCoefficient[axis].Kp * errorRate * tpaFactorKp * auxPgain;
         if (axis == FD_YAW) {
