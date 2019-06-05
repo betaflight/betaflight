@@ -223,17 +223,13 @@ static void osdFormatCoordinate(char *buff, char sym, int32_t val)
     // We show 7 decimals, so we need to use 12 characters:
     // eg: s-180.1234567z   s=symbol, z=zero terminator, decimal separator  between 0 and 1
 
-    static const int coordinateMaxLength = 13;//12 for the number (4 + dot + 7) + 1 for the symbol
-
-    buff[0] = sym;
-    const int32_t integerPart = val / GPS_DEGREES_DIVIDER;
-    const int32_t decimalPart = labs(val % GPS_DEGREES_DIVIDER);
-    const int written = tfp_sprintf(buff + 1, "%d.%07d", integerPart, decimalPart);
-    // pad with blanks to coordinateMaxLength
-    for (int pos = 1 + written; pos < coordinateMaxLength; ++pos) {
-        buff[pos] = SYM_BLANK;
+    int pos = 0;
+    buff[pos++] = sym;
+    if (val < 0) {
+        buff[pos++] = '-';
+        val = -val;
     }
-    buff[coordinateMaxLength] = '\0';
+    tfp_sprintf(buff + pos, "%d.%07d", val / GPS_DEGREES_DIVIDER, val % GPS_DEGREES_DIVIDER);
 }
 #endif // USE_GPS
 
