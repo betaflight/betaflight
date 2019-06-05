@@ -1420,6 +1420,8 @@ static void cliAdjustmentRange(char *cmdline)
             ptr = nextArg(ptr);
             if (ptr) {
                 val = atoi(ptr);
+		// Was: slot
+		// Keeping the parameter to retain backwards compatibility for the command format.
                 validArgumentCount++;
             }
             ptr = nextArg(ptr);
