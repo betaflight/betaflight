@@ -213,6 +213,8 @@
 //#define UART7_TX_DMA_STREAM     DMA1_Stream6
 //#define UART8_TX_DMA_STREAM     DMA1_Stream7
 
+#define USE_ADC
+
 #define ADC1_INSTANCE ADC1
 #define ADC2_INSTANCE ADC2
 #define ADC3_INSTANCE ADC3
