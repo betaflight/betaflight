@@ -55,8 +55,13 @@ typedef int8_t dmaoptValue_t;
 
 #define DMA_OPT_UNUSED (-1)
 
+#if defined(STM32H7)
+#define MAX_PERIPHERAL_DMA_OPTIONS 16
+#define MAX_TIMER_DMA_OPTIONS 16
+#else
 #define MAX_PERIPHERAL_DMA_OPTIONS 2
 #define MAX_TIMER_DMA_OPTIONS 3
+#endif
 
 dmaoptValue_t dmaoptByTag(ioTag_t ioTag);
 const dmaChannelSpec_t *dmaGetChannelSpecByPeripheral(dmaPeripheral_e device, uint8_t index, int8_t opt);

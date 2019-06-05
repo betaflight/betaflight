@@ -123,10 +123,8 @@ typedef struct timerHardware_s {
 #else
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
     DMA_Stream_TypeDef *dmaRef;
-
     // For F4 and F7, dmaChannel is channel for DMA1 or DMA2.
     // For H7, dmaChannel is DMA request number for DMAMUX
-
     uint32_t dmaChannel; // XXX Can be much smaller (e.g. uint8_t)
 #else
     DMA_Channel_TypeDef *dmaRef;
@@ -137,11 +135,10 @@ typedef struct timerHardware_s {
     // TIMUP
 #ifdef STM32F3
     DMA_Channel_TypeDef *dmaTimUPRef;
-#elif defined(STM32H7)
-    DMA_Stream_TypeDef *dmaTimUPRef;
-    uint8_t dmaTimUPRequest;
 #else
     DMA_Stream_TypeDef *dmaTimUPRef;
+    // For F4 and F7, dmaTimUpChannel is channel for DMA1 or DMA2.
+    // For H7, dmaTimUpChannel is DMA request number for DMAMUX
     uint32_t dmaTimUPChannel;
 #endif
     uint8_t dmaTimUPIrqHandler;

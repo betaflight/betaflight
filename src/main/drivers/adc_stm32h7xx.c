@@ -28,6 +28,7 @@
 
 #include "build/debug.h"
 
+#include "drivers/dma_reqmap.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 #include "drivers/rcc.h"
@@ -82,20 +83,26 @@ const adcDevice_t adcHardware[ADCDEV_COUNT] = {
     {
         .ADCx = ADC1_INSTANCE,
         .rccADC = RCC_AHB1(ADC12),
+#if !defined(USE_DMA_SPEC)
         .DMAy_Streamx = ADC1_DMA_STREAM,
         .channel = DMA_REQUEST_ADC1,
+#endif
     },
     { .ADCx = ADC2_INSTANCE,
         .rccADC = RCC_AHB1(ADC12),
+#if !defined(USE_DMA_SPEC)
         .DMAy_Streamx = ADC2_DMA_STREAM,
         .channel = DMA_REQUEST_ADC2,
+#endif
     },
     // ADC3 can be serviced by BDMA also, but we settle for DMA1 or 2 (for now).
     {
         .ADCx = ADC3_INSTANCE,
         .rccADC = RCC_AHB4(ADC3),
+#if !defined(USE_DMA_SPEC)
         .DMAy_Streamx = ADC3_DMA_STREAM,
         .channel = DMA_REQUEST_ADC3,
+#endif
     }
 };
 
@@ -266,7 +273,11 @@ void adcInit(const adcConfig_t *config)
             // Find an ADC device that can handle this input pin
 
             for (dev = 0; dev < ADCDEV_COUNT; dev++) {
-                if (!(adcDevice[dev].ADCx && adcDevice[dev].DMAy_Streamx)) {
+                if (!adcDevice[dev].ADCx 
+#ifndef USE_DMA_SPEC
+                     || !adcDevice[dev].DMAy_Streamx
+#endif
+                   ) {
                     // Instance not activated
                     continue;
                 }
@@ -357,11 +368,22 @@ void adcInit(const adcConfig_t *config)
 
         // Configure DMA for this ADC peripheral
 
-        dmaIdentifier_e dmaIdentifier = dmaGetIdentifier(adc->DMAy_Streamx);
-        dmaInit(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev));
+        dmaIdentifier_e dmaIdentifier;
+#ifdef USE_DMA_SPEC
+        const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_ADC, dev, config->dmaopt[dev]);
 
+        if (!dmaSpec) {
+            return;
+        }
+
+        adc->DmaHandle.Instance                 = dmaSpec->ref;
+        adc->DmaHandle.Init.Request             = dmaSpec->channel;
+        dmaIdentifier = dmaGetIdentifier(dmaSpec->ref);
+#else
+        dmaIdentifier = dmaGetIdentifier(adc->DMAy_Streamx);
         adc->DmaHandle.Instance                 = adc->DMAy_Streamx;
         adc->DmaHandle.Init.Request             = adc->channel;
+#endif
         adc->DmaHandle.Init.Direction           = DMA_PERIPH_TO_MEMORY;
         adc->DmaHandle.Init.PeriphInc           = DMA_PINC_DISABLE;
         adc->DmaHandle.Init.MemInc              = DMA_MINC_ENABLE;
@@ -374,6 +396,8 @@ void adcInit(const adcConfig_t *config)
 
         HAL_DMA_DeInit(&adc->DmaHandle);
         HAL_DMA_Init(&adc->DmaHandle);
+
+        dmaInit(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev));
   
         // Associate the DMA handle
 
