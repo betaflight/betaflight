@@ -86,12 +86,6 @@ static FAST_RAM float antiGravityOsdCutoff = 1.0f;
 static FAST_RAM_ZERO_INIT bool antiGravityEnabled;
 static FAST_RAM_ZERO_INIT bool zeroThrottleItermReset;
 
-PG_REGISTER_WITH_RESET_TEMPLATE(pidAdjust_t, pidAdjust, PG_PID_ADJUST, 0);
-
-PG_RESET_TEMPLATE(pidAdjust_t, pidAdjust,
-    .pid_adjust_aux_channel = 0
-);
-
 PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 2);
 
 #ifdef STM32F10X
@@ -111,13 +105,15 @@ PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 2);
 #ifdef USE_RUNAWAY_TAKEOFF
 PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
     .pid_process_denom = PID_PROCESS_DENOM_DEFAULT,
+    .pid_adjust_aux_channel = 0,
     .runaway_takeoff_prevention = true,
     .runaway_takeoff_deactivate_throttle = 20,  // throttle level % needed to accumulate deactivation time
     .runaway_takeoff_deactivate_delay = 500     // Accumulated time (in milliseconds) before deactivation in successful takeoff
 );
 #else
 PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
-    .pid_process_denom = PID_PROCESS_DENOM_DEFAULT
+    .pid_process_denom = PID_PROCESS_DENOM_DEFAULT,
+    .pid_adjust_aux_channel = 0
 );
 #endif
 
@@ -724,6 +720,7 @@ void pidInit(const pidProfile_t *pidProfile)
     rpmFilterInit(rpmFilterConfig());
 #endif
     auxPgain = 1;
+    pidAdjustmentChannel = pidConfig()->pid_adjust_aux_channel;
     if (pidAdjustmentChannel < 4) {
         pidAdjustmentChannel = 0;
     }    
