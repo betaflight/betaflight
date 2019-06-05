@@ -60,6 +60,8 @@
 
 #include "pid.h"
 
+#include "rx/rx.h"
+
 const char pidNames[] =
     "ROLL;"
     "PITCH;"
@@ -83,6 +85,12 @@ static FAST_RAM_ZERO_INIT uint16_t itermAcceleratorGain;
 static FAST_RAM float antiGravityOsdCutoff = 1.0f;
 static FAST_RAM_ZERO_INIT bool antiGravityEnabled;
 static FAST_RAM_ZERO_INIT bool zeroThrottleItermReset;
+
+PG_REGISTER_WITH_RESET_TEMPLATE(pidAdjust_t, pidAdjust, PG_PID_ADJUST, 0);
+
+PG_RESET_TEMPLATE(pidAdjust_t, pidAdjust,
+    .pid_adjust_aux_channel = 7
+);
 
 PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 2);
 
@@ -1343,7 +1351,13 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         // b = 1 and only c (feedforward weight) can be tuned (amount derivative on measurement or error).
 
         // -----calculate P component
-        pidData[axis].P = pidCoefficient[axis].Kp * errorRate * tpaFactorKp;
+        // If enabled vary P and D using the content of AUXn (Heli-like vehicles, gyro-sensitivity channel).
+        float auxPgain = 1;
+        int8_t auxCH = pidAdjust()->pid_adjust_aux_channel;
+        if (auxCH > 3) {
+            auxPgain = ((-0.1f * constrainf(((float)rcData[auxCH]), 1000.0f, 2000.0f)) + 200.0f) / 50.0f;
+        }
+        pidData[axis].P = pidCoefficient[axis].Kp * errorRate * tpaFactorKp * auxPgain;
         if (axis == FD_YAW) {
             pidData[axis].P = ptermYawLowpassApplyFn((filter_t *) &ptermYawLowpass, pidData[axis].P);
         }
@@ -1403,7 +1417,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
                 }
             }
 #endif
-            pidData[axis].D = pidCoefficient[axis].Kd * delta * tpaFactor * dMinFactor;
+            pidData[axis].D = pidCoefficient[axis].Kd * delta * tpaFactor * dMinFactor * auxPgain;
         } else {
             pidData[axis].D = 0;
         }

@@ -184,6 +184,10 @@ typedef struct pidConfig_s {
 
 PG_DECLARE(pidConfig_t, pidConfig);
 
+typedef struct pidAdjust_s {
+    uint8_t pid_adjust_aux_channel;              // RC channel-No (0-3:off / 4-7:AUX1-AUX4) used to adjust PID according to the flight mode (helicopter like vehicles)
+} pidAdjust_t;
+
 union rollAndPitchTrims_u;
 void pidController(const pidProfile_t *pidProfile, timeUs_t currentTimeUs);
 

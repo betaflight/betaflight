@@ -115,6 +115,13 @@ int gcd(int num, int denom)
 
 float powerf(float base, int exp) {
     float result = base;
+    if (exp == 0) {
+        result = 1;
+        return result;
+    } else
+        if (exp == 1) {
+            return result;
+        }    
     for (int count = 1; count < exp; count++) result *= base;
 
     return result;

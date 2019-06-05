@@ -73,6 +73,7 @@ PG_RESET_TEMPLATE(mixerConfig_t, mixerConfig,
     .mixerMode = DEFAULT_MIXER,
     .yaw_motors_reversed = false,
     .crashflip_motor_percent = 0,
+    .pwm_outputs_reversed = 0,
 );
 
 PG_REGISTER_WITH_RESET_FN(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 1);
@@ -448,6 +449,9 @@ void loadLaunchControlMixer(void)
 
 #ifndef USE_QUAD_MIXER_ONLY
 
+static FAST_RAM_ZERO_INIT uint8_t revFlags[16];
+static FAST_RAM_ZERO_INIT uint16_t checkFlags;
+
 void mixerConfigureOutput(void)
 {
     motorCount = 0;
@@ -477,6 +481,12 @@ void mixerConfigureOutput(void)
     loadLaunchControlMixer();
 #endif
     mixerResetDisarmedMotors();
+    
+    checkFlags = 1;
+    for (uint16_t i = 0; i < motorCount; i++) {
+        revFlags[i] = checkFlags & (mixerConfig()->pwm_outputs_reversed);
+        checkFlags <<= 1;
+    } 
 }
 
 void mixerLoadMix(int index, motorMixer_t *customMixers)
@@ -516,6 +526,14 @@ void mixerResetDisarmedMotors(void)
     }
 }
 
+static FAST_RAM_ZERO_INIT float throttle = 0;
+static FAST_RAM_ZERO_INIT float loggingThrottle = 0;
+static FAST_RAM_ZERO_INIT float motorOutputMin;
+static FAST_RAM_ZERO_INIT float motorRangeMin;
+static FAST_RAM_ZERO_INIT float motorRangeMax;
+static FAST_RAM_ZERO_INIT float motorOutputRange;
+static FAST_RAM_ZERO_INIT int8_t motorOutputMixSign;
+
 void writeMotors(void)
 {
 #ifdef USE_PWM_OUTPUT
@@ -526,6 +544,13 @@ void writeMotors(void)
         }
 #endif
         for (int i = 0; i < motorCount; i++) {
+            if (revFlags[i]) {
+                if (motor[i] == disarmMotorOutput) {
+                    motor[i] = motorOutputHigh;
+                } else {
+                    motor[i] = (motorOutputHigh + motorOutputLow) - motor[i];
+                }
+            }
             pwmWriteMotor(i, motor[i]);
         }
         pwmCompleteMotorUpdate(motorCount);
@@ -555,14 +580,6 @@ void stopPwmAllMotors(void)
     delayMicroseconds(1500);
 #endif
 }
-
-static FAST_RAM_ZERO_INIT float throttle = 0;
-static FAST_RAM_ZERO_INIT float loggingThrottle = 0;
-static FAST_RAM_ZERO_INIT float motorOutputMin;
-static FAST_RAM_ZERO_INIT float motorRangeMin;
-static FAST_RAM_ZERO_INIT float motorRangeMax;
-static FAST_RAM_ZERO_INIT float motorOutputRange;
-static FAST_RAM_ZERO_INIT int8_t motorOutputMixSign;
 
 static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
 {
