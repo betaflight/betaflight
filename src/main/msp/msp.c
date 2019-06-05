@@ -1082,7 +1082,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
     case MSP_ADJUSTMENT_RANGES:
         for (int i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
             const adjustmentRange_t *adjRange = adjustmentRanges(i);
-            sbufWriteU8(dst, adjRange->adjustmentIndex);
+            sbufWriteU8(dst, 0); // was adjRange->adjustmentIndex
             sbufWriteU8(dst, adjRange->auxChannelIndex);
             sbufWriteU8(dst, adjRange->range.startStep);
             sbufWriteU8(dst, adjRange->range.endStep);
@@ -1826,17 +1826,13 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         i = sbufReadU8(src);
         if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
             adjustmentRange_t *adjRange = adjustmentRangesMutable(i);
-            i = sbufReadU8(src);
-            if (i < MAX_SIMULTANEOUS_ADJUSTMENT_COUNT) {
-                adjRange->adjustmentIndex = i;
-                adjRange->auxChannelIndex = sbufReadU8(src);
-                adjRange->range.startStep = sbufReadU8(src);
-                adjRange->range.endStep = sbufReadU8(src);
-                adjRange->adjustmentConfig = sbufReadU8(src);
-                adjRange->auxSwitchChannelIndex = sbufReadU8(src);
-            } else {
-                return MSP_RESULT_ERROR;
-            }
+            sbufReadU8(src); // was adjRange->adjustmentIndex
+            adjRange->auxChannelIndex = sbufReadU8(src);
+            adjRange->range.startStep = sbufReadU8(src);
+            adjRange->range.endStep = sbufReadU8(src);
+            adjRange->adjustmentConfig = sbufReadU8(src);
+            adjRange->auxSwitchChannelIndex = sbufReadU8(src);
+
             activeAdjustmentRangeReset();
         } else {
             return MSP_RESULT_ERROR;

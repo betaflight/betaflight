@@ -1368,7 +1368,7 @@ static void cliSerialPassthrough(char *cmdline)
 
 static void printAdjustmentRange(dumpFlags_t dumpMask, const adjustmentRange_t *adjustmentRanges, const adjustmentRange_t *defaultAdjustmentRanges, const char *headingStr)
 {
-    const char *format = "adjrange %u %u %u %u %u %u %u %u %u";
+    const char *format = "adjrange %u 0 %u %u %u %u %u %u %u";
     // print out adjustment ranges channel settings
     headingStr = cliPrintSectionHeading(dumpMask, false, headingStr);
     for (uint32_t i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
@@ -1380,7 +1380,6 @@ static void printAdjustmentRange(dumpFlags_t dumpMask, const adjustmentRange_t *
             headingStr = cliPrintSectionHeading(dumpMask, !equalsDefault, headingStr);
             cliDefaultPrintLinef(dumpMask, equalsDefault, format,
                 i,
-                arDefault->adjustmentIndex,
                 arDefault->auxChannelIndex,
                 MODE_STEP_TO_CHANNEL_VALUE(arDefault->range.startStep),
                 MODE_STEP_TO_CHANNEL_VALUE(arDefault->range.endStep),
@@ -1392,7 +1391,6 @@ static void printAdjustmentRange(dumpFlags_t dumpMask, const adjustmentRange_t *
         }
         cliDumpPrintLinef(dumpMask, equalsDefault, format,
             i,
-            ar->adjustmentIndex,
             ar->auxChannelIndex,
             MODE_STEP_TO_CHANNEL_VALUE(ar->range.startStep),
             MODE_STEP_TO_CHANNEL_VALUE(ar->range.endStep),
@@ -1406,7 +1404,7 @@ static void printAdjustmentRange(dumpFlags_t dumpMask, const adjustmentRange_t *
 
 static void cliAdjustmentRange(char *cmdline)
 {
-    const char *format = "adjrange %u %u %u %u %u %u %u %u %u";
+    const char *format = "adjrange %u 0 %u %u %u %u %u %u %u";
     int i, val = 0;
     const char *ptr;
 
@@ -1422,10 +1420,9 @@ static void cliAdjustmentRange(char *cmdline)
             ptr = nextArg(ptr);
             if (ptr) {
                 val = atoi(ptr);
-                if (val >= 0 && val < MAX_SIMULTANEOUS_ADJUSTMENT_COUNT) {
-                    ar->adjustmentIndex = val;
-                    validArgumentCount++;
-                }
+		// Was: slot
+		// Keeping the parameter to retain backwards compatibility for the command format.
+                validArgumentCount++;
             }
             ptr = nextArg(ptr);
             if (ptr) {
@@ -1482,7 +1479,6 @@ static void cliAdjustmentRange(char *cmdline)
 
             cliDumpPrintLinef(0, false, format,
                 i,
-                ar->adjustmentIndex,
                 ar->auxChannelIndex,
                 MODE_STEP_TO_CHANNEL_VALUE(ar->range.startStep),
                 MODE_STEP_TO_CHANNEL_VALUE(ar->range.endStep),
@@ -5806,7 +5802,7 @@ static void cliHelp(char *cmdline);
 
 // should be sorted a..z for bsearch()
 const clicmd_t cmdTable[] = {
-    CLI_COMMAND_DEF("adjrange", "configure adjustment ranges", NULL, cliAdjustmentRange),
+    CLI_COMMAND_DEF("adjrange", "configure adjustment ranges", "<index> <unused> <range channel> <start> <end> <function> <select channel> [<center> <scale>]", cliAdjustmentRange),
     CLI_COMMAND_DEF("aux", "configure modes", "<index> <mode> <aux> <start> <end> <logic>", cliAux),
 #ifdef USE_CLI_BATCH
     CLI_COMMAND_DEF("batch", "start or end a batch of commands", "start | end", cliBatch),
