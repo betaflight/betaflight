@@ -787,8 +787,8 @@ static void osdElementGpsHomeDirection(osdElementParms_t *element)
             const int h = GPS_directionToHome - DECIDEGREES_TO_DEGREES(attitude.values.yaw);
             element->buff[0] = osdGetDirectionSymbolFromHeading(h);
         } else {
-            // We don't have a HOME symbol in the font, by now we use this
-            element->buff[0] = SYM_THR1;
+            // We use this symbol when we are at HOME position
+            element->buff[0] = '#';
         }
 
     } else {
@@ -1073,9 +1073,7 @@ static void osdElementStickOverlay(osdElementParms_t *element)
 
 static void osdElementThrottlePosition(osdElementParms_t *element)
 {
-    element->buff[0] = SYM_THR;
-    element->buff[1] = SYM_THR1;
-    tfp_sprintf(element->buff + 2, "%3d", calculateThrottlePercent());
+    tfp_sprintf(element->buff, "%c%3d", SYM_THR, calculateThrottlePercent());
 }
 
 static void osdElementTimer(osdElementParms_t *element)
