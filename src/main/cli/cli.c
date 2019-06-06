@@ -2934,10 +2934,20 @@ static void cliOsdChip(char *cmdline)
 }
 static void cliOsdRead(char *cmdline)
 {
+    // run osdread without arguments will increment through the font
+    static uint16_t staticIndex=1;
+    unsigned charAddr;
     if (isEmpty(cmdline)) {
-        cliPrintLine("Please specify a character number (0-511) ");
+        //cliPrintLine("Please specify a character number (0-511) ");
+       charAddr = staticIndex;
+       cliPrintLinef("Asking for char: %d", staticIndex);
+       staticIndex++;
+       if (staticIndex > 512) { staticIndex = 0; }
     } else {
-        unsigned charAddr = atoi(cmdline);
+        //unsigned charAddr = atoi(cmdline);
+        charAddr = atoi(cmdline);
+    }
+    if (true) {
         uint8_t font_data[64];
         max7456ReadNvm(charAddr, font_data);
         unsigned lineIndex = 0;
@@ -2946,10 +2956,10 @@ static void cliOsdRead(char *cmdline)
             //Processing two bits of information at a time with essentially a truth table
             for (int bitIndex=6;bitIndex>=0;bitIndex-=2) {
                 bitBuf = (font_data[i] >> bitIndex) & 0x03;
-                if (bitBuf==0) { cliPrint("&#x1f311;");} // 00 is black
-                else if (bitBuf==1) { cliPrint("&#x1f30c;");} //01 is transparent, galaxy emoji
-                else if (bitBuf==2) { cliPrint("&#x1f317;");} //10 is white
-                else { cliPrint("&#x26d4;");} // 11 would be transparent, in practice. But red emoji
+                if (bitBuf==0) { cliPrint("&#x1f311;"); } // 00 is black
+                else if (bitBuf==1) { cliPrint("&#x1f30c;"); } //01 is transparent, galaxy emoji
+                else if (bitBuf==2) { cliPrint("&#x1f317;"); } //10 is white
+                else { cliPrint("&#x26d4;"); } // 11 would be transparent, in practice. But red emoji
 
             }
             lineIndex++;
@@ -2957,7 +2967,36 @@ static void cliOsdRead(char *cmdline)
             if(i==53) { cliPrintLinefeed(); } // Extra line between the character memory and extra fluff
         }
         cliPrintLinef("font_data[63] = %d",font_data[63]);
+        cliPrintLinef("VM0      [57] = %d",font_data[57]);
+        cliPrintLinef("CMAH     [58] = %d",font_data[58]);
+        cliPrintLinef("font_data[59] = %d",font_data[59]);
+        cliPrintLinef("STAT     [60] = %d",font_data[60]);
+        cliPrintLinef("font_data[61] = %d",font_data[61]);
+        cliPrintLinef("font_data[62] = %d",font_data[62]);
     }
+}
+static void cliOsdReadShadow(char *cmdline)
+{
+    UNUSED(cmdline);
+    uint8_t font_data[64];
+    max7456ReadShadow(font_data);
+    unsigned lineIndex = 0;
+    unsigned bitBuf=0;
+    for (int i=0;i<64;i++) {
+        //Processing two bits of information at a time with essentially a truth table
+        for (int bitIndex=6;bitIndex>=0;bitIndex-=2) {
+            bitBuf = (font_data[i] >> bitIndex) & 0x03;
+            if (bitBuf==0) { cliPrint("&#x1f311;"); } // 00 is black
+            else if (bitBuf==1) { cliPrint("&#x1f30c;"); } //01 is transparent, galaxy emoji
+            else if (bitBuf==2) { cliPrint("&#x1f317;"); } //10 is white
+            else { cliPrint("&#x26d4;"); } // 11 would be transparent, in practice. But red emoji
+        }
+        lineIndex++;
+        if(lineIndex>2) { cliPrintLinefeed(); lineIndex=0; }
+        if(i==53) { cliPrintLinefeed(); } // Extra line between the character memory and extra fluff
+    }
+    cliPrintLinef("font_data[63] = %d",font_data[63]);
+    cliPrintLinef("font_data[62] = %d",font_data[62]);
 }
 #endif
 
@@ -6089,6 +6128,7 @@ const clicmd_t cmdTable[] = {
 #ifdef USE_MAX7456_EXTENDED
     CLI_COMMAND_DEF("osdchip", "report if extended characters are available", NULL, cliOsdChip),
     CLI_COMMAND_DEF("osdread", "read an osd character", NULL, cliOsdRead),
+    CLI_COMMAND_DEF("osdshadow", "read osd shadow buffer", NULL, cliOsdReadShadow),
 #endif
 #ifndef MINIMAL_CLI
     CLI_COMMAND_DEF("play_sound", NULL, "[<index>]", cliPlaySound),

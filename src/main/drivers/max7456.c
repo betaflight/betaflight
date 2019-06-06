@@ -130,6 +130,7 @@
 #define END_STRING              0xFF
 
 #define MAX7456ADD_READ         0x80
+#define MAX7456ADD_READ_DMM     0x84
 #define MAX7456ADD_VM0          0x00  //0b0011100// 00 // 00             ,0011100
 #define MAX7456ADD_VM1          0x01
 #define MAX7456ADD_HOS          0x02
@@ -861,17 +862,59 @@ void max7456ReadNvm(uint16_t char_address, uint8_t *font_data)
     max7456Lock = true; // This should pause the OSD task
     fontIsLoading = true;
     __spiBusTransactionBegin(busdev);
+    //uint8_t checkDMM = 0;
+    //checkDMM = max7456Send(MAX7456ADD_READ_DMM,0x00);
+    uint8_t retriesOne = 0;
+    while ((max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00) { retriesOne++; }
     max7456Send(MAX7456ADD_VM0, 0);
+    uint8_t checkSTAT = max7456Send(MAX7456ADD_STAT, 0x00);
+    uint8_t retriesTwo = 0;
+    while ((max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00) { retriesTwo++; }
+    uint8_t checkVM0 = 0;
+    checkVM0 = max7456Send(MAX7456ADD_READ,0x00);
     max7456Send(MAX7456ADD_CMAH, (char_address & 0xff));
     max7456Send(MAX7456ADD_CMAL, (char_address & 0x100) ? 0x40 : 0);
+    uint8_t checkCMAH = 0;
+    checkCMAH = max7456Send(MAX7456ADD_READ | MAX7456ADD_CMAH, 0x00);
     max7456Send(MAX7456ADD_CMM, READ_NVR );
     //delay(60); // MAX7456 Datasheet asks for 0.5 microseconds, AT7456E asks for 30
-    while ((max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00);   // wait until bit 5 in the status register returns to 0 (12ms)
+    // wait until bit 5 in the status register returns to 0 (12ms)
+    uint8_t retriesThree = 0;
+    while ((max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00) { retriesThree++; }
     for (int x = 0; x < 64; x++) {
         max7456Send(MAX7456ADD_CMAL, x);
         font_data[x] = max7456Send(MAX7456ADD_CMDO_R, 0xFF);
     }
-    //font_data[54]=max7456Send(MAX7456ADD_STAT, 0x00);
+    font_data[57]=checkVM0;
+    font_data[58]=checkCMAH;
+    font_data[59]=retriesOne;
+    font_data[60]=checkSTAT;
+    font_data[61]=retriesTwo;
+    font_data[62]=retriesThree;
+    __spiBusTransactionEnd(busdev);
+
+    max7456Lock = false;
+    fontIsLoading = false;
+}
+void max7456ReadShadow(uint8_t *font_data)
+{
+#ifdef MAX7456_DMA_CHANNEL_TX
+    while (dmaTransactionInProgress);
+#endif
+    while (max7456Lock);
+    max7456Lock = true; // This should pause the OSD task
+    fontIsLoading = true;
+    __spiBusTransactionBegin(busdev);
+    while ((max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00);
+    max7456Send(MAX7456ADD_VM0, 0);
+    // wait until bit 5 in the status register returns to 0 (12ms)
+    uint8_t retriesTwo = 0;
+    while ((max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00) { retriesTwo++; }
+    for (int x = 0; x < 64; x++) {
+        max7456Send(MAX7456ADD_CMAL, x);
+        font_data[x] = max7456Send(MAX7456ADD_CMDO_R, 0xFF);
+    }
+    font_data[62]=retriesTwo;
     __spiBusTransactionEnd(busdev);
 
     max7456Lock = false;
