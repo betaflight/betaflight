@@ -144,12 +144,6 @@
 
 extern uint32_t SystemCoreClock;
 
-#ifdef EEPROM_IN_FILE
-extern uint8_t eepromData[EEPROM_SIZE];
-#define __config_start (*eepromData)
-#define __config_end (*ARRAYEND(eepromData))
-#endif
-
 typedef enum
 {
     Mode_TEST = 0x0,
