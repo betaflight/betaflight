@@ -77,13 +77,8 @@ bool ws2811LedStripHardwareInit(ioTag_t ioTag)
     uint32_t dmaChannel = dmaSpec->channel;
 #else
     dmaStream_t *dmaRef = timerHardware->dmaRef;
-#ifdef STM32H7
-    uint32_t dmaChannel = timerHardware->dmaRequest;
-#else
     uint32_t dmaChannel = timerHardware->dmaChannel;
 #endif
-#endif
-
 
     if (dmaRef == NULL) {
         return false;
