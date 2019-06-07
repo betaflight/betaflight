@@ -787,8 +787,7 @@ static void osdElementGpsHomeDirection(osdElementParms_t *element)
             const int h = GPS_directionToHome - DECIDEGREES_TO_DEGREES(attitude.values.yaw);
             element->buff[0] = osdGetDirectionSymbolFromHeading(h);
         } else {
-            // We use this symbol when we are at HOME position
-            element->buff[0] = '#';
+            element->buff[0] = SYM_OVER_HOME;
         }
 
     } else {
