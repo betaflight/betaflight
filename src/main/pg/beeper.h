@@ -32,5 +32,5 @@ typedef struct beeperConfig_s {
 #define NUM_DSHOT_BEACON 5
 #define DSHOT_BEEP_CYCLE1 (NUM_DSHOT_BEACON + 1)
 #define DSHOT_BEEP_CYCLE2 (NUM_DSHOT_BEACON + 2)
-
+#define DSHOT_BEEP_MAX DSHOT_BEEP_CYCLE2
 PG_DECLARE(beeperConfig_t, beeperConfig);
