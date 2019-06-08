@@ -29,4 +29,8 @@ typedef struct beeperConfig_s {
     uint32_t dshotBeaconOffFlags;
 } beeperConfig_t;
 
+#define NUM_DSHOT_BEACON 5
+#define DSHOT_BEEP_CYCLE1 (NUM_DSHOT_BEACON + 1)
+#define DSHOT_BEEP_CYCLE2 (NUM_DSHOT_BEACON + 2)
+
 PG_DECLARE(beeperConfig_t, beeperConfig);

@@ -412,13 +412,13 @@ void beeperUpdate(timeUs_t currentTimeUs)
             if ((currentTimeUs - getLastDisarmTimeUs() > DSHOT_BEACON_GUARD_DELAY_US) && !isTryingToArm()) {
                 static uint8_t dshotBeaconCycle = 1;
                 lastDshotBeaconCommandTimeUs = currentTimeUs;
-                if (beeperConfig()->dshotBeaconTone == 6)
+                if (beeperConfig()->dshotBeaconTone == DSHOT_BEEP_CYCLE1)
                 {
                     dshotBeaconCycle++;
-                    pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), ((dshotBeaconCycle/15) % 5) + 1, false);
-                } else if (beeperConfig()->dshotBeaconTone == 7) {
+                    pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), ((dshotBeaconCycle/15) % NUM_DSHOT_BEACON) + 1, false);
+                } else if (beeperConfig()->dshotBeaconTone == DSHOT_BEEP_CYCLE2) {
                     dshotBeaconCycle++;
-                    pwmWriteDshotCommand((dshotBeaconCycle % getMotorCount()), getMotorCount(), (dshotBeaconCycle % 5) + 1, false);
+                    pwmWriteDshotCommand((dshotBeaconCycle % getMotorCount()), getMotorCount(), (dshotBeaconCycle % NUM_DSHOT_BEACON) + 1, false);
                 }
                 else {
                     pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), beeperConfig()->dshotBeaconTone, false);
