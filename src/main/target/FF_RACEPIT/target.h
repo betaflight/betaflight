@@ -23,6 +23,8 @@
 #define USBD_PRODUCT_STRING     "RacePit"
 #define USE_TARGET_CONFIG
 
+#define USE_HARDWARE_REVISION_DETECTION
+
 /*--------------LED----------------*/
 #define LED0_PIN                PB9
 #define LED1_PIN                PB8
@@ -56,8 +58,6 @@
 
 #define GYRO_1_CS_PIN           SPI1_NSS_PIN
 #define GYRO_1_SPI_INSTANCE     SPI1
-
-#define GYRO_1_ALIGN            CW90_DEG_FLIP
 /*---------------------------------*/
 
 

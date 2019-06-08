@@ -20,36 +20,38 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "platform.h"
 
-#ifdef USE_TARGET_CONFIG
+#include "build/build_config.h"
 
-#include "telemetry/telemetry.h"
-
-#include "pg/pinio.h"
-#include "pg/piniobox.h"
+#include "drivers/io.h"
+#include "drivers/time.h"
 
 #include "hardware_revision.h"
 
-#include "sensors/gyro.h"
+#define HW_PIN PC5
 
-#include "pg/gyrodev.h"
+uint8_t hardwareRevision = FF_RACEPIT_UNKNOWN;
 
-void targetConfiguration(void)
-{	
-    if (hardwareRevision == FF_RACEPIT_REV_1) {
-        gyroDeviceConfigMutable(0)->align = CW180_DEG;
+static IO_t HWDetectPinA = IO_NONE;
+
+void detectHardwareRevision(void)
+{
+    HWDetectPinA = IOGetByTag(IO_TAG(HW_PIN));
+    IOInit(HWDetectPinA, OWNER_SYSTEM, 0);
+    IOConfigGPIO(HWDetectPinA, IOCFG_IPU);
+
+    delayMicroseconds(10);  // allow configuration to settle
+
+    if (!IORead(HWDetectPinA)) {
+        hardwareRevision = FF_RACEPIT_REV_1;
+    } else {
+        hardwareRevision = FF_RACEPIT_REV_2;
     }
-    else {
-        gyroDeviceConfigMutable(0)->align = CW90_DEG_FLIP;
-    }
-
-    telemetryConfigMutable()->halfDuplex = false;
-
-    pinioConfigMutable()->config[1] = PINIO_CONFIG_OUT_INVERTED | PINIO_CONFIG_MODE_OUT_PP;
-	
-    pinioBoxConfigMutable()->permanentId[0] = 40;
-    pinioBoxConfigMutable()->permanentId[1] = 41;
 }
-#endif
+
+void updateHardwareRevision(void)
+{
+}
