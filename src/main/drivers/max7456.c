@@ -821,8 +821,9 @@ void max7456WriteNvm(uint16_t char_address, const uint8_t *font_data)
     __spiBusTransactionBegin(busdev);
     // disable display
     fontIsLoading = true;
+    while ((max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00);
     max7456Send(MAX7456ADD_VM0, 0);
-
+    while ((max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00);
     max7456Send(MAX7456ADD_CMAH, char_address); // set start address high
 
     for (int x = 0; x < 64; x++) {
@@ -835,9 +836,11 @@ void max7456WriteNvm(uint16_t char_address, const uint8_t *font_data)
 #endif
     }
 #if 0
+    // CMAL needs to have certain bit set high before WRITE_NVR
     max7456Send(MAX7456ADD_CMAL, (char_address & 0x100) ? 0x40 : 0);
 #else
-    //put the char number into the off screen part of the character
+    // CMAL needs to have certain bit set high before WRITE_NVR
+    // and put the char number into the off screen part of the character
     max7456Send(MAX7456ADD_CMAL, (char_address & 0x100) ? 0x7F : 0x3F);
     max7456Send(MAX7456ADD_CMDI, (char_address & 0xFF));
 #endif
@@ -907,14 +910,12 @@ void max7456ReadShadow(uint8_t *font_data)
     __spiBusTransactionBegin(busdev);
     while ((max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00);
     max7456Send(MAX7456ADD_VM0, 0);
-    // wait until bit 5 in the status register returns to 0 (12ms)
-    uint8_t retriesTwo = 0;
-    while ((max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00) { retriesTwo++; }
+    // Possibly excessive, but we do want the chip to be ready
+    while ((max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00);
     for (int x = 0; x < 64; x++) {
         max7456Send(MAX7456ADD_CMAL, x);
         font_data[x] = max7456Send(MAX7456ADD_CMDO_R, 0xFF);
     }
-    font_data[62]=retriesTwo;
     __spiBusTransactionEnd(busdev);
 
     max7456Lock = false;
