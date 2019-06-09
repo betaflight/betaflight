@@ -648,7 +648,7 @@ static const char *dumpPgValue(const clivalue_t *value, dumpFlags_t dumpMask, co
 #ifdef DEBUG
     if (!pg) {
         cliPrintLinef("VALUE %s ERROR", value->name);
-        return; // if it's not found, the pgn shouldn't be in the value table!
+        return headingStr; // if it's not found, the pgn shouldn't be in the value table!
     }
 #endif
 
@@ -5064,9 +5064,12 @@ static void cliDmaopt(char *cmdline)
     if (!pch) {
         if (entry) {
             printPeripheralDmaoptDetails(entry, index, *optaddr, true, DUMP_MASTER, cliDumpPrintLinef);
-        } else {
+        }
+#if defined(USE_TIMER_MGMT)
+        else {
             printTimerDmaoptDetails(ioTag, timer, orgval, true, DUMP_MASTER, cliDumpPrintLinef);
         }
+#endif
 
         return;
     } else if (strcasecmp(pch, "list") == 0) {

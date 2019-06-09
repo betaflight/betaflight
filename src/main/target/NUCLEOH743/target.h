@@ -200,28 +200,13 @@
 
 #define USE_I2C_OLED_DISPLAY
 
-#define USE_DMA
-
-// H7 allows all stream to handle any peripheral
-// No need for channel definition; each peripheral i/o has a unique channel thanks to MUX.
-//#define UART1_TX_DMA_STREAM     DMA1_Stream0
-//#define UART2_TX_DMA_STREAM     DMA1_Stream1
-//#define UART3_TX_DMA_STREAM     DMA1_Stream2
-//#define UART4_TX_DMA_STREAM     DMA1_Stream3
-//#define UART5_TX_DMA_STREAM     DMA1_Stream4
-//#define UART6_TX_DMA_STREAM     DMA1_Stream5
-//#define UART7_TX_DMA_STREAM     DMA1_Stream6
-//#define UART8_TX_DMA_STREAM     DMA1_Stream7
-
 #define USE_ADC
 
 #define ADC1_INSTANCE ADC1
 #define ADC2_INSTANCE ADC2
 #define ADC3_INSTANCE ADC3
-#define ADC1_DMA_STREAM DMA2_Stream0
-#define ADC2_DMA_STREAM DMA2_Stream1
-#define ADC3_DMA_STREAM DMA2_Stream2
 
+// DMA stream assignmnets
 #define VBAT_ADC_PIN            PB1  // ADC1
 #define CURRENT_METER_ADC_PIN   PC0  // ADC1
 #define RSSI_ADC_PIN            PF14 // ADC2
@@ -233,6 +218,21 @@
 #define USE_DSHOT
 #define USE_DSHOT_DMAR
 
+#define USE_DMA
+
+// Thanks to DMAMUX, H7 does not have limitations on DMA stream assignments to devices (except for collisions among them).
+//#define UART1_TX_DMA_OPT        0
+//#define UART2_TX_DMA_OPT        1
+//#define UART3_TX_DMA_OPT        2
+//#define UART4_TX_DMA_OPT        3
+//#define UART5_TX_DMA_OPT        4
+//#define UART6_TX_DMA_OPT        5
+//#define UART7_TX_DMA_OPT        6
+//#define UART8_TX_DMA_OPT        7
+#define ADC1_DMA_OPT 8
+#define ADC2_DMA_OPT 9
+#define ADC3_DMA_OPT 10
+
 #define DEFAULT_FEATURE (FEATURE_OSD)
 
 #define TARGET_IO_PORTA 0xffff
@@ -243,6 +243,6 @@
 #define TARGET_IO_PORTF 0xffff
 #define TARGET_IO_PORTG 0xffff
 
-#define USABLE_TIMER_CHANNEL_COUNT 15
+#define USABLE_TIMER_CHANNEL_COUNT 14
 
 #define USED_TIMERS  ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8) | TIM_N(12) )

@@ -69,7 +69,7 @@ typedef struct adcDevice_s {
 #else
     DMA_Channel_TypeDef* DMAy_Channelx;
 #endif
-#endif
+#endif // !defined(USE_DMA_SPEC)
 #if defined(STM32F7) || defined(STM32H7)
     ADC_HandleTypeDef ADCHandle;
     DMA_HandleTypeDef DmaHandle;
