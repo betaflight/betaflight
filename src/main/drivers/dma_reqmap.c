@@ -80,8 +80,8 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
     REQMAP_DIR(SPI, 3, RX),
     REQMAP_DIR(SPI, 4, TX),
     REQMAP_DIR(SPI, 4, RX),
-    // REQMAP_DIR(SPI, 5, TX), // Not available in smaller packages
-    // REQMAP_DIR(SPI, 5, TX), // ditto
+    REQMAP_DIR(SPI, 5, TX), // Not available in smaller packages
+    REQMAP_DIR(SPI, 5, TX), // ditto
     // REQMAP_DIR(SPI, 6, TX), // SPI6 is on BDMA (todo)
     // REQMAP_DIR(SPI, 6, TX), // ditto
 #endif // USE_SPI
@@ -122,7 +122,8 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
 
 #define TC(chan) DEF_TIM_CHANNEL(CH_ ## chan)
 
-#define REQMAP_TIM(tim, chan) { tim, TC(chan), DEF_TIM_DMA_REQ__BTCH_ ## tim ## _ ## chan }
+//#define REQMAP_TIM(tim, chan) { tim, TC(chan), DEF_TIM_DMA_REQ__BTCH_ ## tim ## _ ## chan }
+#define REQMAP_TIM(tim, chan) { tim, TC(chan), DMA_REQUEST_ ## tim ## _ ## chan }
 
 static const dmaTimerMapping_t dmaTimerMapping[] = {
     REQMAP_TIM(TIM1, CH1),
@@ -403,18 +404,6 @@ dmaoptValue_t dmaoptByTag(ioTag_t ioTag)
         }
     }
 #else
-#if defined(STM32H7)
-    const timerHardware_t *timhw = timerGetByTag(ioTag);
-    if (timhw && timhw->dmaRefConfigured && timhw->dmaChannelConfigured) {
-        // Reverse lookup dmaopt from dmaRefConfigured by utilizing dmaChannelSpec array
-        unsigned opt;
-        for (opt = 0; opt < ARRAYLEN(dmaChannelSpec); opt++) {
-            if (timhw->dmaRefConfigured == dmaChannelSpec[opt].ref) {
-                return (dmaoptValue_t)opt;
-            }
-        }
-    }
-#endif
     UNUSED(ioTag);
 #endif
 
