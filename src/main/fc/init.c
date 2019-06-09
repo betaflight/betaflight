@@ -324,7 +324,11 @@ void init(void)
 #error "EEPROM_IN_EXTERNAL_FLASH requires USE_FLASH_CHIP to be defined."
 #endif
 
-    flashInit(flashConfig());
+    bool haveFlash = flashInit(flashConfig());
+
+    if (!haveFlash) {
+        failureMode(FAILURE_EXTERNAL_FLASH_INIT_FAILED);
+    }
 
 #endif // EEPROM_IN_EXTERNAL_FLASH
 
