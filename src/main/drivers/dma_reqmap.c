@@ -60,7 +60,7 @@ typedef struct dmaTimerMapping_s {
 #define REQMAP(periph, device) { DMA_PERIPH_ ## periph, periph ## DEV_ ## device, DMA_REQUEST_ ## periph ## device }
 #define REQMAP_DIR(periph, device, dir) { DMA_PERIPH_ ## periph ## _ ## dir, periph ## DEV_ ## device, DMA_REQUEST_ ## periph ## device ## _ ## dir }
 
-// Resolve UART/UART mess
+// Resolve UART/USART mess
 #define DMA_REQUEST_UART1_RX DMA_REQUEST_USART1_RX
 #define DMA_REQUEST_UART1_TX DMA_REQUEST_USART1_TX
 #define DMA_REQUEST_UART2_RX DMA_REQUEST_USART2_RX
@@ -92,10 +92,6 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
     REQMAP(ADC, 3),
 #endif
 
-#ifdef USE_SDCARD_SDIO
-    REQMAP_SGL(SDIO),
-#endif
-    
 #ifdef USE_UART
     REQMAP_DIR(UART, 1, TX),
     REQMAP_DIR(UART, 1, RX),
