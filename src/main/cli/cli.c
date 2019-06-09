@@ -4687,8 +4687,8 @@ dmaoptEntry_t dmaoptEntryTable[] = {
     DEFW("SPI_RX",  DMA_PERIPH_SPI_RX,  PG_SPI_PIN_CONFIG,     spiPinConfig_t,     rxDmaopt, SPIDEV_COUNT),
     DEFA("ADC",     DMA_PERIPH_ADC,     PG_ADC_CONFIG,         adcConfig_t,        dmaopt,   ADCDEV_COUNT),
     DEFS("SDIO",    DMA_PERIPH_SDIO,    PG_SDIO_CONFIG,        sdioConfig_t,       dmaopt),
-    DEFA("UART_TX", DMA_PERIPH_UART_TX, PG_SERIAL_UART_CONFIG, serialUartConfig_t, txDmaopt, UARTDEV_CONFIG_MAX),
-    DEFA("UART_RX", DMA_PERIPH_UART_RX, PG_SERIAL_UART_CONFIG, serialUartConfig_t, rxDmaopt, UARTDEV_CONFIG_MAX),
+    DEFW("UART_TX", DMA_PERIPH_UART_TX, PG_SERIAL_UART_CONFIG, serialUartConfig_t, txDmaopt, UARTDEV_CONFIG_MAX),
+    DEFW("UART_RX", DMA_PERIPH_UART_RX, PG_SERIAL_UART_CONFIG, serialUartConfig_t, rxDmaopt, UARTDEV_CONFIG_MAX),
 };
 
 #undef DEFS
