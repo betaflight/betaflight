@@ -80,8 +80,6 @@ static void w25m_dieSelect(busDevice_t *busdev, int die)
 
 static bool w25m_isReady(flashDevice_t *fdevice)
 {
-    UNUSED(fdevice);
-
     for (int die = 0 ; die < dieCount ; die++) {
         if (dieDevice[die].couldBeBusy) {
             w25m_dieSelect(fdevice->io.handle.busdev, die);
@@ -94,11 +92,11 @@ static bool w25m_isReady(flashDevice_t *fdevice)
     return true;
 }
 
-static bool w25m_waitForReady(flashDevice_t *fdevice, uint32_t timeoutMillis)
+static bool w25m_waitForReady(flashDevice_t *fdevice)
 {
-    uint32_t time = millis();
-    while (!w25m_isReady(fdevice)) {
-        if (millis() - time > timeoutMillis) {
+    for (int die = 0 ; die < dieCount ; die++) {
+        w25m_dieSelect(fdevice->io.handle.busdev, die);
+        if (!dieDevice[die].vTable->waitForReady(&dieDevice[die])) {
             return false;
         }
     }

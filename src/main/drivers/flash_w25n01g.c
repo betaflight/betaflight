@@ -143,8 +143,13 @@ typedef struct bblut_s {
 #define DISABLE(busdev)       IOHi((busdev)->busdev_u.spi.csnPin); __NOP()
 #define ENABLE(busdev)        __NOP(); IOLo((busdev)->busdev_u.spi.csnPin)
 
-// XXX remove - add a forward declaration to keep git diff small while this is work-in-progress.
-bool w25n01g_waitForReady(flashDevice_t *fdevice, uint32_t timeoutMillis);
+static bool w25n01g_waitForReady(flashDevice_t *fdevice);
+
+static void w25n01g_setTimeout(flashDevice_t *fdevice, uint32_t timeoutMillis)
+{
+    uint32_t now = millis();
+    fdevice->timeoutAt = now + timeoutMillis;
+}
 
 /**
  * Send the given command byte to the device.
@@ -241,7 +246,8 @@ static void w25n01g_deviceReset(flashDevice_t *fdevice)
 
     w25n01g_performOneByteCommand(io, W25N01G_INSTRUCTION_DEVICE_RESET);
 
-    w25n01g_waitForReady(fdevice, W25N01G_TIMEOUT_RESET_MS);
+    w25n01g_setTimeout(fdevice, W25N01G_TIMEOUT_RESET_MS);
+    w25n01g_waitForReady(fdevice);
 
     // Protection for upper 1/32 (BP[3:0] = 0101, TB=0), WP-E on; to protect bad block replacement area
     // DON'T DO THIS. This will prevent writes through the bblut as well.
@@ -293,15 +299,16 @@ bool w25n01g_isReady(flashDevice_t *fdevice)
 #endif
 }
 
-bool w25n01g_waitForReady(flashDevice_t *fdevice, uint32_t timeoutMillis)
+static bool w25n01g_waitForReady(flashDevice_t *fdevice)
 {
-    uint32_t time = millis();
     while (!w25n01g_isReady(fdevice)) {
-        if (millis() - time > timeoutMillis) {
+        uint32_t now = millis();
+        if (cmp32(now, fdevice->timeoutAt) >= 0) {
             DPRINTF(("*** TIMEOUT %d\r\n", timeoutMillis));
             return false;
         }
     }
+    fdevice->timeoutAt = 0;
 
     return true;
 }
@@ -420,11 +427,13 @@ bool w25n01g_detect(flashDevice_t *fdevice, uint32_t chipID)
 void w25n01g_eraseSector(flashDevice_t *fdevice, uint32_t address)
 {
 
-    w25n01g_waitForReady(fdevice, W25N01G_TIMEOUT_BLOCK_ERASE_MS);
+    w25n01g_waitForReady(fdevice);
 
     w25n01g_writeEnable(fdevice);
 
     w25n01g_performCommandWithPageAddress(&fdevice->io, W25N01G_INSTRUCTION_BLOCK_ERASE, W25N01G_LINEAR_TO_PAGE(address));
+
+    w25n01g_setTimeout(fdevice, W25N01G_TIMEOUT_BLOCK_ERASE_MS);
 }
 
 //
@@ -442,7 +451,7 @@ static void w25n01g_programDataLoad(flashDevice_t *fdevice, uint16_t columnAddre
 {
 
     //DPRINTF(("    load WaitForReady\r\n"));
-    w25n01g_waitForReady(fdevice, W25N01G_TIMEOUT_PAGE_PROGRAM_MS);
+    w25n01g_waitForReady(fdevice);
 
     //DPRINTF(("    load Issuing command\r\n"));
 
@@ -463,6 +472,8 @@ static void w25n01g_programDataLoad(flashDevice_t *fdevice, uint16_t columnAddre
     }
 #endif
     //DPRINTF(("    load Done\r\n"));
+
+    w25n01g_setTimeout(fdevice, W25N01G_TIMEOUT_PAGE_PROGRAM_MS);
 }
 
 static void w25n01g_randomProgramDataLoad(flashDevice_t *fdevice, uint16_t columnAddress, const uint8_t *data, int length)
@@ -470,7 +481,7 @@ static void w25n01g_randomProgramDataLoad(flashDevice_t *fdevice, uint16_t colum
     const uint8_t cmd[] = { W25N01G_INSTRUCTION_RANDOM_PROGRAM_DATA_LOAD, columnAddress >> 8, columnAddress & 0xff };
 
     //DPRINTF(("    random WaitForReady\r\n"));
-    w25n01g_waitForReady(fdevice, W25N01G_TIMEOUT_PAGE_PROGRAM_MS);
+    w25n01g_waitForReady(fdevice);
 
     //DPRINTF(("    random Issuing command\r\n"));
     if (fdevice->io.mode == FLASHIO_SPI) {
@@ -491,18 +502,22 @@ static void w25n01g_randomProgramDataLoad(flashDevice_t *fdevice, uint16_t colum
 #endif
 
     //DPRINTF(("    random Done\r\n"));
+
+    w25n01g_setTimeout(fdevice, W25N01G_TIMEOUT_PAGE_PROGRAM_MS);
+
 }
 
 static void w25n01g_programExecute(flashDevice_t *fdevice, uint32_t pageAddress)
 {
     //DPRINTF(("    execute WaitForReady\r\n"));
-    w25n01g_waitForReady(fdevice, W25N01G_TIMEOUT_PAGE_PROGRAM_MS);
+    w25n01g_waitForReady(fdevice);
 
     //DPRINTF(("    execute Issuing command\r\n"));
 
     w25n01g_performCommandWithPageAddress(&fdevice->io, W25N01G_INSTRUCTION_PROGRAM_EXECUTE, pageAddress);
 
     //DPRINTF(("    execute Done\r\n"));
+    w25n01g_setTimeout(fdevice, W25N01G_TIMEOUT_PAGE_PROGRAM_MS);
 }
 
 //
@@ -557,7 +572,7 @@ void w25n01g_pageProgramBegin(flashDevice_t *fdevice, uint32_t address)
         if (address != programLoadAddress) {
             PAGEPROG_DPRINTF(("    Buffer dirty and address != programLoadAddress (0x%x), flushing\r\n", programLoadAddress));
             PAGEPROG_DPRINTF(("    Wait for ready\r\n"));
-            w25n01g_waitForReady(fdevice, W25N01G_TIMEOUT_PAGE_PROGRAM_MS);
+            w25n01g_waitForReady(fdevice);
 
             isProgramming = false;
 
@@ -589,7 +604,7 @@ void w25n01g_pageProgramContinue(flashDevice_t *fdevice, const uint8_t *data, in
     }
 
     PAGEPROG_DPRINTF(("    Wait for ready\r\n"));
-    w25n01g_waitForReady(fdevice, W25N01G_TIMEOUT_PAGE_PROGRAM_MS);
+    w25n01g_waitForReady(fdevice);
 
     PAGEPROG_DPRINTF(("    Write enable\r\n"));
     w25n01g_writeEnable(fdevice);
@@ -715,7 +730,7 @@ int w25n01g_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer,
         READBYTES_DPRINTF(("readBytes: PAGE_DATA_READ page 0x%x\r\n", targetPage));
 
 
-        if (!w25n01g_waitForReady(fdevice, W25N01G_TIMEOUT_PAGE_READ_MS)) {
+        if (!w25n01g_waitForReady(fdevice)) {
             return 0;
         }
 
@@ -723,7 +738,8 @@ int w25n01g_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer,
 
         w25n01g_performCommandWithPageAddress(&fdevice->io, W25N01G_INSTRUCTION_PAGE_DATA_READ, targetPage);
 
-        if (!w25n01g_waitForReady(fdevice, W25N01G_TIMEOUT_PAGE_READ_MS)) {
+        w25n01g_setTimeout(fdevice, W25N01G_TIMEOUT_PAGE_READ_MS);
+        if (!w25n01g_waitForReady(fdevice)) {
             return 0;
         }
 
@@ -766,7 +782,8 @@ int w25n01g_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer,
 #endif
 
     // XXX Don't need this?
-    if (!w25n01g_waitForReady(fdevice, W25N01G_TIMEOUT_PAGE_READ_MS)) {
+    w25n01g_setTimeout(fdevice, W25N01G_TIMEOUT_PAGE_READ_MS);
+    if (!w25n01g_waitForReady(fdevice)) {
         return 0;
     }
 
@@ -794,11 +811,11 @@ int w25n01g_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer,
 int w25n01g_readExtensionBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer, int length)
 {
 
-    w25n01g_performCommandWithPageAddress(&fdevice->io, W25N01G_INSTRUCTION_PAGE_DATA_READ, W25N01G_LINEAR_TO_PAGE(address));
-
-    if (!w25n01g_waitForReady(fdevice, W25N01G_TIMEOUT_PAGE_READ_MS)) {
+    if (!w25n01g_waitForReady(fdevice)) {
         return 0;
     }
+
+    w25n01g_performCommandWithPageAddress(&fdevice->io, W25N01G_INSTRUCTION_PAGE_DATA_READ, W25N01G_LINEAR_TO_PAGE(address));
 
     uint32_t column = 2048;
 
@@ -824,6 +841,8 @@ int w25n01g_readExtensionBytes(flashDevice_t *fdevice, uint32_t address, uint8_t
         quadSpiReceiveWithAddress1LINE(quadSpi, W25N01G_INSTRUCTION_READ_DATA, 8, column, W28N01G_STATUS_COLUMN_ADDRESS_SIZE, buffer, length);
     }
 #endif
+
+    w25n01g_setTimeout(fdevice, W25N01G_TIMEOUT_PAGE_READ_MS);
 
     return length;
 }
@@ -899,6 +918,8 @@ void w25n01g_readBBLUT(flashDevice_t *fdevice, bblut_t *bblut, int lutsize)
 
 void w25n01g_writeBBLUT(flashDevice_t *fdevice, uint16_t lba, uint16_t pba)
 {
+    w25n01g_waitForReady(fdevice);
+
     if (fdevice->io.mode == FLASHIO_SPI) {
         busDevice_t *busdev = fdevice->io.handle.busdev;
 
@@ -917,7 +938,7 @@ void w25n01g_writeBBLUT(flashDevice_t *fdevice, uint16_t lba, uint16_t pba)
     }
 #endif
 
-    w25n01g_waitForReady(fdevice, W25N01G_TIMEOUT_PAGE_PROGRAM_MS);
+    w25n01g_setTimeout(fdevice, W25N01G_TIMEOUT_PAGE_PROGRAM_MS);
 }
 
 static void w25n01g_deviceInit(flashDevice_t *flashdev)
