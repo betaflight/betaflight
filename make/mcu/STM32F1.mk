@@ -38,7 +38,10 @@ DEVICE_STDPERIPH_SRC := $(DEVICE_STDPERIPH_SRC) \
 
 endif
 
+ifeq ($(LD_SCRIPT),)
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f103_$(FLASH_SIZE)k.ld
+endif
+
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m3
 
 ifeq ($(DEVICE_FLAGS),)
