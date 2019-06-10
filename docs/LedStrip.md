@@ -44,7 +44,6 @@ The BEACON profile is used to find a lost quad, it flashes all LEDs white once p
     - Select the AUX channel to be used to change the LED strip profile. ("when channel")
     - Set the range to cover the entire range of the selected AUX channel. ("is in ranges")
     - For the action select "RC Rate Adjustment". ("then apply")  This will be configured in the CLI since LED strip profiles is not supported by Configurator 10.4.0 and earlier. "RC Rate Adjustment" is only selected to make the configuration in the CLI a little easier below.
-    - Select slot 1. ("using slot")  (the slot number does not matter, pick any free number)
     - Select the "via channel" to match the selected AUX channel of above. ("when channel").
     - Save
 3. Open the CLI and type ```adjrange``` followed by enter.
