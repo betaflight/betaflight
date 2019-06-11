@@ -1,5 +1,7 @@
 # OSD Glyphs
 
+These symbols are defined in [src/main/drivers/max7456_symbols.h](../src/main/drivers/max7456_symbols.h) and are used in [src/main/osd/osd_elements.c](../src/main/osd/osd_elements.c)
+
 | PNG                            | Hex  | Dec | Betaflight Name(s)              | Notes |
 | -------------------------------|------| --- | ------------------------------- | ----- |
 | ![001.png](osd_images/001.png) | 0x01 | 001 | SYM_RSSI                        | RSSI Icon      |
@@ -14,8 +16,8 @@
 | ![010.png](osd_images/010.png) | 0x0A | 010 | SYM_STICK_OVERLAY_SPRITE_LOW    | Stick overlay      |
 | ![011.png](osd_images/011.png) | 0x0B | 011 | SYM_STICK_OVERLAY_CENTER        | Stick overlay      |
 | ![012.png](osd_images/012.png) | 0x0C | 012 | SYM_M                           | Used in OSD.c      |
-| ![013.png](osd_images/013.png) | 0x0D | 013 | SYM_TEMP_F                      | Used in OSD.c      |
-| ![014.png](osd_images/014.png) | 0x0E | 014 | SYM_TEMP_C                      | Used in OSD.c      |
+| ![013.png](osd_images/013.png) | 0x0D | 013 | SYM_F                           | Used in OSD.c      |
+| ![014.png](osd_images/014.png) | 0x0E | 014 | SYM_C                           | Used in OSD.c      |
 | ![015.png](osd_images/015.png) | 0x0F | 015 | SYM_FT                          | Used in OSD.c      |
 | ![016.png](osd_images/016.png) | 0x10 | 016 | SYM_BBLOG                       |       |
 | ![017.png](osd_images/017.png) | 0x11 | 017 | SYM_HOMEFLAG                    |       |
@@ -33,20 +35,20 @@
 | ![029.png](osd_images/029.png) | 0x1D | 029 | SYM_HEADING_LINE                | Compass bar      |
 | ![030.png](osd_images/030.png) | 0x1E | 030 | SYM_SAT_L                       | GPS icon left      |
 | ![031.png](osd_images/031.png) | 0x1F | 031 | SYM_SAT_R                       | GPS icon right      |
-| ![032.png](osd_images/032.png) | 0x20 | 032 | SYM_BLANK                       | 032 to 095 are ascii for printing strings      |
+| ![032.png](osd_images/032.png) | 0x20 | 032 | SYM_BLANK                       | 032 to 095 are ASCII for printing strings      |
 | ![033.png](osd_images/033.png) | 0x21 | 033 |                                 |       |
 | ![034.png](osd_images/034.png) | 0x22 | 034 |                                 |       |
 | ![035.png](osd_images/035.png) | 0x23 | 035 |                                 |       |
 | ![036.png](osd_images/036.png) | 0x24 | 036 |                                 |       |
 | ![037.png](osd_images/037.png) | 0x25 | 037 |                                 |       |
-| ![038.png](osd_images/038.png) | 0x26 | 038 |                                 | ascii      |
-| ![039.png](osd_images/039.png) | 0x27 | 039 |                                 | ascii      |
+| ![038.png](osd_images/038.png) | 0x26 | 038 |                                 |       |
+| ![039.png](osd_images/039.png) | 0x27 | 039 |                                 |       |
 | ![040.png](osd_images/040.png) | 0x28 | 040 |                                 |       |
 | ![041.png](osd_images/041.png) | 0x29 | 040 |                                 |       |
 | ![042.png](osd_images/042.png) | 0x2A | 040 |                                 |       |
 | ![043.png](osd_images/043.png) | 0x2B | 040 |                                 |       |
 | ![044.png](osd_images/044.png) | 0x2C | 040 |                                 |       |
-| ![045.png](osd_images/045.png) | 0x2D | 045 | SYM_COLON                       | Used in OSD.c      |
+| ![045.png](osd_images/045.png) | 0x2D | 045 | SYM_COLON                       |       |
 | ![046.png](osd_images/046.png) | 0x2E | 046 |                                 |       |
 | ![047.png](osd_images/047.png) | 0x2F | 047 |                                 |       |
 | ![048.png](osd_images/048.png) | 0x30 | 048 |                                 |       |
@@ -88,7 +90,7 @@
 | ![084.png](osd_images/084.png) | 0x54 | 084 |                                 |       |
 | ![085.png](osd_images/085.png) | 0x55 | 085 |                                 |       |
 | ![086.png](osd_images/086.png) | 0x56 | 086 |                                 |       |
-| ![087.png](osd_images/087.png) | 0x57 | 087 | SYM_WATT                        | Still ascii W      |
+| ![087.png](osd_images/087.png) | 0x57 | 087 | SYM_WATT                        | Also ASCII W      |
 | ![088.png](osd_images/088.png) | 0x58 | 088 |                                 |       |
 | ![089.png](osd_images/089.png) | 0x59 | 089 |                                 |       |
 | ![090.png](osd_images/090.png) | 0x5A | 090 |                                 |       |
@@ -127,7 +129,7 @@
 | ![123.png](osd_images/123.png) | 0x7B | 123 |                                 |       |
 | ![124.png](osd_images/124.png) | 0x7C | 124 |                                 |       |
 | ![125.png](osd_images/125.png) | 0x7D | 125 |                                 |       |
-| ![126.png](osd_images/126.png) | 0x7E | 126 | SYM_AH_CENTER                   |       |
+| ![126.png](osd_images/126.png) | 0x7E | 126 |                                 |       |
 | ![127.png](osd_images/127.png) | 0x7F | 127 | SYM_ALTITUDE                    |       |
 | ![128.png](osd_images/128.png) | 0x80 | 128 | SYM_AH_BAR9_0                   |       |
 | ![129.png](osd_images/129.png) | 0x81 | 129 | SYM_AH_BAR9_1                   | Calculated in AH using SYM_AH_BAR9_0 as base |
@@ -154,13 +156,13 @@
 | ![150.png](osd_images/150.png) | 0x96 | 150 | SYM_BATT_EMPTY                  |       |
 | ![151.png](osd_images/151.png) | 0x97 | 151 | SYM_MAIN_BATT                   |       |
 | ![152.png](osd_images/152.png) | 0x98 | 152 | SYM_LON                         |       |
-| ![153.png](osd_images/153.png) | 0x99 | 153 |                                 |       |
+| ![153.png](osd_images/153.png) | 0x99 | 153 | SYM_FTPS                        | ft per second (vario)      |
 | ![154.png](osd_images/154.png) | 0x9A | 154 | SYM_AMP                         |       |
 | ![155.png](osd_images/155.png) | 0x9B | 155 | SYM_ON_M                        |       |
 | ![156.png](osd_images/156.png) | 0x9C | 156 | SYM_FLY_M                       |       |
 | ![157.png](osd_images/157.png) | 0x9D | 157 | SYM_MPH                         |       |
 | ![158.png](osd_images/158.png) | 0x9E | 158 | SYM_KPH                         |       |
-| ![159.png](osd_images/159.png) | 0x9F | 159 |                                 |       |
+| ![159.png](osd_images/159.png) | 0x9F | 159 | SYM_MPS                         | meters per second (vario)      |
 | ![160.png](osd_images/160.png) | 0xA0 | 160 |                                 | *Logo Starts Here* |
 |                                | 0xFF | 255 | SYM_END_OF_FONT                 |       |
 
