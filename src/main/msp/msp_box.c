@@ -226,9 +226,11 @@ void initActiveBoxIds(void)
         BME(BOX3D);
     }
 
+#ifdef USE_DSHOT
     if (isMotorProtocolDshot()) {
         BME(BOXFLIPOVERAFTERCRASH);
     }
+#endif
 
     if (featureIsEnabled(FEATURE_SERVO_TILT)) {
         BME(BOXCAMSTAB);
