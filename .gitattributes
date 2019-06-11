@@ -12,3 +12,4 @@ Makefile text eol=lf
 *.bat eol=crlf
 *.txt text eol=lf
 *.sh text eol=lf
+*.config text eol=lf
