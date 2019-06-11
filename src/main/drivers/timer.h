@@ -187,6 +187,10 @@ extern const timerHardware_t timerHardware[];
 
 #define FULL_TIMER_CHANNEL_COUNT 78
 
+#elif defined(STM32H7)
+
+#define FULL_TIMER_CHANNEL_COUNT 87
+
 #endif
 
 extern const timerHardware_t fullTimerHardware[];
@@ -205,6 +209,10 @@ extern const timerHardware_t fullTimerHardware[];
 #elif defined(STM32F1)
 
 #define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) )
+
+#elif defined(STM32H7)
+
+#define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(6) | TIM_N(7) | TIM_N(8) | TIM_N(12) | TIM_N(13) | TIM_N(14) | TIM_N(15) | TIM_N(16) | TIM_N(17) )
 
 #else
     #error "No timer / channel tag definition found for CPU"
