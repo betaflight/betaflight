@@ -170,7 +170,11 @@ else ifeq ($(TARGET),$(filter $(TARGET),$(H750xB_TARGETS)))
 DEVICE_FLAGS       += -DSTM32H750xx
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h750_128k.ld
 STARTUP_SRC         = startup_stm32h743xx.s
-TARGET_FLASH       := 128
+DEFAULT_TARGET_FLASH := 128
+
+ifeq ($(TARGET_FLASH),)
+TARGET_FLASH := $(DEFAULT_TARGET_FLASH) 
+endif
 
 ifeq ($(EXST),yes)
 FIRMWARE_SIZE      := 448
