@@ -33,8 +33,10 @@
     Create the function to "draw" the element. It should be named like "osdElementSomething()"
     where the "Something" describes the element.
 
-    Finally add the mapping from the element ID added in the first step to the function
+    Add the mapping from the element ID added in the first step to the function
     created in the third step to the osdElementDrawFunction array.
+
+    Finally add a CLI parameter for the new element in cli/settings.c.
 */
 
 #include <stdbool.h>
