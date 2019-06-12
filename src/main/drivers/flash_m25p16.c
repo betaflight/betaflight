@@ -68,12 +68,14 @@
 #define JEDEC_ID_CYPRESS_S25FL128L     0x016018
 #define JEDEC_ID_BERGMICRO_W25Q32      0xE04016
 
+// IMPORTANT: Timeout values are currently required to be set to the highest value required by any of the supported flash chips by this driver.
+
 // The timeout we expect between being able to issue page program instructions
 #define DEFAULT_TIMEOUT_MILLIS       6
-
-// These take sooooo long:
 #define SECTOR_ERASE_TIMEOUT_MILLIS  5000
-#define BULK_ERASE_TIMEOUT_MILLIS    21000
+
+// etracer65 notes: For bulk erase The 25Q16 takes about 3 seconds and the 25Q128 takes about 49
+#define BULK_ERASE_TIMEOUT_MILLIS    50000
 
 #define M25P16_PAGESIZE 256
 

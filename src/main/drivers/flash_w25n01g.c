@@ -122,6 +122,8 @@ serialPort_t *debugSerialPort = NULL;
 #define W25N01G_BLOCK_TO_PAGE(block) ((block) * W25N01G_PAGES_PER_BLOCK)
 #define W25N01G_BLOCK_TO_LINEAR(block) (W25N01G_BLOCK_TO_PAGE(block) * W25N01G_PAGE_SIZE)
 
+// IMPORTANT: Timeout values are currently required to be set to the highest value required by any of the supported flash chips by this driver
+
 // The timeout values (2ms minimum to avoid 1 tick advance in consecutive calls to millis).
 #define W25N01G_TIMEOUT_PAGE_READ_MS        2   // tREmax = 60us (ECC enabled)
 #define W25N01G_TIMEOUT_PAGE_PROGRAM_MS     2   // tPPmax = 700us
