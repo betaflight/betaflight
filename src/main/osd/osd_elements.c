@@ -474,11 +474,9 @@ static void osdElementAltitude(osdElementParms_t *element)
     if (haveBaro || haveGps) {
         osdFormatAltitudeString(element->buff, getEstimatedAltitudeCm());
     } else {
-        // We use this symbol when we don't have a valid measure
-        element->buff[0] = SYM_COLON;
-        // overwrite any previous altitude with blanks
-        memset(element->buff + 1, SYM_BLANK, 6);
-        element->buff[7] = '\0';
+        element->buff[0] = SYM_ALTITUDE;
+        element->buff[1] = SYM_COLON; // We use this symbol when we don't have a valid measure
+        element->buff[2] = '\0';
     }
 }
 
@@ -546,9 +544,6 @@ static void osdElementCoreTemperature(osdElementParms_t *element)
 
 static void osdElementCraftName(osdElementParms_t *element)
 {
-    // This does not strictly support iterative updating if the craft name changes at run time. But since the craft name is not supposed to be changing this should not matter, and blanking the entire length of the craft name string on update will make it impossible to configure elements to be displayed on the right hand side of the craft name.
-    //TODO: When iterative updating is implemented, change this so the craft name is only printed once whenever the OSD 'flight' screen is entered.
-
     if (strlen(pilotConfig()->name) == 0) {
         strcpy(element->buff, "CRAFT_NAME");
     } else {
@@ -603,11 +598,8 @@ static void osdElementCrashFlipArrow(osdElementParms_t *element)
                 }
             }
         }
-    } else {
-        element->buff[0] = ' ';
+        element->buff[1] = '\0';
     }
-
-    element->buff[1] = '\0';
 }
 #endif // USE_ACC
 
@@ -639,9 +631,6 @@ static void osdElementDisarmed(osdElementParms_t *element)
 
 static void osdElementDisplayName(osdElementParms_t *element)
 {
-    // This does not strictly support iterative updating if the display name changes at run time. But since the display name is not supposed to be changing this should not matter, and blanking the entire length of the display name string on update will make it impossible to configure elements to be displayed on the right hand side of the display name.
-    //TODO: When iterative updating is implemented, change this so the display name is only printed once whenever the OSD 'flight' screen is entered.
-
     if (strlen(pilotConfig()->displayName) == 0) {
         strcpy(element->buff, "DISPLAY_NAME");
     } else {
@@ -963,9 +952,7 @@ static void osdElementNumericalVario(osdElementParms_t *element)
     } else {
         // We use this symbol when we don't have a valid measure
         element->buff[0] = SYM_COLON;
-        // overwrite any previous vertical speed with blanks
-        memset(element->buff + 1, SYM_BLANK, 6);
-        element->buff[7] = '\0';
+        element->buff[1] = '\0';
     }
 }
 #endif // USE_VARIO
