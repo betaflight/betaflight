@@ -136,6 +136,8 @@
 #define SYM_SPEED                   0x70
 #define SYM_KPH                     0x9E
 #define SYM_MPH                     0x9D
+#define SYM_MPS                     0x9F
+#define SYM_FTPS                    0x99
 
 // Menu cursor
 #define SYM_CURSOR                  SYM_AH_LEFT
