@@ -1357,7 +1357,8 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         // -----calculate P component
         // If enabled vary P and D using the content of AUXn (Heli-like vehicles, gyro-sensitivity channel).
         if (pidAdjustmentChannel) {
-            auxPgain = ((-0.1f * constrainf(((float)rcData[pidAdjustmentChannel]), 1000.0f, 2000.0f)) + 200.0f) / 50.0f;
+            //auxPgain = ((-0.1f * constrainf(((float)rcData[pidAdjustmentChannel]), 1000.0f, 2000.0f)) + 200.0f) / 50.0f;
+            auxPgain = (scaleRangef((float)rcData[pidAdjustmentChannel], 1000.0f, 2000.0f, 100.0f, 0.0f)) / 50.0f;
         }
         pidData[axis].P = pidCoefficient[axis].Kp * errorRate * tpaFactorKp * auxPgain;
         if (axis == FD_YAW) {
