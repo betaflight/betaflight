@@ -88,10 +88,8 @@ void initEEPROM(void)
     STATIC_ASSERT(sizeof(configFooter_t) == 2, footer_size_failed);
     STATIC_ASSERT(sizeof(configRecord_t) == 6, record_size_failed);
 
-#ifdef TARGET_EEPROM_INIT
-    void targetEEPROMInit(void);
-
-    targetEEPROMInit();
+#ifdef EEPROM_IN_FILE
+    FLASH_Unlock(); // load existing config file into eepromData
 #endif
 }
 

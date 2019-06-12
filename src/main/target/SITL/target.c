@@ -204,11 +204,6 @@ static void* tcpThread(void* data) {
     return NULL;
 }
 
-void targetEEPROMInit(void)
-{
-    FLASH_Unlock(); // load existing config file into eepromData
-}
-
 // system
 void systemInit(void) {
     int ret;
