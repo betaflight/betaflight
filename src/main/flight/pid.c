@@ -721,8 +721,8 @@ void pidInit(const pidProfile_t *pidProfile)
 #endif
     pidAdjustmentFactor = 1;
     pidAdjustmentChannel = pidConfig()->pid_adjust_aux_channel;
-    if (pidAdjustmentChannel < 4) {
-        pidAdjustmentChannel = 0;
+    if (pidAdjustmentChannel) {
+        pidAdjustmentChannel += (NON_AUX_CHANNEL_COUNT-1) ;
     }
 }
 
