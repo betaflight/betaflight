@@ -468,7 +468,6 @@ char _Min_Stack_Size;
 
 // fake EEPROM
 static FILE *eepromFd = NULL;
-uint8_t eepromData[EEPROM_SIZE];
 
 void FLASH_Unlock(void) {
     if (eepromFd != NULL) {

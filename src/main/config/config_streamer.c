@@ -27,6 +27,15 @@
 
 #include "config/config_streamer.h"
 
+#if !defined(EEPROM_IN_FLASH)
+#if defined(EEPROM_IN_RAM) && defined(PERSISTENT)
+PERSISTENT uint8_t eepromData[EEPROM_SIZE];
+#else
+uint8_t eepromData[EEPROM_SIZE];
+#endif
+#endif
+
+
 #if defined(STM32H750xx) && !(defined(EEPROM_IN_EXTERNAL_FLASH) || defined(EEPROM_IN_RAM) || defined(EEPROM_IN_SDCARD))
 #error "STM32750xx only has one flash page which contains the bootloader, no spare flash pages available, use external storage for persistent config or ram for target testing"
 #endif
