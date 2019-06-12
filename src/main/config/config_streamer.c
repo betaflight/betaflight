@@ -78,19 +78,23 @@ void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
     c->address = base;
     c->size = size;
     if (!c->unlocked) {
+
 #if defined(EEPROM_IN_RAM)
         // NOP
-#elif defined(STM32F7) || defined(STM32H7)
+#elif defined(EEPROM_IN_FLASH) || defined(EEPROM_IN_FILE)
+#if defined(STM32F7) || defined(STM32H7)
         HAL_FLASH_Unlock();
 #else
         FLASH_Unlock();
+#endif
 #endif
         c->unlocked = true;
     }
 
 #if defined(EEPROM_IN_RAM) || defined(EEPROM_IN_FILE)
     // NOP
-#elif defined(STM32F10X)
+#elif defined(EEPROM_IN_FLASH)
+#if defined(STM32F10X)
     FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPRTERR);
 #elif defined(STM32F303)
     FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPERR);
@@ -105,12 +109,14 @@ void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
 #else
 # error "Unsupported CPU"
 #endif
+#endif
     c->err = 0;
 }
 
 #if defined(EEPROM_IN_RAM)
 // No flash sector method required.
-#elif defined(STM32F745xx) || defined(STM32F746xx) || defined(STM32F765xx)
+#elif defined(EEPROM_IN_FLASH)
+#if defined(STM32F745xx) || defined(STM32F746xx) || defined(STM32F765xx)
 /*
 Sector 0    0x08000000 - 0x08007FFF 32 Kbytes
 Sector 1    0x08008000 - 0x0800FFFF 32 Kbytes
@@ -334,6 +340,7 @@ static void getFLASHSectorForEEPROM(uint32_t *bank, uint32_t *sector)
     }
 }
 #endif
+#endif
 
 static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t *buffer)
 {
@@ -353,7 +360,23 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
     {
       *dest_addr++ = *src_addr++;
     } while (--row_index != 0);
-#elif defined(STM32H7)
+
+#elif defined(EEPROM_IN_FILE)
+
+    if (c->address % FLASH_PAGE_SIZE == 0) {
+        const FLASH_Status status = FLASH_ErasePage(c->address);
+        if (status != FLASH_COMPLETE) {
+            return -1;
+        }
+    }
+    const FLASH_Status status = FLASH_ProgramWord(c->address, *buffer);
+    if (status != FLASH_COMPLETE) {
+        return -2;
+    }
+
+#elif defined(EEPROM_IN_FLASH)
+
+#if defined(STM32H7)
     if (c->address % FLASH_PAGE_SIZE == 0) {
         FLASH_EraseInitTypeDef EraseInitStruct = {
             .TypeErase     = FLASH_TYPEERASE_SECTORS,
@@ -399,7 +422,7 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
     if (c->address % FLASH_PAGE_SIZE == 0) {
 #if defined(STM32F4)
         const FLASH_Status status = FLASH_EraseSector(getFLASHSectorForEEPROM(), VoltageRange_3); //0x08080000 to 0x080A0000
-#else // STM32F3, STM32F1 or EEPROM_IN_FILE
+#else // STM32F3, STM32F1
         const FLASH_Status status = FLASH_ErasePage(c->address);
 #endif
         if (status != FLASH_COMPLETE) {
@@ -410,6 +433,7 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
     if (status != FLASH_COMPLETE) {
         return -2;
     }
+#endif
 #endif
     c->address += CONFIG_STREAMER_BUFFER_SIZE;
     return 0;
@@ -448,10 +472,14 @@ int config_streamer_finish(config_streamer_t *c)
     if (c->unlocked) {
 #if defined(EEPROM_IN_RAM)
         // NOP
-#elif defined(STM32F7) || defined(STM32H7)
+#elif defined(EEPROM_IN_FILE)
+        FLASH_Lock();
+#elif defined(EEPROM_IN_FLASH)
+#if defined(STM32F7) || defined(STM32H7)
         HAL_FLASH_Lock();
 #else
         FLASH_Lock();
+#endif
 #endif
         c->unlocked = false;
     }
