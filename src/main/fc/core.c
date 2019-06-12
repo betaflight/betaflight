@@ -984,11 +984,6 @@ bool processRx(timeUs_t currentTimeUs)
 
     pidSetAntiGravityState(IS_RC_MODE_ACTIVE(BOXANTIGRAVITY) || featureIsEnabled(FEATURE_ANTI_GRAVITY));
 
-#ifdef USE_PERSISTENT_STATS
-    /* allow the stats collector to do periodic tasks */
-    statsOnLoop();
-#endif
-
     return true;
 }
 
