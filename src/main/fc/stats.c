@@ -1,3 +1,22 @@
+/*
+ * This file is part of Cleanflight and Betaflight.
+ *
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include "platform.h"
 
@@ -6,6 +25,7 @@
 #include "drivers/time.h"
 
 #include "fc/config.h"
+#include "fc/dispatch.h"
 #include "fc/runtime_config.h"
 #include "fc/stats.h"
 
@@ -15,18 +35,42 @@
 #include "pg/stats.h"
 
 
-#define MIN_FLIGHT_TIME_TO_RECORD_STATS_S 10    //prevent recording stats for that short "flights" [s]
-#define STATS_SAVE_DELAY_MS              500    //let disarming complete and save stats after this time
+#define MIN_FLIGHT_TIME_TO_RECORD_STATS_S 10 // Prevent recording stats for that short "flights" [s]
+#define STATS_SAVE_DELAY_US 500000 // Let disarming complete and save stats after this time
 
 static timeMs_t arm_millis;
 static uint32_t arm_distance_cm;
-static timeMs_t save_pending_millis;  // 0 = none
+
+static bool saveRequired = false;
 
 #ifdef USE_GPS
     #define DISTANCE_FLOWN_CM (GPS_distanceFlownInCm)
 #else
     #define DISTANCE_FLOWN_CM (0)
 #endif
+
+void writeStats(struct dispatchEntry_s* self)
+{
+    UNUSED(self);
+
+    if (!ARMING_FLAG(ARMED)) {
+        // Don't save if the user made config changes that have not yet been saved.
+        if (!isConfigDirty()) {
+            writeEEPROM();
+
+            // Repeat disarming beep indicating the stats save is complete
+            beeper(BEEPER_DISARMING);
+        }
+
+        saveRequired = false;
+    }
+}
+
+dispatchEntry_t writeStatsEntry =
+{
+    writeStats, 0, NULL, false
+};
+
 
 void statsOnArm(void)
 {
@@ -42,35 +86,16 @@ void statsOnDisarm(void)
             statsConfigMutable()->stats_total_flights += 1;    //arm/flight counter
             statsConfigMutable()->stats_total_time_s += dt;   //[s]
             statsConfigMutable()->stats_total_dist_m += (DISTANCE_FLOWN_CM - arm_distance_cm) / 100;   //[m]
+
+            saveRequired = true;
+        }
+
+        if (saveRequired) {
             /* signal that stats need to be saved but don't execute time consuming flash operation
                now - let the disarming process complete and then execute the actual save */
-            save_pending_millis = millis();
+            dispatchEnable();
+            dispatchAdd(&writeStatsEntry, STATS_SAVE_DELAY_US);
         }
     }
 }
-
-void statsOnLoop(void)
-{
-    /* check for pending flash write */
-    if (save_pending_millis && millis()-save_pending_millis > STATS_SAVE_DELAY_MS) {
-        if (ARMING_FLAG(ARMED)) {
-            /* re-armed - don't save! */
-        }
-        else {
-            if (isConfigDirty()) {
-                /* There are some adjustments made in the configuration and we don't want
-                   to implicitly save it... We can't currently save part of the configuration,
-                   so we simply don't execute the stats save operation at all. This will result
-                   in missing stats update *if* rc-adjustments were made during the flight. */
-            }
-            else {
-                writeEEPROM();
-                /* repeat disarming beep indicating the stats save is complete */
-                beeper(BEEPER_DISARMING);
-            }
-        }
-        save_pending_millis = 0;
-    }
-}
-
 #endif

@@ -104,6 +104,8 @@
 #define USE_GYRO_DATA_ANALYSE
 #define USE_ADC_INTERNAL
 #define USE_USB_CDC_HID
+#define USE_DMA_SPEC
+#define USE_TIMER_MGMT
 #endif
 
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)

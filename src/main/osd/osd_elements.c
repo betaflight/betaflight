@@ -33,8 +33,10 @@
     Create the function to "draw" the element. It should be named like "osdElementSomething()"
     where the "Something" describes the element.
 
-    Finally add the mapping from the element ID added in the first step to the function
+    Add the mapping from the element ID added in the first step to the function
     created in the third step to the osdElementDrawFunction array.
+
+    Finally add a CLI parameter for the new element in cli/settings.c.
 */
 
 #include <stdbool.h>
@@ -64,6 +66,7 @@
 
 #include "drivers/display.h"
 #include "drivers/max7456_symbols.h"
+#include "drivers/pwm_output.h"
 #include "drivers/time.h"
 #include "drivers/vtx_common.h"
 
@@ -82,7 +85,6 @@
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
-#include "flight/rpm_filter.h"
 
 #include "io/beeper.h"
 #include "io/gps.h"
@@ -158,21 +160,22 @@ static uint32_t blinkBits[(OSD_ITEM_COUNT + 31) / 32];
 #define IS_BLINK(item) (blinkBits[(item) / 32] & (1 << ((item) % 32)))
 #define BLINK(item) (IS_BLINK(item) && blinkState)
 
-#if defined(USE_ESC_SENSOR) || defined(USE_RPM_FILTER)
+#if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
 typedef int (*getEscRpmOrFreqFnPtr)(int i);
 
 static int getEscRpm(int i)
 {
-#ifdef USE_RPM_FILTER
+#ifdef USE_DSHOT_TELEMETRY
     if (motorConfig()->dev.useDshotTelemetry) {
         return 100.0f / (motorConfig()->motorPoleCount / 2.0f) * getDshotTelemetry(i);
     }
 #endif
+#ifdef USE_ESC_SENSOR
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
         return calcEscRpm(getEscSensorData(i)->rpm);
-    } else {
-        return 0;
     }
+#endif
+    return 0;
 }
 
 static int getEscRpmFreq(int i)
@@ -227,17 +230,13 @@ static void osdFormatCoordinate(char *buff, char sym, int32_t val)
     // We show 7 decimals, so we need to use 12 characters:
     // eg: s-180.1234567z   s=symbol, z=zero terminator, decimal separator  between 0 and 1
 
-    static const int coordinateMaxLength = 13;//12 for the number (4 + dot + 7) + 1 for the symbol
-
-    buff[0] = sym;
-    const int32_t integerPart = val / GPS_DEGREES_DIVIDER;
-    const int32_t decimalPart = labs(val % GPS_DEGREES_DIVIDER);
-    const int written = tfp_sprintf(buff + 1, "%d.%07d", integerPart, decimalPart);
-    // pad with blanks to coordinateMaxLength
-    for (int pos = 1 + written; pos < coordinateMaxLength; ++pos) {
-        buff[pos] = SYM_BLANK;
+    int pos = 0;
+    buff[pos++] = sym;
+    if (val < 0) {
+        buff[pos++] = '-';
+        val = -val;
     }
-    buff[coordinateMaxLength] = '\0';
+    tfp_sprintf(buff + pos, "%d.%07d", val / GPS_DEGREES_DIVIDER, val % GPS_DEGREES_DIVIDER);
 }
 #endif // USE_GPS
 
@@ -724,7 +723,7 @@ static void osdElementEscTemperature(osdElementParms_t *element)
 }
 #endif // USE_ESC_SENSOR
 
-#if defined(USE_ESC_SENSOR) || defined(USE_RPM_FILTER)
+#if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
 static void osdElementEscRpm(osdElementParms_t *element)
 {
     renderOsdEscRpmOrFreq(&getEscRpm,element);
@@ -791,8 +790,8 @@ static void osdElementGpsHomeDirection(osdElementParms_t *element)
             const int h = GPS_directionToHome - DECIDEGREES_TO_DEGREES(attitude.values.yaw);
             element->buff[0] = osdGetDirectionSymbolFromHeading(h);
         } else {
-            // We don't have a HOME symbol in the font, by now we use this
-            element->buff[0] = SYM_THR1;
+            // We use this symbol when we are at HOME position
+            element->buff[0] = '#';
         }
 
     } else {
@@ -1077,9 +1076,7 @@ static void osdElementStickOverlay(osdElementParms_t *element)
 
 static void osdElementThrottlePosition(osdElementParms_t *element)
 {
-    element->buff[0] = SYM_THR;
-    element->buff[1] = SYM_THR1;
-    tfp_sprintf(element->buff + 2, "%3d", calculateThrottlePercent());
+    tfp_sprintf(element->buff, "%c%3d", SYM_THR, calculateThrottlePercent());
 }
 
 static void osdElementTimer(osdElementParms_t *element)
@@ -1484,7 +1481,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #ifdef USE_ESC_SENSOR
     [OSD_ESC_TMP]                 = osdElementEscTemperature,
 #endif
-#if defined(USE_RPM_FILTER) || defined(USE_ESC_SENSOR)
+#if defined(USE_DSHOT_TELEMETRY) || defined(USE_ESC_SENSOR)
     [OSD_ESC_RPM]                 = osdElementEscRpm,
 #endif
     [OSD_REMAINING_TIME_ESTIMATE] = osdElementRemainingTimeEstimate,
@@ -1519,7 +1516,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_STICK_OVERLAY_RIGHT]     = osdElementStickOverlay,
 #endif
     [OSD_DISPLAY_NAME]            = osdElementDisplayName,
-#if defined(USE_RPM_FILTER) || defined(USE_ESC_SENSOR)
+#if defined(USE_DSHOT_TELEMETRY) || defined(USE_ESC_SENSOR)
     [OSD_ESC_RPM_FREQ]            = osdElementEscRpmFreq,
 #endif
 #ifdef USE_PROFILE_NAMES
@@ -1576,7 +1573,7 @@ void osdAnalyzeActiveElements(void)
     }
 #endif
 
-#if defined(USE_RPM_FILTER) || defined(USE_ESC_SENSOR)
+#if defined(USE_DSHOT_TELEMETRY) || defined(USE_ESC_SENSOR)
     if ((featureIsEnabled(FEATURE_ESC_SENSOR)) || (motorConfig()->dev.useDshotTelemetry)) {
         osdAddActiveElement(OSD_ESC_RPM);
         osdAddActiveElement(OSD_ESC_RPM_FREQ);

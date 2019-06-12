@@ -18,7 +18,40 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
 
-void statsOnArm(void);
-void statsOnDisarm(void);
+#include "platform.h"
+
+#include "build/build_config.h"
+
+#include "drivers/io.h"
+#include "drivers/time.h"
+
+#include "hardware_revision.h"
+
+#define HW_PIN PC5
+
+uint8_t hardwareRevision = FF_RACEPIT_UNKNOWN;
+
+static IO_t HWDetectPinA = IO_NONE;
+
+void detectHardwareRevision(void)
+{
+    HWDetectPinA = IOGetByTag(IO_TAG(HW_PIN));
+    IOInit(HWDetectPinA, OWNER_SYSTEM, 0);
+    IOConfigGPIO(HWDetectPinA, IOCFG_IPU);
+
+    delayMicroseconds(10);  // allow configuration to settle
+
+    if (!IORead(HWDetectPinA)) {
+        hardwareRevision = FF_RACEPIT_REV_1;
+    } else {
+        hardwareRevision = FF_RACEPIT_REV_2;
+    }
+}
+
+void updateHardwareRevision(void)
+{
+}

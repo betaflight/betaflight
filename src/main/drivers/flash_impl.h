@@ -53,12 +53,13 @@ typedef struct flashDevice_s {
     // for writes. This allows us to avoid polling for writable status
     // when it is definitely ready already.
     bool couldBeBusy;
+    uint32_t timeoutAt;
     flashDeviceIO_t io;
 } flashDevice_t;
 
 typedef struct flashVTable_s {
     bool (*isReady)(flashDevice_t *fdevice);
-    bool (*waitForReady)(flashDevice_t *fdevice, uint32_t timeoutMillis);
+    bool (*waitForReady)(flashDevice_t *fdevice);
     void (*eraseSector)(flashDevice_t *fdevice, uint32_t address);
     void (*eraseCompletely)(flashDevice_t *fdevice);
     void (*pageProgramBegin)(flashDevice_t *fdevice, uint32_t address);

@@ -270,7 +270,6 @@ static int adjustmentRangeValue = -1;
 
 static int applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustmentFunction, int delta)
 {
-
     beeperConfirmationBeeps(delta > 0 ? 2 : 1);
     int newValue;
     switch (adjustmentFunction) {
@@ -427,17 +426,12 @@ static int applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t a
         break;
     };
 
-    setConfigDirty();
     return newValue;
 }
 
 static int applyAbsoluteAdjustment(controlRateConfig_t *controlRateConfig, adjustmentFunction_e adjustmentFunction, int value)
 {
     int newValue;
-
-    if (!controlRateConfig || !currentPidProfile) {
-        return 0;
-    }
 
     switch (adjustmentFunction) {
     case ADJUSTMENT_RC_RATE:
@@ -593,7 +587,6 @@ static int applyAbsoluteAdjustment(controlRateConfig_t *controlRateConfig, adjus
         break;
     };
 
-    setConfigDirty();
     return newValue;
 }
 
@@ -653,7 +646,6 @@ static uint8_t applySelectAdjustment(adjustmentFunction_e adjustmentFunction, ui
         beeperConfirmationBeeps(beeps);
     }
 
-    setConfigDirty();
     return position;
 }
 
@@ -757,6 +749,9 @@ static void processStepwiseAdjustments(controlRateConfig_t *controlRateConfig, c
             }
 
             int newValue = applyStepAdjustment(controlRateConfig, adjustmentFunction, delta);
+
+            setConfigDirty();
+
             pidInitConfig(currentPidProfile);
 
             adjustmentState->ready = false;
@@ -767,6 +762,14 @@ static void processStepwiseAdjustments(controlRateConfig_t *controlRateConfig, c
             UNUSED(newValue);
 #endif
         }
+    }
+}
+
+static void setConfigDirtyIfNotPermanent(const channelRange_t *range)
+{
+    if (range->startStep == MIN_MODE_RANGE_STEP && range->endStep == MAX_MODE_RANGE_STEP) {
+        // Only set the configuration dirty if this range is NOT permanently enabled (and the config thus never used).
+        setConfigDirty();
     }
 }
 
@@ -797,6 +800,8 @@ static void processContinuosAdjustments(controlRateConfig_t *controlRateConfig)
             const uint16_t rangeWidth = (2100 - 900) / switchPositions;
             const uint8_t position = (constrain(rcData[channelIndex], 900, 2100 - 1) - 900) / rangeWidth;
             newValue = applySelectAdjustment(adjustmentFunction, position);
+
+            setConfigDirtyIfNotPermanent(&adjustmentRange->range);
         } else {
             // If setting is defined for step adjustment and center value has been specified, apply values directly (scaled) from aux channel
             if (adjustmentRange->adjustmentCenter &&
@@ -804,6 +809,9 @@ static void processContinuosAdjustments(controlRateConfig_t *controlRateConfig)
                 int value = (((rcData[channelIndex] - PWM_RANGE_MIDDLE) * adjustmentRange->adjustmentScale) / (PWM_RANGE_MIDDLE - PWM_RANGE_MIN)) + adjustmentRange->adjustmentCenter;
 
                 newValue = applyAbsoluteAdjustment(controlRateConfig, adjustmentFunction, value);
+
+                setConfigDirtyIfNotPermanent(&adjustmentRange->range);
+
                 pidInitConfig(currentPidProfile);
             }
         }

@@ -121,12 +121,11 @@ typedef struct timerHardware_s {
     DMA_Channel_TypeDef *dmaRefConfigured;
 #endif
 #else
-#if defined(STM32F4) || defined(STM32F7)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
     DMA_Stream_TypeDef *dmaRef;
-    uint32_t dmaChannel;
-#elif defined(STM32H7)
-    DMA_Stream_TypeDef *dmaRef;
-    uint8_t dmaRequest;
+    // For F4 and F7, dmaChannel is channel for DMA1 or DMA2.
+    // For H7, dmaChannel is DMA request number for DMAMUX
+    uint32_t dmaChannel; // XXX Can be much smaller (e.g. uint8_t)
 #else
     DMA_Channel_TypeDef *dmaRef;
 #endif
@@ -136,11 +135,10 @@ typedef struct timerHardware_s {
     // TIMUP
 #ifdef STM32F3
     DMA_Channel_TypeDef *dmaTimUPRef;
-#elif defined(STM32H7)
-    DMA_Stream_TypeDef *dmaTimUPRef;
-    uint8_t dmaTimUPRequest;
 #else
     DMA_Stream_TypeDef *dmaTimUPRef;
+    // For F4 and F7, dmaTimUpChannel is channel for DMA1 or DMA2.
+    // For H7, dmaTimUpChannel is DMA request number for DMAMUX
     uint32_t dmaTimUPChannel;
 #endif
     uint8_t dmaTimUPIrqHandler;
@@ -189,6 +187,10 @@ extern const timerHardware_t timerHardware[];
 
 #define FULL_TIMER_CHANNEL_COUNT 78
 
+#elif defined(STM32H7)
+
+#define FULL_TIMER_CHANNEL_COUNT 87
+
 #endif
 
 extern const timerHardware_t fullTimerHardware[];
@@ -207,6 +209,10 @@ extern const timerHardware_t fullTimerHardware[];
 #elif defined(STM32F1)
 
 #define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) )
+
+#elif defined(STM32H7)
+
+#define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(6) | TIM_N(7) | TIM_N(8) | TIM_N(12) | TIM_N(13) | TIM_N(14) | TIM_N(15) | TIM_N(16) | TIM_N(17) )
 
 #else
     #error "No timer / channel tag definition found for CPU"

@@ -68,12 +68,14 @@
 #define JEDEC_ID_CYPRESS_S25FL128L     0x016018
 #define JEDEC_ID_BERGMICRO_W25Q32      0xE04016
 
+// IMPORTANT: Timeout values are currently required to be set to the highest value required by any of the supported flash chips by this driver.
+
 // The timeout we expect between being able to issue page program instructions
 #define DEFAULT_TIMEOUT_MILLIS       6
-
-// These take sooooo long:
 #define SECTOR_ERASE_TIMEOUT_MILLIS  5000
-#define BULK_ERASE_TIMEOUT_MILLIS    21000
+
+// etracer65 notes: For bulk erase The 25Q16 takes about 3 seconds and the 25Q128 takes about 49
+#define BULK_ERASE_TIMEOUT_MILLIS    50000
 
 #define M25P16_PAGESIZE 256
 
@@ -150,15 +152,22 @@ static bool m25p16_isReady(flashDevice_t *fdevice)
     return !fdevice->couldBeBusy;
 }
 
-static bool m25p16_waitForReady(flashDevice_t *fdevice, uint32_t timeoutMillis)
+static void m25p16_setTimeout(flashDevice_t *fdevice, uint32_t timeoutMillis)
 {
-    uint32_t time = millis();
+    uint32_t now = millis();
+    fdevice->timeoutAt = now + timeoutMillis;
+}
+
+static bool m25p16_waitForReady(flashDevice_t *fdevice)
+{
     while (!m25p16_isReady(fdevice)) {
-        if (millis() - time > timeoutMillis) {
+        uint32_t now = millis();
+        if (cmp32(now, fdevice->timeoutAt) >= 0) {
             return false;
         }
     }
 
+    fdevice->timeoutAt = 0;
     return true;
 }
 
@@ -246,20 +255,24 @@ static void m25p16_eraseSector(flashDevice_t *fdevice, uint32_t address)
 
     m25p16_setCommandAddress(&out[1], address, fdevice->isLargeFlash);
 
-    m25p16_waitForReady(fdevice, SECTOR_ERASE_TIMEOUT_MILLIS);
+    m25p16_waitForReady(fdevice);
 
     m25p16_writeEnable(fdevice);
 
     m25p16_transfer(fdevice->io.handle.busdev, out, NULL, fdevice->isLargeFlash ? 5 : 4);
+
+    m25p16_setTimeout(fdevice, SECTOR_ERASE_TIMEOUT_MILLIS);
 }
 
 static void m25p16_eraseCompletely(flashDevice_t *fdevice)
 {
-    m25p16_waitForReady(fdevice, BULK_ERASE_TIMEOUT_MILLIS);
+    m25p16_waitForReady(fdevice);
 
     m25p16_writeEnable(fdevice);
 
     m25p16_performOneByteCommand(fdevice->io.handle.busdev, M25P16_INSTRUCTION_BULK_ERASE);
+
+    m25p16_setTimeout(fdevice, BULK_ERASE_TIMEOUT_MILLIS);
 }
 
 static void m25p16_pageProgramBegin(flashDevice_t *fdevice, uint32_t address)
@@ -275,7 +288,7 @@ static void m25p16_pageProgramContinue(flashDevice_t *fdevice, const uint8_t *da
 
     m25p16_setCommandAddress(&command[1], fdevice->currentWriteAddress, fdevice->isLargeFlash);
 
-    m25p16_waitForReady(fdevice, DEFAULT_TIMEOUT_MILLIS);
+    m25p16_waitForReady(fdevice);
 
     m25p16_writeEnable(fdevice);
 
@@ -295,6 +308,8 @@ static void m25p16_pageProgramContinue(flashDevice_t *fdevice, const uint8_t *da
 #endif
 
     fdevice->currentWriteAddress += length;
+
+    m25p16_setTimeout(fdevice, DEFAULT_TIMEOUT_MILLIS);
 }
 
 static void m25p16_pageProgramFinish(flashDevice_t *fdevice)
@@ -330,8 +345,6 @@ static void m25p16_pageProgram(flashDevice_t *fdevice, uint32_t address, const u
  * Read `length` bytes into the provided `buffer` from the flash starting from the given `address` (which need not lie
  * on a page boundary).
  *
- * Waits up to DEFAULT_TIMEOUT_MILLIS milliseconds for the flash to become ready before reading.
- *
  * The number of bytes actually read is returned, which can be zero if an error or timeout occurred.
  */
 static int m25p16_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer, int length)
@@ -340,7 +353,7 @@ static int m25p16_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *b
 
     m25p16_setCommandAddress(&command[1], address, fdevice->isLargeFlash);
 
-    if (!m25p16_waitForReady(fdevice, DEFAULT_TIMEOUT_MILLIS)) {
+    if (!m25p16_waitForReady(fdevice)) {
         return 0;
     }
 
@@ -358,6 +371,8 @@ static int m25p16_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *b
 #else
     m25p16_disable(fdevice->io.handle.busdev);
 #endif
+
+    m25p16_setTimeout(fdevice, DEFAULT_TIMEOUT_MILLIS);
 
     return length;
 }

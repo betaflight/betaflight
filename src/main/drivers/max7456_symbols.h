@@ -41,7 +41,6 @@
 
 // Throttle Position (%)
 #define SYM_THR                     0x04
-#define SYM_THR1                    0x05
 
 // Map mode
 #define SYM_HOME                    0x04

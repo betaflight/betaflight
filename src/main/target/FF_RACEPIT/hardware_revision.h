@@ -20,5 +20,13 @@
 
 #pragma once
 
-void statsOnArm(void);
-void statsOnDisarm(void);
+typedef enum ffRacapitHardwareRevision_t {
+    FF_RACEPIT_UNKNOWN = 0,
+    FF_RACEPIT_REV_1, // RacePIT
+    FF_RACEPIT_REV_2, // RacePIT mini
+} ffRacepitHardwareRevision_e;
+
+extern uint8_t hardwareRevision;
+
+void updateHardwareRevision(void);
+void detectHardwareRevision(void);

@@ -205,9 +205,9 @@ bool flashIsReady(void)
     return flashDevice.vTable->isReady(&flashDevice);
 }
 
-bool flashWaitForReady(uint32_t timeoutMillis)
+bool flashWaitForReady(void)
 {
-    return flashDevice.vTable->waitForReady(&flashDevice, timeoutMillis);
+    return flashDevice.vTable->waitForReady(&flashDevice);
 }
 
 void flashEraseSector(uint32_t address)
@@ -247,7 +247,9 @@ int flashReadBytes(uint32_t address, uint8_t *buffer, int length)
 
 void flashFlush(void)
 {
-    flashDevice.vTable->flush(&flashDevice);
+    if (flashDevice.vTable->flush) {
+        flashDevice.vTable->flush(&flashDevice);
+    }
 }
 
 static const flashGeometry_t noFlashGeometry = {
