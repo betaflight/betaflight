@@ -23,9 +23,13 @@
 #include "platform.h"
 
 #include "drivers/system.h"
+#include "drivers/flash.h"
 
 #include "config/config_streamer.h"
 
+#if defined(STM32H750xx) && !(defined(EEPROM_IN_EXTERNAL_FLASH) || defined(EEPROM_IN_RAM))
+#error "STM32750xx only has one flash page which contains the bootloader, no spare flash pages available, use external storage for persistent config or ram for target testing"
+#endif
 // @todo this is not strictly correct for F4/F7, where sector sizes are variable
 #if !defined(FLASH_PAGE_SIZE)
 // F1
@@ -74,12 +78,11 @@ void config_streamer_init(config_streamer_t *c)
 
 void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
 {
-    // base must start at FLASH_PAGE_SIZE boundary
+    // base must start at FLASH_PAGE_SIZE boundary when using embedded flash.
     c->address = base;
     c->size = size;
     if (!c->unlocked) {
-
-#if defined(EEPROM_IN_RAM)
+#if defined(EEPROM_IN_RAM) || defined(EEPROM_IN_EXTERNAL_FLASH)
         // NOP
 #elif defined(EEPROM_IN_FLASH) || defined(EEPROM_IN_FILE)
 #if defined(STM32F7) || defined(STM32H7)
@@ -91,7 +94,7 @@ void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
         c->unlocked = true;
     }
 
-#if defined(EEPROM_IN_RAM) || defined(EEPROM_IN_FILE)
+#if defined(EEPROM_IN_RAM) || defined(EEPROM_IN_FILE) || defined(EEPROM_IN_EXTERNAL_FLASH)
     // NOP
 #elif defined(EEPROM_IN_FLASH)
 #if defined(STM32F10X)
@@ -113,7 +116,7 @@ void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
     c->err = 0;
 }
 
-#if defined(EEPROM_IN_RAM)
+#if defined(EEPROM_IN_RAM) || defined(EEPROM_IN_EXTERNAL_FLASH)
 // No flash sector method required.
 #elif defined(EEPROM_IN_FLASH)
 #if defined(STM32F745xx) || defined(STM32F746xx) || defined(STM32F765xx)
@@ -342,12 +345,48 @@ static void getFLASHSectorForEEPROM(uint32_t *bank, uint32_t *sector)
 #endif
 #endif
 
+// FIXME the return values are currently magic numbers
 static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t *buffer)
 {
     if (c->err != 0) {
         return c->err;
     }
-#if defined(EEPROM_IN_RAM)
+#if defined(EEPROM_IN_EXTERNAL_FLASH)
+
+    uint32_t dataOffset = (uint32_t)(c->address - (uintptr_t)&eepromData[0]);
+
+    const flashPartition_t *flashPartition = flashPartitionFindByType(FLASH_PARTITION_TYPE_CONFIG);
+    const flashGeometry_t *flashGeometry = flashGetGeometry();
+
+    uint32_t flashStartAddress = flashPartition->startSector * flashGeometry->sectorSize;
+    uint32_t flashOverflowAddress = ((flashPartition->endSector + 1) * flashGeometry->sectorSize); // +1 to sector for inclusive
+
+    uint32_t flashAddress = flashStartAddress + dataOffset;
+    if (flashAddress + CONFIG_STREAMER_BUFFER_SIZE > flashOverflowAddress) {
+        return -3; // address is past end of partition
+    }
+
+    uint32_t flashSectorSize = flashGeometry->sectorSize;
+    uint32_t flashPageSize = flashGeometry->pageSize;
+
+    bool onPageBoundary = (flashAddress % flashPageSize == 0);
+    if (onPageBoundary) {
+
+        bool firstPage = (flashAddress == flashStartAddress);
+        if (!firstPage) {
+            flashPageProgramFinish();
+        }
+
+        if (flashAddress % flashSectorSize == 0) {
+            flashEraseSector(flashAddress);
+        }
+
+        flashPageProgramBegin(flashAddress);
+    }
+
+    flashPageProgramContinue((uint8_t *)buffer, CONFIG_STREAMER_BUFFER_SIZE);
+
+#elif defined(EEPROM_IN_RAM)
     if (c->address == (uintptr_t)&eepromData[0]) {
         memset(eepromData, 0, sizeof(eepromData));
     }
@@ -470,7 +509,9 @@ int config_streamer_flush(config_streamer_t *c)
 int config_streamer_finish(config_streamer_t *c)
 {
     if (c->unlocked) {
-#if defined(EEPROM_IN_RAM)
+#if defined(EEPROM_IN_EXTERNAL_FLASH)
+        flashFlush();
+#elif defined(EEPROM_IN_RAM)
         // NOP
 #elif defined(EEPROM_IN_FILE)
         FLASH_Lock();

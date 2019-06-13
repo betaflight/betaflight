@@ -677,6 +677,5 @@ check-platform-included:
 # rebuild everything when makefile changes
 $(TARGET_OBJS): Makefile $(TARGET_DIR)/target.mk $(wildcard make/*)
 
-
 # include auto-generated dependencies
 -include $(TARGET_DEPS)
