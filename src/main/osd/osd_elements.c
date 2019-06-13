@@ -113,6 +113,7 @@
 #define OSD_STICK_OVERLAY_WIDTH 7
 #define OSD_STICK_OVERLAY_HEIGHT 5
 #define OSD_STICK_OVERLAY_SPRITE_HEIGHT 3
+#define OSD_STICK_OVERLAY_SPRITE_EXTENDED_WIDTH 3
 #define OSD_STICK_OVERLAY_VERTICAL_POSITIONS (OSD_STICK_OVERLAY_HEIGHT * OSD_STICK_OVERLAY_SPRITE_HEIGHT)
 
 #define FULL_CIRCLE 360
@@ -1086,8 +1087,8 @@ static void osdElementStickOverlay(osdElementParms_t *element)
     const uint8_t cursorY = OSD_STICK_OVERLAY_VERTICAL_POSITIONS - 1 - scaleRange(constrain(rcData[vertical_channel], PWM_RANGE_MIN, PWM_RANGE_MAX - 1), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, OSD_STICK_OVERLAY_VERTICAL_POSITIONS);
     const char cursor = SYM_STICK_OVERLAY_SPRITE_HIGH + (cursorY % OSD_STICK_OVERLAY_SPRITE_HEIGHT);
 #ifdef USE_MAX7456_EXTENDED
-    const uint8_t charX = scaleRange(constrain(rcData[horizontal_channel], PWM_RANGE_MIN, PWM_RANGE_MAX - 1), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, OSD_STICK_OVERLAY_WIDTH*3)%3;
-    const uint8_t extended = 256 + charX + (cursorY % OSD_STICK_OVERLAY_SPRITE_HEIGHT) * 3;
+    const uint8_t charX = scaleRange(constrain(rcData[horizontal_channel], PWM_RANGE_MIN, PWM_RANGE_MAX - 1), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, OSD_STICK_OVERLAY_WIDTH * OSD_STICK_OVERLAY_SPRITE_EXTENDED_WIDTH) % OSD_STICK_OVERLAY_SPRITE_EXTENDED_WIDTH;
+    const uint8_t extended = SYM_EXT_STICK_SPRITE_START + charX + (cursorY % OSD_STICK_OVERLAY_SPRITE_HEIGHT) * OSD_STICK_OVERLAY_SPRITE_EXTENDED_WIDTH;
     if (displayIsExtended(element->osdDisplayPort)) {
         displayWriteCharExtended(element->osdDisplayPort, xpos + cursorX, ypos + cursorY / OSD_STICK_OVERLAY_SPRITE_HEIGHT, extended);
     } else {
@@ -1105,9 +1106,15 @@ static void osdElementStickOverlay(osdElementParms_t *element)
 static void osdElementPilotLogo(osdElementParms_t *element)
 {
     if (displayIsExtended(element->osdDisplayPort)) {
-        displayWriteExtended(element->osdDisplayPort, element->elemPosX, element->elemPosY, "\x09\x0a\x0b\x0c");
-        displayWriteExtended(element->osdDisplayPort, element->elemPosX, element->elemPosY+1, "\x0d\x0e\x0f\x10");
-        displayWriteExtended(element->osdDisplayPort, element->elemPosX, element->elemPosY+2, "\x11\x12\x13\x14");
+        int fontOffset = SYM_EXT_PILOT_LOGO_START;
+        for (int row = 0; row < 3; row++) {
+            for (int column = 0; column < 4; column++) {
+                displayWriteCharExtended(element->osdDisplayPort, element->elemPosX + column, element->elemPosY + row, fontOffset++);
+            }
+        }
+        //displayWriteExtended(element->osdDisplayPort, element->elemPosX, element->elemPosY, "\x09\x0a\x0b\x0c");
+        //displayWriteExtended(element->osdDisplayPort, element->elemPosX, element->elemPosY+1, "\x0d\x0e\x0f\x10");
+        //displayWriteExtended(element->osdDisplayPort, element->elemPosX, element->elemPosY+2, "\x11\x12\x13\x14");
     }
 }
 #endif
