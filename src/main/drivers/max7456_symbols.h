@@ -31,10 +31,13 @@
 #define SYM_ROLL                    0x14
 #define SYM_PITCH                   0x15
 #define SYM_TEMPERATURE             0x7A
+
+// GPS and navigation
 #define SYM_LAT                     0x89
 #define SYM_LON                     0x98
 #define SYM_ALTITUDE                0x7F
 #define SYM_TOTAL_DISTANCE          0x71
+#define SYM_OVER_HOME               0x05
 
 // RSSI
 #define SYM_RSSI                    0x01
@@ -59,9 +62,9 @@
 #define SYM_HEADING_LINE            0x1D
 
 // AH Center screen Graphics
-#define SYM_AH_CENTER_LINE          0x7B
-#define SYM_AH_CENTER_LINE_RIGHT    0x7D
-#define SYM_AH_CENTER               0x7E
+#define SYM_AH_CENTER_LINE          0x72
+#define SYM_AH_CENTER               0x73
+#define SYM_AH_CENTER_LINE_RIGHT    0x74
 #define SYM_AH_RIGHT                0x02
 #define SYM_AH_LEFT                 0x03
 #define SYM_AH_DECORATION           0x13
