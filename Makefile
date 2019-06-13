@@ -24,6 +24,9 @@ OPTIONS   ?=
 # compile for OpenPilot BootLoader support
 OPBL      ?= no
 
+# compile for External Storage Bootloader support
+EXST      ?= no
+
 # Debugger optons:
 #   empty           - ordinary build with all optimizations enabled
 #   RELWITHDEBINFO  - ordinary build with debug symbols and all optimizations enabled
@@ -275,14 +278,18 @@ CPPCHECK        = cppcheck $(CSOURCES) --enable=all --platform=unix64 \
 #
 # Things we will build
 #
+TARGET_S19      = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET).s19
 TARGET_BIN      = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET).bin
 TARGET_HEX      = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET).hex
 TARGET_ELF      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).elf
+TARGET_EXST_ELF = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET)_EXST.elf
+TARGET_UNPATCHED_BIN = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET)_UNPATCHED.bin
 TARGET_LST      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).lst
 TARGET_OBJS     = $(addsuffix .o,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $(SRC))))
 TARGET_DEPS     = $(addsuffix .d,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $(SRC))))
 TARGET_MAP      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).map
 
+TARGET_EXST_HASH_SECTION_FILE = $(OBJECT_DIR)/$(TARGET)/exst_hash_section.bin
 
 CLEAN_ARTIFACTS := $(TARGET_BIN)
 CLEAN_ARTIFACTS += $(TARGET_HEX)
@@ -298,13 +305,51 @@ $(OBJECT_DIR)/$(TARGET)/build/version.o : $(SRC)
 $(TARGET_LST): $(TARGET_ELF)
 	$(V0) $(OBJDUMP) -S --disassemble $< > $@
 
+
+$(TARGET_S19): $(TARGET_ELF)
+	@echo "Creating srec/S19 $(TARGET_S19)" "$(STDOUT)"
+	$(V1) $(OBJCOPY) --output-target=srec $(TARGET_S19)
+
+ifeq ($(EXST),no)
+$(TARGET_BIN): $(TARGET_ELF)
+	@echo "Creating BIN $(TARGET_BIN)" "$(STDOUT)"
+	$(V1) $(OBJCOPY) -O binary $< $@
+	
 $(TARGET_HEX): $(TARGET_ELF)
 	@echo "Creating HEX $(TARGET_HEX)" "$(STDOUT)"
 	$(V1) $(OBJCOPY) -O ihex --set-start 0x8000000 $< $@
 
-$(TARGET_BIN): $(TARGET_ELF)
-	@echo "Creating BIN $(TARGET_BIN)" "$(STDOUT)"
+else
+CLEAN_ARTIFACTS += $(TARGET_UNPATCHED_BIN) $(TARGET_EXST_HASH_SECTION_FILE) $(TARGET_EXST_ELF)
+
+$(TARGET_UNPATCHED_BIN): $(TARGET_ELF)
+	@echo "Creating BIN (without checksum) $(TARGET_UNPATCHED_BIN)" "$(STDOUT)"
 	$(V1) $(OBJCOPY) -O binary $< $@
+
+$(TARGET_BIN): $(TARGET_UNPATCHED_BIN)
+	@echo "Creating EXST $(TARGET_BIN)" "$(STDOUT)"
+# Linker script should allow .bin generation from a .elf which results in a file that is the same length as the FIRMWARE_SIZE.
+# These 'dd' commands will pad a short binary to length FIRMWARE_SIZE.
+	$(V1) dd if=/dev/zero ibs=1k count=$(FIRMWARE_SIZE) of=$(TARGET_BIN)
+	$(V1) dd if=$(TARGET_UNPATCHED_BIN) of=$(TARGET_BIN) conv=notrunc
+
+	@echo "Generating MD5 hash of binary" "$(STDOUT)"
+	$(V1) openssl dgst -md5 $(TARGET_BIN) > $(TARGET_UNPATCHED_BIN).md5 
+	
+	@echo "Patching MD5 hash into binary" "$(STDOUT)"
+	$(V1) cat $(TARGET_UNPATCHED_BIN).md5 | awk '{printf("%08x: %s",(1024*$(FIRMWARE_SIZE))-16,$$2);}' | xxd -r - $(TARGET_BIN)
+	$(V1) echo $(FIRMWARE_SIZE) | awk '{printf("-s 0x%08x -l 16 -c 16 %s",(1024*$$1)-16,"$(TARGET_BIN)");}' | xargs xxd
+
+	@echo "Patching MD5 hash into exst elf" "$(STDOUT)"
+	$(OBJCOPY) $(TARGET_ELF) --dump-section .exst_hash=$(TARGET_EXST_HASH_SECTION_FILE)
+	$(V1) cat $(TARGET_UNPATCHED_BIN).md5 | awk '{printf("%08x: %s",64-16,$$2);}' | xxd -r - $(TARGET_EXST_HASH_SECTION_FILE)
+	$(OBJCOPY) $(TARGET_ELF) $(TARGET_EXST_ELF) --update-section .exst_hash=$(TARGET_EXST_HASH_SECTION_FILE)
+
+$(TARGET_HEX): $(TARGET_BIN)
+	@echo "Creating EXST HEX from patched EXST ELF $(TARGET_HEX)" "$(STDOUT)"
+	$(V1) $(OBJCOPY) -O ihex --set-start 0x8000000 $(TARGET_EXST_ELF) $@
+
+endif
 
 $(TARGET_ELF): $(TARGET_OBJS) $(LD_SCRIPT)
 	@echo "Linking $(TARGET)" "$(STDOUT)"
@@ -468,6 +513,9 @@ endif
 binary:
 	$(V0) $(MAKE) -j $(TARGET_BIN)
 
+srec:
+	$(V0) $(MAKE) -j $(TARGET_S19)
+
 hex:
 	$(V0) $(MAKE) -j $(TARGET_HEX)
 
@@ -628,7 +676,6 @@ check-platform-included:
 
 # rebuild everything when makefile changes
 $(TARGET_OBJS): Makefile $(TARGET_DIR)/target.mk $(wildcard make/*)
-
 
 # include auto-generated dependencies
 -include $(TARGET_DEPS)

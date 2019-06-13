@@ -766,7 +766,7 @@ TEST(OsdTest, TestElementAltitude)
     osdRefresh(simulationTime);
 
     // then
-    displayPortTestBufferSubstring(23, 7, "-       ");
+    displayPortTestBufferSubstring(23, 7, "%c-", SYM_ALTITUDE);
 
     // when
     sensorsSet(SENSOR_GPS);

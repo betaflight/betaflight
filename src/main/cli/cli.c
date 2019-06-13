@@ -164,6 +164,13 @@ uint8_t cliMode = 0;
 
 #include "cli.h"
 
+typedef struct serialPassthroughPort_e {
+    int id;
+    uint32_t baud;
+    unsigned mode;
+    serialPort_t *port;
+} serialPassthroughPort_t;
+
 static serialPort_t *cliPort;
 
 #ifdef STM32F1
@@ -1231,6 +1238,20 @@ static void cbCtrlLine(void *context, uint16_t ctrl)
     }
 }
 
+static int cliParseSerialMode(const char *tok)
+{
+    int mode = 0;
+
+    if (strcasestr(tok, "rx")) {
+        mode |= MODE_RX;
+    }
+    if (strcasestr(tok, "tx")) {
+        mode |= MODE_TX;
+    }
+
+    return mode;
+}
+
 static void cliSerialPassthrough(char *cmdline)
 {
     if (isEmpty(cmdline)) {
@@ -1238,12 +1259,10 @@ static void cliSerialPassthrough(char *cmdline)
         return;
     }
 
-    int id = -1;
-    uint32_t baud = 0;
+    serialPassthroughPort_t ports[2] = { {SERIAL_PORT_NONE, 0, 0, NULL}, { SERIAL_PORT_USB_VCP, 0, 0, cliPort} };
     bool enableBaudCb = false;
-    int pinioDtr = 0;
-    bool resetOnDtr = false;
-    unsigned mode = 0;
+    int port1PinioDtr = 0;
+    bool port1ResetOnDtr = false;
     char *saveptr;
     char* tok = strtok_r(cmdline, " ", &saveptr);
     int index = 0;
@@ -1251,114 +1270,147 @@ static void cliSerialPassthrough(char *cmdline)
     while (tok != NULL) {
         switch (index) {
         case 0:
-            id = atoi(tok);
+            ports[0].id = atoi(tok);
             break;
         case 1:
-            baud = atoi(tok);
+            ports[0].baud = atoi(tok);
             break;
         case 2:
-            if (strcasestr(tok, "rx")) {
-                mode |= MODE_RX;
-            }
-            if (strcasestr(tok, "tx")) {
-                mode |= MODE_TX;
-            }
+            ports[0].mode = cliParseSerialMode(tok);
             break;
         case 3:
             if (strncasecmp(tok, "reset", strlen(tok)) == 0) {
-                resetOnDtr = true;
+                port1ResetOnDtr = true;
 #ifdef USE_PINIO
+            } else if (strncasecmp(tok, "none", strlen(tok)) == 0) {
+                port1PinioDtr = 0;
             } else {
-                pinioDtr = atoi(tok);
+                port1PinioDtr = atoi(tok);
+                if (port1PinioDtr < 0 || port1PinioDtr > PINIO_COUNT) {
+                    cliPrintLinef("Invalid PinIO number %d", port1PinioDtr);
+                    return ;
+                }
 #endif /* USE_PINIO */
             }
-
+            break;
+        case 4:
+            ports[1].id = atoi(tok);
+            ports[1].port = NULL;
+            break;
+        case 5:
+            ports[1].baud = atoi(tok);
+            break;
+        case 6:
+            ports[1].mode = cliParseSerialMode(tok);
             break;
         }
         index++;
         tok = strtok_r(NULL, " ", &saveptr);
     }
 
-    if (baud == 0) {
+    // Port checks
+    if (ports[0].id == ports[1].id) {
+        cliPrintLinef("Port1 and port2 are same");
+        return ;
+    }
+
+    for (int i = 0; i < 2; i++) {
+        if (findSerialPortIndexByIdentifier(ports[i].id) == -1) {
+            cliPrintLinef("Invalid port%d %d", i + 1, ports[i].id);
+            return ;
+        } else {
+            cliPrintLinef("Port%d: %d ", i + 1, ports[i].id);
+        }
+    }
+
+    if (ports[0].baud == 0 && ports[1].id == SERIAL_PORT_USB_VCP) {
         enableBaudCb = true;
     }
 
-    cliPrintf("Port %d ", id);
-    serialPort_t *passThroughPort;
-    serialPortUsage_t *passThroughPortUsage = findSerialPortUsageByIdentifier(id);
-    if (!passThroughPortUsage || passThroughPortUsage->serialPort == NULL) {
-        if (enableBaudCb) {
-            // Set default baud
-            baud = 57600;
+    for (int i = 0; i < 2; i++) {
+        serialPort_t **port = &(ports[i].port);
+        if (*port != NULL) {
+            continue;
         }
 
-        if (!mode) {
-            mode = MODE_RXTX;
-        }
+        int portIndex = i + 1;
+        serialPortUsage_t *portUsage = findSerialPortUsageByIdentifier(ports[i].id);
+        if (!portUsage || portUsage->serialPort == NULL) {
+            bool isUseDefaultBaud = false;
+            if (ports[i].baud == 0) {
+                // Set default baud
+                ports[i].baud = 57600;
+                isUseDefaultBaud = true;
+            }
 
-        passThroughPort = openSerialPort(id, FUNCTION_NONE, NULL, NULL,
-                                         baud, mode,
-                                         SERIAL_NOT_INVERTED);
-        if (!passThroughPort) {
-            cliPrintLine("could not be opened.");
-            return;
-        }
+            if (!ports[i].mode) {
+                ports[i].mode = MODE_RXTX;
+            }
 
-        if (enableBaudCb) {
-            cliPrintf("opened, default baud = %d.\r\n", baud);
+            *port = openSerialPort(ports[i].id, FUNCTION_NONE, NULL, NULL,
+                                            ports[i].baud, ports[i].mode,
+                                            SERIAL_NOT_INVERTED);
+            if (!*port) {
+                cliPrintLinef("Port%d could not be opened.", portIndex);
+                return;
+            }
+
+            if (isUseDefaultBaud) {
+                cliPrintf("Port%d opened, default baud = %d.\r\n", portIndex, ports[i].baud);
+            } else {
+                cliPrintf("Port%d opened, baud = %d.\r\n", portIndex, ports[i].baud);
+            }
         } else {
-            cliPrintf("opened, baud = %d.\r\n", baud);
-        }
-    } else {
-        passThroughPort = passThroughPortUsage->serialPort;
-        // If the user supplied a mode, override the port's mode, otherwise
-        // leave the mode unchanged. serialPassthrough() handles one-way ports.
-        // Set the baud rate if specified
-        if (baud) {
-            cliPrintf("already open, setting baud = %d.\n\r", baud);
-            serialSetBaudRate(passThroughPort, baud);
-        } else {
-            cliPrintf("already open, baud = %d.\n\r", passThroughPort->baudRate);
-        }
+            *port = portUsage->serialPort;
+            // If the user supplied a mode, override the port's mode, otherwise
+            // leave the mode unchanged. serialPassthrough() handles one-way ports.
+            // Set the baud rate if specified
+            if (ports[i].baud) {
+                cliPrintf("Port%d is already open, setting baud = %d.\n\r", portIndex, ports[i].baud);
+                serialSetBaudRate(*port, ports[i].baud);
+            } else {
+                cliPrintf("Port%d is already open, baud = %d.\n\r", portIndex, (*port)->baudRate);
+            }
 
-        if (mode && passThroughPort->mode != mode) {
-            cliPrintf("Mode changed from %d to %d.\r\n",
-                   passThroughPort->mode, mode);
-            serialSetMode(passThroughPort, mode);
-        }
+            if (ports[i].mode && (*port)->mode != ports[i].mode) {
+                cliPrintf("Port%d mode changed from %d to %d.\r\n",
+                    portIndex, (*port)->mode, ports[i].mode);
+                serialSetMode(*port, ports[i].mode);
+            }
 
-        // If this port has a rx callback associated we need to remove it now.
-        // Otherwise no data will be pushed in the serial port buffer!
-        if (passThroughPort->rxCallback) {
-            passThroughPort->rxCallback = 0;
+            // If this port has a rx callback associated we need to remove it now.
+            // Otherwise no data will be pushed in the serial port buffer!
+            if ((*port)->rxCallback) {
+                (*port)->rxCallback = NULL;
+            }
         }
     }
 
     // If no baud rate is specified allow to be set via USB
     if (enableBaudCb) {
-        cliPrintLine("Baud rate change over USB enabled.");
+        cliPrintLine("Port1 baud rate change over USB enabled.");
         // Register the right side baud rate setting routine with the left side which allows setting of the UART
         // baud rate over USB without setting it using the serialpassthrough command
-        serialSetBaudRateCb(cliPort, serialSetBaudRate, passThroughPort);
+        serialSetBaudRateCb(ports[0].port, serialSetBaudRate, ports[1].port);
     }
 
     char *resetMessage = "";
-    if (resetOnDtr) {
+    if (port1ResetOnDtr && ports[1].id == SERIAL_PORT_USB_VCP) {
         resetMessage = "or drop DTR ";
     }
 
     cliPrintLinef("Forwarding, power cycle %sto exit.", resetMessage);
 
-    if (resetOnDtr
+    if ((ports[1].id == SERIAL_PORT_USB_VCP) && (port1ResetOnDtr
 #ifdef USE_PINIO
-        || pinioDtr
+        || port1PinioDtr
 #endif /* USE_PINIO */
-        ) {
+        )) {
         // Register control line state callback
-        serialSetCtrlLineStateCb(cliPort, cbCtrlLine, (void *)(intptr_t)(pinioDtr));
+        serialSetCtrlLineStateCb(ports[0].port, cbCtrlLine, (void *)(intptr_t)(port1PinioDtr));
     }
 
-    serialPassthrough(cliPort, passThroughPort, NULL, NULL);
+    serialPassthrough(ports[0].port, ports[1].port, NULL, NULL);
 }
 #endif
 

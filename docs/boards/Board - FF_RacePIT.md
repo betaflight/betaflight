@@ -1,10 +1,10 @@
-# FuriusFPV RacePIT V1.0
+# FuriusFPV RacePIT (v1.x) and RacePIT mini (V2.x)
 
 ## Features
 - Built-in RealPIT for VTX power.
 - More UARTS (Full 6 Uart) for Simultaneous Connections of USB, Runcam Device, GPS, CRFS Rx, Black-box, Bluetooth
 - Selecting Internal 5V or External 5V ESC
-- 2 Port Camera Control and LED Strip for Simultaneous Connections
+- 2 Port Camera Control and LED Strip for Simultaneous Connections (RacePIT only)
 - Built-in ESC connector - Clean and Easy to Connect 4-in-1 ESC
 - Use MPU6000 accelerometers and gyroscopes
 - Ultra Simplified OSD Interface w/ No PC Necessary
@@ -20,7 +20,7 @@
 - STM32F405 main chip
 - Built-in REALPIT for VTX power supply
 - 6 UARTs 
-- Camera control, support foxxer (built-in capacitor) and another camera (without capacitor)
+- Camera control, support foxxer (built-in capacitor) and another camera (without capacitor) (RacePIT only)
 - LED strip control
 - MPU6000 
 - BEC 5V 1.5A 2-6S 
@@ -29,9 +29,7 @@
 - Current sensor support
 - 4 ESCs signal
 
-## BoardLayout
+## BoardLayout RacePIT
 ![RacePIT](images/FF_RacePIT.jpg)
-## Camera Connections
-![RacePIT](images/FF_RacePIT_CAM.jpg)
-## Connections
-![RacePIT](images/FF_RacePIT_Connection.jpg)
+## BoardLayout RacePIT mini
+![RacePIT](images/FF_RacePIT_mini.jpg)

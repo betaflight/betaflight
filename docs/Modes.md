@@ -103,7 +103,7 @@ Use the GUI configuration tool to allow easy configuration when channel.
 
 There is a CLI command, `aux` that allows auxillary configuration.  It takes 5 arguments as follows:
 
-* AUD range slot number (0 - 39)
+* AUX range slot number (0 - 39)
 * mode id (see mode list above)
 * AUX channel index (AUX1 = 0, AUX2 = 1,... etc)
 * low position, from 900 to 2100. Should be a multiple of 25.
