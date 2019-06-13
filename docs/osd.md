@@ -48,7 +48,7 @@ These symbols are defined in [src/main/drivers/max7456_symbols.h](../src/main/dr
 | ![042.png](osd_images/042.png) | 0x2A | 040 |                                 |       |
 | ![043.png](osd_images/043.png) | 0x2B | 040 |                                 |       |
 | ![044.png](osd_images/044.png) | 0x2C | 040 |                                 |       |
-| ![045.png](osd_images/045.png) | 0x2D | 045 | SYM_COLON                       |       |
+| ![045.png](osd_images/045.png) | 0x2D | 045 | SYM_HYPHEN                      |       |
 | ![046.png](osd_images/046.png) | 0x2E | 046 |                                 |       |
 | ![047.png](osd_images/047.png) | 0x2F | 047 |                                 |       |
 | ![048.png](osd_images/048.png) | 0x30 | 048 |                                 |       |
@@ -118,7 +118,7 @@ These symbols are defined in [src/main/drivers/max7456_symbols.h](../src/main/dr
 | ![112.png](osd_images/112.png) | 0x70 | 112 | SYM_SPEED                       |       |
 | ![113.png](osd_images/113.png) | 0x71 | 113 | SYM_TOTAL_DISTANCE              |       |
 | ![114.png](osd_images/114.png) | 0x72 | 114 | SYM_AH_CENTER_LINE              | Crosshairs      |
-| ![115.png](osd_images/115.png) | 0x73 | 115 | SYM_AH_CENTER                   | Crosshairs      |
+| ![115.png](osd_images/115.png) | 0x73 | 115 | SYM_AH_CENTER                   | Crosshairs ![114.png](osd_images/114.png)![115.png](osd_images/115.png)![116.png](osd_images/116.png)     |
 | ![116.png](osd_images/116.png) | 0x74 | 116 | SYM_AH_CENTER_LINE_RIGHT        | Crosshairs      |
 | ![117.png](osd_images/117.png) | 0x75 | 117 |                                 |       |
 | ![118.png](osd_images/118.png) | 0x76 | 118 |                                 |       |
