@@ -475,7 +475,7 @@ static void osdElementAltitude(osdElementParms_t *element)
         osdFormatAltitudeString(element->buff, getEstimatedAltitudeCm());
     } else {
         element->buff[0] = SYM_ALTITUDE;
-        element->buff[1] = SYM_COLON; // We use this symbol when we don't have a valid measure
+        element->buff[1] = SYM_HYPHEN; // We use this symbol when we don't have a valid measure
         element->buff[2] = '\0';
     }
 }
@@ -768,7 +768,7 @@ static void osdElementGpsFlightDistance(osdElementParms_t *element)
         tfp_sprintf(element->buff, "%c%d%c", SYM_TOTAL_DISTANCE, distance, osdGetMetersToSelectedUnitSymbol());
     } else {
         // We use this symbol when we don't have a FIX
-        tfp_sprintf(element->buff, "%c%c", SYM_TOTAL_DISTANCE, SYM_COLON);
+        tfp_sprintf(element->buff, "%c%c", SYM_TOTAL_DISTANCE, SYM_HYPHEN);
     }
 }
 
@@ -784,7 +784,7 @@ static void osdElementGpsHomeDirection(osdElementParms_t *element)
 
     } else {
         // We use this symbol when we don't have a FIX
-        element->buff[0] = SYM_COLON;
+        element->buff[0] = SYM_HYPHEN;
     }
 
     element->buff[1] = 0;
@@ -798,7 +798,7 @@ static void osdElementGpsHomeDistance(osdElementParms_t *element)
     } else {
         element->buff[0] = SYM_HOMEFLAG;
         // We use this symbol when we don't have a FIX
-        element->buff[1] = SYM_COLON;
+        element->buff[1] = SYM_HYPHEN;
         element->buff[2] = '\0';
     }
 }
@@ -950,7 +950,7 @@ static void osdElementNumericalVario(osdElementParms_t *element)
         tfp_sprintf(element->buff, "%c%01d.%01d%c", directionSymbol, abs(verticalSpeed / 100), abs((verticalSpeed % 100) / 10), osdGetVarioToSelectedUnitSymbol());
     } else {
         // We use this symbol when we don't have a valid measure
-        element->buff[0] = SYM_COLON;
+        element->buff[0] = SYM_HYPHEN;
         element->buff[1] = '\0';
     }
 }
