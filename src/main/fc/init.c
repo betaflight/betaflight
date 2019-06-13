@@ -179,6 +179,8 @@ serialPort_t *loopbackPort;
 
 uint8_t systemState = SYSTEM_STATE_INITIALISING;
 
+void SDIO_GPIO_Init(void);
+
 void processLoopback(void)
 {
 #ifdef SOFTSERIAL_LOOPBACK
@@ -246,6 +248,13 @@ static void configureSPIAndQuadSPI(void)
 #endif // USE_QUAD_SPI
 }
 
+void sdCardAndFSInit()
+{
+    sdcardInsertionDetectInit();
+    sdcard_init(sdcardConfig());
+    afatfs_init();
+}
+
 
 void init(void)
 {
@@ -292,14 +301,69 @@ void init(void)
     }
 #endif
 
-#ifdef EEPROM_IN_EXTERNAL_FLASH
+    enum {
+        FLASH_INIT_ATTEMPTED            = (1 << 0),
+        SD_INIT_ATTEMPTED               = (1 << 1),
+        SPI_AND_QSPI_INIT_ATTEMPTED      = (1 << 2),
+    };
+    uint8_t initFlags = 0;
 
+
+#ifdef EEPROM_IN_SDCARD
+
+    //
+    // Config in sdcard presents an issue with pin configuration since the pin and sdcard configs for the
+    // sdcard are in the config which is on the sdcard which we can't read yet!
+    //
+    // FIXME We need to add configuration somewhere, e.g. bootloader image or reserved flash area, that can be read by the firmware.
+    // it's currently possible for the firmware resource allocation to be wrong after the config is loaded if the user changes the settings.
+    // This would cause undefined behaviour once the config is loaded.  so for now, users must NOT change sdio/spi configs needed for
+    // the system to boot and/or to save the config.
+    //
+    // note that target specific SDCARD/SDIO/SPI/QUADSPI configs are
+    // also not supported in USE_TARGET_CONFIG/targetConfigure() when using EEPROM_IN_SDCARD.
+    //
+
+    //
+    // IMPORTANT: all default flash and pin configurations must be valid for the target after pgResetAll() is called.
+    // Target designers must ensure other devices connected the same SPI/QUADSPI interface as the flash chip do not
+    // cause communication issues with the flash chip.  e.g. use external pullups on SPI/QUADSPI CS lines.
+    //
+
+#ifdef TARGET_BUS_INIT
+#error "EEPROM_IN_SDCARD and TARGET_BUS_INIT are mutually exclusive"
+#endif
+
+    pgResetAll();
+
+#if defined(STM32H7) && defined(USE_SDCARD_SDIO) // H7 only for now, likely should be applied to F4/F7 too
+    SDIO_GPIO_Init();
+#endif
+#ifdef USE_SDCARD_SPI
+    configureSPIAndQuadSPI();
+    initFlags |= SPI_AND_QSPI_INIT_ATTEMPTED;
+#endif
+
+    sdCardAndFSInit();
+    initFlags |= SD_INIT_ATTEMPTED;
+
+    while (afatfs_getFilesystemState() != AFATFS_FILESYSTEM_STATE_READY) {
+        afatfs_poll();
+
+        if (afatfs_getFilesystemState() == AFATFS_FILESYSTEM_STATE_FATAL) {
+            failureMode(FAILURE_SDCARD_INITIALISATION_FAILED);
+        }
+    }
+
+#endif // EEPROM_IN_SDCARD
+
+#ifdef EEPROM_IN_EXTERNAL_FLASH
     //
     // Config on external flash presents an issue with pin configuration since the pin and flash configs for the
     // external flash are in the config which is on a chip which we can't read yet!
     //
-    // FIXME We need to add configuration into the bootloader image that can be read by the firmware.
-    // it's currently possible firmware and bootloader to become mismatched if the user changes them.
+    // FIXME We need to add configuration somewhere, e.g. bootloader image or reserved flash area, that can be read by the firmware.
+    // it's currently possible for the firmware resource allocation to be wrong after the config is loaded if the user changes the settings.
     // This would cause undefined behaviour once the config is loaded.  so for now, users must NOT change flash/pin configs needed for
     // the system to boot and/or to save the config.
     //
@@ -319,6 +383,8 @@ void init(void)
 #endif
 
     configureSPIAndQuadSPI();
+    initFlags |= SPI_AND_QSPI_INIT_ATTEMPTED;
+
 
 #ifndef USE_FLASH_CHIP
 #error "EEPROM_IN_EXTERNAL_FLASH requires USE_FLASH_CHIP to be defined."
@@ -329,9 +395,9 @@ void init(void)
     if (!haveFlash) {
         failureMode(FAILURE_EXTERNAL_FLASH_INIT_FAILED);
     }
+    initFlags |= FLASH_INIT_ATTEMPTED;
 
 #endif // EEPROM_IN_EXTERNAL_FLASH
-
 
     initEEPROM();
 
@@ -517,9 +583,11 @@ void init(void)
 
 #else
 
-#ifndef EEPROM_IN_EXTERNAL_FLASH
-    configureSPIAndQuadSPI();
-#endif // EEPROM_IN_EXTERNAL_FLASH
+    // Depending on compilation options SPI/QSPI initialisation may already be done.
+    if (!(initFlags & SPI_AND_QSPI_INIT_ATTEMPTED)) {
+        configureSPIAndQuadSPI();
+        initFlags |= SPI_AND_QSPI_INIT_ATTEMPTED;
+    }
 
 #ifdef USE_USB_MSC
 /* MSC mode will start after init, but will not allow scheduler to run,
@@ -567,9 +635,11 @@ void init(void)
 #endif
 
 #if defined(STM32H7) && defined(USE_SDCARD_SDIO) // H7 only for now, likely should be applied to F4/F7 too
-    void SDIO_GPIO_Init(void);
-    SDIO_GPIO_Init();
+    if (!(initFlags & SD_INIT_ATTEMPTED)) {
+        SDIO_GPIO_Init();
+    }
 #endif
+
 
 #ifdef USE_VTX_RTC6705
     bool useRTC6705 = rtc6705IOInit(vtxIOConfig());
@@ -763,10 +833,11 @@ void init(void)
     }
 #endif
 
-#ifndef EEPROM_IN_EXTERNAL_FLASH
 #ifdef USE_FLASH_CHIP
-    flashInit(flashConfig());
-#endif
+    if (!(initFlags & FLASH_INIT_ATTEMPTED)) {
+        flashInit(flashConfig());
+        initFlags |= FLASH_INIT_ATTEMPTED;
+    }
 #endif
 #ifdef USE_FLASHFS
     flashfsInit();
@@ -776,9 +847,10 @@ void init(void)
 #ifdef USE_SDCARD
     if (blackboxConfig()->device == BLACKBOX_DEVICE_SDCARD) {
         if (sdcardConfig()->mode) {
-            sdcardInsertionDetectInit();
-            sdcard_init(sdcardConfig());
-            afatfs_init();
+            if (!(initFlags & SD_INIT_ATTEMPTED)) {
+                initFlags |= SD_INIT_ATTEMPTED;
+                sdCardAndFSInit();
+            }
         } else {
             blackboxConfigMutable()->device = BLACKBOX_DEVICE_NONE;
         }

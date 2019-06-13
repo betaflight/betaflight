@@ -27,7 +27,16 @@
 
 #include "config/config_streamer.h"
 
-#if defined(STM32H750xx) && !(defined(EEPROM_IN_EXTERNAL_FLASH) || defined(EEPROM_IN_RAM))
+#if !defined(EEPROM_IN_FLASH)
+#if defined(EEPROM_IN_RAM) && defined(PERSISTENT)
+PERSISTENT uint8_t eepromData[EEPROM_SIZE];
+#else
+uint8_t eepromData[EEPROM_SIZE];
+#endif
+#endif
+
+
+#if defined(STM32H750xx) && !(defined(EEPROM_IN_EXTERNAL_FLASH) || defined(EEPROM_IN_RAM) || defined(EEPROM_IN_SDCARD))
 #error "STM32750xx only has one flash page which contains the bootloader, no spare flash pages available, use external storage for persistent config or ram for target testing"
 #endif
 // @todo this is not strictly correct for F4/F7, where sector sizes are variable
@@ -82,7 +91,7 @@ void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
     c->address = base;
     c->size = size;
     if (!c->unlocked) {
-#if defined(EEPROM_IN_RAM) || defined(EEPROM_IN_EXTERNAL_FLASH)
+#if defined(EEPROM_IN_RAM) || defined(EEPROM_IN_EXTERNAL_FLASH) || defined(EEPROM_IN_SDCARD)
         // NOP
 #elif defined(EEPROM_IN_FLASH) || defined(EEPROM_IN_FILE)
 #if defined(STM32F7) || defined(STM32H7)
@@ -116,7 +125,7 @@ void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
     c->err = 0;
 }
 
-#if defined(EEPROM_IN_RAM) || defined(EEPROM_IN_EXTERNAL_FLASH)
+#if defined(EEPROM_IN_RAM) || defined(EEPROM_IN_EXTERNAL_FLASH) || defined(EEPROM_IN_SDCARD)
 // No flash sector method required.
 #elif defined(EEPROM_IN_FLASH)
 #if defined(STM32F745xx) || defined(STM32F746xx) || defined(STM32F765xx)
@@ -168,7 +177,7 @@ static uint32_t getFLASHSectorForEEPROM(void)
 
     // Not good
     while (1) {
-        failureMode(FAILURE_FLASH_WRITE_FAILED);
+        failureMode(FAILURE_CONFIG_STORE_FAILURE);
     }
 }
 
@@ -205,7 +214,7 @@ static uint32_t getFLASHSectorForEEPROM(void)
 
     // Not good
     while (1) {
-        failureMode(FAILURE_FLASH_WRITE_FAILED);
+        failureMode(FAILURE_CONFIG_STORE_FAILURE);
     }
 }
 
@@ -254,7 +263,7 @@ static uint32_t getFLASHSectorForEEPROM(void)
 
     // Not good
     while (1) {
-        failureMode(FAILURE_FLASH_WRITE_FAILED);
+        failureMode(FAILURE_CONFIG_STORE_FAILURE);
     }
 }
 
@@ -296,7 +305,7 @@ static void getFLASHSectorForEEPROM(uint32_t *bank, uint32_t *sector)
     } else {
         // Not good
         while (1) {
-            failureMode(FAILURE_FLASH_WRITE_FAILED);
+            failureMode(FAILURE_CONFIG_STORE_FAILURE);
         }
     }
 
@@ -338,7 +347,7 @@ static void getFLASHSectorForEEPROM(uint32_t *bank, uint32_t *sector)
     } else {
         // Not good
         while (1) {
-            failureMode(FAILURE_FLASH_WRITE_FAILED);
+            failureMode(FAILURE_CONFIG_STORE_FAILURE);
         }
     }
 }
@@ -386,7 +395,7 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
 
     flashPageProgramContinue((uint8_t *)buffer, CONFIG_STREAMER_BUFFER_SIZE);
 
-#elif defined(EEPROM_IN_RAM)
+#elif defined(EEPROM_IN_RAM) || defined(EEPROM_IN_SDCARD)
     if (c->address == (uintptr_t)&eepromData[0]) {
         memset(eepromData, 0, sizeof(eepromData));
     }
@@ -394,7 +403,7 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
     uint64_t *dest_addr = (uint64_t *)c->address;
     uint64_t *src_addr = (uint64_t*)buffer;
     uint8_t row_index = 4;
-    /* Program the 256 bits flash word */
+    /* copy the 256 bits flash word */
     do
     {
       *dest_addr++ = *src_addr++;
@@ -509,7 +518,11 @@ int config_streamer_flush(config_streamer_t *c)
 int config_streamer_finish(config_streamer_t *c)
 {
     if (c->unlocked) {
-#if defined(EEPROM_IN_EXTERNAL_FLASH)
+#if defined(EEPROM_IN_SDCARD)
+        bool saveEEPROMToSDCard(void); // XXX forward declaration to avoid circular dependency between config_streamer / config_eeprom
+        saveEEPROMToSDCard();
+        // TODO overwrite the data in the file on the SD card.
+#elif defined(EEPROM_IN_EXTERNAL_FLASH)
         flashFlush();
 #elif defined(EEPROM_IN_RAM)
         // NOP
