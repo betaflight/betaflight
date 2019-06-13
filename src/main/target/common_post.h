@@ -337,3 +337,18 @@
 #ifdef STM32F7
 #undef USE_ESCSERIAL
 #endif
+
+#if defined(EEPROM_IN_RAM) || defined(EEPROM_IN_FILE)
+#ifndef EEPROM_SIZE
+#define EEPROM_SIZE     4096
+#endif
+extern uint8_t eepromData[EEPROM_SIZE];
+#define __config_start (*eepromData)
+#define __config_end (*ARRAYEND(eepromData))
+#else
+#ifndef EEPROM_IN_FLASH
+#define EEPROM_IN_FLASH
+#endif
+extern uint8_t __config_start;   // configured via linker script when building binaries.
+extern uint8_t __config_end;
+#endif

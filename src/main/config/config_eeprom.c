@@ -36,11 +36,6 @@
 
 #include "drivers/system.h"
 
-#ifndef EEPROM_IN_RAM
-extern uint8_t __config_start;   // configured via linker script when building binaries.
-extern uint8_t __config_end;
-#endif
-
 static uint16_t eepromConfigSize;
 
 typedef enum {
@@ -92,6 +87,10 @@ void initEEPROM(void)
 
     STATIC_ASSERT(sizeof(configFooter_t) == 2, footer_size_failed);
     STATIC_ASSERT(sizeof(configRecord_t) == 6, record_size_failed);
+
+#ifdef EEPROM_IN_FILE
+    FLASH_Unlock(); // load existing config file into eepromData
+#endif
 }
 
 bool isEEPROMVersionValid(void)
@@ -156,6 +155,15 @@ bool isEEPROMStructureValid(void)
 uint16_t getEEPROMConfigSize(void)
 {
     return eepromConfigSize;
+}
+
+size_t getEEPROMStorageSize(void)
+{
+#ifdef EEPROM_IN_RAM
+    return EEPROM_SIZE;
+#else
+    return &__config_end - &__config_start;
+#endif
 }
 
 // find config record for reg + classification (profile info) in EEPROM
