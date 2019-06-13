@@ -365,7 +365,11 @@ uint8_t max7456GetRowsCount(void)
 
 static void max7456ClearShadowBuffer(void)
 {
+#ifdef USE_MAX7456_EXTENDED
+    memset(shadowBuffer, 0, maxScreenSize * 2);
+#else
     memset(shadowBuffer, 0, maxScreenSize);
+#endif
 }
 
 void max7456ReInit(void)
@@ -580,7 +584,7 @@ void max7456WriteChar(uint8_t x, uint8_t y, uint8_t c)
     }
 }
 #ifdef USE_MAX7456_EXTENDED
-void max7456WriteCharExtended(uint8_t x, uint8_t y,uint8_t extendedChar)
+void max7456WriteCharExtended(uint8_t x, uint8_t y, uint8_t extendedChar)
 {
     if (x < CHARS_PER_LINE && y < VIDEO_LINES_PAL) {
         screenBuffer[y * CHARS_PER_LINE + x] = 0x100 + extendedChar;
@@ -702,8 +706,10 @@ void max7456DrawScreen(void)
                     spiBuff[buff_len++] = DMM_SLOW_MODE;
                     bufferDMM = DMM_SLOW_MODE;
                 }
-#endif
                 if (screenBuffer[pos] <= 0xFF && (buff_len + 6) < sizeof(spiBuff)) {
+#else
+                if ((buff_len + 6) < sizeof(spiBuff)) {
+#endif
                     spiBuff[buff_len++] = MAX7456ADD_DMAH;
                     spiBuff[buff_len++] = pos >> 8;
                     spiBuff[buff_len++] = MAX7456ADD_DMAL;
@@ -753,8 +759,6 @@ void max7456DrawScreen(void)
 
 static void max7456DrawScreenSlow(void)
 {
-    bool escapeCharFound;
-
     __spiBusTransactionBegin(busdev);
 
     // Enable auto-increment mode and update every character in the screenBuffer.
@@ -763,30 +767,19 @@ static void max7456DrawScreenSlow(void)
     max7456Send(MAX7456ADD_DMAL, 0);
     max7456Send(MAX7456ADD_DMM, displayMemoryModeReg | 1);
 
+    // Write what we can, and set it up for the regular max7456DrawScreen to write the rest
     for (int xx = 0; xx < maxScreenSize; xx++) {
-        if (screenBuffer[xx] == END_STRING) {
-            escapeCharFound = true;
-            max7456Send(MAX7456ADD_DMDI, ' ');  // replace the 0xFF character with a blank in the first pass to avoid terminating auto-increment
+        if (screenBuffer[xx] >= END_STRING) {
+            max7456Send(MAX7456ADD_DMDI, SYM_BLANK);  // replace the 0xFF character with a blank in the first pass to avoid terminating auto-increment
+            shadowBuffer[xx] = SYM_BLANK;
         } else {
             max7456Send(MAX7456ADD_DMDI, screenBuffer[xx]);
+            shadowBuffer[xx] = screenBuffer[xx];
         }
-        shadowBuffer[xx] = screenBuffer[xx];
     }
 
     max7456Send(MAX7456ADD_DMDI, END_STRING);
     max7456Send(MAX7456ADD_DMM, displayMemoryModeReg);
-
-    // If we found any of the "escape" character 0xFF, then make a second pass
-    // to update them with direct addressing
-    if (escapeCharFound) {
-        for (int xx = 0; xx < maxScreenSize; xx++) {
-            if (screenBuffer[xx] == END_STRING) {
-                max7456Send(MAX7456ADD_DMAH, xx >> 8);
-                max7456Send(MAX7456ADD_DMAL, xx & 0xFF);
-                max7456Send(MAX7456ADD_DMDI, END_STRING);
-            }
-        }
-    }
 
     __spiBusTransactionEnd(busdev);
 }
@@ -879,7 +872,7 @@ void max7456ReadNvm(uint16_t char_address, uint8_t *font_data)
     max7456Send(MAX7456ADD_CMAL, (char_address & 0x100) ? 0x40 : 0);
     uint8_t checkCMAH = 0;
     checkCMAH = max7456Send(MAX7456ADD_READ | MAX7456ADD_CMAH, 0x00);
-    max7456Send(MAX7456ADD_CMM, READ_NVR );
+    max7456Send(MAX7456ADD_CMM, READ_NVR);
     //delay(60); // MAX7456 Datasheet asks for 0.5 microseconds, AT7456E asks for 30
     // wait until bit 5 in the status register returns to 0 (12ms)
     uint8_t retriesThree = 0;
@@ -888,12 +881,12 @@ void max7456ReadNvm(uint16_t char_address, uint8_t *font_data)
         max7456Send(MAX7456ADD_CMAL, x);
         font_data[x] = max7456Send(MAX7456ADD_CMDO_R, 0xFF);
     }
-    font_data[57]=checkVM0;
-    font_data[58]=checkCMAH;
-    font_data[59]=retriesOne;
-    font_data[60]=checkSTAT;
-    font_data[61]=retriesTwo;
-    font_data[62]=retriesThree;
+    font_data[57] = checkVM0;
+    font_data[58] = checkCMAH;
+    font_data[59] = retriesOne;
+    font_data[60] = checkSTAT;
+    font_data[61] = retriesTwo;
+    font_data[62] = retriesThree;
     __spiBusTransactionEnd(busdev);
 
     max7456Lock = false;
@@ -908,10 +901,12 @@ void max7456ReadShadow(uint8_t *font_data)
     max7456Lock = true; // This should pause the OSD task
     fontIsLoading = true;
     __spiBusTransactionBegin(busdev);
-    while ((max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00);
+    //while ((max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00);
+    for (int retries=0;retries < 20 && (max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00; retries++);
     max7456Send(MAX7456ADD_VM0, 0);
     // Possibly excessive, but we do want the chip to be ready
-    while ((max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00);
+    for (int retries=0;retries < 20 && (max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00; retries++);
+    //while ((max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00);
     for (int x = 0; x < 64; x++) {
         max7456Send(MAX7456ADD_CMAL, x);
         font_data[x] = max7456Send(MAX7456ADD_CMDO_R, 0xFF);
