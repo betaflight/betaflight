@@ -180,7 +180,7 @@ typedef struct pidConfig_s {
     uint8_t runaway_takeoff_prevention;          // off, on - enables pidsum runaway disarm logic
     uint16_t runaway_takeoff_deactivate_delay;   // delay in ms for "in-flight" conditions before deactivation (successful flight)
     uint8_t runaway_takeoff_deactivate_throttle; // minimum throttle percent required during deactivation phase
-    uint8_t pid_adjust_aux_channel;              // RC channel-No (0-3:off / 4-7:AUX1-AUX4) used to adjust PID according to the flight mode (helicopter like vehicles)
+    uint8_t pid_adjust_aux_channel;              // RC channel-No (0:off / 1-n:AUX1-AUXn) used to adjust PID according to the flight mode (helicopter like vehicles)
 } pidConfig_t;
 
 PG_DECLARE(pidConfig_t, pidConfig);

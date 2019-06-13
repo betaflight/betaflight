@@ -62,6 +62,7 @@
 
 #include "rx/rx.h"
 
+
 const char pidNames[] =
     "ROLL;"
     "PITCH;"
