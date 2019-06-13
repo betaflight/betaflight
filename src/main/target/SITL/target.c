@@ -212,7 +212,6 @@ void systemInit(void) {
     printf("[system]Init...\n");
 
     SystemCoreClock = 500 * 1e6; // fake 500MHz
-    FLASH_Unlock();
 
     if (pthread_mutex_init(&updateLock, NULL) != 0) {
         printf("Create updateLock error!\n");

@@ -81,22 +81,8 @@ uint32_t GPS_distanceFlownInCm;     // distance flown since armed in centimeters
 int16_t GPS_verticalSpeedInCmS;     // vertical speed in cm/s
 float dTnav;             // Delta Time in milliseconds for navigation computations, updated with every good GPS read
 int16_t nav_takeoff_bearing;
-navigationMode_e nav_mode = NAV_MODE_NONE;    // Navigation mode
 
 #define GPS_DISTANCE_FLOWN_MIN_GROUND_SPEED_THRESHOLD_CM_S 15 // 5.4Km/h 3.35mph
-
-// moving average filter variables
-#define GPS_FILTERING              1    // add a 5 element moving average filter to GPS coordinates, helps eliminate gps noise but adds latency
-#ifdef GPS_FILTERING
-#define GPS_FILTER_VECTOR_LENGTH 5
-static uint8_t GPS_filter_index = 0;
-static int32_t GPS_filter[2][GPS_FILTER_VECTOR_LENGTH];
-static int32_t GPS_filter_sum[2];
-static int32_t GPS_read[2];
-static int32_t GPS_filtered[2];
-static int32_t GPS_degree[2];   //the lat lon degree without any decimals (lat/10 000 000)
-static uint16_t fraction3[2];
-#endif
 
 gpsSolutionData_t gpsSol;
 uint32_t GPS_packetCount = 0;
@@ -1355,33 +1341,6 @@ void onGpsNewData(void)
     if (!(STATE(GPS_FIX) && gpsSol.numSat >= 5)) {
         return;
     }
-
-    // Apply moving average filter to GPS data
-#if defined(GPS_FILTERING)
-    GPS_filter_index = (GPS_filter_index + 1) % GPS_FILTER_VECTOR_LENGTH;
-    for (int axis = 0; axis < 2; axis++) {
-        GPS_read[axis] = axis == LAT ? gpsSol.llh.lat : gpsSol.llh.lon; // latest unfiltered data is in GPS_latitude and GPS_longitude
-        GPS_degree[axis] = GPS_read[axis] / 10000000;   // get the degree to assure the sum fits to the int32_t
-
-        // How close we are to a degree line ? its the first three digits from the fractions of degree
-        // later we use it to Check if we are close to a degree line, if yes, disable averaging,
-        fraction3[axis] = (GPS_read[axis] - GPS_degree[axis] * 10000000) / 10000;
-
-        GPS_filter_sum[axis] -= GPS_filter[axis][GPS_filter_index];
-        GPS_filter[axis][GPS_filter_index] = GPS_read[axis] - (GPS_degree[axis] * 10000000);
-        GPS_filter_sum[axis] += GPS_filter[axis][GPS_filter_index];
-        GPS_filtered[axis] = GPS_filter_sum[axis] / GPS_FILTER_VECTOR_LENGTH + (GPS_degree[axis] * 10000000);
-        if (nav_mode == NAV_MODE_POSHOLD) {             // we use gps averaging only in poshold mode...
-            if (fraction3[axis] > 1 && fraction3[axis] < 999) {
-                if (axis == LAT) {
-                    gpsSol.llh.lat = GPS_filtered[LAT];
-                } else {
-                    gpsSol.llh.lon = GPS_filtered[LON];
-                }
-            }
-        }
-    }
-#endif
 
     //
     // Calculate time delta for navigation loop, range 0-1.0f, in seconds

@@ -206,6 +206,46 @@ static IO_t busSwitchResetPin        = IO_NONE;
 }
 #endif
 
+static void configureSPIAndQuadSPI(void)
+{
+#ifdef USE_SPI
+    spiPinConfigure(spiPinConfig(0));
+#endif
+
+    sensorsPreInit();
+
+#ifdef USE_SPI
+    spiPreinit();
+
+#ifdef USE_SPI_DEVICE_1
+    spiInit(SPIDEV_1);
+#endif
+#ifdef USE_SPI_DEVICE_2
+    spiInit(SPIDEV_2);
+#endif
+#ifdef USE_SPI_DEVICE_3
+    spiInit(SPIDEV_3);
+#endif
+#ifdef USE_SPI_DEVICE_4
+    spiInit(SPIDEV_4);
+#endif
+#ifdef USE_SPI_DEVICE_5
+    spiInit(SPIDEV_5);
+#endif
+#ifdef USE_SPI_DEVICE_6
+    spiInit(SPIDEV_6);
+#endif
+#endif // USE_SPI
+
+#ifdef USE_QUADSPI
+    quadSpiPinConfigure(quadSpiConfig(0));
+
+#ifdef USE_QUADSPI_DEVICE_1
+    quadSpiInit(QUADSPIDEV_1);
+#endif
+#endif // USE_QUAD_SPI
+}
+
 
 void init(void)
 {
@@ -251,6 +291,47 @@ void init(void)
         detectBrushedESC(motorIoTag);
     }
 #endif
+
+#ifdef EEPROM_IN_EXTERNAL_FLASH
+
+    //
+    // Config on external flash presents an issue with pin configuration since the pin and flash configs for the
+    // external flash are in the config which is on a chip which we can't read yet!
+    //
+    // FIXME We need to add configuration into the bootloader image that can be read by the firmware.
+    // it's currently possible firmware and bootloader to become mismatched if the user changes them.
+    // This would cause undefined behaviour once the config is loaded.  so for now, users must NOT change flash/pin configs needed for
+    // the system to boot and/or to save the config.
+    //
+    // note that target specific FLASH/SPI/QUADSPI configs are
+    // also not supported in USE_TARGET_CONFIG/targetConfigure() when using EEPROM_IN_EXTERNAL_FLASH.
+    //
+
+    //
+    // IMPORTANT: all default flash and pin configurations must be valid for the target after pgResetAll() is called.
+    // Target designers must ensure other devices connected the same SPI/QUADSPI interface as the flash chip do not
+    // cause communication issues with the flash chip.  e.g. use external pullups on SPI/QUADSPI CS lines.
+    //
+    pgResetAll();
+
+#ifdef TARGET_BUS_INIT
+#error "EEPROM_IN_EXTERNAL_FLASH and TARGET_BUS_INIT are mutually exclusive"
+#endif
+
+    configureSPIAndQuadSPI();
+
+#ifndef USE_FLASH_CHIP
+#error "EEPROM_IN_EXTERNAL_FLASH requires USE_FLASH_CHIP to be defined."
+#endif
+
+    bool haveFlash = flashInit(flashConfig());
+
+    if (!haveFlash) {
+        failureMode(FAILURE_EXTERNAL_FLASH_INIT_FAILED);
+    }
+
+#endif // EEPROM_IN_EXTERNAL_FLASH
+
 
     initEEPROM();
 
@@ -430,48 +511,15 @@ void init(void)
     initInverters(serialPinConfig());
 #endif
 
+
 #ifdef TARGET_BUS_INIT
     targetBusInit();
 
 #else
 
-#ifdef USE_SPI
-    spiPinConfigure(spiPinConfig(0));
-#endif
-
-    sensorsPreInit();
-
-#ifdef USE_SPI
-    spiPreinit();
-
-#ifdef USE_SPI_DEVICE_1
-    spiInit(SPIDEV_1);
-#endif
-#ifdef USE_SPI_DEVICE_2
-    spiInit(SPIDEV_2);
-#endif
-#ifdef USE_SPI_DEVICE_3
-    spiInit(SPIDEV_3);
-#endif
-#ifdef USE_SPI_DEVICE_4
-    spiInit(SPIDEV_4);
-#endif
-#ifdef USE_SPI_DEVICE_5
-    spiInit(SPIDEV_5);
-#endif
-#ifdef USE_SPI_DEVICE_6
-    spiInit(SPIDEV_6);
-#endif
-#endif // USE_SPI
-
-#ifdef USE_QUADSPI
-    quadSpiPinConfigure(quadSpiConfig(0));
-
-#ifdef USE_QUADSPI_DEVICE_1
-    quadSpiInit(QUADSPIDEV_1);
-#endif
-#endif // USE_QUAD_SPI
-
+#ifndef EEPROM_IN_EXTERNAL_FLASH
+    configureSPIAndQuadSPI();
+#endif // EEPROM_IN_EXTERNAL_FLASH
 
 #ifdef USE_USB_MSC
 /* MSC mode will start after init, but will not allow scheduler to run,
@@ -715,11 +763,13 @@ void init(void)
     }
 #endif
 
+#ifndef EEPROM_IN_EXTERNAL_FLASH
 #ifdef USE_FLASH_CHIP
     flashInit(flashConfig());
+#endif
+#endif
 #ifdef USE_FLASHFS
     flashfsInit();
-#endif
 #endif
 
 #ifdef USE_BLACKBOX
