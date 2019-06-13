@@ -168,6 +168,13 @@ extern uint8_t __config_end;
 
 #include "cli.h"
 
+typedef struct serialPassthroughPort_e {
+    int id;
+    uint32_t baud;
+    unsigned mode;
+    serialPort_t *port;
+} serialPassthroughPort_t;
+
 static serialPort_t *cliPort;
 
 #ifdef STM32F1
@@ -1256,12 +1263,7 @@ static void cliSerialPassthrough(char *cmdline)
         return;
     }
 
-    int port1Id = -1;
-    uint32_t port1Baud = 0;
-    unsigned port1Mode = 0;
-    int port2Id = -1;
-    uint32_t port2Baud = 0;
-    int port2Mode = 0;
+    serialPassthroughPort_t ports[2] = { {SERIAL_PORT_NONE, 0, 0, NULL}, { SERIAL_PORT_USB_VCP, 0, 0, cliPort} };
     bool enableBaudCb = false;
     int port1PinioDtr = 0;
     bool port1ResetOnDtr = false;
@@ -1272,13 +1274,13 @@ static void cliSerialPassthrough(char *cmdline)
     while (tok != NULL) {
         switch (index) {
         case 0:
-            port1Id = atoi(tok);
+            ports[0].id = atoi(tok);
             break;
         case 1:
-            port1Baud = atoi(tok);
+            ports[0].baud = atoi(tok);
             break;
         case 2:
-            port1Mode = cliParseSerialMode(tok);
+            ports[0].mode = cliParseSerialMode(tok);
             break;
         case 3:
             if (strncasecmp(tok, "reset", strlen(tok)) == 0) {
@@ -1288,88 +1290,69 @@ static void cliSerialPassthrough(char *cmdline)
                 port1PinioDtr = 0;
             } else {
                 port1PinioDtr = atoi(tok);
+                if (port1PinioDtr < 0 || port1PinioDtr > PINIO_COUNT) {
+                    cliPrintLinef("Invalid PinIO number %d", port1PinioDtr);
+                    return ;
+                }
 #endif /* USE_PINIO */
             }
             break;
         case 4:
-            port2Id = atoi(tok);
+            ports[1].id = atoi(tok);
+            ports[1].port = NULL;
             break;
         case 5:
-            port2Baud = atoi(tok);
+            ports[1].baud = atoi(tok);
             break;
         case 6:
-            port2Mode = cliParseSerialMode(tok);
+            ports[1].mode = cliParseSerialMode(tok);
             break;
         }
         index++;
         tok = strtok_r(NULL, " ", &saveptr);
     }
 
-    if (port1Baud == 0 && port2Id == -1) {
-        enableBaudCb = true;
-    }
-
-    if (port1PinioDtr < 0 || port1PinioDtr > PINIO_COUNT) {
-        cliPrintLinef("Invalid PinIO number %d", port1PinioDtr);
+    // Port checks
+    if (ports[0].id == ports[1].id) {
+        cliPrintLinef("Port1 and port2 are same");
         return ;
     }
 
-    // Port checks
-    if (findSerialPortIndexByIdentifier(port1Id) == -1) {
-        cliPrintLinef("Invalid port1 %d", port1Id);
-    } else {
-        cliPrintLinef("Port1: %d ", port1Id);
-    }
-
-    if (port2Id != -1) {
-        if (findSerialPortIndexByIdentifier(port2Id) == -1) {
-            cliPrintLinef("Invalid port2 %d", port2Id);
-        } if (port2Id == port1Id) {
-            cliPrintLinef("Port1 and port2 are same");
+    for (int i = 0; i < 2; i++) {
+        if (findSerialPortIndexByIdentifier(ports[i].id) == -1) {
+            cliPrintLinef("Invalid port%d %d", i + 1, ports[i].id);
             return ;
         } else {
-            cliPrintLinef("Port2: %d", port2Id);
+            cliPrintLinef("Port%d: %d ", i + 1, ports[i].id);
         }
-    } else {
-        cliPrintLine("Port2: VCP port");
     }
 
-    serialPort_t *port1 = NULL;
-    serialPort_t *port2 = cliPort;
-    serialPort_t **passthroughPorts[2] = { &port1,  &port2 };
-    int portIds[2] = { port1Id, 0  };
-    uint32_t bauds[2] = { port1Baud, 0 };
-    unsigned modes[2] = { port1Mode, 0 };
-
-    if (port2Id != -1) {
-        *(passthroughPorts[1]) = NULL;
-        portIds[1] = port2Id;
-        bauds[1] = port2Baud;
-        modes[1] = port2Mode;
+    if (ports[0].baud == 0 && ports[1].id == SERIAL_PORT_USB_VCP) {
+        enableBaudCb = true;
     }
 
     for (int i = 0; i < 2; i++) {
-        serialPort_t **port = passthroughPorts[i];
+        serialPort_t **port = &(ports[i].port);
         if (*port != NULL) {
             continue;
         }
 
         int portIndex = i + 1;
-        serialPortUsage_t *portUsage = findSerialPortUsageByIdentifier(portIds[i]);
+        serialPortUsage_t *portUsage = findSerialPortUsageByIdentifier(ports[i].id);
         if (!portUsage || portUsage->serialPort == NULL) {
             bool isUseDefaultBaud = false;
-            if (bauds[i] == 0) {
+            if (ports[i].baud == 0) {
                 // Set default baud
-                bauds[i] = 57600;
+                ports[i].baud = 57600;
                 isUseDefaultBaud = true;
             }
 
-            if (!modes[i]) {
-                modes[i] = MODE_RXTX;
+            if (!ports[i].mode) {
+                ports[i].mode = MODE_RXTX;
             }
 
-            *port = openSerialPort(portIds[i], FUNCTION_NONE, NULL, NULL,
-                                            bauds[i], modes[i],
+            *port = openSerialPort(ports[i].id, FUNCTION_NONE, NULL, NULL,
+                                            ports[i].baud, ports[i].mode,
                                             SERIAL_NOT_INVERTED);
             if (!*port) {
                 cliPrintLinef("Port%d could not be opened.", portIndex);
@@ -1377,26 +1360,26 @@ static void cliSerialPassthrough(char *cmdline)
             }
 
             if (isUseDefaultBaud) {
-                cliPrintf("Port%d opened, default baud = %d.\r\n", portIndex, bauds[i]);
+                cliPrintf("Port%d opened, default baud = %d.\r\n", portIndex, ports[i].baud);
             } else {
-                cliPrintf("Port%d opened, baud = %d.\r\n", portIndex, bauds[i]);
+                cliPrintf("Port%d opened, baud = %d.\r\n", portIndex, ports[i].baud);
             }
         } else {
             *port = portUsage->serialPort;
             // If the user supplied a mode, override the port's mode, otherwise
             // leave the mode unchanged. serialPassthrough() handles one-way ports.
             // Set the baud rate if specified
-            if (bauds[i]) {
-                cliPrintf("Port%d is already open, setting baud = %d.\n\r", portIndex, bauds[i]);
-                serialSetBaudRate(*port, bauds[i]);
+            if (ports[i].baud) {
+                cliPrintf("Port%d is already open, setting baud = %d.\n\r", portIndex, ports[i].baud);
+                serialSetBaudRate(*port, ports[i].baud);
             } else {
                 cliPrintf("Port%d is already open, baud = %d.\n\r", portIndex, (*port)->baudRate);
             }
 
-            if (modes[i] && (*port)->mode != modes[i]) {
+            if (ports[i].mode && (*port)->mode != ports[i].mode) {
                 cliPrintf("Port%d mode changed from %d to %d.\r\n",
-                    portIndex, (*port)->mode, modes[i]);
-                serialSetMode(*port, modes[i]);
+                    portIndex, (*port)->mode, ports[i].mode);
+                serialSetMode(*port, ports[i].mode);
             }
 
             // If this port has a rx callback associated we need to remove it now.
@@ -1412,26 +1395,26 @@ static void cliSerialPassthrough(char *cmdline)
         cliPrintLine("Port1 baud rate change over USB enabled.");
         // Register the right side baud rate setting routine with the left side which allows setting of the UART
         // baud rate over USB without setting it using the serialpassthrough command
-        serialSetBaudRateCb(*(passthroughPorts[0]), serialSetBaudRate, *(passthroughPorts[1]));
+        serialSetBaudRateCb(ports[0].port, serialSetBaudRate, ports[1].port);
     }
 
     char *resetMessage = "";
-    if (port1ResetOnDtr) {
+    if (port1ResetOnDtr && ports[1].id == SERIAL_PORT_USB_VCP) {
         resetMessage = "or drop DTR ";
     }
 
     cliPrintLinef("Forwarding, power cycle %sto exit.", resetMessage);
 
-    if ((port2Id ==  -1) && (port1ResetOnDtr
+    if ((ports[1].id == SERIAL_PORT_USB_VCP) && (port1ResetOnDtr
 #ifdef USE_PINIO
         || port1PinioDtr
 #endif /* USE_PINIO */
         )) {
         // Register control line state callback
-        serialSetCtrlLineStateCb(*(passthroughPorts[0]), cbCtrlLine, (void *)(intptr_t)(port1PinioDtr));
+        serialSetCtrlLineStateCb(ports[0].port, cbCtrlLine, (void *)(intptr_t)(port1PinioDtr));
     }
 
-    serialPassthrough(*(passthroughPorts[0]), *(passthroughPorts[1]), NULL, NULL);
+    serialPassthrough(ports[0].port, ports[1].port, NULL, NULL);
 }
 #endif
 
