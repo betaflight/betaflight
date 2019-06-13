@@ -946,7 +946,7 @@ static void osdElementNumericalVario(osdElementParms_t *element)
 #endif // USE_GPS
     if (haveBaro || haveGps) {
         const int verticalSpeed = osdGetMetersToSelectedUnit(getEstimatedVario());
-        const char directionSymbol = verticalSpeed < 0 ? SYM_ARROW_SOUTH : SYM_ARROW_NORTH;
+        const char directionSymbol = verticalSpeed < 0 ? SYM_ARROW_SMALL_DOWN : SYM_ARROW_SMALL_UP;
         tfp_sprintf(element->buff, "%c%01d.%01d%c", directionSymbol, abs(verticalSpeed / 100), abs((verticalSpeed % 100) / 10), osdGetVarioToSelectedUnitSymbol());
     } else {
         // We use this symbol when we don't have a valid measure
