@@ -42,10 +42,6 @@
 // Throttle Position (%)
 #define SYM_THR                     0x04
 
-// Map mode
-#define SYM_HOME                    0x04
-#define SYM_AIRCRAFT                0x05
-
 // Unit Icons (Metric)
 #define SYM_M                       0x0C
 #define SYM_C                       0x0E
