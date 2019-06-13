@@ -132,13 +132,6 @@ extern int16_t GPS_angle[ANGLE_INDEX_COUNT];                // it's the angles t
 extern float dTnav;             // Delta Time in milliseconds for navigation computations, updated with every good GPS read
 extern float GPS_scaleLonDown;  // this is used to offset the shrinking longitude as we go towards the poles
 extern int16_t nav_takeoff_bearing;
-// navigation mode
-typedef enum {
-    NAV_MODE_NONE = 0,
-    NAV_MODE_POSHOLD,
-    NAV_MODE_WP
-} navigationMode_e;
-extern navigationMode_e nav_mode;          // Navigation mode
 
 typedef enum {
     GPS_DIRECT_TICK = 1 << 0,
