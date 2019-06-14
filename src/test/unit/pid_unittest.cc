@@ -61,6 +61,10 @@ extern "C" {
     #include "sensors/gyro.h"
     #include "sensors/acceleration.h"
 
+    #include "rx/rx.h"
+
+    int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
+
     gyro_t gyro;
     attitudeEulerAngles_t attitude;
 
