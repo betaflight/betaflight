@@ -60,8 +60,6 @@ extern "C" {
 
     #include "sensors/gyro.h"
     #include "sensors/acceleration.h"
-    
-    #include "rx/rx.h"
 
     gyro_t gyro;
     attitudeEulerAngles_t attitude;
