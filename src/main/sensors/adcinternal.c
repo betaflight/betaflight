@@ -57,13 +57,14 @@ static uint16_t adcTempsensorValues[8];
 movingAverageStateUint16_t adcTempsensorAverageState = { 0, adcTempsensorValues, 8, 0 } ;
 
 static int16_t coreTemperature;
+static uint16_t vrefMv;
 
 uint16_t getVrefMv(void)
 {
 #ifdef ADC_VOLTAGE_REFERENCE_MV
     return ADC_VOLTAGE_REFERENCE_MV;
 #else
-    return 3300 * adcVrefintValue / adcVREFINTCAL;
+    return vrefMv;
 #endif
 }
 
@@ -86,12 +87,15 @@ void adcInternalProcess(timeUs_t currentTimeUs)
     adcVrefintValue = updateMovingAverageUint16(&adcVrefintAverageState, vrefintSample);
     adcTempsensorValue = updateMovingAverageUint16(&adcTempsensorAverageState, tempsensorSample);
 
-    int32_t adcTempsensorAdjusted = (int32_t)adcTempsensorValue * 3300 / getVrefMv();
+    vrefMv = 3300 * adcVrefintValue / adcVREFINTCAL;
+
+    int32_t adcTempsensorAdjusted = (int32_t)(adcTempsensorValue * 3300) / vrefMv;
     coreTemperature = ((adcTempsensorAdjusted - adcTSCAL1) * adcTSSlopeK + 30 * 1000 + 500) / 1000;
 
     DEBUG_SET(DEBUG_ADC_INTERNAL, 0, coreTemperature);
     DEBUG_SET(DEBUG_ADC_INTERNAL, 1, vrefintSample);
     DEBUG_SET(DEBUG_ADC_INTERNAL, 2, tempsensorSample);
+    DEBUG_SET(DEBUG_ADC_INTERNAL, 3, vrefMv);
 
     adcInternalStartConversion(); // Start next conversion
 }
