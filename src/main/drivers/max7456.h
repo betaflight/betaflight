@@ -51,3 +51,5 @@ void    max7456RefreshAll(void);
 bool    max7456DmaInProgress(void);
 bool    max7456BuffersSynced(void);
 bool    max7456IsExtended(void);
+bool    max7456IsChipAlive(void);
+bool    max7456WasDeadAtInit(void);

@@ -174,6 +174,8 @@
 
 #define CHARS_PER_LINE      30 // XXX Should be related to VIDEO_BUFFER_CHARS_*?
 
+#define MAX7456_READ_RETRIES    20
+
 // On shared SPI bus we want to change clock for OSD chip and restore for other devices.
 
 #ifdef USE_SPI_TRANSACTION
@@ -228,6 +230,7 @@ static uint8_t  vosRegValue; // VOS (Vertical offset register) value
 static bool fontIsLoading       = false;
 
 static uint8_t max7456DeviceType;
+static uint8_t max7456DeviceAlive = 0xFF;
 
 // previous states initialized outside the valid range to force update on first call
 #define INVALID_PREVIOUS_REGISTER_STATE 255
@@ -475,6 +478,11 @@ bool max7456Init(const max7456Config_t *max7456Config, const vcdProfile_t *pVcdP
 
     __spiBusTransactionEnd(busdev);
 
+    if (max7456IsChipAlive()) {
+        max7456DeviceAlive = 0x00;
+    } else {
+        max7456DeviceAlive = 0xFF;
+    }
 #if defined(USE_OVERCLOCK)
     // Determine SPI clock divisor based on config and the device type.
 
@@ -800,6 +808,11 @@ bool max7456IsExtended(void)
 {
     return max7456DeviceType == MAX7456_DEVICE_TYPE_AT;
 }
+bool max7456WasDeadAtInit(void)
+{
+    //Was the chip alive at startup?
+    return max7456DeviceAlive == 0xFF;
+}
 
 void max7456WriteNvm(uint16_t char_address, const uint8_t *font_data)
 {
@@ -858,14 +871,12 @@ void max7456ReadNvm(uint16_t char_address, uint8_t *font_data)
     max7456Lock = true; // This should pause the OSD task
     fontIsLoading = true;
     __spiBusTransactionBegin(busdev);
-    //uint8_t checkDMM = 0;
-    //checkDMM = max7456Send(MAX7456ADD_READ_DMM,0x00);
     uint8_t retriesOne = 0;
-    while ((max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00) { retriesOne++; }
+    for (retriesOne = 0; retriesOne < MAX7456_READ_RETRIES && (max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00; retriesOne++);
     max7456Send(MAX7456ADD_VM0, 0);
     uint8_t checkSTAT = max7456Send(MAX7456ADD_STAT, 0x00);
     uint8_t retriesTwo = 0;
-    while ((max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00) { retriesTwo++; }
+    for (retriesTwo = 0; retriesTwo < MAX7456_READ_RETRIES && (max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00; retriesTwo++);
     uint8_t checkVM0 = 0;
     checkVM0 = max7456Send(MAX7456ADD_READ,0x00);
     max7456Send(MAX7456ADD_CMAH, (char_address & 0xff));
@@ -876,7 +887,7 @@ void max7456ReadNvm(uint16_t char_address, uint8_t *font_data)
     //delay(60); // MAX7456 Datasheet asks for 0.5 microseconds, AT7456E asks for 30
     // wait until bit 5 in the status register returns to 0 (12ms)
     uint8_t retriesThree = 0;
-    while ((max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00) { retriesThree++; }
+    for (retriesThree = 0; retriesThree < MAX7456_READ_RETRIES && (max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00; retriesThree++);
     for (int x = 0; x < 64; x++) {
         max7456Send(MAX7456ADD_CMAL, x);
         font_data[x] = max7456Send(MAX7456ADD_CMDO_R, 0xFF);
@@ -902,10 +913,10 @@ void max7456ReadShadow(uint8_t *font_data)
     fontIsLoading = true;
     __spiBusTransactionBegin(busdev);
     //while ((max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00);
-    for (int retries=0;retries < 20 && (max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00; retries++);
+    for (int retries=0; retries < MAX7456_READ_RETRIES && (max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00; retries++);
     max7456Send(MAX7456ADD_VM0, 0);
     // Possibly excessive, but we do want the chip to be ready
-    for (int retries=0;retries < 20 && (max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00; retries++);
+    for (int retries=0; retries < MAX7456_READ_RETRIES && (max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00; retries++);
     //while ((max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00);
     for (int x = 0; x < 64; x++) {
         max7456Send(MAX7456ADD_CMAL, x);
@@ -916,7 +927,14 @@ void max7456ReadShadow(uint8_t *font_data)
     max7456Lock = false;
     fontIsLoading = false;
 }
-
+bool max7456IsChipAlive(void)
+{
+    // Idea here is to try reading character 0x20 and see if right right data comes back
+    // font_data 0-5 will be transparent, even if given a fresh MAX7456
+    uint8_t font_data[64];
+    max7456ReadNvm(0x20, font_data);
+    return font_data[0] == 0x55 && font_data[1] == 0x55;
+}
 
 #ifdef MAX7456_NRST_PIN
 static IO_t max7456ResetPin        = IO_NONE;
