@@ -352,3 +352,7 @@ extern uint8_t eepromData[EEPROM_SIZE];
 extern uint8_t __config_start;   // configured via linker script when building binaries.
 extern uint8_t __config_end;
 #endif
+
+#if defined(USE_EXST)
+#define USE_FLASH_BOOT_LOADER
+#endif

@@ -572,8 +572,6 @@ void MPU_Config()
   * @param  None
   * @retval None
   */
-void systemCheckResetReason(void);
-
 void resetMPU(void)
 {
     MPU_Region_InitTypeDef MPU_InitStruct;
