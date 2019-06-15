@@ -91,6 +91,9 @@
 #define SYM_ARROW_15                0x6E
 #define SYM_ARROW_16                0x6F
 
+#define SYM_ARROW_SMALL_UP          0x75
+#define SYM_ARROW_SMALL_DOWN        0x76
+
 // AH Bars
 #define SYM_AH_BAR9_0               0x80
 #define SYM_AH_BAR9_1               0x81
@@ -136,6 +139,8 @@
 #define SYM_SPEED                   0x70
 #define SYM_KPH                     0x9E
 #define SYM_MPH                     0x9D
+#define SYM_MPS                     0x9F
+#define SYM_FTPS                    0x99
 
 // Menu cursor
 #define SYM_CURSOR                  SYM_AH_LEFT

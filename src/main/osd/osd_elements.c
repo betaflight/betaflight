@@ -425,6 +425,16 @@ char osdGetSpeedToSelectedUnitSymbol(void)
     }
 }
 
+char osdGetVarioToSelectedUnitSymbol(void)
+{
+    switch (osdConfig()->units) {
+    case OSD_UNIT_IMPERIAL:
+        return SYM_FTPS;
+    default:
+        return SYM_MPS;
+    }
+}
+
 #if defined(USE_ADC_INTERNAL) || defined(USE_ESC_SENSOR)
 char osdGetTemperatureSymbolForSelectedUnit(void)
 {
@@ -936,8 +946,8 @@ static void osdElementNumericalVario(osdElementParms_t *element)
 #endif // USE_GPS
     if (haveBaro || haveGps) {
         const int verticalSpeed = osdGetMetersToSelectedUnit(getEstimatedVario());
-        const char directionSymbol = verticalSpeed < 0 ? SYM_ARROW_SOUTH : SYM_ARROW_NORTH;
-        tfp_sprintf(element->buff, "%c%01d.%01d", directionSymbol, abs(verticalSpeed / 100), abs((verticalSpeed % 100) / 10));
+        const char directionSymbol = verticalSpeed < 0 ? SYM_ARROW_SMALL_DOWN : SYM_ARROW_SMALL_UP;
+        tfp_sprintf(element->buff, "%c%01d.%01d%c", directionSymbol, abs(verticalSpeed / 100), abs((verticalSpeed % 100) / 10), osdGetVarioToSelectedUnitSymbol());
     } else {
         // We use this symbol when we don't have a valid measure
         element->buff[0] = SYM_COLON;
