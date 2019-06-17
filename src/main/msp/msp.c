@@ -92,7 +92,6 @@
 #include "io/usb_msc.h"
 #include "io/vtx_control.h"
 #include "io/vtx.h"
-#include "io/vtx_string.h"
 
 #include "msp/msp_box.h"
 #include "msp/msp_protocol.h"

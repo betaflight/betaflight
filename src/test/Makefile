@@ -382,8 +382,8 @@ vtx_unittest_SRC := \
 		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/fc/runtime_config.c \
 		$(USER_DIR)/drivers/vtx_common.c \
+		$(USER_DIR)/drivers/vtx_table.c \
 		$(USER_DIR)/io/vtx_control.c \
-		$(USER_DIR)/io/vtx_string.c \
 		$(USER_DIR)/io/vtx.c \
 		$(USER_DIR)/common/bitarray.c
 

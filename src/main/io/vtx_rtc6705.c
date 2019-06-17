@@ -34,16 +34,16 @@
 
 #include "drivers/max7456.h"
 #include "drivers/time.h"
+#include "drivers/vtx_table.h"
 #include "drivers/vtx_rtc6705.h"
 
 #include "io/vtx.h"
 #include "io/vtx_rtc6705.h"
-#include "io/vtx_string.h"
 
 
-#if defined(USE_CMS) || defined(USE_VTX_COMMON)
-const char * rtc6705PowerNames[] = {
-    "OFF", "MIN", "MAX"
+#if (defined(USE_CMS) || defined(USE_VTX_COMMON)) && !defined(USE_VTX_TABLE)
+const char *rtc6705PowerNames[VTX_RTC6705_POWER_COUNT + 1] = {
+    "---", "OFF", "MIN", "MAX"
 };
 #endif
 
@@ -54,21 +54,26 @@ static vtxDevice_t vtxRTC6705 = {
 };
 #endif
 
+static uint16_t rtc6705Frequency;
+static int8_t rtc6705PowerIndex;
+
 static void vtxRTC6705SetBandAndChannel(vtxDevice_t *vtxDevice, uint8_t band, uint8_t channel);
 static void vtxRTC6705SetFrequency(vtxDevice_t *vtxDevice, uint16_t frequency);
 
 bool vtxRTC6705Init(void)
 {
-    vtxRTC6705.capability.bandCount = VTX_SETTINGS_BAND_COUNT,
-    vtxRTC6705.capability.channelCount = VTX_SETTINGS_CHANNEL_COUNT,
-    vtxRTC6705.capability.powerCount = VTX_RTC6705_POWER_COUNT,
-    vtxRTC6705.frequencyTable = vtxStringFrequencyTable();
-    vtxRTC6705.bandNames = vtxStringBandNames();
-    vtxRTC6705.bandLetters = vtxStringBandLetters();
-    vtxRTC6705.channelNames = vtxStringChannelNames();
-    vtxRTC6705.powerNames = rtc6705PowerNames,
-
     vtxCommonSetDevice(&vtxRTC6705);
+#ifndef USE_VTX_TABLE
+    //without USE_VTX_TABLE, fill vtxTable variables with default settings (instead of loading them from PG)
+    vtxTablePowerLevels = VTX_RTC6705_POWER_COUNT;
+    for (int i = 0; i < VTX_RTC6705_POWER_COUNT + 1; i++) {
+        vtxTablePowerLabels[i] = rtc6705PowerNames[i];
+    }
+    for (int i = 0; i < VTX_RTC6705_POWER_COUNT; i++) {
+        vtxTablePowerValues[i] = i;
+    }
+
+#endif
 
     vtxInit();
 
@@ -88,8 +93,10 @@ bool vtxRTC6705CanUpdate(void)
 #ifdef RTC6705_POWER_PIN
 static void vtxRTC6705Configure(vtxDevice_t *vtxDevice)
 {
-    rtc6705SetRFPower(vtxDevice->powerIndex);
-    vtxRTC6705SetBandAndChannel(vtxDevice, vtxDevice->band, vtxDevice->channel);
+    uint16_t newPowerValue = 0;
+    vtxCommonLookupPowerValue(vtxDevice, rtc6705PowerIndex, &newPowerValue);
+    rtc6705SetRFPower(newPowerValue);
+    vtxRTC6705SetFrequency(vtxDevice, rtc6705Frequency);
 }
 
 static void vtxRTC6705EnableAndConfigure(vtxDevice_t *vtxDevice)
@@ -126,27 +133,28 @@ static bool vtxRTC6705IsReady(const vtxDevice_t *vtxDevice)
 
 static void vtxRTC6705SetBandAndChannel(vtxDevice_t *vtxDevice, uint8_t band, uint8_t channel)
 {
-    while (!vtxRTC6705CanUpdate());
-
-    if (band >= 1 && band <= VTX_SETTINGS_BAND_COUNT && channel >= 1 && channel <= VTX_SETTINGS_CHANNEL_COUNT) {
-        if (vtxDevice->powerIndex > 0) {
-            vtxDevice->band = band;
-            vtxDevice->channel = channel;
-            vtxRTC6705SetFrequency(vtxDevice, vtxCommonLookupFrequency(vtxDevice, band, channel));
-        }
-    }
+    UNUSED(vtxDevice);
+    UNUSED(band);
+    UNUSED(channel);
+    //rtc6705 does not support bands and channels, only frequencies
 }
 
 static void vtxRTC6705SetPowerByIndex(vtxDevice_t *vtxDevice, uint8_t index)
 {
     while (!vtxRTC6705CanUpdate());
 
+    uint16_t newPowerValue = 0;
+    if (!vtxCommonLookupPowerValue(vtxDevice, index, &newPowerValue)) {
+        return;
+    }
+    uint16_t currentPowerValue = 0;
+    vtxCommonLookupPowerValue(vtxDevice, rtc6705PowerIndex, &currentPowerValue);
 #ifdef RTC6705_POWER_PIN
-    if (index == 0) {
+    if (newPowerValue == 0) {
         // power device off
-        if (vtxDevice->powerIndex > 0) {
+        if (currentPowerValue > 0) {
             // on, power it off
-            vtxDevice->powerIndex = index;
+            rtc6705PowerIndex = index;
             rtc6705Disable();
             return;
         } else {
@@ -154,20 +162,20 @@ static void vtxRTC6705SetPowerByIndex(vtxDevice_t *vtxDevice, uint8_t index)
         }
     } else {
         // change rf power and maybe turn the device on first
-        if (vtxDevice->powerIndex == 0) {
+        if (currentPowerValue == 0) {
             // if it's powered down, power it up, wait and configure channel, band and power.
-            vtxDevice->powerIndex = index;
+            rtc6705PowerIndex = index;
             vtxRTC6705EnableAndConfigure(vtxDevice);
             return;
         } else {
             // if it's powered up, just set the rf power
-            vtxDevice->powerIndex = index;
-            rtc6705SetRFPower(index);
+            rtc6705PowerIndex = index;
+            rtc6705SetRFPower(newPowerValue);
         }
     }
 #else
-    vtxDevice->powerIndex = MAX(index, VTX_RTC6705_MIN_POWER);
-    rtc6705SetRFPower(index);
+    rtc6705PowerIndex = index;
+    rtc6705SetRFPower(MAX(newPowerValue, VTX_RTC6705_MIN_POWER_VALUE);
 #endif
 }
 
@@ -179,23 +187,28 @@ static void vtxRTC6705SetPitMode(vtxDevice_t *vtxDevice, uint8_t onoff)
 
 static void vtxRTC6705SetFrequency(vtxDevice_t *vtxDevice, uint16_t frequency)
 {
+    UNUSED(vtxDevice);
     if (frequency >= VTX_RTC6705_FREQ_MIN &&  frequency <= VTX_RTC6705_FREQ_MAX) {
         frequency = constrain(frequency, VTX_RTC6705_FREQ_MIN, VTX_RTC6705_FREQ_MAX);
-        vtxDevice->frequency = frequency;
+        rtc6705Frequency = frequency;
         rtc6705SetFrequency(frequency);
     }
 }
 
 static bool vtxRTC6705GetBandAndChannel(const vtxDevice_t *vtxDevice, uint8_t *pBand, uint8_t *pChannel)
 {
-    *pBand = vtxDevice->band;
-    *pChannel = vtxDevice->channel;
+    UNUSED(vtxDevice);
+    *pBand = 0;
+    *pChannel = 0;
+    //rtc6705 does not support bands and channels, only frequencies.
+    //therefore always return 0
     return true;
 }
 
 static bool vtxRTC6705GetPowerIndex(const vtxDevice_t *vtxDevice, uint8_t *pIndex)
 {
-    *pIndex = vtxDevice->powerIndex;
+    UNUSED(vtxDevice);
+    *pIndex = rtc6705PowerIndex;
     return true;
 }
 
@@ -208,7 +221,8 @@ static bool vtxRTC6705GetPitMode(const vtxDevice_t *vtxDevice, uint8_t *pOnOff)
 
 static bool vtxRTC6705GetFreq(const vtxDevice_t *vtxDevice, uint16_t *pFrequency)
 {
-    *pFrequency = vtxDevice->frequency;
+    UNUSED(vtxDevice);
+    *pFrequency = rtc6705Frequency;
     return true;
 }
 

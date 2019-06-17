@@ -867,7 +867,7 @@ void init(void)
     baroSetCalibrationCycles(CALIBRATING_BARO_CYCLES);
 #endif
 
-#ifdef USE_VTX_TABLE
+#if defined(USE_VTX_COMMON) || defined(USE_VTX_CONTROL)
     vtxTableInit();
 #endif
 
