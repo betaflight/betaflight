@@ -118,13 +118,9 @@ static bool cc2500SpiDetect(void)
 
 bool cc2500SpiInit(void)
 {
-#if !defined(RX_CC2500_SPI_DISABLE_CHIP_DETECTION)
     if (rxCc2500SpiConfig()->chipDetectEnabled && !cc2500SpiDetect()) {
         return false;
     }
-#else
-    UNUSED(cc2500SpiDetect);
-#endif
 
     // gpio init here
     gdoPin = IOGetByTag(rxSpiConfig()->extiIoTag);
