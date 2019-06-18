@@ -60,7 +60,7 @@
 #endif
 #endif
 
-#if !defined(USE_BARO)
+#if !defined(USE_BARO) && !defined(USE_GPS)
 #undef USE_VARIO
 #endif
 
