@@ -150,7 +150,7 @@ static uint8_t saLockMode = SA_MODE_SET_UNLOCK; // saCms variable?
 bool saDeferred = true; // saCms variable?
 
 // Receive frame reassembly buffer
-#define SA_MAX_RCVLEN 15
+#define SA_MAX_RCVLEN 21
 static uint8_t sa_rbuf[SA_MAX_RCVLEN+4]; // XXX delete 4 byte guard
 
 //
