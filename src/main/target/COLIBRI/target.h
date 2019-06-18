@@ -80,11 +80,11 @@
 #define UART1_RX_PIN            PB7
 #define UART1_TX_PIN            PB6
 
-#define USE_UART2
+// #define USE_UART2
 #define UART2_RX_PIN            PA3
 #define UART2_TX_PIN            PA2
 
-#define USE_UART3
+// #define USE_UART3
 #define UART3_RX_PIN            PB11
 #define UART3_TX_PIN            PB10
 
@@ -96,10 +96,10 @@
 #define UART5_RX_PIN            PD2
 #define UART5_TX_PIN            PC12
 
-#define USE_SOFTSERIAL1
-#define USE_SOFTSERIAL2
+// #define USE_SOFTSERIAL1
+// #define USE_SOFTSERIAL2
 
-#define SERIAL_PORT_COUNT       6 //VCP, UART1, UART2, UART3, SOFTSERIAL x 2
+#define SERIAL_PORT_COUNT       2 //VCP, UART1, UART2, UART3, SOFTSERIAL x 2
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN  PA10  // (HARDARE=0,PPM)
@@ -118,6 +118,12 @@
 #define SPI2_MISO_PIN           PC2
 #define SPI2_MOSI_PIN           PC3
 
+#define USE_SPI_DEVICE_3
+#define SPI3_NSS_PIN            PD2
+#define SPI3_SCK_PIN            PC10
+#define SPI3_MISO_PIN           PC11
+#define SPI3_MOSI_PIN           PC12
+
 #define USE_I2C
 #define USE_I2C_DEVICE_3
 #define I2C_DEVICE              (I2CDEV_3)
@@ -129,12 +135,37 @@
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 
-#define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
+// #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         0xffff
-#define TARGET_IO_PORTD         0xffff
+#define TARGET_IO_PORTD         (BIT(2))
 
-#define USABLE_TIMER_CHANNEL_COUNT 17
-#define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(10) | TIM_N(11))
+#define USABLE_TIMER_CHANNEL_COUNT 6
+// #define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(10) | TIM_N(11))
+#define USED_TIMERS             ( TIM_N(1) | TIM_N(3) | TIM_N(8)
+
+
+#define USE_RX_SPI
+#define RX_SPI_INSTANCE         SPI3
+
+#define USE_RX_FRSKY_SPI_D
+#define USE_RX_FRSKY_SPI_X
+#define USE_RX_SFHSS_SPI
+#define DEFAULT_RX_FEATURE      FEATURE_RX_SPI
+#define RX_SPI_DEFAULT_PROTOCOL RX_SPI_FRSKY_D
+#define USE_RX_FRSKY_SPI_TELEMETRY
+
+#define RX_NSS_PIN              PD2
+
+#define RX_SPI_EXTI_PIN         PB8
+
+#define USE_RX_CC2500_SPI_PA_LNA
+
+#define RX_CC2500_SPI_TX_EN_PIN   PB14
+#define RX_CC2500_SPI_LNA_EN_PIN  PB15
+
+#define BINDPLUG_PIN             NONE
+
+#define RX_SPI_LED_PIN          PB9
