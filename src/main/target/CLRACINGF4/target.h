@@ -28,6 +28,8 @@
 #define USBD_SERIALNUMBER_STRING "0x8020000" // Remove this at the next major release (?)
 #endif
 
+#define USE_TARGET_CONFIG
+
 #define LED0_PIN                  PB5
 #define USE_BEEPER
 #define BEEPER_PIN                PB4
@@ -133,13 +135,14 @@
 
 #define USE_TRANSPONDER
 
+#define PINIO1_PIN                  PA14
 #define DEFAULT_RX_FEATURE          FEATURE_RX_SERIAL
 #define DEFAULT_FEATURES            ( FEATURE_OSD  )
 #define CURRENT_METER_SCALE_DEFAULT 250
 
-#define TARGET_IO_PORTA (0xffff & ~(BIT(14)|BIT(13)))
-#define TARGET_IO_PORTB (0xffff & ~(BIT(2)))
-#define TARGET_IO_PORTC (0xffff & ~(BIT(15)|BIT(14)|BIT(13)))
+#define TARGET_IO_PORTA (0xffff)
+#define TARGET_IO_PORTB (0xffff)
+#define TARGET_IO_PORTC (0xffff)
 #define TARGET_IO_PORTD BIT(2)
 
 #define USABLE_TIMER_CHANNEL_COUNT 7
