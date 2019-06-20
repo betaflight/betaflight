@@ -20,26 +20,31 @@
 
 #pragma once
 
+#if defined(TALONF4V2)
+#define TARGET_BOARD_IDENTIFIER "TLF4"
+#define USBD_PRODUCT_STRING "TALONF4V2"
+#else
 #define TARGET_BOARD_IDENTIFIER "CLR4"
-
 #define USBD_PRODUCT_STRING "CLRACINGF4"
-
-#ifdef OPBL
-#define USBD_SERIALNUMBER_STRING "0x8020000" // Remove this at the next major release (?)
 #endif
+
+#define USE_TARGET_CONFIG
 
 #define LED0_PIN                  PB5
 #define USE_BEEPER
 #define BEEPER_PIN                PB4
 #define BEEPER_INVERTED
+#if defined(TALONF4V2)
+#define BEEPER_PWM_HZ             0 // Beeper PWM frequency in Hz
+#else
 #define BEEPER_PWM_HZ             3800 // Beeper PWM frequency in Hz
+#endif
 
 #define ENABLE_DSHOT_DMAR         false // Motors 3 / 4 conflict with LED_STRIP if enabled
 
 #define INVERTER_PIN_UART1        PC0 // PC0 used as inverter select GPIO
 
 #define CAMERA_CONTROL_PIN        PB9    // define dedicated camera_osd_control pin
-
 
 #define USE_EXTI
 #define USE_GYRO_EXTI
@@ -75,9 +80,14 @@
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
+
+#if defined(TALONF4V2)
+#define FLASH_CS_PIN            PB12
+#define FLASH_SPI_INSTANCE      SPI2
+#else
 #define FLASH_CS_PIN            PB3
 #define FLASH_SPI_INSTANCE      SPI3
-
+#endif
 
 #define USE_VCP
 #define USE_USB_DETECT
@@ -130,13 +140,20 @@
 
 #define USE_TRANSPONDER
 
+#define USE_PINIO
+#define PINIO1_PIN             PA14 // VTX power switcher
+#define USE_PINIOBOX
+
 #define DEFAULT_RX_FEATURE          FEATURE_RX_SERIAL
 #define DEFAULT_FEATURES            ( FEATURE_OSD  )
 #define CURRENT_METER_SCALE_DEFAULT 250
+#if defined(TALONF4V2)
+#define VBAT_SCALE_DEFAULT 160
+#endif
 
-#define TARGET_IO_PORTA (0xffff & ~(BIT(14)|BIT(13)))
-#define TARGET_IO_PORTB (0xffff & ~(BIT(2)))
-#define TARGET_IO_PORTC (0xffff & ~(BIT(15)|BIT(14)|BIT(13)))
+#define TARGET_IO_PORTA (0xffff)
+#define TARGET_IO_PORTB (0xffff)
+#define TARGET_IO_PORTC (0xffff)
 #define TARGET_IO_PORTD BIT(2)
 
 #define USABLE_TIMER_CHANNEL_COUNT 7
