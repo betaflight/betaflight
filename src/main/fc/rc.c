@@ -53,9 +53,13 @@
 
 typedef float (applyRatesFn)(const int axis, float rcCommandf, const float rcCommandfAbs);
 
-static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
+#ifdef USE_INTERPOLATED_SP
+// Setpoint in degrees/sec before RC-Smoothing is applied
 static float rawSetpoint[XYZ_AXIS_COUNT];
+// Stick deflection [-1.0, 1.0] before RC-Smoothing is applied
 static float rawDeflection[XYZ_AXIS_COUNT];
+#endif
+static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
 static float throttlePIDAttenuation;
 static bool reverseMotors = false;
 static applyRatesFn *applyRates;
@@ -104,6 +108,7 @@ float getThrottlePIDAttenuation(void)
     return throttlePIDAttenuation;
 }
 
+#ifdef USE_INTERPOLATED_SP
 float getRawSetpoint(int axis)
 {
     return rawSetpoint[axis];
@@ -113,6 +118,7 @@ float getRawDeflection(int axis)
 {
     return rawDeflection[axis];
 }
+#endif
 
 #define THROTTLE_LOOKUP_LENGTH 12
 static int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];    // lookup table for expo & mid THROTTLE
@@ -582,18 +588,16 @@ FAST_CODE void processRcCommand(void)
         checkForThrottleErrorResetState(currentRxRefreshRate);
     }
 
+#ifdef USE_INTERPOLATED_SP
     if (isRXDataNew) {
-        if (pidAntiGravityEnabled()) {
-            checkForThrottleErrorResetState(currentRxRefreshRate);
-        }
-
         for (int i = FD_ROLL; i <= FD_YAW; i++) {
             const float rcCommandf = rcCommand[i] / 500.0f;
-            const float rcCommandfAbs = ABS(rcCommandf);
+            const float rcCommandfAbs = fabsf(rcCommandf);
             rawSetpoint[i] = applyRates(i, rcCommandf, rcCommandfAbs);
             rawDeflection[i] = rcCommandf;
         }
     }
+#endif
 
     switch (rxConfig()->rc_smoothing_type) {
 #ifdef USE_RC_SMOOTHING_FILTER

@@ -91,5 +91,6 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "CRSF_LINK_STATISTICS_PWR",
     "CRSF_LINK_STATISTICS_DOWN",
     "BARO",
-    "FF_THUMB",
+    "FF_LIMIT",
+    "FF_INTERPOLATED",
 };
