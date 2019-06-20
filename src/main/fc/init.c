@@ -424,8 +424,6 @@ void init(void)
     }
 #endif
 
-    //i2cSetOverclock(masterConfig.i2c_overclock);
-
     debugMode = systemConfig()->debug_mode;
 
 #ifdef TARGET_PREINIT
