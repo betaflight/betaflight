@@ -136,14 +136,12 @@ typedef enum {
 } osd_items_e;
 
 // *** IMPORTANT ***
-// If the stats enumeration is reordered then the PR version must be incremented. Otherwise there
-// is no indication that the stored config must be reset and the bitmapped values will be incorrect.
+// DO NOT REORDER THE STATS ENUMERATION. The order here cooresponds to the enabled flag bit position
+// storage and changing the order will corrupt user settings. Any new stats MUST be added to the end
+// just before the OSD_STAT_COUNT entry. YOU MUST ALSO add the new stat to the
+// osdStatsDisplayOrder array in osd.c.
 //
-// The stats display order was previously required to match the enumeration definition so it matched
-// the order shown in the configurator. However, to allow reordering this screen without breaking the
-// compatibility, this requirement has been relaxed to a best effort approach. Reordering the elements
-// on the stats screen will have to be more beneficial than the hassle of not matching exactly to the
-// configurator list.
+// IF YOU WANT TO REORDER THE STATS DISPLAY, then adjust the ordering of the osdStatsDisplayOrder array
 typedef enum {
     OSD_STAT_RTC_DATE_TIME,
     OSD_STAT_TIMER_1,
@@ -231,6 +229,7 @@ STATIC_ASSERT(OSD_WARNING_COUNT <= 32, osdwarnings_overflow);
 #define OSD_GPS_RESCUE_DISABLED_WARNING_DURATION_US 3000000 // 3 seconds
 
 extern const uint16_t osdTimerDefault[OSD_TIMER_COUNT];
+extern const osd_stats_e osdStatsDisplayOrder[OSD_STAT_COUNT];
 
 typedef struct osdConfig_s {
     uint16_t item_pos[OSD_ITEM_COUNT];
@@ -266,6 +265,7 @@ typedef struct statistic_s {
     timeUs_t armed_time;
     int16_t max_speed;
     int16_t min_voltage; // /100
+    uint16_t end_voltage;
     int16_t max_current; // /10
     uint8_t min_rssi;
     int32_t max_altitude;
