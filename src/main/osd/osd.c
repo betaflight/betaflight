@@ -302,6 +302,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
         osdConfig->profile[i][0] = '\0';
     }
     osdConfig->rssi_dbm_alarm = 60;
+    osdConfig->dynamic_distance_units = false;
 }
 
 static void osdDrawLogo(int x, int y)
@@ -437,8 +438,6 @@ static void osdUpdateStats(void)
 
 #ifdef USE_GPS
     if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
-        value = GPS_distanceToHome;
-
         if (stats.max_distance < GPS_distanceToHome) {
             stats.max_distance = GPS_distanceToHome;
         }
@@ -570,7 +569,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
 
     case OSD_STAT_MAX_DISTANCE:
         if (featureIsEnabled(FEATURE_GPS)) {
-            tfp_sprintf(buff, "%d%c", osdGetMetersToSelectedUnit(stats.max_distance), osdGetMetersToSelectedUnitSymbol());
+            osdFormatDistanceString(buff, stats.max_distance, SYM_NONE);
             osdDisplayStatisticLabel(displayRow, "MAX DISTANCE", buff);
             return true;
         }
@@ -578,8 +577,8 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
 
     case OSD_STAT_FLIGHT_DISTANCE:
         if (featureIsEnabled(FEATURE_GPS)) {
-            const uint32_t distanceFlown = GPS_distanceFlownInCm / 100;
-            tfp_sprintf(buff, "%d%c", osdGetMetersToSelectedUnit(distanceFlown), osdGetMetersToSelectedUnitSymbol());
+            const int distanceFlown = GPS_distanceFlownInCm / 100;
+            osdFormatDistanceString(buff, distanceFlown, SYM_NONE);
             osdDisplayStatisticLabel(displayRow, "FLIGHT DISTANCE", buff);
             return true;
         }

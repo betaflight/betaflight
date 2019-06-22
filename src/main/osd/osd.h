@@ -257,6 +257,7 @@ typedef struct osdConfig_s {
     char profile[OSD_PROFILE_COUNT][OSD_PROFILE_NAME_LENGTH + 1];
     uint16_t link_quality_alarm;
     uint8_t rssi_dbm_alarm;
+    uint8_t dynamic_distance_units;  // Whether to change from meters to km or ft to miles automatically
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);

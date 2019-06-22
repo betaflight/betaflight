@@ -1130,6 +1130,7 @@ const clivalue_t valueTable[] = {
 // PG_OSD_CONFIG
 #ifdef USE_OSD
     { "osd_units",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_UNIT }, PG_OSD_CONFIG, offsetof(osdConfig_t, units) },
+    { "osd_dynamic_distance_units", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, dynamic_distance_units) },
 
 // Please try to keep the OSD warnings in the same order as presented in the Configurator.
 // This makes it easier for the user to relate the CLI output as warnings are in the same relative
