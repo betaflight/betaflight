@@ -20,5 +20,7 @@
 
 #pragma once
 
+void statsInit(void);
+
 void statsOnArm(void);
 void statsOnDisarm(void);

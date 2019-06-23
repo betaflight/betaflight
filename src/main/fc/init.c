@@ -88,6 +88,7 @@
 #include "fc/init.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
+#include "fc/stats.h"
 #include "fc/tasks.h"
 
 #include "flight/failsafe.h"
@@ -932,10 +933,13 @@ void init(void)
     pwmEnableMotors();
 #endif
 
+#ifdef USE_PERSISTENT_STATS
+    statsInit();
+#endif
+
     setArmingDisabled(ARMING_DISABLED_BOOT_GRACE_TIME);
 
     fcTasksInit();
 
     systemState |= SYSTEM_STATE_READY;
-
 }
