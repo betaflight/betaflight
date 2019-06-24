@@ -359,6 +359,8 @@ extern uint8_t eepromData[EEPROM_SIZE];
 #endif
 extern uint8_t __config_start;   // configured via linker script when building binaries.
 extern uint8_t __config_end;
+extern char __custom_defaults_start;
+extern char __custom_defaults_end;
 #endif
 
 #if defined(USE_EXST)

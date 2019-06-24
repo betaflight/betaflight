@@ -30,8 +30,6 @@
 #include "build/build_config.h"
 #include "build/debug.h"
 
-#include "cli/cli.h"
-
 #include "cms/cms.h"
 #include "cms/cms_types.h"
 
@@ -724,10 +722,6 @@ void init(void)
 
     mspInit();
     mspSerialInit();
-
-#ifdef USE_CLI
-    cliInit(serialConfig());
-#endif
 
     failsafeInit();
 
