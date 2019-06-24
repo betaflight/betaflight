@@ -160,6 +160,8 @@
   */
 HAL_StatusTypeDef HAL_RTCEx_SetTimeStamp(RTC_HandleTypeDef *hrtc, uint32_t TimeStampEdge, uint32_t RTC_TimeStampPin)
 {
+  UNUSED(RTC_TimeStampPin);
+
   uint32_t tmpreg;
 
   /* Check the parameters */
@@ -216,6 +218,8 @@ HAL_StatusTypeDef HAL_RTCEx_SetTimeStamp(RTC_HandleTypeDef *hrtc, uint32_t TimeS
   */
 HAL_StatusTypeDef HAL_RTCEx_SetTimeStamp_IT(RTC_HandleTypeDef *hrtc, uint32_t TimeStampEdge, uint32_t RTC_TimeStampPin)
 {
+  UNUSED(RTC_TimeStampPin);
+
   uint32_t tmpreg;
 
   /* Check the parameters */
