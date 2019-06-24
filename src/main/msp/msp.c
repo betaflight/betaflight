@@ -822,12 +822,6 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU8(dst, 0);
 #endif // USE_OSD_STICK_OVERLAY
 
-        // API >= 1.42
-        // Post-flight stats display order
-        for (int i = 0; i < OSD_STAT_COUNT; i++) {
-            sbufWriteU8(dst, osdStatsDisplayOrder[i]);
-        }
-
 #endif // USE_OSD
         break;
     }
