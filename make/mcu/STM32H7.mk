@@ -86,7 +86,6 @@ EXCLUDES        = \
                 stm32h7xx_ll_rcc.c \
                 stm32h7xx_ll_rng.c \
                 stm32h7xx_ll_rtc.c \
-                stm32h7xx_ll_sdmmc.c \
                 stm32h7xx_ll_spi.c \
                 stm32h7xx_ll_swpmi.c \
                 stm32h7xx_ll_tim.c \
