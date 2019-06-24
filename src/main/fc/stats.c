@@ -49,6 +49,11 @@ static bool saveRequired = false;
     #define DISTANCE_FLOWN_CM (0)
 #endif
 
+void statsInit(void)
+{
+    dispatchEnable();
+}
+
 void writeStats(struct dispatchEntry_s* self)
 {
     UNUSED(self);
@@ -93,7 +98,6 @@ void statsOnDisarm(void)
         if (saveRequired) {
             /* signal that stats need to be saved but don't execute time consuming flash operation
                now - let the disarming process complete and then execute the actual save */
-            dispatchEnable();
             dispatchAdd(&writeStatsEntry, STATS_SAVE_DELAY_US);
         }
     }
