@@ -593,6 +593,22 @@ static void osdElementCraftName(osdElementParms_t *element)
         element->buff[i] = '\0';
     }
 }
+#ifdef USE_MAX7456_EXTENDED
+static void osdElementCraftNameExtended(osdElementParms_t *element)
+{
+    if (displayIsExtended(element->osdDisplayPort)) {
+        if (strlen(pilotConfig()->name) == 0) {
+            displayWriteExtended(element->osdDisplayPort, element->elemPosX, element->elemPosY, "craft_name");
+        } else {
+            displayWriteExtended(element->osdDisplayPort, element->elemPosX, element->elemPosY, pilotConfig()->name);
+        }
+        element->drawElement = false;
+    } else {
+        // Call the other method
+        osdElementCraftName(element);
+    }
+}
+#endif
 
 #ifdef USE_ACC
 static void osdElementCrashFlipArrow(osdElementParms_t *element)
@@ -1477,7 +1493,11 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_ITEM_TIMER_1]            = osdElementTimer,
     [OSD_ITEM_TIMER_2]            = osdElementTimer,
     [OSD_FLYMODE]                 = osdElementFlymode,
+#ifdef USE_MAX7456_EXTENDED
+    [OSD_CRAFT_NAME]              = osdElementCraftNameExtended,
+#else
     [OSD_CRAFT_NAME]              = osdElementCraftName,
+#endif
     [OSD_THROTTLE_POS]            = osdElementThrottlePosition,
 #ifdef USE_VTX_COMMON
     [OSD_VTX_CHANNEL]             = osdElementVtxChannel,
