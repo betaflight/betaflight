@@ -1469,7 +1469,8 @@ void HAL_SD_IRQHandler(SD_HandleTypeDef *hsd)
   /* Check for SDMMC interrupt flags */
   if(__HAL_SD_GET_FLAG(hsd, SDMMC_IT_DATAEND) != RESET)
   {
-    __HAL_SD_CLEAR_FLAG(hsd, SDMMC_FLAG_DATAEND);
+    //__HAL_SD_CLEAR_FLAG(hsd, SDMMC_FLAG_DATAEND);
+    __HAL_SD_CLEAR_FLAG(hsd, SDMMC_FLAG_DATAEND | SDMMC_FLAG_CKSTOP); // DC - See 2.11.5 in H750 Errata
 
     __HAL_SD_DISABLE_IT(hsd, SDMMC_IT_DATAEND  | SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT   |\
                              SDMMC_IT_TXUNDERR | SDMMC_IT_RXOVERR  | SDMMC_IT_TXFIFOHE |\
