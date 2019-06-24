@@ -31,6 +31,7 @@
 #include "common/time.h"
 
 #include "drivers/vtx_common.h"
+#include "drivers/vtx_table.h"
 
 #include "fc/config.h"
 #include "fc/rc_modes.h"
@@ -38,7 +39,6 @@
 
 #include "flight/failsafe.h"
 
-#include "io/vtx_string.h"
 #include "io/vtx_control.h"
 
 #include "pg/pg.h"
@@ -50,13 +50,13 @@
 PG_REGISTER_WITH_RESET_TEMPLATE(vtxSettingsConfig_t, vtxSettingsConfig, PG_VTX_SETTINGS_CONFIG, 0);
 
 PG_RESET_TEMPLATE(vtxSettingsConfig_t, vtxSettingsConfig,
-    .band = VTX_SETTINGS_DEFAULT_BAND,
-    .channel = VTX_SETTINGS_DEFAULT_CHANNEL,
-    .power = VTX_SETTINGS_DEFAULT_POWER,
-    .freq = VTX_SETTINGS_DEFAULT_FREQ,
-    .pitModeFreq = VTX_SETTINGS_DEFAULT_PITMODE_FREQ,
-    .lowPowerDisarm = VTX_LOW_POWER_DISARM_OFF,
-);
+                  .band = VTX_TABLE_DEFAULT_BAND,
+                  .channel = VTX_TABLE_DEFAULT_CHANNEL,
+                  .power = VTX_TABLE_DEFAULT_POWER,
+                  .freq = VTX_TABLE_DEFAULT_FREQ,
+                  .pitModeFreq = VTX_TABLE_DEFAULT_PITMODE_FREQ,
+                  .lowPowerDisarm = VTX_LOW_POWER_DISARM_OFF,
+                 );
 
 typedef enum {
     VTX_PARAM_POWER = 0,
@@ -88,7 +88,7 @@ void vtxInit(void)
 #if defined(VTX_SETTINGS_FREQCMD)
     // constrain pit mode frequency
     if (vtxSettingsConfig()->pitModeFreq) {
-        const uint16_t constrainedPitModeFreq = MAX(vtxSettingsConfig()->pitModeFreq, VTX_SETTINGS_MIN_USER_FREQ);
+        const uint16_t constrainedPitModeFreq = MAX(vtxSettingsConfig()->pitModeFreq, VTX_TABLE_MIN_USER_FREQ);
         if (constrainedPitModeFreq != vtxSettingsConfig()->pitModeFreq) {
             vtxSettingsConfigMutable()->pitModeFreq = constrainedPitModeFreq;
             settingsUpdated = true;
@@ -116,14 +116,14 @@ STATIC_UNIT_TESTED vtxSettingsConfig_t vtxGetSettings(void)
     if (IS_RC_MODE_ACTIVE(BOXVTXPITMODE) && settings.pitModeFreq) {
         settings.band = 0;
         settings.freq = settings.pitModeFreq;
-        settings.power = VTX_SETTINGS_DEFAULT_POWER;
+        settings.power = VTX_TABLE_DEFAULT_POWER;
     }
 #endif
 
     if (!ARMING_FLAG(ARMED) && !failsafeIsActive() &&
         (settings.lowPowerDisarm == VTX_LOW_POWER_DISARM_ALWAYS ||
         (settings.lowPowerDisarm == VTX_LOW_POWER_DISARM_UNTIL_FIRST_ARM && !ARMING_FLAG(WAS_EVER_ARMED)))) {
-        settings.power = VTX_SETTINGS_DEFAULT_POWER;
+        settings.power = VTX_TABLE_DEFAULT_POWER;
     }
 
     return settings;
@@ -131,7 +131,7 @@ STATIC_UNIT_TESTED vtxSettingsConfig_t vtxGetSettings(void)
 
 static bool vtxProcessBandAndChannel(vtxDevice_t *vtxDevice)
 {
-    if(!ARMING_FLAG(ARMED)) {
+    if (!ARMING_FLAG(ARMED)) {
         uint8_t vtxBand;
         uint8_t vtxChan;
         if (vtxCommonGetBandAndChannel(vtxDevice, &vtxBand, &vtxChan)) {
@@ -148,7 +148,7 @@ static bool vtxProcessBandAndChannel(vtxDevice_t *vtxDevice)
 #if defined(VTX_SETTINGS_FREQCMD)
 static bool vtxProcessFrequency(vtxDevice_t *vtxDevice)
 {
-    if(!ARMING_FLAG(ARMED)) {
+    if (!ARMING_FLAG(ARMED)) {
         uint16_t vtxFreq;
         if (vtxCommonGetFrequency(vtxDevice, &vtxFreq)) {
             const vtxSettingsConfig_t settings = vtxGetSettings();

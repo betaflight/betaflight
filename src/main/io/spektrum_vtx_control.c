@@ -26,7 +26,6 @@
 #include "fc/config.h"
 #include "drivers/vtx_common.h"
 #include "io/vtx.h"
-#include "io/vtx_string.h"
 
 #include "io/spektrum_vtx_control.h"
 
