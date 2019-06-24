@@ -26416,9 +26416,17 @@ typedef struct
   * @}
   */
 /****************************** Product define *********************************/
+
+// For Betaflight, FLASH_SIZE is defined by make/<CPUTYPE>.mk in units of KB.
+// FLASH_SIZE definition is not used elsewhere in the library.
+// FLASH_BANK_SIZE is used, so define it as 1M directly.
+
 #define FLASH_SECTOR_SIZE  0x00020000UL        /* 128 KB */
-#define FLASH_SIZE         FLASH_SECTOR_SIZE   /* 128 KB */
-#define FLASH_BANK_SIZE    FLASH_SIZE          /* 128 KB */
+//#define FLASH_SIZE         FLASH_SECTOR_SIZE   /* 128 KB */
+//#define FLASH_BANK_SIZE    FLASH_SIZE          /* 128 KB */
+
+#define FLASH_BANK_SIZE                    FLASH_SECTOR_SIZE /* 128KB */
+
 #define FLASH_LATENCY_DEFAULT   FLASH_ACR_LATENCY_7WS  /* FLASH Seven Latency cycles */
 
 
