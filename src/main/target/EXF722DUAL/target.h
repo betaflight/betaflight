@@ -35,7 +35,7 @@
 #define USE_EXTI
 #define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PA8
-#define GYRO_2_EXTI_PIN         PC13
+#define GYRO_2_EXTI_PIN         PB2
 
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
@@ -138,13 +138,20 @@
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 
 #define USE_TRANSPONDER
+#define USE_ESCSERIAL
+
+#define USE_PINIO
+#define PINIO1_PIN              PC13 // activate/deactivate Bluetooth When disarmed/armed using PINIO_BOX
+#define PINIO2_PIN              PC14 // 2xCamera switcher
+#define PINIO3_PIN              PB8  // VTX power switcher
+#define USE_PINIOBOX
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
-#define DEFAULT_RX_FEATURE                  FEATURE_RX_SERIAL
-#define DEFAULT_FEATURES                    (FEATURE_TRANSPONDER | FEATURE_RSSI_ADC | FEATURE_TELEMETRY | FEATURE_OSD | FEATURE_LED_STRIP)
+#define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
+#define DEFAULT_FEATURES        (FEATURE_TRANSPONDER | FEATURE_RSSI_ADC | FEATURE_TELEMETRY | FEATURE_OSD | FEATURE_LED_STRIP)
 
-#define SERIALRX_UART                       SERIAL_PORT_USART2
-#define SERIALRX_PROVIDER                   SERIALRX_SBUS
+#define SERIALRX_UART           SERIAL_PORT_USART2
+#define SERIALRX_PROVIDER       SERIALRX_SBUS
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
