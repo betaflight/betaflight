@@ -34,6 +34,13 @@ SECTIONS
     . = ALIGN(4);
   } >FLASH AT >AXIM_FLASH
 
+  /* Storage for the address for the configuration section so we can grab it out of the hex file */
+  .custom_defaults :
+  {
+    . = ALIGN(4);
+    *(.custom_defaults_address)
+  } >FLASH1 AT >AXIM_FLASH1
+
   /* The program code and other data goes into FLASH */
   .text :
   {
