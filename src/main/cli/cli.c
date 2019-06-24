@@ -274,6 +274,11 @@ typedef enum dumpFlags_e {
 
 typedef bool printFn(dumpFlags_t dumpMask, bool equalsDefault, const char *format, ...);
 
+typedef enum {
+    REBOOT_TARGET_FIRMWARE,
+    REBOOT_TARGET_BOOTLOADER_ROM,
+    REBOOT_TARGET_BOOTLOADER_FLASH,
+} rebootTarget_e;
 
 static void backupPgConfig(const pgRegistry_t *pg)
 {
@@ -3309,31 +3314,61 @@ static char *checkCommand(char *cmdline, const char *command)
     }
 }
 
-static void cliRebootEx(bool bootLoader)
+static void cliRebootEx(rebootTarget_e rebootTarget)
 {
     cliPrint("\r\nRebooting");
     bufWriterFlush(cliWriter);
     waitForSerialPortToFinishTransmitting(cliPort);
     stopPwmAllMotors();
 
-    if (bootLoader) {
-        systemResetToBootloader();
-        return;
+    switch (rebootTarget) {
+    case REBOOT_TARGET_BOOTLOADER_ROM:
+        systemResetToBootloader(BOOTLOADER_REQUEST_ROM);
+
+        break;
+#if defined(USE_FLASH_BOOT_LOADER)
+    case REBOOT_TARGET_BOOTLOADER_FLASH:
+        systemResetToBootloader(BOATLOADER_REQUEST_FLASH);
+
+        break;
+#endif
+    case REBOOT_TARGET_FIRMWARE:
+    default:
+        systemReset();
+
+        break;
     }
-    systemReset();
 }
 
 static void cliReboot(void)
 {
-    cliRebootEx(false);
+    cliRebootEx(REBOOT_TARGET_FIRMWARE);
 }
 
 static void cliBootloader(char *cmdline)
 {
-    UNUSED(cmdline);
+    rebootTarget_e rebootTarget;
+    if (
+#if !defined(USE_FLASH_BOOT_LOADER)
+        isEmpty(cmdline) ||
+#endif
+        strncasecmp(cmdline, "rom", 3) == 0) {
+        rebootTarget = REBOOT_TARGET_BOOTLOADER_ROM;
 
-    cliPrintHashLine("restarting in bootloader mode");
-    cliRebootEx(true);
+        cliPrintHashLine("restarting in ROM bootloader mode");
+#if defined(USE_FLASH_BOOT_LOADER)
+    } else if (isEmpty(cmdline) || strncasecmp(cmdline, "flash", 5) == 0) {
+        rebootTarget = REBOOT_TARGET_BOOTLOADER_FLASH;
+
+        cliPrintHashLine("restarting in flash bootloader mode");
+#endif
+    } else {
+        cliPrintErrorLinef("Invalid option");
+
+        return;
+    }
+
+    cliRebootEx(rebootTarget);
 }
 
 static void cliExit(char *cmdline)
@@ -5873,7 +5908,11 @@ const clicmd_t cmdTable[] = {
 #ifdef USE_RX_SPI
         CLI_COMMAND_DEF("bind_rx_spi", "initiate binding for RX SPI", NULL, cliRxSpiBind),
 #endif
-    CLI_COMMAND_DEF("bl", "reboot into bootloader", NULL, cliBootloader),
+#if defined(USE_FLASH_BOOT_LOADER)
+    CLI_COMMAND_DEF("bl", "reboot into bootloader", "[flash|rom]", cliBootloader),
+#else
+    CLI_COMMAND_DEF("bl", "reboot into bootloader", "[rom]", cliBootloader),
+#endif
 #if defined(USE_BOARD_INFO)
     CLI_COMMAND_DEF("board_name", "get / set the name of the board model", "[board name]", cliBoardName),
 #endif
