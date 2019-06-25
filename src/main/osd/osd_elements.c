@@ -240,17 +240,15 @@ static void osdFormatCoordinate(char *buff, char sym, int32_t val)
 }
 #endif // USE_GPS
 
-void osdFormatDistanceString(char *result, int distance, char leadingSymbol)
+void osdFormatDistanceString(char *ptr, int distance, char leadingSymbol)
 {
     const int convertedDistance = osdGetMetersToSelectedUnit(distance);
     char unitSymbol;
     char unitSymbolExtended;
     int unitTransition;
-    char buff[10];
 
-    result[0] = leadingSymbol;
     if (leadingSymbol != SYM_NONE) {
-        result[1] = 0;
+        *ptr++ = leadingSymbol;
     }
     switch (osdConfig()->units) {
     case OSD_UNIT_IMPERIAL:
@@ -266,16 +264,15 @@ void osdFormatDistanceString(char *result, int distance, char leadingSymbol)
     }
 
     if (convertedDistance < unitTransition || !osdConfig()->dynamic_distance_units) {
-        tfp_sprintf(buff, "%d%c", convertedDistance, unitSymbol);
+        tfp_sprintf(ptr, "%d%c", convertedDistance, unitSymbol);
     } else {
         const int displayDistance = convertedDistance * 100 / unitTransition;
         if (displayDistance >= 1000) { // >= 10 miles or km - 1 decimal place
-            tfp_sprintf(buff, "%d.%d%c", displayDistance / 100, (displayDistance / 10) % 10, unitSymbolExtended);
+            tfp_sprintf(ptr, "%d.%d%c", displayDistance / 100, (displayDistance / 10) % 10, unitSymbolExtended);
         } else {                     // < 10 miles or km - 2 decimal places
-            tfp_sprintf(buff, "%d.%02d%c", displayDistance / 100, displayDistance % 100, unitSymbolExtended);
+            tfp_sprintf(ptr, "%d.%02d%c", displayDistance / 100, displayDistance % 100, unitSymbolExtended);
         }
     }
-    strcat(result, buff);
 }
 
 static void osdFormatPID(char * buff, const char * label, const pidf_t * pid)

@@ -328,6 +328,7 @@ TEST(OsdTest, TestStatsImperial)
     // and
     // using imperial unit system
     osdConfigMutable()->units = OSD_UNIT_IMPERIAL;
+    osdConfigMutable()->dynamic_distance_units = false;
 
     // and
     // this timer 1 configuration
@@ -414,6 +415,7 @@ TEST(OsdTest, TestStatsMetric)
     // given
     // using metric unit system
     osdConfigMutable()->units = OSD_UNIT_METRIC;
+    osdConfigMutable()->dynamic_distance_units = false;
 
     // set timer 1 configuration to tenths precision
     osdConfigMutable()->timers[OSD_TIMER_1] = OSD_TIMER(OSD_TIMER_SRC_TOTAL_ARMED, OSD_TIMER_PREC_TENTHS, 0);

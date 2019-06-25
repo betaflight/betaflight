@@ -302,7 +302,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
         osdConfig->profile[i][0] = '\0';
     }
     osdConfig->rssi_dbm_alarm = 60;
-    osdConfig->dynamic_distance_units = false;
+    osdConfig->dynamic_distance_units = true;
 }
 
 static void osdDrawLogo(int x, int y)
