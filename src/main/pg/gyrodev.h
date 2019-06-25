@@ -24,6 +24,7 @@
 #include <stdint.h>
 
 #include "pg/pg.h"
+#include "common/sensor_alignment.h"
 #include "drivers/io_types.h"
 
 typedef struct gyroDeviceConfig_s {
@@ -34,7 +35,8 @@ typedef struct gyroDeviceConfig_s {
     uint8_t i2cBus;
     uint8_t i2cAddress;
     ioTag_t extiTag;
-    uint8_t align;        // sensor_align_e
+    uint8_t alignment;        // sensor_align_e
+    sensorAlignment_t customAlignment;
 } gyroDeviceConfig_t;
 
 PG_DECLARE_ARRAY(gyroDeviceConfig_t, MAX_GYRODEV_COUNT, gyroDeviceConfig);

@@ -63,6 +63,7 @@
 #include "pg/pg_ids.h"
 #include "pg/motor.h"
 #include "pg/rx.h"
+#include "pg/gyrodev.h"
 
 #include "rx/rx.h"
 
@@ -71,6 +72,9 @@
 #include "sensors/acceleration.h"
 #include "sensors/battery.h"
 #include "sensors/gyro.h"
+#include "sensors/compass.h"
+
+#include "common/sensor_alignment.h"
 
 static bool configIsDirty; /* someone indicated that the config is modified and it is not yet saved */
 
@@ -255,6 +259,12 @@ static void validateAndFixConfig(void)
     }
 
     validateAndFixGyroConfig();
+
+    buildAlignmentFromStandardAlignment(&compassConfigMutable()->mag_customAlignment, compassConfig()->mag_alignment);
+    buildAlignmentFromStandardAlignment(&gyroDeviceConfigMutable(0)->customAlignment, gyroDeviceConfig(0)->alignment);
+#if defined(USE_MULTI_GYRO)
+    buildAlignmentFromStandardAlignment(&gyroDeviceConfigMutable(1)->customAlignment, gyroDeviceConfig(1)->alignment);
+#endif
 
     if (!(featureIsEnabled(FEATURE_RX_PARALLEL_PWM) || featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_SERIAL) || featureIsEnabled(FEATURE_RX_MSP) || featureIsEnabled(FEATURE_RX_SPI))) {
         featureEnable(DEFAULT_RX_FEATURE);

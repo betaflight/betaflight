@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include "common/sensor_alignment.h"
+
 #include "drivers/bus.h"
 #include "drivers/sensor.h"
 #include "drivers/exti.h"
@@ -29,7 +31,8 @@ typedef struct magDev_s {
     sensorMagReadFuncPtr read;                              // read 3 axis data function
     extiCallbackRec_t exti;
     busDevice_t busdev;
-    sensor_align_e magAlign;
+    sensor_align_e magAlignment;
+    fp_rotationMatrix_t rotationMatrix;
     ioTag_t magIntExtiTag;
     int16_t magGain[3];
 } magDev_t;
