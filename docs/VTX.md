@@ -83,8 +83,8 @@ This mode utilizes the contents of the table and allows the user to create custo
 
 Entries of the vtxtable can be blocked by setting their frequency to 0. This is especially useful for bands set to `FACTORY`: The spots of
 unwanted entries of the videotransmitter's built-in table can be set to 0, effectively disabling them.
-In the example above this was used to only allow frequencies between 5725 and 5875 MHz, as a german pilot would want it to comply with
-german laws. Additionally, the fatshark band was replaced with a new custom one.
+In the example above this was used to only allow frequencies between 5725 and 5875 MHz, as a German pilot would want it to comply with
+German laws. Additionally, the Fatshark band was replaced with a new custom one.
 
 As a starting point, the following table contains the commonly used frequencies:
 ```
