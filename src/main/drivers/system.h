@@ -52,7 +52,7 @@ typedef enum {
 
 typedef enum {
     BOOTLOADER_REQUEST_ROM,
-    BOATLOADER_REQUEST_FLASH,
+    BOOTLOADER_REQUEST_FLASH,
 } bootloaderRequestType_e;
 
 // failure
