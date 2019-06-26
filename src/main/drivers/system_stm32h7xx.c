@@ -250,13 +250,13 @@ void systemResetToBootloader(bootloaderRequestType_e requestType)
     switch (requestType) {
 #if defined(USE_FLASH_BOOT_LOADER)
     case BOOTLOADER_REQUEST_FLASH:
-        persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_FLASH_BOOTLOADER_REQUEST);
+        persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_BOOTLOADER_REQUEST_FLASH);
 
         break;
 #endif
     case BOOTLOADER_REQUEST_ROM:
     default:
-        persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_BOOTLOADER_REQUEST);
+        persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_BOOTLOADER_REQUEST_ROM);
 
         break;
     }
@@ -273,9 +273,9 @@ void systemCheckResetReason(void)
 
     switch (bootloaderRequest) {
 #if defined(USE_FLASH_BOOT_LOADER)
-    case BOOTLOADER_REQUEST_FLASH:
+    case RESET_BOOTLOADER_REQUEST_FLASH:
 #endif
-    case RESET_BOOTLOADER_REQUEST:
+    case RESET_BOOTLOADER_REQUEST_ROM:
         persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_BOOTLOADER_POST);
         break;
 
