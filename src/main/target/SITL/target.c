@@ -411,6 +411,10 @@ pwmOutputPort_t *pwmGetMotors(void) {
     return motors;
 }
 
+void pwmDisableMotors(void) {
+    pwmMotorsEnabled = false;
+}
+
 void pwmEnableMotors(void) {
     pwmMotorsEnabled = true;
 }
