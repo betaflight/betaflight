@@ -26,7 +26,30 @@
 #pragma GCC poison sprintf snprintf
 #endif
 
-#if defined(STM32H743xx) || defined(STM32H750xx)
+#if defined(STM32G474xx)
+#include "stm32g4xx.h"
+#include "stm32g4xx_hal.h"
+#include "system_stm32g4xx.h"
+
+#include "stm32g4xx_ll_spi.h"
+#include "stm32g4xx_ll_gpio.h"
+#include "stm32g4xx_ll_dma.h"
+#include "stm32g4xx_ll_rcc.h"
+#include "stm32g4xx_ll_bus.h"
+#include "stm32g4xx_ll_tim.h"
+#include "stm32g4xx_ll_system.h"
+#include "drivers/stm32g4xx_ll_ex.h"
+
+// Chip Unique ID on G4
+#define U_ID_0 (*(uint32_t*)UID_BASE)
+#define U_ID_1 (*(uint32_t*)(UID_BASE + 4))
+#define U_ID_2 (*(uint32_t*)(UID_BASE + 8))
+
+#ifndef STM32G4
+#define STM32G4
+#endif
+
+#elif defined(STM32H743xx) || defined(STM32H750xx)
 #include "stm32h7xx.h"
 #include "stm32h7xx_hal.h"
 #include "system_stm32h7xx.h"
