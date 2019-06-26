@@ -1,6 +1,10 @@
 H743xI_TARGETS += $(TARGET)
-#FEATURES       += SDCARD VCP
+
 FEATURES       += VCP ONBOARDFLASH
+
+ifeq ($(TARGET), NUCLEOH743_RAMBASED)
+RAM_BASED = yes
+endif
 
 # Top level Makefile adds, if not defined, HSE_VALUE, as default for F4 targets.
 # We don't want to assume any particular value until de facto design is established,
