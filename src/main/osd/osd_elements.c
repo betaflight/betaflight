@@ -263,7 +263,7 @@ void osdFormatDistanceString(char *ptr, int distance, char leadingSymbol)
         break;
     }
 
-    if (convertedDistance < unitTransition || !osdConfig()->dynamic_distance_units) {
+    if (convertedDistance < unitTransition) {
         tfp_sprintf(ptr, "%d%c", convertedDistance, unitSymbol);
     } else {
         const int displayDistance = convertedDistance * 100 / unitTransition;

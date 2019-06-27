@@ -48,12 +48,12 @@
 
 // Unit Icons (Metric)
 #define SYM_M                       0x0C
-#define SYM_KM                      0x4B  // 'K'
+#define SYM_KM                      0x7D
 #define SYM_C                       0x0E
 
 // Unit Icons (Imperial)
 #define SYM_FT                      0x0F
-#define SYM_MILES                   0x4D  // 'M'
+#define SYM_MILES                   0x7E
 #define SYM_F                       0x0D
 
 // Heading Graphics

@@ -302,7 +302,6 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
         osdConfig->profile[i][0] = '\0';
     }
     osdConfig->rssi_dbm_alarm = 60;
-    osdConfig->dynamic_distance_units = true;
 }
 
 static void osdDrawLogo(int x, int y)
@@ -710,9 +709,9 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
         #define METERS_PER_KILOMETER 1000
         #define METERS_PER_MILE      1609
         if (osdConfig()->units == OSD_UNIT_IMPERIAL) {
-            tfp_sprintf(buff, "%dMI", statsConfig()->stats_total_dist_m / METERS_PER_MILE);
+            tfp_sprintf(buff, "%d%c", statsConfig()->stats_total_dist_m / METERS_PER_MILE, SYM_MILES);
         } else {
-            tfp_sprintf(buff, "%dKM", statsConfig()->stats_total_dist_m / METERS_PER_KILOMETER);
+            tfp_sprintf(buff, "%d%c", statsConfig()->stats_total_dist_m / METERS_PER_KILOMETER, SYM_KM);
         }
         osdDisplayStatisticLabel(displayRow, "TOTAL DISTANCE", buff);
         return true;
