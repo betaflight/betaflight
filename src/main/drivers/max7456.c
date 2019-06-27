@@ -478,7 +478,7 @@ bool max7456Init(const max7456Config_t *max7456Config, const vcdProfile_t *pVcdP
 
     __spiBusTransactionEnd(busdev);
 
-    if (max7456IsChipAlive()) {
+    if (max7456CheckIsChipAlive()) {
         max7456DeviceAlive = 0x00;
     } else {
         max7456DeviceAlive = 0xFF;
@@ -927,7 +927,7 @@ void max7456ReadShadow(uint8_t *font_data)
     max7456Lock = false;
     fontIsLoading = false;
 }
-bool max7456IsChipAlive(void)
+bool max7456CheckIsChipAlive(void)
 {
     // Idea here is to try reading character 0x20 and see if right right data comes back
     // font_data 0-5 will be transparent, even if given a fresh MAX7456

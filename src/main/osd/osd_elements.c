@@ -1128,9 +1128,6 @@ static void osdElementPilotLogo(osdElementParms_t *element)
                 displayWriteCharExtended(element->osdDisplayPort, element->elemPosX + column, element->elemPosY + row, fontOffset++);
             }
         }
-        //displayWriteExtended(element->osdDisplayPort, element->elemPosX, element->elemPosY, "\x09\x0a\x0b\x0c");
-        //displayWriteExtended(element->osdDisplayPort, element->elemPosX, element->elemPosY+1, "\x0d\x0e\x0f\x10");
-        //displayWriteExtended(element->osdDisplayPort, element->elemPosX, element->elemPosY+2, "\x11\x12\x13\x14");
     }
 }
 #endif
