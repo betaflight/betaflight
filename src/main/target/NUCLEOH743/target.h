@@ -26,7 +26,7 @@
 #define USE_TARGET_CONFIG
 
 #define LED0_PIN                PB0
-#define LED1_PIN                PB7
+#define LED1_PIN                PB7 // PE1 on NUCLEO-H743ZI2 (may collide with UART8_TX)
 //#define LED2_PIN                PB14 // SDMMC2_D0
 
 // Nucleo-H743 has one button (The blue USER button).
