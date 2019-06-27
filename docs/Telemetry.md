@@ -55,11 +55,11 @@ The following sensors are transmitted :
 | GAlt     | GPS altitude, sea level is zero.                                                                       |
 | Tmp2     | number of sats. Every second, a number > 100 is sent to represent GPS signal quality.                  |
 | Cels     | average cell value, vbat divided by cell number.                                                       |
-> Cleanflight will send Cels (FLVSS Individual Cell Voltages Telemetry), disable the setting to use actual FLVSS sensor with: 
+> Cleanflight will send Cels (FLVSS Individual Cell Voltages Telemetry), disable the setting to use actual FLVSS sensor with:
 > ```
 > set telemetry_send_cells = OFF
 > ```
-> 
+>
 > Note: cell voltage values are an assumed reputation of the cell voltage based on the packs voltage. Actual cell voltage may differ.
 >
 > To view individual cells or more importantly to get lowest cell (all cells are the sum of vbat, so each cell is the same in this case):
@@ -96,7 +96,7 @@ Older HoTT transmitters required the EAM and GPS modules to be enabled in the te
 
 You can connect HoTT-Telemetry in two ways:
 
-#### Old way: 
+#### Old way:
 Serial ports use two wires but HoTT uses a single wire so some electronics are required so that the signals don't get mixed up.  The TX  and RX pins of
 a serial port should be connected using a diode and a single wire to the `T` port on a HoTT receiver.
 
@@ -112,7 +112,7 @@ The diode should be arranged to allow the data signals to flow the right way
 ```
 
 1N4148 diodes have been tested and work with the GR-24.
- 
+
 When using the diode disable `tlm_halfduplex`, go to CLI and type `set tlm_halfduplex = OFF`, don't forget a `save` afterwards.
 
 #### New way:
@@ -150,7 +150,7 @@ https://github.com/stronnag/mwptools/blob/master/docs/ltm-definition.txt
 
 ## MAVLink telemetry
 
-MAVLink is a very lightweight, header-only message marshalling library for micro air vehicles. 
+MAVLink is a very lightweight, header-only message marshalling library for micro air vehicles.
 Cleanflight supports MAVLink for compatibility with ground stations, OSDs and antenna trackers built
 for PX4, PIXHAWK, APM and Parrot AR.Drone platforms.
 
@@ -174,7 +174,7 @@ The following sensors are transmitted :
 | Hdg | heading, North is 0°, South is 180°. |
 | AccX,Y,Z | accelerometers values. |
 | Tmp1 | actual flight mode, sent as 4 digits. Number is sent as (1)1234. Please ignore the leading 1, it is just there to ensure the number as always 5 digits (the 1 + 4 digits of actual data) the numbers are aditives (for example, if first digit after the leading 1 is 6, it means GPS Home and Headfree are both active) <ol><li>1 is GPS Hold, 2 is GPS Home, 4 is Headfree</li><li>1 is mag enabled, 2 is baro enabled, 4 is sonar enabled</li><li>3. 1 is angle, 2 is horizon, 4 is passthrough</li><li>4. 1 is ok to arm, 2 is arming is prevented,  4 is armed</li></ol> |
-| Tmp2 | GPS lock status, Number is sent as 1234, the numbers are aditives<ol><li>1 is GPS Fix, 2 is GPS Home fix</li><li>not used</li><li>not used</li><li>number of sats</li></ol> |
+| Tmp2 | GPS lock status, Number is sent as 1234, the numbers are aditives<ol><li>1 is GPS Fix, 2 is GPS Home fix</li><li>HDOP (0-9, 0 is HDOP >= 5.5m, 9 is HDOP <= 1.0m)</li><li>number of sats</li><li>number of sats</li></ol> |
 | VFAS | actual vbat value. |
 | GAlt | GPS altitude, sea level is zero. |
 | GSpd | current speed, calculated by GPS. |
@@ -182,11 +182,11 @@ The following sensors are transmitted :
 | 420 | GPS distance to home |
 | Cels | average cell value, vbat divided by cell number. |
 
-> Cleanflight will send Cels (FLVSS Individual Cell Voltages Telemetry), disable the setting to use actual FLVSS sensor with: 
+> Cleanflight will send Cels (FLVSS Individual Cell Voltages Telemetry), disable the setting to use actual FLVSS sensor with:
 > ```
 > set telemetry_send_cells = OFF
 > ```
-> 
+>
 > Note: cell voltage values are an assumed reputation of the cell voltage based on the packs voltage. Actual cell voltage may differ. It is recommeded that you chain the flight controllers telemetry with a real Frsky FLVSS s.port sensor.
 >
 > To view individual cells or more importantly to get lowest cell (all cells are the sum of vbat, so each cell is the same in this case):
@@ -215,7 +215,7 @@ set telemetry_inversion = ON
 
 ### SmartPort on F1 and F3 targets with SoftSerial
 
-Since F1 targets like Naze32 or Flip32 are not equipped with hardware inverters, SoftSerial might be simpler to use. 
+Since F1 targets like Naze32 or Flip32 are not equipped with hardware inverters, SoftSerial might be simpler to use.
 
 1. Enable SoftSerial ```feature SOFTSERIAL```
 2. In Configurator assign _Telemetry_ > _Smartport_ > _Auto_ to SoftSerial port of your choice
@@ -328,4 +328,3 @@ The telemetry values that are transmitted depend on whether a suitable sensor is
 | Altitude and Vario                          | Barometer|
 | Roll angle, pitch angle and G-Froce X, Y, Z | ACC|
 | GPS Sats, GPS...                            | GPS|
-
