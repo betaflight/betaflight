@@ -2,9 +2,6 @@
 # H7 Make file include
 #
 
-# Override LINKER_DIR until H7 merge is complete
-LINKER_DIR = $(ROOT)/src/main/target/link
-
 ifeq ($(DEBUG_HARDFAULTS),H7)
 CFLAGS               += -DDEBUG_HARDFAULTS
 endif
@@ -209,7 +206,7 @@ VCP_SRC = \
             drivers/usb_io.c
 
 MCU_COMMON_SRC = \
-            target/system_stm32h7xx.c \
+            startup/system_stm32h7xx.c \
             drivers/system_stm32h7xx.c \
             drivers/timer_hal.c \
             drivers/timer_stm32h7xx.c \
