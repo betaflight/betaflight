@@ -36,6 +36,7 @@ typedef struct osdElementParms_s {
 typedef void (*osdElementDrawFn)(osdElementParms_t *element);
 
 int osdConvertTemperatureToSelectedUnit(int tempInDegreesCelcius);
+void osdFormatDistanceString(char *result, int distance, char leadingSymbol);
 bool osdFormatRtcDateTime(char *buffer);
 void osdFormatTime(char * buff, osd_timer_precision_e precision, timeUs_t time);
 void osdFormatTimer(char *buff, bool showSymbol, bool usePrecision, int timerIndex);

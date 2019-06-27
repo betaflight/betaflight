@@ -240,6 +240,41 @@ static void osdFormatCoordinate(char *buff, char sym, int32_t val)
 }
 #endif // USE_GPS
 
+void osdFormatDistanceString(char *ptr, int distance, char leadingSymbol)
+{
+    const int convertedDistance = osdGetMetersToSelectedUnit(distance);
+    char unitSymbol;
+    char unitSymbolExtended;
+    int unitTransition;
+
+    if (leadingSymbol != SYM_NONE) {
+        *ptr++ = leadingSymbol;
+    }
+    switch (osdConfig()->units) {
+    case OSD_UNIT_IMPERIAL:
+        unitTransition = 5280;
+        unitSymbol = SYM_FT;
+        unitSymbolExtended = SYM_MILES;
+        break;
+    default:
+        unitTransition = 1000;
+        unitSymbol = SYM_M;
+        unitSymbolExtended = SYM_KM;
+        break;
+    }
+
+    if (convertedDistance < unitTransition) {
+        tfp_sprintf(ptr, "%d%c", convertedDistance, unitSymbol);
+    } else {
+        const int displayDistance = convertedDistance * 100 / unitTransition;
+        if (displayDistance >= 1000) { // >= 10 miles or km - 1 decimal place
+            tfp_sprintf(ptr, "%d.%d%c", displayDistance / 100, (displayDistance / 10) % 10, unitSymbolExtended);
+        } else {                     // < 10 miles or km - 2 decimal places
+            tfp_sprintf(ptr, "%d.%02d%c", displayDistance / 100, displayDistance % 100, unitSymbolExtended);
+        }
+    }
+}
+
 static void osdFormatPID(char * buff, const char * label, const pidf_t * pid)
 {
     tfp_sprintf(buff, "%s %3d %3d %3d", label, pid->P, pid->I, pid->D);
@@ -764,8 +799,7 @@ static void osdElementGForce(osdElementParms_t *element)
 static void osdElementGpsFlightDistance(osdElementParms_t *element)
 {
     if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
-        const int32_t distance = osdGetMetersToSelectedUnit(GPS_distanceFlownInCm / 100);
-        tfp_sprintf(element->buff, "%c%d%c", SYM_TOTAL_DISTANCE, distance, osdGetMetersToSelectedUnitSymbol());
+        osdFormatDistanceString(element->buff, GPS_distanceFlownInCm / 100, SYM_TOTAL_DISTANCE);
     } else {
         // We use this symbol when we don't have a FIX
         tfp_sprintf(element->buff, "%c%c", SYM_TOTAL_DISTANCE, SYM_HYPHEN);
@@ -793,8 +827,7 @@ static void osdElementGpsHomeDirection(osdElementParms_t *element)
 static void osdElementGpsHomeDistance(osdElementParms_t *element)
 {
     if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
-        const int32_t distance = osdGetMetersToSelectedUnit(GPS_distanceToHome);
-        tfp_sprintf(element->buff, "%c%d%c", SYM_HOMEFLAG, distance, osdGetMetersToSelectedUnitSymbol());
+        osdFormatDistanceString(element->buff, GPS_distanceToHome, SYM_HOMEFLAG);
     } else {
         element->buff[0] = SYM_HOMEFLAG;
         // We use this symbol when we don't have a FIX

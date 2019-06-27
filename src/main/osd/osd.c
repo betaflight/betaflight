@@ -437,8 +437,6 @@ static void osdUpdateStats(void)
 
 #ifdef USE_GPS
     if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
-        value = GPS_distanceToHome;
-
         if (stats.max_distance < GPS_distanceToHome) {
             stats.max_distance = GPS_distanceToHome;
         }
@@ -570,7 +568,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
 
     case OSD_STAT_MAX_DISTANCE:
         if (featureIsEnabled(FEATURE_GPS)) {
-            tfp_sprintf(buff, "%d%c", osdGetMetersToSelectedUnit(stats.max_distance), osdGetMetersToSelectedUnitSymbol());
+            osdFormatDistanceString(buff, stats.max_distance, SYM_NONE);
             osdDisplayStatisticLabel(displayRow, "MAX DISTANCE", buff);
             return true;
         }
@@ -578,8 +576,8 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
 
     case OSD_STAT_FLIGHT_DISTANCE:
         if (featureIsEnabled(FEATURE_GPS)) {
-            const uint32_t distanceFlown = GPS_distanceFlownInCm / 100;
-            tfp_sprintf(buff, "%d%c", osdGetMetersToSelectedUnit(distanceFlown), osdGetMetersToSelectedUnitSymbol());
+            const int distanceFlown = GPS_distanceFlownInCm / 100;
+            osdFormatDistanceString(buff, distanceFlown, SYM_NONE);
             osdDisplayStatisticLabel(displayRow, "FLIGHT DISTANCE", buff);
             return true;
         }
@@ -711,9 +709,9 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
         #define METERS_PER_KILOMETER 1000
         #define METERS_PER_MILE      1609
         if (osdConfig()->units == OSD_UNIT_IMPERIAL) {
-            tfp_sprintf(buff, "%dMI", statsConfig()->stats_total_dist_m / METERS_PER_MILE);
+            tfp_sprintf(buff, "%d%c", statsConfig()->stats_total_dist_m / METERS_PER_MILE, SYM_MILES);
         } else {
-            tfp_sprintf(buff, "%dKM", statsConfig()->stats_total_dist_m / METERS_PER_KILOMETER);
+            tfp_sprintf(buff, "%d%c", statsConfig()->stats_total_dist_m / METERS_PER_KILOMETER, SYM_KM);
         }
         osdDisplayStatisticLabel(displayRow, "TOTAL DISTANCE", buff);
         return true;
