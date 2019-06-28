@@ -32,6 +32,8 @@
 
 #include "platform.h"
 
+#ifdef USE_SDCARD
+
 #include "common/utils.h"
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
@@ -308,3 +310,4 @@ static int8_t STORAGE_GetMaxLun (void)
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
 
+#endif // USE_SDCARD
