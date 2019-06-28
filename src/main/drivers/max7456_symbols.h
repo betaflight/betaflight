@@ -42,6 +42,7 @@
 
 // RSSI
 #define SYM_RSSI                    0x01
+#define SYM_LINK_QUALITY            0x7B
 
 // Throttle Position (%)
 #define SYM_THR                     0x04
