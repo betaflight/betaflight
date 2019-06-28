@@ -29,8 +29,6 @@
 #include "build/debug.h"
 
 #include "pg/max7456.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
 #include "pg/vcd.h"
 
 #include "drivers/bus_spi.h"

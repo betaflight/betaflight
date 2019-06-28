@@ -29,9 +29,6 @@
 #include "drivers/io.h"
 #include "drivers/serial.h"
 
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
-
 #include "inverter.h"
 
 static const serialPinConfig_t *pSerialPinConfig;

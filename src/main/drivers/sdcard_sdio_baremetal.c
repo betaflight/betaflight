@@ -35,7 +35,6 @@
 
 #include "drivers/time.h"
 
-#include "pg/pg.h"
 #include "pg/bus_spi.h" // For spiPinConfig_t, which is unused but should be defined
 #include "pg/sdio.h"
 

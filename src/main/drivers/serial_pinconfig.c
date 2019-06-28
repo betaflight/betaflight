@@ -32,7 +32,6 @@
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
 
-#include "pg/pg.h"
 #include "pg/pg_ids.h"
 
 // Backward compatibility for exisiting targets

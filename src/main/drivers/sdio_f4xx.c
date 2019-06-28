@@ -38,7 +38,6 @@
 #include "sdmmc_sdio.h"
 #include "stm32f4xx_gpio.h"
 
-#include "pg/pg.h"
 #include "pg/sdio.h"
 
 #include "drivers/io.h"

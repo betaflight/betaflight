@@ -34,7 +34,6 @@
 
 #include "sdmmc_sdio.h"
 
-#include "pg/pg.h"
 #include "pg/sdio.h"
 
 #include "drivers/io.h"
