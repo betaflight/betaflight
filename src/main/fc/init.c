@@ -526,7 +526,7 @@ void init(void)
     if (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_BRUSHED) {
         idlePulse = 0; // brushed motors
     }
-#ifdef USE_PWM_OUTPUT
+#ifdef USE_MOTOR
     /* Motors needs to be initialized soon as posible because hardware initialization
      * may send spurious pulses to esc's causing their early initialization. Also ppm
      * receiver may share timer with motors so motors MUST be initialized here. */
@@ -909,8 +909,8 @@ void init(void)
     rcdeviceInit();
 #endif // USE_RCDEVICE
 
-#ifdef USE_PWM_OUTPUT
-    pwmEnableMotors();
+#ifdef USE_MOTOR
+    motorEnable();
 #endif
 
 #ifdef USE_PERSISTENT_STATS

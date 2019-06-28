@@ -33,6 +33,8 @@
 #include "config/config_eeprom.h"
 #include "config/feature.h"
 
+#include "drivers/dshot_command.h"
+#include "drivers/motor.h"
 #include "drivers/system.h"
 
 #include "fc/config.h"

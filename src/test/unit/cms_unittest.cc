@@ -142,7 +142,7 @@ uint32_t micros(void) { return 0; }
 uint32_t millis(void) { return 0; }
 void saveConfigAndNotify(void) {}
 void stopMotors(void) {}
-void stopPwmAllMotors(void) {}
+void motorShutdown(void) {}
 void systemReset(void) {}
 void setArmingDisabled(armingDisableFlags_e flag) { UNUSED(flag); }
 void unsetArmingDisabled(armingDisableFlags_e flag) { UNUSED(flag); }

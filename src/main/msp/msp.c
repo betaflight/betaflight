@@ -51,6 +51,7 @@
 #include "drivers/flash.h"
 #include "drivers/io.h"
 #include "drivers/max7456.h"
+#include "drivers/motor.h"
 #include "drivers/pwm_output.h"
 #include "drivers/sdcard.h"
 #include "drivers/serial.h"
@@ -255,7 +256,7 @@ static void mspRebootFn(serialPort_t *serialPort)
 {
     UNUSED(serialPort);
 
-    stopPwmAllMotors();
+    motorShutdown();
 
     switch (rebootMode) {
     case MSP_REBOOT_FIRMWARE:
@@ -963,7 +964,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
                 continue;
             }
 
-            sbufWriteU16(dst, convertMotorToExternal(motor[i]));
+            sbufWriteU16(dst, motorConvertToExternal(motor[i]));
 #else
             sbufWriteU16(dst, 0);
 #endif
@@ -1950,7 +1951,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
     case MSP_SET_MOTOR:
         for (int i = 0; i < getMotorCount(); i++) {
-            motor_disarmed[i] = convertExternalToMotor(sbufReadU16(src));
+            motor_disarmed[i] = motorConvertFromExternal(sbufReadU16(src));
         }
         break;
 
