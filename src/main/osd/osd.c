@@ -92,10 +92,10 @@
 #endif
 
 #ifndef CORE_TEMPERATURE_WARNING_THRESHOLD
-// a temperature above 70C should produce a warning, lockups have been reported above 80C.
+// Temperatures above the defined values below should produce a warning, lockups have been reported at high temperatures.
 
 #ifdef STM32H7
-#define CORE_TEMPERATURE_WARNING_THRESHOLD 85 // A 400Mhz+ CPU on small 27x27mm PCB generates and retains more heat than other processors.
+#define CORE_TEMPERATURE_WARNING_THRESHOLD 85
 #else
 #define CORE_TEMPERATURE_WARNING_THRESHOLD 70
 #endif
