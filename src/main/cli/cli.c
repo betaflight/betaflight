@@ -1264,10 +1264,11 @@ static void cliSerialPassthrough(char *cmdline)
         return;
     }
 
-    serialPassthroughPort_t ports[2] = { {SERIAL_PORT_NONE, 0, 0, NULL}, { SERIAL_PORT_USB_VCP, 0, 0, cliPort} };
+    serialPassthroughPort_t ports[2] = { {SERIAL_PORT_NONE, 0, 0, NULL}, {cliPort->identifier, 0, 0, cliPort} };
     bool enableBaudCb = false;
     int port1PinioDtr = 0;
     bool port1ResetOnDtr = false;
+    bool escSensorPassthrough = false;
     char *saveptr;
     char* tok = strtok_r(cmdline, " ", &saveptr);
     int index = 0;
@@ -1275,7 +1276,13 @@ static void cliSerialPassthrough(char *cmdline)
     while (tok != NULL) {
         switch (index) {
         case 0:
-            ports[0].id = atoi(tok);
+            if (strcasestr(tok, "esc_sensor")) {
+                escSensorPassthrough = true;
+                const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_ESC_SENSOR);
+                ports[0].id = portConfig->identifier;
+            } else {
+                ports[0].id = atoi(tok);
+            }
             break;
         case 1:
             ports[0].baud = atoi(tok);
@@ -1414,6 +1421,30 @@ static void cliSerialPassthrough(char *cmdline)
         // Register control line state callback
         serialSetCtrlLineStateCb(ports[0].port, cbCtrlLine, (void *)(intptr_t)(port1PinioDtr));
     }
+
+#ifdef USE_PWM_OUTPUT
+    if (escSensorPassthrough) {
+        pwmDisableMotors();
+        delay(5);
+        unsigned motorsCount = getMotorCount();
+        for (unsigned i = 0; i < motorsCount; i++) {
+            const ioTag_t tag = motorConfig()->dev.ioTags[i];
+            if (tag) {
+                const timerHardware_t *timerHardware = timerGetByTag(tag);
+                if (timerHardware) {
+                    IO_t io = IOGetByTag(tag);
+                    IOInit(io, OWNER_MOTOR, 0);
+                    IOConfigGPIO(io, IOCFG_OUT_PP);
+                    if (timerHardware->output & TIMER_OUTPUT_INVERTED) {
+                        IOLo(io);
+                    } else {
+                        IOHi(io);
+                    }
+                }
+            }
+        }
+    }
+#endif
 
     serialPassthrough(ports[0].port, ports[1].port, NULL, NULL);
 }
