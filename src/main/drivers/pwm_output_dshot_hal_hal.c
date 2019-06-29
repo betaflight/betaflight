@@ -34,6 +34,7 @@
 #include "drivers/nvic.h"
 #include "dma.h"
 #include "rcc.h"
+#include "pg/timerup.h"
 
 static HAL_StatusTypeDef result;
 
@@ -252,8 +253,16 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
+#ifdef USE_DMA_SPEC
+        uint8_t timnum = timerGetTIMNumber(timerHardware->tim);
+        dmaoptValue_t dmaopt = timerUpConfig(timnum - 1)->dmaopt;
+        const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_TIMUP, timnum - 1, dmaopt);
+        dmaRef = dmaChannelSpec->ref;
+        dmaChannel = dmaChannelSpec->channel;
+#else
         dmaRef = timerHardware->dmaTimUPRef;
         dmaChannel = timerHardware->dmaTimUPChannel;
+#endif
     }
 #endif
 
@@ -369,8 +378,8 @@ P    -    High -     High -
         memset(motor->timer->dmaBurstBuffer, 0, DSHOT_DMA_BUFFER_SIZE * 4 * sizeof(uint32_t));
 
         /* Set hdma_tim instance */
-        motor->timer->hdma_tim.Instance = timerHardware->dmaTimUPRef;
-        motor->timer->hdma_tim.Init.Request = timerHardware->dmaTimUPChannel;
+        motor->timer->hdma_tim.Instance = dmaRef;
+        motor->timer->hdma_tim.Init.Request = dmaChannel;
 
         /* Link hdma_tim to hdma[TIM_DMA_ID_UPDATE] (update) */
         __HAL_LINKDMA(&motor->timer->timHandle, hdma[TIM_DMA_ID_UPDATE], motor->timer->hdma_tim);
@@ -413,14 +422,14 @@ P    -    High -     High -
         return;
     }
 
+    dmaIdentifier_e identifier = dmaGetIdentifier(dmaRef);
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
-        dmaInit(timerHardware->dmaTimUPIrqHandler, OWNER_TIMUP, timerGetTIMNumber(timerHardware->tim));
-        dmaSetHandler(timerHardware->dmaTimUPIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), timerIndex);
+        dmaInit(identifier, OWNER_TIMUP, timerGetTIMNumber(timerHardware->tim));
+        dmaSetHandler(identifier, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), timerIndex);
     } else
 #endif
     {
-        dmaIdentifier_e identifier = dmaGetIdentifier(dmaRef);
         dmaInit(identifier, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
         dmaSetHandler(identifier, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
     }

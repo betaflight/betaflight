@@ -49,6 +49,7 @@ typedef enum {
     DMA_PERIPH_SDIO,
     DMA_PERIPH_UART_TX,
     DMA_PERIPH_UART_RX,
+    DMA_PERIPH_TIMUP,
 } dmaPeripheral_e;
 
 typedef int8_t dmaoptValue_t;
@@ -68,3 +69,4 @@ const dmaChannelSpec_t *dmaGetChannelSpecByPeripheral(dmaPeripheral_e device, ui
 const dmaChannelSpec_t *dmaGetChannelSpecByTimerValue(TIM_TypeDef *tim, uint8_t channel, dmaoptValue_t dmaopt);
 const dmaChannelSpec_t *dmaGetChannelSpecByTimer(const timerHardware_t *timer);
 dmaoptValue_t dmaGetOptionByTimer(const timerHardware_t *timer);
+dmaoptValue_t dmaGetUpOptionByTimer(const timerHardware_t *timer);

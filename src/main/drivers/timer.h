@@ -170,6 +170,7 @@ typedef enum {
 #define HARDWARE_TIMER_DEFINITION_COUNT 14
 #elif defined(STM32H7)
 #define HARDWARE_TIMER_DEFINITION_COUNT 17
+#define TIMUP_TIMERS ( BIT(1) | BIT(2) | BIT(3) | BIT(4) | BIT(5) | BIT(6) | BIT(7) | BIT(8) | BIT(15) | BIT(16) | BIT(17) )
 #endif
 
 #define MHZ_TO_HZ(x) ((x) * 1000000)
@@ -177,6 +178,7 @@ typedef enum {
 #if !defined(USE_UNIFIED_TARGET)
 extern const timerHardware_t timerHardware[];
 #endif
+
 
 #if defined(USE_TIMER_MGMT)
 #if defined(STM32F4)
