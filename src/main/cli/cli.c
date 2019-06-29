@@ -4903,21 +4903,21 @@ typedef struct dmaoptEntry_s {
     uint32_t presenceMask;
 } dmaoptEntry_t;
 
+#define MASK_IGNORED (0)
+
 // Handy macros for keeping the table tidy.
 // DEFS : Single entry
 // DEFA : Array of uint8_t (stride = 1)
 // DEFW : Wider stride case; array of structs.
 
 #define DEFS(device, peripheral, pgn, type, member) \
-    { device, peripheral, pgn, 0,               offsetof(type, member), 0, 0 }
+    { device, peripheral, pgn, 0,               offsetof(type, member), 0, MASK_IGNORED }
 
 #define DEFA(device, peripheral, pgn, type, member, max, mask) \
     { device, peripheral, pgn, sizeof(uint8_t), offsetof(type, member), max, mask }
 
 #define DEFW(device, peripheral, pgn, type, member, max, mask) \
     { device, peripheral, pgn, sizeof(type), offsetof(type, member), max, mask }
-
-#define MASK_IGNORED (0)
 
 dmaoptEntry_t dmaoptEntryTable[] = {
     DEFW("SPI_TX",  DMA_PERIPH_SPI_TX,  PG_SPI_PIN_CONFIG,     spiPinConfig_t,     txDmaopt, SPIDEV_COUNT,                    MASK_IGNORED),
@@ -5166,7 +5166,7 @@ static void cliDmaopt(char *cmdline)
     pch = strtok_r(NULL, " ", &saveptr);
     if (entry) {
         index = atoi(pch) - 1;
-        if (index < 0 || index >= entry->maxIndex || !((entry->presenceMask != MASK_IGNORED) && (entry->presenceMask & BIT(index + 1)))) {
+        if (index < 0 || index >= entry->maxIndex || (entry->presenceMask != MASK_IGNORED && !(entry->presenceMask & BIT(index + 1)))) {
             cliPrintErrorLinef("BAD INDEX: '%s'", pch ? pch : "");
             return;
         }
