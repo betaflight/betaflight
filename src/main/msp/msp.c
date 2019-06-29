@@ -281,7 +281,7 @@ static void mspRebootFn(serialPort_t *serialPort)
 #endif
 #if defined(USE_FLASH_BOOT_LOADER)
     case MSP_REBOOT_BOOTLOADER_FLASH:
-        systemResetToBootloader(BOATLOADER_REQUEST_FLASH);
+        systemResetToBootloader(BOOTLOADER_REQUEST_FLASH);
 
         break;
 #endif
