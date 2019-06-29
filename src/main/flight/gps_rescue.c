@@ -304,9 +304,7 @@ static void rescueAttainPosition()
         setBearing(rescueState.sensor.directionToHome);
     }
 
-    if (debugMode == DEBUG_RTH) {
-        DEBUG_SET(DEBUG_RTH, 3, rescueState.failure); //Failure can change with no new GPS Data
-    }
+    DEBUG_SET(DEBUG_RTH, 3, rescueState.failure); //Failure can change with no new GPS Data
     
     if (!newGPSData) {
         return;
@@ -370,18 +368,14 @@ static void rescueAttainPosition()
 
     rescueThrottle = constrain(1000 + altitudeAdjustment + hoverAdjustment, gpsRescueConfig()->throttleMin, gpsRescueConfig()->throttleMax);
 
-    if (debugMode == DEBUG_RTH) {
-        DEBUG_SET(DEBUG_RTH, 0, rescueThrottle);
-        DEBUG_SET(DEBUG_RTH, 1, gpsRescueAngle[AI_PITCH]);
-        DEBUG_SET(DEBUG_RTH, 2, altitudeAdjustment);
-    }
+    DEBUG_SET(DEBUG_RTH, 0, rescueThrottle);
+    DEBUG_SET(DEBUG_RTH, 1, gpsRescueAngle[AI_PITCH]);
+    DEBUG_SET(DEBUG_RTH, 2, altitudeAdjustment);
 
-    if (debugMode == DEBUG_GPS_RESCUE_THROTTLE_PID) {
-        DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 0, throttle.Kp * zVelocityError);
-        DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 1, throttle.Ki * zVelocityIntegral);
-        DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 2, throttle.Kd * zVelocityDerivative);
-        DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 3, rescueState.sensor.zVelocity);
-    }
+    DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 0, throttle.Kp * zVelocityError);
+    DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 1, throttle.Ki * zVelocityIntegral);
+    DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 2, throttle.Kd * zVelocityDerivative);
+    DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 3, rescueState.sensor.zVelocity);
 }
 
 static void performSanityChecks()
