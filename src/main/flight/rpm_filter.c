@@ -31,12 +31,10 @@
 #include "common/filter.h"
 #include "common/maths.h"
 
-#include "drivers/pwm_output_counts.h"
-
 #include "flight/mixer.h"
 #include "flight/pid.h"
 
-#include "pg/pg_ids.h"
+#include "pg/motor.h"
 
 #include "scheduler/scheduler.h"
 

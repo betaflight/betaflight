@@ -138,6 +138,7 @@
 #include "pg/bus_quadspi.h"
 #include "pg/flash.h"
 #include "pg/mco.h"
+#include "pg/motor.h"
 #include "pg/pinio.h"
 #include "pg/piniobox.h"
 #include "pg/pg.h"

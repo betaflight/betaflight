@@ -49,6 +49,7 @@ const timerHardware_t timerHardware[1]; // unused
 #include "scheduler/scheduler.h"
 
 #include "pg/rx.h"
+#include "pg/motor.h"
 
 #include "rx/rx.h"
 

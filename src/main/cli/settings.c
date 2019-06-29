@@ -76,6 +76,7 @@
 #include "pg/gyrodev.h"
 #include "pg/max7456.h"
 #include "pg/mco.h"
+#include "pg/motor.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/pinio.h"

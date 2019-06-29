@@ -41,6 +41,7 @@
 #include "io/flashfs.h"
 #include "io/beeper.h"
 
+#include "pg/motor.h"
 #include "pg/rx.h"
 
 #include "rx/rx.h"

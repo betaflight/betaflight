@@ -33,10 +33,10 @@
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 
-#include "flight/mixer.h"
 #include "flight/pid.h"
 
 #include "pg/rx.h"
+#include "pg/motor.h"
 
 #include "rx/rx.h"
 

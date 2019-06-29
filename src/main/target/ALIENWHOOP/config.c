@@ -57,6 +57,7 @@
 #include "io/beeper.h"
 #include "io/serial.h"
 #include "pg/rx.h"
+#include "pg/motor.h"
 #include "rx/rx.h"
 #include "sensors/barometer.h"
 #include "sensors/boardalignment.h"
