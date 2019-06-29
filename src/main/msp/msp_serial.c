@@ -452,7 +452,7 @@ static void mspProcessPendingRequest(mspPort_t * mspPort)
         break;
 #if defined(USE_FLASH_BOOT_LOADER)
     case MSP_PENDING_BOOTLOADER_FLASH:
-        systemResetToBootloader(BOATLOADER_REQUEST_FLASH);
+        systemResetToBootloader(BOOTLOADER_REQUEST_FLASH);
 
         break;
 #endif
