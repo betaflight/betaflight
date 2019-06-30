@@ -44,6 +44,8 @@
 
 #include "io/serial.h"
 
+#include "pg/motor.h"
+
 
 typedef enum {
     BAUDRATE_NORMAL = 19200,

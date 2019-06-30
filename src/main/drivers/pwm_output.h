@@ -25,9 +25,10 @@
 #include "common/time.h"
 
 #include "drivers/io_types.h"
-#include "drivers/pwm_output_counts.h"
 #include "drivers/timer.h"
 
+#define BRUSHED_MOTORS_PWM_RATE 16000
+#define BRUSHLESS_MOTORS_PWM_RATE 480
 
 #define ALL_MOTORS 255
 #define DSHOT_MAX_COMMAND 47
@@ -220,24 +221,14 @@ typedef struct {
     IO_t io;
 } pwmOutputPort_t;
 
-//CAVEAT: This is used in the `motorConfig_t` parameter group, so the parameter group constraints apply
-typedef struct motorDevConfig_s {
-    uint16_t motorPwmRate;                  // The update rate of motor outputs (50-498Hz)
-    uint8_t  motorPwmProtocol;              // Pwm Protocol
-    uint8_t  motorPwmInversion;             // Active-High vs Active-Low. Useful for brushed FCs converted for brushless operation
-    uint8_t  useUnsyncedPwm;
-    uint8_t  useBurstDshot;
-    uint8_t  useDshotTelemetry;
-    ioTag_t  ioTags[MAX_SUPPORTED_MOTORS];
-} motorDevConfig_t;
-
 extern bool useBurstDshot;
 #ifdef USE_DSHOT_TELEMETRY
 extern bool useDshotTelemetry;
 extern uint32_t dshotInvalidPacketCount;
 #endif
 
-void motorDevInit(const motorDevConfig_t *motorDevConfig, uint16_t idlePulse, uint8_t motorCount);
+struct motorDevConfig_s;
+void motorDevInit(const struct motorDevConfig_s *motorDevConfig, uint16_t idlePulse, uint8_t motorCount);
 
 typedef struct servoDevConfig_s {
     // PWM values, in milliseconds, common range is 1000-2000 (1ms to 2ms)

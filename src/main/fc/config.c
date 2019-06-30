@@ -61,6 +61,7 @@
 #include "pg/beeper_dev.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/motor.h"
 #include "pg/rx.h"
 
 #include "rx/rx.h"

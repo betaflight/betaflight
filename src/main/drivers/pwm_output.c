@@ -34,6 +34,8 @@
 #include "timer.h"
 #include "drivers/pwm_output.h"
 
+#include "pg/motor.h"
+
 static FAST_RAM_ZERO_INIT pwmWriteFn *pwmWrite;
 static FAST_RAM_ZERO_INIT pwmOutputPort_t motors[MAX_SUPPORTED_MOTORS];
 static FAST_RAM_ZERO_INIT pwmCompleteWriteFn *pwmCompleteWrite = NULL;

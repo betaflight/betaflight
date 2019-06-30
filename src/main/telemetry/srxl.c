@@ -50,6 +50,7 @@
 #include "io/gps.h"
 
 #include "pg/rx.h"
+#include "pg/motor.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
