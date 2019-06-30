@@ -305,7 +305,7 @@ static void rescueAttainPosition()
     }
 
     DEBUG_SET(DEBUG_RTH, 3, rescueState.failure); //Failure can change with no new GPS Data
-    
+
     if (!newGPSData) {
         return;
     }
