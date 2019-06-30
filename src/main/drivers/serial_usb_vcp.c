@@ -30,7 +30,7 @@
 #include "common/utils.h"
 
 #include "drivers/io.h"
-#include "pg/pg.h"
+
 #include "pg/usb.h"
 
 #if defined(STM32F4)
