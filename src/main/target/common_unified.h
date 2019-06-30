@@ -73,6 +73,8 @@
 #define USE_FLASH_W25M
 #define USE_FLASH_W25N01G          // 1G NAND flash support
 
+#define USE_MAX7456
+
 #define USE_TRANSPONDER
 
 //TODO: Make this actually work by making the pins configurable
