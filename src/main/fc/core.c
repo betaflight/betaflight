@@ -205,6 +205,80 @@ bool canUseLaunchControl(void)
 }
 #endif
 
+static bool checkIfLowpassGetsDisabled(int nyquist, uint16_t filterCutoff)
+{
+    if (filterCutoff > nyquist) {
+        return true;
+    }
+    return false;
+}
+
+static bool checkIfGyroNotchGetsDisabled(int nyquist, uint16_t notchCenter, uint16_t notchCutoff)
+{
+    if (notchCenter > nyquist && calculateNyquistAdjustedNotchHz(notchCenter, notchCutoff) == 0) {
+        return true;
+    }
+    return false;
+}
+
+// Check to see if any gyro filtering is enabled
+static bool anyGyroFilteringEnabled(void)
+{
+    // Check gyro lowpass filters
+    if (gyroConfig()->dyn_lpf_gyro_min_hz > 0 || gyroConfig()->gyro_lowpass_hz > 0 || gyroConfig()->gyro_lowpass2_hz > 0) {
+        return true;
+    }
+
+    // Check gyro notch filters
+    if ((gyroConfig()->gyro_soft_notch_hz_1 > 0 && gyroConfig()->gyro_soft_notch_cutoff_1 > 0)
+        || (gyroConfig()->gyro_soft_notch_hz_2 > 0 && gyroConfig()->gyro_soft_notch_cutoff_2 > 0)) {
+        return true;
+    }
+
+    // Check dynamic filter
+    if (featureIsEnabled(FEATURE_DYNAMIC_FILTER)) {
+        return true;
+    }
+
+#ifdef USE_RPM_FILTER
+    // Check rpm filter
+    if (isRpmGyroFilterEnabled()) {
+        return true;
+    }
+#endif
+
+    // No gyro filtering!
+    return false;
+}
+
+// Check for invalid or disabled filtering and prevent
+// arming for unsafe settings.
+static void setFilteringArmingStatus(void)
+{
+    const int gyroFrequencyNyquist = 1000000 / 2 / gyro.targetLooptime;
+    const int pidFrequencyNyquist = gyroFrequencyNyquist / pidConfig()->pid_process_denom;
+    bool filterError = false;
+
+    // Check gyro filtering for cases of implicit disabling because of cutoffs being above the nyquist
+    uint16_t gyroLowpassHz = (gyroConfig()->dyn_lpf_gyro_min_hz > 0) ? gyroConfig()->dyn_lpf_gyro_min_hz : gyroConfig()->gyro_lowpass_hz;
+    filterError = filterError || checkIfLowpassGetsDisabled(gyroFrequencyNyquist, gyroLowpassHz);
+    filterError = filterError || checkIfLowpassGetsDisabled(gyroFrequencyNyquist, gyroConfig()->gyro_lowpass2_hz);
+    filterError = filterError || checkIfGyroNotchGetsDisabled(gyroFrequencyNyquist, gyroConfig()->gyro_soft_notch_hz_1, gyroConfig()->gyro_soft_notch_cutoff_1);
+    filterError = filterError || checkIfGyroNotchGetsDisabled(gyroFrequencyNyquist, gyroConfig()->gyro_soft_notch_hz_2, gyroConfig()->gyro_soft_notch_cutoff_2);
+
+    // Check dterm filtering for cases of implicit disabling because of cutoffs being above the nyquist
+    uint16_t dtermLowpassHz = (currentPidProfile->dyn_lpf_dterm_min_hz > 0) ? currentPidProfile->dyn_lpf_dterm_min_hz : currentPidProfile->dterm_lowpass_hz;
+    filterError = filterError || checkIfLowpassGetsDisabled(pidFrequencyNyquist, dtermLowpassHz);
+    filterError = filterError || checkIfLowpassGetsDisabled(pidFrequencyNyquist, currentPidProfile->dterm_lowpass2_hz);
+    filterError = filterError || (currentPidProfile->dterm_notch_hz > pidFrequencyNyquist && currentPidProfile->dterm_notch_cutoff > pidFrequencyNyquist);
+
+    if (filterError || !anyGyroFilteringEnabled()) {
+        setArmingDisabled(ARMING_DISABLED_FILTERING);
+    } else {
+        unsetArmingDisabled(ARMING_DISABLED_FILTERING);
+    }
+}
+
 void resetArmingDisabled(void)
 {
     lastArmingDisabledReason = 0;
@@ -308,6 +382,9 @@ void updateArmingStatus(void)
         if (IS_RC_MODE_ACTIVE(BOXPARALYZE)) {
             setArmingDisabled(ARMING_DISABLED_PARALYZE);
         }
+
+        // Check for filtering errors
+        setFilteringArmingStatus();
 
         if (!isUsingSticksForArming()) {
           /* Ignore ARMING_DISABLED_CALIBRATING if we are going to calibrate gyro on first arm */

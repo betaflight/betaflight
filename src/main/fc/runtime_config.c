@@ -56,6 +56,7 @@ const char *armingDisableFlagNames[]= {
     "RESCUE_SW",
     "RPMFILTER",
     "REBOOT_REQD",
+    "FILTERING",
     "ARMSWITCH",
 };
 

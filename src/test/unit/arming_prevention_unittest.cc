@@ -62,7 +62,9 @@ extern "C" {
     uint8_t cliMode = 0;
     uint8_t debugMode = 0;
     int16_t debug[DEBUG16_VALUE_COUNT];
-    pidProfile_t *currentPidProfile;
+    pidProfile_t pidProfile = {};
+//    pidProfile_t *currentPidProfile;
+    pidProfile_t *currentPidProfile = &pidProfile;
     controlRateConfig_t *currentControlRateProfile;
     attitudeEulerAngles_t attitude;
     gpsSolutionData_t gpsSol;
@@ -73,6 +75,7 @@ extern "C" {
     uint16_t GPS_distanceToHome = 0;
     int16_t GPS_directionToHome = 0;
     acc_t acc = {};
+    gyro_t gyro = {};
 }
 
 uint32_t simulationFeatureFlags = 0;
@@ -106,6 +109,8 @@ TEST(ArmingPreventionTest, CalibrationPowerOnGraceAngleThrottleArmSwitch)
     // and
     systemConfigMutable()->powerOnArmingGraceTime = 5;
     setArmingDisabled(ARMING_DISABLED_BOOT_GRACE_TIME);
+    gyro.targetLooptime = 125; // 8K gyro sampling
+    pidConfigMutable()->pid_process_denom = 1;
 
     // when
     updateActivatedModes();
@@ -113,7 +118,7 @@ TEST(ArmingPreventionTest, CalibrationPowerOnGraceAngleThrottleArmSwitch)
 
     // expect
     EXPECT_TRUE(isArmingDisabled());
-    EXPECT_EQ(ARMING_DISABLED_BOOT_GRACE_TIME | ARMING_DISABLED_CALIBRATING | ARMING_DISABLED_ANGLE | ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_THROTTLE, getArmingDisableFlags());
+    EXPECT_EQ(ARMING_DISABLED_BOOT_GRACE_TIME | ARMING_DISABLED_CALIBRATING | ARMING_DISABLED_ANGLE | ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_THROTTLE | ARMING_DISABLED_FILTERING, getArmingDisableFlags());
 
     // given
     // gyro calibration is done
@@ -125,7 +130,7 @@ TEST(ArmingPreventionTest, CalibrationPowerOnGraceAngleThrottleArmSwitch)
 
     // expect
     EXPECT_TRUE(isArmingDisabled());
-    EXPECT_EQ(ARMING_DISABLED_BOOT_GRACE_TIME | ARMING_DISABLED_ANGLE | ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_THROTTLE, getArmingDisableFlags());
+    EXPECT_EQ(ARMING_DISABLED_BOOT_GRACE_TIME | ARMING_DISABLED_ANGLE | ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_THROTTLE | ARMING_DISABLED_FILTERING, getArmingDisableFlags());
 
     // given
     // quad is level
@@ -136,7 +141,7 @@ TEST(ArmingPreventionTest, CalibrationPowerOnGraceAngleThrottleArmSwitch)
 
     // expect
     EXPECT_TRUE(isArmingDisabled());
-    EXPECT_EQ(ARMING_DISABLED_BOOT_GRACE_TIME | ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_THROTTLE, getArmingDisableFlags());
+    EXPECT_EQ(ARMING_DISABLED_BOOT_GRACE_TIME | ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_THROTTLE | ARMING_DISABLED_FILTERING, getArmingDisableFlags());
 
     // given
     rcData[THROTTLE] = 1000;
@@ -146,11 +151,22 @@ TEST(ArmingPreventionTest, CalibrationPowerOnGraceAngleThrottleArmSwitch)
 
     // expect
     EXPECT_TRUE(isArmingDisabled());
-    EXPECT_EQ(ARMING_DISABLED_BOOT_GRACE_TIME | ARMING_DISABLED_ARM_SWITCH, getArmingDisableFlags());
+    EXPECT_EQ(ARMING_DISABLED_BOOT_GRACE_TIME | ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_FILTERING, getArmingDisableFlags());
 
     // given
     // arming grace time has elapsed
     simulationTime += systemConfig()->powerOnArmingGraceTime * 1e6;
+
+    // when
+    updateArmingStatus();
+
+    // expect
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_FILTERING, getArmingDisableFlags());
+
+    // given
+    // enable some gyro filtering
+    gyroConfigMutable()->gyro_lowpass_hz = 100;
 
     // when
     updateArmingStatus();
@@ -1090,4 +1106,6 @@ extern "C" {
     float getCosTiltAngle(void) { return 0.0f; }
     void pidSetItermReset(bool) {}
     void applyAccelerometerTrimsDelta(rollAndPitchTrims_t*) {}
+    bool isRpmGyroFilterEnabled(void) { return false; }
+    uint16_t calculateNyquistAdjustedNotchHz(uint16_t, uint16_t) { return 0; }
 }

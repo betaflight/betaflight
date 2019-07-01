@@ -663,7 +663,7 @@ void gyroInitLowpassFilterLpf(gyroSensor_t *gyroSensor, int slot, int type, uint
     }
 }
 
-static uint16_t calculateNyquistAdjustedNotchHz(uint16_t notchHz, uint16_t notchCutoffHz)
+uint16_t calculateNyquistAdjustedNotchHz(uint16_t notchHz, uint16_t notchCutoffHz)
 {
     const uint32_t gyroFrequencyNyquist = 1000000 / 2 / gyro.targetLooptime;
     if (notchHz > gyroFrequencyNyquist) {

@@ -72,6 +72,7 @@ extern "C" {
     bool cmsInMenu = false;
     float axisPID_P[3], axisPID_I[3], axisPID_D[3], axisPIDSum[3];
     rxRuntimeConfig_t rxRuntimeConfig = {};
+    gyro_t gyro = {};
 }
 
 uint32_t simulationFeatureFlags = 0;
@@ -178,4 +179,6 @@ extern "C" {
     void osdSuppressStats(bool) {}
     void pidSetItermReset(bool) {}
     void applyAccelerometerTrimsDelta(rollAndPitchTrims_t*) {}
+    bool isRpmGyroFilterEnabled(void) { return false; }
+    uint16_t calculateNyquistAdjustedNotchHz(uint16_t, uint16_t) { return 0; }
 }

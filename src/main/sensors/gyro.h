@@ -142,3 +142,4 @@ gyroDetectionFlags_t getGyroDetectionFlags(void);
 float dynThrottle(float throttle);
 void dynLpfGyroUpdate(float throttle);
 #endif
+uint16_t calculateNyquistAdjustedNotchHz(uint16_t notchHz, uint16_t notchCutoffHz);

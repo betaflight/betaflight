@@ -222,4 +222,9 @@ bool isRpmFilterEnabled(void)
     return (motorConfig()->dev.useDshotTelemetry && (rpmFilterConfig()->gyro_rpm_notch_harmonics || rpmFilterConfig()->dterm_rpm_notch_harmonics));
 }
 
+bool isRpmGyroFilterEnabled(void)
+{
+    return (motorConfig()->dev.useDshotTelemetry && rpmFilterConfig()->gyro_rpm_notch_harmonics);
+}
+
 #endif
