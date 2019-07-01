@@ -147,8 +147,10 @@
 #define HMC5883_CS_PIN          NONE
 
 #define USE_BARO
+#define USE_BARO_LPS
 #define USE_BARO_BMP085
 #define USE_BARO_BMP280
+#define USE_BARO_BMP388
 #define USE_BARO_MS5611
 #define USE_BARO_SPI_BMP280
 #define BMP280_SPI_INSTANCE     NULL

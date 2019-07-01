@@ -16,8 +16,19 @@
  * along with this software.
  *
  * If not, see <http://www.gnu.org/licenses/>.
+ *
+ * BMP388 Driver author: Dominic Clifton
+ *
+ * References:
+ * BMP388 datasheet - https://ae-bst.resource.bosch.com/media/_tech/media/datasheets/BST-BMP388-DS001.pdf
+ * BMP3-Sensor-API - https://github.com/BoschSensortec/BMP3-Sensor-API
+ * BMP280 Cleanflight driver
  */
 
 #pragma once
 
-bool ms5611Detect(baroDev_t *baro);
+typedef struct bmp388Config_s {
+    ioTag_t eocTag;
+} bmp388Config_t;
+
+bool bmp388Detect(const bmp388Config_t *config, baroDev_t *baro);

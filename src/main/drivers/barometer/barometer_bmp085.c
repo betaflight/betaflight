@@ -46,7 +46,7 @@ static bool isEOCConnected = false;
 static IO_t eocIO;
 static extiCallbackRec_t exti;
 
-static void bmp085_extiHandler(extiCallbackRec_t* cb)
+static void bmp085ExtiHandler(extiCallbackRec_t* cb)
 {
     UNUSED(cb);
     isConversionComplete = true;
@@ -120,14 +120,14 @@ static bool bmp085InitDone = false;
 STATIC_UNIT_TESTED uint16_t bmp085_ut;  // static result of temperature measurement
 STATIC_UNIT_TESTED uint32_t bmp085_up;  // static result of pressure measurement
 
-static void bmp085_get_cal_param(busDevice_t *busdev);
-static void bmp085_start_ut(baroDev_t *baro);
-static void bmp085_get_ut(baroDev_t *baro);
-static void bmp085_start_up(baroDev_t *baro);
-static void bmp085_get_up(baroDev_t *baro);
-static int32_t bmp085_get_temperature(uint32_t ut);
-static int32_t bmp085_get_pressure(uint32_t up);
-STATIC_UNIT_TESTED void bmp085_calculate(int32_t *pressure, int32_t *temperature);
+static void bmp085ReadCalibrarionParameters(busDevice_t *busdev);
+static void bmp085StartUT(baroDev_t *baro);
+static void bmp085GetUT(baroDev_t *baro);
+static void bmp085StartUP(baroDev_t *baro);
+static void bmp085GetUP(baroDev_t *baro);
+static int32_t bmp085GetTemperature(uint32_t ut);
+static int32_t bmp085GetPressure(uint32_t up);
+STATIC_UNIT_TESTED void bmp085Calculate(int32_t *pressure, int32_t *temperature);
 
 static bool bmp085TestEOCConnected(baroDev_t *baro, const bmp085Config_t *config);
 
@@ -159,7 +159,7 @@ bool bmp085Detect(const bmp085Config_t *config, baroDev_t *baro)
 
     eocIO = IOGetByTag(config->eocTag);
     IOInit(eocIO, OWNER_BARO_EOC, 0);
-    EXTIHandlerInit(&exti, bmp085_extiHandler);
+    EXTIHandlerInit(&exti, bmp085ExtiHandler);
     EXTIConfig(eocIO, &exti, NVIC_PRIO_BARO_EXTI, IOCFG_IN_FLOATING, EXTI_TRIGGER_RISING);
     EXTIEnable(eocIO, true);
 #else
@@ -185,14 +185,14 @@ bool bmp085Detect(const bmp085Config_t *config, baroDev_t *baro)
             busReadRegisterBuffer(busdev, BMP085_VERSION_REG, &data, 1); /* read Version reg */
             bmp085.ml_version = BMP085_GET_BITSLICE(data, BMP085_ML_VERSION); /* get ML Version */
             bmp085.al_version = BMP085_GET_BITSLICE(data, BMP085_AL_VERSION); /* get AL Version */
-            bmp085_get_cal_param(busdev); /* readout bmp085 calibparam structure */
+            bmp085ReadCalibrarionParameters(busdev); /* readout bmp085 calibparam structure */
             baro->ut_delay = UT_DELAY;
             baro->up_delay = UP_DELAY;
-            baro->start_ut = bmp085_start_ut;
-            baro->get_ut = bmp085_get_ut;
-            baro->start_up = bmp085_start_up;
-            baro->get_up = bmp085_get_up;
-            baro->calculate = bmp085_calculate;
+            baro->start_ut = bmp085StartUT;
+            baro->get_ut = bmp085GetUT;
+            baro->start_up = bmp085StartUP;
+            baro->get_up = bmp085GetUP;
+            baro->calculate = bmp085Calculate;
 
             isEOCConnected = bmp085TestEOCConnected(baro, config);
 
@@ -217,7 +217,7 @@ bool bmp085Detect(const bmp085Config_t *config, baroDev_t *baro)
     return false;
 }
 
-static int32_t bmp085_get_temperature(uint32_t ut)
+static int32_t bmp085GetTemperature(uint32_t ut)
 {
     int32_t temperature;
     int32_t x1, x2;
@@ -230,7 +230,7 @@ static int32_t bmp085_get_temperature(uint32_t ut)
     return temperature;
 }
 
-static int32_t bmp085_get_pressure(uint32_t up)
+static int32_t bmp085GetPressure(uint32_t up)
 {
     int32_t pressure, x1, x2, x3, b3, b6;
     uint32_t b4, b7;
@@ -270,14 +270,14 @@ static int32_t bmp085_get_pressure(uint32_t up)
     return pressure;
 }
 
-static void bmp085_start_ut(baroDev_t *baro)
+static void bmp085StartUT(baroDev_t *baro)
 {
     isConversionComplete = false;
 
     busWriteRegister(&baro->busdev, BMP085_CTRL_MEAS_REG, BMP085_T_MEASURE);
 }
 
-static void bmp085_get_ut(baroDev_t *baro)
+static void bmp085GetUT(baroDev_t *baro)
 {
     uint8_t data[2];
 
@@ -290,7 +290,7 @@ static void bmp085_get_ut(baroDev_t *baro)
     bmp085_ut = (data[0] << 8) | data[1];
 }
 
-static void bmp085_start_up(baroDev_t *baro)
+static void bmp085StartUP(baroDev_t *baro)
 {
     uint8_t ctrl_reg_data;
 
@@ -305,7 +305,7 @@ static void bmp085_start_up(baroDev_t *baro)
  depending on the oversampling ratio setting up can be 16 to 19 bit
  \return up parameter that represents the uncompensated pressure value
  */
-static void bmp085_get_up(baroDev_t *baro)
+static void bmp085GetUP(baroDev_t *baro)
 {
     uint8_t data[3];
 
@@ -319,19 +319,19 @@ static void bmp085_get_up(baroDev_t *baro)
             >> (8 - bmp085.oversampling_setting);
 }
 
-STATIC_UNIT_TESTED void bmp085_calculate(int32_t *pressure, int32_t *temperature)
+STATIC_UNIT_TESTED void bmp085Calculate(int32_t *pressure, int32_t *temperature)
 {
     int32_t temp, press;
 
-    temp = bmp085_get_temperature(bmp085_ut);
-    press = bmp085_get_pressure(bmp085_up);
+    temp = bmp085GetTemperature(bmp085_ut);
+    press = bmp085GetPressure(bmp085_up);
     if (pressure)
         *pressure = press;
     if (temperature)
         *temperature = temp;
 }
 
-static void bmp085_get_cal_param(busDevice_t *busdev)
+static void bmp085ReadCalibrarionParameters(busDevice_t *busdev)
 {
     uint8_t data[22];
     busReadRegisterBuffer(busdev, BMP085_PROM_START__ADDR, data, BMP085_PROM_DATA__LEN);
@@ -365,7 +365,7 @@ static bool bmp085TestEOCConnected(baroDev_t *baro, const bmp085Config_t *config
             return false;
         }
 
-        bmp085_start_ut(baro);
+        bmp085StartUT(baro);
         delayMicroseconds(UT_DELAY * 2); // wait twice as long as normal, just to be sure
 
         // conversion should have finished now so check if EOC is high
