@@ -867,9 +867,6 @@ void max7456ReadNvm(uint16_t char_address, uint8_t *font_data)
 #ifdef MAX7456_DMA_CHANNEL_TX
     while (dmaTransactionInProgress);
 #endif
-    while (max7456Lock);
-    max7456Lock = true; // This should pause the OSD task
-    fontIsLoading = true;
     __spiBusTransactionBegin(busdev);
     uint8_t retriesOne = 0;
     for (retriesOne = 0; retriesOne < MAX7456_READ_RETRIES && (max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00; retriesOne++);
@@ -900,17 +897,12 @@ void max7456ReadNvm(uint16_t char_address, uint8_t *font_data)
     font_data[62] = retriesThree;
     __spiBusTransactionEnd(busdev);
 
-    max7456Lock = false;
-    fontIsLoading = false;
 }
 void max7456ReadShadow(uint8_t *font_data)
 {
 #ifdef MAX7456_DMA_CHANNEL_TX
     while (dmaTransactionInProgress);
 #endif
-    while (max7456Lock);
-    max7456Lock = true; // This should pause the OSD task
-    fontIsLoading = true;
     __spiBusTransactionBegin(busdev);
     //while ((max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00);
     for (int retries=0; retries < MAX7456_READ_RETRIES && (max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00; retries++);
@@ -924,8 +916,6 @@ void max7456ReadShadow(uint8_t *font_data)
     }
     __spiBusTransactionEnd(busdev);
 
-    max7456Lock = false;
-    fontIsLoading = false;
 }
 bool max7456CheckIsChipAlive(void)
 {
