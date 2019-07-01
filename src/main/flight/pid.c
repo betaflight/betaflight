@@ -176,7 +176,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .acro_trainer_lookahead_ms = 50,
         .acro_trainer_debug_axis = FD_ROLL,
         .acro_trainer_gain = 75,
-        .abs_control_gain = 5,
+        .abs_control_gain = 0,
         .abs_control_limit = 90,
         .abs_control_error_limit = 20,
         .abs_control_cutoff = 11,
