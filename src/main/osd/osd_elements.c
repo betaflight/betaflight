@@ -880,12 +880,12 @@ static void osdElementLinkQuality(osdElementParms_t *element)
     if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) { // 0-300
         osdLinkQuality = rxGetLinkQuality()  / 3.41;
         tfp_sprintf(element->buff, "%c%3d", SYM_LINK_QUALITY, osdLinkQuality);
-    } else { // 0-9
-        osdLinkQuality = rxGetLinkQuality() * 10 / LINK_QUALITY_MAX_VALUE;
-        if (osdLinkQuality >= 10) {
-            osdLinkQuality = 9;
+    } else { // 0-100
+        osdLinkQuality = rxGetLinkQuality() * 100 / LINK_QUALITY_MAX_VALUE;
+        if (osdLinkQuality >= 100) {
+            osdLinkQuality = 99;
         }
-        tfp_sprintf(element->buff, "%c%1d", SYM_LINK_QUALITY, osdLinkQuality);
+        tfp_sprintf(element->buff, "%c%2d", SYM_LINK_QUALITY, osdLinkQuality);
     }
 }
 #endif // USE_RX_LINK_QUALITY_INFO
