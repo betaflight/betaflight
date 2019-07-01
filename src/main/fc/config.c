@@ -162,10 +162,10 @@ static void activateConfig(void)
 #endif
 }
 
-static void adjustFilterLimit(uint16_t *parm)
+static void adjustFilterLimit(uint16_t *parm, uint16_t resetValue)
 {
     if (*parm > FILTER_FREQUENCY_MAX) {
-        *parm = FILTER_FREQUENCY_MAX;
+        *parm = resetValue;
     }
 }
 
@@ -209,10 +209,10 @@ static void validateAndFixConfig(void)
     for (unsigned i = 0; i < PID_PROFILE_COUNT; i++) {
         // Fix filter settings to handle cases where an older configurator was used that
         // allowed higher cutoff limits from previous firmware versions.
-        adjustFilterLimit(&pidProfilesMutable(i)->dterm_lowpass_hz);
-        adjustFilterLimit(&pidProfilesMutable(i)->dterm_lowpass2_hz);
-        adjustFilterLimit(&pidProfilesMutable(i)->dterm_notch_hz);
-        adjustFilterLimit(&pidProfilesMutable(i)->dterm_notch_cutoff);
+        adjustFilterLimit(&pidProfilesMutable(i)->dterm_lowpass_hz, FILTER_FREQUENCY_MAX);
+        adjustFilterLimit(&pidProfilesMutable(i)->dterm_lowpass2_hz, FILTER_FREQUENCY_MAX);
+        adjustFilterLimit(&pidProfilesMutable(i)->dterm_notch_hz, FILTER_FREQUENCY_MAX);
+        adjustFilterLimit(&pidProfilesMutable(i)->dterm_notch_cutoff, 0);
 
         // Prevent invalid notch cutoff
         if (pidProfilesMutable(i)->dterm_notch_cutoff >= pidProfilesMutable(i)->dterm_notch_hz) {
@@ -529,12 +529,12 @@ void validateAndFixGyroConfig(void)
 
     // Fix gyro filter settings to handle cases where an older configurator was used that
     // allowed higher cutoff limits from previous firmware versions.
-    adjustFilterLimit(&gyroConfigMutable()->gyro_lowpass_hz);
-    adjustFilterLimit(&gyroConfigMutable()->gyro_lowpass2_hz);
-    adjustFilterLimit(&gyroConfigMutable()->gyro_soft_notch_hz_1);
-    adjustFilterLimit(&gyroConfigMutable()->gyro_soft_notch_cutoff_1);
-    adjustFilterLimit(&gyroConfigMutable()->gyro_soft_notch_hz_2);
-    adjustFilterLimit(&gyroConfigMutable()->gyro_soft_notch_cutoff_2);
+    adjustFilterLimit(&gyroConfigMutable()->gyro_lowpass_hz, FILTER_FREQUENCY_MAX);
+    adjustFilterLimit(&gyroConfigMutable()->gyro_lowpass2_hz, FILTER_FREQUENCY_MAX);
+    adjustFilterLimit(&gyroConfigMutable()->gyro_soft_notch_hz_1, FILTER_FREQUENCY_MAX);
+    adjustFilterLimit(&gyroConfigMutable()->gyro_soft_notch_cutoff_1, 0);
+    adjustFilterLimit(&gyroConfigMutable()->gyro_soft_notch_hz_2, FILTER_FREQUENCY_MAX);
+    adjustFilterLimit(&gyroConfigMutable()->gyro_soft_notch_cutoff_2, 0);
 
     // Prevent invalid notch cutoff
     if (gyroConfig()->gyro_soft_notch_cutoff_1 >= gyroConfig()->gyro_soft_notch_hz_1) {
