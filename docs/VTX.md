@@ -42,7 +42,7 @@ The VTX button works with ALL VTX systems including onboard RTC6705, Tramp and S
 If the VTX can be turned off then POWER 0 will turn off the VTX and POWER 1 will set the VTX into it's lowest power output.
 If the VTX cannot be turned off then POWER 0 will set the VTX into it's lowest power output.
 
-## vtxTable
+## VTX Table
 
 As of Betaflight 4.1.0, band/channel and power level information needed to control videotransmitters is no longer hardcoded,
 but stored in a new facility called vtxTable.
@@ -105,44 +105,51 @@ while the value is sent to the vtx.
 
 Power levels should be setup to match the hardware in use.
 
-IRC Tramp devices should use:
+#### IRC Tramp devices should use:
 ```
 vtxtable powerlevels 5
 vtxtable powervalues 25 100 200 400 600
 vtxtable powerlabels 25 100 200 400 600
 ```
-rtc6705 should use:
+
+#### rtc6705 should use:
 ```
 vtxtable powerlevels 3
 vtxtable powervalues 0 1 2
 vtxtable powerlabels OFF MIN MAX
 ```
-SmartAudio V1.0 devices should use:
+
+#### SmartAudio V1.0 devices should use:
 ```
 vtxtable powerlevels 4
 vtxtable powervalues 7 16 25 40
 vtxtable powerlabels 25 200 500 800
 ```
-SmartAudio V2.0 devices should use:
+
+#### SmartAudio V2.0 devices should use:
 ```
 vtxtable powerlevels 4
 vtxtable powervalues 0 1 2 3
 vtxtable powerlabels 25 200 500 800
 ```
-SmartAudio V2.1 devices vary depending on their model. Check the manufacturers website.
+
+#### SmartAudio V2.1 devices vary depending on their model. Check the manufacturers website.
 For example the
+
 [TBS Unify Pro32 Nano 5G8](https://www.team-blacksheep.com/products/prod:unifypro32_nano):
 ```
 vtxtable powerlevels 3
 vtxtable powervalues  14 20 26
 vtxtable powerlabels 25 100 400
 ```
+
 [TBS Unify Pro 5G8 HV - Race 2 (MMCX)](https://www.team-blacksheep.com/products/prod:unify_pro_hv_race2_m):
 ```
 vtxtable powerlevels 3
 vtxtable powervalues  13 20 26
 vtxtable powerlabels 25 100 400
 ```
+
 [TBS Unify EVO](https://www.team-blacksheep.com/products/prod:tbs_unify_evo):
 ```
 vtxtable powerlevels 4
@@ -159,9 +166,9 @@ vtxtable powervalues  20 26
 vtxtable powerlabels .1W .4W
 ```
 
-###complete examples
+### Complete Examples
 
-IRC Tramp device
+#### IRC Tramp device
 
 ```
 # This example enables a lot of power levels and channels.
@@ -179,7 +186,7 @@ vtxtable powervalues 25 100 200 400 600
 vtxtable powerlabels 25 100 200 400 600
 ```
 
-SmartAudio 1.0 device
+#### SmartAudio 1.0 device
 
 ```
 # This example enables a lot of power levels and channels.
@@ -197,7 +204,7 @@ vtxtable powervalues 7 16 25 40
 vtxtable powerlabels 25 200 500 800
 ```
 
-SmartAudio 2.0 device
+#### SmartAudio 2.0 device
 
 ```
 # This example enables a lot of power levels and channels.
@@ -215,7 +222,7 @@ vtxtable powervalues 0 1 2 3
 vtxtable powerlabels 25 200 500 800
 ```
 
-rtc6705
+#### rtc6705
 
 ```
 # This example enables a lot of power levels and channels.
@@ -233,7 +240,7 @@ vtxtable powervalues 0 1 2
 vtxtable powerlabels OFF MIN MAX
 ```
 
-##Pitmode
+### Pitmode
 Pitmode is separate from vtxTable. No power level should be created for pitmode.
 Pitmode can be controlled in a variety of ways including OSD, AUX switches and lua scripts.
 
