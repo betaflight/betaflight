@@ -27,6 +27,7 @@ This is the official list of manufacturer ids (`manufacturer_id` in the target c
 |RUSH|FPV Racing Rush|http://www.rushfpv.com/|
 |SPRO|Seriously Pro Racing (SP Racing)|http://seriouslypro.com/|
 |TCMM|Shenzhen Xinmumu Science and Technology Co (TCMM)|http://www.tcmm-rc.cn/|
+|TMTR|T-motor|http://uav-en.tmotor.com/|
 |TTRH|TransTEC|http://www.transtechobby.com/|
 |VGRC|V-GOOD Technology Co.|http://www.vgoodrc.com/|
 |VIVA|VivaFPV|https://vivafpv.com/|
