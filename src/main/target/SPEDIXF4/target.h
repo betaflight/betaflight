@@ -20,8 +20,13 @@
 
 #pragma once
 
+#ifdef TMOTORF4
+#define TARGET_BOARD_IDENTIFIER "TMR4"
+#define USBD_PRODUCT_STRING     "TMOTORF4"
+#else
 #define TARGET_BOARD_IDENTIFIER "SPD4"
 #define USBD_PRODUCT_STRING     "SPEDIXF4"
+#endif
 
 #define USE_TARGET_CONFIG
 
@@ -129,8 +134,13 @@
 #define I2C_DEVICE              (I2CDEV_2)
 
 #define USE_ADC
+#ifdef TMOTORF4
+#define CURRENT_METER_ADC_PIN   PC2
+#define VBAT_ADC_PIN            PC1
+#else
 #define CURRENT_METER_ADC_PIN   PC1
 #define VBAT_ADC_PIN            PC2
+#endif
 #define RSSI_ADC_PIN            PC3
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
