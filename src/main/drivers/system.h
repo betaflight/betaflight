@@ -31,8 +31,17 @@ typedef enum {
     FAILURE_ACC_INIT,
     FAILURE_ACC_INCOMPATIBLE,
     FAILURE_INVALID_EEPROM_CONTENTS,
+    FAILURE_CONFIG_STORE_FAILURE,
+    FAILURE_GYRO_INIT_FAILED,
+    FAILURE_FLASH_READ_FAILED,
     FAILURE_FLASH_WRITE_FAILED,
-    FAILURE_GYRO_INIT_FAILED
+    FAILURE_FLASH_INIT_FAILED, // RESERVED
+    FAILURE_EXTERNAL_FLASH_READ_FAILED,  // RESERVED
+    FAILURE_EXTERNAL_FLASH_WRITE_FAILED, // RESERVED
+    FAILURE_EXTERNAL_FLASH_INIT_FAILED,
+    FAILURE_SDCARD_READ_FAILED,
+    FAILURE_SDCARD_WRITE_FAILED,
+    FAILURE_SDCARD_INITIALISATION_FAILED,
 } failureMode_e;
 
 #define WARNING_FLASH_DURATION_MS 50
@@ -41,16 +50,25 @@ typedef enum {
 #define WARNING_CODE_DURATION_LONG_MS 250
 #define WARNING_CODE_DURATION_SHORT_MS 50
 
+typedef enum {
+    BOOTLOADER_REQUEST_ROM,
+    BOOTLOADER_REQUEST_FLASH,
+} bootloaderRequestType_e;
+
 // failure
 void indicateFailure(failureMode_e mode, int repeatCount);
 void failureMode(failureMode_e mode);
 
 // bootloader/IAP
 void systemReset(void);
-void systemResetToBootloader(void);
-void checkForBootLoaderRequest(void);
+void systemResetToBootloader(bootloaderRequestType_e requestType);
 bool isMPUSoftReset(void);
 void cycleCounterInit(void);
+#if defined(STM32H7)
+void systemCheckResetReason(void);
+#endif
+
+void initialiseMemorySections(void);
 
 void enableGPIOPowerUsageAndNoiseReductions(void);
 // current crystal frequency - 8 or 12MHz

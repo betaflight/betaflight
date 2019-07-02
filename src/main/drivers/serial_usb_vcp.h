@@ -28,6 +28,11 @@
 #include "usbd_cdc.h"
 
 extern USBD_HandleTypeDef  USBD_Device;
+
+#elif defined(STM32H7)
+#include "usbd_cdc.h"
+
+extern USBD_HandleTypeDef  USBD_Device;
 #endif
 
 typedef struct {

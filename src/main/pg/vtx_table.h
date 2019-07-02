@@ -20,6 +20,8 @@
 
 #pragma once
 
+#ifdef USE_VTX_TABLE
+
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -33,6 +35,7 @@ typedef struct vtxTableConfig_s {
     char     bandNames[VTX_TABLE_MAX_BANDS][VTX_TABLE_BAND_NAME_LENGTH + 1];
     char     bandLetters[VTX_TABLE_MAX_BANDS];
     char     channelNames[VTX_TABLE_MAX_CHANNELS][VTX_TABLE_CHANNEL_NAME_LENGTH + 1];
+    bool     isFactoryBand[VTX_TABLE_MAX_BANDS];
 
     uint8_t  powerLevels;
     uint16_t powerValues[VTX_TABLE_MAX_POWER_LEVELS];
@@ -41,3 +44,5 @@ typedef struct vtxTableConfig_s {
 
 struct vtxTableConfig_s;
 PG_DECLARE(struct vtxTableConfig_s, vtxTableConfig);
+
+#endif

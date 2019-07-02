@@ -56,14 +56,11 @@
 #define USE_ACC_SPI_MPU6000
 #define USE_ACC_SPI_MPU6500
 #define USE_ACC_SPI_ICM20689
-#define ACC_1_ALIGN             CW180_DEG
 
 #ifdef FURYF4OSD
     #define USE_MAX7456
     #define MAX7456_SPI_INSTANCE    SPI2
     #define MAX7456_SPI_CS_PIN      PB12
-    #define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
-    #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
     #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 
@@ -154,5 +151,5 @@
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         (BIT(2))
 
-#define USABLE_TIMER_CHANNEL_COUNT 6
-#define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8) )
+#define USABLE_TIMER_CHANNEL_COUNT 7
+#define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8) | TIM_N(11) )

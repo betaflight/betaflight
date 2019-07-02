@@ -31,7 +31,6 @@
 
 #define TEST_SOUND // for factory testing audio output
 
-#define USE_DUAL_GYRO
 //#define DEBUG_MODE DEBUG_DUAL_GYRO_DIFF
 
 #define ENABLE_DSHOT_DMAR       true
@@ -58,16 +57,12 @@
 
 #if (SPRACINGF7DUAL_REV >= 2)
 #define GYRO_1_ALIGN        CW0_DEG
-#define ACC_1_ALIGN         CW0_DEG
 
 #define GYRO_2_ALIGN        CW270_DEG
-#define ACC_2_ALIGN         CW270_DEG
 #else
 #define GYRO_1_ALIGN        CW180_DEG
-#define ACC_1_ALIGN         CW180_DEG
 
 #define GYRO_2_ALIGN        CW270_DEG
-#define ACC_2_ALIGN         CW270_DEG
 #endif
 
 #define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_BOTH

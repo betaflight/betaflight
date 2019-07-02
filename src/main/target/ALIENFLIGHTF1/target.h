@@ -42,7 +42,6 @@
 #define USE_ACC
 #define USE_ACC_MPU6050
 
-#define ACC_1_ALIGN             CW0_DEG
 
 #define USE_UART1
 #define USE_UART2

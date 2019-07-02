@@ -20,6 +20,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -30,8 +31,10 @@
 #include "flash.h"
 #include "flash_impl.h"
 #include "flash_m25p16.h"
+#include "flash_w25n01g.h"
 #include "flash_w25m.h"
 #include "drivers/bus_spi.h"
+#include "drivers/bus_quadspi.h"
 #include "drivers/io.h"
 #include "drivers/time.h"
 
@@ -39,16 +42,52 @@ static busDevice_t busInstance;
 static busDevice_t *busdev;
 
 static flashDevice_t flashDevice;
+static flashPartitionTable_t flashPartitionTable;
+static int flashPartitions = 0;
+
+#define FLASH_INSTRUCTION_RDID 0x9F
+
+#ifdef USE_QUADSPI
+static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
+{
+    QUADSPI_TypeDef *quadSpiInstance = quadSpiInstanceByDevice(QUADSPI_CFG_TO_DEV(flashConfig->quadSpiDevice));
+    quadSpiSetDivisor(quadSpiInstance, QUADSPI_CLOCK_INITIALISATION);
+
+    uint8_t readIdResponse[4];
+    bool status = quadSpiReceive1LINE(quadSpiInstance, FLASH_INSTRUCTION_RDID, 8, readIdResponse, sizeof(readIdResponse));
+    if (!status) {
+        return false;
+    }
+
+    flashDevice.io.mode = FLASHIO_QUADSPI;
+    flashDevice.io.handle.quadSpi = quadSpiInstance;
+
+    // Manufacturer, memory type, and capacity
+    uint32_t chipID = (readIdResponse[0] << 16) | (readIdResponse[1] << 8) | (readIdResponse[2]);
+
+#ifdef USE_FLASH_W25N01G
+    quadSpiSetDivisor(quadSpiInstance, QUADSPI_CLOCK_ULTRAFAST);
+
+    if (w25n01g_detect(&flashDevice, chipID)) {
+        return true;
+    }
+#endif
+
+    return false;
+}
+#endif  // USE_QUADSPI
+
+#ifdef USE_SPI
 
 void flashPreInit(const flashConfig_t *flashConfig)
 {
     spiPreinitRegister(flashConfig->csTag, IOCFG_IPU, 1);
 }
 
-// Read chip identification and send it to device detect
-
-bool flashInit(const flashConfig_t *flashConfig)
+static bool flashSpiInit(const flashConfig_t *flashConfig)
 {
+    // Read chip identification and send it to device detect
+
     busdev = &busInstance;
 
     if (flashConfig->csTag) {
@@ -84,27 +123,29 @@ bool flashInit(const flashConfig_t *flashConfig)
 #endif
 #endif
 
-    flashDevice.busdev = busdev;
+    flashDevice.io.mode = FLASHIO_SPI;
+    flashDevice.io.handle.busdev = busdev;
 
-    const uint8_t out[] = { SPIFLASH_INSTRUCTION_RDID, 0, 0, 0 };
+    const uint8_t out[] = { FLASH_INSTRUCTION_RDID, 0, 0, 0, 0 };
 
     delay(50); // short delay required after initialisation of SPI device instance.
 
-    /* Just in case transfer fails and writes nothing, so we don't try to verify the ID against random garbage
-     * from the stack:
+    /* 
+     * Some newer chips require one dummy byte to be read; we can read
+     * 4 bytes for these chips while retaining backward compatibility.
      */
-    uint8_t in[4];
-    in[1] = 0;
+    uint8_t readIdResponse[5];
+    readIdResponse[1] = readIdResponse[2] = 0;
 
     // Clearing the CS bit terminates the command early so we don't have to read the chip UID:
 #ifdef USE_SPI_TRANSACTION
-    spiBusTransactionTransfer(busdev, out, in, sizeof(out));
+    spiBusTransactionTransfer(busdev, out, readIdResponse, sizeof(out));
 #else
-    spiBusTransfer(busdev, out, in, sizeof(out));
+    spiBusTransfer(busdev, out, readIdResponse, sizeof(out));
 #endif
 
     // Manufacturer, memory type, and capacity
-    uint32_t chipID = (in[1] << 16) | (in[2] << 8) | (in[3]);
+    uint32_t chipID = (readIdResponse[1] << 16) | (readIdResponse[2] << 8) | (readIdResponse[3]);
 
 #ifdef USE_FLASH_M25P16
     if (m25p16_detect(&flashDevice, chipID)) {
@@ -112,7 +153,22 @@ bool flashInit(const flashConfig_t *flashConfig)
     }
 #endif
 
-#ifdef USE_FLASH_W25M
+#ifdef USE_FLASH_W25M512
+    if (w25m_detect(&flashDevice, chipID)) {
+        return true;
+    }
+#endif
+
+    // Newer chips
+    chipID = (readIdResponse[2] << 16) | (readIdResponse[3] << 8) | (readIdResponse[4]);
+
+#ifdef USE_FLASH_W25N01G
+    if (w25n01g_detect(&flashDevice, chipID)) {
+        return true;
+    }
+#endif
+
+#ifdef USE_FLASH_W25M02G
     if (w25m_detect(&flashDevice, chipID)) {
         return true;
     }
@@ -122,15 +178,36 @@ bool flashInit(const flashConfig_t *flashConfig)
 
     return false;
 }
+#endif // USE_SPI
+
+bool flashDeviceInit(const flashConfig_t *flashConfig)
+{
+#ifdef USE_SPI
+    bool useSpi = (SPI_CFG_TO_DEV(flashConfig->spiDevice) != SPIINVALID);
+
+    if (useSpi) {
+        return flashSpiInit(flashConfig);
+    }
+#endif
+
+#ifdef USE_QUADSPI
+    bool useQuadSpi = (QUADSPI_CFG_TO_DEV(flashConfig->quadSpiDevice) != QUADSPIINVALID);
+    if (useQuadSpi) {
+        return flashQuadSpiInit(flashConfig);
+    }
+#endif
+
+    return false;
+}
 
 bool flashIsReady(void)
 {
     return flashDevice.vTable->isReady(&flashDevice);
 }
 
-bool flashWaitForReady(uint32_t timeoutMillis)
+bool flashWaitForReady(void)
 {
-    return flashDevice.vTable->waitForReady(&flashDevice, timeoutMillis);
+    return flashDevice.vTable->waitForReady(&flashDevice);
 }
 
 void flashEraseSector(uint32_t address)
@@ -170,7 +247,9 @@ int flashReadBytes(uint32_t address, uint8_t *buffer, int length)
 
 void flashFlush(void)
 {
-    flashDevice.vTable->flush(&flashDevice);
+    if (flashDevice.vTable->flush) {
+        flashDevice.vTable->flush(&flashDevice);
+    }
 }
 
 static const flashGeometry_t noFlashGeometry = {
@@ -184,5 +263,143 @@ const flashGeometry_t *flashGetGeometry(void)
     }
 
     return &noFlashGeometry;
+}
+
+/*
+ * Flash partitioning
+ *
+ * Partition table is not currently stored on the flash, in-memory only.
+ *
+ * Partitions are required so that Badblock management (inc spare blocks), FlashFS (Blackbox Logging), Configuration and Firmware can be kept separate and tracked.
+ *
+ * XXX FIXME
+ * XXX Note that Flash FS must start at sector 0.
+ * XXX There is existing blackbox/flash FS code the relies on this!!!
+ * XXX This restriction can and will be fixed by creating a set of flash operation functions that take partition as an additional parameter.
+ */
+
+static void flashConfigurePartitions(void)
+{
+
+    const flashGeometry_t *flashGeometry = flashGetGeometry();
+    if (flashGeometry->totalSize == 0) {
+        return;
+    }
+
+    flashSector_t startSector = 0;
+    flashSector_t endSector = flashGeometry->sectors - 1; // 0 based index
+
+    const flashPartition_t *badBlockPartition = flashPartitionFindByType(FLASH_PARTITION_TYPE_BADBLOCK_MANAGEMENT);
+    if (badBlockPartition) {
+        endSector = badBlockPartition->startSector - 1;
+    }
+
+#if defined(FIRMWARE_SIZE)
+    const uint32_t firmwareSize = (FIRMWARE_SIZE * 1024);
+    flashSector_t firmwareSectors = (firmwareSize / flashGeometry->sectorSize);
+
+    if (firmwareSize % flashGeometry->sectorSize > 0) {
+        firmwareSectors++; // needs a portion of a sector.
+    }
+
+    startSector = (endSector + 1) - firmwareSectors; // + 1 for inclusive
+
+    flashPartitionSet(FLASH_PARTITION_TYPE_FIRMWARE, startSector, endSector);
+
+    endSector = startSector - 1;
+    startSector = 0;
+#endif
+
+#if defined(EEPROM_IN_EXTERNAL_FLASH)
+    const uint32_t configSize = EEPROM_SIZE;
+    flashSector_t configSectors = (configSize / flashGeometry->sectorSize);
+
+    if (configSize % flashGeometry->sectorSize > 0) {
+        configSectors++; // needs a portion of a sector.
+    }
+
+    startSector = (endSector + 1) - configSectors; // + 1 for inclusive
+
+    flashPartitionSet(FLASH_PARTITION_TYPE_CONFIG, startSector, endSector);
+
+    endSector = startSector - 1;
+    startSector = 0;
+#endif
+
+#ifdef USE_FLASHFS
+    flashPartitionSet(FLASH_PARTITION_TYPE_FLASHFS, startSector, endSector);
+#endif
+}
+
+flashPartition_t *flashPartitionFindByType(uint8_t type)
+{
+    for (int index = 0; index < FLASH_MAX_PARTITIONS; index++) {
+        flashPartition_t *candidate = &flashPartitionTable.partitions[index];
+        if (candidate->type == type) {
+            return candidate;
+        }
+    }
+
+    return NULL;
+}
+
+const flashPartition_t *flashPartitionFindByIndex(uint8_t index)
+{
+    if (index >= flashPartitions) {
+        return NULL;
+    }
+
+    return &flashPartitionTable.partitions[index];
+}
+
+void flashPartitionSet(uint8_t type, uint32_t startSector, uint32_t endSector)
+{
+    flashPartition_t *entry = flashPartitionFindByType(type);
+
+    if (!entry) {
+        if (flashPartitions == FLASH_MAX_PARTITIONS - 1) {
+            return;
+        }
+        entry = &flashPartitionTable.partitions[flashPartitions++];
+    }
+
+    entry->type = type;
+    entry->startSector = startSector;
+    entry->endSector = endSector;
+}
+
+// Must be in sync with FLASH_PARTITION_TYPE
+static const char *flashPartitionNames[] = {
+    "UNKNOWN  ",
+    "PARTITION",
+    "FLASHFS  ",
+    "BBMGMT   ",
+    "FIRMWARE ",
+    "CONFIG   ",
+};
+
+const char *flashPartitionGetTypeName(flashPartitionType_e type)
+{
+    if (type < ARRAYLEN(flashPartitionNames)) {
+        return flashPartitionNames[type];
+    }
+
+    return NULL;
+}
+
+bool flashInit(const flashConfig_t *flashConfig)
+{
+    memset(&flashPartitionTable, 0x00, sizeof(flashPartitionTable));
+
+    bool haveFlash = flashDeviceInit(flashConfig);
+
+    flashConfigurePartitions();
+
+    return haveFlash;
+}
+
+int flashPartitionCount(void)
+{
+    return flashPartitions;
 }
 #endif // USE_FLASH_CHIP

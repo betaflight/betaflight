@@ -28,7 +28,6 @@
 
 #include "common/utils.h"
 
-#include "drivers/accgyro/accgyro.h"
 #include "drivers/adc_impl.h"
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
@@ -260,5 +259,10 @@ void adcInit(const adcConfig_t *config)
     ADC_DMACmd(adc.ADCx, ENABLE);
 
     ADC_StartConversion(adc.ADCx);
+}
+
+void adcGetChannelValues(void)
+{
+    // Nothing to do
 }
 #endif

@@ -28,7 +28,6 @@
 
 #include "build/build_config.h"
 
-#include "drivers/accgyro/accgyro.h"
 #include "drivers/sensor.h"
 #include "adc.h"
 #include "adc_impl.h"
@@ -162,5 +161,10 @@ void adcInit(const adcConfig_t *config)
     while (ADC_GetCalibrationStatus(adc.ADCx));
 
     ADC_SoftwareStartConvCmd(adc.ADCx, ENABLE);
+}
+
+void adcGetChannelValues(void)
+{
+    // Nothing to do
 }
 #endif

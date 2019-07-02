@@ -49,6 +49,7 @@ const timerHardware_t timerHardware[1]; // unused
 #include "scheduler/scheduler.h"
 
 #include "pg/rx.h"
+#include "pg/motor.h"
 
 #include "rx/rx.h"
 
@@ -212,7 +213,6 @@ void systemInit(void) {
     printf("[system]Init...\n");
 
     SystemCoreClock = 500 * 1e6; // fake 500MHz
-    FLASH_Unlock();
 
     if (pthread_mutex_init(&updateLock, NULL) != 0) {
         printf("Create updateLock error!\n");
@@ -253,7 +253,9 @@ void systemReset(void){
     pthread_join(udpWorker, NULL);
     exit(0);
 }
-void systemResetToBootloader(void) {
+void systemResetToBootloader(bootloaderRequestType_e requestType) {
+    UNUSED(requestType);
+
     printf("[system]ResetToBootloader!\n");
     workerRunning = false;
     pthread_join(tcpWorker, NULL);
@@ -410,6 +412,10 @@ pwmOutputPort_t *pwmGetMotors(void) {
     return motors;
 }
 
+void pwmDisableMotors(void) {
+    pwmMotorsEnabled = false;
+}
+
 void pwmEnableMotors(void) {
     pwmMotorsEnabled = true;
 }
@@ -469,7 +475,6 @@ char _Min_Stack_Size;
 
 // fake EEPROM
 static FILE *eepromFd = NULL;
-uint8_t eepromData[EEPROM_SIZE];
 
 void FLASH_Unlock(void) {
     if (eepromFd != NULL) {

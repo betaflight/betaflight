@@ -64,7 +64,6 @@
 
 #define GYRO_1_CS_PIN           PC4
 #define GYRO_1_SPI_INSTANCE     SPI1
-#define ACC_1_ALIGN             CW270_DEG
 #define GYRO_1_ALIGN            CW270_DEG
 
 #define USE_ACC
@@ -103,8 +102,6 @@
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI3
 #define MAX7456_SPI_CS_PIN      PB14
-#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD)
-#define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 #define FLASH_CS_PIN            PB3
 #define FLASH_SPI_INSTANCE      SPI3
 

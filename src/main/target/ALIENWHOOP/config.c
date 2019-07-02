@@ -57,6 +57,7 @@
 #include "io/beeper.h"
 #include "io/serial.h"
 #include "pg/rx.h"
+#include "pg/motor.h"
 #include "rx/rx.h"
 #include "sensors/barometer.h"
 #include "sensors/boardalignment.h"
@@ -96,8 +97,6 @@ void targetConfiguration(void)
 #if defined(BREADBOARD)
     boardAlignmentMutable()->pitchDegrees = 90; // vertical breakout board
     barometerConfigMutable()->baro_hardware = BARO_DEFAULT; // still testing not on V1 or V2 pcb
-#else
-    barometerConfigMutable()->baro_hardware = BARO_NONE;
 #endif
 
     compassConfigMutable()->mag_hardware =  MAG_NONE;

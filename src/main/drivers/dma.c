@@ -24,6 +24,8 @@
 
 #include "platform.h"
 
+#ifdef USE_DMA
+
 #include "drivers/nvic.h"
 #include "dma.h"
 
@@ -142,3 +144,4 @@ dmaChannelDescriptor_t* dmaGetDescriptorByIdentifier(const dmaIdentifier_e ident
 {
     return &dmaDescriptors[DMA_IDENTIFIER_TO_INDEX(identifier)];
 }
+#endif

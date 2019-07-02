@@ -46,7 +46,6 @@
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 #define GYRO_1_ALIGN             CW0_DEG
-#define ACC_1_ALIGN              CW0_DEG
 
 // DEFINE OSD
 #define USE_SPI_DEVICE_2
@@ -58,8 +57,6 @@
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI2
 #define MAX7456_SPI_CS_PIN      PB12
-#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
-#define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
 
 

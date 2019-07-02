@@ -42,7 +42,6 @@
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
-#define ACC_1_ALIGN             CW270_DEG
 
 // MPU6000 interrupts
 #define USE_EXTI

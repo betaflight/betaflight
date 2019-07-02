@@ -70,7 +70,6 @@
 #define USE_ACC
 #define USE_ACC_SPI_MPU6500
 
-#define ACC_1_ALIGN                         CW0_DEG
 #define GYRO_1_ALIGN                        CW0_DEG
 
 #define USE_BARO
@@ -147,9 +146,6 @@
 #define RTC6705_CS_PIN                      PC4
 #define RTC6705_SPI_INSTANCE                SPI3
 #define RTC6705_POWER_PIN                   PC3
-
-#define USE_RTC6705_CLK_HACK
-#define RTC6705_CLK_PIN                     SPI3_SCK_PIN
 
 // Bus Switched Device, Device A.
 #define USE_MAX7456

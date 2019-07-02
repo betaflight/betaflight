@@ -25,6 +25,8 @@
 
 #include "platform.h"
 
+#ifdef USE_TIMER
+
 #include "build/atomic.h"
 
 #include "common/utils.h"
@@ -922,3 +924,4 @@ uint16_t timerGetPrescalerByDesiredHertz(TIM_TypeDef *tim, uint32_t hz)
     }
     return (uint16_t)((timerClock(tim) + hz / 2 ) / hz) - 1;
 }
+#endif

@@ -62,8 +62,11 @@
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
-#include "flight/position.h"
+#if defined(USE_GYRO_DATA_ANALYSE)
+#include "flight/gyroanalyse.h"
+#endif
 #include "flight/imu.h"
+#include "flight/position.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
@@ -75,6 +78,7 @@
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/stats.h"
 
 #include "rx/rx.h"
 
@@ -82,9 +86,6 @@
 #include "sensors/battery.h"
 #include "sensors/esc_sensor.h"
 #include "sensors/sensors.h"
-#if defined(USE_GYRO_DATA_ANALYSE)
-#include "sensors/gyroanalyse.h"
-#endif
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
@@ -93,7 +94,8 @@
 const char * const osdTimerSourceNames[] = {
     "ON TIME  ",
     "TOTAL ARM",
-    "LAST ARM "
+    "LAST ARM ",
+    "ON/ARM   "
 };
 
 // Things in both OSD and CMS
@@ -120,12 +122,46 @@ static uint8_t osdProfile = 1;
 static displayPort_t *osdDisplayPort;
 
 static bool suppressStatsDisplay = false;
+static uint8_t osdStatsRowCount = 0;
 
 #ifdef USE_ESC_SENSOR
 escSensorData_t *osdEscDataCombined;
 #endif
 
-PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 5);
+PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 6);
+
+// Controls the display order of the OSD post-flight statistics.
+// Adjust the ordering here to control how the post-flight stats are presented.
+// Every entry in osd_stats_e should be represented. Any that are missing will not
+// be shown on the the post-flight statistics page.
+// If you reorder the stats it's likely that you'll need to make likewise updates
+// to the unit tests.
+const osd_stats_e osdStatsDisplayOrder[OSD_STAT_COUNT] = {
+    OSD_STAT_RTC_DATE_TIME,
+    OSD_STAT_TIMER_1,
+    OSD_STAT_TIMER_2,
+    OSD_STAT_MAX_ALTITUDE,
+    OSD_STAT_MAX_SPEED,
+    OSD_STAT_MAX_DISTANCE,
+    OSD_STAT_FLIGHT_DISTANCE,
+    OSD_STAT_MIN_BATTERY,
+    OSD_STAT_END_BATTERY,
+    OSD_STAT_BATTERY,
+    OSD_STAT_MIN_RSSI,
+    OSD_STAT_MAX_CURRENT,
+    OSD_STAT_USED_MAH,
+    OSD_STAT_BLACKBOX,
+    OSD_STAT_BLACKBOX_NUMBER,
+    OSD_STAT_MAX_G_FORCE,
+    OSD_STAT_MAX_ESC_TEMP,
+    OSD_STAT_MAX_ESC_RPM,
+    OSD_STAT_MIN_LINK_QUALITY,
+    OSD_STAT_MAX_FFT,
+    OSD_STAT_MIN_RSSI_DBM,
+    OSD_STAT_TOTAL_FLIGHTS,
+    OSD_STAT_TOTAL_TIME,
+    OSD_STAT_TOTAL_DIST,
+};
 
 void osdStatSetState(uint8_t statIndex, bool enabled)
 {
@@ -197,6 +233,11 @@ static void osdDrawElements(timeUs_t currentTimeUs)
     osdDrawActiveElements(osdDisplayPort, currentTimeUs);
 }
 
+const uint16_t osdTimerDefault[OSD_TIMER_COUNT] = {
+        OSD_TIMER(OSD_TIMER_SRC_ON, OSD_TIMER_PREC_SECOND, 10),
+        OSD_TIMER(OSD_TIMER_SRC_TOTAL_ARMED, OSD_TIMER_PREC_SECOND, 10)
+};
+
 void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 {
     // Position elements near centre of screen and disabled by default
@@ -233,13 +274,18 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     for (int i=0; i < OSD_WARNING_COUNT; i++) {
         osdWarnSetState(i, true);
     }
+    // turn off RSSI & Link Quality warnings by default
+    osdWarnSetState(OSD_WARNING_RSSI, false);
+    osdWarnSetState(OSD_WARNING_LINK_QUALITY, false);
+    osdWarnSetState(OSD_WARNING_RSSI_DBM, false);
 
-    osdConfig->timers[OSD_TIMER_1] = OSD_TIMER(OSD_TIMER_SRC_ON, OSD_TIMER_PREC_SECOND, 10);
-    osdConfig->timers[OSD_TIMER_2] = OSD_TIMER(OSD_TIMER_SRC_TOTAL_ARMED, OSD_TIMER_PREC_SECOND, 10);
+    osdConfig->timers[OSD_TIMER_1] = osdTimerDefault[OSD_TIMER_1];
+    osdConfig->timers[OSD_TIMER_2] = osdTimerDefault[OSD_TIMER_2];
 
     osdConfig->overlay_radio_mode = 2;
 
     osdConfig->rssi_alarm = 20;
+    osdConfig->link_quality_alarm = 80;
     osdConfig->cap_alarm  = 2200;
     osdConfig->alt_alarm  = 100; // meters or feet depend on configuration
     osdConfig->esc_temp_alarm = ESC_TEMP_ALARM_OFF; // off by default
@@ -252,6 +298,10 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 
     osdConfig->osdProfileIndex = 1;
     osdConfig->ahInvert = false;
+    for (int i=0; i < OSD_PROFILE_COUNT; i++) {
+        osdConfig->profile[i][0] = '\0';
+    }
+    osdConfig->rssi_dbm_alarm = 60;
 }
 
 static void osdDrawLogo(int x, int y)
@@ -322,6 +372,7 @@ static void osdResetStats(void)
     stats.max_current  = 0;
     stats.max_speed    = 0;
     stats.min_voltage  = 5000;
+    stats.end_voltage  = 0;
     stats.min_rssi     = 99; // percent
     stats.max_altitude = 0;
     stats.max_distance = 0;
@@ -329,25 +380,20 @@ static void osdResetStats(void)
     stats.max_g_force  = 0;
     stats.max_esc_temp = 0;
     stats.max_esc_rpm  = 0;
-    stats.min_link_quality = 99; // percent
+    stats.min_link_quality =  (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) ? 300 : 99; // CRSF  : percent
+    stats.min_rssi_dbm = 0;
 }
 
 static void osdUpdateStats(void)
 {
     int16_t value = 0;
+
 #ifdef USE_GPS
-    switch (osdConfig()->units) {
-    case OSD_UNIT_IMPERIAL:
-        value = CM_S_TO_MPH(gpsSol.groundSpeed);
-        break;
-    default:
-        value = CM_S_TO_KM_H(gpsSol.groundSpeed);
-        break;
-    }
-#endif
+    value = gpsSol.groundSpeed;
     if (stats.max_speed < value) {
         stats.max_speed = value;
     }
+#endif
 
     value = getBatteryVoltage();
     if (stats.min_voltage > value) {
@@ -382,10 +428,15 @@ static void osdUpdateStats(void)
     }
 #endif
 
+#ifdef USE_RX_RSSI_DBM
+    value = getRssiDbm();
+    if (stats.min_rssi_dbm < value) {
+        stats.min_rssi_dbm = value;
+    }
+#endif
+
 #ifdef USE_GPS
     if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
-        value = GPS_distanceToHome;
-
         if (stats.max_distance < GPS_distanceToHome) {
             stats.max_distance = GPS_distanceToHome;
         }
@@ -426,8 +477,11 @@ static void osdGetBlackboxStatusString(char * buff)
 #ifdef USE_FLASHFS
     case BLACKBOX_DEVICE_FLASH:
         if (storageDeviceIsWorking) {
-            const flashGeometry_t *geometry = flashfsGetGeometry();
-            storageTotal = geometry->totalSize / 1024;
+
+            const flashPartition_t *flashPartition = flashPartitionFindByType(FLASH_PARTITION_TYPE_FLASHFS);
+            const flashGeometry_t *flashGeometry = flashGetGeometry();
+
+            storageTotal = ((FLASH_PARTITION_SECTOR_COUNT(flashPartition) * flashGeometry->sectorSize) / 1024);
             storageUsed = flashfsGetOffset() / 1024;
         }
         break;
@@ -468,15 +522,12 @@ static bool isSomeStatEnabled(void)
 // on the stats screen will have to be more beneficial than the hassle of not matching exactly to the
 // configurator list.
 
-static void osdShowStats(uint16_t endBatteryVoltage)
+static bool osdDisplayStat(int statistic, uint8_t displayRow)
 {
-    uint8_t top = 2;
     char buff[OSD_ELEMENT_BUFFER_LENGTH];
 
-    displayClearScreen(osdDisplayPort);
-    displayWrite(osdDisplayPort, 2, top++, "  --- STATS ---");
-
-    if (osdStatGetState(OSD_STAT_RTC_DATE_TIME)) {
+    switch (statistic) {
+    case OSD_STAT_RTC_DATE_TIME: {
         bool success = false;
 #ifdef USE_RTC_TIME
         success = osdFormatRtcDateTime(&buff[0]);
@@ -485,129 +536,232 @@ static void osdShowStats(uint16_t endBatteryVoltage)
             tfp_sprintf(buff, "NO RTC");
         }
 
-        displayWrite(osdDisplayPort, 2, top++, buff);
+        displayWrite(osdDisplayPort, 2, displayRow, buff);
+        return true;
     }
 
-    if (osdStatGetState(OSD_STAT_TIMER_1)) {
+    case OSD_STAT_TIMER_1:
         osdFormatTimer(buff, false, (OSD_TIMER_SRC(osdConfig()->timers[OSD_TIMER_1]) == OSD_TIMER_SRC_ON ? false : true), OSD_TIMER_1);
-        osdDisplayStatisticLabel(top++, osdTimerSourceNames[OSD_TIMER_SRC(osdConfig()->timers[OSD_TIMER_1])], buff);
-    }
+        osdDisplayStatisticLabel(displayRow, osdTimerSourceNames[OSD_TIMER_SRC(osdConfig()->timers[OSD_TIMER_1])], buff);
+        return true;
 
-    if (osdStatGetState(OSD_STAT_TIMER_2)) {
+    case OSD_STAT_TIMER_2:
         osdFormatTimer(buff, false, (OSD_TIMER_SRC(osdConfig()->timers[OSD_TIMER_2]) == OSD_TIMER_SRC_ON ? false : true), OSD_TIMER_2);
-        osdDisplayStatisticLabel(top++, osdTimerSourceNames[OSD_TIMER_SRC(osdConfig()->timers[OSD_TIMER_2])], buff);
-    }
+        osdDisplayStatisticLabel(displayRow, osdTimerSourceNames[OSD_TIMER_SRC(osdConfig()->timers[OSD_TIMER_2])], buff);
+        return true;
 
-    if (osdStatGetState(OSD_STAT_MAX_ALTITUDE)) {
-        osdFormatAltitudeString(buff, stats.max_altitude);
-        osdDisplayStatisticLabel(top++, "MAX ALTITUDE", buff);
+    case OSD_STAT_MAX_ALTITUDE: {
+        const int alt = osdGetMetersToSelectedUnit(stats.max_altitude) / 10;
+        tfp_sprintf(buff, "%d.%d%c", alt / 10, alt % 10, osdGetMetersToSelectedUnitSymbol());
+        osdDisplayStatisticLabel(displayRow, "MAX ALTITUDE", buff);
+        return true;
     }
 
 #ifdef USE_GPS
-    if (featureIsEnabled(FEATURE_GPS)) {
-        if (osdStatGetState(OSD_STAT_MAX_SPEED)) {
-            itoa(stats.max_speed, buff, 10);    
-            osdDisplayStatisticLabel(top++, "MAX SPEED", buff);
+    case OSD_STAT_MAX_SPEED:
+        if (featureIsEnabled(FEATURE_GPS)) {
+            tfp_sprintf(buff, "%d%c", osdGetSpeedToSelectedUnit(stats.max_speed), osdGetSpeedToSelectedUnitSymbol());
+            osdDisplayStatisticLabel(displayRow, "MAX SPEED", buff);
+            return true;
         }
+        break;
 
-        if (osdStatGetState(OSD_STAT_MAX_DISTANCE)) {
-            tfp_sprintf(buff, "%d%c", osdGetMetersToSelectedUnit(stats.max_distance), osdGetMetersToSelectedUnitSymbol());
-            osdDisplayStatisticLabel(top++, "MAX DISTANCE", buff);
+    case OSD_STAT_MAX_DISTANCE:
+        if (featureIsEnabled(FEATURE_GPS)) {
+            osdFormatDistanceString(buff, stats.max_distance, SYM_NONE);
+            osdDisplayStatisticLabel(displayRow, "MAX DISTANCE", buff);
+            return true;
         }
+        break;
 
-        if (osdStatGetState(OSD_STAT_FLIGHT_DISTANCE)) {
-            const uint32_t distanceFlown = GPS_distanceFlownInCm / 100;
-            tfp_sprintf(buff, "%d%c", osdGetMetersToSelectedUnit(distanceFlown), osdGetMetersToSelectedUnitSymbol());
-            osdDisplayStatisticLabel(top++, "FLIGHT DISTANCE", buff);
+    case OSD_STAT_FLIGHT_DISTANCE:
+        if (featureIsEnabled(FEATURE_GPS)) {
+            const int distanceFlown = GPS_distanceFlownInCm / 100;
+            osdFormatDistanceString(buff, distanceFlown, SYM_NONE);
+            osdDisplayStatisticLabel(displayRow, "FLIGHT DISTANCE", buff);
+            return true;
         }
-    }
+        break;
 #endif
 
-    if (osdStatGetState(OSD_STAT_MIN_BATTERY)) {
+    case OSD_STAT_MIN_BATTERY:
         tfp_sprintf(buff, "%d.%02d%c", stats.min_voltage / 100, stats.min_voltage % 100, SYM_VOLT);
-        osdDisplayStatisticLabel(top++, "MIN BATTERY", buff);
-    }
+        osdDisplayStatisticLabel(displayRow, "MIN BATTERY", buff);
+        return true;
 
-    if (osdStatGetState(OSD_STAT_END_BATTERY)) {
-        tfp_sprintf(buff, "%d.%02d%c", endBatteryVoltage / 100, endBatteryVoltage % 100, SYM_VOLT);
-        osdDisplayStatisticLabel(top++, "END BATTERY", buff);
-    }
+    case OSD_STAT_END_BATTERY:
+        tfp_sprintf(buff, "%d.%02d%c", stats.end_voltage / 100, stats.end_voltage % 100, SYM_VOLT);
+        osdDisplayStatisticLabel(displayRow, "END BATTERY", buff);
+        return true;
 
-    if (osdStatGetState(OSD_STAT_BATTERY)) {
+    case OSD_STAT_BATTERY:
         tfp_sprintf(buff, "%d.%02d%c", getBatteryVoltage() / 100, getBatteryVoltage() % 100, SYM_VOLT);
-        osdDisplayStatisticLabel(top++, "BATTERY", buff);
-    }
+        osdDisplayStatisticLabel(displayRow, "BATTERY", buff);
+        return true;
 
-    if (osdStatGetState(OSD_STAT_MIN_RSSI)) {
+    case OSD_STAT_MIN_RSSI:
         itoa(stats.min_rssi, buff, 10);
         strcat(buff, "%");
-        osdDisplayStatisticLabel(top++, "MIN RSSI", buff);
-    }
+        osdDisplayStatisticLabel(displayRow, "MIN RSSI", buff);
+        return true;
 
-    if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
-        if (osdStatGetState(OSD_STAT_MAX_CURRENT)) {
-            itoa(stats.max_current, buff, 10);
-            strcat(buff, "A");
-            osdDisplayStatisticLabel(top++, "MAX CURRENT", buff);
+    case OSD_STAT_MAX_CURRENT:
+        if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
+            tfp_sprintf(buff, "%d%c", stats.max_current, SYM_AMP);
+            osdDisplayStatisticLabel(displayRow, "MAX CURRENT", buff);
+            return true;
         }
+        break;
 
-        if (osdStatGetState(OSD_STAT_USED_MAH)) {
+    case OSD_STAT_USED_MAH:
+        if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
             tfp_sprintf(buff, "%d%c", getMAhDrawn(), SYM_MAH);
-            osdDisplayStatisticLabel(top++, "USED MAH", buff);
+            osdDisplayStatisticLabel(displayRow, "USED MAH", buff);
+            return true;
         }
-    }
+        break;
 
 #ifdef USE_BLACKBOX
-    if (osdStatGetState(OSD_STAT_BLACKBOX) && blackboxConfig()->device && blackboxConfig()->device != BLACKBOX_DEVICE_SERIAL) {
-        osdGetBlackboxStatusString(buff);
-        osdDisplayStatisticLabel(top++, "BLACKBOX", buff);
-    }
+    case OSD_STAT_BLACKBOX:
+        if (blackboxConfig()->device && blackboxConfig()->device != BLACKBOX_DEVICE_SERIAL) {
+            osdGetBlackboxStatusString(buff);
+            osdDisplayStatisticLabel(displayRow, "BLACKBOX", buff);
+            return true;
+        }
+        break;
 
-    if (osdStatGetState(OSD_STAT_BLACKBOX_NUMBER) && blackboxConfig()->device && blackboxConfig()->device != BLACKBOX_DEVICE_SERIAL) {
-        itoa(blackboxGetLogNumber(), buff, 10);
-        osdDisplayStatisticLabel(top++, "BB LOG NUM", buff);
-    }
+    case OSD_STAT_BLACKBOX_NUMBER:
+        if (blackboxConfig()->device && blackboxConfig()->device != BLACKBOX_DEVICE_SERIAL) {
+            itoa(blackboxGetLogNumber(), buff, 10);
+            osdDisplayStatisticLabel(displayRow, "BB LOG NUM", buff);
+            return true;
+        }
+        break;
 #endif
 
 #if defined(USE_ACC)
-    if (osdStatGetState(OSD_STAT_MAX_G_FORCE) && sensors(SENSOR_ACC)) {
-        const int gForce = lrintf(stats.max_g_force * 10);
-        tfp_sprintf(buff, "%01d.%01dG", gForce / 10, gForce % 10);
-        osdDisplayStatisticLabel(top++, "MAX G-FORCE", buff);
-    }
+    case OSD_STAT_MAX_G_FORCE:
+        if (sensors(SENSOR_ACC)) {
+            const int gForce = lrintf(stats.max_g_force * 10);
+            tfp_sprintf(buff, "%01d.%01dG", gForce / 10, gForce % 10);
+            osdDisplayStatisticLabel(displayRow, "MAX G-FORCE", buff);
+            return true;
+        }
+        break;
 #endif
 
 #ifdef USE_ESC_SENSOR
-    if (osdStatGetState(OSD_STAT_MAX_ESC_TEMP)) {
-        tfp_sprintf(buff, "%3d%c", osdConvertTemperatureToSelectedUnit(stats.max_esc_temp), osdGetTemperatureSymbolForSelectedUnit());
-        osdDisplayStatisticLabel(top++, "MAX ESC TEMP", buff);
-    }
+    case OSD_STAT_MAX_ESC_TEMP:
+        tfp_sprintf(buff, "%d%c", osdConvertTemperatureToSelectedUnit(stats.max_esc_temp), osdGetTemperatureSymbolForSelectedUnit());
+        osdDisplayStatisticLabel(displayRow, "MAX ESC TEMP", buff);
+        return true;
 
-    if (osdStatGetState(OSD_STAT_MAX_ESC_RPM)) {
+    case OSD_STAT_MAX_ESC_RPM:
         itoa(stats.max_esc_rpm, buff, 10);
-        osdDisplayStatisticLabel(top++, "MAX ESC RPM", buff);
-    }
+        osdDisplayStatisticLabel(displayRow, "MAX ESC RPM", buff);
+        return true;
 #endif
 
 #ifdef USE_RX_LINK_QUALITY_INFO
-    if (osdStatGetState(OSD_STAT_MIN_LINK_QUALITY)) {
-        itoa(stats.min_link_quality, buff, 10);
+    case OSD_STAT_MIN_LINK_QUALITY:
+        tfp_sprintf(buff, "%d", stats.min_link_quality);
         strcat(buff, "%");
-        osdDisplayStatisticLabel(top++, "MIN LINK", buff);
-    }
+        osdDisplayStatisticLabel(displayRow, "MIN LINK", buff);
+        return true;
 #endif
 
 #if defined(USE_GYRO_DATA_ANALYSE)
-    if (osdStatGetState(OSD_STAT_MAX_FFT) && featureIsEnabled(FEATURE_DYNAMIC_FILTER)) {
-        int value = getMaxFFT();
-        if (value > 0) {
-            tfp_sprintf(buff, "%dHZ", value);
-            osdDisplayStatisticLabel(top++, "PEAK FFT", buff);
+    case OSD_STAT_MAX_FFT:
+        if (featureIsEnabled(FEATURE_DYNAMIC_FILTER)) {
+            int value = getMaxFFT();
+            if (value > 0) {
+                tfp_sprintf(buff, "%dHZ", value);
+                osdDisplayStatisticLabel(displayRow, "PEAK FFT", buff);
+            } else {
+                osdDisplayStatisticLabel(displayRow, "PEAK FFT", "THRT<20%");
+            }
+            return true;
+        }
+        break;
+#endif
+
+#ifdef USE_RX_RSSI_DBM
+    case OSD_STAT_MIN_RSSI_DBM:
+        tfp_sprintf(buff, "%3d", stats.min_rssi_dbm * -1);
+        osdDisplayStatisticLabel(displayRow, "MIN RSSI DBM", buff);
+        return true;
+#endif
+
+#ifdef USE_PERSISTENT_STATS
+    case OSD_STAT_TOTAL_FLIGHTS:
+        itoa(statsConfig()->stats_total_flights, buff, 10);
+        osdDisplayStatisticLabel(displayRow, "TOTAL FLIGHTS", buff);
+        return true;
+
+    case OSD_STAT_TOTAL_TIME: {
+        int minutes = statsConfig()->stats_total_time_s / 60;
+        tfp_sprintf(buff, "%d:%02dH", minutes / 60, minutes % 60);
+        osdDisplayStatisticLabel(displayRow, "TOTAL FLIGHT TIME", buff);
+        return true;
+    }
+
+    case OSD_STAT_TOTAL_DIST:
+        #define METERS_PER_KILOMETER 1000
+        #define METERS_PER_MILE      1609
+        if (osdConfig()->units == OSD_UNIT_IMPERIAL) {
+            tfp_sprintf(buff, "%d%c", statsConfig()->stats_total_dist_m / METERS_PER_MILE, SYM_MILES);
         } else {
-            osdDisplayStatisticLabel(top++, "PEAK FFT", "THRT<20%");
+            tfp_sprintf(buff, "%d%c", statsConfig()->stats_total_dist_m / METERS_PER_KILOMETER, SYM_KM);
+        }
+        osdDisplayStatisticLabel(displayRow, "TOTAL DISTANCE", buff);
+        return true;
+#endif
+    }
+    return false;
+}
+
+static uint8_t osdShowStats(int statsRowCount)
+{
+    uint8_t top = 0;
+    bool displayLabel = false;
+
+    // if statsRowCount is 0 then we're running an initial analysis of the active stats items
+    if (statsRowCount > 0) {
+        const int availableRows = osdDisplayPort->rows;
+        int displayRows = MIN(statsRowCount, availableRows);
+        if (statsRowCount < availableRows) {
+            displayLabel = true;
+            displayRows++;
+        }
+        top = (availableRows - displayRows) / 2;  // center the stats vertically
+    }
+
+    if (displayLabel) {
+        displayWrite(osdDisplayPort, 2, top++, "  --- STATS ---");
+    }
+
+    for (int i = 0; i < OSD_STAT_COUNT; i++) {
+        if (osdStatGetState(osdStatsDisplayOrder[i])) {
+            if (osdDisplayStat(osdStatsDisplayOrder[i], top)) {
+                top++;
+            }
         }
     }
-#endif
+    return top;
+}
+
+static void osdRefreshStats(void)
+{
+    displayClearScreen(osdDisplayPort);
+    if (osdStatsRowCount == 0) {
+        // No stats row count has been set yet.
+        // Go through the logic one time to determine how many stats are actually displayed.
+        osdStatsRowCount = osdShowStats(0);
+        // Then clear the screen and commence with normal stats display which will
+        // determine if the heading should be displayed and also center the content vertically.
+        displayClearScreen(osdDisplayPort);
+    }
+    osdShowStats(osdStatsRowCount);
 }
 
 static void osdShowArmed(void)
@@ -622,7 +776,6 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
     static bool osdStatsEnabled = false;
     static bool osdStatsVisible = false;
     static timeUs_t osdStatsRefreshTimeUs;
-    static uint16_t endBatteryVoltage;
 
     // detect arm/disarm
     if (armState != ARMING_FLAG(ARMED)) {
@@ -634,11 +787,12 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
             resumeRefreshAt = currentTimeUs + (REFRESH_1S / 2);
         } else if (isSomeStatEnabled()
                    && !suppressStatsDisplay
-                   && (!(getArmingDisableFlags() & ARMING_DISABLED_RUNAWAY_TAKEOFF)
+                   && (!(getArmingDisableFlags() & (ARMING_DISABLED_RUNAWAY_TAKEOFF | ARMING_DISABLED_CRASH_DETECTED))
                        || !VISIBLE(osdConfig()->item_pos[OSD_WARNINGS]))) { // suppress stats if runaway takeoff triggered disarm and WARNINGS element is visible
             osdStatsEnabled = true;
             resumeRefreshAt = currentTimeUs + (60 * REFRESH_1S);
-            endBatteryVoltage = getBatteryVoltage();
+            stats.end_voltage = getBatteryVoltage();
+            osdStatsRowCount = 0; // reset to 0 so it will be recalculated on the next stats refresh
         }
 
         armState = ARMING_FLAG(ARMED);
@@ -666,7 +820,7 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
                 }
                 if (currentTimeUs >= osdStatsRefreshTimeUs) {
                     osdStatsRefreshTimeUs = currentTimeUs + REFRESH_1S;
-                    osdShowStats(endBatteryVoltage);
+                    osdRefreshStats();
                 }
             }
         }

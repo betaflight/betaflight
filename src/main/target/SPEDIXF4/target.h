@@ -48,7 +48,6 @@
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
 #define USE_ACC_SPI_MPU6500
-#define ACC_1_ALIGN            CW0_DEG
 
 #define USE_BARO
 #define USE_BARO_SPI_BMP280
@@ -64,8 +63,6 @@
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI2
 #define MAX7456_SPI_CS_PIN      SPI2_NSS_PIN
-#define MAX7456_SPI_CLK         ( SPI_CLOCK_STANDARD )
-#define MAX7456_RESTORE_CLK     ( SPI_CLOCK_FAST )
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16

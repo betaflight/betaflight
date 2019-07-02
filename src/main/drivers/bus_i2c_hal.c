@@ -56,6 +56,7 @@ static void i2cUnstick(IO_t scl, IO_t sda);
 #define GPIO_AF4_I2C GPIO_AF4_I2C1
 
 const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
+#if defined(STM32F7)
 #ifdef USE_I2C_DEVICE_1
     {
         .device = I2CDEV_1,
@@ -99,6 +100,52 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
         .ev_irq = I2C4_EV_IRQn,
         .er_irq = I2C4_ER_IRQn,
     },
+#endif
+#elif defined(STM32H7)
+#ifdef USE_I2C_DEVICE_1
+    {
+        .device = I2CDEV_1,
+        .reg = I2C1,
+        .sclPins = { I2CPINDEF(PB6, GPIO_AF4_I2C1), I2CPINDEF(PB8, GPIO_AF4_I2C1) },
+        .sdaPins = { I2CPINDEF(PB7, GPIO_AF4_I2C1), I2CPINDEF(PB9, GPIO_AF4_I2C1) },
+        .rcc = RCC_APB1L(I2C1),
+        .ev_irq = I2C1_EV_IRQn,
+        .er_irq = I2C1_ER_IRQn,
+    },
+#endif
+#ifdef USE_I2C_DEVICE_2
+    {
+        .device = I2CDEV_2,
+        .reg = I2C2,
+        .sclPins = { I2CPINDEF(PB10, GPIO_AF4_I2C2), I2CPINDEF(PF1, GPIO_AF4_I2C2) },
+        .sdaPins = { I2CPINDEF(PB11, GPIO_AF4_I2C2), I2CPINDEF(PF0, GPIO_AF4_I2C2) },
+        .rcc = RCC_APB1L(I2C2),
+        .ev_irq = I2C2_EV_IRQn,
+        .er_irq = I2C2_ER_IRQn,
+    },
+#endif
+#ifdef USE_I2C_DEVICE_3
+    {
+        .device = I2CDEV_3,
+        .reg = I2C3,
+        .sclPins = { I2CPINDEF(PA8, GPIO_AF4_I2C3) },
+        .sdaPins = { I2CPINDEF(PC9, GPIO_AF4_I2C3) },
+        .rcc = RCC_APB1L(I2C3),
+        .ev_irq = I2C3_EV_IRQn,
+        .er_irq = I2C3_ER_IRQn,
+    },
+#endif
+#ifdef USE_I2C_DEVICE_4
+    {
+        .device = I2CDEV_4,
+        .reg = I2C4,
+        .sclPins = { I2CPINDEF(PD12, GPIO_AF4_I2C4), I2CPINDEF(PF14, GPIO_AF4_I2C4), I2CPINDEF(PB6, GPIO_AF6_I2C4), I2CPINDEF(PB8, GPIO_AF6_I2C4) },
+        .sdaPins = { I2CPINDEF(PD13, GPIO_AF4_I2C4), I2CPINDEF(PF15, GPIO_AF4_I2C4), I2CPINDEF(PB7, GPIO_AF6_I2C4), I2CPINDEF(PB9, GPIO_AF6_I2C4) },
+        .rcc = RCC_APB1L(I2C4),
+        .ev_irq = I2C4_EV_IRQn,
+        .er_irq = I2C4_ER_IRQn,
+    },
+#endif
 #endif
 };
 
@@ -153,12 +200,6 @@ void I2C4_EV_IRQHandler(void)
 #endif
 
 static volatile uint16_t i2cErrorCount = 0;
-
-static bool i2cOverClock;
-
-void i2cSetOverclock(uint8_t OverClock) {
-    i2cOverClock = (OverClock) ? true : false;
-}
 
 static bool i2cHandleHardwareFailure(I2CDevice device)
 {
@@ -250,9 +291,12 @@ void i2cInit(I2CDevice device)
     i2cUnstick(scl, sda);
 
     // Init pins
-#ifdef STM32F7
+#if defined(STM32F7)
     IOConfigGPIOAF(scl, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, GPIO_AF4_I2C);
     IOConfigGPIOAF(sda, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, GPIO_AF4_I2C);
+#elif defined(STM32H7)
+    IOConfigGPIOAF(scl, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, pDev->sclAF);
+    IOConfigGPIOAF(sda, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, pDev->sdaAF);
 #else
     IOConfigGPIO(scl, IOCFG_AF_OD);
     IOConfigGPIO(sda, IOCFG_AF_OD);

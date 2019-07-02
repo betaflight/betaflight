@@ -64,13 +64,11 @@
 #define GYRO_1_SPI_INSTANCE     SPI1
 #define GYRO_1_CS_PIN           PB12          // Onboard IMU
 #define GYRO_1_ALIGN            CW0_DEG
-#define ACC_1_ALIGN             CW0_DEG
 #define GYRO_1_EXTI_PIN         NONE
 
 #define GYRO_2_SPI_INSTANCE     SPI1
 #define GYRO_2_CS_PIN           PA8           // External IMU
 #define GYRO_2_ALIGN            CW270_DEG
-#define ACC_2_ALIGN             CW270_DEG
 #define GYRO_2_EXTI_PIN         NONE
 
 #define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_1
@@ -94,8 +92,6 @@
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI2
 #define MAX7456_SPI_CS_PIN      PA15
-#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
-#define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16

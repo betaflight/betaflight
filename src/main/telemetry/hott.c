@@ -69,7 +69,7 @@
 #include "build/debug.h"
 
 #include "common/axis.h"
-#include "common/maths.h" 
+#include "common/maths.h"
 #include "common/time.h"
 
 #include "drivers/serial.h"

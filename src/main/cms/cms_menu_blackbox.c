@@ -126,9 +126,11 @@ static void cmsx_Blackbox_GetDeviceStatus(void)
         if (storageDeviceIsWorking) {
             tfp_sprintf(cmsx_BlackboxStatus, "READY");
 
-            const flashGeometry_t *geometry = flashfsGetGeometry();
+            const flashPartition_t *flashPartition = flashPartitionFindByType(FLASH_PARTITION_TYPE_FLASHFS);
+            const flashGeometry_t *flashGeometry = flashGetGeometry();
+
             storageUsed = flashfsGetOffset() / 1024;
-            storageFree = (geometry->totalSize / 1024) - storageUsed;
+            storageFree = ((FLASH_PARTITION_SECTOR_COUNT(flashPartition) * flashGeometry->sectorSize) / 1024) - storageUsed;
         } else {
             tfp_sprintf(cmsx_BlackboxStatus, "FAULT");
         }
@@ -198,11 +200,11 @@ static long cmsx_Blackbox_onExit(const OSD_Entry *self)
 static const OSD_Entry cmsx_menuBlackboxEntries[] =
 {
     { "-- BLACKBOX --", OME_Label, NULL, NULL, 0},
-    { "DEVICE",      OME_TAB,     NULL,            &cmsx_BlackboxDeviceTable,                                 0 },
+    { "DEVICE",      OME_TAB,     NULL,            &cmsx_BlackboxDeviceTable,                                 REBOOT_REQUIRED },
     { "(STATUS)",    OME_String,  NULL,            &cmsx_BlackboxStatus,                                      0 },
     { "(USED)",      OME_String,  NULL,            &cmsx_BlackboxDeviceStorageUsed,                           0 },
     { "(FREE)",      OME_String,  NULL,            &cmsx_BlackboxDeviceStorageFree,                           0 },
-    { "P RATIO",     OME_UINT16,  NULL,            &(OSD_UINT16_t){ &blackboxConfig_p_ratio, 1, INT16_MAX, 1 },0 },
+    { "P RATIO",     OME_UINT16,  NULL,            &(OSD_UINT16_t){ &blackboxConfig_p_ratio, 1, INT16_MAX, 1 }, REBOOT_REQUIRED },
 
 #ifdef USE_FLASHFS
     { "ERASE FLASH", OME_Funcall, cmsx_EraseFlash, NULL,                                                      0 },

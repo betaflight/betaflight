@@ -77,6 +77,7 @@
 #include "osd/osd.h"
 
 #include "pg/rx.h"
+#include "pg/motor.h"
 
 #include "rx/rx.h"
 
@@ -237,10 +238,6 @@ void fcTasksInit(void)
     setTaskEnabled(TASK_BATTERY_CURRENT, useBatteryCurrent);
     const bool useBatteryAlerts = batteryConfig()->useVBatAlerts || batteryConfig()->useConsumptionAlerts || featureIsEnabled(FEATURE_OSD);
     setTaskEnabled(TASK_BATTERY_ALERTS, (useBatteryVoltage || useBatteryCurrent) && useBatteryAlerts);
-
-#ifdef USE_TRANSPONDER
-    setTaskEnabled(TASK_TRANSPONDER, featureIsEnabled(FEATURE_TRANSPONDER));
-#endif
 
 #ifdef STACK_CHECK
     setTaskEnabled(TASK_STACK_CHECK, true);

@@ -92,7 +92,6 @@
 #include "io/usb_msc.h"
 #include "io/vtx_control.h"
 #include "io/vtx.h"
-#include "io/vtx_string.h"
 
 #include "msp/msp_box.h"
 #include "msp/msp_protocol.h"
@@ -104,8 +103,7 @@
 #include "pg/beeper.h"
 #include "pg/board.h"
 #include "pg/gyrodev.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
+#include "pg/motor.h"
 #include "pg/rx.h"
 #include "pg/rx_spi.h"
 #include "pg/usb.h"
@@ -140,9 +138,10 @@ static const char * const flightControllerIdentifier = BETAFLIGHT_IDENTIFIER; //
 
 enum {
     MSP_REBOOT_FIRMWARE = 0,
-    MSP_REBOOT_BOOTLOADER,
+    MSP_REBOOT_BOOTLOADER_ROM,
     MSP_REBOOT_MSC,
     MSP_REBOOT_MSC_UTC,
+    MSP_REBOOT_BOOTLOADER_FLASH,
     MSP_REBOOT_COUNT,
 };
 
@@ -190,7 +189,7 @@ uint8_t escPortIndex;
 #ifdef USE_ESCSERIAL
 static void mspEscPassthroughFn(serialPort_t *serialPort)
 {
-    escEnablePassthrough(serialPort, escPortIndex, escMode);
+    escEnablePassthrough(serialPort, &motorConfig()->dev, escPortIndex, escMode);
 }
 #endif
 
@@ -241,6 +240,17 @@ static void mspFc4waySerialCommand(sbuf_t *dst, sbuf_t *src, mspPostProcessFnPtr
 }
 #endif //USE_SERIAL_4WAY_BLHELI_INTERFACE
 
+// TODO: Remove the pragma once this is called from unconditional code
+#pragma GCC diagnostic ignored "-Wunused-function"
+static void configRebootUpdateCheckU8(uint8_t *parm, uint8_t value)
+{
+    if (*parm != value) {
+        setRebootRequired();
+    }
+    *parm = value;
+}
+#pragma GCC diagnostic pop
+
 static void mspRebootFn(serialPort_t *serialPort)
 {
     UNUSED(serialPort);
@@ -252,8 +262,8 @@ static void mspRebootFn(serialPort_t *serialPort)
         systemReset();
 
         break;
-    case MSP_REBOOT_BOOTLOADER:
-        systemResetToBootloader();
+    case MSP_REBOOT_BOOTLOADER_ROM:
+        systemResetToBootloader(BOOTLOADER_REQUEST_ROM);
 
         break;
 #if defined(USE_USB_MSC)
@@ -266,6 +276,12 @@ static void mspRebootFn(serialPort_t *serialPort)
         systemResetToMsc(0);
 #endif
         }
+        break;
+#endif
+#if defined(USE_FLASH_BOOT_LOADER)
+    case MSP_REBOOT_BOOTLOADER_FLASH:
+        systemResetToBootloader(BOOTLOADER_REQUEST_FLASH);
+
         break;
 #endif
     default:
@@ -337,10 +353,12 @@ static void serializeDataflashSummaryReply(sbuf_t *dst)
     if (flashfsIsSupported()) {
         uint8_t flags = MSP_FLASHFS_FLAG_SUPPORTED;
         flags |= (flashfsIsReady() ? MSP_FLASHFS_FLAG_READY : 0);
-        const flashGeometry_t *geometry = flashfsGetGeometry();
+
+        const flashPartition_t *flashPartition = flashPartitionFindByType(FLASH_PARTITION_TYPE_FLASHFS);
+
         sbufWriteU8(dst, flags);
-        sbufWriteU32(dst, geometry->sectors);
-        sbufWriteU32(dst, geometry->totalSize);
+        sbufWriteU32(dst, FLASH_PARTITION_SECTOR_COUNT(flashPartition));
+        sbufWriteU32(dst, flashfsGetSize());
         sbufWriteU32(dst, flashfsGetOffset()); // Effectively the current number of bytes stored on the volume
     } else
 #endif
@@ -486,8 +504,8 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 #else
         sbufWriteU16(dst, 0); // No other build targets currently have hardware revision detection.
 #endif
-#if defined(USE_OSD) && defined(USE_MAX7456)
-        sbufWriteU8(dst, 2);  // 2 == FC with OSD
+#if defined(USE_MAX7456)
+        sbufWriteU8(dst, 2);  // 2 == FC with MAX7456
 #else
         sbufWriteU8(dst, 0);  // 0 == FC
 #endif
@@ -860,6 +878,10 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
             // 4 bytes, flags
             const uint32_t armingDisableFlags = getArmingDisableFlags();
             sbufWriteU32(dst, armingDisableFlags);
+
+            // config state flags - bits to indicate the state of the configuration, reboot required, etc.
+            // other flags can be added as needed
+            sbufWriteU8(dst, (getRebootRequired() << 0));
         }
         break;
 
@@ -935,13 +957,18 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 
     case MSP_MOTOR:
         for (unsigned i = 0; i < 8; i++) {
+#ifdef USE_PWM_OUTPUT
             if (i >= MAX_SUPPORTED_MOTORS || !pwmGetMotors()[i].enabled) {
                 sbufWriteU16(dst, 0);
                 continue;
             }
 
             sbufWriteU16(dst, convertMotorToExternal(motor[i]));
+#else
+            sbufWriteU16(dst, 0);
+#endif
         }
+
         break;
 
     case MSP_RC:
@@ -1007,7 +1034,12 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         // added in 1.41
         sbufWriteU8(dst, currentControlRateProfile->throttle_limit_type);
         sbufWriteU8(dst, currentControlRateProfile->throttle_limit_percent);
-        
+
+        // added in 1.42
+        sbufWriteU16(dst, currentControlRateProfile->rate_limit[FD_ROLL]);
+        sbufWriteU16(dst, currentControlRateProfile->rate_limit[FD_PITCH]);
+        sbufWriteU16(dst, currentControlRateProfile->rate_limit[FD_YAW]);
+
         break;
 
     case MSP_PID:
@@ -1055,7 +1087,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
     case MSP_ADJUSTMENT_RANGES:
         for (int i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
             const adjustmentRange_t *adjRange = adjustmentRanges(i);
-            sbufWriteU8(dst, adjRange->adjustmentIndex);
+            sbufWriteU8(dst, 0); // was adjRange->adjustmentIndex
             sbufWriteU8(dst, adjRange->auxChannelIndex);
             sbufWriteU8(dst, adjRange->range.startStep);
             sbufWriteU8(dst, adjRange->range.endStep);
@@ -1353,17 +1385,16 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         gyroAlignment = gyroDeviceConfig(0)->align;
 #endif
         sbufWriteU8(dst, gyroAlignment);
-        sbufWriteU8(dst, gyroAlignment);  // Starting with 4.0 gyro and acc alignment are the same 
+        sbufWriteU8(dst, gyroAlignment);  // Starting with 4.0 gyro and acc alignment are the same
         sbufWriteU8(dst, compassConfig()->mag_align);
 
         // API 1.41 - Add multi-gyro indicator, selected gyro, and support for separate gyro 1 & 2 alignment
+        sbufWriteU8(dst, getGyroDetectionFlags());
 #ifdef USE_MULTI_GYRO
-        sbufWriteU8(dst, 1);    // USE_MULTI_GYRO
         sbufWriteU8(dst, gyroConfig()->gyro_to_use);
         sbufWriteU8(dst, gyroDeviceConfig(0)->align);
         sbufWriteU8(dst, gyroDeviceConfig(1)->align);
 #else
-        sbufWriteU8(dst, 0);
         sbufWriteU8(dst, GYRO_CONFIG_USE_GYRO_1);
         sbufWriteU8(dst, gyroDeviceConfig(0)->align);
         sbufWriteU8(dst, ALIGN_DEFAULT);
@@ -1441,11 +1472,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, currentPidProfile->itermAcceleratorGain);
         sbufWriteU16(dst, 0); // was currentPidProfile->dtermSetpointWeight
         sbufWriteU8(dst, currentPidProfile->iterm_rotation);
-#if defined(USE_SMART_FEEDFORWARD)
-        sbufWriteU8(dst, currentPidProfile->smart_feedforward);
-#else
-        sbufWriteU8(dst, 0);
-#endif
+        sbufWriteU8(dst, 0); // was currentPidProfile->smart_feedforward
 #if defined(USE_ITERM_RELAX)
         sbufWriteU8(dst, currentPidProfile->iterm_relax);
         sbufWriteU8(dst, currentPidProfile->iterm_relax_type);
@@ -1501,8 +1528,16 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 #else
         sbufWriteU8(dst, 0);
 #endif
+#ifdef USE_BARO
         sbufWriteU8(dst, barometerConfig()->baro_hardware);
+#else
+        sbufWriteU8(dst, BARO_NONE);
+#endif
+#ifdef USE_MAG
         sbufWriteU8(dst, compassConfig()->mag_hardware);
+#else
+        sbufWriteU8(dst, MAG_NONE);
+#endif
         break;
 
 #if defined(USE_VTX_COMMON)
@@ -1796,17 +1831,13 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         i = sbufReadU8(src);
         if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
             adjustmentRange_t *adjRange = adjustmentRangesMutable(i);
-            i = sbufReadU8(src);
-            if (i < MAX_SIMULTANEOUS_ADJUSTMENT_COUNT) {
-                adjRange->adjustmentIndex = i;
-                adjRange->auxChannelIndex = sbufReadU8(src);
-                adjRange->range.startStep = sbufReadU8(src);
-                adjRange->range.endStep = sbufReadU8(src);
-                adjRange->adjustmentConfig = sbufReadU8(src);
-                adjRange->auxSwitchChannelIndex = sbufReadU8(src);
-            } else {
-                return MSP_RESULT_ERROR;
-            }
+            sbufReadU8(src); // was adjRange->adjustmentIndex
+            adjRange->auxChannelIndex = sbufReadU8(src);
+            adjRange->range.startStep = sbufReadU8(src);
+            adjRange->range.endStep = sbufReadU8(src);
+            adjRange->adjustmentConfig = sbufReadU8(src);
+            adjRange->auxSwitchChannelIndex = sbufReadU8(src);
+
             activeAdjustmentRangeReset();
         } else {
             return MSP_RESULT_ERROR;
@@ -1852,11 +1883,18 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             if (sbufBytesRemaining(src) >= 1) {
                 currentControlRateProfile->rcExpo[FD_PITCH] = sbufReadU8(src);
             }
-            
+
             // version 1.41
             if (sbufBytesRemaining(src) >= 2) {
                 currentControlRateProfile->throttle_limit_type = sbufReadU8(src);
                 currentControlRateProfile->throttle_limit_percent = sbufReadU8(src);
+            }
+
+            // version 1.42
+            if (sbufBytesRemaining(src) >= 6) {
+                currentControlRateProfile->rate_limit[FD_ROLL] = sbufReadU16(src);
+                currentControlRateProfile->rate_limit[FD_PITCH] = sbufReadU16(src);
+                currentControlRateProfile->rate_limit[FD_YAW] = sbufReadU16(src);
             }
 
             initRcProcessing();
@@ -2114,11 +2152,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         if (sbufBytesRemaining(src) >= 14) {
             // Added in MSP API 1.40
             currentPidProfile->iterm_rotation = sbufReadU8(src);
-#if defined(USE_SMART_FEEDFORWARD)
-            currentPidProfile->smart_feedforward = sbufReadU8(src);
-#else
-            sbufReadU8(src);
-#endif
+            sbufReadU8(src); // was currentPidProfile->smart_feedforward
 #if defined(USE_ITERM_RELAX)
             currentPidProfile->iterm_relax = sbufReadU8(src);
             currentPidProfile->iterm_relax_type = sbufReadU8(src);
@@ -2180,9 +2214,16 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #else
         sbufReadU8(src);
 #endif
+#if defined(USE_BARO)
         barometerConfigMutable()->baro_hardware = sbufReadU8(src);
+#else
+        sbufReadU8(src);
+#endif
+#if defined(USE_MAG)
         compassConfigMutable()->mag_hardware = sbufReadU8(src);
-
+#else
+        sbufReadU8(src);
+#endif
         break;
 
     case MSP_RESET_CONF:
@@ -2252,7 +2293,6 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 vtxSettingsConfigMutable()->freq = vtxCommonLookupFrequency(vtxDevice, newBand, newChannel);
             } else if (newFrequency <= VTX_SETTINGS_MAX_FREQUENCY_MHZ) { // Value is frequency in MHz
                 vtxSettingsConfigMutable()->band = 0;
-                vtxSettingsConfigMutable()->channel = 0;
                 vtxSettingsConfigMutable()->freq = newFrequency;
             }
 
@@ -2319,6 +2359,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #ifdef USE_FLASHFS
     case MSP_DATAFLASH_ERASE:
         flashfsEraseCompletely();
+
         break;
 #endif
 
@@ -2407,11 +2448,11 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             // Added in MSP API 1.40
             rxConfigMutable()->rcInterpolationChannels = sbufReadU8(src);
 #if defined(USE_RC_SMOOTHING_FILTER)
-            rxConfigMutable()->rc_smoothing_type = sbufReadU8(src);
-            rxConfigMutable()->rc_smoothing_input_cutoff = sbufReadU8(src);
-            rxConfigMutable()->rc_smoothing_derivative_cutoff = sbufReadU8(src);
-            rxConfigMutable()->rc_smoothing_input_type = sbufReadU8(src);
-            rxConfigMutable()->rc_smoothing_derivative_type = sbufReadU8(src);
+            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_type, sbufReadU8(src));
+            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_input_cutoff, sbufReadU8(src));
+            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_derivative_cutoff, sbufReadU8(src));
+            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_input_type, sbufReadU8(src));
+            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_derivative_type, sbufReadU8(src));
 #else
             sbufReadU8(src);
             sbufReadU8(src);
@@ -2742,7 +2783,7 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src, mspPos
                     // API < 1.41 supports only the low 16 bits
                     osdConfigMutable()->enabledWarnings = sbufReadU16(src);
                 }
-                
+
                 if (sbufBytesRemaining(src) >= 4) {
                     // 32bit version of enabled warnings (API >= 1.41)
                     osdConfigMutable()->enabledWarnings = sbufReadU32(src);

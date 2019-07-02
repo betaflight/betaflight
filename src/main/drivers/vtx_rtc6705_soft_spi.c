@@ -31,6 +31,7 @@
 #include "drivers/time.h"
 #include "drivers/vtx_rtc6705.h"
 
+
 #define DP_5G_MASK                  0x7000
 #define PA5G_BS_MASK                0x0E00
 #define PA5G_PW_MASK                0x0180
@@ -60,31 +61,46 @@ static IO_t rtc6705DataPin = IO_NONE;
 static IO_t rtc6705CsnPin = IO_NONE;
 static IO_t rtc6705ClkPin = IO_NONE;
 
-void rtc6705IOInit(void)
+
+bool rtc6705IOInit(const vtxIOConfig_t *vtxIOConfig)
 {
+    rtc6705DataPin = IOGetByTag(vtxIOConfig->dataTag);
+    rtc6705CsnPin  = IOGetByTag(vtxIOConfig->csTag);
+    rtc6705ClkPin  = IOGetByTag(vtxIOConfig->clockTag);
+
+    bool rtc6705HaveRequiredResources = rtc6705DataPin && rtc6705CsnPin && rtc6705ClkPin;
+
 #ifdef RTC6705_POWER_PIN
-    vtxPowerPin = IOGetByTag(IO_TAG(RTC6705_POWER_PIN));
-    IOInit(vtxPowerPin, OWNER_VTX, 0);
+    vtxPowerPin = IOGetByTag(vtxIOConfig->powerTag);
+
+    rtc6705HaveRequiredResources &= (vtxPowerPin != IO_NONE);
+#endif
+
+    if (!rtc6705HaveRequiredResources) {
+        return false;
+    }
+
+#ifdef RTC6705_POWER_PIN
+    IOInit(vtxPowerPin, OWNER_VTX_POWER, 0);
 
     DISABLE_VTX_POWER();
     IOConfigGPIO(vtxPowerPin, IOCFG_OUT_PP);
 #endif
 
-    rtc6705DataPin = IOGetByTag(IO_TAG(RTC6705_SPI_MOSI_PIN));
-    rtc6705CsnPin  = IOGetByTag(IO_TAG(RTC6705_CS_PIN));
-    rtc6705ClkPin  = IOGetByTag(IO_TAG(RTC6705_SPICLK_PIN));
 
-    IOInit(rtc6705DataPin, OWNER_SPI_MOSI, RESOURCE_SOFT_OFFSET);
+    IOInit(rtc6705DataPin, OWNER_VTX_DATA, RESOURCE_SOFT_OFFSET);
     IOConfigGPIO(rtc6705DataPin, IOCFG_OUT_PP);
 
-    IOInit(rtc6705ClkPin, OWNER_SPI_SCK, RESOURCE_SOFT_OFFSET);
+    IOInit(rtc6705ClkPin, OWNER_VTX_CLK, RESOURCE_SOFT_OFFSET);
     IOConfigGPIO(rtc6705ClkPin, IOCFG_OUT_PP);
 
     // Important: The order of GPIO configuration calls are critical to ensure that incorrect signals are not briefly sent to the VTX.
     // GPIO bit is enabled so here so the CS/LE pin output is not pulled low when the GPIO is set in output mode.
     DISABLE_RTC6705;
-    IOInit(rtc6705CsnPin, OWNER_SPI_CS, RESOURCE_SOFT_OFFSET);
+    IOInit(rtc6705CsnPin, OWNER_VTX_CS, RESOURCE_SOFT_OFFSET);
     IOConfigGPIO(rtc6705CsnPin, IOCFG_OUT_PP);
+
+    return true;
 }
 
 static void rtc6705_write_register(uint8_t addr, uint32_t data)

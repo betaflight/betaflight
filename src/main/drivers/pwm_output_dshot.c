@@ -96,8 +96,9 @@ FAST_CODE void pwmDshotSetDirectionOutput(
     DMA_DeInit(dmaRef);
 
 #ifdef USE_DSHOT_TELEMETRY
-    motor->isInput = !output;
     if (!output) {
+        motor->isInput = true;
+        motor->timer->inputDirectionStampUs = micros();
         TIM_ICInit(timer, &motor->icInitStruct);
 
 #if defined(STM32F3)
@@ -111,6 +112,9 @@ FAST_CODE void pwmDshotSetDirectionOutput(
     UNUSED(output);
 #endif
     {
+#ifdef USE_DSHOT_TELEMETRY
+        motor->isInput = false;
+#endif
         timerOCPreloadConfig(timer, timerHardware->channel, TIM_OCPreload_Disable);
         timerOCInit(timer, timerHardware->channel, pOcInit);
         timerOCPreloadConfig(timer, timerHardware->channel, TIM_OCPreload_Enable);
@@ -165,7 +169,6 @@ void pwmCompleteDshotMotorUpdate(uint8_t motorCount)
             dmaMotorTimers[i].timerDmaSources = 0;
         }
     }
-    pwmDshotCommandQueueUpdate();
 }
 
 static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
@@ -216,9 +219,9 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 #define DMAINIT dmaInitStruct
 #endif
 
-    dmaStream_t *dmaRef;
+    dmaStream_t *dmaRef = NULL;
 #if defined(STM32F4)
-    uint32_t dmaChannel;
+    uint32_t dmaChannel = 0;
 #endif
 #if defined(USE_DMA_SPEC)
     const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByTimer(timerHardware);
@@ -266,14 +269,12 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     const bool configureTimer = (timerIndex == dmaMotorTimerCount-1);
 
     uint8_t pupMode = 0;
+    pupMode = (output & TIMER_OUTPUT_INVERTED) ? GPIO_PuPd_DOWN : GPIO_PuPd_UP;
 #ifdef USE_DSHOT_TELEMETRY
-    if (!useDshotTelemetry) {
-        pupMode = (output & TIMER_OUTPUT_INVERTED) ? GPIO_PuPd_DOWN : GPIO_PuPd_UP;
-    } else
-#endif
-    {
-        pupMode = (output & TIMER_OUTPUT_INVERTED) ? GPIO_PuPd_UP : GPIO_PuPd_DOWN;
+    if (useDshotTelemetry) {
+        output ^= TIMER_OUTPUT_INVERTED;
     }
+#endif
 
     IOConfigGPIOAF(motorIO, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, pupMode), timerHardware->alternateFunction);
 
@@ -388,6 +389,9 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 
 #ifdef USE_DSHOT_TELEMETRY
     motor->dmaInputLen = motor->useProshot ? PROSHOT_TELEMETRY_INPUT_LEN : DSHOT_TELEMETRY_INPUT_LEN;
+    motor->dshotTelemetryDeadtimeUs = DSHOT_TELEMETRY_DEADTIME_US + 1000000 *
+        ( 2 + (motor->useProshot ? 4 * MOTOR_NIBBLE_LENGTH_PROSHOT : 16 * MOTOR_BITLENGTH))
+        / getDshotHz(pwmProtocolType);
     pwmDshotSetDirectionOutput(motor, true);
 #else
     pwmDshotSetDirectionOutput(motor, true, &OCINIT, &DMAINIT);
@@ -412,6 +416,12 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
         TIM_CtrlPWMOutputs(timer, ENABLE);
         TIM_Cmd(timer, ENABLE);
     }
+#ifdef USE_DSHOT_TELEMETRY
+    if (useDshotTelemetry) {
+        // avoid high line during startup to prevent bootloader activation
+        *timerChCCR(timerHardware) = 0xffff;
+    }
+#endif
     motor->configured = true;
 }
 

@@ -49,10 +49,9 @@
 
 #include "platform.h"
 
-#include "drivers/serial_usb_vcp.h"
-#include "drivers/time.h"
+#include "build/atomic.h"
 
-#include "stm32f7xx_hal.h"
+#include "usbd_conf.h"
 #include "usbd_core.h"
 #include "usbd_desc.h"
 #include "usbd_cdc.h"
@@ -60,7 +59,8 @@
 #include "stdbool.h"
 
 #include "drivers/nvic.h"
-#include "build/atomic.h"
+#include "drivers/serial_usb_vcp.h"
+#include "drivers/time.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -284,7 +284,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                 lastBuffsize = buffsize;
             }
         }
-    } 
+    }
 }
 
 /**

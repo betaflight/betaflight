@@ -53,7 +53,9 @@ void persistentObjectRTCEnable(void)
 {
     RTC_HandleTypeDef rtcHandle = { .Instance = RTC };
 
+#if !defined(STM32H7)
     __HAL_RCC_PWR_CLK_ENABLE(); // Enable Access to PWR
+#endif
     HAL_PWR_EnableBkUpAccess(); // Disable backup domain protection
 
 #if defined(__HAL_RCC_RTC_CLK_ENABLE)
@@ -70,7 +72,7 @@ void persistentObjectRTCEnable(void)
 #else
 uint32_t persistentObjectRead(persistentObjectId_e id)
 {
-    uint32_t value = RTC_ReadBackupRegister(id); 
+    uint32_t value = RTC_ReadBackupRegister(id);
 
     return value;
 }
@@ -98,9 +100,17 @@ void persistentObjectInit(void)
 
     persistentObjectRTCEnable();
 
-    // Magic value checking may be sufficient
+    // XXX Magic value checking may be sufficient
 
-    if (!(RCC->CSR & RCC_CSR_SFTRSTF) || (persistentObjectRead(PERSISTENT_OBJECT_MAGIC) != PERSISTENT_OBJECT_MAGIC_VALUE)) {
+    uint32_t wasSoftReset;
+
+#ifdef STM32H7
+    wasSoftReset = RCC->RSR & RCC_RSR_SFTRSTF;
+#else
+    wasSoftReset = RCC->CSR & RCC_CSR_SFTRSTF;
+#endif
+
+    if (!wasSoftReset || (persistentObjectRead(PERSISTENT_OBJECT_MAGIC) != PERSISTENT_OBJECT_MAGIC_VALUE)) {
         for (int i = 1; i < PERSISTENT_OBJECT_COUNT; i++) {
             persistentObjectWrite(i, 0);
         }

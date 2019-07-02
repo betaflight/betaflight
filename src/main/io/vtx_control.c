@@ -20,6 +20,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <drivers/vtx_table.h>
 
 #include "platform.h"
 
@@ -64,7 +65,7 @@ void vtxControlInit(void)
 
 void vtxControlInputPoll(void)
 {
-  // Check variuos input sources for VTX config updates
+    // Check variuos input sources for VTX config updates
 #if defined(USE_SPEKTRUM_VTX_CONTROL)
     // Get VTX updates
     spektrumVtxControl();
@@ -109,7 +110,7 @@ void vtxUpdateActivatedChannel(void)
         locked = 1;
     }
 
-    if (!locked && vtxCommonDevice()) {
+    if (vtxCommonDevice()) {
         static uint8_t lastIndex = -1;
 
         for (uint8_t index = 0; index < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT; index++) {
@@ -119,8 +120,18 @@ void vtxUpdateActivatedChannel(void)
                 && index != lastIndex) {
                 lastIndex = index;
 
-                vtxSettingsConfigMutable()->band = vtxChannelActivationCondition->band;
-                vtxSettingsConfigMutable()->channel = vtxChannelActivationCondition->channel;
+                if (!locked) {
+                    if (vtxChannelActivationCondition->band > 0) {
+                        vtxSettingsConfigMutable()->band = vtxChannelActivationCondition->band;
+                    }
+                    if (vtxChannelActivationCondition->channel > 0) {
+                        vtxSettingsConfigMutable()->channel = vtxChannelActivationCondition->channel;
+                    }
+                }
+
+                if (vtxChannelActivationCondition->power > 0) {
+                    vtxSettingsConfigMutable()->power = vtxChannelActivationCondition->power;
+                }
                 break;
             }
         }
@@ -132,25 +143,24 @@ void vtxCycleBandOrChannel(const uint8_t bandStep, const uint8_t channelStep)
     const vtxDevice_t *vtxDevice = vtxCommonDevice();
     if (vtxDevice) {
         uint8_t band = 0, channel = 0;
-        vtxDeviceCapability_t capability;
 
-        const bool haveAllNeededInfo = vtxCommonGetBandAndChannel(vtxDevice, &band, &channel) && vtxCommonGetDeviceCapability(vtxDevice, &capability);
+        const bool haveAllNeededInfo = vtxCommonGetBandAndChannel(vtxDevice, &band, &channel);
         if (!haveAllNeededInfo) {
             return;
         }
 
         int newChannel = channel + channelStep;
-        if (newChannel > capability.channelCount) {
+        if (newChannel > vtxTableChannelCount) {
             newChannel = 1;
         } else if (newChannel < 1) {
-            newChannel = capability.channelCount;
+            newChannel = vtxTableChannelCount;
         }
 
         int newBand = band + bandStep;
-        if (newBand > capability.bandCount) {
+        if (newBand > vtxTableBandCount) {
             newBand = 1;
         } else if (newBand < 1) {
-            newBand = capability.bandCount;
+            newBand = vtxTableBandCount;
         }
 
         vtxSettingsConfigMutable()->band = newBand;
@@ -163,17 +173,16 @@ void vtxCyclePower(const uint8_t powerStep)
     const vtxDevice_t *vtxDevice = vtxCommonDevice();
     if (vtxDevice) {
         uint8_t power = 0;
-        vtxDeviceCapability_t capability;
-        const bool haveAllNeededInfo = vtxCommonGetPowerIndex(vtxDevice, &power) && vtxCommonGetDeviceCapability(vtxDevice, &capability);
+        const bool haveAllNeededInfo = vtxCommonGetPowerIndex(vtxDevice, &power);
         if (!haveAllNeededInfo) {
             return;
         }
 
         int newPower = power + powerStep;
-        if (newPower >= capability.powerCount) {
+        if (newPower >= vtxTablePowerLevels) {
             newPower = 0;
         } else if (newPower < 0) {
-            newPower = capability.powerCount;
+            newPower = vtxTablePowerLevels;
         }
 
         vtxSettingsConfigMutable()->power = newPower;

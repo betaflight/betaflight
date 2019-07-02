@@ -6,26 +6,26 @@ $(error The target specified, $(TARGET), cannot be built. Use one of the ALT tar
 endif
 
 BASE_TARGET   := $(call get_base_target,$(TARGET))
-ifneq ($(TARGET),$(BASE_TARGET))
-include $(ROOT)/src/main/target/$(BASE_TARGET)/$(TARGET).mk
-endif
+# silently ignore if the file is not present. Allows for target specific.
+-include $(ROOT)/src/main/target/$(BASE_TARGET)/$(TARGET).mk
 
 ifeq ($(filter $(TARGET),$(OPBL_TARGETS)), $(TARGET))
 OPBL            = yes
 endif
 
-# silently ignore if the file is not present. Allows for target specific.
+# silently ignore if the file is not present. Allows for target defaults.
 -include $(ROOT)/src/main/target/$(BASE_TARGET)/target.mk
 
 F4_TARGETS      := $(F405_TARGETS) $(F411_TARGETS) $(F446_TARGETS)
 F7_TARGETS      := $(F7X2RE_TARGETS) $(F7X5XE_TARGETS) $(F7X5XG_TARGETS) $(F7X5XI_TARGETS) $(F7X6XG_TARGETS)
+H7_TARGETS      := $(H743xI_TARGETS) $(H750xB_TARGETS)
 
 ifeq ($(filter $(TARGET),$(VALID_TARGETS)),)
 $(error Target '$(TARGET)' is not valid, must be one of $(VALID_TARGETS). Have you prepared a valid target.mk?)
 endif
 
-ifeq ($(filter $(TARGET),$(F1_TARGETS) $(F3_TARGETS) $(F4_TARGETS) $(F7_TARGETS) $(SITL_TARGETS)),)
-$(error Target '$(TARGET)' has not specified a valid STM group, must be one of F1, F3, F405, F411 or F7x5. Have you prepared a valid target.mk?)
+ifeq ($(filter $(TARGET),$(F1_TARGETS) $(F3_TARGETS) $(F4_TARGETS) $(F7_TARGETS) $(H7_TARGETS) $(SITL_TARGETS)),)
+$(error Target '$(TARGET)' has not specified a valid STM group, must be one of F1, F3, F405, F411, F446, F7X2RE, F7X5XE, F7X5XG, F7X5XI, F7X6XG or H7X3XI. Have you prepared a valid target.mk?)
 endif
 
 ifeq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
@@ -36,6 +36,9 @@ TARGET_MCU := STM32F4
 
 else ifeq ($(TARGET),$(filter $(TARGET), $(F7_TARGETS)))
 TARGET_MCU := STM32F7
+
+else ifeq ($(TARGET),$(filter $(TARGET), $(H7_TARGETS)))
+TARGET_MCU := STM32H7
 
 else ifeq ($(TARGET),$(filter $(TARGET), $(SITL_TARGETS)))
 TARGET_MCU := SITL

@@ -66,6 +66,7 @@ typedef enum {
     SERIALRX_SRXL = 10,
     SERIALRX_TARGET_CUSTOM = 11,
     SERIALRX_FPORT = 12,
+    SERIALRX_DJI_HDL_7MS = 13,
 } SerialRXType;
 
 #define MAX_SUPPORTED_RC_PPM_CHANNEL_COUNT          12
@@ -142,9 +143,17 @@ typedef enum {
     RSSI_SOURCE_RX_PROTOCOL,
     RSSI_SOURCE_MSP,
     RSSI_SOURCE_FRAME_ERRORS,
+    RSSI_SOURCE_RX_PROTOCOL_CRSF,
 } rssiSource_e;
 
 extern rssiSource_e rssiSource;
+
+typedef enum {
+    LQ_SOURCE_NONE = 0,
+    LQ_SOURCE_RX_PROTOCOL_CRSF,
+} linkQualitySource_e;
+
+extern linkQualitySource_e linkQualitySource;
 
 extern rxRuntimeConfig_t rxRuntimeConfig; //!!TODO remove this extern, only needed once for channelCount
 
@@ -168,10 +177,15 @@ uint16_t getRssi(void);
 uint8_t getRssiPercent(void);
 bool isRssiConfigured(void);
 
-#define LINK_QUALITY_MAX_VALUE 255
+#define LINK_QUALITY_MAX_VALUE 1023
 
-uint8_t rxGetLinkQuality(void);
-uint8_t rxGetLinkQualityPercent(void);
+uint16_t rxGetLinkQuality(void);
+void setLinkQualityDirect(uint16_t linkqualityValue);
+uint16_t rxGetLinkQualityPercent(void);
+
+uint8_t getRssiDbm(void);
+void setRssiDbm(uint8_t newRssiDbm, rssiSource_e source);
+void setRssiDbmDirect(uint8_t newRssiDbm, rssiSource_e source);
 
 void resetAllRxChannelRangeConfigurations(rxChannelRangeConfig_t *rxChannelRangeConfig);
 

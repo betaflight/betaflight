@@ -39,9 +39,15 @@ void systemReset(void)
     NVIC_SystemReset();
 }
 
-void systemResetToBootloader(void)
+void systemResetToBootloader(bootloaderRequestType_e requestType)
 {
-    persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_BOOTLOADER_REQUEST);
+    switch (requestType) {
+    case BOOTLOADER_REQUEST_ROM:
+    default:
+        persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_BOOTLOADER_REQUEST_ROM);
+
+        break;
+    }
 
     __disable_irq();
     NVIC_SystemReset();
@@ -54,11 +60,12 @@ typedef struct isrVector_s {
     resetHandler_t *resetHandler;
 } isrVector_t;
 
+// Used in the startup files for F4
 void checkForBootLoaderRequest(void)
 {
     uint32_t bootloaderRequest = persistentObjectRead(PERSISTENT_OBJECT_RESET_REASON);
 
-    if (bootloaderRequest != RESET_BOOTLOADER_REQUEST) {
+    if (bootloaderRequest != RESET_BOOTLOADER_REQUEST_ROM) {
         return;
     }
     persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_NONE);

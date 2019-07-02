@@ -24,8 +24,6 @@
 
 #define USBD_PRODUCT_STRING     "EXF722DUAL"
 
-#define USE_DUAL_GYRO
-
 #define ENABLE_DSHOT_DMAR       true
 
 #define LED0_PIN                PC4
@@ -37,7 +35,7 @@
 #define USE_EXTI
 #define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PA8
-#define GYRO_2_EXTI_PIN         PC13
+#define GYRO_2_EXTI_PIN         PB2
 
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
@@ -55,10 +53,8 @@
 #define USE_ACC_SPI_ICM20689
 
 #define GYRO_1_ALIGN        CW0_DEG
-#define ACC_1_ALIGN         CW0_DEG
 
 #define GYRO_2_ALIGN        CW90_DEG
-#define ACC_2_ALIGN         CW90_DEG
 
 #define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_BOTH
 
@@ -68,7 +64,9 @@
 #define USE_UART3
 #define USE_UART4
 #define USE_UART5
-#define SERIAL_PORT_COUNT       6
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+#define SERIAL_PORT_COUNT       8
 
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
@@ -112,20 +110,23 @@
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
+#define USE_FLASH_W25N01G
 #define FLASH_CS_PIN            PB9
 #define FLASH_SPI_INSTANCE      SPI3
 
 #define USE_BARO
 #define USE_BARO_BMP280
-#define USE_BARO_SPI_BMP280
-#define BMP280_CS_PIN           PB8
-#define BMP280_SPI_INSTANCE     SPI3
 #define DEFAULT_BARO_BMP280
 
 #define USE_ADC
 #define ADC_INSTANCE            ADC3
 #define ADC3_DMA_OPT            0  // DMA 2 Stream 0 Channel 2 
 
+#define USE_I2C
+#define USE_I2C_DEVICE_2
+#define I2C_DEVICE              (I2CDEV_2)
+#define I2C2_SCL                PB10
+#define I2C2_SDA                PB11
 
 #define VBAT_ADC_PIN            PC1
 #define CURRENT_METER_ADC_PIN   PC2
@@ -137,13 +138,20 @@
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 
 #define USE_TRANSPONDER
+#define USE_ESCSERIAL
+
+#define USE_PINIO
+#define PINIO1_PIN              PC13 // activate/deactivate Bluetooth When disarmed/armed using PINIO_BOX
+#define PINIO2_PIN              PC14 // 2xCamera switcher
+#define PINIO3_PIN              PB8  // VTX power switcher
+#define USE_PINIOBOX
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
-#define DEFAULT_RX_FEATURE                  FEATURE_RX_SERIAL
-#define DEFAULT_FEATURES                    (FEATURE_TRANSPONDER | FEATURE_RSSI_ADC | FEATURE_TELEMETRY | FEATURE_OSD | FEATURE_LED_STRIP)
+#define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
+#define DEFAULT_FEATURES        (FEATURE_TRANSPONDER | FEATURE_RSSI_ADC | FEATURE_TELEMETRY | FEATURE_OSD | FEATURE_LED_STRIP)
 
-#define SERIALRX_UART                       SERIAL_PORT_USART2
-#define SERIALRX_PROVIDER                   SERIALRX_SBUS
+#define SERIALRX_UART           SERIAL_PORT_USART2
+#define SERIALRX_PROVIDER       SERIALRX_SBUS
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff

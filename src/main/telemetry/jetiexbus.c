@@ -537,12 +537,12 @@ uint8_t sendJetiExBusTelemetry(uint8_t packetID, uint8_t item)
             if (featureIsEnabled(FEATURE_GPS)) {
                 enableGpsTelemetry(false);
                 allSensorsActive = false;
-            }   
+            }
         }
     } else {
         item = createExTelemetryValueMessage(jetiExTelemetryFrame, item);
         createExBusMessage(jetiExBusTelemetryFrame, jetiExTelemetryFrame, packetID);
-        
+
         if (!allSensorsActive) {
             if (sensors(SENSOR_GPS)) {
                 enableGpsTelemetry(true);

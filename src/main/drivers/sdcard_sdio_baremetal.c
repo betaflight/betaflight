@@ -35,7 +35,6 @@
 
 #include "drivers/time.h"
 
-#include "pg/pg.h"
 #include "pg/bus_spi.h" // For spiPinConfig_t, which is unused but should be defined
 #include "pg/sdio.h"
 
@@ -88,7 +87,7 @@ static void sdcard_reset(void)
 {
     if (SD_Init() != 0) {
         sdcard.failureCount++;
-        if (sdcard.failureCount >= SDCARD_MAX_CONSECUTIVE_FAILURES || sdcard_isInserted() == SD_NOT_PRESENT) {
+        if (sdcard.failureCount >= SDCARD_MAX_CONSECUTIVE_FAILURES || !sdcard_isInserted()) {
             sdcard.state = SDCARD_STATE_NOT_PRESENT;
         } else {
             sdcard.operationStartTime = millis();
@@ -174,7 +173,10 @@ static bool sdcard_checkInitDone(void)
 {
     if (SD_GetState()) {
         SD_CardType_t *sdtype = &SD_CardType;
-        SD_GetCardInfo();
+        SD_Error_t errorState = SD_GetCardInfo();
+        if (errorState != SD_OK) {
+            return false;
+        }
 
         sdcard.version = (*sdtype) ? 2 : 1;
         sdcard.highCapacity = (*sdtype == 2) ? 1 : 0;
@@ -198,6 +200,8 @@ static void sdcardSdio_init(const sdcardConfig_t *config, const spiPinConfig_t *
         return;
     }
 
+#ifdef USE_DMA_SPEC
+#if !defined(STM32H7) // H7 uses IDMA
     const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_SDIO, 0, sdioConfig()->dmaopt);
 
     if (!dmaChannelSpec) {
@@ -211,6 +215,8 @@ static void sdcardSdio_init(const sdcardConfig_t *config, const spiPinConfig_t *
         sdcard.state = SDCARD_STATE_NOT_PRESENT;
         return;
     }
+#endif
+#endif
     if (config->cardDetectTag) {
         sdcard.cardDetectPin = IOGetByTag(config->cardDetectTag);
     } else {
@@ -224,8 +230,17 @@ static void sdcardSdio_init(const sdcardConfig_t *config, const spiPinConfig_t *
     } else {
         sdcard.useCache = 0;
     }
+#ifdef USE_DMA_SPEC
+#if defined(STM32H7) // H7 uses IDMA
+    SD_Initialize_LL(0);
+#else
     SD_Initialize_LL(dmaChannelSpec->ref);
-    if (SD_IsDetected()) {
+#endif
+#else
+    SD_Initialize_LL(SDCARD_SDIO_DMA_OPT);
+#endif
+
+    if (sdcard_isInserted()) {
         if (SD_Init() != 0) {
             sdcard.state = SDCARD_STATE_NOT_PRESENT;
             sdcard.failureCount++;

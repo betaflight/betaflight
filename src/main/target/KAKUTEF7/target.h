@@ -24,13 +24,12 @@
 
 #ifdef KAKUTEF7V2
 #define TARGET_BOARD_IDENTIFIER "KT76"
+#define USBD_PRODUCT_STRING "KakuteF7-V2"
+#elif defined(KAKUTEF7MINI)
+#define TARGET_BOARD_IDENTIFIER "KF7M"
+#define USBD_PRODUCT_STRING "KakuteF7-Mini"
 #else
 #define TARGET_BOARD_IDENTIFIER "KTF7"
-#endif
-
-#ifdef KAKUTEF7V2
-#define USBD_PRODUCT_STRING "KakuteF7-V2"
-#else
 #define USBD_PRODUCT_STRING "KakuteF7"
 #endif
 
@@ -47,13 +46,16 @@
 #define USE_GYRO
 #define USE_EXTI
 
+// MPU6000
+#define USE_ACC_SPI_MPU6000
+#define USE_GYRO_SPI_MPU6000
+
 // ICM-20689
 #define USE_ACC_SPI_ICM20689
 #define USE_GYRO_SPI_ICM20689
 #define GYRO_1_CS_PIN           SPI4_NSS_PIN
 #define GYRO_1_SPI_INSTANCE     SPI4
 #define GYRO_1_ALIGN            CW270_DEG
-#define ACC_1_ALIGN             CW270_DEG
 
 #define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PE1
@@ -119,9 +121,14 @@
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI2
 #define MAX7456_SPI_CS_PIN      SPI2_NSS_PIN
-#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
-#define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
+#if defined(KAKUTEF7MINI)
+#define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
+#define USE_FLASHFS
+#define USE_FLASH_M25P16
+#define FLASH_CS_PIN            SPI1_NSS_PIN
+#define FLASH_SPI_INSTANCE      SPI1
+#else
 #define USE_SDCARD
 #define USE_SDCARD_SPI
 #define SDCARD_DETECT_INVERTED
@@ -129,6 +136,9 @@
 #define SDCARD_SPI_INSTANCE                 SPI1
 #define SDCARD_SPI_CS_PIN                   SPI1_NSS_PIN
 #define SPI1_TX_DMA_OPT                       1     // DMA 2 Stream 5 Channel 3
+
+#define SDCARD_DMA_STREAM_TX_FULL             DMA2_Stream5
+#endif
 
 #define USE_I2C
 #define USE_I2C_DEVICE_1

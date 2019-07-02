@@ -76,7 +76,6 @@ Note that if the same pot is used as the Adjustment Channel to make multiple adj
 The CLI command `adjrange` is used to configure adjustment ranges.
 
 12 adjustment ranges can be defined.
-4 adjustments can be made at the same time, each simultaneous adjustment requires an adjustment slot.
 
 Show the current ranges using:
 
@@ -84,14 +83,14 @@ Show the current ranges using:
 
 Configure a range using:
 
-`adjrange <index> <slot> <range channel> <range start> <range end> <adjustment function> <adjustment channel>`
+`adjrange <index> 0 <range channel> <range start> <range end> <adjustment function> <adjustment channel>`
 
 
 
 | Argument | Value | Meaning |
 | -------- | ----- |-------- |
 | Index | 0 - 11 | Select the adjustment range to configure |
-| Slot | 0 - 3 | Select the adjustment slot to use |
+| 0 | 0 | Used as slot before Betaflight 4.1 |
 | Range Channel | 0 based index, AUX1 = 0, AUX2 = 1 | The AUX channel to use to select an adjustment for a switch/pot | 
 | Range Start | 900 - 2100. Steps of 25, e.g. 900, 925, 950... | Start of range | 
 | Range End | 900 - 2100 | End of range |
@@ -102,16 +101,11 @@ Configure a range using:
 
 Range Start/End values should match the values sent by your receiver.
 
-Normally Range Channel and Slot values are grouped together over multiple adjustment ranges.
-
 The Range Channel and the Adjustment Channel can be the same channel.  This is useful when you want a single 3 Position switch to be dedicated
 to a single adjustment function regardless of other switch positions.
  
 The adjustment function is applied to the adjustment channel when range channel is between the range values.
 The adjustment is made when the adjustment channel is in the high or low position.  high = mid_rc + 200, low = mid_rc - 200.  by default this is 1700 and 1300 respectively.
-
-When the Range Channel does not fall into Start/End range the assigned slot will retain it's state and will continue to apply the adjustment. For
-this reason ensure that you define enough ranges to cover the range channel's usable range.
 
 ### Adjustment function
 
@@ -149,7 +143,7 @@ adjrange 0 0 3 900 2100 4 3 0 0
 
 explained:
 
-* configure adjrange 0 to use adjustment slot 1 (0) so that when aux4
+* configure adjrange 0 so that when aux4
 (3) in the range 900-2100 then use adjustment 4 (pitch/roll rate) when aux 4 (3)
 is in the appropriate position. 
 * note that Center/Scale values are both zero, so this range will use increment/decrement mode.
@@ -158,15 +152,15 @@ is in the appropriate position.
 ### Example 2 - 2 Position switch used to enable adjustment of RC rate via a 3 position switch
 
 ```
-adjrange 1 1 0 900 1700 0 2 0 0
-adjrange 2 1 0 1700 2100 1 2 0 0
+adjrange 1 0 0 900 1700 0 2 0 0
+adjrange 2 0 0 1700 2100 1 2 0 0
 ```
 explained:
 
-* configure adjrange 1 to use adjustment slot 2 (1) so that when aux1
+* configure adjrange 1 so that when aux1
 (0) in the range 900-1700 then do nothing (0) when aux 3 (2) is in any
 position.
-* configure adjrange 2 to use adjustment slot 2 (1) so that when aux1
+* configure adjrange 2 so that when aux1
 (0) in the range 1700-2100 then use adjustment rc rate (1) when aux 3
 (2) is in the appropriate position.
 * note that Center/Scale values are both zero, so this range will use increment/decrement mode.
@@ -178,32 +172,32 @@ range.
 ### Example 3 - 6 Position switch used to select PID tuning adjustments via a 3 position switch
 
 ```
-adjrange 3 2 1 900 1150 6 3 0 0
-adjrange 4 2 1 1150 1300 7 3 0 0
-adjrange 5 2 1 1300 1500 8 3 0 0
-adjrange 6 2 1 1500 1700 9 3 0 0
-adjrange 7 2 1 1700 1850 10 3 0 0
-adjrange 8 2 1 1850 2100 11 3 0 0
+adjrange 3 0 1 900 1150 6 3 0 0
+adjrange 4 0 1 1150 1300 7 3 0 0
+adjrange 5 0 1 1300 1500 8 3 0 0
+adjrange 6 0 1 1500 1700 9 3 0 0
+adjrange 7 0 1 1700 1850 10 3 0 0
+adjrange 8 0 1 1850 2100 11 3 0 0
 ```
 
 explained:
 
-* configure adjrange 3 to use adjustment slot 3 (2) so that when aux2
+* configure adjrange 3 so that when aux2
 (1) in the range 900-1150 then use adjustment Pitch/Roll P (6) when aux 4
 (3) is in the appropriate position.
-* configure adjrange 4 to use adjustment slot 3 (2) so that when aux2
+* configure adjrange 4 so that when aux2
 (1) in the range 1150-1300 then use adjustment Pitch/Roll I (7) when aux 4
 (3) is in the appropriate position.
-* configure adjrange 5 to use adjustment slot 3 (2) so that when aux2
+* configure adjrange 5 so that when aux2
 (1) in the range 1300-1500 then use adjustment Pitch/Roll D (8) when aux 4
 (3) is in the appropriate position.
-* configure adjrange 6 to use adjustment slot 3 (2) so that when aux2
+* configure adjrange 6 so that when aux2
 (1) in the range 1500-1700 then use adjustment Yaw P (9) when aux 4
 (3) is in the appropriate position.
-* configure adjrange 7 to use adjustment slot 3 (2) so that when aux2
+* configure adjrange 7 so that when aux2
 (1) in the range 1700-1850 then use adjustment Yaw I (10) when aux 4
 (3) is in the appropriate position.
-* configure adjrange 8 to use adjustment slot 3 (2) so that when aux2
+* configure adjrange 8 so that when aux2
 (1) in the range 1850-2100 then use adjustment Yaw D (11) when aux 4
 (3) is in the appropriate position.
 * note that Center/Scale values are both zero, so this range will use increment/decrement mode.
@@ -211,12 +205,12 @@ explained:
 ### Example 4 - Use a single 3 position switch to change between 3 different rate profiles
 
 ```
-adjrange 11 3 3 900 2100 12 3 0 0
+adjrange 11 0 3 900 2100 12 3 0 0
 ```
 
 explained:
 
-* configure adjrange 11 to use adjustment slot 4 (3) so that when aux4
+* configure adjrange 11 so that when aux4
 (3) in the range 900-2100 then use adjustment Rate Profile (12) when aux 4
 (3) is in the appropriate position.
 * note that Center/Scale values are both zero, so this range will use increment/decrement mode.

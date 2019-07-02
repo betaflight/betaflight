@@ -47,7 +47,7 @@
 #define ADC_VOLTAGE 3.3f
 #endif
 
-#if !defined(STM32F411xE) && !defined(STM32F7)
+#if !defined(STM32F411xE) && !defined(STM32F7) && !defined(STM32H7)
 #define CAMERA_CONTROL_SOFTWARE_PWM_AVAILABLE
 #include "build/atomic.h"
 #endif

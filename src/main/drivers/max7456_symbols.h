@@ -22,27 +22,39 @@
 #pragma once
 
 //Misc
+#define SYM_NONE                    0x00
 #define SYM_END_OF_FONT             0xFF
 #define SYM_BLANK                   0x20
-#define SYM_COLON                   0x2D
+#define SYM_HYPHEN                  0x2D
+#define SYM_BBLOG                   0x10
+#define SYM_HOMEFLAG                0x11
+//#define SYM_RPM                     0x12
+#define SYM_ROLL                    0x14
+#define SYM_PITCH                   0x15
+#define SYM_TEMPERATURE             0x7A
+
+// GPS and navigation
+#define SYM_LAT                     0x89
+#define SYM_LON                     0x98
+#define SYM_ALTITUDE                0x7F
+#define SYM_TOTAL_DISTANCE          0x71
+#define SYM_OVER_HOME               0x05
 
 // RSSI
 #define SYM_RSSI                    0x01
+#define SYM_LINK_QUALITY            0x7B
 
 // Throttle Position (%)
 #define SYM_THR                     0x04
-#define SYM_THR1                    0x05
-
-// Map mode
-#define SYM_HOME                    0x04
-#define SYM_AIRCRAFT                0x05
 
 // Unit Icons (Metric)
 #define SYM_M                       0x0C
+#define SYM_KM                      0x7D
 #define SYM_C                       0x0E
 
 // Unit Icons (Imperial)
 #define SYM_FT                      0x0F
+#define SYM_MILES                   0x7E
 #define SYM_F                       0x0D
 
 // Heading Graphics
@@ -54,9 +66,9 @@
 #define SYM_HEADING_LINE            0x1D
 
 // AH Center screen Graphics
-#define SYM_AH_CENTER_LINE          0x26
-#define SYM_AH_CENTER_LINE_RIGHT    0x27
-#define SYM_AH_CENTER               0x7E
+#define SYM_AH_CENTER_LINE          0x72
+#define SYM_AH_CENTER               0x73
+#define SYM_AH_CENTER_LINE_RIGHT    0x74
 #define SYM_AH_RIGHT                0x02
 #define SYM_AH_LEFT                 0x03
 #define SYM_AH_DECORATION           0x13
@@ -82,6 +94,9 @@
 #define SYM_ARROW_14                0x6D
 #define SYM_ARROW_15                0x6E
 #define SYM_ARROW_16                0x6F
+
+#define SYM_ARROW_SMALL_UP          0x75
+#define SYM_ARROW_SMALL_DOWN        0x76
 
 // AH Bars
 #define SYM_AH_BAR9_0               0x80
@@ -111,18 +126,25 @@
 #define SYM_BATT_1                  0x95
 #define SYM_BATT_EMPTY              0x96
 
-// Batt Icon´s
+// Batt Icons
 #define SYM_MAIN_BATT               0x97
 
 // Voltage and amperage
 #define SYM_VOLT                    0x06
 #define SYM_AMP                     0x9A
 #define SYM_MAH                     0x07
-#define SYM_WATT                    0x57
+#define SYM_WATT                    0x57  // 0x57 is 'W'
 
 // Time
 #define SYM_ON_M                    0x9B
 #define SYM_FLY_M                   0x9C
+
+// Speed
+#define SYM_SPEED                   0x70
+#define SYM_KPH                     0x9E
+#define SYM_MPH                     0x9D
+#define SYM_MPS                     0x9F
+#define SYM_FTPS                    0x99
 
 // Menu cursor
 #define SYM_CURSOR                  SYM_AH_LEFT

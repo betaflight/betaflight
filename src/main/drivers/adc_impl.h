@@ -26,6 +26,12 @@
 
 #if defined(STM32F4) || defined(STM32F7)
 #define ADC_TAG_MAP_COUNT 16
+#elif defined(STM32H7)
+#ifdef USE_ADC_INTERNAL
+#define ADC_TAG_MAP_COUNT 30
+#else
+#define ADC_TAG_MAP_COUNT 28
+#endif
 #elif defined(STM32F3)
 #define ADC_TAG_MAP_COUNT 39
 #else
@@ -37,7 +43,10 @@ typedef struct adcTagMap_s {
 #if !defined(STM32F1) // F1 pins have uniform connection to ADC instances
     uint8_t devices;
 #endif
-    uint8_t channel;
+    uint32_t channel;
+#if defined(STM32H7)
+    uint8_t channelOrdinal;
+#endif
 } adcTagMap_t;
 
 // Encoding for adcTagMap_t.devices
@@ -54,16 +63,20 @@ typedef struct adcDevice_s {
     ADC_TypeDef* ADCx;
     rccPeriphTag_t rccADC;
 #if !defined(USE_DMA_SPEC)
-#if defined(STM32F4) || defined(STM32F7)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
     DMA_Stream_TypeDef* DMAy_Streamx;
     uint32_t channel;
 #else
     DMA_Channel_TypeDef* DMAy_Channelx;
 #endif
-#endif
-#if defined(STM32F7)
+#endif // !defined(USE_DMA_SPEC)
+#if defined(STM32F7) || defined(STM32H7)
     ADC_HandleTypeDef ADCHandle;
     DMA_HandleTypeDef DmaHandle;
+#endif
+#if defined(STM32H7)
+    uint8_t irq;
+    uint32_t channelBits;
 #endif
 } adcDevice_t;
 
@@ -75,3 +88,7 @@ extern volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
 uint8_t adcChannelByTag(ioTag_t ioTag);
 ADCDevice adcDeviceByInstance(ADC_TypeDef *instance);
 bool adcVerifyPin(ioTag_t tag, ADCDevice device);
+
+// Marshall values in DMA instance/channel based order to adcChannel based order.
+// Required for multi DMA instance implementation
+void adcGetChannelValues(void);

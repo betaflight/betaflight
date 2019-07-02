@@ -29,7 +29,6 @@
 //#pragma GCC diagnostic warning "-Wpadded"
 
 //#define SCHEDULER_DEBUG // define this to use scheduler debug[] values. Undefined by default for performance reasons
-#define DEBUG_MODE DEBUG_NONE // change this to change initial debug mode
 
 #define I2C1_OVERCLOCK true
 #define I2C2_OVERCLOCK true
@@ -54,6 +53,7 @@
 #endif
 #define USE_DSHOT
 #define USE_DSHOT_TELEMETRY
+#define USE_DSHOT_TELEMETRY_STATS
 #define USE_RPM_FILTER
 #define I2C3_OVERCLOCK true
 #define USE_GYRO_DATA_ANALYSE
@@ -62,6 +62,7 @@
 #define USE_USB_CDC_HID
 #define USE_USB_MSC
 #define USE_PERSISTENT_MSC_RTC
+#define USE_MCO
 #define USE_DMA_SPEC
 #define USE_TIMER_MGMT
 // Re-enable this after 4.0 has been released, and remove the define from STM32F4DISCOVERY
@@ -79,6 +80,7 @@
 #define USE_FAST_RAM
 #define USE_DSHOT
 #define USE_DSHOT_TELEMETRY
+#define USE_DSHOT_TELEMETRY_STATS
 #define USE_RPM_FILTER
 #define I2C3_OVERCLOCK true
 #define I2C4_OVERCLOCK true
@@ -95,7 +97,18 @@
 //#define USE_SPI_TRANSACTION
 #endif // STM32F7
 
-#if defined(STM32F4) || defined(STM32F7)
+#ifdef STM32H7
+#define USE_ITCM_RAM
+#define USE_FAST_RAM
+#define USE_DSHOT
+#define USE_GYRO_DATA_ANALYSE
+#define USE_ADC_INTERNAL
+#define USE_USB_CDC_HID
+#define USE_DMA_SPEC
+#define USE_TIMER_MGMT
+#endif
+
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
 #define TASK_GYROPID_DESIRED_PERIOD     125 // 125us = 8kHz
 #define SCHEDULER_DELAY_LIMIT           10
 #else
@@ -125,7 +138,7 @@
 #define FAST_RAM
 #endif // USE_FAST_RAM
 
-#ifdef STM32F4
+#if defined(STM32F4) || defined (STM32H7)
 // Data in RAM which is guaranteed to not be reset on hot reboot
 #define PERSISTENT                  __attribute__ ((section(".persistent_data"), aligned(4)))
 #endif
@@ -136,7 +149,18 @@
 #define SRAM2
 #endif
 
+#ifdef USE_DMA_RAM
+#define DMA_RAM __attribute__((section(".DMA_RAM")))
+#else
+#define DMA_RAM
+#endif
+
 #define USE_BRUSHED_ESC_AUTODETECT  // Detect if brushed motors are connected and set defaults appropriately to avoid motors spinning on boot
+
+#define USE_MOTOR
+#define USE_PWM_OUTPUT
+#define USE_DMA
+#define USE_TIMER
 
 #define USE_CLI
 #define USE_SERIAL_PASSTHROUGH
@@ -260,6 +284,8 @@
 #define USE_RX_MSP
 #define USE_ESC_SENSOR_INFO
 #define USE_CRSF_CMS_TELEMETRY
+#define USE_CRSF_LINK_STATISTICS
+#define USE_RX_RSSI_DBM
 #endif
 
 #endif // FLASH_SIZE > 128
@@ -295,9 +321,9 @@
 #define USE_ESCSERIAL_SIMONK
 #define USE_SERIAL_4WAY_SK_BOOTLOADER
 #define USE_CMS_FAILSAFE_MENU
-#define USE_SMART_FEEDFORWARD
+#define USE_CMS_GPS_RESCUE_MENU
 #define USE_TELEMETRY_SENSORS_DISABLED_DETAILS
-// Re-enable this after 4.0 has been released, and remove the define from STM32F4DISCOVERY
-//#define USE_VTX_TABLE
+#define USE_VTX_TABLE
+#define USE_PERSISTENT_STATS
+#define USE_PROFILE_NAMES
 #endif
-

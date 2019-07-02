@@ -64,6 +64,7 @@
   */
 
 #include "stm32f7xx.h"
+#include "drivers/system.h"
 #include "system_stm32f7xx.h"
 #include "platform.h"
 #include "drivers/persistent.h"
@@ -308,6 +309,8 @@ void OverclockRebootIfNecessary(uint32_t overclockLevel)
   */
 void SystemInit(void)
 {
+    initialiseMemorySections();
+
     SystemInitOC();
 
     SystemCoreClock = (pll_n / pll_p) * 1000000;
@@ -344,6 +347,24 @@ void SystemInit(void)
         while (1);
     }
     SCB->VTOR = vtorOffset;
+
+#ifdef USE_HAL_DRIVER
+    HAL_Init();
+#endif
+
+    /* Enable I-Cache */
+    if (INSTRUCTION_CACHE_ENABLE) {
+        SCB_EnableICache();
+    }
+
+    /* Enable D-Cache */
+    if (DATA_CACHE_ENABLE) {
+        SCB_EnableDCache();
+    }
+
+    if (PREFETCH_ENABLE) {
+        LL_FLASH_EnablePrefetch();
+    }
 
     /* Configure the system clock to specified frequency */
     SystemClock_Config();

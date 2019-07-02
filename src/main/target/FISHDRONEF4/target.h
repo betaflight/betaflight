@@ -55,7 +55,6 @@
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6500
-#define ACC_1_ALIGN             CW90_DEG
 
 // *************** UART *****************************
 #define USE_VCP

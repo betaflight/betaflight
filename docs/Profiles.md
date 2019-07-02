@@ -48,7 +48,7 @@ OSD: Access CMS (Left Yaw + Pitch up) > Select `Profiles` > Change `Rate Prof`. 
 Aux Channel (In-flight Adjustments): Adjustments need to be configured first using the GUI.  You must have an available AUX channel configured on your radio.  
 Enable Expert Mode in the Configurator > Click Adjustments
 Click the slider for If enable.  Select the AUX # channel to use.
-For the Range, Select the whole Range from 900 to 2100.  Select Rate Profile Selection from the drop-down menu.  Use Slot 1, or any Slot not used.  Via Channel is the same as the AUX channel used.  
+For the Range, Select the whole Range from 900 to 2100.  Select Rate Profile Selection from the drop-down menu.  Via Channel is the same as the AUX channel used.  
 
 CLI: the `rateprofile` command can be used to change the profile:
 ```

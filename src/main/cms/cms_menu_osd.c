@@ -43,6 +43,7 @@
 
 #include "osd/osd.h"
 #include "osd/osd_elements.h"
+#include "sensors/battery.h"
 
 #ifdef USE_EXTENDED_CMS_MENUS
 static uint16_t osdConfig_item_pos[OSD_ITEM_COUNT];
@@ -66,6 +67,9 @@ const OSD_Entry menuOsdActiveElemsEntries[] =
 {
     {"--- ACTIV ELEM ---", OME_Label,   NULL, NULL, 0},
     {"RSSI",               OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_RSSI_VALUE], DYNAMIC},
+#ifdef USE_RX_RSSI_DBM
+    {"RSSI DBM",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_RSSI_DBM_VALUE], DYNAMIC},
+#endif
     {"BATTERY VOLTAGE",    OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAIN_BATT_VOLTAGE], DYNAMIC},
     {"BATTERY USAGE",      OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAIN_BATT_USAGE], DYNAMIC},
     {"AVG CELL VOLTAGE",   OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_AVG_CELL_VOLTAGE], DYNAMIC},
@@ -113,6 +117,13 @@ const OSD_Entry menuOsdActiveElemsEntries[] =
     {"PITCH PID",          OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_PITCH_PIDS], DYNAMIC},
     {"YAW PID",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_YAW_PIDS], DYNAMIC},
     {"PROFILES",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_PIDRATE_PROFILE], DYNAMIC},
+#ifdef USE_PROFILE_NAMES
+    {"PID PROFILE NAME",   OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_PID_PROFILE_NAME], DYNAMIC},
+    {"RATE PROFILE NAME",  OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_RATE_PROFILE_NAME], DYNAMIC},
+#endif
+#ifdef USE_OSD_PROFILES
+    {"OSD PROFILE NAME",   OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_PROFILE_NAME], DYNAMIC},
+#endif
     {"DEBUG",              OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_DEBUG], DYNAMIC},
     {"WARNINGS",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_WARNINGS], DYNAMIC},
     {"DISARMED",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_DISARMED], DYNAMIC},
@@ -151,14 +162,22 @@ CMS_Menu menuOsdActiveElems = {
 };
 
 static uint8_t osdConfig_rssi_alarm;
+static uint16_t osdConfig_link_quality_alarm;
+static uint8_t osdConfig_rssi_dbm_alarm;
 static uint16_t osdConfig_cap_alarm;
 static uint16_t osdConfig_alt_alarm;
+static uint8_t batteryConfig_vbatDurationForWarning;
+static uint8_t batteryConfig_vbatDurationForCritical;
 
 static long menuAlarmsOnEnter(void)
 {
     osdConfig_rssi_alarm = osdConfig()->rssi_alarm;
+    osdConfig_link_quality_alarm = osdConfig()->link_quality_alarm;
+    osdConfig_rssi_dbm_alarm = osdConfig()->rssi_dbm_alarm;
     osdConfig_cap_alarm = osdConfig()->cap_alarm;
     osdConfig_alt_alarm = osdConfig()->alt_alarm;
+    batteryConfig_vbatDurationForWarning = batteryConfig()->vbatDurationForWarning;
+    batteryConfig_vbatDurationForCritical = batteryConfig()->vbatDurationForCritical;
 
     return 0;
 }
@@ -168,8 +187,12 @@ static long menuAlarmsOnExit(const OSD_Entry *self)
     UNUSED(self);
 
     osdConfigMutable()->rssi_alarm = osdConfig_rssi_alarm;
+    osdConfigMutable()->link_quality_alarm = osdConfig_link_quality_alarm;
+    osdConfigMutable()->rssi_dbm_alarm = osdConfig_rssi_dbm_alarm;
     osdConfigMutable()->cap_alarm = osdConfig_cap_alarm;
     osdConfigMutable()->alt_alarm = osdConfig_alt_alarm;
+    batteryConfigMutable()->vbatDurationForWarning = batteryConfig_vbatDurationForWarning;
+    batteryConfigMutable()->vbatDurationForCritical = batteryConfig_vbatDurationForCritical;
 
     return 0;
 }
@@ -178,8 +201,12 @@ const OSD_Entry menuAlarmsEntries[] =
 {
     {"--- ALARMS ---", OME_Label, NULL, NULL, 0},
     {"RSSI",     OME_UINT8,  NULL, &(OSD_UINT8_t){&osdConfig_rssi_alarm, 5, 90, 5}, 0},
+    {"LINK QUALITY", OME_UINT16,  NULL, &(OSD_UINT16_t){&osdConfig_link_quality_alarm, 5, 300, 5}, 0},
+    {"RSSI DBM", OME_UINT8,  NULL, &(OSD_UINT8_t){&osdConfig_rssi_dbm_alarm, 5, 130, 5}, 0},
     {"MAIN BAT", OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_cap_alarm, 50, 30000, 50}, 0},
     {"MAX ALT",  OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_alt_alarm, 1, 200, 1}, 0},
+    {"VBAT WARN DUR", OME_UINT8, NULL, &(OSD_UINT8_t){ &batteryConfig_vbatDurationForWarning, 0, 200, 1 }, 0 },
+    {"VBAT CRIT DUR", OME_UINT8, NULL, &(OSD_UINT8_t){ &batteryConfig_vbatDurationForCritical, 0, 200, 1 }, 0 },
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}
 };

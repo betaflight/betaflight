@@ -26,10 +26,12 @@
 
 #include "sensors/esc_sensor.h"
 
-#define OSD_NUM_TIMER_TYPES 3
+#define OSD_NUM_TIMER_TYPES 4
 extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 
 #define OSD_ELEMENT_BUFFER_LENGTH 32
+
+#define OSD_PROFILE_NAME_LENGTH 16
 
 #ifdef USE_OSD_PROFILES
 #define OSD_PROFILE_COUNT 3
@@ -126,18 +128,20 @@ typedef enum {
     OSD_STICK_OVERLAY_RIGHT,
     OSD_DISPLAY_NAME,
     OSD_ESC_RPM_FREQ,
+    OSD_RATE_PROFILE_NAME,
+    OSD_PID_PROFILE_NAME,
+    OSD_PROFILE_NAME,
+    OSD_RSSI_DBM_VALUE,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
 // *** IMPORTANT ***
-// If the stats enumeration is reordered then the PR version must be incremented. Otherwise there
-// is no indication that the stored config must be reset and the bitmapped values will be incorrect.
+// DO NOT REORDER THE STATS ENUMERATION. The order here cooresponds to the enabled flag bit position
+// storage and changing the order will corrupt user settings. Any new stats MUST be added to the end
+// just before the OSD_STAT_COUNT entry. YOU MUST ALSO add the new stat to the
+// osdStatsDisplayOrder array in osd.c.
 //
-// The stats display order was previously required to match the enumeration definition so it matched
-// the order shown in the configurator. However, to allow reordering this screen without breaking the
-// compatibility, this requirement has been relaxed to a best effort approach. Reordering the elements
-// on the stats screen will have to be more beneficial than the hassle of not matching exactly to the
-// configurator list.
+// IF YOU WANT TO REORDER THE STATS DISPLAY, then adjust the ordering of the osdStatsDisplayOrder array
 typedef enum {
     OSD_STAT_RTC_DATE_TIME,
     OSD_STAT_TIMER_1,
@@ -159,6 +163,10 @@ typedef enum {
     OSD_STAT_MIN_LINK_QUALITY,
     OSD_STAT_FLIGHT_DISTANCE,
     OSD_STAT_MAX_FFT,
+    OSD_STAT_TOTAL_FLIGHTS,
+    OSD_STAT_TOTAL_TIME,
+    OSD_STAT_TOTAL_DIST,
+    OSD_STAT_MIN_RSSI_DBM,
     OSD_STAT_COUNT // MUST BE LAST
 } osd_stats_e;
 
@@ -180,12 +188,14 @@ typedef enum {
     OSD_TIMER_SRC_ON,
     OSD_TIMER_SRC_TOTAL_ARMED,
     OSD_TIMER_SRC_LAST_ARMED,
+    OSD_TIMER_SRC_ON_OR_ARMED,
     OSD_TIMER_SRC_COUNT
 } osd_timer_source_e;
 
 typedef enum {
     OSD_TIMER_PREC_SECOND,
     OSD_TIMER_PREC_HUNDREDTHS,
+    OSD_TIMER_PREC_TENTHS,
     OSD_TIMER_PREC_COUNT
 } osd_timer_precision_e;
 
@@ -203,6 +213,9 @@ typedef enum {
     OSD_WARNING_LAUNCH_CONTROL,
     OSD_WARNING_GPS_RESCUE_UNAVAILABLE,
     OSD_WARNING_GPS_RESCUE_DISABLED,
+    OSD_WARNING_RSSI,
+    OSD_WARNING_LINK_QUALITY,
+    OSD_WARNING_RSSI_DBM,
     OSD_WARNING_COUNT // MUST BE LAST
 } osdWarningsFlags_e;
 
@@ -214,6 +227,9 @@ STATIC_ASSERT(OSD_WARNING_COUNT <= 32, osdwarnings_overflow);
 #define ESC_CURRENT_ALARM_OFF -1
 
 #define OSD_GPS_RESCUE_DISABLED_WARNING_DURATION_US 3000000 // 3 seconds
+
+extern const uint16_t osdTimerDefault[OSD_TIMER_COUNT];
+extern const osd_stats_e osdStatsDisplayOrder[OSD_STAT_COUNT];
 
 typedef struct osdConfig_s {
     uint16_t item_pos[OSD_ITEM_COUNT];
@@ -238,6 +254,9 @@ typedef struct osdConfig_s {
     uint8_t ahInvert;         // invert the artificial horizon
     uint8_t osdProfileIndex;
     uint8_t overlay_radio_mode;
+    char profile[OSD_PROFILE_COUNT][OSD_PROFILE_NAME_LENGTH + 1];
+    uint16_t link_quality_alarm;
+    uint8_t rssi_dbm_alarm;
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);
@@ -246,6 +265,7 @@ typedef struct statistic_s {
     timeUs_t armed_time;
     int16_t max_speed;
     int16_t min_voltage; // /100
+    uint16_t end_voltage;
     int16_t max_current; // /10
     uint8_t min_rssi;
     int32_t max_altitude;
@@ -253,7 +273,8 @@ typedef struct statistic_s {
     float max_g_force;
     int16_t max_esc_temp;
     int32_t max_esc_rpm;
-    uint8_t min_link_quality;
+    uint16_t min_link_quality;
+    uint8_t min_rssi_dbm;
 } statistic_t;
 
 extern timeUs_t resumeRefreshAt;

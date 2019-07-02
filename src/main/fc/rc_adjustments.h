@@ -21,8 +21,10 @@
 #pragma once
 
 #include <stdbool.h>
-#include "pg/pg.h"
+
 #include "fc/rc_modes.h"
+
+#include "pg/pg.h"
 
 typedef enum {
     ADJUSTMENT_NONE = 0,
@@ -90,27 +92,23 @@ typedef struct adjustmentRange_s {
     uint8_t adjustmentConfig;
     uint8_t auxSwitchChannelIndex;
 
-    // ... via slot
-    uint8_t adjustmentIndex;
     uint16_t adjustmentCenter;
     uint16_t adjustmentScale;
 } adjustmentRange_t;
 
 PG_DECLARE_ARRAY(adjustmentRange_t, MAX_ADJUSTMENT_RANGE_COUNT, adjustmentRanges);
 
-#define ADJUSTMENT_INDEX_OFFSET 1
-
-typedef struct adjustmentState_s {
-    uint8_t auxChannelIndex;
-    const adjustmentConfig_t *config;
+typedef struct timedAdjustmentState_s {
     uint32_t timeoutAt;
-} adjustmentState_t;
+    uint8_t adjustmentRangeIndex;
+    bool ready;
+} timedAdjustmentState_t;
 
-#ifndef MAX_SIMULTANEOUS_ADJUSTMENT_COUNT
-#define MAX_SIMULTANEOUS_ADJUSTMENT_COUNT 4 // enough for 4 x 3position switches / 4 aux channel
-#endif
+typedef struct continuosAdjustmentState_s {
+    uint8_t adjustmentRangeIndex;
+    int16_t lastRcData;
+} continuosAdjustmentState_t;
 
-void resetAdjustmentStates(void);
 struct controlRateConfig_s;
 void processRcAdjustments(struct controlRateConfig_s *controlRateConfig);
 const char *getAdjustmentsRangeName(void);

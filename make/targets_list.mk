@@ -23,7 +23,6 @@ ALT_TARGETS       = $(sort $(notdir $(BASE_ALT_PAIRS)))
 BASE_TARGETS      = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(ROOT)/src/main/target/*/target.mk)))))
 NOBUILD_TARGETS   = $(sort $(filter-out target,$(basename $(notdir $(wildcard $(ROOT)/src/main/target/*/*.nomk)))))
 OPBL_TARGETS      = $(sort $(filter %_OPBL,$(ALT_TARGETS)))
-
 VALID_TARGETS     = $(sort $(filter-out $(NOBUILD_TARGETS),$(BASE_TARGETS) $(ALT_TARGETS)))
 
 # For alt targets, returns their base target name.
@@ -40,7 +39,59 @@ UNSUPPORTED_TARGETS := \
     CC3D_OPBL \
     CJMCU \
     MICROSCISKY \
-    NAZE
+    NAZE \
+    AIORACERF3 \
+    AIR32 \
+    AIRHEROF3 \
+    ALIENFLIGHTF3 \
+    BEEBRAIN_V2D \
+    BEEBRAIN_V2F \
+    BEESTORM \
+    BETAFLIGHTF3 \
+    CHEBUZZF3 \
+    COLIBRI_RACE \
+    CRAZYBEEF3DX \
+    CRAZYBEEF3FR \
+    CRAZYBEEF3FS \
+    DOGE EACHIF3 \
+    FF_ACROWHOOPSP \
+    FF_KOMBINI \
+    FF_PIKOBLX \
+    FF_RADIANCE \
+    FLIP32F3OSD \
+    FRSKYF3 \
+    FURYF3 \
+    FURYF3OSD \
+    IMPULSERCF3 \
+    IRCFUSIONF3 \
+    IRCSYNERGYF3 \
+    ISHAPEDF3 \
+    KISSCC \
+    KISSFC \
+    LUMBAF3 \
+    LUXV2_RACE \
+    LUX_RACE \
+    MIDELICF3 \
+    MOTOLAB \
+    MULTIFLITEPICO \
+    OMNIBUS \
+    RACEBASE \
+    RCEXPLORERF3 \
+    RG_SSD_F3 \
+    RMDO \
+    SINGULARITY \
+    SIRINFPV \
+    SPARKY \
+    SPRACINGF3 \
+    SPRACINGF3EVO \
+    SPRACINGF3MINI \
+    SPRACINGF3MQ \
+    SPRACINGF3NEO \
+    STM32F3DISCOVERY \
+    TINYBEEF3 \
+    TINYFISH \
+    X_RACERSPI \
+    ZCOREF3
 
 SUPPORTED_TARGETS := $(filter-out $(UNSUPPORTED_TARGETS), $(VALID_TARGETS))
 

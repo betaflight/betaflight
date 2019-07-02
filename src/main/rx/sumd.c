@@ -112,8 +112,6 @@ static uint8_t sumdFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
 {
     UNUSED(rxRuntimeConfig);
 
-    uint8_t channelIndex;
-
     uint8_t frameStatus = RX_FRAME_PENDING;
 
     if (!sumdFrameDone) {
@@ -139,10 +137,9 @@ static uint8_t sumdFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
             return frameStatus;
     }
 
-    if (sumdChannelCount > MAX_SUPPORTED_RC_CHANNEL_COUNT)
-        sumdChannelCount = MAX_SUPPORTED_RC_CHANNEL_COUNT;
+    unsigned channelsToProcess = MIN(sumdChannelCount, MAX_SUPPORTED_RC_CHANNEL_COUNT);
 
-    for (channelIndex = 0; channelIndex < sumdChannelCount; channelIndex++) {
+    for (unsigned channelIndex = 0; channelIndex < channelsToProcess; channelIndex++) {
         sumdChannels[channelIndex] = (
             (sumd[SUMD_BYTES_PER_CHANNEL * channelIndex + SUMD_OFFSET_CHANNEL_1_HIGH] << 8) |
             sumd[SUMD_BYTES_PER_CHANNEL * channelIndex + SUMD_OFFSET_CHANNEL_1_LOW]

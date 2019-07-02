@@ -47,7 +47,6 @@
 
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
-#define ACC_1_ALIGN             CW180_DEG
 
 // MPU6000 interrupts
 #define USE_EXTI
@@ -66,8 +65,6 @@
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI3
 #define MAX7456_SPI_CS_PIN      SPI3_NSS_PIN
-#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
-#define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
 #define USE_VCP
 //#define USB_DETECT_PIN          PC15

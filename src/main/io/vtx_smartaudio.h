@@ -25,16 +25,17 @@
 
 #include "platform.h"
 
-#define VTX_SMARTAUDIO_MIN_BAND 1
-#define VTX_SMARTAUDIO_MAX_BAND 5
-#define VTX_SMARTAUDIO_MIN_CHANNEL 1
-#define VTX_SMARTAUDIO_MAX_CHANNEL 8
+#ifdef USE_SMARTAUDIO_DPRINTF
+#include "io/serial.h"
+#include "common/printf.h"
+#include "common/printf_serial.h"
+#endif
 
-#define VTX_SMARTAUDIO_BAND_COUNT (VTX_SMARTAUDIO_MAX_BAND - VTX_SMARTAUDIO_MIN_BAND + 1)
-#define VTX_SMARTAUDIO_CHANNEL_COUNT (VTX_SMARTAUDIO_MAX_CHANNEL - VTX_SMARTAUDIO_MIN_CHANNEL + 1)
+#define VTX_SMARTAUDIO_MIN_BAND 1
+#define VTX_SMARTAUDIO_MIN_CHANNEL 1
+
 
 #define VTX_SMARTAUDIO_POWER_COUNT 4
-#define VTX_SMARTAUDIO_DEFAULT_POWER 1
 
 #define VTX_SMARTAUDIO_MIN_FREQUENCY_MHZ 5000        //min freq in MHz
 #define VTX_SMARTAUDIO_MAX_FREQUENCY_MHZ 5999        //max freq in MHz
@@ -69,13 +70,8 @@ typedef struct smartAudioDevice_s {
     int8_t mode;
     uint16_t freq;
     uint16_t orfreq;
+    bool willBootIntoPitMode;
 } smartAudioDevice_t;
-
-typedef struct saPowerTable_s {
-    int rfpower;
-    int16_t valueV1;
-    int16_t valueV2;
-} saPowerTable_t;
 
 typedef struct smartAudioStat_s {
     uint16_t pktsent;
@@ -93,17 +89,15 @@ extern smartAudioStat_t saStat;
 extern uint16_t sa_smartbaud;
 extern bool saDeferred;
 
-int saDacToPowerIndex(int dac);
-void saSetBandAndChannel(uint8_t band, uint8_t channel);
 void saSetMode(int mode);
-void saSetPowerByIndex(uint8_t index);
 void saSetFreq(uint16_t freq);
 void saSetPitFreq(uint16_t freq);
 bool vtxSmartAudioInit(void);
 
 #ifdef USE_SMARTAUDIO_DPRINTF
+#define DPRINTF_SERIAL_PORT SERIAL_PORT_USART3
 extern serialPort_t *debugSerialPort;
-#define dprintf(x) if (debugSerialPort) printf x
+#define dprintf(x) if (debugSerialPort) tfp_printf x
 #else
 #define dprintf(x)
 #endif // USE_SMARTAUDIO_DPRINTF

@@ -21,6 +21,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <ctype.h>
+#include <drivers/vtx_table.h>
 
 #include "platform.h"
 
@@ -36,7 +37,6 @@
 
 #include "fc/config.h"
 
-#include "io/vtx_string.h"
 #include "io/vtx_rtc6705.h"
 #include "io/vtx.h"
 
@@ -45,23 +45,22 @@ static uint8_t cmsx_vtxChannel;
 static uint8_t cmsx_vtxPower;
 
 static OSD_TAB_t entryVtxBand;
-static OSD_UINT8_t entryVtxChannel;
+static OSD_TAB_t entryVtxChannel;
 static OSD_TAB_t entryVtxPower;
 
 static void cmsx_Vtx_ConfigRead(void)
 {
-    cmsx_vtxBand = vtxSettingsConfig()->band - 1;
-    cmsx_vtxChannel = vtxSettingsConfig()->channel;
-    cmsx_vtxPower = vtxSettingsConfig()->power - VTX_RTC6705_MIN_POWER;
+    vtxCommonGetBandAndChannel(vtxCommonDevice(), &cmsx_vtxBand, &cmsx_vtxChannel);
+    vtxCommonGetPowerIndex(vtxCommonDevice(), &cmsx_vtxPower);
 }
 
 static void cmsx_Vtx_ConfigWriteback(void)
 {
     // update vtx_ settings
-    vtxSettingsConfigMutable()->band = cmsx_vtxBand + 1;
+    vtxSettingsConfigMutable()->band = cmsx_vtxBand;
     vtxSettingsConfigMutable()->channel = cmsx_vtxChannel;
-    vtxSettingsConfigMutable()->power = cmsx_vtxPower + VTX_RTC6705_MIN_POWER;
-    vtxSettingsConfigMutable()->freq = vtxCommonLookupFrequency(vtxCommonDevice(), cmsx_vtxBand + 1, cmsx_vtxChannel);
+    vtxSettingsConfigMutable()->power = cmsx_vtxPower;
+    vtxSettingsConfigMutable()->freq = vtxCommonLookupFrequency(vtxCommonDevice(), cmsx_vtxBand, cmsx_vtxChannel);
 
     saveConfigAndNotify();
 }
@@ -70,20 +69,17 @@ static long cmsx_Vtx_onEnter(void)
 {
     cmsx_Vtx_ConfigRead();
 
-    vtxDevice_t *device = vtxCommonDevice();
-
     entryVtxBand.val = &cmsx_vtxBand;
-    entryVtxBand.max = device->capability.bandCount - 1;
-    entryVtxBand.names = &device->bandNames[1];
+    entryVtxBand.max = vtxTableBandCount;
+    entryVtxBand.names = vtxTableBandNames;
 
     entryVtxChannel.val = &cmsx_vtxChannel;
-    entryVtxChannel.min = 1;
-    entryVtxChannel.max = device->capability.channelCount;
-    entryVtxChannel.step = 1;
+    entryVtxChannel.max = vtxTableChannelCount;
+    entryVtxChannel.names = vtxTableChannelNames;
 
     entryVtxPower.val = &cmsx_vtxPower;
-    entryVtxPower.max = device->capability.powerCount - 1;
-    entryVtxPower.names = device->powerNames;
+    entryVtxPower.max = vtxTablePowerLevels;
+    entryVtxPower.names = vtxTablePowerLabels;
 
     return 0;
 }
@@ -97,13 +93,41 @@ static long cmsx_Vtx_onExit(const OSD_Entry *self)
     return 0;
 }
 
-
-static const OSD_Entry cmsx_menuVtxEntries[] =
+static long cmsx_Vtx_onBandChange(displayPort_t *pDisp, const void *self)
 {
+    UNUSED(pDisp);
+    UNUSED(self);
+    if (cmsx_vtxBand == 0) {
+        cmsx_vtxBand = 1;
+    }
+    return 0;
+}
+
+static long cmsx_Vtx_onChanChange(displayPort_t *pDisp, const void *self)
+{
+    UNUSED(pDisp);
+    UNUSED(self);
+    if (cmsx_vtxChannel == 0) {
+        cmsx_vtxChannel = 1;
+    }
+    return 0;
+}
+
+static long cmsx_Vtx_onPowerChange(displayPort_t *pDisp, const void *self)
+{
+    UNUSED(pDisp);
+    UNUSED(self);
+    if (cmsx_vtxPower == 0) {
+        cmsx_vtxPower = 1;
+    }
+    return 0;
+}
+
+static const OSD_Entry cmsx_menuVtxEntries[] = {
     {"--- VTX ---", OME_Label, NULL, NULL, 0},
-    {"BAND", OME_TAB, NULL, &entryVtxBand, 0},
-    {"CHANNEL", OME_UINT8, NULL, &entryVtxChannel, 0},
-    {"POWER", OME_TAB, NULL, &entryVtxPower, 0},
+    {"BAND", OME_TAB, cmsx_Vtx_onBandChange, &entryVtxBand, 0},
+    {"CHANNEL", OME_TAB, cmsx_Vtx_onChanChange, &entryVtxChannel, 0},
+    {"POWER", OME_TAB, cmsx_Vtx_onPowerChange, &entryVtxPower, 0},
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}
 };
@@ -114,7 +138,7 @@ CMS_Menu cmsx_menuVtxRTC6705 = {
     .GUARD_type = OME_MENU,
 #endif
     .onEnter = cmsx_Vtx_onEnter,
-    .onExit= cmsx_Vtx_onExit,
+    .onExit = cmsx_Vtx_onExit,
     .entries = cmsx_menuVtxEntries
 };
 

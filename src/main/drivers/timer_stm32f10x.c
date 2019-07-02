@@ -20,6 +20,8 @@
 
 #include "platform.h"
 
+#ifdef USE_TIMER
+
 #include "common/utils.h"
 
 #include "stm32f10x.h"
@@ -52,3 +54,4 @@ uint32_t timerClock(TIM_TypeDef *tim)
     UNUSED(tim);
     return SystemCoreClock;
 }
+#endif

@@ -50,7 +50,17 @@
 #define __USBD_CONF_H
 
 /* Includes ------------------------------------------------------------------*/
+#include "platform.h"      // Required for inclusion of stm32Yxx_hal.h below within USB device library code
+#include "common/maths.h"  // Required for MIN & MAX within USB device library code
+
+#if defined(STM32F7)
 #include "stm32f7xx_hal.h"
+#elif defined(STM32H7)
+#include "stm32h7xx_hal.h"
+#else
+#error Unknown MCU
+#endif
+
 #if (USBD_DEBUG_LEVEL > 0)
 #include <stdio.h>
 #endif
@@ -66,7 +76,7 @@
 #define USBD_SUPPORT_USER_STRING              0
 #define USBD_SELF_POWERED                     1
 #define USBD_DEBUG_LEVEL                      0
-#define MSC_MEDIA_PACKET                      512
+#define MSC_MEDIA_PACKET                      512U
 #define USE_USB_FS
 
 /* Exported macro ------------------------------------------------------------*/

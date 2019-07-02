@@ -20,6 +20,10 @@
 
 // pg/max7456
 
+#ifndef DEBUG_MODE
+#define DEBUG_MODE DEBUG_NONE
+#endif
+
 #ifdef USE_MAX7456
 #ifndef MAX7456_CLOCK_CONFIG_DEFAULT
 #define MAX7456_CLOCK_CONFIG_DEFAULT    MAX7456_CLOCK_CONFIG_OC
@@ -236,6 +240,25 @@
 #define SPI3_MISO_PIN   PB4
 #define SPI3_MOSI_PIN   PB5
 #endif
+
+#ifndef SPI4_SCK_PIN
+#define SPI4_SCK_PIN    NONE
+#define SPI4_MISO_PIN   NONE
+#define SPI4_MOSI_PIN   NONE
+#endif
+
+#ifndef SPI5_SCK_PIN
+#define SPI5_SCK_PIN    NONE
+#define SPI5_MISO_PIN   NONE
+#define SPI5_MOSI_PIN   NONE
+#endif
+
+#ifndef SPI6_SCK_PIN
+#define SPI6_SCK_PIN    NONE
+#define SPI6_MISO_PIN   NONE
+#define SPI6_MOSI_PIN   NONE
+#endif
+
 #endif
 
 // Extracted from rx/rx.c and rx/rx.h
@@ -293,14 +316,6 @@
 #endif
 #endif
 
-// F4 and F7 single gyro boards
-#if defined(USE_MULTI_GYRO) && !defined(GYRO_2_SPI_INSTANCE)
-#define GYRO_2_SPI_INSTANCE     GYRO_1_SPI_INSTANCE
-#define GYRO_2_CS_PIN           NONE
-#define GYRO_2_ALIGN            ALIGN_DEFAULT
-#define GYRO_2_EXTI_PIN         NONE
-#endif
-
 #if !defined(GYRO_1_SPI_INSTANCE)
 #define GYRO_1_SPI_INSTANCE     NULL
 #endif
@@ -315,6 +330,14 @@
 
 #if !defined(GYRO_1_ALIGN)
 #define GYRO_1_ALIGN            ALIGN_DEFAULT
+#endif
+
+// F4 and F7 single gyro boards
+#if defined(USE_MULTI_GYRO) && !defined(GYRO_2_SPI_INSTANCE)
+#define GYRO_2_SPI_INSTANCE     GYRO_1_SPI_INSTANCE
+#define GYRO_2_CS_PIN           NONE
+#define GYRO_2_ALIGN            ALIGN_DEFAULT
+#define GYRO_2_EXTI_PIN         NONE
 #endif
 
 #if defined(MPU_ADDRESS)
@@ -423,6 +446,9 @@
 #endif
 #ifndef BARO_I2C_INSTANCE
 #define BARO_I2C_INSTANCE       I2C_DEVICE
+#endif
+#ifndef BARO_XCLR_PIN
+#define BARO_XCLR_PIN           NONE
 #endif
 #endif
 
@@ -551,4 +577,34 @@
 #ifndef UART8_RX_DMA_OPT
 #define UART8_RX_DMA_OPT (-1)
 #endif
+#endif
+
+#ifndef RTC6705_CS_PIN
+#define RTC6705_CS_PIN NONE
+#endif
+
+#ifndef RTC6705_POWER_PIN
+#define RTC6705_POWER_PIN NONE
+#endif
+
+#ifndef RTC6705_SPICLK_PIN
+#define RTC6705_SPICLK_PIN NONE
+#endif
+
+#ifndef RTC6705_SPI_MOSI_PIN
+#define RTC6705_SPI_MOSI_PIN NONE
+#endif
+
+#ifndef RTC6705_SPI_INSTANCE
+#define RTC6705_SPI_INSTANCE NULL
+#endif
+
+#if defined(USE_QUAD_MIXER_ONLY)
+#define MAX_SUPPORTED_MOTORS 4
+#define MAX_SUPPORTED_SERVOS 1
+#else
+#ifndef MAX_SUPPORTED_MOTORS
+#define MAX_SUPPORTED_MOTORS 8
+#endif
+#define MAX_SUPPORTED_SERVOS 8
 #endif

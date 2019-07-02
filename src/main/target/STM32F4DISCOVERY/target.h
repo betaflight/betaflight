@@ -23,7 +23,6 @@
 #define TARGET_BOARD_IDENTIFIER "SDF4"
 #define USBD_PRODUCT_STRING     "STM32F4DISCOVERY"
 
-#define USE_VTX_TABLE
 #define USE_SPI_TRANSACTION
 
 //LEDs
@@ -47,7 +46,6 @@
 #define USE_ACC
 #define USE_FAKE_ACC
 #define USE_ACC_SPI_MPU6500
-#define ACC_1_ALIGN             CW180_DEG_FLIP
 // ACC section -- end
 
 // GYRO section -- start

@@ -46,7 +46,7 @@
 typedef enum ADCDevice {
     ADCINVALID = -1,
     ADCDEV_1   = 0,
-#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
+#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
     ADCDEV_2,
     ADCDEV_3,
 #endif
@@ -64,12 +64,21 @@ typedef enum {
     ADC_CURRENT = 1,
     ADC_EXTERNAL1 = 2,
     ADC_RSSI = 3,
+#ifdef STM32H7
+    // On STM32H7, internal sensors are treated in the similar fashion as regular ADC inputs
+    ADC_CHANNEL_INTERNAL = 4,
+    ADC_TEMPSENSOR = 4,
+    ADC_VREFINT = 5,
+#endif
     ADC_CHANNEL_COUNT
 } AdcChannel;
 
 typedef struct adcOperatingConfig_s {
     ioTag_t tag;
-    uint8_t adcChannel;         // ADC1_INxx channel number
+#ifdef STM32H7
+    ADCDevice adcDevice;        // ADCDEV_x for this input
+#endif
+    uint8_t adcChannel;         // ADCy_INxx channel number for this input
     uint8_t dmaIndex;           // index into DMA buffer in case of sparse channels
     bool enabled;
     uint8_t sampleTime;

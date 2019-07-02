@@ -83,21 +83,17 @@ USBCDC_SRC := $(filter-out ${EXCLUDES}, $(USBCDC_SRC))
 USBHID_DIR = $(ROOT)/lib/main/STM32F7/Middlewares/ST/STM32_USB_Device_Library/Class/HID
 USBHID_SRC = $(notdir $(wildcard $(USBHID_DIR)/Src/*.c))
 
-USBHIDCDC_DIR = $(ROOT)/lib/main/STM32F7/Middlewares/ST/STM32_USB_Device_Library/Class/CDC_HID
-USBHIDCDC_SRC = $(notdir $(wildcard $(USBHIDCDC_DIR)/Src/*.c))
-
 USBMSC_DIR = $(ROOT)/lib/main/STM32F7/Middlewares/ST/STM32_USB_Device_Library/Class/MSC
 USBMSC_SRC = $(notdir $(wildcard $(USBMSC_DIR)/Src/*.c))
 EXCLUDES   = usbd_msc_storage_template.c
 USBMSC_SRC := $(filter-out ${EXCLUDES}, $(USBMSC_SRC))
 
-VPATH := $(VPATH):$(USBCDC_DIR)/Src:$(USBCORE_DIR)/Src:$(USBHID_DIR)/Src:$(USBHIDCDC_DIR)/Src:$(USBMSC_DIR)/Src
+VPATH := $(VPATH):$(USBCDC_DIR)/Src:$(USBCORE_DIR)/Src:$(USBHID_DIR)/Src:$(USBMSC_DIR)/Src
 
 DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC) \
                         $(USBCORE_SRC) \
                         $(USBCDC_SRC) \
                         $(USBHID_SRC) \
-                        $(USBHIDCDC_SRC) \
                         $(USBMSC_SRC)
 
 #CMSIS
@@ -109,7 +105,6 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(USBCORE_DIR)/Inc \
                    $(USBCDC_DIR)/Inc \
                    $(USBHID_DIR)/Inc \
-                   $(USBHIDCDC_DIR)/Inc \
                    $(USBMSC_DIR)/Inc \
                    $(CMSIS_DIR)/Core/Include \
                    $(ROOT)/lib/main/STM32F7/Drivers/CMSIS/Device/ST/STM32F7xx/Include \
@@ -162,7 +157,8 @@ TARGET_FLAGS    = -D$(TARGET)
 
 VCP_SRC = \
             vcp_hal/usbd_desc.c \
-            vcp_hal/usbd_conf.c \
+            vcp_hal/usbd_conf_stm32f7xx.c \
+            vcp_hal/usbd_cdc_hid.c \
             vcp_hal/usbd_cdc_interface.c \
             drivers/serial_usb_vcp.c \
             drivers/usb_io.c

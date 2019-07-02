@@ -31,6 +31,7 @@
 
 #include "common/maths.h"
 #include "common/utils.h"
+#include "common/filter.h"
 
 #include "config/config_reset.h"
 #include "config/feature.h"
@@ -71,9 +72,13 @@
 const char rcChannelLetters[] = "AERT12345678abcdefgh";
 
 static uint16_t rssi = 0;                  // range: [0;1023]
+static uint8_t rssi_dbm = 130;             // range: [0;130] display 0 to -130
 static timeUs_t lastMspRssiUpdateUs = 0;
+
+static pt1Filter_t frameErrFilter;
+
 #ifdef USE_RX_LINK_QUALITY_INFO
-static uint8_t linkQuality = 0;
+static uint16_t linkQuality = 0;
 #endif
 
 #define MSP_RSSI_TIMEOUT_US 1500000   // 1.5 sec
@@ -82,6 +87,7 @@ static uint8_t linkQuality = 0;
 #define RSSI_OFFSET_SCALING (1024 / 100.0f)
 
 rssiSource_e rssiSource;
+linkQualitySource_e linkQualitySource;
 
 static bool rxDataProcessingRequired = false;
 static bool auxiliaryProcessingRequired = false;
@@ -186,6 +192,7 @@ bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
 #endif
 #ifdef USE_SERIALRX_SBUS
     case SERIALRX_SBUS:
+    case SERIALRX_DJI_HDL_7MS:
         enabled = sbusInit(rxConfig, rxRuntimeConfig);
         break;
 #endif
@@ -312,6 +319,9 @@ void rxInit(void)
         rssiSource = RSSI_SOURCE_RX_CHANNEL;
     }
 
+    // Setup source frame RSSI filtering to take averaged values every FRAME_ERR_RESAMPLE_US
+    pt1FilterInit(&frameErrFilter, pt1FilterGain(GET_FRAME_ERR_LPF_FREQUENCY(rxConfig()->rssi_src_frame_lpf_period), FRAME_ERR_RESAMPLE_US/1000000.0));
+
     rxChannelCount = MIN(rxConfig()->max_aux_channel + NON_AUX_CHANNEL_COUNT, rxRuntimeConfig.channelCount);
 }
 
@@ -350,11 +360,11 @@ void resumeRxPwmPpmSignal(void)
 #ifdef USE_RX_LINK_QUALITY_INFO
 #define LINK_QUALITY_SAMPLE_COUNT 16
 
-static uint8_t updateLinkQualitySamples(uint8_t value)
+STATIC_UNIT_TESTED uint16_t updateLinkQualitySamples(uint16_t value)
 {
-    static uint8_t samples[LINK_QUALITY_SAMPLE_COUNT];
+    static uint16_t samples[LINK_QUALITY_SAMPLE_COUNT];
     static uint8_t sampleIndex = 0;
-    static unsigned sum = 0;
+    static uint16_t sum = 0;
 
     sum += value - samples[sampleIndex];
     samples[sampleIndex] = value;
@@ -363,22 +373,44 @@ static uint8_t updateLinkQualitySamples(uint8_t value)
 }
 #endif
 
-static void setLinkQuality(bool validFrame)
+static void setLinkQuality(bool validFrame, timeDelta_t currentDeltaTime)
 {
 #ifdef USE_RX_LINK_QUALITY_INFO
-    // calculate new sample mean
-    linkQuality = updateLinkQualitySamples(validFrame ? LINK_QUALITY_MAX_VALUE : 0);
+    if (linkQualitySource != LQ_SOURCE_RX_PROTOCOL_CRSF) {
+        // calculate new sample mean
+        linkQuality = updateLinkQualitySamples(validFrame ? LINK_QUALITY_MAX_VALUE : 0);
+    }
 #endif
 
     if (rssiSource == RSSI_SOURCE_FRAME_ERRORS) {
-        setRssi(validFrame ? RSSI_MAX_VALUE : 0, RSSI_SOURCE_FRAME_ERRORS);
+        static uint16_t tot_rssi = 0;
+        static uint16_t cnt_rssi = 0;
+        static timeDelta_t resample_time = 0;
+
+        resample_time += currentDeltaTime;
+        tot_rssi += validFrame ? RSSI_MAX_VALUE : 0;
+        cnt_rssi++;
+
+        if (resample_time >= FRAME_ERR_RESAMPLE_US) {
+            setRssi(tot_rssi / cnt_rssi, rssiSource);
+            tot_rssi = 0;
+            cnt_rssi = 0;
+            resample_time -= FRAME_ERR_RESAMPLE_US;
+        }
     }
+}
+
+void setLinkQualityDirect(uint16_t linkqualityValue)
+{
+#ifdef USE_RX_LINK_QUALITY_INFO
+    linkQuality = linkqualityValue;
+#else
+    UNUSED(linkqualityValue);
+#endif
 }
 
 bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
 {
-    UNUSED(currentDeltaTime);
-
     bool signalReceived = false;
     bool useDataDrivenProcessing = true;
 
@@ -409,7 +441,7 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
                 needRxSignalBefore = currentTimeUs + needRxSignalMaxDelayUs;
             }
 
-            setLinkQuality(signalReceived);
+            setLinkQuality(signalReceived, currentDeltaTime);
         }
 
         if (frameStatus & RX_FRAME_PROCESSING_REQUIRED) {
@@ -477,7 +509,7 @@ static uint16_t getRxfailValue(uint8_t channel)
             }
         }
 
-	FALLTHROUGH;
+    FALLTHROUGH;
     default:
     case RX_FAILSAFE_MODE_INVALID:
     case RX_FAILSAFE_MODE_HOLD:
@@ -638,8 +670,13 @@ void setRssi(uint16_t rssiValue, rssiSource_e source)
         return;
     }
 
-    // calculate new sample mean
-    rssi = updateRssiSamples(rssiValue);
+    // Filter RSSI value
+    if (source == RSSI_SOURCE_FRAME_ERRORS) {
+        rssi = pt1FilterApply(&frameErrFilter, rssiValue);
+    } else {
+        // calculate new sample mean
+        rssi = updateRssiSamples(rssiValue);
+    }
 }
 
 void setRssiMsp(uint8_t newMspRssi)
@@ -721,15 +758,52 @@ uint8_t getRssiPercent(void)
     return scaleRange(getRssi(), 0, RSSI_MAX_VALUE, 0, 100);
 }
 
+uint8_t getRssiDbm(void)
+{
+    return rssi_dbm;
+}
+
+#define RSSI_SAMPLE_COUNT_DBM 16
+
+static uint8_t updateRssiDbmSamples(uint8_t value)
+{
+    static uint16_t samplesdbm[RSSI_SAMPLE_COUNT_DBM];
+    static uint8_t sampledbmIndex = 0;
+    static unsigned sumdbm = 0;
+
+    sumdbm += value - samplesdbm[sampledbmIndex];
+    samplesdbm[sampledbmIndex] = value;
+    sampledbmIndex = (sampledbmIndex + 1) % RSSI_SAMPLE_COUNT_DBM;
+    return sumdbm / RSSI_SAMPLE_COUNT_DBM;
+}
+
+void setRssiDbm(uint8_t rssiDbmValue, rssiSource_e source)
+{
+    if (source != rssiSource) {
+        return;
+    }
+
+    rssi_dbm = updateRssiDbmSamples(rssiDbmValue);
+}
+
+void setRssiDbmDirect(uint8_t newRssiDbm, rssiSource_e source)
+{
+    if (source != rssiSource) {
+        return;
+    }
+
+    rssi_dbm = newRssiDbm;
+}
+
 #ifdef USE_RX_LINK_QUALITY_INFO
-uint8_t rxGetLinkQuality(void)
+uint16_t rxGetLinkQuality(void)
 {
     return linkQuality;
 }
 
-uint8_t rxGetLinkQualityPercent(void)
+uint16_t rxGetLinkQualityPercent(void)
 {
-    return scaleRange(rxGetLinkQuality(), 0, LINK_QUALITY_MAX_VALUE, 0, 100);
+    return (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) ?  (linkQuality / 3.41) : scaleRange(linkQuality, 0, LINK_QUALITY_MAX_VALUE, 0, 100);
 }
 #endif
 

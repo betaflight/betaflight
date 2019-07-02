@@ -34,10 +34,10 @@
 #include "fc/rc_controls.h"
 
 #include "flight/failsafe.h"
-#include "flight/mixer.h"
 #include "flight/pid.h"
 
 #include "pg/rx.h"
+#include "pg/motor.h"
 
 #include "rx/rx.h"
 

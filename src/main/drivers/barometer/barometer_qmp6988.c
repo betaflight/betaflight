@@ -92,12 +92,12 @@ STATIC_UNIT_TESTED qmp6988_calib_param_t qmp6988_cal;
 int32_t qmp6988_up = 0;
 int32_t qmp6988_ut = 0;
 
-static void qmp6988_start_ut(baroDev_t *baro);
-static void qmp6988_get_ut(baroDev_t *baro);
-static void qmp6988_start_up(baroDev_t *baro);
-static void qmp6988_get_up(baroDev_t *baro);
+static void qmp6988StartUT(baroDev_t *baro);
+static void qmp6988GetUT(baroDev_t *baro);
+static void qmp6988StartUP(baroDev_t *baro);
+static void qmp6988GetUP(baroDev_t *baro);
 
-STATIC_UNIT_TESTED void qmp6988_calculate(int32_t *pressure, int32_t *temperature);
+STATIC_UNIT_TESTED void qmp6988Calculate(int32_t *pressure, int32_t *temperature);
 
 void qmp6988BusInit(busDevice_t *busdev)
 {
@@ -261,36 +261,36 @@ bool qmp6988Detect(baroDev_t *baro)
 
     // these are dummy as temperature is measured as part of pressure
     baro->ut_delay = 0;
-    baro->get_ut = qmp6988_get_ut;
-    baro->start_ut = qmp6988_start_ut;
+    baro->get_ut = qmp6988GetUT;
+    baro->start_ut = qmp6988StartUT;
     // only _up part is executed, and gets both temperature and pressure
-    baro->start_up = qmp6988_start_up;
-    baro->get_up = qmp6988_get_up;
+    baro->start_up = qmp6988StartUP;
+    baro->get_up = qmp6988GetUP;
     baro->up_delay = ((T_INIT_MAX + T_MEASURE_PER_OSRS_MAX * (((1 << QMP6988_TEMPERATURE_OSR) >> 1) + ((1 << QMP6988_PRESSURE_OSR) >> 1)) + (QMP6988_PRESSURE_OSR ? T_SETUP_PRESSURE_MAX : 0) + 15) / 16) * 1000;
-    baro->calculate = qmp6988_calculate;
+    baro->calculate = qmp6988Calculate;
 
     return true;
 }
 
-static void qmp6988_start_ut(baroDev_t *baro)
+static void qmp6988StartUT(baroDev_t *baro)
 {
     UNUSED(baro);
     // dummy
 }
 
-static void qmp6988_get_ut(baroDev_t *baro)
+static void qmp6988GetUT(baroDev_t *baro)
 {
     UNUSED(baro);
     // dummy
 }
 
-static void qmp6988_start_up(baroDev_t *baro)
+static void qmp6988StartUP(baroDev_t *baro)
 {
     // start measurement
     busWriteRegister(&baro->busdev, QMP6988_CTRL_MEAS_REG, QMP6988_PWR_SAMPLE_MODE);	
 }
 
-static void qmp6988_get_up(baroDev_t *baro)
+static void qmp6988GetUP(baroDev_t *baro)
 {
     uint8_t data[QMP6988_DATA_FRAME_SIZE];
 
@@ -302,7 +302,7 @@ static void qmp6988_get_up(baroDev_t *baro)
 
 // Returns temperature in DegC, resolution is 0.01 DegC. Output value of "5123" equals 51.23 DegC
 // t_fine carries fine temperature as global value
-static float qmp6988_compensate_T(int32_t adc_T)
+static float qmp6988CompensateTemperature(int32_t adc_T)
 {
     int32_t var1;
     float T;
@@ -315,12 +315,12 @@ static float qmp6988_compensate_T(int32_t adc_T)
 
 
 
-STATIC_UNIT_TESTED void qmp6988_calculate(int32_t *pressure, int32_t *temperature)
+STATIC_UNIT_TESTED void qmp6988Calculate(int32_t *pressure, int32_t *temperature)
 {
     float tr,pr;
     int32_t Dp;
     
-    tr = qmp6988_compensate_T(qmp6988_ut);
+    tr = qmp6988CompensateTemperature(qmp6988_ut);
     Dp = qmp6988_up - 1024*1024*8;	
     
     pr = qmp6988_cal.Coe_b00+qmp6988_cal.Coe_bt1*tr+qmp6988_cal.Coe_bp1*Dp+qmp6988_cal.Coe_b11*tr*Dp+qmp6988_cal.Coe_bt2*tr*tr+qmp6988_cal.Coe_bp2*Dp*Dp+qmp6988_cal.Coe_b12*Dp*tr*tr

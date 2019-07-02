@@ -65,7 +65,6 @@
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/serial.h"
-#include "io/vtx_string.h"
 
 #include "rx/rx.h"
 

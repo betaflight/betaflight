@@ -49,7 +49,6 @@
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU9250
-#define ACC_1_ALIGN             CW270_DEG
 
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU9250
@@ -113,6 +112,8 @@
 
 #define USE_I2C
 #define USE_I2C_DEVICE_1
+#define I2C1_SCL                PB8
+#define I2C1_SDA                PB9
 #define I2C_DEVICE              (I2CDEV_1)
 
 #define USE_ADC

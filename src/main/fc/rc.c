@@ -148,6 +148,17 @@ float applyRaceFlightRates(const int axis, float rcCommandf, const float rcComma
     return angleRate;
 }
 
+float applyKissRates(const int axis, float rcCommandf, const float rcCommandfAbs)
+{
+    const float rcCurvef = currentControlRateProfile->rcExpo[axis] / 100.0f;
+
+    float kissRpyUseRates = 1.0f / (constrainf(1.0f - (rcCommandfAbs * (currentControlRateProfile->rates[axis] / 100.0f)), 0.01f, 1.00f));    
+    float kissRcCommandf = (power3(rcCommandf) * rcCurvef + rcCommandf * (1 - rcCurvef)) * (currentControlRateProfile->rcRates[axis] / 1000.0f);
+    float kissAngle = constrainf(((2000.0f * kissRpyUseRates) * kissRcCommandf), -SETPOINT_RATE_LIMIT, SETPOINT_RATE_LIMIT);
+
+    return kissAngle;
+}
+
 static void calculateSetpointRate(int axis)
 {
     float angleRate;
@@ -286,10 +297,10 @@ FAST_CODE uint8_t processRcInterpolation(void)
 #ifdef USE_RC_SMOOTHING_FILTER
 // Determine a cutoff frequency based on filter type and the calculated
 // average rx frame time
-FAST_CODE_NOINLINE int calcRcSmoothingCutoff(int avgRxFrameTimeUs, bool pt1)
+FAST_CODE_NOINLINE int calcRcSmoothingCutoff(int avgRxFrameTimeUs, bool pt1, uint8_t autoSmoothnessFactor)
 {
     if (avgRxFrameTimeUs > 0) {
-        const float cutoffFactor = (100 - rxConfig()->rc_smoothing_auto_factor) / 100.0f;
+        const float cutoffFactor = (100 - autoSmoothnessFactor) / 100.0f;
         float cutoff = (1 / (avgRxFrameTimeUs * 1e-6f)) / 2;  // calculate the nyquist frequency
         cutoff = cutoff * cutoffFactor;
 
@@ -316,15 +327,15 @@ FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *smoothi
     const float dT = targetPidLooptime * 1e-6f;
     uint16_t oldCutoff = smoothingData->inputCutoffFrequency;
     
-    if (rxConfig()->rc_smoothing_input_cutoff == 0) {
-        smoothingData->inputCutoffFrequency = calcRcSmoothingCutoff(smoothingData->averageFrameTimeUs, (rxConfig()->rc_smoothing_input_type == RC_SMOOTHING_INPUT_PT1));
+    if (smoothingData->inputCutoffSetting == 0) {
+        smoothingData->inputCutoffFrequency = calcRcSmoothingCutoff(smoothingData->averageFrameTimeUs, (smoothingData->inputFilterType == RC_SMOOTHING_INPUT_PT1), smoothingData->autoSmoothnessFactor);
     }
 
     // initialize or update the input filter
     if ((smoothingData->inputCutoffFrequency != oldCutoff) || !smoothingData->filterInitialized) {
         for (int i = 0; i < PRIMARY_CHANNEL_COUNT; i++) {
             if ((1 << i) & interpolationChannels) {  // only update channels specified by rc_interp_ch
-                switch (rxConfig()->rc_smoothing_input_type) {
+                switch (smoothingData->inputFilterType) {
                 
                     case RC_SMOOTHING_INPUT_PT1:
                         if (!smoothingData->filterInitialized) {
@@ -349,12 +360,12 @@ FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *smoothi
 
     // update or initialize the derivative filter
     oldCutoff = smoothingData->derivativeCutoffFrequency;
-    if ((rxConfig()->rc_smoothing_derivative_cutoff == 0) && (rxConfig()->rc_smoothing_derivative_type != RC_SMOOTHING_DERIVATIVE_OFF)) {
-        smoothingData->derivativeCutoffFrequency = calcRcSmoothingCutoff(smoothingData->averageFrameTimeUs, (rxConfig()->rc_smoothing_derivative_type == RC_SMOOTHING_DERIVATIVE_PT1));
+    if ((smoothingData->derivativeCutoffSetting == 0) && (smoothingData->derivativeFilterType != RC_SMOOTHING_DERIVATIVE_OFF)) {
+        smoothingData->derivativeCutoffFrequency = calcRcSmoothingCutoff(smoothingData->averageFrameTimeUs, (smoothingData->derivativeFilterType == RC_SMOOTHING_DERIVATIVE_PT1), smoothingData->autoSmoothnessFactor);
     }
 
     if (!smoothingData->filterInitialized) {
-        pidInitSetpointDerivativeLpf(smoothingData->derivativeCutoffFrequency, rxConfig()->rc_smoothing_debug_axis, rxConfig()->rc_smoothing_derivative_type);
+        pidInitSetpointDerivativeLpf(smoothingData->derivativeCutoffFrequency, smoothingData->debugAxis, smoothingData->derivativeFilterType);
     } else if (smoothingData->derivativeCutoffFrequency != oldCutoff) {
         pidUpdateSetpointDerivativeLpf(smoothingData->derivativeCutoffFrequency);
     }
@@ -395,13 +406,13 @@ FAST_CODE_NOINLINE bool rcSmoothingAutoCalculate(void)
     bool ret = false;
 
     // if the input cutoff is 0 (auto) then we need to calculate cutoffs
-    if (rxConfig()->rc_smoothing_input_cutoff == 0) {
+    if (rcSmoothingData.inputCutoffSetting == 0) {
         ret = true;
     }
 
     // if the derivative type isn't OFF and the cutoff is 0 then we need to calculate
-    if (rxConfig()->rc_smoothing_derivative_type != RC_SMOOTHING_DERIVATIVE_OFF) {
-        if (rxConfig()->rc_smoothing_derivative_cutoff == 0) {
+    if (rcSmoothingData.derivativeFilterType != RC_SMOOTHING_DERIVATIVE_OFF) {
+        if (rcSmoothingData.derivativeCutoffSetting == 0) {
             ret = true;
         }
     }
@@ -421,12 +432,18 @@ FAST_CODE uint8_t processRcSmoothingFilter(void)
         initialized = true;
         rcSmoothingData.filterInitialized = false;
         rcSmoothingData.averageFrameTimeUs = 0;
+        rcSmoothingData.autoSmoothnessFactor = rxConfig()->rc_smoothing_auto_factor;
+        rcSmoothingData.debugAxis = rxConfig()->rc_smoothing_debug_axis;
+        rcSmoothingData.inputFilterType = rxConfig()->rc_smoothing_input_type;
+        rcSmoothingData.inputCutoffSetting = rxConfig()->rc_smoothing_input_cutoff;
+        rcSmoothingData.derivativeFilterType = rxConfig()->rc_smoothing_derivative_type;
+        rcSmoothingData.derivativeCutoffSetting = rxConfig()->rc_smoothing_derivative_cutoff;
         rcSmoothingResetAccumulation(&rcSmoothingData);
         
-        rcSmoothingData.inputCutoffFrequency = rxConfig()->rc_smoothing_input_cutoff;
+        rcSmoothingData.inputCutoffFrequency = rcSmoothingData.inputCutoffSetting;
         
-        if (rxConfig()->rc_smoothing_derivative_type != RC_SMOOTHING_DERIVATIVE_OFF) {
-            rcSmoothingData.derivativeCutoffFrequency = rxConfig()->rc_smoothing_derivative_cutoff;
+        if (rcSmoothingData.derivativeFilterType != RC_SMOOTHING_DERIVATIVE_OFF) {
+            rcSmoothingData.derivativeCutoffFrequency = rcSmoothingData.derivativeCutoffSetting;
         }
         
         calculateCutoffs = rcSmoothingAutoCalculate();
@@ -511,7 +528,7 @@ FAST_CODE uint8_t processRcSmoothingFilter(void)
     if (rcSmoothingData.filterInitialized && (debugMode == DEBUG_RC_SMOOTHING)) {
         // after training has completed then log the raw rc channel and the calculated
         // average rx frame rate that was used to calculate the automatic filter cutoffs
-        DEBUG_SET(DEBUG_RC_SMOOTHING, 0, lrintf(lastRxData[rxConfig()->rc_smoothing_debug_axis]));
+        DEBUG_SET(DEBUG_RC_SMOOTHING, 0, lrintf(lastRxData[rcSmoothingData.debugAxis]));
         DEBUG_SET(DEBUG_RC_SMOOTHING, 3, rcSmoothingData.averageFrameTimeUs);
     }
 
@@ -519,7 +536,7 @@ FAST_CODE uint8_t processRcSmoothingFilter(void)
     for (updatedChannel = 0; updatedChannel < PRIMARY_CHANNEL_COUNT; updatedChannel++) {
         if ((1 << updatedChannel) & interpolationChannels) {  // only smooth selected channels base on the rc_interp_ch value
             if (rcSmoothingData.filterInitialized) {
-                switch (rxConfig()->rc_smoothing_input_type) {
+                switch (rcSmoothingData.inputFilterType) {
                     case RC_SMOOTHING_INPUT_PT1:
                         rcCommand[updatedChannel] = pt1FilterApply((pt1Filter_t*) &rcSmoothingData.filter[updatedChannel], lastRxData[updatedChannel]);
                         break;
@@ -712,6 +729,10 @@ void initRcProcessing(void)
         applyRates = applyRaceFlightRates;
 
         break;
+    case RATES_TYPE_KISS:
+        applyRates = applyKissRates;
+
+        break;
     }
 
     interpolationChannels = 0;
@@ -749,18 +770,9 @@ bool rcSmoothingIsEnabled(void)
 }
 
 #ifdef USE_RC_SMOOTHING_FILTER
-int rcSmoothingGetValue(int whichValue)
+rcSmoothingFilter_t *getRcSmoothingData(void)
 {
-    switch (whichValue) {
-        case RC_SMOOTHING_VALUE_INPUT_ACTIVE:
-            return rcSmoothingData.inputCutoffFrequency;
-        case RC_SMOOTHING_VALUE_DERIVATIVE_ACTIVE:
-            return rcSmoothingData.derivativeCutoffFrequency;
-        case RC_SMOOTHING_VALUE_AVERAGE_FRAME:
-            return rcSmoothingData.averageFrameTimeUs;
-        default:
-            return 0;
-    }
+    return &rcSmoothingData;
 }
 
 bool rcSmoothingInitializationComplete(void) {

@@ -16,13 +16,16 @@
 #
 
 # The target to build, see VALID_TARGETS below
-TARGET    ?= BETAFLIGHTF3
+TARGET    ?= OMNIBUSF4
 
 # Compile-time options
 OPTIONS   ?=
 
 # compile for OpenPilot BootLoader support
 OPBL      ?= no
+
+# compile for External Storage Bootloader support
+EXST      ?= no
 
 # Debugger optons:
 #   empty           - ordinary build with all optimizations enabled
@@ -35,7 +38,7 @@ DEBUG     ?=
 DEBUG_HARDFAULTS ?=
 
 # Serial port/Device for flashing
-SERIAL_DEVICE   ?= $(firstword $(wildcard /dev/ttyUSB*) no-port-found)
+SERIAL_DEVICE   ?= $(firstword $(wildcard /dev/ttyACM*) $(firstword $(wildcard /dev/ttyUSB*) no-port-found))
 
 # Flash size (KB).  Some low-end chips actually have more flash than advertised, use this to override.
 FLASH_SIZE ?=
@@ -56,7 +59,7 @@ CMSIS_DIR       := $(ROOT)/lib/main/CMSIS
 INCLUDE_DIRS    := $(SRC_DIR) \
                    $(ROOT)/src/main/target \
                    $(ROOT)/src/main/startup
-LINKER_DIR      := $(ROOT)/src/main/target/link
+LINKER_DIR      := $(ROOT)/src/link
 
 ## V                 : Set verbosity level based on the V= parameter
 ##                     V=0 Low
@@ -96,7 +99,7 @@ FEATURE_CUT_LEVEL_SUPPLIED := $(FEATURE_CUT_LEVEL)
 FEATURE_CUT_LEVEL =
 
 # The list of targets to build for 'pre-push'
-PRE_PUSH_TARGET_LIST ?= BETAFLIGHTF3 OMNIBUSF4 SPRACINGF7DUAL SITL test-representative
+PRE_PUSH_TARGET_LIST ?= OMNIBUSF4 STM32F405 SPRACINGF7DUAL STM32F7X2 SITL test-representative
 
 include $(ROOT)/make/targets.mk
 
@@ -275,14 +278,18 @@ CPPCHECK        = cppcheck $(CSOURCES) --enable=all --platform=unix64 \
 #
 # Things we will build
 #
+TARGET_S19      = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET).s19
 TARGET_BIN      = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET).bin
 TARGET_HEX      = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET).hex
 TARGET_ELF      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).elf
+TARGET_EXST_ELF = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET)_EXST.elf
+TARGET_UNPATCHED_BIN = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET)_UNPATCHED.bin
 TARGET_LST      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).lst
 TARGET_OBJS     = $(addsuffix .o,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $(SRC))))
 TARGET_DEPS     = $(addsuffix .d,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $(SRC))))
 TARGET_MAP      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).map
 
+TARGET_EXST_HASH_SECTION_FILE = $(OBJECT_DIR)/$(TARGET)/exst_hash_section.bin
 
 CLEAN_ARTIFACTS := $(TARGET_BIN)
 CLEAN_ARTIFACTS += $(TARGET_HEX)
@@ -298,13 +305,51 @@ $(OBJECT_DIR)/$(TARGET)/build/version.o : $(SRC)
 $(TARGET_LST): $(TARGET_ELF)
 	$(V0) $(OBJDUMP) -S --disassemble $< > $@
 
+
+$(TARGET_S19): $(TARGET_ELF)
+	@echo "Creating srec/S19 $(TARGET_S19)" "$(STDOUT)"
+	$(V1) $(OBJCOPY) --output-target=srec $(TARGET_S19)
+
+ifeq ($(EXST),no)
+$(TARGET_BIN): $(TARGET_ELF)
+	@echo "Creating BIN $(TARGET_BIN)" "$(STDOUT)"
+	$(V1) $(OBJCOPY) -O binary $< $@
+	
 $(TARGET_HEX): $(TARGET_ELF)
 	@echo "Creating HEX $(TARGET_HEX)" "$(STDOUT)"
 	$(V1) $(OBJCOPY) -O ihex --set-start 0x8000000 $< $@
 
-$(TARGET_BIN): $(TARGET_ELF)
-	@echo "Creating BIN $(TARGET_BIN)" "$(STDOUT)"
+else
+CLEAN_ARTIFACTS += $(TARGET_UNPATCHED_BIN) $(TARGET_EXST_HASH_SECTION_FILE) $(TARGET_EXST_ELF)
+
+$(TARGET_UNPATCHED_BIN): $(TARGET_ELF)
+	@echo "Creating BIN (without checksum) $(TARGET_UNPATCHED_BIN)" "$(STDOUT)"
 	$(V1) $(OBJCOPY) -O binary $< $@
+
+$(TARGET_BIN): $(TARGET_UNPATCHED_BIN)
+	@echo "Creating EXST $(TARGET_BIN)" "$(STDOUT)"
+# Linker script should allow .bin generation from a .elf which results in a file that is the same length as the FIRMWARE_SIZE.
+# These 'dd' commands will pad a short binary to length FIRMWARE_SIZE.
+	$(V1) dd if=/dev/zero ibs=1k count=$(FIRMWARE_SIZE) of=$(TARGET_BIN)
+	$(V1) dd if=$(TARGET_UNPATCHED_BIN) of=$(TARGET_BIN) conv=notrunc
+
+	@echo "Generating MD5 hash of binary" "$(STDOUT)"
+	$(V1) openssl dgst -md5 $(TARGET_BIN) > $(TARGET_UNPATCHED_BIN).md5 
+	
+	@echo "Patching MD5 hash into binary" "$(STDOUT)"
+	$(V1) cat $(TARGET_UNPATCHED_BIN).md5 | awk '{printf("%08x: %s",(1024*$(FIRMWARE_SIZE))-16,$$2);}' | xxd -r - $(TARGET_BIN)
+	$(V1) echo $(FIRMWARE_SIZE) | awk '{printf("-s 0x%08x -l 16 -c 16 %s",(1024*$$1)-16,"$(TARGET_BIN)");}' | xargs xxd
+
+	@echo "Patching MD5 hash into exst elf" "$(STDOUT)"
+	$(OBJCOPY) $(TARGET_ELF) --dump-section .exst_hash=$(TARGET_EXST_HASH_SECTION_FILE)
+	$(V1) cat $(TARGET_UNPATCHED_BIN).md5 | awk '{printf("%08x: %s",64-16,$$2);}' | xxd -r - $(TARGET_EXST_HASH_SECTION_FILE)
+	$(OBJCOPY) $(TARGET_ELF) $(TARGET_EXST_ELF) --update-section .exst_hash=$(TARGET_EXST_HASH_SECTION_FILE)
+
+$(TARGET_HEX): $(TARGET_BIN)
+	@echo "Creating EXST HEX from patched EXST ELF $(TARGET_HEX)" "$(STDOUT)"
+	$(V1) $(OBJCOPY) -O ihex --set-start 0x8000000 $(TARGET_EXST_ELF) $@
+
+endif
 
 $(TARGET_ELF): $(TARGET_OBJS) $(LD_SCRIPT)
 	@echo "Linking $(TARGET)" "$(STDOUT)"
@@ -368,7 +413,7 @@ unsupported: $(UNSUPPORTED_TARGETS)
 
 ## pre-push : The minimum verification that should be run before pushing, to check if CI has a chance of succeeding
 pre-push:
-	$(MAKE) $(addprefix clean_,$(PRE_PUSH_TARGET_LIST)) $(PRE_PUSH_TARGET_LIST) EXTRA_FLAGS=-Werror
+	$(MAKE) $(addsuffix _clean,$(PRE_PUSH_TARGET_LIST)) $(PRE_PUSH_TARGET_LIST) EXTRA_FLAGS=-Werror
 
 ## official          : Build all official (travis) targets
 official: $(OFFICIAL_TARGETS)
@@ -396,7 +441,6 @@ $(VALID_TARGETS):
 $(NOBUILD_TARGETS):
 	$(MAKE) TARGET=$@
 
-CLEAN_TARGETS = $(addprefix clean_,$(VALID_TARGETS) )
 TARGETS_CLEAN = $(addsuffix _clean,$(VALID_TARGETS) )
 
 ## clean             : clean up temporary / machine-generated files
@@ -406,35 +450,45 @@ clean:
 	$(V0) rm -rf $(OBJECT_DIR)/$(TARGET)
 	@echo "Cleaning $(TARGET) succeeded."
 
-## clean_test        : clean up temporary / machine-generated files (tests)
-clean_test-%:
-	$(MAKE) clean_test
+## test_clean        : clean up temporary / machine-generated files (tests)
+test-%_clean:
+	$(MAKE) test_clean
 
-clean_test:
+test_clean:
 	$(V0) cd src/test && $(MAKE) clean || true
-
-## clean_<TARGET>    : clean up one specific target
-$(CLEAN_TARGETS):
-	$(V0) $(MAKE) -j TARGET=$(subst clean_,,$@) clean
 
 ## <TARGET>_clean    : clean up one specific target (alias for above)
 $(TARGETS_CLEAN):
 	$(V0) $(MAKE) -j TARGET=$(subst _clean,,$@) clean
 
 ## clean_all         : clean all valid targets
-clean_all: $(CLEAN_TARGETS)
+clean_all: $(TARGETS_CLEAN) test_clean
 
-## all_clean         : clean all valid targets (alias for above)
-all_clean: $(TARGETS_CLEAN)
+TARGETS_FLASH = $(addsuffix _flash,$(VALID_TARGETS) )
 
+## <TARGET>_flash    : build and flash a target
+$(TARGETS_FLASH):
+	$(V0) $(MAKE) -j hex TARGET=$(subst _flash,,$@)
+ifneq (,$(findstring /dev/ttyUSB,$(SERIAL_DEVICE)))
+	$(V0) $(MAKE) tty_flash TARGET=$(subst _flash,,$@)
+else
+	$(V0) $(MAKE) dfu_flash TARGET=$(subst _flash,,$@)
+endif
 
-flash_$(TARGET): $(TARGET_HEX)
+## tty_flash         : flash firmware (.hex) onto flight controller via a serial port
+tty_flash:
 	$(V0) stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon
-	$(V0) echo -n 'R' >$(SERIAL_DEVICE)
+	$(V0) echo -n 'R' > $(SERIAL_DEVICE)
 	$(V0) stm32flash -w $(TARGET_HEX) -v -g 0x0 -b 115200 $(SERIAL_DEVICE)
 
-## flash             : flash firmware (.hex) onto flight controller
-flash: flash_$(TARGET)
+## dfu_flash         : flash firmware (.bin) onto flight controller via a DFU mode
+dfu_flash:
+ifneq (no-port-found,$(SERIAL_DEVICE))
+	# potentially this is because the MCU already is in DFU mode, try anyway
+	$(V0) echo -n 'R' > $(SERIAL_DEVICE)
+	$(V0) sleep 1
+endif
+	$(V0) dfu-util -a 0 -D $(TARGET_BIN) -s 0x08000000:leave
 
 st-flash_$(TARGET): $(TARGET_BIN)
 	$(V0) st-flash --reset write $< 0x08000000
@@ -449,6 +503,9 @@ endif
 
 binary:
 	$(V0) $(MAKE) -j $(TARGET_BIN)
+
+srec:
+	$(V0) $(MAKE) -j $(TARGET_S19)
 
 hex:
 	$(V0) $(MAKE) -j $(TARGET_HEX)
@@ -610,7 +667,6 @@ check-platform-included:
 
 # rebuild everything when makefile changes
 $(TARGET_OBJS): Makefile $(TARGET_DIR)/target.mk $(wildcard make/*)
-
 
 # include auto-generated dependencies
 -include $(TARGET_DEPS)

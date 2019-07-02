@@ -41,9 +41,12 @@ void systemBeep(bool onoff)
 #ifdef USE_BEEPER
     if (beeperFrequency == 0) {
         IOWrite(beeperIO, beeperInverted ? onoff : !onoff);
-    } else {
+    }
+#ifdef USE_PWM_OUTPUT
+    else {
         pwmWriteBeeper(onoff);
     }
+#endif
 #else
     UNUSED(onoff);
 #endif
@@ -54,9 +57,12 @@ void systemBeepToggle(void)
 #ifdef USE_BEEPER
     if (beeperFrequency == 0) {
         IOToggle(beeperIO);
-    } else {
+    }
+#ifdef USE_PWM_OUTPUT
+    else {
         pwmToggleBeeper();
     }
+#endif
 #endif
 }
 
@@ -72,10 +78,13 @@ void beeperInit(const beeperDevConfig_t *config)
             IOConfigGPIO(beeperIO, config->isOpenDrain ? IOCFG_OUT_OD : IOCFG_OUT_PP);
         }
         systemBeep(false);
-    } else {
+    }
+#ifdef USE_PWM_OUTPUT
+    else {
         const ioTag_t beeperTag = config->ioTag;
         beeperPwmInit(beeperTag, beeperFrequency);
     }
+#endif
 #else
     UNUSED(config);
 #endif

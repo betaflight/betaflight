@@ -37,7 +37,6 @@
 
 #define USE_ACC
 #define USE_ACC_MPU6050
-#define ACC_1_ALIGN             CW270_DEG
 
 #define USE_BARO
 #define USE_BARO_BMP085
