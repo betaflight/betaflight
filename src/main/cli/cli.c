@@ -4868,6 +4868,7 @@ static bool strToPin(char *pch, ioTag_t *tag)
     return false;
 }
 
+#ifdef USE_DMA
 static void printDma(void)
 {
     cliPrintLinefeed();
@@ -4891,6 +4892,7 @@ static void printDma(void)
         }
     }
 }
+#endif
 
 #ifdef USE_DMA_SPEC
 
@@ -5274,6 +5276,7 @@ static void cliDmaopt(char *cmdline)
 }
 #endif // USE_DMA_SPEC
 
+#ifdef USE_DMA
 static void cliDma(char* cmdline)
 {
     int len = strlen(cmdline);
@@ -5289,6 +5292,8 @@ static void cliDma(char* cmdline)
     cliShowParseError();
 #endif
 }
+#endif
+
 
 static void cliResource(char *cmdline)
 {
@@ -5318,10 +5323,12 @@ static void cliResource(char *cmdline)
             cliPrintLinefeed();
         }
 
+#if defined(USE_DMA)
         pch = strtok_r(NULL, " ", &saveptr);
         if (strcasecmp(pch, "all") == 0) {
             cliDma("show");
         }
+#endif
 
         return;
     }
@@ -5972,11 +5979,15 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", "[nosave]", cliDefaults),
     CLI_COMMAND_DEF("diff", "list configuration changes from default", "[master|profile|rates|hardware|all] {defaults|bare}", cliDiff),
 #ifdef USE_RESOURCE_MGMT
+
+#ifdef USE_DMA
 #ifdef USE_DMA_SPEC
     CLI_COMMAND_DEF("dma", "show/set DMA assignments", "<> | <device> <index> list | <device> <index> [<option>|none] | list | show", cliDma),
 #else
     CLI_COMMAND_DEF("dma", "show DMA assignments", "show", cliDma),
 #endif
+#endif
+
 #endif
 #ifdef USE_DSHOT_TELEMETRY
     CLI_COMMAND_DEF("dshot_telemetry_info", "disply dshot telemetry info and stats", NULL, cliDshotTelemetryInfo),

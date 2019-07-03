@@ -407,6 +407,7 @@ void pwmRxInit(const pwmConfig_t *pwmConfig)
 
 #define FIRST_PWM_PORT 0
 
+#ifdef USE_PWM_OUTPUT
 void ppmAvoidPWMTimerClash(TIM_TypeDef *pwmTimer)
 {
     pwmOutputPort_t *motors = pwmGetMotors();
@@ -419,6 +420,7 @@ void ppmAvoidPWMTimerClash(TIM_TypeDef *pwmTimer)
         return;
     }
 }
+#endif
 
 void ppmRxInit(const ppmConfig_t *ppmConfig)
 {
@@ -432,7 +434,9 @@ void ppmRxInit(const ppmConfig_t *ppmConfig)
         return;
     }
 
+#ifdef USE_PWM_OUTPUT
     ppmAvoidPWMTimerClash(timer->tim);
+#endif
 
     port->mode = INPUT_MODE_PPM;
     port->timerHardware = timer;

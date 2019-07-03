@@ -26,7 +26,6 @@
 #include "platform.h"
 
 #ifdef USE_PWM_OUTPUT
-
 #include "drivers/time.h"
 
 #include "drivers/io.h"
@@ -781,4 +780,5 @@ void beeperPwmInit(const ioTag_t tag, uint16_t frequency)
     }
 }
 #endif // USE_BEEPER
-#endif
+#endif //USE_PWM_OUTPUT
+
