@@ -92,7 +92,6 @@
 #include "io/usb_msc.h"
 #include "io/vtx_control.h"
 #include "io/vtx.h"
-#include "io/vtx_string.h"
 
 #include "msp/msp_box.h"
 #include "msp/msp_protocol.h"
@@ -104,8 +103,7 @@
 #include "pg/beeper.h"
 #include "pg/board.h"
 #include "pg/gyrodev.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
+#include "pg/motor.h"
 #include "pg/rx.h"
 #include "pg/rx_spi.h"
 #include "pg/usb.h"
@@ -140,9 +138,10 @@ static const char * const flightControllerIdentifier = BETAFLIGHT_IDENTIFIER; //
 
 enum {
     MSP_REBOOT_FIRMWARE = 0,
-    MSP_REBOOT_BOOTLOADER,
+    MSP_REBOOT_BOOTLOADER_ROM,
     MSP_REBOOT_MSC,
     MSP_REBOOT_MSC_UTC,
+    MSP_REBOOT_BOOTLOADER_FLASH,
     MSP_REBOOT_COUNT,
 };
 
@@ -263,8 +262,8 @@ static void mspRebootFn(serialPort_t *serialPort)
         systemReset();
 
         break;
-    case MSP_REBOOT_BOOTLOADER:
-        systemResetToBootloader();
+    case MSP_REBOOT_BOOTLOADER_ROM:
+        systemResetToBootloader(BOOTLOADER_REQUEST_ROM);
 
         break;
 #if defined(USE_USB_MSC)
@@ -277,6 +276,12 @@ static void mspRebootFn(serialPort_t *serialPort)
         systemResetToMsc(0);
 #endif
         }
+        break;
+#endif
+#if defined(USE_FLASH_BOOT_LOADER)
+    case MSP_REBOOT_BOOTLOADER_FLASH:
+        systemResetToBootloader(BOOTLOADER_REQUEST_FLASH);
+
         break;
 #endif
     default:
@@ -499,8 +504,8 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 #else
         sbufWriteU16(dst, 0); // No other build targets currently have hardware revision detection.
 #endif
-#if defined(USE_OSD) && defined(USE_MAX7456)
-        sbufWriteU8(dst, 2);  // 2 == FC with OSD
+#if defined(USE_MAX7456)
+        sbufWriteU8(dst, 2);  // 2 == FC with MAX7456
 #else
         sbufWriteU8(dst, 0);  // 0 == FC
 #endif

@@ -202,6 +202,10 @@ void SystemInit(void)
 #else
   SCB->VTOR = FLASH_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal FLASH. */
 #endif
+
+#ifdef USE_HAL_DRIVER
+    HAL_Init();
+#endif
 }
 
 /**

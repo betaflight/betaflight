@@ -244,7 +244,7 @@ TEST(LQTest, TestElement_LQ_SOURCE_NONE_SAMPLES)
     osdRefresh(simulationTime);
 
     // then
-    displayPortTestBufferSubstring(8, 1, "9");
+    displayPortTestBufferSubstring(8, 1, "%c9", SYM_LINK_QUALITY);
 
     // when  updateLinkQualitySamples used   50% rounds to 4
     for (int x = 0; x < LINK_QUALITY_SAMPLE_COUNT; x++) {
@@ -256,7 +256,7 @@ TEST(LQTest, TestElement_LQ_SOURCE_NONE_SAMPLES)
     osdRefresh(simulationTime);
 
     // then
-    displayPortTestBufferSubstring(8, 1, "4");
+    displayPortTestBufferSubstring(8, 1, "%c4", SYM_LINK_QUALITY);
 
 }
 /*
@@ -286,9 +286,9 @@ TEST(LQTest, TestElement_LQ_SOURCE_NONE_VALUES)
 #endif
         // then
         if (testdigit >= 10){
-            displayPortTestBufferSubstring(7, 1," 9");
+            displayPortTestBufferSubstring(8, 1,"%c9", SYM_LINK_QUALITY);
         }else{
-            displayPortTestBufferSubstring(7, 1," %1d", testdigit - 1);
+            displayPortTestBufferSubstring(8, 1,"%c%1d", SYM_LINK_QUALITY, testdigit - 1);
         }
     }
 }
@@ -316,7 +316,7 @@ TEST(LQTest, TestElementLQ_PROTOCOL_CRSF_VALUES)
         // then rxGetLinkQuality Osd should be x
         displayClearScreen(&testDisplayPort);
         osdRefresh(simulationTime);
-        displayPortTestBufferSubstring(8, 1,"%3d", x);
+        displayPortTestBufferSubstring(8, 1,"%c%3d", SYM_LINK_QUALITY, x);
 
     }
 }
@@ -367,7 +367,7 @@ TEST(LQTest, TestLQAlarm)
 #ifdef DEBUG_OSD
         printf("%d\n", i);
 #endif
-        displayPortTestBufferSubstring(8,  1, "9");
+        displayPortTestBufferSubstring(8,  1, "%c9", SYM_LINK_QUALITY);
 
     }
 
@@ -387,7 +387,7 @@ TEST(LQTest, TestLQAlarm)
         displayPortTestPrint();
 #endif
         if (i % 2 == 0) {
-            displayPortTestBufferSubstring(8,  1, "5");
+            displayPortTestBufferSubstring(8,  1, "%c5", SYM_LINK_QUALITY);
         } else {
             displayPortTestBufferIsEmpty();
         }

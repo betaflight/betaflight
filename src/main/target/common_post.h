@@ -60,7 +60,7 @@
 #endif
 #endif
 
-#if !defined(USE_BARO)
+#if !defined(USE_BARO) && !defined(USE_GPS)
 #undef USE_VARIO
 #endif
 
@@ -310,6 +310,12 @@
 #undef BEEPER_PWM_HZ
 #endif
 
+#if defined(USE_DSHOT) || defined(USE_LED_STRIP) || defined(USE_TRANSPONDER)
+#define USE_TIMER_DMA
+#else
+#undef USE_DMA_SPEC
+#endif
+
 #if !defined(USE_DMA_SPEC)
 #undef USE_TIMER_MGMT
 #endif
@@ -351,4 +357,8 @@ extern uint8_t eepromData[EEPROM_SIZE];
 #endif
 extern uint8_t __config_start;   // configured via linker script when building binaries.
 extern uint8_t __config_end;
+#endif
+
+#if defined(USE_EXST)
+#define USE_FLASH_BOOT_LOADER
 #endif

@@ -413,7 +413,7 @@ unsupported: $(UNSUPPORTED_TARGETS)
 
 ## pre-push : The minimum verification that should be run before pushing, to check if CI has a chance of succeeding
 pre-push:
-	$(MAKE) $(addprefix clean_,$(PRE_PUSH_TARGET_LIST)) $(PRE_PUSH_TARGET_LIST) EXTRA_FLAGS=-Werror
+	$(MAKE) $(addsuffix _clean,$(PRE_PUSH_TARGET_LIST)) $(PRE_PUSH_TARGET_LIST) EXTRA_FLAGS=-Werror
 
 ## official          : Build all official (travis) targets
 official: $(OFFICIAL_TARGETS)
@@ -441,7 +441,6 @@ $(VALID_TARGETS):
 $(NOBUILD_TARGETS):
 	$(MAKE) TARGET=$@
 
-CLEAN_TARGETS = $(addprefix clean_,$(VALID_TARGETS) )
 TARGETS_CLEAN = $(addsuffix _clean,$(VALID_TARGETS) )
 
 ## clean             : clean up temporary / machine-generated files
@@ -451,37 +450,29 @@ clean:
 	$(V0) rm -rf $(OBJECT_DIR)/$(TARGET)
 	@echo "Cleaning $(TARGET) succeeded."
 
-## clean_test        : clean up temporary / machine-generated files (tests)
-clean_test-%:
-	$(MAKE) clean_test
+## test_clean        : clean up temporary / machine-generated files (tests)
+test-%_clean:
+	$(MAKE) test_clean
 
-clean_test:
+test_clean:
 	$(V0) cd src/test && $(MAKE) clean || true
-
-## clean_<TARGET>    : clean up one specific target
-$(CLEAN_TARGETS):
-	$(V0) $(MAKE) -j TARGET=$(subst clean_,,$@) clean
 
 ## <TARGET>_clean    : clean up one specific target (alias for above)
 $(TARGETS_CLEAN):
 	$(V0) $(MAKE) -j TARGET=$(subst _clean,,$@) clean
 
 ## clean_all         : clean all valid targets
-clean_all: $(CLEAN_TARGETS)
+clean_all: $(TARGETS_CLEAN) test_clean
 
-## all_clean         : clean all valid targets (alias for above)
-all_clean: $(TARGETS_CLEAN)
+TARGETS_FLASH = $(addsuffix _flash,$(VALID_TARGETS) )
 
-FLASH_TARGETS = $(addprefix flash_,$(VALID_TARGETS) )
-
-## flash_<TARGET>    : build and flash a target
-$(FLASH_TARGETS):
+## <TARGET>_flash    : build and flash a target
+$(TARGETS_FLASH):
+	$(V0) $(MAKE) -j hex TARGET=$(subst _flash,,$@)
 ifneq (,$(findstring /dev/ttyUSB,$(SERIAL_DEVICE)))
-	$(V0) $(MAKE) -j hex TARGET=$(subst flash_,,$@)
-	$(V0) $(MAKE) tty_flash TARGET=$(subst flash_,,$@)
+	$(V0) $(MAKE) tty_flash TARGET=$(subst _flash,,$@)
 else
-	$(V0) $(MAKE) -j binary TARGET=$(subst flash_,,$@)
-	$(V0) $(MAKE) dfu_flash TARGET=$(subst flash_,,$@)
+	$(V0) $(MAKE) dfu_flash TARGET=$(subst _flash,,$@)
 endif
 
 ## tty_flash         : flash firmware (.hex) onto flight controller via a serial port

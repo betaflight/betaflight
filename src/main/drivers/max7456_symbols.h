@@ -22,6 +22,7 @@
 #pragma once
 
 //Misc
+#define SYM_NONE                    0x00
 #define SYM_END_OF_FONT             0xFF
 #define SYM_BLANK                   0x20
 #define SYM_HYPHEN                  0x2D
@@ -41,16 +42,19 @@
 
 // RSSI
 #define SYM_RSSI                    0x01
+#define SYM_LINK_QUALITY            0x7B
 
 // Throttle Position (%)
 #define SYM_THR                     0x04
 
 // Unit Icons (Metric)
 #define SYM_M                       0x0C
+#define SYM_KM                      0x7D
 #define SYM_C                       0x0E
 
 // Unit Icons (Imperial)
 #define SYM_FT                      0x0F
+#define SYM_MILES                   0x7E
 #define SYM_F                       0x0D
 
 // Heading Graphics

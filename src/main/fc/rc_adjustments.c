@@ -767,7 +767,7 @@ static void processStepwiseAdjustments(controlRateConfig_t *controlRateConfig, c
 
 static void setConfigDirtyIfNotPermanent(const channelRange_t *range)
 {
-    if (range->startStep == MIN_MODE_RANGE_STEP && range->endStep == MAX_MODE_RANGE_STEP) {
+    if (!(range->startStep == MIN_MODE_RANGE_STEP && range->endStep == MAX_MODE_RANGE_STEP)) {
         // Only set the configuration dirty if this range is NOT permanently enabled (and the config thus never used).
         setConfigDirty();
     }

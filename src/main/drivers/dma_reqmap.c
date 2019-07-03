@@ -59,8 +59,9 @@ typedef struct dmaTimerMapping_s {
 #define REQMAP_SGL(periph) { DMA_PERIPH_ ## periph, 0, DMA_REQUEST_ ## periph }
 #define REQMAP(periph, device) { DMA_PERIPH_ ## periph, periph ## DEV_ ## device, DMA_REQUEST_ ## periph ## device }
 #define REQMAP_DIR(periph, device, dir) { DMA_PERIPH_ ## periph ## _ ## dir, periph ## DEV_ ## device, DMA_REQUEST_ ## periph ## device ## _ ## dir }
+#define REQMAP_TIMUP(periph, timno) { DMA_PERIPH_TIMUP, timno - 1, DMA_REQUEST_ ## TIM ## timno ## _UP }
 
-// Resolve UART/UART mess
+// Resolve UART/USART mess
 #define DMA_REQUEST_UART1_RX DMA_REQUEST_USART1_RX
 #define DMA_REQUEST_UART1_TX DMA_REQUEST_USART1_TX
 #define DMA_REQUEST_UART2_RX DMA_REQUEST_USART2_RX
@@ -92,10 +93,6 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
     REQMAP(ADC, 3),
 #endif
 
-#ifdef USE_SDCARD_SDIO
-    REQMAP_SGL(SDIO),
-#endif
-    
 #ifdef USE_UART
     REQMAP_DIR(UART, 1, TX),
     REQMAP_DIR(UART, 1, RX),
@@ -114,8 +111,24 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
     REQMAP_DIR(UART, 8, TX),
     REQMAP_DIR(UART, 8, RX),
 #endif
+
+#ifdef USE_TIMER
+// Pseudo peripheral for TIMx_UP channel
+    REQMAP_TIMUP(TIMUP, 1),
+    REQMAP_TIMUP(TIMUP, 2),
+    REQMAP_TIMUP(TIMUP, 3),
+    REQMAP_TIMUP(TIMUP, 4),
+    REQMAP_TIMUP(TIMUP, 5),
+    REQMAP_TIMUP(TIMUP, 6),
+    REQMAP_TIMUP(TIMUP, 7),
+    REQMAP_TIMUP(TIMUP, 8),
+    REQMAP_TIMUP(TIMUP, 15),
+    REQMAP_TIMUP(TIMUP, 16),
+    REQMAP_TIMUP(TIMUP, 17),
+#endif
 };
 
+#undef REQMAP_TIMUP
 #undef REQMAP
 #undef REQMAP_SGL
 #undef REQMAP_DIR
@@ -473,4 +486,19 @@ dmaoptValue_t dmaGetOptionByTimer(const timerHardware_t *timer)
 
     return DMA_OPT_UNUSED;
 }
+
+#if defined(STM32H7)
+// A variant of dmaGetOptionByTimer that looks for matching dmaTimUPRef
+dmaoptValue_t dmaGetUpOptionByTimer(const timerHardware_t *timer)
+{
+    for (unsigned opt = 0; opt < ARRAYLEN(dmaChannelSpec); opt++) {
+        if (timer->dmaTimUPRef == dmaChannelSpec[opt].ref) {
+                return (dmaoptValue_t)opt;
+        }
+    }
+
+    return DMA_OPT_UNUSED;
+}
+#endif
+
 #endif // USE_DMA_SPEC

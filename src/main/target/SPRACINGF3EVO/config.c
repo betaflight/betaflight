@@ -24,10 +24,10 @@
 
 #include "common/axis.h"
 
-#include "flight/mixer.h"
 #include "flight/pid.h"
 
 #include "pg/sdcard.h"
+#include "pg/motor.h"
 
 
 #if defined(SPRACINGF3MQ)

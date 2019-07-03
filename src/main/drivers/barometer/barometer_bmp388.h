@@ -16,19 +16,19 @@
  * along with this software.
  *
  * If not, see <http://www.gnu.org/licenses/>.
+ *
+ * BMP388 Driver author: Dominic Clifton
+ *
+ * References:
+ * BMP388 datasheet - https://ae-bst.resource.bosch.com/media/_tech/media/datasheets/BST-BMP388-DS001.pdf
+ * BMP3-Sensor-API - https://github.com/BoschSensortec/BMP3-Sensor-API
+ * BMP280 Cleanflight driver
  */
 
 #pragma once
 
-#include <stdint.h>
+typedef struct bmp388Config_s {
+    ioTag_t eocTag;
+} bmp388Config_t;
 
-#include "platform.h"
-#include "drivers/vtx_common.h"
-
-bool _vtxStringFreq2Bandchan(uint16_t freq, uint8_t *pBand, uint8_t *pChannel);
-uint16_t _vtxStringBandchan2Freq(uint8_t band, uint8_t channel);
-
-const uint16_t * vtxStringFrequencyTable(void);
-const char ** vtxStringBandNames(void);
-const char ** vtxStringChannelNames(void);
-const char * vtxStringBandLetters(void);
+bool bmp388Detect(const bmp388Config_t *config, baroDev_t *baro);

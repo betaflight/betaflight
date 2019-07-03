@@ -348,6 +348,24 @@ void SystemInit(void)
     }
     SCB->VTOR = vtorOffset;
 
+#ifdef USE_HAL_DRIVER
+    HAL_Init();
+#endif
+
+    /* Enable I-Cache */
+    if (INSTRUCTION_CACHE_ENABLE) {
+        SCB_EnableICache();
+    }
+
+    /* Enable D-Cache */
+    if (DATA_CACHE_ENABLE) {
+        SCB_EnableDCache();
+    }
+
+    if (PREFETCH_ENABLE) {
+        LL_FLASH_EnablePrefetch();
+    }
+
     /* Configure the system clock to specified frequency */
     SystemClock_Config();
 

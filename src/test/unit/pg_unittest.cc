@@ -26,6 +26,7 @@ extern "C" {
     #include "build/debug.h"
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
+    #include "pg/motor.h"
 
     #include "flight/mixer.h"
 

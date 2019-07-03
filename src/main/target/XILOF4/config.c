@@ -28,6 +28,7 @@
 
 #include "drivers/io.h"
 #include "pg/rx.h"
+#include "pg/motor.h"
 #include "rx/rx.h"
 #include "io/serial.h"
 
@@ -36,8 +37,8 @@
 
 #include "sensors/battery.h"
 
-#include "flight/mixer.h"
 #include "flight/pid.h"
+#include "flight/mixer.h"
 
 #define CURRENT_SCALE 118
 

@@ -462,6 +462,62 @@ TEST(OsdTest, TestStatsMetric)
 }
 
 /*
+ * Tests the calculation of statistics with metric unit output.
+ * (essentially an abridged version of the previous test
+ */
+TEST(OsdTest, TestStatsMetricDistanceUnits)
+{
+    // given
+    // using metric unit system
+    osdConfigMutable()->units = OSD_UNIT_METRIC;
+
+    // set timer 1 configuration to tenths precision
+    osdConfigMutable()->timers[OSD_TIMER_1] = OSD_TIMER(OSD_TIMER_SRC_TOTAL_ARMED, OSD_TIMER_PREC_TENTHS, 0);
+
+    // and
+    // default state values are set
+    setDefaultSimulationState();
+
+    // when
+    // the craft is armed
+    doTestArm();
+
+    // and
+    // these conditions occur during flight (simplified to less assignments than previous test)
+    rssi = 256;
+    gpsSol.groundSpeed = 800;
+    GPS_distanceToHome = 1150;
+    GPS_distanceFlownInCm = 1050000;
+    simulationBatteryVoltage = 1470;
+    simulationAltitude = 200;
+    simulationTime += 1e6;
+    osdRefresh(simulationTime);
+    osdRefresh(simulationTime);
+
+    simulationBatteryVoltage = 1520;
+    simulationTime += 1e6;
+    osdRefresh(simulationTime);
+
+    // and
+    // the craft is disarmed
+    doTestDisarm();
+
+    // then
+    // statistics screen should display the following
+    int row = 3;
+    displayPortTestBufferSubstring(2, row++, "2017-11-19 10:12:");
+    displayPortTestBufferSubstring(2, row++, "TOTAL ARM         : 00:10.0");
+    displayPortTestBufferSubstring(2, row++, "LAST ARM          : 00:02");
+    displayPortTestBufferSubstring(2, row++, "MAX ALTITUDE      : 2.0%c", SYM_M);
+    displayPortTestBufferSubstring(2, row++, "MAX SPEED         : 28");
+    displayPortTestBufferSubstring(2, row++, "MAX DISTANCE      : 1.15%c", SYM_KM);
+    displayPortTestBufferSubstring(2, row++, "FLIGHT DISTANCE   : 10.5%c", SYM_KM);
+    displayPortTestBufferSubstring(2, row++, "MIN BATTERY       : 14.70%c", SYM_VOLT);
+    displayPortTestBufferSubstring(2, row++, "END BATTERY       : 15.20%c", SYM_VOLT);
+    displayPortTestBufferSubstring(2, row++, "MIN RSSI          : 25%%");
+}
+
+/*
  * Tests activation of alarms and element flashing.
  */
 TEST(OsdTest, TestAlarms)

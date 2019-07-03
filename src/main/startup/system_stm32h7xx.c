@@ -572,8 +572,6 @@ void MPU_Config()
   * @param  None
   * @retval None
   */
-void systemCheckResetReason(void);
-
 void resetMPU(void)
 {
     MPU_Region_InitTypeDef MPU_InitStruct;
@@ -683,6 +681,10 @@ void SystemInit (void)
     // Don't touch the vector table, the bootloader will have already set it.
 #else
     SCB->VTOR = FLASH_BANK1_BASE | VECT_TAB_OFFSET;       /* Vector Table Relocation in Internal FLASH */
+#endif
+
+#ifdef USE_HAL_DRIVER
+    HAL_Init();
 #endif
 
     SystemClock_Config();

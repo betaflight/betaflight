@@ -136,7 +136,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .pid = {
             [PID_ROLL] =  { 42, 60, 35, 70 },
             [PID_PITCH] = { 46, 70, 38, 75 },
-            [PID_YAW] =   { 35, 100, 0, 0 },
+            [PID_YAW] =   { 30, 80, 0, 70 },
             [PID_LEVEL] = { 50, 50, 75, 0 },
             [PID_MAG] =   { 40, 0, 0, 0 },
         },
@@ -176,7 +176,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .acro_trainer_lookahead_ms = 50,
         .acro_trainer_debug_axis = FD_ROLL,
         .acro_trainer_gain = 75,
-        .abs_control_gain = 5,
+        .abs_control_gain = 0,
         .abs_control_limit = 90,
         .abs_control_error_limit = 20,
         .abs_control_cutoff = 11,

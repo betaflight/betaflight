@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <ctype.h>
 #include <string.h>
+#include <drivers/vtx_table.h>
 
 #include "platform.h"
 
@@ -38,7 +39,6 @@
 
 #include "fc/config.h"
 
-#include "io/vtx_string.h"
 #include "io/vtx_smartaudio.h"
 #include "io/vtx.h"
 
@@ -89,7 +89,7 @@ void saCmsUpdate(void)
         // This is a first valid response to GET_SETTINGS.
         saCmsOpmodel = saDevice.willBootIntoPitMode ? SACMS_OPMODEL_RACE : SACMS_OPMODEL_FREE;
 
-        saCmsFselMode = (saDevice.mode & SA_MODE_GET_FREQ_BY_FREQ) ? 1 : 0;
+        saCmsFselMode = (saDevice.mode & SA_MODE_GET_FREQ_BY_FREQ) && vtxSettingsConfig()->band == 0 ? 1 : 0;
 
         saCmsBand = vtxSettingsConfig()->band;
         saCmsChan = vtxSettingsConfig()->channel;
@@ -134,41 +134,45 @@ void saUpdateStatusString(void)
         return;
 
 // XXX These should be done somewhere else
-if (saCmsDeviceStatus == 0 && saDevice.version != 0)
-    saCmsDeviceStatus = saDevice.version;
-if (saCmsORFreq == 0 && saDevice.orfreq != 0)
-    saCmsORFreq = saDevice.orfreq;
-if (saCmsUserFreq == 0 && saDevice.freq != 0)
-    saCmsUserFreq = saDevice.freq;
+    if (saCmsDeviceStatus == 0 && saDevice.version != 0)
+        saCmsDeviceStatus = saDevice.version;
+    if (saCmsORFreq == 0 && saDevice.orfreq != 0)
+        saCmsORFreq = saDevice.orfreq;
+    if (saCmsUserFreq == 0 && saDevice.freq != 0)
+        saCmsUserFreq = saDevice.freq;
 
-if (saDevice.version == 2) {
-    if (saDevice.mode & SA_MODE_GET_OUT_RANGE_PITMODE)
-        saCmsPitFMode = 1;
-    else
-        saCmsPitFMode = 0;
-} else if (saDevice.version == 3) {
-    saCmsPitFMode = 1;//V2.1 only supports PIR
-}
+    if (saDevice.version == 2) {
+        if (saDevice.mode & SA_MODE_GET_OUT_RANGE_PITMODE)
+            saCmsPitFMode = 1;
+        else
+            saCmsPitFMode = 0;
+    } else if (saDevice.version == 3) {
+        saCmsPitFMode = 1;//V2.1 only supports PIR
+    }
 
     const vtxDevice_t *device = vtxCommonDevice();
 
     saCmsStatusString[0] = "-FR"[saCmsOpmodel];
 
     if (saCmsFselMode == 0) {
-        saCmsStatusString[2] = vtxCommonLookupBandLetter(device, saDevice.channel / 8 + 1);
-        saCmsStatusString[3] = vtxCommonLookupChannelName(device, (saDevice.channel % 8) + 1)[0];
+        uint8_t band;
+        uint8_t channel;
+        vtxCommonGetBandAndChannel(device, &band, &channel);
+        saCmsStatusString[2] = vtxCommonLookupBandLetter(device, band);
+        saCmsStatusString[3] = vtxCommonLookupChannelName(device, channel)[0];
     } else {
         saCmsStatusString[2] = 'U';
         saCmsStatusString[3] = 'F';
     }
 
     if ((saDevice.mode & SA_MODE_GET_PITMODE)
-       && (saDevice.mode & SA_MODE_GET_OUT_RANGE_PITMODE))
+        && (saDevice.mode & SA_MODE_GET_OUT_RANGE_PITMODE)) {
         tfp_sprintf(&saCmsStatusString[5], "%4d", saDevice.orfreq);
-    else if (saDevice.mode & SA_MODE_GET_FREQ_BY_FREQ)
-        tfp_sprintf(&saCmsStatusString[5], "%4d", saDevice.freq);
-    else
-        tfp_sprintf(&saCmsStatusString[5], "%4d", vtxCommonLookupFrequency(vtxCommonDevice(), saDevice.channel / 8 + 1, saDevice.channel % 8 + 1));
+    } else {
+        uint16_t freq = 0;
+        vtxCommonGetFrequency(device, &freq);
+        tfp_sprintf(&saCmsStatusString[5], "%4d", freq);
+    }
 
     saCmsStatusString[9] = ' ';
 
@@ -185,14 +189,13 @@ if (saDevice.version == 2) {
     } else {
         saCmsPit = 1;
         uint8_t powerIndex = 0;
-        bool powerFound = vtxCommonGetPowerIndex(vtxCommonDevice(), &powerIndex);
-        tfp_sprintf(&saCmsStatusString[10], "%s", powerFound ? vtxCommonLookupPowerName(vtxCommonDevice(), powerIndex) : "???");
+        bool powerFound = vtxCommonGetPowerIndex(device, &powerIndex);
+        tfp_sprintf(&saCmsStatusString[10], "%s", powerFound ? vtxCommonLookupPowerName(device, powerIndex) : "???");
     }
-#if defined(USE_VTX_TABLE)
-    if (vtxCommonDevice()->capability.bandCount == 0 || vtxCommonDevice()->capability.powerCount == 0) {
+
+    if (vtxTableBandCount == 0 || vtxTablePowerLevels == 0) {
         strncpy(saCmsStatusString, "PLEASE CONFIGURE VTXTABLE", sizeof(saCmsStatusString));
     }
-#endif
 }
 
 void saCmsResetOpmodel()
@@ -218,8 +221,9 @@ static long saCmsConfigBandByGvar(displayPort_t *pDisp, const void *self)
         return 0;
     }
 
-    if ((saCmsOpmodel == SACMS_OPMODEL_FREE) && !saDeferred)
-        saSetBandAndChannel(saCmsBand - 1, saCmsChan - 1);
+    if ((saCmsOpmodel == SACMS_OPMODEL_FREE) && !saDeferred) {
+        vtxCommonSetBandAndChannel(vtxCommonDevice(), saCmsBand, saCmsChan);
+    }
 
     saCmsFreqRef = vtxCommonLookupFrequency(vtxCommonDevice(), saCmsBand, saCmsChan);
 
@@ -243,10 +247,11 @@ static long saCmsConfigChanByGvar(displayPort_t *pDisp, const void *self)
         return 0;
     }
 
-    if ((saCmsOpmodel == SACMS_OPMODEL_FREE) && !saDeferred)
-        saSetBandAndChannel(saCmsBand - 1, saCmsChan - 1);
+    if ((saCmsOpmodel == SACMS_OPMODEL_FREE) && !saDeferred) {
+        vtxCommonSetBandAndChannel(vtxCommonDevice(), saCmsBand, saCmsChan);
+    }
 
-    saCmsFreqRef = vtxCommonLookupFrequency(vtxCommonDevice(), saCmsBand , saCmsChan);
+    saCmsFreqRef = vtxCommonLookupFrequency(vtxCommonDevice(), saCmsBand, saCmsChan);
 
     return 0;
 }
@@ -365,7 +370,7 @@ static long saCmsConfigOpmodelByGvar(displayPort_t *pDisp, const void *self)
         // out-range receivers from getting blinded.
         saCmsPitFMode = 0;
         saCmsConfigPitFModeByGvar(pDisp, self);
-        if(saDevice.version >= 3) {
+        if (saDevice.version >= 3) {
             saSetMode(SA_MODE_SET_IN_RANGE_PITMODE | ((saDevice.mode & SA_MODE_GET_PITMODE) ? 0 : SA_MODE_CLR_PITMODE));
         }
 
@@ -421,19 +426,17 @@ static OSD_TAB_t saCmsEntPower;
 
 static void saCmsInitNames(void)
 {
-    vtxDevice_t *device = vtxCommonDevice();
-
     saCmsEntBand.val = &saCmsBand;
-    saCmsEntBand.max = device->capability.bandCount;
-    saCmsEntBand.names = device->bandNames;
+    saCmsEntBand.max = vtxTableBandCount;
+    saCmsEntBand.names = vtxTableBandNames;
 
     saCmsEntChan.val = &saCmsChan;
-    saCmsEntChan.max = device->capability.channelCount;
-    saCmsEntChan.names = device->channelNames;
+    saCmsEntChan.max = vtxTableChannelCount;
+    saCmsEntChan.names = vtxTableChannelNames;
 
     saCmsEntPower.val = &saCmsPower;
-    saCmsEntPower.max = device->capability.powerCount;
-    saCmsEntPower.names = device->powerNames;
+    saCmsEntPower.max = vtxTablePowerLevels;
+    saCmsEntPower.names = vtxTablePowerLabels;
 }
 
 static OSD_UINT16_t saCmsEntFreqRef = { &saCmsFreqRef, 5600, 5900, 0 };
@@ -462,7 +465,7 @@ static const char * const saCmsPitNames[] = {
 };
 
 static OSD_TAB_t saCmsEntPitFMode = { &saCmsPitFMode, 1, saCmsPitFModeNames };
-static OSD_TAB_t saCmsEntPit = {&saCmsPit , 2, saCmsPitNames};
+static OSD_TAB_t saCmsEntPit = {&saCmsPit, 2, saCmsPitNames};
 
 static long sacms_SetupTopMenu(void); // Forward
 
@@ -520,7 +523,7 @@ static long saCmsCommence(displayPort_t *pDisp, const void *self)
         }
     }
 
-    if(newSettings.power == saCmsPower && saCmsPit > 0) {
+    if (newSettings.power == saCmsPower && saCmsPit > 0) {
         vtxCommonSetPitMode(vtxCommonDevice(), saCmsPit == 2);
     }
     newSettings.power = saCmsPower;

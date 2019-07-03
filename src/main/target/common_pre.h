@@ -157,6 +157,7 @@
 
 #define USE_BRUSHED_ESC_AUTODETECT  // Detect if brushed motors are connected and set defaults appropriately to avoid motors spinning on boot
 
+#define USE_MOTOR
 #define USE_PWM_OUTPUT
 #define USE_DMA
 #define USE_TIMER
@@ -321,7 +322,6 @@
 #define USE_SERIAL_4WAY_SK_BOOTLOADER
 #define USE_CMS_FAILSAFE_MENU
 #define USE_CMS_GPS_RESCUE_MENU
-#define USE_SMART_FEEDFORWARD
 #define USE_TELEMETRY_SENSORS_DISABLED_DETAILS
 #define USE_VTX_TABLE
 #define USE_PERSISTENT_STATS

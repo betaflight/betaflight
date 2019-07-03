@@ -61,6 +61,7 @@
 #include "pg/beeper_dev.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/motor.h"
 #include "pg/rx.h"
 
 #include "rx/rx.h"
@@ -161,6 +162,13 @@ static void activateConfig(void)
 #endif
 }
 
+static void adjustFilterLimit(uint16_t *parm, uint16_t resetValue)
+{
+    if (*parm > FILTER_FREQUENCY_MAX) {
+        *parm = resetValue;
+    }
+}
+
 static void validateAndFixConfig(void)
 {
 #if !defined(USE_QUAD_MIXER_ONLY)
@@ -199,6 +207,13 @@ static void validateAndFixConfig(void)
     }
 
     for (unsigned i = 0; i < PID_PROFILE_COUNT; i++) {
+        // Fix filter settings to handle cases where an older configurator was used that
+        // allowed higher cutoff limits from previous firmware versions.
+        adjustFilterLimit(&pidProfilesMutable(i)->dterm_lowpass_hz, FILTER_FREQUENCY_MAX);
+        adjustFilterLimit(&pidProfilesMutable(i)->dterm_lowpass2_hz, FILTER_FREQUENCY_MAX);
+        adjustFilterLimit(&pidProfilesMutable(i)->dterm_notch_hz, FILTER_FREQUENCY_MAX);
+        adjustFilterLimit(&pidProfilesMutable(i)->dterm_notch_cutoff, 0);
+
         // Prevent invalid notch cutoff
         if (pidProfilesMutable(i)->dterm_notch_cutoff >= pidProfilesMutable(i)->dterm_notch_hz) {
             pidProfilesMutable(i)->dterm_notch_hz = 0;
@@ -452,7 +467,7 @@ static void validateAndFixConfig(void)
 #endif
 #endif
 
-#if defined(USE_DSHOT_TELEMETRY)
+#if defined(USE_DSHOT)
     bool usingDshotProtocol;
     switch (motorConfig()->dev.motorPwmProtocol) {
     case PWM_TYPE_PROSHOT1000:
@@ -467,11 +482,18 @@ static void validateAndFixConfig(void)
         break;
     }
 
+    // If using DSHOT protocol disable unsynched PWM as it's meaningless
+    if (usingDshotProtocol) {
+        motorConfigMutable()->dev.useUnsyncedPwm = false;
+    }
+
+#if defined(USE_DSHOT_TELEMETRY)
     if ((!usingDshotProtocol || motorConfig()->dev.useBurstDshot || !systemConfig()->schedulerOptimizeRate)
         && motorConfig()->dev.useDshotTelemetry) {
         motorConfigMutable()->dev.useDshotTelemetry = false;
     }
-#endif
+#endif // USE_DSHOT_TELEMETRY
+#endif // USE_DSHOT
 
     // Temporary workaround until RPM Filter supports dual-gyro using both sensors
     // Once support is added remove this block
@@ -504,6 +526,15 @@ void validateAndFixGyroConfig(void)
         featureDisable(FEATURE_DYNAMIC_FILTER);
     }
 #endif
+
+    // Fix gyro filter settings to handle cases where an older configurator was used that
+    // allowed higher cutoff limits from previous firmware versions.
+    adjustFilterLimit(&gyroConfigMutable()->gyro_lowpass_hz, FILTER_FREQUENCY_MAX);
+    adjustFilterLimit(&gyroConfigMutable()->gyro_lowpass2_hz, FILTER_FREQUENCY_MAX);
+    adjustFilterLimit(&gyroConfigMutable()->gyro_soft_notch_hz_1, FILTER_FREQUENCY_MAX);
+    adjustFilterLimit(&gyroConfigMutable()->gyro_soft_notch_cutoff_1, 0);
+    adjustFilterLimit(&gyroConfigMutable()->gyro_soft_notch_hz_2, FILTER_FREQUENCY_MAX);
+    adjustFilterLimit(&gyroConfigMutable()->gyro_soft_notch_cutoff_2, 0);
 
     // Prevent invalid notch cutoff
     if (gyroConfig()->gyro_soft_notch_cutoff_1 >= gyroConfig()->gyro_soft_notch_hz_1) {

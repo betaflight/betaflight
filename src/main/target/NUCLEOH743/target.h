@@ -26,7 +26,7 @@
 #define USE_TARGET_CONFIG
 
 #define LED0_PIN                PB0
-#define LED1_PIN                PB7
+#define LED1_PIN                PB7 // PE1 on NUCLEO-H743ZI2 (may collide with UART8_TX)
 //#define LED2_PIN                PB14 // SDMMC2_D0
 
 // Nucleo-H743 has one button (The blue USER button).
@@ -147,8 +147,10 @@
 #define HMC5883_CS_PIN          NONE
 
 #define USE_BARO
+#define USE_BARO_LPS
 #define USE_BARO_BMP085
 #define USE_BARO_BMP280
+#define USE_BARO_BMP388
 #define USE_BARO_MS5611
 #define USE_BARO_SPI_BMP280
 #define BMP280_SPI_INSTANCE     NULL

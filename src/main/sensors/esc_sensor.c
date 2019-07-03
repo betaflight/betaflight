@@ -31,6 +31,7 @@
 #include "config/feature.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/motor.h"
 
 #include "common/maths.h"
 #include "common/utils.h"

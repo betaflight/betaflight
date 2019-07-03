@@ -37,6 +37,7 @@
 #include "flight/pid.h"
 
 #include "pg/rx.h"
+#include "pg/motor.h"
 
 #include "rx/rx.h"
 

@@ -27,27 +27,61 @@
 
 #include "platform.h"
 
-#if defined(USE_VTX_TABLE)
+#include "drivers/vtx_table.h"
 
+#if defined(USE_VTX_TABLE)
 #include "common/printf.h"
 
 #include "pg/vtx_table.h"
 #include "drivers/vtx_common.h"
-#include "drivers/vtx_table.h"
+#endif
 
+
+#if defined(USE_VTX_TABLE)
 int            vtxTableBandCount;
 int            vtxTableChannelCount;
 uint16_t       vtxTableFrequency[VTX_TABLE_MAX_BANDS][VTX_TABLE_MAX_CHANNELS];
 const char *   vtxTableBandNames[VTX_TABLE_MAX_BANDS + 1];
 char           vtxTableBandLetters[VTX_TABLE_MAX_BANDS + 1];
 const char *   vtxTableChannelNames[VTX_TABLE_MAX_CHANNELS + 1];
+bool           vtxTableIsFactoryBand[VTX_TABLE_MAX_BANDS];
 
 int            vtxTablePowerLevels;
 uint16_t       vtxTablePowerValues[VTX_TABLE_MAX_POWER_LEVELS];
 const char *   vtxTablePowerLabels[VTX_TABLE_MAX_POWER_LEVELS + 1];
 
+#else
+
+int            vtxTableBandCount = VTX_TABLE_MAX_BANDS;
+int            vtxTableChannelCount = VTX_TABLE_MAX_CHANNELS;
+uint16_t       vtxTableFrequency[VTX_TABLE_MAX_BANDS][VTX_TABLE_MAX_CHANNELS] = {
+    { 5865, 5845, 5825, 5805, 5785, 5765, 5745, 5725 }, // Boscam A
+    { 5733, 5752, 5771, 5790, 5809, 5828, 5847, 5866 }, // Boscam B
+    { 5705, 5685, 5665, 5645, 5885, 5905, 5925, 5945 }, // Boscam E
+    { 5740, 5760, 5780, 5800, 5820, 5840, 5860, 5880 }, // FatShark
+    { 5658, 5695, 5732, 5769, 5806, 5843, 5880, 5917 }, // RaceBand
+};
+const char *   vtxTableBandNames[VTX_TABLE_MAX_BANDS + 1] = {
+        "--------",
+        "BOSCAM A",
+        "BOSCAM B",
+        "BOSCAM E",
+        "FATSHARK",
+        "RACEBAND",
+};
+char           vtxTableBandLetters[VTX_TABLE_MAX_BANDS + 1] = "-ABEFR";
+const char *   vtxTableChannelNames[VTX_TABLE_MAX_CHANNELS + 1] = {
+        "-", "1", "2", "3", "4", "5", "6", "7", "8",
+};
+bool           vtxTableIsFactoryBand[VTX_TABLE_MAX_BANDS];
+int            vtxTablePowerLevels;
+uint16_t       vtxTablePowerValues[VTX_TABLE_MAX_POWER_LEVELS];
+const char *   vtxTablePowerLabels[VTX_TABLE_MAX_POWER_LEVELS + 1];
+#endif
+
 void vtxTableInit(void)
 {
+#if defined(USE_VTX_TABLE)
     const vtxTableConfig_t *config = vtxTableConfig();
 
     vtxTableBandCount = config->bands;
@@ -59,6 +93,7 @@ void vtxTableInit(void)
         }
         vtxTableBandNames[band + 1] = config->bandNames[band];
         vtxTableBandLetters[band + 1] = config->bandLetters[band];
+        vtxTableIsFactoryBand[band] = config->isFactoryBand[band];
     }
 
     vtxTableBandNames[0] = "--------";
@@ -76,7 +111,29 @@ void vtxTableInit(void)
     vtxTablePowerLabels[0] = "---";
 
     vtxTablePowerLevels = config->powerLevels;
+#else
+    for (int band = 0; band < VTX_TABLE_MAX_BANDS; band++) {
+        vtxTableIsFactoryBand[band] = true;
+    }
+    for (int powerIndex = 0; powerIndex < VTX_TABLE_MAX_POWER_LEVELS; powerIndex++) {
+        vtxTablePowerValues[powerIndex] = 0;
+        vtxTablePowerLabels[powerIndex] = NULL;
+    }
+    vtxTablePowerLevels = VTX_TABLE_MAX_POWER_LEVELS;
+    vtxTableSetFactoryBands(false);
+#endif
 }
+
+#ifndef USE_VTX_TABLE
+void vtxTableSetFactoryBands(bool isFactory)
+{
+    for(int i = 0;i < VTX_TABLE_MAX_BANDS; i++) {
+        vtxTableIsFactoryBand[i] = isFactory;
+    }
+}
+#endif
+
+#if defined(USE_VTX_TABLE)
 
 void vtxTableStrncpyWithPad(char *dst, const char *src, int length)
 {
@@ -118,6 +175,7 @@ void vtxTableConfigClearBand(vtxTableConfig_t *config, int band)
     tfp_sprintf(tempbuf, "BAND%d", band + 1);
     vtxTableStrncpyWithPad(config->bandNames[band], tempbuf, VTX_TABLE_BAND_NAME_LENGTH);
     config->bandLetters[band] = '1' + band;
+    config->isFactoryBand[band] = false;
 }
 
 void vtxTableConfigClearPowerValues(vtxTableConfig_t *config, int start)

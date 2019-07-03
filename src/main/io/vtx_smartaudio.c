@@ -46,7 +46,6 @@
 #include "io/vtx.h"
 #include "io/vtx_control.h"
 #include "io/vtx_smartaudio.h"
-#include "io/vtx_string.h"
 
 
 // Timing parameters
@@ -92,9 +91,9 @@ enum {
 
 
 // convert between 'saDevice.channel' and band/channel values
-#define SA_DEVICE_CHVAL_TO_BAND(val) ((val) / (uint8_t)8)
-#define SA_DEVICE_CHVAL_TO_CHANNEL(val) ((val) % (uint8_t)8)
-#define SA_BANDCHAN_TO_DEVICE_CHVAL(band, channel) ((band) * (uint8_t)8 + (channel))
+#define SA_DEVICE_CHVAL_TO_BAND(val) ((val) / (uint8_t)vtxTableChannelCount) + 1
+#define SA_DEVICE_CHVAL_TO_CHANNEL(val) ((val) % (uint8_t)vtxTableChannelCount) + 1
+#define SA_BANDCHAN_TO_DEVICE_CHVAL(band, channel) ((band - 1) * (uint8_t)vtxTableChannelCount + (channel - 1))
 
 
 // Statistical counters, for user side trouble shooting.
@@ -118,6 +117,7 @@ smartAudioDevice_t saDevice = {
     .mode = 0,
     .freq = 0,
     .orfreq = 0,
+    .willBootIntoPitMode = false,
 };
 
 static smartAudioDevice_t saDevicePrev = {
@@ -138,8 +138,8 @@ static char *saSupportedPowerLabelPointerArray[VTX_SMARTAUDIO_POWER_COUNT + 1];
 bool saDeferred = true; // saCms variable?
 
 // Receive frame reassembly buffer
-#define SA_MAX_RCVLEN 15
-static uint8_t sa_rbuf[SA_MAX_RCVLEN+4]; // XXX delete 4 byte guard
+#define SA_MAX_RCVLEN 21
+static uint8_t sa_rbuf[SA_MAX_RCVLEN + 4]; // XXX delete 4 byte guard
 
 //
 // CRC8 computations
@@ -182,9 +182,9 @@ static void saPrintSettings(void)
     dprintf(("  channel: %d ", saDevice.channel));
     dprintf(("freq: %d ", saDevice.freq));
     dprintf(("power: %d ", saDevice.power));
-    dprintf(("powerval: %d ",saDevice.power > 0 ? vtxSmartAudio.powerValues[saDevice.power - 1] : -1));
+    dprintf(("powerval: %d ", saDevice.power > 0 ? vtxTablePowerValues[saDevice.power - 1] : -1));
     dprintf(("pitfreq: %d ", saDevice.orfreq));
-    dprintf(("device %s boot into pitmode ", saDevice.willBootIntoPitMode ? "will" : "will not"));
+    dprintf(("BootIntoPitMode: %s ", saDevice.willBootIntoPitMode ? "yes" : "no"));
     dprintf(("\r\n"));
 }
 #endif
@@ -208,7 +208,7 @@ static void saAutobaud(void)
 
 #if 0
     dprintf(("autobaud: %d rcvd %d/%d (%d)\r\n",
-        sa_smartbaud, saStat.pktrcvd, saStat.pktsent, ((saStat.pktrcvd * 100) / saStat.pktsent)));
+             sa_smartbaud, saStat.pktrcvd, saStat.pktsent, ((saStat.pktrcvd * 100) / saStat.pktsent)));
 #endif
 
     if (((saStat.pktrcvd * 100) / saStat.pktsent) >= 70) {
@@ -221,11 +221,11 @@ static void saAutobaud(void)
     dprintf(("autobaud: adjusting\r\n"));
 
     if ((sa_adjdir == 1) && (sa_smartbaud == SMARTBAUD_MAX)) {
-       sa_adjdir = -1;
-       dprintf(("autobaud: now going down\r\n"));
+        sa_adjdir = -1;
+        dprintf(("autobaud: now going down\r\n"));
     } else if ((sa_adjdir == -1 && sa_smartbaud == SMARTBAUD_MIN)) {
-       sa_adjdir = 1;
-       dprintf(("autobaud: now going up\r\n"));
+        sa_adjdir = 1;
+        dprintf(("autobaud: now going up\r\n"));
     }
 
     sa_smartbaud += sa_baudstep * sa_adjdir;
@@ -281,7 +281,7 @@ static void saProcessResponse(uint8_t *buf, int len)
         saDevice.channel = buf[2];
         uint8_t rawPowerValue = buf[3];
         saDevice.mode = buf[4];
-        saDevice.freq = (buf[5] << 8)|buf[6];
+        saDevice.freq = (buf[5] << 8) | buf[6];
 
         // read pir and por flags to detect if the device will boot into pitmode.
         // note that "quit pitmode without unsetting the pitmode flag" clears pir and por flags but the device will still boot into pitmode.
@@ -291,15 +291,15 @@ static void saProcessResponse(uint8_t *buf, int len)
         if (saDevice.mode & SA_MODE_GET_PITMODE) {
             bool newBootMode = (saDevice.mode & SA_MODE_GET_IN_RANGE_PITMODE) || (saDevice.mode & SA_MODE_GET_OUT_RANGE_PITMODE);
             if (newBootMode != saDevice.willBootIntoPitMode) {
-                dprintf(("saProcessResponse: willBootIntoPitMode is now %s\r\n", saDevice.willBootIntoPitMode ? "true" : "false"));
+                dprintf(("saProcessResponse: willBootIntoPitMode is now %s\r\n", newBootMode ? "true" : "false"));
             }
             saDevice.willBootIntoPitMode = newBootMode;
         }
 
-        if(saDevice.version == 3) {
+        if (saDevice.version == 3) {
             //read dbm based power levels
             //aaaaaand promptly forget them. todo: write them into vtxtable pg and load it
-            if(len < 10) {//current power level in dbm field missing or power level length field missing or zero power levels reported
+            if (len < 10) { //current power level in dbm field missing or power level length field missing or zero power levels reported
                 dprintf(("processResponse: V2.1 vtx didn't report any power levels\r\n"));
                 break;
             }
@@ -323,8 +323,8 @@ static void saProcessResponse(uint8_t *buf, int len)
             }
 
             dprintf(("processResponse: %d power values: %d, %d, %d, %d\r\n",
-             vtxSmartAudio.capability.powerCount, vtxSmartAudio.powerValues[0], vtxSmartAudio.powerValues[1],
-             vtxSmartAudio.powerValues[2], vtxSmartAudio.powerValues[3]));
+                     vtxTablePowerLevels, vtxTablePowerValues[0], vtxTablePowerValues[1],
+                     vtxTablePowerValues[2], vtxTablePowerValues[3]));
             //dprintf(("processResponse: V2.1 received vtx power value %d\r\n",buf[7]));
             rawPowerValue = buf[7];
         }
@@ -333,8 +333,8 @@ static void saProcessResponse(uint8_t *buf, int len)
 #endif
         saDevice.power = 0;//set to unknown power level if the reported one doesnt match any of the known ones
         dprintf(("processResponse: rawPowerValue is %d, legacy power is %d\r\n", rawPowerValue, buf[3]));
-        for (int8_t i = 0; i < vtxSmartAudio.capability.powerCount; i++) {
-            if(rawPowerValue == vtxSmartAudio.powerValues[i]) {
+        for (int8_t i = 0; i < vtxTablePowerLevels; i++) {
+            if (rawPowerValue == vtxTablePowerValues[i]) {
 #ifdef USE_SMARTAUDIO_DPRINTF
                 if (prevPower != i + 1) {
                     dprintf(("processResponse: power changed from index %d to index %d\r\n", prevPower, i + 1));
@@ -362,7 +362,7 @@ static void saProcessResponse(uint8_t *buf, int len)
             break;
         }
 
-        const uint16_t freq = (buf[2] << 8)|buf[3];
+        const uint16_t freq = (buf[2] << 8) | buf[3];
 
         if (freq & SA_FREQ_GETPIT) {
             saDevice.orfreq = freq & SA_FREQ_MASK;
@@ -378,8 +378,8 @@ static void saProcessResponse(uint8_t *buf, int len)
 
     case SA_CMD_SET_MODE: // Set Mode
         dprintf(("saProcessResponse: SET_MODE 0x%x (pir %s, por %s, pitdsbl %s, %s)\r\n",
-                buf[2], (buf[2] & 1) ? "on" : "off", (buf[2] & 2) ? "on" : "off", (buf[3] & 4) ? "on" : "off",
-                (buf[4] & 8) ? "unlocked" : "locked"));
+                 buf[2], (buf[2] & 1) ? "on" : "off", (buf[2] & 2) ? "on" : "off", (buf[3] & 4) ? "on" : "off",
+                 (buf[4] & 8) ? "unlocked" : "locked"));
         break;
 
     default:
@@ -494,12 +494,12 @@ static void saSendFrame(uint8_t *buf, int len)
 {
     if (!IS_RC_MODE_ACTIVE(BOXVTXCONTROLDISABLE)) {
         switch (smartAudioSerialPort->identifier) {
-            case SERIAL_PORT_SOFTSERIAL1:
-            case SERIAL_PORT_SOFTSERIAL2:
-                break;
-            default:
-                serialWrite(smartAudioSerialPort, 0x00); // Generate 1st start bit
-                break;
+        case SERIAL_PORT_SOFTSERIAL1:
+        case SERIAL_PORT_SOFTSERIAL2:
+            break;
+        default:
+            serialWrite(smartAudioSerialPort, 0x00); // Generate 1st start bit
+            break;
         }
 
         for (int i = 0 ; i < len ; i++) {
@@ -576,7 +576,7 @@ static bool saQueueFull(void)
 static void saQueueCmd(uint8_t *buf, int len)
 {
     if (saQueueFull()) {
-         return;
+        return;
     }
 
     sa_queue[sa_qhead].buf = buf;
@@ -609,7 +609,7 @@ static bool saValidateFreq(uint16_t freq)
     return (freq >= VTX_SMARTAUDIO_MIN_FREQUENCY_MHZ && freq <= VTX_SMARTAUDIO_MAX_FREQUENCY_MHZ);
 }
 
-static void saDoDevSetFreq(uint16_t freq)
+void saSetFreq(uint16_t freq)
 {
     static uint8_t buf[7] = { 0xAA, 0x55, SACMD(SA_CMD_SET_FREQ), 2 };
     static uint8_t switchBuf[7];
@@ -645,14 +645,9 @@ static void saDoDevSetFreq(uint16_t freq)
     saQueueCmd(buf, 7);
 }
 
-void saSetFreq(uint16_t freq)
-{
-    saDoDevSetFreq(freq);
-}
-
 void saSetPitFreq(uint16_t freq)
 {
-    saDoDevSetFreq(freq | SA_FREQ_SETPIT);
+    saSetFreq(freq | SA_FREQ_SETPIT);
 }
 
 #if 0
@@ -662,34 +657,12 @@ static void saGetPitFreq(void)
 }
 #endif
 
-static bool saValidateBandAndChannel(uint8_t band, uint8_t channel)
-{
-    return (band >= VTX_SMARTAUDIO_MIN_BAND && band <= VTX_SMARTAUDIO_MAX_BAND &&
-             channel >= VTX_SMARTAUDIO_MIN_CHANNEL && channel <= VTX_SMARTAUDIO_MAX_CHANNEL);
-}
-
-static void saDevSetBandAndChannel(uint8_t band, uint8_t channel)
-{
-    static uint8_t buf[6] = { 0xAA, 0x55, SACMD(SA_CMD_SET_CHAN), 1 };
-
-    buf[4] = SA_BANDCHAN_TO_DEVICE_CHVAL(band, channel);
-    buf[5] = CRC8(buf, 5);
-    dprintf(("saDevSetBandAndChannel band %d channel %d value sent 0x%x", band, channel, buf[4]));
-
-    saQueueCmd(buf, 6);
-}
-
-void saSetBandAndChannel(uint8_t band, uint8_t channel)
-{
-    saDevSetBandAndChannel(band, channel);
-}
-
 void saSetMode(int mode)
 {
     static uint8_t buf[6] = { 0xAA, 0x55, SACMD(SA_CMD_SET_MODE), 1 };
 
-    buf[4] = (mode & 0x3f)|saLockMode;
-    if (saDevice.version>=3 && (mode & SA_MODE_CLR_PITMODE) &&
+    buf[4] = (mode & 0x3f) | saLockMode;
+    if (saDevice.version >= 3 && (mode & SA_MODE_CLR_PITMODE) &&
         ((mode & SA_MODE_SET_IN_RANGE_PITMODE) || (mode & SA_MODE_SET_OUT_RANGE_PITMODE))) {
         saDevice.willBootIntoPitMode = true;//quit pitmode without unsetting flag.
         //the response will just say pit=off but the device will still go into pitmode on reboot.
@@ -736,33 +709,18 @@ bool vtxSmartAudioInit(void)
         return false;
     }
 
-    for(int8_t i = 0; i < VTX_SMARTAUDIO_POWER_COUNT; i++) {
+    for (int8_t i = 0; i < VTX_SMARTAUDIO_POWER_COUNT; i++) {
         saSupportedPowerValues[i] = 1;
     }
 
-#ifdef USE_VTX_TABLE
-    vtxSmartAudio.capability.bandCount = vtxTableBandCount;
-    vtxSmartAudio.capability.channelCount = vtxTableChannelCount;
-    vtxSmartAudio.capability.powerCount = vtxTablePowerLevels;
-    vtxSmartAudio.frequencyTable = (uint16_t *)vtxTableFrequency;
-    vtxSmartAudio.bandNames = vtxTableBandNames;
-    vtxSmartAudio.bandLetters = vtxTableBandLetters;
-    vtxSmartAudio.channelNames = vtxTableChannelNames;
-    vtxSmartAudio.powerNames = vtxTablePowerLabels;
-    vtxSmartAudio.powerValues = vtxTablePowerValues;
-#else
-    vtxSmartAudio.capability.bandCount = VTX_SMARTAUDIO_BAND_COUNT;
-    vtxSmartAudio.capability.channelCount = VTX_SMARTAUDIO_CHANNEL_COUNT;
-    vtxSmartAudio.capability.powerCount = saSupportedNumPowerLevels,
-    vtxSmartAudio.frequencyTable = vtxStringFrequencyTable();
-    vtxSmartAudio.bandNames = vtxStringBandNames();
-    vtxSmartAudio.bandLetters = vtxStringBandLetters();
-    vtxSmartAudio.channelNames = vtxStringChannelNames();
-    vtxSmartAudio.powerNames = (const char**)saSupportedPowerLabelPointerArray;
-    vtxSmartAudio.powerValues = saSupportedPowerValues;
-#endif
+    dprintf(("vtxSmartAudioInit %d power levels recorded\r\n", vtxTablePowerLevels));
+
+
 
     vtxCommonSetDevice(&vtxSmartAudio);
+#ifndef USE_VTX_TABLE
+    vtxTableSetFactoryBands(true);
+#endif
 
     vtxInit();
 
@@ -806,7 +764,7 @@ static void vtxSAProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
         // Also don't send it to V2.1 for the same reason.
         if (saDevice.version) {
             if (saDevice.version == 2) {
-                saDoDevSetFreq(SA_FREQ_GETPIT);
+                saSetFreq(SA_FREQ_GETPIT);
                 initPhase = SA_INITPHASE_WAIT_PITFREQ;
             } else {
                 initPhase = SA_INITPHASE_DONE;
@@ -818,20 +776,28 @@ static void vtxSAProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
                 saSupportedPowerValues[1] = 16;
                 saSupportedPowerValues[2] = 25;
                 saSupportedPowerValues[3] = 40;
-            }else if(saDevice.version == 2) {
+            } else if (saDevice.version == 2) {
                 saSupportedPowerValues[0] = 0;
                 saSupportedPowerValues[1] = 1;
                 saSupportedPowerValues[2] = 2;
                 saSupportedPowerValues[3] = 3;
             }
 
-            if (saDevice.version >= 2) {//V2.0 and V1.0 use defaults set at declaration
-                vtxSmartAudio.capability.powerCount = constrain(saSupportedNumPowerLevels, 0, VTX_SMARTAUDIO_POWER_COUNT);
-                for(int8_t i = 0; i < saSupportedNumPowerLevels; i++) {
-                    tfp_sprintf(saSupportedPowerLabels[i + 1], "%3d", constrain(saSupportedPowerValues[i], 0, 999));
+            //without USE_VTX_TABLE, fill vtxTable variables with default settings (instead of loading them from PG)
+            vtxTablePowerLevels = constrain(saSupportedNumPowerLevels, 0, VTX_SMARTAUDIO_POWER_COUNT);
+            if (saDevice.version >= 3) {
+                for (int8_t i = 0; i < vtxTablePowerLevels; i++) {
                     //ideally we would convert dbm to mW here
+                    tfp_sprintf(saSupportedPowerLabels[i + 1], "%3d", constrain(saSupportedPowerValues[i], 0, 999));
                 }
             }
+            for (int8_t i = 0; i < vtxTablePowerLevels; i++) {
+                vtxTablePowerValues[i] = saSupportedPowerValues[i];
+            }
+            for (int8_t i = 0; i < vtxTablePowerLevels + 1; i++) {
+                vtxTablePowerLabels[i] = saSupportedPowerLabels[i];
+            }
+            dprintf(("vtxSAProcess init phase vtxTablePowerLevels set to %d\r\n", vtxTablePowerLevels));
 #endif
 
             if (saDevice.version >= 2 ) {
@@ -862,16 +828,17 @@ static void vtxSAProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
         dprintf(("process: resending 0x%x\r\n", sa_outstanding));
         // XXX Todo: Resend termination and possible offline transition
         saResendCmd();
-    lastCommandSentMs = nowMs;
+        lastCommandSentMs = nowMs;
     } else if (!saQueueEmpty()) {
         // Command pending. Send it.
         dprintf(("process: sending queue\r\n"));
         saSendQueue();
-    lastCommandSentMs = nowMs;
-    } else if ((nowMs - lastCommandSentMs < SMARTAUDIO_POLLING_WINDOW) && (nowMs - sa_lastTransmissionMs >= SMARTAUDIO_POLLING_INTERVAL)) {
-    dprintf(("process: sending status change polling\r\n"));
-    saGetSettings();
-    saSendQueue();
+        lastCommandSentMs = nowMs;
+    } else if ((nowMs - lastCommandSentMs < SMARTAUDIO_POLLING_WINDOW)
+               && (nowMs - sa_lastTransmissionMs >= SMARTAUDIO_POLLING_INTERVAL)) {
+        dprintf(("process: sending status change polling\r\n"));
+        saGetSettings();
+        saSendQueue();
     }
 }
 #ifdef USE_VTX_COMMON
@@ -885,14 +852,39 @@ vtxDevType_e vtxSAGetDeviceType(const vtxDevice_t *vtxDevice)
 
 static bool vtxSAIsReady(const vtxDevice_t *vtxDevice)
 {
-    return vtxDevice!=NULL && !(saDevice.version == 0);
+#ifndef USE_VTX_TABLE
+    if (vtxDevice != NULL && saDevice.power == 0) {
+        return false;
+        //wait until power reading exists
+        //this is needed bc the powervalues are loaded into vtxTableXXX after the first settings are received
+        //thus the first time processResponse runs its index lookup it won't find anything and no power is recorded
+        //this waits until after the second time settings are received which will actually find something
+        //this check is not needed with USE_VTX_TABLE as the table is loaded from pg before smartaudio is even started
+        //in fact, with USE_VTX_TABLE this check could end up paralyzing the smartaudio implementation if the user has
+        //chosen to omit a power state in the vtxtable but the vtx happens to power up in that state for whatever reason
+    }
+#endif
+    return vtxDevice != NULL && saDevice.version != 0;
+}
+
+static bool saValidateBandAndChannel(uint8_t band, uint8_t channel)
+{
+    return (band >= VTX_SMARTAUDIO_MIN_BAND && band <= vtxTableBandCount &&
+            channel >= VTX_SMARTAUDIO_MIN_CHANNEL && channel <= vtxTableChannelCount);
 }
 
 static void vtxSASetBandAndChannel(vtxDevice_t *vtxDevice, uint8_t band, uint8_t channel)
 {
     UNUSED(vtxDevice);
     if (saValidateBandAndChannel(band, channel)) {
-        saSetBandAndChannel(band - 1, channel - 1);
+        static uint8_t buf[6] = { 0xAA, 0x55, SACMD(SA_CMD_SET_CHAN), 1 };
+
+        buf[4] = SA_BANDCHAN_TO_DEVICE_CHVAL(band, channel);
+        buf[5] = CRC8(buf, 5);
+        dprintf(("vtxSASetBandAndChannel set index band %d channel %d value sent 0x%x\r\n", band, channel, buf[4]));
+
+        //this will clear saDevice.mode & SA_MODE_GET_FREQ_BY_FREQ
+        saQueueCmd(buf, 6);
     }
 }
 
@@ -904,12 +896,14 @@ static void vtxSASetPowerByIndex(vtxDevice_t *vtxDevice, uint8_t index)
         return;
     }
 
-    if (index <= 0 || index > vtxSmartAudio.capability.powerCount) {
-        dprintf(("saSetPowerByIndex: cannot get power level %d, only levels 1 through %d supported", index, vtxSmartAudio.capability.powerCount));
+    uint16_t powerValue = 0;
+    if (!vtxCommonLookupPowerValue(vtxDevice, index, &powerValue)) {
+        dprintf(("saSetPowerByIndex: cannot get power level %d, only levels 1 through %d supported", index,
+                 vtxTablePowerLevels));
         return;
     }
 
-    buf[4] = vtxSmartAudio.powerValues[index - 1];//use vtxcommonlookuppowervalue instead?
+    buf[4] = powerValue;
     dprintf(("saSetPowerByIndex: index %d, value %d\r\n", index, buf[4]));
     if (saDevice.version == 3) {
         buf[4] |= 128;//set MSB to indicate set power by dbm
@@ -929,7 +923,7 @@ static void vtxSASetPitMode(vtxDevice_t *vtxDevice, uint8_t onoff)
         return;
     }
 
-    if(saDevice.version >= 3 && !saDevice.willBootIntoPitMode) {
+    if (saDevice.version >= 3 && !saDevice.willBootIntoPitMode) {
         if (onoff) {
             // enable pitmode using SET_POWER command with 0 dbm.
             // This enables pitmode without causing the device to boot into pitmode next power-up
@@ -967,9 +961,11 @@ static void vtxSASetPitMode(vtxDevice_t *vtxDevice, uint8_t onoff)
 
 static void vtxSASetFreq(vtxDevice_t *vtxDevice, uint16_t freq)
 {
-    UNUSED(vtxDevice);
+    if (!vtxSAIsReady(vtxDevice)) {
+        return;
+    }
+
     if (saValidateFreq(freq)) {
-        saSetMode(0);        //need to be in FREE mode to set freq
         saSetFreq(freq);
     }
 }
@@ -980,11 +976,15 @@ static bool vtxSAGetBandAndChannel(const vtxDevice_t *vtxDevice, uint8_t *pBand,
         return false;
     }
 
-    // if in user-freq mode then report band as zero
-    *pBand = (saDevice.mode & SA_MODE_GET_FREQ_BY_FREQ) ? 0 :
-        (SA_DEVICE_CHVAL_TO_BAND(saDevice.channel) + 1);
-    *pChannel = SA_DEVICE_CHVAL_TO_CHANNEL(saDevice.channel) + 1;
-    return true;
+    if (saDevice.mode & SA_MODE_GET_FREQ_BY_FREQ) {
+        *pBand = 0;
+        *pChannel = 0;
+        return true;
+    } else {
+        *pBand = SA_DEVICE_CHVAL_TO_BAND(saDevice.channel);
+        *pChannel = SA_DEVICE_CHVAL_TO_CHANNEL(saDevice.channel);
+        return true;
+    }
 }
 
 static bool vtxSAGetPowerIndex(const vtxDevice_t *vtxDevice, uint8_t *pIndex)
@@ -1015,9 +1015,9 @@ static bool vtxSAGetFreq(const vtxDevice_t *vtxDevice, uint16_t *pFreq)
 
     // if not in user-freq mode then convert band/chan to frequency
     *pFreq = (saDevice.mode & SA_MODE_GET_FREQ_BY_FREQ) ? saDevice.freq :
-        vtxCommonLookupFrequency(&vtxSmartAudio,
-                SA_DEVICE_CHVAL_TO_BAND(saDevice.channel) + 1,
-                SA_DEVICE_CHVAL_TO_CHANNEL(saDevice.channel) + 1);
+             vtxCommonLookupFrequency(&vtxSmartAudio,
+                                      SA_DEVICE_CHVAL_TO_BAND(saDevice.channel),
+                                      SA_DEVICE_CHVAL_TO_CHANNEL(saDevice.channel));
     return true;
 }
 

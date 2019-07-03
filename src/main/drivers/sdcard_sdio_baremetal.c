@@ -35,7 +35,6 @@
 
 #include "drivers/time.h"
 
-#include "pg/pg.h"
 #include "pg/bus_spi.h" // For spiPinConfig_t, which is unused but should be defined
 #include "pg/sdio.h"
 
@@ -202,6 +201,7 @@ static void sdcardSdio_init(const sdcardConfig_t *config, const spiPinConfig_t *
     }
 
 #ifdef USE_DMA_SPEC
+#if !defined(STM32H7) // H7 uses IDMA
     const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_SDIO, 0, sdioConfig()->dmaopt);
 
     if (!dmaChannelSpec) {
@@ -215,6 +215,7 @@ static void sdcardSdio_init(const sdcardConfig_t *config, const spiPinConfig_t *
         sdcard.state = SDCARD_STATE_NOT_PRESENT;
         return;
     }
+#endif
 #endif
     if (config->cardDetectTag) {
         sdcard.cardDetectPin = IOGetByTag(config->cardDetectTag);
@@ -230,7 +231,11 @@ static void sdcardSdio_init(const sdcardConfig_t *config, const spiPinConfig_t *
         sdcard.useCache = 0;
     }
 #ifdef USE_DMA_SPEC
+#if defined(STM32H7) // H7 uses IDMA
+    SD_Initialize_LL(0);
+#else
     SD_Initialize_LL(dmaChannelSpec->ref);
+#endif
 #else
     SD_Initialize_LL(SDCARD_SDIO_DMA_OPT);
 #endif

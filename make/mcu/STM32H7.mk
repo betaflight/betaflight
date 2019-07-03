@@ -2,9 +2,6 @@
 # H7 Make file include
 #
 
-# Override LINKER_DIR until H7 merge is complete
-LINKER_DIR = $(ROOT)/src/main/target/link
-
 ifeq ($(DEBUG_HARDFAULTS),H7)
 CFLAGS               += -DDEBUG_HARDFAULTS
 endif
@@ -162,22 +159,26 @@ DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_DMA_RAM
 # H750xB : 128K FLASH, 1M RAM
 #
 ifeq ($(TARGET),$(filter $(TARGET),$(H743xI_TARGETS)))
-DEVICE_FLAGS   += -DSTM32H743xx
-LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_h743_2m.ld
-STARTUP_SRC     = startup_stm32h743xx.s
-TARGET_FLASH   := 2048
+DEVICE_FLAGS       += -DSTM32H743xx
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h743_2m.ld
+STARTUP_SRC         = startup_stm32h743xx.s
+TARGET_FLASH       := 2048
 else ifeq ($(TARGET),$(filter $(TARGET),$(H750xB_TARGETS)))
-DEVICE_FLAGS   += -DSTM32H750xx
-LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_h750_128k.ld
-STARTUP_SRC     = startup_stm32h743xx.s
-TARGET_FLASH   := 128
+DEVICE_FLAGS       += -DSTM32H750xx
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h750_128k.ld
+STARTUP_SRC         = startup_stm32h743xx.s
+DEFAULT_TARGET_FLASH := 128
+
+ifeq ($(TARGET_FLASH),)
+TARGET_FLASH := $(DEFAULT_TARGET_FLASH) 
+endif
 
 ifeq ($(EXST),yes)
-FIRMWARE_SIZE  := 448
+FIRMWARE_SIZE      := 448
 # TARGET_FLASH now becomes the amount of RAM memory that is occupied by the firmware
 # and the maximum size of the data stored on the external storage device.
-TARGET_FLASH   := FIRMWARE_SIZE
-LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_h750_exst.ld
+TARGET_FLASH       := FIRMWARE_SIZE
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h750_exst.ld
 endif
 
 ifneq ($(DEBUG),GDB)
@@ -190,6 +191,10 @@ endif
 
 else
 $(error Unknown MCU for H7 target)
+endif
+
+ifeq ($(LD_SCRIPT),)
+LD_SCRIPT = $(DEFAULT_LD_SCRIPT)
 endif
 
 ifneq ($(FIRMWARE_SIZE),)
@@ -209,7 +214,7 @@ VCP_SRC = \
             drivers/usb_io.c
 
 MCU_COMMON_SRC = \
-            target/system_stm32h7xx.c \
+            startup/system_stm32h7xx.c \
             drivers/system_stm32h7xx.c \
             drivers/timer_hal.c \
             drivers/timer_stm32h7xx.c \

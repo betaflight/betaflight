@@ -20,15 +20,17 @@
 
 #pragma once
 
-#include "platform.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
+#include "drivers/io.h"
+#include "drivers/timer.h" // For HARDWARE_TIMER_DEFINITION_COUNT
 
-#if defined(USE_QUAD_MIXER_ONLY)
-#define MAX_SUPPORTED_MOTORS 4
-#define MAX_SUPPORTED_SERVOS 1
-#else
-#ifndef MAX_SUPPORTED_MOTORS
-#define MAX_SUPPORTED_MOTORS 8
-#endif
-#define MAX_SUPPORTED_SERVOS 8
+#ifdef USE_TIMER_MGMT
+
+typedef struct timerUpConfig_s {
+    int8_t dmaopt;
+} timerUpConfig_t;
+
+PG_DECLARE_ARRAY(timerUpConfig_t, HARDWARE_TIMER_DEFINITION_COUNT, timerUpConfig);
 #endif

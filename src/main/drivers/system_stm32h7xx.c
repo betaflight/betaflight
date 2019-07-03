@@ -180,7 +180,7 @@ void systemInit(void)
     //  Mark ITCM-RAM as read-only
     HAL_MPU_Disable();
 
-    // "For Cortex®-M7, TCMs memories always behave as Non-cacheable, Non-shared normal memories, irrespectiveof the memory type attributes defined in the MPU for a memory region containing addresses held in the TCM"
+    // "For Cortex®-M7, TCMs memories always behave as Non-cacheable, Non-shared normal memories, irrespective of the memory type attributes defined in the MPU for a memory region containing addresses held in the TCM"
     // See AN4838
 
     MPU_Region_InitTypeDef MPU_InitStruct;
@@ -230,14 +230,6 @@ void systemInit(void)
 
 void systemReset(void)
 {
-#if 0
-#ifdef USE_GYRO
-    if (mpuResetFn) {
-        mpuResetFn();
-    }
-#endif
-#endif
-
     SCB_DisableDCache();
     SCB_DisableICache();
 
@@ -253,37 +245,37 @@ void forcedSystemResetWithoutDisablingCaches(void)
     NVIC_SystemReset();
 }
 
-void systemResetToBootloader(void)
+void systemResetToBootloader(bootloaderRequestType_e requestType)
 {
-#if 0
-#ifdef USE_GYRO
-    if (mpuResetFn) {
-        mpuResetFn();
+    switch (requestType) {
+#if defined(USE_FLASH_BOOT_LOADER)
+    case BOOTLOADER_REQUEST_FLASH:
+        persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_BOOTLOADER_REQUEST_FLASH);
+
+        break;
+#endif
+    case BOOTLOADER_REQUEST_ROM:
+    default:
+        persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_BOOTLOADER_REQUEST_ROM);
+
+        break;
     }
-#endif
-#endif
-#ifdef USE_EXST
-    persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_FLASH_BOOTLOADER_REQUEST);
-#else
-    persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_BOOTLOADER_REQUEST);
-#endif
+
     __disable_irq();
     NVIC_SystemReset();
 }
 
 static uint32_t bootloaderRequest;
 
-bool systemIsFlashBootloaderRequested(void)
-{
-    return (bootloaderRequest == RESET_FLASH_BOOTLOADER_REQUEST);
-}
-
 void systemCheckResetReason(void)
 {
     bootloaderRequest = persistentObjectRead(PERSISTENT_OBJECT_RESET_REASON);
 
     switch (bootloaderRequest) {
-    case RESET_BOOTLOADER_REQUEST:
+#if defined(USE_FLASH_BOOT_LOADER)
+    case RESET_BOOTLOADER_REQUEST_FLASH:
+#endif
+    case RESET_BOOTLOADER_REQUEST_ROM:
         persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_BOOTLOADER_POST);
         break;
 

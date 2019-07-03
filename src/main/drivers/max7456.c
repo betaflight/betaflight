@@ -29,8 +29,6 @@
 #include "build/debug.h"
 
 #include "pg/max7456.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
 #include "pg/vcd.h"
 
 #include "drivers/bus_spi.h"
@@ -212,7 +210,6 @@ static uint8_t  displayMemoryModeReg = 0;
 static uint8_t  hosRegValue; // HOS (Horizontal offset register) value
 static uint8_t  vosRegValue; // VOS (Vertical offset register) value
 
-static bool max7456Lock         = false;
 static bool fontIsLoading       = false;
 
 static uint8_t max7456DeviceType;
@@ -649,11 +646,9 @@ void max7456DrawScreen(void)
 {
     static uint16_t pos = 0;
 
-    if (!max7456Lock && !fontIsLoading) {
+    if (!fontIsLoading) {
 
         // (Re)Initialize MAX7456 at startup or stall is detected.
-
-        max7456Lock = true;
 
         max7456ReInitIfRequired();
 
@@ -684,7 +679,6 @@ void max7456DrawScreen(void)
             __spiBusTransactionEnd(busdev);
 #endif // MAX7456_DMA_CHANNEL_TX
         }
-        max7456Lock = false;
     }
 }
 
@@ -732,17 +726,12 @@ static void max7456DrawScreenSlow(void)
 // should not be used when armed
 void max7456RefreshAll(void)
 {
-    if (!max7456Lock) {
 #ifdef MAX7456_DMA_CHANNEL_TX
-        while (dmaTransactionInProgress);
+    while (dmaTransactionInProgress);
 #endif
-        max7456Lock = true;
 
-        max7456ReInitIfRequired();
-        max7456DrawScreenSlow();
-
-        max7456Lock = false;
-    }
+    max7456ReInitIfRequired();
+    max7456DrawScreenSlow();
 }
 
 void max7456WriteNvm(uint8_t char_address, const uint8_t *font_data)
@@ -750,8 +739,6 @@ void max7456WriteNvm(uint8_t char_address, const uint8_t *font_data)
 #ifdef MAX7456_DMA_CHANNEL_TX
     while (dmaTransactionInProgress);
 #endif
-    while (max7456Lock);
-    max7456Lock = true;
 
     __spiBusTransactionBegin(busdev);
     // disable display
@@ -779,8 +766,6 @@ void max7456WriteNvm(uint8_t char_address, const uint8_t *font_data)
     while ((max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00);
 
     __spiBusTransactionEnd(busdev);
-
-    max7456Lock = false;
 }
 
 #ifdef MAX7456_NRST_PIN

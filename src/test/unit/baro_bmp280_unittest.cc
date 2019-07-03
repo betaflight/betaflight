@@ -23,7 +23,7 @@ extern "C" {
 #include "drivers/barometer/barometer.h"
 #include "drivers/bus.h"
 
-void bmp280_calculate(int32_t *pressure, int32_t *temperature);
+void bmp280Calculate(int32_t *pressure, int32_t *temperature);
 
 extern uint32_t bmp280_up;
 extern uint32_t bmp280_ut;
@@ -75,7 +75,7 @@ TEST(baroBmp280Test, TestBmp280Calculate)
     bmp280_cal.dig_P9 = 6000;
 
     // when
-    bmp280_calculate(&pressure, &temperature);
+    bmp280Calculate(&pressure, &temperature);
 
     // then
     EXPECT_EQ(100653, pressure); // 100653 Pa
@@ -105,7 +105,7 @@ TEST(baroBmp280Test, TestBmp280CalculateHighP)
     bmp280_cal.dig_P9 = 6000;
 
     // when
-    bmp280_calculate(&pressure, &temperature);
+    bmp280Calculate(&pressure, &temperature);
 
     // then
     EXPECT_EQ(135382, pressure); // 135385 Pa
@@ -135,7 +135,7 @@ TEST(baroBmp280Test, TestBmp280CalculateZeroP)
     bmp280_cal.dig_P9 = 6000;
 
     // when
-    bmp280_calculate(&pressure, &temperature);
+    bmp280Calculate(&pressure, &temperature);
 
     // then
     EXPECT_EQ(0, pressure); // P1=0 trips pressure to 0 Pa, avoiding division by zero

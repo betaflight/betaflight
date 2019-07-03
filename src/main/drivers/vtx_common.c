@@ -31,9 +31,12 @@
 
 #include "common/time.h"
 #include "drivers/vtx_common.h"
+#include "drivers/vtx_table.h"
 
 
 static vtxDevice_t *vtxDevice = NULL;
+static uint8_t selectedBand = 0;
+static uint8_t selectedChannel = 0;
 
 void vtxCommonInit(void)
 {
@@ -76,15 +79,22 @@ void vtxCommonProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
 // band and channel are 1 origin
 void vtxCommonSetBandAndChannel(vtxDevice_t *vtxDevice, uint8_t band, uint8_t channel)
 {
-    if (band <= vtxDevice->capability.bandCount && channel <= vtxDevice->capability.channelCount) {
-        vtxDevice->vTable->setBandAndChannel(vtxDevice, band, channel);
+    uint16_t freq = vtxCommonLookupFrequency(vtxDevice, band, channel);
+    if (freq != 0) {
+        selectedChannel = channel;
+        selectedBand = band;
+        if (vtxTableIsFactoryBand[band - 1]) {
+            vtxDevice->vTable->setBandAndChannel(vtxDevice, band, channel);
+        } else {
+            vtxDevice->vTable->setFrequency(vtxDevice, freq);
+        }
     }
 }
 
-// index is zero origin, zero = power off completely
+// index is one origin, zero = unknown power level
 void vtxCommonSetPowerByIndex(vtxDevice_t *vtxDevice, uint8_t index)
 {
-    if (index <= vtxDevice->capability.powerCount) {
+    if (index <= vtxTablePowerLevels) {
         vtxDevice->vTable->setPowerByIndex(vtxDevice, index);
     }
 }
@@ -97,12 +107,28 @@ void vtxCommonSetPitMode(vtxDevice_t *vtxDevice, uint8_t onOff)
 
 void vtxCommonSetFrequency(vtxDevice_t *vtxDevice, uint16_t frequency)
 {
+    selectedBand = 0;
+    selectedChannel = 0;
     vtxDevice->vTable->setFrequency(vtxDevice, frequency);
 }
 
 bool vtxCommonGetBandAndChannel(const vtxDevice_t *vtxDevice, uint8_t *pBand, uint8_t *pChannel)
 {
-    return vtxDevice->vTable->getBandAndChannel(vtxDevice, pBand, pChannel);
+    bool result = vtxDevice->vTable->getBandAndChannel(vtxDevice, pBand, pChannel);
+    if ((!result || (*pBand == 0 && *pChannel == 0)) && selectedBand != 0 && selectedChannel != 0
+        && !vtxTableIsFactoryBand[selectedBand - 1]) {
+        uint16_t freq;
+        result = vtxCommonGetFrequency(vtxDevice, &freq);
+        if (!result || freq != vtxCommonLookupFrequency(vtxDevice, selectedBand, selectedChannel)) {
+            return false;
+        } else {
+            *pBand = selectedBand;
+            *pChannel = selectedChannel;
+            return true;
+        }
+    } else {
+        return result;
+    }
 }
 
 bool vtxCommonGetPowerIndex(const vtxDevice_t *vtxDevice, uint8_t *pIndex)
@@ -120,16 +146,10 @@ bool vtxCommonGetFrequency(const vtxDevice_t *vtxDevice, uint16_t *pFrequency)
     return vtxDevice->vTable->getFrequency(vtxDevice, pFrequency);
 }
 
-bool vtxCommonGetDeviceCapability(const vtxDevice_t *vtxDevice, vtxDeviceCapability_t *pDeviceCapability)
-{
-    memcpy(pDeviceCapability, &vtxDevice->capability, sizeof(vtxDeviceCapability_t));
-    return true;
-}
-
 const char *vtxCommonLookupBandName(const vtxDevice_t *vtxDevice, int band)
 {
     if (vtxDevice) {
-        return vtxDevice->bandNames[band];
+        return vtxTableBandNames[band];
     } else {
         return "?";
     }
@@ -138,7 +158,7 @@ const char *vtxCommonLookupBandName(const vtxDevice_t *vtxDevice, int band)
 char vtxCommonLookupBandLetter(const vtxDevice_t *vtxDevice, int band)
 {
     if (vtxDevice) {
-        return vtxDevice->bandLetters[band];
+        return vtxTableBandLetters[band];
     } else {
         return '?';
     }
@@ -147,15 +167,11 @@ char vtxCommonLookupBandLetter(const vtxDevice_t *vtxDevice, int band)
 const char *vtxCommonLookupChannelName(const vtxDevice_t *vtxDevice, int channel)
 {
     if (vtxDevice) {
-        return vtxDevice->channelNames[channel];
+        return vtxTableChannelNames[channel];
     } else {
         return "?";
     }
 }
-
-// XXX FIXME Size of a band in the frequency table is now fixed at
-// VTX_SETTINGS_MAX_CHANNEL (or VTX_TABLE_MAX_CHANNELS).
-// Size constant should be consolidated soon or later.
 
 //Converts frequency (in MHz) to band and channel values.
 bool vtxCommonLookupBandChan(const vtxDevice_t *vtxDevice, uint16_t freq, uint8_t *pBand, uint8_t *pChannel)
@@ -163,9 +179,9 @@ bool vtxCommonLookupBandChan(const vtxDevice_t *vtxDevice, uint16_t freq, uint8_
     if (vtxDevice) {
         // Use reverse lookup order so that 5880Mhz
         // get Raceband 7 instead of Fatshark 8.
-        for (int band = vtxDevice->capability.bandCount - 1 ; band >= 0 ; band--) {
-            for (int channel = 0 ; channel < vtxDevice->capability.channelCount ; channel++) {
-                if (vtxDevice->frequencyTable[band * VTX_SETTINGS_MAX_CHANNEL + channel] == freq) {
+        for (int band = vtxTableBandCount - 1 ; band >= 0 ; band--) {
+            for (int channel = 0 ; channel < vtxTableChannelCount ; channel++) {
+                if (vtxTableFrequency[band][channel] == freq) {
                     *pBand = band + 1;
                     *pChannel = channel + 1;
                     return true;
@@ -187,9 +203,9 @@ bool vtxCommonLookupBandChan(const vtxDevice_t *vtxDevice, uint16_t freq, uint8_
 uint16_t vtxCommonLookupFrequency(const vtxDevice_t *vtxDevice, int band, int channel)
 {
     if (vtxDevice) {
-        if (band > 0 && band <= vtxDevice->capability.bandCount &&
-                              channel > 0 && channel <= vtxDevice->capability.channelCount) {
-            return vtxDevice->frequencyTable[(band - 1) * VTX_SETTINGS_MAX_CHANNEL + (channel - 1)];
+        if (band > 0 && band <= vtxTableBandCount &&
+            channel > 0 && channel <= vtxTableChannelCount) {
+            return vtxTableFrequency[band - 1][channel - 1];
         }
     }
 
@@ -199,18 +215,19 @@ uint16_t vtxCommonLookupFrequency(const vtxDevice_t *vtxDevice, int band, int ch
 const char *vtxCommonLookupPowerName(const vtxDevice_t *vtxDevice, int index)
 {
     if (vtxDevice) {
-        return vtxDevice->powerNames[index];
+        return vtxTablePowerLabels[index];
     } else {
         return "?";
     }
 }
 
-uint16_t vtxCommonLookupPowerValue(const vtxDevice_t *vtxDevice, int index)
+bool vtxCommonLookupPowerValue(const vtxDevice_t *vtxDevice, int index, uint16_t *pPowerValue)
 {
-    if (vtxDevice && index > 0) {
-        return vtxDevice->powerValues[index - 1];
+    if (vtxDevice && index > 0 && index <= vtxTablePowerLevels) {
+        *pPowerValue = vtxTablePowerValues[index - 1];
+        return true;
     } else {
-        return 0;
+        return false;
     }
 }
 #endif

@@ -27,9 +27,9 @@
 #include "pg/pg.h"
 
 typedef enum {
-     VTX_LOW_POWER_DISARM_OFF = 0,
-     VTX_LOW_POWER_DISARM_ALWAYS,
-     VTX_LOW_POWER_DISARM_UNTIL_FIRST_ARM, // Set low power until arming for the first time
+    VTX_LOW_POWER_DISARM_OFF = 0,
+    VTX_LOW_POWER_DISARM_ALWAYS,
+    VTX_LOW_POWER_DISARM_UNTIL_FIRST_ARM, // Set low power until arming for the first time
 } vtxLowerPowerDisarm_e;
 
 typedef struct vtxSettingsConfig_s {

@@ -201,12 +201,6 @@ void I2C4_EV_IRQHandler(void)
 
 static volatile uint16_t i2cErrorCount = 0;
 
-static bool i2cOverClock;
-
-void i2cSetOverclock(uint8_t OverClock) {
-    i2cOverClock = (OverClock) ? true : false;
-}
-
 static bool i2cHandleHardwareFailure(I2CDevice device)
 {
     (void)device;

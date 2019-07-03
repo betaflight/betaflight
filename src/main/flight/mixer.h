@@ -24,13 +24,10 @@
 
 #include "common/time.h"
 #include "pg/pg.h"
-#include "drivers/pwm_output_counts.h"
 #include "drivers/io_types.h"
 #include "drivers/pwm_output.h"
 
 #define QUAD_MOTOR_COUNT 4
-#define BRUSHED_MOTORS_PWM_RATE 16000
-#define BRUSHLESS_MOTORS_PWM_RATE 480
 
 // Digital protocol has fixed values
 #define DSHOT_3D_FORWARD_MIN_THROTTLE 1048
@@ -90,17 +87,6 @@ typedef struct mixerConfig_s {
 } mixerConfig_t;
 
 PG_DECLARE(mixerConfig_t, mixerConfig);
-
-typedef struct motorConfig_s {
-    motorDevConfig_t dev;
-    uint16_t digitalIdleOffsetValue;        // Idle value for DShot protocol, full motor output = 10000
-    uint16_t minthrottle;                   // Set the minimum throttle command sent to the ESC (Electronic Speed Controller). This is the minimum value that allow motors to run at a idle speed.
-    uint16_t maxthrottle;                   // This is the maximum value for the ESCs at full power this value can be increased up to 2000
-    uint16_t mincommand;                    // This is the value for the ESCs when they are not armed. In some cases, this value must be lowered down to 900 for some specific ESCs
-    uint8_t motorPoleCount;                // Magnetic poles in the motors for calculating actual RPM from eRPM provided by ESC telemetry
-} motorConfig_t;
-
-PG_DECLARE(motorConfig_t, motorConfig);
 
 #define CHANNEL_FORWARDING_DISABLED (uint8_t)0xFF
 

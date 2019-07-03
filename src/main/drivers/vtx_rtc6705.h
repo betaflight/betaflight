@@ -31,15 +31,13 @@
 
 #include "pg/vtx_io.h"
 
-#define VTX_RTC6705_BAND_COUNT      5
-#define VTX_RTC6705_CHANNEL_COUNT   8
-#define VTX_RTC6705_POWER_COUNT     3
-#define VTX_RTC6705_DEFAULT_POWER   1
+#define VTX_RTC6705_POWER_COUNT           3
+#define VTX_RTC6705_DEFAULT_POWER_INDEX   2
 
 #if defined(RTC6705_POWER_PIN)
-#define VTX_RTC6705_MIN_POWER   0
+#define VTX_RTC6705_MIN_POWER_VALUE   0
 #else
-#define VTX_RTC6705_MIN_POWER   1
+#define VTX_RTC6705_MIN_POWER_VALUE   1
 #endif
 
 #define VTX_RTC6705_FREQ_MIN    5600

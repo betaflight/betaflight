@@ -112,7 +112,7 @@ typedef struct timerHardware_s {
 #if defined(STM32F3) || defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
     uint8_t alternateFunction;
 #endif
-#if defined(USE_DSHOT) || defined(USE_LED_STRIP) || defined(USE_TRANSPONDER)
+#if defined(USE_TIMER_DMA)
 #if defined(USE_DMA_SPEC)
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
     DMA_Stream_TypeDef *dmaRefConfigured;
@@ -170,6 +170,7 @@ typedef enum {
 #define HARDWARE_TIMER_DEFINITION_COUNT 14
 #elif defined(STM32H7)
 #define HARDWARE_TIMER_DEFINITION_COUNT 17
+#define TIMUP_TIMERS ( BIT(1) | BIT(2) | BIT(3) | BIT(4) | BIT(5) | BIT(6) | BIT(7) | BIT(8) | BIT(15) | BIT(16) | BIT(17) )
 #endif
 
 #define MHZ_TO_HZ(x) ((x) * 1000000)
@@ -177,6 +178,7 @@ typedef enum {
 #if !defined(USE_UNIFIED_TARGET)
 extern const timerHardware_t timerHardware[];
 #endif
+
 
 #if defined(USE_TIMER_MGMT)
 #if defined(STM32F4)
