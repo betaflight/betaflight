@@ -89,7 +89,7 @@ extern "C" {
     void osdRefresh(timeUs_t currentTimeUs);
     uint16_t updateLinkQualitySamples(uint16_t value);
     uint16_t scaleCrsfLq(uint16_t lqvalue);
-#define LINK_QUALITY_SAMPLE_COUNT 16
+#define LINK_QUALITY_SAMPLE_COUNT 100
 }
 
 /* #define DEBUG_OSD */

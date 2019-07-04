@@ -358,13 +358,13 @@ void resumeRxPwmPpmSignal(void)
 }
 
 #ifdef USE_RX_LINK_QUALITY_INFO
-#define LINK_QUALITY_SAMPLE_COUNT 16
+#define LINK_QUALITY_SAMPLE_COUNT 100
 
 STATIC_UNIT_TESTED uint16_t updateLinkQualitySamples(uint16_t value)
 {
     static uint16_t samples[LINK_QUALITY_SAMPLE_COUNT];
     static uint8_t sampleIndex = 0;
-    static uint16_t sum = 0;
+    static uint32_t sum = 0;
 
     sum += value - samples[sampleIndex];
     samples[sampleIndex] = value;
