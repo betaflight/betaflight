@@ -880,7 +880,7 @@ static void osdElementLinkQuality(osdElementParms_t *element)
     if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) { // 0-300
         osdLinkQuality = rxGetLinkQuality()  / 3.41;
         tfp_sprintf(element->buff, "%c%3d", SYM_LINK_QUALITY, osdLinkQuality);
-    } else { // 0-100
+    } else { // 0-99
         osdLinkQuality = rxGetLinkQuality() * 100 / LINK_QUALITY_MAX_VALUE;
         if (osdLinkQuality >= 100) {
             osdLinkQuality = 99;

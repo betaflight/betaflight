@@ -275,8 +275,8 @@ TEST(LQTest, TestElement_LQ_SOURCE_NONE_VALUES)
     osdAnalyzeActiveElements();
     // when LINK_QUALITY_MAX_VALUE to 1 by 10%
     uint16_t testscale = 0;
-    for (int testdigit = 10; testdigit > 0; testdigit--) {
-        testscale = testdigit * 102.3;
+    for (int testdigit = 100; testdigit > 0; testdigit--) {
+        testscale = testdigit * 10.23;
         setLinkQualityDirect(testscale);
         displayClearScreen(&testDisplayPort);
         osdRefresh(simulationTime);
@@ -285,7 +285,7 @@ TEST(LQTest, TestElement_LQ_SOURCE_NONE_VALUES)
         displayPortTestPrint();
 #endif
         // then
-        if (testdigit >= 10){
+        if (testdigit >= 100){
             displayPortTestBufferSubstring(8, 1,"%c9", SYM_LINK_QUALITY);
         }else{
             displayPortTestBufferSubstring(8, 1,"%c%2d", SYM_LINK_QUALITY, testdigit - 1);
