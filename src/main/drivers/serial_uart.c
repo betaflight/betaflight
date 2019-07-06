@@ -46,18 +46,24 @@
 #include "pg/serial_uart.h"
 
 #if defined(STM32H7)
-#define UART_BUFFER_ATTRIBUTE DMA_RAM            // D2 SRAM
+#define UART_TX_BUFFER_ATTRIBUTE DMA_RAM            // D2 SRAM
+#define UART_RX_BUFFER_ATTRIBUTE DMA_RAM            // D2 SRAM
+#elif defined(STM32G4)
+#define UART_TX_BUFFER_ATTRIBUTE DMA_RAM_W          // SRAM MPU NOT_BUFFERABLE
+#define UART_RX_BUFFER_ATTRIBUTE DMA_RAM_R          // SRAM MPU NOT CACHABLE
 #elif defined(STM32F7)
-#define UART_BUFFER_ATTRIBUTE FAST_RAM_ZERO_INIT // DTCM RAM
+#define UART_TX_BUFFER_ATTRIBUTE FAST_RAM_ZERO_INIT // DTCM RAM
+#define UART_RX_BUFFER_ATTRIBUTE FAST_RAM_ZERO_INIT // DTCM RAM
 #elif defined(STM32F4) || defined(STM32F3) || defined(STM32F1)
-#define UART_BUFFER_ATTRIBUTE                    // NONE
+#define UART_TX_BUFFER_ATTRIBUTE                    // NONE
+#define UART_RX_BUFFER_ATTRIBUTE                    // NONE
 #else
-#error Undefined UART_BUFFER_ATTRIBUTE for this MCU
+#error Undefined UART_{TX,RX}_BUFFER_ATTRIBUTE for this MCU
 #endif
 
 #define UART_BUFFERS(n) \
-    UART_BUFFER(UART_BUFFER_ATTRIBUTE, n, R); \
-    UART_BUFFER(UART_BUFFER_ATTRIBUTE, n, T); struct dummy_s
+    UART_BUFFER(UART_TX_BUFFER_ATTRIBUTE, n, T); \
+    UART_BUFFER(UART_RX_BUFFER_ATTRIBUTE, n, R); struct dummy_s
 
 #ifdef USE_UART1
 UART_BUFFERS(1);

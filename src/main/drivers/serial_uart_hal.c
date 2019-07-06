@@ -78,6 +78,11 @@ void uartReconfigure(uartPort_t *uartPort)
     uartPort->Handle.Init.HwFlowCtl = UART_HWCONTROL_NONE;
     uartPort->Handle.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
     uartPort->Handle.Init.Mode = 0;
+#if defined(STM32G4) || defined(STM32H7)
+    if (uartPort->Handle.Instance == LPUART1) {
+        uartPort->Handle.Init.ClockPrescaler = UART_PRESCALER_DIV8;
+    }
+#endif
 
     if (uartPort->port.mode & MODE_RX)
         uartPort->Handle.Init.Mode |= UART_MODE_RX;
@@ -108,7 +113,7 @@ void uartReconfigure(uartPort_t *uartPort)
         if (uartPort->rxDMAResource)
         {
             uartPort->rxDMAHandle.Instance = (DMA_ARCH_TYPE *)uartPort->rxDMAResource;
-#if !defined(STM32H7)
+#if !(defined(STM32H7) || defined(STM32G4))
             uartPort->rxDMAHandle.Init.Channel = uartPort->rxDMAChannel;
 #else 
             uartPort->txDMAHandle.Init.Request = uartPort->rxDMAChannel;
@@ -119,10 +124,12 @@ void uartReconfigure(uartPort_t *uartPort)
             uartPort->rxDMAHandle.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
             uartPort->rxDMAHandle.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
             uartPort->rxDMAHandle.Init.Mode = DMA_CIRCULAR;
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
             uartPort->rxDMAHandle.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
             uartPort->rxDMAHandle.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_1QUARTERFULL;
             uartPort->rxDMAHandle.Init.PeriphBurst = DMA_PBURST_SINGLE;
             uartPort->rxDMAHandle.Init.MemBurst = DMA_MBURST_SINGLE;
+#endif
             uartPort->rxDMAHandle.Init.Priority = DMA_PRIORITY_MEDIUM;
 
 
@@ -156,7 +163,7 @@ void uartReconfigure(uartPort_t *uartPort)
 #ifdef USE_DMA
         if (uartPort->txDMAResource) {
             uartPort->txDMAHandle.Instance = (DMA_ARCH_TYPE *)uartPort->txDMAResource;
-#if !defined(STM32H7)
+#if !(defined(STM32H7) || defined(STM32G4))
             uartPort->txDMAHandle.Init.Channel = uartPort->txDMAChannel;
 #else 
             uartPort->txDMAHandle.Init.Request = uartPort->txDMAChannel;
@@ -167,10 +174,13 @@ void uartReconfigure(uartPort_t *uartPort)
             uartPort->txDMAHandle.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
             uartPort->txDMAHandle.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
             uartPort->txDMAHandle.Init.Mode = DMA_NORMAL;
+#if !defined(STM32G4)
+            // G4's DMA is channel based, and does not have FIFO
             uartPort->txDMAHandle.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
             uartPort->txDMAHandle.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_1QUARTERFULL;
             uartPort->txDMAHandle.Init.PeriphBurst = DMA_PBURST_SINGLE;
             uartPort->txDMAHandle.Init.MemBurst = DMA_MBURST_SINGLE;
+#endif
             uartPort->txDMAHandle.Init.Priority = DMA_PRIORITY_MEDIUM;
 
 
@@ -206,6 +216,7 @@ void uartTryStartTxDMA(uartPort_t *s)
 
         HAL_UART_StateTypeDef state = HAL_UART_GetState(&s->Handle);
         if ((state & HAL_UART_STATE_BUSY_TX) == HAL_UART_STATE_BUSY_TX) {
+            // UART is still transmitting
             return;
         }
 
@@ -239,7 +250,24 @@ static void handleUsartTxDma(uartPort_t *s)
 void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor)
 {
     uartPort_t *s = &(((uartDevice_t*)(descriptor->userParam))->port);
+
     HAL_DMA_IRQHandler(&s->txDMAHandle);
+
+#ifdef STM32G4
+    // G4's DMA HAL turns on half transfer interrupt.
+    // Only detect the transfer complete interrupt by checking remaining transfer count.
+    // XXX TODO Consider using HAL's XferCpltCallback facility to do this.
+
+    if (s->txDMAHandle.Instance->CNDTR == 0) {
+
+        // Unlike other stream based DMA implementations (F4, F7 and H7),
+        // G4's DMA implementation does not clear EN bit upon completion of a transfer,
+        // and it is neccesary to clear the EN bit explicitly here for IS_DMA_ENABLED macro
+        // used in uartTryStartTxDMA() to continue working with G4.
+
+        __HAL_DMA_DISABLE(&s->txDMAHandle);
+    }
+#endif
 }
 #endif
 
@@ -284,7 +312,8 @@ void uartIrqHandler(uartPort_t *s)
         __HAL_UART_CLEAR_IT(huart, UART_CLEAR_OREF);
     }
 
-    /* UART in mode Transmitter ------------------------------------------------*/
+    // UART transmitter in interrupting mode, tx buffer empty
+
     if (
 #ifdef USE_DMA
         !s->txDMAResource &&
@@ -307,7 +336,8 @@ void uartIrqHandler(uartPort_t *s)
         }
     }
 
-    /* UART in mode Transmitter (transmission end) -----------------------------*/
+    // UART transmitter in DMA mode, transmission completed
+
     if ((__HAL_UART_GET_IT(huart, UART_IT_TC) != RESET)) {
         HAL_UART_IRQHandler(huart);
 #ifdef USE_DMA
@@ -316,6 +346,8 @@ void uartIrqHandler(uartPort_t *s)
         }
 #endif
     }
+
+    // UART reception idle detected
 
     if (__HAL_UART_GET_IT(huart, UART_IT_IDLE)) {
         if (s->port.idleCallback) {

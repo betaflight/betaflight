@@ -67,6 +67,15 @@
 #ifndef UART_TX_BUFFER_SIZE
 #define UART_TX_BUFFER_SIZE     256
 #endif
+#elif defined(STM32G4)
+#define UARTDEV_COUNT_MAX 6
+#define UARTHARDWARE_MAX_PINS 3
+#ifndef UART_RX_BUFFER_SIZE
+#define UART_RX_BUFFER_SIZE     128
+#endif
+#ifndef UART_TX_BUFFER_SIZE
+#define UART_TX_BUFFER_SIZE     256
+#endif
 #else
 #error unknown MCU family
 #endif
@@ -125,7 +134,7 @@
 
 typedef struct uartPinDef_s {
     ioTag_t pin;
-#if defined(STM32F7) || defined(STM32H7)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
     uint8_t af;
 #endif
 } uartPinDef_t;
@@ -137,7 +146,7 @@ typedef struct uartHardware_s {
 #ifdef USE_DMA
     dmaResource_t *txDMAResource;
     dmaResource_t *rxDMAResource;
-    // For H7, {tx|rx}DMAChannel are DMAMUX input index for  peripherals (DMA_REQUEST_xxx); RM0433 Table 110.
+    // For H7 and G4, {tx|rx}DMAChannel are DMAMUX input index for  peripherals (DMA_REQUEST_xxx); H7:RM0433 Table 110, G4:RM0440 Table 80.
     // For F4 and F7, these are 32-bit channel identifiers (DMA_CHANNEL_x).
     uint32_t txDMAChannel;
     uint32_t rxDMAChannel;
@@ -146,7 +155,7 @@ typedef struct uartHardware_s {
     uartPinDef_t rxPins[UARTHARDWARE_MAX_PINS];
     uartPinDef_t txPins[UARTHARDWARE_MAX_PINS];
 
-#if defined(STM32F7) || defined(STM32H7)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
     uint32_t rcc_ahb1;
     rccPeriphTag_t rcc_apb2;
     rccPeriphTag_t rcc_apb1;
@@ -158,7 +167,7 @@ typedef struct uartHardware_s {
     uint8_t af;
 #endif
 
-#if defined(STM32F7) || defined(STM32H7)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
     uint8_t txIrq;
     uint8_t rxIrq;
 #else
@@ -203,7 +212,7 @@ void uartConfigureDma(uartDevice_t *uartdev);
 
 void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor);
 
-#if defined(STM32F3) || defined(STM32F7) || defined(STM32H7)
+#if defined(STM32F3) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
 #define UART_REG_RXD(base) ((base)->RDR)
 #define UART_REG_TXD(base) ((base)->TDR)
 #elif defined(STM32F1) || defined(STM32F4)
