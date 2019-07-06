@@ -49,6 +49,7 @@ typedef struct cameraControlConfig_s {
 
     ioTag_t ioTag;
     uint8_t inverted;
+    uint16_t buttonResistanceValues[CAMERA_CONTROL_KEYS_COUNT]; // resistance in 100ohm steps
 } cameraControlConfig_t;
 
 PG_DECLARE(cameraControlConfig_t, cameraControlConfig);
