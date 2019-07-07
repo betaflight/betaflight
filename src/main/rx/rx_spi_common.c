@@ -51,7 +51,7 @@ void rxSpiCommonIOInit(const rxSpiConfig_t *rxSpiConfig)
 
     if (rxSpiConfig->bindIoTag) {
         bindPin = IOGetByTag(rxSpiConfig->bindIoTag);
-        IOInit(bindPin, OWNER_RX_BIND, 0);
+        IOInit(bindPin, OWNER_RX_SPI_BIND, 0);
         IOConfigGPIO(bindPin, IOCFG_IPU);
         lastBindPinStatus = IORead(bindPin);
     } else {
