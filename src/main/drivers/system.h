@@ -66,7 +66,7 @@ bool isMPUSoftReset(void);
 void cycleCounterInit(void);
 uint32_t clockCyclesToMicros(uint32_t clockCycles);
 uint32_t getCycleCounter(void);
-#if defined(STM32H7)
+#if defined(STM32H7) || defined(STM32G4)
 void systemCheckResetReason(void);
 #endif
 
