@@ -382,6 +382,8 @@ __ALIGN_BEGIN static uint8_t HID_MOUSE_ReportDesc[HID_MOUSE_REPORT_DESC_SIZE]  _
   */
 static uint8_t  USBD_HID_Init (USBD_HandleTypeDef *pdev, uint8_t cfgidx)
 {
+  UNUSED(cfgidx);
+
   /* Open EP IN */
   USBD_LL_OpenEP(pdev, HID_EPIN_ADDR, USBD_EP_TYPE_INTR, HID_EPIN_SIZE);
   pdev->ep_in[HID_EPIN_ADDR & 0xFU].is_used = 1U;
@@ -408,6 +410,8 @@ static uint8_t  USBD_HID_Init (USBD_HandleTypeDef *pdev, uint8_t cfgidx)
 static uint8_t  USBD_HID_DeInit (USBD_HandleTypeDef *pdev,
                                  uint8_t cfgidx)
 {
+  UNUSED(cfgidx);
+
   /* Close HID EPs */
   USBD_LL_CloseEP(pdev, HID_EPIN_ADDR);
   pdev->ep_in[HID_EPIN_ADDR & 0xFU].is_used = 0U;
@@ -644,6 +648,7 @@ static uint8_t  *USBD_HID_GetOtherSpeedCfgDesc (uint16_t *length)
 static uint8_t  USBD_HID_DataIn (USBD_HandleTypeDef *pdev,
                               uint8_t epnum)
 {
+  UNUSED(epnum);
 
   /* Ensure that the FIFO is empty before a new transfer, this condition could
   be caused by  a new transfer before the end of the previous transfer */
