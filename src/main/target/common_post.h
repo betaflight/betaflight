@@ -24,10 +24,8 @@
 
 #include "build/version.h"
 
-// Targets with built-in vtx do not need external vtx
-#if defined(USE_VTX_RTC6705) && !defined(VTX_RTC6705_OPTIONAL)
-#undef USE_VTX_SMARTAUDIO
-#undef USE_VTX_TRAMP
+#if defined(USE_VTX_RTC6705_SOFTSPI)
+#define USE_VTX_RTC6705
 #endif
 
 #ifndef USE_DSHOT
