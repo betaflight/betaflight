@@ -72,6 +72,10 @@ uint8_t eepromData[EEPROM_SIZE];
 // H7
 # elif defined(STM32H743xx) || defined(STM32H750xx)
 #  define FLASH_PAGE_SIZE                 ((uint32_t)0x20000) // 128K sectors
+# elif defined(STM32G4)
+   // G4 V1.0.0 library forces us to use dual bank mode
+   // 2 bank * 128 page/bank * 2KB/page
+#  define FLASH_PAGE_SIZE                 ((uint32_t)0x800) // 2K page
 // SIMULATOR
 # elif defined(SIMULATOR_BUILD)
 #  define FLASH_PAGE_SIZE                 (0x400)
@@ -94,7 +98,7 @@ void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
 #if defined(CONFIG_IN_RAM) || defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_SDCARD)
         // NOP
 #elif defined(CONFIG_IN_FLASH) || defined(CONFIG_IN_FILE)
-#if defined(STM32F7) || defined(STM32H7)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
         HAL_FLASH_Unlock();
 #else
         FLASH_Unlock();
@@ -115,6 +119,8 @@ void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
 #elif defined(STM32F7)
     // NOP
 #elif defined(STM32H7)
+    // NOP
+#elif defined(STM32G4)
     // NOP
 #elif defined(UNIT_TEST) || defined(SIMULATOR_BUILD)
     // NOP
@@ -351,6 +357,26 @@ static void getFLASHSectorForEEPROM(uint32_t *bank, uint32_t *sector)
         }
     }
 }
+#elif defined(STM32G4)
+/*
+The G4 V1.0.0 HAL library forces dual bank mode: 2 bank * 128 page/bank * 2KB/page
+*/
+#define FLASH_BANK_SIZE_G4 (128 * 2048)
+#define FLASH_BANK1_BASE 0x08000000
+#define FLASH_BANK2_BASE (FLASH_BANK1_BASE + FLASH_BANK_SIZE_G4)
+
+static void getFLASHSectorForEEPROM(uint32_t address, uint32_t *bank, uint32_t *page)
+{
+    if (address < FLASH_BANK2_BASE) {
+        *bank = FLASH_BANK_1;
+        address -= FLASH_BANK1_BASE;
+    } else {
+        *bank = FLASH_BANK_2;
+        address -= FLASH_BANK2_BASE;
+    }
+
+    *page = address / FLASH_PAGE_SIZE;
+}
 #endif
 #endif
 
@@ -466,7 +492,26 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
     if (status != HAL_OK) {
         return -2;
     }
-#else // !STM32H7 && !STM32F7
+#elif defined(STM32G4)
+    if (c->address % FLASH_PAGE_SIZE == 0) {
+
+        FLASH_EraseInitTypeDef EraseInitStruct = {
+            .TypeErase     = FLASH_TYPEERASE_PAGES,
+            .NbPages       = 1
+        };
+        getFLASHSectorForEEPROM(c->address, &EraseInitStruct.Banks, &EraseInitStruct.Page);
+        uint32_t SECTORError;
+        const HAL_StatusTypeDef status = HAL_FLASHEx_Erase(&EraseInitStruct, &SECTORError);
+        if (status != HAL_OK) {
+            return -1;
+        }
+    }
+
+    const HAL_StatusTypeDef status = HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, c->address, (uint64_t)*buffer);
+    if (status != HAL_OK) {
+        return -2;
+    }
+#else // !STM32H7 && !STM32F7 && !STM32G4
     if (c->address % FLASH_PAGE_SIZE == 0) {
 #if defined(STM32F4)
         const FLASH_Status status = FLASH_EraseSector(getFLASHSectorForEEPROM(), VoltageRange_3); //0x08080000 to 0x080A0000
@@ -529,7 +574,7 @@ int config_streamer_finish(config_streamer_t *c)
 #elif defined(CONFIG_IN_FILE)
         FLASH_Lock();
 #elif defined(CONFIG_IN_FLASH)
-#if defined(STM32F7) || defined(STM32H7)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
         HAL_FLASH_Lock();
 #else
         FLASH_Lock();
