@@ -92,6 +92,15 @@ const struct ioPortDef_s ioPortDefs[] = {
     { RCC_AHB4(GPIOH) },
     { RCC_AHB4(GPIOI) },
 };
+#elif defined(STM32G4)
+const struct ioPortDef_s ioPortDefs[] = {
+    { RCC_AHB2(GPIOA) },
+    { RCC_AHB2(GPIOB) },
+    { RCC_AHB2(GPIOC) },
+    { RCC_AHB2(GPIOD) },
+    { RCC_AHB2(GPIOE) },
+    { RCC_AHB2(GPIOF) },
+};
 #endif
 
 ioRec_t* IO_Rec(IO_t io)
@@ -155,7 +164,7 @@ uint32_t IO_EXTI_Line(IO_t io)
     if (!io) {
         return 0;
     }
-#if defined(STM32F1) || defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
+#if defined(STM32F1) || defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
     return 1 << IO_GPIOPinIdx(io);
 #elif defined(STM32F3)
     return IO_GPIOPinIdx(io);
@@ -323,7 +332,7 @@ void IOConfigGPIO(IO_t io, ioConfig_t cfg)
     GPIO_Init(IO_GPIO(io), &init);
 }
 
-#elif defined(STM32H7)
+#elif defined(STM32H7) || defined(STM32G4)
 
 void IOConfigGPIO(IO_t io, ioConfig_t cfg)
 {
