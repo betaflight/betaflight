@@ -60,7 +60,7 @@ void spiInitDevice(SPIDevice device, bool leadingEdge)
     IOConfigGPIOAF(IOGetByTag(spi->mosi), SPI_IO_AF_CFG, spi->af);
 #endif
 
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
     IOConfigGPIOAF(IOGetByTag(spi->sck), spi->leadingEdge ? SPI_IO_AF_SCK_CFG_LOW : SPI_IO_AF_SCK_CFG_HIGH, spi->sckAF);
     IOConfigGPIOAF(IOGetByTag(spi->miso), SPI_IO_AF_MISO_CFG, spi->misoAF);
     IOConfigGPIOAF(IOGetByTag(spi->mosi), SPI_IO_AF_CFG, spi->mosiAF);
@@ -85,8 +85,10 @@ void spiInitDevice(SPIDevice device, bool leadingEdge)
     spi->hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
     spi->hspi.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
     spi->hspi.Init.TIMode = SPI_TIMODE_DISABLED;
+#if !defined(STM32G4)
     spi->hspi.Init.FifoThreshold = SPI_FIFO_THRESHOLD_01DATA;
     spi->hspi.Init.MasterKeepIOState = SPI_MASTER_KEEP_IO_STATE_ENABLE;  /* Recommanded setting to avoid glitches */
+#endif
 
     if (spi->leadingEdge) {
         spi->hspi.Init.CLKPolarity = SPI_POLARITY_LOW;
