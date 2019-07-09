@@ -34,6 +34,8 @@
 #define USE_UART2
 #define USE_UART6
 
+#define USE_BEEPER
+
 #define SERIAL_PORT_COUNT       (UNIFIED_SERIAL_PORT_COUNT + 3)
 
 #define USE_INVERTER
