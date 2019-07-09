@@ -50,6 +50,7 @@ void    max7456ClearScreen(void);
 void    max7456RefreshAll(void);
 bool    max7456DmaInProgress(void);
 bool    max7456BuffersSynced(void);
+bool    max7456UseExtended(void);
 bool    max7456IsExtended(void);
 bool    max7456CheckIsChipAlive(void);
 bool    max7456WasDeadAtInit(void);

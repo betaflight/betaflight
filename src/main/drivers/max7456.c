@@ -228,6 +228,7 @@ static uint8_t  hosRegValue; // HOS (Horizontal offset register) value
 static uint8_t  vosRegValue; // VOS (Vertical offset register) value
 
 static bool fontIsLoading       = false;
+static bool useExtendedFont     = false;
 
 static uint8_t max7456DeviceType;
 static uint8_t max7456DeviceAlive = 0xFF;
@@ -478,6 +479,8 @@ bool max7456Init(const max7456Config_t *max7456Config, const vcdProfile_t *pVcdP
 
     __spiBusTransactionEnd(busdev);
 
+
+    useExtendedFont = pVcdProfile->video_system_extended == VIDEO_SYSTEM_EXTENDED_ON || (max7456DeviceType == MAX7456_DEVICE_TYPE_AT && pVcdProfile->video_system_extended != VIDEO_SYSTEM_EXTENDED_OFF);
     if (max7456CheckIsChipAlive()) {
         max7456DeviceAlive = 0x00;
     } else {
@@ -799,15 +802,20 @@ void max7456RefreshAll(void)
 #ifdef MAX7456_DMA_CHANNEL_TX
     while (dmaTransactionInProgress);
 #endif
-
     max7456ReInitIfRequired();
     max7456DrawScreenSlow();
+}
+
+bool max7456UseExtended(void)
+{
+    return useExtendedFont;
 }
 
 bool max7456IsExtended(void)
 {
     return max7456DeviceType == MAX7456_DEVICE_TYPE_AT;
 }
+
 bool max7456WasDeadAtInit(void)
 {
     //Was the chip alive at startup?
