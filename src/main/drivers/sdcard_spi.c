@@ -542,14 +542,6 @@ static void sdcardSpi_init(const sdcardConfig_t *config, const spiPinConfig_t *s
     }
     sdcard.busdev.busdev_u.spi.csnPin = chipSelectIO;
 
-    if (config->cardDetectTag) {
-        sdcard.cardDetectPin = IOGetByTag(config->cardDetectTag);
-        sdcard.detectionInverted = config->cardDetectInverted;
-    } else {
-        sdcard.cardDetectPin = IO_NONE;
-        sdcard.detectionInverted = false;
-    }
-
     // Max frequency is initially 400kHz
 
 #ifdef USE_SPI_TRANSACTION

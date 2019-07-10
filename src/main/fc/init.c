@@ -252,7 +252,7 @@ static void configureSPIAndQuadSPI(void)
 
 void sdCardAndFSInit()
 {
-    sdcardInsertionDetectInit();
+    sdcardInsertionDetectInit(sdcardConfig());
     sdcard_init(sdcardConfig());
     afatfs_init();
 }

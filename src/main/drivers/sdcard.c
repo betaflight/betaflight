@@ -75,8 +75,16 @@ void sdcardInsertionDetectDeinit(void)
     }
 }
 
-void sdcardInsertionDetectInit(void)
+void sdcardInsertionDetectInit(const sdcardConfig_t *config)
 {
+    if (config->cardDetectTag) {
+        sdcard.cardDetectPin = IOGetByTag(config->cardDetectTag);
+        sdcard.detectionInverted = config->cardDetectInverted;
+    } else {
+        sdcard.cardDetectPin = IO_NONE;
+        sdcard.detectionInverted = false;
+    }
+
     if (sdcard.cardDetectPin) {
         IOInit(sdcard.cardDetectPin, OWNER_SDCARD_DETECT, 0);
         IOConfigGPIO(sdcard.cardDetectPin, IOCFG_IPU);
