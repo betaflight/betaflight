@@ -31,6 +31,9 @@ mcu.mak
 mcu.mak.old
 stm32.mak
 
+# eclipse launch configurations
+/support/eclipse
+
 # artefacts for Visual Studio Code
 /.vscode/
 
