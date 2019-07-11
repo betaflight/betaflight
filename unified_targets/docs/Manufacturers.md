@@ -6,10 +6,11 @@ This is the official list of manufacturer ids (`manufacturer_id` in the target c
 |Manufacturer Id|Name|Contact|
 |-|-|-|
 |CUST|'Custom', to be used for homebrew targets||
-|CLRA|CLRACING LLC|https://cl-racing.myshopify.com/|
 |AFNG|AlienFlight NG|https://www.alienflightng.com/|
+|AIKO|AIKON Electronics|https://www.aikon-electronics.com/|
 |AIRB|Airbot|https://store.myairbot.com/|
 |BKMN|Jason Blackman|https://github.com/blckmn|
+|CLRA|CLRACING LLC|https://cl-racing.myshopify.com/|
 |DIAT|Diatone Innovations|https://www.diatoneusa.com/|
 |DRCL|dronercland|https://www.instagram.com/dronercland/|
 |DYST|DongYang Smart Technology Co.,Ltd (dys)|http://www.dys.hk/|
@@ -27,6 +28,7 @@ This is the official list of manufacturer ids (`manufacturer_id` in the target c
 |RUSH|FPV Racing Rush|http://www.rushfpv.com/|
 |SPRO|Seriously Pro Racing (SP Racing)|http://seriouslypro.com/|
 |TCMM|Shenzhen Xinmumu Science and Technology Co (TCMM)|http://www.tcmm-rc.cn/|
+|TMTR|T-motor|http://uav-en.tmotor.com/|
 |TTRH|TransTEC|http://www.transtechobby.com/|
 |VGRC|V-GOOD Technology Co.|http://www.vgoodrc.com/|
 |VIVA|VivaFPV|https://vivafpv.com/|

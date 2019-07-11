@@ -117,7 +117,7 @@
 #define RX_SPI_INSTANCE         SPI2
 #define RX_NSS_PIN              SPI2_NSS_PIN
 #define RX_SPI_EXTI_PIN         PA8
-#define BINDPLUG_PIN            PA9
+#define RX_SPI_BIND_PIN         PA9
 #define RX_SPI_LED_PIN          PA10
 #define DEFAULT_FEATURES        (FEATURE_TELEMETRY | FEATURE_OSD | FEATURE_MOTOR_STOP)
 #elif defined(CRAZYBEEF3DX)
@@ -138,7 +138,7 @@
 #define RX_NSS_PIN              SPI2_NSS_PIN
 #define RX_SPI_EXTI_PIN         PA8
 #define RX_SPI_LED_PIN          PA10
-#define BINDPLUG_PIN            PA9
+#define RX_SPI_BIND_PIN         PA9
 #define DEFAULT_FEATURES        (FEATURE_TELEMETRY | FEATURE_OSD | FEATURE_MOTOR_STOP)
 #endif
 

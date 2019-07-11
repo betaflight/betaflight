@@ -301,6 +301,10 @@
 #define RX_SPI_EXTI_PIN NONE
 #endif
 
+#if !defined(RX_SPI_BIND_PIN)
+#define RX_SPI_BIND_PIN NONE
+#endif
+
 #if defined(USE_RX_CC2500)
 #if !defined(RX_CC2500_SPI_TX_EN_PIN)
 #define RX_CC2500_SPI_TX_EN_PIN NONE
@@ -334,7 +338,7 @@
 
 // F4 and F7 single gyro boards
 #if defined(USE_MULTI_GYRO) && !defined(GYRO_2_SPI_INSTANCE)
-#define GYRO_2_SPI_INSTANCE     GYRO_1_SPI_INSTANCE
+#define GYRO_2_SPI_INSTANCE     NULL
 #define GYRO_2_CS_PIN           NONE
 #define GYRO_2_ALIGN            ALIGN_DEFAULT
 #define GYRO_2_EXTI_PIN         NONE

@@ -77,6 +77,9 @@
 
 #define USE_MAX7456
 
+#define USE_VTX_RTC6705
+#define USE_VTX_RTC6705_SOFTSPI
+
 #define USE_TRANSPONDER
 
 //TODO: Make this actually work by making the pins configurable

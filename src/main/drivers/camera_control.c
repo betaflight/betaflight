@@ -69,6 +69,11 @@ void pgResetFn_cameraControlConfig(cameraControlConfig_t *cameraControlConfig)
     cameraControlConfig->internalResistance = 470;
     cameraControlConfig->ioTag = timerioTagGetByUsage(TIM_USE_CAMERA_CONTROL, 0);
     cameraControlConfig->inverted = 0;   // Output is inverted externally
+    cameraControlConfig->buttonResistanceValues[CAMERA_CONTROL_KEY_ENTER] = 450;
+    cameraControlConfig->buttonResistanceValues[CAMERA_CONTROL_KEY_LEFT]  = 270;
+    cameraControlConfig->buttonResistanceValues[CAMERA_CONTROL_KEY_UP]    = 150;
+    cameraControlConfig->buttonResistanceValues[CAMERA_CONTROL_KEY_RIGHT] = 68;
+    cameraControlConfig->buttonResistanceValues[CAMERA_CONTROL_KEY_DOWN]  = 0;
 }
 
 static struct {
@@ -184,11 +189,9 @@ void cameraControlProcess(uint32_t currentTimeUs)
     }
 }
 
-static const int buttonResistanceValues[] = { 45000, 27000, 15000, 6810, 0 };
-
 static float calculateKeyPressVoltage(const cameraControlKey_e key)
 {
-    const int buttonResistance = buttonResistanceValues[key];
+    const int buttonResistance = cameraControlConfig()->buttonResistanceValues[key] * 100;
     return 1.0e-2f * cameraControlConfig()->refVoltage * buttonResistance / (100 * cameraControlConfig()->internalResistance + buttonResistance);
 }
 
