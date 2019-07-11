@@ -111,9 +111,9 @@ Before starting to write code, please read our [development guidelines](docs/dev
 
 TravisCI is used to run automatic builds
 
-https://travis-ci.org/betaflight/betaflight
+https://travis-ci.com/betaflight/betaflight
 
-[![Build Status](https://travis-ci.org/betaflight/betaflight.svg?branch=master)](https://travis-ci.org/betaflight/betaflight)
+[![Build Status](https://travis-ci.com/betaflight/betaflight.svg?branch=master)](https://travis-ci.com/betaflight/betaflight)
 
 ## Betaflight Releases
 
