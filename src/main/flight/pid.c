@@ -205,6 +205,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .auto_profile_cell_count = AUTO_PROFILE_CELL_COUNT_STAY,
         .transient_throttle_limit = 15,
         .profileName = { 0 },
+        .ff_boost = 150,
+        .ff_boost_hz = 20,
     );
 #ifndef USE_D_MIN
     pidProfile->pid[PID_ROLL].D = 30;
@@ -300,6 +302,9 @@ static FAST_RAM_ZERO_INIT pt1Filter_t airmodeThrottleLpf2;
 #endif
 
 static FAST_RAM_ZERO_INIT pt1Filter_t antiGravityThrottleLpf;
+
+static FAST_RAM_ZERO_INIT pt1Filter_t ff_lpf[XYZ_AXIS_COUNT];
+static FAST_RAM_ZERO_INIT float ff_boost_factor;
 
 void pidInitFilters(const pidProfile_t *pidProfile)
 {
@@ -437,6 +442,16 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 #endif
 
     pt1FilterInit(&antiGravityThrottleLpf, pt1FilterGain(ANTI_GRAVITY_THROTTLE_FILTER_CUTOFF, dT));
+
+    for (int axis = 0; axis < (XYZ_AXIS_COUNT - 1); axis++){
+        pt1FilterInit(&ff_lpf[axis], pt1FilterGain((float)pidProfile->ff_boost_hz, dT) );
+    }
+    if (pidProfile->ff_boost > 0 ){
+        ff_boost_factor = (float)pidProfile->ff_boost / 100.0f;
+    } else {
+        ff_boost_factor = 0;
+    }
+
 }
 
 #ifdef USE_RC_SMOOTHING_FILTER
@@ -1416,6 +1431,10 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             // no transition if feedForwardTransition == 0
             float transition = feedForwardTransition > 0 ? MIN(1.f, getRcDeflectionAbs(axis) * feedForwardTransition) : 1;
             pidData[axis].F = feedforwardGain * transition * pidSetpointDelta * pidFrequency;
+            if (ff_boost_factor && (axis <= FD_PITCH)) {
+                const float F_hpf = pidData[axis].F - pt1FilterApply(&ff_lpf[axis], pidData[axis].F);
+                pidData[axis].F += F_hpf * ff_boost_factor;
+            }
         } else {
             pidData[axis].F = 0;
         }

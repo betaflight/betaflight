@@ -1050,6 +1050,8 @@ const clivalue_t valueTable[] = {
 #ifdef USE_AIRMODE_LPF
     { "transient_throttle_limit",   VAR_UINT8 | MASTER_VALUE, .config.minmax = { 0, 30 }, PG_PID_PROFILE, offsetof(pidProfile_t, transient_throttle_limit) },
 #endif
+    { "ff_boost",                   VAR_UINT8 | PROFILE_VALUE,  .config.minmaxUnsigned = { 0, 250 }, PG_PID_PROFILE, offsetof(pidProfile_t, ff_boost) },
+    { "ff_boost_hz",                VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, ff_boost_hz) },
 
 // PG_TELEMETRY_CONFIG
 #ifdef USE_TELEMETRY
