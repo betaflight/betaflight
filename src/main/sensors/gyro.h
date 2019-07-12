@@ -108,6 +108,11 @@ enum {
     FILTER_LOWPASS2
 };
 
+enum {
+    OFF = 0,
+    ON
+};
+
 typedef enum gyroDetectionFlags_e {
     NO_GYROS_DETECTED = 0,
     DETECTED_GYRO_1 = (1 << 0),
@@ -152,6 +157,8 @@ typedef struct gyroConfig_s {
     uint16_t dyn_notch_q;
     uint16_t dyn_notch_min_hz;
     uint8_t  gyro_filter_debug_axis;
+    uint8_t  dyn_lpf_rpm_mode;
+    uint8_t  dyn_lpf_rpm_gyro_cutoff;
 } gyroConfig_t;
 
 PG_DECLARE(gyroConfig_t, gyroConfig);

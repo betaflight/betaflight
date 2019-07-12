@@ -770,6 +770,19 @@ static void updateDynLpfCutoffs(timeUs_t currentTimeUs, float throttle)
         }
     }
 }
+#ifdef USE_RPM_FILTER
+static void updateRpmLpfCutoffs(timeUs_t currentTimeUs)
+{
+    static timeUs_t lastRpmLpfUpdateUs = 0;
+    if (cmpTimeUs(currentTimeUs, lastRpmLpfUpdateUs) >= DYN_LPF_THROTTLE_UPDATE_DELAY_US) {
+        rpmAvgMotorFrequency();
+        dynLpfGyroUpdate(throttle);
+        dynLpfDTermUpdate(throttle);
+        lastRpmLpfUpdateUs = currentTimeUs;
+    }
+}
+#endif
+
 #endif
 
 FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensation)
@@ -863,7 +876,15 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
     pidUpdateAntiGravityThrottleFilter(throttle);
 
 #ifdef USE_DYN_LPF
+#ifdef USE_RPM_FILTER
+    if (gyroConfig()->dyn_lpf_rpm_mode == OFF) {
+        updateDynLpfCutoffs(currentTimeUs, throttle);
+    } else {
+        updateRpmLpfCutoffs(currentTimeUs);
+    }
+#else
     updateDynLpfCutoffs(currentTimeUs, throttle);
+#endif
 #endif
 
 #ifdef USE_THRUST_LINEARIZATION

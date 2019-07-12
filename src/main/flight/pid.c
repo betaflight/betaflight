@@ -216,6 +216,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .ff_spike_limit = 60,
         .ff_max_rate_limit = 100,
         .ff_boost = 15,
+        .dyn_lpf_rpm_dterm_cutoff = 75,
     );
 #ifndef USE_D_MIN
     pidProfile->pid[PID_ROLL].D = 30;
@@ -581,6 +582,8 @@ void pidUpdateAntiGravityThrottleFilter(float throttle)
 static FAST_RAM uint8_t dynLpfFilter = DYN_LPF_NONE;
 static FAST_RAM_ZERO_INIT uint16_t dynLpfMin;
 static FAST_RAM_ZERO_INIT uint16_t dynLpfMax;
+static uint8_t dynLpfRpmMode;
+static uint8_t dynLpfRpmDtermCutoff;
 #endif
 
 #ifdef USE_D_MIN
@@ -696,6 +699,8 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     }
     dynLpfMin = pidProfile->dyn_lpf_dterm_min_hz;
     dynLpfMax = pidProfile->dyn_lpf_dterm_max_hz;
+    dynLpfRpmMode = gyroConfig()->dyn_lpf_rpm_mode;
+    dynLpfRpmDtermCutoff = pidProfile->dyn_lpf_rpm_dterm_cutoff;
 #endif
 
 #ifdef USE_LAUNCH_CONTROL
@@ -1590,9 +1595,18 @@ bool pidAntiGravityEnabled(void)
 void dynLpfDTermUpdate(float throttle)
 {
     if (dynLpfFilter != DYN_LPF_NONE) {
-        const unsigned int cutoffFreq = fmax(dynThrottle(throttle) * dynLpfMax, dynLpfMin);
-
-         if (dynLpfFilter == DYN_LPF_PT1) {
+        static unsigned int cutoffFreq;
+#ifdef USE_RPM_FILTER       
+        if (dynLpfRpmMode == ON && isRpmFilterEnabled()) {
+            cutoffFreq = constrainf(getCutoffFrequency(dynLpfRpmDtermCutoff), dynLpfMin, dynLpfMax);
+            DEBUG_SET(DEBUG_RPM_LPF, 2, cutoffFreq);
+        } else {
+            cutoffFreq = fmax(dynThrottle(throttle) * dynLpfMax, dynLpfMin);
+        }
+#else
+        cutoffFreq = fmax(dynThrottle(throttle) * dynLpfMax, dynLpfMin);
+#endif        
+        if (dynLpfFilter == DYN_LPF_PT1) {
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
                 pt1FilterUpdateCutoff(&dtermLowpass[axis].pt1Filter, pt1FilterGain(cutoffFreq, dT));
             }

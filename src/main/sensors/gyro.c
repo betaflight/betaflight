@@ -196,6 +196,8 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
     gyroConfig->dyn_notch_q = 120;
     gyroConfig->dyn_notch_min_hz = 150;
     gyroConfig->gyro_filter_debug_axis = FD_ROLL;
+    gyroConfig->dyn_lpf_rpm_mode = OFF;
+    gyroConfig->dyn_lpf_rpm_gyro_cutoff = 100;
 }
 
 #ifdef USE_MULTI_GYRO
@@ -569,6 +571,8 @@ gyroDetectionFlags_t getGyroDetectionFlags(void)
 static FAST_RAM uint8_t dynLpfFilter = DYN_LPF_NONE;
 static FAST_RAM_ZERO_INIT uint16_t dynLpfMin;
 static FAST_RAM_ZERO_INIT uint16_t dynLpfMax;
+static FAST_RAM_ZERO_INIT uint8_t dynLpfRpmMode;
+static FAST_RAM_ZERO_INIT uint8_t dynLpfRpmGyroCutoff;
 
 static void dynLpfFilterInit()
 {
@@ -589,6 +593,8 @@ static void dynLpfFilterInit()
     }
     dynLpfMin = gyroConfig()->dyn_lpf_gyro_min_hz;
     dynLpfMax = gyroConfig()->dyn_lpf_gyro_max_hz;
+    dynLpfRpmMode = gyroConfig()->dyn_lpf_rpm_mode;
+    dynLpfRpmGyroCutoff = gyroConfig()->dyn_lpf_rpm_gyro_cutoff;
 }
 #endif
 
@@ -1242,9 +1248,19 @@ float dynThrottle(float throttle) {
 
 void dynLpfGyroUpdate(float throttle)
 {
-    if (dynLpfFilter != DYN_LPF_NONE) {
-        const unsigned int cutoffFreq = fmax(dynThrottle(throttle) * dynLpfMax, dynLpfMin);
+    static unsigned int cutoffFreq;
 
+    if (dynLpfFilter != DYN_LPF_NONE) {
+#ifdef USE_RPM_FILTER
+        if (dynLpfRpmMode == ON && isRpmFilterEnabled()) {
+            cutoffFreq = constrainf(getCutoffFrequency(dynLpfRpmGyroCutoff), dynLpfMin, dynLpfMax);
+            DEBUG_SET(DEBUG_RPM_LPF, 1, cutoffFreq);
+        } else {
+            cutoffFreq = fmax(dynThrottle(throttle) * dynLpfMax, dynLpfMin);
+        }
+#else
+        cutoffFreq = fmax(dynThrottle(throttle) * dynLpfMax, dynLpfMin);
+#endif
         if (dynLpfFilter == DYN_LPF_PT1) {
             DEBUG_SET(DEBUG_DYN_LPF, 2, cutoffFreq);
             const float gyroDt = gyro.targetLooptime * 1e-6f;

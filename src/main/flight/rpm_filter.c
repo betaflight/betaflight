@@ -66,6 +66,7 @@ typedef struct rpmNotchFilter_s
 FAST_RAM_ZERO_INIT static float   erpmToHz;
 FAST_RAM_ZERO_INIT static float   filteredMotorErpm[MAX_SUPPORTED_MOTORS];
 FAST_RAM_ZERO_INIT static float   minMotorFrequency;
+FAST_RAM_ZERO_INIT static float   avgMotorFrequency;
 FAST_RAM_ZERO_INIT static uint8_t numberFilters;
 FAST_RAM_ZERO_INIT static uint8_t numberRpmNotchFilters;
 FAST_RAM_ZERO_INIT static uint8_t filterUpdatesPerIteration;
@@ -248,5 +249,18 @@ float rpmMinMotorFrequency()
     return minMotorFrequency;
 }
 
+void rpmAvgMotorFrequency() {
+    avgMotorFrequency = 0;
+    for (int i = 0; i < getMotorCount(); i++) {
+        avgMotorFrequency += motorFrequency[i];
+    }
+    avgMotorFrequency = avgMotorFrequency / getMotorCount();
+}
+
+float getCutoffFrequency(uint8_t cutoffPercent) {
+    const float percent = cutoffPercent / 100.0f;
+    DEBUG_SET(DEBUG_RPM_LPF, 0, avgMotorFrequency);
+    return avgMotorFrequency * percent;
+}
 
 #endif

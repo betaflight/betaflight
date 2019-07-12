@@ -109,6 +109,7 @@ typedef enum {
     DEBUG_DYN_IDLE,
     DEBUG_FF_LIMIT,
     DEBUG_FF_INTERPOLATED,
+    DEBUG_RPM_LPF,
     DEBUG_COUNT
 } debugType_e;
 

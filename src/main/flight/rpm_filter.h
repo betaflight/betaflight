@@ -44,3 +44,5 @@ float rpmFilterDterm(int axis, float values);
 void  rpmFilterUpdate();
 bool isRpmFilterEnabled(void);
 float rpmMinMotorFrequency();
+float getCutoffFrequency(uint8_t cutoffPercent);
+void rpmAvgMotorFrequency();
