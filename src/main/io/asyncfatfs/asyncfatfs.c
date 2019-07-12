@@ -2633,11 +2633,12 @@ static void afatfs_createFileContinue(afatfsFile_t *file)
                 #ifdef USE_RTC_TIME
                 // rtcGetDateTime will fill dt with 0000-01-01T00:00:00
                 // when time is not known.
-                dateTime_t dt;
+                dateTime_t dt, local_dt;
                 rtcGetDateTime(&dt);
                 if (dt.year != 0) {
-                    fileDate = FAT_MAKE_DATE(dt.year, dt.month, dt.day);
-                    fileTime = FAT_MAKE_TIME(dt.hours, dt.minutes, dt.seconds);
+                    dateTimeUTCToLocal(&dt, &local_dt);
+                    fileDate = FAT_MAKE_DATE(local_dt.year, local_dt.month, local_dt.day);
+                    fileTime = FAT_MAKE_TIME(local_dt.hours, local_dt.minutes, local_dt.seconds);
                 }
                 #endif
 
