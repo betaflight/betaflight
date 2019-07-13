@@ -39,10 +39,10 @@
 void targetConfiguration(void)
 {	
     if (hardwareRevision == FF_RACEPIT_REV_1) {
-        gyroDeviceConfigMutable(0)->align = CW180_DEG;
+        gyroDeviceConfigMutable(0)->alignment = CW180_DEG;
     }
     else {
-        gyroDeviceConfigMutable(0)->align = CW90_DEG_FLIP;
+        gyroDeviceConfigMutable(0)->alignment = CW90_DEG_FLIP;
     }
 
     telemetryConfigMutable()->halfDuplex = false;

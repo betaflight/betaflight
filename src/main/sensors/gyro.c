@@ -433,7 +433,8 @@ static void gyroInitSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t *c
 {
     gyroSensor->gyroDebugAxis = gyroConfig()->gyro_filter_debug_axis;
     gyroSensor->gyroDev.gyro_high_fsr = gyroConfig()->gyro_high_fsr;
-    gyroSensor->gyroDev.gyroAlign = config->align;
+    gyroSensor->gyroDev.gyroAlign = config->alignment;
+    buildRotationMatrixFromAlignment(&config->customAlignment, &gyroSensor->gyroDev.rotationMatrix);
     gyroSensor->gyroDev.mpuIntExtiTag = config->extiTag;
 
     // Must set gyro targetLooptime before gyroDev.init and initialisation of filters
@@ -1037,7 +1038,11 @@ static FAST_CODE FAST_CODE_NOINLINE void gyroUpdateSensor(gyroSensor_t *gyroSens
         gyroSensor->gyroDev.gyroADC[Z] = gyroSensor->gyroDev.gyroADCRaw[Z] - gyroSensor->gyroDev.gyroZero[Z];
 #endif
 
-        alignSensors(gyroSensor->gyroDev.gyroADC, gyroSensor->gyroDev.gyroAlign);
+        if (gyroSensor->gyroDev.gyroAlign == ALIGN_CUSTOM) {
+            alignSensorViaMatrix(gyroSensor->gyroDev.gyroADC, &gyroSensor->gyroDev.rotationMatrix);
+        } else {
+            alignSensorViaRotation(gyroSensor->gyroDev.gyroADC, gyroSensor->gyroDev.gyroAlign);
+        }
     } else {
         performGyroCalibration(gyroSensor, gyroConfig()->gyroMovementCalibrationThreshold);
         // still calibrating, so no need to further process gyro data
