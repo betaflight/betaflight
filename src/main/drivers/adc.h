@@ -77,8 +77,10 @@ typedef struct adcOperatingConfig_s {
     ioTag_t tag;
 #ifdef STM32H7
     ADCDevice adcDevice;        // ADCDEV_x for this input
-#endif
+    uint32_t adcChannel;        // ADCy_INxx channel ID for this input
+#else
     uint8_t adcChannel;         // ADCy_INxx channel number for this input
+#endif
     uint8_t dmaIndex;           // index into DMA buffer in case of sparse channels
     bool enabled;
     uint8_t sampleTime;
