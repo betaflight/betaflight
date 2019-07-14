@@ -66,7 +66,7 @@ sdcardOperationStatus_e sdcard_beginWriteBlocks(uint32_t blockIndex, uint32_t bl
 sdcardOperationStatus_e sdcard_writeBlock(uint32_t blockIndex, uint8_t *buffer, sdcard_operationCompleteCallback_c callback, uint32_t callbackData);
 
 void sdcardInsertionDetectDeinit(void);
-void sdcardInsertionDetectInit(void);
+void sdcardInsertionDetectInit(const sdcardConfig_t *config);
 
 bool sdcard_isInserted(void);
 bool sdcard_isInitialized(void);
