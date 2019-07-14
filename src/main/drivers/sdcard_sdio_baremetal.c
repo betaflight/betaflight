@@ -211,14 +211,6 @@ static void sdcardSdio_init(const sdcardConfig_t *config, const spiPinConfig_t *
         sdcard.state = SDCARD_STATE_NOT_PRESENT;
         return;
     }
-    if (config->cardDetectTag) {
-        sdcard.cardDetectPin = IOGetByTag(config->cardDetectTag);
-    } else {
-        sdcard.cardDetectPin = IO_NONE;
-    }
-    if (config->cardDetectInverted) {
-    	sdcard.detectionInverted = 1;
-    }
     if (sdioConfig()->useCache) {
         sdcard.useCache = 1;
     } else {
