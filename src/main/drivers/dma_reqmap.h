@@ -22,17 +22,16 @@
 
 #include "platform.h"
 
+#include "drivers/dma.h"
 #include "drivers/timer.h"
 
 typedef uint16_t dmaCode_t;
 
 typedef struct dmaChannelSpec_s {
     dmaCode_t             code;
+    dmaResource_t         *ref;
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
-    DMA_Stream_TypeDef    *ref;
     uint32_t              channel;
-#else
-    DMA_Channel_TypeDef   *ref;
 #endif
 } dmaChannelSpec_t;
 

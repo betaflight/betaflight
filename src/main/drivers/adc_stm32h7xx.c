@@ -68,14 +68,14 @@ const adcDevice_t adcHardware[ADCDEV_COUNT] = {
         .ADCx = ADC1_INSTANCE,
         .rccADC = RCC_AHB1(ADC12),
 #if !defined(USE_DMA_SPEC)
-        .DMAy_Streamx = ADC1_DMA_STREAM,
+        .dmaResource = (dmaResource_t *)ADC1_DMA_STREAM,
         .channel = DMA_REQUEST_ADC1,
 #endif
     },
     { .ADCx = ADC2_INSTANCE,
         .rccADC = RCC_AHB1(ADC12),
 #if !defined(USE_DMA_SPEC)
-        .DMAy_Streamx = ADC2_DMA_STREAM,
+        .dmaResource = (dmaResource_t *)ADC2_DMA_STREAM,
         .channel = DMA_REQUEST_ADC2,
 #endif
     },
@@ -84,7 +84,7 @@ const adcDevice_t adcHardware[ADCDEV_COUNT] = {
         .ADCx = ADC3_INSTANCE,
         .rccADC = RCC_AHB4(ADC3),
 #if !defined(USE_DMA_SPEC)
-        .DMAy_Streamx = ADC3_DMA_STREAM,
+        .dmaResource = (dmaResource_t *)ADC3_DMA_STREAM,
         .channel = DMA_REQUEST_ADC3,
 #endif
     }
@@ -283,7 +283,7 @@ void adcInit(const adcConfig_t *config)
             for (dev = 0; dev < ADCDEV_COUNT; dev++) {
                 if (!adcDevice[dev].ADCx 
 #ifndef USE_DMA_SPEC
-                     || !adcDevice[dev].DMAy_Streamx
+                     || !adcDevice[dev].dmaResource
 #endif
                    ) {
                     // Instance not activated
@@ -388,8 +388,8 @@ void adcInit(const adcConfig_t *config)
         adc->DmaHandle.Init.Request             = dmaSpec->channel;
         dmaIdentifier = dmaGetIdentifier(dmaSpec->ref);
 #else
-        dmaIdentifier = dmaGetIdentifier(adc->DMAy_Streamx);
-        adc->DmaHandle.Instance                 = adc->DMAy_Streamx;
+        dmaIdentifier = dmaGetIdentifier(adc->dmaResource);
+        adc->DmaHandle.Instance                 = (DMA_ARCH_TYPE *)adc->dmaResource;
         adc->DmaHandle.Init.Request             = adc->channel;
 #endif
         adc->DmaHandle.Init.Direction           = DMA_PERIPH_TO_MEMORY;

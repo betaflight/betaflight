@@ -226,7 +226,7 @@ static void sdcardSdio_init(const sdcardConfig_t *config, const spiPinConfig_t *
 #if defined(STM32H7) // H7 uses IDMA
     SD_Initialize_LL(0);
 #else
-    SD_Initialize_LL(dmaChannelSpec->ref);
+    SD_Initialize_LL((DMA_ARCH_TYPE *)dmaChannelSpec->ref);
 #endif
 #else
     SD_Initialize_LL(SDCARD_SDIO_DMA_OPT);

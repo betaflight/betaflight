@@ -135,19 +135,14 @@ typedef struct uartHardware_s {
     USART_TypeDef* reg;
 
 #ifdef USE_DMA
+    dmaResource_t *txDMAResource;
+    dmaResource_t *rxDMAResource;
 #if defined(STM32F4) || defined(STM32F7)
     uint32_t DMAChannel;
-    DMA_Stream_TypeDef *txDMAStream;
-    DMA_Stream_TypeDef *rxDMAStream;
 #elif defined(STM32H7)
     // DMAMUX input from peripherals (DMA_REQUEST_xxx); RM0433 Table 110.
     uint8_t txDMARequest;
     uint8_t rxDMARequest;
-    DMA_Stream_TypeDef *txDMAStream;
-    DMA_Stream_TypeDef *rxDMAStream;
-#elif defined(STM32F1) || defined(STM32F3)
-    DMA_Channel_TypeDef *txDMAChannel;
-    DMA_Channel_TypeDef *rxDMAChannel;
 #endif
 #endif // USE_DMA
 

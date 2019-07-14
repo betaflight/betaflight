@@ -1625,8 +1625,8 @@ void SD_Initialize_LL(DMA_Stream_TypeDef *dma)
                               DMA_MBURST_INC4      | DMA_PBURST_INC4        |
                               DMA_MEMORY_TO_PERIPH);
         DMA2_Stream3->FCR  = (DMA_SxFCR_DMDIS | DMA_SxFCR_FTH);                 // Configuration FIFO control register
-        dmaInit(dmaGetIdentifier(DMA2_Stream3), OWNER_SDCARD, 0);
-        dmaSetHandler(dmaGetIdentifier(DMA2_Stream3), SDIO_DMA_ST3_IRQHandler, 1, 0);
+        dmaInit(dmaGetIdentifier((dmaResource_t *)DMA2_Stream3), OWNER_SDCARD, 0);
+        dmaSetHandler(dmaGetIdentifier((dmaResource_t *)DMA2_Stream3), SDIO_DMA_ST3_IRQHandler, 1, 0);
     } else {
         // Initialize DMA2 channel 6
         DMA2_Stream6->CR   = 0;                                                 // Reset DMA Stream control register
@@ -1638,8 +1638,8 @@ void SD_Initialize_LL(DMA_Stream_TypeDef *dma)
                               DMA_MBURST_INC4      | DMA_PBURST_INC4        |
                               DMA_MEMORY_TO_PERIPH);
         DMA2_Stream6->FCR  = (DMA_SxFCR_DMDIS | DMA_SxFCR_FTH);                 // Configuration FIFO control register
-        dmaInit(dmaGetIdentifier(DMA2_Stream6), OWNER_SDCARD, 0);
-        dmaSetHandler(dmaGetIdentifier(DMA2_Stream6), SDIO_DMA_ST6_IRQHandler, 1, 0);
+        dmaInit(dmaGetIdentifier((dmaResource_t *)DMA2_Stream6), OWNER_SDCARD, 0);
+        dmaSetHandler(dmaGetIdentifier((dmaResource_t *)DMA2_Stream6), SDIO_DMA_ST6_IRQHandler, 1, 0);
     }
 }
 

@@ -169,7 +169,7 @@ static const dmaTimerMapping_t dmaTimerMapping[] = {
 #undef TC
 #undef REQMAP_TIM
 
-#define DMA(d, s) { DMA_CODE(d, s, 0), DMA ## d ## _Stream ## s, 0 }
+#define DMA(d, s) { DMA_CODE(d, s, 0), (dmaResource_t *)DMA ## d ## _Stream ## s, 0 }
 
 static dmaChannelSpec_t dmaChannelSpec[MAX_PERIPHERAL_DMA_OPTIONS] = {
     DMA(1, 0),
@@ -195,9 +195,9 @@ static dmaChannelSpec_t dmaChannelSpec[MAX_PERIPHERAL_DMA_OPTIONS] = {
 #elif defined(STM32F4) || defined(STM32F7)
 
 #if defined(STM32F4)
-#define DMA(d, s, c) { DMA_CODE(d, s, c), DMA ## d ## _Stream ## s, DMA_Channel_ ## c }
+#define DMA(d, s, c) { DMA_CODE(d, s, c), (dmaResource_t *)DMA ## d ## _Stream ## s, DMA_Channel_ ## c }
 #elif defined(STM32F7)
-#define DMA(d, s, c) { DMA_CODE(d, s, c), DMA ## d ## _Stream ## s, DMA_CHANNEL_ ## c }
+#define DMA(d, s, c) { DMA_CODE(d, s, c), (dmaResource_t *)DMA ## d ## _Stream ## s, DMA_CHANNEL_ ## c }
 #endif
 
 static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
@@ -291,7 +291,7 @@ static const dmaTimerMapping_t dmaTimerMapping[] = {
 #else // STM32F3
     // The embedded ADC24_DMA_REMAP conditional should be removed
     // when (and if) F3 is going generic.
-#define DMA(d, c) { DMA_CODE(d, 0, c), DMA ## d ## _Channel ## c }
+#define DMA(d, c) { DMA_CODE(d, 0, c), (dmaResource_t *)DMA ## d ## _Channel ## c }
 static const dmaPeripheralMapping_t dmaPeripheralMapping[17] = {
 #ifdef USE_SPI
     { DMA_PERIPH_SPI_TX,  1, { DMA(1, 3) } },
