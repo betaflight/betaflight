@@ -67,15 +67,7 @@ sdcard_t sdcard;
 
 STATIC_ASSERT(sizeof(sdcardCSD_t) == 16, sdcard_csd_bitfields_didnt_pack_properly);
 
-void sdcardInsertionDetectDeinit(void)
-{
-    if (sdcard.cardDetectPin) {
-        IOInit(sdcard.cardDetectPin, OWNER_FREE, 0);
-        IOConfigGPIO(sdcard.cardDetectPin, IOCFG_IN_FLOATING);
-    }
-}
-
-void sdcardInsertionDetectInit(const sdcardConfig_t *config)
+static void sdcardInsertionDetectInit(const sdcardConfig_t *config)
 {
     if (config->cardDetectTag) {
         sdcard.cardDetectPin = IOGetByTag(config->cardDetectTag);
@@ -122,6 +114,8 @@ void sdcard_preInit(const sdcardConfig_t *config)
 
 void sdcard_init(const sdcardConfig_t *config)
 {
+    sdcardInsertionDetectInit(config);
+
     switch (config->mode) {
 #ifdef USE_SDCARD_SPI
     case SDCARD_MODE_SPI:
