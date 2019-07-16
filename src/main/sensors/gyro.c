@@ -422,6 +422,8 @@ static bool gyroDetectSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t 
     if (!gyroFound) {
         return false;
     }
+#else
+    UNUSED(gyroFound);
 #endif
 #else
     UNUSED(config);
@@ -832,6 +834,12 @@ static bool isOnFirstGyroCalibrationCycle(const gyroCalibration_t *gyroCalibrati
 
 static void gyroSetCalibrationCycles(gyroSensor_t *gyroSensor)
 {
+#if defined(USE_FAKE_GYRO) && !defined(UNIT_TEST)
+    if (gyroSensor->gyroDev.gyroHardware == GYRO_FAKE) {
+        gyroSensor->calibration.cyclesRemaining = 0;
+        return;
+    }
+#endif
     gyroSensor->calibration.cyclesRemaining = gyroCalculateCalibratingCycles();
 }
 
