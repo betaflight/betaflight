@@ -15,5 +15,5 @@ TARGET_SRC += \
             drivers/accgyro/accgyro_spi_mpu6500.c \
             drivers/compass/compass_hmc5883l.c \
             drivers/barometer/barometer_bmp388.c \
-            drivers/vtx_rtc6705_soft_spi.c \
-
+            drivers/vtx_rtc6705.c \
+            drivers/vtx_rtc6705_soft_spi.c
