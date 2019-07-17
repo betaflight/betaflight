@@ -42,6 +42,9 @@
 #endif
 
 #include "pwm_output.h"
+#include "drivers/dshot.h"
+#include "drivers/dshot_dpwm.h"
+#include "drivers/dshot_command.h"
 
 #include "pwm_output_dshot_shared.h"
 
@@ -143,13 +146,11 @@ FAST_CODE void pwmDshotSetDirectionOutput(
 }
 
 
-void pwmCompleteDshotMotorUpdate(uint8_t motorCount)
+void pwmCompleteDshotMotorUpdate(void)
 {
-    UNUSED(motorCount);
-
     /* If there is a dshot command loaded up, time it correctly with motor update*/
-    if (pwmDshotCommandIsQueued()) {
-        if (!pwmDshotCommandOutputIsEnabled(motorCount)) {
+    if (!dshotCommandQueueEmpty()) {
+        if (!dshotCommandOutputIsEnabled(dshotPwmDevice.count)) {
             return;
         }
     }
@@ -336,6 +337,8 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     if (useBurstDshot) {
         dmaInit(timerHardware->dmaTimUPIrqHandler, OWNER_TIMUP, timerGetTIMNumber(timerHardware->tim));
 
+        motor->timer->dmaBurstBuffer = &dshotBurstDmaBuffer[timerIndex][0];
+
 #if defined(STM32F3)
         DMAINIT.DMA_MemoryBaseAddr = (uint32_t)motor->timer->dmaBurstBuffer;
         DMAINIT.DMA_DIR = DMA_DIR_PeripheralDST;
@@ -360,6 +363,8 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 #endif
     {
         dmaInit(dmaGetIdentifier(dmaRef), OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
+
+        motor->dmaBuffer = &dshotDmaBuffer[motorIndex][0];
 
 #if defined(STM32F3)
         DMAINIT.DMA_MemoryBaseAddr = (uint32_t)motor->dmaBuffer;
@@ -398,11 +403,11 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 #endif
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
-        dmaSetHandler(timerHardware->dmaTimUPIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(2, 1), motor->index);
+        dmaSetHandler(timerHardware->dmaTimUPIrqHandler, motor_DMA_IRQHandler, NVIC_PRIO_DSHOT_DMA, motor->index);
     } else
 #endif
     {
-        dmaSetHandler(dmaGetIdentifier(dmaRef), motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(2, 1), motor->index);
+        dmaSetHandler(dmaGetIdentifier(dmaRef), motor_DMA_IRQHandler, NVIC_PRIO_DSHOT_DMA, motor->index);
     }
 
     TIM_Cmd(timer, ENABLE);

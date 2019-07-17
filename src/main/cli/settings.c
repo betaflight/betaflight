@@ -35,6 +35,7 @@
 #include "drivers/adc.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
+#include "drivers/dshot_command.h"
 #include "drivers/camera_control.h"
 #include "drivers/light_led.h"
 #include "drivers/pinio.h"
@@ -580,7 +581,7 @@ const lookupTableEntry_t lookupTables[] = {
 
     LOOKUP_TABLE_ENTRY(lookupTableGyroFilterDebug),
 
-    LOOKUP_TABLE_ENTRY(lookupTablePositionAltSource)
+    LOOKUP_TABLE_ENTRY(lookupTablePositionAltSource),
 };
 
 #undef LOOKUP_TABLE_ENTRY

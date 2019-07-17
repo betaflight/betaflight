@@ -43,6 +43,9 @@
 #endif
 
 #include "pwm_output.h"
+#include "drivers/dshot.h"
+#include "drivers/dshot_dpwm.h"
+#include "drivers/dshot_command.h"
 
 #include "pwm_output_dshot_shared.h"
 
@@ -106,7 +109,7 @@ FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
     }
 
     /*If there is a command ready to go overwrite the value and send that instead*/
-    if (pwmDshotCommandIsProcessing()) {
+    if (dshotCommandIsProcessing()) {
         value = pwmGetDshotCommand(index);
 #ifdef USE_DSHOT_TELEMETRY
         // reset telemetry debug statistics every time telemetry is enabled
@@ -116,13 +119,13 @@ FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
         }
 #endif
         if (value) {
-            motor->requestTelemetry = true;
+            motor->protocolControl.requestTelemetry = true;
         }
     }
 
-    motor->value = value;
+    motor->protocolControl.value = value;
 
-    uint16_t packet = prepareDshotPacket(motor);
+    uint16_t packet = prepareDshotPacket(&motor->protocolControl);
     uint8_t bufferSize;
 
 #ifdef USE_DSHOT_DMAR
@@ -238,7 +241,7 @@ void updateDshotTelemetryQuality(dshotTelemetryQuality_t *qualityStats, bool pac
 }
 #endif // USE_DSHOT_TELEMETRY_STATS
 
-bool pwmStartDshotMotorUpdate(uint8_t motorCount)
+bool pwmStartDshotMotorUpdate(void)
 {
     if (!useDshotTelemetry) {
         return true;
@@ -246,7 +249,7 @@ bool pwmStartDshotMotorUpdate(uint8_t motorCount)
 #ifdef USE_DSHOT_TELEMETRY_STATS
     const timeMs_t currentTimeMs = millis();
 #endif
-    for (int i = 0; i < motorCount; i++) {
+    for (int i = 0; i < dshotPwmDevice.count; i++) {
         if (dmaMotors[i].hasTelemetry) {
 #ifdef STM32F7
             uint32_t edges = LL_EX_DMA_GetDataLength(dmaMotors[i].dmaRef);
@@ -296,13 +299,23 @@ bool pwmStartDshotMotorUpdate(uint8_t motorCount)
         }
         pwmDshotSetDirectionOutput(&dmaMotors[i], true);
     }
-    dshotEnableChannels(motorCount);
+    dshotEnableChannels(dshotPwmDevice.count);
     return true;
 }
 
 bool isDshotMotorTelemetryActive(uint8_t motorIndex)
 {
     return dmaMotors[motorIndex].dshotTelemetryActive;
+}
+
+bool isDshotTelemetryActive(void)
+{
+    for (unsigned i = 0; i < dshotPwmDevice.count; i++) {
+        if (!isDshotMotorTelemetryActive(i)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 #ifdef USE_DSHOT_TELEMETRY_STATS

@@ -66,7 +66,7 @@
 
 #include "drivers/display.h"
 #include "drivers/max7456_symbols.h"
-#include "drivers/pwm_output.h"
+#include "drivers/dshot.h"
 #include "drivers/time.h"
 #include "drivers/vtx_common.h"
 

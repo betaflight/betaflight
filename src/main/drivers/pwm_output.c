@@ -26,77 +26,16 @@
 #include "platform.h"
 
 #ifdef USE_PWM_OUTPUT
-#include "drivers/time.h"
 
 #include "drivers/io.h"
-#include "pwm_output.h"
-#include "timer.h"
+#include "drivers/motor.h"
 #include "drivers/pwm_output.h"
+#include "drivers/time.h"
+#include "drivers/timer.h"
 
 #include "pg/motor.h"
 
-static FAST_RAM_ZERO_INIT pwmWriteFn *pwmWrite;
-static FAST_RAM_ZERO_INIT pwmOutputPort_t motors[MAX_SUPPORTED_MOTORS];
-static FAST_RAM_ZERO_INIT pwmCompleteWriteFn *pwmCompleteWrite = NULL;
-#ifdef USE_DSHOT_TELEMETRY
-static FAST_RAM_ZERO_INIT pwmStartWriteFn *pwmStartWrite = NULL;
-#endif
-
-#ifdef USE_DSHOT
-#ifdef STM32H7
-// XXX dshotDmaBuffer can be embedded inside dshotBurstDmaBuffer
-DMA_RAM uint32_t dshotDmaBuffer[MAX_SUPPORTED_MOTORS][DSHOT_DMA_BUFFER_SIZE];
-#ifdef USE_DSHOT_DMAR
-DMA_RAM uint32_t dshotBurstDmaBuffer[MAX_DMA_TIMERS][DSHOT_DMA_BUFFER_SIZE * 4];
-#endif
-#endif
-FAST_RAM_ZERO_INIT loadDmaBufferFn *loadDmaBuffer;
-#define DSHOT_INITIAL_DELAY_US 10000
-#define DSHOT_COMMAND_DELAY_US 1000
-#define DSHOT_ESCINFO_DELAY_US 12000
-#define DSHOT_BEEP_DELAY_US 100000
-#define DSHOT_MAX_COMMANDS 3
-
-typedef enum {
-    DSHOT_COMMAND_STATE_IDLEWAIT,   // waiting for motors to go idle
-    DSHOT_COMMAND_STATE_STARTDELAY, // initial delay period before a sequence of commands
-    DSHOT_COMMAND_STATE_ACTIVE,     // actively sending the command (with optional repeated output)
-    DSHOT_COMMAND_STATE_POSTDELAY   // delay period after the command has been sent
-} dshotCommandState_e;
-
-typedef struct dshotCommandControl_s {
-    dshotCommandState_e state;
-    uint32_t nextCommandCycleDelay;
-    timeUs_t delayAfterCommandUs;
-    uint8_t repeats;
-    uint8_t command[MAX_SUPPORTED_MOTORS];
-} dshotCommandControl_t;
-
-static timeUs_t dshotCommandPidLoopTimeUs = 125; // default to 8KHz (125us) loop to prevent possible div/0
-                                                 // gets set to the actual value when the PID loop is initialized
-
-static dshotCommandControl_t commandQueue[DSHOT_MAX_COMMANDS + 1];
-static uint8_t commandQueueHead;
-static uint8_t commandQueueTail;
-#endif
-
-#ifdef USE_SERVOS
-static pwmOutputPort_t servos[MAX_SUPPORTED_SERVOS];
-#endif
-
-#ifdef USE_BEEPER
-static pwmOutputPort_t beeperPwm;
-static uint16_t freqBeep = 0;
-#endif
-
-static bool pwmMotorsEnabled = false;
-static bool isDshot = false;
-#ifdef USE_DSHOT_DMAR
-FAST_RAM_ZERO_INIT bool useBurstDshot = false;
-#endif
-#ifdef USE_DSHOT_TELEMETRY
-FAST_RAM_ZERO_INIT bool useDshotTelemetry = false;
-#endif
+FAST_RAM_ZERO_INIT pwmOutputPort_t motors[MAX_SUPPORTED_MOTORS];
 
 static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8_t output)
 {
@@ -169,6 +108,8 @@ void pwmOutConfig(timerChannel_t *channel, const timerHardware_t *timerHardware,
     *channel->ccr = 0;
 }
 
+static FAST_RAM_ZERO_INIT motorDevice_t motorPwmDevice;
+
 static void pwmWriteUnused(uint8_t index, float value)
 {
     UNUSED(index);
@@ -181,50 +122,9 @@ static void pwmWriteStandard(uint8_t index, float value)
     *motors[index].channel.ccr = lrintf((value * motors[index].pulseScale) + motors[index].pulseOffset);
 }
 
-#ifdef USE_DSHOT
-static FAST_CODE void pwmWriteDshot(uint8_t index, float value)
+void pwmShutdownPulsesForAllMotors(void)
 {
-    pwmWriteDshotInt(index, lrintf(value));
-}
-
-static FAST_CODE uint8_t loadDmaBufferDshot(uint32_t *dmaBuffer, int stride, uint16_t packet)
-{
-    for (int i = 0; i < 16; i++) {
-        dmaBuffer[i * stride] = (packet & 0x8000) ? MOTOR_BIT_1 : MOTOR_BIT_0;  // MSB first
-        packet <<= 1;
-    }
-    dmaBuffer[16 * stride] = 0;
-    dmaBuffer[17 * stride] = 0;
-
-    return DSHOT_DMA_BUFFER_SIZE;
-}
-
-static uint8_t loadDmaBufferProshot(uint32_t *dmaBuffer, int stride, uint16_t packet)
-{
-    for (int i = 0; i < 4; i++) {
-        dmaBuffer[i * stride] = PROSHOT_BASE_SYMBOL + ((packet & 0xF000) >> 12) * PROSHOT_BIT_WIDTH;  // Most significant nibble first
-        packet <<= 4;   // Shift 4 bits
-    }
-    dmaBuffer[4 * stride] = 0;
-    dmaBuffer[5 * stride] = 0;
-
-    return PROSHOT_DMA_BUFFER_SIZE;
-}
-
-void setDshotPidLoopTime(uint32_t pidLoopTime)
-{
-    dshotCommandPidLoopTimeUs = pidLoopTime;
-}
-#endif
-
-void pwmWriteMotor(uint8_t index, float value)
-{
-    pwmWrite(index, value);
-}
-
-void pwmShutdownPulsesForAllMotors(uint8_t motorCount)
-{
-    for (int index = 0; index < motorCount; index++) {
+    for (int index = 0; index < motorPwmDevice.count; index++) {
         // Set the compare register to 0, which stops the output pulsing if the timer overflows
         if (motors[index].channel.ccr) {
             *motors[index].channel.ccr = 0;
@@ -234,37 +134,19 @@ void pwmShutdownPulsesForAllMotors(uint8_t motorCount)
 
 void pwmDisableMotors(void)
 {
-    pwmShutdownPulsesForAllMotors(MAX_SUPPORTED_MOTORS);
-    pwmMotorsEnabled = false;
+    pwmShutdownPulsesForAllMotors();
 }
 
-void pwmEnableMotors(void)
+static motorVTable_t motorPwmVTable;
+bool pwmEnableMotors(void)
 {
     /* check motors can be enabled */
-    pwmMotorsEnabled = (pwmWrite != &pwmWriteUnused);
+    return (motorPwmVTable.write != &pwmWriteUnused);
 }
 
-bool pwmAreMotorsEnabled(void)
+static void pwmCompleteOneshotMotorUpdate(void)
 {
-    return pwmMotorsEnabled;
-}
-
-#ifdef USE_DSHOT_TELEMETRY
-static bool pwmStartWriteUnused(uint8_t motorCount)
-{
-    UNUSED(motorCount);
-    return true;
-}
-#endif
-
-static void pwmCompleteWriteUnused(uint8_t motorCount)
-{
-    UNUSED(motorCount);
-}
-
-static void pwmCompleteOneshotMotorUpdate(uint8_t motorCount)
-{
-    for (int index = 0; index < motorCount; index++) {
+    for (int index = 0; index < motorPwmDevice.count; index++) {
         if (motors[index].forceOverflow) {
             timerForceOverflow(motors[index].channel.tim);
         }
@@ -274,23 +156,27 @@ static void pwmCompleteOneshotMotorUpdate(uint8_t motorCount)
     }
 }
 
-void pwmCompleteMotorUpdate(uint8_t motorCount)
+static float pwmConvertFromExternal(uint16_t externalValue)
 {
-    pwmCompleteWrite(motorCount);
+    return (float)externalValue;
 }
 
-#ifdef USE_DSHOT_TELEMETRY
-bool pwmStartMotorUpdate(uint8_t motorCount)
+static uint16_t pwmConvertToExternal(float motorValue)
 {
-    return pwmStartWrite(motorCount);
+    return (uint16_t)motorValue;
 }
-#endif
 
-void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount)
+static motorVTable_t motorPwmVTable = {
+    .enable = pwmEnableMotors,
+    .disable = pwmDisableMotors,
+    .shutdown = pwmShutdownPulsesForAllMotors,
+    .convertExternalToMotor = pwmConvertFromExternal,
+    .convertMotorToExternal = pwmConvertToExternal,
+};
+
+motorDevice_t *motorPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount, bool useUnsyncedPwm)
 {
-    memset(motors, 0, sizeof(motors));
-
-    bool useUnsyncedPwm = motorConfig->useUnsyncedPwm;
+    motorPwmDevice.vTable = motorPwmVTable;
 
     float sMin = 0;
     float sLen = 0;
@@ -319,45 +205,11 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
         useUnsyncedPwm = true;
         idlePulse = 0;
         break;
-#ifdef USE_DSHOT
-    case PWM_TYPE_PROSHOT1000:
-        pwmWrite = &pwmWriteDshot;
-        loadDmaBuffer = &loadDmaBufferProshot;
-        pwmCompleteWrite = &pwmCompleteDshotMotorUpdate;
-#ifdef USE_DSHOT_TELEMETRY
-        pwmStartWrite = &pwmStartDshotMotorUpdate;
-        useDshotTelemetry = motorConfig->useDshotTelemetry;
-#endif
-        isDshot = true;
-        break;
-    case PWM_TYPE_DSHOT1200:
-    case PWM_TYPE_DSHOT600:
-    case PWM_TYPE_DSHOT300:
-    case PWM_TYPE_DSHOT150:
-        pwmWrite = &pwmWriteDshot;
-        loadDmaBuffer = &loadDmaBufferDshot;
-        pwmCompleteWrite = &pwmCompleteDshotMotorUpdate;
-#ifdef USE_DSHOT_TELEMETRY
-        pwmStartWrite = &pwmStartDshotMotorUpdate;
-        useDshotTelemetry = motorConfig->useDshotTelemetry;
-#endif
-        isDshot = true;
-#ifdef USE_DSHOT_DMAR
-        if (motorConfig->useBurstDshot) {
-            useBurstDshot = true;
-        }
-#endif
-        break;
-#endif
     }
 
-    if (!isDshot) {
-        pwmWrite = &pwmWriteStandard;
-        pwmCompleteWrite = useUnsyncedPwm ? &pwmCompleteWriteUnused : &pwmCompleteOneshotMotorUpdate;
-#ifdef USE_DSHOT_TELEMETRY
-        pwmStartWrite = pwmStartWriteUnused;
-#endif
-    }
+    motorPwmDevice.vTable.write = pwmWriteStandard;
+    motorPwmDevice.vTable.updateStart = motorUpdateStartNull;
+    motorPwmDevice.vTable.updateComplete = useUnsyncedPwm ? motorUpdateCompleteNull : pwmCompleteOneshotMotorUpdate;
 
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
         const ioTag_t tag = motorConfig->ioTags[motorIndex];
@@ -365,25 +217,14 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
 
         if (timerHardware == NULL) {
             /* not enough motors initialised for the mixer or a break in the motors */
-            pwmWrite = &pwmWriteUnused;
-            pwmCompleteWrite = &pwmCompleteWriteUnused;
+            motorPwmDevice.vTable.write = &pwmWriteUnused;
+            motorPwmDevice.vTable.updateComplete = motorUpdateCompleteNull;
             /* TODO: block arming and add reason system cannot arm */
-            return;
+            return NULL;
         }
 
         motors[motorIndex].io = IOGetByTag(tag);
         IOInit(motors[motorIndex].io, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
-
-#ifdef USE_DSHOT
-        if (isDshot) {
-            pwmDshotMotorHardwareConfig(timerHardware,
-                motorIndex,
-                motorConfig->motorPwmProtocol,
-                motorConfig->motorPwmInversion ? timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output);
-            motors[motorIndex].enabled = true;
-            continue;
-        }
-#endif
 
 #if defined(STM32F1)
         IOConfigGPIO(motors[motorIndex].io, IOCFG_AF_PP);
@@ -422,7 +263,7 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
         motors[motorIndex].enabled = true;
     }
 
-    pwmMotorsEnabled = true;
+    return &motorPwmDevice;
 }
 
 pwmOutputPort_t *pwmGetMotors(void)
@@ -430,274 +271,9 @@ pwmOutputPort_t *pwmGetMotors(void)
     return motors;
 }
 
-bool isMotorProtocolDshot(void)
-{
-    return isDshot;
-}
-
-#ifdef USE_DSHOT
-uint32_t getDshotHz(motorPwmProtocolTypes_e pwmProtocolType)
-{
-    switch (pwmProtocolType) {
-    case(PWM_TYPE_PROSHOT1000):
-        return MOTOR_PROSHOT1000_HZ;
-    case(PWM_TYPE_DSHOT1200):
-        return MOTOR_DSHOT1200_HZ;
-    case(PWM_TYPE_DSHOT600):
-        return MOTOR_DSHOT600_HZ;
-    case(PWM_TYPE_DSHOT300):
-        return MOTOR_DSHOT300_HZ;
-    default:
-    case(PWM_TYPE_DSHOT150):
-        return MOTOR_DSHOT150_HZ;
-    }
-}
-
-bool allMotorsAreIdle(uint8_t motorCount)
-{
-    bool allMotorsIdle = true;
-    for (unsigned i = 0; i < motorCount; i++) {
-        const motorDmaOutput_t *motor = getMotorDmaOutput(i);
-        if (motor->value) {
-            allMotorsIdle = false;
-        }
-    }
-
-    return allMotorsIdle;
-}
-
-FAST_CODE bool pwmDshotCommandQueueFull()
-{
-    return (commandQueueHead + 1) % (DSHOT_MAX_COMMANDS + 1) == commandQueueTail;
-}
-
-FAST_CODE bool pwmDshotCommandIsQueued(void)
-{
-    return commandQueueHead != commandQueueTail;
-}
-
-static FAST_CODE bool isLastDshotCommand(void)
-{
-    return ((commandQueueTail + 1) % (DSHOT_MAX_COMMANDS + 1) == commandQueueHead);
-}
-
-FAST_CODE bool pwmDshotCommandIsProcessing(void)
-{
-    if (!pwmDshotCommandIsQueued()) {
-        return false;
-    }
-    dshotCommandControl_t* command = &commandQueue[commandQueueTail];
-    const bool commandIsProcessing = command->state == DSHOT_COMMAND_STATE_STARTDELAY
-                                     || command->state == DSHOT_COMMAND_STATE_ACTIVE
-                                     || (command->state == DSHOT_COMMAND_STATE_POSTDELAY && !isLastDshotCommand());
-    return commandIsProcessing;
-}
-
-static FAST_CODE bool pwmDshotCommandQueueUpdate(void)
-{
-    if (pwmDshotCommandIsQueued()) {
-        commandQueueTail = (commandQueueTail + 1) % (DSHOT_MAX_COMMANDS + 1);
-        if (pwmDshotCommandIsQueued()) {
-            // There is another command in the queue so update it so it's ready to output in
-            // sequence. It can go directly to the DSHOT_COMMAND_STATE_ACTIVE state and bypass
-            // the DSHOT_COMMAND_STATE_IDLEWAIT and DSHOT_COMMAND_STATE_STARTDELAY states.
-            dshotCommandControl_t* nextCommand = &commandQueue[commandQueueTail];
-            nextCommand->state = DSHOT_COMMAND_STATE_ACTIVE;
-            nextCommand->nextCommandCycleDelay = 0;
-            return true;
-        }
-    }
-    return false;
-}
-
-static FAST_CODE uint32_t dshotCommandCyclesFromTime(timeUs_t delayUs)
-{
-    // Find the minimum number of motor output cycles needed to
-    // provide at least delayUs time delay
-    uint32_t ret = delayUs / dshotCommandPidLoopTimeUs;
-    if (delayUs % dshotCommandPidLoopTimeUs) {
-        ret++;
-    }
-    return ret;
-}
-
-static dshotCommandControl_t* addCommand()
-{
-    int newHead = (commandQueueHead + 1) % (DSHOT_MAX_COMMANDS + 1);
-    if (newHead == commandQueueTail) {
-        return NULL;
-    }
-    dshotCommandControl_t* control = &commandQueue[commandQueueHead];
-    commandQueueHead = newHead;
-    return control;
-}
-
-
-void pwmWriteDshotCommand(uint8_t index, uint8_t motorCount, uint8_t command, bool blocking)
-{
-    if (!isMotorProtocolDshot() || (command > DSHOT_MAX_COMMAND) || pwmDshotCommandQueueFull()) {
-        return;
-    }
-
-    uint8_t repeats = 1;
-    timeUs_t delayAfterCommandUs = DSHOT_COMMAND_DELAY_US;
-
-    switch (command) {
-    case DSHOT_CMD_SPIN_DIRECTION_1:
-    case DSHOT_CMD_SPIN_DIRECTION_2:
-    case DSHOT_CMD_3D_MODE_OFF:
-    case DSHOT_CMD_3D_MODE_ON:
-    case DSHOT_CMD_SAVE_SETTINGS:
-    case DSHOT_CMD_SPIN_DIRECTION_NORMAL:
-    case DSHOT_CMD_SPIN_DIRECTION_REVERSED:
-    case DSHOT_CMD_SIGNAL_LINE_TELEMETRY_DISABLE:
-    case DSHOT_CMD_SIGNAL_LINE_CONTINUOUS_ERPM_TELEMETRY:
-        repeats = 10;
-        break;
-    case DSHOT_CMD_BEACON1:
-    case DSHOT_CMD_BEACON2:
-    case DSHOT_CMD_BEACON3:
-    case DSHOT_CMD_BEACON4:
-    case DSHOT_CMD_BEACON5:
-        delayAfterCommandUs = DSHOT_BEEP_DELAY_US;
-        break;
-    default:
-        break;
-    }
-
-    if (blocking) {
-        delayMicroseconds(DSHOT_INITIAL_DELAY_US - DSHOT_COMMAND_DELAY_US);
-        for (; repeats; repeats--) {
-            delayMicroseconds(DSHOT_COMMAND_DELAY_US);
-
-#ifdef USE_DSHOT_TELEMETRY
-            timeUs_t currentTimeUs = micros();
-            while (!pwmStartDshotMotorUpdate(motorCount) &&
-                   cmpTimeUs(micros(), currentTimeUs) < 1000);
-#endif
-            for (uint8_t i = 0; i < motorCount; i++) {
-                if ((i == index) || (index == ALL_MOTORS)) {
-                    motorDmaOutput_t *const motor = getMotorDmaOutput(i);
-                    motor->requestTelemetry = true;
-                    pwmWriteDshotInt(i, command);
-                }
-            }
-
-            pwmCompleteDshotMotorUpdate(0);
-        }
-        delayMicroseconds(delayAfterCommandUs);
-    } else {
-        dshotCommandControl_t *commandControl = addCommand();
-        if (commandControl) {
-            commandControl->repeats = repeats;
-            commandControl->delayAfterCommandUs = delayAfterCommandUs;
-            for (unsigned i = 0; i < motorCount; i++) {
-                if (index == i || index == ALL_MOTORS) {
-                    commandControl->command[i] = command;
-                } else {
-                    commandControl->command[i] = DSHOT_CMD_MOTOR_STOP;
-                }
-            }
-            if (allMotorsAreIdle(motorCount)) {
-                // we can skip the motors idle wait state
-                commandControl->state = DSHOT_COMMAND_STATE_STARTDELAY;
-                commandControl->nextCommandCycleDelay = dshotCommandCyclesFromTime(DSHOT_INITIAL_DELAY_US);
-            } else {
-                commandControl->state = DSHOT_COMMAND_STATE_STARTDELAY;
-                commandControl->nextCommandCycleDelay = 0;  // will be set after idle wait completes
-            }
-        }
-    }
-}
-
-uint8_t pwmGetDshotCommand(uint8_t index)
-{
-    return commandQueue[commandQueueTail].command[index];
-}
-
-// This function is used to synchronize the dshot command output timing with
-// the normal motor output timing tied to the PID loop frequency. A "true" result
-// allows the motor output to be sent, "false" means delay until next loop. So take
-// the example of a dshot command that needs to repeat 10 times at 1ms intervals.
-// If we have a 8KHz PID loop we'll end up sending the dshot command every 8th motor output.
-FAST_CODE_NOINLINE bool pwmDshotCommandOutputIsEnabled(uint8_t motorCount)
-{
-    dshotCommandControl_t* command = &commandQueue[commandQueueTail];
-    switch (command->state) {
-    case DSHOT_COMMAND_STATE_IDLEWAIT:
-        if (allMotorsAreIdle(motorCount)) {
-            command->state = DSHOT_COMMAND_STATE_STARTDELAY;
-            command->nextCommandCycleDelay = dshotCommandCyclesFromTime(DSHOT_INITIAL_DELAY_US);
-        }
-        break;
-
-    case DSHOT_COMMAND_STATE_STARTDELAY:
-        if (command->nextCommandCycleDelay-- > 1) {
-            return false;  // Delay motor output until the start of the command seequence
-        }
-        command->state = DSHOT_COMMAND_STATE_ACTIVE;
-        command->nextCommandCycleDelay = 0;  // first iteration of the repeat happens now
-        FALLTHROUGH;
-
-    case DSHOT_COMMAND_STATE_ACTIVE:
-        if (command->nextCommandCycleDelay-- > 1) {
-            return false;  // Delay motor output until the next command repeat
-        }
-
-        command->repeats--;
-        if (command->repeats) {
-            command->nextCommandCycleDelay = dshotCommandCyclesFromTime(DSHOT_COMMAND_DELAY_US);
-        } else {
-            command->state = DSHOT_COMMAND_STATE_POSTDELAY;
-            command->nextCommandCycleDelay = dshotCommandCyclesFromTime(command->delayAfterCommandUs);
-            if (!isLastDshotCommand() && command->nextCommandCycleDelay > 0) {
-                // Account for the 1 extra motor output loop between commands.
-                // Otherwise the inter-command delay will be DSHOT_COMMAND_DELAY_US + 1 loop.
-                command->nextCommandCycleDelay--;
-            }
-        }
-        break;
-
-    case DSHOT_COMMAND_STATE_POSTDELAY:
-        if (command->nextCommandCycleDelay-- > 1) {
-            return false;  // Delay motor output until the end of the post-command delay
-        }
-        if (pwmDshotCommandQueueUpdate()) {
-            // Will be true if the command queue is not empty and we
-            // want to wait for the next command to start in sequence.
-            return false;
-        }
-    }
-
-    return true;
-}
-
-FAST_CODE uint16_t prepareDshotPacket(motorDmaOutput_t *const motor)
-{
-    uint16_t packet = (motor->value << 1) | (motor->requestTelemetry ? 1 : 0);
-    motor->requestTelemetry = false;    // reset telemetry request to make sure it's triggered only once in a row
-
-    // compute checksum
-    int csum = 0;
-    int csum_data = packet;
-    for (int i = 0; i < 3; i++) {
-        csum ^=  csum_data;   // xor data by nibbles
-        csum_data >>= 4;
-    }
-    // append checksum
-#ifdef USE_DSHOT_TELEMETRY
-    if (useDshotTelemetry) {
-        csum = ~csum;
-    }
-#endif
-    csum &= 0xf;
-    packet = (packet << 4) | csum;
-
-    return packet;
-}
-#endif // USE_DSHOT
-
 #ifdef USE_SERVOS
+static pwmOutputPort_t servos[MAX_SUPPORTED_SERVOS];
+
 void pwmWriteServo(uint8_t index, float value)
 {
     if (index < MAX_SUPPORTED_SERVOS && servos[index].channel.ccr) {
@@ -735,50 +311,5 @@ void servoDevInit(const servoDevConfig_t *servoConfig)
         servos[servoIndex].enabled = true;
     }
 }
-
 #endif // USE_SERVOS
-
-#ifdef USE_BEEPER
-void pwmWriteBeeper(bool onoffBeep)
-{
-    if (!beeperPwm.io) {
-        return;
-    }
-
-    if (onoffBeep == true) {
-        *beeperPwm.channel.ccr = (PWM_TIMER_1MHZ / freqBeep) / 2;
-        beeperPwm.enabled = true;
-    } else {
-        *beeperPwm.channel.ccr = 0;
-        beeperPwm.enabled = false;
-    }
-}
-
-void pwmToggleBeeper(void)
-{
-    pwmWriteBeeper(!beeperPwm.enabled);
-}
-
-void beeperPwmInit(const ioTag_t tag, uint16_t frequency)
-{
-    const timerHardware_t *timer = timerGetByTag(tag);
-    IO_t beeperIO = IOGetByTag(tag);
-
-    if (beeperIO && timer) {
-        beeperPwm.io = beeperIO;
-        IOInit(beeperPwm.io, OWNER_BEEPER, RESOURCE_INDEX(0));
-#if defined(STM32F1)
-        IOConfigGPIO(beeperPwm.io, IOCFG_AF_PP);
-#else
-        IOConfigGPIOAF(beeperPwm.io, IOCFG_AF_PP, timer->alternateFunction);
-#endif
-        freqBeep = frequency;
-        pwmOutConfig(&beeperPwm.channel, timer, PWM_TIMER_1MHZ, PWM_TIMER_1MHZ / freqBeep, (PWM_TIMER_1MHZ / freqBeep) / 2, 0);
-
-        *beeperPwm.channel.ccr = 0;
-        beeperPwm.enabled = false;
-    }
-}
-#endif // USE_BEEPER
-#endif //USE_PWM_OUTPUT
-
+#endif // USE_PWM_OUTPUT

@@ -64,7 +64,7 @@
 #include "telemetry/srxl.h"
 
 #include "drivers/vtx_common.h"
-#include "drivers/pwm_output.h"
+#include "drivers/dshot.h"
 
 #include "io/vtx_tramp.h"
 #include "io/vtx_smartaudio.h"
@@ -180,7 +180,7 @@ uint16_t getMotorAveragePeriod(void)
     }
 #endif
 
-#if defined( USE_DSHOT_TELEMETRY)
+#if defined(USE_DSHOT_TELEMETRY)
     if (useDshotTelemetry) {
         uint16_t motors = getMotorCount();
 

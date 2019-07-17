@@ -66,7 +66,7 @@ FAST_CODE void pwmDshotSetDirectionOutput(
 #endif
 );
 
-bool pwmStartDshotMotorUpdate(uint8_t motorCount);
+bool pwmStartDshotMotorUpdate(void);
 
 #endif
 #endif

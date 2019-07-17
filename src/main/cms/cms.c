@@ -50,6 +50,7 @@
 
 #include "drivers/system.h"
 #include "drivers/time.h"
+#include "drivers/motor.h"
 
 // For rcData, stopAllMotors, stopPwmAllMotors
 #include "config/feature.h"
@@ -808,7 +809,7 @@ long cmsMenuExit(displayPort_t *pDisplay, const void *ptr)
         displayResync(pDisplay); // Was max7456RefreshAll(); why at this timing?
 
         stopMotors();
-        stopPwmAllMotors();
+        motorShutdown();
         delay(200);
 
         systemReset();
