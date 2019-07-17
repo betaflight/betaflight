@@ -261,7 +261,7 @@ static const char * const *sensorHardwareNames[] = {
 
 #if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
 extern uint32_t readDoneCount;
-extern uint32_t inputBuffer[DSHOT_TELEMETRY_INPUT_LEN];
+extern uint32_t inputBuffer[GCR_TELEMETRY_INPUT_LEN];
 extern uint32_t setDirectionMicros;
 #endif
 
@@ -5680,15 +5680,13 @@ static void cliDshotTelemetryInfo(char *cmdline)
         }
         cliPrintLinefeed();
 
-        const bool proshot = (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_PROSHOT1000);
-        const int modulo = proshot ? MOTOR_NIBBLE_LENGTH_PROSHOT : MOTOR_BITLENGTH;
-        const int len = proshot ? 8 : DSHOT_TELEMETRY_INPUT_LEN;
+        const int len = MAX_GCR_EDGES;
         for (int i = 0; i < len; i++) {
             cliPrintf("%u ", (int)inputBuffer[i]);
         }
         cliPrintLinefeed();
-        for (int i = 1; i < len; i+=2) {
-            cliPrintf("%u ", (int)(inputBuffer[i] + modulo - inputBuffer[i-1]) % modulo);
+        for (int i = 1; i < len; i++) {
+            cliPrintf("%u ", (int)(inputBuffer[i]  - inputBuffer[i-1]));
         }
         cliPrintLinefeed();
     } else {
