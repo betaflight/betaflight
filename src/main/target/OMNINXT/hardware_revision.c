@@ -150,7 +150,6 @@ static uint16_t adcIDDetectReadVrefint(void)
 #endif
 
 #if defined(OMNINXT7)
-#define VREFINT_CAL_ADDR  0x1FF07A2A
 
 #include "drivers/adc_impl.h"
 
