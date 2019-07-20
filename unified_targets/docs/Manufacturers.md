@@ -23,6 +23,7 @@ This is the official list of manufacturer ids (`manufacturer_id` in the target c
 |IFRC|iFlight Innovation Technology Ltd.|https://www.iflight-rc.com/|
 |JHEF|JHE\_FPV|https://github.com/atgfpeyv|
 |KLEE|Kevin Lee (WhitenoiseFPV)|https://whitenoisefpv.com/|
+|MERK|MerakRC|http://www.merakrc.com/|
 |MTKS|Matek Systems|http://www.mateksys.com/|
 |RCTI|RCTimer|http://rctimer.com/|
 |RUSH|FPV Racing Rush|http://www.rushfpv.com/|
