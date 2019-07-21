@@ -416,9 +416,15 @@ static bool gyroDetectSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t 
 #if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) \
  || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20601) || defined(USE_GYRO_SPI_ICM20649) || defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_L3GD20)
 
-    if (!mpuDetect(&gyroSensor->gyroDev, config)) {
+    bool gyroFound = mpuDetect(&gyroSensor->gyroDev, config);
+
+#if !defined(USE_FAKE_GYRO) // Allow resorting to fake accgyro if defined
+    if (!gyroFound) {
         return false;
     }
+#else
+    UNUSED(gyroFound);
+#endif
 #else
     UNUSED(config);
 #endif
@@ -828,6 +834,12 @@ static bool isOnFirstGyroCalibrationCycle(const gyroCalibration_t *gyroCalibrati
 
 static void gyroSetCalibrationCycles(gyroSensor_t *gyroSensor)
 {
+#if defined(USE_FAKE_GYRO) && !defined(UNIT_TEST)
+    if (gyroSensor->gyroDev.gyroHardware == GYRO_FAKE) {
+        gyroSensor->calibration.cyclesRemaining = 0;
+        return;
+    }
+#endif
     gyroSensor->calibration.cyclesRemaining = gyroCalculateCalibratingCycles();
 }
 
