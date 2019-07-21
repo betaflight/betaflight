@@ -222,8 +222,10 @@ static bool processingCustomDefaults = false;
 static char cliBufferTemp[CLI_IN_BUFFER_SIZE];
 #endif
 
+#if defined(USE_CUSTOM_DEFAULTS_ADDRESS)
 static char __attribute__ ((section(".custom_defaults_address"))) *customDefaultsStart = CUSTOM_DEFAULTS_START;
 static char __attribute__ ((section(".custom_defaults_address"))) *customDefaultsEnd = CUSTOM_DEFAULTS_END;
+#endif
 
 #ifndef USE_QUAD_MIXER_ONLY
 // sync this with mixerMode_e
@@ -4165,7 +4167,7 @@ static void cliDefaults(char *cmdline)
     bool saveConfigs = true;
 #if defined(USE_CUSTOM_DEFAULTS)
     bool useCustomDefaults = true;
-#else
+#elif defined(USE_CUSTOM_DEFAULTS_ADDRESS)
     // Required to keep the linker from eliminating these
     if (customDefaultsStart != customDefaultsEnd) {
         delay(0);
@@ -4179,14 +4181,14 @@ static void cliDefaults(char *cmdline)
     } else if (strncasecmp(cmdline, "bare", 4) == 0) {
         useCustomDefaults = false;
     } else if (strncasecmp(cmdline, "show", 4) == 0) {
-        char *ptr = customDefaultsStart;
-        if (isDefaults(ptr)) {
-            while (*ptr && ptr < customDefaultsEnd) {
-                if (*ptr != '\n') {
-                    cliPrintf("%c", *ptr++);
+        char *customDefaultsPtr = customDefaultsStart;
+        if (isDefaults(customDefaultsPtr)) {
+            while (*customDefaultsPtr && *customDefaultsPtr != 0xFF && customDefaultsPtr < customDefaultsEnd) {
+                if (*customDefaultsPtr != '\n') {
+                    cliPrintf("%c", *customDefaultsPtr++);
                 } else {
                     cliPrintLinefeed();
-                    ptr++;
+                    customDefaultsPtr++;
                 }
             }
         } else {
@@ -6255,7 +6257,7 @@ static void cliHelp(char *cmdline)
     }
 }
 
-static void processCommandCharacter(const char c)
+static void processCharacter(const char c)
 {
     if (bufferIndex && (c == '\n' || c == '\r')) {
         // enter pressed
@@ -6314,7 +6316,7 @@ static void processCommandCharacter(const char c)
     }
 }
 
-static void processCharacter(const char c)
+static void processCharacterInteractive(const char c)
 {
     if (c == '\t' || c == '?') {
         // do tab completion
@@ -6368,7 +6370,7 @@ static void processCharacter(const char c)
             cliPrint("\010 \010");
         }
     } else {
-        processCommandCharacter(c);
+        processCharacter(c);
     }
 }
 
@@ -6384,7 +6386,7 @@ void cliProcess(void)
     while (serialRxBytesWaiting(cliPort)) {
         uint8_t c = serialRead(cliPort);
 
-        processCharacter(c);
+        processCharacterInteractive(c);
     }
 }
 
@@ -6395,8 +6397,8 @@ void cliProcessCustomDefaults(void)
         return;
     }
 
-    char *ptr = customDefaultsStart;
-    if (isDefaults(ptr)) {
+    char *customDefaultsPtr = customDefaultsStart;
+    if (isDefaults(customDefaultsPtr)) {
 #if !defined(DEBUG_CUSTOM_DEFAULTS)
         bufWriter_t *cliWriterTemp = cliWriter;
         cliWriter = NULL;
@@ -6406,8 +6408,8 @@ void cliProcessCustomDefaults(void)
         bufferIndex = 0;
         processingCustomDefaults = true;
 
-        while (*ptr && *ptr != 0xFF && ptr < customDefaultsEnd) {
-            processCommandCharacter(*ptr++);
+        while (*customDefaultsPtr && *customDefaultsPtr != 0xFF && customDefaultsPtr < customDefaultsEnd) {
+            processCharacter(*customDefaultsPtr++);
         }
 
         processingCustomDefaults = false;

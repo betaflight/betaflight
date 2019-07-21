@@ -368,3 +368,7 @@ extern uint8_t __config_end;
 #if !defined(USE_RPM_FILTER)
 #undef USE_DYN_IDLE
 #endif
+
+#if defined(USE_CUSTOM_DEFAULTS)
+#define USE_CUSTOM_DEFAULTS_ADDRESS
+#endif
