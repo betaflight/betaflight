@@ -212,13 +212,21 @@ static bool signatureUpdated = false;
 static const char* const emptyName = "-";
 static const char* const emptyString = "";
 
-#if defined(USE_CUSTOM_DEFAULTS)
-static char __attribute__ ((section(".custom_defaults_address"))) *customDefaultsStart = &__custom_defaults_start;
-static char __attribute__ ((section(".custom_defaults_address"))) *customDefaultsEnd = &__custom_defaults_end;
+#if !defined(USE_CUSTOM_DEFAULTS)
+#define CUSTOM_DEFAULTS_START ((char*)0)
+#define CUSTOM_DEFAULTS_END ((char *)0)
+#else
+extern char __custom_defaults_start;
+extern char __custom_defaults_end;
+#define CUSTOM_DEFAULTS_START (&__custom_defaults_start)
+#define CUSTOM_DEFAULTS_END (&__custom_defaults_end)
 
 static bool processingCustomDefaults = false;
 static char cliBufferTemp[CLI_IN_BUFFER_SIZE];
 #endif
+
+static char __attribute__ ((section(".custom_defaults_address"))) *customDefaultsStart = CUSTOM_DEFAULTS_START;
+static char __attribute__ ((section(".custom_defaults_address"))) *customDefaultsEnd = CUSTOM_DEFAULTS_END;
 
 #ifndef USE_QUAD_MIXER_ONLY
 // sync this with mixerMode_e
@@ -4178,6 +4186,11 @@ static void cliDefaults(char *cmdline)
     bool saveConfigs = true;
 #if defined(USE_CUSTOM_DEFAULTS)
     bool useCustomDefaults = true;
+#else
+    // Required to keep the linker from eliminating these
+    if (customDefaultsStart != customDefaultsEnd) {
+        delay(0);
+    }
 #endif
 
     if (isEmpty(cmdline)) {
@@ -6454,7 +6467,7 @@ void cliProcessCustomDefaults(void)
         bufferIndex = 0;
         processingCustomDefaults = true;
 
-        while (*ptr && ptr != 0xFF && ptr < customDefaultsEnd) {
+        while (*ptr && *ptr != 0xFF && ptr < customDefaultsEnd) {
             processCommandCharacter(*ptr++);
         }
 

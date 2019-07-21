@@ -9,9 +9,6 @@
 *****************************************************************************
 */
 
-/* Entry Point */
-ENTRY(Reset_Handler)
-
 /*
 0x08000000 to 0x0807FFFF  512K full flash,
 0x08000000 to 0x08003FFF   16K isr vector, startup code,
@@ -22,7 +19,8 @@ ENTRY(Reset_Handler)
 /* Specify the memory areas */
 MEMORY
 {
-    FLASH (rx)        : ORIGIN = 0x08000000, LENGTH = 16K
+    FLASH (rx)        : ORIGIN = 0x08000000, LENGTH = 10K
+    FLASH_CUSTOM_DEFAULTS (r) : ORIGIN = 0x08002800, LENGTH = 6K
     FLASH_CONFIG (r)  : ORIGIN = 0x08004000, LENGTH = 16K
     FLASH1 (rx)       : ORIGIN = 0x08008000, LENGTH = 480K
 

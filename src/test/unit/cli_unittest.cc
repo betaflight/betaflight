@@ -357,4 +357,6 @@ bool persistBoardInformation(void) { return true; };
 void activeAdjustmentRangeReset(void) {}
 void analyzeModeActivationConditions(void) {}
 bool isModeActivationConditionConfigured(const modeActivationCondition_t *, const modeActivationCondition_t *) { return false; }
+
+void delay(uint32_t) {}
 }

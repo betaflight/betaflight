@@ -31,7 +31,7 @@ EXST      ?= no
 RAM_BASED ?= no
 
 # reserve space for custom defaults
-CUSTOM_DEFAULTS ?= no
+CUSTOM_DEFAULTS_EXTENDED ?= no
 
 # Debugger optons:
 #   empty           - ordinary build with all optimizations enabled
@@ -189,9 +189,9 @@ else
 .DEFAULT_GOAL := hex
 endif
 
-ifeq ($(CUSTOM_DEFAULTS),yes)
-TARGET_FLAGS += -DUSE_CUSTOM_DEFAULTS
-EXTRA_LD_FLAGS += -Wl,--defsym=USE_CUSTOM_DEFAULTS=1
+ifeq ($(CUSTOM_DEFAULTS_EXTENDED),yes)
+TARGET_FLAGS += -DUSE_CUSTOM_DEFAULTS=
+EXTRA_LD_FLAGS += -Wl,--defsym=USE_CUSTOM_DEFAULTS_EXTENDED=1
 endif
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
