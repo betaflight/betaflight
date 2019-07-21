@@ -9,12 +9,10 @@
 *****************************************************************************
 */
 
-/* Entry Point */
-ENTRY(Reset_Handler)
-
 /*
 0x08000000 to 0x0807FFFF  512K full flash,
 0x08000000 to 0x08003FFF   16K isr vector, startup code,
+
 0x08004000 to 0x08007FFF   16K config,                  // FLASH_Sector_1
 0x08008000 to 0x0807FFFF  480K firmware,
 */
@@ -22,10 +20,11 @@ ENTRY(Reset_Handler)
 /* Specify the memory areas */
 MEMORY
 {
-    FLASH (rx)        : ORIGIN = 0x08000000, LENGTH = 16K
+    FLASH (rx)        : ORIGIN = 0x08000000, LENGTH = 10K
+    FLASH_CUSTOM_DEFAULTS (r) : ORIGIN = 0x08002800, LENGTH = 6K
     FLASH_CONFIG (r)  : ORIGIN = 0x08004000, LENGTH = 16K
     FLASH1 (rx)       : ORIGIN = 0x08008000, LENGTH = DEFINED(USE_CUSTOM_DEFAULTS) ? 464K : 480K
-    FLASH_CUSTOM_DEFAULTS (r): ORIGIN = DEFINED(USE_CUSTOM_DEFAULTS) ? 0x0807C000 : 0x08080000, LENGTH = DEFINED(USE_CUSTOM_DEFAULTS) ? 16K : 0K
+    FLASH_CUSTOM_DEFAULTS_EXTENDED (r): ORIGIN = DEFINED(USE_CUSTOM_DEFAULTS) ? 0x0807C000 : 0x08080000, LENGTH = DEFINED(USE_CUSTOM_DEFAULTS_EXTENDED) ? 16K : 0K
 
     SYSTEM_MEMORY (rx): ORIGIN = 0x1FFF0000, LENGTH = 29K
 
@@ -36,9 +35,5 @@ MEMORY
 REGION_ALIAS("STACKRAM", RAM)
 REGION_ALIAS("FASTRAM", RAM)
 REGION_ALIAS("VECTAB", RAM)
-
-/* Base address where the defaults are stored. */
-__custom_defaults_start = ORIGIN(FLASH_CUSTOM_DEFAULTS);
-__custom_defaults_end = ORIGIN(FLASH_CUSTOM_DEFAULTS) + LENGTH(FLASH_CUSTOM_DEFAULTS);
 
 INCLUDE "stm32_flash_split.ld"

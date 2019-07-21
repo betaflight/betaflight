@@ -2,7 +2,7 @@ F405_TARGETS += $(TARGET)
 
 FEATURES       += SDCARD_SPI VCP ONBOARDFLASH
 
-CUSTOM_DEFAULTS = yes
+CUSTOM_DEFAULTS_EXTENDED = yes
 
 TARGET_SRC = \
     $(addprefix drivers/accgyro/,$(notdir $(wildcard $(SRC_DIR)/drivers/accgyro/*.c))) \
