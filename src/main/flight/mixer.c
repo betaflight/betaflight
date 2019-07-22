@@ -577,11 +577,12 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
         static float motorRangeMinIncrease = 0;
         if (currentPidProfile->idle_hz) {
             static float oldMinRpm;
+            const float maxIncrease = isAirmodeActivated() ? currentPidProfile->idle_max_increase * 0.001f : 0.04f;
             const float minRpm = rpmMinMotorSpeed();
             const float targetRpmChangeRate = (currentPidProfile->idle_hz - minRpm) * currentPidProfile->idle_adjustment_speed;
             const float error = targetRpmChangeRate - (minRpm - oldMinRpm) * pidFrequency;
             const float pidSum = constrainf(currentPidProfile->idle_p * 0.0001f * error, -currentPidProfile->idle_pid_limit, currentPidProfile->idle_pid_limit);
-            motorRangeMinIncrease = constrainf(motorRangeMinIncrease + pidSum * dT, 0.0f, currentPidProfile->idle_max_increase * 0.001);
+            motorRangeMinIncrease = constrainf(motorRangeMinIncrease + pidSum * dT, 0.0f, maxIncrease);
             oldMinRpm = minRpm;
         }
         
