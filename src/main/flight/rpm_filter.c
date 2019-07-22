@@ -224,4 +224,16 @@ bool isRpmFilterEnabled(void)
     return (motorConfig()->dev.useDshotTelemetry && (rpmFilterConfig()->gyro_rpm_notch_harmonics || rpmFilterConfig()->dterm_rpm_notch_harmonics));
 }
 
+float rpmMinMotorSpeed()
+{
+    float minSpeed = 10000.0f;
+    for (int i = getMotorCount(); i--;) {
+        if (motorFrequency[i] < minSpeed) {
+            minSpeed = motorFrequency[i];
+        }
+    }
+    return minSpeed;
+}
+
+
 #endif

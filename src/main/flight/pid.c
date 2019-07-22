@@ -75,8 +75,8 @@ static FAST_RAM_ZERO_INIT bool pidStabilisationEnabled;
 
 static FAST_RAM_ZERO_INIT bool inCrashRecoveryMode = false;
 
-static FAST_RAM_ZERO_INIT float dT;
-static FAST_RAM_ZERO_INIT float pidFrequency;
+FAST_RAM_ZERO_INIT float dT;
+FAST_RAM_ZERO_INIT float pidFrequency;
 
 static FAST_RAM_ZERO_INIT uint8_t antiGravityMode;
 static FAST_RAM_ZERO_INIT float antiGravityThrottleHpf;
@@ -206,6 +206,12 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .auto_profile_cell_count = AUTO_PROFILE_CELL_COUNT_STAY,
         .transient_throttle_limit = 15,
         .profileName = { 0 },
+        .idle_hz = 0,
+        .idle_adjustment_speed = 50,
+        .idle_throttle = 60,
+        .idle_p = 20,
+        .idle_pid_limit = 100,
+        .idle_max_increase = 150,
     );
 #ifndef USE_D_MIN
     pidProfile->pid[PID_ROLL].D = 30;

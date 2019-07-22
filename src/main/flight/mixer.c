@@ -57,6 +57,7 @@
 #include "flight/mixer.h"
 #include "flight/mixer_tricopter.h"
 #include "flight/pid.h"
+#include "flight/rpm_filter.h"
 
 #include "rx/rx.h"
 
@@ -464,6 +465,7 @@ static FAST_RAM_ZERO_INIT float motorRangeMax;
 static FAST_RAM_ZERO_INIT float motorOutputRange;
 static FAST_RAM_ZERO_INIT int8_t motorOutputMixSign;
 
+
 static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
 {
     static uint16_t rcThrottlePrevious = 0;   // Store the last throttle direction for deadband transitions
@@ -572,12 +574,23 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             pidResetIterm();
         }
     } else {
+        static float motorRangeMinIncrease = 0;
+        if (currentPidProfile->idle_hz) {
+            static float oldMinRpm;
+            const float minRpm = rpmMinMotorSpeed();
+            const float targetRpmChangeRate = (currentPidProfile->idle_hz - minRpm) * currentPidProfile->idle_adjustment_speed;
+            const float error = targetRpmChangeRate - (minRpm - oldMinRpm) * pidFrequency;
+            const float pidSum = constrainf(currentPidProfile->idle_p * 0.0001f * error, -currentPidProfile->idle_pid_limit, currentPidProfile->idle_pid_limit);
+            motorRangeMinIncrease = constrainf(motorRangeMinIncrease + pidSum * dT, 0.0f, currentPidProfile->idle_max_increase * 0.001);
+            oldMinRpm = minRpm;
+        }
+        
         throttle = rcCommand[THROTTLE] - PWM_RANGE_MIN + throttleAngleCorrection;
         currentThrottleInputRange = rcCommandThrottleRange;
-        motorRangeMin = motorOutputLow;
+        motorRangeMin = motorOutputLow + motorRangeMinIncrease * (motorOutputHigh - motorOutputLow);
         motorRangeMax = motorOutputHigh;
-        motorOutputMin = motorOutputLow;
-        motorOutputRange = motorOutputHigh - motorOutputLow;
+        motorOutputMin = motorRangeMin;
+        motorOutputRange = motorOutputHigh - motorOutputMin;
         motorOutputMixSign = 1;
     }
 
@@ -831,6 +844,8 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
     // reestablish old throttle stick feel by counter compensating thrust linearization
     throttle = pidCompensateThrustLinearization(throttle);
 #endif
+
+    throttle += currentPidProfile->idle_throttle * 0.001f;
 
 #if defined(USE_THROTTLE_BOOST)
     if (throttleBoost > 0.0f) {
