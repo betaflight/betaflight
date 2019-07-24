@@ -2636,6 +2636,7 @@ static void afatfs_createFileContinue(afatfsFile_t *file)
                 dateTime_t dt, local_dt;
                 rtcGetDateTime(&dt);
                 if (dt.year != 0) {
+                    // By tradition, FAT filesystem timestamps use local time.
                     dateTimeUTCToLocal(&dt, &local_dt);
                     fileDate = FAT_MAKE_DATE(local_dt.year, local_dt.month, local_dt.day);
                     fileTime = FAT_MAKE_TIME(local_dt.hours, local_dt.minutes, local_dt.seconds);
