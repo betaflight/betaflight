@@ -38,26 +38,6 @@
 
 #include "pg/adc.h"
 
-// Copied from stm32f7xx_ll_adc.h
-
-#define VREFINT_CAL_VREF                   ( 3300U)                    /* Analog voltage reference (Vref+) value with which temperature sensor has been calibrated in production (tolerance: +-10 mV) (unit: mV). */
-#define TEMPSENSOR_CAL1_TEMP               (( int32_t)   30)           /* Internal temperature sensor, temperature at which temperature sensor has been calibrated in production for data into TEMPSENSOR_CAL1_ADDR (tolerance: +-5 DegC) (unit: DegC). */
-#define TEMPSENSOR_CAL2_TEMP               (( int32_t)  110)           /* Internal temperature sensor, temperature at which temperature sensor has been calibrated in production for data into TEMPSENSOR_CAL2_ADDR (tolerance: +-5 DegC) (unit: DegC). */
-#define TEMPSENSOR_CAL_VREFANALOG          ( 3300U)                    /* Analog voltage reference (Vref+) voltage with which temperature sensor has been calibrated in production (+-10 mV) (unit: mV). */
-
-// These addresses are incorrectly defined in stm32f7xx_ll_adc.h
-#if defined(STM32F745xx) || defined(STM32F746xx) || defined(STM32F765xx)
-// F745xx_F746xx and  F765xx_F767xx_F769xx
-#define VREFINT_CAL_ADDR                   ((uint16_t*) (0x1FF0F44A))
-#define TEMPSENSOR_CAL1_ADDR               ((uint16_t*) (0x1FF0F44C))
-#define TEMPSENSOR_CAL2_ADDR               ((uint16_t*) (0x1FF0F44E))
-#elif defined(STM32F722xx)
-// F72x_F73x
-#define VREFINT_CAL_ADDR                   ((uint16_t*) (0x1FF07A2A))
-#define TEMPSENSOR_CAL1_ADDR               ((uint16_t*) (0x1FF07A2C))
-#define TEMPSENSOR_CAL2_ADDR               ((uint16_t*) (0x1FF07A2E))
-#endif
-
 const adcDevice_t adcHardware[] = {
     {
         .ADCx = ADC1,
