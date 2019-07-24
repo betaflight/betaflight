@@ -24,7 +24,7 @@
 
 #include "memprot.h"
 
-void memProtConfigError(void)
+static void memProtConfigError(void)
 {
     for (;;) {}
 }

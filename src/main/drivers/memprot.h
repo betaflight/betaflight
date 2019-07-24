@@ -31,28 +31,6 @@ typedef struct mpuRegion_s {
     uint8_t  bufferable;
 } mpuRegion_t;
 
-#if defined(STM32H7)
-/*
- * Upper 8 regions are reserved for a boot loader in EXST environment,
- * and of 3 regions are actually used to write protect the firmware
- * image transferred from an external storage.
- *
- * There were arguments on the boot loader reserving something
- * not obvious from firmware point of view, but left as is for now.
- *
- * If we want to remove this invisible "feature", we would completely
- * reset the MPU regions and write protect the firmware image,
- * using (most likely) multiple regions (e.g., 448K = 256K + 128K + 64K).
- */
-#ifdef EXST
-#define MAX_MPU_REGIONS 8
-#else
-#define MAX_MPU_REGIONS 16
-#endif
-#else
-#error Unknown MCU family/type
-#endif
-
 extern mpuRegion_t mpuRegions[];
 extern unsigned mpuRegionCount;
 

@@ -73,3 +73,5 @@ mpuRegion_t mpuRegions[] = {
 };
 
 unsigned mpuRegionCount = ARRAYLEN(mpuRegions);
+
+STATIC_ASSERT(ARRAYLEN(mpuRegions) <= MAX_MPU_REGIONS, MPU_region_count_exceeds_limit);

@@ -163,6 +163,7 @@ DEVICE_FLAGS       += -DSTM32H743xx
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h743_2m.ld
 STARTUP_SRC         = startup_stm32h743xx.s
 TARGET_FLASH       := 2048
+DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
 else ifeq ($(TARGET),$(filter $(TARGET),$(H750xB_TARGETS)))
 DEVICE_FLAGS       += -DSTM32H750xx
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h750_128k.ld
@@ -179,6 +180,13 @@ FIRMWARE_SIZE      := 448
 # and the maximum size of the data stored on the external storage device.
 TARGET_FLASH       := FIRMWARE_SIZE
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h750_exst.ld
+endif
+
+ifeq ($(EXST),yes)
+# Upper 8 regions are reserved for a boot loader in EXST environment
+DEVICE_FLAGS       += -DMAX_MPU_REGIONS=8
+else
+DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
 endif
 
 ifneq ($(DEBUG),GDB)
