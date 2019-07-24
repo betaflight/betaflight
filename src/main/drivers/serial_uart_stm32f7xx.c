@@ -39,6 +39,8 @@
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
 
+#include "stm32f7xx_ll_usart.h"
+
 static void handleUsartTxDma(uartPort_t *s);
 
 const uartHardware_t uartHardware[UARTDEV_COUNT] = {
@@ -150,15 +152,15 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #endif
         .rxPins = {
             { DEFIO_TAG_E(PA1), GPIO_AF8_UART4 },
-            { DEFIO_TAG_E(PC11), GPIO_AF8_UART4 },         
+            { DEFIO_TAG_E(PC11), GPIO_AF8_UART4 },
 #ifdef STM32F765xx
             { DEFIO_TAG_E(PA11), GPIO_AF6_UART4 },
-            { DEFIO_TAG_E(PD0), GPIO_AF8_UART4 }         
+            { DEFIO_TAG_E(PD0), GPIO_AF8_UART4 }
 #endif
         },
         .txPins = {
             { DEFIO_TAG_E(PA0), GPIO_AF8_UART4 },
-            { DEFIO_TAG_E(PC10), GPIO_AF8_UART4 },         
+            { DEFIO_TAG_E(PC10), GPIO_AF8_UART4 },
 #ifdef STM32F765xx
             { DEFIO_TAG_E(PA12), GPIO_AF6_UART4 },
             { DEFIO_TAG_E(PD1), GPIO_AF8_UART4 }
@@ -371,6 +373,14 @@ void uartIrqHandler(uartPort_t *s)
         if (s->txDMAStream) {
             handleUsartTxDma(s);
         }
+    }
+
+    if (__HAL_UART_GET_IT(huart, UART_IT_IDLE)) {
+        if (s->port.idleCallback) {
+            s->port.idleCallback();
+        }
+
+        __HAL_UART_CLEAR_IDLEFLAG(huart);
     }
 }
 

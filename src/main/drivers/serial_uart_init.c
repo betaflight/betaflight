@@ -189,6 +189,7 @@ serialPort_t *uartOpen(UARTDevice_e device, serialReceiveCallbackPtr rxCallback,
         } else {
             USART_ClearITPendingBit(s->USARTx, USART_IT_RXNE);
             USART_ITConfig(s->USARTx, USART_IT_RXNE, ENABLE);
+            USART_ITConfig(s->USARTx, USART_IT_IDLE, ENABLE);
         }
     }
 
