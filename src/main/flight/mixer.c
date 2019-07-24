@@ -575,6 +575,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
         }
     } else {
         static float motorRangeMinIncrease = 0;
+#ifdef USE_RPM_FILTER
         if (currentPidProfile->idle_hz) {
             static float oldMinRpm;
             const float maxIncrease = isAirmodeActivated() ? currentPidProfile->idle_max_increase * 0.001f : 0.04f;
@@ -585,6 +586,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             motorRangeMinIncrease = constrainf(motorRangeMinIncrease + pidSum * dT, 0.0f, maxIncrease);
             oldMinRpm = minRpm;
         }
+#endif
         
         throttle = rcCommand[THROTTLE] - PWM_RANGE_MIN + throttleAngleCorrection;
         currentThrottleInputRange = rcCommandThrottleRange;
