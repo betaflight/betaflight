@@ -485,6 +485,11 @@ static void printValuePointer(const clivalue_t *var, const void *valuePointer, b
                 // int16_t array
                 cliPrintf("%d", ((int16_t *)valuePointer)[i]);
                 break;
+
+            case VAR_UINT32:
+                // uin32_t array
+                cliPrintf("%u", ((uint32_t *)valuePointer)[i]);
+                break;
             }
 
             if (i < var->config.array.length - 1) {
@@ -4323,6 +4328,15 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
                             // store value
                             *data = (int16_t)atoi((const char*) valPtr);
                         }
+
+                        break;
+                    case VAR_UINT32:
+                        {
+                            // fetch data pointer
+                            uint32_t *data = (uint32_t *)cliGetValuePointer(val) + i;
+                            // store value
+                            *data = (uint32_t)strtoul((const char*) valPtr, NULL, 10);
+                       }
 
                         break;
                     }
