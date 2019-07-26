@@ -59,8 +59,10 @@ motorDevice_t *dshotPwmDevInit(const struct motorDevConfig_s *motorConfig, uint1
 #define PROSHOT_TELEMETRY_INPUT_LEN 8
 
 // For H7, DMA buffer is placed in a dedicated segment for coherency management
-#ifdef STM32H7
+#if defined(STM32H7)
 #define DSHOT_DMA_BUFFER_ATTRIBUTE DMA_RAM
+#elif defined(STM32F7)
+#define DSHOT_DMA_BUFFER_ATTRIBUTE FAST_RAM_ZERO_INIT
 #else
 #define DSHOT_DMA_BUFFER_ATTRIBUTE // None
 #endif
