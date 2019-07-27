@@ -27,6 +27,7 @@
 #include "drivers/timer_def.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
+    #if !defined(KAKUTEF4V2TRI)
     #if defined(FLYWOOF405)
     DEF_TIM(TIM10, CH1, PB8, TIM_USE_PPM,   0, 0), // PPM IN
     DEF_TIM(TIM3, CH3, PB0, TIM_USE_MOTOR, 0, 0), // S1_OUT - DMA1_ST7
@@ -45,7 +46,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM2, CH4, PA3, TIM_USE_MOTOR, 0, 1), // S3_OUT - DMA1_ST6
     DEF_TIM(TIM2, CH3, PA2, TIM_USE_MOTOR, 0, 0), // S4_OUT - DMA1_ST1
     #endif
-    #if defined(KAKUTEF4V2)														   
+    #if defined(KAKUTEF4V2)
     DEF_TIM(TIM8, CH3, PC8, TIM_USE_LED,   0, 0), // LED_STRIP - DMA2_ST2
     #elif defined(FLYWOOF405)
     DEF_TIM(TIM1, CH2, PA9,  TIM_USE_PWM, 0, 0),     // FC CAM	
@@ -53,5 +54,15 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM5, CH1, PA0, TIM_USE_MOTOR, 0, 0), // S5_OUT - DMA1_ST2
     DEF_TIM(TIM8, CH3, PC8, TIM_USE_MOTOR, 0, 1), // S6_OUT - DMA2_ST4
     DEF_TIM(TIM5, CH2, PA1, TIM_USE_LED,   0, 0), // LED_STRIP - DMA1_ST4
+    #endif
+    #else // defined(KAKUTEF4V2TRI)
+    // Timer definition for tricopter on KakuteF4V2
+    // Swaps function of M4 and LED pads
+    DEF_TIM(TIM3, CH3, PB0, TIM_USE_MOTOR, 0, 0), // S1_OUT - DMA1_ST7
+    DEF_TIM(TIM3, CH4, PB1, TIM_USE_MOTOR, 0, 0), // S2_OUT - DMA1_ST2
+    DEF_TIM(TIM2, CH4, PA3, TIM_USE_MOTOR, 0, 1), // S3_OUT - DMA1_ST6
+    DEF_TIM(TIM8, CH3, PC8, TIM_USE_SERVO, 0, 0), // S4_OUT - DMA2_ST2     LED pad on KakuteF4V2 used for tricopter tail servo
+
+    DEF_TIM(TIM5, CH3, PA2, TIM_USE_LED,   0, 0), // LED_STRIP - DMA1_ST0  M4 pad on KakuteF4V2
     #endif
 };

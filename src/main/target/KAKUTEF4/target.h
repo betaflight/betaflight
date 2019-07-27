@@ -19,7 +19,7 @@
  */
 
 #pragma once
-#if defined(KAKUTEF4V2)
+#if defined(KAKUTEF4V2) || defined(KAKUTEF4V2TRI)
 #define TARGET_BOARD_IDENTIFIER "KTV2"
 #define USBD_PRODUCT_STRING "KakuteF4-V2"
 #elif defined(FLYWOOF405)
@@ -78,7 +78,7 @@
 #define USE_ACC_SPI_MPU6000								  
 #endif
 
-#if defined(KAKUTEF4V2) || defined(FLYWOOF405)       // There is invertor on RXD3(PB11), so PB10/PB11 can't be used as I2C2.
+#if defined(KAKUTEF4V2) || defined(KAKUTEF4V2TRI) ||defined(FLYWOOF405)  // There is inverter on RXD3(PB11), so PB10/PB11 can't be used as I2C2.
 #define USE_I2C          //No other I2C pins are  fanned out, So V1 don't support I2C  peripherals.
 #define USE_I2C_DEVICE_1
 #define I2C_DEVICE              (I2CDEV_1)
@@ -129,7 +129,7 @@
 #define UART6_RX_PIN            PC7
 #define UART6_TX_PIN            PC6
 
-#if defined (KAKUTEF4V2) || defined(FLYWOOF405)               // Uart4 and Uart5 are fanned out on v2
+#if defined(KAKUTEF4V2) || defined(KAKUTEF4V2TRI) || defined(FLYWOOF405)  // Uart4 and Uart5 are fanned out on v2
 #define USE_UART4                // Uart4 can be used for GPS or  RunCam Split
 #define UART4_RX_PIN            PA1
 #define UART4_TX_PIN            PA0
@@ -186,7 +186,7 @@
 #define TARGET_IO_PORTC 0xffff
 #define TARGET_IO_PORTD        (BIT(2))
 
-#if defined (KAKUTEF4V2)
+#if defined(KAKUTEF4V2) || defined(KAKUTEF4V2TRI)
 #define USABLE_TIMER_CHANNEL_COUNT 6
 #define USED_TIMERS  ( TIM_N(2) | TIM_N(3) |  TIM_N(8))
 #elif defined(FLYWOOF405)

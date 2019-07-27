@@ -1,0 +1,1 @@
+#KAKUTEF4V2TRI.mk file
