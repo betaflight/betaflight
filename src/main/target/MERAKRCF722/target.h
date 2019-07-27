@@ -21,7 +21,7 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "MEF7"
-#define USBD_PRODUCT_STRING     "MERAKF722"
+#define USBD_PRODUCT_STRING     "MERAKRCF722"
 
 #define LED0_PIN                PC13
 
