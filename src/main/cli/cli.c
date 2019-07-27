@@ -5180,7 +5180,7 @@ dmaoptEntry_t dmaoptEntryTable[] = {
     DEFS("SDIO",    DMA_PERIPH_SDIO,    PG_SDIO_CONFIG,        sdioConfig_t,       dmaopt),
     DEFW("UART_TX", DMA_PERIPH_UART_TX, PG_SERIAL_UART_CONFIG, serialUartConfig_t, txDmaopt, UARTDEV_CONFIG_MAX,              MASK_IGNORED),
     DEFW("UART_RX", DMA_PERIPH_UART_RX, PG_SERIAL_UART_CONFIG, serialUartConfig_t, rxDmaopt, UARTDEV_CONFIG_MAX,              MASK_IGNORED),
-#ifdef STM32H7
+#if defined(STM32H7) || defined(STM32G4)
     DEFW("TIMUP",   DMA_PERIPH_TIMUP,   PG_TIMER_UP_CONFIG,    timerUpConfig_t,    dmaopt,   HARDWARE_TIMER_DEFINITION_COUNT, TIMUP_TIMERS),
 #endif
 };
@@ -5192,13 +5192,19 @@ dmaoptEntry_t dmaoptEntryTable[] = {
 #define DMA_OPT_UI_INDEX(i) ((i) + 1)
 #define DMA_OPT_STRING_BUFSIZE 5
 
-#ifdef STM32H7
+#if defined(STM32H7) || defined(STM32G4)
 #define DMA_CHANREQ_STRING "Request"
 #else
 #define DMA_CHANREQ_STRING "Channel"
 #endif
 
-#define DMASPEC_FORMAT_STRING "DMA%d Stream %d " DMA_CHANREQ_STRING " %d"
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
+#define DMA_STCH_STRING    "Stream"
+#else
+#define DMA_STCH_STRING    "Channel"
+#endif
+
+#define DMASPEC_FORMAT_STRING "DMA%d " DMA_STCH_STRING " %d " DMA_CHANREQ_STRING " %d"
 
 static void optToString(int optval, char *buf)
 {

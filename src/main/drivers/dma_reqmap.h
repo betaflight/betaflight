@@ -30,7 +30,7 @@ typedef uint16_t dmaCode_t;
 typedef struct dmaChannelSpec_s {
     dmaCode_t             code;
     dmaResource_t         *ref;
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
     uint32_t              channel;
 #endif
 } dmaChannelSpec_t;
@@ -55,7 +55,7 @@ typedef int8_t dmaoptValue_t;
 
 #define DMA_OPT_UNUSED (-1)
 
-#if defined(STM32H7)
+#if defined(STM32H7) || defined(STM32G4)
 #define MAX_PERIPHERAL_DMA_OPTIONS 16
 #define MAX_TIMER_DMA_OPTIONS 16
 #else
