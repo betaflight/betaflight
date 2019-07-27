@@ -151,8 +151,10 @@
 
 #ifdef USE_DMA_RAM
 #define DMA_RAM __attribute__((section(".DMA_RAM")))
+#define DMA_RW_AXI __attribute__((section(".DMA_AXI_RW")))
 #else
 #define DMA_RAM
+#define DMA_RW_AXI
 #endif
 
 #define USE_BRUSHED_ESC_AUTODETECT  // Detect if brushed motors are connected and set defaults appropriately to avoid motors spinning on boot
