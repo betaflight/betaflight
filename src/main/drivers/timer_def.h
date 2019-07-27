@@ -203,7 +203,7 @@
 #define DEF_TIM_AF__D(af_n) GPIO_AF_ ## af_n
 
 #define DEF_TIM_DMA_CHANNEL(timch) CONCAT(DEF_TIM_DMA_CHANNEL__, DEF_TIM_DMA_GET(0, timch))
-#define DEF_TIM_DMA_CHANNEL__D(dma_n, chan_n) DMA ## dma_n ## _Channel ## chan_n
+#define DEF_TIM_DMA_CHANNEL__D(dma_n, chan_n) (dmaResource_t *)DMA ## dma_n ## _Channel ## chan_n
 #define DEF_TIM_DMA_CHANNEL__NONE NULL
 
 #define DEF_TIM_DMA_HANDLER(timch) CONCAT(DEF_TIM_DMA_HANDLER__, DEF_TIM_DMA_GET(0, timch))
@@ -427,7 +427,7 @@
 
 #define DEF_TIM_DMA_STREAM(variant, timch)                              \
     CONCAT(DEF_TIM_DMA_STREAM__, DEF_TIM_DMA_GET(variant, timch))
-#define DEF_TIM_DMA_STREAM__D(dma_n, stream_n, chan_n)  DMA ## dma_n ## _Stream ## stream_n
+#define DEF_TIM_DMA_STREAM__D(dma_n, stream_n, chan_n)  (dmaResource_t *)DMA ## dma_n ## _Stream ## stream_n
 #define DEF_TIM_DMA_STREAM__NONE                        NULL
 
 #define DEF_TIM_DMA_HANDLER(variant, timch) \
@@ -532,7 +532,7 @@
 
 #define DEF_TIM_DMA_STREAM(variant, timch)                              \
     CONCAT(DEF_TIM_DMA_STREAM__, DEF_TIM_DMA_GET(variant, timch))
-#define DEF_TIM_DMA_STREAM__D(dma_n, stream_n, chan_n)  DMA ## dma_n ## _Stream ## stream_n
+#define DEF_TIM_DMA_STREAM__D(dma_n, stream_n, chan_n)  (dmaResource_t *)DMA ## dma_n ## _Stream ## stream_n
 #define DEF_TIM_DMA_STREAM__NONE                        NULL
 
 #define DEF_TIM_DMA_HANDLER(variant, timch) \
@@ -743,7 +743,7 @@
 
 #define DEF_TIM_DMA_STREAM(variant, timch)                              \
     CONCAT(DEF_TIM_DMA_STREAM__, DEF_TIM_DMA_GET(variant, timch))
-#define DEF_TIM_DMA_STREAM__D(dma_n, stream_n)  DMA ## dma_n ## _Stream ## stream_n
+#define DEF_TIM_DMA_STREAM__D(dma_n, stream_n)  (dmaResource_t *)DMA ## dma_n ## _Stream ## stream_n
 #define DEF_TIM_DMA_STREAM__NONE                        NULL
 
 // XXX This is awful. There must be some smart way of doing this ...

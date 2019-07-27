@@ -118,9 +118,9 @@ void uartReconfigure(uartPort_t *uartPort)
     if (uartPort->port.mode & MODE_RX)
     {
 #ifdef USE_DMA
-        if (uartPort->rxDMAStream)
+        if (uartPort->rxDMAResource)
         {
-            uartPort->rxDMAHandle.Instance = uartPort->rxDMAStream;
+            uartPort->rxDMAHandle.Instance = (DMA_ARCH_TYPE *)uartPort->rxDMAResource;
 #if !defined(STM32H7)
             uartPort->rxDMAHandle.Init.Channel = uartPort->rxDMAChannel;
 #else 
@@ -167,8 +167,8 @@ void uartReconfigure(uartPort_t *uartPort)
     // Transmit DMA or IRQ
     if (uartPort->port.mode & MODE_TX) {
 #ifdef USE_DMA
-        if (uartPort->txDMAStream) {
-            uartPort->txDMAHandle.Instance = uartPort->txDMAStream;
+        if (uartPort->txDMAResource) {
+            uartPort->txDMAHandle.Instance = (DMA_ARCH_TYPE *)uartPort->txDMAResource;
 #if !defined(STM32H7)
             uartPort->txDMAHandle.Init.Channel = uartPort->txDMAChannel;
 #else 
@@ -253,7 +253,7 @@ void uartSetMode(serialPort_t *instance, portMode_e mode)
 void uartTryStartTxDMA(uartPort_t *s)
 {
     ATOMIC_BLOCK(NVIC_PRIO_SERIALUART_TXDMA) {
-        if (s->txDMAStream->CR & 1) {
+        if (IS_DMA_ENABLED(s->txDMAResource)) {
             // DMA is already in progress
             return;
         }
@@ -291,7 +291,7 @@ uint32_t uartTotalRxBytesWaiting(const serialPort_t *instance)
     uartPort_t *s = (uartPort_t*)instance;
 
 #ifdef USE_DMA
-    if (s->rxDMAStream) {
+    if (s->rxDMAResource) {
         uint32_t rxDMAHead = __HAL_DMA_GET_COUNTER(s->Handle.hdmarx);
 
         if (rxDMAHead >= s->rxDMAPos) {
@@ -322,7 +322,7 @@ uint32_t uartTotalTxBytesFree(const serialPort_t *instance)
     }
 
 #ifdef USE_DMA
-    if (s->txDMAStream) {
+    if (s->txDMAResource) {
         /*
          * When we queue up a DMA request, we advance the Tx buffer tail before the transfer finishes, so we must add
          * the remaining size of that in-progress transfer here instead:
@@ -350,7 +350,7 @@ bool isUartTransmitBufferEmpty(const serialPort_t *instance)
 {
     const uartPort_t *s = (uartPort_t *)instance;
 #ifdef USE_DMA
-    if (s->txDMAStream)
+    if (s->txDMAResource)
         return s->txDMAEmpty;
     else
 #endif
@@ -363,7 +363,7 @@ uint8_t uartRead(serialPort_t *instance)
     uartPort_t *s = (uartPort_t *)instance;
 
 #ifdef USE_DMA
-    if (s->rxDMAStream) {
+    if (s->rxDMAResource) {
         ch = s->port.rxBuffer[s->port.rxBufferSize - s->rxDMAPos];
         if (--s->rxDMAPos == 0)
             s->rxDMAPos = s->port.rxBufferSize;
@@ -394,7 +394,7 @@ void uartWrite(serialPort_t *instance, uint8_t ch)
     }
 
 #ifdef USE_DMA
-    if (s->txDMAStream) {
+    if (s->txDMAResource) {
         uartTryStartTxDMA(s);
     } else
 #endif

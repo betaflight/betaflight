@@ -39,7 +39,7 @@
 
 
 const adcDevice_t adcHardware[] = {
-    { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .DMAy_Channelx = DMA1_Channel1 }
+    { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .dmaResource = (dmaResource_t *)DMA1_Channel1 }
 };
 
 const adcTagMap_t adcTagMap[] = {
@@ -115,9 +115,9 @@ void adcInit(const adcConfig_t *config)
     RCC_ADCCLKConfig(RCC_PCLK2_Div8);  // 9MHz from 72MHz APB2 clock(HSE), 8MHz from 64MHz (HSI)
     RCC_ClockCmd(adc.rccADC, ENABLE);
 
-    dmaInit(dmaGetIdentifier(adc.DMAy_Channelx), OWNER_ADC, 0);
+    dmaInit(dmaGetIdentifier(adc.dmaResource), OWNER_ADC, 0);
 
-    DMA_DeInit(adc.DMAy_Channelx);
+    xDMA_DeInit(adc.dmaResource);
     DMA_InitTypeDef DMA_InitStructure;
     DMA_StructInit(&DMA_InitStructure);
     DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)&adc.ADCx->DR;
@@ -131,8 +131,8 @@ void adcInit(const adcConfig_t *config)
     DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
     DMA_InitStructure.DMA_Priority = DMA_Priority_High;
     DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
-    DMA_Init(adc.DMAy_Channelx, &DMA_InitStructure);
-    DMA_Cmd(adc.DMAy_Channelx, ENABLE);
+    xDMA_Init(adc.dmaResource, &DMA_InitStructure);
+    xDMA_Cmd(adc.dmaResource, ENABLE);
 
     ADC_InitTypeDef ADC_InitStructure;
     ADC_StructInit(&ADC_InitStructure);

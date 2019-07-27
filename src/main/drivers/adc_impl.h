@@ -21,6 +21,7 @@
 #pragma once
 
 #include "drivers/adc.h"
+#include "drivers/dma.h"
 #include "drivers/io_types.h"
 #include "drivers/rcc_types.h"
 
@@ -63,11 +64,9 @@ typedef struct adcDevice_s {
     ADC_TypeDef* ADCx;
     rccPeriphTag_t rccADC;
 #if !defined(USE_DMA_SPEC)
+    dmaResource_t* dmaResource;
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
-    DMA_Stream_TypeDef* DMAy_Streamx;
     uint32_t channel;
-#else
-    DMA_Channel_TypeDef* DMAy_Channelx;
 #endif
 #endif // !defined(USE_DMA_SPEC)
 #if defined(STM32F7) || defined(STM32H7)

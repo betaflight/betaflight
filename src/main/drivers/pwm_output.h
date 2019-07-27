@@ -24,6 +24,7 @@
 
 #include "common/time.h"
 
+#include "drivers/dma.h"
 #include "drivers/io_types.h"
 #include "drivers/motor.h"
 #include "drivers/timer.h"

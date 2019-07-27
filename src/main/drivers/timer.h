@@ -23,6 +23,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "drivers/dma.h"
 #include "drivers/io_types.h"
 #include "drivers/rcc_types.h"
 #include "drivers/timer_def.h"
@@ -112,37 +113,25 @@ typedef struct timerHardware_s {
 #if defined(STM32F3) || defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
     uint8_t alternateFunction;
 #endif
-#if defined(USE_TIMER_DMA)
-#if defined(USE_DMA_SPEC)
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
-    DMA_Stream_TypeDef *dmaRefConfigured;
-    uint32_t dmaChannelConfigured;
-#else
-    DMA_Channel_TypeDef *dmaRefConfigured;
-#endif
-#else
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
-    DMA_Stream_TypeDef *dmaRef;
-    // For F4 and F7, dmaChannel is channel for DMA1 or DMA2.
-    // For H7, dmaChannel is DMA request number for DMAMUX
-    uint32_t dmaChannel; // XXX Can be much smaller (e.g. uint8_t)
-#else
-    DMA_Channel_TypeDef *dmaRef;
-#endif
-#endif
 
-#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
-    // TIMUP
-#ifdef STM32F3
-    DMA_Channel_TypeDef *dmaTimUPRef;
-#else
-    DMA_Stream_TypeDef *dmaTimUPRef;
-    // For F4 and F7, dmaTimUpChannel is channel for DMA1 or DMA2.
-    // For H7, dmaTimUpChannel is DMA request number for DMAMUX
+#if defined(USE_TIMER_DMA)
+
+#if defined(USE_DMA_SPEC)
+    dmaResource_t *dmaRefConfigured;
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
+    uint32_t dmaChannelConfigured;
+#endif
+#else // USE_DMA_SPEC
+    dmaResource_t *dmaRef;
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
+    uint32_t dmaChannel; // XXX Can be much smaller (e.g. uint8_t)
+#endif
+#endif // USE_DMA_SPEC
+    dmaResource_t *dmaTimUPRef;
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
     uint32_t dmaTimUPChannel;
 #endif
     uint8_t dmaTimUPIrqHandler;
-#endif
 #endif
 } timerHardware_t;
 
