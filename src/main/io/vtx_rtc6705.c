@@ -212,18 +212,18 @@ static bool vtxRTC6705GetPowerIndex(const vtxDevice_t *vtxDevice, uint8_t *pInde
     return true;
 }
 
-static bool vtxRTC6705GetPitMode(const vtxDevice_t *vtxDevice, uint8_t *pOnOff)
-{
-    UNUSED(vtxDevice);
-    UNUSED(pOnOff);
-    return false;
-}
-
 static bool vtxRTC6705GetFreq(const vtxDevice_t *vtxDevice, uint16_t *pFrequency)
 {
     UNUSED(vtxDevice);
     *pFrequency = rtc6705Frequency;
     return true;
+}
+
+static bool vtxRTC6705GetStatus(const vtxDevice_t *vtxDevice, unsigned *status)
+{
+    UNUSED(vtxDevice);
+    UNUSED(status);
+    return false;
 }
 
 static vtxVTable_t rtc6705VTable = {
@@ -236,8 +236,8 @@ static vtxVTable_t rtc6705VTable = {
     .setFrequency = vtxRTC6705SetFrequency,
     .getBandAndChannel = vtxRTC6705GetBandAndChannel,
     .getPowerIndex = vtxRTC6705GetPowerIndex,
-    .getPitMode = vtxRTC6705GetPitMode,
     .getFrequency = vtxRTC6705GetFreq,
+    .getStatus = vtxRTC6705GetStatus,
 };
 #endif // VTX_COMMON
 

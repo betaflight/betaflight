@@ -1545,11 +1545,11 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
     case MSP_VTX_CONFIG:
         {
             const vtxDevice_t *vtxDevice = vtxCommonDevice();
-            uint8_t pitmode = 0;
+            unsigned vtxStatus;
             vtxDevType_e vtxType = VTXDEV_UNKNOWN;
             uint8_t deviceIsReady = 0;
             if (vtxDevice) {
-                vtxCommonGetPitMode(vtxDevice, &pitmode);
+                vtxCommonGetStatus(vtxDevice, &vtxStatus);
                 vtxType = vtxCommonGetDeviceType(vtxDevice);
                 deviceIsReady = vtxCommonDeviceIsReady(vtxDevice) ? 1 : 0;
             }
@@ -1557,7 +1557,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
             sbufWriteU8(dst, vtxSettingsConfig()->band);
             sbufWriteU8(dst, vtxSettingsConfig()->channel);
             sbufWriteU8(dst, vtxSettingsConfig()->power);
-            sbufWriteU8(dst, pitmode);
+            sbufWriteU8(dst, (vtxStatus & VTX_STATUS_PIT_MODE) ? 1 : 0);
             sbufWriteU16(dst, vtxSettingsConfig()->freq);
             sbufWriteU8(dst, deviceIsReady);
             sbufWriteU8(dst, vtxSettingsConfig()->lowPowerDisarm);
@@ -2303,9 +2303,9 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 if (vtxType != VTXDEV_UNKNOWN) {
                     // Delegate pitmode to vtx directly
                     const uint8_t newPitmode = sbufReadU8(src);
-                    uint8_t currentPitmode = 0;
-                    vtxCommonGetPitMode(vtxDevice, &currentPitmode);
-                    if (currentPitmode != newPitmode) {
+                    unsigned vtxCurrentStatus;
+                    vtxCommonGetStatus(vtxDevice, &vtxCurrentStatus);
+                    if ((bool)(vtxCurrentStatus & VTX_STATUS_PIT_MODE) != (bool)newPitmode) {
                         vtxCommonSetPitMode(vtxDevice, newPitmode);
                     }
 
