@@ -61,6 +61,10 @@
 #error Unknown MCU
 #endif
 
+#ifdef STM32G4
+#define USB_OTG_MAX_EP0_SIZE USB_MAX_EP0_SIZE
+#endif
+
 #if (USBD_DEBUG_LEVEL > 0)
 #include <stdio.h>
 #endif
