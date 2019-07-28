@@ -386,10 +386,12 @@ P    -    High -     High -
         motor->timer->hdma_tim.Init.MemDataAlignment = DMA_MDATAALIGN_WORD ;
         motor->timer->hdma_tim.Init.Mode = DMA_NORMAL;
         motor->timer->hdma_tim.Init.Priority = DMA_PRIORITY_HIGH;
+#if !defined(STM32G4)
         motor->timer->hdma_tim.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
         motor->timer->hdma_tim.Init.PeriphBurst = DMA_PBURST_SINGLE;
         motor->timer->hdma_tim.Init.MemBurst = DMA_MBURST_SINGLE;
         motor->timer->hdma_tim.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+#endif
 
         motor->timer->dmaBurstBuffer = &dshotBurstDmaBuffer[timerIndex][0];
         motor->timer->timHandle = motor->TimHandle;
@@ -415,10 +417,12 @@ P    -    High -     High -
         motor->hdma_tim.Init.MemDataAlignment = DMA_MDATAALIGN_WORD ;
         motor->hdma_tim.Init.Mode = DMA_NORMAL;
         motor->hdma_tim.Init.Priority = DMA_PRIORITY_HIGH;
+#if !defined(STM32G4)
         motor->hdma_tim.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
         motor->hdma_tim.Init.PeriphBurst = DMA_PBURST_SINGLE;
         motor->hdma_tim.Init.MemBurst = DMA_MBURST_SINGLE;
         motor->hdma_tim.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+#endif
 
         motor->dmaBuffer = &dshotDmaBuffer[motorIndex][0];
         motor->dmaBuffer[DSHOT_DMA_BUFFER_SIZE-2] = 0; // XXX Is this necessary? -> probably.
