@@ -443,6 +443,7 @@ void init(void)
             if (bothButtonsHeld) {
                 if (--secondsRemaining == 0) {
                     resetEEPROM();
+                    persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_NONE);
                     systemReset();
                 }
                 delay(1000);
