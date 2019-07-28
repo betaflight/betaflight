@@ -585,6 +585,12 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             const float pidSum = constrainf(currentPidProfile->idle_p * 0.0001f * error, -currentPidProfile->idle_pid_limit, currentPidProfile->idle_pid_limit);
             motorRangeMinIncrease = constrainf(motorRangeMinIncrease + pidSum * dT, 0.0f, maxIncrease);
             oldMinRpm = minRpm;
+
+            DEBUG_SET(DEBUG_DYN_IDLE, 0, motorRangeMinIncrease * 1000);
+            DEBUG_SET(DEBUG_DYN_IDLE, 1, targetRpmChangeRate);
+            DEBUG_SET(DEBUG_DYN_IDLE, 2, error);
+            DEBUG_SET(DEBUG_DYN_IDLE, 3, minRpm);
+            
         }
 #endif
         
@@ -849,7 +855,9 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
 #endif
 
 #ifdef USE_DYN_IDLE
-    throttle += currentPidProfile->idle_throttle * 0.001f;
+    if (currentPidProfile->idle_hz) {
+        throttle += currentPidProfile->idle_throttle * 0.001f;
+    }
 #endif
 
 #if defined(USE_THROTTLE_BOOST)

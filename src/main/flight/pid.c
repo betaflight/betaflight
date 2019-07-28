@@ -207,9 +207,9 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .transient_throttle_limit = 15,
         .profileName = { 0 },
         .idle_hz = 0,
-        .idle_adjustment_speed = 200,
+        .idle_adjustment_speed = 50,
         .idle_throttle = 60,
-        .idle_p = 40,
+        .idle_p = 50,
         .idle_pid_limit = 200,
         .idle_max_increase = 150,
     );
