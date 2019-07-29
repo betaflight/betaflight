@@ -470,6 +470,8 @@ __ALIGN_BEGIN uint8_t USBD_CDC_OtherSpeedCfgDesc[USB_CDC_CONFIG_DESC_SIZ] __ALIG
   */
 static uint8_t  USBD_CDC_Init (USBD_HandleTypeDef *pdev, uint8_t cfgidx)
 {
+  UNUSED(cfgidx);
+
   uint8_t ret = 0U;
   USBD_CDC_HandleTypeDef   *hcdc;
 
@@ -548,6 +550,8 @@ static uint8_t  USBD_CDC_Init (USBD_HandleTypeDef *pdev, uint8_t cfgidx)
   */
 static uint8_t  USBD_CDC_DeInit (USBD_HandleTypeDef *pdev, uint8_t cfgidx)
 {
+  UNUSED(cfgidx);
+
   uint8_t ret = 0U;
 
   /* Close EP IN */
